@@ -383,6 +383,12 @@ flowchart TD
 - [I] **Pickup.** `GoldPickup` takes `min(pile, cap − gold)` and drops the remainder (`DropGold`); in a party with
   another member in the level the amount goes through `PartyGoldShare` (a split by `PartyCount`; plan 0044's two-client
   case). (fn:sub_0055C850_GoldPickup@0x0055C850, fn:sub_00540900_PartyGoldShare@0x00540900)
+  *2026-10-27 (plan 0051 Phase 1b):* [I] the split's arithmetic is read in
+  [multiplayer/0002](../multiplayer/0002-trade-and-party-gold.md) § 1. A pile with a player owner is never shared. Any
+  other pile goes to the split unclipped, as `share = amount / n`, with `n` the members in the level that are not
+  dead. Each other member in the level gets `min(share, cap − gold)`, and the picker gets the rest plus their
+  overflow, clipped at its own cap. The member paid is tested on the picker's mode, not its own.
+  (fn:sub_00540650_PartyGoldClip@0x00540650, 0x00540A1A–0x00540B00)
 - [I] **Pile amounts.** A gold item's amount is set at creation (`ilvl + RNG_Range(item seed, 5·ilvl)`, at least 1,
   items/0006 § gold, 0x00557AC1–0x00557B4C); a monster drop is then scaled by `mul=` and gold find (items/0001,
   `sub_005589A0_DropGoldFind`: `gold·(100 + GF(killer) + GF(killer's owner))/100`). The ilvl of an object's gold
@@ -610,7 +616,9 @@ From the plan 0043 P1 review: the byte `PLAYER_DeathGoldLoss` tests against 3 (0
   what the client shows afterwards was not followed.
 - The gates of `PLAYER_UseAmmo`'s three missile call sites (`0x0056ECB0`, `0x0056F7F0`) and which skill reaches
   `SkillWeaponWear`.
-- The party gold split (`PartyGoldShare`) and trading gold between players: plan 0044.
+- ~~The party gold split (`PartyGoldShare`) and trading gold between players: plan 0044.~~ Read (static, inferred) in
+  [multiplayer/0002](../multiplayer/0002-trade-and-party-gold.md) (plan 0051 Phase 1b, 2026-10-27); the two-client
+  cases MP31 and MP32 wait for the two-client run.
 - ~~`game+0x6A` = 3 as "single player" rests on the logged runs, not on its writer~~: the writer is read above
   (`lane/rbs2`). [L] Which network modes `g_ClientGameMode` 6 and 8 are.
 

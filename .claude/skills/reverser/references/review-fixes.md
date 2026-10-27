@@ -65,7 +65,10 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
     still `[I]` in monsters/0004's H4b section (`lane/h4a` review, 0038); special 66's mod 12, met by H4a (special 68)
     but still `[I]` in monsters/0003's H4b section (`lane/p51r` review, [0051](../../../../docs/plans/0051-backlog-sweep-6.md));
     drlg/0005 § 5's `[C]` *Pattern from size* still stating the `npc`-only rule with the correction appended after it
-    (`lane/h5d` review, 0038).
+    (`lane/h5d` review, 0038);
+    a summary that drops what the section states: stats/0001's Answer bullet for op 6/7 without the source-value gate
+    and with op 7's "value" unnamed, and multiplayer/0001's MP31 cell calling the clipped offer a cancel (`lane/p51s`
+    review, 0051).
 13. **At an observed boundary (ADR-0021), the `[C]` ends at the call.** What the callee makes of a compared argument
     (a class word, a register it must preserve, a mode) and every later call go in "After, `[I]`", also in the Answer
     summary. Seen: the radius of hits 24, 44 and 14 in a callee-saved register (`lane/p46m3` review); hit 52's row 0
@@ -85,4 +88,5 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
     `h·A` said to wrap as a 32-bit product where it cannot on any path that uses it, the subtraction after it being
     what wraps: name the operation that wraps and whether a wrapping path reaches a use (`lane/p46m14` review, all
     three [0046](../../../../docs/plans/0046-skills-function-catalogue.md)); do 140's try offsets said not to wrap "below
-    2³¹ − 9" where 2³¹ − 9 itself still fits (`lane/p46m15` review, 0046).
+    2³¹ − 9" where 2³¹ − 9 itself still fits (`lane/p46m15` review, 0046); `x − 90q` said to wrap "for `x` within 270
+    of `INT32_MIN`" where the bound is `x < INT32_MIN + 90q` (`lane/p51s` review, [0051](../../../../docs/plans/0051-backlog-sweep-6.md)).

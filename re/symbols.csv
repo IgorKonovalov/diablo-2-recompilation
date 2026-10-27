@@ -45,6 +45,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0044E100,func,sub_0044E100_ClientActLoad,,C,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x00451F50,func,sub_00451F50_UnitGetId,,I,monsters/special,docs/findings/items/0002-quality-roll.md
 0x00451F60,func,sub_00451F60_UnitGetClassId,,I,items/cube,docs/findings/items/0008-cube.md
+0x00451F70,func,sub_00451F70_UnitGetMode,,I,items/economy,docs/findings/multiplayer/0002-trade-and-party-gold.md
 0x00451F80,func,MONSTATS_GetRecord,,C,items/tc,docs/findings/items/0001-tc-resolution.md
 0x00451FE0,func,sub_00451FE0_MonStats2Rec,,C,monsters/pool,docs/findings/monsters/0001-level-pool.md
 0x00452040,func,STATES_GetRecord,,I,stats/states,docs/findings/stats/0002-states.md
@@ -263,6 +264,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005404F0,func,sub_005404F0_PartyCountAliveCb,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x00540510,func,sub_00540510_PartyForEach,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
 0x005405A0,func,sub_005405A0_PartyForEachInLevel,,C,items/tc,docs/findings/items/0001-tc-resolution.md
+0x00540650,func,sub_00540650_PartyGoldClip,,I,items/economy,docs/findings/multiplayer/0002-trade-and-party-gold.md
 0x00540710,func,sub_00540710_PartyIdOfUnit,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x005408E0,func,sub_005408E0_PartyCountInLevel,,C,items/tc,docs/findings/items/0001-tc-resolution.md
 0x00540900,func,sub_00540900_PartyGoldShare,,I,items/economy,docs/findings/items/0011-economy.md
@@ -547,8 +549,20 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00565AB0,func,sub_00565AB0_RecipeOutputCreate,,C,items/cube,docs/findings/items/0008-cube.md
 0x005665F0,func,CUBE_Transmute,,C,items/cube,docs/findings/items/0008-cube.md
 0x00566AE0,func,sub_00566AE0_CubeButton,,I,items/cube,docs/findings/items/0008-cube.md
+0x00566B30,func,sub_00566B30_TradeRecAlloc,,I,multiplayer/trade,docs/findings/multiplayer/0002-trade-and-party-gold.md
+0x00566BF0,func,sub_00566BF0_TradeRecFree,,I,multiplayer/trade,docs/findings/multiplayer/0002-trade-and-party-gold.md
+0x00566E60,func,sub_00566E60_TradeRequest,,I,multiplayer/trade,docs/findings/multiplayer/0002-trade-and-party-gold.md
+0x00567020,func,sub_00567020_TradeOpen,,I,multiplayer/trade,docs/findings/multiplayer/0002-trade-and-party-gold.md
+0x00567070,func,sub_00567070_TradeItemRename,,I,multiplayer/trade,docs/findings/multiplayer/0002-trade-and-party-gold.md
+0x005670E0,func,sub_005670E0_TradeMoveItems,,I,multiplayer/trade,docs/findings/multiplayer/0002-trade-and-party-gold.md
+0x005672D0,func,sub_005672D0_TradeItemsAllowed,,I,multiplayer/trade,docs/findings/multiplayer/0002-trade-and-party-gold.md
 0x00567620,func,sub_00567620_TradeItemTest,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
+0x005678F0,func,sub_005678F0_TradeReturnItems,,I,multiplayer/trade,docs/findings/multiplayer/0002-trade-and-party-gold.md
+0x005679E0,func,sub_005679E0_TradeClose,,I,multiplayer/trade,docs/findings/multiplayer/0002-trade-and-party-gold.md
+0x00567B00,func,sub_00567B00_TradeCancel,,I,multiplayer/trade,docs/findings/multiplayer/0002-trade-and-party-gold.md
+0x00567C70,func,sub_00567C70_TradeCommit,,I,multiplayer/trade,docs/findings/multiplayer/0002-trade-and-party-gold.md
 0x00568060,func,sub_00568060_PktInteractButton,,I,items/cube,docs/findings/items/0008-cube.md
+0x005689D0,func,sub_005689D0_TradeStateTick,,I,multiplayer/trade,docs/findings/multiplayer/0002-trade-and-party-gold.md
 0x00568DC0,func,sub_00568DC0_ItemRefFromId,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x00568E60,func,D2S_WriteMercHeader,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x00568F20,func,D2S_WriteHeader,,C,save/d2s,docs/findings/save/0001-d2s-io.md
@@ -1095,6 +1109,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005971B0,func,sub_005971B0_A1Q4_Init,,I,quests/progression,docs/findings/quests/0001-progression.md
 0x00597310,func,sub_00597310_A1Q4_FailOnActLeave,,C,quests/progression,docs/findings/quests/0001-progression.md
 0x005973F0,func,sub_005973F0_ItemFlagUpdateSend,,I,items/sockets-runewords,docs/findings/items/0007-sockets-runewords.md
+0x00597A20,func,sub_00597A20_TradeBlocked,,I,multiplayer/trade,docs/findings/multiplayer/0002-trade-and-party-gold.md
 0x005984C0,func,sub_005984C0_A2Intro_NpcTalk,,I,quests/progression,docs/findings/quests/0001-progression.md
 0x005985B0,func,sub_005985B0_A2Intro_LogState,,I,quests/progression,docs/findings/quests/0001-progression.md
 0x005985D0,func,sub_005985D0_A2Intro_Init,,I,quests/progression,docs/findings/quests/0001-progression.md
@@ -2005,6 +2020,8 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00611860,func,EXP_LevelFromExp,,C,player/creation,docs/findings/player/0001-creation.md
 0x00611D30,func,sub_00611D30_DifficultyRec,,I,monsters/pool,docs/findings/monsters/0001-level-pool.md
 0x00611D60,func,sub_00611D60_StatesMaskBuild,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
+0x00611DC0,func,sub_00611DC0_StatesListByFlag,,I,data/excel,docs/findings/skills/0013-druid.md
+0x00611E60,func,sub_00611E60_StatesListByField,,I,data/excel,docs/findings/skills/0013-druid.md
 0x006121F0,func,DATATBLS_WriteBin,,I,data/excel,docs/findings/data/0001-excel-loader.md
 0x00612280,func,DATATBLS_OpenExcelFile,,I,data/excel,docs/findings/data/0001-excel-loader.md
 0x006122F0,func,DATATBLS_LoadTable,"void * __stdcall DATATBLS_LoadTable(void * pool, char * name, void * fields, int * pCount, int recSize)",C,data/excel,docs/findings/data/0001-excel-loader.md

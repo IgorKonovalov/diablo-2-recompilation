@@ -399,3 +399,93 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Ledger:** lane row filled (usage from the orchestrator), review row added.
   - **Backlog:** review request closed (archive).
   - **Next:** Phase 1b (optional, one Ghidra): items 1, 2 and 3a, with the MP31 and MP32 forwards.
+- **2026-10-27 — Phase 1b done (reverser, `lane/p51s`, from `main` `7ff8d98`; no slot, one headless Ghidra on the lane
+  copy `ghidra-p51s`, `-Xmx3G`, no game).** Two entries closed, one annotated. The items are item 1, item 2 and the
+  two Phase 1a forwards, then item 3a (named at the P0b review), taken after merging `main` `0e3f501` into the
+  lane. Emulation outputs: `workspace/logs/p51s/emu/` (`manifest.txt` `b16c2780…`, 79 files;
+  `check.txt` `7ee746af…`; `commands.txt`, `tools-revisions.txt`). Static outputs: `workspace/logs/p51s/static/`
+  (`manifest.txt`: the findstring, objdump excerpts and call-site scan behind multiplayer/0002, and the item 3a scan). Tool: `tools/sweep_p51s.py`.
+  1. **Op 6/7 emulation** ([archive](../backlog/archive/2026-10-17-reverser-reverser-plan-0041-op-6-7-emulation.md)),
+     closed. `STAT_ByTimeValue` ran 6 000 calls, and `StatEvaluate` cases 6/7 with `ActTimeOfDay`, `MulDiv`, ops 10,
+     12 and above 13 and nested sources ran 3 000. Result: 0 mismatches, 0 undeclared reads (the jump table and the
+     `.rdata` mask are declared, both read-only), 0 stops, every branch reached. Negative controls: the lead's "op 6/7
+     add nothing" fails 2 110, op 7 on the own sum 1 103, no 359 fold 3 302, floor division 2 416. **[C] as a code
+     map** (ADR-0015), run:2026-10-27-p51s-emu, in stats/0001 § 10 (new). The Answer bullet, § 4's note, the
+     contradicted lead's detail and the Open question are updated. Still `[I]`: what `owner +0x1C` and its `+0x04`
+     record hold in play. No symbol row is raised (review-fixes 14: an emulation confirms the map, not the name).
+  2. **S1e follow-ups (b)** ([archive](../backlog/archive/2026-10-17-architect-reverser-plan-0038-s1e-review-follow-ups.md)),
+     closed with (a) and (c) done earlier. The eleven runs of run:2026-10-16-calc-emu were re-run unchanged under
+     `emutrace`. Every output is byte-identical to the kept one. The kept `calc_funcs.py` checkers pass on it, and
+     fail with every EAX + 1. The tool's read set adds two read-only `.text` switch tables (`MISS_CalcVar` 0x0064B62C,
+     `CALC_Eval` 0x006C1164) to data/0005 § 11's list. That is an addendum there and in data/experiments; no claim
+     changes.
+  3. **MP31, MP32** (plan 0044 shortfalls entry, annotated, stays open for the two-client run): the trade path and
+     `PartyGoldShare`'s arithmetic are read in the new **multiplayer/0002** (`[I]` throughout). Gold share:
+     `share = amount / n`, with `n` the members in the level who are not dead. Others get `min(share, room)`, and the
+     picker the rest plus their overflow, clipped. The payment loop tests the **picker's** mode, so a dead member in
+     the level is paid but not counted (three or more players; out of the two-client run). Trade: the `0x4F` buttons
+     3/4/7/8 over `PlayerData+0x50`; the offer is clipped to the partner's room; the commit re-checks gold, cap,
+     room and the quest gate, then moves `ItemCopy` units and carried gold. Predictions in multiplayer/0002 § 3;
+     multiplayer/0001 rows MP31 and MP32 and items/0011 § 6 (the pickup line, the Open question) updated.
+  4. **Item 3a, the `DataTables+0x17C`/`+0x180` list**: [I] `STATES_Load` fills it through the new
+     `sub_00611DC0_StatesListByFlag` with flag bit 16, **`disguise`** (rows 63, 93, 119, 139, 140, 176, 177 on stock
+     data), so none of the three data candidates. Four sibling lists are built in the same pass. Written in
+     skills/0013 § 6, with that section's "shape-shift states" layout guess corrected and its Open question struck.
+     The States § Open questions bullet is the archivist's:
+     [entry](../backlog/2026-10-27-reverser-archivist-states-0x17c-list-is-the-disguise-flag.md). Scan and excerpts in
+     `workspace/logs/p51s/static/` (manifest now `7436cda5…`).
+  - **Symbols:** 17 added (`I`): `UnitGetMode`, `PartyGoldClip`, 13 trade functions (`TradeRequest` …
+    `TradeBlocked`), `StatesListByFlag` and `StatesListByField`. No rename, no tag change; names checked against
+    `main`'s `re/symbols.csv` after the merge.
+  - **Backlog:** review request
+    [p51s review](../backlog/archive/2026-10-27-reverser-architect-p51s-plan-0051-phase-1b-review.md).
+- **2026-10-27 — Phase 1b review (architect, `lane/p51s` at `ee0b1d2`): accept with fixes.** `main` `0e3f501` was
+  already in the lane (merge `daf1571`); `backlog.py archive` moved nothing. Re-run on the review side, each under
+  `systemd-run --user --scope -p MemoryMax=4G`: the three manifests pass (`p51s/emu` `b16c2780…`, 79 files;
+  `p51s/static` `7436cda5…`; `calc-emu` `4ca75152…`), and `tools-revisions.txt` matches every tool and script as
+  committed. `sweep_p51s.py cases` and `calcemu-cases` into a scratch directory give the kept `.cases`/`.mem` files
+  byte for byte (seeded). `check`, `static` and `calcemu-check` over a copy of the outputs give `check.txt` exactly.
+  Negative controls: one result's `EAX + 1` in each of `bytime.out`, `op67.out`, `calcemu/miss.out` and
+  `calcemu/eval.out` gives `bad=1` (`bytime`, `op67`, exit 1) and `model_check_rc=1`, `same_as_kept=0` (calc-emu).
+  objdump reads of the pinned image: `STAT_ByTimeValue` 0x0065CA30–0x0065CAEE (the field decode, the three NULL-tested
+  stores, `x − 90q`, `neg`, the `/15` and `/180` magic divisions, the 359 and 180 folds, `ret 0x18`); `StatEvaluate`'s
+  jump table 0x00626688 (13 slots: op 6 → 0x0062644A, op 7 → 0x006264A4, ops 10 and 12 → 0x00626665, `ja` above 13),
+  cases 6/7 (the three gates, op 7's `MulDiv([ebp−4], t, 100)` at 0x006264FB–0x00626509), the 16-entry loop;
+  `ActTimeOfDay` 0x0061C100 with 0x0061AA60; the mask 0x006CE270 (`4`, `.rdata`, read at 0x00625019); the two calc
+  jump tables (0x0064B394, 0x006C0C07, both `.text`, read-only); `PartyGoldShare` 0x00540900–0x00540B0E and
+  `PartyGoldClip` 0x00540650; the trade offer 0x005683DE–0x00568467, the commit's tests 0x00567C96 and 0x00567F4A–
+  0x00567FCC, the distance test 0x00548E00; `STATES_Load`'s lists 0x00618C2C–0x00618C7A, `mov edi, 0x10` its only
+  write of `EDI`, `mov ebx, 4` its only write of `EBX`; `StatesListByFlag` 0x00611DC0; the full-image scan (28
+  `[reg+0x17c]` operands, the four `[esi+0x17c]` stores, the four absolute references 0x0096BDAC/0x0096BDB0). The 17
+  new symbol addresses are function starts. Stock data for flag bit 16: `states.bin` (the `patch_d2` copy, identical
+  to `workspace/merged`) has byte `+0x12` bit 0 on exactly rows 63, 93, 119, 139, 140, 176, 177, the rows whose
+  `states.txt` `disguise` is 1 (`dopplezon` … `delerium`); bit 17 on 139, 140, 177.
+  - **Fixes (6):** stats/0001's Answer bullet for op 6/7 gains the source-value gate, and op 7's term is named `t`
+    (the by-time value) there and in § 10, where it read "value" (omission). § 10's wrap bound for `x − 90q`: "within
+    270 of `INT32_MIN`" → `x < INT32_MIN + 90q` (misread; reverser review-fixes 15). multiplayer/0002: the gold-offer
+    close is skipped when either side is `TradeBlocked` (omission); "the picker keeps `amount mod 2`" with neither
+    member at its cap (omission); button 8's "§ 1 of the Answer", a section that does not exist, → the Answer's
+    gold-offer bullet (wrong anchor). multiplayer/0001's MP31 Expected cell: the offer above H's room is clipped and
+    the trade goes on, not cancelled (misread; reverser review-fixes 12).
+  - **Rulings.** (a) The wording stands. The lead stays **contradicted**, for the evaluator's code: the emulation
+    is `[C]` as a map (ADR-0015 (3)), and its negative control is the lead's own reading. What the lead may mean in
+    play is not covered and is not claimed; no stock row reaches either op. (b) Enough. The re-run's outputs are
+    byte-identical to the kept run, whose own negative controls stand. The `EAX + 1` perturbation shows that the kept
+    checkers still discriminate, and the review repeated it. No tag depends on the addendum. (c) The quirk stands
+    `[I]`. The review read `ESI` as the picker (`cmp edi, esi` at 0x00540A5A) and `EDI` as the member, and `ECX = ESI`
+    before both `UnitGetMode` calls. A static reading with no second source, so not `[C]`. The branch's play outcome
+    stays `[L]` under Open questions, out of the two-client run. (d) Fine as written: the copy's unit id is a logger
+    item, not a prediction, and no expected value of MP31 depends on it. `ItemCopy` stays unfollowed. (e) Right not to
+    claim "no other writer". The `[I]` rests on the build, the free and the only absolute references. The four
+    `[esi+0x17c]` stores stay unfollowed, and nothing in skills/0013 needs them.
+  - **Boundaries.** Every `[C]` of stats/0001 § 10 is a map from declared inputs. `owner +0x1C` as the act, the phase
+    as a time of day and the reach in play are `[I]`, and the Answer bullet says so. multiplayer/0002 and the item 3a
+    reading are `[I]` throughout. No symbol is raised (review-fixes 14's scope). The 17 `I` rows stand.
+  - **Ledger:** lane row filled (usage from the orchestrator), review row added (usage left to the orchestrator).
+  - **Backlog:** review request closed (archive). Phase 1b closed two entries (the op 6/7 emulation, the S1e
+    follow-ups) and annotated the plan 0044 shortfalls entry, which stays open for the two-client run. It filed one
+    new archivist entry, the States bullet for the `disguise` list.
+  - **Next:** Phases 0, 1a and 1b are done, so the plan's static phases are closed. What remains: Phase 2 (human).
+    The three open owner entries (patch, the Diablo pair, the plan 0044 owner play) were decided "stay open" at
+    approval, but none is annotated with that decision yet. Once that is done, the plan can close. The archivist's
+    States entry is a small fold that can land with the archivist's next lane; it does not hold the plan open.
