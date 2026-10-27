@@ -9,7 +9,10 @@ For every save written (a WDONE line, with the WHDR/WLVL/WTIME/SBIT lines since 
     (= rotate-left-1-and-add with the field zeroed), weapon_set (client +0x45C), name (client +0x0D), the u32
     status (client +0x0A | 0x20 expansion | 0x40 ladder), class (client +0x08), 0x29 = 16, 0x2A = 30, level
     (= stat 12 as read by the writer), unk_2c (client +0x488), last_played (= time() in the writer), unk_34,
-    mouse skills (player data +0x70..+0x8C: skill id, item ref 0 for "no item"), difficulty bytes (game
+    mouse skills (the skill word against the writer's own source where the log has WSKL lines: the unit's current
+    left / right skill, 0x00620190 / 0x006201D0, and swap skills A / B, 0x00623220 / 0x00623290; a log without
+    WSKL lines falls back to player data +0x74/+0x70/+0x84/+0x80, which a weapon swap leaves stale; the item ref 0
+    for "no item" against player data +0x7C/+0x78/+0x8C/+0x88), difficulty bytes (game
     difficulty byte = client act | 0x80, the others 0), map_seed (game +0x7C), 0xCF (client +0x480), the other
     unk_bf bytes 0, and the character stats ('gf') against the unit's base stat list, each base value put through the
     writer's CSvBits clamp first (csv_clamp);
@@ -25,7 +28,9 @@ file (6 if the model checksum differs from the stored one, else 5 if the size fi
 against D2S_ReadHeader's return (RHRET) and, on failure, the failure exit's internal code, with the mapped code 14; the map-seed branch (RMAP/RMAP2),
 the client fields read (unk_2c, class, status, act, weapon switch, 0xCF), the stats read (RSTAT) against the file's
 'gf' list, the items read (RITEM: seed, ilvl, quality, version, code, mode) against the file's items in order, the
-act map seed against the game's, and D2S_LoadFinish's stats 7/9 (LFIN/LFIN2).
+act map seed against the game's, and D2S_LoadFinish's stats 7/9 (LFIN/LFIN2). The items read are the RITEM lines
+before LFIN2 (the end of D2S_LoadFinish): RITEM lines after it are items re-created in play (sub_0055A2A0_ItemCopy,
+the corpse's items at a death), counted apart and compared with the log's COPY / COPY2 lines when it has them.
 Each <saved.d2s> must hash to a logged WDONE buffer. Prints one line per check group, "MISMATCH" lines, and exits 0
 only when nothing mismatched. Stdlib only.
 """
@@ -82,7 +87,7 @@ def csv_clamp(v, bits, signed):
     return max(0, min(v, (1 << bits) - 1))
 
 
-def check_write(ck, buf, whdr, wlvl, wtime, sbits, isc, kinds, drops=None):
+def check_write(ck, buf, whdr, wlvl, wtime, sbits, isc, kinds, drops=None, wskl=None):
     f = d2s.parse(buf, isc, kinds)
     h = f["header"]
     u32 = lambda o: struct.unpack_from("<I", buf, o)[0]  # noqa: E731
@@ -102,10 +107,21 @@ def check_write(ck, buf, whdr, wlvl, wtime, sbits, isc, kinds, drops=None):
     ck.eq("last_played", h["last_played"], wtime["time"])
     ck.eq("unk_34", h["unk_34"], 0xFFFFFFFF)
     pd = whdr.get("pd")
+    # file slots left, right, swap A, swap B. The skill word's source is the writer's own read (D2S_WriteHeader:
+    # 0x00620190 / 0x006201D0 the unit's current left / right skill, 0x00623220 / 0x00623290 the swap skills), logged
+    # as WSKL by tools/gdb/d2s-h1b.py; without WSKL lines the model falls back to player data +0x74, +0x70, +0x84,
+    # +0x80, which the reader fills and a weapon swap leaves stale (rt-r2, run:2026-10-27-sweep-d2s-play).
+    slots = ("left", "right", "swapA", "swapB")
+    if wskl:
+        for slot, name in enumerate(slots):
+            if name in wskl:
+                ck.eq("mouse[%d] skill = writer's source (WSKL)" % slot, u16(0x78 + 4 * slot), wskl[name])
     if pd:
-        # file slots left, right, swap A, swap B <- player data +0x74/+0x7C, +0x70/+0x78, +0x84/+0x8C, +0x80/+0x88
+        # item refs (and, without WSKL, the skill words) <- player data +0x74/+0x7C, +0x70/+0x78, +0x84/+0x8C,
+        # +0x80/+0x88
         for slot, (sk, ref) in enumerate(((1, 3), (0, 2), (5, 7), (4, 6))):
-            ck.eq("mouse[%d] skill" % slot, u16(0x78 + 4 * slot), pd[sk] & 0xFFFF)
+            if not (wskl and slots[slot] in wskl):
+                ck.eq("mouse[%d] skill (player data, no WSKL)" % slot, u16(0x78 + 4 * slot), pd[sk] & 0xFFFF)
             if pd[ref] in (0, 0xFFFFFFFF):
                 ck.eq("mouse[%d] item ref" % slot, u16(0x7A + 4 * slot), 0)
     want = bytearray(3)
@@ -199,9 +215,16 @@ def check_read(ck, buf, ev, isc, kinds):
     fs = [(i, p or 0, (v - (1 << isc[i]["csv_bits"]) if isc[i]["csv_signed"] and v >> (isc[i]["csv_bits"] - 1) else v)
            & M32) for i, p, v in f["stats"]]
     ck.eq("RSTAT list", rs, fs)
-    ri = [d for t, d in ev if t == "RITEM"]
+    # the load's items are the RITEM lines up to LFIN2 (after D2S_LoadFinish); later ones are ItemCopy re-creations
+    kl = next((n for n, (t, _) in enumerate(ev) if t == "LFIN2"), len(ev))
+    ri = [d for t, d in ev[:kl] if t == "RITEM"]
+    nlater = sum(1 for t, _ in ev[kl:] if t == "RITEM")
+    ncopy = sum(1 for t, _ in ev[kl:] if t in ("COPY", "COPY2"))
+    out["nlater"] = nlater
+    if ncopy:
+        ck.eq("RITEM after LFIN2 = ItemCopy lines (COPY/COPY2)", nlater, ncopy)
     fi = list(d2s.all_items(f))
-    ck.eq("RITEM count", len(ri), len(fi))
+    ck.eq("RITEM count (up to LFIN2)", len(ri), len(fi))
     for r, it in zip(ri, fi):
         tag = "read item %s@0x%X" % (it.get("code"), it["off"])
         ck.eq(tag + " code", r.get("code"), it.get("code"))
@@ -252,6 +275,8 @@ def check(excel, log, saved):
             cur[t.lower()] = d
         elif cur is not None and t == "SBIT":
             cur["sbits"].append(d)
+        elif cur is not None and t == "WSKL":
+            cur.setdefault("wskl", {})[d["slot"]] = d["skill"]
         elif cur is not None and t == "WDONE":
             buf = bytes.fromhex(d["hex"])
             n0 = ck.n
@@ -259,7 +284,8 @@ def check(excel, log, saved):
             print("WRITE #%d %s ret=%08X caller=%s size=%d sha256=%s" % (
                 nwrite, d["path"], cur["save"]["ret"],
                 "%08X" % cur["psave"]["ret"] if cur["psave"] else "?", d["size"], d["sha256"][:16]))
-            f, nitems = check_write(ck, buf, cur["whdr"], cur["wlvl"], cur["wtime"], cur["sbits"], isc, kinds, drops)
+            f, nitems = check_write(ck, buf, cur["whdr"], cur["wlvl"], cur["wtime"], cur["sbits"], isc, kinds, drops,
+                                      cur.get("wskl"))
             print("  header, %d stats, %d items: %d comparisons" % (len(f["stats"]), nitems, ck.n - n0))
             written.setdefault(d["sha256"], buf)
             cur = None
@@ -270,10 +296,10 @@ def check(excel, log, saved):
         buf = bytes.fromhex(d["hex"])
         n0 = ck.n
         r = check_read(ck, buf, ev[k:end], isc, kinds)
-        print("READ #%d len=%d sha256=%s checksum_ok=%s size_ok=%s predicted=%s header_code=%s err=%s reuse=%s items=%s stats=%s: "
+        print("READ #%d len=%d sha256=%s checksum_ok=%s size_ok=%s predicted=%s header_code=%s err=%s reuse=%s items=%s later=%s stats=%s: "
               "%d comparisons" % (j + 1, d["len"], d["sha256"][:16], r.get("checksum_ok"), r.get("size_ok"),
                                   r.get("predicted"), r.get("header_code"), r.get("err"), r.get("reuse"), r.get("nitems"),
-                                  r.get("nstats"), ck.n - n0))
+                                  r.get("nlater"), r.get("nstats"), ck.n - n0))
     for p in saved:
         h = hashlib.sha256(open(p, "rb").read()).hexdigest()
         ck.eq("%s is a logged WDONE buffer" % p, h in written, True)

@@ -436,29 +436,14 @@ def main(argv):
             rc = d2sio.check(excel, log, [])
         lines = buf.getvalue().splitlines()
         print("D2SIO %s: %s" % (os.path.basename(log), lines[-1] if lines else "?"))
-        # d2sio.py compares the left/right mouse words of a write with player data +0x74/+0x70; after a weapon swap
-        # the writer's source is the unit's current skill (0x00620190/0x006201D0), which the WSKL lines log and the
-        # mouse group below compares. Those two d2sio comparisons are superseded when the log has WSKL lines.
-        has_wskl = any(t == "WSKL" for t, _ in d2sio.events(log))
+        # d2sio.py compares the mouse words with the writer's own source (WSKL) and counts a load's items up to LFIN2
+        # (tools/d2sio.py revision of plan 0038 r1h); before it, this wrapper explained two kinds of d2sio mismatch
+        # (the revision 2ac6e9f1 / checker c0063a8b that made check/sweep-h1b-check-r2.txt). Now every one counts.
         other = 0
-        # d2sio.py counts every RITEM of a load segment; item copies after the load (COPY lines: the corpse's items
-        # at a death) add RITEM lines of their own. Its count mismatch is explained when the excess equals them.
-        evs = d2sio.events(log)
-        rhs = [k for k, (t, _) in enumerate(evs) if t == "RHDR"] + [len(evs)]
-        explained = set()
-        for a, b in zip(rhs, rhs[1:]):
-            seg = evs[a:b]
-            kl = next((n for n, (t, _) in enumerate(seg) if t == "LFIN2"), len(seg))
-            nri, ncp = sum(1 for t, _ in seg[kl:] if t == "RITEM"), sum(1 for t, _ in seg[kl:] if t in ("COPY", "COPY2"))
-            if nri and nri == ncp:
-                explained.add(sum(1 for t, _ in seg if t == "RITEM"))
         for ln in lines:
             if "MISMATCH" in ln:
-                sup = has_wskl and ("MISMATCH mouse[0] skill" in ln or "MISMATCH mouse[1] skill" in ln)
-                if "MISMATCH RITEM count" in ln and int(ln.split("file ")[1].split(",")[0]) in explained:
-                    sup = True
-                print("  " + ln.strip() + ("   (superseded or explained: see the H1B groups)" if sup else ""))
-                other += 0 if sup else 1
+                print("  " + ln.strip())
+                other += 1
         rc = 1 if other else 0
         ck = check_log(excel, log, T)
         print("H1B TOTAL %s: %d comparisons, %d mismatches; d2sio rc %d" % (os.path.basename(log), ck.n, ck.bad, rc))
