@@ -3499,7 +3499,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Backlog:** review request
     [s38m review](../backlog/archive/2026-10-27-spec-writer-architect-review-lane-s38m-plan-0038-phase-3-monsters.md)
     closed; new spec-writer entry
-    [wiki refresh after the monsters cluster](../backlog/2026-10-27-architect-spec-writer-wiki-refresh-after-the-plan-0038-phase-3.md).
+    [wiki refresh after the monsters cluster](../backlog/archive/2026-10-27-architect-spec-writer-wiki-refresh-after-the-plan-0038-phase-3.md).
   - **Ledger:** the lane row's usage filled from the orchestrator (412 899 tokens, 109 tools, 26 min), verdict and fixes:
     overclaim 2, misread 2, stale cross-reference 1, omission 1; the review row's usage left "—".
   - **Next:** merge `lane/s38m`; the wiki refresh; the remaining Phase 3 clusters as their batches are accepted.
@@ -3562,3 +3562,87 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     omission 1, overclaim 1, misread 1; the review row added with usage "—".
   - **Backlog:** review request and counts entry closed (archive); the wiki refresh entry annotated.
   - **Next:** merge `lane/s38n`; the wiki refresh (now with wiki/levels); objects after H6e2.
+- **2026-10-27 — The wiki refresh after the monsters and drlg/collision clusters (spec-writer, `lane/swk`, from
+  `main` `e88e8e2`).** [wiki/monsters](../wiki/monsters.md) and [wiki/levels](../wiki/levels.md) are refreshed over the
+  re-tagged monsters/pool, spawn, special and stats and drlg/collision, and
+  [wiki/seed-to-world](../wiki/seed-to-world.md)'s stats date is bumped. The six corrections are carried at the specs'
+  tags, the raised statements are said as confirmed, and the kept `[I]` parts are said in words. wiki/levels'
+  § *The collision grid and logic regions* and its *Collision* bullet are rewritten whole. W4 is clear (0 of 60); the
+  gate is green. The specs `lane/s45p3` holds and the economy and randomness pages are untouched.
+  - **Backlog:** the refresh entry is closed
+    ([archive](../backlog/archive/2026-10-27-architect-spec-writer-wiki-refresh-after-the-plan-0038-phase-3.md)), and
+    the review request is filed
+    ([swk review](../backlog/archive/2026-10-27-spec-writer-architect-review-lane-swk-wiki-refresh-after-plan-0038.md)). It also
+    notes that drlg/lifecycle § I lags spawn § K on the wanderer roll.
+  - **Next:** architect review of `lane/swk`.
+- **2026-10-27 — `lane/swk` review (architect): accept with fixes (4).** `main` merged into the lane first (already up to
+  date; `backlog.py archive` a no-op). Every changed statement on wiki/monsters, wiki/levels and wiki/seed-to-world was
+  checked against the spec section it restates (pool C1 and E; spawn A, B, D, E, I and K; special B4, C, G, G5, H and J;
+  stats B7, B10, A1, F3, G3 and the `Align` bullet; collision G1–G3 and I2; lifecycle § I).
+  - **Fixes (on the pages):** (1) wiki/levels *Wanderers*: "that draw passes 1 time in 32 768" moved into the code-read
+    sentence, with the one pass unable to tell the mask's width (spawn K and lifecycle I1 keep it `[I]`). (2) wiki/monsters
+    *Wanderers*: the "1 in 32 768" and the `MonWndr` condition said by the code with the no-player test, since the one
+    pass came in a `MonWndr` level and lifecycle I1 keeps that test `[I]` (rule 1, weaker tag). (3) wiki/monsters' stats
+    paragraph: the emulation's "overflow included" scoped to all but the one faulting input (stats A1). (4) "three were
+    logged" made "three such classes" (special C: classes 59, 397 and 645).
+  - **Rulings.** (a) **`Rarity` 0:** the page's weaker wording is right. spawn D's `[C]` covers a case no run met (no stock
+    region holds a `Rarity` 0 entry; the run confirms the walk, not that outcome), so spawn D is reconciled down to pool's
+    `[I]`, not pool up:
+    [entry](../backlog/archive/2026-10-27-architect-spec-writer-spawn-d-rarity-0-tag-to-pool.md). (b) **drlg/lifecycle § I** is
+    stale against spawn § K (the roll's draw and no-spawn branch are `[C]` on run:2026-10-21-sweep-monsters-a); it was not
+    filed, so it is filed now together with spawn K1's header, which leaves the `MonWndr` ≠ 0 test under `[C]` although
+    the one pass cannot separate it (the `lane/s38m` review missed this):
+    [entry](../backlog/archive/2026-10-27-architect-spec-writer-lifecycle-i-and-spawn-k-wanderer-gate-reconcile.md). (c) The
+    edits beyond the entry (wiki/levels' *Wanderers* paragraph and the room-lifecycle bullet citing spawn § K) are within
+    rule 7 and stand, with fix (1). (d) "By the formula" (`fast`/`fanatic` at `Velocity` 8 and 9, stats G3 `[I]`) and "by
+    the code" (`druidhawk`, stats F3 `[I]`; `Rarity` 0) match the specs' tags. (e) The `based_on` dates equal each spec's
+    `updated` (pool, spawn, special, stats, collision 2026-10-27; the rest unchanged), and spawn is rightly added to
+    wiki/levels.
+  - **Ledger:** the lane row's usage filled from the orchestrator (233 468 tokens, 61 tools, 11 min), verdict and fixes:
+    overclaim 3, other 1; the review row added with usage "—".
+  - **Backlog:** review request closed (archive); two spec-writer entries filed.
+  - **Next:** merge `lane/swk`; the two spec-writer entries, then a `based_on` bump on the three pages.
+- **2026-10-27 — `lane/sfx` (spec-writer): the two entries from the `lane/swk` review.**
+  - **monsters/spawn § D:** the `Rarity` 0 bullet split: the walk's stop rule stays `[C]` (run:2026-10-13-mon-spawn), "a
+    `Rarity` 0 entry is never picked" is `[I]`, read from that walk and from `raritySum` not wrapping, with pool's "no
+    stock region has one". **§ K1:** the Levels `MonWndr` ≠ 0 test (0x0054F0AA) added to the header's `[I]` list and the
+    `[I]` bullet (the pass came in a `MonWndr` 1 level; no logged tick passed the mask in a `MonWndr` 0 level); the
+    `[C]` bullet that `MonWndr` has no other reader is unchanged. Tags C 136 / I 43 / L 5 → C 136 / I 44 / L 5.
+  - **drlg/lifecycle § I:** I1's roll draw and its `mod 100` ≥ 3 return `[C]` on run:2026-10-21-sweep-monsters-a (the
+    region `+0x2C4` test split onto its own `[I]` line); the gate line's mask width marked `[I]`; the "no gate draw
+    passed" bullet replaced by a `[C]` bullet for the Chaos Sanctuary pass and an `[I]` bullet for what it does not
+    separate (mask width, `+0x78`, `MonWndr`, `+0x2C4`, the spawn). Made stale and fixed (rule 7): the Constants rows for
+    the gate and the roll, and the open question, now "the wanderer spawn was never reached". Tags C 92 / I 77 / L 8 →
+    C 96 / I 80 / L 8; `updated` 2026-10-21 → 2026-10-27.
+  - **Wiki:** `based_on` for drlg/lifecycle bumped to 2026-10-27 on wiki/levels, wiki/monsters, wiki/seed-to-world and
+    wiki/objects (which also lists it; its text has no wanderer statement); spawn was already 2026-10-27. No page text
+    changed: the pages already take the weaker tags.
+  - **Research map** (architect's): the spawn row's counts become C 136 / I 44 / L 5 and the lifecycle row's
+    C 96 / I 80 / L 8, updated 2026-10-27.
+  - **Backlog:** both entries closed (archive); review request filed.
+  - **Next:** architect review of `lane/sfx`.
+- **2026-10-27 — `lane/sfx` review (architect): accept with fixes (1).** Head `cc76e71e`; `main` merged first (already up to
+  date), `backlog.py archive` a no-op.
+  - **Checked.** The new `[C]` statements against run:2026-10-21-sweep-monsters-a: `h4a-manifest.sha256` (42 files) and
+    `check/kept-logs.sha256` (63 kept logs) pass `sha256sum -c`; session chaos7's `RTK0` at line 97549 (level 108, room
+    seed `9408b966:5d98f482`) steps to `d17d0000:3dbe6f3a`, the `WRL` seed; one more step gives `c2ef6f3a:57603f25`, low
+    mod 100 = 82, equal to the `RTK1` seed, so two room draws; `sweep-check.txt`'s `wander` line (7 184 ticks, 7 183 one
+    step, 1 roll, bad 0). objdump of 0x0054EFF0–0x0054F0C9: the roll's step, `mul 0x51EB851F; shr edx, 5; imul 0x64`
+    (unsigned mod), `cmp ecx, 3; jge` at 0x0054F02B, `cmp [eax+0x2C4], 3; jge` at 0x0054F041; the tick's `test eax,
+    0x7FFF` at 0x0054F089, `cmp [esi+0x78], 0` at 0x0054F096, `cmp byte [eax+0x2E], 0` at 0x0054F0AA. The counts match
+    the gate (spawn C 136 / I 44 / L 5; lifecycle C 96 / I 80 / L 8 before the fix). No `[L]` outside *Open questions*
+    in either spec.
+  - **Fix (1, applied):** lifecycle's Constants row *wanderer list* raised to `[C]` on the H4a operand read (objdump and
+    r2; the three readers 0x0054EF64, 0x0054EF71, 0x0054EF92 are the only instructions naming 0x00731B2C–0x00731B3B,
+    re-counted here, and the bytes `0e010000 00010000 00000000 00000000` re-read), with spawn § K's anchor. Lifecycle
+    C 96 / I 80 / L 8 → C 97 / I 79 / L 8.
+  - **Rulings.** (a) The flagged mismatch: reconciled up, not filed (fix above); spawn's `[C]` was ruled at the H4a review
+    on the S2c operand route and nothing in lifecycle's row needs more. (b) Spawn D's split and K1's `MonWndr` test move
+    match the `lane/swk` rulings. (c) The two archived entries' `#log` → `#implementation-log` stand; no other entry,
+    open or archived, nor `docs/backlog.md`, links plan 0038 at `#log`. (d) The research map's spawn and lifecycle rows
+    rewritten (counts, updated date, the `lane/sfx` clauses; lifecycle's "the wanderer roll and spawn" open now "the
+    wanderer spawn").
+  - **Ledger:** the lane row filled (verdict, fix 1: under-tag 1, usage from the orchestrator); review row added, usage
+    "—". Seen lines: spec-writer review-fixes rule 8, architect review-fixes rule 3.
+  - **Backlog:** review request closed (archive).
+  - **Next:** merge `lane/sfx`.

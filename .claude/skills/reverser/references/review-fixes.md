@@ -77,7 +77,9 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
     and with op 7's "value" unnamed, and multiplayer/0001's MP31 cell calling the clipped offer a cancel (`lane/p51s`
     review, 0051); `re/types/anim.h` saying a monster frame function's 2 "ends the mode" against the finding's own § 6
     (the return is not read), and the summary's "S3 to S4" for a generic S3 that queues no event (`lane/p50a` review,
-    [0050](../../../../docs/plans/0050-animation-frame-timing.md)).
+    [0050](../../../../docs/plans/0050-animation-frame-timing.md)); skills/0001's Answer bullet giving, inside its `[C]`, the client
+    filter as the reason no refused request reached the server, which § 18 holds `[I]` (`lane/p45k` review,
+    [0045](../../../../docs/plans/0045-skills-missiles-machinery.md)).
 13. **At an observed boundary (ADR-0021), the `[C]` ends at the call.** What the callee makes of a compared argument
     (a class word, a register it must preserve, a mode) and every later call go in "After, `[I]`", also in the Answer
     summary. Seen: the radius of hits 24, 44 and 14 in a callee-saved register (`lane/p46m3` review); hit 52's row 0

@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, monsters/pool, data/excel, drlg/collision, objects]
 consumed_by: [monsters/special, monsters/stats, items/tc, chain]
-tags: {C: 136, I: 43, L: 5}
+tags: {C: 136, I: 44, L: 5}
 updated: 2026-10-27
 ---
 
@@ -368,8 +368,10 @@ D1. PickClass(game, region, room, threshold: u8, special: bool) → (class: i16,
   `+0x035` is 0 in `levels.bin` and set at load to the number of leading non-blank `umon` slots. Every level with
   a non-zero normal `MonDen` has `umon1`, so the stock data never reaches the `c = 0` exit through the pass.
   (0x005BDEB4, tbl:Levels.txt:umon1, run:2026-10-13-mon-spawn)
-- [C] A `Rarity` 0 entry is never picked: the walk stops at the first entry that brings `w` to 0 or below, and `w`
-  starts at 1 or more. (fn:sub_005BDE80_MonRegionPickClass@0x005BDE80, run:2026-10-13-mon-spawn)
+- [C] The walk stops at the first entry that brings `w` to 0 or below, and `w` starts at 1 or more.
+  (fn:sub_005BDE80_MonRegionPickClass@0x005BDE80, run:2026-10-13-mon-spawn)
+- [I] So a `Rarity` 0 entry is never picked, read from that walk and from `raritySum` not wrapping ([pool's u8 note](pool.md#reimplementation-notes)).
+  No stock region has one ([pool](pool.md)), so no run met the case. (fn:sub_005BDE80_MonRegionPickClass@0x005BDE80)
 
 ### E. The type roll, and the 1 → 2 fold
 
@@ -784,7 +786,7 @@ run:2026-10-13-mon-spawn)
 ### K. Wanderers (the tick)
 
 ```
-K1. RoomWandererTick(game, room):                                 [C] for the first draw, the roll's draw and its no-spawn branch; [I] for the gate's mask width, the room +0x78 test and the spawn branch (bullets below) (fn:sub_0054F060_RoomWandererTick@0x0054F060, run:2026-10-13-mon-spawn, run:2026-10-21-sweep-monsters-a)
+K1. RoomWandererTick(game, room):                                 [C] for the first draw, the roll's draw and its no-spawn branch; [I] for the gate's mask width, the room +0x78 test, the Levels MonWndr ≠ 0 test and the spawn branch (bullets below) (fn:sub_0054F060_RoomWandererTick@0x0054F060, run:2026-10-13-mon-spawn, run:2026-10-21-sweep-monsters-a)
       Step(room.seed)                                             ; room draw, every tick
       if room.seed.low & 0x7FFF = 0 and room[+0x78] = 0 and Levels[level].MonWndr ≠ 0:
         WandererRoll: Step(room.seed)                             ; room draw
@@ -803,7 +805,8 @@ K1. RoomWandererTick(game, room):                                 [C] for the fi
   (unsigned) against 3 (0x0054F02B) and the region's `+0x2C4` against 3 (0x0054F041). (fn:sub_0054F060_RoomWandererTick@0x0054F060,
   fn:sub_0054EFF0_WandererRoll@0x0054EFF0, tbl:Levels.txt:MonWndr, run:2026-10-21-sweep-monsters-a, [monsters/0002 § Plan 0038 batch H4a](../../findings/monsters/0002-room-population.md#plan-0038-batch-h4a-run2026-10-21-sweep-monsters-a))
 - [I] Not separated by that one case: the mask's width (its low word had 16 zero bits, so `0x7FFF` and `0xFFFF` agree),
-  the room `+0x78` test (not logged) and the spawn branch (a roll below 3, the region count, `WandererSpawn`'s draws and
+  the room `+0x78` test (not logged), the Levels `MonWndr` ≠ 0 test (0x0054F0AA; the pass came in a `MonWndr` 1 level,
+  and no logged tick passed the mask in a `MonWndr` 0 level) and the spawn branch (a roll below 3, the region count, `WandererSpawn`'s draws and
   placement). (fn:sub_0054F060_RoomWandererTick@0x0054F060, fn:sub_0054EF50_WandererSpawn@0x0054EF50)
   Run:2026-10-17-lifecycle checked the first draw on 11 064 more walked rooms, re-activated ones included. What room `+0x78`
   is, and so in which rooms the gate can pass, is [drlg/lifecycle § I](../drlg/lifecycle.md#i-the-wanderer-tick).
