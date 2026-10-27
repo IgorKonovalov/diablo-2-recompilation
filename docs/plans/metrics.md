@@ -356,6 +356,7 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-10-27 | `lane/rsw` | backlog: objects/0001 § H5b.2 shrine-cap wording (0038 `lane/s38o` review ruling 1) | reverser-static | 69 910 | 30 | 9 | — (static, objdump, no Ghidra, no harness) | accept with fixes | omission 1 |
 | 2026-10-27 | `lane/rsw` review | backlog: objects/0001 § H5b.2 shrine-cap wording | architect-review | 63 340 | 20 | 3 | — (static, objdump, grep, no Ghidra, no harness) | gave accept with fixes | — (on the lane row) |
 | 2026-10-27 | `lane/rlg` review | backlog: the d2s legacy and version-92 readers | architect-review | 149 745 | 66 | 11 | — (static: objdump, `rlg_static.py` rerun, grep; no Ghidra, no harness) | gave accept with fixes | — (on the lane row) |
+| 2026-10-27 | `lane/a72` | backlog: the d2s legacy builder (0038 `lane/rlg` review, ruling 2) | archivist | — | — | — | — (static, scratch builds, no Ghidra, no harness) | | |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not

@@ -4735,7 +4735,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Ruling 3:** no legacy version is refused, so hirelings 3, 30, 33, player-creation 1 and items-uniques-sets 21
     stay shortfalls; none is proposed to move. Save-d2s 126 likewise (the layout is now given).
   - **Backlog:** the entry closed; archivist entry
-    [2026-10-27-reverser-archivist-d2s-legacy-layouts-for-a-builder](../backlog/2026-10-27-reverser-archivist-d2s-legacy-layouts-for-a-builder.md);
+    [2026-10-27-reverser-archivist-d2s-legacy-layouts-for-a-builder](../backlog/archive/2026-10-27-reverser-archivist-d2s-legacy-layouts-for-a-builder.md);
     review request [2026-10-27-reverser-architect-review-lane-rlg-d2s-legacy-and-v92-readers](../backlog/archive/2026-10-27-reverser-architect-review-lane-rlg-d2s-legacy-and-v92-readers.md).
     Ledger row added, usage "—".
   - **Next:** the `lane/rlg` review; then the archivist's legacy builder.
@@ -4777,3 +4777,30 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Backlog:** review request closed. The archivist builder entry stays open, annotated. Ledger: the lane row was
     filled with the orchestrator's usage (425 490 tokens, 131 tools, 36 min) and the fixes. The review row was added
     with usage "—".
+- **2026-10-27 — `lane/a72` (archivist, no slot, no Ghidra, no harness, from `main` `92b811df`): the d2s legacy
+  builder.** Work of the reverser's [builder entry](../backlog/archive/2026-10-27-reverser-archivist-d2s-legacy-layouts-for-a-builder.md),
+  from [save/0001 § Plan 0038 lane/rlg](../findings/save/0001-d2s-io.md#plan-0038-lanerlg-the-legacy-and-version-92-readers-static-2026-10-27)
+  with the review's three additions (0..70 refused with 1, the header skills applied after the skills section, the
+  72..88 base adjustment with 74..79 unadjusted).
+  - **Built** (`tools/d2s.py`, opt-in only): `save_version` 92 (the version-96 file with items in the 1.09 widths and
+    adds, no generic param, the ≤ 92 per-id encodings of stats 83, 107, 126, 188, 195/198/201, a set item's `Sets`
+    id), 87 (the legacy layout: `0x82`-byte header, the quest/waypoint/NPC bytes, `gf` with the 3-byte mask, `if`,
+    items in the 92 form with the ≤ 89 widths, an empty corpse list, the `0x12`-byte mercenary and its list, the
+    hotkey tail) and 71 (version-71 records by classic index or code, the `JM`/seed/name mercenary, no tail); the keys
+    `legacy_new_char`, item `v71` and item `item_props`; `parse_legacy` and the extended parser's 92 read them back.
+    Refused where the finding reads a step but gives no writer layout: magic, rare, crafted and class-affix items at
+    87; stats 23, 24, 93, 96, 99, 102, 105 at 87; stat 204, the remapped and folded ids at ≤ 92.
+  - **Proof of byte identity:** the 259 `RECIPE_BASES` recipes rebuilt into the scratchpad before and after give the
+    same sha256 (the five new `leg*` recipes added on top). `tools/test_d2s.py`: 60 tests OK (`LegacyTest` 5 new;
+    `ExtendedTest`'s refusals of 92 and 87 moved to 91 and 70; `RecipeTest` reads legacy builds with `parse_legacy`).
+  - **Documented** ([d2s.md](../formats/d2s.md)): § Legacy versions (71..91) from the finding, § Versions 92..95 (the
+    complete version-test list, the ≤ 92 rows, the version-92 property encodings, the ⌈`0x029`/8⌉ mask), the version
+    row, the ear's realm bit on reading, § Legacy builder (with the builder's own choices listed as such) and Open
+    questions. All layout statements `[I]`; one data `[C]` (the 1.09 columns: 57 of the 247 saved records differ).
+  - **Recipes staged, not run:** `leg87merc` (hirelings 3, 33), `leg87new` (player-creation 1), `leg71merc`
+    (hirelings 30, 33), `leg71uniq` (items-uniques-sets 21), `leg92props` (save-d2s 126); `RECIPE_BASES` base
+    `smpsor-l50.d2s`, no pinned hash. The rows stay shortfalls until a harness load.
+  - **Backlog:** builder entry closed; the H1a archivist entry annotated (all five parts done); review request
+    [2026-10-27-archivist-architect-review-lane-a72-d2s-legacy-builder](../backlog/2026-10-27-archivist-architect-review-lane-a72-d2s-legacy-builder.md).
+    Ledger row added, usage "—".
+  - **Next:** the `lane/a72` review; then a harness lane for the `leg*` recipes.
