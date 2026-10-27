@@ -74,7 +74,7 @@ Some things are *not* tested at all. The insert does not look at the parent's qu
 type. Low, magic, rare and [crafted](../glossary.md) parents all accepted children in the test run, and a rune went into a helm in a
 classic game. There is no level-requirement test for the child either: a level-1 character put in runes up to *Jah*
 (level 65). In the two cases logged, an unidentified socketed item looked "not socketed" to the client, so the client
-refused the insert as if the item had no sockets; once identified, the same item took the child. That this holds for
+refused the insert as if the item had no sockets; the one of them that was then identified took the child. That this holds for
 every unidentified socketed item, and what tells the client at identification, are not shown.
 
 **Socket order is insertion order.** Each child goes to the end of the parent's list of children, and that order is
@@ -139,9 +139,9 @@ on the game seed. Two consequences matter to a player:
 - The property handlers treat the *rune* as "the item". So `ac%` on a runeword does not reset the parent's base
   defense the way it would on a magic item, `dmg-min`/`dmg-max` write all three related damage stats, and *Famine*'s
   ethereal line never makes the parent ethereal (all confirmed by a run or a game-written save), and *Eternity*'s
-  indestructible line was made in a run. A few other handler branches are read from the code only: the runewords
-  that would use them are ladder-only rows, or the branch needs the rune to be a weapon, so no stock single-player
-  game reaches them.
+  indestructible line was made in a run. A few other handler branches are read from the code only: no stock runeword
+  line uses them, or the runewords that would use them are ladder-only rows, or the branch needs the rune to be a
+  weapon, so no stock single-player game reaches them.
 - A rune loaded from a save starts with a fixed item seed derived from its saved start value, so the same save with
   the same insert order gives the same rolls.
 

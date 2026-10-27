@@ -5210,7 +5210,60 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     and the [H2b entry](../backlog/archive/2026-10-20-reverser-spec-writer-h2b-items-chain-spec-updates.md) ((r)–(s),
     its last open items); annotated the [S2c entry](../backlog/2026-10-16-reverser-spec-writer-plan-0038-s2c-corrections-for-phase.md)
     ((e), (g) done; (a), (d), (f) wait for cube and vendors); filed the
-    [counts entry](../backlog/2026-10-27-spec-writer-architect-s38k-sockets-runewords-counts-for-the-research-map.md) and the
-    [review request](../backlog/2026-10-27-spec-writer-architect-s38k-review-sockets-runewords-phase-3.md). Ledger row
+    [counts entry](../backlog/archive/2026-10-27-spec-writer-architect-s38k-sockets-runewords-counts-for-the-research-map.md) and the
+    [review request](../backlog/archive/2026-10-27-spec-writer-architect-s38k-review-sockets-runewords-phase-3.md). Ledger row
     added, usage "—".
   - **Next:** architect review of `lane/s38k`.
+- **2026-10-27 — `lane/s38k` review (architect): Phase 3 of items/sockets-runewords and items/properties F6, accept
+  with fixes (8).** `main` (`ad8b8cd0`) was already the lane's base: the merge was empty and `backlog.py archive` moved
+  nothing. Static review: objdump on the pinned `game.exe`, no Ghidra, no harness.
+  - **Checked.** The diff restates +48 net `[C]` (+56, −8) and +1 `[I]`; the front matter matched the gate's reader.
+    Traced to the accepted ledgers within their reviews' scopes, more than a third of the new `[C]`: S2c sock 2 (the
+    creation callers, the forced count kept `[I]`), 3, 4, 5, 6, 8, 19, 20, 25 (422), 26, 27, 28 ×2, 32, 34, 36 L472,
+    41, 43, 45, 47; H2b sock 42 (F1's header scoped "but the marked lines", the write clamp `[I]` as the `lane/h2b`
+    review ruled) and sock 44's piece; H6b sock 1 (copier rows and bullets only; golem, version-71, corpse and
+    0x00563441 `[I]`), 10 ×2 (the built-state scope and the no-stock note `[I]`, ruling 1 of the H6b review), 12 L173,
+    14's piece, 16 ×2, 17 L291 and L237 (the empty slot `[C]`, the clear and its reason `[I]`, the H6b split), 18, 21,
+    35 ×2 (E1's test by state alone `[C]`, the `0x40` an `[I]` note), 38 L481 (*Leaf* only), L490, 46. The d-none
+    halves (sock 29's toggle and `0x100` child, sock 38's ranged func 17, L482, L507, the 253 schedule at an insert) and
+    sock 9 (d-2c) stay `[I]` with their reasons. Inline `[I]` sits on every unreached pseudocode line of B1, B2, B5–B6,
+    C1, D1, D3, E1, E2, E4 and F1–F2. objdump: `sub_00625790_UnitFindStatList` passes only the list and the state to
+    `0x00625650` when the state is non-zero (0x006257AC–0x006257B5), so L438's `0x40` correction holds; the timers'
+    13 direct call sites; `NPC_SellItem`'s `VENDOR_IsPermanent` branch (0x0057972F–0x00579736) over the copy call
+    0x00579747 (`push 1`, the same form as Anya's 0x0057A52E). Every `fn:` spot-checked resolves in `re/symbols.csv`.
+    Restatement inflation: the new *Entry points* bullets restate their table rows with the evidence, the pattern the
+    section already used for the packet and reader rows; not inflation.
+  - **Fixes.** (1) overclaim: the Malah-sale `[I]` said "a sale is not a copier case"; `NPC_SellItem` copies with the
+    second word 1 when `VENDOR_IsPermanent` is false, so the bullet is scoped to the logged sale. (2) misread: A1's
+    UI-state bullet said the two immediates are the only stores of 10 and 11; two register stores copy the slot table
+    at 0x007BC9E4 (unfollowed, the H6b review); the bullet also had no tag of its own (its `[I]` was in backticks) and
+    now carries `[I]`. (3) overclaim: "on these items the client copy got the socketed flag only once identified" for
+    two items, one of them never identified; scoped to the skull cap, on the spec and on wiki/items-other-paths.
+    (4) overclaim: "no game-written save has bit 11 on a ring or on gloves" (no save survey behind it) replaced by the
+    creation-path reason. (5) under-claim (rule 8): B5's 253 timer call was `[I]` though sock 18's ledger raises the
+    call ("the 252 then the 253 timer"); B5's line `[C]`, E4b split (the read `[C]`, `v` = 0 at all four; the schedule
+    `[I]`). (6) overclaim (rule 7): the Reimplementation notes kept "no runeword can form" in a classic game and "clamp
+    by quality only at creation" inside `[C]` bullets after D1's and F1's splits; each split, the second half `[I]`.
+    (7) omission: wiki/items-other-paths' handler-branch sentence left out the branches no stock runeword line uses
+    (funcs 8 and 11). (8) miscount: A1's built-state note counted a backticked `` `[C]` `` as a tag; reworded.
+    items/sockets-runewords is now **{C 129, I 85, L 7}**; items/properties **{C 153, I 22, L 3}**.
+  - **Rulings.** (1) **F6 stands.** H2b's sock 44 piece is a compared `[C]` (the cap after the quality switch equal to
+    `min(p, 6)` in all 34 calls, 21 above 3); a constant raised in one spec is raised in every spec that states it
+    (spec-writer rule 8), and "only qualities 2 and 3 reach it from here" stays `[I]`. (2) **E4's timers outside the
+    insert stand `[C]`, scoped to the run's 300 entries.** The `RPE` lines are logged entries, not a model's
+    prediction, and objdump gives the second source: 11 of the 13 direct calls of the two timers lie outside the insert
+    (the bullet now lists them). "Every item load and creation" is not claimed; the two outside 253 schedules stay
+    `[I]` (not compared, the H6b fix 4). (3) **The code-read splits stand as filed** (sock 6's `+0x084`, sock 4's
+    `itype4..6`/`etype`, the group ≥ 3 fatal line, sock 34's classic-legal sentence, sock 36's mode-6 sentence, sock
+    46's `0xFFFF`, sock 47's `hasinv`, sock 20's update queue, sock 21's ethereal and version test, sock 26's Zod):
+    each `[I]` part is the remainder its ledger names. (4) **The Malah-sale bullet may stay without an inventory row.**
+    It is a new `[I]` statement carried from the H6b ledger (sock 1), not a re-tag; it adds one `[I]` and moves no
+    inventory class. Scoped by fix (1). (5) The open-question changes stand: the child-level question is answered by
+    B1's `[C]`; the `p5` `[L]` is the finding's H6b question.
+  - **Research map.** The items/sockets-runewords row rewritten whole (C 129 / I 85 / L 7, Phase 3 done); the
+    items/properties row rewritten (C 153, updated 2026-10-27, F6).
+  - **Totals** (recomputed once, against `main` `ad8b8cd0`): unchanged, **static 567, harness 515, c-emu 0, blocked
+    425** (d-none 298, d-2c 8), **deferred 2, raised 17: 1 526.**
+  - **Bookkeeping.** Review-fixes Seen lines: spec-writer 2, 3, 7 and 8; architect 2. The review request and the counts
+    entry closed. Ledger: the lane row filled (usage from the orchestrator: 244 114 tokens, 83 tools, 20 min; accept
+    with fixes, 8: overclaim 4, misread 1, under-claim 1, omission 1, miscount 1); the review row added, usage "—".
