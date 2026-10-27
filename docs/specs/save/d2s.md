@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, data/excel]
 consumed_by: [items/tc, items/quality, items/affixes, items/uniques-sets, items/properties, items/sockets-runewords, hirelings, player/creation]
-tags: {C: 238, I: 66, L: 3}
+tags: {C: 239, I: 67, L: 3}
 updated: 2026-10-27
 ---
 
@@ -903,6 +903,13 @@ I4. Quality fields, written only when the item is identified (f bit 4) or the sa
   sequence, not an identical one, compared under that operand map over 69 531 cases with 0 differences. The copy is
   covered as the same computation, not as a second source. (fn:BITBUF_WriteClamped@0x0062AF50, 0x0062AF53–0x0062AF6E,
   run:2026-10-17-sweep-emu, run:2026-10-12-d2s-io, run:2026-10-16-player)
+- I1. [C] **The serialiser's arguments.** `ITEMS_SerializeBits` takes three arguments, and every save write passes
+  (1, 1, 0): all 1 960 final-pass items of the 200 logged writes. (fn:ITEMS_SerializeBits@0x006312B0,
+  run:2026-10-12-d2s-io, run:2026-10-16-player)
+- I1. [I] The other forms are not a save's, and a reimplementation of the save applies neither: a non-zero third
+  argument clears flags bit 22 and sets bit 25 (0x00631321–0x0063132D), and a first argument of 0 skips the `JM` tag
+  and clears bit 11 of an unidentified item (0x00631333–0x0063134D). The reader's strip of bit 25 matches the
+  non-save form. (fn:ITEMS_SerializeBits@0x006312B0)
 - I1. [C] An ear (flags bits 4, 16, 21, 23; class 3, level 42, name `earname`) was read into item data `+0x28`, `+0x48`
   and `+0x4A`, the next item started where it ended, and the write gave the same bytes back.
   (0x0062B1D3–0x0062B277, run:2026-10-27-sweep-d2s-load)

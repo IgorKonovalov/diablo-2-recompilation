@@ -4191,3 +4191,27 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Ledger rows:** the lane row filled (verdict, fixes 5: under-claim 1, miscount 1, omission 3; usage from the
     orchestrator: 533 080 tokens, 290 tools, 52 min); the review row added, usage "—".
   - **Next:** merge `lane/h1a`; the save/d2s and items/uniques-sets Phase 3 re-tags may start.
+- **2026-10-27 — Phase 3, the save/d2s and items/uniques-sets clusters (spec-writer, `lane/s38s`, from `main`
+  `cb3a7014`).** Their batches are save/d2s S1a, S1e, H1b (with the r1h moves) and H1a, and items/uniques-sets S2b,
+  S2c, S1f, H2b, H6d and H1a, all accepted.
+  - **Counts:** [save/d2s](../specs/save/d2s.md) {C 91, I 149, L 3} → **{C 239, I 67, L 3}**;
+    [items/uniques-sets](../specs/items/uniques-sets.md) {C 71, I 55, L 4} → **{C 100, I 38, L 4}**; `updated:` 2026-10-27.
+  - **Applied:** every raised row with its `run:` or second source, raised-in-part rows split along their remainders;
+    the H1a new readings (`D2S_ReadSave`'s unmapped 9, the length test first and the test order, the waypoint marker
+    reset and `WAYPOINT_Save`'s restore, a bad set id dropping the item, a bad unique id read −1 and written `0xFFF`,
+    stat 72 in 8 bits for item version ≤ 95, the `0x29` count bounding the old stat form, class 7 halting); H1a ruling
+    1 as one `[I]` reach note; rows 20/34's −1 reach condition as an `[I]` note under the class-7 `[C]`; the d-none
+    halves (row 50's ladder, row 139's `gf`, rows 3/19 and the callback halves of 2/18 per r1h) and the legacy
+    shortfalls `[I]`; H1b ruling (c) (the death save `[C]`, "Nothing was written during play" scoped to
+    run:2026-10-12-d2s-io) and (g) (stat 30's wording); the S1a entry's (b)–(g), the S1e (a)/(f) and review (d) lines,
+    S1f (a)/(c), H2b (c)–(g) and H6d (i).
+  - **Wiki:** [saves](../wiki/saves.md), [characters](../wiki/characters.md) and [items](../wiki/items.md) `based_on`
+    dates set to 2026-10-27 (W4 clear); saves and items restated, characters waits on player/creation and hirelings.
+  - **Backlog:** closed the S1a corrections, S1e corrections, S1e review additions and S1f entries; annotated H1b
+    (hirelings, H6f), H1a (player/creation H6g, hirelings H6f, (k)), H6d (quest-drops) and H2b (sockets-runewords).
+    Counts entry [s38s counts](../backlog/2026-10-27-spec-writer-architect-s38s-save-d2s-and-uniques-sets-counts-for.md),
+    review request [s38s review](../backlog/2026-10-27-spec-writer-architect-s38s-review-save-d2s-and-uniques-sets-phase.md).
+    Ledger row added, usage "—".
+  - **Not touched (waiting):** hirelings (H6f) and player/creation (H6g): the H1b and H1a rows hirelings 3, 24, 30,
+    32, 33 and player-creation 1, 8, 9, 11, 20, 34, and the H1a entry's (k) (data/calc L417, rng/seeds L362).
+  - **Next:** the `lane/s38s` review.
