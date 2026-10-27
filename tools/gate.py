@@ -28,12 +28,12 @@ Implements the fast tier of `.claude/skills/architect/references/evidence-rules.
                closed, the date equal to the file name's, context links resolving, and no open entry
                in docs/backlog/archive/
            E14 a markdown table row with a different number of cells than its header (every tracked .md)
-           E15 a research-map row (docs/specs/README.md) whose status words, `C n / I n / L n` group or
-               `updated` date differ from the spec it links
+           E15 a research-map row (docs/specs/README.md) whose status words, first `C n / I n / L n` group
+               after a spec link (all three given) or `updated` date differ from the spec it links
            E16 docs/plans/README.md: a row's Status differs from the plan's `Status:`, the link is under
                done/ iff the plan is done or abandoned; docs/plans/README.md and docs/adrs/README.md:
                "Next free number" not above every number in use
-           (E14 and E15 are reported as warnings while DEMOTED lists them: plan 0053 Phase 1)
+           (a rule in DEMOTED is reported as a warning until the files it flags are fixed: plan 0053)
   warnings W1 a [C]/[I] line or table row with no anchor
            W2 a table with a Tag column has a row with an empty tag cell
            W3 a re/symbols.csv row cited by no spec or finding
@@ -45,7 +45,7 @@ Implements the fast tier of `.claude/skills/architect/references/evidence-rules.
            W6 a closed entry (done, moved, dropped) still in docs/backlog/ instead of docs/backlog/archive/:
               run `python3 -I tools/backlog.py archive` (ADR-0019; a warning, because a lane on an older
               branch closes entries in place and the orchestrator sweeps them after the merge)
-           W7 a `Total` table row whose numbers differ from the sum of the rows above (specs, findings, plans)
+           W7 a `Total` or `All` table row whose numbers differ from the sum of the rows above (specs, findings, plans)
 
 Wiki front matter (E11, W4): `based_on: [process]`, or a list of `<repo path of a spec> <date>`, either
 `based_on: [docs/specs/rng/core.md 2026-10-11, ...]` or one `  - docs/specs/rng/core.md 2026-10-11` line
@@ -105,9 +105,9 @@ IMAGE_HI = 0x009BA000
 FIXTURES = "tools/gate/fixtures/"
 # research-map status word for each spec `status:` value (E15)
 MAP_STATUS = {"draft": "draft spec"}
-# error rules reported at warning level until the files they flag are fixed (plan 0053 Phase 1);
-# the architect empties this set in Phase 2
-DEMOTED = {"E14", "E15"}
+# error rules reported at warning level until the files they flag are fixed (plan 0053 Phases 1-2);
+# E14 waits for the reverser's entry 2026-10-27-archivist-reverser-e14-table-rows-with-an-extra-cell-in
+DEMOTED = {"E14"}
 BASELINES = "tools/gate/baselines"
 
 # ---------------------------------------------------------------- full tier: survey registry
@@ -1179,18 +1179,19 @@ def check_map_rows(rel, text, ctx, rep):
         status = spec_front(ctx["texts"][first], "status")
         want = MAP_STATUS.get(status, status)
         if words != want:
-            rep.err("E15", rel, n, f"status words {words or cell[:30]!r} differ from {first} status: "
+            rep.err("E15", rel, n, f"status words {(words or cell)[:40]!r} differ from {first} status: "
                     f"{status} (the map says {want!r})")
         for path, seg in specs:
             fmtext = ctx["texts"][path]
             m = RE_TAGS_GROUP.search(seg)
             fm, _, _ = split_front_matter(fmtext)
             mt = RE_FRONT_TAGS.search(fm or "")
-            if m and mt:
+            if m and m.group(3) is None:
+                rep.err("E15", rel, n, f"tags {m.group(0)!r} after {path} give no L: write C n / I n / L n")
+            elif m and mt:
                 have = {k: int(v) for k, v in re.findall(r"([CIL]):\s*(\d+)", mt.group(1))}
                 got = {"C": int(m.group(1)), "I": int(m.group(2))}
-                if m.group(3) is not None:
-                    got["L"] = int(m.group(3))
+                got["L"] = int(m.group(3))
                 if any(have.get(k) != v for k, v in got.items()):
                     rep.err("E15", rel, n, f"tags {m.group(0)!r} after {path} differ from its tags: "
                             f"C {have.get('C')} / I {have.get('I')} / L {have.get('L')}")
@@ -1266,7 +1267,7 @@ def check_totals(rel, text, rep):
     for _, rows in iter_tables(text):
         start = 2
         for i, (n, cells) in enumerate(rows):
-            if i < 2 or cells[0].replace("**", "").strip().lower() != "total":
+            if i < 2 or cells[0].replace("**", "").strip().lower() not in ("total", "all"):
                 continue
             rep.count("W7")
             for col in range(1, len(cells)):
@@ -1305,7 +1306,7 @@ RULES = [
     ("W4", "wiki based_on dates current"),
     ("W5", "no live entry in the frozen backlog archive"),
     ("W6", "closed backlog entries in docs/backlog/archive/"),
-    ("W7", "Total rows equal the sum above"),
+    ("W7", "Total and All rows equal the sum above"),
 ]
 
 

@@ -149,6 +149,12 @@ Errors (fast tier):
 | E11 | A page has a `based_on:` front-matter list, either the single entry `process` or entries `<repo path> <YYYY-MM-DD>` (flow list or one `  - ` line each); each path is a spec and its `status:` is `reviewed` | `docs/wiki/` except `docs/wiki/README.md` |
 | E12 | Every `##` section (its `###` subsections included) holds a relative link, inline or reference-style, into `docs/specs/` | `docs/wiki/` except `README.md` and pages with `based_on: [process]` |
 | E13 | A backlog entry (ADR-0018): front matter as `tools/backlog.py` writes it (only the keys `from`, `to`, `date`, `status`, `context`, `resolution`); `from` and each `to` a lane (`architect`, `archivist`, `reverser`, `spec-writer`, `human`); `status` ∈ {`open`, `done`, `moved`, `dropped`}; a `resolution` when the status is not `open`, none when it is; the file named `YYYY-MM-DD-<from>-<to>-<slug>.md` with `date` equal to its prefix; each `context` link resolves as in E8; no `open` entry in `docs/backlog/archive/` (ADR-0019) | `docs/backlog/*.md` and `docs/backlog/archive/*.md` except `README.md` |
+| E14 | Outside code fences, every row of a markdown table has as many cells as its header row. An escaped `\|` and a pipe inside a code span don't split cells; a code span opens at a run of backticks and closes at the next run of the same length, an unclosed run is literal (plan 0053) | every tracked `.md` except `tools/gate/fixtures/` |
+| E15 | For each spec linked from a research-map row's last (Status) cell: the cell's words before the first ` · `, bold stripped, equal the first linked spec's `status:` mapped as `reviewed` → `reviewed`, `draft` → `draft spec`. In the text between a spec link and the next link, the first `C n / I n / L n` group gives all three numbers and equals that spec's `tags:`, and an `updated YYYY-MM-DD` equals its `updated:`. Map convention that keeps every group checked: each spec's own group comes first after its link, and a sum over several specs is written in words (`sum to C 240, I 191, L 24`), never as a group (plan 0053) | `docs/specs/README.md` |
+| E16 | In `docs/plans/README.md`, each row linking a plan has a Status cell (the third) whose first word equals the first word of the plan's `> **Status:**` line, and the link points under `done/` if and only if that word is `done` or `abandoned`. In `docs/plans/README.md` and `docs/adrs/README.md`, the `Next free number: **NNNN**` line exists and is greater than every number in use in that directory, `done/` included (plan 0053) | those two indexes |
+
+An error rule listed in `DEMOTED` in `tools/gate.py` is reported as a warning until the files it flags are fixed; the
+entry that will fix them is named beside the set. Today: E14, until the reverser's six findings rows land (plan 0053).
 
 Warnings (fast tier):
 
@@ -160,6 +166,7 @@ Warnings (fast tier):
 | W4 | A `based_on:` date is older than that spec's `updated:` date (the page may be stale) | `docs/wiki/` |
 | W5 | The frozen archive holds an unstruck entry, or a struck copy of an entry that has its own file. A warning, not an error, so that a lane merge appending to the archive leaves `main` green; the orchestrator then runs `python3 -I tools/backlog.py archive`, which migrates first | `docs/backlog.md` |
 | W6 | A closed entry (`done`, `moved`, `dropped`) still in `docs/backlog/` instead of `docs/backlog/archive/` (ADR-0019). A warning, so that a lane merged from an older branch, which closed the entry in place, leaves `main` green; the orchestrator then runs `python3 -I tools/backlog.py archive` | `docs/backlog/*.md` |
+| W7 | A table row whose first cell is `Total` or `All` (any case, bold allowed): each numeric cell (spaces, no-break and narrow spaces and commas as digit separators) equals the sum of the numeric cells above it in that column, back to the separator row or the previous such row; a non-numeric cell is skipped (plan 0053) | specs, findings, plans |
 
 Full tier (`--full`): each registered `survey` ends with one `SURVEY <tool> key=value …` line of
 integer counts, compared with `tools/gate/baselines/<tool>.txt`. Any difference is an error. A

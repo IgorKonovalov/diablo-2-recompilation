@@ -153,3 +153,34 @@ Hits and the arithmetic (counts are warnings or errors reported by the gate at t
 8 - 2 = 6 and 6 - 0 = 6. E14 and E15 stay warnings because the files they flag belong to other lanes; Phase 2 empties `DEMOTED` once the entries are fixed. Backlog entries: `2026-10-27-archivist-reverser-e14-table-rows-with-an-extra-cell-in.md` and `2026-10-27-archivist-architect-e15-research-map-rows-that-disagree-with-their.md`.
 
 **Review request (architect).** Review `lane/p53a` at its tip. Check (a) the E15 mapping and the five proposals above against your intent for the rule table, (b) that `DEMOTED = {"E14", "E15"}` with the two backlog entries is the handoff you want for Phase 2, and (c) the `table_cells` rewrite, which every table check shares (W2 and the new checks); the gate output elsewhere is unchanged, and (d) the W3 commit. Copy E14, E15, E16 and W7 into `evidence-rules.md` § Mechanical checks in the review commit.
+
+### 2026-10-27 — Review of `lane/p53a` (architect, Mode 3 for a tools lane): accept with fixes (4)
+
+Checked from `git diff main...lane/p53a` and the log above. The four rules match the plan's table; each has a failing
+fixture and the base passes (E15 three overlays, E16 four). `table_cells`: the gate on the lane tree with `main`'s
+splitter swapped in differs from the lane's output only in E14's `evidence-rules.md:147` hit, so the rewrite changes
+no other check (W2 4 648 checked, 0 warnings, both ways). W3's word set is equivalent to the bounded search for a
+`[A-Za-z0-9_]+` name and falls back otherwise; 0 warnings on 3 666 symbols. `DEMOTED` with two entries is the handoff
+wanted.
+
+Rulings on the questions (the evidence-rules table now states them):
+
+1. **E15, groups after a link:** the looser rule is refused. The first group between a link and the next link is
+   compared, and the map convention is that a spec's own group comes first after its link. The `skills/dispatch` row
+   is rewritten that way, so both groups are checked.
+2. **E15, sums:** no exemption. A sum over several specs is written in words (`sum to C 240, I 191, L 24`), not as a
+   group. The combat row now gives the overview's own `C 41 / I 42 / L 5` and the sum in words (checked: 41+34+80+46+39,
+   42+30+64+25+30, 5+5+4+5+5).
+3. **E15, partial groups:** tightened. A group must give all three numbers, and a group without `L` is an E15 error
+   (fixture `E15-partial`). The monsters overview's `C 15 / I 0` becomes `C 15 / I 0 / L 0`.
+4. **W7, `All` rows:** accepted (any case), fixture `W7-all`. 11 rows checked, 0 warnings.
+
+Fixes (4): miscount 1 (the W3 commit subject's literal "160 s to ~Xs"; the log's 153 s to 5.4 s is right; noted, not
+amended); other 3 (partial groups made an error, the `All` label added, the E15 status message cut to 40 characters
+where it printed a whole cell).
+
+The research-map hits are fixed in this commit, because rulings 1–3 are map conventions (Phase 2 below closes the
+entry): `monsters/pool` and `monsters/spawn` get `**reviewed** · `; `player/creation` reads updated 2026-10-21 with
+plan 0048 P3's staff-mod oracle rewording; `stats/aggregate` reads C 65 / I 42 / L 4, updated 2026-10-20, with plan 0047
+P1's J4 (the full Trang-Oul's `state` and `oskill` blocks `[C]`) in place of the stale `[I]`. E15 leaves `DEMOTED`.
+E14, E15, E16 and W7 are in `evidence-rules.md` § Mechanical checks.

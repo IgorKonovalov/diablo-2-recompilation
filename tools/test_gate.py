@@ -66,6 +66,8 @@ EXPECT_MORE = {
     "W5-archived": ("W5", "docs/backlog.md", 7),           # a struck archive copy of an archived entry
     "E15-tags": ("E15", "docs/specs/README.md", 6),        # tag counts after the link differ from the spec's
     "E15-updated": ("E15", "docs/specs/README.md", 6),     # updated date after the link differs
+    "E15-partial": ("E15", "docs/specs/README.md", 6),     # a tag group that gives no L
+    "W7-all": ("W7", "docs/specs/rng/counts.md", 16),      # an `All` row off by two
     "E16-next": ("E16", "docs/plans/README.md", 3),        # next free number is not above the highest plan
     "E16-done": ("E16", "docs/plans/README.md", 8),        # a done plan outside done/
     "E16-adr": ("E16", "docs/adrs/README.md", 3),          # next free number of the ADR index
