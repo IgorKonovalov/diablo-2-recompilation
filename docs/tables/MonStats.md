@@ -820,8 +820,9 @@ The columns that name a monster's animation, its modes and its speeds (values fr
     tbl:MonStats.txt:SplEndGeneric)
   - `SplEndDeath` (`+0x1A4` u8, 1 or 2 in 9 rows): at the end of `DT`, after mode 12, 1 changes the class to its
     `minion1`, 2 kills the owner. (0x005A72B0, tbl:MonStats.txt:SplEndDeath)
-  - `aidel`, `aidel(N)`, `aidel(H)` (`+0x04F`..`+0x051` u8, 1..15): `MonModeStartNeutral` re-queues the AI event at
-    `T +` the delay of the difficulty (15 when the cell is 0), or at `T + 45` under state 21 `stunned`. The AI itself is
+  - `aidel`, `aidel(N)`, `aidel(H)` (`+0x04F`..`+0x051` u8, 1..15, 0 in the 18 blank rows): when the next AI
+    event is not later than now, `MonModeStartNeutral` re-queues it at `T +` the delay of the difficulty (15 when the
+    cell is 0), or at `T + 45` under state 21 `stunned`. The AI itself is
     phase (5)'s ([plan 0052](../plans/0052-monster-ai.md)). (fn:sub_005A73E0_MonModeStartNeutral@0x005A73E0,
     tbl:MonStats.txt:aidel)
 - `[C]` A new monster's stat 67 `velocitypercent` is 75, and the `champion`/`possessed` (+20) and `fast`/`fanatic`

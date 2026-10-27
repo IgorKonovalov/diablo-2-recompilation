@@ -7,7 +7,7 @@ context:
   - ../../findings/skills/0008-sorceress.md
   - ../../tables/Skills.md
   - ../../tables/Missiles.md
-resolution: "Folded 2026-10-25 (plan 0051 P0a, lane/p51a): Skills startmana, progressive, Param1/2/7, aurarangecalc, auralencalc, aurastat1, calc1/2, the Hydra summon words; Missiles Vel/VelLev (unsigned), Size link skills/0008 ([Skills](../../tables/Skills.md), [Missiles](../../tables/Missiles.md), [log](../../plans/0051-backlog-sweep-6.md#implementation-log))."
+resolution: "Folded 2026-10-25 (plan 0051 P0a, lane/p51a): Skills startmana, progressive, Param1/2/7, aurarangecalc, auralencalc, aurastat1, calc1/2, the Hydra summon words; Missiles Vel/VelLev (unsigned), Size link skills/0008 ([Skills](../../tables/Skills.md), [Missiles](../../tables/Missiles.md), [log](../../plans/done/0051-backlog-sweep-6.md#implementation-log))."
 ---
 
 Not blocking. Plan 0046 batch `sor` ([skills/0008](../../findings/skills/0008-sorceress.md)) settles code readers for

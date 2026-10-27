@@ -7,7 +7,7 @@ context:
   - ../../findings/skills/0007-missile-hit-31-59.md
   - ../../tables/Skills.md
   - ../../tables/Missiles.md
-resolution: "Folded 2026-10-25 (plan 0051 P0a, lane/p51a): Skills Kick (max divides by 3), the physical and elemental length maps; Missiles sHitPar1..3, Param4, CollideKill, pSrvHitFunc; MonStats2 large link skills/0007 (ring steps of hits 52/59 and the CollideKill returns [I], as the finding) ([Missiles](../../tables/Missiles.md), [Skills](../../tables/Skills.md), [MonStats2](../../tables/MonStats2.md), [log](../../plans/0051-backlog-sweep-6.md#implementation-log))."
+resolution: "Folded 2026-10-25 (plan 0051 P0a, lane/p51a): Skills Kick (max divides by 3), the physical and elemental length maps; Missiles sHitPar1..3, Param4, CollideKill, pSrvHitFunc; MonStats2 large link skills/0007 (ring steps of hits 52/59 and the CollideKill returns [I], as the finding) ([Missiles](../../tables/Missiles.md), [Skills](../../tables/Skills.md), [MonStats2](../../tables/MonStats2.md), [log](../../plans/done/0051-backlog-sweep-6.md#implementation-log))."
 ---
 
 Not blocking. Plan 0046 batch 9d ([skills/0007](../../findings/skills/0007-missile-hit-31-59.md)) settles code readers

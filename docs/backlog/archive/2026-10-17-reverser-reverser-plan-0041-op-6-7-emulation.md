@@ -13,7 +13,7 @@ moved from the plan 0041 P1 review follow-ups entry, item (c) (optional; not tak
 *2026-10-20 (reverser, `lane/p49r`, plan 0049 Phase 1):* not taken. It is optional, no tag depends on it, and it needs
 no slot. No plan takes it: it is out of plan 0049 and stays open for a later static lane with Ghidra emulation time.
 
-*2026-10-27 (reverser, `lane/p51s`, [plan 0051](../../plans/0051-backlog-sweep-6.md) Phase 1b, no slot):* **done.**
+*2026-10-27 (reverser, `lane/p51s`, [plan 0051](../../plans/done/0051-backlog-sweep-6.md) Phase 1b, no slot):* **done.**
 `STAT_ByTimeValue` (6 000 calls) and `sub_00626200_StatEvaluate` cases 6 and 7 (3 000 calls, with
 `sub_0061C100_ActTimeOfDay`, `MulDiv`, ops 10, 12 and above 13 between them, nested sources) ran under `tools/ghidra.sh
 emutrace` over a declared image. They match `tools/sweep_p51s.py`'s models with 0 mismatches, every branch reached,

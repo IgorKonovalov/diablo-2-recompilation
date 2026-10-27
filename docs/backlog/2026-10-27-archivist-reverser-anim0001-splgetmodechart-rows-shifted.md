@@ -23,3 +23,5 @@ Asked: fix `anim_scan.py`'s `monstats.txt` read (drop the `Expansion` row, or in
 correct § 10: which mode records classes 417, 543, 570, 705 and 709 take, and the names of 418 and 544. Not blocking
 P1.2; MonStats § Timing quotes the class numbers only and leaves those five branches `[L]` until then. Other
 `OVR`-style reads of `monstats.txt` rows ≥ 410 in the P1.1 tooling may have the same shift.
+
+*2026-10-27 (architect, `lane/a51f` review):* the shift is confirmed on `monstats.bin` (`+0x1A5`; [plan 0050 log](../plans/0050-animation-frame-timing.md#implementation-log), ruling (a)) and folded into P1.2's item list. With the § 10 fix, also strike anim/0001's open question "the PlrType and object-type token tables have no doc": [PlrType](../tables/PlrType.md) and [ObjType](../tables/ObjType.md) now exist.

@@ -18,7 +18,7 @@ resolution: ""
 
 *2026-10-17 (reverser, `lane/rbs` static sweep):* skipped: needs harness; rides on plan 0038 harness batches H2b, H6a, H6b, H6c and H6e1.
 
-*2026-10-25 (reverser, `lane/p51r`, [plan 0051](../plans/0051-backlog-sweep-6.md) Phase 1a, no slot):* **H2b piece
+*2026-10-25 (reverser, `lane/p51r`, [plan 0051](../plans/done/0051-backlog-sweep-6.md) Phase 1a, no slot):* **H2b piece
 pruned.** H2b ran and was reviewed ([plan 0038 log](../plans/0038-inferred-claims-sweep.md#implementation-log), H2b
 review ruling (d)): sock 44's piece met in part, the row stays raised in part as S2c filed it
 ([items/0007 § Plan 0038 batch H2b](../findings/items/0007-sockets-runewords.md#plan-0038-batch-h2b-2026-10-20)). Its

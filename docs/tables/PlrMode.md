@@ -117,7 +117,8 @@ mode token `WK`, which no row has; [cof § Files](../formats/cof.md#files) has i
 - `[I]` **How the mode runs** ([anim/0001 § 9](../findings/anim/0001-modes-frames.md#9-player-modes)): rows 0, 4, 7–16 and 18 queue their frame events
   (codes 1–4) and their end once, at the mode start (`SUNIT_ScheduleModeEvents`); rows 2, 3, 6 and 19 run a move frame
   every game frame; rows 1, 5 and 17 queue nothing. A mode's end goes to neutral (town neutral in a town); row 0 goes to
-  row 17. The rates (`frames` and `speed` against the rate stats) are plan 0050 P1.2. (fn:SUNIT_ScheduleModeEvents@0x005539B0,
+  row 17; row 19's own branch (to get-hit, row 4) is not reached from its move frame, which sets neutral on
+  arrival before the end runs and queues no end event ([anim/0001 § 9.1](../findings/anim/0001-modes-frames.md#91-moving-modes)). The rates (`frames` and `speed` against the rate stats) are plan 0050 P1.2. (fn:SUNIT_ScheduleModeEvents@0x005539B0,
   fn:sub_00581020_PlayerModeEnd@0x00581020)
 
 ## Interpretation notes

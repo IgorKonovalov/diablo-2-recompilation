@@ -7,7 +7,7 @@ context:
   - ../../findings/skills/0014-assassin.md
   - ../../tables/Skills.md
   - ../../tables/Levels.md
-resolution: "Folded 2026-10-27 (plan 0051 P0b, lane/p51b): Levels Teleport, Skills startmana, prgcalc1..3, Param4, passivestat1/passivecalc1, pettype, summode, ItemEffect 36 and Missiles Vel/VelLev link skills/0014; 0 forbids / 2 restricts and stat 8 as mana in 256ths stay [I], as the review asked ([Levels](../../tables/Levels.md), [Skills](../../tables/Skills.md), [Missiles](../../tables/Missiles.md), [log](../../plans/0051-backlog-sweep-6.md#implementation-log))."
+resolution: "Folded 2026-10-27 (plan 0051 P0b, lane/p51b): Levels Teleport, Skills startmana, prgcalc1..3, Param4, passivestat1/passivecalc1, pettype, summode, ItemEffect 36 and Missiles Vel/VelLev link skills/0014; 0 forbids / 2 restricts and stat 8 as mana in 256ths stay [I], as the review asked ([Levels](../../tables/Levels.md), [Skills](../../tables/Skills.md), [Missiles](../../tables/Missiles.md), [log](../../plans/done/0051-backlog-sweep-6.md#implementation-log))."
 ---
 
 Not blocking. Plan 0046 batch `ass` ([skills/0014](../../findings/skills/0014-assassin.md)) settles code readers for these

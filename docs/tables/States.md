@@ -405,6 +405,6 @@ reach a state two ways, both data (`python3 -I tools/anim_survey.py skills works
   not read; it finds no site for 7 (6, 25, 29, 39, 116, 164, 171), which stay open.
 - ~~The shape-shift state list: which loader fills `DataTables+0x17C`/`+0x180`, and which column (`restrict`, `group` 3
   or `transform`) picks its rows~~ answered `[I]` by [skills/0013 § 6](../findings/skills/0013-druid.md#6-the-melee-functions-start-56-57-58-do-121-122) (plan 0051 Phase 1b item 3a): `STATES_Load`
-  fills it with the `disguise` rows (flag bit 16), none of the three candidates ([§ Flag bits](#columns)).
+  fills it with the `disguise` rows (flag bit 16), none of the three candidates ([§ Flag bits](#flag-bits-0x010-40-bits-bit-i--byte-0x010--i8-bit-i-mod-8)).
   Still `[L]`: whether any other code writes the list (skills/0013 does not follow the four `[esi+0x17c]` stores'
   base registers).
