@@ -75,14 +75,14 @@ Values over the 44 data rows (the `*end*` row left out), by script over the `.tx
   fn:sub_005474C0_RegionActClass@0x005474C0). Which level the logged flying scimitar was on is the run's
   ([chain/0003](../findings/chain/0003-end-to-end-run.md)), not this table's.
 - `[I]` **The other three classes** are player summons (`valkyrie`, the assassin's `shadowwarrior` and `shadowmaster`),
-  42 rows with no `oninit`, keyed by `level` from 27 down to 0. Their rows are walked by the summon code's own calls of
-  `MonEquipInit`: `sub_005C4470_SummonInitStats` ends with it
+  42 rows with no `oninit`, keyed by `level` from 27 down to 0. The summon code calls `MonEquipInit` for them; whether
+  the walk then runs is open (§ Open questions), since none of the 42 has `oninit`: `sub_005C4470_SummonInitStats` ends with it
   ([skills/0003 § 7](../findings/skills/0003-handlers.md#7-summons); fn:sub_005C4470_SummonInitStats@0x005C4470), and
   do 49 (Shadow Warrior, Shadow Master) calls `MonEquipInit(m, id, lvl, level, 0)` after its boundary with a level from
   `SkillParam5ByLevel` capped by `ExpMaxLevel`
   ([skills/0014 § 6](../findings/skills/0014-assassin.md#6-traps-states-and-areas-do-43-44-45-47-48-49-51-54);
-  fn:sub_005D6E70_SkillDo49Shadow@0x005D6E70). Their last argument is 0, the creation's 1; whether that argument
-  skips the `oninit` test is not read (§ Open questions).
+  fn:sub_005D6E70_SkillDo49Shadow@0x005D6E70). Do 49's last argument is 0, the creation's 1 (`SummonInitStats`' arguments are not
+  recorded in skills/0003); whether that argument skips the `oninit` test is not read (§ Open questions).
 - `[C]` Eight rows (two `shadowwarrior`, six `shadowmaster`) have a `loc1` (`tors` or `head`) and no `item1`; 9 rows
   (all `shadowmaster`) fill all three slots, with one location and one mod for the three.
 

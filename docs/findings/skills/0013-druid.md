@@ -397,7 +397,7 @@ CancelEvents(game, u; 5, id); UnitQueueEvent(game, u; 5, frame + Param4, id, lvl
   start 58 `SKILLS_RollElemDamage(caster, &packet; id, lvl)` and `ResolveAndQueue(game, caster; target, &packet, 0x80)`;
   do 122 the elemental roll, `+0x08 += MulDiv(+0x08, calc1, 100)` (`sub_00483360_MulDiv`), `calc2` added to `+0x38`
   and `calc3` (`+0x140`) to `+0x3C`, `ResolveAndQueue(…, 0x80)`, `COMBAT_DeliverQueued(game, caster; target, 0)`; both
-  return 1. No stock row of either has `ResultFlags` bit 0: of the 358 Skills rows only 239 has `srvstfunc` 58 and
+  return 1. No stock row of either has `ResultFlags` bit 0: of the 357 Skills rows (recounted at the plan 0051 P0b review: `skills.txt` and the `.bin` count) only 239 has `srvstfunc` 58 and
   only 242 `srvdofunc` 122, and both have `ResultFlags` 0 (`rows.txt`, its 25-row selection checked complete against
   every row at the review; tbl:Skills.txt:ResultFlags); 238 Rabies (1) reaches
   `0x0056E680` only through `0x005C7C20` after do 121's boundary. (0x005C7E7A–0x005C7F02, 0x005C7F90–0x005C8070)
@@ -501,7 +501,7 @@ boundary), `calc1`, `calc2`, `calc3`, `calc4`, `Param4` (`+0x154`), `ResultFlags
   near the caster (block `+0x14`/`+0x18` 0) (§ 3), a harness check.
 - [L] What `STATE_GroupClear`'s result means for a shape-shift (do 116 returns 0 and calls `SkillDelayFromCalc` when it
   is non-zero) (§ 4).
-- [L] Who fills `DataTables+0x17C`/`+0x180` and with which states (§ 6), an archivist question; and whether
+- [L] Who fills `DataTables+0x17C`/`+0x180` and with which states (§ 6): code, not layout (plan 0051 P0b: `states.bin` has no list field; data candidates in States § Open questions), plan 0051 Phase 1b item 3; and whether
   `SKILLS_GetUnitSkill(caster, id)` and the used node are the same node at Armageddon's first period, and whether any
   other writer of its `+0x18` runs between the cast and that period (§ 5).
 - [L] Everything after each boundary (§§ 3–7), for a later batch or the harness.
