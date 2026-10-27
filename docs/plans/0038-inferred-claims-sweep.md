@@ -4231,7 +4231,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   `SrcDam` 0 formula and the `Kick` minimum `÷ 4` `[C]` (emulated inside hit 43, skills/0007 § 3), the `Kick` maximum
   `÷ 3` `[I]`, the weapon share `[I]`; skills/0003 § 5 does not say whether start 2 reads `MinDam` itself or calls
   `GetPhysMin/Max`, nor the table doc the `Kick` row's `MinDam`, so which damage Kick's start hit carries is an `[L]`
-  open question and a [reverser entry](../backlog/2026-10-27-spec-writer-reverser-kick-start-hit-damage.md).
+  open question and a [reverser entry](../backlog/archive/2026-10-27-spec-writer-reverser-kick-start-hit-damage.md).
   (2) [monsters/special § J](../specs/monsters/special.md#j-other-entry-paths-and-pre-existing-mods): the post-create
   helpers and the flag-2 gate `[I]`, `MonPostCreateBoss`'s case table by `BaseId` (one tag per row, 13 `[I]`; the 526
   row `[C]` for mod 22, `[I]` for its hook) and a `[C]` bullet for Nihlathak's 22, scoped to `BaseId` 526; § G row 60
@@ -4260,7 +4260,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     `MinDam` itself or calls `GetPhysMin/Max`; skills/0003 § 5's reading gives the former and objdump shows it
     (`0x0056CB54`–`0x0056CB71`, no call). The I4 `[I]` bullet now says the start hit carries the row's `MinDam`; the
     `[L]` is narrowed to the `Kick` row's values, the logged hits and the `Kick` branch's callers; wiki/skills and the
-    [reverser entry](../backlog/2026-10-27-spec-writer-reverser-kick-start-hit-damage.md) annotated (counts unchanged).
+    [reverser entry](../backlog/archive/2026-10-27-spec-writer-reverser-kick-start-hit-damage.md) annotated (counts unchanged).
     (3) *wrong anchor:* the `SrcDam` share cited `0x00647CA6`–`0x00647CF1` (bands, synergy, shift); now
     `0x00647C4D`–`0x00647CA3` and the add at `0x00647CBA`.
   - **Rulings:** (a) **The I4 `[C]` raise is within the ADR-0015 map.** skills/0007 § 2 lists `SKILLS_GetPhysMin/Max`
@@ -4311,3 +4311,52 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     [2026-10-27-reverser-spec-writer-h6e2-quest-items-raises-and-the-khalim-chest](../backlog/2026-10-27-reverser-spec-writer-h6e2-quest-items-raises-and-the-khalim-chest.md)
     filed, held until the review. Slot 1 stopped, saves restored (empty, no aside).
   - **Next:** the `lane/h6e2` review; then H6e1.
+- **2026-10-27 — `lane/rk` (reverser, static: objdump, `tools/xrefscan.py`, the kept skills logs rescanned under
+  `MemoryMax=4G`; no Ghidra, no harness): the [Kick start-hit entry](../backlog/archive/2026-10-27-spec-writer-reverser-kick-start-hit-damage.md)
+  answered** in [skills/0003 § 5](../findings/skills/0003-handlers.md#5-tier-a-start-and-do-functions)'s 2026-10-27
+  note and two Answer bullets. (2) `[C]` the stock `Kick` row has `MinDam` 0, `MaxDam` 0, the bands 0 and `HitShift`
+  8, so start 2's physical is 0. (3) `[C]` run:2026-10-27-skills: Kick's 32 start and 32 do events (all `barh`), 25 do
+  spans reaching `COMBAT_ApplyDamage` with result 9, physical 0, hit class 1 (`tools/kick_hits.py`, new; `bad=0`),
+  where `GetPhysMin`'s `Kick` branch would give at least 49 920; run:2026-10-25-skills has no Kick. That the start
+  stores `MinDam << HitShift` rather than nothing stays `[I]` (the code's), and the 7 deliveries with no `ApplyDamage`
+  are not read. (4) `[I]` the `Kick` branch (`+0x05 & 0x02`; rows 1, 255, 270, 275) is reached through the new
+  `sub_005D54B0_SkillKickPhysDamage` by Dragon Talon (start 24, do 42), Dragon Tail (start 27) and Dragon Flight
+  (do 52), through no direct call of Kick's start 2 or do 2 (review fix 2); `GetPhysMax`'s branch is `sub_00644C20`'s only call; 15 variable-id call sites unfollowed.
+  Kept: `workspace/logs/rk/rk-manifest.sha256` (9 files). Entries: [spec-writer](../backlog/2026-10-27-reverser-spec-writer-dispatch-i4-kick-start-hit-answered.md)
+  (dispatch I4's `[L]`), [architect review](../backlog/archive/2026-10-27-reverser-architect-review-lane-rk-kick-start-hit-damage.md).
+  Ledger row added, usage "—".
+  - **Review (architect, 2026-10-27): accept with fixes (2).** Checked: `sha256sum -c` of `rk-manifest.sha256` (9 OK);
+    `tools/kick_hits.py` rerun under `systemd-run --user --scope -p MemoryMax=4G`, byte-identical (`774d0573…`, exit 0),
+    and a negative control (a scratch `skills.bin` with the Kick row's `MinDam` 195, model 49 920: `bad=25`, exit 1);
+    the Kick row re-dumped (identical; `MinDam`, `MaxDam`, the ten bands 0, `HitShift` 8, `DmgSymPerCalc` raw −1, the
+    `.txt` cells blank but `HitShift`); objdump of start 2 (`0x0056CB42`–`0x0056CB80`: flags `+0x00` 2, result
+    `+0x04` 9, `[esi+0x1A4]`/`[esi+0x1A8]`, `shl`, phys `+0x08`, hit class `+0x60` 1, `ResolveAndQueue(…, 0x80)`, no
+    other call but the record fetch and the memset), `GetPhysMin`'s branch (`0x00647BF0`–`0x00647C48`; the byte at
+    `0x006CE26C` is 0x02; `cdq`/`and 3`/`sar 2` rounds toward zero) and `sub_005D54B0` (its id and level from
+    `[ebp+0x14]`/`[ebp+0x18]`); `tools/xrefscan.py` gives the 18 + 18 sites, the 3 `sub_005D54B0` calls (in
+    `0x005D5880`, start 27 `0x005D7090`, do 52 `0x005D7850`), `0x005D5880`'s 2 (start 24, do 42) and
+    `0x00644C20`'s 1, all as listed; the two `push 0x75` sites push the id; MonStats: only `shadowwarrior` and
+    `shadowmaster` hold a `Kick`-bit skill (Dragon Flight). Kept: `workspace/logs/rk/review/` (`review-manifest.sha256`, 5 files).
+    Fixes: (1) *omission:* the `[C]` separation leaned on "at least 49 920" without saying that the packet at
+    `ApplyDamage`'s entry is already reduced (`ResolveAndQueue` runs `ApplyReductions` on a hit; combat/delivery A1),
+    so a 100 % physical resistance would also give 0; the bullet now names the 9 target classes (`MonStats` 15, 19,
+    20, 28, 44, 53, 58, 165, 170), Normal, `ResDm` 0, and the negative control (`kick-targets.txt`,
+    `kick-hits-neg.txt`). (2) *overclaim:* "Kick itself never reaches it" in the Answer bullet, this log and the
+    spec-writer entry: the scan covers start 2's and do 2's direct calls only (do 2 calls `0x0057D690` and others,
+    whose calls are unfollowed); now scoped to the direct calls, and the run's 25 zero physicals named as the
+    observation that no path added the branch's damage to those deliveries.
+  - **Rulings:** (a) **Part 3's `[C]` is honestly scoped** once fix 1 is in: the run observes physical 0 at
+    `ApplyDamage` on 25 deliveries, which no reading giving ≥ 195 life points before reductions could match on these
+    targets; it does not separate `MinDam << HitShift` from no physical (both 0 on the stock row), and the lane keeps
+    that `[I]` on the code and leaves `sub_0056CAF0` I (the start's store is not logged; reviewer rule 14 does not
+    apply). (b) **The 7 do events without `ApplyDamage` need no entry.** They contradict nothing: each calls
+    `DeliverQueued` with the do's target, and `DeliverQueued`'s gates (melee range, the queued result's bit `0x1`, a
+    living attacker; combat/delivery A2 `[I]`) are the candidates, none logged; the § 5 `[I]` bullet now names them.
+    A future combat run that logs the queue entry reads them; that is combat/delivery's A2, not Kick's damage.
+    (c) Part 2 `[I]` stands: the branch callers are a static `call`-operand scan with 15 variable-id sites named and
+    unfollowed (reverser rule 9 satisfied). (d) The spec-writer entry is released with fix 2 applied.
+  - **Bookkeeping:** review-fixes Seen lines: reverser 9 and 10. The review request closed; the
+    [spec-writer entry](../backlog/2026-10-27-reverser-spec-writer-dispatch-i4-kick-start-hit-answered.md) released.
+    Ledger: the lane row filled (accept with fixes, 2: omission 1, overclaim 1; usage from the orchestrator: 171 207
+    tokens, 79 tools, 12 min); the review row added, usage "—".
+  - **Next:** merge `lane/rk`; the spec-writer entry on dispatch I4 may start.

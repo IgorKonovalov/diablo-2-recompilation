@@ -65,6 +65,20 @@ offsets are record offsets. This batch continues [skills/0001](0001-dispatch.md)
   handler fires of the combat and stats logs reproduced for their seed effects. The cast's own draws, howl's flag gate,
   the handlers no session fired and the re-seed sites other than `0x005C9290` stay `[I]`.
   (fn:UNIT_DispatchEvent@0x005C0C30, fn:sub_0057D810_PreventHealHook@0x0057D810, run:2026-10-27-skills)
+- [C] *2026-10-27 (lane `rk`):* **Kick's start hit carries physical 0** (§ 5 note): the stock Kick row has `MinDam` 0,
+  `MaxDam` 0 and `HitShift` 8 (tbl:Skills.txt:MinDam), and in run:2026-10-27-skills all 25 of Kick's 32 do events
+  that reach `COMBAT_ApplyDamage` deliver a packet with result 9, physical 0 and hit class 1, where `GetPhysMin`'s
+  `Kick` branch would give at least 49 920 before reductions, and the 25 targets' reductions could not take that to 0
+  (the packet is already reduced by `ResolveAndQueue`; the 9 target classes have Normal `ResDm` 0; § 5 note). That
+  start 2 stores `MinDam << HitShift` itself (rather than no physical) is the code's, `[I]`; the 7 deliveries with no
+  `ApplyDamage` are not read. (fn:sub_0056CAF0_SkillSt02Kick@0x0056CAF0,
+  run:2026-10-27-skills)
+- [I] *2026-10-27 (lane `rk`):* **`GetPhysMin/Max`'s `Kick` branch** (rows 1, 255, 270, 275) is reached from
+  `sub_005D54B0_SkillKickPhysDamage`, called by Dragon Talon's start 24 and do 42, Dragon Tail's start 27 and Dragon
+  Flight's do 52 (an Assassin, or `shadowwarrior`/`shadowmaster` by their MonStats Dragon Flight); no direct call of
+  Kick's start 2 or do 2 reaches it (their callees' own calls, and 15 call sites with a variable skill id, are
+  unfollowed). (fn:sub_005D54B0_SkillKickPhysDamage@0x005D54B0,
+  fn:SKILLS_GetPhysMin@0x00647BC0)
 - [I] **The frame pass** (`sub_005414D0_GameRunUnitEvents`) runs the unit-event lists in this order: missiles, players,
   monsters, objects, then a fifth list; each first its every-frame list, then the current frame's bucket. So every
   missile steps before any player or monster acts in a frame. (0x005414EE–0x00541589)
@@ -134,6 +148,7 @@ code windows R1–R7; `p45b-rows.txt` `cbf9c64a…`, the stock-row values compar
 |---|---|---|---|
 | `0x005D3CF0` | `sub_005D3CF0_SkillSrvMissileByCharge` | `srvmissilea`, or by the progressive charge count `srvmissileb`/`c` | I |
 | `0x005D3DA0` | `sub_005D3DA0_SkillPrgCalcByCharge` | `prgcalc1`, or by the charge count `prgcalc2`/`3` | I |
+| `0x005D54B0` | `sub_005D54B0_SkillKickPhysDamage` | the assassin kicks' physical: `SKILLS_GetPhysMin/Max(unit, id, lvl, 0)` into the packet, scaled by `+0x0C` (2026-10-27 note in § 5) | I |
 | `0x0056E170` | `sub_0056E170_SkillRollPhys` | one `RangeB` between the skill's physical min and max into the packet | I |
 | `0x005D4DB0` | `sub_005D4DB0_SkillPrgDo36NovaAtTarget` | `srvprgfunc` 36 | I |
 | `0x005D4E70` | `sub_005D4E70_SkillPrgDo37Ring` | `srvprgfunc` 37 | I |
@@ -383,7 +398,7 @@ flagged for removal (`+0x02` bit 1) or with no list (`+0x04` = 0) is unlinked an
 | Row | `srvstfunc` | `srvdofunc` | Reading | Draws (own) |
 |---|---|---|---|---|
 | 0 Attack, 5 Left Hand Swing | 1 `SKILL_AttackStart` | 1 `SKILL_AttackDo` | P1.1 § 11, P1.2 § 2 | melee chain or missile |
-| 1 Kick | 2 `0x0056CAF0`: a packet result 9, flags 2, physical `MinDam << HitShift`, hit class 1, `ResolveAndQueue(…, 128)` | 2 `SKILL_MeleeDeliverDo` | start builds, do delivers | the builder's |
+| 1 Kick | 2 `0x0056CAF0`: a packet result 9, flags 2, physical `MinDam << HitShift` (0 for the stock row, `0 << 8`; 2026-10-27 note below), hit class 1, `ResolveAndQueue(…, 128)` | 2 `SKILL_MeleeDeliverDo` | start builds, do delivers | the builder's |
 | 2 Throw, 4 Left Hand Throw | 65 `0x0056CAB0` | 3, 5 (P1.2) | start: `0x0056C4E0(unit)` (the thrown item) or the two refusal calls `0x00580310`/`0x00580380`, return 0 | none |
 | 25 Plague Javelin, 12 Multiple Shot | 4 `0x005DA8B0` (the same code as 65) | — / 8 | 8: `n = calc1` missiles (`srvmissilea`, `srvmissileb` for a weapon class ≠ 1) fanned across the line to the target: offsets `(dx, dy)` from the unit to the target, start points stepped perpendicular to it from the point less half the fan (corrected 2026-10-20, note below), flags `0x820` (`0x10000` on the outer groups), activate `calc2`, `calc3` (or `n`) centre missiles | the creations' |
 | 10 Jab | 5 `0x005DA8F0`: a target | 7 `0x005DB2D0` | to-hit `SKILLS_GetToHit` (and `MonAttackStats` for a monster), `edPct = calc1`, conversion `EType`/`calc4`, elemental roll, `ResolveAndQueue(SrcDam or 128)`, `DeliverQueued` | to-hit, defence, build, 1–2 |
@@ -480,6 +495,72 @@ flagged for removal (`+0x02` bit 1) or with no list (`+0x04` = 0) is unlinked an
   `InvGetBodyLocItem(inventory, 4)`; without one it sets bit 6 when bit 8 of `+0x38` is set and clears it otherwise,
   runs do 34 (`MeleeHitTest(target, GetToHit, 0)` after its `aurastate` and `aurastat1` tests), and returns 1 where do 34
   refuses (by the reading 1 after its hit path too). Everything after those calls stays as read above, `[I]`. (fn:sub_005D35D0_PrgChargeHitDualDo@0x005D35D0)
+  *2026-10-27 (backlog `kick-start-hit-damage`, lane `rk`), the Kick row's start hit:*
+  - [C] **The stock Kick row's damage columns are all zero but `HitShift`.** `skills.bin` row 1 (`Kick`, `Id` 1,
+    `srvstfunc` 2, `srvdofunc` 2): `HitShift` 8, `SrcDam` 0, `MinDam` 0, `MaxDam` 0, `MinLevDam1..5` and `MaxLevDam1..5`
+    0, `DmgSymPerCalc` blank (−1); the `.txt` row has every one of those cells blank but `HitShift`
+    (`tools/excel_bin.py dump … skills 1`, `kick-row-dump.txt`). So start 2's physical is `0 << 8` = **0**.
+    (tbl:Skills.txt:MinDam, tbl:Skills.txt:HitShift, tbl:Skills.txt:MaxDam)
+  - [I] Start 2 reads the row itself and calls neither `SKILLS_GetPhysMin` nor `GetPhysMax`: it zeroes a 0x70-byte packet
+    (`0x0056CB42`), stores result 9 (`0x0056CB47`) and flags 2 (`0x0056CB4D`), loads `HitShift` (`mov cl, [esi+0x1A4]`,
+    `0x0056CB54`) and `MinDam` (`mov edx, [esi+0x1A8]`, `0x0056CB5A`), shifts (`shl edx, cl`, `0x0056CB63`), stores the
+    physical at `+0x08` (`0x0056CB71`) and hit class 1 at `+0x60` (`0x0056CB79`), then `COMBAT_ResolveAndQueue(…,
+    0x80)` (`0x0056CB80`) and returns 1. `MaxDam` is not read. It tests the record pointer for null nowhere (an id
+    outside the Skills count would read through 0). (fn:sub_0056CAF0_SkillSt02Kick@0x0056CAF0, `start02-objdump.txt`)
+  - [C] **The logged hits match, for the reading separated from `GetPhysMin`'s.** run:2026-10-27-skills holds
+    Kick's 32 start events (`SST0` id 1, all returning 1) and 32 do events, all from `barh-1` (14), `barh-2` (6) and
+    `barh-3` (12), skill level 1; run:2026-10-25-skills has none. In 25 of the 32 do spans `COMBAT_ApplyDamage`
+    (`AD0`, its packet at entry) is called with the Kicker as attacker, and all 25 packets have flags `0x20`,
+    result 9, physical `+0x08` = **0** and hit class `+0x60` = 1 (`tools/kick_hits.py` over the 33 logs,
+    `kick-hits.txt`: `bad=0`). `GetPhysMin`'s `Kick` branch would give a player `max(str + dex − 20, 1) ÷ 4 << 8`,
+    at least `(400 + 400 − 20) ÷ 4 << 8` = 49 920 for `SkillsBarH` (strength and dexterity 400 by
+    `tools/d2s_recipes/skills-barh.json`, before items). The packet `ApplyDamage` receives here has already been
+    through `COMBAT_ApplyReductions`, which `ResolveAndQueue` runs on a hit (`DeliverQueued` then calls `ApplyDamage`
+    without reductions; [combat/delivery A1–A2](../../specs/combat/delivery.md#a-queue-and-delivery)), so the
+    separation also needs the targets' reductions not to take 195 life points to 0: the 25 targets are 9 monster
+    classes (`MonStats` rows 15, 19, 20, 28, 44, 53, 58, 165, 170: crows, fallen, a fallen shaman, brute, dark ones,
+    goatman, lancer, skeleton archer), the run is Normal (`MAS0` `diff` 0), and all 9 rows have `ResDm` blank (0)
+    (`kick-targets.txt`, review). A 100 % physical resistance would have zeroed it; none was present. Negative
+    control (review): the same run of `tools/kick_hits.py` over a scratch `skills.bin` whose Kick `MinDam` is 195
+    (model 49 920) reports `bad=25` and exits 1 (`kick-hits-neg.txt`). So each of the 25 separates the two readings.
+    The other 7 do spans call `COMBAT_DeliverQueued` (`DQ0`/`DQ1`) and no `ApplyDamage`. (fn:COMBAT_ApplyDamage@0x0057C6C0,
+    fn:sub_0056CAF0_SkillSt02Kick@0x0056CAF0, fn:COMBAT_ApplyReductions@0x0057C1E0, tbl:MonStats.txt:ResDm, run:2026-10-27-skills)
+  - [I] What the run does not separate: a start that stores `MinDam << HitShift` from one that stores no physical at
+    all (both 0 on the stock row); the code above makes the difference. The packet is logged at `ApplyDamage`'s entry,
+    after `ResolveAndQueue` and `DeliverQueued`, so the start's own store is not logged, and `sub_0056CAF0` stays I
+    in `re/symbols.csv`. Why 7 deliveries reach no `ApplyDamage` is not read: `DeliverQueued`'s gates (the target
+    in melee range, the queued result's bit `0x1`, a living attacker; combat/delivery A2, `[I]`) are the candidates,
+    and the log holds none of them (the start's `ResolveAndQueue` packet is not logged; each start precedes its do
+    by a few frames). (0x0056CB71, fn:COMBAT_DeliverQueued@0x0057D4F0, run:2026-10-27-skills)
+  - [I] **Who reaches `GetPhysMin/Max`'s `Kick` branch.** The branch is taken when the row's `+0x05` byte has
+    `0x02` (`test [esi+0x05], al` with `al` = the byte at `0x006CE26C`, which is 0x02; `0x00647BF0`–`0x00647BF9`); the
+    layout calls that bit `Kick`, and it is set in four of the 357 rows: 1 Kick, 255 Dragon Talon, 270 Dragon Tail,
+    275 Dragon Flight (`kick-hits.txt`'s `KICKBIT` line). Inside it a player unit (`[unit] == 0`) gives
+    `stat 2 − 20 + stat 0`, any other unit (or none) `3 · stat 12`, floored at 1, `÷ 4` (signed, rounding toward
+    zero), `<< 8` (`0x00647BFB`–`0x00647C48`); `HitShift`, `MinDam` and the level bands are not read on this path.
+    `GetPhysMax` takes the same branch through `sub_00644C20_SkillKickDamage(…, 0)` (`0x00647D41`, that function's
+    only call site, `xrefs-kickdamage.txt`), so the two functions' `Kick` branches have the same callers.
+    `tools/xrefscan.py` finds 18 `call` sites for each of `GetPhysMin` and `GetPhysMax` (`xrefs-physminmax.txt`,
+    the argument pushes in `physmin-callsites.txt`; each of the 18 `GetPhysMax` calls sits 0x0D–0x19 bytes after a
+    `GetPhysMin` call in the same function):
+    - `sub_005D54B0_SkillKickPhysDamage` (`0x005D54D2`, `0x005D54E4`) passes its own skill id and level, and its 3
+      callers are the assassin kicks: start 24 Dragon Talon (`0x005D5A1C`) and do 42 (`0x005D5BAC`), both through
+      `0x005D5880`; start 27 Dragon Tail (`0x005D7145`); do 52 Dragon Flight (`0x005D79A6`) (`xrefs-kickbuild.txt`).
+      So these three rows take the branch: the Assassin's strength-and-dexterity form, and the `3 · level` form for
+      `shadowwarrior` and `shadowmaster`, whose MonStats `Skill1..8` hold Dragon Flight (no other MonStats row holds a
+      `Kick`-bit skill, and no MonStats `SkillDamage` names one).
+    - `0x00485DF7` and `0x004EB4E9` push the constant skill 117 (`push 0x75`), a row without the bit: they never take it.
+    - Kick (row 1) reaches neither through its own functions' direct calls: start 2 makes no such call (above), and
+      `SKILL_MeleeDeliverDo` (`0x0056F1F0`) is not among the 18 callers; what its callees (`0x0057D690`, …) call in
+      turn is unfollowed. The run's 25 deliveries carry no physical, so no path added the branch's damage there.
+    - The other 15 sites pass a skill id from a variable: the client's 8 (`0x004E9D89`, `0x004EA104`, `0x004EADC3`,
+      `0x004EAEB8`, `0x004EBA63`, `0x004EBB8E`, `0x004EC326`, `0x004EE891`), and
+      `sub_0056E000_SkillDamagePair` (`0x0056E012`), `sub_0056E170_SkillRollPhys` (`0x0056E1A9`),
+      `sub_0057E270_SkillHitRecord` (`0x0057E2A5`), hit 43 (`0x005AC3EE`), do 107 (`0x005CDAB3`), do 150 (`0x005CEAEC`),
+      `sub_0064B860_MissileDamageBlock` (`0x0064B9FD`). Which ids reach them is unfollowed (15 sites); a Dragon Tail
+      `srvmissilea` hit through `MissileDamageBlock` is among the paths not followed.
+    (fn:SKILLS_GetPhysMin@0x00647BC0, fn:SKILLS_GetPhysMax@0x00647D00, fn:sub_005D54B0_SkillKickPhysDamage@0x005D54B0,
+    tbl:Skills.txt:Kick, tbl:MonStats.txt:Skill1)
 
 ### 6. Tier A: missile do, hit and damage functions
 
@@ -871,6 +952,23 @@ remainder:
 workspace/install/app/game.exe`) and `handlers-rows.txt` `dd52e147…` (`… rows workspace/mpq/patch_d2/data/global/excel`),
 both from `tools/skills_handlers_scan.py` sha256 `39b09e52…`. P1.1's `dispatch-scan.txt` and P1.2's `missiles-scan.txt`
 are cited where the claim is theirs.
+
+`workspace/logs/rk/` (manifest `rk-manifest.sha256`, one path base; `sha256sum -c` from that directory; the 2026-10-27
+Kick note of § 5): `kick-hits.txt` `774d0573…` (`systemd-run --user --scope -q -p MemoryMax=4G python3 -I
+tools/kick_hits.py 2026-10-25-skills-*.log 2026-10-27-skills-*.log` from `workspace/logs/skills`, `tools/kick_hits.py`
+sha256 `2d55c7a4…`), `kick-row-dump.txt` `3741e7e5…` (`python3 -I tools/excel_bin.py dump
+workspace/merged/data/global/excel skills 1`), `xrefs-physminmax.txt` `66221e1d…` and `xrefs-kickbuild.txt` `96a726c4…`
+(`python3 -I tools/xrefscan.py 0x00647BC0 0x00647D00`, `… 0x005D54B0 0x005D5880`), `xrefs-kickdamage.txt` `96538472…` (`… 0x00644C20`), `physmin-callsites.txt` `8b8f213d…`
+(the 9 instructions before each `GetPhysMin` call but `0x005D54D2`), and `objdump -d -M intel` of start 2
+(`start02-objdump.txt` `e1e57b9c…`), `GetPhysMin` (`getphysmin-objdump.txt` `19e082fc…`) and `0x005D54B0`
+(`kickbuild-objdump.txt` `3c111a7e…`).
+
+`workspace/logs/rk/review/` (the `lane/rk` review, manifest `review-manifest.sha256`, `sha256sum -c` from that
+directory): `kick-hits.txt` `774d0573…` (the rerun, byte-identical), `kick-hits-neg.txt` `12968a42…` (the negative
+control: the same command with `--excel` a scratch copy of `skills.bin` whose row 1 `MinDam` at `+0x1A8` is 195),
+`kick-targets.txt` `b789b936…` (each Kick do span's `AD0`/`DQ0` defender's `(type, class)` over the three `barh`
+logs, from the review's `kick_targets.py` `b2109c2a…`, kept beside it), `xrefs.txt` `78d1fb0a…` (`tools/xrefscan.py`
+over the five targets; the 18 + 18 + 3 + 2 + 1 sites as above).
 
 ## Data touched
 
