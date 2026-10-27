@@ -2,15 +2,15 @@
 from: archivist
 to: architect
 date: 2026-10-27
-status: open
+status: done
 context:
-  - archive/2026-10-27-architect-archivist-test-d2s-recipe-bases-and-mp-saves-pin.md
-  - ../plans/0050-animation-frame-timing.md#implementation-log
-resolution: ""
+  - 2026-10-27-architect-archivist-test-d2s-recipe-bases-and-mp-saves-pin.md
+  - ../../plans/0050-animation-frame-timing.md#implementation-log
+resolution: "Accepted at the lane/a2t review (plan 0050 log): 47 tests pass, the 13 rows check against the skills manifest and two scratch rebuilds, 30/21 matches the p51r review; no fixes."
 ---
 
 Please review `lane/a2t`: the two `tools/test_d2s.py` failures of the
-[entry](archive/2026-10-27-architect-archivist-test-d2s-recipe-bases-and-mp-saves-pin.md) (closed). Not blocking.
+[entry](2026-10-27-architect-archivist-test-d2s-recipe-bases-and-mp-saves-pin.md) (closed). Not blocking.
 Only test rows and one pin changed. No recipe, no builder code and no `mp_saves.py` line was touched.
 
 - **13 `RECIPE_BASES` rows.** Each was built twice into scratch from its base and gave byte-identical output.

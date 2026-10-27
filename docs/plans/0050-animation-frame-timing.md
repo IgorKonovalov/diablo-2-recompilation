@@ -626,3 +626,14 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   entry (omission); the P1.3 reads of ruling (d) (omission); the request's `travel-tab2` (misread, in the request only).
   No game data is dumped: the new tables give row ids, names and counts. The review request is closed. Ledger: lane row
   filled (usage from the orchestrator), review row added with "—" usage.
+- **2026-10-27 — `lane/a2t` review (architect): accept.** The archivist's fix for the two old `test_d2s.py` failures
+  ([request](../backlog/archive/2026-10-27-archivist-architect-review-lane-a2t-testd2s-recipe-bases.md)). After merging
+  `main`, `python3 -I tools/test_d2s.py` runs 47 tests, OK. Under `tools/` the lane touches only `tools/test_d2s.py`:
+  13 `RECIPE_BASES` rows, the `test_mp_saves_check` pin and its docstring line. No recipe, builder or `mp_saves.py`
+  line changed. All ten `skills-*` hashes equal their saves in `2026-10-27-skills-manifest.sha256`, checked by script.
+  `mp-sock-join`, `mp-wound-join` and `mp-pal-conv` were built twice into the review scratchpad, and both builds give the
+  pinned hashes. `mp_saves.py check` gives `recipes=30 bad=0 pairs=21 pairs_bad=0`, the figure the `lane/p51r` review
+  accepted for plan 0051 P1a. **`workspace/runtime/`:** the mp saves have no manifest. Nothing under
+  `mp-saves-p44` or `mp-saves-p44h` is newer than 2026-10-20, and no `MpSockJoin`, `MpWoundJoin` or `MpPalConv` exists
+  anywhere in `workspace/`. That is consistent with the blocked build never running. No fixes. The request is closed.
+  Ledger: lane row filled (usage from the orchestrator), review row added with "—" usage.
