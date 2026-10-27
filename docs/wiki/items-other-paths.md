@@ -1,6 +1,6 @@
 ---
 based_on:
-  - docs/specs/items/sockets-runewords.md 2026-10-17
+  - docs/specs/items/sockets-runewords.md 2026-10-27
   - docs/specs/items/cube.md 2026-10-17
   - docs/specs/items/vendors.md 2026-10-21
   - docs/specs/items/quest-drops.md 2026-10-27
@@ -72,9 +72,10 @@ full, and so on) are read from the code and were never seen failing.
 
 Some things are *not* tested at all. The insert does not look at the parent's quality, its item class or the game
 type. Low, magic, rare and [crafted](../glossary.md) parents all accepted children in the test run, and a rune went into a helm in a
-classic game. The code has no level-requirement test for the child either, but that is read from the code only: no
-rune in the run was above the character's level. One single case also suggests that an unidentified socketed item
-looks "not socketed" to the client until it is identified.
+classic game. There is no level-requirement test for the child either: a level-1 character put in runes up to *Jah*
+(level 65). In the two cases logged, an unidentified socketed item looked "not socketed" to the client, so the client
+refused the insert as if the item had no sockets; once identified, the same item took the child. That this holds for
+every unidentified socketed item, and what tells the client at identification, are not shown.
 
 **Socket order is insertion order.** Each child goes to the end of the parent's list of children, and that order is
 the one a runeword is compared against
@@ -137,16 +138,17 @@ on the game seed. Two consequences matter to a player:
 
 - The property handlers treat the *rune* as "the item". So `ac%` on a runeword does not reset the parent's base
   defense the way it would on a magic item, `dmg-min`/`dmg-max` write all three related damage stats, and *Famine*'s
-  ethereal line never makes the parent ethereal (all confirmed by a run or a game-written save). The indestructible
-  line and a few other handler branches are read from the code only, because no runeword that uses them was made in
-  the run.
+  ethereal line never makes the parent ethereal (all confirmed by a run or a game-written save), and *Eternity*'s
+  indestructible line was made in a run. A few other handler branches are read from the code only: the runewords
+  that would use them are ladder-only rows, or the branch needs the rune to be a weapon, so no stock single-player
+  game reaches them.
 - A rune loaded from a save starts with a fixed item seed derived from its saved start value, so the same save with
   the same insert order gives the same rolls.
 
 Charged skills still draw their roll, and then a player-made runeword has its charges refilled to the maximum.
-That refill is confirmed for the insert a player makes; that the save reader does *not* refill is read from the code.
-A runeword loaded from a save is not rolled again: read from the code, the reader rebuilds the parent with its saved
-lists first, so the match finds the runeword list already present
+That refill is confirmed for the insert a player makes, and the save reader does *not* refill. A runeword loaded
+from a save is not rolled again: the reader rebuilds the parent with its saved lists first, so when the last rune goes
+back in, the game finds the runeword list already present and adds nothing (seen on the *Steel* save)
 ([§ E](../specs/items/sockets-runewords.md#e-the-runeword-flag-list-and-rolls)). The save does not name the runeword's
 row either: the writer runs the match again and saves that row's name index, and the reader keeps the number without
 looking a row up; the row of a loaded runeword is always found again from its runes (read from the code;
@@ -159,8 +161,9 @@ loaded item still marked as a runeword whose row no longer matches is discarded
 There are two ways an item gets its number of sockets
 ([§ F](../specs/items/sockets-runewords.md#f-socket-counts-the-two-setters)). At creation (a drop, the cube, a quest
 reward) the count is capped by the inventory size, by 6, by the base's maximum, and by quality: magic at most 4, rare
-at most 2, crafted at most 3, sets and uniques 1 (or the count they already have). Those quality caps are read from the
-code; the socket test run did not execute them. A count loaded from a save is kept as it is, above those caps: a magic
+at most 2, crafted at most 3, sets and uniques 1 (or the count they already have). On drops, the size, 6 and base
+caps and their order are confirmed, and normal and superior items get no quality cap; the quality caps themselves are
+read from the code, since no logged run executed them. A count loaded from a save is kept as it is, above those caps: a magic
 crystal sword with 6 sockets loaded with 6 and took 6 children.
 
 ## The Horadric Cube

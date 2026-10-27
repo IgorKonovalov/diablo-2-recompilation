@@ -366,6 +366,7 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-10-27 | `lane/s38q` review | 0038 P3 items/quest-drops | architect-review | 208 821 | 64 | 16 | — (static, objdump, no Ghidra) | gave accept with fixes | — (on the lane row; inventory H6e2 line moved, research-map rows rewritten) |
 | 2026-10-27 | `lane/h6b` | 0038 H6b | reverser-harness | 461 969 | 170 | 43 | slot 1 (10 launches), no Ghidra | accept with fixes (rulings: `forced_sockets` a tool-built save, ADR-0013 § Neutral, backing the client test's order only; the already-applied branch modelling, not fitting; L237 re-scoped; sock 9 → d-2c, 29, 38 L482 and L507 → d-none; sock 46 (S2c) raised) | 6: misread 1, stale cross-reference 1, miscount 1, omission 2, overclaim 1 |
 | 2026-10-27 | `lane/h6b` review | 0038 H6b | architect-review | 221 154 | 102 | 23 | — (static, objdump, checker reruns, no Ghidra, no harness) | gave accept with fixes | — (on the lane row) |
+| 2026-10-27 | `lane/s38k` | 0038 P3 items/sockets-runewords (S2c, H2b, H6b) | spec-writer | — | — | — | — (no slot, no Ghidra, no harness) | — (review pending) | — |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not

@@ -2913,7 +2913,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Backlog:** review request
     [2026-10-20-reverser-architect-review-h2b-items-chain](../backlog/archive/2026-10-20-reverser-architect-review-h2b-items-chain.md);
     spec-writer entry
-    [2026-10-20-reverser-spec-writer-h2b-items-chain-spec-updates](../backlog/2026-10-20-reverser-spec-writer-h2b-items-chain-spec-updates.md)
+    [2026-10-20-reverser-spec-writer-h2b-items-chain-spec-updates](../backlog/archive/2026-10-20-reverser-spec-writer-h2b-items-chain-spec-updates.md)
     (to be released with the review).
   - **Next:** architect review of `lane/h2b`; then H2c.
 - **2026-10-20 — Review of `lane/h2b`, batch H2b (items: affixes, tc, uniques-sets, properties, sockets-runewords;
@@ -2953,7 +2953,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Backlog:** review request
     [2026-10-20-reverser-architect-review-h2b-items-chain](../backlog/archive/2026-10-20-reverser-architect-review-h2b-items-chain.md)
     closed; the spec-writer entry
-    [2026-10-20-reverser-spec-writer-h2b-items-chain-spec-updates](../backlog/2026-10-20-reverser-spec-writer-h2b-items-chain-spec-updates.md)
+    [2026-10-20-reverser-spec-writer-h2b-items-chain-spec-updates](../backlog/archive/2026-10-20-reverser-spec-writer-h2b-items-chain-spec-updates.md)
     released (open, for the Phase 3 re-tag of items/tc, uniques-sets, affixes, properties and sockets-runewords).
   - **Next:** H2c (forced), after the H2b merge.
 - **2026-10-20 — Phase 3, the items/affixes cluster (spec-writer, `lane/s38h2b`, from `main` `33484f8`).** The cluster
@@ -5184,6 +5184,33 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - § 5 marks H6b done, and the research-map row says the spec is ready.
   - **Phase 3 ready: items/sockets-runewords** (S2c, H2b and H6b, all accepted).
   - No H6b spec-writer entry existed, so the review filed one:
-    [2026-10-27-architect-spec-writer-h6b-sockets-raises-for-the-phase-3-re](../backlog/2026-10-27-architect-spec-writer-h6b-sockets-raises-for-the-phase-3-re.md).
+    [2026-10-27-architect-spec-writer-h6b-sockets-raises-for-the-phase-3-re](../backlog/archive/2026-10-27-architect-spec-writer-h6b-sockets-raises-for-the-phase-3-re.md).
   - The S2c harness-pieces entry stays open for H6a and H6c.
   - Review request closed; the lane's ledger row is filled.
+- **2026-10-27 — Phase 3, the items/sockets-runewords cluster (spec-writer, `lane/s38k`, from `main` `ad8b8cd0`).**
+  Batches S2c, H2b and H6b, all accepted; each restated statement checked against its section of
+  [items/0007](../findings/items/0007-sockets-runewords.md) (§ Plan 0038 batch S2c, H2b, H6b) and the reviews'
+  rulings.
+  - **items/sockets-runewords** {C 80, I 83, L 7} → **{C 128, I 84, L 7}** (recounted with the gate's tag reader).
+    Raised: S2c sock 2 (the drop roll, cube and Larzuk callers), 3, 4 (`itype1..3`), 5, 6 (the shared index), 8, 19,
+    20, 25 (with the 422 correction), 26 (Pul, Ith, Sol, Ohm), 27, 28 ×2, 32, 34, 36 L472, 41, 43 (no quality switch),
+    44, 45, 46, 47 (the count and the re-insert); H2b sock 42 (F1's cap steps and order) and sock 44's piece; H6b sock
+    1 (the copier, its own unit as the player), 10 ×2 (built states, with the no-stock note `[I]`), 12 L173, 13 in
+    part, 14's piece (two cases), 16 ×2, 17 L291 (`p4`, `p6`, `p7`) and L237's empty slot, 18 (the 252 timer, and the
+    timers outside the insert, scoped to the run), 21, 35 ×2 (the test by state alone; the `0x40` an `[I]` note),
+    38 L481 (*Leaf*), L490, L505 in part. Kept `[I]` as the ledgers rule: sock 1 L284 and the golem and other reader
+    sites, sock 9 (d-2c), 12 L174, 17's clear and its reason, 18's 253 half, 29 (d-none), 38's ranged half, L482 and
+    L507, and the S2c and H2b remainders. Pseudocode lines no run reached got inline `[I]` (B1, B2, B5–B6, C1, D1,
+    D3, E1, E4, F1, F2). Open questions: the child-level question struck; the `p5` question added.
+  - **items/properties F6** (rule 8): the no-clamp half for qualities 2 and 3 `[C]` (H2b sock 44); {C 152, I 22,
+    L 3} → {C 153, I 22, L 3}.
+  - **Wiki:** [items-other-paths](../wiki/items-other-paths.md) socketing section refreshed, `based_on`
+    sockets-runewords 2026-10-27; [items](../wiki/items.md) `based_on` properties 2026-10-27 (no text change).
+  - **Backlog:** closed the [H6b entry](../backlog/archive/2026-10-27-architect-spec-writer-h6b-sockets-raises-for-the-phase-3-re.md)
+    and the [H2b entry](../backlog/archive/2026-10-20-reverser-spec-writer-h2b-items-chain-spec-updates.md) ((r)–(s),
+    its last open items); annotated the [S2c entry](../backlog/2026-10-16-reverser-spec-writer-plan-0038-s2c-corrections-for-phase.md)
+    ((e), (g) done; (a), (d), (f) wait for cube and vendors); filed the
+    [counts entry](../backlog/2026-10-27-spec-writer-architect-s38k-sockets-runewords-counts-for-the-research-map.md) and the
+    [review request](../backlog/2026-10-27-spec-writer-architect-s38k-review-sockets-runewords-phase-3.md). Ledger row
+    added, usage "—".
+  - **Next:** architect review of `lane/s38k`.
