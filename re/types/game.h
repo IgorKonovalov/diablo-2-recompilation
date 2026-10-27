@@ -1,7 +1,7 @@
 /* Server game and unit objects (partial: only the fields findings cite). Field names are ours.
  * Evidence: docs/findings/items/0001-tc-resolution.md, docs/findings/rng/0002-seed-tree.md,
  * docs/findings/save/0001-d2s-io.md, docs/findings/monsters/0001-level-pool.md, docs/findings/items/0009-vendors.md,
- * docs/findings/combat/0001-formulas.md. [I] unless noted. */
+ * docs/findings/combat/0001-formulas.md, docs/findings/anim/0001-modes-frames.md. [I] unless noted. */
 #include <stdint.h>
 
 typedef struct Game { /* server game object, passed in ECX */
@@ -20,7 +20,10 @@ typedef struct Game { /* server game object, passed in ECX */
     void    * pClients;           /* +0x088 client list, next = client+0x4A8 (save/0001) */
     uint8_t  _pad008C[0x1C];
     uint32_t frame;               /* +0x0A8 server game frame; timed states expire at frame + length (combat/0001) */
-    uint8_t  _pad00AC[0x10];
+    uint8_t  _pad00AC[0xC];
+    void    * pEventCtl;          /* +0x0B8 unit event lists: +0x00 frame & 63; per unit-type list L (0x006E0B9C: player 0,
+                                     monster 1, missile 2, object 3, item 4) the oldest-first slot heads at +0x004 + 4 (64 L + slot),
+                                     the newest at +0x504 + ..., the every-frame list at +0xA04 + 4 L (anim/0001 § 6) */
     void    * pActs[5];           /* +0x0BC server acts, created on demand with mapSeed (rng/0002, save/0001) */
     uint32_t seed[2];             /* +0x0D0 game seed (rng/0002) */
     uint8_t  _pad00D8[0x14];
@@ -45,7 +48,21 @@ typedef struct Unit { /* any unit; type-specific data at +0x14 */
     uint8_t  _pad0018[0x8];
     uint32_t seed[2];             /* +0x020 unit seed (rng/0002, items/0001 §5) */
     uint32_t initSeed;            /* +0x028 value the unit seed was initialised from (rng/0002); the saved item seed (save/0001) */
-    uint8_t  _pad002C[0x30];
+    void    * pPath;              /* +0x02C path (PathSetTargetPoint, PathSetSpeed; skills/0002, anim/0001) */
+    /* Animation fields (anim/0001 § 2, re/types/anim.h). 8.8 means frames x 256. */
+    void    * pSeqFrames;         /* +0x030 the sequence's 6-byte frame records (SeqFrame); 0 outside a sequence */
+    int32_t  seqLength;           /* +0x034 sequence length, frames << 8 */
+    int32_t  seqPos;              /* +0x038 sequence position, 8.8 */
+    int32_t  seqRate;             /* +0x03C sequence step per tick, 8.8; 0x100 at the sequence start */
+    int32_t  seqMode;             /* +0x040 the mode byte of the current sequence frame */
+    int32_t  animFrame;           /* +0x044 current frame, 8.8; in a server-scheduled mode the game frame the schedule was made at, << 8 */
+    int32_t  animLength;          /* +0x048 frames << 8 (animdata FramesPerDir); objects: Objects FrameCnt[mode] unshifted;
+                                     sequences: the frames still to run, << 8, counted down by seqRate */
+    int16_t  animRate;            /* +0x04C frame step per tick, 8.8, clamped to [0, 0x7FFF] */
+    uint8_t  animEvent;           /* +0x04E event byte (1..4) of the frames the last advance crossed, 0 if none */
+    uint8_t  _pad004F;
+    struct AnimDataRec * pAnimData; /* +0x050 the animdata record of the unit's token, mode and weapon class */
+    uint8_t  _pad0054[0x8];
     void    * pStatList;          /* +0x05C stat list; base stats saved in the gf section (save/0001) */
     void    * pInventory;         /* +0x060 inventory (save/0001) */
     uint8_t  _pad0064[0x1C];
@@ -56,7 +73,12 @@ typedef struct Unit { /* any unit; type-specific data at +0x14 */
     void    * pHitQueue;          /* +0x0AC queued hits of this attacker, next = +0x84 (combat/0001) */
     uint32_t hitClass;            /* +0x0B0 last hit class received (combat/0001) */
     uint8_t  _pad00B4[0x10];
-    uint32_t flagsC4;             /* +0x0C4 bit 17 skips the death drop (items/0001 §3); byte +0xC6 bit 0 = dead flag (items/0001 §6) */
-    uint8_t  _pad00C8[0x1C];
+    uint32_t flagsC4;             /* +0x0C4 bit 17 skips the death drop (items/0001 §3); byte +0xC6 bit 0 = dead flag (items/0001 §6);
+                                     bit 0 set by UNIT_SetMode; bit 14 (0x4000) the sequence frame's mode changed (anim/0001 § 5);
+                                     bit 19 (0x80000) set by the monster mode command (anim/0001 § 4) */
+    uint32_t flagsC8;             /* +0x0C8 bit 3: the unit may have a display-transform state (UNIT_AnimTransform; anim/0001 § 2) */
+    uint8_t  _pad00CC[0x10];
+    struct UnitEvent * pEventChain; /* +0x0DC the unit's queued events, linked by UnitEvent +0x24 (re/types/anim.h; anim/0001 § 6) */
+    uint8_t  _pad00E0[0x4];
     struct Unit * pListNext;      /* +0x0E4 next in the game player hash list (items/0001 §6) */
 } Unit;

@@ -5,13 +5,16 @@
 // Usage (headless): -postScript RngCallGraph.java <out-file> <class-file|-> <root> [<root> ...]
 // <root>: 0x-hex address or function name, or table@0x<addr>:<n> for a table of n code pointers
 //   (each target is a root; a target with no Ghidra function is scanned as a stub, linearly up to
-//   the first return, int3 or address gap, and reported as "stub 0x<addr> insns=<n> lcg=<n> calls=<n>"). <class-file>: lines "0x<entry> <seed> [note...]", '#' comments.
+//   the first return, int3 or address gap, and reported as "stub 0x<addr> insns=<n> lcg=<n> calls=<n>"),
+//   or stop@0x<addr> (plan 0050 P1.1): a function the walk does not descend into; each direct call to it
+//   is listed as a "stop" line. <class-file>: lines "0x<entry> <seed> [note...]", '#' comments.
 // Output:
 //   fn 0x<entry> <name> depth=<d> via=0x<parent> [rng] [class=<seed>]
 //      lcg  0x<addr> <instruction>            (one per multiplier use)
 //      call 0x<site> -> <RNG fn>              (one per call to an RNG function)
 //      ctx  0x<addr> <instruction>            (the 6 instructions before each lcg/call line)
 //      icall 0x<site> <instruction>           (indirect calls: their targets are not followed)
+//      stop 0x<site> -> <fn>                  (a direct call to a stop@ function, not followed)
 //   summary: functions=<n> rng=<n> unclassified=<n> indirect=<n>
 // RNG functions are leaves: the walk does not descend into them.
 // @category d2-recon
@@ -65,7 +68,9 @@ public class RngCallGraph extends GhidraScript {
 		ArrayDeque<Function> q = new ArrayDeque<>();
 		List<String> roots = new ArrayList<>();
 		List<String> stubLines = new ArrayList<>();
+		Set<Long> stopFns = new TreeSet<>();
 		for (int i = 2; i < args.length; i++) {
+			if (args[i].startsWith("stop@")) { stopFns.add(Long.decode(args[i].substring(5))); continue; }
 			if (!args[i].startsWith("table@")) { roots.add(args[i]); continue; }
 			String[] tp = args[i].substring(6).split(":");
 			Address tab = toAddr(Long.decode(tp[0]));
@@ -130,6 +135,8 @@ public class RngCallGraph extends GhidraScript {
 						rng = true;
 						ctx(out, ins);
 						out.add(String.format("   call 0x%08X -> %s", ins.getAddress().getOffset(), c.getName()));
+					} else if (stopFns.contains(ce)) {
+						out.add(String.format("   stop 0x%08X -> %s", ins.getAddress().getOffset(), c.getName()));
 					} else if (!seen.containsKey(ce)) {
 						seen.put(ce, new long[] { depth + 1, e });
 						q.add(c);
