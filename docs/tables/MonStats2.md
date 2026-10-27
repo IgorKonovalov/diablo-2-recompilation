@@ -320,6 +320,32 @@ over the 609 rows. Meanings `[L]`.
   `minionspawner*`, the four catapults, `act5pow`, the three `injuredbarb*`, `demonspawner`) (`.txt` read by
   script, tbl:MonStats2.txt:restore).
 
+## Timing (plan 0050 Phase 0)
+
+The mode flags and the timing columns, from the layout ([§ Record layout](#record-layout-308-bytes)); values from the
+`.bin` over the 609 records (`python3 -I tools/anim_survey.py monsters workspace/merged`; survey keys `mon_*`):
+
+| Column | `.bin` field | Observed | Meaning | Tag |
+|---|---|---|---|---|
+| `BaseW` | `+0x010` 4-byte code | `hth` 541, `1hs` 26, `bow` 16, `2hs` 13, `1ht` 6, `2ht` 5, `fgt` 1, `mgk` 1 | the weapon class: the third part of the `animdata.d2` record name | [C] layout; the join `[C]`, the game's use `[L]` |
+| `HitClass` | `+0x014` u8 | 1 ×6, 3 ×566, 12 ×37 | read as [HitClass](HitClass.md) rows: `hth`, `1hsl`, `claw` | [C] layout; `[L]` |
+| `mDT` … `mRN` | `+0x0F0` u16, bit *k* = [MonMode](MonMode.md) row *k* | set in `DT` 519, `NU` 585, `WL` 476, `GH` 403, `A1` 450, `A2` 217, `BL` 51, `SC` 41, `S1` 238, `S2` 60, `S3` 25, `S4` 15, `DD` 524, `KB` 377, `SQ` 384, `RN` 57 records | the class has mode *k* | [C] layout; `[C]` in the 603 records a MonStats row names, every set bit outside `SQ` names an existing `animdata.d2` record (below); the other 6 (`diabloclone` and the five `uber*` rows) have no MonStats `Code` to build a name from and are not checked |
+| `dDT` … `dRN` | `+0x0F4 + k` u8 | 1, 4, 8 or 16 in every record and mode (8 the most common: 498..562 per mode) | directions of mode *k* | [C] layout; `[L]` |
+| `A1mv`, `A2mv`, `SCmv`, `S1mv`, `S2mv`, `S3mv`, `S4mv` | `+0x104` bits by mode index (`A1mv` bit 4 … `S4mv` bit 11) | set in 0, 18, 0, 11, 4, 0, 0 records | the monster moves while in that mode | [C]/[I] layout ([§ Columns](#columns)); `[L]` |
+| `InfernoLen` | `+0x108` u8 | 1 ×601, 14 ×6, 6, 7 | frames to the next inferno event | [C] layout; `[I]` `sub_005CC3B0_InfernoEnd` ([§ Columns](#columns)) |
+| `InfernoAnim` | `+0x109` u8 | 6..11 in 25 records, blank 0 | the inferno's animation frame test | [C] layout; `[I]` `sub_005CC440_InfernoAnim` ([§ Columns](#columns)) |
+| `InfernoRollback` | `+0x10A` u8 | 6..15 in 18 records, blank 0 | the frame an inferno rolls back to (name) | [C] layout; `[L]` (no reader read) |
+| `ResurrectMode` | `+0x10B` u8, `monmode` row | `NU` 568, `xx` 31, `S1` 10 | the mode of a resurrected monster | [C] layout; `[L]` |
+| `ResurrectSkill` | `+0x10C` s16, `skills` row | 158 (`SkeletonRaise`) in 31, −1 otherwise | the skill a resurrection plays | [C] layout; `[L]` |
+
+- `[C]` **Every flagged mode has animation data.** For the 734 MonStats rows, each set `m<mode>` bit outside `SQ`
+  (5 109 in all) names an `animdata.d2` record `<MonStats Code><MonMode token><BaseW>` (5 057) or, failing that,
+  `<…>HTH` (52, the death modes of the `GM`, `FE` and `FK` classes); `mon_miss=0`
+  ([MonMode § Timing](MonMode.md#timing-plan-0050-phase-0)). The 31 `ResurrectMode` `xx` rows are the 31 with
+  `ResurrectSkill` `SkeletonRaise`, whose sequence is `seq_skeletonraise` ([MonSeq](MonSeq.md)) by the name.
+- `[L]` Whether `d<mode>` matches the COF's direction count, and what the `*mv` bits do to the movement step, is plan
+  0050 Phases 1.1 and 1.3.
+
 ## Interpretation notes
 
 - `[C]` `HD` … `S8` (component present) and the `*v` lists are not the same thing by data: `HD` is set in 146 rows

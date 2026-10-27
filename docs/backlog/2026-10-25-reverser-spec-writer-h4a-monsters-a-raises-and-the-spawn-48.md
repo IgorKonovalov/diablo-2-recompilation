@@ -25,3 +25,11 @@ the `skeleton5` count stays `[I]` (only r = 0 met); (e) pool 12 and quest-drops 
 and Andariel's hell creation, five classes met (not six); (f) stats 14 and 13 (monsters/stats § B, still counted as
 H4b) are raised whole: class 312's one `Range(4)` stored at `+0x0E` and `+0x0F` (monsters/0004 § H4a). The Lord De Seis
 rows and spawn 11 stay `[I]`; their open question names the owner-play route.
+
+*Annotation (spec-writer, 2026-10-27, `lane/s38m`, plan 0038 Phase 3, monsters cluster):* applied to monsters/pool,
+spawn, special and stats as the review left the ledger: (a) spawn K1 split (the gate, the roll's step and the no-spawn
+branch `[C]`, the mask's width, room `+0x78` and the spawn branch `[I]`; the "never fired" note scoped to
+run:2026-10-13-mon-spawn); (b) special § G tails split by record, the aura-twice line `[C]` with its control, the De Seis
+lines `[I]` with an *Open questions* entry; (c) `EscortSpawn` cited in the tail rows; (d) tail 10 `[C]` for the draw,
+`[I]` for the `+ r`; (e) pool E's `boss` line `[C]` with five classes met; (f) stats B3 `[C]` for 311 and 312. **Open:**
+items/quest-drops 48, which waits with the items/quest-drops cluster (H6e1, H6e2).

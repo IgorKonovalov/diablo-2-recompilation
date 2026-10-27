@@ -25,10 +25,15 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
    through item creations" with 2 unexplained sales, and question 9's absence after a control saturated in two frames
    ([0043](../../../../docs/plans/done/0043-items-economy.md) P2 review); a gamble window opened before the control's first
    line (0043 P2b review); 304 caster resyncs "not logged by this run" where 87 match the caster's own logged `THR`
-   rolls (`lane/p45h` review, [0045](../../../../docs/plans/0045-skills-missiles-machinery.md)).
+   rolls (`lane/p45h` review, [0045](../../../../docs/plans/0045-skills-missiles-machinery.md)); "the breakpoint tables
+   are not copied" where the lane's own check transcribes all 39 (`lane/p50c` review,
+   [0050](../../../../docs/plans/0050-animation-frame-timing.md)); `PlrModeSkillFrame` writing the event index "at every
+   player frame event" where a unit with no used skill returns 2 first (`lane/p50a` review, 0050).
 5. **An existing reviewed symbol name wins.** Merge `main` and grep `re/symbols.csv` for every address
    before you name it; rename your side. Seen: six addresses named twice, `lane/p41r`
-   ([0041](../../../../docs/plans/done/0041-stats-and-states.md) P1 review).
+   ([0041](../../../../docs/plans/done/0041-stats-and-states.md) P1 review). The same holds inside `re/types/`
+   comments: `MON_ModeEveryFrame` for the row's `sub_005A6B10_MonModeEveryFrame` (`lane/p50a` review,
+   [0050](../../../../docs/plans/0050-animation-frame-timing.md)).
 6. **Keep the tool behind every claim**: the script in `tools/` (seeded, if it generates cases), its
    output hashed, logs under `workspace/logs/` with a manifest line, one path base per manifest so `sha256sum -c` passes from one directory (H7a review, 0038; again 0043 P2 review), and every tool revision behind a cited output named. Seen: the unseeded `eval` case
    writer (S1e, 0038); the *Fleshripper* log left in session scratch (resume lane, 0037). An aborted session's
@@ -46,7 +51,9 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
 9. **Name the path for every claim about a caller**, or say "unfollowed" with the count. Seen: the
    superunique minion path (0039 P1b, Q19); the 8/9 case's `RoomTileSetFlags` call (0039 P1a); "the effect flag is 1
    only from handler 20" without `SKILLS_SrvDo`'s seven other calls, and `SKILLS_PayCost`'s 0 for a zero-cost row
-   without its three calls, none of which tests it (`lane/p46m12` review, [0046](../../../../docs/plans/0046-skills-function-catalogue.md)).
+   without its three calls, none of which tests it (`lane/p46m12` review, [0046](../../../../docs/plans/0046-skills-function-catalogue.md));
+   "the only RNG call" of a call graph with 3 indirect calls unfollowed, and the mode graph's 118, left out of the
+   text (`lane/p50a` review, [0050](../../../../docs/plans/0050-animation-frame-timing.md)).
 10. **One case decides only if a wrong reading could not match it by chance.** Seen: aff 28's durability
     value, about one in eight (S2b, 0038). Count the cases that separate the readings, not the cases checked: a
     rounding needs a remainder (three curse lengths whose `MulDiv` is exact), and a model fix's counter is not its
@@ -68,7 +75,9 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
     (`lane/h5d` review, 0038);
     a summary that drops what the section states: stats/0001's Answer bullet for op 6/7 without the source-value gate
     and with op 7's "value" unnamed, and multiplayer/0001's MP31 cell calling the clipped offer a cancel (`lane/p51s`
-    review, 0051).
+    review, 0051); `re/types/anim.h` saying a monster frame function's 2 "ends the mode" against the finding's own § 6
+    (the return is not read), and the summary's "S3 to S4" for a generic S3 that queues no event (`lane/p50a` review,
+    [0050](../../../../docs/plans/0050-animation-frame-timing.md)).
 13. **At an observed boundary (ADR-0021), the `[C]` ends at the call.** What the callee makes of a compared argument
     (a class word, a register it must preserve, a mode) and every later call go in "After, `[I]`", also in the Answer
     summary. Seen: the radius of hits 24, 44 and 14 in a callee-saved register (`lane/p46m3` review); hit 52's row 0

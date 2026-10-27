@@ -1,0 +1,1 @@
+SURVEY animdata records=3558 blocks=256 empty_blocks=120 names=3529 dup_names=29 dup_differ=9 hash_bad=0 errors=0 frames_max=200 frames_over_144=1 speed_distinct=41 speed_zero=4 ev1=433 ev2=148 ev3=4 ev_other=0 ev_past_frames=0 recs_with_events=568 cof_files=3512 cof_join=3500 rec_no_cof=29 cof_multi=30 cof_no_rec=3 cof_frames_eq=3500 cof_events_eq=3500 cof_rate_eq=3500
