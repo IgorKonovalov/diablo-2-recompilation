@@ -244,3 +244,13 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   **Left:** the gate's result, the verdict, closing the review request (`backlog.py close`, then stage the archive/
   path), the ledger rows in `docs/plans/metrics.md` (lane: archivist, static, 183 561 tokens, 59 tools, 14 min;
   review: "—"), and the review-fixes Seen lines.
+- **2026-10-27 — Phase 0a reviewed (architect, on `lane/p51a`, resumed at `171ee5a`): accept, 0 fixes.** Merged
+  `main` (`cf25f22`, lane/h4a) first: no conflict; `backlog.py archive` moved nothing. Resumed checks: the readers
+  re-read against the finding sections they cite (row 568's `pSrvHitFunc` 64 948 `[I]` never called, as skills/0002
+  § 5 and 9d ruling 4 have it); the lane's other edits outside the tables are `backlog.py` link rewrites to
+  `archive/` in plan 0046 and three archived review entries, no claim changed; full gate GREEN after the merge.
+  **Rulings:** (1) the folded readers stand with the findings' tags; where an entry and its finding differed, the
+  finding's reading is the right one. (2) `SubMissile3`'s "slot by stride `[L]`" stays as a layout lead until a
+  finding gives do 34's third slot. (3) No review-fixes Seen line: no fix was made, so no rule recurred. Review request
+  closed ([archive](../backlog/archive/2026-10-25-archivist-architect-review-plan-0051-phase-0a-column-readers.md)).
+  Ledger rows filed. Next: P0b (items 9–16).
