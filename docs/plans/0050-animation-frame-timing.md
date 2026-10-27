@@ -268,4 +268,32 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   `workspace/logs/anim-leads/p50c-leads-check.txt` (`b185e780…`, `manifest.sha256`); a check of community claims
   against each other, not of the game. **Gaps** (no lead found): monster frames and rates, the `fast` mod, object
   operate frames, `monseq` sequences; part 2 records them "no lead". The `animdata.d2` format guides are left to
-  Phase 0. Review request: [backlog](../backlog/2026-10-27-reverser-architect-review-plan-0050-p1b-part-1.md).
+  Phase 0. Review request: [backlog](../backlog/archive/2026-10-27-reverser-architect-review-plan-0050-p1b-part-1.md).
+- **2026-10-27 — P1b part 1 reviewed: accept with fixes (architect, `lane/p50c` review; `main` merged first, ledger
+  rows kept on both sides; no Ghidra, no harness).** Re-run: `python3 -I tools/anim_leads_check.py` (`331eb0f0…`)
+  byte-identical to the kept output (`b185e780…`, `sha256sum -c manifest.sha256` OK), `SUMMARY … agree=70 differ=8
+  alt_base_found=8`, the 8 ALT lines the Druid's three forms (base 15) and the Necromancer (base 16) in both sources;
+  case counts 12 FCR + 16 FHR + 11 FBR = 39 as C3, H3 and B3 state. The § 11 grep gives 61 (R 5, A 15, C 7, D 5, H 10,
+  B 5, M 14); every row `[L]` with an empty verdict, no `[C]` or `[I]` in the file, nothing promoted. No hex offset in
+  the commit; the longest quote is 66 characters (the Basin's "required EIAS" formula); the six registry rows are
+  summaries. **Rulings.** (a) **Hammerman's post:** within the sources policy. ADR-0001 names offset lists among the
+  community documentation usable as leads; what it bars is decompiled or reconstructed code, the reason
+  `pk-pathfinding-thread` is rejected (structs and code that walks them). Two field offsets named in prose are an
+  offset list of a 1.09 build, which ADR-0001 also says does not transfer; `src:basin-runwalk-thread` stays a
+  registered lead, the offsets stay uncopied and unused, and M11 (the mode factors, no offset) stays staged. (b) **The
+  blind rule:** the header note is the control, widened and made checkable; the file is not withheld. A lane must
+  merge `main`, the claims restate public pages any lane could fetch, and the blind-first rule is about order, which a
+  log statement and the reviewer can check; keeping the file on an unmerged branch would strand part 2's bookkeeping.
+  The rule now covers every Phase 1 batch, P1.1 included (R1, A3 and A4 are frame-advance and start-frame claims, now
+  batched P1.1 too): a P1 lane reads only § 1 before filing, says "leads not read before filing" in its log entry, and
+  its review checks that the finding cites no leads row and states no community number or formula without an address.
+  (c) **Version scope:** each claim now carries a **Version** column from its sources; 19 rows are **D2R 2.4+ only**
+  and 5 **1.09 only**. A code disagreement on such a row is written `contradicted (version: D2R)` or `(version: 1.09)`
+  and is not a community error, and it stays a required Phase 2 case when reachable on stock data (the run settles
+  1.14d; the version note does not excuse the code reading). (d) A4 and D4 are decided from the P0 survey in part 2,
+  as staged. **Fixes (3), written into `anim/leads`:** (1) the Version column and its § 1, § 2 and § 11 text, with
+  the kept greps (19, 5); (2) § 2's "the breakpoint tables are not copied" corrected: they are not in the file but are
+  transcribed as numbers into the check; (3) the blind rule widened to P1.1 with the log statement and review check,
+  and P1.1 added to R1, A3 and A4's batch (the plan's own Phase 1b text named only P1.2 and P1.3; the gap was the
+  plan's). Ledger: accept with fixes, 3 (omission 2, misread 1). The review request is closed. Part 2 (verdicts) runs
+  after P1.3's review.
