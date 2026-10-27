@@ -24,7 +24,8 @@ counted below, the commands in `commands.txt`; `manifest.txt` holds their sha256
 - [I] **Who counts and who is paid are tested differently.** The count skips dead members (`UnitIsDead`: flag `+0xC6`
   bit 0, or player mode 0 or 17). The payment loop tests the **picker's** mode (`ECX = ESI` at 0x00540A73 and
   0x00540A7E), not the member's. So a dead member in the level is paid a share but was not counted. With three in the
-  level and one dead, `n = 2`, both others get `amount / 2`, and the picker keeps `amount mod 2`. (0x00540A5A–0x00540ABA,
+  level and one dead, `n = 2`, both others get `amount / 2`, and the picker keeps `amount mod 2` (with neither member
+  at its cap; a member's overflow comes back to the picker). (0x00540A5A–0x00540ABA,
   fn:sub_005541B0_UnitIsDead@0x005541B0, fn:sub_00451F70_UnitGetMode@0x00451F70)
 - [I] **A trade between players is a state machine on `PlayerData+0x50`, driven by the `0x4F` button packet.**
   Interacting with a player in town (distance test ≤ 50) sends a request: the requester gets state 1, the target 2.
@@ -34,7 +35,8 @@ counted below, the commands in `commands.txt`; `manifest.txt` holds their sha256
   fn:sub_00568060_PktInteractButton@0x00568060, fn:sub_00566E60_TradeRequest@0x00566E60,
   fn:sub_00567020_TradeOpen@0x00567020, fn:sub_00566B30_TradeRecAlloc@0x00566B30)
 - [I] **The gold offer is clipped to what the partner can hold.** An offer above the offerer's carried gold (unsigned
-  compare) closes the trade (state 9). Otherwise, if the partner's gold plus the offer passes the partner's cap, the
+  compare) closes the trade (state 9), unless either side is `TradeBlocked`, when the button does nothing
+  (0x005683EB–0x00568409). Otherwise, if the partner's gold plus the offer passes the partner's cap, the
   offer becomes `cap − gold(partner)`. The amount is stored at the offerer's trade record `+0x0C` and sent to both
   clients. Only carried gold (stat 14) is read, not the stash. (0x005683DC–0x00568497)
 - [I] **The commit re-checks gold and room, then moves copies and gold.** For each side with an offer, it cancels
@@ -167,7 +169,7 @@ clip left at the picker's cap; UnitAddGoldStat(picker, 14, give); return the exc
     goes to 4, and if the partner is at 4 the trade commits (`TradeCommit(EAX presser; game, partner, pd presser,
     pd partner)`) and both `+0x58` get the tick. (0x00568499–0x00568573)
   - **7:** each side at 4 goes back to 3. (0x0056857F–0x005685C2)
-  - **8** (gold, parameter = the amount): § 1 of the Answer. The unsigned `cmp [ebp+0xC], eax; jbe` at 0x005683E6, the
+  - **8** (gold, parameter = the amount): the Answer's gold-offer bullet. The unsigned `cmp [ebp+0xC], eax; jbe` at 0x005683E6, the
     cap clip at 0x0056843C–0x00568448, the store at 0x00568467.
   - 5 and 6 do nothing; 0x12–0x14 are the stash gold buttons and 0x17–0x18 the cube's (items/0008).
 - [I] **The change lock.** `TradeItemTest` (from 0x00535676 and 0x00535697) puts both players in state 7 when an

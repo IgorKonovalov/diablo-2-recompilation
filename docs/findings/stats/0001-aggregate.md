@@ -38,9 +38,10 @@ finding, write for write; § 9 lists what each claim was checked against and wha
   (fn:sub_00626200_StatEvaluate@0x00626200, fn:STAT_ByTimeValue@0x0065CA30)
 - [C] **Op 6 and 7 as code** (plan 0051 Phase 1b, § 10): `STAT_ByTimeValue` and `StatEvaluate`'s cases 6 and 7
   (with `ActTimeOfDay`, ops 10, 12 and above 13 between them) were run under emulation on synthetic lists. They
-  reproduce § 4's arithmetic bit for bit in 9 000 calls, 0 mismatches. Op 6 adds the by-time value and op 7 adds
-  `MulDiv(running total, value, 100)` whenever the list's owner has a non-zero `+0x1C`. What `+0x1C` and the phase
-  pair are in play, and whether stock play ever reaches the cases, stay `[I]`.
+  reproduce § 4's arithmetic bit for bit in 9 000 calls, 0 mismatches. Each case adds a term only when the list's
+  owner (`+0x44`) is non-NULL, the owner's `+0x1C` is non-zero and the source's value `p` is non-zero. Op 6 then adds
+  the by-time value `t = STAT_ByTimeValue(p, …)`, and op 7 adds `MulDiv(running total, t, 100)`. What `+0x1C` and the
+  phase pair are in play, and whether stock play ever reaches the cases, stay `[I]`.
   (fn:STAT_ByTimeValue@0x0065CA30, fn:sub_00626200_StatEvaluate@0x00626200, fn:sub_0061C100_ActTimeOfDay@0x0061C100,
   run:2026-10-27-p51s-emu)
 - [C] **The maxima** are the cached full stats 7, 9 and 11 (`UnitGetMaxHp`, `UNIT_GetMaxMana`,
@@ -520,13 +521,14 @@ pinned image under Ghidra 12.1.2's p-code emulator with `EmuTrace.java` (ADR-001
 - [C] **Wrap bounds** (signed 32-bit, from the model's arithmetic). `a + 7` fits up to `a = 0x7FFFFFF8`
   (`0x7FFFFFFF`). From `0x7FFFFFF9` it wraps negative, so `a` becomes 0 and the value is `hi`. 26 cases have
   `|d| ≥ 0x7FFFFFF9`, 3 of them `d = INT32_MIN`. `(hi − lo)·a` stays within `1023·180 = 184 140`, so it never wraps.
-  `d = x − 90q` wraps only for `x` within 270 of `INT32_MIN`, and 128 cases do. (0x0065CA7B–0x0065CA82,
+  `d = x − 90q` wraps only when `x < INT32_MIN + 90q` (at most the 270 lowest values, for `q = 3`;
+  `x = INT32_MIN + 90q` gives `d = INT32_MIN`, which fits), and 128 cases do. (0x0065CA7B–0x0065CA82,
   0x0065CACF, run:2026-10-27-p51s-emu)
 - [C] **`StatEvaluate`, cases 6 and 7** (ECX = list, EDX = key): for each entry of the target's op table, read in
   order, case 6 needs the list's owner (`+0x44`) non-NULL, the owner's `+0x1C` non-zero and the source's full value
   `p = Eval(list, src << 16)` non-zero. Then it adds `STAT_ByTimeValue(p, r, x, 0, 0, 0)`, with
-  `r = ActTimeOfDay(owner +0x1C, &x)`. Case 7 has the same gates and adds `MulDiv(acc, value, 100)`, where `acc` is
-  the running total read after the source's evaluation (`mov edi, [ebp−4]` at 0x006264FB). Ops 10 and 12 jump
+  `r = ActTimeOfDay(owner +0x1C, &x)`. Case 7 has the same gates and adds `MulDiv(acc, t, 100)`, with
+  `t = STAT_ByTimeValue(p, r, x, 0, 0, 0)` as for case 6 and `acc` the running total read after the source's evaluation (`mov edi, [ebp−4]` at 0x006264FB). Ops 10 and 12 jump
   straight to the next entry, as does any op above 13. The loop stops at op 0 or after 16 entries. Sums are 32-bit
   and wrap. 3 000 calls, 0 mismatches, on lists with 1 to 16 entries and nested sources (a source with its own op 6/7
   table, 2 605 nested evaluations). Reached: op 6 term 5 301, op 7 term 5 187, `p = 0` 1 772 / 1 793, no owner
