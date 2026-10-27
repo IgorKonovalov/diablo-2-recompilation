@@ -2,12 +2,12 @@
 from: reverser
 to: spec-writer
 date: 2026-10-27
-status: open
+status: done
 context:
-  - ../plans/0038-inventory/README.md#26-moves-made-by-the-batch-reviews
-  - ../findings/drlg/0005-collision.md#plan-0038-batch-h5d-run2026-10-27-sweep-collision
-  - ../findings/monsters/0002-room-population.md#plan-0038-batch-h5d-run2026-10-27-sweep-collision
-resolution: ""
+  - ../../plans/0038-inventory/README.md#26-moves-made-by-the-batch-reviews
+  - ../../findings/drlg/0005-collision.md#plan-0038-batch-h5d-run2026-10-27-sweep-collision
+  - ../../findings/monsters/0002-room-population.md#plan-0038-batch-h5d-run2026-10-27-sweep-collision
+resolution: "Done 2026-10-27: monsters/spawn parts (g), (h) on lane/s38m (merged); every drlg/collision part (a)-(f), (i) on lane/s38n, plan 0038 Phase 3 drlg/collision cluster ([drlg/collision](../../specs/drlg/collision.md))"
 ---
 
 For the Phase 3 re-tag of drlg/collision and monsters/spawn, once the H5d review has accepted (released by it): apply
@@ -35,3 +35,15 @@ applied: (g) spawn H3 sizes 0 and 1 `[C]`, other sizes `[I]`; (h) spawn H5 `[C]`
 its no-stock-source note; (a)'s in-pass mark is not restated in monsters/spawn (it names no `npc` rule), so nothing to
 correct there; (b)/(i) the spawn Constants row states the `spawnCol` 1 and 3 masks `[C]` and does not name 260 or 263.
 **Open:** every drlg/collision part, which waits with its cluster (H6e2).
+
+*Annotation (spec-writer, 2026-10-27, `lane/s38n`, plan 0038 Phase 3, drlg/collision cluster):* drlg/collision's batches are
+S4a, S4b, H5b and H5d ([inventory drlg-collision](../../plans/0038-inventory/drlg-collision.md), § 5); no row is in H6e2, so the
+cluster ran once H5d was accepted. **Every drlg/collision part is applied** in [drlg/collision](../../specs/drlg/collision.md):
+(a)/(f) F2's *Pattern from size* rewritten to `MonIsNpc` = `npc` or `inTown` with `interact` clear, the `inTown` half `[C]`,
+the `npc` half and the `+0xC4` branch `[I]`, an *Open questions* `[L]` for them; the bit-13 row and the Inputs row (`inTown`
+added); (b)/(i) the Constants row of the `spawnCol` 1 and 3 masks `[C]`, with the refinement (153 and 258–263 reach the ring,
+260 and 263 `[I]`, the frog demons to `SpawnPosOnTile`); (c) § A3's entry flag `0x80`, the bit-9 and bit-2 rows, § E1's sizes
+0 and 1, F2's patterns 3 and 4, the item row and F1's item note, § H's 228, 298 (flag 0) and 528 rows, § I2's `Position`
+levels (the operand `[I]`); (d) B1 and the AND-NOT stay `[I]`, the 334 row `[I]` with its no-stock-source note; (e) *Open
+questions*: sizes 0/1, `SpawnClassCellTest` and NPC patterns struck, the `Position` levels narrowed to the operand,
+`TileCollisionUpdate` to 41 calls.
