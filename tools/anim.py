@@ -193,8 +193,8 @@ class Data:
             return (self.cs[cls]["baseWClass"] or "hth").upper()
         _, it, _ = w
         others = [e for e in eq if e[0] in (4, 5) and e is not w[2]]
-        if it.get("2handed") and not (it.get("1or2handed") and cls == 4):
-            wc = it["2handedwclass"]
+        if it.get("2handed") and not (it.get("1or2handed") and cls == 4 and others):
+            wc = it["2handedwclass"]      # a Barbarian's one-or-two-handed weapon is one-handed beside a shield
         else:
             wc = it["wclass"]
         return (wc or "hth").upper()
@@ -505,6 +505,14 @@ class Checker:
             if tag == "SR":
                 last[x["u"]["u"]] = x
                 continue
+            if tag == "RSC":
+                # a catalogue reschedule (anim/0001 § 7.1, a boundary oracle): its queue is taken as given
+                self.tally["rsc-%s" % x["f"]] += 1
+                for q in x["q"]:
+                    fr = max(q[1], x["fr"] + 1)
+                    queued[(x["u"]["u"], q[0], fr, q[2], q[3])] = x["n"]
+                    pend[x["u"]["u"]].append((q[0], fr, q[2], q[3], x["n"]))
+                continue
             if tag != "SCH":
                 continue
             u = x["u"]
@@ -708,7 +716,10 @@ class Checker:
             if tag == "KBE":
                 kbe.add((x["ecx"], x["fr"]))
                 kbe.add((x["edx"], x["fr"]))
+        cls_now = {}
         for tag, x in lines:
+            if tag in ("SR", "MSET", "SCH") and x["u"]["t"] == 1:
+                cls_now[x["u"]["u"]] = x["u"]["c"]      # unit pointers are reused: the class at this point
             if tag != "AD0":
                 continue
             pair = prev is not None and prev["u"] == x["u"] and x["fr"] == prev["fr"] + 1 and x["m"] == prev["m"]
@@ -725,7 +736,7 @@ class Checker:
                 cls = None
                 rows = None
                 if prev.get("sk"):
-                    cls = self.mon_cls.get(prev["u"])
+                    cls = cls_now.get(prev["u"])
                     rows = self.mon_seq(cls, prev["sk"][0]) if cls is not None else None
                 if rows is None:
                     self.tally["adv-seq-norows"] += 1
