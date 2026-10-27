@@ -14,15 +14,20 @@ resolution: ""
 
 Plan 0050 Phase 2 required cases from the Phase 1b part 2 `contradicted` leads (`lane/p50v`; the verdicts are in the
 *Leads used* sections of anim/0001, anim/0002 and anim/0003 and in the Verdict column of [anim/leads](../findings/anim/leads.md)).
-All 23 contradicted claims are reachable on stock data; each is settled by a case below, written into Phase 2's
+All 19 contradicted claims are reachable on stock data (23 as filed; the `lane/p50v` review moved A1, C1, H1 and B1
+to `held with refinement`, P1b-1 staying required for A2 and the counting question); each is settled by a case below,
+written into Phase 2's
 *Done when* (the minimums are estimates; a rare branch may fall short, named in the record, its claim staying `[I]`).
 A `(version: D2R)` or `(version: 1.09)` claim is not a community error; the run settles what 1.14d does.
 
-- **P1b-1 the mode length** (A1, A2, C1, H1, B1; D2R for A1, C1, H1, B1): for attack (an Amazon or Sorceress A1 with a
-  start frame and one class without), cast, get-hit and block, each at two or more rates: the start frame `T`, the
-  end event's frame and the next mode's start, against the code's `n = max(2, ⌈256 (F − S) / r⌉)` (anim/0002 § 7)
-  and the sources' `n − 1` (the 78 table comparisons and the 69 Basin rows all differ by exactly one,
-  `p50v-code.txt`); a Lightning or Chain Lightning cast (sequence 12, 19 frames) as the control where the sources give
+- **P1b-1 the mode length** (A2 contradicted; A1, C1, H1, B1 held with refinement at the review: the sources' count
+  is the schedule's step count `N = n − 1`, anim/0001 § 7): for attack (an Amazon or Sorceress A1 with a
+  start frame and one class without), cast, get-hit and block, each at two or more rates, one slowed (factor ≤ 60)
+  and one fast (factor ≥ 157) so A2 separates from both readings: the start frame `T`, every kind-0 event's frame,
+  the end event's frame, the next request's frame with `PlrModeLeaveOk`'s result and `PlrModeEndPending`'s `E`, and
+  the next mode's start (for get-hit and block, the first frame the player acts), against the code's `n = max(2,
+  ⌈256 (F − S) / r⌉)` (anim/0001 § 7) and the sources' `n − 1` (the 78 table comparisons and the 69 Basin rows all
+  differ by exactly one, `p50v-code.txt`); a Lightning or Chain Lightning cast (sequence 12, 19 frames) as the control where the sources give
   `n`; for a repeated attack or cast, whether the next start precedes the end event (`PlrModeLeaveOk` lets A1, A2, SC
   and TH be left while the end is queued, anim/0003 § 6.2).
 - **P1b-2 the attack factor's cap** (R5): at least 30 attacks whose `B_IAS + stat 68` (with the dual-wield and
@@ -45,7 +50,8 @@ A `(version: D2R)` or `(version: 1.09)` claim is not a community error; the run 
 - **P1b-9 the get-hit threshold** (H6), inside the `GetHitRoll` case: at least one get-hit with the total in
   `[hp/16, hp/12)` and one refusal above `hp/12`, at a hit class with `D` 16.
 - **P1b-10 the player's knockback end** (H10): at least 10 of the 30 knockbacks on a player, the mode after the path
-  ends logged (neutral, no get-hit; anim/0001 § 9.1), if the pilot can stage a stock knockback source.
+  ends logged (neutral, no get-hit; anim/0001 § 9.1), from the stock source, Blood Raven in Hell (MonProp
+  `bloodraven` `prop1 (H)` `knock`); not conditional (the `lane/p50v` review), a shortfall is named in the record.
 - **P1b-11 the block animation's gate** (B5): blocked hits on a player within `⌊stat 102 / 8⌋ + 15` frames of the last
   block start, the second starting no block mode and leaving stat 95; at least 30 blocked hits, ten inside the window.
 - **P1b-12 the delay interval** (D2): at least 30 repeated casts of a delay skill whose delay outlasts the cast (Frozen

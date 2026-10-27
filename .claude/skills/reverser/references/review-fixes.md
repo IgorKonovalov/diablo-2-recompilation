@@ -54,7 +54,8 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
 7. **A conclusion needs an address, `fn:` or `run:` anchor**, not a link to another finding (gate W1).
    Seen: the resume lane's experiments addendum (0037); `lane/w1`'s 104 W1 lines (0039); the levels
    `+0x033..+0x035` refinement and the 18th `-txt`-only (`sounds`) call filed without their writer and call addresses
-   (`lane/h3b` review, 0038).
+   (`lane/h3b` review, 0038); 28 of the 61 anim verdicts in the findings' *Leads used* filed with a section number and no
+   address or `fn:` (`lane/p50v` review, [0050](../../../../docs/plans/0050-animation-frame-timing.md)).
 8. **Split a raise where it has a remainder** and head the row "raised in part", in the ledger itself.
    Seen: special 65 (H4b), sock 14 (S2c), special 43 (S3b), all 0038; five `[C]` bullets of drlg/0009 § 11 with an
    unreached branch inside (the wanderer gate's `+0x78`, the item drop on expiry; [0040](../../../../docs/plans/done/0040-drlg-room-lifecycle.md) P2 review);
@@ -79,7 +80,10 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
     rounding needs a remainder (three curse lengths whose `MulDiv` is exact), and a model fix's counter is not its
     evidence (59 events counted, one separating; `lane/p47b` review, [0047](../../../../docs/plans/done/0047-simulation-shortfalls.md));
     Radament's `2 + r` escorts filed raised on r = 0 alone (`lane/h4a` review, 0038); `MonIsNpc`'s "`npc` or `inTown`"
-    scored against `npc` alone but not against `inTown` alone, which every stock row also fits (`lane/h5d` review, 0038).
+    scored against `npc` alone but not against `inTown` alone, which every stock row also fits (`lane/h5d` review, 0038);
+    a constant one-frame offset over 76 table rows filed `contradicted` when the rows cannot tell a different count
+    (the schedule's steps `N = n − 1` against its end `n`) from a different behaviour, A1's source naming the
+    convention (`lane/p50v` review, [0050](../../../../docs/plans/0050-animation-frame-timing.md)).
 11. **"Moved" names the destination plan**; otherwise write "out of this plan". Seen: status bit 1
     (0039 P1b ruling 4); a closed entry's "(3) deferred" with no home (H7a review, 0038).
 12. **Carry a correction into the section it corrects**, not only into the run's ledger section: the claim, its

@@ -6,7 +6,8 @@
 > **Status:** staged (plan 0050 Phase 1b part 1, `lane/p50c`, 2026-10-27); **verdicts given** (Phase 1b part 2,
 > `lane/p50v`, 2026-10-27): each row's Verdict cell names its verdict and the finding whose *Leads used* holds it with
 > its anchor and detail (anim/0001 for R1, A3, A4; anim/0003 for the gate, delay, H5–H10, B4, B5 and movement rows;
-> anim/0002 for the rest), and a `contradicted` row names its Phase 2 case (§ 12). The claims stay `[L]`.
+> anim/0002 for the rest), and a `contradicted` row names its Phase 2 case (§ 12). The claims stay `[L]`. Reviewed
+> (`lane/p50v` review, accept with fixes): A1, C1, H1 and B1 moved to `held with refinement` (§ 12's ruling).
 > **Blind rule:** this file is leads only. Every claim here is `[L]` and stays `[L]`: agreement promotes nothing
 > (reverser skill, step 7). A lane running any Phase 1 batch (P1.1, P1.2 or P1.3) does not read §§ 3–10 here before
 > its own behavioural claims are written from the code (step 2, blind first); it may read § 1 to learn which sources
@@ -69,7 +70,7 @@ each other; it is not a check of the game.
 
 | Id | Claim | Source | Version | Batch | Tag | Verdict |
 |---|---|---|---|---|---|---|
-| A1 | Attack frames = `ceil(AnimLength·256 / floor(AnimSpeed·(AnimRate + SIAS + EIAS − WSM)/100)) − 1`, with `AnimRate` = 100 and `AnimSpeed` 256 for a player; the `− 1` is because the first and last frame are the same. Example: an Amazon's 12-frame unarmed attack takes 11 frames at no IAS. | `src:maxroll-d2r-attack-speed` | **D2R 2.4+ only** | P1.2 | `[L]` | **contradicted (version: D2R)** ([anim/0002](0002-rates.md#leads-used); Phase 2 case P1b-1) |
+| A1 | Attack frames = `ceil(AnimLength·256 / floor(AnimSpeed·(AnimRate + SIAS + EIAS − WSM)/100)) − 1`, with `AnimRate` = 100 and `AnimSpeed` 256 for a player; the `− 1` is because the first and last frame are the same. Example: an Amazon's 12-frame unarmed attack takes 11 frames at no IAS. | `src:maxroll-d2r-attack-speed` | **D2R 2.4+ only** | P1.2 | `[L]` | **held with refinement** ([anim/0002](0002-rates.md#leads-used); Phase 2 case P1b-1; `lane/p50v` review) |
 | A2 | Attack frames = `ceil((FramesPerDirection − 1 − StartingFrame)·256 / AnimRate)`, `AnimRate = AnimationSpeed·(100 + percentage modifiers)/100`. Conflicts with A1 in where the `− 1` sits (inside or outside the ceiling) whenever the rate is not 256; both match at no IAS. | `src:basin-wiki-animation` (Attack speed) | LoD 1.10+ | P1.2 | `[L]` | **contradicted** ([anim/0002](0002-rates.md#leads-used); Phase 2 case P1b-1) |
 | A3 | `StartingFrame` skips the first frames of an animation: 1 or 2 for the Amazon's and Sorceress's melee A1 classes, 0 elsewhere. | `src:basin-wiki-animation` (Attack speed) | LoD 1.10+ | P0, P1.1, P1.2 | `[L]` | **held with refinement** ([anim/0001](0001-modes-frames.md#leads-used)) |
 | A4 | Per class, mode A1 and weapon class, the animation has the frames per direction, speed (256ths of a frame), starting frame and action frame of the Basin table: 10 Assassin rows, 8 Amazon, 12 Barbarian (with `1JS`, `1JT`, `1SS`, `1ST`), 8 each for Druid, Necromancer, Paladin and Sorceress, and 7 kick (`KK`) rows. Illustrative rows: `AM A1 HTH 13 256 1 8`, `AI A1 HT1 11 208 0 6`, `BA A1 2HS 18 256 0 8`. Part 2 re-fetches the page and compares it row by row with the P0 `animdata.d2` survey. | `src:basin-wiki-animation` (Attack speed) | LoD 1.10+ | P0, P1.1, P1.2 | `[L]` | **held** ([anim/0001](0001-modes-frames.md#leads-used)) |
@@ -89,7 +90,7 @@ each other; it is not a check of the game.
 
 | Id | Claim | Source | Version | Batch | Tag | Verdict |
 |---|---|---|---|---|---|---|
-| C1 | Cast frames = `ceil(256·Base / floor(Speed·(100 + EFCR)/100) − 1)`; Lightning and Chain Lightning drop the `− 1`. | `src:maxroll-d2r-breakpoints` | **D2R 2.4+ only** | P1.2 | `[L]` | **contradicted (version: D2R)** ([anim/0002](0002-rates.md#leads-used); Phase 2 case P1b-1) |
+| C1 | Cast frames = `ceil(256·Base / floor(Speed·(100 + EFCR)/100) − 1)`; Lightning and Chain Lightning drop the `− 1`. | `src:maxroll-d2r-breakpoints` | **D2R 2.4+ only** | P1.2 | `[L]` | **held with refinement** ([anim/0002](0002-rates.md#leads-used); Phase 2 case P1b-1; `lane/p50v` review) |
 | C2 | Casting base and speed: Amazon 20/256, Assassin 17/256, Barbarian 14/256, Druid 16/208, werewolf 16/229, werebear 16/228, Necromancer 15/256, vampire form 15/160, Paladin 16/256, Sorceress 14/256, Lightning and Chain Lightning 19/256, Act 3 mercenary 18/256. | `src:maxroll-d2r-breakpoints` | **D2R 2.4+ only** | P0, P1.2 | `[L]` | **contradicted (version: D2R)** ([anim/0002](0002-rates.md#leads-used); Phase 2 case P1b-7) |
 | C3 | The FCR tables of both sources (12 per source: Amazon, Assassin, Barbarian, Druid human, wolf and bear, Necromancer human and vampire, Paladin, Sorceress other spells and Lightning, Act 3 mercenary) agree with each other. With C1 and C2 they reproduce 8 of the 12; the Druid's three forms are reproduced only with base 15, the Necromancer's only with base 16 (§ 9). C2's Druid and Necromancer rows and the tables cannot both hold. | `src:maxroll-d2r-breakpoints`, `src:pd-breakpoints` | D2R 2.4+, unnamed | P1.2 | `[L]` | **held with refinement** ([anim/0002](0002-rates.md#leads-used)) |
 | C4 | Cast action frame = `ceil(BaseActionFlag·256 / floor(Speed·(100 + EFCR)/100))`; bases: Amazon with a bow 10, no weapon 11, crossbow or two-handed sword 12, two-handed staff, hammer, axe, polearm, spear, knife or javelin 13; Assassin 9; Barbarian 9; Druid 10, werewolf 8, werebear 9; Necromancer 8, vampire form 5; Paladin 9; Sorceress 7; Act 3 mercenary 7. | `src:maxroll-d2r-breakpoints` | **D2R 2.4+ only** | P1.2, P1.3 | `[L]` | **contradicted (version: D2R)** ([anim/0003](0003-movement-gates.md#leads-used); Phase 2 case P1b-7) |
@@ -111,7 +112,7 @@ each other; it is not a check of the game.
 
 | Id | Claim | Source | Version | Batch | Tag | Verdict |
 |---|---|---|---|---|---|---|
-| H1 | Hit-recovery frames = `ceil(256·Base / floor(Speed·(50 + EFHR)/100) − 1)`. | `src:maxroll-d2r-breakpoints` | **D2R 2.4+ only** | P1.2 | `[L]` | **contradicted (version: D2R)** ([anim/0002](0002-rates.md#leads-used); Phase 2 case P1b-1) |
+| H1 | Hit-recovery frames = `ceil(256·Base / floor(Speed·(50 + EFHR)/100) − 1)`. | `src:maxroll-d2r-breakpoints` | **D2R 2.4+ only** | P1.2 | `[L]` | **held with refinement** ([anim/0002](0002-rates.md#leads-used); Phase 2 case P1b-1; `lane/p50v` review) |
 | H2 | Hit base and speed: Amazon 6/256, Assassin 5/256, Barbarian 5/256, Druid with a one-handed swinging weapon 7/248, Druid otherwise 7/256, werewolf 4/256, werebear 5/184, Necromancer 7/256, vampire form 4/136, Paladin with a spear or staff 5/192, Paladin otherwise 5/256, Sorceress 8/256, mercenaries Act 1 6, Act 2 8, Act 3 9, Act 5 5 (all 256). | `src:maxroll-d2r-breakpoints` | **D2R 2.4+ only** | P0, P1.2 | `[L]` | **held with refinement** ([anim/0002](0002-rates.md#leads-used)) |
 | H3 | The FHR tables of both sources (16 cases) are reproduced by H1 and H2 up to each table's last row (§ 9); `src:pd-breakpoints` lists further rows (for example Amazon 600 → 3 frames). | `src:maxroll-d2r-breakpoints`, `src:pd-breakpoints` | D2R 2.4+, unnamed | P1.2 | `[L]` | **held with refinement** ([anim/0002](0002-rates.md#leads-used)) |
 | H4 | Which weapons count as "one-handed swinging" for the Druid's FHR and the Amazon's FBR: axes, clubs, maces, scepters, swords, throwing axes and wands (Maxroll FHR); the same with hammers and without wands (Maxroll FBR note); one-handed axes, clubs, one-handed maces, orbs, scepters, one-handed swords, two-handed swords held in one hand, throwing axes and wands (PureDiablo). The three lists differ; the weapon classes the code tests decide. | `src:maxroll-d2r-breakpoints`, `src:pd-breakpoints` | D2R 2.4+, unnamed | P1.2 | `[L]` | **contradicted** ([anim/0002](0002-rates.md#leads-used); Phase 2 case P1b-8) |
@@ -126,7 +127,7 @@ each other; it is not a check of the game.
 
 | Id | Claim | Source | Version | Batch | Tag | Verdict |
 |---|---|---|---|---|---|---|
-| B1 | Block frames = `ceil(256·Base / floor(Speed·(50 + EFBR)/100) − 1)`; Holy Shield adds 50 to EFBR. | `src:maxroll-d2r-breakpoints` | **D2R 2.4+ only** | P1.2 | `[L]` | **contradicted (version: D2R)** ([anim/0002](0002-rates.md#leads-used); Phase 2 case P1b-1) |
+| B1 | Block frames = `ceil(256·Base / floor(Speed·(50 + EFBR)/100) − 1)`; Holy Shield adds 50 to EFBR. | `src:maxroll-d2r-breakpoints` | **D2R 2.4+ only** | P1.2 | `[L]` | **held with refinement** ([anim/0002](0002-rates.md#leads-used); Phase 2 case P1b-1; `lane/p50v` review) |
 | B2 | Block base and speed: Amazon 3/256, Amazon with a one-handed swinging weapon 3/88, Assassin 3/256, Barbarian 4/256, Druid 6/256, werewolf 5/256, werebear 5/200, Necromancer 6/256, Paladin 3/256, Sorceress 5/256. | `src:maxroll-d2r-breakpoints` | **D2R 2.4+ only** | P0, P1.2 | `[L]` | **held with refinement** ([anim/0002](0002-rates.md#leads-used)) |
 | B3 | The FBR tables of both sources (11 cases) are reproduced by B1 and B2 up to each table's last row (§ 9). | `src:maxroll-d2r-breakpoints`, `src:pd-breakpoints` | D2R 2.4+, unnamed | P1.2 | `[L]` | **held with refinement** ([anim/0002](0002-rates.md#leads-used)) |
 | B4 | The Assassin's Weapon Block uses the block mode and the same FBR values as a shield block. | `src:maxroll-d2r-breakpoints`, `src:pd-breakpoints` | D2R 2.4+, unnamed | P1.3 | `[L]` | **held with refinement** ([anim/0003](0003-movement-gates.md#leads-used)) |
@@ -186,16 +187,26 @@ The Basin "Attack speed" page was re-fetched for A4 (rev 65669, unchanged) and t
 | Verdict | Count | Rows |
 |---|--:|---|
 | held | 7 | R2, R4, A4, A5, D3, D4, M1 |
-| held with refinement | 29 | R1, R3, A3, A6, A7, A8, A15, C3, C5, C6, C7, D1, H2, H3, H5, H7, H8, H9, B2, B3, B4, M2, M3, M4, M5, M9, M10, M13, M14 |
+| held with refinement | 33 | R1, R3, A1, A3, A6, A7, A8, A15, C1, C3, C5, C6, C7, D1, H1, H2, H3, H5, H7, H8, H9, B1, B2, B3, B4, M2, M3, M4, M5, M9, M10, M13, M14 |
 | contradicted | 9 | R5, A2, D2, H4, H6, H10, B5, M6, M8 |
-| contradicted (version: D2R) | 11 | A1, A9, A10, A12, A13, A14, C1, C2, C4, H1, B1 |
+| contradicted (version: D2R) | 7 | A9, A10, A12, A13, A14, C2, C4 |
 | contradicted (version: 1.09) | 3 | M7, M11, M12 |
 | not covered | 2 | A11 (the rollback percentages are catalogue values), D5 (the item cast's delay path is not read) |
 
 61 verdicts, counted with `grep -cE '^\| [RACDHBM][0-9]+ \|.*\*\*<verdict>'` (`\*\*held\*\*` 7, `\*\*held with
-refinement\*\*` 29, `\*\*contradicted` 23 of which `version: D2R\)\*\*` 11 and `version: 1\.09\)\*\*` 3, `\*\*not
+refinement\*\*` 33, `\*\*contradicted` 19 of which `version: D2R\)\*\*` 7 and `version: 1\.09\)\*\*` 3, `\*\*not
 covered\*\*` 2). Every contradicted row is reachable on stock data and is a required Phase 2 case, P1b-1 … P1b-15 of
 the [backlog entry](../../backlog/2026-10-27-reverser-reverser-plan-0050-p1b-contradicted-cases.md) and of plan 0050's
 Phase 2 *Done when*. The largest is P1b-1: every table and Basin row gives one frame fewer than the code's
-`⌈256 (F − S) / r⌉` for a record mode, and the sources' sequence count (Lightning) equals it. "No lead" (§ 1): monster
+`n = ⌈256 (F − S) / r⌉` for a record mode, and the sources' sequence count (Lightning) equals it.
+
+**Review ruling (`lane/p50v` review, 2026-10-27).** The one-frame offset is a counting difference, not a shown
+contradiction: the schedule's event steps are `T + 1` … `T + n − 1` and its end `T + n` (anim/0001 § 7), so the
+sources' count is the step count `N = n − 1` (A1's source gives the convention, "the first and last frame are the
+same"), and which of `n` and `n − 1` a reimplementer observes as the interval between two actions is not read from the
+code (`PlrModeLeaveOk` lets A1, A2, SC and TH be left while the end is queued). A1, C1, H1 and B1 move from
+`contradicted (version: D2R)` to `held with refinement` (the counts above are after the move; the lane filed held 7,
+held with refinement 29, contradicted 23 with D2R 11). A2 stays `contradicted`: its `− 1` inside the ceiling differs
+from both `n` and `n − 1` at rates other than 256. P1b-1 stays a required Phase 2 case, for A2 and to settle the
+convention, with the Lightning control (the sources' `n`) unexplained by the convention alone. "No lead" (§ 1): monster
 frames and rates, the `fast` mod, object operate frames, `monseq` sequences, as recorded in each finding's *Leads used*.
