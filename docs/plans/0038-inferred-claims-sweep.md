@@ -3950,3 +3950,74 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     [h3b raises](../backlog/2026-10-27-reverser-spec-writer-h3b-data-load-raises-and-corrections.md) was **released**,
     with the TC caller list, the clamp half, the addresses and the G1 post-pass note added.
   - **Next:** merge `lane/h3b`; then H6e2 (plan order), and the data clusters' Phase 3 round.
+- **2026-10-27 — `lane/rbd` (reverser, static, objdump only, no slot, no Ghidra): the H4a chained-model mismatches and
+  skills/0002 § 6.** Filed from head `daac96a5` (the lane added no entry of its own here; this one records it). The
+  three H4a groups of the [backlog entry](../backlog/archive/2026-10-25-architect-reverser-h4a-chained-model-mismatches-council-nihl2.md)
+  were resolved without a session: council is entry bit `0x400`, the client wall fade's mark, on a near room's walls
+  ([drlg/0002 § Lane rbd](../findings/drlg/0002-room-build-draws.md#lane-rbd-entry-bit-0x400-on-a-neighbours-walls-2026-10-27));
+  nihl2 is `MonPostCreateBoss`'s mod 22 for `BaseId` 526, and behind it superunique tail 60's escorts
+  ([monsters/0003 § Lane rbd](../findings/monsters/0003-special-monsters.md#lane-rbd-monpostcreateboss-and-the-h4a-chained-models-2026-10-27));
+  chaos7 is the logger's `CM` window, closed at the two seal superuniques' placements
+  ([experiments addendum](../findings/monsters/experiments.md#addendum-2026-10-27-lanerbd-the-chained-models-re-checked)).
+  The twelve H4a logs go rc 0 and the 63 kept logs are unchanged. The skills/0002 § 6 entry (from the plan 0045 P3
+  review) is logged in [plan 0045](done/0045-skills-missiles-machinery.md#implementation-log).
+- **2026-10-27 — `lane/rbd` review (architect): accept with fixes (6).** Merged `main` `7cd4f991` into the lane first
+  (`349463a4`). The ledger conflict kept both sides. `backlog.py archive` had nothing to move.
+  - **Checks:** `sha256sum -c` passes for `check-rbd/rbd-manifest.sha256` (`f34f23c5…`, 9 files) and
+    `skills/rbd/rbd-manifest.sha256` (`3c6bdf04…`, 3 files). Under `systemd-run --user --scope -p MemoryMax=4G`,
+    `run-monstats.sh` and `run-regress.sh` re-run with the lane's tools and with `main` `7cd4f991`'s
+    (`git archive`, a `workspace` link beside them) give the four kept outputs byte for byte: `monstats-h4a-rbd.txt`
+    (12 × rc 0), `monstats-h4a-main-control.txt` (council, nihl2, chaos7 rc 1), `regress-kept-rbd.txt` and
+    `regress-kept-main-control.txt` (identical, one rc 1 each). `main`'s chain tools have not changed since the
+    lane's control at `550d2dcc`. `skills.py check` on the 33 skills logs reproduces `rbd-skills-check.txt` and its JSON
+    byte for byte (BD.seed 4 118, 0 mismatches). `test_skills.py`: 13 tests pass, `test_bd_swap` among them. objdump
+    confirms the anchors: `MissileElemRoll`'s max-then-min reads, the `jg` tests at `0x005A8925`/`0x005A8940`, the swap
+    at `0x005A894B`–`0x005A8951` (`EAX` still the minimum), the mastery read on `EBX` at `0x005A895F`, the physical
+    swap at `0x005A89EB`, `RangeB`'s `jg` at `0x0045C3E5`; `MISSILE_HitUnit`'s `mov edi, edx` at `0x005ADF1C` and
+    `push edi` before `0x005AE150`; `MonSpawnTry`'s `test bl, 2` at `0x005B2ECF`, the unconditional
+    `MonPostCreateBoss` call at `0x005B2EDF` and `test bl, 0x40` at `0x005B2EE4`; the jump table (254 indices, 17
+    targets, 235 to `0x005B2058`) and the `BaseId` 526 compare at `0x005B2002`, which runs quest hook 34 then
+    `ModAppendApply(22, 1)`; tail 60's `LevelClassVariant(453)` and `EscortSpawn(…, 1, 10, 20, 0x40)` at
+    `0x005A4DDD`–`0x005A4DFB`; and a whole-`.text` scan finds exactly the two `or [esi+0x14], 0x400` and two
+    `and …, 0xFFFFFBFF` sites (none in byte form). The chaos7 window lines are as stated: `PX` at 34508 and
+    `CMRX` at 50604, the last window lines before `SU0` 34913 and 50798.
+  - **Fixes (6, made here):** (1) *under-claim (rule 14):* `sub_005B1CF0_MonPostCreateBoss` (its 526 case compared
+    at `SMPX`) and `sub_0063EC70_LevelClassVariant` (453 → 458, logged and chained) raised to C in `re/symbols.csv` and
+    monsters/0003's Functions table; `MISSILE_BuildDamage` and `sub_005A8910_MissileElemRoll`, whose drawn fields the
+    4 118 builds compare, raised to C, the first's evidence moved to skills/0002 (combat/0001's and skills/0002's
+    tables updated). (2) *tool not kept:* `rbd-manifest-dev.sha256` sat in `check-rbd/`, where it fails, while the
+    record said it passes from `check-rbd/dev/`: moved there, now passing, the record says so. (3) *omission:* the kept
+    log `h4b-s5b-4801-normal-merc-game2`'s 12 roomk mismatches under both tool sets are the **known, recorded**
+    failure of run:2026-10-16-sweep-monsters-b's *Deviations and limits* (a second game in one process; its DT1 lists
+    are those already loaded); the record now links it. No backlog entry is needed. (4) *omission:* tail 60's `[C]`
+    read as a new raise; H4a's `sweep_h4a.py` had already reproduced the tail's calls (special § G row 60 rests on it).
+    The bullet now says what the lane adds (the chained placement, its 20 requests compared with `MT0`, flags
+    included) and that no tag moves. (5) *omission:* the window rule's limits were not stated: it ignores the thread,
+    where the logger keeps one window per thread, and the logger's RW0 line is conditional while its window close is
+    not. Written into the record with why both errors fail loudly. (6) *omission:* the lane filed no entry in this
+    log; the entry above records it.
+  - **Rulings:** (a) **The chaos7 change is legitimate modelling under ADR-0004, not a fit after the fact.** The
+    logged `CM` marks are the oracle the collision model takes; outside the logger's window there is no oracle, and
+    the model falls back on its own prediction, which ADR-0004 prefers ("a boundary oracle never replaces in-scope
+    code"). The window rule is the logger's own breakpoint set, read from `tools/gdb/collision.py`, not tuned to the two
+    mismatches; a logged `CM` inside a window called closed is a mismatch, and so is a missing one inside a window
+    called open. The applied marks are not confirmed by themselves: the 211 later `CollisionTest` returns with the unit
+    bit (142 and 69 in the two `SU` windows), logged unwindowed, are what checks them, and they all match. No claim
+    rests on the unlogged marks alone. (b) **The `[C]` raises stay within the logs.** Mod 22 is `[C]` for `BaseId` 526
+    alone (one unit, and the model without it fails); the rest of the case table and the flag-2 gate stay `[I]` (590
+    flag-2 requests, none compared). Tail 60 keeps its `[C]` with no tag move. `0x400` on near-room walls only is `[C]`
+    for the council log (33 entries over 151 dumps, none on an own room), not a claim about other logs; its writer is
+    `[I]` (immediate forms only, a computed store not excluded). (c) **Tail 60 is a symbol matter, not a spec one:**
+    `LevelClassVariant` C here, § G row 60 unchanged. (d) **No H4a ledger outcome or inventory total changes.** None of
+    the three groups sat on an H4a row (the H4a review's ruling d stands); row 60 (H4a) was already raised, and the
+    526 piece belongs to special § J's `[I]` bullet, a remainder of S3a's row 73 that the spec-writer splits in Phase 3
+    with no class move. Totals stand at the H3b review's 1 526 (`main` `7cd4f991` adds no inventory change).
+  - **Spec-writer:** the entry [skills/missiles F1 and dispatch I4](../backlog/2026-10-27-architect-spec-writer-skills-missiles-f1-mastery-and-dispatch-i4-kick.md)
+    is **released** with what to write (the mastery out of F1's `[C]`, the `k` lines `[I]` inline, the `[L]` open
+    question, the swap's order, both runs' 4 118 builds). The lane's entry
+    [MonPostCreateBoss and 0x400](../backlog/2026-10-27-reverser-spec-writer-postcreateboss-table-and-entry-bit-0x400.md)
+    is **released** with the § J split and the scope of the `0x400` `[C]`.
+  - **Backlog:** the review request was closed. Review-fixes Seen lines: reverser 6 and 14.
+  - **Ledger:** the lane row filled (verdict, fixes 6: under-claim 1, tool not kept 1, omission 4; usage from the
+    orchestrator: 301 043 tokens, 196 tools, 33 min); the review row added, usage "—".
+  - **Next:** merge `lane/rbd`; the two spec-writer entries may start.

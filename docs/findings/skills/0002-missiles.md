@@ -194,7 +194,7 @@ code windows R1–R7; `p45b-rows.txt` `cbf9c64a…`, the stock-row values compar
 | `0x005ADB00` | `sub_005ADB00_MissileJustHitState` | state 86 on the hit unit for `NextDelay` frames | I |
 | `0x005ADCD0` | `sub_005ADCD0_MissileApplyAndAc` | `MISSILE_ApplyDamage`, then stat 120 against a monster's defence | I |
 | `0x005AD9D0` | `sub_005AD9D0_MissileEndHit` | hit function with no unit, then free; no reference found | I |
-| `0x005A8910` | `sub_005A8910_MissileElemRoll` | one element's `RangeB` with its mastery | I |
+| `0x005A8910` | `sub_005A8910_MissileElemRoll` | one element's `RangeB` with its mastery | C (the drawn fields, § 6; the mastery and the swap I) |
 | `0x005A8730` | `sub_005A8730_CollideUnitFilter` | the shared unit test of the collide filters | I |
 | `0x005A87B0`, `0x005A87F0`, `0x005A8850`, `0x005A8890` | `sub_005A87B0_CollideMonster`, `sub_005A87F0_CollidePlayerOrAlly`, `sub_005A8850_CollideUnit`, `sub_005A8890_CollideMissile` | the collide-type filters | I |
 | `0x00641CB0` | `sub_00641CB0_FindUnitAtCell` | a unit whose footprint covers a cell, through a filter | I |

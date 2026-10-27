@@ -49,7 +49,8 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
    whose save copies overwrote the first sessions' copies under the same directory, and a dev manifest said to pass from
    the directory above its files (`lane/h1b` review, 0038); the crashed `--early` probes' logs and the crash files
    they left in the shared game directory deleted, not kept in `dev/`, and the session screenshots left outside the
-   kept manifest (`lane/h3b` review, 0038).
+   kept manifest (`lane/h3b` review, 0038); a dev manifest said to pass from `dev/` while it sat in the directory above, where it
+   fails (`lane/rbd` review, 0038).
 7. **A conclusion needs an address, `fn:` or `run:` anchor**, not a link to another finding (gate W1).
    Seen: the resume lane's experiments addendum (0037); `lane/w1`'s 104 W1 lines (0039); the levels
    `+0x033..+0x035` refinement and the 18th `-txt`-only (`sounds`) call filed without their writer and call addresses
@@ -113,7 +114,9 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
     symbol row (`lane/p46m12` review ruling 7, [0046](../../../../docs/plans/0046-skills-function-catalogue.md)).
     Seen also: `D2S_WriteMercItems` left I beside a raised `D2S_ReadMercItems` and `D2S_WriteCorpses` on the same evidence (`lane/h1b`
     review, 0038). `DRLG_LoadLevels` raised in `re/symbols.csv` but left I in data/0001's Functions table (`lane/h3b`
-    review, 0038).
+    review, 0038). `sub_005B1CF0_MonPostCreateBoss` (its 526 case compared at `SMPX`) and `sub_0063EC70_LevelClassVariant`
+    (453 → 458, logged and chained) left I, and `MISSILE_BuildDamage` and `MissileElemRoll` left I under a 4 118-build
+    re-check (`lane/rbd` review, 0038).
 15. **State an integer wrap or overflow bound from a kept computation**: the largest input that still fits and the
     first that wraps, with the product written out, and what the code does past it. Seen: a negative ring step count
     called an endless loop where the signed index wraps past −2³¹ (`lane/p46m11` review); `PathDirection`'s

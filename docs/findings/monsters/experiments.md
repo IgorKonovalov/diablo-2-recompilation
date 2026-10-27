@@ -1044,6 +1044,13 @@ the tool models fixed. The same twelve logs are then re-checked.
   - Tail 60 runs `LevelClassVariant(453)` and 20 `EscortSpawn` spawns.
   - A `SU0`/`PM0` outside the CM window (`mark_window_open`) applies the model's creation and post-create marks and
     counts them, and a logged `CM` there is a mismatch.
+    The window rule is read from the logger's code (`tools/gdb/collision.py`: `win_open` at the two RW1 addresses,
+    `win_close` at the two RW0 addresses and PX, the `CMR0` .. `CMRX` scope), not from the mismatch positions. It looks
+    at the last such line on any thread, where the logger keeps one window per thread, and the logger's RW0 line is
+    written only for a room with driver bit 0 clear while its window closes at either. Both ways of getting it wrong fail
+    loudly: a window called open where it was closed compares the model's marks with no logged line, and one called
+    closed where it was open meets a logged `CM` the branch refuses. The marks applied there are not themselves
+    confirmed; the 211 later `CollisionTest` returns with bit `0x1000` are what checks them. (run:2026-10-21-sweep-monsters-a)
 - **Procedure** (from the worktree root, each under `systemd-run --user --scope -p MemoryMax=4G`):
   ```
   sh workspace/logs/h4a/check-rbd/run-monstats.sh $PWD/tools workspace/logs/h4a/check-rbd/monstats-h4a-rbd.txt
@@ -1069,11 +1076,13 @@ the tool models fixed. The same twelve logs are then re-checked.
 - **Regression** (`regress-kept-rbd.txt`, `regress-kept-main-control.txt`): `monstats.py check`, one log per call, on
   the 63 kept logs of `check/kept-logs.lst`. The new tools and main's give the same per-log summary lines on every log.
   62 logs are rc 0. `h4b/h4b-s5b-4801-normal-merc-game2.log` is rc 1 under both, from 12 roomk mismatches (a DT1
-  list and room seeds of DRLG room `029efe00`) that the change does not touch.
+  list and room seeds of DRLG room `029efe00`) that the change does not touch. That failure is the known one recorded
+  in run:2026-10-16-sweep-monsters-b's *Deviations and limits* (session 5b: the DRLG models fail on a second game in
+  one process, its DT1 lists being those already loaded); its creation checks pass. (run:2026-10-16-sweep-monsters-b)
 - **Kept:** `workspace/logs/h4a/check-rbd/rbd-manifest.sha256` (`f34f23c5…`, 9 files: the two scripts, the four check
   outputs, the two scans and `fl2-scan.py`); `sha256sum -c` from `workspace/logs/h4a/check-rbd/` passes. `tools/cb_entry_bits.py`
   `942dff77…`. Two development outputs (`dev/monstats-h4a-rbd-dev1.txt`, before tail 60 was modelled: nihl2 failing on it;
-  `dev/monstats-nihl2-dev2.txt`) are under `rbd-manifest-dev.sha256`, which passes from `check-rbd/dev/`; no claim rests on them. The record's own `check/` outputs are unchanged.
+  `dev/monstats-nihl2-dev2.txt`) are under `dev/rbd-manifest-dev.sha256` (moved there at the review from `check-rbd/`, where it did not pass), which passes from `check-rbd/dev/`; no claim rests on them. The record's own `check/` outputs are unchanged.
 - **Conclusion:** none of the three groups was a game behaviour the specs contradict. Two were gaps in the models,
   `MonPostCreateBoss` and the tail-60 escorts. The third was a run-time client bit plus a logger window the model did
   not know.

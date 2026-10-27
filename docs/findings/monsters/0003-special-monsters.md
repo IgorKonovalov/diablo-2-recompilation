@@ -273,14 +273,14 @@ Both read as in § 3 and § 6, so nothing is corrected and the tags stay `[I]`.
 | `0x005A46E0` | `sub_005A46E0_MinionRestore` | inactive-unit restore of a minion: saved mods, handlers with flag 0 | I |
 | `0x005A4940` | `sub_005A4940_MonMakeSpecial` | an existing monster made special (`SpecialModsRoll(…, 1)`, apply without minions) | I |
 | `0x005B21B0` | `sub_005B21B0_MonPostCreateMods` | MonSpawnTry post-create: per-`BaseId` fixed mods (flag 0) | C (S3a) |
-| `0x005B1CF0` | `sub_005B1CF0_MonPostCreateBoss` | MonSpawnTry post-create: act and uber bosses, fixed mods (flag 1) and quest hooks | I |
+| `0x005B1CF0` | `sub_005B1CF0_MonPostCreateBoss` | MonSpawnTry post-create: act and uber bosses, fixed mods (flag 1) and quest hooks | C (lane/rbd: Nihlathak's 22 at `SMPX`; the other cases I) |
 | `0x005A0CE0` … `0x005A1F90` | the 22 server handlers | table below | I |
 | `0x005A00F0` | `sub_005A00F0_UModConstant` | MonUMod `constants` of a row (`+0x1C`) | I |
 | `0x005A21D0` | `sub_005A21D0_UModElemDamage` | elemental damage % from `constants` rows 28 and 31 (`monsters/stats`) | I |
 | `0x0054DA60` | `sub_0054DA60_MonClassChainStep` | `(class, n)`: the class's `BaseId`, then `NextInClass` n times | I |
 | `0x0054E600` | `sub_0054E600_PresetMonSpawn` | MonPreset dispatch; MonPlace switch: rows 2–5, 8, 10, 11, 17, 18, 22–24, 26, 29–32 place a monster (24, 26 in Normal only); the rest nothing | I |
 | `0x0054E2A0` | `sub_0054E2A0_PresetFallenVariant` | `fallen1`/`fallenshaman1` → act-1 variant by level id | I |
-| `0x0063EC70` | `sub_0063EC70_LevelClassVariant` | the level's version of a base class (its `mon` list, else `NextInClass` by `Level`) | I |
+| `0x0063EC70` | `sub_0063EC70_LevelClassVariant` | the level's version of a base class (its `mon` list, else `NextInClass` by `Level`) | C (H4a and lane/rbd: 453 → 458 in level 124, logged and chained) |
 | `0x0054E090` | `sub_0054E090_PresetGroupSpawn` | normal-difficulty MonPlace `0x18`/`0x1A`: a group in the preset's box | I |
 | `0x0053E2E0` | `sub_0053E2E0_MonUnitPacketBuild` | server → client monster record: flags, superunique id, mods, name seed | I |
 | `0x004AD020` | `sub_004AD020_ClientMonModsApply` | client: handlers of mods 1–4 and of the list from `0x00724D78` | I |
@@ -1234,7 +1234,11 @@ record 60) leaves `SpecialMonPlace` with mods `[22]` (the `SMPX` line) after `MU
 - [C] **Superunique tail 60 chained.** With the mods matching, the model reached the record's tail, which it had not
   modelled. The tail is `EscortSpawn(LevelClassVariant(the unit's room, 453), 1, radius 10, 20, flags 0x40)`
   (`0x005A4DDD`–`0x005A4DFB`). It now gives `453 → 458` in level 124 and the 20 escort spawns, which chain with
-  0 mismatches (nihl2's monspawn checks 38 334 → 44 584). That agrees with special § G's row 60. (fn:sub_005B24E0_EscortSpawn@0x005B24E0,
+  0 mismatches (nihl2's monspawn checks 38 334 → 44 584). That agrees with special § G's row 60. The tail's calls
+  and their arguments were already reproduced at H4a by `tools/sweep_h4a.py` (the `tails` row for record 60, the
+  logged `0x63ec70 → 458`), which is what row 60's `[C]` rests on; this lane adds the chained placement: the 20
+  requests, compared with their `MT0` lines (class, radius and flags included), and their draws. No tag moves.
+  (fn:sub_005B24E0_EscortSpawn@0x005B24E0,
   fn:sub_0063EC70_LevelClassVariant@0x0063EC70, run:2026-10-21-sweep-monsters-a)
 - For the spec: special § J's sentence on `MonPostCreateBoss` stands. The table above gives its full case list, the
   flag-2 gate, and the Nihlathak case as confirmed. Filed to the spec-writer.

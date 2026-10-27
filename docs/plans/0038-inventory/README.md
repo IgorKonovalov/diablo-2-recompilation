@@ -996,6 +996,8 @@ are a candidate for the plan's `d-owner` addendum at the close (Open questions),
 reaches seal 394 is the other route. Stats 14 and 13 are raised whole by the class-312 piece (still counted as H4b, a
 Phase 3 note, not a class move). The three chained-model mismatches go to their own reverser entry
 ([2026-10-25-architect-reverser-h4a-chained-model-mismatches-council-nihl2](../../backlog/archive/2026-10-25-architect-reverser-h4a-chained-model-mismatches-council-nihl2.md)).
+*(`lane/rbd` review, 2026-10-27: all three resolved as model or logger gaps; no row, class or total moves; special
+§ J's 526 case is a Phase 3 split of row 73's remainder. See the plan 0038 log.)*
 **Ledger: raised 15, raised in part 9, shortfall 8.** No class move; totals unchanged and recounted against `main`
 `9e221ed` after merging it (no inventory change since `e3ac907`): **static 567, harness 526, c-emu awaiting a batch 0,
 blocked 414** (d-none 288, d-edit 73, d-sim 28, d-2c 7, d-owner 10, d-0032 8), **deferred 2, raised 17: 1 526.**
