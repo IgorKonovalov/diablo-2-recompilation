@@ -40,3 +40,25 @@ for the word-10 bits (the kept Duriel log), `[I]` for the `hst` gate. § K adds 
 and 367. All anchored to run:2026-10-27-sweep-quest-items. **Still open:** every items/quest-drops part (§ E, E1, the
 gate wording, § Entry points, the quality column, Wirt's gold anchor), which waits for H6e1; wiki/items-other-paths'
 quest-chest sentence (its "quest item, then chest drop, then gold" is quest-drops' E1 and moves with that round).
+
+*Annotation (reverser, 2026-10-27, `lane/h6e2f`, the H6e2 follow-up; held for its architect review):* three more
+parts are met under run:2026-10-27-sweep-quest-items (addendum *Follow-up*;
+[items/0010 § H6e2](../findings/items/0010-quest-drops.md#plan-0038-batch-h6e2-run2026-10-27-sweep-quest-items)).
+**The eye and brain chests** ran in the corrected Khalim order (quest seed, gold 5 and 7 first, then `qey`/`qbr` at
+quality 2, then the chest drop), so objects § L's Khalim row can be `[C]` for all three chests, the held-part refusal
+staying `[I]`; quest-drops' E1 correction likewise. **The tome** (`bbb`) was created on the unchanged quest seed with
+word 17 clear (asked 2, created 7): objects § L's item-objects row gains `bbb` (`[C]`; quality 7 After `[I]`, as
+`bks`), `hdm` stays `[I]`. **The brain chest's question** (objects § L does not state it; items/0010's open question)
+is answered in part: listed and opened once its room is active (`[C]`), which copy the listing follows `[I]`.
+Ledger: `bbb` shortfall → raised in part.
+
+*Annotation (architect, 2026-10-27, `lane/h6e2f` review: accept with fixes; plan 0038 log):* the follow-up's parts are
+released. **objects needs a small follow-up re-tag** of [§ L](../specs/objects/README.md#l-quest-objects-the-hellforge-and-the-quest-item-objects-named-only):
+the Khalim chests' row becomes `[C]` for all three chests (heart 8, eye 5, brain 7 gold piles first, each the count on
+its logged seed; `fn:sub_005B8940_A3Q2_EyeChest@0x005B8940`, `fn:sub_005B8A20_A3Q2_BrainChest@0x005B8A20`), the
+held-part refusal staying `[I]`; the item-objects row adds `bbb` to `[C]` (the tome, word 17 clear, one item on the
+unchanged quest seed, no draw; `fn:sub_005B7A60_A3Q1_TomeDrop@0x005B7A60`), its quality 7 (the base `unique`
+override), the word-17 refusal and `hdm` staying `[I]`. Anchor run:2026-10-27-sweep-quest-items (addendum *Follow-up*).
+items/quest-drops' Phase 3 takes the same Khalim and `bbb` parts into § E/E1. The brain chest's listing is not a spec
+statement; if one is written, its `[C]` is "listed and opened with its room active in both copies" (the review scoped
+the lane's "once its room is active"), and which copy the listing follows is `[I]`.

@@ -35,7 +35,7 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
    does not save without a host callback" with a logger at the entry only, where `0x00730FFC` and the time tests come
    before the callback test (`lane/h1b` review, [0038](../../../../docs/plans/0038-inferred-claims-sweep.md)); "no code reads a class-7
    player's column" as the d-none reason for `EXP_GetThreshold`'s clamp, without its other out-of-range input (the −1 of
-   the callers' inlined null-unit test; `lane/h1a` review, 0038); the brain chest's absence filed "Answered" from its room never activating in the matching copy, where no log has that room active, so the listing once it activates stays `[I]` until `brain4c` (`lane/rdp` review, 0038). The legacy header's version refusal called "a case `D2S_ReadSave` never sends", where its unsigned `cmp ebx, 0x5B; jbe` sends 0..70 too and only the half above `0x60` is unreachable (`lane/rlg` review, 0038).
+   the callers' inlined null-unit test; `lane/h1a` review, 0038); the brain chest's absence filed "Answered" from its room never activating in the matching copy, where no log has that room active, so the listing once it activates stays `[I]` until `brain4c` (`lane/rdp` review, 0038); then `brain4c`'s "listed once its room is active" `[C]` from a log with the room active in both copies, where `brain4` had it active in one copy and no listing (scoped to "in both copies", `lane/h6e2f` review, 0038). The legacy header's version refusal called "a case `D2S_ReadSave` never sends", where its unsigned `cmp ebx, 0x5B; jbe` sends 0..70 too and only the half above `0x60` is unreachable (`lane/rlg` review, 0038).
 5. **An existing reviewed symbol name wins.** Merge `main` and grep `re/symbols.csv` for every address
    before you name it; rename your side. Seen: six addresses named twice, `lane/p41r`
    ([0041](../../../../docs/plans/done/0041-stats-and-states.md) P1 review). The same holds inside `re/types/`
@@ -52,7 +52,7 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
    the directory above its files (`lane/h1b` review, 0038); the crashed `--early` probes' logs and the crash files
    they left in the shared game directory deleted, not kept in `dev/`, and the session screenshots left outside the
    kept manifest (`lane/h3b` review, 0038); a dev manifest said to pass from `dev/` while it sat in the directory above, where it
-   fails (`lane/rbd` review, 0038); the 24 kept-session screenshots left outside every manifest again (`lane/h6e2` review, 0038).
+   fails (`lane/rbd` review, 0038); the 24 kept-session screenshots left outside every manifest again (`lane/h6e2` review, 0038); the per-copy first-`RRESEED` lines of the copy-order argument cited from an ad hoc count that no kept output printed (`h6e2f_copies.py --first` added at the `lane/h6e2f` review, 0038).
 7. **A conclusion needs an address, `fn:` or `run:` anchor**, not a link to another finding (gate W1).
    Seen: the resume lane's experiments addendum (0037); `lane/w1`'s 104 W1 lines (0039); the levels
    `+0x033..+0x035` refinement and the 18th `-txt`-only (`sounds`) call filed without their writer and call addresses

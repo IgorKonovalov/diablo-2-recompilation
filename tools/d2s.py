@@ -1,4 +1,4 @@
-"""Read Diablo II character saves (.d2s, version 96; 93..95 on request): header, sections, stats, skills, item lists.
+"""Read Diablo II character saves (.d2s, version 96; 92..95, 87 and 71 on request): header, sections, stats, skills, item lists.
 
 Usage:
   python3 -I tools/d2s.py survey <excel-dir> <file.d2s ...>   parse every save; checksum, sections,
@@ -121,13 +121,26 @@ build recipe (JSON object; every key optional; example tools/d2s_recipes/lightso
   exactly as without them:
   save_version 93..96 (header 0x04): <= 94 writes the stats in the old form ('gf', a 2-byte mask over stats
                0..stat_slots-1, a u32 per set bit; only stat_slots 9..16), <= 95 writes every item's current
-               durability (stat 72) in 8 bits, <= 93 writes two realm words, not three. 92 and below are refused
-               (undocumented layouts). A base with corpse, golem or (unreplaced) mercenary items is refused for a
+               durability (stat 72) in 8 bits, <= 93 writes two realm words, not three. 92, 87 and 71: the
+               legacy builder below; other versions are refused. A base with corpse, golem or (unreplaced) mercenary items is refused for a
                version other than 96, since those bytes are copied from the base in the version-96 widths
   stat_slots   header 0x29 (the old stat reader's count); skill_count: header 0x2A and that many skill bytes
                (padded with 0, a cut-off non-zero byte refused)
   item "realm": [u32, u32] or [u32, u32, u32]: the realm flag 1 and its words (three above version 93; the
                game writes the third as 0); in the extended form an ear's realm bit 0 follows its name
+  Legacy builder (backlog 2026-10-27, the d2s legacy layouts; d2s.md § Legacy versions, § Versions 92..95; all
+  [I], no such file loaded yet): save_version 92 writes the version-96 file with items in the 1.09 widths and the
+  <= 92 per-id encodings (stat 83 by class param, 107 skill/level, 126 param 1, 188, 195/198/201) and a set item's
+  Sets id; a remapped or folded id, a param in the generic path, 204 and the five-class fold are refused.
+  save_version 87 and 71 write the legacy layout (0x82-byte header, Woo!, WS, NPCs, 'gf' with a 3-byte mask over
+  stats 0..15, 'if', items, an empty corpse list, the mercenary, for 87 the hotkey tail; no checksum, no size):
+  87 items in the 1.09 form with the <= 89 widths (magic, rare, crafted and class-affix items refused), the
+  0x12-byte mercenary record and its item list; 71 items as version-71 records (classic index form, or the code
+  form for an item with no version-0 row), the mercenary as 'JM' + seed + name, no item list.
+  legacy_new_char: true (71, 87) sets status bit 0 (sub_00532590_NewCharLegacy). item "v71": {"form": "index" |
+  "code", "unit_seed", "item_seed", "file_index", "page"} overrides the version-71 record fields. item
+  "item_props": [[stat id, param, value], ...] adds param entries to the property list (any version).
+  Read back with parse(b, isc, kinds, extended=True) (92) or parse_legacy(b, isc, kinds, classic_codes(t)).
 Unique properties come from the row's prop/par/min/max through properties.txt (funcs 1, 2, 3, 7, 8,
 11, 15, 16, 17, 19, 21; any other func is an error). Armor defense = maxac (+1 with enhanced defense),
 durability = the base value, current = the full maximum; flags = identified | bit 23 (| simple).
@@ -185,6 +198,9 @@ EXT_VERSIONS = (93, 94, 95, 96)
 OLD_STATS_MAX = 94        # D2S_ReadStats: version <= 94 takes the bitmask form (save/0001 § Plan 0038 H1a row 68)
 DUR8_MAX = 95             # ITEMS_ReadFull: version <= 95 reads stat 72 in 8 bits (0x0062D425, 0x0062D759)
 REALM3_MIN = 94           # a third realm u32 is read for a version above 93 (0x0062D2D3-0x0062D2DF)
+V92 = 92                  # the 1.09 property widths and per-id encodings (save/0001 § Plan 0038 lane/rlg (b))
+LEGACY_VERSIONS = (71, 87)  # the legacy layouts the builder writes (sub_00534020_ReadSaveLegacy, lane/rlg (a))
+BUILD_VERSIONS = LEGACY_VERSIONS + (V92,) + EXT_VERSIONS
 OLD_SLOTS = range(9, 17)  # stat_slots whose bitmask takes 2 bytes under the finding's reading (12, 16 run-confirmed)
 
 
@@ -237,7 +253,8 @@ def load_isc(excel_dir):
         isc[col(r, "ID")] = dict(name=r[ix["Stat"]], save_bits=col(r, "Save Bits"),
                                  save_add=col(r, "Save Add"), param_bits=col(r, "Save Param Bits"),
                                  csv_bits=col(r, "CSvBits"), csv_param=col(r, "CSvParam"),
-                                 csv_signed=col(r, "CSvSigned"))
+                                 csv_signed=col(r, "CSvSigned"), s109_bits=col(r, "1.09-Save Bits"),
+                                 s109_add=col(r, "1.09-Save Add"))
     return isc
 
 
@@ -255,7 +272,7 @@ def u16(b, o):
 
 def parse_header(b, extended=False):
     """The 0x14F-byte header. Only version 96 unless extended (backlog 2026-10-27 H1a gaps, d2s.md § Versions 92..95):
-    then 93..96; 92 stays refused, its item property widths are not documented (1.09 widths plus per-id overrides)."""
+    then 92..96 (92 with the item form of parse_item_109)."""
     if len(b) < HEADER_SIZE or u32(b, 0) != MAGIC:
         raise D2sError("bad magic or short file")
     h = dict(version=u32(b, 4), file_size=u32(b, 8), checksum=u32(b, 12), weapon_set=u32(b, 16),
@@ -269,11 +286,8 @@ def parse_header(b, extended=False):
              merc_type=u16(b, 0xBB - 2), merc_exp=u32(b, 0xBB), unk_bf=bytes(b[0xBF:QUEST_OFF]))
     if extended:
         h["stat_slots"], h["skill_count"] = b[0x29], b[0x2A]
-    if extended and h["version"] in EXT_VERSIONS:
-        return h
-    if extended and h["version"] == 92:
-        raise D2sError("version 92: item properties use the 1.09 widths with per-id overrides that are not "
-                       "documented (d2s.md § Versions 92..95)")
+    if extended and (h["version"] in EXT_VERSIONS or h["version"] == V92):
+        return h   # 92: the 1.09 widths and per-id encodings of parse_item_109 (d2s.md § Versions 92..95)
     if h["version"] != 96:
         raise D2sError("version %d" % h["version"])
     return h
@@ -393,6 +407,8 @@ def parse_item(b, pos, isc, kinds, ver=None):
     """One item at byte pos (its 'JM'). Returns (item, end byte). kinds: code -> 'armor'|'weapon'|'misc'.
     ver: None reads as before (version 96, realm data refused, nothing after an ear's name); a save version reads
     the realm data, the ear's realm bit and, for ver <= 95, stat 72 in 8 bits."""
+    if ver is not None and ver <= V92:
+        return parse_item_109(b, pos, isc, kinds, ver)
     if b[pos:pos + 2] != b"JM":
         raise D2sError("'JM' missing at 0x%X" % pos)
     r = Bits(b, pos * 8 + 16)
@@ -907,7 +923,10 @@ def write_name7(w, name):
 
 def encode_item(it, isc, kinds, ver=None):
     """One item record, the inverse of parse_item: takes the dict parse_item returns (or one built
-    with the same keys) and gives the bytes from 'JM' to the end of the item's last byte. ver as parse_item's."""
+    with the same keys) and gives the bytes from 'JM' to the end of the item's last byte. ver as parse_item's;
+    a ver of 72..92 writes the 1.09 form (encode_item_109)."""
+    if ver is not None and ver <= V92:
+        return encode_item_109(it, isc, kinds, ver)
     w = BitWriter()
     w.write(0x4D4A, 16)  # 'J', 'M'
     f = it["flags"]
@@ -1291,6 +1310,15 @@ QUALITIES = {"low": 1, "normal": 2, "superior": 3, "rare": 6, "crafted": 8}
 
 
 def new_item(t, spec, rng):
+    """An item dict for encode_item from a recipe entry (see build). The item key "v71" (legacy builder, version-71
+    record fields) is carried into the dict as it is; without it the dict is what it was."""
+    it = _new_item(t, {k: v for k, v in spec.items() if k != "v71"}, rng)
+    if "v71" in spec:
+        it["v71"] = dict(spec["v71"])
+    return it
+
+
+def _new_item(t, spec, rng):
     """An item dict for encode_item from a recipe entry (see build)."""
     if "rare" in spec and "crafted" in spec:
         raise D2sError("item %r: rare or crafted, not both" % spec)
@@ -1446,6 +1474,12 @@ def new_item(t, spec, rng):
         # test-state key (plan 0030 Phase 2): extra entries of the item's property list, {stat id: value}, e.g. stat
         # 356 (questitemdifficulty) on an extended quest item such as Wirt's Leg
         stats[(int(k), None)] = v
+    for e in spec.get("item_props", []):
+        # test-state key (backlog 2026-10-27, the legacy builder): [stat id, param, value] entries, for the param
+        # stats the version-92 encodings take (83 by class, 107 by skill, 188, 195/198/201; d2s.md § Versions 92..95)
+        if not (isinstance(e, list) and len(e) == 3 and all(isinstance(x, int) for x in e)):
+            raise D2sError("item %r: item_props entries are [stat id, param, value]" % spec)
+        stats[(e[0], e[1])] = e[2]
     # test-state key (backlog 2026-10-27, plan 0038 batch H1b row 124): a group follower (e.g. 49 fire-max) with no
     # head is written alone, with its own id and Save Bits, so the reader meets a follower read by itself
     it["props"] = props_list(stats, lone_follower=bool(spec.get("lone_follower")))
@@ -1868,14 +1902,39 @@ def build(excel_dir, recipe_path, src, dst):
         return g[0]["location"] == 1 and g[0]["body"] in hands
     allit = [it for g in groups if not in_hand(g) for it in g] + [it for g in groups if in_hand(g) for it in g]
     tail = bytes(b[f["items_end"]:])
+    merc_groups = []
     if "merc" in rc:
         merc_groups = set_merc(t, rc["merc"], b, expansion, rng)
         new += [it for g in merc_groups for it in g]
-        if expansion:
+        if expansion and ver not in LEGACY_VERSIONS:
             merc = [it for g in merc_groups if not in_hand(g) for it in g] + \
                    [it for g in merc_groups if in_hand(g) for it in g]
             tail = (bytes(b[f["items_end"]:f["corpses_end"]]) + b"jf" + encode_items(merc, isc, t.kinds, ver=ver)
                     + bytes(b[f["kf_off"]:]))
+    if ver is not None and ver <= V92:
+        # the legacy builder (backlog 2026-10-27): a set item's 12-bit field is a Sets id below 93; v71 refused
+        # where it does not belong
+        allit = old_set_ids(t, allit, ver)
+        merc_groups = [old_set_ids(t, g, ver) for g in merc_groups]
+        if ver == V92 and expansion and "merc" in rc:
+            merc = [it for g in merc_groups if not in_hand(g) for it in g] + \
+                   [it for g in merc_groups if in_hand(g) for it in g]
+            tail = (bytes(b[f["items_end"]:f["corpses_end"]]) + b"jf" + encode_items(merc, isc, t.kinds, ver=ver)
+                    + bytes(b[f["kf_off"]:]))
+    if rc.get("legacy_new_char") and ver not in LEGACY_VERSIONS:
+        raise D2sError("legacy_new_char needs save_version 71 or 87")
+    if any("v71" in it for it in allit + [it for g in merc_groups for it in g]) and ver != 71:
+        raise D2sError("item key v71 needs save_version 71")
+    if ver in LEGACY_VERSIONS:
+        out = legacy_image(t, rc, b, stats, skills, allit, merc_groups, ver, in_hand)
+        parse_legacy(out, isc, t.kinds, classic_codes(t))  # must read back
+        with open(dst, "wb") as fh:
+            fh.write(out)
+        for it in new:
+            if "seed" in it:
+                print("item %s seed %d" % (it["code"].strip(), it["seed"]))
+        print("wrote", dst, "%d bytes, %d items, version %d (legacy layout, no checksum)" % (len(out), len(allit), ver))
+        return
     if ver is not None:
         struct.pack_into("<I", b, 4, ver)
     gf = encode_stats_old(stats, b[0x29]) if ver is not None and ver <= OLD_STATS_MAX else encode_stats(stats, isc)
@@ -1896,16 +1955,18 @@ EXT_KEYS = ("save_version", "stat_slots", "skill_count")
 
 def ext_version(rc, f):
     """The save version an extended build writes, or None for the ordinary version-96 build (every key of the
-    extension absent). save_version: 93..96 (92 and the legacy versions are not buildable: d2s.md § Versions
-    92..95, § Legacy versions); stat_slots alone, skill_count alone or an item with "realm" give 96."""
+    extension absent). save_version: 71, 87, 92 (the legacy builder) or 93..96; stat_slots alone, skill_count alone
+    or an item with "realm" give 96."""
     items = list(rc.get("items", [])) + list(rc.get("merc", {}).get("items", []))
     items += [c for it in list(items) for c in it.get("filled", [])]
     if not any(k in rc for k in EXT_KEYS) and not any("realm" in it for it in items):
         return None
     ver = rc.get("save_version", 96)
-    if ver not in EXT_VERSIONS:
-        raise D2sError("save_version %r: 93..96 (92: the 1.09 property widths' per-id overrides are not documented; "
-                       "< 92: the legacy layouts are not documented; d2s.md § Versions 92..95)" % (ver,))
+    if ver not in BUILD_VERSIONS:
+        raise D2sError("save_version %r: 71, 87, 92 or 93..96 (the other legacy versions 72..91 are not built: their "
+                       "item forms differ by version; d2s.md § Legacy versions)" % (ver,))
+    if ver in LEGACY_VERSIONS and any(k in rc for k in ("stat_slots", "skill_count")):
+        raise D2sError("save_version %d: stat_slots and skill_count are header fields of versions 92..96 only" % ver)
     if "stat_slots" in rc and not (isinstance(rc["stat_slots"], int) and 0 <= rc["stat_slots"] < 256):
         raise D2sError("stat_slots %r: a byte" % (rc["stat_slots"],))
     if "skill_count" in rc and not (isinstance(rc["skill_count"], int) and 0 <= rc["skill_count"] < 256):
@@ -1918,6 +1979,610 @@ def ext_version(rc, f):
             raise D2sError("save_version %d: the base has corpse, golem or mercenary items (written in the "
                            "version-96 widths)" % ver)
     return ver
+
+
+# ---------------------------------------------------------------------------------------------------------------
+# The legacy builder (backlog 2026-10-27 reverser -> archivist, the d2s legacy layouts; d2s.md § Legacy versions,
+# § Versions 92..95). Opt-in only: save_version 71, 87 or 92. Every layout statement is the static reading of
+# save/0001 § Plan 0038 lane/rlg, [I]; no file of these versions has been loaded yet.
+
+# ITEMS_ReadFull's per-stat switch below 93 (lane/rlg (b)): the class of stat 83's param -> the id that carries it
+CLASS_SKILL_IDS = {0: 83, 3: 84, 2: 85, 1: 86, 4: 87, 5: 179, 6: 180}
+# ids a version <= 92 reader takes for another stat or another encoding; the builder refuses to write them raw
+REMAP_IDS = {92: 93, 94: 96, 95: 96, 97: 99, 98: 99, 100: 102, 101: 102, 103: 105, 104: 105, 106: 105}
+FOLDED_IDS = set(CLASS_SKILL_IDS.values()) - {83} | {108, 109} | set(range(181, 188)) | {196, 197, 199, 200, 202,
+                                                                                        203} | set(range(205, 214))
+OLD_PROP_89 = {74: (5, 10), 79: (8, 20), 80: (7, 20)}   # ITEMS_ReadProperty, version <= 89: (width, add)
+LEGACY_HEADER_SIZE = 0x82
+LEGACY_STATS = 16            # sub_00532DA0 is called with 16: stats 0..15, a 3-byte mask
+
+
+def s_write(w, v, n):
+    """A signed n-bit field (two's complement)."""
+    if not -(1 << (n - 1)) <= v < 1 << (n - 1):
+        raise D2sError("value %d does not fit a signed %d-bit field" % (v, n))
+    w.write(v & ((1 << n) - 1), n)
+
+
+def s_read(r, n):
+    v = r.read(n)
+    return v - (1 << n) if v >> (n - 1) else v
+
+
+def w109(isc, sid):
+    """The 1.09 width and add of a stat; a stat with no 1.09 width cannot be written below 93."""
+    e = isc[sid]
+    if not e["s109_bits"]:
+        raise D2sError("item stat %d has no 1.09-Save Bits (not writable below version 93)" % sid)
+    return e["s109_bits"], e["s109_add"]
+
+
+def encode_props_109(w, props, isc, ver):
+    """One property list in the version 72..92 form (lane/rlg (b)): 9-bit id, no param in the generic path, the
+    1.09 widths and adds, the per-id encodings of ITEMS_ReadFull below 93 and ITEMS_ReadProperty's <= 89 widths.
+    Takes the representation parse_props gives (id, param, [values]); refuses what the reader would take for
+    something else (a remapped id, a param it drops, a folded id, the five-class fold into stat 127)."""
+    cls83 = {}
+    for sid, param, vals in props:
+        if len(vals) != GROUPS.get(sid, 1):
+            raise D2sError("stat %d takes %d values, got %r" % (sid, GROUPS.get(sid, 1), vals))
+        v = vals[0]
+        if sid in REMAP_IDS:
+            raise D2sError("stat %d: a version <= 92 reader stores it as stat %d" % (sid, REMAP_IDS[sid]))
+        if sid in FOLDED_IDS or sid == 204:
+            raise D2sError("stat %d: not writable below 93 by this builder (folded into another id, or its "
+                           "encoding's shifts are not in the findings)" % sid)
+        if ver <= 81 or (ver <= 85 and sid in (1, 3)) or (ver <= 89 and sid in (23, 24)) or (
+                ver <= 87 and sid in (93, 96, 99, 102, 105)):
+            raise D2sError("stat %d at version %d: the older override is not built (d2s.md § Legacy versions)"
+                           % (sid, ver))
+        if sid == 83:
+            if param not in CLASS_SKILL_IDS:
+                raise D2sError("stat 83: param %r is not a class 0..6" % (param,))
+            w.write(CLASS_SKILL_IDS[param], 9)
+            w.write(v, 3)
+            cls83[param] = v
+        elif sid == 126:
+            if param != 1:
+                raise D2sError("stat 126: below 93 the 4-bit field is read with param 1 only, got %r" % (param,))
+            w.write(126, 9)
+            w.write(v, 4)
+        elif sid == 107:
+            if not (param is not None and 0 <= param < 512 and 0 < v <= (1 << isc[107]["save_bits"]) - 1):
+                raise D2sError("stat 107: skill %r level %r (skill 9 bits, level 1..%d)"
+                               % (param, v, (1 << isc[107]["save_bits"]) - 1))
+            w.write(107, 9)
+            w.write(param | v << 9, 14)
+        elif sid == 188:
+            cls, tab = (param or 0) >> 3, (param or 0) & 7
+            if param is None or cls > 6 or tab > 2 or not 0 <= v <= 7:
+                raise D2sError("stat 188: param %r (8 class + tab, tab 0..2), value %r (0..7)" % (param, v))
+            w.write(188, 9)
+            w.write(3 * cls + tab | v << 5, 10)
+        elif sid in (195, 198, 201):
+            if param is None or param >> 6 >= 512 or (param & 0x3F) >= 32 or not 0 <= v < 128:
+                raise D2sError("stat %d: param %r (skill << 6 | level, level < 32), chance %r" % (sid, param, v))
+            w.write(sid, 9)
+            w.write(param >> 6 | (param & 0x3F) << 9 | v << 14, 21)
+        elif sid == 134 and ver <= 89:
+            if v != 1 or param is not None:
+                raise D2sError("stat 134 at version %d: 16 bits read and dropped, the stat set to 1; give 1" % ver)
+            w.write(134, 9)
+            w.write(0, 16)
+        elif sid in OLD_PROP_89 and ver <= 89:
+            if param is not None:
+                raise D2sError("stat %d: no param below 93" % sid)
+            n, a = OLD_PROP_89[sid]
+            w.write(sid, 9)
+            w.write(v + a, n)
+        else:
+            if param is not None:
+                raise D2sError("stat %d param %r: the generic path reads no param below 93" % (sid, param))
+            w.write(sid, 9)
+            for k, x in enumerate(vals):
+                n, a = w109(isc, sid + k)
+                w.write(x + a, n)
+    if all(cls83.get(c, 0) == cls83.get(0, 0) for c in range(5)) and cls83.get(0, 0) > 0:
+        raise D2sError("stat 83 equal and above 0 for the five classic classes: a version <= 92 reader folds it "
+                       "into stat 127")
+    w.write(0x1FF, 9)
+
+
+def parse_props_109(r, isc, ver):
+    """Inverse of encode_props_109, in the parse_props representation."""
+    props = []
+    by_id = {i: c for c, i in CLASS_SKILL_IDS.items()}
+    while True:
+        sid = r.read(9)
+        if sid == 0x1FF:
+            return props
+        if sid in by_id:
+            props.append((83, by_id[sid], [r.read(3)]))
+        elif sid == 126:
+            props.append((126, 1, [r.read(4)]))
+        elif sid == 107:
+            x = r.read(14)
+            props.append((107, x & 0x1FF, [x >> 9]))
+        elif sid == 188:
+            x = r.read(10)
+            props.append((188, (x & 31) // 3 * 8 + (x & 31) % 3, [x >> 5]))
+        elif sid in (195, 198, 201):
+            x = r.read(21)
+            props.append((sid, (x & 0x1FF) << 6 | (x >> 9 & 31), [x >> 14]))
+        elif sid == 134 and ver <= 89:
+            r.read(16)
+            props.append((134, None, [1]))
+        elif sid in OLD_PROP_89 and ver <= 89:
+            n, a = OLD_PROP_89[sid]
+            props.append((sid, None, [r.read(n) - a]))
+        elif sid in REMAP_IDS or sid in FOLDED_IDS or sid == 204:
+            raise D2sError("stat %d below 93: not read by this parser (bit %d)" % (sid, r.pos))
+        else:
+            vals = []
+            for k in range(GROUPS.get(sid, 1)):
+                n, a = w109(isc, sid + k)
+                vals.append(r.read(n) - a)
+            props.append((sid, None, vals))
+
+
+def encode_item_109(it, isc, kinds, ver):
+    """One item of a version 72..92 list (lane/rlg (a) item lists, (b), (c)): the version-96 record with the tests
+    a version below 93 meets. Built here for 87 and 92 only; at <= 88 the affix fields (magic, rare, crafted, the
+    class affix) are refused, their base adjustment and the rare-affix step being read but not laid out."""
+    if ver not in (87, V92):
+        raise D2sError("item list version %d: only 87 and 92 are built" % ver)
+    w = BitWriter()
+    w.write(0x4D4A, 16)
+    f = it["flags"]
+    w.write(f, 32)
+    w.write(it["version"], 10)
+    for k, n in (("location", 3), ("body", 4), ("x", 4), ("y", 4), ("store", 3)):
+        w.write(it[k], n)
+    realm = ver > 86      # the realm bit is read for a version above 86 (0x0062ABFF, 0x0062D2AF)
+    if f >> 16 & 1:
+        w.write(it["ear_class"], 3)
+        w.write(it["ear_level"], 7)
+        write_name7(w, it["ear_name"])
+        if realm:
+            write_realm(w, it, ver)
+        return w.tobytes()
+    code = it["code"].ljust(4)
+    if code == "nec " or code == "neg ":
+        raise D2sError("item code %r: a version <= 92 reader takes 'nec ' for 'neg '" % code)
+    for c in code:
+        w.write(ord(c), 8)
+    c3 = code.strip()
+    if f >> 21 & 1:
+        if c3 == "gld":
+            big = it.get("gold_big", int(it["gold"] > 4095))
+            w.write(big, 1)
+            w.write(it["gold"], 32 if big else 12)
+        # stat 356 of a simple quest item is read only above 92 (0x0062AB1A): not written
+        if realm:
+            write_realm(w, it, ver)
+        return w.tobytes()
+    w.write(it.get("n_filled", 0), 3)
+    w.write(it["seed"], 32)
+    w.write(it["ilvl"], 7)
+    q = it["quality"]
+    w.write(q, 4)
+    w.write(it["has_gfx"], 1)
+    if it["has_gfx"]:
+        w.write(it["gfx"], 3)
+    if ver <= 88 and (it["has_class"] or q in (4, 6, 8)):
+        raise D2sError("version %d: magic, rare, crafted and class-affix items are not built (the 72..88 affix "
+                       "base adjustment and the rare-affix step are not laid out)" % ver)
+    w.write(it["has_class"], 1)
+    if it["has_class"]:
+        w.write(it["class_affix"], 11)
+    if q in (1, 3):
+        w.write(it["qdata"], 3)
+    elif q == 4:
+        w.write(it["prefix"], 11)
+        w.write(it["suffix"], 11)
+    elif q in (5, 7):
+        w.write(it["qid"], 12)
+    elif q in (6, 8):
+        w.write(it["names"][0], 8)
+        w.write(it["names"][1], 8)
+        for a in it["affixes"]:
+            w.write(a is not None, 1)
+            if a is not None:
+                w.write(a, 11)
+    elif q != 2:
+        raise D2sError("quality %d" % q)
+    if c3 in ("tbk", "ibk"):
+        w.write(it["tome"], 5)
+    if f >> 26 & 1:
+        w.write(it["rw"][0], 12)
+        w.write(it["rw"][1], 4)
+    if f >> 24 & 1:
+        write_name7(w, it["pname"])
+    if realm:
+        write_realm(w, it, ver)
+    kind = kinds.get(c3)
+    if kind == "armor":
+        n, a = w109(isc, 31)
+        w.write(it["defense"] + a, n)
+    if kind in ("armor", "weapon"):
+        w.write(it["maxdur"], w109(isc, 73)[0])
+        if it["maxdur"]:
+            w.write(it["dur"], 8)          # stat 72 in 8 bits for any version <= 95
+    if kinds.get(c3 + "#stack"):
+        w.write(it["quantity"], 9)          # 9 bits above 80 (0x0062D7B7)
+    if f >> 11 & 1:
+        w.write(it["sockets"], w109(isc, 194)[0])
+    if q == 5:
+        w.write(it["set_lists"], 5)         # set lists above 84 (0x0062D856)
+    encode_props_109(w, it["props"], isc, ver)
+    for lst in it.get("set_props", []) if q == 5 else ():
+        encode_props_109(w, lst, isc, ver)
+    if f >> 26 & 1:
+        encode_props_109(w, it["rw_props"], isc, ver)
+    return w.tobytes()
+
+
+def parse_item_109(b, pos, isc, kinds, ver):
+    """Inverse of encode_item_109 (versions 87 and 92)."""
+    if b[pos:pos + 2] != b"JM":
+        raise D2sError("'JM' missing at 0x%X" % pos)
+    r = Bits(b, pos * 8 + 16)
+    it = dict(off=pos, flags=r.read(32))
+    f = it["flags"]
+    it.update(identified=f >> 4 & 1, socketed=f >> 11 & 1, new=f >> 13 & 1, ear=f >> 16 & 1,
+              starter=f >> 17 & 1, simple=f >> 21 & 1, ethereal=f >> 22 & 1, personalized=f >> 24 & 1,
+              runeword=f >> 26 & 1)
+    it["version"] = r.read(10)
+    it["location"], it["body"], it["x"], it["y"], it["store"] = r.read(3), r.read(4), r.read(4), r.read(4), r.read(3)
+    realm = ver > 86
+    if it["ear"]:
+        it["ear_class"], it["ear_level"] = r.read(3), r.read(7)
+        it["ear_name"] = "".join(chr(c) for c in iter(lambda: r.read(7), 0))
+        if realm:
+            read_realm(r, it, ver)
+        it["pad"] = r.align()
+        return it, r.pos // 8
+    it["code"] = bytes(r.read(8) for _ in range(4)).decode("latin1")
+    code = it["code"].strip()
+    if it["simple"]:
+        if code == "gld":
+            it["gold_big"] = r.read(1)
+            it["gold"] = r.read(32 if it["gold_big"] else 12)
+        if realm:
+            read_realm(r, it, ver)
+        it["pad"] = r.align()
+        return it, r.pos // 8
+    it["n_filled"] = r.read(3)
+    it["seed"], it["ilvl"], it["quality"] = r.read(32), r.read(7), r.read(4)
+    it["has_gfx"] = r.read(1)
+    it["gfx"] = r.read(3) if it["has_gfx"] else None
+    it["has_class"] = r.read(1)
+    it["class_affix"] = r.read(11) if it["has_class"] else None
+    q = it["quality"]
+    if q in (1, 3):
+        it["qdata"] = r.read(3)
+    elif q == 4:
+        it["prefix"], it["suffix"] = r.read(11), r.read(11)
+    elif q in (5, 7):
+        it["qid"] = r.read(12)
+    elif q in (6, 8):
+        it["names"] = (r.read(8), r.read(8))
+        it["affixes"] = [r.read(11) if r.read(1) else None for _ in range(6)]
+    elif q != 2:
+        raise D2sError("quality %d at 0x%X" % (q, pos))
+    if code in ("tbk", "ibk"):
+        it["tome"] = r.read(5)
+    if it["runeword"]:
+        it["rw"] = (r.read(12), r.read(4))
+    if it["personalized"]:
+        it["pname"] = "".join(chr(c) for c in iter(lambda: r.read(7), 0))
+    if realm:
+        read_realm(r, it, ver)
+    kind = kinds.get(code)
+    if kind == "armor":
+        n, a = w109(isc, 31)
+        it["defense"] = r.read(n) - a
+    if kind in ("armor", "weapon"):
+        it["maxdur"] = r.read(w109(isc, 73)[0])
+        if it["maxdur"]:
+            it["dur"] = r.read(8)
+    if kinds.get(code + "#stack"):
+        it["quantity"] = r.read(9)
+    if it["socketed"]:
+        it["sockets"] = r.read(w109(isc, 194)[0])
+    if q == 5:
+        it["set_lists"] = r.read(5)
+    it["props"] = parse_props_109(r, isc, ver)
+    for k in range(5) if q == 5 else ():
+        if it["set_lists"] >> k & 1:
+            it.setdefault("set_props", []).append(parse_props_109(r, isc, ver))
+    if it["runeword"]:
+        it["rw_props"] = parse_props_109(r, isc, ver)
+    it["pad"] = r.align()
+    return it, r.pos // 8
+
+
+def old_set_ids(t, items, ver):
+    """Below 93 a set item's 12-bit field is a Sets id; the reader names the item by the first member of that set
+    whose item code is the item's (lane/rlg (b); member order = SetItems record order, SetItems.md +0x02E).
+    Returns copies with qid the Sets id; a set item the reader would take for another member is refused. Version
+    71 records carry the SetItems row as their file index, so nothing changes there."""
+    if ver == 71:
+        return items
+    ix, rows = load_txt(t.excel_dir, "sets.txt")
+    sets = [r[ix["index"]] for r in rows if r[ix["index"]] != "Expansion"]
+    recs = sorted((rec, row) for lst in t.setitems.values() for rec, row in lst)
+    out = []
+    for it in items:
+        if it.get("quality") != 5 or it.get("simple"):
+            out.append(it)
+            continue
+        row = dict(recs)[it["qid"]]
+        sid = sets.index(row["set"])
+        first = [rec for rec, r in recs if r["set"] == row["set"] and r["item"] == it["code"].strip()][0]
+        if first != it["qid"]:
+            raise D2sError("set item %d (%s): below 93 the reader takes set %d's first %s, record %d"
+                           % (it["qid"], row["index"], sid, it["code"].strip(), first))
+        out.append(dict(it, qid=sid, setitem=it["qid"]))
+    return out
+
+
+def skill_byte(sid):
+    """The legacy one-byte skill (lane/rlg (a), 0x00532B00-0x00532B1B): 0..155 as is, 221..281 minus 0x41,
+    0xFF none; the bytes 0xD9..0xFE are skills 217..254 as is."""
+    if sid in (0xFFFF, 0xFFFFFFFF, -1):
+        return 0xFF
+    if 0 <= sid <= 155 or 217 <= sid <= 220:
+        return sid
+    if 221 <= sid <= 281:
+        return sid - 0x41
+    raise D2sError("skill %d cannot be stored in a legacy skill byte (0..155, 217..281)" % sid)
+
+
+def unskill_byte(x):
+    return -1 if x == 0xFF else x + 0x41 if 0x9C <= x <= 0xD8 else x
+
+
+def classic_codes(t):
+    """The classic item index map (data/0001 Q3): the codes of the version-0 rows of weapons, armor, misc, in item
+    index order; the version-71 record's 10-bit index is a position in this list."""
+    out = []
+    for name in ("weapons", "armor", "misc"):
+        ix, rows = load_txt(t.excel_dir, name + ".txt")
+        out += [cell(ix, r, "code") for r in rows if cell(ix, r, "code") and cell(ix, r, "version") == "0"]
+    return out
+
+
+V71_PAGE = {0: 0, 1: 0, 4: 3, 5: 4}   # store (the current form's page + 1) -> page; the builder's mapping
+
+
+def encode_v71_record(it, classic):
+    """'JM' and one version-71 record (lane/rlg (a), sub_00532F30): the index form (flags 0x100000 and the ear bit
+    clear, 25 bytes) or the code form (0x100000 set, 0x200000 clear, the bytes the bits fill). The item key "v71"
+    may give form ("index" | "code"; default index when the code has a version-0 row), unit_seed, item_seed
+    (default the item seed), file_index (default the unique or set row for quality 7 / 5, else 0), page."""
+    o = dict(it.get("v71", {}))
+    unknown = set(o) - {"form", "unit_seed", "item_seed", "file_index", "page"}
+    if unknown:
+        raise D2sError("v71: unknown key(s) %s" % ", ".join(sorted(unknown)))
+    if it["flags"] >> 16 & 1:
+        raise D2sError("version 71: ears are not built")
+    code = it["code"].strip()
+    form = o.get("form", "index" if code in classic else "code")
+    if form == "index" and code not in classic:
+        raise D2sError("v71 item %r: no version-0 row, give form \"code\"" % code)
+    q = it.get("quality", 2)
+    seed = it.get("seed", 0)
+    fi = o.get("file_index", it.get("qid", 0) if q in (5, 7) else 0)
+    page = o.get("page", V71_PAGE.get(it["store"], 0) if it["location"] == 0 else 0)
+    w = BitWriter()
+    flags = it["flags"] & ~0x300000 | (0x100000 if form == "code" else 0)
+    w.write(flags, 32)
+    if form == "code":
+        w.write(it["version"] & 0x3FF, 10)
+        for c in it["code"].ljust(4):
+            w.write(ord(c), 8)
+    w.write(it["body"], 5)
+    w.write(it.get("n_filled", 0), 3)
+    w.write(it.get("ilvl", 1), 12)
+    if form == "index":
+        s_write(w, classic.index(code), 10)
+    w.write(it["location"], 3)
+    w.write(q, 4)
+    s_write(w, it.get("quantity", 0), 20)
+    w.write(it.get("dur", 0) if it.get("maxdur") else 0, 8)
+    w.write(it.get("maxdur", 0), 8)
+    w.write(it["x"], 5)
+    w.write(it["y"], 3)
+    s_write(w, fi, 10)
+    w.write(o.get("unit_seed", seed), 32)
+    w.write(o.get("item_seed", seed), 32)
+    w.write(page, 8)
+    rec = w.tobytes()
+    return b"JM" + (rec.ljust(25, b"\0") if form == "index" else rec)
+
+
+def parse_v71_record(b, pos, classic=None):
+    """Inverse of encode_v71_record: (record dict, end)."""
+    if b[pos:pos + 2] != b"JM":
+        raise D2sError("'JM' missing at 0x%X" % pos)
+    r = Bits(b, (pos + 2) * 8)
+    it = dict(off=pos, flags=r.read(32))
+    f = it["flags"]
+    if f & 0x10000 or (f & 0x100000 and f & 0x200000):
+        raise D2sError("v71 record at 0x%X: ear or code-and-compact form, not read here" % pos)
+    form = "code" if f & 0x100000 else "index"
+    if form == "code":
+        it["version"] = r.read(10)
+        it["code"] = bytes(r.read(8) for _ in range(4)).decode("latin1")
+    it["body"], it["n_filled"], it["ilvl"] = r.read(5), r.read(3), r.read(12)
+    if form == "index":
+        it["index"] = s_read(r, 10)
+        if classic is not None:
+            it["code"] = classic[it["index"]].ljust(4) if 0 <= it["index"] < len(classic) else None
+    it["location"], it["quality"], it["quantity"] = r.read(3), r.read(4), s_read(r, 20)
+    it["dur"], it["maxdur"], it["x"], it["y"] = r.read(8), r.read(8), r.read(5), r.read(3)
+    it["file_index"], it["unit_seed"], it["item_seed"], it["page"] = s_read(r, 10), r.read(32), r.read(32), r.read(8)
+    it["form"] = form
+    end = pos + 2 + (25 if form == "index" else (r.pos - (pos + 2) * 8 + 7) // 8)
+    return it, end
+
+
+def legacy_header(t, rc, b, stats, ver):
+    """The 0x82-byte legacy header from the (edited) version-96 header b (lane/rlg (a) header table)."""
+    h = bytearray(LEGACY_HEADER_SIZE)
+    struct.pack_into("<II", h, 0, MAGIC, ver)
+    h[0x08:0x18] = b[0x14:0x24]
+    h[0x17] = 0
+    status = b[0x24] | min(b[0x25], 31) << 8 | (0x2000 if u32(b, 0x10) else 0) | (1 if rc.get("legacy_new_char") else 0)
+    struct.pack_into("<I", h, 0x18, status)
+    struct.pack_into("<HHHH", h, 0x1C, 0, LEGACY_STATS, LEGACY_HEADER_SIZE, b[0x28])
+    h[0x24] = dict((s, v) for s, _, v in stats).get(12, b[0x2B])
+    h[0x26:0x31] = b[0x88:0x93]           # graphics, the first 11 of the current 16
+    h[0x36:0x41] = b[0x98:0xA3]           # colours, likewise
+    for i in range(8):
+        h[0x46 + 2 * i] = skill_byte(u32(b, 0x38 + 4 * i) & 0x7FFF if u16(b, 0x38 + 4 * i) != 0xFFFF else -1)
+        h[0x47 + 2 * i] = 0               # the flag byte: written 0 (its meaning is not in the findings)
+    h[0x56] = skill_byte(u32(b, 0x78))
+    h[0x57] = skill_byte(u32(b, 0x7C))
+    act = [(d, x & 7) for d, x in enumerate(b[0xA8:0xAB]) if x & 0x80]
+    d, a = act[0] if act else (0, 0)
+    h[0x58] = d << 4 | a
+    struct.pack_into("<I", h, 0x7E, u32(b, 0xAB))
+    return bytes(h)
+
+
+def legacy_stats(stats):
+    """'gf', a 3-byte mask over stats 0..15 (the third byte unread), a u32 per set bit (sub_00532DA0)."""
+    vals = {}
+    for sid, param, v in stats:
+        if sid >= LEGACY_STATS or param is not None:
+            raise D2sError("legacy stats: stat %d%s (stats 0..15 only)" % (sid, " (param)" if param is not None else ""))
+        if not 0 <= v < 1 << 32:
+            raise D2sError("legacy stats: stat %d value %d is not a u32" % (sid, v))
+        vals[sid] = v
+    mask = sum(1 << s for s in vals)
+    return b"gf" + mask.to_bytes(3, "little") + b"".join(struct.pack("<I", vals[s]) for s in sorted(vals))
+
+
+def legacy_items(items, isc, kinds, ver, classic):
+    if ver == 71:
+        top = [it for it in items if "parent" not in it]
+        seen = set()
+        for it in top:
+            k = (it["code"], it.get("qid") if it.get("quality") in (5, 7) else 0, it.get("ilvl", 1), it.get("seed", 0))
+            if k in seen:
+                raise D2sError("v71: two top-level %s with the same code, file index, ilvl and seeds: the reader "
+                               "skips the second" % it["code"].strip())
+            seen.add(k)
+        return b"JM" + struct.pack("<H", len(top)) + b"".join(encode_v71_record(it, classic) for it in items)
+    return encode_items(items, isc, kinds, ver=ver)
+
+
+def legacy_image(t, rc, b, stats, skills, allit, merc_groups, ver, in_hand):
+    """A whole legacy file (lane/rlg (a) Order and framing): header, the quest, waypoint and NPC sections as the
+    version-96 ones, gf, if, items, corpses (none), the mercenary, the hotkey tail (>= 73). No checksum, no size."""
+    isc, kinds, classic = t.isc, t.kinds, classic_codes(t)
+    out = legacy_header(t, rc, b, stats, ver) + bytes(b[QUEST_OFF:HEADER_SIZE])
+    out += legacy_stats(stats) + b"if" + bytes(skills)
+    out += legacy_items(allit, isc, kinds, ver, classic)
+    out += b"JM\0\0"                                  # no corpse
+    flags, seed, name, mid, exp = struct.unpack_from("<IIHHI", b, 0xAF)
+    merc = [it for g in merc_groups if not in_hand(g) for it in g] + [it for g in merc_groups if in_hand(g) for it in g]
+    if ver == 71:
+        if merc:
+            raise D2sError("version 71: the mercenary has no item list")
+        out += b"JM" + struct.pack("<IH", seed, name)
+    elif not seed:
+        out += b"\0"
+    else:
+        out += struct.pack("<BBIIHHI", 1, 0, flags & 0x10000, seed, name, mid, exp)
+        out += legacy_items(merc, isc, kinds, ver, classic)
+    if ver >= 73:
+        for i in range(8, 16):
+            x = u32(b, 0x38 + 4 * i)
+            out += bytes((skill_byte(x & 0x7FFF if x & 0xFFFF != 0xFFFF else -1), 0)) + b"\0" * 4
+        if ver >= 82:
+            out += struct.pack("<II", u32(b, 0x80), u32(b, 0x84))   # swap-set skills A, B: the builder's order
+    return out
+
+
+def parse_legacy(b, isc, kinds, classic=None):
+    """Read a file the legacy builder wrote (versions 71 and 87; the layout of legacy_image). Returns a dict."""
+    if len(b) < LEGACY_HEADER_SIZE or u32(b, 0) != MAGIC:
+        raise D2sError("bad magic or short file")
+    ver = u32(b, 4)
+    if ver not in LEGACY_VERSIONS:
+        raise D2sError("legacy version %d: 71 and 87 are read" % ver)
+    if u16(b, 0x20) != LEGACY_HEADER_SIZE:
+        raise D2sError("legacy header length %d" % u16(b, 0x20))
+    status = u32(b, 0x18) & 0xFFFF
+    h = dict(version=ver, name=b[0x08:0x18].split(b"\0")[0].decode("latin1"), status=status,
+             progression=status >> 8 & 31, cls=u16(b, 0x22), level=b[0x24],
+             hotkeys=[(unskill_byte(b[0x46 + 2 * i]), b[0x47 + 2 * i]) for i in range(8)],
+             left=unskill_byte(b[0x56]), right=unskill_byte(b[0x57]), act=b[0x58] & 15, difficulty=b[0x58] >> 4,
+             map_seed=u32(b, 0x7E))
+    p = LEGACY_HEADER_SIZE
+    for tag, size in ((b"Woo!", 0x12A), (b"WS", 0x50), (b"\x01w", 0x34)):
+        if b[p:p + len(tag)] != tag:
+            raise D2sError("%r missing at 0x%X" % (tag, p))
+        p += size
+    if b[p:p + 2] != b"gf":
+        raise D2sError("'gf' missing at 0x%X" % p)
+    mask = int.from_bytes(b[p + 2:p + 5], "little")
+    p += 5
+    stats = []
+    for sid in range(LEGACY_STATS):
+        if mask >> sid & 1:
+            stats.append((sid, None, u32(b, p)))
+            p += 4
+    if b[p:p + 2] != b"if":
+        raise D2sError("'if' missing at 0x%X" % p)
+    skills, p = list(b[p + 2:p + 32]), p + 32
+
+    def items_at(p):
+        if b[p:p + 2] != b"JM":
+            raise D2sError("item list 'JM' missing at 0x%X" % p)
+        count, p, out = u16(b, p + 2), p + 4, []
+        for _ in range(count):
+            if ver == 71:
+                it, p = parse_v71_record(b, p, classic)
+            else:
+                it, p = parse_item(b, p, isc, kinds, ver)
+            it["end"] = p
+            out.append(it)
+            for _ in range(it.get("n_filled", 0)):
+                sub, p = parse_v71_record(b, p, classic) if ver == 71 else parse_item(b, p, isc, kinds, ver)
+                sub["parent"], sub["end"] = it["off"], p
+                out.append(sub)
+        return dict(count=count, items=out), p
+    f = dict(header=h, ver=ver, stats=stats, skills=skills)
+    f["items"], p = items_at(p)
+    if b[p:p + 2] != b"JM" or u16(b, p + 2):
+        raise D2sError("corpse list at 0x%X: 'JM' and count 0 expected" % p)
+    p += 4
+    if ver == 71:
+        if b[p:p + 2] != b"JM":
+            raise D2sError("v71 mercenary 'JM' missing at 0x%X" % p)
+        f["merc"] = dict(seed=u32(b, p + 2), name=u16(b, p + 6))
+        p += 8
+    elif b[p] == 0:
+        f["merc"] = None
+        p += 1
+    else:
+        _, _, flags, seed, name, mid, exp = struct.unpack_from("<BBIIHHI", b, p)
+        f["merc"] = dict(dead=flags >> 16 & 1, seed=seed, name=name, id=mid, exp=exp)
+        f["merc_items"], p = items_at(p + 0x12)
+    if ver >= 73:
+        f["hotkeys_tail"] = [(unskill_byte(b[p + 6 * i]), b[p + 6 * i + 1]) for i in range(8)]
+        p += 48
+        if ver >= 82:
+            f["swap"] = struct.unpack_from("<II", b, p)
+            p += 8
+    if p != len(b):
+        raise D2sError("legacy file: %d bytes after the last section" % (len(b) - p))
+    f["end"] = p
+    return f
 
 
 def to_classic(b, isc, kinds):

@@ -220,10 +220,10 @@ verdict per compared claim.
 | `0x00599DF0` | `sub_00599DF0_A2Q2_CubeChest` | `box` chest | C (H6e2) |
 | `0x0059A7E0` | `sub_0059A7E0_A2Q3_ViperChest` | `vip` chest | I |
 | `0x0059D050` | `sub_0059D050_A2Q6_DurielDeath` | Duriel's death: word 14 bit 5 | I |
-| `0x005B7A60` | `sub_005B7A60_A3Q1_TomeDrop` | `bbb` from its object | I |
+| `0x005B7A60` | `sub_005B7A60_A3Q1_TomeDrop` | `bbb` from its object | C (H6e2 follow-up) |
 | `0x005B8860` | `sub_005B8860_A3Q2_HeartChest` | `qhr` chest | C (H6e2) |
-| `0x005B8940` | `sub_005B8940_A3Q2_EyeChest` | `qey` chest | I |
-| `0x005B8A20` | `sub_005B8A20_A3Q2_BrainChest` | `qbr` chest | I |
+| `0x005B8940` | `sub_005B8940_A3Q2_EyeChest` | `qey` chest | C (H6e2 follow-up) |
+| `0x005B8A20` | `sub_005B8A20_A3Q2_BrainChest` | `qbr` chest | C (H6e2 follow-up) |
 | `0x005B9980` | `sub_005B9980_A3Q3_GidbinnDrop` | `g33` from a dying monster | I |
 | `0x005B9240` | `sub_005B9240_A3Q3_NpcMessage` | Ormus's rare ring | C (H6e1) |
 | `0x005BAB60` | `sub_005BAB60_A3Q4_FigurineDrop` | `j34` from a dying monster | I |
@@ -1291,6 +1291,12 @@ Run record [run:2026-10-27-sweep-quest-items](experiments.md#run2026-10-27-sweep
 `tools/sweep_h6e2.py check`; the check over the 11 kept logs is `workspace/logs/h6e2/check-final.txt`
 (`d4ce6d6d…`): **chest 6, object 2, event7 19, dup 8, gate 8, gold 45, death 3 (listed); 0 mismatches.**
 
+*Follow-up (`lane/h6e2f`, 2026-10-27, same run id):* the three reruns `eye4c`, `tome4c` and `brain4c` (the `lane/rdp`
+review, ruling 7), each kept, on slot 1 with `d2pilot.py --descend-to` and `--all-copies`; the check over the 14 kept
+logs is `workspace/logs/h6e2/check-followup.txt` (`fe0f034f…`): **chest 8, object 3, event7 19, dup 8, gate 8, gold
+57, death 6 (listed); 0 mismatches.** The eye and brain chests and the tome below; run record
+[§ Follow-up](experiments.md#follow-up-2026-10-27-laneh6e2f-eye4c-tome4c-brain4c).
+
 ### Static reads behind the checker (2026-10-27, objdump of the pinned `game.exe`)
 
 - [I] **A quest chest opens once.** Every chest script (`box`, `tr1`, `msf`, the three Khalim chests) first calls
@@ -1314,7 +1320,8 @@ Run record [run:2026-10-27-sweep-quest-items](experiments.md#run2026-10-27-sweep
   `qf2` (Khalim's Will), create that many parts (quality 2), and only then run the chest's ordinary drop
   (`ObjectChestDrop`, 0x005B8931 / 0x005B8A11 / 0x005B8AF1). The spec's E1 order (items, chest drop, gold) holds for
   `box`, `tr1`, `msf` and the altar, not for these three; and their "per player" gate has the held-part test. Met at
-  run time for the heart chest (below, `[C]`); the eye and brain chests stay this reading.
+  run time for the heart chest, and in the follow-up for the eye and brain chests (below, `[C]`); the held-part
+  refusal stays this reading.
   (fn:sub_005B8860_A3Q2_HeartChest@0x005B8860 0x005B8878–0x005B8931, fn:sub_005B8940_A3Q2_EyeChest@0x005B8940,
   fn:sub_005B8A20_A3Q2_BrainChest@0x005B8A20, fn:sub_00585970_DropItemCodeAt@0x00585970,
   fn:sub_00585B90_ObjectChestDrop@0x00585B90)
@@ -1378,9 +1385,17 @@ Run record [run:2026-10-27-sweep-quest-items](experiments.md#run2026-10-27-sweep
   found), then `qhr` (`QDI` return 0x005B8916, quality 2), then `ObjectChestDrop` (return 0x005B8936). The spec's E1
   order (items, chest drop, gold) is contradicted for this chest; the static reading of § Static reads holds.
   (fn:sub_005B8860_A3Q2_HeartChest@0x005B8860, run:2026-10-27-sweep-quest-items)
-  - `[I]`: the eye and brain chests (the same shape, read, not run: `eye4`'s warp led to the Arachnid Lair, and the
-    brain chest was never listed in level 91: its room was never activated, § The brain chest in level 91) and the altar (`vip`, not run). (fn:sub_005B8940_A3Q2_EyeChest@0x005B8940,
-    fn:sub_005B8A20_A3Q2_BrainChest@0x005B8A20, fn:sub_0059A7E0_A2Q3_ViperChest@0x0059A7E0)
+- [C] **The eye and brain chests draw their gold first too** (follow-up). `eye4c` (map seed 4915, the Spider Cavern
+  85): the eye chest (class 407, slot 58, mode 0) logged `QGS` (return 0x005B895D, `515778ce:0000029a`), 5 `QDC` gold
+  piles (return 0x005B89A1; `k` = 5 on that seed), the callback's `PlayerFindItemByCode` for `qey` and `qf2` (neither
+  found), `qey` (`QDI` return 0x005B89F6, quality 2, created at 2), then `ObjectChestDrop` (return 0x005B8A16).
+  `brain4c` (map seed 4914, level 91): the brain chest (class 406, slot 59, mode 0) logged `QGS` (0x005B8A3D,
+  `a0b46047:0000029a`), 7 piles (0x005B8A81; `k` = 7), `qbr` and `qf2` not found, `qbr` (0x005B8AD6, quality 2,
+  created at 2), then `ObjectChestDrop` (0x005B8AF6). With the heart chest's 8, three seeds give three different `k`
+  (5, 7, 8) on the same order. (fn:sub_005B8940_A3Q2_EyeChest@0x005B8940, fn:sub_005B8A20_A3Q2_BrainChest@0x005B8A20,
+  fn:QUESTS_GetSeed@0x005438B0, run:2026-10-27-sweep-quest-items)
+  - `[I]`: the held-part refusal of the three Khalim chests (no session held a part or `qf2`), and the altar (`vip`,
+    not run). (the callbacks 0x005B8810, 0x005B8770, 0x005B87C0; fn:sub_0059A7E0_A2Q3_ViperChest@0x0059A7E0)
 - [C] **A held cube stops the cube.** `cube-held4` (`QuestBoxH`, Normal, a cube in the inventory): the callback's
   `PlayerFindItemByCode('box ')` (return 0x005997CD) found the held cube, no `box` was created, and the chest drop
   and the 5 gold piles still ran, as in `cube4` without it. So the per-player gate is "without `box`", and a refused
@@ -1420,14 +1435,21 @@ Run record [run:2026-10-27-sweep-quest-items](experiments.md#run2026-10-27-sweep
   (fn:sub_00593AF0_A1Q4_InifussDrop@0x00593AF0, run:2026-10-27-sweep-quest-items)
   - After, `[I]`: the 7 is the base `unique` override below (`bks` has `unique` 1 in `misc.txt`). *(Review, 2026-10-27:
     the lane had filed `bks` at quality 2, the asked value.)* (0x005574E3–0x00557567, tbl:Misc.txt:unique)
+- [C] **The Lam Esen tome, first operate** (follow-up). `tome4c` (map seed 4913, the Ruined Temple 94, the kept
+  `QuestFreshT` from the Act IV town): the tome (class 193, slot 28) in mode 0, word 17 = 0, created `bbb` (`QDI`
+  return 0x005B7AF8, asked with quality 2) on the unchanged quest seed `f01147c1:0000029a` (the heart chest's seed of
+  map seed 4913 before its draw, so no draw here); the item was created with quality 7 (`ICQ` q 7, rq 2).
+  (fn:sub_005B7A60_A3Q1_TomeDrop@0x005B7A60 0x005B7AF3, run:2026-10-27-sweep-quest-items)
+  - After, `[I]`: the 7 is the base `unique` override, as `bks` (`bbb` has `unique` 1 in `misc.txt`). The word-17
+    refusal (message 0x13) and the used-tome half did not run. (0x005574E3–0x00557567, tbl:Misc.txt:unique)
 - [I] **The second click.** Neither the body (in `tristram`, after the piles) nor the tree (in `inifuss6`, seven clicks
   from 4.0–5.8 sub-tiles) logged a second `QOW`: the clicks did not reach the operate, so the scripts' "mode ≠ 0:
   nothing" halves were not run. Whether the game offers a used body or tree to the click at all is not read.
   (fn:sub_00583E70_WirtLegDrop@0x00583E70 0x00583E7E, fn:sub_00593AF0_A1Q4_InifussDrop@0x00593AF0)
 - [C] **The death creations** (listed by the check, `death`): `ass` at Radament's death (`radament4`, return
-  0x0059911B, source monster class 229) and `j34` at two Act III kills (`tome4` class 126, `brain4` class 280; return
-  0x005BABFE), each asked with quality 2 and created with quality 7 (`ICQ` q 7, rq 2; `QDX` quality 7). The `j34`
-  kills were by a player whose word 19 was 0. (fn:sub_00599020_A2Q1_RadamentDeath@0x00599020,
+  0x0059911B, source monster class 229) and `j34` at five Act III kills (`tome4` class 126, `brain4` class 280; in the
+  follow-up `eye4c` 397, `tome4c` 27, `brain4c` 144; return 0x005BABFE), each asked with quality 2 and created with
+  quality 7 (`ICQ` q 7, rq 2; `QDX` quality 7). The `j34` kills were by a player whose word 19 was 0. (fn:sub_00599020_A2Q1_RadamentDeath@0x00599020,
   fn:sub_005BAB60_A3Q4_FigurineDrop@0x005BAB60 0x005BABA8–0x005BABF9, run:2026-10-27-sweep-quest-items)
   - After, `[I]`: the 7 is the base `unique` pre-switch override of `ItemCreateByQuality` (items/0004 § Plan 0038
     batch S2b, us 13: `j34` and `mss` in run:2026-10-16-quest-drops; here `ass` and the tree's `bks` too, with `BLD` unique and no
@@ -1469,21 +1491,25 @@ Run record [run:2026-10-27-sweep-quest-items](experiments.md#run2026-10-27-sweep
 | qd 30 `msf` | its chest | **raised in part** | the creation in Normal and Nightmare (a Normal staff held); the held-`msf`/`hst` refusal of the same difficulty, word 10 |
 | qd 30 `box` | its chest | **raised** | created without a cube, refused with one |
 | qd 30 `vip` | the altar | **shortfall** | not run |
-| qd 30 `bbb` | the tome | **shortfall** | `tome4`'s temple warp led to the Disused Fane (95), not the Ruined Temple (94) |
-| qd 30 `qhr`/`qey`/`qbr` | their chests | **raised in part** | `qhr` with the held-part test passing; `qey`, `qbr` not run |
+| qd 30 `bbb` | the tome | **raised in part** (follow-up; was shortfall) | `tome4c`: the creation with word 17 clear, no draw; the word-17 refusal and the used-tome half |
+| qd 30 `qhr`/`qey`/`qbr` | their chests | **raised in part** | all three with the held-part test passing (`qhr`; `qey` and `qbr` in the follow-up); the held-part refusal |
 | qd 30 `g33` | a dying monster | **shortfall** | not run |
-| qd 30 `j34` | a dying monster | **raised in part** | two creations at kills with word 19 = 0; the refusal |
+| qd 30 `j34` | a dying monster | **raised in part** | five creations at kills with word 19 = 0 (three in the follow-up); the refusal |
 | qd 30 `g34`, `xyz` | NPCs | **shortfall** | not run |
 | qd 30 `qf1` | the council | **shortfall** | not run |
-| qd 33 | E1 | **raised in part, with the correction** | `box`, `tr1`, `msf` in E1's order; `qhr` in the corrected order (gold first); `vip`, `qey`, `qbr` stay |
+| qd 33 | E1 | **raised in part, with the correction** | `box`, `tr1`, `msf` in E1's order; `qhr`, and in the follow-up `qey` and `qbr`, in the corrected order (gold first); `vip` and the Khalim held-part refusal stay |
 | qd 34 | duplicates | **raised in part** | held cube refuses (Normal); Normal staff in Nightmare does not; the cursor branch, the cube in Nightmare/Hell and "only" stay |
 | qd 35 | item-move gate | **raised in part** | 8 cases (checkpoint 1); the word identities, `xyz`/`g33`/`tr2`, the unique branch |
 | objects 48 chests | chests row | **raised in part, with the correction** | as qd 33 |
 | objects 48 Wirt | Wirt's body row | **raised** | the first operate (slot 33, the leg, then event 7) and the 18 piles |
-| objects 48 item objects | `leg`, `bks`, `hdm`, `bbb` | **raised in part** | `leg` and `bks`, one item each, no draw; `hdm`, `bbb` stay |
+| objects 48 item objects | `leg`, `bks`, `hdm`, `bbb` | **raised in part** | `leg`, `bks` and (follow-up) `bbb`, one item each, no draw; `hdm` stays |
 | objects 48 orifice | the orifice row | **raised in part** | the word 10 bits 0 and 13 (kept log); the `hst` gate |
 
 **Raised 3, raised in part 14, shortfall 7: 24.** No class move is proposed.
+
+*Follow-up (`lane/h6e2f`):* `bbb` moves from shortfall to raised in part; `qhr`/`qey`/`qbr`, `j34`, qd 33, objects 48
+chests (as qd 33) and item objects gain the parts above and stay raised in part. **Raised 3, raised in part 15,
+shortfall 6: 24.** No class move.
 
 ### The brain chest in level 91 (lane/rdp, 2026-10-27, static)
 
@@ -1517,6 +1543,21 @@ part (b). No session: the kept `brain4` log and the development `brain4b` log of
   never activated in the first copy in either log, and the chest is never listed. (run:2026-10-27-sweep-quest-items)
   - [I] That the chest is listed once its room activates in that copy is the model's prediction, not yet observed:
     no log has that room active in the matching copy. `brain4c` tests it (below). (run:2026-10-27-sweep-quest-items)
+    *Follow-up (`lane/h6e2f`): met in part, see the next bullet.*
+- [C] **`brain4c`: with the chest's room activated in both copies, the chest is listed and opens** (follow-up; kept log
+  `quest-items-s1-4914-brain4c.log`, `tools/h6e2f_copies.py` output `copies-followup.txt` `c119a6c2…` and
+  `tools/rdp_brain91.py` output `brain91-4c.txt` `ed4f4bd5…`, manifest `manifest-followup.sha256`). Map seed 4914
+  again gave `DungRm2B` (64 objects listed in the level's rect, all of them the file's, 0 outside it). `explore
+  --all-copies` activated all 25 rooms in both copies. The chest's room (0, 32) activated at log line 7639 in one
+  copy and 7728 in the other; the first `OBJS` line listing class 406 at (10014, 11879) is 7897, and every one of the
+  64 listed objects was first listed after its room had activated in both copies. The objop then operated it (above:
+  `qbr`, gold 7 first). (run:2026-10-27-sweep-quest-items)
+  - What this does not separate: both copies had the room active before the listing, so `brain4c` alone does not
+    say which copy the listing follows; that rests on `brain4` and `brain4b` (one copy's rooms, 0/0, above) and stays
+    `[I]` as to which copy that is (next bullet). The `[C]` is scoped to both copies: in `brain4` the chest's room
+    activated in the fully activated copy (line 7337, `copies-followup.txt`) and the chest was never listed, so an
+    activation in that copy alone does not list it. *(Review, 2026-10-27: the lane had "once its room is active",
+    unscoped.)* (run:2026-10-27-sweep-quest-items)
 - [C] **Why the pilot stopped: its frontier is the last copy's.** `LogState` keeps one level pointer per level id
   (`lptr`) and overwrites it at each `RRESEED`. Its frontier is the unactivated rooms of that one pointer. The last
   level-91 `RRESEED` of both logs names the fully activated copy, so `frontier(91)` is empty at the end of both
@@ -1530,9 +1571,23 @@ part (b). No session: the kept `brain4` log and the development `brain4b` log of
 - [I] **Which copy is which.** The copy whose activations match the listed objects behaves as the server's (the
   `OBJS` walk reads the server game). That a preset level is built once for the server and once for the client, the
   two told apart by room flag `0x40000` (room `+0x28`), is drlg/0004 row 10 (0x006678E2, run:2026-10-13-drlg-preset);
-  `tools/gdb/pilot.py` does not log room `+0x28`, so the H6e2 logs cannot name the copy. That the other copy is the client's, and why it activates every room of the
-  level, is not read. (run:2026-10-27-sweep-quest-items)
-- **The session it needs** (not run: no harness in this lane): `python3 -I tools/h6e2_sessions.py run --slot N
+  `tools/gdb/pilot.py` did not log room `+0x28` before the follow-up, so `brain4` and `brain4b` cannot name the copy.
+  That the other copy is the client's, and why it activates every room of the level, is not read.
+  (run:2026-10-27-sweep-quest-items)
+  - [C] *Follow-up:* `tools/gdb/pilot.py`'s RL line now carries `f28` (room `+0x28` at 0x0066B970, the point where
+    `drlg-gen.py` reads it). In `brain4c` one level-91 copy has `0x40000` in all 25 of its RL rooms and the other in
+    none (`copies-followup.txt`). The `0x40000` copy is the one whose first `RRESEED` comes first (line 6951, against
+    6974), the one built second (first RL line 6634, against 6606) and the one that activated the chest's room first
+    (7639). Log lines are 0-based, as the tool prints them; the first-RL and first-`RRESEED` lines are in
+    `copies-review.txt` (`33c41b9c…`, `tools/h6e2f_copies.py --first`, `566a0531…`, added at the review; manifest
+    `manifest-review.sha256`, `sha256sum -c` from `workspace/logs/h6e2/`). (run:2026-10-27-sweep-quest-items)
+  - [I] In `brain4` and `brain4b` the fully activated copy is likewise the one whose first `RRESEED` comes first
+    (6857 against 6880; 6982 against 7005) and the one built second (first RL 6461 against 6433; 6689 against 6661;
+    `copies-review.txt`), and the copy whose rooms match the listing is the other one. By that order
+    the listing copy would be the copy without `0x40000`, which drlg/0004 row 10 names the server's. This is an order
+    match over three logs, not a flag read in the two that separate the copies, so it stays `[I]`.
+    (0x006678E2, run:2026-10-27-sweep-quest-items)
+- **The session it needs** (run in the follow-up, `lane/h6e2f`; the eye and tome reruns too, above): `python3 -I tools/h6e2_sessions.py run --slot N
   --tag … --saves … --run … brain4c`. That is map seed 4914 again, from the Act IV town, the dungeon 1–3, then
   `explore --all-copies` (new, opt-in: d2pilot's frontier counts a room as unactivated while it is unactivated in
   any copy of the level), then `objop --obj-cls 406 --obj-mem`. The chest stands at (10014, 11879). The eye chest and
@@ -1556,8 +1611,13 @@ part (b). No session: the kept `brain4` log and the development `brain4b` log of
   frontier 0).~~ Answered in part (lane/rdp, static; the listing once the room activates is inferred until `brain4c`): its room was never activated in the level copy whose rooms held the
   listed objects, and the pilot's "frontier 0" was the other copy's; `OBJS` filters neither class nor distance (the
   question's "only the objects near the player" was wrong). See § The brain chest in level 91.
-- Whether the brain chest is listed once its room activates in the copy whose rooms hold the listed objects, and
-  whether that copy is the server's (`brain4c`, § The brain chest in level 91).
+- ~~Whether the brain chest is listed once its room activates in the copy whose rooms hold the listed objects, and
+  whether that copy is the server's (`brain4c`, § The brain chest in level 91).~~ Answered in part (follow-up,
+  `brain4c`): with its room active in both copies the chest is listed and opens (`[C]`); `brain4c` names the copies by their
+  `0x40000` flag, but both had the room active, so which copy the listing follows rests on the order match of
+  `brain4`/`brain4b` (`[I]`). (run:2026-10-27-sweep-quest-items)
+- Which copy the `OBJS` listing follows, read from a log that has the `f28` key and a room active in one copy only;
+  and why the `0x40000` copy activates every room of the level (§ The brain chest in level 91).
 
 ## Plan 0038 batch H6e1 (run:2026-10-27-sweep-quest-npc)
 

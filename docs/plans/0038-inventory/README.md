@@ -1260,13 +1260,13 @@ whose ledger table gives each statement's `[C]` part and remainder.
 - **Raised (3):** quest-drops 30 `box` (made without a cube, refused with one); 30 Wirt's gold (already `[C]` in the
   spec from run:2026-10-19-economy2; met again, 18 piles by event 7); objects 48 Wirt's body row.
 - **Raised in part (14):** quest-drops 1 (classes 268 and 367; the other event-7 classes), 30 `leg`, `bks`, `ass`,
-  `tr1`, `msf`, `qhr`/`qey`/`qbr` (`qhr` only), `j34` (the creations; the refusal halves), 33 (E1 for `box`, `tr1`,
+  `tr1`, `msf`, `qhr`/`qey`/`qbr` (`qhr` only; all three after the follow-up below), `j34` (the creations; the refusal halves), 33 (E1 for `box`, `tr1`,
   `msf`; **corrected** for the Khalim chests, gold first, met on `qhr`; `vip`, `qey`, `qbr` stay), 34 (a held cube
   refuses in Normal; a Normal staff does not count in Nightmare; the cursor branch and "only" stay), 35 (8 gate
   cases, as at checkpoint 1); objects 48 chests row (as 33, with the correction), item-objects row (`leg`, `bks`),
   orifice row (the bits, from the kept log `quests-s3-3364-duriel-normal.log`; the `hst` gate stays).
 - **Shortfall (7):** quest-drops 30 `bkd`, `hdm`, `vip`, `bbb`, `g33`, `g34`/`xyz`, `qf1`: not run (launch cap), or
-  the route failed (the tome's warp led to the Disused Fane).
+  the route failed (the tome's warp led to the Disused Fane). *(Follow-up below: `bbb` raised in part, shortfall 6.)*
 - Eleven symbols I → C (rule 14): `QUESTS_ObjectEvent`, `A1Q4_WirtGold`, `WirtLegDrop`, `A1Q4_InifussDrop`, the
   scroll, staff, cube and heart chests, `DropItemCodeAt`, `PlayerFindItemByCode`, `ItemQuestGate`.
 
@@ -1280,6 +1280,38 @@ c-emu awaiting a batch 0, blocked 421** (d-none 295, d-edit 73, d-sim 28, d-2c 7
 this run met it again on an independent seed (3811); Phase 3 adds the run anchor only. Recounted against `main`
 `507a6f5c` after merging it (`lane/rk` moved no inventory row): totals as above. **Phase 3 ready:** objects (S4a,
 S4b, H5b, H6e2; its 13 "—" rows have no batch). Not ready: items/quest-drops (H6e1 open).
+*Follow-up (2026-10-27, reverser, `lane/h6e2f`; the `lane/rdp` review's ruling 7):* the reruns `eye4c`, `tome4c`
+and `brain4c` under run:2026-10-27-sweep-quest-items (addendum *Follow-up*), 3 launches and 3 kept sessions on slot 1
+with `d2pilot.py --descend-to` and `--all-copies`, the RL line's new `f28` key; checker over the 14 kept logs: **chest
+8, object 3, event7 19, dup 8, gate 8, gold 57, death 6 (listed); 0 mismatches** (`check-followup.txt`, manifest
+`manifest-followup.sha256`, 18 lines). Ledger moves inside H6e2, no class move:
+- quest-drops 30 `bbb`: **shortfall → raised in part** (`tome4c`: the creation with word 17 clear; the refusal stays);
+- quest-drops 30 `qhr`/`qey`/`qbr`, 30 `j34`, 33 and objects 48 chests and item-objects rows stay **raised in part**,
+  with more met: `qey` and `qbr` in the corrected Khalim order (gold first; `k` 5 and 7 on their logged seeds, the
+  heart chest's 8), so E1's correction holds for all three Khalim chests and only `vip` and the held-part refusal
+  stay; `bbb` joins `leg` and `bks`; three more `j34` kills;
+- the brain chest's open question: with its room active in both copies the chest is listed and opens (`[C]`; scoped
+  at the review, `brain4`'s activation in the other copy alone listed nothing); which copy the listing follows stays
+  `[I]` (an order match over three logs; `brain4c` had the room active in both copies).
+
+Symbols `sub_005B7A60_A3Q1_TomeDrop`, `sub_005B8940_A3Q2_EyeChest`, `sub_005B8A20_A3Q2_BrainChest` I → C (rule 14:
+each one's logged calls compared with the checker's model). H6e2's ledger: **raised 3, raised in part 15, shortfall
+6: 24.** Net effect on the totals: none. Taken against `main` `1573a48f` (the lane's base; no inventory row moved on
+`main` since the `lane/s38s` review's totals): **static 567, harness 519, c-emu awaiting a batch 0, blocked 421**
+(d-none 295, d-edit 73, d-sim 28, d-2c 7, d-owner 10, d-0032 8), **deferred 2, raised 17: 1 526.** Review-fixes pass
+(reverser 1–15): the new `[C]` bullets each carry a `run:` anchor and an address; the copy identification stays `[I]`
+(1, 4); every count copied from the kept outputs (2); totals against `main` (3); logs, outputs and the 8 screenshots in
+one manifest, the `--warps` replay kept as a tool mode (6); the remainders named in the ledger rows (8); three
+separating seeds for `k` (10); the correction carried into § Static reads' Khalim bullet, the eye/brain `[I]`
+sub-bullet, the open questions and the `h6e2_sessions.py` comment (12); `bbb`'s quality 7 as After `[I]` (13); the
+three symbols raised in `re/symbols.csv` and the Functions table (14).
+**`lane/h6e2f` review (2026-10-27, architect): accept with fixes (2).** The ledger moves stand: `bbb` shortfall →
+raised in part, H6e2 **raised 3, raised in part 15, shortfall 6: 24**, no class move, three symbols I → C. The brain
+chest's `[C]` is scoped to "with its room active in both copies" (in `brain4` the room activated in the other copy
+alone and the chest was not listed); the copy order lines are now in a kept output (`copies-review.txt`). Recounted
+against `main` `dcf6c210` after merging it into the lane (`lane/rlg` and `lane/h6e1` merged since the lane's base;
+neither moved a class): **static 567, harness 519, c-emu awaiting a batch 0, blocked 421** (d-none 295, d-edit 73,
+d-sim 28, d-2c 7, d-owner 10, d-0032 8), **deferred 2, raised 17: 1 526.**
 **`lane/s38s` review (2026-10-27, architect, Phase 3 of save/d2s and items/uniques-sets): three S1a rows completed by
 H1b's kept check.** The H1b ledger listed the S1a pieces it met and left the rows as S1a. Two of those pieces carry a
 compared line in the kept check output (`workspace/logs/r1h/sweep-h1b-check-r1h.txt`, 0 failing), so they move here,
@@ -1430,6 +1462,7 @@ a letter suffix and its own run id, as the plan requires.
 |---|---|---|---|---|---|---|---|
 | **H1a** (done) | `d2s-load` | 46 (45 filed; uniques-sets 21 from H6d, § 2.6) | 0/3/43 | save/d2s 9–10, 17, 22–23, 26–30, 36, 38, 44, 46–47, 49–50, 52–54, 59, 62, 65, 68, 80, 90–91, 105–107, 126, 132, 139–140; hirelings 3, 30, 32–33; player/creation 1, 8–9, 11, 20, 34; uniques-sets 21 (from H6d) | `d2s-io.gdb` + `d2sio.py check`. Tool-built saves from `d2sio_saves.py`: bad magic or version, wrong name, class 7 and 8, act 5, status mismatches, waypoint markers, out-of-range unique and set ids, legacy v94 and versions 71 and 87 (builder support needed; from H6d, a version-`0x47` item list holding a unique, under `uniques.py`, if a version-71 load reaches `0x00533350`), item version < 93, ear, personalized, realm, > 8 KiB, checksum and size wrong; `MercMF` loaded. From S1b (one extra session, staged by plan 0051 Phase 1a; the rows stay counted as S1b, § 2.6): `tools/gdb/s1b-pieces.gdb` + `s1b-pieces.steps` on CalcSor, the hover marker `CH` (data-calc 19) and the `SUNITPRE` caller `ra` with a second load (rng-seeds 11), checked with `rng.py seedtree`, `calc.py hover` and `calc.py check` | `findings/save/experiments.md` | ~19 |
 | **H1b** (done) | `d2s-play` | 48 | 0/22/26 | save/d2s 1–4, 6, 18–19, 21, 25, 31, 33–35, 37, 39–43, 48, 55–57, 60, 72–73, 77–78, 83, 88, 102, 108, 110–116, 117 (from S1a), 118, 124 (from S1a), 125, 127; hirelings 24 | same family. A one-client TCP/IP host, weapon swap, hotkeys, the hirelings mercenary saves (write side, dead flag), iron golem, corpse, runeword, the `questdiffcheck` item, `maxhp`/`maxmana` and poison items, the bit-13 case, and section writer, reader and join breakpoints. **Also:** load `questrewards` and `questrewardsh` (built `246515c5…`, `14c28526…`; backlog 2026-10-16, archivist `lane/abl`) and pin both in `tools/test_d2s.py` with the run id, as the plan 0032 recipes were pinned. From S1a (§ 2.6; 117 and 124 counted here, the other pieces stay counted as S1a): a set item with one damage group in its main and a bonus list; a lone `fire-max` and a lone `fire-min`; magic damage (group 52); a hired mercenary, a swapped weapon set, a left-button hotkey, an item on the cursor and a class item with an automagic affix at *Save and Exit* | `findings/save/experiments.md` | ~14–17 |
+| **H1c** | `d2s-legacy` | 0 new (the 6 H1a shortfall rows, counted in H1a, no class move) | — | hirelings 3, 30, 33; player/creation 1; uniques-sets 21; save/d2s 126 | `d2s-io.gdb` (H1a's logger) on the staged `lane/a72` builds `leg87merc`, `leg87new`, `leg71merc`, `leg71uniq`, `leg92props` (base `smpsor-l50.d2s`); each load logged at the legacy reader's or `D2S_ReadSaveV92`'s return and checked by the game's version-96 write-back field by field (`lane/a72` review rulings 2–3, plan 0038 log) | run id `sweep-d2s-legacy` | 5 (estimate) |
 | **H2a** (done) | `items-tc` | 17 | 10/0/7 | quality 20, 22–23; tc 1–2, 11, 22, 34 (2, from S2a), 37, 45, 47, 59–60, 70–71 | `tc-drops.gdb` + `tc.py`. New lines: the caller, gold (stat 14), the MonDeathDrop exit. A Find Item barbarian, `/players 8` host and chests, Hell mfnecro, skeleton or Valkyrie kills; a classic Countess kill (tc 34, § 2.6) | `findings/items/experiments.md` | ~6 |
 | **H2b** (done) | `items-chain` | 25 (5 to d-none, § 2.6) | 7/1/17 | affixes 5, 13, 17, 19–21, 24; properties 7, 20, 24 (from S2b); sockets 42 (from S2c); tc 58, 68 (from S2a); uniques-sets 7, 9, 10, 35, 39 (9, 39 from S2b) | `items-chain.gdb` + `items_chain.py both`. A classic hunt (classicsorc) and a long Hell hunt (also a superior ethereal `dur%` item where the two orders differ, properties 24; magic drops requesting 5 or 6 sockets, sockets 42; from the S2c review, a piece with the row counted as S2c: normal and rare drops requesting more than 3 and 4, sockets 44). New line (tc 58, 68, uniques-sets 9, 39; § 2.6): `game+0xD0` at `sub_00558D90_ItemCreate` entry and after `sub_00552E90_ItemSeedInit`, and `Unit+0x20` with the game seed at `IC0` and `ICJ` | `findings/items/experiments.md` | 6–10 |
 | **H2c** (done) | `items-forced` (id ends `-forced`) | 7 | 0/0/7 | properties 12 (spec L390 only), 14–15; tc 10, 55–56 | **forced, admitted with conditions** (§ 6): `items-chain.gdb` + `tc.py`, `props.py` on a loose `treasureclassex.bin` under `-direct`; two edits (classic throwables; TC-named uniques), each its own `-forced` session set | `findings/items/experiments.md` | few |
@@ -1453,7 +1486,7 @@ a letter suffix and its own run id, as the plan requires.
 
 **Logger-family conflicts.** Two batches may run at once only when they share no recipe save, logger file or checker
 under edit. Inside one family the batches run one after the other:
-- H1a and H1b;
+- H1a, H1b and H1c;
 - H2a, H2b and H2c;
 - H4a and H4b;
 - H5a, H5c, H5d and H5e (H5c edits `collision.gdb`, which H5d uses);
