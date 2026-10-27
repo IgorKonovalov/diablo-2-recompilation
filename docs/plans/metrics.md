@@ -284,6 +284,7 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-10-27 | `lane/h5d` review | 0038 H5d | architect-review | 178 360 | 69 | 16 | — (static, objdump, no Ghidra) | gave accept with fixes | — (on the lane row) |
 | 2026-10-27 | `lane/p51s` | 0051 P1b | reverser-static | 390 010 | 159 | 39 | no slot, one Ghidra (`ghidra-p51s`, `-Xmx3G`, lane copy) | accept with fixes (rulings: op 6/7's lead stays contradicted for the code; the calc-emu addendum's control enough; the party-gold quirk `[I]`, its play outcome `[L]`; the copy's unit id a logger item; no "no other writer" for `+0x17C`) | 6: misread 2, omission 3, wrong anchor 1 (stats/0001's op 6/7 Answer without the source-value gate and op 7's term unnamed; the `x − 90q` wrap bound; the gold-offer close's `TradeBlocked` skip; "the picker keeps `amount mod 2`" without the overflow; button 8's "§ 1 of the Answer"; MP31's clipped offer called a cancel) |
 | 2026-10-27 | `lane/p51s` review | 0051 P1b | architect-review | 178 120 | 65 | 21 | — (static, objdump, no Ghidra) | gave accept with fixes | — (on the lane row) |
+| 2026-10-27 | `lane/s38m` | 0038 P3 monsters | spec-writer | — | — | — | no slot, no Ghidra | — | — |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not

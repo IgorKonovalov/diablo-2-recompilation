@@ -3421,3 +3421,30 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     [2026-10-16-architect-reverser-plan-0038-h4b-review-follow-ups](../backlog/archive/2026-10-16-architect-reverser-plan-0038-h4b-review-follow-ups.md)
     closed (its last piece, H5d's, is settled); the new reverser entry above.
   - **Next:** the Phase 3 re-tag of the H5d rows (spec-writer); the next harness batch per the run order.
+- **2026-10-27 — Phase 3, the monsters cluster (spec-writer, `lane/s38m`, from `main` `0e3f501`, `main` `0848879` merged
+  in after H5d's acceptance).** The cluster's batches, S3a, S3b, S1f, H4b, H4a and H5d (inventory § 5 with the § 2.6
+  moves), are all accepted, so monsters/pool, spawn, special and stats qualify; monsters/README was done in round 1.
+  - **monsters/pool** {C 81, I 29, L 3} → **{C 99, I 19, L 3}**: the later game-seed draws (rng/0002 via rng/seeds 7a),
+    `monLvl` unread (H4b watchpoints), classic normal `mon` (H4b) and level (S3a), the `+0x025` compiler (S3b; the 254 cap
+    `[I]`), the set caps (S3a), the other `boss` classes (H4a), `MonLvl` row, the bonuses, the gate, the picks,
+    `MonRegionFindAdd` (S3a; its other returns `[I]`), `RegionActClass` (S3b; ranges and cache `[I]`), `tries = 0` (S1f).
+  - **monsters/stats** {C 110, I 58, L 4} → **{C 130, I 47, L 5}**: `SetStat`/`AddStat`, the champion part, `MonTypeFlag`,
+    the `Align` skip, the velocity bonus corrected to ≤ 8 (S3a); the skill list and bonus, `doomknight2`, `Align` 1/2 (H4b);
+    the reversed HP range, the MonProp reader and rows, `druidhawk` reachable (S3b); `MulDiv` (S1f); `doomknight3` and
+    `MonEquipInit` (H4a). The flag-0 walk corrected for `SetBoss` pack members.
+  - **monsters/special** {C 107, I 95, L 3} → **{C 149, I 70, L 4}**: the always-run mods, null rows met, aura `n`, flag-0
+    return, the group walk, the unique-pick remainder, `MonPostCreateMods`, the quest test (S3a); the aura table and levels,
+    the `sandleaper` exclusion, the client tables and names, `UniqueTitle`, the restores with the two-aura correction,
+    MonPlace cases with the `BaseId` correction (H4b); the second aura call, the tails by record, rows 10/12/13, the placed
+    bit, Blood Raven's and three fixed names (H4a). Lord De Seis's rows stay `[I]` with an *Open questions* entry.
+  - **monsters/spawn** {C 112, I 64, L 4} → **{C 136, I 43, L 5}**: `RoomUpdateOne`, the client, `MonWndr` (S3b); the box
+    rectangle, the special count, the `0x80` bypass, `/players`, classic passes (S3a); the tick, the `spawnCol` masks, the
+    hidden-warp writer, `tentaclehead` minions, `PartyMin` = `PartyMax`, `MonSpcWalk`, `evilhut` (H4b); the wanderer list
+    and the roll's no-spawn branch (H4a, correcting "never fired"); sizes 0 and 1 and `sarcophagus` (H5d). The Chaos
+    Sanctuary gate's closed state stays `[I]` with an *Open questions* entry. The d-none header mentions are reworded.
+  - **Backlog:** closed the S3a two-statements entry and the H4b corrections entry; annotated the H4a, S3b, S1f and H5d
+    entries; review request with the four specs' old and new counts, the corrections and what is left to other clusters
+    ([2026-10-27-spec-writer-architect-review-lane-s38m-plan-0038-phase-3-monsters](../backlog/2026-10-27-spec-writer-architect-review-lane-s38m-plan-0038-phase-3-monsters.md)).
+  - **Commits:** the four specs in one commit, then backlog, this log and the ledger. Gate green; W4 warns for the
+    monsters and seed-to-world wiki pages.
+  - **Next:** architect review of `lane/s38m`.
