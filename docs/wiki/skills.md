@@ -215,12 +215,12 @@ start function is the pattern, read from the code:
    **after** the defender's reductions.
 
 Bash's start function was run under emulation up to the call that sets its attack rate; the rest is the code
-reading. A skill's own physical damage, used by summons, missiles and several do functions, is the skill's min and
-max damage by level bands plus its synergy percent, run under emulation for a row with no weapon share; the weapon
-share is read from the code. For a row flagged `Kick` the minimum is instead a quarter of (strength + dexterity − 20)
+reading. A skill's own physical damage is the skill's min and max damage by level bands plus its synergy percent,
+run under emulation for a row with no weapon share; the weapon share, and which code uses this damage (summons,
+missiles and several do functions), are read from the code. For a row flagged `Kick` the minimum is instead a quarter of (strength + dexterity − 20)
 for a player, or of three times the level for another unit, at least 1 before the quarter (run under emulation); the
-maximum is a third of the same, read from the code. Kick's own start function, above, takes its row's `MinDam`
-instead, read from the code; which of the two damages Kick's hit carries is still open. The weapon masteries enter
+maximum is a third of the same, read from the code. Kick's own start function, above, does not use it: it reads
+its row's `MinDam` itself (read from the code), and what that column holds for Kick is still open. The weapon masteries enter
 through the combat build and the missile damage, the synergies through the skill's formulas, read from the code.
 
 ## Charge-up skills and the finisher
@@ -534,8 +534,8 @@ From the specs' open questions ([overview](../specs/skills/README.md#open-questi
 - **The caster gaps left** (43 and 103 player gaps over the two runs) and the monster gaps, which wait for monster AI.
 - **Which frame carries the action**, and the unit field behind two frame tests: animation timing.
 - **The finisher** in a run.
-- **Kick's hit damage**: whether its start function's hit carries the row's `MinDam` or the strength-and-dexterity
-  damage of the skill's own physical damage.
+- **Kick's hit damage**: the `MinDam` value of Kick's row, which its start function's hit carries, and which code
+  uses the strength-and-dexterity damage.
 - **Missiles**: the end of a hit for rows with a hit function, the filters before the build, the "always explode"
   rows and the end-of-life branch in a run; the speed's per-level term, the slow-missiles scaling, the extra loops and
   the distance refusal; the re-seed sites other than Firestorm's, and which path call steps Firestorm's; the critical
