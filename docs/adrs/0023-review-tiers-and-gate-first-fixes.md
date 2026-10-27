@@ -1,6 +1,6 @@
 # ADR-0023 — Review tiers: a full review at spec promotion, a diff-scoped check for the rest, and the gate takes the mechanical fixes
 
-> **Status:** proposed
+> **Status:** accepted (trial; owner, 2026-10-27; settled by plan 0053 Phase 4)
 > **Date:** 2026-10-27
 > **Related plan(s):** [0053-review-tiers-and-gate-checks](../plans/0053-review-tiers-and-gate-checks.md)
 

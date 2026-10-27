@@ -1,9 +1,9 @@
 # 0053 — Review tiers and gate checks for the mechanical fix categories
 
-> **Status:** draft
+> **Status:** approved (owner, 2026-10-27; ADR-0023 accepted as a trial)
 > **Created:** 2026-10-27
 > **Owner skill(s):** archivist (phases 0–1), architect (phases 2 and 4), human (phase 3)
-> **Related ADRs:** [0023-review-tiers-and-gate-first-fixes](../adrs/0023-review-tiers-and-gate-first-fixes.md) (proposed), [0006-docs-gate](../adrs/0006-docs-gate.md)
+> **Related ADRs:** [0023-review-tiers-and-gate-first-fixes](../adrs/0023-review-tiers-and-gate-first-fixes.md) (accepted, trial), [0006-docs-gate](../adrs/0006-docs-gate.md)
 
 ## TL;DR
 
