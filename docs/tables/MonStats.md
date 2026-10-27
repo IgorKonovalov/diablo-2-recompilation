@@ -812,7 +812,7 @@ The columns that name a monster's animation, its modes and its speeds (values fr
     417 `shadowwarrior`, 418 `shadowmaster`, 543 `baalthrone`, 544 `baalcrab`, 570 `baalclone`, 705 `uberdiablo`, 709
     `uberbaal`. anim/0001 § 10 reads 417, 543, 570, 705 and 709 as blank and names 418 and 544 after 417 and 543: its
     row read counts the `Expansion` marker row, so it is one row off from record 410 on
-    ([backlog](../backlog/2026-10-27-archivist-reverser-anim0001-splgetmodechart-rows-shifted.md)). `[L]` What those
+    ([backlog](../backlog/archive/2026-10-27-archivist-reverser-anim0001-splgetmodechart-rows-shifted.md)). `[L]` What those
     five branches give is not read.
   - `SplEndGeneric` (`+0x1A6` u8, 1 in 27 rows): at the end of a listed mode of a listed base class (110 `vulture1` S1,
     247 `frogdemon1` SQ, 136 `batdemon1` S3/S4, 230/231 any, 118 `willowisp1` WL, 403 any) `MonModeEndGeneric` only

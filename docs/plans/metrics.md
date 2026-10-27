@@ -296,6 +296,7 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-10-27 | `lane/s38n` review | 0038 P3 drlg/collision | architect-review | 147 133 | 46 | 9 | — (static, objdump, no Ghidra) | gave accept with fixes | — (on the lane row) |
 | 2026-10-27 | `lane/a51f` | 0050 entry items 3–4, 0051 item 3a | archivist | 200 541 | 100 | 16 | — (static, no Ghidra) | accept with fixes (rulings: both surveys reproduce their baselines; the `SplGetModeChart` row shift holds on the `.bin`, folded into P1.2's *Done when*; the States anchor complaint is not a gate bug) | 3: omission 2, wrong anchor 1 |
 | 2026-10-27 | `lane/a51f` review | 0050 entry items 3–4, 0051 item 3a and P2; plan 0051 closed | architect-review | 156 404 | 78 | 8 | — (static, no Ghidra) | gave accept with fixes | — (on the lane row) |
+| 2026-10-27 | `lane/p50b` | 0050 P1.2 | reverser-static | — | — | — | no slot, one Ghidra (`ghidra-p50b`, `-Xmx3G`) | (review pending) | (review pending) |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not

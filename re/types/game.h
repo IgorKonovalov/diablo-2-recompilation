@@ -53,12 +53,13 @@ typedef struct Unit { /* any unit; type-specific data at +0x14 */
     void    * pSeqFrames;         /* +0x030 the sequence's 6-byte frame records (SeqFrame); 0 outside a sequence */
     int32_t  seqLength;           /* +0x034 sequence length, frames << 8 */
     int32_t  seqPos;              /* +0x038 sequence position, 8.8 */
-    int32_t  seqRate;             /* +0x03C sequence step per tick, 8.8; 0x100 at the sequence start */
+    int32_t  seqRate;             /* +0x03C sequence step per tick, 8.8; 0x100 at the sequence start; UNIT_AnimSetRate writes
+                                     it only in its cast and attack branches (anim/0002 § 3.8) */
     int32_t  seqMode;             /* +0x040 the mode byte of the current sequence frame */
     int32_t  animFrame;           /* +0x044 current frame, 8.8; in a server-scheduled mode the game frame the schedule was made at, << 8 */
     int32_t  animLength;          /* +0x048 frames << 8 (animdata FramesPerDir); objects: Objects FrameCnt[mode] unshifted;
                                      sequences: the frames still to run, << 8, counted down by seqRate */
-    int16_t  animRate;            /* +0x04C frame step per tick, 8.8, clamped to [0, 0x7FFF] */
+    int16_t  animRate;            /* +0x04C frame step per tick, 8.8, clamped to [0, 0x7FFF]; UNIT_AnimSetRate (anim/0002) */
     uint8_t  animEvent;           /* +0x04E event byte (1..4) of the frames the last advance crossed, 0 if none */
     uint8_t  _pad004F;
     struct AnimDataRec * pAnimData; /* +0x050 the animdata record of the unit's token, mode and weapon class */

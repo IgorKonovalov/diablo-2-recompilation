@@ -152,7 +152,7 @@ client-side display of timing stay out (ADR-0005, ADR-0014 § Time): timing ente
     the **breakpoints** are derived from the formula and stated as a function, not copied; where the formula is a pure
     function, its cases are emulated (ADR-0015, ADR-0021) over the stock input range so the derived tables are
     checked against the binary; and anim/0001 § 10's class overrides re-read on the `.bin` rows (the
-    [`SplGetModeChart` row-shift entry](../backlog/2026-10-27-archivist-reverser-anim0001-splgetmodechart-rows-shifted.md),
+    [`SplGetModeChart` row-shift entry](../backlog/archive/2026-10-27-archivist-reverser-anim0001-splgetmodechart-rows-shifted.md),
     folded at the `lane/a51f` review): the records classes 417, 543, 570, 705 and 709 take, and 418/544 named
     `shadowmaster`/`baalcrab`;
   - **P1.3 movement and the gates:** walk and run velocity (CharStats, MonStats, `MonStatsSpeeds` at load, stat 67 and
@@ -449,7 +449,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     `mon_rule_miss=0` (by the game's monster name, `hth` in DT/DD without `compositeDeath`, every flagged mode outside
     `xx` has a record) and `obj_objtype_token_ne=16`, `obj_objtype_hit=1491` (the ObjType token differs from the
     Objects `Token` in 16 records; under it 1 491 of the 1 603 flagged object modes have a record, against 1 483).
-  - Surprise, for the reverser ([backlog](../backlog/2026-10-27-archivist-reverser-anim0001-splgetmodechart-rows-shifted.md)):
+  - Surprise, for the reverser ([backlog](../backlog/archive/2026-10-27-archivist-reverser-anim0001-splgetmodechart-rows-shifted.md)):
     anim/0001 § 10's `SplGetModeChart` data is one row off from record 410 on (`anim_scan.py rows` keeps the
     `Expansion` row). By the `.bin` all ten override classes have the column set, so the five branches § 10 calls
     unreached (417, 543, 570, 705, 709) are reached, and 418/544 are `shadowmaster`/`baalcrab`. MonStats § Timing
@@ -482,3 +482,25 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   (e) anim/0001's open question on the token tables is the reverser's to strike; it rides with the row-shift entry.
   Ledger: lane row filled (usage from the orchestrator), review row added with "—" usage. The review request is
   closed. P1.2 is not held.
+- **2026-10-27 — Phase 1, batch P1.2 landed for review (reverser, `lane/p50b`, static, Ghidra copy `ghidra-p50b`;
+  `main` merged at 51757b68 before filing; leads not read before filing, only `anim/leads` § 1).**
+  [anim/0002](../findings/anim/0002-rates.md) reads `UNIT_AnimSetRate`: nine branches chosen by display type and mode
+  through three image tables (player; monster class < 410; ≥ 410): cast `spd · min(100 + B_FCR, 175) / 100`; block
+  `max(1, spd · (B_FBR + 50 or 100 under Holy Shield) / 100)`; get-hit `spd · (B_FHR + 50) / 100`; knockback the walk
+  base; moving `vbase · max(B_FRW + stat 67, 25) / 100` (signed) with the path speed; attack `base · clamp(B_IAS + stat
+  68 + dual-wield mean − 30 in a player sequence, 15, 175) / 100`, the base being a shapeshift form's human-equivalent
+  speed under `meleeonly`; fixed (death) `spd`; default `spd · clamp(stat 69, 15, 175) / 100`; floor 0, cap 0x7FFF;
+  only cast and attack write the sequence step. The bonus `B = k s / (k + s)` (k 120; 150 for FRW) is `[C]` as an
+  ADR-0015 map (3 413 cases). **Ruling (a)'s two cases:** a scheduled mode keeps its queued events (`[I]`: no queue or
+  cancel among the 19 callees; only the § 7.1 reschedules rebuild); an every-frame monster's next advance takes the new
+  rate (`[C]` as a map, 1 200 emulated advance pairs, run:2026-10-27-anim-rates-emu). 31 call sites (24 server, 7
+  client); `UpdateAnimRate` is tested by the server only in do 30, its helper, do 61 and do 71; no stat write hooks the
+  rate. No difficulty term; `MinimumCastingDelay` is not a column of this data. Breakpoints stated as a function
+  (§ 7), with the closed forms checked against brute force over every stock record pair. Surprises: a classic
+  monster's S1–S4 always take the moving rate; a negative factor (FCR ≤ −55, FHR or FBR ≤ −36) wraps to the maximum
+  rate. 22 symbols, `tools/anim_rates.py`, outputs `workspace/logs/anim/p50b-*` (`p50b-manifest.sha256`). Also the
+  folded row-shift item: anim/0001 § 10 corrected (all ten override classes reached; 418 `shadowmaster`, 544
+  `baalcrab`), `anim_scan.py rows` fixed with a `.bin` read, the archivist entry closed
+  ([archive](../backlog/archive/2026-10-27-archivist-reverser-anim0001-splgetmodechart-rows-shifted.md)), the token-table
+  open question struck. Review requested
+  ([backlog](../backlog/2026-10-27-reverser-architect-review-lane-p50b-plan-0050-phase-1-batch.md)).

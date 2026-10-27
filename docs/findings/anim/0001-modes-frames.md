@@ -4,8 +4,8 @@
 > **Question:** when a unit enters a mode, which animation record does it get, how are its frame fields set and
 > advanced, on which game frames do its frame events (codes 1–4) and its mode end fall, which mode follows, and does
 > any of it draw from an RNG?
-> **Date:** 2026-10-27   **Plan:** 0050 (Phase 1, batch P1.1)   **Status:** open (P1.2 rates and P1.3 movement and
-> the gates follow; the rate formulas of `UNIT_AnimSetRate` are P1.2's)
+> **Date:** 2026-10-27   **Plan:** 0050 (Phase 1, batch P1.1)   **Status:** open (P1.3 movement and the gates
+> follows; the rate formulas of `UNIT_AnimSetRate` are in [anim/0002](0002-rates.md))
 
 Static reading of the pinned `Game.exe` in Ghidra (project copy `workspace/ghidra-p50a`) and objdump. The table
 values, call-site counts and event kinds below come from `tools/anim_scan.py`; the RNG reach comes from
@@ -96,7 +96,7 @@ New names (subsystem `anim/timing`) and the existing ones this finding reads; al
 |---|---|---|---|
 | `0x00624690` | `UNIT_SetMode` | mode change, then `UNIT_AnimInit` (§ 3) | C (objects; unchanged) |
 | `0x00624390` | `UNIT_AnimInit` | frame fields per unit type (§ 3) | C (objects; unchanged) |
-| `0x00623F50` | `UNIT_AnimSetRate` | record and `+0x4C`/`+0x3C` rate (formulas: P1.2) | I |
+| `0x00623F50` | `UNIT_AnimSetRate` | record and `+0x4C`/`+0x3C` rate (formulas: [anim/0002](0002-rates.md)) | I |
 | `0x00620F00` | `UNIT_AnimSetRecord` | `+0x50 = ANIMDATA_Lookup(mode, type, inventory)` (class in a register) | I |
 | `0x00623B10` | `UNIT_AnimStartFrame` | the start frame (§ 4) | I |
 | `0x00623E00` | `UNIT_AnimAdvance` | the per-frame advance and event byte (§ 8) | I |
@@ -141,7 +141,7 @@ Data: `g_MonModeRecords` `0x006E2260` (21 × 16 B), `g_MonModePerFrame` `0x006E2
 | `struct:Unit+0x30` | ptr | the sequence's frame records, 0 outside a sequence | `UNIT_SeqInit`, `UNIT_AnimInit` (0), `SUNIT_AnimInit` (0) |
 | `struct:Unit+0x34` | s32 | sequence length, frames << 8 | `UNIT_SeqInit` |
 | `struct:Unit+0x38` | s32 | sequence position, 8.8 | `UNIT_SeqInit` (0), `UNIT_AnimAdvance`, `sub_006212C0_UnitSetSeqPos` |
-| `struct:Unit+0x3C` | s32 | sequence step, 8.8 (0x100 at the start) | `UNIT_SeqInit`, `UNIT_AnimSetRate` (P1.2) |
+| `struct:Unit+0x3C` | s32 | sequence step, 8.8 (0x100 at the start) | `UNIT_SeqInit`, `UNIT_AnimSetRate` (anim/0002 § 3.8) |
 | `struct:Unit+0x40` | s32 | the mode byte of the current sequence frame | `UNIT_SeqReadFrame` |
 | `struct:Unit+0x44` | s32 | frame, 8.8; in a scheduled mode the schedule's game frame `<< 8` | `UNIT_AnimInit`, `SUNIT_AnimInit` (0), `SUNIT_ScheduleModeEvents`, `UNIT_AnimAdvance`, `UNIT_SeqReadFrame` |
 | `struct:Unit+0x48` | s32 | length, frames << 8; objects unshifted; sequences the frames left `<< 8` | `UNIT_AnimInit`, `SUNIT_AnimInit`, `UNIT_SeqInit`, `UNIT_AnimAdvance` (sequence) |
@@ -166,7 +166,7 @@ Data: `g_MonModeRecords` `0x006E2260` (21 × 16 B), `g_MonModePerFrame` `0x006E2
   and compares the first two dwords of each 0xA0-byte record. (fn:ANIMDATA_Load@0x0066A770, 0x0066A80A, 0x0066A814,
   fn:ANIMDATA_Find@0x0066A8F0, 0x0066A92E, 0x0066A96A, data:g_pAnimData@0x0096C8A4)
 - [I] The record fields read: `+0x08` frames per direction (`+0x48 = +0x08 << 8` at every non-sequence init), `+0x0C`
-  the speed that `UNIT_AnimSetRate` scales (P1.2), `+0x10 + f` the event byte of frame `f`, read only for `f < 0x90`.
+  the speed that `UNIT_AnimSetRate` scales (anim/0002), `+0x10 + f` the event byte of frame `f`, read only for `f < 0x90`.
   (0x00624470, 0x006244F1, 0x00623E95, 0x00553A40)
 - [I] **The name.** `COMPOSIT_BuildCofName(…, mode, class, type, …)` (fn:COMPOSIT_BuildCofName@0x0064F5B0):
   - player (type 0): the PlrType token of the class, the PlrMode token of the mode, and the weapon class
@@ -435,7 +435,7 @@ for (; f <= (unit->animFrame >> 8); f++) take(f);
 - [I] `PlrModeStartNeutral(mode)`: mode 5 when the unit's room is a town, else the requested 1; cancel events 0 and 1;
   `SUNIT_SetMode`; clear the used skill. No event is queued. (fn:sub_0057F020_PlrModeStartNeutral@0x0057F020)
 - [I] `PlrModeStartGetHit` / `PlrModeStartBlock`: `SUNIT_SetMode(4 or 9)`, `SUNIT_AnimInit`, clear the used skill,
-  cancel, schedule. The get-hit and block lengths are therefore the schedule of their records at their rates (P1.2).
+  cancel, schedule. The get-hit and block lengths are therefore the schedule of their records at their rates (anim/0002 § 3.2).
   (fn:sub_0057FE30_PlrModeStartGetHit@0x0057FE30, fn:sub_0057FDC0_PlrModeStartBlock@0x0057FDC0)
 - [I] `PlrModeStartSkillXY`: path target, `SUNIT_SetMode`, `SUNIT_AnimInit`, cancel, schedule, clear `+0xC4` bit 6,
   `SKILLS_StartUsedSkill`. `PlrModeSkillFrame` then runs the do function on event code 1 or 2 with bit 6 clear
@@ -488,12 +488,15 @@ for (; f <= (unit->animFrame >> 8); f++) take(f);
 (data:g_MonModeRecords@0x006E2260, `p50a-anim-scan.txt` `MMODE`)
 
 - [I] **Class overrides** (`sub_005A78A0_MonModeRecord`, only when MonStats `SplGetModeChart` is set): classes 243
-  (`diablo`) and 333 (`diabloclone`) take attack records for S3 (row 17) and S4 (row 16); 403 (`trappedsoul1`) takes
-  rows 18 (A1, A2: end `MonModeEndToS1`) and 19 (S1, S2: end `MonModeEndToS1b`), both ending in a mode-8 command whose
-  `cmd` byte is 101 with MonStats2 `+0x105` bit 0 (`S1mv`) else 100; 418 (`shadowwarrior`) row 20 for S4; 544
-  (`baalthrone`) row 7 for S3. Classes 417, 543, 570, 705 and 709 are tested by the switch but have `SplGetModeChart`
-  blank, so their branches are not reached on stock data (`p50a-anim-rows.txt` `OVR`). (fn:sub_005A78A0_MonModeRecord@0x005A78A0,
-  tbl:MonStats.txt:SplGetModeChart)
+  (`diablo`), 333 (`diabloclone`) and 705 (`uberdiablo`) take attack records for S3 (row 17) and S4 (row 16); 403
+  (`trappedsoul1`) takes rows 18 (A1, A2: end `MonModeEndToS1`) and 19 (S1, S2: end `MonModeEndToS1b`), both ending in
+  a mode-8 command whose `cmd` byte is 101 with MonStats2 `+0x105` bit 0 (`S1mv`) else 100; 417 (`shadowwarrior`) and
+  418 (`shadowmaster`) row 20 for S4; 543 (`baalthrone`), 544 (`baalcrab`), 570 (`baalclone`) and 709 (`uberbaal`)
+  row 7 for S3. All ten classes have `SplGetModeChart` set (the `.txt` and the `monstats.bin` byte `+0x1A5`), so
+  every branch is reached on stock data (`p50b-anim-rows.txt` `OVR`, `OVRBIN`). *2026-10-27 (plan 0050 P1.2, `lane/p50b`):* corrected; the P1.1 text read the `.txt`
+  one row off from record 410 on (the `Expansion` marker row was kept, `tools/anim_scan.py` `rows`, fixed), which
+  named 418 and 544 wrongly and left 417, 543, 570, 705 and 709 "unreached" ([backlog](../../backlog/archive/2026-10-27-archivist-reverser-anim0001-splgetmodechart-rows-shifted.md)).
+  (fn:sub_005A78A0_MonModeRecord@0x005A78A0, 0x005A7923–0x005A7990, tbl:MonStats.txt:SplGetModeChart)
 - [I] **`MonAttackFrame`**: with no used skill, an every-frame mode steps, advances and returns 2 at the end, and
   strikes (`MON_MeleeHit`, `COMBAT_DeliverQueued`) only on a frame whose event byte is 1 (mode 14: bit 6 set); a
   scheduled mode strikes on **each** of its scheduled events (any code 1–4). With a used skill it runs
@@ -573,7 +576,7 @@ for (; f <= (unit->animFrame >> 8); f++) take(f);
   MonMode and ObjMode tokens; `animdata.d2` ([formats/animdata](../../formats/animdata.md): `+0x00` name, `+0x08` frames,
   `+0x0C` speed, `+0x10` events); `monseq.txt` ([MonSeq](../../tables/MonSeq.md): `sequence`, `mode`, `frame`, `dir`,
   `event`); the PlrType and object-type
-  tokens (`0x0065B480`, `0x0065B570`; no table doc).
+  tokens (`0x0065B480`, `0x0065B570`; [PlrType](../../tables/PlrType.md), [ObjType](../../tables/ObjType.md)).
 - Unit: struct:Unit+0x10, struct:Unit+0x2C, struct:Unit+0x30 … struct:Unit+0x50 (§ 1), struct:Unit+0xB0,
   struct:Unit+0xC4 (bits 0, 6, 14, 19), struct:Unit+0xC8 (bit 3), struct:Unit+0xDC; game: struct:Game+0xA8, struct:Game+0xB8.
 
@@ -597,7 +600,7 @@ for (; f <= (unit->animFrame >> 8); f++) take(f);
   of § 6 is read).
 - ~~The format and table docs for `animdata.d2` and `monseq`.~~ *2026-10-27 (P1.1 review):* written by plan 0050
   Phase 0 ([formats/animdata](../../formats/animdata.md), [MonSeq](../../tables/MonSeq.md)).
-- [L] The PlrType and object-type token tables have no doc (archivist entry, items 3–4).
-- [L] `UNIT_AnimSetRate`'s branches (attack, cast, block with state 101, get-hit, walk and run with stat 67, the
-  `+0x3C` sequence rate): P1.2.
+- ~~The PlrType and object-type token tables have no doc.~~ *2026-10-27 (P1.2, `lane/p50b`):* written by plan 0050's
+  archivist entry ([PlrType](../../tables/PlrType.md), [ObjType](../../tables/ObjType.md)).
+- ~~`UNIT_AnimSetRate`'s branches.~~ *2026-10-27 (P1.2):* read in [anim/0002 §§ 1–3](0002-rates.md).
 - [L] `sub_0064C040` (called by `UNIT_SetMode`) and `0x0057C980` (by `SUNIT_SetMode`) are not read.
