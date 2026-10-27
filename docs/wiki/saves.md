@@ -462,8 +462,8 @@ From [save/d2s § Open questions](../specs/save/d2s.md#open-questions):
 
 - what item flag bit 13 means, and how soon after a drop the game clears it;
 - not exercised in a run: ground positions, a hotkey bound to an item, realm data on a simple item, gold items, the
-  golem section, two or more corpses, a few reader error codes, the older reader on a real old save, character
-  stats with a parameter or a sign, a save above 8 KiB, a classic game's items, and stats beyond those the runs
+  golem section, a mercenary name id past its hireling row's last name, two or more corpses, a few reader error
+  codes, the older reader on a real old save, character stats with a parameter or a sign, a save above 8 KiB, a classic game's items, and stats beyond those the runs
   saved;
 - what the character-creation screen means by status bit 1.
 
