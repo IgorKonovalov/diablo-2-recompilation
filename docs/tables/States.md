@@ -314,6 +314,29 @@ several.
   the state is the code + 122; fire, cold and lightning are in another order). The pairing is a name reading until the shrine
   operate is read.
 
+## Timing (plan 0050 Phase 0)
+
+States has no timing column of its own. The rate and velocity stats ([ItemStatCost § Timing](ItemStatCost.md#timing-plan-0050-phase-0))
+reach a state two ways, both data (`python3 -I tools/anim_survey.py skills workspace/merged`, keys
+`rate_stat_states`, `rate_stat_skill_cells`):
+
+| Column | `.bin` field | Observed | Tag |
+|---|---|---|---|
+| `stat` | `+0x018` u16, `itemstatcost` row; blank 65 535 | 55 set; a rate stat in 7: 67 `velocitypercent` in 11 `cold`, 44 `holywindcold`, 82 `increasedspeed`; 68 `attackrate` in 25 `fetishaura`, 49 `fanaticism`, 120 `feralrage`, 157 `quickness` | [C] layout ([§ Which data names a row](#which-data-names-a-row)); `[L]` meaning |
+
+- `[C]` **The skills that put a rate stat with a state.** The Skills rows whose `aurastat*` or `passivestat*` name a rate
+  stat, with the state the same row names: Holy Freeze (`aurastat1..3` = 67, 68, 69; `aurastate` 43 `holywind`,
+  `auratargetstate` 44 `holywindcold`), Fanaticism (68; 49 `fanaticism` both), Decrepify (67, 68; target 60
+  `decrepify`), Frenzy (67, 68; 94 `frenzy`), MonFrenzy and BloodLordFrenzy (67, 68, 69; 103 `monfrenzy`), Quickness
+  (67, 68; 157), Feral Rage (67; 120), Wearwolf (68; 139 `wolf`), Delerium Change (67, 68, 69; 177 `delerium`),
+  Overseer Whip (67, 68; target 141 `bloodlust`), SpiderLay and Vine Attack (67; target 24 `slowed`), Vigor (67 as
+  `aurastat3`; 41 `stamina`), Increased Speed (67 as `passivestat1`; `passivestate` 82), and the four golems and Revive (67
+  as `passivestat1`, no `passivestate`; Clay Golem also `item_slow` as `aurastat1`). 20 rows, 33 cells. Whether the stat value
+  rides on the state's stat list is the aggregation of [stats/aggregate](../specs/stats/aggregate.md); how it changes a
+  rate in frames is plan 0050 Phase 1.2.
+- `[L]` The chill (`cold`, stat 67) and the other slowing states change a unit's velocity and, through `UpdateAnimRate`,
+  its animation rate (names). Plan 0050 Phases 1.2–1.3.
+
 ## Interpretation notes
 
 - `[I]` **`exp` is flag bit 30, and the quest TC switch reads it.** The states loader builds 40 bit-sets at

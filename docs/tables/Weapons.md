@@ -451,7 +451,7 @@ tagged.
 - `[I]` At item creation the damage columns become base stats 21–24 and 159/160 with no draw
   ([§ Fields the base-stat roll reads](#fields-the-base-stat-roll-reads-plan-0024-phase-1),
   fn:PROP_Func05_DmgMin@0x0065ECF0); which of them an attack reads, and what `StrBonus`, `DexBonus`, `speed` and
-  `rangeadder` do, is plan 0037 Phase 1. `hit class` waits for the animation phase (ADR-0014 phase 5).
+  `rangeadder` do, is plan 0037 Phase 1. `hit class` is [HitClass](HitClass.md) and plan 0050's ([§ Timing](#timing-plan-0050-phase-0)).
 
 ## Economy (plan 0043 Phase 0)
 
@@ -515,6 +515,24 @@ the hire price in [Hireling § Costs](Hireling.md#costs-plan-0043-phase-0).
   for an armour item (type 50 `armo`) with `maxac − minac ≠ −1` and `maxac ≠ 0`, all three become
   `cost × armorclass / maxac` (the item's base defence, signed truncation). So `minac`/`maxac`
   ([Armor](Armor.md)) scale the armour price.
+
+## Timing (plan 0050 Phase 0)
+
+The columns a player's attack timing can read (values from the `.bin` over the 306 records):
+
+| Column | `.bin` field | Observed | Meaning | Tag |
+|---|---|---|---|---|
+| `speed` | `+0x0D8` s32 | −60..20 (11 values: 0 ×105 set, −10 ×79, 10 ×67, −20 ×22, 20 ×19, …); 105 blank store 0 | the weapon's speed modifier (name) | [C] layout; `[L]` |
+| `wclass` | `+0x0C0` 4-byte code | `1hs` 122, `stf` 56, `1ht` 44, `bow` 30, `2ht` 21, `ht1` 21, `xbw` 12 | weapon class held one-handed: the third part of the player's `animdata.d2` record name | [C] layout; `[L]` |
+| `2handedwclass` | `+0x0C4` 4-byte code | as `wclass` except 18 rows with `2hs` (their `wclass` is `1hs`) | weapon class held two-handed | [C] layout; `[L]` |
+| `hit class` | `+0x13C` u8, [HitClass](HitClass.md) row | 1..11 in all 306 | the hit class | [C] layout ([HitClass](HitClass.md)); `[L]` |
+
+- `[C]` The 18 rows whose two classes differ are the 18 with both `2handed` (`+0x11C`) and `1or2handed` (`+0x13D`)
+  set. Every `wclass`/`2handedwclass` code is a `weaponclass.txt` code, and each names an `NU` record for every class
+  except `ht1` (the Assassin's only); which modes have a record per weapon class is in
+  [PlrMode § Timing](PlrMode.md#timing-plan-0050-phase-0) and the tool's `players` output.
+- `[L]` How `speed` enters the attack rate with IAS (`item_fasterattackrate`) and the skill rate terms, and which
+  weapon class a dual wield or a two-handed grip names, are plan 0050 Phase 1.2.
 
 ## Open questions
 

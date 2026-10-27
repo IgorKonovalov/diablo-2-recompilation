@@ -249,3 +249,29 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   lacked ([0045 log](0045-skills-missiles-machinery.md#implementation-log)). That acceptance is the one this plan's
   approval waited for: **Phases 0, 1 and 1b are open**. Phase 2 still waits for 0045·P3's review, which waits for 0045
   Phase 2 part 2's review.
+- **2026-10-27 — Phase 0 landed (archivist, `lane/p50z`).** `animdata.d2` decoded and the timing columns documented;
+  no Ghidra, no harness. What was produced:
+  - [formats/animdata](../formats/animdata.md) and `tools/animdata.py` (`survey`, `dump`, `compare`, `dups`; gate
+    survey `animdata`): 256 hash blocks (`u32` count + 160-byte records: `name` char[8], `frames` u32, `speed` u32,
+    144 event bytes), every record in block `sum(name bytes) & 0xFF`, the file consumed exactly; layout `[C]`, meanings
+    `[L]`. Copies: d2data 2 563 records, d2exp 3 558 (wins by the precedence, `[I]`), patch_d2 none; d2exp adds 973
+    names and changes 4 values. Event bytes 1 ×433, 2 ×148, 3 ×4.
+  - [cof](../formats/cof.md#animdatad2-against-the-cof-fields-data-only): for all 3 500 joined names the COF
+    `frames_per_dir`, frame bytes and `rate` equal the record's `frames`, events and `speed` (data only).
+  - [MonSeq](../tables/MonSeq.md) and [HitClass](../tables/HitClass.md) (new; layouts `monseq` 5 050 cells and
+    `hitclass` 14 cells, 0 mismatches; `excel_layout` baseline regenerated: 71 tables, 951 693 cells, 0 unexplained).
+  - § Timing in PlrMode, MonMode, ObjMode (the stale "phase (5)" lines rewritten), CharStats, MonStats, MonStats2,
+    Weapons, Skills, States, ItemStatCost and Objects, each column with offset, width and range.
+  - `tools/anim_survey.py` (gate survey `anim`): the token-to-record joins with their misses: players 755 of 756 names
+    (`AMWK1HS` unjoined), monsters 5 109 flagged modes all joined (5 057 by `BaseW`, 52 by `HTH`), objects 1 483 of
+    1 603 flagged modes (120 misses); the Skills `anim`/`monanim`/`seqnum` rows; the rate stats and their users; the 60
+    `monseq` sequences with lengths and event steps.
+  - **Surprises for Phase 1.1** (written here, not into its *Done when*, per the lane's instruction to keep this plan's
+    edits to a log entry; the architect may fold them in): (a) 29 duplicate record names, 9 with different content
+    (`3DNUHTH`, `64A1HTH`, `VM*`): which one the lookup takes; (b) for objects the table and the record disagree:
+    `FrameCnt<k>` equals `frames` in 1 173 of 1 483 modes and `FrameDelta<k>` equals `speed` in 609 (0 in 421): which
+    one the server's frame advance reads; (c) 249 `monseq` steps name a frame at or past the user's record (`K9`
+    shadow warriors on 2-frame records, `OS`, `ST`); (d) `monseq` events agree with the record's event byte at the same
+    frame in only 81 of the 805 steps where either is set; event 4 exists only in `monseq`; (e) `eanimdata.d2` (d2exp,
+    3 531 records, a subset with equal values) is named by no string in `Game.exe`.
+  - Merge order: after plan 0051 Phase 0 (already on main at the branch point, 0e3f501).

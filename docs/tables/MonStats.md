@@ -782,6 +782,35 @@ fn:MONSTATS_IsPrimeEvil@0x0063EDC0, fn:MONSTATS_IsDemon@0x0063E940, fn:MONSTATS_
   fn:COMBAT_BuildDamage@0x0057B7D0, fn:sub_0057B660_UndeadDmgBonus@0x0057B660, fn:COMBAT_ToHitTargetMods@0x0057D8A0,
   fn:COMBAT_ApplyReductions@0x0057C1E0, fn:COMBAT_ResistFor@0x0057BE00, tbl:MonStats.txt:demon, tbl:MonStats.txt:lUndead)
 
+## Timing (plan 0050 Phase 0)
+
+The columns that name a monster's animation, its modes and its speeds (values from the `.bin` over the 734 records;
+`python3 -I tools/anim_survey.py monsters workspace/merged` and `monseq`, survey keys `mon_*` and `seq_*`):
+
+| Column | `.bin` field | Observed | Meaning | Tag |
+|---|---|---|---|---|
+| `Code` | `+0x010` 4-byte code | 210 distinct (`SK` 49, `CR` 24, `xx` 23, …) | the animation token: the first part of the `animdata.d2` record name | [C] layout; the join below `[C]`, the game's use `[L]` |
+| `MonStatsEx` | `+0x018` u16, `monstats2` row | 0..603, set in all 734 | the [MonStats2](MonStats2.md#timing-plan-0050-phase-0) row whose `m<mode>` bits and `BaseW` complete the record name | [C] layout |
+| `Velocity` | `+0x032` u16 | 0..15 (16 distinct), 4 blank (`gorgon1..4`); 0 in 99 | walk speed | [C] layout; `[I]` readers in [§ Readers at creation](#readers-at-creation-and-at-attack-time-plan-0025-phase-1) (the bonus, the stun test) |
+| `Run` | `+0x034` u16 | 0..20 (18 distinct), 4 blank; 0 in 99; below `Velocity` in 7 | run speed | [C] layout; `[C]` as a map, Charge's base ([§ Readers](#readers-at-creation-and-at-attack-time-plan-0025-phase-1)) |
+| — | `+0x036`, `+0x038` s16 | 0 in the file | walk and run values derived at load from the animation data and `Velocity`/`Run` | `[I]` (`sub_00650F00_MonStatsSpeeds`, [§ Fields with no `.txt` column](#fields-with-no-txt-column)) |
+| `Sk1mode`..`Sk8mode` | `+0x180 + k` u8, `monmode` row; `+0x188 + 2k` s16, `monseq` ordinal | 775 cells set: mode 14 (`xx`) 319, `S1` 112, `S2` 106, `A1` 93, `SC` 62, `A2` 48, `S3` 24, `S4` 6, `NU` 5; ordinal 1..59 in the 319 `xx` cells, −1 otherwise | the mode skill *k* plays, or the sequence | [C] layout ([§ Columns](#columns)) |
+| `spawnmode` | `+0x024` u8, `monmode` row | 52 set: `NU` 33, `S1` 19; blank 255 | the mode a spawned monster starts in | [C] layout; `[L]` |
+| `El1Mode`..`El3Mode` | `+0x0FE + e` u8, `monmode` row | `El1Mode` 295 set (`A1` 230, `A2` 53, `S1` 12), `El2Mode` 40 (`A2` 19, `A1` 13, `SC` 8), `El3Mode` none; blank 255 | the mode the elemental attack adds to | [C] layout ([§ Combat columns](#combat-columns-plan-0037-phase-0)) |
+
+- `[C]` **The record join.** Each row's `Code` + the [MonMode](MonMode.md#timing-plan-0050-phase-0) `token` of every mode
+  its MonStats2 `m<mode>` bit sets + MonStats2 `BaseW` (else `HTH`) names an `animdata.d2` record for all 5 109 flagged
+  modes outside `xx` (5 057 with `BaseW`, 52 with `HTH`); per mode in [MonMode § Timing](MonMode.md#timing-plan-0050-phase-0).
+- `[C]` **The sequences.** The 319 `xx` cells name 54 of the 60 `monseq` sequences; 249 of the 5 408 (row, step) pairs
+  name a frame at or past the row's record ([MonSeq § Sequences](MonSeq.md#sequences)).
+- Scope note: `aidel`, `aidel(N)`, `aidel(H)` (`+0x04F`..`+0x051` u8, 0..15) are the AI's delay, phase (5)'s
+  ([plan 0052](../plans/0052-monster-ai.md)); not timing columns here.
+- `[C]` A new monster's stat 67 `velocitypercent` is 75, and the `champion`/`possessed` (+20) and `fast`/`fanatic`
+  (`clamp(2048 ÷ Velocity − 128, 10, 100)`) mods add to it only when `Velocity` > 0
+  ([monsters/stats](../specs/monsters/stats.md), [ItemStatCost § Timing](ItemStatCost.md#timing-plan-0050-phase-0)).
+- `[L]` How `Velocity`/`Run` and stat 67 become the per-frame step, and how the rate stats change a monster's modes,
+  are plan 0050 Phases 1.2 and 1.3.
+
 ## Open questions
 
 - Answered `[I]` in [data/0001 §8](../findings/data/0001-excel-loader.md#8-answers-to-the-archivists-phase-1-questions): monster

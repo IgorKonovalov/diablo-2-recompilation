@@ -67,6 +67,29 @@ prints them per class from the `.bin`).
 The plan's column list also names `SkillsPerLevel` and `MinimumCastingDelay`: **this `charstats.txt` has neither**
 `[C]`. Skill points per level are not in this table.
 
+## Timing (plan 0050 Phase 0)
+
+The columns a player's mode timing and speed can read, from the layout above (values over the 7 records):
+
+| Column | `.bin` field | Observed | Meaning | Tag |
+|---|---|---|---|---|
+| `WalkVelocity` | `+0x040` u8 | 6 in all 7 | walk speed `WalkVelocity << 8` | [C] layout; `[I]` ([§ Columns](#columns), 0x0056E5B0) |
+| `RunVelocity` | `+0x041` u8 | 9 in all 7 | run as `velocitypercent = RunVelocity × 100 / WalkVelocity − 100`; Charge's base | [C] layout; `[I]`/`[C]` as in [§ Columns](#columns) |
+| `RunDrain` | `+0x042` u8 | 20, 15 (Assassin) | per-step run stamina drain | [C] layout; `[I]` ([§ Columns](#columns)) |
+| `BlockFactor` | `+0x049` u8 | 20, 25, 30 | the block chance base | [C] layout; `[I]` ([§ Columns](#columns)); the block's *length* is plan 0050 Phase 1.3 |
+| `baseWClass` | `+0x04C` 4-byte code | `hth` in all 7 | the weapon class with no weapon: the third part of the `animdata.d2` record name ([PlrMode § Timing](PlrMode.md#timing-plan-0050-phase-0)) | [C] layout; `[I]` ([§ Columns](#columns), 0x0064F166) |
+| `#walk`, `#run`, `#swing`, `#spell`, `#gethit`, `#bow` | — (not compiled) | 4..22 | editor notes | [C] (absence) |
+| `MinimumCastingDelay` | — | **no such column** in this `charstats.txt` | — | [C] |
+
+- `[C]` **The editor notes are not the animation data.** Compared with the class's `animdata.d2` frames (`WL HTH`,
+  `RN HTH`, `A1 1HS`, `SC HTH`, `GH HTH`, `A1 BOW`), 14 of the 42 cells agree: Amazon `#swing`, `#spell`, `#gethit`,
+  `#bow`; Sorceress `#walk`, `#swing`, `#spell`, `#gethit`; Necromancer `#swing`, `#spell`, `#gethit`; Barbarian
+  `#gethit`; Druid `#swing`, `#gethit`; none for the Paladin or the Assassin (whose row repeats the Amazon's, as the
+  Druid's repeats the Necromancer's). `#run` (4, 5) never equals the 8-frame `RN` records. The game does not compile
+  these columns; they are not timing data.
+- `[L]` No column of this table names a rate (attack speed, cast rate, hit recovery, block rate); the rates are stats
+  ([ItemStatCost § Timing](ItemStatCost.md#timing-plan-0050-phase-0)) and the animation data. Plan 0050 Phase 1.2.
+
 ## Interpretation notes
 
 - **The start block per class** (`python3 -I tools/player_survey.py start …`, `[C]` for the values): every class has

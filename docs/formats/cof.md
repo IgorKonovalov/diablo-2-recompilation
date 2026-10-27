@@ -152,6 +152,29 @@ flowchart LR
   the survey's `leftover_bytes=9`. Whether they belong to the frame block or are padding cannot be
   told from the data, since all four bytes are zero.
 
+## `animdata.d2` against the COF fields (data only)
+
+Plan 0050 Phase 0. [animdata.md](animdata.md) holds a record per COF name with a frame count, a speed and one event byte
+per frame. `python3 -I tools/animdata.py survey workspace/merged` joins each record name with the `.cof` of the same
+name (case-insensitive, anywhere under `data/global/`) and compares three fields. This is a data comparison: which of
+the two the game reads is plan 0050 Phase 1.1.
+
+| `animdata.d2` field | COF field | Agree (of 3 500 joined names) |
+|---|---|---:|
+| `frames` | `frames_per_dir` (`0x01`) | 3 500 |
+| `events[0..F)` (non-zero bytes and their frames) | frame bytes (`0x1C + 9L`, F bytes) | 3 500 |
+| `speed` | `rate` (`0x18`) | 3 500 |
+
+- `[C]` **The three fields carry the same values.** 3 500 of the 3 529 record names have a `.cof`; for each of them the
+  frame count, the non-zero frame bytes (positions and values) and the speed equal the COF's. 30 of the joined names
+  have two records or two `.cof` files (the `VM` monster's two COF directories, the `2Q` and `3D` tokens shared by a
+  monster and an object, and the other duplicate records of [animdata § Layout](animdata.md#layout)); for those a field
+  counts as agreeing when some record–file pair agrees, and every one does. Taking only the first record and the
+  first file in the parser's directory walk, 6 names differ (`3DNUHTH`, `VMA1HTH`, `VMGHHTH`, `VMNUHTH`, `VMS1HTH`, `VMWLHTH`).
+- `[C]` So the COF frame-byte values 1, 2 and 3 are the `animdata.d2` event bytes, and the COF `rate` with 256 as the
+  common value is the `animdata.d2` `speed` (both `[L]` in meaning).
+- `[C]` 29 record names have no `.cof` and 3 `.cof` names have no record (lists in [animdata § Lookup by name](animdata.md#lookup-by-name)).
+
 ## Composition (renderer heuristic, not game behaviour)
 
 `cof.py compose <root> <unit dir> <mode> <wclass> [out] [--dirs …] [--frame N] [--part LAYER=PART,…]`
@@ -199,5 +222,5 @@ draws one frame of one direction:
   weapon code…) for players (equipment) and monsters (`monstats2.txt` columns `HD`..`S8` and
   `HDv`..`S8v`).
 - `[L]` What the 3 extra bytes in the three `objects/f9` files are, and whether the game reads them.
-- **Not done (plan 0006 scope):** animation playback, timing (`animdata.d2`), colour shifts (`.pl2`
+- **Not done (plan 0006 scope):** animation playback; timing is `animdata.d2` ([animdata.md](animdata.md), plan 0050), colour shifts (`.pl2`
   tables and monster palette shifts), shadows and blend modes.
