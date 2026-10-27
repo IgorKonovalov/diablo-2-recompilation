@@ -1,0 +1,75 @@
+{
+ "game": "expansion",
+ "class": "Paladin",
+ "seed": 5830,
+ "name": "AnimPalB0",
+ "progression": 15,
+ "difficulty": [
+  131,
+  131,
+  131
+ ],
+ "waypoints": {
+  "normal": "all",
+  "nightmare": "all",
+  "hell": "all"
+ },
+ "quests": "all",
+ "stats": {
+  "strength": 150,
+  "energy": 200,
+  "dexterity": 100,
+  "vitality": 25,
+  "hitpoints": 1500,
+  "maxhp": 1500,
+  "mana": 600,
+  "maxmana": 600,
+  "stamina": 400,
+  "maxstamina": 400,
+  "level": 25,
+  "experience": 2050449
+ },
+ "skills": {
+  "Holy Bolt": 1,
+  "Holy Shield": 1,
+  "Sacrifice": 1
+ },
+ "mouse": {
+  "left": "Attack",
+  "right": "Holy Bolt",
+  "swap_left": "Attack",
+  "swap_right": "Holy Bolt"
+ },
+ "hotkeys": [
+  "Attack",
+  "Holy Bolt",
+  "Kick",
+  "Throw",
+  "Sacrifice"
+ ],
+ "belt_fill": [
+  "rvl",
+  "rvl",
+  "rvl",
+  "mp5"
+ ],
+ "items": [
+  {
+   "code": "tax",
+   "equip": "rarm",
+   "quantity": 60
+  },
+  {
+   "code": "buc",
+   "equip": "larm"
+  },
+  {
+   "code": "spr",
+   "equip": "rarm2"
+  },
+  {
+   "code": "mbl",
+   "equip": "belt"
+  }
+ ]
+}

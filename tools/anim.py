@@ -5,6 +5,7 @@ tools/gdb/anim.gdb (tools/gdb/anim.py).
 Usage:
   python3 -I tools/anim.py check [--root workspace/merged] [--exe workspace/install/app/game.exe] [-v] <log> ...
   python3 -I tools/anim.py lengths <recipe.json> ...     # the lengths a recipe's rate items give (tool for recipes)
+  python3 -I tools/anim.py summary <check output> ...     # per class and mode the scheduled events and their rates
 
 What it models (docs/findings/anim/0001-0003; the Boundary of plan 0050 Phase 2):
   RATE   each SR line (UNIT_AnimSetRate's exit): the record name (anim/0001 § 2: token + mode token + weapon class),
@@ -184,6 +185,17 @@ class Data:
                         return bl, it, e
         return None
 
+    def dual(self, eq):
+        """two hand items that are weapons (item type 45 and below): [(entry, row)] right hand first, else None."""
+        out = []
+        for bl in (4, 5):
+            for e in eq:
+                if e[0] == bl:
+                    it = self.item(e[1])
+                    if it and it["_kind"] == "weapons":
+                        out.append((e, it))
+        return out if len(out) == 2 else None
+
     def plr_wclass(self, cls, mode, eq):
         """COMPOSIT_WeaponClass for a player (anim/0001 § 2), single weapon only."""
         if mode in (0, 17):
@@ -192,6 +204,12 @@ class Data:
         if not w:
             return (self.cs[cls]["baseWClass"] or "hth").upper()
         _, it, _ = w
+        dual = self.dual(eq)
+        if dual and cls == 6:
+            return "HT2"
+        if dual and cls == 4:     # the primary taken as the right hand (body location 4)
+            a, b = (dual[0][1]["wclass"] or "").lower(), (dual[1][1]["wclass"] or "").lower()
+            return {("1hs", "1ht"): "1JS", ("1ht", "1ht"): "1JT", ("1ht", "1hs"): "1ST"}.get((a, b), "1SS")
         others = [e for e in eq if e[0] in (4, 5) and e is not w[2]]
         if it.get("2handed") and not (it.get("1or2handed") and cls == 4 and others):
             wc = it["2handedwclass"]      # a Barbarian's one-or-two-handed weapon is one-handed beside a shield
@@ -225,7 +243,44 @@ def bonus(i, v):
     return AR.bonus(i, v)
 
 
-def rate_model(d, line):
+MON_MODE_FLAGS = ("mDT", "mNU", "mWL", "mGH", "mA1", "mA2", "mBL", "mSC", "mS1", "mS2", "mS3", "mS4", "mDD", "mKB",
+                  "mSQ", "mRN")
+FORM_STATES = {139: 430, 140: 431}       # States wolf, bear: gfxtype 1, gfxclass (logger rev 5 logs both states)
+
+
+def plr_to_mon_mode(d, cls, mode):
+    """sub_00645190_PlrToMonMode (anim/0001 § 2): g_PlrToMonMode, then 5, 7 -> 4; 6 -> 3; 9-11 -> 8; 15 -> 2; others
+    -> 1 until the display class's MonStats2 m<mode> flag is set."""
+    m = d.pe.dw(0x006EB348 + 4 * mode)
+    ex = d.mon[cls]["MonStatsEx"]
+    m2 = d.mon2[ex] if ex is not None and 0 <= ex < len(d.mon2) else {}
+    for _ in range(8):
+        if m2.get(MON_MODE_FLAGS[m]):
+            return m
+        m = {5: 4, 7: 4, 6: 3, 9: 8, 10: 8, 11: 8, 15: 2}.get(m, 1)
+    return m
+
+
+def wereform_base(d, line, l48):
+    """sub_00646170_WereformAttackBase (anim/0002 § 3.6): w = (+0x48 & ~0xFF) / D, D 19 without a weapon, else
+    HumanAttackFrames: the player's own A1 record with the weapon's class, (F << 8) / (spd (100 + s93 + s68) / 100)."""
+    u = line["u"]
+    w = d.weapon(line.get("eq", []))
+    if not w:
+        D = 19
+    else:
+        bl, it, e = w
+        nm, F, spd, _, found = d.record(PLR_TOKEN[u["c"]] + "A1" + (it["wclass"] or "hth").upper())
+        if not found:
+            spd = 45
+        q = cdiv(s32(spd * (100 + e[4] + e[3])), 100)
+        D = cdiv(s32(F << 8), q)
+    if D <= 0:
+        return 0
+    return cdiv(s32(l48 & ~0xFF), D)
+
+
+def rate_model(d, line, prev48=None):
     """-> (name, r, sr or None, path speed or None, branch) for an SR line."""
     u = line["u"]
     t, cls, mode = u["t"], u["c"], u["m"]
@@ -234,6 +289,11 @@ def rate_model(d, line):
     ss = set(line["ss"])
     sk = line["sk"]
     skr = skill_rec(d, sk[0]) if sk else None
+    real_t, real_m = t, mode
+    form = [FORM_STATES[x] for x in sorted(ss) if x in FORM_STATES] if line.get("c8", 0) & 8 else []
+    if form and t == 0:            # UNIT_AnimTransform: the display type, class and mode (anim/0001 § 2)
+        t, cls = 1, form[0]
+        mode = plr_to_mon_mode(d, cls, mode)
     if t == 0:
         name = d.plr_name(cls, mode, line.get("eq", []))
     else:
@@ -266,7 +326,9 @@ def rate_model(d, line):
         if is_move:
             if line.get("pv") is None:
                 return nm, None, None, None, "move-nopath", found, frames, spd
-            x = max(bonus(4, g(96)) + g(67), 25)
+            x = bonus(4, g(96)) + g(67)
+            line["_x"] = x                  # the factor before the floor (P1b-14 tally)
+            x = max(x, 25)
             if t == 0:
                 vb = 0x65 if mode == 3 else 0xD5
                 pb = (d.cs[cls]["WalkVelocity"] or 0) << 8
@@ -279,10 +341,22 @@ def rate_model(d, line):
             br = "move"
         elif bool(at) or (bool(ska) and skr is not None and skr["UseAttackRate"]):
             x = bonus(0, g(93)) + g(68)
-            if t == 0 and mode == 18:
+            dw = d.dual(line.get("eq", [])) if real_t == 0 and u["c"] in (4, 6) else None
+            if dw:                  # the dual-wield term (anim/0002 § 3.6): the two hands' mean 68 for the right's
+                a, b = dw[0][0][3], dw[1][0][3]
+                x += int((a + b) / 2) - a
+            if real_t == 0 and real_m == 18:
                 x -= 30
+            line["_x"] = x                  # the factor before the clamp (P1b-2 tally)
             x = max(15, min(175, x))
-            r = fc(AR.rate_u(spd, x))
+            base = spd
+            # +0x48 at the call: UNIT_AnimInit's calls (returns 0x00624469, 0x006244C5, 0x006244E3) come before it
+            # writes the new length (0x00624473, 0x006244F4), so they read the previous mode's
+            l48 = prev48 if 0x00624390 <= line.get("ra", 0) < 0x00624500 else frames << 8
+            if form and l48 is not None:     # state flag 38 (meleeonly): set by the wolf and bear states (States)
+                w = wereform_base(d, line, l48)
+                base = w or spd
+            r = fc(AR.rate_u(base, x))
             out_sr, br = r, "attack"
         elif bool(fx):
             r, br = fc(spd), "fixed"
@@ -441,9 +515,18 @@ class Checker:
                 except ValueError:
                     continue
         self.mon_cls = {}
+        self.cat_cancel = {}
         for tag, d in lines:
             if tag in ("SR", "MSET", "SCH") and d["u"]["t"] == 1:
                 self.mon_cls[d["u"]["u"]] = d["u"]["c"]
+        # the monsters the pilot's MON scan shows with MonUMod row 6 (`fast`), by unit id (plan 0050 Phase 2: the
+        # `fast` boss of *Done when*; a tally only, the rate check is the same for every monster)
+        self.fast_ids = set()
+        for tag, d in lines:
+            if tag == "MON":
+                for m in d.get("m") or ():
+                    if 6 in (m.get("mods") or ()):
+                        self.fast_ids.add(m["id"])
         self.check_rates(lines)
         self.check_sched(lines)
         self.check_steps(lines)
@@ -456,18 +539,27 @@ class Checker:
         self.check_chain(lines)
         self.check_block_gate(lines)
         self.check_delay(lines)
+        self.check_plr_kb(lines)
 
     # --- rates ---------------------------------------------------------------------------------------------------
     def check_rates(self, lines):
         self.last_sr = {}
+        self.last48 = {}
         for tag, d in lines:
             if tag != "SR":
                 continue
             u = d["u"]
-            if d["c8"] & 8:
-                self.tally["sr-transformed-skipped"] += 1
+            if d["c8"] & 8 and not any(x in FORM_STATES for x in d["ss"]):
+                self.tally["sr-transformed-skipped"] += 1    # logger rev 4 does not log the form states
                 continue
-            res = rate_model(self.d, d)
+            res = rate_model(self.d, d, self.last48.get(u["u"]))
+            if d["rec"]:
+                self.last48[u["u"]] = d["rec"][1] << 8
+            if d["c8"] & 8:
+                self.tally["sr-transformed-%s" % res[4]] += 1
+                if res[4] == "attack":       # P1b-6: the human A1 record's weapon behind the form's base
+                    w = self.d.weapon(d.get("eq", []))
+                    self.tally["sr-transformed-attack-%s-%s" % (res[0][:2], (w[1]["code"] if w else "none"))] += 1
             nm, r, sr, pv, br, found, frames, spd = res
             key = "rate"
             got = d["rec"]
@@ -483,6 +575,21 @@ class Checker:
             if pv is not None and d.get("pv") is not None:
                 self.ok("pathspeed", pv == d["pv"], ("pv", d["n"], br, u, pv, d["pv"], d["st"]))
             self.tally["sr-%s-%s" % ("p" if u["t"] == 0 else "m", br)] += 1
+            d["_br"] = br
+            if u["t"] == 0 and d.get("sk") and d["sk"][0] in (107, 143) and u["m"] == 18:
+                # P1b-4 (A10): Charge and Leap Attack's sequence rate against the item IAS (stat 93)
+                self.tally["sr-p-sk%d-m18-%s-r%d-s93=%d" % (d["sk"][0], br, r, int(d["st"].get("93", 0)))] += 1
+            if "_x" in d and br in ("attack", "move"):
+                xx = d["_x"]
+                if br == "attack" and (xx > 175 or xx < 15):
+                    self.tally["sr-%s-attack-x-%s" % ("p" if u["t"] == 0 else "m", "gt175" if xx > 175 else "lt15")] += 1
+                if u["t"] == 0 and d.get("sk") and d["sk"][0] in (107, 143, 147, 133, 258):
+                    # Charge, Leap Attack, Frenzy, Double Swing, Burst of Speed (P1b-2, -4, -5, -15)
+                    self.tally["sr-p-%s-sk%d-x=%d" % (br, d["sk"][0], xx)] += 1
+                if br == "move" and xx < 25:
+                    self.tally["sr-%s-move-x-lt25" % ("p" if u["t"] == 0 else "m")] += 1
+            if u["t"] == 1 and u["id"] in self.fast_ids:
+                self.tally["sr-m-fastmod-%s-s67=%s" % (br, d["st"].get("67"))] += 1
             if u["t"] == 1 and 8 <= u["m"] <= 11:
                 # the P1.2 review's ruling (g): S1-S4 of a classic monster (moving rate) and of a class from 410
                 self.tally["sr-mS-%s-%s" % ("lt410" if u["c"] < 410 else "ge410", br)] += 1
@@ -504,6 +611,11 @@ class Checker:
                 disp[(x["u"], x["fr"])].add((x["k"], x["a"], x["b"], x["n"]))
             elif tag == "CAN":
                 cancels[x["u"]].append((x["fr"], x["k"], x["n"]))
+                if 0x005B0000 <= x["ra"] < 0x005F0000:
+                    # a cancel from catalogue skill code (0x005CBDED, 0x005CFAAA, 0x005D1503, Leap Attack 0x005DA2AA,
+                    # 0x005DA82F, ...): the skill queues its
+                    # own events at a site the logger does not read (plan 0046's, a boundary oracle)
+                    self.cat_cancel.setdefault(x["u"], []).append(x["fr"])
             elif tag == "FREE":
                 freed.setdefault(x["u"], []).append((x["fr"], x["n"]))
         queued = {}     # (unit, kind, frame, a, b) -> sched line
@@ -602,6 +714,10 @@ class Checker:
                 if (uu, fr, kind, a, b) not in used:
                     if (uu, kind, fr, a, b) in queued:
                         continue
+                    cc = [f for f in self.cat_cancel.get(uu, ()) if f <= fr]
+                    if cc:
+                        self.tally["dispatch-catalogue-queued"] += 1    # after a catalogue cancel: not modelled
+                        continue
                     self.ok("dispatch", False, ("unqueued", n, uu, fr, kind, a, b))
                 else:
                     self.ok("dispatch", True)
@@ -614,7 +730,10 @@ class Checker:
         last_sr = {}
         for tag, x in lines:
             if tag == "SR":
-                last_sr[x["u"]["u"]] = x
+                if x.get("_br") in ("move", "knockback"):     # only these branches write the path speed
+                    last_sr[x["u"]["u"]] = x
+                else:
+                    last_sr.pop(x["u"]["u"], None)
             elif tag == "CT":
                 if cur is not None:
                     cts.append((x["t"], x["r"]))
@@ -775,6 +894,12 @@ class Checker:
                 else:
                     res = self.seq_adv(prev, rows)
                     got = (x["sp"], x["L"], x["a44"], x["e4e"], x["m40"])
+                    skr = skill_rec(self.d, prev["sk"][0])
+                    if res and res[3] and not x["e4e"] and skr and skr.get("srvdofunc") in (87, 89, 103):
+                        # the do run on that event clears +0x4E itself (do 87 MaggotLay 0x005CB48E, do 89 Jump
+                        # 0x005CB989, do 103 0x005CD51E; catalogue writers, plan 0046): the byte is not the advance's
+                        self.tally["adv-seq-do-cleared-4e"] += 1
+                        res = res[:3] + (0,) + res[4:]
                     if self.ok("adv-seq", res == got, ("advseq", prev["n"], res, got)):
                         self.tally["adv-seq"] += 1
             # a monster knockback ends in the frame its advance reaches the length (anim/0003 § 4)
@@ -840,12 +965,37 @@ class Checker:
                 if gate:
                     self.tally["block-gate-open-mode-%s" % ("started" if started else "refused")] += 1
 
+    def check_plr_kb(self, lines):
+        """P1b-10 (H10): a hit on a player with result bit 0x8 (knockback): the player's next mode set in that frame
+        (MSET "to"), or none; the mode the player was in."""
+        pend = {}
+        for tag, x in lines:
+            if tag == "GH" and x["d"]["t"] == 0 and x["res"] & 8:
+                if x["d"]["u"] in pend:
+                    self.tally["plr-kb-next=none"] += 1
+                pend[x["d"]["u"]] = x
+                self.tally["plr-kb-attacker-c%d" % x["a"]["c"]] += 1
+            elif tag == "MSET" and x["u"]["t"] == 0 and x["u"]["u"] in pend:
+                g = pend.pop(x["u"]["u"])
+                self.tally["plr-kb-next=%s" % (("m%d-to-%d" % (x["u"]["m"], x["to"])) if x["fr"] == g["fr"] else "later")] += 1
+        self.tally["plr-kb-next=none"] += len(pend)
+
     def check_delay(self, lines):
         """P1b-12 (D1/D2): for a player's delay skill, the interval from one do to the next and the delay (DLY)."""
         last = {}
+        nxt = {}
         for tag, x in lines:
             if tag == "DLY":
                 last[x["u"]] = x
+                nxt[x["u"]] = x
+            elif tag == "SCH" and x["u"]["t"] == 0 and x["u"]["u"] in nxt:
+                # the next scheduled player mode after the delay state: its start against the state's end (fr + d)
+                d = nxt.pop(x["u"]["u"])
+                if x["T"] > d["fr"]:
+                    off = x["T"] - (d["fr"] + d["d"])
+                    self.tally["delay-next-start-minus-end=%s" % (off if abs(off) <= 3 else ("<-3" if off < 0 else ">3"))] += 1
+                    if abs(off) <= 3:
+                        self.tally["delay-next-start-m%d-minus-end=%d" % (x["u"]["m"], off)] += 1
             elif tag == "PDS" and x["k"] == 0 and x["u"] in last:
                 d = last[x["u"]]
                 if x["fr"] > d["fr"]:
@@ -861,7 +1011,9 @@ class Checker:
         for idx, (tag, x) in enumerate(lines):
             if tag == "SCH" and x["u"]["t"] == 0:
                 e1 = [q[1] for q in x["q"] if q[0] == 1]
-                a = {"T": x["T"], "m": x["u"]["m"], "e1": e1[0] if e1 else None, "ev": [q[1] for q in x["q"] if q[0] == 0],
+                a = {"T": x["T"], "m": x["u"]["m"], "sk": (x.get("sk") or [None])[0], "e1": e1[0] if e1 else None,
+                     "F": (x.get("rec") or [None, None])[1], "S": x.get("s0") or 0, "r": x["sr"] if x["seq"] else x["r"],
+                     "seq": x["seq"], "ev": [q[1] for q in x["q"] if q[0] == 0],
                      "n": x["n"], "req": None, "leave": None, "E": None, "next": None, "u": x["u"]["u"]}
                 acts.append(a)
                 cur[a["u"]] = a
@@ -887,7 +1039,21 @@ class Checker:
                 dd = (b["T"] - a["T"]) - (a["e1"] - a["T"])
                 # back to back (the next action within 3 frames of the end), else a gap
                 self.tally["act-m%d-nextact-minus-n=%s" % (a["m"], dd if abs(dd) <= 3 else "gap")] += 1
-            if a["E"] is not None and a["e1"] is not None and a["req"] and a["req"][0] <= a["e1"]:
+                if a["m"] in (7, 8, 10, 12) and not a["seq"] and a["F"] and a["r"] and abs(dd) <= 3:
+                    # P1b-1 (A2): the source's ceil((F - 1 - S) 256 / r) against the observed interval (n + dd)
+                    a2 = -(-((a["F"] - 1 - a["S"]) * 256) // a["r"])
+                    n_ = a["e1"] - a["T"]
+                    self.tally["act-a2-m%d-%s-obs-%s" % (a["m"], "a2eq-n-1" if a2 == n_ - 1 else "a2ne-n-1",
+                                                          "n-1" if dd == -1 else ("n" if dd == 0 else "other"))] += 1
+                if a["m"] in (4, 7, 9, 10, 11, 12) and abs(dd) <= 3 and a["ev"]:
+                    # the next start against the last kind-0 event's frame (when may the mode be left?)
+                    self.tally["act-m%d-next-minus-lastev=%d" % (a["m"], b["T"] - max(a["ev"]))] += 1
+                if a["m"] == 18:        # the sequences by skill (Lightning 49, the P1b-1 control)
+                    self.tally["act-m18-sk%s-nextact-minus-n=%s" % (a["sk"], dd if abs(dd) <= 3 else "gap")] += 1
+            if a["E"] is not None and a["e1"] is not None and a["req"] and a["req"][0] <= a["e1"] and \
+                    any(a["T"] <= f <= a["req"][0] for f in self.cat_cancel.get(a["u"], ())):
+                self.tally["endpending-E-after-catalogue"] += 1
+            elif a["E"] is not None and a["e1"] is not None and a["req"] and a["req"][0] <= a["e1"]:
                 self.ok("endpending-E", a["E"] == a["e1"], ("E", a["n"], a["E"], a["e1"]))
             if a["e1"] is None or a["next"] is None:
                 continue
@@ -1278,14 +1444,52 @@ def replay_combat(logs):
     return 1 if out["ghr-bad"] else 0
 
 
+PLR_CLS = ("ama", "sor", "nec", "pal", "bar", "dru", "ass")
+PMODE_NAMES = {4: "get-hit", 7: "A1", 8: "A2", 9: "block", 10: "cast", 11: "throw", 12: "kick", 13: "S1", 14: "S2",
+               15: "S3", 16: "S4", 18: "sequence", 19: "knockback", 0: "death"}
+
+
+def summary(paths):
+    """the Done-when tallies of a check output (plan 0050 Phase 2): per player class and mode the scheduled events
+    (rate-p<c>-m<m>-<record>-r<r> lines), the distinct rates per class and mode, the monster classes scheduled."""
+    t = collections.Counter()
+    for p in paths:
+        with open(p) as f:
+            for line in f:
+                if line.startswith("TALLY "):
+                    _, k, v = line.split()
+                    t[k] += int(v)
+    per = collections.defaultdict(collections.Counter)
+    for k, v in t.items():
+        if k.startswith("rate-p"):
+            c, m, rec, r = k[len("rate-p"):].split("-")
+            per[(int(c), int(m[1:]))][(rec, int(r[1:]))] += v
+    tot = collections.Counter()
+    for (c, m), ctr in sorted(per.items()):
+        n = sum(ctr.values())
+        tot[m] += n
+        rates = collections.Counter()
+        for (rec, r), v in ctr.items():
+            rates[r] += v
+        print("MODE %s %-9s %5d  rates %s" % (PLR_CLS[c], PMODE_NAMES.get(m, m), n,
+                                             " ".join("%d:%d" % kv for kv in sorted(rates.items()))))
+    print("MODES " + " ".join("%s=%d" % (PMODE_NAMES.get(m, m), v) for m, v in sorted(tot.items())),
+          "total=%d" % sum(tot.values()))
+    mc = {k[len("sch-mclass-"):]: v for k, v in t.items() if k.startswith("sch-mclass-")}
+    print("MONSTER classes=%d events=%d" % (len(mc), sum(mc.values())))
+    return 0
+
+
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("cmd", choices=("check", "replay-skills", "replay-combat"))
+    ap.add_argument("cmd", choices=("check", "replay-skills", "replay-combat", "summary"))
     ap.add_argument("logs", nargs="+")
     ap.add_argument("--root", default=os.path.join(ROOT, "workspace", "merged"))
     ap.add_argument("--exe", default=os.path.join(ROOT, "workspace", "install", "app", "game.exe"))
     ap.add_argument("-v", action="store_true")
     a = ap.parse_args()
+    if a.cmd == "summary":
+        return summary(a.logs)
     if a.cmd == "replay-combat":
         return replay_combat(a.logs)
     d = Data(a.root, a.exe)

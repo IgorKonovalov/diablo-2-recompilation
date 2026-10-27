@@ -1,0 +1,113 @@
+{
+ "game": "expansion",
+ "class": "Druid",
+ "seed": 5452,
+ "name": "AnimDruH2",
+ "progression": 15,
+ "difficulty": [
+  131,
+  131,
+  131
+ ],
+ "waypoints": {
+  "normal": "all",
+  "nightmare": "all",
+  "hell": "all"
+ },
+ "quests": "all",
+ "stats": {
+  "strength": 150,
+  "energy": 200,
+  "dexterity": 100,
+  "vitality": 25,
+  "hitpoints": 120,
+  "maxhp": 120,
+  "mana": 600,
+  "maxmana": 600,
+  "stamina": 400,
+  "maxstamina": 400,
+  "level": 25,
+  "experience": 2050449
+ },
+ "skills": {
+  "Firestorm": 1,
+  "Molten Boulder": 1,
+  "Arctic Blast": 1
+ },
+ "mouse": {
+  "left": "Attack",
+  "right": "Firestorm",
+  "swap_left": "Attack",
+  "swap_right": "Firestorm"
+ },
+ "hotkeys": [
+  "Attack",
+  "Firestorm",
+  "Kick",
+  "Molten Boulder",
+  "Arctic Blast"
+ ],
+ "belt_fill": [
+  "rvl",
+  "rvl",
+  "rvl",
+  "mp5"
+ ],
+ "items": [
+  {
+   "code": "whm",
+   "equip": "rarm",
+   "suffix": 18
+  },
+  {
+   "code": "buc",
+   "equip": "larm",
+   "suffix": 172
+  },
+  {
+   "code": "rin",
+   "equip": "rrin",
+   "suffix": 173
+  },
+  {
+   "code": "rin",
+   "equip": "lrin",
+   "suffix": 173
+  },
+  {
+   "code": "qui",
+   "equip": "tors",
+   "suffix": 263
+  },
+  {
+   "code": "vbt",
+   "equip": "feet",
+   "suffix": 113
+  },
+  {
+   "code": "amu",
+   "equip": "neck",
+   "suffix": 173
+  },
+  {
+   "code": "ci0",
+   "equip": "head",
+   "suffix": 174
+  },
+  {
+   "code": "lgl",
+   "equip": "glov",
+   "suffix": 674
+  },
+  {
+   "code": "mbl",
+   "equip": "belt",
+   "suffix": 263
+  },
+  {
+   "code": "2hs",
+   "equip": "rarm2",
+   "suffix": 18
+  }
+ ]
+}

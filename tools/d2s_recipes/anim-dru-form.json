@@ -1,0 +1,96 @@
+{
+ "game": "expansion",
+ "class": "Druid",
+ "seed": 5483,
+ "name": "AnimDruForm",
+ "progression": 15,
+ "difficulty": [
+  131,
+  131,
+  131
+ ],
+ "waypoints": {
+  "normal": "all",
+  "nightmare": "all",
+  "hell": "all"
+ },
+ "quests": "all",
+ "stats": {
+  "strength": 150,
+  "energy": 200,
+  "dexterity": 100,
+  "vitality": 25,
+  "hitpoints": 1500,
+  "maxhp": 1500,
+  "mana": 600,
+  "maxmana": 600,
+  "stamina": 120,
+  "maxstamina": 120,
+  "level": 25,
+  "experience": 2050449
+ },
+ "skills": {
+  "Wearwolf": 1,
+  "Wearbear": 1,
+  "Shape Shifting": 1,
+  "Firestorm": 1
+ },
+ "mouse": {
+  "left": "Attack",
+  "right": "Wearwolf",
+  "swap_left": "Attack",
+  "swap_right": "Wearwolf"
+ },
+ "hotkeys": [
+  "Attack",
+  "Wearwolf",
+  "Wearbear",
+  "Kick",
+  "Firestorm"
+ ],
+ "belt_fill": [
+  "rvl",
+  "rvl",
+  "rvl",
+  "mp5"
+ ],
+ "items": [
+  {
+   "code": "rin",
+   "equip": "rrin",
+   "suffix": 173
+  },
+  {
+   "code": "rin",
+   "equip": "lrin",
+   "suffix": 173
+  },
+  {
+   "code": "qui",
+   "equip": "tors",
+   "suffix": 263
+  },
+  {
+   "code": "lbt",
+   "equip": "feet",
+   "suffix": 112
+  },
+  {
+   "code": "mbl",
+   "equip": "belt"
+  },
+  {
+   "code": "buc",
+   "equip": "larm"
+  },
+  {
+   "code": "whm",
+   "equip": "rarm2",
+   "suffix": 16
+  },
+  {
+   "code": "buc",
+   "equip": "larm2"
+  }
+ ]
+}

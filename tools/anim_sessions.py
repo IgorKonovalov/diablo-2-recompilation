@@ -128,6 +128,96 @@ def mon_recipe():
     return r
 
 
+# batch 5 (the second lane run): the get-hit variant gh2 and the special recipes of the P1b cases
+GH2_SET1 = {"ama": ("wnd", "buc"), "sor": ("tax", "buc"), "nec": ("tax", "buc"), "pal": ("tax", "buc"),
+            "bar": ("tax", "buc"), "dru": ("whm", "buc"), "ass": ("tax", "buc")}
+GH2_SET2 = {"dru": ("2hs", None)}
+
+
+def gh2_recipe(cls, tier, life=120, tag="H", seed0=5400):
+    """life 120 (Act III Normal hits of about 8-20 reach every GetHitRoll band), set 1 a throwing axe with a buckler
+    (Throw by every class but the Amazon, P1b-3), the Amazon's a wand with a buckler (her block with a wand, P1b-8),
+    the Druid's a war hammer (one-handed hammer) and in set 2 a two-handed sword (his get-hits, P1b-8)."""
+    r = recipe(cls, tier)
+    r["name"] = "Anim%s%s%d" % (cls.capitalize(), tag, tier)
+    r["seed"] = seed0 + 10 * list(CLASSES).index(cls) + tier
+    r["stats"].update({"hitpoints": life, "maxhp": life})
+    w1, l1 = GH2_SET1[cls]
+    ias_w = (None, ALACRITY_W, QUICKNESS_W)[tier]
+    items = [it for it in r["items"] if it["equip"] not in ("rarm", "larm")]
+    items.insert(0, magic(l1, (None, BLOCKING, DEFLECTING)[tier], "larm"))
+    items.insert(0, dict(magic(w1, None if w1 in THROWN else ias_w, "rarm"), **({"quantity": 60} if w1 in THROWN else {})))
+    if cls in GH2_SET2:
+        w2, l2 = GH2_SET2[cls]
+        items = [it for it in items if it["equip"] not in ("rarm2", "larm2")]
+        items.append(magic(w2, ias_w, "rarm2"))
+    r["items"] = items
+    r["hotkeys"][3] = "Throw" if w1 in THROWN else CLASSES[cls][7]
+    return r
+
+
+def special_recipes():
+    """P1b-2 (Burst of Speed, a fast claw), P1b-4/P1b-15 (Charge, Leap Attack at two item-IAS values), P1b-5 (Double
+    Swing and Frenzy with two weapons of different speed), P1b-6/P1b-7 (werewolf and werebear: attacks with no weapon
+    and with a hammer, the form casts)."""
+    out = {}
+    r = recipe("ass", 2)                                 # P1b-2: t2 items, Burst of Speed 20, katars of Quickness
+    r.update({"name": "AnimAssBos", "seed": 5480})
+    r["skills"] = {"Quickness": 20, "Psychic Hammer": 1, "Fire Trauma": 1, "Fists of Fire": 1}
+    r["mouse"] = {"left": "Attack", "right": "Quickness", "swap_left": "Attack", "swap_right": "Quickness"}
+    r["hotkeys"] = ["Attack", "Quickness", "Kick", "Psychic Hammer", "Fists of Fire"]
+    r["items"] = [it for it in r["items"] if it["equip"] not in ("rarm", "larm", "rarm2", "larm2")] + [
+        magic("ktr", QUICKNESS_W, "rarm"), magic("ktr", QUICKNESS_W, "larm"), magic("clw", None, "rarm2")]
+    out["anim-ass-bos"] = ("AnimAssBos", r, "smpasn")
+    r = recipe("bar", 0)                                 # P1b-5, P1b-4: two weapons of different speed
+    r.update({"name": "AnimBarDw", "seed": 5481})
+    r["skills"] = {"Double Swing": 1, "Frenzy": 1, "Leap Attack": 1, "Leap": 1, "Howl": 1}
+    r["mouse"] = {"left": "Attack", "right": "Frenzy", "swap_left": "Attack", "swap_right": "Frenzy"}
+    r["hotkeys"] = ["Attack", "Double Swing", "Frenzy", "Leap Attack", "Kick"]
+    r["items"] = [it for it in r["items"] if it["equip"] not in ("rarm", "larm", "rarm2", "larm2")] + [
+        magic("hax", None, "rarm"), magic("scm", None, "larm"),
+        magic("hax", QUICKNESS_W, "rarm2"), magic("flc", ALACRITY_W, "larm2")]
+    out["anim-bar-dw"] = ("AnimBarDw", r, "smpbar")
+    r = recipe("pal", 0)                                 # P1b-4, P1b-15: Charge at two item-IAS values
+    r.update({"name": "AnimPalChg", "seed": 5482})
+    r["skills"] = {"Charge": 5, "Holy Bolt": 1, "Sacrifice": 1}
+    r["mouse"] = {"left": "Attack", "right": "Charge", "swap_left": "Attack", "swap_right": "Charge"}
+    r["hotkeys"] = ["Attack", "Charge", "Kick", "Holy Bolt", "Sacrifice"]
+    r["items"] = [it for it in r["items"] if it["equip"] not in ("rarm", "larm", "rarm2", "larm2")] + [
+        magic("crs", None, "rarm"), magic("buc", None, "larm"),
+        magic("crs", QUICKNESS_W, "rarm2"), magic("buc", None, "larm2")]
+    out["anim-pal-chg"] = ("AnimPalChg", r, "smppal")
+    r = recipe("dru", 1)                                 # P1b-6, P1b-7: no weapon in set 1, a war hammer in set 2
+    r.update({"name": "AnimDruForm", "seed": 5483})
+    r["skills"] = {"Wearwolf": 1, "Wearbear": 1, "Shape Shifting": 1, "Firestorm": 1}
+    r["mouse"] = {"left": "Attack", "right": "Wearwolf", "swap_left": "Attack", "swap_right": "Wearwolf"}
+    r["hotkeys"] = ["Attack", "Wearwolf", "Wearbear", "Kick", "Firestorm"]
+    r["items"] = [it for it in r["items"] if it["equip"] not in ("rarm", "larm", "rarm2", "larm2")] + [
+        magic("buc", None, "larm"), magic("whm", ALACRITY_W, "rarm2"), magic("buc", None, "larm2")]
+    out["anim-dru-form"] = ("AnimDruForm", r, "smpdru")
+    r = recipe("dru", 2)                                 # P1b-6, P1b-7 again: a spear (2ht) and a short staff (stf), FCR 50
+    r.update({"name": "AnimDruForm2", "seed": 5485})
+    r["skills"] = {"Wearwolf": 1, "Wearbear": 1, "Shape Shifting": 1, "Firestorm": 1}
+    r["mouse"] = {"left": "Attack", "right": "Wearwolf", "swap_left": "Attack", "swap_right": "Wearwolf"}
+    r["hotkeys"] = ["Attack", "Wearwolf", "Wearbear", "Kick", "Firestorm"]
+    r["items"] = [it for it in r["items"] if it["equip"] not in ("rarm", "larm", "rarm2", "larm2")] + [
+        magic("spr", None, "rarm"), magic("sst", None, "rarm2")]
+    out["anim-dru-form2"] = ("AnimDruForm2", r, "smpdru")
+    r = gh2_recipe("dru", 1)                             # P1b-8: the two-handed sword in set 1 (p8-dru-2h's swap missed)
+    r.update({"name": "AnimDruH2s", "seed": 5486})
+    r["items"] = [it for it in r["items"] if it["equip"] not in ("rarm", "larm", "rarm2", "larm2")] + [
+        magic("2hs", ALACRITY_W, "rarm"), magic("whm", ALACRITY_W, "rarm2"), magic("buc", BLOCKING, "larm2")]
+    out["anim-dru-2hs"] = ("AnimDruH2s", r, "smpdru")
+    r = mon_recipe()                                     # P1b-10: Blood Raven in Hell (MonProp bloodraven, knock)
+    r.update({"name": "AnimSorBr", "seed": 5484})
+    r["stats"].update({"hitpoints": 2500, "maxhp": 2500, "vitality": 400})
+    r["skills"] = {"Teleport": 1, "Nova": 20, "Frost Nova": 5, "Static Field": 1}
+    r["mouse"] = {"left": "Teleport", "right": "Nova", "swap_left": "Teleport", "swap_right": "Nova"}
+    r["hotkeys"] = ["Nova", "Frost Nova", "Static Field"]
+    out["anim-sor-br"] = ("AnimSorBr", r, "smpsor")
+    return out
+
+
 def cmd_recipes():
     for cls in CLASSES:
         for tier in (0, 1, 2):
@@ -135,6 +225,28 @@ def cmd_recipes():
             with open(p, "w") as f:
                 json.dump(recipe(cls, tier, gh=True), f, indent=1)
                 f.write("\n")
+    for cls in CLASSES:
+        for tier in (0, 1, 2):
+            p = os.path.join(RDIR, "anim-%s-t%d-gh2.json" % (cls, tier))
+            with open(p, "w") as f:
+                json.dump(gh2_recipe(cls, tier), f, indent=1)
+                f.write("\n")
+            p = os.path.join(RDIR, "anim-%s-t%d-gh3.json" % (cls, tier))
+            with open(p, "w") as f:
+                json.dump(gh2_recipe(cls, tier, 60, "L", 5500), f, indent=1)
+                f.write("\n")
+            p = os.path.join(RDIR, "anim-%s-t%d-gh4.json" % (cls, tier))
+            with open(p, "w") as f:
+                json.dump(gh2_recipe(cls, tier, 80, "M", 5600), f, indent=1)
+                f.write("\n")
+            p = os.path.join(RDIR, "anim-%s-t%d-bk.json" % (cls, tier))
+            with open(p, "w") as f:
+                json.dump(gh2_recipe(cls, tier, 1500, "B", 5800), f, indent=1)
+                f.write("\n")
+    for rec, (_, r, _) in special_recipes().items():
+        with open(os.path.join(RDIR, rec + ".json"), "w") as f:
+            json.dump(r, f, indent=1)
+            f.write("\n")
     p = os.path.join(RDIR, "anim-sor-mon.json")
     with open(p, "w") as f:
         json.dump(mon_recipe(), f, indent=1)
@@ -155,6 +267,16 @@ SAVES = {"Anim%s%d" % (c.capitalize(), t): ("anim-%s-t%d" % (c, t), CLASSES[c][1
 SAVES["AnimSorMon"] = ("anim-sor-mon", "smpsor")
 SAVES.update({"gh/Anim%s%d" % (c.capitalize(), t): ("anim-%s-t%d-gh" % (c, t), CLASSES[c][1]) for c in CLASSES
               for t in (0, 1, 2)})
+
+SAVES.update({"gh2/Anim%sH%d" % (c.capitalize(), t): ("anim-%s-t%d-gh2" % (c, t), CLASSES[c][1]) for c in CLASSES
+              for t in (0, 1, 2)})
+SAVES.update({"gh3/Anim%sL%d" % (c.capitalize(), t): ("anim-%s-t%d-gh3" % (c, t), CLASSES[c][1]) for c in CLASSES
+              for t in (0, 1, 2)})
+SAVES.update({"gh4/Anim%sM%d" % (c.capitalize(), t): ("anim-%s-t%d-gh4" % (c, t), CLASSES[c][1]) for c in CLASSES
+              for t in (0, 1, 2)})
+SAVES.update({"bk/Anim%sB%d" % (c.capitalize(), t): ("anim-%s-t%d-bk" % (c, t), CLASSES[c][1]) for c in CLASSES
+              for t in (0, 1, 2)})
+SAVES.update({"sp/" + name: (rec, base) for rec, (name, _, base) in special_recipes().items()})
 
 FIELDS = ("1,2", "1,3", "1,4", "1,5")
 
@@ -222,6 +344,120 @@ for k, f in enumerate(("5,2", "5,3", "2,2", "3,2", "1,4", "5,4")):
     SESSIONS["mon-%d" % (k + 1)] = mon_session(5200 + k, f)
 
 
+def gh2_session(cls, tier, seed, field, hops=20):
+    """batch 5's get-hit session: Act III Normal, fights only (Attack, Throw or the second cast, the cast, Kick), the
+    pilot drinking below 80 % life inside its click bursts too (d2pilot --drink-in-burst); the weapon swap half way."""
+    keys = ["F1", "F4", "F2", "F1", "F4", "F3"]
+    f = fight(keys, hops, extra=("--drink-in-burst",))
+    f = (f[0], [("0.8" if a == "0.7" else a) for a in f[1]], f[2])
+    return ("gh2/Anim%sH%d" % (cls.capitalize(), tier), "enter-normal", seed,
+            [wp(field), f, ("keys", ["w"], 1.0), f])
+
+
+for k, cls in enumerate(CLASSES):
+    for tier in (0, 1, 2):
+        SESSIONS["gh2-%s-t%d" % (cls, tier)] = gh2_session(cls, tier, 5400 + 10 * k + tier, ("3,2", "3,3")[(k + tier) % 2])
+
+
+def gh3_session(cls, tier, seed, field, hops=24):
+    """gh2-sor-t1 (life 120 in Act III) died after 7 get-hits, its potions spent at hops 1-8 (a full orb reads 0.75):
+    life 60 in Act I Normal (hits of 3-7 in the 3/8 and 3/4 bands), drinking below 0.5 of the orb, in bursts too."""
+    keys = ["F1", "F4", "F2", "F1", "F4", "F3"]
+    f = fight(keys, hops, extra=("--drink-in-burst",))
+    f = (f[0], [("0.5" if a == "0.7" else a) for a in f[1]], f[2])
+    return ("gh3/Anim%sL%d" % (cls.capitalize(), tier), "enter-normal", seed,
+            [wp(field), f, ("keys", ["w"], 1.0), f])
+
+
+for k, cls in enumerate(CLASSES):
+    for tier in (0, 1, 2):
+        SESSIONS["gh3-%s-t%d" % (cls, tier)] = gh3_session(cls, tier, 5500 + 10 * k + tier, ("1,3", "1,4")[(k + tier) % 2])
+
+
+def gh4_session(cls, tier, seed, field, hops=24):
+    """the Act I monsters (levels near 5) seldom hit a clvl 25 character (dev5-gh3-sor-t2: 2 of 33 attacks): life 80
+    in Act II Normal (Dry Hills, Far Oasis), drinking below 0.5 of the orb, in bursts too."""
+    keys = ["F1", "F4", "F2", "F1", "F4", "F3"]
+    f = fight(keys, hops, extra=("--drink-in-burst",))
+    f = (f[0], [("0.5" if a == "0.7" else a) for a in f[1]], f[2])
+    return ("gh4/Anim%sM%d" % (cls.capitalize(), tier), "enter-normal", seed,
+            [wp(field), f, ("keys", ["w"], 1.0), f])
+
+
+for k, cls in enumerate(CLASSES):
+    for tier in (0, 1, 2):
+        SESSIONS["gh4-%s-t%d" % (cls, tier)] = gh4_session(cls, tier, 5600 + 10 * k + tier, ("2,3", "2,5")[(k + tier) % 2])
+
+
+def gh4n_session(cls, tier, seed, field, hops=24):
+    """gh4 in Far Oasis died within a burst (gh4-nec-t1, the belt full: 80 life gone in under a second): the same
+    saves in Act I Nightmare (Cold Plains, Stony Field), no lightning scarabs."""
+    row = gh4_session(cls, tier, seed, field, hops)
+    return (row[0], "enter-nightmare") + row[2:]
+
+
+for k, cls in enumerate(CLASSES):
+    for tier in (0, 1, 2):
+        SESSIONS["gh4n-%s-t%d" % (cls, tier)] = gh4n_session(cls, tier, 5700 + 10 * k + tier, ("1,2", "1,3")[(k + tier) % 2])
+
+
+def bk_session(cls, tier, seed, field="2,5", hops=24):
+    """blocks and throws (P1b-3, P1b-8's wand block): the gh2 weapons (a throwing axe, the Amazon's wand, the Druid's
+    hammer and two-handed sword) on a life-1500 character in Far Oasis (gh4-sor-t2 met 126 attacks there in a minute)."""
+    keys = ["F1", "F4", "F2", "F1", "F4", "F3"]
+    f = fight(keys, hops, extra=("--drink-in-burst",))
+    f = (f[0], [("0.5" if a == "0.7" else a) for a in f[1]], f[2])
+    return ("bk/Anim%sB%d" % (cls.capitalize(), tier), "enter-normal", seed,
+            [wp(field), f, ("keys", ["w"], 1.0), f])
+
+
+for k, cls in enumerate(CLASSES):
+    for tier in (0, 1, 2):
+        # bk-ama-t2 (the first) ran 24 hops per half (about 12 minutes); the others 10, for the session cap
+        SESSIONS["bk-%s-t%d" % (cls, tier)] = bk_session(cls, tier, 5800 + 10 * k + tier,
+                                                         hops=24 if (cls, tier) == ("ama", 2) else 10)
+
+
+def p8_session(save, seed, swap_first, field="3,2", hops=24):
+    """P1b-8: the Druid's get-hits with the war hammer (set 1) or, swapped first, the two-handed sword (set 2), on the
+    life-120 gh2 save in Spider Forest (gh2-sor-t1: 7 get-hits before its death)."""
+    keys = ["F1", "F2", "F1", "F3"]
+    f = fight(keys, hops, extra=("--drink-in-burst",))
+    f = (f[0], [("0.5" if a == "0.7" else a) for a in f[1]], f[2])
+    return (save, "enter-normal", seed, [wp(field)] + ([("keys", ["w"], 1.0)] if swap_first else []) + [f, f])
+
+
+SESSIONS["p8-dru-1h"] = p8_session("gh2/AnimDruH2", 5490, False)
+SESSIONS["p8-dru-2h"] = p8_session("gh2/AnimDruH1", 5491, True)
+
+
+def sp_session(save, seed, field, keys, hops=24, holds=()):
+    f = fight(keys, hops, extra=("--drink-in-burst",))
+    f = (f[0], [("0.5" if a == "0.7" else a) for a in f[1]], f[2])
+    return ("sp/" + save, "enter-normal", seed,
+            [wp(field), f] + list(holds) + [("keys", ["w"], 1.0), f] + list(holds))
+
+
+SESSIONS["sp-ass-bos"] = sp_session("AnimAssBos", 5480, "1,3", ["F2", "F1", "F1", "F1", "F1", "F5", "F1", "F1"])
+SESSIONS["sp-bar-dw"] = sp_session("AnimBarDw", 5481, "1,4", ["F1", "F2", "F3", "F3", "F4", "F1", "F3", "F2"],
+                                   holds=[("hold", "F3", 4.0), ("hold", "F2", 3.0)])
+SESSIONS["sp-pal-chg"] = sp_session("AnimPalChg", 5482, "1,2", ["F2", "F1", "F2", "F1", "F2", "F4"])
+BRNOVA = ["--nova-key", "F1", "--radius", "9", "--mana-col", "4", "--drink", "0.5", "--nova-hold", "1.6",
+          "--max-res", "1000"]
+# Blood Raven (class 267) in the Graveyard preset (LvlPrest Def 108) of the Burial Grounds, next to Cold Plains;
+# map seed 4807 reached it in plan 0038's raven2 (monsters/experiments, H4a)
+SESSIONS["br-hell"] = ("sp/AnimSorBr", "enter-hell", 4807,
+                       [wp("1,2"), ("pilot", ["explore", "--hops", "300", "--to-pdef", "108", "--pdef-any", "--persist",
+                                              "25"] + BRNOVA, 400),
+                        ("pilot", ["hunt", "--mon-cls", "267", "--time", "240"] + BRNOVA, 280)])
+SESSIONS["br-hell2"] = SESSIONS["br-hell"]          # the same steps again (br-hell: 7 knockback results)
+SESSIONS["sp-dru-form2"] = sp_session("AnimDruForm2", 5485, "1,4", ["F2", "F1", "F1", "F1", "F3", "F1", "F1", "F1",
+                                                                    "F3", "F5", "F3", "F1", "F1"])
+SESSIONS["p8-dru-2hs"] = p8_session("sp/AnimDruH2s", 5492, False)
+SESSIONS["sp-dru-form"] = sp_session("AnimDruForm", 5483, "1,5", ["F2", "F1", "F1", "F1", "F3", "F1", "F1", "F1",
+                                                                  "F3", "F5", "F3", "F1", "F1"])
+
+
 def sh(args, timeout=None, log=None):
     print("$ " + " ".join(args), flush=True)
     try:
@@ -231,9 +467,12 @@ def sh(args, timeout=None, log=None):
         return None
 
 
-def build(saves):
-    os.makedirs(os.path.join(saves, "gh"), exist_ok=True)
+def build(saves, only=None):
+    for d in ("gh", "gh2", "gh3", "gh4", "bk", "sp"):
+        os.makedirs(os.path.join(saves, d), exist_ok=True)
     for name, (rec, base) in SAVES.items():
+        if only and not any(name.startswith(o) for o in only):
+            continue
         rc = sh(PY + ["tools/d2s.py", "build", EXCEL, os.path.join("tools", "d2s_recipes", rec + ".json"),
                       os.path.join(BASE, base + ".d2s"), os.path.join(saves, name + ".d2s")], 60)
         if rc:
@@ -341,7 +580,7 @@ def main(argv):
             names.append(a[k])
             k += 1
     if argv[0] == "build":
-        return build(opt["saves"])
+        return build(opt["saves"], names)
     for n in names:
         if n not in SESSIONS:
             print("unknown session %s" % n)

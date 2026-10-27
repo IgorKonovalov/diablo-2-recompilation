@@ -10,7 +10,7 @@
 #   SR      UNIT_AnimSetRate 0x00623F50 (stack unit) at its five `ret 0xC` (matched by ESP), players and monsters:
 #           ra (the call's return address), rec [name, frames, speed] (Unit+0x50), r (+0x4C s16), sr (+0x3C), seq
 #           (+0x30 != 0), c8 (+0xC8), st {67, 68, 69, 93, 96, 99, 102, 105, 10, 154: STATS_GetUnitStat as
-#           tools/gdb/skills.py reads it; rev 4 adds 150 item_slow}, ss (states 1, 11, 15, 21, 38, 42, 54, 101 that are on), sk [used skill id,
+#           tools/gdb/skills.py reads it; rev 4 adds 150 item_slow}, ss (states 1, 11, 15, 21, 38, 42, 54, 101, rev 5 also 139, 140, that are on), sk [used skill id,
 #           SkillEntry+0x0C flags] or null, pv (path +0x7C) or null; players also eq [[bodyloc, item class, ItemData
 #           +0x18 flags, item stat 68, item stat 93, ItemData +0x45 page] for body locations 3, 4, 5], monsters mf (MonsterData +0x16)
 #   SCH     SUNIT_ScheduleModeEvents 0x005539B0 (ECX game, EDX unit) closed at its rets 0x00553A0B / 0x00553AF9:
@@ -65,8 +65,8 @@ import struct
 
 import gdb
 
-REV = 4  # rev 1: the development logs (dev-, dev2-, dev3-, dev-r1-); rev 2: FREE lines, PS0 "pts"; rev 3: "ph";
-#          rev 4: DLY lines, GH "st" (95, 102), stat 150 in SR
+REV = 5  # rev 1: the development logs (dev-, dev2-, dev3-, dev-r1-); rev 2: FREE lines, PS0 "pts"; rev 3: "ph";
+#          rev 4: DLY lines, GH "st" (95, 102), stat 150 in SR; rev 5: states 139 (wolf), 140 (bear) in "ss"
 
 
 def _anim_main():
@@ -88,7 +88,7 @@ def _anim_main():
                0x0058403E, 0x0058438C, 0x005846FF, 0x00584C79, 0x00584EBE, 0x00585F32, 0x005863B7, 0x0058648C,
                0x005865A1, 0x0058672A, 0x00586800, 0x005869E1, 0x00586A9D, 0x0058BDDB, 0x0058D4F6)
     RST = [67, 68, 69, 93, 96, 99, 102, 105, 10, 154, 150]
-    STATES = [1, 11, 15, 21, 38, 42, 54, 101]
+    STATES = [1, 11, 15, 21, 38, 42, 54, 101] + ([139, 140] if REV >= 5 else [])
     st = {"game": 0, "n": {}, "capped": set(), "line": 0, "isc": None, "sr": {}, "sch": None, "oa": {},
           "pl": {}, "dr": {}, "gr": {}, "pa": {}, "ps": {}, "ad": {}, "win": 0, "win_t0": 0, "wins": 0, "plr": 0,
           "rsc": None, "ph": 0}
