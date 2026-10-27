@@ -275,6 +275,14 @@ apart by the logs. With the level's class list and the stats draws modelled toge
 this seed for all 12 580 monster creations it met ([spawn § Inputs and oracles](../specs/monsters/spawn.md#inputs-and-oracles);
 [seed to world](seed-to-world.md#e-one-monsters-creation)).
 
+A skill's summon is created the same way, outside the pass. In 219 logged summons (207 Druid Ravens and 12 skeletons
+of Raise Skeleton) the game seed stepped once, the summon's own seed came from that step, and its hit points and
+defence were what the creation draws give on that seed
+([spawn § J](../specs/monsters/spawn.md#j-creation-and-the-unit-seed),
+[stats § F](../specs/monsters/stats.md#f-monprop-at-creation)). The summon's other stats, the skill's bonuses among
+them, were not checked; the [skills](skills.md) page has the summon side. That the summoning step itself adds no draw
+is read from the code.
+
 **Wanderers** ([spawn § K](../specs/monsters/spawn.md#k-wanderers-the-tick)). Every room in the update walk takes one
 room-seed draw per tick, and it goes on doing so after the room is populated: 4 044 logged ticks on
 populated rooms each took exactly one step. Rarely, a wanderer roll follows. It fired once in a run, in the Chaos
@@ -400,6 +408,28 @@ A fixed `aura` runs its handler a second time, on the same seed, so it writes th
 Bremm Sparkfist. Read from the code only: the `thief` mod is dropped from a row's fixed mods, and a superunique
 that already holds 5 or more mods gets nothing below placement.
 
+## Mods a class is created with
+
+Some monsters hold mods before any special code runs: the creation step writes them by the class's base type
+([special § J](../specs/monsters/special.md#j-other-entry-paths-and-pre-existing-mods)). Two helpers do this.
+
+- **The first** gives four base types a fixed mod at the head of the list: the base types of `brute2`, `scarab1`,
+  `reanimatedhorde1` and `frozenhorror1` held mods 13, 20, 34 and 35 in every logged list (42 units), and none of the
+  718 logged units of other base types held them. Its other cases (mummies, Duriel, traps, the bone prisons, the suicide minions,
+  the Ancients) were not met and are read from the code. None of its mods has a server handler, so they draw nothing:
+  the superunique Beetleburst and its minions came in with mod 20 already present, as modelled. By the code the
+  helper is skipped when the creation request carries a certain flag; 590 logged requests carried it, but none of
+  their mod lists was compared.
+- **The second** covers the act bosses and a few others. By the code, Andariel, Mephisto, Diablo, Izual, Baal,
+  the compelling orb, the smith and Nihlathak get mod 22 `questcomplete`; Blood Raven gets 12 and 22, the
+  Maggot Queen 23 and 22 and the fire golem 31; Duriel gets none from this helper; the uber bosses get longer sets of their own. By the
+  code, outside the uber classes, only the Maggot Queen's 23 calls a mod handler. Only Nihlathak's row is confirmed: he left his
+  placement holding 22 and then held 22 and 30, as logged, and a model without his case fails. The other bosses that
+  were logged were created where no mod list was compared, so their rows rest on the code.
+
+By the code, mods from either helper count as already held: the special's mod roll treats them as taken, and a superunique's fixed
+mods come after them.
+
 ## Names
 
 The name is built on the client ([special § I](../specs/monsters/special.md#i-names)):
@@ -453,7 +483,8 @@ of a class its row's properties for the difficulty, special or not, with any val
 On stock data only `thorns` has a range, and a test run reproduced it. Stock `chance` is 0 everywhere, so the
 `chance` roll is never reached. Of the three rows with a normal-difficulty part, two cannot be reached on stock
 data. The third, `druidhawk`, can: it belongs to the Druid's Raven, so by the code a Raven in a normal game reads its
-normal row. No such creation was logged.
+normal row. Ravens were created in a skills run, but only their seed, hit points and defence were checked, not
+this list.
 
 **Monster equipment** (`MonEquip`, [stats § B](../specs/monsters/stats.md#b-monstatsinit-in-order), step B12) comes
 last. Only two classes have a row that equips at creation in the stock table: 234 (a flying scimitar) and 267 (Blood
@@ -538,12 +569,16 @@ Notes the spec makes a point of:
 
 To-hit and damage are not creation stats. They are computed each time the monster enters an attack mode
 ([stats § H](../specs/monsters/stats.md#h-to-hit-and-damage-at-attack-time-reference-only)). The random draws of that
-step are confirmed by the combat run: one draw of 100 for each elemental group of that attack mode whose chance is between 1 and 99, one
-draw of 5 for one element type, and nothing else. The formulas of the values it writes are read from the code only,
-because the combat run took those values as given. By the code, the expansion adds 6.25 % damage per player beyond the
-first in nightmare and hell only, and a `noRatio` class (a summon or pet) ends up with no elemental damage at attack
-time, because its elemental values are written to one place and read from another. The attack itself is on the
-[combat](combat.md) page.
+step are confirmed by the combat run, and again by the skills runs: one draw of 100 for each elemental group of that
+attack mode whose chance is between 1 and 99, one draw of 5 for one element type, and nothing else. The plain values
+are now confirmed too. In 26 425 logged calls the minimum and maximum damage and the to-hit were the mode's `MonStats`
+cells scaled by the `MonLvl` row of the monster's level, as at creation: the `A2` cells for one attack mode, the `S1`
+cells for two others and the `A1` cells for every other mode (the raw cells for a `noRatio` class). Read from the code
+only: whether the `L-` columns or the plain ones are used here (they gave the same values in every call), the classic
+cut, the expansion's 6.25 % more damage per player beyond the first in nightmare and hell (every logged call was at one
+player), the extra damage a monster skill adds, and the redraw for one element type. By the code,
+too, a `noRatio` class (a summon or pet) ends up with no elemental damage at attack time, because its elemental values
+are written to one place and read from another. The attack itself is on the [combat](combat.md) page.
 
 ## Worked examples
 
@@ -630,8 +665,9 @@ Each spec's *Open questions* has the full list: [pool](../specs/monsters/pool.md
   floating-point precision of the hit-point rescale, the will-o'-wisp halving, and the unreached branches (`poisonhit`,
   `always_run_ai`, monster equipment beyond the one-row case, a `MonProp` slot with a chance, `fast` and `fanatic` at
   `Velocity` 8 and 9, more than 8 players, the hit-point percentage and regeneration overflows). A Druid's Raven reading the normal
-  `druidhawk` row was not logged.
-  The formulas of the attack-time to-hit and damage values were not asserted by a run.
+  `druidhawk` row was not logged. Of the attack-time values, the plain cells are confirmed; the `L-` cells, the
+  monster skill's extra damage, the classic cut, the expansion player bonus, the element-type redraw and an attack of
+  the second or third elemental group are not.
 
 ## Where to read more
 

@@ -381,6 +381,8 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-10-27 | `lane/h6c` review | 0038 H6c | architect-review | 179 463 | 84 | 16 | — (static, objdump, no Ghidra, no harness) | gave accept with fixes | — (on the lane row) |
 | 2026-10-27 | `lane/h6f` | 0038 H6f | reverser-harness | 492 169 | 210 | 73 | slot 2 (19 launches), no Ghidra | accept with fixes (ledger as filed; rows 1, 9 d-none; the refusal halves of 17, 18, 21 d-none on a condition; row 29 a shortfall, d-2c not accepted) | 6: overclaim 3, misread 1, omission 2 (the name clamp's widths, the cap's "unsigned", "no other call" for `MERC_Create`; `MERC_AddExp`'s 98 as a constant; the `floor` shots path; the client-test gap unfiled) |
 | 2026-10-27 | `lane/h6f` review | 0038 H6f | architect-review | 175 941 | 73 | 14 | — (static, objdump, no Ghidra, no harness) | gave accept with fixes | — (on the lane row) |
+| 2026-10-27 | `lane/wiki` | owner request: wiki refresh over the 2026-10-27 re-tags, root README | wiki | 191 812 | 45 | 9 | — (no slot, no Ghidra, no harness) | accept with fixes (ruling: the README Status table follows the research map's rows, so the four combat files fold into `combat/formulas`) | 2: misread 1, other 1 (wiki/saves' "long name" for a name id past `+0x116`; the four combat rows split from the map's one) |
+| 2026-10-27 | `lane/wiki` review | owner request: wiki refresh, root README | architect-review | 112 970 | 37 | 6 | — (static, no Ghidra, no harness) | gave accept with fixes | — (on the lane row) |
 | 2026-10-27 | `lane/a52` | 0052 P0 | archivist | — | — | — | — (static, no Ghidra) | pending | — |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
