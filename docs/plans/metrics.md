@@ -298,6 +298,7 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-10-27 | `lane/a51f` review | 0050 entry items 3–4, 0051 item 3a and P2; plan 0051 closed | architect-review | 156 404 | 78 | 8 | — (static, no Ghidra) | gave accept with fixes | — (on the lane row) |
 | 2026-10-27 | `lane/swk` | 0038 P3 wiki refresh | wiki | 233 468 | 61 | 11 | no slot, no Ghidra | accept with fixes (rulings: the `Rarity` 0 weaker tag right, spawn D to `[I]` by a spec-writer entry; lifecycle § I and spawn K's `MonWndr` test to one spec-writer entry; the *Wanderers* and lifecycle-bullet edits within rule 7; `based_on` dates match the specs) | 4: overclaim 3, other 1 (wiki/levels' "passes 1 time in 32 768" flat while both specs keep the mask width `[I]`; wiki/monsters' "1 in 32 768" and `MonWndr` test flat while lifecycle I1 keeps that test `[I]`; "overflow included" under emulation without the one faulting input it leaves out; "three were logged" for three classes) |
 | 2026-10-27 | `lane/swk` review | 0038 P3 wiki refresh | architect-review | 114 071 | 45 | 8 | — (static, no Ghidra) | gave accept with fixes | — (on the lane row) |
+| 2026-10-27 | `lane/sfx` | 0038 P3 spawn D and lifecycle § I reconcile | spec-writer | — | — | — | no slot, no Ghidra | | |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not

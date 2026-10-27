@@ -3588,11 +3588,11 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Rulings.** (a) **`Rarity` 0:** the page's weaker wording is right. spawn D's `[C]` covers a case no run met (no stock
     region holds a `Rarity` 0 entry; the run confirms the walk, not that outcome), so spawn D is reconciled down to pool's
     `[I]`, not pool up:
-    [entry](../backlog/2026-10-27-architect-spec-writer-spawn-d-rarity-0-tag-to-pool.md). (b) **drlg/lifecycle § I** is
+    [entry](../backlog/archive/2026-10-27-architect-spec-writer-spawn-d-rarity-0-tag-to-pool.md). (b) **drlg/lifecycle § I** is
     stale against spawn § K (the roll's draw and no-spawn branch are `[C]` on run:2026-10-21-sweep-monsters-a); it was not
     filed, so it is filed now together with spawn K1's header, which leaves the `MonWndr` ≠ 0 test under `[C]` although
     the one pass cannot separate it (the `lane/s38m` review missed this):
-    [entry](../backlog/2026-10-27-architect-spec-writer-lifecycle-i-and-spawn-k-wanderer-gate-reconcile.md). (c) The
+    [entry](../backlog/archive/2026-10-27-architect-spec-writer-lifecycle-i-and-spawn-k-wanderer-gate-reconcile.md). (c) The
     edits beyond the entry (wiki/levels' *Wanderers* paragraph and the room-lifecycle bullet citing spawn § K) are within
     rule 7 and stand, with fix (1). (d) "By the formula" (`fast`/`fanatic` at `Velocity` 8 and 9, stats G3 `[I]`) and "by
     the code" (`druidhawk`, stats F3 `[I]`; `Rarity` 0) match the specs' tags. (e) The `based_on` dates equal each spec's
@@ -3602,3 +3602,22 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     overclaim 3, other 1; the review row added with usage "—".
   - **Backlog:** review request closed (archive); two spec-writer entries filed.
   - **Next:** merge `lane/swk`; the two spec-writer entries, then a `based_on` bump on the three pages.
+- **2026-10-27 — `lane/sfx` (spec-writer): the two entries from the `lane/swk` review.**
+  - **monsters/spawn § D:** the `Rarity` 0 bullet split: the walk's stop rule stays `[C]` (run:2026-10-13-mon-spawn), "a
+    `Rarity` 0 entry is never picked" is `[I]`, read from that walk and from `raritySum` not wrapping, with pool's "no
+    stock region has one". **§ K1:** the Levels `MonWndr` ≠ 0 test (0x0054F0AA) added to the header's `[I]` list and the
+    `[I]` bullet (the pass came in a `MonWndr` 1 level; no logged tick passed the mask in a `MonWndr` 0 level); the
+    `[C]` bullet that `MonWndr` has no other reader is unchanged. Tags C 136 / I 43 / L 5 → C 136 / I 44 / L 5.
+  - **drlg/lifecycle § I:** I1's roll draw and its `mod 100` ≥ 3 return `[C]` on run:2026-10-21-sweep-monsters-a (the
+    region `+0x2C4` test split onto its own `[I]` line); the gate line's mask width marked `[I]`; the "no gate draw
+    passed" bullet replaced by a `[C]` bullet for the Chaos Sanctuary pass and an `[I]` bullet for what it does not
+    separate (mask width, `+0x78`, `MonWndr`, `+0x2C4`, the spawn). Made stale and fixed (rule 7): the Constants rows for
+    the gate and the roll, and the open question, now "the wanderer spawn was never reached". Tags C 92 / I 77 / L 8 →
+    C 96 / I 80 / L 8; `updated` 2026-10-21 → 2026-10-27.
+  - **Wiki:** `based_on` for drlg/lifecycle bumped to 2026-10-27 on wiki/levels, wiki/monsters, wiki/seed-to-world and
+    wiki/objects (which also lists it; its text has no wanderer statement); spawn was already 2026-10-27. No page text
+    changed: the pages already take the weaker tags.
+  - **Research map** (architect's): the spawn row's counts become C 136 / I 44 / L 5 and the lifecycle row's
+    C 96 / I 80 / L 8, updated 2026-10-27.
+  - **Backlog:** both entries closed (archive); review request filed.
+  - **Next:** architect review of `lane/sfx`.
