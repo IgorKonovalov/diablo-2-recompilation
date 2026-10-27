@@ -579,7 +579,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00568060,func,sub_00568060_PktInteractButton,,I,items/cube,docs/findings/items/0008-cube.md
 0x005689D0,func,sub_005689D0_TradeStateTick,,I,multiplayer/trade,docs/findings/multiplayer/0002-trade-and-party-gold.md
 0x00568DC0,func,sub_00568DC0_ItemRefFromId,,I,save/d2s,docs/findings/save/0001-d2s-io.md
-0x00568E60,func,D2S_WriteMercHeader,,I,save/d2s,docs/findings/save/0001-d2s-io.md
+0x00568E60,func,D2S_WriteMercHeader,,C,save/d2s,docs/findings/save/0001-d2s-io.md
 0x00568F20,func,D2S_WriteHeader,,C,save/d2s,docs/findings/save/0001-d2s-io.md
 0x00569320,func,D2S_WriteQuests,,C,save/d2s,docs/findings/save/0001-d2s-io.md
 0x005693E0,func,D2S_WriteWaypoints,,C,save/d2s,docs/findings/save/0001-d2s-io.md
@@ -587,8 +587,8 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00569540,func,D2S_WriteStats,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x005696F0,func,D2S_WriteSkills,,C,save/d2s,docs/findings/save/0001-d2s-io.md
 0x005697B0,func,D2S_WriteItemList,,I,save/d2s,docs/findings/save/0001-d2s-io.md
-0x005697F0,func,D2S_WriteCorpses,,I,save/d2s,docs/findings/save/0001-d2s-io.md
-0x005699A0,func,D2S_WriteMercItems,,I,save/d2s,docs/findings/save/0001-d2s-io.md
+0x005697F0,func,D2S_WriteCorpses,,C,save/d2s,docs/findings/save/0001-d2s-io.md
+0x005699A0,func,D2S_WriteMercItems,,C,save/d2s,docs/findings/save/0001-d2s-io.md
 0x00569A00,func,D2S_WriteGolem,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x00569AD0,func,D2S_WriteSave,,C,save/d2s,docs/findings/save/0001-d2s-io.md
 0x00569D80,func,D2S_CheckStatus,,I,save/d2s,docs/findings/save/0001-d2s-io.md
@@ -603,11 +603,11 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0056A620,func,D2S_ReadStats,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x0056A710,func,D2S_ReadSkills,,C,save/d2s,docs/findings/save/0001-d2s-io.md
 0x0056A7E0,func,D2S_ReadItemList,,I,save/d2s,docs/findings/save/0001-d2s-io.md
-0x0056A830,func,D2S_ReadCorpses,,I,save/d2s,docs/findings/save/0001-d2s-io.md
-0x0056AA50,func,D2S_ReadMercHeader,,I,save/d2s,docs/findings/save/0001-d2s-io.md
-0x0056AC10,func,D2S_ReadMercItems,,I,save/d2s,docs/findings/save/0001-d2s-io.md
+0x0056A830,func,D2S_ReadCorpses,,C,save/d2s,docs/findings/save/0001-d2s-io.md
+0x0056AA50,func,D2S_ReadMercHeader,,C,save/d2s,docs/findings/save/0001-d2s-io.md
+0x0056AC10,func,D2S_ReadMercItems,,C,save/d2s,docs/findings/save/0001-d2s-io.md
 0x0056AE50,func,D2S_ReadGolem,,I,save/d2s,docs/findings/save/0001-d2s-io.md
-0x0056AF80,func,D2S_LoadFinish,,I,save/d2s,docs/findings/save/0001-d2s-io.md
+0x0056AF80,func,D2S_LoadFinish,,C,save/d2s,docs/findings/save/0001-d2s-io.md
 0x0056B180,func,D2S_ReadSaveV92,,C,save/d2s,docs/findings/save/0001-d2s-io.md
 0x0056B3E0,func,sub_0056B3E0_SkillUnitFilter,,I,multiplayer,docs/findings/multiplayer/0001-cases.md
 0x0056B7E0,func,SKILLS_ForUnitsInRange,,I,stats/states,docs/findings/stats/0002-states.md
