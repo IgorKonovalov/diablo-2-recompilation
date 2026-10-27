@@ -519,8 +519,10 @@ Step notes:
 - F7. [C] **The quest repair is the services' repair.** Larzuk's socket service and Anya's personalization each
   call `ItemRepairAll` on the service's item at the end (0x0057A3ED, 0x0057A581): a damaged magic cap came back at
   durability 12 of 12, seeds unchanged, one case each. Charsi's imbue calls it too (0x0057A0F9), on the new rare item
-  before `ItemIdentifyAttach` runs (0x0057A103); the item is not yet identified (flags `0x82000`, no `0x10`), so F1
-  refuses it and the call does nothing: the imbued item kept durability 10 of 12. (fn:NPC_MenuAction@0x00579D60,
+  before `ItemIdentifyAttach` runs (0x0057A103). When `ItemCreate` returns the new rare unidentified (flags `0x82000`,
+  no `0x10`), F1 refuses it and the call does nothing: the imbued `cap` kept durability 10 of 12. When it returns it
+  identified, the call repairs it: an imbued Wirt's Leg (flags `0x00082010`) went from 61 to 66 of 66
+  (run:2026-10-27-sweep-quest-npc, [items/quest-drops § F0](quest-drops.md#f0-the-shared-tail)). (fn:NPC_MenuAction@0x00579D60,
   fn:sub_0062E660_ItemCanRepair@0x0062E660, run:2026-10-19-economy2)
 - F7. [I] **No quest script repairs.** A call-site scan of the six repair functions finds `ItemRepairAll` called
   only from `NpcRepair` (directly and, for repair-all, through the thunk `sub_005762B0_ItemRepairAllThunk`), the

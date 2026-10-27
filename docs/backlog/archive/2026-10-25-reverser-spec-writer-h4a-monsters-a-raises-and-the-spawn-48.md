@@ -2,12 +2,12 @@
 from: reverser
 to: spec-writer
 date: 2026-10-25
-status: open
+status: done
 context:
-  - ../plans/0038-inventory/README.md#26-moves-made-by-the-batch-reviews
-  - ../findings/monsters/0002-room-population.md#plan-0038-batch-h4a-run2026-10-21-sweep-monsters-a
-  - ../findings/monsters/0003-special-monsters.md#plan-0038-batch-h4a-run2026-10-21-sweep-monsters-a
-resolution: ""
+  - ../../plans/0038-inventory/README.md#26-moves-made-by-the-batch-reviews
+  - ../../findings/monsters/0002-room-population.md#plan-0038-batch-h4a-run2026-10-21-sweep-monsters-a
+  - ../../findings/monsters/0003-special-monsters.md#plan-0038-batch-h4a-run2026-10-21-sweep-monsters-a
+resolution: "Done: the monsters parts on lane/s38m, items/quest-drops 48 (§ G) on lane/s38q [items/quest-drops § G](../../specs/items/quest-drops.md#g-the-boss-level-exception-monsterspool-e4)"
 ---
 
 For the Phase 3 re-tag of monsters/pool, spawn, special, stats and items/quest-drops, once the H4a review has
@@ -33,3 +33,8 @@ run:2026-10-13-mon-spawn); (b) special § G tails split by record, the aura-twic
 lines `[I]` with an *Open questions* entry; (c) `EscortSpawn` cited in the tail rows; (d) tail 10 `[C]` for the draw,
 `[I]` for the `+ r`; (e) pool E's `boss` line `[C]` with five classes met; (f) stats B3 `[C]` for 311 and 312. **Open:**
 items/quest-drops 48, which waits with the items/quest-drops cluster (H6e1, H6e2).
+
+*Annotation (spec-writer, 2026-10-27, `lane/s38q`, plan 0038 Phase 3, items/quest-drops cluster):* items/quest-drops
+48 applied to [§ G](../../specs/items/quest-drops.md#g-the-boss-level-exception-monsterspool-e4): the other `boss` classes
+take the same test `[C]` (five of 25 met in expansion Nightmare, the Hell branch logged for Andariel), as monsters/pool
+§ E states it; the predicted levels of the unmet classes and Hell levels `[I]`.

@@ -139,8 +139,10 @@ a broken cap from 0 to full and cleared its broken mark); whether that repair dr
 confirmed, because it was seen once.
 
 **The quest services' repair.** Larzuk's socketing and Anya's personalization repair the item they hand back: a
-damaged cap came back at full durability from each, once each. Charsi's imbue does not: the new rare item is not yet
-identified when the repair runs, and an unidentified item cannot be repaired, so the imbued cap kept its damage. No
+damaged cap came back at full durability from each, once each. Charsi's imbue repairs only when the new rare item
+is already identified as it is created: the repair runs before the service identifies it, and an unidentified item
+cannot be repaired. An imbued cap, created unidentified, kept its damage; an imbued Wirt's Leg, created identified,
+came back at full durability. Why one comes out identified and the other not is not known. No
 quest script repairs anything else; that comes from a search of the code, not from a run
 ([§ F](../specs/items/economy.md#f-callers-buy-sell-repair)).
 

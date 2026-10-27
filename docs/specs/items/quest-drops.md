@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, items/tc, items/quality, items/affixes, items/properties, items/sockets-runewords, items/cube, save/d2s]
 consumed_by: [items/tc, objects, monsters/pool]
-tags: {C: 86, I: 86, L: 2}
-updated: 2026-10-20
+tags: {C: 159, I: 76, L: 2}
+updated: 2026-10-27
 ---
 
 # Quest drops, quest rewards and special drops
@@ -29,11 +29,11 @@ here; which event sets each bit is [quests/progression](../quests/progression.md
 | A monster dies: TC choice, then the quest TC switch | fn:sub_0057CCB0_UnitKilled@0x0057CCB0 → fn:sub_005A7C20_MonSetMode@0x005A7C20 → fn:sub_005A6FF0_MonDeathEvent@0x005A6FF0 → fn:MONSTER_DropItems@0x005A6600 | [C] (run:2026-10-16-quest-drops) |
 | The same death, after the drop: the quest scripts' death event (event 8) | fn:QUESTS_MonsterDeathEvent@0x00543A30 → `Quest+0xC0` of each quest the monster is hooked to | [C] (run:2026-10-16-quest-drops, 0x0057CDD9) |
 | Game creation: the quest objects and the quest seed | fn:QUESTS_InitGame@0x00545D80 | [C] (run:2026-10-16-quest-drops) |
-| A quest object is operated (the Hellforge, quest chests, the altar, item objects): the quest script is the object's `OperateFn` slot itself | fn:OBJ_OperateDispatch@0x00584420 → data:g_ObjOperateFns@0x00732D18`[OperateFn]` (slots in § E and § D4) | [I] (items/0010 § 9); the Hellforge's slot 49 [C] (run:2026-10-16-quest-drops, the only reference to `ForgeOperate`) |
-| Object event 7, a timer some operate slots and scripts queue on a quest object (the forge's waves, Wirt's gold piles): dispatch by object class | fn:OBJ_EventDispatch@0x00586AD0 → data:g_ObjEventFns@0x006E19B0 entry 7 → fn:sub_00581A10_ObjEvent7Thunk@0x00581A10 → fn:QUESTS_ObjectEvent@0x005449E0 | [I] (items/0010 § 9) |
+| A quest object is operated (the Hellforge, quest chests, the altar, item objects): the quest script is the object's `OperateFn` slot itself | fn:OBJ_OperateDispatch@0x00584420 → data:g_ObjOperateFns@0x00732D18`[OperateFn]` (slots in § E and § D4) | [I] (items/0010 § 9) for the altar (24), the Malus (21) and the orifice (25); [C] the Hellforge's slot 49 (run:2026-10-16-quest-drops, the only reference to `ForgeOperate`), and the slots logged on the operates of run:2026-10-27-sweep-quest-items: 33 Wirt's body, 12 the Inifuss tree, 28 the tome, 39–41 the cube, scroll and staff chests, 57–59 the heart, eye and brain chests |
+| Object event 7, a timer some operate slots and scripts queue on a quest object (the forge's waves, Wirt's gold piles): dispatch by object class | fn:sub_005414D0_GameRunUnitEvents@0x005414D0 → fn:sub_00541160_ObjEventsRun@0x00541160 → fn:OBJ_EventDispatch@0x00586AD0 → data:g_ObjEventFns@0x006E19B0 entry 7 → fn:sub_00581A10_ObjEvent7Thunk@0x00581A10 (one `jmp`, no frame) → fn:QUESTS_ObjectEvent@0x005449E0 → the class's target | [C] for classes 268 (Wirt's body → fn:sub_00594630_A1Q4_WirtGold@0x00594630, 18 events) and 367 (the Kurast sewer lever → fn:sub_005B85E0_A3Q2_SewerLeverEvent7@0x005B85E0, one event), the logged chain (run:2026-10-27-sweep-quest-items); the Hellforge's (376) [C] below; [I] the other classes' targets (items/0010 § 9) |
 | The Hellforge's timer, after the third strike | fn:QUESTS_ObjectEvent@0x005449E0 → fn:sub_005B6710_A4Q3_ForgeWave@0x005B6710 | [C] (run:2026-10-16-quest-drops; the only references in the image force the event-7 route, items/0010 § 9) |
 | An NPC menu action: imbue (Charsi), socket (Larzuk), personalize (Anya) | fn:NPC_MenuAction@0x00579D60 | [C] (run:2026-10-16-quest-drops) |
-| An NPC message that gives an item (Akara, Ormus, Alkor, Qual-Kehk, Malah, Anya) | the act scripts' NPC message callbacks → fn:QUESTS_GiveItem@0x005466B0 | [I] |
+| An NPC message that gives an item (Akara, Ormus, Alkor, Meshif, Qual-Kehk, Malah, Anya) | the act scripts' NPC message callbacks → fn:QUESTS_GiveItem@0x005466B0 | [C] (run:2026-10-27-sweep-quest-npc: 20 calls, each NPC's from its handler's call site) |
 
 ## Inputs
 
@@ -75,8 +75,8 @@ here; which event sets each bit is [quests/progression](../quests/progression.md
 | `FORGE_FLAWLESS` | `gzv glr glb gly glg glw skl` | data:g_ForgeGemsFlawless@0x0073E588 | [C] (run:2026-10-16-quest-drops) |
 | `FORGE_RUNES[0]`, `[1]` | `r01`…`r11` (Normal), `r12`…`r22` (Nightmare) | data:g_ForgeRunesNormal@0x0073E114, data:g_ForgeRunesNightmare@0x0073E514 | [C] (run:2026-10-16-quest-drops) |
 | `FORGE_RUNES[2]` | `r15`…`r25` (Hell) | data:g_ForgeRunesHell@0x0073E540 | [C] (run:2026-10-16-quest-drops, owner-played session 3507: entry 4 → `r19`) |
-| `QUAL_KEHK_RUNES` | `r07 r08 r09` | data:g_QualKehkRunes@0x00732FEC | [I] |
-| `ANYA_REWARDS[d]` | per class row (§ F5) | data:g_AnyaRewardsNormal@0x00735F6C, data:g_AnyaRewardsNightmare@0x00735EFC, data:g_AnyaRewardsHell@0x00735F34 | [I] |
+| `QUAL_KEHK_RUNES` | `r07 r08 r09` | data:g_QualKehkRunes@0x00732FEC | [C] (run:2026-10-27-sweep-quest-npc: given in that order) |
+| `ANYA_REWARDS[d]` | per class row (§ F5) | data:g_AnyaRewardsNormal@0x00735F6C, data:g_AnyaRewardsNightmare@0x00735EFC, data:g_AnyaRewardsHell@0x00735F34 | [C] (the three arrays read from the image against their reader, items/0010 § S2c qd 47; run:2026-10-27-sweep-quest-npc: each difficulty's table, the code read from it by the logged draw) |
 | `INIT_HIGH` | 666 (`0x29A`), the high word of every `Init` | [rng](../rng/README.md) step 5 | [C] (run:2026-10-16-quest-drops) |
 
 ### Inputs and oracles
@@ -103,7 +103,7 @@ flowchart TD
   walk --> ev["QUESTS_MonsterDeathEvent:<br/>quest scripts, event 8"]
   ev --> sd["scripted drops on questSeed:<br/>Andariel gems, Cow King vps,<br/>Baal gold, quest items"]
   op["quest object operate"] --> forge["Hellforge waves and rune<br/>on questSeed"]
-  op --> chest["quest chests: chest TC,<br/>then gold on questSeed"]
+  op --> chest["quest chests: item, chest TC, gold;<br/>Khalim chests: gold, part, chest TC"]
   npc["NPC menu action"] --> svc["imbue, socket, personalize"]
   npcmsg["NPC message"] --> give["QUESTS_GiveItem"]
   sd --> ic["item creation"]
@@ -123,7 +123,7 @@ A1. QUESTS_InitGame(game):                                         [C] (fn:QUEST
 A2. QuestPick(n: u32) → u32:                                       [C] (fn:QUESTS_GetSeed@0x005438B0, run:2026-10-16-quest-drops)
       Step(questSeed)                                              ; draw; the LCG step inlined in the scripts
       return questSeed.low mod n                                   ; unsigned
-A3. GetState(rec, q, s) = bit 16q + s of rec                        [I] (fn:QUESTRECORD_GetState@0x0065C310)
+A3. GetState(rec, q, s) = bit 16q + s of rec                        [C] (fn:QUESTRECORD_GetState@0x0065C310, run:2026-10-16-quest-drops)
 ```
 
 Step notes:
@@ -137,13 +137,28 @@ Step notes:
   entry was exactly three steps past `Init(N)` of the session's seed ([rng/seeds](../rng/seeds.md) step 7a).
   (fn:sub_00547D20_MonRegionsInit@0x00547D20, fn:OBJRGN_Create@0x00546C60, fn:NPCSTORE_CtlCreate@0x00536070,
   fn:QUESTS_InitGame@0x00545D80, run:2026-10-16-quest-drops, [items/0010 § 1](../../findings/items/0010-quest-drops.md#1-quest-objects-events-and-the-quest-seed))
-- A1. [I] `g_QuestDescs` also gives each quest object its record word; object id and word are equal for Act I
-  (objects 0–6) and differ after (7 → 8 … 13 → 14, 14 → 16 … 20 → 22, 21 → 24 … 24 → 27, 25 → 29, 26 → 30, 27 → 31,
-  28 → 32, 29 → 33, 30 → 41, 31 → 35 … 36 → 40). (data:g_QuestDescs@0x00731510)
-- A2. [I] The scripts write the step inline (`s ← lo·0x6AC690C5 + hi`, the compiler's multiply-shift for `mod 7` and
+- A1. [C] `g_QuestDescs` (37 records) gives each quest object its record word at `+0x14`; object id and word are equal
+  for Act I (objects 0–6) and differ after (7 → 8 … 13 → 14, 14 → 16 … 20 → 22, 21 → 24 … 24 → 27, 25 → 29, 26 → 30,
+  27 → 31, 28 → 32, 29 → 33, 30 → 41, 31 → 35 … 36 → 40). This is the word `sub_00546270_QuestsPlayerJoin` uses: it
+  walks the records and reads `+0x14` as the word of its `GetState(…, 0)`, `GetState(…, 15)` and the game record's
+  `SetState(…, 15)` (0x005462DF–0x00546339). (data:g_QuestDescs@0x00731510, fn:sub_00546270_QuestsPlayerJoin@0x00546270,
+  [items/0010 § Plan 0038 batch S2c](../../findings/items/0010-quest-drops.md#plan-0038-batch-s2c-2026-10-16) qd 8)
+- A1. [C] **The scripts' own word is not always the table's.** Each object's init function stores a word at
+  `Quest+0xE0`, and it equals `+0x14` for 35 of the 37 objects; object 28 (Act III, table word 32) stores **16**, and
+  object 30 (Act I, table word 41), which shares its init function with object 25, stores **29**.
+  (fn:QUESTS_InitGame@0x00545D80, [items/0010 § Plan 0038 batch S2c](../../findings/items/0010-quest-drops.md#plan-0038-batch-s2c-2026-10-16) qd 8)
+- A1. [I] Beyond the join path, word 41 is object 1's second word (written by object 1's own scripts at its `+0xE4`
+  sites 0x0058FF2F and 0x0058FF3E and the constant sites 0x0058FD36–0x0058FD71), not object 30's, and word 32 has one
+  write, bit 0 at 0x005BD2AB (`sub_005BD260_A3Q7_SetSeen`). (fn:sub_005BD260_A3Q7_SetSeen@0x005BD260,
+  [items/0010 § Plan 0049 Phase 1](../../findings/items/0010-quest-drops.md#plan-0049-phase-1-2026-10-20-static-the-s2c-static-leftovers))
+- A2. [C] The scripts write the step inline (`s ← lo·0x6AC690C5 + hi`, the compiler's multiply-shift for `mod 7` and
   `mod 5`) or call `RNG_Range`/`RNG_RandLoHi` on the quest seed; all are `Step` then `low mod n` of
   [rng](../rng/README.md) step 2, and `RandLoHi(s, lo, hi)` is `lo + Range(s, hi − lo)`
-  ([objects § E](../objects/README.md#e-the-populatefn-handlers)). (fn:RNG_Range@0x0045C390, fn:RNG_RandLoHi@0x004BC500)
+  ([objects § E](../objects/README.md#e-the-populatefn-handlers)). The run's 28 scripted draws reproduce so; every
+  inline multiply-shift constant of a quest-seed function is an exact `/ 5` (`0xCCCCCCCD`, 8 sites) or `/ 7`
+  (`0x24924925`, 5 sites); `RandLoHi`'s form reproduces 7 513 store-seed draws. (fn:RNG_Range@0x0045C390,
+  fn:RNG_RandLoHi@0x004BC500, run:2026-10-16-quest-drops, run:2026-10-15-vendors,
+  [items/0010 § Plan 0038 batch S2c](../../findings/items/0010-quest-drops.md#plan-0038-batch-s2c-2026-10-16) qd 9)
 - A3. [C] On a player's record bit 15 of a word is set by the save loader alone, from a saved bit 1 (words 0–41), and
   only word 9's script clears it (0x00599293); the one record-function set of bit 15 is the join's, on the game record.
   So bit 15 means "this character saved the game while bit 1 was set". The loaded quest saves of the run came back
@@ -183,9 +198,9 @@ B6. QuestTcSwitch(game, mon, ctx, tc: u16) → u16:                  [C] (fn:MON
       q: u8 ← row.TCQuestId
       if q = 0 or row.TreasureClass4[d] = 0 or ctx = none or ctx.killer = none: return tc
       k ← ctx.killer
-B6a.  if k.type ≠ 0:                                                [I] (fn:sub_0058F0D0_MonsterOwner@0x0058F0D0, fn:sub_0063A690_UnitHasExpState@0x0063A690, fn:sub_00625760_StatListFindFlag@0x00625760, all of B6a)
+B6a.  if k.type ≠ 0:                                                [C] (fn:sub_0058F0D0_MonsterOwner@0x0058F0D0, run:2026-10-17-sweep-quest-b6: a hireling and a summon)
         p ← MonsterOwner(k)                                         ; unit type 1 only; else none
-        if UnitHasExpState(k):
+        if UnitHasExpState(k):                                      [I] (fn:sub_0063A690_UnitHasExpState@0x0063A690, fn:sub_00625760_StatListFindFlag@0x00625760, these three lines)
           sl ← StatListFindFlag(k, 0x800)
           if sl ≠ none: p ← GameFindUnit(game, sl.ownerType (+0x08), sl.ownerGuid (+0x0C))
         if p ≠ none: k ← p
@@ -196,7 +211,7 @@ B6c.  if GetState(r, q, 15) = 1: return tc                          [C] (fn:QUES
       if GetState(r, q, 1) = 1: return tc                           ; the tests stop at the first set bit
       if GetState(r, q, row.TCQuestCP) = 1: return tc
       return row.TreasureClass4[d]
-B7.   TC_DropByIndex(game, mon, ctx.killer, tc, …)                  [I] (fn:MONSTER_DropItems@0x005A6600 0x005A6817) ; the unresolved killer
+B7.   TC_DropByIndex(game, mon, ctx.killer, tc, …)                  [C] (fn:MONSTER_DropItems@0x005A6600 0x005A6817, run:2026-10-17-sweep-quest-b6) ; the unresolved killer
 ```
 
 Step notes:
@@ -212,17 +227,41 @@ Step notes:
   (Andariel's `SetKilled` at 0x0059621D, Duriel's bit 5 at 0x0059D0F5). So the bits a boss's own script sets for a
   kill never hide the quest TC of that kill. (fn:sub_0057CCB0_UnitKilled@0x0057CCB0, fn:sub_005A7C20_MonSetMode@0x005A7C20,
   fn:QUESTS_MonsterDeathEvent@0x00543A30, run:2026-10-16-quest-drops)
-- B6a. [I] The pet, hireling and `exp`-state paths: a monster killer is replaced by its owner unit; a killer carrying
-  a state of the `exp` bit-set (`states.txt` rows 53 `conversion`, 57 `attract`, 59 `confuse` in the shipped data) is
-  replaced by the owner of its first stat list with flag `0x800`, found by stored type and GUID. A missile is never
-  resolved here (`MonsterOwner` answers for type 1 only). None of these ran: in every logged kill (Nova) the killer was
-  the player unit. (fn:sub_0063A130_UnitHasStateInMask@0x0063A130, fn:sub_00611D60_StatesMaskBuild@0x00611D60,
-  fn:sub_00552F60_GameFindUnit@0x00552F60, run:2026-10-16-quest-drops)
-- B6b. [I] Only the resolved player's own record is read; no other party member's record enters. No party was run.
-  (fn:QUESTS_PlayerRecord@0x00543520, fn:UNIT_GetPlayerData@0x006221A0)
-- B6. [I] The death mode's function record is chosen by `sub_005A78A0_MonModeRecord`, which also reads
-  `MonStats+0x1A5`; for Andariel, Duriel and Mephisto the drop came first in every kill, and Diablo and Baal were
-  not killed. (fn:sub_005A78A0_MonModeRecord@0x005A78A0, run:2026-10-16-quest-drops)
+- B6a. [C] **A pet's or hireling's kill reads the owner's record.** A hireling (the Rogue Scout, class 271) and a
+  summon (the player's Hydra, `hydra2`, class 352) each killed Andariel in Normal: `MonsterOwner` gave the player, B6
+  read the player's word 6 (`0x0018`, then `0x0019`) with `GetState` 15, 1, 1 all 0, and the TC was `Andarielq`
+  (833) both times. Step B7 then passed the **unresolved** killer (the hireling, the Hydra) to `TC_DropByIndex`, and
+  `tools/tc.py` reproduces both drops. (fn:sub_0058F0D0_MonsterOwner@0x0058F0D0, fn:MONSTER_DropItems@0x005A6600
+  0x005A6817, run:2026-10-17-sweep-quest-b6, [items/0010 § Plan 0038 batch H6d](../../findings/items/0010-quest-drops.md#plan-0038-batch-h6d-2026-10-17))
+- B6a. [I] The `exp`-state path: a killer carrying a state of the `exp` bit-set (`states.txt` rows 53 `conversion`,
+  57 `attract`, 59 `confuse` in the shipped data) is replaced by the owner of its first stat list with flag `0x800`,
+  found by stored type and GUID. A missile is never resolved here (`MonsterOwner` answers for type 1 only). Neither
+  ran: no logged killer had such a state, and in every Nova kill the killer was the player unit.
+  (fn:sub_0063A130_UnitHasStateInMask@0x0063A130, fn:sub_00611D60_StatesMaskBuild@0x00611D60,
+  fn:sub_00552F60_GameFindUnit@0x00552F60, run:2026-10-16-quest-drops, run:2026-10-17-sweep-quest-b6)
+- B6a. [C] **The death event resolves the killer the same way**, so the owner gets the quest credit and the scripted
+  drops. `QUESTS_MonsterDeathEvent` gives its event the player behind a monster killer: `sub_0058F090_MonsterOwnerRef`
+  reads the record MonsterData `+0x28` points to and returns the owner's GUID (`+0x2C`) and type (`+0x30`) when that
+  record's `+0x28` is non-zero, else GUID −1 (0x0058F0A8–0x0058F0C7), and the event looks the unit up only for type 0,
+  a player (0x00543A8C–0x00543AB2). On the hireling's kill the event's player was the owner, Andariel's script set
+  the owner's word 6 bits 13 and 1 and dropped the three gems (D1). (fn:QUESTS_MonsterDeathEvent@0x00543A30,
+  fn:sub_0058F090_MonsterOwnerRef@0x0058F090, fn:sub_005965A0_A1Q6_AndarielDeath@0x005965A0, run:2026-10-17-sweep-quest-b6)
+- B6b. [I] Only the resolved player's own record is read; no other party member's record enters. No party was run,
+  and no non-player killer that no step resolves (every logged one had an owner), so B6b's return is not met either.
+  (fn:QUESTS_PlayerRecord@0x00543520, fn:UNIT_GetPlayerData@0x006221A0, run:2026-10-17-sweep-quest-b6)
+- B6. [C] **The death mode's record, for the records reached.** In every boss kill of run:2026-10-17-sweep-quest-b6
+  (Andariel 7, Baal 2) mode 0's record was `0x006E2260`, whose start is `sub_005A6FF0_MonDeathEvent`, chosen before
+  the B6 test with no write of the class's word between. Baal's fresh kill dropped from `Baalq` (884) first, then the
+  death event ran, then word 40 bits 13 and 0 were set (returns 0x0058DD3D, 0x0058DD47). For Andariel, Duriel and
+  Mephisto the drop also came first in every kill of run:2026-10-16-quest-drops. (fn:sub_005A78A0_MonModeRecord@0x005A78A0,
+  fn:sub_005A6FF0_MonDeathEvent@0x005A6FF0, fn:sub_005A7C20_MonSetMode@0x005A7C20, run:2026-10-16-quest-drops,
+  run:2026-10-17-sweep-quest-b6)
+- B6. [I] **No class gets a special mode-0 record.** `sub_005A78A0_MonModeRecord` tests `MonStats+0x1A5`, then
+  switches on the class in two jump tables (classes 243–418 and 544–709, and 543 directly), which reach five targets:
+  four give a special record only for modes 4, 5, 8, 9, 10 or 11, and the fifth, like every class outside the ranges,
+  falls to `0x006E2260 + 16·mode`. The run reached the default record and Baal's block; Diablo's block (0x005A7977) and
+  the two others were not run, so Diablo's record and his drop-before-script order rest on this reading.
+  (fn:sub_005A78A0_MonModeRecord@0x005A78A0, [items/0010 § Plan 0038 batch H6d](../../findings/items/0010-quest-drops.md#plan-0038-batch-h6d-2026-10-17) qd 13)
 
 **The quest-dependent TCs.** Exactly five classes have a `TCQuestId`, and each has all three `TreasureClass4` cells.
 [C] (tbl:MonStats.txt:TCQuestId, tbl:MonStats.txt:TreasureClass4, [MonStats § Quest TCs](../../tables/MonStats.md#quest-tcs-plan-0032-phase-0))
@@ -231,54 +270,67 @@ Step notes:
 |---|---|---|---|---|---|---|
 | `andariel` (156) | 6 | 1 | `Andarielq` / `Andarielq (N)` / `Andarielq (H)` | 13, 1 on the killer when bits 0 and 1 are clear (`sub_00596210_A1Q6_SetKilled`) | 15, 1, 1 | [C] (fn:sub_00596210_A1Q6_SetKilled@0x00596210, run:2026-10-16-quest-drops) |
 | `duriel` (211) | 14 | 5 | `Durielq` … | 5 on the killer when bits 0, 3, 4, 5 are clear | 15, 1, 5 | [C] (fn:sub_0059D050_A2Q6_DurielDeath@0x0059D050, run:2026-10-16-quest-drops) |
-| `mephisto` (242) | 22 | 0 | `Mephistoq` … | 13, 0, 11 (`sub_005BC140_A3Q6_SetDone`) | 15, 1, 0 | [I] (fn:sub_005BC140_A3Q6_SetDone@0x005BC140) |
+| `mephisto` (242) | 22 | 0 | `Mephistoq` … | 13, 0, 11 (`sub_005BC140_A3Q6_SetDone`) | 15, 1, 0 | [C] (fn:sub_005BC140_A3Q6_SetDone@0x005BC140 returns 0x005BC14D, 0x005BC157, 0x005BC161, run:2026-10-16-quest-drops: the fresh kill) |
 | `diablo` (243) | 26 | 0 | `Diabloq` … | 13, 0, 6, 7 (through 0x005B4D20) | 15, 1, 0 | [I] (fn:sub_005B52E0_A4Q2_DiabloDeath@0x005B52E0) |
-| `baalcrab` (544) | 40 | 0 | `Baalq` … | 0, 13 (through 0x0058DC60 / 0x0058DD30) | 15, 1, 0 | [I] (fn:sub_0058DF20_A5Q6_BaalDeath@0x0058DF20) |
+| `baalcrab` (544) | 40 | 0 | `Baalq` … | 13, 0 (through 0x0058DC60 / 0x0058DD30) | 15, 1, 0 | [C] (fn:sub_0058DF20_A5Q6_BaalDeath@0x0058DF20, fn:sub_0058DD30_A5Q6_Credit@0x0058DD30 returns 0x0058DD3D, 0x0058DD47, run:2026-10-17-sweep-quest-b6: the fresh kill) |
 
 **What each state of the word gives.**
 
 | class | killer's word | TC | Tag |
 |---|---|---|---|
 | Andariel | clear (fresh) | quest TC | [C] (run:2026-10-16-quest-drops: Normal) |
-| Andariel | bit 0 only, bit 1 clear (reported to Warriv) | quest TC, in every later game | [C] (run:2026-10-16-quest-drops: Normal and Hell) |
+| Andariel | bit 0 only, bit 1 clear (reported to Warriv) | quest TC, in every later game | [C] (run:2026-10-16-quest-drops: Normal and Hell; run:2026-10-17-sweep-quest-b6: the game after the report) |
 | Andariel | bit 1 (killed in this game, not yet reported) | normal TC | [I] (fn:sub_00595C60_A1Q6_NpcMessage@0x00595C60) |
 | Andariel | bits 1 and 15 (saved before the report) | normal TC for good | [C] (run:2026-10-16-quest-drops: the test stops at bit 15) |
 | Duriel | clear, or bit 0 only | quest TC | [C] (run:2026-10-16-quest-drops) |
 | Duriel | bit 5 (after the first kill) | normal TC | [C] (run:2026-10-16-quest-drops) |
 | Mephisto | clear | quest TC | [C] (run:2026-10-16-quest-drops) |
 | Mephisto | bit 0 (after the first kill) | normal TC (`Mephisto` 848, not `Mephistoq` 851), and no `mss` | [C] (run:2026-10-16-quest-drops, owner-played: word 22 = `0x0001`; fn:sub_005BC8B0_A3Q6_MephistoDeath@0x005BC8B0) |
-| Diablo, Baal | clear / bit 0 | quest TC / normal TC | [I] (fn:sub_005B52E0_A4Q2_DiabloDeath@0x005B52E0, fn:sub_0058DF20_A5Q6_BaalDeath@0x0058DF20) |
+| Baal | clear (word 40 `0x0004`) / bit 0 (`0x0401`, `quests: all`) | quest TC (`Baalq` 884) / normal TC (`TreasureClass` 881, no write of word 40 at the kill) | [C] (fn:sub_0058DF20_A5Q6_BaalDeath@0x0058DF20, run:2026-10-17-sweep-quest-b6) |
+| Diablo | clear / bit 0 | quest TC / normal TC | [I] (fn:sub_005B52E0_A4Q2_DiabloDeath@0x005B52E0; not killed in any run) |
 
-- [I] **Andariel's quest TC comes back.** Warriv's message (npc 155, `0xB7`) with bit 1 set clears bit 1 and sets bit
+- [C] **Andariel's quest TC comes back.** Warriv's message (npc 155, `0xB7`) with bit 1 set clears bit 1 and sets bit
   0, and nothing else writes bits 0, 1 or 15 of word 6. With `TCQuestCP` 1 the test is "bits 15 and 1 clear", so after
   the report every later game gives the quest TC again; a save between the kill and the report sets bit 15 at the next
-  load and ends it. (fn:sub_00595C60_A1Q6_NpcMessage@0x00595C60 0x00595D92, 0x00595D9C, fn:QUESTRECORD_LoadBytes@0x0065C4D0)
+  load and ends it. After a kill (word 6 `0x201A`) the talk to Warriv cleared bit 1 (return 0x00595D97) and set bit 0
+  (return 0x00595DA1): `0x201A` → `0x2018` → `0x2019`; the save the game wrote held `0x2019`, the next game from it
+  loaded `0x0019` (no bit 15, bit 1 having been clear at the save), and B6 gave `Andarielq` again.
+  (fn:sub_00595C60_A1Q6_NpcMessage@0x00595C60 0x00595D92, 0x00595D9C, fn:QUESTRECORD_LoadBytes@0x0065C4D0,
+  run:2026-10-17-sweep-quest-b6)
 - [C] **Duriel's bits stay.** Duriel's bit 5 is never cleared and his bit 1 is never set through the record functions:
   no constant site clears word 14 bit 5 or sets bit 1, no register site writes word 14 and no steps clear is on it, by
   the closure of A3; the only route outside those functions is the save loader. A whole-record reset outside the five
   functions is not covered. (fn:sub_0059D050_A2Q6_DurielDeath@0x0059D050 0x0059CD2F–0x0059CEA5, 0x0059D0F0,
   fn:QUESTRECORD_ClearSteps@0x0065C3E0, [items/0010 § Plan 0049 Phase 1](../../findings/items/0010-quest-drops.md#plan-0049-phase-1-2026-10-20-static-the-s2c-static-leftovers))
-- [I] **The others do not.** Mephisto's, Diablo's and Baal's scripts set bit 0, which `TCQuestCP` 0 tests. So for
-  these four (Duriel included) the quest TC is used until the killer's first kill in that difficulty.
-  (fn:sub_0059D050_A2Q6_DurielDeath@0x0059D050, fn:sub_005BC8B0_A3Q6_MephistoDeath@0x005BC8B0)
-- [I] **No quest TC.** The Countess (`corruptrogue3`), the Cow King, Nihlathak (`nihlathakboss`) and every other
-  class have `TCQuestId` 0: B6 never applies and their drop is their ordinary (superunique) TC. (tbl:MonStats.txt:TCQuestId,
-  tbl:SuperUniques.txt:TC, fn:MONSTER_DropItems@0x005A6600)
+- [C] **The others do not.** Mephisto's, Diablo's and Baal's scripts set bit 0, which `TCQuestCP` 0 tests: the
+  constant set sites are word 22 bit 0 at 0x005BC152 (Mephisto), word 26 bit 0 at 0x005B4D32 (Diablo) and word 40 bit
+  0 at 0x0058DCB6 and 0x0058DD42 (Baal), within the closure of A3. So for these four (Duriel included) the quest TC is
+  used until the killer's first kill in that difficulty: met for Duriel, Mephisto and Baal in the rows above.
+  (fn:sub_0059D050_A2Q6_DurielDeath@0x0059D050, fn:sub_005BC8B0_A3Q6_MephistoDeath@0x005BC8B0,
+  [items/0010 § Plan 0038 batch S2c](../../findings/items/0010-quest-drops.md#plan-0038-batch-s2c-2026-10-16) qd 19)
+- [I] For Diablo the "until the first kill" rests on that set site and the shared B6 path; he was not killed.
+  (fn:sub_005B52E0_A4Q2_DiabloDeath@0x005B52E0)
+- [C] **No quest TC.** The Countess (`corruptrogue3`), the Cow King, Nihlathak (`nihlathakboss`) and every other
+  class have `TCQuestId` 0: B6 never applies and their drop is their ordinary (superunique) TC. MonStats has exactly
+  the five rows above with a `TCQuestId`, and the owner-played Countess and Cow King kills reached no B6 test.
+  (tbl:MonStats.txt:TCQuestId, tbl:SuperUniques.txt:TC, fn:MONSTER_DropItems@0x005A6600, run:2026-10-16-quest-drops)
 
 ### C. The two creators of scripted items
 
 ```
-C1. DropItemAtUnit(game, source, quality, …):                      [I] (fn:sub_00559A30_DropItemAtUnit@0x00559A30, all of C1)
+C1. DropItemAtUnit(game, source, quality, …):                      [C] (fn:sub_00559A30_DropItemAtUnit@0x00559A30, run:2026-10-16-quest-drops: the monster and object sources, the code's base)
       ilvl ← source is a monster ? its stat 12
-           : source is a player  ? its base stat 12
+           : source is a player  ? its base stat 12                 [I] (0x00559A30; no player source logged)
            : the area level of the object's level (Levels monster level of d and the game type), min 1
-      index ← source+0xB8 ≠ 0 ? ITEMS_GetByCode(source+0xB8) : a random base
-      rec ← {ilvl (+0x0C), index (+0x14), quality (+0x30)}, at a free cell near the source
+      index ← source+0xB8 ≠ 0 ? ITEMS_GetByCode(source+0xB8) : a random base   ; the random base [I] (0x00559A30)
+      rec ← {ilvl (+0x0C), index (+0x14), quality (+0x30)}, at a free cell near the source   ; the free cell [I] (0x00559A30)
       ItemCreate(rec)                                              ; no quest-seed draw
-C2. QUESTS_GiveItem(game, player, code, ilvl, quality, dropIfFull): [I] (fn:QUESTS_GiveItem@0x005466B0, fn:ITEMS_CreateForStore@0x00559CE0, all of C2)
+C2. QUESTS_GiveItem(game, player, code, ilvl, quality, dropIfFull): [C] (fn:QUESTS_GiveItem@0x005466B0, fn:ITEMS_CreateForStore@0x00559CE0, run:2026-10-27-sweep-quest-npc: 20 calls)
       if ilvl = 0: ilvl ← clvl
-      item ← ITEMS_CreateForStore(index of code, quality, ilvl); durability ← maximum
-      into the inventory; if it does not fit and dropIfFull: dropped at the player
+      item ← ITEMS_CreateForStore(index of code, quality, ilvl)    ; kind 4, noEthereal 1
+      durability ← maximum, when positive                          [I] (0x0054670B–0x0054671A; no given item has durability)
+      into the inventory                                           ; placed, 0x0054676D
+      if it does not fit and dropIfFull: dropped at the player     [I] (0x005467B5; the inventory was never full)
 ```
 
 Step notes:
@@ -288,7 +340,11 @@ Step notes:
   ([items README](README.md)). (run:2026-10-16-quest-drops, fn:sub_00558D90_ItemCreate@0x00558D90)
 - C1. [C] The object case: the Hellforge's gems and rune took the area level of the forge's level (27 in Normal), and
   a monster's drop took the monster's level (Andariel 12, Hephasto 28 in Normal). In Hell the forge's drops took ilvl
-  85, `MonLvl3Ex` of level 107, and the Cow King's potions his level 31. (run:2026-10-16-quest-drops, tbl:Levels.txt:MonLvl3Ex)
+  85, `MonLvl3Ex` of level 107, and the Cow King's potions his level 31. Over the run, 25 creations from a monster
+  (Andariel's gems, the hammer, the eight `vps`, `j34`, `mss`) have the ilvl of that monster's own TC drop, and 30
+  forge creations have Levels row 107's `MonLvl1Ex`/`MonLvl2Ex`/`MonLvl3Ex` (27, 57, 85) of the difficulty.
+  (run:2026-10-16-quest-drops, tbl:Levels.txt:MonLvl1Ex, tbl:Levels.txt:MonLvl3Ex,
+  [items/0010 § Plan 0038 batch S2c](../../findings/items/0010-quest-drops.md#plan-0038-batch-s2c-2026-10-16) qd 21)
 - C1. [I] **An object with no level record.** For a source that is neither monster nor player, the level is
   `LevelMonLvl(level of the source's room, difficulty, expansion)`: it returns 1 for a difficulty ≥ 3, a level id ≤ 0
   or past the `Levels` count, or no record, else `MonLvl` or `MonLvlEx` of the difficulty; a unit with no room gives
@@ -296,8 +352,11 @@ Step notes:
   of 0 or 1 (the towns), drops at ilvl 1. (0x00559A6F–0x00559AEF, 0x0061DCA0–0x0061DCF4,
   fn:sub_00559A30_DropItemAtUnit@0x00559A30, fn:sub_0061DCA0_LevelMonLvl@0x0061DCA0, tbl:Levels.txt:MonLvl1,
   [items/0010 § Plan 0039 batch P1b](../../findings/items/0010-quest-drops.md#q20-the-open-questions-of--open-questions))
-- C2. [I] Every `QUESTS_GiveItem` creation is a fresh store-path creation (`ITEMS_CreateForStore`), as
-  [items/vendors](vendors.md) uses. (fn:ITEMS_CreateForStore@0x00559CE0)
+- C2. [C] Every `QUESTS_GiveItem` creation is a fresh store-path creation (`ITEMS_CreateForStore`), as
+  [items/vendors](vendors.md) uses: all 20 logged calls created their item through it (kind 4, noEthereal 1) and placed
+  it in the inventory. The calls with ilvl 0 (Qual-Kehk, Malah, Alkor, Meshif) made their items at the player's
+  clvl, 80. (fn:ITEMS_CreateForStore@0x00559CE0, fn:QUESTS_GiveItem@0x005466B0, run:2026-10-27-sweep-quest-npc,
+  [items/0010 § Plan 0038 batch H6e1](../../findings/items/0010-quest-drops.md#given-items-inventory-qd-2-4-5-32-45-46-50))
 
 ### D. Special drops
 
@@ -332,9 +391,14 @@ D1. AndarielDeath (event 8, quest active, killer present):          [C] (fn:sub_
 
 - D1. [C] One kill with bits 0 and 1 clear drew two chipped picks and one standard pick (`gcy`, `skc`, `gsg`); the
   kills with bit 0 or bit 1 set drew nothing. The gems' ilvl is Andariel's level. (run:2026-10-16-quest-drops)
-- D1. [I] The same in every difficulty and game type: the script has no difficulty or expansion test, and later
-  per-player callbacks set bits 13 and 1 for players in level 37 and the killer's Act I party without drawing.
-  (fn:sub_005965A0_A1Q6_AndarielDeath@0x005965A0, fn:sub_00596210_A1Q6_SetKilled@0x00596210)
+- D1. [C] The same in every difficulty and game type: the script has no difficulty or expansion test, and each fresh
+  kill drew two chipped picks and one standard pick, one `low mod 7` step each, in expansion Normal (three kills, one
+  by the hireling: the owner's gems, B6a), Nightmare and Hell and in classic Normal. All six games started from one map
+  seed and so one quest seed, and all drew `gcr`, `gcy`, `gsb`; the ilvl was Andariel's level of the difficulty (12,
+  49, 75). The Hydra's kill on a reported word (bit 0 set) drew none. (fn:sub_005965A0_A1Q6_AndarielDeath@0x005965A0,
+  data:g_AndarielChippedGems@0x007361DC, data:g_AndarielStdGems@0x00736444, run:2026-10-17-sweep-quest-b6)
+- D1. [I] Later per-player callbacks set bits 13 and 1 for players in level 37 and the killer's Act I party without
+  drawing; no party was run. (fn:sub_005965A0_A1Q6_AndarielDeath@0x005965A0, fn:sub_00596210_A1Q6_SetKilled@0x00596210)
 
 #### D2. The Countess
 
@@ -458,21 +522,34 @@ D5. ForgeWave (timer), forge active:                               [C] (fn:sub_0
 #### D6. Baal's first kill
 
 ```
-D6. BaalDeath, killer present, killer word 40 bit 0 clear:          [I] (fn:sub_0058DF20_A5Q6_BaalDeath@0x0058DF20 0x0058E002–0x0058E079, all of D6)
+D6. BaalDeath, killer present, killer word 40 bit 0 clear:          [C] (fn:sub_0058DF20_A5Q6_BaalDeath@0x0058DF20 0x0058E002–0x0058E079, run:2026-10-17-sweep-quest-b6: one player, Normal)
       for each qualifying player counted by the per-player callbacks (+0x88):      ; input count
         amount ← RandLoHi(questSeed, 6000·d + 1500, min(6000·d + 3000, 0xFFFF))   ; draw: 6000d + 1500 … 6000d + 2999
-        DropGold(amount) at Baal                                   ; up to 32 piles
+        DropGold(amount) at Baal                                   ; up to 32 piles; one for any Baal amount
 ```
 
-- D6. [I] Not run (Baal was not killed). `DropGold` is `sub_0055A090_DropGoldAmount(amount, 32)`: piles of at most
-  2 000 000 000, at most 32, each a created gold item whose stat 14 is set to its share, so each pile draws as an item
-  creation ([items/economy § G](economy.md#g-gold-payment-caps-piles-and-the-death-loss), G9).
+- D6. [C] Baal's fresh kill in Normal, one qualifying player: the bounds were 1 500 and 3 000, the quest seed was as
+  `QUESTS_InitGame` left it (`91fdb5f0:0000029a`), `RandLoHi` gave 2 178 (`1500 + low(step) mod 1500`) and left the
+  model's seed, and one pile (`gld`) was created with stat 14 = 2 178. A kill with word 40 bit 0 already set made no
+  draw: the flag is taken at 0x0058DFA6, before the script sets the bits. (fn:RNG_RandLoHi@0x004BC500,
+  fn:sub_0055B030_DropGold@0x0055B030, fn:sub_0055A090_DropGoldAmount@0x0055A090, run:2026-10-17-sweep-quest-b6,
+  [items/0010 § Plan 0038 batch H6d](../../findings/items/0010-quest-drops.md#plan-0038-batch-h6d-2026-10-17) qd 27)
+- D6. [I] `DropGold` is `sub_0055A090_DropGoldAmount(amount, 32)`: piles of at most 2 000 000 000 (0x0055A0F3), at
+  most 32, each a gold item made by `ITEMS_CreateForStore` (0x0055A188) whose stat 14 is set to its share, so each
+  pile draws as an item creation ([items/economy § G](economy.md#g-gold-payment-caps-piles-and-the-death-loss), G9).
+  Any Baal amount (at most 15 000) is therefore one pile; Nightmare and Hell and several players were not run.
   (fn:sub_0055B030_DropGold@0x0055B030, fn:sub_0055A090_DropGoldAmount@0x0055A090)
 
 #### D7. Scripts that create nothing, and Uber Tristram
 
-- [I] Diablo's death script and the Nihlathak and Ancients scripts (a5q4, a5q5) call none of the item creators; their
-  drops are their TCs (Diablo through B6). (fn:sub_005B52E0_A4Q2_DiabloDeath@0x005B52E0)
+- [C] Diablo's death script and the Nihlathak and Ancients scripts (a5q4, a5q5) call none of the item creators: the
+  direct-call walk from Diablo's death function and from every callback of the a5q4 and a5q5 objects, stopped at the
+  engine entries they call (`MonSetMode`, `PortalObjectCreate`, `SUnitCreate`, `UnitKilled`, `PLAYER_LevelUp`),
+  reaches no item creator. Through those engine entries it does reach creators (a new monster's equipment, room
+  restores, a level-up's items), which are not the scripts' drops. (fn:sub_005B52E0_A4Q2_DiabloDeath@0x005B52E0,
+  [items/0010 § Plan 0038 batch S2c](../../findings/items/0010-quest-drops.md#plan-0038-batch-s2c-2026-10-16) qd 28)
+- [I] So their drops are their TCs (Diablo's through B6); Diablo was not killed in any run, and no kill of the others
+  is compared here. (fn:MONSTER_DropItems@0x005A6600)
 - [I] `sub_005E0070_UberTristramDrop` (death handlers of 704, 705, 709) drops, once all three have died, `cm2` with
   quality 7 (charges refilled) and `Game+0x8C` copies of `std` with quality 2. The portals to those levels cannot open
   in this `Game.exe` ([save/0002 § 6](../../findings/save/0002-quest-words.md)), so stock play never reaches it.
@@ -480,57 +557,107 @@ D6. BaalDeath, killer present, killer word 40 bit 0 clear:          [I] (fn:sub_
 
 ### E. Quest items
 
-| item | source | the script's gate | count | quality | draws | Tag |
+| item | source | the script's gate | count | quality asked (created) | draws | Tag |
 |---|---|---|---|---|---|---|
-| `leg` | its object's operate | object not yet used | 1 | 2 | — | [I] (fn:sub_00583E70_WirtLegDrop@0x00583E70) |
-| gold | Wirt's body (object 268) | first operate | `RandLoHi(questSeed, 10, 20)` piles (10–19), one per timer ([items/economy](economy.md#g-gold-payment-caps-piles-and-the-death-loss) G8a) | 2 | 1 | [C] (fn:sub_00594630_A1Q4_WirtGold@0x00594630, run:2026-10-19-economy2) |
-| `bks` | the Inifuss tree | word 4 bits 0, 1 clear, no `bks`/`bkd` held | 1 | 2 | — | [I] (fn:sub_00593AF0_A1Q4_InifussDrop@0x00593AF0) |
+| `leg` | its object's operate | object not yet used (mode 0) | 1 | 2 | — | [C] the creation in mode 0, on the unchanged quest seed (fn:sub_00583E70_WirtLegDrop@0x00583E70, run:2026-10-27-sweep-quest-items); [I] the used-object half (no second operate was reached) |
+| gold | Wirt's body (object 268) | first operate | `RandLoHi(questSeed, 10, 20)` piles (10–19), one per timer ([items/economy](economy.md#g-gold-payment-caps-piles-and-the-death-loss) G8a) | 2 | 1 | [C] (fn:sub_00594630_A1Q4_WirtGold@0x00594630, run:2026-10-19-economy2; run:2026-10-27-sweep-quest-items: 18 piles on another quest seed, the count `RandLoHi` gives on it) |
+| `bks` | the Inifuss tree | word 4 bits 0, 1 clear, no `bks`/`bkd` held | 1 | 2 (7) | — | [C] the creation with word 4 clear and neither held, no draw (fn:sub_00593AF0_A1Q4_InifussDrop@0x00593AF0, run:2026-10-27-sweep-quest-items); [I] the refusals |
 | `bkd` | Akara (npc 148), for `bks` | — | 1 (`GiveItem`) | 2 | — | [I] (fn:sub_00592250_A1Q4_NpcMessage@0x00592250 0x00592313) |
 | `hdm` | the Malus object | word 3 bits 0, 1 clear, clvl ≥ 8 | 1 | 2 | — | [I] (fn:sub_00591AC0_A1Q3_MalusDrop@0x00591AC0) |
-| `ass` | Radament's death | per player with word 9 bit 5, no `ass` held | per player | 2 | — | [I] (fn:sub_00599020_A2Q1_RadamentDeath@0x00599020) |
-| `tr1` | its chest | per player with word 10 bits 0, 3 clear | per player (identified) | 7 | chest § E1 | [I] (fn:sub_00599C10_A2Q2_ScrollChest@0x00599C10) |
-| `msf` | its chest | per player with word 10 bit 0 clear, no `msf`/`hst` | per player (identified) | 7 | chest § E1 | [I] (fn:sub_00599CF0_A2Q2_StaffChest@0x00599CF0) |
-| `box` | its chest | per player without `box` | per player | 2 | chest § E1 | [I] (fn:sub_00599DF0_A2Q2_CubeChest@0x00599DF0) |
+| `ass` | Radament's death | per player with word 9 bit 5, no `ass` held | per player | 2 (7) | — | [C] the creation at Radament's death (fn:sub_00599020_A2Q1_RadamentDeath@0x00599020, run:2026-10-27-sweep-quest-items); [I] the gate's refusals |
+| `tr1` | its chest | per player with word 10 bits 0, 3 clear | per player (identified) | 7 | chest § E1 | [C] the creation, identified, quality 7, item flag `0x10` (fn:sub_00599C10_A2Q2_ScrollChest@0x00599C10, run:2026-10-27-sweep-quest-items); [I] the word-10 refusals |
+| `msf` | its chest | per player with word 10 bit 0 clear, no `msf`/`hst` | per player (identified) | 7 | chest § E1 | [C] the creation in Normal, and in Nightmare with a Normal staff held (fn:sub_00599CF0_A2Q2_StaffChest@0x00599CF0, run:2026-10-27-sweep-quest-items); [I] the refusals by word 10 or a held `msf`/`hst` of the difficulty |
+| `box` | its chest | per player without `box` | per player | 2 | chest § E1 | [C] created without a cube, refused with one in the inventory (fn:sub_00599DF0_A2Q2_CubeChest@0x00599DF0, run:2026-10-27-sweep-quest-items) |
 | `vip` | the altar (object 149 `taintedsunaltar`, operate slot 24) | not (word 11 done and (word 10 done or `vip`/`hst` held)) | per player (identified) | 7 | chest § E1 | [I] (fn:sub_0059A7E0_A2Q3_ViperChest@0x0059A7E0) |
-| `bbb` | its object | word 17 bit 0 clear | 1 | 2 | — | [I] (fn:sub_005B7A60_A3Q1_TomeDrop@0x005B7A60) |
-| `qhr`, `qey`, `qbr` | their chests | per player | per player | 2 | chest § E1 | [I] (fn:sub_005B8860_A3Q2_HeartChest@0x005B8860, fn:sub_005B8940_A3Q2_EyeChest@0x005B8940, fn:sub_005B8A20_A3Q2_BrainChest@0x005B8A20) |
+| `bbb` | its object | word 17 bit 0 clear | 1 | 2 (7) | — | [C] the creation with word 17 clear, on the unchanged quest seed (fn:sub_005B7A60_A3Q1_TomeDrop@0x005B7A60, run:2026-10-27-sweep-quest-items); [I] the word-17 refusal and a used tome |
+| `qhr`, `qey`, `qbr` | their chests | per player holding neither the part nor `qf2` | per player | 2 | chest § E1b | [C] all three, the gate passing (fn:sub_005B8860_A3Q2_HeartChest@0x005B8860, fn:sub_005B8940_A3Q2_EyeChest@0x005B8940, fn:sub_005B8A20_A3Q2_BrainChest@0x005B8A20, run:2026-10-27-sweep-quest-items); [I] the refusal of a held part or `qf2` (read) |
 | `g33` | a dying monster (unique or flagged) | quest flag armed | 1 | 2 | — | [I] (fn:sub_005B9980_A3Q3_GidbinnDrop@0x005B9980) |
-| `j34` | a dying monster | killer word 19 bit 0 clear | 1 | 2 | — | [I] (fn:sub_005BAB60_A3Q4_FigurineDrop@0x005BAB60) |
-| `g34`, `xyz` | npc 264 for `j34`; Alkor (npc 254) for `g34` | word 20 states | 1 each (`GiveItem`, clvl) | 2 | — | [I] (fn:sub_005BA320_A3Q4_NpcMessage@0x005BA320 0x005BA661, 0x005BA587) |
+| `j34` | a dying monster | killer word 19 bit 0 clear | 1 | 2 (7) | — | [C] five creations at kills by a player with word 19 = 0 (fn:sub_005BAB60_A3Q4_FigurineDrop@0x005BAB60, run:2026-10-27-sweep-quest-items); [I] the refusal |
+| `g34`, `xyz` | npc 264 (Meshif) for `j34`; Alkor (npc 254) for `g34` | word 20 states | 1 each (`GiveItem`, clvl) | 2 (`g34` 7) | — | [C] `g34` given with `j34` held (Nightmare), `xyz` with word 20 bit 1 set, each at clvl (fn:sub_005BA320_A3Q4_NpcMessage@0x005BA320 0x005BA661, 0x005BA587, run:2026-10-27-sweep-quest-npc); [I] the other word-20 states |
 | `qf1`, then `box` | the council's deaths | counted players | per player | 7, 2 | — | [I] (fn:sub_005BBC00_A3Q5_CouncilDeath@0x005BBC00) |
-| `mss` | Mephisto's death | killer word 22 bit 0 clear (+ counted players) | per player | 2 | — | [I] (fn:sub_005BC8B0_A3Q6_MephistoDeath@0x005BC8B0) |
+| `mss` | Mephisto's death | killer word 22 bit 0 clear (+ counted players) | per player | 2 (7) | — | [C] the fresh kill created it, the kill with the quest done none (fn:sub_005BC8B0_A3Q6_MephistoDeath@0x005BC8B0 return 0x005BCA86, run:2026-10-16-quest-drops) |
 | `hfh` | Hephasto's death callback | quest active | 1 | 7 | — | [C] (fn:sub_005B65D0_A4Q3_HammerDrop@0x005B65D0, run:2026-10-16-quest-drops) |
-| `ice`, `tr2` | Malah (messages) | word 37 states; no `ice` held | 1 each (`GiveItem`, clvl) | 2 | — | [I] (fn:sub_00589580_A5Q3_NpcMessage@0x00589580 0x0058964F, 0x005896DF) |
+| `ice`, `tr2` | Malah (messages) | word 37 states; no `ice` held | 1 each (`GiveItem`, clvl) | 2 (`tr2` 7) | — | [C] `tr2` in Normal, Nightmare and Hell (fn:sub_00589580_A5Q3_NpcMessage@0x00589580 0x005896DF, run:2026-10-27-sweep-quest-npc); [I] `ice` (0x0058964F; offered only in a quest state no run reached, F4) |
+
+- [C] **The quality column is the asked quality.** `ass`, `bks`, `bbb`, `j34`, `mss`, `tr2` and `g34` are asked at
+  quality 2 and come back at 7 (the creation's `ICQ` line: rq 2, q 7); `box`, the Khalim parts, `leg` and `xyz` come
+  back at the asked 2. (run:2026-10-16-quest-drops, run:2026-10-27-sweep-quest-items, run:2026-10-27-sweep-quest-npc)
+- [C] The 7 is the base `unique` pre-switch override of `ItemCreateByQuality` (every base that came back 7 has Misc
+  `unique` 1) for `j34` and `mss` ([items/0004](../../findings/items/0004-uniques-sets.md) us 13) and for `tr2` and
+  `g34`, which `xyz` separates from the `quest` column: a `ques` item with `quest` 19 and `unique` 0, it kept 2.
+  (0x005574E3–0x00557567, tbl:Misc.txt:unique, fn:sub_00557450_ItemCreateByQuality@0x00557450, run:2026-10-27-sweep-quest-npc)
+- [I] For `ass`, `bks` and `bbb` the override is the cause by the same reading; their runs logged the 7, not a
+  separating case. (0x005574E3–0x00557567, tbl:Misc.txt:unique,
+  [items/0010 § Plan 0038 batch H6e2](../../findings/items/0010-quest-drops.md#the-quest-item-objects-and-wirts-body-inventory-qd-30-objects-48))
 
 ```
-E1. A quest chest's or the altar's operate (tr1, msf, box, vip, qhr, qey, qbr):    [I] (fn:sub_00585B90_ObjectChestDrop@0x00585B90, fn:sub_00585970_DropItemCodeAt@0x00585970, all of E1)
-      the quest item(s) of the table row
+E1. An Act II quest chest's or the altar's operate (tr1, msf, box, vip):   [C] tr1, msf, box (fn:sub_00585B90_ObjectChestDrop@0x00585B90, fn:sub_00585970_DropItemCodeAt@0x00585970, fn:QUESTS_GetSeed@0x005438B0, run:2026-10-27-sweep-quest-items); the altar [I]
+      the quest item(s) of the table row                           ; one per player the gate passes
       ObjectChestDrop(…)                                           ; the chest's ordinary TC drop, objects § J3
       k ← 5 + QuestPick(5)                                         ; draw: 5 … 9
       repeat k: DropItemCodeAt('gld ', quality 2)
+E1b. A Khalim chest's operate (qhr, qey, qbr):                     [C] all three (fn:sub_005B8860_A3Q2_HeartChest@0x005B8860, fn:sub_005B8940_A3Q2_EyeChest@0x005B8940, fn:sub_005B8A20_A3Q2_BrainChest@0x005B8A20, run:2026-10-27-sweep-quest-items)
+      k ← 5 + QuestPick(5)                                         ; draw: 5 … 9, first
+      repeat k: DropItemCodeAt('gld ', quality 2)
+      n ← players holding neither the part nor qf2                 ; the refusal [I] (0x005B8810, 0x005B8770, 0x005B87C0)
+      repeat n: DropItemAtUnit(part, quality 2)
+      ObjectChestDrop(…)
 ```
 
 Step notes:
 
+- E1. [C] **The Act II chests: the item, then the chest drop, then the gold.** Five operates with the chest in mode 0
+  logged, in this order, the quest item's `DropItemAtUnit` when its gate passed, `ObjectChestDrop`, one
+  `QUESTS_GetSeed`, then `k` gold piles, `k` being `5 + QuestPick(5)` on the logged quest seed: 9 for `tr1`, 5 twice
+  for `box`, 9 twice for `msf` (three distinct seeds). A player the gate refuses does not stop the rest: with a cube
+  held, `box` was not made and the chest drop and the 5 piles still ran. The operate slots are 39 (`box`, class 354),
+  40 (`tr1`, 355) and 41 (`msf`, 356). (fn:sub_00599C10_A2Q2_ScrollChest@0x00599C10,
+  fn:sub_00599CF0_A2Q2_StaffChest@0x00599CF0, fn:sub_00599DF0_A2Q2_CubeChest@0x00599DF0, run:2026-10-27-sweep-quest-items,
+  [items/0010 § Plan 0038 batch H6e2](../../findings/items/0010-quest-drops.md#the-quest-chests-inventory-qd-30-qd-33-objects-48))
+- E1b. [C] **The Khalim chests draw their gold first.** Each logged `QUESTS_GetSeed`, `k` gold piles (the count on its
+  logged seed: 8 for the heart, 5 for the eye, 7 for the brain chest), the callback's `PlayerFindItemByCode` for the
+  part and for `qf2` (neither found), the part (quality 2, created at 2), then `ObjectChestDrop`; slots 57 (heart,
+  class 405), 58 (eye, 407) and 59 (brain, 406). E1's order does not hold for these three. (fn:sub_005B8860_A3Q2_HeartChest@0x005B8860,
+  fn:sub_005B8940_A3Q2_EyeChest@0x005B8940, fn:sub_005B8A20_A3Q2_BrainChest@0x005B8A20,
+  fn:sub_00558110_PlayerFindItemByCode@0x00558110, run:2026-10-27-sweep-quest-items)
+- E1b. [I] The callbacks (0x005B8810, 0x005B8770, 0x005B87C0) count a player who holds neither the chest's part
+  (`qhr`, `qey`, `qbr`) nor `qf2` (Khalim's Will); no session held either, so the refusal is this reading.
+- E1. [I] **A quest chest opens once.** Every chest script (`box`, `tr1`, `msf`, the three Khalim chests) first calls
+  `0x00545850`, which stops the script when the object's mode (`+0x10`) is not 0 and otherwise sets the mode to 1 or
+  2. So a chest reopened in the same game creates nothing, gold included. (0x00545850–0x005458BD,
+  fn:sub_00599C10_A2Q2_ScrollChest@0x00599C10 0x00599C17, fn:sub_005B8860_A3Q2_HeartChest@0x005B8860 0x005B8867)
+- [C] **Duplicates and the difficulty.** A quest item (`quest` ≠ 0) whose base has `questdiffcheck` counts only when
+  its stat 356 is ≥ the game's difficulty, and `sub_00557AB0_ItemInitStats` gives every created item with `quest` ≠ 0
+  and `questdiffcheck` ≠ 0 stat 356 = the difficulty. So a Normal staff does not stop a Nightmare chest from making a
+  new one: with a Normal `msf` (stat 356 = 0) held in a Nightmare game, the chest's `PlayerFindItemByCode('msf ')`
+  read 0 against difficulty 1 and found none, and the chest made a new `msf`. The cube (`box`, `questdiffcheck`
+  blank) does stop one: a held cube refused `box` in Normal. (fn:sub_00558110_PlayerFindItemByCode@0x00558110
+  0x005581D2–0x005581D8, fn:sub_00557AB0_ItemInitStats@0x00557AB0 0x00557E61–0x00557EC3, tbl:Misc.txt:questdiffcheck,
+  run:2026-10-27-sweep-quest-items)
 - [I] **Duplicates** are refused only by each script's own test: its quest bits, or "the player already has the item".
-  That test is `sub_00558110_PlayerFindItemByCode`, over the cursor item and the inventory (not page 1). A quest item
-  (`quest` ≠ 0) whose base has `questdiffcheck` counts only when its stat 356 is ≥ the game's difficulty, and
-  `sub_00557AB0_ItemInitStats` gives every created item with `quest` ≠ 0 and `questdiffcheck` ≠ 0 stat 356 = the
-  difficulty. So a Normal staff does not stop a Nightmare chest from making a new one; the cube (`box`,
-  `questdiffcheck` blank) does. (fn:sub_00558110_PlayerFindItemByCode@0x00558110 0x005581D6,
-  fn:sub_00557AB0_ItemInitStats@0x00557AB0 0x00557E61–0x00557EC3, tbl:Misc.txt:questdiffcheck)
+  That test is `sub_00558110_PlayerFindItemByCode`, over the cursor item and the inventory (not page 1). The "only",
+  the cursor branch and the cube in Nightmare or Hell were not run. (fn:sub_00558110_PlayerFindItemByCode@0x00558110
+  0x0055815C–0x0055816F)
 - [C] **`quest` − 1 is a quest object id, not a record word.** Every reader subtracts 1 and looks the object up by id
   (`sub_00543BD0_QuestsInvItemEvent` sends event 9 to it; `sub_00555D20_ItemQuestHook` hooks the item to it), and the
   pair table `{word, quest}` of `sub_0055CC90_ItemQuestGate` matches `g_QuestDescs` for all four pairs. So `hfh`
   (`quest` 25) names object 24, word 27; `mss` (23) names object 22, word 25, not Mephisto's word 22. (data:g_QuestDescs@0x00731510,
   data:g_QuestItemWordGate@0x00731FEC, fn:QUESTS_FindById@0x00543640, tbl:Misc.txt:quest, tbl:Weapons.txt:quest)
+- [C] **The item-move gate at a ground pickup.** In a game whose record words had bit 0 set, `ItemQuestGate` ran at
+  each pickup of a quest item lying on the ground (return 0x00563636) and returned 0 for `bks`, `tr1`, `qbr`, `hdm`,
+  `j34` and `ass` and 1 for `box` and `bbb`, as the reading below gives on the logged words; for the two allowed items
+  the `0x0055CA40` tail ran once and returned 0. (fn:sub_0055CC90_ItemQuestGate@0x0055CC90, run:2026-10-27-sweep-quest-items,
+  [items/0010 § Plan 0038 batch H6e2](../../findings/items/0010-quest-drops.md#item-move-gate-inventory-qd-35-checkpoint-1))
 - [I] **The item-move gate** `sub_0055CC90_ItemQuestGate` refuses, for the player's record of the game's difficulty: a
   unique quest item whose unique row has `+0x2C` bit 2 when `0x0055CA40` returns non-zero; `ass` while word 9 bit 5
   is clear; `j34` once word 20 bit 0 is set; `xyz` while word 20 bit 5 is clear; `g33` once word 19 bit 7 or 8 is set;
   `tr2` while word 37 bit 8 is clear or once bit 7 is set; then by object `quest − 1`: object 9 when word 10 bit 0 is
   set (not `box`), object 4 when word 4 bit 0 is set, otherwise the pair table's word bit 0; finally when `0x0055CA40`
-  is non-zero for this or any other player. Its four callers are item-move paths. (fn:sub_0055CC90_ItemQuestGate@0x0055CC90,
-  fn:QUESTRECORD_GetState@0x0065C310)
+  is non-zero for this or any other player. Its four callers are item-move paths, the ground pickup among them (the
+  call at 0x00563631, after the test that the item lies on the ground). The cases above do not tell which word each
+  branch reads (every word bit 0 was set); the `xyz`, `g33` and `tr2` tests, the unique-row branch and the tail's
+  other-player half did not run. (fn:sub_0055CC90_ItemQuestGate@0x0055CC90, fn:QUESTRECORD_GetState@0x0065C310,
+  0x005635F8–0x00563649)
 - [I] **`0x0055CA40` is "the inventory already holds this quest item or this carry-one unique".** It walks the
   inventory, skipping the item X itself, and returns 1 for: when X is a unique whose `UniqueItems` row has `carry1`, an
   item of quality 7 with the same row (not on page 1); or an item not on page 1 whose `quest` equals X's (non-zero) and
@@ -542,15 +669,28 @@ Step notes:
 - [I] Per-player loops (`sub_005537D0_GameForEachUnit`) visit every player unit of the game except one in state 7
   (`playerbody`), wherever it stands; party loops (`sub_00540510_PartyForEach`) visit one party. (fn:sub_005537D0_GameForEachUnit@0x005537D0,
   fn:sub_00540510_PartyForEach@0x00540510)
-- [I] Placing the Horadric Staff: the orifice operate opens the one-item box when the player holds `hst`, and
-  `sub_0059DD80_A2Q6_StaffPlaced` sets word 10 bits 0 and 13 (and credits the party); it worked in a game whose word
-  14 bit 0 was already set. (fn:sub_0059DC70_A2Q6_OrificeOperate@0x0059DC70, fn:sub_0059DD80_A2Q6_StaffPlaced@0x0059DD80,
-  fn:sub_0059DBD0_A2Q6_StaffPartyCredit@0x0059DBD0, run:2026-10-16-quest-drops)
+- [C] Placing the Horadric Staff: `sub_0059DD80_A2Q6_StaffPlaced` sets word 10 bit 0, then bit 13 (returns 0x0059DDA1,
+  0x0059DDB9; the constant sites 0x0059DD9C and 0x0059DDB4); it worked in a game whose word 14 bit 0 was already set.
+  (fn:sub_0059DD80_A2Q6_StaffPlaced@0x0059DD80, run:2026-10-16-quest-drops)
+- [I] The orifice operate opens the one-item box when the player holds `hst` (no operate without `hst` was logged),
+  and `StaffPlaced` credits the party. (fn:sub_0059DC70_A2Q6_OrificeOperate@0x0059DC70,
+  fn:sub_0059DBD0_A2Q6_StaffPartyCredit@0x0059DBD0)
 
 ### F. NPC item services and given items
 
 `NPC_MenuAction(game, action, npcGuid, itemGuid)`, player in EDX; the item is the player's cursor item, consumed by
-`sub_0055EEA0_CursorItemConsume`. [I] (fn:NPC_MenuAction@0x00579D60, fn:sub_0055EEA0_CursorItemConsume@0x0055EEA0)
+`sub_0055EEA0_CursorItemConsume`. [C] (fn:NPC_MenuAction@0x00579D60, fn:sub_0055EEA0_CursorItemConsume@0x0055EEA0
+from 0x0057A093, 0x0057A364, 0x0057A56E, run:2026-10-27-sweep-quest-npc: in all 18 services the consumed item was the
+player's cursor item, `[[player+0x60]+0x20]`, and the call returned 1)
+
+- [C] **The client refuses first.** Every refused item of run:2026-10-27-sweep-quest-npc was refused by the client's
+  call of the same test (returns 0x004BFD44, 0x004BFD5A, 0x004BFD70) and stayed on the cursor; no refused item reached
+  `NPC_MenuAction`, and each accepted item was tested twice, client then server, with the same steps and result. So
+  the server's refusal lines below (F1–F3) were not reached. (fn:sub_0062C590_ItemCanImbue@0x0062C590,
+  fn:sub_0062C770_ItemCanQuestSocket@0x0062C770, fn:sub_0062C6A0_ItemCanPersonalize@0x0062C6A0, run:2026-10-27-sweep-quest-npc)
+- [I] The client code (0x004BFCF4–0x004BFD9B) refuses an unidentified item, then calls the test of the window's NPC
+  (154, 511, 512); these are the tests' only callers besides `NPC_MenuAction` (0x00579FED, 0x0057A310, 0x0057A51B),
+  so a refused item never reaches the server in stock play. ([items/0010 § Plan 0038 batch H6e1](../../findings/items/0010-quest-drops.md#static-reads-behind-the-checker-2026-10-27-objdump-of-the-pinned-gameexe-1))
 
 ```mermaid
 flowchart LR
@@ -569,7 +709,7 @@ flowchart LR
 
 ```
 F1. Imbue(player, item):                                          [C] (fn:NPC_MenuAction@0x00579D60 0x0057A020–0x0057A0CB, run:2026-10-16-quest-drops, all of F1)
-      if not ItemCanImbue(item): refuse (message 7), the item goes back
+      if not ItemCanImbue(item): refuse (message 7), the item goes back   [I] (0x00579FED; not reached: the client refuses first)
       rec ← ItemCreateRecFromItem(item)                            ; same base index, quality, flags +0x44, durability, …
       rec.flags80 |= 0x20 | (item is ethereal ? 0x04 : 0x02)       ; staff-mod bonus; force ethereal / no ethereal roll
       keep the personalized name if item flag 0x1000000
@@ -579,7 +719,7 @@ F1. Imbue(player, item):                                          [C] (fn:NPC_Me
       if ilvl > 5: ilvl ← ilvl + 4
       rec.ilvl ← ilvl
       new ← ItemCreate(rec)                                        ; restore 0: unit and item seeds from game.seed
-      repair, identify (F0); place in the inventory or drop      ; the repair finds the item unidentified: no-op (F0)
+      repair, identify (F0); place in the inventory or drop      ; the repair is a no-op when the new item is unidentified (F0)
       ImbueDone: word 3 bit 0 set, bit 1 cleared
 ```
 
@@ -589,15 +729,25 @@ F1. Imbue(player, item):                                          [C] (fn:NPC_Me
   [affixes § E](affixes.md#e-the-rare-builder--items_buildrare--items_buildrareaffixes) at that ilvl. The seeds copied
   from the old item into the record (`+0x48`, `+0x4C`) are not used. (fn:sub_00558270_ItemCreateRecFromItem@0x00558270,
   fn:sub_00558D90_ItemCreate@0x00558D90, fn:sub_00555230_SUnitCreate@0x00555230, run:2026-10-16-quest-drops)
-- F1. [I] The `clvl ≤ 5` branch (ilvl = clvl) was not run; on stock data the Malus needs clvl ≥ 8 (§ E), so it is
-  reached only by an imbue state made otherwise. Flag `0x04` (an ethereal item stays ethereal) was not run either.
-  Flag `0x02` skips the ethereal roll and `0x04` forces it ([properties § F](properties.md#f-ethereal-and-sockets));
-  `0x20` gives staff mods a bonus of the ilvl ([affixes § I](affixes.md#i-staff-mods--items_rollstaffmods)).
-  (fn:NPC_MenuAction@0x00579D60, struct:ItemCreateRec+0x80)
-- F1. [I] `sub_0062C590_ItemCanImbue` refuses: `ITEMS_GetType` 4, item flag `0x1000`, a base without `bitfield1` bit 0,
-  a throwable (unless unit flag bit 25 at `Unit+0xC8`), a quest item other than `leg`, an item holding socketed
-  items, a socketed item (`0x800`), and qualities 4–9. So only low, normal and superior bases (1–3) are imbued.
-  (fn:sub_0062C590_ItemCanImbue@0x0062C590, fn:sub_00629C80_ItemMagicStockable@0x00629C80, tbl:Weapons.txt:bitfield1)
+- F1. [C] **The `ilvl > 5` bound and the ethereal flag.** An ethereal normal `cap` imbued at clvl 5 got record ilvl 5
+  (no + 4) and flags `+0x80` = `0x24`, and the new rare (quality 6, ilvl 5) was ethereal; Wirt's Leg imbued at clvl 6
+  got ilvl 10 and flags `0x22`, not ethereal. With the clvl-80 imbues (ilvl 84) the bound is met on both sides.
+  (fn:NPC_MenuAction@0x00579D60 0x0057A02F–0x0057A04A, 0x0057A0A0–0x0057A0CB, run:2026-10-27-sweep-quest-npc)
+- F1. [I] On stock data the Malus needs clvl ≥ 8 (§ E), so the `clvl ≤ 5` branch is reached only by an imbue state
+  made otherwise (the run's saves were tool-built). Flag `0x02` skips the ethereal roll and `0x04` forces it
+  ([properties § F](properties.md#f-ethereal-and-sockets)); `0x20` gives staff mods a bonus of the ilvl
+  ([affixes § I](affixes.md#i-staff-mods--items_rollstaffmods)). (fn:NPC_MenuAction@0x00579D60, struct:ItemCreateRec+0x80)
+- F1. [C] **`sub_0062C590_ItemCanImbue`'s refusals, in code order:** a base without `bitfield1` bit 0 (`key`, `hdm`),
+  a quest item other than `leg` (`qf1`; `leg` passes), an item holding an item (a `cap` with a socketed gem), a
+  socketed item (`0x800`), and qualities 4–8 (magic, set, rare, unique, crafted); low and superior `cap` (1, 3) pass. An
+  item failing two tests stops at the first (the `cap` holding a gem has `0x800` too; `hdm` stops before the quest
+  test). The throwable test is skipped for every logged item: each had unit `+0xC8` bit 25 set, no call of
+  `ItemTypeThrowable` was made, and throwing knives (`tkf`) passed. (fn:sub_0062C590_ItemCanImbue@0x0062C590,
+  fn:sub_00629C80_ItemMagicStockable@0x00629C80, fn:sub_0062A270_ItemHoldsItem@0x0062A270, tbl:Weapons.txt:bitfield1,
+  run:2026-10-27-sweep-quest-npc: 22 imbue tests)
+- F1. [I] The test also refuses `ITEMS_GetType` 4, item flag `0x1000`, quality 9 and, when unit `+0xC8` bit 25 is
+  clear, a throwable (ItemTypes `+0x10`); none was reached, and what sets bit 25 is not read. So only low, normal and
+  superior bases (1–3) are imbued. (fn:sub_0062C590_ItemCanImbue@0x0062C590, fn:sub_0062BA80_ItemTypeThrowable@0x0062BA80)
 - F1. [I] **`ITEMS_GetType` = 4 is `gold`**: it returns the record's own `type` (`+0x11E`), and ItemTypes row 4 is
   `gold` (rows 5–7, `bowq`, `xboq`, `play`, are the types the personalize test refuses). **Item flag `0x1000` marks a
   monster's own equipment**: `ItemCreate` copies it from the creation record, and `MonEquipItemCreate` sets it on each
@@ -612,20 +762,21 @@ F1. Imbue(player, item):                                          [C] (fn:NPC_Me
   fn:ITEMS_BuildSetPick@0x005C25C0) [C] No imbued item takes the unique path: every stock base with the `unique` flag is a
   `quest` item other than `leg` or has `bitfield1` bit 0 clear (`std`), so `ItemCanImbue` refuses it. (data check,
   tbl:Weapons.txt:unique, tbl:Misc.txt:bitfield1, fn:sub_0062C590_ItemCanImbue@0x0062C590)
-- F1. [I] The service tests word 3 bit 1 only: the run's reward saves had bit 15 beside bit 1 (the loader's copy) and
-  the imbue was served in every session. (fn:sub_00591790_A1Q3_ImbueDone@0x00591790, run:2026-10-16-quest-drops)
+- F1. [C] The service tests word 3 bit 1 only: the imbue branch makes one quest test, `GetState(rec, 3, 1)` at
+  0x00579FB1, and the run's reward saves had bit 15 beside bit 1 (the loader's copy) and were served 17 times.
+  (fn:NPC_MenuAction@0x00579D60, fn:sub_00591790_A1Q3_ImbueDone@0x00591790, run:2026-10-16-quest-drops)
 
 #### F2. Larzuk's socket (action 511, word 35 bit 1 set)
 
 ```
-F2. QuestSocket(player, item):                                    [I] (fn:NPC_MenuAction@0x00579D60 0x0057A3A0–0x0057A3E0, all of F2)
-      if not ItemCanQuestSocket(item): refuse
+F2. QuestSocket(player, item):                                    [C] (fn:NPC_MenuAction@0x00579D60 0x0057A38F–0x0057A3E7, run:2026-10-16-quest-drops, run:2026-10-27-sweep-quest-npc)
+      if not ItemCanQuestSocket(item): refuse                      [I] (0x0057A310; not reached: the client refuses first)
       copy ← ItemCopy(item)                                        ; two game-seed steps, items/cube § K
       CursorItemConsume(item); copy.flags |= 0x800
       max: i32 ← ItemMaxSockets(copy)
       q ← copy.quality
       if q = 4:      n ← 1 + RangeB(copy.itemSeed, min(max, 2))     ; one draw, made even when the bound is 1
-      else if 5 ≤ q ≤ 9: n ← 1                                     ; set, rare, unique, crafted, 9 (max ≥ 1)
+      else if 5 ≤ q ≤ 9: n ← 1                                     ; set, rare, unique, crafted, 9 (max ≥ 1); 9 [I], no stock item (0x0057A38F)
       else:          n ← max                                       ; low, normal, superior
       ITEMS_SetSockets(copy, n)                                    ; sockets-runewords § F1 caps
       repair, identify (F0); place
@@ -636,17 +787,23 @@ F2. QuestSocket(player, item):                                    [I] (fn:NPC_Me
   item seed `{start, 666}`, `n = 1 + r` (1 eight times, 2 seven times), and stat 194 after `ITEMS_SetSockets` equal
   to `n`. (fn:RNG_RangeB@0x0045C3E0, fn:ITEMS_SetSockets@0x0062BCB0, fn:sub_0055A2A0_ItemCopy@0x0055A2A0,
   run:2026-10-16-quest-drops)
-- F2. [I] The other branches (low, normal, superior: `max`; 5–9: 1) were not run. A crafted item asks for 1, so
-  Larzuk never reaches the crafted cap of [sockets-runewords § F](sockets-runewords.md#f-socket-counts-the-two-setters)
-  above 1. `sub_0062C770_ItemCanQuestSocket` needs no item flag `0x1000` or `0x100` (broken), a non-quest item (or
-  `leg`), nothing socketed in it, flag `0x800` clear, `ItemMaxSockets` ≠ 0 and 0 sockets now.
-  (fn:sub_0062C770_ItemCanQuestSocket@0x0062C770, fn:sub_0062BC20_ItemMaxSockets@0x0062BC20, fn:sub_005877C0_A5Q1_SocketDone@0x005877C0)
+- F2. [C] The other branches, one socket each on a `max`-3 base: low, normal (a `ghm` and Wirt's Leg) and superior
+  got `n` = 3; set (*Sigon's Visor*), rare, unique (*Howltusk*) and crafted got 1, with no draw on the item seed. So a
+  crafted item asks for 1, and Larzuk does not reach the crafted cap of
+  [sockets-runewords § F](sockets-runewords.md#f-socket-counts-the-two-setters) above 1. (fn:NPC_MenuAction@0x00579D60
+  0x0057A38F–0x0057A3E7, run:2026-10-27-sweep-quest-npc)
+- F2. [C] `sub_0062C770_ItemCanQuestSocket` refused, in code order, a quest item other than `leg` (`qf1`; `leg`
+  passes), a broken item (`0x100`), an item holding an item, a socketed item (`0x800`) and a base with
+  `ItemMaxSockets` 0 (`lbl`, `aqv`). (fn:sub_0062C770_ItemCanQuestSocket@0x0062C770, fn:sub_0062BC20_ItemMaxSockets@0x0062BC20,
+  run:2026-10-27-sweep-quest-npc)
+- F2. [I] It also needs no item flag `0x1000`, `ITEMS_GetType` ≠ 4 and 0 sockets now; none was reached (no stock state
+  has sockets with flag `0x800` clear). (fn:sub_0062C770_ItemCanQuestSocket@0x0062C770, fn:sub_005877C0_A5Q1_SocketDone@0x005877C0)
 
 #### F3. Anya's personalization (action 512, word 38 bit 1 set)
 
 ```
-F3. Personalize(player, item):                                    [C] (fn:NPC_MenuAction@0x00579D60 0x0057A610–0x0057A625, run:2026-10-16-quest-drops, all of F3)
-      if not ItemCanPersonalize(item): refuse
+F3. Personalize(player, item):                                    [C] (fn:NPC_MenuAction@0x00579D60 0x0057A610–0x0057A625, run:2026-10-16-quest-drops, all of F3 but the refusal)
+      if not ItemCanPersonalize(item): refuse                      [I] (0x0057A51B; not reached: the client refuses first)
       copy ← ItemCopy(item); CursorItemConsume(item)
       repair, identify (F0); place the copy
       copy.flags |= 0x1000000; copy.name (ItemData+0x4A) ← the player's name   ; after the placement
@@ -655,51 +812,79 @@ F3. Personalize(player, item):                                    [C] (fn:NPC_Me
 
 - F3. [C] 15 personalizations: each copy got flag `0x1000000` and the player's name, written after the copy was placed;
   no affix or seed is touched by the service itself. (fn:sub_00628370_ItemSetPersonalName@0x00628370, run:2026-10-16-quest-drops)
-- F3. [I] `sub_0062C6A0_ItemCanPersonalize` needs: no flag `0x1000`; base type not 5, 6 or 7; flag `0x100` clear; not
-  already personalized; `compactsave` 0 and `Nameable` ≠ 0. (fn:sub_0062C6A0_ItemCanPersonalize@0x0062C6A0,
-  tbl:Weapons.txt:compactsave, tbl:Armor.txt:nameable, fn:sub_0058BC00_A5Q4_PersonalizeDone@0x0058BC00)
+- F3. [C] `sub_0062C6A0_ItemCanPersonalize` refused base types 5 and 6 (`aqv`, `cqv`), a broken item (`0x100`), an
+  item already personalized, a `compactsave` base (`gsv`) and a base with `Nameable` 0 (`jew`), and accepted the rest.
+  (fn:sub_0062C6A0_ItemCanPersonalize@0x0062C6A0, tbl:Weapons.txt:compactsave, tbl:Armor.txt:nameable,
+  run:2026-10-27-sweep-quest-npc)
+- F3. [I] It also needs no flag `0x1000`, `ITEMS_GetType` ≠ 4 and base type ≠ 7 (ears); none was reached.
+  (fn:sub_0062C6A0_ItemCanPersonalize@0x0062C6A0, fn:sub_0058BC00_A5Q4_PersonalizeDone@0x0058BC00)
 
 #### F0. The shared tail
 
-- [I] Before the result is placed, each of the three services calls `sub_005761C0_ItemRepairAll` (a throwable stack to
-  its maximum, charges refilled, the broken flag cleared, durability to its maximum), then
-  `sub_0055FE00_ItemIdentifyAttach` (identified; socketed children attached). (fn:sub_005761C0_ItemRepairAll@0x005761C0,
-  fn:sub_0055FE00_ItemIdentifyAttach@0x0055FE00, 0x0057A0F9, 0x0057A3ED, 0x0057A581)
+- [C] Before the result is placed, each of the three services calls `sub_005761C0_ItemRepairAll`, then
+  `sub_0055FE00_ItemIdentifyAttach`, in that order (18 of each). The repair refilled a throwable stack to its maximum
+  (throwing knives 20 → 160 and 30 → 160, `maxstack` 160) and the durability (1 → 4, 2 → 4 of 4); the identify left
+  every item identified. (fn:sub_005761C0_ItemRepairAll@0x005761C0, fn:sub_0055FE00_ItemIdentifyAttach@0x0055FE00,
+  0x0057A0F9, 0x0057A3ED, 0x0057A581, 0x0057A103, 0x0057A3F7, 0x0057A58B, run:2026-10-27-sweep-quest-npc)
+- [I] The repair also refills charges and clears the broken flag, and the identify attaches socketed children; the
+  run's one gem-holding item carried its child into the call already, so these are not separated.
+  (fn:sub_005761C0_ItemRepairAll@0x005761C0, fn:sub_0055FE00_ItemIdentifyAttach@0x0055FE00)
 - [C] A socketed or personalized item comes back repaired: a damaged magic cap went from durability 1 to 12 of 12 at
-  each service, one case each. An imbued item does not: `ItemRepairAll` refuses an unidentified item, and the new rare
-  is identified only after the call (0x0057A103), so the imbued cap kept durability 10 of 12
-  ([items/economy § F](economy.md#f-callers-buy-sell-repair) F7). (fn:NPC_MenuAction@0x00579D60,
-  fn:sub_0062E660_ItemCanRepair@0x0062E660, run:2026-10-19-economy2)
+  each service, one case each. An imbued item is repaired only when `ItemCreate` returns it identified: the repair's
+  gate refuses an unidentified item, and the new rare is identified by the tail only after the repair (0x0057A103).
+  The imbued `cap` of run:2026-10-19-economy2, created unidentified, kept durability 10 of 12
+  ([items/economy § F](economy.md#f-callers-buy-sell-repair) F7); the imbued Wirt's Leg of
+  run:2026-10-27-sweep-quest-npc came back from `ItemCreate` identified (flags `0x00082010`) and went from 61 to 66 of
+  66. Why the leg's rare is identified at creation is not read. (fn:NPC_MenuAction@0x00579D60,
+  fn:sub_00558D90_ItemCreate@0x00558D90, run:2026-10-19-economy2, run:2026-10-27-sweep-quest-npc)
+- [I] The gate is `sub_0062E660_ItemCanRepair`, called first in `ItemRepairAll` (0x005761CB): it refuses a non-item,
+  an unidentified item (`+0x18 & 0x10` clear) and an ethereal one (`& 0x400000`), so an ethereal item comes back from
+  any of the three services unrepaired. No run had an identified ethereal item at the tail (the run's ethereal imbued
+  `cap` was unidentified too, at full durability). (fn:sub_0062E660_ItemCanRepair@0x0062E660, 0x0062E679, 0x0062E689)
 
 #### F4. Given items (`QUESTS_GiveItem`)
 
 | NPC (quest word) | item | ilvl | quality | draws | Tag |
 |---|---|---|---|---|---|
-| Akara (npc 148, word 4) | `rin` | 7 / 30 / 60 (Normal / Nightmare / Hell) | 4 / 6 / 6 | — | [I] (fn:sub_00592250_A1Q4_NpcMessage@0x00592250 0x005923E5–0x00592412) |
-| Ormus (npc 255, word 19) | `rin` | 21 / 35 / 75 | 6 | — | [I] (fn:sub_005B9240_A3Q3_NpcMessage@0x005B9240 0x005B93F3–0x005B941F) |
-| Qual-Kehk (npc 515, word 36) | the first *n* of `r07 r08 r09` | clvl | 2 | — | [I] (fn:sub_00587B00_A5Q2_NpcMessage@0x00587B00 0x00587C30–0x00587C83, data:g_QualKehkRunes@0x00732FEC) |
-| Malah (npc 513, word 37) | `ice`, `tr2` | clvl | 2 | — | [I] (fn:sub_00589580_A5Q3_NpcMessage@0x00589580 0x0058964F, 0x005896DF) |
-| Anya (npc 512, word 37) | a class item (F5) | clvl | 6 | one `Range(questSeed, count)` | [I] (fn:sub_00589580_A5Q3_NpcMessage@0x00589580) |
+| Akara (npc 148, word 4) | `rin` | 7 / 30 / 60 (Normal / Nightmare / Hell) | 4 / 6 / 6 | — | [C] (fn:sub_00592250_A1Q4_NpcMessage@0x00592250 0x005923E5–0x00592412, run:2026-10-27-sweep-quest-npc) |
+| Ormus (npc 255, word 19) | `rin` | 21 / 35 / 75 | 6 | — | [C] (fn:sub_005B9240_A3Q3_NpcMessage@0x005B9240 0x005B93F3–0x005B941F, run:2026-10-27-sweep-quest-npc) |
+| Qual-Kehk (npc 515, word 36) | the first *n* of `r07 r08 r09` | clvl | 2 | — | [C] (fn:sub_00587B00_A5Q2_NpcMessage@0x00587B00 0x00587C30–0x00587C83, data:g_QualKehkRunes@0x00732FEC, run:2026-10-27-sweep-quest-npc) |
+| Malah (npc 513, word 37) | `ice`, `tr2` | clvl | 2 (`tr2` created 7, § E) | — | [C] `tr2` in the three difficulties (fn:sub_00589580_A5Q3_NpcMessage@0x00589580 0x005896DF, run:2026-10-27-sweep-quest-npc); [I] `ice` (0x0058964F; note below) |
+| Anya (npc 512, word 37) | a class item (F5) | clvl | 6 | one `Range(questSeed, count)` | [C] (fn:sub_00589580_A5Q3_NpcMessage@0x00589580, run:2026-10-27-sweep-quest-npc) |
 
-- F4. [I] Qual-Kehk: `n` = 2 when word 36 bit 6 is set, else 1 when bit 7 is set, else 3; given once word 36 bit 1 is
-  set (then bit 0 set, bit 1 cleared). (fn:sub_00587B00_A5Q2_NpcMessage@0x00587B00)
-- F4. [I] Akara's and Ormus's rings take a fixed ilvl per difficulty, not the player's level. The Ancients and
-  Nihlathak give no item. (fn:sub_00592250_A1Q4_NpcMessage@0x00592250, fn:sub_005B9240_A3Q3_NpcMessage@0x005B9240)
+- F4. [C] Qual-Kehk: `n` = 2 when word 36 bit 6 is set, else 1 when bit 7 is set, else 3; given once word 36 bit 1 is
+  set (then bit 0 set, bit 1 cleared). Bit 6 gave 2 runes, bit 7 one, neither (bit 5) three, in the order of the
+  table, and bit 0 was set (0x00587CB0) and bit 1 cleared (0x00587CBF) each time. (fn:sub_00587B00_A5Q2_NpcMessage@0x00587B00,
+  run:2026-10-27-sweep-quest-npc)
+- F4. [C] Akara's and Ormus's rings take a fixed ilvl per difficulty, not the player's level: 7 / 30 / 60 and 21 / 35
+  / 75 for a clvl-80 player. (fn:sub_00592250_A1Q4_NpcMessage@0x00592250, fn:sub_005B9240_A3Q3_NpcMessage@0x005B9240,
+  run:2026-10-27-sweep-quest-npc)
+- F4. [I] The Ancients and Nihlathak give no item: their scripts call no item creator (D7), and no talk to them was
+  run. (fn:QUESTS_GiveItem@0x005466B0, [§ D7](#d7-scripts-that-create-nothing-and-uber-tristram))
+- F4. [I] **Malah's potion is offered only in quest state 4.** Her talk table offers message 3 (the potion) only when
+  the quest object's state `+0x0C` is 4, no `ice` is held and the potion count `+0xD8` is 0
+  (0x00589B9C–0x00589BD4); with word 37 clear the three talks gave other messages and no potion. What sets state 4 is
+  not read. (fn:sub_00589580_A5Q3_NpcMessage@0x00589580, run:2026-10-27-sweep-quest-npc)
 
 ```
-F5. Anya's Prison-of-Ice item: word 37 bit 1 set, bits 0 and 10 clear:   [I] (fn:sub_00589580_A5Q3_NpcMessage@0x00589580, all of F5)
+F5. Anya's Prison-of-Ice item: word 37 bit 1 set, bits 0 and 10 clear:   [C] (fn:sub_00589580_A5Q3_NpcMessage@0x00589580 0x005898C4–0x00589942, run:2026-10-27-sweep-quest-npc: game type 3)
       t ← Normal
-      if d = 1 and (game.type = 3 or clvl > 45): t ← Nightmare
+      if d = 1 and (game.type = 3 or clvl > 45): t ← Nightmare    ; the clvl halves [I] (0x005898C4–0x00589942)
       if d = 2 and (game.type = 3 or clvl > 65): t ← Hell
       row ← ANYA_REWARDS[t][player class 0..6]
       code ← row[Range(questSeed, count of row)]                  ; draw
       QUESTS_GiveItem(code, ilvl clvl, quality 6)
 ```
 
-- F5. [I] Rows: Normal `am1`–`am5`, `ob1`–`ob5`, `ne1`–`ne5`, `pa1`–`pa5`, `ba1`–`ba5`, `dr1`–`dr5`, and `ktr wrb axf
-  ces clw btl skr`; Nightmare the `…6`–`…a` codes and the `9…` katars; Hell `…b`–`…f` and the `7…` katars. `game.type`
-  is 3 in every logged single-player game, so single player always takes the difficulty's table. (data:g_AnyaRewardsNormal@0x00735F6C,
-  data:g_AnyaRewardsNightmare@0x00735EFC, data:g_AnyaRewardsHell@0x00735F34)
+- F5. [C] Rows: Normal `am1`–`am5`, `ob1`–`ob5`, `ne1`–`ne5`, `pa1`–`pa5`, `ba1`–`ba5`, `dr1`–`dr5`, and `ktr wrb axf
+  ces clw btl skr`; Nightmare the `…6`–`…a` codes and the `9…` katars; Hell `…b`–`…f` and the `7…` katars (the three
+  arrays read from the image against their reader). `game.type` is 3 in every logged single-player game, so single
+  player always takes the difficulty's table: in each difficulty the logged table was that difficulty's, the code was
+  entry `r` of the Sorceress row (5 entries), and `r` = `Range(questSeed, 5)` on the logged seed (3, 2, 0); then word
+  37 bits 9, 0 and 10 were set and bit 1 cleared (0x005899BF–0x005899EB). (data:g_AnyaRewardsNormal@0x00735F6C,
+  data:g_AnyaRewardsNightmare@0x00735EFC, data:g_AnyaRewardsHell@0x00735F34, run:2026-10-27-sweep-quest-npc)
+- F5. [I] The `clvl > 45` / `> 65` halves apply only to a game type other than 3, which single player does not give.
+  (fn:sub_00589580_A5Q3_NpcMessage@0x00589580)
 
 ### G. The `boss` level exception (monsters/pool E4)
 
@@ -709,10 +894,17 @@ F5. Anya's Prison-of-Ice item: word 37 bit 1 set, bits 0 and 10 clear:   [I] (fn
   reproduced both with every other monster level of those games. The rest of the level step is
   [monsters/pool § E](../monsters/pool.md#e-the-monster-level-sub_00573cb0_monstatsinit). (fn:sub_00573CB0_MonStatsInit@0x00573CB0,
   tbl:MonStats.txt:boss, run:2026-10-16-quest-drops)
-- [I] The other 24 `boss` classes take the same test; the levels they would show (expansion, `Level(N)`/`(H)` vs
-  `MonLvl2Ex`/`MonLvl3Ex`): `duriel` in 73 55/88 vs 49/80, `mephisto` in 102 59/87 vs 55/83, `diablo` in 108 62/94 vs
-  58/85, `bloodraven` in 17 43/88 vs 36/80, `griswold` in 38 39/84 vs 39/76. (fn:sub_00573CB0_MonStatsInit@0x00573CB0,
-  tbl:Levels.txt:MonLvl2Ex, tbl:Levels.txt:MonLvl3Ex)
+- [C] The other `boss` classes take the same test. In expansion Nightmare games four more kept `Level(N)` where the
+  area level differs: Blood Raven 43 (`MonLvl2Ex` 36), Radament 49 (44), Mephisto 59 (55) and Nihlathak 70 (64), with
+  Andariel 49 (43) again; five of the 25 classes with the flag (156, 211, 229, 242, 243, 250, 256, 267, 333, 365, 526,
+  544, 546–550, 559, 570, 704–709) are met. The instruction tests the class's own flag byte with no class compare, and
+  Hell takes the same branch (its other tests are the expansion word and `d` > 0), logged for Andariel at 75 above.
+  (fn:sub_00573CB0_MonStatsInit@0x00573CB0 0x00573E23–0x00573E40, tbl:MonStats.txt:boss, tbl:Levels.txt:MonLvl2Ex,
+  run:2026-10-21-sweep-monsters-a, [monsters/pool § E](../monsters/pool.md#e-the-monster-level-sub_00573cb0_monstatsinit))
+- [I] The levels the unmet classes would show (expansion, `Level(N)`/`(H)` vs `MonLvl2Ex`/`MonLvl3Ex`): `duriel` in 73
+  55/88 vs 49/80, `diablo` in 108 62/94 vs 58/85, `griswold` in 38 39/84 vs 39/76; and the Hell levels of `mephisto`
+  (87 vs 83 in 102) and `bloodraven` (88 vs 80 in 17). (fn:sub_00573CB0_MonStatsInit@0x00573CB0, tbl:Levels.txt:MonLvl2Ex,
+  tbl:Levels.txt:MonLvl3Ex)
 
 ### Draw order on the quest seed
 
@@ -733,9 +925,12 @@ sequenceDiagram
 - [C] The quest seed is drawn only by quest code, one step per pick, in the order the scripts run; in the run no
   non-item quest code drew between `QUESTS_InitGame` and a scripted drop. (fn:QUESTS_GetSeed@0x005438B0,
   run:2026-10-16-quest-drops)
-- [I] Non-item quest code also draws it (0x0058E830, 0x00592E90, 0x0059B1C0, 0x0059EDC0, 0x005BD390), so in general
-  its state at a drop depends on the game's quest history and is asserted, not derived (§ Inputs and oracles).
-  (fn:QUESTS_GetSeed@0x005438B0)
+- [C] Non-item quest code also draws it (0x0058E830, 0x00592E90, 0x0059B1C0, 0x0059EDC0, 0x005BD390: each draws after
+  its `QUESTS_GetSeed` call and calls no item creator; 22 call sites in 17 functions in all), so in general its state
+  at a drop depends on the game's quest history and is asserted, not derived (§ Inputs and oracles). Baal's death
+  (0x0058DF20, `RNG_RandLoHi` at 0x0058E05C) draws it too, for its gold piles, which are items (D6).
+  (fn:QUESTS_GetSeed@0x005438B0, fn:sub_0058DF20_A5Q6_BaalDeath@0x0058DF20,
+  [items/0010 § Plan 0038 batch S2c](../../findings/items/0010-quest-drops.md#plan-0038-batch-s2c-2026-10-16) qd 49)
 - [C] No scripted drop's item creation steps the quest seed; the created items draw the game seed and their own seeds
   like every item. (run:2026-10-16-quest-drops, fn:sub_00559A30_DropItemAtUnit@0x00559A30)
 
@@ -745,12 +940,14 @@ sequenceDiagram
   [items/tc § C](tc.md#c-level-upgrade--tc_dropbyindex-and-tc_getbyindex). [C] (fn:MONSTER_DropItems@0x005A6600,
   run:2026-10-16-quest-drops)
 - Creation records for scripted items: an item code (`source+0xB8`), a quality (0, 2 or 7 from the script) and the
-  source's ilvl; for given items a code, an ilvl (fixed, or clvl) and a quality. [I] (fn:sub_00559A30_DropItemAtUnit@0x00559A30,
-  fn:QUESTS_GiveItem@0x005466B0)
+  source's ilvl. [I] (fn:sub_00559A30_DropItemAtUnit@0x00559A30)
+- For given items: a code, an ilvl (fixed per difficulty, or clvl for 0) and the asked quality, which a base with
+  Misc `unique` 1 turns into 7 (§ E). [C] (fn:QUESTS_GiveItem@0x005466B0, run:2026-10-27-sweep-quest-npc)
 - For the services: a new rare of the same base (imbue), a copy with `n` sockets (Larzuk) or a copy with flag
   `0x1000000` and a name (Anya), each identified, and the service's quest word moved from bit 1 to bit 0.
   [C] (fn:NPC_MenuAction@0x00579D60, run:2026-10-16-quest-drops) The socketed and personalized copies are also
-  repaired; the imbued item is not (F0). [C] (fn:NPC_MenuAction@0x00579D60, run:2026-10-19-economy2)
+  repaired; the imbued item only when `ItemCreate` returns it identified (F0). [C] (fn:NPC_MenuAction@0x00579D60,
+  run:2026-10-19-economy2, run:2026-10-27-sweep-quest-npc)
 - The quest seed, advanced by one step per pick. [C] (fn:QUESTS_GetSeed@0x005438B0, run:2026-10-16-quest-drops)
 
 ## Worked example
@@ -843,7 +1040,13 @@ logs of run:2026-10-16-quest-drops (`workspace/logs/quests-s3-<seed>-….log`, p
   does not draw the quest seed. Seed it from one game-seed step at game creation and keep it across the game. [C]
   (fn:QUESTS_InitGame@0x00545D80, run:2026-10-16-quest-drops)
 - **Larzuk draws even when the bound is 1.** A magic item with `max` 1 still costs one item-seed step (`RangeB(…, 1)`
-  steps for `n` ≥ 1). [I] (fn:RNG_RangeB@0x0045C3E0, [rng](../rng/README.md) step 2)
+  steps for `n` ≥ 1): a magic Buckler (`buc`, `max` 1) had its item seed stepped once, `r` 0, `n` 1. [C]
+  (fn:RNG_RangeB@0x0045C3E0, [rng](../rng/README.md) step 2, run:2026-10-27-sweep-quest-npc)
+- **The Khalim chests are not the other chests.** Their gold piles come first and their part after; the Act II chests
+  give the item, then the chest drop, then the gold (E1, E1b). [C] (fn:sub_005B8860_A3Q2_HeartChest@0x005B8860,
+  run:2026-10-27-sweep-quest-items)
+- **The quality a script asks for is not always the item's.** A base with Misc `unique` 1 comes back at 7 (§ E). [C]
+  (0x005574E3–0x00557567, run:2026-10-27-sweep-quest-npc)
 - **The imbue does not reuse the old seeds.** It is a fresh creation on two game-seed steps; only the base, the
   ethereal state and a personal name carry over. [C] (fn:NPC_MenuAction@0x00579D60, run:2026-10-16-quest-drops)
 - **The forge's gem count is per credited player.** Each wave makes `n` gems; the rune is one per game. The hammer is
@@ -863,6 +1066,16 @@ logs of run:2026-10-16-quest-drops (`workspace/logs/quests-s3-<seed>-….log`, p
   53 sessions, 0 mismatches; the shortfalls; and its [owner-played addendum](../../findings/items/experiments.md#owner-played-addendum-same-run-id-2026-10-16-result)
   (7 sessions, 0 mismatches: Mephisto done, the Countess, the Cow King, the Hell Hellforge, the 356 boundary), with
   [items/0010 § Owner-played addendum](../../findings/items/0010-quest-drops.md#owner-played-addendum-run2026-10-16-quest-drops-2026-10-16).
+- Plan 0038 batches in items/0010: [S2c](../../findings/items/0010-quest-drops.md#plan-0038-batch-s2c-2026-10-16)
+  (static: the record layout, the quest-object words, the inline draws, the set sites, the call-graph and
+  `QUESTS_GetSeed` reads, the Anya arrays),
+  [H4a](../../findings/items/0010-quest-drops.md#plan-0038-batch-h4a-run2026-10-21-sweep-monsters-a) (the `boss` classes,
+  run:2026-10-21-sweep-monsters-a), [H6d](../../findings/items/0010-quest-drops.md#plan-0038-batch-h6d-2026-10-17) (the
+  pet and hireling killers, Warriv's report, Andariel in four game states, Baal fresh and done and his gold,
+  run:2026-10-17-sweep-quest-b6), [H6e2](../../findings/items/0010-quest-drops.md#plan-0038-batch-h6e2-run2026-10-27-sweep-quest-items)
+  (object event 7, the quest chests, the item objects, the gate, run:2026-10-27-sweep-quest-items, with its follow-up)
+  and [H6e1](../../findings/items/0010-quest-drops.md#plan-0038-batch-h6e1-run2026-10-27-sweep-quest-npc) (the service
+  tests and branches, the shared tail, the given items, run:2026-10-27-sweep-quest-npc).
 - [findings/save/0002-quest-words.md](../../findings/save/0002-quest-words.md): the quest record and the reward states.
 - [findings/items/0001-tc-resolution.md](../../findings/items/0001-tc-resolution.md) § 3: the TC choice B6 follows.
 - Tables: [MonStats § Quest TCs](../../tables/MonStats.md#quest-tcs-plan-0032-phase-0), [Misc](../../tables/Misc.md),
@@ -876,12 +1089,15 @@ logs of run:2026-10-16-quest-drops (`workspace/logs/quests-s3-<seed>-….log`, p
 
 ## Open questions
 
-- [L] **Not attempted:** a kill by a hireling, a golem or an `exp`-state caster (B6a); a party (B6b, and the forge's
-  `n` > 1); a classic game (the Cow King's word 26 test, no forge rune); the imbue below clvl 6 and of an ethereal
-  item; Larzuk on a non-magic item; Diablo's and Baal's kills; Baal's gold; Anya's and Qual-Kehk's items; the quest
-  chests' gold (Wirt's gold is run in [items/economy](economy.md#g-gold-payment-caps-piles-and-the-death-loss) G8a);
-  Mephisto's kill-time bit 0 for a fresh killer; the Countess in Hell; the Cow King's two
-  refusals.
+- [L] **Not attempted:** a kill by an `exp`-state caster, or by a non-player with no owner (B6a, B6b; the hireling
+  and the Hydra are run); a party (B6b, the forge's `n` > 1, Baal's gold for several players); a classic forge (no
+  rune) and the Cow King's classic word 26 test; Diablo's kills (an owner-played pair is the route, plan 0038); the
+  Hellforge hammer's boundary in Nightmare; the Countess in Hell; the Cow King's two refusals; the altar (`vip`), the
+  Malus (`hdm`), Akara's `bkd`, `g33` and the council's `qf1`; every quest item's refusal half (a held part or `qf2`,
+  the word tests, a used object); the server's refusal paths of the three services; Malah's `ice` (what moves her
+  quest object to state 4); an identified ethereal item at the service tail; what sets unit `+0xC8` bit 25, and so
+  whether a throwable ever reaches `ItemCanImbue`'s throwable test; why an imbued Wirt's Leg is identified at
+  creation and an imbued `cap` is not.
 - ~~How `sub_0055A090_DropGoldAmount` splits Baal's amount into piles, and whether it draws.~~ Answered in
   [items/economy § G](economy.md#g-gold-payment-caps-piles-and-the-death-loss) (G9): piles of at most 2 000 000 000, at
   most 32, one item creation each; Baal's gold itself stays unrun.
@@ -891,10 +1107,7 @@ logs of run:2026-10-16-quest-drops (`workspace/logs/quests-s3-<seed>-….log`, p
   record's `+0x40` can reach the rare build.~~ Answered: `gold`, a monster's own equipment, no (F1 notes).
 - ~~`0x0055CA40` (the holder test of the quest-item gate) is not read.~~ Answered: the carry-one and quest-duplicate
   test (§ E step notes). All three from [items/0010 § Plan 0039 batch P1b](../../findings/items/0010-quest-drops.md#plan-0039-batch-p1b-2026-10-17).
-- [L] The event-7 route at run time for the quest objects other than the Hellforge (Wirt's gold, classes 26, 122, 131,
-  189, 341, 367, 371, 459–461, 474–476): no breakpoint sat on the thunk or `QUESTS_ObjectEvent`.
-  run:2026-10-19-economy2 operated Wirt's body and logged `A1Q4_WirtGold` 18 times, 10 frames apart
-  ([items/economy](economy.md#g-gold-payment-caps-piles-and-the-death-loss) G8a), but not the route to it, so the
-  route stays open for Wirt too; a run with a breakpoint on the thunk would settle it. The first event-7 queue of
-  classes 122, 371 and 459–461 is not read.
-  ([items/0010 § Open questions](../../findings/items/0010-quest-drops.md#open-questions))
+- [L] The event-7 route at run time for the quest objects other than the Hellforge, Wirt's body (268) and the Kurast
+  sewer lever (367), which run:2026-10-27-sweep-quest-items logged (§ Entry points): classes 26, 122, 131, 189, 341,
+  371, 459–461, 474–476. Who queues each event is not logged, and the first event-7 queue of classes 122, 371 and
+  459–461 is not read. ([items/0010 § Open questions](../../findings/items/0010-quest-drops.md#open-questions))

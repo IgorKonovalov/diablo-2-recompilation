@@ -2,11 +2,11 @@
 from: reverser
 to: spec-writer
 date: 2026-10-27
-status: open
+status: done
 context:
-  - ../plans/0038-inventory/README.md#26-moves-made-by-the-batch-reviews
-  - ../findings/items/0010-quest-drops.md#plan-0038-batch-h6e2-run2026-10-27-sweep-quest-items
-resolution: ""
+  - ../../plans/0038-inventory/README.md#26-moves-made-by-the-batch-reviews
+  - ../../findings/items/0010-quest-drops.md#plan-0038-batch-h6e2-run2026-10-27-sweep-quest-items
+resolution: "Done: objects § L on lane/s38o and its follow-up re-tag on lane/s38q; the items/quest-drops parts and the wiki sentence on lane/s38q [items/quest-drops § E](../../specs/items/quest-drops.md#e-quest-items)"
 ---
 
 **Released by the `lane/h6e2` review (2026-10-27, accept with fixes; plan 0038 log).** Phase 3 re-tag input for items/quest-drops and objects from plan 0038 batch
@@ -29,7 +29,7 @@ Points beyond a tag change:
   anchor (18 piles on another seed), no tag change; objects § L's Wirt's body row is `[I]` there and is raised here. The objects cluster is ready for its Phase 3 re-tag with this entry.
 
 *Annotation (spec-writer, 2026-10-27, `lane/s38o`, plan 0038 Phase 3, objects cluster):* **the objects parts are done.**
-[objects § L](../specs/objects/README.md#l-quest-objects-the-hellforge-and-the-quest-item-objects-named-only): the chests
+[objects § L](../../specs/objects/README.md#l-quest-objects-the-hellforge-and-the-quest-item-objects-named-only): the chests
 row is split in two. The Act II chests (`tr1`, `msf`, `box`) are `[C]` in E1's order (item, chest drop, gold), with the
 held cube refusing `box`; the altar stays `[I]`. The Khalim chests' row states the corrected order (quest seed and gold
 first, then the part per player holding neither the part nor `qf2`, then the chest drop), `[C]` on the heart chest; the
@@ -43,7 +43,7 @@ quest-chest sentence (its "quest item, then chest drop, then gold" is quest-drop
 
 *Annotation (reverser, 2026-10-27, `lane/h6e2f`, the H6e2 follow-up; held for its architect review):* three more
 parts are met under run:2026-10-27-sweep-quest-items (addendum *Follow-up*;
-[items/0010 § H6e2](../findings/items/0010-quest-drops.md#plan-0038-batch-h6e2-run2026-10-27-sweep-quest-items)).
+[items/0010 § H6e2](../../findings/items/0010-quest-drops.md#plan-0038-batch-h6e2-run2026-10-27-sweep-quest-items)).
 **The eye and brain chests** ran in the corrected Khalim order (quest seed, gold 5 and 7 first, then `qey`/`qbr` at
 quality 2, then the chest drop), so objects § L's Khalim row can be `[C]` for all three chests, the held-part refusal
 staying `[I]`; quest-drops' E1 correction likewise. **The tome** (`bbb`) was created on the unchanged quest seed with
@@ -53,7 +53,7 @@ is answered in part: listed and opened once its room is active (`[C]`), which co
 Ledger: `bbb` shortfall → raised in part.
 
 *Annotation (architect, 2026-10-27, `lane/h6e2f` review: accept with fixes; plan 0038 log):* the follow-up's parts are
-released. **objects needs a small follow-up re-tag** of [§ L](../specs/objects/README.md#l-quest-objects-the-hellforge-and-the-quest-item-objects-named-only):
+released. **objects needs a small follow-up re-tag** of [§ L](../../specs/objects/README.md#l-quest-objects-the-hellforge-and-the-quest-item-objects-named-only):
 the Khalim chests' row becomes `[C]` for all three chests (heart 8, eye 5, brain 7 gold piles first, each the count on
 its logged seed; `fn:sub_005B8940_A3Q2_EyeChest@0x005B8940`, `fn:sub_005B8A20_A3Q2_BrainChest@0x005B8A20`), the
 held-part refusal staying `[I]`; the item-objects row adds `bbb` to `[C]` (the tome, word 17 clear, one item on the
@@ -62,3 +62,13 @@ override), the word-17 refusal and `hdm` staying `[I]`. Anchor run:2026-10-27-sw
 items/quest-drops' Phase 3 takes the same Khalim and `bbb` parts into § E/E1. The brain chest's listing is not a spec
 statement; if one is written, its `[C]` is "listed and opened with its room active in both copies" (the review scoped
 the lane's "once its room is active"), and which copy the listing follows is `[I]`.
+
+*Annotation (spec-writer, 2026-10-27, `lane/s38q`, plan 0038 Phase 3, items/quest-drops cluster and the objects
+follow-up):* items/quest-drops § E: E1 for the Act II chests `[C]` (the altar `[I]`) and a new E1b for the Khalim
+chests `[C]` on all three (gold 8, 5, 7 first), the held-part refusal `[I]`; the gate wording "holding neither the part
+nor `qf2`"; § Entry points' event-7 row `[C]` for 268 and 367; the quality column is the asked quality, `ass`, `bks`,
+`bbb`, `j34`, `mss` created at 7 (the cause `[I]` for `ass`, `bks`, `bbb`); Wirt's gold's second anchor; `bbb` `[C]`
+for the creation, its refusal `[I]`. [objects § L](../../specs/objects/README.md#l-quest-objects-the-hellforge-and-the-quest-item-objects-named-only):
+the Khalim row `[C]` for all three chests, the held-part refusal `[I]`; `bbb` joins `leg` and `bks` in the item-objects
+row's `[C]`, its 7 as the override, the word-17 refusal and `hdm` `[I]`. The brain chest's listing is not stated in
+either spec. wiki/items-other-paths' quest-chest sentence now gives both orders.

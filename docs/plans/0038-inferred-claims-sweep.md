@@ -3308,7 +3308,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Backlog:** review request
     [2026-10-25-reverser-architect-review-lane-h4a-plan-0038-batch-h4a](../backlog/archive/2026-10-25-reverser-architect-review-lane-h4a-plan-0038-batch-h4a.md);
     spec-writer entry
-    [2026-10-25-reverser-spec-writer-h4a-monsters-a-raises-and-the-spawn-48](../backlog/2026-10-25-reverser-spec-writer-h4a-monsters-a-raises-and-the-spawn-48.md)
+    [2026-10-25-reverser-spec-writer-h4a-monsters-a-raises-and-the-spawn-48](../backlog/archive/2026-10-25-reverser-spec-writer-h4a-monsters-a-raises-and-the-spawn-48.md)
     (to be released with the review).
   - **Next:** architect review of `lane/h4a`.
   - **Usage:** this resume about 1 h 50 min, about 110 tool calls; with the earlier parts about 300 min. (Measured by
@@ -3340,7 +3340,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Ledger:** raised 15, raised in part 9, shortfall 8. Totals unchanged and recounted against `main` `9e221ed`:
     static 567, harness 526, c-emu 0, blocked 414, deferred 2, raised 17: 1 526.
   - **Backlog:** review request closed (archive); spec-writer entry
-    [2026-10-25-reverser-spec-writer-h4a-monsters-a-raises-and-the-spawn-48](../backlog/2026-10-25-reverser-spec-writer-h4a-monsters-a-raises-and-the-spawn-48.md)
+    [2026-10-25-reverser-spec-writer-h4a-monsters-a-raises-and-the-spawn-48](../backlog/archive/2026-10-25-reverser-spec-writer-h4a-monsters-a-raises-and-the-spawn-48.md)
     released with the review's changes.
   - **Next:** the Phase 3 re-tag of the H4a rows (spec-writer); the next harness batch per the run order.
 - **2026-10-25, reverser, `lane/h5d` (batch H5d, `collision`, 17 statements): paused at the owner's request (usage
@@ -4308,7 +4308,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Backlog:** review request
     [2026-10-27-reverser-architect-review-lane-h6e2-plan-0038-batch-h6e2](../backlog/archive/2026-10-27-reverser-architect-review-lane-h6e2-plan-0038-batch-h6e2.md)
     filed; spec-writer entry
-    [2026-10-27-reverser-spec-writer-h6e2-quest-items-raises-and-the-khalim-chest](../backlog/2026-10-27-reverser-spec-writer-h6e2-quest-items-raises-and-the-khalim-chest.md)
+    [2026-10-27-reverser-spec-writer-h6e2-quest-items-raises-and-the-khalim-chest](../backlog/archive/2026-10-27-reverser-spec-writer-h6e2-quest-items-raises-and-the-khalim-chest.md)
     filed, held until the review. Slot 1 stopped, saves restored (empty, no aside).
   - **Next:** the `lane/h6e2` review; then H6e1.
 - **2026-10-27 — `lane/rk` (reverser, static: objdump, `tools/xrefscan.py`, the kept skills logs rescanned under
@@ -4408,7 +4408,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     updated). items/quest-drops still waits on H6e1.
   - **Bookkeeping:** inventory § 2.6 H6e2 block marked accepted with the ruling, § 5 "(done)"; review-fixes Seen lines:
     reverser 6 and 13. The review request closed; the
-    [spec-writer entry](../backlog/2026-10-27-reverser-spec-writer-h6e2-quest-items-raises-and-the-khalim-chest.md)
+    [spec-writer entry](../backlog/archive/2026-10-27-reverser-spec-writer-h6e2-quest-items-raises-and-the-khalim-chest.md)
     released (with the `bks` and Wirt points). Ledger: both lane rows filled (usage from the orchestrator: 331 873 tokens,
     178 tools, 39 min to checkpoint 1; 307 855 tokens, 200 tools, 107 min for the resume; accept with fixes, 3: misread 1,
     tool not kept 1, other 1, on the resume row); the review row added, usage "—".
@@ -4595,7 +4595,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Backlog:** closed the [H5b spec updates](../backlog/archive/2026-10-20-reverser-spec-writer-h5b-objects-spec-updates.md),
     the [S4b corrections](../backlog/archive/2026-10-16-reverser-spec-writer-plan-0038-s4b-corrections-for-phase.md) and the
     [S2a tc 64](../backlog/archive/2026-10-16-architect-reverser+spec-writer-plan-0038-s2a-tc-64-and.md) entries; annotated the
-    [H6e2 entry](../backlog/2026-10-27-reverser-spec-writer-h6e2-quest-items-raises-and-the-khalim-chest.md) (objects done,
+    [H6e2 entry](../backlog/archive/2026-10-27-reverser-spec-writer-h6e2-quest-items-raises-and-the-khalim-chest.md) (objects done,
     quest-drops waits for H6e1); filed the [counts entry](../backlog/archive/2026-10-27-spec-writer-architect-s38o-objects-counts-for-the-research-map.md)
     and the [review request](../backlog/archive/2026-10-27-spec-writer-architect-s38o-review-objects-phase-3.md). Ledger row
     added, usage "—".
@@ -4808,7 +4808,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Backlog:** review request
     [2026-10-27-reverser-architect-review-lane-h6e1-plan-0038-batch-h6e1](../backlog/archive/2026-10-27-reverser-architect-review-lane-h6e1-plan-0038-batch-h6e1.md)
     filed; spec-writer entry
-    [2026-10-27-reverser-spec-writer-h6e1-quest-npc-raises-and-the-given-item](../backlog/2026-10-27-reverser-spec-writer-h6e1-quest-npc-raises-and-the-given-item.md)
+    [2026-10-27-reverser-spec-writer-h6e1-quest-npc-raises-and-the-given-item](../backlog/archive/2026-10-27-reverser-spec-writer-h6e1-quest-npc-raises-and-the-given-item.md)
     filed, held until the review. Slot 1 stopped, saves restored (empty, no aside).
   - **Next:** the `lane/h6e1` review; items/quest-drops is then ready for its Phase 3 re-tag.
 - **2026-10-27 — `lane/h6e1` review (architect): H6e1 (`quest-npc`) accept with fixes (7).** `main` merged into the
@@ -4870,7 +4870,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     part 11, shortfall 0: 22. S2c's quest-drops tally: raised 13, raised in part 2, reclassified 1.
   - **Readiness.** **items/quest-drops is ready for its Phase 3 re-tag**: S2c, H6d, H6e2 and H6e1 are all accepted, and
     no other batch holds one of its rows. Research-map row updated. Spec-writer entry
-    [2026-10-27-reverser-spec-writer-h6e1-quest-npc-raises-and-the-given-item](../backlog/2026-10-27-reverser-spec-writer-h6e1-quest-npc-raises-and-the-given-item.md)
+    [2026-10-27-reverser-spec-writer-h6e1-quest-npc-raises-and-the-given-item](../backlog/archive/2026-10-27-reverser-spec-writer-h6e1-quest-npc-raises-and-the-given-item.md)
     released, and the review request closed. The inventory § 5 marks H6e1 done.
 - **2026-10-27 — `lane/a72` (archivist, no slot, no Ghidra, no harness, from `main` `92b811df`): the d2s legacy
   builder.** Work of the reverser's [builder entry](../backlog/archive/2026-10-27-reverser-archivist-d2s-legacy-layouts-for-a-builder.md),
@@ -5012,3 +5012,36 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     refusal `[I]`) and the item-objects row (`bbb` joins `leg` and `bks` as `[C]`, its quality 7 `[I]`; `hdm` stays
     `[I]`). The brain chest's listing is not stated in the objects spec. The spec-writer H6e2 entry is annotated.
     Request closed ([archive](../backlog/archive/2026-10-27-reverser-architect-h6e2f-review.md)); ledger rows filled.
+- **2026-10-27 — Phase 3, the items/quest-drops cluster and the objects § L follow-up (spec-writer, `lane/s38q`,
+  from `main` `fd841611`).** Batches S2c, H6d, H6e2 (with `lane/h6e2f`) and H6e1, and H4a's qd 48, all accepted; each
+  restated statement checked against its section of
+  [items/0010](../findings/items/0010-quest-drops.md) (§ Plan 0038 batch S2c, H4a, H6d, H6e2, H6e1) and the reviews'
+  rulings.
+  - **items/quest-drops** {C 86, I 86, L 2} → **{C 159, I 76, L 2}** (recounted with the gate's tag reader).
+    Raised: S2c qd 7, 9, 14, 19, 20, 28, 31, 37, 38, 41, 47, 49 and qd 8's map and its correction (objects 28 and 30
+    store 16 and 29), qd 21's monster and object sources; H6d qd 18, 22, 27 and the `[C]` halves of 11 (the hireling
+    and the Hydra, B7, the death event's owner), 13 (the records reached, Baal's order) and 16 (Baal); H4a qd 48;
+    H6e2 qd 1 (event 7 for 268 and 367), the quest-item rows' creations, E1 for `box`, `tr1`, `msf`, a new E1b for the
+    three Khalim chests (gold first), qd 34's two difficulty cases, qd 35's pickup cases; H6e1's 11 raised rows and the
+    `[C]` halves of its 11 in part (the given items, the service tests' refusals in code order and the throwable skip,
+    Larzuk's branches, the imbue's `ilvl > 5` bound and ethereal flag, the shared tail, the imbue repair when
+    identified). The quality column is the asked quality (seven bases come back 7). Kept `[I]` as the ledgers rule:
+    the `exp`-state branch, Diablo, the Nightmare forge, the H6e2 shortfalls and refusal halves, Malah's `ice`, the
+    server refusal lines (the client refuses first), the d-2c, d-0032 and d-none rows.
+  - **objects § L:** the Khalim chests' row `[C]` for all three chests (heart 8, eye 5, brain 7 piles first), the
+    held-part refusal `[I]`; the item-objects row adds `bbb` to `[C]` (word 17 clear, one item, no draw), its 7 as the
+    override, the word-17 refusal and `hdm` `[I]`. Counts unchanged {C 189, I 62, L 4}.
+  - **items/economy F7:** the imbue's repair qualified (the identified leg repaired, the unidentified `cap` not), as
+    the H6e1 entry asked; counts unchanged.
+  - **Wiki:** [items-other-paths](../wiki/items-other-paths.md) quest section refreshed, `based_on` quest-drops
+    2026-10-27; [objects](../wiki/objects.md) and [economy](../wiki/economy.md) text refreshed (dates unchanged).
+  - **Backlog:** closed the [H6d](../backlog/archive/2026-10-17-reverser-spec-writer-plan-0038-h6d-for-the-phase.md),
+    [H4a](../backlog/archive/2026-10-25-reverser-spec-writer-h4a-monsters-a-raises-and-the-spawn-48.md),
+    [H6e1](../backlog/archive/2026-10-27-reverser-spec-writer-h6e1-quest-npc-raises-and-the-given-item.md) and
+    [H6e2](../backlog/archive/2026-10-27-reverser-spec-writer-h6e2-quest-items-raises-and-the-khalim-chest.md) entries;
+    annotated the [S2c entry](../backlog/2026-10-16-reverser-spec-writer-plan-0038-s2c-corrections-for-phase.md) ((b),
+    (c) done; (a), (d)–(g) wait for cube, vendors, sockets-runewords); filed the
+    [counts entry](../backlog/2026-10-27-spec-writer-architect-s38q-quest-drops-counts-for-the-research-map.md) and the
+    [review request](../backlog/2026-10-27-spec-writer-architect-s38q-review-quest-drops-phase-3.md). Ledger row
+    added, usage "—".
+  - **Next:** architect review of `lane/s38q`.
