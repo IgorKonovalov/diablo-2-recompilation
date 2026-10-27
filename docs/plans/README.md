@@ -84,7 +84,7 @@ clusters as their batches land; 0045·P3 and P4; 0046·P2, P3 and P4.
 
 | Lane | Queue, in order | Notes |
 |---|---|---|
-| **architect** | `lane/h4a` and `lane/p45h` as they land → each phase below in landing order; re-draft 0052 at the 0045·P3 review | Each review fills the ledger row. |
+| **architect** | `lane/h4a` and `lane/p45h` as they land → each phase below in landing order; re-draft 0052 at the 0045·P3 review and propose what follows it (see the 2026-10-27 owner decision below) | Each review fills the ledger row. |
 | **archivist** (no slots, no Ghidra) | **0051·P0a → 0051·P0b** (on approval) → 0050·P0 (after 0045·P2's acceptance) → 0052·P0 (after its gate) | 0051·P0 and 0050·P0 edit the same table docs: merge one at a time, 0051's first. |
 | **reverser, static lane A** (Ghidra 1) | **0051·P1a** (no Ghidra, on approval) → 0050·P1.1 → 0050·P1.2 → 0050·P1.3 → 0052·P1 batches | 0050·P1 is phase (4)'s critical path. |
 | **reverser, static lane B** (Ghidra 2) | **0051·P1b** (optional, on approval) → 0050·P1b (no Ghidra, beside P1.x) → 0052·P1 batches beside lane A | Lane B may also take a P1 batch of 0050 that lane A has not started, one batch per lane. |
@@ -108,6 +108,10 @@ phase (5)'s path and 0046 gates nothing (ADR-0020).
 - **Backlog:** the plan 0042 owner-play entry closed as dropped (0051 Phase 2).
 - **The two-client tail** (the plan 0044 shortfalls): optional and deferred; it stays in the queue as optional.
 - **Harness:** 0050·P2 runs before 0046·P2.
+- **Planning after 0052 (owner, 2026-10-27):** no new plans before then. At the review of 0045·P3, when it re-drafts
+  0052, the architect also proposes what follows it. Phase (5) is the last phase of ADR-0014, so anything beyond the
+  remaining 0038/0046 tails needs a scope ADR for the owner. The aim is to have that ready before 0052's harness phase
+  starts, so the static lanes and the archivist do not go idle while 0052·P2 waits on 0050·P3.
 
 ## Run order (unattended queue, set 2026-10-20, plans 0038–0049)
 
