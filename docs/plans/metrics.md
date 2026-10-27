@@ -377,6 +377,8 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-10-27 | `lane/p50e` review | 0050 P2 | architect-review | 211 324 | 91 | 19 | — (static, objdump, no Ghidra, no harness) | gave accept with fixes | — (on the lane row) |
 | 2026-10-27 | `lane/a4t` | 0050 P2 (the 134 `anim-*` recipe bases in `tools/test_d2s.py`) | archivist | 75 864 | 18 | 5 | — (scratch builds, no Ghidra, no harness) | accept | 0 |
 | 2026-10-27 | `lane/a4t` review | 0050 P2 | architect-review | 57 215 | 14 | 2 | — (scratch builds, no Ghidra, no harness) | gave accept | — (on the lane row) |
+| 2026-10-27 | `lane/h6c` | 0038 H6c | reverser-harness | 606 857 | 273 | 129 | slot 1 (8 launches), no Ghidra | accept with fixes (rulings: vend 2's rescan of run:2026-10-20-two-clients legitimate; vendors 29 and 32 to d-2c; the built states neutral inputs; the `vendors.py` branch modelling once narrowed; the `larz` session kept for its build and leave; vendors 26 (S2c) raised; items/vendors Phase 3 ready) | 6: misread 2, omission 2, stale cross-reference 1, other 1 (the skip branch open to any caller; the gold piles' cause; the clvl-30 save's threshold; vend 14's "never" without the `+0x21` read; totals against `ffa5b957` for `a105ae13`; `PlayerSetInteract`'s flag guard) |
+| 2026-10-27 | `lane/h6c` review | 0038 H6c | architect-review | 179 463 | 84 | 16 | — (static, objdump, no Ghidra, no harness) | gave accept with fixes | — (on the lane row) |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not

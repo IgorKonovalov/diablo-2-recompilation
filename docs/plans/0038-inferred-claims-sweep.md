@@ -5441,3 +5441,96 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Bookkeeping.** Review-fixes Seen lines: spec-writer 2 and 9. The review request and the counts entry closed; the
     S2c entry stays open for (d) (vendors, H6c). Ledger: the lane row filled (usage from the orchestrator: 235 263
     tokens, 78 tools, 23 min; accept with fixes, 4: overclaim 2, wrong anchor 2); the review row added, usage "—".
+- **2026-10-27 — H6c (`vendors`) filed (reverser, `lane/h6c`, harness slot 1, from `main` `ad8b8cd0`; `main`
+  `a105ae13` merged at `e21e840a`; the entry named `ffa5b957`, corrected at the review).** Run id run:2026-10-27-sweep-vendors, record in
+  [items experiments](../findings/items/experiments.md#run2026-10-27-sweep-vendors), evidence in
+  [items/0009 § Plan 0038 batch H6c](../findings/items/0009-vendors.md#plan-0038-batch-h6c-run2026-10-27-sweep-vendors).
+  - **Built:** logger `tools/gdb/h6c.gdb` (`vendors.gdb`'s files) + `tools/gdb/h6c.py` (the town-leave call site, the
+    level-up note, the interaction set and clear, the hireling build's caller, each stock item's tab, placement and
+    cell, the inventories at builds, opens and windows, the creation record at IC0, purchases and sales), session driver
+    `tools/h6c_sessions.py` (H6b's loop; `BUY:`/`GBUY` tokens resolved from the log for `economy_sessions.py act`),
+    checker `tools/sweep_h6c.py logs|pairs|hb|fails|static`, a `tools/vendors.py` branch (an `ITEMS_CreateForStore`
+    call outside a build, a gold pile at 0x0055A18D, counted and skipped; run:2026-10-15-vendors unchanged), four
+    recipes `tools/d2s_recipes/vend-h6c-*.json` (rows in `tools/test_d2s.py`).
+  - **Sessions:** 8 launches, 6 kept (Normal clvl 1 in Act I: gamble windows, sales, purchases, a reopen, the walk out;
+    Normal clvl 30 from Act IV: Drognan's reopens around an act change, a level-up and a town entry; Hell clvl 99 in
+    Act V: Larzuk, Anya, Malah, Asheara at ilvl 104, gamble windows, a sale and purchases; two Larzuk rebuild loops,
+    one ended by a death in the Frigid Highlands; Nightmare clvl 19: six Fara builds at ilvl 24), 2 development logs.
+    Lessons: the tab of a store page is page + 1 (the trade window's labels); the Act IV start and H4a's fixed waypoint
+    click reach Lut Gholein reliably where the Lut Gholein start did not; an in-act waypoint in Hell without Energy
+    Shield killed the character at arrival; a stale rebuild needs a pause of 240 s before the act change.
+  - **Check:** `vendors.py check` over the 6 kept logs: 17 stock builds, 40 gamble windows, 1 646 creations through
+    the item chain, **0 mismatches**; `sweep_h6c.py logs`: **9 616 counted checks, 0 bad**.
+  - **Ledger (13): raised 7, raised in part 2, shortfall 4** (inventory § 2.6 H6c block). Corrections and refinements:
+    Asheara's hirelings are built at the interaction start, so the trade-first order is never taken (vend 14);
+    `PlayerInteractEnd` runs at a player unit's free and reaches `NpcStorePlayerLeave` only with an interaction open,
+    met in run:2026-10-20-two-clients's kept logs (vend 2); the 32-failure test sits only after normal copies and
+    permanent items (vend 5, at most 27 failures in 17 builds). Proposed d-2c: vendors 29 and 32. No class move filed;
+    totals unchanged: static 567, harness 513, c-emu 0, blocked 427, deferred 2, raised 17: 1 526.
+  - **S2c pieces:** vend 22 (tab and cell) met, its cell search `[I]`; vend 26 (`+0x18`, `+0x28`) met, proposed raised.
+    The S2c harness-pieces entry is annotated: every piece has run.
+  - **Symbols (rule 14), I → C:** `VENDOR_IsPermanent`, `sub_00576F50_StoreItemSold`, `sub_0062E880_ItemStorePage`;
+    new `sub_00554120_PlayerSetInteract`, `sub_00554190_PlayerClearInteract` (I).
+  - **Backlog:** review request
+    [2026-10-27-reverser-architect-review-lane-h6c-plan-0038-batch-h6c](../backlog/archive/2026-10-27-reverser-architect-review-lane-h6c-plan-0038-batch-h6c.md)
+    filed. Slot 1 stopped, saves restored (empty, no aside).
+  - **Next:** the `lane/h6c` review; items/vendors is then ready for its Phase 3 re-tag (S2c and H6c).
+- **2026-10-27 — `lane/h6c` review (architect): accept with fixes (6).** `main` `a105ae13` was already merged into
+  the lane (`e21e840a`); the merge was empty. Static review: objdump on the pinned `game.exe` (`631066c1…`), no Ghidra,
+  no harness.
+  - **Checked.** `manifest-run.sha256` (23 lines), `manifest-shots.sha256` (62) and `dev/manifest-dev.sha256` (25, not
+    listing itself) pass; the ten procedure commands, rerun under `systemd-run --user --scope -p MemoryMax=4G`, give
+    byte-identical outputs: `vendors.py check` 0 mismatches (17 builds, 40 windows, 1 646 creations), `sweep_h6c.py
+    logs` 9 616 checks 0 bad, the run:2026-10-15-vendors regression 0 mismatches. run:2026-10-20-two-clients's
+    manifest passes; its host logs hold 7 `PIEND` (return 0x005555CB) and 2 `PLEAVE` (0x00555562): Kashya's (class
+    150, `MLV`) and Akara's (148, `BS0`). objdump: `PlayerInteractEnd` 0x00555500–0x00555569 (the `+0x6C` test, the unit
+    found by `+0x68`/`+0x64`, type 1 → `NpcStorePlayerLeave` at 0x0055555D, type 2 → 0x00585550); the 32-failure tests
+    at 0x00576AA3 and 0x00576BE5 and none in 0x00576B25–0x00576B4D; `NpcInteractStart` → `HIRE_SendList` at 0x00572CFF,
+    whose `+0x21` test at 0x005767D5 guards the build 0x005767EB; `NPC_OpenStore`'s 0x00578BD3 test and the class list
+    (150, 515, 198, 252) before 0x00578BFF; `NpcInteractRemove`'s 0x00572FAF; `GambleEnsure`'s id scan
+    0x00578AFC–0x00578B18; `VENDOR_IsPermanent`'s difficulty clause 0x00576EF0–0x00576F10 (`hp4`, `hp5`, `mp4`, `mp5`);
+    `PlayerSetInteract`/`ClearInteract` 0x00554120/0x00554190; `ItemStorePage` 0x0062E880; the gold call 0x0055A188.
+    `vendors.py lists`: `hp5` in no permanent list, so the Hell refusal separates the clause. The four `vend-h6c-*`
+    recipes have their `RECIPE_BASES` rows and build to the recorded hashes; `test_d2s.py`'s one failure is `main`'s
+    134 `anim-*` recipes without rows (the archivist lane's fix, not this one's).
+  - **Fixes.** (1) other (tool): `tools/vendors.py`'s new branch skipped every `ITEMS_CreateForStore` call outside a
+    build whatever its caller; narrowed to the return 0x0055A18D (`sub_0055A090_DropGoldAmount`), any other caller
+    staying a mismatch (`a0ec05e4…`; both checks' outputs unchanged, `workspace/logs/h6c/review/manifest-review.sha256`
+    `4ac7f16e…`). (2) misread: "a gold pile dropped when a sale's gold passes the level cap" named a cause for the 4
+    piles that the logs do not show (one at the `larz` death's arrival, two after refused sales, one after a copied
+    sale); the cause struck, the call site kept. (3) misread: `VendH6cLvl` was "the experience one point short of a
+    threshold"; it is clvl 30 one point under clvl 32's threshold and over clvl 31's, so vend 18's level-up is one event
+    of two levels (one `LUN`, level 32); written into vend 18 and the run record, with the note queue's read
+    (0x00536850–0x005368DF) that the level gained is not read. (4) omission (rule 4): vend 14's "never taken" had no
+    read beyond the six runs; the writes of store `+0x21` added (only 0x005770C5, rebuilt at once at 0x005770C9;
+    `NPCSTORE_Reset` writes `+0x20` alone, 0x00536D24), `[I]`, in the ledger and the body's correction. (5) stale
+    cross-reference (rule 3): the totals were said to be against `main` `ffa5b957`; the lane had merged `a105ae13`
+    (the numbers are the same). (6) omission: `PlayerSetInteract`'s row left out that it writes only while `+0x6C` is
+    0 (0x00554133). Also vend 5's refinement gained the read that both tests jump to the epilogue 0x00576B74.
+  - **Rulings.** (a) **vend 2's raise stands.** Rescanning a reviewed run's kept logs (plan 0044, done), with its
+    manifest checked first and the lines its own logger wrote (`PIEND`, `PLEAVE`), is a legitimate source: the class
+    of the row was b because no vendor log of a player's free with an interaction open existed in H6c's plan, not
+    because only a new run could carry it. The row stays counted as H6c; the raise rests on the two `PLEAVE` and this
+    run's `PIEND` without one; the flag test between them stays `[I]`. (b) **vendors 29 and 32 move to d-2c.** With
+    one player every close and menu Escape logs `NIR` and `ICLR`, and the skip at 0x00572FAF needs a second entry in
+    the NPC's list. A d-edit route (a gamble action sent with the window open) would be a forged client, not stock
+    behaviour. (c) **The built states stand as ADR-0013 § Neutral inputs**, backing only the code that reads them;
+    the clvl-30 save's state is not one a character reaches by play, and vend 18 says so (fix 3). (d) **The
+    `vendors.py` branch is modelling, once narrowed** (fix 1): the skipped call is a different caller of the same
+    function, identified by its return address, outside the store model's scope like the `ICB` lines it already
+    skips; the regression is unchanged and the 4 calls are counted in `check-vendors.txt`. (e) **The `larz` session is
+    kept for its Larzuk build and the in-act leave only**: both precede the death, no ledger line uses a later line,
+    and the gold pile its death produced is one of the 4 skipped calls. (f) **vend 14's correction and vend 5's
+    refinement stand** as filed, with fix 4 and the epilogue read. (g) The S2c pieces: vendors 26 is raised (it stays
+    counted as S2c; the S2c tally in items/0009 now 9 raised, 6 in part); vendors 22 stays raised in part with the
+    cell search as its remainder.
+  - **Ledger: raised 7, raised in part 2, reclassified 2, shortfall 2** (13). Totals recounted once against `main`
+    `a105ae13`: **static 567, harness 511, c-emu awaiting a batch 0, blocked 429** (d-none 300, d-edit 73, d-sim 28,
+    d-2c 10, d-owner 10, d-0032 8), **deferred 2, raised 17: 1 526** (inventory § 2.6 H6c block, § 3, § 5).
+  - **Phase 3 ready:** items/vendors (S2c and H6c, both accepted). The spec-writer entry
+    [2026-10-27-architect-spec-writer-h6c-items-vendors-phase-3-retag](../backlog/2026-10-27-architect-spec-writer-h6c-items-vendors-phase-3-retag.md)
+    filed (no H6c entry existed); the research map's items/vendors row says so.
+  - **Bookkeeping.** Review-fixes Seen lines: reverser 3, 4 and 9. The review request and the S2c
+    harness-pieces entry closed (every piece has run). Ledger: the lane row filled (usage from the orchestrator:
+    606 857 tokens, 273 tools, 129 min; accept with fixes, 6: misread 2, omission 2, stale cross-reference 1, other 1);
+    the review row added, usage "—".

@@ -508,6 +508,10 @@ RECIPE_BASES = {
     "anim-sor-t2-gh2": (os.path.join(P0005, "smpsor.d2s"), "4a2645f19c32669ce2a0fa1d28e252f3e1ff9fd6301537c3f68ba9f9182b46ff"),  # run:2026-10-27-anim gh2/AnimSorH2
     "anim-sor-t2-gh3": (os.path.join(P0005, "smpsor.d2s"), "816bd267c30957e647091a3442b75a4e748d2ec9279d6a0c7192cb2ce3be7917"),  # run:2026-10-27-anim gh3/AnimSorL2
     "anim-sor-t2-gh4": (os.path.join(P0005, "smpsor.d2s"), "3a74647031c9c34de079b84a1fc2d5e988af02425c06961901d37dd6a37e67c0"),  # run:2026-10-27-anim gh4/AnimSorM2
+    "vend-h6c-low": (BASE_X, "b0334a6eb3f6ae25c6dfd1b08fb79e16b144e970701d953123f26a3a3419161c"),  # run:2026-10-27-sweep-vendors
+    "vend-h6c-lvl": (BASE_X, "45223841c311618199df65291cccab69a9be2f6ea74c247c4aa79f34f14522a0"),
+    "vend-h6c-h99e": (BASE_X, "b7e77e44c6c5ec6bf235a0a2a52ef46b3e3a50afd19c5310cec44bf87feed8ea"),
+    "vend-h6c-n19": (BASE_X, "1a48c28694629c582dc256f3a3f6e3eeb0c28057d41a003ebd42c1e3a952ebe0"),
 }
 
 _TABLES = []
