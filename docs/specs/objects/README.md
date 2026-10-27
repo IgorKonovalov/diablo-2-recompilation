@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, data/excel, drlg/preset, drlg/collision]
 consumed_by: [monsters/spawn, drlg/collision, items/tc, items/quality, items/quest-drops, chain]
-tags: {C: 189, I: 62, L: 4}
+tags: {C: 190, I: 63, L: 4}
 updated: 2026-10-27
 ---
 
@@ -652,6 +652,10 @@ G4. SUnitPathCreate(unit), after ServerInit:                      [C] (fn:sub_00
 - G2. [C] The animation draw touches only the object's own unit seed. Any later mode change (a state `InitFn`, the
   `PreOperate` roll, the operate) makes it again. (fn:UNIT_AnimInit@0x00624390, tbl:Objects.txt:Sync,
   tbl:Objects.txt:FrameDelta0, run:2026-10-15-objects)
+- G2. [C] **The draw's value is the object's animation rate**: `+0x4C = clamp(FrameDelta − (FrameDelta >> 4) + draw,
+  0, 0x7FFF)` when `Sync` is 0, `FrameDelta` otherwise, with `+0x44 = Start << 8` and `+0x48 = FrameCnt` (725 logged
+  starts, 490 with a draw). No server code reads the rate back ([anim/timing § C](../anim/timing.md#c-the-mode-start)).
+  (fn:UNIT_AnimInit@0x00624390, 0x00624563, run:2026-10-27-anim)
 - G4. [C] Every object mark of run:2026-10-15-objects is predicted this way (*Inputs and oracles*), by mask `0x400`
   1813, `0x404` 13, `0x806` 7 and `0x8000` 2. (fn:UNIT_GetCollMask@0x006209D0, run:2026-10-15-objects)
 - G4. [C] **A door with neither `BlocksVis` nor `BlockMissile` marks `0x400`:** 60 marks of classes 13 and 14 (`IsDoor`
@@ -862,6 +866,11 @@ J3. ObjectChestDrop(object, player, q):                           [C] the drop's
   chests (DS1 580), all with forced quality 4, which repeated the drop until one item was magic or better (4, 4 and 6
   drops). (fn:OBJOP_Chest@0x00585F60, fn:sub_0062A0F0_ItemQualityMagicPlus@0x0062A0F0, fn:UNIT_GetSparkle@0x005540D0,
   run:2026-10-15-objects)
+- J2. [I] **Mode 1's end.** The chest's mode 1 queues object event 1 at `frame + (FrameCnt1 >> 8) + 1` (the loader
+  stores `FrameCnt` `<< 8`); event 1 sets the mode to 2 when the object is still in mode 1 and the row has `Mode2`,
+  without `UNIT_SetMode`, so with no animation start and no second unit-seed draw, and unmarks the footprint when
+  `HasCollision2` is 0 ([anim/timing § I](../anim/timing.md#i3-objects), I3). (fn:OBJOP_Chest@0x00585F60,
+  fn:sub_00581490_ObjEvOperateEnd@0x00581490, 0x0058639A–0x005863B7, tbl:Objects.txt:Mode2)
 - J3. [C] **The chest drop is the item-creation entry.** `ObjectChestDrop` makes no draw of its own, picks
   `Act N Chest A/B/C` with `TC_GetChestTC` and calls `TC_ResolveDrops` once; the choice of the TC and the resolution
   are [items/tc § J](../items/tc.md#j-object-drops-named-only). Its `EDX` argument is passed on as the resolver's forced

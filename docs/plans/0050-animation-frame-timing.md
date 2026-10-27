@@ -1045,3 +1045,27 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     targets written `[I]`, re-tagged from part 2's reviewed raises); **0050·P3's review waits for part 2's review**.
     0052·P2 stays closed (gated on 0050·P3's review). **0050·P2 part 2** may start on one harness slot. The P1b
     cases entry stays closed (its remaining cases are part 2's); the review request is closed.
+- **2026-10-27 — Phase 3 landed for review (spec-writer, `lane/s50p3`; no Ghidra, no harness; beside Phase 2 part 2,
+  not yet run).** The spec [anim](../specs/anim/README.md) in three files (the map's two rows kept as two specs plus
+  the overview): [anim/timing](../specs/anim/timing.md) (the record, the mode start per unit type, the start frame,
+  the schedule as pseudocode with its widths, the per-frame advance, sequences, the event queue and the frame order,
+  the mode machines as state diagrams for players, monsters and objects, the rate with its decision diagram, the
+  breakpoints as derived closed forms over `[C]` inputs, the gates, the draws; C 58 / I 131 / L 23),
+  [anim/movement](../specs/anim/movement.md) (the speeds, the step as pseudocode, the snap, the collision walk, the run
+  drain, knockback, the slowing states; C 25 / I 43 / L 9) and the overview (C 12 / I 13 / L 2). The Phase 2 part 1
+  rulings are carried: P1b-1 (the server starts the next action in its request's frame `[C]`; the stock client's held
+  request at `T + N`, held Lightning at `T + n`, `[C]` as an observation of that input; the client's rule `[I]`; A2
+  contradicted; the sources' count stated as `N = n − 1`), P1b-12 (the delay from the do `[C]`), P1b-10 (the
+  observation `[C]`, the cause `[I]`), the catalogue-queue exclusion as an uncompared path, and the `+0x4E` store as a
+  catalogue write. The statements Phase 2 part 2 targets stay at their findings' current tags for a re-tag pass.
+  Community differences (the 19 contradicted verdicts) are under each spec's *Open questions*, the D2R-only and 1.09-only
+  rows marked. Related specs updated where a finding answers them: [skills/dispatch](../specs/skills/dispatch.md) (G1,
+  two open questions struck), [combat](../specs/combat/README.md) (the "owed to phase (5), animation" question
+  relabelled and answered; the part-2 remainder `[L]`), [combat/delivery](../specs/combat/delivery.md) § F,
+  [objects](../specs/objects/README.md) (G2, J2), [monsters/stats](../specs/monsters/stats.md) (G3); five
+  [glossary](../glossary.md) entries; wiki/combat's `based_on` date for delivery. Open questions: 34 `[L]` (timing 23,
+  movement 9, overview 2), of which 20 are community-difference rows (timing 15, movement 5: the 19 contradicted
+  verdicts, the movement ones in both specs, and the held-with-refinement groups A1/C1/H1/B1 and M2/M3). Research-map status (architect's): `anim/timing` and
+  `anim/movement` drafted. Review requested
+  ([backlog](../backlog/2026-10-27-spec-writer-architect-review-plan-0050-phase-3-anim-spec.md)); **the review waits
+  for Phase 2 part 2's review**. The related specs merge one at a time with their owners' lanes.

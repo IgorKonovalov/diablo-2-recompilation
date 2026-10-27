@@ -5,7 +5,7 @@ target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, combat/overview, combat/to-hit, combat/damage, combat/reductions, monsters/stats]
 consumed_by: [combat/overview, items/tc, stats/states, items/economy]
 tags: {C: 80, I: 64, L: 4}
-updated: 2026-10-21
+updated: 2026-10-27
 ---
 
 # Combat: queue, delivery, on-hit effects and the life change
@@ -656,7 +656,9 @@ Durability loss (`COMBAT_DurabilityLoss`: the attacker's weapon one draw, the de
 knockback (`0x005D10C0`), the get-hit decision (`sub_0057CB00_GetHitRoll`, up to two `RangePow2` on the defender)
 and the monster's on-hit skill (`0x005A4390`) were boundary oracles in the run: their entry seeds were asserted and
 their exit seeds taken. [I] (fn:COMBAT_DurabilityLoss@0x0057D3D0, fn:ITEMS_DurabilityLossRoll@0x00559E30,
-fn:sub_0057CB00_GetHitRoll@0x0057CB00, run:2026-10-16-combat) Hit recovery and knockback timing are ADR-0014 phase (5).
+fn:sub_0057CB00_GetHitRoll@0x0057CB00, run:2026-10-16-combat) Hit recovery, the get-hit decision and knockback timing
+are specified in [anim/timing § M](../anim/timing.md#m-hit-recovery-the-block-the-get-hit-roll-the-mode-tests-stun-and-the-hit-class)
+and [anim/movement § E](../anim/movement.md#e-knockback) (ADR-0014 phase (4), plan 0050).
 The durability loss itself is specified in [items/economy § H](../items/economy.md#h-wear-durability-quantity-charges-replenish).
 
 ## Outputs

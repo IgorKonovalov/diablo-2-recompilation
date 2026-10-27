@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, monsters/pool, monsters/spawn, monsters/special, items/properties, data/excel]
 consumed_by: [items/tc, hirelings, combat/overview, combat/damage, stats/aggregate, chain]
-tags: {C: 134, I: 50, L: 5}
+tags: {C: 135, I: 50, L: 5}
 updated: 2026-10-27
 ---
 
@@ -583,6 +583,11 @@ The `fanatic` and `fast` bonus is `clamp(2048 ÷ Velocity − 128, 10, 100)` wit
 fn:sub_005A11F0_UModFanatic@0x005A11F0, tbl:MonStats.txt:Velocity, run:2026-10-15-mon-stats) So it is 100 for `Velocity`
 ≤ 8 and 99 at 9 (2048 ÷ 9 = 227), not 100 up to 9 as this note said before plan 0038's S3a batch; velocities 8 and 9
 were not met. [I] (tbl:MonStats.txt:Velocity)
+Stat 67 is the velocity term of the moving factor `max(B_FRW + stat 67, 25)`: it sets the path speed of every moving
+mode and the animation rate of the moving branch, a classic monster's S1–S4 among them; a monster's walk and run
+animation bases `+0x36`/`+0x38` are computed from the `WL` and `RN` records at load
+([anim/movement § A](../anim/movement.md#a-speeds), A1 and A4). [C] (fn:UNIT_AnimSetRate@0x00623F50,
+fn:sub_00650F00_MonStatsSpeeds@0x00650F00, run:2026-10-27-anim)
 
 G4. **`resist`, `spectralhit`, `stoneskin` and the enchant `resist` part** (`sub_005A1370_UModResist`, the mod id in
 `EDX`, flag 1 only):

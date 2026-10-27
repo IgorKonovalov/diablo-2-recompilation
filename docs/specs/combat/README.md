@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, monsters/stats, player/creation, items/properties, data/calc]
 consumed_by: [items/tc]
-tags: {C: 41, I: 42, L: 5}
+tags: {C: 41, I: 43, L: 5}
 updated: 2026-10-27
 ---
 
@@ -552,8 +552,16 @@ crushing blow at `/players 8` ([delivery](delivery.md#worked-example)). [C] (run
   only, and the stat-event handlers no session fired (1–4, 10–12, 14, 18, 23–27, 30, 31; the others' draws are
   confirmed by run:2026-10-27-skills, B6); the numbered hit, damage and do functions outside tier A (plan 0046); the
   progressive-charge hooks around the build.
-- [L] **Owed to phase (5), animation:** hit recovery, knockback and stun lengths in time, the hit class, the get-hit
-  and durability draws.
+- ~~**Owed to phase (5), animation** (the label predates the 2026-10-20 swap: animation is phase (4)): hit recovery,
+  knockback and stun lengths in time, the hit class, the get-hit and durability draws.~~ Specified in
+  [anim/timing § M](../anim/timing.md#m-hit-recovery-the-block-the-get-hit-roll-the-mode-tests-stun-and-the-hit-class)
+  (hit recovery and the block as their modes' schedules, the block gate, `GetHitRoll` and its draws on the defender's
+  seed, the hit class and its divisor, stun's timing effects, the player's mode tests) and
+  [anim/movement § E](../anim/movement.md#e-knockback) (knockback's distance, speed and length), plan 0050; the
+  durability draws are [items/economy § H](../items/economy.md#h-wear-durability-quantity-charges-replenish).
+- [L] **Still owed to plan 0050 Phase 2 part 2:** the get-hit lengths at three FHR rates per class, the FBR rates, and
+  a player's knockback length (mode 19, two starts in run:2026-10-27-anim); their statements stay `[I]` in
+  [anim/timing](../anim/timing.md#open-questions).
 - ~~**Shortfalls of run:2026-10-16-combat** (plan 0037 Phase 2): crushing blow on a champion, the cold, lightning and
   magic caps, magic immunity, the negative absorbed amount, evade, weapon block, dodge, avoid, freeze, flat absorb,
   the negative total, the walking block.~~ Closed by run:2026-10-20-shortfalls (plan 0047 Phase 2). Reached, each to

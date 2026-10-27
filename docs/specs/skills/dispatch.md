@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, data/calc, combat/overview, combat/delivery, stats/states, monsters/spawn, monsters/stats]
 consumed_by: [skills/missiles, combat/overview, combat/delivery, stats/states, items/economy, monsters/stats]
-tags: {C: 75, I: 191, L: 10}
+tags: {C: 76, I: 191, L: 8}
 updated: 2026-10-27
 ---
 
@@ -516,8 +516,14 @@ G3. SKILLS_QueuePeriodic(unit, id, lvl, selected):                   [I] (fn:SKI
 - G2. **One delay blocks every delayed skill**: the state is one per unit, whichever skill set it, and the test is
   `EvalCalc(delay) ≥ 1` of the row asked for. 23 stock rows have a `delay`. [I] (fn:SKILLS_DelayOk@0x006478F0,
   tbl:Skills.txt:delay)
-- G1. A sequence-anim row (`anim` 18) sets its delay only while `Unit+0x38 & 0xFFFFFF00` is 0 (E4); what `+0x38` holds
-  is open. [I] (fn:SKILLS_SrvDo@0x0056F7F0)
+- G1. A sequence-anim row (`anim` 18) sets its delay only while `Unit+0x38 & 0xFFFFFF00` is 0 (E4). For a player
+  `+0x38 >> 8` is the index of the code-1/2/4 event being run, which `PlrModeSkillFrame` writes at each frame event, so
+  the delay is set on the sequence's first event ([anim/timing § G](../anim/timing.md#g-sequences), G5). [I]
+  (fn:SKILLS_SrvDo@0x0056F7F0, fn:sub_00580460_PlrModeSkillFrame@0x00580460)
+- G1. **The delay runs from the do** (plan 0050): with Frozen Orb held, 72 of the 73 next casts that start within 3
+  frames of the delay state's end start exactly at the `SKILLS_SetDelayState` frame plus `d`, one 3 frames later; the
+  frames from the mode start to the do are not part of it ([anim/timing § L](../anim/timing.md#l-the-frame-events-as-gates), L3).
+  [C] (fn:SKILLS_SetDelayState@0x0056EF90, run:2026-10-27-anim)
 - G3. The grid is the aura grid of [stats/states § F](../stats/states.md#f-auras). A `periodic` row's start cancels
   all the unit's event-8 entries first (D3). The two stock `periodic` rows are Thunder Storm and Blade Shield; the
   channelled rows are the `startmana` rows (C6), not `periodic`. [I] (fn:SKILLS_QueuePeriodic@0x0056CDA0,
@@ -1118,8 +1124,11 @@ run:2026-10-25-skills) The step's use, `low mod 100` against Raise Skeleton's `P
   run:2026-10-27-skills (§ P).
 - [L] **The caster gaps left**: the 43 + 103 player gaps listed in § P, and the 171 + 160 monster gaps, which point at
   the AI (plan 0052).
-- [L] What `Unit+0x38` holds (the sequence-anim delay gate of E4 and do 35's parity).
-- [L] Which frame of a mode carries event code 1 or 2, and `Unit+0x4E`: animation timing (plan 0050).
+- ~~What `Unit+0x38` holds (the sequence-anim delay gate of E4 and do 35's parity).~~ For a player, the index of the
+  frame event being run ([anim/timing § G](../anim/timing.md#g-sequences), G5; plan 0050).
+- ~~Which frame of a mode carries event code 1 or 2, and `Unit+0x4E`.~~ The frame whose `animdata.d2` or sequence
+  event byte is 1 or 2, at the game frame the schedule gives it, `T + max(1, ⌈256 (f − S) / r⌉)`; `Unit+0x4E` is the
+  every-frame advance's event byte ([anim/timing](../anim/timing.md) §§ E, F, L; plan 0050).
 - [L] The finisher's entries in a run (56 finisher calls were oracles in run:2026-10-25-skills).
 - ~~The damage of Kick's start hit.~~ Physical 0 on the stock row, by the table and run:2026-10-27-skills's 25
   deliveries; the `Kick` branch's callers read from the code, its 15 variable-id call sites unfollowed (I4;
