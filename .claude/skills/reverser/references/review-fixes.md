@@ -17,7 +17,7 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
    ([0039](../../../../docs/plans/done/0039-backlog-sweep-4.md) P1b review); S4b row 17 short by 9, "7" instructions for 8 (0038);
    eight wear and resurrection counts one off `check-run.txt` ([0043](../../../../docs/plans/done/0043-items-economy.md) P2 review);
    pool 12's "six of the 25 `boss` classes" met for five (`lane/h4a` review, 0038); "2 708 do events" in the record for the logs' 1 840, which hid the 2 000 skill-use floor's shortfall (`lane/p45h` review, [0045](../../../../docs/plans/done/0045-skills-missiles-machinery.md)); 318 pattern-5 creations for `patterns.txt`'s 360 (`lane/h5d` review, 0038); a 27-line manifest filed as "26 lines", and the 9 non-ItemStatCost `UpdateAnimRate` sites
-   described without the scan's own breakdown (2 unidentified among them; `lane/p50b` review, 0050); "ten readers" raised for the eleven of `re/symbols.csv`'s diff (`lane/h1a` review, 0038); "four of the six" brain-chest positions at a corner for `brain91.txt`'s five files (`lane/rdp` review, 0038).
+   described without the scan's own breakdown (2 unidentified among them; `lane/p50b` review, 0050); "ten readers" raised for the eleven of `re/symbols.csv`'s diff (`lane/h1a` review, 0038); "four of the six" brain-chest positions at a corner for `brain91.txt`'s five files (`lane/rdp` review, 0038). The review request's "14 symbol raises" for the lane's 15 `re/symbols.csv` rows (`lane/h6e1` review, 0038).
 3. **Take totals against `main` after merging it**, not against the totals your batch started from.
    Seen: S2c, S3b and S1a reviews (0038), each recomputed; H3b's totals taken before the `lane/r1h` moves had landed
    (`lane/h3b` review, 0038).
@@ -89,7 +89,7 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
     convention (`lane/p50v` review, [0050](../../../../docs/plans/0050-animation-frame-timing.md)); Kick's 25 logged
     physicals of 0 set against `GetPhysMin`'s ≥ 49 920 without saying the packet at `ApplyDamage` is already reduced, so
     that a physical-immune target would also log 0: name what the observed value has been through, and rule it out
-    (`lane/rk` review, 0038).
+    (`lane/rk` review, 0038). The imbued `cap` filed as the unidentified case of "an imbued item is repaired when created identified", where it was ethereal too and already at 7 of 7, so "refused" and "repaired" give the same line (`lane/h6e1` review, 0038).
 11. **"Moved" names the destination plan**; otherwise write "out of this plan". Seen: status bit 1
     (0039 P1b ruling 4); a closed entry's "(3) deferred" with no home (H7a review, 0038).
 12. **Carry a correction into the section it corrects**, not only into the run's ledger section: the claim, its
@@ -110,7 +110,7 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
     [0050](../../../../docs/plans/0050-animation-frame-timing.md)); skills/0001's Answer bullet giving, inside its `[C]`, the client
     filter as the reason no refused request reached the server, which § 18 holds `[I]` (`lane/p45k` review,
     [0045](../../../../docs/plans/done/0045-skills-missiles-machinery.md)); `brain_mem`'s docstring in `tools/h6e2_sessions.py` still saying
-    `OBJS` lists "only the objects near the player" after the finding corrected it (`lane/rdp` review, 0038).
+    `OBJS` lists "only the objects near the player" after the finding corrected it (`lane/rdp` review, 0038). The imbue-repair refinement left out of items/0011's "never: the imbued item is built unidentified" and items/0010's Answer bullet "all three repair" (`lane/h6e1` review, 0038).
 13. **At an observed boundary (ADR-0021), the `[C]` ends at the call.** What the callee makes of a compared argument
     (a class word, a register it must preserve, a mode) and every later call go in "After, `[I]`", also in the Answer
     summary. Seen: the radius of hits 24, 44 and 14 in a callee-saved register (`lane/p46m3` review); hit 52's row 0
@@ -129,7 +129,7 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
     review, 0038). `sub_005B1CF0_MonPostCreateBoss` (its 526 case compared at `SMPX`) and `sub_0063EC70_LevelClassVariant`
     (453 → 458, logged and chained) left I, and `MISSILE_BuildDamage` and `MissileElemRoll` left I under a 4 118-build
     re-check (`lane/rbd` review, 0038). `QUESTRECORD_LoadBytes` raised in `re/symbols.csv` but left I in save/0002's
-    Functions table and its § bullet (`lane/h1a` review, 0038).
+    Functions table and its § bullet (`lane/h1a` review, 0038). `ITEMS_GetType`, `ITEMS_GetCode` and `ITEMS_GetQuality` raised in `re/symbols.csv` but left I in items/0001, 0003 and 0006's Functions tables, and `ITEMS_CheckFlags` and `ItemGetFlags` left I with separating logged steps (`lane/h6e1` review, 0038).
 15. **State an integer wrap or overflow bound from a kept computation**: the largest input that still fits and the
     first that wraps, with the product written out, and what the code does past it. Seen: a negative ring step count
     called an endless loop where the signed index wraps past −2³¹ (`lane/p46m11` review); `PathDirection`'s

@@ -278,7 +278,7 @@ backlog entry 2026-10-14 reverser → architect (plan 0024 Phase 1b contradictio
 | `0x0045C4B0` | `SKILLS_GetRecord` | `DataTables+0xB98 + 0x23C·id`, bound `+0xBA0` | I |
 | `0x00644710` | `SKILLS_GetReqLevel` | skills `reqlevel` (`+0x174`), `0x7FFFFFFF` when invalid | I |
 | `0x004AA8B0` | `SKILLS_GetMaxLevel` | skills `maxlvl` (`+0x12C`), < 1 → 20 | I |
-| `0x00628590` | `ITEMS_GetCode` | base record `+0x80` | I |
+| `0x00628590` | `ITEMS_GetCode` | base record `+0x80` | C (items/0010 H6e1) |
 | `0x006286C0` | `sub_006286C0_ItemInvSize` | `invwidth`, `invheight` | I |
 | `0x00638630` | `sub_00638630_LoadProperties` | `properties` descriptor and load; link `0x0096BCD8` | C |
 

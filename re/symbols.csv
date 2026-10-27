@@ -2306,9 +2306,9 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00627FE0,func,ITEMS_GetRareName1,,I,items/affixes,docs/findings/items/0005-affixes.md
 0x00628010,func,ITEMS_SetRareName1,,I,items/affixes,docs/findings/items/0005-affixes.md
 0x00628070,func,ITEMS_SetRareName2,,I,items/affixes,docs/findings/items/0005-affixes.md
-0x006280A0,func,ITEMS_CheckFlags,,I,items/graphics,docs/findings/items/0003-item-graphics.md
+0x006280A0,func,ITEMS_CheckFlags,,C,items/graphics,docs/findings/items/0010-quest-drops.md
 0x006280D0,func,ITEMS_SetFlag,"void __stdcall ITEMS_SetFlag(void * item, uint mask, int set)",I,save/d2s,docs/findings/save/0001-d2s-io.md
-0x00628110,func,sub_00628110_ItemGetFlags,,I,items/cube,docs/findings/items/0008-cube.md
+0x00628110,func,sub_00628110_ItemGetFlags,,C,items/cube,docs/findings/items/0010-quest-drops.md
 0x006281E0,func,ITEMS_GetItemLevel,,C,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
 0x00628250,func,sub_00628250_ItemGetPage,,I,items/cube,docs/findings/items/0008-cube.md
 0x00628280,func,sub_00628280_ItemSetPage,,I,items/cube,docs/findings/items/0008-cube.md

@@ -2,13 +2,13 @@
 from: reverser
 to: architect
 date: 2026-10-27
-status: open
+status: done
 context:
-  - ../plans/0038-inferred-claims-sweep.md#implementation-log
-  - ../plans/0038-inventory/README.md#26-moves-made-by-the-batch-reviews
-  - ../findings/items/experiments.md#run2026-10-27-sweep-quest-npc
-  - ../findings/items/0010-quest-drops.md#plan-0038-batch-h6e1-run2026-10-27-sweep-quest-npc
-resolution: ""
+  - ../../plans/0038-inferred-claims-sweep.md#implementation-log
+  - ../../plans/0038-inventory/README.md#26-moves-made-by-the-batch-reviews
+  - ../../findings/items/experiments.md#run2026-10-27-sweep-quest-npc
+  - ../../findings/items/0010-quest-drops.md#plan-0038-batch-h6e1-run2026-10-27-sweep-quest-npc
+resolution: "Reviewed 2026-10-27: accept with fixes (7: overclaim 1, under-claim 2, miscount 1, omission 2, stale cross-reference 1). The imbue-repair [C] was re-anchored (the leg plus economy2's cap; ItemCanRepair's ethereal half is [I]). ITEMS_CheckFlags and ItemGetFlags were raised, 17 I to C in all. qd 38 is raised under S2c. Rulings, fixes and totals (unchanged, 1 526) are in the plan 0038 log. The spec-writer entry is released, and items/quest-drops is ready for Phase 3."
 ---
 
 Review plan 0038 batch H6e1 (`quest-npc`; items/quest-drops rows 2, 4, 5, 32, 39, 40, 42–46, 50, 51 and the S2c

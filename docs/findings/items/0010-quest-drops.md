@@ -69,7 +69,8 @@ Phase 1 was written from the code only; no community text had been read when it 
 - [I] **Rewards.** All three NPC item services live in `NPC_MenuAction`: Charsi's imbue creates a
   **new** rare (quality 6) of the same base with **ilvl = clvl, +4 when clvl > 5**, on fresh seeds; Larzuk's socket
   copies the item and requests `max` sockets (low, normal, superior), `1 + RangeB(item seed, min(max, 2))` (magic) or 1
-  (set, rare, unique, crafted, 9); Anya copies the item and writes the player's name (flag `0x1000000`); all three repair and recharge the result.
+  (set, rare, unique, crafted, 9); Anya copies the item and writes the player's name (flag `0x1000000`); all three repair and recharge the result
+  when `sub_0062E660_ItemCanRepair` accepts it (identified, not ethereal; the new rare only when created identified, § Plan 0038 batch H6e1).
   Akara, Ormus, Malah, Anya (Prison of Ice) and Qual-Kehk give fixed or difficulty-tiered items; the Ancients and Nihlathak
   create none. (§ 6; fn:NPC_MenuAction@0x00579D60, fn:QUESTS_GiveItem@0x005466B0)
 - [C] **The `boss` exception of monsters/pool E4** (run:2026-10-16-quest-drops: Andariel in Nightmare and Hell) is the byte test `MonStats+0x00C & 0x40` next to `& 0x04`
@@ -190,7 +191,13 @@ verdict per compared claim.
 | `0x0062A270` | `sub_0062A270_ItemHoldsItem` | the item holds an item (its own inventory) | C (H6e1) |
 | `0x0062A2B0` | `sub_0062A2B0_ItemCompactSave` | the base record's `compactsave` byte | C (H6e1) |
 | `0x00578610` | `sub_00578610_PlayerCursorItemIs` | the player's cursor item has this id | I |
-| `0x00629C80` | `sub_00629C80_ItemMagicStockable` | `bitfield1` (`+0xDC`) bit 0 of the item record (existing row, items/0009) | I |
+| `0x00628700` | `ITEMS_GetType` | the base's ItemTypes index (existing row, items/0001) | C (H6e1) |
+| `0x00628590` | `ITEMS_GetCode` | the base's code (existing row, items/0006) | C (H6e1) |
+| `0x00627E70` | `ITEMS_GetQuality` | item data `+0x00` (existing row, items/0003) | C (H6e1) |
+| `0x006280A0` | `ITEMS_CheckFlags` | item data `+0x18 & mask` (existing row, items/0003) | C (H6e1 review) |
+| `0x00628110` | `sub_00628110_ItemGetFlags` | `ItemData+0x18` (existing row, items/0008) | C (H6e1 review) |
+| `0x0062E660` | `sub_0062E660_ItemCanRepair` | `ItemRepairAll`'s gate: identified, not ethereal, … (existing row, items/0011) | I |
+| `0x00629C80` | `sub_00629C80_ItemMagicStockable` | `bitfield1` (`+0xDC`) bit 0 of the item record (existing row, items/0009) | C (items/0009) |
 | `0x00628370` | `sub_00628370_ItemSetPersonalName` | copies a name to `ItemData+0x4A` | C |
 | `0x005761C0` | `sub_005761C0_ItemRepairAll` | stack, charges, broken flag, durability to maximum | C (H6e1) |
 | `0x0055FE00` | `sub_0055FE00_ItemIdentifyAttach` | identified flag; attach socketed items | C (H6e1) |
@@ -601,8 +608,9 @@ ITEMS_SetSockets(copy, n); place; SocketDone (word 35: set bit 0, clear bit 1)
   `sub_005761C0_ItemRepairAll` (refills a throwable stack to its maximum, refills charges, repairs a broken item, sets
   durability to its maximum) and `sub_0055FE00_ItemIdentifyAttach` (sets identified, attaches socketed items). So an
   imbued, socketed or personalized item comes back repaired and recharged. Re-read for Phase 1b. *H6e1 ([§ Plan 0038
-  batch H6e1](#plan-0038-batch-h6e1-run2026-10-27-sweep-quest-npc)): an imbued item is repaired only when `ItemCreate` returns it identified (the leg, not the
-  `cap`).*
+  batch H6e1](#plan-0038-batch-h6e1-run2026-10-27-sweep-quest-npc)): an imbued item is repaired when `ItemCreate` returns it identified (the leg, 61 → 66 of 66); `ItemRepairAll`'s gate
+  `sub_0062E660_ItemCanRepair` (called at 0x005761CB) refuses an unidentified and an ethereal item (`[I]` for the ethereal
+  half; `lane/h6e1` review).*
   (fn:sub_005761C0_ItemRepairAll@0x005761C0, fn:sub_0055FE00_ItemIdentifyAttach@0x0055FE00, 0x0057A0F9, 0x0057A3ED, 0x0057A581)
 
 **Other given items** (`QUESTS_GiveItem`):
@@ -969,7 +977,9 @@ the 7 of its owner-played addendum, sha256 checked against `quests-run-manifest.
 - **qd 38** (L484) **raised in part.** [C] `NPC_MenuAction` calls `sub_0055EEA0_CursorItemConsume` once in each
   service branch (0x0057A093 imbue, 0x0057A364 socket, 0x0057A56E personalize; raw scan and objdump), and the imbued
   item is the action's item argument (17 imbues: `MA` arg = the `IMB0` item id). (fn:sub_0055EEA0_CursorItemConsume@0x0055EEA0)
-  **Remainder:** that the consumed item is the cursor item (no cursor line) → b, H6e1.
+  **Remainder:** that the consumed item is the cursor item (no cursor line) → b, H6e1. *Met by H6e1 (18 consumed
+  items, each the player's cursor item, [§ Plan 0038 batch H6e1](#the-cursor-item-each-service-consumes-s2c-piece-of-qd-38));
+  at the `lane/h6e1` review qd 38 is **raised** (still counted as S2c; no class change).*
 - **qd 41** (L532) **raised.** [C] The imbue branch makes one quest test, `GetState(rec, 3, 1)` at 0x00579FB1 (objdump,
   the pushed word and bit); the reward saves had bit 15 set beside bit 1 and were served 17 times.
   (fn:NPC_MenuAction@0x00579D60, run:2026-10-16-quest-drops; `sweep_s2c.py static imbue`)
@@ -989,7 +999,8 @@ the 7 of its owner-played addendum, sha256 checked against `quests-run-manifest.
   `sweep_s2c.py static qseed`)
 
 **Tally:** 16 statements: 10 raised (7, 9, 14, 20, 28, 31, 37, 41, 47, 49), 5 raised in part (8, 10, 19, 21, 38), 1
-reclassified (48 → a-run H4a). One correction (qd 8) and two refinements (qd 28, 49).
+reclassified (48 → a-run H4a). One correction (qd 8) and two refinements (qd 28, 49). *Now (with plan 0049's qd 10 and 19, and qd 38,
+raised at the `lane/h6e1` review on H6e1's cursor line): 13 raised, 2 raised in part (8, 21), 1 reclassified.*
 
 ## Plan 0038 batch H4a (run:2026-10-21-sweep-monsters-a)
 
@@ -1627,7 +1638,7 @@ marked; each accepted item is tested again by the server branch, with the same s
 | flag `0x1000000` (personalized) | — | — | the `ghm` personalized in the game before |
 | `compactsave` ≠ 0 | — | — | `gsv` (0x0062C747 = 1) |
 | `Nameable` = 0 | — | — | `jew` (r 0 at 0x0062C762) |
-| accepted | the ethereal `cap` (clvl 5), `leg` (clvl 6); low and superior `cap` tried (quality 1, 3: pass) | low, normal, superior, set, rare, unique, crafted `ghm`; magic `buc`; `leg` | `tkf` ×2, `ghm` ×3, `buc`, the `cap` holding a gem |
+| accepted | the ethereal `cap` (clvl 5), `leg` (clvl 6); low and superior `cap` tried (quality 1, 3: pass); `tkf` ×2 tried (the throwable test skipped) | low, normal, superior, set, rare, unique, crafted `ghm`; magic `buc`; `leg` | `tkf` ×2, `ghm` ×3, `buc`, the `cap` holding a gem |
 
 - [C] **The throwable test is skipped for every logged item.** Every item the tests saw had unit `+0xC8` bit 25 set
   (`0x02000000` in the inventory, `0x06000000` at the server's call), so `ItemCanImbue` went from the stockable test
@@ -1668,11 +1679,18 @@ marked; each accepted item is tested again by the server branch, with the same s
   0x0057A0F9 / 0x0057A3ED / 0x0057A581, `IDA`/`IDX` from 0x0057A103 / 0x0057A3F7 / 0x0057A58B): 18 of each, in that order. (run:2026-10-27-sweep-quest-npc)
 - [C] **A throwable stack is refilled.** Personalized throwing knives: quantity 20 → 160 and 30 → 160 (`maxstack`
   160), durability 1 → 4 and 2 → 4 of 4. (fn:sub_005761C0_ItemRepairAll@0x005761C0, run:2026-10-27-sweep-quest-npc)
-- [C] **An imbued item is repaired when it is identified at its creation.** The imbued `cap` came back from
-  `ItemCreate` unidentified (flag `0x10` clear) and `ItemRepairAll` left it as it was (durability 7 of 7 either way);
-  the imbued Wirt's Leg came back identified (flags `0x00082010`) with durability 61 of 66 and left the call at 66 of
-  66. So the spec's "an imbued item is not repaired" holds for an unidentified new item only; why the leg's rare is
-  identified at creation is not read (Open questions). (fn:sub_00558D90_ItemCreate@0x00558D90, run:2026-10-27-sweep-quest-npc)
+- [C] **An imbued item is repaired when it is identified at its creation.** The imbued Wirt's Leg came back from
+  `ItemCreate` identified (flags `0x00082010`) with durability 61 of 66 and left `ItemRepairAll` at 66 of 66. The
+  unidentified case is run:2026-10-19-economy2's imbued `cap`, which kept 10 of 12 (spec F0). So the spec's "an imbued
+  item is not repaired" holds for an unidentified new item only; why the leg's rare is identified at creation is not
+  read (Open questions). (fn:sub_00558D90_ItemCreate@0x00558D90, run:2026-10-27-sweep-quest-npc, run:2026-10-19-economy2)
+  *`lane/h6e1` review:* this run's imbued `cap` separates nothing. It came back unidentified **and** ethereal (flags
+  `0x00482000`) at 7 of 7, so "refused" and "repaired" give the same line.
+- [I] **The gate is `sub_0062E660_ItemCanRepair`**, called first in `ItemRepairAll` (0x005761CB; 0 returns at
+  0x0057629F before the stack, charge and durability writes). It refuses a non-item, an unidentified item (`+0x18 &
+  0x10` clear, 0x0062E679) and an ethereal one (`& 0x400000`, 0x0062E689), and tests further after 0x0062E693, which
+  this review did not read. So an ethereal item comes back from any of the three services unrepaired. No run has an
+  identified ethereal item at the tail. (fn:sub_0062E660_ItemCanRepair@0x0062E660, fn:sub_005761C0_ItemRepairAll@0x005761C0)
 - [C] `ItemIdentifyAttach` left every item identified (flag `0x10`), the imbued `cap` included (set by the call).
   The personalized `cap` holding a gem had its child at the call's entry already (`kids` 1 at `IDA`): the copy
   carries it, so the "attach" half is not separated by the run. (fn:sub_0055FE00_ItemIdentifyAttach@0x0055FE00, run:2026-10-27-sweep-quest-npc)
@@ -1729,6 +1747,12 @@ tables, each over separating cases: `ITEMS_GetType` (0x00628700, the base type i
 `qf1 ` and `leg `), `ITEMS_GetQuality` (0x00627E70, qualities 1–8) and two new rows, `sub_0062A270_ItemHoldsItem` (1
 for the `cap` holding a gem, 0 otherwise) and `sub_0062A2B0_ItemCompactSave` (1 for `gsv`, 0 otherwise).
 `sub_00578610_PlayerCursorItemIs` is new and stays I (not logged). `ItemTypeThrowable` was never called and stays I.
+That is 15 rows I → C and 3 new rows, not the 14 the review request said. *`lane/h6e1` review (rule 14):* two more step
+functions are raised on the same lines. `ITEMS_CheckFlags` (0x006280A0) returned 0 and non-zero at all three of its
+logged steps (0x0062C653: 17 zero and 1 `0x800`; 0x0062C81E: 22 and 2 `0x800`; 0x0062C72F: 17 and 1 `0x100`).
+`sub_00628110_ItemGetFlags` (0x00628110) at 0x0062C739 returned the logged flag word in all 20 calls, `0x1800010`
+(personalized, refused) among them. So 17 rows move I → C. `ITEMS_GetSockets` (0x006299B0) returned 0 at every
+logged step, which separates nothing, and stays I.
 
 ### Ledger of the 22 statements
 
@@ -1749,7 +1773,7 @@ for the `cap` holding a gem, 0 otherwise) and `sub_0062A2B0_ItemCompactSave` (1 
 | qd 42 (L621) | F2 pseudocode | **raised in part** | low, normal, superior (n = max 3), set, rare, unique, crafted (n = 1, max 3), magic (the draw); quality 9 has no stock item |
 | qd 42 (L639) | the branches; `ItemCanQuestSocket` | **raised in part** | as L621; the quest test and the `leg` exception, `0x100`, holds an item, `0x800`, max 0 met; flag `0x1000`, type 4 and "0 sockets now" with `0x800` clear (no stock state) stay |
 | qd 43 (L658) | `ItemCanPersonalize` | **raised in part** | base types 5 and 6, `0x100`, personalized, `compactsave`, `Nameable` 0, and accepts; type 4, type 7 (ears) and `0x1000` not reached |
-| qd 44 (L664) | the shared tail | **raised in part, with a refinement** | each service calls both, in order; stacks refilled, durability repaired, identified; an imbued item repaired when identified at creation (the leg); charges, the broken flag and the children attach not separated |
+| qd 44 (L664) | the shared tail | **raised in part, with a refinement** | each service calls both, in order; stacks refilled, durability repaired, identified; an imbued item repaired when identified at creation (the leg; the unidentified case from run:2026-10-19-economy2); charges, the broken flag, the children attach and `ItemCanRepair`'s ethereal refusal not separated |
 | qd 45 (L678) | Akara's row | **raised** | ilvl 7 / 30 / 60, quality 4 / 6 / 6 |
 | qd 45 (L679) | Ormus's row | **raised** | ilvl 21 / 35 / 75, quality 6 |
 | qd 45 (L686) | fixed ilvl; Ancients and Nihlathak give nothing | **raised in part** | the fixed ilvl (not the clvl 80); the Ancients and Nihlathak not run |
@@ -1758,13 +1782,15 @@ for the `cap` holding a gem, 0 otherwise) and `sub_0062A2B0_ItemCompactSave` (1 
 | qd 51 (L845) | Larzuk draws at bound 1 | **raised** | the Buckler's item seed stepped once at bound 1 |
 
 **Raised 11, raised in part 11, shortfall 0: 22.** The S2c piece of qd 38 is met (18 consumed items, each the
-cursor item); qd 38 stays counted as S2c.
+cursor item); qd 38 stays counted as S2c. *`lane/h6e1` review: with this compared line qd 38 is
+**raised** under S2c (no class change).*
 
 ### Open questions (H6e1)
 
 - What sets unit `+0xC8` bit 25 on the items the service tests saw (every one), and whether any stock item reaches
   `ItemTypeThrowable` in `ItemCanImbue` (throwing knives passed the test here).
-- Why the imbued Wirt's Leg came back from `ItemCreate` identified while the imbued `cap` did not.
+- Why the imbued Wirt's Leg came back from `ItemCreate` identified while the imbued `cap` did not. Also,
+  `ItemCanRepair`'s tests after 0x0062E693, and an identified ethereal item at the tail (`lane/h6e1` review).
 - What moves Malah's quest object to state 4, the only state in which her talk table offers the potion.
 
 ## Data touched
