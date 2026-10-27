@@ -5656,7 +5656,53 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     the [H1b entry](../backlog/archive/2026-10-27-reverser-spec-writer-h1b-save-d2s-and-hirelings-raises.md); annotated
     the [H1a entry](../backlog/2026-10-27-reverser-spec-writer-h1a-save-d2s-player-creation-raises.md) (hirelings 32
     done; 3, 30, 33 for H1c); filed the
-    [counts entry](../backlog/2026-10-27-spec-writer-architect-s38h-hirelings-counts-for-the-research-map.md) and the
-    [review request](../backlog/2026-10-27-spec-writer-architect-s38h-review-hirelings-phase-3.md). Ledger row added,
+    [counts entry](../backlog/archive/2026-10-27-spec-writer-architect-s38h-hirelings-counts-for-the-research-map.md) and the
+    [review request](../backlog/archive/2026-10-27-spec-writer-architect-s38h-review-hirelings-phase-3.md). Ledger row added,
     usage "—".
   - **Next:** architect review of `lane/s38h`; the H1c re-tag of rows 3, 30 and 33 after H1c.
+- **2026-10-27 — `lane/s38h` review (architect): Phase 3 of hirelings, accept with fixes (6).** `main` (`e0270b75`)
+  merged into the lane first; `README.md` and `docs/plans/metrics.md` conflicted (main's Status rows and Scope kept,
+  the hirelings row set to its reviewed state; both ledger sides kept). Static review: objdump on the pinned
+  `game.exe`, no Ghidra, no harness.
+  - **Checked.** Every restated H6f raise against the ledger and the `lane/h6f` rulings: rows 1 and 9 as no stock case
+    (C2: the skip `[C]` at 0x00578BD3, objdump shows the `+1` byte test then the four seller classes before the
+    0x00578BFF build; the reach `[I]`, ruling 1); the refusal halves of 17, 18 and 21 inline `[I]` on F1, stated as
+    server checks the stock client did not send (ruling 2); row 29 an `[I]` shortfall with the `+0x60` list unread and
+    no "no other call" (ruling 3); row 27 `[C]` for the clamp only, the u16 add and `jbe` `[I]` with the wrap bound
+    (ruling 4; objdump 0x0056AAA0–0x0056AABB); row 25's `M = ExpMaxLevel(0) − 1` `[I]` (ruling 5; `call 0x611830;
+    sub ebx, 1` at 0x0057E8D6–0x0057E8DD, the test at 0x0057E8E3 before the write at 0x0057E8F2), `·86 >> 8` at
+    0x0057EA2D–0x0057EA39. S3a rows 4, 19, 26, S3b rows 7, 8 (the fatal branches and the `> 99` / `= 100` note `[I]`),
+    H4b 34, H1b 24 and H1a 32 match their batch sections. Inline `[I]` sits on A1, A2, D1, D5, E2, F1, F2, G4, G5, G7,
+    H12 and H13. The new `[L]` is under *Open questions*. Rows 3, 30 and 33 stay `[I]` for H1c.
+  - **Fixes.** (1) overclaim (rule 2): F1's `[I]` title said the stock client "never sent" the quest refusals, and F2's
+    note "the stock client never sends" an unlisted hire; scoped to the states observed and the logged hires.
+    (2) wrong anchor (rule 9): G4's `shr` was anchored at 0x0057E3FD (the player test; the shift is 0x0057E45A, the
+    `jbe` 0x0057E461), and G5's gain test at 0x0057E8BA–0x0057E8BC (the owner-level test; the gain test is
+    0x0057E869–0x0057E86B). (3) omission: `MERC_CapExpGain` returns 0 when the owner is missing or not a player or the
+    pet info or band row is missing (0x0057E402–0x0057E43C, 0x0057E46F), and `MERC_AddExp` returns on a missing pet
+    info or band row (0x0057E880–0x0057E8A7); both now in the pseudocode `[I]`, and the G5 note that left the test order
+    "not given" now gives the code's order `[I]`. (4) misread: G5's comment "class 0's MaxLvl: 98" (`MaxLvl` is 99,
+    `M` is 98). (5) stale cross-reference (rule 7): the introduction still said resurrection and death are named only.
+    (6) overclaim (rule 1): wiki/characters stated the trade build's "no stock case" and the share "worked out at the
+    mercenary's level" flat, both `[I]` in the spec; each now said read from the code. hirelings is now
+    **{C 137, I 43, L 7}** (gate reader).
+  - **Left for the review, done here.** (a) wiki/saves: `based_on` hirelings 2026-10-27; the mercenary header's "a name
+    past the end of its range is read from the code only" now follows hirelings H3 (the built-save reset, the widths
+    read from the code) and the load's cap 99; the open-question item marked as since run (spec-writer rule 1, `lane/s38s`
+    scope). save/d2s § D keeps its stale "not run-checked" bullet; routed to the H1c re-tag by an annotation on the
+    [H1a entry](../backlog/2026-10-27-reverser-spec-writer-h1a-save-d2s-player-creation-raises.md). (b) items/economy's
+    *NPC classes* bullet split (rule 8): resurrection at 150 and 515 `[C]` (run:2026-10-17-economy, Qual-Kehk;
+    run:2026-10-27-sweep-hirelings, Kashya; objdump confirms the five classes at 0x00579C31–0x00579C55), 198, 252 and
+    367 `[I]`. Only that bullet was touched (`lane/s38v` may edit F4); items/economy **{C 126, I 85, L 11}**, research-map
+    counts updated.
+  - **Rulings.** (1) **The partial pass stands** on the sockets precedent; rows 3, 30, 33 are H1c's. (2) **The F3 stash
+    note and `HIRE_Hire`'s no result stand `[C]`** (the H6f ledger, row 20 and the checker correction). (3) **G2 stays
+    an `[I]` call path**; its later steps are compared. (4) **Section K keeps its heading** (wiki links point at it);
+    the introduction says what it now holds.
+  - **Totals:** unchanged by a re-tag: **static 567, harness 509, c-emu 0, blocked 431, deferred 2, raised 17: 1 526**.
+  - **Bookkeeping.** Research-map rows (hirelings rewritten whole, items/economy's counts) and the root README hirelings
+    row (reviewed, 2026-10-27). Review-fixes Seen lines: spec-writer 1, 2, 7 and 9. The review request and the counts
+    entry closed. Ledger: the lane row filled (usage from the orchestrator: 236 661 tokens, 99 tools, 20 min; accept with
+    fixes, 6: overclaim 2, wrong anchor 1, omission 1, misread 1, stale cross-reference 1); the review row added, usage
+    "—".
+  - **Next:** merge `lane/s38h`; the H1c re-tag of hirelings rows 3, 30 and 33 and save/d2s § D's name bullet after H1c.

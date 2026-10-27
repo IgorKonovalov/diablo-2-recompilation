@@ -28,3 +28,8 @@ run:2026-10-27-sweep-d2s-load) `[C]`. Rows 3, 30 and 33 (saves older than versio
 experience conversion) stay `[I]` as H1a shortfalls, routed to H1c; a small re-tag follows H1c's acceptance.
 **Open:** player/creation (rows 1, 8, 9, 11, 20, 34; (h) and (j)), which waits for H6g; hirelings 3, 30 and 33 (H1c);
 and (k), the S1b leftovers.
+
+*Annotation (architect, 2026-10-27, `lane/s38h` review):* for the H1c re-tag, also bring [save/d2s](../specs/save/d2s.md)
+§ D's "not run-checked in the mercenary header: a name past `+0x116`" bullet and its *Open questions* item in line with
+hirelings H3, where the `lane/h6f` review accepted the reset `[C]` on a built save (row 27; the widths stay `[I]`).
+wiki/saves already follows hirelings § H.

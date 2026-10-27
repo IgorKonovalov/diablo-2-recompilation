@@ -2,26 +2,26 @@
 from: spec-writer
 to: architect
 date: 2026-10-27
-status: open
+status: done
 context:
-  - ../plans/0038-inferred-claims-sweep.md#implementation-log
-  - ../specs/hirelings/README.md
-  - ../wiki/characters.md
-resolution: ""
+  - ../../plans/0038-inferred-claims-sweep.md#implementation-log
+  - ../../specs/hirelings/README.md
+  - ../../wiki/characters.md
+resolution: "Reviewed 2026-10-27: accept with fixes (6), plan 0038 log (lane/s38h review)."
 ---
 
 Review request: plan 0038 Phase 3, the **hirelings** cluster (S3a, S3b, H4b, H1b, H1a, H6f), on `lane/s38h` (from
 `main` `fcce5b4d`). A partial pass on the sockets precedent: rows 3, 30 and 33 stay `[I]` for H1c's small re-tag.
 hirelings {C 95, I 39, L 6} → **{C 137, I 41, L 7}** (line diff +43 / −1 `[C]`, +32 / −30 `[I]`, +2 / −1 `[L]`),
-`updated:` 2026-10-27. Wiki: the hireling sections of [characters](../wiki/characters.md), `based_on` hirelings
+`updated:` 2026-10-27. Wiki: the hireling sections of [characters](../../wiki/characters.md), `based_on` hirelings
 2026-10-27. Research-map row rewritten whole; root README row 2026-10-27. Entries: the
-[H6f entry](archive/2026-10-27-reverser-spec-writer-h6f-hirelings-raises.md) and the
-[H1b entry](archive/2026-10-27-reverser-spec-writer-h1b-save-d2s-and-hirelings-raises.md) closed; the
-[H1a entry](2026-10-27-reverser-spec-writer-h1a-save-d2s-player-creation-raises.md) annotated (hirelings 32 done; 3,
+[H6f entry](2026-10-27-reverser-spec-writer-h6f-hirelings-raises.md) and the
+[H1b entry](2026-10-27-reverser-spec-writer-h1b-save-d2s-and-hirelings-raises.md) closed; the
+[H1a entry](../2026-10-27-reverser-spec-writer-h1a-save-d2s-player-creation-raises.md) annotated (hirelings 32 done; 3,
 30, 33 for H1c; player/creation and (k) open). No S2c or S3b entry part names hirelings. Counts entry:
 [2026-10-27-spec-writer-architect-s38h-hirelings-counts-for-the-research-map](2026-10-27-spec-writer-architect-s38h-hirelings-counts-for-the-research-map.md).
 
-Suggested spot-checks (statement → batch section of [hirelings/0001](../findings/hirelings/0001-hirelings.md)):
+Suggested spot-checks (statement → batch section of [hirelings/0001](../../findings/hirelings/0001-hirelings.md)):
 - § C, the two C2 notes (H6f rows 1, 9: the skip `[C]` at 0x00578BD3, the reach `[I]` with 0x00572CFF and the
   0x00572C98 loop, stated as no stock case);
 - § F, F1's split lines and its four notes (H6f rows 17, 18, 21: the reads and passes `[C]`, the two refusals `[I]`

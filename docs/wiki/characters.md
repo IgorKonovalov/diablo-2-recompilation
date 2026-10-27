@@ -287,7 +287,8 @@ talk to a seller changes that seller's list, and the reverse. When a hire emptie
 from the store seed. The table lives with the NPC, so all players of a game share it: in a two-client game
 Kashya's list was built once and the second player saw the same entries. Opening Asheara's trade window does not
 build her table: the first talk with her has already built it, and in a run that opened the trade first the trade's
-own build test found the table there. That build has no stock case.
+own build test found the table there. That the trade's own build is never reached in stock play is read from the
+code.
 
 ## A list entry and the hire
 
@@ -362,8 +363,8 @@ mercenary kills a monster, the [magic find](../glossary.md) used is its own plus
 ([hirelings § J](../specs/hirelings/README.md#j-magic-find-on-a-mercenarys-kill)).
 
 **Levelling in play** ([hirelings § G](../specs/hirelings/README.md#levelling-in-play-merc_addexp)). When a monster
-dies, the owner's mercenary gets its own share, worked out at the mercenary's level and capped at a sixty-fourth of
-that level's experience span. If someone else made the kill, the mercenary keeps `86/256` of it, rounded toward zero;
+dies, the owner's mercenary gets its own share, worked out at the mercenary's level (that path is read from the
+code), and capped at a sixty-fourth of that level's experience span. If someone else made the kill, the mercenary keeps `86/256` of it, rounded toward zero;
 its own kill gives it the full amount. The mercenary then adds **twice** that value, but only while it is below its
 owner's level: in a run, a level-85 mercenary under a level-80 owner gained nothing. The upper bound, level 98 on the
 stock tables, is read from the code: at that level the mercenary would gain nothing, and the level loop stops there.

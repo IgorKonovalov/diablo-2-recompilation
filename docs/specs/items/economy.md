@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, items/properties, items/tc, items/vendors, stats/aggregate, monsters/stats, hirelings, combat/delivery, data/excel]
 consumed_by: [items/vendors, hirelings, items/quest-drops, combat/delivery]
-tags: {C: 125, I: 85, L: 11}
+tags: {C: 126, I: 85, L: 11}
 updated: 2026-10-27
 ---
 
@@ -60,9 +60,14 @@ flowchart LR
 | A charged skill is cast | fn:sub_0056BEC0_UseCharge@0x0056BEC0 | [I] |
 | Item event 3 fires (replenish) | data:g_ItemEventFuncs@0x006E117C → fn:ITEMEVENT_Replenish@0x00562D30, run:2026-10-17-economy | [C] |
 
-- [I] **NPC classes.** Repair is accepted for MonStats classes 154, 178, 253, 257 and 511; resurrection at 150, 198,
-  252, 367 and 515; Cain's identify at 244–246, 265 and 520. (fn:sub_00578050_NpcRepair@0x00578050,
+- [I] **NPC classes.** Repair is accepted for MonStats classes 154, 178, 253, 257 and 511; resurrection at 198, 252
+  and 367 (with 150 and 515, the next bullet, the five classes of the test at 0x00579C31–0x00579C55); Cain's identify
+  at 244–246, 265 and 520. (fn:sub_00578050_NpcRepair@0x00578050,
   fn:MERC_Resurrect@0x00579C00, fn:NPC_CainIdentify@0x00578460)
+- [C] **Resurrection at 150 and 515.** Qual-Kehk (515) resurrected in run:2026-10-17-economy (G13), and Kashya (150) in
+  run:2026-10-27-sweep-hirelings: a dead level-30 mercenary for 6 750 gold, mode 12 → 1
+  ([hirelings § K](../hirelings/README.md#k-named-only)). (fn:MERC_Resurrect@0x00579C00, 0x00579C31–0x00579C55,
+  run:2026-10-17-economy, run:2026-10-27-sweep-hirelings)
 - [I] **The client copy.** The client calls the same price and repair-cost functions (six call sites of the price
   wrapper, two of `RepairCost`) with its own difficulty and quest record, so the displayed prices are the same
   arithmetic on the client's copies of the units; the server's call decides what is paid. (0x0049024C, 0x004887F0,

@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, items/vendors, monsters/pool, monsters/stats, data/strings, data/excel, save/d2s]
 consumed_by: [items/quality, monsters/pool, save/d2s]
-tags: {C: 137, I: 41, L: 7}
+tags: {C: 137, I: 43, L: 7}
 updated: 2026-10-27
 ---
 
@@ -19,8 +19,9 @@ its type (a `Hireling.txt` `Id`) and its level offset; the player's level at tha
 stores `{seed, name, Id}` with the player and creates the mercenary, whose level and stats then follow from
 `Hireling.txt`, its level and its experience. A saved mercenary is recreated from the same three values plus its
 experience. This spec gives the build and its draw order, the entry roll, the hire, the stats per level, the load
-from a save, the monster class and level path, and the mercenary's magic find. Combat AI and skill use, item
-restrictions, resurrection and death are named only (§ K).
+from a save, the levelling in play, the monster class and level path, and the mercenary's magic find. § K gathers
+the free mercenary, resurrection (specified in items/economy) and death; combat AI and skill use and item
+restrictions are named only there.
 
 Names of functions, structs and fields are ours ([hirelings/0001](../../findings/hirelings/0001-hirelings.md),
 `re/types/hireling.h`). Column names are those of [Hireling](../../tables/Hireling.md) and
@@ -417,7 +418,7 @@ Step notes:
   Kashya's menu had two lines (talk, cancel), and with word 36 open so did Qual-Kehk's; no hire request left the
   client, so the two refusal tails (lines 0x654 and 0x65F) ran in no session. (fn:HIRE_Hire@0x005770E0,
   run:2026-10-27-sweep-hirelings)
-- F1. [I] **The two quest refusals are server checks the stock client never sent.** They are what `HIRE_Hire` does
+- F1. [I] **The two quest refusals are server checks the stock client did not send in the states observed.** They are what `HIRE_Hire` does
   with such a request (read from the code). The client test that drops the hire line is not read, so whether it
   matches the server's gates in every state (three states were observed: Kashya at 3 and 7, Qual-Kehk) is open; a
   state where the client offers the line and the server refuses would make the refusal reachable.
@@ -426,7 +427,7 @@ Step notes:
   name with `hired` 0, and its seed is the one `MERC_Init` received; no other listed entry had that seed.
   (fn:HIRE_Hire@0x005770E0, 0x005771E8–0x00577258, fn:MERC_Init@0x00573270, run:2026-10-16-hirelings)
 - F2. [I] The refusals (a name outside the range, a slot holding another name or already hired) were met by no hire.
-  A hire of an entry that is in the table but not listed would pass this test; the stock client never sends one.
+  A hire of an entry that is in the table but not listed would pass this test; no logged hire sent one.
   (fn:HIRE_Hire@0x005770E0)
 - F3. [C] **The stash pays the rest; a short total refuses.** With 100 gold carried and 2 410 in the stash, an Asheara
   hire priced 2 500 took the 100 and 2 400 of the stash (10 left); a second, priced 2 650, had `PayGold` return 0,
@@ -522,18 +523,21 @@ G3. if merc ≠ killer: gain ← (gain × 86) ÷ 256                           [
     MERC_AddExp(gain, merc, owner, L)                                    ; G5
 
 MERC_CapExpGain(unit, gain, L) → i32:                                    [C] (fn:MERC_CapExpGain@0x0057E3F0, 0x0057E43E–0x0057E463, run:2026-10-27-sweep-hirelings)
-G4. if unit is a player: return gain
-    row ← GetRecord(vflag, info.hirelingId, L)                           ; the band row of L
-    cap ← (ExpForLevel(L + 1, row.Exp/Lvl) − ExpForLevel(L, row.Exp/Lvl)) >> 6   ; shr: the unsigned width [I] (0x0057E3FD)
-    return min(gain, cap)                                                ; jbe: the unsigned compare [I] (0x0057E43E–0x0057E463)
+G4. if unit is a player: return gain                                     ; (0x0057E3F7–0x0057E400)
+    owner ← MonsterOwner(unit);  info ← PETS_GetInfo(owner, unit);  row ← GetRecord(vflag, info.hirelingId, L)   ; the band row of L
+    if owner is none or not a player, or info or row is none: return 0   [I] (fn:sub_0058F0D0_MonsterOwner@0x0058F0D0, 0x0057E402–0x0057E43C, 0x0057E46F) ; not separated by the run
+    cap ← (ExpForLevel(L + 1, row.Exp/Lvl) − ExpForLevel(L, row.Exp/Lvl)) >> 6   ; shr: the unsigned width [I] (0x0057E45A)
+    return min(gain, cap)                                                ; jbe: the unsigned compare [I] (0x0057E45D–0x0057E463)
 
 MERC_AddExp(gain, merc, owner, L):                                       [C] (fn:MERC_AddExp@0x0057E860, run:2026-10-27-sweep-hirelings)
-G5. if gain ≤ 0: return                                                  ; (0x0057E8BA–0x0057E8BC)
-    if L ≥ owner's level: return
-    M: i32 ← sub_00611830_ExpMaxLevel(0) − 1                             [I] (0x0057E8D6–0x0057E8E3) ; class 0's MaxLvl: 98 on stock data
+G5. if gain ≤ 0: return                                                  ; (0x0057E869–0x0057E86B)
+    info ← PETS_GetInfo(owner, merc);  row ← GetRecord(vflag, info.hirelingId, L)   ; the band row of the old L
+    if info or row is none: return                                       [I] (fn:PETS_GetInfo@0x00574BD0, 0x0057E880–0x0057E8A7) ; not separated by the run
+    if L ≥ owner's level (stat 12): return                               ; (0x0057E8B5–0x0057E8BC)
+    M: i32 ← sub_00611830_ExpMaxLevel(0) − 1                             [I] (0x0057E8D6–0x0057E8E3) ; class 0's MaxLvl − 1: 98 on stock data
     if L ≥ M: return                                                     [I] (0x0057E8D6–0x0057E8E3) ; before the experience write at 0x0057E8F2
 G6. stat 13 ← stat 13 + 2 × gain                                         ; (0x0057E8CE, the write at 0x0057E8F2)
-G7. row ← GetRecord(vflag, info.hirelingId, L);  i: i32 ← L              ; the band row of the old L
+G7. i: i32 ← L                                                          ; row: G5's, the band row of the old L
     while ExpForLevel(i + 1, row.Exp/Lvl) ≤ stat 13 and i < M: i ← i + 1  ; the bound M [I] (0x0057E93B)
     if i ≠ L: MERC_SetLevel(merc, i)                                     ; § G
 ```
@@ -552,12 +556,12 @@ Step notes:
   to 109 from 356; 35 below the cap). (fn:MERC_CapExpGain@0x0057E3F0, 0x0057E43E–0x0057E463,
   run:2026-10-27-sweep-hirelings)
 - G4. [I] The shift and the compare are unsigned (`shr`, `jbe`); this is read, not separated, as no logged gain or
-  difference was negative. (fn:MERC_CapExpGain@0x0057E3F0, 0x0057E3FD)
+  difference was negative. (fn:MERC_CapExpGain@0x0057E3F0, 0x0057E45A–0x0057E461)
 - G5–G7. [C] **The mercenary gains twice the gain**, and only while it is below its owner's level. Of 42
   `MERC_AddExp` calls, 3 with `gain ≤ 0` changed nothing, 33 with the mercenary's level not below its owner's (L 85
   under owners of 80 and 81, gains 77 to 113) changed nothing, and 6 added `2·gain` to stat 13 (`lea ecx, [esi +
   ebx·2]`); two of these levelled up, 3 → 4 and 10 → 11, through the loop on the band row of the old `L` and one
-  `MERC_SetLevel` at the new level. (fn:MERC_AddExp@0x0057E860, 0x0057E8BA–0x0057E8BC, 0x0057E8CE,
+  `MERC_SetLevel` at the new level. (fn:MERC_AddExp@0x0057E860, 0x0057E869–0x0057E86B, 0x0057E8BA–0x0057E8BC, 0x0057E8CE,
   0x0057E920–0x0057E950, fn:MERC_SetLevel@0x00572840, run:2026-10-27-sweep-hirelings)
 - G5, G7. [I] **The bound `M`.** `M` is `sub_00611830_ExpMaxLevel(0) − 1`: class 0's `MaxLvl` record of
   [Experience](../../tables/Experience.md), 99 in stock data, so `M` = 98, a table value, not a constant. It is tested
@@ -565,8 +569,12 @@ Step notes:
   load were 0, so they do not separate this return), and the level loop stops at `M`, not at the owner's level (each
   logged level-up moved one level). (0x0057E8D6–0x0057E8E3, 0x0057E8F2, 0x0057E93B,
   fn:sub_00611830_ExpMaxLevel@0x00611830)
-- G5. [I] The order of the three return tests is not given beyond the gain test's and `M`'s addresses; none of them
-  has a side effect. (fn:MERC_AddExp@0x0057E860)
+- G4, G5. [I] **The order of the tests** is the code's: `MERC_CapExpGain` tests for a player, then for the owner, the
+  pet info and the band row (each missing one returns 0), and computes the cap; `MERC_AddExp` tests the gain, then the
+  pet info and the band row (each missing one returns), the owner's level (stat 12) and `M`, all before the experience
+  write. Read with objdump; none of these tests has a side effect, and the run's logged calls took none of the
+  missing-record exits. (fn:MERC_CapExpGain@0x0057E3F0, 0x0057E3F7–0x0057E43C, fn:MERC_AddExp@0x0057E860,
+  0x0057E869–0x0057E8E3)
 
 ### H. The mercenary from a save (`D2S_ReadMercHeader`, `MERC_Create`)
 
