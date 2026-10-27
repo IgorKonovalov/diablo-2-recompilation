@@ -483,6 +483,12 @@ class Checker:
             if pv is not None and d.get("pv") is not None:
                 self.ok("pathspeed", pv == d["pv"], ("pv", d["n"], br, u, pv, d["pv"], d["st"]))
             self.tally["sr-%s-%s" % ("p" if u["t"] == 0 else "m", br)] += 1
+            if u["t"] == 1 and 8 <= u["m"] <= 11:
+                # the P1.2 review's ruling (g): S1-S4 of a classic monster (moving rate) and of a class from 410
+                self.tally["sr-mS-%s-%s" % ("lt410" if u["c"] < 410 else "ge410", br)] += 1
+                self.tally["sr-mS-%s-c%d" % ("lt410" if u["c"] < 410 else "ge410", u["c"])] += 1
+                if 67 in {int(k) for k in d["st"]} and d["st"].get("67") != 75:
+                    self.tally["sr-mS-%s-stat67-changed" % ("lt410" if u["c"] < 410 else "ge410")] += 1
 
     # --- schedules and their events ------------------------------------------------------------------------------
     def check_sched(self, lines):
@@ -631,6 +637,27 @@ class Checker:
             elif tag == "MSET" and cur is not None and x["u"]["u"] == cur:
                 pass
         self.tally["ps-lines"] = sum(1 for t, _ in lines if t == "PS0")
+        # movement windows: a run of consecutive-frame PS0 lines of one unit in one mode (two or more steps);
+        # "slow" when the unit's last SR before the window had state 11 (chill) or a stat 67 below its base
+        runs = {}
+        srl = {}
+        for tag, x in lines:
+            if tag == "SR":
+                srl[x["u"]["u"]] = x
+            elif tag == "PS0":
+                r = runs.get(x["u"])
+                if r and r["m"] == x["m"] and x["fr"] == r["last"] + 1:
+                    r["last"] = x["fr"]
+                    r["n"] += 1
+                else:
+                    if r and r["n"] >= 2:
+                        self.close_window(r)
+                    sr = srl.get(x["u"])
+                    slow = bool(sr and (11 in sr["ss"] or sr["st"].get("67", 100) < (100 if x["t"] == 0 else 75)))
+                    runs[x["u"]] = {"m": x["m"], "last": x["fr"], "n": 1, "t": x["t"], "slow": slow}
+        for r in runs.values():
+            if r["n"] >= 2:
+                self.close_window(r)
         # anim/0003's open question: the first run of an every-frame event queued at a mode start (EF) during the
         # frame's unit-list run: the offset of the unit's first PathStep (PS0) or advance (AD0) after its EF line
         pend = {}
@@ -650,6 +677,11 @@ class Checker:
                         self.ok("ef-first", off == want, ("ef", e["n"], e["ph"], want, off))
             elif tag == "MSET" and x["u"]["u"] in pend:
                 pend.pop(x["u"]["u"], None)
+
+    def close_window(self, r):
+        self.tally["win-%s-m%d" % ("p" if r["t"] == 0 else "m", r["m"])] += 1
+        if r["slow"]:
+            self.tally["win-slow-%s" % ("p" if r["t"] == 0 else "m")] += 1
 
     def step_pair(self, p, cts, nxt):
         res = step_model(p, cts)
