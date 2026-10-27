@@ -107,9 +107,19 @@ mode token `WK`, which no row has; [cof § Files](../formats/cof.md#files) has i
 - `[C]` In every class the bow and crossbow `A1` records carry event 2 and every melee weapon class 1 ([animdata § Event bytes](../formats/animdata.md#event-bytes)). Per class and weapon
   class the frame counts differ (Amazon `A1`: `hth` 13, `1hs` 16, `2hs` 20, `bow` 14; the full grid is the tool's
   `players` output).
-- `[L]` Which record a player in a mode reads (the weapon class from the equipped items, CharStats `baseWClass` with no
-  weapon), and how `frames`, `speed` and the event byte drive the mode, is plan 0050 Phase 1.1; rows 18 (`SQ`) and 19
-  (`KB`) are modes without records of their own.
+- `[I]` **Which record a player reads** ([anim/0001 § 2](../findings/anim/0001-modes-frames.md#2-records-the-token-the-lookup-and-the-fallback)):
+  the [PlrType](PlrType.md) token of the class, this table's `Token` of the mode (replaced by `GH` for rows 18 and 19,
+  `g_PlrModeTokenRemap`) and the weapon class: CharStats `baseWClass` unless a weapon is in the right or left hand, then
+  the weapon's (or a dual class); rows 0 and 17 take `hth`, row 11 (`TH`) with a weapon class other than `1hs`, `1ht`,
+  `1js`, `1jt`, `1ss`, `1st` takes `hth`. A name with no record gets the built-in fallback (2048 frames, speed 256, no
+  events). Row 18 (`SQ`) reads its frames from a sequence table indexed by Skills `seqnum`, not from `animdata.d2`
+  ([anim/0001 § 5](../findings/anim/0001-modes-frames.md#5-sequences)). (fn:COMPOSIT_BuildCofName@0x0064F5B0, fn:UNIT_AnimSetRecord@0x00620F00)
+- `[I]` **How the mode runs** ([anim/0001 § 9](../findings/anim/0001-modes-frames.md#9-player-modes)): rows 0, 4, 7–16 and 18 queue their frame events
+  (codes 1–4) and their end once, at the mode start (`SUNIT_ScheduleModeEvents`); rows 2, 3, 6 and 19 run a move frame
+  every game frame; rows 1, 5 and 17 queue nothing. A mode's end goes to neutral (town neutral in a town); row 0 goes to
+  row 17; row 19's own branch (to get-hit, row 4) is not reached from its move frame, which sets neutral on
+  arrival before the end runs and queues no end event ([anim/0001 § 9.1](../findings/anim/0001-modes-frames.md#91-moving-modes)). The rates (`frames` and `speed` against the rate stats) are plan 0050 P1.2. (fn:SUNIT_ScheduleModeEvents@0x005539B0,
+  fn:sub_00581020_PlayerModeEnd@0x00581020)
 
 ## Interpretation notes
 

@@ -803,8 +803,28 @@ The columns that name a monster's animation, its modes and its speeds (values fr
   modes outside `xx` (5 057 with `BaseW`, 52 with `HTH`); per mode in [MonMode § Timing](MonMode.md#timing-plan-0050-phase-0).
 - `[C]` **The sequences.** The 319 `xx` cells name 54 of the 60 `monseq` sequences; 249 of the 5 408 (row, step) pairs
   name a frame at or past the row's record ([MonSeq § Sequences](MonSeq.md#sequences)).
-- Scope note: `aidel`, `aidel(N)`, `aidel(H)` (`+0x04F`..`+0x051` u8, 0..15) are the AI's delay, phase (5)'s
-  ([plan 0052](../plans/0052-monster-ai.md)); not timing columns here.
+- `[I]` **The mode columns the mode machine reads** ([anim/0001 § 10](../findings/anim/0001-modes-frames.md#10-monster-modes); values from the
+  [§ Columns](#columns) rows):
+  - `SplGetModeChart` (`+0x1A5` u8, 1 in 20 rows): only when it is set does `sub_005A78A0_MonModeRecord` test the
+    class against its override switch, which gives classes 243, 333, 403, 418 and 544 their own records for some of
+    `A1`, `A2`, `S1`–`S4` (fn:sub_005A78A0_MonModeRecord@0x005A78A0, tbl:MonStats.txt:SplGetModeChart). `[C]` By the
+    `.bin` all ten classes the switch names have the column set: 243 `diablo`, 333 `diabloclone`, 403 `trappedsoul1`,
+    417 `shadowwarrior`, 418 `shadowmaster`, 543 `baalthrone`, 544 `baalcrab`, 570 `baalclone`, 705 `uberdiablo`, 709
+    `uberbaal`. anim/0001 § 10 reads 417, 543, 570, 705 and 709 as blank and names 418 and 544 after 417 and 543: its
+    row read counts the `Expansion` marker row, so it is one row off from record 410 on
+    ([backlog](../backlog/2026-10-27-archivist-reverser-anim0001-splgetmodechart-rows-shifted.md)). `[L]` What those
+    five branches give is not read.
+  - `SplEndGeneric` (`+0x1A6` u8, 1 in 27 rows): at the end of a listed mode of a listed base class (110 `vulture1` S1,
+    247 `frogdemon1` SQ, 136 `batdemon1` S3/S4, 230/231 any, 118 `willowisp1` WL, 403 any) `MonModeEndGeneric` only
+    queues the AI event instead of the neutral command. (fn:sub_005A8030_MonModeEndGeneric@0x005A8030,
+    tbl:MonStats.txt:SplEndGeneric)
+  - `SplEndDeath` (`+0x1A4` u8, 1 or 2 in 9 rows): at the end of `DT`, after mode 12, 1 changes the class to its
+    `minion1`, 2 kills the owner. (0x005A72B0, tbl:MonStats.txt:SplEndDeath)
+  - `aidel`, `aidel(N)`, `aidel(H)` (`+0x04F`..`+0x051` u8, 1..15, 0 in the 18 blank rows): when the next AI
+    event is not later than now, `MonModeStartNeutral` re-queues it at `T +` the delay of the difficulty (15 when the
+    cell is 0), or at `T + 45` under state 21 `stunned`. The AI itself is
+    phase (5)'s ([plan 0052](../plans/0052-monster-ai.md)). (fn:sub_005A73E0_MonModeStartNeutral@0x005A73E0,
+    tbl:MonStats.txt:aidel)
 - `[C]` A new monster's stat 67 `velocitypercent` is 75, and the `champion`/`possessed` (+20) and `fast`/`fanatic`
   (`clamp(2048 ÷ Velocity − 128, 10, 100)`) mods add to it only when `Velocity` > 0
   ([monsters/stats](../specs/monsters/stats.md), [ItemStatCost § Timing](ItemStatCost.md#timing-plan-0050-phase-0)).

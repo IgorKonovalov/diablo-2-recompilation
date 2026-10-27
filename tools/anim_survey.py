@@ -4,9 +4,11 @@ Usage:
   python3 -I tools/anim_survey.py players  <root>      per class (plrtype Token) and mode (plrmode Token): the weapon
                                                        classes with an animdata record, frames and speed of each
   python3 -I tools/anim_survey.py monsters <root>      per MonStats row: Code + each mode its MonStats2 m<mode> flag
-                                                       sets + BaseW (else HTH); the record found, or the miss
+                                                       sets + BaseW (else HTH); the record found, or the miss; and
+                                                       the game's rule (anim/0001 section 2), mon_rule_miss
   python3 -I tools/anim_survey.py objects  <root>      per Objects row: Token + each mode its Mode<k> flag sets + HTH;
-                                                       FrameCnt<k> and FrameDelta<k> against the record
+                                                       FrameCnt<k> and FrameDelta<k> against the record; the same
+                                                       join with the ObjType token (OBJTYPE lines, obj_objtype_*)
   python3 -I tools/anim_survey.py skills   <root>      Skills rows per anim, monanim, seqtrans, seqnum, seqinput; the
                                                        delay/perdelay cells; the rate stats and their users
   python3 -I tools/anim_survey.py monseq   <root>      per monseq sequence: rows, modes, frames, event frames, users
@@ -16,8 +18,8 @@ Usage:
 <root> is a merged data tree (workspace/merged): the tables come from <root>/data/global/excel, the records from
 <root>/data/global/animdata.d2 (tools/animdata.py). Table values come from the .bin records decoded with
 tools/excel_layouts.py; blank cells from the .txt. The joins use the record name rule of docs/formats/animdata.md
-(token + mode token + weapon class, upper case); which name the game builds, and its fallback when no record exists,
-is plan 0050 Phase 1.1's ([L] here). Every command ends with `SURVEY anim key=value ...`; tools/gate.py --full
+(token + mode token + weapon class, upper case); the name the game builds and its fallback are
+docs/findings/anim/0001-modes-frames.md section 2 (the monster and ObjType counts above follow it). Every command ends with `SURVEY anim key=value ...`; tools/gate.py --full
 compares the summary line with its baseline. Stdlib only. Read-only.
 """
 import collections
@@ -43,7 +45,7 @@ class Data:
         self.refs = eb.Refs(self.excel)
         self.t = {}
         for name in ("plrmode", "monmode", "objmode", "monstats", "monstats2", "objects", "skills", "itemstatcost",
-                     "states", "monseq", "hitclass", "weapons", "charstats"):
+                     "states", "monseq", "hitclass", "weapons", "charstats", "objtype"):
             self.t[name] = Table(self.excel, name, self.refs)
         self.recs = animdata.load(os.path.join(root, "data", "global", "animdata.d2"))
         self.by = collections.defaultdict(list)
@@ -144,7 +146,7 @@ def sec_players(d):
 def sec_monsters(d):
     out, kv = [], collections.OrderedDict()
     ms, m2 = d.t["monstats"], d.t["monstats2"]
-    rows = hit_base = hit_hth = miss = modes_n = sq_flag = 0
+    rows = hit_base = hit_hth = miss = modes_n = sq_flag = rule_miss = 0
     per = {}
     miss_mode = collections.Counter()
     used = set()
@@ -180,6 +182,12 @@ def sec_monsters(d):
                     miss += 1
                     miss_mode[d.mmode_code[k]] += 1
                     misses.append("%s(%d) %s %s" % (ms.txt[i]["Id"], i, d.mmode_code[k], name.upper()))
+            # findings/anim/0001 section 2: the game's name takes hth in DT (0) and DD (12) unless compositeDeath,
+            # else BaseW; a name with no record gets the built-in fallback record (no HTH retry)
+            gw = base if (k not in (0, 12) or x["compositeDeath"]) else "hth"
+            if not d.rec(tok + d.mmode_tok[k] + gw):
+                rule_miss += 1
+                misses.append("RULE %s(%d) %s %s" % (ms.txt[i]["Id"], i, d.mmode_code[k], (tok + d.mmode_tok[k] + gw).upper()))
             if rec:
                 per[k][1].add(rec)
                 for _f, v in animdata.events_of(rec):
@@ -191,6 +199,8 @@ def sec_monsters(d):
                "none %d" % (rows, modes_n, hit_base, hit_hth, miss))
     out.append("m%s set on %d rows (not joined); misses per mode: %s" % ("SQ", sq_flag, hist(miss_mode.elements())))
     out.append("distinct record names used: %d of %d whose name starts with a MonStats Code" % (len(used), own))
+    out.append("by the game's rule (anim/0001 section 2: hth in DT/DD without compositeDeath, else BaseW): flagged "
+               "modes with no record %d" % rule_miss)
     out.append("event bytes per mode (mode:value), per flagged mode of a row: %s" % hist(ev.elements()))
     out += mode_table("per mode (named = MonStats rows whose MonStats2 m<mode> is set; records = distinct records):",
                       d.mmode_code, per)
@@ -205,6 +215,7 @@ def sec_monsters(d):
     kv["mon_miss"] = miss
     kv["mon_msq"] = sq_flag
     kv["mon_records_used"] = len(used)
+    kv["mon_rule_miss"] = rule_miss
     return out, kv
 
 
@@ -265,6 +276,23 @@ def sec_objects(d):
         out.append("  DIFF " + x)
     if len(diffs) > 60:
         out.append("  ... %d more" % (len(diffs) - 60))
+    # findings/anim/0001 section 2: the object record name takes the object-type token (objtype +0x020, row = the
+    # Objects row), not the Objects Token. The same join with that token: rows whose two tokens differ, and the
+    # flagged modes with a record under it.
+    ot = d.t["objtype"].rec
+    tok_ne = ot_hit = 0
+    for i, r in enumerate(ob.rec):
+        otok = ot[i]["Token"].strip() if i < len(ot) else ""
+        if otok.lower() != r["Token"].lower():
+            tok_ne += 1
+            out.append("  OBJTYPE %s(%d) Objects %s objtype %s" % (ob.txt[i]["Name"], i, r["Token"], otok))
+        for k in range(8):
+            if r["Mode%d" % k] and otok and d.rec(otok + d.omode_tok[k] + "hth"):
+                ot_hit += 1
+    out.append("objtype token: rows whose Token differs from Objects Token %d; flagged modes with a record under the "
+               "objtype token %d" % (tok_ne, ot_hit))
+    kv["obj_objtype_token_ne"] = tok_ne
+    kv["obj_objtype_hit"] = ot_hit
     kv["obj_rows"] = rows
     kv["obj_modes"] = modes_n
     kv["obj_hit"] = hit

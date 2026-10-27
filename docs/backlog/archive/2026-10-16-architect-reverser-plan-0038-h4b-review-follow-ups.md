@@ -14,7 +14,7 @@ resolution: "Closed at the lane/h5d review (architect, 2026-10-27; plan 0038 log
 
 *2026-10-17 (reverser, `lane/rbs` static sweep):* skipped: needs harness; rides on plan 0038 harness batches H4a and H5d.
 
-*2026-10-25 (reverser, `lane/p51r`, [plan 0051](../../plans/0051-backlog-sweep-6.md) Phase 1a, no slot):* **With H4a.**
+*2026-10-25 (reverser, `lane/p51r`, [plan 0051](../../plans/done/0051-backlog-sweep-6.md) Phase 1a, no slot):* **With H4a.**
 `lane/h4a` has not landed: it is paused at the owner's request (its second pause, 2026-10-21, resume note in its own
 plan 0038 log entry on that branch), with no statement claimed, no § 2.6 entry and no review request. So pieces (a)–(f)
 are not checked off here. Its resume note names (c) Blood Raven's client name (special 66) as met, and (a) the
@@ -23,7 +23,7 @@ there. The H5d piece (spawn 42's remainder in the tomb and `suckernest1` session
 lines) is still in H5d's row of [inventory § 5](../../plans/0038-inventory/README.md#harness-batches), and no H5d run is on
 `main`. The entry stays open; the H4a review annotates which pieces the batch took.
 
-*2026-10-27 (architect, [plan 0051](../../plans/0051-backlog-sweep-6.md) Phase 1a review, after merging `main` `cf25f22`):*
+*2026-10-27 (architect, [plan 0051](../../plans/done/0051-backlog-sweep-6.md) Phase 1a review, after merging `main` `cf25f22`):*
 `lane/h4a` has landed and was accepted
 ([plan 0038 log](../../plans/0038-inferred-claims-sweep.md#implementation-log), `lane/h4a` review). **H4a took (a) and (c):**
 (a) `doomknight3` (312), 63 creations, both appearance bytes one `Range(4)` (stats 14 and 13 raised whole, still counted
