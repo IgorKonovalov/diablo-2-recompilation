@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, data/excel]
 consumed_by: [items/tc, items/quality, items/affixes, items/uniques-sets, items/properties, items/sockets-runewords, hirelings, player/creation]
-tags: {C: 239, I: 67, L: 3}
+tags: {C: 240, I: 68, L: 3}
 updated: 2026-10-27
 ---
 
@@ -100,7 +100,7 @@ data** is `unit+0x14` of an item unit (partial types in `re/types/save.h`).
 | struct:ItemStatCostRec+0x1C | `Save Add` (s32) |
 | struct:ItemStatCostRec+0x24 | `Save Param Bits` |
 | struct:ItemStatCostRec+0x18 | `ValShift` |
-| struct:ItemStatCostRec+0x1A, struct:ItemStatCostRec+0x20 | `1.09-Save Bits`, `1.09-Save Add`: read only for item versions older than 93 |
+| struct:ItemStatCostRec+0x1A, struct:ItemStatCostRec+0x20 | `1.09-Save Bits`, `1.09-Save Add`: read only for a save version older than 93 (`ITEMS_ReadFull`'s version argument, the file's `0x004`) |
 | tbl:Weapons.txt:compactsave | record byte `+0x143`: a simple (compact) item, flags bit 21 (the same record layout serves armor and misc) |
 | tbl:Weapons.txt:questdiffcheck | record byte `+0x12B`: a simple quest item carries stat 356 |
 | tbl:Runes.txt:Name | the runeword field (u16): `Runes` record `+0x82`, the string index of `Name` ([items/sockets-runewords § G](../items/sockets-runewords.md#g-in-the-save)) |
@@ -315,7 +315,7 @@ Each row gives the runtime source the writer reads and the runtime field the rea
 | `0x004` | u32 | `version` | 96 | [C] | < 92 → legacy reader `0x00534020`; 92..96 accepted; else (7) | [C] 91, 94, 96, 97; [I] 92, 93, 95 | fn:D2S_WriteHeader@0x00568F20, fn:D2S_ReadSave@0x00534330, 0x0056A117, run:2026-10-12-d2s-io, run:2026-10-27-sweep-d2s-load |
 | `0x008` | u32 | `file_size` | bytes written | [C] | must equal bytes read (5) | [C] | fn:D2S_WriteHeader@0x00568F20, fn:D2S_ReadHeader@0x0056A090, run:2026-10-12-d2s-io |
 | `0x00C` | u32 | `checksum` | `Checksum` (§ B) | [C] | recomputed and compared (6) | [C] | fn:D2S_WriteHeader@0x00568F20, fn:D2S_ReadHeader@0x0056A090, run:2026-10-12-d2s-io |
-| `0x010` | u32 | `weapon_set` | bit 0 = client `+0x45C` ≠ 0 (swap set active) | [C] for 0; [I] for 1 | bit 0 → client `+0x45C` | [C] | fn:D2S_WriteHeader@0x00568F20, fn:D2S_ReadHeader@0x0056A090, run:2026-10-16-player, run:2026-10-27-sweep-d2s-play |
+| `0x010` | u32 | `weapon_set` | bit 0 = client `+0x45C` ≠ 0 (swap set active) | [C] | bit 0 → client `+0x45C` | [C] | fn:D2S_WriteHeader@0x00568F20, fn:D2S_ReadHeader@0x0056A090, run:2026-10-16-player, run:2026-10-27-sweep-d2s-play |
 | `0x014` | 16 B | `name` | client name `+0x0D`, NUL within 16 bytes | [C] | byte `0x23` forced 0, then `_stricmp` with the client's name (case ignored), else (7) | [C] | fn:D2S_WriteHeader@0x00568F20, fn:D2S_ReadHeader@0x0056A090, 0x0056A12B, run:2026-10-12-d2s-io, run:2026-10-27-sweep-d2s-load |
 | `0x024` | u32 | `status` | client `+0x0A` (u16, zero-extended) `\| 0x20` if expansion game `\| 0x40` if ladder game | [C] | low u16 → client `+0x0A` after `D2S_CheckStatus` | [C] | fn:D2S_WriteHeader@0x00568F20, fn:D2S_ReadHeader@0x0056A090, run:2026-10-12-d2s-io |
 | `0x028` | u8 | `class` | client `+0x08` | [C] | ≤ 7 (unsigned) → client `+0x08`, the class of the new player unit; > 7 → (4) (note below the table) | [C] | fn:D2S_WriteHeader@0x00568F20, fn:D2S_ReadHeader@0x0056A090, run:2026-10-12-d2s-io |
@@ -352,7 +352,8 @@ side with the logged client and player-data fields after `D2S_ReadHeader`; [save
 - [C] **The rows raised by plan 0038 H1b and H1a**, scoped to their cases
   ([save/0001 § Plan 0038 batch H1b](../../findings/save/0001-d2s-io.md#plan-0038-batch-h1b-run2026-10-27-sweep-d2s-play),
   [§ Plan 0038 batch H1a](../../findings/save/0001-d2s-io.md#plan-0038-batch-h1a-run2026-10-27-sweep-d2s-load)):
-  `weapon_set` read after a swap (`w`, bit 0 = 1 stored back at client `+0x45C`); the hotkey `0x8000` flag written for a
+  `weapon_set` written after a swap (`w`: bit 0 = 1 in rt-r2's four writes, equal to the logged client `+0x45C`) and
+  read back (bit 0 = 1 stored at client `+0x45C`); the hotkey `0x8000` flag written for a
   left-button skill (slot 2 `left:Teleport` → `0x8036`), the skill alone otherwise, and the empty slots coming back
   `0xFFFF` after a load and a write; swap skills A and B (54/48 after the swap, 42/43 before) written and read back;
   graphics and colour bytes equal to the image `0x0063E510` left, with non-`0xFF` bytes present; the mercenary header
@@ -370,7 +371,8 @@ side with the logged client and player-data fields after `D2S_ReadHeader`; [save
   [save/0001](../../findings/save/0001-d2s-io.md) header row `0x028`)
 - [C] **Class 7 passes the class test, and no class-7 character loads.** A full save and a stub with class byte 7
   pass the header; when the player unit is made, `sub_00553180_PlayerSetClient`'s null-unit test (line 1210, `0x4BA`)
-  halts the game both ways in, so no class-7 player is made. (fn:sub_00553180_PlayerSetClient@0x00553180, 0x00553185–0x00553187,
+  halts the game both ways in, so no class-7 player is made (raised by H1a as player/creation's row 11; the readings
+  that need a class-7 player, in the next note, have no case). (fn:sub_00553180_PlayerSetClient@0x00553180, 0x00553185–0x00553187,
   0x0056A22C–0x0056A23B, run:2026-10-27-sweep-d2s-load)
 - [I] So the class clamp of `EXP_GetThreshold` (D5's stat 30) is reached by no class-7 player. Its other out-of-range
   input is the −1 that its callers' inlined null-unit test passes (0x005342DE, 0x00535A0A, 0x0056B13D), and no run or
@@ -566,7 +568,8 @@ E1. Quests: "Woo!", u32 6, u16 0x12A, then three 96-byte blocks copied from play
                                                                      [C] (fn:D2S_ReadQuests@0x0056A370, fn:QUESTRECORD_LoadBytes@0x0065C4D0, run:2026-10-18-quests2)
 E2. Waypoints: "WS", u32 1, u16 0x50, then three 24-byte blocks: 16 bytes from the waypoint
     record at player data +0x1C, +0x20, +0x24 (WAYPOINT_Save) and 8 bytes never written;   [C] (fn:D2S_WriteWaypoints@0x005693E0, fn:WAYPOINT_Save@0x006610B0, note E)
-    WAYPOINT_Save first stores the marker 0x0102 into a record whose marker is 0 or 0x0101 (0x006610EB)
+    WAYPOINT_Save first stores the marker 0x0102 into a record whose marker is 0 or 0x0101 (0x006610EB);
+      the 0 case met, 0x0101 at a write from the code only [I] (0x006610EB; a load zeroes a 0x0101 record)
     record = u16 marker 0x0102, then 7 u16 words; waypoint n (< 112) is word 1 + n ÷ 16,
     mask 1 << (n mod 16), i.e. bit n LSB first from block byte +0x02.                    [C] (data:g_WaypointBits@0x00746428, run:2026-10-11-d2s-waypoints)
     Reader: D2S_ReadWaypoints tests the marker: 0x0102, 0x0101 or 0 accepted, else (16),     [C] (fn:D2S_ReadWaypoints@0x0056A3E0, fn:WAYPOINT_Load@0x00661030, run:2026-10-27-sweep-d2s-load)
@@ -661,7 +664,8 @@ F2. ReadStatsBits(player, bb), version ≥ 95:                     [C] (fn:D2S_R
   fraction bits. The param path, the signed path and code 18 were not exercised and rest on the code read. (0x0056A4F0,
   run:2026-10-12-d2s-io)
 - F2. [C] Versions ≤ 94 use another format (`D2S_ReadStats`): a bitmask of `byte[0x029]` bits, then one u32 per set
-  bit, for stats 0 … n−1. 1.14d never writes it. A version-94 file with count 16 gave one `SetStat` per stat 0..15 (the
+  bit, for stats 0 … n−1. 1.14d never writes it. Version 95 was not loaded: the bound is `cmp eax, 0x5E; jbe`
+  (0x0056A627), [I] for 95. A version-94 file with count 16 gave one `SetStat` per stat 0..15 (the
   u32 or 0) and the skills section 2 + 2 + 4 × 11 bytes on; with count 12 only stats 0..11 were set, so stat 12
   (`level`) was not, and the next write held no stat 12 and header level 0; a version-96 file with count 8 read its
   whole `gf` list, and the write's count was 16 again. (fn:D2S_ReadStats@0x0056A620, 0x0056A627–0x0056A640,
@@ -938,7 +942,7 @@ I4. Quality fields, written only when the item is identified (f bit 4) or the sa
   it, the reader adds it back to a non-zero 11-bit value (0x0062CE45) and stores `+0x36` (0x0062CE57). For a save
   version ≤ 88 the reader returns 0, and at version 89 it adds 1 before adding the base (0x0062CE2A–0x0062CE3D);
   1.14d writes 96. No stock save holds `has_class` 1, so no stock save reaches the pair. (data:g_MagicAffixInfo@0x0096CA7C)
-- I3. [I] For item versions 72–88 the reader lowers both the prefix base and the automagic base by a per-version
+- I3. [I] For save versions 72–88 the reader lowers both the prefix base and the automagic base by a per-version
   constant through a jump table (0x0062CDC4–0x0062CE10, e.g. 0x295 and 0x4EE); version 96 takes no case. Only an
   old-format file reaches it. (0x0062CDC4–0x0062CE10)
 - I3. [C] Weapon damage (stats 21–24, 159, 160), speed (67, 68) and block (20) are not saved; the reader rebuilds
@@ -977,7 +981,7 @@ I5. Reading an item (sub_00558CB0_ItemCreateFromSave → ITEMS_ReadFull / ITEMS_
       set id (version ≥ 93): d ← SETITEMS_GetRecord(id)+0x00 (s16);                                 [C] (fn:SETITEMS_GetRecord@0x00483440, 0x0062D11C–0x0062D1A3, run:2026-10-27-sweep-d2s-load)
         no record: that item is dropped (its unit freed) and the load goes on
       runeword u16 → d+0x38                                                                          [C] (0x0062D1CB, run:2026-10-27-sweep-d2s-play)
-      item version ≤ 95: stat 72 (durability) is read in 8 bits, not SaveBits[72]                     [C] (0x0062D425–0x0062D433, 0x0062D759–0x0062D764, run:2026-10-27-sweep-d2s-load)
+      save version ≤ 95 (the argument at [ebp+0x1C]): stat 72 (durability) in 8 bits, not SaveBits[72]   [C] 94 (8 bits) and 96 (SaveBits); [I] 95 (0x0062D425–0x0062D433, 0x0062D759–0x0062D764, run:2026-10-27-sweep-d2s-load)
       the peek reader takes n_filled only when flags bits 21 and 25 are clear                        [C] (fn:ITEMS_PeekHeader@0x0062AE20, 0x0062AF1F, note I5)
 ```
 
@@ -1067,8 +1071,7 @@ J1. WritePropertyList(list, bb):                                 [C] framing, sc
       Write(bb, 0x1FF, 9)
     ClampU as in I1                                               [C] (fn:BITBUF_WriteClamped@0x0062AF50, run:2026-10-17-sweep-emu)
     GROUP = { 17: [18], 48: [49], 50: [51], 52: [53], 54: [55, 56], 57: [58, 59] }
-    group 57                                                      [C] (0x00630E3B–0x00631245, note J)
-    group 52                                                      [I] (0x00630E3B–0x00631245)
+    groups 57 and 52, one item each                               [C] (0x00630E3B–0x00631245, note J)
 
 J2. ITEMS_ReadProperty:                                          [C] framing, scope in note J (fn:ITEMS_ReadProperty@0x0062AC80, fmt:d2s#property-lists)
       id ← Read(9); 0x1FF ends the list
@@ -1077,7 +1080,7 @@ J2. ITEMS_ReadProperty:                                          [C] framing, sc
       grouped ids (17, 48, 50, 52, 54, 57): the followers' values as in J1
       a follower id read on its own (no head before it) takes the default path above   [I] (0x0062D99C, 0x0062E1A1)
       after the 57 group, stat 326 (poison_count) ← 1                [C] (fn:ITEMS_ReadProperty@0x0062AC80, run:2026-10-27-sweep-d2s-play)
-      item version < 93: 1.09-Save Bits / 1.09-Save Add instead, plus per-id width overrides   [I] (0x0062D9AE–0x0062E1A9)
+      save version < 93: 1.09-Save Bits / 1.09-Save Add instead, plus per-id width overrides   [I] (0x0062D9AE–0x0062E1A9)
 ```
 
 - J. [C] **Scope of the framing `[C]`** (code anchor plus data behaviour, evidence rule 2): `tools/d2s.py` decodes
@@ -1104,7 +1107,12 @@ J2. ITEMS_ReadProperty:                                          [C] framing, sc
   the stored value left by 8 (J2), so the file holds the in-memory value without its 8 fraction bits. On 13 items of
   run:2026-10-27-sweep-d2s-play the full stat was the file value << 8 (5 → 1 280, 1 → 256) and the written value the
   full stat >> 8. A Septic dagger (group 57) had stat 326 = 1 after the read. (fn:ITEMS_ReadProperty@0x0062AC80,
-  tbl:ItemStatCost.txt:ValShift, {P})
+  tbl:ItemStatCost.txt:ValShift, run:2026-10-27-sweep-d2s-play)
+- J. [C] **Group 52.** Ginther's Rift (`9cr`, 52/53 = 50/120) was read three times in run:2026-10-27-sweep-d2s-play
+  (rt-r2 reads 1 and 2, drop) with stats 52 and 53 equal to the file's group values, and rt-r2's second read took
+  the file the game had written at the first *Save and Exit*: head value, then the follower's, no id, no param, as
+  J1 and J2 frame the other groups. Scope: that one item. (0x0063105D–0x006311AB, 0x0062D99C,
+  run:2026-10-27-sweep-d2s-play, [save/0001 § Plan 0038 batch H1b](../../findings/save/0001-d2s-io.md#plan-0038-batch-h1b-run2026-10-27-sweep-d2s-play))
 - J. [I] The writer's shift is arithmetic, not logical: no negative value was shifted. A non-zero value that shifts
   to 0 (a `maxhp` or `maxmana` below 256) is skipped too; no stock item stat holds one. (0x00630ED9, 0x00630EDB)
 - J. [I] **Followers.** A follower is written raw, without `ValShift` (all eight followers have `ValShift` 0 in the
@@ -1118,7 +1126,7 @@ J2. ITEMS_ReadProperty:                                          [C] framing, sc
 - J. [C] **The clamp saturates as unsigned.** `ClampU` compares the value as a u32, so a sum that is negative as an
   s32 is written as `2^n − 1`, not as 0: emulated reproduction of `BITBUF_WriteClamped` and the inlined copy's operand
   map (note I1). (fn:BITBUF_WriteClamped@0x0062AF50, 0x00630F38–0x00630F4E, run:2026-10-17-sweep-emu)
-- J. [I] Group 52, the clamp at the bounds (the only stored value at a bound is a 1-bit stat 153 = 1, which tests
+- J. [I] The clamp at the bounds (the only stored value at a bound is a 1-bit stat 153 = 1, which tests
   nothing), and the version < 93 paths (the 1.09 widths: no version-92 item list was built) rest on the code read.
   (0x00630E3B–0x00631245, 0x0062D9AE–0x0062E1A9)
 
@@ -1135,7 +1143,7 @@ distinct ids and the grouped ids, which are the counts above (plan 0015 Phase 1)
 
 ## Outputs
 
-- Write: a byte string of `file_size` bytes, at most 8 KiB, with a valid checksum, written twice per *Save and Exit*
+- Write: a byte string of `file_size` bytes (at most 8 KiB, the buffer: [I], § Constants) with a valid checksum, written twice per *Save and Exit*
   in single player. [C] (fn:D2S_WriteSave@0x00569AD0, run:2026-10-12-d2s-io)
 - Read: the client fields and player-data fields of § D, the base stat list of § F, the skills of § G, one item unit
   per saved item (with `+0x28` and `+0x20` as in I5), and possibly `game+0x7C` (D4); or an error code. [C]
@@ -1279,9 +1287,9 @@ python3 -I tools/d2sio.py check workspace/merged/data/global/excel workspace/log
 - **Simple items have no `n_filled`.** Their bit 108 is the realm flag; reading 3 bits there works only while the
   realm flag and the next two bits are 0. [C] (fn:ITEMS_WriteCompact@0x0062AF80, 0x0062AF1F, note I5)
 - **Prefix ids are rebased, suffix ids are not.** [C] (0x0062CEEA, note I3)
-- **Grouped properties carry one id.** 17, 48, 50, 54 and 57 are followed by the next ids' values with no id and no
+- **Grouped properties carry one id.** 17, 48, 50, 52, 54 and 57 are followed by the next ids' values with no id and no
   param; reading them as one id each desynchronises the rest of the item. [C] (fn:ITEMS_ReadProperty@0x0062AC80,
-  fmt:d2s#property-lists, note J) 52 is read the same way by the code. [I] (0x00630E3B–0x00631245)
+  fmt:d2s#property-lists, note J)
 - **An item property's param is read unsigned:** a 9-bit param of 270 came back as 270 (a signed read gives −242). [C]
   (fn:ITEMS_ReadProperty@0x0062AC80, run:2026-10-27-sweep-d2s-load) **`CSvParam` is read signed** in the `gf` list; no `ItemStatCost` row with
   `CSvBits` has a `CSvParam`, so stock data never reads one. [I] (fn:D2S_ReadStatsBits@0x0056A4F0)

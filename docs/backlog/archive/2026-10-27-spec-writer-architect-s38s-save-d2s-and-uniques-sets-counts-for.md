@@ -2,12 +2,12 @@
 from: spec-writer
 to: architect
 date: 2026-10-27
-status: open
+status: done
 context:
-  - ../plans/0038-inferred-claims-sweep.md#implementation-log
-  - ../specs/save/d2s.md
-  - ../specs/items/uniques-sets.md
-resolution: ""
+  - ../../plans/0038-inferred-claims-sweep.md#implementation-log
+  - ../../specs/save/d2s.md
+  - ../../specs/items/uniques-sets.md
+resolution: "Applied at the lane/s38s review (2026-10-27): research-map rows rewritten with save/d2s {C 240, I 68, L 3} and items/uniques-sets {C 100, I 38, L 4}; wiki saves, characters and items based_on dates kept at 2026-10-27; the cross-spec wiki choice ruled (the page follows the spec carrying the accepted raise); characters' stub-order and saved-merc paragraphs now follow save/d2s."
 ---
 
 Plan 0038 Phase 3 (`lane/s38s`), the **save/d2s** (S1a, S1e, H1b, H1a) and **items/uniques-sets** (S2b, S2c, S1f,
@@ -16,12 +16,12 @@ Not blocking.
 
 | Spec | Old | New | `updated:` |
 |---|---|---|---|
-| [save/d2s](../specs/save/d2s.md) | {C 91, I 149, L 3} | **{C 239, I 67, L 3}** | 2026-10-20 → 2026-10-27 |
-| [items/uniques-sets](../specs/items/uniques-sets.md) | {C 71, I 55, L 4} | **{C 100, I 38, L 4}** | 2026-10-21 → 2026-10-27 |
+| [save/d2s](../../specs/save/d2s.md) | {C 91, I 149, L 3} | **{C 239, I 67, L 3}** | 2026-10-20 → 2026-10-27 |
+| [items/uniques-sets](../../specs/items/uniques-sets.md) | {C 71, I 55, L 4} | **{C 100, I 38, L 4}** | 2026-10-21 → 2026-10-27 |
 
 - **Research map:** rewrite both rows whole (spec-writer rule 6); the H1a review left them at "Phase 3 ready".
-- **Wiki (W4, done on this lane):** [saves](../wiki/saves.md) and [characters](../wiki/characters.md) `based_on`
-  save/d2s 2026-10-27, [items](../wiki/items.md) `based_on` items/uniques-sets 2026-10-27. Restated on saves: the
+- **Wiki (W4, done on this lane):** [saves](../../wiki/saves.md) and [characters](../../wiki/characters.md) `based_on`
+  save/d2s 2026-10-27, [items](../../wiki/items.md) `based_on` items/uniques-sets 2026-10-27. Restated on saves: the
   introduction, the big picture's expansion sections, when the game writes (the death save, no autosave, the host
   hook, the TCP/IP buffer, 8 KiB), the load checks and codes with the single-player reach, the header lists, class 7,
   the status checks, quests and waypoints, the load-time stat fixes and stat 30, the old stat form, skills, item
@@ -30,8 +30,8 @@ Not blocking.
   Characters is unchanged apart from the date: its stub-order, class-7 and saved-mercenary paragraphs rest on
   player/creation § A2 and § J and hirelings § F/§ H, which wait for H6g and H6f.
 - **Cross-spec, for the review:** the saves page follows save/d2s (now `[C]`) for the header test order and the
-  mercenary header's write side, while [player/creation § A2](../specs/player/creation.md#a-the-stub-and-the-servers-checks)
-  and [hirelings F8](../specs/hirelings/README.md) still state those `[I]` (rows player-creation 8 and hirelings 24,
+  mercenary header's write side, while [player/creation § A2](../../specs/player/creation.md#a-the-stub-and-the-servers-checks)
+  and [hirelings F8](../../specs/hirelings/README.md) still state those `[I]` (rows player-creation 8 and hirelings 24,
   raised by H1a and H1b, waiting for the H6g and H6f rounds). If the review holds rule 1 (the weaker tag) across specs
   here, those two saves passages go back to "read from the code" until then.
 - **Not reflected, with the reason:**

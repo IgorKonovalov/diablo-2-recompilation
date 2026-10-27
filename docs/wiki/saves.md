@@ -51,7 +51,7 @@ item list; the test the writer makes for one is read from the code.
 *Save and Exit* in single player writes the file **twice**, and both writes are byte-identical. Nothing was written
 during play in the first save test run ([save/d2s § Entry points](../specs/save/d2s.md#entry-points)).
 
-Single player does write the file during play in one case: **a death**. A later run saw the death path save the
+Single player also writes the file during play at **a death**: a later run saw the death path save the
 character once, just before the respawn. That is an event save, not an autosave. There is **no autosave** in single
 player: the periodic save routine was called all through every session and never saved. Which of its checks stopped
 it is read from the code. The periodic save, and a hosted save that is skipped when nothing changed, need a host
@@ -85,7 +85,8 @@ Codes 6 and 5 both reach the player as error 14, and you are back at the main me
 the size, so a file with a wrong size and a right checksum fails with 5, one with a wrong checksum fails with 6, and
 one with **both** wrong fails with 6 too. These steps were checked with deliberately broken saves: each failed with
 the code above, mapped to the error the player sees through the game's table, and versions 91, 94, 96 and 97 behaved
-as described (92, 93 and 95 were not tried). A few codes were never met, and the older reader was never fed a real
+as described (92, 93 and 95 were not tried). Where a file failed two tests, the code named the earlier one; the
+size and version tests were not told apart. A few codes were never met, and the older reader was never fed a real
 old save. In single player, a short file, a bad magic number, a wrong version or a status that does not fit the game
 can only reach the reader if the file changes after the character screen has listed it, because that screen checks
 those first (read from the code); the tests swapped the file in at that moment.
@@ -136,7 +137,7 @@ What is confirmed and what is not:
   Nightmare save was also seen to load) and the map seed. The `level` byte is output only: a save edited to say
   level 2 for a level-1 character was rewritten with level 1. A field at `0x02C` is passed through unchanged; what
   it means is unknown.
-- Also confirmed since: the weapon-swap bit read back after a swap, the hotkeys' "left button" flag and their empty
+- Also confirmed since: the weapon-swap bit written and read back after a swap, the hotkeys' "left button" flag and their empty
   slots, the two swap skills, the graphics and colour bytes (written from the equipment picture, not read on load),
   the time and `0x034` fields (not read on load), and the reserved bytes (written as 0, not read). A class byte above
   7 is a read error, and an act of 5 or more is read as 0.
@@ -145,8 +146,7 @@ What is confirmed and what is not:
 - The byte at `0x0CF` belongs to the host, not to the game. The game stores it on load and writes it back on save
   (confirmed). Read from the code: it hands it to the host program only in a ladder game, and no game rule reads it.
   A reimplementation carries it unchanged.
-- Read from the code only: a hotkey's item reference and the mask on its skill id, and the write side of a swapped
-  weapon set.
+- Read from the code only: a hotkey's item reference and the mask on its skill id.
 
 **The status word** ([save/d2s § D](../specs/save/d2s.md#d-header-fields)) packs these bits. The checks the reader
 makes on them were each met with a mismatched save, except the ladder check (it needs the host hook, never installed
@@ -335,8 +335,8 @@ The rest of the extended part is confirmed over the saves the game wrote, unless
 - fixed fields: defense for armor, then maximum and current durability (current only when the maximum is not 0),
   the quantity of a stack, and the socket count. Defense and durability use the `Save Add` offset. That they skip
   `ValShift`, and that the quantity and the socket count skip `Save Add`, cannot be seen with the shipped table,
-  where those values are 0; it is read from the code. For an item version of 95 or less, the reader takes the current
-  durability in 8 bits. Weapon damage, speed and block are not saved; the reader rebuilds them from the base record (the low
+  where those values are 0; it is read from the code. In a save of version 95 or less (94 was tried), the reader takes the
+  current durability in 8 bits. Weapon damage, speed and block are not saved; the reader rebuilds them from the base record (the low
   quality branch of that rebuild was not met);
 - the property lists described below.
 
@@ -369,10 +369,10 @@ flowchart TD
 
 How sure this is: the framing was decoded over every property list of the 146 saves the game wrote in the tests
 (652 lists, 1 687 properties, 77 distinct ids), and each list ended exactly where the next item began. Groups 17,
-48, 50, 54 and 57 were seen, and after group 57 the reader sets a poison counter to 1. Three dropped items saved
+48, 50, 52 (on one item), 54 and 57 were seen, and after group 57 the reader sets a poison counter to 1. Three dropped items saved
 after pickup held exactly the lists logged when they were created. Maximum life and mana are stored without their 8
 fraction bits and multiplied back by 256 on load (confirmed). An item's property parameter is read as an unsigned
-number. The rest is read from the code only: group 52, a follower written without its head, whether the shift is
+number. The rest is read from the code only: a follower written without its head, whether the shift is
 signed, and the old item lists of saves before version 93.
 
 ## The mercenary header
@@ -468,7 +468,7 @@ From [save/d2s § Open questions](../specs/save/d2s.md#open-questions):
 - what the character-creation screen means by status bit 1.
 
 Beyond those, the "read from the code" points above (the host-hook paths, the less common branches of the extended
-item fields, group 52, and the old formats) are still waiting for a run, or have no case on the shipped data.
+item fields, and the old formats) are still waiting for a run, or have no case on the shipped data.
 
 ## Where to read more
 

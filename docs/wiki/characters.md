@@ -53,8 +53,9 @@ This layout was checked on 35 stubs
 ([player/creation § A](../specs/player/creation.md#a-the-stub-and-the-servers-checks)).
 
 The server then checks the stub in a fixed order: length, checksum, the size field, the version (92 to 96), the
-name, the status word and the class byte. This order is read from the code. Every stub of the test run passed, so
-none of the failure codes has been seen. That the client adds the checksum when it writes the stub is also read
+name, the status word and the class byte. Every stub of the creation run passed. The same header checks, run later
+on deliberately broken saves, confirmed each failure code and the order wherever two tests could be told apart
+([save/d2s § D3–D5](../specs/save/d2s.md#d3d5-reading-a-save), the [saves](saves.md) page). That the client adds the checksum when it writes the stub is also read
 from the code only. When the "new" bit is set, the server clears it and builds a fresh character instead of
 reading the rest of the file; a stub followed by extra bytes would be a load error, which is again read from the
 code only. The status word and the rest of the header are explained on the [saves](saves.md) page.
@@ -369,8 +370,9 @@ the name range), its type Id and its experience. On load
    expansion game creates it in any act. In the run, 10 classic loads outside their act were not created and the
    header was kept.
 
-The load side was checked on 33 headers. The write side (no save was written in that run), a dead mercenary, a
-name past the end of its range, and the empty-header rule (all zeros means no mercenary) are read from the code
+The load side was checked on 33 headers. A later save run confirmed the write side, a dead mercenary written and
+loaded back dead, and the empty header (all zeros means no mercenary, and the load goes on)
+([save/d2s § D](../specs/save/d2s.md#d-header-fields)). A name past the end of its range is read from the code
 only. The header layout is on the [saves](saves.md) page.
 
 Resurrection costs `min(50000, (L² ÷ 2) × 15)` gold, with `L` the mercenary's level, paid like a hire; the economy

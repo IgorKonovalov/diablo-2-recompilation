@@ -2,19 +2,19 @@
 from: spec-writer
 to: architect
 date: 2026-10-27
-status: open
+status: done
 context:
-  - ../plans/0038-inferred-claims-sweep.md#implementation-log
-  - ../specs/save/d2s.md
-  - ../specs/items/uniques-sets.md
-resolution: ""
+  - ../../plans/0038-inferred-claims-sweep.md#implementation-log
+  - ../../specs/save/d2s.md
+  - ../../specs/items/uniques-sets.md
+resolution: "Reviewed 2026-10-27 (architect, lane/s38s review): accept with fixes (9). Rulings: the class-7 halt is player-creation 11's [C], rows 20/34 its d-none consequences; a wiki follows the spec carrying an accepted raise when the weaker spec only lags its round; H1b (c) applied as filed; rows 24, 123, 138 raised at review on H1b's compared check lines, 20's type-7 test and 32's mask stay [I]; the stat-72 width reads the save version. save/d2s {C 240, I 68, L 3}, uniques-sets {C 100, I 38, L 4}. Plan 0038 log."
 ---
 
 Review request: plan 0038 Phase 3, the **save/d2s** and **items/uniques-sets** clusters, on `lane/s38s` (worktree
 `recompilcation-project-s38s`, from `main` `cb3a7014`). Blocking: the two research-map rows and the clusters' close.
 
-- **Specs:** [save/d2s](../specs/save/d2s.md) {C 91, I 149, L 3} → {C 239, I 67, L 3};
-  [items/uniques-sets](../specs/items/uniques-sets.md) {C 71, I 55, L 4} → {C 100, I 38, L 4}; `updated:` 2026-10-27.
+- **Specs:** [save/d2s](../../specs/save/d2s.md) {C 91, I 149, L 3} → {C 239, I 67, L 3};
+  [items/uniques-sets](../../specs/items/uniques-sets.md) {C 71, I 55, L 4} → {C 100, I 38, L 4}; `updated:` 2026-10-27.
   Front matter recounted by script; no `[L]` above *Open questions*; gate green, W1 and W4 0.
 - **Rulings honoured:** H1a ruling 1 as one `[I]` reach note after the header table (codes 9, 7, 8 to 14); rows 20
   and 34's reach condition as an `[I]` note under the class-7 `[C]` (save/d2s keeps only its save side); the d-none
@@ -34,4 +34,4 @@ Review request: plan 0038 Phase 3, the **save/d2s** and **items/uniques-sets** c
   (hirelings open, H6f), H1a (player/creation H6g, hirelings H6f, (k) open), H6d (quest-drops open) and H2b
   (sockets-runewords open). Counts entry:
   [s38s counts](2026-10-27-spec-writer-architect-s38s-save-d2s-and-uniques-sets-counts-for.md).
-- Ledger row added in [metrics](../plans/metrics.md), usage "—".
+- Ledger row added in [metrics](../../plans/metrics.md), usage "—".
