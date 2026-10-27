@@ -1476,6 +1476,21 @@ LAYOUTS["states"] = dict(size=0x3C, fields=[
 LAYOUTS["elemtypes"] = dict(size=4, fields=[C("Code", 0x0)],
                             txt_only={"Elemental Type": "editor name of the element; not in the record"})
 
+# ------------------------------------------------------------------ hitclass (4 B)
+# Plan 0050 Phase 0 (docs/tables/HitClass.md). Code list: the record is the 4-character code; row 0 (`None`) has a
+# blank code and stores four spaces. MonStats2 `hit class` and Weapons `hit class` name its rows by Code.
+LAYOUTS["hitclass"] = dict(size=4, fields=[C("Code", 0x0)],
+                           txt_only={"Hit Class": "editor name of the hit class; not in the record"})
+
+# ------------------------------------------------------------------ monseq (6 B)
+# Plan 0050 Phase 0 (docs/tables/MonSeq.md). One record per monseq.txt row (1 010), in row order: the sequence as
+# the ordinal of its name among the distinct `sequence` values (row 0's blank name is ordinal 0, the same index
+# MonStats Sk<k>seq stores), the monmode row, the frame, the direction and the event code.
+LAYOUTS["monseq"] = dict(size=6, fields=[
+    R("sequence", 0x000, "monseq:sequence", "u16", distinct=True),
+    R("mode", 0x002, "monmode:code", "u8"), I("frame", 0x003, "u8"), I("dir", 0x004, "u8"), I("event", 0x005, "u8")],
+    txt_only={"eol": "end-of-line marker column"})
+
 # ------------------------------------------------------------------ monmode, plrmode (52 B = 0x34)
 # Plan 0037 Phase 0 (docs/tables/MonMode.md, PlrMode.md). The ObjMode shape: the mode name, its two-letter Token
 # (the animation token, not the Code column: `knockback` stores GH), then 16 bytes that are 0 in every record.
