@@ -621,7 +621,32 @@ class Pass:
                 a = self.take("MK")
                 self.eq("MK rs (exit)", a["rs"], fmt(rsd.t()))
                 self.eq("MK gs (exit)", a["gs"], fmt(self.gs.t()))
+                n0 = sum(v for k, v in self.stats.items() if k.startswith("predicted by the collision model"))
                 self.pred("CollisionTest", a["r"], lambda: self.chk.world.collision_test(room, x, y, size, mask))
+                if size in (0, 1) or mask in (0x01C0, 0):
+                    # plan 0038 H5d (collision 5, 24; spawn 41): the size / mask cases by whether the model predicted them
+                    n1 = sum(v for k, v in self.stats.items() if k.startswith("predicted by the collision model"))
+                    k = "H5d CollisionTest (size %d, mask 0x%04x) %s, result %s, class %d" % (
+                        size, mask, "predicted" if n1 > n0 else "oracle", "0" if a["r"] == 0 else "non-zero", cls)
+                    self.stats[k] = self.stats.get(k, 0) + 1
+                    if size in (0, 1) and n1 > n0:
+                        # the case a wrong reading would get wrong: size 2's plus test on the same cells
+                        W = self.chk.world
+                        ov = getattr(self, "overlay", None)
+                        alt = None
+                        try:
+                            if not self.snap() and ov is not None:
+                                W.maps_override, W.nears_override = ov(), W.model_near
+                            alt = W.plus_test(room, x, y, mask)
+                        except (collision.NotLogged, IndexError):
+                            alt = None
+                        finally:
+                            if not self.snap() and ov is not None:
+                                W.maps_override = W.nears_override = None
+                        if alt is not None and (alt == 0) != (a["r"] == 0):
+                            k = "H5d CollisionTest size %d: the one-cell test decides (a plus test gives %s)" % (
+                                size, "0" if alt == 0 else "non-zero")
+                            self.stats[k] = self.stats.get(k, 0) + 1
                 if self.snap():
                     self.coll_cases(room, x, y, size, mask, a["r"])
                 if a["r"] != 0 and not (fl & 0x80):

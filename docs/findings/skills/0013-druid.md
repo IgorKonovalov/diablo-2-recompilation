@@ -421,8 +421,27 @@ CancelEvents(game, u; 5, id); UnitQueueEvent(game, u; 5, frame + Param4, id, lvl
   len, id, lvl)` (skills/0007's contagion) and `0x005C7C20` (`ECX` the record, `EAX` the id, `ESI` the caster; game,
   target, len, lvl): `0x0056E680` again, on a hit `HitFlags`, `HitClass`, `calc1`, `SKILLS_RollElemDamage`,
   `0x0056C840(caster, &packet; max(len, 10), id)`, `ResolveAndQueue(…, 0x80)` and `DeliverQueued`; do 121 returns 1.
-  By the layout the list at `DataTables+0x17C` holds the shape-shift states, so the sum is the to-hit of the skills the
-  wereform lists record. (0x005C8A9B–0x005C8AC3, 0x005C8B5F–0x005C8BB1, 0x005C7C20–0x005C7CDC)
+  ~~By the layout the list at `DataTables+0x17C` holds the shape-shift states~~ (corrected 2026-10-27, below): the
+  list holds the States rows with the `disguise` flag, so the sum is the to-hit of the skills those states' lists
+  record, the wereforms among them. (0x005C8A9B–0x005C8AC3, 0x005C8B5F–0x005C8BB1, 0x005C7C20–0x005C7CDC)
+- [I] **Who fills `DataTables+0x17C`/`+0x180`** (plan 0051 Phase 1b item 3a, `lane/p51s`, 2026-10-27). `STATES_Load`
+  builds it after the table load. At 0x00618C4D–0x00618C58 it calls `sub_00611DC0_StatesListByFlag(ECX
+  &g_DataTables+0x17C, EDX &+0x180; EDI)`, and `EDI` is 16, set once at 0x00618113 (`mov edi, 0x10`). No instruction
+  of `STATES_Load` writes `EDI` after that, and the callees in between preserve it (`StatesMaskBuild` pushes and
+  pops it). `StatesListByFlag(list, count; k)` allocates `2 × States count` bytes and sets the `s16` count to 0. For
+  each record `i` (0x3C bytes at `DataTables+0xBC`, count `+0xC4`), it tests byte `+0x10 + k/8` against the mask
+  `1 << (k mod 8)` (the table 0x006CE268, `1 << i`) and appends `i` as a `u16`. So `k = 16` is flag bit 16,
+  **`disguise`** (byte `+0x12` bit 0), not `restrict` (bit 17), `group` or `transform`. On stock data that is the
+  seven rows 63 `dopplezon`, 93 `valkyrie`, 119 `shadowwarrior`, 139 `wolf`, 140 `bear`, 176 `monsterset` and
+  177 `delerium`, in id order ([States § Flag bits by row](../../tables/States.md#flag-bits-by-row), bit 16, `[C]`
+  data). The same pass builds four more lists the same way: `+0x16C`/`+0x170` with `EBX` (4, `pgsv`; `mov ebx, 4`
+  at 0x00618125), `+0x174`/`+0x178` with 11 (`curse`), `+0x184`/`+0x188` with 5 (`active`), and through
+  `sub_00611E60_StatesListByField` (`push 0x2a`) `+0x18C`/`+0x190`, the rows whose `s16` at `+0x2A` (`itemtype`) is
+  above 0. The only absolute references to `+0x17C`/`+0x180` (0x0096BDAC/0x0096BDB0) are this build and the free at
+  0x00618CF9–0x00618D15. The image has 28 register-relative `[reg+0x17c]` operands, 4 of them stores (0x00538D64,
+  0x00538EE1, 0x00538F5C, 0x0053A1F2, all `[esi+0x17c]`). Their base registers are not followed, so "no other
+  writer" is not claimed. The scan is kept in `workspace/logs/p51s/static/scan-17c.txt` (manifest `7436cda5…`). (fn:STATES_Load@0x00618100, fn:sub_00611DC0_StatesListByFlag@0x00611DC0, fn:sub_00611E60_StatesListByField@0x00611E60, fn:sub_00611D60_StatesMaskBuild@0x00611D60,
+  data:g_DataTables@0x0096BC30)
 
 ### 7. The missiles: do 117, 118, 123
 
@@ -501,7 +520,7 @@ boundary), `calc1`, `calc2`, `calc3`, `calc4`, `Param4` (`+0x154`), `ResultFlags
   near the caster (block `+0x14`/`+0x18` 0) (§ 3), a harness check.
 - [L] What `STATE_GroupClear`'s result means for a shape-shift (do 116 returns 0 and calls `SkillDelayFromCalc` when it
   is non-zero) (§ 4).
-- [L] Who fills `DataTables+0x17C`/`+0x180` and with which states (§ 6): code, not layout (plan 0051 P0b: `states.bin` has no list field; data candidates in States § Open questions), plan 0051 Phase 1b item 3; and whether
+- [L] ~~Who fills `DataTables+0x17C`/`+0x180` and with which states (§ 6)~~: read (§ 6, `STATES_Load`, flag bit 16 `disguise`; plan 0051 Phase 1b item 3a). Still open: whether
   `SKILLS_GetUnitSkill(caster, id)` and the used node are the same node at Armageddon's first period, and whether any
   other writer of its `+0x18` runs between the cast and that period (§ 5).
 - [L] Everything after each boundary (§§ 3–7), for a later batch or the harness.
