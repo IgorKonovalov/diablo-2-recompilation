@@ -1877,6 +1877,10 @@ def cmd_objop(args):
     t_note = [time.time(), 0]
     while time.time() - t0 < args.time and done < args.times:
         st.poll()
+        if getattr(args, "skip_operated", False):
+            # plan 0038 H4a: an object some earlier click operated (OO0, by its unit's OU0 position) is not a target
+            # again; without this a later objop went back to the Chaos seals already opened
+            visited |= {st.objs[u][1:3] for u in st.operated if u in st.objs}
         if time.time() - t_note[0] > 20:              # a status line every 20 s (plan 0038 H5b: silent objops)
             print("objop: %.0f s, player %s, %d Nova bursts since the last note" % (
                 time.time() - t0, st.pos and st.pos[:3], t_note[1]), flush=True)
@@ -3248,6 +3252,8 @@ def main():
     ap.add_argument("--corpse-tries", type=int, default=3, help="corpse: Find Item clicks per corpse")
     ap.add_argument("--corpse-max", type=int, default=40, help="corpse: stop after this many corpses")
     ap.add_argument("--no-nova", action="store_true", help="objop: never stop to cast Nova (Hell: Teleport through)")
+    ap.add_argument("--skip-operated", action="store_true", help="objop: never target an object already operated "
+                    "(an OO0 line for its unit)")
     ap.add_argument("--approach", action="store_true", help="objop: stop within --obj-near of the object, no click")
     ap.add_argument("--me", help="two clients (plan 0044): steer by this player's PLRS entry (tools/gdb/two-players.py): "
                                  "'host', 'join' or a unit id; join defaults to 'join'")

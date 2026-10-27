@@ -267,7 +267,7 @@ Both read as in § 3 and § 6, so nothing is corrected and the tags stay `[I]`.
 | `0x005A0C00` | `sub_005A0C00_UniqueMinions` | `min + RangeB(max−min+1)` minions unless champion; xfer copy, link, flag `0x10` | C |
 | `0x005A49B0` | `sub_005A49B0_SuperUniqueSpawn` | superunique from its record | C |
 | `0x005A0200` | `sub_005A0200_MonSuperUniqueIdSet` | `MonsterData+0x26` = superunique id | I |
-| `0x005B24E0` | `sub_005B24E0_EscortSpawn` | `n` × `SpawnNearUnitNoBox(class)`, linked to the unit | I |
+| `0x005B24E0` | `sub_005B24E0_EscortSpawn` | `n` × `SpawnNearUnitNoBox(class)`, linked to the unit | C (H4a: 20 units of the passed class, return 1, tails 42 and 60) |
 | `0x005A48C0` | `sub_005A48C0_ChampionMemberMark` | pack member or preset champion: special, flags `0x05`, mod appended, `SpecialModsApply` | C |
 | `0x005A4440` | `sub_005A4440_SpecialMonRestore` | inactive-unit restore of a special: saved mods and name seed, `SpecialModsApply` without minions | I |
 | `0x005A46E0` | `sub_005A46E0_MinionRestore` | inactive-unit restore of a minion: saved mods, handlers with flag 0 | I |
@@ -1081,6 +1081,104 @@ What it adds to § 7 here:
   "level-dependent class" for row 30 is class 492, or 529 in level 110. (fn:sub_0063EC70_LevelClassVariant@0x0063EC70,
   fn:sub_00651040_MonClassChain@0x00651040, run:2026-10-15-objects)
 
+## Plan 0038 batch H4a (run:2026-10-21-sweep-monsters-a)
+
+Harness batch H4a of [plan 0038](../../plans/0038-inferred-claims-sweep.md) took 21 rows (22 statements) of
+[monsters/special](../../specs/monsters/special.md) ([inventory](../../plans/0038-inventory/monsters-special.md); spec
+lines `Lnnn` at `main` `1d0262a`). Record: [experiments.md § run:2026-10-21-sweep-monsters-a](experiments.md#run2026-10-21-sweep-monsters-a).
+Logger `tools/gdb/mon-h4a.gdb` (mon-stats.gdb unchanged, plus `tools/gdb/mon-h4a.py`: `SUC`/`SUCR` at every call of the
+tail cases 0x005A4BFE–0x005A4E43 with the pushed arguments, `SURD` after Radament's draw, `GQ` at the Chaos Sanctuary
+gate). Checks: `tools/sweep_h4a.py` (`su`, `tails`, `handlers`, `names`) on the batch's logs and on 63 kept logs of the
+earlier monster runs and run:2026-10-20-chain (`workspace/logs/h4a/check/kept-logs.lst`), bad = 0 in every part;
+`tools/monstats.py check` 0 monstats mismatches on every session log (the chained `monspawn.py` and DRLG models'
+mismatches on three logs touch no row of this section; they are listed in the record).
+
+
+- **special 30** (L349, "the second call uses the same local seed and gives the same index"), **special 50, aura half**
+  (L501, `hasAura` set by a fixed 30) and **special 51** (L509, the second `UModAura`) **raised.** [C] Bremm Sparkfist
+  (record 28, `Mod1` 30, session durance): two `AUR` lines with the same name seed, `n` 7 and `r` 2, and two `AURS` rows
+  2, the second after `SpecialModsApply`'s exit; the kept logs hold two more such records (`check/check-kept.txt`:
+  `aura twice: same draw, same row, the second after SpecialModsApply` 2). A reading without the second call gives one
+  `AUR`; one with a fresh seed would draw on a stepped local seed. **Control** (`check/aura-control.txt`, `AUR` lines per
+  `SU0` .. `SUX` window): three superuniques whose 30 is an *extra* pick, not a fixed mod, get one `AUR` inside
+  `SpecialModsApply` and none after it: Shenk (record 42, session shenk), Nihlathak (60, nihl2) and the Infector of Souls
+  (36, mods 6, 27 fixed and 30 picked; chaos7). So `hasAura` follows the fixed list, not the unit's mods. (fn:sub_005A49B0_SuperUniqueSpawn@0x005A49B0,
+  fn:sub_005A1650_UModAura@0x005A1650, run:2026-10-21-sweep-monsters-a)
+- **special 34** (L372, rows 10, 11, 13, 14, 15 null) **raised in part.** [C] for rows 10 and 13: every
+  `SpecialModsApply` window (`HD0` .. `SMAX`) skips a listed mod whose `g_UModHandlers` slot is null and calls the
+  others in list order, after the always-run rows 1–4: 121 windows in this batch's logs (row 13 skipped 6 times, Treehead
+  WoodFist among them) and 855 in the 63 kept logs (row 10 skipped 11 times, row 13 7). The table read in the game's
+  memory gives the null rows `[0, 3, 7, 10, 11, 12, 13, 14, 15, 19, 20, 21, 22, 24, 29, 31, 32, 33, 34, 35, 40, 42]`.
+  **Remainder `[I]`:** rows 11, 14 and 15 (`durieldead`, `spcdamage`, `partydead`) were in no logged list; their slots
+  are null in the same read, but no call skipped them. (data:g_UModHandlers@0x0073C008,
+  fn:sub_005A2120_SpecialModsApply@0x005A2120, run:2026-10-21-sweep-monsters-a)
+- **special 35** (L373, row 12 `bloodraven`: client name only) and **special 68** (L645, string 3111) **raised.** [C]
+  Blood Raven (class 267, session raven2) is written mods `[12, 22]` by the preset path (`PMAX`), with no
+  `SpecialModsApply` window, so no server handler runs for row 12; the client builder is called for mod 1 and then for
+  mod 12 (`CNB` m 12), which returns string 3111 *Blood Raven* (`sweep_h4a.py names`: `mod12 name reproduced: class
+  267` 1). (data:g_ClientUModHandlers@0x00724D78, fn:sub_004AC870_ClientMonNameBuild@0x004AC870,
+  run:2026-10-21-sweep-monsters-a)
+- **special 48** (L491, the placed bit) **raised.** [C] On the kept logs, three `SuperUniqueSpawn` calls for a record
+  with `Stacks` 0 whose placed bit (`game+0x1D30 + (id >> 3)`, bit `id & 7`) was already set returned at 0x005A4A09
+  with no unit (`check/check-kept.txt`: `placed bit set, Stacks 0: refused` 3); every first call of those records
+  created its unit. (0x005A4A09, tbl:SuperUniques.txt:Stacks, run:2026-10-21-sweep-monsters-a)
+- **special 54** (L520, tail 10) **raised in part** (architect review: the lane filed it raised). [C] Radament (session radament): the tail draws `Range(u.seed, 5)` once
+  (`SURD` r 0, reproduced from the logged unit seed), then calls `SpawnNearUnitNoBox` with class 4 (`skeleton5`) 2 + r
+  = 2 times and once each with 276, 382, 385, 389 (`skmage_pois3`, `skmage_cold4`, `skmage_fire3`, `skmage_ltng3`),
+  radius 4, flags 0x40; six units were created, each call returning non-zero. The draw's position (one unit-seed step
+  before the spawns) holds whatever r is. **Remainder `[I]`:** the `+ r` of the
+  `skeleton5` count (`add ebx, 2` on the draw, 0x005A4CDE–0x005A4CE0): only r = 0 was met, and r = 0 cannot tell
+  `2 + r` from a fixed 2 or any other count that is 2 at r = 0 (reverser rule 10).
+  (0x005A4CD1, fn:sub_005A49B0_SuperUniqueSpawn@0x005A49B0, run:2026-10-21-sweep-monsters-a)
+- **special 55** (L521, tails 26, 27, 29) **raised.** [C] The three council members (session council) each make
+  `QUESTS_HookMonster(19, record, room, 0, 1)` then `0x00545B50`, and nothing else; no unit is created in
+  the tails. (fn:sub_005A49B0_SuperUniqueSpawn@0x005A49B0, fn:QUESTS_HookMonster@0x005436B0, run:2026-10-21-sweep-monsters-a)
+- **special 58** (L524, tail 42) **raised.** [C] The Siege Boss (Shenk, session shenk): `EscortSpawn(453, 1, radius
+  20, count 20, flags 0)` created 20 units of class 453 (`minion1`) and returned 1; then quest hook 31, `0x00545B50`,
+  and `STATE_Set(u, 118, 1, …)`. (fn:sub_005B24E0_EscortSpawn@0x005B24E0, run:2026-10-21-sweep-monsters-a)
+- **special 60** (L526, tail 60) **raised.** [C] Nihlathak (session nihl2): `sub_0058F030_MonSetOwner(217, 1, 1, 0, 60)`,
+  `sub_00620BB0_UnitGetRoom`, `LevelClassVariant(…, 453, …)` (0x0063EC70), `EscortSpawn(458, 1, radius 10, count 20, flags 0x40)`
+  creating 20 units of class 458 (the variant of `minion1` 453 on level 124), then quest hook 34.
+  (fn:sub_005B24E0_EscortSpawn@0x005B24E0, fn:sub_0063EC70_LevelClassVariant@0x0063EC70,
+  run:2026-10-21-sweep-monsters-a)
+- **special 69** (L646, the fixed boss strings) **raised in part.** [C] for 156 (Andariel, string 3021), 242
+  (Mephisto, 3062) and, on a kept log, 256 (Izual, 1014): each name is the fixed string of the class, reached by the
+  client builder's class test (`names-fixed`: reproduced 156 1, 242 1; kept 256 1). **Remainder `[I]`:** the other
+  classes of the list (211, 243, 333, 544, 704–709) were not met. (fn:sub_004AC870_ClientMonNameBuild@0x004AC870,
+  run:2026-10-21-sweep-monsters-a)
+- **special 56** (L522, tails 36–38) **raised in part.** [C] for records 36 and 38 (session chaos7): the Infector of Souls
+  (after seal 392 was operated) and the Grand Vizier of Chaos (after seal 396) each make `QUESTS_HookMonster(23, record,
+  room, 0, 1)` and nothing else inside the tail; `ModAppendApply(22, 1, …)` follows, as for every record
+  (`sweep_h4a.py tails`: `tail_36_calls_reproduced` 1, `tail_38_calls_reproduced` 1). **Remainder `[I]`:** record 37, Lord
+  De Seis: seal 394 was logged (`OU0`/`OI0` at (7773, 5155)) but the pilot found no hop towards it (d 33, `no hop towards
+  the object`), so it was never operated and De Seis was not created. (fn:sub_005A49B0_SuperUniqueSpawn@0x005A49B0,
+  fn:QUESTS_HookMonster@0x005436B0, run:2026-10-21-sweep-monsters-a)
+- **special 52** (L510, the tail by record index, non-default cases) and **special 46** (L488, the G1 header, following
+  the tail rows) **raised in part.** [C] for the cases met: every logged call between `SUT` and `SUX` is the tail table's
+  entry for the record's index, with the pushed arguments read from 0x005A4BFE–0x005A4E43: records 10, 26, 27, 29, 36, 38,
+  42 and 60; and records 0, 4, 28, 30, 48 and 49, which have no tail, make no call there (`sweep_h4a.py tails` on the
+  twelve session logs, bad 0). On the 63 kept logs, which have no `SUC` lines, only the units created inside a tail are
+  checked: records 0, 3, 4, 5, 13, 41, 47, 49, 50, 51 and 56 (no tail) create none there, and record 42 creates its 20
+  escorts of class 453 (bad 0). **Remainder `[I]`:** the tails of records 6 (The
+  Countess), 37 (Lord De Seis), 39 (The Cow King), 43–45 (the Ancients) and 62 (Baal Subject 2), not met.
+  (fn:sub_005A49B0_SuperUniqueSpawn@0x005A49B0, 0x005A4BF7, run:2026-10-21-sweep-monsters-a)
+- **special 9** (L118, `thief` dropped), **10** (L119, the aura classes), **25** (L319, Lord De Seis's index 5), **31**
+  (L350, the local-seed step of De Seis and `ubermephisto`), **38** (L381, row 24 never written) and **special 50, thief
+  half** (L500) **shortfall.** Each needs Lord De Seis (record 37, the only record with `Mod3` 24, and the only one the
+  index override names). He was not created: seal 394 was not operated (special 56 above). The rows stay `[I]`, counted
+  as H4a; the class-704 halves of 10 and 31 stay d-owner. Route: an owner-played Chaos Sanctuary session on the
+  `UniqNova` save with `tools/gdb/mon-h4a-obj.gdb` (seed 4907, Nightmare): open seal 394 in the wing where the pilot
+  stopped, kill the three seal bosses (this also gives spawn 11's closed gate, monsters/0002).
+  (fn:sub_005A49B0_SuperUniqueSpawn@0x005A49B0, fn:sub_005A1650_UModAura@0x005A1650, run:2026-10-21-sweep-monsters-a)
+- **special 59** (L525, tails 43–45, the Ancients) **shortfall.** No recipe with the Ancients quest open was built; the
+  three records were never created. Stays `[I]`, counted as H4a; route as filed (a quest-open recipe and `objop` on the
+  altar, or owner play). (fn:sub_005A49B0_SuperUniqueSpawn@0x005A49B0, run:2026-10-21-sweep-monsters-a)
+
+**Symbols:** `sub_005B24E0_EscortSpawn` I → C: its logged return (1) and the units created between its call and its
+return (20 of the class passed, twice) are what the `tails` part compares (reverser rule 14). No other symbol moves:
+`QUESTS_HookMonster`'s return is not compared, and the wanderer functions' effect is checked on the seed, not on a
+return.
+
 ## Open questions
 
 - ~~[L] The monster level the aura handler reads in a classic game~~ answered in
@@ -1089,6 +1187,9 @@ What it adds to § 7 here:
 - ~~[L] What reaches `sub_005A4940_MonMakeSpecial` (caller `0x00583050`, likely a skill) and whether it occurs in normal play.~~
   Answered in § Plan 0038 batch H4b (special 2): `0x00583050` is the Shrines code-20 function (shrine-function table
   entry 20); it occurs when that shrine is operated. No session has operated one (d-owner).
+- [L] Lord De Seis (record 37): the `thief` drop, the forced aura index 5, the local-seed step, his tail and the closed
+  Chaos Sanctuary gate after the three seal bosses die are code reads only (plan 0038 H4a shortfalls: seal 394 not
+  operated by the pilot). Route: an owner-played Chaos Sanctuary session with `tools/gdb/mon-h4a-obj.gdb`.
 - [L] The client draws its name on the client unit's own seed; whether that seed is used for anything else on the client
   after the name is set was not checked. It cannot feed the server.
 - [L] A unique's random colour (src:d2dfg-blizzard: `Utrans` 0 means random; src:fandom-d2-elite-monsters: palettes

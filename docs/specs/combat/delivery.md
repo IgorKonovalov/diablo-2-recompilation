@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, combat/overview, combat/to-hit, combat/damage, combat/reductions, monsters/stats]
 consumed_by: [combat/overview, items/tc, stats/states, items/economy]
-tags: {C: 80, I: 63, L: 3}
+tags: {C: 80, I: 64, L: 4}
 updated: 2026-10-21
 ---
 
@@ -386,6 +386,13 @@ C1. Leech(att, def, pkt):                                            [C] (fn:COM
   (0x0057C47D–0x0057C4CE, run:2026-10-16-combat)
 - C1. `Drain` 0 or blank means no leech from that monster at all; the stock `Drain` cuts leech further in Nightmare
   and Hell for many classes (`fallen2`: 100 / 85 / 75). [C] (tbl:MonStats.txt:Drain, run:2026-10-16-combat)
+- C1. **The leech starts from the attacker's life after the defender's handlers.** B3's event 5/1 (or 6/2) handlers
+  run before B4's `Leech`, so a draining monster that a player's lightning thorns (`sub_005BF720_StatEv10ThornsLightning`,
+  in the defender's event 1) has just hurt adds its gain to the life the handler left, not to its life at the
+  event's entry. One event separates the two readings (`abs-nm-marsh`, 25 life: a checker that took the entry life
+  mismatched there, and checks it once corrected); the other events where the handler changed the attacker's life
+  have no leech after it, or do not separate them. [I] (fn:COMBAT_ApplyDamage@0x0057C6C0, fn:COMBAT_Leech@0x0057C420,
+  fn:sub_005BF720_StatEv10ThornsLightning@0x005BF720, run:2026-10-21-shortfalls2)
 
 ### D. Stun, cold, freeze, poison, burn
 
@@ -534,8 +541,9 @@ E4. MonLifeTick(game, unit):                                          [C] (fn:su
   (negative stat 74) were reproduced by plan 0041's run. [C] (fn:sub_00580610_LifeRegenTick@0x00580610,
   run:2026-10-17-stats)
 - E4. **A player's tick never takes life below 256** (one point): a result below 256 is raised to 256, so poison and
-  open wounds cannot kill a player. No poisoned tick reached the floor and open wounds never hit the player.
-  [I] (fn:sub_00580610_LifeRegenTick@0x00580610, 0x0058065B–0x0058066E)
+  open wounds cannot kill a player. No poisoned tick reached the floor (0 in 1 431 poisoned ticks of
+  run:2026-10-21-shortfalls2, final for plan 0047: [stats/states E2](../stats/states.md#e-the-regeneration-tick)) and
+  open wounds never hit the player. [I] (fn:sub_00580610_LifeRegenTick@0x00580610, 0x0058065B–0x0058066E)
 
 **E5. The other stat-event handlers.** `UNIT_DispatchEvent` runs a unit's handler records for the event, newest
 first; a handler draws on the seed of **its own unit**, the unit that owns the event (the attacker for the `do…`
@@ -736,9 +744,13 @@ against a `fallen2` at life 74776 with physical resistance 15). Reduced packet: 
 - [combat/0001 § 16](../../findings/combat/0001-formulas.md#16-plan-0047-phase-2-the-shortfalls-run2026-10-20-shortfalls)
   and [combat/experiments § run:2026-10-20-shortfalls](../../findings/combat/experiments.md#run2026-10-20-shortfalls)
   (plan 0047 Phase 2, 0 mismatches over 18 737 events) with its review in the
-  [plan 0047 log](../../plans/0047-simulation-shortfalls.md#implementation-log): crushing blow on champions 52, the
+  [plan 0047 log](../../plans/done/0047-simulation-shortfalls.md#implementation-log): crushing blow on champions 52, the
   type flags of 7 474 monsters, freeze 81, the total ≤ 0 (488 + 113 on the player, 32 on a monster), the negative
   absorbed amount 186.
+- [combat/0001 § 17](../../findings/combat/0001-formulas.md#17-plan-0047-phase-2b-flat-absorb-by-element-run2026-10-21-shortfalls2)
+  and [combat/experiments § run:2026-10-21-shortfalls2](../../findings/combat/experiments.md#run2026-10-21-shortfalls2)
+  (plan 0047 Phase 2b, 0 mismatches over 2 527 events) with its review in the plan 0047 log: the leech after a
+  defender's handler, one separating event (C1).
 - [skills/0001](../../findings/skills/0001-dispatch.md) §§ 10 (item-event casts and the `ItemTarget` 2 helper's draws,
   the dated Phase 1b note), 12 (the finisher's seed save and restore; its callers, as corrected by the dated 2026-10-21 note).
 - [skills/0014](../../findings/skills/0014-assassin.md) §§ 1 (the finisher's six calls, `ItemEffect` 36), 4 (the
@@ -767,7 +779,9 @@ against a `fallen2` at life 74776 with physical resistance 15). Reduced packet: 
 - [L] Not reached: open wounds on a monster with the champion flag `0x04` alone (no stock spawn carries it, E2) and
   on a player (only another player's item wounds a player: plan 0044's case, not run); freeze from a missile and the
   freezing inside the nested delivery (D3). ~~The player's life tick~~: reproduced by run:2026-10-17-stats under
-  poison (E4); its 256 floor was not reached (0 in run:2026-10-20-shortfalls; plan 0047 Phase 2b).
+  poison (E4); its 256 floor was not reached (0 over run:2026-10-20-shortfalls and run:2026-10-21-shortfalls2; final
+  for plan 0047, out of it).
+- [L] The leech after a defender's handler (C1): one event separates it from a leech on the entry life (30 asked).
 - ~~The state end: when a timed state's stat list is freed at its end frame.~~ At `frame + duration` by unit event 12,
   one event per apply or refresh: [stats/states § C](../stats/states.md#c-expiry-and-removal) (plan 0041).
 - ~~Event handlers other than 14, 15 and 16 (skill on hit, knockback, slow and the like) draw on seeds this spec

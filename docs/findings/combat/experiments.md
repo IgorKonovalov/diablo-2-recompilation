@@ -317,7 +317,7 @@ One run under two checkers: this section holds the combat sessions; the stats se
 [stats/experiments](../stats/experiments.md#the-stats-sessions-of-run2026-10-20-shortfalls), the travel sessions in
 [quests/experiments](../quests/experiments.md#the-travel-sessions-of-run2026-10-20-shortfalls).
 
-- **Question:** plan [0047](../../plans/0047-simulation-shortfalls.md) Phase 2. Do the branches that
+- **Question:** plan [0047](../../plans/done/0047-simulation-shortfalls.md) Phase 2. Do the branches that
   run:2026-10-16-combat left under the rare-branch floor of about 30 (combat/0001 § 15, last bullets) reproduce event
   for event when sessions are built for them: crushing blow on champions, the resistance caps, magic immunity, the
   negative absorbed amount, the negative total, evade, weapon block, dodge, avoid, freeze, flat absorb, a walking
@@ -484,7 +484,7 @@ input and is dropped with a count (8, one log).
 ## run:2026-10-21-shortfalls2
 
 The run is defined in [stats/experiments § The stats sessions of run:2026-10-21-shortfalls2](../stats/experiments.md#the-stats-sessions-of-run2026-10-21-shortfalls2)
-(plan [0047](../../plans/0047-simulation-shortfalls.md) Phase 2b); this section holds its combat sessions, the cold and
+(plan [0047](../../plans/done/0047-simulation-shortfalls.md) Phase 2b); this section holds its combat sessions, the cold and
 lightning flat absorb that `abs-nm-marsh` was to reach.
 
 - **Setup:** slot 2, tag `p47b`, saves `workspace/scratch-p47b/saves` (`CombatAbs` `05f4741c…`, pinned). Logger

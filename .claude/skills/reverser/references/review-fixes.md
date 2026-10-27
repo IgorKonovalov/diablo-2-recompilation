@@ -14,7 +14,8 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
    writers, call sites, instructions, items. Copy a run's counts from the kept, hashed check output, never from an
    earlier check. Seen: bit-17 writers 5 → 21
    ([0039](../../../../docs/plans/done/0039-backlog-sweep-4.md) P1b review); S4b row 17 short by 9, "7" instructions for 8 (0038);
-   eight wear and resurrection counts one off `check-run.txt` ([0043](../../../../docs/plans/done/0043-items-economy.md) P2 review).
+   eight wear and resurrection counts one off `check-run.txt` ([0043](../../../../docs/plans/done/0043-items-economy.md) P2 review);
+   pool 12's "six of the 25 `boss` classes" met for five (`lane/h4a` review, 0038).
 3. **Take totals against `main` after merging it**, not against the totals your batch started from.
    Seen: S2c, S3b and S1a reviews (0038), each recomputed.
 4. **"Never", "only", "no X": say what the run separates.** If one case carries both readings (Andariel has
@@ -47,7 +48,8 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
 10. **One case decides only if a wrong reading could not match it by chance.** Seen: aff 28's durability
     value, about one in eight (S2b, 0038). Count the cases that separate the readings, not the cases checked: a
     rounding needs a remainder (three curse lengths whose `MulDiv` is exact), and a model fix's counter is not its
-    evidence (59 events counted, one separating; `lane/p47b` review, [0047](../../../../docs/plans/0047-simulation-shortfalls.md)).
+    evidence (59 events counted, one separating; `lane/p47b` review, [0047](../../../../docs/plans/done/0047-simulation-shortfalls.md));
+    Radament's `2 + r` escorts filed raised on r = 0 alone (`lane/h4a` review, 0038).
 11. **"Moved" names the destination plan**; otherwise write "out of this plan". Seen: status bit 1
     (0039 P1b ruling 4); a closed entry's "(3) deferred" with no home (H7a review, 0038).
 12. **Carry a correction into the section it corrects**, not only into the run's ledger section: the claim, its
@@ -56,7 +58,8 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
     the switched-off reward writes, left in § 16 only (0042 P2 part 2 review); skills/0001's *Leads used* detail still
     naming start 25 for do 46's finisher calls after the § 12 note corrected it (`lane/p46m11` review,
     [0046](../../../../docs/plans/0046-skills-function-catalogue.md)); skills/0003 § 2's `EDX`-the-skill note filed under the
-    bullet after the one that still said `EDX` the level (`lane/p46m12` review, 0046).
+    bullet after the one that still said `EDX` the level (`lane/p46m12` review, 0046); class 312's remainder met by H4a but
+    still `[I]` in monsters/0004's H4b section (`lane/h4a` review, 0038).
 13. **At an observed boundary (ADR-0021), the `[C]` ends at the call.** What the callee makes of a compared argument
     (a class word, a register it must preserve, a mode) and every later call go in "After, `[I]`", also in the Answer
     summary. Seen: the radius of hits 24, 44 and 14 in a callee-saved register (`lane/p46m3` review); hit 52's row 0

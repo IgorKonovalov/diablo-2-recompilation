@@ -1417,7 +1417,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005B1CF0,func,sub_005B1CF0_MonPostCreateBoss,,I,monsters/special,docs/findings/monsters/0003-special-monsters.md
 0x005B21B0,func,sub_005B21B0_MonPostCreateMods,,C,monsters/special,docs/findings/monsters/0003-special-monsters.md
 0x005B23C0,func,sub_005B23C0_SpawnNearUnitNoBox,,C,monsters/spawn,docs/findings/monsters/0002-room-population.md
-0x005B24E0,func,sub_005B24E0_EscortSpawn,,I,monsters/special,docs/findings/monsters/0003-special-monsters.md
+0x005B24E0,func,sub_005B24E0_EscortSpawn,,C,monsters/special,docs/findings/monsters/0003-special-monsters.md
 0x005B2570,func,sub_005B2570_TentacleMinionsSpawn,,C,monsters/spawn,docs/findings/monsters/0002-room-population.md
 0x005B2700,func,sub_005B2700_SpawnPosOnTile,,I,monsters/spawn,docs/findings/monsters/0002-room-population.md
 0x005B2830,func,sub_005B2830_MinionsSpawn,,C,monsters/spawn,docs/findings/monsters/0002-room-population.md

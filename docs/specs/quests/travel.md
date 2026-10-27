@@ -265,10 +265,14 @@ Step notes:
   run 3's three attempts, from the Rogue Encampment and the Kurast Docks, reached no mode-0 waypoint). This stays `[I]`
   in plan 0042. (fn:sub_00584E30_WaypointOperate@0x00584E30 0x00584E78–0x00584E81, run:2026-10-18-quests2,
   run:2026-10-19-quests3)
-- C1. [I] Plan 0047's run operated one waypoint from mode 0 (the Crystalline Passage's, on the Act V route down from
-  the Arreat Plateau): mode 0 → 1 with one object-seed step, its row's `Sync` 0, 0 mismatches. One of the 20
-  activations asked, so the mode-0 branch stays `[I]`; plan 0047 Phase 2b carries the rest. (fn:sub_00584E30_WaypointOperate@0x00584E30,
-  tbl:Objects.txt:Sync, run:2026-10-20-shortfalls, [quests/0002](../../findings/quests/0002-travel.md))
+- C1. [I] Plan 0047's runs operated seven waypoints from mode 0 on the Act V routes from the Arreat Plateau: one in
+  run:2026-10-20-shortfalls (the Crystalline Passage's) and six in run:2026-10-21-shortfalls2 (three in the
+  Crystalline Passage, class 511; three in the Frigid Highlands, class 496, reached on foot), each mode 0 → 1 with one
+  object-seed step, its row's `Sync` 0, 0 mismatches. Seven of the 20 activations asked; the count is final for plan
+  0047 (a tool reason, the route fixes tried, the yield measured over eight sessions), so the mode-0 branch stays
+  `[I]`. (fn:sub_00584E30_WaypointOperate@0x00584E30,
+  tbl:Objects.txt:Sync, run:2026-10-20-shortfalls, run:2026-10-21-shortfalls2,
+  [quests/0002](../../findings/quests/0002-travel.md))
 - C2. [I] Over the 45 logs of the three runs, a field waypoint first seen after a waypoint arrival in its level was in
   mode 1 (87) or already 2 (8), and one first seen with no arrival was in mode 0 (4); the object lines are periodic, so
   first seen is not the creation, and the reading of `InitFn` 17's creation mode is not raised. (fn:OBJINIT_Waypoint@0x00547210,
@@ -758,7 +762,10 @@ manifest, and checked by `tools/quests.py check` with 0 mismatches.
 - Runs: [run:2026-10-17-quests](../../findings/quests/experiments.md#run2026-10-17-quests),
   [run:2026-10-18-quests2](../../findings/quests/experiments.md#run2026-10-18-quests2),
   [run:2026-10-19-quests3](../../findings/quests/experiments.md#run2026-10-19-quests3),
-  [run:2026-10-20-two-clients](../../findings/multiplayer/experiments.md#run2026-10-20-two-clients).
+  [run:2026-10-20-two-clients](../../findings/multiplayer/experiments.md#run2026-10-20-two-clients), and plan 0047's
+  travel sessions of [run:2026-10-20-shortfalls](../../findings/quests/experiments.md#the-travel-sessions-of-run2026-10-20-shortfalls)
+  and [run:2026-10-21-shortfalls2](../../findings/quests/experiments.md#the-travel-sessions-of-run2026-10-21-shortfalls2)
+  (the mode-0 activations of C1).
 - Tables: [Levels § Travel](../../tables/Levels.md#travel-plan-0042-phase-0), [Objects § Waypoints and
   portals](../../tables/Objects.md#waypoints-and-portals-plan-0042-phase-0), [Misc](../../tables/Misc.md),
   [LvlWarp](../../tables/LvlWarp.md).
