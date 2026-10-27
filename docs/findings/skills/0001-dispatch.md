@@ -44,6 +44,12 @@ Skills columns are named as in [Skills](../../tables/Skills.md); offsets are rec
   the players-only payment held in 1 334 player payments, 259 no-cost calls and 205 non-player calls; the payment and
   the delay state add no draw to the caster's seed in the events checked. The floor, the refusal (so the ignored
   result), blood mana and charges are not reached and stay `[I]`. (fn:SKILLS_PayCost@0x0056BFE0, run:2026-10-25-skills)
+- [C] *2026-10-27:* **Part 2** (§ 18, run:2026-10-27-skills, 0 mismatches), raised in part: `SKILLS_CanUse`'s codes 0,
+  1 (mana, a cost equal to the mana passing), 6 and 8 (delay, only for a row with `delay`) in 1 340 calls; a request
+  at frame `f + d` of a delay set at `f` for `d` frames passes; no refused request reached the request handlers in the run (the client's
+  own check refused first); `MonAttackStats`' 21, 22, 19 by the mode's columns in 26 425 calls, its `El` rolls the
+  only draws. Codes 2, 3, 4, 5, 7, the town refusal and `El2`/`El3` (given El1's bounds by the mask `0x40 + e`, `[I]`)
+  are not reached. (fn:SKILLS_CanUse@0x00647960, fn:sub_005A4F50_MonAttackStats@0x005A4F50, run:2026-10-27-skills)
 - [I] **Delay**: a player whose skill has `delay` > 0 gets the timed state `skilldelay` (121) until `frame + delay`;
   while it lasts `SKILLS_CanUse` refuses every skill whose own `delay` is ≥ 1, and no other.
   (fn:SKILLS_SetDelayState@0x0056EF90, fn:SKILLS_DelayOk@0x006478F0)
@@ -154,7 +160,7 @@ code windows R1–R7; `p45b-rows.txt` `cbf9c64a…`, the stock-row values compar
 | `0x00549BA0` | `PLRMSG_SkillAtUnit` | request at a unit: `CanUse`, range walk, mode command | I |
 | `0x00549960` | `sub_00549960_DualAttackAlternate` | Attack with two weapons alternates with Left Hand Swing | I |
 | `0x00549A60` | `sub_00549A60_NoManaMsg` | code-1 refusal: a message to the client | I |
-| `0x00647960` | `SKILLS_CanUse` | the request checks, codes 0–8 | I |
+| `0x00647960` | `SKILLS_CanUse` | the request checks, codes 0–8 (codes 0, 1, 6, 8 checked, § 18) | C |
 | `0x00647640` | `sub_00647640_SkillAmmoOk` | Throw / Left Hand Throw / Left Hand Swing items; scroll uses | I |
 | `0x00643F80` | `SKILLS_WeaponTypeOk` | `itypea*`/`etypea*` against the two hands | I |
 | `0x00647540` | `SKILLS_ManaOk` | mana (or life under state 114, or charges) against the cost | I |
@@ -765,8 +771,10 @@ event's own line. Raises of § 7 and § 15, each split where the run leaves a re
   binds` of the checker stayed at 0), the refusal of a cost above the unit's mana (`PAY refused` 0), and with it the
   ignored result of § 7; the blood-mana path (state 114 never on) and the charge path (no item skill used).
   (run:2026-10-25-skills)
-- [C] **No draw in the cost and the delay** (§ 15): in the 1 142 start and 1 269 do events of skills/0003 § 15's
-  eleven checked rows, the caster's seed at `SKILLS_SrvStart`'s and `SKILLS_SrvDo`'s `ret` is the entry seed stepped
+- [C] **No draw in the cost and the delay** (§ 15): in the 1 142 start and 1 269 do events that `SST.seed` and
+  `SDO.seed` check (skills/0003 § 15's eleven rows at 30 or more events, 828 start and 947 do; its five rows under 30,
+  106 and 106; 92 Poison Nova, 208 and 208; and the 8 Raise Skeleton do events; *count basis corrected 2026-10-27,
+  lane/p45k*: "eleven rows" alone was wrong, and these are not the run's 1 688 start and 1 840 do events), the caster's seed at `SKILLS_SrvStart`'s and `SKILLS_SrvDo`'s `ret` is the entry seed stepped
   by the nested events' draws only; those events hold the payments of nine cost rows (Fire Bolt, Frost Nova, Nova,
   Teleport, Meteor, Howl, Raven, Firestorm, Multiple Shot) and 251 of the 277 delay states set (Meteor 30, Firestorm
   221; Plague Javelin's 26 are in a row under 30 events, `[I]`). (fn:SKILLS_PayCost@0x0056BFE0,
@@ -785,11 +793,87 @@ event's own line. Raises of § 7 and § 15, each split where the run leaves a re
   names it otherwise and 10 have no line naming it; of the 171 monster gaps, 146 hold `MonAttackStats` calls on the
   unit (each leaving its seed unchanged, so the steps lie elsewhere, the AI's among the candidates) and 25 none.
   A count that matches is not yet a draw-for-draw check. § 15's reading that a start-built hit and its delivery are
-  two events with frames between them stands, with the gaps' draws open. (run:2026-10-25-skills)
+  two events with frames between them stands, with the gaps' draws open. *2026-10-27 (part 2):* walked draw by draw
+  in § 18: 90 of the 133 player gaps attributed, the other 43 listed. (run:2026-10-25-skills)
 - [I] Not logged by the run: the request checks of § 2 (`SKILLS_CanUse` has no breakpoint, so its codes, the mana,
-  delay and town refusals among them, are not seen), the delay state's end (`DLY`, 277 lines, an oracle), the
+  delay and town refusals among them, are not seen; *2026-10-27:* logged by part 2, § 18), the delay state's end (`DLY`, 277 lines, an oracle), the
   periodic queue. The refusals the run does see are a start function's or a do function's 0 (2 and 21 events,
   experiments § run:2026-10-25-skills).
+
+### 18. Plan 0045 Phase 2 part 2: the run (run:2026-10-27-skills)
+
+15 sessions on slot 2 with logger rev 4/5 (the record: [experiments § run:2026-10-27-skills](experiments.md#run2026-10-27-skills));
+`tools/skills.py` (`c09f9419…`) `check` over the 15 logs and, re-checked, part 1's 18: **0 mismatches**
+(`workspace/logs/skills/2026-10-27-skills-check.txt` `f6e4df6c…`, `…-part1-check.txt` `82688917…`). The `CU0`/`CU1`
+lines take `SKILLS_CanUse`'s two stack arguments (unit, entry) and its return at the ten `ret 8`s (`0x006479BC`,
+`0x006479D5`, `0x006479E8`, `0x00647A0C`, `0x00647A24`, `0x00647A3E`, `0x00647A53`, `0x00647A6C`, `0x00647A85`,
+`0x00647A8F`), from the request handlers' four call sites and, rev 5, from the client's per-frame check
+(`0x004D9FC5`) at its changes of code; `CUL` the level bonus and base at `0x00647589`. Raises of §§ 2, 8, 13 and 15,
+split where the run leaves a remainder:
+
+- [C] **`SKILLS_CanUse`'s code, raised in part** (§ 2): in 1 340 calls (1 126 request calls, 214 client changes of
+  code) the code is the one the order of § 2 gives for the tests the checker models: 6 for an aura row (1), 1 when
+  `(lvlmana · max(lvl − 1, 0) + mana) << manashift` with `lvl` the entry's base plus the `CUL` bonus is above stat 8
+  (8), 8 when the unit is in state 121 and the row has a `delay` (76), else 0. Two readings are separated: 5 code-0
+  calls with stat 8 exactly equal to the cost (a strict test would refuse them), and 67 code-0 calls in state 121 for
+  a row without `delay` (a delay test on every skill would refuse them). (fn:SKILLS_CanUse@0x00647960,
+  fn:SKILLS_ManaOk@0x00647540, fn:SKILLS_DelayOk@0x006478F0, run:2026-10-27-skills)
+- [I] The remainder: codes 2, 3, 4, 5 and 7, `startmana`, item charges and blood mana are not reached; the 8 mana
+  refusals all lie 2 mana or more below the cost (`cost − mana` ≥ 512), so the `− 1` of the level term is separated by
+  the payments of § 17, not here. (run:2026-10-27-skills)
+- [C] **No refused request reached the request handlers in this run**: all 1 126 request calls return 0 while the
+  client's own check of the same skills changed to a refusal 85 times (code 8 76, code 1 8, code 6 1); the 60 casts
+  in the Rogue Encampment of three sessions gave no request at all. (fn:SKILLS_CanUse@0x00647960,
+  fn:PLRMSG_SkillAtXY@0x00549AD0, fn:PLRMSG_SkillAtUnit@0x00549BA0, run:2026-10-27-skills)
+- [I] Why: the client runs `SKILLS_CanUse` on its own copy of the player for the skill buttons every frame
+  (`0x004D9FC5`, return `0x004D9FCA`) and, by this run, sends no request for a refused skill; the client's sending
+  code is not read. So the server-side refusals of § 2 and the `InTown` test of `SKILLS_SrvStart` (§ 4) are not
+  reached by a stock client; they matter for a server that accepts any client. (0x004D9FC5, run:2026-10-27-skills)
+- [C] **The delay state's end** (§ 8): with `SKILLS_SetDelayState` at frame `f` and delay `d` (the `DLY` line), a
+  request at frame `f + d` passes (16 request calls of Meteor, Firestorm or Plague Javelin), and the client's check of
+  the skill, 8 from the cast, changes back to 0 at frame `f + d` in 26 delays (`check.txt`'s "CU code 0 after a delay"
+  distributions). A state still on at `f + d` would refuse those 16. (fn:SKILLS_SetDelayState@0x0056EF90,
+  fn:SKILLS_DelayOk@0x006478F0, run:2026-10-27-skills)
+- [I] That the state refuses on every frame up to `f + d − 1` rests on the client's check running each frame (only
+  its changes are logged); 8 more client changes back to 0 come at `f + d + 1`, the client's frame there one behind
+  the server's, which is not read. (run:2026-10-27-skills)
+- [C] **The payment, more of § 17**: 1 286 more `PAY` checks as § 17 states them (167 non-player calls among them, 337
+  payments with a `lvlmana` term at level > 1); again no floor and no refusal for cost. (fn:SKILLS_PayCost@0x0056BFE0, run:2026-10-27-skills)
+- [C] **`MonAttackStats`, raised in part** (§ 13, monsters/0004 § 9): in 26 425 calls (12 732 of part 1's logs,
+  13 693 of part 2's) stats 21, 22 and 19 are `MulDiv(MonLvl DM, MinD/MaxD, 100)` and `MulDiv(MonLvl TH, TH, 100)` of
+  the mode's columns, `A2` for mode 5, `S1` for modes 7 and 8, `A1` for every other (raw cells for a `noRatio`
+  class), at the unit's stat 12 and the game's difficulty; for 26 383 of them another column set gives other values,
+  so the mode's choice is separated. A summon's full list adds its other lists to the same stats: the offset learned
+  at its first call holds over its 5 693 later calls. In the 26 439 calls the checker models, the unit's seed steps
+  only by the `El<e>` chance rolls: 21 calls with one `RNG_Range(seed, 100)` (19 failing, 2 applying an `El1` cold and
+  poison attack with the poison's `10 ·` and `2 ·` scalings), the 26 418 others with none; the 516 calls made before
+  the unit has a stat list write nothing and leave the seed as it was. (fn:sub_005A4F50_MonAttackStats@0x005A4F50,
+  fn:sub_006538A0_MonLvlStats@0x006538A0, run:2026-10-27-skills, run:2026-10-25-skills)
+- [I] The remainder: the `L` columns are not separated (the plain columns give the same values in every call); the
+  classic scaling and the expansion bonus (`b` = 0 in every call: Normal and Nightmare, one player); type 10's redraw;
+  the 2 218 calls of the Raven class (419), whose `SkillDamage` owner pair (`0x0056E050`) the checker does not model.
+  Read from the pinned image (objdump): the list is cleared first (`0x00627340` at `0x005A4FB3`), so a stat the call
+  does not write reads 0 in that list afterwards (the elemental stats seen to vanish, `check.txt`'s "cleared" counts);
+  and `El<e>`'s `MonLvlStats` mask is `0x40 + e` (`[ebp−0x30] = 0xFFFFFF42 − record` at `0x005A51D7`, `ecx =
+  [ebp−0x30] + (record + 0xFE + e)` at `0x005A5252`–`0x005A525C`), which is El1's block (`0x40`) with HP (`0x01`) or AC
+  (`0x02`) added for `e` = 1, 2: **`El2` and `El3` are applied with El1's minimum, maximum and length**, their own
+  cells unread. No logged call applied an `El2` or `El3`. (0x005A4FB3, 0x005A51D7, 0x005A5252–0x005A527A,
+  run:2026-10-27-skills)
+- [C] **The caster's chaining with the unit's own logged draws** (§ 15, part 1 review ruling (c)): walking the lines
+  between two skill events of a unit, stepping its seed for each of its logged draws (`THR`, `DRR`, `REL`) and taking
+  the logged exit of each span the checker models (`MAS`, `EVH`, `MC`, `RSK`) or treats as a boundary (`AD`, `DQ`,
+  `MA`, `MHT`), every logged observation of the seed agreeing on the way, reaches the next entry in 90 of part 1's 133
+  player resyncs and 45 of part 2's 148. (fn:SKILLS_SrvDo@0x0056F7F0, run:2026-10-25-skills, run:2026-10-27-skills)
+- [I] The rest are listed with their lines (`…-part1-gaps.txt` `5f43d175…`, `…-gaps.txt` `6843be4a…`): of part 1's
+  43, 31 with the player a hit's defender between (its defence rolls, combat/0001; part 1's logger wrote `DRR` only
+  inside an open span), 11 with no line naming it, 1 other; of part 2's 103, 60 as a defender, 17 nested (the first
+  event inside a span still open after it: an item cast of handler 20 or 21 inside a delivery), 11 off the stream
+  within 4 096 steps, 2 with no line, 13 other. The 171 + 160 monster resyncs are left to plan 0052 (monster AI).
+  (run:2026-10-25-skills, run:2026-10-27-skills)
+- [C] **Kick, Left Hand Throw and Left Hand Swing** (§ 1): 32, 36 and 30 do events, the caster's seed unchanged across
+  each of their 32, 36 and 30 start events (`check.txt`'s `SST skill` step distributions); Left Hand Swing arrives only by the dual-wield alternation of Attack (the
+  request for skill 5 bound to a key reached no handler in the development session). (fn:sub_00549960_DualAttackAlternate@0x00549960,
+  run:2026-10-27-skills)
 
 ## Data touched
 

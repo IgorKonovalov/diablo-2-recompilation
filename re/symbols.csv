@@ -736,7 +736,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0057D3D0,func,COMBAT_DurabilityLoss,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x0057D4F0,func,COMBAT_DeliverQueued,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x0057D690,func,sub_0057D690_QueuedHitFind,,I,combat/formulas,docs/findings/combat/0001-formulas.md
-0x0057D810,func,sub_0057D810_PreventHealHook,,I,combat/formulas,docs/findings/combat/0001-formulas.md
+0x0057D810,func,sub_0057D810_PreventHealHook,,C,combat/formulas,docs/findings/skills/0003-handlers.md
 0x0057D8A0,func,COMBAT_ToHitTargetMods,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x0057D9B0,func,COMBAT_ToHitRoll,,C,combat/formulas,docs/findings/combat/0001-formulas.md
 0x0057DBF0,func,COMBAT_ResolveAndQueue,,I,combat/formulas,docs/findings/combat/0001-formulas.md
@@ -1378,7 +1378,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005AD970,func,sub_005AD970_MissHit57BaalFx,,I,skills/catalogue,docs/findings/skills/0007-missile-hit-31-59.md
 0x005AD9D0,func,sub_005AD9D0_MissileEndHit,,I,skills/missiles,docs/findings/skills/0002-missiles.md
 0x005ADA40,func,sub_005ADA40_MissileHitTypeFilter,,I,skills/missiles,docs/findings/skills/0002-missiles.md
-0x005ADA80,func,sub_005ADA80_MissilePierceUse,,I,skills/missiles,docs/findings/skills/0002-missiles.md
+0x005ADA80,func,sub_005ADA80_MissilePierceUse,,C,skills/missiles,docs/findings/skills/0002-missiles.md
 0x005ADB00,func,sub_005ADB00_MissileJustHitState,,I,skills/missiles,docs/findings/skills/0002-missiles.md
 0x005ADBB0,func,sub_005ADBB0_MissileDoFrame,,C,skills/missiles,docs/findings/skills/0002-missiles.md
 0x005ADCC0,func,sub_005ADCC0_MissileFrameEvent,,I,skills/missiles,docs/findings/skills/0002-missiles.md
@@ -1647,7 +1647,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005BFE60,func,STATEVENT_OpenWounds,,C,combat/formulas,docs/findings/combat/0001-formulas.md
 0x005BFFC0,func,STATEVENT_CrushingBlow,,C,combat/formulas,docs/findings/combat/0001-formulas.md
 0x005C0130,func,sub_005C0130_StatEv17ManaAfterKill,,I,skills/dispatch,docs/findings/skills/0003-handlers.md
-0x005C01D0,func,sub_005C01D0_StatEv28HealAfterKill,,I,skills/dispatch,docs/findings/skills/0003-handlers.md
+0x005C01D0,func,sub_005C01D0_StatEv28HealAfterKill,,C,skills/dispatch,docs/findings/skills/0003-handlers.md
 0x005C0260,func,sub_005C0260_StatEv18HealAfterDemonKill,,I,skills/dispatch,docs/findings/skills/0003-handlers.md
 0x005C0310,func,sub_005C0310_StatEv19Slow,,I,skills/dispatch,docs/findings/skills/0003-handlers.md
 0x005C0470,func,sub_005C0470_StatEv20SkillOnEvent,,I,skills/dispatch,docs/findings/skills/0003-handlers.md
@@ -3448,7 +3448,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00647640,func,sub_00647640_SkillAmmoOk,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
 0x00647840,func,SKILLS_ItemChargesOk,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
 0x006478F0,func,SKILLS_DelayOk,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
-0x00647960,func,SKILLS_CanUse,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
+0x00647960,func,SKILLS_CanUse,,C,skills/dispatch,docs/findings/skills/0001-dispatch.md
 0x00647BC0,func,SKILLS_GetPhysMin,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
 0x00647D00,func,SKILLS_GetPhysMax,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
 0x00647E00,func,SKILLS_GetMasteryCalc,,I,data/calc,docs/findings/data/0005-calc.md

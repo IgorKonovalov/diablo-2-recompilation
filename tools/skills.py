@@ -813,6 +813,11 @@ class Checker:
         if sv is None or not isinstance(u, dict):
             return
         st0, st1 = u.get("st") or {}, h1.get("st") or {}
+        if fn in (0x005C0130, 0x005C01D0) and sv > 0:
+            cur, mx = (stat(st0, 8), stat(st0, 9)) if fn == 0x005C0130 else (stat(st0, 6), stat(st0, 7))
+            self.info["EVH %s: %s" % ("mana after kill" if fn == 0x005C0130 else "heal after kill",
+                                      "the addition below the cap (separating)" if mx - cur > (sv << 8) else
+                                      "the cap binds")] += 1
         if fn == 0x005C0130 and sv > 0:
             want = min(stat(st0, 8) + (sv << 8), stat(st0, 9))
             want = max(want, stat(st0, 8))
@@ -861,6 +866,7 @@ class Checker:
         mana_ok = cost <= mana
         if not mana_ok:
             self.check("CU.code", r == 1, log, n, "skill %d lvl %d cost %d mana %d: code %d" % (sid, lvl, cost, mana, r))
+            self.dist["CU code 1: cost - mana (1/256)"][min(cost - mana, 512)] += 1
             self.info["CU mana refusal predicted (cost %s mana)" % ">"] += 1
             return
         if r == 4:
@@ -880,8 +886,15 @@ class Checker:
             self.info["CU at the delay boundary frame (frame - end %d, code %d)" % (fr - delay_until, r)] += 1
         self.check("CU.code", r == want, log, n, "skill %d frame %s delay until %s (row delay %s): want %d got %d" %
                    (sid, fr, delay_until, has_delay, want, r))
+        if want == 0 and r == 0 and mana - cost < 512:
+            self.dist["CU code 0 within 2 mana of the cost: mana - cost (1/256)"][mana - cost] += 1
         if want == 8:
             self.info["CU delay refusal predicted"] += 1
+            self.dist["CU code 8: frame - the delay's end frame"][fr - delay_until] += 1
+        elif in_delay is False and delay_until is not None and fr is not None and has_delay:
+            self.dist["CU code 0 after a delay, %s: frame - its end frame (0..3)" % (
+                "client change" if c0.get("cl") else "request")][min(fr - delay_until, 4)
+                                                                 if fr >= delay_until else "<0"] += 1
         elif in_delay:
             self.info["CU in state 121, row without delay: passes"] += 1
 

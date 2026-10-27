@@ -102,7 +102,7 @@ code windows R1–R7; `p45b-rows.txt` `cbf9c64a…`, the stock-row values compar
 - [L] src:d2dfg-blizzard: velocity is `Vel` plus `VelLev` per caster level beyond 1. **contradicted**
   Detail: `((VelLev · lvl) / 8 + Vel) << 8`, `lvl` the request's level (R1: `imul [esi+0x30]`, `cdq; and edx,7;
   sar 3`); four stock rows (`spike1`–`spike4`). Phase 2 case C2,
-  [backlog](../../backlog/2026-10-20-reverser-reverser-plan-0045-p1b-contradicted-cases.md). *2026-10-25:* not reached by run:2026-10-25-skills (no `VelLev` row created; § 11).
+  [backlog](../../backlog/2026-10-20-reverser-reverser-plan-0045-p1b-contradicted-cases.md). *2026-10-25:* not reached by run:2026-10-25-skills (no `VelLev` row created; § 11). *2026-10-27:* 22 `spike2` creations at level 1 only, not separating (§ 12).
 - [L] src:d2dfg-blizzard: `MaxVel` caps the velocity. **held**
 - [L] src:d2dfg-blizzard: `Accel` changes the velocity per frame. **contradicted**
   Detail: `Accel` is added on every **fifth** path step (R3: the counter `+0x8C` reaches 5), the result capped at
@@ -113,7 +113,7 @@ code windows R1–R7; `p45b-rows.txt` `cbf9c64a…`, the stock-row values compar
 - [L] src:d2dfg-blizzard: `LevRange` adds to `Range` per caster level beyond 1. **contradicted**
   Detail: `LevRange · lvl + Range`, `lvl` the request's level, with no `− 1` (R2: `movsx [edx+0x98]; imul [esi+0x30]`);
   32 stock rows, none in tier A. Phase 2 case C4,
-  [backlog](../../backlog/2026-10-20-reverser-reverser-plan-0045-p1b-contradicted-cases.md). *2026-10-25:* not reached by run:2026-10-25-skills (Blaze cast 29 times, no `LevRange` row created; § 11).
+  [backlog](../../backlog/2026-10-20-reverser-reverser-plan-0045-p1b-contradicted-cases.md). *2026-10-25:* not reached by run:2026-10-25-skills (Blaze cast 29 times, no `LevRange` row created; § 11). *2026-10-27:* met by run:2026-10-27-skills, 271 `blaze` creations at level 2 (§ 12).
 - [L] src:d2dfg-blizzard: `Activate` is the frame count before the missile collides. **held**
 - [L] src:d2dfg-blizzard: `CollideType` codes 0–8, 7 being missile collision. **held with refinement**
   Detail: 7's mask is `0x40` with a `CanDestroy` filter, and no stock row uses it (§ 2).
@@ -189,7 +189,7 @@ code windows R1–R7; `p45b-rows.txt` `cbf9c64a…`, the stock-row values compar
 | `0x005ACFC0` | `sub_005ACFC0_MissHit23CallDo` | hit function 23 (*corrected 2026-10-20*, was "22"): retarget, a skill do function by `sHitPar1` | I |
 | `0x005ADF10` | `MISSILE_HitUnit` | (combat name) the hit: filters, pierce, to-hit, hit/damage functions (105 missed returns, § 11) | C |
 | `0x005ADA40` | `sub_005ADA40_MissileHitTypeFilter` | `CollideType` 0 none, 1 players, 2 monsters, other all | I |
-| `0x005ADA80` | `sub_005ADA80_MissilePierceUse` | stat 328 − 1 on a `Pierce` row | I |
+| `0x005ADA80` | `sub_005ADA80_MissilePierceUse` | stat 328 − 1 on a `Pierce` row (checked, § 12) | C |
 | `0x005ADB00` | `sub_005ADB00_MissileJustHitState` | state 86 on the hit unit for `NextDelay` frames | I |
 | `0x005ADCD0` | `sub_005ADCD0_MissileApplyAndAc` | `MISSILE_ApplyDamage`, then stat 120 against a monster's defence | I |
 | `0x005AD9D0` | `sub_005AD9D0_MissileEndHit` | hit function with no unit, then free; no reference found | I |
@@ -631,7 +631,7 @@ Answer's bullets, each split where the run leaves a remainder (raised in part):
   run (30 941; 450 taken after a creation callback), the frames left equal to it (30 922; 19 lob counts taken), the
   activate mark, skill and level. (fn:sub_0059FA30_MissileCreate@0x0059FA30, run:2026-10-25-skills)
 - [I] The remainder: the `VelLev` term (C2: no `spike1`–`spike4` created) and the `LevRange` term (C4: no `LevRange`
-  row created), the slow-missiles scaling (no `CanSlow` row's owner slowed), the `SubLoop` loops, the 99-sub-tile
+  row created; *2026-10-27:* C4 met by part 2, § 12), the slow-missiles scaling (no `CanSlow` row's owner slowed), the `SubLoop` loops, the 99-sub-tile
   refusal. (run:2026-10-25-skills)
 - [C] **The missile's seed** (§ 2): `SUnitCreate` steps the game seed once and the missile's seed is
   `Init(post.low)` in 31 391 of 31 391 creations (`MC.gameseed`, `MC.seed`), the game seed chaining from one creation
@@ -666,7 +666,34 @@ Answer's bullets, each split where the run leaves a remainder (raised in part):
   and a failed roll returns 2 and frees the missile at that unit, a `Pierce` row having spent one pierce first: 105
   misses, 7 with a pierce left. (fn:MISSILE_HitUnit@0x005ADF10, fn:COMBAT_ToHitRoll@0x0057D9B0, run:2026-10-25-skills)
 - [I] Not checked by the run: the result of a hit that does not miss (31 257 calls returned 2, oracles), a pierce
-  used at a hit, the hit and damage functions, the sub-missile site `0x005A9820`.
+  used at a hit (*2026-10-27:* both checked for the rows with no hit function, § 12), the hit and damage functions, the sub-missile site `0x005A9820`.
+
+### 12. Plan 0045 Phase 2 part 2: the run (run:2026-10-27-skills)
+
+15 sessions, logger rev 4/5 (the record: [experiments § run:2026-10-27-skills](experiments.md#run2026-10-27-skills));
+`tools/skills.py` (`c09f9419…`) over part 2's logs and part 1's re-checked: **0 mismatches**
+(`workspace/logs/skills/2026-10-27-skills-check.txt` `f6e4df6c…`, `…-part1-check.txt` `82688917…`). § 11's checks
+again over 19 667 creations, 5 660 moving frames of 414 followed missiles (238 fifth steps, 48 caps), 3 340 builds
+(43 with two draws) and 124 missed to-hits; and two of § 11's remainders:
+
+- [C] **The `LevRange` term** (§ 2, case C4): 271 `blaze` creations (row 67, `LevRange` 25, `Range` 90) at level 2,
+  made by Blaze while the Sorceress walks, each with range and frames left `LevRange · lvl + Range` = 140 (`MC.range`,
+  `MC.left`). The lead's `LevRange · (lvl − 1) + Range` would give 115: every one separates.
+  (fn:sub_0059FA30_MissileCreate@0x0059FA30, tbl:Missiles.txt:LevRange, run:2026-10-27-skills)
+- [I] The `VelLev` term (C2) is still not separated: 22 `spike2` creations (Normal Dark Wood's quill rats), all at
+  level 1, where `(VelLev · 1) / 8` is 0 for `VelLev` 7; the two Nightmare sessions met no quill rat.
+  (run:2026-10-27-skills)
+- [C] **The end of a damaging hit, raised in part** (§ 5): for a row with no hit function, on the 3 876 hit calls that
+  reached `MISSILE_BuildDamage` (3 166 in part 2's logs, 710 in part 1's), the result and the missile's stat 328 are
+  as § 5 reads them: a pierce used when the row has `Pierce`, the owner stat 166 or 156 (its value at the creation
+  line) and stat 328 > 0, stat 328 falling by 1 and the missile kept (130: 12 + 118); otherwise the missile ends at
+  the unit when the row has `CollideKill` (276: 137 + 139) and is kept when it has not (3 470: 3 017 + 453).
+  (fn:MISSILE_HitUnit@0x005ADF10, fn:sub_005ADA80_MissilePierceUse@0x005ADA80, tbl:Missiles.txt:CollideKill,
+  tbl:Missiles.txt:Pierce, run:2026-10-27-skills, run:2026-10-25-skills)
+- [I] The remainder: the 64 hits of rows with a hit function (its result replaces the end bit: a boundary), the
+  1 203 calls that returned before the build (the last-hit, type and hostility filters, not separated from each
+  other), the `end` call's own branch, `AlwaysExplode`, and an owner whose pierce stats changed after the creation.
+  (run:2026-10-27-skills, run:2026-10-25-skills)
 
 ## Data touched
 
