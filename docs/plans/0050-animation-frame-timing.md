@@ -566,3 +566,27 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   misread 1); review row added with "—" usage. The review request is closed
   ([archive](../backlog/archive/2026-10-27-reverser-architect-review-lane-p50b-plan-0050-phase-1-batch.md)).
   **P1.3 may start** once this lane is merged into `main`.
+- **2026-10-27 — Phase 1, batch P1.3 landed for review (reverser, `lane/p50d`, static, Ghidra copy `ghidra-p50d`;
+  no harness, no emulation; leads not read before filing, only `anim/leads` § 1).**
+  [anim/0003](../findings/anim/0003-movement-gates.md) reads movement and the gates, all `[I]`: the path speed
+  `(pbase · max(B_FRW + stat 67, 25)) / 100` with `pbase` = `WalkVelocity << 8` or MonStats `Velocity << 8` (no mode
+  argument, so a monster runs at its walk base unless the AI's command carries a velocity); the player's run as a
+  mode-scoped stat-67 list (+50 on stock data); the per-frame step `(d · ((v · 0x400) >> 6)) >> 12` (`v / 16`
+  subtiles per frame on an axis: walk 0.375, run 0.5625, knockback 1), the point snap, the collision walk and the
+  stop; no acceleration for units; the run drain; knockback (planner type 8, `n = (+0x90 >> 1) + 1` subtiles, 3 or 6;
+  a player's ends with the path, a monster's with its animation). The gates: the do, the attack's delivery, the
+  `srvmissile` and the skill delay all start at the first code-1/2 event; hit recovery and block are their modes'
+  schedules; `COMBAT_GetHit`'s dispatch per unit type; `PlrModeLeaveOk` (get-hit and block cannot be left but for
+  death or neutral) and `PlayerModeAllowed` (P1.1 ruling (c): a get-hit during a non-interruptible skill never starts;
+  under Concentration one `Range(player seed, 100)` against stat 164); the block animation's `lastblockframe` gate
+  (`frame − stat 95 > ⌊stat 102 / 8⌋ + 15`); `GetHitRoll`'s 0–2 `RangePow2` on the defender's seed with the divisor by
+  hit class; stun skips the roll; an object's operate mode 1 lasts `FrameCnt1` frames and turns to 2 without an
+  animation start. **The hit class** (folded at P0): the packet's `+0x60`, low nibble from the attacker's weapon,
+  MonStats2 or Missiles `HitClass`, an element nibble from a global counter in `COMBAT_GetHit`; the server gate found
+  is `GetHitRoll`'s divisor. **Corrections:** anim/0001 § 1 (object `FrameCnt` is shifted << 8 at load, so its
+  `+0x48` is 8.8) and combat/0001 § 6 (the delivery calls `UnitBaseHitClass`, not `HitClassPick`), as dated notes.
+  23 symbols (12 `anim/movement`, 11 `anim/timing`), `re/types/anim.h` `PathMove`, `tools/anim_moves.py`, outputs
+  `workspace/logs/anim/p50d-*` (`p50d-manifest.sha256`). Boundary recommendation in anim/0003 § 9. Archivist entry
+  ([backlog](../backlog/2026-10-27-reverser-archivist-p50d-objects-framecnt-shift-and-hit-class-readers.md)); review
+  requested ([backlog](../backlog/2026-10-27-reverser-architect-review-lane-p50d-plan-0050-phase-1-batch.md));
+  **Phase 1b part 2 runs after this review.**

@@ -144,14 +144,18 @@ Data: `g_MonModeRecords` `0x006E2260` (21 × 16 B), `g_MonModePerFrame` `0x006E2
 | `struct:Unit+0x3C` | s32 | sequence step, 8.8 (0x100 at the start) | `UNIT_SeqInit`, `UNIT_AnimSetRate` (anim/0002 § 3.8) |
 | `struct:Unit+0x40` | s32 | the mode byte of the current sequence frame | `UNIT_SeqReadFrame` |
 | `struct:Unit+0x44` | s32 | frame, 8.8; in a scheduled mode the schedule's game frame `<< 8` | `UNIT_AnimInit`, `SUNIT_AnimInit` (0), `SUNIT_ScheduleModeEvents`, `UNIT_AnimAdvance`, `UNIT_SeqReadFrame` |
-| `struct:Unit+0x48` | s32 | length, frames << 8; objects unshifted; sequences the frames left `<< 8` | `UNIT_AnimInit`, `SUNIT_AnimInit`, `UNIT_SeqInit`, `UNIT_AnimAdvance` (sequence) |
+| `struct:Unit+0x48` | s32 | length, frames << 8 (objects too: `FrameCnt` is shifted at load, anim/0003 § 6.5); sequences the frames left `<< 8` | `UNIT_AnimInit`, `SUNIT_AnimInit`, `UNIT_SeqInit`, `UNIT_AnimAdvance` (sequence) |
 | `struct:Unit+0x4C` | s16 | rate, 8.8 per frame, clamped to `[0, 0x7FFF]` | `UNIT_AnimSetRate`, `UNIT_AnimInit` (objects, missiles, items), `0x00621780` (client; one server site, a missile's: [anim/0002 § 5](0002-rates.md#5-who-calls-it-and-the-updateanimrate-bit)) |
 | `struct:Unit+0x4E` | u8 | event byte of the frames last crossed (1–4), else 0 | `UNIT_AnimInit` (0), `SUNIT_AnimInit` (0), `UNIT_AnimAdvance`, `UNIT_SeqReadFrame` |
 | `struct:Unit+0x50` | ptr | the `animdata.d2` record (`re/types/anim.h` `AnimDataRec`) | `UNIT_AnimSetRecord` |
 
 - [I] `UNIT_AnimFrames` (`sub_00621810_UnitAnimFrames`) returns `+0x44 >> 8` and, for an object, Objects
-  `FrameCnt[mode]` (`+0xD8 + 4·mode`), else `+0x48 >> 8`. So an object's `+0x48` is a plain frame count while every
-  other type's is 8.8. (fn:sub_00621810_UnitAnimFrames@0x00621810, tbl:Objects.txt:FrameCnt0)
+  `FrameCnt[mode]` (`+0xD8 + 4·mode`), else `+0x48 >> 8`. *2026-10-27 (plan 0050 P1.3, `lane/p50d`), corrected:*
+  the Objects loader shifts the eight `FrameCnt` dwords left by 8 after loading (`sub_0063F690_ObjectsLoad`,
+  0x00640E33–0x00640E64), so an object's `+0x48` is frames << 8 like every other type's, and `UNIT_AnimFrames` returns
+  an object's length unshifted (8.8) beside its frame `>> 8`; the P1.1 text called the object length "a plain frame
+  count" ([anim/0003 § 6.5](0003-movement-gates.md#65-objects-the-operate-frames)). (fn:sub_00621810_UnitAnimFrames@0x00621810,
+  fn:sub_0063F690_ObjectsLoad@0x0063F690, tbl:Objects.txt:FrameCnt0)
 
 ### 2. Records: the token, the lookup and the fallback
 
