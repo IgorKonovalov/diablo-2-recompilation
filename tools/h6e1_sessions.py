@@ -46,6 +46,7 @@ def wait(s):
     return ("xd", ["sleep %d" % s], 0)
 
 
+TO5 = qs("towp2", "wp:5,1", t=200)
 SAVEX = [("savexit", None, 0), ("keep", None, 0)]
 # Harrogath: Anya near the waypoint (5114, 5069) as plan 0042 part 3 walked to her
 ANYA_GO = qs("goto:5088:5060", "goto:5096:5108")
@@ -78,10 +79,12 @@ SESSIONS = {
     # A: a chain of three games on the save each writes (the personalized and socketed items tried again)
     "svca-n": ("NpcSvcA", "enter-normal", 4931, [svc("larzuk", "socket", "inv:0,0,2,2", A_SOCK_TRY, 400),
                                                   svc("anya", "personalize", "inv:2,0,2,2", A_PERS_TRY)] + SAVEX),
-    "svca-nm": ("@svca-n", "enter-nightmare", 4932, [svc("larzuk", "socket", "inv:2,0,2,2", ["inv:0,0,2,2"]),
-                                                  svc("anya", "personalize", "inv:4,0,2,2", ["inv:2,0,2,2"])] + SAVEX),
-    "svca-h": ("@svca-nm", "enter-hell", 4933, [svc("larzuk", "socket", "inv:4,0,2,2"),
-                                                  svc("anya", "personalize", "inv:0,0,2,2")] + SAVEX),
+    # the game writes 0 into the act bytes of the difficulties not played (0xA9, 0xAA after a Normal game): the chain's
+    # later games start in the Rogue Encampment and take the waypoint to Harrogath first
+    "svca-nm": ("@svca-n", "enter-nightmare", 4932, [TO5, svc("anya", "personalize", "inv:2,2,2,2", ["inv:2,0,2,2"]),
+                                                      svc("larzuk", "socket", "inv:2,0,2,2", ["inv:0,0,2,2"])] + SAVEX),
+    "svca-h": ("@svca-nm", "enter-hell", 4933, [TO5, svc("larzuk", "socket", "inv:4,0,2,2"),
+                                                 svc("anya", "personalize", "inv:0,0,2,2")] + SAVEX),
     "svcb-n": ("NpcSvcB", "enter-normal", 4941, [svc("larzuk", "socket", "inv:0,0,2,2"),
                                                   svc("anya", "personalize", "inv:7,0,1,2", ["inv:6,0,1,3"])]),
     "svcb-nm": ("NpcSvcB", "enter-nightmare", 4942, [svc("larzuk", "socket", "inv:2,0,2,2"),
@@ -127,6 +130,8 @@ def save_path(saves, run, name):
     if save.startswith("@"):            # the save another session of this run wrote (Save and Exit)
         src = save[1:]
         sname = SESSIONS[src][0]
+        while sname.startswith("@"):     # a chain: the character name is the first session's save
+            sname = SESSIONS[sname[1:]][0]
         return os.path.join(saves, "%s-%s" % (run, src), sname + ".d2s"), sname
     return os.path.join(saves, save + ".d2s"), save
 

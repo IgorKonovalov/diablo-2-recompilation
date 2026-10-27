@@ -175,7 +175,7 @@ verdict per compared claim.
 | `0x00540510` | `sub_00540510_PartyForEach` | calls a function on each member of a party | I |
 | `0x00559A30` | `sub_00559A30_DropItemAtUnit` | creates the item coded at `source+0xB8` (or a random base) at the source, quality given | I |
 | `0x00559CE0` | `ITEMS_CreateForStore` | creation record for an item index, quality, ilvl; ItemCreate (existing row, items/0009) | I |
-| `0x005466B0` | `QUESTS_GiveItem` | item by code into the player's inventory, or dropped at the player | I |
+| `0x005466B0` | `QUESTS_GiveItem` | item by code into the player's inventory, or dropped at the player | C (H6e1) |
 | `0x00558110` | `sub_00558110_PlayerFindItemByCode` | cursor or inventory item with a code; in the inventory a quest item with `questdiffcheck` counts only at stat 356 ≥ difficulty, on the cursor every quest item does (P1b B12) | C (H6e2) |
 | `0x00544160` | `sub_00544160_PlayerRemoveItemByCode` | removes that item | I |
 | `0x00585970` | `sub_00585970_DropItemCodeAt` | creates an item by code at a unit (used for `gld`) | C (H6e2) |
@@ -183,14 +183,17 @@ verdict per compared claim.
 | `0x0055B030` | `sub_0055B030_DropGold` | `DropGoldAmount(amount, max 32 piles)` | C (H6d) |
 | `0x00579D60` | `NPC_MenuAction` | NPC menu actions: imbue (154), socket (511), personalize (512), act travel (existing row, items/0009) | I |
 | `0x00558270` | `sub_00558270_ItemCreateRecFromItem` | fills a creation record from an existing item | I |
-| `0x0055EEA0` | `sub_0055EEA0_CursorItemConsume` | removes the item on the player's cursor | I |
-| `0x0062C590` | `sub_0062C590_ItemCanImbue` | imbue test | I |
-| `0x0062C6A0` | `sub_0062C6A0_ItemCanPersonalize` | personalize test | I |
-| `0x0062C770` | `sub_0062C770_ItemCanQuestSocket` | Larzuk test | I |
+| `0x0055EEA0` | `sub_0055EEA0_CursorItemConsume` | removes the item on the player's cursor | C (H6e1) |
+| `0x0062C590` | `sub_0062C590_ItemCanImbue` | imbue test | C (H6e1) |
+| `0x0062C6A0` | `sub_0062C6A0_ItemCanPersonalize` | personalize test | C (H6e1) |
+| `0x0062C770` | `sub_0062C770_ItemCanQuestSocket` | Larzuk test | C (H6e1) |
+| `0x0062A270` | `sub_0062A270_ItemHoldsItem` | the item holds an item (its own inventory) | C (H6e1) |
+| `0x0062A2B0` | `sub_0062A2B0_ItemCompactSave` | the base record's `compactsave` byte | C (H6e1) |
+| `0x00578610` | `sub_00578610_PlayerCursorItemIs` | the player's cursor item has this id | I |
 | `0x00629C80` | `sub_00629C80_ItemMagicStockable` | `bitfield1` (`+0xDC`) bit 0 of the item record (existing row, items/0009) | I |
 | `0x00628370` | `sub_00628370_ItemSetPersonalName` | copies a name to `ItemData+0x4A` | C |
-| `0x005761C0` | `sub_005761C0_ItemRepairAll` | stack, charges, broken flag, durability to maximum | I |
-| `0x0055FE00` | `sub_0055FE00_ItemIdentifyAttach` | identified flag; attach socketed items | I |
+| `0x005761C0` | `sub_005761C0_ItemRepairAll` | stack, charges, broken flag, durability to maximum | C (H6e1) |
+| `0x0055FE00` | `sub_0055FE00_ItemIdentifyAttach` | identified flag; attach socketed items | C (H6e1) |
 | `0x00591790` | `sub_00591790_A1Q3_ImbueDone` | word 3: set bit 0, clear bit 1 | I |
 | `0x005877C0` | `sub_005877C0_A5Q1_SocketDone` | word 35: set bit 0, clear bit 1 | I |
 | `0x0058BC00` | `sub_0058BC00_A5Q4_PersonalizeDone` | word 38: set bit 0, clear bit 1 | I |
@@ -202,7 +205,7 @@ verdict per compared claim.
 | `0x00593E70` | `sub_00593E70_A1Q4_CowKingDeath` | the Cow King's death: word 4 bit 10, eight `vps` | I |
 | `0x00593AF0` | `sub_00593AF0_A1Q4_InifussDrop` | Scroll of Inifuss (`bks`) from the tree | C (H6e2) |
 | `0x00594630` | `sub_00594630_A1Q4_WirtGold` | Wirt's body: 10–19 gold piles | C (H6e2) |
-| `0x00592250` | `sub_00592250_A1Q4_NpcMessage` | Akara's ring, the deciphered scroll | I |
+| `0x00592250` | `sub_00592250_A1Q4_NpcMessage` | Akara's ring, the deciphered scroll | C (H6e1) |
 | `0x00583E70` | `sub_00583E70_WirtLegDrop` | `leg` from its object | C (H6e2) |
 | `0x00599020` | `sub_00599020_A2Q1_RadamentDeath` | Book of Skill (`ass`) per qualifying player | I |
 | `0x00599C10` | `sub_00599C10_A2Q2_ScrollChest` | `tr1` chest | C (H6e2) |
@@ -215,9 +218,9 @@ verdict per compared claim.
 | `0x005B8940` | `sub_005B8940_A3Q2_EyeChest` | `qey` chest | I |
 | `0x005B8A20` | `sub_005B8A20_A3Q2_BrainChest` | `qbr` chest | I |
 | `0x005B9980` | `sub_005B9980_A3Q3_GidbinnDrop` | `g33` from a dying monster | I |
-| `0x005B9240` | `sub_005B9240_A3Q3_NpcMessage` | Ormus's rare ring | I |
+| `0x005B9240` | `sub_005B9240_A3Q3_NpcMessage` | Ormus's rare ring | C (H6e1) |
 | `0x005BAB60` | `sub_005BAB60_A3Q4_FigurineDrop` | `j34` from a dying monster | I |
-| `0x005BA320` | `sub_005BA320_A3Q4_NpcMessage` | `g34`, `xyz` | I |
+| `0x005BA320` | `sub_005BA320_A3Q4_NpcMessage` | `g34`, `xyz` | C (H6e1) |
 | `0x005BBC00` | `sub_005BBC00_A3Q5_CouncilDeath` | `qf1`, then `box` | I |
 | `0x005BC8B0` | `sub_005BC8B0_A3Q6_MephistoDeath` | Mephisto's death: soulstones | I |
 | `0x005BC140` | `sub_005BC140_A3Q6_SetDone` | word 22 bits 13, 0, 11 | I |
@@ -225,8 +228,8 @@ verdict per compared claim.
 | `0x005B5C10` | `sub_005B5C10_A4Q3_ForgeOperate` | Hellforge: soulstone, three hammer strikes | C |
 | `0x005B6710` | `sub_005B6710_A4Q3_ForgeWave` | Hellforge: a gem wave per event, then the rune | C |
 | `0x005B65D0` | `sub_005B65D0_A4Q3_HammerDrop` | `hfh`, unique | I |
-| `0x00587B00` | `sub_00587B00_A5Q2_NpcMessage` | Qual-Kehk's runes | I |
-| `0x00589580` | `sub_00589580_A5Q3_NpcMessage` | Malah's `ice`/`tr2`, Anya's class item | I |
+| `0x00587B00` | `sub_00587B00_A5Q2_NpcMessage` | Qual-Kehk's runes | C (H6e1) |
+| `0x00589580` | `sub_00589580_A5Q3_NpcMessage` | Malah's `ice`/`tr2`, Anya's class item | C (H6e1) |
 | `0x0058DF20` | `sub_0058DF20_A5Q6_BaalDeath` | Baal's death: gold per qualifying player | C (H6d) |
 | `0x005E0070` | `sub_005E0070_UberTristramDrop` | after three uber deaths: `cm2` unique and `std` per player | I |
 
@@ -556,7 +559,8 @@ place in the inventory or drop; ImbueDone (word 3: set bit 0, clear bit 1)
   a record without `bitfield1` bit 0, a throwable (unless the unit flag bit 25 at `Unit+0xC8`), a quest item other
   than `leg`, an item holding socketed items, a socketed item (`0x800`), and qualities 4–9. So low, normal and
   superior bases only. (fn:sub_0062C590_ItemCanImbue@0x0062C590, fn:sub_00629C80_ItemMagicStockable@0x00629C80,
-  tbl:Weapons.txt:bitfield1)
+  tbl:Weapons.txt:bitfield1) *Refined by H6e1 ([§ Plan 0038 batch H6e1](#plan-0038-batch-h6e1-run2026-10-27-sweep-quest-npc)): every item the run tested
+  had unit `+0xC8` bit 25 set, so the throwable test never ran and throwing knives passed.*
 - [I] The new item is a fresh creation (`restore` `+0x2C` = 0), so its seeds come from the game seed through
   `sub_00555230_SUnitCreate`, and the rare build is `items/affixes`' ordinary rare path with that ilvl; the old item's
   seeds copied into the record (`+0x48`, `+0x4C`) are not used. (fn:NPC_MenuAction@0x00579D60 0x0057A020–0x0057A0CB,
@@ -596,7 +600,9 @@ ITEMS_SetSockets(copy, n); place; SocketDone (word 35: set bit 0, clear bit 1)
 - [I] **The shared tail of the three services.** Before the result is placed, each path calls
   `sub_005761C0_ItemRepairAll` (refills a throwable stack to its maximum, refills charges, repairs a broken item, sets
   durability to its maximum) and `sub_0055FE00_ItemIdentifyAttach` (sets identified, attaches socketed items). So an
-  imbued, socketed or personalized item comes back repaired and recharged. Re-read for Phase 1b.
+  imbued, socketed or personalized item comes back repaired and recharged. Re-read for Phase 1b. *H6e1 ([§ Plan 0038
+  batch H6e1](#plan-0038-batch-h6e1-run2026-10-27-sweep-quest-npc)): an imbued item is repaired only when `ItemCreate` returns it identified (the leg, not the
+  `cap`).*
   (fn:sub_005761C0_ItemRepairAll@0x005761C0, fn:sub_0055FE00_ItemIdentifyAttach@0x0055FE00, 0x0057A0F9, 0x0057A3ED, 0x0057A581)
 
 **Other given items** (`QUESTS_GiveItem`):
@@ -605,10 +611,10 @@ ITEMS_SetSockets(copy, n); place; SocketDone (word 35: set bit 0, clear bit 1)
 |---|---|---|---|---|---|
 | Akara (npc 148, word 4) | `rin` | 7 / 30 / 60 | 4 / 6 / 6 (Normal / NM / Hell) | — | 0x005923E5–0x00592412 |
 | Ormus (npc 255, word 19) | `rin` | 21 / 35 / 75 | 6 | — | 0x005B93F3–0x005B941F |
-| npc 264 (word 20), for `j34` | `g34` | clvl | 2 | — | 0x005BA661 |
+| npc 264 (word 20), for `j34` | `g34` | clvl | 2 (asked; created at 7, H6e1) | — | 0x005BA661 |
 | Alkor (npc 254, word 20), for `g34` | `xyz` | clvl | 2 | — | 0x005BA587 |
 | Qual-Kehk (npc 515, word 36) | `r07`, `r08`, `r09`: the first *n* | clvl | 2 | — | 0x00587C30–0x00587C83 |
-| Malah (npc 513, word 37) | `ice`, `tr2` | clvl | 2 | — | 0x0058964F, 0x005896DF |
+| Malah (npc 513, word 37) | `ice`, `tr2` | clvl | 2 (asked; `tr2` is created at 7, H6e1) | — | 0x0058964F, 0x005896DF |
 | Anya (npc 512, word 37) | a class item | clvl | 6 | `RNG_Range(quest seed, count)` | 0x00589580 |
 
 - [I] Qual-Kehk: *n* = 2 when word 36 bit 6 is set, else 1 when bit 7 is set, else 3; given once word 36 bit 1 is set
@@ -1477,6 +1483,225 @@ Run record [run:2026-10-27-sweep-quest-items](experiments.md#run2026-10-27-sweep
 - Why the brain chest (class 406) was not listed in level 91 on map seed 4914 after a full explore (`brain4b`,
   frontier 0): the `OBJS` lines list only the objects near the player, and whether the chest stands outside every
   position the pilot reached, or is not created on that seed, is not read.
+
+## Plan 0038 batch H6e1 (run:2026-10-27-sweep-quest-npc)
+
+Harness batch H6e1 (`quest-npc`) of [plan 0038](../../plans/0038-inferred-claims-sweep.md) takes 22 inferred
+statements of [items/quest-drops](../../specs/items/quest-drops.md): rows 2, 4, 5, 32, 39, 40, 42–46, 50 and 51 of
+[the inventory](../../plans/0038-inventory/items-quest-drops.md), and the S2c piece of row 38 (a cursor-item line at
+`sub_0055EEA0_CursorItemConsume` in each service branch). Run record
+[run:2026-10-27-sweep-quest-npc](experiments.md#run2026-10-27-sweep-quest-npc): 14 kept sessions on slot 1 (17
+launches), tool-built saves in town. Logger `tools/gdb/quest-npc.gdb`, checker `tools/sweep_h6e1.py check`; the check
+over the 14 kept logs is `workspace/logs/h6e1/check-final.txt` (`66868cc2…`): **69 service-test calls, 9 sockets, 2
+imbues, 18 consumed cursor items, 18 tails, 20 given items, 3 Anya draws; 0 mismatches.** Spec lines below are those
+of `main` at `44cfbcb5`.
+
+### Static reads behind the checker (2026-10-27, objdump of the pinned `game.exe`)
+
+- [I] **The client runs the same three tests first.** When the cursor item is dropped into the one-item box, the client
+  code at 0x004BFCF4–0x004BFD9B refuses an unidentified item (`ITEMS_CheckFlags(item, 0x10)` at 0x004BFD1F returns 0:
+  0x004BFD74) and then, while the box's mode (`0x007C5470`) is 1, calls the test of the NPC the window belongs to
+  (`0x004B1670`): `ItemCanImbue` for 154 (0x004BFD3F), `ItemCanQuestSocket` for 511 (0x004BFD55),
+  `ItemCanPersonalize` for 512 (0x004BFD6B); a 0 refuses (0x004BFD74, the item stays on the cursor), a non-zero
+  accepts (0x004BFD9B). These are the functions' only callers besides `NPC_MenuAction` (0x00579FED, 0x0057A310,
+  0x0057A51B; a full scan of direct calls). So a refused item never reaches the server in stock play: the run's
+  refusal cases are the client's calls (return 0x004BFD44 / 0x004BFD5A / 0x004BFD70), and its accepted cases are
+  each tested twice, client then server.
+- [I] **The server branches' order** (0x00579F43–0x0057A1C0 imbue, 0x0057A2A3–0x0057A48F socket, 0x0057A4C0–0x0057A646
+  personalize): the cursor test `0x00578610` (the player's cursor item, `[[player+0x60]+0x20]`, has the menu's item
+  id), the item by id, the record word's bit 1 (`QUESTRECORD_GetState(rec, 3 / 35 / 38, 1)`), the service test, then
+  the copy or the creation record, `sub_0055EEA0_CursorItemConsume(game, player, item)` (0x0057A093, 0x0057A364,
+  0x0057A56E), the shared tail, the placement and the quest word. `CursorItemConsume` returns 0 unless the item is
+  the cursor item (0x0055EEB8–0x0055EEC0), and then removes it (0x0055EEF5, `0x00557FD0`) and returns 1; the imbue
+  takes the refusal path on 0 (0x0057A09A).
+- [I] **The tests' steps**, as the logger records them (each the value after a call):
+  `ItemCanImbue` 0x0062C590: `ITEMS_GetType` = 4 (0x0062C5CA) or item flag `0x1000` refuse (0x0062C68E);
+  `ItemMagicStockable` (bitfield1 bit 0, 0x0062C5F7) 0 refuses; unless unit `+0xC8` bit 25, `ItemTypeThrowable`
+  (0x0062C613, ItemTypes `+0x10`) refuses; the record's `quest` byte (`+0x12A`, 0x0062C61D) non-zero refuses unless
+  `ITEMS_GetCode` = `leg ` (0x0062C62C); `0x0062A270` (the item holds an item, 0x0062C63A) refuses; flag `0x800`
+  (0x0062C653) refuses; `ITEMS_GetQuality` 4–9 (0x0062C65D) refuses; else 1 (0x0062C67B).
+  `ItemCanPersonalize` 0x0062C6A0: `ITEMS_GetType` = 4 or flag `0x1000`; `ITEMS_GetBaseType` = 7, 5, 6 (three calls,
+  0x0062C6FF, 0x0062C70A, 0x0062C715); flag `0x100` (0x0062C72F); `ItemGetFlags & 0x1000000` (0x0062C739);
+  `compactsave` (`0x0062A2B0`, record `+0x143`, 0x0062C747); the result is `Nameable` (`+0x145`) ≠ 0 (0x0062C75D).
+  `ItemCanQuestSocket` 0x0062C770: `ITEMS_GetType` = 4 or flag `0x1000`; the `quest` byte and `leg ` as above
+  (0x0062C7D2, 0x0062C7E1); flag `0x100` (no call, 0x0062C7F7); `0x0062A270` (0x0062C805); flag `0x800` (0x0062C81E);
+  `ItemMaxSockets` low byte 0 (0x0062C828) refuses; the result is `ITEMS_GetSockets` low byte = 0 (0x0062C832).
+  (fn:sub_0062C590_ItemCanImbue@0x0062C590, fn:sub_0062C6A0_ItemCanPersonalize@0x0062C6A0,
+  fn:sub_0062C770_ItemCanQuestSocket@0x0062C770, fn:ITEMS_GetBaseType@0x0062B400, fn:sub_0062BA80_ItemTypeThrowable@0x0062BA80)
+- [I] **`0x0062A270` walks the item's own inventory** (`[item+0x60]`, first item `+0x0C` by `0x0063B2C0`, next at
+  ItemData `+0x64` by `0x0063DFA0`) for a unit of type 4 (`0x0063DFD0`): "holds an item". The logger counts the same
+  list (`kids`). (0x0062A270–0x0062A299)
+- [I] **`QUESTS_GiveItem`** (0x005466B0): `ITEMS_GetIndexByCode` (0x005466C5; no item for an unknown code,
+  0x005467CE), clvl = `0x00558200(player)`, used when the ilvl argument is 0 (0x005466DB–0x005466E2), then
+  `ITEMS_CreateForStore(player, index; game, kind 4, quality, 0, noEthereal 1, ilvl, 0, 0, 0)` (0x005466FB), the
+  durability stat 72 set to `0x00625E00` (the maximum) when positive (0x0054670B–0x0054671A), `0x00628280(item, 0)`,
+  the placement `0x00560200` (0x00546741: returns 0x0054676D with the item), else when `dropIfFull` a drop at the
+  player (0x005467B5, return 0x005467BD). (fn:QUESTS_GiveItem@0x005466B0, fn:ITEMS_CreateForStore@0x00559CE0)
+- [I] **Alkor's `xyz`** (0x005BA4F8–0x005BA587): message 0x21A with word 20 bit 0 clear and bit 1 set clears bit 1,
+  sets bits 0, 13 and 5, and calls `QUESTS_GiveItem('xyz ', 0, 2, 1)`; no item need be held (the held `g34` is the
+  test of message 0x216, 0x005BA45C, which sets bit 1). (fn:sub_005BA320_A3Q4_NpcMessage@0x005BA320)
+
+### The three service tests at run time (inventory qd 40, 42, 43)
+
+`sweep_h6e1.py check` models each `CAN` line from the stock tables and the logged item (its class, quality, flags,
+children, sockets and the unit's `+0xC8` word): every step value against the table column it reads, the list of steps
+the function ran (it returns at its first failing test, so the list ends at the test that refused) and the result.
+**69 calls (51 client, 18 server), 0 mismatches** (`check-final.txt`). The cases, by the test that decided them (client calls unless
+marked; each accepted item is tested again by the server branch, with the same steps and result):
+
+| test | ItemCanImbue | ItemCanQuestSocket | ItemCanPersonalize |
+|---|---|---|---|
+| bitfield1 bit 0 = 0 (`ItemMagicStockable`) | `key`, `hdm` (0x0062C5F7 = 0) | — | — |
+| `quest` ≠ 0 and not `leg ` | `qf1` (quest 17, code `qf1 `) | `qf1` | — |
+| `quest` ≠ 0, code `leg `: passes | `leg` (quest 1) accepted, and imbued (clvl 6) | `leg` accepted, and socketed: n = 3 | — |
+| flag `0x100` (broken) | — | broken `cap` (exit 0x0062C83E with the record step last) | broken `cap` (0x0062C72F) |
+| holds an item (`0x0062A270` ≠ 0) | `cap` with a socketed `gsv` (kids 1) | the same `cap` | — |
+| flag `0x800` | `cap` with an empty socket | the same; the `ghm` socketed by Larzuk in the game before | — |
+| `ItemMaxSockets` = 0 | — | `lbl` (gemsockets 0), `aqv` | — |
+| quality 4–9 | magic `cap` (4), *Cathan's Seal* (5), a rare ring (6), *The Stone of Jordan* (7), a crafted amulet (8) | — | — |
+| base type 5 / 6 (`bowq` / `xboq`) | — | — | `aqv` (0x0062C70A), `cqv` (0x0062C715) |
+| flag `0x1000000` (personalized) | — | — | the `ghm` personalized in the game before |
+| `compactsave` ≠ 0 | — | — | `gsv` (0x0062C747 = 1) |
+| `Nameable` = 0 | — | — | `jew` (r 0 at 0x0062C762) |
+| accepted | the ethereal `cap` (clvl 5), `leg` (clvl 6); low and superior `cap` tried (quality 1, 3: pass) | low, normal, superior, set, rare, unique, crafted `ghm`; magic `buc`; `leg` | `tkf` ×2, `ghm` ×3, `buc`, the `cap` holding a gem |
+
+- [C] **The throwable test is skipped for every logged item.** Every item the tests saw had unit `+0xC8` bit 25 set
+  (`0x02000000` in the inventory, `0x06000000` at the server's call), so `ItemCanImbue` went from the stockable test
+  to the record without calling `ItemTypeThrowable` (no step 0x0062C613 in any line), and the throwing knives
+  (`tkf`, ItemTypes `tkni` Throwable 1) passed the test and went into the box. What sets bit 25, and whether a
+  throwable can ever reach the throwable test, is not read.
+- [C] **The order of the refusals** separates the tests that one item could fail twice: the `cap` holding a gem has
+  flag `0x800` too and stops at `0x0062A270` (0x0062C63A for the imbue, 0x0062C805 for the socket) before the flag
+  test; `hdm` (quest 4) stops at the stockable test before the quest test; the broken `cap` stops the socket test at
+  the flag `0x100` test, right after the quest step and before `0x0062A270`.
+- [C] **The client refuses first.** Every refusal was a client call (returns 0x004BFD44 / 0x004BFD5A / 0x004BFD70)
+  and left the item on the cursor; no refused item reached `NPC_MenuAction`, whose own refusal paths (message 7, the
+  item back) stay unrun.
+
+### The services' branches (inventory qd 39, 42, 51)
+
+- [C] **Imbue at clvl 5 and 6.** The ethereal normal `cap` at clvl 5: `IMBL` 5, the record's ilvl 5 (no + 4),
+  flags `+0x80` = `0x24`, the new rare quality 6, ilvl 5, ethereal (item flag `0x400000`). Wirt's Leg at clvl 6:
+  ilvl 10 (6 + 4), flags `0x22`, the new rare not ethereal. With run:2026-10-16-quest-drops's clvl 80 (ilvl 84) the
+  bound `ilvl > 5` is met on both sides (5 → 5, 6 → 10). (0x0057A0A0–0x0057A0CB, 0x0057A02F–0x0057A04A)
+- [C] **Larzuk's branches**, one socket each (`LZ0` quality and `max`, `LZX` n, `LZY` stat 194 = n): low `ghm`
+  (quality 1, max 3) n 3; normal `ghm` and `leg` (2, max 3) n 3; superior `ghm` (3, max 3) n 3; set *Sigon's Visor*
+  (5), rare `ghm` (6), unique *Howltusk* (7), crafted `ghm` (8), each max 3, n 1. No draw on the item seed in any of
+  them (no `LZS`/`LZR` line). Quality 9 has no stock item. (fn:NPC_MenuAction@0x00579D60 0x0057A38F–0x0057A3E7, run:2026-10-27-sweep-quest-npc)
+- [C] **Larzuk draws at bound 1.** The magic Buckler (`buc`, gemsockets 1, so max 1): `LZS` bound 1 on its item seed
+  `4243f5de:0000029a`, the seed after `4e4d1670:1ba389d7` = one LCG step of it, r 0, n 1, stat 194 1. (0x0057A3BF–0x0057A3D1,
+  fn:RNG_RangeB@0x0045C3E0)
+
+### The cursor item each service consumes (S2c piece of qd 38)
+
+- [C] In every service the item `sub_0055EEA0_CursorItemConsume` was called with (from 0x0057A093, 0x0057A364,
+  0x0057A56E) was the player's cursor item (`[[player+0x60]+0x20]`, the same unit), and the call returned 1: 18
+  calls, imbue 2, socket 9, personalize 7. (fn:sub_0055EEA0_CursorItemConsume@0x0055EEA0)
+
+### The shared tail (inventory qd 44)
+
+- [C] **Each service calls `ItemRepairAll`, then `ItemIdentifyAttach`,** on the item it places (`RPA`/`RPX` from
+  0x0057A0F9 / 0x0057A3ED / 0x0057A581, `IDA`/`IDX` from 0x0057A103 / 0x0057A3F7 / 0x0057A58B): 18 of each, in that order. (run:2026-10-27-sweep-quest-npc)
+- [C] **A throwable stack is refilled.** Personalized throwing knives: quantity 20 → 160 and 30 → 160 (`maxstack`
+  160), durability 1 → 4 and 2 → 4 of 4. (fn:sub_005761C0_ItemRepairAll@0x005761C0, run:2026-10-27-sweep-quest-npc)
+- [C] **An imbued item is repaired when it is identified at its creation.** The imbued `cap` came back from
+  `ItemCreate` unidentified (flag `0x10` clear) and `ItemRepairAll` left it as it was (durability 7 of 7 either way);
+  the imbued Wirt's Leg came back identified (flags `0x00082010`) with durability 61 of 66 and left the call at 66 of
+  66. So the spec's "an imbued item is not repaired" holds for an unidentified new item only; why the leg's rare is
+  identified at creation is not read (Open questions). (fn:sub_00558D90_ItemCreate@0x00558D90, run:2026-10-27-sweep-quest-npc)
+- [C] `ItemIdentifyAttach` left every item identified (flag `0x10`), the imbued `cap` included (set by the call).
+  The personalized `cap` holding a gem had its child at the call's entry already (`kids` 1 at `IDA`): the copy
+  carries it, so the "attach" half is not separated by the run. (fn:sub_0055FE00_ItemIdentifyAttach@0x0055FE00, run:2026-10-27-sweep-quest-npc)
+
+### Given items (inventory qd 2, 4, 5, 32, 45, 46, 50)
+
+`sweep_h6e1.py check` takes each `QGV` call by its return address (the NPC message handler's call site) and checks
+the arguments against § 6's table, the `CF0` creation under it (`ITEMS_CreateForStore` from 0x00546700: kind 4,
+noEthereal 1, the asked quality, the ilvl the call passes or the clvl for 0), the created item (`QGC`: code, ilvl,
+quality) and the exit (placed, 0x0054676D). **20 calls in three games, 0 mismatches.**
+
+| NPC (caller's return) | game | asked: code, ilvl, quality | created |
+|---|---|---|---|
+| Akara (0x00592417) | N / NM / H | `rin`, 7 / 30 / 60, 4 / 6 / 6 | the same |
+| Ormus (0x005B9424) | N / NM / H | `rin`, 21 / 35 / 75, 6 | the same |
+| Qual-Kehk (0x00587C88) | N (word 36 `0x8022`: b1, b5) | `r07 r08 r09`, 0, 2 | ilvl 80 (clvl), 2 |
+| | NM (`0x8042`: b1, b6) | `r07 r08` | the same |
+| | H (`0x8082`: b1, b7) | `r07` | the same |
+| Malah (0x005896E4) | N / NM / H | `tr2`, 0, 2 | ilvl 80, **quality 7** |
+| Anya (0x0058995F) | N / NM / H | `ob4` / `ob8` / `obb`, 80 (clvl), 6 | the same |
+| Alkor (0x005BA58C) | N (word 20 b1) | `xyz`, 0, 2 | ilvl 80, 2 |
+| Meshif (0x005BA666) | NM (`j34` held) | `g34`, 0, 2 | ilvl 80, **quality 7** |
+
+- [C] **Every given item is a store-path creation.** Each of the 20 calls created its item through
+  `ITEMS_CreateForStore` (kind 4, noEthereal 1) and placed it in the inventory (exit 0x0054676D); no call dropped an
+  item (the inventory was never full). (fn:QUESTS_GiveItem@0x005466B0, fn:ITEMS_CreateForStore@0x00559CE0)
+- [C] **ilvl 0 means clvl.** Qual-Kehk's, Malah's, Alkor's and Meshif's calls pass ilvl 0 and their items were made at
+  ilvl 80, the player's clvl (`0x00558200`); Akara's and Ormus's rings take the fixed ilvl by difficulty (7 / 30 / 60,
+  21 / 35 / 75), not 80; Anya's call passes the clvl itself (80).
+- [C] **Qual-Kehk's count.** Word 36 bit 6 gave 2 runes, bit 7 gave 1, neither (bit 5) gave 3, the first *n* of
+  `r07 r08 r09` in that order; after the runes bit 0 was set (0x00587CB0) and bit 1 cleared (0x00587CBF), every game.
+- [C] **Anya's table and draw.** In each difficulty the table at `ANY` was that difficulty's (0x00735F6C,
+  0x00735EFC, 0x00735F34; game type 3), the code was entry r of the Sorceress row (5 entries) read from the pinned
+  image, and r = `RNG_Range(questSeed, 5)` on the seed `QUESTS_GetSeed` returned at 0x0058992E (one LCG step, the
+  logged seed after it): r 3, 2, 0. Then word 37 bits 9, 0 and 10 set and 1 cleared (0x005899BF–0x005899EB).
+- [C] **Correction: two given items come back quality 7.** `tr2` and `g34` are asked at quality 2 and created at 7:
+  both bases have Misc `unique` 1, so the pre-switch override of items/0004 (us 13; the `ICQ` line shows rq 2, q 7)
+  applies, as for H6e2's `bks`. § 6's table and the spec's F4 rows give the asked quality; the created one differs for
+  these two. `xyz`, the runes and `rin` (`unique` 0) keep theirs. (tbl:Misc.txt:unique, 0x005574E3–0x00557567)
+- [C] **The message handlers' bit moves** around the gifts: Akara word 4 bit 0 set, bit 1 cleared
+  (0x005923B1/0x005923BB); Ormus word 19 bit 8 set (0x005B93F3); Malah word 37 bit 8 set (0x005896F6); Alkor word 20
+  bit 1 cleared, bits 0, 13, 5 set (0x005BA530–0x005BA55B).
+- [I] **Malah's potion is offered only in quest state 4.** Her talk table (`0x00589B00`, NPC 513 at 0x00589B90)
+  offers message 3 (the potion) only when the quest object's state `+0x0C` is 4, no `ice` is held and the potion
+  count `+0xD8` is 0 (0x00589B9C–0x00589BD4); with word 37 clear (`svcc-h`) the three talks gave messages 0x4E46,
+  0x4E94 (the start) and 0x4ED3, no potion. What sets state 4 is not read. (fn:sub_00589580_A5Q3_NpcMessage@0x00589580)
+
+### Symbols raised by the run (I → C)
+
+Each one's logged return or call is compared with the checker's model above: `QUESTS_GiveItem` (20 calls); the five
+NPC message handlers whose gifts were logged (`A1Q4`, `A3Q3`, `A3Q4`, `A5Q2`, `A5Q3`); the three service tests;
+`CursorItemConsume`; `ItemRepairAll`; `ItemIdentifyAttach`; and the step functions the tests' lines compare with the
+tables, each over separating cases: `ITEMS_GetType` (0x00628700, the base type index), `ITEMS_GetCode` (0x00628590,
+`qf1 ` and `leg `), `ITEMS_GetQuality` (0x00627E70, qualities 1–8) and two new rows, `sub_0062A270_ItemHoldsItem` (1
+for the `cap` holding a gem, 0 otherwise) and `sub_0062A2B0_ItemCompactSave` (1 for `gsv`, 0 otherwise).
+`sub_00578610_PlayerCursorItemIs` is new and stays I (not logged). `ItemTypeThrowable` was never called and stays I.
+
+### Ledger of the 22 statements
+
+| Row (spec line) | Statement | Result | What moves; what stays |
+|---|---|---|---|
+| qd 2 (L36) | NPC messages give items through `QUESTS_GiveItem` | **raised** | all six NPCs the row names (Akara, Ormus, Alkor, Qual-Kehk, Malah, Anya), and Meshif (`g34`), 20 calls by caller |
+| qd 2 (L278) | C2 pseudocode | **raised in part** | ilvl 0 → clvl, `ITEMS_CreateForStore`, into the inventory; the durability write (no given item has durability) and the drop when full stay |
+| qd 2 (L299) | every gift a store-path creation | **raised** | 20 of 20 through `ITEMS_CreateForStore` from 0x00546700 |
+| qd 4 (L78) | `QUAL_KEHK_RUNES` | **raised** | `r07 r08 r09` in order |
+| qd 4 (L680) | Qual-Kehk's row | **raised** | the first *n*, clvl, quality 2 |
+| qd 4 (L684) | *n* by bits 6 / 7 / else 3; bits 0 and 1 after | **raised** | 3, 2, 1 in the three games; bit 0 set, bit 1 cleared each time |
+| qd 5 (L79) | `ANYA_REWARDS[d]` | **raised** | each difficulty's table, the code read from it by the logged draw |
+| qd 5 (L682) | Anya's row | **raised** | clvl, quality 6, one `Range(questSeed, 5)` reproduced on the logged seed |
+| qd 5 (L690) | F5 | **raised in part** | the table by difficulty with game type 3 and the draw; the clvl > 45 / 65 halves (game type ≠ 3) are not separated in single player |
+| qd 32 (L503) | Malah gives `ice` and `tr2` | **raised in part, with a correction** | `tr2` in three games, created at quality 7 (base `unique`); `ice` not given (state 4) |
+| qd 39 (L592) | imbue clvl ≤ 5 branch, flag `0x04` | **raised** | clvl 5 → ilvl 5 ethereal (`0x24`), clvl 6 → 10 (`0x22`) |
+| qd 40 (L597) | `ItemCanImbue` refusals | **raised in part, with a refinement** | stockable, quest (and the `leg` exception), holds an item, `0x800`, qualities 4–8 met in code order; the throwable test was skipped for every item (unit `+0xC8` bit 25 set); gold, flag `0x1000` and quality 9 not reached |
+| qd 42 (L621) | F2 pseudocode | **raised in part** | low, normal, superior (n = max 3), set, rare, unique, crafted (n = 1, max 3), magic (the draw); quality 9 has no stock item |
+| qd 42 (L639) | the branches; `ItemCanQuestSocket` | **raised in part** | as L621; the quest test and the `leg` exception, `0x100`, holds an item, `0x800`, max 0 met; flag `0x1000`, type 4 and "0 sockets now" with `0x800` clear (no stock state) stay |
+| qd 43 (L658) | `ItemCanPersonalize` | **raised in part** | base types 5 and 6, `0x100`, personalized, `compactsave`, `Nameable` 0, and accepts; type 4, type 7 (ears) and `0x1000` not reached |
+| qd 44 (L664) | the shared tail | **raised in part, with a refinement** | each service calls both, in order; stacks refilled, durability repaired, identified; an imbued item repaired when identified at creation (the leg); charges, the broken flag and the children attach not separated |
+| qd 45 (L678) | Akara's row | **raised** | ilvl 7 / 30 / 60, quality 4 / 6 / 6 |
+| qd 45 (L679) | Ormus's row | **raised** | ilvl 21 / 35 / 75, quality 6 |
+| qd 45 (L686) | fixed ilvl; Ancients and Nihlathak give nothing | **raised in part** | the fixed ilvl (not the clvl 80); the Ancients and Nihlathak not run |
+| qd 46 (L681) | Malah's row | **raised in part, with a correction** | `tr2` at clvl, created quality 7; `ice` stays |
+| qd 50 (L747) | creation records of scripted and given items | **raised in part** | the given half (code, fixed or clvl ilvl, quality; the base override above); the scripted half is not this run's |
+| qd 51 (L845) | Larzuk draws at bound 1 | **raised** | the Buckler's item seed stepped once at bound 1 |
+
+**Raised 11, raised in part 11, shortfall 0: 22.** The S2c piece of qd 38 is met (18 consumed items, each the
+cursor item); qd 38 stays counted as S2c.
+
+### Open questions (H6e1)
+
+- What sets unit `+0xC8` bit 25 on the items the service tests saw (every one), and whether any stock item reaches
+  `ItemTypeThrowable` in `ItemCanImbue` (throwing knives passed the test here).
+- Why the imbued Wirt's Leg came back from `ItemCreate` identified while the imbued `cap` did not.
+- What moves Malah's quest object to state 4, the only state in which her talk table offers the potion.
 
 ## Data touched
 

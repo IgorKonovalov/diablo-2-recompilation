@@ -5,6 +5,7 @@ service branches of NPC_MenuAction (0x00579D60). Reads logs of tools/gdb/quest-n
 
 Usage:
   python3 -I tools/sweep_h6e1.py check <excel-dir> <game.exe> <log> [<log> ...]
+  python3 -I tools/sweep_h6e1.py static <game.exe>     the direct callers of the functions the run reads (objdump)
 
 Models (every model input is the logged game state, the stock excel tables or the pinned game.exe's data):
   can      each CAN line (ItemCanImbue 0x0062C590, ItemCanPersonalize 0x0062C6A0, ItemCanQuestSocket 0x0062C770):
@@ -22,7 +23,8 @@ Models (every model input is the logged game state, the stock excel tables or th
   give     QGV/QGC/QGD/QGX by the caller's return: Akara's and Ormus's rings (code, ilvl and quality by difficulty),
            Qual-Kehk's runes (the first n of r07 r08 r09, n by word 36 bits 6 and 7), Malah's ice and tr2 and Anya's
            item (ilvl 0 = clvl, quality); the created item's code, ilvl and quality; durability = maximum after QGD;
-           every call through ITEMS_CreateForStore (CF0 from 0x00546700, kind 4, noEthereal 1); Anya's code is
+           (the created quality 7 for a base with `unique` 1, the pre-switch override); every call through
+           ITEMS_CreateForStore (CF0 from 0x00546700, kind 4, noEthereal 1); Anya's code is
            entry r of the logged table, the table the one of the difficulty
 """
 import csv
@@ -53,7 +55,8 @@ class Tables:
         self.items = []
         for t in ("weapons.txt", "armor.txt", "misc.txt"):
             self.items += [r for r in rows(excel, t) if r.get("code")]
-        self.types = rows(excel, "itemtypes.txt")
+        self.types = [r for r in rows(excel, "itemtypes.txt") if r["ItemType"] != "Expansion"]   # the .txt separator
+        # row, which the game's table does not have (the logged type indices of gsv, jew: 96, 58)
         self.tidx = {r["Code"]: i for i, r in enumerate(self.types) if r["Code"]}
 
     def rec(self, cls):
@@ -273,6 +276,7 @@ def check(excel, exe, logs):
                 cur["bound"], cur["seed"] = d["bound"], d["seed"]
             elif tag == "LZR" and cur:
                 cur["r"] = d["r"]
+                cur["after"] = d["seed"]
             elif tag == "LZX" and cur:
                 cur["n"] = d["n"]
             elif tag == "LZY" and cur:
@@ -281,7 +285,9 @@ def check(excel, exe, logs):
                     b = min(mx, 2)
                     lo, _ = rng_step(cur["seed"]) if "seed" in cur else (None, None)
                     want = 1 + (lo % b) if lo is not None else None
-                    ok = cur.get("bound") == b and cur.get("r") == (lo % b if lo is not None else None)
+                    st1 = rng_step(cur["seed"]) if "seed" in cur else None
+                    ok = cur.get("bound") == b and cur.get("r") == (lo % b if lo is not None else None) and \
+                        st1 is not None and cur.get("after") == "%08x:%08x" % st1   # one item-seed step, any bound
                     kind = "magic (draw, bound %d)" % b
                 elif 5 <= q <= 9:
                     want, ok, kind = 1, "seed" not in cur, "quality %d (1)" % q
@@ -362,8 +368,10 @@ def check(excel, exe, logs):
                 who, diff = g["who"], g["diff"]
                 code = T.code(it["u"][1]).ljust(4) if it and it.get("u") else None
                 want_ilvl = g["ilvl"] if g["ilvl"] else g["clvl"]
+                # the base `unique` column turns the asked quality into 7 before the builders (items/0004 us 13)
+                want_q = 7 if it and it.get("u") and num(T.rec(it["u"][1]).get("unique")) else g["q"]
                 ok = d["site"] == "0054676d" and code == g["code"] and it.get("ilvl") == want_ilvl and \
-                    it.get("q") == g["q"]
+                    it.get("q") == want_q
                 cf = g["cf"]
                 ok = ok and cf is not None and cf["kind"] == 4 and cf["noeth"] == 1 and cf["q"] == g["q"] and \
                     cf["ilvl"] == want_ilvl
@@ -392,7 +400,24 @@ def check(excel, exe, logs):
                 if not ok:
                     miss(log, "give %s: %s / item %s / %s" % (who, {k: v for k, v in g.items() if k != "rec"}, it, d))
                 open_ = None
+        # Anya's draw: one RNG_Range(quest seed, n) on the seed QUESTS_GetSeed returned (0x0058992E)
+        last_qgs = None
+        for tag, d in L:
+            if tag == "QGS" and d.get("ret") == "0058992e":
+                last_qgs = d["qs"]
+            elif tag == "ANY":
+                c["give anya draw checks"] += 1
+                st1 = rng_step(last_qgs) if last_qgs else None
+                if st1 is None or "%08x:%08x" % st1 != d["qs"] or st1[0] % d["n"] != d["r"]:
+                    miss(log, "anya draw: seed %s, logged %s" % (last_qgs, d))
+                last_qgs = None
         if qk:
+            # after the runes: word 36 bit 0 set (0x00587CB0), bit 1 cleared (0x00587CBF)
+            w = [(t, d["b"]) for t, d in L if t in ("QS", "QC") and d.get("w") == 36 and d.get("ret") in (
+                "00587cb0", "00587cbf")]
+            c["give qualkehk word 36 writes %s" % w] += 1
+            if w != [("QS", 0), ("QC", 1)]:
+                miss(log, "qualkehk: word 36 writes %s" % w)
             rec = qk[0][0]["rec"]
             w36 = rec[36] if rec else 0
             n = 2 if w36 >> 6 & 1 else 1 if w36 >> 7 & 1 else 3
@@ -411,7 +436,32 @@ def check(excel, exe, logs):
     return 1 if bad else 0
 
 
+STATIC = {0x0062C590: "ItemCanImbue", 0x0062C6A0: "ItemCanPersonalize", 0x0062C770: "ItemCanQuestSocket",
+          0x0055EEA0: "CursorItemConsume", 0x005761C0: "ItemRepairAll", 0x0055FE00: "ItemIdentifyAttach",
+          0x005466B0: "QUESTS_GiveItem", 0x0062A270: "ItemHoldsItem", 0x0062A2B0: "ItemCompactSave"}
+
+
+def static(exe):
+    import re
+    import subprocess
+    out = subprocess.run(["objdump", "-d", "--no-show-raw-insn", "-M", "intel", exe], capture_output=True, text=True,
+                         check=True).stdout
+    want = {"0x%x" % t: t for t in STATIC}
+    calls = {t: [] for t in STATIC}
+    for ln in out.splitlines():
+        m = re.match(r"\s*([0-9a-f]+):\s+(call|jmp)\s+(0x[0-9a-f]+)\s*$", ln)
+        if m and m.group(3) in want:
+            calls[want[m.group(3)]].append("%s %s" % (m.group(2), m.group(1)))
+    raw = open(exe, "rb").read()
+    for t, name in STATIC.items():
+        ptr = raw.count(struct.pack("<I", t))          # the VA as a 32-bit value anywhere in the file (a pointer)
+        print("0x%08X %-20s %d: %s; VA in the file %d time(s)" % (t, name, len(calls[t]), " ".join(calls[t]), ptr))
+    return 0
+
+
 def main(argv):
+    if len(argv) == 2 and argv[0] == "static":
+        return static(argv[1])
     if len(argv) < 4 or argv[0] != "check":
         print(__doc__)
         return 2

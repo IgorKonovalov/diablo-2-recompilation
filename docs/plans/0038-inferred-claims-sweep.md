@@ -4441,3 +4441,37 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     12 min); the review row added, usage "—".
   - **Next:** merge `lane/sk`.
 - **2026-10-27 — `lane/a3r` review (architect): accept.** The `tools/` diff is the one `h3brare` `RECIPE_BASES` row; a scratch rebuild of `h3brare.json` (`52aa64e8…`) on `smpsor-l50.d2s` gives `ce57d8f7…6317`, the H3b record's save hash (data/experiments); `test_d2s.py` 47 tests OK; the [review request](../backlog/archive/2026-10-27-archivist-architect-review-lane-a3r-test-d2s-h3brare-row.md) closed; ledger lane row filled (usage from the orchestrator), review row usage "—".
+- **2026-10-27 — H6e1 (`quest-npc`) filed (reverser, `lane/h6e1`, harness slot 1, from `main` `147e5ca3`; `main`
+  `44cfbcb5` merged).** Run id run:2026-10-27-sweep-quest-npc, record in
+  [items experiments](../findings/items/experiments.md#run2026-10-27-sweep-quest-npc), evidence in
+  [items/0010 § Plan 0038 batch H6e1](../findings/items/0010-quest-drops.md#plan-0038-batch-h6e1-run2026-10-27-sweep-quest-npc).
+  - **Built:** logger `tools/gdb/quest-npc.gdb` + `tools/gdb/quest-npc.py` (`QUESTS_GiveItem`, the three service tests
+    step by step, the consumed cursor item, the shared tail), session driver `tools/h6e1_sessions.py` (H6e2's loop, a
+    `qs` command for `quest_sessions.py act`), `d2pilot.py npc --try` (the refusal cases tried in the service box) and
+    a 7-sub-tile margin around the town waypoint for walking clicks, checker `tools/sweep_h6e1.py check|static`, six
+    recipes `tools/d2s_recipes/quest-h6e1-*.json` (rows in `tools/test_d2s.py`, 47 tests OK).
+  - **Sessions:** 17 launches, 14 kept (three given-item games, two imbues, nine Larzuk/Anya games, one a chain of
+    three on the saves the game wrote), 3 development logs. H6e2's habits held: the town waypoint walk and `wpchain`
+    returned in seconds; no Act II/III descents were needed. Two new traps, recorded in the run: a walking click near
+    Harrogath's waypoint opens its menu (fixed by the margin), and Save and Exit writes 0 into the act bytes of the
+    difficulties not played, so a chained game starts in the Rogue Encampment (the driver takes the waypoint first).
+  - **Check:** `sweep_h6e1.py check` over the 14 kept logs: 69 service-test calls, 9 sockets, 2 imbues, 18 consumed
+    cursor items, 18 tails, 20 given items, 3 Anya draws; **0 mismatches** (`check-final.txt` `66868cc2…`).
+  - **Ledger (22): raised 11, raised in part 11, shortfall 0** (inventory § 2.6 H6e1 block). Highlights: every given
+    item by NPC and difficulty through the store path, Qual-Kehk's count on all three bit states, Anya's table and
+    draw; the imbue's clvl 5 / 6 bound and the ethereal flag; every Larzuk branch but quality 9 and the bound-1 draw;
+    the three tests' refusals in code order. Corrections: `tr2` and `g34` are created at quality 7 (base `unique`).
+    Refinements: the throwable test is skipped for every tested item (unit `+0xC8` bit 25); an imbued item is
+    repaired when created identified. Malah's potion was not given (her talk table offers it in quest state 4 only).
+    No class move; totals unchanged: static 567, harness 519, c-emu 0, blocked 421, deferred 2, raised 17: 1 526.
+  - **S2c piece (qd 38):** met, 18 consumed items, each the player's cursor item; qd 38 stays counted as S2c.
+  - **Symbols (rule 14), I → C:** `QUESTS_GiveItem`, `A1Q4`/`A3Q3`/`A3Q4`/`A5Q2`/`A5Q3_NpcMessage`, the three
+    service tests, `CursorItemConsume`, `ItemRepairAll`, `ItemIdentifyAttach`, `ITEMS_GetType`, `ITEMS_GetCode`,
+    `ITEMS_GetQuality`; new `sub_0062A270_ItemHoldsItem`, `sub_0062A2B0_ItemCompactSave` (C) and
+    `sub_00578610_PlayerCursorItemIs` (I).
+  - **Backlog:** review request
+    [2026-10-27-reverser-architect-review-lane-h6e1-plan-0038-batch-h6e1](../backlog/2026-10-27-reverser-architect-review-lane-h6e1-plan-0038-batch-h6e1.md)
+    filed; spec-writer entry
+    [2026-10-27-reverser-spec-writer-h6e1-quest-npc-raises-and-the-given-item](../backlog/2026-10-27-reverser-spec-writer-h6e1-quest-npc-raises-and-the-given-item.md)
+    filed, held until the review. Slot 1 stopped, saves restored (empty, no aside).
+  - **Next:** the `lane/h6e1` review; items/quest-drops is then ready for its Phase 3 re-tag.

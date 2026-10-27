@@ -1281,6 +1281,34 @@ this run met it again on an independent seed (3811); Phase 3 adds the run anchor
 `507a6f5c` after merging it (`lane/rk` moved no inventory row): totals as above. **Phase 3 ready:** objects (S4a,
 S4b, H5b, H6e2; its 13 "—" rows have no batch). Not ready: items/quest-drops (H6e1 open).
 
+**H6e1 (filed 2026-10-27, reverser, `lane/h6e1`): 22 statements of items/quest-drops (rows 2, 4, 5, 32, 39, 40,
+42–46, 50, 51) and the S2c piece of row 38.** run:2026-10-27-sweep-quest-npc, 14 kept sessions on slot 1 (17
+launches, 3 development logs; Normal, Nightmare and Hell, all in town; tool-built saves in the Act V and Act I towns,
+one three-game chain on the saves the game wrote), logger `tools/gdb/quest-npc.gdb`, checker `tools/sweep_h6e1.py check`
+over the 14 kept logs: **69 service-test calls, 9 sockets, 2 imbues, 18 consumed cursor items, 18 tails, 20 given
+items, 3 Anya draws; 0 mismatches** (`check-final.txt`, manifests `manifest-final.sha256`, `manifest-shots-final.sha256`,
+`manifest-dev-final.sha256`). The evidence is in [items/0010 § Plan 0038 batch H6e1](../../findings/items/0010-quest-drops.md#plan-0038-batch-h6e1-run2026-10-27-sweep-quest-npc),
+whose ledger table gives each statement's `[C]` part and remainder.
+
+- **Raised (11):** quest-drops 2 (L36, L299), 4 (L78, L680, L684), 5 (L79, L682), 39, 45 (L678, L679), 51.
+- **Raised in part (11):** quest-drops 2 (L278: the durability write and the drop when full), 5 (L690: the clvl
+  halves, game type 3 only), 32 and 46 (`tr2`, created at quality 7; `ice` not given), 40 (refinement: the throwable
+  test skipped for every item; gold, `0x1000`, quality 9), 42 (L621, L639: quality 9; `0x1000`, type 4, "0 sockets
+  now"), 43 (type 4, ears, `0x1000`), 44 (refinement: an imbued item repaired when created identified; charges, the
+  broken flag, the attach), 45 (L686: the Ancients and Nihlathak), 50 (the scripted half).
+- **Shortfall (0).** The qd 38 piece is met (18 consumed items, each the player's cursor item); qd 38 stays counted
+  as S2c (raised in part there); its remainder, the cursor line, is met here.
+- Corrections carried into items/0010 § 6: `tr2` and `g34` are created at quality 7 (base `unique`), the asked 2 in
+  the table; the throwable and the imbue-repair notes.
+- Symbols I → C (rule 14): `QUESTS_GiveItem`, the five NPC message handlers, the three service tests,
+  `CursorItemConsume`, `ItemRepairAll`, `ItemIdentifyAttach`, `ITEMS_GetType`, `ITEMS_GetCode`, `ITEMS_GetQuality`;
+  new rows `sub_0062A270_ItemHoldsItem` and `sub_0062A2B0_ItemCompactSave` (C), `sub_00578610_PlayerCursorItemIs` (I).
+
+No class move is proposed. Net effect on the totals: none. Taken against `main` after merging it into the lane
+(`44cfbcb5`; no inventory row moved on `main` since the `lane/h6e2` review totals above): **static 567, harness 519,
+c-emu awaiting a batch 0, blocked 421** (d-none 295, d-edit 73, d-sim 28, d-2c 7, d-owner 10, d-0032 8), **deferred
+2, raised 17: 1 526.** H6e1's ledger: raised 11, raised in part 11, shortfall 0: 22.
+
 ## 3. Blocked rows, for the plan's open questions
 
 - **d-2c, 14 statements** (items/tc 3, items/vendors 5, items/quest-drops 3, hirelings 1, player/creation 2). This is
