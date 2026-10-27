@@ -26,7 +26,7 @@ named again with the reason it cannot be staged on stock data.
     magic immunity (0); the negative absorbed amount (4); evade, weapon block, dodge, avoid (0); freeze and flat
     absorb (0); the negative total that leaves life unchanged (25, under the floor of about 30); the mode-2 (walking)
     exception of the block `÷ 3` (no walking player attacked). **Conversion and pierce** are skill and missile
-    effects: they move to plan [0045](../0045-skills-missiles-machinery.md) Phase 2, not here.
+    effects: they move to plan [0045](0045-skills-missiles-machinery.md) Phase 2, not here.
   - [stats/states § Open questions](../../specs/stats/states.md) (run:2026-10-17-stats): shrines and wells (12 operates
     against 50: the combat and stamina shrines, the re-arm, a cure by a well); an aura state's end (9 on and off
     events against 50); a different-state `group` clear; the 256 floor; open wounds on the player; the curse
@@ -362,7 +362,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Ruling 4 (the in-event `MonAttackStats`, the drop past the cap).** Accepted at `[I]`: the inner call is checked
     as its own `mas` event, its exit stats feed the build as a value oracle (as at `EV0`), its entry seed is asserted
     (5 in this run, 6 over the 71 logs); the 8 dropped events are counted in `ma` and checked nothing. Which events
-    call it is unread: carried to plan [0045](../0045-skills-missiles-machinery.md) (its monster skill uses with
+    call it is unread: carried to plan [0045](0045-skills-missiles-machinery.md) (its monster skill uses with
     `MonAttackStats` predicted; log entry there).
   - **Ruling 5 (the stats checker's item-type fix, `--dead-below`, the potion key).** The index fix follows
     ItemTypes.md's `[C]` marker rule and moves no kept-run value (byte-identical re-check). `--dead-below` changes the

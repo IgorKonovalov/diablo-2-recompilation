@@ -6,7 +6,7 @@ status: done
 context:
   - ../../plans/0052-monster-ai.md
   - ../../plans/README.md
-  - ../../plans/0045-skills-missiles-machinery.md#implementation-log
+  - ../../plans/done/0045-skills-missiles-machinery.md#implementation-log
 resolution: "2026-10-27 (architect, lane/plans52): plan 0052 re-drafted at its gate, status proposed, eight scoping questions with recommendations for the owner (pathing its own plan, one plan with the spec in two parts, the logger ADR only if needed, hirelings and summons in, one slot, the gate confirmed, ADR-0022 next, stock-row coverage); the handed-over items H1-H6 folded in; ADR-0022 (proposed) drafts what follows (the server frame composed), with the sweep and player-side rules weighed in its alternatives and the plans README; run order updated (state on 2026-10-27, 0052 items awaiting the owner)."
 ---
 

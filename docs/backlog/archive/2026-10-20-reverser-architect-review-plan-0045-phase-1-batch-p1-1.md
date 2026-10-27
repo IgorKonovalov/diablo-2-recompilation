@@ -4,7 +4,7 @@ to: architect
 date: 2026-10-20
 status: done
 context:
-  - ../../plans/0045-skills-missiles-machinery.md
+  - ../../plans/done/0045-skills-missiles-machinery.md
   - ../../findings/skills/0001-dispatch.md
   - ../../findings/combat/0001-formulas.md#14-phase-2-static-leftovers-phase-1-review-ruling-3
 resolution: "Reviewed 2026-10-20 (architect): accept with fixes; rulings and fixes in plan 0045's log (P1.1 reviewed)."

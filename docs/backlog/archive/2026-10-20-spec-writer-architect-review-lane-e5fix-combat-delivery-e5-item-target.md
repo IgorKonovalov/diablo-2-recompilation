@@ -6,7 +6,7 @@ status: done
 context:
   - ../../specs/combat/delivery.md
   - 2026-10-20-architect-spec-writer-combat-delivery-e5-item-target-2-draws.md
-  - ../../plans/0045-skills-missiles-machinery.md#implementation-log
+  - ../../plans/done/0045-skills-missiles-machinery.md#implementation-log
 resolution: "Accepted with fixes (1) at the lane/e5fix review: anchors checked on the pinned Game.exe; E5 bullet now states the helper's failure exits (no room, 10 failed tries) refuse the cast; helper symbol rows routed to plan 0046 Phase 1 item batch. See plan 0045 log."
 ---
 

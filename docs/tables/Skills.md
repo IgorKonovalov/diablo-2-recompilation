@@ -3,7 +3,7 @@
 > **Source archive:** patch_d2 (`.txt` and `.bin`)   **Rows:** 357 (no `Expansion` marker)   **Record:** 572 B (`0x23C`)
 > **sha256:** `.txt` `465c28e83657540e0d7ae5b0de826d5657be7fba1aa539a85c3ca3aeea34b498`, `.bin` `0b57ba62b6b5c74be6a579adb9327641ecfe880ebc0c217d341c9d5bba89043b`, `skillscode.bin` `d42e1da6ebdf835c0c623f13c77201e3c2a25659dc58eff215af3cacc7ecf30f`
 > **Doc status:** layout complete (every compiled column placed, `[C]` by diff); passive and aura rows listed (plan 0041 Phase 0); dispatch columns surveyed (plan 0045 Phase 0); semantics `[C]`/`[I]` for
-> the columns the item code, the formula readers and the combat findings read, `[L]` elsewhere until the skills machinery is read ([plan 0045](../plans/0045-skills-missiles-machinery.md) Phase 1)
+> the columns the item code, the formula readers and the combat findings read, `[L]` elsewhere until the skills machinery is read ([plan 0045](../plans/done/0045-skills-missiles-machinery.md) Phase 1)
 
 ## Purpose
 
@@ -12,7 +12,7 @@ One row per skill: the 210 character-class skills, plus monster, item and intern
 aura and passive stats, summon, item-type requirements, level and mana costs, damage and formulas. In this project
 the reader so far is `items/affixes`: the staff-mods roll picks class skills by id and tests their item-type
 requirement ([items/0005 § 9](../findings/items/0005-affixes.md#9-staff-mods-items_rollstaffmodsitem-ecx-rec-edx-0x005c1260),
-plan 0021). The skills machinery (`skills/dispatch`, `skills/missiles`) is [plan 0045](../plans/0045-skills-missiles-machinery.md)
+plan 0021). The skills machinery (`skills/dispatch`, `skills/missiles`) is [plan 0045](../plans/done/0045-skills-missiles-machinery.md)
 and the function catalogue [plan 0046](../plans/0046-skills-function-catalogue.md); their columns are § [Dispatch](#dispatch-plan-0045-phase-0).
 Monster AI's choice of skill is ADR-0014 phase (5). Leads: no lead; derived from data.
 

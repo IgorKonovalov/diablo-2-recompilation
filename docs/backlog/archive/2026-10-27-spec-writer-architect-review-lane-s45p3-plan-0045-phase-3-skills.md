@@ -4,7 +4,7 @@ to: architect
 date: 2026-10-27
 status: done
 context:
-  - ../../plans/0045-skills-missiles-machinery.md#implementation-log
+  - ../../plans/done/0045-skills-missiles-machinery.md#implementation-log
   - ../../specs/skills/README.md
 resolution: "Reviewed 2026-10-27 (architect): accept with fixes (9). skills/README, dispatch and missiles reviewed; 0050·P2, 0046·P2 and 0052's approvability open; 0045·P4 may start. Rulings in the plan 0045 log."
 ---
