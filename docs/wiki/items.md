@@ -3,7 +3,7 @@ based_on:
   - docs/specs/items/tc.md 2026-10-21
   - docs/specs/items/quality.md 2026-10-20
   - docs/specs/items/uniques-sets.md 2026-10-27
-  - docs/specs/items/affixes.md 2026-10-21
+  - docs/specs/items/affixes.md 2026-10-27
   - docs/specs/items/properties.md 2026-10-27
 ---
 
@@ -582,7 +582,8 @@ The main flow above is confirmed in recorded games. These parts are not, or are 
   from a Hell Bovine; which game type, if any, excludes ladder uniques.
 - **Affixes** ([affixes open questions](../specs/items/affixes.md#open-questions)): the socket test on affixes, a rare
   with names but no affix, charms reaching the normal builder, the low-quality armour and throw-damage cuts, automagic on unique items
-  (set items skip it, seen once with edited quality odds), a forced affix outside its level window, and which text a
+  (set items skip it, seen once with edited quality odds), a forced affix that fails a test other than the level
+  window (no stock recipe has one), and which text a
   rare name id is shown as (the [game data](game-data.md) page has the name line).
 - **Properties** ([properties open questions](../specs/items/properties.md#open-questions)): several property kinds
   never reached (among them the one *Tomb Reaver* carries, which needs a Hellforge drop in Hell), the type-11 setup,

@@ -5294,7 +5294,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Backlog:** review request
     [2026-10-27-reverser-architect-review-lane-h6a-plan-0038-batch-h6a](../backlog/archive/2026-10-27-reverser-architect-review-lane-h6a-plan-0038-batch-h6a.md)
     filed; spec-writer entry
-    [2026-10-27-reverser-spec-writer-h6a-cube-raises-for-the-phase-3-re](../backlog/2026-10-27-reverser-spec-writer-h6a-cube-raises-for-the-phase-3-re.md)
+    [2026-10-27-reverser-spec-writer-h6a-cube-raises-for-the-phase-3-re](../backlog/archive/2026-10-27-reverser-spec-writer-h6a-cube-raises-for-the-phase-3-re.md)
     held until the review; the S2c-pieces entry annotated (H6a parts done). Slot 1 stopped, saves restored (empty, no
     aside).
 - **2026-10-27 — `lane/h6a` review (architect): accept with fixes (7).** Static review after merging `main`
@@ -5361,6 +5361,33 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - § 5 marks H6a done; the research-map row says the spec is ready.
   - **Phase 3 ready: items/cube** (S2c and H6a, both accepted).
   - The spec-writer entry is released, corrected:
-    [2026-10-27-reverser-spec-writer-h6a-cube-raises-for-the-phase-3-re](../backlog/2026-10-27-reverser-spec-writer-h6a-cube-raises-for-the-phase-3-re.md).
+    [2026-10-27-reverser-spec-writer-h6a-cube-raises-for-the-phase-3-re](../backlog/archive/2026-10-27-reverser-spec-writer-h6a-cube-raises-for-the-phase-3-re.md).
   - The S2c harness-pieces entry stays open for H6c.
   - Review request closed; the lane's ledger row is filled.
+- **2026-10-27 — Phase 3, the items/cube cluster (spec-writer, `lane/s38c`, from `main` `7995eefc`).** Batches S2c
+  and H6a, both accepted; each restated statement checked against its section of
+  [items/0008](../findings/items/0008-cube.md) (§ Plan 0038 batch S2c, H6a) and the `lane/h6a` review's rulings and
+  fixes.
+  - **items/cube** {C 119, I 82, L 4} → **{C 167, I 87, L 3}** (recounted with the gate's tag reader; diff +59 / −11
+    `[C]`, +50 / −45 `[I]`, +2 / −3 `[L]`). Raised from S2c: cube 6, 8, 10, 12, 13, 21, 22, 29, 47 (case 8; the
+    fallback `[I]`), 49 (the survey), 52, 55 (L776 corrected: the spot search draws nothing, the portal object draws;
+    L829 in part), 56. From H6a, each naming run:2026-10-27-sweep-cube: cube 1 (L48; L54's `0x18` half), 7 ×3, 15, 17
+    (`exc`; `eli` split to f″ `[I]`), 25 (L331; L349's classic half `[I]`), 32 (in part), 36, 38 ×2, 39 (L495; L491,
+    L524 in part, fixes 1–2), 40 (L496, L971; L528 in part, fix 3), 43 ×3, 53 ×2, 54 (the classic word-26 test moved
+    into L1 in the code's order, the old L3 removed), 58 (in part, fix 4). Refinements: K4 (a copied child's two
+    game-seed steps, `[C]` for one, `[I]` per child, fix 5) with § M; K3's name id `0x509F` (`[C]`; the path `[I]`,
+    fix 7); G4's flags bit 0 `[C]` (fix 6); E3 and F2's ethereal upgrade (plain values, then `MakeEthereal` ×3/2,
+    `[C]`, ruling 4). S2c piece cube 49 (b) `[C]` at 0x005C2460, (a) `[I]`. Kept `[I]` with their no-stock reasons
+    (ruling 3): cube 16, 20, 24, 44, 49 (a), 51 (shortfall). Pseudocode lines no run reached got inline `[I]` (A3c–A3e,
+    B3, B4, C2, E3–E5, F1, F3–F5, H4, I1, J2–J3, K4). Open questions: the ethereal upgrade struck; the cow portal
+    narrowed to the portal object's draws; the not-reached list rewritten.
+  - **items/affixes C4i** (rule 8): the forced row's level-window skip `[C]` (H6a cube 58, S2c aff 14's piece),
+    "only" `[I]`; the open question narrowed; {C 152, I 28, L 4} → {C 153, I 28, L 4}.
+  - **Wiki:** [items-other-paths](../wiki/items-other-paths.md) cube section refreshed, `based_on` cube 2026-10-27;
+    [items](../wiki/items.md) `based_on` affixes 2026-10-27 (one open-question line).
+  - **Backlog:** closed the [H6a entry](../backlog/archive/2026-10-27-reverser-spec-writer-h6a-cube-raises-for-the-phase-3-re.md);
+    annotated the [S2c entry](../backlog/2026-10-16-reverser-spec-writer-plan-0038-s2c-corrections-for-phase.md)
+    ((a), (f) done; (d) waits for vendors, H6c); filed the
+    [counts entry](../backlog/2026-10-27-spec-writer-architect-s38c-cube-counts-for-the-research-map.md) and the
+    [review request](../backlog/2026-10-27-spec-writer-architect-s38c-review-cube-phase-3.md). Ledger row added, usage "—".
+  - **Next:** architect review of `lane/s38c`.

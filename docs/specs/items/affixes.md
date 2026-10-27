@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, items/quality, items/uniques-sets, data/excel]
 consumed_by: [items/properties, items/vendors, items/cube, save/d2s, chain]
-tags: {C: 152, I: 28, L: 4}
-updated: 2026-10-21
+tags: {C: 153, I: 28, L: 4}
+updated: 2026-10-27
 ---
 
 # Affixes: alvl, magic and rare picks, automagic, and the other builders
@@ -364,9 +364,14 @@ Step notes:
   `sub_0055A550_DropCreateItem` zeroes the record and nothing on the path writes `+0x68..+0x7C`. [C]
   (0x005C180B–0x005C181B, struct:ItemCreateRec+0x68, fn:ITEMS_PickMagicAffix@0x005C1560, run:2026-10-15-cube,
   [items/0005 § Plan 0038 batch S2c](../../findings/items/0005-affixes.md#plan-0038-batch-s2c-2026-10-16), aff 11 and 14)
-- C4i. The forced row skips only the level window, and a forced row that fails another test leaves the pick to
-  continue as an ordinary one. All 12 logged forced picks lay inside their rows' windows, so no run decides the
-  window skip. [I] (0x005C16FE–0x005C1713, [items/0005 § Plan 0038 batch S2c](../../findings/items/0005-affixes.md#plan-0038-batch-s2c-2026-10-16), aff 14)
+- C4i. **The forced row skips the level window.** Cube row 17 on a magic tower shield (output ilvl 30, alvl 19) took
+  the forced suffix *of Spikes* (`suf=162`, level 21), reproduced with no level window on the forced row; the 12 forced
+  picks of run:2026-10-15-cube all lay inside their windows. [C] (0x005C16FE–0x005C1713, fn:ITEMS_PickMagicAffix@0x005C1560,
+  run:2026-10-27-sweep-cube, [items/0005 § Plan 0038 batch S2c](../../findings/items/0005-affixes.md#plan-0038-batch-s2c-2026-10-16),
+  aff 14, H6a note)
+- C4i. It skips **only** the level window: a forced row that fails another test leaves the pick to continue as an
+  ordinary one. No stock case separates it, since the 8 forced ids of the stock cube table pass every other test. [I]
+  (0x005C16D3–0x005C17AD, tbl:CubeMain.txt:output)
 - C4i. Every logged pick on the drop path had `forcedId` 0. [C] (fn:ITEMS_PickMagicAffix@0x005C1560,
   run:2026-10-14-affixes)
 - C4. **Weights.** `frequency` alone, or `frequency × level` when the base has `magic lvl`, the same rule in the sum
@@ -996,9 +1001,9 @@ A single candidate still costs both draws. [C] (run:2026-10-14-affixes)
   and the quality-5 skip once in a session with an edited ItemRatio. The forced row (C4i) was reached on the cube path:
   12 forced picks, block-relative and with no weighted draw
   ([items/0005 § 3](../../findings/items/0005-affixes.md#3-items_pickmagicaffixitem-needspawnable-mustroll-applyprops-isprefix-forcedid-autogroup-0x005c1560),
-  [items/cube § E](cube.md#e-building-one-output--sub_00565ab0_recipeoutputcreate)); that it skips the level window
-  of a row outside its window is still untested, and plan 0038 batch H6a carries the one stock case (cube row 17 on a
-  magic tower shield, *of Spikes*). A forced-path run (ADR-0010) or the [items/vendors](vendors.md) path could reach
+  [items/cube § E](cube.md#e-building-one-output--sub_00565ab0_recipeoutputcreate)), and plan 0038 batch H6a reached
+  the window skip on the one stock case (cube row 17 on a magic tower shield, *of Spikes*; C4i). A forced row failing
+  another C4 test has no stock case. A forced-path run (ADR-0010) or the [items/vendors](vendors.md) path could reach
   the charm.
 - [L] **Automagic and `spawnable`.** The pick passes `needSpawnable` 0, but every stock `automagic` row has
   `spawnable` 1; ruled unreachable with stock data (plan 0021 Phase 1 review). Only modded data would show it.

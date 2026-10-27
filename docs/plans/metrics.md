@@ -370,6 +370,7 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-10-27 | `lane/s38k` review | 0038 P3 items/sockets-runewords | architect-review | 175 907 | 54 | 11 | — (static, objdump, no Ghidra, no harness) | gave accept with fixes | — (on the lane row) |
 | 2026-10-27 | `lane/h6a` | 0038 H6a | reverser-harness | 466 656 | 161 | 42 | slot 1 (8 launches), no Ghidra | accept with fixes (rulings: each built state backs only the code reading it; the shared game directory untouched, re-hashed; cube 16, 44 and 49 (a) d-none re-counted from the tables; the ethereal upgrade `[C]` on `IIS1`/`CMODX`; 18 of 22 raises separate) | 7: overclaim 5, under-claim 1, omission 1 (cube 39 L491, L524, 40 L528, 58 raised in part; per-child copy steps from one child; InvPlaceItem bit 0 left `[I]`; the runeword copy's serialiser path) |
 | 2026-10-27 | `lane/h6a` review | 0038 H6a | architect-review | 209 213 | 104 | 20 | — (static, objdump, checker and regression reruns under `MemoryMax=4G`, table recounts, re-hash, no Ghidra, no harness) | gave accept with fixes | — (on the lane row) |
+| 2026-10-27 | `lane/s38c` | 0038 P3 items/cube (S2c, H6a) and items/affixes C4i | spec-writer | — | — | — | — (no slot, no Ghidra, no harness) | — (review pending) | — |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not

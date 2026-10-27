@@ -1,7 +1,7 @@
 ---
 based_on:
   - docs/specs/items/sockets-runewords.md 2026-10-27
-  - docs/specs/items/cube.md 2026-10-17
+  - docs/specs/items/cube.md 2026-10-27
   - docs/specs/items/vendors.md 2026-10-21
   - docs/specs/items/quest-drops.md 2026-10-27
 ---
@@ -194,14 +194,16 @@ flowchart TD
 - A classic game skips expansion rows.
 - **Ladder rows work in single player.** The rune upgrades and the two elite unique upgrades are marked for the ladder,
   but the skip only applies to a game type that single player is not, and the run made those runes offline.
-- The five disabled rows can never be reached; this is read from the code (the switch that would enable them is never
-  set).
+- The five disabled rows can never be reached: the switch that would enable them is read once, written nowhere, and
+  starts at 0 in the executable.
 
 **The inputs** ([cube § B](../specs/items/cube.md#b-the-inputs--sub_005658c0_cubematchinputs-and-cube_matchinput)).
 Inputs are taken in column order, and an input claims *every* matching item in the cube, not just its quantity, then
 compares the count. An input can ask for a base code or an item type, a quality, sockets or no sockets, ethereal or
-not, a tier (normal, exceptional, elite); the "ethereal" test and the exceptional and elite tests are read from the
-code only, as no run reached them. On the recipes that need it, a quest item is tested against the difficulty:
+not, a tier (normal, exceptional, elite). The exceptional test was seen deciding: an elite-upgrade recipe refused a
+normal and an elite dagger and took an exceptional one. The "ethereal" and elite input tests are read from the code
+only; no stock recipe uses them. An input that names a base also takes a higher tier of it: a gloves recipe matched
+magic heavy bracers and vambraces. On the recipes that need it, a quest item is tested against the difficulty:
 Wirt's Leg matches only if its quest-difficulty stat is at least the current difficulty. A leg with that stat at 0
 matched no row in Nightmare, one at 1 did; in Normal every leg passes. Read from the table, the same test binds the
 Staff of Kings, the Viper Amulet, Khalim's Flail and Khalim's organs. A recipe whose output
@@ -210,7 +212,7 @@ player tests (day of the month, stats) are read from the code only; no stock row
 (on the player, and on the first input) compare not the stat itself but its bonus over the base value (from items, skills and states); that reading is from
 the code too.
 
-That a stackable item relaxes the exact count is also read from the code.
+That a stackable item relaxes the exact count is also read from the code; on the stock recipes it changes nothing.
 
 ### What an output can be
 
@@ -239,18 +241,26 @@ Some details from [§ E](../specs/items/cube.md#e-building-one-output--sub_00565
   on the game seed. The polearm recipe drew a scythe out of ten candidates. The edge cases of that pick (an empty list,
   the candidate cap) are read from the code only.
 - **Copies are not clones of the seed** ([§ K](../specs/items/cube.md#k-the-copys-seeds--sub_0055a2a0_itemcopy)). A `useitem` or `mod` copy takes two game-seed steps and gets a fresh item seed,
-  so its later rolls (the recipe's own lines, a socket) start from new values.
+  so its later rolls (the recipe's own lines, a socket) start from new values. A copy keeps the gems or runes in its
+  sockets unless the recipe strips them (the unsocket recipe does), and a copy with one socketed item took two more
+  game-seed steps; two per socketed item is read from the code. The unsocket recipe on a runeword also removes the
+  runeword.
+- **An ethereal upgrade** first gets the plain values of its new base, then the ethereal bonus (×3/2) from the
+  recipe's property line, as seen on an ethereal *Gull* upgraded to an exceptional dagger.
 - **The recipe's own property lines** come after the item exists. On the rune socket recipes the line rolls 1 to 6
   sockets for every item class, then the base caps it: a roll of 6 on a gothic plate gave 4 sockets. Each line could
   have a chance to apply; every stock chance cell is blank, so that gate is read from the code only.
 - **`sock=1`** (the recipe that adds a socket to a rare) gave one socket to a rare short sword, cap and kite shield.
   Its quality caps are read from the code; with one socket they never bind.
-- Repair and recharge outputs ran only on items already full, where they changed nothing; repairing a damaged item and
-  refilling charges are read from the code.
+- **Repair and recharge.** The repair recipe restored a damaged sword's durability and a broken one's (clearing the
+  broken state), and refilled throwing knives to their maximum stack of 160; the recharge recipe refilled a wand's
+  charges. Read from the code only: which maximum durability the repair takes when the item has a durability bonus
+  (both swords had none), the refill of an item with several charged skills, and a stack whose maximum is above 255.
 
 **Finishing** ([§ G](../specs/items/cube.md#g-finishing-the-transmute)). If anything was produced, every item in the
 cube is destroyed (with the stock rows that is exactly the inputs) and the outputs are placed in the cube,
-**identified**, crafted items included. Where each output lands is the same free-spot search the game uses for a
+**identified**, crafted items included. Placing the Horadric Staff sets the player's staff quest bit, and Khalim's
+Will calls its own quest hook; neither hook ran for any of the 18 other outputs placed in that run. Where each output lands is the same free-spot search the game uses for a
 player's inventory, run on the empty 3 × 4 cube grid: a 1 × 1 item lands at cell (2, 3), a 2 × 1 item at (1, 3),
 and anything larger at (0, 0). That search reproduced all 100 logged placements. A partly filled
 cube never meets an output, since the inputs are destroyed first. If nothing was produced, the cube stays as it was:
@@ -264,20 +274,22 @@ A crafted item is built by the crafted builder
 [rare names](../glossary.md), then an affix count of the remainder of a draw by 5, raised to a tier set by the ilvl
 (above 70: 4; above 50: 3; above 30: 2; else 1), so it is never lowered. Each slot first draws a side (prefix or
 suffix), every slot, then picks an affix. Properties are rolled only after all picks, then the recipe's own three lines
-are added. So tier 4 always gives four affixes, while tier 1 gives one with probability 2/5. Two rarer
-cases are read from the code only: an affix pick that finds no candidate, and the limit of 252 retries against a
-duplicate.
+are added. So tier 4 always gives four affixes, while tier 1 gives one with probability 2/5. An affix pick can find
+no candidate on the stock data, for a low-level character crafting on a short staff, light boots or light gloves at
+output ilvl 5 or below: when that side already holds an affix, the game crashes, as was seen at output ilvl 1 on light
+boots. The same pick on an empty side, and the limit of 252 retries against a duplicate, are read from the code only.
 
 ### The cow portal and the Pandemonium rows
 
 The Cow Portal opens only from the Act I town ([level](../glossary.md) 1), once per game. It is refused for a
 character whose [quest record](../glossary.md) has the bit that the Cow King's death script sets for his killer, and in an expansion
-game the character's Baal quest word must show the quest done (in a classic game, Diablo's; not exercised)
+game the character's Baal quest word must show the quest done (in a classic game, Diablo's; both seen)
 ([cube § L](../specs/items/cube.md#l-the-special-outputs-kinds-1-2-3),
 [quest-drops § D3](../specs/items/quest-drops.md#d3-the-cow-king-and-the-cows)). The run tested these gates with forced save
 states, so it checks the gates, not which quest events set the bits. A refused portal leaves the leg and the tome in
-the cube. Still unconfirmed: the refusal outside the encampment (every test was inside it), the classic-game condition,
-and how many game-seed draws the spot search and the portal object make. The two Pandemonium rows match, produce
+the cube. Outside the encampment it was refused (tried in the Act IV town). Finding the portal's spot draws nothing;
+the portal object draws from the game seed (171 to 173 steps in the logged openings), and what those draws are spent
+on is not yet known. The two Pandemonium rows match, produce
 nothing, and leave the cube untouched in any game this executable hosts.
 
 ## Vendors and gambling
@@ -620,10 +632,11 @@ Collected from the specs' open questions and unconfirmed points:
   client test were never seen failing; a child above the player's level, ladder-only rows in a ladder game, and the
   `etype` exclusion were not tested; what the leftover slot of the one-extra-rune case holds in a game needs a run;
   the creation-side socket caps were not executed (the crafted cap is 3 in the code).
-- **Cube** ([open questions](../specs/items/cube.md#open-questions)): whether upgrading an ethereal item re-applies its
-  ethereal bonus; the cow portal's draws and its classic-game condition; whether the stat-bonus reading of the stat
-  tests holds, since no stock row uses them; and everything the run did not reach (outputs B and C, the player and item tests, ethereal and elite inputs, repair of
-  damaged items, the item level cap, the crafted edge cases).
+- **Cube** ([open questions](../specs/items/cube.md#open-questions)): what the cow portal object's game-seed draws
+  are spent on; whether the stat-bonus reading of the stat tests holds, since no stock row uses them; what no stock
+  recipe reaches (outputs B and C, the player and item tests, ethereal and elite inputs, the item level cap, an affix
+  pick with no candidate on an empty side); and stock cases no run has logged (a repair on an item with a durability
+  bonus, a recharge with several charged skills, a stack above 255, a copy with two socketed items).
 - **Vendors** ([open questions](../specs/items/vendors.md#open-questions)): the rest of the multiplayer cases (a leave
   with a trade window open, the two ways of leaving, three or more players); three bytes of the
   vendor record that nothing read in the windows a run watched (a reader elsewhere is not excluded); and how many draws
