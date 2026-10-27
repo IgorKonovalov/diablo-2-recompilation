@@ -27,3 +27,16 @@ Points beyond a tag change:
   `[I]`; *review fix*: the lane had `bks` at 2). The column is the asked quality; a base with `unique` 1 comes back 7.
 - Wirt's gold: in items/quest-drops § E already `[C]` (plan 0043), add run:2026-10-27-sweep-quest-items as a second
   anchor (18 piles on another seed), no tag change; objects § L's Wirt's body row is `[I]` there and is raised here. The objects cluster is ready for its Phase 3 re-tag with this entry.
+
+*Annotation (spec-writer, 2026-10-27, `lane/s38o`, plan 0038 Phase 3, objects cluster):* **the objects parts are done.**
+[objects § L](../specs/objects/README.md#l-quest-objects-the-hellforge-and-the-quest-item-objects-named-only): the chests
+row is split in two. The Act II chests (`tr1`, `msf`, `box`) are `[C]` in E1's order (item, chest drop, gold), with the
+held cube refusing `box`; the altar stays `[I]`. The Khalim chests' row states the corrected order (quest seed and gold
+first, then the part per player holding neither the part nor `qf2`, then the chest drop), `[C]` on the heart chest; the
+eye and brain chests and the held-part refusal stay `[I]`. Wirt's body row is `[C]` (slot 33, the leg on the unchanged
+quest seed, 18 event-7 piles, `RandLoHi` = 18 on the logged seed). The item-objects row is `[C]` for `leg` and `bks`
+(`bks` asked at quality 2, created at 7; the base `unique` override and `hdm`, `bbb` stay `[I]`). The orifice row is `[C]`
+for the word-10 bits (the kept Duriel log), `[I]` for the `hst` gate. § K adds the event-7 route `[C]` for classes 268
+and 367. All anchored to run:2026-10-27-sweep-quest-items. **Still open:** every items/quest-drops part (§ E, E1, the
+gate wording, § Entry points, the quality column, Wirt's gold anchor), which waits for H6e1; wiki/items-other-paths'
+quest-chest sentence (its "quest item, then chest drop, then gold" is quest-drops' E1 and moves with that round).

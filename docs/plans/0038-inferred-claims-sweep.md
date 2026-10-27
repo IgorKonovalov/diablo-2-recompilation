@@ -2592,7 +2592,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Backlog:** review request
     [2026-10-20-reverser-architect-review-h5b-objects](../backlog/archive/2026-10-20-reverser-architect-review-h5b-objects.md);
     spec-writer entry
-    [2026-10-20-reverser-spec-writer-h5b-objects-spec-updates](../backlog/2026-10-20-reverser-spec-writer-h5b-objects-spec-updates.md).
+    [2026-10-20-reverser-spec-writer-h5b-objects-spec-updates](../backlog/archive/2026-10-20-reverser-spec-writer-h5b-objects-spec-updates.md).
   - **Left:** trap types 8 and 9, the well cap and the shrine cap's `= 10` half, the class-397 operate (the pilot
     never reached the chest), a window inside a portal-like operate, quest 13's 582 object, `InitFn` 54/55/62/68/69/79.
   - Slot 1 stopped, saves restored (aside removed, harness idle), no background process left.
@@ -2640,7 +2640,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Backlog:** review request
     [2026-10-20-reverser-architect-review-h5b-objects](../backlog/archive/2026-10-20-reverser-architect-review-h5b-objects.md)
     closed; the spec-writer entry
-    [2026-10-20-reverser-spec-writer-h5b-objects-spec-updates](../backlog/2026-10-20-reverser-spec-writer-h5b-objects-spec-updates.md)
+    [2026-10-20-reverser-spec-writer-h5b-objects-spec-updates](../backlog/archive/2026-10-20-reverser-spec-writer-h5b-objects-spec-updates.md)
     released (it is applied with the objects and drlg/collision Phase 3 rounds, when H6e2 and H5d are accepted).
 - **2026-10-20 — Batch order and the 0039 fold (owner decisions, via the orchestrator; architect, `lane/plans45`).**
   (1) The remaining harness batches run **core and enabler first**: H5b (in flight) → H2a → H2b → H2c → H4a → H5d →
@@ -4413,3 +4413,30 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     178 tools, 39 min to checkpoint 1; 307 855 tokens, 200 tools, 107 min for the resume; accept with fixes, 3: misread 1,
     tool not kept 1, other 1, on the resume row); the review row added, usage "—".
   - **Next:** merge `lane/h6e2`; then H6e1.
+- **2026-10-27 — Phase 3, the objects cluster (spec-writer, `lane/s38o`, from `main` `1e61473c`).** Batches S4a, S4b,
+  H5b and H6e2, all accepted; each restated statement checked against its section of
+  [objects/0001](../findings/objects/0001-object-population.md) (§ Plan 0038 batch S4a, S4b, H5b) or
+  [items/0010 § Plan 0038 batch H6e2](../findings/items/0010-quest-drops.md#plan-0038-batch-h6e2-run2026-10-27-sweep-quest-items)
+  and the four reviews' rulings.
+  - **objects** {C 139, I 72, L 5} → **{C 188, I 56, L 4}** (recounted with the gate's tag reader). Raised: rows 1, 2,
+    8, 9, 11, 13/51, 14, 16, 17, 22, 37, 40, 45, 50, the 52 timing (its types 8/9 draw kept `[I]`), 47 for the
+    Hellforge, 48 Wirt's body; row 7 adds S4a's 190 restores beside the lifecycle `[C]`. Split along the ledgers'
+    remainders: 3/15 (the `> roomCount ÷ 8` half; `= 10` and the well cap `[I]`), 4 (trap types 1–7 modelled, 8/9
+    `[I]`), 23 (`0x400` door, zero size; `0x804` no stock case), 26 (57, 58; 79 `[I]`), 27 (47, 66, 25, 71 reached),
+    28 (13 reached `InitFn`s), 36/38 (level 25; whole byte and the `PreOperate` half `[I]`), 41/42 (the branches
+    reached), 43 (the survey; the indirect routes `[I]`), 48's chests (Act II chests and the Khalim heart chest in the
+    corrected order, eye and brain `[I]`), item objects (`leg`, `bks`; `bks` created at 7) and orifice (the bits).
+    Restated, not raised: row 20 and the d-none halves as no stock case, row 25 with the nine monster-creating
+    `InitFn`s (S4b (a)), the H5b shortfalls (6, 19, 35, 39, 46, 49) in *Open questions*. Beyond the inventory: § K's
+    event-7 route for classes 268 and 367 (qd 1, rule 8) and § J3's tier and `ilvl` (S2a tc 64 (b)), striking the
+    tier-cut `[L]`. K2 is rewritten from H5b.1 (the remap, the function table, class **160** second).
+  - **Wiki:** [objects](../wiki/objects.md) refreshed and its `based_on` set to 2026-10-27; [seed-to-world](../wiki/seed-to-world.md)
+    date only.
+  - **Backlog:** closed the [H5b spec updates](../backlog/archive/2026-10-20-reverser-spec-writer-h5b-objects-spec-updates.md),
+    the [S4b corrections](../backlog/archive/2026-10-16-reverser-spec-writer-plan-0038-s4b-corrections-for-phase.md) and the
+    [S2a tc 64](../backlog/archive/2026-10-16-architect-reverser+spec-writer-plan-0038-s2a-tc-64-and.md) entries; annotated the
+    [H6e2 entry](../backlog/2026-10-27-reverser-spec-writer-h6e2-quest-items-raises-and-the-khalim-chest.md) (objects done,
+    quest-drops waits for H6e1); filed the [counts entry](../backlog/2026-10-27-spec-writer-architect-s38o-objects-counts-for-the-research-map.md)
+    and the [review request](../backlog/2026-10-27-spec-writer-architect-s38o-review-objects-phase-3.md). Ledger row
+    added, usage "—".
+  - **Next:** architect review of `lane/s38o`.
