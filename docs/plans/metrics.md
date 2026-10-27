@@ -394,6 +394,7 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-10-27 | `lane/r52` (to the first pause) | 0052 P1.1 | reverser-static | 478 119 | 170 | 45 | — (static, Ghidra copy ghidra-r52) | — (on the resume row) | — (on the resume row) |
 | 2026-10-27 | `lane/r52` (resume: EDX callers, review-fixes pass, review request) | 0052 P1.1 | reverser-static | — | — | — | — (static, objdump, no Ghidra) | — | — |
 | 2026-10-27 | r52 | 0052 | architect-check | 0 | 0 | 0 | — | accept | none |
+| 2026-10-27 | lane/r52 P1.1 rulings | 0052 P1.1 | architect-review | 0 | 0 | 0 | — | rulings: tier amended (18), batches set (12), boundary accepted with conditions, no logger ADR | none (planning rulings; the finding passed its lane check) |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not

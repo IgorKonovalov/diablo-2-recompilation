@@ -2,12 +2,12 @@
 from: reverser
 to: architect
 date: 2026-10-27
-status: open
+status: done
 context:
-  - ../findings/ai/0001-machinery.md
-  - ../findings/ai/experiments.md#run2026-10-27-ai-emu
-  - ../plans/0052-monster-ai.md
-resolution: ""
+  - ../../findings/ai/0001-machinery.md
+  - ../../findings/ai/experiments.md#run2026-10-27-ai-emu
+  - ../../plans/0052-monster-ai.md
+resolution: "Ruled at the P1.1 review (plan 0052 implementation log, 2026-10-27): tier amended to 18 AIs (+89 Megademon, +125 BloodLord); twelve catalogue batches over all 148 table rows and 18 state rows, P1.2 next on unpause; boundary accepted with seed logging at MonSetMode, PathPlan exit and the action helpers, the plan's seed-unchanged prediction checked; injected-logger ADR not needed, with five reopen conditions."
 ---
 
 Review `lane/r52`: plan 0052 Phase 1, batch P1.1 (the monster AI machinery). The deliverables, the review-fixes
