@@ -40,5 +40,5 @@ Points for the ruling:
 - (g) **Totals** against `main` `147e5ca3` after merging it: unchanged, static 567, harness 519, c-emu 0, blocked 421,
   deferred 2, raised 17: 1 526.
 - (h) **Released with the review:** the spec-writer entry
-  [2026-10-27-reverser-spec-writer-h6e2-quest-items-raises-and-the-khalim-chest](../2026-10-27-reverser-spec-writer-h6e2-quest-items-raises-and-the-khalim-chest.md)
+  [2026-10-27-reverser-spec-writer-h6e2-quest-items-raises-and-the-khalim-chest](2026-10-27-reverser-spec-writer-h6e2-quest-items-raises-and-the-khalim-chest.md)
   (held until then).

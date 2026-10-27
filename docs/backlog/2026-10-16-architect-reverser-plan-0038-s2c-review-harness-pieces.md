@@ -31,6 +31,14 @@ the *Steel* load's `+0x38` store (sock 46); **H6c** the stock item's store tab a
 of the store creation record at `IC0` (vend 26); **H6e1** the cursor-item line at `sub_0055EEA0_CursorItemConsume`
 (qd 38). None of the four batches has a run on `main`. The entry stays open for them.
 
+*2026-10-27 (reverser, `lane/h6b`, plan 0038 batch H6b):* **H6b pieces met.** sock 14: the unidentified socketed skull
+cap's client flags were `0x00800000` (no bit 4, no bit 11, stat 194 0) and the insert was refused at the socketed
+test; after a Scroll of Identify they were `0x00800811` (stat 194 2) and the same insert was accepted. sock 46: the
+*Steel* sample's load logged the reader's store `0x509F` at `+0x38` (0x0062D1EA), and the client copies held the Name
+index of their row ([items/0007 § Plan 0038 batch H6b](../findings/items/0007-sockets-runewords.md#plan-0038-batch-h6b-run2026-10-27-sweep-sockets),
+run:2026-10-27-sweep-sockets). Both rows stay counted as S2c. **Left:** H6a (cube 49, aff 14) and H6c (vend 22, 26). The
+entry stays open for them.
+
 *2026-10-27 (reverser, `lane/h6a`, plan 0038 batch H6a, run:2026-10-27-sweep-cube):* **H6a pieces done.** Cube 49:
 crafting at output ilvl 1 (clvl 1) on light boots faulted the game at its third transmute, the session's last; the
 logger's `CNULL` at 0x005C2460 (record 0 of the picked id against a filled suffix slot) and the game's crash report
@@ -38,4 +46,4 @@ logger's `CNULL` at 0x005C2460 (record 0 of the picked id against a filled suffi
 side whose first pick lacks a candidate). Aff 14: row 17 on a magic tower shield took *of Spikes* above the alvl, the
 level-window half met; "only" has no separating stock case. Both rows stay counted as S2c, raised in part
 ([items/0008 § Plan 0038 batch H6a](../findings/items/0008-cube.md#plan-0038-batch-h6a-run2026-10-27-sweep-cube)).
-The entry stays open for H6b and H6c.
+The entry stays open for H6c (H6b's pieces met on `main`, `lane/h6b`).

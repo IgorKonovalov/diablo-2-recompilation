@@ -211,7 +211,7 @@ A `C` in the table rests on the bit-exact reproduction run:2026-10-14-affixes.
 | `0x00628070` | `ITEMS_SetRareName2` | item data `+0x34` | I |
 | `0x00628740` | `ITEMS_GetQLvl` | base `level` (`+0x0FD`) | C |
 | `0x006289F0` | `sub_006289F0_ItemBaseStackable` | base `stackable` (`+0x132`) | I |
-| `0x00629900` | `sub_00629900_ItemBaseHasInv` | base `hasinv` (`+0x137`) | I |
+| `0x00629900` | `sub_00629900_ItemBaseHasInv` | base `hasinv` (`+0x137`); raised by plan 0038 H6b ([items/0007](0007-sockets-runewords.md#plan-0038-batch-h6b-run2026-10-27-sweep-sockets)) | C |
 | `0x0062B400` | `ITEMS_GetBaseType` | the base's `type` (ItemTypes row) | C |
 | `0x0062BA80` | `sub_0062BA80_ItemTypeThrowable` | ItemTypes `Throwable` (`+0x10`) | I |
 | `0x0062BBD0` | `sub_0062BBD0_ItemTypeStaffMods` | ItemTypes `StaffMods` (`+0x1F`), 7 = none | C |

@@ -81,6 +81,8 @@ build recipe (JSON object; every key optional; example tools/d2s_recipes/lightso
                Phase 2: stat 356 on Wirt's Leg); "lone_follower": true (plan 0038 H1b, test state) writes a
                group follower whose head is absent (e.g. item_stats {"49": 10}, fire-max without fire-min) as an
                entry of its own, its id and its own Save Bits, instead of refusing it;
+               "forced_sockets": true (plan 0038 H6b, test state) with "sockets": N (1..6) sets flags bit 11 and the
+               count on any base, past the cap above (a ring, gloves: the client's socket tests);
                "dur": N (plan 0043 Phase 2, test state) writes current durability N (0..the full maximum) for
                a damaged item; "broken": true (plan 0043 Phase 2b, test state, with "dur": 0) sets flags bit 8;
                {"code": ..., "crafted": [name1, name2]} (plan 0043 Phase 2b) is a crafted item (quality 8) built
@@ -1516,6 +1518,10 @@ def _new_item(t, spec, rng):
         it["quantity"] = spec.get("quantity", int(base.get("maxstack") or 1))
     if "sockets" in spec:
         n, cap = spec["sockets"], max_sockets(t, base, it["ilvl"])
+        if spec.get("forced_sockets"):
+            # test state (plan 0038 H6b): flags bit 11 and the count on any base, past the F5-F6 cap (a ring, gloves);
+            # the loader's ITEMS_SetSocketsOnLoad still clamps stat 194 to its own cap (items/0007 § 7)
+            cap = 6
         if not isinstance(n, int) or not 1 <= n <= cap:
             raise D2sError("item %r: sockets %r, this base at ilvl %d takes 1..%d (min(6, invwidth x invheight, "
                            "gemsockets, MaxSock by ilvl), items/properties F5-F6)" % (code, n, it["ilvl"], cap))

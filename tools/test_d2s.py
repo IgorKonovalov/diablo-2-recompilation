@@ -368,6 +368,10 @@ RECIPE_BASES = {
     "quest-h6e1-svca": (BASE_X, "7dd9f00355fbf41af37e03d2c2f111f4d510abdc6930a2f3a83177165afab47f"),
     "quest-h6e1-svcb": (BASE_X, "636db82b21cd5eb7e1c308fadf005735a02c278af531abcf3bfa2ab1d0de4058"),
     "quest-h6e1-svcc": (BASE_X, "406d719aa7cf2db52cf204b617f01f6e6ea173b435f035d5e0e81760080de10c"),
+    "sock-h6b-low": (BASE_RW, "6fe4ad5619497d909b4e01d290a8f694f3830ef1ea010eb90d62e965d4ee5d61"),  # run:2026-10-27-sweep-sockets
+    "sock-h6b-low2": (BASE_RW, "7e3d88ccc9ad7446fe9594aff0bfb8b5d8fa3f70e07f83e33af96da1aa0915da"),
+    "sock-h6b-refuse": (BASE_X, "a9afe50254561549f5d134b8632d33208cdff598c7b4a8992426cef9c6ba65b8"),
+    "sock-h6b-svc": (BASE_X, "a0aa3e8ce029d439cae03c8fbc787c0203e02a413bce9d604c0c72d5f46bd783"),
 }
 
 _TABLES = []

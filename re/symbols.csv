@@ -522,7 +522,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00558110,func,sub_00558110_PlayerFindItemByCode,,C,items/quest-drops,docs/findings/items/0010-quest-drops.md
 0x00558200,func,sub_00558200_UnitDropLevel,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x00558270,func,sub_00558270_ItemCreateRecFromItem,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
-0x00558530,func,sub_00558530_ItemReplenishDurTimer,,I,items/sockets-runewords,docs/findings/items/0007-sockets-runewords.md
+0x00558530,func,sub_00558530_ItemReplenishDurTimer,,C,items/sockets-runewords,docs/findings/items/0007-sockets-runewords.md
 0x00558580,func,sub_00558580_ItemReplenishQtyTimer,,I,items/sockets-runewords,docs/findings/items/0007-sockets-runewords.md
 0x005585D0,func,ITEMS_DropMagicFind,,C,items/quality,docs/findings/items/0002-quality-roll.md
 0x00558610,func,ITEMS_MagicFindDiminish,,C,items/quality,docs/findings/items/0002-quality-roll.md
@@ -2335,7 +2335,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x006295B0,func,ITEMS_GetMaxStack,,I,items/properties,docs/findings/items/0006-properties.md
 0x00629660,func,ITEMS_GetSpawnStack,,I,items/properties,docs/findings/items/0006-properties.md
 0x006296F0,func,ITEMS_GetMinStack,,I,items/properties,docs/findings/items/0006-properties.md
-0x00629900,func,sub_00629900_ItemBaseHasInv,,I,items/affixes,docs/findings/items/0005-affixes.md
+0x00629900,func,sub_00629900_ItemBaseHasInv,,C,items/affixes,docs/findings/items/0007-sockets-runewords.md
 0x00629930,func,sub_00629930_ItemHasDurability,,C,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
 0x006299B0,func,ITEMS_GetSockets,,I,items/sockets-runewords,docs/findings/items/0007-sockets-runewords.md
 0x00629A00,func,sub_00629A00_GemApplyTypeOfClass,,I,items/sockets-runewords,docs/findings/items/0007-sockets-runewords.md
