@@ -1,6 +1,6 @@
 # 0050 — Animation and frame timing: unit modes, frame counts, rates and breakpoints, movement speed (ADR-0014 phase 4)
 
-> **Status:** approved 2026-10-25 (owner), in effect 2026-10-27 (plan 0045 Phase 2 part 1 accepted); P0 accepted 2026-10-27; P1 batches P1.1–P1.3 accepted with fixes 2026-10-27; P1b part 2 and P2 open (P2's gate, 0045·P3's review, open since 2026-10-27)
+> **Status:** approved 2026-10-25 (owner), in effect 2026-10-27 (plan 0045 Phase 2 part 1 accepted); P0 accepted 2026-10-27; P1 batches P1.1–P1.3 accepted with fixes 2026-10-27; P1b part 2 accepted with fixes 2026-10-27 (Phase 1b done); P2 open (its gate, 0045·P3's review, open since 2026-10-27)
 > **Created:** 2026-10-25
 > **Owner skill(s):** archivist, reverser, spec-writer
 > **Related ADRs:** 0001-target-toolchain-evidence-sources, 0003-runtime-experiments, 0004-boundary-oracles-in-reproduction, 0005-presentation-formats-tools-only, 0007-fetched-leads-only, 0011-harness-slots, 0013-forced-path-runs-cell-level, 0014-scope-game-simulation, 0015-emulated-reproduction, 0016-pipelined-simulation-phases, 0020-skills-phase-in-two-plans, 0021-observed-boundaries-in-emulation
@@ -229,7 +229,32 @@ client-side display of timing stay out (ADR-0005, ADR-0014 § Time): timing ente
   - **the oracle replacement:** plan 0045's skills run (its action frames), run:2026-10-16-combat and the plan 0047
     runs (their get-hit and block events) re-checked with the action frame and the get-hit length modelled where the
     logs hold what the model needs; the record names what could and could not be replaced;
-  - the Phase 1b cases;
+  - **the Phase 1b cases** (required, from the 19 `contradicted` verdicts of P1b part 2, all reachable on stock data,
+    and the P1b-1 refinement of A1, C1, H1 and B1 ruled at its review;
+    [anim/leads § 12](../findings/anim/leads.md#12-verdicts-part-2),
+    [backlog](../backlog/2026-10-27-reverser-reverser-plan-0050-p1b-contradicted-cases.md); minimums are estimates):
+    **P1b-1** the mode length (A2 contradicted; A1, C1, H1, B1 the counting refinement): attack (an Amazon or
+    Sorceress A1 with a start frame and one class without), cast, get-hit and block at two or more rates each, one of
+    them a slowed attack (factor ≤ 60) and one a fast one (factor ≥ 157), so A2 separates from both `n` and `n − 1`;
+    per action the schedule frame `T`, every kind-0 event's frame, the kind-1 end's frame (`T + n`), the frame of the
+    next request and `PlrModeLeaveOk`'s result with `PlrModeEndPending`'s `E`, and the next mode's start frame; for
+    get-hit and block the first frame the player acts again; a held Lightning cast (mode 18) as the control, the same
+    fields. It settles whether the interval between two actions is `n` or `N = n − 1`, and the spec states the
+    sources' count as `N`; **P1b-2** 30 attacks with the factor above 175 (R5);
+    **P1b-3** 30 throws (TH) by a non-Barbarian, no −30 (A9); **P1b-4** Charge and Leap Attack rates at two item-IAS
+    values, not the attack branch (A10); **P1b-5** Double Swing and Frenzy with two weapons of different speed, one
+    rate, base 70, also Frenzy after a missed first swing (A12, A13); **P1b-6** werewolf and werebear attacks with no
+    weapon and two weapon classes, `w` against the human A1 record (A14); **P1b-7** lengths and do frames of the
+    `DZSC*`, `40SCHTH`, `TGSCHTH`, `VASCHTH` and `NESC*` casts at two FCR values (C2, C4); **P1b-8** a Druid's get-hit
+    with a one-handed hammer and with a two-handed sword or axe, an Amazon's block with a wand (H4); **P1b-9** in the
+    `GetHitRoll` case, a get-hit in `[hp/16, hp/12)` and a refusal above `hp/12` (H6); **P1b-10** 10 player knockbacks
+    with the following mode (neutral) logged, from Blood Raven in Hell (MonProp `bloodraven` `prop1 (H)` `knock`, the
+    stock source; the P1.3 review's 30 knockbacks include them) (H10); **P1b-11** 30 blocked hits on a
+    player, 10 inside `⌊stat 102 / 8⌋ + 15` frames of the last block start (B5); **P1b-12** 30 repeated casts of a delay
+    skill outlasting its cast (Frozen Orb), the do, state 121 and the next do (D2); **P1b-13** a unit under Slows
+    Target, path speed unchanged, rate lowered at the cap, 30 events and a movement window (M6, M7, M8); **P1b-14** a
+    moving factor below 25 (the floor) and a player's run at the animation base `0x65`, in the movement windows (M11);
+    **P1b-15** 30 Charge starts with the path speed logged, one at stat 67 ≤ 50 (M12);
   - **the P1.3 review's cases** (minimums are estimates): 100 `GetHitRoll` calls with the band, the divisor and the
     draws predicted, at least 20 in each of the two drawing bands and over two or more hit classes with different
     divisors; 30 knockbacks (players and monsters, the end frame predicted); the run drain in the run windows above
@@ -762,3 +787,70 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   in lower case (misread). HitClass and Missiles carry the high-nibble count (omission). MonStats gives the `E9`
   rows' run base 256 (omission). The anchors (wrong anchor). The review request is closed. Ledger: the lane row
   filled (usage from the orchestrator), the review row added with "—" usage.
+- **2026-10-27 — Phase 1b part 2: the verdicts (reverser, `lane/p50v`; no Ghidra, no harness, objdump once).** Each
+  of the 61 [anim/leads](../findings/anim/leads.md) claims has one verdict, written in the *Leads used* of
+  [anim/0001](../findings/anim/0001-modes-frames.md#leads-used) (R1, A3, A4), [anim/0002](../findings/anim/0002-rates.md#leads-used)
+  (29 rate, attack, cast, hit-recovery and block rows) and [anim/0003](../findings/anim/0003-movement-gates.md#leads-used)
+  (29 gate, delay, H5–H10, B4, B5 and movement rows), each with the finding's section and address, and in the leads'
+  Verdict column with a new § 12. **Counts:** held 7, held with refinement 29, contradicted 23 (9 plain; 11
+  `(version: D2R)`, 3 `(version: 1.09)`, ruling (c) of the `lane/p50c` review), not covered 2 (A11: the rollback
+  percentages are catalogue values; D5: the item cast's delay path is not read). By topic: R 2/2/1/0 (held, refined,
+  contradicted, not covered), A 2/5/7/1, C 0/4/3/0, D 2/1/1/1, H 0/6/4/0, B 0/3/2/0, M 1/8/5/0. A4 and D4 are decided
+  from the P0 data (ruling (d)): the Basin attack page re-fetched (rev 65669, unchanged), all 69 rows equal the
+  records, the code's start frames and first code-1/2 events; the 23 delays equal Skills `delay` at 25 a second.
+  **Kept check:** `tools/anim_leads_check.py code` (`80fb5fae…`; part 1's default run still byte-identical to
+  `p50c-leads-check.txt`): the 39 tables × 2 sources against the code's model (`tools/anim_rates.py` rates and
+  `sched_len`) over the records the code looks up: every change point equal (78/78), the tables' frame count one below
+  the code's `⌈256 (F − S) / r⌉` in 76, equal in the 2 Lightning tables (a sequence); output
+  `workspace/logs/anim-leads/p50v-code.txt` (`99e7b983…`), `p50v-commands.txt`, `p50v-manifest.sha256`. **Main
+  findings:** the one-frame offset on every record mode (P1b-1, the largest case); the records settle C2/C3 for the
+  tables (Druid cast 15 frames at 208, Necromancer 16) and against C2's and C4's Druid, form and vampire rows; Slows
+  Target sets stats 68/69 only, so no velocity effect (M6–M8); a player's knockback ends in neutral (H10); the block
+  animation's gate is a cooldown (B5); the throw has no −30 (A9); Charge and Leap Attack take no IAS (A10); the
+  shapeshift base uses the human A1 record per weapon (A14). One objdump read: `RunVelocityStat`'s class is the unit's
+  real class (0x0062449F), cited in M14. **Phase 2:** the 23 contradicted claims are all reachable on stock data and
+  are written into *Done when* as cases P1b-1 … P1b-15
+  ([backlog](../backlog/2026-10-27-reverser-reverser-plan-0050-p1b-contradicted-cases.md)). No tag changed; nothing
+  promoted; `re/symbols.csv` untouched. "No lead" recorded for monster frames and rates, the `fast` mod, object operate
+  frames and `monseq`. Review requested
+  ([backlog](../backlog/archive/2026-10-27-reverser-architect-review-plan-0050-p1b-part-2.md)).
+- **2026-10-27 — `lane/p50v` review (architect): accept with fixes; Phase 1b done.** After merging `main` (the plan
+  log and ledger conflicts kept both sides; `backlog.py archive` clean), `tools/anim_leads_check.py code` was rerun
+  under `MemoryMax=4G` and is byte-identical to `p50v-code.txt` (`SUMMARY anim_leads_code tab=78 thresholds_equal=78
+  table_minus_n_is_-1=76 table_minus_n_is_0=2 basin=69 basin_match=69 delay_rows=23 delay_match=23`), the default run
+  byte-identical to `p50c-leads-check.txt`, and `sha256sum -c p50v-manifest.sha256` and `manifest.sha256` pass; the
+  six input hashes in `p50v-commands.txt` match. One verdict per Id: 61 across the three *Leads used*, none twice,
+  checked by script. No `[C]`/`[I]` changed in the lane's diff, `re/symbols.csv` and `docs/specs/` untouched.
+  **Rulings:** (a) **P1b-1 is a counting difference, not a shown contradiction.** The schedule queues the steps `T +
+  1` … `T + N` that carry every frame event and the end at `T + N + 1 = T + n` (anim/0001 § 7,
+  fn:SUNIT_ScheduleModeEvents@0x005539B0), so `N = n − 1` whenever the ceiling is 2 or more: the sources' count is
+  `N`, the frames with the end's frame left out, and A1's own source names that convention ("the first and last
+  frame are the same"). The 76 rows agree on the rate and on every change point; a constant offset cannot tell a
+  different count from a different behaviour, and the code does not say which of `n` and `n − 1` is observed as the
+  interval between two actions (`PlrModeLeaveOk` lets A1, A2, SC and TH be left while the end is queued). A1, C1,
+  H1 and B1 move from `contradicted (version: D2R)` to **held with refinement**; the Lightning tables' `n` is the
+  sources' own exception and stays for the case to explain. **A2 stays contradicted:** its `− 1` inside the ceiling
+  gives `n − 2` below 256 and up to `n` above, so it differs from both readings. P1b-1 stays a required Phase 2 case
+  and now names what settles it: per action the schedule frame `T`, every kind-0 event's frame, the kind-1 end's
+  frame, the next request's frame with `PlrModeLeaveOk`'s result and `PlrModeEndPending`'s `E`, the next mode's start
+  (for get-hit and block, the first frame the player acts), a slowed (factor ≤ 60) and a fast (≥ 157) attack for A2,
+  and a held Lightning cast as the control. Counts after the move: **held 7, held with refinement 33, contradicted 19
+  (9 plain, 7 `(version: D2R)`, 3 `(version: 1.09)`), not covered 2** (A11, D5), greps in leads § 12. (b) The
+  version rulings of the `lane/p50c` review are applied as written: all 19 D2R-only and 5 1.09-only rows checked, every
+  contradicted one among them carries its version, and no D2R-only difference is counted as a community error. (c)
+  **P1b-10 is not conditional:** MonProp's one `knock` row is `bloodraven` `prop1 (H)`, a stock source of a player
+  knockback in Hell, and the P1.3 review's 30 knockbacks already include players; a shortfall is named in the record
+  under the rare-branch rule. The other 18 contradicted claims are reachable on stock data as filed (P1b-2 Fanaticism
+  or Burst of Speed with a fast weapon; P1b-14 chill with a stat-67 curse). (d) The vocabulary fits the evidence rules
+  (one of the four verdicts per compared claim, `contradicted` with its backlog entry), with (a)'s reading of
+  `contradicted`: a disagreement the code itself shows, not a count the rows cannot separate. (e) A11 and D5 not
+  covered is right: the reschedule percentages are catalogue values (plan 0046) and the item cast's delay path is
+  unread; neither is a Phase 2 case. **Fixes (4), written into the findings, leads § 12, Phase 2's *Done when* and the
+  cases entry:** A1, C1, H1, B1's verdicts and details (overclaim); A2's detail, `n − 2` below 256 (omission); an
+  address or `fn:` added to the 28 verdicts that cited only a section (omission); P1b-10's stock source named and the
+  condition dropped (omission). **Phase 1b's *Done when* is met** (one verdict per claim; every reachable
+  contradicted claim a required Phase 2 case; agreement promotes nothing), so Phase 1b is done. **For 0050·P2
+  (`lane/p50e`):** merge `main` for the cases P1b-1 … P1b-15 in *Done when* and the cases entry; P1b-1 now logs the
+  next request and `PlrModeLeaveOk`'s result besides the frames, and the spec (Phase 3) states the sources' count as
+  `N = n − 1` whatever the run finds; P1b-10 needs a Hell game with Blood Raven. The review request is closed.
+  Ledger: the lane row filled (usage from the orchestrator), the review row added with "—" usage.

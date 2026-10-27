@@ -79,9 +79,161 @@ hashes). Unit fields as in `re/types/game.h`, the path fields as in `re/types/an
 
 ## Leads used
 
-None. No lead was used to locate or read this code, and [anim/leads](leads.md) was read only in its § 1 (sources and
-versions) before filing ("leads not read before filing"; plan 0050, `lane/p50c` review ruling (b)). The movement,
-hit-recovery, block and delay rows are decided against this finding in Phase 1b part 2.
+No lead was used to locate or read this code, and [anim/leads](leads.md) was read only in its § 1 (sources and
+versions) before filing ("leads not read before filing"; plan 0050, `lane/p50c` review ruling (b)).
+*2026-10-27 (plan 0050 Phase 1b part 2, `lane/p50v`):* the verdicts on the 29 gate, delay, hit-recovery, block and
+movement rows, against this finding, anim/0001, anim/0002 and the P0 table docs; agreement promotes nothing, and a
+`contradicted` row is a required Phase 2 case ([backlog](../../backlog/2026-10-27-reverser-reverser-plan-0050-p1b-contradicted-cases.md);
+`(version: …)` marks a row whose only source describes D2R or 1.09). Table comparisons: `tools/anim_leads_check.py
+code` (`workspace/logs/anim-leads/p50v-code.txt` `99e7b983…`, `p50v-manifest.sha256`).
+
+- [L] src:maxroll-d2r-breakpoints: C4, the cast action frame `⌈B_act · 256 / r⌉` with per-class bases (Amazon by
+  weapon 10–13, Assassin 9, Barbarian 9, Druid 10, werewolf 8, werebear 9, Necromancer 8, vampire 5, Paladin 9,
+  Sorceress 7, Act 3 mercenary 7). **contradicted (version: D2R)**
+  ([P1b-7](../../backlog/2026-10-27-reverser-reverser-plan-0050-p1b-contradicted-cases.md))
+  Detail: the do runs at `T + max(1, ⌈256 (f − S) / r⌉)` for the first code-1/2 event frame `f` (§ 5,
+  fn:sub_00580460_PlrModeSkillFrame@0x00580460), the same form; the records' `f` agree for the Amazon (bow 10, hand
+  to hand 11, `1hs`/`2hs`/`xbw` 12, `1ht`/`stf`/`2ht` 13), Assassin, Barbarian, Necromancer, Paladin, Sorceress and
+  `IWSC1HS`, and differ for the Druid (`DZSC*` 8), the werewolf (`40SCHTH` 5), the werebear (`TGSCHTH` 5) and the
+  vampire (`VASCHTH` 3) (`CAST` lines).
+- [L] src:maxroll-d2r-breakpoints: C6, a cast is interrupted by hit recovery, a stun and a block. **held with
+  refinement**
+  Detail: from SC a get-hit or block request passes `PlrModeLeaveOk`, and `PlayerModeAllowed` passes it for a skill
+  with `interrupt` (§ 6.2, fn:sub_0057EDD0_PlrModeLeaveOk@0x0057EDD0, fn:sub_0057EEC0_PlayerModeAllowed@0x0057EEC0; under Concentration with one draw); the 12 player skills without `interrupt` (among them
+  Werewolf and Werebear, anim `SC`) are not interrupted (`INTERRUPT` line); a stun interrupts through the get-hit it
+  gives without the roll (§ 6.1, fn:COMBAT_GetHit@0x0057CEE0).
+- [L] src:maxroll-d2r-breakpoints, src:basin-wiki-animation: D1, the delay starts at the action frame, so casts repeat
+  every action frame plus delay (Immolation Arrow: 25 frames plus the action frame). **held with refinement**
+  Detail: `SKILLS_SrvDo` sets state 121 for `delay` frames from the do frame and `SKILLS_CanUse` refuses a delay skill
+  while it lasts (§ 5, fn:SKILLS_SetDelayState@0x0056EF90, fn:SKILLS_CanUse@0x00647960); Immolation Arrow's `delay` is
+  25; the next start also passes the mode tests of § 6.2.
+- [L] src:pd-breakpoints: D2, the delay runs after the whole cast (an 11-frame cast with a 25-frame delay repeats every
+  36). **contradicted** ([P1b-12](../../backlog/2026-10-27-reverser-reverser-plan-0050-p1b-contradicted-cases.md))
+  Detail: the delay starts at the do frame (§ 5, fn:SKILLS_SetDelayState@0x0056EF90), not at the mode end; the frames from the do to the end overlap it.
+- [L] src:basin-wiki-animation: D3, every delay is global in LoD. **held**
+  Detail: one state (121) per unit, and `SKILLS_CanUse` refuses every skill with a `delay` while it is set (§ 5, fn:SKILLS_CanUse@0x00647960).
+- [L] src:basin-wiki-animation: D4, the LoD delays in seconds (23 skills); nothing shortens a delay. **held**
+  Detail: Skills `delay` equals 25 × the seconds for all 23, and no other row with a `charclass` has a delay (`DELAY
+  rows=23 match=23`); the state's length is the `delay` cell, with no stat term read (§ 5, fn:SKILLS_SetDelayState@0x0056EF90, tbl:Skills.txt:delay).
+- [L] src:basin-wiki-animation: D5, a delay skill cast by a chance-to-cast item sets an 11-frame block on active
+  skills from the action frame, not the skill's delay. **not covered**
+  Detail: the item cast path (skills/0015) is not read for the delay here; `SKILLS_SetDelayState`'s three callers are
+  `SKILLS_SrvDo` (two) and `sub_0056F020_SkillDelayFromCalc` (§ 5, fn:SKILLS_SetDelayState@0x0056EF90, fn:sub_0056F020_SkillDelayFromCalc@0x0056F020); where an 11-frame value comes from is not found.
+- [L] src:maxroll-d2r-breakpoints: H5, no hit recovery on a kill, when frozen, on poison only or below 1 damage; else
+  `T = maxLife / D` with `D` 8 (hit class 2, 6, 10, 11), 32 (4, 8), 64 (5), 16 otherwise; below `T` none, below `2T` a
+  1-in-2 then a 3-in-4 roll, below `4T` a 3-in-4 roll, else always; some units immune. **held with refinement**
+  Detail: § 6.3 (fn:sub_0057CB00_GetHitRoll@0x0057CB00): the tests, the divisor table and the two `RangePow2` draws on
+  the defender's seed agree, with `4T` itself always (the "≥" reading); `2T` and `4T` are `hp / (D/2)` and `hp /
+  (D/4)` (signed), a kill is a result bit handled before (§ 6.1); `D` reads the whole `+0x60`, so any element or
+  doubled nibble gives 16; a stunned defender skips the roll; a monster without a GH mode is never hit.
+- [L] src:pd-breakpoints: H6, hit recovery on any hit above 1/12 of maximum life. **contradicted**
+  ([P1b-9](../../backlog/2026-10-27-reverser-reverser-plan-0050-p1b-contradicted-cases.md))
+  Detail: the threshold is `hp / D` with the bands of H5 (§ 6.3, fn:sub_0057CB00_GetHitRoll@0x0057CB00): at `D` 16 a hit from `hp/16` can get hit (3/8) and
+  one at or above `hp/12` but below `hp/4` can fail.
+- [L] src:maxroll-d2r-breakpoints, src:pd-breakpoints: H7, hit recovery interrupts a cast, an attack, walking,
+  running and standing; nothing can be done until it ends; it can be re-entered at once. **held with refinement**
+  Detail: get-hit and block refuse every request but death and neutral (§ 6.2, fn:sub_0057EDD0_PlrModeLeaveOk@0x0057EDD0);
+  a get-hit during a used skill without `interrupt` (12 player skills, among them Kick, Jab, Fend, Zeal, Frenzy,
+  Whirlwind) never starts (fn:sub_0057EEC0_PlayerModeAllowed@0x0057EEC0); a new get-hit during get-hit is refused, one
+  after its end is not.
+- [L] src:basin-wiki-animation: H8, a stunned player is not incapacitated but enters hit recovery on every hit while
+  stunned, even with no damage. **held with refinement**
+  Detail: a stunned defender's get-hit skips `GetHitRoll`, its damage tests included (§ 6.1, fn:COMBAT_GetHit@0x0057CEE0); the command still meets
+  the mode tests of § 6.2, and no state-21 test was found in them (§ 6.4).
+- [L] src:basin-wiki-animation: H9, a 10-second ceiling on stun, the latest replacing the running one; champions,
+  uniques and superuniques stunned 1 time in 10; bosses and static units never. **held with refinement**
+  Detail: `COMBAT_ApplyStun` caps the length at 250 frames (13 for a hireling from 12 up), re-sets state 21's end to
+  `frame + length`, rolls `Range(100) ≥ 90` on the attacker's seed for a monster with type flag `0x08`, and returns for
+  a boss and for `Velocity` 0 (§ 6.4, fn:COMBAT_ApplyStun@0x0057AAE0; combat/0001 § 9); which special monsters carry
+  flag `0x08` is combat's.
+- [L] src:basin-wiki-animation: H10, knockback moves the target up to three subtiles (sometimes fewer) and puts it into
+  hit recovery; not when frozen or killed; it needs a knockback mode, and the chance depends on the target's size.
+  **contradicted** ([P1b-10](../../backlog/2026-10-27-reverser-reverser-plan-0050-p1b-contradicted-cases.md))
+  Detail: the distance `n` 3 (6 for `sandleaper1`), shortened by collision, and the kill test before agree (§ 4,
+  fn:sub_0067A000_PathPlanKnockback@0x0067A000); a monster's ends in a get-hit command (fn:sub_005A8520_MonKnockbackEnd@0x005A8520)
+  and needs both GH and KB, but a player's ends in neutral when the path arrives (anim/0001 § 9.1,
+  fn:sub_00580C20_PlrModeMoveFrame@0x00580C20), with no hit recovery; the chance is stat event 7's `c` 64 or 32/128 by
+  MonStats2 flags (fn:sub_005BF960_StatEv07Knockback@0x005BF960).
+- [L] src:maxroll-d2r-breakpoints, src:pd-breakpoints: B4, the Assassin's Weapon Block uses the block mode and the
+  same FBR values. **held with refinement**
+  Detail: a blocked hit enters mode 9 through the same path whatever made the block (§ 6.1, fn:COMBAT_GetHit@0x0057CEE0); the `AIBL*` records,
+  `ht1`/`ht2` included, are 3 frames at 256 (`TAB fbr Assassin`).
+- [L] src:pd-breakpoints, src:maxroll-d2r-breakpoints: B5, a block only in melee or while walking, not while running;
+  nothing during the block; blocks repeat with no cooldown. **contradicted**
+  ([P1b-11](../../backlog/2026-10-27-reverser-reverser-plan-0050-p1b-contradicted-cases.md))
+  Detail: a player's block mode starts only when `frame − stat 95 > ⌊stat 102 / 8⌋ + 15` (§ 6.1, 0x0057D282–0x0057D2D6),
+  so a second block within that window plays no block mode; block refuses every request but death and neutral (§ 6.2);
+  whether a running player can block at all is the block test's (combat), not read here.
+- [L] src:basin-runwalk-thread, src:basin-wiki-animation: M1, every class has `WalkVelocity` 6 and `RunVelocity` 9.
+  **held**
+  Detail: all seven CharStats rows (`MOVE charstats`, tbl:CharStats.txt:WalkVelocity, tbl:CharStats.txt:RunVelocity).
+- [L] src:basin-wiki-animation, src:basin-runwalk-thread, src:basin-movement-clarification: M2, walk `max(WB (100 +
+  Speed)/100, WB/4)`, run `max(RB + WB · Speed/100, WB/4)`. **held with refinement**
+  Detail: `v = (pbase · X) / 100`, `pbase = WalkVelocity << 8`, `X = max(B_FRW + stat 67, 25)` (§ 1); the run is the
+  walk base with stat 67's mode-scoped `RunVelocity · 100 / WalkVelocity − 100` (+50), so `RB` enters only through
+  that list (fn:sub_00620E80_RunVelocityStat@0x00620E80) and the floor 25 is `WB/4` for both; integer, 1/256 units.
+- [L] src:basin-runwalk-thread, src:basin-movement-clarification, src:basin-wiki-animation: M3, 6 and 9 subtiles (or
+  yards) per second. **held with refinement**
+  Detail: a speed `v` moves `v / 16` subtiles per frame on an axis (§ 2, fn:sub_006502D0_PathVelocityStep@0x006502D0): `WB / 16` and `RB / 16`, 0.375 and 0.5625,
+  in the ratio 2 : 3; the sources' unit is theirs (read as subtiles per second at 25 frames, the 2003 figure is not
+  the code's 9.375).
+- [L] src:basin-wiki-animation, src:basin-runwalk-thread: M4, item FR/W `⌊150 x / (150 + x)⌋`; skill bonuses, slows
+  and the armour penalty undiminished. **held with refinement**
+  Detail: `B_FRW = 150 s / (150 + s)` truncated (anim/0002 § 2); stat 67 enters `X` raw (§ 1), an armour's base 67 is
+  `−speed` (items/properties A3, fn:sub_00557AB0_ItemInitStats@0x00557AB0).
+- [L] src:basin-wiki-animation, src:basin-runwalk-thread: M5, `Speed` is the sum of EFRW, the skill bonuses, the
+  armour and shield speeds, cold −50 for a player, Holy Freeze, Decrepify −50 and Slows Target. **held with
+  refinement**
+  Detail: the sum is `B_FRW + stat 67` floored at 25 (§ 1); the player's chill is −50 (combat/delivery D2,
+  fn:COMBAT_ApplyCold@0x0057AF80); the skills' values and their formula are their stat lists' (not read here); Slows
+  Target does not enter (M6).
+- [L] src:basin-wiki-animation, src:basin-movement-clarification: M6, Slows Target lowers a player's walk and run by
+  its percentage, capped at −50. **contradicted**
+  ([P1b-13](../../backlog/2026-10-27-reverser-reverser-plan-0050-p1b-contradicted-cases.md))
+  Detail: its state carries stats 68 and 69 (attack and default rate), not 67 (skills/0003 handler 19,
+  fn:sub_005C0310_StatEv19Slow@0x005C0310), and movement reads only `B_FRW + stat 67` (§ 1).
+- [L] src:basin-runwalk-thread: M7, Slows Target of any percentage gives −100 % to walk and run. **contradicted
+  (version: 1.09)** ([P1b-13](../../backlog/2026-10-27-reverser-reverser-plan-0050-p1b-contradicted-cases.md))
+  Detail: as M6, no stat 67 in its state (fn:sub_005C0310_StatEv19Slow@0x005C0310).
+- [L] src:basin-wiki-animation: M8, Slows Target caps (90 % on normal and minion monsters, 50 % on players, mercenaries
+  and special monsters); with cold, Decrepify and Holy Freeze no unit below 15 % attack rate or 25 % velocity; the first
+  percentage sets velocity, the latest attack rate. **contradicted**
+  ([P1b-13](../../backlog/2026-10-27-reverser-reverser-plan-0050-p1b-contradicted-cases.md))
+  Detail: the floors agree as clamps on every source (attack factor ≥ 15, anim/0002 § 3.6; moving factor ≥ 25, § 1);
+  the caps are 50 (players, bosses, hirelings, a `MonTypeFlag`), 75 or 90 (fn:sub_005C0310_StatEv19Slow@0x005C0310);
+  Slows Target sets no velocity at all (M6).
+- [L] src:basin-runwalk-thread: M9, the final speed keeps its fraction. **held with refinement**
+  Detail: `v` is in 1/256 of the walk unit, truncated by the signed divide by 100 (§ 1, fn:sub_00648690_PathSetSpeed@0x00648690), and the step keeps 1/65536
+  subtile (§ 2, fn:sub_006502D0_PathVelocityStep@0x006502D0).
+- [L] src:basin-runwalk-thread: M10, `WalkVelocity` 0 never moves; negative values walk backwards (modded data).
+  **held with refinement**
+  Detail: `pbase` 0 gives `v` 0 and `PathStep` stops a path with no speed (§ 2, fn:sub_00650840_PathStep@0x00650840);
+  the negative half needs modded data and is not decided (the field's signedness is not read).
+- [L] src:basin-runwalk-thread: M11, `effective rw = skill FRW + EFRW + RunVelocity · 100 / WalkVelocity − 100 −
+  armour`, floored at 15; `velocity1 = effective rw · factor / 100`, factor 213 (walk, town walk) or 65 (run);
+  `velocity2 = WalkVelocity · 256 · effective rw / 100`. **contradicted (version: 1.09)**
+  ([P1b-14](../../backlog/2026-10-27-reverser-reverser-plan-0050-p1b-contradicted-cases.md))
+  Detail: the sum is `X` and `velocity2` is the path speed (§ 1); `velocity1` is the animation rate `vbase · X / 100`
+  with `vbase` 0xD5 = 213 for walk and town walk and 0x65 = 101 for run (anim/0002 § 3.4,
+  fn:sub_006213D0_AnimMoveBaseRate@0x006213D0; the row's 65 matches only read as hex); the floor is 25, not 15.
+- [L] src:basin-runwalk-thread: M12, Charge at `RB · (1 + bonus + armour) · 150 %`, item FR/W not applied.
+  **contradicted (version: 1.09)** ([P1b-15](../../backlog/2026-10-27-reverser-reverser-plan-0050-p1b-contradicted-cases.md))
+  Detail: start 31 sets `MulDiv(RunVelocity << 8, max(stat 67, 50) + Param1, 100)`, `Param1` 150 (skills/0011 § 5,
+  fn:sub_005CF6B0_SkillSt31Charge@0x005CF6B0): `RB · (stat 67 + 150) / 100`, 2.5 RB at stat 67 100, not 1.5 RB.
+- [L] src:basin-movement-clarification, src:basin-wiki-animation: M13, Charge at `RB · (1 + bonus + armour) + 1.5 RB`,
+  item FR/W not applied, the bonus floored at −50 % at the start; normal run speed when slowed mid-charge; 8–9 frames
+  between charges. **held with refinement**
+  Detail: the start's speed is that formula with stat 67 (no item FR/W) raised to 50 (fn:sub_005CF6B0_SkillSt31Charge@0x005CF6B0); the speed after a
+  slow mid-charge and the interval between charges are not read here.
+- [L] src:basin-wiki-animation: M14, the fetish walks and runs at 6, the vampire at 9 (floor 2.25), werewolf and
+  werebear at the class's 6 and 9. **held with refinement**
+  Detail: the path base takes the display class (`AnimPathBaseSpeed(EAX` display class`, ECX` display type`)`,
+  0x00624158–0x006241A9): MonStats `Velocity` 6 (wolf, bear, fetish) or 9 (vampire5); the vampire and fetish rows have
+  no RN mode, so a run is shown as WL (anim/0001 § 2's fallback) and takes no run list, while wolf and bear keep RN and
+  the +50 (`RunVelocityStat` takes the unit's real class, `mov eax, [esi+0x4]` at 0x0062449F; `MOVE shape` lines; fn:sub_00621360_AnimPathBaseSpeed@0x00621360).
+
+No lead was found for monster walk and run speeds, the `fast` mod, object operate frames, the knockback length in
+frames or the run drain (part 1, anim/leads § 1): "no lead; derived from code".
 
 ## Functions
 
