@@ -5267,3 +5267,100 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Bookkeeping.** Review-fixes Seen lines: spec-writer 2, 3, 7 and 8; architect 2. The review request and the counts
     entry closed. Ledger: the lane row filled (usage from the orchestrator: 244 114 tokens, 83 tools, 20 min; accept
     with fixes, 8: overclaim 4, misread 1, under-claim 1, omission 1, miscount 1); the review row added, usage "—".
+- **2026-10-27 — H6a (`cube`) filed (reverser, `lane/h6a`, harness slot 1, from `main` `fd841611`).** Run id
+  run:2026-10-27-sweep-cube, record in [items experiments](../findings/items/experiments.md#run2026-10-27-sweep-cube),
+  evidence in [items/0008 § Plan 0038 batch H6a](../findings/items/0008-cube.md#plan-0038-batch-h6a-run2026-10-27-sweep-cube).
+  - **Built:** logger revision r4 of `tools/gdb/cube.py` (the packet-to-transmute chain, `UnitSetEvent`, the runeword
+    strip, the two quest hooks, the crafted builder's null-record read, the children's list owners), session driver
+    `tools/h6a_sessions.py` (`cube_sessions.py`'s layouts, a step's rune inserts, the Act IV act byte, the crash
+    session's own game directory), checker `tools/sweep_h6a.py check|static|tables`, `tools/cube.py` extended (`uns`,
+    `rep` broken and stackable, `qty=`, the copy's children, placement bit 0), eight recipes
+    `tools/d2s_recipes/cube-h6a-*.json` (rows in `tools/test_d2s.py`, 60 tests OK).
+  - **Sessions:** 8 launches, all kept, no development log; Normal, expansion and classic, in town. The tooling
+    lessons applied: the Act IV start by act byte 131 (`-a4` recipes); no walking, so the Harrogath margin,
+    `--descend-to` and `--all-copies` were not needed; no Save and Exit, so the act-byte zeroing did not arise. The
+    faulting session ran in a symlink game copy inside slot 1's prefix; its crash folder is in `workspace/logs/h6a/dev/`.
+  - **Check:** `sweep_h6a.py check` over the 8 logs: 26 transmutes reproduced, 27 call chains, 23 `UnitSetEvent`
+    calls, **0 mismatches** (`check-final.txt` `15e54b63…`); regressions: `tools/cube.py check` on run:2026-10-15-cube
+    182 reproduced, 0 failed; `sweep_s2c.py cube` byte-identical.
+  - **Ledger (29): raised 22, raised in part 4, reclassified 2 (cube 16, 44 → d-none), shortfall 1 (cube 51)**
+    (inventory § 2.6 H6a block). Totals against `main` `fd841611`: static 567, harness 517, c-emu 0, blocked 423,
+    deferred 2, raised 17: 1 526.
+  - **S2c pieces:** cube 49 case (b) met (the game faults at 0x005C2460), case (a) d-none; aff 14's level-window half
+    met. Both stay counted as S2c, raised in part.
+  - **Symbols (rule 14), I → C:** `g_SrvPacketTable`, `SrvPacketDispatch`, `Pkt4FButton`, `PktInteractButton`,
+    `PlayerGetInteract`, `CubeButton`, `ItemRemoveRuneword`, `ItemRepairBroken`, `QuestStaffMade`,
+    `QuestKhalimWillMade`; new `sub_0055F590_ItemInvNonEmpty` (I).
+  - **Backlog:** review request
+    [2026-10-27-reverser-architect-review-lane-h6a-plan-0038-batch-h6a](../backlog/archive/2026-10-27-reverser-architect-review-lane-h6a-plan-0038-batch-h6a.md)
+    filed; spec-writer entry
+    [2026-10-27-reverser-spec-writer-h6a-cube-raises-for-the-phase-3-re](../backlog/2026-10-27-reverser-spec-writer-h6a-cube-raises-for-the-phase-3-re.md)
+    held until the review; the S2c-pieces entry annotated (H6a parts done). Slot 1 stopped, saves restored (empty, no
+    aside).
+- **2026-10-27 — `lane/h6a` review (architect): accept with fixes (7).** Static review after merging `main`
+  `ad8b8cd0` (`lane/h6b`, `lane/s38q`; bookkeeping conflicts kept both sides; `backlog.py archive` moved nothing). The
+  three manifests pass `sha256sum -c`; under `systemd-run --user --scope -p MemoryMax=4G`, `sweep_h6a.py check`,
+  `static` and `tables` reproduce `check-final.txt`, `static.txt` and `tables.txt` byte for byte, `tools/cube.py check`
+  on run:2026-10-15-cube reproduces `regress-cube-run.txt` (182, 0 failed), `sweep_s2c.py cube` is byte-identical,
+  `test_d2s.py` 60 OK. Anchors objdumped (no Ghidra): the dispatcher's `call eax` at 0x0054D818 (return 0x0054D81A),
+  `UnitSetEvent(…, 4)` at 0x00566439, the faulting `mov eax, [eax+0x5C]` at 0x005C2460 after `MAGICAFFIX_GetRecord`,
+  InvPlaceItem's `ItemInvNonEmpty` → `ITEMS_SetFlag(item, 1, 1)` at 0x00560385–0x00560393, the cow tests (word 26 at
+  0x00594199, word 40 at 0x005941BE, `cmp eax, 1` on the level at 0x005941DD), the `rep` block 0x00566289–0x0056630C,
+  ItemCopy's child loop and CubeModApply's `MakeEthereal` call (0x00660280).
+
+  **Rulings:**
+  1. **Built states** (ADR-0013 § Neutral) each back only the code that reads them: `dur` 5 and the broken sword
+     (`0x100`, 72 = 0) the `rep` branches; the wand's stat-204 entry the refill; the knives' quantity the stackable
+     `rep`/`qty=` steps; the ethereal *Gull*'s flag the copy's `ItemInitStats` and the mod line's `MakeEthereal` (not a
+     game-made ethereal item's other stats, e.g. its durability); the socketed *Greyform* and the gemmed swords the
+     copy's child loop, `uns` and the placement bit; the magic and rare builder items the input tests; the clvl-1
+     character with ilvl-1 inputs the crafted builder at output ilvl 1 (cube 49 (b) is the code path, not a claim on
+     how a game reaches that ilvl); the quest bits and act byte 131 the cow and quest tests. *Steel* was formed by the
+     game's insert, not built. No raise rests on how a game reaches a built state.
+  2. **The crash session.** It ran in `workspace/wineprefix-1/drive_c/h6a-game`, a directory of symlinks to the shared
+     game files plus its own `BnetLog.txt`; its crash folder is in `dev/` (`manifest-dev.sha256` passes). The shared
+     game directory is untouched: `game.exe`, the three DLLs and `d2.lng` re-hash to `docs/inventory.md`'s values
+     (`game.exe` `631066c1…`), and the 11 MPQs it links re-hash to their recorded values (`docs/formats/`). Its own
+     `BlizzardError` folder holds two reports from 10:17 and 10:20, before H6a's first session (14:37): not this lane's.
+  3. **The d-none moves** stand, re-counted from the tables with `python3 -I` at review: cube 16, 0 of 389 inputs
+     with `eth` (4 with `noe`); cube 44, no output with `rem` (`uns` row 141 only); cube 49 (a), 0 of 40 194 crafted
+     cases (203 row-base pairs × 99 × 2), with a looser filter that can only add empty sides. The prefix groups
+     (101 and up) and the suffix groups (1 and up) are disjoint, so a first pick is never emptied by the other side.
+  4. **Refinements.** The ethereal upgrade stands `[C]`: `IIS1` logs the plain `9dg` values (6–18) between the copy's
+     `ItemInitStats` and the mod line, `CMODX` the ×3/2 (9–27); `MakeEthereal` sits inside `CubeModApply` (0x00660280),
+     which the loop calls once per line, so "after each line" follows. `ItemCopy`'s two extra steps are `[C]` for one
+     child; "per child" is `[I]` (fix 5). The runeword copy's 20639 is `0x509F`, H6b's *Steel* value; the path is
+     `[I]` with the reader's anchor (fix 7). `InvPlaceItem` bit 0 is raised to `[C]` (fix 6).
+  5. **Raises.** 18 of the 22 have a separating case: every chain return address, event 4 / 20 / none, `xmg` and `umg`
+     against a plain class test, `9dg` → `7dg` against the ubercode, *Steel* against the gemmed sword, `IIS1` against
+     `CMODX`, the damaged and broken paths, `qty=` with the `sock` flag clear against run:2026-10-15-cube's `sock=1`,
+     the two hooks against 18 other outputs, level 103 against level 1, classic word 26 against word 40. Four do not
+     (fixes 1–4). cube 15 stays raised: its `[I]` was "for a higher tier" alone.
+  6. **Symbols:** the 10 raises stand under rule 14 (logged returns, flags and quest words compared with the model).
+     `sub_0055F590_ItemInvNonEmpty` stays I (its return is not logged); `ITEMS_SetFlag` and `sub_00553380_UnitSetEvent`
+     stay I.
+
+  **Fixes** (each written into items/0008 § Plan 0038 batch H6a, the run record and the spec-writer entry):
+  1. *Overclaim:* cube 39 L491 → raised in part: which stat 73 the repair reads (evaluated, `STATS_GetUnitStat` at
+     0x005662F1, or base) is not separated (24 both), nor the 255 side of the stackable `min`.
+  2. *Overclaim:* cube 39 L524 → raised in part: one charge entry cannot separate "every stat-204 entry"; stock items
+     with 2–4 exist.
+  3. *Overclaim:* cube 40 L528 → raised in part: max stack 160 < 255; a 200-stack throwing weapon with *Dense* reaches
+     the 255 side on stock data.
+  4. *Overclaim:* cube 58 L968 → raised in part: "only" is aff 14's unseparated half (d-none part, checked: the 8
+     stock forced ids pass every other C4 test).
+  5. *Overclaim:* "two more steps per child" from one child: `[C]` for one, per child `[I]` from the loop at
+     0x0055A3A0–0x0055A468.
+  6. *Under-claim:* `InvPlaceItem` bit 0 `[C]`: the two row-141 copies, socketed with no child, kept `0x880810`.
+  7. *Omission:* the runeword copy's name id without the serialiser path (0x0062D1EA, items/0007 H6b).
+
+  **Bookkeeping:**
+  - H6a's ledger: **raised 18, raised in part 8, reclassified 2, shortfall 1: 29.**
+  - Totals, recounted against `main` `ad8b8cd0`: **static 567, harness 513, c-emu 0, blocked 427** (d-none 300,
+    d-2c 8), **deferred 2, raised 17: 1 526.**
+  - § 5 marks H6a done; the research-map row says the spec is ready.
+  - **Phase 3 ready: items/cube** (S2c and H6a, both accepted).
+  - The spec-writer entry is released, corrected:
+    [2026-10-27-reverser-spec-writer-h6a-cube-raises-for-the-phase-3-re](../backlog/2026-10-27-reverser-spec-writer-h6a-cube-raises-for-the-phase-3-re.md).
+  - The S2c harness-pieces entry stays open for H6c.
+  - Review request closed; the lane's ledger row is filled.

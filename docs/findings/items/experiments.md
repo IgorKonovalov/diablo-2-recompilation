@@ -3361,3 +3361,98 @@ run id). Evidence in [items/0010 § Plan 0038 batch H6e2](0010-quest-drops.md#pl
   existing recipes build byte-identically with `main`'s tool and the lane's, and `"forced_sockets"` is off unless it is
   given (one recipe uses it); `test_d2s.py` gives 60 OK. Version-71 saves are buildable since `lane/a72` (the `leg71*`
   recipes), so the limit above concerns this run, not the setup.
+
+## run:2026-10-27-sweep-cube
+
+- **Question:** (plan 0038 Phase 2, batch H6a, [inventory § 5](../../plans/0038-inventory/README.md#5-batch-list))
+  Do the cube paths run:2026-10-15-cube left `[I]` run as [items/0008](0008-cube.md) reads them: the packet-to-transmute
+  chain, the event codes, `upg` and `exc`/`eli` on higher tiers, the `eli` slots, the ethereal upgrade, `rep` (damaged,
+  broken, stackable), `rch`, `qty=`, `uns` on gemmed and runeword items, the quest outputs' hooks, the cow portal
+  outside level 1 and in classic, row 17's forced suffix above the alvl, more row-19 transmutes, and the crafted pick
+  of 0 at output ilvl 1 (the S2c piece)? Boundary as in run:2026-10-15-cube (ItemCopy's stream, the cow portal's spot
+  search and object are oracles); every transmute is checked from the game seed at CUB0.
+- **Status:** done (2026-10-27). Evidence in
+  [items/0008 § Plan 0038 batch H6a](0008-cube.md#plan-0038-batch-h6a-run2026-10-27-sweep-cube).
+- **Setup:** agent-driven sessions on harness **slot 1** (display `:8`, `workspace/wineprefix-1`), stock data, pinned
+  `game.exe`, one player, in town. Game directory `workspace/runtime/game`, except `craftlow`, whose last transmute was
+  expected to fault: it ran in a symlink copy inside the slot's prefix (`workspace/wineprefix-1/drive_c/h6a-game`,
+  `--game-dir`), and its `BlizzardError` folder was moved into `workspace/logs/h6a/dev/`.
+  - **Logger** `tools/gdb/cube.gdb` (`406fd79b…`, unchanged) sourcing `uniques.py`, `props.py` (unchanged) and
+    `tools/gdb/cube.py` revision r4 (`7033ed72…`): r3's lines unchanged, plus `PK4F`, `PIB`, `CBTN`, `SEV`,
+    `RRW0`/`RRWX`, `QSM`/`QSMS`/`QSMX`/`QSD0`/`QSD1`, `QKW`/`QKW18`/`QKD0`/`QKD1`, `CNULL`, `CUBL`, and the fields
+    `CUB0.ret`, `CCPX.own` (the header comment lists each address).
+  - **Session driver** `tools/h6a_sessions.py` (`0d815539…` at the last session; the `repair` session ran the revision
+    before it, which lacked the closing `saves.py restore`, done by hand after it): `cube_sessions.py`'s layouts plus
+    a step's `ins` (runes put into input 1's sockets with `d2pilot.py cube`'s `mv:` before the step) and a session's
+    Act IV act byte; per session `saves.py --slot 1 restore`/`aside h6a`, `d2run.py --slot 1 --seed S --gdb
+    tools/gdb/cube.gdb --steps tools/gdb/cube-enter-normal.steps` (`3ac7701d…`) `--after 1200 --install h6a <save>`,
+    `d2pilot.py cube <log> --slot 1 --plan tools/gdb/cube-h6a-<name>.plan --ins-gap 1.2 --pick-wait 0.5`,
+    `slots.py stop 1`, `saves.py restore`.
+  - **Characters** (`tools/d2s.py build workspace/merged/data/global/excel tools/d2s_recipes/cube-h6a-<name>.json
+    <base> workspace/runtime/h6a-chars/<Name>.d2s`; base `workspace/samples/d2s-owner/smpsor-l50.d2s`, the classic
+    ones `workspace/runtime/monspawn-chars/cls/smpsor.d2s`; build hashes pinned in `tools/test_d2s.py`): the Sorceress
+    of `cubecraft.json` / `cubeclassic.json`, clvl 80 (classic 50, `craftlow` 1). Built (test) states: `dur`, `broken`,
+    `item_props` (stat 204), `quantity`, `ethereal`, `sockets` with `filled`, magic items with one suffix, rare items
+    without affixes, `quest_bits`, and act byte 131 (`cowa4`). Each backs only the code that reads it.
+- **Sessions** (`python3 -I tools/h6a_sessions.py run --slot 1 --tag h6a --saves workspace/runtime/h6a-chars --run h6a
+  <name>`; logs `workspace/logs/h6a/h6a-s1-<seed>-<name>.log`, pilot output beside each):
+
+  | seed, session (log sha256) | game | transmutes (row) | result |
+  |---|---|---|---|
+  | 6103 `repair` `7dbab454…` | exp, Normal, 80 | 137 damaged, 137 broken, 139 charges, 137 knives, noe refusal, 141 gems, 141 *Steel* | kept, 7 |
+  | 6101 `upgu` `17374d06…` | exp, Normal, 80 | 131 on *Gull* (none), on *Wizardspike* (none), 131 *Spineripper*, 135 rare `9dg`, 129 ethereal *Gull*, 19 | kept, 6 |
+  | 6102 `upgc` `2e77ee5f…` | exp, Normal, 80 | 66 on `xmg`, 66 on `umg`, 130 *Greyform* with a gem | kept, 3 |
+  | 6104 `quest` `6b7f2d6d…` | exp, Normal, 80 | 1 (`qf2`), 0 (`hst`) | kept, 2 |
+  | 6105 `cowa4` `2125a81e…` | exp, Normal, 80, Act IV start | 2 refused (level 103), 17 on `tow`, 19 | kept, 3 |
+  | 6106 `cowcl0` `9e93294e…` | classic, Normal, 50 | 2 refused (word 26 clear), 19 | kept, 2 |
+  | 6107 `cowcl1` `b2f3c204…` | classic, Normal, 50 | 2 opened (word 26 set, word 40 clear) | kept, 1 |
+  | 6108 `craftlow` `d5c5ac5b…` | exp, Normal, 1, own game dir | 83 `lbt`, 72 `sst`, then 83 `lbt`: the fault | kept, 2 + the fault |
+
+  Recipes `tools/d2s_recipes/cube-h6a-<name>.json`: upgu `688ed51f…`, upgc `277425df…`, repair `9a84624e…`, quest
+  `045e6b72…`, cowa4 `68ababe2…`, cowcl0 `1e9d3836…`, cowcl1 `c8e4e3eb…`, craftlow `cc01e1b5…`. **Launches: 8, all
+  kept**; the batch cap is 20. In `craftlow` the pilot's last two `tm` tokens met a dead game (no CUB0).
+- **Procedure** (from `workspace/logs/h6a/`, under `systemd-run --user --scope -q -p MemoryMax=4G`, tool paths absolute
+  into the worktree): `python3 -I tools/sweep_h6a.py check $(cat kept.lst) > check-final.txt` (checker `974bf702…`); `python3 -I
+  tools/sweep_h6a.py static > static.txt`; `python3 -I tools/sweep_h6a.py tables > tables.txt`; the regressions
+  `python3 -I tools/cube.py check <the 29 logs of cube-run.lst> > regress-cube-run.txt` (182 reproduced, 0 failed) and
+  `python3 -I tools/sweep_s2c.py cube > regress-sweep-s2c-cube.txt` (byte-identical to the kept
+  `sweep-s2c-cube.txt`).
+- **Observed** (`check-final.txt` `15e54b63…`; `static.txt` `f736601e…`, `tables.txt` `9eb18467…`; manifests
+  `manifest-final.sha256` `8735a574…` (24 lines: logs, pilot outputs, checks, the session driver's output),
+  `manifest-shots.sha256` `2dced972…` (46 screenshots), `manifest-dev.sha256` `8e2d2cdf…` (4: the crash folder's three
+  files and the pre-edit regression), each checked with `sha256sum -c` from `workspace/logs/h6a/`; trimmed):
+  ```
+  cube 1: PK4F 0x4F/0x18 -> PIB type 4 -> CBTN 0x18 -> CUBE_Transmute (ret 0x00566AFC)       27
+     return addresses (PK4F, CBTN, CUB0): 0054d81a 005680f6 00566afc (x27)
+  cube 7: UnitSetEvent(player, 4) after the destroy (ret 0x0056643E)                        21
+  cube 7: UnitSetEvent(player, 20) at a refused cow portal (ret 00594258)                    2
+  cube 7: no UnitSetEvent (nothing produced, no cow refusal)                                  3
+  cube 15: upg matched a higher tier: row 66 input mgl, item xmg / umg                      1 / 1
+  cube 17: exc decided: row 131 refuses dgr (normal) / 7dg (elite); exc passed: rows 131, 135 (9dg)
+  cube 25: eli slot branch: rows 131, 135
+  cube 32: copy kept its 1 children; uns copy: 2 children on the input, 0 on the copy (x2)
+  cube 36: uns removed the runeword                                                          1
+  cube 39: rep dur (5, 24); rep broken (0, 24); rch 1
+  cube 40: rep qty (20, 160); qty (160, 160)
+  cube 43: hst placed -> QuestStaffMade, word 10 bit 11 set (0x0000 -> 0x0800); qf2 placed -> QuestKhalimWillMade
+  cube 49: (b) the crafted pick of 0 with a filled slot: record 0 read at +0x5C (side s, slot 0 id 730)
+  cube 51: row 19 start 28, 255, 505: start - 1 a candidate in none
+  cube 53/54: not in level 1 (level 103) (exp); word 26 bit 0 clear (classic); opened (classic)
+  cube 58: forced suffix above the alvl (level 21 > alvl 19) taken                            1
+  transmutes reproduced by tools/cube.py                                                      26
+  8 logs, 26 transmutes checked, 0 mismatches
+  ```
+  The crash report (`dev/h6a-s1-6108-craftlow-BlizzardError/2026-10-27 14.46.23/Crash.txt`): `ACCESS_VIOLATION`, stack
+  0x005C2460, 0x005577E5, 0x00557E46, 0x00558EC0, 0x005660C5, 0x00566A9E, 0x00566AFC, 0x005680F6, 0x0054C7F5,
+  0x0054D81A, ….
+- **Model changes** (`tools/cube.py` `47ca0924…`): `uns` on a `useitem` output (the copy without children, then
+  `RemoveRuneword`), `rep` on a stackable base and on a broken item, `qty=` on a stackable base, two more game-seed
+  steps per child an `ItemCopy` copies, flags bit 0 on a placed item holding items, the runeword copy's prefix slot 0,
+  and the r4 side lines skipped by `read_log`.
+- **Limits:** button `0x17` and a non-cube interaction type were not sent; no `eth`, `eli` or `nru` input and no `rem`
+  output exist in the stock table; the three row-19 transmutes did not separate the skipped record; the crafted
+  pick of 0 with an empty side (case (a)) has no stock base.
+  *`lane/h6a` review:* the swords carry no maximum-durability modifier (the evaluated and base stat 73 agree), the wand
+  holds one charge entry, the knives' max stack 160 lies under the `qty=255` byte, and the forced rows' other tests all
+  pass on stock data: cube 39 L491 and L524, 40 L528 and 58 are raised in part
+  ([items/0008 § Plan 0038 batch H6a](0008-cube.md#plan-0038-batch-h6a-run2026-10-27-sweep-cube)).

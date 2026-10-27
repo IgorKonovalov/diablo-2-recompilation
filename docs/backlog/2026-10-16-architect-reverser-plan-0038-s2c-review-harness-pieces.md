@@ -38,3 +38,12 @@ test; after a Scroll of Identify they were `0x00800811` (stat 194 2) and the sam
 index of their row ([items/0007 § Plan 0038 batch H6b](../findings/items/0007-sockets-runewords.md#plan-0038-batch-h6b-run2026-10-27-sweep-sockets),
 run:2026-10-27-sweep-sockets). Both rows stay counted as S2c. **Left:** H6a (cube 49, aff 14) and H6c (vend 22, 26). The
 entry stays open for them.
+
+*2026-10-27 (reverser, `lane/h6a`, plan 0038 batch H6a, run:2026-10-27-sweep-cube):* **H6a pieces done.** Cube 49:
+crafting at output ilvl 1 (clvl 1) on light boots faulted the game at its third transmute, the session's last; the
+logger's `CNULL` at 0x005C2460 (record 0 of the picked id against a filled suffix slot) and the game's crash report
+(`ACCESS_VIOLATION` at 0x005C2460) give case (b) `[C]`; case (a) is d-none on stock data (no crafted base, ilvl and
+side whose first pick lacks a candidate). Aff 14: row 17 on a magic tower shield took *of Spikes* above the alvl, the
+level-window half met; "only" has no separating stock case. Both rows stay counted as S2c, raised in part
+([items/0008 § Plan 0038 batch H6a](../findings/items/0008-cube.md#plan-0038-batch-h6a-run2026-10-27-sweep-cube)).
+The entry stays open for H6c (H6b's pieces met on `main`, `lane/h6b`).

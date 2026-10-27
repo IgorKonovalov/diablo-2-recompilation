@@ -35,6 +35,28 @@
 #   CPL   0x00566481 a placement call (sub_00560200_InvPlaceItem): the output (ESI) as UNIT, gs; CPLR 0x00566486 EAX
 #   ROCX  RecipeOutputCreate's returns 0x00566579 / 0x0056658E: gs
 #   CUBX  CUBE_Transmute's returns 0x00566A8A / 0x00566AA3: gs, the page-3 items as UNIT
+# Added for plan 0038 batch H6a (logger r4; no earlier line, address or field changed):
+#   PK4F  0x0054C7C0 sub_0054C7C0_Pkt4FButton entry: its return address, the packet bytes ([esp+4], the length
+#         [esp+8] at most 16 bytes), ECX, EDX
+#   PIB   0x005680A2 in sub_00568060_PktInteractButton after sub_00554100_PlayerGetInteract: its result (EAX), the
+#         interaction type ([ebp-0x2c]) and unit id ([ebp-0x30]), the button ([ebp+8], u16)
+#   CBTN  0x00566AE0 sub_00566AE0_CubeButton entry: the button (AX), its return address
+#   CUB0  also carries "ret", CUBE_Transmute's return address; CUBL after it, for each cube item with socketed
+#         children, the owner unit (StatList +0x04) of each node of its list chain, in the order of the UNIT's "sub";
+#         CCPX also carries "own", the same for the copy
+#   SEV   0x00553380 sub_00553380_UnitSetEvent entry inside a transmute: the unit (ECX), the event (EDX, u16), the
+#         argument ([esp+4]), the return address
+#   RRW0 / RRWX  the sub_00558C50_ItemRemoveRuneword call 0x00566130 / its return 0x00566135: the item as UNIT
+#   QSM   0x005664C2 / QKW 0x005664D4 the QuestStaffMade / QuestKhalimWillMade calls: the output index, the placed
+#         item ([ebp-0xc4 + 4 s]) as UNIT, the player (EDX)
+#   QSMS  0x0059E614 QUESTRECORD_SetState(rec, 10, 11) in sub_0059E5C0_QuestStaffMade: rec, word 10 before;
+#         QSMX 0x0059E619: word 10 after; QSD0 0x0059E5D5 / QSD1 0x0059E5F8 the game's quest 9 data (+0x18..+0x2C)
+#         before and after its writes
+#   QKW18 0x005B86FC in sub_005B86E0_QuestKhalimWillMade: the record's word 18 and the first GetState result;
+#         QKD0 0x005B871C / QKD1 0x005B8732 the game's quest 16 data (+0x10..+0x20) before and after
+#   CNULL 0x005C237C (prefix) / 0x005C2460 (suffix) in sub_005C21D0_ItemBuildCrafted: the duplicate test's read of
+#         the picked id's record +0x5C: the record (EAX), the picked id ([ebp-0xc]), the slot k ([ebp-0x14]), the
+#         slot's id (DI) and record (EBX); a record of 0 is the read of address 0x5C
 # UNIT = {"u", "type", "cls", "id", "mode", "useed" (Unit+0x20), "seed28" (Unit+0x28), "q", "seed" (ItemData+0x04), "start" (+0x10),
 #        "fl" (+0x18), "fi" (+0x28), "ilvl" (+0x2C), "ver" (+0x30), "page" (+0x45), "p" (+0x38, 3 u16), "s" (+0x3E),
 #        "rn" (+0x32, +0x34), "auto" (+0x36), "kids" [[unit, cls], ...], "xy" (the path +0x2C: +0x0C, +0x10; the
@@ -142,6 +164,18 @@ def _cube_main():
             out.update(lists(u))
         return out
 
+    def owners(u):
+        """r4: the owner unit (StatList +0x04) of each node of the item's list chain, in the order of lists()'s sub."""
+        lst = u32(u + 0x5C) if u else 0
+        out = []
+        if lst and u32(lst + 0x10) & 0x80000000:
+            for head in (0x3C, 0x40):
+                node, guard = u32(lst + head), 0
+                while node and guard < 64:
+                    out.append(u32(node + 0x04))
+                    node, guard = u32(node + 0x2C), guard + 1
+        return out
+
     def cube_items(player):
         inv = u32(player + 0x60)
         out = []
@@ -182,10 +216,16 @@ def _cube_main():
             return
         tx[thn()] = {"game": game, "player": player}
         pl = lists(player)
-        emit("CUB0", {"game": game, "player": player, "gs": sd(game + 0xD0), "g6a": u8(game + 0x6A),
+        emit("CUB0", {"game": game, "player": player, "ret": u32(reg("esp")), "gs": sd(game + 0xD0), "g6a": u8(game + 0x6A),
                       "diff": u8(game + 0x6D), "exp": u32(game + 0x70), "ladder": u32(game + 0x74),
                       "iver": u16(game + 0x78), "pcls": s32(player + 4), "pb": pl["b"],
                       "items": cube_items(player)})
+        own = {}
+        for it in cube_items(player):
+            if it and it.get("kids"):
+                own[str(it["u"])] = owners(it["u"])
+        if own:
+            emit("CUBL", {"own": own})
 
     def on_cubx():
         c = tx.pop(thn(), None)
@@ -252,7 +292,7 @@ def _cube_main():
     def on_ccpx(where):
         def f():
             if cur():
-                emit("CCPX", {"at": where, "it": unit(reg("eax")), "gs": gs()})
+                emit("CCPX", {"at": where, "it": unit(reg("eax")), "gs": gs(), "own": owners(reg("eax"))})
         return f
 
     def on_cpt0(where):
@@ -368,6 +408,100 @@ def _cube_main():
         if cur():
             emit("ROCX", {"gs": gs()})
 
+    # ---- plan 0038 batch H6a (logger r4)
+    def on_pk4f():
+        esp = reg("esp")
+        pkt, n = u32(esp + 4), u32(esp + 8)
+        emit("PK4F", {"ret": u32(esp), "len": n, "pkt": mem(pkt, min(n, 16)).hex() if pkt else None,
+                      "ecx": reg("ecx"), "edx": reg("edx")})
+
+    def on_pib():
+        ebp = reg("ebp")
+        emit("PIB", {"r": sreg("eax"), "type": s32(ebp - 0x2C), "id": u32(ebp - 0x30), "btn": u16(ebp + 8)})
+
+    def on_cbtn():
+        emit("CBTN", {"btn": reg("eax") & 0xFFFF, "ret": u32(reg("esp"))})
+
+    def on_sev():
+        if cur():
+            esp = reg("esp")
+            emit("SEV", {"unit": reg("ecx"), "ev": reg("edx") & 0xFFFF, "arg": u32(esp + 4), "ret": u32(esp),
+                         "gs": gs()})
+
+    def on_unit_reg(tag, r):
+        def f():
+            if cur():
+                emit(tag, {"it": unit(reg(r)), "gs": gs()})
+        return f
+
+    qrec = {}
+
+    def on_qsms():
+        if not cur():
+            return
+        rec = u32(reg("esp"))
+        qrec[thn()] = rec
+        emit("QSMS", {"rec": rec, "q": u32(reg("esp") + 4), "s": u32(reg("esp") + 8), "w10": u16(u32(rec) + 20)})
+
+    def on_qsmx():
+        rec = qrec.pop(thn(), None)
+        if cur() and rec:
+            emit("QSMX", {"rec": rec, "w10": u16(u32(rec) + 20)})
+
+    qdat = {}
+
+    def on_qd(tag, lo, hi, save):
+        def f():
+            if not cur():
+                return
+            if save:
+                d = u32(reg("eax") + 0x18)
+                qdat[(thn(), tag[:2])] = d
+            else:
+                d = qdat.pop((thn(), tag[:2]), None)
+                if not d:
+                    return
+            emit(tag, {"data": d, "w": list(struct.unpack("<%di" % ((hi - lo) // 4 + 1), mem(d + lo, hi - lo + 4))),
+                       "b2a": u8(d + 0x2A) if tag.startswith("QS") else None})
+        return f
+
+    def on_qkw18():
+        if cur():
+            rec = reg("esi")
+            emit("QKW18", {"rec": rec, "w18": u16(u32(rec) + 36), "r": sreg("eax")})
+
+    def on_cnull(side):
+        def f():
+            ebp = reg("ebp")
+            emit("CNULL", {"side": side, "rec": reg("eax"), "id": u16(ebp - 0xC), "k": s32(ebp - 0x14),
+                           "slot": reg("edi") & 0xFFFF, "srec": reg("ebx"), "gs": gs()})
+        return f
+
+    Bp(0x0054C7C0, on_pk4f)
+    Bp(0x005680A2, on_pib)
+    Bp(0x00566AE0, on_cbtn)
+    Bp(0x00553380, on_sev)
+    Bp(0x00566130, on_unit_reg("RRW0", "edx"))
+    Bp(0x00566135, on_unit_reg("RRWX", "esi"))
+    def on_qhook(tag):
+        def f():
+            if cur():
+                ebp = reg("ebp")
+                it = u32(ebp - 0xC4 + 4 * u32(ebp - 0x9C))       # the placed output (ESI holds its class here)
+                emit(tag, {"s": u32(ebp - 0x9C), "it": unit(it), "player": reg("edx"), "gs": gs()})
+        return f
+
+    Bp(0x005664C2, on_qhook("QSM"))
+    Bp(0x005664D4, on_qhook("QKW"))
+    Bp(0x0059E614, on_qsms)
+    Bp(0x0059E619, on_qsmx)
+    Bp(0x0059E5D5, on_qd("QSD0", 0x18, 0x2C, True))
+    Bp(0x0059E5F8, on_qd("QSD1", 0x18, 0x2C, False))
+    Bp(0x005B86FC, on_qkw18)
+    Bp(0x005B871C, on_qd("QKD0", 0x10, 0x20, True))
+    Bp(0x005B8732, on_qd("QKD1", 0x10, 0x20, False))
+    Bp(0x005C237C, on_cnull("p"))
+    Bp(0x005C2460, on_cnull("s"))
     Bp(0x005665F0, on_cub0)
     for a in (0x00566A8A, 0x00566AA3):
         Bp(a, on_cubx)
