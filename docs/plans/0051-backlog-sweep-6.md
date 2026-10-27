@@ -312,3 +312,35 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Ledger:** no statement moved (staging only); the Routing count stands at 45 open (no entry closed).
   - **Backlog:** review request closed (archive).
   - **Next:** Phase 1b (optional, one Ghidra), with the MP31 and MP32 forwards.
+- **2026-10-27 — Phase 1b done (reverser, `lane/p51s`, from `main` `7ff8d98`; no slot, one headless Ghidra on the lane
+  copy `ghidra-p51s`, `-Xmx3G`, no game).** Two entries closed, one annotated. The items are item 1, item 2 and the
+  two Phase 1a forwards; P0b (`lane/p51b`, running at the same time) had forwarded nothing to `main`, so item 3 holds
+  only MP31 and MP32. Emulation outputs: `workspace/logs/p51s/emu/` (`manifest.txt` `b16c2780…`, 79 files;
+  `check.txt` `7ee746af…`; `commands.txt`, `tools-revisions.txt`). Static outputs: `workspace/logs/p51s/static/`
+  (`manifest.txt` `1464d267…`: the findstring, objdump excerpts and call-site scan behind multiplayer/0002). Tool: `tools/sweep_p51s.py`.
+  1. **Op 6/7 emulation** ([archive](../backlog/archive/2026-10-17-reverser-reverser-plan-0041-op-6-7-emulation.md)),
+     closed. `STAT_ByTimeValue` ran 6 000 calls, and `StatEvaluate` cases 6/7 with `ActTimeOfDay`, `MulDiv`, ops 10,
+     12 and above 13 and nested sources ran 3 000. Result: 0 mismatches, 0 undeclared reads (the jump table and the
+     `.rdata` mask are declared, both read-only), 0 stops, every branch reached. Negative controls: the lead's "op 6/7
+     add nothing" fails 2 110, op 7 on the own sum 1 103, no 359 fold 3 302, floor division 2 416. **[C] as a code
+     map** (ADR-0015), run:2026-10-27-p51s-emu, in stats/0001 § 10 (new). The Answer bullet, § 4's note, the
+     contradicted lead's detail and the Open question are updated. Still `[I]`: what `owner +0x1C` and its `+0x04`
+     record hold in play. No symbol row is raised (review-fixes 14: an emulation confirms the map, not the name).
+  2. **S1e follow-ups (b)** ([archive](../backlog/archive/2026-10-17-architect-reverser-plan-0038-s1e-review-follow-ups.md)),
+     closed with (a) and (c) done earlier. The eleven runs of run:2026-10-16-calc-emu were re-run unchanged under
+     `emutrace`. Every output is byte-identical to the kept one. The kept `calc_funcs.py` checkers pass on it, and
+     fail with every EAX + 1. The tool's read set adds two read-only `.text` switch tables (`MISS_CalcVar` 0x0064B62C,
+     `CALC_Eval` 0x006C1164) to data/0005 § 11's list. That is an addendum there and in data/experiments; no claim
+     changes.
+  3. **MP31, MP32** (plan 0044 shortfalls entry, annotated, stays open for the two-client run): the trade path and
+     `PartyGoldShare`'s arithmetic are read in the new **multiplayer/0002** (`[I]` throughout). Gold share:
+     `share = amount / n`, with `n` the members in the level who are not dead. Others get `min(share, room)`, and the
+     picker the rest plus their overflow, clipped. The payment loop tests the **picker's** mode, so a dead member in
+     the level is paid but not counted (three or more players; out of the two-client run). Trade: the `0x4F` buttons
+     3/4/7/8 over `PlayerData+0x50`; the offer is clipped to the partner's room; the commit re-checks gold, cap,
+     room and the quest gate, then moves `ItemCopy` units and carried gold. Predictions in multiplayer/0002 § 3;
+     multiplayer/0001 rows MP31 and MP32 and items/0011 § 6 (the pickup line, the Open question) updated.
+  - **Symbols:** 15 added (`I`): `UnitGetMode`, `PartyGoldClip`, and 13 trade functions (`TradeRequest` …
+    `TradeBlocked`). No rename, no tag change; names checked against `main`'s `re/symbols.csv`.
+  - **Backlog:** review request
+    [p51s review](../backlog/2026-10-27-reverser-architect-p51s-plan-0051-phase-1b-review.md).

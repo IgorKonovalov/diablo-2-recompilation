@@ -13,7 +13,8 @@
 
 - **32 cases: 29 stageable, 3 not.** The not stageable ones need more than two players in one party (MP02, MP03) or a
   player with no room, which no input holds open (MP05). Of the 29, three have no prediction yet: their code is not
-  read (MP25 auras, MP31–MP32 trade and gold, plan 0043). One depends on whether the stock client sends the packet
+  read (MP25 auras, MP31–MP32 trade and gold, plan 0043). *2026-10-27:* MP31 and MP32 have theirs now, from
+  [multiplayer/0002](0002-trade-and-party-gold.md) § 3 (plan 0051 Phase 1b, static reading, inferred). One depends on whether the stock client sends the packet
   at all (MP18). Two may need owner play: MP17 (the Ancients) and MP14 (a joiner death in Andariel's level).
   § 2 maps every source row to its cases.
 - **Coverage.** All 14 d-2c rows of plan 0038's inventory have a case, and so do the four partial halves (tc 27,
@@ -174,8 +175,8 @@ function starts, the line before is `int3` or `ret`; the other eight bare addres
 
 | Case | Source | Entry | Condition | Logger | Expected | Stage |
 |---|---|---|---|---|---|---|
-| MP31 | plan 0043 (trading between players) | not read on `main` (plan 0043 Phase 1 on lane/p43r) | H and J trade an item and gold (`join trade request`, `accept`, `give:…`, `ok`) | to be named by plan 0043 | **no prediction yet** | yes, as driver steps; the expected outputs wait for plan 0043's reading |
-| MP32 | plan 0043 (shared gold in a party) | as MP31 | partied players pick up gold | as MP31 | **no prediction yet** | as MP31 |
+| MP31 | plan 0043 (trading between players); read in plan 0051 Phase 1b | fn:sub_00568060_PktInteractButton@0x00568060 (buttons 3, 4, 8) → fn:sub_00567C70_TradeCommit@0x00567C70 → fn:sub_005670E0_TradeMoveItems@0x005670E0 | H and J trade an item and gold (`join trade request`, `accept`, `give:…`, `ok`); counter cases: an offer above J's gold, above H's room, no room for the item | to be written: the button entry, `TradeCommit`, `TradeCancel`/`TradeClose`, stat 14 of both, the item lists ([multiplayer/0002](0002-trade-and-party-gold.md) § 3) | [I] [multiplayer/0002](0002-trade-and-party-gold.md) § 3: H `+g`, J `−g` (the offer clipped to H's room at button 8), J holds the `ItemCopy` of `X` and H no longer `X`; both states 9 → 10 → 0; each counter case cancels or closes with nothing moved | yes, as driver steps (two clients, both slots) |
+| MP32 | plan 0043 (shared gold in a party); read in plan 0051 Phase 1b | fn:sub_0055C850_GoldPickup@0x0055C850 → fn:sub_00540900_PartyGoldShare@0x00540900 → fn:sub_00540650_PartyGoldClip@0x00540650 | H picks up a monster's pile of odd `A`, partied with J alive in the level; then with `A` above J's cap room; counter cases: J in another level, J dead, not partied | to be written: `GoldPickup` and `PartyGoldShare` entry and return, `PartyGoldClip`, stat 14 of both | [I] [multiplayer/0002](0002-trade-and-party-gold.md) § 3: J `+min(⌊A/2⌋, room(J))`, H the rest plus J's overflow, clipped at H's cap; each counter case: H alone | yes (two clients, both slots) |
 
 **Coverage.**
 
@@ -199,7 +200,8 @@ function starts, the line before is `int3` or `ret`; the other eight bare addres
 4. Hostility (MP23, MP24): 200 attack events.
 5. Rooms (MP20, MP21).
 
-MP17 and MP25 come last. MP31–MP32 wait for plan 0043.
+MP17 and MP25 come last. MP31–MP32 wait for plan 0043. *2026-10-27 (plan 0051 Phase 1b):* MP31 and MP32 now carry
+the predictions of [multiplayer/0002](0002-trade-and-party-gold.md) § 3; their sessions wait for the two-client run.
 
 ### 3. The joiner's driver
 
