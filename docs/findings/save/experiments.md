@@ -180,3 +180,112 @@
 - **Conclusion:** the "all acts open" recipe of [save/0002](0002-quest-words.md) works as a whole in an expansion
   Normal game: all five tabs drawn and selectable, travel into every act. Arcane Sanctuary (74) opened by waypoint
   (Act II row 8) from this save.
+
+## run:2026-10-27-sweep-d2s-play
+
+- **Question:** (plan 0038 Phase 2, batch H1b, [inventory § 5](../../plans/0038-inventory/README.md#harness-batches))
+  the 48 inferred statements of [inventory save-d2s](../../plans/0038-inventory/save-d2s.md) rows 1–4, 6, 18, 19, 21,
+  25, 31, 33–35, 37, 39–43, 48, 55–57, 60, 72, 73, 77, 78, 83, 88, 102, 108, 110–118, 124, 125, 127 and
+  [hirelings](../../plans/0038-inventory/hirelings-README.md) row 24: who calls `PLRSAVE_Save` and through which branch
+  (single player, a one-client TCP/IP host, Alt+F4, a death), the join load chain, the section writers and readers in
+  order, the header's weapon set, swap skills, hotkeys, graphics and mercenary fields, `D2S_LoadFinish`, the corpse,
+  mercenary and golem lists, the item writer's runeword, quest and `ValShift` paths, the reader's rebuilt weapon stats,
+  and item flag bit 13 on drops.
+- **Setup:** the ADR-0003 harness on **slot 1** (display `:8`, prefix `workspace/wineprefix-1`), agent-driven play (no
+  owner play), stock data. The slot's empty saves directory set aside as tag `h1b`, restored and set aside again before
+  each launch (`tools/h1b_sessions.py` does both), restored after the last session (empty, all sha256 match).
+  - **Characters** (`workspace/runtime/h1b-chars/`, hashes in `h1b-manifest-r2.sha256`): `H1bSor` (`116d0f90…`,
+    recipe `tools/d2s_recipes/h1bsor.json` `822dc869…`: Sorceress level 80, gold 900 000 and bank 3 000 000 above the
+    level-80 maxima, swap skills set, hotkey slot 2 `left:Teleport`, a mercenary of Id 0, seed 12345, name 3, a short
+    bow), `H1bDead` (`9ff431ea…`, `h1bdead.json` `0e9d4353…`: the same with a **dead** mercenary of Id 7, seed 54321,
+    name 20, experience 3 000 000 above a level threshold, character experience 750 000 000 at level 80), `H1bWeak`
+    (`3acba754…`, `h1bweak.json` `8ea93db5…`: 1 life point, for the death), `H1bHire` (`a1313dd0…`, `h1bhire.json`
+    `bff69e4f…`: no mercenary), all built on `smpsor-l50.d2s` with `python3 -I tools/d2s.py build`; `QuestRewards`
+    (`246515c5…`) and `QuestRewardsH` (`14c28526…`) from the plan 0032 recipes `questrewards.json` (`b6e54e35…`) and
+    `questrewardsh.json` (`4fd8d541…`); the sample `qitbarb` (`98042d88…`, run:2026-10-11-d2s-samples, the corpus's one
+    runeword). Tool-built inputs (ADR-0003): the gold above the maximum, the dead mercenary's header and its experience
+    are values the builder wrote, not states the game made; the hired, the killed-in-play and the swapped cases are
+    the game's own.
+  - **Logger** `tools/gdb/d2s-h1b.gdb` (`bcd53b34…`; `d2s-h1b-hire.gdb` `05c0b954…` for the hire session adds the
+    hirelings loggers) sourcing `tools/gdb/d2s-io.py` (`5a7ad56d…`, unchanged), `pilot.py` and `tools/gdb/d2s-h1b.py`.
+    **Two revisions of `d2s-h1b.py` were used.** Revision 2 is the committed file (`8a27dc8c…`). Revision 1 was not
+    kept as a file; it is revision 2 less three pieces: the function `h1b_full` (the unit's full stat array, stat list
+    `+0x48`/`+0x4C`) and the `"full"` key it adds to the `RIST` and `SBX` lines; the function `h1b_wskl` and its four
+    breakpoints (0x0056915B, 0x00569191, 0x005691C2, 0x005691FB: the `WSKL` lines, the mouse and swap skill the header
+    writer reads). Every other breakpoint and line is the same. Revision 1 logged dead, tcpip, shut, hell-r3, hire, qr,
+    qrh and rw; revision 2 logged rt-r2, qr-r2, qrh-r2, drop and rw-r2. `tools/sweep_h1b.py` skips, on a log without
+    `full`, the property checks (stats 7/9 `ValShift`, 326 after group 57, 52/53, 356, and the write-side runeword
+    field = `Runes +0x82`), and keeps the two d2sio mouse comparisons only where there are no `WSKL` lines.
+  - **Runner** `tools/h1b_sessions.py` (`d11afb5c…`), steps `enter-normal`, `enter-hell`, `d2s-io-enter` and
+    `tools/gdb/h1b-tcpip-host.steps` (`9cb8bcc0…`). **Checker** `tools/sweep_h1b.py` (`c0063a8b…`), which runs
+    `tools/d2sio.py check` on each log first.
+- **Procedure:** `python3 -I tools/h1b_sessions.py run --slot 1 --tag h1b --saves workspace/runtime/h1b-chars --run h1b
+  <session>` (each launch is `d2run.py --slot 1 --seed N --gdb … --steps … --after 2400 --install h1b <save> --log …`;
+  `slots.py stop 1` after each session). *Save and Exit* is Escape, then (400, 268); a reload is *Single Player*, *OK*
+  and the difficulty in the same process. Check: `systemd-run -q --user --scope -p MemoryMax=4G python3 -I
+  tools/sweep_h1b.py check workspace/merged/data/global/excel $(ls workspace/logs/h1b/*.log)` →
+  `workspace/logs/h1b/check/sweep-h1b-check-r2.txt` (`f44b92e0…`). Manifests, `sha256sum -c` from `workspace/logs/h1b`:
+  `h1b-manifest-r2.sha256` (`f0e88782…`: the 13 kept logs, the check output, the seven input saves) supersedes
+  `h1b-manifest.sha256` (`18f92562…`: the first 12 logs and `check/sweep-h1b-check.txt`, 2 502 comparisons, the check
+  before rw-r2), kept as it was; `h1b-manifest-dev.sha256` (`122aca67…`: the four logs in `dev/`, listed without the
+  directory, so it is checked **from `workspace/logs/h1b/dev`**: `cd dev && sha256sum -c ../h1b-manifest-dev.sha256`;
+  `lane/h1b` review fix). No log has `internal-error:`.
+
+  | Session | Seed | Save | Logger rev. | What was done | Lines |
+  |---|---|---|---|---|---|
+  | rt-r2 | 27101 | H1bSor | 2 | 75 s in town (the autosave control), `w` (weapon swap), *Save and Exit*, reload, *Save and Exit* | 1 325 |
+  | dead | 27102 | H1bDead | 1 | load, *Save and Exit*, reload, *Save and Exit* | 1 319 |
+  | tcpip | 27103 | H1bSor | 1 | TCP/IP *Host Game*, one client, 80 s, *Save and Exit* | 439 |
+  | shut | 27104 | H1bSor | 1 | Alt+F4 in game | 668 |
+  | hell-r3 | 27105 | H1bWeak | 1 | Hell River of Flame, teleports with no attack until the death (the Rogue killed in play), *Save and Exit*, reload in Hell, *Save and Exit* | 2 834 |
+  | hire | 27106 | H1bHire | 1 | Kashya hire, *Save and Exit*, reload, *Save and Exit* | 3 287 |
+  | qr, qr-r2 | 27107 | QuestRewards | 1, 2 | load, *Save and Exit* | 988, 995 |
+  | qrh, qrh-r2 | 27108 | QuestRewardsH | 1, 2 | load in Hell, *Save and Exit* | 989, 997 |
+  | rw, rw-r2 | 27109 | qitbarb | 1, 2 | load, *Save and Exit*, reload, *Save and Exit* | 1 758, 1 774 |
+  | drop | 27111 | H1bSor | 2 | Normal City of the Damned, 15 Nova hops, a 240 s hold (no pickup made), *Save and Exit*; `H1B_WATCH=1` | 2 785 |
+
+  Development logs in `dev/`: rt (revision 1: its two d2sio mouse mismatches per swapped write are the d2sio model's,
+  see below), hell and hell-r2 (no death: the pilot stood, then stopped at the 1-point life orb), drop 27110
+  (waypoint row 1 is the town). rw-r2 was run at the resume (2026-10-27, the same slot and tag) because the revision-1
+  rw log skips the write-side runeword check; its `keep` steps overwrote the rw session's copies under
+  `workspace/runtime/h1b-chars/h1b-rw/` (not in a manifest; the logs carry the buffers). *(`lane/h1b` review fix:
+  rw-r2 was not the only one. The runner keeps copies per session name without the `-r2` suffix, so rt-r2, qr-r2 and
+  qrh-r2 also overwrote the copies of dev rt, qr and qrh under `h1b-rt/`, `h1b-qr/` and `h1b-qrh/`, and drop 27111
+  overwrote dev drop 27110's under `h1b-drop/` (file times 08:20–08:35). No claim and no check reads a copy:
+  `sweep_h1b.py` reads only the logs.)*
+- **Observed** (`check/sweep-h1b-check-r2.txt`; counts as printed):
+  ```
+  ALL 2798 H1B comparisons, 0 failing (mismatches + d2sio failures)
+  per log: rt-r2 342, dead 300, tcpip 46, shut 150, hell-r3 353, hire 292, qr 132, qr-r2 148, qrh 132, qrh-r2 148,
+           rw 272, rw-r2 296, drop 187
+  who: PLRSAVE_Save callers 0052C940 / 0052CA5F in every session; 0057FD88 once (hell-r3, the death);
+       branches SAVE in every single-player write, SVCL (0x00532340) 2 in tcpip; host callback 0 at every AUTO line;
+       AutosaveTick logged at call 1 and every 500th call (up to 6 500, drop), saves returning into it 0;
+       SaveAllOnShutdown entries 1 or 2 per session (ret 0044F2FE single player, 0044D052 tcpip), its saves 0
+  join: single player ClientAddPlayerToGame<-005301E9 PlayerLoad<-00539809 PLRSAVE_ReadFile<-005344E0
+        D2S_ReadSave<-0053447A (every load); tcpip D2S_ReadSave<-00534563, no PLRSAVE_ReadFile
+  mouse rt-r2 writes 1-4: weapon set 1; sources left 42 right 43 swapA 54 swapB 48
+  merc: tool-built 12345/3/0 (rt-r2, drop) and 54321/20/7 dead (dead), hired 2573073805/0/1 exp 52424400 (hire),
+        killed in play: dead test 1, merc mode 12 (hell-r3); hire read 1: all-zero header -> merc none, 0x005726C0 0
+  lfin rt-r2 read 1: gold 900000 (max 800000) -> 0; bank 3000000 (max 2500000) -> 0; stamina 74240;
+        stat 30 742730244 = row 80 (742730244), row 81 is 809986056
+  lfin hire read 1: gold 500000 (max 800000) -> 500000; dead read 1: experience 750000000, stat 30 742730244
+  vshift rt-r2: stat 9 file 5 -> runtime 1280, stat 7 file 5 -> 1280, stat 9 file 1 -> 256
+  poison rt-r2, drop: dgr 57/58/59 = [41, 41, 75], 326 = 1; magdmg: 9cr 52/53 = [50, 120]
+  rw rw-r2 writes 1-4: lsd field 20639, RWW [20639, 20639]
+  corpse hell-r3: 1 corpse, 11 items (location 1, body 1-11), written 5 times, read 1 corpse, 11 items
+  bit13 drop: 5 drops (ids 27-31: gld, mp3, hp5, cm3, gld) with 0x2000 at creation, each cleared by the ground pass;
+        watch: unit id 27 armed flags 0x82010; 0 writes; GOLD 0; COPY 11 (hell-r3)
+  ```
+  The d2sio part has 0 mismatches except rt-r2's four mouse words (file 42/43, runtime 0: d2sio compares player data
+  `+0x74`/`+0x70`, which a swap leaves 0, where the writer reads the unit's current skill, `0x00620190`/`0x006201D0`;
+  the `WSKL` group compares that source) and hell-r3's `RITEM` count (25 = 14 loaded + 11 `ItemCopy` recreations of the
+  corpse items at the death, the 11 `COPY` lines).
+- **Deviations and limits:** revision 1 (above) leaves the property checks to the four revision-2 logs that hold
+  items with those properties (rt-r2, qr-r2, qrh-r2, drop) and the runeword write to rw-r2. The watchpoint armed on
+  drop 27 logged no hit, though that drop's bit was cleared (`B13C`): it is no control, so no absence is claimed from
+  it. No mode 3/5 item was in any save, no low-quality item, no socketed item copy, no negative gold, no golem item, no
+  joiner on the TCP/IP host and no hosted callback (no `SVCB` line).
+- **Conclusion:** see [save/0001 § Plan 0038 batch H1b](0001-d2s-io.md#plan-0038-batch-h1b-run2026-10-27-sweep-d2s-play)
+  and [hirelings/0001 § Plan 0038 batch H1b](../hirelings/0001-hirelings.md#plan-0038-batch-h1b-run2026-10-27-sweep-d2s-play):
+  25 statements raised, 14 raised in part, 7 shortfalls, 2 proposed d-none.

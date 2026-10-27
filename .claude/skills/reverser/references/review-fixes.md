@@ -28,7 +28,9 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
    rolls (`lane/p45h` review, [0045](../../../../docs/plans/0045-skills-missiles-machinery.md)); "the breakpoint tables
    are not copied" where the lane's own check transcribes all 39 (`lane/p50c` review,
    [0050](../../../../docs/plans/0050-animation-frame-timing.md)); `PlrModeSkillFrame` writing the event index "at every
-   player frame event" where a unit with no used skill returns 2 first (`lane/p50a` review, 0050).
+   player frame event" where a unit with no used skill returns 2 first (`lane/p50a` review, 0050); "the periodic save
+   does not save without a host callback" with a logger at the entry only, where `0x00730FFC` and the time tests come
+   before the callback test (`lane/h1b` review, [0038](../../../../docs/plans/0038-inferred-claims-sweep.md)).
 5. **An existing reviewed symbol name wins.** Merge `main` and grep `re/symbols.csv` for every address
    before you name it; rename your side. Seen: six addresses named twice, `lane/p41r`
    ([0041](../../../../docs/plans/done/0041-stats-and-states.md) P1 review). The same holds inside `re/types/`
@@ -40,7 +42,9 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
    partial log is kept as a development log, not deleted (0040 P2 review). A development run's outputs are written under their own names, not overwritten by the kept run
    (`lane/p46m9` review, [0046](../../../../docs/plans/0046-skills-function-catalogue.md)), and no kept file is renamed or
    reused under a name a kept manifest lists: the stub renamed so a session could run under its name broke one line of
-   `manifest-r2-ckpt1.txt` (`lane/p48r2` review, [0048](../../../../docs/plans/done/0048-seed-to-world.md)).
+   `manifest-r2-ckpt1.txt` (`lane/p48r2` review, [0048](../../../../docs/plans/done/0048-seed-to-world.md)); `-r2` reruns
+   whose save copies overwrote the first sessions' copies under the same directory, and a dev manifest said to pass from
+   the directory above its files (`lane/h1b` review, 0038).
 7. **A conclusion needs an address, `fn:` or `run:` anchor**, not a link to another finding (gate W1).
    Seen: the resume lane's experiments addendum (0037); `lane/w1`'s 104 W1 lines (0039).
 8. **Split a raise where it has a remainder** and head the row "raised in part", in the ledger itself.
@@ -53,7 +57,9 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
    only from handler 20" without `SKILLS_SrvDo`'s seven other calls, and `SKILLS_PayCost`'s 0 for a zero-cost row
    without its three calls, none of which tests it (`lane/p46m12` review, [0046](../../../../docs/plans/0046-skills-function-catalogue.md));
    "the only RNG call" of a call graph with 3 indirect calls unfollowed, and the mode graph's 118, left out of the
-   text (`lane/p50a` review, [0050](../../../../docs/plans/0050-animation-frame-timing.md)).
+   text (`lane/p50a` review, [0050](../../../../docs/plans/0050-animation-frame-timing.md)); a logged load chain written
+   without the two frames between `PlayerLoad` and the logged returns (`PlayerLoadFromFile`, `PlayerLoadFromClient`;
+   `lane/h1b` review, [0038](../../../../docs/plans/0038-inferred-claims-sweep.md)).
 10. **One case decides only if a wrong reading could not match it by chance.** Seen: aff 28's durability
     value, about one in eight (S2b, 0038). Count the cases that separate the readings, not the cases checked: a
     rounding needs a remainder (three curse lengths whose `MulDiv` is exact), and a model fix's counter is not its
@@ -92,6 +98,8 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
     [0038](../../../../docs/plans/0038-inferred-claims-sweep.md)). Scope: the return logged by the game on its own data. An
     ADR-0015/0021 emulation over a declared scratch image confirms the map, not the role the name states, and raises no
     symbol row (`lane/p46m12` review ruling 7, [0046](../../../../docs/plans/0046-skills-function-catalogue.md)).
+    Seen also: `D2S_WriteMercItems` left I beside a raised `D2S_ReadMercItems` and `D2S_WriteCorpses` on the same evidence (`lane/h1b`
+    review, 0038).
 15. **State an integer wrap or overflow bound from a kept computation**: the largest input that still fits and the
     first that wraps, with the product written out, and what the code does past it. Seen: a negative ring step count
     called an endless loop where the signed index wraps past −2³¹ (`lane/p46m11` review); `PathDirection`'s
