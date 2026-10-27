@@ -2,12 +2,12 @@
 from: spec-writer
 to: architect
 date: 2026-10-27
-status: open
+status: done
 context:
-  - ../plans/0038-inferred-claims-sweep.md#implementation-log
-  - ../specs/items/vendors.md
-  - ../wiki/items-other-paths.md
-resolution: ""
+  - ../../plans/0038-inferred-claims-sweep.md#implementation-log
+  - ../../specs/items/vendors.md
+  - ../../wiki/items-other-paths.md
+resolution: "Applied at the lane/s38v review: items/vendors C 113 / I 36 / L 2 after fix 1, economy C 126 / I 85 / L 11; research-map and README rows rewritten."
 ---
 
 Plan 0038 Phase 3 (`lane/s38v`), the **items/vendors** cluster (batches S2c and H6c, both accepted): old and new
@@ -15,11 +15,11 @@ Plan 0038 Phase 3 (`lane/s38v`), the **items/vendors** cluster (batches S2c and 
 
 | Spec | Old | New | `updated:` |
 |---|---|---|---|
-| [items/vendors](../specs/items/vendors.md) | {C 77, I 37, L 2} | **{C 112, I 37, L 2}** | 2026-10-21 → 2026-10-27 |
+| [items/vendors](../../specs/items/vendors.md) | {C 77, I 37, L 2} | **{C 112, I 37, L 2}** | 2026-10-21 → 2026-10-27 |
 
 - **Research map:** the items/vendors row rewritten whole on the lane (spec-writer rule 6), "review pending"; the
   status stays `reviewed`. The root README row says "reviewed; re-tagged, review pending", 2026-10-27.
-- **Wiki (W4, done on this lane):** [wiki/items-other-paths](../wiki/items-other-paths.md) lists
+- **Wiki (W4, done on this lane):** [wiki/items-other-paths](../../wiki/items-other-paths.md) lists
   `items/vendors.md 2026-10-27` (the vendor sections only: refresh, the stock build, the tab and placement, the
   32-failure limit, gambling, buying and selling, the vendors line of *What is not known yet*). wiki/economy restates
   no vendors statement and does not list items/vendors; it is unchanged.

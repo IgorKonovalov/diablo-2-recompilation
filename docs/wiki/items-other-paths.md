@@ -373,7 +373,8 @@ same type, so exceptional and elite stock comes only from the two thresholds. Ve
 ([vendors § F](../specs/items/vendors.md#f-the-creation-record-items_createforstore-and-the-item-seeds)).
 
 Each stock item goes on the tab of its item type: armor, weapons or miscellaneous. A weapon that does not fit tries
-the second weapons tab, and an item that still does not fit is created anyway, its random draws spent, and then
+the store's third tab, which no item type names, so it holds only weapons that did not fit; and
+an item that still does not fit is created anyway, its random draws spent, and then
 left out of the stock as a failed creation. The runs confirmed the tabs; exactly which free cell the game picks is
 not modelled yet ([§ E](../specs/items/vendors.md#e-one-stock-item-vendor_createstockitem)). No build reached 32
 failed creations (the most was 27, Larzuk in Hell). Read from the code, the check that finds a 33rd failure ends the

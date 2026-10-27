@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, items/quality, items/uniques-sets, items/affixes, items/properties, data/excel]
 consumed_by: [hirelings]
-tags: {C: 112, I: 37, L: 2}
+tags: {C: 113, I: 36, L: 2}
 updated: 2026-10-27
 ---
 
@@ -80,7 +80,7 @@ flowchart TD
   callbacks that the 37 quest init functions store never reaches `VENDOR_BuildStock`. It reaches `NPCSTORE_Reset` by
   one chain only: Baal's death → `0x0052E2A0` (a save of every client, in game types 1 and 2 only) → `0x0052E110` →
   `0x0052CAF0` (a client dropped after three failed sends) → `0x00539DA0` → `sub_00537580_TownPlayerRemove` →
-  `NPCSTORE_ActStale`. So quest code resets a store only through that client drop, never in single player.
+  `NPCSTORE_ActStale`. So, by direct calls, quest code resets a store only through that client drop, never in single player.
   (fn:VENDOR_BuildStock@0x00576980, fn:NPCSTORE_Reset@0x00536D10, fn:sub_0058DF20_A5Q6_BaalDeath@0x0058DF20,
   [items/0009 § Plan 0038 batch S2c](../../findings/items/0009-vendors.md#plan-0038-batch-s2c-2026-10-16) vend 4)
 - [I] The walk follows direct calls only: the 825 indirect call sites under those callbacks are not followed.
@@ -263,9 +263,10 @@ stateDiagram-v2
 ```
 
 ```
-C0. on the first interaction start of a player with a hireling seller   [C] (fn:sub_00572C10_NpcInteractStart@0x00572C10, 0x00572CFF, fn:HIRE_SendList@0x00576770, run:2026-10-16-hirelings, run:2026-10-27-sweep-vendors)
-    (150, 198, 252, 515; hirelings spec), before any menu action:
-      HIRE_SendList(npc): if rec.hirelingsBuilt = 0: HIRE_BuildStock(rec); rec.hirelingsBuilt ← 1   ; draws on S: hirelings spec
+C0. on each interaction start of a player with an NPC                   [C] (fn:sub_00572C10_NpcInteractStart@0x00572C10, 0x00572CFF, fn:HIRE_SendList@0x00576770, run:2026-10-16-hirelings, run:2026-10-27-sweep-vendors)
+    before any menu action (the call 0x00572CFF is unconditional):
+      HIRE_SendList(npc): if npc.class ∉ {150, 198, 252, 515}: return   ; the sellers (hirelings spec)
+        if rec.hirelingsBuilt = 0: HIRE_BuildStock(rec); rec.hirelingsBuilt ← 1   ; 0x005767D5; draws on S: hirelings spec
 C1. on trade open (action 1) of NPC npc by player p:                  [C] (fn:NPC_TradeOpen@0x00579430, fn:NPC_OpenStore@0x00578B30, run:2026-10-15-vendors)
       rec ← NPCSTORE_FindRec(npc.class); rec.opened ← 1
       if rec.hasStore:
@@ -565,8 +566,9 @@ Step notes:
   Nightmare stock items took their `ubercode` and reproduced. With modified data such an upgrade would reach a fatal
   assert (creation returns no item in a classic game, and `ITEMS_GetCode(NULL)` asserts). (0x0057652B,
   fn:sub_00558D90_ItemCreate@0x00558D90, run:2026-10-15-vendors)
-- E2. [I] Neither retry was reached in the run: stock is never low quality, and no created code differed from the
-  chosen one. (0x00576505, 0x00576536)
+- E2. [C] Neither retry was reached in the run: stock is never low quality (D5), and the first pass returned the
+  chosen code for all 4 656 stock items (no `CRK`, no `CMM`). (0x00576505, 0x00576536, run:2026-10-15-vendors,
+  [items/0009 § Plan 0038 batch S2c](../../findings/items/0009-vendors.md#plan-0038-batch-s2c-2026-10-16) vend 20, 21)
 - E3. [C] The tab is the item type's `StorePage` byte, byte `+0x22` of the `itemtypes.bin` record, compiled to the
   StorePage row index of its code (0 `armo`, 1 `weap`, 2 `mag`, 3 `misc`; 0xFF for the 28 blank cells), as
   `sub_0062E880_ItemStorePage` reads it. No item type names `mag` (blank 28, `armo` 12, `misc` 45, `weap` 18), so tab 2
