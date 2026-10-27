@@ -18,7 +18,7 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
    ([0039](../../../../docs/plans/done/0039-backlog-sweep-4.md) P1b review); S4b row 17 short by 9, "7" instructions for 8 (0038);
    eight wear and resurrection counts one off `check-run.txt` ([0043](../../../../docs/plans/done/0043-items-economy.md) P2 review);
    pool 12's "six of the 25 `boss` classes" met for five (`lane/h4a` review, 0038); "2 708 do events" in the record for the logs' 1 840, which hid the 2 000 skill-use floor's shortfall (`lane/p45h` review, [0045](../../../../docs/plans/done/0045-skills-missiles-machinery.md)); 318 pattern-5 creations for `patterns.txt`'s 360 (`lane/h5d` review, 0038); a 27-line manifest filed as "26 lines", and the 9 non-ItemStatCost `UpdateAnimRate` sites
-   described without the scan's own breakdown (2 unidentified among them; `lane/p50b` review, 0050); "ten readers" raised for the eleven of `re/symbols.csv`'s diff (`lane/h1a` review, 0038); "four of the six" brain-chest positions at a corner for `brain91.txt`'s five files (`lane/rdp` review, 0038). The review request's "14 symbol raises" for the lane's 15 `re/symbols.csv` rows (`lane/h6e1` review, 0038). "Six" register stores of the UI word, where `check-static.txt` lists seven, and five of them resolve to constants (`lane/h6b` review, 0038).
+   described without the scan's own breakdown (2 unidentified among them; `lane/p50b` review, 0050); "ten readers" raised for the eleven of `re/symbols.csv`'s diff (`lane/h1a` review, 0038); "four of the six" brain-chest positions at a corner for `brain91.txt`'s five files (`lane/rdp` review, 0038). The review request's "14 symbol raises" for the lane's 15 `re/symbols.csv` rows (`lane/h6e1` review, 0038). "Six" register stores of the UI word, where `check-static.txt` lists seven, and five of them resolve to constants (`lane/h6b` review, 0038). The catalogue exclusion filed as "124 kind-1 dispatches" where the kept check gives 110 kind 0 and 14 kind 1, and the MonUMod champion rows "16, 36, 37, 39" for the table's 16 and 36–39 (`lane/p50e` review, [0050](../../../../docs/plans/0050-animation-frame-timing.md)).
 3. **Take totals against `main` after merging it**, not against the totals your batch started from.
    Seen: S2c, S3b and S1a reviews (0038), each recomputed; H3b's totals taken before the `lane/r1h` moves had landed
    (`lane/h3b` review, 0038). Check the routes after the merge too: sock 1 still read "needs a version-71 save" after `lane/a72`'s `leg71` builder had been merged (`lane/h6b` review, 0038).
@@ -53,7 +53,7 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
    the directory above its files (`lane/h1b` review, 0038); the crashed `--early` probes' logs and the crash files
    they left in the shared game directory deleted, not kept in `dev/`, and the session screenshots left outside the
    kept manifest (`lane/h3b` review, 0038); a dev manifest said to pass from `dev/` while it sat in the directory above, where it
-   fails (`lane/rbd` review, 0038); the 24 kept-session screenshots left outside every manifest again (`lane/h6e2` review, 0038); the per-copy first-`RRESEED` lines of the copy-order argument cited from an ad hoc count that no kept output printed (`h6e2f_copies.py --first` added at the `lane/h6e2f` review, 0038).
+   fails (`lane/rbd` review, 0038); the 24 kept-session screenshots left outside every manifest again (`lane/h6e2` review, 0038); the per-copy first-`RRESEED` lines of the copy-order argument cited from an ad hoc count that no kept output printed (`h6e2f_copies.py --first` added at the `lane/h6e2f` review, 0038). A dev manifest that lists its own hash, a line `sha256sum -c` can never pass (`lane/p50e` review, 0050).
 7. **A conclusion needs an address, `fn:` or `run:` anchor**, not a link to another finding (gate W1).
    Seen: the resume lane's experiments addendum (0037); `lane/w1`'s 104 W1 lines (0039); the levels
    `+0x033..+0x035` refinement and the 18th `-txt`-only (`sounds`) call filed without their writer and call addresses
@@ -65,7 +65,9 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
    sell's seed with five refusal tests unreached (0043 P2b review); spawn 41 filed raised with its "other sizes" half
    d-none (`lane/h5d` review, [0038](../../../../docs/plans/0038-inferred-claims-sweep.md)); the language clamp filed
    raised on a made-up `use` byte of 0x0E, where only edited data reaches it (ADR-0010: that half stays `[I]`,
-   d-edit; `lane/h3b` review, 0038).
+   d-edit; `lane/h3b` review, 0038). A `min` met on one side only (`min(255, max stack)` at a max stack of 160), a
+   "every entry" refill on a one-entry wand, an evaluated-or-base stat 73 equal on both swords, and "a forced row
+   skips only the window" filed raised beside aff 14's same "only" kept in part (`lane/h6a` review, 0038).
 9. **Name the path for every claim about a caller**, or say "unfollowed" with the count. Seen: the
    superunique minion path (0039 P1b, Q19); the 8/9 case's `RoomTileSetFlags` call (0039 P1a); "the effect flag is 1
    only from handler 20" without `SKILLS_SrvDo`'s seven other calls, and `SKILLS_PayCost`'s 0 for a zero-cost row
@@ -85,6 +87,7 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
     evidence (59 events counted, one separating; `lane/p47b` review, [0047](../../../../docs/plans/done/0047-simulation-shortfalls.md));
     Radament's `2 + r` escorts filed raised on r = 0 alone (`lane/h4a` review, 0038); `MonIsNpc`'s "`npc` or `inTown`"
     scored against `npc` alone but not against `inTown` alone, which every stock row also fits (`lane/h5d` review, 0038);
+    `ItemCopy`'s "two more seed steps per child" from the one copy that had a child (`lane/h6a` review, 0038);
     a constant one-frame offset over 76 table rows filed `contradicted` when the rows cannot tell a different count
     (the schedule's steps `N = n − 1` against its end `n`) from a different behaviour, A1's source naming the
     convention (`lane/p50v` review, [0050](../../../../docs/plans/0050-animation-frame-timing.md)); Kick's 25 logged
@@ -117,7 +120,7 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
     summary. Seen: the radius of hits 24, 44 and 14 in a callee-saved register (`lane/p46m3` review); hit 52's row 0
     (`arrow`) and hits 51/52's later creations under `[C]` (`lane/p46m4` review, both
     [0046](../../../../docs/plans/0046-skills-function-catalogue.md)); the Inifuss tree's `bks` filed "created … quality 2" from
-    the `QDI` argument, where the next `ICQ` line shows the creation at 7 (`lane/h6e2` review, [0038](../../../../docs/plans/0038-inferred-claims-sweep.md)).
+    the `QDI` argument, where the next `ICQ` line shows the creation at 7 (`lane/h6e2` review, [0038](../../../../docs/plans/0038-inferred-claims-sweep.md)). P1b-1's "`N` is the interval between two held actions" filed `[C]` as a server rule, where every restart is in its request's frame, the request being an oracle (the client's cadence), and 23 casts restarted before `T + N`; also an uncompared path (a catalogue queue the logger does not read) called "a boundary oracle": an oracle is a logged output taken as given, ADR-0004 (`lane/p50e` review, 0050).
 14. **Raise the symbols your run checks.** A function whose logged return the run compares with a model or a table row
     (and whose consumer agrees) is `[C]` in `re/symbols.csv` and the finding's Functions table, evidence column moved
     to the finding that holds the claim; don't leave it to the review. Seen: five H2b symbols (`lane/h2b` review fix 4);
@@ -130,7 +133,7 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
     review, 0038). `sub_005B1CF0_MonPostCreateBoss` (its 526 case compared at `SMPX`) and `sub_0063EC70_LevelClassVariant`
     (453 → 458, logged and chained) left I, and `MISSILE_BuildDamage` and `MissileElemRoll` left I under a 4 118-build
     re-check (`lane/rbd` review, 0038). `QUESTRECORD_LoadBytes` raised in `re/symbols.csv` but left I in save/0002's
-    Functions table and its § bullet (`lane/h1a` review, 0038). `ITEMS_GetType`, `ITEMS_GetCode` and `ITEMS_GetQuality` raised in `re/symbols.csv` but left I in items/0001, 0003 and 0006's Functions tables, and `ITEMS_CheckFlags` and `ItemGetFlags` left I with separating logged steps (`lane/h6e1` review, 0038).
+    Functions table and its § bullet (`lane/h1a` review, 0038). `ITEMS_GetType`, `ITEMS_GetCode` and `ITEMS_GetQuality` raised in `re/symbols.csv` but left I in items/0001, 0003 and 0006's Functions tables, and `ITEMS_CheckFlags` and `ItemGetFlags` left I with separating logged steps (`lane/h6e1` review, 0038). `sub_00650150_PathStepCollide`, `sub_005A8520_MonKnockbackEnd`, `SKILLS_SetDelayState` and `SUNIT_ModeEveryFrame` left I beside 21 raises on the same run (`lane/p50e` review, 0050).
 15. **State an integer wrap or overflow bound from a kept computation**: the largest input that still fits and the
     first that wraps, with the product written out, and what the code does past it. Seen: a negative ring step count
     called an endless loop where the signed index wraps past −2³¹ (`lane/p46m11` review); `PathDirection`'s

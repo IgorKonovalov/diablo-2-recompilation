@@ -1465,6 +1465,60 @@ c-emu awaiting a batch 0, blocked 425** (d-none 298, d-edit 73, d-sim 28, d-2c 8
 2, raised 17: 1 526.** § 5 marks H6b done. **Phase 3 ready:** items/sockets-runewords (S2c, H2b and H6b, all
 accepted).
 
+**H6a (filed 2026-10-27, reverser, `lane/h6a`): 29 statements of items/cube (rows 1, 7, 15–17, 25, 32, 36, 38–40,
+43, 44, 51, 53, 54, 58) and the S2c pieces of cube 49 and aff 14.** run:2026-10-27-sweep-cube, 8 sessions on slot 1,
+all kept (one game each; expansion and classic, Normal, in town; tool-built saves, one with the Act IV act byte, one
+at clvl 1 in its own game directory for the expected fault), logger `tools/gdb/cube.gdb` with `tools/gdb/cube.py` r4,
+checker `tools/sweep_h6a.py check` over the 8 logs: **26 transmutes reproduced by `tools/cube.py`, 27 call chains,
+23 `UnitSetEvent` calls, 0 mismatches** (`check-final.txt`, manifests `manifest-final.sha256`, `manifest-shots.sha256`,
+`manifest-dev.sha256`). The evidence is in [items/0008 § Plan 0038 batch H6a](../../findings/items/0008-cube.md#plan-0038-batch-h6a-run2026-10-27-sweep-cube).
+
+- **Raised (22):** cube 1 L48; 7 (3); 15; 25 L331; 36; 38 (2); 39 (3); 40 (3); 43 (3); 53 (2); 54; 58.
+- **Raised in part (4):** cube 1 L54 (button `0x17` and a type other than 4 not sent), 17 (no stock `eli` input), 25
+  L349 (the version gate's classic half: rows 129–136 are all version 100, d-none part), 32 (no stock `rem` row).
+- **Shortfall (1):** cube 51, three row-19 transmutes, the skipped record `start − 1` a candidate in none (10 in 659 per
+  transmute).
+- **Pieces:** cube 49 (stays counted as S2c, raised in part): case (b) met, the fault at 0x005C2460 logged and in the
+  game's crash report; case (a) d-none (no crafted base, ilvl and side whose first pick lacks a candidate, 0 of 40 194).
+  aff 14 (stays S2c, raised in part): the level-window half met (cube 58); "only" has no separating stock case.
+- Refinements carried into items/0008: an `ItemCopy` draws two more game-seed steps per child it copies; the runeword
+  copy's prefix slot 0 holds the name id; `InvPlaceItem` sets flags bit 0 on an item holding items; `ItemInitStats` on
+  an ethereal copy writes the plain base values (the open question answered).
+- Symbols I → C (rule 14): `g_SrvPacketTable`, `SrvPacketDispatch`, `Pkt4FButton`, `PktInteractButton`,
+  `PlayerGetInteract`, `CubeButton`, `ItemRemoveRuneword`, `ItemRepairBroken`, `QuestStaffMade`,
+  `QuestKhalimWillMade` (10); new `sub_0055F590_ItemInvNonEmpty` (I).
+
+Proposed class moves (two rows):
+
+| Row | Was | Now | Why |
+|---|---|---|---|
+| items-cube 16 (`eth` input) | b, H6a | **d-none** | 0 of the 389 compiled stock inputs has `eth` (`tables.txt`); `noe`, the same `ITEMS_IsEthereal` test, refused an ethereal sword at row 137. |
+| items-cube 44 (the `rem` children placed) | b, H6a | **d-none** | No stock output has `rem` (only row 141 has `uns`), so the second placement loop counts 0 in every stock transmute. |
+
+Net effect on the totals: harness −2, d-none +2. Taken against `main` `fd841611` (the lane's base; no inventory row
+moved on `main` since the `lane/h6e1` review totals above): **static 567, harness 517, c-emu awaiting a batch 0,
+blocked 423** (d-none 297, d-edit 73, d-sim 28, d-2c 7, d-owner 10, d-0032 8), **deferred 2, raised 17: 1 526.**
+H6a's ledger: raised 22, raised in part 4, reclassified 2, shortfall 1: 29.
+
+**`lane/h6a` review (2026-10-27, architect): accept with fixes (7).** Both moves stand, checked from the tables with
+`python3 -I` at review: 0 of the 389 stock inputs carry `eth` (4 carry `noe`), no stock output carries `rem` (`uns` row
+141 only), and 0 of the 40 194 crafted (row, base, output ilvl, side) cases has a side without a candidate (203 row-base
+pairs × 99 × 2; recounted with a looser filter, every level 1–99 against `level`/`maxlevel`, which can only add empty
+sides). Four raises have a half the run does not separate, and move to raised in part:
+
+| Row | Filed | Now | The half not separated |
+|---|---|---|---|
+| items-cube 39 L491 (`rep`) | raised | **raised in part** | evaluated against base stat 73 (both 24, no durability modifier on the swords; `STATS_GetUnitStat(it, 73)` read at 0x005662F1), and the 255 side of the stackable `min` |
+| items-cube 39 L524 (repair and refill) | raised | **raised in part** | "every stat-204 count": one charge entry; stock items with 2–4 exist (*Spellsteel*, *Wisp*) |
+| items-cube 40 L528 (`min(255, max stack)`) | raised | **raised in part** | the 255 side: max stack 160 < 255; a 200-stack throwing weapon with *Dense* reaches it on stock data |
+| items-cube 58 L968 (a forced row skips only the window) | raised | **raised in part** | "only", as aff 14: d-none part, the 8 stock forced ids pass every other C4 test |
+
+No class move beyond the lane's two. H6a's ledger: **raised 18, raised in part 8, reclassified 2, shortfall 1: 29.**
+Net effect on the totals: harness −2 (515 → 513), d-none +2 (298 → 300), blocked 425 → 427. Recounted once, against
+`main` `ad8b8cd0` merged into the lane (`lane/h6b`'s four moves and `lane/s38q`, which moved none): **static 567,
+harness 513, c-emu awaiting a batch 0, blocked 427** (d-none 300, d-edit 73, d-sim 28, d-2c 8, d-owner 10, d-0032 8),
+**deferred 2, raised 17: 1 526.** § 5 marks H6a done. **Phase 3 ready:** items/cube (S2c and H6a, both accepted).
+
 ## 3. Blocked rows, for the plan's open questions
 
 - **d-2c, 14 statements** (items/tc 3, items/vendors 5, items/quest-drops 3, hirelings 1, player/creation 2). This is
@@ -1557,7 +1611,7 @@ a letter suffix and its own run id, as the plan requires.
 | **H5c** (done) | `roomk` | 41 | 33/0/8 | drlg/README 1–3, 5, 10; preset 31–32; room-tiles 1–2, 4 (2), 14 (2), 15, 27, 28 (3), 30–31, 33, 37, 38; warps 1, 16, 19; **rng/seeds 2, 4–10, 14** (ex H5r); room-tiles 4, 14, 28, 37 and warps 16 from S4a (§ 2.6) | `drlg-roomk.gdb` and `collision.gdb` (LevelUnload, RoomTilesRelease, TINIT-exit flags, `LI0` caller, the act callback, WarpExitPos), plus `seed-tree.gdb` + `rng.py seedtree` (act-seed steps in `LevelLinkBuild`, `R+0x28`/`R+0x60` and `T+0x18`/`+0x20` at activation, flags at `0x0052D1C9`, `LEVEL` caller, client `UnitInit` (x, y), one `-seed -2147483648` session). rng/0002 cites the record. From S4a (§ 2.6): a walled level whose bit-2 merges go through the remap rows 0–5, the row −2 return and the 8/9 edge (counted by `sweep_s4a.py roomk` on the batch's logs), and a `RoomNeighboursEnsure` line at `0x0066C370` (room, warp bits, each `WarpPairLink` call and outcome) | `findings/drlg/experiments.md` | ~10 |
 | **H5d** (done) | `collision` | 17 | 6/0/11 | collision 1, 5, 8–9, 11, 19, 21, 24, 30, 36, 45–46; spawn 41 (from S3b) | `collision.gdb` + `collision.py`: tombs (228), Act III (334), Act V (298, 528, baaltaunt), a non-town `Position` level, `spawnCol` 1, ground items, an entry-flag `0x80` cell. From the H4b review (piece; the row stays counted as H4b): the tomb (228) and `suckernest1` (334) sessions also decide spawn 42's remainder, by `monspawn.py check` on the presets-window `SpawnClassCellTest` (`MC`) lines. From S3b (§ 2.6): a `sarcophagus` (228, size 1) and a `baaltaunt` (545, size 0) creation with their `MK0` lines (spawn 41) | `findings/drlg/experiments.md` | ~8 |
 | **H5e** (done) | `drlg-mazes` | 22 | 16/0/6 | maze 6, 10–12; outdoor 7, 11, 13–14, 20; preset 2, 12–14 | `drlg-outdoor.gdb` (with the maze lines) + `drlg-preset.py`, `maze_replay.py`, `outdoor_replay.py`, `drlg.py gen`: unreached maze levels from waypoint saves, outdoor rare branches on chosen seeds, the Blood Moor centre monster | `findings/drlg/experiments.md` | 16–17 |
-| **H6a** | `cube` | 29 | 0/18/11 | cube 1, 7, 15–16, 17 (from S2c), 25, 32, 36, 38–40, 43–44, 51 (from S2c), 53–54, 58 (from S2c) | `cube.gdb` + `cube.py`; new `.plan` files (upgrades, eth/strip rows, ethereal or socketed inputs, repair, recharge, `qty`, Staff of Kings, Khalim's Will, unsocket, the cow portal outside level 1 and in classic; from S2c: an elite upgrade with an exceptional-tier and a normal-tier base, more row-19 transmutes, row 17 on a magic tower shield, which also decides affixes 14's remainder); a UnitSetEvent line. From the S2c review (piece; cube 49 stays counted as S2c): a crafting session at output ilvl ≤ 5 with `sst` (rows 72, 90), `lbt` (83) or `lgl` (84) on a tool-built low-level save, for the crafted pick of 0; case (b) faults the game, so it is the session's last transmute | `findings/items/experiments.md` | ≤ 20 |
+| **H6a** (done) | `cube` | 29 (2 reclassified, § 2.6) | 0/18/11 | cube 1, 7, 15–16, 17 (from S2c), 25, 32, 36, 38–40, 43–44, 51 (from S2c), 53–54, 58 (from S2c) | `cube.gdb` + `cube.py`; new `.plan` files (upgrades, eth/strip rows, ethereal or socketed inputs, repair, recharge, `qty`, Staff of Kings, Khalim's Will, unsocket, the cow portal outside level 1 and in classic; from S2c: an elite upgrade with an exceptional-tier and a normal-tier base, more row-19 transmutes, row 17 on a magic tower shield, which also decides affixes 14's remainder); a UnitSetEvent line. From the S2c review (piece; cube 49 stays counted as S2c): a crafting session at output ilvl ≤ 5 with `sst` (rows 72, 90), `lbt` (83) or `lgl` (84) on a tool-built low-level save, for the crafted pick of 0; case (b) faults the game, so it is the session's last transmute | `findings/items/experiments.md` | ≤ 20 |
 | **H6b** (done) | `sockets` | 25 (4 reclassified, § 2.6) | 0/20/5 | sockets 1, 9–10, 12–13, 16–18, 21, 29, 35 ×2 (from S2c), 38 | `sockets.gdb` + `sockets.py`; child x/y and cursor lines; sock-refuse and sock-rw plans; a save holding a runeword (the *Steel* sample) loaded under the logger (sockets 35; with it the reader's `+0x38` store of sockets 46). From the S2c review (piece; sockets 14 stays counted as S2c): an unidentified socketed parent's client flags before and after identifying it, with an insert tried each time | `findings/items/experiments.md` | ≤ 20 |
 | **H6c** | `vendors` | 13 | 0/11/2 | vendors 2, 5, 12, 14–15, 18, 29–30, 32–34, 36 | `vendors.gdb` + `vendors.py`; reopen store or gamble, Asheara's hire list first, walk out of town, level-up between opens, buy and sell; saves at clvl ≤ 9, ≥ 96, 99 in Hell. From the S2c review (pieces; vendors 22 and 26 stay counted as S2c): the stock item's store tab and grid cell, and `+0x18`/`+0x28` of the store creation record at `IC0` | `findings/items/experiments.md` | ≤ 20 |
 | **H6d** (done) | `quest-b6` | 16 (17 filed; uniques-sets 21 to H1a, § 2.6) | 10/5/2 | quest-drops 11, 13, 16, 18, 22, 25, 27; tc 26–27; uniques-sets 21 | `quests.gdb` + tc-drops, `tc.py` b6_model, `questdrops.py`: Andariel or Duriel killed by a mercenary or summon, Diablo and Baal, Warriv's report, questfresh in Nightmare, Hell and classic, the forge with a stat-356-1 hammer, the unique restore path | `findings/items/experiments.md` | ≤ 20 |

@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, items/quality, items/uniques-sets, items/affixes, items/properties, items/sockets-runewords, data/excel]
 consumed_by: [drlg/outdoor, save/d2s]
-tags: {C: 119, I: 82, L: 4}
-updated: 2026-10-17
+tags: {C: 167, I: 88, L: 3}
+updated: 2026-10-27
 ---
 
 # The Horadric Cube: recipe match and outputs
@@ -45,16 +45,22 @@ flowchart TD
 
 | When | Function | Tag |
 |---|---|---|
-| Client packet `0x4F` with button `0x18`, player interaction type 4 | fn:sub_0054C7C0_Pkt4FButton@0x0054C7C0 → fn:sub_00568060_PktInteractButton@0x00568060 → fn:sub_00566AE0_CubeButton@0x00566AE0 | [I] |
+| Client packet `0x4F` with button `0x18`, player interaction type 4 | fn:sub_0054C7C0_Pkt4FButton@0x0054C7C0 → fn:sub_00568060_PktInteractButton@0x00568060 → fn:sub_00566AE0_CubeButton@0x00566AE0, run:2026-10-27-sweep-cube | [C] |
 | The transmute: row scan, filter, player ops, match | fn:CUBE_Transmute@0x005665F0, run:2026-10-15-cube | [C] |
 | The outputs of the matched row | fn:sub_00565AB0_RecipeOutputCreate@0x00565AB0, run:2026-10-15-cube | [C] |
 | A created output of quality 8 | fn:sub_00557450_ItemCreateByQuality@0x00557450 case 8 → fn:sub_005C21D0_ItemBuildCrafted@0x005C21D0, run:2026-10-15-cube | [C] |
 | Output kinds 1, 2, 3 | data:g_CubePortalFns@0x006E11C8 → fn:CUBE_CowPortalOpen@0x00594140, fn:CUBE_PandemoniumPortalStub@0x00594270, fn:CUBE_PandemoniumFinalePortalStub@0x00594280, run:2026-10-15-cube | [C] |
 
-- [I] The packet `0x4F` (7 bytes: opcode, u16 button, u16, u16) is dispatched through `g_SrvPacketTable` (8-byte
-  entries). Buttons `0x17` and `0x18` need the player's interaction type (`Unit+0x68`) to be 4; `0x17` ends the
-  interaction and `0x18` calls `CUBE_Transmute(game)` with the player. (data:g_SrvPacketTable@0x006E0D18,
+- [C] The packet `0x4F` (7 bytes: opcode, u16 button, u16, u16) is dispatched through `g_SrvPacketTable` (8-byte
+  entries; entry `0x4F` is {0x0054C7C0, 1}), and button `0x18` with the player's interaction type (`Unit+0x68`) 4
+  calls `CUBE_Transmute(game)` with the player. All 27 transmutes of run:2026-10-27-sweep-cube came through that chain,
+  each return address logged (0x0054D81A after the dispatcher's `call eax` at 0x0054D818, 0x005680F6, 0x00566AFC), and
+  the crash report of the faulting one lists the same addresses on its stack. (data:g_SrvPacketTable@0x006E0D18,
   fn:sub_0054D750_SrvPacketDispatch@0x0054D750, fn:sub_00554100_PlayerGetInteract@0x00554100,
+  fn:sub_00566AE0_CubeButton@0x00566AE0, run:2026-10-27-sweep-cube,
+  [items/0008 § Plan 0038 batch H6a](../../findings/items/0008-cube.md#plan-0038-batch-h6a-run2026-10-27-sweep-cube) cube 1)
+- [I] Button `0x17` also needs interaction type 4 and ends the interaction, and a player whose type is not 4 is
+  refused; no session logged either. (fn:sub_00568060_PktInteractButton@0x00568060,
   [items/0008 § Answer](../../findings/items/0008-cube.md#answer-summary))
 - [C] Every one of the 182 transmutes of run:2026-10-15-cube is reproduced from two inputs only: the cube's contents
   and the game seed at `CUBE_Transmute`. The rows that reach the matcher, the matched row, the slots, each creation
@@ -143,26 +149,31 @@ What a reimplementation needs from them:
 | `CRAFT_REDRAWS` | 252 picks per slot against a duplicate id or group | fn:sub_005C21D0_ItemBuildCrafted@0x005C21D0 | [I] |
 | `ILVL_CAP` | `experience` record 0, class-0 column: 99 on stock data | fn:sub_00611830_ExpMaxLevel@0x00611830, tbl:Experience.txt:Amazon | [I] |
 | `STAT_SOCKETS`, `STAT_QUESTDIFF` | 194 `item_numsockets`, 356 `questitemdifficulty` | fn:ITEMS_GetSockets@0x006299B0, 0x005652C9 | [C] |
-| `COW_LEVEL`, `COW_PORTAL_CLASS` | level 39, object class 60 | fn:CUBE_CowPortalOpen@0x00594140, tbl:Objects.txt:Name, tbl:Levels.txt:Name | [I] |
-| event codes | 4 after a produced transmute, 20 after a refused cow portal | fn:sub_00553380_UnitSetEvent@0x00553380 | [I] |
+| `COW_LEVEL`, `COW_PORTAL_CLASS` | level 39, object class 60, pushed before the `PortalObjectCreate` call | fn:CUBE_CowPortalOpen@0x00594140, 0x00594228, tbl:Objects.txt:Name, tbl:Levels.txt:Name, run:2026-10-15-cube, [items/0008 § Plan 0038 batch S2c](../../findings/items/0008-cube.md#plan-0038-batch-s2c-2026-10-16) cube 6 | [C] |
+| event codes | 4 after a produced transmute (the call at 0x00566439), 20 after a refused cow portal; none when nothing is produced | fn:sub_00553380_UnitSetEvent@0x00553380, run:2026-10-27-sweep-cube, [items/0008 § Plan 0038 batch H6a](../../findings/items/0008-cube.md#plan-0038-batch-h6a-run2026-10-27-sweep-cube) cube 7 | [C] |
 
 ### Inputs and oracles
 
 - [C] The reproduction has no seed oracle between the match and any output: every created item, every copy and
   every mod line is predicted from the game seed at `CUBE_Transmute`. Its only boundary oracles (ADR-0004) are the
   cow portal's free-spot search `0x00545340` and portal object `sub_0056D130_PortalObjectCreate`, whose return
-  values and the game seed after each are taken from the log; no item is created after them in a transmute.
+  values and the game seed after each are taken from the log; no item is created after them in a transmute. The
+  spot search draws nothing (the game seed after it equals the one at `CUBE_CowPortalOpen`'s entry in all three
+  openings); the portal object's draws are the portal's whole game-seed cost (§ L2).
   `sub_00560200_InvPlaceItem` is used for its success or failure only. (run:2026-10-15-cube,
-  fn:sub_0056D130_PortalObjectCreate@0x0056D130, fn:sub_00560200_InvPlaceItem@0x00560200,
+  fn:sub_0056D130_PortalObjectCreate@0x0056D130, fn:sub_00560200_InvPlaceItem@0x00560200, [items/0008 § Plan 0038 batch S2c](../../findings/items/0008-cube.md#plan-0038-batch-s2c-2026-10-16) cube 55,
   [items/0008 § 8](../../findings/items/0008-cube.md#8-phase-2-the-reproduction-run2026-10-15-cube))
 - [C] The run's inputs were builder-made items (rares with names and no affixes, magic items with one suffix, uniques
   at their maximal properties). They limit no statement here: the match reads class, type, quality, socket and
   ethereal state and stat 356; a created output reads only input 1's class and ilvl; a copy is compared with its
   input list by list. (run:2026-10-15-cube, plan 0030 Phase 2 review ruling 2)
-- [I] Every chained callee is specified elsewhere and used here as specified: item creation
+- [C] Every chained callee is specified elsewhere and used here as specified: item creation
   ([items/uniques-sets](uniques-sets.md), [items/affixes](affixes.md)), base stats and the property handlers
   ([items/properties](properties.md)), the socket setter ([items/sockets-runewords § F](sockets-runewords.md#f-socket-counts-the-two-setters)).
-  (fn:sub_00558D90_ItemCreate@0x00558D90, fn:PROP_ApplyBlockByVersion@0x0065FE10, fn:ITEMS_SetSockets@0x0062BCB0)
+  The 182 transmutes reproduce through those specs' models with no oracle between the match and the output: 140
+  `ItemCreate` records, 140 `ItemInitStats` calls, 51 crafted builds, 301 `ItemApplyProps` calls and 3
+  `ITEMS_SetSockets` calls. (fn:sub_00558D90_ItemCreate@0x00558D90, fn:PROP_ApplyBlockByVersion@0x0065FE10,
+  fn:ITEMS_SetSockets@0x0062BCB0, run:2026-10-15-cube, [items/0008 § Plan 0038 batch S2c](../../findings/items/0008-cube.md#plan-0038-batch-s2c-2026-10-16) cube 8)
 
 ## Algorithm
 
@@ -180,16 +191,16 @@ A3. for i in 0 ..< CUBEMAIN_GetCount():                                      [C]
 A3a.  r ← CubeMain[i]                                                         ; record index = .txt row
       if r.enabled = 0 and g_CubeAllRows = 0: continue
 A3b.  if game.expansion = 0 and r.version ≥ 100: continue                    ; u16
-A3c.  if game.gameType = 0 and game.ladder = 0 and r.ladder ≠ 0: continue
-A3d.  if r.minDiff > game.difficulty: continue                                ; unsigned bytes
-A3e.  if r.class ≠ 0xFF and r.class ≠ classId(player): continue
+A3c.  if game.gameType = 0 and game.ladder = 0 and r.ladder ≠ 0: continue    ; [I] the skip: every run was single player (0x00566679–0x00566689)
+A3d.  if r.minDiff > game.difficulty: continue                                ; unsigned bytes; [I] the skip: no stock row (fn:CUBE_Transmute@0x005665F0)
+A3e.  if r.class ≠ 0xFF and r.class ≠ classId(player): continue              ; [I] the skip: no stock row (fn:CUBE_Transmute@0x005665F0)
 A3f.  if r.numinputs ≠ n: continue                                            ; compared as a byte
 A3g.  if not PlayerOp(r, player, t, dow): continue                            ; A4
 A3h.  slots[0..2] ← {0, 0, 0}
       if MatchInputs(game, r, slots):                                          ; § B
         RecipeOutputCreate(game, player, r, slots)                             ; § E–G
         return
-A4. PlayerOp(r, …): by r.op, table below; op 0 and ops 15–28 pass here       [I] (0x005666C1–0x00566A39, tbl:CubeMain.txt:op)
+A4. PlayerOp(r, …): by r.op, table below; op 0 and ops 15–28 pass here       [C] (0x005666C1–0x005666D1, tbl:CubeMain.txt:op, run:2026-10-15-cube)
 A5. return                                                                    ; no row matched
 ```
 
@@ -200,7 +211,7 @@ A5. return                                                                    ; 
 | 3 / 4 / 5 / 6 | `STATS_GetUnitStat(player, param)` ≥ v / ≤ v / ≠ v / = v | [I] (0x00566739, fn:STATS_GetUnitStat@0x00625480) |
 | 7 / 8 / 9 / 10 | the same on the player's base stat | [I] (0x005666C1–0x00566A39) |
 | 11 / 12 / 13 / 14 | the same on `sub_00625560_UnitStatDelta(player, param)` | [I] (fn:sub_00625560_UnitStatDelta@0x00625560) |
-| 0, 15–28, any other | no test here | [I] (0x005666C1) |
+| 0, 15–28, any other | no test here | [C] (0x005666C1–0x005666D1, run:2026-10-15-cube, [items/0008 § Plan 0038 batch S2c](../../findings/items/0008-cube.md#plan-0038-batch-s2c-2026-10-16) cube 10, 12) |
 
 Step notes:
 
@@ -208,7 +219,9 @@ Step notes:
   rows after it are never tested. 166 transmutes matched a row and 16 matched none, and the model predicts every
   row that reached the matcher and its result. [C] (fn:CUBE_Transmute@0x005665F0, run:2026-10-15-cube)
 - A3a. **The five disabled rows (142–146) are unreachable.** `g_CubeAllRows` is read once and never written, and the
-  image holds 0 there. [I] (data:g_CubeAllRows@0x0088CAC0, 0x00566658)
+  image holds 0 there: the raw scan and Ghidra both find one reference, the read at 0x00566658, and the address lies
+  in `.data` past the file's raw data, so it starts zero-filled. [C] (data:g_CubeAllRows@0x0088CAC0, 0x00566658,
+  [items/0008 § Plan 0038 batch S2c](../../findings/items/0008-cube.md#plan-0038-batch-s2c-2026-10-16) cube 13)
 - A3b. **A classic game refuses the `version` 100 rows.** In the classic session row 60 (`version` 100) reached no
   matcher. [C] (0x00566653, run:2026-10-15-cube)
 - A3c. **Ladder rows match in single player.** A `ladder` row is skipped only when `Game+0x6A` = 0 and the game is not
@@ -219,6 +232,11 @@ Step notes:
   ([CubeMain § Survey of the stock rows](../../tables/CubeMain.md#survey-of-the-stock-rows), tbl:CubeMain.txt:class)
 - A3f. **The count is an exact count of cube items.** With stock data `numinputs` is the inputs' summed `qty`, so an
   extra item in the cube refuses every row. [C] (0x005666B4–0x005666BB, run:2026-10-15-cube)
+- A4. **Op 0 and ops 15–28 make no player test.** `op` is loaded as a byte, 1 is subtracted, and a result above 13
+  (unsigned) jumps to the matcher at 0x00566A42, else the 14-entry table at 0x00566AA8 takes ops 1–14; none of its
+  entries is 0x00566A42. Run for every op 0..255 by an evaluator over the instructions; in the logs 4 081 matcher
+  entries had op 0 and 142 op 28, all predicted. [C] (0x005666C1–0x005666D1, fn:CUBE_Transmute@0x005665F0,
+  run:2026-10-15-cube, [items/0008 § Plan 0038 batch S2c](../../findings/items/0008-cube.md#plan-0038-batch-s2c-2026-10-16) cube 10, 12)
 - A4. **The stat ops.** `v ← value >> ItemStatCost[param].ValShift` (arithmetic shift). For ops 3–14 the test runs
   only when 0 ≤ `param` ≤ the stat count (`DataTables+0xBD4`); outside that range the row passes; a missing
   `ItemStatCost` record refuses the row. No stock row has ops 1–27; only op 28 is used (§ B). [I] (0x005666C1,
@@ -258,14 +276,14 @@ B3. for each cube item it, in inventory-list order:
       ord ← ord + 1
       if not ItemTest(in, it): continue                                         ; B5
       if k = 0 and not FirstInputSocketable(r, it): continue                    ; B6
-      if ord ≤ 48 and claimed[ord − 1]: continue
+      if ord ≤ 48 and claimed[ord − 1]: continue                               ; [I] the 48 bound (fn:sub_005658C0_CubeMatchInputs@0x005658C0)
       if k = 0:
         if not ItemOp(r, it): continue                                          ; B7
         FillSlots(r, it, slots)                                                 ; § C
-      if ord ≤ 48: claimed[ord − 1] ← 1
+      if ord ≤ 48: claimed[ord − 1] ← 1                                         ; [I] the 48 bound (fn:sub_005658C0_CubeMatchInputs@0x005658C0)
       got ← got + 1
       if ItemBaseStackable(it): exact ← false
-B4. return (got = need) if exact else (got ≥ need)
+B4. return (got = need) if exact else (got ≥ need)                           ; [I] the ≥ (fn:sub_006289F0_ItemBaseStackable@0x006289F0)
 ```
 
 **B5. `ItemTest(in, it)`**, in the code's order; the first failing test refuses the item:
@@ -273,14 +291,15 @@ B4. return (got = need) if exact else (got ≥ need)
 | # | Test | Tag |
 |---|---|---|
 | a | **Base.** Flag `0x001` with item `0xFFFF`: any item. Flag `0x001` without `upg`: the item's class = `item`. Flag `0x002`: `ITEMS_UnitIsType(it, item)` (type equivalences count) | [C] (0x005650A0–0x005651AD, fn:ITEMS_UnitIsType@0x00629BB0, run:2026-10-15-cube) |
-| a′ | **`upg`** (`0x001` with `0x080`): let `c` be the item's own code and `i` the input's code; it passes when `c` = `normcode` and `i` = `normcode`; `c` = `ubercode` and `i` ∈ {`normcode`, `ubercode`}; `c` = `ultracode` and `i` is any of the three. So `upg` accepts the named base or a higher tier of it | [C] for an item of the named tier (rows 66, 73, 74, 85, 91); [I] for a higher tier (0x00565330–0x00565847, tbl:Weapons.txt:normcode, run:2026-10-15-cube) |
+| a′ | **`upg`** (`0x001` with `0x080`): let `c` be the item's own code and `i` the input's code; it passes when `c` = `normcode` and `i` = `normcode`; `c` = `ubercode` and `i` ∈ {`normcode`, `ubercode`}; `c` = `ultracode` and `i` is any of the three. So `upg` accepts the named base or a higher tier of it. Every stock `upg` input names a normal code | [C] for an item of the named tier (rows 66, 73, 74, 85, 91) and of a higher tier (row 66 `mgl` matched a magic `xmg` and a magic `umg`, which a plain class test refuses) (0x00565330–0x00565847, tbl:Weapons.txt:normcode, tbl:Weapons.txt:ubercode, run:2026-10-15-cube, run:2026-10-27-sweep-cube, [items/0008 § Plan 0038 batch H6a](../../findings/items/0008-cube.md#plan-0038-batch-h6a-run2026-10-27-sweep-cube) cube 15) |
 | b | **Quality.** When `in.quality` ≠ 0 the item's quality equals it | [C] (0x005651B0–0x005651D8, run:2026-10-15-cube) |
 | c | **Named unique or set** (`0x040`): `ITEMS_GetFileIndex(it)` = `in.id` − 1 | [C] (fn:ITEMS_GetFileIndex@0x00629DA0, run:2026-10-15-cube) |
 | d | **Sockets.** `nos`: stat 194 = 0. `sock`: stat 194 ≠ 0 (the socket count, not the number filled) | [C] (fn:ITEMS_GetSockets@0x006299B0, run:2026-10-15-cube) |
 | e | **Ethereal.** `noe`: not ethereal | [C] (fn:ITEMS_IsEthereal@0x0062A8D0, run:2026-10-15-cube) |
-| e′ | `eth`: ethereal | [I] (fn:ITEMS_IsEthereal@0x0062A8D0) |
+| e′ | `eth`: ethereal. No stock input has `eth` (0 of the 389 compiled inputs) | [I] (fn:ITEMS_IsEthereal@0x0062A8D0, tbl:CubeMain.txt:input 1) |
 | f | **Tier.** `bas`: the item's code = its `normcode` | [C] (0x0056526D–0x005652A8, run:2026-10-15-cube) |
-| f′ | else `exc`: = `ubercode`; else `eli`: = `ultracode` (one of the three is tested, in that priority) | [I] (0x0056526D–0x005652A8, tbl:Weapons.txt:ubercode, tbl:Weapons.txt:ultracode) |
+| f′ | else `exc`: = `ubercode` | [C] (row 131 refused *Gull* `dgr` and *Wizardspike* `7dg`, each passing every other test, and matched *Spineripper* `9dg`; row 135 an exceptional rare) (0x0056526D–0x005652A8, tbl:Weapons.txt:ubercode, run:2026-10-27-sweep-cube, [items/0008 § Plan 0038 batch H6a](../../findings/items/0008-cube.md#plan-0038-batch-h6a-run2026-10-27-sweep-cube) cube 17) |
+| f″ | else `eli`: = `ultracode` (one of the three is tested, in that priority). No stock input has `eli` | [I] (0x0056526D–0x005652A8, tbl:Weapons.txt:ultracode) |
 | g | **`nru`**: the item's runeword flag (bit 26) is clear. No stock input has `nru` | [I] (fn:sub_00628110_ItemGetFlags@0x00628110, tbl:CubeMain.txt:input 1) |
 | h | **Op 28, on every input.** When `r.op` = 28 and the item's base has both `quest` and `questdiffcheck` set, stat 356 ≥ `game.difficulty` | [C] (0x005652C9–0x005652FF, tbl:Weapons.txt:quest, tbl:Misc.txt:questdiffcheck, run:2026-10-15-cube) |
 
@@ -308,28 +327,35 @@ Step notes:
 - B3. **An input claims every matching item, not `qty` of them**, and the test is `got = qty`. Inputs are taken in
   column order, so an item that could match two inputs goes to the first. Each cube item counts 1 whatever its stack
   quantity. [C] (0x0056504A, 0x0056581C–0x0056587C, run:2026-10-15-cube)
-- B4. **A stackable base relaxes the count** to `got ≥ qty`, once any claimed item has a stackable base. [I]
-  (fn:sub_006289F0_ItemBaseStackable@0x006289F0)
+- B4. **A stackable base relaxes the count** to `got ≥ qty`, once any claimed item has a stackable base. No stock row
+  has two stackable inputs (6 have one) and `numinputs` is the summed `qty` on every row, so a stackable input could
+  claim more than its `qty` only by leaving another input short: `got ≥ qty` and `got = qty` decide every stock
+  transmute alike. [I] (fn:sub_006289F0_ItemBaseStackable@0x006289F0, tbl:CubeMain.txt:numinputs)
 - B3. Because the row filter already requires the cube count to equal `numinputs` (A3f), and `numinputs` is the summed
-  `qty` on every stock row, an unmatched item always refuses the row with stock data. A row whose `numinputs` exceeded
-  the inputs' sum would let an unmatched item through; none exists. [I] (0x005666B4–0x005666BB, tbl:CubeMain.txt:numinputs)
+  `qty` on every stock row (an empty `qty` counted 1, all 151 rows of the stock `cubemain.bin`), an unmatched item
+  always refuses the row with stock data. [C] (0x005666B4–0x005666BB, tbl:CubeMain.txt:numinputs, [items/0008 § Plan 0038 batch S2c](../../findings/items/0008-cube.md#plan-0038-batch-s2c-2026-10-16) cube 21)
+- B3. A row whose `numinputs` exceeded the inputs' sum would let an unmatched item through; none exists. [I]
+  (0x005666B4–0x005666BB)
 - B5h. **Op 28 is ≥, not >.** Wirt's Leg with stat 356 = 1 matched row 2 in Nightmare and 356 = 2 in Hell; 356 = 0 in
   Nightmare and 356 = 1 in Hell matched no row. In Normal every leg passes. The Pandemonium keys and organs have
   `quest` blank, so op 28 does not test them. [C] (0x005652FD, run:2026-10-15-cube)
-- B5. Op 28 binds, of the five op-28 rows, Wirt's Leg, the Staff of Kings and the Viper Amulet, the Khalim Flail and
-  Khalim's organs. [I] (tbl:Misc.txt:questdiffcheck, [CubeMain § Header](../../tables/CubeMain.md#header-0x000-20-bytes))
+- B5. Op 28 binds, of the five op-28 rows, the inputs whose base has both `quest` and `questdiffcheck`: row 0 the Staff
+  of Kings and the Viper Amulet (`msf`, `vip`); row 1 the Khalim Flail and Khalim's organs (`qf1`, `qhr`, `qey`, `qbr`);
+  row 2 Wirt's Leg (`leg`, not the tome); rows 148 and 149 none. [C] (tbl:Misc.txt:questdiffcheck,
+  tbl:CubeMain.txt:op, [CubeMain § Header](../../tables/CubeMain.md#header-0x000-20-bytes), [items/0008 § Plan 0038 batch S2c](../../findings/items/0008-cube.md#plan-0038-batch-s2c-2026-10-16) cube 22)
 - B5b. On a quality mismatch with quality 9 the code makes a call (`0x00625290`) whose result is unused; it has no
   effect. [I] (0x005651B0–0x005651D8)
 - B6. **Row 63 refuses a ring or an amulet.** Its output is `useitem,sock=1`, so input 1 must be able to hold sockets;
   a rare amulet (`ItemMaxSockets` 0) stayed out of input 1 and no row matched. A rare short sword, cap and kite shield
   matched. [C] (0x00565307, run:2026-10-15-cube)
 - B7. Input `sock=N` is **not** an input keyword: the parser knows `sock` alone and stops at the unknown token `N`, so
-  the count is never stored or tested. [I] (fn:sub_00668600_CubeParseInput@0x00668600, [CubeMain § Input record](../../tables/CubeMain.md#input-record-input-17-at-0x014--8k1-8-bytes))
+  the count is never stored or tested. No stock input cell holds `sock=N` (two of 389 hold `sock` alone, rows 15 and
+  141). [I] (fn:sub_00668600_CubeParseInput@0x00668600, [CubeMain § Input record](../../tables/CubeMain.md#input-record-input-17-at-0x014--8k1-8-bytes))
 
 ### C. What input 1 hands to the outputs — `FillSlots`
 
 ```
-C1. for each item it that input 1 claims, in claim order:                      [C] (0x005656EE–0x00565816, run:2026-10-15-cube, all of C1–C2)
+C1. for each item it that input 1 claims, in claim order:                      [C] (0x005656EE–0x00565816, run:2026-10-15-cube, run:2026-10-27-sweep-cube, all of C1–C2)
       for s in 0 ..< 3:                                                         ; outputs A, B, C
         slots[s].ilvl ← ITEMS_GetItemLevel(it)
         a ← r.output[0]                                                         ; output A's kind and flags, for all three
@@ -338,10 +364,10 @@ C1. for each item it that input 1 claims, in claim order:                      [
         if a.kind = 0xFE: slots[s].classId ← −1
 C2.     if a.kind ∈ {0xFE, 0xFF}:
           if a.flags & 0x080: code ← base(it).ubercode
-          else if a.flags & 0x100: code ← base(it).ultracode                   ; [I] (0x005656EE–0x00565816) no stock row reaches it
+          else if a.flags & 0x100: code ← base(it).ultracode
           else: code ← none
           if code ≠ blank and EXCEL_FindCode(code) = j
-             and (game.expansion or Items[j].version < 100):
+             and (game.expansion or Items[j].version < 100):                    ; [I] the classic half (0x005656EE–0x00565816)
             slots[s].classId ← j
 ```
 
@@ -355,8 +381,12 @@ Step notes:
   [items/0008 § 2.4](../../findings/items/0008-cube.md#24-what-input-1-hands-to-the-outputs))
 - C2. The `exc` upgrade gave the three `mod` outputs of the run (rows 129, 130, 133) the base's `ubercode` record.
   [C] (fn:EXCEL_FindCode@0x006BD130, run:2026-10-15-cube)
-- C2. The `eli` branch and the version gate (a classic game with an expansion-only upgraded base) were not reached.
-  [I] (0x005656EE–0x00565816, tbl:Weapons.txt:version)
+- C2. **The `eli` branch** gave rows 131 and 135 the `ultracode` record: `9dg` became `7dg` (class 235), the nine slot
+  words predicted, the copy's class set to it and `ItemInitStats` re-run. [C] (0x005656EE–0x00565816,
+  run:2026-10-27-sweep-cube, [items/0008 § Plan 0038 batch H6a](../../findings/items/0008-cube.md#plan-0038-batch-h6a-run2026-10-27-sweep-cube) cube 25)
+- C2. The version gate's classic half (a classic game with an expansion-only upgraded base) has no stock case: the 8
+  rows whose output A has `exc` or `eli` (129–136) are all `version` 100, so a classic game refuses them at A3b first.
+  [I] (0x005656EE–0x00565816, tbl:Weapons.txt:version, tbl:CubeMain.txt:version)
 
 ### D. The output ilvl
 
@@ -408,25 +438,25 @@ flowchart TD
 Outputs A, B and C (`row + 0x4C + 0x54·s`) are built in that order, each to the end of § F before the next.
 
 ```
-E1. strip ← (o.flags & 0x030) ≠ 0                                               [C] (fn:sub_00565AB0_RecipeOutputCreate@0x00565AB0, run:2026-10-15-cube, all of E1–E6)
+E1. strip ← (o.flags & 0x030) ≠ 0                                               [C] (fn:sub_00565AB0_RecipeOutputCreate@0x00565AB0, run:2026-10-15-cube, run:2026-10-27-sweep-cube, all of E1–E6)
     v ← § D
 E2. if o.kind ∈ 1..3 and g_CubePortalFns[o.kind] ≠ 0:
       produced ← produced or (g_CubePortalFns[o.kind](game, player) ≠ 0)       ; § L
 E3. if o.flags & 0x001:                                                         ; `mod`: re-base a copy of input 1
       it ← ItemCopy(game, slots[s].unit, children: not strip)                  ; § K
-      cls ← max(slots[s].classId, 0)       if o.kind = 0xFE
-            slots[s].classId               if o.kind = 0xFF
-            o.item                         if o.kind = 0xFC
-            PickItemOfType(game, v, o.item) if o.kind = 0xFD                    ; § J
+      cls ← max(slots[s].classId, 0)       if o.kind = 0xFE                      ; [I] the −1 → 0 case (0x00565DC4–0x00565E3F)
+            slots[s].classId               if o.kind = 0xFF                      ; [I] no stock `mod` row of this kind (0x00565DC4–0x00565E3F)
+            o.item                         if o.kind = 0xFC                      ; [I] (0x00565DC4–0x00565E3F)
+            PickItemOfType(game, v, o.item) if o.kind = 0xFD                    ; [I] § J (0x00565DC4–0x00565E3F)
       it.classId ← cls;  ItemInitStats(game, it, 0, 0)                          ; base stats on the copy's unit seed
 E4. else if o.kind = 0xFE:                                                      ; `useitem`
       it ← ItemCopy(game, slots[s].unit, children: not strip)                  ; § K
-      if o.quality = 9: TmpNames(it)                                            ; E8
+      if o.quality = 9: TmpNames(it)                                            ; E8; [I] the disabled rows only (fn:sub_005C1BC0_PickRareNameByVersion@0x005C1BC0)
 E5. else if o.kind ∈ {0xFC, 0xFD, 0xFF}:
       q ← o.quality;  rowP1 ← o.id
       if o.kind = 0xFC: cls ← o.item
       if o.kind = 0xFD: cls ← PickItemOfType(game, v, o.item)                   ; § J, 2 game-seed draws
-      if o.kind = 0xFF: cls ← slots[s].classId;  if o.flags & 0x040: Reg(…)     ; E7
+      if o.kind = 0xFF: cls ← slots[s].classId;  if o.flags & 0x040: Reg(…)     ; E7; [I] `Reg`: no stock row (0x00565F49–0x00565FA9)
       rec ← CreationRecord(cls, v, q, rowP1, o)                                 ; table below
       it ← ItemCreate(game, rec)                                                ; items/uniques-sets § A onward
 E6. else: no item                                                               ; kinds 0..3
@@ -440,7 +470,7 @@ The creation record of E5 (every other field 0):
 | ilvl (`+0x0C`) | `v` of § D | [C] (struct:ItemCreateRec+0x0C, run:2026-10-15-cube) |
 | item index | `cls` | [C] (run:2026-10-15-cube) |
 | `+0x18` | 4 (3 on a drop; meaning not read) | [I] (0x00565FEE–0x005660C5) |
-| `+0x28`, `+0x2A` | 1, `game.itemVersion` | [I] (0x00565FEE–0x005660C5) |
+| `+0x28`, `+0x2A` | 1, `game.itemVersion` (101 in the 132 logged expansion records, 2 in the 8 classic ones) | [C] (0x00565FEE–0x005660C5, struct:ItemCreateRec+0x80, run:2026-10-15-cube, [items/0008 § Plan 0038 batch S2c](../../findings/items/0008-cube.md#plan-0038-batch-s2c-2026-10-16) cube 29) |
 | quality (`+0x30`) | `o.quality`: `mag` 4, `rar` 6, `crf` 8, `nor` 2, …; 0 when the cell names none | [C] (struct:ItemCreateRec+0x30, run:2026-10-15-cube) |
 | unique/set row + 1 | `o.id` (0 on every stock output) | [C] (run:2026-10-15-cube) |
 | forced prefixes, suffixes (`+0x68`, `+0x74`) | `o.pre[0..2]`, `o.suf[0..2]`, u16 widened to i32 | [C] (struct:ItemCreateRec+0x68, run:2026-10-15-cube) |
@@ -468,12 +498,21 @@ Step notes:
   speed and the picture are rewritten; sockets, prefixes, suffixes, the unique's or set's row and their lists stay;
   the quality builders do not run. Rows 129, 130, 133. [C] (0x00565DC4–0x00565E3F,
   fn:sub_00557AB0_ItemInitStats@0x00557AB0, run:2026-10-15-cube)
+- E3. **On an ethereal copy `ItemInitStats` writes the plain base values**: row 129 on an ethereal *Gull* re-based to
+  `9dg` logged the plain damage 6–18 after the copy's `ItemInitStats`; the ×3/2 (9–27) comes from the mod line's
+  `ITEMS_MakeEthereal` (F2). [C] (fn:sub_00557AB0_ItemInitStats@0x00557AB0, fn:ITEMS_MakeEthereal@0x0065E4D0,
+  run:2026-10-27-sweep-cube, [items/0008 § Plan 0038 batch H6a](../../findings/items/0008-cube.md#plan-0038-batch-h6a-run2026-10-27-sweep-cube) cube 38)
 - E3. A class of −1 left by the slot (a `useitem,mod` row whose input base has no next-tier code) becomes **0**, item
   record 0. The stock upgrade rows require `bas` or `exc` bases, so it is not reachable. [I] (0x00565DC4–0x00565E3F)
 - E4. **`useitem` is a copy of input 1**: class, quality, affixes, rare names, ilvl, flags and every stat list come
   back from the copy stream; 15 `useitem` copies. [C] (fn:sub_0055A2A0_ItemCopy@0x0055A2A0, run:2026-10-15-cube)
-- E3–E4. The copy takes the input's socketed children with it unless `uns` or `rem` is given. [I] (0x00565D76–0x00565DA2,
-  0x00565E66–0x00565E8C)
+- E3–E4. **The copy takes the input's socketed children with it unless `uns` is given.** Row 130 (`mod`) on *Greyform*
+  holding a standard amethyst gave a copy with its one child; row 141 (`useitem,uns`) on a sword with two gems and on
+  *Steel* passed `ItemCopy` flag 0 and gave copies with no child, the input's children destroyed with it (G2). [C]
+  (0x00565D76–0x00565DA2, 0x00565E66–0x00565E8C, fn:sub_0055A2A0_ItemCopy@0x0055A2A0, run:2026-10-27-sweep-cube,
+  [items/0008 § Plan 0038 batch H6a](../../findings/items/0008-cube.md#plan-0038-batch-h6a-run2026-10-27-sweep-cube) cube 32)
+- E3–E4. `rem` strips the children the same way; no stock output has `rem`. [I] (0x00565D76–0x00565DA2,
+  tbl:CubeMain.txt:output)
 - E7. **`Reg`** (`usetype` with `reg`, no stock row): when input 1 exists, `q` ← its quality, `rowP1` ← its file index
   + 1 and `v` ← its unclamped `ITEMS_GetItemLevel`. If `q` = 7 and the row's made bit is clear before the build,
   the bit is cleared again after `ItemCreate`, so the made set is unchanged; a bit already set stays set and the
@@ -489,26 +528,26 @@ Step notes:
 ### F. After the item exists, in this order
 
 ```
-F1. if strip: RemoveRuneword(it)                                                [I] (fn:sub_00558C50_ItemRemoveRuneword@0x00558C50, 0x00566105–0x005661C6)
-    if o.flags & 0x020: copy each socketed child of the ORIGINAL input aside   ; `rem`, placed after the outputs (§ G)
+F1. if strip: RemoveRuneword(it)                                                [C] (fn:sub_00558C50_ItemRemoveRuneword@0x00558C50, 0x00566105–0x005661C6, run:2026-10-27-sweep-cube)
+    if o.flags & 0x020: copy each socketed child of the ORIGINAL input aside   ; `rem`, placed after the outputs (§ G); [I] no stock row (0x00566105–0x005661C6)
 F2. for m in 1 ..< 6 (skipped when TmpNames failed):                            [C] (0x005661C8–0x00566283, fn:sub_00660240_CubeModApply@0x00660240, run:2026-10-15-cube)
       line ← o.mod[m]; if line.prop < 0: continue
       if 1 ≤ line.chance ≤ 99:                                                  [I] (0x00566204–0x00566239)
         Step(it.unitSeed)                                                       ; draw on the UNIT seed
         if low mod 100 > line.chance: continue                                  ; u32
       PROP_ApplyBlockByVersion(7, it, line, state 0, flags 0x40)                ; handlers draw on the ITEM seed
-      if IsEthereal(it): ITEMS_MakeEthereal(it)                                 ; [I] (fn:ITEMS_MakeEthereal@0x0065E4D0)
-F3. if o.flags & 0x200:                                                         [I] (0x00566289–0x0056630C)  ; `rep`
-      if stackable base and o.qty ≠ 0: stat 70 ← min(o.qty, maxStack)
-      if it.flags & 0x100: ItemRepairBroken(it)
-      else if base stat 72 < stat 73: base stat 72 ← stat 73
-F4. if o.flags & 0x400: ItemRefillCharges(it)                                   [I] (0x00566311–0x00566325)  ; `rch`
-F5. if (o.flags & 0x002) = 0:                                                   [I] (0x0056632A–0x005663E3)  ; `qty=N`
-      if stackable base and o.qty ≠ 0: stat 70 ← min(o.qty, maxStack)
+      if IsEthereal(it): ITEMS_MakeEthereal(it)                                 ; [C] (fn:ITEMS_MakeEthereal@0x0065E4D0, 0x00660280, run:2026-10-27-sweep-cube)
+F3. if o.flags & 0x200:                                                         [C] (0x00566289–0x0056630C, run:2026-10-27-sweep-cube, all of F3–F4)  ; `rep`
+      if stackable base and o.qty ≠ 0: stat 70 ← min(o.qty, maxStack)          ; [I] the o.qty side of the min (fn:ITEMS_GetMaxStack@0x006295B0)
+      if it.flags & 0x100: ItemRepairBroken(it)                                 ; stat 72 ← ItemMaxDurability(it)
+      else if base stat 72 < stat 73: base stat 72 ← stat 73                   ; [I] which stat 73 (0x005662F1–0x005662FD)
+F4. if o.flags & 0x400: ItemRefillCharges(it)                                   ; `rch`; [I] past the first stat-204 entry (0x0055FEF2–0x0055FF83)
+F5. if (o.flags & 0x002) = 0:                                                   [C] (0x0056632A–0x005663E3, run:2026-10-27-sweep-cube)  ; `qty=N`
+      if stackable base and o.qty ≠ 0: stat 70 ← min(o.qty, maxStack)          ; [I] the o.qty side of the min (fn:ITEMS_GetMaxStack@0x006295B0)
     else if o.qty ≠ 0 and stat 194 = 0 and (it.flags & 0x800) = 0:             [C] (fn:ITEMS_SetSockets@0x0062BCB0, run:2026-10-15-cube)  ; `sock=N`, no draw
       k ← min(ItemMaxSockets(it), o.qty)
-      if quality ∈ {4, 9}: k ← min(k, 3)
-      if quality ∈ {5, 6, 7, 8}: k ← min(k, 1)
+      if quality ∈ {4, 9}: k ← min(k, 3)                                        ; [I] never binds on stock data (0x0056632A–0x005663E3)
+      if quality ∈ {5, 6, 7, 8}: k ← min(k, 1)                                  ; [I] (0x0056632A–0x005663E3)
       if k ≠ 0: it.flags ← it.flags | 0x800;  ITEMS_SetSockets(it, k)
 ```
 
@@ -526,16 +565,36 @@ Step notes:
   armour, helm, shield and weapon alike; the count is then capped by the `sock` handler (`ItemMaxSockets` and the
   inventory size, no quality clamp): rolls of 6 on a gothic plate gave 4 sockets, 5 on a great helm and a kite shield
   3 each, 5 on a quilted armour 2. 10 transmutes. [C] (fn:PROP_Func14_Sockets@0x0065F590, run:2026-10-15-cube)
-- F2. The ethereal base bonus is re-applied after each line when the item is ethereal; no ethereal item was upgraded
-  in the run. [I] (fn:sub_00660240_CubeModApply@0x00660240)
-- F3–F4. `rep` and `rch` ran only on items already at full durability and with no charges, where they change
-  nothing; that much is reproduced. [C] (0x00566289–0x00566325, run:2026-10-15-cube)
-- F3–F4. The repair of a damaged or broken item and the refill of charges (every stat-204 count raised to its
-  maximum) were not reached. [I] (fn:sub_0055F900_ItemRepairBroken@0x0055F900, fn:sub_0055FE80_ItemRefillCharges@0x0055FE80,
-  fn:ITEMS_GetMaxStack@0x006295B0)
+- F2. **The ethereal base bonus is re-applied after each line** when the item is ethereal: `ITEMS_MakeEthereal` sits
+  inside `CubeModApply` (0x00660280), which the loop calls once per line. Row 129 on an ethereal *Gull*: the copy's
+  plain `9dg` damage 6–18 (E3), then the `levelreq` line and `MakeEthereal`, damage ×3/2 (9–27) and the flag, every
+  list predicted to the placement. [C] (fn:sub_00660240_CubeModApply@0x00660240, fn:ITEMS_MakeEthereal@0x0065E4D0,
+  run:2026-10-27-sweep-cube, [items/0008 § Plan 0038 batch H6a](../../findings/items/0008-cube.md#plan-0038-batch-h6a-run2026-10-27-sweep-cube) cube 38)
+- F3–F4. `rep` and `rch` on items already at full durability and with no charges change nothing; that much is
+  reproduced. [C] (0x00566289–0x00566325, run:2026-10-15-cube)
+- F3. **The repair.** Row 137 raised a damaged short sword's base stat 72 from 5 to 24; on a broken one (flag `0x100`,
+  72 = 0) `ItemRepairBroken` set flag `0x200`, cleared `0x100` and wrote 72 = 24 (`sub_00625E00_ItemMaxDurability`,
+  0x0055F95A–0x0055F96C). Each predicted at the placement. [C] (0x00566289–0x00566325,
+  fn:sub_0055F900_ItemRepairBroken@0x0055F900, run:2026-10-27-sweep-cube, [items/0008 § Plan 0038 batch H6a](../../findings/items/0008-cube.md#plan-0038-batch-h6a-run2026-10-27-sweep-cube) cube 39)
+- F3. **Which maximum the repair reads** is not separated: the damaged branch compares `STATS_GetUnitStat(it, 73)`
+  (0x005662F1, the evaluated stat) with `STATS_GetUnitBaseStat(it, 72)` (0x005662FD), the broken branch takes
+  `ItemMaxDurability`, and on both logged swords (no durability modifier) the evaluated and the base maximum are the
+  same 24. [I] (0x005662F1–0x005662FD, 0x0055F95A–0x0055F96C)
+- F4. **The recharge.** Row 139's `rch` raised a wand's charge entry (stat 204) from 5 to 27, predicted. [C]
+  (fn:sub_0055FE80_ItemRefillCharges@0x0055FE80, run:2026-10-27-sweep-cube, [items/0008 § Plan 0038 batch H6a](../../findings/items/0008-cube.md#plan-0038-batch-h6a-run2026-10-27-sweep-cube) cube 39)
+- F4. `ItemRefillCharges` loops over every stat-204 entry `sub_006261D0_StatListGetEntries` returns (0x0055FED9, loop
+  0x0055FEF2–0x0055FF83); the logged wand held one entry, so a refill of every entry is not separated from a refill of
+  the first. Stock items with two to four charge entries exist (*Spellsteel* 4, *Wisp* 3). [I] (0x0055FEF2–0x0055FF83,
+  tbl:UniqueItems.txt:prop1)
 - F5. **`qty` and `sock` share a byte; the flag decides.** The builder reads it as a socket count when the `sock` flag
-  is set and as a stack quantity otherwise. So the repair rows' `qty=255` refills a stackable base to
-  `min(255, max stack)` and never adds sockets. No stackable output with `qty=` was reached. [I] (0x0056632A–0x005663E3)
+  is set and as a stack quantity otherwise. Row 137 (`useitem,rep,qty=255`, no `sock` flag) on throwing knives at 20
+  set the quantity (stat 70) to 160, `ITEMS_GetMaxStack`, in `rep` and again in the `qty` step, with no socket call;
+  row 63's `sock=1` (run:2026-10-15-cube) is the other reading. [C] (0x00566294–0x005662BA, 0x0056632A–0x005663E3,
+  fn:ITEMS_GetMaxStack@0x006295B0, run:2026-10-15-cube, run:2026-10-27-sweep-cube, [items/0008 § Plan 0038 batch H6a](../../findings/items/0008-cube.md#plan-0038-batch-h6a-run2026-10-27-sweep-cube) cube 40)
+- F5. The `qty` side of `min(255, max stack)` is not separated: the knives' max stack 160 is below 255. Stock data
+  reaches it: a throwing weapon of `maxstack` 200 (`7tk`, `7bk`) with *Dense* (stat 254 +81..120) has a max stack
+  above 255. `ITEMS_GetMaxStack` is the base's `maxstack` plus stat 254 (0 on the knives), capped below 511. [I]
+  (0x006295B0–0x0062960E, tbl:MagicPrefix.txt:mod1code)
 - F5. **`sock=N`** (row 63, `useitem,sock=1`): a rare short sword, cap and kite shield got one socket through
   `ITEMS_SetSockets`. [C] (fn:ITEMS_SetSockets@0x0062BCB0, run:2026-10-15-cube)
 - F5. The quality clamps (magic and 9 at most 3; set, rare, unique and crafted at most 1) are read only; with N = 1 on
@@ -551,14 +610,15 @@ G1. if not produced (no output made an item and no special output returned non-z
       return                                                                     ; nothing destroyed, nothing placed
 G2. CubeDestroyContents(player)                                                  [C] (fn:sub_00564F30_CubeDestroyContents@0x00564F30, run:2026-10-15-cube)
     ; every page-3 item, the originals of useitem/mod copies included
-G3. UnitSetEvent(player, 4, …)                                                   [I] (fn:sub_00553380_UnitSetEvent@0x00553380)
-G4. for each output item, in order A, B, C:                                      [C] (0x00566400–0x00566563, run:2026-10-15-cube)
+G3. UnitSetEvent(player, 4, …)                                                   [C] (fn:sub_00553380_UnitSetEvent@0x00553380, 0x00566439, run:2026-10-27-sweep-cube)
+G4. for each output item, in order A, B, C:                                      [C] (0x00566400–0x00566563, run:2026-10-15-cube, run:2026-10-27-sweep-cube)
       set page 3; InvPlaceItem(game, player, it, …)                              ; ORACLE: success or failure only
+        ; inside it: if ItemInvNonEmpty(it): ITEMS_SetFlag(it, 1, 1)             ; flags bit 0 (0x00560385–0x00560393)
       if it failed: UnitFree(it)                                                 ; [I] (fn:sub_00555600_UnitFree@0x00555600)
       else: ITEMS_SetFlag(it, 0x10)                                              ; identified
-            if code(it) = hst: QuestStaffMade(player)                            ; [I] (fn:sub_0059E5C0_QuestStaffMade@0x0059E5C0)
-            if code(it) = qf2: QuestKhalimWillMade(player)                       ; [I] (fn:sub_005B86E0_QuestKhalimWillMade@0x005B86E0)
-G5. place the `rem` children the same way                                         [I] (0x00566400–0x00566563)
+            if base(it).quest and code(it) = hst: QuestStaffMade(player)         ; 0x005664A8–0x005664D4
+            if base(it).quest and code(it) = qf2: QuestKhalimWillMade(player)
+G5. place the `rem` children the same way                                         [I] (0x00566501–0x00566561)  ; no stock output has `rem`
 ```
 
 Step notes:
@@ -578,8 +638,24 @@ Step notes:
   fn:sub_0063B850_InvSpotFindBySize@0x0063B850, fn:sub_0063B490_InvSpotFindRow@0x0063B490,
   fn:sub_0063B620_InvSpotFind@0x0063B620, run:2026-10-15-cube, run:2026-10-16-player,
   [items/0008 § Plan 0038 batch S2c](../../findings/items/0008-cube.md#plan-0038-batch-s2c-2026-10-16) cube 45)
-- G4. A placed `hst` sets the player's quest word 10 bit 11; neither `hst` nor `qf2` was made in the run. [I]
-  (fn:sub_0059E5C0_QuestStaffMade@0x0059E5C0)
+- G3. **Event 4 follows the destroy** in every produced transmute (21 logged); a transmute that produces nothing makes
+  no call (3 logged), and a refused cow portal makes its own event 20 (§ L). What `UnitSetEvent` does with the code is
+  not logged. [C] (fn:sub_00553380_UnitSetEvent@0x00553380, 0x00566439, run:2026-10-27-sweep-cube, [items/0008 § Plan 0038 batch H6a](../../findings/items/0008-cube.md#plan-0038-batch-h6a-run2026-10-27-sweep-cube) cube 7)
+- G4. **The placement sets flags bit 0 on an output that holds items**: the copied *Greyform* with its child went
+  from `0x880810` to `0x880811`, while the two row-141 copies, socketed with no child, kept `0x880810` and none of the
+  17 other outputs gained it. [C] (0x00560385–0x00560393, fn:sub_0055F590_ItemInvNonEmpty@0x0055F590,
+  fn:ITEMS_SetFlag@0x006280D0, run:2026-10-27-sweep-cube, [items/0008 § Plan 0038 batch H6a](../../findings/items/0008-cube.md#plan-0038-batch-h6a-run2026-10-27-sweep-cube) *Other refinements*)
+- G4. **The two quest hooks.** A placed `hst` calls `QuestStaffMade`, which sets the player's quest word 10 bit 11
+  (`0x0000` → `0x0800`, `QUESTRECORD_SetState(rec, 10, 11)` at 0x0059E614); a placed `qf2` calls
+  `QuestKhalimWillMade`. Neither hook ran for the 18 other placed outputs (14 classes). [C]
+  (0x005664A8–0x005664D4, fn:sub_0059E5C0_QuestStaffMade@0x0059E5C0, fn:sub_005B86E0_QuestKhalimWillMade@0x005B86E0,
+  run:2026-10-27-sweep-cube, [items/0008 § Plan 0038 batch H6a](../../findings/items/0008-cube.md#plan-0038-batch-h6a-run2026-10-27-sweep-cube) cube 43)
+- G4. What else the hooks do is seen in the log but not compared with a model: the staff's writes the game's quest 9
+  data (`+0x2A` = 1 and counters); the will's reads word 18 bits 0 and 1 (results unused), writes no player bit and
+  moves the game's quest 16 counters. [I] (fn:sub_0059E5C0_QuestStaffMade@0x0059E5C0,
+  fn:sub_005B86E0_QuestKhalimWillMade@0x005B86E0)
+- G5. No stock output has `rem`, so the second placement loop runs with a count of 0 in every stock transmute. [I]
+  (0x00566501–0x00566561, tbl:CubeMain.txt:output)
 
 ### H. The creation-side quality roll of a quality-0 record
 
@@ -596,7 +672,7 @@ H3. d: i32 ← 1 if ITEMS_IsType(it, 52 misc) else max(rec.ilvl − base.level, 
       c: i32 ← ratio[code].base − d ÷ ratio[code].divisor                       ; no ×128, no magic find
       if c ≤ 0: return code                                                     ; no draw
       if Range(item.seed, c) = 0: return code                                   ; draw
-H4. return 3 if rec.flags & 0x40 else 1
+H4. return 3 if rec.flags & 0x40 else 1                                       ; [I] the 3: no cube record sets 0x40 (0x00556F60–0x0055714C)
 ```
 
 Step notes:
@@ -620,9 +696,12 @@ Step notes:
 
 ### I. The crafted builder — `sub_005C21D0_ItemBuildCrafted`
 
-Case 8 of `ItemCreateByQuality` clears both rare names, reads the item seed's low word for the fallback, calls the
-builder, and on failure calls `sub_005572A0_ItemFallbackNormal` with that value. [I] (0x005577B7–0x005577FC,
-fn:sub_00557450_ItemCreateByQuality@0x00557450, fn:sub_005572A0_ItemFallbackNormal@0x005572A0)
+Case 8 of `ItemCreateByQuality` clears both rare names, reads the item seed's low word for the fallback and calls the
+builder: 51 crafted builds reproduced. [C] (0x005577B7–0x005577FC, fn:sub_00557450_ItemCreateByQuality@0x00557450,
+run:2026-10-15-cube, [items/0008 § Plan 0038 batch S2c](../../findings/items/0008-cube.md#plan-0038-batch-s2c-2026-10-16) cube 47) On failure it calls `sub_005572A0_ItemFallbackNormal` with that value; stock data
+has no failing case, since the builder fails only on a rare-name pick and every spawnable base of every crafted row
+(161) has at least 24 rare prefixes and 14 rare suffixes that pass `ITEMS_RareNameTypeOk`. [I] (0x005577B7–0x005577FC,
+fn:sub_005572A0_ItemFallbackNormal@0x005572A0)
 
 ```mermaid
 flowchart TD
@@ -647,7 +726,7 @@ flowchart TD
 ```
 I1. a ← RareName(prefix);  b ← RareName(suffix)                                 [C] (fn:sub_005C21D0_ItemBuildCrafted@0x005C21D0, fn:ITEMS_PickRareName@0x005C1AB0, run:2026-10-15-cube, all of I1–I6)
     ; ITEMS_PickRareName for an item of version ≥ 1 (items/affixes E2, R1–R4): one Range draw each
-    if a = 0 or b = 0: return false
+    if a = 0 or b = 0: return false                                             ; [I] no stock case (0x005577B7–0x005577FC)
     rareName1 ← a;  rareName2 ← b
 I2. tier: i32 ← 4 if rec.ilvl > 70 else 3 if rec.ilvl > 50 else 2 if rec.ilvl > 30 else 1
 I3. Step(item.seed);  n: u32 ← low mod 5;  if n < tier: n ← tier               ; draw
@@ -659,7 +738,7 @@ I4. p ← 0;  s ← 0
       loop:
         id ← PickMagicAffix(it, needSpawnable 1, mustRoll 1, applyProps 0, side,
                             rec.forced<side>[side's counter], 0)                ; items/affixes § C: 2 draws
-        if id's row and group differ from every filled slot of that side:
+        if id's row and group differ from every filled slot of that side:     ; id 0 against a filled slot faults (I4 note)
           store id in that side's slot; advance that side's counter; break
         if t > 250: store 0 in that side's slot; break                          ; [I] (0x005C2252–0x005C251F) the 252-pick bound
         t ← t + 1
@@ -695,11 +774,22 @@ Step notes:
   test for 0: it goes straight to the duplicate loop, which skips empty slots (`MAGICAFFIX_GetRecord` returns NULL for
   id 0). (a) When the side has **no filled slot**, the 0 is stored in that side's slot and the counter advanced: the
   slot stays empty, counts towards the side's 3, and the property pass skips it; the build still returns true, even
-  with every slot 0. (b) When the side **has a filled slot**, the group comparison reads the NULL record of id 0 at
-  `+0x5C` and the game faults; no redraw happens. Neither case was reached, and whether stock data can reach them
-  (a crafted base and ilvl where a later pick of a side has no candidate) was not surveyed. [I] (0x005C2300–0x005C23A6,
-  0x005C23E0–0x005C248B, fn:MAGICAFFIX_GetRecord@0x00633EE0, fn:ITEMS_SetPrefix@0x00627EF0, fn:ITEMS_SetSuffix@0x00627FB0,
+  with every slot 0. [I] (0x005C2300–0x005C23A6, fn:ITEMS_SetPrefix@0x00627EF0, fn:ITEMS_SetSuffix@0x00627FB0,
   [items/0008 § 4](../../findings/items/0008-cube.md#4-crafted-sub_005c21d0_itembuildcrafted-ecx-item-edx-creation-record))
+- I4. (b) When the side **has a filled slot**, the group comparison reads the NULL record of id 0 at `+0x5C` and the
+  game faults; no redraw happens. Crafting at output ilvl 1 (clvl 1, input ilvl 1) on light boots (row 83) drew a
+  second suffix of 0 against slot 0 holding suffix 730: the record read at 0x005C2460 was 0 and the game ended there,
+  its crash report giving `ACCESS_VIOLATION` at 0x005C2460 under case 8's call (0x005577E5). [C] (0x005C2441–0x005C2460, fn:MAGICAFFIX_GetRecord@0x00633EE0,
+  fn:sub_005C21D0_ItemBuildCrafted@0x005C21D0, run:2026-10-27-sweep-cube, [items/0008 § Plan 0038 batch H6a](../../findings/items/0008-cube.md#plan-0038-batch-h6a-run2026-10-27-sweep-cube) S2c piece, cube 49)
+- I4. **Stock data reaches a pick of 0.** The prefix and suffix groups are disjoint but one (group 0), and a side whose
+  candidates span *g* ≤ 2 groups gives a pick of 0 at its (*g* + 1)-th affix: rows 72 and 90 on a short staff (`sst`,
+  suffixes in 1 group at output ilvl 1), row 83 on light boots (`lbt`, 1 group at ilvl 1–3, 2 at 4–5), row 84 on
+  light gloves (`lgl`, 2 groups at ilvl 1–3). Every other crafted base and ilvl has 3 or more groups per side. The
+  crafted rows' output ilvl is `clvl × 50 ÷ 100 + ilvl × 50 ÷ 100`, so only a low-level character reaches these. [C]
+  (fn:sub_005C21D0_ItemBuildCrafted@0x005C21D0, tbl:MagicSuffix.txt:group, [items/0008 § Plan 0038 batch S2c](../../findings/items/0008-cube.md#plan-0038-batch-s2c-2026-10-16) cube 49)
+- I4. Case (a) has no stock case: it needs a side whose first pick has no candidate, all its candidates in group 0,
+  and no crafted row, base, output ilvl and side has that (0 of 40 194). [I] (0x005C2300–0x005C23A6,
+  tbl:MagicPrefix.txt:group, tbl:MagicSuffix.txt:group)
 - I1. An item of version 0 takes `sub_005C19A0_PickRareNameV0` instead; not reached. [I] (fn:sub_005C19A0_PickRareNameV0@0x005C19A0)
 
 ### J. A random item of a type — `sub_00565930_CubePickItemOfType`
@@ -707,13 +797,13 @@ Step notes:
 ```
 J1. start: u32 ← Range(game.seed, nItems)                                       [C] draw (fn:sub_00565930_CubePickItemOfType@0x00565930, fn:RNG_RangeB@0x0045C3E0, run:2026-10-15-cube, all of J1–J3)
 J2. cand ← []
-    for j from start upward, wrapping at nItems, stopping BEFORE start − 1:     ; start − 1 is never examined
+    for j from start upward, wrapping at nItems, stopping BEFORE start − 1:     ; start − 1 is never examined; [I] (0x005659B7)
       if ITEMS_IsType(Items[j], type) and Items[j].spawnable
          and (Items[j].version < 100 or game.itemVersion ≥ 100)
          and Items[j].level ≤ ilvl                                              ; signed
-         and len(cand) < 256:
+         and len(cand) < 256:                                                   ; [I] the cap: no stock case (0x00565A54)
         append j
-J3. if cand is empty: return 0                                                  ; item record 0, no second draw
+J3. if cand is empty: return 0                                                  ; item record 0, no second draw; [I] no stock case (0x00565A54)
     return cand[Range(game.seed, len(cand))]                                    ; draw
 ```
 
@@ -722,8 +812,11 @@ Step notes:
 - J1–J3. Both draws come before `ItemCreate`, on the game seed. Row 19 (`pole,mag,pre=191`, ilvl from `lvl` 50) picked a
   scythe (`scy`, record 59) from ten candidates, with the prefix *Savage* forced; one transmute. [C] (0x00565930–0x00565A71,
   fn:ITEMS_IsType@0x00629A90, tbl:Weapons.txt:level, tbl:Weapons.txt:spawnable, run:2026-10-15-cube)
-- J2–J3. One transmute cannot distinguish the skipped record `start − 1` (the last record when `start` is 0), the
-  256-candidate cap or the empty case. [I] (0x005659B7, 0x00565A54)
+- J2–J3. The logged row-19 transmutes (four over both runs; run:2026-10-27-sweep-cube's three had `start` 28, 255
+  and 505) do not distinguish the skipped record `start − 1` (the last record when `start` is 0): in none was it a
+  candidate, a chance of 10 in 659 per transmute. The 256-candidate cap and the empty case have no stock case: row 19
+  is the only stock kind-`0xFD` row, and its type `pole` has 18 spawnable items, levels 5–85. [I] (0x005659B7,
+  0x00565A54, tbl:Weapons.txt:spawnable, [items/0008 § Plan 0038 batch H6a](../../findings/items/0008-cube.md#plan-0038-batch-h6a-run2026-10-27-sweep-cube) cube 51)
 
 ### K. The copy's seeds — `sub_0055A2A0_ItemCopy`
 
@@ -732,6 +825,8 @@ K1. Step(game.seed)                                       ; SUnitCreate         
 K2. Step(game.seed); copy.start ← low; Init(copy.itemSeed, copy.start)          ; ItemSeedInit (0x0055532A): item seed {start, 666}
 K3. restore from the copy stream: Init(copy.unitSeed, source Unit+0x28), class, quality,
     file index, ilvl, affixes, rare names, flags, every stat list
+K4. if children are copied: for each socketed child of the source:               [C] for one child (0x0055A3A0–0x0055A468, run:2026-10-27-sweep-cube)
+      ItemCreateFromSave(child's stream): Step(game.seed) twice;  insert it into the copy   ; [I] per child (0x0055A3A0–0x0055A468)
 ```
 
 Step notes:
@@ -740,8 +835,21 @@ Step notes:
   start from `{start, 666}` of the second game-seed step, while its unit seed restarts from the source's saved
   `Unit+0x28`. 18 copies (15 `useitem`, 3 `mod`) had their start, item and unit seeds predicted. [C]
   (fn:sub_00552E90_ItemSeedInit@0x00552E90, 0x006302CF, run:2026-10-15-cube)
-- K3. The serialise path of the copy follows [save/d2s](../save/d2s.md); that path itself is not what the run tested.
-  [I] (fn:sub_0055A2A0_ItemCopy@0x0055A2A0)
+- K3. **The copy is a save round trip.** `ItemCopy` serialises the item (`ITEMS_Serialize`, whose walk reaches
+  `ITEMS_WriteFull`) and rebuilds it with `ItemCreateFromSave`, which calls `ITEMS_ReadFull`: the save writer and
+  reader of [save/d2s](../save/d2s.md). The 18 logged copies came back with the source's class, quality, affixes and
+  lists. [C] (fn:sub_0055A2A0_ItemCopy@0x0055A2A0, fn:ITEMS_Serialize@0x006313E0, fn:ITEMS_WriteFull@0x0062FFF0,
+  fn:ITEMS_ReadFull@0x0062CBE0, run:2026-10-15-cube, [items/0008 § Plan 0038 batch S2c](../../findings/items/0008-cube.md#plan-0038-batch-s2c-2026-10-16) cube 52)
+- K3. **A runeword's name id comes back in prefix slot 0.** The *Steel* copy held 20639 (`0x509F`) in prefix slot 0,
+  where the source's `ItemData+0x38` held 0; § F1's strip then cleared it. [C] (fn:sub_00558C50_ItemRemoveRuneword@0x00558C50,
+  run:2026-10-27-sweep-cube, [items/0008 § Plan 0038 batch H6a](../../findings/items/0008-cube.md#plan-0038-batch-h6a-run2026-10-27-sweep-cube) cube 36) The path: the writer saves `RUNEWORD_Match`'s row `+0x82`, not `+0x38`, and
+  the reader stores the 16 bits at `ItemData+0x38` (0x0062D1EA), as H6b logged on the loaded *Steel*. [I] (0x0062D1EA,
+  [items/0007 § Plan 0038 batch H6b](../../findings/items/0007-sockets-runewords.md#plan-0038-batch-h6b-run2026-10-27-sweep-sockets))
+- K4. **A copied child costs two more game-seed steps.** Row 130 on *Greyform* with one gem drew 4 game-seed steps
+  for the copy, the copy's start seed still the second step's. [C] (fn:sub_0055A2A0_ItemCopy@0x0055A2A0,
+  run:2026-10-27-sweep-cube, [items/0008 § Plan 0038 batch H6a](../../findings/items/0008-cube.md#plan-0038-batch-h6a-run2026-10-27-sweep-cube) cube 32) That the two steps are per child is read from the copy's child loop
+  (0x0055A3A0–0x0055A468), which creates each child with `ItemCreateFromSave`, the creator the copy itself calls
+  (0x0055A31C), then inserts it; no logged copy had two children. [I] (0x0055A3A0–0x0055A468, 0x0055A31C)
 
 ### L. The special outputs (kinds 1, 2, 3)
 
@@ -763,19 +871,19 @@ flowchart TD
 ```
 
 ```
-L1. CowPortalOpen(game, player):                                                [C] (fn:CUBE_CowPortalOpen@0x00594140, 0x00594149–0x00594260, run:2026-10-15-cube, all of L1)
+L1. CowPortalOpen(game, player):                                                [C] (fn:CUBE_CowPortalOpen@0x00594140, 0x00594149–0x00594260, run:2026-10-15-cube, run:2026-10-27-sweep-cube, all of L1)
       if GameQuestGet(4, 11): refuse                                            ; the game's own quest record
       q ← the player's quest record of game.difficulty
       if q.bit(4, 10): refuse
-      if game.expansion and not q.bit(40, 0): refuse                            ; word 26 not tested here
-L1a.  if RoomGetLevelId(room(player)) ≠ 1: refuse                               [I] (fn:sub_0061A1B0_RoomGetLevelId@0x0061A1B0)
-L2.   spot ← FreeSpotNear(player)                                               [C] ORACLE (0x00545340, fn:sub_0056D130_PortalObjectCreate@0x0056D130, run:2026-10-15-cube)
-      portal ← PortalObjectCreate(game, player, …, level 39, 0, class 60, 0)    ; ORACLE
-      if either fails: refuse
+      if not game.expansion: if not q.bit(26, 0): refuse                        ; 0x0059419E; word 40 not tested
+      else if not q.bit(40, 0): refuse                                          ; 0x005941BE; word 26 not tested
+L1a.  if RoomGetLevelId(room(player)) ≠ 1: refuse                               [C] (fn:sub_0061A1B0_RoomGetLevelId@0x0061A1B0, 0x005941DD, run:2026-10-27-sweep-cube)
+L2.   spot ← FreeSpotNear(player)                                               [C] ORACLE, no draw (0x00545340, run:2026-10-15-cube)
+      portal ← PortalObjectCreate(game, player, …, level 39, 0, class 60, 0)    [C] ORACLE, draws (fn:sub_0056D130_PortalObjectCreate@0x0056D130, run:2026-10-15-cube)
+      if either fails: refuse                                                   ; [I] no failure logged (0x0059420F, 0x0059422F)
       GameQuestSet(4, 11);  return 1                                            [C] (fn:sub_00544720_GameQuestSet@0x00544720, run:2026-10-15-cube)
-    refuse: UnitSetEvent(player, 20, …); return 0                               [I] (fn:sub_00553380_UnitSetEvent@0x00553380)
-L3. if not game.expansion and not q.bit(26, 0): refuse                          [I] (0x00594149–0x00594260)
-L4. PandemoniumPortalStub, PandemoniumFinalePortalStub: return 0                [C] (fn:CUBE_PandemoniumPortalStub@0x00594270, fn:CUBE_PandemoniumFinalePortalStub@0x00594280, run:2026-10-15-cube, run:2026-10-15-drlg-outdoor)
+    refuse: UnitSetEvent(player, 20, …); return 0                               [C] (fn:sub_00553380_UnitSetEvent@0x00553380, run:2026-10-27-sweep-cube)
+L3. PandemoniumPortalStub, PandemoniumFinalePortalStub: return 0                [C] (fn:CUBE_PandemoniumPortalStub@0x00594270, fn:CUBE_PandemoniumFinalePortalStub@0x00594280, run:2026-10-15-cube, run:2026-10-15-drlg-outdoor)
 ```
 
 Step notes:
@@ -788,21 +896,34 @@ Step notes:
   run:2026-10-15-cube)
 - L1. The run's quest bits and stat 356 were forced save states (ADR-0010): they test the gates, not which quest
   events set those bits in a game. [C] (run:2026-10-15-cube, plan 0030 Phase 2 review ruling 3)
-- L1a. Every opening was in level 1; a refusal for being outside level 1 was not tried. [I]
-  (fn:sub_0061A1B0_RoomGetLevelId@0x0061A1B0)
-- L2. **The spot search and the portal object are oracles.** Both draw from the game seed (it moved across each in
-  the three openings); how many draws and on what is not read. The arguments (level 39, object class 60) are read
-  from the call. [I] (0x00545340, fn:sub_0056D130_PortalObjectCreate@0x0056D130)
+- L1. **A classic game tests word 26, an expansion game word 40.** In a classic game with word 26 bit 0 clear the
+  portal was refused at that test, before any word-40 test; with word 26 bit 0 set and word 40 bit 0 clear it opened
+  in level 1, with event 4 only. The expansion games' word-40 test (0x005941BE, reached only when `Game+0x70` ≠ 0) is
+  run:2026-10-15-cube's. [C] (0x0059419E, 0x005941BE, fn:CUBE_CowPortalOpen@0x00594140, run:2026-10-15-cube, run:2026-10-27-sweep-cube,
+  [items/0008 § Plan 0038 batch H6a](../../findings/items/0008-cube.md#plan-0038-batch-h6a-run2026-10-27-sweep-cube) cube 54)
+- L1a. **Only in the Rogue Encampment.** In the Pandemonium Fortress (level 103) the tests passed up to the level test,
+  which refused: return 0, event 20, the leg and the tome left in the cube. The three openings of run:2026-10-15-cube
+  were in level 1. [C] (fn:sub_0061A1B0_RoomGetLevelId@0x0061A1B0, 0x005941DD, run:2026-10-15-cube,
+  run:2026-10-27-sweep-cube, [items/0008 § Plan 0038 batch H6a](../../findings/items/0008-cube.md#plan-0038-batch-h6a-run2026-10-27-sweep-cube) cube 53)
+- L1–L2. **A refusal sets event 20**: both logged refusals (the Pandemonium Fortress, classic word 26 clear) called
+  `UnitSetEvent(player, 20, …)` from `CUBE_CowPortalOpen` (return 0x00594258). [C] (fn:sub_00553380_UnitSetEvent@0x00553380,
+  run:2026-10-27-sweep-cube, [items/0008 § Plan 0038 batch H6a](../../findings/items/0008-cube.md#plan-0038-batch-h6a-run2026-10-27-sweep-cube) cube 7)
+- L2. **The spot search draws nothing; the portal object draws.** In all three openings the game seed at the spot
+  test equals the one at `CUBE_CowPortalOpen`'s entry, and an objdump walk under 0x00545340 (429 functions; 532 indirect
+  call sites not followed) reaches no seed step and no RNG call; the portal object then took 171, 173 and 171 game-seed steps. Both stay oracles for their results, and
+  the portal object for its draws. The arguments (level 39, object class 60) are read from the call. [C] (0x00545340,
+  fn:sub_0056D130_PortalObjectCreate@0x0056D130, run:2026-10-15-cube, [items/0008 § Plan 0038 batch S2c](../../findings/items/0008-cube.md#plan-0038-batch-s2c-2026-10-16) cube 55)
 - L. The cow portal row also has op 28, so the leg must be of the current difficulty (B5h). [C] (0x005652C9,
   run:2026-10-15-cube)
-- L4. **The Pandemonium portals open nothing in this executable.** Both handlers are `xor eax, eax; ret`, so rows 148
+- L3. **The Pandemonium portals open nothing in this executable.** Both handlers are `xor eax, eax; ret`, so rows 148
   (`pk1`, `pk2`, `pk3`) and 149 (`dhn`, `bey`, `mbr`) match, produce nothing, and § G leaves the cube untouched, in
   any game the executable hosts. Rows 148 and 149 were matched, their handlers entered and returned 0, nothing was
   destroyed; the earlier session k1 of run:2026-10-15-drlg-outdoor saw the same with Transmute pressed three times. [C]
   (0x00594270, 0x00594280, 0x00566400, run:2026-10-15-cube, run:2026-10-15-drlg-outdoor,
   [save/0002 § 6](../../findings/save/0002-quest-words.md#6-the-pandemonium-key-transmute-level-134-plan-0027-phase-2-2026-10-15))
-- L4. No caller in this binary passes the Pandemonium levels 133–136 to the portal creator. [I]
-  (fn:sub_0056D130_PortalObjectCreate@0x0056D130)
+- L3. No caller in this binary passes the Pandemonium levels 133–136 to the portal creator: its 12 call sites, from
+  Ghidra and a raw scan alike, and the levels they pass were traced (drlg/0008 § Plan 0038 batch S4b row 3). [C]
+  (fn:sub_0056D130_PortalObjectCreate@0x0056D130, [items/0008 § Plan 0038 batch S2c](../../findings/items/0008-cube.md#plan-0038-batch-s2c-2026-10-16) cube 56)
 
 ### M. Draws per output kind
 
@@ -823,11 +944,14 @@ sequenceDiagram
       T->>I: creation roll if quality 0, builder, ethereal and socket steps, automagic
     else copy: useitem, mod
       T->>G: SUnitCreate step, ItemSeedInit step
+      opt each copied child
+        T->>G: two steps
+      end
       opt mod
         T->>U: ItemInitStats on the copy
       end
     else cow portal
-      T->>G: spot search and portal object, ORACLE
+      T->>G: portal object ORACLE, the spot search draws nothing
     end
     loop mod lines
       T->>U: chance step, chance 1 to 99 only
@@ -843,9 +967,9 @@ sequenceDiagram
 | fixed code (`0xFC`) | game seed: `SUnitCreate` step, `ItemSeedInit` step; unit seed: base stats ([items/properties § A](properties.md#a-base-stats-on-the-unit-seed)); item seed from `{S, 666}`: the creation-side roll (§ H) when the record's quality is 0, else none, then the builder of the (overridden) quality, the ethereal and socket steps ([items/properties § F](properties.md#f-ethereal-and-sockets)), the automagic pick; then the mod lines | [C] (fn:sub_00558D90_ItemCreate@0x00558D90, run:2026-10-15-cube) |
 | item type (`0xFD`) | game seed: `Range(nItems)`, then `Range(count)` when there is a candidate (§ J); then as a fixed code | [C] (fn:sub_00565930_CubePickItemOfType@0x00565930, run:2026-10-15-cube) |
 | `usetype` (`0xFF`) | as a fixed code, with input 1's class (upgraded by `exc`/`eli`) | [C] (run:2026-10-15-cube) |
-| `useitem` (`0xFE`) | game seed: two steps (§ K); then the mod lines on the copy's fresh item seed, and `sock=N` (no draw) | [C] (fn:sub_0055A2A0_ItemCopy@0x0055A2A0, run:2026-10-15-cube) |
-| `mod` | game seed: two steps (§ K); unit seed: `ItemInitStats` on the copy; then the mod lines | [C] (fn:sub_00557AB0_ItemInitStats@0x00557AB0, run:2026-10-15-cube) |
-| Cow Portal | whatever the spot search and the portal object draw from the game seed (oracles) | [I] (0x00545340, fn:sub_0056D130_PortalObjectCreate@0x0056D130) |
+| `useitem` (`0xFE`) | game seed: two steps (§ K), then two more for a copied child (K4); then the mod lines on the copy's fresh item seed, and `sock=N` (no draw) | [C] with no child or one (fn:sub_0055A2A0_ItemCopy@0x0055A2A0, run:2026-10-15-cube, run:2026-10-27-sweep-cube); [I] two per child past the first (0x0055A3A0–0x0055A468) |
+| `mod` | game seed: two steps (§ K), then two more for a copied child (K4); unit seed: `ItemInitStats` on the copy; then the mod lines | [C] with no child or one (fn:sub_00557AB0_ItemInitStats@0x00557AB0, run:2026-10-15-cube, run:2026-10-27-sweep-cube); [I] two per child past the first |
+| Cow Portal | the portal object's game-seed draws (an oracle; 171, 173 and 171 steps in the three logged openings); the spot search draws nothing | [C] (0x00545340, fn:sub_0056D130_PortalObjectCreate@0x0056D130, run:2026-10-15-cube, [items/0008 § Plan 0038 batch S2c](../../findings/items/0008-cube.md#plan-0038-batch-s2c-2026-10-16) cube 55) |
 | Pandemonium portals | none | [C] (fn:CUBE_PandemoniumPortalStub@0x00594270, run:2026-10-15-cube) |
 | each mod line | unit seed: one step only when `chance` is 1..99 (never on stock data); item seed: the property handler's draws | [C] for the item-seed draws (fn:sub_00660240_CubeModApply@0x00660240, run:2026-10-15-cube); [I] for the chance step (0x00566204) |
 
@@ -977,26 +1101,46 @@ ids (prefix id = 747 + the prefix block row + 1); rare-name ids are merged rare 
   rune that ends at quality 2 has consumed those draws. [C] (fn:sub_00556F60_ItemRollQualityCreate@0x00556F60,
   run:2026-10-15-cube)
 - **Copies are not clones of the seed.** `useitem` and `mod` take two game-seed steps and roll their mod lines on a
-  new item seed; the unit seed comes back from the source's `Unit+0x28`. [C] (fn:sub_0055A2A0_ItemCopy@0x0055A2A0,
-  run:2026-10-15-cube)
+  new item seed; the unit seed comes back from the source's `Unit+0x28`. A copied child adds two more game-seed steps.
+  [C] (fn:sub_0055A2A0_ItemCopy@0x0055A2A0, run:2026-10-15-cube, run:2026-10-27-sweep-cube) Count two for each child
+  of a copy with several: read from the child loop, not logged. [I] (0x0055A3A0–0x0055A468)
+- **An ethereal upgrade is plain, then ×3/2.** `ItemInitStats` on the re-based copy writes the plain values; the mod
+  line's `ITEMS_MakeEthereal` applies the bonus. Do not apply it in the re-base. [C] (fn:ITEMS_MakeEthereal@0x0065E4D0,
+  run:2026-10-27-sweep-cube)
 - **Crafted: a side draw every slot**, and the count is raised to the tier, never lowered. [C]
   (fn:sub_005C21D0_ItemBuildCrafted@0x005C21D0, run:2026-10-15-cube)
 - **Forced affix ids are block rows + 1**, taken with no weighted draw. [C]
   (fn:ITEMS_PickMagicAffix@0x005C1560, run:2026-10-15-cube)
-- **A forced row skips only the level window** ([items/affixes § C](affixes.md#c-one-magic-affix-pick--items_pickmagicaffix),
-  C4i); the run's forced picks were not checked against their rows' windows. [I] (0x005C16FE–0x005C1713)
+- **A forced row skips the level window** ([items/affixes § C](affixes.md#c-one-magic-affix-pick--items_pickmagicaffix),
+  C4i): row 17 on a magic tower shield (output ilvl 30, alvl 19) took the forced *of Spikes* (`suf=162`, level 21). [C]
+  (0x005C16FE–0x005C1713, fn:ITEMS_PickMagicAffix@0x005C1560, run:2026-10-27-sweep-cube, [items/0008 § Plan 0038 batch H6a](../../findings/items/0008-cube.md#plan-0038-batch-h6a-run2026-10-27-sweep-cube) cube 58)
+- That it skips **only** the level window, a forced row failing another C4 test being passed over, has no separating
+  stock case: the 8 forced ids of the stock table (rows 6–10, 17–19) pass every other test. [I] (0x005C16D3–0x005C17AD,
+  tbl:CubeMain.txt:output)
+- **A crafted item at a low output ilvl can fault the game.** On rows 72, 83, 84 and 90 a side with too few groups
+  picks 0 against a filled slot and the duplicate test reads a NULL record (I4 (b)); a reimplementation that wants the
+  1.14d outcome must stop there, not draw again. [C] (0x005C2460, run:2026-10-27-sweep-cube, tbl:MagicSuffix.txt:group,
+  [items/0008 § Plan 0038 batch S2c](../../findings/items/0008-cube.md#plan-0038-batch-s2c-2026-10-16) cube 49; the fault logged on row 83 only)
 - **Nothing produced, nothing consumed.** A row that matches but produces nothing (the Pandemonium rows, a refused
   cow portal) leaves the inputs in the cube. [C] (0x00566400, run:2026-10-15-cube)
-- **`qty=` and `sock=` share one byte**: test the `sock` flag to know which it is. [I] (0x0056632A)
+- **`qty=` and `sock=` share one byte**: test the `sock` flag to know which it is. [C] (0x0056632A, run:2026-10-15-cube,
+  run:2026-10-27-sweep-cube)
 
 ## Evidence
 
 - [items/0008](../../findings/items/0008-cube.md): the packet path, the row filter and ops (§ 1), the inputs (§ 2),
   the outputs (§ 3), the crafted builder (§ 4), the special outputs (§ 5), the draws per kind (§ 6), the Phase 2
   readings (§ 8: the creation-side roll, `ItemCopy`, `CubePickItemOfType`, other results), and *Leads used*
-  (29 verdicts, Phase 1b); § Plan 0038 batch S2c cube 45 (the output cell) and § Plan 0039 batch P1b (`UnitStatDelta`).
+  (29 verdicts, Phase 1b); § Plan 0038 batch S2c (the output cell, the static raises and surveys, the cow portal's
+  draws); § Plan 0039 batch P1b (`UnitStatDelta`); § Plan 0038 batch H6a (the packet chain, the events, the tier and
+  strip tests, the ethereal upgrade, the repair, recharge and stack steps, the copy's children, the quest hooks, the
+  cow portal's level and classic tests, the crafted pick of 0).
 - [run:2026-10-15-cube](../../findings/items/experiments.md#run2026-10-15-cube): 29 sessions, 182 transmutes,
   0 mismatches (`tools/cube.py check`).
+- [run:2026-10-27-sweep-cube](../../findings/items/experiments.md#run2026-10-27-sweep-cube): 8 sessions, 26 transmutes
+  reproduced and one faulting, 0 mismatches (`tools/sweep_h6a.py check`). Its saves are tool-built inputs (damaged,
+  broken, charged, stacked, ethereal and socketed items, a clvl-1 character, quest bits, the Act IV act byte); each
+  backs only the code that reads that state, not how a game reaches it (ADR-0013 § Neutral).
 - [run:2026-10-15-drlg-outdoor](../../findings/drlg/experiments.md#run2026-10-15-drlg-outdoor): the Pandemonium
   key transmute that opened nothing.
 - [items/0002 § 8](../../findings/items/0002-quality-roll.md#8-the-other-quality-roll-and-the-creation-fallbacks-named-only):
@@ -1015,11 +1159,12 @@ ids (prefix id = 747 + the prefix block row + 1); rare-name ids are merged rare 
 
 ## Open questions
 
-- [L] **The ethereal upgrade.** Whether `ItemInitStats`, re-run on an upgraded ethereal copy, applies the ethereal base
-  bonus itself, or only the following mod line's `ITEMS_MakeEthereal` does; the run upgraded no ethereal item
-  ([items/0008 § Open questions](../../findings/items/0008-cube.md#open-questions)).
-- [L] **The cow portal's oracles.** How many draws the free-spot search and the portal object take from the game seed,
-  and on what; and the classic word-26 gate, not exercised (the words' writers: [quests/progression § Word 4](../quests/progression.md#word-4-cain-the-cairn-stones-tristram-and-the-cow-king-quest-object-4)).
+- ~~**The ethereal upgrade.** Whether `ItemInitStats`, re-run on an upgraded ethereal copy, applies the ethereal base
+  bonus itself.~~ Answered: it writes the plain values and the mod line's `ITEMS_MakeEthereal` applies the bonus
+  (§ E, E3 note; § F, F2 note; items/0008 § Plan 0038 batch H6a, cube 38).
+- [L] **The cow portal's object.** What the portal object's game-seed draws (171 to 173 in the logged openings) are
+  spent on. The spot search draws nothing and the classic word-26 gate is logged (§ L); the words' writers are in
+  [quests/progression § Word 4](../quests/progression.md#word-4-cain-the-cairn-stones-tristram-and-the-cow-king-quest-object-4).
 - ~~**The output cell.** The search order of `sub_00560200_InvPlaceItem` in the cube grid.~~ Answered: § G, step note
   G4 (the player spot search on the empty grid; items/0008 § Plan 0038 batch S2c, cube 45).
 - ~~**The stat-delta ops.** `sub_00625560_UnitStatDelta`'s two stat-list reads are not identified.~~ Answered: stat
@@ -1027,7 +1172,9 @@ ids (prefix id = 747 + the prefix block row + 1); rare-name ids are merged rare 
   No stock row uses ops 11–14 or 23–26, so the reading stays inferred.
 - [L] **Interaction type 4** (what sets it) and the client's view of a refused transmute: not read; no effect on the
   server outcome.
-- [L] **Not reached in the run**, so the statements above about them stay inferred: outputs B and C, `uns`, `rem`, `reg`, `tmp`, the
-  mod `chance`, ops 1–27, `eth`, `exc`, `eli` and `nru` inputs, a crafted pick of 0, `upg` across a tier, `rep` on a damaged or broken
-  item, `rch` with charges, `qty=` on a stackable output, `hst` and `qf2` outputs, the `MaxLvl` cap, the
-  `CubePickItemOfType` edge cases and the 252-redraw bound.
+- [L] **Not reached in the runs**, so the statements above about them stay inferred: outputs B and C, `rem`, `reg`,
+  `tmp`, the mod `chance`, ops 1–27, `eth`, `eli` and `nru` inputs, a crafted pick of 0 on an empty side (case (a)),
+  the crafted fallback, the `MaxLvl` cap, the `CubePickItemOfType` edge cases and the 252-redraw bound (no stock case
+  for any of these); and, with stock cases left unlogged, a repair that separates the evaluated from the base maximum
+  durability, a recharge of an item with several charge entries, a stack refill whose max stack exceeds 255, a copy
+  with two or more children, and a row-19 transmute whose `start − 1` is a candidate.

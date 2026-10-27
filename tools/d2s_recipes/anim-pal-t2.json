@@ -1,0 +1,113 @@
+{
+ "game": "expansion",
+ "class": "Paladin",
+ "seed": 5032,
+ "name": "AnimPal2",
+ "progression": 15,
+ "difficulty": [
+  131,
+  131,
+  131
+ ],
+ "waypoints": {
+  "normal": "all",
+  "nightmare": "all",
+  "hell": "all"
+ },
+ "quests": "all",
+ "stats": {
+  "strength": 150,
+  "energy": 200,
+  "dexterity": 100,
+  "vitality": 25,
+  "hitpoints": 1500,
+  "maxhp": 1500,
+  "mana": 600,
+  "maxmana": 600,
+  "stamina": 400,
+  "maxstamina": 400,
+  "level": 25,
+  "experience": 2050449
+ },
+ "skills": {
+  "Holy Bolt": 1,
+  "Holy Shield": 1,
+  "Sacrifice": 1
+ },
+ "mouse": {
+  "left": "Attack",
+  "right": "Holy Bolt",
+  "swap_left": "Attack",
+  "swap_right": "Holy Bolt"
+ },
+ "hotkeys": [
+  "Attack",
+  "Holy Bolt",
+  "Kick",
+  "Holy Shield",
+  "Sacrifice"
+ ],
+ "belt_fill": [
+  "rvl",
+  "rvl",
+  "rvl",
+  "mp5"
+ ],
+ "items": [
+  {
+   "code": "crs",
+   "equip": "rarm",
+   "suffix": 18
+  },
+  {
+   "code": "buc",
+   "equip": "larm",
+   "suffix": 172
+  },
+  {
+   "code": "spr",
+   "equip": "rarm2",
+   "suffix": 18
+  },
+  {
+   "code": "rin",
+   "equip": "rrin",
+   "suffix": 173
+  },
+  {
+   "code": "rin",
+   "equip": "lrin",
+   "suffix": 173
+  },
+  {
+   "code": "qui",
+   "equip": "tors",
+   "suffix": 263
+  },
+  {
+   "code": "vbt",
+   "equip": "feet",
+   "suffix": 113
+  },
+  {
+   "code": "amu",
+   "equip": "neck",
+   "suffix": 173
+  },
+  {
+   "code": "ci0",
+   "equip": "head",
+   "suffix": 174
+  },
+  {
+   "code": "lgl",
+   "equip": "glov",
+   "suffix": 674
+  },
+  {
+   "code": "mbl",
+   "equip": "belt",
+   "suffix": 263
+  }
+ ]
+}

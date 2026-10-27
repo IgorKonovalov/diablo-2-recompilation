@@ -9,14 +9,14 @@ context:
   - ../../findings/anim/0001-modes-frames.md#leads-used
   - ../../findings/anim/0002-rates.md#leads-used
   - ../../findings/anim/0003-movement-gates.md#leads-used
-  - ../2026-10-27-reverser-reverser-plan-0050-p1b-contradicted-cases.md
+  - 2026-10-27-reverser-reverser-plan-0050-p1b-contradicted-cases.md
 resolution: "Reviewed 2026-10-27 (architect, lane/p50v review): accept with fixes (4). P1b-1 ruled a counting difference: A1, C1, H1, B1 to held with refinement, A2 stays contradicted, P1b-1 required with the fields that settle it; counts held 7, refined 33, contradicted 19 (9, D2R 7, 1.09 3), not covered 2; P1b-10 not conditional (Blood Raven, Hell); 28 verdicts given anchors. Phase 1b done. Plan 0050 log."
 ---
 
 Review `lane/p50v`: plan 0050 Phase 1b part 2, one verdict per [anim/leads](../../findings/anim/leads.md) claim (61)
 against anim/0001–0003 and the P0 data, in the findings' *Leads used* and the leads' Verdict column and § 12; the
 contradicted claims written into Phase 2's *Done when* as P1b-1 … P1b-15
-([entry](../2026-10-27-reverser-reverser-plan-0050-p1b-contradicted-cases.md)). Static, no Ghidra, no harness.
+([entry](2026-10-27-reverser-reverser-plan-0050-p1b-contradicted-cases.md)). Static, no Ghidra, no harness.
 
 What to check:
 - the counts (held 7, held with refinement 29, contradicted 23 = 9 + 11 `(version: D2R)` + 3 `(version: 1.09)`, not

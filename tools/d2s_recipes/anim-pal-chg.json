@@ -1,0 +1,79 @@
+{
+ "game": "expansion",
+ "class": "Paladin",
+ "seed": 5482,
+ "name": "AnimPalChg",
+ "progression": 15,
+ "difficulty": [
+  131,
+  131,
+  131
+ ],
+ "waypoints": {
+  "normal": "all",
+  "nightmare": "all",
+  "hell": "all"
+ },
+ "quests": "all",
+ "stats": {
+  "strength": 150,
+  "energy": 200,
+  "dexterity": 100,
+  "vitality": 25,
+  "hitpoints": 1500,
+  "maxhp": 1500,
+  "mana": 600,
+  "maxmana": 600,
+  "stamina": 400,
+  "maxstamina": 400,
+  "level": 25,
+  "experience": 2050449
+ },
+ "skills": {
+  "Charge": 5,
+  "Holy Bolt": 1,
+  "Sacrifice": 1
+ },
+ "mouse": {
+  "left": "Attack",
+  "right": "Charge",
+  "swap_left": "Attack",
+  "swap_right": "Charge"
+ },
+ "hotkeys": [
+  "Attack",
+  "Charge",
+  "Kick",
+  "Holy Bolt",
+  "Sacrifice"
+ ],
+ "belt_fill": [
+  "rvl",
+  "rvl",
+  "rvl",
+  "mp5"
+ ],
+ "items": [
+  {
+   "code": "mbl",
+   "equip": "belt"
+  },
+  {
+   "code": "crs",
+   "equip": "rarm"
+  },
+  {
+   "code": "buc",
+   "equip": "larm"
+  },
+  {
+   "code": "crs",
+   "equip": "rarm2",
+   "suffix": 18
+  },
+  {
+   "code": "buc",
+   "equip": "larm2"
+  }
+ ]
+}

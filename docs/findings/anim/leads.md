@@ -196,7 +196,7 @@ The Basin "Attack speed" page was re-fetched for A4 (rev 65669, unchanged) and t
 61 verdicts, counted with `grep -cE '^\| [RACDHBM][0-9]+ \|.*\*\*<verdict>'` (`\*\*held\*\*` 7, `\*\*held with
 refinement\*\*` 33, `\*\*contradicted` 19 of which `version: D2R\)\*\*` 7 and `version: 1\.09\)\*\*` 3, `\*\*not
 covered\*\*` 2). Every contradicted row is reachable on stock data and is a required Phase 2 case, P1b-1 … P1b-15 of
-the [backlog entry](../../backlog/2026-10-27-reverser-reverser-plan-0050-p1b-contradicted-cases.md) and of plan 0050's
+the [backlog entry](../../backlog/archive/2026-10-27-reverser-reverser-plan-0050-p1b-contradicted-cases.md) and of plan 0050's
 Phase 2 *Done when*. The largest is P1b-1: every table and Basin row gives one frame fewer than the code's
 `n = ⌈256 (F − S) / r⌉` for a record mode, and the sources' sequence count (Lightning) equals it.
 

@@ -1,0 +1,118 @@
+{
+ "game": "expansion",
+ "class": "Amazon",
+ "seed": 5002,
+ "name": "AnimAma2",
+ "progression": 15,
+ "difficulty": [
+  131,
+  131,
+  131
+ ],
+ "waypoints": {
+  "normal": "all",
+  "nightmare": "all",
+  "hell": "all"
+ },
+ "quests": "all",
+ "stats": {
+  "strength": 150,
+  "energy": 200,
+  "dexterity": 100,
+  "vitality": 25,
+  "hitpoints": 40,
+  "maxhp": 40,
+  "mana": 600,
+  "maxmana": 600,
+  "stamina": 400,
+  "maxstamina": 400,
+  "level": 25,
+  "experience": 2050449
+ },
+ "skills": {
+  "Inner Sight": 1,
+  "Magic Arrow": 1,
+  "Jab": 1
+ },
+ "mouse": {
+  "left": "Attack",
+  "right": "Inner Sight",
+  "swap_left": "Attack",
+  "swap_right": "Inner Sight"
+ },
+ "hotkeys": [
+  "Attack",
+  "Inner Sight",
+  "Kick",
+  "Throw",
+  "Jab"
+ ],
+ "belt_fill": [
+  "rvl",
+  "rvl",
+  "rvl",
+  "mp5"
+ ],
+ "items": [
+  {
+   "code": "jav",
+   "equip": "rarm",
+   "quantity": 60
+  },
+  {
+   "code": "buc",
+   "equip": "larm",
+   "suffix": 172
+  },
+  {
+   "code": "sbw",
+   "equip": "rarm2",
+   "suffix": 16
+  },
+  {
+   "code": "aqv",
+   "equip": "larm2",
+   "quantity": 150
+  },
+  {
+   "code": "rin",
+   "equip": "rrin",
+   "suffix": 173
+  },
+  {
+   "code": "rin",
+   "equip": "lrin",
+   "suffix": 173
+  },
+  {
+   "code": "qui",
+   "equip": "tors",
+   "suffix": 263
+  },
+  {
+   "code": "vbt",
+   "equip": "feet",
+   "suffix": 113
+  },
+  {
+   "code": "amu",
+   "equip": "neck",
+   "suffix": 173
+  },
+  {
+   "code": "ci0",
+   "equip": "head",
+   "suffix": 174
+  },
+  {
+   "code": "lgl",
+   "equip": "glov",
+   "suffix": 674
+  },
+  {
+   "code": "mbl",
+   "equip": "belt",
+   "suffix": 263
+  }
+ ]
+}

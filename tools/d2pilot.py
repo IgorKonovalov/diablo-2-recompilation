@@ -2650,6 +2650,13 @@ def cmd_explore(args):
                 if not gate.cast(p, st):
                     break
                 time.sleep(args.cast_wait)
+                if args.drink_in_burst:     # plan 0050 Phase 2: a fragile character drinks between the clicks too
+                    hpb = p.hp()
+                    if hpb is not None and args.dead_below <= hpb < args.drink:
+                        npot += 1
+                        col = [c for c in (1, 2, 3, 4) if c != args.mana_col][npot % 3]
+                        p.potion(col)
+                        print("hop %d: life %.2f in a burst, potion %d" % (k, hpb, col))
         if args.potion and k % args.potion == 0:
             p.potion(1 + (k // args.potion) % 4)
         hp = p.hp()
@@ -3235,6 +3242,8 @@ def main():
     ap.add_argument("--merc-drink", type=float, default=0, help="farm, hunt: give the mercenary a belt potion "
                     "(Shift + column key) below this fill of its most seen MON life (0: never)")
     ap.add_argument("--drink", type=float, default=0.6, help="drink a belt potion below this life-orb fill")
+    ap.add_argument("--drink-in-burst", action="store_true", help="explore: also sample the life orb after each "
+                    "click of a burst and drink below --drink (plan 0050 Phase 2, the get-hit sessions)")
     ap.add_argument("--dead-below", type=float, default=0.05,
                     help="explore: stop as dead below this life-orb fill (0: never; plan 0047 Phase 2, StatsFloor at 1 %%)")
     ap.add_argument("--to-pdef", help="go to the room of this LvlPrest Def (or any of a comma-separated list) in the "

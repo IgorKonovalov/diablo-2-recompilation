@@ -2913,7 +2913,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Backlog:** review request
     [2026-10-20-reverser-architect-review-h2b-items-chain](../backlog/archive/2026-10-20-reverser-architect-review-h2b-items-chain.md);
     spec-writer entry
-    [2026-10-20-reverser-spec-writer-h2b-items-chain-spec-updates](../backlog/2026-10-20-reverser-spec-writer-h2b-items-chain-spec-updates.md)
+    [2026-10-20-reverser-spec-writer-h2b-items-chain-spec-updates](../backlog/archive/2026-10-20-reverser-spec-writer-h2b-items-chain-spec-updates.md)
     (to be released with the review).
   - **Next:** architect review of `lane/h2b`; then H2c.
 - **2026-10-20 — Review of `lane/h2b`, batch H2b (items: affixes, tc, uniques-sets, properties, sockets-runewords;
@@ -2953,7 +2953,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Backlog:** review request
     [2026-10-20-reverser-architect-review-h2b-items-chain](../backlog/archive/2026-10-20-reverser-architect-review-h2b-items-chain.md)
     closed; the spec-writer entry
-    [2026-10-20-reverser-spec-writer-h2b-items-chain-spec-updates](../backlog/2026-10-20-reverser-spec-writer-h2b-items-chain-spec-updates.md)
+    [2026-10-20-reverser-spec-writer-h2b-items-chain-spec-updates](../backlog/archive/2026-10-20-reverser-spec-writer-h2b-items-chain-spec-updates.md)
     released (open, for the Phase 3 re-tag of items/tc, uniques-sets, affixes, properties and sockets-runewords).
   - **Next:** H2c (forced), after the H2b merge.
 - **2026-10-20 — Phase 3, the items/affixes cluster (spec-writer, `lane/s38h2b`, from `main` `33484f8`).** The cluster
@@ -5184,6 +5184,260 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - § 5 marks H6b done, and the research-map row says the spec is ready.
   - **Phase 3 ready: items/sockets-runewords** (S2c, H2b and H6b, all accepted).
   - No H6b spec-writer entry existed, so the review filed one:
-    [2026-10-27-architect-spec-writer-h6b-sockets-raises-for-the-phase-3-re](../backlog/2026-10-27-architect-spec-writer-h6b-sockets-raises-for-the-phase-3-re.md).
+    [2026-10-27-architect-spec-writer-h6b-sockets-raises-for-the-phase-3-re](../backlog/archive/2026-10-27-architect-spec-writer-h6b-sockets-raises-for-the-phase-3-re.md).
   - The S2c harness-pieces entry stays open for H6a and H6c.
   - Review request closed; the lane's ledger row is filled.
+- **2026-10-27 — Phase 3, the items/sockets-runewords cluster (spec-writer, `lane/s38k`, from `main` `ad8b8cd0`).**
+  Batches S2c, H2b and H6b, all accepted; each restated statement checked against its section of
+  [items/0007](../findings/items/0007-sockets-runewords.md) (§ Plan 0038 batch S2c, H2b, H6b) and the reviews'
+  rulings.
+  - **items/sockets-runewords** {C 80, I 83, L 7} → **{C 128, I 84, L 7}** (recounted with the gate's tag reader).
+    Raised: S2c sock 2 (the drop roll, cube and Larzuk callers), 3, 4 (`itype1..3`), 5, 6 (the shared index), 8, 19,
+    20, 25 (with the 422 correction), 26 (Pul, Ith, Sol, Ohm), 27, 28 ×2, 32, 34, 36 L472, 41, 43 (no quality switch),
+    44, 45, 46, 47 (the count and the re-insert); H2b sock 42 (F1's cap steps and order) and sock 44's piece; H6b sock
+    1 (the copier, its own unit as the player), 10 ×2 (built states, with the no-stock note `[I]`), 12 L173, 13 in
+    part, 14's piece (two cases), 16 ×2, 17 L291 (`p4`, `p6`, `p7`) and L237's empty slot, 18 (the 252 timer, and the
+    timers outside the insert, scoped to the run), 21, 35 ×2 (the test by state alone; the `0x40` an `[I]` note),
+    38 L481 (*Leaf*), L490, L505 in part. Kept `[I]` as the ledgers rule: sock 1 L284 and the golem and other reader
+    sites, sock 9 (d-2c), 12 L174, 17's clear and its reason, 18's 253 half, 29 (d-none), 38's ranged half, L482 and
+    L507, and the S2c and H2b remainders. Pseudocode lines no run reached got inline `[I]` (B1, B2, B5–B6, C1, D1,
+    D3, E1, E4, F1, F2). Open questions: the child-level question struck; the `p5` question added.
+  - **items/properties F6** (rule 8): the no-clamp half for qualities 2 and 3 `[C]` (H2b sock 44); {C 152, I 22,
+    L 3} → {C 153, I 22, L 3}.
+  - **Wiki:** [items-other-paths](../wiki/items-other-paths.md) socketing section refreshed, `based_on`
+    sockets-runewords 2026-10-27; [items](../wiki/items.md) `based_on` properties 2026-10-27 (no text change).
+  - **Backlog:** closed the [H6b entry](../backlog/archive/2026-10-27-architect-spec-writer-h6b-sockets-raises-for-the-phase-3-re.md)
+    and the [H2b entry](../backlog/archive/2026-10-20-reverser-spec-writer-h2b-items-chain-spec-updates.md) ((r)–(s),
+    its last open items); annotated the [S2c entry](../backlog/2026-10-16-reverser-spec-writer-plan-0038-s2c-corrections-for-phase.md)
+    ((e), (g) done; (a), (d), (f) wait for cube and vendors); filed the
+    [counts entry](../backlog/archive/2026-10-27-spec-writer-architect-s38k-sockets-runewords-counts-for-the-research-map.md) and the
+    [review request](../backlog/archive/2026-10-27-spec-writer-architect-s38k-review-sockets-runewords-phase-3.md). Ledger row
+    added, usage "—".
+  - **Next:** architect review of `lane/s38k`.
+- **2026-10-27 — `lane/s38k` review (architect): Phase 3 of items/sockets-runewords and items/properties F6, accept
+  with fixes (8).** `main` (`ad8b8cd0`) was already the lane's base: the merge was empty and `backlog.py archive` moved
+  nothing. Static review: objdump on the pinned `game.exe`, no Ghidra, no harness.
+  - **Checked.** The diff restates +48 net `[C]` (+56, −8) and +1 `[I]`; the front matter matched the gate's reader.
+    Traced to the accepted ledgers within their reviews' scopes, more than a third of the new `[C]`: S2c sock 2 (the
+    creation callers, the forced count kept `[I]`), 3, 4, 5, 6, 8, 19, 20, 25 (422), 26, 27, 28 ×2, 32, 34, 36 L472,
+    41, 43, 45, 47; H2b sock 42 (F1's header scoped "but the marked lines", the write clamp `[I]` as the `lane/h2b`
+    review ruled) and sock 44's piece; H6b sock 1 (copier rows and bullets only; golem, version-71, corpse and
+    0x00563441 `[I]`), 10 ×2 (the built-state scope and the no-stock note `[I]`, ruling 1 of the H6b review), 12 L173,
+    14's piece, 16 ×2, 17 L291 and L237 (the empty slot `[C]`, the clear and its reason `[I]`, the H6b split), 18, 21,
+    35 ×2 (E1's test by state alone `[C]`, the `0x40` an `[I]` note), 38 L481 (*Leaf* only), L490, 46. The d-none
+    halves (sock 29's toggle and `0x100` child, sock 38's ranged func 17, L482, L507, the 253 schedule at an insert) and
+    sock 9 (d-2c) stay `[I]` with their reasons. Inline `[I]` sits on every unreached pseudocode line of B1, B2, B5–B6,
+    C1, D1, D3, E1, E2, E4 and F1–F2. objdump: `sub_00625790_UnitFindStatList` passes only the list and the state to
+    `0x00625650` when the state is non-zero (0x006257AC–0x006257B5), so L438's `0x40` correction holds; the timers'
+    13 direct call sites; `NPC_SellItem`'s `VENDOR_IsPermanent` branch (0x0057972F–0x00579736) over the copy call
+    0x00579747 (`push 1`, the same form as Anya's 0x0057A52E). Every `fn:` spot-checked resolves in `re/symbols.csv`.
+    Restatement inflation: the new *Entry points* bullets restate their table rows with the evidence, the pattern the
+    section already used for the packet and reader rows; not inflation.
+  - **Fixes.** (1) overclaim: the Malah-sale `[I]` said "a sale is not a copier case"; `NPC_SellItem` copies with the
+    second word 1 when `VENDOR_IsPermanent` is false, so the bullet is scoped to the logged sale. (2) misread: A1's
+    UI-state bullet said the two immediates are the only stores of 10 and 11; two register stores copy the slot table
+    at 0x007BC9E4 (unfollowed, the H6b review); the bullet also had no tag of its own (its `[I]` was in backticks) and
+    now carries `[I]`. (3) overclaim: "on these items the client copy got the socketed flag only once identified" for
+    two items, one of them never identified; scoped to the skull cap, on the spec and on wiki/items-other-paths.
+    (4) overclaim: "no game-written save has bit 11 on a ring or on gloves" (no save survey behind it) replaced by the
+    creation-path reason. (5) under-claim (rule 8): B5's 253 timer call was `[I]` though sock 18's ledger raises the
+    call ("the 252 then the 253 timer"); B5's line `[C]`, E4b split (the read `[C]`, `v` = 0 at all four; the schedule
+    `[I]`). (6) overclaim (rule 7): the Reimplementation notes kept "no runeword can form" in a classic game and "clamp
+    by quality only at creation" inside `[C]` bullets after D1's and F1's splits; each split, the second half `[I]`.
+    (7) omission: wiki/items-other-paths' handler-branch sentence left out the branches no stock runeword line uses
+    (funcs 8 and 11). (8) miscount: A1's built-state note counted a backticked `` `[C]` `` as a tag; reworded.
+    items/sockets-runewords is now **{C 129, I 85, L 7}**; items/properties **{C 153, I 22, L 3}**.
+  - **Rulings.** (1) **F6 stands.** H2b's sock 44 piece is a compared `[C]` (the cap after the quality switch equal to
+    `min(p, 6)` in all 34 calls, 21 above 3); a constant raised in one spec is raised in every spec that states it
+    (spec-writer rule 8), and "only qualities 2 and 3 reach it from here" stays `[I]`. (2) **E4's timers outside the
+    insert stand `[C]`, scoped to the run's 300 entries.** The `RPE` lines are logged entries, not a model's
+    prediction, and objdump gives the second source: 11 of the 13 direct calls of the two timers lie outside the insert
+    (the bullet now lists them). "Every item load and creation" is not claimed; the two outside 253 schedules stay
+    `[I]` (not compared, the H6b fix 4). (3) **The code-read splits stand as filed** (sock 6's `+0x084`, sock 4's
+    `itype4..6`/`etype`, the group ≥ 3 fatal line, sock 34's classic-legal sentence, sock 36's mode-6 sentence, sock
+    46's `0xFFFF`, sock 47's `hasinv`, sock 20's update queue, sock 21's ethereal and version test, sock 26's Zod):
+    each `[I]` part is the remainder its ledger names. (4) **The Malah-sale bullet may stay without an inventory row.**
+    It is a new `[I]` statement carried from the H6b ledger (sock 1), not a re-tag; it adds one `[I]` and moves no
+    inventory class. Scoped by fix (1). (5) The open-question changes stand: the child-level question is answered by
+    B1's `[C]`; the `p5` `[L]` is the finding's H6b question.
+  - **Research map.** The items/sockets-runewords row rewritten whole (C 129 / I 85 / L 7, Phase 3 done); the
+    items/properties row rewritten (C 153, updated 2026-10-27, F6).
+  - **Totals** (recomputed once, against `main` `ad8b8cd0`): unchanged, **static 567, harness 515, c-emu 0, blocked
+    425** (d-none 298, d-2c 8), **deferred 2, raised 17: 1 526.**
+  - **Bookkeeping.** Review-fixes Seen lines: spec-writer 2, 3, 7 and 8; architect 2. The review request and the counts
+    entry closed. Ledger: the lane row filled (usage from the orchestrator: 244 114 tokens, 83 tools, 20 min; accept
+    with fixes, 8: overclaim 4, misread 1, under-claim 1, omission 1, miscount 1); the review row added, usage "—".
+- **2026-10-27 — H6a (`cube`) filed (reverser, `lane/h6a`, harness slot 1, from `main` `fd841611`).** Run id
+  run:2026-10-27-sweep-cube, record in [items experiments](../findings/items/experiments.md#run2026-10-27-sweep-cube),
+  evidence in [items/0008 § Plan 0038 batch H6a](../findings/items/0008-cube.md#plan-0038-batch-h6a-run2026-10-27-sweep-cube).
+  - **Built:** logger revision r4 of `tools/gdb/cube.py` (the packet-to-transmute chain, `UnitSetEvent`, the runeword
+    strip, the two quest hooks, the crafted builder's null-record read, the children's list owners), session driver
+    `tools/h6a_sessions.py` (`cube_sessions.py`'s layouts, a step's rune inserts, the Act IV act byte, the crash
+    session's own game directory), checker `tools/sweep_h6a.py check|static|tables`, `tools/cube.py` extended (`uns`,
+    `rep` broken and stackable, `qty=`, the copy's children, placement bit 0), eight recipes
+    `tools/d2s_recipes/cube-h6a-*.json` (rows in `tools/test_d2s.py`, 60 tests OK).
+  - **Sessions:** 8 launches, all kept, no development log; Normal, expansion and classic, in town. The tooling
+    lessons applied: the Act IV start by act byte 131 (`-a4` recipes); no walking, so the Harrogath margin,
+    `--descend-to` and `--all-copies` were not needed; no Save and Exit, so the act-byte zeroing did not arise. The
+    faulting session ran in a symlink game copy inside slot 1's prefix; its crash folder is in `workspace/logs/h6a/dev/`.
+  - **Check:** `sweep_h6a.py check` over the 8 logs: 26 transmutes reproduced, 27 call chains, 23 `UnitSetEvent`
+    calls, **0 mismatches** (`check-final.txt` `15e54b63…`); regressions: `tools/cube.py check` on run:2026-10-15-cube
+    182 reproduced, 0 failed; `sweep_s2c.py cube` byte-identical.
+  - **Ledger (29): raised 22, raised in part 4, reclassified 2 (cube 16, 44 → d-none), shortfall 1 (cube 51)**
+    (inventory § 2.6 H6a block). Totals against `main` `fd841611`: static 567, harness 517, c-emu 0, blocked 423,
+    deferred 2, raised 17: 1 526.
+  - **S2c pieces:** cube 49 case (b) met (the game faults at 0x005C2460), case (a) d-none; aff 14's level-window half
+    met. Both stay counted as S2c, raised in part.
+  - **Symbols (rule 14), I → C:** `g_SrvPacketTable`, `SrvPacketDispatch`, `Pkt4FButton`, `PktInteractButton`,
+    `PlayerGetInteract`, `CubeButton`, `ItemRemoveRuneword`, `ItemRepairBroken`, `QuestStaffMade`,
+    `QuestKhalimWillMade`; new `sub_0055F590_ItemInvNonEmpty` (I).
+  - **Backlog:** review request
+    [2026-10-27-reverser-architect-review-lane-h6a-plan-0038-batch-h6a](../backlog/archive/2026-10-27-reverser-architect-review-lane-h6a-plan-0038-batch-h6a.md)
+    filed; spec-writer entry
+    [2026-10-27-reverser-spec-writer-h6a-cube-raises-for-the-phase-3-re](../backlog/archive/2026-10-27-reverser-spec-writer-h6a-cube-raises-for-the-phase-3-re.md)
+    held until the review; the S2c-pieces entry annotated (H6a parts done). Slot 1 stopped, saves restored (empty, no
+    aside).
+- **2026-10-27 — `lane/h6a` review (architect): accept with fixes (7).** Static review after merging `main`
+  `ad8b8cd0` (`lane/h6b`, `lane/s38q`; bookkeeping conflicts kept both sides; `backlog.py archive` moved nothing). The
+  three manifests pass `sha256sum -c`; under `systemd-run --user --scope -p MemoryMax=4G`, `sweep_h6a.py check`,
+  `static` and `tables` reproduce `check-final.txt`, `static.txt` and `tables.txt` byte for byte, `tools/cube.py check`
+  on run:2026-10-15-cube reproduces `regress-cube-run.txt` (182, 0 failed), `sweep_s2c.py cube` is byte-identical,
+  `test_d2s.py` 60 OK. Anchors objdumped (no Ghidra): the dispatcher's `call eax` at 0x0054D818 (return 0x0054D81A),
+  `UnitSetEvent(…, 4)` at 0x00566439, the faulting `mov eax, [eax+0x5C]` at 0x005C2460 after `MAGICAFFIX_GetRecord`,
+  InvPlaceItem's `ItemInvNonEmpty` → `ITEMS_SetFlag(item, 1, 1)` at 0x00560385–0x00560393, the cow tests (word 26 at
+  0x00594199, word 40 at 0x005941BE, `cmp eax, 1` on the level at 0x005941DD), the `rep` block 0x00566289–0x0056630C,
+  ItemCopy's child loop and CubeModApply's `MakeEthereal` call (0x00660280).
+
+  **Rulings:**
+  1. **Built states** (ADR-0013 § Neutral) each back only the code that reads them: `dur` 5 and the broken sword
+     (`0x100`, 72 = 0) the `rep` branches; the wand's stat-204 entry the refill; the knives' quantity the stackable
+     `rep`/`qty=` steps; the ethereal *Gull*'s flag the copy's `ItemInitStats` and the mod line's `MakeEthereal` (not a
+     game-made ethereal item's other stats, e.g. its durability); the socketed *Greyform* and the gemmed swords the
+     copy's child loop, `uns` and the placement bit; the magic and rare builder items the input tests; the clvl-1
+     character with ilvl-1 inputs the crafted builder at output ilvl 1 (cube 49 (b) is the code path, not a claim on
+     how a game reaches that ilvl); the quest bits and act byte 131 the cow and quest tests. *Steel* was formed by the
+     game's insert, not built. No raise rests on how a game reaches a built state.
+  2. **The crash session.** It ran in `workspace/wineprefix-1/drive_c/h6a-game`, a directory of symlinks to the shared
+     game files plus its own `BnetLog.txt`; its crash folder is in `dev/` (`manifest-dev.sha256` passes). The shared
+     game directory is untouched: `game.exe`, the three DLLs and `d2.lng` re-hash to `docs/inventory.md`'s values
+     (`game.exe` `631066c1…`), and the 11 MPQs it links re-hash to their recorded values (`docs/formats/`). Its own
+     `BlizzardError` folder holds two reports from 10:17 and 10:20, before H6a's first session (14:37): not this lane's.
+  3. **The d-none moves** stand, re-counted from the tables with `python3 -I` at review: cube 16, 0 of 389 inputs
+     with `eth` (4 with `noe`); cube 44, no output with `rem` (`uns` row 141 only); cube 49 (a), 0 of 40 194 crafted
+     cases (203 row-base pairs × 99 × 2), with a looser filter that can only add empty sides. The prefix groups
+     (101 and up) and the suffix groups (1 and up) are disjoint, so a first pick is never emptied by the other side.
+  4. **Refinements.** The ethereal upgrade stands `[C]`: `IIS1` logs the plain `9dg` values (6–18) between the copy's
+     `ItemInitStats` and the mod line, `CMODX` the ×3/2 (9–27); `MakeEthereal` sits inside `CubeModApply` (0x00660280),
+     which the loop calls once per line, so "after each line" follows. `ItemCopy`'s two extra steps are `[C]` for one
+     child; "per child" is `[I]` (fix 5). The runeword copy's 20639 is `0x509F`, H6b's *Steel* value; the path is
+     `[I]` with the reader's anchor (fix 7). `InvPlaceItem` bit 0 is raised to `[C]` (fix 6).
+  5. **Raises.** 18 of the 22 have a separating case: every chain return address, event 4 / 20 / none, `xmg` and `umg`
+     against a plain class test, `9dg` → `7dg` against the ubercode, *Steel* against the gemmed sword, `IIS1` against
+     `CMODX`, the damaged and broken paths, `qty=` with the `sock` flag clear against run:2026-10-15-cube's `sock=1`,
+     the two hooks against 18 other outputs, level 103 against level 1, classic word 26 against word 40. Four do not
+     (fixes 1–4). cube 15 stays raised: its `[I]` was "for a higher tier" alone.
+  6. **Symbols:** the 10 raises stand under rule 14 (logged returns, flags and quest words compared with the model).
+     `sub_0055F590_ItemInvNonEmpty` stays I (its return is not logged); `ITEMS_SetFlag` and `sub_00553380_UnitSetEvent`
+     stay I.
+
+  **Fixes** (each written into items/0008 § Plan 0038 batch H6a, the run record and the spec-writer entry):
+  1. *Overclaim:* cube 39 L491 → raised in part: which stat 73 the repair reads (evaluated, `STATS_GetUnitStat` at
+     0x005662F1, or base) is not separated (24 both), nor the 255 side of the stackable `min`.
+  2. *Overclaim:* cube 39 L524 → raised in part: one charge entry cannot separate "every stat-204 entry"; stock items
+     with 2–4 exist.
+  3. *Overclaim:* cube 40 L528 → raised in part: max stack 160 < 255; a 200-stack throwing weapon with *Dense* reaches
+     the 255 side on stock data.
+  4. *Overclaim:* cube 58 L968 → raised in part: "only" is aff 14's unseparated half (d-none part, checked: the 8
+     stock forced ids pass every other C4 test).
+  5. *Overclaim:* "two more steps per child" from one child: `[C]` for one, per child `[I]` from the loop at
+     0x0055A3A0–0x0055A468.
+  6. *Under-claim:* `InvPlaceItem` bit 0 `[C]`: the two row-141 copies, socketed with no child, kept `0x880810`.
+  7. *Omission:* the runeword copy's name id without the serialiser path (0x0062D1EA, items/0007 H6b).
+
+  **Bookkeeping:**
+  - H6a's ledger: **raised 18, raised in part 8, reclassified 2, shortfall 1: 29.**
+  - Totals, recounted against `main` `ad8b8cd0`: **static 567, harness 513, c-emu 0, blocked 427** (d-none 300,
+    d-2c 8), **deferred 2, raised 17: 1 526.**
+  - § 5 marks H6a done; the research-map row says the spec is ready.
+  - **Phase 3 ready: items/cube** (S2c and H6a, both accepted).
+  - The spec-writer entry is released, corrected:
+    [2026-10-27-reverser-spec-writer-h6a-cube-raises-for-the-phase-3-re](../backlog/archive/2026-10-27-reverser-spec-writer-h6a-cube-raises-for-the-phase-3-re.md).
+  - The S2c harness-pieces entry stays open for H6c.
+  - Review request closed; the lane's ledger row is filled.
+- **2026-10-27 — Phase 3, the items/cube cluster (spec-writer, `lane/s38c`, from `main` `7995eefc`).** Batches S2c
+  and H6a, both accepted; each restated statement checked against its section of
+  [items/0008](../findings/items/0008-cube.md) (§ Plan 0038 batch S2c, H6a) and the `lane/h6a` review's rulings and
+  fixes.
+  - **items/cube** {C 119, I 82, L 4} → **{C 167, I 87, L 3}** (recounted with the gate's tag reader; diff +59 / −11
+    `[C]`, +50 / −45 `[I]`, +2 / −3 `[L]`). Raised from S2c: cube 6, 8, 10, 12, 13, 21, 22, 29, 47 (case 8; the
+    fallback `[I]`), 49 (the survey), 52, 55 (L776 corrected: the spot search draws nothing, the portal object draws;
+    L829 in part), 56. From H6a, each naming run:2026-10-27-sweep-cube: cube 1 (L48; L54's `0x18` half), 7 ×3, 15, 17
+    (`exc`; `eli` split to f″ `[I]`), 25 (L331; L349's classic half `[I]`), 32 (in part), 36, 38 ×2, 39 (L495; L491,
+    L524 in part, fixes 1–2), 40 (L496, L971; L528 in part, fix 3), 43 ×3, 53 ×2, 54 (the classic word-26 test moved
+    into L1 in the code's order, the old L3 removed), 58 (in part, fix 4). Refinements: K4 (a copied child's two
+    game-seed steps, `[C]` for one, `[I]` per child, fix 5) with § M; K3's name id `0x509F` (`[C]`; the path `[I]`,
+    fix 7); G4's flags bit 0 `[C]` (fix 6); E3 and F2's ethereal upgrade (plain values, then `MakeEthereal` ×3/2,
+    `[C]`, ruling 4). S2c piece cube 49 (b) `[C]` at 0x005C2460, (a) `[I]`. Kept `[I]` with their no-stock reasons
+    (ruling 3): cube 16, 20, 24, 44, 49 (a), 51 (shortfall). Pseudocode lines no run reached got inline `[I]` (A3c–A3e,
+    B3, B4, C2, E3–E5, F1, F3–F5, H4, I1, J2–J3, K4). Open questions: the ethereal upgrade struck; the cow portal
+    narrowed to the portal object's draws; the not-reached list rewritten.
+  - **items/affixes C4i** (rule 8): the forced row's level-window skip `[C]` (H6a cube 58, S2c aff 14's piece),
+    "only" `[I]`; the open question narrowed; {C 152, I 28, L 4} → {C 153, I 28, L 4}.
+  - **Wiki:** [items-other-paths](../wiki/items-other-paths.md) cube section refreshed, `based_on` cube 2026-10-27;
+    [items](../wiki/items.md) `based_on` affixes 2026-10-27 (one open-question line).
+  - **Backlog:** closed the [H6a entry](../backlog/archive/2026-10-27-reverser-spec-writer-h6a-cube-raises-for-the-phase-3-re.md);
+    annotated the [S2c entry](../backlog/2026-10-16-reverser-spec-writer-plan-0038-s2c-corrections-for-phase.md)
+    ((a), (f) done; (d) waits for vendors, H6c); filed the
+    [counts entry](../backlog/archive/2026-10-27-spec-writer-architect-s38c-cube-counts-for-the-research-map.md) and the
+    [review request](../backlog/archive/2026-10-27-spec-writer-architect-s38c-review-cube-phase-3.md). Ledger row added, usage "—".
+  - **Next:** architect review of `lane/s38c`.
+- **2026-10-27 — `lane/s38c` review (architect): Phase 3 of items/cube and items/affixes C4i, accept with fixes (4).**
+  `main` (`7995eefc`) was already the lane's base: the merge was empty and `backlog.py archive` moved nothing. Static
+  review: objdump on the pinned `game.exe`, no Ghidra, no harness.
+  - **Checked.** The diff restates +48 net `[C]` (+59, −11) on items/cube and +1 on items/affixes; the front matter
+    matched the gate's reader. Traced to the accepted ledgers within their reviews' scopes, more than a third of the
+    new `[C]`: S2c cube 6 (the `COW_LEVEL` row), 8 (the chained callees), 10 and 12 (A4's line, row and note), 13 (A3a),
+    21 (B3's split), 22 (B5's bindings), 29 (`+0x28`/`+0x2A`), 47 (case 8; the fallback `[I]`), 49 (the survey), 52
+    (K3's round trip), 55 (L2, M and the oracles bullet: 0 steps at the spot search, 171 / 173 / 171 at the portal
+    object), 56 (L3); H6a cube 1 (the entry row and packet bullet; `0x17` and type ≠ 4 a separate `[I]`), 7 (the
+    constants row, G3, the L refusal), 15 (a′), 17 (f′, `eli` split to f″ `[I]`), 25 (C2 `eli`; the classic gate `[I]`),
+    32 (E3–E4 with `uns`; `rem` `[I]`), 36 (F1, K3's `0x509F`; the path `[I]`), 38 (E3, F2), 39 and 40 (F3–F5 with the
+    stat-73 reading, entries past the first, the `qty` side and the 255 side inline `[I]`, fixes 1–3 of the H6a review),
+    43 (G4's two hooks; the other writes an `[I]` note), 53 (L1a), 54 (L1), 58 (the window half; "only" `[I]` in both
+    specs), and the refinements (K4 and § M `[C]` for one child, `[I]` per child; G4's bit 0; I4 (b) at 0x005C2460).
+    The d-none moves (cube 16, 44, 49 (a)) stay `[I]` with their no-stock reasons, and cube 20, 24 and 51 likewise.
+    objdump: `CUBE_CowPortalOpen` 0x00594140–0x00594260 tests `Game+0x70` at 0x00594181, then in a classic game word 26
+    (call 0x00594199, result 0x0059419E; set skips to 0x005941CB, clear refuses at 0x005941A5), in an expansion game
+    word 40 (0x005941BE) and never word 26, so the reordered L1 holds; level 39 and class 60 pushed before 0x00594228;
+    the found flag at 0x0059420F and the portal result at 0x0059422F both refuse; `UnitSetEvent` 20 at 0x00594253.
+    Also `ItemInvNonEmpty` → `ITEMS_SetFlag(it, 1, 1)` at 0x00560385–0x00560393, the event-4 call 0x00566439, the
+    faulting `mov eax, [eax+0x5C]` at 0x005C2460, `MakeEthereal` inside `CubeModApply` at 0x00660280, ItemCopy's own
+    `ItemCreateFromSave` at 0x0055A31C, the `STATS_GetUnitStat(73)` / `GetUnitBaseStat(72)` pair at
+    0x005662F1/0x005662FD, the quest-byte test at `+0x12A` then `hst` and `qf2` at 0x005664A8–0x005664D4. Every `fn:`
+    spot-checked (15) resolves in `re/symbols.csv`. Inline `[I]` sits on the unreached lines of A3, B3–B4, C2, E3–E5,
+    F1, F3–F5, G5, H4, I1, I4, J2–J3 and K4 (but L2's refusal, fix 1). Restatement inflation: the new A4, G3, L1–L2
+    and Reimplementation notes restate their raised rows and lines at the same scope (the `lane/s38k` and `lane/s38q`
+    precedent); not inflation.
+  - **Fixes.** (1) overclaim (rule 2): L2's "if either fails: refuse" sat under the portal line's raised `[C]` with no
+    failure logged; inline `[I]` (0x0059420F, 0x0059422F). (2) wrong anchor: the Reimplementation note naming rows 72,
+    83, 84 and 90 as able to fault cited only the row-83 fault; S2c cube 49's survey added, the fault scoped to row 83.
+    (3) wrong anchor: L1's "an expansion game word 40" cited only the H6a classic sessions; 0x005941BE and
+    run:2026-10-15-cube added. (4) overclaim: wiki/items-other-paths put the crafted pick of 0 "at output ilvl 5 or
+    below" for all three bases; scoped (staff 1, boots up to 5, gloves up to 3) and the low-level condition stated as
+    the character's and the input's. items/cube is now **{C 167, I 88, L 3}**; items/affixes **{C 153, I 28, L 4}**.
+  - **Rulings.** (1) **The H6a rulings are carried as filed.** Built states are named once in *Evidence* as backing the
+    code that reads them; the I4 survey's "only a low-level character" is the output-ilvl formula's condition, not a
+    claim on how a game reaches the built clvl-1 case. The d-none moves (16, 44, 49 (a)) stay `[I]`; the four in-part
+    overclaims (39 L491, L524, 40 L528, 58) keep their remainders inline `[I]`; ItemCopy's child steps are `[C]` for one
+    child and `[I]` per child (K4, § M, the Reimplementation note); `InvPlaceItem` bit 0 `[C]`; the ethereal upgrade
+    `[C]` and its open question struck; 49 (b)'s fault `[C]` on the code path, with the crash report as the second
+    source. (2) **§ L's reorder stands**: the classic word-26 test belongs inside L1 at the code's position, and the old
+    L3 had no address of its own. (3) **§ M's `useitem` row may say `[C]` for one child**: the child steps sit inside
+    `ItemCopy`, and the E3–E4 children statement covers both call sites as the H6a ledger raised it (cube 32). (4) The
+    open-question changes stand: the ethereal question answered by E3/F2, the cow question narrowed to the portal
+    object's draws, the not-reached list split by stock reachability.
+  - **Research map.** The items/cube row rewritten whole (C 167 / I 88 / L 3, Phase 3 done); the items/affixes row's
+    counts and date moved, C4i's raise named.
+  - **Bookkeeping.** Review-fixes Seen lines: spec-writer 2 and 9. The review request and the counts entry closed; the
+    S2c entry stays open for (d) (vendors, H6c). Ledger: the lane row filled (usage from the orchestrator: 235 263
+    tokens, 78 tools, 23 min; accept with fixes, 4: overclaim 2, wrong anchor 2); the review row added, usage "—".
