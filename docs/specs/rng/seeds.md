@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng]
 consumed_by: [drlg/overview, drlg/room-tiles, drlg/*, monsters/spawn, objects, items/*, chain]
-tags: {C: 80, I: 13, L: 4}
-updated: 2026-10-21
+tags: {C: 81, I: 14, L: 4}
+updated: 2026-10-27
 ---
 
 # Seed tree: game → act → level → room → unit
@@ -549,6 +549,15 @@ separate objects.
   fn:sub_005C9290_MissCbReseedPathXPlusArg@0x005C9290, fn:sub_005CD110_MissCbReseedRoll@0x005CD110,
   fn:sub_005AC040_MissCbReseedPathX@0x005AC040, fn:sub_005C8520_SkillDo146Armageddon@0x005C8520, 0x005C8688–0x005C8694,
   [skills/0003 § 9](../../findings/skills/0003-handlers.md#9-re-seed-sites-rng0002--the-other-initialiser-sites))
+
+  The callback `0x005C9290` sets the new missile's seed to `Init(w + arg)`, `w` the u16 at its path's `+0x10` and
+  `arg` the creator's argument (low `w + arg`, high `0x29A`), and its own path calls then step that seed before it
+  returns: in 450 of 450 creations the seed at the callback's return lies on that stream, 20 steps past the `Init` for
+  each of 442 Firestorm sub-missiles and 38 for each of 8 class-195 missiles of a monster. [C]
+  (fn:sub_005C9290_MissCbReseedPathXPlusArg@0x005C9290, run:2026-10-25-skills,
+  [skills/0003 § 15](../../findings/skills/0003-handlers.md#15-plan-0045-phase-2-the-run-run2026-10-25-skills))
+  Which of its three path calls makes the steps is not read; the other sites of the table were not reached. [I]
+  (fn:sub_00649970_PathPlan@0x00649970, [skills/missiles § H](../skills/missiles.md#h-re-seed-sites))
 
 - **Armageddon's cast draw.** Skill do function 124 (`srvdofunc` 124: 249 Armageddon, 250 Hurricane, 349 Diablogeddon),
   after its record test, its `aurastate` range test, its used-skill tests and the setting of bit 6 of the caster's
