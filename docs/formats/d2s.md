@@ -632,7 +632,7 @@ repeat:
   0x0062B36E–0x0062B387, fn:ITEMS_WriteFull@0x0062FFF0, [save/0001 § Plan 0038 batch H1a](../findings/save/0001-d2s-io.md#plan-0038-batch-h1a-run2026-10-27-sweep-d2s-load))
 - `[I]` The third word is read only for a version above 93 (0x0062D2D3–0x0062D2DF), so a version-93 file carries
   two words. The writer sets the bit and writes the data only when item data `+0x20` is non-zero; otherwise it
-  writes the bit 0 (0x0062B341–0x0062B387; the reverser's H1a entry, [archivist backlog](../backlog/2026-10-27-reverser-archivist-h1a-d2s-legacy-layouts-and-parser-gaps.md) (1)).
+  writes the bit 0 (0x0062B341–0x0062B387; the reverser's H1a entry, [archivist backlog](../backlog/archive/2026-10-27-reverser-archivist-h1a-d2s-legacy-layouts-and-parser-gaps.md) (1)).
 - No sample holds realm data, and no run has had a realm game ([save/0001 § Plan 0038 batch H1b](../findings/save/0001-d2s-io.md#plan-0038-batch-h1b-run2026-10-27-sweep-d2s-play) row 83).
   `d2s.py` refuses a realm bit of 1 by default and reads it in its extended form.
 
@@ -687,10 +687,10 @@ width and add)
 
 | id(s) | version 92 | older versions | where |
 |---|---|---|---|
-| 0, 2 | w/a | — | 0x0062D9B5 |
+| 0, 2 | w/a, set as is (no `ValShift`, no param) | — | 0x0062D9B5 |
 | 1 | w/a | ≤ 85: then stat 9 with 9's w/a | 0x0062DA46, 0x0062D9F8 |
 | 3 | w/a | ≤ 85: then stat 7 with 7's w/a, `<< 8` | 0x0062D9DA, 0x0062DA64 |
-| 17 (+18), 50 (+51), 52 (+53), 54 (+55, +56), 48 (+49), 57 (+58, +59) | one id, each value in its own w/a | ≤ 81: 48 in 6 bits, 49, 51, 55, 57 in 7, 58 in 8 | 0x0062DAAF–0x0062DDC4 |
+| 17 (+18), 50 (+51), 52 (+53), 54 (+55, +56), 48 (+49), 57 (+58, +59; then stat 326 = 1) | one id, each value in its own w/a | ≤ 81: 48 in 6 bits, 49, 51, 55, 57 in 7, 58 in 8 | 0x0062DAAF–0x0062DDC4 |
 | 83, 84, 85, 86, 87, 179, 180 | 3 bits → stat 83 with param (the class) 0, 3, 2, 1, 4, 5, 6 | — | 0x0062DDF8–0x0062DF39 |
 | 126 | 4 bits → stat 126, param 1 | — | 0x0062DF99 |
 | 107, 108, 109, 181..187 | 14 bits: skill the low 9, level the next 5 → stat 107 (param the skill) if 0 < level ≤ 2^`Save Bits`(107) − 1 and the skill passes `0x00627AF0`, else nothing | — | 0x0062DFC4–0x0062E037 |
@@ -707,8 +707,8 @@ width and add)
 - `[I]` For 93..96 every special case above except ids 0–3 and the grouped ids sends its id to the generic path
   (0x0062E1A1).
 - `[C]` (data, `itemstatcost.txt`) Of the 247 records with a `Save Bits`, 57 have a different 1.09 width or add
-  (blank read as 0), e.g. `fireresist` add 0 (current 50), `armorclass` 10 bits (11), `durability` 8 (9), and 5 have
-  no 1.09 width: the four `item_pierce_*` and `questitemdifficulty`
+  (blank read as 0), e.g. `fireresist` add 0 (current 50), `armorclass` 10 bits (11), `durability` 8 (9); 5 of the
+  57 have no 1.09 width at all: the four `item_pierce_*` and `questitemdifficulty`
   ([ItemStatCost § Record layout](../tables/ItemStatCost.md#record-layout)).
 
 ## Legacy versions (71..91)
@@ -809,7 +809,7 @@ left); trailing bytes are ignored.
 
 | test | versions | what | where |
 |---|---|---|---|
-| affix bases lowered | 72, 73, 80, 81, 82: `0x295`, `0x4EE`; 83, 84: `0x2A2`, `0x4F1`; 85..87: `0x2A3`, `0x4F2`; 88: `0x2D9`, `0x5A0`; 74..79: none | the prefix base and the automagic base `ITEMS_ReadFull` adds back | 0x0062CD94–0x0062CE10 |
+| affix bases lowered | 72, 73, 80, 81, 82: `0x295`, `0x4EE`; 83, 84: `0x2A2`, `0x4F1`; 85..87: `0x2A3`, `0x4F2`; 88: `0x2D9`, `0x5A0`; 74..79 and 89 and above: none | the prefix base and the automagic base `ITEMS_ReadFull` adds back | 0x0062CD94–0x0062CE10 |
 | class affix | ≤ 88: read as 0; 89: the lowered base added back | `has_class` / `class_affix` | 0x0062CE2A–0x0062CE45 |
 | rare affixes | below 92 | a step on the rare/crafted affix fields, not laid out | 0x0062CFA9, 0x0062CFFF |
 | realm bit | above 86 | the realm field exists | 0x0062ABFF, 0x0062D2AF |
@@ -821,7 +821,10 @@ left); trailing bytes are ignored.
   missing `JM` returns 14. A top-level item equal to an earlier one on code, file index, ilvl and both seeds is
   skipped with its socketed items. An item is created by `sub_00530F40_ItemCreateFromOldRec` (the restore flag set,
   the stored seeds kept) and placed by its mode: 0 stored at (x, y) on its page, 1 equipped at its body slot, 2 belt
-  slot x, 4 cursor, 6 socketed into the previous parent; any other mode, or a failed placement, 12 (13 on a corpse).
+  slot x, 4 cursor, 6 socketed into the previous parent; any other mode, or a failed placement, 12. A corpse's list
+  places modes 0, 1 and 6 only, else 13. A failed top-level item of the save's own list is skipped and its socketed
+  items' records are then read as top-level items; a failed socketed item, or any failure on a corpse list, ends the
+  list with that code.
 - `[I]` **A version-71 record** (`sub_00532F30`, LSB first, read over 64 bytes):
 
 | form | bits, in order (width field) | length |
@@ -1457,11 +1460,16 @@ these files has been loaded by the game yet. Read back: `parse(…, extended=Tru
   (the current form's left-button bit `0x8000` is dropped); `+0x58` from the first of the three difficulty bytes with
   bit 7 set; the client bytes `+0x59`..`+0x7D` 0; the mercenary record's `+0x00` = 1 and `+0x01` = 0; swap skill A =
   the current `0x080` (swap left), B = `0x084`; the version-71 page = the current `store` − 1 (0 inventory, 3 cube, 4
-  stash), unit seed = item seed = the current `seed`, file index = the unique or set row for quality 7 / 5, else 0.
+  stash), unit seed = item seed = the current `seed`, file index = the unique or set row for quality 7 / 5, else 0;
+  the version-71 mode = the current item's `location` (the finding names the modes 0, 1, 2, 4, 6 the placing helper
+  switches on, not their source); the `if` section = the base's 30 skill bytes, taken to be the class list
+  `0x00646140(class)` counts (the finding gives the count's function, not its value); stat 134's ≤ 89 field written
+  as 16 bits of 0 (read and dropped).
 - Recipes staged for the H1a shortfall rows, built by `RecipeTest` and **not run**: `leg87merc` (hirelings 3, 33:
   the `0x12`-byte mercenary, experience conversion, its item list, the hotkey tail), `leg87new` (player-creation 1:
   status bit 0), `leg71merc` (hirelings 30, 33: the version-71 mercenary, Id `0xFFFF`), `leg71uniq`
-  (items-uniques-sets 21: a unique and a set item by classic index and a jewel by code through the restore path),
+  (items-uniques-sets 21: uniques and set items by classic index, rows 0 and 1 of each so the file index separates
+  from its default 0, one set item with distinct unit and item seeds, and a jewel by code, through the restore path),
   `leg92props` (save-d2s 126: the 1.09 widths, the per-id encodings, a `Sets` id). Base: `smpsor-l50.d2s`.
 
 ## Sample hashes
@@ -1524,7 +1532,8 @@ What the save code leaves open after [save/0001](../findings/save/0001-d2s-io.md
   `leg*` recipes ([§ Legacy builder](#legacy-builder-versions-71-87-92)) are the pieces a harness load would raise
   them with (save/0001's Open questions list the same). Open with them: the builder's choices listed there (the
   hotkey flag byte, which swap skill is A, the version-71 page numbers and which seed is the unit's, the difficulty
-  byte picked, the mercenary record's first byte); for a writer, the 72..88 affix base adjustment and the rare-affix
+  byte picked, the mercenary record's first byte, the version-71 mode taken from `location`, the 30 class skill
+  bytes; a load raises a layout statement past them only as ruled at the `lane/a72` review, plan 0038 log); for a writer, the 72..88 affix base adjustment and the rare-affix
   step (so magic, rare and crafted items below 89 are not built), the adds of the ≤ 89 / ≤ 87 widths of stats 23, 24,
   93, 96, 99, 102, 105, and stat 204's param shift words below 93; the meaning of client `+0x45E`, `+0x460`, `+0x464`
   (legacy header `+0x59`, `+0x5B`, `+0x5F`) and the corpse record's 12 unread bytes. (The old stat form's mask width

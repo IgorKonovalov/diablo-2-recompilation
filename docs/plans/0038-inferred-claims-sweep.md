@@ -4143,7 +4143,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     `0x29` bounds the old stat form; class 7 halts.
   - **S1b piece:** the CalcSor session ran as staged (`rng.py seedtree` 1 884/1 884; `calc.py hover` 7 `CH` lines, 0 hover evaluations, 8 drink evaluations; `calc.py check` 52/52). data-calc 19's hover half and rng-seeds 11's caller 0x00569F53 are met (notes in data/0005 and rng/0002); the rows stay S1b for the review. The 2026-10-16 entry is closed (archive).
   - **Symbols** (rule 14): eleven readers I → C (filed as "ten"; corrected at the review); four functions added (I).
-  - **Backlog:** archivist [2026-10-27-reverser-archivist-h1a-d2s-legacy-layouts-and-parser-gaps](../backlog/2026-10-27-reverser-archivist-h1a-d2s-legacy-layouts-and-parser-gaps.md);
+  - **Backlog:** archivist [2026-10-27-reverser-archivist-h1a-d2s-legacy-layouts-and-parser-gaps](../backlog/archive/2026-10-27-reverser-archivist-h1a-d2s-legacy-layouts-and-parser-gaps.md);
     spec-writer [2026-10-27-reverser-spec-writer-h1a-save-d2s-player-creation-raises](../backlog/2026-10-27-reverser-spec-writer-h1a-save-d2s-player-creation-raises.md)
     (held for the review); review request [2026-10-27-reverser-architect-review-lane-h1a-plan-0038-batch-h1a](../backlog/archive/2026-10-27-reverser-architect-review-lane-h1a-plan-0038-batch-h1a.md).
   - **Next:** the `lane/h1a` review.
@@ -4651,7 +4651,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     added, usage "—".
   - **Next:** merge `lane/s38o`; objects is done for plan 0038 Phase 3.
 - **2026-10-27 — `lane/a71` (archivist, no slot, no Ghidra, no harness, from `main` `44cfbcb5`): the H1a parser gaps.**
-  Work of the [H1a archivist entry](../backlog/2026-10-27-reverser-archivist-h1a-d2s-legacy-layouts-and-parser-gaps.md).
+  Work of the [H1a archivist entry](../backlog/archive/2026-10-27-reverser-archivist-h1a-d2s-legacy-layouts-and-parser-gaps.md).
   - **Built** (`tools/d2s.py`, every change off by default): an extended reader and writer (`parse(…, extended=True)`,
     `encode_item(…, ver)`) and the build keys `save_version` 93..96, `stat_slots`, `skill_count` and the item key
     `realm`: the old stat form for ≤ 94, stat 72 in 8 bits for ≤ 95, header `0x2A` skill bytes, realm data (two
@@ -4896,6 +4896,59 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     (hirelings 30, 33), `leg71uniq` (items-uniques-sets 21), `leg92props` (save-d2s 126); `RECIPE_BASES` base
     `smpsor-l50.d2s`, no pinned hash. The rows stay shortfalls until a harness load.
   - **Backlog:** builder entry closed; the H1a archivist entry annotated (all five parts done); review request
-    [2026-10-27-archivist-architect-review-lane-a72-d2s-legacy-builder](../backlog/2026-10-27-archivist-architect-review-lane-a72-d2s-legacy-builder.md).
+    [2026-10-27-archivist-architect-review-lane-a72-d2s-legacy-builder](../backlog/archive/2026-10-27-archivist-architect-review-lane-a72-d2s-legacy-builder.md).
     Ledger row added, usage "—".
   - **Next:** the `lane/a72` review; then a harness lane for the `leg*` recipes.
+- **2026-10-27 — `lane/a72` review (architect): accept with fixes (6).** `main` (`dcf6c210`, H6e1) merged into the
+  lane first (the log and metrics conflicts kept both sides; `tools/test_d2s.py` auto-merged; `backlog.py archive`
+  moved nothing). **Default path:** the 265 non-`leg` recipes of `RECIPE_BASES` (the 259 and H6e1's six) built in the
+  scratchpad by `main`'s `tools/d2s.py` and the lane's give the same 265 sha256, and `dump` of 27 of them (every tenth)
+  prints the same text under both tools. `tools/test_d2s.py`: 60 tests OK, before and after the fixes. The five `leg*`
+  recipes build and `parse_legacy` / the extended parser read each to its last byte; `dump` refuses them, as the usage
+  says (the commands read as before). Every layout statement of d2s.md § Legacy versions, § Versions 92..95 and
+  § Legacy builder was compared with save/0001 § Plan 0038 lane/rlg and its review fixes: all `[I]` as the finding's,
+  none stronger; the three review additions are there (0..70 refused with 1 after the length test, 9 on the host
+  path; the header's left and right skills applied after the skills section, non-zero only; the 72..88 base
+  adjustment). The `[C]` data count recounts over `itemstatcost.txt` (359 rows): 247 with a `Save Bits`, 57 of them
+  with a different 1.09 width or add (blank as 0), 5 of those 57 with no 1.09 width (`item_pierce_cold/fire/ltng/pois`,
+  `questitemdifficulty`); the three examples hold. No game data is dumped (offsets, counts and three illustrative
+  `ItemStatCost` values only).
+  - **Fixes:** (1) omission: the base-adjustment row left out "89 and above: none" (the finding's default case).
+    (2) omission: the version-92 encodings table left out stat 326 = 1 after the 57 group and ids 0, 2 "set as is (no
+    `ValShift`, no param)". (3) omission: the version-71 list left out that a corpse's list places modes 0, 1, 6 only
+    (13 otherwise), that a failed top-level item is skipped with its socketed records then read as top-level items,
+    and that a failed socketed item or any corpse failure ends the list. (4) other: the `[C]` count read as 57 + 5;
+    the 5 are among the 57. (5) overclaim: three builder choices were written as layout, not listed as choices: the
+    version-71 mode taken from the current `location`, the `if` section's 30 bytes as the count of
+    `0x00646140(class)` (the finding gives the function, not its value), and stat 134's ≤ 89 field as 16 bits of 0;
+    now in the choices bullet and Open questions. (6) omission: `leg71uniq` could not separate what items-uniques-sets
+    21 needs: The Gnasher and Civerb's Ward are both row 0, the builder's default file index, and every record's unit
+    and item seeds were equal. The recipe now adds Deathspade (unique row 1) and Civerb's Icon (set row 1), and gives
+    Civerb's Ward distinct seeds (`v71` `unit_seed` 1234567, `item_seed` 7654321); it builds (835 bytes, 6 items) and
+    reads back.
+  - **Rulings.** (1) Accept with the fixes applied in the review commit. (2) **The builder choices are marked as
+    choices** (§ Legacy builder's "not from the findings" bullet and Open questions), and no `[I]` layout statement
+    rests on one. They stay choices after any load: a load that accepts a file shows only that the reader did not
+    refuse those bytes, not what the game writes there. (3) **What a session must observe** for a `leg*` load to raise
+    anything despite the choices: (a) the reader path and its return, logged (the legacy reader's return, or
+    `D2S_ReadSaveV92`'s for 92, and `NewCharLegacy` for `leg87new`), since a legacy file has no checksum; (b) for the
+    sections 7–10, which fail silently, the game's version-96 write-back compared field by field with the build:
+    every built item with its code, quality, unique or set row, seeds and position; the mercenary's seed, name,
+    hireling Id and converted experience; hotkey slots 8–15 and the swap skills. "The character loaded" raises nothing
+    past the skills section, and a missing item means the read stopped there. (c) A statement is raised only by a
+    separating value: one the write-back puts in the slot the finding names, which another reading would have put
+    elsewhere or dropped (distinct swap A and B, distinct left and right skills, distinct unit and item seeds, a
+    non-zero unique or set row). A value set by a builder choice raises the finding's statement about that field only
+    if it separates in this way, and never the choice itself as a format fact. (d) Bytes the server does not read
+    (legacy header `+0x1E`, `+0x24`, `+0x26`/`+0x36`, `+0x59`..`+0x7D`, the mercenary record's `+0x01`, hotkey bytes
+    2–5, the corpse's 12 bytes) raise nothing. (e) A refusal or a short read refutes the finding only once the choices
+    touching that section are ruled out by a second build that varies them. (4) The H1a archivist entry's five parts are
+    done ((1), (2), (3), (5) at `lane/a71`, (4) and version 92 here): closed. The six rows stay H1a shortfalls (b), no
+    class move, totals unchanged. (5) **Route:** a new harness batch **H1c** (`d2s-legacy`, reverser-harness, run id
+    `sweep-d2s-legacy`, H1a's `d2s-io.gdb` logger) loads the five recipes under ruling 3. It has its own row in
+    [inventory § 5](0038-inventory/README.md#harness-batches) and is in the H1 family (H1a and H1b are done), so it may
+    pair with a batch of any other family.
+  - **Backlog:** review request closed; the H1a archivist entry
+    [2026-10-27-reverser-archivist-h1a-d2s-legacy-layouts-and-parser-gaps](../backlog/archive/2026-10-27-reverser-archivist-h1a-d2s-legacy-layouts-and-parser-gaps.md)
+    closed. Ledger: the lane row was filled with the orchestrator's usage (255 234 tokens, 82 tools, 22 min) and the
+    fixes. The review row was added with usage "—".

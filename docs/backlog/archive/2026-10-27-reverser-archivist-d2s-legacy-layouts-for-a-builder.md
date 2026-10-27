@@ -6,7 +6,7 @@ status: done
 context:
   - ../../findings/save/0001-d2s-io.md#plan-0038-lanerlg-the-legacy-and-version-92-readers-static-2026-10-27
   - ../../formats/d2s.md#legacy-versions-7191
-  - ../2026-10-27-reverser-archivist-h1a-d2s-legacy-layouts-and-parser-gaps.md
+  - 2026-10-27-reverser-archivist-h1a-d2s-legacy-layouts-and-parser-gaps.md
 resolution: "lane/a72 (archivist): tools/d2s.py builds save_version 71, 87 and 92, opt-in, and reads them back (parse_legacy, the extended parser); d2s.md § Legacy versions (71..91), § Versions 92..95 (with the version-92 property encodings), the version row, § Legacy builder and Open questions updated, all [I]; test_d2s.py LegacyTest; recipes leg71merc, leg71uniq, leg87merc, leg87new, leg92props staged, not run [../formats/d2s.md#legacy-builder-versions-71-87-92]"
 ---
 
