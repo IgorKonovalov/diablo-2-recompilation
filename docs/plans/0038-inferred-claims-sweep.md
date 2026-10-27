@@ -4622,7 +4622,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
        the cap, so the seeds that matched after the two cap returns confirm the draw. E2's order and § E's count stand;
        the finding means "before any placement draw". The spec's *Constants* row, which copied the finding's words, is
        fixed; the finding's wording goes to the reverser
-       ([entry](../backlog/2026-10-27-architect-reverser-h5b-shrine-cap-wording.md)). No code question.
+       ([entry](../backlog/archive/2026-10-27-architect-reverser-h5b-shrine-cap-wording.md)). No code question.
     2. **7 against 4 super chests.** The 29 logs hold 7 `OPU0` lines with id 580 at 7 distinct positions (sessions 3:
        three in level 79; 13: level 44; 29: two in level 62; 30: level 4), each run through the checker's 580 model, so
        S4a's 7 counts creations, not re-creations or windows twice. The run record's "super chests (DS1 580) 4, all
@@ -4716,3 +4716,11 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     ledger: the lane row's usage filled from the orchestrator (230 283 tokens, 72 tools, 20 min), verdict and fixes
     filled, the review row added with usage "—"; archivist review-fixes rules 1 and 4 gain `lane/a71` Seen lines.
   - **Next:** merge `lane/a71`; the reverser takes the legacy and version-92 readers entry.
+- **2026-10-27 — H5b.2 shrine-cap wording (reverser, `lane/rsw`).** The `lane/s38o` review's ruling 1 is carried into
+  objects/0001 § H5b.2: the shrine cap returned "before any placement draw (after the handler's `P100(S)` draw)", with
+  a dated correction naming the room-seed step at 0x00552B9A–0x00552BBA, `OBJRGN_HealthShrineDue` at 0x00552BC5 and
+  the cap call at 0x00552BF7 (objdump of 0x00552B50–0x00552C10). No other finding repeats the wording; no tag, symbol
+  or spec change. The entry is closed
+  ([archive](../backlog/archive/2026-10-27-architect-reverser-h5b-shrine-cap-wording.md)); review requested
+  ([entry](../backlog/archive/2026-10-27-reverser-architect-rsw-review.md)).
+- **2026-10-27 — `lane/rsw` review (architect): accept with fixes (1).** objdump of 0x00552B50–0x00552C10 on the pinned `Game.exe` matches the correction (seed step 0x00552B9A–0x00552BBA, `HealthShrineDue` 0x00552BC5, cap call 0x00552BF7), the wording matches objects/README *Constants* and E2, and the grep finds no other copy; fix (omission): the note now also cites the `% 100` test at 0x00552BDB–0x00552BF0 (skipped when the health shrine is due); request closed ([entry](../backlog/archive/2026-10-27-reverser-architect-rsw-review.md)).
