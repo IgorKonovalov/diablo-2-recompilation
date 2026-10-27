@@ -385,6 +385,8 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-10-27 | `lane/wiki` review | owner request: wiki refresh, root README | architect-review | 112 970 | 37 | 6 | — (static, no Ghidra, no harness) | gave accept with fixes | — (on the lane row) |
 | 2026-10-27 | `lane/s38v` | 0038 P3 items/vendors (S2c, H6c) | spec-writer | 227 622 | 95 | 20 | — (no slot, no Ghidra, no harness) | accept with fixes | 5: under-claim 2, overclaim 2, misread 1 |
 | 2026-10-27 | `lane/s38v` review | 0038 P3 items/vendors | architect-review | 160 089 | 44 | 9 | — (static, objdump only) | gave accept with fixes | — (on the lane row) |
+| 2026-10-27 | `lane/a52` | 0052 P0 | archivist | 278 105 | 106 | 26 | — (static, no Ghidra) | accept with fixes (rulings: the generated 148-row index is a derived index, not a dump; 13 batches accepted; rows 0 and 143 placed right; reading the image table stays archivist) | 2: misread 1, omission 1 (`MonAiEntryGet`'s `EDX` = 0 condition dropped; the second table at `0x0073D358` undocumented) |
+| 2026-10-27 | `lane/a52` review | 0052 P0 | architect-review | 123 218 | 49 | 10 | — (static, objdump, no Ghidra, no harness) | gave accept with fixes | — (on the lane row) |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not
