@@ -37,3 +37,13 @@ Added by the `lane/h1b` review (the fixes are in save/0001's H1b section):
   `class + 8·L + 8`, 0x00611814).
 - Rows 3 and 19 and the callback halves of rows 2 and 18 stay `[I]` (shortfalls); a reverser entry may move them
   to d-none.
+
+*Annotation (spec-writer, 2026-10-27, `lane/s38s`, plan 0038 Phase 3, save/d2s cluster):* the save/d2s parts are
+applied in [save/d2s](../specs/save/d2s.md): the H1b rows raised and split along their remainders; § Entry points
+lists the death path's save as met in single player, an event save, with "Nothing was written during play" scoped to
+run:2026-10-12-d2s-io and "no single-player autosave" kept as the outcome `[C]` (the `0x00730FFC` entry test, the time
+tests and the callback test `[I]`); the join row's two `PlayerLoad` links `[I]` beside the logged returns `[C]`; D5's
+stat 30 as the experience.txt row whose `Level` is L (index L + 1 counting `MaxLvl`, dword `class + 8·L + 8`); rows
+3 and 19 and the callback halves of rows 2 and 18 `[I]` as d-none readings (the setter has no caller, r1h); rows 77
+and 78 `[I]`. **Open:** the hirelings part (§ F, the header of a mercenary hired in play, hirelings 24), which waits
+for H6f.
