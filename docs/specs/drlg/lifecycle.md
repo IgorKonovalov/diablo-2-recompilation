@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, drlg/overview, drlg/room-tiles, monsters/spawn, monsters/special, monsters/stats, objects, save/d2s]
 consumed_by: [drlg/room-tiles, drlg/preset, drlg/collision, monsters/spawn, monsters/special, monsters/stats, objects, chain]
-tags: {C: 96, I: 80, L: 8}
+tags: {C: 97, I: 79, L: 8}
 updated: 2026-10-27
 ---
 
@@ -102,7 +102,7 @@ stateDiagram-v2
 | restored item expiry floor | frame + 15000 | fn:sub_00541990_InactiveItemRestoreOne@0x00541990 | [C] (run:2026-10-17-lifecycle) |
 | wanderer gate | `low & 0x7FFF = 0` | 0x0054F089 | [C] (run:2026-10-17-lifecycle), the mask's width [I] (§ I) |
 | wanderer roll | `low mod 100 < 3`, region `+0x2C4` < 3 | 0x0054F024–0x0054F041 | [C] for the draw and the `mod 100` ≥ 3 return (run:2026-10-21-sweep-monsters-a), [I] for the region test and the pass below 3 (fn:sub_0054EFF0_WandererRoll@0x0054EFF0) |
-| wanderer list | act I: class 270 (`rogue2`), start 0, count 1; other acts count 0 | 0x00731B2C, 0x00731B30 | [I] (fn:sub_0054EF50_WandererSpawn@0x0054EF50) |
+| wanderer list | act I: class 270 (`rogue2`), start 0, count 1; other acts count 0 | 0x00731B2C, 0x00731B30 | [C] (objdump and r2 of the image; the only code naming them are the readers at 0x0054EF64, 0x0054EF71 and 0x0054EF92, fn:sub_0054EF50_WandererSpawn@0x0054EF50, [monsters/0002 § Plan 0038 batch H4a](../../findings/monsters/0002-room-population.md#plan-0038-batch-h4a-run2026-10-21-sweep-monsters-a)) |
 
 ## Algorithm
 

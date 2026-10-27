@@ -31,7 +31,7 @@ against all of them before you file the review request. Categories are those of 
    with a W4 warning and an answered "unknown" (`lane/p43s`, 0043); quest-drops' Wirt-body
    route bullet left saying a run would settle it (`lane/p43t`, 0043); states E3's "stamina shrine not reached" left after the same clause in G6 was fixed (`lane/s47p3b`, [0047](../../../../docs/plans/done/0047-simulation-shortfalls.md)). Pool's "unit proxies" left for draw 3 after rng/0002 named it the store (`lane/s38m`, 0038).
 8. **Don't under-tag**: a raise the accepted ledger allows is stated at its strength. Seen: `burn = 2`
-   (`lane/p37s`, 0037); cube G4 (`lane/p39s`, 0039); a shortfall the logs already covered (`lane/p43s`, 0043). Split a mixed tag, don't extend the weaker one: H5's marks, compared in order (`[C]`), said read from the code with their call path (`[I]`) (`lane/s48p4`, 0048).
+   (`lane/p37s`, 0037); cube G4 (`lane/p39s`, 0039); a shortfall the logs already covered (`lane/p43s`, 0043). Split a mixed tag, don't extend the weaker one: H5's marks, compared in order (`[C]`), said read from the code with their call path (`[I]`) (`lane/s48p4`, 0048). A constant raised in one spec is raised in every spec that states it: lifecycle's *wanderer list* row left `[I]` beside spawn's `[C]` Inputs row (`lane/sfx`, 0038).
 9. **Cite the exact instruction the finding gives**, and link the section that holds the object named.
    Seen: the cold-draw anchor (`lane/p37s`, 0037); the glossary *near list* link (`lane/wiki3`, 0038); a packing
    anchored to the checker's decoder, not the code's globals (`lane/p43s`, 0043). Keep the finding's mood: chain/0001's

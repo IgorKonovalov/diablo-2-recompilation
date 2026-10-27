@@ -3621,3 +3621,28 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     C 96 / I 80 / L 8, updated 2026-10-27.
   - **Backlog:** both entries closed (archive); review request filed.
   - **Next:** architect review of `lane/sfx`.
+- **2026-10-27 — `lane/sfx` review (architect): accept with fixes (1).** Head `cc76e71e`; `main` merged first (already up to
+  date), `backlog.py archive` a no-op.
+  - **Checked.** The new `[C]` statements against run:2026-10-21-sweep-monsters-a: `h4a-manifest.sha256` (42 files) and
+    `check/kept-logs.sha256` (63 kept logs) pass `sha256sum -c`; session chaos7's `RTK0` at line 97549 (level 108, room
+    seed `9408b966:5d98f482`) steps to `d17d0000:3dbe6f3a`, the `WRL` seed; one more step gives `c2ef6f3a:57603f25`, low
+    mod 100 = 82, equal to the `RTK1` seed, so two room draws; `sweep-check.txt`'s `wander` line (7 184 ticks, 7 183 one
+    step, 1 roll, bad 0). objdump of 0x0054EFF0–0x0054F0C9: the roll's step, `mul 0x51EB851F; shr edx, 5; imul 0x64`
+    (unsigned mod), `cmp ecx, 3; jge` at 0x0054F02B, `cmp [eax+0x2C4], 3; jge` at 0x0054F041; the tick's `test eax,
+    0x7FFF` at 0x0054F089, `cmp [esi+0x78], 0` at 0x0054F096, `cmp byte [eax+0x2E], 0` at 0x0054F0AA. The counts match
+    the gate (spawn C 136 / I 44 / L 5; lifecycle C 96 / I 80 / L 8 before the fix). No `[L]` outside *Open questions*
+    in either spec.
+  - **Fix (1, applied):** lifecycle's Constants row *wanderer list* raised to `[C]` on the H4a operand read (objdump and
+    r2; the three readers 0x0054EF64, 0x0054EF71, 0x0054EF92 are the only instructions naming 0x00731B2C–0x00731B3B,
+    re-counted here, and the bytes `0e010000 00010000 00000000 00000000` re-read), with spawn § K's anchor. Lifecycle
+    C 96 / I 80 / L 8 → C 97 / I 79 / L 8.
+  - **Rulings.** (a) The flagged mismatch: reconciled up, not filed (fix above); spawn's `[C]` was ruled at the H4a review
+    on the S2c operand route and nothing in lifecycle's row needs more. (b) Spawn D's split and K1's `MonWndr` test move
+    match the `lane/swk` rulings. (c) The two archived entries' `#log` → `#implementation-log` stand; no other entry,
+    open or archived, nor `docs/backlog.md`, links plan 0038 at `#log`. (d) The research map's spawn and lifecycle rows
+    rewritten (counts, updated date, the `lane/sfx` clauses; lifecycle's "the wanderer roll and spawn" open now "the
+    wanderer spawn").
+  - **Ledger:** the lane row filled (verdict, fix 1: under-tag 1, usage from the orchestrator); review row added, usage
+    "—". Seen lines: spec-writer review-fixes rule 8, architect review-fixes rule 3.
+  - **Backlog:** review request closed (archive).
+  - **Next:** merge `lane/sfx`.
