@@ -366,3 +366,68 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   and P1.1 added to R1, A3 and A4's batch (the plan's own Phase 1b text named only P1.2 and P1.3; the gap was the
   plan's). Ledger: accept with fixes, 3 (omission 2, misread 1). The review request is closed. Part 2 (verdicts) runs
   after P1.3's review.
+- **2026-10-27 — Phase 1, batch P1.1 landed for review (reverser, `lane/p50a`, static, Ghidra copy `ghidra-p50a`).**
+  [anim/0001](../findings/anim/0001-modes-frames.md) reads the mode machine, all `[I]`: the `animdata.d2` record by
+  token, mode token and weapon class (with a built-in fallback of 2048 frames, speed 256, no events), the attack
+  start-frame table (Amazon and Sorceress only), `UNIT_SetMode`/`UNIT_AnimInit` per unit type, the unit's frame fields
+  (`re/types/game.h`, new `re/types/anim.h`), sequences (player tables in the image, `monseq` for monsters), the
+  player and monster mode tables with their ends, and the event lists' order in a frame. **Surprise:** most server
+  modes are not advanced frame by frame; `SUNIT_ScheduleModeEvents` queues the frame events (codes 1–4) and the mode
+  end at the start, from the start frame, rate and length, and only monster every-frame modes advance with
+  `UNIT_AnimAdvance`. The animation machine draws once (an object's start when `Sync` is 0). Second surprise: the
+  monster frame event ignores a frame function's 2. 75 symbols (`anim/timing`); `tools/anim_scan.py` and the `stop@`
+  root of `RngCallGraph.java`; outputs kept under `workspace/logs/anim/` (`p50a-manifest.sha256`). Archivist entry
+  for the `animdata.d2`/`monseq`/token docs filed; review requested
+  ([backlog](../backlog/archive/2026-10-27-reverser-architect-review-lane-p50a-plan-0050-phase-1-batch.md)). P1.2 (rates:
+  `UNIT_AnimSetRate`, already named) is next. The five data questions of Phase 0's survey (`lane/p50z`) are answered
+  from the code in anim/0001 § 2.1.
+
+- **2026-10-27 — Phase 1, batch P1.1 reviewed: accept with fixes (architect, `lane/p50a` review; static, objdump
+  only, no Ghidra, no harness).** `main` merged into the lane twice (0e3f501 → 0848879, then d24d839 with P0 and P1b
+  part 1; ledger and log conflicts kept both sides; `backlog.py archive` moved nothing). Judged against the plan as on
+  `main` **with the P0 fold** (P1.1's sub-item (a)–(e), landed with `lane/p50z`). Re-run: `tools/anim_scan.py` (scan
+  and rows) byte-identical to the kept outputs (`d6679d5f…`, `8e5d2636…`); `sha256sum -c p50a-manifest.sha256` OK
+  (6 files); tool hashes equal `p50a-commands.txt`'s. objdump of the pinned `Game.exe`: `SUNIT_ScheduleModeEvents`
+  (`0x005539B0`) as § 7 states (one `T` step per `acc < L` pass, the inner scan to `acc >> 8` capped at `0x90`, the
+  jump table `0x00553AFC` 1, 2, 4 → `0x00553A82` with the running index, 3 → `0x00553A9A` with 0, the end at `T + N + 1`
+  or `T + 2`, `+0x44 = T << 8`), so `T + max(2, ⌈(L − 256·S)/r⌉)` for `L > 256·S` holds; `UNIT_AnimAdvance`
+  (`0x00623E00`) as § 8 (the 16-bit signed `0x100` test, the wrap restarting the scan at 0 and the position at the
+  start frame, the last event byte winning); its 11 call sites, 7 monster (`0x005A736C`, `0x005A74AC`, three in
+  `MonAttackFrame`, `0x005A863C`, `0x005A8720`) and 4 client; `UNIT_AnimSetRate` calls neither the event queue nor
+  the cancel; the fallback `+0x40C = 0x800`, `+0x410 = 0x100` returned as `+0x404`; `ANIMDATA_Find`'s forward walk
+  returning the first match; the image's one `AnimData` string at `0x006EED5C` and no `eanimdata`; the five runners in
+  the order missile, player, monster, object, item, every-frame list then slot; `0x005A7BA0` calling the frame
+  function with ECX/EDX only and `sub_00541060_MonEventsRun` not testing the result (`0x005410C4`); the
+  `PlrModeSkillFrame` write of `b` at `0x00580482`; `g_MonModeRecords`, `g_MonModePerFrame` and `g_MonModeEndDirect`
+  dumped and equal to § 10. 75 rows, all `I`, `anim/timing`; no duplicate address or name after both merges; no `[C]`
+  and no raise. `RngCallGraph.java`: `stop@` is parsed before roots and only consulted for callees, so a call without
+  it runs as before (backward-compatible). **Blind check (the `lane/p50c` ruling, applied on P1.1's behalf):** the
+  finding cites no [anim/leads](../findings/anim/leads.md) row and states no community number or formula without an
+  address; the lane ran before the file existed on `main` and was told not to read `lane/p50c` — **leads not read
+  before filing**. Not a lane fix.
+  **Fixes (7), written into the documents:** (1) anim/0001 summary and § 10: the generic S3 (row 10, `schedule` 0)
+  queues no event, so its frame function and "S3 to S4" are run by nothing read; open question 1 widened; (2)
+  `re/types/anim.h` `MonModeRec.pfnFrame` "2 ends the mode" → the return is not read; (3) `re/types/game.h` bit 19's
+  "§ 4" → § 10; (4) `anim.h`'s `MON_ModeEveryFrame` → `sub_005A6B10_MonModeEveryFrame`; (5) § 5 and skills/0001's dated
+  note: `PlrModeSkillFrame` writes the index only with a used skill (`0x00580475` returns 2 first); (6) the Draws
+  summary names the 3 unfollowed indirect calls, § 11 the mode graph's 118; (7) § 6: the frame function gets no code
+  or index, the return's path to `MonEventsRun`, the object runner `sub_00541160_ObjEventsRun`, and the no-record
+  fallback `0x005A7B30`. Not counted (left stale by the P0 and P1b merges): the header's and *Data touched*'s "no
+  format doc", § 2.1's "under review", open question 4, *Leads used* (now naming R1, A3, A4), and a dated note on the
+  archivist entry (items 1–2 met by P0; 3–4 remain).
+  **Rulings.** (a) **Two clocks** stand `[I]`. Phase 2 logs a scheduled mode at `SUNIT_ScheduleModeEvents` (the
+  queued list, once per start) and the kind 0/1 dispatch, and `UNIT_AnimAdvance` only in windows for every-frame
+  monsters; P1.2 answers "does a rate change apply to a mode in progress" as two cases: a scheduled mode keeps its
+  events (bar the § 7.1 reschedules), an every-frame monster's next advance takes the new rate (P1.2 to read).
+  (b) **The ignored 2** (and the generic S3) **stay an open question of anim/0001 for Phase 2 to log**, not routed:
+  what ends the mode is the AI command if anything, which § 12 already names as plan 0052's oracle; Phase 2 records
+  the mode's end event per every-frame attack it meets, and plan 0052 takes it over only if the log shows the AI
+  command. (c) **The RNG scope** is accepted as stated: "only draw" holds over the 171-function graph with its stops
+  and 3 unfollowed callbacks (stats/states'), now in the text; the mode-function graph stays reported by entry, its
+  draws belong to the subsystems named; `PlayerModeAllowed`'s draw is P1.3's gate. (d) The archivist entry stays
+  open for items 3–4, non-blocking. (e) The dated notes in skills/0001 and skills/0002 stand (0001 scoped by fix 5).
+  (f) **§ 2.1 meets the P0 fold** (a)–(e), each `[I]` with its address: first record in the block wins, objects
+  never read their record on the server, a sequence's frame and event come from the sequence record, only
+  `%s\AnimData.d2` is loaded. Ledger: lane row filled (usage from the orchestrator), accept with fixes, 7 (misread 2,
+  omission 2, overclaim 1, wrong anchor 1, symbol clash 1). The review request is closed. **P1.2 may start** once this
+  lane is merged into `main`.
