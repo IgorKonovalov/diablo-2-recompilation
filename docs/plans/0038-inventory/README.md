@@ -1147,6 +1147,42 @@ the setter writes, and a raw scan finds nothing that reaches 0x0052BFC0. **H1b's
 changed no inventory row): **static 567, harness 521, c-emu awaiting a batch 0, blocked 419** (d-none 293, d-edit 73,
 d-sim 28, d-2c 7, d-owner 10, d-0032 8), **deferred 2, raised 17: 1 526.**
 
+**H1a (filed 2026-10-27, reverser, `lane/h1a`): 46 statements of save/d2s, hirelings, player/creation and
+items-uniques-sets.** run:2026-10-27-sweep-d2s-load, 5 kept sessions on slot 2 (expansion, Normal, Nightmare
+and Hell, single player), tool-built saves from `tools/h1a_saves.py` swapped in after the character screen read its
+list, logger `tools/gdb/d2s-h1a.gdb`; plus the S1b session (CalcSor, `tools/gdb/s1b-pieces.gdb`; data-calc 19 and
+rng-seeds 11 stay counted as S1b). `sweep_h1a.py check` on the kept logs: **410 comparisons over 38 cases, 0 failing**, every log's `d2sio.py` part 0 mismatches (`check/sweep-h1a-check.txt`,
+manifest `h1a-manifest.sha256`). The evidence is in the "Plan 0038 batch H1a" sections of
+[save/0001](../../findings/save/0001-d2s-io.md#plan-0038-batch-h1a-run2026-10-27-sweep-d2s-load),
+[hirelings/0001](../../findings/hirelings/0001-hirelings.md#plan-0038-batch-h1a-run2026-10-27-sweep-d2s-load) and
+[player/0001](../../findings/player/0001-creation.md#plan-0038-batch-h1a-run2026-10-27-sweep-d2s-load). The batch is
+45 statements filed (save-d2s 35 in 34 rows, hirelings 4, player-creation 6) and items-uniques-sets 21 from H6d.
+
+- **Raised (32):** save-d2s 9, 22, 26, 27, 28, 29, 30, 36, 38, 44 (2), 46, 47, 49, 52, 53, 54, 59, 62, 65, 68, 80, 90,
+  91, 105, 106, 107, 132; hirelings 32; player-creation 8, 9, 11.
+- **Raised in part (4):** save-d2s 23 (91 → legacy, 94 and 96 accepted, 97 → 7; 92, 93, 95 not loaded), 50 (every
+  status code met; the ladder test and the classic progression bounds not), 139 (the item param half; the `gf` half
+  has no stock case), 140 (the reader half; no write above 8 KiB).
+- **Shortfall (8):** save-d2s 10, 17 (no write above 8 KiB), 126 (no version-92 item list in the 1.09 widths);
+  hirelings 3, 30, 33, player-creation 1, items-uniques-sets 21 (no save in the version 71 or 87 layout: no builder,
+  no format doc; archivist entry).
+- **Proposed d-none (2):** player-creation 20 and 34. A class-7 player is never made: a class-7 full save and a
+  class-7 stub both pass the header, then halt the game at the null-unit test (line 1210) when the player unit is made,
+  so no code reads a class-7 CharStats row or experience column.
+- **Halves proposed d-none (the rows stay counted as H1a, raised in part):** save-d2s 139's `gf` half (no
+  `ItemStatCost` row with `CSvBits` has a `CSvParam`), save-d2s 50's ladder test (it runs only with the host callback
+  set, `0x00883D54`, which the r1h ruling holds is never set on this image).
+
+| Row | Was | Now (proposed) | Why |
+|---|---|---|---|
+| player-creation 20 (class outside 0..6 reads column 0) | b, H1a | **d-none** | No class-7 player unit is made: both loads halt at `sub_00553180`'s null-unit test (1210), per the two crash reports. The statement stays `[I]` as a reading of `EXP_GetThreshold`. |
+| player-creation 34 (class 7 gets nothing; class 0 experience column) | b, H1a | **d-none** | As row 20. |
+
+Net effect on the totals (proposed): harness −2, d-none +2. Taken against `main` after merging it into the lane
+(`ee8273b7`; no inventory change on `main` since the `lane/r1h` review totals above): **static 567, harness 519, c-emu
+awaiting a batch 0, blocked 421** (d-none 295, d-edit 73, d-sim 28, d-2c 7, d-owner 10, d-0032 8), **deferred 2,
+raised 17: 1 526.** H1a's ledger: raised 32, raised in part 4, shortfall 8, d-none 2: 46.
+
 ## 3. Blocked rows, for the plan's open questions
 
 - **d-2c, 14 statements** (items/tc 3, items/vendors 5, items/quest-drops 3, hirelings 1, player/creation 2). This is

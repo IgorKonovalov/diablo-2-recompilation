@@ -33,8 +33,10 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00430750,func,sub_00430750_CreateToggleLadder,,I,player/creation,docs/findings/player/0001-creation.md
 0x00430770,func,sub_00430770_CreateToggleExpansion,,I,player/creation,docs/findings/player/0001-creation.md
 0x00433BF0,func,sub_00433BF0_CreateClassSelect,,I,player/creation,docs/findings/player/0001-creation.md
+0x00438F70,func,sub_00438F70_CharListBuild,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x0043C540,func,sub_0043C540_StubBuild,,C,save/d2s,docs/findings/save/0001-d2s-io.md
 0x0043C6B0,func,sub_0043C6B0_StubWrite,,I,save/d2s,docs/findings/save/0001-d2s-io.md
+0x0043C8A0,func,sub_0043C8A0_CharListReadInfo,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x0043CAA0,func,sub_0043CAA0_ConvertToExpansion,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x0044BE50,func,sub_0044BE50_UnitGetType,,I,items/quality,docs/findings/items/0002-quality-roll.md
 0x0044D5A0,func,sub_0044D5A0_ApplyActOption,,I,player/creation,docs/findings/player/0001-creation.md
@@ -188,11 +190,12 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005337F0,func,sub_005337F0_ItemListReadByVersion,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x00533BF0,func,sub_00533BF0_MercExpFromOldSave,,I,hirelings,docs/findings/hirelings/0001-hirelings.md
 0x00533C70,func,sub_00533C70_ReadMercOldSave,,I,hirelings,docs/findings/hirelings/0001-hirelings.md
-0x00534330,func,D2S_ReadSave,,I,save/d2s,docs/findings/save/0001-d2s-io.md
-0x005343A0,func,PLRSAVE_ReadFile,,I,save/d2s,docs/findings/save/0001-d2s-io.md
+0x00534020,func,sub_00534020_ReadSaveLegacy,,I,save/d2s,docs/findings/save/0001-d2s-io.md
+0x00534330,func,D2S_ReadSave,,C,save/d2s,docs/findings/save/0001-d2s-io.md
+0x005343A0,func,PLRSAVE_ReadFile,,C,save/d2s,docs/findings/save/0001-d2s-io.md
 0x005344B0,func,sub_005344B0_PlayerLoadFromFile,,I,save/d2s,docs/findings/quests/0001-progression.md
 0x00534520,func,sub_00534520_PlayerLoadFromClient,,I,save/d2s,docs/findings/quests/0001-progression.md
-0x005345A0,func,sub_005345A0_PlayerLoad,,I,save/d2s,docs/findings/save/0001-d2s-io.md
+0x005345A0,func,sub_005345A0_PlayerLoad,,C,save/d2s,docs/findings/save/0001-d2s-io.md
 0x00534630,func,sub_00534630_PlrSaveWrapper,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x005347B0,func,DEBUG_ToHitRollStub,"void __fastcall DEBUG_ToHitRollStub(void * game, void * attacker, void * defender, int chance, int roll)",C,combat/formulas,docs/findings/combat/0001-formulas.md
 0x005347C0,func,DEBUG_DefenceRollStub,"void __fastcall DEBUG_DefenceRollStub(void * game, void * defender, void * unit, int chance, int roll, char * label)",C,combat/formulas,docs/findings/combat/0001-formulas.md
@@ -446,6 +449,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00552F60,func,sub_00552F60_GameFindUnit,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x00552FD0,func,sub_00552FD0_UnitGetOwner,,I,skills/missiles,docs/findings/skills/0002-missiles.md
 0x00553010,func,sub_00553010_UnitStoredUnit9C,,I,skills/catalogue,docs/findings/skills/0015-item.md
+0x00553180,func,sub_00553180_PlayerSetClient,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x00553220,func,sub_00553220_UnitFrameReset,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x00553380,func,sub_00553380_UnitSetEvent,,I,items/cube,docs/findings/items/0008-cube.md
 0x005533D0,func,SUNIT_AnimInit,,I,anim/timing,docs/findings/anim/0001-modes-frames.md
@@ -593,16 +597,16 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005699A0,func,D2S_WriteMercItems,,C,save/d2s,docs/findings/save/0001-d2s-io.md
 0x00569A00,func,D2S_WriteGolem,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x00569AD0,func,D2S_WriteSave,,C,save/d2s,docs/findings/save/0001-d2s-io.md
-0x00569D80,func,D2S_CheckStatus,,I,save/d2s,docs/findings/save/0001-d2s-io.md
+0x00569D80,func,D2S_CheckStatus,,C,save/d2s,docs/findings/save/0001-d2s-io.md
 0x00569EC0,func,sub_00569EC0_DecodeSkillSlot,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x00569F20,func,sub_00569F20_PlayerUnitInit,,C,player/creation,docs/findings/player/0001-creation.md
 0x00569F80,func,sub_00569F80_NewCharFromStub,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x0056A090,func,D2S_ReadHeader,,C,save/d2s,docs/findings/save/0001-d2s-io.md
-0x0056A370,func,D2S_ReadQuests,,I,save/d2s,docs/findings/save/0001-d2s-io.md
-0x0056A3E0,func,D2S_ReadWaypoints,,I,save/d2s,docs/findings/save/0001-d2s-io.md
+0x0056A370,func,D2S_ReadQuests,,C,save/d2s,docs/findings/save/0001-d2s-io.md
+0x0056A3E0,func,D2S_ReadWaypoints,,C,save/d2s,docs/findings/save/0001-d2s-io.md
 0x0056A470,func,D2S_ReadNpcs,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x0056A4F0,func,D2S_ReadStatsBits,,C,save/d2s,docs/findings/save/0001-d2s-io.md
-0x0056A620,func,D2S_ReadStats,,I,save/d2s,docs/findings/save/0001-d2s-io.md
+0x0056A620,func,D2S_ReadStats,,C,save/d2s,docs/findings/save/0001-d2s-io.md
 0x0056A710,func,D2S_ReadSkills,,C,save/d2s,docs/findings/save/0001-d2s-io.md
 0x0056A7E0,func,D2S_ReadItemList,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x0056A830,func,D2S_ReadCorpses,,C,save/d2s,docs/findings/save/0001-d2s-io.md
@@ -2353,7 +2357,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0062C590,func,sub_0062C590_ItemCanImbue,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
 0x0062C6A0,func,sub_0062C6A0_ItemCanPersonalize,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
 0x0062C770,func,sub_0062C770_ItemCanQuestSocket,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
-0x0062CBE0,func,ITEMS_ReadFull,,I,save/d2s,docs/findings/save/0001-d2s-io.md
+0x0062CBE0,func,ITEMS_ReadFull,,C,save/d2s,docs/findings/save/0001-d2s-io.md
 0x0062E430,func,ITEMS_Deserialize,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x0062E5D0,func,sub_0062E5D0_ItemIsRepairableStack,,I,items/economy,docs/findings/items/0011-economy.md
 0x0062E660,func,sub_0062E660_ItemCanRepair,,I,items/economy,docs/findings/items/0011-economy.md
@@ -2701,7 +2705,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0065C3A0,func,QUESTRECORD_ClearState,,I,save/d2s,docs/findings/save/0002-quest-words.md
 0x0065C3E0,func,QUESTRECORD_ClearSteps,,I,quests/progression,docs/findings/quests/0001-progression.md
 0x0065C430,func,QUESTRECORD_Alloc,,I,save/d2s,docs/findings/save/0002-quest-words.md
-0x0065C4D0,func,QUESTRECORD_LoadBytes,,I,save/d2s,docs/findings/save/0002-quest-words.md
+0x0065C4D0,func,QUESTRECORD_LoadBytes,,C,save/d2s,docs/findings/save/0001-d2s-io.md
 0x0065C560,func,QUESTRECORD_SaveBytes,,I,save/d2s,docs/findings/save/0002-quest-words.md
 0x0065C660,func,sub_0065C660_AffixPropBlock,,I,items/properties,docs/findings/items/0006-properties.md
 0x0065C6D0,func,sub_0065C6D0_PropBlock3x3,,I,items/properties,docs/findings/items/0006-properties.md
@@ -2752,8 +2756,8 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00660E00,func,WAYPOINT_IndexFromLevel,,I,save/d2s,docs/findings/save/0002-quest-words.md
 0x00660E50,func,WAYPOINT_IsSet,,I,save/d2s,docs/findings/save/0002-quest-words.md
 0x00660EC0,func,WAYPOINT_Set,,I,save/d2s,docs/findings/save/0002-quest-words.md
-0x00661030,func,WAYPOINT_Load,,I,save/d2s,docs/findings/save/0001-d2s-io.md
-0x006610B0,func,WAYPOINT_Save,,I,save/d2s,docs/findings/save/0001-d2s-io.md
+0x00661030,func,WAYPOINT_Load,,C,save/d2s,docs/findings/save/0001-d2s-io.md
+0x006610B0,func,WAYPOINT_Save,,C,save/d2s,docs/findings/save/0001-d2s-io.md
 0x00663270,func,sub_00663270_MissileSpeedAtLevel,,I,skills/catalogue,docs/findings/skills/0008-sorceress.md
 0x006632C0,func,sub_006632C0_PlrSeqColumn,,I,anim/timing,docs/findings/anim/0001-modes-frames.md
 0x00663310,func,sub_00663310_UnitSeqRecord,,I,anim/timing,docs/findings/anim/0001-modes-frames.md

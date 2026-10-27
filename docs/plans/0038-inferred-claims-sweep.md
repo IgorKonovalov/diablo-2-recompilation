@@ -3863,3 +3863,28 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     shortfall 5, d-none 4: 48. **static 567, harness 521, c-emu 0, blocked 419** (d-none 293, d-edit 73, d-sim 28,
     d-2c 7, d-owner 10, d-0032 8), **deferred 2, raised 17: 1 526**, as the lane filed them.
   - **Backlog:** review request closed. **Next:** merge `lane/r1h`; H1a (`d2s-load`) as before.
+- **2026-10-27 — H1a (`d2s-load`) filed (reverser, `lane/h1a`, harness slot 2, from `main` `550d2dcc`, `main`
+  `ee8273b7` merged in).** Slot 2 is stopped and its saves directory restored (empty, no aside); no game, driver, gdb
+  or watcher of the lane is left.
+  - **Method:** the character screen lists only files that pass its own header tests (`0x0043C8A0`) and takes the
+    game's status from the listed file, so the runner (`tools/h1a_sessions.py`) lets the screen read a listed file,
+    then copies the case file over it and presses OK: the server reads the case's bytes. 5 kept sessions (main, order,
+    stub7, name15, mercmf) and the S1b piece on tool-built saves (`tools/h1a_saves.py`, 37 cases), logger
+    `tools/gdb/d2s-h1a.gdb` (the H1b logger plus `d2s-h1a.py`), checker `tools/sweep_h1a.py` (runs `d2sio.py check`
+    first). `d2sio.py` gained the file-only code model (4, 6, 5, 7), the error-map table, `context=`, `UNPARSED` and
+    `UNTERMINATED`; the H1b logs re-check byte-identical (2 798, 0 failing) and the 2026-10-12 logs keep `main`'s totals.
+  - **Check:** **410 comparisons over 38 cases, 0 failing**; every `d2sio.py` part 0 mismatches (`workspace/logs/h1a/check/sweep-h1a-check.txt`, manifest `h1a-manifest.sha256`).
+  - **Ledger (46):** raised 32, raised in part 4, shortfall 8, proposed d-none 2 (player-creation 20, 34: no class-7
+    player is ever made; both class-7 loads halt at line 1210). Halves proposed d-none: save-d2s 139's `gf` half, 50's
+    ladder test. Totals against `main` `ee8273b7`: **static 567, harness 519, c-emu 0, blocked 421** (d-none 295),
+    **deferred 2, raised 17: 1 526** (inventory § 2.6 H1a block).
+  - **New readings (for the spec-writer entry):** `D2S_ReadSave`'s 9 is unmapped; a waypoint record with marker 0 or
+    `0x0101` is zeroed with its marker and `WAYPOINT_Save` restores `0x0102`; a set id with no record drops the item,
+    not the load; a unique id ≥ the count is −1, written `0xFFF`; for a version ≤ 95 the current durability is 8 bits;
+    `0x29` bounds the old stat form; class 7 halts.
+  - **S1b piece:** the CalcSor session ran as staged (`rng.py seedtree` 1 884/1 884; `calc.py hover` 7 `CH` lines, 0 hover evaluations, 8 drink evaluations; `calc.py check` 52/52). data-calc 19's hover half and rng-seeds 11's caller 0x00569F53 are met (notes in data/0005 and rng/0002); the rows stay S1b for the review. The 2026-10-16 entry is closed (archive).
+  - **Symbols** (rule 14): ten readers I → C; four functions added (I).
+  - **Backlog:** archivist [2026-10-27-reverser-archivist-h1a-d2s-legacy-layouts-and-parser-gaps](../backlog/2026-10-27-reverser-archivist-h1a-d2s-legacy-layouts-and-parser-gaps.md);
+    spec-writer [2026-10-27-reverser-spec-writer-h1a-save-d2s-player-creation-raises](../backlog/2026-10-27-reverser-spec-writer-h1a-save-d2s-player-creation-raises.md)
+    (held for the review); review request [2026-10-27-reverser-architect-review-lane-h1a-plan-0038-batch-h1a](../backlog/2026-10-27-reverser-architect-review-lane-h1a-plan-0038-batch-h1a.md).
+  - **Next:** the `lane/h1a` review.
