@@ -1209,9 +1209,15 @@ OBJTRAP_ObjectCreate (0x00582380):
   margin, which the created class's size would not give. (fn:OBJPOP_Clusters@0x00550C20, fn:OBJ_PosTestPadded@0x00550220,
   run:2026-10-19-h5b-objects)
 - [C] **The shrine cap, its `> roomCount ÷ 8` half** (rows 3, 15): twice (Catacombs, `roomCount` 15 and two
-  shrines placed, sessions cata and traps2). The cap returned before any draw of the
-  handler, and the seeds after the handler match. The `= 10` half needs `roomCount ≥ 80` with ten shrines placed; it was
-  not reached. (fn:OBJPOP_Shrine@0x00552B50, run:2026-10-19-h5b-objects)
+  shrines placed, sessions cata and traps2). The cap returned before any placement draw (after the handler's
+  `P100(S)` draw), and the seeds after the handler match: they confirm one room draw, then the return. The `= 10` half
+  needs `roomCount ≥ 80` with ten shrines placed; it was not reached. (fn:OBJPOP_Shrine@0x00552B50,
+  run:2026-10-19-h5b-objects)
+  *Corrected 2026-10-27* (the `lane/s38o` review, plan 0038 Phase 3, ruling 1): this bullet said the cap returned
+  "before any draw of the handler". `OBJPOP_Shrine` steps the room seed with `0x6AC690C5` at 0x00552B9A–0x00552BBA,
+  before the `HealthShrineDue` call at 0x00552BC5 and the cap call (`OBJRGN_ShrineCapReached`) at 0x00552BF7; § 4's
+  handler 2 step 1 and `tools/objects.py` `pop_2` have that draw first. No tag changes.
+  (fn:OBJPOP_Shrine@0x00552B50, fn:OBJRGN_HealthShrineDue@0x00547330, fn:OBJRGN_ShrineCapReached@0x00547360)
 - [I] **The well cap** (row 19) was not reached: no level placed more than `roomCount ÷ 8` wells before a well slot.
   (fn:OBJPOP_Well@0x005516C0, run:2026-10-19-h5b-objects)
 - [C] **The due rule and the forced conversion** (rows 16, 17, 50; E2). In the City of the Damned (level 106, 75 rooms,

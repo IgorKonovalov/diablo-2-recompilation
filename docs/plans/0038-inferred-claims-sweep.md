@@ -4622,7 +4622,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
        the cap, so the seeds that matched after the two cap returns confirm the draw. E2's order and § E's count stand;
        the finding means "before any placement draw". The spec's *Constants* row, which copied the finding's words, is
        fixed; the finding's wording goes to the reverser
-       ([entry](../backlog/2026-10-27-architect-reverser-h5b-shrine-cap-wording.md)). No code question.
+       ([entry](../backlog/archive/2026-10-27-architect-reverser-h5b-shrine-cap-wording.md)). No code question.
     2. **7 against 4 super chests.** The 29 logs hold 7 `OPU0` lines with id 580 at 7 distinct positions (sessions 3:
        three in level 79; 13: level 44; 29: two in level 62; 30: level 4), each run through the checker's 580 model, so
        S4a's 7 counts creations, not re-creations or windows twice. The run record's "super chests (DS1 580) 4, all
@@ -4650,3 +4650,10 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     misread 1, miscount 1, omission 1; usage from the orchestrator: 297 611 tokens, 122 tools, 18 min); the review row
     added, usage "—".
   - **Next:** merge `lane/s38o`; objects is done for plan 0038 Phase 3.
+- **2026-10-27 — H5b.2 shrine-cap wording (reverser, `lane/rsw`).** The `lane/s38o` review's ruling 1 is carried into
+  objects/0001 § H5b.2: the shrine cap returned "before any placement draw (after the handler's `P100(S)` draw)", with
+  a dated correction naming the room-seed step at 0x00552B9A–0x00552BBA, `OBJRGN_HealthShrineDue` at 0x00552BC5 and
+  the cap call at 0x00552BF7 (objdump of 0x00552B50–0x00552C10). No other finding repeats the wording; no tag, symbol
+  or spec change. The entry is closed
+  ([archive](../backlog/archive/2026-10-27-architect-reverser-h5b-shrine-cap-wording.md)); review requested
+  ([entry](../backlog/2026-10-27-reverser-architect-rsw-review.md)).
