@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, monsters/pool, monsters/spawn, monsters/special, items/properties, data/excel]
 consumed_by: [items/tc, hirelings, combat/overview, combat/damage, stats/aggregate, chain]
-tags: {C: 130, I: 47, L: 5}
+tags: {C: 134, I: 50, L: 5}
 updated: 2026-10-27
 ---
 
@@ -49,7 +49,7 @@ flowchart TD
 | Classic nightmare and hell factors | fn:sub_0063EEF0_MonClassicDiffAdjust@0x0063EEF0 | [C] (run:2026-10-15-mon-stats) |
 | Any later change of max HP (stat 7) | fn:sub_0055B800_MonStatCallback@0x0055B800 | [C] (run:2026-10-15-mon-stats) |
 | Special-mod handlers (stat writes) | fn:sub_005A2120_SpecialModsApply@0x005A2120 → the handlers of § G | [C] for the handlers met (run:2026-10-15-mon-stats) |
-| Attack: to-hit and damage (reference only; the attack is [combat](../combat/README.md)) | fn:sub_005A4F50_MonAttackStats@0x005A4F50 | [C] for its draws (run:2026-10-16-combat); [I] for its stats |
+| Attack: to-hit and damage (reference only; the attack is [combat](../combat/README.md)) | fn:sub_005A4F50_MonAttackStats@0x005A4F50 | [C] for its draws (run:2026-10-16-combat) and for stats 21, 22 and 19 from the mode's MonLvl cells (run:2026-10-27-skills); [I] for the other terms |
 
 ## Inputs
 
@@ -488,9 +488,18 @@ MonStats record names the `irongolem` row. [C] (fn:sub_00573470_MonPropRec@0x005
 tbl:MonProp.txt:prop1, tbl:MonStats.txt:MonProp, [monsters/0004 § Plan 0038 batch S3b](../../findings/monsters/0004-stats.md#plan-0038-batch-s3b-2026-10-16))
 The third, `druidhawk`, **is** reachable: it is the summon of the Druid skill Raven (221), `MonStatsInit` takes `d` = 0
 only for the five hireling classes, and `MonPropRec` runs for every monster (0x0057416D), so a Druid's Raven in a normal
-game reads the normal row (`stupidity`, −1). The summon's creation path into `MonsterInit` is not read and no such
-creation was logged (*Open questions*). [I] (fn:sub_00573CB0_MonStatsInit@0x00573CB0, fn:sub_0063EE90_HirelingType@0x0063EE90,
+game reads the normal row (`stupidity`, −1). The summon's creation path into `MonsterInit` is not read and the MonProp
+list of such a creation was not logged (*Open questions*). [I] (fn:sub_00573CB0_MonStatsInit@0x00573CB0, fn:sub_0063EE90_HirelingType@0x0063EE90,
 0x0057416D, tbl:Skills.txt:summon)
+
+F3. **A summon's seed, life and defence** are the creation's: in 219 summons of plan 0045 (207 Ravens, 12 Raise Skeleton
+`necroskeleton`) the new unit's seed is `Init(Step(game seed).low)` and its life (stat 6 = stat 7) and defence (stat 31)
+are what `MonStatsInit`'s draws give on that seed (§ B: one draw per MonStats2 component with a count of 1 or more,
+then the life draw of the class's raw cells, both classes `noRatio`); the Raven's 20–32 range separates in 207.
+[C] (fn:sub_0056D940_SpawnOwnedMonster@0x0056D940, fn:sub_00573CB0_MonStatsInit@0x00573CB0, run:2026-10-27-skills,
+[skills/dispatch § L](../skills/dispatch.md#l-summons)) The summon's other stats (`SummonInitStats`, the skill's
+bonuses) and a summon class without `noRatio` are not checked. [I] (fn:sub_005C4470_SummonInitStats@0x005C4470,
+run:2026-10-27-skills)
 
 ### G. The mod handlers' stat effects
 
@@ -637,20 +646,38 @@ H1. MonAttackStats(unit, mode), at each attack:                  [I] (fn:sub_005
       add the skill-damage pair (0x0056E050)
       if classic and d > 0 and Align ≠ 1: damage × 10/12, to-hit × 10/15
       if expansion: b ← (d = 0 or n < 2) ? 0 : (n < 9 ? 8·(n − 1) : 8n − 16), n = stat 100; each value += value·b ÷ 128
-      write stats 21, 22, 19 to a list of the unit
+      clear the list, then write stats 21, 22, 19 to it
       for each El<e> whose mode matches: apply if El<e>Pct ≥ 100 or Range(unit.seed, 100) < El<e>Pct   ; draw; type 10 also Range(unit.seed, 5)
+        ; MonLvlStats mask 0x40 + e: El2 and El3 take El1's minimum, maximum and length
 ```
 
 H1. To-hit, damage and elemental damage are not creation stats. They are out of the creation model; the expansion
-damage bonus is + 6.25 % per player beyond the first, in nightmare and hell only. The stats H1 writes were value inputs
-of the combat run, so their formulas stay [I]. (fn:sub_005A4F50_MonAttackStats@0x005A4F50, fn:sub_005A4F20_PlayerDmgBonus@0x005A4F20)
+damage bonus is + 6.25 % per player beyond the first, in nightmare and hell only. [I] (fn:sub_005A4F50_MonAttackStats@0x005A4F50, fn:sub_005A4F20_PlayerDmgBonus@0x005A4F20)
+
+H1. **Stats 21, 22 and 19 are confirmed** for the plain cells: in 26 425 calls of plan 0045 (12 732 in
+run:2026-10-25-skills' logs, 13 693 in run:2026-10-27-skills') they are `MulDiv(MonLvl DM, MinD / MaxD, 100)` and
+`MulDiv(MonLvl TH, TH, 100)` of the mode's columns, `A2` for mode 5, `S1` for modes 7 and 8, `A1` for every other
+(the raw cells for a `noRatio` class), at the unit's stat 12 and the game's difficulty; another column set gives other
+values in 26 383 of them. A summon's full list adds its other lists to the same stats: the offset at its first call
+holds over its 5 693 later calls. [C] (fn:sub_005A4F50_MonAttackStats@0x005A4F50, fn:sub_006538A0_MonLvlStats@0x006538A0,
+run:2026-10-27-skills, run:2026-10-25-skills)
+
+H1. The rest of H1 is the code reading: the `L` columns (the plain ones gave the same values in every call), the
+classic factors and the expansion bonus (`b` = 0 in every call: normal and nightmare, one player), the skill-damage
+pair (the 2 218 calls of the Raven class 419 are not modelled), type 10's redraw; the list cleared before the writes,
+so a stat the call does not write reads 0 afterwards (`0x005A4FB3`); and `El2`/`El3` taking `El1`'s bounds through
+the mask `0x40 + e` (`0x005A51D7`–`0x005A525C`; no logged call applied one). [I] (0x005A4FB3, 0x005A51D7,
+run:2026-10-27-skills, [monsters/0004 § 9](../../findings/monsters/0004-stats.md#9-to-hit-and-damage-at-attack-time-sub_005a4f50_monattackstats))
 
 H1. **The draws are confirmed.** `MonAttackStats` draws one `Range(unit.seed, 100)` per `El` group whose mode matches
 and whose percent is 1..99, one `Range(unit.seed, 5)` for an element type 10, and nothing else: 5 060 calls, 167 with
 an `El` group applied, 2 795 chained to the attack they open. [C] (fn:sub_005A4F50_MonAttackStats@0x005A4F50,
-run:2026-10-16-combat) It runs at the monster's mode change (`MonSetMode` passes the new mode, except for get-hit);
-mode 5 reads the `A2` cells, 7 and 8 the `S1` cells, every other mode (`sequence` 14 included) the `A1` cells. [I]
-(fn:sub_005A7C20_MonSetMode@0x005A7C20, 0x005A7D34)
+run:2026-10-16-combat) Plan 0045's 26 439 modelled calls held the same: 21 with one `Range(unit.seed, 100)` (19
+failing, 2 applying an `El1` cold and poison attack), 26 418 with none; the 516 calls made before the unit has a stat
+list write nothing and leave the seed as it was. [C] (fn:sub_005A4F50_MonAttackStats@0x005A4F50, run:2026-10-27-skills)
+It runs at the monster's mode change (`MonSetMode` passes the new mode, except for get-hit). [I]
+(fn:sub_005A7C20_MonSetMode@0x005A7C20, 0x005A7D34) Mode 5 reads the `A2` cells, 7 and 8 the `S1` cells, every other
+mode the `A1` cells. [C] (fn:sub_005A4F50_MonAttackStats@0x005A4F50, run:2026-10-27-skills) `sequence` 14 among the others is the reading. [I] (0x005A7D34)
 
 H1. **`noRatio` elemental damage is 0 at attack time.** For a `noRatio` class `MonLvlStats` writes the raw
 `El<e>MinD/MaxD` to its output `+0x24`/`+0x28`, but `MonAttackStats` reads the elemental min and max at `+0x2C`/`+0x30`,
@@ -873,9 +900,11 @@ fn:sub_005A1910_UModFast@0x005A1910, run:2026-10-15-mon-stats)
   `MulDiv` branches are closed by plan 0038 (§ B7, § B3, § A1).
 - [L] **MonProp in normal, corrected by plan 0038 S3b** (§ F3): the `druidhawk` normal row was said unreachable, but a
   Druid's Raven in a normal game reads it by the code. A Druid casting Raven in a normal game under `mon-stats.gdb` (its
-  `SI` lines carry the MonProp stat list) would log it; the H4a run did not take that piece.
+  `SI` lines carry the MonProp stat list) would log it; the H4a run did not take that piece, and run:2026-10-27-skills
+  checked the Ravens' seed, life and defence only.
 - ~~`Flag-0 calls go to the minions of uniques and superuniques only`~~ (§ G, corrected by plan 0038 S3a): a `SetBoss`
   champion-pack member's own MonStats minions get flag-0 calls too.
-- [L] The formulas of the stats `MonAttackStats` writes (§ H1: the MonLvl cells, the skill-damage pair, the classic
-  factors, the expansion player-count bonus): run:2026-10-16-combat took them as value inputs. A run that asserts them
-  confirms § H ([combat § Open questions](../combat/README.md#open-questions)).
+- ~~The formulas of the stats `MonAttackStats` writes~~: the plain MonLvl cells by mode confirmed by
+  run:2026-10-27-skills (§ H1).
+- [L] The rest of `MonAttackStats` (§ H1): the `L` cells, the skill-damage pair, the classic factors, the expansion
+  player-count bonus, type 10's redraw, and an `El2`/`El3` attack ([combat § Open questions](../combat/README.md#open-questions)).

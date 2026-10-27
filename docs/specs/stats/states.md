@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [stats/overview, stats/aggregate, rng, combat/delivery, data/calc, objects]
 consumed_by: [combat/delivery, combat/overview, objects]
-tags: {C: 51, I: 53, L: 6}
-updated: 2026-10-21
+tags: {C: 52, I: 54, L: 6}
+updated: 2026-10-27
 ---
 
 # States: the timed apply, expiry, the group clear, the regeneration tick, auras, shrines and wells
@@ -182,6 +182,14 @@ Step notes:
   (§ G) and about twenty skill functions call B1; poison, burn, cold and freeze use their own appliers
   ([combat/delivery](../combat/delivery.md)) with the same list shape. (fn:STATEVENT_OpenWounds@0x005BFE60,
   fn:sub_0057D810_PreventHealHook@0x0057D810, fn:COMBAT_ApplyPoison@0x0057AC50)
+- B2. [C] **Prevent heal (state 52)** is applied by B1 for 120 000 frames with stat 31 = 0 to the defender in 86 of 918
+  calls of the to-hit hook, exactly those with the player attacker's stat 117 non-zero, and the hook draws on neither
+  seed ([skills/dispatch § K3](../skills/dispatch.md#k-stat-event-handlers)). **Open wounds** applies state 62 for
+  200 frames when its roll passes (82 of 120 fires). (fn:sub_0057D810_PreventHealHook@0x0057D810,
+  fn:STATEVENT_OpenWounds@0x005BFE60, fn:STATE_ApplyTimed@0x0056E970, run:2026-10-27-skills, run:2026-10-25-skills)
+- B2. [I] The hook's type and class tests (a monster defender outside 704–709) are not separated: every call had a
+  player attacker and a monster defender outside that range. (fn:sub_0057D810_PreventHealHook@0x0057D810,
+  run:2026-10-27-skills)
 - B3. [I] **Potions** (`sub_005BEDA0_ItemUseTimedState`) run the group clear (§ D) before they apply.
   (fn:sub_005BEDA0_ItemUseTimedState@0x005BEDA0, fn:STATE_GroupClear@0x0056C740)
 
@@ -565,8 +573,12 @@ leaves the cache. (fn:sub_00580610_LifeRegenTick@0x00580610, run:2026-10-17-stat
   clear (D1). Open wounds on the player needs another player's item (plan 0044's case, not run).
 - [L] The monster gate's two bits (MonStats `+0x0D` bit 0, MonStats2 `+0x05` bit 1): which columns.
 - [L] The skill shrine's `Arg0` (2): no stat is written, so the +2 skills come from a reader of state 134 not read.
-- [L] Holy Shield, the progressive skills and the timed self-states (armours, shouts): their skill functions
-  (phase 3); the aura request's `+0x48` field and `SKILLS_ForUnitsInRange`'s monster exclusion flag.
+- ~~Holy Shield, the progressive skills and the timed self-states (armours, shouts): their skill functions; the aura
+  request's `+0x48` field.~~ Specified in [skills/dispatch](../skills/dispatch.md) § O (do 18, the timed self-state of
+  Holy Shield and Bone Armor) and § J (the progressive charges), plan 0045 Phase 3; the `+0x48` word is do 65's
+  `passivestate`, the state the apply removes from the caster
+  ([skills/0011 § Answer](../../findings/skills/0011-paladin.md#answer-summary)).
+- [L] `SKILLS_ForUnitsInRange`'s monster exclusion flag.
 - [L] Seven States rows (6, 25, 29, 39, 116, 164, 171) have no immediate setter in the scan of stats/0002; whether
   anything sets them is open.
 - [L] Two clients (plan 0044): whether an offensive aura (`0x8000`) reaches a hostile player, and hostile states;
