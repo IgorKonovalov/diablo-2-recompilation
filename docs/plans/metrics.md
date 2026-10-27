@@ -317,6 +317,7 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-10-27 | `lane/a50t` review | 0050 P1.2 follow-up | architect-review | 112 791 | 41 | 11 | — (static, no Ghidra, no harness) | gave accept with fixes | — (on the lane row) |
 | 2026-10-27 | `lane/s45p4` | 0045 P4 | wiki | 212 809 | 43 | 14 | — (no slot, no Ghidra, no harness) | accept with fixes (rulings: missiles F1's `[C]` and `[I]` bullets on the mastery reconciled at `[I]` after `lane/rbd`, spec-writer entry filed, the page takes the weaker tag now; Kick worded at § O's and § I's tags, I4's ÷ 3 maximum and Kick's start-hit damage to the same entry; plan 0045 closed) | 9: overclaim 5, misread 2, omission 2 ("five uses" for C4's checks, Kick's "fixed hit", the missile chain's "not the melee build's", the direction table, the mastery step in confirmed text; the `Kick`-flag damage beside Kick's hit, `k` as the index for the monster's missiles; the *Fleshripper* log, the diagram's non-moving step) |
 | 2026-10-27 | `lane/s45p4` review | 0045 P4 | architect-review | 218 841 | 52 | 13 | — (static, no Ghidra, no harness) | gave accept with fixes | — (on the lane row) |
+| 2026-10-27 | `lane/rbd` | backlog: skills/0002 § 6 `BuildDamage` swap and unit; 0038 H4a chained-model mismatches | reverser-static | — | — | — | — (static, objdump, no Ghidra, no harness) | pending | — |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not

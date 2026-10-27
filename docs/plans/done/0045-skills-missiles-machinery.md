@@ -1045,7 +1045,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     the `[C]` note says so. (2) *omission:* F1 had no swap of an inverted pair (`0x005A894B`, physical `0x005A89EB`)
     and tested the bounds after the mastery: rewritten, one new `[I]` bullet (missiles I 90 → 92 with the inline swap
     tag); the finding gap filed for the reverser
-    ([backlog](../../backlog/2026-10-27-architect-reverser-skills-0002-builddamage-pair-swap-and-unit.md)). (3)
+    ([backlog](../../backlog/archive/2026-10-27-architect-reverser-skills-0002-builddamage-pair-swap-and-unit.md)). (3)
     *misread:* missiles § A drew the creation callback after the critical chain and the pierce count; H2 and B1 run it
     before the damage block: moved. (4) *wrong anchor:* the three gate W1 warnings (missiles D4's `v < 0`, F1's pair
     order and stat 180 inline tags) carried no anchor: anchored (the ruling on the W1 warnings). (5) *other:* the

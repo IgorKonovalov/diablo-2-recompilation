@@ -3332,7 +3332,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     rows 36, 42 and 60 have no fixed 30 (`Mod1`–`Mod3` 6/27, 5, none) and get one `AUR`; row 28 (`Mod1` 30) gets two; with
     the two kept-log cases the fixed side has three. (d) The chained-model mismatches (council DRLG room tiles 3, nihl2
     `monspawn` 1 for class 526's mod 22, chaos7 collision `0x1000` 2 + 10) touch no H4a row and get one reverser entry,
-    [2026-10-25-architect-reverser-h4a-chained-model-mismatches-council-nihl2](../backlog/2026-10-25-architect-reverser-h4a-chained-model-mismatches-council-nihl2.md).
+    [2026-10-25-architect-reverser-h4a-chained-model-mismatches-council-nihl2](../backlog/archive/2026-10-25-architect-reverser-h4a-chained-model-mismatches-council-nihl2.md).
     (e) Class 312's piece raises stats 14 and 13's remainder: both rows raised whole, still counted as H4b (a Phase 3
     note, no class move). (f) stats 7, 18 and 21 may rest on run:2026-10-20-chain's reviewed check (kept, hashed, cited
     by its own output and re-run here). (g) `sub_005B24E0_EscortSpawn` C stands (rule 14: return 1 and the 20 units

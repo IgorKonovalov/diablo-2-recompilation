@@ -1182,6 +1182,63 @@ return (20 of the class passed, twice) are what the `tails` part compares (rever
 `QUESTS_HookMonster`'s return is not compared, and the wanderer functions' effect is checked on the seed, not on a
 return.
 
+## Lane rbd: `MonPostCreateBoss` and the H4a chained models (2026-10-27)
+
+From the backlog entry on the H4a chained models (nihl2, `h4a-s1-4910-nihl2:31107`). Nihlathak (class 526, superunique
+record 60) leaves `SpecialMonPlace` with mods `[22]` (the `SMPX` line) after `MU`'s empty list, and `SU1` gives
+`[22, 30]`. The model had `[30]`.
+
+- [I] **`MonSpawnTry`'s two post-create helpers.** After the alignment setter, `MonSpawnTry` calls
+  `sub_005B21B0_MonPostCreateMods` only when the request's flag word (`+0x24`, kept at `[ebp−0x2C]`, `0x005B2A91`–`0x005B2A98`)
+  has bit `0x2` clear (`test bl, 2; jne` at `0x005B2ECF`). It then calls `sub_005B1CF0_MonPostCreateBoss` with no test
+  (`0x005B2EDF`), and the minions follow unless bit `0x40` is set (`0x005B2EE4`). Both helpers key on the **requested**
+  class (`[request+0x0C]`). (fn:sub_005B2A00_MonSpawnTry@0x005B2A00)
+- [I] **`MonPostCreateBoss`'s cases**, by the class's MonStats `BaseId`. A class with no record, or a `BaseId` outside
+  the table, takes no case (`0x005B1CFD`–`0x005B1D3C`). Above `0x1B2` the cases are compares (`0x005B1D3E`, `0x005B2002`);
+  from `0x9C` to `0x199` they go through the jump table `0x005B2060`, indexed by the bytes at `0x005B20A4`
+  (17 targets; 235 of the 254 indices fall through to the exit). Each mod goes through `sub_005A4850_ModAppendApply(game, unit, mod, flag)`: with flag 1
+  it first calls `sub_005A0320_MonMarkSpecial`, then writes the mod in the first free slot (none if all 9 are used) and
+  calls its `g_UModHandlers` entry, if any, with the flag (`0x005A4850`–`0x005A48B0`). Every mod is flag 1 except
+  `firegolem`'s.
+
+  | `BaseId` (classes) | mods, in call order | other calls |
+  |---|---|---|
+  | 156 `andariel` | 22; `uberandariel` (707): 23, 6, 29 | quest hook 6 |
+  | 211 `duriel` | none; `uberduriel` (708): 6, 18 | quest hooks 13, 9 |
+  | 242 `mephisto` | 22; `ubermephisto` (704): 22, 30, 17, 8, 6 | quest hook 20 |
+  | 243 `diablo`, `diabloclone` | 22; `uberdiablo` (705): 22, 8, 6 | quest hook 23 |
+  | 256 `izual` | 22; `uberizual` (706): 6, 18 | quest hook 22 |
+  | 544 `baalcrab` | 22; `uberbaal` (709): 22, 18, 8, 6 | quest hook 36 |
+  | 267 `bloodraven` | 12, 22 | quest hook 2; `0x00639DB0(unit, 0x76, 1)` |
+  | 284 `maggotqueen1`..`5` | 23, 22 | |
+  | 292 `firegolem` | 31 (flag 0) | |
+  | 366 `compellingorb` | 22 | quest hook 19, unit flag `0x20000` |
+  | 402 `smith` | 22 | |
+  | 526 `nihlathakboss` | 22 | quest hook 34 |
+  | 175 `warriv2`, 250 `summoner`, 340–343 `boneprison1`..`4`, 407 `fetish11`, 409 `hephasto`, 229 `radament`, 434 `prisondoor`, 540 `ancientbarb1`..`3` | none | quest hooks (250: 12, then unit flag `0x800`; 407: 17; 409: 24; 229: 8; 434: 32), unit flag `0x20000` (340–343), the gear call `0x005B1C50` (540), `0x005447A0` (175) |
+
+  Of these mods only 6, 8, 17, 18, 23 and 30 have a server handler (`g_UModHandlers`, `0x0073C008`). So outside the uber
+  classes the only handler call is the Maggot Queen's 23. The quest hooks (`QUESTS_HookMonster`) were not followed for
+  mod writes. (fn:sub_005B1CF0_MonPostCreateBoss@0x005B1CF0, fn:sub_005A4850_ModAppendApply@0x005A4850,
+  data:g_UModHandlers@0x0073C008, tbl:MonStats.txt:BaseId)
+- [C] **Nihlathak's 22 is `MonPostCreateBoss`'s.** With the table in `tools/monspecial.py` (`post_create_boss`) and
+  `tools/monspawn.py` appending its mods after `MonPostCreateMods`, the model's list at `SpecialMonPlace`'s exit is `[22]`
+  and at `SU1` `[22, 30]`, as logged. The nihl2 log's chained check goes from 1 mismatch (main's tools,
+  `monstats-h4a-main-control.txt`) to 0 (`monstats-h4a-rbd.txt`). A model without the case gives `[30]` and fails, so
+  the one unit separates the readings, but only for `BaseId` 526. The other logged classes of the table (`andariel`,
+  `mephisto` ×2, `bloodraven`, `compellingorb`) are created outside a superunique path, where no logged mod list is
+  compared, so their cases stay `[I]`. (fn:sub_005B1CF0_MonPostCreateBoss@0x005B1CF0, run:2026-10-21-sweep-monsters-a)
+- [I] The flag-2 gate on `MonPostCreateMods` is a code reading. 590 H4a requests carry flag 2, 93 of them with a class
+  that has `MonPostCreateMods` mods, and none of their lists is compared (`check-rbd/fl2-scan.txt`, the script `fl2-scan.py` beside it).
+  (0x005B2ECF, fn:sub_005B2A00_MonSpawnTry@0x005B2A00, run:2026-10-21-sweep-monsters-a)
+- [C] **Superunique tail 60 chained.** With the mods matching, the model reached the record's tail, which it had not
+  modelled. The tail is `EscortSpawn(LevelClassVariant(the unit's room, 453), 1, radius 10, 20, flags 0x40)`
+  (`0x005A4DDD`–`0x005A4DFB`). It now gives `453 → 458` in level 124 and the 20 escort spawns, which chain with
+  0 mismatches (nihl2's monspawn checks 38 334 → 44 584). That agrees with special § G's row 60. (fn:sub_005B24E0_EscortSpawn@0x005B24E0,
+  fn:sub_0063EC70_LevelClassVariant@0x0063EC70, run:2026-10-21-sweep-monsters-a)
+- For the spec: special § J's sentence on `MonPostCreateBoss` stands. The table above gives its full case list, the
+  flag-2 gate, and the Nihlathak case as confirmed. Filed to the spec-writer.
+
 ## Open questions
 
 - ~~[L] The monster level the aura handler reads in a classic game~~ answered in

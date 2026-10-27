@@ -50,7 +50,8 @@ CLS_UBERMEPHISTO = 0x2C0
 # SuperUniqueSpawn tails (record +0x08), docs/findings/monsters/0003 section 6
 SU_TAIL_NO_DRAW = {6, 26, 27, 29, 36, 37, 38, 39, 43, 44, 45}
 SU_TAIL_RADAMENT = 10
-SU_TAIL_ESCORT = {60}                          # Nihlathak: EscortSpawn(LevelClassVariant(room, 453), ...), not modelled
+SU_TAIL_ESCORT = {60: (453, 10, 20, 0x40)}     # Nihlathak: EscortSpawn(LevelClassVariant(room, 453), radius 10, 20,
+                                               # flags 0x40) 0x005A4DDD-0x005A4DFB
 SU_TAIL_ESCORT_FIXED = {42: (453, 20, 20, 0),   # Siege Boss: EscortSpawn(class, radius, count, flags) 0x005A4D6D
                         62: (381, 20, 10, 0x40)}  # Baal Subject 2 0x005A4E2D
 RADAMENT_ESCORTS = (276, 382, 385, 389)        # after Range(5) + 2 of class 4
@@ -352,6 +353,43 @@ def post_create_mods(d, cls):
     if b == 0xD3:
         return [11, 22]                      # duriel
     return []
+
+
+def post_create_boss(d, cls):
+    """sub_005B1CF0_MonPostCreateBoss, by the class's MonStats BaseId (a class with no record, or a BaseId out of the
+    table, takes no case; 0x005B1CFD-0x005B1D3C): the ModAppendApply calls (mod, flag) in call order, called by
+    MonSpawnTry after MonPostCreateMods for every creation (0x005B2EDF). The QUESTS_HookMonster calls, the unit flags
+    (0x800, 0x20000), the monster gear of ancientbarb1..3 (0x005B1C50) and the other calls in the cases make no mod and
+    are not modelled. Of the mods, only the uber classes' (704-709) and the Maggot Queen's 23 have a server handler.
+    The switch: BaseId 0x1B2 and above 0x1B2 by compares (0x005B1D3E, 0x005B2002), 0x9C..0x199 by the jump table
+    0x005B2060 indexed by the bytes at 0x005B20A4."""
+    if not d.valid(cls):
+        return []
+    b = d.ms_s16(cls, 0x02)
+    if not d.valid(b):
+        return []
+    one = lambda *ms: [(m, 1) for m in ms]          # noqa: E731
+    if b == 156:                                     # andariel; uberandariel 707: 23, 6, 29
+        return one(23, 6, 29) if cls == 0x2C3 else one(22)
+    if b == 211:                                     # duriel: quest hooks only; uberduriel 708: 6, 18
+        return one(6, 18) if cls == 0x2C4 else []
+    if b == 243:                                     # diablo, diabloclone; uberdiablo 705: 22, 8, 6
+        return one(22, 8, 6) if cls == 0x2C1 else one(22)
+    if b == 242:                                     # mephisto; ubermephisto 704: 22, 30, 17, 8, 6
+        return one(22, 30, 17, 8, 6) if cls == 0x2C0 else one(22)
+    if b == 256:                                     # izual; uberizual 706: 6, 18
+        return one(6, 18) if cls == 0x2C2 else one(22)
+    if b == 544:                                     # baalcrab; uberbaal 709: 22, 18, 8, 6
+        return one(22, 18, 8, 6) if cls == 0x2C5 else one(22)
+    if b == 267:                                     # bloodraven
+        return one(12, 22)
+    if b == 284:                                     # maggotqueen1..5
+        return one(23, 22)
+    if b == 292:                                     # firegolem: goboom with flag 0
+        return [(31, 0)]
+    if b in (366, 402, 526):                         # compellingorb, smith, nihlathakboss
+        return one(22)
+    return []                                        # 175, 250, 340..343, 407, 409, 434, 540 and the rest: no mod
 
 
 def client_name_seed(name_seed):

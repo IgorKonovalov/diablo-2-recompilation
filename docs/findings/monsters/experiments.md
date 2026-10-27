@@ -1018,3 +1018,62 @@ monstats (monstats.py): 0 mismatches on all 12 logs; doomknight3 63 creations, b
   [0003](0003-special-monsters.md#plan-0038-batch-h4a-run2026-10-21-sweep-monsters-a),
   [0004](0004-stats.md#plan-0038-batch-h4a-run2026-10-21-sweep-monsters-a) and
   [items/0010](../items/0010-quest-drops.md#plan-0038-batch-h4a-run2026-10-21-sweep-monsters-a).
+
+### Addendum 2026-10-27: lane/rbd, the chained models re-checked
+
+Static lane, no session. The three chained-model mismatch groups of the record above are traced in the kept logs and
+the tool models fixed. The same twelve logs are then re-checked.
+
+- **Causes.**
+  - council: entry bit `0x400`, the client wall fade's mark, on a near room's walls
+    ([drlg/0002 § Lane rbd](../drlg/0002-room-build-draws.md#lane-rbd-entry-bit-0x400-on-a-neighbours-walls-2026-10-27)).
+  - nihl2: `MonPostCreateBoss`'s mod 22 for `BaseId` 526, missing from the model. Behind it, superunique tail 60's
+    escorts were not modelled
+    ([monsters/0003 § Lane rbd](0003-special-monsters.md#lane-rbd-monpostcreateboss-and-the-h4a-chained-models-2026-10-27)).
+  - chaos7: the logger, not the game. `tools/gdb/collision.py` logs `CM` marks only inside a room's `RW1` .. `RW0`/`PX`
+    window (and `CMR0` .. `CMRX`). The Infector's (`SU0` line 34913) and the Vizier's (line 50798) superunique
+    placements come after seal operations (`OO0`/`OOX` of objects 392 and 396, lines 34887–34892 and 50783–50788),
+    with the last window line before them a `PX` (line 34508 for the first). So their creation marks were made and
+    not logged. The model had expected logged marks there and applied the empty list, which left bit `0x1000` off its
+    grid.
+- **Model changes** (`tools/drlg.py` `5733a476…`, `tools/collision.py` `a161aa86…`, `tools/monspawn.py` `c5862c66…`,
+  `tools/monspecial.py` `bbdb5b76…`; `tools/monstats.py` unchanged, `8d6d0d13…`):
+  - `cb_entries` counts a near room's `0x400` with `0x20000`/`0x40000` and does not compare it.
+  - `monspecial.post_create_boss` holds the case table, appended after `MonPostCreateMods`; `MonPostCreateMods` is
+    skipped for request flag 2.
+  - Tail 60 runs `LevelClassVariant(453)` and 20 `EscortSpawn` spawns.
+  - A `SU0`/`PM0` outside the CM window (`mark_window_open`) applies the model's creation and post-create marks and
+    counts them, and a logged `CM` there is a mismatch.
+- **Procedure** (from the worktree root, each under `systemd-run --user --scope -p MemoryMax=4G`):
+  ```
+  sh workspace/logs/h4a/check-rbd/run-monstats.sh $PWD/tools workspace/logs/h4a/check-rbd/monstats-h4a-rbd.txt
+  sh workspace/logs/h4a/check-rbd/run-monstats.sh <main 550d2dcc's tools> workspace/logs/h4a/check-rbd/monstats-h4a-main-control.txt
+  sh workspace/logs/h4a/check-rbd/run-regress.sh $PWD/tools workspace/logs/h4a/check-rbd/regress-kept-rbd.txt
+  sh workspace/logs/h4a/check-rbd/run-regress.sh <main 550d2dcc's tools> workspace/logs/h4a/check-rbd/regress-kept-main-control.txt
+  python3 -I tools/cb_entry_bits.py workspace/logs/h4a/h4a-s1-4905-council.log > workspace/logs/h4a/check-rbd/cb-bit400-council.txt
+  python3 -I workspace/logs/h4a/check-rbd/fl2-scan.py > workspace/logs/h4a/check-rbd/fl2-scan.txt
+  ```
+  `run-monstats.sh` is `run-checks.sh`'s chained `monstats.py check` loop over the twelve session logs. Main's tools
+  were taken from `git archive 550d2dcc tools`, outside the worktree.
+- **Result** (`monstats-h4a-rbd.txt`): **every log rc 0, 0 mismatches**. In the control (`monstats-h4a-main-control.txt`)
+  the three groups are as the record reports: council rc 1 (roomk 3), nihl2 rc 1 (monspawn 1), chaos7 rc 1 (monspawn 2,
+  collision 10). The other nine logs' counts are unchanged.
+  - council: roomk 6 523 checks, 0 mismatches. Its 33 `0x400` entries are all near-room walls
+    (`cb-bit400-council.txt`: 151 `CB`, 62 277 entries).
+  - nihl2: monspawn 44 584 checks against the control's 38 334. The 6 250 more are tail 60's 20 escorts and the rest of
+    that superunique window, which the control aborts.
+  - chaos7: monspawn 95 923 checks against 89 389, collision 11 656 against 11 636. The two specials outside the
+    window had 15 creation marks and 15 post-create re-marks applied from the model. The 587 `CollisionTest` calls in
+    the two `SU0` .. `SUX` windows (231 and 356) include 211 with the unit bit `0x1000` (142 and 69). All are now
+    predicted, among them the 4097 and the 4096 the record named. The control fails on the first of them.
+- **Regression** (`regress-kept-rbd.txt`, `regress-kept-main-control.txt`): `monstats.py check`, one log per call, on
+  the 63 kept logs of `check/kept-logs.lst`. The new tools and main's give the same per-log summary lines on every log.
+  62 logs are rc 0. `h4b/h4b-s5b-4801-normal-merc-game2.log` is rc 1 under both, from 12 roomk mismatches (a DT1
+  list and room seeds of DRLG room `029efe00`) that the change does not touch.
+- **Kept:** `workspace/logs/h4a/check-rbd/rbd-manifest.sha256` (`f34f23c5…`, 9 files: the two scripts, the four check
+  outputs, the two scans and `fl2-scan.py`); `sha256sum -c` from `workspace/logs/h4a/check-rbd/` passes. `tools/cb_entry_bits.py`
+  `942dff77…`. Two development outputs (`dev/monstats-h4a-rbd-dev1.txt`, before tail 60 was modelled: nihl2 failing on it;
+  `dev/monstats-nihl2-dev2.txt`) are under `rbd-manifest-dev.sha256`, which passes from `check-rbd/dev/`; no claim rests on them. The record's own `check/` outputs are unchanged.
+- **Conclusion:** none of the three groups was a game behaviour the specs contradict. Two were gaps in the models,
+  `MonPostCreateBoss` and the tail-60 escorts. The third was a run-time client bit plus a logger window the model did
+  not know.

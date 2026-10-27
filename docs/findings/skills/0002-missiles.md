@@ -52,7 +52,8 @@ this batch continues from.
 - [I] **The hit** (`MISSILE_HitUnit(missile, unit, end)`): the `NextHit`/`justhit` (state 86), last-hit and
   `CollideType` unit filters, the hostility test (`CollideFriend`), the pierce use, the `ToHit` roll on the owner's
   seed, event 0 (`hitbymissile`) on the unit, the `pSrvHitFunc` entry (its return replaces the result flags), then for a
-  damaging result `MISSILE_BuildDamage` (up to seven `RNG_RangeB` draws on the **missile's** seed), the `pSrvDmgFunc`
+  damaging result `MISSILE_BuildDamage` (up to seven `RNG_RangeB` draws on the **missile's** seed, every bound and
+  mastery read on the missile, an inverted pair swapped before the mastery; § 6), the `pSrvDmgFunc`
   entry and `MISSILE_ApplyDamage`; a result with "end" and no pierce left unmarks the `0x40` mark and frees the missile.
   At the end of life (range out, blocked path, a wall cell) the hit function runs with no unit. (fn:MISSILE_HitUnit@0x005ADF10)
 - [I] **Row 568's hit function 64 948 is never called.** All four reads of `g_MissileSrvHitFuncs` (`0x0073C840`,
@@ -571,6 +572,34 @@ return 1;
   122 (undead) + the stat-180 entries matching the target's monster type`, floored at −90; stat 141 doubles `phys` and
   sets packet flag `0x2000`; stats 103/104/106 set the bypass flags. (0x005A89A0–0x005A8C6F, fn:sub_005A8910_MissileElemRoll@0x005A8910)
   combat/0001 § 2 already names the call; this is its draw list. Phase 2 should log the missile seed at the hit.
+- [I] *2026-10-27 (lane/rbd, from the plan 0045 P3 review):* **every bound and the mastery are read on the missile.**
+  `MISSILE_BuildDamage`'s first stack argument goes to `ESI` at `0x005A89B9`, the function's only write to `ESI` before
+  its `pop esi` at `0x005A8C5E`; both physical reads (`STATS_GetUnitStat(ESI, 22, 0)` at `0x005A89C4`, `(ESI, 21, 0)` at
+  `0x005A89D9`) and the six `sub_005A8910_MissileElemRoll` calls (`push esi`, `0x005A8A09` to `0x005A8AD3`) take it.
+  `MissileElemRoll` keeps that unit in `EBX` (`0x005A8914`) for the maximum (`0x005A891C`, the stat id in `EAX`), the
+  minimum (`0x005A8937`) and the mastery (`0x005A895F`). At `MISSILE_HitUnit`'s call (`0x005AE150`) the argument is
+  `EDI`, the missile (`EDX` at the entry, `0x005ADF1C`, not rewritten before the call). The other seven callers (the
+  area and chain hit functions at `0x005A9D31`, `0x005A9F47`, `0x005AACB2`, `0x005AC604`, `0x005ACD33`, `0x005ADE7D` and
+  `0x005AFB0F`) are unfollowed. (fn:MISSILE_BuildDamage@0x005A89A0, fn:sub_005A8910_MissileElemRoll@0x005A8910,
+  fn:MISSILE_HitUnit@0x005ADF10, fn:STATS_GetUnitStat@0x00625480)
+- [I] *2026-10-27 (lane/rbd):* **the bounds are tested before the mastery, and an inverted pair is swapped.** The
+  maximum is read first; each bound must be `> 0` (`jg` at `0x005A8925` and `0x005A8940`; physical `0x005A89CE`,
+  `0x005A89E2`), or the field is 0 and nothing else is read. Then, if the minimum is above the maximum, the two are
+  exchanged (`cmp esi, edi; jle; mov esi, edi; mov edi, eax` at `0x005A894B`–`0x005A8951`, `EAX` still holding the
+  minimum; physical `0x005A89EB`–`0x005A89F1`). The mastery `MulDiv` follows on the swapped bounds (`0x005A8953`–`0x005A8982`,
+  skipped for the id −1 and for a stat of 0), then `RangeB(seed +0x20 of the missile, hi − lo) + lo` (`0x005A8987`–`0x005A8993`),
+  which draws nothing for a range ≤ 0 (`0x0045C3E3`). So the draw list above stands with this order: test both, swap,
+  mastery, draw. (fn:sub_005A8910_MissileElemRoll@0x005A8910, fn:MISSILE_BuildDamage@0x005A89A0, fn:RNG_RangeB@0x0045C3E0)
+- [I] *2026-10-27 (lane/rbd):* `tools/skills.py`'s `bd` reads every bound and mastery from the missile's own stat list
+  (the `MH0` line) and now swaps an inverted pair before the mastery (`tools/test_skills.py` `test_bd_swap`: an inverted
+  fire pair with mastery 50 passes swapped, and the unswapped reading fails it on the seed and the field). The re-check
+  of both runs' 33 logs (`skills.py check 2026-10-25-skills-*.log 2026-10-27-skills-*.log --json rbd/rbd-skills-check.json
+  > rbd/rbd-skills-check.txt` from `workspace/logs/skills` under a 4 GB scope; checker `cb0a13ac…`, tests `73224b19…`;
+  `rbd/rbd-manifest.sha256` `3c6bdf04…`) gives 4 118 builds, 0 mismatches, and no inverted pair (the swap's counter
+  stays absent); the swap is a code reading only, and so is the mastery's unit:
+  none of the 54 655 `MH0` lists holds a mastery stat (329–332, 357; `rbd-mastery-scan.txt`, the control pattern
+  finding stat 328 in 867), so no logged build separates the missile's mastery from the owner's.
+  (run:2026-10-25-skills, run:2026-10-27-skills, fn:MISSILE_BuildDamage@0x005A89A0)
 
 ### 7. The function tables
 
@@ -735,5 +764,8 @@ again over 19 667 creations, 5 660 moving frames of 414 followed missiles (238 f
 - [L] The numbered do, hit and damage functions outside tier A (plan 0046). *2026-10-20:* tier A's and the re-seed
   sites `0x005ACDF0`, `0x005AC073` (inside the callback `0x005AC040`), `0x005A9820` and the others of rng/0002 are read
   in [skills/0003 §§ 6, 9](0003-handlers.md#9-re-seed-sites-rng0002--the-other-initialiser-sites).
+- [L] *2026-10-27 (lane/rbd):* whether a missile's stat list carries its owner's masteries (329–332, 357), so that
+  § 6's mastery term is ever non-zero: no logged `MH0` list holds one. A logged build by a caster with a mastery
+  (Fire Mastery's 329, say) would settle it.
 - ~~`0x00645F00` (the unit's ranged missile and its level).~~ Answered 2026-10-20 in
   [skills/0003 § 10](0003-handlers.md#10-helpers-p12-left-unread).
