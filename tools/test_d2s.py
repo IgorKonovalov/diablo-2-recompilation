@@ -362,6 +362,13 @@ RECIPE_BASES = {
     "quest-h6e2-questboxh-a4": (BASE_X, "54ac3e3dee32ee1c207f89c1a6405250016641cf4735e5e9f9bc00f508bb238b"),
     "quest-h6e2-questmsfn-a4": (BASE_X, "1b6796d678b1c05b7f54ec26c2fd66258508effcbfe9cb40a185d38145846a52"),
     "h3brare": (BASE_X, "ce57d8f76eaabcad6bdb6eea7b06082ae400ae8c01be85404ec11dfa9cf86317"),  # run:2026-10-27-sweep-data-load
+    "player-h6g-anc": (BASE_X, "b7366902ea1892ba8253c6845b9511b3bc1c28c5b0a813fcca8577ec460bb335"),  # run:2026-10-27-sweep-player
+    "player-h6g-cap98": (BASE_X, "374fc7eb7e644e04a5832bb4eaf078a194e23ad65902d645129928b51189e702"),  # run:2026-10-27-sweep-player
+    "player-h6g-deathh": (BASE_X, "36d99e01ddcd346649d43ac7452cf7b7acc130c0f711106a35000a3ea98f39e1"),  # run:2026-10-27-sweep-player
+    "player-h6g-deathn": (BASE_X, "bc6150bd83d5276c1f1cb4f79fe12b6a81a315cde108737bec41b8c98d5ffdfd"),  # run:2026-10-27-sweep-player
+    "player-h6g-deathnm": (BASE_X, "8f9fd1801f23094065ee2501b7646b85b54ae01efc47d282927ed422b9acef20"),  # run:2026-10-27-sweep-player
+    "player-h6g-town": (BASE_X, "d32d3ad609d9e5ac28ed10664635f7f8ad41a310e700eab7ca987e4dc2e6dfe7"),  # run:2026-10-27-sweep-player
+    "player-h6g-xp85": (BASE_X, "bce8ad899d09a053845d9636d8e63e950ccd8f6cc43a6ab0444e104c60fde250"),  # run:2026-10-27-sweep-player
     "quest-h6e1-give": (BASE_X, "3668f330864628d73c64277ed22326df2eb829eccb6eacb491160d80a9fa3cca"),  # run:2026-10-27-sweep-quest-npc
     "quest-h6e1-imb5": (BASE_X, "f4aa33741cea53bfc1f48bf5387b83351fff8bc80308eee892f378fb4c601f9f"),
     "quest-h6e1-imb6": (BASE_X, "5bf8e6702cc54bb2fbc5ca6cee87de97a215d0a1acf1cc9d93a7ad46ce6c77c5"),

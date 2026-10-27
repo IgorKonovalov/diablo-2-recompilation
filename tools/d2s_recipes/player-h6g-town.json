@@ -1,0 +1,69 @@
+{
+  "game": "expansion",
+  "class": "Sorceress",
+  "seed": 6701,
+  "name": "H6gTown",
+  "progression": 15,
+  "difficulty": [
+    128,
+    128,
+    128
+  ],
+  "waypoints": {
+    "normal": "all"
+  },
+  "stats": {
+    "strength": 35,
+    "energy": 35,
+    "dexterity": 25,
+    "vitality": 30,
+    "hitpoints": 100,
+    "maxhp": 100,
+    "mana": 100,
+    "maxmana": 100,
+    "stamina": 275,
+    "maxstamina": 275,
+    "level": 30,
+    "experience": 4664553,
+    "statpts": 4,
+    "newskills": 4
+  },
+  "skills": {
+    "Frozen Armor": 19,
+    "Frost Nova": 20
+  },
+  "items": [
+    {
+      "code": "vbl",
+      "equip": "belt"
+    },
+    {
+      "code": "hp1",
+      "belt_slot": 0
+    },
+    {
+      "code": "hp1",
+      "store": "inventory",
+      "x": 0,
+      "y": 0
+    },
+    {
+      "code": "hp1",
+      "store": "inventory",
+      "x": 1,
+      "y": 0
+    },
+    {
+      "code": "mp1",
+      "store": "inventory",
+      "x": 2,
+      "y": 0
+    },
+    {
+      "code": "hp1",
+      "store": "inventory",
+      "x": 3,
+      "y": 0
+    }
+  ]
+}

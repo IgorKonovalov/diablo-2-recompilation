@@ -5441,3 +5441,40 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Bookkeeping.** Review-fixes Seen lines: spec-writer 2 and 9. The review request and the counts entry closed; the
     S2c entry stays open for (d) (vendors, H6c). Ledger: the lane row filled (usage from the orchestrator: 235 263
     tokens, 78 tools, 23 min; accept with fixes, 4: overclaim 2, wrong anchor 2); the review row added, usage "—".
+- **2026-10-27 — H6g (`player`) checkpoint 1 (reverser, `lane/h6g`, harness slot 2, from `main` `a105ae13`; paused
+  by the owner's session reload).** Run id run:2026-10-27-sweep-player (not yet recorded in
+  `findings/player/experiments.md`). Slot 2 is stopped, its saves directory restored (empty, no aside); no game,
+  driver, gdb, pilot or watcher of the lane is left.
+  - **Built (uncommitted before this checkpoint, now in it):** logger `tools/gdb/h6g.gdb` (`player.gdb`'s files plus
+    `tools/gdb/h6g.py`) and `tools/gdb/h6g-quest.gdb` (the same plus `vendors.py`, for the Ancients route); session
+    driver `tools/h6g_sessions.py` (`recipes`, `list`, `run`); checker `tools/sweep_h6g.py check|static` (runs
+    `tools/player.py check` first; `static` 31 pins, 0 failing); seven recipes `tools/d2s_recipes/player-h6g-*.json`
+    with their `RECIPE_BASES` rows in `tools/test_d2s.py` (the builds pass; `test_every_recipe_has_a_base` fails on
+    `main`'s own `anim-*` recipes, not this lane's). `h6g.py` revisions: r1 (`workspace/logs/h6g/tools/h6g-r1.py`,
+    `9f4fa4c4…`: town, newchar), r2 (`h6g-r2.py`, `fe78700d…`, adds the `C3W` writers of client `+0x3D4`: every later
+    session). Known logger slip, handled in the checker: `AS0` reads the Skills `+0x12C` maxlvl cell as a dword; it is
+    an i16 (`SKILLS_GetMaxLevel`, `movsx word` at 0x004AA8CD), so the checker takes the low word.
+  - **Kept sessions (8, slot 2):** town (6711: four attribute points, Ice Bolt 0 → 1 → 2, Frozen Armor 19 → 20, a
+    click on Frost Nova at 20 sent no request; four Shift+click potions to an 8-box belt: column path box 4, first-free
+    box 1, first-free box 2 (`mp1`), column path box 5), newchar (6712 r1 and r2: a Sorceress and a classic Barbarian;
+    `+0x3D4` bit 0 is already set at NC0, by 0x005397A3 in `sub_00539760_ClientAddPlayerToGame`, so the `or` at
+    0x00537993 does not separate), cap98 (6713, Hell: add 5 at T(98) − 2 → T(98) exactly, level 99, then 71 kills
+    with `XP_Compute` 0), xp85 (6714, Hell, Annihilus: 73 kills with stat 85 = 10 and a non-zero term), deathn (6715,
+    Normal: loss 0, corpse share 0), deathh (6716, Hell: loss 465 059 = 10 % of 4 650 593, share 348 794), deathnm
+    (6717, Nightmare: the clamp, kept 1 000, new T(39) + 1, share 750; the corpse pickup was not reached: the pilot
+    Teleported in town).
+  - **Check:** `sweep_h6g.py check` over the 8 kept logs: **0 mismatches** (`workspace/logs/h6g/check/check-ckpt1.txt`
+    `20be8922…`); manifests `workspace/logs/h6g/manifest-ckpt1.sha256` (68 lines, `0d870563…`, passes from
+    `workspace/logs/h6g/`) and `manifest-dev-ckpt1.sha256` (35 lines, `280c0808…`, passes from `workspace/logs/h6g/dev/`;
+    the calibration session, a first town log under the r0 `SKC` bug, three deathn attempts whose pilot killed or
+    outran the monsters, and the Ancients attempt aborted at the pause on level 118).
+  - **Resume (next):** (1) rerun `deathnm` (now with the town walk in `do_corpse`, `TOWNS`) for the corpse pickup
+    (`CP0`/`CPS`/`CPA`/`AED`, then `XA0` of 750); (2) the Ancients session `anc` (route of plan 0042's x-summit: `towp2`,
+    `wp:5,8`, `explore:40`, `warp:76:150`, `clickwarp:76:1`, `objop:546:1`, then `farm --boss-cls 540,541,542`) for
+    rows 2 and 29; one or two tries, else a shortfall; (3) the run record, player/0001 § Plan 0038 batch H6g, the
+    inventory § 2.6 H6g block with totals against `main` after merging it, symbols (rule 14: `PLAYER_SpendStatPoint`,
+    `PLAYER_SpendEnergy`, `PLAYER_SpendVitality`, `SKILLS_AddSkill`, `PLAYER_DeathExpLoss`, the gate,
+    `CLIENT_Set/GetDeathExpLoss`, `PLAYER_CorpseCreate`, `STATS_GetUnitBaseStat`; new `0x00570080` skill-point spend,
+    `0x0054D520` packet 0x63 handler, `0x00537970`), the review-fixes pass, the review request and the ledger row.
+    Expected ledger, as the logs stand: raised 4, 32, 16 (in part: the at-maximum side unsent), 18, 22, 25, 28 (2),
+    3 and 30 (in part until the pickup), 12 (in part), 23, 27, 33, 35 (in part); 2 and 29 open.
