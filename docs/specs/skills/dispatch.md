@@ -1,6 +1,6 @@
 ---
 spec: skills/dispatch
-status: draft
+status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, data/calc, combat/overview, combat/delivery, stats/states, monsters/spawn, monsters/stats]
 consumed_by: [skills/missiles, combat/overview, combat/delivery, stats/states, items/economy, monsters/stats]
@@ -160,6 +160,7 @@ sequenceDiagram
   D->>D: defender's attacked…, damaged…, killed handlers 3, 21, 30
   G->>G: summon: SpawnAtPos (monsters/spawn), the new monster's seed
   A->>A: Raise Skeleton: one Step after the spawn (class 363 above skill level 2, class 364)
+  Note over A,D: state 52: PreventHealHook after a successful to-hit, no draw (§ K3)
 ```
 
 ### B. The request
@@ -917,7 +918,7 @@ The rows plan 0045 reproduces; the reading is [skills/0003 § 5](../../findings/
 | 2 Throw, 4 Left Hand Throw | 65 (`0x0056CAB0`): the thrown item | 3, 5 | the throw missile ([skills/missiles § B](missiles.md#b-creation)) | none | [C] for Left Hand Throw's 36 do events (run:2026-10-27-skills); [I] otherwise (fn:sub_0056F460_SkillThrowDo@0x0056F460) |
 | 25 Plague Javelin, 12 Multiple Shot | 4 (`0x005DA8B0`) | — / 8 | 8: `calc1` missiles fanned perpendicular to the line to the target | the creations' | [I] (fn:sub_005DB410_SkillDo08MultiShot@0x005DB410) |
 | 10 Jab | 5: a target | 7 | to-hit, `edPct = calc1`, conversion, elemental roll, `ResolveAndQueue(SrcDam or 128)`, delivery | to-hit, defence, build, 1–2 | [I] (0x005DB2D0) |
-| 70 Raise Skeleton | 15: a monster corpse the raise test accepts | 31 | L5 | 1 (class 363 above skill level 2, class 364) | [C] for one step at class 363, level 20 (run:2026-10-25-skills) |
+| 70 Raise Skeleton | 15: a monster corpse the raise test accepts | 31 | L5 | 1 (class 363 above skill level 2, class 364) | [C] for one step at class 363, level 20, 12 of 12 (run:2026-10-25-skills, run:2026-10-27-skills) |
 | 259 Fists of Fire | 23: target in melee range | 35 | J1, the finisher J3 | as J4 | [I] (fn:sub_005D35D0_PrgChargeHitDualDo@0x005D35D0) |
 | 117 Holy Shield, 68 Bone Armor | 36 (a shield) / — | 18 | bit 6, `STATE_GroupClear(1)`, `STATE_ApplyTimed(aurastate, auralencalc)`, the aura and passive stats, stats 350/351, the `auraevent`s | none | [I] (fn:sub_005C9480_SkillDo18TimedSelfState@0x005C9480) |
 | 42 Static Field | — | 20 | `ForUnitsInRange(aurarangecalc, aurafilter)` with calc1, calc2, the elemental length, `EType` and the difficulty's `+0x40` | the callback's | [I] (fn:sub_005C9800_SorSkillStaticMin@0x005C9800) |

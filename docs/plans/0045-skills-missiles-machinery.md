@@ -1,6 +1,7 @@
 # 0045 — Skills and missiles, the machinery: dispatch, packets, missiles, event handlers (ADR-0014 phase 3, part 1)
 
-> **Status:** approved 2026-10-20 (owner); Phase 2 part 1 accepted with fixes 2026-10-27, part 2 filed
+> **Status:** approved 2026-10-20 (owner); Phase 2 done 2026-10-27 (parts 1 and 2 accepted with fixes); Phase 3
+> accepted with fixes 2026-10-27 (the skills spec reviewed); Phase 4 (wiki) open
 > **Created:** 2026-10-20
 > **Owner skill(s):** archivist, reverser, spec-writer
 > **Related ADRs:** 0001-target-toolchain-evidence-sources, 0003-runtime-experiments, 0004-boundary-oracles-in-reproduction, 0007-fetched-leads-only, 0011-harness-slots, 0013-forced-path-runs-cell-level, 0014-scope-game-simulation, 0015-emulated-reproduction, 0016-pipelined-simulation-phases, 0020-skills-phase-in-two-plans
@@ -892,7 +893,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   table docs (plan 0051's `lane/p51b`), data/calc, monsters/spawn, monsters/stats, drlg/collision (no new answer;
   drlg/collision held by 0038 P3). One count queried in the request: the eleven rows' do counts in skills/0003 § 15
   sum to 947, not the 1 269 cited. Review:
-  [request](../backlog/2026-10-27-spec-writer-architect-review-lane-s45p3-plan-0045-phase-3-skills.md); it waits for
+  [request](../backlog/archive/2026-10-27-spec-writer-architect-review-lane-s45p3-plan-0045-phase-3-skills.md); it waits for
   part 2's review.
 - **2026-10-27 — Phase 2 part 2 written up, review requested (reverser, `lane/p45k`).** Slot 2 only (slot 1 held by
   `lane/h5d`), stopped after every session (`slots.py stop 2`), saves restored, no aside left; no Ghidra (objdump only;
@@ -1014,6 +1015,72 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   combat/README `{C: 39, I: 42, L: 5}` → `{C: 41, I: 42, L: 5}`, stats/states `{C: 51, I: 53, L: 6}` →
   `{C: 52, I: 54, L: 6}`. Wiki: combat (a monster's attack stats) and stats-and-states (prevent heal) edited, a `based_on`
     line added to each; every `based_on` date of the edited specs is 2026-10-27, so W4 stays clear.
-  - Review: the [request](../backlog/2026-10-27-spec-writer-architect-review-lane-s45p3-plan-0045-phase-3-skills.md)
+  - Review: the [request](../backlog/archive/2026-10-27-spec-writer-architect-review-lane-s45p3-plan-0045-phase-3-skills.md)
     has a dated addendum; no new request filed. Gate E9 (on `main`'s gate) flagged two first-draft sequence diagrams
     (dispatch A3, missiles A) for a `;` inside a message, which Mermaid reads as a separator: replaced by a comma.
+- **2026-10-27 — `lane/s45p3` reviewed (architect): accept with fixes. Phase 3 is done.** `main` merged first
+  (`51345d5d`: `lane/h1b` landed at `2b087d2c`, the ledger conflict kept both sides; `backlog.py archive` clean). Static,
+  objdump on the pinned image only (no harness, no Ghidra). Checked against *Done when*: a sequence diagram per event
+  kind (dispatch A1 request/start/do/cost, A3 finisher/handler/summon, state 52 added here; missiles § A
+  create/frame/hit/end; a monster's start and do, A2, are the same events and stay prose), the `SKILLS_CanUse` order
+  as a flowchart (dispatch § C), the packet (dispatch I1–I2) and `MISSILE_BuildDamage` (missiles F1) as pseudocode with
+  widths, the missile's life as a state diagram with D3–D4's per-frame motion, the 31-handler table (dispatch § K, ids
+  1–31, 11/12 and 14–16 grouped), and the two worked examples (Raise Skeleton's 84 and its step; Firestorm's
+  `0x005C9290` seeds), both from run:2026-10-25-skills. Every `[C]` checked against skills/0001 §§ 17–18, 0002 §§ 11–12,
+  0003 §§ 15–16 and monsters/0004 § 9 and the two Phase 2 rulings: refusals `[C]` only for codes 0, 1, 6, 8 (and their
+  order) from the 1 340 calls, the server's handling of a refused request, the client filter, codes 2–5 and 7 `[I]`;
+  `VelLev` `[I]` with the lead under *Open questions*; Raise Skeleton at 12; the 1 269 / 1 142 basis as corrected. No
+  `[L]` outside *Open questions* (gate E5); the front-matter counts match (E6); every `fn:`/`data:` anchor resolves (E1).
+  Objdump: `SKILLS_SrvDo`'s bound `cmp ax,0xBF` at `0x0056F911` and `SrvStart`'s `0x5B` at `0x0056F75D`;
+  `MissileDoFrame`'s `movsx` and its count `[0x0073C71C]` at `0x005ADBFB`; stat 328 (`push 0x148`) at `0x00549D4A`;
+  `SKILLS_RollElemDamage`'s `RangeB(max − min)` at `0x0056E12A`–`0x0056E132`; `PreventHealHook` at `0x0057DB80` with
+  state `0x34`, `0x1D4C0` frames and stat `0x1F` (`0x0057D879`–`0x0057D891`); `SummonSetLevel`'s signed `÷ 4`
+  (`cdq; and edx,3; add; sar 2`, `0x005C4A02`–`0x005C4A0A`) and its clamps; `SkillWeaponWear`'s two exclusive branches,
+  each one inline step (`0x005DAA70`, `0x005DAABC`), as items/economy H6 now has it; do 31's `call 0x5C4430` at
+  `0x005C4C7A`; `MISSILE_BuildDamage`'s seven pairs in the order F1 gives (stats `0x30`/`0x31` … `0x13C`/`0x13D` with
+  masteries `0x149`, `0x165`, `0x14A`, `0x14B`, `0x14C`, `0x149`).
+  - **Fixes (9, made here):** (1) *misread:* missiles F1 read the mastery as `stat(owner, mastery)`; the code reads it
+    on the missile (`STATS_GetUnitStat` at `0x005A895F`, as for the bounds), as `tools/skills.py`'s `bd` does: fixed,
+    the `[C]` note says so. (2) *omission:* F1 had no swap of an inverted pair (`0x005A894B`, physical `0x005A89EB`)
+    and tested the bounds after the mastery: rewritten, one new `[I]` bullet (missiles I 90 → 92 with the inline swap
+    tag); the finding gap filed for the reverser
+    ([backlog](../backlog/2026-10-27-architect-reverser-skills-0002-builddamage-pair-swap-and-unit.md)). (3)
+    *misread:* missiles § A drew the creation callback after the critical chain and the pierce count; H2 and B1 run it
+    before the damage block: moved. (4) *wrong anchor:* the three gate W1 warnings (missiles D4's `v < 0`, F1's pair
+    order and stat 180 inline tags) carried no anchor: anchored (the ruling on the W1 warnings). (5) *other:* the
+    overview's two "B4" bullets: the finisher one is B5. (6) *omission:* the overview's conventions now link `MulDiv`
+    (monsters/stats § A) for dispatch I4, M2 and missiles F1. (7) *omission:* state 52 had no diagram: a note in
+    dispatch A3. (8) *under-claim:* dispatch § O's Raise Skeleton row cited part 1's run only; 12 of 12 over both runs.
+    (9) *overclaim:* the glossary's pet limit removed "the oldest" pet; the code removes the first of its list.
+    Promotion bookkeeping (not counted): the three skills specs and the overview's file table `reviewed`;
+    combat/README's and stats/states' "plan 0045 Phase 3, draft" made current.
+  - **Ruling (a): "tier A lives here."** Accepted. The tier-A start, do and missile functions are specified once, in
+    dispatch § O and missiles § G, and the plan 0046 boundary reproductions they cite stand as `[C]` up to their calls.
+    When the `skills/catalogue` spec (0046·P3) is written it links those sections for the tier-A rows and does not
+    restate them; the research map's catalogue row says so.
+  - **Ruling (b): the specs the plan named that got no edit.** After the re-tag pass, two remain unedited, rightly:
+    data/calc (no 0045 finding answers `MISS_CalcVar` 19–27 or a monster's `BearSmite` cast; its open question stays
+    `[L]` there) and drlg/collision (its § F missile-side `0x40` paragraph already holds what skills/0002 and missiles D7
+    give: collide type 7 the only missile reader, used by no stock row; nothing new to add). monsters/spawn,
+    monsters/stats, combat and stats/states carry part 2's statements (checked: J3, F3, H1, B6, B2 within skills/0003 § 16
+    and monsters/0004 § 9's scope).
+  - **Ruling (c): the counts.** Part 2 re-checked § 11's creation, motion and build checks over more events (19 667
+    creations, 3 340 builds, 124 missed to-hits); the spec states part 1's counts with part 1's anchor, which is
+    correct; no change asked.
+  - **Final counts:** skills/README `{C: 23, I: 25, L: 2}`, skills/dispatch `{C: 72, I: 187, L: 10}`, skills/missiles
+    `{C: 46, I: 92, L: 6}`; monsters/stats `{C: 134, I: 50, L: 5}`, monsters/spawn `{C: 137, I: 45, L: 5}`,
+    combat/README `{C: 41, I: 42, L: 5}` (combat's five summed C 240 / I 191 / L 24), stats/states `{C: 52, I: 54, L: 6}`,
+    items/economy `{C: 125, I: 85, L: 11}`, rng/seeds `{C: 81, I: 14, L: 4}`. Research-map rows rewritten: skills/dispatch
+    and skills/missiles `reviewed`; combat, stats/states, monsters/spawn, monsters/stats, rng/seeds and items/economy
+    (the last stale since 2026-10-20: `I 83 / L 12`) with their counts; skills/catalogue, anim/timing and monsters/ai
+    with the gates below.
+  - **Gates.** **Phase 3 is done; this acceptance opens 0050·P2** (harness, one slot, before 0046·P2 per the run order),
+    **0046·P2** (one slot) and **plan 0052's approvability**: the owner approves 0052, after the architect's re-draft,
+    which is not part of this review
+    ([backlog](../backlog/2026-10-27-architect-architect-plan-0052-re-draft-and-what-follows.md), with the owner's
+    2026-10-27 "propose what follows 0052"). **0045·P4 (the wiki page `docs/wiki/skills.md`) may start** (spec-writer).
+  - Review request closed
+    ([archive](../backlog/archive/2026-10-27-spec-writer-architect-review-lane-s45p3-plan-0045-phase-3-skills.md));
+    review-fixes Seen lines (spec-writer 3, 4, 8, 9; architect 8). Ledger: the lane row filled (verdict, fixes 9:
+    overclaim 1, under-claim 1, misread 2, omission 3, wrong anchor 1, other 1), the re-tag pass row's usage filled
+    from the orchestrator, the review row added with its usage "—".

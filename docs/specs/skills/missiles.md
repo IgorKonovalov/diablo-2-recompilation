@@ -1,10 +1,10 @@
 ---
 spec: skills/missiles
-status: draft
+status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, skills/dispatch, combat/overview, combat/to-hit, combat/delivery, drlg/collision, data/calc]
 consumed_by: [combat/overview, combat/delivery, drlg/collision, items/economy, rng/seeds]
-tags: {C: 46, I: 90, L: 6}
+tags: {C: 46, I: 92, L: 6}
 updated: 2026-10-27
 ---
 
@@ -115,9 +115,9 @@ sequenceDiagram
   participant L as local seed
   participant D as defender seed
   G->>M: create: SUnitCreate steps the game seed, the missile seed is Init of its low word
+  Note over M: a creation callback may re-seed M (§ H), before the damage block
   O->>O: create, weapon share: critical chain, 1 to 3 Steps
   L->>L: create, Pierce row: Init(owner base stat 328), up to 4 Steps
-  Note over M: a creation callback may re-seed M (§ H)
   Note over M: each frame: do function, do 1 draws nothing of its own
   O->>O: hit, ToHit row: Range(100) to hit
   M->>M: hit: BuildDamage up to 7 RangeB, the damage function's
@@ -350,7 +350,7 @@ D4. PathVelocityStep(path):                                          [C] (fn:sub
         if count = 5:
           v += accel;  count ← 0
           if v > max: v ← max; accel ← 0
-          if v < 0: v ← 0                                            ; [I] not reached
+          if v < 0: v ← 0                                            ; [I] not reached (run:2026-10-25-skills)
       s: i32 ← (v × 0x400) >> 6
       pos.x += (dir.x × s) >> 12;  pos.y += (dir.y × s) >> 12         ; arithmetic shifts, 16.16
 ```
@@ -480,24 +480,32 @@ F1. MISSILE_BuildDamage(game, m, unit, pkt):                          [C] (fn:MI
       for (lo, hi, mastery, field) in
           [(21, 22, —, +0x08 phys), (48, 49, 329, +0x10 fire), (52, 53, 357, +0x20 magic),
            (50, 51, 330, +0x1C lightning), (54, 55, 331, +0x24 cold), (57, 58, 332, +0x28 poison),
-           (316, 317, 329, +0x14 burn)]:                            ; this order: [I] (note)
+           (316, 317, 329, +0x14 burn)]:                            ; this order: [I] (0x005A89A0–0x005A8C6F)
         a: i32 ← stat(m, lo);  b: i32 ← stat(m, hi)
-        if mastery and stat(owner, mastery) ≠ 0: a += MulDiv(a, mastery, 100); b += MulDiv(b, mastery, 100)
-        if a ≥ 1 and b ≥ 1: pkt[field] ← RNG.RangeB(seed: m.seed, n: b − a) + a     ; draw, none when b − a < 1
+        if a ≥ 1 and b ≥ 1:                                          ; tested before the mastery
+          if a > b: swap(a, b)                                       ; [I] (0x005A894B–0x005A8951, 0x005A89EB–0x005A89F1)
+          k: i32 ← mastery ? stat(m, mastery) : 0                    ; the missile's own stat, not the owner's
+          if k ≠ 0: a += MulDiv(a, k, 100); b += MulDiv(b, k, 100)
+          pkt[field] ← RNG.RangeB(seed: m.seed, n: b − a) + a       ; draw, none when b − a < 1
       ; between them, no draw: cold length 56 → +0x30, poison length 59 → +0x2C (÷ stat 326 when > 1),
       ;   62 → +0x3C, 60 → +0x38, 64 → +0x40, 315 → +0x18, 66 → +0x44
-      pct: i32 ← max(stat 25 + stat 121 (demon) + stat 122 (undead) + matching stat-180 entries, −90)   ; [I] stat 180
+      pct: i32 ← max(stat 25 + stat 121 (demon) + stat 122 (undead) + matching stat-180 entries, −90)   ; [I] stat 180 (fn:MISSILE_BuildDamage@0x005A89A0)
       pkt.phys += pkt.phys × pct ÷ 100
       if stat(m, 141): pkt.phys ×= 2; pkt.flags |= 0x2000
       stats 103/104/106 → the bypass flags
 ```
 
 - F1. In 778 builds the draws are `RangeB(hi − lo) + lo` on the missile's seed once per pair with both bounds ≥ 1 and
-  `hi − lo ≥ 1`, the mastery `MulDiv` on both bounds first (39 builds with no draw, 720 with one, 19 with two); every
+  `hi − lo ≥ 1`, the mastery `MulDiv` (the missile's own mastery stat) on both bounds first (39 builds with no draw, 720 with one, 19 with two); every
   drawn elemental field (594), the physical field with its percent and critical doubling (164) and the cold and burn
   lengths (24) as above. [C] (fn:MISSILE_BuildDamage@0x005A89A0, fn:sub_005A8910_MissileElemRoll@0x005A8910,
   run:2026-10-25-skills) The order of the seven pairs is separated only by the 19 two-draw builds, and the stat-180
   entries were not checked. [I] (0x005A89A0–0x005A8C6F, run:2026-10-25-skills)
+- F1. **Both bounds are the missile's**, the mastery stat included (`STATS_GetUnitStat` on the missile at
+  `0x005A895F`, as for the bounds at `0x005A891C` and `0x005A8937`), and a pair with its minimum above its maximum is
+  swapped before the mastery and the draw (the physical pair at `0x005A89EB`, the others in `MissileElemRoll` at
+  `0x005A894B`). No build of the run had an inverted pair. [I] (fn:sub_005A8910_MissileElemRoll@0x005A8910,
+  fn:STATS_GetUnitStat@0x00625480, run:2026-10-25-skills)
 - F1. Combat's missile oracle is this build: [combat/overview § B3](../combat/README.md#b-draw-order-per-event). [I]
   (fn:MISSILE_BuildDamage@0x005A89A0)
 

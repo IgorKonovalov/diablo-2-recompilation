@@ -547,7 +547,7 @@ crushing blow at `/players 8` ([delivery](delivery.md#worked-example)). [C] (run
   a missile's creation draws beyond B4; the full rule of the conversion writers.~~ Specified in
   [skills/dispatch § I](../skills/dispatch.md#i-the-skill-packet) (the skill packet, `SrcDam`, all fifteen conversion
   writers) and [skills/missiles](../skills/missiles.md) §§ B, C, F and H (the creation, the damage block, the packet at
-  the hit, the re-seeding creation callbacks and the monster owner's unique-mod hook), plan 0045 Phase 3, draft.
+  the hit, the re-seeding creation callbacks and the monster owner's unique-mod hook), plan 0045 Phase 3.
 - [L] **Still owed to phase (3):** a run that reaches the progressive finisher, whose draws B5 gives from the code
   only, and the stat-event handlers no session fired (1–4, 10–12, 14, 18, 23–27, 30, 31; the others' draws are
   confirmed by run:2026-10-27-skills, B6); the numbered hit, damage and do functions outside tier A (plan 0046); the

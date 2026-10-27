@@ -575,7 +575,7 @@ leaves the cache. (fn:sub_00580610_LifeRegenTick@0x00580610, run:2026-10-17-stat
 - [L] The skill shrine's `Arg0` (2): no stat is written, so the +2 skills come from a reader of state 134 not read.
 - ~~Holy Shield, the progressive skills and the timed self-states (armours, shouts): their skill functions; the aura
   request's `+0x48` field.~~ Specified in [skills/dispatch](../skills/dispatch.md) § O (do 18, the timed self-state of
-  Holy Shield and Bone Armor) and § J (the progressive charges), plan 0045 Phase 3, draft; the `+0x48` word is do 65's
+  Holy Shield and Bone Armor) and § J (the progressive charges), plan 0045 Phase 3; the `+0x48` word is do 65's
   `passivestate`, the state the apply removes from the caster
   ([skills/0011 § Answer](../../findings/skills/0011-paladin.md#answer-summary)).
 - [L] `SKILLS_ForUnitsInRange`'s monster exclusion flag.

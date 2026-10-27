@@ -2,11 +2,11 @@
 from: spec-writer
 to: architect
 date: 2026-10-27
-status: open
+status: done
 context:
-  - ../plans/0045-skills-missiles-machinery.md#implementation-log
-  - ../specs/skills/README.md
-resolution: ""
+  - ../../plans/0045-skills-missiles-machinery.md#implementation-log
+  - ../../specs/skills/README.md
+resolution: "Reviewed 2026-10-27 (architect): accept with fixes (9). skills/README, dispatch and missiles reviewed; 0050·P2, 0046·P2 and 0052's approvability open; 0045·P4 may start. Rulings in the plan 0045 log."
 ---
 
 Review `lane/s45p3`: plan 0045 Phase 3, the skills spec, written in parallel with Phase 2 part 2 (`lane/p45k`) as the
@@ -14,13 +14,13 @@ Review `lane/s45p3`: plan 0045 Phase 3, the skills spec, written in parallel wit
 targets are written at the findings' present tags (mostly `[I]`) for a re-tag pass after part 2.
 
 New, `status: draft`:
-- [skills/README](../specs/skills/README.md) `{C: 16, I: 24, L: 3}`: the overview, the ADR-0014 boundary, the event
+- [skills/README](../../specs/skills/README.md) `{C: 16, I: 24, L: 3}`: the overview, the ADR-0014 boundary, the event
   kinds and their seeds, chaining, branches.
-- [skills/dispatch](../specs/skills/dispatch.md) `{C: 35, I: 185, L: 11}`: request, `SKILLS_CanUse` (decision order),
+- [skills/dispatch](../../specs/skills/dispatch.md) `{C: 35, I: 185, L: 11}`: request, `SKILLS_CanUse` (decision order),
   mode start, do frame, costs, delay and periodic, item skills and casts, the skill packet (widths), progressive
   charges, the 31-handler table, summons and the pet limit, monster skill use, ammunition and wear, tier A, draws per
   event; a sequence diagram per event kind (A1, A3), worked example from the run (Raise Skeleton, C1).
-- [skills/missiles](../specs/skills/missiles.md) `{C: 42, I: 88, L: 6}`: the life as a state diagram, creation,
+- [skills/missiles](../../specs/skills/missiles.md) `{C: 42, I: 88, L: 6}`: the life as a state diagram, creation,
   the damage block, the seed, the frame pass, do 1, motion, collide types, the hit, `BuildDamage`, the tables, the
   tier-A missiles, the re-seed sites; worked example from the run (Firestorm's `0x005C9290` seeds).
 
@@ -28,14 +28,14 @@ New, `status: draft`:
 ADR-0021 boundary reproductions of skills/0004–0016, each scoped to its run or boundary.
 
 Updated (reviewed specs, only `[I]`/`[C]` added from accepted findings):
-- [combat/README](../specs/combat/README.md): the "Owed to phase (3)" open question struck in part and rewritten whole
+- [combat/README](../../specs/combat/README.md): the "Owed to phase (3)" open question struck in part and rewritten whole
   (tags unchanged).
-- [stats/states](../specs/stats/states.md): the Holy Shield / self-states / `+0x48` question struck, the monster
+- [stats/states](../../specs/stats/states.md): the Holy Shield / self-states / `+0x48` question struck, the monster
   exclusion flag kept `[L]` (tags unchanged).
-- [items/economy](../specs/items/economy.md) H6: `SkillWeaponWear`'s draw now under its weapon tests (the old block
+- [items/economy](../../specs/items/economy.md) H6: `SkillWeaponWear`'s draw now under its weapon tests (the old block
   stepped first, the finding says no draw when the weapon fails them); wear is Impale's start 7 only, the open question
   struck (`I` 84 → 85, `L` 12 → 11).
-- [rng/seeds](../specs/rng/seeds.md): `0x005C9290`'s re-seed and its path calls' steps `[C]` (450 of 450), the
+- [rng/seeds](../../specs/rng/seeds.md): `0x005C9290`'s re-seed and its path calls' steps `[C]` (450 of 450), the
   rest `[I]` (`C` 80 → 81, `I` 13 → 14).
 - Wiki: economy (Impale's wear, the "which skill" unknown dropped), randomness (the confirmed Firestorm re-seed);
   combat, stats-and-states and seed-to-world `based_on` bumps only. Glossary: four terms.

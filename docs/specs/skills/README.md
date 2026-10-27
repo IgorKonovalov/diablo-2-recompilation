@@ -1,6 +1,6 @@
 ---
 spec: skills/overview
-status: draft
+status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, data/calc, combat/overview, stats/states, monsters/spawn, monsters/stats, drlg/collision]
 consumed_by: [combat/overview, combat/delivery, stats/states, items/economy, monsters/stats, rng/seeds]
@@ -44,12 +44,12 @@ flowchart LR
 
 | File | Covers | Status |
 |---|---|---|
-| [dispatch.md](dispatch.md) | the request, the checks, the start and do functions, costs, delay, periodic and aura skills, item skills and casts, the skill packet, progressive charges, the stat-event handlers, summons, monster skill use, ammunition and wear, the tier-A start and do functions | draft |
-| [missiles.md](missiles.md) | creation, the damage block, the missile's seed, the frame pass and the do function, motion, collision, the hit and its packet, the function tables, the tier-A missile functions, the re-seed sites, the end of life | draft |
+| [dispatch.md](dispatch.md) | the request, the checks, the start and do functions, costs, delay, periodic and aura skills, item skills and casts, the skill packet, progressive charges, the stat-event handlers, summons, monster skill use, ammunition and wear, the tier-A start and do functions | reviewed |
+| [missiles.md](missiles.md) | creation, the damage block, the missile's seed, the frame pass and the do function, motion, collision, the hit and its packet, the function tables, the tier-A missile functions, the re-seed sites, the end of life | reviewed |
 
 Names are ours ([skills/0001](../../findings/skills/0001-dispatch.md), [skills/0002](../../findings/skills/0002-missiles.md),
 [skills/0003](../../findings/skills/0003-handlers.md), `re/types/skills.h`). Primitives (`Step`, `Range`, `RangeB`,
-`RangePow2`, `Init`) are [rng](../rng/README.md)'s; a calc is [data/calc](../data/calc.md)'s. Divisions are signed and
+`RangePow2`, `Init`) are [rng](../rng/README.md)'s; a calc is [data/calc](../data/calc.md)'s. `MulDiv` is [monsters/stats § A](../monsters/stats.md#a-muldiv-and-monlvlstats)'s. Divisions are signed and
 truncate toward zero unless stated; life, mana and damage are in 1/256 points.
 
 ## Entry points
@@ -129,7 +129,7 @@ truncate toward zero unless stated; life, mana and damage are in 1/256 points.
 - B4. **The stat-event handlers step their unit's seed by their own draws**: 1 303 handler calls of both runs and the
   3 461 fires of earlier combat runs, 0 mismatches ([dispatch § K](dispatch.md#k-stat-event-handlers)). [C]
   (data:g_StatEventFuncs@0x007325B0, run:2026-10-27-skills)
-- B4. The finisher had no checked chained pairs (its 56 calls were oracles in run:2026-10-25-skills); its draw order is
+- B5. The finisher had no checked chained pairs (its 56 calls were oracles in run:2026-10-25-skills); its draw order is
   the reading. [I] (fn:COMBAT_PrgFinisher@0x005D5220)
 
 ### C. Branches
