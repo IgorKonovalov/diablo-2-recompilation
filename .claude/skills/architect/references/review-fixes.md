@@ -26,4 +26,4 @@ review against these before committing it. Categories are those of the [lane run
    `skills/catalogue` rows, due when plan 0045 started, added only at the `lane/p46m15` review
    ([0046](../../../../docs/plans/0046-skills-function-catalogue.md)); and keep a row's status current at each phase acceptance: the
    `skills/dispatch` and `skills/missiles` rows still read "Phase 2 and the spec not started" after the part 1 review
-   (fixed at the `lane/p45k` review, [0045](../../../../docs/plans/0045-skills-missiles-machinery.md)).
+   (fixed at the `lane/p45k` review, [0045](../../../../docs/plans/0045-skills-missiles-machinery.md)). The `items/economy` row's counts left at `I 83 / L 12` while the front matter had moved to 84 / 12 (fixed at the `lane/s45p3` review, 0045).

@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, items/properties, items/tc, items/vendors, stats/aggregate, monsters/stats, hirelings, combat/delivery, data/excel]
 consumed_by: [items/vendors, hirelings, items/quest-drops, combat/delivery]
-tags: {C: 125, I: 84, L: 12}
-updated: 2026-10-20
+tags: {C: 125, I: 85, L: 11}
+updated: 2026-10-27
 ---
 
 # Item economy: prices, repair, gold, costs and wear
@@ -778,9 +778,10 @@ H4. ItemConsumeOne(item): q ← max(q − 1, 0);  arm the quantity timer;  D ←
 H5. UseCharge(caster, skill, level): the item carrying that charged skill and level:    [I] (fn:sub_0056BEC0_UseCharge@0x0056BEC0)
       current ← min(max(current − 1, 0), max)             ; no draw
 H6. SkillWeaponWear (from 0x005DAB40), with the skill's calcs +0x13C chance and +0x140 amount:   [I] (fn:sub_005DAA40_SkillWeaponWear@0x005DAA40)
-      Step(caster.seed);  if low mod 100 < chance:
-        a non-stackable weapon with durability loses amount (breaks when nothing is left)
-        a stackable one with q > 0: PLAYER_UseAmmo
+      a non-stackable weapon (type 45) with durability: Step(caster.seed);  if low mod 100 < chance:
+        it loses amount (breaks when nothing is left)
+      a stackable one with q > 0: Step(caster.seed);  if low mod 100 < chance: PLAYER_UseAmmo
+      ; no draw when the weapon passes neither test
 ```
 
 - H4. [C] 130 thrown uses (a throwing axe, through 142 `PLAYER_UseAmmo` calls) write `q − 1` with no draw.
@@ -797,8 +798,12 @@ H6. SkillWeaponWear (from 0x005DAB40), with the skill's calcs +0x13C chance and 
   (fn:sub_0056ECB0_SkillMissileCreate@0x0056ECB0, fn:sub_0056EE90_SkillMissileCreateLob@0x0056EE90,
   fn:SKILL_AttackDo@0x0056F070, fn:sub_0056F460_SkillThrowDo@0x0056F460, fn:SKILLS_SrvDo@0x0056F7F0,
   tbl:Skills.txt:decquant, [skills/0002 § 2](../../findings/skills/0002-missiles.md#2-creation))
-- H5–H6. [I] No charge was used and no skill wear was met in the run; which skill reaches `SkillWeaponWear` is not
-  read. (fn:sub_0056BEC0_UseCharge@0x0056BEC0, fn:sub_005DAA40_SkillWeaponWear@0x005DAA40)
+- H5–H6. [I] No charge was used and no skill wear was met in the run. (fn:sub_0056BEC0_UseCharge@0x0056BEC0,
+  fn:sub_005DAA40_SkillWeaponWear@0x005DAA40)
+- H6. [I] **Wear is Impale's.** `SkillWeaponWear` has one caller, start function 7 (Impale), which calls it after its
+  hit when the weapon has durability, with `chance = calc2` and `amount = calc3`
+  ([skills/dispatch § N](../skills/dispatch.md#n-ammunition-and-weapon-wear)). (fn:sub_005DAB40_SkillSt07ImpaleHit@0x005DAB40,
+  tbl:Skills.txt:calc2, [skills/0001 § 14](../../findings/skills/0001-dispatch.md#14-ammunition-and-weapon-wear))
 
 ```
 H7. timer: when none is queued, queue item event 3 at frame + 2500 ÷ r + 1   ; 64-bit signed ÷   [I] (fn:sub_00558530_ItemReplenishDurTimer@0x00558530, fn:sub_00558580_ItemReplenishQtyTimer@0x00558580)
@@ -834,7 +839,7 @@ H8. ITEMEVENT_Replenish(item):                                                  
 | hire | from the hireling entry seed ([hirelings § E](../hirelings/README.md#e-an-entry-hireling_rollentry)), not the game seed | [C] (fn:HIRELING_RollEntry@0x006637F0, run:2026-10-17-economy) |
 | weapon wear | one step of the attacker's seed (none without durability or for a classic throwing weapon) | [C] (fn:ITEMS_DurabilityLossRoll@0x00559E30, run:2026-10-17-economy) |
 | armour wear | `RangeB(7)`, `RangeB(W)` on the defender's seed, then one step when the item has durability; none when `W = 0` | [C] (fn:COMBAT_DurabilityLoss@0x0057D3D0, run:2026-10-17-economy) |
-| skill wear | one step of the caster's seed | [I] (fn:sub_005DAA40_SkillWeaponWear@0x005DAA40) |
+| skill wear (Impale) | one step of the caster's seed when the weapon has durability or quantity | [I] (fn:sub_005DAA40_SkillWeaponWear@0x005DAA40) |
 | charge use | none (no drawing callee within depth 6) | [I] (fn:sub_0056BEC0_UseCharge@0x0056BEC0) |
 
 - [C] The wear kinds draw on the player's seed only; the melee event's step count on the player is 3 (two picks and
@@ -1011,7 +1016,7 @@ so the amount is `5 + 19 = 24`, unchanged by `mul=`. G7: the killer's stat 79 is
 - [L] Which code sets the broken flag of a melee weapon at durability 0, if any (H2), and what the client shows.
 - ~~The missile gates of `PLAYER_UseAmmo` (H3).~~ Answered from the code (H3, [skills/0002 § 2](../../findings/skills/0002-missiles.md#2-creation));
   the unit's ranged missile behind `SKILL_AttackDo`'s gate (`0x00645F00`) is plan 0045 P1.3's.
-- [L] Which skill reaches `SkillWeaponWear` (H6).
+- ~~Which skill reaches `SkillWeaponWear` (H6).~~ Answered from the code (H6): Impale's start function 7 only.
 
 ### Community sources: differences of 1.14d
 
