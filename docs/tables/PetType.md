@@ -46,11 +46,11 @@ The six behaviour columns are bits of `+0x004` (bit order = header order: `warp`
 | Column | Observed | `.bin` field | Meaning | References | Layout tag |
 |---|---|---|---|---|---|
 | `group` | int {1}, 17 blank | `+0x008` u16 | pet group (set on `spiritwolf`, `fenris`, `grizzly`); `[I]` adding a pet of a type with a non-zero `group` removes the owner's pets of every other type of the same group (`PetGroupClear` in `sub_00575D90_PetAdd`, [skills/0003 § 7](../findings/skills/0003-handlers.md#7-summons)) | — | [C] |
-| `basemax` | int {0, 1}, 1 blank | `+0x00A` u16 | base count limit of the type (1 on `single` and `hireable`, 0 elsewhere: the limit then comes from the summoning skill's `petmax`) | — | [C] |
+| `basemax` | int {0, 1}, 1 blank | `+0x00A` u16 | base count limit of the type (1 on `single` and `hireable`, 0 elsewhere: the limit then comes from the summoning skill's `petmax`); *plan 0046 readers:* `[I]` read as s16: the limit `sub_00575900_PetLimitRefresh` gives a type no skill of the player raises ([skills/0015 § 10](../findings/skills/0015-item.md#10-pets-when-petmax-falls); fn:sub_00575900_PetLimitRefresh@0x00575900) | — | [C] |
 | `warp` | int {1}, 5 blank | `+0x004` bit 0 | the pet follows its owner through warps | — | [C] |
 | `range` | int {1}, 17 blank | `+0x004` bit 1 | the pet is removed when its owner is out of range | — | [C] |
 | `partysend` | int {1}, 7 blank | `+0x004` bit 2 | the pet is sent to party members | — | [C] |
-| `unsummon` | int {1}, 8 blank | `+0x004` bit 3 | the pet can be unsummoned | — | [C] |
+| `unsummon` | int {1}, 8 blank | `+0x004` bit 3 | the pet can be unsummoned; *plan 0046 readers:* `[C]` start 3 (Unsummon) refuses a target whose pet type (`0x00574A20`, the owner's pet lists) lacks the bit (`g_BitMask32[3]`; type 0 for a monster in no list) ([skills/0015 § 3](../findings/skills/0015-item.md#3-unsummon-start-3-and-do-4); fn:sub_0056CBA0_SkillSt03Unsummon@0x0056CBA0) | — | [C] |
 | `automap` | int {1}, 6 blank | `+0x004` bit 4 | shown on the automap | — | [C] |
 | `drawhp` | int {1}, 7 blank | `+0x004` bit 5 | its life bar is drawn | — | [C] |
 
@@ -121,3 +121,8 @@ The six behaviour columns are bits of `+0x004` (bit order = header order: `warp`
 - `[L]` Which PetType columns the summon code reads and how the limit is computed from `basemax`, `group` and the
   skill's `petmax` (the plan names "the `pettype` limit"). Owner: reverser, plan 0045 Phase 1.3.
 - `[L]` Whether `idx` is read at all (it equals the row index).
+- `[I]` **`+0x0BC`/`+0x0C0`, zero in the file, are a runtime skill list of the type**: `sub_0056BD90_PetLimitForSkill`
+  reads a count at `+0x0BC` and `s16` skill ids at `+0x0C0`, and limits the type to the highest `max(petmax, 1)` of the
+  listed skills the player has (plan 0046 batch `item`, [skills/0015 § 10](../findings/skills/0015-item.md#10-pets-when-petmax-falls);
+  fn:sub_0056BD90_PetLimitForSkill@0x0056BD90); the loader that fills it is not followed. The first open question above
+  is answered in part: `basemax` and `petmax` by skills/0015 § 10, `group` and the limit by skills/0003 § 7.

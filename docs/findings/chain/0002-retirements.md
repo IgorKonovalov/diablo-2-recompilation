@@ -315,7 +315,7 @@ oracle left when it predicted every one of them.
   after the u32 count): the byte at `+0x04` equals the `oninit` column and the s16 at `+0x02` the `level` column in all
   45, 0 mismatches; the two `oninit` rows are `bloodraven` (267) and `flyingscimitar` (234), each its class's first
   row. (fn:sub_005D6B60_MonEquipInit@0x005D6B60, fn:sub_005D30A0_MonEquipFirstRow@0x005D30A0, 0x005D6BA5) The table has no doc yet: the archivist's
-  [MonEquip entry](../../backlog/2026-10-20-architect-archivist-monequip-table-doc-for-plan-0048.md) holds it.
+  [MonEquip entry](../../backlog/archive/2026-10-20-architect-archivist-monequip-table-doc-for-plan-0048.md) holds it.
 - [I] The model (`tools/monstats.py Model.monequip`, from monsters/0004 § 6): rows of the class from the first whose
   level is at most the monster level; per row, n = the leading locations in 1..10 (at most 3); if n > 0 one unit-seed
   step picks one (masked for a power of two, a step all the same), and a free location gets its item. In
@@ -334,7 +334,7 @@ oracle left when it predicted every one of them.
   monster level), a second row, n = 2 or 3 (n = 3 is the `RangeB` branch), and an occupied location skipped. Each of
   the two `oninit` classes has one row (`monequip.bin` rows 0 and 1, level 0, locations `4, 0, 0`), so no stock game
   reaches them. (fn:sub_005D6B60_MonEquipInit@0x005D6B60)
-- The archivist's MonEquip table doc ([backlog entry](../../backlog/2026-10-20-architect-archivist-monequip-table-doc-for-plan-0048.md))
+- The archivist's MonEquip table doc ([backlog entry](../../backlog/archive/2026-10-20-architect-archivist-monequip-table-doc-for-plan-0048.md))
   should record the `+0x04` `oninit` byte and the load-time `MonStats +0x2A`; a note is added to that entry.
 
 ## 12. Oracle 20: the grid snapshot, the barrier grid, the type-11 point (named, not modelled)

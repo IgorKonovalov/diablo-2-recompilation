@@ -447,7 +447,8 @@ if (g_MissileSrvDoFuncs[rec->pSrvDoFunc](game, m) == 2) free: UnitFree(game, m);
   (`+0xA0C`) and then with the missile bucket of the current frame (`+0x204 + 4 · (frame & 63)`); a record without a
   callback calls `sub_005ADCC0_MissileFrameEvent` → `MissileDoFrame`. Where the missile pass sits against the other
   unit types' passes is the order of the calls that follow (`0x00540F60` …), not read here. (0x005414EE–0x00541508,
-  0x0054129F, 0x005412F6)
+  0x0054129F, 0x005412F6) *2026-10-27 (plan 0050 P1.1):* the missile pass runs first, then players, monsters,
+  objects and items ([anim/0001 § 6](../anim/0001-modes-frames.md#6-the-event-queue-and-the-frame-order)).
 
 ```c
 // fn:sub_005AE1F0_MissileMoveCollide@0x005AE1F0 (ECX game, EDX m) — do function 1, trimmed

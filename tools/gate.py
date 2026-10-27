@@ -200,6 +200,12 @@ SURVEYS = [
     # start checks name, Missiles server do/hit/damage functions, motion, collision, damage and link columns, PetType),
     # the function family sizes and the tier-A candidate rows (docs/tables/Missiles.md, Skills.md § Dispatch, PetType.md)
     Survey("skills", ["tools/skills_survey.py", "summary", "workspace/merged/data/global/excel"]),
+    # plan 0050 P0: animdata.d2 decoded (256 hash blocks, 160-byte records, event bytes) and joined with the COFs of
+    # the same name (docs/formats/animdata.md)
+    Survey("animdata", ["tools/animdata.py", "survey", "workspace/merged"]),
+    # plan 0050 P0: the tables' tokens joined with animdata.d2 (players, monsters, objects), the Skills animation and
+    # sequence columns, the rate stats and their users, the monseq sequences (docs/tables/MonSeq.md and the docs it links)
+    Survey("anim", ["tools/anim_survey.py", "summary", "workspace/merged"]),
 ]
 
 # E9: Mermaid parser shipped with VS Code (no download); cache under the checkout's workspace/

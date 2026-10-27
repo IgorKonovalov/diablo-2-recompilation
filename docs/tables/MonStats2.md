@@ -63,7 +63,7 @@ Three special encodings (`tools/excel_bin.py` field types `tokcount`, `toklist`,
 | `Height` | int 0..4 (5 distinct) | `+0x00B` u8 | — | [C] |
 | `OverlayHeight` | int 0..4 (5 distinct) | `+0x00C` u8 | — | [C] |
 | `pixHeight` | int 32..144 (11 distinct) | `+0x00D` u8 | — | [C] |
-| `SizeX` | int 0..3 (4 distinct) | `+0x008` u8 | — | [I] |
+| `SizeX` | int 0..3 (4 distinct) | `+0x008` u8 | *plan 0046 readers:* `[C]` read `movsx` by `UNIT_GetSizeX` for a type-1 unit (0 without a row; 2 for a player): the size argument of start 40's `FreeNearFallback` (ADR-0021) ([skills/0012 § 6](../findings/skills/0012-barbarian.md#6-whirlwind-the-leaps-and-double-throw-start-38-40-41-do-74-76-77-78); fn:UNIT_GetSizeX@0x00620510) | [I] |
 | `SizeY` | int 0..3 (4 distinct) | `+0x009` u8 | — | [I] |
 | `spawnCol` | int 1..3 (3 distinct), 589 blank | `+0x00A` u8 | — | [C] |
 | `MeleeRng` | int 0..6 (6 distinct) | `+0x00E` u8 | *plan 0046 readers:* `[C]` as a map: `sub_00622870_UnitMeleeReach` gives a monster this byte (through MonStats `MonStatsEx`; 0 without a row), and start 9 and do 13 search at that plus 4; the value `0xFF` sends it to `0x0064F380` instead (ADR-0021 boundaries) ([skills/0009 § 3](../findings/skills/0009-amazon.md#3-start-4-5-8-and-9-ammunition-a-target-and-the-strafe-and-fend-counts), [§ 7](../findings/skills/0009-amazon.md#7-do-12-and-do-13-strafe-fend-zeal-and-fury); fn:sub_00622870_UnitMeleeReach@0x00622870, fn:sub_005DAE30_SkillSt09Fend@0x005DAE30, fn:sub_005DBC60_SkillDo13Fend@0x005DBC60); `[I]` that this is the monster's melee reach (the column name; stock 0..6, so the `0xFF` branch is synthetic only) | [C] (width [I]) |
@@ -79,8 +79,8 @@ Three special encodings (`tools/excel_bin.py` field types `tokcount`, `toklist`,
 | `SHv` | list of 1..5 codes (5 distinct), 574 blank | `+0x01C` u8 count; `+0x07A` u8[12] `compcode` rows | `compcode:code` | [C] |
 | `S1v` | list of 1..12 codes (17 distinct), 360 blank | `+0x01D` u8 count; `+0x086` u8[12] `compcode` rows | `compcode:code` | [C] |
 | `S2v` | list of 1..12 codes (12 distinct), 467 blank | `+0x01E` u8 count; `+0x092` u8[12] `compcode` rows | `compcode:code` | [C] |
-| `S3v` | list of 1..4 codes (5 distinct), 539 blank | `+0x01F` u8 count; `+0x09E` u8[12] `compcode` rows | `compcode:code` | [C] |
-| `S4v` | list of 1..4 codes (8 distinct), 562 blank | `+0x020` u8 count; `+0x0AA` u8[12] `compcode` rows | `compcode:code` | [C] |
+| `S3v` | list of 1..4 codes (5 distinct), 539 blank | `+0x01F` u8 count; `+0x09E` u8[12] `compcode` rows | `compcode:code`; *plan 0046 readers:* `[I]` skill do 148 (DoomKnightMissile) adds the caster's monster-data byte `+0x0E` to its `srvmissilea` ([skills/0018 § 3](../findings/skills/0018-monster-8c.md#3-the-missile-casts-do-130-132-136-139-148-149-and-start-63)), and that byte is component 10's (`S3`) drawn variant, in `[0, count)` (MonsterData `+0x04 + k`, [monsters/0004 § 6](../findings/monsters/0004-stats.md#6-appearance-and-monequip-draws)); `[C]` (data) the five classes with that skill (`doomknight2`, `doomknight3`, `dkmag1..3`) have `S3v` `pos,fir,col,unh` (count 4) on their MonStats2 row, and `undeadmissile1..4` are consecutive Missiles rows (fn:sub_005CDFB0_SkillDo148DoomKnightMissile@0x005CDFB0, fn:sub_005739D0_MonComponentsPick@0x005739D0) | [C] |
+| `S4v` | list of 1..4 codes (8 distinct), 562 blank | `+0x020` u8 count; `+0x0AA` u8[12] `compcode` rows | `compcode:code`; *plan 0046 readers:* `[I]` skill do 149 (NecromageMissile) adds the byte `+0x0F`, component 11's (`S4`) drawn variant, as `S3v` for do 148; `[C]` (data) its one class, `necromage`, has `S4v` `pos,cld,fir,lht` (count 4), and `necromage1..4` are consecutive Missiles rows ([skills/0018 § 3](../findings/skills/0018-monster-8c.md#3-the-missile-casts-do-130-132-136-139-148-149-and-start-63); fn:sub_005CE0B0_SkillDo149NecromageMissile@0x005CE0B0) | [C] |
 | `S5v` | list of 1..4 codes (7 distinct), 577 blank | `+0x021` u8 count; `+0x0B6` u8[12] `compcode` rows | `compcode:code` | [C] |
 | `S6v` | list of 1..1 codes (1 distinct), 605 blank | `+0x022` u8 count; `+0x0C2` u8[12] `compcode` rows | `compcode:code` | [C] |
 | `S7v` | list of 1..1 codes (1 distinct), 597 blank | `+0x023` u8 count; `+0x0CE` u8[12] `compcode` rows | `compcode:code` | [C] |
@@ -154,13 +154,13 @@ Three special encodings (`tools/excel_bin.py` field types `tokcount`, `toklist`,
 | `alSel` | int, always 1, 592 blank | `+0x004` bit 4 | — | [C] |
 | `noSel` | int, always 1, 580 blank | `+0x004` bit 5 | — | [C] |
 | `shiftSel` | int, always 1, 604 blank | `+0x004` bit 6 | — | [C] |
-| `corpseSel` | int, always 1, 215 blank | `+0x004` bit 7 | *plan 0046 readers:* `[C]` as a map: the corpse tests `0x00645510` and `0x00645680` (starts 15, 17, 21) refuse a monster without flag bit 7 ([skills/0010 § 3](../findings/skills/0010-necromancer.md#3-the-start-functions-15-17-18-19-20-21); fn:sub_00645510_MonCorpseTest@0x00645510, fn:sub_00645680_MonCorpseTestDead@0x00645680, fn:sub_004638A0_MonStats2FlagTest@0x004638A0); `[I]` so Raise Skeleton and the corpse explosions take only a `corpseSel` monster (the bit is this column by the layout) | [C] |
+| `corpseSel` | int, always 1, 215 blank | `+0x004` bit 7 | *plan 0046 readers:* `[C]` as a map: the corpse tests `0x00645510` and `0x00645680` (starts 15, 17, 21) refuse a monster without flag bit 7 ([skills/0010 § 3](../findings/skills/0010-necromancer.md#3-the-start-functions-15-17-18-19-20-21); fn:sub_00645510_MonCorpseTest@0x00645510, fn:sub_00645680_MonCorpseTestDead@0x00645680, fn:sub_004638A0_MonStats2FlagTest@0x004638A0); `[I]` so Raise Skeleton and the corpse explosions take only a `corpseSel` monster (the bit is this column by the layout); `[C]` as a bit test, flag 7 of `sub_004638A0_MonStats2FlagTest` in `sub_006455E0_CorpseTest` and `sub_00645590_CorpseTestF12` (starts 33, 34, do 69, 72, 75; do 137), `[I]` that flag 7 is this column (the layout) ([skills/0012 § 4](../findings/skills/0012-barbarian.md#4-the-corpse-functions-start-33-34-do-69-72-75), [skills/0018 § 4](../findings/skills/0018-monster-8c.md#4-the-hits-the-curses-and-the-states-do-128-131-133-134-137); fn:sub_006455E0_CorpseTest@0x006455E0) | [C] |
 | `isAtt` | int, always 1, 122 blank | `+0x005` bit 1 | — | [C] |
 | `revive` | int, always 1, 220 blank | `+0x005` bit 0 | *plan 0046 readers:* `[C]` as a map: `0x005C3300` (start 21) refuses a monster without flag bit 8, up to its `0x0056E2F0` boundary (ADR-0021) ([skills/0010 § 3](../findings/skills/0010-necromancer.md#3-the-start-functions-15-17-18-19-20-21); fn:sub_005C3300_ReviveTargetTest@0x005C3300, fn:sub_005C3350_SkillSt21Revive@0x005C3350); `[I]` so Revive needs a `revive` monster (the bit is this column by the layout) | [C] |
 | `critter` | int, always 1, 599 blank | `+0x005` bit 5 | — | [C] |
-| `small` | int, always 1, 534 blank | `+0x005` bit 2 | *plan 0046 readers:* `[C]` damage function 14 reads it as flag 10 through `sub_004638A0_MonStats2FlagTest`: with `large` and Missiles `dParam1` it picks a monster's knockback chance (`dParam1` < 1: `dParam2` if small, else none; 1: small 2·`dParam2`, large none, else `dParam2`; ≥ 2: small 3·`dParam2`, large `dParam2`, else 2·`dParam2`) ([skills/0005 § 16](../findings/skills/0005-missile-do-19-36-damage.md#16-damage-5-13-14); fn:sub_005AD630_MissDmg14KnockBySize@0x005AD630) | [C] |
-| `large` | int, always 1, 435 blank | `+0x005` bit 3 | *plan 0046 readers:* `[C]` damage function 14's flag 11 (the chance rule under `small`) ([skills/0005 § 16](../findings/skills/0005-missile-do-19-36-damage.md#16-damage-5-13-14); fn:sub_005AD630_MissDmg14KnockBySize@0x005AD630); `[C]` hit 47 (molten boulder) returns 2 (keep rolling) on a unit that is not a monster with this flag, and calls `MISSILE_BuildDamage` for one (or at the end of life), its boundary (ADR-0021); `[I]` the area hit after it, so the boulder explodes on `large` monsters only ([skills/0007 § 8](../findings/skills/0007-missile-hit-31-59.md#8-hit-47-56-and-53-area-hits-and-the-contagion); fn:sub_005AC550_MissHit47Boulder@0x005AC550) | [C] |
-| `soft` | int, always 1, 206 blank | `+0x005` bit 4 | — | [C] |
+| `small` | int, always 1, 534 blank | `+0x005` bit 2 | *plan 0046 readers:* `[C]` damage function 14 reads it as flag 10 through `sub_004638A0_MonStats2FlagTest`: with `large` and Missiles `dParam1` it picks a monster's knockback chance (`dParam1` < 1: `dParam2` if small, else none; 1: small 2·`dParam2`, large none, else `dParam2`; ≥ 2: small 3·`dParam2`, large `dParam2`, else 2·`dParam2`) ([skills/0005 § 16](../findings/skills/0005-missile-do-19-36-damage.md#16-damage-5-13-14); fn:sub_005AD630_MissDmg14KnockBySize@0x005AD630); `[I]` skill do 75's second test (§ `large`) | [C] |
+| `large` | int, always 1, 435 blank | `+0x005` bit 3 | *plan 0046 readers:* `[C]` damage function 14's flag 11 (the chance rule under `small`) ([skills/0005 § 16](../findings/skills/0005-missile-do-19-36-damage.md#16-damage-5-13-14); fn:sub_005AD630_MissDmg14KnockBySize@0x005AD630); `[C]` hit 47 (molten boulder) returns 2 (keep rolling) on a unit that is not a monster with this flag, and calls `MISSILE_BuildDamage` for one (or at the end of life), its boundary (ADR-0021); `[I]` the area hit after it, so the boulder explodes on `large` monsters only ([skills/0007 § 8](../findings/skills/0007-missile-hit-31-59.md#8-hit-47-56-and-53-area-hits-and-the-contagion); fn:sub_005AC550_MissHit47Boulder@0x005AC550); `[I]` skill do 75 (Grim Ward) creates `srvmissilec` for a corpse with this bit, else `srvmissileb` with `small`, else `srvmissilea`, after its boundary ([skills/0012 § 4](../findings/skills/0012-barbarian.md#4-the-corpse-functions-start-33-34-do-69-72-75); fn:sub_005D89B0_SkillDo75GrimWard@0x005D89B0) | [C] |
+| `soft` | int, always 1, 206 blank | `+0x005` bit 4 | *plan 0046 readers:* `[C]` as a bit test, flag 12 through `sub_00621F60_MonStats2Flag12`, the last test of `sub_00645590_CorpseTestF12` (start 33, do 69, 75; do 137), `[I]` that flag 12 is this column (the layout) ([skills/0012 § 4](../findings/skills/0012-barbarian.md#4-the-corpse-functions-start-33-34-do-69-72-75), [skills/0018 § 4](../findings/skills/0018-monster-8c.md#4-the-hits-the-curses-and-the-states-do-128-131-133-134-137); fn:sub_00645590_CorpseTestF12@0x00645590) | [C] |
 | `inert` | int, always 1, 524 blank | `+0x006` bit 1 | — | [C] |
 | `objCol` | int, always 1, 606 blank | `+0x006` bit 2 | — | [C] |
 | `deadCol` | int, always 1, 596 blank | `+0x006` bit 3 | — | [C] |
@@ -179,8 +179,8 @@ Three special encodings (`tools/excel_bin.py` field types `tokcount`, `toklist`,
 | `Utrans(H)` | int 4..255 (3 distinct), 594 blank | `+0x124` u8 | — | [C] (width [I]) |
 | `Heart` | str, always 'xxx' | `+0x128` char[4] | — | [I] |
 | `BodyPart` | str, always 'xxx' | `+0x12C` char[4] | — | [I] |
-| `InfernoLen` | int 1..14 (4 distinct) | `+0x108` u8 | — | [C] |
-| `InfernoAnim` | int 6..11 (4 distinct), 584 blank | `+0x109` u8 | — | [C] |
+| `InfernoLen` | int 1..14 (4 distinct) | `+0x108` u8 | *plan 0046 readers:* `[I]` `sub_005CC3B0_InfernoEnd` (the end of skill do 95 and do 152, after its `CancelEvents` boundary) queues the next event at `frame + InfernoLen` (11 without a row) ([skills/0016 § 6](../findings/skills/0016-monster-8a.md#6-missiles-and-the-infernos-do-85-88-93-95-111-start-53); fn:sub_005CC3B0_InfernoEnd@0x005CC3B0) | [C] |
+| `InfernoAnim` | int 6..11 (4 distinct), 584 blank | `+0x109` u8 | *plan 0046 readers:* `[I]` read by `sub_005CC440_InfernoAnim`, which skill do 95 (and do 126) call after a created missile ([skills/0016 § 6](../findings/skills/0016-monster-8a.md#6-missiles-and-the-infernos-do-85-88-93-95-111-start-53), [skills/0017 § 3](../findings/skills/0017-monster-8b.md#3-the-missile-casts-do-99-101-102-105-106-125-126-152); fn:sub_005CC440_InfernoAnim@0x005CC440) | [C] |
 | `InfernoRollback` | int 6..15 (4 distinct), 591 blank | `+0x10A` u8 | — | [C] |
 | `ResurrectMode` | str, 3 distinct, len ≤ 2 | `+0x10B` u8 index | monmode:code | [C] |
 | `ResurrectSkill` | str, always 'SkeletonRaise', 578 blank | `+0x10C` s16 index | skills:skill | [C] (width [I]) |
@@ -319,6 +319,32 @@ over the 609 rows. Meanings `[L]`.
   traps, `act2guard2`, `seventombs`, `izualghost` and the druid summons) and 2 for 18 (`barricadetower`, the eight
   `minionspawner*`, the four catapults, `act5pow`, the three `injuredbarb*`, `demonspawner`) (`.txt` read by
   script, tbl:MonStats2.txt:restore).
+
+## Timing (plan 0050 Phase 0)
+
+The mode flags and the timing columns, from the layout ([§ Record layout](#record-layout-308-bytes)); values from the
+`.bin` over the 609 records (`python3 -I tools/anim_survey.py monsters workspace/merged`; survey keys `mon_*`):
+
+| Column | `.bin` field | Observed | Meaning | Tag |
+|---|---|---|---|---|
+| `BaseW` | `+0x010` 4-byte code | `hth` 541, `1hs` 26, `bow` 16, `2hs` 13, `1ht` 6, `2ht` 5, `fgt` 1, `mgk` 1 | the weapon class: the third part of the `animdata.d2` record name | [C] layout; the join `[C]`, the game's use `[L]` |
+| `HitClass` | `+0x014` u8 | 1 ×6, 3 ×566, 12 ×37 | read as [HitClass](HitClass.md) rows: `hth`, `1hsl`, `claw` | [C] layout; `[L]` |
+| `mDT` … `mRN` | `+0x0F0` u16, bit *k* = [MonMode](MonMode.md) row *k* | set in `DT` 519, `NU` 585, `WL` 476, `GH` 403, `A1` 450, `A2` 217, `BL` 51, `SC` 41, `S1` 238, `S2` 60, `S3` 25, `S4` 15, `DD` 524, `KB` 377, `SQ` 384, `RN` 57 records | the class has mode *k* | [C] layout; `[C]` in the 603 records a MonStats row names, every set bit outside `SQ` names an existing `animdata.d2` record (below); the other 6 (`diabloclone` and the five `uber*` rows) have no MonStats `Code` to build a name from and are not checked |
+| `dDT` … `dRN` | `+0x0F4 + k` u8 | 1, 4, 8 or 16 in every record and mode (8 the most common: 498..562 per mode) | directions of mode *k* | [C] layout; `[L]` |
+| `A1mv`, `A2mv`, `SCmv`, `S1mv`, `S2mv`, `S3mv`, `S4mv` | `+0x104` bits by mode index (`A1mv` bit 4 … `S4mv` bit 11) | set in 0, 18, 0, 11, 4, 0, 0 records | the monster moves while in that mode | [C]/[I] layout ([§ Columns](#columns)); `[L]` |
+| `InfernoLen` | `+0x108` u8 | 1 ×601, 14 ×6, 6, 7 | frames to the next inferno event | [C] layout; `[I]` `sub_005CC3B0_InfernoEnd` ([§ Columns](#columns)) |
+| `InfernoAnim` | `+0x109` u8 | 6..11 in 25 records, blank 0 | the inferno's animation frame test | [C] layout; `[I]` `sub_005CC440_InfernoAnim` ([§ Columns](#columns)) |
+| `InfernoRollback` | `+0x10A` u8 | 6..15 in 18 records, blank 0 | the frame an inferno rolls back to (name) | [C] layout; `[L]` (no reader read) |
+| `ResurrectMode` | `+0x10B` u8, `monmode` row | `NU` 568, `xx` 31, `S1` 10 | the mode of a resurrected monster | [C] layout; `[L]` |
+| `ResurrectSkill` | `+0x10C` s16, `skills` row | 158 (`SkeletonRaise`) in 31, −1 otherwise | the skill a resurrection plays | [C] layout; `[L]` |
+
+- `[C]` **Every flagged mode has animation data.** For the 734 MonStats rows, each set `m<mode>` bit outside `SQ`
+  (5 109 in all) names an `animdata.d2` record `<MonStats Code><MonMode token><BaseW>` (5 057) or, failing that,
+  `<…>HTH` (52, the death modes of the `GM`, `FE` and `FK` classes); `mon_miss=0`
+  ([MonMode § Timing](MonMode.md#timing-plan-0050-phase-0)). The 31 `ResurrectMode` `xx` rows are the 31 with
+  `ResurrectSkill` `SkeletonRaise`, whose sequence is `seq_skeletonraise` ([MonSeq](MonSeq.md)) by the name.
+- `[L]` Whether `d<mode>` matches the COF's direction count, and what the `*mv` bits do to the movement step, is plan
+  0050 Phases 1.1 and 1.3.
 
 ## Interpretation notes
 

@@ -1626,3 +1626,99 @@
 - **Conclusion:** see [drlg/0009 § 11.3](0009-room-lifecycle.md#113-plan-0038-batch-h7a-run2026-10-17-h7a-lifecycle):
   the alignment-2 half of the `0x400` drop and the expired-item drop at the restore are raised; the 4 mismatches show
   the monster record's `+0xC4` read after the save test (bit `0x2000`); recipe (b) is a shortfall and (c) withdrawn.
+
+## run:2026-10-27-sweep-collision
+
+- **Question:** (plan 0038 Phase 2, batch H5d, [inventory § 5](../../plans/0038-inventory/README.md#harness-batches))
+  the 17 inferred statements of drlg/collision rows 1, 5, 8–9, 11, 19, 21, 24, 30, 36, 45–46 and monsters/spawn 41: the
+  bit-2 merge's `TileCollisionUpdate` in an active room, the `spawnCol` 1 and 3 masks, entry flag `0x80`, the item mark,
+  NPC patterns 3 and 4, `CollisionTest` sizes 0 and 1 as placement tests, `SpawnClassCellTest` for `BaseId`s 228, 298
+  (flag 0), 334 and 528, and the level-seed step of `LevelPointPick` in `Position` levels other than Tristram; with the
+  H4b piece of spawn 42 (classes 228 and 334).
+- **Setup:** the ADR-0003 harness on **slot 1** (display `:8`, prefix `workspace/wineprefix-1`), agent-driven play
+  (no owner play), expansion Normal (`enter-normal.steps`). Character `UniqNova` built from
+  `tools/d2s_recipes/uniqnova.json` (save `2c793a3d…`, `workspace/runtime/h5d-chars`); the slot's empty saves directory
+  set aside as tag `h5d`, restored and set aside again before each launch, restored after the last session. Each
+  session starts in the Act IV town (103).
+  - **Logger** `tools/gdb/collision-h5d.gdb` (`de169d56…`; its header names the run with the date of the lane's pause,
+    2026-10-25, the sessions ran on 2026-10-27): `collision.gdb`'s set (`drlg-gen.py`, `drlg-roomk.py`,
+    `mon-spawn.py`, `collision.py` `16c8c90a…` with the H5d pairs TCB0/TCB1, IM0/IM1, PN0/PN1, SCT0/SCT1, LPP0/LPP1)
+    plus `mon-special.py` (`c014564b…`) and `objects.py` (`7d78c5e3…`). `MONSPAWN_WATCH` empty.
+  - **Driver** `tools/h5d_sessions.py`: session tomb at `16defea` (`b452bd98…`, two waypoint hops from the town: the
+    second, from the waypoint the character stood on, did not open the list, so the session stayed in Lut Gholein);
+    tomb-r2 to arcane with one waypoint hop from the starting town (the tomb, tomb2 and frigid rows changed, nothing else);
+    rogue with the committed revision (`98f2b5a7…`, the rogue row added: waypoint 1,1, then `wpchain` 1,7).
+  - **Checkers** `tools/collision.py check` (`ecc24c2e…`, which runs `tools/monspawn.py` `1e6b5365…`; new H5d counters:
+    entry flag `0x80` cells, `SpawnClassCellTest` separation, `CollisionTest` size 0/1 cases) and `tools/sweep_h5d.py`
+    (`5f4b9228…`, new: `static`, `masks`, `patterns`).
+- **Procedure:** `python3 -I tools/h5d_sessions.py run --slot 1 --tag h5d --saves workspace/runtime/h5d-chars --run
+  run-2026-10-27-h5d <session>` (each launch is `d2run.py --slot 1 --seed N --gdb tools/gdb/collision-h5d.gdb --steps
+  tools/gdb/enter-normal.steps --after 2400 --install h5d …`; Xwayland kept on `special:d2harness`; `slots.py stop 1`
+  after each session). Checks: `workspace/logs/h5d/check/run-checks.sh` under `systemd-run --user --scope -p
+  MemoryMax=4G`, and `python3 -I tools/sweep_h5d.py static` (`check/sweep-static.txt`). Manifests
+  `workspace/logs/h5d/h5d-manifest.sha256` (`f9f6c4c4…`; logs, pilot outputs, `check/`) and `h5d-manifest-dev.sha256`
+  (`1b3aba39…`; `dev/`: the
+  2026-10-25 launch stopped at start, 21 lines, and two development outputs of `sweep_h5d.py`), both `sha256sum -c` from
+  `workspace/logs/h5d`. No log has `internal-error:`.
+
+  | Session | Seed | Levels (PLR) | Lines | `CB` dumps | Ended by |
+  |---|---|---|---|---|---|
+  | tomb | 1557 | 103, 40 | 13 591 | 57 | its commands (the second waypoint hop failed) |
+  | tomb-r2 | 1557 | 103, 46, 70 | 50 924 | 360 | its commands |
+  | tomb2 | 1558 | 103, 46 | 12 749 | 105 | watchdog (no way down to 66) |
+  | frigid | 4101 | 103, 111 | 32 752 | 249 | its commands |
+  | steppes | 4102 | 103, 104 | 24 359 | 239 | its commands |
+  | jail | 4103 | 103, 29, 30 | 12 102 | 75 | its commands |
+  | throne | 4104 | 103, 129 | 12 493 | 98 | the descent to 131 failed |
+  | arcane | 4105 | 103, 74 | 23 029 | 74 | its commands |
+  | rogue | 4106 | 103, 1, 29 | 10 786 | 94 | its commands |
+
+- **Observed** (`check/collision-check.txt`, `e004e456…`, the nine logs together; per log `check/collision-per-log.txt`):
+  ```
+  monspawn: 162845 checks, 3 mismatches; collision: 26913 checks, 0 mismatches
+  MISMATCH …tomb-r2.log:50476 level 70 room 033d1000: log ends, expected MC0
+  MISMATCH …jail.log:12092 level 30 room 02f8bc00: log ends, expected PG
+  MISMATCH …rogue.log: line 4769: operate mode/interact/sparkle (2, 0, 0), model (1, 0, 0)
+  H5d SpawnClassCellTest predicted: BaseId 228, flag 0, caller 005f6aea, result 1        2
+  H5d SpawnClassCellTest predicted: BaseId 228, flag 1, caller 005b2d95, result 1        4
+  H5d SpawnClassCellTest BaseId 228: the offset decides (the own cell gives 0)           4
+  H5d SpawnClassCellTest BaseId 228: the mask decides (mask 0x1c0 gives 0)               2
+  H5d SpawnClassCellTest predicted: BaseId 298, flag 0, caller 005f9fa2, result 0        3
+  H5d SpawnClassCellTest predicted: BaseId 298, flag 0, caller 005f9fa2, result 1        15
+  H5d SpawnClassCellTest BaseId 298: the mask decides (mask 0x1c0 gives 0 / 1)           1 / 2
+  H5d SpawnClassCellTest predicted: BaseId 528, flag 0, caller 005e62c1, result 1        1
+  H5d SpawnClassCellTest predicted: BaseId 528, flag 1, caller 005b2d95, result 0 / 1    13 / 4
+  H5d SpawnClassCellTest BaseId 528: the offset decides (the own cell gives 0 / 1)       1 / 13
+  H5d CollisionTest (size 0, mask 0x3c01) predicted: classes 327, 517, 545; result 0 17, non-zero 9
+  H5d CollisionTest (size 1, mask 0x3c01) predicted: classes 228, 371; result 0 9, non-zero 1
+  H5d CollisionTest size 0 / 1: the one-cell test decides (a plus test gives non-zero)   4 / 1
+  H5d CollisionTest (size 3, mask 0x0000) predicted, result 0 (barricades 432-435, 524, 525) 43
+  H5d PM pattern 3 (mask 0x100) 2324, (mask 0x8000) 6; PU pattern 3 (0x100) 1571, (0x8000) 6
+  H5d PM pattern 4 (mask 0x100) 6; PU pattern 4 (mask 0x100) 4
+  H5d item marks predicted (RO: one cell 0x200) 271; on a cell without 0x200 before 271
+  H5d LevelPointPick predicted: level 46 type 11 n 1: 100; level 74 type 11 n 1: 554; level 125 type 11 n 1: 1;
+    level 103 type 0 n 0: 9
+  H5d TileCollisionUpdate: no room holds the tile's top-left (no write) 37 (of 37 calls)
+  ```
+  (lines merged by hand from the output, counts as printed.) The two "log ends" mismatches are the last request of a
+  session cut by `slots.py stop`; the rogue one is `tools/objects.py`'s operate model on the Rogue Encampment waypoint (class 119;
+  corrected at the review, which read the log: not a second click). The unit was created in mode 1 (`OIX` at line 3225:
+  the arrival by waypoint, `OBJINIT_Waypoint`'s arrival-list match) and is in mode 2 at its one operate (`OO0` at line
+  4769, `wpchain`); no logged line moves it in between, so the change is presumably the queued object event 1, which the
+  model does not apply (reverser entry of the review). None is on a row of this batch.
+  - `check/flag80-check.txt` (the two kept logs with Harrogath's activation dumps, `h4a-s1-4908-foothills` and
+    `h5b … 3906-harro`): `collision: 3320 checks, 0 mismatches`; `entry flag 0x80: entries 88, dumps 16, cells only its
+    0x04 OR explains (model exact there) 1044`, all in level 109.
+  - `check/masks.txt` (1 330 kept logs of the earlier runs and the nine sessions): `MK0 by (spawnCol, mask): (0,
+    0x3c01) 172925; (1, 0x01c0) 271; (2, 0x3f11) 236; (3, 0x0000) 837`; the `spawnCol` 1 rows are classes 153, 258, 259,
+    261, 262; every frog demon request (247–249, 1 777 `MTT` lines) takes `SpawnPosOnTile` (MTT) and makes no `MK0`.
+  - `check/patterns.txt` (the same 1 339 logs): `creation marks 38338 (pattern 5 excluded); model (npc or inTown,
+    interact clear) mismatches 0; older reading (npc only) mismatches 254`; patterns 3 and 4 at creation for classes
+    152, 179 (`cow`, pattern 4), 195, 196, 203, 294, 296, 359, 522, 567–569; the 360 pattern-5 creations are the
+    wraiths (38–40, 42, 631; 318 as filed, recounted at the review). `check/patterns-sessions.txt` alone: 1 544, 0 and 7, `cow` once.
+  - `check/sweep-static.txt`: no table names a suckernest class (334–337) as a creation (Levels 30 class columns,
+    MonStats `minion1`/`minion2`/`spawn`, MonPreset `Place`, SuperUniques `Class`, Skills `summon`: 0); 81 `.text`
+    sites with an immediate 334–337, classified in [drlg/0005 § Plan 0038 batch H5d](0005-collision.md#plan-0038-batch-h5d-run2026-10-27-sweep-collision).
+- **Conclusion:** see [drlg/0005 § Plan 0038 batch H5d](0005-collision.md#plan-0038-batch-h5d-run2026-10-27-sweep-collision)
+  and [monsters/0002 § Plan 0038 batch H5d](../monsters/0002-room-population.md#plan-0038-batch-h5d-run2026-10-27-sweep-collision):
+  11 statements raised, 3 raised in part, 2 shortfalls, 1 proposed d-none.

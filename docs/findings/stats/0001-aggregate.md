@@ -36,6 +36,14 @@ finding, write for write; § 9 lists what each claim was checked against and wha
   fn:ITEMSTATCOST_Load@0x00637A00, run:2026-10-17-stats)
 - [I] Op 3 (no row), op 6 and 7 (time of day; no spawnable row) and the empty ops 10 and 12 were not reached.
   (fn:sub_00626200_StatEvaluate@0x00626200, fn:STAT_ByTimeValue@0x0065CA30)
+- [C] **Op 6 and 7 as code** (plan 0051 Phase 1b, § 10): `STAT_ByTimeValue` and `StatEvaluate`'s cases 6 and 7
+  (with `ActTimeOfDay`, ops 10, 12 and above 13 between them) were run under emulation on synthetic lists. They
+  reproduce § 4's arithmetic bit for bit in 9 000 calls, 0 mismatches. Each case adds a term only when the list's
+  owner (`+0x44`) is non-NULL, the owner's `+0x1C` is non-zero and the source's value `p` is non-zero. Op 6 then adds
+  the by-time value `t = STAT_ByTimeValue(p, …)`, and op 7 adds `MulDiv(running total, t, 100)`. What `+0x1C` and the
+  phase pair are in play, and whether stock play ever reaches the cases, stay `[I]`.
+  (fn:STAT_ByTimeValue@0x0065CA30, fn:sub_00626200_StatEvaluate@0x00626200, fn:sub_0061C100_ActTimeOfDay@0x0061C100,
+  run:2026-10-27-p51s-emu)
 - [C] **The maxima** are the cached full stats 7, 9 and 11 (`UnitGetMaxHp`, `UNIT_GetMaxMana`,
   `UNIT_GetMaxStamina`). Item and state life reaches them through the cache; vitality and energy from items through
   op 9 and op 8 with the class's `LifePerVitality`, `StaminaPerVitality`, `ManaPerMagic` (quarter points); `item_maxhp_percent` and `item_maxmana_percent` (op 11) are a
@@ -92,7 +100,10 @@ Phase 1b, compared after the code reading of § 4 – § 8 (blind first).
   Detail: the server evaluator computes both (§ 4, `STAT_ByTimeValue`), op 7 as a percentage of the running total.
   Not reachable on stock data: the only stock rows that write a `…/time` property are the magic suffixes *of Dawn*
   and *of Sunlight*, both `spawnable` 0 and `frequency` 0. Not a Phase 2 case; [backlog](../../backlog.md) entry
-  filed.
+  filed. *2026-10-27 (plan 0051 Phase 1b):* settled for the code. [C] Under emulation `StatEvaluate` adds both terms
+  (§ 10); the lead's "does not work" reading (op 6/7 adding nothing) fails 2 110 of the 3 000 cases. What the lead
+  may mean in play (the phase never moving, a client display) is not covered: stock data reaches neither op.
+  (fn:sub_00626200_StatEvaluate@0x00626200, run:2026-10-27-p51s-emu)
 - [L] src:pk-itemstatcost-guide: op 8 and 9 give mana and life/stamina from CharStats for the energy and vitality
   "added", characters only; op 11 is op 1 with extra checks; 10 and 12 do nothing; 13 is op 1 on items only.
   **held with refinement**
@@ -309,6 +320,7 @@ return acc;
   (`(a + 7) / 15 × 15`, 0 below 1), then `a ≥ 359 → 360 − 359`, `a ≥ 180 → 360 − a`; value `hi − (hi − lo)·a/180`.
   The phase source (`owner +0x1C`) is not read further; stock data never reaches this case (Leads used).
   (fn:STAT_ByTimeValue@0x0065CA30, fn:sub_0061C100_ActTimeOfDay@0x0061C100)
+  *2026-10-27:* the map is `[C]` under emulation and the phase source is read, in § 10.
 - [I] **op 8/9:** the term uses only `full − own` of the source on the list being evaluated. On a player's list
   `own` is the base attribute, so only item, state and set vitality/energy give life, stamina and mana here; the
   spent points are added to the base maxima by the stat-point code (player/0001). (0x00626511–0x00626606,
@@ -490,6 +502,59 @@ and predicts every line from § 1–§ 8 (method and counts in the run record). 
   between two refreshes in every session); what queues it was not read. (fn:sub_0055DBC0_EquipReqRefresh@0x0055DBC0,
   run:2026-10-17-stats)
 
+### 10. Op 6 and 7 under emulation (run:2026-10-27-p51s-emu, plan 0051 Phase 1b)
+
+The backlog's optional emulation (plan 0041 P1 review, item (c)): the code that stock data never reaches, run on the
+pinned image under Ghidra 12.1.2's p-code emulator with `EmuTrace.java` (ADR-0015) and compared with
+`tools/sweep_p51s.py`'s models. The record, commands and counts are in
+[stats experiments](experiments.md#run2026-10-27-p51s-emu).
+
+- [C] **`STAT_ByTimeValue(v, unused, x, pq, plo, phi)`** (`__stdcall`, `ret 0x18`): `q = v & 3`,
+  `lo = ((v >> 2) & 0x3FF) − 256`, `hi = ((v >> 12) & 0x3FF) − 256`, each written through its pointer when that is
+  not NULL. Then `d = x − 90·q` (32-bit) and `a = |d|`, where `neg` leaves `INT32_MIN` as it is. It sets
+  `a = trunc((a + 7) / 15)·15` (signed), and 0 when that is ≤ 0. Then `a ≥ 359` gives `a = 1`, and `180 < a < 359`
+  gives `a = 360 − a`. It returns `hi − trunc((hi − lo)·a / 180)`. The second argument is never read. 6 000 calls,
+  0 mismatches, every branch reached: `a ≤ 0` 207, `0 < a ≤ 180` 1 443, `180 < a < 359` 987, `a ≥ 359` 3 363,
+  `d < 0` 2 606, `lo > hi` 2 968, a NULL pointer 5 458 times. Negative controls: the model without the 359 step
+  fails 3 302 cases, and floor division in place of truncation fails 2 416. (fn:STAT_ByTimeValue@0x0065CA30,
+  0x0065CA33–0x0065CAEE, run:2026-10-27-p51s-emu)
+- [C] **Wrap bounds** (signed 32-bit, from the model's arithmetic). `a + 7` fits up to `a = 0x7FFFFFF8`
+  (`0x7FFFFFFF`). From `0x7FFFFFF9` it wraps negative, so `a` becomes 0 and the value is `hi`. 26 cases have
+  `|d| ≥ 0x7FFFFFF9`, 3 of them `d = INT32_MIN`. `(hi − lo)·a` stays within `1023·180 = 184 140`, so it never wraps.
+  `d = x − 90q` wraps only when `x < INT32_MIN + 90q` (at most the 270 lowest values, for `q = 3`;
+  `x = INT32_MIN + 90q` gives `d = INT32_MIN`, which fits), and 128 cases do. (0x0065CA7B–0x0065CA82,
+  0x0065CACF, run:2026-10-27-p51s-emu)
+- [C] **`StatEvaluate`, cases 6 and 7** (ECX = list, EDX = key): for each entry of the target's op table, read in
+  order, case 6 needs the list's owner (`+0x44`) non-NULL, the owner's `+0x1C` non-zero and the source's full value
+  `p = Eval(list, src << 16)` non-zero. Then it adds `STAT_ByTimeValue(p, r, x, 0, 0, 0)`, with
+  `r = ActTimeOfDay(owner +0x1C, &x)`. Case 7 has the same gates and adds `MulDiv(acc, t, 100)`, with
+  `t = STAT_ByTimeValue(p, r, x, 0, 0, 0)` as for case 6 and `acc` the running total read after the source's evaluation (`mov edi, [ebp−4]` at 0x006264FB). Ops 10 and 12 jump
+  straight to the next entry, as does any op above 13. The loop stops at op 0 or after 16 entries. Sums are 32-bit
+  and wrap. 3 000 calls, 0 mismatches, on lists with 1 to 16 entries and nested sources (a source with its own op 6/7
+  table, 2 605 nested evaluations). Reached: op 6 term 5 301, op 7 term 5 187, `p = 0` 1 772 / 1 793, no owner
+  475 / 460, no `+0x1C` 459 / 431, ops 10 / 12 / above 13 571 / 595 / 1 152, 16 entries 447, an extended list with
+  no children 893. Op 7's `MulDiv` took its 32-bit (2 667), wrapped 32-bit (1 188) and divide-first (1 332) paths.
+  Negative controls: op 6/7 adding nothing fails 2 110 cases; op 7 on the own-plus-children sum instead of the
+  running total fails 1 103. (fn:sub_00626200_StatEvaluate@0x00626200, 0x0062644A–0x0062650C,
+  fn:sub_00483360_MulDiv@0x00483360, run:2026-10-27-p51s-emu)
+- [C] **`ActTimeOfDay(p, &x)`** (`ret 8`): `e = *(p + 4)` (through `0x0061AA60`, which asserts `p` non-NULL; the
+  case gate makes it so, and the guard on the assert path was never reached). When `e` is NULL, `x = 0` and it returns
+  0. Otherwise `x = e[+0x08] / e[+0x28]` (signed `idiv`, truncated), or 0 when `e[+0x28]` is 0, and it returns
+  `e[+0x04]`. Reached: `e` NULL 1 055 times among the terms, divisor 0 315 cases. The one fault input
+  (`INT32_MIN / −1`) is left out of the cases (ADR-0015 (5)). (fn:sub_0061C100_ActTimeOfDay@0x0061C100,
+  0x0061C100–0x0061C14F, run:2026-10-27-p51s-emu)
+- [C] **Read set** (ADR-0015 (2), enumerated by `EmuTrace`): beyond the stack, the memory spec and each case's
+  memory, the code read only `StatEvaluate`'s jump table 0x00626688 (.text) and the mask 0x006CE270 (`4`, .rdata),
+  both in read-only sections (`sweep_p51s.py static`). It wrote nothing outside the stack and the case's out words.
+  The spec writes `g_pDataTables` (an input) and two DataTables fields, `+0xBCC` (the ItemStatCost records) and
+  `+0xBD4` (their count). Each case writes only the record fields the code reads: byte `+0x04`, byte `+0x52` and the
+  op entries' `+0xE0` source, `+0xE2` op and `+0xE3` param. The entries' `+0xDE` (`op base`) is never read by ops 6
+  and 7: no trace of it. (data:g_pDataTables@0x00744304, run:2026-10-27-p51s-emu)
+- [I] **Not covered** (ADR-0015 (3)): what the game holds at `owner +0x1C` (by the unit layout, the act pointer) and at
+  `+0x04 → {+0x08, +0x28}`. So the phase `x` as a time of day (90 per quarter, 360 a cycle, from the `q·90` offset
+  and the 180/359 folds) is a reading of the code's constants, not a run observation. Neither is who reaches the
+  cases in play, given that no stock row is spawnable. (fn:sub_0061C100_ActTimeOfDay@0x0061C100)
+
 ## Data touched
 
 tbl:ItemStatCost.txt:op, tbl:ItemStatCost.txt:op param, tbl:ItemStatCost.txt:op base, tbl:ItemStatCost.txt:op stat1,
@@ -537,4 +602,6 @@ struct:ItemStatCostOps+0x5E, struct:ItemStatCostOps+0xDE.
   re-attaches both hands through `sub_005616A0_PlayerSwapWeapons` (the function itself not read).
 - [L] The take test's stat-0 quirk hides a per-level source's own value on a player (§ 3); which readers read the
   per-level stats themselves (the character screen is client-side). Phase 2 logs one.
-- [L] `sub_0061C100_ActTimeOfDay` and `owner +0x1C` (op 6/7): not read; unreachable on stock data.
+- [L] ~~`sub_0061C100_ActTimeOfDay` and `owner +0x1C` (op 6/7): not read; unreachable on stock data.~~ The function is
+  read and run in § 10. Still open: that `owner +0x1C` is the unit's act and `+0x04 → {+0x08, +0x28}` a time-of-day
+  pair, and who writes them. Resolve by reading the writers of the record at act `+0x04`, or by a harness watch.

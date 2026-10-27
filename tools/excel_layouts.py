@@ -1373,6 +1373,20 @@ LAYOUTS["books"] = dict(size=0x20, fields=[
 ], txt_only={"Namco": "display suffix (\"of Town Portal\"); no field (its keys are not in the string tables)",
              "Completed": "1, 1, 0; no byte or bit follows it (+0x003 is 0 in every record)"})
 
+# ------------------------------------------------------------------ monequip (0x1C B)
+# Plan 0051 Phase 0 (docs/tables/MonEquip.md). The monster class and level as s16 (MonEquipInit 0x005D6B60 and the
+# reverser's note of 2026-10-20), the oninit byte, three item codes, then the three body locations and the three
+# mods as bytes. The *end* row's class does not resolve (-1).
+LAYOUTS["monequip"] = dict(size=0x1C, fields=[
+    R("monster", 0x000, "monstats:Id", "s16", distinct=True), I("level", 0x002, "s16"), I("oninit", 0x004, "u8"),
+    U("pad_005", 0x005, "u8"), U("pad_006", 0x006, "u8"), U("pad_007", 0x007, "u8"),
+    C("item1", 0x008), C("item2", 0x00C), C("item3", 0x010),
+    R("loc1", 0x014, "bodylocs:Code", "u8", blank=0), R("loc2", 0x015, "bodylocs:Code", "u8", blank=0),
+    R("loc3", 0x016, "bodylocs:Code", "u8", blank=0),
+    I("mod1", 0x017, "u8"), I("mod2", 0x018, "u8"), I("mod3", 0x019, "u8"),
+    U("pad_01A", 0x01A, "u8"), U("pad_01B", 0x01B, "u8"),
+], txt_only={"eol": "end-of-line marker column (0 in every row); no byte follows mod3 but the two pad bytes"})
+
 # ------------------------------------------------------------------ gamble (12 B)
 # Plan 0031 Phase 0 (docs/tables/Gamble.md). The item code, then 8 bytes that are 0 in every record (no column feeds
 # them; filled at load or never, a question for the reverser).
@@ -1461,6 +1475,21 @@ LAYOUTS["states"] = dict(size=0x3C, fields=[
 # (MonStats El<e>Type, Skills EType, ...) while compiling.
 LAYOUTS["elemtypes"] = dict(size=4, fields=[C("Code", 0x0)],
                             txt_only={"Elemental Type": "editor name of the element; not in the record"})
+
+# ------------------------------------------------------------------ hitclass (4 B)
+# Plan 0050 Phase 0 (docs/tables/HitClass.md). Code list: the record is the 4-character code; row 0 (`None`) has a
+# blank code and stores four spaces. MonStats2 `hit class` and Weapons `hit class` name its rows by Code.
+LAYOUTS["hitclass"] = dict(size=4, fields=[C("Code", 0x0)],
+                           txt_only={"Hit Class": "editor name of the hit class; not in the record"})
+
+# ------------------------------------------------------------------ monseq (6 B)
+# Plan 0050 Phase 0 (docs/tables/MonSeq.md). One record per monseq.txt row (1 010), in row order: the sequence as
+# the ordinal of its name among the distinct `sequence` values (row 0's blank name is ordinal 0, the same index
+# MonStats Sk<k>seq stores), the monmode row, the frame, the direction and the event code.
+LAYOUTS["monseq"] = dict(size=6, fields=[
+    R("sequence", 0x000, "monseq:sequence", "u16", distinct=True),
+    R("mode", 0x002, "monmode:code", "u8"), I("frame", 0x003, "u8"), I("dir", 0x004, "u8"), I("event", 0x005, "u8")],
+    txt_only={"eol": "end-of-line marker column"})
 
 # ------------------------------------------------------------------ monmode, plrmode (52 B = 0x34)
 # Plan 0037 Phase 0 (docs/tables/MonMode.md, PlrMode.md). The ObjMode shape: the mode name, its two-letter Token

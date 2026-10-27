@@ -901,14 +901,19 @@ split where the run leaves a remainder:
   client tests ([skills/0003 § 12](0003-handlers.md#12-routed-questions-from-p11)).
 - ~~Which record the ally test's inner lookup reads.~~ *2026-10-20 (P1.3):* the same skill id (`ECX = [ebp+0xC]`), so
   the refusal never fires from `SKILLS_StartUsedSkill` ([skills/0003 § 12](0003-handlers.md#12-routed-questions-from-p11)).
-- [L] What `Unit+0x38` holds (the sequence-delay gate of § 6 and the dual-claw parity of `srvdofunc` 35).
+- ~~What `Unit+0x38` holds (the sequence-delay gate of § 6 and the dual-claw parity of `srvdofunc` 35).~~
+  *2026-10-27 (plan 0050 P1.1):* for a player, `PlrModeSkillFrame` writes the running frame event's index into its
+  integer part at every frame event while a skill is in use; the sequence position of an advancing sequence otherwise
+  ([anim/0001 § 5](../anim/0001-modes-frames.md#5-sequences)).
 - [L] *2026-10-20 (Phase 1b):* the `ItemTarget` helpers' draws. 2 (`0x005FD850`) steps the seed at `+0x20` of
   the unit it is given 2 to 20 times; which unit that is (caster or target) is unfollowed. Whether 3 (`0x005FD9C0`,
   a corpse pick through `0x0056E390`) or 4 (`0x005FDA10`) draws is not read. Phase 2 meets 2 only through an item
   Teleport cast. *2026-10-21 (plan 0046 batch `item`):* answered in [skills/0015 § 5](0015-item.md#5-itemskill_cast-its-itemtarget-helpers-and-its-callers)
   (helper 2 is given the cast's caster; 3 and 4 do not draw). (0x005FDB9B, fn:sub_005FD9C0_ItemTargetCorpse@0x005FD9C0)
 - [L] Which frame of a mode carries event code 1 or 2, and `Unit+0x4E` for monsters: phase (4) (animation timing);
-  Phase 2 logs it.
+  Phase 2 logs it. *2026-10-27 (plan 0050 P1.1):* read in [anim/0001 §§ 7–8](../anim/0001-modes-frames.md#7-the-schedule)
+  (the schedule's game frame for each event byte, and the per-frame advance's `+0x4E`); the values stay a logged input
+  of this plan until plan 0050's Phase 2 models them.
 - ~~The `srvprgfunc` entries the finisher calls (36–41, 143) and `0x00571AA0`.~~ *2026-10-20:* read in
   [skills/0003 § 1](0003-handlers.md#1-progressive-entries-srvprgfunc-and-the-finishers-tail).
 - ~~`TgtPlaceCheck`, `prgcalc1..3`, `prgdam`, `weapsel`/`leftskill`.~~ *2026-10-20:* `prgcalc` by charge count

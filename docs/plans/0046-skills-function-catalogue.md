@@ -761,7 +761,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   (items/0001 note). Tags: 31 `[C]`, 22 `[I]`, 4 `[L]` bullets; 32 symbols added (`I`). Dated notes in skills/0001
   § 11, skills/0003 § 5 (the Kick row in step) and items/0001. Review request
   [to the architect](../backlog/archive/2026-10-21-reverser-architect-lane-p46m9-review-plan-0046-batch-bar.md); column
-  readers [to the archivist](../backlog/2026-10-21-reverser-archivist-plan-0046-bar-skills-monstats2-column-readers.md).
+  readers [to the archivist](../backlog/archive/2026-10-21-reverser-archivist-plan-0046-bar-skills-monstats2-column-readers.md).
 - **2026-10-21 — `lane/p46m9` review (architect): accept with fixes.** Main (`8d9ecb5`) merged first (one conflict in
   this log, both sides kept; `backlog.py archive` moved nothing more). `check --batch bar` and `static --batch bar`
   from the lane's tool reproduce the kept `check.txt` (`13b1a4d2…`) and `static.txt` (`4808f177…`) byte for byte;
@@ -833,7 +833,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   (`[I]` after the boundary; skills/0003 § 9 note, rng/seeds open question to the spec-writer). Tags: 25 `[C]`, 25 `[I]`,
   4 `[L]` bullets; 20 symbols added (`I`). Dated notes in skills/0003 § 5 (the Firestorm row in step) and § 9. Review
   request [to the architect](../backlog/archive/2026-10-21-reverser-architect-lane-p46m10-review-plan-0046-batch-dru.md); column
-  readers [to the archivist](../backlog/2026-10-21-reverser-archivist-plan-0046-dru-skills-missiles-column-readers.md);
+  readers [to the archivist](../backlog/archive/2026-10-21-reverser-archivist-plan-0046-dru-skills-missiles-column-readers.md);
   [to the spec-writer](../backlog/archive/2026-10-21-reverser-spec-writer-rng-seeds-armageddon-first-period.md) on rng/seeds.
 - **2026-10-21 — `lane/p46m10` review (architect): accept with fixes.** Main (`f8f1e9f`) merged first (clean, no
   markers; `backlog.py archive` moved nothing). `check --batch dru` and `static --batch dru` from the lane's tool
@@ -942,7 +942,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   35 returns 1 where do 34 refuses (and after its hit path, `[I]`). Tags: 39 `[C]`, 28 `[I]`, 4 `[L]` bullets; 27 symbols added (`I`). Dated notes
   in skills/0001 § 12 and skills/0003 §§ 1, 5, 9. Review request
   [to the architect](../backlog/archive/2026-10-21-reverser-architect-lane-p46m11-review-plan-0046-batch-ass.md); column
-  readers [to the archivist](../backlog/2026-10-21-reverser-archivist-plan-0046-ass-skills-levels-column-readers.md);
+  readers [to the archivist](../backlog/archive/2026-10-21-reverser-archivist-plan-0046-ass-skills-levels-column-readers.md);
   [to the spec-writer](../backlog/archive/2026-10-21-reverser-spec-writer-combat-delivery-a3-finisher-callers-and-progressiv.md)
   on combat/delivery A2/A3.
 - **2026-10-21 — `lane/p46m11` review (architect): accept with fixes.** Reviewed on the lane (head `a943188`), main not
@@ -990,7 +990,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   Answer's "After, from the reading" bullet had no anchor (gate W1); the after-boundary ranges of do 33, do 42, ring 37
   and the trap helper added (wrong anchor). Counted: 4 (misread 1, stale cross-reference 1, wrong anchor 1, other 1). Review request closed
   ([archive](../backlog/archive/2026-10-21-reverser-architect-lane-p46m11-review-plan-0046-batch-ass.md)); the
-  [archivist entry](../backlog/2026-10-21-reverser-archivist-plan-0046-ass-skills-levels-column-readers.md) and the
+  [archivist entry](../backlog/archive/2026-10-21-reverser-archivist-plan-0046-ass-skills-levels-column-readers.md) and the
   [spec-writer entry](../backlog/archive/2026-10-21-reverser-spec-writer-combat-delivery-a3-finisher-callers-and-progressiv.md)
   (combat/delivery A2/A3, the five finisher callers and the entries' raises) are **released**, the latter with the
   negative-count and do 46 wording of fixes 1 and 3; lane ledger row added (the review's row is the orchestrator's at
@@ -1057,7 +1057,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   `UnitSkillGet18`. Tags: 29 `[C]`, 22 `[I]`, 4 `[L]` bullets; 26 symbols added (`I`). Dated notes in skills/0001
   § 10 and skills/0003 §§ 2, 3. Review request
   [to the architect](../backlog/archive/2026-10-21-reverser-architect-lane-p46m12-review-plan-0046-batch-item.md); column
-  readers [to the archivist](../backlog/2026-10-21-reverser-archivist-plan-0046-item-skills-pettype-books-shrines-column.md);
+  readers [to the archivist](../backlog/archive/2026-10-21-reverser-archivist-plan-0046-item-skills-pettype-books-shrines-column.md);
   [to the spec-writer](../backlog/archive/2026-10-21-reverser-spec-writer-combat-delivery-e5-item-cast-helpers-and-effect.md)
   on combat/delivery E5.
 - **2026-10-21 — `lane/p46m12` review (architect): accept with fixes.** Reviewed on the lane (head `bcdb4ca`), main not
@@ -1117,7 +1117,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   1, stale cross-reference 1). Promoted: fixes 1 and 2 are both a claim about callers with a caller path unnamed,
   reverser review-fixes rule 9 gains them as Seen lines. Review request closed
   ([archive](../backlog/archive/2026-10-21-reverser-architect-lane-p46m12-review-plan-0046-batch-item.md)); the
-  [archivist entry](../backlog/2026-10-21-reverser-archivist-plan-0046-item-skills-pettype-books-shrines-column.md)
+  [archivist entry](../backlog/archive/2026-10-21-reverser-archivist-plan-0046-item-skills-pettype-books-shrines-column.md)
   (Skills, PetType, Books, Shrines and Misc column readers, with fix 3's wording) and the
   [spec-writer entry](../backlog/archive/2026-10-21-reverser-spec-writer-combat-delivery-e5-item-cast-helpers-and-effect.md)
   (combat/delivery E5, with fixes 1, 2 and 6 and ruling 1's `[I]` for the composed chain) are **released**; lane
@@ -1186,7 +1186,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   room; thirteen entries make no id test. Tags: 34 `[C]`, 6 `[I]`, 4 `[L]` bullets; 38 symbols added (`I`). Dated
   note in skills/0003 § 4 (do 83). Review request
   [to the architect](../backlog/archive/2026-10-21-reverser-architect-lane-p46m13-review-plan-0046-batch-8a.md); column readers
-  [to the archivist](../backlog/2026-10-21-reverser-archivist-plan-0046-8a-skills-monstats-missiles-column-reade.md).
+  [to the archivist](../backlog/archive/2026-10-21-reverser-archivist-plan-0046-8a-skills-monstats-missiles-column-reade.md).
   No spec-writer entry: no spec states these functions yet (Phase 3 takes the finding).
 - **2026-10-21 — `lane/p46m13` review (architect): accept with fixes.** Reviewed on the lane (head `53060fe`), main not
   merged (it moved to `bce3d86` with the p48r2 and s46d merges; neither touches a skills finding, and none of the 38
@@ -1241,7 +1241,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   Promoted: fix 2 and the `lane/p46m11` review's ring-count wrap are both an integer wrap bound stated without the
   computation, reverser review-fixes rule 15. Review request closed
   ([archive](../backlog/archive/2026-10-21-reverser-architect-lane-p46m13-review-plan-0046-batch-8a.md)); the
-  [archivist entry](../backlog/2026-10-21-reverser-archivist-plan-0046-8a-skills-monstats-missiles-column-reade.md)
+  [archivist entry](../backlog/archive/2026-10-21-reverser-archivist-plan-0046-8a-skills-monstats-missiles-column-reade.md)
   (Skills `Param4`, `lob`, `summon`/`summode`, MonStats `spawn*` and `+0x4B`, Missiles `Vel`/`VelLev`, MonStats2
   `InfernoLen`/`InfernoAnim` readers; read against § 3–6, no fix touches it) is **released**; lane ledger row added (the
   review's row is the orchestrator's at the merge). **Phase 1 status:** the seven class batches, 9a–9d, batch 10 and
@@ -1269,7 +1269,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   position from the x offset; do 127's life unit is 0 for a player caster; start 59 is start 53 with calc1 for calc2.
   Tags: 32 `[C]`, 5 `[I]`, 3 `[L]` bullets; 28 symbols added (`I`). Review request
   [to the architect](../backlog/archive/2026-10-21-reverser-architect-lane-p46m14-review-plan-0046-batch-8b.md); column readers
-  [to the archivist](../backlog/2026-10-21-reverser-archivist-plan-0046-8b-skills-missiles-column-readers.md). No
+  [to the archivist](../backlog/archive/2026-10-21-reverser-archivist-plan-0046-8b-skills-missiles-column-readers.md). No
   spec-writer entry: no spec states these functions yet (Phase 3 takes the finding).
 - **2026-10-21 — `lane/p46m14` review (architect): accept with fixes.** Reviewed on the lane (head `f4e5227`), main not
   merged (it moved to `a12993b`: plan 0048 closed and moved to `plans/done/` with its links rewritten; none of it
@@ -1318,7 +1318,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   `0x005CD60D`), and the slot is not read after it; do 105's y position from `dx / 6` (`0x005CD81B`–`0x005CD838`, both
   position words from `esi`); do 127's life unit 0 for a non-monster caster (`0x005D1724`–`0x005D1743`). What the game
   shows for them stays under *Open questions*. (8) **The archivist entry is released**
-  ([entry](../backlog/2026-10-21-reverser-archivist-plan-0046-8b-skills-missiles-column-readers.md); read against
+  ([entry](../backlog/archive/2026-10-21-reverser-archivist-plan-0046-8b-skills-missiles-column-readers.md); read against
   §§ 3–5, no fix touches a column it names). **No spec-writer entry** is right: no spec states these functions;
   Phase 3 takes skills/0016 and 0017. (9) The tool's `near8` docstring still says "below 258" (the `lane/p46m13` review
   fix 2 left it to the next revision); it is carried to 8c's tool revision, the hash here being cited. `dev/notes.txt`
@@ -1370,7 +1370,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   Baal's arm of `0x0063EFA0` (two or three `RNG_Range` on the caster's seed, § 7 `[I]`), put to the review. No machinery
   path beyond plan 0045's spec (no 0045 correction filed); do 129's direct call of do 98 is a catalogue fact. Tags: 27
   `[C]`, 10 `[I]`, 3 `[L]` bullets; 30 symbols (`I`). Filed:
-  [archivist entry](../backlog/2026-10-21-reverser-archivist-plan-0046-8c-skills-monstats-column-readers.md) (column
+  [archivist entry](../backlog/archive/2026-10-21-reverser-archivist-plan-0046-8c-skills-monstats-column-readers.md) (column
   readers), [review request](../backlog/archive/2026-10-21-reverser-architect-lane-p46m15-review-plan-0046-batch-8c.md). **Next:**
   the architect's review of 8c, and the ruling on the six `general` entries plan 0045 read for Phase 1's close.
 - **2026-10-21 — `lane/p46m15` review (architect): accept with fixes. Phase 1 closed.** Reviewed on the lane (head
@@ -1419,7 +1419,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   emulation over a scratch image raises no symbol row). (8) **The surprises stand** as code readings inside the map (do
   148/149's one byte, do 132's slot write, do 136's point test before bit 6, the three entries with no id test, do 134's
   stock gate); what the game shows for them stays under *Open questions*. (9) **The archivist entry is released**
-  ([entry](../backlog/2026-10-21-reverser-archivist-plan-0046-8c-skills-monstats-column-readers.md)) after fix 3. **No
+  ([entry](../backlog/archive/2026-10-21-reverser-archivist-plan-0046-8c-skills-monstats-column-readers.md)) after fix 3. **No
   spec-writer entry** is right: no spec states these functions; Phase 3 takes skills/0004–0018. **Fixes, made in the
   documents:** (1) skills/0018 § 7 (and the Answer's draw bullet, and a new `[L]` under *Open questions*): the arm's two
   class constants are guarded by the MonStats count (570 or 562 when the count is above it, else −1); the five

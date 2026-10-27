@@ -390,3 +390,58 @@ byte-identical to `s1017-check-p47r.json` and `p47h-check.json` (`p47b-recheck-s
   cure was not tried in this phase; both are final as a slot-time ruling of the review, out of this plan, not as a
   stock-data limit.
   (fn:sub_00580610_LifeRegenTick@0x00580610, fn:OBJOP_Shrine@0x00583C70, run:2026-10-21-shortfalls2)
+
+## run:2026-10-27-p51s-emu
+
+Static, no game and no slot (plan 0051 Phase 1b, `lane/p51s`). Two items of the backlog sweep, each optional:
+the op 6/7 emulation (backlog entry of 2026-10-17, from the plan 0041 P1 review) and the re-run of
+run:2026-10-16-calc-emu under `EmuTrace` (the plan 0038 S1e review follow-ups, (b)).
+
+- **Question:** (1) Do `STAT_ByTimeValue` and `sub_00626200_StatEvaluate`'s cases 6 and 7 do what
+  [stats/0001](0001-aggregate.md) § 4 reads, on inputs no stock play reaches? (2) Does run:2026-10-16-calc-emu's
+  read set, written from a code read in [data/0005](../data/0005-calc.md) § 11, match what the tool traces?
+- **Setup:** Ghidra 12.1.2 p-code emulator on the pinned `game.exe`, lane copy
+  `GHIDRA_PROJ_DIR=workspace/ghidra-p51s` (symbols replayed from `re/symbols.csv`), heap 3 GB, under
+  `systemd-run --user --scope -p MemoryMax=4G`, one headless instance at a time. Script `re/ghidra_scripts/EmuTrace.java`
+  (unchanged; its sha256 is in `tools-revisions.txt`). Models, case writers and checks: `tools/sweep_p51s.py`
+  (families `bytime`, `op67` seeded `p51s-<family>`; `calcemu-cases`/`calcemu-check` over the kept files of
+  `workspace/logs/calc-emu/`, manifest `4ca75152…`, which still checks). It reuses `tools/sweep_s1e.py`'s report and
+  read-set accounting, `tools/sweep_s1f.py`'s `MulDiv` model and guards (the allocator and fatal-path entries), and
+  `tools/calc_funcs.py`'s checkers unchanged. Files in `workspace/logs/p51s/emu/`: `manifest.txt` `b16c2780…`
+  (79 files, `sha256sum -c` passes from that directory), `check.txt` `7ee746af…`, `commands.txt`, `tools-revisions.txt`
+  (the sha256 of each tool and script behind the outputs), and the empty stderr of each run in `stderr/`.
+- **Procedure:** `commands.txt`: `sweep_p51s.py cases` and `calcemu-cases`; one `tools/ghidra.sh emutrace` per family
+  (2) and per kept calc-emu run (11); `check`, `static`, `calcemu-check` into `check.txt`; `manifest --write`.
+- **Observed** (`check.txt`; `neg` = the negative control's mismatches or failure, `undeclared` = traced accesses
+  outside the declared read set):
+  ```
+  P51S bytime cases=6000 match=6000 bad=0 neg=3302 traced=0 undeclared=0 stopped=0 neg_floor=2416
+  P51S op67 cases=3000 match=3000 bad=0 neg=2110 traced=5 undeclared=0 stopped=0 neg_b0=1103
+  P51S static cases=0 match=0 bad=0 neg=0 traced=0 undeclared=0 stopped=0 callers_0061C100=12 callers_00626200=10 callers_0065CA30=8 jt_ok=1 mask_ro=1 pins=43 pins_ok=43 ro_tables=3
+  P51S calcemu-skills_min cases=5000 match=5000 bad=0 neg=1 traced=0 undeclared=0 stopped=0 model_check_rc=0 neg_vs_skills_max=4972 pop_ok=5000 same_as_kept=1
+  P51S calcemu-skills_max cases=5000 match=5000 bad=0 neg=1 traced=0 undeclared=0 stopped=0 model_check_rc=0 neg_vs_skills_min=4972 pop_ok=5000 same_as_kept=1
+  P51S calcemu-skills_rand cases=5000 match=5000 bad=0 neg=1 traced=0 undeclared=0 stopped=0 model_check_rc=0 neg_vs_miss_rand=2913 pop_ok=5000 same_as_kept=1
+  P51S calcemu-items_min cases=5000 match=5000 bad=0 neg=1 traced=0 undeclared=0 stopped=0 model_check_rc=0 neg_vs_items_max=4972 pop_ok=5000 same_as_kept=1
+  P51S calcemu-items_max cases=5000 match=5000 bad=0 neg=1 traced=0 undeclared=0 stopped=0 model_check_rc=0 neg_vs_items_min=4972 pop_ok=5000 same_as_kept=1
+  P51S calcemu-items_rand cases=5000 match=5000 bad=0 neg=1 traced=0 undeclared=0 stopped=0 model_check_rc=0 neg_vs_miss_rand=2913 pop_ok=5000 same_as_kept=1
+  P51S calcemu-miss_min cases=5000 match=5000 bad=0 neg=1 traced=0 undeclared=0 stopped=0 model_check_rc=0 neg_vs_miss_max=4972 pop_ok=5000 same_as_kept=1
+  P51S calcemu-miss_max cases=5000 match=5000 bad=0 neg=1 traced=0 undeclared=0 stopped=0 model_check_rc=0 neg_vs_miss_min=4972 pop_ok=5000 same_as_kept=1
+  P51S calcemu-miss_rand cases=5000 match=5000 bad=0 neg=1 traced=0 undeclared=0 stopped=0 model_check_rc=0 neg_vs_skills_rand=2913 pop_ok=5000 same_as_kept=1
+  P51S calcemu-miss cases=5000 match=5000 bad=0 neg=1 traced=34 undeclared=0 stopped=0 model_check_rc=0 same_as_kept=1
+  P51S calcemu-eval cases=236 match=236 bad=0 neg=1 traced=6 undeclared=0 stopped=0 model_check_rc=0 same_as_kept=1
+  ```
+  The `op67` traced reads are `StatEvaluate`'s jump table (4 slots) and the mask 0x006CE270. For the calc-emu
+  re-run: the nine calc functions read nothing outside their case memory. `MISS_CalcVar` read 34 slots of its own
+  jump table 0x0064B62C (indexed at 0x0064B394, codes 0–42), and `MISS_EvalCalc` 2 of them, 3 slots of `CALC_Eval`'s
+  0x006C1164 (at 0x006C0C07) and `g_nMissCalcFuncs` (0x00745848, 234 reads). Every output is byte-identical to the
+  kept output of 2026-10-16. The kept checkers pass on it, and fail on it with every EAX + 1 (`neg=1`). The nine calc
+  functions also differ from a sibling's kept output on 4 972 (min against max) or 2 913 (one table's `rand` against
+  another's) lines.
+- **Conclusion:** (1) The op 6/7 arithmetic of stats/0001 § 4 is reproduced bit for bit, with every branch reached,
+  as a map from the declared inputs. It raises § 10 of stats/0001 to `[C]` under ADR-0015, run id this record. The
+  meaning of `owner +0x1C` and its record stays `[I]`. (2) The calc-emu read set: the tool finds the two `.text`
+  switch tables (`MISS_CalcVar`'s 0x0064B62C and `CALC_Eval`'s 0x006C1164), which data/0005 § 11's list omits.
+  Both lie in the read-only `.text` (`sweep_p51s.py static`), so no claim changes. The addendum is in
+  [data/0005 § 11](../data/0005-calc.md#11-static-emulation-of-the-functions-and-the-missile-context-run2026-10-16-calc-emu).
+  (fn:STAT_ByTimeValue@0x0065CA30, fn:sub_00626200_StatEvaluate@0x00626200, fn:MISS_CalcVar@0x0064B340,
+  fn:MISS_EvalCalc@0x0064B7C0)

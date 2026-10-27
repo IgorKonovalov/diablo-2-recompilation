@@ -10,7 +10,7 @@ The twenty player animation modes (`Death`, `Neutral`, `Walk`, `Run`, `Get Hit`,
 `Attack1`, `Attack2`, `Block`, `Cast`, `Throw`, `Kick`, `Skill1`..`Skill4`, `Dead`, `Sequence`, `Knock back`), each
 with a two-letter token and a code. The row index is the **mode number** that [Skills](Skills.md) `anim` and
 `seqtrans` store. Readers expected: `combat/formulas` (plan 0037), the attack modes of a player's normal attack, throw
-and kick; animation timing is ADR-0014 phase (5).
+and kick; `anim/timing` (plan 0050), the mode's frames, events and rate ([§ Timing](#timing-plan-0050-phase-0)).
 
 ## Row identity
 
@@ -71,6 +71,45 @@ record). Same shape as [ObjMode](ObjMode.md) and [MonMode](MonMode.md).
 | 17 | DD | DD | Dead | 0 | 0 |
 | 18 | SQ | GH | Sequence | 116 | 98 |
 | 19 | KB | GH | Knock back | 0 | 0 |
+
+## Timing (plan 0050 Phase 0)
+
+The table has no timing column: a mode's frame count, speed and event bytes are in `animdata.d2`
+([animdata](../formats/animdata.md)), one record per class token, mode `Token` and weapon class. `[C]` The join
+(`python3 -I tools/anim_survey.py players workspace/merged`; survey keys `plr_*`): for each of the 7 class tokens of
+`plrtype.txt` (`AM`, `SO`, `NE`, `PA`, `BA`, `DZ`, `AI`), each row's `Token` (`+0x020`, 4-byte code) and each of the
+14 `weaponclass.txt` codes, the record `<class><Token><wclass>`. Rows 18 and 19 store `GH`, so they name row 4's
+records and are not counted again. 756 record names start with a class token; 755 are joined, 1 is not (`AMWK1HS`,
+mode token `WK`, which no row has; [cof § Files](../formats/cof.md#files) has its COF). Every row 0..17 has records
+(`plr_modes_none=0`).
+
+| Row | `Code` | Records (7 classes) | Classes with one | `frames` | `speed` | Event bytes (value: count, frames) |
+|---:|---|---:|---:|---|---|---|
+| 0 | DT | 7 | 7 | 20..28 | 176..256 | — |
+| 1 | NU | 62 | 7 | 6..8 | 96..184 | — |
+| 2 | WL | 62 | 7 | 8..10 | 136..288 | — |
+| 3 | RN | 62 | 7 | 8 | 168..256 | — |
+| 4 | GH | 62 | 7 | 5..8 | 192..256 | 1: 4, frame 0 |
+| 5 | TN | 62 | 7 | 10..16 | 64..128 | — |
+| 6 | TW | 62 | 7 | 8..10 | 128..288 | — |
+| 7 | A1 | 62 | 7 | 11..24 | 208..256 | 1: 48, frames 6..14; 2: 14, frames 6..11 |
+| 8 | A2 | 46 | 7 | 12..24 | 208..256 | 1: 46, frames 6..14 |
+| 9 | BL | 25 | 7 | 3..6 | 88..256 | — |
+| 10 | SC | 62 | 7 | 14..20 | 208..256 | 1: 47, frames 7..13; 2: 15, frames 9..13 |
+| 11 | TH | 24 | 7 | 12..20 | 256 | 2: 24, frames 6..10 |
+| 12 | KK | 62 | 7 | 12..13 | 224..256 | 1: 62, frames 4..6 |
+| 13 | S1 | 57 | 7 | 9..17 | 208..256 | 1: 42, frames 2..10 |
+| 14 | S2 | 11 | 2 | 8..14 | 128..256 | 1: 1, frame 9; 2: 10, frame 4 |
+| 15 | S3 | 14 | 2 | 10..12 | 256 | 1: 4, frames 7..8 |
+| 16 | S4 | 6 | 2 | 12..16 | 208..256 | 1: 2, frame 6; 2: 4, frames 8..9 |
+| 17 | DD | 7 | 7 | 1 | 256 | — |
+
+- `[C]` In every class the bow and crossbow `A1` records carry event 2 and every melee weapon class 1 ([animdata § Event bytes](../formats/animdata.md#event-bytes)). Per class and weapon
+  class the frame counts differ (Amazon `A1`: `hth` 13, `1hs` 16, `2hs` 20, `bow` 14; the full grid is the tool's
+  `players` output).
+- `[L]` Which record a player in a mode reads (the weapon class from the equipped items, CharStats `baseWClass` with no
+  weapon), and how `frames`, `speed` and the event byte drive the mode, is plan 0050 Phase 1.1; rows 18 (`SQ`) and 19
+  (`KB`) are modes without records of their own.
 
 ## Interpretation notes
 
