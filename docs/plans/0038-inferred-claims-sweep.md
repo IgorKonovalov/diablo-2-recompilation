@@ -3343,3 +3343,81 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     [2026-10-25-reverser-spec-writer-h4a-monsters-a-raises-and-the-spawn-48](../backlog/2026-10-25-reverser-spec-writer-h4a-monsters-a-raises-and-the-spawn-48.md)
     released with the review's changes.
   - **Next:** the Phase 3 re-tag of the H4a rows (spec-writer); the next harness batch per the run order.
+- **2026-10-27 — H1b (`d2s-play`) rotated at about 4 h (reverser, `lane/h1b`, harness slot 1, from `main`
+  `0e3f501`).** Slot 1 is stopped and its saves directory restored (empty, no aside); no game, driver, pilot, gdb or
+  wait loop of the lane is left running. Sessions and checks are done; the write-up is not. Nothing is claimed yet: no
+  statement raised, no § 2.6 entry, no review request.
+  - **Tools** (this commit): logger `tools/gdb/d2s-h1b.py` (sha256 `8a27dc8c…`; sourced after `d2s-io.py`, unchanged,
+    and `pilot.py` by `tools/gdb/d2s-h1b.gdb`, `bcd53b34…`; `d2s-h1b-hire.gdb`, `05c0b954…`, adds the hirelings
+    loggers): who saves (`PSV2`, `SVCL`, `SVCB`, `SHUT`, `AUTO`), the join chain (`JCH`), section cursors of
+    `D2S_WriteSave`/`D2S_ReadSaveV92` (`WSEC`/`RSEC`), hotkeys (`HOTK`/`HREF`), graphics bytes (`GFX`), the
+    mercenary header write and read (`MHW0`–`MHW2`, `MHWD`, `MRX`, `M5726`), `D2S_LoadFinish` (`LFG`, `LFB`, `LFS`,
+    `LFX0`/`LFX`, `LFE`), item stats (`RIST`, `SBX`), runeword (`RWW`, `RWR`), bit 13 (`B13S`, `B13C`, `SETF`, `GOLD`,
+    `COPY`, the watchpoint `WTCH`). **Two revisions were used:** revision 1 (the committed file without `h1b_full`,
+    `h1b_wskl` and their `full`/`WSKL` lines) for sessions dead, tcpip, shut, hell-r3, hire, rw, qr, qrh; revision 2
+    (committed) for rt-r2, drop, qr-r2, qrh-r2. The checker skips the property groups where `full` is absent. Runner
+    `tools/h1b_sessions.py` (`d11afb5c…`), steps `tools/gdb/h1b-tcpip-host.steps`, checker `tools/sweep_h1b.py`
+    (`c0063a8b…`; runs `d2sio.py check` first), recipes `h1bsor`, `h1bdead`, `h1bweak`, `h1bhire` (on
+    `smpsor-l50.d2s`), pinned in `tools/test_d2s.py` with `questrewards`/`questrewardsh` (the backlog pin request).
+    `test_d2s.py` RecipeTest pins pass; `test_every_recipe_has_a_base` and `test_mp_saves_check` fail on `main` too
+    (other lanes' mp recipes), not touched here.
+  - **Sessions** (slot 1, run:2026-10-27-sweep-d2s-play, `workspace/logs/h1b/`; manifests `h1b-manifest.sha256`
+    `18f92562…` (12 logs, the check output, the six input saves) and `h1b-manifest-dev.sha256` `122aca67…` (dev logs
+    in `dev/`: rt (revision 1, no `WSKL`: its two d2sio left/right-mouse mismatches per swapped write are the d2sio
+    model's, see below), hell and hell-r2 (no death: the pilot stood, then stopped at the 1-point life orb), drop
+    27110 (waypoint row 1 is the town)). Kept: rt-r2 (27101, swap `w`, 75 s autosave control, reload), dead (27102,
+    tool-built dead Desert merc id 7 name 20), tcpip (27103, one-client TCP/IP host), shut (27104, Alt+F4 in game),
+    hell-r3 (27105, death in Hell River of Flame with the Rogue killed in play; corpse; reload), hire (27106, Kashya
+    hire), qr/qr-r2 (27107), qrh/qrh-r2 (27108), rw (27109, sample `qitbarb`'s runeword), drop (27111, City of the
+    Damned, three drops). Check: `systemd-run --user --scope -p MemoryMax=4G python3 -I tools/sweep_h1b.py check
+    workspace/merged/data/global/excel $(ls workspace/logs/h1b/*.log)` → `check/sweep-h1b-check.txt`: **2 502 H1B
+    comparisons, 0 failing**; every d2sio part 0 mismatches except the left/right mouse words of swapped writes
+    (superseded by the `WSKL` group: the writer reads the unit's current skill, `0x00620190`/`0x006201D0`, not player
+    data `+0x74`/`+0x70`, which a swap leaves 0) and hell-r3's `RITEM` count (25 = 14 loaded + 11 `ItemCopy`
+    recreations of the corpse items at the death, matched by 11 `COPY` lines).
+  - **Findings so far (for the ledger; cite the check file):**
+    - who saves: SP `PLRSAVE_Save` from `0x0052CA5F`/`0x0052C940` (Save and Exit, Alt+F4) and **`0x0057FD88`, the
+      death path, in single player** (hell-r3: the write before the respawn, status word `0x0F28`, bit 3 set); game type
+      3 + host callback 0 → file in every SP write; TCP/IP game type 2 → `0x00532340` (`SVCL`), no file by the server;
+      host callback `0x00883D50` 0 in every session; `AutosaveTick` called throughout (up to 3 000 calls) and never
+      saved; `SaveAllOnShutdown` entered once per game exit (ret `0x0044F2FE` SP, `0x0044D052` TCP/IP) and never saved
+      (its game list at `0x00882D38` already empty). Join chain SP: `ClientAddPlayerToGame`←`0x005301E9`,
+      `PlayerLoad`←`0x00539809`, `PLRSAVE_ReadFile`←`0x005344E0`, `D2S_ReadSave`←`0x0053447A`; TCP/IP: no
+      `PLRSAVE_ReadFile`, `D2S_ReadSave`←`0x00534563`.
+    - sections: every write's final-pass cursors = the file's sections; the scratch pass sizes = final; reader order
+      and offsets as the finding; `D2S_ReadMercHeader` at the merc offset without moving the cursor; `0x005726C0(1)`
+      exactly when a merc was made; the all-zero header (hire read 1) → no merc, load continues.
+    - header: weapon set bit 0 written 1 after `w` and read back into client `+0x45C`; swap A/B = player data
+      `+0x84`/`+0x80` (values 54/48 after the swap, 42/43 before) written and read; hotkeys with the `0x8000` flag
+      (slot 2 `left:Teleport` → `0x8036`), item refs 0 only; graphics/colour bytes = the image after `0x0063E510`
+      (non-`0xFF` bytes present); merc header seed/name/id/exp/dead = sources in tool-built (12345/3/0, 54321/20/7),
+      hired (2573073805/0/1, exp 52424400) and killed-in-play (bit 16 from the dead test, merc mode 12) cases.
+    - `D2S_LoadFinish`: gold 900 000 > 800 000 → 0, bank 3 000 000 > 2 500 000 → 0, 500 000 kept; stamina = max; 6/8
+      restored; 67–69 = 100; stat 30 = `EXP_GetThreshold(class, L)` = experience.txt row L (level 80 → 742 730 244 with
+      experience 750 000 000 in dead, so it is not the experience; level 1 → 500): the threshold of level L + 1, as the
+      spec's "table at level + 1" counting the MaxLvl row.
+    - items: maxhp/maxmana full stat = file << 8 (5 → 1280, 1 → 256) and written back >> 8; stat 326 = 1 after group
+      57 (Septic dagger); group 52 (Ginther's Rift 50/120); rebuilt 21–24 and 68 = weapons.txt (an ethereal `lsd`:
+      the ×3/2 branch met; no low-quality item); stat 356 = file 0 and 2 (qr-r2, qrh-r2); runeword 20639 read into
+      `+0x38` and written from `Runes +0x82`.
+    - corpse: one corpse, 12 bytes, 11 equipped items (mode 1), written and read; no mode 3/5 item in any save
+      (rows 77/78 → d-none per their route). bit 13: three drops set at create (`0x00558EA8`, params `+0x2C` 0), each
+      cleared on the ground (mode 3) by `UnitFrameReset` (ret `0x0053B049`) inside the tick's `ActUnitsFrameReset`
+      call; no gold-pile (`DropGoldPile`) and no pickup of a saved item; `ItemCopy`'s clears seen 11 times (death);
+      the watchpoint armed (`WTCH0`) but logged **no hit**, not even the logged `SetFlag` writes: row 110's "only
+      through `ITEMS_SetFlag`" has no working control → shortfall.
+    - Proposed ledger (48): raised 4, 21, 25, 33 (2), 34 (2), 35, 37, 39 (2), 40, 41, 42, 43, 55, 56, 57, 108, 111,
+      112, 113, 125, 127, hirelings 24; in part 2 (no-callback half), 6 (death caller and no-autosave; 0x0052E2A0 not
+      reached), 18 (file and client branches), 31 (item refs 0 only), 48 (name reset unreachable: the builder refuses a
+      name past `+0x116`), 60 (negative gold), 72 (count ≥ 2 refusal, the first u32), 73 (no golem item), 83 (gold and
+      realm), 88 (`0xFFFF`), 102 (low quality), 115 (copy seen, socketed copy not), 116 (no pickup of an item with the
+      bit), 118 (no negative value: arithmetic not separated); shortfall 1, 3, 19, 110, 114, 117 (no separating case:
+      rule 10), 124 (the builder refuses a lone follower: archivist entry); d-none 77, 78. Recount before filing.
+    - S1a pieces met (rows stay S1a): hired merc (20), swapped weapon set (24), left-button hotkey (32), group 52
+      (123/130/138 in part). Not met: cursor item (71), automagic class item (86/103), lone `fire-min` (128).
+  - **Next (resume):** (1) optional: rerun dead, tcpip, shut, hell, hire, rw under logger revision 2 so every kept log
+    has one tool revision (or record revision 1 by its diff); (2) write run:2026-10-27-sweep-d2s-play in
+    `findings/save/experiments.md`, the "Plan 0038 batch H1b" sections in save/0001 and hirelings/0001, the inventory
+    § 2.6 H1b block with totals against `main`, symbols (rule 14: `D2S_WriteMercHeader`, `D2S_ReadMercHeader`,
+    `D2S_LoadFinish`, `D2S_WriteCorpses`, `D2S_ReadCorpses`, `D2S_ReadMercItems` I → C), the archivist entry for a
+    lone-follower builder key, the review request and the metrics row ("—").
