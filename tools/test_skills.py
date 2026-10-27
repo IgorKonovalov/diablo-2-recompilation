@@ -268,7 +268,8 @@ class Model(unittest.TestCase):
                     ("SP1", {"k": 1, "m": {"u": 7, "t": 1, "c": 419, "id": 4, "m": 8, "s": s, "st": {}}, "so": None,
                              "n": 4})]
         C = self.run_lines(lines(skills.sd_fmt((post[0], 0x29A))))
-        self.assertEqual((C.ok["SP.seed"], C.ok["SP.gameseed"], sum(C.bad.values())), (1, 1, 0))
+        self.assertEqual((C.ok["SP.seed"], C.ok["SP.gameseed"], C.bad["SP.seed"]), (1, 1, 0))
+        self.assertEqual(C.bad["SP.stats"], 1)                     # SP1 carries no life: the stats check fails
         self.assertEqual(self.run_lines(lines(skills.sd_fmt((post[0] + 1, 0x29A)))).bad["SP.seed"], 1)
 
 

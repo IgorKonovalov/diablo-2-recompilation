@@ -54,6 +54,8 @@
 #   CU0/CU1    (rev 4) SKILLS_CanUse 0x00647960 (stdcall unit, entry) called from the request handlers (return address
 #              0x00549B0F, 0x00549B49, 0x00549BC6, 0x00549C11) and its ten rets: the skill id, the entry's base level
 #              (+0x28), item guid (+0x34) and charges (+0x38), the unit's stats 6, 8, its mode, the frame; exit eax
+#              rev 5: also the client's per-frame check of a skill button (return address 0x004D9FCA), written
+#              ("cl": 1) only when that skill's code differs from the last one written for it (the transitions)
 #   CUL        (rev 4) SKILLS_ManaOk's level bonus 0x00647589 inside a CU: EAX the bonus (0x00644180), EDI the base
 #   CAP        once per kind when its cap is reached
 import json
@@ -624,29 +626,54 @@ def _skills_main():
 
     # --- SKILLS_CanUse at the request (rev 4) ---------------------------------------------------------------------
     CU_RETS = (0x00549B0F, 0x00549B49, 0x00549BC6, 0x00549C11)
+    CU_CLIENT = 0x004D9FCA            # rev 5: the client's per-frame check of a skill button (0x004D9FC5)
 
     def on_cu0():
         esp = reg("esp")
-        if u32(esp) not in CU_RETS:        # the client's per-frame checks (0x004D9FC5, 0x0055C…) are not requests
+        ret = u32(esp)
+        if ret not in CU_RETS and ret != CU_CLIENT:   # the other client checks (0x0055C…, 0x00561…) are not logged
             return
         u, e = u32(esp + 4), u32(esp + 8)
         if not u or not e:
             return
         rec = u32(e)
-        n = emit("CU0", {"u": unit(u, [6, 8, 9]), "sk": s16(rec) if rec else None, "ret": u32(esp),
-                         "bl": s32(e + 0x28), "it": s32(e + 0x34), "ch": s32(e + 0x38), "fr": frame()})
-        st["cu"] = (n, esp, u)
+        d = {"u": unit(u, [6, 8, 9]), "sk": s16(rec) if rec else None, "ret": ret,
+             "bl": s32(e + 0x28), "it": s32(e + 0x34), "ch": s32(e + 0x38), "fr": frame()}
+        if ret == CU_CLIENT:
+            # rev 5: buffered; written only when this skill's code differs from the last one written for it
+            d["cl"] = 1
+            st.setdefault("cus", {})[esp] = (None, esp, u, d, [], d["sk"])
+            return
+        n = emit("CU0", d)
+        st.setdefault("cus", {})[esp] = (n, esp, u, None, None, None)
 
     def on_cul():
-        d = st.get("cu")
+        # the pending CanUse whose frame encloses this one (the nearest entry ESP above the current one)
+        cus = st.get("cus") or {}
+        esp = reg("esp")
+        above = [k for k in cus if k > esp]
+        d = cus[min(above)] if above else None
         if d:
-            emit("CUL", {"k": d[0], "bonus": sreg("eax"), "base": sreg("edi")})
+            if d[0] is None:
+                d[4].append({"bonus": sreg("eax"), "base": sreg("edi")})
+            else:
+                emit("CUL", {"k": d[0], "bonus": sreg("eax"), "base": sreg("edi")})
 
     def on_cu1():
-        d = st.get("cu")
-        if d and reg("esp") == d[1]:
-            emit("CU1", {"k": d[0], "r": sreg("eax"), "s": sd(d[2])})
-            st["cu"] = None
+        d = (st.get("cus") or {}).pop(reg("esp"), None)
+        if d:
+            r = sreg("eax")
+            if d[0] is None:
+                last = st.setdefault("cucl", {})
+                if last.get(d[5]) != r:
+                    last[d[5]] = r
+                    n = emit("CU0", d[3])
+                    for c in d[4]:
+                        c["k"] = n
+                        emit("CUL", c)
+                    emit("CU1", {"k": n, "r": r, "s": sd(d[2])})
+            else:
+                emit("CU1", {"k": d[0], "r": r, "s": sd(d[2])})
 
     # --- MonAttackStats ------------------------------------------------------------------------------------------
     def on_mas0():
@@ -741,7 +768,7 @@ def _skills_main():
         Bp(a, on_cu1)
     Bp(0x005A4F50, on_mas0)
     Bp(0x005A5443, on_mas1)
-    emit("SKILLSLOG", {"rev": 4, "win": WIN, "caps": CAPS})
+    emit("SKILLSLOG", {"rev": 5, "win": WIN, "caps": CAPS})
     gdb.write("SKILLS logger armed\n")
 
 

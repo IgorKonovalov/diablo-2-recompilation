@@ -2,7 +2,7 @@
 docs/findings/skills/0001-dispatch.md, 0002-missiles.md and 0003-handlers.md.
 
 Usage:
-  python3 -I tools/skills.py check <log> [...] [--excel DIR] [-v] [--json OUT]
+  python3 -I tools/skills.py check <log> [...] [--excel DIR] [-v] [--json OUT] [--gaps OUT]
   python3 -I tools/skills.py manifest <log> [...]          # sha256, size and line count of each log
   python3 -I tools/skills.py audit <log> [...]             # the oracle replacement: what a foreign log holds
   python3 -I tools/skills.py tally <log> [...] [--excel DIR] # the run's coverage counts against plan 0045's minimums
@@ -43,8 +43,24 @@ Checked (a mismatch is any difference):
   RSK   do 31's call of 0x005C4430 (logger rev 3): one caster draw for a class-363 summon at skill level > 2
         (0x005C4300) or a class-364 summon (0x005C43D0 -> 0x005C4180), none otherwise; the SDO.seed of rows 70 and 80
         counts the same draw per SP1 summon.
-Reported (oracles, ADR-0014): MH (the hit's result and the boundary calls after the build), EVH/EVR, MAS, SP/SL/PA,
-DLY.
+Part 2 (plan 0045 Phase 2 part 2, lane/p45k; logger rev 4/5):
+  MAS   sub_005A4F50_MonAttackStats: 21, 22, 19 from MonLvlStats by the mode's A1/A2/S1 columns, the El<e> rolls on the
+        unit seed and their stats (El1's bounds for every e: the mask 0x40 + e), a summon's other-list offset learned
+        at its first call; classes with a SkillDamage owner pair are reported (MAS.seed, MAS.stats).
+  EVH   each UNIT_DispatchEvent handler call: the handler unit's seed steps by the handler's own draws (EVH.seed; a
+        cast handler's at least one, EVH.seed1), the howl gate on the other unit's flags, mana and life after a kill
+        (EVH.mana, EVH.life), open wounds' roll against its STA 62 (EVH.ow).
+  PH    sub_0057D810_PreventHealHook: STA state 52 (120 000 frames, stat 31 = 0) exactly when the attacker is a player,
+        the defender a monster outside 704..709 and the attacker's stat 117 is non-zero; no draw (PH.state52, PH.seed).
+  CU    SKILLS_CanUse at the request (and, rev 5, the client's per-frame check at its changes of code): the aura,
+        passive, mana, startmana and delay codes (CU.code); the delay from the unit's last DLY line.
+  SP    the summoned unit's seed Init(step(game).low) (SP.seed, SP.gameseed).
+  MH.end  a damaging hit of a row with no hit function: the pierce use (stat 328 - 1) and the result (2 when CollideKill
+        or the end call, without a pierce used).
+  CHAIN.caster+logged  a caster resync attributed by walking the unit's own logged draws (THR, DRR, REL) and the logged
+        exits of the spans the checker models or takes (MAS, EVH, MC, RSK; AD, DQ, MA, MHT as boundaries); every resync
+        left is listed in --gaps OUT with the lines between.
+Reported (oracles, ADR-0014): MH (a hit function's result and the boundary calls after the build), SL/PA, DLY.
 Exit 0 only if every check holds. Stdlib only. Read-only.
 """
 import hashlib
@@ -145,7 +161,8 @@ class Tables:
                 "levrange": h(0x98), "activate": u8(0x136), "subloop": u8(0x180), "substart": u8(0x181),
                 "substop": u8(0x182), "pierce": bool(r[4] & 4), "canslow": bool(r[4] & 8),
                 "mskill": bool(r[5] & 0x80), "skill": h(0x194), "srcdmg": u8(0x12D), "srcmiss": u8(0x12E),
-                "do": h(0x0C)}
+                "do": h(0x0C), "hitfn": h(0x0E), "collidekill": r[0x186], "explosion": bool(r[4] & 2),
+                "tohit": r[0x18B], "alwaysexplode": r[0x18C]}
 
     def srec(self, sid):
         r = self.sk[sid]
@@ -190,6 +207,7 @@ class Checker:
         self.gaps = []
         self.mon_flags = {}
         self.mas_off = {}
+        self.mc_owner = {}
         self.summons = set()
 
     def fail(self, log, kind, n, msg):
@@ -520,10 +538,14 @@ class Checker:
             self.check("THR.roll", t["r"] == sd_parse(t["sa"])[0] % 100, log, t["n"], "roll %d, seed after %s" %
                        (t["r"], t["sa"]))
         m = d0["m"]
+        if not thr and d0.get("d") and not self.T.mrec(m["c"])["tohit"]:
+            self.mh_end(log, d0, d1, inner)              # a row with no to-hit roll
+            return
         if len(thr) == 1 and d0.get("d"):
             hit = thr[0]["r"] < thr[0]["c"]
             if hit:
                 self.info["MH to-hit hits"] += 1
+                self.mh_end(log, d0, d1, inner)
                 return
             self.info["MH to-hit misses"] += 1
             p0 = stat(m.get("st"), 328)
@@ -682,6 +704,18 @@ class Checker:
         ok = self.check("MAS.stats", got == want, log, n, "cls %d lvl %d mode %d d %d: want %s got %s" %
                         (cls, stat(st0, 12), d0["mode"], d, {k: v for k, v in want.items() if v},
                          {k: v for k, v in got.items() if v}))
+        if ok:
+            # review-fix 10: does the mode's column choice separate? the other two column sets' writes
+            alt = {mm: self.mas_model(cls, stat(st0, 12), d, L, mm, s0, game70)[0] for mm in (4, 5, 7)}
+            mine = 5 if d0["mode"] == 5 else 7 if d0["mode"] in (7, 8) else 4
+            own = {k2: w[k2] for k2 in (19, 21, 22)}
+            others = [mm for mm in alt if mm != mine and {k2: alt[mm][k2] for k2 in (19, 21, 22)} != own]
+            if others:
+                self.info["MAS mode's columns separate from another set (A1/A2/S1)"] += 1
+            if L == 1:
+                altL = self.mas_model(cls, stat(st0, 12), d, 0, d0["mode"], s0, game70)[0]
+                if {k2: altL[k2] for k2 in (19, 21, 22)} != own:
+                    self.info["MAS the L columns separate from the plain ones"] += 1
         if ok and rev4 and any(k.startswith("el") and "applied" in k for k in notes):
             self.ok["MAS.elem"] += 1
         if ok and any("separating" in k for k in notes) and any("applied" in k for k in notes):
@@ -800,7 +834,7 @@ class Checker:
         n = c0["n"]
         sid = c0.get("sk")
         r = c1["r"]
-        self.info["CU code %d" % r] += 1
+        self.info["CU code %d%s" % (r, " (client check, a change of code)" if c0.get("cl") else "")] += 1
         if sid is None or not (0 <= sid < len(self.T.sk)):
             self.check("CU.code", r == 3, log, n, "no record, code %d" % r)
             return
@@ -864,8 +898,24 @@ class Checker:
         ok = True
         why = None
         open_spans = {}
+        bopen = {}               # boundary spans (AD, DQ, MA, MHT) naming u: their exit seed is taken (ADR-0021)
         for tt, dd in between:
             obs = None
+            if tt in ("AD1", "DQ1", "MA1", "MHT1") and (tt[:-1], dd.get("k")) in bopen:
+                side = bopen.pop((tt[:-1], dd.get("k")))
+                t = sd_parse(dd["sa"] if side == "a" else dd["sb"])
+                tags.append(tt[:-1] + " exit")
+                continue
+            if bopen:
+                continue         # inside a boundary: its own draws (the delivery's) are the exit's
+            if tt in ("AD0", "DQ0", "MA0", "MHT0") and u in (dd.get("a"), dd.get("b")):
+                side = "a" if dd.get("a") == u else "b"
+                o2 = dd.get("sa") if side == "a" else dd.get("sb")
+                if o2 and sd_parse(o2) != t:
+                    ok, why = False, "%s n=%s" % (tt, dd.get("n"))
+                    break
+                bopen[(tt[:-1], dd["n"])] = side
+                continue
             if tt == "THR" and dd.get("a") == u:
                 t = step(t)
                 obs = dd.get("sa")
@@ -927,13 +977,43 @@ class Checker:
                                                                   "+".join(sorted(set(tags))) or "none")] += 1
             return
         who = "player" if utype == 0 else "monster"
+        # a span closing between the two events that opened before the first one's exit: the first event (an item
+        # cast of handler 20 or 21, a skill event of a summon's owner...) was nested in it
+        seen = {dd.get("n") for _, dd in between}
+        nested = any(tt in ("AD1", "DQ1", "MA1", "MHT1", "EVR", "MH1", "SDO1", "SST1") and dd.get("k") is not None and
+                     dd["k"] not in seen for tt, dd in between)
+        defender = any(tt == "PH0" and dd.get("d") == u or tt == "MH0" and (dd.get("d") or {}).get("u") == u or
+                       tt in ("AD0", "MA0", "DQ0") and dd.get("b") == u for tt, dd in between)
+        kind = "nested (a span open across the first event's exit)" if nested else (
+            "off the stream within 4096 steps" if k is None else
+            "a hit's defender between (PH0, MH0, AD0, MA0 or DQ0): its defence rolls, combat/0001" if defender else
+            "no logged line names the unit" if not tags else "not attributed")
+        self.info["CHAIN.caster resync left (%s): %s" % (who, kind)] += 1
         self.info["CHAIN.caster resync left (%s)" % who] += 1
         mas = sum(1 for tt, dd in between if tt == "MAS0" and dd["u"]["u"] == u)
-        self.gaps.append("%s n=%s %s unit %s: %s steps; %s; first disagreement %s; own lines %s; MonAttackStats calls "
+        self.gaps.append("%s n=%s %s unit %s [%s]: %s steps; %s; first disagreement %s; own lines %s; MonAttackStats calls "
                          "%d; lines between %d (%s)" % (
-                             os.path.basename(log), n, who, u, k, "walk ended off the entry" if ok else "stopped",
+                             os.path.basename(log), n, who, u, kind, k, "walk ended off the entry" if ok else "stopped",
                              why, "+".join(tags) or "none", mas, len(between),
                              ",".join(sorted({tt for tt, _ in between}))))
+
+    # ---------------------------------------------------------------- PH (state 52)
+    def ph(self, log, d0, d1, inner):
+        """sub_0057D810_PreventHealHook (EDI attacker, ESI defender), called by COMBAT_ToHitRoll on a hit
+        (skills/0003 section 3): a player attacker, a monster defender of a class outside 704..709 and the attacker's
+        stat 117 non-zero give STATE_ApplyTimed(state 52, 120 000 frames, stat 31 = 0) on the defender, nothing
+        otherwise; no draw on either seed."""
+        want = d0.get("ta") == 0 and d0.get("td") == 1 and not (704 <= (d0.get("dc") or 0) <= 709) and \
+            bool(d0.get("s117"))
+        sta = [dd for tt, dd in inner if tt == "STA" and dd.get("state") == 52]
+        got = len(sta) == 1 and sta[0]["d"] == d0["d"] and sta[0]["len"] == 120000 and sta[0]["stat"] == 31 and \
+            sta[0]["val"] == 0
+        self.check("PH.state52", (got if want else not sta), log, d0["n"], "want apply %s, STA 52 lines %s" %
+                   (want, sta))
+        self.info["PH state 52 applied" if want else "PH no apply (%s)" % (
+            "stat 117 is 0" if not d0.get("s117") else "attacker or defender type, or class 704-709")] += 1
+        self.check("PH.seed", (d0.get("sa"), d0.get("sd")) == (d1.get("sa"), d1.get("sd")), log, d0["n"],
+                   "seeds moved in the hook")
 
     # ---------------------------------------------------------------- SP (the summoned unit)
     def sp(self, log, d0, d1, inner):
@@ -955,10 +1035,57 @@ class Checker:
         self.check("SP.seed", sd_parse(su1[0]["s"]) == (post[0], INIT_HIGH), log, d0["n"], "unit seed %s, want %s" %
                    (su1[0]["s"], sd_fmt((post[0], INIT_HIGH))))
         self.info["SP class %d" % m["c"]] += 1
+        # the stats at the monsters/stats boundary: tools/monstats.py's MonStatsInit draws on the new unit's seed
+        # (the appearance draws per MonStats2 component, then the HP draw lo + RangeB(hi - lo + 1) of MonLvlStats;
+        # both stock summon classes met here are noRatio, so the raw MonStats cells and no level term), stat 6 = 7 =
+        # hp << 8 and stat 31 the AC cell
+        import monstats  # noqa: E402 (lazy: its tables load once)
+        if not hasattr(self, "_msT"):
+            self._msT = monstats.Tables()
+            self._msM = monstats.Model(self._msT)
+        S = monstats.Seed((post[0], INIT_HIGH))
+        self._msM.appearance(S, m["c"], 0, None)
+        lo, hi, ac, _ = self._msM.monlvl_stats(m["c"], 1, 0, 1)
+        hp = lo + S.rangeb(hi - lo + 1)
+        st = m.get("st") or {}
+        self.check("SP.stats", (stat(st, 6), stat(st, 7), stat(st, 31)) == (hp << 8, hp << 8, ac), log, d0["n"],
+                   "class %d: want life %d AC %d, got %s" % (m["c"], hp, ac, st))
+        if hi > lo:
+            self.info["SP HP drawn from a range (separating), class %d" % m["c"]] += 1
         mas = [dd for tt, dd in inner if tt == "MAS0" and dd["u"]["u"] == m["u"]]
         if mas:
             k = steps_between((post[0], INIT_HIGH), sd_parse(mas[0]["u"]["s"]), 4096)
             self.dist["SP init -> first MonAttackStats steps (MonStatsInit, class %d)" % m["c"]][k] += 1
+
+    def mh_end(self, log, d0, d1, inner):
+        """part 2: the end of a missile at a unit it damages (skills/0002 section 5), for rows with no hit function
+        (pSrvHitFunc not in 1..70), on calls that reached the damage build (a BD line inside: no early return 1): the
+        pierce use p = 2 (stat 328 - 1) when the row has Pierce, the owner has stat 166 or 156 (taken from the
+        missile's creation line, MC0) and stat 328 > 0, else p = 3; c = (Explosion ? 0 : 2) | CollideKill; the result
+        is 2 when (c & 1 or end) and p & 1, else 1."""
+        m = d0["m"]
+        R = self.T.mrec(m["c"])
+        if not any(tt == "BD0" for tt, _ in inner):
+            self.info["MH no build inside (a filter or a hit function returned first)"] += 1
+            return
+        if 0 < R["hitfn"] < 71:
+            self.info["MH end with a hit function (its result: a boundary)"] += 1
+            return
+        o = self.mc_owner.get((log, m["u"]))
+        if o is None:
+            self.info["MH end: missile created before the log or not logged"] += 1
+            return
+        p328 = stat(m.get("st"), 328)
+        pierce = R["pierce"] and (stat(o.get("st"), 166) or stat(o.get("st"), 156)) and p328 > 0
+        p = 2 if pierce else 3
+        c = (0 if R["explosion"] else 2) | (1 if R["collidekill"] else 0)
+        want = 2 if ((c & 1) or d0.get("end")) and (p & 1) else 1
+        want328 = p328 - 1 if pierce else p328
+        self.check("MH.end", d1["r"] == want and d1.get("m328", 0) == want328, log, d0["n"],
+                   "cls %d pierce %s CollideKill %d: want r %d 328 %d, got r %s 328 %s" %
+                   (m["c"], bool(pierce), R["collidekill"], want, want328, d1["r"], d1.get("m328")))
+        self.info["MH end: %s" % ("pierce used, continues" if pierce else
+                                  "ends at the unit" if want == 2 else "continues (no CollideKill)")] += 1
 
     # ---------------------------------------------------------------- the run
     def run(self, log):
@@ -974,10 +1101,12 @@ class Checker:
         mf_open = {}
         ev_open = []
         delay_until = {}
+        ptr2id = {}
         utype = {}
         for i, (t, d) in enumerate(L):
             if t in ("SST0", "SDO0"):
                 utype[d["u"]["u"]] = d["u"]["t"]
+                ptr2id[d["u"]["u"]] = (d["u"]["t"], d["u"]["id"])
             if t == "PAY0":
                 d1 = exits.get(("PAY", d["n"]))
                 if d1:
@@ -994,6 +1123,8 @@ class Checker:
                     self.info["MC with a nested creation (not checked)"] += 1
                     continue
                 self.mc(log, d, d1, inner)
+                if d1.get("m") and d.get("o"):
+                    self.mc_owner[(log, d1["m"]["u"])] = d["o"]
             elif t == "MH0":
                 d1 = exits.get(("MH", d["n"]))
                 if not d1:
@@ -1018,6 +1149,10 @@ class Checker:
                     self.check("RSK.seed", step_n(sd_parse(d["s"]), k) == sd_parse(d1["s"]), log, d["n"],
                                "class %s level %d: %d caster draws, %s -> %s" % (d["c"], sdo["a"][1], k, d["s"],
                                                                                  d1["s"]))
+            elif t == "PH0":
+                d1 = exits.get(("PH", d["n"]))
+                if d1:
+                    self.ph(log, d, d1, L[i + 1:pos[d1["n"]]])
             elif t == "MON":
                 for mm in d.get("m") or ():
                     if "mf" in mm:
@@ -1035,13 +1170,15 @@ class Checker:
                         self.handler(log, h0, d, L[j0 + 1:i])
                         self.handler_effect(log, h0, d)
             elif t == "DLY":
+                # keyed by the unit's guid: the client's checks (rev 5, "cl") run on the client's copy of the player
                 if d.get("d", 0) > 0 and d.get("fr") is not None:
-                    delay_until[d["u"]] = d["fr"] + d["d"]
+                    delay_until[ptr2id.get(d["u"], ("ptr", d["u"]))] = d["fr"] + d["d"]
             elif t == "CU0":
                 c1 = exits.get(("CU", d["n"]))
                 cul = next((d2 for t2, d2 in L[i + 1:i + 8] if t2 == "CUL" and d2.get("k") == d["n"]), None)
                 if c1:
-                    self.cu(log, d, c1, cul, delay_until.get(d["u"]["u"]))
+                    self.cu(log, d, c1, cul, delay_until.get((d["u"]["t"], d["u"]["id"]),
+                                                             delay_until.get(("ptr", d["u"]["u"]))))
             elif t == "SP0":
                 d1 = exits.get(("SP", d["n"]))
                 if d1:
@@ -1278,6 +1415,11 @@ def tally(paths, excel=DEFAULT_EXCEL):
             elif t == "EVH":
                 c["EVH event %s fn 0x%08X" % (d.get("e"), d.get("fn") or 0)] += 1
                 c["EVH fires"] += 1
+            elif t == "CU0":
+                e = exits.get(("CU", d["n"]))
+                if e:
+                    c["CU code %d, row %s" % (e["r"], d.get("sk"))] += 1
+                    c["CU calls (request checks)"] += 1
             elif t == "STA" and d.get("state") == 52:
                 c["STA state 52"] += 1
             elif t in ("SP0", "MAS0", "MCB0", "ARM0", "PF0"):
