@@ -1,6 +1,6 @@
 # 0051 — Backlog sweep 6: the catalogue's column readers, the static optionals and the routing of the rest
 
-> **Status:** approved 2026-10-25 (owner); Phase 2 in part done at approval (one entry closed)
+> **Status:** done 2026-10-27 (Phase 0a accepted, Phases 0b, 1a and 1b and the item 3a fold accepted with fixes; Phase 2's owner entries annotated; approved 2026-10-25, owner)
 > **Created:** 2026-10-25
 > **Owner skill(s):** archivist, reverser, human
 > **Related ADRs:** 0006-docs-gate, 0013-forced-path-runs-cell-level, 0015-emulated-reproduction, 0018-backlog-one-file-per-entry, 0019-backlog-closed-entries-archive, 0021-observed-boundaries-in-emulation
@@ -69,7 +69,7 @@ take them as soon as the plan is approved.
 - **Read first.** Several entries were released "with fixes" at their plan 0046 batch reviews, and some carry a
   correction made at the review (for example the `item` entry's shrine count, the `ass` entry's `Teleport` and
   `PrgCalcByCharge` re-reads). For each entry, read its batch review in the
-  [plan 0046 log](0046-skills-function-catalogue.md#implementation-log) and apply the entry as the review left it.
+  [plan 0046 log](../0046-skills-function-catalogue.md#implementation-log) and apply the entry as the review left it.
 - **Three data questions in the entries** may need code, not layouts: the `bar` entry's Skills `+0x005` bit 0 (which
   column sets it), the `dru` entry's DataTables `+0x17C`/`+0x180` state list (which loader and which States column),
   and the `8c` entry's monster-data bytes `+0x0E`/`+0x0F` (whether a column fills them). The archivist answers what
@@ -87,7 +87,7 @@ take them as soon as the plan is approved.
   recipes their sessions need, so the batch that carries them spends no slot time on preparation.
 - **Items (4):**
   1. `2026-10-16-architect-reverser-plan-0038-s2c-review-harness-pieces.md`: prune the H2b piece (sock 44, met in part
-     at the H2b run, [plan 0038 log](0038-inferred-claims-sweep.md#implementation-log), H2b filed and reviewed) and
+     at the H2b run, [plan 0038 log](../0038-inferred-claims-sweep.md#implementation-log), H2b filed and reviewed) and
      annotate the four that remain with their batches (H6a, H6b, H6c, H6e1); the entry stays open for those;
   2. `2026-10-16-architect-reverser-plan-0038-phase-2-leftover-pieces.md`: write and test off-slot the two lines it asks
      for (a hover marker in `tools/gdb/calc.gdb` at the client caller `0x00486370`; a caller `ra` on `SUNITPRE` in
@@ -116,10 +116,10 @@ take them as soon as the plan is approved.
      under `emutrace` so its read set is enumerated by the tool (an addendum; no tag depends on it);
   3. the data questions Phase 0 could not answer from the layouts, each as its own item.
      Named at the P0b review (2026-10-27): **(3a)** who fills `DataTables+0x17C` (`u16` state ids) and `+0x180` (`s16`
-     count), the list skill do 121's `0x005C8980` walks ([skills/0013 § 6](../findings/skills/0013-druid.md#6-the-melee-functions-start-56-57-58-do-121-122)):
+     count), the list skill do 121's `0x005C8980` walks ([skills/0013 § 6](../../findings/skills/0013-druid.md#6-the-melee-functions-start-56-57-58-do-121-122)):
      the loader and the States column or flag it selects on; the data candidates are `restrict` (139, 140, 177),
-     `group` 3 and `transform` ([States § Open questions](../tables/States.md#open-questions)); from the closed
-     [`dru` entry](../backlog/archive/2026-10-21-reverser-archivist-plan-0046-dru-skills-missiles-column-readers.md).
+     `group` 3 and `transform` ([States § Open questions](../../tables/States.md#open-questions)); from the closed
+     [`dru` entry](../../backlog/archive/2026-10-21-reverser-archivist-plan-0046-dru-skills-missiles-column-readers.md).
      The other two P0 data questions were answered from the layouts (`bar`'s `InTown`, 8c's `S3v`/`S4v`). The
      Phase 1a forwards MP31 and MP32 ride with this item (that review's ruling 4).
 - **Done when:** each entry is closed with a resolution or annotated with the reason it stays open; any `[C]` from an
@@ -208,17 +208,17 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 - **2026-10-25 — Drafted (architect, `lane/plans50`).** Status `proposed`; triage of the 46 open entries in § Routing.
 - **2026-10-25 — Approved (owner, via the orchestrator).** Approved as drafted; may start at once. Phase 2: the plan
   0042 owner-play entry closed as dropped
-  ([archive](../backlog/archive/2026-10-17-architect-human-plan-0042-owner-play-boss-steps.md)); the patch, Diablo-pair
+  ([archive](../../backlog/archive/2026-10-17-architect-human-plan-0042-owner-play-boss-steps.md)); the patch, Diablo-pair
   and plan 0044 owner-play entries stay open as recommended; the two-client tail optional and deferred.
 - **2026-10-25 — Phase 0a landed for review (archivist, `lane/p51a`, no slot, no Ghidra).** The eight plan 0046
   column-reader entries of 2026-10-20 (9a, 9b, 9c, 9d, `ama`, `nec`, `pal`, `sor`) are folded and closed. Each column
   the entries name now ends its row's Meaning cell with `*plan 0046 readers:*`, a tagged reader, the finding section
   (skills/0004–0011) and an `fn:` or address anchor. Tables touched:
-  [Skills](../tables/Skills.md), [Missiles](../tables/Missiles.md), [MonStats2](../tables/MonStats2.md)
-  (`MeleeRng`, `corpseSel`, `revive`, `small`, `large`), [MonStats](../tables/MonStats.md) (`Velocity` and `Run` as
-  two rows of § Readers at creation and at attack time), [CharStats](../tables/CharStats.md) (`RunVelocity`),
-  [DifficultyLevels](../tables/DifficultyLevels.md) (`AiCurseDivisor`: `DiffDivide` read, the three other readers
-  still not read) and [States](../tables/States.md) (`udead`, a dated note on its bullet). In Skills the reader goes on
+  [Skills](../../tables/Skills.md), [Missiles](../../tables/Missiles.md), [MonStats2](../../tables/MonStats2.md)
+  (`MeleeRng`, `corpseSel`, `revive`, `small`, `large`), [MonStats](../../tables/MonStats.md) (`Velocity` and `Run` as
+  two rows of § Readers at creation and at attack time), [CharStats](../../tables/CharStats.md) (`RunVelocity`),
+  [DifficultyLevels](../../tables/DifficultyLevels.md) (`AiCurseDivisor`: `DiffDivide` read, the three other readers
+  still not read) and [States](../../tables/States.md) (`udead`, a dated note on its bullet). In Skills the reader goes on
   the § Dispatch row where one carries the column's code meanings (missiles, `progressive`, parameters, costs,
   summons), else on the § Columns row (the § Passive and aura table has no Meaning cell). One row per column; a run
   of columns read together sits on its first column's row, and the others say "as `X`". Where an entry differs from
@@ -259,25 +259,25 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   **Rulings:** (1) the folded readers stand with the findings' tags; where an entry and its finding differed, the
   finding's reading is the right one. (2) `SubMissile3`'s "slot by stride `[L]`" stays as a layout lead until a
   finding gives do 34's third slot. (3) No review-fixes Seen line: no fix was made, so no rule recurred. Review request
-  closed ([archive](../backlog/archive/2026-10-25-archivist-architect-review-plan-0051-phase-0a-column-readers.md)).
+  closed ([archive](../../backlog/archive/2026-10-25-archivist-architect-review-plan-0051-phase-0a-column-readers.md)).
   Ledger rows filed. Next: P0b (items 9–16).
 - **2026-10-25 — Phase 1a done (reverser, `lane/p51r`, from `main` `9e221ed`; no slot, no Ghidra, no game run).**
   Four entries annotated, all four still open as the plan says (each annotation names what remains and with which
   batch). Off-slot outputs: `workspace/logs/p51r/` (manifest `manifest.sha256`, `22169f4a…`; `commands.txt` lists the
   command behind each file; tool revisions in `tools-revisions.txt`).
   1. **S2c harness pieces**
-     ([entry](../backlog/2026-10-16-architect-reverser-plan-0038-s2c-review-harness-pieces.md)): the H2b piece (sock
+     ([entry](../../backlog/2026-10-16-architect-reverser-plan-0038-s2c-review-harness-pieces.md)): the H2b piece (sock
      44) is pruned. It was met in part at H2b's run and review, and its remainder (a request of 4 or more) is out of
      this plan. H6a, H6b, H6c and H6e1 are left, each still in its inventory § 5 row.
   2. **S1b leftover pieces**
-     ([entry](../backlog/2026-10-16-architect-reverser-plan-0038-phase-2-leftover-pieces.md)): `tools/gdb/calc.py`
+     ([entry](../../backlog/2026-10-16-architect-reverser-plan-0038-phase-2-leftover-pieces.md)): `tools/gdb/calc.py`
      writes the hover marker `CH` at `0x00486370`, and `tools/calc.py hover` counts it. The `SUNITPRE` line of
      `seed-tree-core.gdb` carries the caller's `ra=`, which `tools/rng.py seedtree` names among the six direct calls of
      `0x00552DF0`. The call sites behind both come from a kept objdump scan (`call-sites.txt`). The session is staged as
      `tools/gdb/s1b-pieces.gdb` + `.steps` (CalcSor: hover, drink, Save and Exit, load again) and assigned to plan 0038
      **H1a**, one extra session: no open batch loads either logger first. Tests: `tools/test_p51_staging.py`.
   3. **Plan 0044 shortfalls (2)–(4)**
-     ([entry](../backlog/2026-10-20-architect-reverser-plan-0044-p2-review-agent-stageable-shortfalls.md)): staged
+     ([entry](../../backlog/2026-10-20-architect-reverser-plan-0044-p2-review-agent-stageable-shortfalls.md)): staged
      MP18 (recipe `mp-sock-join`, logger `two-sockets.gdb`), MP25's offensive auras (recipe `mp-pal-conv`, `two-combat.gdb`
      and `mp_check.py aura` as they stand), MP30 (the QL0..QL1 lines in `tools/gdb/quests.py`, checker `mp_check.py
      leave`) and the open-wounds pair (recipe `mp-wound-join`, *Ripsaw*, logger `two-wounds.gdb`). `mp_saves.py check`:
@@ -286,13 +286,13 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
      **Forwarded to Phase 1b**, as new readings: MP31's prediction (the player-to-player trade, not read) and MP32's
      (the arithmetic of `sub_00540900_PartyGoldShare`; items/0011 gives only "a split by `PartyCount`").
   4. **H4b follow-ups**
-     ([entry](../backlog/archive/2026-10-16-architect-reverser-plan-0038-h4b-review-follow-ups.md)): **with H4a**. `lane/h4a`
+     ([entry](../../backlog/archive/2026-10-16-architect-reverser-plan-0038-h4b-review-follow-ups.md)): **with H4a**. `lane/h4a`
      has not landed (paused 2026-10-21, nothing claimed). The H5d piece is still in H5d's § 5 row.
   - **Not touched:** no slot, no Ghidra, no game launch. No tool that `lane/h4a` or `lane/p45h` edits on its branch
     (`d2pilot.py`, `sweep_h4a.py`, the `mon-h4a*` and `skills*` files) was changed. The inventory of plan 0038 is not
     edited (the H1a session is for the architect to add to § 5).
   - **Backlog:** review request
-    [p51r review](../backlog/archive/2026-10-25-reverser-architect-p51r-plan-0051-phase-1a-review.md).
+    [p51r review](../../backlog/archive/2026-10-25-reverser-architect-p51r-plan-0051-phase-1a-review.md).
 - **2026-10-27 — Phase 1a review (architect, `lane/p51r`): accept with fixes.** Reviewed after merging `main` `cf25f22`
   (the `lane/h4a` merge) into the lane. Re-run on the review side: `test_p51_staging.py` 9 OK; `mp_saves.py check` 30
   recipes, 21 pairs, 0 bad; `manifest.sha256` and `tools-revisions.txt` pass (the merge touched none of the lane's
@@ -323,13 +323,13 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   column-reader entries of 2026-10-21 (8a, 8b, 8c, `ass`, `bar`, `dru`, `item`) are folded and closed, and the MonEquip
   entry is done. Each reader ends its row's Meaning cell with `*plan 0046 readers:*` (P0a's convention: the § Dispatch row
   in Skills where one exists, else § Columns), a tagged reader, the finding section (skills/0012–0018) and an `fn:` or
-  address anchor. Tables touched: [Skills](../tables/Skills.md) (38 rows), [Missiles](../tables/Missiles.md) (`Vel`,
-  `VelLev`, `Param1`, `Param2`, `Size`), [MonStats2](../tables/MonStats2.md) (`InfernoLen`, `InfernoAnim`, `corpseSel`,
-  `soft`, `large`, `small`, `SizeX`, `S3v`, `S4v`), [MonStats](../tables/MonStats.md) (§ Spawn columns `spawn`,
+  address anchor. Tables touched: [Skills](../../tables/Skills.md) (38 rows), [Missiles](../../tables/Missiles.md) (`Vel`,
+  `VelLev`, `Param1`, `Param2`, `Size`), [MonStats2](../../tables/MonStats2.md) (`InfernoLen`, `InfernoAnim`, `corpseSel`,
+  `soft`, `large`, `small`, `SizeX`, `S3v`, `S4v`), [MonStats](../../tables/MonStats.md) (§ Spawn columns `spawn`,
   `spawnx`/`spawny`, `spawnmode`, whose name readings `[L]` are replaced by the summon readers; `+0x04B`; a `BaseId` row
-  in § Readers), [States](../tables/States.md) (`srvactivefunc`, an Open question), [Levels](../tables/Levels.md)
-  (`Teleport`), [PetType](../tables/PetType.md), [Books](../tables/Books.md), [Shrines](../tables/Shrines.md) (§ Effects:
-  codes 19, 21, 22; the `[L]` bullet narrowed to 16–18) and [Misc](../tables/Misc.md) (`pSpell` 10, 11).
+  in § Readers), [States](../../tables/States.md) (`srvactivefunc`, an Open question), [Levels](../../tables/Levels.md)
+  (`Teleport`), [PetType](../../tables/PetType.md), [Books](../../tables/Books.md), [Shrines](../../tables/Shrines.md) (§ Effects:
+  codes 19, 21, 22; the `[L]` bullet narrowed to 16–18) and [Misc](../../tables/Misc.md) (`pSpell` 10, 11).
   - **The tags are the findings', as their reviews left them.** Values and tests `[C]` up to each ADR-0021 boundary,
     meanings and what follows a boundary `[I]` (`bar`: the archivist entry's `[C]` items carry values only; `dru` fix 2:
     `InTown` and `aurarangecalc` give the branch and its calls `[C]`, "the state is removed", "the period ends" `[I]`; 8c
@@ -347,7 +347,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     Skills `srvmissilea` rows, no Phase 1b item. (c) `dru`'s DataTables `+0x17C`/`+0x180` list needs its loader read:
     **forwarded to Phase 1b** (§ Phase 1b item 3), with the data candidates in States § Open questions (`restrict`,
     exactly 139, 140, 177; `group` 3; `transform`).
-  - **MonEquip** ([MonEquip](../tables/MonEquip.md), new): a `monequip` layout in `tools/excel_layouts.py` (45 records ×
+  - **MonEquip** ([MonEquip](../../tables/MonEquip.md), new): a `monequip` layout in `tools/excel_layouts.py` (45 records ×
     12 fields = 540 cells, 0 mismatches; `loc2`/`loc3` and `mod2`/`mod3` placed by order, `[I]`, since the 9 rows that
     set slot 2 set slot 3 alike), the `excel_layout` baseline regenerated (69 tables). The `oninit` rows are the first
     rows of 267 `bloodraven` and 234 `flyingscimitar`, level 0, one location; the other 42 rows are the summons
@@ -356,7 +356,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     the doc, not needed by oracle 13.
   - Left open: none of P0b's entries. `tools/` changes: the layout and the baseline only; `re/` unchanged. Gate fast tier GREEN (the 11 W1
     warnings are `main`'s, in `docs/specs/data/excel.md`); `--full=excel_layout` GREEN against the new baseline. Review
-    request filed ([entry](../backlog/archive/2026-10-27-archivist-architect-review-plan-0051-phase-0b-column-readers.md)); ledger
+    request filed ([entry](../../backlog/archive/2026-10-27-archivist-architect-review-plan-0051-phase-0b-column-readers.md)); ledger
     row added. Next: Phase 1b (with the `dru` item).
 - **2026-10-27 — Phase 0b review (architect, `lane/p51b`): accept with fixes.** Reviewed after merging `main` `3fa5209`
   into the lane (the plan log and the ledger kept both sides; `backlog.py archive` moved nothing). Re-run on the review
@@ -405,7 +405,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   lane. Emulation outputs: `workspace/logs/p51s/emu/` (`manifest.txt` `b16c2780…`, 79 files;
   `check.txt` `7ee746af…`; `commands.txt`, `tools-revisions.txt`). Static outputs: `workspace/logs/p51s/static/`
   (`manifest.txt`: the findstring, objdump excerpts and call-site scan behind multiplayer/0002, and the item 3a scan). Tool: `tools/sweep_p51s.py`.
-  1. **Op 6/7 emulation** ([archive](../backlog/archive/2026-10-17-reverser-reverser-plan-0041-op-6-7-emulation.md)),
+  1. **Op 6/7 emulation** ([archive](../../backlog/archive/2026-10-17-reverser-reverser-plan-0041-op-6-7-emulation.md)),
      closed. `STAT_ByTimeValue` ran 6 000 calls, and `StatEvaluate` cases 6/7 with `ActTimeOfDay`, `MulDiv`, ops 10,
      12 and above 13 and nested sources ran 3 000. Result: 0 mismatches, 0 undeclared reads (the jump table and the
      `.rdata` mask are declared, both read-only), 0 stops, every branch reached. Negative controls: the lead's "op 6/7
@@ -413,7 +413,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
      map** (ADR-0015), run:2026-10-27-p51s-emu, in stats/0001 § 10 (new). The Answer bullet, § 4's note, the
      contradicted lead's detail and the Open question are updated. Still `[I]`: what `owner +0x1C` and its `+0x04`
      record hold in play. No symbol row is raised (review-fixes 14: an emulation confirms the map, not the name).
-  2. **S1e follow-ups (b)** ([archive](../backlog/archive/2026-10-17-architect-reverser-plan-0038-s1e-review-follow-ups.md)),
+  2. **S1e follow-ups (b)** ([archive](../../backlog/archive/2026-10-17-architect-reverser-plan-0038-s1e-review-follow-ups.md)),
      closed with (a) and (c) done earlier. The eleven runs of run:2026-10-16-calc-emu were re-run unchanged under
      `emutrace`. Every output is byte-identical to the kept one. The kept `calc_funcs.py` checkers pass on it, and
      fail with every EAX + 1. The tool's read set adds two read-only `.text` switch tables (`MISS_CalcVar` 0x0064B62C,
@@ -432,13 +432,13 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
      data), so none of the three data candidates. Four sibling lists are built in the same pass. Written in
      skills/0013 § 6, with that section's "shape-shift states" layout guess corrected and its Open question struck.
      The States § Open questions bullet is the archivist's:
-     [entry](../backlog/2026-10-27-reverser-archivist-states-0x17c-list-is-the-disguise-flag.md). Scan and excerpts in
+     [entry](../../backlog/archive/2026-10-27-reverser-archivist-states-0x17c-list-is-the-disguise-flag.md). Scan and excerpts in
      `workspace/logs/p51s/static/` (manifest now `7436cda5…`).
   - **Symbols:** 17 added (`I`): `UnitGetMode`, `PartyGoldClip`, 13 trade functions (`TradeRequest` …
     `TradeBlocked`), `StatesListByFlag` and `StatesListByField`. No rename, no tag change; names checked against
     `main`'s `re/symbols.csv` after the merge.
   - **Backlog:** review request
-    [p51s review](../backlog/archive/2026-10-27-reverser-architect-p51s-plan-0051-phase-1b-review.md).
+    [p51s review](../../backlog/archive/2026-10-27-reverser-architect-p51s-plan-0051-phase-1b-review.md).
 - **2026-10-27 — Phase 1b review (architect, `lane/p51s` at `ee0b1d2`): accept with fixes.** `main` `0e3f501` was
   already in the lane (merge `daf1571`); `backlog.py archive` moved nothing. Re-run on the review side, each under
   `systemd-run --user --scope -p MemoryMax=4G`: the three manifests pass (`p51s/emu` `b16c2780…`, 79 files;
@@ -489,3 +489,27 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     The three open owner entries (patch, the Diablo pair, the plan 0044 owner play) were decided "stay open" at
     approval, but none is annotated with that decision yet. Once that is done, the plan can close. The archivist's
     States entry is a small fold that can land with the archivist's next lane; it does not hold the plan open.
+- **2026-10-27 — Phase 1b item 3a folded into States (archivist, `lane/a51f`; no Ghidra).** The States entry
+  ([archive](../../backlog/archive/2026-10-27-reverser-archivist-states-0x17c-list-is-the-disguise-flag.md)):
+  [States § Flag bits](../../tables/States.md#flag-bits-0x010-40-bits-bit-i--byte-0x010--i8-bit-i-mod-8) gains a bullet on
+  the five lists `STATES_Load` builds (`disguise` → `+0x17C`/`+0x180`, `pgsv`, `curse`, `active`, `itemtype` > 0),
+  `[I]` from skills/0013 § 6, with the stock `disguise` rows `[C]` and its two readers (do 121 and anim/0001's
+  `UNIT_AnimTransform`). The § Open questions bullet on the data candidates (`restrict`, `group` 3, `transform`) is
+  struck as answered; what stays `[L]` is whether other code writes the list (the four `[esi+0x17c]` stores). The
+  plan's static work is now folded; what remains is Phase 2's owner-entry annotations (architect).
+- **2026-10-27 — Item 3a fold reviewed; Phase 2 done; plan closed (architect, `lane/a51f`).** The States bullet
+  (with plan 0050's items 3–4, ruled in the [plan 0050 log](../0050-animation-frame-timing.md#implementation-log)):
+  **accept with fixes**, the one here being the § Flag bits anchor (`#columns` → the heading's own slug, in States,
+  in this log and in the closed entry; the gate's slug is GitHub's, so no gate entry). The `disguise` rows recomputed
+  on `states.bin`: 63, 93, 119, 139, 140, 176, 177.
+  - **Phase 2.** The three owner entries are annotated with the owner's 2026-10-25 decision ("stay open", this log's
+    approval entry and the [run order](../README.md#run-order-set-2026-10-25-plans-00380052)'s owner decisions):
+    [patch_d2](../../backlog/2026-10-11-archivist-architect+human-is-1-14d-s-patchd2-mpq.md) (parked),
+    [the Diablo pair](../../backlog/2026-10-17-architect-human-plan-0038-h6d-diablo-owner-pair.md) (optional, closed as not
+    played at plan 0038 Phase 3's items/quest-drops round if still unplayed) and
+    [the plan 0044 owner play](../../backlog/2026-10-20-architect-human-plan-0044-owner-play-cases-mp12-mp14-mp17.md)
+    (optional). The fourth was closed at approval. Phase 2's *Done when* is met.
+  - **What stays open, by design.** The [plan 0044 shortfalls entry](../../backlog/2026-10-20-architect-reverser-plan-0044-p2-review-agent-stageable-shortfalls.md)
+    for the two-client run (optional tail of the run order); the Phase 1a entries for their plan 0038 batches; the
+    17 plan 0038 Phase 3 inputs and the three batch entries of § Routing with their plans.
+  - **Close.** Phases 0, 1a, 1b and 2 are done and reviewed. Status `done`; moved to `done/`; links rewritten.

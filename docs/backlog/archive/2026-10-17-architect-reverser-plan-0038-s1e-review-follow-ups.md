@@ -18,7 +18,7 @@ resolution: "(a) done 2026-10-17 (lane/s1f, tooling.md § emutrace); (c) done 20
 taken in this pass. (a) and (c) are done (above). (b) is out of plan 0049 and stays open, optional, for a later static
 lane with Ghidra emulation time.
 
-*2026-10-27 (reverser, `lane/p51s`, [plan 0051](../../plans/0051-backlog-sweep-6.md) Phase 1b, no slot):* **(b) done.**
+*2026-10-27 (reverser, `lane/p51s`, [plan 0051](../../plans/done/0051-backlog-sweep-6.md) Phase 1b, no slot):* **(b) done.**
 The eleven runs of run:2026-10-16-calc-emu were re-run unchanged under `tools/ghidra.sh emutrace`
 (`tools/sweep_p51s.py calcemu-cases`/`calcemu-check`). Every output is byte-identical to the kept one, and the kept
 `tools/calc_funcs.py` checkers pass on it and fail on a perturbed copy. The read set the tool enumerates adds two

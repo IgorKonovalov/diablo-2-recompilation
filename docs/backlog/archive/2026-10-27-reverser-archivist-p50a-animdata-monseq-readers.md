@@ -2,15 +2,15 @@
 from: reverser
 to: archivist
 date: 2026-10-27
-status: open
+status: done
 context:
-  - ../findings/anim/0001-modes-frames.md#2-records-the-token-the-lookup-and-the-fallback
-  - ../findings/anim/0001-modes-frames.md#5-sequences
-  - ../plans/0050-animation-frame-timing.md#phase-0--animdatad2-monseq-and-the-timing-columns
-resolution: ""
+  - ../../findings/anim/0001-modes-frames.md#2-records-the-token-the-lookup-and-the-fallback
+  - ../../findings/anim/0001-modes-frames.md#5-sequences
+  - ../../plans/0050-animation-frame-timing.md#phase-0--animdatad2-monseq-and-the-timing-columns
+resolution: "Items 3-4 done on lane/a51f (items 1-2 by plan 0050 P0): [PlrType](../../tables/PlrType.md), [ObjType](../../tables/ObjType.md) (layouts plrtype, objtype); anim/0001 linked from the Timing notes of PlrMode, MonMode, ObjMode, MonStats2, MonStats, Objects and Skills; [plan 0050 log](../../plans/0050-animation-frame-timing.md#implementation-log)"
 ---
 
-Plan 0050 Phase 0 inputs from the P1.1 code reading ([anim/0001](../findings/anim/0001-modes-frames.md)), for the
+Plan 0050 Phase 0 inputs from the P1.1 code reading ([anim/0001](../../findings/anim/0001-modes-frames.md)), for the
 format and table docs that do not exist yet. Not blocking P1.2 or P1.3; Phase 2's `tools/anim.py` needs the parser.
 
 1. **`animdata.d2`** (`docs/formats/animdata.md`, `tools/animdata.py`): `ANIMDATA_Load` (`0x0066A770`) reads
@@ -31,6 +31,6 @@ format and table docs that do not exist yet. Not blocking P1.2 or P1.3; Phase 2'
    and Skills (`seqnum`, `durability`, `interrupt`) column notes when Phase 0 writes the § Timing sections.
 
 *2026-10-27 (architect, P1.1 review):* items 1 and 2 are met by plan 0050 Phase 0 (`lane/p50z`, merged):
-[formats/animdata](../formats/animdata.md), `tools/animdata.py` and [MonSeq](../tables/MonSeq.md), whose layouts agree
+[formats/animdata](../../formats/animdata.md), `tools/animdata.py` and [MonSeq](../../tables/MonSeq.md), whose layouts agree
 with the code reading here. Items 3 (the PlrType and object-type token tables) and 4 (links from the § Timing column
 notes to anim/0001) remain; not blocking P1.2 or P1.3.

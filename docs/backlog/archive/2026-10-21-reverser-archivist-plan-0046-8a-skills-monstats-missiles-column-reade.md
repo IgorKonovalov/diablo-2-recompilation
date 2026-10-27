@@ -9,7 +9,7 @@ context:
   - ../../tables/MonStats.md
   - ../../tables/MonStats2.md
   - ../../tables/Missiles.md
-resolution: "Folded 2026-10-27 (plan 0051 P0b, lane/p51b): Skills Param4, lob, summon/summode, MonStats spawn/spawnx/spawny/spawnmode and +0x04B, Missiles Vel/VelLev, MonStats2 InfernoLen/InfernoAnim link skills/0016 in their rows, tags as the finding has them (the velocity's meaning and the inferno end [I]) ([Skills](../../tables/Skills.md), [MonStats](../../tables/MonStats.md), [Missiles](../../tables/Missiles.md), [MonStats2](../../tables/MonStats2.md), [log](../../plans/0051-backlog-sweep-6.md#implementation-log))."
+resolution: "Folded 2026-10-27 (plan 0051 P0b, lane/p51b): Skills Param4, lob, summon/summode, MonStats spawn/spawnx/spawny/spawnmode and +0x04B, Missiles Vel/VelLev, MonStats2 InfernoLen/InfernoAnim link skills/0016 in their rows, tags as the finding has them (the velocity's meaning and the inferno end [I]) ([Skills](../../tables/Skills.md), [MonStats](../../tables/MonStats.md), [Missiles](../../tables/Missiles.md), [MonStats2](../../tables/MonStats2.md), [log](../../plans/done/0051-backlog-sweep-6.md#implementation-log))."
 ---
 
 Not blocking. Plan 0046 batch 8a ([skills/0016](../../findings/skills/0016-monster-8a.md)) settles code readers for these

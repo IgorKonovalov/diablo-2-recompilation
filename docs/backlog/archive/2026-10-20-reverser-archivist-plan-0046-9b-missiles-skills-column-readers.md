@@ -8,7 +8,7 @@ context:
   - ../../tables/Missiles.md
   - ../../tables/Skills.md
   - ../../tables/MonStats2.md
-resolution: "Folded 2026-10-25 (plan 0051 P0a, lane/p51a): Missiles dParam1/2, EType, DmgCalc1, ProgOverlay, HitFlags/ResultFlags, Param1..5, SubMissile1..3; Skills ELen bands, Param1/2, calc4, aurarangecalc, aurafilter; MonStats2 small/large link skills/0005; do 28/34 at [C] (ADR-0021) as the 9b review raised them ([Missiles](../../tables/Missiles.md), [Skills](../../tables/Skills.md), [MonStats2](../../tables/MonStats2.md), [log](../../plans/0051-backlog-sweep-6.md#implementation-log))."
+resolution: "Folded 2026-10-25 (plan 0051 P0a, lane/p51a): Missiles dParam1/2, EType, DmgCalc1, ProgOverlay, HitFlags/ResultFlags, Param1..5, SubMissile1..3; Skills ELen bands, Param1/2, calc4, aurarangecalc, aurafilter; MonStats2 small/large link skills/0005; do 28/34 at [C] (ADR-0021) as the 9b review raised them ([Missiles](../../tables/Missiles.md), [Skills](../../tables/Skills.md), [MonStats2](../../tables/MonStats2.md), [log](../../plans/done/0051-backlog-sweep-6.md#implementation-log))."
 ---
 
 Plan 0046 batch 9b ([skills/0005](../../findings/skills/0005-missile-do-19-36-damage.md)) settles code readers for columns the table docs leave unexplained; please link them (the tags are the finding's: `[C]` for the damage functions, emulated on returning cases; `[I]` (ADR-0021) for the do functions up to their boundary; `[I]` readings otherwise).

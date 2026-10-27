@@ -331,7 +331,7 @@ The mode flags and the timing columns, from the layout ([§ Record layout](#reco
 | `HitClass` | `+0x014` u8 | 1 ×6, 3 ×566, 12 ×37 | read as [HitClass](HitClass.md) rows: `hth`, `1hsl`, `claw` | [C] layout; `[L]` |
 | `mDT` … `mRN` | `+0x0F0` u16, bit *k* = [MonMode](MonMode.md) row *k* | set in `DT` 519, `NU` 585, `WL` 476, `GH` 403, `A1` 450, `A2` 217, `BL` 51, `SC` 41, `S1` 238, `S2` 60, `S3` 25, `S4` 15, `DD` 524, `KB` 377, `SQ` 384, `RN` 57 records | the class has mode *k* | [C] layout; `[C]` in the 603 records a MonStats row names, every set bit outside `SQ` names an existing `animdata.d2` record (below); the other 6 (`diabloclone` and the five `uber*` rows) have no MonStats `Code` to build a name from and are not checked |
 | `dDT` … `dRN` | `+0x0F4 + k` u8 | 1, 4, 8 or 16 in every record and mode (8 the most common: 498..562 per mode) | directions of mode *k* | [C] layout; `[L]` |
-| `A1mv`, `A2mv`, `SCmv`, `S1mv`, `S2mv`, `S3mv`, `S4mv` | `+0x104` bits by mode index (`A1mv` bit 4 … `S4mv` bit 11) | set in 0, 18, 0, 11, 4, 0, 0 records | the monster moves while in that mode | [C]/[I] layout ([§ Columns](#columns)); `[L]` |
+| `A1mv`, `A2mv`, `SCmv`, `S1mv`, `S2mv`, `S3mv`, `S4mv` | `+0x104` bits by mode index (`A1mv` bit 4 … `S4mv` bit 11) | set in 0, 18, 0, 11, 4, 0, 0 records | `[I]` the mode runs every game frame (step, advance) instead of on its scheduled events ([anim/0001 § 10](../findings/anim/0001-modes-frames.md#10-monster-modes)) | [C]/[I] layout ([§ Columns](#columns)); `[I]` the clock |
 | `InfernoLen` | `+0x108` u8 | 1 ×601, 14 ×6, 6, 7 | frames to the next inferno event | [C] layout; `[I]` `sub_005CC3B0_InfernoEnd` ([§ Columns](#columns)) |
 | `InfernoAnim` | `+0x109` u8 | 6..11 in 25 records, blank 0 | the inferno's animation frame test | [C] layout; `[I]` `sub_005CC440_InfernoAnim` ([§ Columns](#columns)) |
 | `InfernoRollback` | `+0x10A` u8 | 6..15 in 18 records, blank 0 | the frame an inferno rolls back to (name) | [C] layout; `[L]` (no reader read) |
@@ -343,8 +343,21 @@ The mode flags and the timing columns, from the layout ([§ Record layout](#reco
   `<…>HTH` (52, the death modes of the `GM`, `FE` and `FK` classes); `mon_miss=0`
   ([MonMode § Timing](MonMode.md#timing-plan-0050-phase-0)). The 31 `ResurrectMode` `xx` rows are the 31 with
   `ResurrectSkill` `SkeletonRaise`, whose sequence is `seq_skeletonraise` ([MonSeq](MonSeq.md)) by the name.
-- `[L]` Whether `d<mode>` matches the COF's direction count, and what the `*mv` bits do to the movement step, is plan
-  0050 Phases 1.1 and 1.3.
+- `[I]` **`*mv`** ([anim/0001 § 10](../findings/anim/0001-modes-frames.md#10-monster-modes)): `sub_005A6B10_MonModeEveryFrame` makes `A1`, `A2`, `SC`,
+  `S1`–`S4` every-frame modes when the mode's bit at `+0x104` is set (`WL`, `KB`, `SQ`, `RN` always are); such a mode
+  steps and advances each frame (`UNIT_AnimAdvance`) and, with no used skill, strikes only on a frame whose event byte is
+  1; a scheduled one strikes on each queued event. (fn:sub_005A6B10_MonModeEveryFrame@0x005A6B10,
+  fn:sub_005A7670_MonAttackFrame@0x005A7670, tbl:MonStats2.txt:A2mv)
+- `[I]` **`compositeDeath`** (`+0x006` bit 0) and **`BaseW`** ([anim/0001 § 2](../findings/anim/0001-modes-frames.md#2-records-the-token-the-lookup-and-the-fallback)):
+  the record name takes `BaseW` as its weapon class, except `hth` in `DT` (0) and `DD` (12) unless `compositeDeath` is
+  set; a class with no MonStats2 record takes `hth`. `[C]` By that rule every flagged mode outside `SQ` names a record
+  (`mon_rule_miss=0`, [MonMode § Timing](MonMode.md#timing-plan-0050-phase-0)). (fn:COMPOSIT_BuildCofName@0x0064F5B0,
+  tbl:MonStats2.txt:compositeDeath)
+- `[I]` **`mDT` … `mRN`** under a shape-shift: a player drawn as a monster maps its mode down a fallback chain until
+  `m<mode>` of the display class (States `gfxclass`) is set ([anim/0001 § 2](../findings/anim/0001-modes-frames.md#2-records-the-token-the-lookup-and-the-fallback),
+  fn:sub_00645190_PlrToMonMode@0x00645190).
+- `[L]` Whether `d<mode>` matches the COF's direction count, and what the `*mv` modes' step moves, is plan 0050
+  Phase 1.3.
 
 ## Interpretation notes
 

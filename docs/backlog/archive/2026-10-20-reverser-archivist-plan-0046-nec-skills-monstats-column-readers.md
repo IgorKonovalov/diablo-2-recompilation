@@ -10,7 +10,7 @@ context:
   - ../../tables/DifficultyLevels.md
   - ../../tables/MonStats.md
   - ../../tables/States.md
-resolution: "Folded 2026-10-25 (plan 0051 P0a, lane/p51a): Skills aura and summon words, srvmissilea; MonStats2 corpseSel, revive; MonStats Velocity; DifficultyLevels AiCurseDivisor (DiffDivide, the other three readers still unread); States udead link skills/0010 ([Skills](../../tables/Skills.md), [MonStats2](../../tables/MonStats2.md), [MonStats](../../tables/MonStats.md), [DifficultyLevels](../../tables/DifficultyLevels.md), [States](../../tables/States.md), [log](../../plans/0051-backlog-sweep-6.md#implementation-log))."
+resolution: "Folded 2026-10-25 (plan 0051 P0a, lane/p51a): Skills aura and summon words, srvmissilea; MonStats2 corpseSel, revive; MonStats Velocity; DifficultyLevels AiCurseDivisor (DiffDivide, the other three readers still unread); States udead link skills/0010 ([Skills](../../tables/Skills.md), [MonStats2](../../tables/MonStats2.md), [MonStats](../../tables/MonStats.md), [DifficultyLevels](../../tables/DifficultyLevels.md), [States](../../tables/States.md), [log](../../plans/done/0051-backlog-sweep-6.md#implementation-log))."
 ---
 
 Not blocking. Plan 0046 batch `nec` ([skills/0010](../../findings/skills/0010-necromancer.md)) settles code readers for

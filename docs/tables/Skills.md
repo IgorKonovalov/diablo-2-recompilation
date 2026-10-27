@@ -1059,7 +1059,7 @@ The animation, sequence and delay columns, by the layout of [§ Animation, range
 | `anim` | `+0x010` u8, `plrmode` row | 334 set: `SC` 141, `SQ` 116, `A1` 48, `S2` 9, `S1` 6, `TH` 5, `S3` 4, `KK` 3, `A2` 1, `S4` 1; 23 blank store 255 | the player mode of the skill | [C] layout; `[I]` as in [§ Animation, range and delay](#animation-range-and-delay) |
 | `seqtrans` | `+0x012` u8, `plrmode` row | 334 set: `SC` 143, `SQ` 98, `A1` 64, then as `anim`; 23 blank store 255 | the mode of a sequence's transitions (name) | [C] layout; `[L]` |
 | `monanim` | `+0x011` u8, `monmode` row | 357 set: `xx` 214, `A1` 41, `SC` 29, `S1` 29, `S2` 24, `A2` 11, `S3` 8, `NU` 1 | the monster mode of the skill | [C] layout; `[L]` |
-| `seqnum` | `+0x013` u8 | 1..41 in 34 rows (23 distinct), blank 0 | the player sequence's number | [C] layout; `[L]` |
+| `seqnum` | `+0x013` u8 | 1..41 in 34 rows (23 distinct), blank 0 | the player sequence's number | [C] layout; `[I]` the index into the code's player sequence tables (below) |
 | `seqinput` | `+0x016` u16 | 8, 10, 10, 12 in 4 rows (Charge, Inferno, Arctic Blast, Blade Fury), blank 0 | the sequence's input frame (name) | [C] layout; `[L]` |
 | `delay` | `+0x190` s32 calc offset | 23 rows, all constants: 15 (3), 25 (6), 30, 35, 40, 45, 50 (3), 100 (2), 150 (5) | the cooldown in frames | [C] layout; `[I]` the `skilldelay` state ([§ Animation, range and delay](#animation-range-and-delay)) |
 | `perdelay` | `+0x128` s32 calc offset | 22 rows: 50 in the 20 Paladin auras, `par3` (Blade Shield), `(100-dm56) * par4/100 + par3` (Thunder Storm) | the period of a periodic skill in frames | [C] layout; `[I]` `SKILLS_NextPeriodicFrame` ([§ Columns](#columns)) |
@@ -1073,9 +1073,20 @@ The animation, sequence and delay columns, by the layout of [§ Animation, range
   and monster rows such as DiabRun (22), DesertTurret (26) and QueenDeath (41). Six rows have a `seqnum` with another
   `anim`: Fend (`A1`, 9), Sacrifice (`A1`, 2), Conviction (blank `anim`, 5), Wearwolf and Wearbear (`SC`, 22) and
   Dragon Talon (`KK`, 19) (`sk_seqnum_nonsq=6`).
-- `[L]` `seqnum` is not a `monseq` ordinal: the player sequences are not in any table, and the numbers 1..41 index a
-  sequence list the code holds (Phase 1.1). The values 22 for DiabRun and for the two shape-shifts, and 18 for Arctic
-  Blast and two monster rows, show the number is shared across unrelated skills.
+- `[I]` **`seqnum` indexes a table in the code, not `monseq`** ([anim/0001 § 5](../findings/anim/0001-modes-frames.md#5-sequences)): a player's sequence
+  (mode 18) is `g_PlrSeqTables[seqnum]` (24 entries, 0 null; 14 weapon-class columns of 12 bytes), read with no bound
+  test; an index < 1 means no sequence. A monster's comes from its MonStats `Sk<k>mode` ordinal into `monseq`, not
+  from this column. (fn:sub_00643D00_SkillSeqIndex@0x00643D00, fn:sub_00663310_UnitSeqRecord@0x00663310,
+  data:g_PlrSeqTables@0x007483B8, tbl:Skills.txt:seqnum) `[C]` The rows above 23 (DesertTurret 26, QueenDeath 41 and
+  the others) have no `charclass`; the values 22 for DiabRun and for the two shape-shifts, and 18 for Arctic Blast and
+  two monster rows, show the number is shared across unrelated skills.
+- `[I]` **`durability`** (`+0x006` bit 2): at a player mode's end (`PlayerModeEnd`), modes 7, 8, 11 or a used skill
+  with this bit refresh the hands (`sub_00580310_HandsRefresh`) before the next mode
+  ([anim/0001 § 9](../findings/anim/0001-modes-frames.md#9-player-modes), fn:sub_00581020_PlayerModeEnd@0x00581020, tbl:Skills.txt:durability).
+- `[I]` **`interrupt`** (`+0x007` bit 7): `sub_0057EEC0_PlayerModeAllowed`, for a used skill with this bit under state
+  42 `concentration`, draws `Range(player unit seed, 100)` against stat 164 `skill_concentration` of that state's list
+  and refuses the interrupt below it ([anim/0001 § 11](../findings/anim/0001-modes-frames.md#11-draws-seeds-and-the-chaining-reading-adr-0014),
+  0x0057EF7C, tbl:Skills.txt:interrupt). How the gate is used is plan 0050 P1.3.
 - `[C]` **No rate column.** No Skills column names an attack, cast or hit-recovery rate; the rate stats reach a skill
   through its `aurastat*`/`passivestat*` columns: 33 cells name `velocitypercent`, `attackrate`, `other_animrate` or
   `item_slow` ([ItemStatCost § Timing](ItemStatCost.md#timing-plan-0050-phase-0), `rate_stat_skill_cells`).

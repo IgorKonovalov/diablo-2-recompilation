@@ -70,7 +70,7 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
     [0046](../../../../docs/plans/0046-skills-function-catalogue.md)); skills/0003 § 2's `EDX`-the-skill note filed under the
     bullet after the one that still said `EDX` the level (`lane/p46m12` review, 0046); class 312's remainder met by H4a but
     still `[I]` in monsters/0004's H4b section (`lane/h4a` review, 0038); special 66's mod 12, met by H4a (special 68)
-    but still `[I]` in monsters/0003's H4b section (`lane/p51r` review, [0051](../../../../docs/plans/0051-backlog-sweep-6.md));
+    but still `[I]` in monsters/0003's H4b section (`lane/p51r` review, [0051](../../../../docs/plans/done/0051-backlog-sweep-6.md));
     drlg/0005 § 5's `[C]` *Pattern from size* still stating the `npc`-only rule with the correction appended after it
     (`lane/h5d` review, 0038);
     a summary that drops what the section states: stats/0001's Answer bullet for op 6/7 without the source-value gate
@@ -98,4 +98,4 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
     what wraps: name the operation that wraps and whether a wrapping path reaches a use (`lane/p46m14` review, all
     three [0046](../../../../docs/plans/0046-skills-function-catalogue.md)); do 140's try offsets said not to wrap "below
     2³¹ − 9" where 2³¹ − 9 itself still fits (`lane/p46m15` review, 0046); `x − 90q` said to wrap "for `x` within 270
-    of `INT32_MIN`" where the bound is `x < INT32_MIN + 90q` (`lane/p51s` review, [0051](../../../../docs/plans/0051-backlog-sweep-6.md)).
+    of `INT32_MIN`" where the bound is `x < INT32_MIN + 90q` (`lane/p51s` review, [0051](../../../../docs/plans/done/0051-backlog-sweep-6.md)).
