@@ -381,6 +381,14 @@ tag and the second source given here are the current ones.
   `SUNITPRE` has no return address. Proposed class (b): a caller `ra` on `SUNITPRE` (`seed-tree.gdb`), with a
   character load and a re-seed in the session. (fn:sub_00552DF0_UnitSeedInit@0x00552DF0,
   fn:sub_00555230_SUnitCreate@0x00555230, run:2026-10-11-seed-tree-p1)
+  *2026-10-27, plan 0038 H1a (the S1b session, [run:2026-10-27-sweep-d2s-load](../save/experiments.md#run2026-10-27-sweep-d2s-load),
+  `workspace/logs/h1a/h1a-s2-27210-s1b.log`, `check/s1b-checks.txt`):* with `ra` on `SUNITPRE`, the two player loads
+  of the session (the CalcSor game and the second load after *Save and Exit*) each took their seed through the call
+  at 0x00569F53 (return 0x00569F58, `sub_00569F20_PlayerUnitInit`, `lea edx, [ebx + 0xD0]` at 0x00569F4B with EBX the
+  game), and `rng.py seedtree` matches all 1 884 lines (the 59 other server units through `SUnitCreate`'s call at
+  0x0055530E, types 1, 2 and 4). Of the five, 0x00569F4B is now run-confirmed; 0x00532546, 0x005338D0, 0x0056A956 and
+  0x0057F7DD logged no line in the session. The remainder shrinks to those
+  four; the row stays counted as S1b, raised in part, for the review.
 - **Row 15** (spec L390, client type 4 draws nothing before the room draw) **raised.** [C] objdump closure:
   `ItemDataAlloc` calls only the allocator, `0x00681EF0` and the fatal path (0x00408090, 0x00408A60, 0x00681E09),
   `ItemDataSeedInitOne` only `RNG_SeedInitOne`; the closure under both holds no drawing function, only that one

@@ -799,6 +799,25 @@ summary above had the saved header as inferred ("no save written in the run"); b
   (hell-r3, merc mode 12, dead bit set) cases separate the fields and the flag. (fn:D2S_WriteMercHeader@0x00568E60,
   fn:D2S_ReadMercHeader@0x0056AA50, fn:HIRE_Hire@0x005770E0, run:2026-10-27-sweep-d2s-play)
 
+## Plan 0038 batch H1a (run:2026-10-27-sweep-d2s-load)
+
+Harness batch H1a of [plan 0038](../../plans/0038-inferred-claims-sweep.md) took four rows of
+[hirelings](../../specs/hirelings/README.md) ([inventory](../../plans/0038-inventory/hirelings-README.md), rows 3, 30,
+32, 33); the save rows are in [save/0001](../save/0001-d2s-io.md#plan-0038-batch-h1a-run2026-10-27-sweep-d2s-load),
+with the counts of `workspace/logs/h1a/check/sweep-h1a-check.txt`.
+
+- **hirelings 32** (§ H, the mercenary items read after the header) **raised.** [C] `MercMF` (`mercmf.json`, a
+  mercenary with three items: `lea`, `cap`, `sbw`), loaded in Normal: `D2S_ReadMercHeader` returned the mercenary
+  (`MRX`), the mercenary list's reader was called with the cursor at the file's `jf` (`RSEC` `merc_items` = the end of
+  the corpse list, 970), and the load's `RITEM` lines were the file's 4 + 3 items in order (`tools/d2sio.py`: code,
+  seed, quality, version, mode of each); the write held the same mercenary list. (fn:D2S_ReadMercItems@0x0056AC10,
+  fn:D2S_ReadSaveV92@0x0056B180, 0x0056B32D, run:2026-10-27-sweep-d2s-load)
+- **hirelings 3, 30, 33** (saves older than version 92: `ReadMercOldSave`, the Id `0xFFFF` of a version-71 save,
+  `MercExpFromOldSave`) **shortfall.** No save in the version 71 or 87 layout was built (no builder, no format doc;
+  archivist entry [2026-10-27-reverser-archivist-h1a-d2s-legacy-layouts-and-parser-gaps](../../backlog/2026-10-27-reverser-archivist-h1a-d2s-legacy-layouts-and-parser-gaps.md)).
+  The one legacy load, a version-96 body labelled 91, was refused by `sub_00534020_ReadSaveLegacy` (14) before any
+  mercenary step.
+
 ## Open questions
 
 - Which MonStats-derived fields (velocity, mana, other stats that `MERC_SetLevel` does not set) survive from

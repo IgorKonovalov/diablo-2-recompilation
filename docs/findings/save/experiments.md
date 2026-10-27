@@ -294,3 +294,120 @@
 - **Conclusion:** see [save/0001 § Plan 0038 batch H1b](0001-d2s-io.md#plan-0038-batch-h1b-run2026-10-27-sweep-d2s-play)
   and [hirelings/0001 § Plan 0038 batch H1b](../hirelings/0001-hirelings.md#plan-0038-batch-h1b-run2026-10-27-sweep-d2s-play):
   25 statements raised, 14 raised in part, 7 shortfalls, 2 proposed d-none.
+
+## run:2026-10-27-sweep-d2s-load
+
+- **Question:** (plan 0038 Phase 2, batch H1a, [inventory § 5](../../plans/0038-inventory/README.md#harness-batches))
+  the 46 inferred statements of [inventory save-d2s](../../plans/0038-inventory/save-d2s.md) rows 9, 10, 17, 22, 23,
+  26–30, 36, 38, 44, 46, 47, 49, 50, 52–54, 59, 62, 65, 68, 80, 90, 91, 105–107, 126, 132, 139, 140,
+  [hirelings](../../plans/0038-inventory/hirelings-README.md) 3, 30, 32, 33,
+  [player-creation](../../plans/0038-inventory/player-creation.md) 1, 8, 9, 11, 20, 34 and
+  [items-uniques-sets](../../plans/0038-inventory/items-uniques-sets.md) 21: what the server's reader does with a
+  malformed, edited or old-format save (the codes of `D2S_ReadSave`, `D2S_ReadHeader`, `D2S_CheckStatus` and the
+  section readers, the error map, the 8 KiB cap, the header fields not read, the act clamp, the quest and waypoint
+  records, the skill count, the old stat form, ears, personalized names, realm data, out-of-range unique and set ids,
+  item params, class 7, the mercenary item list). Plus the S1b leftover session the plan 0051 P1a review assigned to
+  H1a (CalcSor; data-calc 19, rng-seeds 11; the rows stay S1b).
+- **Setup:** the ADR-0003 harness on **slot 2** (display `:9`, prefix `workspace/wineprefix-2`), agent-driven, no
+  owner play, stock data, the shared game directory unchanged. The slot's empty saves directory was set aside as tag
+  `h1a` and restored before each launch and after the last (empty, all sha256 match).
+  - **Saves:** `python3 -I tools/h1a_saves.py workspace/merged/data/global/excel workspace/runtime/h1a`
+    (`eebfeba2…`), one directory per case; each file's size, size field, checksum and sha256 are in
+    `workspace/logs/h1a/check/h1a-saves-build.txt`. The base is the sample `qitsor.d2s` (`81a75f54…`, expansion
+    Sorceress level 1, 14 items); the stubs come from `stub-seedtest.d2s`; `MercMF.d2s` is `mercmf.json` on
+    `smpsor-l50.d2s` (`e98a6b9d…`, the `test_d2s.py` pin); `CalcSor.d2s` is `calc-sor.json` on
+    `runtime/saves-backup/p0005/smpsor.d2s` (`787a2291…`, the pin). Tool-built, malformed on purpose (ADR-0003 inputs,
+    ADR-0013 § Neutral): they back the reader's handling of the built bytes, never how a game makes them.
+  - **Logger** `tools/gdb/d2s-h1a.gdb` (`e9b40dcc…`): `pilot.py`, `d2s-io.py` (`5a7ad56d…`, unchanged),
+    `d2s-h1b.py` (`8a27dc8c…`, unchanged) and the new `tools/gdb/d2s-h1a.py` (`00d2f737…`; lines `RSV`,
+    `LEG`, `LEGR`, `PLD`, `RCST`, `RACT`, `RSKC`, `RSTV`, `RSTL`, `RQW`, `RWP`, `RIX`, addresses in its header).
+    Steps `tools/gdb/h1a-menu.steps` (`92c31f98…`: activate the window, stay at the main menu).
+  - **Runner** `tools/h1a_sessions.py` (`097a8a77…`). One game process per session; per case: copy the
+    listed file over the character's `.d2s`, *Single Player* (the character screen reads the directory), copy the
+    case's file over it (**the swap**), OK and the difficulty, wait for `PLD`, then *Save and Exit* (a load that
+    passed; the written file kept under `workspace/logs/h1a/<stem>-saves/<case>/`) or back to the menu. Each case's
+    first log line is in `<stem>.marks.jsonl`. The copies are made by the runner into slot 2's saves directory only,
+    while `h1a` is set aside.
+  - **Checker** `tools/sweep_h1a.py` (`bd1a2a9f…`), which runs `tools/d2sio.py check`
+    (`523991f2…`) on each log first. `d2sio.py` was extended (the r1h revision was `29561293…`): the code
+    predicted from the file in `D2S_ReadHeader`'s order (4 short, 6, 5, 7 version), the mapped code from the table
+    `g_D2sLoadErrorMap` (read from the image), the codes that need the client or the game printed as `context=`, and a
+    layout `tools/d2s.py` refuses (realm data, version 94, a skill count other than 30) reported as `UNPARSED` instead
+    of a crash. Regression: the 13 H1b logs give the r1h output byte for byte once ` context=None` is dropped
+    (`check/sweep-h1b-recheck-h1a.txt`, 2 798 comparisons, 0 failing), and the five d2s-io logs of this record's
+    first run give the same totals as `main`'s checker (`check/d2sio-runs-2026-10-12-recheck-h1a.txt`).
+- **Procedure** (`python3 -I tools/h1a_sessions.py run --slot 2 --tag h1a --cases workspace/runtime/h1a --run h1a NAME`):
+  1. `main` (seed 27201, log `h1a-s2-27201-main.log`): 26 cases in one process, in this order: magic, short, v97,
+     v91, class8, hcon (listed base, swapped hc), hcsoft (hc / base), hcdead (hc / hcdead), clson (base / classic),
+     expon (classic / base), prog4 (prog5 / prog4, Nightmare), prog0 (prog10 / base, Hell), both, wpbad, stubtrail,
+     bigbad, setbad (each back to the menu; setbad loaded and was saved and exited), then big8k, fields, skills29,
+     items, v94, prog5 (Nightmare), prog10 (Hell), stubok, uniqbad (each loaded, *Save and Exit*, the file kept).
+  2. `order` (27204, `h1a-s2-27204-order.log`): hdrshort, v97sum, namehc, class8hc (menu), param, slots8, v94s12,
+     act6 (loaded, saved), class7 (the process halted; the runner stopped).
+  3. `stub7` (27205, `h1a-s2-27205-stub7.log`): stub7 (the process halted).
+  4. `name15` (27202, `h1a-s2-27202-name15.log`): the 15-character character listed and loaded, saved.
+  5. `mercmf` (27203, `h1a-s2-27203-mercmf.log`): MercMF in Normal, saved.
+  6. S1b (27210, `h1a-s2-27210-s1b.log`): `python3 -I tools/d2run.py --slot 2 --seed 27210 --gdb
+     tools/gdb/s1b-pieces.gdb --steps tools/gdb/s1b-pieces.steps --after 30 --install h1a
+     workspace/runtime/h1a/s1b/CalcSor.d2s --log workspace/logs/h1a/h1a-s2-27210-s1b.log` (the plan 0051 P1a staging,
+     unchanged: hover, three potions drunk, *Save and Exit*, the same character loaded again), the written save copied
+     to `h1a-s2-27210-s1b-CalcSor-written.d2s`.
+  Crash reports of the two halts (the game writes them under the shared game directory's `BlizzardError/`) were copied
+  to `workspace/logs/h1a/class7-crash/` and `stub7-crash/` (`Crash.txt`); nothing in the game directory was changed.
+- **Check:** `systemd-run --user --scope -p MemoryMax=4G python3 -I tools/sweep_h1a.py check
+  workspace/merged/data/global/excel workspace/runtime/h1a $(ls workspace/logs/h1a/h1a-*.log)` →
+  `workspace/logs/h1a/check/sweep-h1a-check.txt`: **410 H1A comparisons over 38 cases, 0 failing**; the `d2sio.py` part of each of the five logs 0 mismatches (5440 comparisons; 6 buffers that `tools/d2s.py` does not parse reported as `UNPARSED`, one read that never returned as `UNTERMINATED`). The S1b log is checked with its own three checkers (`check/s1b-checks.txt`): `rng.py seedtree` 1 884/1 884, `calc.py hover` 7 `CH` lines and 0 hover evaluations, `calc.py check` 52 evaluations, 0 mismatches.
+- **Observed:**
+  ```
+  case       listed / swapped        D2S_ReadSave  ReadHeader  CheckStatus  RERR int->mapped  PLD   outcome
+  magic      base / magic             9 (1179 B)   -           -            -                 9     menu
+  short      base / short (7 B)       9 (7 B)      -           -            -                 9     menu
+  v91        base / v91               legacy 14    -           -            -                 14    menu
+  hdrshort   base / first 0x100 B     -            4           -            4 -> 9            9     menu
+  v97sum     base / v97 + sum+1       -            6           -            6 -> 14           14    menu
+  both       base / sum+1, size+1     -            6           -            6 -> 14           14    menu
+  bigbad     base / 8392 B valid      (8192 read)  6           -            6 -> 14           14    menu
+  v97        base / v97               -            7           -            7 -> 1            1     menu
+  namehc     base / qitsox + hc       -            7           -            7 -> 1            1     menu
+  class8hc   base / class 8 + hc      -            11          11           11 -> 20          20    menu
+  class8     base / class 8           -            4           0            4 -> 9            9     menu
+  hcon       base / hc                -            11          11           11 -> 20          20    menu
+  hcsoft     hc / base                -            12          12           12 -> 19          19    menu
+  hcdead     hc / hc+dead             -            10          10           10 -> 21          21    menu
+  clson      base / classic           -            9           9            9 -> 23           23    menu
+  expon      classic / base           -            8           8            8 -> 24           24    menu
+  prog4      prog5 / prog4, NM        -            13          13           13 -> 17          17    menu
+  prog0      prog10 / prog0, Hell     -            14          14           14 -> 18          18    menu
+  prog5      prog5 / prog5, NM        -            0           0            -                 0     saved
+  prog10     prog10 / prog10, Hell    -            0           0            -                 0     saved
+  stubtrail  base / stub + 10 B       -            2           0            2 -> 9            9     menu
+  stubok     base / stub              -            2           0            -                 0     new character, saved
+  wpbad      base / marker 0x0303     -            0           0            16 -> 3           3     menu
+  setbad     base / set id 4000       -            0           0            -                 0     item dropped, 13 items saved
+  class7     base / class 7           -            (none)      0            -                 -     halt 1210 (Crash.txt)
+  stub7      base / class-7 stub      -            2           0            -                 -     halt 1210 (Crash.txt)
+  big8k fields skills29 items v94 v94s12 slots8 act6 param uniqbad name15 mercmf: header 0, loaded, saved
+  big8k     RHDR 8192 of 8392 bytes; written 1179
+  fields    RACT 0x85 -> 0; Hell words 1/2/3 0x6002->0x8002, 0x6000->0x0000, 0x0002->0x8002; waypoints Normal
+            0x0102/0002 -> 0x0102/0003, NM 0x0101/000F and Hell 0000/000F -> 0000/0001, written 0x0102/0001;
+            written last_played = time(), unk_34 FFFFFFFF, 0x88..0xA7 = GFX (base bytes), 0xCF 5A, unk_bf rest 0
+  skills29  RSKC 29; item list at skills + 31; written 30 skill bytes, name qitsor
+  items     ear: +0x28 3, +0x48 42, +0x4A earname; cap: +0x4A Hoarder; gloves: realm 11223344/55667788;
+            15 written records = the read ones, the realm third u32 written 0
+  v94       RSTV 94/16, 16 SetStat lines; durabilities 7, 8, 20 (8-bit) written back; v94s12: RSTV 94/12, stat
+            12 not set, header level 0 written; slots8: RSTV 96/8, every gf stat read
+  act6      RACT 0x86 -> 0          param  stat 107 param 270 read and written
+  uniqbad   unique ids read 71, -1; written 71, 0xFFF      name15  loaded; written name 15 chars + 0
+  mercmf    MRX mercenary; merc item list at 970; RITEM 4 + 3 in file order; written merc list the same
+  ```
+- **Raw data:** `workspace/logs/h1a/` (logs, marks, pilot output, screenshots, kept saves), manifest
+  `h1a-manifest.sha256` (`dd900aae…`; `sha256sum -c` from `workspace/logs/h1a`). The
+  development session `dev-h1a-s2-27201-main` (two cases, before the post-error click was moved to empty background)
+  is kept as a development log, listed in `h1a-manifest-dev.sha256`; no claim rests on it.
+- **Deviations and limits:** the swap is the runner's, not a game state: the listed file decides the client's name,
+  status and difficulty, the swapped file is what the server reads. No legacy save (version < 92 with its own layout)
+  was built, so the legacy reader was reached only with a version-96 body labelled 91 (it returned 14). No write above
+  8 KiB, no version-92 item list (the 1.09 widths), no ladder or host game, no classic progression bounds.
+- **Conclusion:** see [save/0001 § Plan 0038 batch H1a](0001-d2s-io.md#plan-0038-batch-h1a-run2026-10-27-sweep-d2s-load),
+  [hirelings/0001 § Plan 0038 batch H1a](../hirelings/0001-hirelings.md#plan-0038-batch-h1a-run2026-10-27-sweep-d2s-load)
+  and [player/0001 § Plan 0038 batch H1a](../player/0001-creation.md#plan-0038-batch-h1a-run2026-10-27-sweep-d2s-load).
