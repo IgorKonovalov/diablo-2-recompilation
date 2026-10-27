@@ -1000,6 +1000,38 @@ Phase 3 note, not a class move). The three chained-model mismatches go to their 
 `9e221ed` after merging it (no inventory change since `e3ac907`): **static 567, harness 526, c-emu awaiting a batch 0,
 blocked 414** (d-none 288, d-edit 73, d-sim 28, d-2c 7, d-owner 10, d-0032 8), **deferred 2, raised 17: 1 526.**
 
+**H5d (filed 2026-10-27, reverser, `lane/h5d`): 17 statements of drlg/collision and monsters/spawn 41.**
+run:2026-10-27-sweep-collision, nine kept sessions on slot 1 (expansion Normal, `UniqNova`; the 2026-10-25 launch
+stopped at start kept in `dev/`), stock data, logger `tools/gdb/collision-h5d.gdb` with before / after cell pairs.
+`collision.py check` on the nine logs: collision 26 913 checks, 0 mismatches; monspawn 3 mismatches, none on these rows
+(two session ends cut by the slot stop, one `objects.py` operate of the town waypoint clicked twice). The evidence is in
+the "Plan 0038 batch H5d" sections of
+[drlg/0005](../../findings/drlg/0005-collision.md#plan-0038-batch-h5d-run2026-10-27-sweep-collision) and
+[monsters/0002](../../findings/monsters/0002-room-population.md#plan-0038-batch-h5d-run2026-10-27-sweep-collision).
+
+- **Raised (11):** collision 5 (on 1 330 kept logs and the sessions: `spawnCol` 1 → `0x01C0` on 271 tests, 3 → `0` on
+  837), 8 (Harrogath, 1 044 cells only the `0x04` OR explains, two kept logs), 19 and 36 (271 item marks, one cell
+  `0x200`), 24 (sizes 0 and 1, 36 presets-window tests, 5 separating), 30's two statements (patterns 3 and 4, marks and
+  unmarks before / after), 45's 228, 298-with-flag-0 and 528 statements (each with separating cases); spawn 41.
+- **Raised in part (3):** collision 1 (the call from `Bit2TileMerge` with an active room, 37 calls; its write into an
+  active neighbour not reached), 21 (bit 13's writers, **with a correction**: `MonIsNpc` is `npc` **or** `inTown`, 0
+  mismatches on 38 338 creation marks against 254 for `npc` alone; the unit `+0xC4` bit 31 branch stays `[I]`), 46
+  (levels 46, 74 and 125: one level-seed step per lookup; the operand, `n` ≥ 2, not separated).
+- **Shortfall (2):** collision 9 and 11 (B1's clear and re-stamp): no call had its tile in a reachable room.
+- **Proposed d-none (1):** collision 45's 334 statement (`suckernest1`): no table names a class 334–337 as a creation,
+  and none of the 81 `.text` immediates 334–337 passes one to a creation (`sweep_h5d.py static`).
+- **H4b piece** (spawn 42, still counted as H4b): 228 met (4 presets-window offset-cell tests predicted); 334 as above.
+  The H4b follow-ups entry's H5d piece is annotated.
+
+| Row | Was | Now (proposed) | Why |
+|---|---|---|---|
+| drlg-collision 45, the 334 statement (`SpawnClassCellTest` for `suckernest1`) | a-run, H5d | **d-none** | No stock creation source of a `BaseId` 334 class (tables and code; drlg/0005 § H5d). The statement stays `[I]` as a reading. |
+
+Net effect on the totals (proposed): harness −1, d-none +1. Taken against `main` after merging it into the lane
+(`0e3f501`; the H4a review's totals above are the latest in this section): **static 567, harness 525, c-emu awaiting
+a batch 0, blocked 415** (d-none 289, d-edit 73, d-sim 28, d-2c 7, d-owner 10, d-0032 8), **deferred 2, raised 17:
+1 526.**
+
 ## 3. Blocked rows, for the plan's open questions
 
 - **d-2c, 14 statements** (items/tc 3, items/vendors 5, items/quest-drops 3, hirelings 1, player/creation 2). This is

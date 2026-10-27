@@ -36,3 +36,12 @@ this plan** (no harness batch left loads `mon-stats.gdb` for them): (b) stats 40
 not run, dropped. **Still open for H5d only:** spawn 42's remainder (the tomb and `suckernest1` sessions,
 `monspawn.py check` on the `MC` lines), in H5d's row of
 [inventory § 5](../plans/0038-inventory/README.md#harness-batches). The entry closes with H5d's review.
+
+*2026-10-27 (reverser, `lane/h5d`, plan 0038 batch H5d, run:2026-10-27-sweep-collision):* **The H5d piece.** 228
+(`sarcophagus`) met in the tomb session (tomb-r2, level 70): `monspawn.py`'s presets-window prediction holds on its four
+offset-cell `MC` tests, and the logger's before/after cells reproduce all six calls
+([monsters/0002 § H5d](../findings/monsters/0002-room-population.md#plan-0038-batch-h5d-run2026-10-27-sweep-collision)).
+334 (`suckernest1`) has no stock creation source (tables and code,
+[drlg/0005 § H5d](../findings/drlg/0005-collision.md#plan-0038-batch-h5d-run2026-10-27-sweep-collision)): proposed d-none, so
+no Act III session was run. Left open for the H5d review to close.
+

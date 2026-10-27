@@ -3363,3 +3363,24 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Next:** test the logger on one session (tomb), then the session list; `tools/sweep_h5d.py` (static 334 check,
     kept-log counts), manifest, findings in drlg/0005 and monsters/0002, the § 2.6 entry against current main,
     symbols, the review request, the spec-writer entry. Slot 1 stopped and restored.
+- **2026-10-27 — H5d (`collision`) filed (reverser, `lane/h5d`, harness slot 1, after merging `main` `0e3f501`).**
+  run:2026-10-27-sweep-collision: nine kept sessions (tomb, tomb-r2, tomb2, frigid, steppes, jail, throne, arcane,
+  rogue; expansion Normal, `UniqNova`), record in
+  [drlg experiments](../findings/drlg/experiments.md#run2026-10-27-sweep-collision), evidence in the "Plan 0038 batch
+  H5d" sections of [drlg/0005](../findings/drlg/0005-collision.md#plan-0038-batch-h5d-run2026-10-27-sweep-collision) and
+  [monsters/0002](../findings/monsters/0002-room-population.md#plan-0038-batch-h5d-run2026-10-27-sweep-collision).
+  - **Merge of `main`:** first at the resume (`cf25f22`, H4a's merge: no H5d row or tool touched; the plan log's
+    conflict kept both sides), then `3fa5209` and `0e3f501` before filing; backlog `archive` run after each.
+  - **Ledger (17):** raised 11 (collision 5, 8, 19, 24, 30 ×2, 36, 45's 228, 298-flag-0 and 528; spawn 41), raised in
+    part 3 (collision 1, 21 with a correction of the NPC rule, 46), shortfall 2 (collision 9, 11), proposed d-none 1
+    (collision 45's 334). Inventory § 2.6 H5d block; totals (proposed) static 567, harness 525, blocked 415, deferred 2,
+    raised 17: 1 526.
+  - **Design changes on the way:** a second waypoint hop from the waypoint the character stands on did not open the
+    list (first tomb session), so each session takes one hop from the starting town; a rogue session (Rogue
+    Encampment cows, pattern 4) was added; no Act III session (334 proposed d-none instead). Rows 5 and 8 rest on kept
+    logs.
+  - **Backlog:** review request
+    [h5d review](../backlog/2026-10-27-reverser-architect-review-lane-h5d-plan-0038-batch-h5d.md); spec-writer entry
+    [h5d raises](../backlog/2026-10-27-reverser-spec-writer-h5d-collision-raises-and-the-monisnpc-correction.md) (released
+    with the review); the H4b follow-ups entry annotated with the H5d piece.
+  - **Next:** the H5d review. Slot 1 stopped, saves restored (empty, no aside).
