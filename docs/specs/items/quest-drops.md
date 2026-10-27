@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, items/tc, items/quality, items/affixes, items/properties, items/sockets-runewords, items/cube, save/d2s]
 consumed_by: [items/tc, objects, monsters/pool]
-tags: {C: 159, I: 76, L: 2}
+tags: {C: 159, I: 80, L: 2}
 updated: 2026-10-27
 ---
 
@@ -199,7 +199,7 @@ B6. QuestTcSwitch(game, mon, ctx, tc: u16) → u16:                  [C] (fn:MON
       if q = 0 or row.TreasureClass4[d] = 0 or ctx = none or ctx.killer = none: return tc
       k ← ctx.killer
 B6a.  if k.type ≠ 0:                                                [C] (fn:sub_0058F0D0_MonsterOwner@0x0058F0D0, run:2026-10-17-sweep-quest-b6: a hireling and a summon)
-        p ← MonsterOwner(k)                                         ; unit type 1 only; else none
+        p ← MonsterOwner(k)                                         ; unit type 1 only; else none [I] (fn:sub_0058F0D0_MonsterOwner@0x0058F0D0; every logged non-player killer was a monster)
         if UnitHasExpState(k):                                      [I] (fn:sub_0063A690_UnitHasExpState@0x0063A690, fn:sub_00625760_StatListFindFlag@0x00625760, these three lines)
           sl ← StatListFindFlag(k, 0x800)
           if sl ≠ none: p ← GameFindUnit(game, sl.ownerType (+0x08), sl.ownerGuid (+0x0C))
@@ -391,7 +391,7 @@ D1. AndarielDeath (event 8, quest active, killer present):          [C] (fn:sub_
 
 - D1. [C] One kill with bits 0 and 1 clear drew two chipped picks and one standard pick (`gcy`, `skc`, `gsg`); the
   kills with bit 0 or bit 1 set drew nothing. The gems' ilvl is Andariel's level. (run:2026-10-16-quest-drops)
-- D1. [C] The same in every difficulty and game type: the script has no difficulty or expansion test, and each fresh
+- D1. [C] The same in the four difficulty and game-type states run: the script has no difficulty or expansion test, and each fresh
   kill drew two chipped picks and one standard pick, one `low mod 7` step each, in expansion Normal (three kills, one
   by the hireling: the owner's gems, B6a), Nightmare and Hell and in classic Normal. All six games started from one map
   seed and so one quest seed, and all drew `gcr`, `gcy`, `gsb`; the ilvl was Andariel's level of the difficulty (12,
@@ -524,8 +524,8 @@ D5. ForgeWave (timer), forge active:                               [C] (fn:sub_0
 ```
 D6. BaalDeath, killer present, killer word 40 bit 0 clear:          [C] (fn:sub_0058DF20_A5Q6_BaalDeath@0x0058DF20 0x0058E002–0x0058E079, run:2026-10-17-sweep-quest-b6: one player, Normal)
       for each qualifying player counted by the per-player callbacks (+0x88):      ; input count
-        amount ← RandLoHi(questSeed, 6000·d + 1500, min(6000·d + 3000, 0xFFFF))   ; draw: 6000d + 1500 … 6000d + 2999
-        DropGold(amount) at Baal                                   ; up to 32 piles; one for any Baal amount
+        amount ← RandLoHi(questSeed, 6000·d + 1500, min(6000·d + 3000, 0xFFFF))   ; draw: 6000d + 1500 … 6000d + 2999; d > 0 [I] (0x0058E002–0x0058E079; Normal only)
+        DropGold(amount) at Baal                                   ; up to 32 piles; one for any Baal amount [I] (fn:sub_0055A090_DropGoldAmount@0x0055A090; one pile logged)
 ```
 
 - D6. [C] Baal's fresh kill in Normal, one qualifying player: the bounds were 1 500 and 3 000, the quest seed was as
@@ -627,17 +627,18 @@ Step notes:
   2. So a chest reopened in the same game creates nothing, gold included. (0x00545850–0x005458BD,
   fn:sub_00599C10_A2Q2_ScrollChest@0x00599C10 0x00599C17, fn:sub_005B8860_A3Q2_HeartChest@0x005B8860 0x005B8867)
 - [C] **Duplicates and the difficulty.** A quest item (`quest` ≠ 0) whose base has `questdiffcheck` counts only when
-  its stat 356 is ≥ the game's difficulty, and `sub_00557AB0_ItemInitStats` gives every created item with `quest` ≠ 0
-  and `questdiffcheck` ≠ 0 stat 356 = the difficulty. So a Normal staff does not stop a Nightmare chest from making a
+  its stat 356 is ≥ the game's difficulty. So a Normal staff does not stop a Nightmare chest from making a
   new one: with a Normal `msf` (stat 356 = 0) held in a Nightmare game, the chest's `PlayerFindItemByCode('msf ')`
   read 0 against difficulty 1 and found none, and the chest made a new `msf`. The cube (`box`, `questdiffcheck`
   blank) does stop one: a held cube refused `box` in Normal. (fn:sub_00558110_PlayerFindItemByCode@0x00558110
-  0x005581D2–0x005581D8, fn:sub_00557AB0_ItemInitStats@0x00557AB0 0x00557E61–0x00557EC3, tbl:Misc.txt:questdiffcheck,
-  run:2026-10-27-sweep-quest-items)
+  0x005581D2–0x005581D8, tbl:Misc.txt:questdiffcheck, run:2026-10-27-sweep-quest-items)
 - [I] **Duplicates** are refused only by each script's own test: its quest bits, or "the player already has the item".
   That test is `sub_00558110_PlayerFindItemByCode`, over the cursor item and the inventory (not page 1). The "only",
-  the cursor branch and the cube in Nightmare or Hell were not run. (fn:sub_00558110_PlayerFindItemByCode@0x00558110
-  0x0055815C–0x0055816F)
+  the cursor branch and the cube in Nightmare or Hell were not run. `sub_00557AB0_ItemInitStats` gives every created
+  item with `quest` ≠ 0 and `questdiffcheck` ≠ 0 stat 356 = the difficulty, so an item made in a difficulty counts
+  there; the held staff of the run came from a tool-built save, so that write is this reading.
+  (fn:sub_00558110_PlayerFindItemByCode@0x00558110 0x0055815C–0x0055816F, fn:sub_00557AB0_ItemInitStats@0x00557AB0
+  0x00557E61–0x00557EC3)
 - [C] **`quest` − 1 is a quest object id, not a record word.** Every reader subtracts 1 and looks the object up by id
   (`sub_00543BD0_QuestsInvItemEvent` sends event 9 to it; `sub_00555D20_ItemQuestHook` hooks the item to it), and the
   pair table `{word, quest}` of `sub_0055CC90_ItemQuestGate` matches `g_QuestDescs` for all four pairs. So `hfh`
@@ -708,11 +709,11 @@ flowchart LR
 #### F1. Charsi's imbue (action 154, word 3 bit 1 set)
 
 ```
-F1. Imbue(player, item):                                          [C] (fn:NPC_MenuAction@0x00579D60 0x0057A020–0x0057A0CB, run:2026-10-16-quest-drops, all of F1)
+F1. Imbue(player, item):                                          [C] (fn:NPC_MenuAction@0x00579D60 0x0057A020–0x0057A0CB, run:2026-10-16-quest-drops, run:2026-10-27-sweep-quest-npc: the `ilvl > 5` bound and the ethereal flag; all of F1 but the refusal and the personal name)
       if not ItemCanImbue(item): refuse (message 7), the item goes back   [I] (0x00579FED; not reached: the client refuses first)
       rec ← ItemCreateRecFromItem(item)                            ; same base index, quality, flags +0x44, durability, …
       rec.flags80 |= 0x20 | (item is ethereal ? 0x04 : 0x02)       ; staff-mod bonus; force ethereal / no ethereal roll
-      keep the personalized name if item flag 0x1000000
+      keep the personalized name if item flag 0x1000000            [I] (fn:NPC_MenuAction@0x00579D60; no logged imbue had a personalized item)
       CursorItemConsume(item)
       rec.quality ← 6
       ilvl: i32 ← max(clvl, 1)
@@ -1100,7 +1101,7 @@ logs of run:2026-10-16-quest-drops (`workspace/logs/quests-s3-<seed>-….log`, p
   creation and an imbued `cap` is not.
 - ~~How `sub_0055A090_DropGoldAmount` splits Baal's amount into piles, and whether it draws.~~ Answered in
   [items/economy § G](economy.md#g-gold-payment-caps-piles-and-the-death-loss) (G9): piles of at most 2 000 000 000, at
-  most 32, one item creation each; Baal's gold itself stays unrun.
+  most 32, one item creation each; Baal's gold was run since, for one player in Normal (D6).
 - ~~The ilvl `DropItemAtUnit` gives a drop from an object in a level without a `Levels` record, and which
   `ItemCreateByQuality` case takes the Cow King's quality 0.~~ Answered: ilvl 1 (C1 note), case 2 (D3 note).
 - ~~The meaning of `ITEMS_GetType` = 4 and item flag `0x1000` in the three service tests, and whether the imbue

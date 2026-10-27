@@ -5041,7 +5041,52 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     [H6e2](../backlog/archive/2026-10-27-reverser-spec-writer-h6e2-quest-items-raises-and-the-khalim-chest.md) entries;
     annotated the [S2c entry](../backlog/2026-10-16-reverser-spec-writer-plan-0038-s2c-corrections-for-phase.md) ((b),
     (c) done; (a), (d)–(g) wait for cube, vendors, sockets-runewords); filed the
-    [counts entry](../backlog/2026-10-27-spec-writer-architect-s38q-quest-drops-counts-for-the-research-map.md) and the
-    [review request](../backlog/2026-10-27-spec-writer-architect-s38q-review-quest-drops-phase-3.md). Ledger row
+    [counts entry](../backlog/archive/2026-10-27-spec-writer-architect-s38q-quest-drops-counts-for-the-research-map.md) and the
+    [review request](../backlog/archive/2026-10-27-spec-writer-architect-s38q-review-quest-drops-phase-3.md). Ledger row
     added, usage "—".
   - **Next:** architect review of `lane/s38q`.
+- **2026-10-27 — `lane/s38q` review (architect): Phase 3 of items/quest-drops and the objects § L follow-up, accept
+  with fixes (7).** `main` (`fd841611`) was already the lane's base: the merge was empty and `backlog.py archive` moved
+  nothing. Static review: objdump on the pinned `game.exe`, no Ghidra, no harness.
+  - **Checked.** The diff restates 73 net `[C]` (+78, −5) and −10 `[I]` (+51, −61); the front matter matched the
+    gate's reader. Traced to the accepted ledgers within their reviews' scopes, more than a third of the new `[C]`:
+    S2c qd 7, 8 (both A1 bullets), 9, 14, 19, 20, 21, 28, 37, 38, 41, 47, 49; H6d qd 11 (the hireling and the Hydra, the
+    death event's owner), 13 (the records reached), 16 (Baal), 18, 22, 27; H4a qd 48 (five of 25 classes; the finding's
+    "five more" is four more plus Andariel, as the spec says); H6e2 qd 1, 30 (every `[C]` cell of § E's table against
+    the finding's ledger), 33 (E1 and E1b), 34, 35; H6e1 qd 2, 4, 5, 32, 39, 40, 42–46, 50, 51. objdump: Baal's
+    word-40 test and flag at 0x0058DF9A–0x0058DFA6 and `QUESTS_GetSeed` → `RNG_RandLoHi` at 0x0058E052/0x0058E05C; the
+    imbue's single quest test `GetState(rec, 3, 1)` at 0x00579FA3–0x00579FB1; the `boss` branch 0x00573E23–0x00573E40
+    (expansion word, `d` > 0, the class's flag byte); the tail's `ItemRepairAll` then `ItemIdentifyAttach` at
+    0x0057A0F9/0x0057A103 and `ItemCanRepair` first in `ItemRepairAll` (0x005761CB) with its `0x10` and `0x400000`
+    tests (0x0062E679–0x0062E691); the heart chest's mode call then `QUESTS_GetSeed` first (0x005B8867, 0x005B8878),
+    E1b's order. Every `fn:` spot-checked resolves in `re/symbols.csv`.
+  - **Fixes.** (1) overclaim: D1's `[C]` said "every difficulty and game type" for the four states H6d ran; scoped to
+    them (the H6d ruling). (2) overclaim: the duplicates `[C]` carried `ItemInitStats`' stat-356 write, which no run
+    reads back (the held Normal staff came from the tool-built `QuestMsfN`); the sentence moved to the `[I]` bullet.
+    (3)–(5) overclaim (rule 2): pseudocode lines no run reached under raised headers got inline `[I]`: B6a's `else
+    none` (every logged non-player killer was a monster), D6's `d > 0` and the one-pile split, F1's personal-name
+    line (F1's header now scoped "but the refusal and the personal name", with the H6e1 anchor for the `ilvl > 5`
+    bound and the ethereal flag). (6) overclaim: wiki/items-other-paths put Alkor's `xyz` (Normal) and Meshif's `g34`
+    (Nightmare) under "confirmed in all three difficulties"; scoped. (7) stale cross-reference: the struck pile
+    question still said "Baal's gold itself stays unrun". items/quest-drops is now **{C 159, I 80, L 2}**.
+  - **Rulings.** (1) **The operate slots stand `[C]`.** Slots 33, 12, 28, 39–41 and 57–59 are on H6e2's compared `QOW`
+    lines, inside `[C]` finding bullets the `lane/h6e2` and `lane/h6e2f` reviews accepted, and the sentence is part of
+    inventory row 1's original statement (`QUESTS_ObjectOperate` dispatches by class). It is reflected with row 1,
+    which stays raised in part (the other classes); the altar, Malus and orifice slots stay `[I]`. No inventory move.
+    (2) **§ E's `g34`/`xyz` row is a legitimate cross-batch raise, and the inventory now reflects it.** H6e1's checker
+    compares both gifts (`QGV` → `CF0` → `QGC`, 0 mismatches) in the logged word-20 states; a met piece with a compared
+    line moves at the review that finds it (the `lane/s38s` and `lane/h6e1` precedents). Inventory § 2.6: qd 30's
+    `g34`/`xyz` line H6e2 shortfall → **raised in part** (counted H6e2, no class change); H6e2's ledger is **raised 3,
+    raised in part 16, shortfall 5: 24**; items/0010's H6e2 ledger row annotated. (3) **The brain-chest scope holds.**
+    No spec or wiki states the chest's listing or which copy it follows; objects § L and quest-drops E1b state the
+    operate order only, which `brain4c` met with the room active in both copies. (4) The quality-7 split (point 3),
+    S2c (c) as H6d corrected it (point 4), qd 20 (point 5), D7's split (point 6) and economy F7 (point 7) stand as
+    filed. The Reimplementation notes' two new `[C]` restate E1/E1b and § E's `[C]` at the same scope; not inflation.
+  - **Research map.** The items/quest-drops row rewritten whole (C 159 / I 80 / L 2, Phase 3 done); the objects row's
+    stale "Khalim heart chest (eye and brain `[I]`)" rewritten for the three chests and `bbb`.
+  - **Totals** (recomputed once, against `main` `fd841611`): unchanged, **static 567, harness 519, c-emu awaiting a
+    batch 0, blocked 421** (d-none 295, d-edit 73, d-sim 28, d-2c 7, d-owner 10, d-0032 8), **deferred 2, raised 17:
+    1 526.**
+  - **Bookkeeping.** Review-fixes Seen lines: spec-writer 2 and 7, architect 8. The review request and the counts
+    entry closed. Ledger: the lane row filled (usage from the orchestrator: 315 288 tokens, 93 tools, 23 min; accept
+    with fixes, 7: overclaim 6, stale cross-reference 1); the review row added, usage "—".

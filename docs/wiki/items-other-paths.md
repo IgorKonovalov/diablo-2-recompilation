@@ -522,9 +522,9 @@ the client before it reached the server, so the server's own refusal is read fro
 
 Confirmed in all three difficulties ([§ F4](../specs/items/quest-drops.md#f4-given-items-quests_giveitem)):
 Akara's ring (magic in Normal, rare in Nightmare and Hell, at a fixed ilvl of 7, 30 or 60), Ormus's rare ring (ilvl 21,
-35 or 75), Qual-Kehk's one to three runes (by his quest bits), Malah's scroll, Alkor's potion, Meshif's golden bird,
-and Anya's class item from the Prison of Ice, picked with one quest-seed draw from a per-class list for the
-difficulty. Each is created like a store item, at the character's level unless a fixed level is given. Malah's
+35 or 75), Qual-Kehk's one to three runes (by his quest bits), Malah's scroll, and Anya's class item from the Prison
+of Ice, picked with one quest-seed draw from a per-class list for the difficulty. Alkor's potion (in Normal) and
+Meshif's golden bird (in Nightmare) were each confirmed in one difficulty. Each is created like a store item, at the character's level unless a fixed level is given. Malah's
 potion was not given: her talk offers it only in one quest state, which no run reached and whose cause is not known.
 
 ### The boss level exception

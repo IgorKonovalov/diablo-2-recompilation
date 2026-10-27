@@ -1495,7 +1495,7 @@ logs is `workspace/logs/h6e2/check-followup.txt` (`fe0f034f…`): **chest 8, obj
 | qd 30 `qhr`/`qey`/`qbr` | their chests | **raised in part** | all three with the held-part test passing (`qhr`; `qey` and `qbr` in the follow-up); the held-part refusal |
 | qd 30 `g33` | a dying monster | **shortfall** | not run |
 | qd 30 `j34` | a dying monster | **raised in part** | five creations at kills with word 19 = 0 (three in the follow-up); the refusal |
-| qd 30 `g34`, `xyz` | NPCs | **shortfall** | not run |
+| qd 30 `g34`, `xyz` | NPCs | **shortfall** (H6e2); **raised in part** at the `lane/s38q` review | not run here; met by H6e1's compared `QGV` calls ([§ Plan 0038 batch H6e1](#given-items-inventory-qd-2-4-5-32-45-46-50): Meshif's `g34` with `j34` held, Nightmare; Alkor's `xyz` with word 20 bit 1, Normal); the other word-20 states stay |
 | qd 30 `qf1` | the council | **shortfall** | not run |
 | qd 33 | E1 | **raised in part, with the correction** | `box`, `tr1`, `msf` in E1's order; `qhr`, and in the follow-up `qey` and `qbr`, in the corrected order (gold first); `vip` and the Khalim held-part refusal stay |
 | qd 34 | duplicates | **raised in part** | held cube refuses (Normal); Normal staff in Nightmare does not; the cursor branch, the cube in Nightmare/Hell and "only" stay |

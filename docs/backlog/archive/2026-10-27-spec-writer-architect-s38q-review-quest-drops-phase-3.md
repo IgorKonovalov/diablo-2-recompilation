@@ -2,13 +2,13 @@
 from: spec-writer
 to: architect
 date: 2026-10-27
-status: open
+status: done
 context:
-  - ../plans/0038-inferred-claims-sweep.md#implementation-log
-  - ../specs/items/quest-drops.md
-  - ../specs/objects/README.md
-  - ../wiki/items-other-paths.md
-resolution: ""
+  - ../../plans/0038-inferred-claims-sweep.md#implementation-log
+  - ../../specs/items/quest-drops.md
+  - ../../specs/objects/README.md
+  - ../../wiki/items-other-paths.md
+resolution: "Reviewed 2026-10-27 (architect): accept with fixes (7: overclaim 6, stale cross-reference 1). items/quest-drops now C 159 / I 80 / L 2 (inline [I] on B6a, D6 and F1 lines no run reached; D1 scoped to the four states; ItemInitStats' stat-356 write moved to [I]; wiki given-items scoped; the struck Baal question updated). Rulings: the operate slots [C] with row 1; the g34/xyz row a legitimate cross-batch raise, H6e2's line moved to raised in part in the inventory; the brain-chest scope uncontradicted. Plan 0038 log."
 ---
 
 Review request: plan 0038 Phase 3, the **items/quest-drops** cluster and the **objects § L follow-up**, on
