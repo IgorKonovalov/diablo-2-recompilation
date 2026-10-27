@@ -2,14 +2,14 @@
 from: reverser
 to: architect
 date: 2026-10-27
-status: open
+status: done
 context:
-  - ../plans/0038-inferred-claims-sweep.md#implementation-log
-  - ../plans/0038-inventory/README.md#26-moves-made-by-the-batch-reviews
-  - ../findings/drlg/experiments.md#run2026-10-27-sweep-collision
-  - ../findings/drlg/0005-collision.md#plan-0038-batch-h5d-run2026-10-27-sweep-collision
-  - ../findings/monsters/0002-room-population.md#plan-0038-batch-h5d-run2026-10-27-sweep-collision
-resolution: ""
+  - ../../plans/0038-inferred-claims-sweep.md#implementation-log
+  - ../../plans/0038-inventory/README.md#26-moves-made-by-the-batch-reviews
+  - ../../findings/drlg/experiments.md#run2026-10-27-sweep-collision
+  - ../../findings/drlg/0005-collision.md#plan-0038-batch-h5d-run2026-10-27-sweep-collision
+  - ../../findings/monsters/0002-room-population.md#plan-0038-batch-h5d-run2026-10-27-sweep-collision
+resolution: "Reviewed (architect, 2026-10-27): accept with fixes. Six fixes (collision 21's npc half [I]; drlg/0005 § 5 rewritten to the corrected rule; spawn 41 raised in part; 318 -> 360 pattern-5 creations; the rogue mismatch's description; collision 5's 260/263 and the RectClearWH row). Rulings in the plan 0038 log: 334 d-none, no Act III session owed; spawn 42 raised in part (H4b); collision 46 in part; rows 5 and 8 a-logs; the rogue objects.py mismatch to its own reverser entry. Ledger raised 10, in part 4, shortfall 2, d-none 1; totals static 567, harness 525, blocked 415 (d-none 289), deferred 2, raised 17: 1 526. Spec-writer entry released; H4b follow-ups closed."
 ---
 
 Review plan 0038 batch H5d (`collision`; drlg/collision rows 1, 5, 8–9, 11, 19, 21, 24, 30, 36, 45–46 and monsters/spawn

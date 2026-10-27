@@ -1701,8 +1701,11 @@
   H5d TileCollisionUpdate: no room holds the tile's top-left (no write) 37 (of 37 calls)
   ```
   (lines merged by hand from the output, counts as printed.) The two "log ends" mismatches are the last request of a
-  session cut by `slots.py stop`; the rogue one is `tools/objects.py`'s operate model on the town waypoint (class 119)
-  clicked a second time by `wpchain` while it was already in mode 2. None is on a row of this batch.
+  session cut by `slots.py stop`; the rogue one is `tools/objects.py`'s operate model on the Rogue Encampment waypoint (class 119;
+  corrected at the review, which read the log: not a second click). The unit was created in mode 1 (`OIX` at line 3225:
+  the arrival by waypoint, `OBJINIT_Waypoint`'s arrival-list match) and is in mode 2 at its one operate (`OO0` at line
+  4769, `wpchain`); no logged line moves it in between, so the change is presumably the queued object event 1, which the
+  model does not apply (reverser entry of the review). None is on a row of this batch.
   - `check/flag80-check.txt` (the two kept logs with Harrogath's activation dumps, `h4a-s1-4908-foothills` and
     `h5b … 3906-harro`): `collision: 3320 checks, 0 mismatches`; `entry flag 0x80: entries 88, dumps 16, cells only its
     0x04 OR explains (model exact there) 1044`, all in level 109.
@@ -1711,8 +1714,8 @@
     261, 262; every frog demon request (247–249, 1 777 `MTT` lines) takes `SpawnPosOnTile` (MTT) and makes no `MK0`.
   - `check/patterns.txt` (the same 1 339 logs): `creation marks 38338 (pattern 5 excluded); model (npc or inTown,
     interact clear) mismatches 0; older reading (npc only) mismatches 254`; patterns 3 and 4 at creation for classes
-    152, 179 (`cow`, pattern 4), 195, 196, 203, 294, 296, 359, 522, 567–569; the 318 pattern-5 creations are the
-    wraiths (38–40, 42, 631). `check/patterns-sessions.txt` alone: 1 544, 0 and 7, `cow` once.
+    152, 179 (`cow`, pattern 4), 195, 196, 203, 294, 296, 359, 522, 567–569; the 360 pattern-5 creations are the
+    wraiths (38–40, 42, 631; 318 as filed, recounted at the review). `check/patterns-sessions.txt` alone: 1 544, 0 and 7, `cow` once.
   - `check/sweep-static.txt`: no table names a suckernest class (334–337) as a creation (Levels 30 class columns,
     MonStats `minion1`/`minion2`/`spawn`, MonPreset `Place`, SuperUniques `Class`, Skills `summon`: 0); 81 `.text`
     sites with an immediate 334–337, classified in [drlg/0005 § Plan 0038 batch H5d](0005-collision.md#plan-0038-batch-h5d-run2026-10-27-sweep-collision).

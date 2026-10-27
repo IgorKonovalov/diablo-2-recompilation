@@ -1000,11 +1000,12 @@ Phase 3 note, not a class move). The three chained-model mismatches go to their 
 `9e221ed` after merging it (no inventory change since `e3ac907`): **static 567, harness 526, c-emu awaiting a batch 0,
 blocked 414** (d-none 288, d-edit 73, d-sim 28, d-2c 7, d-owner 10, d-0032 8), **deferred 2, raised 17: 1 526.**
 
-**H5d (filed 2026-10-27, reverser, `lane/h5d`): 17 statements of drlg/collision and monsters/spawn 41.**
+**H5d (filed 2026-10-27, reverser, `lane/h5d`; accepted with fixes at the `lane/h5d` review, 2026-10-27): 17 statements of drlg/collision and monsters/spawn 41.**
 run:2026-10-27-sweep-collision, nine kept sessions on slot 1 (expansion Normal, `UniqNova`; the 2026-10-25 launch
 stopped at start kept in `dev/`), stock data, logger `tools/gdb/collision-h5d.gdb` with before / after cell pairs.
 `collision.py check` on the nine logs: collision 26 913 checks, 0 mismatches; monspawn 3 mismatches, none on these rows
-(two session ends cut by the slot stop, one `objects.py` operate of the town waypoint clicked twice). The evidence is in
+(two session ends cut by the slot stop, one `objects.py` operate of the Rogue Encampment waypoint, created in mode 1 and in mode 2 at its one operate with no
+logged line between: corrected at the review, which routes it to a reverser entry). The evidence is in
 the "Plan 0038 batch H5d" sections of
 [drlg/0005](../../findings/drlg/0005-collision.md#plan-0038-batch-h5d-run2026-10-27-sweep-collision) and
 [monsters/0002](../../findings/monsters/0002-room-population.md#plan-0038-batch-h5d-run2026-10-27-sweep-collision).
@@ -1031,6 +1032,34 @@ Net effect on the totals (proposed): harness −1, d-none +1. Taken against `mai
 (`0e3f501`; the H4a review's totals above are the latest in this section): **static 567, harness 525, c-emu awaiting
 a batch 0, blocked 415** (d-none 289, d-edit 73, d-sim 28, d-2c 7, d-owner 10, d-0032 8), **deferred 2, raised 17:
 1 526.**
+
+**`lane/h5d` review (architect, 2026-10-27): accept with fixes.** The checks were re-run on the review side
+(`check/run-checks.sh` into the review's scratch, under `MemoryMax=4G`, and `sweep_h5d.py static`): all seven outputs
+byte-identical to the kept files; both manifests pass `sha256sum -c` and hash as the record cites (`f9f6c4c4…`,
+`1b3aba39…`); the eight tool hashes cited match the lane's tree. Spot reads of the pinned `Game.exe` with objdump:
+`MonIsNpc` (0x0063E89A–0x0063E8BD: `+0x0D` & `.rdata` 0x006CE268 = 1, then & 0x006CE270 = 4, then `+0xC4` bit 31),
+`PATH_PatternFromSize`'s flag-9 test and 1 → 3, 2 → 4 (0x006485B0–0x006485D7), `g_CollPatternBySize` {0, 1, 1, 2},
+`MonSpawnTry`'s `spawnCol` 1 branch (0x005B2B7E; 0x102–0x107 and 0x99 to the ring at 0x005B2B90–0x005B2BA6), the
+`SpawnClassCellTest` callers 0x005B2D90, 0x005F6AE5, 0x005F9F9D and 0x005E62BC, the `MK0` call at 0x005B2DA8, the
+`TileCollisionUpdate` call returning to 0x0066E91B, `UNIT_CollMarkRect`'s `RectOrWH` call at 0x00620ACA, and the
+`MosquitoNest` AI's 334 at 0x005E02E8–0x005E0322 (a `SpawnClassCellTest` argument, then `MonAiUseSkill`; only classes
+334–337 carry that AI). Fixes: (1) collision 21's `npc` half is `[I]`: the five stock rows with `npc` and without
+`inTown` (406, 527, 537–539) all have `interact`, so an `inTown`-only reading also scores 0 on the 38 338 marks; the
+`[C]` of the correction is its `inTown` half (drlg/0005 § 5, the summary and § H5d rewritten to the corrected rule,
+an open question added); (2) spawn 41 moved from raised to **raised in part** (its "others" half, `0xFFFF`, is d-none
+as drlg/collision row 3); (3) the record's 318 pattern-5 creations recounted to 360 (`check/patterns.txt`); (4) the
+rogue mismatch's description corrected (no second click: the unit left its creation in mode 1 and was in mode 2 at its
+one operate); (5) collision 5's refinement names 260 and 263 as not met; (6) drlg/0005's Functions-table row for
+`COLL_RectOrWH` / `COLL_RectClearWH` scoped to C / I. Rulings: rows 5 and 8 count as H5d raises, a-logs in effect (as
+H4b's kept-log raises); collision 45's 334 statement moves to **d-none**, and no Act III session is owed; spawn 42 is
+raised in part (206, 228, 298, 528 `[C]`, 334 d-none), still counted as H4b, a Phase 3 note; collision 46 stays raised in
+part (with one match per lookup every operand picks the same point; the remainder stays `[I]`, counted as H5d); the
+rogue mismatch goes to its own reverser entry
+([2026-10-27-architect-reverser-h5d-objects-py-waypoint-mode-after-arrival](../../backlog/2026-10-27-architect-reverser-h5d-objects-py-waypoint-mode-after-arrival.md)).
+**Ledger: raised 10, raised in part 4, shortfall 2, d-none 1.** One class move (collision 45's 334, harness −1, d-none
++1); totals recounted against `main` `0e3f501` (no inventory change on `main` since): **static 567, harness 525, c-emu
+awaiting a batch 0, blocked 415** (d-none 289, d-edit 73, d-sim 28, d-2c 7, d-owner 10, d-0032 8), **deferred 2,
+raised 17: 1 526.**
 
 ## 3. Blocked rows, for the plan's open questions
 

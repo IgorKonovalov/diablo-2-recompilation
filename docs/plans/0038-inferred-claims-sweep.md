@@ -3380,7 +3380,44 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     Encampment cows, pattern 4) was added; no Act III session (334 proposed d-none instead). Rows 5 and 8 rest on kept
     logs.
   - **Backlog:** review request
-    [h5d review](../backlog/2026-10-27-reverser-architect-review-lane-h5d-plan-0038-batch-h5d.md); spec-writer entry
+    [h5d review](../backlog/archive/2026-10-27-reverser-architect-review-lane-h5d-plan-0038-batch-h5d.md); spec-writer entry
     [h5d raises](../backlog/2026-10-27-reverser-spec-writer-h5d-collision-raises-and-the-monisnpc-correction.md) (released
     with the review); the H4b follow-ups entry annotated with the H5d piece.
   - **Next:** the H5d review. Slot 1 stopped, saves restored (empty, no aside).
+- **2026-10-27 — `lane/h5d` review (architect): accept with fixes.** H5d (`collision`, 17 statements), reviewed at
+  `c19f55f` with `main` `0e3f501` already merged (the merge was a no-op; backlog `archive` clean). Checks re-run on the
+  review side (`check/run-checks.sh` into scratch, under `MemoryMax=4G`, and `sweep_h5d.py static`): the seven outputs
+  byte-identical to the kept ones; `h5d-manifest.sha256` and `h5d-manifest-dev.sha256` pass and hash as cited; the
+  eight cited tool hashes match. objdump spot reads of the pinned `Game.exe` (list in inventory § 2.6, H5d review
+  paragraph), no Ghidra.
+  - **Fixes (6):** collision 21's `npc` half `[I]`: the five stock `npc` rows without `inTown` (406, 527, 537–539) all
+    have `interact`, so an `inTown`-only reading also scores 0 mismatches on the 38 338 marks (overclaim); drlg/0005
+    § 5's *Pattern from size* rewritten to the corrected rule instead of the old rule plus a note, with the summary line
+    and an open question (stale cross-reference); spawn 41 raised → raised in part, its "others" half (`0xFFFF`) d-none
+    (overclaim); the record's 318 pattern-5 creations → 360 (miscount); the rogue `objects.py` mismatch was not a second
+    click: the waypoint left its creation in mode 1 (arrival by waypoint) and was in mode 2 at its one operate, no
+    logged line between (misread); collision 5's 260 and 263 named as not met, and the Functions-table row of
+    `COLL_RectOrWH` / `COLL_RectClearWH` scoped to C / I (omission, counted once).
+  - **Rulings.** (a) **Collision 21's correction stands** (`MonIsNpc` = `npc` or `inTown`, else `+0xC4` bit 31, read
+    at 0x0063E89A–0x0063E8BD): the `[C]` is the `inTown` half, separated by 254 marks; the `npc` half and the `+0xC4`
+    branch stay `[I]` (only an edited row, d-edit, separates the `npc` half). Raised in part, as filed. (b) Rows 5 and 8
+    rest on kept logs, a-logs in effect, counted as H5d raises (the H4b precedent); row 5 adds 43 live mask-0 tests,
+    row 8 the 1 044 cells only the `0x04` OR explains, with the model exact cell for cell. (c) **Collision 46 stays raised
+    in part**: with one match per lookup every operand picks the same point, so only the step (one seed draw per
+    lookup, and none on zero matches) is `[C]`; the operand stays `[I]`, counted as H5d. (d) **Collision 45's 334
+    statement → d-none**, and no Act III session is owed: no table names a class 334–337 as a creation, and the one code
+    path that passes 334 (the `MosquitoNest` AI, 0x005E02E8–0x005E0322) runs only on classes 334–337 and calls
+    `SpawnClassCellTest` then `MonAiUseSkill`. (e) **Spawn 42 is raised in part** (206, 228, 298, 528 `[C]`; 334 d-none),
+    still counted as H4b, a Phase 3 note (as stats 21 at H4a). (f) The rogue mismatch touches no H5d row but is a model
+    gap that will recur on every waypoint arrival: its own reverser entry,
+    [2026-10-27-architect-reverser-h5d-objects-py-waypoint-mode-after-arrival](../backlog/2026-10-27-architect-reverser-h5d-objects-py-waypoint-mode-after-arrival.md).
+    The two "log ends" mismatches are session cuts, no entry. (g) The seven symbols I → C stand (rule 14: each return or
+    cell effect logged and compared); `MonIsNpc` stays I, and `COLL_RectClearWH` stays I.
+  - **Ledger:** raised 10, raised in part 4, shortfall 2, d-none 1. Totals against `main` `0e3f501`: static 567,
+    harness 525, c-emu 0, blocked 415 (d-none 289), deferred 2, raised 17: 1 526.
+  - **Backlog:** review request closed (archive); spec-writer entry
+    [2026-10-27-reverser-spec-writer-h5d-collision-raises-and-the-monisnpc-correction](../backlog/2026-10-27-reverser-spec-writer-h5d-collision-raises-and-the-monisnpc-correction.md)
+    released with the review's changes; the H4b follow-ups entry
+    [2026-10-16-architect-reverser-plan-0038-h4b-review-follow-ups](../backlog/archive/2026-10-16-architect-reverser-plan-0038-h4b-review-follow-ups.md)
+    closed (its last piece, H5d's, is settled); the new reverser entry above.
+  - **Next:** the Phase 3 re-tag of the H5d rows (spec-writer); the next harness batch per the run order.

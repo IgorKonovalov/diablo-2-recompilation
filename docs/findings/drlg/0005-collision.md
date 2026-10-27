@@ -25,7 +25,8 @@ population pass, so the claims it exercised are `[C]`. What it did not reach sta
 - [C] **Unit marks.** Players (`0x80`) and monsters (`0x100`) mark through a footprint *pattern* chosen from their size:
   size 0 marks nothing; size 1 or 2 marks a plus of five cells plus `0x1000` on the centre; size 3 marks the 3×3 square plus
   `0x1000` on the plus. A non-interactive NPC uses `0x2000` instead of `0x1000` (reproduced at plan 0038 H5d, where "NPC" is corrected to
-  MonStats `npc` or `inTown`: § Plan 0038 batch H5d). A wraith is created with
+  MonStats `npc` or `inTown`: the `inTown` half separated, the `npc` half and the unit `+0xC4` bit 31 by the code read only;
+  § Plan 0038 batch H5d). A wraith is created with
   the plus only (pattern 5), but **the post-create pattern refresh gives it pattern 1** (plus and `0x1000` centre) before the
   next placement (§ 5, corrected at Phase 2). Players `[I]` (seen only in the R3 residue). Ground items mark one cell `0x200`.
   Objects mark a `SizeX`×`SizeY` rectangle when `HasCollision` is set for their mode, with `0x400`, `0x800`, `0x4`, `0x2` or `0x8000`
@@ -199,7 +200,7 @@ r2 and corrected in place (§ 5 table, § 6 rows 6 and 15), and both are require
 | `0x0064DDB0` / `0x0064DB70` / `0x0064CAF0` / `0x0064CAA0` / `0x0064CB90` / `0x0064CBE0` | `COLL_CellOr` / `COLL_CellClear` / `COLL_CellOrA` / `COLL_CellClearA` / `COLL_CellOrAt` / `COLL_CellClearAt` | one-cell OR / AND-NOT | I |
 | `0x0064DC80` / `0x0064DA40` | `COLL_PlusOr` / `COLL_PlusClear` | plus of five cells, each cell looked up on its own | I |
 | `0x0064DDF0` / `0x0064DBC0` | `COLL_Square3Or` / `COLL_Square3Clear` | 3×3 square | I |
-| `0x0064DE30` / `0x0064DC00` | `COLL_RectOrWH` / `COLL_RectClearWH` | w×h rectangle centred as `x − w/2 .. x − w/2 + w − 1`; 1×1 is one cell | C (objects § 14; items 1×1, plan 0038 H5d) |
+| `0x0064DE30` / `0x0064DC00` | `COLL_RectOrWH` / `COLL_RectClearWH` | w×h rectangle centred as `x − w/2 .. x − w/2 + w − 1`; 1×1 is one cell | C / I (`COLL_RectOrWH`: objects § 14, items 1×1 at plan 0038 H5d; `COLL_RectClearWH` not checked) |
 | `0x0064EA00` / `0x0064EBA0` | `COLL_SizeMark` / `COLL_SizeUnmark` | mark by size 1..3 (scheme A) | I |
 | `0x0064EA90` / `0x0064EC10` | `COLL_PatternMark` / `COLL_PatternUnmark` | mark by pattern 0..5 with the `0x1000`/`0x2000` extras (scheme B) | C (patterns 3 and 4 before / after, plan 0038 H5d) |
 | `0x0064ED20` / `0x0064EDA0` | `COLL_SizeMove` / `COLL_PatternMove` | unmark, test, re-mark (movement; named only) | I |
@@ -379,8 +380,11 @@ RectOrWH(r, x, y, w, h, m): w = h = 1: CellOr(m); else RectOr({x - w/2, y - h/2,
   cells outside every reachable room are dropped. Unmarking uses the same footprint with AND-NOT. No bit is reference-counted:
   unmarking one unit clears a `0x1000` that an overlapping unit also set. (run:2026-10-14-collision, fn:COLL_PlusOr@0x0064DC80, fn:COLL_PatternUnmark@0x0064EC10, fn:UNIT_CollUnmark@0x00649560)
 - [C] **Pattern from size** (`PATH_PatternFromSize`, at path creation and on revival): `g_CollPatternBySize` = {0: 0, 1: 1, 2: 1, 3: 2}, any
-  size > 3 (unsigned) gives 1. For a monster with MonStats `npc` and not `interact`, 1 → 3 and 2 → 4. **Corrected at plan 0038 H5d:** `MonIsNpc`
-  is `npc` **or** `inTown` (else the unit's `+0xC4` bit 31, `[I]`), checked on 38 338 creation marks (§ Plan 0038 batch H5d). (run:2026-10-14-collision, fn:PATH_PatternFromSize@0x00648580, data:g_CollPatternBySize@0x006EB3DC, fn:sub_0063E860_MonIsNpc@0x0063E860, fn:MONSTATS_FlagTest@0x00457490, tbl:MonStats.txt:npc, tbl:MonStats.txt:interact)
+  size > 3 (unsigned) gives 1. For a monster for which `MonIsNpc` holds and MonStats `interact` is clear, 1 → 3 and 2 → 4.
+  **Corrected at plan 0038 H5d** (this said MonStats `npc`): `MonIsNpc` is MonStats `npc` **or** `inTown`, else the unit's
+  `+0xC4` bit 31 (0x0063E89A–0x0063E8BD). `[C]` for `inTown`: 38 338 creation marks predicted, 254 of them (`inTown` without
+  `npc`) missed by the `npc`-only reading. `[I]` for the `npc` half and the `+0xC4` branch: every stock row with `npc` and
+  without `inTown` (406, 527, 537–539) also has `interact`, so no creation separates them (§ Plan 0038 batch H5d). (run:2026-10-14-collision, run:2026-10-27-sweep-collision, fn:PATH_PatternFromSize@0x00648580, data:g_CollPatternBySize@0x006EB3DC, fn:sub_0063E860_MonIsNpc@0x0063E860, fn:MONSTATS_FlagTest@0x00457490, tbl:MonStats.txt:npc, tbl:MonStats.txt:inTown, tbl:MonStats.txt:interact)
 - [I] **Sizes** (`UNIT_GetSizeX`): player 2, monster MonStats2 `SizeX` (`+0x08`, signed byte), object Objects `SizeX` (`+0xD0`), missile Missiles `+0x18A`, item 1,
   type 5 0. `UNIT_GetSizeY` reads MonStats2 `+0x09` and Objects `+0xD4`. Only objects use Y. (fn:UNIT_GetSizeX@0x00620510, fn:UNIT_GetSizeY@0x006205A0, tbl:MonStats2.txt:SizeX)
 - [I] **Masks** (fn:PATH_DynamicCreate@0x00649D00, fn:UNIT_GetCollMask@0x006209D0):
@@ -970,7 +974,7 @@ the grid is compared with the game's own cells, not with the activation model.
   earlier runs and the nine sessions, `MonSpawnTry`'s `CollisionTest` (the `MK0` line at 0x005B2DA8) carried mask
   `0x01C0` on all 271 calls of a `spawnCol` 1 class and `0` on all 837 calls of a `spawnCol` 3 class (the barricades
   432–435, 524, 525), `0x3F11` on all 236 of `spawnCol` 2 and `0x3C01` on all 172 925 others: one mask per `spawnCol`
-  (`check/masks.txt`). Refinement: only classes 153 (`hellmeteor`) and 258–263 (the tentacles) reach the ring with
+  (`check/masks.txt`). Refinement: only classes 153 (`hellmeteor`) and 258–263 (the tentacles; 260 and 263 not met, the range test covers them) reach the ring with
   `0x01C0`: 0x005B2B7E tests `spawnCol` = 1, and 0x005B2B90–0x005B2BA6 send every other `spawnCol` 1 class (the frog
   demons 247–249: 1 777 `MTT` lines, no `MK0`) to `SpawnPosOnTile`. The 43 mask-0 tests of the sessions were all
   predicted and returned 0. (fn:sub_005B2A00_MonSpawnTry@0x005B2A00, tbl:MonStats2.txt:spawnCol, run:2026-10-27-sweep-collision)
@@ -1017,7 +1021,10 @@ the grid is compared with the game's own cells, not with the activation model.
   clear. Checked on every creation mark of the 1 339 logs (`check/patterns.txt`): 38 338 creation marks (wraiths'
   pattern 5 apart), 0 mismatches with `npc` or `inTown`; the `npc`-only reading misses 254, among them `cow` (179,
   `inTown` only, size 3 → pattern 4), `act3hire` (359), `act5barb1` (522) and `injuredbarb1`–`3` (567–569, pattern 3).
-  [I] The unit `+0xC4` bit 31 branch: no creation separated it (every upgraded class has `npc` or `inTown`).
+  [I] **The `npc` half** (review of `lane/h5d`): every upgraded class has `inTown`, and the five stock rows with `npc`
+  and without `inTown` (406 `izualghost`, 527 `drehyaiced`, 537–539 `ancientstatue1`–`3`) all have `interact`, so an
+  `inTown`-only reading also scores 0 mismatches; the `npc` test (`.rdata` 0x006CE268 = 1, bit 0 of `+0x0D`, at
+  0x0063E89E) rests on the code read. [I] The unit `+0xC4` bit 31 branch: no creation separated it either.
   (fn:sub_0063E860_MonIsNpc@0x0063E860, fn:PATH_PatternFromSize@0x00648580, fn:MONSTATS_FlagTest@0x00457490,
   tbl:MonStats.txt:npc, tbl:MonStats.txt:inTown, tbl:MonStats.txt:interact, run:2026-10-27-sweep-collision)
 - **Row 46, `LevelPointPick` in other `Position` levels.** [C] Each lookup steps the level seed once: `LPP0`/`LPP1` were
@@ -1029,7 +1036,9 @@ the grid is compared with the game's own cells, not with the activation model.
 **Shortfall (2):** rows 9 and 11 (B1's clear and re-stamp, the plain AND-NOT): none of the 37 calls had its tile in a
 room it could reach (row 1). A level where a bit-2 merge reaches an already active neighbour is still to find.
 
-**Proposed d-none (1): row 45's `BaseId` 334 (`suckernest1`).** [I] No stock source creates a class whose `BaseId` is
+**Proposed d-none (1): row 45's `BaseId` 334 (`suckernest1`)** (accepted at the `lane/h5d` review, which also read the
+`MosquitoNest` AI's call at 0x005E0322: it passes 334 as the class to `SpawnClassCellTest` and then calls
+`sub_005DEAD0_MonAiUseSkill`, no creation of a 334 class; only classes 334–337 have that AI). [I] No stock source creates a class whose `BaseId` is
 334 (classes 334–337): no table names one (`check/sweep-static.txt`: Levels' 30 class columns, MonStats `minion1`,
 `minion2` and `spawn`, MonPreset `Place`, SuperUniques `Class`, Skills `summon`, 0 cells), and of the 81 `.text`
 instructions with an immediate 334–337 (r2 `/ai`, displacements dropped) none passes it as a class to a creation: in
@@ -1095,5 +1104,7 @@ on the centre, as pattern 3 does for any non-zero mask.
   the tile in a reachable room.
 - (H5d) `MonIsNpc`'s third branch, the unit's `+0xC4` bit 31: which units carry it, and whether any non-`npc`, non-`inTown`
   class takes patterns 3 and 4 through it.
+- (H5d review) `MonIsNpc`'s `npc` half: no stock row has `npc` without `inTown` and with `interact` clear, so only an edited
+  MonStats row (d-edit) would separate it from an `inTown`-only reading.
 - ~~The `0x30000` and `0x10..0x800` DRLG room flags behind the warp points are set by the warp builder, which is not read (`drlg/warps`).~~
   Read and reproduced in [drlg/0007](0007-warps.md) (§ 1, § 5): `DRLG_PresetMapScan` sets them from the DS1 and the seams.

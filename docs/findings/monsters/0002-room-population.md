@@ -848,7 +848,8 @@ Checks: `tools/sweep_h4b.py` (`tick`, `tentacle`, `masks`, `hwt`) and `tools/mon
   session 3 (fn:sub_005FD350_SpawnClassCellTest@0x005FD350, run:2026-10-15-mon-stats, run:2026-10-14-mon-special,
   run:2026-10-16-sweep-monsters-b; the session 3 pair found by the review's re-run of `tools/monstats.py check`). **Remainder
   `[I]`:** 228 (`sarcophagus`, the Act II tombs; session 6 found no way into one) and 334 (`suckernest1`, not met).
-  *Plan 0038 H5d:* 228 met and reproduced, 334 proposed d-none (§ Plan 0038 batch H5d).
+  *Plan 0038 H5d:* 228 met and reproduced, 334 d-none (accepted at the `lane/h5d` review: spawn 42 raised in part,
+  § Plan 0038 batch H5d).
   Inventory note: 528 was filed "stays d-edit"; it is stock-reachable.
 
 ## Plan 0038 batch S3b (2026-10-16)
@@ -1036,16 +1037,19 @@ Harness batch H5d of [plan 0038](../../plans/0038-inferred-claims-sweep.md): mon
 [drlg experiments § run:2026-10-27-sweep-collision](../drlg/experiments.md#run2026-10-27-sweep-collision); the drlg side
 is [drlg/0005 § Plan 0038 batch H5d](../drlg/0005-collision.md#plan-0038-batch-h5d-run2026-10-27-sweep-collision).
 
-- **spawn 41** (`CollisionTest` sizes 0, 1 and others) **raised.** [C] Sizes 0 and 1 test one cell in placement: in the
+- **spawn 41** (`CollisionTest` sizes 0, 1 and others) **raised in part** (filed raised; the review moved it: the
+  "others" half has no stock observable). [C] Sizes 0 and 1 test one cell in placement: in the
   presets window `tools/monspawn.py` predicted 26 size-0 tests (classes 327, 517, 545 `baaltaunt`) and 10 size-1 tests
   (228 `sarcophagus`, 371), results 0 and non-zero in both, 0 mismatches; in 4 size-0 and 1 size-1 case a plus test of
-  the same cells gives non-zero where the game gave 0 (`check/collision-check.txt`). Sizes other than 0–3 stay d-none
-  (no MonStats2 record has one, § Plan 0038 batch S3b). (fn:sub_0064D9B0_CollisionTest@0x0064D9B0,
+  the same cells gives non-zero where the game gave 0 (`check/collision-check.txt`). [I] Sizes other than 0–3
+  (`0xFFFF`) stay as read, d-none (no MonStats2 record has one, § Plan 0038 batch S3b; drlg/collision row 3). (fn:sub_0064D9B0_CollisionTest@0x0064D9B0,
   fn:sub_005B2A00_MonSpawnTry@0x005B2A00, run:2026-10-27-sweep-collision)
 - **spawn 42's remainder** (H4b piece). [C] 228: `monspawn.py`'s presets-window prediction of the `MC` lines holds on the
   four `sarcophagus` offset-cell tests (`SpawnClassCellTest: BaseId 228 offset-cell tests 4`), and the logger's own
   before/after cells add the AI caller (drlg/0005 § H5d, row 45). [I] 334 (`suckernest1`): no stock source creates a
-  `BaseId` 334 class (drlg/0005 § H5d, the static check), so the remainder is proposed **d-none**.
+  `BaseId` 334 class (drlg/0005 § H5d, the static check), so the remainder is proposed **d-none**. *Review of
+  `lane/h5d`:* d-none accepted; spawn 42 is **raised in part** (206, 228, 298 and 528 `[C]`, 334 `[I]` as read, d-none),
+  still counted as H4b (a Phase 3 note, not a class move).
   (fn:sub_005FD350_SpawnClassCellTest@0x005FD350, run:2026-10-27-sweep-collision)
 - **Correction carried here** (§ 6 placement: the in-pass mark's pattern): an `inTown` class without `npc` also takes
   patterns 3 and 4 (drlg/0005 § H5d, row 21). (fn:sub_0063E860_MonIsNpc@0x0063E860, fn:PATH_PatternFromSize@0x00648580)

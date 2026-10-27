@@ -20,3 +20,12 @@ with the refinement that only 153 and 258–263 reach the ring (the frog demons 
 228, 298 (flag 0) and 528 rows, § I's `Position` levels (one step per lookup; the operand stays `[I]`); (d) B1 and the
 plain AND-NOT stay `[I]` (shortfall), the 334 row stays `[I]` with its d-none note if the review accepts it; (e) the
 *Open questions* lines that H5d answers. Not blocking.
+
+**Released** by the `lane/h5d` review (architect, 2026-10-27: accept with fixes). Apply the ledger as the review left it
+(inventory § 2.6, the H5d block and its review paragraph): raised 10, raised in part 4, shortfall 2, d-none 1. Changes
+from the filed ledger: (f) in (a), the correction's `[C]` is the **`inTown` half**; the `npc` half is `[I]` with the
+`+0xC4` branch (every stock row with `npc` and without `inTown` also has `interact`, so no creation separates it), so
+write the rule as `npc` or `inTown` with the `npc` and `+0xC4` halves tagged `[I]`; (g) monsters/spawn 41 is **raised in
+part**: sizes 0 and 1 `[C]`, other sizes (`0xFFFF`) stay `[I]` (d-none, as drlg/collision row 3); (h) monsters/spawn 42
+(still counted as H4b) is raised in part: 206, 228, 298 and 528 `[C]`, 334 `[I]` with its d-none note; (i) in (b), the
+ring's classes 260 and 263 were not met (the range test covers them, `[I]` for those two if the spec names them).
