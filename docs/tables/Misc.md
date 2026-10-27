@@ -218,6 +218,7 @@ has no column for (4 983 cells, all at the missing-column default).
   item rows have `version` 0: weapons 175, armor 92, misc 94; the rest are 100 (misc one row 109).
   ([data/0001 § Plan 0039 batch P1b](../findings/data/0001-excel-loader.md#plan-0039-batch-p1b-2026-10-17) Q3,
   fn:ITEMS_LoadItemTables@0x006315D0, data:g_pClassicItemIndex@0x0096CA78, tbl:Weapons.txt:version)
+- *plan 0046 readers* (`pSpell`): `[C]` the item-use table `g_ItemUseFns` holds entries 10 and 11 (data, [skills/0015 § 1](../findings/skills/0015-item.md#1-the-table-slots-the-stock-rows-and-the-callers)); `[I]` both cast skill 47 (Fire Ball) at level 1, effect 0, through `ItemCastAtUnit` or `ItemCastAtXY` (10 at the user's target unit or its path point, 11 at the stack point) (fn:sub_005BF170_ItemUseCastFireBall@0x005BF170, fn:sub_005BF1F0_ItemUseCastFireBallXY@0x005BF1F0, data:g_ItemUseFns@0x00741790); `[C]` (data) no stock row has `pSpell` 10 or 11: the values are 1, 2, 3, 5, 6, 7, 8, 9 (tbl:Misc.txt:pSpell).
 
 ## Fields the quality roll reads (plan 0010 Phase 0)
 
