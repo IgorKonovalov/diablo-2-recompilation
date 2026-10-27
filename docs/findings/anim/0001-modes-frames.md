@@ -145,7 +145,7 @@ Data: `g_MonModeRecords` `0x006E2260` (21 × 16 B), `g_MonModePerFrame` `0x006E2
 | `struct:Unit+0x40` | s32 | the mode byte of the current sequence frame | `UNIT_SeqReadFrame` |
 | `struct:Unit+0x44` | s32 | frame, 8.8; in a scheduled mode the schedule's game frame `<< 8` | `UNIT_AnimInit`, `SUNIT_AnimInit` (0), `SUNIT_ScheduleModeEvents`, `UNIT_AnimAdvance`, `UNIT_SeqReadFrame` |
 | `struct:Unit+0x48` | s32 | length, frames << 8; objects unshifted; sequences the frames left `<< 8` | `UNIT_AnimInit`, `SUNIT_AnimInit`, `UNIT_SeqInit`, `UNIT_AnimAdvance` (sequence) |
-| `struct:Unit+0x4C` | s16 | rate, 8.8 per frame, clamped to `[0, 0x7FFF]` | `UNIT_AnimSetRate`, `UNIT_AnimInit` (objects, missiles, items) |
+| `struct:Unit+0x4C` | s16 | rate, 8.8 per frame, clamped to `[0, 0x7FFF]` | `UNIT_AnimSetRate`, `UNIT_AnimInit` (objects, missiles, items), `0x00621780` (client; one server site, a missile's: [anim/0002 § 5](0002-rates.md#5-who-calls-it-and-the-updateanimrate-bit)) |
 | `struct:Unit+0x4E` | u8 | event byte of the frames last crossed (1–4), else 0 | `UNIT_AnimInit` (0), `SUNIT_AnimInit` (0), `UNIT_AnimAdvance`, `UNIT_SeqReadFrame` |
 | `struct:Unit+0x50` | ptr | the `animdata.d2` record (`re/types/anim.h` `AnimDataRec`) | `UNIT_AnimSetRecord` |
 

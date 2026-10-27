@@ -33,7 +33,8 @@ after `UNIT_AnimTransform` ([anim/0001 § 2](0001-modes-frames.md#2-records-the-
   knockback `r = vbase`; fixed (death modes) `r = spd`; default (every other mode) `r = spd · clamp(stat 69, 15, 175) / 100`.
   (fn:UNIT_AnimSetRate@0x00623F50, 0x00623FCB–0x0062438B, tbl:ItemStatCost.txt:Stat)
 - [C] **The rate bonus** `B_i = k · s / (k + s)` (signed 32-bit `imul`, `idiv` truncating toward zero) when `s ≠ 0`,
-  else 0, with `s` the unit's full stat and `(k, stat)` = (120, 93 `item_fasterattackrate`), (120, 99
+  else 0, with `s` = `sub_00625500_UnitGetStat(unit, stat, 0)` (that this is the unit's full stat is the § 2 reading,
+  `[I]`) and `(k, stat)` = (120, 93 `item_fasterattackrate`), (120, 99
   `item_fastergethitrate`), (120, 105 `item_fastercastrate`), (120, 102 `item_fasterblockrate`), (150, 96
   `item_fastermovevelocity`) from the image table `g_AnimRateBonus`. As a map (ADR-0015): 3 413 emulated cases over
   the six entries, `s` from −119 to 65 535 and 240 random 32-bit values, 0 mismatches, 0 stops, no read outside the
@@ -143,8 +144,9 @@ else                                          { default;   +0x4C = r; }
   for a type other than 0 or 1 (0x006214C5–0x006214DF); in the code read, `UNIT_AnimInit`'s object and missile
   branches do not call `UNIT_AnimSetRate` (anim/0001 § 3), and no caller in `p50b-calls.txt` passes one.
   (fn:sub_006214A0_AnimRateIsMove@0x006214A0)
-- [I] **Floor and cap.** Every branch but block ends `q ≤ 0 (signed) → 0; q ≥ 0x7FFF → 0x7FFF` (`test; setle; sub 1;
-  and; cmp 0x7FFF; jl`) and stores the low word in `+0x4C`; cast and attack store the sign-extended word in `+0x3C`
+- [I] **Floor and cap.** Every branch ends `q ≤ 0 (signed) → 0; q ≥ 0x7FFF → 0x7FFF` (`test; setle; sub 1;
+  and; cmp 0x7FFF; jl`) and stores the low word in `+0x4C`, block after its `q < 1 → 1` (it joins the default
+  branch's floor at 0x00624369; *2026-10-27, `lane/p50b` review:* "every branch but block" corrected); cast and attack store the sign-extended word in `+0x3C`
   too. (0x00623FF6–0x00624016, 0x006242E2–0x00624302, 0x00624369–0x00624381)
 
 ### 2. The rate bonus
@@ -199,7 +201,8 @@ return s;
   (spd · X) mod 2³² / 100`; `q < 1 → 1` (`cmp 1; jae`), then the floor and cap. No upper bound on `X`. (0x0062403D–0x00624084,
   fn:UNIT_HasState@0x00639DF0)
 - [I] Get-hit, (0, 4) or (1, 3): `X = B_FHR + 50`, the same divide, floor and cap. A negative `X` (FHR from −119 to
-  −36) gives the cap, as in § 3.1; so does a block factor below 0 (FBR from −119 to −36).
+  −36) gives the cap, as in § 3.1; so does a block factor below 0 (FBR from −119 to −36; under state 101 `X = B_FBR + 100`,
+  so from −119 to −55, as for cast).
   (0x0062409F–0x006240B1, 0x0062435C–0x00624381, `p50b-bp.txt` `EDGE gethit_factor_negative`, `block_factor_negative`)
 
 #### 3.3 Knockback
@@ -340,12 +343,20 @@ start stores at 0x005D91EC)
 
 - [I] **No stat write calls it.** `ITEMS_DetachFromOwner` is not a caller, so unequipping an item leaves the rate
   until the next call (a mode start, typically). (`p50b-calls.txt`; fn:ITEMS_DetachFromOwner@0x0055C730)
+- [I] **A second `+0x4C` writer.** `0x00621780(unit, q)` (stdcall, unnamed) stores `q` floored at 0 and capped at
+  `0x7FFF` into `+0x4C`, with no record and no stat read (0x00621783–0x006217B1). Its 17 call sites are 16 client
+  (`0x004C5662` … `0x004F1827`) and one server, in `sub_005CC2E0_InfernoMissileRange` at `0x005CC387`, on the unit in
+  `EBX` whose range `MISSDATA_SetRange` sets next (`0x005CC38E`), a missile. So the only server write outside
+  `UNIT_AnimSetRate` and `UNIT_AnimInit` that this scan finds is a missile's. (*2026-10-27, `lane/p50b` review:*
+  added; objdump `call 0x621780` over `.text`, 17 sites.)
 - [I] **`UpdateAnimRate`** (ItemStatCost `+0x005` bit 1, mask byte `0x006CE26C`) is tested on an ItemStatCost record
   at 5 sites, 4 server: do 30 (`0x005C38F4`) and its per-target helper `0x005C39C0` (`0x005C3A8D`), do 61
   (`0x005C403B`), do 71 Taunt (`0x005D868A`); each sets a word of the state block when any of the row's stats has the
   bit, and the apply callback calls the rate only then (`CurseApplyCb` tests `block+0x0C` at 0x005C371B); the fifth
-  is client (`0x004D9E32`). The other 9 loads of that mask byte followed by a `+0x5` test are on MonStats2, Missiles,
-  Skills or MonStats2-local records (`p50b-uar.txt`, `SCAN uar sites=14`). (fn:sub_005C37C0_SkillDo30Curse@0x005C37C0,
+  is client (`0x004D9E32`). The other 9 loads of that mask byte followed by a `+0x5` test are on 2 MonStats2, 2
+  Missiles and 2 Skills records, 1 local record in `sub_00573CB0_MonStatsInit` (`0x00574141`), and 2 client records
+  the scan does not identify (`0x004AEB4E`, `0x004AF024`) (`p50b-uar.txt`, `SCAN uar sites=14 -=2 ItemStatCost=5
+  Missiles=2 MonStats2=2 Skills=2 local=1`; *2026-10-27, `lane/p50b` review:* breakdown corrected). (fn:sub_005C37C0_SkillDo30Curse@0x005C37C0,
   fn:sub_005C3F20_SkillDo61Confuse@0x005C3F20, fn:sub_005D8570_SkillDo71Taunt@0x005D8570)
 
 ### 6. Does a rate change apply to a mode in progress? (P1.1 review ruling (a))

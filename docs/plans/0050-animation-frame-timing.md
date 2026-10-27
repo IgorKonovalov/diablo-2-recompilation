@@ -198,6 +198,10 @@ client-side display of timing stay out (ADR-0005, ADR-0014 § Time): timing ente
     events; a rate change in the middle of a mode (a stat change from an item swap or a state), if Phase 1 says it
     applies;
   - 500 monster mode events over at least 20 classes, a sequence monster (mode 14) and a `fast` champion among them;
+  - **required (the P1.2 review ruling (g)):** a classic monster (class < 410, not `npc`) in an S1–S4 mode, its `+0x4C`
+    at the moving rate from its walk base (anim/0002 § 3.4) and its schedule predicted, at least 30 events over two or
+    more classes, one under a stat 67 change (a `fast` or champion mod, or a slowing state); and a class ≥ 410 monster
+    in an S1–S4 mode at the default or attack rate, at least 30 events;
   - 100 object animation starts with the `Sync` draw predicted (and chained);
   - 200 movement windows (walk and run per class, monsters walking and running), positions per logged frame in a
     stated window, 50 under a slowing state;
@@ -503,4 +507,62 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   `baalcrab`), `anim_scan.py rows` fixed with a `.bin` read, the archivist entry closed
   ([archive](../backlog/archive/2026-10-27-archivist-reverser-anim0001-splgetmodechart-rows-shifted.md)), the token-table
   open question struck. Review requested
-  ([backlog](../backlog/2026-10-27-reverser-architect-review-lane-p50b-plan-0050-phase-1-batch.md)).
+  ([backlog](../backlog/archive/2026-10-27-reverser-architect-review-lane-p50b-plan-0050-phase-1-batch.md)).
+- **2026-10-27 — Phase 1, batch P1.2 reviewed (architect, `lane/p50b` at `85b6b3a2`; static, objdump, no Ghidra
+  decompile, no harness): accept with fixes (6).** `main` `450accc9` merged first (one conflict, `metrics.md`, both
+  sides kept; `backlog.py archive` a no-op). Checks: `p50b-manifest.sha256` (`588b438c…`, 27 lines) passes
+  `sha256sum -c`; the case files regenerate byte-identical; both families re-emulated under
+  `systemd-run --user --scope -p MemoryMax=4G` on `ghidra-p50b` (`-Xmx3G`): `bonus.out` and `advance.out` byte-identical,
+  `check.txt` byte-identical (`3566d9da…`, bonus 3 413 and advance 2 400 cases, 0 bad). **Negative control:** one bonus
+  output raised by 1 (case 500, `s` 380: 92 for 91) and one advance frame raised by 1 (case 7: 99 for 98) give
+  `bad=1` in each family, `SCAN check bad=2`. `tables`, `uar`, `data` and `bp` re-run byte-identical (`CHECK … bad=0`
+  ×3; the SOSCHTH FCR 9 and 200 rows re-derived by hand: `B` 8 and 75, lengths 13 and 8); `calls` re-runs with the same
+  31 sites and differs only in five enclosing-symbol labels, the lane's own new rows (the kept output predates them).
+  Objdump: the three mode-class tables and `g_AnimRateBonus` dumped and equal to § 1 and § 2; `AnimRateBonus`'s
+  `imul; cdq; idiv` and its `type == 1 && s ≠ 0` test; cast, get-hit, block, attack and default divide unsigned
+  (`mul 0x51EB851F; shr 5`), moving and its path speed signed (`imul; sar 5` plus the sign bit); cast capped only
+  above, attack and default clamped 15..175, moving floored at 25; the `0x7FFF` cap (`cmp; jl`) and the floor on every
+  branch; state `0x65` (101) giving 100 for 50 in block; the 31 call sites (`call`/`jmp 0x623f50` over `.text`, no
+  other reference); `UpdateAnimRate`: no immediate test of ItemStatCost `+0x5` bit 1 outside the 14 mask-byte sites;
+  the `SUNIT_ScheduleModeEvents` first-step test (`0x00553A16`, `jge` past the event loop) behind "no frame event"; the
+  `MonModeRecord` jump tables behind § 10's correction. Symbols: 22 rows, all `I`, no duplicate address, none raised
+  (review-fix 14). **Blind rule:** the finding cites no `anim/leads` row and no community number without an address;
+  the log above says "leads not read before filing". Met.
+  **Fixes (6), written into the documents:** (1) anim/0002 § 1: block too goes through the floor and cap (it joins at
+  `0x00624369`), not "every branch but block" (misread); (2) the summary's `[C]` bonus: `s` named by the call
+  (`sub_00625500_UnitGetStat(unit, stat, 0)`), "the unit's full stat" left as the § 2 reading `[I]` (overclaim,
+  a meaning inside a map `[C]`); (3) § 5 `UpdateAnimRate`: the other nine sites are 2 MonStats2, 2 Missiles, 2 Skills,
+  1 local and 2 unidentified client records, not "MonStats2, Missiles, Skills or MonStats2-local" (miscount); (4) § 5:
+  the second `+0x4C` writer `0x00621780` (17 sites, 16 client, one server on a missile in
+  `sub_005CC2E0_InfernoMissileRange`), also in anim/0001 § 1's field table (omission); (5) § 3.2: under Holy Shield
+  the block factor wraps from FBR −55, not −36 (omission); (6) the review request's "26 lines" for the manifest's 27
+  (miscount).
+  **Rulings.** (a) The bonus `[C]` stands as an ADR-0015 map within its boundary (`s = −k` and the role of
+  `UnitGetStat` outside it); no symbol is raised by it. (b) **Ruling (a)'s two cases are answered:** a scheduled mode
+  keeps its queued events `[I]` (no queue or cancel among the 19 direct callees, rechecked; the helpers below them are
+  the lane's reading, so `[I]` is the right tag); `UNIT_AnimAdvance` taking the rate at each call is `[C]` as a map (1 114 of 1 120 changed
+  pairs separate it from the old rate); that the every-frame monster's next advance then runs at the new rate stays
+  `[I]` (the per-frame call is anim/0001 § 10's reading). Phase 2 keeps its "rate change in the middle of a mode" case.
+  (c) The breakpoint function is a check of the algebra only, as stated; it raises nothing. (d) **Surprise: a classic
+  monster's S1–S4 take the moving rate** (walk base `+0x36`, factor floored at 25 and uncapped, the record's speed
+  unused, and no write without a path). It holds on the tables and the `0x19A` tests; it is a **Phase 2 required
+  case**, now in Phase 2's *Done when*: ruling (g) below. (e) **Surprise: negative factors wrap to the maximum
+  rate.** It holds on the unsigned divides (cast, get-hit, block, attack and default; moving is signed and floored at
+  25). Not a required case: whether a stock source reaches FCR ≤ −55 or FHR/FBR ≤ −36 is unsurveyed; the survey goes to
+  the archivist (entry below, item 2); a reachable source becomes a Phase 2 case then. (f) **Surprise: no frame
+  event when `r ≥ 256 (F − S)`.** It holds on `0x00553A16`. Not a required case for players: the start frames (1 or 2)
+  are only those of player A1/A2 (anim/0001 § 4), and over the 568 stock records with an event 1–4 none reaches it at
+  a factor ≤ 175 with `S` 0 or 2 (`S` 1: only 2-frame monster records, whose start is 0); review computation
+  `noev2.py` over `animdata.d2` (scratch, `e1124ff6…`, output `4691c9ec…`). The one stock path left is (d)'s uncapped
+  classic-monster S1/S2 on the 2-frame records `K9S1HTH`, `K9S2HTH`, `E9S2HTH` (event at frame 1, `r ≥ 512` needed):
+  the archivist names their classes (item 3), and ruling (g)'s case covers it if one reaches. (g) Phase 2 required
+  case: a classic monster (< 410, not `npc`) in S1–S4 at the moving rate, 30 events over two or more classes, one under
+  a stat 67 change, and a class ≥ 410 monster in S1–S4 at the default or attack rate, 30 events. (h) **The MonStats
+  § Timing `[L]` on the five branches** is the archivist's:
+  [entry](../backlog/2026-10-27-architect-archivist-p50b-monstats-timing-branches-and-rate-stat-minima.md) (item 1,
+  with items 2–3 above), non-blocking. (i) The row-shift fix holds: anim/0001 § 10's ten classes match the two
+  byte-indexed jump tables (`0x005A79C4`, `0x005A7A80`) and `OVRBIN`; the archivist entry's closure stands.
+  Ledger: lane row filled (usage from the orchestrator), accept with fixes, 6 (miscount 2, omission 2, overclaim 1,
+  misread 1); review row added with "—" usage. The review request is closed
+  ([archive](../backlog/archive/2026-10-27-reverser-architect-review-lane-p50b-plan-0050-phase-1-batch.md)).
+  **P1.3 may start** once this lane is merged into `main`.
