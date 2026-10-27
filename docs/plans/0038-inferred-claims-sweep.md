@@ -5776,3 +5776,78 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     fixes, 6: overclaim 2, wrong anchor 1, omission 1, misread 1, stale cross-reference 1); the review row added, usage
     "—".
   - **Next:** merge `lane/s38h`; the H1c re-tag of hirelings rows 3, 30 and 33 and save/d2s § D's name bullet after H1c.
+- **2026-10-27 — H6g (`player`) checkpoint 1 (reverser, `lane/h6g`, harness slot 2, from `main` `a105ae13`; paused
+  by the owner's session reload).** Run id run:2026-10-27-sweep-player (not yet recorded in
+  `findings/player/experiments.md`). Slot 2 is stopped, its saves directory restored (empty, no aside); no game,
+  driver, gdb, pilot or watcher of the lane is left.
+  - **Built (uncommitted before this checkpoint, now in it):** logger `tools/gdb/h6g.gdb` (`player.gdb`'s files plus
+    `tools/gdb/h6g.py`) and `tools/gdb/h6g-quest.gdb` (the same plus `vendors.py`, for the Ancients route); session
+    driver `tools/h6g_sessions.py` (`recipes`, `list`, `run`); checker `tools/sweep_h6g.py check|static` (runs
+    `tools/player.py check` first; `static` 31 pins, 0 failing); seven recipes `tools/d2s_recipes/player-h6g-*.json`
+    with their `RECIPE_BASES` rows in `tools/test_d2s.py` (the builds pass; `test_every_recipe_has_a_base` fails on
+    `main`'s own `anim-*` recipes, not this lane's). `h6g.py` revisions: r1 (`workspace/logs/h6g/tools/h6g-r1.py`,
+    `9f4fa4c4…`: town, newchar), r2 (`h6g-r2.py`, `fe78700d…`, adds the `C3W` writers of client `+0x3D4`: every later
+    session). Known logger slip, handled in the checker: `AS0` reads the Skills `+0x12C` maxlvl cell as a dword; it is
+    an i16 (`SKILLS_GetMaxLevel`, `movsx word` at 0x004AA8CD), so the checker takes the low word.
+  - **Kept sessions (8, slot 2):** town (6711: four attribute points, Ice Bolt 0 → 1 → 2, Frozen Armor 19 → 20, a
+    click on Frost Nova at 20 sent no request; four Shift+click potions to an 8-box belt: column path box 4, first-free
+    box 1, first-free box 2 (`mp1`), column path box 5), newchar (6712 r1 and r2: a Sorceress and a classic Barbarian;
+    `+0x3D4` bit 0 is already set at NC0, by 0x005397A3 in `sub_00539760_ClientAddPlayerToGame`, so the `or` at
+    0x00537993 does not separate), cap98 (6713, Hell: add 5 at T(98) − 2 → T(98) exactly, level 99, then 71 kills
+    with `XP_Compute` 0), xp85 (6714, Hell, Annihilus: 73 kills with stat 85 = 10 and a non-zero term), deathn (6715,
+    Normal: loss 0, corpse share 0), deathh (6716, Hell: loss 465 059 = 10 % of 4 650 593, share 348 794), deathnm
+    (6717, Nightmare: the clamp, kept 1 000, new T(39) + 1, share 750; the corpse pickup was not reached: the pilot
+    Teleported in town).
+  - **Check:** `sweep_h6g.py check` over the 8 kept logs: **0 mismatches** (`workspace/logs/h6g/check/check-ckpt1.txt`
+    `20be8922…`); manifests `workspace/logs/h6g/manifest-ckpt1.sha256` (68 lines, `0d870563…`, passes from
+    `workspace/logs/h6g/`) and `manifest-dev-ckpt1.sha256` (35 lines, `280c0808…`, passes from `workspace/logs/h6g/dev/`;
+    the calibration session, a first town log under the r0 `SKC` bug, three deathn attempts whose pilot killed or
+    outran the monsters, and the Ancients attempt aborted at the pause on level 118).
+  - **Resume (next):** (1) rerun `deathnm` (now with the town walk in `do_corpse`, `TOWNS`) for the corpse pickup
+    (`CP0`/`CPS`/`CPA`/`AED`, then `XA0` of 750); (2) the Ancients session `anc` (route of plan 0042's x-summit: `towp2`,
+    `wp:5,8`, `explore:40`, `warp:76:150`, `clickwarp:76:1`, `objop:546:1`, then `farm --boss-cls 540,541,542`) for
+    rows 2 and 29; one or two tries, else a shortfall; (3) the run record, player/0001 § Plan 0038 batch H6g, the
+    inventory § 2.6 H6g block with totals against `main` after merging it, symbols (rule 14: `PLAYER_SpendStatPoint`,
+    `PLAYER_SpendEnergy`, `PLAYER_SpendVitality`, `SKILLS_AddSkill`, `PLAYER_DeathExpLoss`, the gate,
+    `CLIENT_Set/GetDeathExpLoss`, `PLAYER_CorpseCreate`, `STATS_GetUnitBaseStat`; new `0x00570080` skill-point spend,
+    `0x0054D520` packet 0x63 handler, `0x00537970`), the review-fixes pass, the review request and the ledger row.
+    Expected ledger, as the logs stand: raised 4, 32, 16 (in part: the at-maximum side unsent), 18, 22, 25, 28 (2),
+    3 and 30 (in part until the pickup), 12 (in part), 23, 27, 33, 35 (in part); 2 and 29 open.
+- **2026-10-27 — H6g (`player`) filed, review requested (reverser, `lane/h6g`, harness slot 2; `main` merged at
+  `5c7f1c5e`, the one conflict this log, kept both sides).** Run id run:2026-10-27-sweep-player
+  ([player/experiments](../findings/player/experiments.md#run2026-10-27-sweep-player)); slot 2 stopped, its saves
+  directory restored (no aside left); no game, driver or gdb of the lane remains. The old `test_d2s` anim failure cleared
+  with the merge.
+  - **Resume work:** `deathnm` rerun four times (r2 to r5; `do_corpse` now clears monsters within 18 before each step and
+    before each click): the character died a second time at or before the corpse each time (60 life), so no `CP0`; r5 is
+    kept (its first death is the clamp case again, its second the new kept-1 case, share 0), r2 to r4 are in `dev/`.
+    `anc` twice (seed 6718, then 4314): no warp 76 on the first, level 120 on the second with no object of class 546;
+    in `dev/`, not retried. The seed of the `anc` row in `tools/h6g_sessions.py` is now 4314.
+  - **Ledger (17): raised 7 (rows 4, 18, 22, 25, 28 x2, 32), raised in part 8 (3, 12, 16, 23, 27, 30, 33, 35), open 2
+    (2 and 29).** Details and remainders in
+    [player/0001 § Plan 0038 batch H6g](../findings/player/0001-creation.md#plan-0038-batch-h6g-run2026-10-27-sweep-player).
+    Checks over the 9 kept logs: `tools/sweep_h6g.py check` 0 mismatches (`check-final.txt`, `bec4893d…`), `static` 31 pins;
+    manifests `workspace/logs/h6g/manifest-final.sha256` (75 lines, `9dbee516…`) and `dev/manifest-dev-final.sha256` (54
+    lines, `606f3c68…`).
+  - **Totals:** no row changed class, so `main`'s stand: **static 567, harness 509, c-emu 0, blocked 431, deferred 2, raised
+    17: 1 526** (inventory § 2.6 H6g block).
+  - **Symbols:** 10 raised to `[C]` (`PLAYER_SpendStatPoint`, `PLAYER_SpendEnergy`, `PLAYER_SpendVitality`,
+    `SKILLS_AddSkill`, `PLAYER_DeathExpLoss`, the gate, `CLIENT_SetDeathExpLoss`, `CLIENT_GetDeathExpLoss`,
+    `PLAYER_CorpseCreate`, `STATS_GetUnitBaseStat`; their Functions-table rows moved) and 3 new `[I]`
+    (`PLAYER_SpendSkillPoint` 0x00570080, `sub_0054D520_SrvPacket63Handler`, `sub_00537970_ClientFlag3D4Set`).
+  - **For the reviewer to rule on:** (1) rows 23, 27, 33 and 35 as "raised in part" (my reading: the cap and stat 85
+    halves are met, the non-positive, clamp and overflow halves not); (2) rows 2 and 29 and the corpse pickup: the backlog
+    entry `2026-10-27-reverser-architect-plan-0038-h6g-shortfalls-ancients-altar-and-corpse.md` (static read of the
+    Ancients' spawn, a different recipe, or d-owner); (3) the 0x0054D520 name: packet 0x63 is read from the table
+    (index 0x63 at 0x006E0D18), the packet's meaning is not.
+  - **Review-fixes pass:** rules 1 (the table-index claim is `[I]`), 2 (counts copied from `check-final.txt`) and 14
+    (10 symbols) checked.
+- **2026-10-27 — `lane/h6g` check (architect, Tier B, plan 0038 H6g): accept with fixes (1).** Rulings: (1) the split of rows
+  23, 27, 33 and 35 is honest (each [C] half names the run; row 35's met half is the level-cap return the spec note at
+  `creation.md` line 692 pairs with the return of 1, which stays `[I]`); (2) rows 2/29 and the corpse pickup stay open,
+  routed by the backlog entry, which stays open and is addressed to the unpause: the project is paused, so the static
+  read of the Ancients' spawn, a different recipe or an owner play session is the owner's choice then, none started;
+  (3) `sub_0054D520_SrvPacket63Handler` is scoped right at `[I]` (table index read, the client's send not read).
+  Totals: no row class changed in the diff (`player-creation.md` untouched) and `main` has no later total, so static 567,
+  harness 509, blocked 431, deferred 2, raised 17 = 1 526 stand. Fix: the run id added to seven [C] bullets of
+  player/0001's H6g ledger (rows 3/30, 12, 16, 18, 22, 25, 28).
