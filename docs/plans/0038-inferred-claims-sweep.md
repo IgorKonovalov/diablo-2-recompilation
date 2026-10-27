@@ -5012,3 +5012,33 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     refusal `[I]`) and the item-objects row (`bbb` joins `leg` and `bks` as `[C]`, its quality 7 `[I]`; `hdm` stays
     `[I]`). The brain chest's listing is not stated in the objects spec. The spec-writer H6e2 entry is annotated.
     Request closed ([archive](../backlog/archive/2026-10-27-reverser-architect-h6e2f-review.md)); ledger rows filled.
+- **2026-10-27 — H6a (`cube`) filed (reverser, `lane/h6a`, harness slot 1, from `main` `fd841611`).** Run id
+  run:2026-10-27-sweep-cube, record in [items experiments](../findings/items/experiments.md#run2026-10-27-sweep-cube),
+  evidence in [items/0008 § Plan 0038 batch H6a](../findings/items/0008-cube.md#plan-0038-batch-h6a-run2026-10-27-sweep-cube).
+  - **Built:** logger revision r4 of `tools/gdb/cube.py` (the packet-to-transmute chain, `UnitSetEvent`, the runeword
+    strip, the two quest hooks, the crafted builder's null-record read, the children's list owners), session driver
+    `tools/h6a_sessions.py` (`cube_sessions.py`'s layouts, a step's rune inserts, the Act IV act byte, the crash
+    session's own game directory), checker `tools/sweep_h6a.py check|static|tables`, `tools/cube.py` extended (`uns`,
+    `rep` broken and stackable, `qty=`, the copy's children, placement bit 0), eight recipes
+    `tools/d2s_recipes/cube-h6a-*.json` (rows in `tools/test_d2s.py`, 60 tests OK).
+  - **Sessions:** 8 launches, all kept, no development log; Normal, expansion and classic, in town. The tooling
+    lessons applied: the Act IV start by act byte 131 (`-a4` recipes); no walking, so the Harrogath margin,
+    `--descend-to` and `--all-copies` were not needed; no Save and Exit, so the act-byte zeroing did not arise. The
+    faulting session ran in a symlink game copy inside slot 1's prefix; its crash folder is in `workspace/logs/h6a/dev/`.
+  - **Check:** `sweep_h6a.py check` over the 8 logs: 26 transmutes reproduced, 27 call chains, 23 `UnitSetEvent`
+    calls, **0 mismatches** (`check-final.txt` `15e54b63…`); regressions: `tools/cube.py check` on run:2026-10-15-cube
+    182 reproduced, 0 failed; `sweep_s2c.py cube` byte-identical.
+  - **Ledger (29): raised 22, raised in part 4, reclassified 2 (cube 16, 44 → d-none), shortfall 1 (cube 51)**
+    (inventory § 2.6 H6a block). Totals against `main` `fd841611`: static 567, harness 517, c-emu 0, blocked 423,
+    deferred 2, raised 17: 1 526.
+  - **S2c pieces:** cube 49 case (b) met (the game faults at 0x005C2460), case (a) d-none; aff 14's level-window half
+    met. Both stay counted as S2c, raised in part.
+  - **Symbols (rule 14), I → C:** `g_SrvPacketTable`, `SrvPacketDispatch`, `Pkt4FButton`, `PktInteractButton`,
+    `PlayerGetInteract`, `CubeButton`, `ItemRemoveRuneword`, `ItemRepairBroken`, `QuestStaffMade`,
+    `QuestKhalimWillMade`; new `sub_0055F590_ItemInvNonEmpty` (I).
+  - **Backlog:** review request
+    [2026-10-27-reverser-architect-review-lane-h6a-plan-0038-batch-h6a](../backlog/2026-10-27-reverser-architect-review-lane-h6a-plan-0038-batch-h6a.md)
+    filed; spec-writer entry
+    [2026-10-27-reverser-spec-writer-h6a-cube-raises-for-the-phase-3-re](../backlog/2026-10-27-reverser-spec-writer-h6a-cube-raises-for-the-phase-3-re.md)
+    held until the review; the S2c-pieces entry annotated (H6a parts done). Slot 1 stopped, saves restored (empty, no
+    aside).

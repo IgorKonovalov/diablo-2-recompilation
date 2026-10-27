@@ -399,10 +399,10 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0054C0E0,func,sub_0054C0E0_Pkt41Resurrect,,I,quests/travel,docs/findings/quests/0002-travel.md
 0x0054C590,func,sub_0054C590_Pkt48ActChangeClear,,I,quests/travel,docs/findings/quests/0002-travel.md
 0x0054C5D0,func,sub_0054C5D0_Pkt49WaypointTravel,,I,quests/travel,docs/findings/quests/0002-travel.md
-0x0054C7C0,func,sub_0054C7C0_Pkt4FButton,,I,items/cube,docs/findings/items/0008-cube.md
+0x0054C7C0,func,sub_0054C7C0_Pkt4FButton,,C,items/cube,docs/findings/items/0008-cube.md
 0x0054C9C0,func,sub_0054C9C0_Pkt58QuestSeen,,I,quests/progression,docs/findings/quests/0001-progression.md
 0x0054CE70,func,sub_0054CE70_SwapWeaponsReq,,I,stats/aggregate,docs/findings/stats/0001-aggregate.md
-0x0054D750,func,sub_0054D750_SrvPacketDispatch,,I,items/cube,docs/findings/items/0008-cube.md
+0x0054D750,func,sub_0054D750_SrvPacketDispatch,,C,items/cube,docs/findings/items/0008-cube.md
 0x0054DA60,func,sub_0054DA60_MonClassChainStep,,I,monsters/special,docs/findings/monsters/0003-special-monsters.md
 0x0054DAC0,func,sub_0054DAC0_SpawnBoxBounds,,C,monsters/spawn,docs/findings/monsters/0002-room-population.md
 0x0054DB50,func,sub_0054DB50_NearWarpTest,,I,monsters/spawn,docs/findings/monsters/0002-room-population.md
@@ -477,7 +477,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00554010,func,sub_00554010_UnitGetGame,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x005540A0,func,UNIT_SetSparkle,,C,objects,docs/findings/objects/0001-object-population.md
 0x005540D0,func,UNIT_GetSparkle,,C,objects,docs/findings/objects/0001-object-population.md
-0x00554100,func,sub_00554100_PlayerGetInteract,,I,items/cube,docs/findings/items/0008-cube.md
+0x00554100,func,sub_00554100_PlayerGetInteract,,C,items/cube,docs/findings/items/0008-cube.md
 0x005541B0,func,sub_005541B0_UnitIsDead,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x00554200,func,sub_00554200_UnitsHostile,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x005542C0,func,sub_005542C0_SkillPetTest,,I,skills/catalogue,docs/findings/skills/0006-missile-hit-1-29.md
@@ -529,7 +529,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00558640,func,ITEMS_DropRollQuality,,C,items/quality,docs/findings/items/0002-quality-roll.md
 0x005589A0,func,sub_005589A0_DropGoldFind,,C,items/tc,docs/findings/items/0001-tc-resolution.md
 0x00558A10,func,sub_00558A10_ItemGroundExpiry,,C,drlg/lifecycle,docs/findings/drlg/0009-room-lifecycle.md
-0x00558C50,func,sub_00558C50_ItemRemoveRuneword,,I,items/cube,docs/findings/items/0008-cube.md
+0x00558C50,func,sub_00558C50_ItemRemoveRuneword,,C,items/cube,docs/findings/items/0008-cube.md
 0x00558CB0,func,sub_00558CB0_ItemCreateFromSave,,C,save/d2s,docs/findings/save/0001-d2s-io.md
 0x00558D90,func,sub_00558D90_ItemCreate,,C,items/tc,docs/findings/items/0001-tc-resolution.md
 0x00559300,func,sub_00559300_DropGoldPile,,I,save/d2s,docs/findings/save/0001-d2s-io.md
@@ -558,8 +558,9 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0055CA40,func,sub_0055CA40_InvHoldsQuestDup,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
 0x0055DB00,func,sub_0055DB00_ItemUsableBy,,I,items/sockets-runewords,docs/findings/items/0007-sockets-runewords.md
 0x0055DBC0,func,sub_0055DBC0_EquipReqRefresh,,C,items/sockets-runewords,docs/findings/items/0007-sockets-runewords.md
+0x0055F590,func,sub_0055F590_ItemInvNonEmpty,,I,items/cube,docs/findings/items/0008-cube.md
 0x0055F850,func,sub_0055F850_ItemBreak,,I,items/sockets-runewords,docs/findings/items/0007-sockets-runewords.md
-0x0055F900,func,sub_0055F900_ItemRepairBroken,,I,items/cube,docs/findings/items/0008-cube.md
+0x0055F900,func,sub_0055F900_ItemRepairBroken,,C,items/cube,docs/findings/items/0008-cube.md
 0x0055FE00,func,sub_0055FE00_ItemIdentifyAttach,,C,items/quest-drops,docs/findings/items/0010-quest-drops.md
 0x0055FE80,func,sub_0055FE80_ItemRefillCharges,,C,items/sockets-runewords,docs/findings/items/0007-sockets-runewords.md
 0x00560200,func,sub_00560200_InvPlaceItem,,C,items/cube,docs/findings/items/0008-cube.md
@@ -581,7 +582,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00565AA0,func,thunk_CUBE_PandemoniumFinalePortalStub,,C,save/d2s,docs/findings/save/0002-quest-words.md
 0x00565AB0,func,sub_00565AB0_RecipeOutputCreate,,C,items/cube,docs/findings/items/0008-cube.md
 0x005665F0,func,CUBE_Transmute,,C,items/cube,docs/findings/items/0008-cube.md
-0x00566AE0,func,sub_00566AE0_CubeButton,,I,items/cube,docs/findings/items/0008-cube.md
+0x00566AE0,func,sub_00566AE0_CubeButton,,C,items/cube,docs/findings/items/0008-cube.md
 0x00566B30,func,sub_00566B30_TradeRecAlloc,,I,multiplayer/trade,docs/findings/multiplayer/0002-trade-and-party-gold.md
 0x00566BF0,func,sub_00566BF0_TradeRecFree,,I,multiplayer/trade,docs/findings/multiplayer/0002-trade-and-party-gold.md
 0x00566E60,func,sub_00566E60_TradeRequest,,I,multiplayer/trade,docs/findings/multiplayer/0002-trade-and-party-gold.md
@@ -594,7 +595,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005679E0,func,sub_005679E0_TradeClose,,I,multiplayer/trade,docs/findings/multiplayer/0002-trade-and-party-gold.md
 0x00567B00,func,sub_00567B00_TradeCancel,,I,multiplayer/trade,docs/findings/multiplayer/0002-trade-and-party-gold.md
 0x00567C70,func,sub_00567C70_TradeCommit,,I,multiplayer/trade,docs/findings/multiplayer/0002-trade-and-party-gold.md
-0x00568060,func,sub_00568060_PktInteractButton,,I,items/cube,docs/findings/items/0008-cube.md
+0x00568060,func,sub_00568060_PktInteractButton,,C,items/cube,docs/findings/items/0008-cube.md
 0x005689D0,func,sub_005689D0_TradeStateTick,,I,multiplayer/trade,docs/findings/multiplayer/0002-trade-and-party-gold.md
 0x00568DC0,func,sub_00568DC0_ItemRefFromId,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x00568E60,func,D2S_WriteMercHeader,,C,save/d2s,docs/findings/save/0001-d2s-io.md
@@ -1260,7 +1261,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0059E3F0,func,sub_0059E3F0_A2Q8_NpcTalk,,I,quests/progression,docs/findings/quests/0001-progression.md
 0x0059E4B0,func,sub_0059E4B0_A2Q8_NpcGate,,I,quests/progression,docs/findings/quests/0001-progression.md
 0x0059E530,func,sub_0059E530_A2Q8_Init,,I,quests/progression,docs/findings/quests/0001-progression.md
-0x0059E5C0,func,sub_0059E5C0_QuestStaffMade,,I,items/cube,docs/findings/items/0008-cube.md
+0x0059E5C0,func,sub_0059E5C0_QuestStaffMade,,C,items/cube,docs/findings/items/0008-cube.md
 0x0059E630,func,sub_0059E630_A2Q2_LogState,,I,quests/progression,docs/findings/quests/0001-progression.md
 0x0059E850,func,sub_0059E850_A2Q2_FirstJoin,,I,quests/progression,docs/findings/quests/0001-progression.md
 0x0059E970,func,sub_0059E970_A2Q2_LaterJoin,,I,quests/progression,docs/findings/quests/0001-progression.md
@@ -1598,7 +1599,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005B85E0,func,sub_005B85E0_A3Q2_SewerLeverEvent7,,I,quests/progression,docs/findings/quests/0001-progression.md
 0x005B8660,func,sub_005B8660_A3Q2_SewerStairsInit,,I,quests/progression,docs/findings/quests/0001-progression.md
 0x005B86B0,func,sub_005B86B0_A3Q2_SewerStairsInitB,,I,quests/progression,docs/findings/quests/0001-progression.md
-0x005B86E0,func,sub_005B86E0_QuestKhalimWillMade,,I,items/cube,docs/findings/items/0008-cube.md
+0x005B86E0,func,sub_005B86E0_QuestKhalimWillMade,,C,items/cube,docs/findings/items/0008-cube.md
 0x005B8860,func,sub_005B8860_A3Q2_HeartChest,,C,items/quest-drops,docs/findings/items/0010-quest-drops.md
 0x005B8940,func,sub_005B8940_A3Q2_EyeChest,,C,items/quest-drops,docs/findings/items/0010-quest-drops.md
 0x005B8A20,func,sub_005B8A20_A3Q2_BrainChest,,C,items/quest-drops,docs/findings/items/0010-quest-drops.md
@@ -3182,7 +3183,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x006CE2E8,data,g_BitMaskInv32,,I,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
 0x006DA488,data,g_ChampionNameStr,,I,monsters/special,docs/findings/monsters/0003-special-monsters.md
 0x006E0B9C,data,g_UnitTypeEventList,,I,anim/timing,docs/findings/anim/0001-modes-frames.md
-0x006E0D18,data,g_SrvPacketTable,,I,items/cube,docs/findings/items/0008-cube.md
+0x006E0D18,data,g_SrvPacketTable,,C,items/cube,docs/findings/items/0008-cube.md
 0x006E1080,data,g_PresetShrineRanges,,I,objects,docs/findings/objects/0001-object-population.md
 0x006E117C,data,g_ItemEventFuncs,,I,items/economy,docs/findings/items/0011-economy.md
 0x006E11C8,data,g_CubePortalFns,,C,save/d2s,docs/findings/save/0002-quest-words.md

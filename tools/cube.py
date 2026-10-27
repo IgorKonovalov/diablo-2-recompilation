@@ -345,9 +345,15 @@ def create_roll(T, ic, seed):
 
 # ---------------------------------------------------------------- log reading
 
+# logger r4 lines (plan 0038 batch H6a) that tools/sweep_h6a.py checks and this model does not consume; RRW0/RRWX (the
+# runeword strip of a `uns`/`rem` output) are consumed by check_tx
+R4_SIDE = {"PK4F", "PIB", "CBTN", "SEV", "QSM", "QSMS", "QSMX", "QSD0", "QSD1", "QKW", "QKW18", "QKD0", "QKD1",
+           "CNULL"}
+
+
 class TX:
     def __init__(self, c):
-        self.c, self.ev = c, []
+        self.c, self.ev, self.own = c, [], None
 
 
 def read_log(path):
@@ -364,7 +370,10 @@ def read_log(path):
         if tag == "CUB0":
             cur = TX(d)
             continue
-        if cur is None or tag == "PDT":
+        if cur is not None and tag == "CUBL":
+            cur.own = d["own"]
+            continue
+        if cur is None or tag == "PDT" or tag in R4_SIDE:
             continue
         cur.ev.append((tag, d))
         if tag == "CUBX":
@@ -566,7 +575,33 @@ def pick_type(X, ilvl, typ):
     return cls
 
 
-def check_copy(X, slot, at, res):
+def check_strip(X, src, cp, res):
+    """`uns` on a useitem output (0x00566105-0x0056612E): sub_00558C50_ItemRemoveRuneword(game, copy): for an item with
+    flags bit 26 (runeword) it clears the bit (ITEMS_SetFlag 0x4000000, 0), writes prefix slot 0 = 0
+    (ITEMS_SetPrefix(item, 0, 0)) and frees the stat list of state 171 (0xAB, flags 0x40); any other item is left as
+    it is. The children were not copied (ItemCopy's flag 0), so they are destroyed with the original."""
+    d = X.take("RRW0")
+    eq("RemoveRuneword item = the copy", cp["u"], d["it"]["u"])
+    x = X.take("RRWX")["it"]
+    want = dict(cp)
+    if cp["fl"] & 0x4000000:
+        want["fl"] = cp["fl"] & ~0x4000000
+        want["p"] = [0] + list(cp["p"][1:])
+        want_subs = [e for e in subs_of(cp) if e[0] != 171]
+        X.S["uns: runeword removed (bit 26, prefix 0, state 171)"] += 1
+    else:
+        want_subs = subs_of(cp)
+        X.S["uns: no runeword, item unchanged"] += 1
+    for key in ("cls", "q", "fl", "p", "s", "rn"):
+        eq("after RemoveRuneword: %s" % key, want[key], x[key])
+    eq("after RemoveRuneword: base entries", sorted(base_of(cp).items()), sorted(base_of(x).items()))
+    eq("after RemoveRuneword: lists", norm(want_subs), norm(subs_of(x)))
+    res["strip"] = dict(runeword=bool(cp["fl"] & 0x4000000), kids_src=len(src.get("kids") or []),
+                        kids_copy=len(x.get("kids") or []))
+    return x
+
+
+def check_copy(X, slot, at, res, strip=False):
     """sub_0055A2A0_ItemCopy (serialise, then sub_00558CB0_ItemCreateFromSave): its seeds predicted, its contents compared.
     Its game-seed use is SUnitCreate's and ItemSeedInit's two steps, as a created item's: the copy's start seed and
     item seed {start, 666} are the second step's low word; its unit seed comes back from the stream (the source's
@@ -579,12 +614,21 @@ def check_copy(X, slot, at, res):
     d = X.take("CCP0")
     eq("ItemCopy call", at, d["at"])
     eq("ItemCopy source (slot unit)", slot[0], d["src"])
+    eq("ItemCopy children flag (0 for uns/rem)", 0 if strip else 1, d["kids"])
     eq("game seed at ItemCopy", fmt(X.gs), d["gs"])
     X.step()
     start = X.step()
     x = X.take("CCPX")
     cp = x["it"]
-    eq("game seed after ItemCopy (two steps)", fmt(X.gs), x["gs"])
+    if not strip:
+        # each socketed child copied with it is a created unit too: two more game-seed steps per child, after the
+        # parent's (plan 0038 H6a: Greyform with one gem, 4 steps)
+        for _ in src.get("kids") or []:
+            X.step()
+            X.step()
+        if src.get("kids"):
+            X.S["ItemCopy with children: 2 + 2 x %d game-seed steps" % len(src["kids"])] += 1
+    eq("game seed after ItemCopy (two steps, two more per child copied)", fmt(X.gs), x["gs"])
     eq("copy start seed (the second game-seed step)", start, cp["start"])
     eq("copy item seed {start, 666}", fmt((start, 666)), cp["seed"])
     s28 = src.get("seed28")
@@ -593,13 +637,42 @@ def check_copy(X, slot, at, res):
             raise Mismatch("source unit seed stepped and no seed28 logged")
         s28 = seedpair(src["useed"])[0]
     eq("copy unit seed init(source Unit+0x28)", fmt((s28, 666)), cp["useed"])
-    for key in ("cls", "q", "fi", "ilvl", "ver", "p", "s", "rn", "auto"):
+    for key in ("cls", "q", "fi", "ilvl", "ver", "s", "rn", "auto"):
         eq("copy %s = input's" % key, src[key], cp[key])
+    if src["fl"] & 0x4000000:
+        # a runeword (flags bit 26): the copy stream brings prefix slot 0 back as the runeword's name id, which the
+        # source's ItemData+0x38 does not hold (plan 0038 H6a, Steel: 0 -> 20639); the other slots are the input's
+        eq("copy p[1:] = input's (runeword)", src["p"][1:], cp["p"][1:])
+        X.notes["runeword copy: prefix slot 0, input -> copy"].append("%d -> %d" % (src["p"][0], cp["p"][0]))
+    else:
+        eq("copy p = input's", src["p"], cp["p"])
     eq("copy flags = input's", src["fl"], cp["fl"])
     eq("copy base entries = input's", sorted(base_of(src).items()), sorted(base_of(cp).items()))
-    eq("copy lists = input's", norm(subs_of(src)), norm(subs_of(cp)))
+    if strip:
+        # without its children the copy has none of their lists; its own lists are the input's
+        own = own_lists(src, (X.tx.own or {}).get(str(src["u"])))
+        eq("copy lists = input's own (children not copied)", norm(subs_of(dict(sub=own))), norm(subs_of(cp)))
+        eq("copy children (none)", [], cp.get("kids") or [])
+    else:
+        eq("copy lists = input's", norm(subs_of(src)), norm(subs_of(cp)))
+        eq("copy children: as many as the input's", len(src.get("kids") or []), len(cp.get("kids") or []))
+        if src.get("kids"):
+            res["kids_kept"] = len(cp.get("kids") or [])
     X.S["ItemCopy (%s)" % at] += 1
     return src, cp
+
+
+def own_lists(it, own):
+    """The item's lists without its socketed children's: in the dump's chain each child brings one list whose flag word
+    has 0x80000000 (a full list; plan 0038 H6a: two children, two such lists, on both socketed inputs of row 141; every
+    node's StatList +0x04, logger r4's CUBL, is the parent itself, so the owner does not tell them apart). The count of
+    such lists must equal the children's."""
+    kids = it.get("kids") or []
+    sub = it.get("sub", [])
+    full = [e for e in sub if e[1] & 0x80000000]
+    if len(full) != len(kids):
+        raise Mismatch("%d full lists in the chain for %d children" % (len(full), len(kids)))
+    return [e for e in sub if not e[1] & 0x80000000]
 
 
 def check_mod(X, o, sl, cp, res):
@@ -696,15 +769,28 @@ def finish_output(X, o, st, it, res):
     if o["flags"] & 0x200:
         # rep: a stackable base's quantity, then a broken item's repair, else base stat 72 raised to the evaluated 73
         if raw[0x132] and o["qty"]:
-            raise Mismatch("rep on a stackable output not modelled (no session)")
+            # a stackable base: quantity (stat 70) = min(ITEMS_GetMaxStack, qty) (0x00566294-0x005662BA)
+            q = min(max_stack(T, st), o["qty"])
+            res["rep qty"] = (st.get_base(70), q)
+            st.set_base(70, q)
+            X.S["rep: stackable quantity set"] += 1
         if st.flags & 0x100:
-            raise Mismatch("rep of a broken item (sub_0055F900_ItemRepairBroken) not modelled (no session)")
-        e73 = st.eval_maxdur()
-        if st.get_base(72) < e73:
-            st.set_base(72, e73)
-            X.S["rep: durability raised"] += 1
+            # sub_0055F900_ItemRepairBroken: flag 0x200 set, 0x100 cleared, then base stat 72 = the evaluated stat 73
+            # (sub_00625E00_ItemMaxDurability) when it is above 0
+            st.flags = (st.flags | 0x200) & ~0x100
+            e73 = st.eval_maxdur()
+            res["rep broken"] = (st.get_base(72), e73)
+            if e73 > 0:
+                st.set_base(72, e73)
+            X.S["rep: broken item repaired"] += 1
         else:
-            X.S["rep: durability already full"] += 1
+            e73 = st.eval_maxdur()
+            if st.get_base(72) < e73:
+                res["rep dur"] = (st.get_base(72), e73)
+                st.set_base(72, e73)
+                X.S["rep: durability raised"] += 1
+            else:
+                X.S["rep: durability already full"] += 1
     if o["flags"] & 0x400:
         # rch: sub_0055FE80_ItemRefillCharges, every stat 204 entry's charges raised to its maximum
         n = 0
@@ -714,6 +800,7 @@ def finish_output(X, o, st, it, res):
                     L[(stat, par)] = (v & ~0xFF) | (v >> 8)
                     n += 1
         X.S["rch: charge entries refilled %d" % n] += 1
+        res["rch"] = n
     if o["flags"] & 2:
         if o["qty"]:
             if st.get_base(194) == 0 and not st.flags & 0x800:
@@ -732,7 +819,16 @@ def finish_output(X, o, st, it, res):
                     res["sock="] = (o["qty"], n, final)
                     X.S["sock= sockets set"] += 1
     elif o["qty"] and raw[0x132]:
-        raise Mismatch("qty= on a stackable output not modelled yet")
+        # qty=N without sock on a stackable base: quantity = min(ITEMS_GetMaxStack, N) (0x005663BD-0x005663E3)
+        q = min(max_stack(T, st), o["qty"])
+        res["qty"] = (st.get_base(70), q)
+        st.set_base(70, q)
+        X.S["qty=: stackable quantity set"] += 1
+
+
+def max_stack(T, st):
+    """ITEMS_GetMaxStack (0x006295B0): the base's maxstack plus the evaluated stat 254 (item_extra_stack), below 511."""
+    return min(T.P.base(st.cls)["maxstack"] + st.eval_stat(254), 0x1FF)
 
 
 def set_sockets(T, st, cls, it, n):
@@ -816,13 +912,15 @@ def check_tx(T, tx, S, notes, pdt, made):
             continue
         if o["kind"] == 0:
             continue
-        if strip:
-            raise Mismatch("uns/rem not modelled yet")
+        if strip and (o["flags"] & 0x20 or o["flags"] & 1 or o["kind"] != 0xFE):
+            raise Mismatch("rem, or uns on another output than useitem, not modelled (no stock row)")
         if not o["flags"] & 1:
             if o["kind"] == 0xFE:
-                src, cp = check_copy(X, sl, "useitem", ores)
+                src, cp = check_copy(X, sl, "useitem", ores, strip)
                 if o["q"] == 9:
                     raise Mismatch("tmp output not modelled (disabled rows only)")
+                if strip:
+                    cp = check_strip(X, src, cp, ores)
                 st, it = state_of(T, cp), cp
             else:
                 st, it = check_created(X, r, s, o, sl, ores, made)
@@ -859,7 +957,13 @@ def check_tx(T, tx, S, notes, pdt, made):
         r_ = X.take("CPLR")
         if not r_["r"]:
             raise Mismatch("placement failed (InvPlaceItem oracle 0)")
-        placed.append((p, st.flags | 0x10))
+        fl = st.flags | 0x10
+        if p.get("kids"):
+            # InvPlaceItem sets flags bit 0 on an item that holds items (0x00560385-0x00560393: sub_0055F590, item
+            # type 4 with a non-empty inventory, then ITEMS_SetFlag(item, 1, 1)); plan 0038 H6a, one placed copy
+            fl |= 0x1
+            X.S["placed item holding children: flags bit 0 set"] += 1
+        placed.append((p, fl))
     x = X.take("ROCX")
     eq("game seed at the return", fmt(X.gs), x["gs"])
     x = X.take("CUBX")

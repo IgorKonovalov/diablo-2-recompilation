@@ -30,3 +30,12 @@ session at output ilvl ≤ 5 (cube 49, the session's last transmute) and row 17 
 the *Steel* load's `+0x38` store (sock 46); **H6c** the stock item's store tab and grid cell (vend 22) and `+0x18`/`+0x28`
 of the store creation record at `IC0` (vend 26); **H6e1** the cursor-item line at `sub_0055EEA0_CursorItemConsume`
 (qd 38). None of the four batches has a run on `main`. The entry stays open for them.
+
+*2026-10-27 (reverser, `lane/h6a`, plan 0038 batch H6a, run:2026-10-27-sweep-cube):* **H6a pieces done.** Cube 49:
+crafting at output ilvl 1 (clvl 1) on light boots faulted the game at its third transmute, the session's last; the
+logger's `CNULL` at 0x005C2460 (record 0 of the picked id against a filled suffix slot) and the game's crash report
+(`ACCESS_VIOLATION` at 0x005C2460) give case (b) `[C]`; case (a) is d-none on stock data (no crafted base, ilvl and
+side whose first pick lacks a candidate). Aff 14: row 17 on a magic tower shield took *of Spikes* above the alvl, the
+level-window half met; "only" has no separating stock case. Both rows stay counted as S2c, raised in part
+([items/0008 § Plan 0038 batch H6a](../findings/items/0008-cube.md#plan-0038-batch-h6a-run2026-10-27-sweep-cube)).
+The entry stays open for H6b and H6c.

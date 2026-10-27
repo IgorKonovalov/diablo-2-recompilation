@@ -1383,6 +1383,41 @@ moves. Recounted against `main` `92b811df` after merging it into the lane (`lane
 8), **deferred 2, raised 17: 1 526.** § 5 marks H6e1 done. **Phase 3 ready:** items/quest-drops (S2c, H6d, H6e2 and
 H6e1, all accepted).
 
+**H6a (filed 2026-10-27, reverser, `lane/h6a`): 29 statements of items/cube (rows 1, 7, 15–17, 25, 32, 36, 38–40,
+43, 44, 51, 53, 54, 58) and the S2c pieces of cube 49 and aff 14.** run:2026-10-27-sweep-cube, 8 sessions on slot 1,
+all kept (one game each; expansion and classic, Normal, in town; tool-built saves, one with the Act IV act byte, one
+at clvl 1 in its own game directory for the expected fault), logger `tools/gdb/cube.gdb` with `tools/gdb/cube.py` r4,
+checker `tools/sweep_h6a.py check` over the 8 logs: **26 transmutes reproduced by `tools/cube.py`, 27 call chains,
+23 `UnitSetEvent` calls, 0 mismatches** (`check-final.txt`, manifests `manifest-final.sha256`, `manifest-shots.sha256`,
+`manifest-dev.sha256`). The evidence is in [items/0008 § Plan 0038 batch H6a](../../findings/items/0008-cube.md#plan-0038-batch-h6a-run2026-10-27-sweep-cube).
+
+- **Raised (22):** cube 1 L48; 7 (3); 15; 25 L331; 36; 38 (2); 39 (3); 40 (3); 43 (3); 53 (2); 54; 58.
+- **Raised in part (4):** cube 1 L54 (button `0x17` and a type other than 4 not sent), 17 (no stock `eli` input), 25
+  L349 (the version gate's classic half: rows 129–136 are all version 100, d-none part), 32 (no stock `rem` row).
+- **Shortfall (1):** cube 51, three row-19 transmutes, the skipped record `start − 1` a candidate in none (10 in 659 per
+  transmute).
+- **Pieces:** cube 49 (stays counted as S2c, raised in part): case (b) met, the fault at 0x005C2460 logged and in the
+  game's crash report; case (a) d-none (no crafted base, ilvl and side whose first pick lacks a candidate, 0 of 40 194).
+  aff 14 (stays S2c, raised in part): the level-window half met (cube 58); "only" has no separating stock case.
+- Refinements carried into items/0008: an `ItemCopy` draws two more game-seed steps per child it copies; the runeword
+  copy's prefix slot 0 holds the name id; `InvPlaceItem` sets flags bit 0 on an item holding items; `ItemInitStats` on
+  an ethereal copy writes the plain base values (the open question answered).
+- Symbols I → C (rule 14): `g_SrvPacketTable`, `SrvPacketDispatch`, `Pkt4FButton`, `PktInteractButton`,
+  `PlayerGetInteract`, `CubeButton`, `ItemRemoveRuneword`, `ItemRepairBroken`, `QuestStaffMade`,
+  `QuestKhalimWillMade` (10); new `sub_0055F590_ItemInvNonEmpty` (I).
+
+Proposed class moves (two rows):
+
+| Row | Was | Now | Why |
+|---|---|---|---|
+| items-cube 16 (`eth` input) | b, H6a | **d-none** | 0 of the 389 compiled stock inputs has `eth` (`tables.txt`); `noe`, the same `ITEMS_IsEthereal` test, refused an ethereal sword at row 137. |
+| items-cube 44 (the `rem` children placed) | b, H6a | **d-none** | No stock output has `rem` (only row 141 has `uns`), so the second placement loop counts 0 in every stock transmute. |
+
+Net effect on the totals: harness −2, d-none +2. Taken against `main` `fd841611` (the lane's base; no inventory row
+moved on `main` since the `lane/h6e1` review totals above): **static 567, harness 517, c-emu awaiting a batch 0,
+blocked 423** (d-none 297, d-edit 73, d-sim 28, d-2c 7, d-owner 10, d-0032 8), **deferred 2, raised 17: 1 526.**
+H6a's ledger: raised 22, raised in part 4, reclassified 2, shortfall 1: 29.
+
 ## 3. Blocked rows, for the plan's open questions
 
 - **d-2c, 14 statements** (items/tc 3, items/vendors 5, items/quest-drops 3, hirelings 1, player/creation 2). This is

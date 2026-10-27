@@ -362,6 +362,7 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-10-27 | `lane/a72` review | backlog: the d2s legacy builder | architect-review | 140 655 | 53 | 12 | — (static, scratch builds and dumps with main's and the lane's tool, `itemstatcost.txt` recount, no Ghidra, no harness) | gave accept with fixes | — (on the lane row) |
 | 2026-10-27 | `lane/h6e2f` | 0038 H6e2 follow-up (`lane/rdp` review ruling 7) | reverser-harness | 220 606 | 115 | 32 | slot 1 (3 launches), no Ghidra | accept with fixes (rulings: the eye/brain Khalim order `[C]` on three separating `k` 5/7/8, the refusals `[I]`; `bbb` raised in part; the copy the listing follows `[I]`, an order match; the `eye4c` skip correct, the 84 warp confirmed by `eye4`) | 2: overclaim 1, tool not kept 1 |
 | 2026-10-27 | `lane/h6e2f` review | 0038 H6e2 follow-up | architect-review | 143 540 | 60 | 11 | — (static, objdump, no Ghidra) | gave accept with fixes | — (on the lane row; the brain-chest `[C]` scoped to both copies active; objects § L follow-up re-tag named) |
+| 2026-10-27 | `lane/h6a` | 0038 H6a | reverser-harness | — | — | — | slot 1 (8 launches), no Ghidra | — | — |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not

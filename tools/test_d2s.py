@@ -136,6 +136,14 @@ RECIPE_BASES = {
     "cube-craft5": (BASE_X, "317c3fbc460a0813869a81b224a748299da4930b6a8c7f20bd886981766819a7"),  # run:2026-10-15-cube
     "cube-craftgear": (BASE_X, "47584b5529fa892e3ac41d79fe241c072af6c4d8e91e0a92550f2ad0c3f447be"),  # run:2026-10-15-cube
     "cube-forced": (BASE_X, "ff91be7fc0d50bb7c9e2dbb7cbd081481d956373ccbe868a29f12e42f422361a"),  # run:2026-10-15-cube
+    "cube-h6a-cowa4": (BASE_X, "2a10c928773b8614f42e82696a3adf7154af83496e88b9c5b3f2db6e397c664b"),  # run:2026-10-27-sweep-cube
+    "cube-h6a-cowcl0": (BASE_C, "d1ad2732eb2d9870153122f7b29d81a137340d6dd05b166c67080b001812aafa"),  # run:2026-10-27-sweep-cube
+    "cube-h6a-cowcl1": (BASE_C, "3839e7ba4b4da7d0938c4e9c9a7daf9c7d79a503fa63e151dfe125ad32bee3f6"),  # run:2026-10-27-sweep-cube
+    "cube-h6a-craftlow": (BASE_X, "aae80fc0b6b5c62a01a9263ac6a3934cc4932ec7826e3695c2af7bd5b6d88fe3"),  # run:2026-10-27-sweep-cube
+    "cube-h6a-quest": (BASE_X, "5cf60735f06e95a519b14e277aa21e983ec71e055268935149bd67095625eefe"),  # run:2026-10-27-sweep-cube
+    "cube-h6a-repair": (BASE_X, "39fa3e939ed72342ed6436d53023c0af3f0ea3f3a6a0c54e39b7d83273753903"),  # run:2026-10-27-sweep-cube
+    "cube-h6a-upgc": (BASE_X, "3d642dc9d30f5a09fa0018bfcec1b6b05185cb7423f8f55105ba7d4d0c022852"),  # run:2026-10-27-sweep-cube
+    "cube-h6a-upgu": (BASE_X, "52bfa7721ae14058a0fbcac253ef19b343c1a07d01540e5367ca94fd44a752ba"),  # run:2026-10-27-sweep-cube
     "cube-kinds1": (BASE_X, "0051a31bad0faa0cd8790ffd9b2ed4c77f401969ba3743ae847946ebd8e6d980"),  # run:2026-10-15-cube
     "cube-kinds2": (BASE_X, "9318cf69b85b8d10d93db03729566dadbd45ecd8ace1b12854c58452d65c6663"),  # run:2026-10-15-cube
     "cube-nomatch": (BASE_X, "96ed5e8b3d91286dd96c1ae8255c12c52820136c8f7757bdc0baa7fc365038d2"),  # run:2026-10-15-cube
