@@ -35,4 +35,4 @@ filled entries, 23 emulated; hit 44 is 9c's) and the tier-A hit 2 carried from 9
   hit 36, hit 58) and skills/0006 § 16 (hit 2 done).
 - **Symbols:** 28 rows (subsystem `skills/catalogue`, all `I`), no clash with `main` at `24d2c67`.
 - Column readers filed to the archivist
-  ([entry](../2026-10-20-reverser-archivist-plan-0046-9d-missiles-skills-column-readers.md)).
+  ([entry](2026-10-20-reverser-archivist-plan-0046-9d-missiles-skills-column-readers.md)).

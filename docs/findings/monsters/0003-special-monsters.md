@@ -917,7 +917,10 @@ UniqueTitle watch: load 5, free 3, no other access
   `Format(1721, prefix, suffix)` (23) or `Format(1722, prefix, suffix, appellation)` (13) from the rows the roll drew.
   (fn:sub_004AC870_ClientMonNameBuild@0x004AC870, fn:sub_004AD020_ClientMonModsApply@0x004AD020,
   run:2026-10-16-sweep-monsters-b) Also met: the fixed-name branch, for Izual (class 256, string 1014, session 1).
-  **Remainder `[I]`:** mod 12 (Blood Raven, string 3111) and the other fixed-name classes, not met.
+  **Remainder `[I]`:** mod 12 (Blood Raven, string 3111) and the other fixed-name classes, not met. *Met since* in
+  run:2026-10-21-sweep-monsters-a (§ Plan 0038 batch H4a below, special 35 and 68): mod 12, Blood Raven (class 267), named
+  string 3111; also the fixed-name classes 156 and 242 (special 69). The remainder narrows to the fixed-name classes no
+  session met; the row stays as filed, counted as H4b (plan 0051 Phase 1a review).
 - **special 71** (L634) **raised.** [C] The builder re-initialises its seed on each call (`Init(nameSeed)` logged for each of
   36 random-unique calls), and for a champion the client calls it for mod 1 first and then for the champion mod (13
   sequences: mod 1 then 16, 37 or 38); the text set last is the champion mod's. (fn:sub_004AC870_ClientMonNameBuild@0x004AC870,

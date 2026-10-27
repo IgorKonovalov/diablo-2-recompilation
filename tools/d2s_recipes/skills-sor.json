@@ -1,0 +1,71 @@
+{
+  "game": "expansion",
+  "class": "Sorceress",
+  "seed": 4501,
+  "name": "SkillsSor",
+  "progression": 15,
+  "difficulty": [
+    131,
+    131,
+    131
+  ],
+  "waypoints": {
+    "normal": "all",
+    "nightmare": "all",
+    "hell": "all"
+  },
+  "quests": "all",
+  "stats": {
+    "strength": 100,
+    "energy": 1000,
+    "dexterity": 100,
+    "vitality": 800,
+    "hitpoints": 6000,
+    "maxhp": 6000,
+    "mana": 8000,
+    "maxmana": 8000,
+    "stamina": 400,
+    "maxstamina": 400,
+    "level": 80,
+    "experience": 742730244
+  },
+  "skills": {
+    "Nova": 20,
+    "Frost Nova": 20,
+    "Static Field": 5,
+    "Teleport": 1,
+    "Fire Bolt": 10,
+    "Meteor": 5,
+    "Blaze": 2,
+    "Warmth": 20,
+    "Fire Mastery": 1,
+    "Lightning Mastery": 1,
+    "Cold Mastery": 1
+  },
+  "mouse": {
+    "left": "Teleport",
+    "right": "Nova",
+    "swap_left": "Teleport",
+    "swap_right": "Nova"
+  },
+  "hotkeys": [
+    "Nova",
+    "Frost Nova",
+    "Static Field",
+    "Fire Bolt",
+    "Meteor",
+    "Blaze"
+  ],
+  "belt_fill": [
+    "rvl",
+    "rvl",
+    "rvl",
+    "mp5"
+  ],
+  "items": [
+    {
+      "code": "hbl",
+      "equip": "belt"
+    }
+  ]
+}

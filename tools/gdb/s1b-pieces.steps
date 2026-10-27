@@ -1,0 +1,57 @@
+# Plan 0051 Phase 1a staging for plan 0038 H1a (the S1b leftover pieces, tools/gdb/s1b-pieces.gdb): load the CalcSor
+# save (tools/d2s_recipes/calc-sor.json, seven potions vps yps wms elx vps yps wms in inventory row 0), hover each
+# potion, drink three, Save and Exit, then load the same character again (the second game's seeds and unit loads).
+# Main menu -> Single Player -> OK on the only character -> Select Difficulty: NORMAL. 800x600, window-relative;
+# the inventory cells are those of tools/gdb/calc-sor-hover.steps (run:2026-10-16-calc).
+click 700 150   # empty background: the first click only activates the window
+sleep 1
+click 400 307   # SINGLE PLAYER
+sleep 3
+click 690 556   # OK on the character-select screen (first character is preselected)
+sleep 2
+click 400 280   # NORMAL in the Select Difficulty box
+sleep 14
+shot workspace/logs/s1b-pieces-game1.png
+move 400 120    # pointer off every item: no CH line expected while it rests here
+sleep 2.0
+key i
+sleep 1
+move 700 520    # inventory open, pointer on no item
+sleep 2.0
+move 432 330   # inventory (0, 0) vps
+sleep 2.0
+move 461 330   # inventory (1, 0) yps
+sleep 2.0
+move 490 330   # inventory (2, 0) wms
+sleep 2.0
+move 519 330   # inventory (3, 0) elx
+sleep 2.0
+move 700 520    # pointer back on no item
+sleep 2.0
+move 548 330   # inventory (4, 0) vps
+sleep 2.0
+rclick 548 330   # drink the vps at (4, 0)
+sleep 1
+move 577 330   # inventory (5, 0) yps
+sleep 2.0
+rclick 577 330   # drink the yps at (5, 0)
+sleep 1
+move 606 330   # inventory (6, 0) wms
+sleep 2.0
+rclick 606 330   # drink the wms at (6, 0)
+sleep 1
+shot workspace/logs/s1b-pieces-inv.png
+key Escape      # close the inventory
+sleep 1
+key Escape      # game menu
+sleep 1
+click 400 262   # SAVE AND EXIT GAME
+sleep 6
+shot workspace/logs/s1b-pieces-menu.png
+click 400 307   # SINGLE PLAYER
+sleep 3
+click 690 556   # OK on the character-select screen
+sleep 2
+click 400 280   # NORMAL in the Select Difficulty box
+sleep 14
+shot workspace/logs/s1b-pieces-game2.png

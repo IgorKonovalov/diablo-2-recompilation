@@ -1,0 +1,63 @@
+{
+  "game": "expansion",
+  "progression": 15,
+  "difficulty": [
+    131,
+    131,
+    131
+  ],
+  "waypoints": {
+    "normal": "all",
+    "nightmare": "all",
+    "hell": "all"
+  },
+  "quests": "all",
+  "stats": {
+    "strength": 400,
+    "energy": 400,
+    "dexterity": 400,
+    "vitality": 800,
+    "hitpoints": 6000,
+    "maxhp": 6000,
+    "mana": 6000,
+    "maxmana": 6000,
+    "stamina": 800,
+    "maxstamina": 800,
+    "level": 85,
+    "experience": 1145236814
+  },
+  "belt_fill": [
+    "rvl",
+    "rvl",
+    "rvl",
+    "mp5"
+  ],
+  "class": "Druid",
+  "seed": 4514,
+  "name": "SkillsDru",
+  "skills": {
+    "Raven": 20,
+    "Firestorm": 20
+  },
+  "mouse": {
+    "left": "Attack",
+    "right": "Firestorm",
+    "swap_left": "Attack",
+    "swap_right": "Firestorm"
+  },
+  "hotkeys": [
+    "Firestorm",
+    "Raven"
+  ],
+  "items": [
+    {
+      "unique": "The Gnasher",
+      "equip": "rarm",
+      "roll": "max"
+    },
+    {
+      "code": "hbl",
+      "equip": "belt"
+    }
+  ]
+}

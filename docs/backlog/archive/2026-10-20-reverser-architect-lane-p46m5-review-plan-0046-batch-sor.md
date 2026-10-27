@@ -41,4 +41,4 @@ do functions 17–29 and 144, 18 entries (tier A: do 18, 20, 22, 27, 28), with t
   `+0x40` term is 0 outside an expansion game; do 22's velocity).
 - **Symbols:** 25 rows (subsystem `skills/catalogue`, all `I`), no clash with `main` after the merge.
 - Column readers filed to the archivist
-  ([entry](../2026-10-20-reverser-archivist-plan-0046-sor-skills-missiles-column-readers.md)).
+  ([entry](2026-10-20-reverser-archivist-plan-0046-sor-skills-missiles-column-readers.md)).

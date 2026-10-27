@@ -1,0 +1,57 @@
+{
+  "game": "expansion",
+  "class": "Sorceress",
+  "seed": 440440052,
+  "name": "MpWoundJoin",
+  "progression": 15,
+  "difficulty": [
+    128,
+    128,
+    128
+  ],
+  "waypoints": {
+    "normal": "all",
+    "nightmare": "all",
+    "hell": "all"
+  },
+  "stats": {
+    "strength": 150,
+    "energy": 200,
+    "dexterity": 150,
+    "vitality": 200,
+    "hitpoints": 1000,
+    "maxhp": 1000,
+    "mana": 1000,
+    "maxmana": 1000,
+    "stamina": 275,
+    "maxstamina": 275,
+    "level": 30,
+    "experience": 4663553
+  },
+  "skills": {
+    "Nova": 1
+  },
+  "mouse": {
+    "left": "Attack",
+    "right": "Nova"
+  },
+  "keep_items": [
+    "tsc",
+    "isc"
+  ],
+  "items": [
+    {
+      "code": "tbk",
+      "tome": 0,
+      "quantity": 20,
+      "store": "inventory",
+      "x": 0,
+      "y": 0
+    },
+    {
+      "unique": "Ripsaw",
+      "equip": "rarm"
+    }
+  ],
+  "quests": "all"
+}

@@ -15,7 +15,7 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
    earlier check. Seen: bit-17 writers 5 → 21
    ([0039](../../../../docs/plans/done/0039-backlog-sweep-4.md) P1b review); S4b row 17 short by 9, "7" instructions for 8 (0038);
    eight wear and resurrection counts one off `check-run.txt` ([0043](../../../../docs/plans/done/0043-items-economy.md) P2 review);
-   pool 12's "six of the 25 `boss` classes" met for five (`lane/h4a` review, 0038).
+   pool 12's "six of the 25 `boss` classes" met for five (`lane/h4a` review, 0038); "2 708 do events" in the record for the logs' 1 840, which hid the 2 000 skill-use floor's shortfall (`lane/p45h` review, [0045](../../../../docs/plans/0045-skills-missiles-machinery.md)).
 3. **Take totals against `main` after merging it**, not against the totals your batch started from.
    Seen: S2c, S3b and S1a reviews (0038), each recomputed.
 4. **"Never", "only", "no X": say what the run separates.** If one case carries both readings (Andariel has
@@ -24,7 +24,8 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
    ([0037](../../../../docs/plans/done/0037-combat-formulas.md)), re-scoped at the `lane/p37t` review; "sell draws only
    through item creations" with 2 unexplained sales, and question 9's absence after a control saturated in two frames
    ([0043](../../../../docs/plans/done/0043-items-economy.md) P2 review); a gamble window opened before the control's first
-   line (0043 P2b review).
+   line (0043 P2b review); 304 caster resyncs "not logged by this run" where 87 match the caster's own logged `THR`
+   rolls (`lane/p45h` review, [0045](../../../../docs/plans/0045-skills-missiles-machinery.md)).
 5. **An existing reviewed symbol name wins.** Merge `main` and grep `re/symbols.csv` for every address
    before you name it; rename your side. Seen: six addresses named twice, `lane/p41r`
    ([0041](../../../../docs/plans/done/0041-stats-and-states.md) P1 review).
@@ -59,7 +60,8 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
     naming start 25 for do 46's finisher calls after the § 12 note corrected it (`lane/p46m11` review,
     [0046](../../../../docs/plans/0046-skills-function-catalogue.md)); skills/0003 § 2's `EDX`-the-skill note filed under the
     bullet after the one that still said `EDX` the level (`lane/p46m12` review, 0046); class 312's remainder met by H4a but
-    still `[I]` in monsters/0004's H4b section (`lane/h4a` review, 0038).
+    still `[I]` in monsters/0004's H4b section (`lane/h4a` review, 0038); special 66's mod 12, met by H4a (special 68)
+    but still `[I]` in monsters/0003's H4b section (`lane/p51r` review, [0051](../../../../docs/plans/0051-backlog-sweep-6.md)).
 13. **At an observed boundary (ADR-0021), the `[C]` ends at the call.** What the callee makes of a compared argument
     (a class word, a register it must preserve, a mode) and every later call go in "After, `[I]`", also in the Answer
     summary. Seen: the radius of hits 24, 44 and 14 in a callee-saved register (`lane/p46m3` review); hit 52's row 0

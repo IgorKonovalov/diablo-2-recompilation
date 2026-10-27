@@ -5,6 +5,7 @@
     python3 -I tools/mp_check.py gates <log> [<log> ...] [-v]
     python3 -I tools/mp_check.py aura <log> [<log> ...]
     python3 -I tools/mp_check.py quests <log> [--word W --join-bits B,B|none --host-bits B,B]
+    python3 -I tools/mp_check.py leave <log> [<log> ...]
 
 xpshare: the party share of kill experience (docs/findings/player/0001-creation.md, the Party bullet; spec
 docs/specs/player/creation.md J4; case MP16 of docs/findings/multiplayer/0001-cases.md), from a host log of
@@ -41,6 +42,12 @@ quests: whose quest record each quest-bit write (QS set / QC clear of tools/gdb/
   pointers (PlayerData +0x10 + 4 * difficulty, QUESTS_PlayerRecord 0x00543520), with both players' presence at the
   write; with --word, the bits set in that word on each player's record are compared with --host-bits / --join-bits
   (a case's prediction, e.g. MP28 (a): the Den of Evil's word 1 bits 1 and 13 on the partied joiner's record).
+leave: case MP30 (multiplayer/0001 § 2; quests/0001 § 2, the e9 and e10 rows), from the QL0..QL1 lines plan 0051
+  Phase 1a added to tools/gdb/quests.py (staged; no session has them yet). Each leave (QL0 at
+  sub_00543BD0_QuestsInvItemEvent's entry, QL1 after its e10 dispatch) must hold only its own player's QE9 lines, then
+  one QE10 for that player, then QL1, in that order; the e9 callback 0x00592C80's count (Q4B before its code test,
+  Q4C after) must drop by exactly 1 when the code is `bks ` or `bkd ` and stay otherwise. The list removals (QLR, by
+  return address), the resets (Q4R) and the quest-bit writes inside a leave (QS/QC) are counted, not predicted.
 Prints one SURVEY line per check; exit 1 on any mismatch. Stdlib only; reads only the logs named.
 """
 import collections
@@ -464,7 +471,74 @@ def check_quests(paths, word, expect):
     return 1 if bad else 0
 
 
+def check_leave(paths):
+    S = collections.Counter()
+    bad = []
+    for path in paths:
+        cur, q4b, phase = None, None, None   # the open leave's player, the last Q4B count, "e9" | "e10"
+        with open(path, errors="replace") as f:
+            for n, line in enumerate(f, 1):
+                tag, _, rest = line.rstrip("\n").partition(" ")
+                if tag not in ("QL0", "QE9", "Q4B", "Q4C", "Q4R", "QE10", "QLR", "QL1", "QS", "QC"):
+                    continue
+                try:
+                    d = json.loads(rest)
+                except ValueError:
+                    bad.append("%s:%d malformed %s line" % (path, n, tag))
+                    continue
+                where = "%s:%d" % (path, n)
+                if tag == "QL0":
+                    if cur is not None:
+                        bad.append("%s QL0 inside an open leave" % where)
+                    cur, phase = d["pl"], "e9"
+                    S["leaves"] += 1
+                    continue
+                if tag in ("QS", "QC"):
+                    if cur is not None:
+                        S["%s word %d bit %d inside a leave" % (tag, d["w"], d["b"])] += 1
+                    continue
+                if cur is None:
+                    bad.append("%s %s outside a leave" % (where, tag))
+                    continue
+                if tag == "QE9":
+                    if phase != "e9" or d["pl"] != cur:
+                        bad.append("%s QE9 after the e10 dispatch or for another player" % where)
+                    S["QE9 quest object %d, callback %s" % (d["q"], d["fn"])] += 1
+                elif tag == "Q4B":
+                    q4b = d["cnt"]
+                elif tag == "Q4C":
+                    want = None if q4b is None else q4b - (1 if d["code"] in ("bks ", "bkd ") else 0)
+                    if want is None or d["cnt"] != want:
+                        bad.append("%s Q4C code %r count %d, predicted %s" % (where, d["code"], d["cnt"], want))
+                    else:
+                        S["Q4C count predicted (code %r)" % d["code"]] += 1
+                    q4b = None
+                elif tag == "Q4R":
+                    S["Q4R reset at count %d" % d["cnt"]] += 1
+                elif tag == "QE10":
+                    if phase != "e9" or d["pl"] != cur:
+                        bad.append("%s QE10 twice or for another player" % where)
+                    phase = "e10"
+                    S["QE10"] += 1
+                elif tag == "QLR":
+                    S["QLR list removal, ret %s%s" % (d["ret"], " (after QE10)" if phase == "e10" else "")] += 1
+                elif tag == "QL1":
+                    if phase != "e10":
+                        bad.append("%s QL1 with no QE10" % where)
+                    cur, phase = None, None
+        if cur is not None:
+            S["leave still open at the end of a log"] += 1
+    for b in bad:
+        print("MISMATCH " + b)
+    print("SURVEY mp_check leave logs=%d leaves=%d mismatches=%d" % (len(paths), S["leaves"], len(bad)))
+    for k, v in sorted(S.items()):
+        print("  %-90s %d" % (k, v))
+    return 1 if bad else 0
+
+
 def main(argv):
+    if len(argv) >= 3 and argv[1] == "leave":
+        return check_leave(argv[2:])
     if len(argv) >= 3 and argv[1] == "aura":
         return check_aura(argv[2:])
     if len(argv) >= 3 and argv[1] == "quests":
