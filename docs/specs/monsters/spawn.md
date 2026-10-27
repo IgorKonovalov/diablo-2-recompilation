@@ -109,7 +109,7 @@ MonStats record position.
 | `UNIQUE_MINIONS` | 3 … 6 | fn:sub_005A0C00_UniqueMinions@0x005A0C00 | [C] |
 | `PACK_MOD` | 16, the mod `ChampionPack` passes to each member (`push 0x10`) | 0x0054E246 | [C] |
 | collision mask by `spawnCol` | 0 and other: `0x3C01`; 2: `0x3F11` | fn:sub_005B2A00_MonSpawnTry@0x005B2A00, run:2026-10-14-collision (1754 and 10 `CollisionTest` calls) | [C] |
-| collision mask by `spawnCol` | 1: `0x01C0` (on the ring path; most `spawnCol` 1 classes take `SpawnPosOnTile` instead, H2); 3: 0 | fn:sub_005B2A00_MonSpawnTry@0x005B2A00, run:2026-10-16-sweep-monsters-b (1: 159 calls, `tentaclehead2`, `tentacle2`, `hellmeteor`; 3: 451, barricades and the prison door) | [C] |
+| collision mask by `spawnCol` | 1: `0x01C0` (on the ring path; most `spawnCol` 1 classes take `SpawnPosOnTile` instead, H2); 3: 0 | fn:sub_005B2A00_MonSpawnTry@0x005B2A00, run:2026-10-14-mon-special, run:2026-10-15-mon-stats, run:2026-10-16-sweep-monsters-b (1: 157 kept-log and 2 session calls, `tentaclehead2`, `tentacle2`, `hellmeteor`; 3: 438 and 13, barricades and the prison door) | [C] |
 | `EVILHUT`, its object | class 528, object 562 | 0x0054E03B | [I] |
 | wanderer class list | Act I: one class, 270 `rogue2`; other acts none | 0x00731B2C, fn:sub_0054EF50_WandererSpawn@0x0054EF50 (§ K) | [C] |
 
@@ -784,7 +784,7 @@ run:2026-10-13-mon-spawn)
 ### K. Wanderers (the tick)
 
 ```
-K1. RoomWandererTick(game, room):                                 [C] up to the roll's draw and its no-spawn branch, [I] for the spawn branch (fn:sub_0054F060_RoomWandererTick@0x0054F060, run:2026-10-13-mon-spawn, run:2026-10-21-sweep-monsters-a)
+K1. RoomWandererTick(game, room):                                 [C] for the first draw, the roll's draw and its no-spawn branch; [I] for the gate's mask width, the room +0x78 test and the spawn branch (bullets below) (fn:sub_0054F060_RoomWandererTick@0x0054F060, run:2026-10-13-mon-spawn, run:2026-10-21-sweep-monsters-a)
       Step(room.seed)                                             ; room draw, every tick
       if room.seed.low & 0x7FFF = 0 and room[+0x78] = 0 and Levels[level].MonWndr ≠ 0:
         WandererRoll: Step(room.seed)                             ; room draw

@@ -609,14 +609,14 @@ expansion and classic games and unread under the watchpoints of step note B4.
 - [I] So a `Rarity` 0 entry is never picked, and with `nPool` = 0 nothing spawns. No stock region has either (the
   only `Rarity` 0 pool cells are *Mountain Top*'s `isSpawn` 0 classes, which are dropped). (fn:sub_005BDE80_MonRegionPickClass@0x005BDE80)
 - [C] `sub_00547BC0_MonRegionFindAdd` (from `sub_00574250_MonsterInit`) appends a class not yet in its level's
-  region when MonStats2 `TotalPieces` (`+0x0EC`) is above 2, raising `nEntries` but not `nPool` (so the spawn pick
-  never sees the entry), and rolls its sets from the **unit** seed, not from `R` (`MonVariantRoll(&unit.seed,
-  entry, 3)`). Over 4568 creations it found the class 4216 times, appended 39 (19 drawing 8–18 unit-seed steps, 20
+  region when MonStats2 `TotalPieces` (`+0x0EC`) is above 2, and rolls its sets from the **unit** seed, not from
+  `R`. Over 4568 creations it found the class 4216 times, appended 39 (19 drawing 8–18 unit-seed steps, 20
   single-set classes drawing none) and did not append 313 with `TotalPieces` ≤ 2; the unit seed at `MonStatsInit`
   entry and every appended set are reproduced, and the region equals the model in 1145 snapshots.
   (fn:sub_00547BC0_MonRegionFindAdd@0x00547BC0, fn:sub_00574250_MonsterInit@0x00574250, tbl:MonStats2.txt:TotalPieces,
   run:2026-10-15-mon-stats, [monsters/0001 § Plan 0038 batch S3a](../../findings/monsters/0001-level-pool.md#plan-0038-batch-s3a-2026-10-16))
-- [I] Its other returns, none met: a region already holding 13 entries returns no entry (0x00547C43; the largest
+- [I] The append raises `nEntries` (`+0x012`) but not `nPool` (`+0x010`), so the spawn pick never sees the entry, and
+  the roll is `MonVariantRoll(&unit.seed, entry, 3)` (the reading the model follows). Its other returns, none met: a region already holding 13 entries returns no entry (0x00547C43; the largest
   snapshotted region held 10); classes 0xC3, 0xC4, 0x126 and 0x128 (`act2male`, `act2female`, `act3male`,
   `act3female`) get no entry; with `TotalPieces` ≤ 2 it returns the next slot unwritten, whose `nVariants` is 0, so
   `MonStatsInit` takes the per-component draws. (fn:sub_00547BC0_MonRegionFindAdd@0x00547BC0)
@@ -736,7 +736,7 @@ prints `monster level 68 (difficulty index 2)`, and `--exp 0` prints 67.
   note C1) and for natural nightmare and hell games, seed 1, which build the same regions. [C]
   (fn:sub_00547D20_MonRegionsInit@0x00547D20, run:2026-10-12-mon-pool, run:2026-10-12-mon-pool-p2)
 - **The game seed is shared.** The region init's single draw (A2) is one step in the game seed's sequence;
-  the object regions, unit proxies, quests and every server unit created later step the same seed after it
+  the object regions, the store, quests and every server unit created later step the same seed after it
   ([rng/seeds](../rng/seeds.md) step 7a). [C] (fn:sub_00530BF0_GameCreate@0x00530BF0, run:2026-10-15-objects,
   run:2026-10-15-vendors, run:2026-10-16-quest-drops)
 - **A dropped class still costs a pick.** `isSpawn` is tested after the pick and the slot removal (C8).

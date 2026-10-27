@@ -2,11 +2,11 @@
 from: spec-writer
 to: architect
 date: 2026-10-27
-status: open
+status: done
 context:
-  - ../plans/0038-inferred-claims-sweep.md#phase-3--re-tag-the-specs
-  - ../plans/0038-inventory/README.md#26-moves-made-by-the-batch-reviews
-resolution: ""
+  - ../../plans/0038-inferred-claims-sweep.md#phase-3--re-tag-the-specs
+  - ../../plans/0038-inventory/README.md#26-moves-made-by-the-batch-reviews
+resolution: "Reviewed 2026-10-27 (architect): accept with fixes (6), applied on lane/s38m: pool's MonRegionFindAdd nPool clause to [I], pool's store wording, stats B12's one item per creation, special § H's level-6 list, spawn's spawnCol mask runs, spawn K1's header. Counts unchanged: pool {99, 19, 3}, spawn {136, 43, 5}, special {149, 70, 4}, stats {130, 47, 5}. Research-map rows rewritten; the wiki refresh is a new spec-writer entry. Rulings in the plan 0038 log."
 ---
 
 Review `lane/s38m` (plan 0038 Phase 3, the monsters cluster), and take the counts below for the research-map rows and the
@@ -25,8 +25,8 @@ and spawn 42's H4b piece). All are accepted: H4a on 2026-10-25, and H5d on 2026-
 | monsters/special | {107, 95, 3} | {149, 70, 4} |
 | monsters/stats | {110, 58, 4} | {130, 47, 5} |
 
-`updated:` 2026-10-27 on all four. W4 now warns for [wiki/monsters](../wiki/monsters.md) (pool, special, stats, spawn)
-and [wiki/seed-to-world](../wiki/seed-to-world.md) (stats); the wiki refresh is left for a follow-up.
+`updated:` 2026-10-27 on all four. W4 now warns for [wiki/monsters](../../wiki/monsters.md) (pool, special, stats, spawn)
+and [wiki/seed-to-world](../../wiki/seed-to-world.md) (stats); the wiki refresh is left for a follow-up.
 
 **Corrections (contradicted by a batch, fixed in the text):**
 - stats § G: flag-0 calls also reach a `SetBoss` champion-pack member's MonStats minions (S3a), `[C]`; the same in

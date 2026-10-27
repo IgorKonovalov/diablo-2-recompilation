@@ -3444,7 +3444,62 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     Sanctuary gate's closed state stays `[I]` with an *Open questions* entry. The d-none header mentions are reworded.
   - **Backlog:** closed the S3a two-statements entry and the H4b corrections entry; annotated the H4a, S3b, S1f and H5d
     entries; review request with the four specs' old and new counts, the corrections and what is left to other clusters
-    ([2026-10-27-spec-writer-architect-review-lane-s38m-plan-0038-phase-3-monsters](../backlog/2026-10-27-spec-writer-architect-review-lane-s38m-plan-0038-phase-3-monsters.md)).
+    ([2026-10-27-spec-writer-architect-review-lane-s38m-plan-0038-phase-3-monsters](../backlog/archive/2026-10-27-spec-writer-architect-review-lane-s38m-plan-0038-phase-3-monsters.md)).
   - **Commits:** the four specs in one commit, then backlog, this log and the ledger. Gate green; W4 warns for the
     monsters and seed-to-world wiki pages.
   - **Next:** architect review of `lane/s38m`.
+- **2026-10-27 — Review of `lane/s38m`, Phase 3 monsters cluster (architect): accept with fixes (6).** `main` had not
+  moved past `0848879`, already merged into the lane, so the merge was a no-op; `backlog.py archive` moved nothing. Read:
+  the four spec diffs (`0848879..cc329ea`) against the S3a, H4b, S3b, S1f, H4a and H5d sections of
+  [monsters/0001](../findings/monsters/0001-level-pool.md), [0002](../findings/monsters/0002-room-population.md),
+  [0003](../findings/monsters/0003-special-monsters.md) and [0004](../findings/monsters/0004-stats.md), the per-spec
+  inventory rows, inventory § 2.2 (pool 5 and 24 by rng/0002) and § 2.6 (the S3a, H4b, S3b, S1f, H4a and H5d moves and
+  their review fixes), the touched backlog entries and the lane's log entry.
+  - **Done when, item by item.** Every raised, in-part and contradicted row of the six batches for these four specs is
+    in the text or listed in the request with its reason; the d-none, d-owner, d-sim and shortfall rows keep `[I]`, the guard ones reworded with their counts.
+    E6: pool {C 99, I 19, L 3}, spawn {C 136, I 43, L 5}, special {C 149, I 70, L 4}, stats {C 130, I 47, L 5}, recounted
+    by script and unchanged by the fixes. Every `[L]` is under *Open questions*. Every raise names its `run:` or second
+    source. The review fixes of the batches are carried: H5d's spawn 41 (sizes 0 and 1 `[C]`, `0xFFFF` `[I]`) and spawn
+    42 (206, 228, 298, 528 `[C]`, 334 `[I]`) raised in part; H4a's special 54 `[C]` at r = 0 only with the `+ r` `[I]`;
+    pool 12's "five" `boss` classes; S3a's pool 22 recounted in part; S3b's special 43 split (already in E1); S3b ruling
+    1's composition for stats 19 and 45. The six contradicted statements are corrected in the text.
+  - **Anchors.** All 642 `fn:`/`data:` anchors of the four specs resolve in `re/symbols.csv` (script). objdump of the
+    pinned image: `MonStats2CompList`'s list-15 test, count skip, cap and store (0x0065712C–0x00657190); the placed-bit
+    refusal (`Stacks` at 0x005A4A09, bit test 0x005A4A1E, `jne` 0x005A4A25); the doomknight draws and stores
+    (0x00573D68–0x00573DAC); Radament's `Range(5)` and `add ebx, 2` (0x005A4CD1–0x005A4CE0); `PresetFallenVariant`'s
+    `BaseId` read and its 0x13 / 0x3A compares (0x0054E2C7–0x0054E2E9); the tick's `test eax, 0x7FFF`, `+0x78` and
+    Levels `+0x2E` tests (0x0054F089–0x0054F0AA); `WandererSpawn`'s act bound and pair reads (0x0054EF59–0x0054EF78);
+    `UModFast`'s `idiv` (0x005A1951).
+  - **Spot-checks** (the five offered, then the sections listed): pool C1 (H4b), stats A1 `MulDiv` (S1f), special G5 (H4a special
+    48), special I4 (H4b special 72), spawn K's class list (H4a spawn 5/49) hold against their sections. Also pool B4,
+    the `+0x025` sum and cap split, the caps, E's classic and `boss` lines, `MonLvl` row and clamp split, the bonuses,
+    the gate, the picks, `MonRegionFindAdd`, `RegionActClass`, pool 27; stats B3, B7, B10, B12, C1, D4, F3, G, G1, G3;
+    special B1, B4, C1, C3, the mod table's split rows, G1 and the tails, H's MonPlace cases, I1–I4, J; spawn A1, B,
+    C1, E3, H2, H3, H5, I1, K. Six fixes below; the rest hold.
+  - **Rulings.** (a) Scope: a fair reading. Phase 3 runs per cluster once its batches are accepted, so the round folds
+    every accepted move of S3a, S3b, S1f, H4b, H4a and H5d for these specs, and pool 5 and 24 by inventory § 2.2. (b) The
+    new spawn § B bullet ("the Chaos Sanctuary test was met 91 times, all with byte 0, each followed by an open gate") is
+    admitted: it records what H4a logged on the open side, which the gate's fall-through already gives, and spawn 11's
+    closed state stays `[I]` as the shortfall says. (c) stats C1's `camel`: the H4b review raised stats 23 whole and made
+    the camel an optional H4a piece, so the `[C]` sentence that names the camel unmet stands. (d) The items left to other
+    clusters are accepted as listed: drlg/lifecycle H2b's restore wording (H4b special 74's correction), items/quest-drops
+    48 (H4a), player/creation D1 (S3b (d)), drlg/collision's H5d parts. (e) Plan 0037 is closed (`done/`), so the
+    one-at-a-time rule for monsters/stats has nothing to wait for. (f) The wiki refresh (W4 on wiki/monsters and
+    wiki/seed-to-world) goes to a spec-writer follow-up entry.
+  - **Fixes applied (6):** (1) overclaim: pool § Consumers' `MonRegionFindAdd` `[C]` stated "raising `nEntries` but not
+    `nPool`" and the call's arguments, which the S3a raise does not list (they are the model's reading); moved to the
+    `[I]` bullet. (2) stale cross-reference: pool's *game seed is shared* note still said "unit proxies" for draw 3, which
+    rng/0002 names the store (`NPCSTORE_CtlCreate`); reworded. (3) misread: stats B12 said each run:2026-10-20-chain
+    creation came "with its two items"; one item each, two in all. (4) misread: special § H's `[I]` bullet listed level
+    6's `PresetFallenVariant` results among the unlogged ones; level 6 is the logged case, removed from the list. (5)
+    omission: spawn's `spawnCol` 1 and 3 mask row cited only the H4b run for counts that are mostly kept-log calls (157 of
+    159, 438 of 451); the kept runs named and the counts split. (6) overclaim: spawn K1's header put the whole gate under
+    `[C]`, while its bullet keeps the mask width and the room `+0x78` test `[I]`; the header now says so.
+  - **Research map:** the monsters/pool, spawn, special and stats rows rewritten whole with the new counts and dates.
+  - **Backlog:** review request
+    [s38m review](../backlog/archive/2026-10-27-spec-writer-architect-review-lane-s38m-plan-0038-phase-3-monsters.md)
+    closed; new spec-writer entry
+    [wiki refresh after the monsters cluster](../backlog/2026-10-27-architect-spec-writer-wiki-refresh-after-the-plan-0038-phase-3.md).
+  - **Ledger:** the lane row's usage filled from the orchestrator (412 899 tokens, 109 tools, 26 min), verdict and fixes:
+    overclaim 2, misread 2, stale cross-reference 1, omission 1; the review row's usage left "—".
+  - **Next:** merge `lane/s38m`; the wiki refresh; the remaining Phase 3 clusters as their batches are accepted.

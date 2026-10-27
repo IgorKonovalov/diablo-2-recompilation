@@ -315,7 +315,7 @@ The path those two rows take is reproduced: one row of level 0 with one location
 item at a free location with its two game-seed steps. run:2026-10-21-chain2 creates class 267 three times and class
 234 once, with the unit seed after `MonEquipInit` predicted and each item made by the item chain, and the control that
 leaves out the location draw fails each case. In run:2026-10-20-chain, one creation of each class reproduces the unit seed
-after `MonEquipInit` (0x0057423A) with its two items, and a control with no `MonEquipInit` walk fails both. So the call is
+after `MonEquipInit` (0x0057423A) with its one item (two items in all), and a control with no `MonEquipInit` walk fails both. So the call is
 made and its draws are the model's on the stock rows; the seed after it is no longer an oracle. [C]
 (fn:sub_005D6B60_MonEquipInit@0x005D6B60, fn:sub_00573B20_MonEquipItemCreate@0x00573B20, run:2026-10-20-chain,
 run:2026-10-21-chain2, [monsters/0004 § Plan 0038 batch H4a](../../findings/monsters/0004-stats.md#plan-0038-batch-h4a-run2026-10-21-sweep-monsters-a)) The level skip, a second row, `k` of 2 or 3 and an
