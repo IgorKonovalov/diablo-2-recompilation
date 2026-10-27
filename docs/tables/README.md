@@ -127,12 +127,12 @@ match (`=` exact, `= (−n marker)` once the `n` `Expansion` marker rows are dro
 | objects | `objects.txt` (patch_d2) | `.bin` (patch_d2) | 573 | 574 | 448 | = (−1 marker) | [Objects](Objects.md) |
 | objgroup | `objgroup.txt` (d2exp) | `.bin` (d2exp) | 133 | 133 | 52 | = | [ObjGroup](ObjGroup.md) |
 | ObjMode | `ObjMode.txt` (d2exp) | `.bin` (d2exp) | 8 | 8 | 52 | = | [ObjMode](ObjMode.md) |
-| ObjType | `ObjType.txt` (d2exp) | `.bin` (d2exp) | 573 | 574 | 52 | = (−1 marker) | — |
+| ObjType | `ObjType.txt` (d2exp) | `.bin` (d2exp) | 573 | 574 | 52 | = (−1 marker) | [ObjType](ObjType.md) |
 | overlay | `overlay.txt` (patch_d2) | `.bin` (patch_d2) | 293 | 294 | 132 | = (−1 marker) | — |
 | pettype | `pettype.txt` (patch_d2) | `.bin` (patch_d2) | 20 | 20 | 224 | = | [PetType](PetType.md) (layout, limit columns) |
 | PlayerClass | `PlayerClass.txt` (d2exp) | `.bin` (d2exp) | 7 | 8 | 4 | = (−1 marker) | — |
 | PlrMode | `PlrMode.txt` (patch_d2) | `.bin` (d2exp) | 20 | 20 | 52 | = | [PlrMode](PlrMode.md) |
-| PlrType | `PlrType.txt` (d2exp) | `.bin` (d2exp) | 7 | 8 | 52 | = (−1 marker) | — |
+| PlrType | `PlrType.txt` (d2exp) | `.bin` (d2exp) | 7 | 8 | 52 | = (−1 marker) | [PlrType](PlrType.md) |
 | properties | `properties.txt` (patch_d2) | `.bin` (patch_d2) | 268 | 269 | 46 | = (−1 marker) | [Properties](Properties.md) |
 | qualityitems | `qualityitems.txt` (d2exp) | `.bin` (d2exp) | 8 | 8 | 112 | = | [QualityItems](QualityItems.md) |
 | RarePrefix | `RarePrefix.txt` (d2exp) | `.bin` (patch_d2) | 46 | 46 | 72 | = | [RarePrefix](RarePrefix.md) |

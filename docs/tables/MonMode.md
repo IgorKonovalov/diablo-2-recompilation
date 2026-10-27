@@ -112,10 +112,17 @@ MonStats `Code`.
   `sub_005A75C0_MonModeStartSkill` and frame with `sub_005A7670_MonAttackFrame`, which runs the do function with no
   event-code test; `xx` (14) starts at `0x005A7870` and frames with `sub_005A8670_MonSeqFrame`
   ([skills/0001 § 5](../findings/skills/0001-dispatch.md#5-the-frame-when-the-do-function-runs),
-  fn:sub_005A78A0_MonModeRecord@0x005A78A0). How often the frame function runs per animation frame, and what the
-  event bytes above do for a monster, is plan 0050 Phase 1.1 (`[L]`).
-- `[L]` The join rule (`BaseW`, then `HTH`) is the data's: it reaches a record for every flagged mode, but the game's
-  own name building and fallback are Phase 1.1's.
+  fn:sub_005A78A0_MonModeRecord@0x005A78A0).
+- `[I]` **How often the frame function runs** ([anim/0001 § 10](../findings/anim/0001-modes-frames.md#10-monster-modes)): every game frame for `WL`,
+  `KB`, `xx` and `RN`, and for `A1`, `A2`, `SC`, `S1`–`S4` when the MonStats2 `*mv` bit of the mode is set; else once
+  per frame event (codes 1–4) of the record, queued at the mode start with the end after the last step
+  (`SUNIT_ScheduleModeEvents`); `NU`, `S3`, `S4` and `DD` queue nothing (their record's `schedule` is 0).
+  (fn:sub_005A6B10_MonModeEveryFrame@0x005A6B10, fn:sub_005A7C20_MonSetMode@0x005A7C20)
+- `[I]` **The game's name** ([anim/0001 § 2](../findings/anim/0001-modes-frames.md#2-records-the-token-the-lookup-and-the-fallback)): MonStats `Code`, this
+  table's `token` (`KB` → `GH`, `g_MonModeTokenRemap`) and MonStats2 `BaseW`, except `hth` in rows 0 and 12 unless
+  MonStats2 `compositeDeath`, and `hth` with no MonStats2 record; a name with no record gets the built-in fallback
+  (2048 frames, speed 256), not an `HTH` retry. `[C]` By that rule every flagged mode outside `xx` names a record too
+  (`mon_rule_miss=0`; the 52 `HTH` joins above are death modes without `compositeDeath`). (fn:COMPOSIT_BuildCofName@0x0064F5B0)
 
 ## Interpretation notes
 

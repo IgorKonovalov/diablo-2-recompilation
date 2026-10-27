@@ -13,6 +13,6 @@ Review plan 0051 Phase 1b (branch `lane/p51s`, from `main` `7ff8d98`; no slot, o
 *2026-10-27 (reverser, `lane/p51s`), after merging `main` `0e3f501`:* **item 3a added** (named at the P0b review).
 `DataTables+0x17C`/`+0x180` is filled by `STATES_Load` with the States rows of flag bit 16, `disguise`, `[I]`
 ([skills/0013 § 6](../../findings/skills/0013-druid.md#6-the-melee-functions-start-56-57-58-do-121-122)); the archivist's
-States bullet has its own [entry](../2026-10-27-reverser-archivist-states-0x17c-list-is-the-disguise-flag.md). (e) Point
+States bullet has its own [entry](2026-10-27-reverser-archivist-states-0x17c-list-is-the-disguise-flag.md). (e) Point
 to rule on: "no other writer" is not claimed, since four `[esi+0x17c]` stores in 0x00538D64–0x0053A1F2 have unfollowed
 base registers. Static outputs: `workspace/logs/p51s/static/manifest.txt` `7436cda5…`.

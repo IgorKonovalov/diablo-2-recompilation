@@ -58,6 +58,14 @@ survey keys `obj_*`), per row of this table: Objects rows whose `Mode<k>` is 1, 
 1 603 flagged modes, 1 483 with a record, 120 without (`S1` 56, `OP` 31, `ON` 31, `NU` 1, `S4` 1). The Objects columns
 and the comparison are in [Objects § Timing](Objects.md#timing-plan-0050-phase-0).
 
+- `[I]` The game's record name is the object token of [ObjType](ObjType.md) (`0x0065B570(class, 0)`), this table's
+  `Token` and `hth` ([anim/0001 § 2](../findings/anim/0001-modes-frames.md#2-records-the-token-the-lookup-and-the-fallback),
+  fn:COMPOSIT_BuildCofName@0x0064F5B0), not the Objects `Token` the join above uses; under the ObjType token 1 491 of
+  the 1 603 flagged modes have a record ([ObjType § Timing](ObjType.md#timing-plan-0050)). `[I]` The server sets an
+  object's frame fields from Objects `FrameCnt`, `Start` and `FrameDelta` of the row's mode, the mode index < 8 (else
+  fatal), and no server code advances them ([anim/0001 § 3](../findings/anim/0001-modes-frames.md#3-unit_setmode-unit_animinit-and-sunit_animinit),
+  fn:UNIT_AnimInit@0x00624390).
+
 ## Open questions
 
 - `[L]` Whether the 16 zero bytes at `+0x024` are filled at load (e.g. a string-table index or a pointer). Reverser,

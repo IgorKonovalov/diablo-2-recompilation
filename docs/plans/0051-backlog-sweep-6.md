@@ -432,7 +432,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
      data), so none of the three data candidates. Four sibling lists are built in the same pass. Written in
      skills/0013 § 6, with that section's "shape-shift states" layout guess corrected and its Open question struck.
      The States § Open questions bullet is the archivist's:
-     [entry](../backlog/2026-10-27-reverser-archivist-states-0x17c-list-is-the-disguise-flag.md). Scan and excerpts in
+     [entry](../backlog/archive/2026-10-27-reverser-archivist-states-0x17c-list-is-the-disguise-flag.md). Scan and excerpts in
      `workspace/logs/p51s/static/` (manifest now `7436cda5…`).
   - **Symbols:** 17 added (`I`): `UnitGetMode`, `PartyGoldClip`, 13 trade functions (`TradeRequest` …
     `TradeBlocked`), `StatesListByFlag` and `StatesListByField`. No rename, no tag change; names checked against
@@ -489,3 +489,11 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     The three open owner entries (patch, the Diablo pair, the plan 0044 owner play) were decided "stay open" at
     approval, but none is annotated with that decision yet. Once that is done, the plan can close. The archivist's
     States entry is a small fold that can land with the archivist's next lane; it does not hold the plan open.
+- **2026-10-27 — Phase 1b item 3a folded into States (archivist, `lane/a51f`; no Ghidra).** The States entry
+  ([archive](../backlog/archive/2026-10-27-reverser-archivist-states-0x17c-list-is-the-disguise-flag.md)):
+  [States § Flag bits](../tables/States.md#columns) gains a bullet on
+  the five lists `STATES_Load` builds (`disguise` → `+0x17C`/`+0x180`, `pgsv`, `curse`, `active`, `itemtype` > 0),
+  `[I]` from skills/0013 § 6, with the stock `disguise` rows `[C]` and its two readers (do 121 and anim/0001's
+  `UNIT_AnimTransform`). The § Open questions bullet on the data candidates (`restrict`, `group` 3, `transform`) is
+  struck as answered; what stays `[L]` is whether other code writes the list (the four `[esi+0x17c]` stores). The
+  plan's static work is now folded; what remains is Phase 2's owner-entry annotations (architect).

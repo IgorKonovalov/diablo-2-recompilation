@@ -431,3 +431,23 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   `%s\AnimData.d2` is loaded. Ledger: lane row filled (usage from the orchestrator), accept with fixes, 7 (misread 2,
   omission 2, overclaim 1, wrong anchor 1, symbol clash 1). The review request is closed. **P1.2 may start** once this
   lane is merged into `main`.
+- **2026-10-27 — Archivist entry items 3–4 folded (archivist, `lane/a51f`; no Ghidra, no harness).** The anim/0001
+  readers entry ([archive](../backlog/archive/2026-10-27-reverser-archivist-p50a-animdata-monseq-readers.md)), whose
+  items 1–2 Phase 0 had met:
+  - Item 3: [PlrType](../tables/PlrType.md) and [ObjType](../tables/ObjType.md) (new; layouts `plrtype` 14 cells and
+    `objtype` 1 146 cells, 0 mismatches; the ObjMode shape, `Token` at `+0x020`, 16 zero bytes; `excel_layout`
+    baseline regenerated: 73 tables, 952 853 cells, 0 unexplained). The token's use `[I]` from anim/0001 § 2.
+  - Item 4: anim/0001 linked from the § Timing notes of PlrMode, MonMode, ObjMode, MonStats2 (`compositeDeath`,
+    `*mv`, `m<mode>` under a shape-shift), MonStats (`SplGetModeChart`, `SplEndGeneric`, `SplEndDeath`, `aidel`;
+    the old `aidel` scope note replaced), Objects (`FrameCnt`, `Start`, `FrameDelta`, `Sync`: the server's object
+    frame fields come from the table, the old `[L]` answered) and Skills (`seqnum`, `durability`, `interrupt`; the
+    `seqnum` `[L]` answered). Tags are the finding's.
+  - `tools/anim_survey.py` gains the finding's rules as counts (anim baseline regenerated, 60 keys):
+    `mon_rule_miss=0` (by the game's monster name, `hth` in DT/DD without `compositeDeath`, every flagged mode outside
+    `xx` has a record) and `obj_objtype_token_ne=16`, `obj_objtype_hit=1491` (the ObjType token differs from the
+    Objects `Token` in 16 records; under it 1 491 of the 1 603 flagged object modes have a record, against 1 483).
+  - Surprise, for the reverser ([backlog](../backlog/2026-10-27-archivist-reverser-anim0001-splgetmodechart-rows-shifted.md)):
+    anim/0001 § 10's `SplGetModeChart` data is one row off from record 410 on (`anim_scan.py rows` keeps the
+    `Expansion` row). By the `.bin` all ten override classes have the column set, so the five branches § 10 calls
+    unreached (417, 543, 570, 705, 709) are reached, and 418/544 are `shadowmaster`/`baalcrab`. MonStats § Timing
+    states the data and leaves those branches `[L]`. For P1.2's *Done when*: re-check § 10 once that entry is answered.
