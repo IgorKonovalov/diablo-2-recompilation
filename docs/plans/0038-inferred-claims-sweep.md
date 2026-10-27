@@ -3572,6 +3572,33 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Backlog:** the refresh entry is closed
     ([archive](../backlog/archive/2026-10-27-architect-spec-writer-wiki-refresh-after-the-plan-0038-phase-3.md)), and
     the review request is filed
-    ([swk review](../backlog/2026-10-27-spec-writer-architect-review-lane-swk-wiki-refresh-after-plan-0038.md)). It also
+    ([swk review](../backlog/archive/2026-10-27-spec-writer-architect-review-lane-swk-wiki-refresh-after-plan-0038.md)). It also
     notes that drlg/lifecycle § I lags spawn § K on the wanderer roll.
   - **Next:** architect review of `lane/swk`.
+- **2026-10-27 — `lane/swk` review (architect): accept with fixes (4).** `main` merged into the lane first (already up to
+  date; `backlog.py archive` a no-op). Every changed statement on wiki/monsters, wiki/levels and wiki/seed-to-world was
+  checked against the spec section it restates (pool C1 and E; spawn A, B, D, E, I and K; special B4, C, G, G5, H and J;
+  stats B7, B10, A1, F3, G3 and the `Align` bullet; collision G1–G3 and I2; lifecycle § I).
+  - **Fixes (on the pages):** (1) wiki/levels *Wanderers*: "that draw passes 1 time in 32 768" moved into the code-read
+    sentence, with the one pass unable to tell the mask's width (spawn K and lifecycle I1 keep it `[I]`). (2) wiki/monsters
+    *Wanderers*: the "1 in 32 768" and the `MonWndr` condition said by the code with the no-player test, since the one
+    pass came in a `MonWndr` level and lifecycle I1 keeps that test `[I]` (rule 1, weaker tag). (3) wiki/monsters' stats
+    paragraph: the emulation's "overflow included" scoped to all but the one faulting input (stats A1). (4) "three were
+    logged" made "three such classes" (special C: classes 59, 397 and 645).
+  - **Rulings.** (a) **`Rarity` 0:** the page's weaker wording is right. spawn D's `[C]` covers a case no run met (no stock
+    region holds a `Rarity` 0 entry; the run confirms the walk, not that outcome), so spawn D is reconciled down to pool's
+    `[I]`, not pool up:
+    [entry](../backlog/2026-10-27-architect-spec-writer-spawn-d-rarity-0-tag-to-pool.md). (b) **drlg/lifecycle § I** is
+    stale against spawn § K (the roll's draw and no-spawn branch are `[C]` on run:2026-10-21-sweep-monsters-a); it was not
+    filed, so it is filed now together with spawn K1's header, which leaves the `MonWndr` ≠ 0 test under `[C]` although
+    the one pass cannot separate it (the `lane/s38m` review missed this):
+    [entry](../backlog/2026-10-27-architect-spec-writer-lifecycle-i-and-spawn-k-wanderer-gate-reconcile.md). (c) The
+    edits beyond the entry (wiki/levels' *Wanderers* paragraph and the room-lifecycle bullet citing spawn § K) are within
+    rule 7 and stand, with fix (1). (d) "By the formula" (`fast`/`fanatic` at `Velocity` 8 and 9, stats G3 `[I]`) and "by
+    the code" (`druidhawk`, stats F3 `[I]`; `Rarity` 0) match the specs' tags. (e) The `based_on` dates equal each spec's
+    `updated` (pool, spawn, special, stats, collision 2026-10-27; the rest unchanged), and spawn is rightly added to
+    wiki/levels.
+  - **Ledger:** the lane row's usage filled from the orchestrator (233 468 tokens, 61 tools, 11 min), verdict and fixes:
+    overclaim 3, other 1; the review row added with usage "—".
+  - **Backlog:** review request closed (archive); two spec-writer entries filed.
+  - **Next:** merge `lane/swk`; the two spec-writer entries, then a `based_on` bump on the three pages.

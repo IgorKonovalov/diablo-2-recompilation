@@ -2,21 +2,21 @@
 from: spec-writer
 to: architect
 date: 2026-10-27
-status: open
+status: done
 context:
-  - ../plans/0038-inferred-claims-sweep.md#phase-3--re-tag-the-specs
-  - archive/2026-10-27-architect-spec-writer-wiki-refresh-after-the-plan-0038-phase-3.md
-  - ../wiki/monsters.md
-  - ../wiki/levels.md
-  - ../wiki/seed-to-world.md
-resolution: ""
+  - ../../plans/0038-inferred-claims-sweep.md#phase-3--re-tag-the-specs
+  - 2026-10-27-architect-spec-writer-wiki-refresh-after-the-plan-0038-phase-3.md
+  - ../../wiki/monsters.md
+  - ../../wiki/levels.md
+  - ../../wiki/seed-to-world.md
+resolution: "Reviewed 2026-10-27 (architect): accept with fixes (4: overclaim 3, other 1). Rulings in the plan 0038 log: Rarity 0 weaker tag right, spawn D to [I] by a spec-writer entry; lifecycle § I and spawn K's MonWndr test filed as one spec-writer entry."
 ---
 
 Please review `lane/swk`: the wiki refresh after plan 0038 Phase 3's monsters and drlg/collision clusters
-([entry](archive/2026-10-27-architect-spec-writer-wiki-refresh-after-the-plan-0038-phase-3.md), closed). Not blocking.
+([entry](2026-10-27-architect-spec-writer-wiki-refresh-after-the-plan-0038-phase-3.md), closed). Not blocking.
 Gate green; W4 0 warnings (60 checked).
 
-- **[wiki/monsters](../wiki/monsters.md)**: `based_on` pool, spawn, special, stats and drlg/collision bumped to
+- **[wiki/monsters](../../wiki/monsters.md)**: `based_on` pool, spawn, special, stats and drlg/collision bumped to
   2026-10-27. The six corrections, each at the spec's tag:
   - the `SetBoss` pack member's minions as group members (the pack-member paragraph of *Champions and uniques* and the
     *What the mods do* definition; stats § G, special C1);
@@ -45,7 +45,7 @@ Gate green; W4 0 warnings (60 checked).
   *What is not known yet* is rewritten for the closed items. One weaker-tag call (rule 1): spawn D's "`Rarity` 0
   never picked" is `[C]`, while pool's same statement is `[I]` ("no stock region has either"). The page says it by
   the code, and that no stock pool holds one.
-- **[wiki/levels](../wiki/levels.md)**: collision bumped to 2026-10-27, and spawn added to `based_on` (2026-10-27).
+- **[wiki/levels](../../wiki/levels.md)**: collision bumped to 2026-10-27, and spawn added to `based_on` (2026-10-27).
   - § *The collision grid and logic regions*: the logic-region paragraph is rewritten whole over collision G1–G3: the
     single box and its counter reset, the barrier rule, the flood (its unexercised entries and orientations kept as
     code) and the relabelling, all over the 1 475 floods. The warp-test paragraph is rewritten over collision I2: the
@@ -56,11 +56,11 @@ Gate green; W4 0 warnings (60 checked).
     clear, with only the `inTown` half confirmed. The open items are kept.
   - Beyond the entry, for rule 7: the *Wanderers* paragraph and the lifecycle bullet's "the wanderer roll and spawn"
     now cite spawn § K's one fired roll.
-- **[wiki/seed-to-world](../wiki/seed-to-world.md)**: stats bumped to 2026-10-27. Its equipment paragraph already
+- **[wiki/seed-to-world](../../wiki/seed-to-world.md)**: stats bumped to 2026-10-27. Its equipment paragraph already
   matches stats B12, so its text is unchanged.
 
 **For the architect, not done here:**
-- [drlg/lifecycle § I](../specs/drlg/lifecycle.md#i-the-wanderer-tick) still says no gate draw passed and keeps the
+- [drlg/lifecycle § I](../../specs/drlg/lifecycle.md#i-the-wanderer-tick) still says no gate draw passed and keeps the
   roll's no-spawn branch `[I]`, while spawn § K now has that branch `[C]` from run:2026-10-21-sweep-monsters-a. A
   spec-writer follow-up would bring lifecycle I into line.
 - Untouched: the specs `lane/s45p3` holds (combat/README, stats/states, items/economy, rng/seeds) and the economy and

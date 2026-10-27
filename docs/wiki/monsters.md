@@ -277,11 +277,12 @@ this seed for all 12 580 monster creations it met ([spawn § Inputs and oracles]
 
 **Wanderers** ([spawn § K](../specs/monsters/spawn.md#k-wanderers-the-tick)). Every room in the update walk takes one
 room-seed draw per tick, and it goes on doing so after the room is populated: 4 044 logged ticks on
-populated rooms each took exactly one step. Rarely (1 in 32 768 ticks), and only in a level with `MonWndr` set, a
-wanderer roll follows. It fired once in a run, in the Chaos Sanctuary: the roll stepped the room seed once more,
-missed its 3 in 100, and spawned nothing, so that tick took two steps. The spawn itself was never reached and is
-read from the code only. So are two details of the gate that this single case cannot separate: how many bits of
-the draw the gate tests, and its "no player near the room" test. The wanderer class list holds one class, for Act I
+populated rooms each took exactly one step. Rarely, a wanderer roll follows. It fired once in a run, in the Chaos
+Sanctuary: the roll stepped the room seed once more, missed its 3 in 100, and spawned nothing, so that tick took two
+steps. The spawn itself was never reached and is read from the code only. So is the rest of the gate, which this
+single case cannot separate: by the code it passes 1 in 32 768 ticks, only in a level with `MonWndr` set and only in a
+room no player is near, but the one pass came in a `MonWndr` level and cannot tell how many bits of the draw are
+tested. The wanderer class list holds one class, for Act I
 only. `MonWndr` gates only this roll: the code has no other reader of it, and watching it in play found none. It
 does not decide whether monsters roam, which is what a community page says.
 
@@ -315,7 +316,7 @@ mod count costs one extra draw (`Range(1)`, which always gives 0 but still steps
 **Pack members and preset champions** ([special § F](../specs/monsters/special.md#f-champion-pack-members-and-preset-champions))
 are not rolled. Each one always gets mod 16 `champion`, whatever the boss drew. Each counts as a special, and each
 brings its own MonStats minions if its class has them. They are not linked to the boss as minions. A pack member whose
-class is a `SetBoss` class (three were logged, `fallenshaman2` and `fallenshaman6` among them) is a small leader in its
+class is a `SetBoss` class (three such classes were logged, `fallenshaman2` and `fallenshaman6` among them) is a small leader in its
 own right: its mod handlers also
 run on its MonStats minions, as a unique's do on its minions (see [What the mods do](#what-the-mods-do-to-stats)).
 
@@ -442,10 +443,10 @@ matched `L-`. The two sets differ only in nightmare and hell defence and in hell
 
 The game stores hit points times 256. A minimum above the maximum makes no draw and gives the minimum; no logged
 creation met one (two stock rows have one, in normal), but each piece of that path is confirmed on its own. The scaling
-arithmetic's branches, overflow included, were checked under emulation. Read from the code but never reached: a
-hit-point cap for very large values and the overflow branches of the hit-point percentage step. Skills get the
-difficulty's `MonsterSkillBonus` (0, 3 or 7) added to their level, with no draw; a run confirmed the skill list of
-every creation in all three difficulties.
+arithmetic's branches, overflow included, were checked under emulation, all but one input that faults. Read from
+the code but never reached: a hit-point cap for very large values and the overflow branches of the hit-point
+percentage step. Skills get the difficulty's `MonsterSkillBonus` (0, 3 or 7) added to their level, with no draw; a
+run confirmed the skill list of every creation in all three difficulties.
 
 **MonProp** ([stats § F](../specs/monsters/stats.md#f-monprop-at-creation)) gives every monster
 of a class its row's properties for the difficulty, special or not, with any value range rolled on the unit seed.

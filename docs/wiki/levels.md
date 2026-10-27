@@ -562,10 +562,10 @@ tests: the first end-to-end run's only two mismatches were that.
 
 **Wanderers** ([lifecycle § I](../specs/drlg/lifecycle.md#i-the-wanderer-tick),
 [spawn § K](../specs/monsters/spawn.md#k-wanderers-the-tick)). Each time a room is handled at the
-start of a frame it takes one room-seed draw for the wandering monster; that draw passes 1 time in 32 768. In the
-lifecycle run no draw passed. A later run saw one pass, in the Chaos Sanctuary: the second draw followed on the room
-seed, did not fall below 3 out of 100, and nothing spawned. The rest is read from the code only: the room must have no
-player near and the level must allow wanderers, a spawn needs the second draw below 3 out of 100 with fewer than 3
+start of a frame it takes one room-seed draw for the wandering monster. In the lifecycle run no draw passed. A later
+run saw one pass, in the Chaos Sanctuary: the second draw followed on the room seed, did not fall below 3 out of 100,
+and nothing spawned. The rest is read from the code only: the draw passes 1 time in 32 768 (the one pass cannot tell
+how many of its bits are tested), the room must have no player near and the level must allow wanderers, a spawn needs the second draw below 3 out of 100 with fewer than 3
 wanderers already in the level's region, and only Act I has a wanderer class. So wanderers can only appear in active
 rooms no player is near.
 
