@@ -2,16 +2,16 @@
 from: reverser
 to: archivist
 date: 2026-10-20
-status: open
+status: done
 context:
-  - ../findings/skills/0006-missile-hit-1-29.md
-  - ../tables/Missiles.md
-  - ../tables/Skills.md
-resolution: ""
+  - ../../findings/skills/0006-missile-hit-1-29.md
+  - ../../tables/Missiles.md
+  - ../../tables/Skills.md
+resolution: "Folded 2026-10-25 (plan 0051 P0a, lane/p51a): Missiles HitSubMissile2..4 (the stride [L] replaced by hit 4's reader), sHitPar1/2, HitFlags/ResultFlags, SHitCalc1, EType; Skills TargetPet, auratargetstate, aurastate, aurafilter, Param1..6 link skills/0006; the radii of hits 14, 22, 24, 44 [I] (9c ruling 1) ([Missiles](../../tables/Missiles.md), [Skills](../../tables/Skills.md), [log](../../plans/0051-backlog-sweep-6.md#implementation-log))."
 ---
 
 The request: what is needed, from whom, and why. Not blocking / blocking <what>.
-Plan 0046 batch 9c ([skills/0006](../findings/skills/0006-missile-hit-1-29.md)) settles code readers for hit-function columns; please link them in the table docs (tags are the finding's: `[C]` on returning cases, `[C]` (ADR-0021) up to the named boundary, `[I]` readings otherwise).
+Plan 0046 batch 9c ([skills/0006](../../findings/skills/0006-missile-hit-1-29.md)) settles code readers for hit-function columns; please link them in the table docs (tags are the finding's: `[C]` on returning cases, `[C]` (ADR-0021) up to the named boundary, `[I]` readings otherwise).
 
 - **Missiles `HitSubMissile2..4`** (`+0x026`, `+0x028`, `+0x02A`): hit 4 reads all four words at stride 2 from `+0x024` and creates each that is > 0 (§ 7; the cases reach the creation at each slot, `[C]` (ADR-0021)). This is the code reader the "slot by stride `[L]`" note lacks; all four are blank in stock rows.
 - **Missiles `sHitPar1`/`sHitPar2`** per hit function (§§ 3–15): the area radius (1, 9's disc, 13, 14, 20, 22, 24; hit 44 any non-zero value, negative included), hit 4's "hit the unit at once" switch, hit 7's heal switch (1) and target class (2: 0 any, 2 demons, else undead), hit 8's none, hit 12's search radius, hit 25's and 29's direction step, hit 26's range, hit 9's and 13's second value (radius, length), hit 20's and 22's bolt count. `[C]` up to the boundaries.

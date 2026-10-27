@@ -270,7 +270,9 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-10-25 | `lane/plans50` | plans 0050–0052, run order | architect | 232 926 | 59 | 19 | — (static, no Ghidra) | 0050, 0051 and the run order approved by the owner 2026-10-25; 0052 held | — |
 | 2026-10-25 | `lane/h4a` (earlier parts, to the second pause) | 0038 H4a | reverser-harness | ~620 000 | 325 | 190 | slot 1 | — (on the resume row) | — (on the resume row) |
 | 2026-10-25 | `lane/h4a` (resume: chaos7 and write-up) | 0038 H4a | reverser-harness | 240 197 | 141 | 64 | slot 1 | accept with fixes (rulings: the De Seis and gate shortfalls a `d-owner` addendum candidate, not routed; the chained-model mismatches to a reverser entry; stats 14 and 13 raised whole by the class-312 piece) | 4: overclaim 1, miscount 1, omission 1, stale cross-reference 1 (special 54 raised on r = 0 alone; pool 12's "six" boss classes for five; the `(H)` half of pool 12 and qd 48 unstated; monsters/0004's H4b class-312 remainder left unmarked) |
-| 2026-10-25 | `lane/h4a` review | 0038 H4a | architect-review | — | — | — | — (static, no Ghidra) | gave accept with fixes | — (on the lane row; ledger raised 15, in part 9, shortfall 8; totals 1 526 unchanged) |
+| 2026-10-25 | `lane/h4a` review | 0038 H4a | architect-review | 158 439 | 64 | 22 | — (static, no Ghidra) | gave accept with fixes | — (on the lane row; ledger raised 15, in part 9, shortfall 8; totals 1 526 unchanged) |
+| 2026-10-25 | `lane/p51a` | 0051 P0a | archivist | 183 561 | 59 | 14 | — (static, no Ghidra) | accept | 0 |
+| 2026-10-27 | `lane/p51a` review | 0051 P0a | architect-review | 69 432 | 27 | 3 | — (static, no Ghidra) | gave accept | — (on the lane row; resumed after the owner's usage-limit pause) |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not

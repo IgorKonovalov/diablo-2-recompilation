@@ -31,7 +31,8 @@ every record and compares it with every mapped cell: **609 records × 142 mapped
 mismatches** (layout `monstats2` in `tools/excel_layouts.py`). A field is `[C]` when a probe over every record
 finds only that offset for the column; `[I]` when the column is constant or equal to a sibling, so its slot comes
 from the stride of its group; "width `[I]`" when the bytes after a field are zero in every record, so a wider
-integer would also fit. **Meaning:** names only, `[L]`, except the rows of § [What the monster pool reads](#what-the-monster-pool-reads).
+integer would also fit. **Meaning:** names only, `[L]`, except the rows of § [What the monster pool reads](#what-the-monster-pool-reads) and
+the *plan 0046 readers* (plan 0051 Phase 0), which carry their own tags.
 
 Three special encodings (`tools/excel_bin.py` field types `tokcount`, `toklist`, `toksum`):
 
@@ -65,7 +66,7 @@ Three special encodings (`tools/excel_bin.py` field types `tokcount`, `toklist`,
 | `SizeX` | int 0..3 (4 distinct) | `+0x008` u8 | — | [I] |
 | `SizeY` | int 0..3 (4 distinct) | `+0x009` u8 | — | [I] |
 | `spawnCol` | int 1..3 (3 distinct), 589 blank | `+0x00A` u8 | — | [C] |
-| `MeleeRng` | int 0..6 (6 distinct) | `+0x00E` u8 | — | [C] (width [I]) |
+| `MeleeRng` | int 0..6 (6 distinct) | `+0x00E` u8 | *plan 0046 readers:* `[C]` as a map: `sub_00622870_UnitMeleeReach` gives a monster this byte (through MonStats `MonStatsEx`; 0 without a row), and start 9 and do 13 search at that plus 4; the value `0xFF` sends it to `0x0064F380` instead (ADR-0021 boundaries) ([skills/0009 § 3](../findings/skills/0009-amazon.md#3-start-4-5-8-and-9-ammunition-a-target-and-the-strafe-and-fend-counts), [§ 7](../findings/skills/0009-amazon.md#7-do-12-and-do-13-strafe-fend-zeal-and-fury); fn:sub_00622870_UnitMeleeReach@0x00622870, fn:sub_005DAE30_SkillSt09Fend@0x005DAE30, fn:sub_005DBC60_SkillDo13Fend@0x005DBC60); `[I]` that this is the monster's melee reach (the column name; stock 0..6, so the `0xFF` branch is synthetic only) | [C] (width [I]) |
 | `BaseW` | str, 8 distinct, len ≤ 3 | `+0x010` char[4] | — | [C] |
 | `HitClass` | int 1..12 (3 distinct) | `+0x014` u8 | — | [C] |
 | `HDv` | list of 1..7 codes (19 distinct), 465 blank | `+0x015` u8 count; `+0x025` u8 Σ(count − 1), all 16; `+0x026` u8[12] `compcode` rows | `compcode:code` | [C] |
@@ -153,12 +154,12 @@ Three special encodings (`tools/excel_bin.py` field types `tokcount`, `toklist`,
 | `alSel` | int, always 1, 592 blank | `+0x004` bit 4 | — | [C] |
 | `noSel` | int, always 1, 580 blank | `+0x004` bit 5 | — | [C] |
 | `shiftSel` | int, always 1, 604 blank | `+0x004` bit 6 | — | [C] |
-| `corpseSel` | int, always 1, 215 blank | `+0x004` bit 7 | — | [C] |
+| `corpseSel` | int, always 1, 215 blank | `+0x004` bit 7 | *plan 0046 readers:* `[C]` as a map: the corpse tests `0x00645510` and `0x00645680` (starts 15, 17, 21) refuse a monster without flag bit 7 ([skills/0010 § 3](../findings/skills/0010-necromancer.md#3-the-start-functions-15-17-18-19-20-21); fn:sub_00645510_MonCorpseTest@0x00645510, fn:sub_00645680_MonCorpseTestDead@0x00645680, fn:sub_004638A0_MonStats2FlagTest@0x004638A0); `[I]` so Raise Skeleton and the corpse explosions take only a `corpseSel` monster (the bit is this column by the layout) | [C] |
 | `isAtt` | int, always 1, 122 blank | `+0x005` bit 1 | — | [C] |
-| `revive` | int, always 1, 220 blank | `+0x005` bit 0 | — | [C] |
+| `revive` | int, always 1, 220 blank | `+0x005` bit 0 | *plan 0046 readers:* `[C]` as a map: `0x005C3300` (start 21) refuses a monster without flag bit 8, up to its `0x0056E2F0` boundary (ADR-0021) ([skills/0010 § 3](../findings/skills/0010-necromancer.md#3-the-start-functions-15-17-18-19-20-21); fn:sub_005C3300_ReviveTargetTest@0x005C3300, fn:sub_005C3350_SkillSt21Revive@0x005C3350); `[I]` so Revive needs a `revive` monster (the bit is this column by the layout) | [C] |
 | `critter` | int, always 1, 599 blank | `+0x005` bit 5 | — | [C] |
-| `small` | int, always 1, 534 blank | `+0x005` bit 2 | — | [C] |
-| `large` | int, always 1, 435 blank | `+0x005` bit 3 | — | [C] |
+| `small` | int, always 1, 534 blank | `+0x005` bit 2 | *plan 0046 readers:* `[C]` damage function 14 reads it as flag 10 through `sub_004638A0_MonStats2FlagTest`: with `large` and Missiles `dParam1` it picks a monster's knockback chance (`dParam1` < 1: `dParam2` if small, else none; 1: small 2·`dParam2`, large none, else `dParam2`; ≥ 2: small 3·`dParam2`, large `dParam2`, else 2·`dParam2`) ([skills/0005 § 16](../findings/skills/0005-missile-do-19-36-damage.md#16-damage-5-13-14); fn:sub_005AD630_MissDmg14KnockBySize@0x005AD630) | [C] |
+| `large` | int, always 1, 435 blank | `+0x005` bit 3 | *plan 0046 readers:* `[C]` damage function 14's flag 11 (the chance rule under `small`) ([skills/0005 § 16](../findings/skills/0005-missile-do-19-36-damage.md#16-damage-5-13-14); fn:sub_005AD630_MissDmg14KnockBySize@0x005AD630); `[C]` hit 47 (molten boulder) returns 2 (keep rolling) on a unit that is not a monster with this flag, and calls `MISSILE_BuildDamage` for one (or at the end of life), its boundary (ADR-0021); `[I]` the area hit after it, so the boulder explodes on `large` monsters only ([skills/0007 § 8](../findings/skills/0007-missile-hit-31-59.md#8-hit-47-56-and-53-area-hits-and-the-contagion); fn:sub_005AC550_MissHit47Boulder@0x005AC550) | [C] |
 | `soft` | int, always 1, 206 blank | `+0x005` bit 4 | — | [C] |
 | `inert` | int, always 1, 524 blank | `+0x006` bit 1 | — | [C] |
 | `objCol` | int, always 1, 606 blank | `+0x006` bit 2 | — | [C] |
