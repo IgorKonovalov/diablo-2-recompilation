@@ -4440,3 +4440,4 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     row filled (accept with fixes, 2: wrong anchor 1, omission 1; usage from the orchestrator: 87 940 tokens, 26 tools,
     12 min); the review row added, usage "—".
   - **Next:** merge `lane/sk`.
+- **2026-10-27 — `lane/a3r` review (architect): accept.** The `tools/` diff is the one `h3brare` `RECIPE_BASES` row; a scratch rebuild of `h3brare.json` (`52aa64e8…`) on `smpsor-l50.d2s` gives `ce57d8f7…6317`, the H3b record's save hash (data/experiments); `test_d2s.py` 47 tests OK; the [review request](../backlog/archive/2026-10-27-archivist-architect-review-lane-a3r-test-d2s-h3brare-row.md) closed; ledger lane row filled (usage from the orchestrator), review row usage "—".
