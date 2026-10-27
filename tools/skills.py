@@ -37,8 +37,8 @@ Checked (a mismatch is any difference):
   CHAIN the game seed across consecutive missile creations of one SrvDo event (the pairs whose creations are not
         separated by any other logged unit creation), and the caster's seed across consecutive skill events.
   BD    MISSILE_BuildDamage inside a MISSILE_HitUnit: the draws on the missile's seed (physical, fire, magic,
-        lightning, cold, poison, burn; RangeB(hi - lo) + lo when both stats are >= 1, the mastery MulDiv on both bounds
-        first), the drawn packet fields, the physical percent (25 + 121 + 122, floored at -90) and the critical doubling,
+        lightning, cold, poison, burn; RangeB(hi - lo) + lo when both stats are >= 1, an inverted pair swapped, then
+        the mastery MulDiv on both bounds), the drawn packet fields, the physical percent (25 + 121 + 122, floored at -90) and the critical doubling,
         the cold and burn lengths; the missile's stats taken from the MH0 line (the hit's entry).
   RSK   do 31's call of 0x005C4430 (logger rev 3): one caster draw for a class-363 summon at skill level > 2
         (0x005C4300) or a class-364 summon (0x005C43D0 -> 0x005C4180), none otherwise; the SDO.seed of rows 70 and 80
@@ -478,7 +478,10 @@ class Checker:
         for lo_s, hi_s, ms, off in self.BD_ROLLS:
             lo, hi = stat(st, lo_s), stat(st, hi_s)
             if lo >= 1 and hi >= 1:
-                m = stat(st, ms) if ms else 0
+                if lo > hi:                               # an inverted pair is swapped before the mastery
+                    lo, hi = hi, lo                       # (0x005A894B, physical 0x005A89EB)
+                    self.info["BD inverted pairs (swapped)"] += 1
+                m = stat(st, ms) if ms else 0             # the mastery read on the missile too (0x005A895F)
                 if m:
                     lo += muldiv(lo, m, 100)
                     hi += muldiv(hi, m, 100)

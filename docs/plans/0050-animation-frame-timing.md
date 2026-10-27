@@ -1,6 +1,6 @@
 # 0050 — Animation and frame timing: unit modes, frame counts, rates and breakpoints, movement speed (ADR-0014 phase 4)
 
-> **Status:** approved 2026-10-25 (owner), in effect 2026-10-27 (plan 0045 Phase 2 part 1 accepted); P0 accepted 2026-10-27, P1 and P1b open, P2 after 0045·P3's review
+> **Status:** approved 2026-10-25 (owner), in effect 2026-10-27 (plan 0045 Phase 2 part 1 accepted); P0 accepted 2026-10-27; P1 batches P1.1–P1.3 accepted with fixes 2026-10-27; P1b part 2 accepted with fixes 2026-10-27 (Phase 1b done); P2 open (its gate, 0045·P3's review, open since 2026-10-27)
 > **Created:** 2026-10-25
 > **Owner skill(s):** archivist, reverser, spec-writer
 > **Related ADRs:** 0001-target-toolchain-evidence-sources, 0003-runtime-experiments, 0004-boundary-oracles-in-reproduction, 0005-presentation-formats-tools-only, 0007-fetched-leads-only, 0011-harness-slots, 0013-forced-path-runs-cell-level, 0014-scope-game-simulation, 0015-emulated-reproduction, 0016-pipelined-simulation-phases, 0020-skills-phase-in-two-plans, 0021-observed-boundaries-in-emulation
@@ -164,6 +164,11 @@ client-side display of timing stay out (ADR-0005, ADR-0014 § Time): timing ente
     the hit class (`sub_0057CE30_HitClassPick`: which of Weapons `hit class`, MonStats2 `HitClass` and the packet's
     `+0x60` it starts from, and whether the server gates anything on it; [HitClass](../tables/HitClass.md#open-questions),
     folded in at the P0 review);
+    - **and the `lane/a50t` review's two reads** ([log](#implementation-log)): what `MonStatsSpeeds` (anim/0002 § 3.5)
+      writes as the walk base `+0x036` for a class with no walk record (the seven classic `9A` rows and the `E9` rows,
+      [MonStats § Timing](../tables/MonStats.md#timing-plan-0050-phase-0) `[L]`), and whether the moving branch
+      writes `+0x4C` for a `Velocity`-0 class in S1 (a path or none); and anim/0002's open question on a negative
+      rate stat closed, citing [ItemStatCost § Timing](../tables/ItemStatCost.md#timing-plan-0050-phase-0)'s survey;
   - for each event kind (mode start, frame event, mode end, rate change, movement step), its inputs, outputs, draws,
     seeds and the chaining reading (ADR-0014);
   - the community cross-check (Phase 1b) done;
@@ -188,8 +193,19 @@ client-side display of timing stay out (ADR-0005, ADR-0014 § Time): timing ente
   batch, 0045 or 0046 session needs it)
 - **What:** write `tools/anim.py` (model and `check`), `tools/gdb/anim.gdb` and its handler, the character recipes
   (tool-built, stock rate items, ADR-0013 § Neutral), and log a run.
-- **Done when:** `run:YYYY-MM-DD-anim` reproduces with **0 mismatches** over at least (minimums are estimates, to be
-  confirmed at the P1.3 review):
+- **Boundary** (anim/0003 § 9, ruled at the P1.3 review, [log](#implementation-log)): **oracles** (ADR-0004,
+  ADR-0021) are the mode request (plan 0045), the AI's command and its velocity block (plan 0052), the path plan (its
+  points, the replan and the target revalidation's `PathPlan` calls, `0x00679720`; phase (5)), the collision test
+  `0x0064FF90`'s result per crossed subtile, the catalogue speed writers of anim/0003 § 1 and the reschedules of
+  anim/0001 § 7.1, and the client. **Modelled:** the speeds, the step, the snap and the collision walk's arithmetic
+  (the halved increment, the 10-crossing exit), the run drain, the knockback point and its length, the gates of
+  anim/0003 §§ 5–6, `GetHitRoll` with its draws, `PlayerModeAllowed`'s draw, the hit-class nibbles and the object
+  operate end. **Log windows:** the step per frame of one unit per window (position before and after, `+0x7C`, the
+  direction, the point index, `UnitMoveStep`'s return), not every unit every frame (ADR-0014 § Log volume);
+  `COMBAT_GetHit` at entry (result bits, `+0x60`, total, max HP, the defender's seed) and the mode command it issues
+  with the seed before and after `PlayerModeAllowed`; `PlrModeLeaveOk`'s result; object event 1.
+- **Done when:** `run:YYYY-MM-DD-anim` reproduces with **0 mismatches** over at least (minimums are estimates,
+  confirmed as estimates at the P1.3 review):
   - 1 500 player mode events across all seven classes, each with its start frame, its event frames and its end frame
     predicted: A1, A2 (or the class's second attack), kick, throw, cast, get-hit, block, walk and run, a sequence
     skill; at least 30 per class and mode the pilot can stage;
@@ -202,6 +218,9 @@ client-side display of timing stay out (ADR-0005, ADR-0014 § Time): timing ente
     at the moving rate from its walk base (anim/0002 § 3.4) and its schedule predicted, at least 30 events over two or
     more classes, one under a stat 67 change (a `fast` or champion mod, or a slowing state); and a class ≥ 410 monster
     in an S1–S4 mode at the default or attack rate, at least 30 events;
+  - optional (the `lane/a50t` review ruling): a classic `9A` trap (326–330, 355 or 369) in S1, its `+0x036` and `+0x4C`
+    logged and its schedule predicted, at least 30 events; it counts toward the classic classes above when its rate
+    is the moving one. The two-frame records' lost event (`r ≥ 512`) is not a case: no stock source reaches it;
   - 100 object animation starts with the `Sync` draw predicted (and chained);
   - 200 movement windows (walk and run per class, monsters walking and running), positions per logged frame in a
     stated window, 50 under a slowing state;
@@ -210,7 +229,40 @@ client-side display of timing stay out (ADR-0005, ADR-0014 § Time): timing ente
   - **the oracle replacement:** plan 0045's skills run (its action frames), run:2026-10-16-combat and the plan 0047
     runs (their get-hit and block events) re-checked with the action frame and the get-hit length modelled where the
     logs hold what the model needs; the record names what could and could not be replaced;
-  - the Phase 1b cases.
+  - **the Phase 1b cases** (required, from the 19 `contradicted` verdicts of P1b part 2, all reachable on stock data,
+    and the P1b-1 refinement of A1, C1, H1 and B1 ruled at its review;
+    [anim/leads § 12](../findings/anim/leads.md#12-verdicts-part-2),
+    [backlog](../backlog/2026-10-27-reverser-reverser-plan-0050-p1b-contradicted-cases.md); minimums are estimates):
+    **P1b-1** the mode length (A2 contradicted; A1, C1, H1, B1 the counting refinement): attack (an Amazon or
+    Sorceress A1 with a start frame and one class without), cast, get-hit and block at two or more rates each, one of
+    them a slowed attack (factor ≤ 60) and one a fast one (factor ≥ 157), so A2 separates from both `n` and `n − 1`;
+    per action the schedule frame `T`, every kind-0 event's frame, the kind-1 end's frame (`T + n`), the frame of the
+    next request and `PlrModeLeaveOk`'s result with `PlrModeEndPending`'s `E`, and the next mode's start frame; for
+    get-hit and block the first frame the player acts again; a held Lightning cast (mode 18) as the control, the same
+    fields. It settles whether the interval between two actions is `n` or `N = n − 1`, and the spec states the
+    sources' count as `N`; **P1b-2** 30 attacks with the factor above 175 (R5);
+    **P1b-3** 30 throws (TH) by a non-Barbarian, no −30 (A9); **P1b-4** Charge and Leap Attack rates at two item-IAS
+    values, not the attack branch (A10); **P1b-5** Double Swing and Frenzy with two weapons of different speed, one
+    rate, base 70, also Frenzy after a missed first swing (A12, A13); **P1b-6** werewolf and werebear attacks with no
+    weapon and two weapon classes, `w` against the human A1 record (A14); **P1b-7** lengths and do frames of the
+    `DZSC*`, `40SCHTH`, `TGSCHTH`, `VASCHTH` and `NESC*` casts at two FCR values (C2, C4); **P1b-8** a Druid's get-hit
+    with a one-handed hammer and with a two-handed sword or axe, an Amazon's block with a wand (H4); **P1b-9** in the
+    `GetHitRoll` case, a get-hit in `[hp/16, hp/12)` and a refusal above `hp/12` (H6); **P1b-10** 10 player knockbacks
+    with the following mode (neutral) logged, from Blood Raven in Hell (MonProp `bloodraven` `prop1 (H)` `knock`, the
+    stock source; the P1.3 review's 30 knockbacks include them) (H10); **P1b-11** 30 blocked hits on a
+    player, 10 inside `⌊stat 102 / 8⌋ + 15` frames of the last block start (B5); **P1b-12** 30 repeated casts of a delay
+    skill outlasting its cast (Frozen Orb), the do, state 121 and the next do (D2); **P1b-13** a unit under Slows
+    Target, path speed unchanged, rate lowered at the cap, 30 events and a movement window (M6, M7, M8); **P1b-14** a
+    moving factor below 25 (the floor) and a player's run at the animation base `0x65`, in the movement windows (M11);
+    **P1b-15** 30 Charge starts with the path speed logged, one at stat 67 ≤ 50 (M12);
+  - **the P1.3 review's cases** (minimums are estimates): 100 `GetHitRoll` calls with the band, the divisor and the
+    draws predicted, at least 20 in each of the two drawing bands and over two or more hit classes with different
+    divisors; 30 knockbacks (players and monsters, the end frame predicted); the run drain in the run windows above
+    (stamina per frame, and a run that turns to a walk at 0 if the pilot can stage it); the first frame of an
+    every-frame event queued during a frame's unit-list run (anim/0003's open question: it sets the first step of
+    every moving mode and the monster knockback count), logged at 30 or more moving-mode starts; optional: 30
+    `PlayerModeAllowed` draws under state 42 and 30 object operate ends (event 1). The step-product wrap
+    (`v ≥ 32 768`) is not a case unless a stock source reaches it.
 
   Rare-branch minimums (about 30 each) may fall short, named in the record with their counts; their claims stay `[I]`.
 
@@ -265,7 +317,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   harness; the 2026-10-25 run order of the [plans index](README.md#run-order-set-2026-10-25-plans-00380052) is current.
 - **2026-10-27 — In effect (architect, at the plan 0045 Phase 2 part 1 review).** Plan 0045 Phase 2 part 1
   (`lane/p45h`, run:2026-10-25-skills) is accepted with fixes, with a part 2 filed for the models and sessions it
-  lacked ([0045 log](0045-skills-missiles-machinery.md#implementation-log)). That acceptance is the one this plan's
+  lacked ([0045 log](done/0045-skills-missiles-machinery.md#implementation-log)). That acceptance is the one this plan's
   approval waited for: **Phases 0, 1 and 1b are open**. Phase 2 still waits for 0045·P3's review, which waits for 0045
   Phase 2 part 2's review.
 - **2026-10-27 — Phase 0 landed (archivist, `lane/p50z`).** `animdata.d2` decoded and the timing columns documented;
@@ -559,10 +611,246 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   case: a classic monster (< 410, not `npc`) in S1–S4 at the moving rate, 30 events over two or more classes, one under
   a stat 67 change, and a class ≥ 410 monster in S1–S4 at the default or attack rate, 30 events. (h) **The MonStats
   § Timing `[L]` on the five branches** is the archivist's:
-  [entry](../backlog/2026-10-27-architect-archivist-p50b-monstats-timing-branches-and-rate-stat-minima.md) (item 1,
+  [entry](../backlog/archive/2026-10-27-architect-archivist-p50b-monstats-timing-branches-and-rate-stat-minima.md) (item 1,
   with items 2–3 above), non-blocking. (i) The row-shift fix holds: anim/0001 § 10's ten classes match the two
   byte-indexed jump tables (`0x005A79C4`, `0x005A7A80`) and `OVRBIN`; the archivist entry's closure stands.
   Ledger: lane row filled (usage from the orchestrator), accept with fixes, 6 (miscount 2, omission 2, overclaim 1,
   misread 1); review row added with "—" usage. The review request is closed
   ([archive](../backlog/archive/2026-10-27-reverser-architect-review-lane-p50b-plan-0050-phase-1-batch.md)).
   **P1.3 may start** once this lane is merged into `main`.
+- **2026-10-27 — the P1.2 review's archivist entry folded (archivist, `lane/a50t`; no Ghidra, no harness).**
+  [Entry](../backlog/archive/2026-10-27-architect-archivist-p50b-monstats-timing-branches-and-rate-stat-minima.md).
+  `tools/anim_survey.py` gains the sections `ratemin` and `twoframe` (baseline `tools/gate/baselines/anim.txt`
+  regenerated by rerunning `summary`: the six `rate_src_*` and four `twoframe_*` keys are new, every old key unchanged).
+  (1) [MonStats § Timing](../tables/MonStats.md#timing-plan-0050-phase-0): the `SplGetModeChart` `[L]` is replaced by
+  anim/0001 § 10's per-class reading `[I]`. (2) **No stock source makes a rate-bonus stat negative** `[C]`
+  ([ItemStatCost § Timing](../tables/ItemStatCost.md#timing-plan-0050-phase-0)): 353 property blocks over the item
+  tables, cubemain and monprop write 93, 96, 99, 102 or 105, all with `min`/`max` ≥ 3 (lowest: FRW 3 on *of Inertia*);
+  no Skills, States, Misc or `op stat` cell names one of the five. So FCR ≤ −55, FHR/FBR ≤ −36, FBR ≤ −55 under Holy
+  Shield and `s = −k` are not reached by stock data: no Phase 2 case from ruling (e). (3) The `K9`/`E9` rows
+  ([MonStats § Timing](../tables/MonStats.md#timing-plan-0050-phase-0) table): of the classic classes (< 410) only 332
+  `invisospawner` (`mS1`, `S1mv` 0, `Velocity` 0, walk record `K9WLHTH` speed 256) reaches one of the three records
+  (`K9S1HTH`); 153 `hellmeteor` has `K9` but no S mode, and no `E9` row is below 410 (410 `wakeofdestruction` and 415
+  `infernosentry` are the first). At `vbase` 256 `r ≥ 512` needs `B_FRW + stat 67 ≥ 200` against the 75 a `Velocity`-0
+  monster keeps. **Surprise for ruling (f)/(g):** the review's three records miss four more two-frame S records with
+  an event: `K9S3HTH`, `K9S4HTH` (event at frame 1; no classic row flags S3/S4) and `9AS1HTH`, `9AS2HTH` (event 2 at
+  **frame 0**, which also fires nothing at `r ≥ 256 (F − S)`): seven classic `9A` rows (traps 326–330, 369 and 355
+  `seventombs`) flag `mS1` (327, 328 also `mS2`), all `Velocity` 0 with no walk record, so their walk base is what the
+  load reads for a missing record (not read, `[L]` in the table doc). For ruling (g)'s Phase 2 case, if the architect
+  wants it: `invisospawner` S1 and a `9A` trap S1, with the stat 67 they carry. anim/0002 open question 3 is answered
+  by the ItemStatCost bullet (the reverser's to close in the finding).
+- **2026-10-27 — `lane/a50t` reviewed (architect): accept with fixes (3).** `main` merged first (`062bc473`, the ledger
+  conflict kept both sides; `backlog.py archive` clean). Static only (no harness, no Ghidra). `anim_survey.py summary`
+  reproduces `tools/gate/baselines/anim.txt` key for key; `ratemin` and `twoframe` rerun. A review script of its own over
+  the excel `.txt` files (scratch, not kept) gives the same: 15 property codes write the five stats, 353 blocks (uniqueitems
+  192, runes 50, setitems 53, magicsuffix 37, sets 10, cubemain 4, monprop 4, gems 3), none negative or non-integer, the
+  lowest 3 (*of Inertia* `move1`). No cell outside `itemstatcost`/`properties` names one of the five. The 24 `K9`/`E9`/`9A`
+  rows, their `m<mode>` bits, `*mv` bits and `Velocity` match the MonStats table row for row. Note that
+  the survey's row numbers skip the `Expansion` marker row (*Stormchaser* is record 226).
+  `python3 -I tools/test_d2s.py`: 47 tests, the two new ones pass, and the two failures already on `main` remain.
+  **Rulings.** (a) Item 1 stands: the `SplGetModeChart` `[I]` is anim/0001 § 10's reading, class for class.
+  (b) Item 2's `[C]` stands for the data (the counts and minima); its table's "factor < 0" and "divide fault" columns
+  quote anim/0002 § 2 and § 3.1–3.2, and the bullet's step to "no stock combination" is `[I]` as written. Ruling (e)
+  gets no Phase 2 case. (c) **The item 3 surprise does not add a required case.** Losing a two-frame record's event
+  needs `r ≥ 512`: at walk base 256 that is `B_FRW + stat 67 ≥ 200`. A `Velocity`-0 class keeps the new-monster
+  75 (the `champion`/`fast` terms need `Velocity` > 0), and no stock monprop block writes stat 96. So no stock
+  source reaches it, which is the same outcome as ruling (f). **A `9A` trap's S1 is a Phase 2 optional case** (now in
+  *Done when*), for its run-time `+0x036`/`+0x4C`. The `invisospawner` is not a case: its walk base is the `K9WLHTH`
+  record, which leaves nothing to settle. (d) **Two static reads are now in P1.3's *Done when*:** the walk base
+  `MonStatsSpeeds` gives a class with no walk record (MonStats § Timing's `[L]`), with the moving branch's write for a
+  `Velocity`-0 class in S1, and closing anim/0002's open question on a negative rate stat. The lane had left these as
+  "the reverser's to close" with no route. (e) The 0045 part 2 links match their findings: skills/0001 § 18 and
+  monsters/0004 § 9 (26 425 / 26 383, mask `0x40 + e` at `0x005A51D7`), and skills/0002 § 12 (271 `blaze` at level 2,
+  `25 · 2 + 90` = 140). (f) The d2s keys are opt-in and default off, and each refusal path is tested. The two old
+  `test_d2s.py` failures are not this lane's and are not an architect fix: each missing `RECIPE_BASES` row needs a
+  base save and a built hash. They are routed:
+  [archivist entry](../backlog/archive/2026-10-27-architect-archivist-test-d2s-recipe-bases-and-mp-saves-pin.md). The 13
+  recipes are three plan 0051 P1a mp recipes and ten `skills-*` recipes; `travel-tab2` is not one.
+  **Fixes:** the Missiles `VelLev` row gains the review note that a level-1 `spike1` separates the term, with its C2
+  entry (omission); the P1.3 reads of ruling (d) (omission); the request's `travel-tab2` (misread, in the request only).
+  No game data is dumped: the new tables give row ids, names and counts. The review request is closed. Ledger: lane row
+  filled (usage from the orchestrator), review row added with "—" usage.
+- **2026-10-27 — Phase 1, batch P1.3 landed for review (reverser, `lane/p50d`, static, Ghidra copy `ghidra-p50d`;
+  no harness, no emulation; leads not read before filing, only `anim/leads` § 1).**
+  [anim/0003](../findings/anim/0003-movement-gates.md) reads movement and the gates, all `[I]`: the path speed
+  `(pbase · max(B_FRW + stat 67, 25)) / 100` with `pbase` = `WalkVelocity << 8` or MonStats `Velocity << 8` (no mode
+  argument, so a monster runs at its walk base unless the AI's command carries a velocity); the player's run as a
+  mode-scoped stat-67 list (+50 on stock data); the per-frame step `(d · ((v · 0x400) >> 6)) >> 12` (`v / 16`
+  subtiles per frame on an axis: walk 0.375, run 0.5625, knockback 1), the point snap, the collision walk and the
+  stop; no acceleration for units; the run drain; knockback (planner type 8, `n = (+0x90 >> 1) + 1` subtiles, 3 or 6;
+  a player's ends with the path, a monster's with its animation). The gates: the do, the attack's delivery, the
+  `srvmissile` and the skill delay all start at the first code-1/2 event; hit recovery and block are their modes'
+  schedules; `COMBAT_GetHit`'s dispatch per unit type; `PlrModeLeaveOk` (get-hit and block cannot be left but for
+  death or neutral) and `PlayerModeAllowed` (P1.1 ruling (c): a get-hit during a non-interruptible skill never starts;
+  under Concentration one `Range(player seed, 100)` against stat 164); the block animation's `lastblockframe` gate
+  (`frame − stat 95 > ⌊stat 102 / 8⌋ + 15`); `GetHitRoll`'s 0–2 `RangePow2` on the defender's seed with the divisor by
+  hit class; stun skips the roll; an object's operate mode 1 lasts `FrameCnt1` frames and turns to 2 without an
+  animation start. **The hit class** (folded at P0): the packet's `+0x60`, low nibble from the attacker's weapon,
+  MonStats2 or Missiles `HitClass`, an element nibble from a global counter in `COMBAT_GetHit`; the server gate found
+  is `GetHitRoll`'s divisor. **Corrections:** anim/0001 § 1 (object `FrameCnt` is shifted << 8 at load, so its
+  `+0x48` is 8.8) and combat/0001 § 6 (the delivery calls `UnitBaseHitClass`, not `HitClassPick`), as dated notes.
+  23 symbols (12 `anim/movement`, 11 `anim/timing`), `re/types/anim.h` `PathMove`, `tools/anim_moves.py`, outputs
+  `workspace/logs/anim/p50d-*` (`p50d-manifest.sha256`). Boundary recommendation in anim/0003 § 9. Archivist entry
+  ([backlog](../backlog/archive/2026-10-27-reverser-archivist-p50d-objects-framecnt-shift-and-hit-class-readers.md)); review
+  requested ([backlog](../backlog/archive/2026-10-27-reverser-architect-review-lane-p50d-plan-0050-phase-1-batch.md));
+  **Phase 1b part 2 runs after this review.**
+  *Addendum (same lane, after merging `main` `ee8273b7` with the `lane/a50t` review's two reads):* anim/0003 § 1.1:
+  `MonStatsSpeeds` reads the fallback record for a class with no walk record, so the `9A` and `E9` rows get walk base
+  256 (run 128 below 410), and a `Velocity`-0 classic class in S1 has a path (`SUnitPathCreate`) and so `+0x4C` 192
+  at `X` 75 with path speed 0; anim/0002's negative-rate-stat open question struck, citing ItemStatCost § Timing.
+  Archivist entry item 3 added (the MonStats `[L]`).
+- **2026-10-27 — Phase 1 batch P1.3 reviewed (architect, `lane/p50d` at `ae55f39a`; static, objdump, no Ghidra, no
+  harness): accept with fixes (4).** `main` merged first (already up to date); `backlog.py archive` clean. The manifest
+  passes `sha256sum -c` (7 lines, from `workspace/logs/anim/`); `tools/anim_moves.py` (`4f68385e…`) reruns `tables`,
+  `calls` and `model` under `systemd-run --user --scope -p MemoryMax=4G` byte for byte, and the `p50d-monstatsspeeds.asm`
+  command reproduces. Objdump checks: the step at 0x00650330–0x00650345 is `imul ecx, edi; sar 6; imul; sar 0xC` on
+  both axes, signed, with `k = [ebp+0xC]` passed in `ECX` at 0x00650899 and the acceleration every fifth call
+  (0x006502E6–0x00650320); the collision walk's 10-crossing exit at 0x0065022F–0x0065023D; `PathSetAccel`'s two call
+  or jump sites (0x0059FDCC in `MissileCreate`, 0x004CD97E client) and no image pointer to it; the speed
+  `(pbase · X) / 100` by `0x51EB851F` and `sar 5` with the sign fix (0x006241A9–0x006241C9); the drain
+  (`RunDrain · 2`, `speed / 10 + 1` signed, stat 154 by `0xAE147AE1`, floor 1; 0x0057F283–0x0057F2F7);
+  `GetHitRoll`'s jump table at 0x0057CBF8 decoded (1 → 16, 2 → 8, 3 → 16, 4 → 32, 5 → 64, 6 → 8, 7 → 16, 8 → 32,
+  9 → 16, 10 → 8, 11 → 8, 12 → 16; above 12 → 16), the signed `D/2` and `D/4`, and two `RNG_RangePow2` calls on
+  `def+0x20` with `n` 2 and 4 (`low & (n − 1)`, rng/0001: so the bands get hit with 3/8, 3/4, 1 as stated); the
+  Concentration draw is `RNG_Range(player+0x20, 100)` at 0x0057EF7C against stat 164 of state 42's list, a draw below
+  it refusing; the eight `shl [edi+0xD8…0xF4], 8` at 0x00640E33–0x00640E64; and 0x0057D5EA calls 0x00623C20
+  (`UnitBaseHitClass`: weapon `+0x13C` via 0x0062A180, 1 without one, MonStats2 `+0x14`, else 0) under `+0x64` = 0 and
+  an empty low nibble. Also read: the knockback distance 10 for base class 78 else 5 (0x005A783F–0x005A784B), the
+  block gate (0x0057D282–0x0057D2D6), `g_HitClassElements` (36→48, 16→32, 28→64, 40→80, twice).
+  **The corrections stand:** anim/0001 § 1 (an object's `+0x48` is 8.8, `re/types/game.h` with it) and combat/0001
+  § 6 (`UnitBaseHitClass` at the delivery, `HitClassPick` in `COMBAT_GetHit`), each as a dated note. **Blind rule:**
+  no `anim/leads` row is cited, no community number or formula appears without an address, and *Leads used* states
+  that leads were not read before filing. **P1.3's *Done when* is met:** the speeds (CharStats, MonStats,
+  `MonStatsSpeeds`, stat 67, the slowing states, `RunDrain`), `PathSetSpeed` and the step in 16.16 units, each gate
+  (do, delivery, `srvmissile`, hit recovery and `GetHitRoll`, knockback and stun lengths, block, `delay`, the object
+  operate), the get-hit and durability draws, the hit class (folded at P0: its sources, and the server gate found is
+  `GetHitRoll`'s divisor; `Unit+0xB0`'s readers stay an open question, which the item's "whether" allows), the
+  `lane/a50t` items (§ 1.1's walk base 256 and the `Velocity`-0 S1 write; anim/0002's question struck citing
+  ItemStatCost § Timing), the movement-step event kind, and § 9.
+  **Rulings.** (a) **§ 9's boundary is accepted** with one addition, the collision test `0x0064FF90`'s result per
+  crossed subtile as an oracle (the grid is drlg/collision's), and is **folded into Phase 2's text** (a *Boundary*
+  item) with five new cases under *Done when* (`GetHitRoll` bands, knockbacks, the run drain in the run windows, the
+  every-frame event's first frame, and optional Concentration draws and object operate ends); the minimums stay
+  estimates. (b) The step-product wrap (`v ≥ 32 768`) is not a Phase 2 case unless a stock source reaches it; it
+  stays anim/0003's open question. (c) The global hit-class counter changes no server outcome found (every high
+  nibble gives `D` 16), so Phase 2 logs `+0x60` but need not model the counter beyond the nibble it logs. (d) **With
+  P1.3 accepted, Phase 1's three batches are done.** Phase 1's last *Done when* item (Phase 1b) closes with P1b
+  part 2. **P1b part 2 (the verdicts on `anim/leads` against P1.1–P1.3) may start now.** **0050·P2 (harness, one
+  slot) may start now:** its gate, 0045·P3's review, has been open since 2026-10-27, and Phase 1b need only land
+  before Phase 2's last session batch.
+  **Fixes (applied in anim/0003):** § 2's move bullet gains the collision walk's increment (`0x00678F00` halves both
+  axes until each is within one subtile), the free-crossing count at `+0x1D4`, and the 10th crossing's exit, which
+  takes the full step unchecked and sets flag `0x8` (omission); § 2's wrap bound names the sign case (+4096 wraps at
+  `v` 32 768, −4096 does not) (omission); § 6.1's block gate writes stat 95 only when the test passes, and otherwise
+  returns at 0x0057D3BD (omission); the function table's "§ 6.7" for § 6.5, and that heading's level (stale
+  cross-reference). The review request is closed. Ledger: the lane row filled (usage from the orchestrator), the
+  review row added with "—" usage.
+- **2026-10-27 — `lane/a2t` review (architect): accept.** The archivist's fix for the two old `test_d2s.py` failures
+  ([request](../backlog/archive/2026-10-27-archivist-architect-review-lane-a2t-testd2s-recipe-bases.md)). After merging
+  `main`, `python3 -I tools/test_d2s.py` runs 47 tests, OK. Under `tools/` the lane touches only `tools/test_d2s.py`:
+  13 `RECIPE_BASES` rows, the `test_mp_saves_check` pin and its docstring line. No recipe, builder or `mp_saves.py`
+  line changed. All ten `skills-*` hashes equal their saves in `2026-10-27-skills-manifest.sha256`, checked by script.
+  `mp-sock-join`, `mp-wound-join` and `mp-pal-conv` were built twice into the review scratchpad, and both builds give the
+  pinned hashes. `mp_saves.py check` gives `recipes=30 bad=0 pairs=21 pairs_bad=0`, the figure the `lane/p51r` review
+  accepted for plan 0051 P1a. **`workspace/runtime/`:** the mp saves have no manifest. Nothing under
+  `mp-saves-p44` or `mp-saves-p44h` is newer than 2026-10-20, and no `MpSockJoin`, `MpWoundJoin` or `MpPalConv` exists
+  anywhere in `workspace/`. That is consistent with the blocked build never running. No fixes. The request is closed.
+  Ledger: lane row filled (usage from the orchestrator), review row added with "—" usage.
+- **2026-10-27 — anim/0003's table links folded (archivist, `lane/a3f`; no Ghidra, no harness).** From the reverser's
+  p50d entry ([backlog](../backlog/archive/2026-10-27-reverser-archivist-p50d-objects-framecnt-shift-and-hit-class-readers.md)),
+  every reader `[I]` as the finding: [Objects § Timing](../tables/Objects.md#timing-plan-0050-phase-0) gains the
+  load-time `FrameCnt` `<< 8` (`0x00640E33`–`0x00640E64`, an object's length is 8.8) and the chest operate end (event 1
+  `FrameCnt1 + 1` frames on, mode 2 without an animation start), with a reader row;
+  [HitClass](../tables/HitClass.md#open-questions)'s open question is answered (the attacker's low nibble, the element
+  nibble in `COMBAT_GetHit`, `GetHitRoll`'s divisor), its old "the delivery picks from the counter" sentence replaced
+  per anim/0003's correction of combat/0001 § 6, and the Weapons, MonStats2 and Missiles hit-class rows link it
+  (Missiles has no § Timing: its column row); MonStats § Timing's `9A`/`E9` `[L]` is replaced by § 1.1's reading, walk
+  base 256 and run 128 below 410. **Surprises:** the entry's "Missiles gives the low nibble" differs from the finding
+  (the whole `+0x60` under the packet's high nibble), and the finding's "seven classic `9A` rows" are the `mS1` ones;
+  an eighth (`compellingorb` 366) gets the same base. The docs follow the finding and say both. No survey baseline
+  changed. Review request: [backlog](../backlog/archive/2026-10-27-archivist-architect-review-lane-a3f-p50d-table-links.md).
+- **2026-10-27 — `lane/a3f` review (architect): accept with fixes.** After merging `main`, objdump on the pinned
+  `Game.exe` checks the `FrameCnt` shifts (`0x00640E33`–`0x00640E64`, `shl [edi+0xD8..0xF4], 8`), the chest queue
+  (`0x0058639A`: `FrameCnt1 >> 8` + frame + 1, `Mode1` at `+0x140`), event 1 (`0x005814A7` `Mode2` `+0x141`,
+  `0x005814B7` `HasCollision2` `+0x122`), the missile hit (`0x005AD868`–`0x005AD875`: `HitClass | (+0x60 & 0xF0)`
+  stored whole), `GetHitRoll`'s jump table at `0x0057CBF8` (8, 32, 64, 16 as the docs) and `MonStatsSpeeds`' walk and
+  run lookups. The tables were read with `python3 -I`: `hitclass.txt`'s row order, Missiles `HitClass`'s values, the
+  ten `9A`/`E9` rows, MonStats2's and `animdata.d2`'s (no `9AWL`, `E9WL` or `E9RN` record). Every new reader is `[I]`,
+  with one `[C]` data count; no game data dumped. **Rulings:** (1) Missiles `HitClass` sets the whole `+0x60`: the
+  docs follow the finding over the entry, and the data adds to it, as 122 of the 192 set rows carry a high nibble of
+  their own. (2) `compellingorb` 366 as the eighth `9A` row is accepted: it has no `mS1`, which is why the finding
+  names seven, and it shares the fallback walk base. (3) The divisor rows' names match `hitclass.txt`'s order (2
+  `1hss`, 6 `1ht`, 10 `bow`, 11 `xbow`; 4 `2hss`, 8 `club`; 5 `2hsl`). (4) anim/0003 § 6.5 is not internally
+  inconsistent. Its prose and the binary (`+0x122`) agree on `HasCollision2`, and the `HasCollision0` anchor was a
+  slip. It is fixed in place in anim/0003 (§ 6.5 with a dated note, and Data touched) and in Objects § Timing,
+  with `Mode2` and `FrameCnt1` added. No reverser entry. **Fixes (4):** MonStats names `compellingorb`'s code `9a`,
+  in lower case (misread). HitClass and Missiles carry the high-nibble count (omission). MonStats gives the `E9`
+  rows' run base 256 (omission). The anchors (wrong anchor). The review request is closed. Ledger: the lane row
+  filled (usage from the orchestrator), the review row added with "—" usage.
+- **2026-10-27 — Phase 1b part 2: the verdicts (reverser, `lane/p50v`; no Ghidra, no harness, objdump once).** Each
+  of the 61 [anim/leads](../findings/anim/leads.md) claims has one verdict, written in the *Leads used* of
+  [anim/0001](../findings/anim/0001-modes-frames.md#leads-used) (R1, A3, A4), [anim/0002](../findings/anim/0002-rates.md#leads-used)
+  (29 rate, attack, cast, hit-recovery and block rows) and [anim/0003](../findings/anim/0003-movement-gates.md#leads-used)
+  (29 gate, delay, H5–H10, B4, B5 and movement rows), each with the finding's section and address, and in the leads'
+  Verdict column with a new § 12. **Counts:** held 7, held with refinement 29, contradicted 23 (9 plain; 11
+  `(version: D2R)`, 3 `(version: 1.09)`, ruling (c) of the `lane/p50c` review), not covered 2 (A11: the rollback
+  percentages are catalogue values; D5: the item cast's delay path is not read). By topic: R 2/2/1/0 (held, refined,
+  contradicted, not covered), A 2/5/7/1, C 0/4/3/0, D 2/1/1/1, H 0/6/4/0, B 0/3/2/0, M 1/8/5/0. A4 and D4 are decided
+  from the P0 data (ruling (d)): the Basin attack page re-fetched (rev 65669, unchanged), all 69 rows equal the
+  records, the code's start frames and first code-1/2 events; the 23 delays equal Skills `delay` at 25 a second.
+  **Kept check:** `tools/anim_leads_check.py code` (`80fb5fae…`; part 1's default run still byte-identical to
+  `p50c-leads-check.txt`): the 39 tables × 2 sources against the code's model (`tools/anim_rates.py` rates and
+  `sched_len`) over the records the code looks up: every change point equal (78/78), the tables' frame count one below
+  the code's `⌈256 (F − S) / r⌉` in 76, equal in the 2 Lightning tables (a sequence); output
+  `workspace/logs/anim-leads/p50v-code.txt` (`99e7b983…`), `p50v-commands.txt`, `p50v-manifest.sha256`. **Main
+  findings:** the one-frame offset on every record mode (P1b-1, the largest case); the records settle C2/C3 for the
+  tables (Druid cast 15 frames at 208, Necromancer 16) and against C2's and C4's Druid, form and vampire rows; Slows
+  Target sets stats 68/69 only, so no velocity effect (M6–M8); a player's knockback ends in neutral (H10); the block
+  animation's gate is a cooldown (B5); the throw has no −30 (A9); Charge and Leap Attack take no IAS (A10); the
+  shapeshift base uses the human A1 record per weapon (A14). One objdump read: `RunVelocityStat`'s class is the unit's
+  real class (0x0062449F), cited in M14. **Phase 2:** the 23 contradicted claims are all reachable on stock data and
+  are written into *Done when* as cases P1b-1 … P1b-15
+  ([backlog](../backlog/2026-10-27-reverser-reverser-plan-0050-p1b-contradicted-cases.md)). No tag changed; nothing
+  promoted; `re/symbols.csv` untouched. "No lead" recorded for monster frames and rates, the `fast` mod, object operate
+  frames and `monseq`. Review requested
+  ([backlog](../backlog/archive/2026-10-27-reverser-architect-review-plan-0050-p1b-part-2.md)).
+- **2026-10-27 — `lane/p50v` review (architect): accept with fixes; Phase 1b done.** After merging `main` (the plan
+  log and ledger conflicts kept both sides; `backlog.py archive` clean), `tools/anim_leads_check.py code` was rerun
+  under `MemoryMax=4G` and is byte-identical to `p50v-code.txt` (`SUMMARY anim_leads_code tab=78 thresholds_equal=78
+  table_minus_n_is_-1=76 table_minus_n_is_0=2 basin=69 basin_match=69 delay_rows=23 delay_match=23`), the default run
+  byte-identical to `p50c-leads-check.txt`, and `sha256sum -c p50v-manifest.sha256` and `manifest.sha256` pass; the
+  six input hashes in `p50v-commands.txt` match. One verdict per Id: 61 across the three *Leads used*, none twice,
+  checked by script. No `[C]`/`[I]` changed in the lane's diff, `re/symbols.csv` and `docs/specs/` untouched.
+  **Rulings:** (a) **P1b-1 is a counting difference, not a shown contradiction.** The schedule queues the steps `T +
+  1` … `T + N` that carry every frame event and the end at `T + N + 1 = T + n` (anim/0001 § 7,
+  fn:SUNIT_ScheduleModeEvents@0x005539B0), so `N = n − 1` whenever the ceiling is 2 or more: the sources' count is
+  `N`, the frames with the end's frame left out, and A1's own source names that convention ("the first and last
+  frame are the same"). The 76 rows agree on the rate and on every change point; a constant offset cannot tell a
+  different count from a different behaviour, and the code does not say which of `n` and `n − 1` is observed as the
+  interval between two actions (`PlrModeLeaveOk` lets A1, A2, SC and TH be left while the end is queued). A1, C1,
+  H1 and B1 move from `contradicted (version: D2R)` to **held with refinement**; the Lightning tables' `n` is the
+  sources' own exception and stays for the case to explain. **A2 stays contradicted:** its `− 1` inside the ceiling
+  gives `n − 2` below 256 and up to `n` above, so it differs from both readings. P1b-1 stays a required Phase 2 case
+  and now names what settles it: per action the schedule frame `T`, every kind-0 event's frame, the kind-1 end's
+  frame, the next request's frame with `PlrModeLeaveOk`'s result and `PlrModeEndPending`'s `E`, the next mode's start
+  (for get-hit and block, the first frame the player acts), a slowed (factor ≤ 60) and a fast (≥ 157) attack for A2,
+  and a held Lightning cast as the control. Counts after the move: **held 7, held with refinement 33, contradicted 19
+  (9 plain, 7 `(version: D2R)`, 3 `(version: 1.09)`), not covered 2** (A11, D5), greps in leads § 12. (b) The
+  version rulings of the `lane/p50c` review are applied as written: all 19 D2R-only and 5 1.09-only rows checked, every
+  contradicted one among them carries its version, and no D2R-only difference is counted as a community error. (c)
+  **P1b-10 is not conditional:** MonProp's one `knock` row is `bloodraven` `prop1 (H)`, a stock source of a player
+  knockback in Hell, and the P1.3 review's 30 knockbacks already include players; a shortfall is named in the record
+  under the rare-branch rule. The other 18 contradicted claims are reachable on stock data as filed (P1b-2 Fanaticism
+  or Burst of Speed with a fast weapon; P1b-14 chill with a stat-67 curse). (d) The vocabulary fits the evidence rules
+  (one of the four verdicts per compared claim, `contradicted` with its backlog entry), with (a)'s reading of
+  `contradicted`: a disagreement the code itself shows, not a count the rows cannot separate. (e) A11 and D5 not
+  covered is right: the reschedule percentages are catalogue values (plan 0046) and the item cast's delay path is
+  unread; neither is a Phase 2 case. **Fixes (4), written into the findings, leads § 12, Phase 2's *Done when* and the
+  cases entry:** A1, C1, H1, B1's verdicts and details (overclaim); A2's detail, `n − 2` below 256 (omission); an
+  address or `fn:` added to the 28 verdicts that cited only a section (omission); P1b-10's stock source named and the
+  condition dropped (omission). **Phase 1b's *Done when* is met** (one verdict per claim; every reachable
+  contradicted claim a required Phase 2 case; agreement promotes nothing), so Phase 1b is done. **For 0050·P2
+  (`lane/p50e`):** merge `main` for the cases P1b-1 … P1b-15 in *Done when* and the cases entry; P1b-1 now logs the
+  next request and `PlrModeLeaveOk`'s result besides the frames, and the spec (Phase 3) states the sources' count as
+  `N = n − 1` whatever the run finds; P1b-10 needs a Hell game with Blood Raven. The review request is closed.
+  Ledger: the lane row filled (usage from the orchestrator), the review row added with "—" usage.

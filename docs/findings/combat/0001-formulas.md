@@ -195,7 +195,7 @@ backlog entries (2026-10-16 "combat contradictions").
 | `0x005BFC60` | `STATEVENT_Freeze` | `itemeventfunc` 14 | I |
 | `0x0056E970` | `STATE_ApplyTimed` | put a timed state with one stat | I |
 | `0x005ADF10` | `MISSILE_HitUnit` | missile collision with a unit (named only) | I |
-| `0x005A89A0` | `MISSILE_BuildDamage` | missile packet from the missile's stats | I |
+| `0x005A89A0` | `MISSILE_BuildDamage` | missile packet from the missile's stats | C (skills/0002 § 6: 4 118 builds) |
 | `0x005AD730` | `MISSILE_ApplyDamage` | missile: defence roll, `COMBAT_ApplyDamage` with reductions | I |
 | `0x0063E9F0` | `MONSTATS_IsBoss` | MonStats `+0x0C` bit 6 | I |
 | `0x0063E940` | `MONSTATS_IsDemon` | `+0x0D` bit 5 | I |
@@ -426,6 +426,11 @@ Called as `(game ECX, attacker EDX; defender, packet, critFlag, srcdam)`; `srcda
   `+0x6C`, picks a hit class (`sub_0057CE30_HitClassPick`, a global counter, no draw), runs `COMBAT_DurabilityLoss`;
   then always events 7 (`domeleeattack`, attacker) and 3 (`attackedinmelee`, defender); on a hit the knockback
   `0x005D10C0`; then `COMBAT_GetHit` and removes the entry. (fn:COMBAT_DeliverQueued@0x0057D4F0, 0x0057D5B2–0x0057D662)
+  *2026-10-27 (plan 0050 P1.3, `lane/p50d`), corrected:* the call at `0x0057D5EA` is
+  `sub_00623C20_UnitBaseHitClass(attacker)`, OR-ed into the packet's `+0x60` when `+0x64` is 0 and the low nibble is
+  empty (the attacker's weapon `hit class`, or MonStats2 `HitClass`); `HitClassPick` (the element nibble from a global
+  counter) runs later, inside `COMBAT_GetHit` ([anim/0003 § 7](../anim/0003-movement-gates.md#7-the-hit-class)).
+  (fn:sub_00623C20_UnitBaseHitClass@0x00623C20, fn:sub_0057CE30_HitClassPick@0x0057CE30)
 
 ### 7. Reductions (`COMBAT_ApplyReductions`)
 

@@ -2,7 +2,7 @@
 
 > **Source archive:** d2exp (`.txt` and `.bin`)   **Rows:** 14 (no `Expansion` marker)   **Record:** 4 B
 > **sha256:** `.txt` `57d43b716f248a7f72a4fef39b774569ecaccd644396fe3deebf29206b3b6b30`, `.bin` `ad4b04eb8b90e52eda5b589eee7cc5d509c2a104e7259de541550a8e53dd6d4b`
-> **Doc status:** layout complete (plan 0050 Phase 0); meanings `[L]`
+> **Doc status:** layout complete (plan 0050 Phase 0); the server's use `[I]` (plan 0050 P1.3, anim/0003), the names' meanings `[L]`
 
 ## Purpose
 
@@ -69,10 +69,37 @@ a number in the same range. Readers expected: `anim/timing` and `combat` (plan 0
   low nibble (13 in 109, 141, 157 and 3 in the Skills row with 3) is this table's row is `[L]`.
   (fn:SKILLS_AddElemToPacket@0x0056C8E0, fn:sub_005A5560_MonCritDouble@0x005A5560)
 - `[L]` By the names, the hit class chooses the hit's sound and graphic by weapon kind and target size (`vs. Small`,
-  `vs. Large`). `[I]` The melee delivery picks a hit class from a global counter (`sub_0057CE30_HitClassPick`, no
-  draw, [combat/0001](../findings/combat/0001-formulas.md)); which table value it starts from is plan 0050 Phase 1.3.
+  `vs. Large`).
+- `[I]` **Where the packet's `+0x60` comes from** ([anim/0003 § 7](../findings/anim/0003-movement-gates.md#7-the-hit-class)).
+  The low nibble is the attacker's: at the melee delivery (`COMBAT_DeliverQueued`, `0x0057D5EA`), when the packet's
+  `+0x64` is 0 and `+0x60 & 0xF` is 0, `+0x60 |= sub_00623C20_UnitBaseHitClass(attacker)`: a player's weapon (the
+  base record's `+0x13C`, [Weapons](Weapons.md) `hit class`), 1 (`hth`) without a weapon; a monster's
+  [MonStats2](MonStats2.md) `HitClass` (`+0x014`); 0 otherwise. A missile's hit (`MISSILE_ApplyDamage`, `0x005AD863`)
+  sets `+0x60 = Missiles HitClass | (+0x60 & 0xF0)`: the whole value, not a low nibble. `[C]` (data) Of the 192 rows
+  that set Missiles `HitClass`, 70 hold a low nibble only (2, 6, 10) and 122 a high nibble of their own (32 ×58, 64 ×46,
+  176 ×10, 48 ×7, 80 ×1), which the OR keeps; `[I]` such a hit's class is above 12 and takes `GetHitRoll`'s 16 (below).
+  The high nibble is the element: `sub_0057CE30_HitClassPick`,
+  called in `COMBAT_GetHit` (not at the delivery: anim/0003 corrects combat/0001 § 6, dated note there), takes the
+  first of cold `0x30`, fire `0x20`, lightning `0x40`, poison `0x50` with damage > 0, scanning from a global counter
+  (`g_HitClassCounter & 3`, not an RNG seed); none gives `0x10` on a doubled hit, else 0; a class of 0 becomes 13
+  (`over`). (fn:sub_00623C20_UnitBaseHitClass@0x00623C20, fn:sub_0062A180_ItemHitClass@0x0062A180,
+  fn:COMBAT_DeliverQueued@0x0057D4F0, fn:MISSILE_ApplyDamage@0x005AD730, fn:sub_0057CE30_HitClassPick@0x0057CE30,
+  data:g_HitClassCounter@0x0088CAD0, tbl:Weapons.txt:hitclass, tbl:MonStats2.txt:HitClass, tbl:Missiles.txt:HitClass)
+- `[I]` **The server's use: `GetHitRoll`'s divisor** ([anim/0003 § 6.3](../findings/anim/0003-movement-gates.md#63-the-get-hit-roll)).
+  With `hc` the whole `+0x60`, `D` is 8 for 2, 6, 10, 11 (rows `1hss`, `1ht`, `bow`, `xbow`), 32 for 4, 8 (`2hss`,
+  `club`), 64 for 5 (`2hsl`) and 16 otherwise (among the rows `hth`, `1hsl`, `2ht`, `staf`, `claw`, `over`), so any
+  class with a high nibble (an element or a doubled hit) takes 16 whatever the counter picked. The roll returns "no
+  get-hit" when the defender has state 1 (freeze), when the packet's poison is non-zero and equals its total, when the
+  total is below `0x100`, or when the total is below `maxhp / D` (signed divisions, 1/256 units); otherwise the bands
+  `[hp/D, hp/(D/2))`, `[hp/(D/2), hp/(D/4))` and from `hp/(D/4)` give the get-hit with probability 3/8, 3/4 and 1, by
+  one or two `RangePow2` draws on the defender's unit seed in the first band, one in the second, none in the third;
+  last, a monster whose class lacks the `GH` mode takes no get-hit. Two callers, both in `COMBAT_GetHit`. The value is also
+  copied to `Unit+0xB0` on every hit; that field's readers are anim/0003's open question.
+  (fn:sub_0057CB00_GetHitRoll@0x0057CB00, 0x0057CB0B–0x0057CBF5, fn:COMBAT_GetHit@0x0057CEE0)
 
 ## Open questions
 
-- `[L]` What the server does with the hit class (it is presentation unless Phase 1 finds a gate) and how Weapons
-  `hit class`, MonStats2 `HitClass` and the packet's `+0x60` relate. Plan 0050 Phase 1.3.
+- Answered `[I]` by [anim/0003 § 7](../findings/anim/0003-movement-gates.md#7-the-hit-class) (plan 0050 P1.3): Weapons
+  `hit class` (1 without a weapon) and MonStats2 `HitClass` give the melee packet's low nibble, Missiles `HitClass`
+  the missile hit's value under the packet's high nibble, an element nibble is added in `COMBAT_GetHit`, and the server gate found is `GetHitRoll`'s divisor
+  ([§ Interpretation notes](#interpretation-notes)). The readers of `Unit+0xB0`, where the class is stored, stay open there.

@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: []
 consumed_by: [items/*, monsters/*, drlg/*, objects, data/calc, data/strings]
-tags: {C: 3, I: 5, L: 0}
-updated: 2026-10-16
+tags: {C: 9, I: 2, L: 0}
+updated: 2026-10-27
 ---
 
 # Data: how the game gets its tables
@@ -47,10 +47,15 @@ flowchart TD
 
 - [C] Every excel table is read from its compiled `.bin`; no `.txt` is parsed in a stock run.
   (fn:DATATBLS_LoadTable@0x006122F0, data:g_DataTblsLoadBin@0x00744308; [data/0001](../../findings/data/0001-excel-loader.md#answer-summary))
-- [I] File lookup searches the open MPQs by descending priority (`patch_d2` > `d2exp` > `d2kfixup` > `d2delta` >
-  `d2data` for excel data; `d2kfixup` and `d2delta` are optional, [excel § A](excel.md#a-archives-and-file-lookup) A1); loose files are consulted
-  only under `-direct`, and then before every archive.
-  (fn:STORM_FindFile@0x00417F10; [data/0002](../../findings/data/0002-mpq-precedence.md#answer-summary))
+- [C] File lookup searches the open MPQs by descending priority, so for excel data `patch_d2` > `d2exp` > `d2data`:
+  a kept log reads each kind of file the archives hold with different bytes with 0 mismatches on that order, and with
+  any other copy it fails. Loose files are consulted only under `-direct`, and then before every archive: the loose run's
+  three loose files were never read, and the direct run, with only the switch changed, read all three from disk.
+  (fn:STORM_FindFile@0x00417F10, fn:sub_00406870_InitFileIO@0x00406870, run:2026-10-27-sweep-data-load;
+  [data/0002 § S1b](../../findings/data/0002-mpq-precedence.md#plan-0038-batch-s1b-2026-10-16),
+  [§ H3b](../../findings/data/0002-mpq-precedence.md#plan-0038-batch-h3b-run2026-10-27-sweep-data-load))
+- [I] The optional `d2kfixup` and `d2delta` would sit between `d2exp` and `d2data` ([excel § A](excel.md#a-archives-and-file-lookup)
+  A1, A2). Our install ships neither, so no run shows their place. (fn:STORM_LinkArchive@0x0041B6B0)
 - [C] The live treasure-class table is `treasureclassex`. `TreasureClass.txt` is never loaded.
   (fn:TC_LoadTreasureClassEx@0x006547D0; [data/0001](../../findings/data/0001-excel-loader.md#7-treasure-classes-at-load-time))
 - [C] Each loaded `.bin` holds fixed-size records whose stride is the one the game's consumers use,
@@ -60,10 +65,20 @@ flowchart TD
 
 | When | Function | Tag |
 |---|---|---|
-| Startup, before the excel load | fn:MPQ_OpenCoreArchives@0x004FAB90, fn:MPQ_OpenGameArchives@0x004FAEC0 | [I] |
-| Startup, all tables | fn:DATATBLS_LoadAll@0x00619300 (fixed call sequence, one loader per table) | [I] |
-| A consumer resolves an item code | fn:ITEMS_GetByCode@0x00633640 → fn:EXCEL_FindCode@0x006BD130 | [I] |
-| A consumer resolves a TC name | fn:TC_GetByName@0x00654DD0 → fn:EXCEL_FindName@0x006BD3C0 | [I] |
+| Startup, before the excel load | fn:MPQ_OpenCoreArchives@0x004FAB90, fn:MPQ_OpenGameArchives@0x004FAEC0 | [C] run:2026-10-27-sweep-data-load |
+| Startup, all tables | fn:DATATBLS_LoadAll@0x00619300 (fixed call sequence, one loader per table) | [C] run:2026-10-27-sweep-data-load |
+| A consumer resolves an item code | fn:ITEMS_GetByCode@0x00633640 → fn:EXCEL_FindCode@0x006BD130 | [C] run:2026-10-27-sweep-data-load |
+| A TC name is resolved (at load) | fn:EXCEL_FindName@0x006BD3C0 on data:g_TCLink@0x0096C5E8, called from fn:TC_ParseItemCell@0x00654440, fn:TC_BuildChestTable@0x0065A2C0 (from fn:TC_LoadAll@0x0065A390) and, under `-txt`, the `.txt` parser (0x006BDDEC) | [C] run:2026-10-27-sweep-data-load |
+
+- [C] The four rows are logged in the H3b runs: the 12 archive opens before the first string-table and excel load,
+  one `DATATBLS_LoadAll` call with the same 73 table loads in the same order in every stock-mode run, 1 147 item-code
+  calls that return the code's combined position, and 3 728 `EXCEL_FindName` calls on the TC link that return the TC
+  index of the name (−1 for the 6 names that are no TC). In the stock run no TC name lookup ran in play. (run:2026-10-27-sweep-data-load,
+  [data/0001 § H3b](../../findings/data/0001-excel-loader.md#plan-0038-batch-h3b-run2026-10-27-sweep-data-load),
+  [data/0002 § H3b](../../findings/data/0002-mpq-precedence.md#plan-0038-batch-h3b-run2026-10-27-sweep-data-load))
+- [I] `TC_GetByName` (0x00654DD0), the name → TC wrapper, is dead code: no call, jump or pointer in the image names it,
+  and its breakpoint had no hit in the seven runs. A computed call target is not excluded.
+  (fn:TC_GetByName@0x00654DD0, run:2026-10-27-sweep-data-load)
 
 ## Downstream
 

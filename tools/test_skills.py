@@ -272,6 +272,26 @@ class Model(unittest.TestCase):
         self.assertEqual(C.bad["SP.stats"], 1)                     # SP1 carries no life: the stats check fails
         self.assertEqual(self.run_lines(lines(skills.sd_fmt((post[0] + 1, 0x29A)))).bad["SP.seed"], 1)
 
+    def test_bd_swap(self):
+        # MISSILE_BuildDamage's fire pair inverted (min 20 > max 10) with mastery 329 = 50 on the missile: swapped
+        # first (0x005A894B), then each bound + MulDiv(bound, 50, 100): lo 15, hi 30, one draw RangeB(15) + 15
+        s0 = (0x1234, 0x29A)
+        s1 = skills.step(s0)
+        st = {"48": 20, "49": 10, "329": 50}
+
+        def run(seed_after, fire):
+            C = skills.Checker(self.T)
+            pk = [0] * 28
+            pk[0x10 // 4] = fire
+            C.bd("t", {"m": {"st": st}}, {"n": 1, "sm": skills.sd_fmt(s0)},
+                 {"sm": skills.sd_fmt(seed_after), "p": struct.pack("<28i", *pk).hex()})
+            return C
+        C = run(s1, s1[0] % 15 + 15)
+        self.assertEqual((C.ok["BD.seed"], C.ok["BD.elem"], sum(C.bad.values())), (1, 1, 0), C.miss)
+        self.assertEqual(C.info["BD inverted pairs (swapped)"], 1)
+        C = run(s0, 30)                         # the unswapped reading: hi - lo = 15 - 30 < 1, no draw, fire 30
+        self.assertEqual((C.bad["BD.seed"], C.bad["BD.elem"]), (1, 1))
+
 
 if __name__ == "__main__":
     unittest.main()

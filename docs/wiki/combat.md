@@ -1,10 +1,11 @@
 ---
 based_on:
-  - docs/specs/combat/README.md 2026-10-21
+  - docs/specs/combat/README.md 2026-10-27
   - docs/specs/combat/to-hit.md 2026-10-21
   - docs/specs/combat/damage.md 2026-10-21
   - docs/specs/combat/reductions.md 2026-10-21
   - docs/specs/combat/delivery.md 2026-10-21
+  - docs/specs/monsters/stats.md 2026-10-27
 ---
 
 # Combat
@@ -60,8 +61,8 @@ inputs**, read off the units when the event starts ([overview § The ADR-0014 bo
 How items, set bonuses, passives, auras and states add up to those numbers is now specified, and the
 [stats and states](stats-and-states.md) page explains it; the combat run logged values, not the stat lists, so in it
 the stats stay inputs, and a run that checks combat against the added-up stats is still owed
-([§ Open questions](../specs/combat/README.md#open-questions)). A skill's or a missile's own damage packet is a later
-subject: the specs take it as given and describe what happens to it.
+([§ Open questions](../specs/combat/README.md#open-questions)). A skill's or a missile's own damage packet is the
+subject of the [skills and missiles](skills.md) page: the combat specs take it as given and describe what happens to it.
 
 A few events with their own random draws sit at the edge of the model and are not modelled draw by draw: weapon and
 armour durability loss, knockback, the get-hit decision, and a monster's on-hit skill. In the run the seed was checked
@@ -79,7 +80,7 @@ Three events are covered ([overview § A](../specs/combat/README.md#a-the-attack
   Confirmed: 4 533 monster and 1 259 mercenary attacks.
 - **A missile reaching a unit**, from the defender's side: its block and avoid rolls, the reductions and the delivery.
   Confirmed for the defender's seed over 1 957 missiles. How the missile builds its damage and whether it rolls a
-  chance to hit belong to the missile phase still to come; here its damage packet is an input.
+  chance to hit are on the [skills and missiles](skills.md#missiles-the-hit) page; here its damage packet is an input.
 
 A player skill's melee hit and a monster skill's melee hit use the same machinery, with the skill's own attack-rating
 percent and damage share; that is read from the code only.
@@ -220,9 +221,11 @@ A monster's attack rating, damage and elemental damage are written when it **ent
 hit ([damage § E](../specs/combat/damage.md#e-a-monsters-attack-stats-monattackstats)). That step draws only one
 `Range(100)` for each elemental group of that attack mode whose chance is between 1 and 99, and one `Range(5)` for the random element
 type. The draws are confirmed (5 060 calls). Between that moment and the hit the monster's AI draws on the same seed,
-which the combat model does not cover. The formulas of the values written (the per-level damage, the classic
-Nightmare and Hell factors, the expansion's extra damage per player) were taken as given in the run and are read
-from the code only. Also read from the code: a summon or pet class (`noRatio`) ends up with no elemental damage at
+which the combat model does not cover. The per-level attack rating and damage come from the monster-level table,
+scaled by the attack mode's own columns (the second attack and the two skill modes have theirs): the skills runs
+checked them in 26 425 calls, in Normal and Nightmare with one player. The classic Nightmare and Hell factors, the
+expansion's extra damage per player and the ladder columns were not separated there and are read from the code only.
+Also read from the code: the second and third elemental groups take the first group's damage and length, and a summon or pet class (`noRatio`) ends up with no elemental damage at
 attack time, because its values are written to one place and read from another.
 
 ## Reductions on the defender
@@ -436,7 +439,9 @@ From the specs' open questions ([overview](../specs/combat/README.md#open-questi
 - **The inputs.** A run that checks combat against the added-up stats instead of logged values (how they add up is on
   the [stats and states](stats-and-states.md) page), and the formulas of a monster's attack values.
 - **Skills and missiles.** A skill's or missile's own damage, a missile's chance to hit and knockback, conversion, and
-  on-hit effects other than crushing blow, open wounds and freeze.
+  the on-hit effects other than crushing blow, open wounds and freeze are now explained on the
+  [skills and missiles](skills.md) page; what stays open there (the finisher in a run, the handlers no session fired,
+  the numbered functions outside tier A) is listed at its end.
 - **Timing.** Hit recovery, knockback and stun lengths in time, and the get-hit and durability draws.
 - **Branches the runs met too rarely or never.** A second run built for the rare branches settled most of the first
   run's list (above). Left: a walking player's full block chance (6 cases, and final: the extra session allowed was
@@ -459,5 +464,6 @@ From the specs' open questions ([overview](../specs/combat/README.md#open-questi
 - The [glossary](../glossary.md) for D2 terms.
 - Related wiki pages: [randomness](randomness.md) (unit seeds and draws), [monsters](monsters.md) (a monster's level,
   hit points and defence at creation), [characters](characters.md) (a class's base attributes),
-  [stats and states](stats-and-states.md) (how a unit's stats add up), [items](items.md)
+  [stats and states](stats-and-states.md) (how a unit's stats add up), [skills and missiles](skills.md) (a skill's or a
+  missile's own hit), [items](items.md)
   (what drops at the kill) and [how we know](how-we-know.md).

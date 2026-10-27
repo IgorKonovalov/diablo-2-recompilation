@@ -542,6 +542,29 @@ The rate and velocity stats, the rows with `UpdateAnimRate`, and the property co
 - `[I]` A skill can put stat 68 on its own list: `sub_0056E520_SkillAttackRateList` builds a plain stat list with stat
   68 = the row's `calc3` for start 32 ([skills/0001 § 11](../findings/skills/0001-dispatch.md#11-the-skill-packet),
   fn:sub_0056E520_SkillAttackRateList@0x0056E520).
+- `[C]` **The stock minima of the five rate-bonus stats** (plan 0050 P1.2 review; `python3 -I tools/anim_survey.py
+  ratemin workspace/merged`, keys `rate_src_*`). Every block that names a code writing 93, 96, 99, 102 or 105 — the
+  `prop_survey.py` sources (uniqueitems, setitems with its `aprop`s, the three affix tables, qualityitems, sets, gems,
+  runes; live or not), cubemain `mod 1..5` and monprop's six slots in all three difficulties — has integer `min` and
+  `max` at least 3; no Skills `aurastat`/`passivestat` cell, States `stat`, Misc `stat1..3` or `op stat1..3` names one
+  of the five. 353 blocks in all:
+
+  | Stat | Blocks | Lowest `min` (row) | Highest `max` | Factor < 0 from | Divide fault at |
+  |---|---:|---|---:|---|---|
+  | 93 `item_fasterattackrate` | 154 | 10 (uniqueitems *Bloodrise* `swing1`) | 80 | — (clamped 15..175) | −120 |
+  | 96 `item_fastermovevelocity` | 53 | 3 (magicsuffix *of Inertia* `move1`) | 45 | — (floored at 25) | −150 |
+  | 99 `item_fastergethitrate` | 69 | 5 (magicsuffix *of Balance* `balance1`) | 55 | −36 | −120 |
+  | 102 `item_fasterblockrate` | 24 | 10 (uniqueitems *Stormchaser* `block2`) | 65 | −36 (−55 under state 101) | −120 |
+  | 105 `item_fastercastrate` | 53 | 5 (cubemain, the caster belt recipe `cast1` 5..10) | 50 | −55 | −120 |
+
+  Monprop's two rate blocks are `mephisto`'s `cast2` and `swing2` (15 in
+  nightmare, 30 in hell). So no stock block gives one of the five a negative value, and since the property writer
+  adds or sets the rolled value (`Write`, [items/0006 § 4](../findings/items/0006-properties.md#4-the-handlers-per-func),
+  func 8 rolls within `min`..`max`) `[I]`, no stock combination of items, sockets, set bonuses, cube outputs or monprop
+  brings a stat to the negative factor of [anim/0002 § 3.1–3.2](../findings/anim/0002-rates.md#31-cast) (FHR or FBR
+  ≤ −36, FCR ≤ −55, FBR ≤ −55 under Holy Shield) or to the divide fault of § 2 (`s = −k`). Scope: the data only; a
+  code writer of these stats outside the property blocks is not surveyed (anim/0002 § 4 names none).
+  (tbl:Properties.txt:stat1, tbl:MonProp.txt:prop1)
 - `[L]` By the names, `UpdateAnimRate` makes a change of the stat refresh the unit's animation rate, `item_faster*` are
   the item IAS/FRW/FHR/FBR/FCR terms and `item_slow` the target slow. How each enters a mode's rate, its caps, and
   whether `damage_framerate` (327, `Signed`, `Send Bits` 8, not saved) is a timing stat, are plan 0050 Phase 1.2.

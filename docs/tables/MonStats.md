@@ -717,6 +717,15 @@ blank 0) hold one value for all difficulties; `El<e>Pct`, `El<e>MinD`, `El<e>Max
   section: § Combat readers below. ([monsters/0004 § 4](../findings/monsters/0004-stats.md#4-monlvlstats-and-muldiv) and
   [§ 9](../findings/monsters/0004-stats.md#9-to-hit-and-damage-at-attack-time-sub_005a4f50_monattackstats);
   fn:sub_005A4F50_MonAttackStats@0x005A4F50, fn:sub_006538A0_MonLvlStats@0x006538A0, tbl:MonStats.txt:El1Pct)
+- *Plan 0045 Phase 2 part 2* ([skills/0001 § 18](../findings/skills/0001-dispatch.md#18-plan-0045-phase-2-part-2-the-run-run2026-10-27-skills),
+  [monsters/0004 § 9](../findings/monsters/0004-stats.md#9-to-hit-and-damage-at-attack-time-sub_005a4f50_monattackstats)):
+  `[C]` the mode's column choice above (`A2` for mode 5, `S1` for 7 and 8, `A1` otherwise; raw cells for `noRatio`) and
+  stats 21, 22, 19 hold on 26 425 logged calls, another column set giving other values in 26 383 of them; the unit seed
+  steps only by the `El<e>` chance rolls (run:2026-10-27-skills). `[I]` (objdump) For each `El<e>` the call passes
+  `MonLvlStats` the mask `0x40 + e`, not `0x40 << e`, so **`El2` and `El3` are applied with El1's minimum, maximum and
+  length**; their `El<e>Mode`, `El<e>Pct` and `El<e>Type` are their own. So `El2MinD`, `El2MaxD`, `El2Dur` and `El3MinD`, `El3MaxD`, `El3Dur`
+  (each with its `(N)`/`(H)` cells) have no reader in `MonAttackStats`; no logged call applied an `El2` or `El3`. (0x005A51D7,
+  0x005A5252–0x005A527A, fn:sub_005A4F50_MonAttackStats@0x005A4F50, tbl:MonStats.txt:El2MinD)
 - `[I]` For a `noRatio` class the elemental masks write the raw `El<e>` cells to the output's `+0x24`/`+0x28`, not to
   the elemental slots (monsters/0004 § 4). `MonAttackStats` reads the elemental min and max at `+0x2C`/`+0x30`, so a
   `noRatio` monster's `El` attack has min = max = 0 and keeps only its duration (`+0x34`)
@@ -806,14 +815,16 @@ The columns that name a monster's animation, its modes and its speeds (values fr
 - `[I]` **The mode columns the mode machine reads** ([anim/0001 § 10](../findings/anim/0001-modes-frames.md#10-monster-modes); values from the
   [§ Columns](#columns) rows):
   - `SplGetModeChart` (`+0x1A5` u8, 1 in 20 rows): only when it is set does `sub_005A78A0_MonModeRecord` test the
-    class against its override switch, which gives classes 243, 333, 403, 418 and 544 their own records for some of
+    class against its override switch, which gives the ten classes below their own mode records for some of
     `A1`, `A2`, `S1`–`S4` (fn:sub_005A78A0_MonModeRecord@0x005A78A0, tbl:MonStats.txt:SplGetModeChart). `[C]` By the
     `.bin` all ten classes the switch names have the column set: 243 `diablo`, 333 `diabloclone`, 403 `trappedsoul1`,
     417 `shadowwarrior`, 418 `shadowmaster`, 543 `baalthrone`, 544 `baalcrab`, 570 `baalclone`, 705 `uberdiablo`, 709
-    `uberbaal`. anim/0001 § 10 reads 417, 543, 570, 705 and 709 as blank and names 418 and 544 after 417 and 543: its
-    row read counts the `Expansion` marker row, so it is one row off from record 410 on
-    ([backlog](../backlog/archive/2026-10-27-archivist-reverser-anim0001-splgetmodechart-rows-shifted.md)). `[L]` What those
-    five branches give is not read.
+    `uberbaal`. `[I]` What each branch gives is [anim/0001 § 10](../findings/anim/0001-modes-frames.md#10-monster-modes)'s
+    reading (corrected at P1.2 for the one-row shift of the P1.1 text,
+    [backlog](../backlog/archive/2026-10-27-archivist-reverser-anim0001-splgetmodechart-rows-shifted.md)): 243, 333
+    and 705 take the attack mode records (`g_MonModeRecords` rows) 17 (S3) and 16 (S4); 403 takes rows 18 (A1, A2) and 19 (S1, S2), both
+    ending in a mode-8 command whose `cmd` byte is 101 with MonStats2 `S1mv` set, else 100; 417 and 418 row 20 for S4;
+    543, 544, 570 and 709 row 7 for S3. (fn:sub_005A78A0_MonModeRecord@0x005A78A0, 0x005A7923–0x005A7990)
   - `SplEndGeneric` (`+0x1A6` u8, 1 in 27 rows): at the end of a listed mode of a listed base class (110 `vulture1` S1,
     247 `frogdemon1` SQ, 136 `batdemon1` S3/S4, 230/231 any, 118 `willowisp1` WL, 403 any) `MonModeEndGeneric` only
     queues the AI event instead of the neutral command. (fn:sub_005A8030_MonModeEndGeneric@0x005A8030,
@@ -828,8 +839,59 @@ The columns that name a monster's animation, its modes and its speeds (values fr
 - `[C]` A new monster's stat 67 `velocitypercent` is 75, and the `champion`/`possessed` (+20) and `fast`/`fanatic`
   (`clamp(2048 ÷ Velocity − 128, 10, 100)`) mods add to it only when `Velocity` > 0
   ([monsters/stats](../specs/monsters/stats.md), [ItemStatCost § Timing](ItemStatCost.md#timing-plan-0050-phase-0)).
-- `[L]` How `Velocity`/`Run` and stat 67 become the per-frame step, and how the rate stats change a monster's modes,
-  are plan 0050 Phases 1.2 and 1.3.
+- `[C]` **The two-frame S1–S4 records with an event** (plan 0050 P1.2 review; `python3 -I tools/anim_survey.py twoframe
+  workspace/merged`, keys `twoframe_*`): seven, all speed 256 — `K9S1HTH`, `K9S2HTH`, `K9S3HTH`, `K9S4HTH` (event 2 at
+  frame 1), `E9S2HTH` (event 1 at frame 1), `9AS1HTH`, `9AS2HTH` (event 2 at frame 0). 24 MonStats records have `Code`
+  `K9`, `E9` or `9A` (case-insensitive), 10 of them classes below 410. Every MonStats2 `S1mv`..`S4mv` bit of the 24 is
+  0, and none has the `npc` bit. Per row (record index, `Id`, the `m<mode>` bits set among the listed records,
+  `Velocity`):
+
+  | Code | Below 410 | `m<mode>` set | `Velocity` | Walk record |
+  |---|---|---|---:|---|
+  | `K9` | 153 `hellmeteor` | none | 0 | `K9WLHTH`, speed 256 |
+  | `K9` | 332 `invisospawner` | `mS1` | 0 | `K9WLHTH`, speed 256 |
+  | `9A` | 326 `trap-firebolt`, 329 `trap-poisoncloud`, 330 `trap-lightning`, 355 `seventombs`, 369 `trap-nova` | `mS1` | 0 | none |
+  | `9A` | 327 `trap-horzmissile`, 328 `trap-vertmissile` | `mS1`, `mS2` | 0 | none |
+  | `9A` | 366 `compellingorb` | none | 0 | none |
+
+  | Code | From 410 | `m<mode>` set | `Velocity` | Walk record |
+  |---|---|---|---:|---|
+  | `E9` | 410 `wakeofdestruction`, 415 `infernosentry` | `mS2` (and `mS1`, whose `E9S1HTH` has 15 frames and no event) | 0 | none |
+  | `K9` | 414 `invisopet`, 516–519 `catapultspotter1..4` | `mS1` | 0 | `K9WLHTH`, speed 256 |
+  | `K9` | 417 `shadowwarrior`, 418 `shadowmaster` | `mS1`..`mS4` | 0 | `K9WLHTH`, speed 256 |
+  | `K9` | 425 `plaguepoppy`, 426 `cycleoflife`, 427 `vinecreature` | `mS1` | 7 | `K9WLHTH`, speed 256 |
+  | `K9` | 545 `baaltaunt`, 574 `worldstoneeffect` | none | 12 | `K9WLHTH`, speed 256 |
+
+  Every row is its own `BaseId` but 517–519 (base 516, `Velocity` 0), so `Velocity` scales nothing and the derived
+  walk base (`+0x036`) of the `K9` rows is the walk record's speed, 256 `[I]` ([anim/0002 § 3.5](../findings/anim/0002-rates.md#35-the-monster-walk-and-run-base-monstatsspeeds-at-load),
+  fn:sub_00650F00_MonStatsSpeeds@0x00650F00). `[I]` By anim/0002 a class below 410 takes the moving branch in S1–S4
+  (`r = vbase · max(B_FRW + stat 67, 25) / 100`, no cap on the factor, only with a path) and a mode whose `*mv` bit is
+  0 is scheduled; a scheduled mode fires no frame event once `r ≥ 256 (F − S)`, 512 for these
+  two-frame records from frame 0 ([anim/0002 § 7](../findings/anim/0002-rates.md#7-the-breakpoint-function-derived-not-copied));
+  with `vbase` 256, `r ≥ 512` needs `B_FRW + stat 67 ≥ 200`, against the new-monster 75 that the
+  `champion`/`fast` terms leave unchanged at `Velocity` 0 (the bullet above). So the classic candidates are the
+  `invisospawner`'s S1 and, their walk base being 256 too (next bullet), the seven `9A` rows' S1 (and S2 for
+  `trap-horzmissile` and `trap-vertmissile`); from 410 the S1–S4
+  rate is capped at 175 (`r ≤ 448`) except through a move-first skill ([anim/0002 § 1](../findings/anim/0002-rates.md#1-entry-the-record-and-the-order-of-the-tests)).
+  (tbl:MonStats.txt:Code, tbl:MonStats2.txt:S1mv, tbl:MonStats.txt:Velocity)
+  Whether a `9A` row or the `invisospawner` reaches stat 67 ≥ 200 at run time (an aura or state) and runs S1 with a path
+  is a run-time question, not a data one.
+- `[I]` **The `9A` and `E9` rows' walk base** ([anim/0003 § 1.1](../findings/anim/0003-movement-gates.md#11-a-class-with-no-walk-record-the-lanea50t-reviews-reads),
+  answering this section's former `[L]`). These rows have no walk record; `sub_00650F00_MonStatsSpeeds` takes the walk
+  speed with `ANIMDATA_Lookup(mode 2, type 1, base class, no inventory)`, which returns the table's fallback record
+  when the name has no record (frames 2048, speed 256,
+  [anim/0001 § 2](../findings/anim/0001-modes-frames.md#2-records-the-token-the-lookup-and-the-fallback)). So a class
+  whose `<Code>WL<BaseW>` record is missing gets walk base `+0x036` = 256, scaled by `Velocity(i) / Velocity(b)` only
+  when its base row `b ≠ i` and `Velocity(b) > 0` (unsigned `div`), then `0 → 0`, capped at `0x7FFF`; below class 410
+  its run base `+0x038` is `+0x036(b) / 2` (signed), 128 for such a base, and from 410 the `RN` lookup, falling back to
+  256 the same way. Every `9A` and `E9` row is its own `BaseId` (above), so the eight classic `9A` rows (326–330, 355,
+  366, 369; the finding names the seven with `mS1`; `compellingorb` 366 has the code in lower case, `9a`, and no walk
+  record under either case) get walk base 256 and run base 128, and the two `E9` rows (410, 415) walk base 256 and,
+  from the `RN` lookup with no `E9RN` record, run base 256.
+  (fn:sub_00650F00_MonStatsSpeeds@0x00650F00, fn:ANIMDATA_Lookup@0x0066A9B0, 0x00650F80–0x00650F9D,
+  0x00650FBE–0x00650FD4, tbl:MonStats.txt:Velocity, tbl:MonStats.txt:BaseId)
+- How `Velocity`/`Run` and stat 67 become the per-frame step is [anim/0003 § 1–2](../findings/anim/0003-movement-gates.md#1-velocities) `[I]` (plan 0050 Phase 1.3); how the rate stats change a
+  monster's modes is [anim/0002](../findings/anim/0002-rates.md) `[I]`.
 
 ## Open questions
 

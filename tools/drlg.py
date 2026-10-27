@@ -556,8 +556,9 @@ class Model:
         logged tile record (the rarity pick is the tile-choice input of drlg/room-tiles). Entries past the model's are
         AnimTilesBuild's frames (sub_0066D440, animated tiles of an Animate preset): each is checked against the flags
         formula of its kind on the cell of its layer, | 0x8. In the near rooms other than the one activating, bits
-        0x20000 and 0x40000 may have been added after their own activation (never present at a room's own dump; their
-        writer is not in the build code) and are counted, not compared. On an animated tile (flags16 0x100) the 0x8 bit
+        0x20000, 0x40000 and 0x400 may have been added after their own activation (never present at a room's own dump;
+        their writers are not in the build code: 0x400 is the client wall fade's alpha-0 mark, set and cleared at
+        0x004DF05A/0x004DF063 and at 0x004DF2A8) and are counted, not compared. On an animated tile (flags16 0x100) the 0x8 bit
         is the animation's frame visibility, run-time state, and is not compared either."""
         import base64
         import zlib
@@ -599,7 +600,7 @@ class Model:
                         self.hit("entry flags: animated tile, 0x8 differs (the frame shown; not compared)")
                         fl = (fl & ~8) | (want & 8)
                     extra = fl & ~want
-                    if not own and extra and not extra & ~0x60000 and not want & ~fl:
+                    if not own and extra and not extra & ~0x60400 and not want & ~fl:
                         self.hit("entry flags: bits 0x%x added after the room's activation (near room, not compared)" % extra)
                         fl = want
                     if fl != want:

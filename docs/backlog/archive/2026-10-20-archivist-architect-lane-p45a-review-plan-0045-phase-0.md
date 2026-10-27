@@ -8,7 +8,7 @@ context:
 resolution: "Reviewed 2026-10-20 (architect): accept with fixes (3: miscount 2, other 1). Surveys rerun green, baselines match; tier-A ruling written into plan 0045 Phase 1; notes for P1.1 in 2026-10-20-architect-reverser-plan-0045-p0-review-notes-for-p1-1.md."
 ---
 
-Review `lane/p45a` (from main c4b4539): [plan 0045](../../plans/0045-skills-missiles-machinery.md) Phase 0, "Missiles and
+Review `lane/p45a` (from main c4b4539): [plan 0045](../../plans/done/0045-skills-missiles-machinery.md) Phase 0, "Missiles and
 the dispatch columns". Blocking plan 0045 Phase 1's tier-A list (fixed at its review from this survey), not P1.1's
 start.
 
