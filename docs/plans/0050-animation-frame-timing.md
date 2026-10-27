@@ -854,3 +854,46 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   next request and `PlrModeLeaveOk`'s result besides the frames, and the spec (Phase 3) states the sources' count as
   `N = n − 1` whatever the run finds; P1b-10 needs a Hell game with Blood Raven. The review request is closed.
   Ledger: the lane row filled (usage from the orchestrator), the review row added with "—" usage.
+- **2026-10-27 — Phase 2, first lane run: checkpoint and resume note (reverser, `lane/p50e`; harness slot 2, no
+  Ghidra; rotated at about 4 h).** Built: `tools/gdb/anim.gdb` with `tools/gdb/anim.py` (rev 4: the rate exit, the
+  schedule and its queue at the 13 call sites, the slot-list dispatches, cancels, mode sets, every-frame starts with
+  the event runner's phase, object animation starts and queues, the windowed path steps with the collision results,
+  the windowed advances, the run drain, `GetHitRoll` with its max-HP boundary, `COMBAT_GetHit`, `PlayerModeAllowed`,
+  `PlrModeLeaveOk` with `PlrModeEndPending`'s `E`, the delay state, unit frees); `tools/anim.py` (`check`, the model
+  of anim/0001–0003, and the oracle replays `replay-skills`, `replay-combat`); `tools/anim_sessions.py` (recipes
+  `tools/d2s_recipes/anim-*.json`, sessions, driver); `tools/xdrive.py` `rhold`. The record is
+  [run:2026-10-27-anim](../findings/anim/experiments.md#run2026-10-27-anim) (in progress); no finding claim is raised
+  yet.
+  **Checkpoint** (`2026-10-27-anim-check-ckpt1.txt`, 31 sessions, `tools/anim.py` `b3fca053…`): `CHECK anim` 0 mismatched in every kind: 186 016 rate calls (record name, frames, speed, `+0x4C`), 17 896 schedules (start frame 17 398, queued lists, lengths, rates), 29 207 queued events fired at their frames and 29 182 dispatches all queued, 2 507 advances and 1 109 sequence advances, 70 019 path steps (68 327 point indices, 95 907 path speeds against the rate call), 27 919 run-drain frames, 4 226 `GetHitRoll` calls, 19 830 `PlayerModeAllowed` seeds, 440 object animation starts, 299 block gates, 3 050 knockback ends, 715 `PlrModeEndPending` values and 7 437 every-frame first runs.
+  Against *Done when* so far: 4 846 player mode events, every class (530–1 013 each): A1 1 913, cast 1 466, kick 533, sequence 498 (mode 18), block 244, throw 91 (Amazon and Barbarian), S2 59, get-hit 38, death 4; met for 1 500 and per class and mode except get-hit (all classes), throw (Amazon 38, others none), block for most classes; the rates: three tiers logged for every class (IAS, FCR, FBR and FRW at three values; FHR has no get-hit events at t1–t2), so the get-hit breakpoints are short. 13 050 monster schedule events over 39 classes (met), sequence monsters (1 109 sequence advances), 444 monster knockback ends; ruling (g) met: classic S1–S4 at the moving rate 1 266 rate calls over `fallen1` and `fallen2` (632 S1/S2 schedules), 17 under a stat
+  67 change, class ≥ 410 S1–S4 584 at the attack or default rate; 292 object starts with the `Sync` draw (met) but no chained pair; 4 611 movement windows (met; walk and run per class, monsters walking, running, knocked back), 104 under a slowing state (met); `GetHitRoll` 4 226 calls, the drawing bands 386 and 425, divisors 8, 16, 32, 64 (met); P1b-9 (37 get-hits in `[hp/16, hp/12)`, 237 refusals above `hp/12`) and P1b-11 (299 blocked hits, 40 inside the window) met; the `fast` champion not yet identified in the tallies.
+  **Preliminary readings** (for the closing run to confirm; none is a claim yet): (1) P1b-1: of the held actions
+  that followed within 3 frames of the end, the next cast started at `T + n − 1` 360 times and at `T + n` 73, the
+  next attack 66 and 33, while held Lightning (mode 18) started at `T + n` 70 times and `T + n − 1` once: the
+  back-to-back interval of a normal mode is the sources' `N = n − 1` (`PlrModeLeaveOk` passes while the end is
+  queued), Lightning's is `n`, the sources' own exception. (2) The every-frame start's first run (anim/0003's open
+  question): 7 437 starts, every one in its own frame when queued before the type's every-frame list is walked (the
+  runner's phase below 3 for players, 5 for monsters) and in the next frame otherwise (`ef-first`, 0 mismatched).
+  (3) P1b-12: after Frozen Orb's delay state the next do came at `d + 7` frames 16 times (7 = its cast's do frame),
+  i.e. the delay runs from the do (D1). (4) P1b-11: 299 blocked hits on a player, 40 inside the gate; the gate decides
+  the block command, and the command's mode test refused it 15 times. (5) The `MonStatsSpeeds` run base below class
+  410 is scaled by `Run(i) / Run(b)` too (anim/0002 § 3.5's "then scaled the same way by `Run`"; the first model
+  revision missed it, class 6 `zombie2` showed it). (6) The oracle replays: plan 0045's do frames 2 435 of 2 436; the
+  combat and plan 0047 `GetHitRoll` draws 3 547 of 3 636 and 2 596 of 2 667, every miss a monster defender drawing
+  nothing where the model draws (freeze or stun, not in those logs).
+  **Resume (next lane, same branch and worktree, slot 2, aside tag `p50e`, saves
+  `workspace/logs/anim/saves-2026-10-27-anim/`):** keep `tools/gdb/anim.py` at rev 4 unless a case needs a line (then
+  rev 5, named per session in the record). Sessions owed: (a) the get-hit coverage (FHR at three breakpoints per
+  class, 30 each): the life-40 `gh-` sessions gave only 2–8 get-hits each before the character died; design a
+  character that survives being hit (more life with heavier hitters, e.g. Act II–III Normal at life 120–200, or
+  Prayer for the Paladin), else name the shortfall; (b) `mon-4` … `mon-6` (more classes, chilled walkers toward the
+  50 slowed windows, Frozen Orb toward 30 delay intervals); (c) P1b-2 (Fanaticism or Burst of Speed with a fast
+  weapon), P1b-3 by a second non-Barbarian (the Assassin's throws: give `tkf` the F4 Throw in set 2), P1b-4/P1b-15
+  (Charge, Leap Attack), P1b-5 (Double Swing and Frenzy with two weapons), P1b-6 and the form casts of P1b-7
+  (werewolf, werebear), P1b-8 (a Druid with a one-handed hammer and a two-handed sword; an Amazon with a wand and a
+  shield), P1b-10 (Blood Raven in Hell: a Hell-proof character and the route from Cold Plains to the Burial Grounds),
+  P1b-13 (Slows Target), P1b-14 (a moving factor below 25); (d) the chaining minimum (20 chained pairs per drawing
+  kind): `GetHitRoll` has 86 chained of 526 consecutive pairs and the object starts none (other draws on the same
+  seed come between); either log the intervening draws or keep the draw order `[I]`; (e) then the closing check over
+  every kept log, the findings' run sections (anim/0001–0003, raising what the run separates, review-fix 14's symbol
+  raises), the review-fixes pass, the review request and the ledger row.
