@@ -2,22 +2,22 @@
 from: spec-writer
 to: architect
 date: 2026-10-27
-status: open
+status: done
 context:
-  - ../plans/0050-animation-frame-timing.md#implementation-log
-  - ../specs/anim/README.md
-  - ../specs/anim/timing.md
-  - ../specs/anim/movement.md
-resolution: ""
+  - ../../plans/0050-animation-frame-timing.md#implementation-log
+  - ../../specs/anim/README.md
+  - ../../specs/anim/timing.md
+  - ../../specs/anim/movement.md
+resolution: "Reviewed 2026-10-27 (architect, Tier A, after merging main with 0050 P2 part 2): accept with fixes (4); re-tagged from part 2 (the catalogue queue [C] in part, the advance's 4 110 with the restart rule, the short floors recorded short); anim/timing, anim/movement and the overview reviewed; see the plan 0050 log."
 ---
 
-Review plan 0050 Phase 3 (`lane/s50p3`): the new spec [anim](../specs/anim/README.md) in three files,
-[anim/timing](../specs/anim/timing.md) (C 58 / I 131 / L 23), [anim/movement](../specs/anim/movement.md) (C 25 / I 43 /
-L 9) and the overview (C 12 / I 13 / L 2), and the related updates: [skills/dispatch](../specs/skills/dispatch.md)
-(G1's `Unit+0x38` and the delay from the do, two open questions struck), [combat](../specs/combat/README.md) (the
+Review plan 0050 Phase 3 (`lane/s50p3`): the new spec [anim](../../specs/anim/README.md) in three files,
+[anim/timing](../../specs/anim/timing.md) (C 58 / I 131 / L 23), [anim/movement](../../specs/anim/movement.md) (C 25 / I 43 /
+L 9) and the overview (C 12 / I 13 / L 2), and the related updates: [skills/dispatch](../../specs/skills/dispatch.md)
+(G1's `Unit+0x38` and the delay from the do, two open questions struck), [combat](../../specs/combat/README.md) (the
 "owed to phase (5), animation" question relabelled and answered, a part-2 remainder `[L]`),
-[combat/delivery](../specs/combat/delivery.md) § F's pointer, [objects](../specs/objects/README.md) (G2's rate, J2's
-mode-1 end) and [monsters/stats](../specs/monsters/stats.md) (G3's stat-67 note); five glossary entries.
+[combat/delivery](../../specs/combat/delivery.md) § F's pointer, [objects](../../specs/objects/README.md) (G2's rate, J2's
+mode-1 end) and [monsters/stats](../../specs/monsters/stats.md) (G3's stat-67 note); five glossary entries.
 
 **This review waits for plan 0050 Phase 2 part 2's review**, as plan 0045's Phase 3 did: the statements part 2 targets
 (the FHR tiers per class, the FBR rates, the throws, the set-2 IAS rates, a third FCR rate, P1b-1's restart for

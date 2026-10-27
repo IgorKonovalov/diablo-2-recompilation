@@ -1,6 +1,6 @@
 # 0050 — Animation and frame timing: unit modes, frame counts, rates and breakpoints, movement speed (ADR-0014 phase 4)
 
-> **Status:** approved 2026-10-25 (owner), in effect 2026-10-27 (plan 0045 Phase 2 part 1 accepted); P0 accepted 2026-10-27; P1 batches P1.1–P1.3 accepted with fixes 2026-10-27; P1b part 2 accepted with fixes 2026-10-27 (Phase 1b done); P2 part 1 accepted with fixes 2026-10-27 (run:2026-10-27-anim, 0 mismatches); **P2 part 2 open** (ruled at the part 1 review); P3 may start beside it, its review waits for part 2's
+> **Status:** approved 2026-10-25 (owner), in effect 2026-10-27 (plan 0045 Phase 2 part 1 accepted); P0 accepted 2026-10-27; P1 batches P1.1–P1.3 accepted with fixes 2026-10-27; P1b part 2 accepted with fixes 2026-10-27 (Phase 1b done); P2 part 1 accepted with fixes 2026-10-27 (run:2026-10-27-anim, 0 mismatches); P2 part 2 accepted with fixes 2026-10-27 (`lane/p50f`, Tier B check; floors recorded short, survivability-bound; the build deviation and a part 3 open for the owner); P3 accepted with fixes 2026-10-27 (`lane/s50p3`); **P4 (wiki) next on unpause**
 > **Created:** 2026-10-25
 > **Owner skill(s):** archivist, reverser, spec-writer
 > **Related ADRs:** 0001-target-toolchain-evidence-sources, 0003-runtime-experiments, 0004-boundary-oracles-in-reproduction, 0005-presentation-formats-tools-only, 0007-fetched-leads-only, 0011-harness-slots, 0013-forced-path-runs-cell-level, 0014-scope-game-simulation, 0015-emulated-reproduction, 0016-pipelined-simulation-phases, 0020-skills-phase-in-two-plans, 0021-observed-boundaries-in-emulation
@@ -1119,5 +1119,49 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   movement 9, overview 2), of which 20 are community-difference rows (timing 15, movement 5: the 19 contradicted
   verdicts, the movement ones in both specs, and the held-with-refinement groups A1/C1/H1/B1 and M2/M3). Research-map status (architect's): `anim/timing` and
   `anim/movement` drafted. Review requested
-  ([backlog](../backlog/2026-10-27-spec-writer-architect-review-plan-0050-phase-3-anim-spec.md)); **the review waits
+  ([backlog](../backlog/archive/2026-10-27-spec-writer-architect-review-plan-0050-phase-3-anim-spec.md)); **the review waits
   for Phase 2 part 2's review**. The related specs merge one at a time with their owners' lanes.
+- **2026-10-27 — `lane/s50p3` reviewed (architect, Tier A, ADR-0023; at `5b097263`, `main` merged first at `b179d851`
+  with Phase 2 part 2 (`lane/p50f`, `237aa775`); plan-log and ledger conflicts kept both sides; static, objdump, no
+  Ghidra, no harness): accept with fixes (4): under-claim 1, stale cross-reference 1, overclaim 1, omission 1.** Gate
+  green after the fixes (it was red after the merge on four E15 research-map rows: the lane's tag changes in objects,
+  monsters/stats, combat and skills/dispatch, whose map rows are the architect's; rewritten). Anchors: all 155 `fn:`/
+  `data:` anchors of the three anim files resolve by name and address; objdump spot checks agree with the sentences
+  (the `0x90` scan bound at `0x00553A40`, the dual-wield term and the real-mode-18 `− 30` at `0x00624288`–`0x0062429B`,
+  the block gate's signed `÷ 8 + 15` against `Game+0xA8 − stat 95` at `0x0057D29B`–`0x0057D2B1`); 21 spot-checked
+  counts (25 848 schedules, 7 195 `GetHitRoll` calls, 99 241 steps …) are the findings'. No `[L]` in a body; the
+  community rows sit under *Open questions* with their version marks; no transliterated structure. Fixes written into
+  the spec: (1) *under-claim*: part 2's partial raise of `sub_005417D0_UnitQueueEvent` carried: timing's Inputs row
+  split, E1 and H1 gain the `[C]` for the catalogue's queued kind 0 with `a ≠ 0` and kind 1 (83 `CQ`-keyed dispatches,
+  134 post-cancel dispatches matched; part 1's 124 and kinds 2 and 12 stay `[I]`), anchored to the queue and the
+  dispatchers; the overview's boundary row split the same way; part 2's closing counts (`sched` 34 647, `ghr` 9 858,
+  `block-gate` 2 309, K3's floors reached) cited as corroboration. (2) *stale cross-reference*: every "Phase 2 part 2
+  (not yet run)" / "part 2's case" in timing (K3, L4, M1, open questions), movement (A1, D2, E2, F2, open questions),
+  the overview and combat's open question rewritten to what part 2 reached or left short, and the advance's 2 927 to
+  4 110 over 81 logs (2 924 of them part 1's under the restart rule). (3) *overclaim* (review-fix 2): B3's
+  shapeshift fallback steps (5, 7 → 4; 6 → 3; …) moved out of the `[C]` (the 758 calls are not split by step).
+  (4) *omission*: F1 gains part 2's restart rule (a new hit restarting a monster's every-frame mode starts again from
+  `+0x44` 0, `[C]`; the path through `SUNIT_AnimInit` `[I]`), and C1 is scoped to `UNIT_SetMode` itself, whose
+  "neither restarts the animation" the restart contradicted for a server start. Re-tagged: timing C 63 / I 134 / L 23,
+  overview C 13 / I 14 / L 2, movement unchanged (C 25 / I 43 / L 9); combat overview I 43.
+  - **Promotion re-check (ADR-0023).** The only finding statements written or raised since the anim findings' last
+    Tier A review (`lane/p50e`) are part 2's (`lane/p50f`, Tier B): `UnitQueueEvent`'s partial raise and the restart
+    correction of § 8's pair rule; the spec imported neither until this review. Read as raises, both hold: the
+    queue's second source is the logged dispatch (a writer/reader pair, the rev 6 window closed: 0
+    `dispatch-catalogue-queued-rev6`), and the restart is two logged values (`SR` between two `AD0` lines, the second
+    `+0x44` 0); the anchors name the logged functions.
+  - **Ruling (a): the re-tag pass is done at this review**, so the statements part 2 targeted carry part 2's results;
+    part 2 raised nothing else, so the FHR tiers per class, the FBR floor for the classes its record does not name, a
+    third FCR rate for three classes, the set-2 IAS rates, the Druid's throws and the rare branches stay `[I]` and are
+    named short (survivability-bound at the build used) under *Open questions*. **Noted for the owner:** part 2's
+    record reports no outcome for P1b-13/14 (`sp-pal-slow`), P1b-15 or `rv-req-*` per class beyond part 1's; the
+    spec says so instead of guessing; no backlog entry is filed while the project is paused.
+  - **Ruling (b): the build deviation does not block the spec.** No `[C]` in the spec rests on the get-hit floors:
+    the get-hit and block lengths are `[C]` at every logged rate, and the per-class tiers are derived `[I]` either way.
+    If the owner closes the floors short, the spec stands as written. If a part 3 runs, its reviewed raises re-tag
+    K3, M3 and the open questions in timing, movement and combat, a spec-writer pass of its own.
+  - **Status.** anim/timing, anim/movement and the overview `reviewed`; research-map rows and the root README's two
+    rows rewritten; plans index and status line updated. **Phase 3 accepted with fixes; 0050·P4 (the wiki page) is
+    next on unpause**; 0052·P2's gate on this review is open, but nothing starts while the project is paused. The
+    review request is closed. Ledger: the lane row's usage set (402 558 / 82 / 30) and its verdict and fixes filled;
+    the review row appended.

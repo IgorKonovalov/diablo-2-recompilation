@@ -1,10 +1,10 @@
 ---
 spec: anim/overview
-status: draft
+status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, stats/aggregate, skills/dispatch, combat/overview, monsters/stats, objects, drlg/collision]
 consumed_by: [skills/dispatch, skills/missiles, combat/overview, combat/delivery, objects, monsters/stats]
-tags: {C: 12, I: 13, L: 2}
+tags: {C: 13, I: 14, L: 2}
 updated: 2026-10-27
 ---
 
@@ -75,8 +75,9 @@ rate and mode machine.
 | Input | Treatment | Tag |
 |---|---|---|
 | The mode request (plan 0045), the AI's command and its velocity block (plan 0052), the path plan and `0x00679720` (phase (5)), the collision test's result per crossed subtile ([drlg/collision](../drlg/collision.md)), the client | boundary oracles: logged and taken as given (ADR-0004) | [C] (run:2026-10-27-anim) |
-| The catalogue's reschedules, its speed writers (Charge, Leap Attack), its own event queue after a cancel, a do's store to `+0x4E` (plan 0046) | taken as given where logged; the queue after a cancel is not logged in part 1, so the 124 dispatches it gives are an uncompared catalogue path, not an oracle | [I] (fn:sub_00553DC0_RescheduleAt@0x00553DC0) |
-| Everything else: the record, the start frame, the schedule, the advance, the rate, the speeds, the step and its snap and collision walk, the run drain, the knockback point and length, the gates, `GetHitRoll` and its draws, `PlayerModeAllowed`'s draw, the hit-class nibbles, the object operate end | modelled | [C] where run:2026-10-27-anim compares it (the timing and movement sections say which), [I] otherwise |
+| The catalogue's own event queue after a cancel, kinds 0 with `a ≠ 0` and 1 (plan 0046) | boundary oracle from Phase 2 part 2 on (logger rev 6): logged, taken as given, the dispatches after it compared ([timing § E](timing.md#e-the-schedule)) | [C] (fn:sub_005417D0_UnitQueueEvent@0x005417D0, run:2026-10-27-anim-p2) |
+| The catalogue's reschedules, its speed writers (Charge, Leap Attack), its queued kinds 2 and 12, a do's store to `+0x4E` (plan 0046); part 1's 124 dispatches after a cancel, whose logs lack the queue | taken as given where logged; the rest an uncompared catalogue path, not an oracle | [I] (fn:sub_00553DC0_RescheduleAt@0x00553DC0) |
+| Everything else: the record, the start frame, the schedule, the advance, the rate, the speeds, the step and its snap and collision walk, the run drain, the knockback point and length, the gates, `GetHitRoll` and its draws, `PlayerModeAllowed`'s draw, the hit-class nibbles, the object operate end | modelled | [C] where run:2026-10-27-anim or run:2026-10-27-anim-p2 compares it (the timing and movement sections say which), [I] otherwise |
 
 ## Algorithm
 
@@ -141,15 +142,16 @@ fn:UNIT_AnimSetRate@0x00623F50, fn:sub_00650840_PathStep@0x00650840, fn:sub_0057
 
 - Findings: [anim/0001](../../findings/anim/0001-modes-frames.md), [anim/0002](../../findings/anim/0002-rates.md),
   [anim/0003](../../findings/anim/0003-movement-gates.md), [anim/leads](../../findings/anim/leads.md),
-  [anim/experiments](../../findings/anim/experiments.md).
+  [anim/experiments](../../findings/anim/experiments.md) (run:2026-10-27-anim and run:2026-10-27-anim-p2).
 - Plan: [0050](../../plans/0050-animation-frame-timing.md). Upstream: [rng](../rng/README.md),
   [stats/aggregate](../stats/aggregate.md). Downstream: [skills/dispatch](../skills/dispatch.md),
   [combat](../combat/README.md), [objects](../objects/README.md), [monsters/stats](../monsters/stats.md).
 
 ## Open questions
 
-- [L] Plan 0050 Phase 2 part 2 (not yet run) targets the get-hit FHR tiers, the FBR rates, the throws of three
-  classes, the set-2 IAS rates, a third FCR rate, P1b-1's restart for every class and action mode, the catalogue
-  queue, and the rare branches; the statements it targets are at their findings' current tags, for a re-tag pass
-  ([timing § Open questions](timing.md#open-questions), [movement § Open questions](movement.md#open-questions)).
+- [L] Plan 0050 Phase 2 part 2 (run:2026-10-27-anim-p2) compared the catalogue queue and left short, survivability-bound
+  at its build, the FHR tiers per class, some FBR rates, the Druid's throws, the set-2 IAS rates, a third FCR rate for
+  three classes, P1b-1's restart for the other classes and modes, and the rare branches; their statements stay `[I]`.
+  Whether a part 3 reopens them is the owner's call ([timing § Open questions](timing.md#open-questions),
+  [movement § Open questions](movement.md#open-questions)).
 - [L] Two clients: party-wide rate auras on another player's unit (plan 0050 § Open questions).

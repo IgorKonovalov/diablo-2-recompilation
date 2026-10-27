@@ -559,8 +559,10 @@ crushing blow at `/players 8` ([delivery](delivery.md#worked-example)). [C] (run
   seed, the hit class and its divisor, stun's timing effects, the player's mode tests) and
   [anim/movement § E](../anim/movement.md#e-knockback) (knockback's distance, speed and length), plan 0050; the
   durability draws are [items/economy § H](../items/economy.md#h-wear-durability-quantity-charges-replenish).
-- [L] **Still owed to plan 0050 Phase 2 part 2:** the get-hit lengths at three FHR rates per class, the FBR rates, and
-  a player's knockback length (mode 19, two starts in run:2026-10-27-anim); their statements stay `[I]` in
+- [L] **Left short by plan 0050 Phase 2 part 2** (run:2026-10-27-anim-p2, survivability-bound at its build; a part 3
+  is the owner's call): get-hits at three FHR rates of 30 per class, two FBR rates of 30 for the classes its record
+  does not name, and a player's knockback length (mode 19, two starts in run:2026-10-27-anim, none staged in part 2).
+  The get-hit and block lengths hold at every logged rate; the per-class tiers stay `[I]` in
   [anim/timing](../anim/timing.md#open-questions).
 - ~~**Shortfalls of run:2026-10-16-combat** (plan 0037 Phase 2): crushing blow on a champion, the cold, lightning and
   magic caps, magic immunity, the negative absorbed amount, evade, weapon block, dodge, avoid, freeze, flat absorb,

@@ -1,10 +1,10 @@
 ---
 spec: anim/timing
-status: draft
+status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, stats/aggregate, stats/states, monsters/stats, skills/dispatch, combat/overview, combat/delivery, objects]
 consumed_by: [anim/movement, skills/dispatch, skills/missiles, combat/overview, combat/delivery, objects]
-tags: {C: 58, I: 131, L: 23}
+tags: {C: 63, I: 134, L: 23}
 updated: 2026-10-27
 ---
 
@@ -45,7 +45,7 @@ flowchart LR
 | A scheduled mode's events are queued | fn:SUNIT_ScheduleModeEvents@0x005539B0 | [C] (run:2026-10-27-anim: 25 848 schedules) |
 | An every-frame mode starts | fn:SUNIT_ModeEveryFrame@0x00553F00 | [C] (run:2026-10-27-anim: 9 682 starts) |
 | Each game frame, the unit event lists run | fn:sub_005414D0_GameRunUnitEvents@0x005414D0 | [I] |
-| An every-frame monster's frame advances | fn:UNIT_AnimAdvance@0x00623E00 | [C] (run:2026-10-27-anim: 2 927 advances) |
+| An every-frame monster's frame advances | fn:UNIT_AnimAdvance@0x00623E00 | [C] (run:2026-10-27-anim, run:2026-10-27-anim-p2: 4 110 advances over both parts) |
 | A unit's rate is (re)computed | fn:UNIT_AnimSetRate@0x00623F50 | [C] (run:2026-10-27-anim: 298 373 calls) |
 | A player's mode ends | fn:sub_00581020_PlayerModeEnd@0x00581020 | [I] |
 | A monster's mode command | fn:sub_005A7C20_MonSetMode@0x005A7C20 | [I] |
@@ -93,7 +93,8 @@ flowchart LR
 | Input | How it enters | Tag |
 |---|---|---|
 | The mode request (a player's packet, the pilot's client) and the AI's command | logged and taken as given (ADR-0004); the server's handling from the request on is specified | [C] (run:2026-10-27-anim) |
-| A catalogue function's reschedule (§ E3), its own event queue after a cancel, its writes of the frame word or `+0x4E` | outputs taken as given (plan 0046's catalogue) | [I] (fn:sub_00553DC0_RescheduleAt@0x00553DC0, fn:sub_005417D0_UnitQueueEvent@0x005417D0) |
+| A catalogue function's own event queue after a cancel, kinds 0 with `a ≠ 0` and 1 (§ E1) | logged at the call (logger rev 6) and taken as given (ADR-0004); the dispatches after it compared | [C] (fn:sub_005417D0_UnitQueueEvent@0x005417D0, run:2026-10-27-anim-p2) |
+| A catalogue function's reschedule (§ E3), its queued kinds 2 and 12, its writes of the frame word or `+0x4E` | outputs taken as given (plan 0046's catalogue), not compared | [I] (fn:sub_00553DC0_RescheduleAt@0x00553DC0, fn:sub_005417D0_UnitQueueEvent@0x005417D0) |
 | The stats behind the rate | values of the aggregate | [C] (run:2026-10-27-anim) |
 
 ### Constants
@@ -176,11 +177,13 @@ B2. ANIMDATA_Find(name):                                          [I] (fn:ANIMDA
   [formats/animdata](../../formats/animdata.md#layout))
 - B3. [C] **The shapeshift display.** With `Unit+0xC8` bit 3 set, the first state of the DataTables transform list
   that the unit has decides: States `gfxtype` 1 shows a player as a monster of class `gfxclass` (its mode mapped by
-  `g_PlrToMonMode`, then down 5, 7 → 4; 6 → 3; 9–11 → 8; 15 → 2; others → 1 until MonStats2 `mDT`…`mRN` has it);
-  the record, the start frame and the rate all take the display values (758 transformed calls of the werewolf and
-  werebear, display classes 430 and 431). (fn:UNIT_AnimTransform@0x00645270,
-  fn:sub_00645190_PlrToMonMode@0x00645190, tbl:States.txt:gfxtype, run:2026-10-27-anim) `gfxtype` 2 shows a monster as
-  a player class of class `gfxclass`, its mode mapped by `g_MonToPlrMode`; no case of the run has it. [I] (data:g_MonToPlrMode@0x006EB308)
+  `g_PlrToMonMode` and the MonStats2 fallback); the record, the start frame and the rate all take the display values
+  (758 transformed calls of the werewolf and werebear, display classes 430 and 431). (fn:UNIT_AnimTransform@0x00645270,
+  fn:sub_00645190_PlrToMonMode@0x00645190, tbl:States.txt:gfxtype, run:2026-10-27-anim)
+- B3. [I] The fallback's steps, read from the code: down 5, 7 → 4; 6 → 3; 9–11 → 8; 15 → 2; others → 1 until
+  MonStats2 `mDT`…`mRN` has the mode; the run does not split the 758 calls by step. `gfxtype` 2 shows a monster as a
+  player class of class `gfxclass`, its mode mapped by `g_MonToPlrMode`; no case of the run has it.
+  (fn:sub_00645190_PlrToMonMode@0x00645190, data:g_MonToPlrMode@0x006EB308)
 - B4. [I] A record's `frames` gives `+0x48 = frames << 8` at every non-sequence start; its `speed` is the base of the
   rate (§ J); its event byte for frame `f` is read only for `f < 0x90`. (0x00624470, 0x006244F1, 0x00553A40)
 
@@ -222,7 +225,9 @@ C3. SUNIT_AnimInit(unit):                                         [I] (fn:SUNIT_
       +0x48 ← rec.frames << 8
 ```
 
-- C1. [I] A request for the mode the unit is already in neither restarts the animation nor draws. (fn:UNIT_SetMode@0x00624690)
+- C1. [I] In `UNIT_SetMode`, a request for the mode the unit is already in runs no `UNIT_AnimInit` (no draw). A server
+  mode start still resets the frame through C3 (`+0x44 ← 0`), so a monster restarted in its mode by a new hit starts
+  its animation again (F1). (fn:UNIT_SetMode@0x00624690, fn:SUNIT_AnimInit@0x005533D0)
 - C2. [C] **The object start draw.** At 725 logged object animation starts the rate is
   `FrameDelta − (FrameDelta >> 4) + draw` with draw#1 `RangeB(object seed, FrameDelta >> 3)` when `Sync` is 0 (490 starts) and no draw otherwise
   (235), and `+0x44`, `+0x48` as C2. (fn:UNIT_AnimInit@0x00624390, 0x00624563, tbl:Objects.txt:Sync,
@@ -298,11 +303,17 @@ E1. SUNIT_ScheduleModeEvents(game, unit):                         [C] (fn:SUNIT_
   queued events fire at their frames unless cancelled first; no dispatch fires an event the schedulers did not queue
   (42 449 dispatches). (fn:SUNIT_ScheduleModeEvents@0x005539B0, fn:sub_00581220_PlayerEventDispatch@0x00581220,
   fn:sub_005A7F80_MonEventDispatch@0x005A7F80, run:2026-10-27-anim)
-- E1. [I] Outside that `[C]`: 124 dispatches (110 kind 0, 14 kind 1) 0–4 frames after a catalogue skill function's own
-  `UNIT_CancelEvents` call, each followed at once by that function's own `UnitQueueEvent` call, which the run did not
-  log. They are an **uncompared catalogue path** (plan 0046), not a boundary oracle: the queue's output is not
-  logged, so nothing was taken as given. (fn:UNIT_CancelEvents@0x00540E60, fn:sub_005417D0_UnitQueueEvent@0x005417D0,
-  run:2026-10-27-anim)
+- E1. [C] **The catalogue's own queue after a cancel** (Phase 2 part 2, logger rev 6): a catalogue skill function's
+  `UnitQueueEvent` calls of kind 0 with `a ≠ 0` and of kind 1 are logged at the call and taken as given (ADR-0004), and
+  the dispatches after its `UNIT_CancelEvents` call are compared like a schedule's: the 83 dispatches of an event so
+  queued fire at the queued frames with the queued arguments (Charge), and all 134 dispatches 0–4 frames after a
+  catalogue cancel match a queued event of one source or the other (the schedulers' or the catalogue's); an unqueued
+  dispatch there would be a mismatch, and none occurs. (fn:sub_005417D0_UnitQueueEvent@0x005417D0,
+  fn:UNIT_CancelEvents@0x00540E60, fn:sub_00581220_PlayerEventDispatch@0x00581220, run:2026-10-27-anim-p2) [I] Part 1's 124 such dispatches (110 kind 0, 14 kind 1),
+  whose logs lack the queue, stay an **uncompared catalogue path** (plan 0046); the catalogue's kinds 2 and 12 are
+  logged but not compared. (run:2026-10-27-anim)
+- E1. [C] Over both parts (81 logs) the closing check holds `sched` 34 647 schedules, `fire` 56 941 and `dispatch`
+  56 800 with 0 mismatches. (fn:SUNIT_ScheduleModeEvents@0x005539B0, run:2026-10-27-anim-p2)
 - E2. [C] **The length.** For `L = 256 F` and `F > S` the end fires at `T + n`, `n(r) = max(2, ⌈256 (F − S) / r⌉)`, at
   every logged rate (25 848 lengths). (fn:SUNIT_ScheduleModeEvents@0x005539B0, run:2026-10-27-anim)
 - E2. [I] **The event frames**, derived from E1's loop: with `N = ⌈256 (F − S) / r⌉ − 1` steps, frame `f ≥ S` fires
@@ -345,8 +356,15 @@ F2. UNIT_AnimAtEnd(unit) → bool:                                   [I] (fn:UNI
       sequence: +0x48 < 1;  else: +0x48 ≤ +0x44 + +0x4C
 ```
 
-- F1. [C] 2 927 consecutive advances of windowed every-frame monsters (knockback among them) give the next `+0x44` and
-  event byte. (fn:UNIT_AnimAdvance@0x00623E00, run:2026-10-27-anim)
+- F1. [C] 4 110 consecutive advances of windowed every-frame monsters (knockback among them) give the next `+0x44` and
+  event byte (2 924 of them part 1's under the restart rule below). (fn:UNIT_AnimAdvance@0x00623E00,
+  run:2026-10-27-anim, run:2026-10-27-anim-p2)
+- F1. [C] **A restart is not an advance.** When a new hit restarts a monster's every-frame mode in the same mode (a
+  mode start of the unit between two advances; the first cases were knockbacks, mode 13), the next advance starts from
+  `+0x44` 0, not from the previous position plus the rate; two advances pair only with no mode start of that unit
+  between them (15 restarts over the 81 logs, 3 in part 1's). (fn:UNIT_AnimAdvance@0x00623E00, run:2026-10-27-anim-p2)
+  [I] The 0 is C3's `+0x44 ← 0`, which `MonSetMode` reaches whether or not `UNIT_SetMode` saw a new mode (C1, I2).
+  (fn:SUNIT_AnimInit@0x005533D0, fn:sub_005A7C20_MonSetMode@0x005A7C20)
 - F1. [I] Below a rate of `0x100` the frame the unit stood on is scanned again, so one event byte can be taken on two
   consecutive frames; at `0x100` or more each frame is taken once. (0x00623E58–0x00623E6E)
 - F1. [C] **The advance reads the rate at its call** (an ADR-0015 map: 1 200 emulated pairs, the second call at a new
@@ -413,6 +431,10 @@ flowchart LR
   one to the current + 1, and appends the record to slot `frame & 63` of the unit type's list; a frame of −1 puts it
   at the head of the type's every-frame list. (fn:sub_005417D0_UnitQueueEvent@0x005417D0,
   fn:sub_005416B0_EventQueueAt@0x005416B0, fn:sub_005415E0_EventQueueEveryFrame@0x005415E0, struct:Game+0xA8)
+- H1. [C] A queued kind-0 event with `a ≠ 0` and a kind-1 event fire at the queued frame with the queued `(a, b)`,
+  from the schedulers (E1) and from the catalogue's own calls (E1, 83 dispatches). Kinds 2 and 12 are not compared:
+  `[I]`. (fn:sub_005417D0_UnitQueueEvent@0x005417D0, fn:sub_00581220_PlayerEventDispatch@0x00581220,
+  fn:sub_005A7F80_MonEventDispatch@0x005A7F80, run:2026-10-27-anim, run:2026-10-27-anim-p2)
 - H2. [I] Each game frame runs the missile, player, monster, object and item lists in that order, each its
   every-frame list (newest first) and then the current frame's slot (oldest first, only records whose frame equals
   the current one, then freed). (fn:sub_005414D0_GameRunUnitEvents@0x005414D0, 0x005414EE–0x00541589)
@@ -717,11 +739,17 @@ K3. The least item stat for a bonus ≥ y:                               [I] (de
   256, event at frame 7) at FCR 0, 9, 20, 37, 63, 105, 200 lasts 14, 13, 12, 11, 10, 9, 8 frames (`n`; the last at the
   cap, any FCR ≥ 200 the same); `PAGHHTH` (5 frames) at FHR 0, 7, 15, 27, 48, 86, 200 lasts 10, 9, 8, 7, 6, 5, 4.
   (fn:SUNIT_ScheduleModeEvents@0x005539B0, [anim/0002 § 7](../../findings/anim/0002-rates.md#7-the-breakpoint-function-derived-not-copied))
-- K3. [C] The schedule lengths of the run equal `n(r)` at every logged rate: three FCR rates of 30 events for four
-  classes, two FBR rates for three. (fn:SUNIT_ScheduleModeEvents@0x005539B0, run:2026-10-27-anim) [I] The FHR rates
-  per class, a third FCR rate for the Amazon, Barbarian and Assassin, the FBR rates of the other classes and the second
-  weapon type of the IAS rates have fewer than 30 events in the run (plan 0050 Phase 2 part 2's cases), so their
-  breakpoints stand on K1–K3 and the `[C]` inputs only. (run:2026-10-27-anim)
+- K3. [C] The schedule lengths equal `n(r)` at every logged rate over both parts (`sched-len` 34 647): three FCR rates
+  of 30 events for the Sorceress, Necromancer, Paladin and Druid; three FBR rates of 30 for the Paladin and Druid; one
+  A1 record per class at three IAS rates of 30; get-hits at an FHR rate with 30 starts for the Barbarian (two rates),
+  Paladin, Druid, Assassin and Sorceress. (fn:SUNIT_ScheduleModeEvents@0x005539B0, run:2026-10-27-anim,
+  run:2026-10-27-anim-p2) [I] **Recorded short** (Phase 2 part 2, survivability-bound at the build used, not a
+  mismatch): three FHR rates of 30 for any class (308 get-hit starts in all; the Amazon and Necromancer reach no rate
+  of 30), a third FCR rate for the Amazon, Barbarian and Assassin, a second weapon type of the IAS rates, and two FBR
+  rates of 30 for the classes the records do not name (part 1 had two for three classes; part 2's record names the
+  Paladin and Druid at three); their breakpoints stand on
+  K1–K3 and the `[C]` inputs only. Whether a part 3 reopens them is the owner's call (plan 0050 log).
+  (run:2026-10-27-anim-p2)
 
 ### L. The frame events as gates
 
@@ -754,7 +782,8 @@ K3. The least item stat for a bonus ≥ y:                               [I] (de
   interval a held button gives with this client. (run:2026-10-27-anim)
 - L4. [I] The client's own rule for when it sends a held request is not read (ADR-0005: the client is presentation and
   an oracle). The other player action modes (A2, S1–S4) and the classes' get-hit and block restarts against the
-  request frame are plan 0050 Phase 2 part 2's cases. (run:2026-10-27-anim)
+  request frame are not separated: Phase 2 part 2's record reports no `rv-req-*` result for them. (run:2026-10-27-anim,
+  run:2026-10-27-anim-p2)
 - L5. [I] **Get-hit and block are never left before `T + n`**: in the run no get-hit or block was followed by the next
   mode before its end; the reading is `PlrModeLeaveOk`'s refusal of every request but death and neutral from GH and BL
   (M4). (fn:sub_0057EDD0_PlrModeLeaveOk@0x0057EDD0, run:2026-10-27-anim)
@@ -800,12 +829,14 @@ M2. GetHitRoll(def, pkt, hc) → i32 (0 get hit, 1 not):              [C] (fn:su
   (MonProp `knock`), 12 set the player to neutral in the hit's own frame and one later; 2 by class 462 started
   mode 19. (fn:COMBAT_GetHit@0x0057CEE0, run:2026-10-27-anim) [I] Why Blood Raven's knockback commands end in neutral at once
   (the planner's point equal to the start, or a refusal in the mode command) is not logged; the length of mode 19 (two
-  starts) is Phase 2 part 2's rare branch; its reading is [anim/movement § E](movement.md#e-knockback).
+  starts) stays unstaged (Phase 2 part 2 names player knockbacks short); its reading is [anim/movement § E](movement.md#e-knockback).
   (fn:sub_0057F090_PlrModeStartMove@0x0057F090)
 - M2. [C] All 7 195 logged calls return what M2 gives with 0–2 draws on the defender's seed (none 5 977, one 928, two
   290): early returns 809, below `hp ÷ D` 4 518, the two drawing bands 605 and 613, at `hp ÷ (D ÷ 4)` and above 650; `D`
   16 (5 589 calls) and 8 (774). 102 consecutive pairs on one defender chain (the second's seed before is the first's
-  after); 701 have other draws between. (fn:RNG_RangePow2@0x00472210, run:2026-10-27-anim)
+  after); 701 have other draws between. (fn:RNG_RangePow2@0x00472210, run:2026-10-27-anim) Over both parts' 81 logs
+  the closing check holds `ghr` 9 858 and `block-gate` 2 309 with 0 mismatches. [C] (fn:sub_0057CB00_GetHitRoll@0x0057CB00,
+  run:2026-10-27-anim-p2)
 - M2. [I] The divisors 32 (19 calls) and 64 (4) are met but not shown to separate from 16. `D ÷ 2` and `D ÷ 4` are
   signed; the get-hit chance per band is 3/8, 3/4 and 1 (`RangePow2(n)` is `low & (n − 1)`, [rng](../rng/README.md)).
   Two callers, both in `COMBAT_GetHit`. (0x0057CB0B–0x0057CBF5, 0x0057CBF8, fn:RNG_RangePow2@0x00472210)
@@ -939,10 +970,12 @@ run:2026-10-27-anim's schedules hold `n(r)` at every logged rate (E2), but these
 
 ## Evidence
 
-- Findings: [anim/0001](../../findings/anim/0001-modes-frames.md) (§§ 1–11 and its run section),
+- Findings: [anim/0001](../../findings/anim/0001-modes-frames.md) (§§ 1–11 and its two run sections),
   [anim/0002](../../findings/anim/0002-rates.md) (§§ 1–7 and its run section), [anim/0003](../../findings/anim/0003-movement-gates.md)
   (§§ 5–7 and its run section), [anim/leads](../../findings/anim/leads.md) (the verdicts, § 12).
 - Runs: [run:2026-10-27-anim](../../findings/anim/experiments.md#run2026-10-27-anim) (55 logs, 0 mismatches),
+  [run:2026-10-27-anim-p2](../../findings/anim/experiments.md#run2026-10-27-anim-p2) (part 2: 26 logs, the closing
+  check over 81 with 0 mismatches; the catalogue queue, the restart rule),
   [run:2026-10-27-anim-rates-emu](../../findings/anim/experiments.md#run2026-10-27-anim-rates-emu) (the bonus and
   advance maps).
 - Formats and tables: [formats/animdata](../../formats/animdata.md), [MonSeq](../../tables/MonSeq.md),
@@ -968,11 +1001,13 @@ run:2026-10-27-anim's schedules hold `n(r)` at every logged rate (E2), but these
 - [L] `SkillEntry+0x0C` bit 12, which turns a move-first skill back to the default rate branch, and item flag `0x4000`,
   which empties a hand for the dual-wield term, are not named.
 - [L] `sub_0057ED90_PlrSeqLeaveOk` past its first test.
-- [L] **Plan 0050 Phase 2 part 2** (not yet run): the FHR tiers per class, the FBR rates, the throws of three classes,
-  the set-2 IAS rates, a third FCR rate; P1b-1's restart against the request frame for every class and action mode;
-  the catalogue queue after a cancel (part 1's 124 dispatches stay uncompared); the rare branches (player knockbacks,
-  P1b-2, P1b-13 Slows Target, P1b-14, `VASCHTH`, P1b-15). The statements they target are written above at their
-  findings' current tags, for a re-tag pass after part 2's review.
+- [L] **Left short by plan 0050 Phase 2 part 2** (run:2026-10-27-anim-p2, reviewed; survivability-bound at clvl 70 /
+  life 400, the owner's build deviation and a part 3 open): three FHR rates of 30 per class, two FBR rates of 30 for
+  the classes the records do not name, the Druid's throws (12 of 30), the set-2 IAS rates, a third FCR rate for the Amazon, Barbarian and
+  Assassin; P1b-1's restart against the request frame for the other classes and action modes; the rare branches
+  (player knockbacks, the turn to a walk, `VASCHTH`: no stock state transforms a player into the vampire), and
+  P1b-13 and P1b-14 (session `sp-pal-slow`) and P1b-15, whose outcome the part 2 record does not report. Their statements stay `[I]`;
+  none is waiting on a mismatch (0 over 81 logs).
 
 ### Community sources: differences of 1.14d
 
