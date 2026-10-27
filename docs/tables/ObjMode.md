@@ -37,6 +37,27 @@ fn:UNIT_CollMarkRect@0x00620A70); that the mode numbers are this table's rows is
 | 2 | Opened | ON |
 | 3..7 | Special1..Special5 | S1..S5 |
 
+## Timing (plan 0050 Phase 0)
+
+The table has no timing column. An object's frames per mode are in [Objects](Objects.md#timing-plan-0050-phase-0)
+(`FrameCnt<k>`, `FrameDelta<k>`) and in `animdata.d2` ([animdata](../formats/animdata.md)), whose record names are
+`<Objects Token><this table's Token>HTH`. `[C]` The join (`python3 -I tools/anim_survey.py objects workspace/merged`;
+survey keys `obj_*`), per row of this table: Objects rows whose `Mode<k>` is 1, and how many of them have a record.
+
+| Row | `Token` | Objects rows with `Mode<k>` | With a record | `FrameCnt<k>` = record `frames` | `FrameDelta<k>` = record `speed` |
+|---:|---|---:|---:|---:|---:|
+| 0 | NU | 562 | 561 | 473 | 157 |
+| 1 | OP | 422 | 391 | 262 | 234 |
+| 2 | ON | 441 | 410 | 350 | 127 |
+| 3 | S1 | 97 | 41 | 22 | 26 |
+| 4 | S2 | 33 | 33 | 32 | 24 |
+| 5 | S3 | 27 | 27 | 26 | 23 |
+| 6 | S4 | 20 | 19 | 7 | 18 |
+| 7 | S5 | 1 | 1 | 1 | 0 |
+
+1 603 flagged modes, 1 483 with a record, 120 without (`S1` 56, `OP` 31, `ON` 31, `NU` 1, `S4` 1). The Objects columns
+and the comparison are in [Objects § Timing](Objects.md#timing-plan-0050-phase-0).
+
 ## Open questions
 
 - `[L]` Whether the 16 zero bytes at `+0x024` are filled at load (e.g. a string-table index or a pointer). Reverser,

@@ -1048,6 +1048,38 @@ Unsummon's start 3 and do 4. (tbl:Skills.txt:charclass, tbl:Skills.txt:general, 
 | 151 | 1 | item | — | — | Param1 1, Param3 1, Param4 1, Param5 1, Param8 1 | calc1 1 | `ItemEffect`: 53 Chain Lightning |
 | 152 | 1 | monster | — | monster 1 | Param1 1, Param2 1, Param3 1, Param4 1 | calc2 1, calc3 1 | 193 DiabLight |
 
+## Timing (plan 0050 Phase 0)
+
+The animation, sequence and delay columns, by the layout of [§ Animation, range and delay](#animation-range-and-delay)
+(values from the `.bin` over the 357 records; blanks from the `.txt`;
+`python3 -I tools/anim_survey.py skills workspace/merged`, survey keys `sk_*`):
+
+| Column | `.bin` field | Observed | Meaning | Tag |
+|---|---|---|---|---|
+| `anim` | `+0x010` u8, `plrmode` row | 334 set: `SC` 141, `SQ` 116, `A1` 48, `S2` 9, `S1` 6, `TH` 5, `S3` 4, `KK` 3, `A2` 1, `S4` 1; 23 blank store 255 | the player mode of the skill | [C] layout; `[I]` as in [§ Animation, range and delay](#animation-range-and-delay) |
+| `seqtrans` | `+0x012` u8, `plrmode` row | 334 set: `SC` 143, `SQ` 98, `A1` 64, then as `anim`; 23 blank store 255 | the mode of a sequence's transitions (name) | [C] layout; `[L]` |
+| `monanim` | `+0x011` u8, `monmode` row | 357 set: `xx` 214, `A1` 41, `SC` 29, `S1` 29, `S2` 24, `A2` 11, `S3` 8, `NU` 1 | the monster mode of the skill | [C] layout; `[L]` |
+| `seqnum` | `+0x013` u8 | 1..41 in 34 rows (23 distinct), blank 0 | the player sequence's number | [C] layout; `[L]` |
+| `seqinput` | `+0x016` u16 | 8, 10, 10, 12 in 4 rows (Charge, Inferno, Arctic Blast, Blade Fury), blank 0 | the sequence's input frame (name) | [C] layout; `[L]` |
+| `delay` | `+0x190` s32 calc offset | 23 rows, all constants: 15 (3), 25 (6), 30, 35, 40, 45, 50 (3), 100 (2), 150 (5) | the cooldown in frames | [C] layout; `[I]` the `skilldelay` state ([§ Animation, range and delay](#animation-range-and-delay)) |
+| `perdelay` | `+0x128` s32 calc offset | 22 rows: 50 in the 20 Paladin auras, `par3` (Blade Shield), `(100-dm56) * par4/100 + par3` (Thunder Storm) | the period of a periodic skill in frames | [C] layout; `[I]` `SKILLS_NextPeriodicFrame` ([§ Columns](#columns)) |
+
+- `[C]` **`anim` `SQ` and `seqnum`.** Of the 116 rows with `anim` `SQ`, 28 have a `seqnum` (1..41, 19 values) and 88
+  have none; those 88 all have a blank `charclass` (monster skills), with `monanim` `xx` 25, `S1` 22, `A1` 20, `SC` 8,
+  `A2` 5, `S2` 5, `S3` 3. A monster's sequence comes from its MonStats `Sk<k>mode` cell ([MonSeq](MonSeq.md)), not from
+  the Skills row. The 28 numbered rows include the class skills Jab (1), Charge (4), Inferno (6),
+  Impale (8), Whirlwind (10), Double Swing and Frenzy (11), Lightning and Chain Lightning (12), Leap (13), Leap Attack
+  (14), Double Throw (15), the four Assassin charge-ups (16), Arctic Blast (18), Dragon Flight (21) and Blade Fury (23),
+  and monster rows such as DiabRun (22), DesertTurret (26) and QueenDeath (41). Six rows have a `seqnum` with another
+  `anim`: Fend (`A1`, 9), Sacrifice (`A1`, 2), Conviction (blank `anim`, 5), Wearwolf and Wearbear (`SC`, 22) and
+  Dragon Talon (`KK`, 19) (`sk_seqnum_nonsq=6`).
+- `[L]` `seqnum` is not a `monseq` ordinal: the player sequences are not in any table, and the numbers 1..41 index a
+  sequence list the code holds (Phase 1.1). The values 22 for DiabRun and for the two shape-shifts, and 18 for Arctic
+  Blast and two monster rows, show the number is shared across unrelated skills.
+- `[C]` **No rate column.** No Skills column names an attack, cast or hit-recovery rate; the rate stats reach a skill
+  through its `aurastat*`/`passivestat*` columns: 33 cells name `velocitypercent`, `attackrate`, `other_animrate` or
+  `item_slow` ([ItemStatCost § Timing](ItemStatCost.md#timing-plan-0050-phase-0), `rate_stat_skill_cells`).
+
 ## Open questions
 
 - `[L]` How the per-class lists at `DataTables+0xBA4..+0xBAC` are built at load (their builder is not read). What

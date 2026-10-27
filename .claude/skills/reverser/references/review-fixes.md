@@ -25,7 +25,9 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
    through item creations" with 2 unexplained sales, and question 9's absence after a control saturated in two frames
    ([0043](../../../../docs/plans/done/0043-items-economy.md) P2 review); a gamble window opened before the control's first
    line (0043 P2b review); 304 caster resyncs "not logged by this run" where 87 match the caster's own logged `THR`
-   rolls (`lane/p45h` review, [0045](../../../../docs/plans/0045-skills-missiles-machinery.md)).
+   rolls (`lane/p45h` review, [0045](../../../../docs/plans/0045-skills-missiles-machinery.md)); "the breakpoint tables
+   are not copied" where the lane's own check transcribes all 39 (`lane/p50c` review,
+   [0050](../../../../docs/plans/0050-animation-frame-timing.md)).
 5. **An existing reviewed symbol name wins.** Merge `main` and grep `re/symbols.csv` for every address
    before you name it; rename your side. Seen: six addresses named twice, `lane/p41r`
    ([0041](../../../../docs/plans/done/0041-stats-and-states.md) P1 review).
