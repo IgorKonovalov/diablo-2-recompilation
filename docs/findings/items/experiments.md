@@ -2977,3 +2977,128 @@ logs; shortfalls under *Limits*.
   durability, func 23 sets flag `0x400000`, returns 1, makes no draw and no `PROP_WriteStat` call. `props.py`
   reproduces all three creations of each from their seeds. The ledger is in
   [items/0006 § Plan 0038 batch H2c](0006-properties.md#plan-0038-batch-h2c-2026-10-21).
+
+## run:2026-10-27-sweep-quest-items
+
+- **Question:** (plan 0038 Phase 2, batch H6e2, [inventory § 5](../../plans/0038-inventory/README.md#5-batch-list))
+  Do the quest chests, Wirt's body, the quest-item objects and the orifice create what
+  [items/0010 § 5](0010-quest-drops.md#5-quest-items) reads, in that order and under those gates; does object event 7
+  reach `QUESTS_ObjectEvent` and its class target; do the duplicate test and the item-move gate answer as read? Boundary
+  as in run:2026-10-16-quest-drops: quest bits and held items are inputs (tool-built saves, ADR-0013 § Neutral), and
+  each scripted draw takes the quest seed it finds (`QGS`).
+- **Status:** done (2026-10-27): the first checkpoint (rotation) and the resume, under the same run id. Evidence in
+  [items/0010 § Plan 0038 batch H6e2](0010-quest-drops.md#plan-0038-batch-h6e2-run2026-10-27-sweep-quest-items).
+- **Setup:** agent-driven sessions on harness **slot 1** (display `:8`, `workspace/wineprefix-1`, game in
+  `workspace/runtime/game`), stock data, pinned `game.exe`, gdb by `tools/d2run.py --slot 1 --seed 3811 --gdb
+  tools/gdb/quest-items.gdb --steps tools/gdb/enter-normal.steps --after 1500 --install h6e2 <save> --log <log>`.
+  - **Logger** `tools/gdb/quest-items.gdb` (`1b917862…`): `tools/gdb/quests.gdb`'s files (`pilot.py`, `uniques.py`,
+    `affixes.py`, `vendors.py`, `mon-pool.py`, `quests.py`, `tc-drops.gdb`, unchanged) plus `tools/gdb/quest-items.py`
+    (`d0a860fe…`): `QOW` (each object operate with the player's record words), `QOE`/`QOT` (object event 7 and its
+    targets), `QGV`/`QGX` (`QUESTS_GiveItem`), `QDC` (`DropItemCodeAt`), `OCD` (`ObjectChestDrop`), `PFI`/`PFX`/`PSX`
+    (`PlayerFindItemByCode` and its stat-356 reads), `IQG`/`IQX`/`IHD` (`ItemQuestGate`, its result and the
+    `0x0055CA40` answers), `ORF`/`OSP` (the orifice).
+  - **Session driver** `tools/h6e2_sessions.py` (`61c03244…`, the H6d loop with this logger); the gate session was
+    driven by hand with `tools/xdrive.py` (inventory clicks, drops, item labels with Alt held), recorded below.
+  - **Characters** (`tools/d2s.py build workspace/merged/data/global/excel tools/d2s_recipes/<recipe>.json
+    workspace/samples/d2s-owner/smpsor-l50.d2s <out>`, saves in `workspace/scratch-h6e2/saves/`): `QuestFreshT`
+    (`questfresht.json`, save `09fd6ec4…`, as H6d), `QuestAllDone` (`questalldone.json`, `501eb4a8…`), and four new
+    recipes: `QuestGateD` (`quest-h6e2-questgated.json` `c4e29b8e…`, save `fa1794ec…`: `QuestAllDone` holding `bks`,
+    `ass`, `tr2`, `tr1`, `box`, `j34`, `g33`, `hdm`, `xyz`, Amulet of the Viper, `qey`, `bbb`, `qhr`, `qbr` in the
+    inventory and Staff of Kings, `leg`, `ice` in the stash, each with stat 356 = 0 where the base has
+    `questdiffcheck`), `QuestGateF` (`quest-h6e2-questgatef.json` `f9694233…`, `5d0635bd…`: the same items on
+    `QuestFreshT`), `QuestBoxH` (`quest-h6e2-questboxh.json` `80e9ac90…`, `284ac719…`: `QuestFreshT` with a cube) and
+    `QuestMsfN` (`quest-h6e2-questmsfn.json` `30a3a73d…`, `8c85a011…`: `QuestFreshT` with a Normal Staff of Kings).
+- **Sessions of the first checkpoint** (logs `workspace/logs/h6e2/`):
+
+  | log | save | what | result |
+  |---|---|---|---|
+  | `dev-quest-items-s1-3811-gate-done.log` | QuestGateD | load only, 20 s (logger revision without `PSX`) | development log: no `IQG` at the load; 10 `PFI` calls |
+  | `quest-items-s1-3811-gate-done-r2.log` | QuestGateD | by hand: `bks` dropped and picked up; then 13 items dropped and their labels clicked (7 picked or refused before the character walked off) | **kept**: 8 `IQG` calls (6 refused, 2 allowed) |
+  | `dev-quest-items-s1-3811-radament.log` | QuestFreshT | `h6e2_sessions.py` radament: waypoint to the Sewers Level 2, `farm --descend 23` | development log: the descent never left level 48 (below); session stopped |
+  | `dev-quest-items-s1-3811-skilltest.log` | QuestFreshT | by hand: the same waypoint, one Teleport hop, `farm --descend 23`, clicks on the stairs | development log: Teleport works; `descend` finds the warp 9 sub-tiles away and reports "no hop along the path"; two clicks on the stairs' label did not take them |
+
+- **Procedure:** `python3 -I tools/sweep_h6e2.py check workspace/merged/data/global/excel
+  workspace/logs/h6e2/quest-items-s1-3811-gate-done-r2.log > workspace/logs/h6e2/check-ckpt1.txt` (`a859021f…` the
+  checker).
+- **Observed** (`check-ckpt1.txt` `6963f9e1…`; manifests `workspace/logs/h6e2/manifest-ckpt1.sha256` `cdc9d9d7…` for
+  the kept log and the check, `manifest-dev-ckpt1.sha256` `c43293dd…` for the three development logs, both checked
+  with `sha256sum -c` from `workspace/logs/h6e2/`):
+  ```
+  gate: 8 cases, 0 mismatches: bks, tr1, qbr, j34, ass, hdm refused (IQX 0); box, bbb allowed (IQX 1, IHD 0)
+  dup: 6 PlayerFindItemByCode stat-356 reads, all 0 against difficulty 0
+  chest 0, object 0, event7 0 (no such session yet)
+  SUMMARY ... mismatches=0
+  ```
+- **Stalls of this checkpoint** (for the resume): in the scripted `radament` session `d2pilot.py farm` printed
+  "life 0.00" and "mana 0.00" after every hop in the Sewers (the orbs were full on a screenshot taken then; a later
+  direct read gave 0.75 / 0.79), and `wpchain` arrived at once (level 1 → 48 in 0.4 s) but its command ran to the
+  120 s timeout. On map seed 3811 the Sewers Level 2 down-stairs (LvlWarp 23) stand 9 sub-tiles from the waypoint and
+  `descend` finds no path to them. The resume should try another map seed for the Act II and III descents (H4a's
+  radament ran on 4904), and check the orb read before a long session.
+
+### Resume (2026-10-27): the sessions
+
+- **Changes at the resume.** `tools/h6e2_sessions.py` (final revision `399a30c3…`; sessions were only added after one
+  ran, so its definitions are those that ran): `wpchain`'s limit 120 → 45 s (its settle loop waits for a quiet log,
+  which this logger never gives; it arrived in 0.2 s in every session); `objop` takes `--obj-near` (6 for the tree);
+  the Act II and III sessions start in the **Act IV town** (`wp4`: `tools/d2pilot.py wp --wp-x 715 --wp-y 58`, H4a's
+  move; the Pandemonium Fortress does not change with the map seed), so each takes its own map seed; `a4x` puts an
+  `explore --to-pdef … --pdef-any` before each preset objop and `--pdef-any` on it. Three recipes
+  `tools/d2s_recipes/quest-h6e2-{questfresht,questboxh,questmsfn}-a4.json` (`726c3682…`, `c6514175…`, `ba2ea8f1…`) are
+  the checkpoint's `QuestFreshT`, `QuestBoxH` and `QuestMsfN` with the three header act bytes 131 (Act IV, the
+  `0x80` flag set); built as before into `workspace/scratch-h6e2/saves/a4/` (`d6d11161…`, `54ac3e3d…`, `1b6796d6…`).
+  `tools/sweep_h6e2.py` (`44225cb0…`) adds the `death` listing (no model). The orb read was checked once after the
+  first waypoint (`tristram`): life 0.75, mana 0.79 at `--view-h 571` (the checkpoint's 0.00 did not recur; the frame
+  measured 600 rows).
+- **Sessions** (`python3 -I tools/h6e2_sessions.py run --slot 1 --tag h6e2 --saves workspace/scratch-h6e2/saves --run
+  quest-items <session>`, under `systemd-run --user --scope -p MemoryMax=4G`; all Normal but `staff-nm4b`, expansion,
+  one player, agent-driven):
+
+  | log (`quest-items-s1-…`) | save | route | result |
+  |---|---|---|---|
+  | `3811-tristram` `1ee7610a…` | QuestAllDone | Stony Field, the cairn stones, the portal, Wirt's body, a second click | **kept**: `leg`, 18 event-7 `WirtGold` piles; the second click logged no operate |
+  | `4904-radament4` `64227ea1…` | a4/QuestFreshT | Sewers Level 2 waypoint, the down-stairs (second try, after the driver's explore), Radament, the scroll chest | **kept**: `ass`; `tr1` chest |
+  | `4911-cube4` `01fdb98f…` | a4/QuestFreshT | Halls of the Dead 2, down, the cube chest | **kept**: `box` chest |
+  | `4911-cube-held4` `f9e9ea25…` | a4/QuestBoxH | as cube4 | **kept**: the held cube refuses `box` |
+  | `4916-staff4b` `01f927c4…` | a4/QuestFreshT | Far Oasis, the Maggot Lair 1–3, explore to LvlPrest 509, the staff chest | **kept**: `msf` chest |
+  | `4916-staff-nm4b` `7aaee230…` | a4/QuestMsfN | as staff4b, Nightmare | **kept**: the Normal staff does not count; `msf` made |
+  | `4913-heart4` `fa8cfa0b…` | a4/QuestFreshT | Kurast Bazaar, the sewers, the lever (event 7), down, the heart chest | **kept**: event 7 on class 367; `qhr` chest (gold first) |
+  | `4914-brain4` `3b55e206…` | a4/QuestFreshT | Flayer Jungle, the dungeon 1–3, the brain chest | **kept** for one `j34` kill; the chest was not found (objop 0/1) |
+  | `4913-tome4` `a98604bd…` | a4/QuestFreshT | Kurast Bazaar, the temple warp (61) | **kept** for one `j34` kill; the warp led to the Disused Fane (95), not the Ruined Temple (94) |
+  | `3811-inifuss6` `0e36f883…` | QuestFreshT | Dark Wood, the tree (`--obj-near 6`), a second click | **kept**: `bks`; the second click logged no operate |
+
+  Development logs (no claim rests on them): `dev-quest-items-s1-3811-inifuss` (stood 4.1 sub-tiles from the tree
+  with `--obj-near 4`, no click), `dev-quest-items-s1-4912-staff4` and `-staff-nm4` (map seed 4912: `objop --to-pdef
+  509` stood 420 s at the Maggot Lair 3 arrival point, the preset room logged but no hop moved the player),
+  `dev-quest-items-s1-4915-eye4` (the Spider Forest warp 51 led to the Arachnid Lair 84, not the Spider Cavern 85),
+  `dev-quest-items-s1-4914-brain4b` (the brain4 route with a full explore of level 91, frontier 0, then `objop
+  --obj-mem`: no class-406 object in any `OBJS` line). They were renamed `dev-` before any manifest listed them.
+- **Launches:** 19 in all (4 at the checkpoint, 15 at the resume); 11 kept sessions (`gate-done-r2` and the ten
+  above), 8 development logs.
+- **Not run** (launch cap): `gate-fresh`, the Malus, the NPC items (`bkd`, `g34`, `xyz`), the altar (`vip`), `g33`,
+  the council (`qf1`); the eye and brain chests and the tome after their failures above. The checkpoint's Act II
+  stall: on map seed 4904 the first `descend` also found "no hop along the path" to the Sewers stairs, and the
+  driver's explore-then-retry (the `until` loop's second try) took them, as in H4a's radament.
+- **Procedure:** `python3 -I tools/sweep_h6e2.py check workspace/merged/data/global/excel $(ls
+  workspace/logs/h6e2/quest-items-*.log) > workspace/logs/h6e2/check-final.txt`.
+- **Observed** (`check-final.txt` `d4ce6d6d…`; manifests `manifest-final.sha256` `849df588…` (the ten resume logs,
+  their pilot outputs, the check: 21 lines) and `manifest-dev-final.sha256` `04ad2b1a…` (the five resume development
+  logs and pilot outputs: 10 lines), both checked with `sha256sum -c` from `workspace/logs/h6e2/`; the checkpoint's
+  two manifests still pass there):
+  ```
+  chest 6: tr1 (9 gold), box (5), box held (no box, 5), msf (9), msf Nightmare (9), qhr (gold 8 first, then qhr, OCD)
+  object 2: leg (Wirt, mode 0), bks (tree, mode 0)
+  event7 19: 18 x class 268 -> 0x00594630, 1 x class 367 -> 0x005B85E0; all ev 7, ret 0x00586B1B, r1 0x005411C4
+  dup 8: 6 Normal reads (gate-done), 2 msf reads s356 0 in Nightmare -> none
+  gate 8 (gate-done); death 3 (listed): ass, j34 x2, asked 2, created 7
+  SUMMARY chest=6 chest_bad=0 object=2 object_bad=0 event7=19 event7_bad=0 dup=8 dup_bad=0 gate=8 gate_bad=0
+          gate_skip=0 gold=45 death=3 mismatches=0
+  ```
+- **Screenshots** *(added at the review, 2026-10-27)*: the 24 pilot screenshots of the kept sessions (eight
+  `quest-items-*-shots/` directories; the dev and the other kept directories are empty) were outside every manifest;
+  the review hashed them into `workspace/logs/h6e2/manifest-shots-final.sha256` (`2f8f0b14…`, 24 lines, `sha256sum -c`
+  from `workspace/logs/h6e2/`). No claim rests on them. The empty `quest-items-s1-3811-radament-shots/` belongs to the
+  development log `dev-quest-items-s1-3811-radament.log`.
+- **Limits.** One player in every session, so the per-player counts are 0 or 1; the record words are those the
+  tool-built saves give (all clear or all done), so no case separates which word a gate reads. The `QOW` record
+  is the operating player's at the operate, not at a death. The second clicks reached no operate.

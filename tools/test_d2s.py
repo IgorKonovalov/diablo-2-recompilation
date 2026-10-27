@@ -331,6 +331,15 @@ RECIPE_BASES = {
     "questfreshm": (BASE_X, None),
     "questfresht": (BASE_X, None),
     "questservicesone": (BASE_X, None),
+    # plan 0038 batch H6e2 (run:2026-10-27-sweep-quest-items): the saves of the run record
+    "quest-h6e2-questgated": (BASE_X, "fa1794ecb0db6769257c1f34286afb0ad2d5cb1700187a43b2e0e3c2283f8bea"),
+    "quest-h6e2-questgatef": (BASE_X, "5d0635bd80d70d5e18a8e1e9d741aadee9eb092d51080548c01d0b071f3fbdac"),
+    "quest-h6e2-questboxh": (BASE_X, "284ac719ebcbfdde00a593ac97941c0e0555a51122dda5487bfe984abe665b61"),
+    "quest-h6e2-questmsfn": (BASE_X, "8c85a0112726494bd502e73412424c1bb3066ca453fdff3c58c4998cf1a01b75"),
+    "quest-h6e2-questfresht-a4": (BASE_X, "d6d11161a9375a3d9b151bc10822c7d729b3c4b3fad3069b518cca1da3c23f08"),
+    "quest-h6e2-questboxh-a4": (BASE_X, "54ac3e3dee32ee1c207f89c1a6405250016641cf4735e5e9f9bc00f508bb238b"),
+    "quest-h6e2-questmsfn-a4": (BASE_X, "1b6796d678b1c05b7f54ec26c2fd66258508effcbfe9cb40a185d38145846a52"),
+    "h3brare": (BASE_X, "ce57d8f76eaabcad6bdb6eea7b06082ae400ae8c01be85404ec11dfa9cf86317"),  # run:2026-10-27-sweep-data-load
 }
 
 _TABLES = []

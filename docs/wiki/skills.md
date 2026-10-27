@@ -144,8 +144,13 @@ rolls, the target's defence rolls, a missile creation's critical roll, an aura's
 rows that share Bash's start function roll the to-hit, defence and damage when the mode starts and deliver the hit on
 the action frame; Jab does everything on the action frame. A rebuild has to order the draws by frame accordingly
 ([dispatch § Reimplementation notes](../specs/skills/dispatch.md#reimplementation-notes)). Kick's start function builds
-its hit from its row's values (a set result and hit class, the row's `MinDam` as physical damage), read from the code,
-and the same delivering do function delivers it; in its 32 uses the caster's seed did not move at the start, and the
+its hit from its row's values (a set result and hit class, the row's `MinDam` shifted by its `HitShift` as physical
+damage), read from the code, and the same delivering do function delivers it. The stock Kick row's `MinDam` is 0, so
+that physical damage is 0 (from the table). In the 25 of its 32 uses whose hit reached the damage step, on Normal
+against nine monster kinds with no physical resistance, the hit carried no physical damage, which the
+strength-and-dexterity damage below could not have given (confirmed); that the start stores the shifted `MinDam`
+rather than nothing at all is read from the code, and why the other 7 uses reached no damage step is not read. In its
+32 uses the caster's seed did not move at the start, and the
 action frame added no draw of its own (confirmed). The
 delivering do function was run on its own under emulation up to its calls.
 
@@ -220,7 +225,10 @@ run under emulation for a row with no weapon share; the weapon share, and which 
 missiles and several do functions), are read from the code. For a row flagged `Kick` the minimum is instead a quarter of (strength + dexterity − 20)
 for a player, or of three times the level for another unit, at least 1 before the quarter (run under emulation); the
 maximum is a third of the same, read from the code. Kick's own start function, above, does not use it: it reads
-its row's `MinDam` itself (read from the code), and what that column holds for Kick is still open. The weapon masteries enter
+its row's `MinDam` itself (read from the code), which is 0 for Kick. Read from the code, the `Kick`-flagged damage is reached by the
+Assassin's Dragon Talon, Dragon Tail and Dragon Flight (strength and dexterity for the Assassin, three times the
+level for the two shadow monsters that cast Dragon Flight), and not by a direct call of Kick's own functions; the
+calls that pass a skill chosen at run time are not followed. The weapon masteries enter
 through the combat build and the missile damage, the synergies through the skill's formulas, read from the code.
 
 ## Charge-up skills and the finisher
@@ -534,8 +542,6 @@ From the specs' open questions ([overview](../specs/skills/README.md#open-questi
 - **The caster gaps left** (43 and 103 player gaps over the two runs) and the monster gaps, which wait for monster AI.
 - **Which frame carries the action**, and the unit field behind two frame tests: animation timing.
 - **The finisher** in a run.
-- **Kick's hit damage**: the `MinDam` value of Kick's row, which its start function's hit carries, and which code
-  uses the strength-and-dexterity damage.
 - **Missiles**: the end of a hit for rows with a hit function, the filters before the build, the "always explode"
   rows and the end-of-life branch in a run; the speed's per-level term, the slow-missiles scaling, the extra loops and
   the distance refusal; the re-seed sites other than Firestorm's, and which path call steps Firestorm's; the critical

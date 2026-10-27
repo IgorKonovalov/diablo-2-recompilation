@@ -164,8 +164,8 @@ verdict per compared claim.
 | `0x0058F090` | `sub_0058F090_MonsterOwnerRef` | a monster's owner from the record MonsterData `+0x28` points to: GUID `+0x2C`, type `+0x30` when the record's `+0x28` ≠ 0, else GUID −1; the death event finds a player by it | C (H6d) |
 | `0x00543BD0` | `sub_00543BD0_QuestsInvItemEvent` | each inventory item with `quest` ≠ 0: event 9 (`Quest+0xC4`) of quest object `quest − 1`; then event 1 (§ 5) | I |
 | `0x00555D20` | `sub_00555D20_ItemQuestHook` | sets identified; an item with `quest` ≠ 0 is registered with quest object `quest − 1` (`QUESTS_HookMonster`) (§ 5) | I |
-| `0x0055CC90` | `sub_0055CC90_ItemQuestGate` | per-code and per-`quest` refusals of a quest item for a player, four item-move callers (§ 5) | I |
-| `0x005449E0` | `QUESTS_ObjectEvent` | object **event 7** of the quest objects, by object class (§ 9; `QUESTS_ObjectOperate` until 2026-10-16) | I |
+| `0x0055CC90` | `sub_0055CC90_ItemQuestGate` | per-code and per-`quest` refusals of a quest item for a player, four item-move callers (§ 5) | C (H6e2) |
+| `0x005449E0` | `QUESTS_ObjectEvent` | object **event 7** of the quest objects, by object class (§ 9; `QUESTS_ObjectOperate` until 2026-10-16) | C (H6e2) |
 | `0x00581A10` | `sub_00581A10_ObjEvent7Thunk` | entry 7 of `g_ObjEventFns`: `jmp QUESTS_ObjectEvent` (§ 9) | I |
 | `0x00586AD0` | `OBJ_EventDispatch` | `g_ObjEventFns[event](game, object)` for an object event without its own callback (§ 9) | I |
 | `0x00541160` | `sub_00541160_ObjEventsRun` | runs the object event list (list 3) of the current frame (§ 9) | I |
@@ -176,9 +176,9 @@ verdict per compared claim.
 | `0x00559A30` | `sub_00559A30_DropItemAtUnit` | creates the item coded at `source+0xB8` (or a random base) at the source, quality given | I |
 | `0x00559CE0` | `ITEMS_CreateForStore` | creation record for an item index, quality, ilvl; ItemCreate (existing row, items/0009) | I |
 | `0x005466B0` | `QUESTS_GiveItem` | item by code into the player's inventory, or dropped at the player | I |
-| `0x00558110` | `sub_00558110_PlayerFindItemByCode` | cursor or inventory item with a code; in the inventory a quest item with `questdiffcheck` counts only at stat 356 ≥ difficulty, on the cursor every quest item does (P1b B12) | I |
+| `0x00558110` | `sub_00558110_PlayerFindItemByCode` | cursor or inventory item with a code; in the inventory a quest item with `questdiffcheck` counts only at stat 356 ≥ difficulty, on the cursor every quest item does (P1b B12) | C (H6e2) |
 | `0x00544160` | `sub_00544160_PlayerRemoveItemByCode` | removes that item | I |
-| `0x00585970` | `sub_00585970_DropItemCodeAt` | creates an item by code at a unit (used for `gld`) | I |
+| `0x00585970` | `sub_00585970_DropItemCodeAt` | creates an item by code at a unit (used for `gld`) | C (H6e2) |
 | `0x0055A090` | `sub_0055A090_DropGoldAmount` | gold piles of a given amount at a unit | C (H6d) |
 | `0x0055B030` | `sub_0055B030_DropGold` | `DropGoldAmount(amount, max 32 piles)` | C (H6d) |
 | `0x00579D60` | `NPC_MenuAction` | NPC menu actions: imbue (154), socket (511), personalize (512), act travel (existing row, items/0009) | I |
@@ -200,18 +200,18 @@ verdict per compared claim.
 | `0x00595C60` | `sub_00595C60_A1Q6_NpcMessage` | Warriv: word 6 bit 1 → bit 0 | C (H6d) |
 | `0x00595710` | `sub_00595710_A1Q5_CountessDeath` | the Countess's death: word 5 bits, no item | I |
 | `0x00593E70` | `sub_00593E70_A1Q4_CowKingDeath` | the Cow King's death: word 4 bit 10, eight `vps` | I |
-| `0x00593AF0` | `sub_00593AF0_A1Q4_InifussDrop` | Scroll of Inifuss (`bks`) from the tree | I |
-| `0x00594630` | `sub_00594630_A1Q4_WirtGold` | Wirt's body: 10–19 gold piles | I |
+| `0x00593AF0` | `sub_00593AF0_A1Q4_InifussDrop` | Scroll of Inifuss (`bks`) from the tree | C (H6e2) |
+| `0x00594630` | `sub_00594630_A1Q4_WirtGold` | Wirt's body: 10–19 gold piles | C (H6e2) |
 | `0x00592250` | `sub_00592250_A1Q4_NpcMessage` | Akara's ring, the deciphered scroll | I |
-| `0x00583E70` | `sub_00583E70_WirtLegDrop` | `leg` from its object | I |
+| `0x00583E70` | `sub_00583E70_WirtLegDrop` | `leg` from its object | C (H6e2) |
 | `0x00599020` | `sub_00599020_A2Q1_RadamentDeath` | Book of Skill (`ass`) per qualifying player | I |
-| `0x00599C10` | `sub_00599C10_A2Q2_ScrollChest` | `tr1` chest | I |
-| `0x00599CF0` | `sub_00599CF0_A2Q2_StaffChest` | `msf` chest | I |
-| `0x00599DF0` | `sub_00599DF0_A2Q2_CubeChest` | `box` chest | I |
+| `0x00599C10` | `sub_00599C10_A2Q2_ScrollChest` | `tr1` chest | C (H6e2) |
+| `0x00599CF0` | `sub_00599CF0_A2Q2_StaffChest` | `msf` chest | C (H6e2) |
+| `0x00599DF0` | `sub_00599DF0_A2Q2_CubeChest` | `box` chest | C (H6e2) |
 | `0x0059A7E0` | `sub_0059A7E0_A2Q3_ViperChest` | `vip` chest | I |
 | `0x0059D050` | `sub_0059D050_A2Q6_DurielDeath` | Duriel's death: word 14 bit 5 | I |
 | `0x005B7A60` | `sub_005B7A60_A3Q1_TomeDrop` | `bbb` from its object | I |
-| `0x005B8860` | `sub_005B8860_A3Q2_HeartChest` | `qhr` chest | I |
+| `0x005B8860` | `sub_005B8860_A3Q2_HeartChest` | `qhr` chest | C (H6e2) |
 | `0x005B8940` | `sub_005B8940_A3Q2_EyeChest` | `qey` chest | I |
 | `0x005B8A20` | `sub_005B8A20_A3Q2_BrainChest` | `qbr` chest | I |
 | `0x005B9980` | `sub_005B9980_A3Q3_GidbinnDrop` | `g33` from a dying monster | I |
@@ -475,7 +475,7 @@ level; `ITEMS_CreateForStore`; durability set to max; into the inventory, or dro
 | `box` | its chest | per player without `box` | per player | 2 | 0x00599DF0 |
 | `vip` | the altar (object 149 `taintedsunaltar`, `OperateFn` 24; § 9) | not (word 11 done and (word 10 done or `vip`/`hst` held)) | per player (identified) | 7 | 0x0059A7E0 |
 | `bbb` | its object | word 17 bit 0 clear | 1 | 2 | 0x005B7A60 |
-| `qhr`, `qey`, `qbr` | their chests | per player | per player | 2 | 0x005B8860, 0x005B8940, 0x005B8A20 |
+| `qhr`, `qey`, `qbr` | their chests | per player holding neither the part nor `qf2` (H6e2) | per player | 2 | 0x005B8860, 0x005B8940, 0x005B8A20 |
 | `g33` | a dying monster (unique or flagged) | quest flag armed | 1 | 2 | 0x005B9980 |
 | `j34` | a dying monster | killer word 19 bit 0 clear | 1 | 2 | 0x005BAB60 |
 | `qf1`, then `box` | council deaths | counted players | per player | 7, 2 | 0x005BBC00 |
@@ -485,7 +485,9 @@ level; `ITEMS_CreateForStore`; durability set to max; into the inventory, or dro
 
 - [I] The chest functions (`tr1`, `msf`, `box`, `vip`, the Khalim chests) also run the chest's normal TC drop
   (`sub_00585B90_ObjectChestDrop`) and then `5 + low32(LCG(quest seed)) mod 5` gold piles (`sub_00585970_DropItemCodeAt`
-  with `gld`, quality 2). (fn:sub_00599C10_A2Q2_ScrollChest@0x00599C10, fn:sub_00599CF0_A2Q2_StaffChest@0x00599CF0,
+  with `gld`, quality 2). *(Corrected at H6e2, [§ Plan 0038 batch H6e2](#the-quest-chests-inventory-qd-30-qd-33-objects-48):
+  the three Khalim chests draw the gold **first**, then the parts, then the chest drop; the order above holds for
+  `tr1`, `msf`, `box` and `vip`. The tags of both orders are in that section.)* (fn:sub_00599C10_A2Q2_ScrollChest@0x00599C10, fn:sub_00599CF0_A2Q2_StaffChest@0x00599CF0,
   fn:sub_00599DF0_A2Q2_CubeChest@0x00599DF0, fn:sub_0059A7E0_A2Q3_ViperChest@0x0059A7E0,
   fn:sub_005B8860_A3Q2_HeartChest@0x005B8860, fn:sub_005B8940_A3Q2_EyeChest@0x005B8940,
   fn:sub_005B8A20_A3Q2_BrainChest@0x005B8A20, fn:sub_00585B90_ObjectChestDrop@0x00585B90, fn:sub_00585970_DropItemCodeAt@0x00585970)
@@ -1260,6 +1262,222 @@ quest item without stat 356, such as `box` (`questdiffcheck` 0), is found on the
 inventory in every difficulty. (fn:sub_00558110_PlayerFindItemByCode@0x00558110, fn:STATS_GetUnitStat@0x00625480,
 fn:sub_00624F60_StatListGetValue@0x00624F60, tbl:Misc.txt:quest, tbl:Misc.txt:questdiffcheck)
 
+## Plan 0038 batch H6e2 (run:2026-10-27-sweep-quest-items)
+
+Harness batch H6e2 (`quest-items`) of [plan 0038](../../plans/0038-inferred-claims-sweep.md) takes 24 inferred
+statements: [items/quest-drops](../../specs/items/quest-drops.md) rows 1, 30, 33, 34 and 35 of
+[the inventory](../../plans/0038-inventory/items-quest-drops.md) and [objects](../../specs/objects/README.md) row 48
+([inventory](../../plans/0038-inventory/objects-README.md)). The first checkpoint (rotation, plan 0038 log 2026-10-27)
+had one kept session and the static reads; the resume ran 15 more launches (19 in all), 11 kept sessions in all.
+Run record [run:2026-10-27-sweep-quest-items](experiments.md#run2026-10-27-sweep-quest-items). Logger
+`tools/gdb/quest-items.gdb` (`tools/gdb/quests.gdb`'s files plus `tools/gdb/quest-items.py`), checker
+`tools/sweep_h6e2.py check`; the check over the 11 kept logs is `workspace/logs/h6e2/check-final.txt`
+(`d4ce6d6d…`): **chest 6, object 2, event7 19, dup 8, gate 8, gold 45, death 3 (listed); 0 mismatches.**
+
+### Static reads behind the checker (2026-10-27, objdump of the pinned `game.exe`)
+
+- [I] **A quest chest opens once.** Every chest script (`box`, `tr1`, `msf`, the three Khalim chests) first calls
+  `0x00545850`, which returns 0 (the script stops) when the object's mode (`+0x10`) is not 0, and otherwise sets the
+  mode to 1 (queuing object event 1 at the frame `+ Objects+0xDC >> 8`) or 2. So a chest reopened in the same game
+  creates nothing, and the duplicate route "chest reopened with the item held" of inventory row 34 needs a new game
+  with the item held (the `QuestBoxH` and `QuestMsfN` saves of the run). (0x00545850–0x005458BD,
+  fn:sub_00599C10_A2Q2_ScrollChest@0x00599C10 0x00599C17, fn:sub_005B8860_A3Q2_HeartChest@0x005B8860 0x005B8867)
+- [I] **The per-player gates of the Act II chests**, read from their `GameForEachUnit` callbacks: `tr1`
+  (callback 0x00599700) counts a player whose record has word 10 bit 0 clear and bit 3 clear; `msf` (0x00599750) word
+  10 bit 0 clear and no `msf` and no `hst` held (`PlayerFindItemByCode`, returns 0x00599780, 0x00599792); `box`
+  (0x005997C0) no `box` held (0x005997CD). The count is the quest object 9's data `+0x14`; the chest then creates that
+  many items with `DropItemAtUnit` (quality 7 for `tr1` and `msf`, 2 for `box`; `msf` also sets item flag `0x10`,
+  0x00599D61). This is the table of § 5 as read before. (fn:sub_00599C10_A2Q2_ScrollChest@0x00599C10,
+  fn:sub_00599CF0_A2Q2_StaffChest@0x00599CF0, fn:sub_00599DF0_A2Q2_CubeChest@0x00599DF0,
+  fn:sub_00558110_PlayerFindItemByCode@0x00558110, fn:QUESTRECORD_GetState@0x0065C310)
+- [I] **Correction: the Khalim chests draw their gold first, and refuse a held part.** `HeartChest`, `EyeChest` and
+  `BrainChest` take the quest seed (`QUESTS_GetSeed` at 0x005B8878 / 0x005B8958 / 0x005B8A38), drop `5 + QuestPick(5)`
+  `gld ` piles (`DropItemCodeAt`, quality 2), **then** count the players with their callbacks (0x005B8810,
+  0x005B8770, 0x005B87C0), each of which counts a player who holds neither the chest's part (`qhr`, `qey`, `qbr`) nor
+  `qf2` (Khalim's Will), create that many parts (quality 2), and only then run the chest's ordinary drop
+  (`ObjectChestDrop`, 0x005B8931 / 0x005B8A11 / 0x005B8AF1). The spec's E1 order (items, chest drop, gold) holds for
+  `box`, `tr1`, `msf` and the altar, not for these three; and their "per player" gate has the held-part test. Met at
+  run time for the heart chest (below, `[C]`); the eye and brain chests stay this reading.
+  (fn:sub_005B8860_A3Q2_HeartChest@0x005B8860 0x005B8878–0x005B8931, fn:sub_005B8940_A3Q2_EyeChest@0x005B8940,
+  fn:sub_005B8A20_A3Q2_BrainChest@0x005B8A20, fn:sub_00585970_DropItemCodeAt@0x00585970,
+  fn:sub_00585B90_ObjectChestDrop@0x00585B90)
+- [I] **Wirt's body** creates `leg` (quality 2) only in mode 0, then sets mode 1 and queues object event 1 (frame
+  `+ Objects+0xDC >> 8 + 1`) and event 7 (frame + 10); in any other mode the click does nothing. **The Inifuss tree**
+  needs quest object 4 with `+0x09` ≠ 0 (else it sets mode 1 and stops), its state `+0x0C` < 6, mode 0,
+  word 4 bits 0 and 1 clear, no `bkd` and no `bks` held; then `bks` (quality 2). **The Malus** needs quest object 3's
+  `+0x09` ≠ 0, word 3 bits 0 and 1 clear and character level (stat 12) ≥ 8 (else message 0x13); then `hdm` (quality 2).
+  **The Lam Esen tome** needs quest object 15's `+0x09` ≠ 0 and mode 0; word 17 bit 0 set gives message 0x13 and no item,
+  clear gives `bbb` (quality 2). (fn:sub_00583E70_WirtLegDrop@0x00583E70 0x00583E7E–0x00583EF5,
+  fn:sub_00593AF0_A1Q4_InifussDrop@0x00593AF0 0x00593B2B–0x00593C11, fn:sub_00591AC0_A1Q3_MalusDrop@0x00591AC0
+  0x00591AEC–0x00591B99, fn:sub_005B7A60_A3Q1_TomeDrop@0x005B7A60 0x005B7A7E–0x005B7AF3)
+- [I] **The gate's ground-pickup route.** `sub_0055CC90_ItemQuestGate` runs when a player picks up an item lying on
+  the ground: the call at 0x00563631 (inside `sub_00563470_ItemDiscardInvalid`, after the test that the item's mode
+  `+0x10` is 3, on the ground) sends error 0x13 and returns 0 when the gate refuses. The call at 0x0055D011 (in
+  `0x0055CF50`, called from `sub_00548B00_UnitInteract` at 0x00548C9D) is a second interact path; neither ran at the load
+  of a save holding refused items (the first session: no `IQG` line before the first pickup), so a held quest item is
+  not taken away at the join by this gate. (0x005635F8–0x00563649, 0x0055CF50–0x0055D011)
+- [I] **The quality column of § 5 is the argument.** In the kept log `quests-s3-3356-meph-normal.log`
+  (run:2026-10-16-quest-drops) `j34` (`FigurineDrop`, return 0x005BABFE) and `mss` (`MephistoDeath`, 0x005BCA86) were
+  requested with quality 2 and came back as items of quality 7 (`QDX`); `leg`, the gems and the Hellforge's `hfh` came
+  back with the quality they were asked for. Where the 7 comes from is not read (an open question below).
+  (fn:sub_00559A30_DropItemAtUnit@0x00559A30, fn:sub_005BAB60_A3Q4_FigurineDrop@0x005BAB60,
+  fn:sub_005BC8B0_A3Q6_MephistoDeath@0x005BC8B0)
+
+### Object event 7 at run time (inventory qd 1)
+
+- [C] **The route for classes 268 and 367.** Each of the 19 `QOE` lines (18 on Wirt's body, session `tristram`; one on
+  the Kurast sewer lever, `heart4`) is `QUESTS_ObjectEvent`'s entry with event index 7 (`OBJ_EventDispatch`'s argument,
+  `ebp+8`), entered by the `call eax` at 0x00586B19 (return 0x00586B1B) whose `eax` is `g_ObjEventFns[7]`; that entry is
+  `0x00581A10` in the image, and `0x00581A10` is a single `jmp 0x005449E0` (bytes `e9 cb 2f fc ff`), so the thunk
+  adds no frame. On the logged path the caller of `OBJ_EventDispatch` is `sub_00541160_ObjEventsRun` (return 0x005411C4, after
+  the call at 0x005411BF; its second call site, 0x00541216, did not appear), called by `sub_005414D0_GameRunUnitEvents` (return 0x0054156D, call at 0x00541568). Inside
+  `QUESTS_ObjectEvent` the class picks the target: 268 → `sub_00594630_A1Q4_WirtGold` (18 entries, each returning to
+  0x00544C4E after the call at 0x00544C49), 367 → `sub_005B85E0_A3Q2_SewerLeverEvent7` (return 0x00544C8E). Two
+  classes reaching two different targets through one entry is the "dispatch by object class" of the statement.
+  (fn:sub_005414D0_GameRunUnitEvents@0x005414D0, fn:sub_00541160_ObjEventsRun@0x00541160,
+  fn:OBJ_EventDispatch@0x00586AD0, data:g_ObjEventFns@0x006E19B0, fn:sub_00581A10_ObjEvent7Thunk@0x00581A10,
+  fn:QUESTS_ObjectEvent@0x005449E0, run:2026-10-27-sweep-quest-items)
+  - After, `[I]`: what the lever's target does (no item; its writes are quests/0001's), and the targets of the other
+    event-7 classes of § 9 (26, 122, 341, 371, 459–461, 474–476), none of which ran here; the Hellforge's (376) is `[C]`
+    from run:2026-10-16-quest-drops. Who queued each event (Wirt's operate, the lever's) is not logged.
+
+### The quest chests (inventory qd 30, qd 33; objects 48)
+
+- [C] **`box`, `tr1`, `msf`: the item, then the chest drop, then the gold.** Five chest operates with the chest in
+  mode 0 (`cube4`, `cube-held4`, `radament4`, `staff4b`, `staff-nm4b`): each logged, in this order, the quest item's
+  `DropItemAtUnit` (`QDI`, return inside the chest's script) when its gate passed, `ObjectChestDrop` (`OCD`), one
+  `QUESTS_GetSeed` (`QGS`), then `k` gold creations `DropItemCodeAt('gld ', quality 2)` (`QDC`), with
+  `k = 5 + (low32(lo · 0x6AC690C5 + hi) mod 5)` on the logged quest seed: 9 (`tr1`, seed `ba556b09:0000029a`), 5 twice
+  (`box`, `8ecb16b5:…`, the two cube sessions share map seed 4911), 9 twice (`msf`, `01fa9154:…`, map seed 4916).
+  The items' qualities: `box` 2, `tr1` and `msf` 7 with item flag `0x10` set on the created item (`OCD`'s re-read,
+  flags `0x00082010`). The operate slots on the `QOW` lines are 39 (`box`, class 354), 40 (`tr1`, 355) and 41 (`msf`,
+  356). Three distinct seeds give the three `k`; a reading with another modulus or offset matches all three by chance
+  about once in 125. (fn:sub_00599C10_A2Q2_ScrollChest@0x00599C10, fn:sub_00599CF0_A2Q2_StaffChest@0x00599CF0,
+  fn:sub_00599DF0_A2Q2_CubeChest@0x00599DF0, fn:sub_00585B90_ObjectChestDrop@0x00585B90,
+  fn:sub_00585970_DropItemCodeAt@0x00585970, fn:QUESTS_GetSeed@0x005438B0, run:2026-10-27-sweep-quest-items)
+- [C] **The Khalim heart chest draws its gold first** (the checkpoint's correction to E1, now met). `heart4`: the
+  heart chest (class 405, slot 57) logged `QGS` (`f01147c1:0000029a`), 8 `QDC` gold piles (`k` = 8 on that seed),
+  then the callback's two `PlayerFindItemByCode` calls (`qhr` at return 0x005B8820, `qf2` at 0x005B8832, neither
+  found), then `qhr` (`QDI` return 0x005B8916, quality 2), then `ObjectChestDrop` (return 0x005B8936). The spec's E1
+  order (items, chest drop, gold) is contradicted for this chest; the static reading of § Static reads holds.
+  (fn:sub_005B8860_A3Q2_HeartChest@0x005B8860, run:2026-10-27-sweep-quest-items)
+  - `[I]`: the eye and brain chests (the same shape, read, not run: `eye4`'s warp led to the Arachnid Lair, and the
+    brain chest was never listed in level 91, below) and the altar (`vip`, not run). (fn:sub_005B8940_A3Q2_EyeChest@0x005B8940,
+    fn:sub_005B8A20_A3Q2_BrainChest@0x005B8A20, fn:sub_0059A7E0_A2Q3_ViperChest@0x0059A7E0)
+- [C] **A held cube stops the cube.** `cube-held4` (`QuestBoxH`, Normal, a cube in the inventory): the callback's
+  `PlayerFindItemByCode('box ')` (return 0x005997CD) found the held cube, no `box` was created, and the chest drop
+  and the 5 gold piles still ran, as in `cube4` without it. So the per-player gate is "without `box`", and a refused
+  player does not stop the rest of the operate. (fn:sub_00599DF0_A2Q2_CubeChest@0x00599DF0,
+  fn:sub_00558110_PlayerFindItemByCode@0x00558110, run:2026-10-27-sweep-quest-items)
+- [I] The `tr1` and `msf` gates' refusal halves (word 10 bits 0 and 3, a held `msf` or `hst` of the difficulty) did
+  not run: every chest session had the words clear and nothing held but the cube and the Normal staff.
+  (fn:sub_00599C10_A2Q2_ScrollChest@0x00599C10, fn:sub_00599CF0_A2Q2_StaffChest@0x00599CF0)
+
+### Duplicates and the difficulty (inventory qd 34)
+
+- [C] **A Normal staff does not stop a Nightmare staff chest.** `staff-nm4b` (`QuestMsfN`: a Normal `msf`, stat 356 = 0,
+  in a Nightmare game): the chest's `PlayerFindItemByCode('msf ')` (return 0x00599780) read stat 356 = 0 against
+  difficulty 1 (`PSX` at 0x005581D2) and returned no item (`PFX` 0); `hst` was not found either; the chest made a new
+  `msf` (quality 7, identified) and the rest of E1. With the cube case above, both halves of the step note's example
+  are met in one difficulty each. (fn:sub_00558110_PlayerFindItemByCode@0x00558110 0x005581D2–0x005581D8,
+  fn:sub_00599CF0_A2Q2_StaffChest@0x00599CF0, tbl:Misc.txt:questdiffcheck, run:2026-10-27-sweep-quest-items)
+- [I] "Only by each script's own test" (no other refusal), the cursor branch, and the cube in Nightmare or Hell were
+  not run; the 8 `dup` cases of the check are these two `msf` reads and the six Normal-in-Normal reads of `gate-done`.
+  (fn:sub_00558110_PlayerFindItemByCode@0x00558110 0x0055815C–0x0055816F)
+
+### The quest-item objects and Wirt's body (inventory qd 30; objects 48)
+
+- [C] **Wirt's body, first operate.** `tristram` (`QuestAllDone`, Normal): the body (class 268) in mode 0 ran slot 33
+  (`QOW` fn 33), which created `leg` (`QDI` return 0x00583EA4, quality 2) with the quest seed `91fdb5f0:0000029a`
+  unchanged; then 18 object events 7 ran `WirtGold`, each creating one `gld ` pile (return 0x0059469A, quality 2).
+  The first `WirtGold` drew the quest seed once (`QGS` return 0x00594658 → `91fdb5f0:0000029a`), and
+  `low32(0x91FDB5F0 · 0x6AC690C5 + 0x29A) = 0x2634044A`, `0x2634044A mod 10 + 10 = 18`: the pile count, and the piles'
+  seed `2634044a:3ce44a1f` on the `QDI` lines. So the leg makes no quest-seed draw, and the gold is
+  `RandLoHi(questSeed, 10, 20)` piles, one per event-7 timer, as G8a of items/economy (already `[C]` from
+  run:2026-10-19-economy2). (fn:sub_00583E70_WirtLegDrop@0x00583E70, fn:sub_00594630_A1Q4_WirtGold@0x00594630
+  0x00594651–0x0059469A, run:2026-10-27-sweep-quest-items)
+- [C] **The Inifuss tree, first operate.** `inifuss6` (`QuestFreshT`, Normal): the tree (class 30, slot 12) in mode 0,
+  word 4 = 0, called `PlayerFindItemByCode` for `bkd` (return 0x00593BA8) and `bks` (0x00593BBF), found neither, and
+  created `bks` (`QDI` return 0x00593C16, asked with quality 2) on the unchanged quest seed `91fdb5f0:0000029a`; the
+  item was created with quality 7 (`ICQ` q 7, rq 2, the next line), as `ass` and `j34` below.
+  (fn:sub_00593AF0_A1Q4_InifussDrop@0x00593AF0, run:2026-10-27-sweep-quest-items)
+  - After, `[I]`: the 7 is the base `unique` override below (`bks` has `unique` 1 in `misc.txt`). *(Review, 2026-10-27:
+    the lane had filed `bks` at quality 2, the asked value.)* (0x005574E3–0x00557567, tbl:Misc.txt:unique)
+- [I] **The second click.** Neither the body (in `tristram`, after the piles) nor the tree (in `inifuss6`, seven clicks
+  from 4.0–5.8 sub-tiles) logged a second `QOW`: the clicks did not reach the operate, so the scripts' "mode ≠ 0:
+  nothing" halves were not run. Whether the game offers a used body or tree to the click at all is not read.
+  (fn:sub_00583E70_WirtLegDrop@0x00583E70 0x00583E7E, fn:sub_00593AF0_A1Q4_InifussDrop@0x00593AF0)
+- [C] **The death creations** (listed by the check, `death`): `ass` at Radament's death (`radament4`, return
+  0x0059911B, source monster class 229) and `j34` at two Act III kills (`tome4` class 126, `brain4` class 280; return
+  0x005BABFE), each asked with quality 2 and created with quality 7 (`ICQ` q 7, rq 2; `QDX` quality 7). The `j34`
+  kills were by a player whose word 19 was 0. (fn:sub_00599020_A2Q1_RadamentDeath@0x00599020,
+  fn:sub_005BAB60_A3Q4_FigurineDrop@0x005BAB60 0x005BABA8–0x005BABF9, run:2026-10-27-sweep-quest-items)
+  - After, `[I]`: the 7 is the base `unique` pre-switch override of `ItemCreateByQuality` (items/0004 § Plan 0038
+    batch S2b, us 13: `j34` and `mss` in run:2026-10-16-quest-drops; here `ass` and the tree's `bks` too, with `BLD` unique and no
+    unique row, `UNONE`; all three bases have `unique` 1, while `box`, `qhr` and `leg`, `unique` 0, came back at the asked 2). The refusal halves (`ass` held or word 9 bit 5 clear; word 19 bit 0 set) did not run.
+    (0x005574E3–0x00557567)
+- [C] **The orifice's bits**, from the kept log `quests-s3-3364-duriel-normal.log` (run:2026-10-16-quest-drops,
+  `90e8b37f…`, in `workspace/logs/quests-run-manifest.txt`): placing the staff wrote word 10 bit 0 (`QS` return
+  0x0059DDA1, old word 0) and then bit 13 (return 0x0059DDB9, old word 1), both inside
+  `sub_0059DD80_A2Q6_StaffPlaced`. (fn:sub_0059DD80_A2Q6_StaffPlaced@0x0059DD80, run:2026-10-16-quest-drops)
+  - `[I]`: "opens when the player holds `hst`" (no operate without `hst` was logged) and the party credit.
+    (fn:sub_0059DC70_A2Q6_OrificeOperate@0x0059DC70, fn:sub_0059DBD0_A2Q6_StaffPartyCredit@0x0059DBD0)
+
+### Item-move gate (inventory qd 35; checkpoint 1)
+
+- **8 cases, 0 mismatches** (session `gate-done`, unchanged from checkpoint 1): `ItemQuestGate` ran at the ground
+  pickup (`IQG` return 0x00563636) and returned 0 for `bks`, `tr1`, `qbr`, `hdm`, `j34` and `ass`, and 1 for `box` and
+  `bbb`, each as the model of § 5 gives it on the logged record words; for the two allowed items the `0x0055CA40` tail
+  ran once and returned 0 (`IHD` at 0x0055CEDD, the call at 0x0055CED8). [C] (fn:sub_0055CC90_ItemQuestGate@0x0055CC90,
+  run:2026-10-27-sweep-quest-items)
+  - What the cases separate: a reading that refuses every quest item is wrong on `box` and `bbb`; one without `box`'s
+    exception to object 9 is wrong on `box`; one without the `ass` test (quest 15, object 14, no pair) is wrong on
+    `ass`. Every word bit 0 was set, so the cases do not tell which word each branch reads (word 3 against word 4
+    for `hdm`, word 18 for `qbr`, word 10 for `tr1`): those stay `[I]`, with the `xyz`, `g33` and `tr2` tests, the
+    unique-row branch and the tail's other-player half, none of which ran. A `gate-fresh` session was not run (the
+    launch cap). (fn:sub_0055CC90_ItemQuestGate@0x0055CC90, run:2026-10-27-sweep-quest-items)
+
+### Ledger of the 24 statements
+
+| Row | Statement | Result | What moves; what stays |
+|---|---|---|---|
+| qd 1 | event 7 dispatched by class | **raised in part** | the route and the class choice for 268 and 367; the other event-7 classes' targets stay |
+| qd 30 `leg` | its object's operate | **raised in part** | the creation in mode 0, no draw; the used-object half (no second operate) |
+| qd 30 gold | Wirt's piles | **raised** (already `[C]` in the spec from run:2026-10-19-economy2; met again) | 18 piles on the logged seed, one per event 7 |
+| qd 30 `bks` | the Inifuss tree | **raised in part** | the creation with word 4 clear and nothing held; the refusals |
+| qd 30 `bkd` | Akara | **shortfall** | no NPC session (launch cap) |
+| qd 30 `hdm` | the Malus | **shortfall** | no Malus session (launch cap) |
+| qd 30 `ass` | Radament's death | **raised in part** | the creation (quality 2 asked); the per-player gate's refusals |
+| qd 30 `tr1` | its chest | **raised in part** | the creation, identified, quality 7; the word-10 refusals |
+| qd 30 `msf` | its chest | **raised in part** | the creation in Normal and Nightmare (a Normal staff held); the held-`msf`/`hst` refusal of the same difficulty, word 10 |
+| qd 30 `box` | its chest | **raised** | created without a cube, refused with one |
+| qd 30 `vip` | the altar | **shortfall** | not run |
+| qd 30 `bbb` | the tome | **shortfall** | `tome4`'s temple warp led to the Disused Fane (95), not the Ruined Temple (94) |
+| qd 30 `qhr`/`qey`/`qbr` | their chests | **raised in part** | `qhr` with the held-part test passing; `qey`, `qbr` not run |
+| qd 30 `g33` | a dying monster | **shortfall** | not run |
+| qd 30 `j34` | a dying monster | **raised in part** | two creations at kills with word 19 = 0; the refusal |
+| qd 30 `g34`, `xyz` | NPCs | **shortfall** | not run |
+| qd 30 `qf1` | the council | **shortfall** | not run |
+| qd 33 | E1 | **raised in part, with the correction** | `box`, `tr1`, `msf` in E1's order; `qhr` in the corrected order (gold first); `vip`, `qey`, `qbr` stay |
+| qd 34 | duplicates | **raised in part** | held cube refuses (Normal); Normal staff in Nightmare does not; the cursor branch, the cube in Nightmare/Hell and "only" stay |
+| qd 35 | item-move gate | **raised in part** | 8 cases (checkpoint 1); the word identities, `xyz`/`g33`/`tr2`, the unique branch |
+| objects 48 chests | chests row | **raised in part, with the correction** | as qd 33 |
+| objects 48 Wirt | Wirt's body row | **raised** | the first operate (slot 33, the leg, then event 7) and the 18 piles |
+| objects 48 item objects | `leg`, `bks`, `hdm`, `bbb` | **raised in part** | `leg` and `bks`, one item each, no draw; `hdm`, `bbb` stay |
+| objects 48 orifice | the orifice row | **raised in part** | the word 10 bits 0 and 13 (kept log); the `hst` gate |
+
+**Raised 3, raised in part 14, shortfall 7: 24.** No class move is proposed.
+
+### Open questions (H6e2)
+
+- ~~Where `j34`'s and `mss`'s quality 7 comes from (the `DropItemAtUnit` record has quality 2).~~ The base `unique`
+  pre-switch override (items/0004, us 13, 0x005574E3–0x00557567); this run adds `ass` and `bks` (above).
+- What the 0x0055D011 interact route is (which click reaches `0x0055CF50`), and whether `sub_00563470_ItemDiscardInvalid`'s
+  name fits the ground-pickup path that ran.
+- Why the brain chest (class 406) was not listed in level 91 on map seed 4914 after a full explore (`brain4b`,
+  frontier 0): the `OBJS` lines list only the objects near the player, and whether the chest stands outside every
+  position the pilot reached, or is not created on that seed, is not read.
+
 ## Data touched
 
 - `tbl:MonStats.txt:TCQuestId` (`+0x9E` u8), `tbl:MonStats.txt:TCQuestCP` (`+0x9F` u8), `tbl:MonStats.txt:TreasureClass4`
@@ -1296,3 +1514,5 @@ fn:sub_00624F60_StatListGetValue@0x00624F60, tbl:Misc.txt:quest, tbl:Misc.txt:qu
 - [I] The § 9 route at run time: the Hellforge's waves are `[C]` (the run plus the reference scan, § 9); for the other
   groups no breakpoint sat on `0x00581A10` or `QUESTS_ObjectEvent`, and a run that reaches `sub_00594630_A1Q4_WirtGold`
   (Wirt's body clicked) or another event-7 target would make theirs `[C]` the same way. The first event-7 queue of classes 122, 371 and 459–461 is not read. (fn:QUESTS_ObjectEvent@0x005449E0)
+  *(H6e2, 2026-10-27: classes 268 and 367 met, [§ Plan 0038 batch H6e2](#object-event-7-at-run-time-inventory-qd-1);
+  the other classes stay as read.)*

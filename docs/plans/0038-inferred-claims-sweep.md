@@ -3803,6 +3803,36 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     [2026-10-27-reverser-spec-writer-h1b-save-d2s-and-hirelings-raises](../backlog/2026-10-27-reverser-spec-writer-h1b-save-d2s-and-hirelings-raises.md)
     was **released**, with four points added. The reverser entry above was filed. The archivist entry is unchanged.
   - **Next:** merge `lane/h1b`; then H1a (`d2s-load`).
+- **2026-10-27 — H6e2 (`quest-items`) started; rotated at the first checkpoint (reverser, `lane/h6e2`, harness slot 1,
+  from `main` `3c90008`; `main` `2637b08` merged at the checkpoint).** Run id run:2026-10-27-sweep-quest-items, record in
+  [items experiments](../findings/items/experiments.md#run2026-10-27-sweep-quest-items), evidence so far in
+  [items/0010 § Plan 0038 batch H6e2](../findings/items/0010-quest-drops.md#plan-0038-batch-h6e2-run2026-10-27-sweep-quest-items).
+  - **Built:** logger `tools/gdb/quest-items.gdb` + `tools/gdb/quest-items.py` (object operates with record words,
+    object event 7 and its targets, `GiveItem`, the chest gold, `ObjectChestDrop`, `PlayerFindItemByCode` with its
+    stat-356 reads, `ItemQuestGate` with its result and tail, the orifice); session driver `tools/h6e2_sessions.py`
+    (13 sessions listed: gate-done, gate-fresh, radament, cube, cube-held, staff, staff-nm, heart, brain, eye, tome,
+    inifuss, tristram); checker `tools/sweep_h6e2.py check` (chest, object, event7, dup, gate models); four recipes
+    `tools/d2s_recipes/quest-h6e2-*.json`; saves in `workspace/scratch-h6e2/saves/`.
+  - **So far:** one kept session (`gate-done`, by hand): item-move gate 8 cases, 0 mismatches (qd 35 raised in part
+    when filed; the word identities, `xyz`/`g33`/`tr2` and the unique branch still open). Static reads for the checker,
+    all `[I]`: a chest opens once (mode test `0x00545850`); the Act II chest callbacks; **a correction** to E1 for the
+    three Khalim chests (gold first, then the parts, then the chest drop; each counts a player holding neither the part
+    nor `qf2`); the Wirt / Inifuss / Malus / tome gates; the gate's ground-pickup route; `j34`/`mss` requested at
+    quality 2 come back quality 7 (kept log 3356). Kept logs usable as a-logs for the write-up: `leg`
+    (`economy2-s1-4506-wirt.log`), `j34` and `mss` (`quests-s3-3356-meph-normal.log`), the orifice's StaffPlaced bits
+    (`quests-s3-3364-duriel-normal.log`, `QS` returns 0x0059DDA1 / 0x0059DDB9).
+  - **Resume note.** (1) The scripted Act II descent stalled on map seed 3811: `descend` sees the Sewers Level 2
+    down-stairs 9 sub-tiles away and finds no path; clicks on their label did not take them; the pilot also read the
+    orbs as 0.00 through that session (a direct read later gave 0.75 / 0.79) and `wpchain` ran to its 120 s timeout
+    after arriving. Next agent: try H4a's map seeds (radament 4904) or another seed per session, check `Pilot.hp()` once
+    after the waypoint, and give `wpchain` a shorter timeout. (2) Then run, in this order (cheapest first): `tristram`
+    (QuestAllDone: leg, the gold piles' event 7 for the qd 1 backtrace, the second click), `inifuss`, `cube`,
+    `cube-held`, `radament` (ass, tr1), `staff`, `staff-nm` (the questdiffcheck duplicate), `heart` (sewer lever event 7,
+    the Khalim order), `brain`, `eye`, `tome`; a `gate-fresh` hand session as in the record (drop one item, Alt, click its
+    label, one at a time; walking off ended the first). (3) `sweep_h6e2.py`'s chest model already has the Khalim order;
+    the altar (`vip`) gate is unmodelled (prints a mismatch if met); Malus, tome and Inifuss assume the quest object's
+    `+0x09` is set. (4) The backlog entry on `objects.py`'s waypoint mode was not hit (no `objects.py` run yet). Slot 1
+    stopped, saves restored (empty, no aside). Four launches so far (one kept, three development logs); the cap is ~20.
 - **2026-10-27 — `lane/r1h` filed (reverser, static, Ghidra lane copy, no slot): the `lane/h1b` review's reverser
   entry, rulings (d) and (i).** Branched from `main` `2b087d2c`.
   - **Setter:** `tools/ghidra.sh findptr` (new: `re/ghidra_scripts/FindPointer.java`) and a raw byte scan both find
@@ -4201,7 +4231,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   `SrcDam` 0 formula and the `Kick` minimum `÷ 4` `[C]` (emulated inside hit 43, skills/0007 § 3), the `Kick` maximum
   `÷ 3` `[I]`, the weapon share `[I]`; skills/0003 § 5 does not say whether start 2 reads `MinDam` itself or calls
   `GetPhysMin/Max`, nor the table doc the `Kick` row's `MinDam`, so which damage Kick's start hit carries is an `[L]`
-  open question and a [reverser entry](../backlog/2026-10-27-spec-writer-reverser-kick-start-hit-damage.md).
+  open question and a [reverser entry](../backlog/archive/2026-10-27-spec-writer-reverser-kick-start-hit-damage.md).
   (2) [monsters/special § J](../specs/monsters/special.md#j-other-entry-paths-and-pre-existing-mods): the post-create
   helpers and the flag-2 gate `[I]`, `MonPostCreateBoss`'s case table by `BaseId` (one tag per row, 13 `[I]`; the 526
   row `[C]` for mod 22, `[I]` for its hook) and a `[C]` bullet for Nihlathak's 22, scoped to `BaseId` 526; § G row 60
@@ -4230,7 +4260,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     `MinDam` itself or calls `GetPhysMin/Max`; skills/0003 § 5's reading gives the former and objdump shows it
     (`0x0056CB54`–`0x0056CB71`, no call). The I4 `[I]` bullet now says the start hit carries the row's `MinDam`; the
     `[L]` is narrowed to the `Kick` row's values, the logged hits and the `Kick` branch's callers; wiki/skills and the
-    [reverser entry](../backlog/2026-10-27-spec-writer-reverser-kick-start-hit-damage.md) annotated (counts unchanged).
+    [reverser entry](../backlog/archive/2026-10-27-spec-writer-reverser-kick-start-hit-damage.md) annotated (counts unchanged).
     (3) *wrong anchor:* the `SrcDam` share cited `0x00647CA6`–`0x00647CF1` (bands, synergy, shift); now
     `0x00647C4D`–`0x00647CA3` and the add at `0x00647CBA`.
   - **Rulings:** (a) **The I4 `[C]` raise is within the ADR-0015 map.** skills/0007 § 2 lists `SKILLS_GetPhysMin/Max`
@@ -4251,3 +4281,163 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     1, under-claim 1, wrong anchor 1; usage from the orchestrator: 133 323 tokens, 62 tools, 13 min); the review row
     added, usage "—".
   - **Next:** merge `lane/sf2`; the reverser entry on Kick's row values may start.
+- **2026-10-27 — H6e2 (`quest-items`) filed (reverser, `lane/h6e2`, harness slot 1; resumed from checkpoint 1,
+  `main` `147e5ca3` merged).** Run id run:2026-10-27-sweep-quest-items, record in
+  [items experiments](../findings/items/experiments.md#run2026-10-27-sweep-quest-items), evidence in
+  [items/0010 § Plan 0038 batch H6e2](../findings/items/0010-quest-drops.md#plan-0038-batch-h6e2-run2026-10-27-sweep-quest-items).
+  - **Resume, per the note:** the Act II and III sessions start in the Act IV town (three `-a4` recipes, header act
+    bytes 131; H4a's fixed waypoint click), each on its own map seed (radament on 4904); `wpchain` limit 45 s; the orb
+    read checked once after the first waypoint (0.75 / 0.79). On 4904 the Sewers stairs took two tries, as in H4a.
+    Where a route failed twice (the staff chest on 4912, the brain chest on 4914) the pilot's other moves were used
+    (`explore --to-pdef … --pdef-any` before the objop; then a full explore and `objop --obj-mem`); the staff chest was
+    reached on map seed 4916, the brain chest not. 15 launches at the resume, 19 in all; 11 kept sessions.
+  - **Check:** `sweep_h6e2.py check` over the 11 kept logs: chest 6, object 2, event7 19, dup 8, gate 8, death 3
+    (listed); **0 mismatches** (`check-final.txt` `d4ce6d6d…`, manifest `manifest-final.sha256`).
+  - **Ledger (24): raised 3, raised in part 14, shortfall 7** (inventory § 2.6 H6e2 block). Highlights: object event 7's
+    route `[C]` for classes 268 and 367 (qd 1, in part); E1 met for `box`, `tr1`, `msf` and **corrected** for the Khalim
+    chests (gold first; met on `qhr`); a held cube refuses `box`, a Normal staff in Nightmare does not stop `msf` (qd 34
+    in part); Wirt's body row raised (leg, then 18 event-7 piles, `RandLoHi(10, 20)` = 18 on the logged seed). Shortfalls:
+    `bkd`, `hdm`, `vip`, `bbb`, `g33`, `g34`/`xyz`, `qf1` (launch cap; the tome's warp led to the Disused Fane). No class
+    move; totals unchanged: static 567, harness 519, c-emu 0, blocked 421, deferred 2, raised 17: 1 526.
+  - **Answered:** the checkpoint's open question on `j34`/`mss` quality 7 is items/0004's us 13 (the base `unique`
+    override); `ass` shows it too.
+  - **Symbols (rule 14), I → C:** `QUESTS_ObjectEvent`, `sub_00594630_A1Q4_WirtGold`, `sub_00583E70_WirtLegDrop`,
+    `sub_00593AF0_A1Q4_InifussDrop`, `sub_00599C10_A2Q2_ScrollChest`, `sub_00599CF0_A2Q2_StaffChest`,
+    `sub_00599DF0_A2Q2_CubeChest`, `sub_005B8860_A3Q2_HeartChest`, `sub_00585970_DropItemCodeAt`,
+    `sub_00558110_PlayerFindItemByCode`, `sub_0055CC90_ItemQuestGate`.
+  - **Backlog:** review request
+    [2026-10-27-reverser-architect-review-lane-h6e2-plan-0038-batch-h6e2](../backlog/archive/2026-10-27-reverser-architect-review-lane-h6e2-plan-0038-batch-h6e2.md)
+    filed; spec-writer entry
+    [2026-10-27-reverser-spec-writer-h6e2-quest-items-raises-and-the-khalim-chest](../backlog/2026-10-27-reverser-spec-writer-h6e2-quest-items-raises-and-the-khalim-chest.md)
+    filed, held until the review. Slot 1 stopped, saves restored (empty, no aside).
+  - **Next:** the `lane/h6e2` review; then H6e1.
+- **2026-10-27 — `lane/rk` (reverser, static: objdump, `tools/xrefscan.py`, the kept skills logs rescanned under
+  `MemoryMax=4G`; no Ghidra, no harness): the [Kick start-hit entry](../backlog/archive/2026-10-27-spec-writer-reverser-kick-start-hit-damage.md)
+  answered** in [skills/0003 § 5](../findings/skills/0003-handlers.md#5-tier-a-start-and-do-functions)'s 2026-10-27
+  note and two Answer bullets. (2) `[C]` the stock `Kick` row has `MinDam` 0, `MaxDam` 0, the bands 0 and `HitShift`
+  8, so start 2's physical is 0. (3) `[C]` run:2026-10-27-skills: Kick's 32 start and 32 do events (all `barh`), 25 do
+  spans reaching `COMBAT_ApplyDamage` with result 9, physical 0, hit class 1 (`tools/kick_hits.py`, new; `bad=0`),
+  where `GetPhysMin`'s `Kick` branch would give at least 49 920; run:2026-10-25-skills has no Kick. That the start
+  stores `MinDam << HitShift` rather than nothing stays `[I]` (the code's), and the 7 deliveries with no `ApplyDamage`
+  are not read. (4) `[I]` the `Kick` branch (`+0x05 & 0x02`; rows 1, 255, 270, 275) is reached through the new
+  `sub_005D54B0_SkillKickPhysDamage` by Dragon Talon (start 24, do 42), Dragon Tail (start 27) and Dragon Flight
+  (do 52), through no direct call of Kick's start 2 or do 2 (review fix 2); `GetPhysMax`'s branch is `sub_00644C20`'s only call; 15 variable-id call sites unfollowed.
+  Kept: `workspace/logs/rk/rk-manifest.sha256` (9 files). Entries: [spec-writer](../backlog/archive/2026-10-27-reverser-spec-writer-dispatch-i4-kick-start-hit-answered.md)
+  (dispatch I4's `[L]`), [architect review](../backlog/archive/2026-10-27-reverser-architect-review-lane-rk-kick-start-hit-damage.md).
+  Ledger row added, usage "—".
+  - **Review (architect, 2026-10-27): accept with fixes (2).** Checked: `sha256sum -c` of `rk-manifest.sha256` (9 OK);
+    `tools/kick_hits.py` rerun under `systemd-run --user --scope -p MemoryMax=4G`, byte-identical (`774d0573…`, exit 0),
+    and a negative control (a scratch `skills.bin` with the Kick row's `MinDam` 195, model 49 920: `bad=25`, exit 1);
+    the Kick row re-dumped (identical; `MinDam`, `MaxDam`, the ten bands 0, `HitShift` 8, `DmgSymPerCalc` raw −1, the
+    `.txt` cells blank but `HitShift`); objdump of start 2 (`0x0056CB42`–`0x0056CB80`: flags `+0x00` 2, result
+    `+0x04` 9, `[esi+0x1A4]`/`[esi+0x1A8]`, `shl`, phys `+0x08`, hit class `+0x60` 1, `ResolveAndQueue(…, 0x80)`, no
+    other call but the record fetch and the memset), `GetPhysMin`'s branch (`0x00647BF0`–`0x00647C48`; the byte at
+    `0x006CE26C` is 0x02; `cdq`/`and 3`/`sar 2` rounds toward zero) and `sub_005D54B0` (its id and level from
+    `[ebp+0x14]`/`[ebp+0x18]`); `tools/xrefscan.py` gives the 18 + 18 sites, the 3 `sub_005D54B0` calls (in
+    `0x005D5880`, start 27 `0x005D7090`, do 52 `0x005D7850`), `0x005D5880`'s 2 (start 24, do 42) and
+    `0x00644C20`'s 1, all as listed; the two `push 0x75` sites push the id; MonStats: only `shadowwarrior` and
+    `shadowmaster` hold a `Kick`-bit skill (Dragon Flight). Kept: `workspace/logs/rk/review/` (`review-manifest.sha256`, 5 files).
+    Fixes: (1) *omission:* the `[C]` separation leaned on "at least 49 920" without saying that the packet at
+    `ApplyDamage`'s entry is already reduced (`ResolveAndQueue` runs `ApplyReductions` on a hit; combat/delivery A1),
+    so a 100 % physical resistance would also give 0; the bullet now names the 9 target classes (`MonStats` 15, 19,
+    20, 28, 44, 53, 58, 165, 170), Normal, `ResDm` 0, and the negative control (`kick-targets.txt`,
+    `kick-hits-neg.txt`). (2) *overclaim:* "Kick itself never reaches it" in the Answer bullet, this log and the
+    spec-writer entry: the scan covers start 2's and do 2's direct calls only (do 2 calls `0x0057D690` and others,
+    whose calls are unfollowed); now scoped to the direct calls, and the run's 25 zero physicals named as the
+    observation that no path added the branch's damage to those deliveries.
+  - **Rulings:** (a) **Part 3's `[C]` is honestly scoped** once fix 1 is in: the run observes physical 0 at
+    `ApplyDamage` on 25 deliveries, which no reading giving ≥ 195 life points before reductions could match on these
+    targets; it does not separate `MinDam << HitShift` from no physical (both 0 on the stock row), and the lane keeps
+    that `[I]` on the code and leaves `sub_0056CAF0` I (the start's store is not logged; reviewer rule 14 does not
+    apply). (b) **The 7 do events without `ApplyDamage` need no entry.** They contradict nothing: each calls
+    `DeliverQueued` with the do's target, and `DeliverQueued`'s gates (melee range, the queued result's bit `0x1`, a
+    living attacker; combat/delivery A2 `[I]`) are the candidates, none logged; the § 5 `[I]` bullet now names them.
+    A future combat run that logs the queue entry reads them; that is combat/delivery's A2, not Kick's damage.
+    (c) Part 2 `[I]` stands: the branch callers are a static `call`-operand scan with 15 variable-id sites named and
+    unfollowed (reverser rule 9 satisfied). (d) The spec-writer entry is released with fix 2 applied.
+  - **Bookkeeping:** review-fixes Seen lines: reverser 9 and 10. The review request closed; the
+    [spec-writer entry](../backlog/archive/2026-10-27-reverser-spec-writer-dispatch-i4-kick-start-hit-answered.md) released.
+    Ledger: the lane row filled (accept with fixes, 2: omission 1, overclaim 1; usage from the orchestrator: 171 207
+    tokens, 79 tools, 12 min); the review row added, usage "—".
+  - **Next:** merge `lane/rk`; the spec-writer entry on dispatch I4 may start.
+- **2026-10-27 — `lane/h6e2` review (architect): H6e2 (`quest-items`) accept with fixes (3).** `main` `507a6f5c`
+  (`lane/rk`) merged into the lane first (plan log and ledger conflicts kept both sides; `backlog.py archive`: nothing
+  to move). Static review: no Ghidra, no harness.
+  - **Checked.** The four manifests pass `sha256sum -c` from `workspace/logs/h6e2/` (21 + 2 kept, 10 + 3 dev lines; 11
+    kept logs and 8 dev logs, 19 launches). `sweep_h6e2.py check` rerun under `systemd-run --user --scope -p
+    MemoryMax=4G` over the 11 kept logs: byte-identical to `check-final.txt` (`d4ce6d6d…`): chest 6, object 2, event7
+    19, dup 8, gate 8, gold 45, death 3, 0 mismatches. The chest `k` recomputed from the four logged seeds (9, 5, 9, 8)
+    and Wirt's `low32(0x91FDB5F0 · 0x6AC690C5 + 0x29A) mod 10 + 10 = 18`. objdump on the pinned `game.exe`
+    (`631066c1…`): `WirtGold` 0x00594651–0x0059469A (`QUESTS_GetSeed`, `RNG_RandLoHi(seed, 10, 20)` with lo in `edx` and
+    hi 0x14 on the stack, the count at `+0x8C` set once behind the `+0x90` flag, one `DropItemAtUnit` per event);
+    `HeartChest` 0x005B8867 mode test, 0x005B8878 seed, 0x005B88BC `gld ` loop, callback 0x005B8810 (`qhr ` and `qf2 `),
+    0x005B8911 the part, 0x005B8931 `ObjectChestDrop`; the thunk `0x00581A10: jmp 0x005449E0`; the `call eax` at
+    0x00586B19; the callers at 0x005411BF and 0x00541568; the cube and staff callbacks (0x005997C8, 0x0059977B /
+    0x0059978D); the stat-356 compare at 0x005581D2; the gate call at 0x00563631. The orifice a-log
+    `quests-s3-3364-duriel-normal.log` hashes to its manifest line (`90e8b37f…`) and holds both `QS` writes.
+  - **Fixes.** (1) misread: the Inifuss tree's `bks` was filed "created … quality 2" from the `QDI` argument; the next
+    `ICQ` line shows quality 7 (rq 2), the base `unique` override (`bks` has `unique` 1); items/0010's tree bullet, the
+    death bullet's After, the answered open question and the spec-writer entry now say so (`box`, `qhr`, `leg`, `unique`
+    0, came back at 2). (2) tool not kept: the 24 screenshots of eight kept sessions were outside every manifest;
+    hashed into `manifest-shots-final.sha256` (`2f8f0b14…`, 24 lines), noted in the run record. (3) other: items/0010
+    § 5's `[I]` chest bullet carried a `[C]` sentence; the correction is now an italic note pointing at the H6e2 section,
+    where the tags are.
+  - **Rulings.** (a) **Wirt's gold** stays counted **raised** under H6e2, no class move (the `lane/p49r` precedent for
+    quest-drops 10 and 19): plan 0043 raised it first on map seed 4506; this run met it on seed 3811, an independent
+    quest seed. Phase 3 adds the anchor; objects § L's Wirt's body row, still `[I]` there, is the one raised.
+    (b) **The Khalim E1 correction** stands: the code order (gold, part, chest drop) is read and met on the heart chest;
+    the eye and brain chests have the same shape and stay `[I]`. (c) **The 18 piles** are `RNG_RandLoHi(questSeed, 10,
+    20)` = 10 + (LCG mod 10) on the logged seed, one quest-seed draw at the first event, none at the leg. (d) **The `-a4`
+    recipes** (header act bytes 131 = `0x80 | 3` in all three difficulties) are ADR-0003 tool-built inputs (ADR-0013 §
+    Neutral; the vendor saves set the act byte the same way): none of the checked code reads the start act, and the
+    quest seed and record words are logged at each operate. They support `[C]` for the scripts, nothing about how a
+    character reaches Act IV. (e) **The failed routes** are recorded honestly (the brain chest as an open question, the
+    two warps in the run record). The warps are a pilot limitation, not a model bug: `descend` takes the first warp of a
+    LvlWarp row, and rows 51 and 61 serve two levels each; routed with the brain-chest question to a reverser entry,
+    [2026-10-27-architect-reverser-d2pilot-descend-by-destination-and-the-brain-chest](../backlog/2026-10-27-architect-reverser-d2pilot-descend-by-destination-and-the-brain-chest.md).
+    (f) **The 11 symbols I → C** stand (rule 14: each one's logged call compared with the checker's model); the
+    call-site-only frames stay I. (g) **The quality 7 answer** stands as `[I]` After (items/0004 us 13), now with `bks`.
+    (h) **`test_d2s.py`** fails `test_every_recipe_has_a_base` after the merge, on `lane/h3b`'s `h3brare` alone (merged
+    into `main` before `lane/a2t`, whose branch lacked it); H6e2's seven recipes have rows. Not H6e2's: routed,
+    [2026-10-27-architect-archivist-test-d2s-h3brare-recipe-base](../backlog/archive/2026-10-27-architect-archivist-test-d2s-h3brare-recipe-base.md),
+    with the base and the save hash the review rebuilt (`ce57d8f7…`, as the H3b record).
+  - **Totals** recounted against `main` `507a6f5c` after merging it (`lane/rk` moved no inventory row): unchanged,
+    static 567, harness 519, c-emu 0, blocked 421, deferred 2, raised 17: 1 526. H6e2's ledger: raised 3, raised in part
+    14, shortfall 7: 24 (rows: quest-drops 1 + 16 + 1 + 1 + 1, objects 48 × 4).
+  - **Readiness.** **objects** is ready for the Phase 3 re-tag (S4a, S4b, H5b, H6e2 all accepted; research-map row
+    updated). items/quest-drops still waits on H6e1.
+  - **Bookkeeping:** inventory § 2.6 H6e2 block marked accepted with the ruling, § 5 "(done)"; review-fixes Seen lines:
+    reverser 6 and 13. The review request closed; the
+    [spec-writer entry](../backlog/2026-10-27-reverser-spec-writer-h6e2-quest-items-raises-and-the-khalim-chest.md)
+    released (with the `bks` and Wirt points). Ledger: both lane rows filled (usage from the orchestrator: 331 873 tokens,
+    178 tools, 39 min to checkpoint 1; 307 855 tokens, 200 tools, 107 min for the resume; accept with fixes, 3: misread 1,
+    tool not kept 1, other 1, on the resume row); the review row added, usage "—".
+  - **Next:** merge `lane/h6e2`; then H6e1.
+- **2026-10-27 — `lane/sk` (spec-writer, no slot, no Ghidra, no harness): the entry released at the `lane/rk`
+  review.** [Dispatch § I4](../specs/skills/dispatch.md#i-the-skill-packet): Kick's start hit restated from
+  skills/0003 § 5's anchored instructions (`[I]`: `MinDam << HitShift`, hit class 1, no `GetPhysMin/Max` call); the
+  stock row's `HitShift` 8 and `MinDam` 0, so physical 0 `[C]` (tbl:Skills.txt); the 25 logged deliveries with
+  physical 0 `[C]`, scoped to the packet after `ResolveAndQueue`'s reductions, Normal and the 9 target classes with
+  `ResDm` 0; the store against no physical and the 7 do events without `ApplyDamage` `[I]` (combat/delivery A2); the
+  `Kick` branch's callers `[I]` (Dragon Talon, Tail and Flight; the Assassin's `str + dex − 20`, the shadow warrior's
+  and shadow master's `3 · level`; no direct call of Kick's start 2 or do 2). The `[L]` struck. Tags: dispatch C 73 →
+  75, I 189 → 191, L 11 → 10. Wiki: skills (two paragraphs, one open item removed). Entry closed;
+  [review request](../backlog/archive/2026-10-27-spec-writer-architect-review-lane-sk-dispatch-i4-kick.md) filed; ledger row
+  added, usage "—".
+  - **Review (architect, 2026-10-27): accept with fixes (2).** Checked each I4 bullet against skills/0003 § 5's
+    2026-10-27 note and the `lane/rk` rulings: the start-2 store `[I]` (instructions `0x0056CB42`–`0x0056CB80`), the
+    stock row `[C]` (tbl:Skills.txt), the 25 deliveries `[C]` scoped as ruled (post-reduction packet, Normal, the 9
+    classes with `ResDm` 0), the store against no physical and the 7 do events `[I]` (ruling (b), combat/delivery A2),
+    the callers `[I]` scoped to direct calls with the 15 variable-id sites (ruling (c), review fix 2); § O's note; the
+    anchors in `re/symbols.csv` (`0x0056CAF0`, `0x005D54B0`, `0x00644C20`, `0x0057C1E0`, `0x0057C6C0`, `0x0057D4F0`,
+    `0x00647BC0`, `0x00647D00`). Wiki: the two Kick paragraphs say "read from the code" for the store and callers,
+    "confirmed" for the 25 hits with their scope; the open item removed. Fixes: (1) *wrong anchor:* start 2's bullet
+    anchored `0x0056CB54`–`0x0056CB71` while restating the memset, result, flags, hit class and `ResolveAndQueue`; now
+    `0x0056CB42`–`0x0056CB80`. (2) *omission:* the tables-used list lacked `MaxDam` and MonStats `ResDm`, `Skill1`,
+    now cited in § I; added. Counts unchanged (C 75 / I 191 / L 10).
+  - **Bookkeeping:** research-map row for skills/dispatch rewritten (counts, the `lane/sk` clause, the stale `Kick`
+    `MinDam` `[L]` clause removed); review-fixes Seen line: spec-writer 9. The review request closed. Ledger: the lane
+    row filled (accept with fixes, 2: wrong anchor 1, omission 1; usage from the orchestrator: 87 940 tokens, 26 tools,
+    12 min); the review row added, usage "—".
+  - **Next:** merge `lane/sk`.
+- **2026-10-27 — `lane/a3r` review (architect): accept.** The `tools/` diff is the one `h3brare` `RECIPE_BASES` row; a scratch rebuild of `h3brare.json` (`52aa64e8…`) on `smpsor-l50.d2s` gives `ce57d8f7…6317`, the H3b record's save hash (data/experiments); `test_d2s.py` 47 tests OK; the [review request](../backlog/archive/2026-10-27-archivist-architect-review-lane-a3r-test-d2s-h3brare-row.md) closed; ledger lane row filled (usage from the orchestrator), review row usage "—".
