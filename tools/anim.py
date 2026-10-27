@@ -615,6 +615,25 @@ class Checker:
             elif tag == "MSET" and cur is not None and x["u"]["u"] == cur:
                 pass
         self.tally["ps-lines"] = sum(1 for t, _ in lines if t == "PS0")
+        # anim/0003's open question: the first run of an every-frame event queued at a mode start (EF) during the
+        # frame's unit-list run: the offset of the unit's first PathStep (PS0) or advance (AD0) after its EF line
+        pend = {}
+        for tag, x in lines:
+            if tag == "EF":
+                pend[x["u"]] = x
+            elif tag in ("PS0", "AD0") and x["u"] in pend:
+                e = pend.pop(x["u"])
+                if x["m"] == e["m"]:
+                    who = "p" if x.get("t", 1) == 0 else "m"
+                    off = x["fr"] - e["fr"]
+                    self.tally["ef-first-%s-%s-offset=%d" % (tag[:2].lower(), who, off)] += 1
+                    if "ph" in e:
+                        # queued at the head of the type's every-frame list: run in this frame only if that list's
+                        # walk (phase 3 players, 5 monsters) is still to come
+                        want = 0 if e["ph"] < (3 if who == "p" else 5) else 1
+                        self.ok("ef-first", off == want, ("ef", e["n"], e["ph"], want, off))
+            elif tag == "MSET" and x["u"]["u"] in pend:
+                pend.pop(x["u"]["u"], None)
 
     def step_pair(self, p, cts, nxt):
         res = step_model(p, cts)
@@ -1058,14 +1077,92 @@ def replay_skills(d, root, logs):
     return 1 if out["do-bad"] else 0
 
 
+def ghr_draws(tot, poi, hp, hc, lo, hi, freeze=False, mon_gh=True):
+    """sub_0057CB00_GetHitRoll (anim/0003 § 6.3) -> (return, band, draws, lo, hi)."""
+    if freeze or (poi and poi == tot) or tot < 0x100:
+        return 1, "none", 0, lo, hi
+    D = {2: 8, 6: 8, 10: 8, 11: 8, 4: 32, 8: 32, 5: 64}.get(hc, 16)
+    if tot < cdiv(hp, D):
+        return 1, "below", 0, lo, hi
+    draws, band = 0, "full"
+    if tot < cdiv(hp, cdiv(D, 2)):
+        band = "half"
+        v, lo, hi = RNG.rng_pow2(lo, hi, 2)
+        draws += 1
+        if v == 0:
+            return 1, band, draws, lo, hi
+    if tot < cdiv(hp, cdiv(D, 4)):
+        if band == "full":
+            band = "quarter"
+        v, lo, hi = RNG.rng_pow2(lo, hi, 4)
+        draws += 1
+        if v == 0:
+            return 1, band, draws, lo, hi
+    return (0 if mon_gh else 1), band, draws, lo, hi
+
+
+def replay_combat(logs):
+    """The combat runs' GH0/GH1 (the defender's seed around COMBAT_GetHit) against GetHitRoll's draws predicted from
+    the AD1 packet (after the reductions: result +0x04, element fields, total +0x4C, +0x60, +0x64) and the
+    defender's stat 7 (AD1 "ld"[1], for UnitGetMaxHp): only get-hits (result 0x4) with none of 0x2, 0x8, 0x10, 0x80,
+    0x100, 0x200, 0x8000, on a defender left alive. States (freeze, stun) are not in these logs."""
+    import struct
+    out = collections.Counter()
+    bad = []
+    for path in logs:
+        ad1 = ev0 = None
+        with open(path, errors="replace") as f:
+            for raw in f:
+                tag, _, rest = raw.partition(" ")
+                if tag == "AD1":
+                    ad1 = json.loads(rest)
+                elif tag == "EV0":
+                    ad1 = None
+                    ev0 = json.loads(rest)
+                elif tag == "GH0" and ad1 is not None:
+                    gh0 = json.loads(rest)
+                elif tag == "GH1" and ad1 is not None:
+                    g1 = json.loads(rest)
+                    p = bytes.fromhex(ad1["p"])
+                    res = struct.unpack_from("<H", p, 4)[0]
+                    if not res & 4 or res & 0x839A or (ad1["ld"] and ad1["ld"][0] <= 0):
+                        out["skip"] += 1
+                        continue
+                    tot, poi = struct.unpack_from("<i", p, 0x4C)[0], struct.unpack_from("<i", p, 0x28)[0]
+                    hc = struct.unpack_from("<I", p, 0x60)[0]
+                    if not p[0x64] and not hc & 0xF0:
+                        el = any(struct.unpack_from("<i", p, o)[0] > 0 for o in (0x24, 0x10, 0x1C, 0x28))
+                        if el or res & 0x2000:
+                            hc |= 0x10                     # any element or doubled nibble: D 16 (anim/0003 § 7)
+                        elif hc == 0:
+                            hc = 13
+                    lo, hi = seed_of(gh0["sd"])
+                    r, band, nd, lo, hi = ghr_draws(tot, poi, ad1["ld"][1], hc, lo, hi)
+                    good = "%08x:%08x" % (lo, hi) == g1["sd"]
+                    out["ghr-%s" % ("ok" if good else "bad")] += 1
+                    out["ghr-%s-kind-%s" % ("ok" if good else "bad", ev0.get("k") if ev0 else None)] += 1
+                    out["ghr-band-%s" % band] += 1
+                    if not good and len(bad) < 10:
+                        bad.append((os.path.basename(path), band, nd, tot, ad1["ld"][1], hex(hc), gh0["sd"], g1["sd"]))
+                    ad1 = None
+    for k in sorted(out):
+        print("TALLY %s %d" % (k, out[k]))
+    for b in bad:
+        print("BAD ghr %r" % (b,))
+    print("CHECK anim-replay-combat ghr=%d/%d" % (out["ghr-ok"] + out["ghr-bad"], out["ghr-bad"]))
+    return 1 if out["ghr-bad"] else 0
+
+
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("cmd", choices=("check", "replay-skills"))
+    ap.add_argument("cmd", choices=("check", "replay-skills", "replay-combat"))
     ap.add_argument("logs", nargs="+")
     ap.add_argument("--root", default=os.path.join(ROOT, "workspace", "merged"))
     ap.add_argument("--exe", default=os.path.join(ROOT, "workspace", "install", "app", "game.exe"))
     ap.add_argument("-v", action="store_true")
     a = ap.parse_args()
+    if a.cmd == "replay-combat":
+        return replay_combat(a.logs)
     d = Data(a.root, a.exe)
     if a.cmd == "replay-skills":
         return replay_skills(d, a.root, a.logs)

@@ -17,17 +17,17 @@
  "quests": "all",
  "stats": {
   "strength": 150,
-  "energy": 300,
+  "energy": 200,
   "dexterity": 100,
   "vitality": 25,
-  "hitpoints": 32,
-  "maxhp": 32,
-  "mana": 1500,
-  "maxmana": 1500,
+  "hitpoints": 150,
+  "maxhp": 150,
+  "mana": 800,
+  "maxmana": 800,
   "stamina": 400,
   "maxstamina": 400,
-  "level": 80,
-  "experience": 742730244
+  "level": 50,
+  "experience": 51767302
  },
  "skills": {
   "Howl": 1,

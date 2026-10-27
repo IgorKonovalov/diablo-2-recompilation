@@ -24,7 +24,8 @@
 #           unit, [esp] kind, a, b; the every-frame lists call it elsewhere): kind 1, or kind 0 with a != 0; MDS "fz"
 #           1 when the dispatch will drop it (state 1 on a unit not in DT or DD)
 #   MSET    UNIT_SetMode 0x00624690 (stack unit, mode): players, monsters, objects; "to", ra
-#   EF      SUNIT_ModeEveryFrame 0x00553F00 (ECX game, EDX unit): the every-frame start
+#   EF      SUNIT_ModeEveryFrame 0x00553F00 (ECX game, EDX unit): the every-frame start; "ph" the event runner's
+#           phase at the call (rev 3: breakpoints at the ten list calls of 0x005414D0 and its end, 0x0054158E)
 #   OA0/OA1 UNIT_AnimInit 0x00624390 (stack unit) for an object: seed, mode, class, +0x44, +0x48, +0x4C before and at
 #           its ten `ret 4` (ESP-matched)
 #   OQ      the 23 `call 0x5417D0` sites of the object code (0x00580000..0x0058FFFF with a `shr .., 8` before them)
@@ -62,7 +63,7 @@ import struct
 
 import gdb
 
-REV = 2  # rev 1: the development logs (dev-, dev2-, dev3-, dev-r1-); rev 2: FREE lines, PS0 "pts"
+REV = 3  # rev 1: the development logs (dev-, dev2-, dev3-, dev-r1-); rev 2: FREE lines, PS0 "pts"; rev 3: "ph"
 
 
 def _anim_main():
@@ -87,7 +88,7 @@ def _anim_main():
     STATES = [1, 11, 15, 21, 38, 42, 54, 101]
     st = {"game": 0, "n": {}, "capped": set(), "line": 0, "isc": None, "sr": {}, "sch": None, "oa": {},
           "pl": {}, "dr": {}, "gr": {}, "pa": {}, "ps": {}, "ad": {}, "win": 0, "win_t0": 0, "wins": 0, "plr": 0,
-          "rsc": None}
+          "rsc": None, "ph": 0}
 
     def mem(a, n):
         return bytes(inf.read_memory(a, n))
@@ -418,7 +419,12 @@ def _anim_main():
     def on_ef():
         u = reg("edx")
         if server(u) and u32(u) in (0, 1) and take("ef"):
-            emit("EF", {"u": u, "m": u32(u + 0x10), "fr": frame()})
+            emit("EF", {"u": u, "m": u32(u + 0x10), "fr": frame(), "ph": st["ph"]})
+
+    def phase(k):
+        def f():
+            st["ph"] = k
+        return f
 
     def on_free():
         # UnitFree 0x00555600 (ECX game, EDX unit)
@@ -615,6 +621,13 @@ def _anim_main():
     Bp(0x005410C4, dispatch("MDS", "mds"))
     Bp(0x00624690, on_mset)
     Bp(0x00553F00, on_ef)
+    # the runner's phases in sub_005414D0_GameRunUnitEvents (anim/0001 § 6): 1 missiles every-frame list, 2 missile
+    # slot, 3 players every-frame, 4 player slot, 5 monsters every-frame, 6 monster slot, 7/8 objects, 9/10 items,
+    # 11 after the runner; 0 at its entry
+    Bp(0x005414D0, phase(0))
+    for k, a in enumerate((0x005414F6, 0x00541508, 0x00541517, 0x00541526, 0x00541535, 0x00541547, 0x00541556,
+                           0x00541568, 0x00541577, 0x00541589, 0x0054158E), 1):
+        Bp(a, phase(k))
     Bp(0x00555600, on_free)
     Bp(0x00624390, on_oa0)
     for a in (0x0062444F, 0x00624480, 0x006244D0, 0x00624501, 0x00624555, 0x0062459A, 0x006245C6, 0x006245E8,

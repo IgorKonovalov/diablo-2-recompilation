@@ -17,8 +17,8 @@ record index d2s.py takes) or a plain base item:
   FBR  shield of Blocking (15) / of Deflecting (30)
   FRW  boots of Haste (20) / of Speed (30)
 Each class carries two weapon sets (weapon swap, W): set 1 a one-handed weapon with a shield, set 2 another weapon
-type. Life is low (max 32) and Dexterity 100 (a block chance near 20 %) so that Act I Normal monsters' hits reach GetHitRoll's bands; the belt holds rejuvenation
-potions. Hotkeys: F1 Attack, F2 the class's cast skill, F3 Kick, F4 Throw (a throwing weapon in set 1) or the second
+type. The sessions play Act I Nightmare at clvl 50 (monster levels about 36-40, so their hits land), life 150 (their
+hits reach GetHitRoll's bands) and Dexterity 100 (a block chance near 20 %); the belt holds rejuvenation potions. Hotkeys: F1 Attack, F2 the class's cast skill, F3 Kick, F4 Throw (a throwing weapon in set 1) or the second
 cast skill, F5 the class's sequence skill (if any).
 
 A session (SESSIONS row): the save, the difficulty steps file, the game seed and the steps; ("pilot", [args], t) runs
@@ -101,15 +101,35 @@ def recipe(cls, tier):
         "game": "expansion", "class": name, "seed": 5000 + 10 * list(CLASSES).index(cls) + tier,
         "name": "Anim%s%d" % (cls.capitalize(), tier), "progression": 15, "difficulty": [131, 131, 131],
         "waypoints": {"normal": "all", "nightmare": "all", "hell": "all"}, "quests": "all",
-        "stats": {"strength": 150, "energy": 300, "dexterity": 100, "vitality": 25, "hitpoints": 32, "maxhp": 32,
-                  "mana": 1500, "maxmana": 1500, "stamina": 120 if tier == 1 else 400,
-                  "maxstamina": 120 if tier == 1 else 400, "level": 80, "experience": 742730244},
+        "stats": {"strength": 150, "energy": 200, "dexterity": 100, "vitality": 25, "hitpoints": 150, "maxhp": 150,
+                  "mana": 800, "maxmana": 800, "stamina": 120 if tier == 1 else 400,
+                  "maxstamina": 120 if tier == 1 else 400, "level": 50, "experience": 51767302},
         "skills": skills, "mouse": {"left": "Attack", "right": cast, "swap_left": "Attack", "swap_right": cast},
         "hotkeys": hot, "belt_fill": ["rvl", "rvl", "rvl", "mp5"], "items": items,
     }
 
 
+def mon_recipe():
+    """the monster-session Sorceress: Teleport (left), Frost Nova F1 (chill: the slowing state), Nova F2, Frozen Orb
+    F3 (P1b-12: a delay skill), Lightning F4; life 900 so that Act V Normal and Act II-III fields are survivable."""
+    r = recipe("sor", 0)
+    r["name"] = "AnimSorMon"
+    r["seed"] = 5090
+    r["stats"].update({"hitpoints": 900, "maxhp": 900, "vitality": 200, "dexterity": 100, "level": 80,
+                       "experience": 742730244, "mana": 1500, "maxmana": 1500})
+    r["skills"] = {"Teleport": 1, "Frost Nova": 5, "Nova": 10, "Frozen Orb": 1, "Lightning": 1, "Fire Bolt": 1,
+                   "Charged Bolt": 1}
+    r["mouse"] = {"left": "Teleport", "right": "Nova", "swap_left": "Teleport", "swap_right": "Nova"}
+    r["hotkeys"] = ["Frost Nova", "Nova", "Frozen Orb", "Lightning"]
+    return r
+
+
 def cmd_recipes():
+    p = os.path.join(RDIR, "anim-sor-mon.json")
+    with open(p, "w") as f:
+        json.dump(mon_recipe(), f, indent=1)
+        f.write("\n")
+    print(p)
     for cls in CLASSES:
         for tier in (0, 1, 2):
             r = recipe(cls, tier)
@@ -122,6 +142,7 @@ def cmd_recipes():
 
 
 SAVES = {"Anim%s%d" % (c.capitalize(), t): ("anim-%s-t%d" % (c, t), CLASSES[c][1]) for c in CLASSES for t in (0, 1, 2)}
+SAVES["AnimSorMon"] = ("anim-sor-mon", "smpsor")
 
 FIELDS = ("1,2", "1,3", "1,4", "1,5")
 
@@ -141,12 +162,11 @@ def class_session(cls, tier, seed, field, hops=24):
     seq = CLASSES[cls][8]
     keys1 = ["F1", "F1", "F2", "F3", "F1", "F4"] + (["F5", "F5"] if seq else [])
     keys2 = ["F1", "F1", "F2", "F1", "F3"] + (["F5"] if seq else [])
-    holds = [("hold", "F1", 5.0), ("hold", "F2", 5.0), ("hold", "F3", 4.0), ("hold", "F4", 4.0)] + \
-        ([("hold", "F5", 4.0)] if seq else [])
-    return ("Anim%s%d" % (cls.capitalize(), tier), "enter-normal", seed,
+    holds = [("hold", "F1", 4.0), ("hold", "F2", 4.0)] + ([("hold", "F5", 3.0)] if seq else [])
+    return ("Anim%s%d" % (cls.capitalize(), tier), "enter-nightmare", seed,
             [wp(field), fight(keys1, hops, extra=("--loot", "6"))] + holds +
-            [fight(keys1, hops // 2)] + holds +
-            [("keys", ["w"], 1.0), ("keys", ["r"], 0.5), fight(keys2, hops, extra=("--loot", "6"))] + holds[:3] +
+            [fight(keys1, hops // 2), ("hold", "F3", 3.0), ("hold", "F4", 3.0),
+             ("keys", ["w"], 1.0), ("keys", ["r"], 0.5), fight(keys2, hops, extra=("--loot", "6"))] + holds[:2] +
             [("keys", ["r"], 0.5), ("keys", ["w"], 1.0), fight(keys1, hops // 2)])
 
 
@@ -157,6 +177,20 @@ SESSIONS = {"dev-smoke": ("AnimSor0", "enter-normal", 5900, [wp("1,2"), fight(["
 for k, cls in enumerate(CLASSES):
     for tier in (0, 1, 2):
         SESSIONS["%s-t%d" % (cls, tier)] = class_session(cls, tier, 5100 + 10 * k + tier, FIELDS[(k + tier) % 4])
+
+
+def mon_session(seed, field, hops=40):
+    """Teleport hops (Shift + left) and the right button cast at the nearest live monster, the hotkeys in turn:
+    monsters of every class met, chilled walkers (Frost Nova), Frozen Orb held (P1b-12)."""
+    tele = ("pilot", ["explore", "--melee", "--melee-button", "3", "--curse-keys", "F1,F2,F1,F4", "--keys-cycle",
+                      "--give-up", "8", "--radius", "12", "--melee-hold", "0.3", "--drink", "0.5", "--mana-col", "4",
+                      "--hops", str(hops)], 60 + 12 * hops)
+    return ("AnimSorMon", "enter-normal", seed, [wp(field), tele, ("hold", "F3", 6.0), ("hold", "F4", 4.0),
+                                                 ("hold", "F3", 6.0), tele])
+
+
+for k, f in enumerate(("5,2", "5,3", "2,2", "3,2", "1,4", "5,4")):
+    SESSIONS["mon-%d" % (k + 1)] = mon_session(5200 + k, f)
 
 
 def sh(args, timeout=None, log=None):
