@@ -771,6 +771,7 @@ are taken in turn.
       (`sweep-rbs4-override-type`). 94 of them set an immediate: 0, 1, 2, 5, 7, 13 or 15.
     - **9 calls are not immediates and are not followed**: 0x005DF813, 0x005E12F8, 0x005ECBD7, 0x005F025C, 0x005F3817,
       0x005F390C, 0x005F5447, 0x005F549B and 0x005FADD3. Five of them read a byte at `+0x0D` or `+0x02` of a record.
+      *2026-10-27 correction (plan 0052 P1.1, [ai/0001 § 8](../ai/0001-machinery.md#8-the-path-request)):* the five are `lea edx,[reg+0xd]` / `lea edx,[ecx+0x2]` on a zeroed register, the immediates 13 and 2; all nine resolve to 13, 2, 0, 6 or a drawn 5/6, none to 4, 10 or 14 (0x005E12F8, 0x005FADD3, 0x005DF813).
   - The four calls that set the type from a register restore a saved type or are client code: 0x00648DC0 (7, or the
     saved `+0x40`), 0x0054CB10 (15, then the saved type), 0x005DD510 (2, then the saved type), and 0x004AFFEE
     (client).

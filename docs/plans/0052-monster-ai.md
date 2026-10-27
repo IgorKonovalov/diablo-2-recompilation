@@ -314,3 +314,22 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   (f) **The log's four items are folded** into P1.1's and P1.2's text above, with the second table. The architect's
   revision of the batches for question 8 stays due at the P1.1 review. (g) The lane relied on the commit hook. The
   review ran `python3 -I tools/gate.py` (green).
+- **2026-10-27 — P1.1 checkpoint (reverser, static lane B, `lane/r52`; paused by the owner for a session reload).**
+  Committed: [ai/0001](../findings/ai/0001-machinery.md) (§§ 1–13 drafted: the AI tick `sub_005B1740_MonAiEvent` =
+  monster event kind 2, run by `MonEventsRun`'s slot pass in `GameRunUnitEvents` ← `GameTick` ←
+  `sub_0052FC20_ServerGamesFrame` / `sub_005645E0_GameTickAlt`, plus nine direct calls from mode ends; the 30 kind-2
+  queue sites; `g_MonAiTable` 148 × `{searchKind, init, think, alt}` and the **second table `g_MonAiStateRows`
+  (0x0073D358, 18 state rows indexed by `AiCtl.state`, who sets each state)**, covered in § 3; `AiCtl`/`MonPathCtl`/
+  `AiCtx`/`MonCmd` in `re/types/ai.h`; target search and the ten target lists at `Game+0x10F8`; the command and move
+  helpers; the path request (AI types 1, 2, 5, 6, 7, 13, 15; the planner draws only for 10 and 16, unreached); draws;
+  hireling and summon entries; H4/H5 AI side; the unit lists for ADR-0022; tier proposal, batch list, boundary
+  recommendation and the log-volume estimate (capped breakpoints suffice)), [ai/experiments](../findings/ai/experiments.md)
+  run:2026-10-27-ai-emu (1 314 emulated cases, 0 mismatches), 84 `re/symbols.csv` rows (all `I`),
+  `tools/ai_machinery_scan.py`, `tools/ai_emu.py`, kept outputs `workspace/logs/r52/` (manifest 40 lines), the
+  drlg/0009 § 11 correction (the nine "register" override calls). `main` merged at `db8162b3`.
+  **Resume note — next:** (1) re-read § 3 against `docs/tables/MonAI.md` (now on `main`) and align the state-row
+  wording with the archivist's table; check who passes `EDX` to `MonAiEntryGet` at 0x005B1663 (the event's row-kind
+  switch) and 0x005B0E81 (MonAiInit's old-state lookup) and state it; (2) run the review-fixes checklist over ai/0001
+  (counts recounted from the kept files, Functions-table tags); (3) the ledger row in `docs/plans/metrics.md`
+  (usage "—"); (4) the review request to the architect (`python3 -I tools/backlog.py new --from reverser --to
+  architect --slug "plan 0052 P1.1 review"`). No Ghidra needed for (1)–(4) except an optional re-check of 0x005B1663.
