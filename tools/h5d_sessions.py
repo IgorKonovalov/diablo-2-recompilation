@@ -50,13 +50,15 @@ TOMBS = "38,39,40,41,42,43,44"
 SESSIONS = {
     # collision 24, 45 (228), spawn 41, 42: sarcophagi (228, size 1, MonPreset act 2) in the Tal Rasha tombs, entered
     # from the Canyon of the Magi (46, Position 1: collision 46's LevelPointPick); Lut Gholein first (its
-    # non-interactive townsfolk, patterns 3 and 4: collision 21, 30); item marks from the kills (19, 36); the map seed
+    # non-interactive townsfolk, patterns 3 and 4: collision 21, 30, met in the starting town and Lut Gholein by the
+    # first tomb session, whose second waypoint hop from the waypoint it stood on did not open the list; so every
+    # session now takes one waypoint hop from the starting town); item marks from the kills (19, 36); the map seed
     # of run:2026-10-16-sweep-mazes s3, whose LvlWarp row 42 led into tomb 70
-    "tomb": ("UniqNova", "enter-normal", 1557, [wp(2, 1), wp(2, 9), explore(40), descend(70, "42"), explore(120)]),
-    "tomb2": ("UniqNova", "enter-normal", 1558, [wp(2, 1), wp(2, 9), explore(40), descend(66, TOMBS), explore(120)]),
+    "tomb": ("UniqNova", "enter-normal", 1557, [wp(2, 9), explore(40), descend(70, "42"), explore(120)]),
+    "tomb2": ("UniqNova", "enter-normal", 1558, [wp(2, 9), explore(40), descend(66, TOMBS), explore(120)]),
     # collision 8 (entry flag 0x80: levels 109, 111 in the kept logs), 45 (528 evilhut, MonPreset act 5), the item and
     # pattern lines: Harrogath, then the Frigid Highlands
-    "frigid": ("UniqNova", "enter-normal", 4101, [wp(5, 1), wp(5, 2), explore(160)]),
+    "frigid": ("UniqNova", "enter-normal", 4101, [wp(5, 2), explore(160)]),
     # collision 45 (298 with flag 0: the AI callers of SpawnClassCellTest): vile mothers (vilemother1, pools of levels
     # 104 and 105) from the Pandemonium Fortress into the Outer Steppes
     "steppes": ("UniqNova", "enter-normal", 4102, [explore(200, ["--any-level"])]),
@@ -66,6 +68,10 @@ SESSIONS = {
     # from the Worldstone Keep Level 2 waypoint
     "throne": ("UniqNova", "enter-normal", 4104, [wp(5, 9), descend(129, "85,86"), descend(131, "87,88,89"),
                                                  explore(80)]),
+    # collision 21, 30 (pattern 4): the Rogue Encampment's cows (179: inTown, size 3), then the Jail by a waypoint hop
+    # from the town waypoint the character stands on (wpchain's retries)
+    "rogue": ("UniqNova", "enter-normal", 4106, [wp(1, 1), ("pilot", ["wpchain", "--chain", "1,7", "--linger", "2"], 150),
+                                                explore(60)]),
     # collision 46 again: the Arcane Sanctuary (74, Position 1)
     "arcane": ("UniqNova", "enter-normal", 4105, [wp(2, 8), explore(100)]),
 }

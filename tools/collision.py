@@ -289,8 +289,10 @@ class World:
         room = d["room"]
         self.rects[room] = (x0, y0, w, h)
         cells = [0] * (w * h)
+        alt80 = [0] * (w * h)    # plan 0038 H5d (collision 8): the same build without the 0x80 -> 0x04 OR
         bad = 0
         n_ent = 0
+        n80 = 0
         stamps = []
         for n, _dr, trect, W, F, S in z["near"]:
             tx, ty = trect[0], trect[1]
@@ -305,11 +307,16 @@ class World:
                         continue
                     row, col = sy - y0, sx - x0
                     bad += stamp(cells, w, row, col, self.tiles.bytes_of(tp))
+                    stamp(alt80, w, row, col, self.tiles.bytes_of(tp))
                     stamps.append((sx, sy, tp))
                     v = (0x10 if fl & 0x02 else 0) | (0x01 if fl & 0x40 else 0) | (0x04 if fl & 0x80 else 0)
                     if v:
                         or_block(cells, w, row, col, v)
                         self.hit("activation: entry flag bits 0x%02x over a tile" % v)
+                    if v & ~0x04:
+                        or_block(alt80, w, row, col, v & ~0x04)
+                    if fl & 0x80:
+                        n80 += 1
         logged = z["cells"]
         if logged[4] is None:
             self.hit("activation: map without cells")
@@ -321,6 +328,15 @@ class World:
                 % (os.path.basename(path), ln, room, d["lid"], ndiff, len(cells)))
         self.hit("activation dumps compared")
         self.hit("activation cells compared", len(cells))
+        if n80:
+            # plan 0038 H5d (collision 8): cells whose logged value only the 0x80 -> 0x04 OR explains
+            sep = sum(1 for a, b, c in zip(lc, cells, alt80) if a == b and a != c)
+            self.hit("H5d entry flag 0x80: entries in activation dumps", n80)
+            self.hit("H5d entry flag 0x80: dumps with such an entry")
+            if sep:
+                self.hit("H5d entry flag 0x80: cells only its 0x04 OR explains (model exact there)", sep)
+                self.hit("H5d entry flag 0x80: dumps where its OR changes a cell")
+            self.hit("H5d entry flag 0x80: entries by level %s" % d["lid"], n80)
         dr = d["dr"]
         rr = self.rr.get(dr, {})
         self.cb_info[room] = {"lid": d["lid"], "dr": dr, "th": d["th"], "type": rr.get("type"), "ltype": rr.get("ltype"),
@@ -1312,14 +1328,22 @@ class World:
                 self.hit("H5d SpawnClassCellTest: offset class without a room")
                 return
             g = lambda xx, yy: c[5 + yy][5 + xx]
-            if g(dx, dy) is None:
-                exp = 0
-            else:
+            def plus_ok(px, py, mk):
+                if g(px, py) is None:
+                    return 0
                 v = 0
                 for ox, oy in ((0, 0), (-1, 0), (1, 0), (0, -1), (0, 1)):
-                    cv = g(dx + ox, dy + oy)
-                    v |= 0x27 if cv is None else cv & mask
-                exp = 1 if v == 0 else 0
+                    cv = g(px + ox, py + oy)
+                    v |= 0x27 if cv is None else cv & mk
+                return 1 if v == 0 else 0
+            exp = plus_ok(dx, dy, mask)
+            # plan 0038 H5d (collision 45): the cases a wrong reading would get wrong: the same size-2 test at the
+            # unit's own cell (no offset), or with the other mask (0x3C01 <-> 0x01C0)
+            if (dx, dy) != (0, 0) and plus_ok(0, 0, mask) != exp:
+                self.hit("H5d SpawnClassCellTest BaseId %s: the offset decides (the own cell gives %d)" % (b, 1 - exp))
+            alt = 0x01C0 if mask == 0x3C01 else 0x3C01
+            if plus_ok(dx, dy, alt) != exp:
+                self.hit("H5d SpawnClassCellTest BaseId %s: the mask decides (mask %#x gives %d)" % (b, alt, 1 - exp))
         else:
             exp = 1
         self.ok((d["r"] & 0xFF) == exp, "%s:%d SpawnClassCellTest class %d (BaseId %s) flag %d at %s: game %d, model %d" % (
