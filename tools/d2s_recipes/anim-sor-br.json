@@ -1,0 +1,73 @@
+{
+ "game": "expansion",
+ "class": "Sorceress",
+ "seed": 5484,
+ "name": "AnimSorBr",
+ "progression": 15,
+ "difficulty": [
+  131,
+  131,
+  131
+ ],
+ "waypoints": {
+  "normal": "all",
+  "nightmare": "all",
+  "hell": "all"
+ },
+ "quests": "all",
+ "stats": {
+  "strength": 150,
+  "energy": 200,
+  "dexterity": 100,
+  "vitality": 400,
+  "hitpoints": 2500,
+  "maxhp": 2500,
+  "mana": 1500,
+  "maxmana": 1500,
+  "stamina": 400,
+  "maxstamina": 400,
+  "level": 80,
+  "experience": 742730244
+ },
+ "skills": {
+  "Teleport": 1,
+  "Nova": 20,
+  "Frost Nova": 5,
+  "Static Field": 1
+ },
+ "mouse": {
+  "left": "Teleport",
+  "right": "Nova",
+  "swap_left": "Teleport",
+  "swap_right": "Nova"
+ },
+ "hotkeys": [
+  "Nova",
+  "Frost Nova",
+  "Static Field"
+ ],
+ "belt_fill": [
+  "rvl",
+  "rvl",
+  "rvl",
+  "mp5"
+ ],
+ "items": [
+  {
+   "code": "crs",
+   "equip": "rarm"
+  },
+  {
+   "code": "buc",
+   "equip": "larm"
+  },
+  {
+   "code": "lst",
+   "equip": "rarm2"
+  },
+  {
+   "code": "mbl",
+   "equip": "belt"
+  }
+ ]
+}

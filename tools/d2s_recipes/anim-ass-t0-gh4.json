@@ -1,0 +1,80 @@
+{
+ "game": "expansion",
+ "class": "Assassin",
+ "seed": 5660,
+ "name": "AnimAssM0",
+ "progression": 15,
+ "difficulty": [
+  131,
+  131,
+  131
+ ],
+ "waypoints": {
+  "normal": "all",
+  "nightmare": "all",
+  "hell": "all"
+ },
+ "quests": "all",
+ "stats": {
+  "strength": 150,
+  "energy": 200,
+  "dexterity": 100,
+  "vitality": 25,
+  "hitpoints": 80,
+  "maxhp": 80,
+  "mana": 600,
+  "maxmana": 600,
+  "stamina": 400,
+  "maxstamina": 400,
+  "level": 25,
+  "experience": 2050449
+ },
+ "skills": {
+  "Psychic Hammer": 1,
+  "Fire Trauma": 1,
+  "Fists of Fire": 1
+ },
+ "mouse": {
+  "left": "Attack",
+  "right": "Psychic Hammer",
+  "swap_left": "Attack",
+  "swap_right": "Psychic Hammer"
+ },
+ "hotkeys": [
+  "Attack",
+  "Psychic Hammer",
+  "Kick",
+  "Throw",
+  "Fists of Fire"
+ ],
+ "belt_fill": [
+  "rvl",
+  "rvl",
+  "rvl",
+  "mp5"
+ ],
+ "items": [
+  {
+   "code": "tax",
+   "equip": "rarm",
+   "quantity": 60
+  },
+  {
+   "code": "buc",
+   "equip": "larm"
+  },
+  {
+   "code": "tkf",
+   "equip": "rarm2",
+   "quantity": 60
+  },
+  {
+   "code": "buc",
+   "equip": "larm2"
+  },
+  {
+   "code": "mbl",
+   "equip": "belt"
+  }
+ ]
+}

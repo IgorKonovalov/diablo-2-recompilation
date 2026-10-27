@@ -1,0 +1,95 @@
+{
+ "game": "expansion",
+ "class": "Necromancer",
+ "seed": 5021,
+ "name": "AnimNec1",
+ "progression": 15,
+ "difficulty": [
+  131,
+  131,
+  131
+ ],
+ "waypoints": {
+  "normal": "all",
+  "nightmare": "all",
+  "hell": "all"
+ },
+ "quests": "all",
+ "stats": {
+  "strength": 150,
+  "energy": 200,
+  "dexterity": 100,
+  "vitality": 25,
+  "hitpoints": 1500,
+  "maxhp": 1500,
+  "mana": 600,
+  "maxmana": 600,
+  "stamina": 120,
+  "maxstamina": 120,
+  "level": 25,
+  "experience": 2050449
+ },
+ "skills": {
+  "Teeth": 1,
+  "Amplify Damage": 1
+ },
+ "mouse": {
+  "left": "Attack",
+  "right": "Teeth",
+  "swap_left": "Attack",
+  "swap_right": "Teeth"
+ },
+ "hotkeys": [
+  "Attack",
+  "Teeth",
+  "Kick",
+  "Amplify Damage"
+ ],
+ "belt_fill": [
+  "rvl",
+  "rvl",
+  "rvl",
+  "mp5"
+ ],
+ "items": [
+  {
+   "code": "wnd",
+   "equip": "rarm",
+   "suffix": 16
+  },
+  {
+   "code": "buc",
+   "equip": "larm",
+   "suffix": 171
+  },
+  {
+   "code": "scy",
+   "equip": "rarm2",
+   "suffix": 16
+  },
+  {
+   "code": "rin",
+   "equip": "rrin",
+   "suffix": 173
+  },
+  {
+   "code": "rin",
+   "equip": "lrin",
+   "suffix": 173
+  },
+  {
+   "code": "qui",
+   "equip": "tors",
+   "suffix": 263
+  },
+  {
+   "code": "lbt",
+   "equip": "feet",
+   "suffix": 112
+  },
+  {
+   "code": "mbl",
+   "equip": "belt"
+  }
+ ]
+}
