@@ -8,7 +8,7 @@ context:
   - ../../findings/skills/0002-missiles.md#leads-used
   - ../../findings/skills/0003-handlers.md#leads-used
   - ../../sources.md
-  - ../../plans/0045-skills-missiles-machinery.md#implementation-log
+  - ../../plans/done/0045-skills-missiles-machinery.md#implementation-log
 resolution: "Reviewed 2026-10-20 (architect): accept with fixes (2: wrong anchor 1, other 1). Rulings: C4 adds a Blaze cast (not tier A); C2 a monster-session case; ItemTarget 2–4 helper reads and pet removal moved to plan 0046 Phase 1's item/shrine/object batch, finishing-move finisher callers to its Assassin batch; combat/delivery E5 correction routed to the spec-writer; verdict words kept. Plan 0045 Phase 1 closed. See the plan 0045 log."
 ---
 

@@ -12,7 +12,7 @@ missile function (server do, hit and damage) do: which states it applies, which 
 calcs and params it reads, and which draws it makes on which seed? When it is done, `docs/findings/skills/` holds one
 catalogue section per function, raised to `[C]` by emulation (ADR-0015) or by harness events, and
 `docs/specs/skills/catalogue.md` (or one file per class, as the spec-writer chooses at the start) specifies every
-function a stock row uses on the machinery of plan [0045](0045-skills-missiles-machinery.md).
+function a stock row uses on the machinery of plan [0045](done/0045-skills-missiles-machinery.md).
 
 ## Context
 

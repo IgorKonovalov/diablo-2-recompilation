@@ -4,7 +4,7 @@ to: architect
 date: 2026-10-27
 status: done
 context:
-  - ../../plans/0045-skills-missiles-machinery.md#implementation-log
+  - ../../plans/done/0045-skills-missiles-machinery.md#implementation-log
   - ../../findings/skills/experiments.md#run2026-10-25-skills
   - ../../findings/skills/0001-dispatch.md#17-plan-0045-phase-2-the-run-run2026-10-25-skills
   - ../../findings/skills/0002-missiles.md#11-plan-0045-phase-2-the-run-run2026-10-25-skills

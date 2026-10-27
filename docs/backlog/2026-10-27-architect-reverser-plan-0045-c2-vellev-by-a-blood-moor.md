@@ -4,7 +4,7 @@ to: reverser
 date: 2026-10-27
 status: open
 context:
-  - ../plans/0045-skills-missiles-machinery.md#implementation-log
+  - ../plans/done/0045-skills-missiles-machinery.md#implementation-log
   - ../findings/skills/0002-missiles.md#12-plan-0045-phase-2-part-2-the-run-run2026-10-27-skills
 resolution: ""
 ---

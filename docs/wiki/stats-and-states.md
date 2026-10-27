@@ -329,7 +329,8 @@ From [states § F](../specs/stats/states.md#f-auras), confirmed except where not
   of the same caster picking up exactly where the last one left the seed, as the project's stats checker counts them
   (in 115 others the next run did not start where the last one left the seed, and the record does not say why; 4 runs
   were the caster's last in their log). The
-  damage itself belongs to the skills phase still to come, but a rebuild that runs Sanctuary must take that draw. A
+  damage itself belongs to the skills specs (see [skills and missiles](skills.md)), but a rebuild that runs Sanctuary
+  must take that draw. A
   kill by the aura also moves the game seed when it drops an item.
 - **Once per run, not once per unit hit.** The run did not count how many units each run hit. Read from the code:
   the aura rolls its damage once, before it goes over the units in range, and gives every unit it hits a copy of that
@@ -399,8 +400,8 @@ From the specs' open questions ([overview](../specs/stats/README.md#open-questio
   hidden value.
 - Two flags of `MonStats` that make a monster refuse timed states, the skill shrine's +2 skills, and seven `States`
   rows nothing was found to set.
-- **Skills** (Holy Shield, the timed armours and shouts, a damaging aura's hit) belong to the skills phase still to
-  come. A two-client game confirmed that a helping aura such as Might reaches another player only while the two share
+- **Skills** (Holy Shield, the timed armours and shouts, a damaging aura's hit) belong to the skills specs, explained on
+  the [skills and missiles](skills.md) page, which lists what is still open there. A two-client game confirmed that a helping aura such as Might reaches another player only while the two share
   a party; **offensive auras on a hostile player and hostile states** still need a run with two clients.
 
 ## Where to read more
@@ -410,7 +411,8 @@ From the specs' open questions ([overview](../specs/stats/README.md#open-questio
   [states](../specs/stats/states.md#reimplementation-notes). Each *Reimplementation notes* section lists the traps for
   someone rebuilding the system.
 - The [glossary](../glossary.md) for D2 terms.
-- Related wiki pages: [combat](combat.md) (what reads these stats), [characters](characters.md) (base attributes and
+- Related wiki pages: [combat](combat.md) (what reads these stats), [skills and missiles](skills.md) (the skills that
+  put timed states and auras on units), [characters](characters.md) (base attributes and
   level-up), [items](items.md) (how an item's properties, ethereal state and sockets are made),
   [objects](objects.md) (shrines and wells as objects), [randomness](randomness.md) (unit seeds) and
   [how we know](how-we-know.md).

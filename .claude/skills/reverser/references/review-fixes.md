@@ -16,7 +16,7 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
    earlier check. Seen: bit-17 writers 5 → 21
    ([0039](../../../../docs/plans/done/0039-backlog-sweep-4.md) P1b review); S4b row 17 short by 9, "7" instructions for 8 (0038);
    eight wear and resurrection counts one off `check-run.txt` ([0043](../../../../docs/plans/done/0043-items-economy.md) P2 review);
-   pool 12's "six of the 25 `boss` classes" met for five (`lane/h4a` review, 0038); "2 708 do events" in the record for the logs' 1 840, which hid the 2 000 skill-use floor's shortfall (`lane/p45h` review, [0045](../../../../docs/plans/0045-skills-missiles-machinery.md)); 318 pattern-5 creations for `patterns.txt`'s 360 (`lane/h5d` review, 0038); a 27-line manifest filed as "26 lines", and the 9 non-ItemStatCost `UpdateAnimRate` sites
+   pool 12's "six of the 25 `boss` classes" met for five (`lane/h4a` review, 0038); "2 708 do events" in the record for the logs' 1 840, which hid the 2 000 skill-use floor's shortfall (`lane/p45h` review, [0045](../../../../docs/plans/done/0045-skills-missiles-machinery.md)); 318 pattern-5 creations for `patterns.txt`'s 360 (`lane/h5d` review, 0038); a 27-line manifest filed as "26 lines", and the 9 non-ItemStatCost `UpdateAnimRate` sites
    described without the scan's own breakdown (2 unidentified among them; `lane/p50b` review, 0050).
 3. **Take totals against `main` after merging it**, not against the totals your batch started from.
    Seen: S2c, S3b and S1a reviews (0038), each recomputed.
@@ -27,7 +27,7 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
    through item creations" with 2 unexplained sales, and question 9's absence after a control saturated in two frames
    ([0043](../../../../docs/plans/done/0043-items-economy.md) P2 review); a gamble window opened before the control's first
    line (0043 P2b review); 304 caster resyncs "not logged by this run" where 87 match the caster's own logged `THR`
-   rolls (`lane/p45h` review, [0045](../../../../docs/plans/0045-skills-missiles-machinery.md)); "the breakpoint tables
+   rolls (`lane/p45h` review, [0045](../../../../docs/plans/done/0045-skills-missiles-machinery.md)); "the breakpoint tables
    are not copied" where the lane's own check transcribes all 39 (`lane/p50c` review,
    [0050](../../../../docs/plans/0050-animation-frame-timing.md)); `PlrModeSkillFrame` writing the event index "at every
    player frame event" where a unit with no used skill returns 2 first (`lane/p50a` review, 0050); "the periodic save
@@ -89,7 +89,7 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
     (the return is not read), and the summary's "S3 to S4" for a generic S3 that queues no event (`lane/p50a` review,
     [0050](../../../../docs/plans/0050-animation-frame-timing.md)); skills/0001's Answer bullet giving, inside its `[C]`, the client
     filter as the reason no refused request reached the server, which § 18 holds `[I]` (`lane/p45k` review,
-    [0045](../../../../docs/plans/0045-skills-missiles-machinery.md)).
+    [0045](../../../../docs/plans/done/0045-skills-missiles-machinery.md)).
 13. **At an observed boundary (ADR-0021), the `[C]` ends at the call.** What the callee makes of a compared argument
     (a class word, a register it must preserve, a mode) and every later call go in "After, `[I]`", also in the Answer
     summary. Seen: the radius of hits 24, 44 and 14 in a callee-saved register (`lane/p46m3` review); hit 52's row 0
