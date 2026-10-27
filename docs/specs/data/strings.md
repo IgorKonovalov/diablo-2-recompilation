@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [data/excel]
 consumed_by: [data/excel, monsters/special, items/affixes, hirelings]
-tags: {C: 88, I: 29, L: 3}
+tags: {C: 88, I: 31, L: 3}
 updated: 2026-10-27
 ---
 
@@ -382,7 +382,11 @@ Step notes:
 - E2. **A miss always examines `max_probes` nodes**, through unused ones (1 179 in `patchstring`, 2 453 in
   `expansionstring`, 5 192 in `string` for the `eng` files). The run logged 5 688 such misses, each over all
   `max_probes` nodes. [C] (0x00524C7D–0x00524CDC, [run:2026-10-15-strings](../../findings/data/experiments.md#run2026-10-15-strings))
-- E2. The match is an exact, case-sensitive `strcmp`. [C] (fn:STRTABLE_FindInTable@0x00524C60, run:2026-10-15-strings)
+- E2. The match is an exact `strcmp`: every logged hit and miss is the model's. [C] (fn:STRTABLE_FindInTable@0x00524C60,
+  run:2026-10-15-strings) It is case-sensitive: the compare is an inline byte loop with no case folding. [I] No logged
+  key is held by a table only under another case, so the run cannot tell it from a case-folding compare
+  ([data/0003 § S1b](../../findings/data/0003-string-tables.md#plan-0038-batch-s1b-2026-10-16), data/excel I3).
+  (0x00524CA4–0x00524CC6)
 - E2. **A duplicated key returns its lowest entry**: the nodes were placed by inserting entries in order along the
   same probe chain, so the first used node with that key is the first entry. The run hit three: `Berserker's`
   (string 1826, not 2507), `Eschuta's temper` (expansionstring 1586, not 1620), `fire` (string 3272, not 3328). [C]
@@ -504,9 +508,9 @@ all its `max_probes` nodes, and returns 0 with `"funeralpire -not xlated call ke
   (fn:STRTABLE_GetByIndex@0x00524A30, fn:STRTABLE_GetByKey@0x00524D30, run:2026-10-15-strings)
 - **What only guards corrupt files.** The CRC check, the offset checks, the node checks, the NULL-text fatal and the
   missing-file crash (§ G rows marked "guards"). A reimplementation that reads only the stock tables can drop them
-  without changing any output. [I] (fn:STRTABLE_LoadFile@0x00525920) The 11078 and entry-500 fallbacks, which behave
-  as § C states under emulation, matter only to an install without `d2exp.mpq` or to edited tables. [C]
-  (fn:STRTABLE_EntryToString@0x00524930, run:2026-10-17-sweep-emu)
+  without changing any output. [I] (fn:STRTABLE_LoadFile@0x00525920) The 11078 and entry-500 fallbacks behave as
+  § C states under emulation. [C] (fn:STRTABLE_EntryToString@0x00524930, run:2026-10-17-sweep-emu) They matter only to
+  an install without `d2exp.mpq` or to edited tables. [I] (0x00524A33–0x00524A49, fn:STRTABLE_EntryToString@0x00524930)
 - **An exact-match map can replace the probe walk** if it returns the lowest entry of a duplicated key and `0xFFFF`
   for an absent key: every entry of every shipped file is found within `max_probes` nodes of its home slot, and the
   walk returns the first-inserted node of a key. [C] Over every distinct key of the three `eng` tables (8 949 keys,

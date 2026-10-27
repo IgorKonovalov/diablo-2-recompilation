@@ -55,8 +55,8 @@ then they beat every archive. In a
 normal run a loose file never overrides an archive. This is confirmed in runs that put a debugger on the game before
 its start-up code: the archive opens, the sorted list after each open and every file lookup match these rules, a run
 with loose files but no `-direct` read none of them, and the same kind of files with `-direct` were read from disk.
-Only the place of the two optional archives in the middle of the list is read from the code, since the install has
-neither. The video archive is opened later, when a cinematic is played, and goes to the front of its priority group.
+Only the place of the two optional archives in the middle of the list (the install has neither) and the case with no
+archive open (no lookup ran before the first open) are read from the code. The video archive is opened later, when a cinematic is played, and goes to the front of its priority group.
 
 ## The game reads the .bin, not the .txt
 
@@ -69,7 +69,8 @@ normal run no `.txt` is parsed at all. This is confirmed: the in-memory "parse t
 The `-txt` option compiles the `.txt` files and writes fresh `.bin` files to disk, and then loads the `.bin`
 through the normal lookup. Without `-direct` the game never sees the disk copy, so `-txt` alone changes nothing;
 only `-direct -txt` makes the game run on edited text. Both are confirmed in a run: with `-txt` alone every table
-loaded was the archive's copy, and with `-direct -txt` every table came from the freshly written files.
+loaded was the archive's copy, and with `-direct -txt` every table read after the compile came from the freshly
+written files.
 
 A few consequences that a modder or reimplementer would trip over:
 
@@ -140,7 +141,8 @@ name; a name that matches nothing is dropped. So a short TC name that equals an 
 stops reading a row's items at the first empty `ItemN`, so an item after a blank cell is ignored; a
 [Picks](../glossary.md) of 0 becomes 1; and a cell with a probability below 1 is skipped. A replay of the logged
 drops confirms the numbering, the item-code-first rule and the resolution of every logged cell; the three rules just
-named, the unique and set steps and a name that ends at an inner quote have no stock case and are read from the code.
+named, a short name that is both an item code and a TC name, the unique and set steps and a name that ends at an
+inner quote have no stock case and are read from the code.
 
 The automatic TC of an item type for level L (named after the type code and L, such as `bow3`) takes the non-quest,
 spawnable items of that type whose level is above L − 3 and at most L, each weighted by the rarity of the item's own
@@ -226,13 +228,14 @@ flowchart TD
     s -->|no| nx["0, placeholder text"]
 ```
 
-The search order is patchstring, then expansionstring, then string, and the match is exact and case-sensitive. Each
+The search order is patchstring, then expansionstring, then string, and the match is exact. Each
 table is a hash table searched by walking from a home slot; a miss always walks the table's whole probe limit (1 179
 nodes in the English patchstring, for example). When a key occurs twice in one table, the lowest entry wins
 ([strings § E](../specs/data/strings.md#e-hash-probing--strtable_findintable-strtable_hash)). A key found nowhere
 returns 0 with a placeholder text: the key followed by the suffix " -not xlated call ken w", minus its last
 character, so `funeralpire` gives "funeralpire -not xlated call ken " with a trailing space. All of this is
-confirmed in a run that logged the game's key lookups. One quirk is confirmed under the emulator: entry 0 of
+confirmed in a run that logged the game's key lookups, except that the match is case-sensitive: no logged key differs
+from a table's key only in case, so that part is read from the code. One quirk is confirmed under the emulator: entry 0 of
 `string.tbl` cannot be told apart from "not found", since both give 0.
 
 When the `.txt` compiler turns a string-key cell into a stored index, it replaces 0 (blank or unknown) by 5382,

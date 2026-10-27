@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: []
 consumed_by: [items/tc, items/*, monsters/*, drlg/*, objects, data/strings, data/calc]
-tags: {C: 144, I: 45, L: 2}
+tags: {C: 144, I: 51, L: 2}
 updated: 2026-10-27
 ---
 
@@ -151,12 +151,12 @@ A1. OpenArchives(expansion: bool):                                   [C] (fn:MPQ
       ; d2video (1000) is opened and linked later, on demand     [C] (fn:MPQ_OpenVideoArchives@0x004FAD10, run:2026-10-27-sweep-data-load)
 
 A2. Link(a):                                                         [C] (fn:STORM_LinkArchive@0x0041B6B0, 0x0041B955, run:2026-10-27-sweep-data-load)
-      n ← first node of the list with n.priority ≤ a.priority        ; signed compare
+      n ← first node of the list with n.priority ≤ a.priority        ; signed compare: [I] every priority is positive (0x0041B95B)
       insert a before n (append when there is none)
       ; result: descending priority; on a tie, the later-opened archive is searched first
 
 A3. FindFile(path) → source:                                         [C] (fn:STORM_FindFile@0x00417F10, fn:STORM_GetDirectFlags@0x00418B50, fn:STORM_DiskPath@0x00415B00, run:2026-10-27-sweep-data-load)
-      diskAllowed: bool ← direct or (no archive is open)
+      diskAllowed: bool ← direct or (no archive is open)            ; [I] the no-archive half: no run shows a lookup before the first open (0x00418B6A–0x00418B7A)
       if diskAllowed and path exists on disk (relative to the working directory):
         return disk                                                  ; checked before any archive
       for a in archive list, front to back:
@@ -331,7 +331,7 @@ D1. LoadItems():                                                      [C] (fn:IT
       (W, nW) ← LoadTable("weapons"); (A, nA) ← LoadTable("armor"); (M, nM) ← LoadTable("misc")
       items ← W ++ A ++ M                                            ; one array, stride 0x1A8, in this order
       nItems ← nW + nA + nM
-      weapons, armor, misc pointers ← the three sub-ranges of items  ; the file buffers are freed
+      weapons, armor, misc pointers ← the three sub-ranges of items  ; the file buffers are freed: [I] not logged (fn:ITEMS_LoadItemTables@0x006315D0)
 D2.   for i in 0 ..< nItems:                                          [C] (0x00633491, run:2026-10-15-vendors)
         AddCode(itemCodeLink, code: u32 ← item[i]+0x080 read as u32 LE)     ; step E2
 D3. GetItemByCode(code: u32) → (record, index: i32):                  [C] (fn:ITEMS_GetByCode@0x00633640, run:2026-10-27-sweep-data-load)
@@ -387,7 +387,7 @@ E1. FindCode(link, code: u32) → i32:                                  [C] (fn:
       return −1
 
 E2. AddCode(link, code: u32) → i32:                                   [C] (fn:EXCEL_AddCode@0x006BD230, run:2026-10-17-sweep-emu)
-      grow codes by 64 entries when count ≥ capacity
+      grow codes by 64 entries when count ≥ capacity                 ; [I] the emulation never filled the array (0x006BD26C, 0x006BD27A)
       loop:
         pos ← first position whose code ≥ code (unsigned)
         if pos < count and codes[pos].code = code:
@@ -408,9 +408,10 @@ Step notes:
   (fn:EXCEL_FindCode@0x006BD130, fn:STR_ToItemCode@0x00650EB0, run:2026-10-17-sweep-emu, run:2026-10-12-d2s-io, run:2026-10-15-vendors,
   [data/0001 § S1e](../../findings/data/0001-excel-loader.md#plan-0038-batch-s1e-2026-10-17), [data/0001 § S1b](../../findings/data/0001-excel-loader.md#plan-0038-batch-s1b-2026-10-16))
 - E2. Under emulation 1 500 inserts (capacity above the count) bump 665 duplicates, 221 of them through `0xFFFFFFFF`
-  → 0 → … chains, and the array, count and returned index match the model byte for byte. The growth by 64 entries is
-  the one layout of rule 1 (capacity `+4` against count `+0`, grown by `0x40`). [C] (fn:EXCEL_AddCode@0x006BD230,
-  0x006BD26C, 0x006BD27A, run:2026-10-17-sweep-emu, [data/0001 § S1e](../../findings/data/0001-excel-loader.md#plan-0038-batch-s1e-2026-10-17))
+  → 0 → … chains, and the array, count and returned index match the model byte for byte. [C] (fn:EXCEL_AddCode@0x006BD230,
+  run:2026-10-17-sweep-emu, [data/0001 § S1e](../../findings/data/0001-excel-loader.md#plan-0038-batch-s1e-2026-10-17))
+  The growth by 64 entries is read from the code: the capacity `+4` is compared with the count `+0` and grown by `0x40`
+  (the link layout of rule 1), but every emulated insert had room, so no case grew the array. [I] (0x006BD26C, 0x006BD27A)
 - E2. **Duplicate codes:** the first record keeps its code; a later record with the same code is
   registered under `code + 1` (or the next free value), so it is unreachable by its written code and
   reachable by an unrelated one. The index returned is still the insertion count. The shipped
@@ -910,9 +911,12 @@ Step notes:
   in between. (run:2026-10-27-sweep-data-load, fn:GEMS_Load@0x00636B70, fn:MONEQUIP_Load@0x00659E60, fn:DRLG_LoadLevels@0x0061C540, [data/0004 § H3b](../../findings/data/0004-cell-converters.md#plan-0038-batch-h3b-run2026-10-27-sweep-data-load))
   The `+0x033..+0x035` writers: per record, three loops over the s16 slots at `+0x036`, `+0x068` and `+0x09A` stop at
   the first negative slot or after 25 and store the count as a byte at 0x0061DB05, 0x0061DB20 and 0x0061DB40. [C]
-  (fn:DRLG_LoadLevels@0x0061C540, 0x0061DAF0–0x0061DB4D, run:2026-10-27-sweep-data-load, [Levels](../../tables/Levels.md))
-  [I] for the values of monstats `+0x036`/`+0x038` and `+0x04A`/`+0x04B`, which the run does not model, and for
-  "never written" outside the load-to-unload window and through other pointers. (fn:sub_00650F00_MonStatsSpeeds@0x00650F00,
+  for the counts and the stop at the first negative slot (fn:DRLG_LoadLevels@0x0061C540, 0x0061DAF0–0x0061DB4D,
+  run:2026-10-27-sweep-data-load, [Levels](../../tables/Levels.md)); [I] for the bound of 25 (`cmp eax, 0x19`): no
+  stock record has more than 10 leading non-negative slots in any of the three lists. (0x0061DAF0–0x0061DB4D)
+  [I] for the values of monstats `+0x036`/`+0x038` and `+0x04A`/`+0x04B`, which the run does not model, for
+  "never written" outside the load-to-unload window and through other pointers, and for "no reader" of the padding
+  bytes, which a dump cannot show. (fn:sub_00650F00_MonStatsSpeeds@0x00650F00,
   fn:sub_00651040_MonClassChain@0x00651040, [data/0004 § 3–4](../../findings/data/0004-cell-converters.md#3-runtime-fillers-of-no-column-fields))
 - J4. **More record bytes filled at load** (the 0 in the `.bin` is overwritten):
   - [C] gems `+0x02C`: `GEMS_Load` stores `STRTABLE_GetByKey` of a key built from `+0x28..+0x2A`, which hold the

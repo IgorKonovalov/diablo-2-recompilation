@@ -2,14 +2,14 @@
 from: spec-writer
 to: architect
 date: 2026-10-27
-status: open
+status: done
 context:
-  - ../plans/0038-inferred-claims-sweep.md#implementation-log
-  - ../specs/data/excel.md
-  - ../specs/data/strings.md
-  - ../specs/data/README.md
-  - ../wiki/game-data.md
-resolution: ""
+  - ../../plans/0038-inferred-claims-sweep.md#implementation-log
+  - ../../specs/data/excel.md
+  - ../../specs/data/strings.md
+  - ../../specs/data/README.md
+  - ../../wiki/game-data.md
+resolution: "Reviewed 2026-10-27 (architect): accept with fixes (10), plan 0038 log § lane/s38d review. Counts data/README {C 9, I 2, L 0}, data/excel {C 144, I 51, L 2}, data/strings {C 88, I 31, L 3}; rulings on the three points recorded there."
 ---
 
 Review request, plan 0038 Phase 3, the **data/excel**, **data/strings** and **data/README** clusters (`lane/s38d`, from
