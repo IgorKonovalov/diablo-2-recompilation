@@ -17,7 +17,7 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
    ([0039](../../../../docs/plans/done/0039-backlog-sweep-4.md) P1b review); S4b row 17 short by 9, "7" instructions for 8 (0038);
    eight wear and resurrection counts one off `check-run.txt` ([0043](../../../../docs/plans/done/0043-items-economy.md) P2 review);
    pool 12's "six of the 25 `boss` classes" met for five (`lane/h4a` review, 0038); "2 708 do events" in the record for the logs' 1 840, which hid the 2 000 skill-use floor's shortfall (`lane/p45h` review, [0045](../../../../docs/plans/done/0045-skills-missiles-machinery.md)); 318 pattern-5 creations for `patterns.txt`'s 360 (`lane/h5d` review, 0038); a 27-line manifest filed as "26 lines", and the 9 non-ItemStatCost `UpdateAnimRate` sites
-   described without the scan's own breakdown (2 unidentified among them; `lane/p50b` review, 0050).
+   described without the scan's own breakdown (2 unidentified among them; `lane/p50b` review, 0050); "ten readers" raised for the eleven of `re/symbols.csv`'s diff (`lane/h1a` review, 0038).
 3. **Take totals against `main` after merging it**, not against the totals your batch started from.
    Seen: S2c, S3b and S1a reviews (0038), each recomputed; H3b's totals taken before the `lane/r1h` moves had landed
    (`lane/h3b` review, 0038).
@@ -33,7 +33,9 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
    [0050](../../../../docs/plans/0050-animation-frame-timing.md)); `PlrModeSkillFrame` writing the event index "at every
    player frame event" where a unit with no used skill returns 2 first (`lane/p50a` review, 0050); "the periodic save
    does not save without a host callback" with a logger at the entry only, where `0x00730FFC` and the time tests come
-   before the callback test (`lane/h1b` review, [0038](../../../../docs/plans/0038-inferred-claims-sweep.md)).
+   before the callback test (`lane/h1b` review, [0038](../../../../docs/plans/0038-inferred-claims-sweep.md)); "no code reads a class-7
+   player's column" as the d-none reason for `EXP_GetThreshold`'s clamp, without its other out-of-range input (the −1 of
+   the callers' inlined null-unit test; `lane/h1a` review, 0038).
 5. **An existing reviewed symbol name wins.** Merge `main` and grep `re/symbols.csv` for every address
    before you name it; rename your side. Seen: six addresses named twice, `lane/p41r`
    ([0041](../../../../docs/plans/done/0041-stats-and-states.md) P1 review). The same holds inside `re/types/`
@@ -116,7 +118,8 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
     review, 0038). `DRLG_LoadLevels` raised in `re/symbols.csv` but left I in data/0001's Functions table (`lane/h3b`
     review, 0038). `sub_005B1CF0_MonPostCreateBoss` (its 526 case compared at `SMPX`) and `sub_0063EC70_LevelClassVariant`
     (453 → 458, logged and chained) left I, and `MISSILE_BuildDamage` and `MissileElemRoll` left I under a 4 118-build
-    re-check (`lane/rbd` review, 0038).
+    re-check (`lane/rbd` review, 0038). `QUESTRECORD_LoadBytes` raised in `re/symbols.csv` but left I in save/0002's
+    Functions table and its § bullet (`lane/h1a` review, 0038).
 15. **State an integer wrap or overflow bound from a kept computation**: the largest input that still fits and the
     first that wraps, with the product written out, and what the code does past it. Seen: a negative ring step count
     called an endless loop where the signed index wraps past −2³¹ (`lane/p46m11` review); `PathDirection`'s

@@ -869,8 +869,11 @@ saves swapped in after the character screen read its list) and the counts of `wo
   (the full save) and from `sub_00569F80_NewCharFromStub` (the stub), per the two crash reports kept under
   `workspace/logs/h1a/`. (0x0056A172, 0x00553185–0x00553187, run:2026-10-27-sweep-d2s-load)
 - **Rows 20 and 34** (class 7 reads class 0's experience column; it gets no attributes, items or start skill)
-  **proposed d-none.** No class-7 player exists for that code to read (row 11): both ways in halt before. The
-  statements stay `[I]` readings of 0x00611806–0x0061180F and 0x005706FD.
+  **d-none** (proposed; accepted at the `lane/h1a` review, ruling 2). No class-7 player exists for that code to read
+  (row 11): both ways in halt before. The statements stay `[I]` readings of 0x00611806–0x0061180F and 0x005706FD.
+  [I] Reach condition: the clamp's other out-of-range input, the −1 of the callers' inlined null-unit test
+  (0x005342DE, 0x00535A0A, 0x0056B13D), is not met by any run or reading; a null-unit call found at any of the 13
+  `EXP_GetThreshold` callers moves row 20 back to (b). (fn:EXP_GetThreshold@0x00611800)
 - **Row 1** (the version < 92 reader reaches the same steps through `sub_00532590_NewCharLegacy`) **shortfall.** No
   save in the legacy layout was built; the one legacy load (a version-96 body labelled 91) was refused (14) by
   `sub_00534020_ReadSaveLegacy`.
