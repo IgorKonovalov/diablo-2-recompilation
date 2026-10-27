@@ -3157,6 +3157,12 @@ run id). Evidence in [items/0010 § Plan 0038 batch H6e2](0010-quest-drops.md#pl
 - **Limits.** One player, record words all clear, nothing held: the Khalim chests' held-part refusals and the tome's
   word-17 refusal did not run. In `brain4c` both copies activated every room before the chest was listed, so this log
   alone does not tell which copy the listing follows (items/0010 § The brain chest in level 91).
+- **Review addition** (2026-10-27, `lane/h6e2f` review): the first-RL and first-`RRESEED` lines per level-91 copy that
+  items/0010 § The brain chest in level 91 cites (6951/6974, 6857/6880, 6982/7005; 0-based) were in no kept output.
+  `tools/h6e2f_copies.py` gained `--first` (`566a0531…`; the default output is byte-identical to
+  `copies-followup.txt`), and `python3 -I tools/h6e2f_copies.py --first <brain4c> <brain4> <dev brain4b> >
+  workspace/logs/h6e2/copies-review.txt` (`33c41b9c…`) prints them; manifest `workspace/logs/h6e2/manifest-review.sha256`
+  (`6b4d3ac4…`, 1 line, `sha256sum -c` from `workspace/logs/h6e2/`).
 
 ## run:2026-10-27-sweep-quest-npc
 

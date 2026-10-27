@@ -6,6 +6,7 @@ tools/rdp_brain91.py (unchanged): the same DS1 file of LvlPrest 704, the same le
 Usage:
   python3 -I tools/h6e2f_copies.py [--root workspace/merged] [--exe workspace/install/app/game.exe] LOG [LOG ...]
   python3 -I tools/h6e2f_copies.py --warps LID ROW LOG
+  python3 -I tools/h6e2f_copies.py --first LOG [LOG ...]   (lane/h6e2f review: adds one line per copy, below)
 
 --warps: at each first WRP line of a room with a LvlWarp-row-ROW warp on level LID, and at the first PLR line on
 another level after LID, the warps of that row on LID and the destination tools/d2pilot.py's LogState.warp_dest gives
@@ -19,7 +20,10 @@ Per log and per level-91 copy (level pointer):
     (the room activated in the copy before the object was first listed; consistent with the listing following the
     copy), "after" (first listed while the room was not yet activated in that copy: the listing cannot follow it),
     "never" (the room never activated in that copy);
-  - the class-406 chest's room: its RRESEED line per copy and the chest's first OBJS line.
+  - the class-406 chest's room: its RRESEED line per copy and the chest's first OBJS line;
+  - with --first (added at the lane/h6e2f review; the default output is unchanged): per copy, the line of its first
+    RL line of level 91 and of its first level-91 RRESEED, the order the finding's copy argument uses.
+Line numbers are 0-based (the first line of a log is line 0).
 Stdlib only (and tools/ds1.py).
 """
 import argparse
@@ -78,6 +82,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--root", default=os.path.join(ROOT, "workspace", "merged"))
     ap.add_argument("--exe", default=os.path.join(ROOT, "workspace", "install", "app", "game.exe"))
+    ap.add_argument("--first", action="store_true")
     ap.add_argument("logs", nargs="+")
     a = ap.parse_args()
     t = ds1._tables(a.root)
@@ -86,6 +91,7 @@ def main():
     files = {rec["File%d" % i]: ds1_file(a.root, t, objtab, rec["File%d" % i]) for i in range(1, 7)}
     for path in a.logs:
         rl, f28 = {}, {}
+        rl1 = {}            # level pointer -> its first RL line (lid 91 or pdef 704)
         org = None
         acts = {}           # level pointer -> {(rx, ry) room in tiles/8: first RRESEED line}
         first = {}          # (cls, x, y) level-relative -> first OBJS line
@@ -97,6 +103,7 @@ def main():
                 rl[d["room"]] = (d["level"], d["rect"])
                 if d.get("lid") == 91 or d.get("pdef") == 704:
                     f28.setdefault(d["level"], []).append(d.get("f28"))
+                    rl1.setdefault(d["level"], n)
                 if d.get("pdef") == 704:
                     org = (min(org[0], d["rect"][0]), min(org[1], d["rect"][1])) if org else (d["rect"][0], d["rect"][1])
         for n, l in enumerate(lines):
@@ -134,6 +141,9 @@ def main():
             print("  chest 406 at %s, room (tiles) %s: first OBJS line %s; RRESEED line per copy %s"
                   % (o[1:], (8 * room[0], 8 * room[1]), first.get(o),
                      {lp: acts[lp].get(room) for lp in sorted(acts)}))
+        if a.first:
+            for lp in sorted(acts):
+                print("  first copy %d: first RL line %s, first RRESEED line %d" % (lp, rl1.get(lp), min(acts[lp].values())))
 
 
 if __name__ == "__main__":

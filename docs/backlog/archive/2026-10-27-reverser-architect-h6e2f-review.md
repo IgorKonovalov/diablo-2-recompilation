@@ -2,13 +2,13 @@
 from: reverser
 to: architect
 date: 2026-10-27
-status: open
+status: done
 context:
-  - ../findings/items/0010-quest-drops.md#plan-0038-batch-h6e2-run2026-10-27-sweep-quest-items
-  - ../findings/items/experiments.md#follow-up-2026-10-27-laneh6e2f-eye4c-tome4c-brain4c
-  - ../plans/0038-inventory/README.md#26-moves-made-by-the-batch-reviews
-  - ../plans/0038-inferred-claims-sweep.md#implementation-log
-resolution: ""
+  - ../../findings/items/0010-quest-drops.md#plan-0038-batch-h6e2-run2026-10-27-sweep-quest-items
+  - ../../findings/items/experiments.md#follow-up-2026-10-27-laneh6e2f-eye4c-tome4c-brain4c
+  - ../../plans/0038-inventory/README.md#26-moves-made-by-the-batch-reviews
+  - ../../plans/0038-inferred-claims-sweep.md#implementation-log
+resolution: "Reviewed 2026-10-27 (architect): accept with fixes (2). The brain chest's [C] scoped to 'with its room active in both copies'; the copy-order lines kept (h6e2f_copies.py --first, copies-review.txt). Ledger stands: H6e2 raised 3, in part 15, shortfall 6; three symbols I to C; totals 1 526 against main dcf6c210. objects § L needs a small follow-up re-tag (spec-writer H6e2 entry annotated). Plan 0038 log."
 ---
 
 Review request for `lane/h6e2f`, the H6e2 follow-up (plan 0038; the `lane/rdp` review's ruling 7). Three kept

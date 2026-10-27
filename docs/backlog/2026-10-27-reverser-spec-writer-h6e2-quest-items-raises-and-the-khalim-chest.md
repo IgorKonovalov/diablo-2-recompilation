@@ -51,3 +51,14 @@ word 17 clear (asked 2, created 7): objects § L's item-objects row gains `bbb` 
 `bks`), `hdm` stays `[I]`. **The brain chest's question** (objects § L does not state it; items/0010's open question)
 is answered in part: listed and opened once its room is active (`[C]`), which copy the listing follows `[I]`.
 Ledger: `bbb` shortfall → raised in part.
+
+*Annotation (architect, 2026-10-27, `lane/h6e2f` review: accept with fixes; plan 0038 log):* the follow-up's parts are
+released. **objects needs a small follow-up re-tag** of [§ L](../specs/objects/README.md#l-quest-objects-the-hellforge-and-the-quest-item-objects-named-only):
+the Khalim chests' row becomes `[C]` for all three chests (heart 8, eye 5, brain 7 gold piles first, each the count on
+its logged seed; `fn:sub_005B8940_A3Q2_EyeChest@0x005B8940`, `fn:sub_005B8A20_A3Q2_BrainChest@0x005B8A20`), the
+held-part refusal staying `[I]`; the item-objects row adds `bbb` to `[C]` (the tome, word 17 clear, one item on the
+unchanged quest seed, no draw; `fn:sub_005B7A60_A3Q1_TomeDrop@0x005B7A60`), its quality 7 (the base `unique`
+override), the word-17 refusal and `hdm` staying `[I]`. Anchor run:2026-10-27-sweep-quest-items (addendum *Follow-up*).
+items/quest-drops' Phase 3 takes the same Khalim and `bbb` parts into § E/E1. The brain chest's listing is not a spec
+statement; if one is written, its `[C]` is "listed and opened with its room active in both copies" (the review scoped
+the lane's "once its room is active"), and which copy the listing follows is `[I]`.

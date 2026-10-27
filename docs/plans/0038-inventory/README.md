@@ -1290,8 +1290,9 @@ with `d2pilot.py --descend-to` and `--all-copies`, the RL line's new `f28` key; 
   with more met: `qey` and `qbr` in the corrected Khalim order (gold first; `k` 5 and 7 on their logged seeds, the
   heart chest's 8), so E1's correction holds for all three Khalim chests and only `vip` and the held-part refusal
   stay; `bbb` joins `leg` and `bks`; three more `j34` kills;
-- the brain chest's open question: with its room active the chest is listed and opens (`[C]`); which copy the listing
-  follows stays `[I]` (an order match over three logs; `brain4c` had the room active in both copies).
+- the brain chest's open question: with its room active in both copies the chest is listed and opens (`[C]`; scoped
+  at the review, `brain4`'s activation in the other copy alone listed nothing); which copy the listing follows stays
+  `[I]` (an order match over three logs; `brain4c` had the room active in both copies).
 
 Symbols `sub_005B7A60_A3Q1_TomeDrop`, `sub_005B8940_A3Q2_EyeChest`, `sub_005B8A20_A3Q2_BrainChest` I → C (rule 14:
 each one's logged calls compared with the checker's model). H6e2's ledger: **raised 3, raised in part 15, shortfall
@@ -1304,6 +1305,13 @@ one manifest, the `--warps` replay kept as a tool mode (6); the remainders named
 separating seeds for `k` (10); the correction carried into § Static reads' Khalim bullet, the eye/brain `[I]`
 sub-bullet, the open questions and the `h6e2_sessions.py` comment (12); `bbb`'s quality 7 as After `[I]` (13); the
 three symbols raised in `re/symbols.csv` and the Functions table (14).
+**`lane/h6e2f` review (2026-10-27, architect): accept with fixes (2).** The ledger moves stand: `bbb` shortfall →
+raised in part, H6e2 **raised 3, raised in part 15, shortfall 6: 24**, no class move, three symbols I → C. The brain
+chest's `[C]` is scoped to "with its room active in both copies" (in `brain4` the room activated in the other copy
+alone and the chest was not listed); the copy order lines are now in a kept output (`copies-review.txt`). Recounted
+against `main` `dcf6c210` after merging it into the lane (`lane/rlg` and `lane/h6e1` merged since the lane's base;
+neither moved a class): **static 567, harness 519, c-emu awaiting a batch 0, blocked 421** (d-none 295, d-edit 73,
+d-sim 28, d-2c 7, d-owner 10, d-0032 8), **deferred 2, raised 17: 1 526.**
 **`lane/s38s` review (2026-10-27, architect, Phase 3 of save/d2s and items/uniques-sets): three S1a rows completed by
 H1b's kept check.** The H1b ledger listed the S1a pieces it met and left the rows as S1a. Two of those pieces carry a
 compared line in the kept check output (`workspace/logs/r1h/sweep-h1b-check-r1h.txt`, 0 failing), so they move here,

@@ -1544,7 +1544,7 @@ part (b). No session: the kept `brain4` log and the development `brain4b` log of
   - [I] That the chest is listed once its room activates in that copy is the model's prediction, not yet observed:
     no log has that room active in the matching copy. `brain4c` tests it (below). (run:2026-10-27-sweep-quest-items)
     *Follow-up (`lane/h6e2f`): met in part, see the next bullet.*
-- [C] **`brain4c`: with the chest's room activated, the chest is listed and opens** (follow-up; kept log
+- [C] **`brain4c`: with the chest's room activated in both copies, the chest is listed and opens** (follow-up; kept log
   `quest-items-s1-4914-brain4c.log`, `tools/h6e2f_copies.py` output `copies-followup.txt` `c119a6c2…` and
   `tools/rdp_brain91.py` output `brain91-4c.txt` `ed4f4bd5…`, manifest `manifest-followup.sha256`). Map seed 4914
   again gave `DungRm2B` (64 objects listed in the level's rect, all of them the file's, 0 outside it). `explore
@@ -1554,7 +1554,10 @@ part (b). No session: the kept `brain4` log and the development `brain4b` log of
   `qbr`, gold 7 first). (run:2026-10-27-sweep-quest-items)
   - What this does not separate: both copies had the room active before the listing, so `brain4c` alone does not
     say which copy the listing follows; that rests on `brain4` and `brain4b` (one copy's rooms, 0/0, above) and stays
-    `[I]` as to which copy that is (next bullet). (run:2026-10-27-sweep-quest-items)
+    `[I]` as to which copy that is (next bullet). The `[C]` is scoped to both copies: in `brain4` the chest's room
+    activated in the fully activated copy (line 7337, `copies-followup.txt`) and the chest was never listed, so an
+    activation in that copy alone does not list it. *(Review, 2026-10-27: the lane had "once its room is active",
+    unscoped.)* (run:2026-10-27-sweep-quest-items)
 - [C] **Why the pilot stopped: its frontier is the last copy's.** `LogState` keeps one level pointer per level id
   (`lptr`) and overwrites it at each `RRESEED`. Its frontier is the unactivated rooms of that one pointer. The last
   level-91 `RRESEED` of both logs names the fully activated copy, so `frontier(91)` is empty at the end of both
@@ -1574,9 +1577,13 @@ part (b). No session: the kept `brain4` log and the development `brain4b` log of
   - [C] *Follow-up:* `tools/gdb/pilot.py`'s RL line now carries `f28` (room `+0x28` at 0x0066B970, the point where
     `drlg-gen.py` reads it). In `brain4c` one level-91 copy has `0x40000` in all 25 of its RL rooms and the other in
     none (`copies-followup.txt`). The `0x40000` copy is the one whose first `RRESEED` comes first (line 6951, against
-    6974) and the one that activated the chest's room first (7639). (run:2026-10-27-sweep-quest-items)
+    6974), the one built second (first RL line 6634, against 6606) and the one that activated the chest's room first
+    (7639). Log lines are 0-based, as the tool prints them; the first-RL and first-`RRESEED` lines are in
+    `copies-review.txt` (`33c41b9c…`, `tools/h6e2f_copies.py --first`, `566a0531…`, added at the review; manifest
+    `manifest-review.sha256`, `sha256sum -c` from `workspace/logs/h6e2/`). (run:2026-10-27-sweep-quest-items)
   - [I] In `brain4` and `brain4b` the fully activated copy is likewise the one whose first `RRESEED` comes first
-    (6857 against 6880; 6982 against 7005), and the copy whose rooms match the listing is the other one. By that order
+    (6857 against 6880; 6982 against 7005) and the one built second (first RL 6461 against 6433; 6689 against 6661;
+    `copies-review.txt`), and the copy whose rooms match the listing is the other one. By that order
     the listing copy would be the copy without `0x40000`, which drlg/0004 row 10 names the server's. This is an order
     match over three logs, not a flag read in the two that separate the copies, so it stays `[I]`.
     (0x006678E2, run:2026-10-27-sweep-quest-items)
@@ -1606,7 +1613,7 @@ part (b). No session: the kept `brain4` log and the development `brain4b` log of
   question's "only the objects near the player" was wrong). See § The brain chest in level 91.
 - ~~Whether the brain chest is listed once its room activates in the copy whose rooms hold the listed objects, and
   whether that copy is the server's (`brain4c`, § The brain chest in level 91).~~ Answered in part (follow-up,
-  `brain4c`): with its room active the chest is listed and opens (`[C]`); `brain4c` names the copies by their
+  `brain4c`): with its room active in both copies the chest is listed and opens (`[C]`); `brain4c` names the copies by their
   `0x40000` flag, but both had the room active, so which copy the listing follows rests on the order match of
   `brain4`/`brain4b` (`[I]`). (run:2026-10-27-sweep-quest-items)
 - Which copy the `OBJS` listing follows, read from a log that has the `f28` key and a room active in one copy only;
