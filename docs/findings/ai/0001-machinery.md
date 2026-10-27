@@ -93,7 +93,7 @@ anchors where this batch builds on them (anim/0001's event queue, drlg/0009's pa
 | `0x005B1650` | `sub_005B1650_MonAiTargetByKind` | the row's `searchKind` | I |
 | `0x005B13E0` | `sub_005B13E0_MonSpcWalkCheck` | boss pause, unique teleport, `MonSpcWalk` re-target | I |
 | `0x005B1140` | `sub_005B1140_MonAiBossSightPause` | 20-frame pause of a boss at its first player sight | I |
-| `0x005B15D0` | `sub_005B15D0_MonAiEntryGet` | the table row of a unit and a state | C (map) |
+| `0x005B15D0` | `sub_005B15D0_MonAiEntryGet` | the table row of a unit and a state | I (map `[C]`, § 12) |
 | `0x005B0E00` | `sub_005B0E00_MonAiInit` | sets `AiCtl.state` and `AiCtl.think`, calls the row's `init` | I |
 | `0x005C34B0` | `sub_005C34B0_CurseSetAiState` | `CurseApplyCb`'s callee: AI state 10, 12 or 11 for `auratargetstate` 23, 27 or 56, else 0 | I |
 | `0x005B0CC0` / `0x005B0CD0` | `sub_005B0CC0_AiNone` / `sub_005B0CD0_AiIdle` | row 0 (returns), rows 1 and state 1 (idle 200 frames) | I |
@@ -109,7 +109,7 @@ anchors where this batch builds on them (anim/0001's event queue, drlg/0009's pa
 | `0x005DCE60` / `0x005DCEE0` / `0x005DCF70` / `0x005DD050` | `sub_005DCE60_AiSearchNearRooms` / `sub_005DCEE0_AiSearchNearClients` / `sub_005DCF70_AiSearchNearRoomsNoTown` / `sub_005DD050_AiSearchOwnerGroup` | the four walkers | I |
 | `0x005DC970` | `sub_005DC970_AiHostileCandidate` | hostility test of a candidate (draws on a player's seed) | I |
 | `0x005DC640` | `sub_005DC640_AiApproachPointTest` | three teleport-point tests toward a unit | I |
-| `0x005DC530` | `sub_005DC530_AiDistToPoint` | the AI distance | C (map) |
+| `0x005DC530` | `sub_005DC530_AiDistToPoint` | the AI distance | I (map `[C]`, § 12) |
 | `0x005DC380` / `0x005DC480` / `0x005DC5C0` | `sub_005DC380_AiDistUnits` / `sub_005DC480_AiDistToPointSized` / `sub_005DC5C0_AiPathDistToPoint` | variants with sizes | I |
 | `0x005DE890` / `0x005DE9D0` | `sub_005DE890_MonAiTargetOrIdle` / `sub_005DE9D0_MonAiTargetOrWait` | row kinds 1 and 4/5 | I |
 | `0x005DDFC0` / `0x005DDF90` | `sub_005DDFC0_MonAiSetMode` / `sub_005DDF90_MonAiSetModeAtUnit` | a mode at a point / at a unit | I |
@@ -119,10 +119,10 @@ anchors where this batch builds on them (anim/0001's event queue, drlg/0009's pa
 | `0x005DEC80` / `0x005DEF80` / `0x005DED40` / `0x005DECA0` | `sub_005DEC80_MonAiWalkToUnit` / `sub_005DEF80_MonAiWalkToUnitStop` / `sub_005DED40_MonAiWalkToUnitType13` / `sub_005DECA0_MonAiWalkToUnitOrZero` | walk to a unit | I |
 | `0x005DED20` / `0x005DED00` | `sub_005DED20_MonAiRunToUnit` / `sub_005DED00_MonAiRunToUnitFlags` | run to a unit | I |
 | `0x005DED90` / `0x005DEDE0` / `0x005DEE50` | `sub_005DED90_MonAiWalkToPoint` / `sub_005DEDE0_MonAiRunToPoint` / `sub_005DEE50_MonAiWalkToPointOrStop` | to a point | I |
-| `0x005DE200` / `0x005DF400` | `sub_005DE200_MonAiWanderRing` / `sub_005DF400_MonAiWanderRingDirect` | a ring point around the unit | C (map, 0x005DE200) / I |
+| `0x005DE200` / `0x005DF400` | `sub_005DE200_MonAiWanderRing` / `sub_005DF400_MonAiWanderRingDirect` | a ring point around the unit | I (map `[C]` for 0x005DE200, § 12) / I |
 | `0x005DF530` / `0x005DF680` | `sub_005DF530_MonAiWanderNearUnit` / `sub_005DF680_MonAiRunNearUnit` | a ring point around another unit | I |
-| `0x005DF7D0` | `sub_005DF7D0_MonAiWalkToUnitType56` | walk to a unit with a drawn path type | C (map) |
-| `0x005DEFE0` | `sub_005DEFE0_MonAiStepAway` | a point away from a unit | C (map) |
+| `0x005DF7D0` | `sub_005DF7D0_MonAiWalkToUnitType56` | walk to a unit with a drawn path type | I (map `[C]`, § 12) |
+| `0x005DEFE0` | `sub_005DEFE0_MonAiStepAway` | a point away from a unit | I (map `[C]`, § 12) |
 | `0x005DE190` / `0x005A6260` | `sub_005DE190_MonAiPathOverride` / `sub_005A6260_AiPathOverrideSet` | the one-shot override | I |
 | `0x005A63F0` / `0x005A6290` | `sub_005A63F0_MonMovePlan` / `sub_005A6290_MonPathPlanType` | the command's plan | I |
 | `0x00649070` / `0x006490E0` | `sub_00649070_PathSetStopDist` / `sub_006490E0_PathSetByte94` | path `+0x93`, `+0x94` | I |
@@ -254,7 +254,7 @@ flowchart TD
 - [C] The row address map (states 0–9, 13–17; `AI` over the s16 range) matches the emulation in all 554 cases; the
   control without the upper bound fails all 143 cases that separate it. (run:2026-10-27-ai-emu, `entry`)
 - [I] **The row** `{+0 searchKind, +4 init, +8 think, +C alt}` (`MonAiRow`). The stock table (`ai-rows.txt`): kinds 0
-  (26 rows), 1 (104), 2 (16), 4 (1), 5 (1); 21 rows with an `init`, 14 with an `alt`; 147 distinct think functions,
+  (26 rows), 1 (104), 2 (16), 4 (1), 5 (1); 19 rows with an `init`, 11 with an `alt` (`ai-rows.txt`, `ROW` lines; the state rows add 3 and 1); 147 distinct think functions,
   `0x005EB970` shared by rows 106 `ShadowMaster` and 143 `ShadowMasterNoInit`. Row 0 (`None`) is a bare `ret 4`
   (0x005B0CC0); row 1 (`Idle`) and state row 1 run `sub_005B0CD0_AiIdle`: with a room, `MonAiIdle(200)` (0x005B0CE0).
   The row order is `monai.txt`'s: its 148 data rows match the 148 table rows, and the 734 MonStats rows name 146 of
@@ -488,8 +488,10 @@ flowchart TD
   fn:sub_00679ED0_PathPlanGreedyNear@0x00679ED0, fn:sub_00679F70_PathPlanOnePoint@0x00679F70,
   fn:sub_0067B850_PathPlanType1@0x0067B850, fn:sub_0067C2D0_PathPlanType15@0x0067C2D0, fn:sub_0067AD00_PathPlanSearch@0x0067AD00,
   fn:sub_00649760_PathPlanStraight@0x00649760)
-- [I] **Whether the planner draws.** `RngCallGraph` over the 17 planner entries and `PathPlan` (`rngcg-planfuncs.txt`,
-  115 functions, one indirect call: `PathPlan`'s own table call 0x00649BAE) finds four RNG functions: the random walk
+- [I] **Whether the planner draws.** `RngCallGraph` with 8 roots (`rngcg-planfuncs.txt`): `PathPlan` and the seven distinct
+  functions of the `g_PathPlanFuncs` slots for types 0–2, 5–9, 13, 15 and 16 (`ai-tables.txt`, `PF` lines; slots 4, 10
+  and 14 are 0). The slots of types 3, 11 and 12 (0x00679E50, 0x00679FD0, 0x00679E60), which no AI path requests
+  (§ 8), are not roots and their draws are unfollowed. The graph reaches 115 functions, one indirect call: `PathPlan`'s own table call 0x00649BAE) finds four RNG functions: the random walk
   0x0067A240 (type 10) and 0x0067A740, 0x0067A690, 0x0067A630 under `PathSearchRun`, which step the seed at `[ctx +
   0x36FD4]` only when `ctx+0x36FD0` is set, and `PathSearchRun` sets it, with the seed `path→unit + 0x20`, only for
   request type 16 (0x0067AB74–0x0067ABA4). The type-16 setters (0x00663E12, 0x00663EE2) have no caller and no
@@ -503,7 +505,7 @@ flowchart TD
 
 ### 9. Draws and seeds
 
-- [I] **The machinery's own draws** (`rngcg-machinery.txt`: the 92 machinery functions and the tick as roots,
+- [I] **The machinery's own draws** (`rngcg-machinery.txt`: 94 roots, the tick and 93 machinery functions,
   stopping at `MonSetMode`, `PathPlan`, `MonModeStartNeutral` and the fatal entries; 2 231 functions reached, 116
   indirect calls not followed, the AI think functions among them; fn:sub_005DE200_MonAiWanderRing@0x005DE200):
 
@@ -582,7 +584,7 @@ flowchart TD
   Scarab 71, Wraith 70, Mummy 70, Skeleton 57, CorruptArcher 57, SkeletonMage 57, Vampire 56, SkeletonBow 54, Fallen
   51, BatDemon 51); with FallenShaman (31; a leader that resurrects, and the class of the superunique Bishibosh),
   Andariel (row 34, the act I boss), NecroPet (row 67, the summon) and Hireable (row 61, the hireling): **16 AIs**,
-  44.8 % of the slots. Ranged: CorruptArcher, SkeletonBow; casters: SkeletonMage, Vampire; resurrecting:
+  44.7 % of the slots (784 of 1 753; the last three have no pool slot). Ranged: CorruptArcher, SkeletonBow; casters: SkeletonMage, Vampire; resurrecting:
   GreaterMummy, FallenShaman. Reaching 50 % takes three more (PinHead 47, ClawViper 45, Goatman 44).
 - **Batch list for P1.2 onward** (the whole table, owner question 8; 148 rows and 18 state rows, grouped by the
   think functions' address ranges and families; a proposal): **B1** rows 2–16 (0x005EFB80–0x005F1B60, act I–II pool

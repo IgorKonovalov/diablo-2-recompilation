@@ -333,3 +333,43 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   (counts recounted from the kept files, Functions-table tags); (3) the ledger row in `docs/plans/metrics.md`
   (usage "—"); (4) the review request to the architect (`python3 -I tools/backlog.py new --from reverser --to
   architect --slug "plan 0052 P1.1 review"`). No Ghidra needed for (1)–(4) except an optional re-check of 0x005B1663.
+- **2026-10-27 — P1.1 review request (reverser, static lane B, `lane/r52`, resumed after the checkpoint).** The
+  resume note's four items are done. `main` merged at `a2d31a99`; `python3 -I tools/gate.py` green (no error; the six
+  E14 warnings are in items/ and rng/ findings this lane does not touch).
+  - **Who passes `EDX` to `MonAiEntryGet`** ([ai/0001 § 3](../findings/ai/0001-machinery.md#3-the-ai-table-and-its-dispatch),
+    `[I]`): three direct calls in two functions, no dword reference (`entryget-callers.txt`). 0x005B1663
+    (`MonAiTargetByKind`) passes the stored `AiCtl.state` (`[[ctx+0x00]]`, 0x005B1655–0x005B165D), so the row kind
+    comes from the state row when the state is non-zero; 0x005B0E81 (`MonAiInit`) the current state before the store;
+    0x005B0EBE the new state. § 4's row-kind bullet and the Answer bullet carry it. `MonAiInit`'s `< 18` test is
+    signed: a negative state would index below the state rows; no immediate caller passes one, five register callers
+    stay unresolved.
+  - **Review-fixes pass** (rules 1–15 over the lane's diff; corrections carried into each section that repeats them):
+    rule 2 recounts from kept files: the setters of `AiCtl.state` were "7 calls pass a register" and are 21 immediate
+    and 12 register calls (`aiinit-pushes.txt`, `aiinit-regstates.txt`), adding the curse path `CurseApplyCb` →
+    0x005C34B0 (states 10, 12, 11 by `auratargetstate` 23, 27, 56; new row `sub_005C34B0_CurseSetAiState`, I) and the
+    state-0 returns of five state-row functions and three other sites; the table rows with an `init`/`alt` were "21 / 14" and are 19 / 11
+    (`ai-rows.txt`, as MonAI.md has them); the machinery RNG graph has 94 roots, not "92 and the tick"; the planner
+    graph has 8 roots, not "the 17 entries" (the slots of types 3, 11, 12 are not roots and are written as unfollowed,
+    rule 9; no AI path requests them); the tier share is 44.7 %, not 44.8 % (784 of 1 753); "66 cancel" now has its
+    kept output (`aicancel-pushes.txt`). Rule 14: the five emulated maps' Functions-table tags read "I (map `[C]`, § 12)"
+    to match `re/symbols.csv` (the emulation raises no row). Rule 7: two W1 lines anchored. Rules 5 and 3: no address or
+    name of the lane's 85 `re/symbols.csv` rows collides with `main`'s after the merge.
+  - **Kept outputs:** six new files under `workspace/logs/r52/` (`entryget-callers.txt`, `entryget-windows.txt`,
+    `aiinit-pushes.txt`, `aiinit-windows.txt`, `aiinit-regstates.txt`, `aicancel-pushes.txt`), from
+    `tools/sweep_rbs3.py` (`callers`, `window`, `pushes`); manifest 46 lines, `sha256sum -c` passes from that directory.
+  - **Backlog:** [archivist](../backlog/2026-10-27-reverser-archivist-monai-second-table-named-by-ai-0001.md) (link
+    MonAI.md's second table and its open question to ai/0001 § 3; the survey reads the state rows, ruling (e));
+    the [review request](../backlog/2026-10-27-reverser-architect-plan-0052-p1-1-review.md).
+  - **To rule on.** (1) The tier proposal (16 AIs, § 13). (2) The batch list for P1.2 onward (§ 13; the architect's
+    revision for question 8 was due at this review). (3) The boundary (§ 13: the command at `MonSetMode`, the path
+    plan exit, the catalogue's action helpers). (4) **The injected-logger ADR is not needed** (owner question 3 asked
+    for it only if capped per-event breakpoints cannot keep the logs bounded). The case, from ai/0001 § 13: the AI
+    runs once per AI event, not every frame (§§ 1–2: kind-2 events at `T + aidel`, 10–25 frames when idle, or a mode
+    end), so one decision is 4–5 lines (9 at most: entry, search result, command, plan exit, exit seed), and the
+    draws of the forced-target and state-146 tests fall inside the entry and exit seeds and need no line. About 15–60
+    events a second near one player, uncapped 10 000–20 000 lines a minute; with ADR-0014's room filter and a cap of
+    200 decisions per AI row and 3 000 per session, at most about 15 000 lines per session, the size of plan 0045's
+    runs (13 335 missile-frame lines in one). The path planner draws nothing for the AI's types (§ 8), so no line
+    inside the planner is needed. What would change the answer: a P2 case that needs every frame of every monster
+    (that is ADR-0022's frame window, a separate question) or a think function that loops over many units with a draw
+    each, which the catalogue would find. All of this is an estimate (`[I]`), from the static reading.
