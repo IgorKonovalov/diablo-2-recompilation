@@ -1011,6 +1011,13 @@ built by `python3 -I tools/merc_saves.py workspace/merged/data/global/excel <out
   and `merc_exp`. The builder refuses an `Id` with no row of the save's `Version` (100 expansion, 0 classic), a seed
   of 0 (the parser, after save/0001, reads a mercenary item list only when the seed is non-zero), and a name id past
   the row's `NameLast` (string index of `NameLast` − string index of `NameFirst`, [Hireling § Name range](../tables/Hireling.md#interpretation-notes)).
+- `[I]` **Two opt-in test-state keys** (plan 0038 batch H1b, backlog 2026-10-27; `MercTest`, `KeysTest`), both
+  default off and both states no stock builder makes: `"name_unchecked": true` on the `merc` object writes any u16
+  name id as given, past the row's `NameLast` too (for the reader's reset of such a name,
+  [save/0001](../findings/save/0001-d2s-io.md#plan-0038-batch-h1b-run2026-10-27-sweep-d2s-play)); `"lone_follower": true` on
+  an item writes a group follower whose head is absent (for example `"item_stats": {"49": 10}`, `fire-max` without
+  `fire-min`) as an entry of its own, its 9-bit id then its own `Save Bits` value, where the builder otherwise refuses
+  it (`stat 49 without its group head 48`). A run that uses either records it as a forced state.
 - `[I]` In an expansion save the mercenary's items go after `jf` as an item list (`JM`, count, records) with their
   `"equip"` body slots, the hand items last as in the player's list (save/0001 § 6); the corpse list and everything
   from `kf` on are kept from the base. A classic save has no `jf`, so a classic recipe takes no mercenary items.

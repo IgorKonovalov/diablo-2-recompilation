@@ -13,6 +13,11 @@ Usage:
                                                        delay/perdelay cells; the rate stats and their users
   python3 -I tools/anim_survey.py monseq   <root>      per monseq sequence: rows, modes, frames, event frames, users
                                                        (MonStats Sk<k>seq), and each user's record frames
+  python3 -I tools/anim_survey.py ratemin  <root>      the stock sources writing a rate-bonus stat (93, 96, 99, 102,
+                                                       105) and their lowest values (anim/0002 open question 3)
+  python3 -I tools/anim_survey.py twoframe <root>      the two-frame S1-S4 records with an event, and the MonStats
+                                                       rows whose Code names them: class, m<mode>, <mode>mv,
+                                                       Velocity, the derived walk base (plan 0050 P1.2 review)
   python3 -I tools/anim_survey.py summary  <root>      the counts of every section only
 
 <root> is a merged data tree (workspace/merged): the tables come from <root>/data/global/excel, the records from
@@ -466,8 +471,150 @@ def sec_monseq(d):
     return out, kv
 
 
+RATE_BONUS = (("item_fasterattackrate", 120), ("item_fastermovevelocity", 150), ("item_fastergethitrate", 120),
+              ("item_fasterblockrate", 120), ("item_fastercastrate", 120))
+
+
+def sec_ratemin(d):
+    """The stock sources that write a rate-bonus stat (93, 96, 99, 102, 105) and their lowest values.
+
+    findings/anim/0002 sections 2 and 3.1-3.2: the factor goes negative (the wrap to the cap) for FHR and FBR at
+    s <= -36 and for FCR (and FBR under holyshield) at s <= -55; s = -k divides by zero. Sources: the property blocks
+    of tools/prop_survey.py SOURCES, cubemain mod 1..5, monprop prop1..6 (all three difficulties), Skills
+    aurastat1..6 / passivestat1..5, States stat, Misc stat1..3 and ItemStatCost op stat1..3."""
+    import prop_survey as ps
+    out, kv = [], collections.OrderedDict()
+    pd = ps.Data(d.excel)
+    names = [s for s, _k in RATE_BONUS]
+    codes = {}   # property code (lower case) -> the rate stats its slots write
+    for i, c in enumerate(pd.pcode):
+        w = [pd.stat(s) for _f, s, _st, _v in pd.slots(i) if pd.stat(s) in names]
+        if w:
+            codes[c.lower()] = w
+    out.append("property codes writing a rate stat: %s" % ", ".join("%s->%s" % (c, "/".join(v))
+                                                                    for c, v in sorted(codes.items())))
+    blocks = collections.defaultdict(list)   # stat -> [(source, row, code, min, max)]
+    for name in pd.uses:
+        for r, ok, bl in pd.uses[name]:
+            for _k, code, _par, lo, hi in bl:
+                for s in codes.get(code.lower(), []):
+                    blocks[s].append((name if ok else name + "(not live)", r, code, lo, hi))
+    cells, n = ps.txt_cells(d.excel, "cubemain")
+    for r in range(n):
+        for k in range(1, 6):
+            for s in codes.get(cells["mod %d" % k][r].lower(), []):
+                blocks[s].append(("cubemain", r, cells["mod %d" % k][r], cells["mod %d min" % k][r],
+                                  cells["mod %d max" % k][r]))
+    cells, n = ps.txt_cells(d.excel, "monprop")
+    for r in range(n):
+        for suf in ("", " (N)", " (H)"):
+            for k in range(1, 7):
+                c = cells["prop%d%s" % (k, suf)][r]
+                for s in codes.get(c.lower(), []):
+                    blocks[s].append(("monprop" + suf, r, c, cells["min%d%s" % (k, suf)][r],
+                                      cells["max%d%s" % (k, suf)][r]))
+    other = collections.Counter()
+    sk = d.t["skills"]
+    for i, r in enumerate(sk.rec):
+        for col in ["aurastat%d" % k for k in range(1, 7)] + ["passivestat%d" % k for k in range(1, 6)]:
+            if not sk.blank(i, col) and d.stats[r[col]] in names:
+                other["skills"] += 1
+    st = d.t["states"]
+    other["states"] = sum(1 for i, r in enumerate(st.rec) if not st.blank(i, "stat") and d.stats[r["stat"]] in names)
+    cells, n = ps.txt_cells(d.excel, "misc")
+    other["misc"] = sum(1 for r in range(n) for k in (1, 2, 3) if cells["stat%d" % k][r] in names)
+    isc = d.t["itemstatcost"]
+    other["isc_op"] = sum(1 for i in range(len(isc.rec)) for k in (1, 2, 3)
+                          if isc.txt[i].get("op stat%d" % k, "") in names)
+    out.append("cells naming a rate stat outside the property blocks: %s" % ", ".join(
+        "%s %d" % (k, other[k]) for k in ("skills", "states", "misc", "isc_op")))
+    lowest_all = None
+    neg = reach = nonint_all = 0
+    for s, k in RATE_BONUS:
+        b = blocks[s]
+        vals = [int(v) for _n, _r, _c, lo, hi in b for v in (lo, hi) if ps.is_int(v.strip())]
+        nonint = sum(1 for _n, _r, _c, lo, hi in b for v in (lo, hi) if not ps.is_int(v.strip()))
+        nonint_all += nonint
+        lo = min(vals) if vals else 0
+        lowest_all = lo if lowest_all is None else min(lowest_all, lo)
+        neg += sum(1 for v in vals if v < 0)
+        thr = -55 if s == "item_fastercastrate" else -36
+        reach += int(lo <= thr)
+        per = collections.Counter(x[0] for x in b)
+        out.append("  stat %-24s (%3d, k %3d): blocks %3d (%s); min..max %d..%d; negative cells %d; non-integer %d; "
+                   "factor < 0 needs s <= %d, divide fault s = -%d" % (
+                       s, d.stats.index(s), k, len(b), ", ".join("%s %d" % x for x in sorted(per.items())), lo,
+                       max(vals) if vals else 0, sum(1 for v in vals if v < 0), nonint, thr, k))
+        for x in sorted(b, key=lambda x: (min(int(v) for v in x[3:] if ps.is_int(v.strip()))
+                                          if any(ps.is_int(v.strip()) for v in x[3:]) else 0))[:3]:
+            out.append("      lowest: %s row %d %s %s..%s" % x)
+    kv["rate_src_blocks"] = sum(len(v) for v in blocks.values())
+    kv["rate_src_other_cells"] = sum(other.values())
+    kv["rate_src_negative"] = neg
+    kv["rate_src_nonint"] = nonint_all
+    kv["rate_src_lowest"] = lowest_all or 0
+    kv["rate_src_reach_wrap"] = reach
+    return out, kv
+
+
+def sec_twoframe(d):
+    """The two-frame S1-S4 records with a frame event, and the MonStats rows whose Code names one.
+
+    Class < 410 takes the moving branch in S1-S4 (findings/anim/0002 section 1, the monster mode-class table);
+    the walk base is MonStats +0x36 (section 3.5): the record (Code of BaseId, WL, BaseW)'s speed, scaled by
+    Velocity(i) / Velocity(BaseId) when BaseId != i and Velocity(BaseId) > 0."""
+    out, kv = [], collections.OrderedDict()
+    ms, m2 = d.t["monstats"], d.t["monstats2"]
+    ids = [r["Id"] for r in ms.txt]
+    smodes = [k for k, m in enumerate(MON_MODES) if m in ("S1", "S2", "S3", "S4")]
+    recs = []
+    for r in d.recs:
+        if r.frames == 2 and any(True for _f, _v in animdata.events_of(r)) and r.name[2:4] in \
+                [d.mmode_tok[k].upper() for k in smodes]:
+            recs.append(r)
+    recs.sort(key=lambda r: r.name)
+    out.append("two-frame S1-S4 records with an event: %d: %s" % (len(recs), ", ".join(
+        "%s(spd %d, events %s)" % (r.name, r.speed, " ".join("%d:%d" % e for e in animdata.events_of(r)))
+        for r in recs)))
+    toks = sorted({r.name[:2] for r in recs})
+    rows = classic = classic_flag = 0
+    for i, r in enumerate(ms.rec):
+        if r["Code"].upper() not in toks or ms.blank(i, "MonStatsEx"):
+            continue
+        rows += 1
+        x = m2.rec[r["MonStatsEx"]]
+        b = r["BaseId"] if 0 <= r["BaseId"] < len(ms.rec) else i
+        bx = m2.rec[ms.rec[b]["MonStatsEx"]]
+        wl = d.rec(ms.rec[b]["Code"] + d.mmode_tok[MON_MODES.index("WL")] + (bx["BaseW"] or "hth"))
+        if wl is None:
+            walk = "no WL record"
+        else:
+            v_i, v_b = r["Velocity"], ms.rec[b]["Velocity"]
+            w = (v_i * wl.speed) // v_b if (b != i and v_b > 0) else wl.speed
+            walk = "%d (%s spd %d%s)" % (min(w, 0x7FFF), wl.name, wl.speed,
+                                         ", x %d/%d" % (v_i, v_b) if (b != i and v_b > 0) else "")
+        named = []
+        for k in smodes:
+            m = MON_MODES[k]
+            nm = (r["Code"] + d.mmode_tok[k] + (x["BaseW"] or "hth")).upper()
+            if any(nm == q.name for q in recs):
+                named.append("%s m%s %d %smv %d" % (nm, m, x["m" + m], m, x.get(m + "mv", 0)))
+                if i < 410 and x["m" + m]:
+                    classic_flag += 1
+        classic += int(i < 410)
+        out.append("  %3d %-18s Code %-3s class %s 410; base %3d %-18s; Velocity %2d Run %2d; npc %d; walk base %s; "
+                   "%s" % (i, ids[i], r["Code"], "<" if i < 410 else ">=", b, ids[b], r["Velocity"], r["Run"],
+                           int(bool(r["npc"])), walk, "; ".join(named) or "no S1-S4 record of the list"))
+    kv["twoframe_records"] = len(recs)
+    kv["twoframe_rows"] = rows
+    kv["twoframe_rows_classic"] = classic
+    kv["twoframe_classic_flagged"] = classic_flag
+    return out, kv
+
+
 SECTIONS = collections.OrderedDict([("players", sec_players), ("monsters", sec_monsters), ("objects", sec_objects),
-                                    ("skills", sec_skills), ("monseq", sec_monseq)])
+                                    ("skills", sec_skills), ("monseq", sec_monseq), ("ratemin", sec_ratemin),
+                                    ("twoframe", sec_twoframe)])
 
 
 def main(argv):

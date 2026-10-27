@@ -450,6 +450,24 @@ class KeysTest(Scratch):
             with self.subTest(spec=spec), self.assertRaises(d2s.D2sError):
                 self.build(dict(stats={"level": 1}, items=[dict(spec, store="inventory", x=0, y=0)]))
 
+    def test_lone_follower_test_state(self):
+        """backlog 2026-10-27 (plan 0038 H1b row 124): a group follower without its head (49 fire-max, no 48
+        fire-min) is refused by default and written alone, with its own Save Bits, under "lone_follower"."""
+        spec = dict(code="cap", store="inventory", x=0, y=0, item_stats={"49": 10})
+        with self.assertRaises(d2s.D2sError) as cm:
+            self.build(dict(stats={"level": 1}, items=[spec]))
+        self.assertIn("stat 49 without its group head 48", str(cm.exception))
+        b, f = self.build(dict(stats={"level": 1}, items=[dict(spec, lone_follower=True)]))
+        cap = [i for i in f["items"]["items"] if i.get("code", "").strip() == "cap"][0]
+        self.assertEqual(cap["props"], [(49, None, [10])])
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(d2s.roundtrip(EXCEL, [self.path("out.d2s")]), 0)
+        # with the head present the key changes nothing: one grouped entry, as without it
+        _b, f2 = self.build(dict(stats={"level": 1}, items=[dict(spec, item_stats={"48": 5, "49": 10},
+                                                                  lone_follower=True)]))
+        cap2 = [i for i in f2["items"]["items"] if i.get("code", "").strip() == "cap"][0]
+        self.assertEqual(cap2["props"], [(48, None, [5, 10])])
+
     def test_belt_fill_columns(self):
         t = tables()
         cols = ["rvl", "hp5", "mp5", "rvs"]
@@ -830,6 +848,18 @@ class MercTest(Scratch):
         self.refused(dict(self.MERC, name=41), "name 41 outside 0 .. 40")
         self.refused(dict(self.MERC, items=[dict(code="cap", store="inventory", x=0, y=0)]), "equip")
         self.refused(dict(self.MERC, level=3), "unknown key")
+
+    def test_name_unchecked_test_state(self):
+        """backlog 2026-10-27 (plan 0038 H1b row 48): "name_unchecked" writes a name id past the row's range as
+        given; it is still refused outside the u16, and the default stays the range check."""
+        out, b, f = self.build(dict(self.MERC, name=41, name_unchecked=True))
+        self.assertEqual(f["header"]["merc_name"], 41)
+        self.assertEqual(struct.unpack_from("<H", b, 0xB7)[0], 41)
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(d2s.roundtrip(EXCEL, [out]), 0)
+        self.refused(dict(self.MERC, name=0x10000, name_unchecked=True), "u16")
+        self.refused(dict(self.MERC, name=-1, name_unchecked=True), "u16")
+        self.refused(dict(self.MERC, name=41, name_unchecked=False), "name 41 outside 0 .. 40")
 
 
 class ExcelEditTest(Scratch):

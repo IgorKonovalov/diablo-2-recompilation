@@ -918,7 +918,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - The orchestrator's count note on skills/0001 § 17 and 0003 § 15 answered: "1 269 do / 1 142 start" are the
     `SDO.seed`/`SST.seed` totals over 18 and 15 rows, not the eleven rows' (947/828); corrected in both.
   - Review request: [backlog](../backlog/archive/2026-10-27-reverser-architect-review-lane-p45k-plan-0045-phase-2-part.md);
-    table links for the archivist: [backlog](../backlog/2026-10-27-reverser-archivist-plan-0045-phase-2-part-2-table-readings.md).
+    table links for the archivist: [backlog](../backlog/archive/2026-10-27-reverser-archivist-plan-0045-phase-2-part-2-table-readings.md).
 - **2026-10-27 — `lane/p45k` reviewed (architect): accept with fixes. Phase 2 is done.** `main` merged first
   (`4638beca`, no conflict; `backlog.py archive` clean). Checked against the kept outputs, objdump only (no harness, no
   Ghidra): `tools/skills.py` hashes `c09f9419…`, `tools/gdb/skills.py` `e28d1344…`; its 12 tests pass;

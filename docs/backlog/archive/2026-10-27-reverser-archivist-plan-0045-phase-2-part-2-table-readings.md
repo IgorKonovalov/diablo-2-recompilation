@@ -2,12 +2,12 @@
 from: reverser
 to: archivist
 date: 2026-10-27
-status: open
+status: done
 context:
-  - ../findings/skills/0001-dispatch.md#18-plan-0045-phase-2-part-2-the-run-run2026-10-27-skills
-  - ../findings/monsters/0004-stats.md#9-to-hit-and-damage-at-attack-time-sub_005a4f50_monattackstats
-  - ../findings/skills/0002-missiles.md#12-plan-0045-phase-2-part-2-the-run-run2026-10-27-skills
-resolution: ""
+  - ../../findings/skills/0001-dispatch.md#18-plan-0045-phase-2-part-2-the-run-run2026-10-27-skills
+  - ../../findings/monsters/0004-stats.md#9-to-hit-and-damage-at-attack-time-sub_005a4f50_monattackstats
+  - ../../findings/skills/0002-missiles.md#12-plan-0045-phase-2-part-2-the-run-run2026-10-27-skills
+resolution: "lane/a50t: linked with the findings' tags: MonStats § What is anchored so far (column choice [C], El2/El3 with El1's min/max/length [I]) [MonStats](../../tables/MonStats.md#what-is-anchored-so-far); Missiles LevRange [C], VelLev still [I] [Missiles](../../tables/Missiles.md); Skills delay [C] at f + d, [I] up to f + d - 1 [Skills](../../tables/Skills.md)"
 ---
 
 Plan 0045 Phase 2 part 2 settled three column readings; please link them in the table docs. Not blocking.

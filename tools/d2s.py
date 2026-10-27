@@ -78,7 +78,9 @@ build recipe (JSON object; every key optional; example tools/d2s_recipes/lightso
                property list: a filled item's own stats are not copied into it, and no runeword is formed
                (flags bit 26 stays clear), whatever the runes; the game's insert path does that, not the builder
                "item_stats": {stat id: value} adds entries to an extended item's property list (plan 0030
-               Phase 2: stat 356 on Wirt's Leg);
+               Phase 2: stat 356 on Wirt's Leg); "lone_follower": true (plan 0038 H1b, test state) writes a
+               group follower whose head is absent (e.g. item_stats {"49": 10}, fire-max without fire-min) as an
+               entry of its own, its id and its own Save Bits, instead of refusing it;
                "dur": N (plan 0043 Phase 2, test state) writes current durability N (0..the full maximum) for
                a damaged item; "broken": true (plan 0043 Phase 2b, test state, with "dur": 0) sets flags bit 8;
                {"code": ..., "crafted": [name1, name2]} (plan 0043 Phase 2b) is a crafted item (quality 8) built
@@ -109,7 +111,9 @@ build recipe (JSON object; every key optional; example tools/d2s_recipes/lightso
                hireling id, experience; docs/formats/d2s.md) and, in an expansion save, the mercenary item list after
                'jf' (items placed with "equip" only; hand items written last). The Id must have a row of the save's
                Version (100 expansion, 0 classic); name runs 0 .. (string index of NameLast - of NameFirst) of that
-               row; seed 0 is refused (it means no mercenary). A classic save takes no merc items
+               row; seed 0 is refused (it means no mercenary). A classic save takes no merc items.
+               Test-state key (plan 0038 H1b): "name_unchecked": true writes any u16 name id, past the row's
+               range too
 Unique properties come from the row's prop/par/min/max through properties.txt (funcs 1, 2, 3, 7, 8,
 11, 15, 16, 17, 19, 21; any other func is an error). Armor defense = maxac (+1 with enhanced defense),
 durability = the base value, current = the full maximum; flags = identified | bit 23 (| simple).
@@ -1103,15 +1107,21 @@ def unique_stats(tables, row, pick="max", base=None):
     return out
 
 
-def props_list(stats):
+def props_list(stats, lone_follower=False):
     """(id, param) -> value map to a property list in ascending (id, param) order, the order of every
-    sample list; a group head takes its followers' values and the followers get no entry."""
+    sample list; a group head takes its followers' values and the followers get no entry. A follower without
+    its head is refused, unless lone_follower (the test-state item key "lone_follower": true): then it gets an
+    entry of its own, its id and its own Save Bits, which no stock builder writes."""
     followers = {h + k: h for h, n in GROUPS.items() for k in range(1, n)}
     out = []
     for (sid, param), v in sorted(stats.items(), key=lambda kv: (kv[0][0], kv[0][1] or 0)):
         if sid in followers:
             if (followers[sid], None) not in stats:
-                raise D2sError("stat %d without its group head %d" % (sid, followers[sid]))
+                if lone_follower:
+                    out.append((sid, param, [v]))
+                    continue
+                raise D2sError("stat %d without its group head %d (give \"lone_follower\": true to write it "
+                               "alone, a test state)" % (sid, followers[sid]))
             continue
         vals = [v] + [stats.get((sid + k, None), 0) for k in range(1, GROUPS.get(sid, 1))]
         out.append((sid, param, vals))
@@ -1313,7 +1323,9 @@ def new_item(t, spec, rng):
         # test-state key (plan 0030 Phase 2): extra entries of the item's property list, {stat id: value}, e.g. stat
         # 356 (questitemdifficulty) on an extended quest item such as Wirt's Leg
         stats[(int(k), None)] = v
-    it["props"] = props_list(stats)
+    # test-state key (backlog 2026-10-27, plan 0038 batch H1b row 124): a group follower (e.g. 49 fire-max) with no
+    # head is written alone, with its own id and Save Bits, so the reader meets a follower read by itself
+    it["props"] = props_list(stats, lone_follower=bool(spec.get("lone_follower")))
     if kind == "armor":
         # base defense: maxac, and maxac + 1 when the item has enhanced defense (stat 16), as every
         # sample with stat 16 stores it (Hand of Broc gloves 4 of 2..3, rare chain mail 76 of 72..75)
@@ -1551,9 +1563,10 @@ def set_merc(t, m, b, expansion, rng):
     """Write the mercenary header (0xAF..0xBE, docs/formats/d2s.md) from the recipe's "merc" object and return its
     item groups. id: Hireling.txt Id, which must have a row of the save's version (100 expansion, 0 classic); seed:
     non-zero (a zero seed means no mercenary, and an expansion save then has no mercenary item list); name: the name
-    id as stored, 0 .. string index of NameLast - string index of NameFirst; exp: u32; dead: bool (flags bit 16);
+    id as stored, 0 .. string index of NameLast - string index of NameFirst (any u16 with the test-state key
+    "name_unchecked": true); exp: u32; dead: bool (flags bit 16);
     items: item specs placed with "equip" only (a classic save has no mercenary item list, so none there)."""
-    unknown = set(m) - {"id", "seed", "name", "exp", "dead", "items"}
+    unknown = set(m) - {"id", "seed", "name", "name_unchecked", "exp", "dead", "items"}
     if unknown:
         raise D2sError("merc: unknown key(s) %s" % ", ".join(sorted(unknown)))
     version = "100" if expansion else "0"
@@ -1565,7 +1578,12 @@ def set_merc(t, m, b, expansion, rng):
         raise D2sError("merc: seed must be 1 .. 2^32-1 (0 means no mercenary)")
     first, last = hireling_names(t, rows[0])
     name = m.get("name", 0)
-    if not 0 <= name <= last - first:
+    if m.get("name_unchecked"):
+        # test-state key (backlog 2026-10-27, plan 0038 batch H1b row 48): the name id is written as given, past
+        # the row's NameLast too, so the reader's reset of such a name can be met; it must still fit the u16
+        if not isinstance(name, int) or not 0 <= name <= 0xFFFF:
+            raise D2sError("merc: name %r outside the u16 0 .. 65535" % (name,))
+    elif not 0 <= name <= last - first:
         raise D2sError("merc: name %r outside 0 .. %d (%s .. %s)" % (name, last - first, rows[0]["NameFirst"],
                                                                      rows[0]["NameLast"]))
     exp = m.get("exp", 0)
