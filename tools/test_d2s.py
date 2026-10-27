@@ -354,6 +354,12 @@ RECIPE_BASES = {
     "quest-h6e2-questboxh-a4": (BASE_X, "54ac3e3dee32ee1c207f89c1a6405250016641cf4735e5e9f9bc00f508bb238b"),
     "quest-h6e2-questmsfn-a4": (BASE_X, "1b6796d678b1c05b7f54ec26c2fd66258508effcbfe9cb40a185d38145846a52"),
     "h3brare": (BASE_X, "ce57d8f76eaabcad6bdb6eea7b06082ae400ae8c01be85404ec11dfa9cf86317"),  # run:2026-10-27-sweep-data-load
+    "quest-h6e1-give": (BASE_X, "3668f330864628d73c64277ed22326df2eb829eccb6eacb491160d80a9fa3cca"),  # run:2026-10-27-sweep-quest-npc
+    "quest-h6e1-imb5": (BASE_X, "f4aa33741cea53bfc1f48bf5387b83351fff8bc80308eee892f378fb4c601f9f"),
+    "quest-h6e1-imb6": (BASE_X, "5bf8e6702cc54bb2fbc5ca6cee87de97a215d0a1acf1cc9d93a7ad46ce6c77c5"),
+    "quest-h6e1-svca": (BASE_X, "7dd9f00355fbf41af37e03d2c2f111f4d510abdc6930a2f3a83177165afab47f"),
+    "quest-h6e1-svcb": (BASE_X, "636db82b21cd5eb7e1c308fadf005735a02c278af531abcf3bfa2ab1d0de4058"),
+    "quest-h6e1-svcc": (BASE_X, "406d719aa7cf2db52cf204b617f01f6e6ea173b435f035d5e0e81760080de10c"),
 }
 
 _TABLES = []
