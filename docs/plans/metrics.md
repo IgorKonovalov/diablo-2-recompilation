@@ -271,6 +271,8 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-10-25 | `lane/h4a` (earlier parts, to the second pause) | 0038 H4a | reverser-harness | ~620 000 | 325 | 190 | slot 1 | — (on the resume row) | — (on the resume row) |
 | 2026-10-25 | `lane/h4a` (resume: chaos7 and write-up) | 0038 H4a | reverser-harness | 240 197 | 141 | 64 | slot 1 | accept with fixes (rulings: the De Seis and gate shortfalls a `d-owner` addendum candidate, not routed; the chained-model mismatches to a reverser entry; stats 14 and 13 raised whole by the class-312 piece) | 4: overclaim 1, miscount 1, omission 1, stale cross-reference 1 (special 54 raised on r = 0 alone; pool 12's "six" boss classes for five; the `(H)` half of pool 12 and qd 48 unstated; monsters/0004's H4b class-312 remainder left unmarked) |
 | 2026-10-25 | `lane/h4a` review | 0038 H4a | architect-review | — | — | — | — (static, no Ghidra) | gave accept with fixes | — (on the lane row; ledger raised 15, in part 9, shortfall 8; totals 1 526 unchanged) |
+| 2026-10-25 | `lane/p45h` (Phase 2, three parts to the 10-25 pause) | 0045 P2 | reverser-harness | ~503 600 + the 10-25 part (not recorded) | ~164 + | ~84 + | slot 2 | — (on the write-up row) | — (on the write-up row) |
+| 2026-10-27 | `lane/p45h` (Phase 2 part 1 write-up) | 0045 P2 | reverser-harness | — (orchestrator to fill) | — | — | slot 2 idle, no Ghidra | — (review requested) | — |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not

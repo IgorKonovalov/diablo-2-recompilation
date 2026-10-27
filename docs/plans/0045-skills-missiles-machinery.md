@@ -778,3 +778,19 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   Kick/LHT/LHS): decide whether a second run (slot 1 too, a walking Blaze, a `spike` monster area, a handler model)
   precedes the review; (4) gate, the review request (`tools/backlog.py new --from reverser --to architect`), the
   ledger row.
+- **2026-10-27 — Phase 2 part 1 written up, review requested (reverser, `lane/p45h`).** `main` merged first (one
+  conflict, this log's 0047 link, now `done/`; backlog archive: nothing to move). No session run, no slot launched
+  (slot 2 idle, no aside), no Ghidra. Done:
+  - [skills/0001 § 17](../findings/skills/0001-dispatch.md#17-plan-0045-phase-2-the-run-run2026-10-25-skills): the
+    payment raised in part (1 334 player payments, 259 no-cost, 205 non-player; floor, refusal, blood mana, charges
+    unreached), no draw in the cost and delay steps of the checked events, the caster's chaining (3 155 of 3 459
+    pairs, 304 unattributed gaps of 1–33 steps); Answer, § 7 and § 15 notes; `SKILLS_PayCost` raised to C in
+    `re/symbols.csv` and the Functions table (review-fix 14).
+  - Review-fixes pass over skills/0001 § 17, 0002 § 11 and 0003 § 15: the RSK and C1 raises headed "raised in part",
+    with their 8 cases named as one input each and what they separate (fix 10: the C1 case separates the lead's 86 and
+    a rounded-up 3/4, not the clamps); nine unanchored `[I]` remainders given their `run:` anchor (fix 7, gate W1).
+  - **No second run before the review.** A rerun with the current checker would only add events to the seven tier-A
+    rows under 30; the other shortfalls (request refusals, handlers and state 52, `MonAttackStats`, summon seeds and
+    stats, hit ends and pierce uses, re-seed sites, C2, C4) need new models, a `CanUse` breakpoint or pilot changes.
+    Proposed as Phase 2 part 2 in the review request, for the architect's ruling.
+  - Review request: [backlog](../backlog/2026-10-27-reverser-architect-review-lane-p45h-plan-0045-phase-2-run.md).

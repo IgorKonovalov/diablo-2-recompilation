@@ -632,7 +632,7 @@ Answer's bullets, each split where the run leaves a remainder (raised in part):
   activate mark, skill and level. (fn:sub_0059FA30_MissileCreate@0x0059FA30, run:2026-10-25-skills)
 - [I] The remainder: the `VelLev` term (C2: no `spike1`–`spike4` created) and the `LevRange` term (C4: no `LevRange`
   row created), the slow-missiles scaling (no `CanSlow` row's owner slowed), the `SubLoop` loops, the 99-sub-tile
-  refusal.
+  refusal. (run:2026-10-25-skills)
 - [C] **The missile's seed** (§ 2): `SUnitCreate` steps the game seed once and the missile's seed is
   `Init(post.low)` in 31 391 of 31 391 creations (`MC.gameseed`, `MC.seed`), the game seed chaining from one creation
   of a do event to the next in 21 860 pairs. (fn:sub_00555230_SUnitCreate@0x00555230, run:2026-10-25-skills)
@@ -640,6 +640,7 @@ Answer's bullets, each split where the run leaves a remainder (raised in part):
   that takes weapon damage, none for any other row: 984 creations with one draw, 30 407 with none (`MC.owner`).
   (fn:sub_0064A850_MissileCritRoll@0x0064A850, run:2026-10-25-skills)
 - [I] The second and third draws (stat 141, the mastery's chance) are not reached: no creation drew twice.
+  (run:2026-10-25-skills)
 - [C] **The pierce count** (§ 3): from a local seed `Init(owner base stat 328)` in 1 066 creations of `Pierce` rows
   (856 with draws), the owner's and the game seeds untouched. (fn:sub_0059F940_MissilePierceCount@0x0059F940,
   run:2026-10-25-skills)
@@ -648,7 +649,7 @@ Answer's bullets, each split where the run leaves a remainder (raised in part):
   stopping (60 caps), and the position moves `(dir · ((v · 0x400) >> 6)) >> 12` on both 16.16 axes; frames left drop by
   1 per frame (13 335). (fn:sub_006502D0_PathVelocityStep@0x006502D0, fn:sub_005ADBB0_MissileDoFrame@0x005ADBB0,
   run:2026-10-25-skills)
-- [I] The floor at 0 is not reached (no velocity fell below 0).
+- [I] The floor at 0 is not reached (no velocity fell below 0). (run:2026-10-25-skills)
 - [C] **The first frame** (P1.3's open question): each of the 493 followed missiles first runs its do function on
   the frame after its creation. (run:2026-10-25-skills)
 - [C] **A frame's seed** (§§ 4, 5): the do function of a followed frame leaves the missile's seed unchanged, except
@@ -660,6 +661,7 @@ Answer's bullets, each split where the run leaves a remainder (raised in part):
   field with its percent and critical doubling (164) and the cold and burn lengths (24) as read. (fn:MISSILE_BuildDamage@0x005A89A0,
   run:2026-10-25-skills)
 - [I] The order of the seven pairs is separated only by the 19 two-draw builds; the stat-180 entries are not checked.
+  (run:2026-10-25-skills)
 - [C] **A missed to-hit** (§ 5, case C5): `COMBAT_ToHitRoll`'s roll is the owner's next draw `low % 100` (269 rolls),
   and a failed roll returns 2 and frees the missile at that unit, a `Pierce` row having spent one pierce first: 105
   misses, 7 with a pierce left. (fn:MISSILE_HitUnit@0x005ADF10, fn:COMBAT_ToHitRoll@0x0057D9B0, run:2026-10-25-skills)

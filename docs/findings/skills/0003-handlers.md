@@ -54,8 +54,9 @@ offsets are record offsets. This batch continues [skills/0001](0001-dispatch.md)
 - [C] **The run** (§ 15, run:2026-10-25-skills, 0 mismatches): the § 5 rows with no own draws leave the caster's
   seed stepped only by their nested events' draws (11 rows at 30 events or more; five rows under 30 stay `[I]`);
   Raise Skeleton's do 31 steps the caster's seed **once** inside `0x005C4430` after the spawn (8 of 8, class 363 at
-  skill level 20; § 5's "none" corrected); the summon level is `min(max(L · 3/4 + skill level, 1), L)` (8 of 8, case
-  C1) or the given level (207); `0x005C9290` re-seeds the new missile from `Init(path x + arg)` (450 of 450), and its
+  skill level 20; § 5's "none" corrected; raised in part: one input, the level gate and class 364 unreached); the
+  summon level is `min(max(L · 3/4 + skill level, 1), L)` (8 of 8, case C1, one input: raised in part, the clamps
+  unreached) or the given level (207); `0x005C9290` re-seeds the new missile from `Init(path x + arg)` (450 of 450), and its
   path calls then step that seed (§ 9's "none" corrected; which call, `[I]`). (fn:sub_005C4430_SummonClassRoll@0x005C4430,
   fn:sub_005C49E0_SummonSetLevel@0x005C49E0, fn:sub_005C9290_MissCbReseedPathXPlusArg@0x005C9290, run:2026-10-25-skills)
 - [I] **The frame pass** (`sub_005414D0_GameRunUnitEvents`) runs the unit-event lists in this order: missiles, players,
@@ -753,28 +754,33 @@ RunList(lists->a14, every); RunList(lists->bucket[4], frame);     // fifth list 
   fn:SKILLS_SrvStart@0x0056F640, run:2026-10-25-skills)
 - [I] The same rows under the plan's 30 events: 25 Plague Javelin (26), 66 Amplify Damage (25), 68 Bone Armor (23),
   251 Fire Trauma (19), 117 Holy Shield (13); every one of their events held. (run:2026-10-25-skills)
-- [C] **Do 31's class draw** (§ 5 note, corrected 2026-10-25): in 8 of 8 Raise Skeleton casts (skill level 20, a
-  class-363 `necroskeleton` summon) the caster's seed steps exactly once between do 31's call of
+- [C] **Do 31's class draw, raised in part** (§ 5 note, corrected 2026-10-25): in 8 of 8 Raise Skeleton casts (skill
+  level 20, a class-363 `necroskeleton` summon) the caster's seed steps exactly once between do 31's call of
   `sub_005C4430_SummonClassRoll` at `0x005C4C7A` and its return at `0x005C4C7F` (`RSK0`/`RSK1`), and nowhere else in
-  the do event (`SDO.seed`). (fn:sub_005C4430_SummonClassRoll@0x005C4430, 0x005C4384, run:2026-10-25-skills)
+  the do event (`SDO.seed`). The 8 casts share one input (class 363, skill level 20), so they decide one case: an
+  exact step count, which a reading of 0 draws (§ 5 before the correction) or of 2 could not match.
+  (fn:sub_005C4430_SummonClassRoll@0x005C4430, 0x005C4384, run:2026-10-25-skills)
 - [I] The level gate (no draw at skill level 2 or less) and the class-364 path (`0x005C43D0` → `0x005C4180`'s step)
   are not reached; the roll's use (`low % 100 < Param1`, the data bytes) is not logged. (fn:sub_005C4300_SkeletonParam1Roll@0x005C4300,
   fn:sub_005C4180_SummonSetDataBytes@0x005C4180)
-- [C] **The summon's level** (§ 7, case C1 of the P1b review): `SummonSetLevel(m, 0, 20)` with an owner of level
-  L = 86 gives 84 = `min(max(86 · 3/4 + 20, 1), 86)` in 8 of 8 Raise Skeleton summons (the lead's "the caster's
-  level" would give 86); a positive `lvl` is taken as given in 207 Raven summons. (fn:sub_005C49E0_SummonSetLevel@0x005C49E0,
-  run:2026-10-25-skills)
-- [I] Its MonLvl defence and to-hit, `SummonInitStats`, and the created unit's seed are not checked.
+- [C] **The summon's level, raised in part** (§ 7, case C1 of the P1b review): `SummonSetLevel(m, 0, 20)` with an
+  owner of level L = 86 gives 84 = `min(max(86 · 3/4 + 20, 1), 86)` in 8 of 8 Raise Skeleton summons (the lead's "the
+  caster's level" would give 86); a positive `lvl` is taken as given in 207 Raven summons.
+  (fn:sub_005C49E0_SummonSetLevel@0x005C49E0, run:2026-10-25-skills)
+- [I] The 8 summons share one input (L 86, `lvl` 0, skill level 20) and decide one case. It separates the read
+  formula from the lead's 86 and from a rounded-up `3/4` (64.5 → 65 would give 85), not the clamps: neither `max(…, 1)`
+  nor `min(…, L)` binds at 84. Its MonLvl defence and to-hit, `SummonInitStats`, and the created unit's seed are not
+  checked. (run:2026-10-25-skills)
 - [C] **`0x005C9290`'s re-seed** (§ 9): the new missile's seed at the callback's `ret` lies on the stream of
   `Init(path x + arg)` (low = the word at path `+0x10` plus `+0x58`, high `0x29A`) in 450 of 450 creations, 20 steps
   past it in the 442 of Firestorm's sub-missiles and 38 in the 8 of a monster's class-195 missiles; a seed made any
   other way lies within 5 000 steps of that Init by chance with odds of about 5 000 in 2⁶⁴. (fn:sub_005C9290_MissCbReseedPathXPlusArg@0x005C9290,
   run:2026-10-25-skills)
 - [I] Which of the callback's three path calls makes the 20 or 38 steps is not read (§ 9 note). The other re-seed
-  sites of § 9 are not reached.
+  sites of § 9 are not reached. (run:2026-10-25-skills)
 - [I] **Not checked by the run** (named in the record as shortfalls): the stat-event handlers of § 3 (284 fires
   logged, oracles), state 52 (never applied), the progressive entries of § 1 (56 finisher calls, oracles), Kick, Left
-  Hand Throw and Left Hand Swing (no session).
+  Hand Throw and Left Hand Swing (no session). (run:2026-10-25-skills)
 
 ## Kept outputs
 

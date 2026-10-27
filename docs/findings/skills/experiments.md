@@ -135,6 +135,10 @@ Two readings changed by the run, both recorded in the findings: do 31's caster d
 development logs and located statically: `0x005C4300`'s inline step at `0x005C4384`), and the `0x005C9290` re-seed,
 whose new seed the callback's own path calls then step 20 or 38 times (skills/0003 § 9, the "none" corrected).
 
+The raises are in [skills/0001 § 17](0001-dispatch.md#17-plan-0045-phase-2-the-run-run2026-10-25-skills) (the
+payment, the cost and delay steps' draws, the caster's chaining), [skills/0002 § 11](0002-missiles.md#11-plan-0045-phase-2-the-run-run2026-10-25-skills)
+and [skills/0003 § 15](0003-handlers.md#15-plan-0045-phase-2-the-run-run2026-10-25-skills).
+
 
 ## run:2026-10-20-cat-emu-9a
 

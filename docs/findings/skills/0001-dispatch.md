@@ -40,6 +40,10 @@ Skills columns are named as in [Skills](../../tables/Skills.md); offsets are rec
   `minmana · 256`, the checks do not. Under `blood_mana` (state 114) it is paid from life. The payment's result is
   ignored: a cost above the unit's mana is not taken and the skill still runs. An item skill uses a charge instead.
   (fn:SKILLS_PayCost@0x0056BFE0, 0x0056F7AF, 0x0056FA7F, fn:SKILLS_ManaOk@0x00647540)
+- [C] *2026-10-27:* **The run** (§ 17, run:2026-10-25-skills, 0 mismatches), raised in part: the cost formula and
+  the players-only payment held in 1 334 player payments, 259 no-cost calls and 205 non-player calls; the payment and
+  the delay state add no draw to the caster's seed in the events checked. The floor, the refusal (so the ignored
+  result), blood mana and charges are not reached and stay `[I]`. (fn:SKILLS_PayCost@0x0056BFE0, run:2026-10-25-skills)
 - [I] **Delay**: a player whose skill has `delay` > 0 gets the timed state `skilldelay` (121) until `frame + delay`;
   while it lasts `SKILLS_CanUse` refuses every skill whose own `delay` is ≥ 1, and no other.
   (fn:SKILLS_SetDelayState@0x0056EF90, fn:SKILLS_DelayOk@0x006478F0)
@@ -170,7 +174,7 @@ code windows R1–R7; `p45b-rows.txt` `cbf9c64a…`, the stock-row values compar
 | `0x0056FC50` | `SKILLS_DoUsedSkill` | `SrvDo` of the used skill, then the periodic queue | I |
 | `0x0056F7F0` | `SKILLS_SrvDo` | `srvdofunc`, `srvmissile`, cost, ammunition, delay | I |
 | `0x0056C160` | `SKILLS_SrvManaCheck` | the server-side mana test | I |
-| `0x0056BFE0` | `SKILLS_PayCost` | mana, blood-mana life or a charge | I |
+| `0x0056BFE0` | `SKILLS_PayCost` | mana, blood-mana life or a charge (1 798 logged returns, § 17) | C |
 | `0x005D2B60` | `sub_005D2B60_BloodManaPay` | the life payment under state 114 | I |
 | `0x0056EF90` | `SKILLS_SetDelayState` | state 121 until `frame + delay` | I |
 | `0x0056F020` | `sub_0056F020_SkillDelayFromCalc` | evaluates `delay` and sets the state | I |
@@ -491,6 +495,8 @@ return 0;
   (fn:sub_005D2B60_BloodManaPay@0x005D2B60, tbl:Skills.txt:Param5, tbl:States.txt:state)
 - [I] **Charges.** An item skill's use calls `sub_0056BEC0_UseCharge` (items/0011: charges −1, no draw).
   (fn:sub_0056BEC0_UseCharge@0x0056BEC0)
+- *2026-10-27:* the cost and the players-only branch are raised in § 17 (run:2026-10-25-skills); the floor, the
+  refusal, blood mana and charges are not reached there and stay as above.
 
 ### 8. The delay state
 
@@ -722,7 +728,9 @@ return 1;
   attacker's seed with frames between them; whether anything draws on that seed in between (the player's own defence
   rolls, a monster's AI) is what the chaining test of ADR-0014 measures. The request, cost, delay and queue steps hold
   no draw site of their own (callees not followed: `0x00548EF0`, `0x00548F80`, `0x0063A510`, `0x00643D90`).
-  (fn:SKILLS_SrvStart@0x0056F640, fn:SKILLS_SrvDo@0x0056F7F0)
+  (fn:SKILLS_SrvStart@0x0056F640, fn:SKILLS_SrvDo@0x0056F7F0) *2026-10-27:* measured in § 17: the cost and delay
+  steps add no draw in the checked events, and between two skill events of one unit the seed moved in 304 of
+  3 459 pairs (unattributed).
 
 ### 16. Branches
 
@@ -733,6 +741,47 @@ return 1;
   or player-count test; the expansion and player-count terms of a monster skill hit are `MonAttackStats`'
   (monsters/0004 § 9). (fn:SKILLS_CanUse@0x00647960, fn:SKILLS_SrvStart@0x0056F640, fn:SKILLS_SrvDo@0x0056F7F0,
   fn:sub_005A4F50_MonAttackStats@0x005A4F50)
+
+### 17. Plan 0045 Phase 2: the run (run:2026-10-25-skills)
+
+18 sessions of eight tier-A characters on slot 2 (the record:
+[experiments § run:2026-10-25-skills](experiments.md#run2026-10-25-skills)); `tools/skills.py` (`1b297c24…`) `check`
+over the 18 logs: **0 mismatches** (`workspace/logs/skills/2026-10-25-skills-check.txt` `17555e43…`). The logger's
+`PAY0`/`PAY1` lines, written inside a logged start or do event, take `SKILLS_PayCost`'s unit (`EDX`), skill and
+level (the two stack arguments), stats 6–9 at entry and at the `ret`, and the return; the unit's type comes from the
+event's own line. Raises of § 7 and § 15, each split where the run leaves a remainder:
+
+- [C] **The cost, raised in part** (§ 7): in 1 334 player payments of a row with `mana` or `lvlmana`, stat 8 falls by
+  exactly `(lvlmana · max(lvl − 1, 0) + mana) << manashift` and the return is 1; 258 of them carry a `lvlmana` term at
+  level > 1, and the shifts 5, 6, 7 and 8 occur in 19, 21, 117 and 1 177. Each is an exact 1/256 amount, which a
+  reading without the `− 1` could not match on the 258, nor a fixed shift of 8 on the 157 at shifts 5–7.
+  (fn:SKILLS_PayCost@0x0056BFE0, tbl:Skills.txt:mana, tbl:Skills.txt:lvlmana, tbl:Skills.txt:manashift,
+  run:2026-10-25-skills)
+- [C] **Only players pay** (§ 7, § 16): 205 calls for a non-player unit return 1 with stat 8 unchanged; 259 player
+  calls of a row with neither `mana` nor `lvlmana` (Attack, Throw, Might, Holy Fire) return 0 with stat 8 unchanged.
+  (fn:SKILLS_PayCost@0x0056BFE0, run:2026-10-25-skills)
+- [I] Not reached, so not separated: the `minmana · 256` floor (no payment's cost fell below it: the counter `PAY floor
+  binds` of the checker stayed at 0), the refusal of a cost above the unit's mana (`PAY refused` 0), and with it the
+  ignored result of § 7; the blood-mana path (state 114 never on) and the charge path (no item skill used).
+  (run:2026-10-25-skills)
+- [C] **No draw in the cost and the delay** (§ 15): in the 1 142 start and 1 269 do events of skills/0003 § 15's
+  eleven checked rows, the caster's seed at `SKILLS_SrvStart`'s and `SKILLS_SrvDo`'s `ret` is the entry seed stepped
+  by the nested events' draws only; those events hold the payments of nine cost rows (Fire Bolt, Frost Nova, Nova,
+  Teleport, Meteor, Howl, Raven, Firestorm, Multiple Shot) and 251 of the 277 delay states set (Meteor 30, Firestorm
+  221; Plague Javelin's 26 are in a row under 30 events, `[I]`). (fn:SKILLS_PayCost@0x0056BFE0,
+  fn:SKILLS_SetDelayState@0x0056EF90, fn:SKILLS_SrvDo@0x0056F7F0, run:2026-10-25-skills)
+- [C] **The caster's seed across skill events** (§ 15, ADR-0014): at a start or do entry it equals the same unit's
+  seed at the previous start or do exit in 3 155 of 3 459 consecutive pairs (`CHAIN.caster`). In the other 304 it is
+  1 to 33 steps further on the same stream (1 ×92, 2 ×64, 3 ×59, 4 ×20, 5 ×12, the rest under 10 each), so something
+  drew on that seed between the two events; none lies off the stream within 4 096 steps.
+  (fn:SKILLS_SrvStart@0x0056F640, fn:SKILLS_SrvDo@0x0056F7F0, run:2026-10-25-skills)
+- [I] What draws in those 304 gaps (the unit's own defence or block rolls, a monster's AI, a hit recovery) is not
+  logged by this run; § 15's reading that a start-built hit and its delivery are two events with frames between them
+  stands, with the gap's draws open. (run:2026-10-25-skills)
+- [I] Not logged by the run: the request checks of § 2 (`SKILLS_CanUse` has no breakpoint, so its codes, the mana,
+  delay and town refusals among them, are not seen), the delay state's end (`DLY`, 277 lines, an oracle), the
+  periodic queue. The refusals the run does see are a start function's or a do function's 0 (2 and 21 events,
+  experiments § run:2026-10-25-skills).
 
 ## Data touched
 

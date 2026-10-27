@@ -3319,7 +3319,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00553540,func,UNIT_GetTargetUnit,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
 0x00554D20,func,sub_00554D20_SkillAllyTest,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
 0x0056B740,func,sub_0056B740_SkillCallOnSelf,,I,skills/catalogue,docs/findings/skills/0011-paladin.md
-0x0056BFE0,func,SKILLS_PayCost,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
+0x0056BFE0,func,SKILLS_PayCost,,C,skills/dispatch,docs/findings/skills/0001-dispatch.md
 0x0056C160,func,SKILLS_SrvManaCheck,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
 0x0056C8E0,func,SKILLS_AddElemToPacket,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
 0x0056CC60,func,SKILLS_TargetCheck,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
