@@ -293,6 +293,10 @@
   [ADR-0015](../../adrs/0015-emulated-reproduction.md) (architect review of `lane/rbl`, 2026-10-16); the read set its
   condition 2 asks for is in [data/0005 § 11](0005-calc.md#11-static-emulation-of-the-functions-and-the-missile-context-run2026-10-16-calc-emu).
   (fn:MISS_CalcVar@0x0064B340, fn:MISS_EvalCalc@0x0064B7C0)
+- **Addendum 2026-10-27** (plan 0051 Phase 1b): re-run under `EmuTrace` as run:2026-10-27-p51s-emu
+  ([stats experiments](../stats/experiments.md#run2026-10-27-p51s-emu)). The outputs are byte-identical, and the
+  traced read set adds the two `.text` jump tables to [data/0005 § 11](0005-calc.md)'s list. No tag depends on it.
+  (fn:MISS_CalcVar@0x0064B340, run:2026-10-27-p51s-emu)
 
 ## run:2026-10-17-sweep-emu
 

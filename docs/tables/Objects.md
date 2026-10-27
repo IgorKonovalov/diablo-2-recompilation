@@ -337,6 +337,38 @@ entry is `[C]`, § Code semantics). The class is the record index ([§ Row ident
   fn:OBJOP_ArcanePortal@0x005846B0)
 - `[L]` `OpenWarp` 1 is on four rows that are not portals (74 trap door, 194/195 stairs, 386 `Dummy`); not named.
 
+## Timing (plan 0050 Phase 0)
+
+The animation columns, per mode *k* = [ObjMode](ObjMode.md) row (`NU`, `OP`, `ON`, `S1`..`S5`), with the
+`animdata.d2` record of the same mode ([animdata](../formats/animdata.md); record name `<Token><ObjMode Token>HTH`,
+the weapon class is `HTH` in every object COF name, [cof § Files](../formats/cof.md#files)). Offsets and widths are the
+layout's ([§ Modes, animation and drawing](#modes-animation-and-drawing)); values from the `.bin`
+(`python3 -I tools/anim_survey.py objects workspace/merged`; survey keys `obj_*`).
+
+| Column | `.bin` field | Observed (573 rows) | Meaning | Tag |
+|---|---|---|---|---|
+| `Token` | `+0x0C0` char[3] | 573 set | the object's animation token | [C] layout |
+| `Mode0..7` | `+0x13F + k` u8 | 0/1; set in 562, 422, 441, 97, 33, 27, 20, 1 rows | the object has mode *k* | [C] layout; meaning `[L]` (`Mode1` `[C]` read by the chest operate, [§ Code semantics](#code-semantics-plan-0023-phase-1)) |
+| `FrameCnt0..7` | `+0x0D8 + 4k` u32 | 0..44, 0..50, 0..44, 0..30, 0..25, 0..20, 0..20, 0..10 | frames of mode *k* | [C] layout; `[L]` |
+| `FrameDelta0..7` | `+0x0F8 + 2k` u16 | 0..256, 0..640, then 0..256; mostly 0, 128, 256 | animation speed of mode *k* | [C] layout; `[C]` its use at an animation start (below) |
+| `CycleAnim0..7` | `+0x108 + k` u8 | 0/1; set in 249, 46, 67, 4, 4, 4, 3, 3 rows | mode *k* loops | [C] layout; `[L]` |
+| `Start0..7` | `+0x129 + k` u8 | 0, 0..1, 0..28, 0..29, 0..1, 0..1, 0, 0 | start frame of mode *k* | [C] layout; `[L]` |
+| `Sync` | `+0x175` u8 | 0/1; 1 in 348 rows | — | [C] layout; `[C]` (below) |
+
+- `[C]` **`Sync` and `FrameDelta` at an animation start.** `UNIT_SetMode` → `UNIT_AnimInit` draws
+  `Range(unit seed, FrameDelta[mode] >> 3)` on the object's own seed when `Sync` is 0, and nothing when the bound is
+  below 1 ([objects § G2](../specs/objects/README.md), fn:UNIT_AnimInit@0x00624390, run:2026-10-15-objects). On the
+  data: 225 rows have `Sync` 0; 216 of them have a flagged mode with `FrameDelta >> 3 ≥ 1`, 393 (row, mode) pairs in
+  all (`obj_sync0_draw_rows`, `obj_sync0_draw_modes`).
+- `[C]` **The tables and `animdata.d2` against each other.** Of 1 603 flagged (row, mode) pairs, 1 483 have a record.
+  `FrameCnt<k>` equals the record's `frames` in 1 173, is smaller in 308 and larger in 2 (`obj_framecnt_gt`);
+  `FrameDelta<k>` equals the record's `speed` in 609, and is 0 in 421 of the pairs (the record's `speed` is 256 in
+  1 385 of the 1 483). So the two sources disagree for most modes: the table gives fewer frames (61 `NU`, 38 `ON`
+  rows with `FrameCnt` 1 against a longer record) and often a delta of 0 where the record has 256. Per mode in
+  [ObjMode § Timing](ObjMode.md#timing-plan-0050-phase-0).
+- `[L]` Which source the server's frame advance uses for an object (the table's `FrameCnt`/`FrameDelta`, the record, or
+  both) is plan 0050 Phase 1.1.
+
 ## Interpretation notes
 
 - **Mode-indexed runs.** `[L]` Eleven column groups end in `0..7`: `Selectable`, `FrameCnt`, `FrameDelta`, `CycleAnim`,

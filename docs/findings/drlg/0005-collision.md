@@ -15,16 +15,18 @@ population pass, so the claims it exercised are `[C]`. What it did not reach sta
   every floor, wall and shadow tile entry of the room **and of every active room in its near list** is stamped, provided
   the entry's top-left subtile lies inside this room. The stamp ORs the tile's 25 DT1 sub-tile bytes, rows reversed, plus three
   bits that come from the tile entry's flags (`0x10`, `0x01`, `0x04`). No tile is skipped for its orientation or its hidden flag.
-  1439 activation dumps, 0 cells differ; the entry flag `0x80` → `0x04` was never seen. (fn:COLL_MapBuild@0x0064C900, fn:COLL_StampTileList@0x0064C790, fn:COLL_StampTile@0x0064C4C0, fn:DUNGEON_RoomCreate@0x00619890, struct:CollMap+0x20, run:2026-10-14-collision)
+  1439 activation dumps, 0 cells differ; the entry flag `0x80` → `0x04` was never seen here (reproduced at plan 0038 H5d: 1 044 cells in Harrogath). (fn:COLL_MapBuild@0x0064C900, fn:COLL_StampTileList@0x0064C790, fn:COLL_StampTile@0x0064C4C0, fn:DUNGEON_RoomCreate@0x00619890, struct:CollMap+0x20, run:2026-10-14-collision)
 - [C] **What a room's grid contains depends on activation order.** A room's border tiles (column `w` and row `h` of its
   (w+1)×(h+1) cell grids) lie inside the right or bottom neighbour. They reach that neighbour's grid only if the neighbour
   is activated *after* this room. A grid is never re-stamped when a neighbour activates later. The one later tile write is
   the bit-2 merge into an already active neighbour: it clears the old tile and stamps the new one (`TileCollisionUpdate`;
-  that write stays `[I]`, the run's 4 calls had the tile in no active room). 702 rooms activated after their right or bottom
+  that write stays `[I]`, the run's 4 calls had the tile in no active room, and so did plan 0038 H5d's 37). 702 rooms activated after their right or bottom
   neighbour; their 5970 border tiles reached no grid, and the dumps agree. (run:2026-10-14-collision, fn:DUNGEON_NearRoomsBuild@0x00619800, fn:sub_0064C860_TileCollisionUpdate@0x0064C860, fn:sub_0066E740_Bit2TileMerge@0x0066E740)
 - [C] **Unit marks.** Players (`0x80`) and monsters (`0x100`) mark through a footprint *pattern* chosen from their size:
   size 0 marks nothing; size 1 or 2 marks a plus of five cells plus `0x1000` on the centre; size 3 marks the 3×3 square plus
-  `0x1000` on the plus. A non-interactive NPC uses `0x2000` instead of `0x1000` (`[I]`, not reached). A wraith is created with
+  `0x1000` on the plus. A non-interactive NPC uses `0x2000` instead of `0x1000` (reproduced at plan 0038 H5d, where "NPC" is corrected to
+  MonStats `npc` or `inTown`: the `inTown` half separated, the `npc` half and the unit `+0xC4` bit 31 by the code read only;
+  § Plan 0038 batch H5d). A wraith is created with
   the plus only (pattern 5), but **the post-create pattern refresh gives it pattern 1** (plus and `0x1000` centre) before the
   next placement (§ 5, corrected at Phase 2). Players `[I]` (seen only in the R3 residue). Ground items mark one cell `0x200`.
   Objects mark a `SizeX`×`SizeY` rectangle when `HasCollision` is set for their mode, with `0x400`, `0x800`, `0x4`, `0x2` or `0x8000`
@@ -35,7 +37,7 @@ population pass, so the claims it exercised are `[C]`. What it did not reach sta
   population pass, and each monster the pass creates marks before the next placement test. Monsters, corpses (`deadCol` 0 and 1)
   and missiles are reproduced. The object marks are reproduced too since plan 0027 Phase 2 (§ 14): 1847 marks with masks
   `0x400`, `0x404`, `0x806` and `0x8000` (a portal), every one predicted from the Objects columns and compared. The item mark
-  (`0x200`) stays `[I]`: its 71 marks are applied from the log.
+  (`0x200`) was applied from the log here (71 marks); plan 0038 H5d reproduced it (271 marks, § Plan 0038 batch H5d).
   (run:2026-10-14-collision, fn:sub_00649CA0_PathPatternRefresh@0x00649CA0, fn:UNIT_CollMark@0x00649400, fn:PATH_DynamicCreate@0x00649D00, fn:PATH_PatternFromSize@0x00648580, fn:COLL_PatternMark@0x0064EA90, fn:UNIT_GetCollMask@0x006209D0, fn:sub_00554850_SUnitPathCreate@0x00554850)
 - [C] **`CollisionTest(room, x, y, size, mask)`** looks the cell up in the room at (x, y), searching the hint room and its
   near list. Size 0 and 1 test one cell, size 2 the plus of five cells, size 3 the 3×3 square, and any other size
@@ -58,8 +60,9 @@ population pass, so the claims it exercised are `[C]`. What it did not reach sta
   subtile distance with `Levels.WarpDist` against the **level's** warp points (DRLG room centres, built at level init from
   room flags that `drlg/warps` sets) and against the level's waypoint point. The waypoint lookup can initialise the level,
   activate the waypoint room and, in `Position` levels, step the level seed. `BaseId`s 206 and 298 and the pass-through are
-  reproduced (1782 calls); 228, 334 and 528 stay `[I]`. `NearWarpTest` reproduced on 1645 calls, with the room activation
-  (17, any level) and the level-seed step (Tristram, 20 calls) observed. (run:2026-10-14-collision, fn:sub_005FD350_SpawnClassCellTest@0x005FD350, fn:sub_0054DB50_NearWarpTest@0x0054DB50, fn:sub_006423D0_LevelWarpPointsBuild@0x006423D0, fn:sub_0066AC40_LevelPointPick@0x0066AC40)
+  reproduced (1782 calls); 228, 334 and 528 stayed `[I]` here (plan 0038 H5d: 228 and 528 reproduced, 298's flag 0 too, 334
+  proposed d-none). `NearWarpTest` reproduced on 1645 calls, with the room activation
+  (17, any level) and the level-seed step (Tristram, 20 calls; plan 0038 H5d adds levels 46, 74 and 125) observed. (run:2026-10-14-collision, fn:sub_005FD350_SpawnClassCellTest@0x005FD350, fn:sub_0054DB50_NearWarpTest@0x0054DB50, fn:sub_006423D0_LevelWarpPointsBuild@0x006423D0, fn:sub_0066AC40_LevelPointPick@0x0066AC40)
 - [C] **Boundary B (§ 12), ruled and run:** the grid snapshot at pass entry is the oracle, R3 measured it (§ 13).
   The original recommendation: log a grid snapshot at pass entry (the room and its near rooms) and model
   only the in-pass marks and the four predicates. Separately, check the tile half end to end at activation (the cell-for-cell dumps
@@ -182,7 +185,7 @@ r2 and corrected in place (§ 5 table, § 6 rows 6 and 15), and both are require
 | `0x0061A840` | `DUNGEON_RoomFree` | flags and releases the room's units, then `COLL_MapFree` | I |
 | `0x00619DF0` | `sub_00619DF0_RectContainsPt` | half-open point-in-rectangle on `{x, y, w, h}` | I |
 | `0x00463740` | `sub_00463740_RoomAtSubtile` | the hint room if it holds the point, else the first room of its near list that does, else 0 | I |
-| `0x0064D9B0` | `sub_0064D9B0_CollisionTest` | test by size 0..3 (scheme A) | I |
+| `0x0064D9B0` | `sub_0064D9B0_CollisionTest` | test by size 0..3 (scheme A) | C (all four sizes predicted, plan 0038 H5d) |
 | `0x0064D450` / `0x0064CA50` | `COLL_CellTest` / `COLL_CellTestNb` | one cell, `cell & mask` or `0x27`; register forms (EAX = y, EDI = x) | I |
 | `0x0064CB30` | `COLL_CellTestAt` | the same, stack form (room, x, y, mask) | I |
 | `0x0064D100` | `COLL_PlusTest` | plus of five cells, neighbours across a room edge via `COLL_CellTestNb` | I |
@@ -197,14 +200,14 @@ r2 and corrected in place (§ 5 table, § 6 rows 6 and 15), and both are require
 | `0x0064DDB0` / `0x0064DB70` / `0x0064CAF0` / `0x0064CAA0` / `0x0064CB90` / `0x0064CBE0` | `COLL_CellOr` / `COLL_CellClear` / `COLL_CellOrA` / `COLL_CellClearA` / `COLL_CellOrAt` / `COLL_CellClearAt` | one-cell OR / AND-NOT | I |
 | `0x0064DC80` / `0x0064DA40` | `COLL_PlusOr` / `COLL_PlusClear` | plus of five cells, each cell looked up on its own | I |
 | `0x0064DDF0` / `0x0064DBC0` | `COLL_Square3Or` / `COLL_Square3Clear` | 3×3 square | I |
-| `0x0064DE30` / `0x0064DC00` | `COLL_RectOrWH` / `COLL_RectClearWH` | w×h rectangle centred as `x − w/2 .. x − w/2 + w − 1`; 1×1 is one cell | I |
+| `0x0064DE30` / `0x0064DC00` | `COLL_RectOrWH` / `COLL_RectClearWH` | w×h rectangle centred as `x − w/2 .. x − w/2 + w − 1`; 1×1 is one cell | C / I (`COLL_RectOrWH`: objects § 14, items 1×1 at plan 0038 H5d; `COLL_RectClearWH` not checked) |
 | `0x0064EA00` / `0x0064EBA0` | `COLL_SizeMark` / `COLL_SizeUnmark` | mark by size 1..3 (scheme A) | I |
-| `0x0064EA90` / `0x0064EC10` | `COLL_PatternMark` / `COLL_PatternUnmark` | mark by pattern 0..5 with the `0x1000`/`0x2000` extras (scheme B) | I |
+| `0x0064EA90` / `0x0064EC10` | `COLL_PatternMark` / `COLL_PatternUnmark` | mark by pattern 0..5 with the `0x1000`/`0x2000` extras (scheme B) | C (patterns 3 and 4 before / after, plan 0038 H5d) |
 | `0x0064ED20` / `0x0064EDA0` | `COLL_SizeMove` / `COLL_PatternMove` | unmark, test, re-mark (movement; named only) | I |
 | `0x0064DEA0` / `0x0064E840` | `COLL_FindFreeNear` / `COLL_FindFreeSpiral` | nearest free position searches (named only) | I |
 | `0x0064E260` | `COLL_LineTest` | line walk with a mask (line of sight and missiles; named only) | I |
 | `0x00649D00` | `PATH_DynamicCreate` | dynamic path (players, monsters, missiles): size, pattern, masks; marks when created in a room | I |
-| `0x00648580` | `PATH_PatternFromSize` | `g_CollPatternBySize`, NPC upgrade | I |
+| `0x00648580` | `PATH_PatternFromSize` | `g_CollPatternBySize`, NPC upgrade (`npc` or `inTown`, plan 0038 H5d) | C (38 338 creation marks) |
 | `0x00648480` | `PATH_MonTestMask` | monster move mask: `flying` `0x1804`, `opendoors` `0x3401`, else `0x3C01` | I |
 | `0x00648C30` | `PATH_SetMarkMask` | unmark, set path `+0x4C`, re-mark | I |
 | `0x00649400` / `0x00649560` | `UNIT_CollMark` / `UNIT_CollUnmark` | mark / unmark a unit by type | I |
@@ -225,10 +228,10 @@ r2 and corrected in place (§ 5 table, § 6 rows 6 and 15), and both are require
 | `0x0066C9C0` | `sub_0066C9C0_LogicWallBoxes` | wall entry `+0x10` → its box | I |
 | `0x0066D040` / `0x0066CF60` / `0x0066C770` | `LOGIC_NeighbourMerge` / `LOGIC_EdgeMerge` / `LOGIC_RegionRelabel` | merge regions across the edges of same-level neighbours | I |
 | `0x0066CE30` / `0x0061B130` | `sub_0066CE30_LogicRegionIdAtTile` / `sub_0061B130_LogicRegionIdAt` | region id at a point | I |
-| `0x005FD350` | `sub_005FD350_SpawnClassCellTest` | five `BaseId`s test an offset cell | I |
+| `0x005FD350` | `sub_005FD350_SpawnClassCellTest` | five `BaseId`s test an offset cell | C (206, 228, 298, 528 predicted; 334 proposed d-none, plan 0038 H5d) |
 | `0x0054DB50` | `sub_0054DB50_NearWarpTest` | warp-point and waypoint distance test | I |
 | `0x0061AC10` / `0x006423D0` | `sub_0061AC10_RoomLevelWarpPoints` / `sub_006423D0_LevelWarpPointsBuild` | the level's warp point list `+0x1E0`/`+0x204`/`+0x228` | I |
-| `0x00619E50` / `0x0066B2B0` / `0x0066AC40` / `0x0066AD80` | `sub_00619E50_ActLevelPointFind` / `sub_0066B2B0_LevelPointFind` / `sub_0066AC40_LevelPointPick` / `sub_0066AD80_LevelWaypointRoom` | level point of a type (11 = waypoint), shared with `WaypointTravel` | I |
+| `0x00619E50` / `0x0066B2B0` / `0x0066AC40` / `0x0066AD80` | `sub_00619E50_ActLevelPointFind` / `sub_0066B2B0_LevelPointFind` / `sub_0066AC40_LevelPointPick` / `sub_0066AD80_LevelWaypointRoom` | level point of a type (11 = waypoint), shared with `WaypointTravel` | I; `LevelPointPick` C (point and seed predicted, plan 0038 H5d) |
 | `0x005B2700` | `sub_005B2700_SpawnPosOnTile` | `spawnCol` 1 placement: floor tile centres, `0x100` and `0x1C09` tests | I |
 | `0x006EB3DC` | `g_CollPatternBySize` | size 0..3 → pattern 0, 1, 1, 2 | I |
 | `0x006E2D50` | `g_SpawnTileOffsets` | (0, −3), (3, 0), (0, 3), (−3, 0) | I |
@@ -362,7 +365,7 @@ UNIT_CollMark(u):                                                  [C] monsters 
   type 2 object:            RectOrWH(room(u), x, y, SizeX(u), SizeY(u), UNIT_GetCollMask(u))
   type 3, 4, 5:             SizeMark(room(u), x, y, UNIT_GetSizeX(u), UNIT_GetCollMask(u))
 
-PatternMark(r, x, y, p, m):                                        [C] patterns 1, 2, 5 (run:2026-10-14-collision), [I] 3, 4 (fn:COLL_PatternMark@0x0064EA90)
+PatternMark(r, x, y, p, m):                                        [C] patterns 1, 2, 5 (run:2026-10-14-collision), 3, 4 (run:2026-10-27-sweep-collision) (fn:COLL_PatternMark@0x0064EA90)
   0: nothing
   1: PlusOr(m);    if m: CellOr(x, y, 0x1000)
   2: Square3Or(m); if m: PlusOr(0x1000)
@@ -377,7 +380,11 @@ RectOrWH(r, x, y, w, h, m): w = h = 1: CellOr(m); else RectOr({x - w/2, y - h/2,
   cells outside every reachable room are dropped. Unmarking uses the same footprint with AND-NOT. No bit is reference-counted:
   unmarking one unit clears a `0x1000` that an overlapping unit also set. (run:2026-10-14-collision, fn:COLL_PlusOr@0x0064DC80, fn:COLL_PatternUnmark@0x0064EC10, fn:UNIT_CollUnmark@0x00649560)
 - [C] **Pattern from size** (`PATH_PatternFromSize`, at path creation and on revival): `g_CollPatternBySize` = {0: 0, 1: 1, 2: 1, 3: 2}, any
-  size > 3 (unsigned) gives 1. For a monster with MonStats `npc` and not `interact`, 1 → 3 and 2 → 4. (run:2026-10-14-collision, fn:PATH_PatternFromSize@0x00648580, data:g_CollPatternBySize@0x006EB3DC, fn:sub_0063E860_MonIsNpc@0x0063E860, fn:MONSTATS_FlagTest@0x00457490, tbl:MonStats.txt:npc, tbl:MonStats.txt:interact)
+  size > 3 (unsigned) gives 1. For a monster for which `MonIsNpc` holds and MonStats `interact` is clear, 1 → 3 and 2 → 4.
+  **Corrected at plan 0038 H5d** (this said MonStats `npc`): `MonIsNpc` is MonStats `npc` **or** `inTown`, else the unit's
+  `+0xC4` bit 31 (0x0063E89A–0x0063E8BD). `[C]` for `inTown`: 38 338 creation marks predicted, 254 of them (`inTown` without
+  `npc`) missed by the `npc`-only reading. `[I]` for the `npc` half and the `+0xC4` branch: every stock row with `npc` and
+  without `inTown` (406, 527, 537–539) also has `interact`, so no creation separates them (§ Plan 0038 batch H5d). (run:2026-10-14-collision, run:2026-10-27-sweep-collision, fn:PATH_PatternFromSize@0x00648580, data:g_CollPatternBySize@0x006EB3DC, fn:sub_0063E860_MonIsNpc@0x0063E860, fn:MONSTATS_FlagTest@0x00457490, tbl:MonStats.txt:npc, tbl:MonStats.txt:inTown, tbl:MonStats.txt:interact)
 - [I] **Sizes** (`UNIT_GetSizeX`): player 2, monster MonStats2 `SizeX` (`+0x08`, signed byte), object Objects `SizeX` (`+0xD0`), missile Missiles `+0x18A`, item 1,
   type 5 0. `UNIT_GetSizeY` reads MonStats2 `+0x09` and Objects `+0xD4`. Only objects use Y. (fn:UNIT_GetSizeX@0x00620510, fn:UNIT_GetSizeY@0x006205A0, tbl:MonStats2.txt:SizeX)
 - [I] **Masks** (fn:PATH_DynamicCreate@0x00649D00, fn:UNIT_GetCollMask@0x006209D0):
@@ -390,7 +397,7 @@ RectOrWH(r, x, y, w, h, m): w = h = 1: CellOr(m); else RectOr({x - w/2, y - h/2,
 | dead monster, `deadCol` 1 | unchanged: the corpse call is skipped and the live mark stays (0x004B05DB, 0x004B09FB) | `0x100` (unchanged) | — | C |
 | dead player (mode 0 or 17), or any corpse call with argument ≠ 0 | 3×3 square, `RectOrWH(room, x, y, 3, 3, …)` (0x00649FD8) | `0x8000` | — | I |
 | missile | size `+0x18A` | 0 at creation; `0x40` set at once by `PATH_SetMarkMask` when Missiles `Collision` (`+0x184`) ≠ 0 (0x004CD10A–0x004CD11D, 0x0059FD54–0x0059FD64) | 0 | C (`firewall`, size 1) |
-| item on the ground (mode 3) | one cell | `0x200` | — | I |
+| item on the ground (mode 3) | one cell | `0x200` | — | C (plan 0038 H5d, through `UNIT_CollMarkRect`) |
 | object, `IsDoor` 0 | `SizeX`×`SizeY` | `SubClass` bit 2 (the two `Portal` rows): `0x8000`; else `0x400`, `\| 0x4` if `BlockMissile` | — | C (§ 14) |
 | object, `IsDoor` 1 | `SizeX`×`SizeY` | `BlocksVis`: `0x806`; else `BlockMissile`: `0x804`; else `0x400` | — | C for `0x806`, I for the other two (§ 14) |
 | type 5 | size 0 (nothing written) | `0x01` | — | I |
@@ -442,11 +449,11 @@ Writers and readers found in the code read. "Readers" lists the masks named in t
 | 6 | `0x0040` | missiles with Missiles `Collision` set (0x004CD116, 0x0059FD5D; corrected at Phase 1b; the write reproduced in run:2026-10-14-collision, no reader reached) | `0x01C0` | I |
 | 7 | `0x0080` | players | `0x01C0` | I |
 | 8 | `0x0100` | live monsters | `0x01C0`, `0x3F11`, `SpawnPosOnTile`'s cell test | I |
-| 9 | `0x0200` | ground items | `0x3F11` | I |
+| 9 | `0x0200` | ground items | `0x3F11` | C (the writer, plan 0038 H5d) |
 | 10 | `0x0400` | objects (not portals) | `0x3C01`, `0x3401`, `0x1C09`, `0x3F11` | I |
 | 11 | `0x0800` | doors with `BlocksVis` or `BlockMissile` | `0x3C01`, `0x1C09`, `0x1804`, `0x804`, `0x3F11`; not `0x3401` (`opendoors`) | I |
 | 12 | `0x1000` | players and monsters, patterns 1 and 2 | `0x3C01`, `0x3401`, `0x1C09`, `0x1804`, `0x3F11` | C (306 rejections, run:2026-10-14-collision) |
-| 13 | `0x2000` | non-interactive NPCs, patterns 3 and 4 | `0x3C01`, `0x3401`, `0x3F11` | I |
+| 13 | `0x2000` | non-interactive NPCs (`npc` or `inTown`, plan 0038 H5d), patterns 3 and 4 | `0x3C01`, `0x3401`, `0x3F11` | C (the writer, plan 0038 H5d) |
 | 14 | `0x4000` | none found | none | I |
 | 15 | `0x8000` | corpses (monsters with `deadCol` 0: plus; players: 3×3), portals | none of the listed masks | I |
 
@@ -662,6 +669,10 @@ window). No tile bit differs. (run:2026-10-14-collision)
 at the seven call sites of the object code: 5767 calls, masks `0x3F11` and `0xC01`, boxes `size + 2`, `+ 6`, `+ 7`) is
 compared for its arguments; its result is still a logged value, and the object marks are still the logged CM lines. Neither
 the test's result nor the marks was predicted from the grid in that run. (run:2026-10-15-objects, fn:COLL_WHTest@0x0064D800)
+
+*Plan 0038 H5d (§ Plan 0038 batch H5d) reached since:* the `0x80` entry flag, `CollisionTest` sizes 0 and 1, the masks
+`0x01C0` and `0`, `BaseId`s 228 and 528, patterns 3 and 4, the item mark, and the Arcane Sanctuary and the Canyon; `BaseId`
+334 is proposed d-none and `TileCollisionUpdate`'s write is still not reached. The paragraph below is the Phase 2 state.
 
 [I] **Not reached, so still as read:** the `0x80` entry flag (grid `0x04`); `TileCollisionUpdate`'s clear and re-stamp (4 calls, each
 with the tile's top-left in no active room); `CollisionTest` sizes 0 and 1 as placement tests and the `0xFFFF` value; the masks
@@ -947,6 +958,104 @@ Each statement below corrects the "not reached" of § 14 for its case.
   window, and no `CM` line followed either.
   (fn:sub_00554850_SUnitPathCreate@0x00554850, tbl:Objects.txt:SizeX, run:2026-10-19-h5b-objects)
 
+## Plan 0038 batch H5d (run:2026-10-27-sweep-collision)
+
+Harness batch H5d of [plan 0038](../../plans/0038-inferred-claims-sweep.md), rows drlg-collision 1, 5, 8, 9, 11, 19, 21,
+24, 30, 36, 45 and 46 of [inventory drlg-collision](../../plans/0038-inventory/drlg-collision.md) (16 statements; spawn 41
+is in [monsters/0002](../monsters/0002-room-population.md#plan-0038-batch-h5d-run2026-10-27-sweep-collision)). Record:
+[experiments § run:2026-10-27-sweep-collision](experiments.md#run2026-10-27-sweep-collision). Every count below is copied
+from the kept outputs under `workspace/logs/h5d/check/` (manifest `h5d-manifest.sha256`). The new logger lines read the
+cells around the call **before** and **after** it (§ 13's logger only snapshotted the pass), so a function's effect on
+the grid is compared with the game's own cells, not with the activation model.
+
+**Raised (10 here, 11 with spawn 41):**
+
+- [C] **Row 5: `spawnCol` 1 gives the ring mask `0x01C0`, `spawnCol` 3 gives `0`.** Over the 1 330 kept logs of the
+  earlier runs and the nine sessions, `MonSpawnTry`'s `CollisionTest` (the `MK0` line at 0x005B2DA8) carried mask
+  `0x01C0` on all 271 calls of a `spawnCol` 1 class and `0` on all 837 calls of a `spawnCol` 3 class (the barricades
+  432–435, 524, 525), `0x3F11` on all 236 of `spawnCol` 2 and `0x3C01` on all 172 925 others: one mask per `spawnCol`
+  (`check/masks.txt`). Refinement: only classes 153 (`hellmeteor`) and 258–263 (the tentacles; 260 and 263 not met, the range test covers them) reach the ring with
+  `0x01C0`: 0x005B2B7E tests `spawnCol` = 1, and 0x005B2B90–0x005B2BA6 send every other `spawnCol` 1 class (the frog
+  demons 247–249: 1 777 `MTT` lines, no `MK0`) to `SpawnPosOnTile`. The 43 mask-0 tests of the sessions were all
+  predicted and returned 0. (fn:sub_005B2A00_MonSpawnTry@0x005B2A00, tbl:MonStats2.txt:spawnCol, run:2026-10-27-sweep-collision)
+- [C] **Row 8: entry flag `0x80` ORs grid `0x04` over the tile.** In Harrogath (109) the two kept logs with its
+  activation dumps (`h4a-s1-4908-foothills`, `h5b … 3906-harro`) hold 88 entries with the flag in 16 dumps; 1 044 cells
+  of those dumps match the model only with the `0x04` OR (the same build without it differs there), and every dump is
+  exact cell for cell (`check/flag80-check.txt`, 0 mismatches). (fn:sub_0066DB20_RoomTileSetFlags@0x0066DB20,
+  fn:COLL_MapBuild@0x0064C900, run:2026-10-19-h5b-objects, run:2026-10-21-sweep-monsters-a, run:2026-10-27-sweep-collision)
+- [C] **Rows 19 and 36: a ground item marks one cell `0x200`.** 271 item marks (unit type 4) went through
+  `UNIT_CollMarkRect`'s `RectOrWH` call (0x00620ACA) with `w = h = 1` and mask `0x200`; each set `0x200` on the centre
+  cell only, which never had it before (the `IM0`/`IM1` cells, all predicted). The `SizeMark` call of `UNIT_CollMark`
+  (0x0064954C), the other item path of § 5, was not reached. (fn:UNIT_CollMarkRect@0x00620A70, fn:COLL_RectOrWH@0x0064DE30,
+  fn:UNIT_GetCollMask@0x006209D0, run:2026-10-27-sweep-collision)
+- [C] **Row 24: `CollisionTest` sizes 0 and 1 are one-cell tests in placement.** 26 size-0 tests (classes 327, 517
+  `catapultspotter2`, 545 `baaltaunt`; 17 results 0, 9 non-zero) and 10 size-1 tests (228 `sarcophagus`, 371; 9 and 1)
+  were predicted by the one-cell test of § 4; in 4 size-0 and 1 size-1 case a plus test on the same cells would have
+  given non-zero where the game gave 0. All are presets-window tests (the pass's own sizes are 2 and 3).
+  (fn:sub_0064D9B0_CollisionTest@0x0064D9B0, fn:sub_005B2A00_MonSpawnTry@0x005B2A00, run:2026-10-27-sweep-collision)
+- [C] **Row 30: patterns 3 and 4 mark like 1 and 2 with `0x2000` for `0x1000`.** `PN0`/`PN1` give the 5×5 cells before
+  and after each `COLL_PatternMark`/`Unmark` with pattern 3 or 4: pattern 3 marks 2 330 and unmarks 1 577 (masks `0x100`
+  and, 6 each, `0x8000`), pattern 4 marks 6 and unmarks 4 (`0x100`, the Rogue Encampment's `cow`), every one predicted:
+  plus (3) or 3×3 (4) of the mask, then `0x2000` on the centre (3) or the plus (4), cleared the same way by the unmark.
+  (fn:COLL_PatternMark@0x0064EA90, fn:COLL_PatternUnmark@0x0064EC10, run:2026-10-27-sweep-collision)
+- [C] **Row 45: `SpawnClassCellTest` for `BaseId`s 228, 298 with flag 0, and 528.** From the 11×11 cells the `SCT0` line
+  reads, every result was predicted: 228 `sarcophagus` 6 calls (flag 1 from `MonSpawnTry` 0x005B2D95, 4; flag 0 from
+  0x005F6AEA, 2), all 1; 298 `vilemother1` with flag 0 from the AI caller 0x005F9FA2, 18 calls, 3 results 0 and 15
+  results 1 (its 213 flag-1 calls pass, § 8); 528 `evilhut` 18 calls (13 results 0 and 4 results 1 with flag 1, 1 with
+  flag 0 from 0x005E62C1). They separate: for 228 the cell at the unit's own position would have given 0 in 4 cases and
+  mask `0x01C0` would have given 0 in 2; for 528 the own cell gives the other result in 14 cases; for 298 mask `0x01C0`
+  gives the other result in 3. (fn:sub_005FD350_SpawnClassCellTest@0x005FD350, run:2026-10-27-sweep-collision)
+
+**Raised in part (3):**
+
+- **Row 1, the call:** [C] `TileCollisionUpdate` is called from `Bit2TileMerge` with the active room, the entry and its
+  old and new tiles: 37 calls in the nine logs (22 in the Jail), every one returning to 0x0066E91B. [I] **What it does to an active
+  neighbour** stays read only: in every call no room reachable from the hint holds the entry's top-left subtile, so it
+  wrote nothing (the `TCB0`/`TCB1` blocks are empty); rows 9 and 11 below. (fn:sub_0064C860_TileCollisionUpdate@0x0064C860,
+  fn:sub_0066E740_Bit2TileMerge@0x0066E740, run:2026-10-27-sweep-collision)
+- **Row 21, bit 13's writers, with a correction.** [C] Bit `0x2000` is written by patterns 3 and 4 (row 30), and the
+  pattern is chosen as follows (check below). **Correction** of § 5 (*Pattern from size*), the § 6 table and the table of
+  § 5's unit marks: the upgrade 1 → 3, 2 → 4 is not for MonStats `npc` alone. `MonIsNpc` (0x0063E860) is true when
+  `+0x0D` bit 0 (`npc`) **or** bit 2 (`inTown`) is set, and otherwise when the unit's `+0xC4` bit 31 is set; then
+  `PATH_PatternFromSize` upgrades only if MonStats flag 9 (`interact`, `+0x0D` bit 1, through `MONSTATS_FlagTest`) is
+  clear. Checked on every creation mark of the 1 339 logs (`check/patterns.txt`): 38 338 creation marks (wraiths'
+  pattern 5 apart), 0 mismatches with `npc` or `inTown`; the `npc`-only reading misses 254, among them `cow` (179,
+  `inTown` only, size 3 → pattern 4), `act3hire` (359), `act5barb1` (522) and `injuredbarb1`–`3` (567–569, pattern 3).
+  [I] **The `npc` half** (review of `lane/h5d`): every upgraded class has `inTown`, and the five stock rows with `npc`
+  and without `inTown` (406 `izualghost`, 527 `drehyaiced`, 537–539 `ancientstatue1`–`3`) all have `interact`, so an
+  `inTown`-only reading also scores 0 mismatches; the `npc` test (`.rdata` 0x006CE268 = 1, bit 0 of `+0x0D`, at
+  0x0063E89E) rests on the code read. [I] The unit `+0xC4` bit 31 branch: no creation separated it either.
+  (fn:sub_0063E860_MonIsNpc@0x0063E860, fn:PATH_PatternFromSize@0x00648580, fn:MONSTATS_FlagTest@0x00457490,
+  tbl:MonStats.txt:npc, tbl:MonStats.txt:inTown, tbl:MonStats.txt:interact, run:2026-10-27-sweep-collision)
+- **Row 46, `LevelPointPick` in other `Position` levels.** [C] Each lookup steps the level seed once: `LPP0`/`LPP1` were
+  predicted (point and seed) at 100 lookups in the Canyon of the Magi (46), 554 in the Arcane Sanctuary (74) and 1 in
+  level 125, all type 11 with one match; 9 lookups of type 0 in the Act IV town (103) had no match, took entry 0 and
+  did not draw. [I] **The operand is the match count**: with one match every reading picks the same point, so `n` ≥ 2
+  was not separated. (fn:sub_0066AC40_LevelPointPick@0x0066AC40, tbl:Levels.txt:Position, run:2026-10-27-sweep-collision)
+
+**Shortfall (2):** rows 9 and 11 (B1's clear and re-stamp, the plain AND-NOT): none of the 37 calls had its tile in a
+room it could reach (row 1). A level where a bit-2 merge reaches an already active neighbour is still to find.
+
+**Proposed d-none (1): row 45's `BaseId` 334 (`suckernest1`)** (accepted at the `lane/h5d` review, which also read the
+`MosquitoNest` AI's call at 0x005E0322: it passes 334 as the class to `SpawnClassCellTest` and then calls
+`sub_005DEAD0_MonAiUseSkill`, no creation of a 334 class; only classes 334–337 have that AI). [I] No stock source creates a class whose `BaseId` is
+334 (classes 334–337): no table names one (`check/sweep-static.txt`: Levels' 30 class columns, MonStats `minion1`,
+`minion2` and `spawn`, MonPreset `Place`, SuperUniques `Class`, Skills `summon`, 0 cells), and of the 81 `.text`
+instructions with an immediate 334–337 (r2 `/ai`, displacements dropped) none passes it as a class to a creation: in
+the server range they are assert line numbers (0x0053AB8E, 0x0055B624, 0x005746E9, 0x00587CED, 0x00590CCA,
+0x005B8002), the `.d2s` header size (0x00568FA8, 0x00568FCE), a stat id (0x0057B8E0), compares of a unit's class word
+(0x00584830, 0x005854EC, 0x00585559, 0x00598AEC), the divisor 337 (0x005F3F72, 0x005F3F9A, 0x005F400A, 0x005F41DD,
+0x005F4358), stack frames (0x005206B3, 0x005234D3), one mis-decoded fragment (0x005D8859), `SpawnClassCellTest`'s own
+compare (0x005FD409) and the `MosquitoNest` AI's argument to it (0x005E02E8, 0x005E0301, the nest's own AI); elsewhere
+Excel column tables (0x00616EF2, 0x0061F7D3, 0x00632B27–0x00632D61, 0x0063623B, 0x006404E1, 0x00640507, 0x006531F2,
+0x00653218), `SpawnClassByBase`'s case for a *caster* of base 334 (0x0063EFF1), a stat id (0x0064A857), an assert
+(0x0065B633), the maze's fixed room 336 (0x00672A89), an allocation size (0x00506B83, 0x00506B8D) and client code
+(0x0040D293–0x004E2925). So the 334 cell test has no observable on stock data. (fn:sub_005FD350_SpawnClassCellTest@0x005FD350,
+fn:sub_0063EFA0_SpawnClassByBase@0x0063EFA0, tbl:MonStats.txt:BaseId)
+
+**Seen, not a row:** an NPC's death mark with pattern 3 and mask `0x8000` (6 in the Frigid Highlands) also sets `0x2000`
+on the centre, as pattern 3 does for any non-zero mask.
+
 ## Data touched
 
 - tbl:MonStats2.txt:SizeX (`+0x08`, s8; `+0x09` as Y), tbl:MonStats2.txt:spawnCol (`+0x0A`, through monsters/0002).
@@ -988,7 +1097,14 @@ Each statement below corrects the "not reached" of § 14 for its case.
   `UnitCorpseColl` callers are unread. Also whether any spawn path tests `flying` (not reached in Phase 2).
 - Which callers make the two `UNIT_CollMark` calls inside `SUnitCreate` (both return to `0x006494D5`), and whether the post-create
   pattern refresh runs on every path that creates a monster (it ran on all 410 pass creations).
-- The `Position` 1 levels other than Tristram (Arcane 74, Canyon 46, Durance 3 102, …) were not reached; Tristram showed the
-  level-seed step. A `drlg/warps` follow-up should own the point lists.
+- ~~The `Position` 1 levels other than Tristram (Arcane 74, Canyon 46, Durance 3 102, …) were not reached; Tristram showed the
+  level-seed step.~~ Reached at plan 0038 H5d (46, 74, 125: one step per lookup, one match each). Open: a lookup with two or
+  more matches, which would separate the draw's operand (the match count). A `drlg/warps` follow-up should own the point lists.
+- (H5d) `TileCollisionUpdate` writing into an active room (B1's clear and re-stamp): 37 calls of plan 0038 H5d, none with
+  the tile in a reachable room.
+- (H5d) `MonIsNpc`'s third branch, the unit's `+0xC4` bit 31: which units carry it, and whether any non-`npc`, non-`inTown`
+  class takes patterns 3 and 4 through it.
+- (H5d review) `MonIsNpc`'s `npc` half: no stock row has `npc` without `inTown` and with `interact` clear, so only an edited
+  MonStats row (d-edit) would separate it from an `inTown`-only reading.
 - ~~The `0x30000` and `0x10..0x800` DRLG room flags behind the warp points are set by the warp builder, which is not read (`drlg/warps`).~~
   Read and reproduced in [drlg/0007](0007-warps.md) (§ 1, § 5): `DRLG_PresetMapScan` sets them from the DS1 and the seams.

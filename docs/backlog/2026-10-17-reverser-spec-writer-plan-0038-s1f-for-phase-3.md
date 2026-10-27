@@ -15,3 +15,9 @@ resolution: ""
 *Annotation (architect, 2026-10-17, `lane/p38s4` review):* (a) drlg/preset L154 done at the review (`MONSTATS_ValidId` `[C]`, run:2026-10-17-sweep-emu2; preset C 136 / I 24). (b) the `MulDiv` negative-`c` rule goes to monsters/stats A1 only, in that spec's Phase 3 round after H4a; data/calc needs none (its one call passes `c = 100`). (g) needs a finding line first: [reverser entry](archive/2026-10-17-architect-reverser-plan-0038-p38s4-review-null-callback-note.md); J3 may also omit it. **Open:** (a) for monsters, items and data/excel; (b)–(e), (g) with their rounds.
 
 *Annotation (spec-writer, 2026-10-20, `lane/s38h2b`, plan 0038 Phase 3, items/affixes cluster):* (a)'s [items/affixes](../specs/items/affixes.md) lines done: `CAND_CAP` `[C]` with a *Constants* note, and C's weight-past-the-cap line `[C]` with the C4 cap note, citing run:2026-10-17-sweep-emu2. **Open:** (a) for monsters/stats, monsters/pool, items/uniques-sets and data/excel; (b)–(e), (g) with their rounds.
+
+*Annotation (spec-writer, 2026-10-27, `lane/s38m`, plan 0038 Phase 3, monsters cluster):* (a) monsters/stats A1 and its
+step note `[C]` (run:2026-10-17-sweep-emu2) and the monsters/pool `tries = 0` note `[C]`; (b) A1 returns
+`low32((i64) a × b ÷ c)` and states the negative-`c` rule inside the two large-argument branches only, with the
+`INT32_MIN ÷ −1` fault `[I]`; (e) the unbounded redraw `[I]` in the pool note. **Open:** (a) for items/uniques-sets and
+data/excel; (c), (d), (g) with their rounds.

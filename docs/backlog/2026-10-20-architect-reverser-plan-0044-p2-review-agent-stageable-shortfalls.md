@@ -50,3 +50,13 @@ stays with the two-client run.
   from the findings.
 - **Still open for the two-client run (both slots):** (2) MP16, MP20, MP21, MP27, MP28 (b), (c); (3) the shield flag
   for `combat.py --no-shield`; and the sessions of everything staged above. The entry stays open.
+
+*2026-10-27 (reverser, `lane/p51s`, [plan 0051](../plans/0051-backlog-sweep-6.md) Phase 1b, no slot, no game):*
+**MP31 and MP32 predictions written** (the Phase 1a forward). The trade path and `sub_00540900_PartyGoldShare`'s
+arithmetic are read in [multiplayer/0002](../findings/multiplayer/0002-trade-and-party-gold.md) (§ 1, § 2, all
+`[I]`); § 3 gives the predictions, counter cases and logger points, and
+[multiplayer/0001](../findings/multiplayer/0001-cases.md) § 2 rows MP31 and MP32 now cite them. MP32: J gets
+`min(⌊A/2⌋, room)`, H the rest plus J's overflow, clipped at H's cap (an odd `A` and an `A` above J's room separate
+the readings). MP31: H `+g`, J `−g` with the offer clipped to H's room at button 8, and J holds the `ItemCopy` of the
+item. The logger lines are not written (they need the sessions' design). The sessions wait for the two-client run with
+both slots, like the rest of (2)–(4). The entry stays open.

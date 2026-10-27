@@ -13,3 +13,10 @@ resolution: ""
 *Annotation (architect, `lane/sw6` review, 2026-10-17):* (f) applied at the review: monsters/special E1 now states `[C]`
 "a minion's own handlers are never called for its copied list, and the copied list is what the server sends", and its
 "other readers" remainder `[I]` from the `lane/rbs3` read of the four callers. (a)–(e) remain.
+
+*Annotation (spec-writer, 2026-10-27, `lane/s38m`, plan 0038 Phase 3, monsters cluster):* (a) monsters/stats F3 now states
+the single reader and the two unreachable rows `[C]` and the `druidhawk` normal row reachable `[I]`, with an *Open
+questions* entry (the H4a Druid-Raven piece was not run); (b) monsters/pool § Consumers gains the `RegionActClass` ranges,
+default and cache `[I]` and the pool read `[C]`; (c) monsters/spawn A1 names the three `RoomUpdateOne` callers `[I]` and
+the shared body `[C]`; (e) spawn H3 sizes 0 and 1 `[C]` from H5d (run:2026-10-27-sweep-collision). **Open:** (d),
+player/creation D1, for the player cluster.
