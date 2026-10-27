@@ -4,7 +4,7 @@ status: draft
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, data/calc, combat/overview, stats/states, monsters/spawn, monsters/stats, drlg/collision]
 consumed_by: [combat/overview, combat/delivery, stats/states, items/economy, monsters/stats, rng/seeds]
-tags: {C: 16, I: 24, L: 3}
+tags: {C: 23, I: 25, L: 2}
 updated: 2026-10-27
 ---
 
@@ -61,9 +61,9 @@ truncate toward zero unless stated; life, mana and damage are in 1/256 points.
 | A skill mode reaches its action frame | fn:SKILLS_SrvDo@0x0056F7F0 | [C] for the caster's seed (run:2026-10-25-skills: 1 269 do events) |
 | A missile is created | fn:sub_0059FA30_MissileCreate@0x0059FA30 | [C] (run:2026-10-25-skills: 31 391) |
 | A missile steps | fn:sub_005ADBB0_MissileDoFrame@0x005ADBB0 | [C] (run:2026-10-25-skills: 13 335 frames) |
-| A missile hits or ends | fn:MISSILE_HitUnit@0x005ADF10 | [I] |
-| A stat event fires | fn:UNIT_DispatchEvent@0x005C0C30 | [I] |
-| A skill summons a monster | fn:sub_0056D940_SpawnOwnedMonster@0x0056D940 | [I] |
+| A missile hits or ends | fn:MISSILE_HitUnit@0x005ADF10 | [C] for the end and the pierce use of a row with no hit function (run:2026-10-27-skills: 3 876 hits); [I] otherwise |
+| A stat event fires | fn:UNIT_DispatchEvent@0x005C0C30 | [C] for the draws of the handlers dispatch § K marks (run:2026-10-27-skills: 1 303 calls); [I] otherwise |
+| A skill summons a monster | fn:sub_0056D940_SpawnOwnedMonster@0x0056D940 | [C] for the new unit's seed, life and defence (run:2026-10-27-skills: 219 summons); [I] otherwise |
 
 ## Inputs
 
@@ -101,13 +101,14 @@ truncate toward zero unless stated; life, mana and damage are in 1/256 points.
 
 | Event | Spec | Seeds drawn | Tag |
 |---|---|---|---|
-| request | [dispatch § B, § C](dispatch.md#b-the-request) | none | [I] (fn:SKILLS_CanUse@0x00647960) |
+| request | [dispatch § B, § C](dispatch.md#b-the-request) | none | [I] (fn:SKILLS_CanUse@0x00647960); codes 0, 1, 6 and 8 and their order [C] (run:2026-10-27-skills) |
 | start | [dispatch § D](dispatch.md#d-the-mode-start) | the start function's: a start-built hit's to-hit and build on the caster, defence on the target | [C] the machinery adds none (run:2026-10-25-skills) |
 | do | [dispatch § E](dispatch.md#e-the-do-frame-and-skills_srvdo) | the do function's, the delivery's, the missile creations' | [C] the machinery adds none (run:2026-10-25-skills) |
-| cost and delay | [dispatch § F, § G](dispatch.md#f-costs) | none | [C] (run:2026-10-25-skills) |
+| cost and delay | [dispatch § F, § G](dispatch.md#f-costs) | none; the delay ends at `f + d` | [C] (run:2026-10-25-skills, run:2026-10-27-skills) |
 | finisher | [dispatch § J](dispatch.md#j-progressive-charges-and-the-finisher) | the entries' on the attacker, area units, local seeds | [I] (fn:COMBAT_PrgFinisher@0x005D5220) |
-| handler | [dispatch § K](dispatch.md#k-stat-event-handlers) | the handler's unit | [I] (data:g_StatEventFuncs@0x007325B0) |
-| summon | [dispatch § L](dispatch.md#l-summons) | game (the spawn); Raise Skeleton one step of the caster | [C] for the step at class 363, level 20 (run:2026-10-25-skills) |
+| handler | [dispatch § K](dispatch.md#k-stat-event-handlers) | the handler's unit | [C] for the handlers § K marks (run:2026-10-27-skills); [I] otherwise (data:g_StatEventFuncs@0x007325B0) |
+| state 52 | [dispatch § K3](dispatch.md#k-stat-event-handlers) | none | [C] (fn:sub_0057D810_PreventHealHook@0x0057D810, run:2026-10-27-skills) |
+| summon | [dispatch § L](dispatch.md#l-summons) | game (one step), then the new unit's `MonStatsInit` draws; Raise Skeleton one step of the caster | [C] for 219 summons and the step at class 363, level 20 (run:2026-10-25-skills, run:2026-10-27-skills) |
 | missile create | [missiles § B, § C](missiles.md#b-creation) | game (one step); owner (critical chain); a local pierce seed; a re-seeding callback | [C] (run:2026-10-25-skills) |
 | missile frame | [missiles § D](missiles.md#d-each-frame) | the do function's, on the missile | [C] for do 1 (run:2026-10-25-skills) |
 | missile hit | [missiles § E, § F](missiles.md#e-the-hit) | owner (to-hit); missile (build, knockback, damage function); defender | [C] for the to-hit and the build (run:2026-10-25-skills) |
@@ -117,21 +118,25 @@ truncate toward zero unless stated; life, mana and damage are in 1/256 points.
 - B1. **The game seed chains across the creations of one do event**: 21 860 pairs. [C] (fn:sub_00555230_SUnitCreate@0x00555230,
   run:2026-10-25-skills)
 - B2. **The caster's seed chains across its skill events** in 3 155 of 3 459 consecutive pairs; the other 304 lie a
-  few steps further on the same stream, drawn between the events by something the run did not model (to-hit rolls of
-  the caster's own, its defence rolls, a monster's AI among the candidates:
-  [dispatch § P](dispatch.md#p-draws-and-seeds-per-event-kind)). [C] (fn:SKILLS_SrvDo@0x0056F7F0, run:2026-10-25-skills)
+  few steps further on the same stream. Walking the unit's own logged draws between two events reaches the next entry
+  in 90 of run:2026-10-25-skills' 133 player gaps and 45 of run:2026-10-27-skills' 148
+  ([dispatch § P](dispatch.md#p-draws-and-seeds-per-event-kind)). [C] (fn:SKILLS_SrvDo@0x0056F7F0,
+  run:2026-10-25-skills, run:2026-10-27-skills) The player gaps left are listed (most with the player a hit's
+  defender); the monster gaps point at the AI (plan 0052). [I] (run:2026-10-27-skills)
 - B3. **A missile's seed is private** to the missile, except where a re-seed site sets it from the creator's value
   ([missiles § H](missiles.md#h-re-seed-sites)); its draws chain across the hits of one frame (110 checks). [C]
   (fn:sub_005ADBB0_MissileDoFrame@0x005ADBB0, run:2026-10-25-skills)
-- B4. The finisher and the stat-event handlers had no checked chained pairs (their fires were oracles in
-  run:2026-10-25-skills); their draw orders are the reading. [I] (fn:COMBAT_PrgFinisher@0x005D5220,
-  data:g_StatEventFuncs@0x007325B0)
+- B4. **The stat-event handlers step their unit's seed by their own draws**: 1 303 handler calls of both runs and the
+  3 461 fires of earlier combat runs, 0 mismatches ([dispatch § K](dispatch.md#k-stat-event-handlers)). [C]
+  (data:g_StatEventFuncs@0x007325B0, run:2026-10-27-skills)
+- B4. The finisher had no checked chained pairs (its 56 calls were oracles in run:2026-10-25-skills); its draw order is
+  the reading. [I] (fn:COMBAT_PrgFinisher@0x005D5220)
 
 ### C. Branches
 
 | Branch | Where | What changes | Tag |
 |---|---|---|---|
-| player against monster | costs, ammunition, delay, the request checks | players only; a monster reaches the start and do through its AI with bit 6 set | [C] for the payment (run:2026-10-25-skills); [I] otherwise (fn:SKILLS_SetDelayState@0x0056EF90) |
+| player against monster | costs, ammunition, delay, the request checks | players only; a monster reaches the start and do through its AI with bit 6 set | [C] for the payment and the request codes 0, 1, 6 and 8 (run:2026-10-25-skills, run:2026-10-27-skills); [I] otherwise (fn:SKILLS_SetDelayState@0x0056EF90) |
 | player against monster | missile to-hit | `SkillMissileCreate` passes a to-hit only for a monster owner | [I] (fn:sub_0056ECB0_SkillMissileCreate@0x0056ECB0) |
 | player against monster | town | a player's missile ends when the player is in town; a monster's only with `SrcTown` | [I] (fn:sub_005ADBB0_MissileDoFrame@0x005ADBB0) |
 | difficulty | Static Field, curse lengths, summon MonLvl stats | the difficulty record's `+0x40`, `+0x1C`; MonLvl by difficulty | [I] (fn:sub_005C9800_SorSkillStaticMin@0x005C9800, fn:sub_005C49E0_SummonSetLevel@0x005C49E0) |
@@ -164,16 +169,16 @@ run:2026-10-25-skills. [C] (run:2026-10-25-skills, fn:sub_005C49E0_SummonSetLeve
 - Findings: [skills/0001](../../findings/skills/0001-dispatch.md), [skills/0002](../../findings/skills/0002-missiles.md),
   [skills/0003](../../findings/skills/0003-handlers.md), the plan 0046 boundary reproductions
   [skills/0004](../../findings/skills/0004-missile-do-1-18.md)–[0016](../../findings/skills/0016-monster-8a.md), and
-  [skills/experiments](../../findings/skills/experiments.md#run2026-10-25-skills).
+  [skills/experiments](../../findings/skills/experiments.md#run2026-10-25-skills) (and
+  [§ run:2026-10-27-skills](../../findings/skills/experiments.md#run2026-10-27-skills)).
 - Tables: [Skills](../../tables/Skills.md), [Missiles](../../tables/Missiles.md), [PetType](../../tables/PetType.md).
-- Plan: [0045](../../plans/0045-skills-missiles-machinery.md) (Phase 2 part 1 accepted 2026-10-27; part 2 open).
+- Plan: [0045](../../plans/0045-skills-missiles-machinery.md) (Phase 2 accepted 2026-10-27, parts 1 and 2).
 
 ## Open questions
 
-- [L] **Plan 0045 Phase 2 part 2** owes the request refusals, the handler fires and state 52, `MonAttackStats`, the
-  summoned unit's seed and stats, the end of a missile at a hit and pierce uses, the re-seed sites other than
-  `0x005C9290`, cases C2 and C4, the short tier-A rows and the caster resyncs' attribution; the statements they
-  concern stay at their present tags until its review ([dispatch](dispatch.md#open-questions),
-  [missiles](missiles.md#open-questions)).
+- ~~Plan 0045 Phase 2 part 2's targets.~~ Re-tagged from its reviewed raises (run:2026-10-27-skills); what stays open
+  is in [dispatch](dispatch.md#open-questions) and [missiles](missiles.md#open-questions): the server's handling of a
+  refused request, the handlers no session fired, the rest of `MonAttackStats` and of the summon's stats, C2's
+  `VelLev`, the re-seed sites other than `0x005C9290`, and the caster gaps left.
 - [L] The catalogue of the numbered functions outside tier A ([plan 0046](../../plans/0046-skills-function-catalogue.md)).
 - [L] Client-only skills and missiles (`cltmissile*`, the description tables) are presentation and out of scope.

@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, monsters/stats, player/creation, items/properties, data/calc]
 consumed_by: [items/tc]
-tags: {C: 39, I: 42, L: 5}
+tags: {C: 41, I: 42, L: 5}
 updated: 2026-10-27
 ---
 
@@ -383,6 +383,13 @@ its `kill` handler 31 reanimate; on the defender's: 3 shiver armour (`attacked�
 its `killed` handler 30. In run:2026-10-16-combat these handlers were boundary oracles (§ The ADR-0014 boundary); the
 list and their draws are [delivery § E5](delivery.md#e-the-stat-events-crushing-blow-open-wounds-freeze). [I]
 (data:g_StatEventFuncs@0x007325B0, [skills/0003 §§ 3, 13](../../findings/skills/0003-handlers.md#3-the-stat-event-handlers))
+[C] In plan 0045's runs the handler unit's seed stepped by exactly the handler's own draws in 1 303 handler calls:
+one for 7, 8, 9, 15 and 16, one for 20 when its roll fails and at least one when its cast follows, at least one for
+21, none for 5, 6, 13, 17, 19, 22, 28 and 29 ([skills/dispatch § K](../skills/dispatch.md#k-stat-event-handlers)).
+(fn:UNIT_DispatchEvent@0x005C0C30, run:2026-10-27-skills, run:2026-10-25-skills) [C] State 52 (prevent heal) is not a
+handler: the to-hit hook applies it, for 120 000 frames with stat 31 = 0, in 86 of 918 calls, exactly those with the
+player attacker's stat 117 non-zero, and draws on neither seed ([to-hit A6](to-hit.md#a-the-chance-to-hit-combat_tohitroll)).
+(fn:sub_0057D810_PreventHealHook@0x0057D810, run:2026-10-27-skills)
 
 ### C. Chaining events on one seed
 
@@ -395,7 +402,7 @@ attacks). (run:2026-10-16-combat)
 [I] The run had no finisher events (they were dropped by rule and none occurred), so this chaining does not cover a
 charged progressive state: there the finisher's entries 37, 39, 41 and 143 add one draw each and 38 two or three on the
 player's seed inside the attack, besides the creation draws of the missiles they create (B5, B4), and the drawing stat-event handlers of B6 add theirs inside a hit or a kill. Plan 0045 Phase 2
-tests both kinds. (fn:COMBAT_PrgFinisher@0x005D5220, 0x005D4E80, 0x0056E1C4, data:g_StatEventFuncs@0x007325B0)
+checked the handlers' draws (B6); the finisher's entries stayed oracles in its runs. (fn:COMBAT_PrgFinisher@0x005D5220, 0x005D4E80, 0x0056E1C4, data:g_StatEventFuncs@0x007325B0)
 
 [I] A weapon-share missile the player creates (a bow or crossbow attack, a javelin, a throw, a `SrcDam` skill
 missile) inserts the 1–3 critical draws of B4 on the player's seed at its creation frame, between the player's other
@@ -532,16 +539,19 @@ crushing blow at `/players 8` ([delivery](delivery.md#worked-example)). [C] (run
   spec takes as inputs.~~ Specified in [stats/aggregate](../stats/aggregate.md) and [stats/states](../stats/states.md)
   (plan 0041). The stats run:2026-10-16-combat logged stay value inputs: its logs hold values, not the lists the
   aggregation needs (plan 0041 P2 review).
-- [L] **Still owed:** the formulas of the stats `MonAttackStats` writes, and a run that checks combat against the
-  aggregated stats instead of logged values.
+- [L] **Still owed:** the terms of `MonAttackStats` beyond the plain MonLvl cells (the `L` cells, the skill-damage
+  pair, the classic factors, the expansion bonus; the plain cells by mode are confirmed by run:2026-10-27-skills,
+  [monsters/stats § H](../monsters/stats.md#h-to-hit-and-damage-at-attack-time-reference-only)), and a run that checks
+  combat against the aggregated stats instead of logged values.
 - ~~**Owed to phase (3), skills and missiles:** a skill's damage packet and `SrcDam`; a missile's packet values; what
   a missile's creation draws beyond B4; the full rule of the conversion writers.~~ Specified in
   [skills/dispatch § I](../skills/dispatch.md#i-the-skill-packet) (the skill packet, `SrcDam`, all fifteen conversion
   writers) and [skills/missiles](../skills/missiles.md) §§ B, C, F and H (the creation, the damage block, the packet at
   the hit, the re-seeding creation callbacks and the monster owner's unique-mod hook), plan 0045 Phase 3, draft.
-- [L] **Still owed to phase (3):** a run that reaches the progressive finisher and the stat-event handlers other than
-  crushing blow and open wounds, whose draws B5 and B6 give from the code only (plan 0045 Phase 2 part 2); the
-  numbered hit, damage and do functions outside tier A (plan 0046); the progressive-charge hooks around the build.
+- [L] **Still owed to phase (3):** a run that reaches the progressive finisher, whose draws B5 gives from the code
+  only, and the stat-event handlers no session fired (1–4, 10–12, 14, 18, 23–27, 30, 31; the others' draws are
+  confirmed by run:2026-10-27-skills, B6); the numbered hit, damage and do functions outside tier A (plan 0046); the
+  progressive-charge hooks around the build.
 - [L] **Owed to phase (5), animation:** hit recovery, knockback and stun lengths in time, the hit class, the get-hit
   and durability draws.
 - ~~**Shortfalls of run:2026-10-16-combat** (plan 0037 Phase 2): crushing blow on a champion, the cold, lightning and

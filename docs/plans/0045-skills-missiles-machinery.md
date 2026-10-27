@@ -983,3 +983,37 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - Review request closed; ledger: the lane row filled (verdict, fixes 3: overclaim 1, stale cross-reference 2), the
     review row added with its usage "—". Gate E13 from `main`: the context links of two 2026-10-27 spec-writer entries
     `0038…#log` pointed at no heading, now `#implementation-log`.
+- **2026-10-27 — Phase 3 re-tag pass from part 2's reviewed raises (spec-writer, `lane/s45p3`).** `main` merged
+  twice (`07b2fca0`: part 2 accepted at `7386da27`, the plan log and ledger conflicts kept both sides; `797b1bf8`:
+  `lane/sfx` landed at `450accc9`, the ledger conflict kept both sides; `backlog.py archive` clean). No Ghidra, no
+  harness. The re-tags the part 2 review lists, each raise naming run:2026-10-27-skills:
+  - **skills/dispatch:** `SKILLS_CanUse`'s codes 0, 1, 6, 8 and their order, the equal-cost pass, the delay test only
+    for a row with `delay` `[C]` (codes 2–5, 7, `startmana`, charges, blood mana `[I]`); no refused request reached the
+    server in the run `[C]`, a stock client sending none and the server path `[I]` (ruling (a)); the delay's end at
+    `f + d` `[C]`, the per-frame refusal up to it and the client's frame `[I]`; `MonAttackStats`' 21/22/19 by
+    `A1`/`A2`/`S1` and its `El` rolls as its only draws `[C]`, the list clear and El2/El3 with El1's bounds `[I]`; the
+    handler table's draws column `[C]` for 5–9, 13, 15–17, 19–22, 28, 29, heal and mana after a kill (the cap, life's
+    addition) `[C]`, open wounds' roll `[C]`, the 3 461-fire audit `[C]`; state 52 by stat 117, no draw `[C]`; the
+    summon's seed, life and defence `[C]` (219), the summon level and do 31's step at 12 of 12; Kick, Left Hand Throw,
+    Left Hand Swing and the five rows now over 30 `[C]`, Raise Skeleton at 12; the caster chaining (90 of 133, 45 of
+    148) `[C]`, the rest listed `[I]`; § O and E4 on the corrected basis (1 269/1 142 the per-row seed-check totals,
+    the eleven rows 947 do / 828 start). Six open questions struck, five remainders written `[L]`.
+  - **skills/missiles:** `LevRange · lvl + Range` `[C]` (C4, the lead contradicted); the end of a damaging hit and the
+    pierce use for rows with no hit function `[C]`, the rest `[I]`; `VelLev` `[I]` with the contradicted lead under
+    *Open questions* (ruling (b)); the re-seed sites other than `0x005C9290` named unreached `[I]`.
+  - **skills/README:** the entry, event and branch tables, B2 (chaining) and B4 (handlers) re-tagged; the part 2
+    open question struck.
+  - **Not edited by the first draft, now:** monsters/stats (F3: the summon's seed, life and defence `[C]`; H1: stats
+    21/22/19 and the modes' columns `[C]`, the part 2 draws `[C]`, the list clear and El2/El3 `[I]`; the open question
+    split), monsters/spawn (J3: a skill summon's creation `[C]`, on `main`'s text after `lane/sfx`), combat/README (B6:
+    the handlers' draws and state 52 `[C]`; two open questions rewritten whole), stats/states (B2: state 52 and open
+    wounds' state 62 `[C]`, the hook's type and class tests `[I]`).
+  - Counts: skills/README `{C: 16, I: 24, L: 3}` → `{C: 23, I: 25, L: 2}`, skills/dispatch `{C: 35, I: 185, L: 11}` →
+  `{C: 72, I: 187, L: 10}`, skills/missiles `{C: 42, I: 88, L: 6}` → `{C: 46, I: 90, L: 6}`, monsters/stats
+  `{C: 130, I: 47, L: 5}` → `{C: 134, I: 50, L: 5}`, monsters/spawn `{C: 136, I: 44, L: 5}` → `{C: 137, I: 45, L: 5}`,
+  combat/README `{C: 39, I: 42, L: 5}` → `{C: 41, I: 42, L: 5}`, stats/states `{C: 51, I: 53, L: 6}` →
+  `{C: 52, I: 54, L: 6}`. Wiki: combat (a monster's attack stats) and stats-and-states (prevent heal) edited, a `based_on`
+    line added to each; every `based_on` date of the edited specs is 2026-10-27, so W4 stays clear.
+  - Review: the [request](../backlog/2026-10-27-spec-writer-architect-review-lane-s45p3-plan-0045-phase-3-skills.md)
+    has a dated addendum; no new request filed. Gate E9 (on `main`'s gate) flagged two first-draft sequence diagrams
+    (dispatch A3, missiles A) for a `;` inside a message, which Mermaid reads as a separator: replaced by a comma.

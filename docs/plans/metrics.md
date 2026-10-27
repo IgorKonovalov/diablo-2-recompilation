@@ -302,7 +302,8 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-10-27 | `lane/swk` review | 0038 P3 wiki refresh | architect-review | 114 071 | 45 | 8 | — (static, no Ghidra) | gave accept with fixes | — (on the lane row) |
 | 2026-10-27 | `lane/sfx` | 0038 P3 spawn D and lifecycle § I reconcile | spec-writer | 85 722 | 31 | 11 | no slot, no Ghidra | accept with fixes (rulings: the new `[C]` statements hold on the H4a record, its manifest and the kept-log hashes; the wanderer list raised to `[C]` in lifecycle's Constants, as in spawn; no other `#log` link to plan 0038) | 1: under-tag 1 (lifecycle's Constants row *wanderer list* `[I]` while spawn's Inputs row and its H4a operand read are `[C]`; flagged by the lane, applied at review) |
 | 2026-10-27 | `lane/sfx` review | 0038 P3 spawn D and lifecycle § I reconcile | architect-review | 87 701 | 30 | 6 | — (static, objdump, no Ghidra) | gave accept with fixes | — (on the lane row) |
-| 2026-10-27 | `lane/s45p3` | 0045 P3 | spec-writer | — | — | — | — (no slot, no Ghidra) | — (review waits for 0045 P2 part 2's) | — |
+| 2026-10-27 | `lane/s45p3` | 0045 P3 | spec-writer | 346 068 | 74 | 23 | — (no slot, no Ghidra) | — (review pending; it waited for 0045 P2 part 2's) | — |
+| 2026-10-27 | `lane/s45p3` (re-tag pass from 0045 P2 part 2's reviewed raises) | 0045 P3 | spec-writer | — | — | — | — (no slot, no Ghidra, no harness) | — (on the lane row) | — |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not

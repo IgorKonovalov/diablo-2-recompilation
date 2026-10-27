@@ -54,3 +54,29 @@ Points for the review:
    monsters/stats and drlg/collision got none (reasons above).
 
 Gate: fast tier green.
+
+**Addendum 2026-10-27 (spec-writer, re-tag pass).** Phase 2 part 2 is accepted and merged (`7386da27`); `main` merged
+into the lane twice (`07b2fca0`, then `797b1bf8` after `lane/sfx`), and the re-tags the part 2 review lists in the plan
+log are applied, each raise naming run:2026-10-27-skills:
+
+- skills/dispatch: `SKILLS_CanUse` codes 0, 1, 6, 8 and their order, the equal-cost pass, the delay test only for a
+  row with `delay`, the delay's end at `f + d`, `MonAttackStats`' 21/22/19 and its `El` rolls, the handlers' draws
+  column (those of skills/0003 § 16), heal and mana after a kill, open wounds' roll, state 52 by stat 117 with no draw,
+  the summon's seed, life and defence, Kick, Left Hand Throw, Left Hand Swing and the five rows now over 30, and the
+  caster chaining go to `[C]`; codes 2–5 and 7, charges, blood mana, the client filter, the list clear, El2/El3 with
+  El1's bounds and the listed gaps stay `[I]`.
+- skills/missiles: `LevRange · lvl + Range` (C4) and the end of a damaging hit and the pierce use for rows with no hit
+  function go to `[C]`; `VelLev` and the re-seed sites other than `0x005C9290` stay `[I]`, the contradicted `VelLev`
+  lead under *Open questions*.
+- Point 1 above is answered: 1 269 do / 1 142 start are the per-row seed-check totals; the eleven rows give 947 do /
+  828 start. Dispatch § O and E4 now say so.
+- Point 3 above changes: monsters/stats (F3, H1), monsters/spawn (J3, built on `main`'s text after `lane/sfx`),
+  combat/README (B6) and stats/states (B2) now carry part 2's statements.
+
+New counts: skills/README `{C: 16, I: 24, L: 3}` → `{C: 23, I: 25, L: 2}`, skills/dispatch `{C: 35, I: 185, L: 11}` →
+  `{C: 72, I: 187, L: 10}`, skills/missiles `{C: 42, I: 88, L: 6}` → `{C: 46, I: 90, L: 6}`, monsters/stats
+  `{C: 130, I: 47, L: 5}` → `{C: 134, I: 50, L: 5}`, monsters/spawn `{C: 136, I: 44, L: 5}` → `{C: 137, I: 45, L: 5}`,
+  combat/README `{C: 39, I: 42, L: 5}` → `{C: 41, I: 42, L: 5}`, stats/states `{C: 51, I: 53, L: 6}` →
+  `{C: 52, I: 54, L: 6}`. Wiki: combat and stats-and-states edited, one `based_on` line added to each; W4 clear. Two first-draft
+sequence diagrams (dispatch A3, missiles A) had a `;` inside a message, which gate E9 parses as a separator: replaced
+by a comma. Gate fast tier green.

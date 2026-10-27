@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [stats/overview, stats/aggregate, rng, combat/delivery, data/calc, objects]
 consumed_by: [combat/delivery, combat/overview, objects]
-tags: {C: 51, I: 53, L: 6}
+tags: {C: 52, I: 54, L: 6}
 updated: 2026-10-27
 ---
 
@@ -182,6 +182,14 @@ Step notes:
   (§ G) and about twenty skill functions call B1; poison, burn, cold and freeze use their own appliers
   ([combat/delivery](../combat/delivery.md)) with the same list shape. (fn:STATEVENT_OpenWounds@0x005BFE60,
   fn:sub_0057D810_PreventHealHook@0x0057D810, fn:COMBAT_ApplyPoison@0x0057AC50)
+- B2. [C] **Prevent heal (state 52)** is applied by B1 for 120 000 frames with stat 31 = 0 to the defender in 86 of 918
+  calls of the to-hit hook, exactly those with the player attacker's stat 117 non-zero, and the hook draws on neither
+  seed ([skills/dispatch § K3](../skills/dispatch.md#k-stat-event-handlers)). **Open wounds** applies state 62 for
+  200 frames when its roll passes (82 of 120 fires). (fn:sub_0057D810_PreventHealHook@0x0057D810,
+  fn:STATEVENT_OpenWounds@0x005BFE60, fn:STATE_ApplyTimed@0x0056E970, run:2026-10-27-skills, run:2026-10-25-skills)
+- B2. [I] The hook's type and class tests (a monster defender outside 704–709) are not separated: every call had a
+  player attacker and a monster defender outside that range. (fn:sub_0057D810_PreventHealHook@0x0057D810,
+  run:2026-10-27-skills)
 - B3. [I] **Potions** (`sub_005BEDA0_ItemUseTimedState`) run the group clear (§ D) before they apply.
   (fn:sub_005BEDA0_ItemUseTimedState@0x005BEDA0, fn:STATE_GroupClear@0x0056C740)
 

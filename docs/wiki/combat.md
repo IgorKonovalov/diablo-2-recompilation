@@ -5,6 +5,7 @@ based_on:
   - docs/specs/combat/damage.md 2026-10-21
   - docs/specs/combat/reductions.md 2026-10-21
   - docs/specs/combat/delivery.md 2026-10-21
+  - docs/specs/monsters/stats.md 2026-10-27
 ---
 
 # Combat
@@ -220,9 +221,11 @@ A monster's attack rating, damage and elemental damage are written when it **ent
 hit ([damage § E](../specs/combat/damage.md#e-a-monsters-attack-stats-monattackstats)). That step draws only one
 `Range(100)` for each elemental group of that attack mode whose chance is between 1 and 99, and one `Range(5)` for the random element
 type. The draws are confirmed (5 060 calls). Between that moment and the hit the monster's AI draws on the same seed,
-which the combat model does not cover. The formulas of the values written (the per-level damage, the classic
-Nightmare and Hell factors, the expansion's extra damage per player) were taken as given in the run and are read
-from the code only. Also read from the code: a summon or pet class (`noRatio`) ends up with no elemental damage at
+which the combat model does not cover. The per-level attack rating and damage come from the monster-level table,
+scaled by the attack mode's own columns (the second attack and the two skill modes have theirs): the skills runs
+checked them in 26 425 calls, in Normal and Nightmare with one player. The classic Nightmare and Hell factors, the
+expansion's extra damage per player and the ladder columns were not separated there and are read from the code only.
+Also read from the code: the second and third elemental groups take the first group's damage and length, and a summon or pet class (`noRatio`) ends up with no elemental damage at
 attack time, because its values are written to one place and read from another.
 
 ## Reductions on the defender

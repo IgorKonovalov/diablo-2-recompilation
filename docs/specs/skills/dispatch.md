@@ -4,7 +4,7 @@ status: draft
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, data/calc, combat/overview, combat/delivery, stats/states, monsters/spawn, monsters/stats]
 consumed_by: [skills/missiles, combat/overview, combat/delivery, stats/states, items/economy, monsters/stats]
-tags: {C: 35, I: 185, L: 11}
+tags: {C: 72, I: 187, L: 10}
 updated: 2026-10-27
 ---
 
@@ -39,7 +39,7 @@ flowchart LR
 |---|---|---|
 | A player's skill request at a location (packets 0x05, 0x08, 0x0C, 0x0F) | fn:PLRMSG_SkillAtXY@0x00549AD0 | [I] |
 | A player's skill request at a unit (packets 0x06, 0x07, 0x09, 0x0A, 0x0D–0x11 but 0x0F) | fn:PLRMSG_SkillAtUnit@0x00549BA0 | [I] |
-| The request checks | fn:SKILLS_CanUse@0x00647960 | [I] |
+| The request checks | fn:SKILLS_CanUse@0x00647960 | [C] for codes 0, 1, 6 and 8 and their order (run:2026-10-27-skills: 1 340 calls); [I] otherwise |
 | A skill mode starts (player modes 7, 8, 10–16, 18; monster modes 4, 5, 7, 8, 9) | fn:SKILLS_StartUsedSkill@0x0056FAF0 → fn:SKILLS_SrvStart@0x0056F640 | [C] for the caster's seed in the start events of the rows of § O (run:2026-10-25-skills); [I] otherwise |
 | The mode's action frame | fn:SKILLS_DoUsedSkill@0x0056FC50 → fn:SKILLS_SrvDo@0x0056F7F0 | [C] for the caster's seed in the do events of the rows of § O (run:2026-10-25-skills); [I] otherwise |
 | A cost is paid | fn:SKILLS_PayCost@0x0056BFE0 | [C] (run:2026-10-25-skills: 1 798 calls) |
@@ -154,7 +154,7 @@ sequenceDiagram
   participant D as defender seed
   participant G as game seed
   Note over A: PrgFinisher: one Step on a copy, the seed restored (peek)
-  A->>A: entries 37, 39, 41, 143: one Step at entry; 38: RangeB x2 (x3 for EType 10)
+  A->>A: entries 37, 39, 41, 143: one Step at entry, 38: RangeB x2 (x3 for EType 10)
   D->>D: entry 38: each area unit's defence rolls on its own seed
   A->>A: attacker's do… and kill handlers 7, 8, 9, 20, 31: one draw each
   D->>D: defender's attacked…, damaged…, killed handlers 3, 21, 30
@@ -246,8 +246,13 @@ C1. SKILLS_CanUse(unit, entry) → i32:                                [I] (fn:S
       return SKILLS_DelayOk(unit, entry) ? 0 : 8                        ; § G
 ```
 
-- C1. The order and codes are as above; no step draws. All 357 stock rows have `InGame`, so code 3 is reached only
-  with no record. [I] (fn:SKILLS_CanUse@0x00647960, tbl:Skills.txt:InGame)
+- C1. **Codes 0, 1, 6 and 8 and their order, measured.** In 1 340 calls (1 126 from the request handlers' four call
+  sites, 214 changes of code at the client's per-frame check `0x004D9FC5`) the code is the one this order gives for
+  the aura test (6, 1 call), the mana test of C4 (1, 8 calls) and the delay test of G2 (8, 76 calls), else 0. [C]
+  (fn:SKILLS_CanUse@0x00647960, fn:SKILLS_ManaOk@0x00647540, fn:SKILLS_DelayOk@0x006478F0, run:2026-10-27-skills)
+- C1. Codes 2, 3, 4, 5 and 7, the `startmana` test (C6) and the item-charge tests (C4, C7) are the code reading: no
+  call of the run reached them. No step draws. All 357 stock rows have `InGame`, so code 3 is reached only with no
+  record. [I] (fn:SKILLS_CanUse@0x00647960, tbl:Skills.txt:InGame, run:2026-10-27-skills)
 - C2. `SkillAmmoOk`: a `scroll` row needs `SkillEntry+0x30` > 0; Throw (skill 2) needs a throwable item in the hand
   (the other hand's when dual wielding and the first is empty), or one with stat 125; Left Hand Throw (4) the same on
   the other hand; Left Hand Swing (5) dual wield and a weapon in the hand; any other skill passes. [I]
@@ -259,6 +264,11 @@ C1. SKILLS_CanUse(unit, entry) → i32:                                [I] (fn:S
   `lvl: i32 ← clamp(base + bonus, 0, ExpMaxLevel(0))` and the cost of § F1 (with no `minmana` floor); under state 114
   `cost ≤ stat 6` (life); else a `srvdofunc` 116 row (the shapeshifts) with `Unit+0xC8` bit 3 passes; else
   `cost ≤ stat 8`. [I] (fn:SKILLS_ManaOk@0x00647540)
+- C4. **A cost equal to the mana passes.** With `lvl` the entry's base plus its bonus, a cost above stat 8 gives code 1
+  (8 calls) and a cost equal to it passes (5 code-0 calls with stat 8 exactly the cost, which a strict test would
+  refuse). [C] (fn:SKILLS_ManaOk@0x00647540, 0x00647589, run:2026-10-27-skills) The clamp, the charges, the state-114
+  and `srvdofunc` 116 branches are not reached; the 8 refusals lie 2 mana or more below the cost, so the `− 1` of the
+  level term rests on the payments of F1, not on these. [I] (run:2026-10-27-skills)
 - C5. `RestrictOk` (`restrict`): 0 refuses while the unit is in a restricted state (`0x0063A510`, not read); 1
   passes; 2 passes only in a restricted state and with one of `State1..3` (the first negative ends the list); any
   other value passes. [I] (fn:SKILLS_RestrictOk@0x00644060, tbl:Skills.txt:restrict)
@@ -269,6 +279,14 @@ C1. SKILLS_CanUse(unit, entry) → i32:                                [I] (fn:S
 - C7. `ItemChargesOk`: an item skill passes only if its item (guid `+0x34`) has a non-zero low byte of stat 204 at
   layer `skill · 64 + (level & 0x3F)`; a missing item passes. [I] (fn:SKILLS_ItemChargesOk@0x00647840,
   struct:SkillEntry+0x34)
+- C. **No refused request reached the server in the run.** All 1 126 request calls returned 0, while the client's own
+  check of the same skills changed to a refusal 85 times (code 8 76, code 1 8, code 6 1); 60 casts in the Rogue
+  Encampment gave no request at all. [C] (fn:SKILLS_CanUse@0x00647960, fn:PLRMSG_SkillAtXY@0x00549AD0,
+  fn:PLRMSG_SkillAtUnit@0x00549BA0, run:2026-10-27-skills)
+- C. **A stock client sends no refused request.** The client runs `SKILLS_CanUse` on its own copy of the player for
+  the skill buttons every frame and, in the run, sent no request for a refused skill; its sending code is not read.
+  So the refusal branches of B2–B3 and the `InTown` refusal of D2–D3 are the server path for a client that sends any
+  request, stated from the code reading. [I] (0x004D9FC5, run:2026-10-27-skills)
 - C. A monster does not pass through `SKILLS_CanUse` on its way to the mode start (§ M). [I]
   (fn:sub_005DEAD0_MonAiUseSkill@0x005DEAD0)
 
@@ -419,7 +437,8 @@ E4. SKILLS_SrvDo(game, unit, id, lvl, pay, item, effect) → i32:      [I] (fn:S
 - E4. `SKILLS_SrvDo` has eight callers: `SKILLS_DoUsedSkill`, the selected-aura tick (two), the item-aura tick, the
   right-skill aura select, `ITEMAURA_Start`, `ITEMSKILL_Cast` and the player's placement in an act. Only
   `ITEMSKILL_Cast` passes a non-zero effect flag. [I] (fn:SKILLS_SrvDo@0x0056F7F0, 0x0056FD29–0x0056FD34)
-- E4. **No draw in the do machinery.** In the do events the run checked (1 269 in all, the eleven rows of § O among them), the caster's seed at
+- E4. **No draw in the do machinery.** In the do events run:2026-10-25-skills checked (1 269 in all: the per-row
+  seed-check total of § O, the eleven rows' 947 among them), the caster's seed at
   `SKILLS_SrvDo`'s return is its entry seed stepped by the nested events' draws only (the missile creations'
   critical draws, the to-hit rolls, the defence rolls, an aura's elemental roll), the payments and 251 of the 277
   delay states set (Meteor 30, Firestorm 221) inside them. [C] (fn:SKILLS_SrvDo@0x0056F7F0,
@@ -482,8 +501,18 @@ G3. SKILLS_QueuePeriodic(unit, id, lvl, selected):                   [I] (fn:SKI
       queue unit event 8 at ((frame − 1 + p) ÷ p) × p + 1 with (id, lvl), or (−1, 0) for the selected right-skill aura
 ```
 
-- G2. **One delay blocks every delayed skill.** State 121 refuses every skill whose own `delay` is ≥ 1 and no other;
-  a skill with no delay is usable meanwhile. 23 stock rows have a `delay`. [I] (fn:SKILLS_DelayOk@0x006478F0,
+- G1. **The delay ends at `f + d`.** With `SKILLS_SetDelayState` at frame `f` and delay `d`, a request at frame
+  `f + d` passes (16 request calls of Meteor, Firestorm or Plague Javelin), and the client's check of the skill, 8
+  from the cast, changes back to 0 at frame `f + d` in 26 delays; a state still on at `f + d` would refuse those 16.
+  [C] (fn:SKILLS_SetDelayState@0x0056EF90, fn:SKILLS_DelayOk@0x006478F0, run:2026-10-27-skills)
+- G1. That the state refuses on every frame up to `f + d − 1` rests on the client's check running each frame (only its
+  changes are logged); 8 more client changes back to 0 come at `f + d + 1`, the client's frame one behind the
+  server's there, which is not read. [I] (run:2026-10-27-skills)
+- G2. **The delay test applies to a row with a `delay` only.** In state 121 a row with a `delay` is refused (code 8,
+  76 calls) and a row without one passes (67 code-0 calls, which a delay test on every skill would refuse). [C]
+  (fn:SKILLS_DelayOk@0x006478F0, tbl:Skills.txt:delay, run:2026-10-27-skills)
+- G2. **One delay blocks every delayed skill**: the state is one per unit, whichever skill set it, and the test is
+  `EvalCalc(delay) ≥ 1` of the row asked for. 23 stock rows have a `delay`. [I] (fn:SKILLS_DelayOk@0x006478F0,
   tbl:Skills.txt:delay)
 - G1. A sequence-anim row (`anim` 18) sets its delay only while `Unit+0x38 & 0xFFFFFF00` is 0 (E4); what `+0x38` holds
   is open. [I] (fn:SKILLS_SrvDo@0x0056F7F0)
@@ -682,28 +711,28 @@ K1. UNIT_DispatchEvent(unit, event, other, packet):                  [I] (fn:UNI
 | 2 | Frozen Armor | `damagedinmelee` | a packet, result `0x20`, `+0x34 = calc1`, on the attacker | none | [I] (fn:sub_005CAC50_StatEv02CalcHitAttacker@0x005CAC50) |
 | 3 | Shiver Armor | `attackedinmelee` | `SKILLS_RollElemDamage` into a packet on the attacker | 1 (2 for `EType` 10) | [I] (fn:sub_005CAD40_StatEv03ElemHitAttacker@0x005CAD40) |
 | 4 | Iron Maiden | `domeleedamage` | the cursed attacker takes back a share of its damage | none | [I] (fn:sub_005C5F50_StatEv04ReturnDamage@0x005C5F50) |
-| 5 | Life Tap | `damagedinmelee`, `damagedbymissile` | the attacker heals `MulDiv(damage, calc1, 100)` | none | [I] (fn:sub_005C61E0_StatEv05LifeTap@0x005C61E0) |
-| 6 | stat 78 | `damagedinmelee` | physical `stat << 8` to the attacker | none | [I] (fn:sub_005BF670_StatEv06ThornsPhys@0x005BF670) |
-| 7 | stat 81 | `domeleedamage`, `domissiledamage` | knockback: `low & 0x7F < c` sets result bit 3, `c` 64 or 32/128 by MonStats2 flags | 1 inline | [I] (fn:sub_005BF960_StatEv07Knockback@0x005BF960) |
-| 8 | stat 112 | as 7 | howl: `RangePow2(seed, 128) < stat` makes the monster flee | 1 | [I] (fn:sub_005BFA10_StatEv08Howl@0x005BFA10) |
-| 9 | stat 113 | as 7 | stupidity: `Range(seed, 100) < c` | 1 | [I] (fn:sub_005BFAA0_StatEv09Stupidity@0x005BFAA0) |
+| 5 | Life Tap | `damagedinmelee`, `damagedbymissile` | the attacker heals `MulDiv(damage, calc1, 100)` | none | [C] draws (run:2026-10-27-skills: 2 calls); [I] effect (fn:sub_005C61E0_StatEv05LifeTap@0x005C61E0) |
+| 6 | stat 78 | `damagedinmelee` | physical `stat << 8` to the attacker | none | [C] draws (run:2026-10-27-skills: 7 calls); [I] effect (fn:sub_005BF670_StatEv06ThornsPhys@0x005BF670) |
+| 7 | stat 81 | `domeleedamage`, `domissiledamage` | knockback: `low & 0x7F < c` sets result bit 3, `c` 64 or 32/128 by MonStats2 flags | 1 inline | [C] draws (run:2026-10-27-skills: 103 calls); [I] effect (fn:sub_005BF960_StatEv07Knockback@0x005BF960) |
+| 8 | stat 112 | as 7 | howl: `RangePow2(seed, 128) < stat` makes the monster flee | 1 | [C] draws (run:2026-10-27-skills: 103 calls); [I] effect (fn:sub_005BFA10_StatEv08Howl@0x005BFA10) |
+| 9 | stat 113 | as 7 | stupidity: `Range(seed, 100) < c` | 1 | [C] draws (run:2026-10-27-skills: 65 calls); [I] effect (fn:sub_005BFAA0_StatEv09Stupidity@0x005BFAA0) |
 | 10 | stat 128 | `damagedinmelee` | lightning `stat << 8` to the attacker | none | [I] (fn:sub_005BF720_StatEv10ThornsLightning@0x005BF720) |
 | 11, 12 | none | — | fire, cold to the other unit | none | [I] (fn:sub_005BF7D0_StatEv11ThornsFire@0x005BF7D0) |
-| 13 | stat 114 | `damagedinmelee`, `damagedbymissile` | a player gains mana from damage | none | [I] (fn:sub_005BFBB0_StatEv13DamageToMana@0x005BFBB0) |
-| 14–16 | stats 134–136 | as 7 | freeze, open wounds, crushing blow ([combat/delivery § E](../combat/delivery.md#e-the-stat-events-crushing-blow-open-wounds-freeze)) | 1 inline each | [I] (fn:STATEVENT_CrushingBlow@0x005BFFC0) |
-| 17 | stat 138 | `kill` | mana `+= stat · 256`, capped | none | [I] (fn:sub_005C0130_StatEv17ManaAfterKill@0x005C0130) |
+| 13 | stat 114 | `damagedinmelee`, `damagedbymissile` | a player gains mana from damage | none | [C] draws (run:2026-10-27-skills: 9 calls); [I] effect (fn:sub_005BFBB0_StatEv13DamageToMana@0x005BFBB0) |
+| 14–16 | stats 134–136 | as 7 | freeze, open wounds, crushing blow ([combat/delivery § E](../combat/delivery.md#e-the-stat-events-crushing-blow-open-wounds-freeze)) | 1 inline each | [C] draws for 15 and 16 (run:2026-10-27-skills: 182, 138 calls), open wounds' roll (K2); [I] otherwise (fn:STATEVENT_OpenWounds@0x005BFE60, fn:STATEVENT_CrushingBlow@0x005BFFC0) |
+| 17 | stat 138 | `kill` | mana `+= stat · 256`, capped | none | [C] draws (run:2026-10-27-skills: 172 calls) and the cap (K2); [I] the addition (fn:sub_005C0130_StatEv17ManaAfterKill@0x005C0130) |
 | 18 | stat 139 | `kill` | for a demon victim, life `+= stat · 256` | none | [I] (fn:sub_005C0260_StatEv18HealAfterDemonKill@0x005C0260) |
-| 19 | stat 150 | as 7 | slow: a timed state with stats 68, 69 = −v | none | [I] (fn:sub_005C0310_StatEv19Slow@0x005C0310) |
-| 20 | stats 195, 196, 198 | attack, kill, hit | skill on event: one inline step, `low mod 100 < stat` casts (§ H) | 1 inline | [C] up to the cast (ADR-0021, fn:sub_005C0470_StatEv20SkillOnEvent@0x005C0470, run:2026-10-21-cat-emu-item) |
-| 21 | stat 201 | `damagedinmelee`, `damagedbymissile` | skill on get-hit: `RangeB(seed, 100) < stat` casts, effect 0 | 1 | [C] up to the cast (ADR-0021, fn:sub_005C05A0_StatEv21SkillOnGetHit@0x005C05A0, run:2026-10-21-cat-emu-item) |
-| 22 | Bone Armor | `absorbdamage` | absorbs physical from `aurastat1`, removes the state at 0 | none | [I] (fn:sub_005C6370_StatEv22BoneArmorAbsorb@0x005C6370) |
+| 19 | stat 150 | as 7 | slow: a timed state with stats 68, 69 = −v | none | [C] draws (run:2026-10-27-skills: 103 calls); [I] effect (fn:sub_005C0310_StatEv19Slow@0x005C0310) |
+| 20 | stats 195, 196, 198 | attack, kill, hit | skill on event: one inline step, `low mod 100 < stat` casts (§ H) | 1 inline | [C] up to the cast (ADR-0021, fn:sub_005C0470_StatEv20SkillOnEvent@0x005C0470, run:2026-10-21-cat-emu-item); [C] one draw when the roll is at or above the stat (233 calls), at least one when below and the cast follows (19) (run:2026-10-27-skills) |
+| 21 | stat 201 | `damagedinmelee`, `damagedbymissile` | skill on get-hit: `RangeB(seed, 100) < stat` casts, effect 0 | 1 | [C] up to the cast (ADR-0021, fn:sub_005C05A0_StatEv21SkillOnGetHit@0x005C05A0, run:2026-10-21-cat-emu-item); [C] at least one draw (run:2026-10-27-skills: 9 calls) |
+| 22 | Bone Armor | `absorbdamage` | absorbs physical from `aurastat1`, removes the state at 0 | none | [C] draws (run:2026-10-27-skills: 2 calls); [I] effect (fn:sub_005C6370_StatEv22BoneArmorAbsorb@0x005C6370) |
 | 23 | Blood Golem | `domeleedamage` | heals the golem and its owner | none | [I] (fn:sub_005C6530_StatEv23BloodGolemHit@0x005C6530) |
 | 24 | Energy Shield | `absorbdamage` | moves a share of each element to mana | none | [I] (fn:sub_005CA6C0_StatEv24EnergyShield@0x005CA6C0) |
 | 25 | Cyclone Armor | `absorbdamage` | absorbs fire, cold, lightning from `aurastat1` | none | [I] (fn:sub_005C87A0_StatEv25CycloneArmor@0x005C87A0) |
 | 26 | Blood Golem | `damagedinmelee`, `damagedbymissile` | the owner loses life with the golem, floor 256 | none | [I] (fn:sub_005C6690_StatEv26BloodGolemDamaged@0x005C6690) |
 | 27 | Clay Golem | `damagedinmelee` | slow by its stat 150 | none | [I] (fn:sub_005C6760_StatEv27ClayGolemSlow@0x005C6760) |
-| 28 | stat 86 | `kill` | life `+= stat · 256`, capped | none | [I] (fn:sub_005C01D0_StatEv28HealAfterKill@0x005C01D0) |
-| 29 | stat 108 | `kill` | state 172 on the victim | none | [I] (fn:sub_005C0770_StatEv29RestInPeace@0x005C0770) |
+| 28 | stat 86 | `kill` | life `+= stat · 256`, capped | none | [C] (run:2026-10-27-skills: 78 calls; K2, fn:sub_005C01D0_StatEv28HealAfterKill@0x005C01D0) |
+| 29 | stat 108 | `kill` | state 172 on the victim | none | [C] draws (run:2026-10-27-skills: 78 calls); [I] effect (fn:sub_005C0770_StatEv29RestInPeace@0x005C0770) |
 | 30 | stats 197, 199 | `killed`, `levelup` | skill on death or level-up: one inline step whatever the packet, `low mod 100 < stat` casts, effect 0 | 1 inline | [C] up to the cast (ADR-0021, fn:sub_005C0670_StatEv30SkillOnDeathOrLevel@0x005C0670, run:2026-10-21-cat-emu-item) |
 | 31 | stat 155 | `kill` | reanimate | 1 | [I] (fn:STATEVENT_Reanimate@0x005C09E0) |
 
@@ -711,15 +740,38 @@ K1. UNIT_DispatchEvent(unit, event, other, packet):                  [I] (fn:UNI
   [combat/delivery § E5](../combat/delivery.md#e-the-stat-events-crushing-blow-open-wounds-freeze)'s; 21 returns before
   its draw when its packet lacks result bit 2, 30 draws whatever the packet. [C] (ADR-0021,
   fn:sub_005C05A0_StatEv21SkillOnGetHit@0x005C05A0, run:2026-10-21-cat-emu-item)
-- K2. The event-9 (kill) handler `0x005C01D0` that runs inside delivery is handler 28 (heal after kill): life
-  `+= stat · 256`, capped, overlay 151, **no draw**. [I] (fn:sub_005C01D0_StatEv28HealAfterKill@0x005C01D0)
-- K2. The run logged 284 handler fires (open wounds 62, crushing blow 62, stupidity 65, mana after kill 94, Bone
-  Armor 1) as oracles; no handler model checked them. [I] (run:2026-10-25-skills)
+- K2. **The handlers' draws, measured.** In 1 303 handler calls (284 of run:2026-10-25-skills, 1 019 of
+  run:2026-10-27-skills) the handler unit's seed steps by exactly the *Draws* column for the handlers the table marks
+  `[C]`: none for 5, 6, 13, 17, 19, 22, 28 and 29, one for 7, 8, 9, 15 and 16, one for 20 when its roll fails and at
+  least one when the cast follows, at least one for 21; a reading of 0 for a one-draw handler, or of 1 for a no-draw
+  one, fails on every such call. [C] (fn:UNIT_DispatchEvent@0x005C0C30, fn:STATEVENT_OpenWounds@0x005BFE60,
+  run:2026-10-27-skills, run:2026-10-25-skills)
+- K2. The 3 461 handler fires of run:2026-10-16-combat, run:2026-10-17-stats and the *Fleshripper* log (crushing blow
+  and open wounds 1 637 each, slow 59, heal after kill 57, life tap 12, 59 skill-on-attack fires with a draw) give
+  the same seed effects under the handler model, 0 mismatches. [C] (fn:UNIT_DispatchEvent@0x005C0C30,
+  run:2026-10-16-combat, run:2026-10-27-skills)
+- K2. The remainder is the code reading: the cast's own draws after the first in 20 and 21 (a boundary, ADR-0021),
+  howl's gate on the other unit's MonsterData `+0x16 & 0x0C`, knockback's `0x7F` mask and its result bit,
+  stupidity's chance formula, the effects the table marks `[I]`, and the handlers no session fired (1–4, 10–12, 14,
+  18, 23–27, 30, 31). [I] (0x005BFA38, run:2026-10-27-skills)
+- K2. **Heal and mana after a kill.** The event-9 (kill) handler `0x005C01D0` that runs inside delivery is handler 28:
+  life `+= stat << 8`, capped at stat 7; handler 17 adds `stat << 8` to mana, capped at stat 9. In 78 heals and 78
+  mana gains the cap binds in 154 (the unit at its maximum), and the 2 heals with life more than `stat << 8` below the
+  maximum separate the addition. [C] (fn:sub_005C01D0_StatEv28HealAfterKill@0x005C01D0,
+  fn:sub_005C0130_StatEv17ManaAfterKill@0x005C0130, run:2026-10-27-skills) Mana's addition below the cap (every gain
+  came at full mana) and overlay 151 are the reading. [I] (run:2026-10-27-skills)
+- K2. **Open wounds' roll.** `low mod 100` of the attacker's next draw below stat 135 applies state 62 for 200 frames
+  (82 of 120 fires); at or above it, nothing (38). [C] (fn:STATEVENT_OpenWounds@0x005BFE60, run:2026-10-27-skills)
 - K3. **State 52 (prevent heal) is not a handler.** `COMBAT_ToHitRoll` calls `PreventHealHook` on a successful roll:
   a player attacker with stat 117 and a monster defender whose class is not 704–709 get `STATE_ApplyTimed` of state
-  52 for 120 000 frames with stat 31 = 0; no draw. So it sits between the to-hit draw and the defence roll
+  52 for 120 000 frames with stat 31 = 0. So it sits between the to-hit draw and the defence roll
   ([combat/to-hit](../combat/to-hit.md#a-the-chance-to-hit-combat_tohitroll)). [I] (fn:sub_0057D810_PreventHealHook@0x0057D810,
-  0x0057DB80, 0x0057D879–0x0057D891) The run never applied state 52. [I] (run:2026-10-25-skills)
+  0x0057DB80, 0x0057D879–0x0057D891)
+- K3. **State 52 by stat 117, no draw.** The hook applies state 52 for 120 000 frames with stat 31 = 0 to the defender
+  in 86 of 918 hook calls, exactly those with the player attacker's stat 117 non-zero (*Fleshripper*, *Nature's
+  Peace*), and steps neither unit's seed. [C] (fn:sub_0057D810_PreventHealHook@0x0057D810,
+  fn:STATE_ApplyTimed@0x0056E970, run:2026-10-27-skills, run:2026-10-25-skills) Every call had a player attacker and
+  a monster defender outside 704–709, so the type and class tests are the reading. [I] (run:2026-10-27-skills)
 
 ### L. Summons
 
@@ -736,7 +788,7 @@ L2. SummonSetLevel(owner, m, lvl, skillLvl):                         [I] (fn:sub
       if lvl ≤ 0:
         L: i32 ← stat(owner, 12);  if L = 0: leave the level unset
         lvl ← min(max(L × 3 ÷ 4 + skillLvl, 1), L)                  ; signed ÷ 4
-      stat(m, 12) ← lvl                                             ; [C] (run:2026-10-25-skills: 8 + 207 summons)
+      stat(m, 12) ← lvl                                             ; [C] (run:2026-10-25-skills: 8 + 207 summons; run:2026-10-27-skills: 4 more)
       add MonLvl defence (stat 31) and to-hit (stat 19) by difficulty and the expansion/ladder pair
 
 L3. SpawnOwnedMonster(block) → unit:                                  [I] (fn:sub_0056D940_SpawnOwnedMonster@0x0056D940, all of L3)
@@ -750,17 +802,27 @@ L3. SpawnOwnedMonster(block) → unit:                                  [I] (fn:
   petmax, mode}`, after refusing a negative `pettype` or one at or past the PetType count **before** bit 6. [C]
   (ADR-0021, fn:sub_005C6910_SkillDo114Summon@0x005C6910, run:2026-10-21-cat-emu-dru)
 - L2. **The summon level.** With `lvl` 0 (Raise Skeleton) the level is `min(max(L · 3/4 + skill level, 1), L)`, L the
-  owner's level: in 8 of 8 summons with L 86 and skill level 20 it was 84, not the owner's 86 nor a rounded-up 85. A
-  positive `lvl` is taken as given (207 Raven summons). [C] (fn:sub_005C49E0_SummonSetLevel@0x005C49E0,
-  run:2026-10-25-skills) The 8 summons share one input: the clamps, which do not bind at 84, are the reading. [I]
-  (run:2026-10-25-skills)
+  owner's level: in 12 of 12 summons with L 86 and skill level 20 (8 in run:2026-10-25-skills, 4 in
+  run:2026-10-27-skills) it was 84, not the owner's 86 nor a rounded-up 85. A positive `lvl` is taken as given (207
+  Raven summons). [C] (fn:sub_005C49E0_SummonSetLevel@0x005C49E0, run:2026-10-25-skills, run:2026-10-27-skills) The
+  12 summons share one input: the clamps, which do not bind at 84, are the reading. [I] (run:2026-10-25-skills)
 - L2. `SummonInitStats(m, id, lvl, n)`: `passivestat1..5` with `passivecalc` on the summon, `aurastat1..6` into a list
   (each stat's `itemevent` registered on the summon), `aurastate` set, maximum life `+= maxhp · calc1 / 100`
   (64-bit when large), `sumskill1..5` with `sumsk*calc`, `sumumod`, `sumoverlay`, and the equipment init. [I]
   (fn:sub_005C4470_SummonInitStats@0x005C4470)
 - L3. The created unit's seed is the spawn's ([monsters/spawn § J](../monsters/spawn.md#j-creation-and-the-unit-seed));
-  `SpawnOwnedMonster` adds no draw of its own. The created unit's seed and stats were not checked by the run. [I]
-  (fn:sub_005B2F20_SpawnAtPos@0x005B2F20, run:2026-10-25-skills)
+  `SpawnOwnedMonster` adds no draw of its own. [I] (fn:sub_005B2F20_SpawnAtPos@0x005B2F20)
+- L3. **The summon's seed, life and defence, measured.** In 219 summons (207 Ravens of row 221, 12 `necroskeleton` of
+  Raise Skeleton) the new unit's seed is `Init(Step(game seed).low)` in its unit creation, the game seed stepped once,
+  and its life (stat 6 = stat 7) and defence (stat 31) are what
+  [monsters/stats](../monsters/stats.md)' `MonStatsInit` draws give on that seed: one draw per MonStats2 component
+  with a count of 1 or more, then the life draw `lo + RangeB(hi − lo + 1)` of the class's raw cells (both classes
+  `noRatio`). The Raven's 20–32 range separates in 207. [C] (fn:sub_0056D940_SpawnOwnedMonster@0x0056D940,
+  fn:sub_00552DF0_UnitSeedInit@0x00552DF0, fn:sub_00573CB0_MonStatsInit@0x00573CB0, run:2026-10-27-skills,
+  run:2026-10-25-skills)
+- L3. The summon's other stats (`SummonInitStats`, the skill's bonuses, the to-hit offset), a summon class without
+  `noRatio` (its MonLvl term), the golems and the other summons are the reading. [I] (fn:sub_005C4470_SummonInitStats@0x005C4470,
+  run:2026-10-27-skills)
 - L4. **The pet limit** (players only): `PetGroupClear(type)` removes the owner's pets of every other type with the
   same non-zero `group`; `PetLimit(type, max)` stores `max` and, while the owner's count of the type is above it and the
   type is not 7, removes the first pet of the list; type 1 keeps its stored maximum unless `max` is 1. When `petmax`
@@ -780,9 +842,10 @@ L5. RaiseSkeletonDo(unit, id, lvl):            (srvdofunc 31)        [I] (fn:sub
       SummonInitStats(m, id, lvl, 0);  stat 349 as resistances;  add to the target list
 ```
 
-- L5. **Do 31's caster draw.** In 8 of 8 Raise Skeleton casts (class 363, skill level 20) the caster's seed steps
-  exactly once between the call of `SummonClassRoll` at `0x005C4C7A` and its return, and nowhere else in the do event.
-  [C] (fn:sub_005C4430_SummonClassRoll@0x005C4430, 0x005C4384, run:2026-10-25-skills) The 8 casts share one input:
+- L5. **Do 31's caster draw.** In 12 of 12 Raise Skeleton casts (class 363, skill level 20; 8 in
+  run:2026-10-25-skills, 4 in run:2026-10-27-skills) the caster's seed steps exactly once between the call of
+  `SummonClassRoll` at `0x005C4C7A` and its return, and nowhere else in the do event. [C]
+  (fn:sub_005C4430_SummonClassRoll@0x005C4430, 0x005C4384, run:2026-10-25-skills, run:2026-10-27-skills) The 12 casts share one input:
   the level gate (no draw at skill level 2 or less) and the class-364 path are the reading. [I]
   (fn:sub_005C4300_SkeletonParam1Roll@0x005C4300, fn:sub_005C4180_SummonSetDataBytes@0x005C4180)
 
@@ -794,16 +857,30 @@ L5. RaiseSkeletonDo(unit, id, lvl):            (srvdofunc 31)        [I] (fn:sub
   fn:sub_005A7C20_MonSetMode@0x005A7C20, fn:sub_005A75C0_MonModeStartSkill@0x005A75C0)
 - M2. `MonAttackStats` has six callers: the mode change, start function 42 (Fire Hit), do functions 150, 67 (Charge)
   and 7 (Jab), and `MonSkillAttackDo` (the monster branch of start 40, Leap: `MonAttackStats(mode 4)`,
-  `MON_MeleeHit`, `COMBAT_DeliverQueued`, then a leap past the target). Its formulas are owed
-  ([monsters/stats § H](../monsters/stats.md#h-to-hit-and-damage-at-attack-time-reference-only)); its draws are
+  `MON_MeleeHit`, `COMBAT_DeliverQueued`, then a leap past the target). Its formulas are
+  [monsters/stats § H](../monsters/stats.md#h-to-hit-and-damage-at-attack-time-reference-only)'s; its draws are
   [combat/damage § E](../combat/damage.md#e-a-monsters-attack-stats-monattackstats)'s. [I]
   (fn:sub_005A4F50_MonAttackStats@0x005A4F50, fn:sub_005D9C80_MonSkillAttackDo@0x005D9C80)
+- M2. **`MonAttackStats`, measured.** In 26 425 calls (12 732 in run:2026-10-25-skills' logs, 13 693 in
+  run:2026-10-27-skills') stats 21, 22 and 19 are `MulDiv(MonLvl DM, MinD / MaxD, 100)` and `MulDiv(MonLvl TH, TH,
+  100)` of the mode's columns, `A2` for mode 5, `S1` for modes 7 and 8, `A1` for every other (the raw cells for a
+  `noRatio` class), at the unit's stat 12 and the game's difficulty; another column set gives other values in 26 383
+  of them. A summon's full list adds its other lists to the same stats: the offset at its first call holds over its
+  5 693 later calls. The unit's seed steps only by the `El<e>` chance rolls (21 calls with one `RNG_Range(seed, 100)`,
+  19 failing and 2 applying an `El1` cold and poison attack; 26 418 with none), and the 516 calls made before the
+  unit has a stat list write nothing and leave the seed as it was. [C] (fn:sub_005A4F50_MonAttackStats@0x005A4F50,
+  fn:sub_006538A0_MonLvlStats@0x006538A0, run:2026-10-27-skills, run:2026-10-25-skills)
+- M2. The remainder is the code reading: the list cleared before the writes, so a stat the call does not write reads 0
+  afterwards (`0x005A4FB3`); `El2` and `El3` applied with `El1`'s minimum, maximum and length (the `MonLvlStats` mask
+  `0x40 + e`, `0x005A51D7`–`0x005A525C`; no logged call applied one); the `L` columns (the plain ones gave the same
+  values in every call), the classic scaling, the expansion bonus, type 10's redraw, and the 2 218 calls of the Raven
+  class (419), whose owner skill-damage pair the checker does not model. [I] (0x005A4FB3, 0x005A51D7,
+  run:2026-10-27-skills)
 - M2. **A summon's owner skill damage.** For a monster with an owner whose MonStats `SkillDamage` names a skill row,
   `MonAttackStats` first adds `SKILLS_GetPhysMin(…) >> 8`, `SKILLS_GetPhysMax(…) >> 8` and `SKILLS_GetToHit(…)` of
   that skill (at the owner's level of it, clamped) to the attack mode's min, max and to-hit, before the classic and
   player-count adjustments. Which unit's level is read is register-passed and not resolved. [I]
   (fn:sub_0056E050_MonOwnerSkillDamage@0x0056E050, tbl:MonStats.txt:SkillDamage)
-- M2. The run logged 15 268 `MonAttackStats` calls as oracles; none was predicted. [I] (run:2026-10-25-skills)
 
 ### N. Ammunition and weapon wear
 
@@ -835,9 +912,9 @@ The rows plan 0045 reproduces; the reading is [skills/0003 § 5](../../findings/
 
 | Row | `srvstfunc` | `srvdofunc` | What runs | Own draws | Tag |
 |---|---|---|---|---|---|
-| 0 Attack, 5 Left Hand Swing | 1 `SKILL_AttackStart` | 1 `SKILL_AttackDo` | the normal attack ([combat/overview § A](../combat/README.md#a-the-attack-events)) or the missile | the attack's | [C] for Attack (fn:SKILL_AttackDo@0x0056F070, run:2026-10-16-combat) |
-| 1 Kick | 2 (`0x0056CAF0`): result 9, flags 2, physical `MinDam << HitShift`, hit class 1, `ResolveAndQueue(…, 128)` | 2 | start builds, do delivers (I3) | the builder's | [I] (0x0056CAF0) |
-| 2 Throw, 4 Left Hand Throw | 65 (`0x0056CAB0`): the thrown item | 3, 5 | the throw missile ([skills/missiles § B](missiles.md#b-creation)) | none | [I] (fn:sub_0056F460_SkillThrowDo@0x0056F460) |
+| 0 Attack, 5 Left Hand Swing | 1 `SKILL_AttackStart` | 1 `SKILL_AttackDo` | the normal attack ([combat/overview § A](../combat/README.md#a-the-attack-events)) or the missile | the attack's | [C] for Attack (fn:SKILL_AttackDo@0x0056F070, run:2026-10-16-combat); [C] for Left Hand Swing's 30 do events (run:2026-10-27-skills) |
+| 1 Kick | 2 (`0x0056CAF0`): result 9, flags 2, physical `MinDam << HitShift`, hit class 1, `ResolveAndQueue(…, 128)` | 2 | start builds, do delivers (I3) | the builder's | [C] for 32 do events (run:2026-10-27-skills); [I] the build (0x0056CAF0) |
+| 2 Throw, 4 Left Hand Throw | 65 (`0x0056CAB0`): the thrown item | 3, 5 | the throw missile ([skills/missiles § B](missiles.md#b-creation)) | none | [C] for Left Hand Throw's 36 do events (run:2026-10-27-skills); [I] otherwise (fn:sub_0056F460_SkillThrowDo@0x0056F460) |
 | 25 Plague Javelin, 12 Multiple Shot | 4 (`0x005DA8B0`) | — / 8 | 8: `calc1` missiles fanned perpendicular to the line to the target | the creations' | [I] (fn:sub_005DB410_SkillDo08MultiShot@0x005DB410) |
 | 10 Jab | 5: a target | 7 | to-hit, `edPct = calc1`, conversion, elemental roll, `ResolveAndQueue(SrcDam or 128)`, delivery | to-hit, defence, build, 1–2 | [I] (0x005DB2D0) |
 | 70 Raise Skeleton | 15: a monster corpse the raise test accepts | 31 | L5 | 1 (class 363 above skill level 2, class 364) | [C] for one step at class 363, level 20 (run:2026-10-25-skills) |
@@ -856,11 +933,18 @@ The rows plan 0045 reproduces; the reading is [skills/0003 § 5](../../findings/
 
 - O. **No own draw, measured.** For the eleven rows 36, 44, 48, 54, 56, 98, 102, 130, 221, 225 and 12, each met in 30
   or more do events, the caster's seed at `SKILLS_SrvDo`'s and `SKILLS_SrvStart`'s return equals the entry seed stepped
-  by exactly the nested events' draws (of the 1 269 do and 1 142 start events checked in all; a missing or extra step
-  would be a mismatch). [C] (fn:SKILLS_SrvDo@0x0056F7F0, fn:SKILLS_SrvStart@0x0056F640, run:2026-10-25-skills) The same held for
-  rows met fewer than 30 times: 25 Plague Javelin (26), 66 Amplify Damage (25), 68 Bone Armor (23), 251 Fire Trauma
-  (19), 117 Holy Shield (13). [I] (run:2026-10-25-skills) Kick, Left Hand Throw and Left Hand Swing had no session.
-  [I] (run:2026-10-25-skills)
+  by exactly the nested events' draws, in their 947 do and 828 start events (98 and 102 have no start event); a
+  missing or extra step would be a mismatch. The 1 269 do and 1 142 start events run:2026-10-25-skills checked in
+  all are the per-row seed-check totals: these eleven rows, the five rows below (106, 106), 92 Poison Nova (208, 208)
+  and do 31's 8 Raise Skeleton do events. [C] (fn:SKILLS_SrvDo@0x0056F7F0, fn:SKILLS_SrvStart@0x0056F640,
+  run:2026-10-25-skills)
+- O. **The rows once under 30, now over it.** 25 Plague Javelin (45 do events), 66 Amplify Damage (61), 68 Bone Armor
+  (34), 251 Fire Trauma (61) and 117 Holy Shield (65), part 1's events with part 2's, hold the same at `SKILLS_SrvDo`'s
+  exit. [C] (fn:SKILLS_SrvDo@0x0056F7F0, run:2026-10-25-skills, run:2026-10-27-skills)
+- O. **Kick, Left Hand Throw and Left Hand Swing**: 32, 36 and 30 do events, the caster's seed unchanged across each
+  of their 32, 36 and 30 start events. Left Hand Swing arrives only by the dual-wield alternation of Attack (B4). [C]
+  (fn:sub_00549960_DualAttackAlternate@0x00549960, run:2026-10-27-skills) 70 Raise Skeleton stays at 12 do events
+  (L5). [I] (run:2026-10-27-skills)
 - O. **Reproduced up to their boundaries** (ADR-0021): do 18 up to `STATE_GroupClear`; do 20 up to
   `SKILLS_ForUnitsInRange`, its block `{calc2, calc1, the difficulty record's +0x40, elemental length, EType}` with
   the third word 0 when `game+0x70` is 0; do 22 up to the first creation, its velocity Missiles
@@ -877,17 +961,17 @@ The rows plan 0045 reproduces; the reading is [skills/0003 § 5](../../findings/
 
 | Event | Entry | Draws | Seed | Tag |
 |---|---|---|---|---|
-| request | `PLRMSG_SkillAt*`, `SKILLS_CanUse` | none (stat 328 + 1) | — | [I] (fn:SKILLS_CanUse@0x00647960) |
+| request | `PLRMSG_SkillAt*`, `SKILLS_CanUse` | none (stat 328 + 1) | — | [I] (fn:SKILLS_CanUse@0x00647960); its codes per § C |
 | start | `SKILLS_SrvStart` | the `srvstfunc`'s; a start-built hit: to-hit, defence, build, elemental roll | unit; target for defence | [C] machinery adds none (run:2026-10-25-skills) |
 | do | `SKILLS_SrvDo` | the `srvdofunc`'s, the delivery's, the missile creations' | unit, defender, game | [C] machinery adds none (run:2026-10-25-skills) |
 | cost, delay | `SKILLS_PayCost`, `SKILLS_SetDelayState` | none | — | [C] (run:2026-10-25-skills) |
 | periodic queue | `SKILLS_QueuePeriodic` | none read | — | [I] (fn:SKILLS_QueuePeriodic@0x0056CDA0) |
 | finisher | `COMBAT_PrgFinisher` | its peek restores the seed; entries per J4 | attacker; area units; local | [I] (fn:COMBAT_PrgFinisher@0x005D5220) |
-| handler | `UNIT_DispatchEvent` | per § K | the handler's unit | [I] (data:g_StatEventFuncs@0x007325B0) |
-| state 52 | `PreventHealHook` | none | — | [I] (fn:sub_0057D810_PreventHealHook@0x0057D810) |
+| handler | `UNIT_DispatchEvent` | per § K | the handler's unit | [C] for the handlers § K marks (run:2026-10-27-skills: 1 303 calls); [I] otherwise (data:g_StatEventFuncs@0x007325B0) |
+| state 52 | `PreventHealHook` | none | — | [C] (fn:sub_0057D810_PreventHealHook@0x0057D810, run:2026-10-27-skills: 918 calls) |
 | item cast | `ITEMSKILL_Cast` | none of its own; `ItemTarget` 2: 2 per try | caster | [I] (fn:ITEMSKILL_Cast@0x005FDA80) |
-| summon | `SpawnOwnedMonster` | the spawn's | game | [I] (fn:sub_005B2F20_SpawnAtPos@0x005B2F20) |
-| Raise Skeleton | `SummonClassRoll` | 1 | caster | [C] at class 363, level 20 (run:2026-10-25-skills) |
+| summon | `SpawnOwnedMonster` | one step of the game seed, then the new unit's `MonStatsInit` draws (L3) | game; the new unit | [C] for 219 summons (run:2026-10-27-skills); [I] otherwise (fn:sub_005B2F20_SpawnAtPos@0x005B2F20) |
+| Raise Skeleton | `SummonClassRoll` | 1 | caster | [C] at class 363, level 20 (run:2026-10-25-skills, run:2026-10-27-skills) |
 | weapon wear | `SkillWeaponWear` | 1 | unit | [I] (fn:sub_005DAA40_SkillWeaponWear@0x005DAA40) |
 | Armageddon period | do 146 | re-seeds the caster's seed (P2) | caster | [I] (fn:sub_005C8520_SkillDo146Armageddon@0x005C8520) |
 
@@ -896,12 +980,18 @@ The rows plan 0045 reproduces; the reading is [skills/0003 § 5](../../findings/
   further on the same stream (1 ×92, 2 ×64, 3 ×59, 4 ×20, 5 ×12, the rest under 10 each), so something drew on that
   seed between the two events; none lies off the stream within 4 096 steps. [C] (fn:SKILLS_SrvStart@0x0056F640,
   fn:SKILLS_SrvDo@0x0056F7F0, run:2026-10-25-skills)
-- P1. What draws in those 304 gaps is sorted, not attributed draw by draw: of the 133 player gaps, 87 step exactly as
-  many times as the unit's own logged to-hit rolls between the events, 4 hold fewer, 31 find the unit a hit's defender
-  (its defence rolls), 1 names it otherwise and 10 have no line naming it; of the 171 monster gaps, 146 hold
-  `MonAttackStats` calls (each leaving the seed unchanged, so the steps lie elsewhere, the AI's among the candidates)
-  and 25 none. So between a start-built hit and its delivery, other events draw on the attacker's seed. [I]
-  (run:2026-10-25-skills, [skills/0001 § 17](../../findings/skills/0001-dispatch.md#17-plan-0045-phase-2-the-run-run2026-10-25-skills))
+- P1. **The gaps walked draw by draw.** Walking the lines between two skill events of a unit, stepping its seed once
+  for each of its own logged to-hit, defence and elemental rolls and taking the logged exit of each span the checker
+  models (`MonAttackStats`, a handler, a missile creation, do 31's class roll) or treats as a boundary (a delivery, a
+  queued hit, a melee attack, a missile hit), every logged observation of the seed agreeing on the way, reaches the
+  next entry in 90 of run:2026-10-25-skills' 133 player gaps and 45 of run:2026-10-27-skills' 148. [C]
+  (fn:SKILLS_SrvDo@0x0056F7F0, run:2026-10-25-skills, run:2026-10-27-skills)
+- P1. The rest are listed with their lines: of part 1's 43, 31 with the player a hit's defender between (its defence
+  rolls, logged only inside an open span then), 11 with no line naming it, 1 other; of part 2's 103, 60 as a defender,
+  17 nested (an item cast of handler 20 or 21 inside a delivery), 11 off the stream within 4 096 steps, 2 with no
+  line, 13 other. So between a start-built hit and its delivery, other events draw on the attacker's seed. The 171 +
+  160 monster gaps point at the AI (plan 0052). [I] (run:2026-10-25-skills, run:2026-10-27-skills,
+  [skills/0001 § 18](../../findings/skills/0001-dispatch.md#18-plan-0045-phase-2-part-2-the-run-run2026-10-27-skills))
 - P2. **Armageddon re-seeds its caster.** The periodic function of Armageddon and Diablogeddon (do 146) seeds the
   caster's seed with `Init` of its skill entry's `+0x18` word and stores a fresh `RNG_Range(1 000 000)` there; the
   first period's word and its conditions are [rng/seeds](../rng/seeds.md#reimplementation-notes)' *Armageddon's cast
@@ -947,29 +1037,41 @@ run:2026-10-25-skills) The step's use, `low mod 100` against Raise Skeleton's `P
 ## Evidence
 
 - [skills/0001](../../findings/skills/0001-dispatch.md): the request, checks, start and do, costs, delay, periodic,
-  item skills, the skill packet, progressive charges, monster skill use, ammunition and wear; § 17 the run.
+  item skills, the skill packet, progressive charges, monster skill use, ammunition and wear; § 17 the run, § 18 part 2.
 - [skills/0003](../../findings/skills/0003-handlers.md): the progressive entries, item-event casts, stat-event
-  handlers, state 52, `SrvStart` inside do functions, tier A, summons; § 15 the run.
+  handlers, state 52, `SrvStart` inside do functions, tier A, summons; § 15 the run, § 16 part 2.
+- [monsters/0004 § 9](../../findings/monsters/0004-stats.md#9-to-hit-and-damage-at-attack-time-sub_005a4f50_monattackstats):
+  `MonAttackStats`.
 - [skills/0008](../../findings/skills/0008-sorceress.md)–[0016](../../findings/skills/0016-monster-8a.md) (plan 0046):
   the boundary reproductions cited in §§ D, H, I, J, K, L and O.
-- [skills/experiments § run:2026-10-25-skills](../../findings/skills/experiments.md#run2026-10-25-skills).
+- [skills/experiments § run:2026-10-25-skills](../../findings/skills/experiments.md#run2026-10-25-skills),
+  [§ run:2026-10-27-skills](../../findings/skills/experiments.md#run2026-10-27-skills).
 - [combat/0001](../../findings/combat/0001-formulas.md): the combat build and delivery a skill hit feeds.
 - Tables: [Skills](../../tables/Skills.md), [PetType](../../tables/PetType.md), [MonStats](../../tables/MonStats.md),
   [ItemStatCost](../../tables/ItemStatCost.md).
 
 ## Open questions
 
-- [L] **The request refusals as the game makes them**: `SKILLS_CanUse`'s codes, the mana, delay and town refusals,
-  are not logged (plan 0045 Phase 2 part 2, item 1).
-- [L] **The stat-event handlers run** (plan 0045 Phase 2 part 2, item 2): the 31 handlers' draws and effects, event 9
-  among them, and the state-52 apply, read from the code only.
-- [L] **`MonAttackStats`' formulas** and a run predicting them (part 2, item 3; [monsters/stats](../monsters/stats.md)).
-- [L] **The summoned unit's seed and stats** to the monsters/stats boundary (part 2, item 4), the class-364 draw and
-  the level gate of do 31.
-- [L] **The short tier-A rows**: Kick, Left Hand Throw and Left Hand Swing (no session), and the rows under 30
-  events (part 2, item 6).
-- [L] **The attribution of the 304 caster resyncs** (part 2, item 7): the player gaps to modelled draws; the monster
-  gaps point at the AI (plan 0052).
+- ~~The request refusals as the game makes them.~~ Codes 0, 1, 6 and 8 and their order, and the delay's end, by
+  run:2026-10-27-skills (§ C, § G).
+- [L] **The server's handling of a refused request**: codes 2–5 and 7, `startmana`, item charges, blood mana and the
+  `InTown` refusal, which a stock client never sends (§ C); a forged-request test needs plan 0044's two-client
+  harness or a patched client.
+- ~~The stat-event handlers run.~~ The draws of the handlers § K marks, heal and mana after a kill, open wounds' roll
+  and state 52, by run:2026-10-27-skills (§ K).
+- [L] The handlers no session fired (1–4, 10–12, 14, 18, 23–27, 30, 31) and the effects § K leaves to the reading.
+- ~~`MonAttackStats`' formulas and a run predicting them.~~ Stats 21, 22 and 19 and the draws, by
+  run:2026-10-27-skills (§ M).
+- [L] `MonAttackStats`' `L` columns, classic and expansion terms, type 10's redraw, `El2`/`El3`, and the Raven class's
+  owner skill-damage pair (§ M).
+- ~~The summoned unit's seed and stats.~~ Its seed, life and defence, by run:2026-10-27-skills (§ L).
+- [L] The summon's other stats, a class without `noRatio`, the golems, the class-364 draw and the level gate of do 31.
+- ~~The short tier-A rows.~~ Kick, Left Hand Throw, Left Hand Swing and the five rows under 30, by
+  run:2026-10-27-skills (§ O); Raise Skeleton stays at 12 do events.
+- ~~The attribution of the 304 caster resyncs.~~ 90 of part 1's 133 player gaps and 45 of part 2's 148 walked, by
+  run:2026-10-27-skills (§ P).
+- [L] **The caster gaps left**: the 43 + 103 player gaps listed in § P, and the 171 + 160 monster gaps, which point at
+  the AI (plan 0052).
 - [L] What `Unit+0x38` holds (the sequence-anim delay gate of E4 and do 35's parity).
 - [L] Which frame of a mode carries event code 1 or 2, and `Unit+0x4E`: animation timing (plan 0050).
 - [L] The finisher's entries in a run (56 finisher calls were oracles in run:2026-10-25-skills).

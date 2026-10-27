@@ -4,7 +4,7 @@ status: draft
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, skills/dispatch, combat/overview, combat/to-hit, combat/delivery, drlg/collision, data/calc]
 consumed_by: [combat/overview, combat/delivery, drlg/collision, items/economy, rng/seeds]
-tags: {C: 42, I: 88, L: 6}
+tags: {C: 46, I: 90, L: 6}
 updated: 2026-10-27
 ---
 
@@ -44,7 +44,7 @@ stateDiagram-v2
 | A missile is created at a point (quests, shrines, missiles, some skills) | fn:sub_0056EDE0_MissileCreateAt@0x0056EDE0 | [I] |
 | Every frame, for every missile | fn:sub_005ADBB0_MissileDoFrame@0x005ADBB0 | [C] (run:2026-10-25-skills: 13 335 frames) |
 | Do function 1, the common step | fn:sub_005AE1F0_MissileMoveCollide@0x005AE1F0 | [I] |
-| A missile reaches a unit, or ends its life | fn:MISSILE_HitUnit@0x005ADF10 | [C] for a missed to-hit (run:2026-10-25-skills: 105); [I] otherwise |
+| A missile reaches a unit, or ends its life | fn:MISSILE_HitUnit@0x005ADF10 | [C] for a missed to-hit (run:2026-10-25-skills: 105), and for the end and the pierce use of a damaging hit by a row with no hit function (run:2026-10-27-skills: 3 876); [I] otherwise |
 | The packet at the hit | fn:MISSILE_BuildDamage@0x005A89A0 | [C] (run:2026-10-25-skills: 778 builds) |
 
 ## Inputs
@@ -118,7 +118,7 @@ sequenceDiagram
   O->>O: create, weapon share: critical chain, 1 to 3 Steps
   L->>L: create, Pierce row: Init(owner base stat 328), up to 4 Steps
   Note over M: a creation callback may re-seed M (§ H)
-  Note over M: each frame: do function; do 1 draws nothing of its own
+  Note over M: each frame: do function, do 1 draws nothing of its own
   O->>O: hit, ToHit row: Range(100) to hit
   M->>M: hit: BuildDamage up to 7 RangeB, the damage function's
   M->>M: hit: knockback Range(100) (MISSILE_ApplyDamage)
@@ -197,8 +197,15 @@ B1. MissileCreate(game, p) → missile:                                [I] (fn:s
   caller's, then `· 75/100`), the path's `Accel` and `MaxVel << 8` as read, the range `Range` less the frames already
   run (30 941; 450 ranges taken after a creation callback are oracles), the frames left equal to it (30 922; 19 lob
   counts are oracles), the activate mark, skill and level. [C] (fn:sub_0059FA30_MissileCreate@0x0059FA30,
-  run:2026-10-25-skills) The `VelLev` and `LevRange` terms (no row with them was created), the slow-missiles scaling,
-  the `SubLoop` loops and the 100-sub-tile refusal are the reading. [I] (run:2026-10-25-skills)
+  run:2026-10-25-skills) The slow-missiles scaling, the `SubLoop` loops and the 100-sub-tile refusal are the
+  reading. [I] (run:2026-10-25-skills)
+- B1. **The `LevRange` term is `LevRange · lvl`, with no `− 1`.** 271 `blaze` creations (row 67, `LevRange` 25, `Range`
+  90) at level 2, made by Blaze while the Sorceress walks, each have range and frames left `25 · 2 + 90` = 140;
+  `LevRange · (lvl − 1) + Range` would give 115. [C] (fn:sub_0059FA30_MissileCreate@0x0059FA30,
+  tbl:Missiles.txt:LevRange, run:2026-10-27-skills)
+- B1. The `VelLev` term, `(VelLev · lvl) ÷ 8` with no `− 1`, is the code reading: the 22 `spike2` creations of
+  run:2026-10-27-skills were all at level 1, where `(7 · 1) ÷ 8` is 0 either way. [I] (0x0059FB18–0x0059FBAB,
+  tbl:Missiles.txt:VelLev, run:2026-10-27-skills)
 - B1. Integer semantics: `(VelLev · lvl) ÷ 8` is signed and truncates toward zero; the slow and the 75 % scalings are
   signed `÷ 100`; the lob division is unsigned; `MaxVel << 8` is a byte times 256. [I] (0x0059FB18–0x0059FBAB,
   0x0059FDD4–0x0059FDDE, 0x0059FE02–0x0059FE12)
@@ -439,6 +446,17 @@ E1. MISSILE_HitUnit(game, m, unit, end) → 1 keep, 2 free:            [I] (fn:M
   successful pierce (`p` = 2) clears bit 0 of `p`, so the missile continues even with `CollideKill`. At the end of
   life (`end` 1) the hit function runs with no unit and no damage is built. [I] (fn:sub_005ADA80_MissilePierceUse@0x005ADA80,
   fn:sub_005ADA40_MissileHitTypeFilter@0x005ADA40, tbl:Missiles.txt:CollideKill, tbl:Missiles.txt:AlwaysExplode)
+- E1. **The end of a damaging hit, measured for a row with no hit function.** On 3 876 hit calls that reached
+  `MISSILE_BuildDamage` (710 in run:2026-10-25-skills' logs, 3 166 in run:2026-10-27-skills'), the result and the
+  missile's stat 328 are as E1 reads them: a pierce is used when the row has `Pierce`, the owner's stat 166 or 156
+  (its value at the creation) is non-zero and stat 328 is above 0, stat 328 falling by 1 and the missile kept (130);
+  otherwise the missile ends at the unit when the row has `CollideKill` (276) and is kept when it has not (3 470). [C]
+  (fn:MISSILE_HitUnit@0x005ADF10, fn:sub_005ADA80_MissilePierceUse@0x005ADA80, tbl:Missiles.txt:CollideKill,
+  tbl:Missiles.txt:Pierce, run:2026-10-27-skills, run:2026-10-25-skills)
+- E1. The rest is the reading: the 64 hits of rows with a hit function (its result replaces the end bit: a boundary),
+  the 1 203 calls that returned before the build (the last-hit, type and hostility filters, not separated from each
+  other), the `end` call's own branch, `AlwaysExplode`, and an owner whose pierce stats changed after the creation.
+  [I] (run:2026-10-27-skills, run:2026-10-25-skills)
 - E1. **A missed to-hit.** `COMBAT_ToHitRoll`'s roll is the owner's next draw, `low mod 100` (269 rolls), and a failed
   roll returns 2 and frees the missile at that unit, a `Pierce` row having spent one pierce first: 105 misses, 7 with
   a pierce left. [C] (fn:COMBAT_ToHitRoll@0x0057D9B0, fn:MISSILE_HitUnit@0x005ADF10, run:2026-10-25-skills) The
@@ -542,7 +560,10 @@ re-seed the missile's draws are a function of the creator's value, not of the ga
   why 20 or 38, is not read: the path planner is a value oracle. [I] (fn:sub_00649970_PathPlan@0x00649970)
 - H2. The callbacks are stored at the parameter block's `+0x54` and called by `MissileCreate` with the new missile
   before the damage block (B1). [I] (fn:sub_0059FA30_MissileCreate@0x0059FA30)
-- H3. The other re-seed sites of the table are not reached by run:2026-10-25-skills. [I] (run:2026-10-25-skills)
+- H3. The other re-seed sites of the table are not reached by run:2026-10-25-skills or run:2026-10-27-skills (no
+  breakpoint on them, and no session's row on their paths): `0x005ACDF0` (hit 58), `0x005D40F0` (do 37), `0x005D5BF0`,
+  the call at `0x005AC073` and `0x00645390` (no reference in the image). `0x005C9290` re-seeded 168 more times in
+  run:2026-10-27-skills, 38 steps past the Init each. [I] (run:2026-10-25-skills, run:2026-10-27-skills)
 
 ### I. Draws and seeds per event kind
 
@@ -592,6 +613,9 @@ the reading. [I] (fn:sub_005C7160_SkillDo117Firestorm@0x005C7160)
 - **A missile steps before any unit acts in its frame**, and first on the frame after its creation. [C] for the
   first frame (run:2026-10-25-skills); [I] for the pass order (fn:sub_005414D0_GameRunUnitEvents@0x005414D0)
 - **A missed piercing missile has spent a pierce.** [C] (run:2026-10-25-skills: 7 cases)
+- **A used pierce keeps the missile**: stat 328 falls by 1 and the missile flies on. [C] (fn:sub_005ADA80_MissilePierceUse@0x005ADA80,
+  run:2026-10-27-skills: 130 cases)
+- **`LevRange` counts every level**: `LevRange · lvl + Range`, not from level 2. [C] (fn:sub_0059FA30_MissileCreate@0x0059FA30, run:2026-10-27-skills: 271 creations)
 - **A freed missile at a bit-0 or bit-2 own cell does not explode.** [I] (fn:sub_005AE1F0_MissileMoveCollide@0x005AE1F0)
 - **Keep `g_PathDirTable` as data.** The step direction is a table lookup, not a trigonometric function. [I]
   (data:g_PathDirTable@0x006EB7E0)
@@ -599,21 +623,28 @@ the reading. [I] (fn:sub_005C7160_SkillDo117Firestorm@0x005C7160)
 ## Evidence
 
 - [skills/0002](../../findings/skills/0002-missiles.md): creation, the damage block, the frame, collision, the hit,
-  the packet, the tables; § 11 the run.
+  the packet, the tables; § 11 the run, § 12 part 2.
 - [skills/0003](../../findings/skills/0003-handlers.md) §§ 6, 9, 10, 11: tier-A missile functions, re-seed sites,
-  helpers, the frame pass; § 15 the run.
+  helpers, the frame pass; § 15 the run, § 16 part 2.
 - [skills/0004](../../findings/skills/0004-missile-do-1-18.md)–[0007](../../findings/skills/0007-missile-hit-31-59.md)
   (plan 0046): the boundary reproductions cited in §§ D, G and H.
-- [skills/experiments § run:2026-10-25-skills](../../findings/skills/experiments.md#run2026-10-25-skills).
+- [skills/experiments § run:2026-10-25-skills](../../findings/skills/experiments.md#run2026-10-25-skills),
+  [§ run:2026-10-27-skills](../../findings/skills/experiments.md#run2026-10-27-skills).
 - Tables: [Missiles](../../tables/Missiles.md), [Skills](../../tables/Skills.md).
 
 ## Open questions
 
-- [L] **The end of a missile at a hit and pierce uses at a hit** (plan 0045 Phase 2 part 2): the result of a hit that
-  does not miss was an oracle in run:2026-10-25-skills (31 257 calls), and no pierce was used at a hit.
-- [L] **The `VelLev` and `LevRange` terms** (cases C2 and C4 of part 2: no `spike1`–`spike4` or `blaze` missile was
-  created), the slow-missiles scaling, the `SubLoop` loops and the distance refusal.
-- [L] **The re-seed sites other than `0x005C9290`** in a run, and which of `0x005C9290`'s path calls steps the new seed.
+- ~~The end of a missile at a hit and pierce uses at a hit.~~ For rows with no hit function, by run:2026-10-27-skills
+  (E1).
+- [L] The end of a hit for a row with a hit function, the filters before the build, `AlwaysExplode` and the `end`
+  call's branch in a run.
+- ~~The `LevRange` term (case C4).~~ By run:2026-10-27-skills (B1); the lead's `− 1` contradicted.
+- [L] **The `VelLev` term (case C2).** The lead src:d2dfg-blizzard gives velocity `Vel` plus `VelLev` per caster level
+  beyond 1; the code reads `(VelLev · lvl) ÷ 8 + Vel` (contradicted, from the code); no run has separated them (22
+  `spike2` at level 1). A `spike1` (`VelLev` 8) at level 1 would (velocity 11 against the lead's 10): carried to a
+  later Blood Moor log. Also open: the slow-missiles scaling, the `SubLoop` loops and the distance refusal.
+- [L] **The re-seed sites other than `0x005C9290`** in a run (named unreached by both runs, H3), and which of
+  `0x005C9290`'s path calls steps the new seed.
 - [L] The critical chain's second and third steps in a run.
 - [L] The insertion of a new missile into the every-frame list (its first frame is measured, the code not read).
 - [L] The unit filter for a missile as the unit (the grim wards' do 30) and the fifth unit-event list of the frame pass.
