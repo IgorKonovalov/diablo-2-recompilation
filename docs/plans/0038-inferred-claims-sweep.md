@@ -4399,7 +4399,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     call-site-only frames stay I. (g) **The quality 7 answer** stands as `[I]` After (items/0004 us 13), now with `bks`.
     (h) **`test_d2s.py`** fails `test_every_recipe_has_a_base` after the merge, on `lane/h3b`'s `h3brare` alone (merged
     into `main` before `lane/a2t`, whose branch lacked it); H6e2's seven recipes have rows. Not H6e2's: routed,
-    [2026-10-27-architect-archivist-test-d2s-h3brare-recipe-base](../backlog/2026-10-27-architect-archivist-test-d2s-h3brare-recipe-base.md),
+    [2026-10-27-architect-archivist-test-d2s-h3brare-recipe-base](../backlog/archive/2026-10-27-architect-archivist-test-d2s-h3brare-recipe-base.md),
     with the base and the save hash the review rebuilt (`ce57d8f7…`, as the H3b record).
   - **Totals** recounted against `main` `507a6f5c` after merging it (`lane/rk` moved no inventory row): unchanged,
     static 567, harness 519, c-emu 0, blocked 421, deferred 2, raised 17: 1 526. H6e2's ledger: raised 3, raised in part
@@ -4440,3 +4440,4 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     row filled (accept with fixes, 2: wrong anchor 1, omission 1; usage from the orchestrator: 87 940 tokens, 26 tools,
     12 min); the review row added, usage "—".
   - **Next:** merge `lane/sk`.
+- **2026-10-27 — `lane/a3r` review (architect): accept.** The `tools/` diff is the one `h3brare` `RECIPE_BASES` row; a scratch rebuild of `h3brare.json` (`52aa64e8…`) on `smpsor-l50.d2s` gives `ce57d8f7…6317`, the H3b record's save hash (data/experiments); `test_d2s.py` 47 tests OK; the [review request](../backlog/archive/2026-10-27-archivist-architect-review-lane-a3r-test-d2s-h3brare-row.md) closed; ledger lane row filled (usage from the orchestrator), review row usage "—".
