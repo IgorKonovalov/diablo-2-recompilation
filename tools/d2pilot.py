@@ -1136,10 +1136,13 @@ NPCS = {
     "tyrael": (367, ["talk", "resurrect", "travel", "cancel"], None),
     "tyraelgo": (367, ["talk", "travel to harrogath", "cancel"], None),   # plan 0042 P2 part 3: no mercenary
     "qualres": (515, ["talk", "resurrect", "hire", "cancel"], (-56, 12)),   # Qual-Kehk with a dead mercenary
+    "kashyares": (150, ["talk", "resurrect", "hire", "cancel"], None),   # plan 0038 H6f: Kashya, a dead mercenary (assumed as Qual-Kehk's)
     "waypoint": (None, [], None),       # npc <log> waypoint walk: walk next to the town waypoint (OBJP lines)
 }
 NPC_DONE = {"trade": ("TO", lambda d: d.get("gamble") == 0), "gamble": ("GBX", None), "hire": ("HIRE", None),
             "identify": ("CI1", None), "resurrect": ("MR1", None)}
+# lines another logger writes for the same event (plan 0038 H6f: tools/gdb/h6f.py's RESX at MERC_Resurrect's exit)
+DONE_ALIASES = {"MR1": ("RESX",)}
 # Quest item services (plan 0032 Phase 2, tools/gdb/quests.py): with the reward pending the NPC's menu has one more line
 # just before "cancel" (Charsi: talk, trade, imbue, cancel). The service opens the inventory beside a one-item box:
 # the pilot picks the --item cell up, puts it into the box and presses the box's check mark, then waits for the line.
@@ -1802,7 +1805,7 @@ def cmd_npc(args):
                 text, _ = log_tail(args.log, start)
                 for ln in text.splitlines():
                     tg, _, rest = ln.partition(" ")
-                    if tg != done_tag:
+                    if tg != done_tag and tg not in DONE_ALIASES.get(done_tag, ()):
                         continue
                     try:
                         dd = json.loads(rest)
