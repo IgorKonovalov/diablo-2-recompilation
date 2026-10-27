@@ -847,6 +847,21 @@ tables`; the string indices are resolved with `tools/tbl.py index workspace/merg
   `sweep_s1a.py survey` now prints the breakdown: `empty_main_list_samples_q4_ilvl1` 40, `_d2sio_q4_ilvl1` 8,
   `_cube_q6_ilvl99` 5 (kept output `sweep-s1a-survey-p49r-2026-10-20.txt`). (run:2026-10-15-cube-saves)
 
+## Plan 0038 batch H3b (run:2026-10-27-sweep-data-load)
+
+Harness batch H3b of [plan 0038](../../plans/0038-inferred-claims-sweep.md), data-excel row 74 of
+[inventory data-excel](../../plans/0038-inventory/data-excel.md); method as in
+[data/0004 § Plan 0038 batch H3b](../data/0004-cell-converters.md#plan-0038-batch-h3b-run2026-10-27-sweep-data-load)
+(charstats dumped at `DATATBLS_LoadAll`'s return and at the excel unload in six runs,
+[run:2026-10-27-sweep-data-load](../data/experiments.md#run2026-10-27-sweep-data-load)).
+
+- **data/excel row 74** (spec L706, charstats `+0x000..+0x01F` the class's display name as UTF-16) **raised in part.**
+  [C] In all 12 dumps the 7 records' first 32 bytes are the UTF-16 text `STRTABLE_GetStringByKey` gives for the
+  record's `class` (`+0x20`) key, at most 16 units, zero padded (11 offsets differ from the file, which holds 0), and
+  no other byte of the records differs from the file. **Remainder `[I]`:** the fallback built from the key text when the
+  key is not found: every class key was found. (fn:sub_00612600_RecWideNameFill@0x00612600,
+  fn:CHARSTATS_LoadTable@0x00613260, run:2026-10-27-sweep-data-load)
+
 ## Open questions
 
 - ~~Which UI path sets status bit `0x20` for classes 0–4 in an expansion game, and bit `0x40` (ladder): the stub only

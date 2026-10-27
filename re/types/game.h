@@ -57,7 +57,7 @@ typedef struct Unit { /* any unit; type-specific data at +0x14 */
                                      it only in its cast and attack branches (anim/0002 § 3.8) */
     int32_t  seqMode;             /* +0x040 the mode byte of the current sequence frame */
     int32_t  animFrame;           /* +0x044 current frame, 8.8; in a server-scheduled mode the game frame the schedule was made at, << 8 */
-    int32_t  animLength;          /* +0x048 frames << 8 (animdata FramesPerDir); objects: Objects FrameCnt[mode] unshifted;
+    int32_t  animLength;          /* +0x048 frames << 8 (animdata FramesPerDir); objects: Objects FrameCnt[mode], shifted << 8 at load (anim/0003 § 6.5);
                                      sequences: the frames still to run, << 8, counted down by seqRate */
     int16_t  animRate;            /* +0x04C frame step per tick, 8.8, clamped to [0, 0x7FFF]; UNIT_AnimSetRate (anim/0002) */
     uint8_t  animEvent;           /* +0x04E event byte (1..4) of the frames the last advance crossed, 0 if none */

@@ -3863,3 +3863,90 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     shortfall 5, d-none 4: 48. **static 567, harness 521, c-emu 0, blocked 419** (d-none 293, d-edit 73, d-sim 28,
     d-2c 7, d-owner 10, d-0032 8), **deferred 2, raised 17: 1 526**, as the lane filed them.
   - **Backlog:** review request closed. **Next:** merge `lane/r1h`; H1a (`d2s-load`) as before.
+- **2026-10-27 — H3b (`data-load`) filed (reverser, `lane/h3b`, harness slot 2, after merging `main` `2637b08`).**
+  run:2026-10-27-sweep-data-load: seven program runs (stock, `-txt`, loose files, `-direct`, `-direct -txt`, and `-direct`
+  with a loose `use` byte of 0x0B and of 0x0E; expansion Normal, `H3bRare`), record in
+  [data experiments](../findings/data/experiments.md#run2026-10-27-sweep-data-load), evidence in the "Plan 0038 batch
+  H3b" sections of [data/0001](../findings/data/0001-excel-loader.md#plan-0038-batch-h3b-run2026-10-27-sweep-data-load),
+  [data/0002](../findings/data/0002-mpq-precedence.md#plan-0038-batch-h3b-run2026-10-27-sweep-data-load),
+  [data/0003](../findings/data/0003-string-tables.md#plan-0038-batch-h3b-run2026-10-27-sweep-data-load),
+  [data/0004](../findings/data/0004-cell-converters.md#plan-0038-batch-h3b-run2026-10-27-sweep-data-load) and
+  [player/0001](../findings/player/0001-creation.md#plan-0038-batch-h3b-run2026-10-27-sweep-data-load).
+  - **Ruling 3's start mode works:** `tools/d2run.py --early` stops the game once `game.exe` is mapped (0.50–0.57 s
+    after launch in the kept runs) and attaches then; built and tested off-slot on a stopped dummy process, then with
+    probe runs on slot 2 (kept in `dev/`). Loggers used with it need `set displaced-stepping off`. The 9 startup rows
+    are no shortfall.
+  - **Ledger (25):** raised 18 (data/README 2, 3, 4; data/excel 1–7, 17, 18, 20, 24, 25, 27, 50; data/strings 29),
+    raised in part 7 (data/README 5 and data/excel 8, with a correction: `TC_GetByName` is dead code, its half a d-none
+    remainder; data/excel 71 with a refinement, 74; data/strings 2, 6, 22), shortfall 0. S1b remainders: data/README 1
+    raised, data/excel 30 raised in part with a correction (`hitclass.bin` read whole by the character-graphics loader).
+    No class move; inventory § 2.6 H3b block; totals static 567, harness 523, blocked 417, deferred 2, raised 17: 1 526.
+  - **Design changes on the way:** three runs were added to the plan's piece list (dtxt, rus, clamp), which separate
+    `-direct -txt`'s load of the written files, the language byte read and its clamp; the loose files stay in the
+    slot's prefix (`h3b_sessions.py stage` / `unstage`), and the checker re-creates them by `stage` (`--written` for the
+    files the dtxt run wrote).
+  - **Backlog:** review request
+    [h3b review](../backlog/archive/2026-10-27-reverser-architect-review-lane-h3b-plan-0038-batch-h3b.md); spec-writer entry
+    [h3b raises](../backlog/2026-10-27-reverser-spec-writer-h3b-data-load-raises-and-corrections.md) (held for the
+    review).
+  - **Next:** the H3b review. Slot 2 stopped, saves restored (empty, no aside), staged directories removed.
+- **2026-10-27 — H3b review (architect, `lane/h3b`): accept with fixes (9).** Merged `main` `550d2dcc` into the lane
+  first (`30352c97`). The plan log, inventory and ledger conflicts kept both sides. `backlog.py archive` had nothing to move.
+  - **Checks:** `sha256sum -c` passes for `h3b-manifest.sha256` (`0b75400a…`, 88 files) and `h3b-manifest-dev.sha256`
+    (`73e35bff…`, from `dev/`). After `h3b_sessions.py stage --slot 2`, `sweep_h3b.py check` re-run under
+    `systemd-run --user --scope -p MemoryMax=4G` (the tool hashes of `check/tools-at-check.sha256`) is byte-identical
+    to `check/check-h3b.txt` (`3cd7cecf…`, `TOTAL bad=0`), then `unstage`. `tbl.py check` gives the kept 7 `CHECK` lines.
+    The outputs and a hash list of the 25 screenshots the kept manifest left out are in `workspace/logs/h3b/review/`
+    (`review-manifest.sha256` `a26cb23e…`). objdump confirms the anchors. Callers 0x0044B937 (`DATATBLS_LoadAll`), 0x004359F2,
+    0x0044B911, 0x00441B91 (`STRTABLE_LoadAll`), 0x00435C8D, 0x0044B976 (`STRTABLE_Unload`), 0x00434331
+    (`MPQ_OpenVideoArchives`), 0x004345D7, 0x00504485 and 0x006122CC (`FILE_LoadWhole`), 0x0048C5F8/0x0048C6DB, 0x004DBA9E/0x0063EC2D
+    (`ITEMS_GetByCode`). The handler call at 0x0044DA0C returns to 0x0044DA0E. The `-txt` gates are at 0x006127DF and 0x00617745. 0x0065A33B lies
+    in `TC_BuildChestTable` (0x0065A2C0), called from `TC_LoadAll` at 0x0065A3B5. Nothing calls or jumps to 0x00654DD0,
+    and its VA and RVA occur nowhere in the file as bytes. The `sounds` 2-byte call is at 0x00659C16, skipped by the `je` at 0x00659BC1
+    when `g_DataTblsCompileTxt` is 0. The levels writers are at 0x0061DB05/0x0061DB20/0x0061DB40.
+  - **Shared tree:** in `workspace/runtime/game`, `game.exe` (`631066c1…`), `binkw32.dll`, `ijl11.dll`, `smackw32.dll`
+    and `d2.lng` match `docs/inventory.md`. The `d2data`, `d2exp` and LoD `patch_d2` reference archives it links to
+    match `docs/formats/installer.md`. Nothing there or in the reference tree is newer than 2026-10-12 except the
+    directory entry (the crash folder's removal) and the game's own `BnetLog.txt`/`default.key`. No `BlizzardError/` is
+    left. No stopped game: `slots.py status` shows slot 2 idle, and the only game running is another lane's on slot 1.
+    The `--early` code can leave a stopped game when gdb never resumes it. The driver's `--after` timeout and
+    `wineserver -k` end it, but only after up to `--after` seconds. Rule recorded in the reverser tooling reference:
+    check `slots.py status` after such a run and `slots.py stop` a game left in state `T`. Probes that may crash go in
+    a `--game-dir` inside the slot's prefix. Crash folders are kept in `dev/`, not deleted.
+  - **Fixes (9):** (1) *overclaim:* the language clamp (values above 13 → 0) rested on a made-up `use` byte 0x0E that
+    no shipped file holds. Data/strings 29 and data/excel 50 become raised in part, the clamp half `[I]`, d-edit
+    (data/0003). (2) *wrong anchor:* the `EXCEL_FindName` return 0x0065A33B is `TC_BuildChestTable`'s, not
+    `TC_LoadAll`'s (data/0001, spec-writer entry). (3) *omission:* the 18th `-txt`-only call's address and gate
+    (data/0001 § B1 note and H3b bullet). (4) *omission:* the levels `+0x033..+0x035` writers and their 25-slot bound
+    (data/0004). (5) *under-claim:* `DRLG_LoadLevels` C in data/0001's Functions table (rule 14). (6) *miscount:* the
+    filed totals predated the `lane/r1h` moves. (7) *tool not kept:* the record said the probes were kept in `dev/`.
+    Their logs and the crash files were not kept, and the record now says so. (8) *tool not kept:* the screenshots
+    were outside the manifest. They are now hashed in `review/shots-h3b.sha256`. (9) *omission:* the 45 logged
+    chest-name lookups give S1b row 42 G1's post-pass half an observable. Its d-none label is struck, and the store
+    stays `[I]` (data/0001 row 42 and § H3b). Also fixed: tooling.md's "first breakpoint" (the probes ended at the
+    second), and the record now says `check/tbl-check-h3b.txt` holds the `CHECK` lines only.
+  - **Rulings:** (a) Ruling 3's start mode, `d2run.py --early`, is accepted as built. Its stop needs only the image
+    mapped, it touches only descendants of the launcher (so a concurrent slot's game is safe), and the logger's
+    `XATT` line is the per-run check. The stopped-game and shared-directory rules go to tooling.md. (b) `TC_GetByName` is dead code, d-none as a remainder of
+    data/README 5 and data/excel 8, both raised in part. The absence is `[I]` (a computed target is not excluded), as
+    in the `lane/r1h` ruling. Phase 3 rewrites the entry rows to name the real callers and keeps `TC_GetByName` as a
+    note. (c) Excel 30's correction stands. `hitclass.bin`'s whole read at every start is the character-graphics
+    loader's, and the `sounds` call is the 18th `-txt`-only call. (d) Levels `+0x033..+0x035` go into J4 (spec-writer
+    entry). (e) The `CYR` correction to data/0003 § Language stands. `0B` is the shipped `Use_rus`, which the
+    install's Russian launcher script copies with `-direct`, so the rus run is stock-reachable. The exit test stays
+    `[I]`. (f) Of the three runs beyond the piece list, **dtxt** counts (it separates excel 27's `-direct -txt` half),
+    **rus** counts (stock-reachable, the byte read's 11), and **clamp** is kept as seen, not counted (ADR-0010: a claim
+    only edited data reaches stays `[I]`). The `.bin` padding and the `.tbl` variants of the loose and direct runs taint no
+    claim, because the claims are about which source `FindFile` picks, a stock path. (g) The 18 symbols I → C stand.
+    `TC_GetByName` stays I.
+  - **Ledger:** H3b raised 16, raised in part 9, shortfall 0: 25. No class moves. Totals against `main` `550d2dcc`:
+    **static 567, harness 521, c-emu 0, blocked 419** (d-none 293, d-edit 73, d-sim 28, d-2c 7, d-owner 10, d-0032 8),
+    **deferred 2, raised 17: 1 526** (inventory § 2.6 H3b block). Lane row usage filled from the orchestrator (530 156
+    tokens, 235 tools, 61 min). Review row added, usage "—".
+  - **Phase 3:** with H3b accepted, the **data/excel**, **data/strings** and **data/README** clusters are ready for
+    their re-tag round. Their batches are S1b, S1e and H3b, all accepted. The data/excel round also folds plan 0039's
+    remainder (P1b (a), P1c (a), the 11 data/excel W1).
+  - **Backlog:** the review request was closed. The spec-writer entry
+    [h3b raises](../backlog/2026-10-27-reverser-spec-writer-h3b-data-load-raises-and-corrections.md) was **released**,
+    with the TC caller list, the clamp half, the addresses and the G1 post-pass note added.
+  - **Next:** merge `lane/h3b`; then H6e2 (plan order), and the data clusters' Phase 3 round.

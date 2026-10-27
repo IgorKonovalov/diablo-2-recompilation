@@ -19,7 +19,8 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
    pool 12's "six of the 25 `boss` classes" met for five (`lane/h4a` review, 0038); "2 708 do events" in the record for the logs' 1 840, which hid the 2 000 skill-use floor's shortfall (`lane/p45h` review, [0045](../../../../docs/plans/done/0045-skills-missiles-machinery.md)); 318 pattern-5 creations for `patterns.txt`'s 360 (`lane/h5d` review, 0038); a 27-line manifest filed as "26 lines", and the 9 non-ItemStatCost `UpdateAnimRate` sites
    described without the scan's own breakdown (2 unidentified among them; `lane/p50b` review, 0050).
 3. **Take totals against `main` after merging it**, not against the totals your batch started from.
-   Seen: S2c, S3b and S1a reviews (0038), each recomputed.
+   Seen: S2c, S3b and S1a reviews (0038), each recomputed; H3b's totals taken before the `lane/r1h` moves had landed
+   (`lane/h3b` review, 0038).
 4. **"Never", "only", "no X": say what the run separates.** If one case carries both readings (Andariel has
    flag `0x08` and `boss`), that half stays `[I]`. An observed absence counts only while a control is shown live over
    the whole window. Seen: resume-lane review
@@ -46,14 +47,20 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
    reused under a name a kept manifest lists: the stub renamed so a session could run under its name broke one line of
    `manifest-r2-ckpt1.txt` (`lane/p48r2` review, [0048](../../../../docs/plans/done/0048-seed-to-world.md)); `-r2` reruns
    whose save copies overwrote the first sessions' copies under the same directory, and a dev manifest said to pass from
-   the directory above its files (`lane/h1b` review, 0038).
+   the directory above its files (`lane/h1b` review, 0038); the crashed `--early` probes' logs and the crash files
+   they left in the shared game directory deleted, not kept in `dev/`, and the session screenshots left outside the
+   kept manifest (`lane/h3b` review, 0038).
 7. **A conclusion needs an address, `fn:` or `run:` anchor**, not a link to another finding (gate W1).
-   Seen: the resume lane's experiments addendum (0037); `lane/w1`'s 104 W1 lines (0039).
+   Seen: the resume lane's experiments addendum (0037); `lane/w1`'s 104 W1 lines (0039); the levels
+   `+0x033..+0x035` refinement and the 18th `-txt`-only (`sounds`) call filed without their writer and call addresses
+   (`lane/h3b` review, 0038).
 8. **Split a raise where it has a remainder** and head the row "raised in part", in the ledger itself.
    Seen: special 65 (H4b), sock 14 (S2c), special 43 (S3b), all 0038; five `[C]` bullets of drlg/0009 § 11 with an
    unreached branch inside (the wanderer gate's `+0x78`, the item drop on expiry; [0040](../../../../docs/plans/done/0040-drlg-room-lifecycle.md) P2 review);
    sell's seed with five refusal tests unreached (0043 P2b review); spawn 41 filed raised with its "other sizes" half
-   d-none (`lane/h5d` review, [0038](../../../../docs/plans/0038-inferred-claims-sweep.md)).
+   d-none (`lane/h5d` review, [0038](../../../../docs/plans/0038-inferred-claims-sweep.md)); the language clamp filed
+   raised on a made-up `use` byte of 0x0E, where only edited data reaches it (ADR-0010: that half stays `[I]`,
+   d-edit; `lane/h3b` review, 0038).
 9. **Name the path for every claim about a caller**, or say "unfollowed" with the count. Seen: the
    superunique minion path (0039 P1b, Q19); the 8/9 case's `RoomTileSetFlags` call (0039 P1a); "the effect flag is 1
    only from handler 20" without `SKILLS_SrvDo`'s seven other calls, and `SKILLS_PayCost`'s 0 for a zero-cost row
@@ -63,7 +70,9 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
    without the two frames between `PlayerLoad` and the logged returns (`PlayerLoadFromFile`, `PlayerLoadFromClient`;
    `lane/h1b` review, [0038](../../../../docs/plans/0038-inferred-claims-sweep.md)); an undisassembled reader of the
    host callback, 0x0052BFC0, left "callers unfollowed" when one raw scan settles it, and the nearest indexed store
-   (0x0052C134) left unbounded beside a "no block write" claim (`lane/r1h` review, 0038).
+   (0x0052C134) left unbounded beside a "no block write" claim (`lane/r1h` review, 0038); a logged `EXCEL_FindName`
+   return (0x0065A33B) credited to `TC_LoadAll` where it lies in `TC_BuildChestTable`, which `TC_LoadAll` calls
+   (`lane/h3b` review, 0038).
 10. **One case decides only if a wrong reading could not match it by chance.** Seen: aff 28's durability
     value, about one in eight (S2b, 0038). Count the cases that separate the readings, not the cases checked: a
     rounding needs a remainder (three curse lengths whose `MulDiv` is exact), and a model fix's counter is not its
@@ -103,6 +112,7 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
     ADR-0015/0021 emulation over a declared scratch image confirms the map, not the role the name states, and raises no
     symbol row (`lane/p46m12` review ruling 7, [0046](../../../../docs/plans/0046-skills-function-catalogue.md)).
     Seen also: `D2S_WriteMercItems` left I beside a raised `D2S_ReadMercItems` and `D2S_WriteCorpses` on the same evidence (`lane/h1b`
+    review, 0038). `DRLG_LoadLevels` raised in `re/symbols.csv` but left I in data/0001's Functions table (`lane/h3b`
     review, 0038).
 15. **State an integer wrap or overflow bound from a kept computation**: the largest input that still fits and the
     first that wraps, with the product written out, and what the code does past it. Seen: a negative ring step count
@@ -112,4 +122,8 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
     what wraps: name the operation that wraps and whether a wrapping path reaches a use (`lane/p46m14` review, all
     three [0046](../../../../docs/plans/0046-skills-function-catalogue.md)); do 140's try offsets said not to wrap "below
     2³¹ − 9" where 2³¹ − 9 itself still fits (`lane/p46m15` review, 0046); `x − 90q` said to wrap "for `x` within 270
-    of `INT32_MIN`" where the bound is `x < INT32_MIN + 90q` (`lane/p51s` review, [0051](../../../../docs/plans/done/0051-backlog-sweep-6.md)).
+    of `INT32_MIN`" where the bound is `x < INT32_MIN + 90q` (`lane/p51s` review, [0051](../../../../docs/plans/done/0051-backlog-sweep-6.md));
+    the step product's wrap from `v` 32 768 stated without its sign case (a component of +4096 wraps, −4096 reaches
+    −2³¹ exactly), and the collision walk's "at most 10 crossings" without what the 10th does (the full step taken
+    unchecked, flag `0x8`) or the halved increment it walks by (`lane/p50d` review,
+    [0050](../../../../docs/plans/0050-animation-frame-timing.md)).

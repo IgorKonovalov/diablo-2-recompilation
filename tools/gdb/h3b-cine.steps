@@ -1,0 +1,13 @@
+# plan 0038 batch H3b (tools/h3b_sessions.py): from the main menu, CINEMATICS, play the first one (The Sister's
+# Lament), skip it after a while, CANCEL the list.
+click 468 516   # CINEMATICS
+sleep 3
+shot workspace/logs/h3b/shots/cine-list.png
+click 398 163   # THE SISTER'S LAMENT
+sleep 15
+shot workspace/logs/h3b/shots/cine-play.png
+key Escape
+sleep 4
+shot workspace/logs/h3b/shots/cine-after.png
+click 398 470   # CANCEL
+sleep 3

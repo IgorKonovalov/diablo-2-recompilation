@@ -1,0 +1,4 @@
+# plan 0038 batch H3b (tools/h3b_sessions.py): EXIT DIABLO II from the main menu (program exit).
+shot workspace/logs/h3b/shots/quit-menu.png
+click 400 551   # EXIT DIABLO II
+sleep 15

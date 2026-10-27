@@ -90,3 +90,42 @@ typedef struct ModeRateClass {
     uint32_t attack;              /* +0x0C attack */
     uint32_t fixed;               /* +0x10 the record's speed unscaled */
 } ModeRateClass;
+
+/* The movement fields of a unit's dynamic path (Unit+0x2C), as the per-frame step reads them (plan 0050 P1.3,
+ * docs/findings/anim/0003-movement-gates.md §§ 2 and 4; the collision fields are re/types/collision.h DynPathColl).
+ * Positions are 16.16 subtiles; points are subtile words, taken at the subtile centre ((w << 16) + 0x8000).
+ * One step per game frame: sub_00554CA0_UnitMoveStep -> sub_00650840_PathStep(unit, 0x400) ->
+ * sub_006502D0_PathVelocityStep: step = (dir * ((speed * 0x400) >> 6)) >> 12 per axis (imul, sar). */
+#pragma pack(push, 1)                 /* dirX/dirY sit at +0x6A, unaligned */
+typedef struct PathMove {
+    uint32_t x;                   /* +0x00 16.16 */
+    uint32_t y;                   /* +0x04 16.16 */
+    uint8_t  _pad08[0x1C];
+    int32_t  iPoint;              /* +0x24 index of the next point */
+    int32_t  nPoints;             /* +0x28 point count (0: no path) */
+    uint8_t  _pad2C[0x08];
+    uint32_t flags;               /* +0x34 0x20 moving, 0x10 re-plan when blocked (monster), 0x8000 speed from +0x80,
+                                     0x40000 straight (no target check) */
+    int32_t  changed;             /* +0x38 15 when PathSetSpeed changed the speed */
+    int32_t  type;                /* +0x3C planner index into g_PathPlanFuncs (0x006EB6D8); 8 knockback */
+    uint8_t  _pad40[0x18];
+    void   * pTargetUnit;         /* +0x58 */
+    uint8_t  _pad5C[0x0E];
+    int32_t  dirX;                /* +0x6A unit vector x 4096 (g_PathDirTable), unaligned */
+    int32_t  dirY;                /* +0x6E */
+    int32_t  stepX;               /* +0x72 1/65536 subtile per frame */
+    int32_t  stepY;               /* +0x76 */
+    uint8_t  _pad7A[0x02];
+    int32_t  speed;               /* +0x7C v: v/16 subtiles per frame on an axis */
+    int32_t  speedSaved;          /* +0x80 restored into +0x7C by sub_00648DC0_PathMoveReset under flag 0x8000 */
+    int32_t  speedMax;            /* +0x84 */
+    int32_t  accel;               /* +0x88 added every fifth step; set only for missiles */
+    int32_t  accelCount;          /* +0x8C */
+    uint8_t  knockDist;           /* +0x90 knockback: the point is (knockDist >> 1) + 1 subtiles away; decremented per
+                                     subtile crossed for other path types than 8 and 11 */
+    uint8_t  _pad91[0x02];
+    uint8_t  stopRange;           /* +0x93 the target-check distance at or below which the path ends */
+    uint8_t  _pad94[0x08];
+    uint32_t points[1];           /* +0x9C word pairs (x, y), nPoints of them */
+} PathMove;
+#pragma pack(pop)
