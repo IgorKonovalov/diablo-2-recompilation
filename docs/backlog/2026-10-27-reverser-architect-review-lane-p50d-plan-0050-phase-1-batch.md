@@ -25,11 +25,16 @@ What to check:
   the gates (§ 5: do, delivery, missile, delay; § 6: `COMBAT_GetHit`'s dispatch, the hit-recovery and block lengths,
   the `lastblockframe` gate, `PlrModeLeaveOk`, `PlayerModeAllowed` and its draw, `GetHitRoll` and its draws, stun,
   the object operate end), the hit class (§ 7), draws and event kinds (§ 8), and the Phase 2 boundary (§ 9).
+- The `lane/a50t` review's two reads (added to *Done when* after this lane branched; `main` `ee8273b7` merged
+  before filing): anim/0003 § 1.1 (a class with no walk record gets walk base 256 from the fallback record, run 128
+  below 410; a `Velocity`-0 classic class in S1 writes `+0x4C` 192 with a path speed of 0, the path coming from
+  `SUnitPathCreate`), and anim/0002's negative-rate-stat open question struck with a dated note citing ItemStatCost
+  § Timing.
 - Corrections to reviewed findings, as dated notes: anim/0001 § 1 (an object's `+0x48` is 8.8: the Objects loader
   shifts `FrameCnt` at `0x00640E33`; `re/types/game.h` too) and combat/0001 § 6 (the delivery calls
   `UnitBaseHitClass`, not `HitClassPick`).
 - Tool and outputs: `tools/anim_moves.py` (`tables`, `calls`, `model`), `workspace/logs/anim/p50d-manifest.sha256`
-  (6 lines; `sha256sum -c` from `workspace/logs/anim/`), `p50d-commands.txt` with the tool hashes; the derived
+  (7 lines; `sha256sum -c` from `workspace/logs/anim/`), `p50d-commands.txt` with the tool hashes; the derived
   frame counts and get-hit bands are model outputs, not game observations.
 - 23 new `re/symbols.csv` rows (all `I`; 12 `anim/movement`, 11 `anim/timing`); `re/types/anim.h` `PathMove` (packed,
   offsets checked with `_Static_assert` under `gcc -m32`).

@@ -12,7 +12,7 @@ Static reading of the pinned `Game.exe` in Ghidra (project copy `workspace/ghidr
 tables, the call sites and the derived models come from `tools/anim_moves.py`; the decompiles and the objdump ranges
 cited are kept. All outputs are under `workspace/logs/anim/` (`p50d-manifest.sha256`, one path base:
 `p50d-tables.txt` `e5d88a3c…`, `p50d-calls.txt` `03441655…`, `p50d-model.txt` `72bcae68…`, `p50d-decompile.c`
-`371eaeb4…`, `p50d-sites.asm` `e1451e39…`, and `p50d-commands.txt` `40cc4fef…` with the command lines and the tool
+`371eaeb4…`, `p50d-sites.asm` `e1451e39…`, `p50d-monstatsspeeds.asm` `27b50da0…`, and `p50d-commands.txt` `cdd647fb…` with the command lines and the tool
 hashes). Unit fields as in `re/types/game.h`, the path fields as in `re/types/anim.h` `PathMove` (new). Positions are
 16.16 subtiles (the high word the subtile, as in [drlg/0005](../drlg/0005-collision.md)); a speed `v` is the path's
 `+0x7C`. 8.8 means frames × 256.
@@ -35,7 +35,8 @@ hashes). Unit fields as in `re/types/game.h`, the path fields as in `re/types/an
   WalkVelocity − 100` (50 on stock data) added at the run's start and dropped at the next mode change: walk `v` 1 536
   (0.375 subtile per frame on an axis), run 2 304 (0.5625) for every stock class at `X` 100 and 150. A monster's
   stat 67 starts at 75 and its run moves at the walk base unless the AI's mode command carries a velocity, which goes
-  into a mode-scoped stat-67 list. Knockback moves at `v = 0x1000`, one subtile per frame on an axis.
+  into a mode-scoped stat-67 list. Knockback moves at `v = 0x1000`, one subtile per frame on an axis. A class with no walk record gets walk base 256 at load (the fallback
+  record's speed), so a `Velocity`-0 trap in S1 animates at 192 with a path speed of 0.
   (fn:sub_00621360_AnimPathBaseSpeed@0x00621360, fn:sub_00620E80_RunVelocityStat@0x00620E80,
   fn:sub_005A6380_MonModeVelocity@0x005A6380, fn:UNIT_AnimSetRate@0x00623F50, tbl:CharStats.txt:WalkVelocity,
   tbl:CharStats.txt:RunVelocity, tbl:MonStats.txt:Velocity, `p50d-model.txt` `WALK`, `RUN`, `STEP`)
@@ -165,6 +166,26 @@ if (cs->WalkVelocity) { SetStat(list, 67, (RunVelocity * 100) / WalkVelocity - 1
   (`p50d-calls.txt` `CALLS sub_00648690_PathSetSpeed 25`, fn:sub_00648DC0_PathMoveReset@0x00648DC0)
 - [I] `sub_0056E5B0_UnitWalkVelocity` (player `WalkVelocity << 8`, monster `Velocity << 8`, else 0x600) has two
   callers, both catalogue (`0x005CBBAE`, `0x005D909C`); the moving branch does not use it. (`p50d-calls.txt`)
+
+#### 1.1 A class with no walk record (the `lane/a50t` review's reads)
+
+- [I] **The walk base at load.** `sub_00650F00_MonStatsSpeeds` takes the walk speed with
+  `ANIMDATA_Lookup(mode 2, type 1, base class, no inventory)` (`0x00650F3E`–`0x00650F4F`), which returns the table's
+  fallback record when the name has no record (anim/0001 § 2: frames 2048, **speed 256**). So a class whose
+  `<Code>WL<BaseW>` record is missing gets `+0x036 = 256`, scaled by `Velocity(i) / Velocity(b)` only when its base row
+  `b ≠ i` and `Velocity(b) > 0` (unsigned `div`), then `0 → 0`, capped at `0x7FFF` (`cmp; sbb; and`, `jb`); below
+  class 410 its run `+0x038` is `+0x036(b) / 2` (signed) = 128 for such a base, from 410 the `RN` lookup, falling back
+  to 256 the same way. This settles MonStats § Timing's `[L]` for the seven classic `9A` rows (traps 326–330, 369,
+  355) and the `E9` rows: walk base 256 (and run 128 below 410). (fn:sub_00650F00_MonStatsSpeeds@0x00650F00,
+  fn:ANIMDATA_Lookup@0x0066A9B0, 0x00650F80–0x00650F9D, 0x00650FBE–0x00650FD4, `p50d-monstatsspeeds.asm`, tbl:MonStats.txt:Velocity,
+  tbl:MonStats.txt:BaseId)
+- [I] **`+0x4C` of a `Velocity`-0 class in S1.** A classic class's S1 takes the moving branch (anim/0002 § 1), which
+  returns without a write only when the unit has no path; every monster that `SUnitCreate` makes with create flag bit
+  0 gets a dynamic path (drlg/0005: the spawn and preset paths pass it), so the branch writes `+0x4C = ⌊256 · X / 100⌋`
+  (192 at the new-monster `X` 75) and the path speed `(0 << 8) · X / 100 = 0`: the animation runs at the walk-base rate
+  while the unit does not move. A monster created without flag bit 0 (no path) keeps the `+0x4C` of its previous rate
+  call. (fn:UNIT_AnimSetRate@0x00623F50, 0x00624128–0x006241D4, fn:sub_00554850_SUnitPathCreate@0x00554850,
+  fn:sub_00621360_AnimPathBaseSpeed@0x00621360)
 
 ### 2. The per-frame step
 

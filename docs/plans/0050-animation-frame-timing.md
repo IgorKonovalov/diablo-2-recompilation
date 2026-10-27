@@ -650,3 +650,8 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   ([backlog](../backlog/2026-10-27-reverser-archivist-p50d-objects-framecnt-shift-and-hit-class-readers.md)); review
   requested ([backlog](../backlog/2026-10-27-reverser-architect-review-lane-p50d-plan-0050-phase-1-batch.md));
   **Phase 1b part 2 runs after this review.**
+  *Addendum (same lane, after merging `main` `ee8273b7` with the `lane/a50t` review's two reads):* anim/0003 § 1.1:
+  `MonStatsSpeeds` reads the fallback record for a class with no walk record, so the `9A` and `E9` rows get walk base
+  256 (run 128 below 410), and a `Velocity`-0 classic class in S1 has a path (`SUnitPathCreate`) and so `+0x4C` 192
+  at `X` 75 with path speed 0; anim/0002's negative-rate-stat open question struck, citing ItemStatCost § Timing.
+  Archivist entry item 3 added (the MonStats `[L]`).
