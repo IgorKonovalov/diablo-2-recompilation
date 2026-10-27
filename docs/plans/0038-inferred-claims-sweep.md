@@ -4322,7 +4322,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   are not read. (4) `[I]` the `Kick` branch (`+0x05 & 0x02`; rows 1, 255, 270, 275) is reached through the new
   `sub_005D54B0_SkillKickPhysDamage` by Dragon Talon (start 24, do 42), Dragon Tail (start 27) and Dragon Flight
   (do 52), through no direct call of Kick's start 2 or do 2 (review fix 2); `GetPhysMax`'s branch is `sub_00644C20`'s only call; 15 variable-id call sites unfollowed.
-  Kept: `workspace/logs/rk/rk-manifest.sha256` (9 files). Entries: [spec-writer](../backlog/2026-10-27-reverser-spec-writer-dispatch-i4-kick-start-hit-answered.md)
+  Kept: `workspace/logs/rk/rk-manifest.sha256` (9 files). Entries: [spec-writer](../backlog/archive/2026-10-27-reverser-spec-writer-dispatch-i4-kick-start-hit-answered.md)
   (dispatch I4's `[L]`), [architect review](../backlog/archive/2026-10-27-reverser-architect-review-lane-rk-kick-start-hit-damage.md).
   Ledger row added, usage "—".
   - **Review (architect, 2026-10-27): accept with fixes (2).** Checked: `sha256sum -c` of `rk-manifest.sha256` (9 OK);
@@ -4356,7 +4356,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     (c) Part 2 `[I]` stands: the branch callers are a static `call`-operand scan with 15 variable-id sites named and
     unfollowed (reverser rule 9 satisfied). (d) The spec-writer entry is released with fix 2 applied.
   - **Bookkeeping:** review-fixes Seen lines: reverser 9 and 10. The review request closed; the
-    [spec-writer entry](../backlog/2026-10-27-reverser-spec-writer-dispatch-i4-kick-start-hit-answered.md) released.
+    [spec-writer entry](../backlog/archive/2026-10-27-reverser-spec-writer-dispatch-i4-kick-start-hit-answered.md) released.
     Ledger: the lane row filled (accept with fixes, 2: omission 1, overclaim 1; usage from the orchestrator: 171 207
     tokens, 79 tools, 12 min); the review row added, usage "—".
   - **Next:** merge `lane/rk`; the spec-writer entry on dispatch I4 may start.
@@ -4413,3 +4413,30 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     178 tools, 39 min to checkpoint 1; 307 855 tokens, 200 tools, 107 min for the resume; accept with fixes, 3: misread 1,
     tool not kept 1, other 1, on the resume row); the review row added, usage "—".
   - **Next:** merge `lane/h6e2`; then H6e1.
+- **2026-10-27 — `lane/sk` (spec-writer, no slot, no Ghidra, no harness): the entry released at the `lane/rk`
+  review.** [Dispatch § I4](../specs/skills/dispatch.md#i-the-skill-packet): Kick's start hit restated from
+  skills/0003 § 5's anchored instructions (`[I]`: `MinDam << HitShift`, hit class 1, no `GetPhysMin/Max` call); the
+  stock row's `HitShift` 8 and `MinDam` 0, so physical 0 `[C]` (tbl:Skills.txt); the 25 logged deliveries with
+  physical 0 `[C]`, scoped to the packet after `ResolveAndQueue`'s reductions, Normal and the 9 target classes with
+  `ResDm` 0; the store against no physical and the 7 do events without `ApplyDamage` `[I]` (combat/delivery A2); the
+  `Kick` branch's callers `[I]` (Dragon Talon, Tail and Flight; the Assassin's `str + dex − 20`, the shadow warrior's
+  and shadow master's `3 · level`; no direct call of Kick's start 2 or do 2). The `[L]` struck. Tags: dispatch C 73 →
+  75, I 189 → 191, L 11 → 10. Wiki: skills (two paragraphs, one open item removed). Entry closed;
+  [review request](../backlog/archive/2026-10-27-spec-writer-architect-review-lane-sk-dispatch-i4-kick.md) filed; ledger row
+  added, usage "—".
+  - **Review (architect, 2026-10-27): accept with fixes (2).** Checked each I4 bullet against skills/0003 § 5's
+    2026-10-27 note and the `lane/rk` rulings: the start-2 store `[I]` (instructions `0x0056CB42`–`0x0056CB80`), the
+    stock row `[C]` (tbl:Skills.txt), the 25 deliveries `[C]` scoped as ruled (post-reduction packet, Normal, the 9
+    classes with `ResDm` 0), the store against no physical and the 7 do events `[I]` (ruling (b), combat/delivery A2),
+    the callers `[I]` scoped to direct calls with the 15 variable-id sites (ruling (c), review fix 2); § O's note; the
+    anchors in `re/symbols.csv` (`0x0056CAF0`, `0x005D54B0`, `0x00644C20`, `0x0057C1E0`, `0x0057C6C0`, `0x0057D4F0`,
+    `0x00647BC0`, `0x00647D00`). Wiki: the two Kick paragraphs say "read from the code" for the store and callers,
+    "confirmed" for the 25 hits with their scope; the open item removed. Fixes: (1) *wrong anchor:* start 2's bullet
+    anchored `0x0056CB54`–`0x0056CB71` while restating the memset, result, flags, hit class and `ResolveAndQueue`; now
+    `0x0056CB42`–`0x0056CB80`. (2) *omission:* the tables-used list lacked `MaxDam` and MonStats `ResDm`, `Skill1`,
+    now cited in § I; added. Counts unchanged (C 75 / I 191 / L 10).
+  - **Bookkeeping:** research-map row for skills/dispatch rewritten (counts, the `lane/sk` clause, the stale `Kick`
+    `MinDam` `[L]` clause removed); review-fixes Seen line: spec-writer 9. The review request closed. Ledger: the lane
+    row filled (accept with fixes, 2: wrong anchor 1, omission 1; usage from the orchestrator: 87 940 tokens, 26 tools,
+    12 min); the review row added, usage "—".
+  - **Next:** merge `lane/sk`.
