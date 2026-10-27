@@ -35,6 +35,17 @@ What it does, in order:
 save when a session ends (the act byte of the difficulty played), so a loop of games that must start in the same
 town passes --install on every launch. The installed files and their sha256 prefixes go in the log header.
 
+--early (plan 0038 batch H3b, review ruling 3) puts gdb on the game before its startup code runs: steps 3 and 4
+change. The launcher polls every EARLY_POLL seconds for a descendant (not only a child: start.exe may not have exited
+yet) whose cmdline holds "\\game.exe" and whose /proc/<pid>/maps already maps that file at 0x00400000, and sends it
+SIGSTOP at once, before wine's loader reaches the image's entry point. The driver is forked next and waits for the
+window itself (the game cannot draw one while stopped); the launcher then execs gdb on the stopped process, which
+attaches (attaching to a job-stopped process works: gdb takes the stop over) and resumes it at the script's
+`continue`. So the gdb script's breakpoints are in place before InitGame, the archive opens, the language read and
+the first string-table load. The log header gains "# early: ..." with the polls taken and the seconds from launch
+to the stop. A logger checks for itself that it was early enough (tools/gdb/excel.py: the archive handles still 0
+at attach). Without --gdb, --early is refused.
+
 Without --gdb, step 5 is a plain wait (useful to record menu coordinates, or to run the second,
 undebugged client of a two-client game).
 
@@ -52,6 +63,7 @@ import argparse
 import ctypes
 import os
 import shutil
+import signal
 import subprocess
 import sys
 import time
@@ -65,6 +77,7 @@ import slots  # noqa: E402
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 GAME_DIR = os.path.join(ROOT, "workspace", "runtime", "game")
 PR_SET_CHILD_SUBREAPER = 36
+EARLY_POLL = 0.002        # --early: seconds between polls for the game process
 DRIVER_PIDFILE = os.path.join(ROOT, "workspace", "runtime", "d2run-driver.pid")
 MEM_MAX = "4G"            # a run (game, wine services, gdb) is about 0.5 GB
 MEM_SWAP_MAX = "1G"
@@ -150,6 +163,71 @@ def children_named(pid, needle):
     return hits
 
 
+def descendants(root):
+    """{pid: cmdline} of every live process below root (by walking ppid links over /proc)."""
+    procs = {}
+    for d in os.listdir("/proc"):
+        if not d.isdigit():
+            continue
+        try:
+            with open(f"/proc/{d}/stat") as f:
+                rest = f.read().rsplit(")", 1)[1].split()
+            with open(f"/proc/{d}/cmdline", "rb") as f:
+                cmd = f.read().replace(b"\0", b" ").decode("latin1")
+        except OSError:
+            continue
+        if rest[0] != "Z":
+            procs[int(d)] = (int(rest[1]), cmd)
+    out, todo = {}, [root]
+    while todo:
+        p = todo.pop()
+        for c, (pp, cmd) in procs.items():
+            if pp == p and c not in out:
+                out[c] = cmd
+                todo.append(c)
+    return out
+
+
+def image_mapped(pid, name="game.exe", base=0x400000):
+    """True once /proc/pid/maps maps a file whose name ends with `name` (any case) starting at `base`."""
+    try:
+        with open(f"/proc/{pid}/maps") as f:
+            for line in f:
+                parts = line.split(None, 5)
+                if len(parts) == 6 and parts[5].strip().lower().endswith(name) and \
+                        int(parts[0].split("-")[0], 16) == base:
+                    return True
+    except OSError:
+        pass
+    return False
+
+
+def stop_game_early(root, wine, needle="\\game.exe", timeout=60.0, poll=EARLY_POLL):
+    """--early: SIGSTOP the first descendant of root whose cmdline holds needle once its image is mapped.
+    Returns (pid, polls, seconds) or (None, polls, seconds) on timeout."""
+    t0, polls = time.time(), 0
+    while time.time() - t0 < timeout:
+        polls += 1
+        wine.poll()
+        for pid, cmd in descendants(root).items():
+            if needle in cmd and image_mapped(pid):
+                os.kill(pid, signal.SIGSTOP)
+                return pid, polls, time.time() - t0
+        time.sleep(poll)
+    return None, polls, time.time() - t0
+
+
+def wait_window(xdrive, game=None):
+    for _ in range(600):  # wait for the window: the menu is up
+        if game and not alive(game, "game.exe"):
+            return False
+        if subprocess.run(xdrive + ["--window", "Diablo II", "move", "1", "1"],
+                          stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode == 0:
+            return True
+        time.sleep(0.1)
+    return False
+
+
 def ensure_display(display, fullscreen=False):
     """Start a rootful Xwayland on `display` if none is running, parked off-screen.
 
@@ -227,6 +305,9 @@ def main():
     ap.add_argument("--install", nargs="+", metavar="TAG_OR_FILE",
                     help="TAG FILE.d2s...: install these saves into the slot first (TAG aside, as saves.py install); "
                          "use on every launch of a loop, since the game rewrites the installed save on exit")
+    ap.add_argument("--early", action="store_true",
+                    help="stop the game as soon as its image is mapped and attach gdb then, before the startup code "
+                         "(archives, language, string tables) runs; needs --gdb")
     ap.add_argument("--mem-max", default=MEM_MAX,
                     help=f"RAM cap of the run's systemd scope, as systemd's MemoryMax (default {MEM_MAX}; 'off' for none)")
     ns = ap.parse_args()
@@ -237,6 +318,8 @@ def main():
     if not os.path.isdir(ns.prefix):
         ap.error(f"no prefix {ns.prefix}" + (f" (create the slot: python3 -I tools/slots.py create {ns.slot})"
                                               if ns.slot else ""))
+    if ns.early and not ns.gdb:
+        ap.error("--early needs --gdb")
     enter_scope(ns.mem_max)
 
     pidfile = pidfile_for(ns.display)
@@ -262,7 +345,13 @@ def main():
 
     me = os.getpid()
     game = None
-    for _ in range(600):
+    xdrive = [sys.executable, "-I", os.path.join(ROOT, "tools", "xdrive.py"), "--display", ns.display]
+    if ns.early:
+        game, polls, secs = stop_game_early(me, wine)
+        if not game:
+            sys.exit("--early: game.exe never appeared with its image mapped")
+        log.write(f"# game pid {game}\n# early: stopped after {polls} polls, {secs:.3f} s from launch\n")
+    for _ in range(0 if game else 600):
         wine.poll()  # reap start.exe when it exits
         hits = children_named(me, "\\game.exe")
         if hits:
@@ -271,20 +360,18 @@ def main():
         time.sleep(0.1)
     if not game:
         sys.exit("game.exe never became our child (subreaper not working?)")
-    log.write(f"# game pid {game}\n")
-
-    xdrive = [sys.executable, "-I", os.path.join(ROOT, "tools", "xdrive.py"), "--display", ns.display]
-    for _ in range(600):  # wait for the window: the menu is up
-        if subprocess.run(xdrive + ["--window", "Diablo II", "move", "1", "1"],
-                          stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode == 0:
-            break
-        time.sleep(0.1)
-    time.sleep(3)
+    if not ns.early:
+        log.write(f"# game pid {game}\n")
+        wait_window(xdrive)
+        time.sleep(3)
 
     if os.fork() == 0:  # driver
         os.setsid()
         with open(pidfile, "w") as f:
             f.write(f"{os.getpid()} game={game}\n")
+        if ns.early:  # the game runs once gdb continues it; the menu is up when the window is
+            wait_window(xdrive, game)
+            time.sleep(3)
         time.sleep(ns.attach_wait if ns.gdb else 0)
         if ns.steps:
             subprocess.run(xdrive + ["--window", "Diablo II", "run", ns.steps])

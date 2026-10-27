@@ -50,24 +50,24 @@
 | Address | Name | Role | Tag |
 |---|---|---|---|
 | `0x00405C30` | `sub_00405C30_InitGame` | file-I/O init, then `MPQ_OpenCoreArchives`, `MPQ_OpenGameArchives`, `LNG_GetLanguageIndex` | I |
-| `0x00406870` | `sub_00406870_InitFileIO` | `ECX` = `cfg[0x204]` (`-direct`): `STORM_SetDirectFlags(ECX)`, `g_bDirect = ECX` | I |
+| `0x00406870` | `sub_00406870_InitFileIO` | `ECX` = `cfg[0x204]` (`-direct`): `STORM_SetDirectFlags(ECX)`, `g_bDirect = ECX` | C (H3b) |
 | `0x00406D20` | `FILEIO_IsDirect` | returns `g_bDirect` | I |
-| `0x004FAB90` | `MPQ_OpenCoreArchives` | opens the 7 core archives (order above) | I |
-| `0x004FAEC0` | `MPQ_OpenGameArchives` | `d2char`, `d2music`; expansion: `d2Xmusic`, `d2Xtalk`, `d2Xvideo` | I |
-| `0x004FAD10` | `MPQ_OpenVideoArchives` | `d2video` or `d2Xvideo` on demand | I |
-| `0x00517332` | `MPQ_OpenArchive` | `__fastcall(name, flags; retryCb, priority)`: retries via callback with `Sleep(100)` | I |
+| `0x004FAB90` | `MPQ_OpenCoreArchives` | opens the 7 core archives (order above) | C (H3b) |
+| `0x004FAEC0` | `MPQ_OpenGameArchives` | `d2char`, `d2music`; expansion: `d2Xmusic`, `d2Xtalk`, `d2Xvideo` | C (H3b) |
+| `0x004FAD10` | `MPQ_OpenVideoArchives` | `d2video` or `d2Xvideo` on demand | C (H3b) |
+| `0x00517332` | `MPQ_OpenArchive` | `__fastcall(name, flags; retryCb, priority)`: retries via callback with `Sleep(100)` | C (H3b) |
 | `0x00517299` | `sub_00517299_MpqOpenFromPaths` | tries name as given, then `<exe dir>\name`, then `0x00517128` | I |
 | `0x0041BA60` | `STORM_OpenArchive` | Storm archive open: record 0x25C bytes, priority at `+0x118` | I |
-| `0x0041B6B0` | `STORM_LinkArchive` | reads the MPQ header (`0x1A51504D`) and tables, inserts into the sorted list | I |
+| `0x0041B6B0` | `STORM_LinkArchive` | reads the MPQ header (`0x1A51504D`) and tables, inserts into the sorted list | C (H3b) |
 | `0x00419980` | `STORM_OpenFile` | `STORM_OpenFileEx(0, name, STORM_GetDirectFlags(), &h)` | I |
 | `0x004192F0` | `STORM_OpenFileEx` | `STORM_FindFile`; 2 → `CreateFileA` on disk, 1 → archive file handle | I |
-| `0x00417F10` | `STORM_FindFile` | walks the archive list; disk check first when flags & 3 | I |
+| `0x00417F10` | `STORM_FindFile` | walks the archive list; disk check first when flags & 3 | C (H3b) |
 | `0x00415B00` | `STORM_DiskPath` | builds and tests the on-disk path for flag bits 1/2 | I |
 | `0x00418B50` | `STORM_GetDirectFlags` | bit 0 = `g_StormDirectFlags & 1` (or no archive open), bit 1 = `& 2` | I |
 | `0x00415F70` | `STORM_SetDirectFlags` | `g_StormDirectFlags = arg` | I |
 | `0x004155D0` | `STORM_HashLookup` | hash-table probe with (locale, platform) and neutral fallback | I |
-| `0x00517079` | `FILE_LoadWhole` | game file API: open, size, alloc, read, close; fatal on a short read | I |
-| `0x00525150` | `LNG_GetLanguageIndex` | first byte of `data\local\use`, cached, > 13 → 0 | I |
+| `0x00517079` | `FILE_LoadWhole` | game file API: open, size, alloc, read, close; fatal on a short read | C (H3b) |
+| `0x00525150` | `LNG_GetLanguageIndex` | first byte of `data\local\use`, cached, > 13 → 0 | C (H3b) |
 | `0x00525260` | `LNG_GetLanguageCode` | language table lookup, returns one of 4 fields | I |
 
 ## Walkthrough
@@ -250,6 +250,74 @@ found nothing else outside the table, the 0x18 bytes after it and the three NULL
   memory and stay `[I]` (ADR-0015 condition 3), as does the fault. Entry 12's `+0x14` is not read by this function
   (it reads `+0x0` to `+0x10`), so ids 0–12 and ≥ 14 read only image data no code writes.
 
+## Plan 0038 batch H3b (run:2026-10-27-sweep-data-load)
+
+Harness batch H3b of [plan 0038](../../plans/0038-inferred-claims-sweep.md), the archive, file-lookup and language rows
+of [inventory data-excel](../../plans/0038-inventory/data-excel.md) and [data-README](../../plans/0038-inventory/data-README.md).
+Seven program runs on slot 2, gdb on the game **before its startup code** (`tools/d2run.py --early`: the process is
+stopped once `game.exe` is mapped, 0.50–0.57 s after launch, and the logger's `XATT` line finds every archive handle,
+the language flag, both direct flags and the string buffer still 0 in all seven). Record, commands and manifest:
+[run:2026-10-27-sweep-data-load](experiments.md#run2026-10-27-sweep-data-load); every count below is printed by
+`python3 -I tools/sweep_h3b.py check` over the seven logs (`check/check-h3b.txt`). The sessions: **stock** (stock game
+directory), **txt** (`-txt`), **loose** (loose files, no `-direct`), **direct** (the same kind of loose files with
+`-direct`), **dtxt** (`-direct -txt`), **rus** and **clamp** (`-direct` with a loose `use` byte of 0x0B and 0x0E). The
+loose files, in game directories inside the slot's prefix: `data/global/excel/difficultylevels.bin` (the archive copy
+plus 4 zero bytes: the same records, another size), `data/local/lng/eng/patchstring.tbl` (loose: `tbl_crc_case.py`'s
+*bad* copy, whose crc check is fatal; direct: its *fixed* copy) and `data/local/use` (loose: `0B`; direct: `00 00 00
+00`). Where a statement above is tagged inferred and this section raises it, the tag and the run given here are the
+current ones.
+
+- **data/excel row 1** (spec L27, `-direct` sets the file I/O mode in `InitGame` → `InitFileIO`) **raised.** [C] In all
+  seven runs `sub_00406870_InitFileIO` is called once, first of the logged functions after the attach, with `ECX` =
+  the `-direct` byte (0 in stock, txt and loose; 1 in direct, dtxt, rus and clamp), and on return
+  `g_StormDirectFlags` (0x00779058) and `g_bDirect` (0x0074C82C) both hold that value.
+  (fn:sub_00406870_InitFileIO@0x00406870, fn:sub_00405C30_InitGame@0x00405C30, run:2026-10-27-sweep-data-load)
+- **data/README row 2, data/excel rows 2, 3 and 17** (the core and game archives opened at startup, before the excel
+  load; A1's order and priorities) **raised.** [C] Every run makes the same 12 `MPQ_OpenArchive` calls at startup, in
+  A1's order with A1's priorities (`d2data`, `d2sfx`, `d2speech`, `d2delta`, `d2kfixup` 1000, `patch_d2` 5000,
+  `d2exp` 3000; then `d2char`, `d2music` 1000 and `d2Xmusic`, `d2Xtalk`, `d2Xvideo` 3000), all before the first
+  string-table and excel load. The two archives our install lacks (`d2delta`, `d2kfixup`) return 0 and the other ten a
+  handle, as the files present predict, and startup continues. After every open the logged Storm list (22 snapshots in
+  stock, 14 in each other run) equals A2's model, a new archive in front of the first node of priority ≤ its own.
+  (fn:MPQ_OpenCoreArchives@0x004FAB90, fn:MPQ_OpenGameArchives@0x004FAEC0, fn:MPQ_OpenArchive@0x00517332,
+  fn:STORM_LinkArchive@0x0041B6B0, run:2026-10-27-sweep-data-load)
+- **data/excel rows 4 and 18** (the video archive opened on demand; `d2video` opened and linked later) **raised.** [C]
+  In the stock run the main menu's *Cinematics* list and its first film reach `MPQ_OpenVideoArchives` once (returning
+  to 0x00434336); before it the five game archives are closed (gone from the list), `d2video.mpq` is opened at priority
+  1000 and linked at the **front** of the 1000 band (before `d2speech`, `d2sfx`, `d2data`), and after the film
+  `MPQ_OpenGameArchives` (call at 0x004345D7) opens the five again. No other run opens it.
+  (fn:MPQ_OpenVideoArchives@0x004FAD10, run:2026-10-27-sweep-data-load)
+  - *Note:* this is a live case of A2's tie rule (a later-opened archive in front of older ones of equal priority),
+    which data/excel row 19's remainder had as d-none for want of a file whose copies differ (S1b); no lookup in the
+    run read a file `d2video` shares with a 1000-band archive.
+- **data/excel row 20** (A3 `FindFile`: the disk first only with `-direct`; the first archive hit wins) **raised.** [C]
+  Every `STORM_FindFile` inside a `FILE_LoadWhole` (442, 530, 418, 418, 521, 8 and 413 calls in the seven runs) returns
+  what A3 predicts from the Storm list of that moment and the extracted archive trees: 1 with the first archive that
+  holds the path, or 2 for a path on disk under `-direct`, or 0. Under `-direct` the loose files win over the archives
+  that also hold them (direct: `use`, `difficultylevels.bin` and the three `patchstring.tbl` loads; dtxt: the 90
+  `.bin` files the compile wrote, 95 reads, the 5 reads before the write going to the archives). Without `-direct` no
+  call of any kind returns 2: the logger writes an `XFF` line for every call that does, and stock, txt and loose have
+  none (their counts, to the last 30-second total, are 1 107, 1 186 and 1 074 calls).
+  (fn:STORM_FindFile@0x00417F10, fn:STORM_GetDirectFlags@0x00418B50, run:2026-10-27-sweep-data-load)
+- **data/excel row 24 and the remainder of data/README row 1** (a stock run never reads the disk, loose files only
+  under `-direct`; under `-direct` a loose file beats the archives) **raised.** [C] The loose run's directory holds a
+  `.bin` of another size, a `patchstring.tbl` whose load is fatal and a `use` byte that selects tables the install does
+  not have; the game enters a game normally, and every buffer `FILE_LoadWhole` returns (418) is byte for byte the
+  archive copy (`difficultylevels.bin` 268 bytes, `patchstring.tbl` with the stock crc, `use` = `00`). The direct run,
+  same kind of files and only the switch changed, reads each of them from disk (sizes 272, 53 008 with the recomputed
+  crc, 4). The kept d2sio-5 log (run:2026-10-12-d2s-io) is a second `-direct` control. (fn:STORM_FindFile@0x00417F10,
+  fn:sub_00406870_InitFileIO@0x00406870, run:2026-10-27-sweep-data-load)
+- **data/excel row 25** (every excel table and `use` go through `FILE_LoadWhole`) **raised**, with a refinement. [C]
+  Every `DATATBLS_LoadTable` call (73 per stock-mode run, 91 under `-txt`) is followed on its thread by one
+  `FILE_LoadWhole` of `DATA\GLOBAL\EXCEL\<name>.bin`, and `data\local\use` is read once per run the same way.
+  *Refinement:* the excel files read outside `DATATBLS_LoadTable` also go through it: `weapons`, `armor`, `misc`,
+  `itemtypes` and `hitclass` `.bin` from the character-graphics copy of the loader (return 0x0050448A, before
+  `DATATBLS_LoadAll`), and the four `*code.bin` (return 0x006122D1). (fn:FILE_LoadWhole@0x00517079,
+  fn:DATATBLS_LoadTable@0x006122F0, run:2026-10-27-sweep-data-load)
+
+Not raised here and still `[I]`: the `-direct` startup without the core archives (A1's step note: every run had them),
+`STORM_HashLookup`'s locale pair, and the third MPQ search location `0x00517128`.
+
 ## Data touched
 
 - Archive names `0x006DC728`…`0x006DC7B4`, `0x006CD3A0`, `0x006D4C78`.
@@ -268,7 +336,8 @@ found nothing else outside the table, the 0x18 bytes after it and the three NULL
 
 - Runtime confirmation: a wine run with a loose `DATA\GLOBAL\EXCEL\<table>.bin` that differs from the MPQ copy,
   launched with and without `-direct`, would confirm the loose-file rule. Same for a dummy `d2kfixup.mpq`
-  carrying one excel file.
+  carrying one excel file. *(2026-10-27, plan 0038 H3b: the loose-file half is answered, with and without `-direct`,
+  in § Plan 0038 batch H3b, run:2026-10-27-sweep-data-load; the `d2kfixup` half stays open, d-edit.)*
 - Storm's lookup also matches a (locale, platform) pair with neutral fallback (`STORM_HashLookup`). Which locale the
   game sets is not followed; excel files are stored neutral in our archives, so it does not affect them.
 - `sub_00408F20` (expansion detection by `d2exp.mpq` file presence) and the archive record fields `+0x150`/`+0x258`

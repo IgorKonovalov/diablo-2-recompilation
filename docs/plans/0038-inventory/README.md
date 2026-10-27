@@ -1146,6 +1146,55 @@ the setter writes, and a raw scan finds nothing that reaches 0x0052BFC0. **H1b's
 14, shortfall 5, d-none 4: 48.** Recounted against `main` after merging it into the lane (`2637b081`; `lane/p50b`
 changed no inventory row): **static 567, harness 521, c-emu awaiting a batch 0, blocked 419** (d-none 293, d-edit 73,
 d-sim 28, d-2c 7, d-owner 10, d-0032 8), **deferred 2, raised 17: 1 526.**
+**H3b (filed 2026-10-27, reverser, `lane/h3b`): 25 statements of data/README, data/excel and data/strings, plus the S1b
+remainders of data/README 1 and data/excel 30.** run:2026-10-27-sweep-data-load, seven program runs on slot 2 (stock,
+`-txt`, loose files, `-direct`, `-direct -txt`, `-direct` with a loose `use` byte of 0x0B and of 0x0E), stock tables,
+gdb on the game **before its startup code**: review ruling 3's start mode, `tools/d2run.py --early`, built and tested
+first (a stopped dummy process, then probe runs on slot 2), works (the stop 0.50–0.57 s after launch; every startup
+global still 0 at the attach). Logger `tools/gdb/excel.gdb` (pilot.py, strings.py and the new excel.py); checker
+`tools/sweep_h3b.py check` over the seven logs: 0 mismatches; `tools/tbl.py check`: 0. The evidence is in the "Plan 0038
+batch H3b" sections of [data/0001](../../findings/data/0001-excel-loader.md#plan-0038-batch-h3b-run2026-10-27-sweep-data-load),
+[data/0002](../../findings/data/0002-mpq-precedence.md#plan-0038-batch-h3b-run2026-10-27-sweep-data-load),
+[data/0003](../../findings/data/0003-string-tables.md#plan-0038-batch-h3b-run2026-10-27-sweep-data-load),
+[data/0004](../../findings/data/0004-cell-converters.md#plan-0038-batch-h3b-run2026-10-27-sweep-data-load) and
+[player/0001](../../findings/player/0001-creation.md#plan-0038-batch-h3b-run2026-10-27-sweep-data-load).
+
+- **Raised (18):** data/README 2, 3, 4; data/excel 1, 2, 3, 4, 5, 6, 7, 17, 18, 20, 24, 25 (with a refinement: the
+  character-graphics loader and the `*code.bin` reads also go through `FILE_LoadWhole`), 27 (`-txt` alone: the 191
+  excel reads are the archive copies, `monstats.bin` separating; `-direct -txt`: the 95 reads of written files from
+  disk, the compiled `monstats` in memory), 50; data/strings 29 (50 and 29: the bytes 0x0B → 11 and 0x0E → 0 separate
+  the byte read and the clamp).
+- **Raised in part (7):** data/README 5 and data/excel 8 (the name → TC map through `EXCEL_FindName` on `g_TCLink`, 3 728
+  lines; **correction**: `TC_GetByName` has no reference and no hit, so its half is dead code, d-none as a remainder);
+  data/excel 71 (the filled fields and the padding over 60 dumps; the values of monstats `+0x036`/`+0x038`,
+  `+0x04A`/`+0x04B` not modelled; **refinement**: levels `+0x033..+0x035` are filled too), 74 (the not-found fallback
+  not reached); data/strings 2 and 6 (no count above 1: the release that keeps the tables and the load that only counts
+  not reached), 22 (the raw name for a stored index 0 not reached).
+- **Shortfall (0).** The 9 startup rows need no shortfall: the start mode worked.
+- **S1b remainders** (counted as S1b): data/README 1's "only under `-direct`" **raised** (the loose run reads none of
+  its three loose files; the direct run reads all three); data/excel 30's "a stock run never loads them" **raised in
+  part** (no code-list `DATATBLS_LoadTable` call in four stock-mode runs) **with a correction**: `hitclass.bin` is read
+  whole at every start by the character-graphics loader (return 0x0050448A); a 2-byte `sounds` call is an 18th
+  `-txt`-only call.
+
+No class moves (the d-none halves are remainders of rows raised in part). Totals against `main` after merging it into
+the lane (`2637b08`; the `lane/h1b` review's are the latest above): **static 567, harness 523, c-emu awaiting a batch
+0, blocked 417** (d-none 291, d-edit 73, d-sim 28, d-2c 7, d-owner 10, d-0032 8), **deferred 2, raised 17: 1 526.**
+
+**`lane/h3b` review (2026-10-27, architect): accept with fixes (9).** One ledger change. **data/strings 29 and
+data/excel 50 move from raised to raised in part.** The byte read is `[C]`: the archive's `00`, the direct run's
+`00 00 00 00` and the shipped `Use_rus` byte `0B` (which the install's Russian launcher script copies over `Use`) →
+0, 0 and 11. The clamp of values above 13 stays `[I]`, d-edit as a half. No shipped file holds such a byte, so only
+the made-up `0E` reaches it, and a claim only edited data reaches stays `[I]` (ADR-0010, ADR-0013). The clamp run is
+kept as seen, not counted. **H3b's ledger: raised 16** (data/README 2, 3, 4; data/excel 1–7, 17, 18, 20, 24, 25, 27),
+**raised in part 9** (data/README 5; data/excel 8, 50, 71, 74; data/strings 2, 6, 22, 29), **shortfall 0: 25.** The S1b
+remainders stand as filed. data/README 1 is raised, and data/excel 30 is raised in part with its correction. S1b row 42
+G1's post-pass half loses its d-none label. H3b logs its 45 chest-name lookups (0x0065A33B, in `TC_BuildChestTable`),
+and they match. It stays `[I]` for the store into `g_ChestTCs`, with no count change. No class moves. Recounted against `main` after merging it
+into the lane (`550d2dcc`). The filed totals predate the `lane/r1h` review's moves (harness −2, d-none +2), so they are
+corrected here: **static 567, harness 521, c-emu awaiting a batch 0, blocked 419** (d-none 293, d-edit 73, d-sim 28,
+d-2c 7, d-owner 10, d-0032 8), **deferred 2, raised 17: 1 526.** The 25 H3b rows are all (b) and batch H3b in the
+cluster tables (data-excel 17, data-README 4, data-strings 4).
 
 ## 3. Blocked rows, for the plan's open questions
 
