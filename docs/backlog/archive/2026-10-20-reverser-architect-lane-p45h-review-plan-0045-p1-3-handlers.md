@@ -5,7 +5,7 @@ date: 2026-10-20
 status: done
 context:
   - ../../findings/skills/0003-handlers.md
-  - ../../plans/0045-skills-missiles-machinery.md#implementation-log
+  - ../../plans/done/0045-skills-missiles-machinery.md#implementation-log
 resolution: "Reviewed 2026-10-20: accept with fixes (4); Phase 2 design ruled in plan 0045's log; Phase 1 static complete, P1b open; 0046 P0 may start."
 ---
 

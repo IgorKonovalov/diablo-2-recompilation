@@ -11,7 +11,8 @@ review against these before committing it. Categories are those of the [lane run
 3. **Write a review fix into the document it changes**, not only into the review's fix list. Seen: S4a's
    preset 18 split, still "raised" in drlg/0004 at the `lane/p38s3` review ([0038](../../../../docs/plans/0038-inferred-claims-sweep.md)); the `lane/s38h2b` review's items/affixes count (I 28) missing from its research-map row, fixed at the `lane/s38h2c` review (0038); the `lane/h4a` review marking class 312's H4b piece met in monsters/0004 but not special 66's in monsters/0003, fixed at the `lane/p51r` review ([0051](../../../../docs/plans/done/0051-backlog-sweep-6.md)). The H4a raise of the wanderer list written into monsters/spawn only, lifecycle's Constants row left `[I]` until the `lane/sfx` review (0038).
 4. **Read the whole branch region before ruling.** Seen: the Phase 2 review missed the moving player's
-   `÷ 3`, found at Phase 3 (0037).
+   `÷ 3`, found at Phase 3 (0037). The `lane/p50d` review passed anim/0003 § 6.5's `HasCollision0` anchor for event 1's
+   `+0x122` (`HasCollision2`) test, fixed at the `lane/a3f` review ([0050](../../../../docs/plans/0050-animation-frame-timing.md)).
 5. **Recompute totals once, over every reviewed batch, after merging `main`.** Two reviews computed in
    parallel each missed the other (S2b and S3a, fixed at the S4b review, 0038).
 6. **After every lane merge, run `python3 -I tools/backlog.py archive`** (ADR-0019; it runs `migrate` first, then
@@ -26,4 +27,4 @@ review against these before committing it. Categories are those of the [lane run
    `skills/catalogue` rows, due when plan 0045 started, added only at the `lane/p46m15` review
    ([0046](../../../../docs/plans/0046-skills-function-catalogue.md)); and keep a row's status current at each phase acceptance: the
    `skills/dispatch` and `skills/missiles` rows still read "Phase 2 and the spec not started" after the part 1 review
-   (fixed at the `lane/p45k` review, [0045](../../../../docs/plans/0045-skills-missiles-machinery.md)). The `items/economy` row's counts left at `I 83 / L 12` while the front matter had moved to 84 / 12 (fixed at the `lane/s45p3` review, 0045).
+   (fixed at the `lane/p45k` review, [0045](../../../../docs/plans/done/0045-skills-missiles-machinery.md)). The `items/economy` row's counts left at `I 83 / L 12` while the front matter had moved to 84 / 12 (fixed at the `lane/s45p3` review, 0045). The `anim/timing` row still reading "P1.2 next" after the P1.2 review, and `anim/movement` "not started" (fixed at the `lane/p50d` review, [0050](../../../../docs/plans/0050-animation-frame-timing.md)).

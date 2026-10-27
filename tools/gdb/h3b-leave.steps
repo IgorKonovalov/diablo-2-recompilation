@@ -1,0 +1,10 @@
+# plan 0038 batch H3b (tools/h3b_sessions.py): leave the game by the Escape menu's SAVE AND EXIT GAME (the save is
+# reinstalled before every session) and go back from the character-select screen to the main menu.
+key Escape
+sleep 2
+click 400 260   # SAVE AND EXIT GAME
+sleep 20
+shot workspace/logs/h3b/shots/charsel.png
+click 90 555    # EXIT on the character-select screen
+sleep 5
+shot workspace/logs/h3b/shots/mainmenu.png

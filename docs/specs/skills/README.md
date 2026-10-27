@@ -16,7 +16,7 @@ A skill use is a chain of server events: a request, its checks, a mode start tha
 an action frame that runs its do function and creates its missile, the missile's frames, hits and end, the
 stat-event handlers its hits fire, and the units it summons. This subsystem specifies that machinery, the third
 simulation phase of [ADR-0014](../../adrs/0014-scope-game-simulation.md), part 1 under
-[ADR-0020](../../adrs/0020-skills-phase-in-two-plans.md) ([plan 0045](../../plans/0045-skills-missiles-machinery.md)):
+[ADR-0020](../../adrs/0020-skills-phase-in-two-plans.md) ([plan 0045](../../plans/done/0045-skills-missiles-machinery.md)):
 the dispatch tables, every check and its order, the costs and their rounding, the skill packet, progressive charges,
 the handler table, summons, and the missile's life, with every draw named by its seed. What each numbered start, do,
 progressive, missile do, hit and damage function does is the catalogue of plan 0046; here the tier-A rows are
@@ -172,7 +172,7 @@ run:2026-10-25-skills. [C] (run:2026-10-25-skills, fn:sub_005C49E0_SummonSetLeve
   [skills/experiments](../../findings/skills/experiments.md#run2026-10-25-skills) (and
   [§ run:2026-10-27-skills](../../findings/skills/experiments.md#run2026-10-27-skills)).
 - Tables: [Skills](../../tables/Skills.md), [Missiles](../../tables/Missiles.md), [PetType](../../tables/PetType.md).
-- Plan: [0045](../../plans/0045-skills-missiles-machinery.md) (Phase 2 accepted 2026-10-27, parts 1 and 2).
+- Plan: [0045](../../plans/done/0045-skills-missiles-machinery.md) (Phase 2 accepted 2026-10-27, parts 1 and 2).
 
 ## Open questions
 

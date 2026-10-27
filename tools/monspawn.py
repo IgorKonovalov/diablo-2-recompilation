@@ -183,6 +183,18 @@ class Room:
         self.p0 = p0
 
 
+def mark_window_open(lines, i):
+    """Whether line i is inside a CM logging window of tools/gdb/collision.py: opened at RW1 (0x0052D1CE, 0x0052D101)
+    or CMR0, closed at RW0 (0x0052D1C4, 0x0052D0F6), PX (0x0054EEDD) or CMRX; the last such line before i decides."""
+    for j in range(i - 1, -1, -1):
+        tg = lines[j][0]
+        if tg in ("RW1", "CMR0"):
+            return True
+        if tg in ("RW0", "PX", "CMRX"):
+            return False
+    return False
+
+
 class Pass:
     def __init__(self, chk, ev, t, path):
         self.chk, self.ev, self.t, self.path = chk, ev, t, path
@@ -776,7 +788,12 @@ class Pass:
             self.chk.unit_steps_odd.append((self.path, self.ev[self.i - 1][2], self.lid, cls, j))
         self.chk.creations.append((self.path, self.lid, cls, x, y, u["id"], fl))
         mods = list(u.get("mods") or [0] * 9)
-        for m in monspecial.post_create_mods(self.chk.sp, cls):    # MonPostCreateMods, after MU (no draw)
+        if not fl & 2:                                              # MonPostCreateMods, after MU (no draw),
+            for m in monspecial.post_create_mods(self.chk.sp, cls):  # skipped for request flag 2 (0x005B2ECF)
+                monspecial.mod_append(mods, m)
+        for m, _flag in monspecial.post_create_boss(self.chk.sp, cls):  # MonPostCreateBoss (0x005B2EDF)
+            if self.chk.sp.handler[m]:
+                self.guard("post-create boss mod %d with a server handler (not modelled)" % m)
             monspecial.mod_append(mods, m)
         self.units[u["u"]] = {"u": u["u"], "id": u["id"], "room": room, "x": x, "y": y, "cls": cls, "us": S(seed_t(u["us"])),
                               "mods": mods}
@@ -1407,6 +1424,9 @@ class PresetPass(Pass):
     preset (PM0 .. PMX). The room and game seeds are taken at the entry line (the window before it stays a seed
     oracle); every draw after it is predicted like the pass's."""
 
+    level_class_variant = PresetMonPass.level_class_variant     # tail 60's escort class (lane/rbd)
+    chain_len = PresetMonPass.chain_len
+
     def run(self):
         tg = self.ev[0][0]
         d = self.take(tg)
@@ -1550,7 +1570,11 @@ class PresetPass(Pass):
                 for _ in range(n):              # sub_005B24E0_EscortSpawn: n x SpawnNearUnitNoBox(c, 1, rad, fl)
                     self.near_unit(u, None, c, 1, rad, fl)
             elif rec["idx"] in monspecial.SU_TAIL_ESCORT:
-                raise Mismatch("superunique %d: EscortSpawn of LevelClassVariant(minion) not modelled" % rec["idx"])
+                c0, rad, n, fl = monspecial.SU_TAIL_ESCORT[rec["idx"]]
+                c = self.level_class_variant(c0)  # sub_0063EC70_LevelClassVariant(the unit's room, c0), no draw
+                self.note("superunique EscortSpawn tails through LevelClassVariant (%d: %d -> %d)" % (rec["idx"], c0, c))
+                for _ in range(n):
+                    self.near_unit(u, None, c, 1, rad, fl)
             elif rec["idx"] in monspecial.SU_TAIL_NO_DRAW:
                 self.note("superunique tails with quest hooks (seed-asserted)")
             monspecial.mod_append(mods, monspecial.M_QUESTCOMPLETE)
@@ -2019,6 +2043,13 @@ class Checker:
                     end += 1
                 win = lines[i:end + 1]
                 P = PresetPass(self, win, self.t, path)
+                if W.P is not None and not mark_window_open(lines, i):
+                    # tools/gdb/collision.py logs the CM marks only inside RW1 .. RW0/PX (and CMR0 .. CMRX): a special
+                    # spawned outside them (a Chaos Sanctuary seal's superunique, after OBJ_OperateDispatch) marks
+                    # with no CM line, so the model's marks are applied unlogged
+                    W.P["unlogged"] = True
+                    self.stats["preset specials outside the CM window (marks applied from the model)"] = \
+                        self.stats.get("preset specials outside the CM window (marks applied from the model)", 0) + 1
                 try:
                     res = P.run()
                     self.results[res] = self.results.get(res, 0) + 1

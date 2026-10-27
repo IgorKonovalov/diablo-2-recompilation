@@ -1,0 +1,20 @@
+# plan 0038 batch H3b (tools/h3b_sessions.py): in game, open the inventory and hover the four rare items of H3bRare
+# (cells (0,0)..(3,0), centres x = 418 + 29c + 14, y = 330), so the client builds their name lines; then close it.
+key i
+sleep 2
+move 432 330
+sleep 3
+shot workspace/logs/h3b/shots/hover0.png
+move 461 330
+sleep 3
+shot workspace/logs/h3b/shots/hover1.png
+move 490 330
+sleep 3
+shot workspace/logs/h3b/shots/hover2.png
+move 519 330
+sleep 3
+shot workspace/logs/h3b/shots/hover3.png
+move 300 200
+sleep 1
+key i
+sleep 1

@@ -13,7 +13,7 @@ against all of them before you file the review request. Categories are those of 
    ItemStatCost "not read" (0039 P0).
 3. **Recompute universal data claims over the whole table** (case-insensitive for names) before writing
    "no", "every" or "N rows". Seen: 44 names both a skill and a state (0041 P0); *Find Potion* takes the
-   tier above (0043 P0); MonStats2's `m<mode>` "every set bit names a record" checked over the 603 rows MonStats names, not the 609 ([0050](../../../../docs/plans/0050-animation-frame-timing.md) P0).
+   tier above (0043 P0); MonStats2's `m<mode>` "every set bit names a record" checked over the 603 rows MonStats names, not the 609 ([0050](../../../../docs/plans/0050-animation-frame-timing.md) P0); `compellingorb` called "the same code" as the `9A` rows where the file has `9a`, and Missiles `HitClass` linked as the packet's whole `+0x60` without counting the 122 set rows whose value carries a high nibble (`lane/a3f`, 0050).
 4. **Re-read the format doc and the findings a column touches.** Seen: ds1.md bits 18–19 against
    drlg/0001, and Levels level 0 as a town (`lane/arc4`, 0039); Missiles `VelLev`'s part 2 link without skills/0002 § 12's review note (a level-1 `spike1` separates it; `lane/a50t`, [0050](../../../../docs/plans/0050-animation-frame-timing.md)).
 5. **Label every count with its game type, difficulty and index kind.** Seen: 138/208 are classic

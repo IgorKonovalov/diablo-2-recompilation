@@ -4,7 +4,7 @@ to: reverser
 date: 2026-10-20
 status: done
 context:
-  - ../../plans/0045-skills-missiles-machinery.md
+  - ../../plans/done/0045-skills-missiles-machinery.md
   - ../../findings/quests/0001-progression.md
   - ../../findings/items/0002-quality-roll.md
 resolution: "Done (lane/p45m review, 2026-10-20): skills/0002 reuses sub_0056EDE0_MissileCreateAt and g_MissileSrvDoFuncs byte for byte (one row each in re/symbols.csv after the merge, no duplicate address or name), names 0x005ADBB0 sub_005ADBB0_MissileDoFrame, and follows the Srv pattern for the hit, damage and count tables; STATEVENT_Reanimate untouched."

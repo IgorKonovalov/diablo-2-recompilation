@@ -4,7 +4,7 @@
 > **sha256:** `.txt` `89bee1fdeeb520d6eb3920437d237ba5a70bdf045770ed9808ca1a611fd932f0`, `.bin` `faa7be5af7ec274248dc51a1efcda31c3018888ef9166359101bb9a4585ab233`, `misscode.bin` `7784fbc408651ba070f060ac52a9a90b4565795aee3e89c97439fc65a29786db`
 > **Doc status:** layout complete (every compiled column placed, `[C]` by diff; plan 0045 Phase 0); semantics `[C]`/`[I]` only for
 > the columns the formula readers, the hit path and the collision code are known to read, `[L]` elsewhere until
-> [skills/0002](../plans/0045-skills-missiles-machinery.md#phase-1--read-the-machinery) (plan 0045 Phase 1.2)
+> [skills/0002](../plans/done/0045-skills-missiles-machinery.md#phase-1--read-the-machinery) (plan 0045 Phase 1.2)
 
 ## Purpose
 
@@ -12,7 +12,7 @@ One row per missile class: arrows, bolts, novas, clouds, walls, explosions, debr
 "control" missiles that spawn others, and pure client effects. A row holds the missile's server and client function
 numbers, their parameters and formulas, its motion (velocity, acceleration, lifetime), its collision rules, its
 physical and elemental damage, the missiles it creates (sub-missiles, on-hit missiles, the explosion) and its art,
-light and sound. Readers: `skills/missiles` ([plan 0045](../plans/0045-skills-missiles-machinery.md)); so far
+light and sound. Readers: `skills/missiles` ([plan 0045](../plans/done/0045-skills-missiles-machinery.md)); so far
 `data/calc` (the missile formula variables), `combat` (the hit path, named) and `drlg/collision` (the creation mark).
 Leads: no lead; derived from data.
 
@@ -161,7 +161,7 @@ The server columns are the machinery plan 0045 reads; the client columns are pre
 | `Half2HSrc` | int {1}, 675 blank | `+0x005` bit 6 | `[I]` halves the weapon share for a two-handed weapon ([skills/0002 § 3](../findings/skills/0002-missiles.md#3-the-damage-the-missile-carries)) | — | [C] |
 | `ApplyMastery` | int {1}, 682 blank | `+0x005` bit 0 | `[I]` adds the owner's elemental mastery to the elemental minimum and maximum at creation ([skills/0002 § 3](../findings/skills/0002-missiles.md#3-the-damage-the-missile-carries)) | — | [C] |
 | `KnockBack` | int {1, 33, 75}, 662 blank | `+0x0AE` u16 | `[I]` knockback chance: `MISSILE_ApplyDamage` knocks back when `RNG_Range(missile seed, 100) < KnockBack` ([combat/0001](../findings/combat/0001-formulas.md); fn:MISSILE_ApplyDamage@0x005AD730) | — | [C] |
-| `HitClass` | int 2..176 (8 distinct), 492 blank | `+0x094` u16 | hit class (hit sound and effect); `[I]` read as a byte by `sub_0064A5A0_MissileHitClass` ([skills/0002 § Functions](../findings/skills/0002-missiles.md#functions)) | — | [C] |
+| `HitClass` | int 2..176 (8 distinct), 492 blank | `+0x094` u16 | hit class (hit sound and effect); `[I]` read as a byte by `sub_0064A5A0_MissileHitClass` ([skills/0002 § Functions](../findings/skills/0002-missiles.md#functions)); `[I]` a missile's hit sets the packet's `+0x60` to `HitClass` OR the packet's high nibble (`MISSILE_ApplyDamage`, `0x005AD863`), the whole value; `[C]` (data) 122 of the 192 set rows (32, 48, 64, 80, 176) carry a high nibble of their own, 70 (2, 6, 10) a low nibble only; the value's server use is `GetHitRoll`'s divisor ([anim/0003 § 7](../findings/anim/0003-movement-gates.md#7-the-hit-class), [§ 6.3](../findings/anim/0003-movement-gates.md#63-the-get-hit-roll), [HitClass](HitClass.md#interpretation-notes)) | — | [C] |
 | `HitFlags` | int {2, 5}, 656 blank | `+0x0A8` u32 | flags of the hit; *plan 0046 readers:* `[C]` (ADR-0021, up to `AreaHitAt`) hits 1, 9 and 13 OR it into the area packet's `+0x00` (u32) ([skills/0006 §§ 3–5](../findings/skills/0006-missile-hit-1-29.md#3-hit-1-and-hit-24-an-area-hit-at-the-missile); fn:sub_0056BAD0_AreaHitAt@0x0056BAD0); `[I]` hits 14, 24 and 44 the same after `MISSILE_BuildDamage` ([skills/0006 §§ 3–4](../findings/skills/0006-missile-hit-1-29.md#3-hit-1-and-hit-24-an-area-hit-at-the-missile); fn:sub_005A9E10_MissHit44AreaHit@0x005A9E10); `[I]` do 27 the same before its area hit ([skills/0005 § 12](../findings/skills/0005-missile-do-19-36-damage.md#12-do-27-tornado); fn:sub_005AFA30_MissDo27PeriodicAreaHit@0x005AFA30) | — | [C] |
 | `ResultFlags` | int 4..9 (4 distinct), 362 blank | `+0x0AC` u16 | flags of the hit's result; *plan 0046 readers:* `[C]` (ADR-0021, up to `AreaHitAt`) hits 1, 9 and 13 OR it into the area packet's result `+0x04` (u16) ([skills/0006 §§ 3–5](../findings/skills/0006-missile-hit-1-29.md#3-hit-1-and-hit-24-an-area-hit-at-the-missile); fn:sub_0056BAD0_AreaHitAt@0x0056BAD0); `[I]` hits 14, 24 and 44 the same after `MISSILE_BuildDamage` ([skills/0006 §§ 3–4](../findings/skills/0006-missile-hit-1-29.md#3-hit-1-and-hit-24-an-area-hit-at-the-missile); fn:sub_005A9E10_MissHit44AreaHit@0x005A9E10); `[I]` do 27 the same before its area hit ([skills/0005 § 12](../findings/skills/0005-missile-do-19-36-damage.md#12-do-27-tornado); fn:sub_005AFA30_MissDo27PeriodicAreaHit@0x005AFA30) | — | [C] |
 | `DamageRate` | int {41, 82, 205}, 660 blank | `+0x19C` u32 | damage-rate scale; `[I]` stored as the missile's stat 327 at creation ([skills/0002 § 2](../findings/skills/0002-missiles.md#2-creation)) | — | [C] |
