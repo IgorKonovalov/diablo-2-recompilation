@@ -1519,6 +1519,40 @@ Net effect on the totals: harness −2 (515 → 513), d-none +2 (298 → 300), b
 harness 513, c-emu awaiting a batch 0, blocked 427** (d-none 300, d-edit 73, d-sim 28, d-2c 8, d-owner 10, d-0032 8),
 **deferred 2, raised 17: 1 526.** § 5 marks H6a done. **Phase 3 ready:** items/cube (S2c and H6a, both accepted).
 
+**H6f (filed 2026-10-27, reverser, `lane/h6f`): 23 statements of hirelings (rows 1–2, 5–6, 9–10, 14–18, 20–21, 23,
+25, 27–29, 31, 35–37; row 28 counts 2).** run:2026-10-27-sweep-hirelings, 19 launches on slot 2, 15 kept and 4
+development (the classic Greiz attempts), logger `tools/gdb/h6f.gdb` (`hirelings.gdb`'s four loggers plus
+`tools/gdb/h6f.py`), checker `tools/sweep_h6f.py check` over the 15 kept logs: **603 comparisons, 0 failing**, and
+`tools/hirelings.py check` on the same logs 0 mismatches (`check/check-final.txt`, manifests `manifest-final.sha256`,
+`manifest-shots.sha256`, `dev/manifest-dev.sha256`). The evidence is in
+[hirelings/0001 § Plan 0038 batch H6f](../../findings/hirelings/0001-hirelings.md#plan-0038-batch-h6f-run2026-10-27-sweep-hirelings).
+
+- **Raised (12):** 5, 6, 10, 14, 15, 16, 20, 27 (built state: the name id past the range), 28 (2), 31, 37.
+- **Raised in part (8):** 2 and 35 (the Act I gift in expansion; the Act III gift and the classic pet test not run),
+  17, 18 and 21 (the stock level, the quest reads and the passes; the stock client offered no hire line with the quest
+  open, so the two refusal tails were never sent: d-none parts), 23 (no classic Greiz hire), 25 (the `L ≥ 98` return
+  with a gain > 0), 36 (resurrection at Kashya here and Qual-Kehk in run:2026-10-17-economy; Greiz, Asheara, Tyrael).
+- **Shortfall (1):** 29, `MERC_Create` with a hire table present: every call came from the load, before any NPC
+  interaction, and the act changes made none. The lane proposes d-2c (a client joining a game whose table was built);
+  left as a shortfall for the review.
+- Refinements carried into hirelings/0001: `MERC_AddExp` adds twice the gain (its level loop's bound of 98, not the
+  owner's level, is a reading); a kill by another unit gives the mercenary `·86 >> 8` of its gain; `HIRE_Hire` returns no value
+  (`tools/hirelings.py` now counts a hire by `MERC_Init`, its output on run:2026-10-16-hirelings unchanged).
+- Symbols I → C (rule 14): `HIRE_GiveFreeMerc`, `MERC_AddExp`, `MERC_CapExpGain`, `PETS_OnDeath`, `MERC_Resurrect`,
+  `MERC_ResurrectCost`, `sub_00576D90_PayGold`, `sub_004B5C60_ClientHireListDraw`, `sub_004B1090_ClientMercInit` (9).
+
+Proposed class moves (two rows):
+
+| Row | Was | Now | Why |
+|---|---|---|---|
+| hirelings 1 (trade at Asheara before any interaction built the table) | a-run, H6f | **d-none** | `sub_00572C10_NpcInteractStart` calls `HIRE_SendList` (0x00572CFF) on every new interaction, which builds while `+0x21` is 0, so a trade never finds the flag clear; logged: the build from 0x005767F0 and `NPC_OpenStore`'s test reading 1 (0x00578BD3) |
+| hirelings 9 (`NPC_OpenStore` would also build the table) | a-run, H6f | **d-none** | the same reach: its call at 0x00578BFF runs only with `+0x21` 0 |
+
+Net effect on the totals: harness −2 (513 → 511), d-none +2 (300 → 302), blocked 427 → 429. Taken against `main`
+`a105ae13` merged into the lane (no inventory row moved on `main` since the `lane/h6a` review totals): **static 567,
+harness 511, c-emu awaiting a batch 0, blocked 429** (d-none 302, d-edit 73, d-sim 28, d-2c 8, d-owner 10, d-0032 8),
+**deferred 2, raised 17: 1 526.** H6f's ledger: raised 12, raised in part 8, shortfall 1, reclassified 2: 23.
+
 ## 3. Blocked rows, for the plan's open questions
 
 - **d-2c, 14 statements** (items/tc 3, items/vendors 5, items/quest-drops 3, hirelings 1, player/creation 2). This is

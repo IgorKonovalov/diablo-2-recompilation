@@ -5441,3 +5441,41 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Bookkeeping.** Review-fixes Seen lines: spec-writer 2 and 9. The review request and the counts entry closed; the
     S2c entry stays open for (d) (vendors, H6c). Ledger: the lane row filled (usage from the orchestrator: 235 263
     tokens, 78 tools, 23 min; accept with fixes, 4: overclaim 2, wrong anchor 2); the review row added, usage "—".
+- **2026-10-27 — H6f (`hirelings`) filed (reverser, `lane/h6f`, harness slot 2, from `main` `ffa5b957`; `main`
+  `a105ae13` merged before filing).** Run id run:2026-10-27-sweep-hirelings, record in
+  [hirelings experiments](../findings/hirelings/experiments.md#run2026-10-27-sweep-hirelings), evidence in
+  [hirelings/0001 § Plan 0038 batch H6f](../findings/hirelings/0001-hirelings.md#plan-0038-batch-h6f-run2026-10-27-sweep-hirelings).
+  - **Built:** logger `tools/gdb/h6f.gdb` (`hirelings.gdb`'s four loggers unchanged plus `tools/gdb/h6f.py`: the hire
+    gates, refusal tail and `PayGold`, the free mercenary, `MERC_Create`'s table write, the saved mercenary's name clamp
+    and dead branch, `PETS_OnDeath`, `MERC_Resurrect`, the kill award, `MERC_CapExpGain`, `MERC_AddExp`, the client's
+    name string), session driver `tools/h6f_sessions.py write|plan|run` (15 recipes `tools/d2s_recipes/h6f-*.json`,
+    pinned in `tools/test_d2s.py`; the stash and the 1057 seed chosen offline by `plan`), checker
+    `tools/sweep_h6f.py check` (runs `tools/hirelings.py check` first). `tools/d2pilot.py`: the `kashyares` menu and the
+    `RESX` done alias. `tools/hirelings.py`: a hire counted by `MERC_Init`, not by `HIRE_Hire`'s `EAX` (the function
+    returns no value); its output on the 48 logs of run:2026-10-16-hirelings is byte-identical to `main`'s.
+  - **Sessions:** 19 launches on slot 2 (cap 20), 15 kept, 4 development (the classic Greiz attempts: from the Act II
+    start the pilot found neither Greiz nor the waypoint, and from the waypoint it walked into the sewer twice). Tooling
+    lessons applied: `-a4` starts (act byte 131) and per-act starts (128–130), no Save and Exit (so no act-byte
+    zeroing), `--descend-to`/`--all-copies` not needed (no descent), the Harrogath margin on the town walks; built
+    states named per recipe in the run record (each backs only the code that reads it); no crash-prone probe, so no game
+    copy; heavy checks under `MemoryMax=4G`. Slot 2 stopped and its saves directory restored (empty, no aside).
+  - **Check:** `sweep_h6f.py check` over the 15 kept logs: **603 comparisons, 0 failing**, `hirelings.py check` 0
+    mismatches (16 hires, 13 tables, 6 loads), `monpool.py check` 4 613 of 4 613 (`check/check-final.txt` `943f181f…`).
+  - **Ledger (23): raised 12, raised in part 8, shortfall 1, reclassified 2** (inventory § 2.6 H6f block). Highlights:
+    the free mercenary at Kashya (the pick, no payment, `RebuildIfEmpty` after it); the stash paying the rest and the
+    gold refusal 0x6AE; the level floor (12 floor-bound rolls); a level-up between the list and the hire; 1057 → 11021 at
+    both client sites; the saved mercenary's cap 99, name reset and dead branch; `PETS_OnDeath` at a load and three
+    deaths in play; resurrection at Kashya; `MERC_AddExp` adding 2·gain only below the owner's level, with the cap
+    binding at L 3 and 4. The stock client offers no hire line at Kashya below 8 or at Qual-Kehk with their quests
+    open, so the server's two quest refusals are never sent (d-none parts). Proposed moves: rows 1 and 9 → d-none (the
+    interaction start always builds first); row 29 stays a shortfall with a d-2c proposal. Totals against `main`
+    `a105ae13`: **static 567, harness 511, c-emu 0, blocked 429** (d-none 302), **deferred 2, raised 17: 1 526**.
+  - **Symbols (rule 14), I → C:** `HIRE_GiveFreeMerc`, `MERC_AddExp`, `MERC_CapExpGain`, `PETS_OnDeath`,
+    `MERC_Resurrect`, `MERC_ResurrectCost`, `sub_00576D90_PayGold`, `sub_004B5C60_ClientHireListDraw`,
+    `sub_004B1090_ClientMercInit` (9).
+  - **Backlog:** review request
+    [2026-10-27-reverser-architect-review-lane-h6f-plan-0038-batch-h6f](../backlog/2026-10-27-reverser-architect-review-lane-h6f-plan-0038-batch-h6f.md);
+    spec-writer entry
+    [2026-10-27-reverser-spec-writer-h6f-hirelings-raises](../backlog/2026-10-27-reverser-spec-writer-h6f-hirelings-raises.md),
+    held until the review. Ledger row added with usage "—".
+  - **Next:** the `lane/h6f` review; hirelings is then ready for its Phase 3 re-tag.

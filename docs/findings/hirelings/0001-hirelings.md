@@ -489,9 +489,10 @@ tbl:Hireling.txt:Exp/Lvl)
 (fn:sub_00611830_ExpMaxLevel@0x00611830)
 
 **Levelling in play**: `MERC_AddExp` adds **twice** the gain, only while the mercenary's level is below its owner's
-(and below 98), then levels up while `ExpForLevel(i+1)` of the old band's row is reached, up to 98 (not bounded by the
-owner's level); `MERC_CapExpGain` caps one gain at `(ExpForLevel(L+1) − ExpForLevel(L)) >> 6`, and a kill by another
-unit gives the mercenary `·86 >> 8` of its gain. [C] by [§ Plan 0038 batch H6f](#plan-0038-batch-h6f-run2026-10-27-sweep-hirelings) (the `L ≥ 98` return `[I]`).
+(and below 98), then levels up while `ExpForLevel(i+1)` of the old band's row is reached; `MERC_CapExpGain` caps one gain at
+`(ExpForLevel(L+1) − ExpForLevel(L)) >> 6`, and a kill by another unit gives the mercenary `·86 >> 8` of its gain. [C] by
+[§ Plan 0038 batch H6f](#plan-0038-batch-h6f-run2026-10-27-sweep-hirelings). [I] The `L ≥ 98` return, and the loop's bound of 98 (not the owner's
+level), not separated there.
 (fn:MERC_AddExp@0x0057E860, fn:MERC_CapExpGain@0x0057E3F0)
 
 ### 7. The mercenary from a save
@@ -931,9 +932,10 @@ addresses below are those reads. Built (test) states are named per row; each bac
 
 ### Death and resurrection (rows 36, 37)
 
-- [C] `PETS_OnDeath` sets bit 0 of the mercenary's pet node (pet type 7) and keeps the node: at the dead load and at
-  three deaths in play (`hexp`, `hx3`, `hx85`, from `sub_0057CCB0_UnitKilled`, 0x0057CD21) the node's flags went
-  0 → 1, and `MERC_Resurrect` found the dead load's mercenary through the node (`PETS_GetUnitOfType(…, 7, 1)`).
+- [C] `PETS_OnDeath` sets bit 0 of the mercenary's pet node (pet type 7): at the dead load and at three deaths in play
+  (`hexp`, `hx3`, `hx85`, from `sub_0057CCB0_UnitKilled`, 0x0057CD21) the node's flags went 0 → 1. The node stays: at
+  the dead load `MERC_Resurrect` found the mercenary through it (`PETS_GetUnitOfType(…, 7, 1)`); after the three deaths
+  in play nothing read it.
   (fn:PETS_OnDeath@0x005751A0, 0x005751FF, 0x00575251, fn:sub_0057CCB0_UnitKilled@0x0057CCB0,
   run:2026-10-27-sweep-hirelings)
 - [C] Resurrection at **Kashya** (`dead`): cost `min(50 000, (30·30)/2·15) = 6 750`, `PayGold` 1, paid from gold,
@@ -944,7 +946,7 @@ addresses below are those reads. Built (test) states are named per row; each bac
 
 ### `MERC_AddExp` and the gain cap (row 25)
 
-Read from the code before the run: the kill award `XP_OnMonsterKill` gives the owner's mercenary (pet type 7,
+[I] Read from the code before the run (the `[C]` bullets below check each step): the kill award `XP_OnMonsterKill` gives the owner's mercenary (pet type 7,
 living) `XP_Compute` of the victim's experience at the mercenary's level, which ends in `MERC_CapExpGain`, scaled by
 `·86 >> 8` (signed, truncating: `imul 0x56; cdq; and edx, 0xFF; add; sar 8`, 0x0057EA2D–0x0057EA39) unless the
 mercenary is the killer, then `MERC_AddExp(gain, merc, owner, L)`.
@@ -958,10 +960,11 @@ mercenary is the killer, then `MERC_AddExp(gain, merc, owner, L)`.
 - [C] `MERC_AddExp` (42 calls): nothing when `gain ≤ 0` (3, `n99`) or when the mercenary's level is not below its
   owner's (33: L 85 under an owner of 80 and 81, gains 77 to 113); otherwise experience += **2·gain** (6, two of them with a level-up), then the
   level loop `while ExpForLevel(i + 1)` (the band row of the old L) ≤ the new experience, up to 98, and
-  `MERC_SetLevel` at the new level when it moved: 3 → 4 and 10 → 11. The loop's bound is 98, not the owner's level.
+  `MERC_SetLevel` at the new level when it moved: 3 → 4 and 10 → 11.
   (fn:MERC_AddExp@0x0057E860, 0x0057E8BA–0x0057E8BC, 0x0057E8CE, 0x0057E8D6–0x0057E8E3, 0x0057E920–0x0057E950,
   run:2026-10-27-sweep-hirelings) **Remainder `[I]`:** the `L ≥ 98` return with a gain > 0 (`n99`'s three gains were 0,
-  so they do not separate it).
+  so they do not separate it), and the loop's bounds: it stops at 98 (0x0057E93B), not at the owner's level, which no
+  level-up here came near (each moved one level).
 
 ### Symbols
 
