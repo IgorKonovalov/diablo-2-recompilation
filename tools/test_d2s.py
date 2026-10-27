@@ -339,6 +339,7 @@ RECIPE_BASES = {
     "quest-h6e2-questfresht-a4": (BASE_X, "d6d11161a9375a3d9b151bc10822c7d729b3c4b3fad3069b518cca1da3c23f08"),
     "quest-h6e2-questboxh-a4": (BASE_X, "54ac3e3dee32ee1c207f89c1a6405250016641cf4735e5e9f9bc00f508bb238b"),
     "quest-h6e2-questmsfn-a4": (BASE_X, "1b6796d678b1c05b7f54ec26c2fd66258508effcbfe9cb40a185d38145846a52"),
+    "h3brare": (BASE_X, "ce57d8f76eaabcad6bdb6eea7b06082ae400ae8c01be85404ec11dfa9cf86317"),  # run:2026-10-27-sweep-data-load
 }
 
 _TABLES = []

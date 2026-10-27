@@ -27,3 +27,10 @@ items/sockets-runewords: (r) F1 (L521) `[C]` for the cap's steps (size and 6, qu
 *Annotation (spec-writer, 2026-10-20, `lane/s38h2b`, plan 0038 Phase 3, items/affixes cluster):* **done in part.** (h)–(n) applied to [items/affixes](../specs/items/affixes.md): `TYPE_JEWEL` and its *Constants* note, C5a (split from C5b, which stays `[I]`) and its two notes, D3, E3 and its note, R1, R3 and their note, the E2 name-failure fallback `[C]` with E5's "no affix" cause and the discard `[I]` (E5 restated as having no stock case). **Open:** (a)–(g) and (o)–(s), for items/tc (waits for H2c), items/uniques-sets (H1a), items/properties (H2c) and items/sockets-runewords (H6b).
 
 *Annotation (spec-writer, 2026-10-21, `lane/s38h2c`, plan 0038 Phase 3, items/tc and items/properties clusters):* **done in part.** (a) the H7 seed note split (`[C]` by run:2026-10-20-sweep-items-chain, the classic refusal `[I]`) and (b) the *Outputs* creation-call bullet `[C]` in [items/tc](../specs/items/tc.md); (o) the F4 `tors` line and note `[C]`, (p) the `dur%` note kept `[I]` with the shortfall, (q) the A5 note restated as no stock case, the A5 and H3 lines `[I]`, in [items/properties](../specs/items/properties.md). **Open:** (c)–(g) for items/uniques-sets (H1a) and (r)–(s) for items/sockets-runewords (H6b).
+
+*Annotation (spec-writer, 2026-10-27, `lane/s38s`, plan 0038 Phase 3, items/uniques-sets cluster):* (c)–(g) applied
+to [items/uniques-sets](../specs/items/uniques-sets.md): the oracle table splits the superior builder (`[C]` as a
+fallback entered at `{S, 666}`, `[I]` from a failed unique or set) from the normal builder (`[I]`); A1–A2 `[C]`; E2's
+steps past the first `[C]` up to a successful superior step, the failing superior step, the normal step and `Rare` 0
+`[I]`; the draw-order note on the game and unit seeds `[C]`; A3 stays `[I]` with no stock item of type 11. **Open:**
+(r)–(s), for items/sockets-runewords (H6b).
