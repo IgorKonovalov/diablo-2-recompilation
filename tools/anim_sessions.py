@@ -11,14 +11,15 @@ Usage:
 
 The recipes: one per class and rate tier (t0, t1, t2), every rate item a stock magic affix (magicsuffix rows, the
 record index d2s.py takes) or a plain base item:
-  IAS  weapon suffixes of Alacrity (20) / of Quickness (40), gloves of Alacrity (20)
+  IAS  weapon suffixes of Alacrity (20) / of Quickness (40), gloves of Readiness (10)
   FCR  rings and amulet of the Apprentice (10 each), circlet of the Magus (20)
   FHR  body armour and belt of Stability (24 each)
   FBR  shield of Blocking (15) / of Deflecting (30)
   FRW  boots of Haste (20) / of Speed (30)
 Each class carries two weapon sets (weapon swap, W): set 1 a one-handed weapon with a shield, set 2 another weapon
-type. The sessions play Act I Nightmare at clvl 50 (monster levels about 36-40, so their hits land), life 150 (their
-hits reach GetHitRoll's bands) and Dexterity 100 (a block chance near 20 %); the belt holds rejuvenation potions. Hotkeys: F1 Attack, F2 the class's cast skill, F3 Kick, F4 Throw (a throwing weapon in set 1) or the second
+type. The sessions play Act I Normal at clvl 25 (near the monsters' levels, so their hits land) with Dexterity 100 (a
+block chance near 20 %), life 1500; the gh- variants (recipes anim-<cls>-t<k>-gh, saves under DIR/gh/) have life
+40, so that the monsters' hits reach GetHitRoll's bands. The belt holds rejuvenation potions, drunk below 70 % life. Hotkeys: F1 Attack, F2 the class's cast skill, F3 Kick, F4 Throw (a throwing weapon in set 1) or the second
 cast skill, F5 the class's sequence skill (if any).
 
 A session (SESSIONS row): the save, the difficulty steps file, the game seed and the steps; ("pilot", [args], t) runs
@@ -43,11 +44,13 @@ BASE = os.path.join("workspace", "runtime", "saves-backup", "p0005")
 RDIR = os.path.join(HERE, "d2s_recipes")
 
 # magicsuffix record indices (d2s.py: the index in the file without the Expansion row)
-ALACRITY_W, QUICKNESS_W, ALACRITY_G = 166, 168, 169
+# (the rows whose levelreq a clvl 25 character meets: Alacrity 6, Quickness 18, Readiness 15, Apprentice 3, Magus 21,
+# Stability 13, Blocking 1, Deflecting 8, Haste 9, Speed 16)
+ALACRITY_W, QUICKNESS_W, READINESS_G = 16, 18, 674
 APPRENTICE, MAGUS = 173, 174
 STABILITY = 263
 BLOCKING, DEFLECTING = 171, 172
-HASTE, SPEED = 394, 395
+HASTE, SPEED = 112, 113
 
 # class: (save class, base save, set 1 weapon, set 1 left hand, set 2 weapon, set 2 left, cast, cast2, seq, extra skills)
 CLASSES = {
@@ -69,7 +72,7 @@ def magic(code, suffix, equip):
     return it
 
 
-def recipe(cls, tier):
+def recipe(cls, tier, gh=False):
     name, base, w1, l1, w2, l2, cast, cast2, seq, extra = CLASSES[cls]
     ias_w = (None, ALACRITY_W, QUICKNESS_W)[tier]
     items = []
@@ -88,7 +91,7 @@ def recipe(cls, tier):
         items += [magic("rin", APPRENTICE, "rrin"), magic("rin", APPRENTICE, "lrin"),
                   magic("qui", STABILITY, "tors"), magic("lbt" if tier == 1 else "vbt", (None, HASTE, SPEED)[tier], "feet")]
     if tier == 2:
-        items += [magic("amu", APPRENTICE, "neck"), magic("ci0", MAGUS, "head"), magic("lgl", ALACRITY_G, "glov"),
+        items += [magic("amu", APPRENTICE, "neck"), magic("ci0", MAGUS, "head"), magic("lgl", READINESS_G, "glov"),
                   magic("mbl", STABILITY, "belt")]
     else:
         items.append({"code": "mbl", "equip": "belt"})
@@ -101,9 +104,10 @@ def recipe(cls, tier):
         "game": "expansion", "class": name, "seed": 5000 + 10 * list(CLASSES).index(cls) + tier,
         "name": "Anim%s%d" % (cls.capitalize(), tier), "progression": 15, "difficulty": [131, 131, 131],
         "waypoints": {"normal": "all", "nightmare": "all", "hell": "all"}, "quests": "all",
-        "stats": {"strength": 150, "energy": 200, "dexterity": 100, "vitality": 25, "hitpoints": 150, "maxhp": 150,
-                  "mana": 800, "maxmana": 800, "stamina": 120 if tier == 1 else 400,
-                  "maxstamina": 120 if tier == 1 else 400, "level": 50, "experience": 51767302},
+        "stats": {"strength": 150, "energy": 200, "dexterity": 100, "vitality": 25, "hitpoints": 40 if gh else 1500,
+                  "maxhp": 40 if gh else 1500,
+                  "mana": 600, "maxmana": 600, "stamina": 120 if tier == 1 else 400,
+                  "maxstamina": 120 if tier == 1 else 400, "level": 25, "experience": 2050449},
         "skills": skills, "mouse": {"left": "Attack", "right": cast, "swap_left": "Attack", "swap_right": cast},
         "hotkeys": hot, "belt_fill": ["rvl", "rvl", "rvl", "mp5"], "items": items,
     }
@@ -125,6 +129,12 @@ def mon_recipe():
 
 
 def cmd_recipes():
+    for cls in CLASSES:
+        for tier in (0, 1, 2):
+            p = os.path.join(RDIR, "anim-%s-t%d-gh.json" % (cls, tier))
+            with open(p, "w") as f:
+                json.dump(recipe(cls, tier, gh=True), f, indent=1)
+                f.write("\n")
     p = os.path.join(RDIR, "anim-sor-mon.json")
     with open(p, "w") as f:
         json.dump(mon_recipe(), f, indent=1)
@@ -143,6 +153,8 @@ def cmd_recipes():
 
 SAVES = {"Anim%s%d" % (c.capitalize(), t): ("anim-%s-t%d" % (c, t), CLASSES[c][1]) for c in CLASSES for t in (0, 1, 2)}
 SAVES["AnimSorMon"] = ("anim-sor-mon", "smpsor")
+SAVES.update({"gh/Anim%s%d" % (c.capitalize(), t): ("anim-%s-t%d-gh" % (c, t), CLASSES[c][1]) for c in CLASSES
+              for t in (0, 1, 2)})
 
 FIELDS = ("1,2", "1,3", "1,4", "1,5")
 
@@ -155,7 +167,7 @@ def fight(keys, hops, radius=10, extra=()):
     """explore on foot, the right button cast or swung at the nearest live monster, the hotkeys taken in turn."""
     return ("pilot", ["explore", "--walk", "--melee", "--melee-button", "3", "--curse-keys", ",".join(keys),
                       "--keys-cycle", "--give-up", "10", "--radius", str(radius), "--melee-hold", "0.3",
-                      "--drink", "0.55", "--mana-col", "4", "--hops", str(hops)] + list(extra), 60 + 12 * hops)
+                      "--drink", "0.7", "--mana-col", "4", "--hops", str(hops)] + list(extra), 60 + 12 * hops)
 
 
 def class_session(cls, tier, seed, field, hops=24):
@@ -163,7 +175,7 @@ def class_session(cls, tier, seed, field, hops=24):
     keys1 = ["F1", "F1", "F2", "F3", "F1", "F4"] + (["F5", "F5"] if seq else [])
     keys2 = ["F1", "F1", "F2", "F1", "F3"] + (["F5"] if seq else [])
     holds = [("hold", "F1", 4.0), ("hold", "F2", 4.0)] + ([("hold", "F5", 3.0)] if seq else [])
-    return ("Anim%s%d" % (cls.capitalize(), tier), "enter-nightmare", seed,
+    return ("Anim%s%d" % (cls.capitalize(), tier), "enter-normal", seed,
             [wp(field), fight(keys1, hops, extra=("--loot", "6"))] + holds +
             [fight(keys1, hops // 2), ("hold", "F3", 3.0), ("hold", "F4", 3.0),
              ("keys", ["w"], 1.0), ("keys", ["r"], 0.5), fight(keys2, hops, extra=("--loot", "6"))] + holds[:2] +
@@ -177,6 +189,9 @@ SESSIONS = {"dev-smoke": ("AnimSor0", "enter-normal", 5900, [wp("1,2"), fight(["
 for k, cls in enumerate(CLASSES):
     for tier in (0, 1, 2):
         SESSIONS["%s-t%d" % (cls, tier)] = class_session(cls, tier, 5100 + 10 * k + tier, FIELDS[(k + tier) % 4])
+        # the get-hit variant: life 40 (the bands of GetHitRoll reached by Act I Normal hits), same seed and steps
+        row = class_session(cls, tier, 5100 + 10 * k + tier, FIELDS[(k + tier) % 4])
+        SESSIONS["gh-%s-t%d" % (cls, tier)] = ("gh/" + row[0],) + row[1:]
 
 
 def mon_session(seed, field, hops=40):
@@ -203,7 +218,7 @@ def sh(args, timeout=None, log=None):
 
 
 def build(saves):
-    os.makedirs(saves, exist_ok=True)
+    os.makedirs(os.path.join(saves, "gh"), exist_ok=True)
     for name, (rec, base) in SAVES.items():
         rc = sh(PY + ["tools/d2s.py", "build", EXCEL, os.path.join("tools", "d2s_recipes", rec + ".json"),
                       os.path.join(BASE, base + ".d2s"), os.path.join(saves, name + ".d2s")], 60)

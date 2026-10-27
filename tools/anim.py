@@ -454,6 +454,9 @@ class Checker:
         self.check_pma(lines)
         self.check_obj(lines)
         self.check_actions(lines)
+        self.check_chain(lines)
+        self.check_block_gate(lines)
+        self.check_delay(lines)
 
     # --- rates ---------------------------------------------------------------------------------------------------
     def check_rates(self, lines):
@@ -547,6 +550,12 @@ class Checker:
             who = "p" if u["t"] == 0 else "m"
             if good:
                 self.tally["sch-%s-%d-%d" % (who, u["c"] if who == "p" else 0, u["m"])] += 1
+                if who == "p":
+                    # the rate cases (plan 0050 Phase 2 *Done when*): class, mode, record, rate
+                    self.tally["rate-p%d-m%d-%s-r%d" % (u["c"], u["m"], (x["rec"] or ["?"])[0],
+                                                       x["sr"] if x["seq"] else x["r"])] += 1
+                else:
+                    self.tally["sch-m-m%d-c%d" % (u["m"], u["c"])] += 1
                 if who == "m":
                     self.tally["sch-mclass-%d" % u["c"]] += 1
             for q in got:
@@ -649,7 +658,7 @@ class Checker:
         if stopped:
             self.tally["step-blocked"] += 1
             return
-        same_path = nxt["np"] == p["np"]
+        same_path = nxt["np"] == p["np"] and nxt.get("pts") == p.get("pts")
         if same_path:
             self.ok("step-point", nxt["i"] == i, ("i", p["n"], i, nxt["i"]))
         else:
@@ -736,6 +745,63 @@ class Checker:
                     if at_end:
                         self.tally["kb-end-monster"] += 1
             prev = x
+
+    def check_chain(self, lines):
+        """ADR-0014 chaining: for the drawing kinds (GetHitRoll on the defender's seed, PlayerModeAllowed on the
+        player's, an object's animation start on its own), a pair is chained when an event's seed before equals the
+        previous drawing event's seed after on the same unit (no unlogged draw between)."""
+        last = {}
+        opened = {}
+        for tag, x in lines:
+            if tag in ("GR0", "PA0"):
+                u = (x["d"] if tag == "GR0" else x["u"])["u"]
+                opened[x["n"]] = (tag[:2], u, x["s"])
+            elif tag == "OA0":
+                opened[x["n"]] = ("OA", x["o"]["u"], x["s"])
+            elif tag in ("GR1", "PA1", "OA1"):
+                v = opened.pop(x["k"], None)
+                if not v:
+                    continue
+                kind, u, before = v
+                if before == x["s"]:
+                    continue            # no draw in this event
+                prev = last.get(u)
+                if prev is not None:
+                    self.tally["chain-%s-%s" % (prev[0], kind)] += 1 if prev[1] == before else 0
+                    self.tally["chain-%s-%s-broken" % (prev[0], kind)] += 0 if prev[1] == before else 1
+                last[u] = (kind, x["s"])
+            elif tag == "FREE":
+                last.pop(x["u"], None)
+
+    def check_block_gate(self, lines):
+        """anim/0003 § 6.1: a blocked hit on a player (result 0x8010 without 0x4000) starts the block mode only when
+        frame - stat 95 > stat 102 / 8 (signed, toward zero) + 15 (rev 4 GH lines carry the stats)."""
+        schs = collections.defaultdict(set)
+        for tag, x in lines:
+            if tag == "SCH" and x["u"]["t"] == 0 and x["u"]["m"] == 9:
+                schs[x["u"]["u"]].add(x["T"])
+        for tag, x in lines:
+            if tag != "GH" or x["d"]["t"] != 0 or x.get("st") is None:
+                continue
+            if (x["res"] & 0x8010) != 0x8010 or x["res"] & 0x4000 or x["res"] & 0x380:
+                continue
+            st = x["st"]
+            gate = x["fr"] - st.get("95", 0) > cdiv(st.get("102", 0), 8) + 15
+            got = x["fr"] in schs.get(x["d"]["u"], ())
+            if self.ok("block-gate", gate == got, ("block", x["n"], gate, got, st)):
+                self.tally["block-gate-%s" % ("open" if gate else "shut")] += 1
+
+    def check_delay(self, lines):
+        """P1b-12 (D1/D2): for a player's delay skill, the interval from one do to the next and the delay (DLY)."""
+        last = {}
+        for tag, x in lines:
+            if tag == "DLY":
+                last[x["u"]] = x
+            elif tag == "PDS" and x["k"] == 0 and x["u"] in last:
+                d = last[x["u"]]
+                if x["fr"] > d["fr"]:
+                    self.tally["delay-next-do-minus-d=%d" % ((x["fr"] - d["fr"]) - d["d"])] += 1
+                    del last[x["u"]]
 
     def check_actions(self, lines):
         """P1b-1 (plan 0050 Phase 2): per player action, T, the kind-1 end frame E1 (T + n), the next request (PL0) with
@@ -830,6 +896,7 @@ class Checker:
                 lo, hi = seed_of(g["s"])
                 tot, poi, hc = g["tot"], g["poi"], g["hc"]
                 draws = 0
+                D = None
                 if 1 in g["ss"] or (poi and poi == tot) or tot < 0x100:
                     r = 1
                     band = "none"
@@ -868,6 +935,13 @@ class Checker:
                 if self.ok("ghr", (r, want_s) == (x["r"], x["s"]), ("ghr", g["n"], band, (r, want_s), (x["r"], x["s"]))):
                     self.tally["ghr-%s" % band] += 1
                     self.tally["ghr-draws-%d" % draws] += 1
+                    h = hp.get(x["k"])
+                    if band != "none" and h and D == 16:
+                        # P1b-9 (H6): a get-hit with the total in [hp/16, hp/12), a refusal above hp/12
+                        if x["r"] == 0 and cdiv(h, 16) <= tot < cdiv(h, 12):
+                            self.tally["ghr-p1b9-gethit-in-16-12"] += 1
+                        if x["r"] == 1 and tot >= cdiv(h, 12):
+                            self.tally["ghr-p1b9-refused-above-12"] += 1
 
     def check_pma(self, lines):
         opened = {}

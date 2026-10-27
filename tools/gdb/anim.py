@@ -10,7 +10,7 @@
 #   SR      UNIT_AnimSetRate 0x00623F50 (stack unit) at its five `ret 0xC` (matched by ESP), players and monsters:
 #           ra (the call's return address), rec [name, frames, speed] (Unit+0x50), r (+0x4C s16), sr (+0x3C), seq
 #           (+0x30 != 0), c8 (+0xC8), st {67, 68, 69, 93, 96, 99, 102, 105, 10, 154: STATS_GetUnitStat as
-#           tools/gdb/skills.py reads it}, ss (states 1, 11, 15, 21, 38, 42, 54, 101 that are on), sk [used skill id,
+#           tools/gdb/skills.py reads it; rev 4 adds 150 item_slow}, ss (states 1, 11, 15, 21, 38, 42, 54, 101 that are on), sk [used skill id,
 #           SkillEntry+0x0C flags] or null, pv (path +0x7C) or null; players also eq [[bodyloc, item class, ItemData
 #           +0x18 flags, item stat 68, item stat 93, ItemData +0x45 page] for body locations 3, 4, 5], monsters mf (MonsterData +0x16)
 #   SCH     SUNIT_ScheduleModeEvents 0x005539B0 (ECX game, EDX unit) closed at its rets 0x00553A0B / 0x00553AF9:
@@ -44,12 +44,14 @@
 #           exit eax and stat 10
 #   GR0/GRH/GR1  sub_0057CB00_GetHitRoll (def, pkt, hc): def unit, its seed, states, stat 7, pkt total / poison /
 #           result / +0x60; GRH the max-HP call's return (0x0057CB3E, the boundary); exit eax and the seed
-#   GH      COMBAT_GetHit 0x0057CEE0 (ECX game, EDX attacker; defender, packet): units, result, +0x60, +0x64, total
+#   GH      COMBAT_GetHit 0x0057CEE0 (ECX game, EDX attacker; defender, packet): units, result, +0x60, +0x64, total;
+#           rev 4: a player defender's stats 95 (lastblockframe) and 102
 #   PA0/PA1 sub_0057EEC0_PlayerModeAllowed (ECX game, EDX unit; mode, 1, skill): seed, states, stat 164, used skill;
 #           exit eax and seed
 #   PL0/PL1 sub_0057EDD0_PlrModeLeaveOk (EAX unit, EBX mode) and its seven rets; PLE inside it: E, the
 #           least positive kind-1 event frame (sub_005415A0's return, read at 0x0057ED7A / 0x0057EDBC before the + 5)
 #   KBE     sub_005A8520_MonKnockbackEnd entry (unit in ECX/EDX: both logged)
+#   DLY     (rev 4) SKILLS_SetDelayState 0x0056EF90 (EDI unit, EAX the delay d): state 121 for d frames from "fr"
 #   CAP     once per kind when its cap is reached
 # Windows (ADR-0014 § Log volume): the player is always windowed for PS/CT; one monster at a time is windowed for PS,
 # CT and AD, opened at an MSET of a monster into mode 2, 13, 14 or 15 (13 preempts an open walk
@@ -63,7 +65,8 @@ import struct
 
 import gdb
 
-REV = 3  # rev 1: the development logs (dev-, dev2-, dev3-, dev-r1-); rev 2: FREE lines, PS0 "pts"; rev 3: "ph"
+REV = 4  # rev 1: the development logs (dev-, dev2-, dev3-, dev-r1-); rev 2: FREE lines, PS0 "pts"; rev 3: "ph";
+#          rev 4: DLY lines, GH "st" (95, 102), stat 150 in SR
 
 
 def _anim_main():
@@ -84,7 +87,7 @@ def _anim_main():
     OQSITES = (0x00581A04, 0x00581D30, 0x00582068, 0x0058216C, 0x0058223C, 0x00583E4C, 0x00583EDB, 0x00583F65,
                0x0058403E, 0x0058438C, 0x005846FF, 0x00584C79, 0x00584EBE, 0x00585F32, 0x005863B7, 0x0058648C,
                0x005865A1, 0x0058672A, 0x00586800, 0x005869E1, 0x00586A9D, 0x0058BDDB, 0x0058D4F6)
-    RST = [67, 68, 69, 93, 96, 99, 102, 105, 10, 154]
+    RST = [67, 68, 69, 93, 96, 99, 102, 105, 10, 154, 150]
     STATES = [1, 11, 15, 21, 38, 42, 54, 101]
     st = {"game": 0, "n": {}, "capped": set(), "line": 0, "isc": None, "sr": {}, "sch": None, "oa": {},
           "pl": {}, "dr": {}, "gr": {}, "pa": {}, "ps": {}, "ad": {}, "win": 0, "win_t0": 0, "wins": 0, "plr": 0,
@@ -559,7 +562,14 @@ def _anim_main():
         if not server(de) or not take("gh"):
             return
         emit("GH", {"a": unit(att), "d": unit(de), "fr": frame(), "res": u16(pk + 4), "hc60": u32(pk + 0x60),
-                    "b64": u8(pk + 0x64), "tot": s32(pk + 0x4C), "ds": sd(de), "ss": states_on(de)})
+                    "b64": u8(pk + 0x64), "tot": s32(pk + 0x4C), "ds": sd(de), "ss": states_on(de),
+                    "st": stats(de, [95, 102]) if u32(de) == 0 else None})
+
+    def on_dly():
+        # SKILLS_SetDelayState 0x0056EF90 (EDI unit, EAX the delay; [ebp+8] after the prologue: the game)
+        u = reg("edi")
+        if server(u) and take("dly"):
+            emit("DLY", {"u": u, "d": sreg("eax"), "fr": frame()})
 
     def on_pa0():
         esp = reg("esp")
@@ -654,5 +664,6 @@ def _anim_main():
     Bp(0x0057ED7A, on_ple)
     Bp(0x0057EDBC, on_ple)
     Bp(0x005A8520, on_kbe)
+    Bp(0x0056EF90, on_dly)
     gdb.write("ANIM logger armed rev %d\n" % REV)
 _anim_main()

@@ -20,14 +20,14 @@
   "energy": 200,
   "dexterity": 100,
   "vitality": 25,
-  "hitpoints": 150,
-  "maxhp": 150,
-  "mana": 800,
-  "maxmana": 800,
+  "hitpoints": 1500,
+  "maxhp": 1500,
+  "mana": 600,
+  "maxmana": 600,
   "stamina": 120,
   "maxstamina": 120,
-  "level": 50,
-  "experience": 51767302
+  "level": 25,
+  "experience": 2050449
  },
  "skills": {
   "Fire Bolt": 1,
@@ -57,7 +57,7 @@
   {
    "code": "crs",
    "equip": "rarm",
-   "suffix": 166
+   "suffix": 16
   },
   {
    "code": "buc",
@@ -67,7 +67,7 @@
   {
    "code": "lst",
    "equip": "rarm2",
-   "suffix": 166
+   "suffix": 16
   },
   {
    "code": "rin",
@@ -87,7 +87,7 @@
   {
    "code": "lbt",
    "equip": "feet",
-   "suffix": 394
+   "suffix": 112
   },
   {
    "code": "mbl",

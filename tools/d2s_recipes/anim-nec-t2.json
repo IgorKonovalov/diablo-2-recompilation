@@ -20,14 +20,14 @@
   "energy": 200,
   "dexterity": 100,
   "vitality": 25,
-  "hitpoints": 150,
-  "maxhp": 150,
-  "mana": 800,
-  "maxmana": 800,
+  "hitpoints": 1500,
+  "maxhp": 1500,
+  "mana": 600,
+  "maxmana": 600,
   "stamina": 400,
   "maxstamina": 400,
-  "level": 50,
-  "experience": 51767302
+  "level": 25,
+  "experience": 2050449
  },
  "skills": {
   "Teeth": 1,
@@ -55,7 +55,7 @@
   {
    "code": "wnd",
    "equip": "rarm",
-   "suffix": 168
+   "suffix": 18
   },
   {
    "code": "buc",
@@ -65,7 +65,7 @@
   {
    "code": "scy",
    "equip": "rarm2",
-   "suffix": 168
+   "suffix": 18
   },
   {
    "code": "rin",
@@ -85,7 +85,7 @@
   {
    "code": "vbt",
    "equip": "feet",
-   "suffix": 395
+   "suffix": 113
   },
   {
    "code": "amu",
@@ -100,7 +100,7 @@
   {
    "code": "lgl",
    "equip": "glov",
-   "suffix": 169
+   "suffix": 674
   },
   {
    "code": "mbl",
