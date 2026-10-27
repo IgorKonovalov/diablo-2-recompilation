@@ -386,7 +386,8 @@ layout's ([§ Modes, animation and drawing](#modes-animation-and-drawing)); valu
   (`UNIT_CollUnmarkRect`) when `HasCollision2` is 0. The same `FrameCnt1 >> 8` + frame + 1 queue appears at 46 sites;
   anim/0003 reads two (`0x0058639A`, `0x00586475`), and what the other 44 schedule is its open question.
   (fn:OBJOP_Chest@0x00585F60, fn:sub_00581490_ObjEvOperateEnd@0x00581490, 0x0058639A–0x005863B7,
-  tbl:Objects.txt:Mode1, tbl:Objects.txt:HasCollision0)
+  0x005814A7–0x005814BE (`+0x141` `Mode2`, `+0x122` `HasCollision2`), tbl:Objects.txt:FrameCnt1, tbl:Objects.txt:Mode1,
+  tbl:Objects.txt:Mode2, tbl:Objects.txt:HasCollision2)
 - `[I]` **The record's token** is [ObjType](ObjType.md)'s, not this table's `Token` ([anim/0001 § 2](../findings/anim/0001-modes-frames.md#2-records-the-token-the-lookup-and-the-fallback),
   `0x0065B570(class, 0)`). `[C]` The two differ in 16 records; under the ObjType token 1 491 of the 1 603 flagged
   modes have a record, against the 1 483 above ([ObjType § Timing](ObjType.md#timing-plan-0050)).

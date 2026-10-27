@@ -885,8 +885,9 @@ The columns that name a monster's animation, its modes and its speeds (values fr
   when its base row `b ≠ i` and `Velocity(b) > 0` (unsigned `div`), then `0 → 0`, capped at `0x7FFF`; below class 410
   its run base `+0x038` is `+0x036(b) / 2` (signed), 128 for such a base, and from 410 the `RN` lookup, falling back to
   256 the same way. Every `9A` and `E9` row is its own `BaseId` (above), so the eight classic `9A` rows (326–330, 355,
-  366, 369; the finding names the seven with `mS1`, `compellingorb` 366 has the same code and no walk record) get walk
-  base 256 and run base 128, and the two `E9` rows (410, 415) walk base 256.
+  366, 369; the finding names the seven with `mS1`; `compellingorb` 366 has the code in lower case, `9a`, and no walk
+  record under either case) get walk base 256 and run base 128, and the two `E9` rows (410, 415) walk base 256 and,
+  from the `RN` lookup with no `E9RN` record, run base 256.
   (fn:sub_00650F00_MonStatsSpeeds@0x00650F00, fn:ANIMDATA_Lookup@0x0066A9B0, 0x00650F80–0x00650F9D,
   0x00650FBE–0x00650FD4, tbl:MonStats.txt:Velocity, tbl:MonStats.txt:BaseId)
 - How `Velocity`/`Run` and stat 67 become the per-frame step is [anim/0003 § 1–2](../findings/anim/0003-movement-gates.md#1-velocities) `[I]` (plan 0050 Phase 1.3); how the rate stats change a

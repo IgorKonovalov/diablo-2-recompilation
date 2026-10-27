@@ -75,7 +75,10 @@ a number in the same range. Readers expected: `anim/timing` and `combat` (plan 0
   `+0x64` is 0 and `+0x60 & 0xF` is 0, `+0x60 |= sub_00623C20_UnitBaseHitClass(attacker)`: a player's weapon (the
   base record's `+0x13C`, [Weapons](Weapons.md) `hit class`), 1 (`hth`) without a weapon; a monster's
   [MonStats2](MonStats2.md) `HitClass` (`+0x014`); 0 otherwise. A missile's hit (`MISSILE_ApplyDamage`, `0x005AD863`)
-  sets `+0x60 = Missiles HitClass | (+0x60 & 0xF0)`. The high nibble is the element: `sub_0057CE30_HitClassPick`,
+  sets `+0x60 = Missiles HitClass | (+0x60 & 0xF0)`: the whole value, not a low nibble. `[C]` (data) Of the 192 rows
+  that set Missiles `HitClass`, 70 hold a low nibble only (2, 6, 10) and 122 a high nibble of their own (32 ×58, 64 ×46,
+  176 ×10, 48 ×7, 80 ×1), which the OR keeps; `[I]` such a hit's class is above 12 and takes `GetHitRoll`'s 16 (below).
+  The high nibble is the element: `sub_0057CE30_HitClassPick`,
   called in `COMBAT_GetHit` (not at the delivery: anim/0003 corrects combat/0001 § 6, dated note there), takes the
   first of cold `0x30`, fire `0x20`, lightning `0x40`, poison `0x50` with damage > 0, scanning from a global counter
   (`g_HitClassCounter & 3`, not an RNG seed); none gives `0x10` on a doubled hit, else 0; a class of 0 becomes 13

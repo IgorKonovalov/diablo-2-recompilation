@@ -743,4 +743,22 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   base 256 and run 128 below 410. **Surprises:** the entry's "Missiles gives the low nibble" differs from the finding
   (the whole `+0x60` under the packet's high nibble), and the finding's "seven classic `9A` rows" are the `mS1` ones;
   an eighth (`compellingorb` 366) gets the same base. The docs follow the finding and say both. No survey baseline
-  changed. Review request: [backlog](../backlog/2026-10-27-archivist-architect-review-lane-a3f-p50d-table-links.md).
+  changed. Review request: [backlog](../backlog/archive/2026-10-27-archivist-architect-review-lane-a3f-p50d-table-links.md).
+- **2026-10-27 — `lane/a3f` review (architect): accept with fixes.** After merging `main`, objdump on the pinned
+  `Game.exe` checks the `FrameCnt` shifts (`0x00640E33`–`0x00640E64`, `shl [edi+0xD8..0xF4], 8`), the chest queue
+  (`0x0058639A`: `FrameCnt1 >> 8` + frame + 1, `Mode1` at `+0x140`), event 1 (`0x005814A7` `Mode2` `+0x141`,
+  `0x005814B7` `HasCollision2` `+0x122`), the missile hit (`0x005AD868`–`0x005AD875`: `HitClass | (+0x60 & 0xF0)`
+  stored whole), `GetHitRoll`'s jump table at `0x0057CBF8` (8, 32, 64, 16 as the docs) and `MonStatsSpeeds`' walk and
+  run lookups. The tables were read with `python3 -I`: `hitclass.txt`'s row order, Missiles `HitClass`'s values, the
+  ten `9A`/`E9` rows, MonStats2's and `animdata.d2`'s (no `9AWL`, `E9WL` or `E9RN` record). Every new reader is `[I]`,
+  with one `[C]` data count; no game data dumped. **Rulings:** (1) Missiles `HitClass` sets the whole `+0x60`: the
+  docs follow the finding over the entry, and the data adds to it, as 122 of the 192 set rows carry a high nibble of
+  their own. (2) `compellingorb` 366 as the eighth `9A` row is accepted: it has no `mS1`, which is why the finding
+  names seven, and it shares the fallback walk base. (3) The divisor rows' names match `hitclass.txt`'s order (2
+  `1hss`, 6 `1ht`, 10 `bow`, 11 `xbow`; 4 `2hss`, 8 `club`; 5 `2hsl`). (4) anim/0003 § 6.5 is not internally
+  inconsistent. Its prose and the binary (`+0x122`) agree on `HasCollision2`, and the `HasCollision0` anchor was a
+  slip. It is fixed in place in anim/0003 (§ 6.5 with a dated note, and Data touched) and in Objects § Timing,
+  with `Mode2` and `FrameCnt1` added. No reverser entry. **Fixes (4):** MonStats names `compellingorb`'s code `9a`,
+  in lower case (misread). HitClass and Missiles carry the high-nibble count (omission). MonStats gives the `E9`
+  rows' run base 256 (omission). The anchors (wrong anchor). The review request is closed. Ledger: the lane row
+  filled (usage from the orchestrator), the review row added with "—" usage.

@@ -323,7 +323,8 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-10-27 | `lane/p50d` review | 0050 P1.3 | architect-review | 142 754 | 43 | 10 | — (static, objdump, tool rerun under `MemoryMax=4G`, no Ghidra) | gave accept with fixes | — (on the lane row; P1b part 2 and 0050·P2 may start) |
 | 2026-10-27 | `lane/a2t` | 0050 hand-over: test_d2s recipe bases and mp_saves pin | archivist | 80 551 | 29 | 13 | — (static, no Ghidra, no harness) | accept (the ten `skills-*` hashes equal run:2026-10-27-skills's kept saves; the three `mp-*` pins rebuild twice byte-identical; 30/21 matches the `lane/p51r` review; `workspace/runtime/` untouched) | 0 |
 | 2026-10-27 | `lane/a2t` review | 0050 hand-over | architect-review | 64 559 | 22 | 7 | — (static, no Ghidra, no harness) | gave accept | — (on the lane row) |
-| 2026-10-27 | `lane/a3f` | 0050 P1.3 table links (anim/0003) | archivist | — | — | — | — (static, no Ghidra, no harness) | | |
+| 2026-10-27 | `lane/a3f` | 0050 P1.3 table links (anim/0003) | archivist | 107 243 | 49 | 8 | — (static, no Ghidra, no harness) | accept with fixes (rulings: Missiles `HitClass` sets the whole `+0x60`, the finding over the entry, now with the data count; `compellingorb` 366 the eighth `9A` row, accepted; the divisor rows' names match `hitclass.txt`'s order; the `HasCollision0` anchor a slip for `HasCollision2`, fixed in anim/0003 and Objects, no reverser entry) | 4: misread 1, omission 2, wrong anchor 1 (`compellingorb`'s code is `9a`; the Missiles high-nibble count; the `E9` run base 256; `HasCollision2` and `Mode2` anchors) |
+| 2026-10-27 | `lane/a3f` review | 0050 P1.3 table links | architect-review | — | — | — | — (static, objdump, no Ghidra, no harness) | gave accept with fixes | — (on the lane row) |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not
