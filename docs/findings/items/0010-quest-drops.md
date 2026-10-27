@@ -983,6 +983,21 @@ the 7 of its owner-played addendum, sha256 checked against `quests-run-manifest.
 **Tally:** 16 statements: 10 raised (7, 9, 14, 20, 28, 31, 37, 41, 47, 49), 5 raised in part (8, 10, 19, 21, 38), 1
 reclassified (48 → a-run H4a). One correction (qd 8) and two refinements (qd 28, 49).
 
+## Plan 0038 batch H4a (run:2026-10-21-sweep-monsters-a)
+
+Harness batch H4a of [plan 0038](../../plans/0038-inferred-claims-sweep.md) took S2c's reclassified qd 48 (spec line
+L712 at `main` `1d0262a`). Record: [monsters/experiments.md § run:2026-10-21-sweep-monsters-a](../monsters/experiments.md#run2026-10-21-sweep-monsters-a).
+
+- **qd 48** (L712, "the other 24 `boss` classes keep `Level(N)`/`(H)`") **raised.** [C] In expansion nightmare games
+  `MonStatsInit` gave five more `boss` classes their MonStats `Level(N)` where the level's `MonLvl2Ex` differs (`SI2` at
+  0x00573F83; `tools/sweep_h4a.py boss`): Blood Raven 43 (area 36), Radament 49 (44), Mephisto 59 (55), Nihlathak 70
+  (64), and Andariel 49 (43) again. The test reads the class's own flag byte (0x00573E2E–0x00573E40), so it holds for
+  every class that has the flag; the `.bin` sets it on 25 classes: 156, 211, 229, 242, 243, 250, 256, 267, 333, 365,
+  526, 544, 546–550, 559, 570, 704–709 (the run met 156, 229, 242, 267, 526). `(H)`: hell takes the same branch
+  (0x00573E23–0x00573E2C test only the expansion word and the difficulty index > 0), logged for Andariel at 75 in
+  run:2026-10-16-quest-drops; no other `boss` class was created in hell. (fn:sub_00573CB0_MonStatsInit@0x00573CB0,
+  tbl:MonStats.txt:boss, run:2026-10-21-sweep-monsters-a)
+
 ## Plan 0049 Phase 1 (2026-10-20, static): the S2c static leftovers
 
 The remainders of qd 8, 10 and 19 (backlog *plan 0038 S2c review, static leftovers*). They are settled by tracing the 45
