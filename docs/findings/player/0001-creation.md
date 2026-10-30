@@ -112,7 +112,7 @@ branches § 11 and the summary list as not exercised stay `[I]` in the text.
 | `0x00611860` | `EXP_LevelFromExp` | count of thresholds ≤ exp, capped at MaxLvl | C |
 | `0x00613E60` | `EXP_GetRatio` | `ExpRatio` of level L; L ≤ 0 → the MaxLvl row's; L > `record[0].perClass[0]` → 0 | C |
 | `0x00569F80` | `sub_00569F80_NewCharFromStub` | the new-character path from a stub | I |
-| `0x00532590` | `sub_00532590_NewCharLegacy` | the same steps, reached from the version < 92 reader (run:2026-10-27-sweep-d2s-legacy) and `sub_005345A0_PlayerLoad` | C |
+| `0x00532590` | `sub_00532590_NewCharLegacy` | the same steps, reached from the version < 92 reader (run:2026-10-27-sweep-d2s-legacy; the call from `sub_005345A0_PlayerLoad` stays `[I]`, not met) | C |
 | `0x00569F20` | `sub_00569F20_PlayerUnitInit` | client link, name, game-seed step, mode 1, player data `+0x50..+0x5C` = 0 | C |
 | `0x00532520` | `sub_00532520_PlayerUnitInitLegacy` | the same, for `0x00532590` | I |
 | `0x005348C0` | `sub_005348C0_PlayerUnitAlloc` | `SUnitCreate`'s player branch: inventory, skill list, stat list | I |
