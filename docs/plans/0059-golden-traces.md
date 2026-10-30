@@ -114,3 +114,16 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   observed and 8 predicted world cases and 8 observed drop cases of derived values only (seeds, ids, counts, region
   pool class ids, digests); no strings except two `monster_flags` bytes, no table rows or file bytes, so it is not
   game data under the CLAUDE.md rule. Test run 10 OK; the sample checks against itself (22 cases, 0 different).
+- **2026-10-30 — Phase 2 landed (archivist, `lane/a59b`).** The v1 set, local under `workspace/golden-v1-full.jsonl`
+  (5 073 cases, scope `world,drops,drlg`, digest `d73f2385…09e08`; parts and digests in the inventory block). Observed:
+  chain2 37 `world` + 3 784 `drop` (the P1 digest reproduces), items-chain 256 `drop` (the 8 stock logs with a drop;
+  `tc_sweep`'s 256 reproduced), 334 outdoor and 50 maze `drlg` windows from 112 kept logs, each written only after
+  `tools/drlg.py` (outdoor) or `tools/maze_replay.py` reproduced the seed after the window and the room lists; 0
+  failed. Predicted: 612 `world` (102 seeds x 3 x 2, 86 levels). `tools/golden.py` gained `emit --drlg`, `coverage`,
+  a scope that follows the case types, `sample --drlg`, an optional drop `game_seed` (the 2026-10-15 loggers do not
+  log it); `tools/outdoor_replay.py` got a `__main__` guard so the module imports; `tools/test_golden.py` 15 tests; the
+  sample is 28 cases (6 `drlg` added). Coverage per spec step: `docs/formats/golden-trace.md` § Set v1. Gaps: A2, A4,
+  B2 digest and the monster pools are predicted only (no kept log shows them); forced-variant items-chain logs
+  (23) are not cases; maze types other than 3, 10 and 13 are not modelled by the replayer; no predicted DRLG;
+  item seeds and populations wait for a later set version (P1 ruling 2). Surprises: the `sweep-roomk` s9/s10 logs
+  carry a `-seed` the game does not use as the map seed (0 and clamp), so their windows are skipped.

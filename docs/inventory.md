@@ -105,6 +105,27 @@ pm 519 = 15 358) and skills 2026-10-27 (`2026-10-27-skills-check.txt` over its m
 the reader's 19 668 less that one). The other families' records (anim, stats, economy) state tallies the reader does not
 map to a line kind one to one; their counts are not compared (plan 0055 Phase 2a compares their effects).
 
+## Golden-trace set v1 (plan 0059 Phase 2)
+
+The conformance cases of [plan 0059](plans/0059-golden-traces.md) in [golden-trace.md](formats/golden-trace.md), built from
+kept logs and the reviewed models by `tools/golden.py emit` and kept **local** (`workspace/golden-*.jsonl`, never in git; the
+28-case sample is `docs/formats/golden/sample-v1.jsonl`). Only counts and digests are recorded (`[C]`, by script, 2026-10-30;
+the digest is `golden.py digest`: the header's identity and every case line ordered by id, so the same logs and table set give
+the same digest). Header: `game_exe_sha256` the pinned one; `tables_digest`
+`89c1925940142db03d9e64bd84e4324c6bfbbf652f4ad8ce749104157dec9cc1`.
+
+| Part | Cases | Digest |
+|---|---|---|
+| chain2: 37 observed `world`, 3 784 observed `drop` (run:2026-10-21-chain2; `chain.py check` exit 0) | 3 821 | `210523526edd1af5d56516ff46fb14bd78b655a96efbe0e972ef1a29a5288c85` |
+| items-chain: 256 observed `drop`, the 8 stock logs with a drop of run:2026-10-15-items-chain (32 logs' sha256 match `items-chain-manifest.txt`) | 256 | `746f6408238e0e8dc19e67784e895b4cfef6e8d9540666d013d9d0a96f40d3a6` |
+| DRLG: 334 observed outdoor windows, 50 observed maze windows, from 112 of the 133 kept logs with an `OD0` or `MZ0` line (log list digest `14b27e34c1289d47dc19caa139494b2f5e3b8237c4f2a04b1e917470f19e2e14` over the contributing logs' `name sha256` lines) | 384 | `4f796f4cfd82bc8f27ed9ea51e1badf949e830e035d8e2d9e3fb7b697d6aa445` |
+| predicted grid: 102 seeds x 3 difficulties x 2 game types, 86 levels | 612 | `777d8471691c0445718c36234bc8962d37d98782986983fdf43c1d85515dc105` |
+| **v1, the four joined** (scope `world,drops,drlg`; `golden.py check` against itself passes) | **5 073** | `d73f29f6cc99067cb667614b434270b14b174d7b58d4303d1ac73c78e5a09e08` |
+
+By kind and type: observed 37 `world`, 4 040 `drop`, 384 `drlg`; predicted 612 `world`. Not cases: 0 windows or calls that
+failed to reproduce in the runs above; 2 logs skipped (`-seed` not the map seed); 184 maze windows of unmodelled level types;
+the 23 forced-variant items-chain logs.
+
 ## Classes
 
 | class | files | bytes | meaning |

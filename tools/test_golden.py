@@ -169,7 +169,7 @@ class Check(unittest.TestCase):
 
     def test_sample_and_merge(self):
         h, cases = golden.read_set(SAMPLE)
-        golden.cmd_sample(NS(set=SAMPLE, out=self.p("s1"), worlds=2, drops=3))
+        golden.cmd_sample(NS(set=SAMPLE, out=self.p("s1"), worlds=2, drops=3, drlg=0))
         h1, c1 = golden.read_set(self.p("s1"))
         self.assertEqual(h1, h)
         self.assertEqual(len(c1), 5)
@@ -177,6 +177,70 @@ class Check(unittest.TestCase):
         hm, cm = golden.read_set(self.p("m"))
         self.assertEqual(len(cm), len(cases))
         self.assertEqual(hm["set"], "m")
+
+
+def drlg_case(i, gen, lvl):
+    f = "drlg.%s." % gen
+    ex = {f + "seed_after": "00000001:0000029a", f + "rooms_digest": "ab" * 32, f + "room_count": 3}
+    return {"id": i, "kind": "observed", "type": "drlg", "source": {"log": "x.log"}, "quirks": [],
+            "inputs": {"generator": gen, "level": lvl, "map_seed": 5, "window_seed": "00000001:0000029a"},
+            "expected": ex}
+
+
+class Drlg(unittest.TestCase):
+    def setUp(self):
+        self.d = tempfile.mkdtemp()
+
+    def p(self, n):
+        return os.path.join(self.d, n)
+
+    def test_scope(self):
+        h, c = mini()
+        self.assertEqual(golden.scope_of(c), "world,drops")
+        self.assertEqual(golden.scope_of(c + [drlg_case("m", "maze", 8)]), "world,drops,drlg")
+        self.assertEqual(golden.scope_of([drlg_case("m", "maze", 8)]), "drlg")
+        self.assertEqual(golden.scope_of([drlg_case("m", "maze", 8)], "world,drops"), "world,drops,drlg")
+
+    def test_patterns_and_check(self):
+        for f in ("drlg.outdoor.seed_after", "drlg.outdoor.presets_digest", "drlg.maze.room_count"):
+            self.assertEqual(golden.pattern(f), f)
+        h, c = mini()
+        c += [drlg_case("m", "maze", 8), drlg_case("o", "outdoor", 41)]
+        c[3]["expected"] = {k.replace("maze", "outdoor"): v for k, v in c[3]["expected"].items()}
+        h["scope"] = golden.scope_of(c)
+        write(self.p("s"), h, c)
+        self.assertEqual(golden.main(["x", "check", self.p("s"), self.p("s")]), 0)
+        c2 = copy.deepcopy(c)
+        c2[2]["expected"]["drlg.maze.room_count"] = 4
+        write(self.p("alt"), h, c2)
+        self.assertEqual(golden.main(["x", "check", self.p("s"), self.p("alt")]), 1)
+
+    def test_merge_unions_scope_and_coverage(self):
+        h, c = mini()
+        write(self.p("a"), h, c)
+        write(self.p("b"), dict(h, scope="drlg"), [drlg_case("m", "maze", 8)])
+        golden.cmd_merge(NS(sets=[self.p("a"), self.p("b")], out=self.p("m"), name="v"))
+        hm, cm = golden.read_set(self.p("m"))
+        self.assertEqual(hm["scope"], "world,drops,drlg")
+        self.assertEqual(len(cm), 3)
+        self.assertEqual(golden.main(["x", "coverage", self.p("m")]), 0)
+
+    def test_sample_keeps_drlg(self):
+        h, c = mini()
+        c += [drlg_case("m%d" % i, "maze", i) for i in range(5)]
+        c[1]["inputs"] = {"difficulty": 0, "expansion": 1}
+        c[1]["expected"]["chain.G1.subtc"] = []
+        write(self.p("a"), dict(h, scope=golden.scope_of(c)), c)
+        golden.cmd_sample(NS(set=self.p("a"), out=self.p("s"), worlds=1, drops=1, drlg=3))
+        _h, cs = golden.read_set(self.p("s"))
+        self.assertEqual(sorted(x["type"] for x in cs), ["drlg", "drlg", "drlg", "drop", "world"])
+
+    def test_drop_case_without_game_seed(self):
+        call = [("TCR", dict(tc="470", ilvl="84", seed="1:2", diff="2", exp="1", stype="1", sclass="453", mflags="10")),
+                ("TCEND", dict(count="0", seed="1:2"))]
+        c = golden.drop_case(call, 0, {"log": "x.log"})
+        self.assertNotIn("game_seed", c["inputs"])
+        self.assertEqual(c["expected"]["chain.G1.count"], 0)
 
 
 if __name__ == "__main__":
