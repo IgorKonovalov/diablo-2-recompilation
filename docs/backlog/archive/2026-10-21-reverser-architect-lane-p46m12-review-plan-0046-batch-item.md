@@ -6,7 +6,7 @@ status: done
 context:
   - ../../findings/skills/0015-item.md
   - ../../findings/skills/experiments.md
-  - ../../plans/0046-skills-function-catalogue.md
+  - ../../plans/done/0046-skills-function-catalogue.md
 resolution: "Reviewed 2026-10-21: accept with fixes (6: overclaim 1, misread 1, omission 2, wrong anchor 1, stale cross-reference 1); rulings and fixes in plan 0046's log (lane/p46m12 review); archivist and spec-writer entries released."
 ---
 

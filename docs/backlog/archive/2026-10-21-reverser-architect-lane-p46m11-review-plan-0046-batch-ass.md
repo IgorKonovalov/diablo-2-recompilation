@@ -6,7 +6,7 @@ status: done
 context:
   - ../../findings/skills/0014-assassin.md
   - ../../findings/skills/experiments.md
-  - ../../plans/0046-skills-function-catalogue.md
+  - ../../plans/done/0046-skills-function-catalogue.md
 resolution: "Reviewed 2026-10-21 (architect): accept with fixes (4: misread 1, stale cross-reference 1, wrong anchor 1, other 1); rulings in plan 0046's log; archivist and spec-writer entries released; the plan's Phase 1 carried-item text corrected to do 46."
 ---
 

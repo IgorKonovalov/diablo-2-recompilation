@@ -7,7 +7,7 @@ context:
   - ../../specs/rng/seeds.md
   - ../../wiki/randomness.md
   - ../../findings/skills/0013-druid.md
-  - ../../plans/0046-skills-function-catalogue.md
+  - ../../plans/done/0046-skills-function-catalogue.md
 resolution: "Reviewed 2026-10-21: accept with fixes (2: omission 2); do 124's bit 6 and list steps restated in rng/seeds; research map row rewritten (C 80 / I 13 / L 4); see plan 0046 log."
 ---
 

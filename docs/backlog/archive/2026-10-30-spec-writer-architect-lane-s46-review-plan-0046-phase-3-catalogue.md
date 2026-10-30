@@ -5,7 +5,7 @@ date: 2026-10-30
 status: done
 context:
   - ../../specs/skills/catalogue.md
-  - ../../plans/0046-skills-function-catalogue.md
+  - ../../plans/done/0046-skills-function-catalogue.md
 resolution: "Reviewed 2026-10-30 (Tier A): accept with fixes (40), skills/catalogue reviewed, Phase 4 released; plan 0046 log."
 ---
 

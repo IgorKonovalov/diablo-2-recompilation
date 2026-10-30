@@ -4,13 +4,13 @@ to: architect
 date: 2026-10-20
 status: done
 context:
-  - ../../plans/0046-skills-function-catalogue.md
+  - ../../plans/done/0046-skills-function-catalogue.md
   - ../../tables/Skills.md#function-index-plan-0046-phase-0
   - ../../tables/Missiles.md#function-index-plan-0046-phase-0
 resolution: "Accepted 2026-10-20 (architect, lane/p46a review): Phase 0 done; monster and missile batches split into 8a-8c and 9a-9d, Phase 1 static order 9a, 9b, 9c, 9d, sor, ama, nec, pal, bar, dru, ass, item (with Unsummon), 8a, 8b, 8c (plan 0046 Phase 1); skills/0003 label of 0x005C8520 reworded by the review."
 ---
 
-Review `lane/p46a` (from main 407184c): [plan 0046](../../plans/0046-skills-function-catalogue.md) Phase 0, "The function
+Review `lane/p46a` (from main 407184c): [plan 0046](../../plans/done/0046-skills-function-catalogue.md) Phase 0, "The function
 index". Blocking plan 0046 Phase 1 (its batches).
 
 - **Index.** `tools/skills_survey.py --index` (also `index`): one entry per function-table entry a stock row uses, 310

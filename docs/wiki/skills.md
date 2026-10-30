@@ -366,9 +366,9 @@ of the tier-A functions were run under emulation up to a call that ends the repr
 Tier A names the skills whose own functions the machinery spec writes out. The
 [function catalogue](../specs/skills/catalogue.md#purpose) covers the rest: every numbered start, do, progressive,
 item-effect and periodic-state entry a stock Skills or States row uses, and every missile do, hit and damage entry a
-stock Missiles row uses (310 entries in all). Each entry says what it tests, what it writes, which missiles, units,
-states and packets it makes, and which random draws it makes in order. The six general-purpose entries and the
-tier-A ones stay in the machinery specs; the catalogue links them.
+stock Missiles row uses (310 entries in all, counting the six general-purpose ones). Each entry says what it tests,
+what it writes, which missiles, units, states and packets it makes, and which random draws it makes in order. The
+general-purpose entries and the tier-A ones are written out in the machinery specs; the catalogue links them.
 
 ### Finding a function
 
@@ -414,8 +414,9 @@ table ([every draw, by seed](../specs/skills/catalogue.md#b-every-draw-by-seed))
   a storm or a fall of rocks scatter. A creation callback can re-seed the missile as it is made.
 - **Another unit's seed** moves in a few places: the missile do that draws on its target, the stat-event handlers
   that draw on the unit they belong to, and the shrines on the shrine object.
-- **A seed no unit keeps**: the progressive (charge-up) entries and one monster start copy the caster's seed into a
-  local one and draw from that, after stepping the caster once at entry.
+- **A seed no unit keeps**: the progressive (charge-up) entries step the caster once at entry, copy its seed into a
+  local one and draw from that; one monster start (start 55) draws from a local seed built from the target's and the
+  caster's ids.
 
 The same section's note on draws after a boundary lists the draws that
 lie past where the emulation stopped; those are the code reading's order, not a measured one. How the seeds are
