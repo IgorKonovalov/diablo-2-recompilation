@@ -1793,7 +1793,8 @@ open, `+0x4C` altar mode, `+0x50` altar id, `+0x54` live players on 120, `+0x58.
 | 5–9 | set | 0x0058C40B | e11 from NPC 511 → 5, 520 (`0x208`) → 6, 512 → 7, 513 → 8, 515 → 9 (the switch at 0x0058C3B3) | 0x0058C440 |
 
 - [I] **Experience reward:** each credit calls `sub_0058C5C0_ExpGrantCapped` (player/0001): 1 400 000 (Normal),
-  20 000 000 (Nightmare), 40 000 000 (Hell), capped at the experience between the current and next level. No draw.
+  20 000 000 (Nightmare), 40 000 000 (Hell), capped at `T(L + 1) − T(L)`, the width of the level after the
+  current one (read 2026-10-30, [player/0001 § Plan 0038 H6g shortfalls](../player/0001-creation.md#plan-0038-h6g-shortfalls-static-read-2026-10-30)). No draw.
   (fn:sub_0058C5C0_ExpGrantCapped@0x0058C5C0, fn:sub_0058C6D0_A5Q5_PartyExpGrant@0x0058C6D0,
   fn:sub_0058C7E0_A5Q5_SummitExpGrant@0x0058C7E0)
 - [I] **Arming:** the altar (OperateFn 65 = `0x0058D310`, object 546) sends message 0x4E22 to e11: if `+0x0C` = 0 and

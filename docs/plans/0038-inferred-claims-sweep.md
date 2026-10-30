@@ -5862,3 +5862,28 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   or the owner-play option, which stays open as a later choice). The entry stays open until that read's review.
   Totals unchanged (1 526). **Queued:** the player/creation Phase 3 re-tag and hirelings rows 3/30/33, after H1c's
   review.
+- **2026-10-30 — H6g shortfalls, static read filed, review requested (reverser, `lane/h6gs`, static; Ghidra on a
+  project copy, objdump, `tools/ds1.py`; no harness slot; `main` merged at `8dddf4c5`).** Read in
+  [player/0001 § Plan 0038 H6g shortfalls, static read](../findings/player/0001-creation.md#plan-0038-h6g-shortfalls-static-read-2026-10-30);
+  kept outputs `workspace/logs/h6gs/manifest-h6gs.sha256` (6 lines).
+  - **Rows 2 and 29 stay open** (b, H6g). There is no static second source for J2: the three amounts are immediates
+    of `0x0058C5C0` only, which has three direct callers. Class 546 is the altar (OperateFn 65), so `objop:546` was
+    right. The `anc` session never populated the altar's room: no 546, 547 or 474–476 in its 86 `OBJS` lines, and the
+    player stayed at least 25 subtiles south of the altar. The corrected route: from the logged summit door, walk to
+    about + (−9, −49), operate 546 once, cast no town portal on level 120, then farm classes 540–542. A level-20–35
+    Normal character is needed to reach the cut (it binds for L 1–35 in Normal, `grant-cut.txt`), plus a new `EG0`
+    line. This is a harness session, not d-owner.
+  - **Rows 3 and 30 stay raised in part**, with the remainder narrowed. Proposed `[C]` (rule 1, a writer/reader pair
+    with the writer logged at `CCX`): the pickup reads the corpse's stat 13 and its inventory owner id, the two fields
+    `PLAYER_CorpseCreate` writes. Still `[I]`: the pickup's run. It is reached through `UnitInteract`'s type-0 case
+    (distance ≤ 8 picks up, 9–50 walks there and then picks up), with no difficulty test. It needs a Nightmare or Hell
+    death and a click within 50 in the same game.
+  - **Refinement** carried to player/0001 § 7, § P1c and its Functions row, and to quests/0001 word 39: the grant's
+    cut is `T(L + 1) − T(L)`, the width of level L + 1.
+  - **Totals:** no class change, so `main`'s 1 526 stand. **Symbols:** 7 new `[I]`, none raised.
+  - **Review request:** `2026-10-30-reverser-architect-review-h6gs-static-read.md`. The routing entry is annotated
+    and left open for the review to close.
+  - **Review-fixes pass:** rule 1 (every new reading is `[I]`; the one `[C]` is proposed and names its pair), rule 2
+    (the counts 86 `OBJS`, 14 `PLR`, 3 callers and 7 symbols come from kept commands or the `re/symbols.csv` diff),
+    rule 6 (outputs and the script hashed), rule 9 (every caller is named: 1 for the pickup, 3 for the interact, 3
+    for the grant), rule 12 (the cut is carried to four places).
