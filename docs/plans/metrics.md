@@ -415,7 +415,8 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-10-30 | lane/r52b check | 0052 P1.2 b1 | architect-check | 69 796 | 20 | 2 | — (Tier B check, no harness) | accept | — |
 | 2026-10-30 | lane/a55 | 0055 P0 | archivist | 152 177 | 51 | 18 | — (no Ghidra, no harness) | accept with fixes (Tier B check) | 1: omission 1 |
 | 2026-10-30 | lane/a55 check | 0055 P0 | architect-check | 54 060 | 9 | 3 | — (Tier B check, no harness) | accept with fixes | 1: omission 1 (337 stamped logs vs the 331 corpus logs unexplained in inventory and plan entry) |
-| 2026-10-30 | lane/a54 | 0052 backlog link + 0054 P0 | archivist | 110 000 | 42 | 25 | — (no Ghidra, no harness) | pending (review requested) | — |
+| 2026-10-30 | lane/a54 | 0052 backlog link + 0054 P0 | archivist | 110 000 | 42 | 25 | — (no Ghidra, no harness) | accept (Tier B check) | 0 |
+| 2026-10-30 | lane/a54 check | 0054 P0 | architect-check | 60 000 | 14 | 5 | — (Tier B check, no harness) | accept | — |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not
