@@ -535,7 +535,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   [review request](../backlog/archive/2026-10-30-reverser-architect-plan-0052-p1-2-batch-3-review.md),
   [archivist](../backlog/archive/2026-10-30-reverser-archivist-monstats-and-monstats2-readers-named-by-ai-0004.md) (MonStats and
   MonStats2 readers). Next: batch 4 (pool-D).
-- **2026-10-30 — P1.2 catalogue batch 4 (pool-D) for review (reverser, static, `lane/r52e`, from `main` d4996fb8).**
+- **2026-10-30 — P1.2 catalogue batch 4 (pool-D) for review (reverser, static, `lane/r52e`, from `main` d4996fb8; `main` 08f54ba0 merged before filing).**
   [ai/0005](../findings/ai/0005-pool-d.md): the eighteen think functions of rows 64–66, 68–80, 87 and 92 and row 65's
   `alt`, each with its `aip` reads per record, its `AiCtl+0x14/+0x18/+0x1C` words, its draws in order (all on the
   acting unit's seed; 0–5 per decision) and its command, plus the pieces first read here (three search callbacks, the
