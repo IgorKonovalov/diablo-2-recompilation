@@ -533,5 +533,5 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   rows (all I). Kept outputs `workspace/logs/r52d/` (manifest 10 lines, with the lane check's nest and sarcophagus control; `emu/` 57, `emu/dev-1/` 58, `emu/dev-2/` 58; each
   passes from its directory). Backlog: the
   [review request](../backlog/archive/2026-10-30-reverser-architect-plan-0052-p1-2-batch-3-review.md),
-  [archivist](../backlog/2026-10-30-reverser-archivist-monstats-and-monstats2-readers-named-by-ai-0004.md) (MonStats and
+  [archivist](../backlog/archive/2026-10-30-reverser-archivist-monstats-and-monstats2-readers-named-by-ai-0004.md) (MonStats and
   MonStats2 readers). Next: batch 4 (pool-D).
