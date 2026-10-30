@@ -26,7 +26,7 @@ implement an entry, because the one-line restatement leaves out the conditions t
 
 | Column | Meaning |
 |---|---|
-| Id | `Q<n>`, stable within this page's revision; the classes below are in id order |
+| Id | `Q<n>`, permanent from the Phase 1 review on: golden-trace cases cite it ([golden-trace](../../formats/golden-trace.md)), so an id is never renumbered or reused; a new entry takes the next free id at the end of its class, and a removed entry's id is retired. Q1–Q435 are in class order |
 | Quirk | the behaviour to keep, restated in one or two sentences |
 | Tag | the tag the source statement carries; a source note that holds two tags gives two entries |
 | Anchors | anchors copied from the source statement (functions, addresses, runs, table columns) |
@@ -34,12 +34,19 @@ implement an entry, because the one-line restatement leaves out the conditions t
 
 What counts as a quirk (owner decision 2): behaviour a reimplementer would plausibly "fix" or get wrong, in eight
 classes, plus deliberate oddities that look like bugs and the community descriptions that 1.14d does not follow. Left
-out: presentation (displayed names, strings, the quest log), wall-clock timing, and table-loading rules that the table
-docs already own. Crash and hang paths are listed from the specs' code readings only (owner decision 5); none was
-provoked for this page.
+out: presentation (displayed names, strings, the quest log); a note whose whole content is a wall-clock rule (a
+`GetTickCount` compare), while a branch that merely has a wall-clock threshold stays (Q387); and the table-loading
+rules of data/excel and data/calc's pools, with two row-index and code-resolution notes of hirelings and
+items/properties, which a loader built to those specs implements as written (read
+[data/excel's notes](../data/excel.md#reimplementation-notes) whole when writing the loader). Crash and hang paths are
+listed as the specs state them: six from code readings (inferred) and one fault a kept run logged before this plan (Q89,
+confirmed); none was provoked for this page (owner decision 5).
 
 `python3 -I tools/quirks.py check` verifies the page mechanically: every entry's tag appears in each tagged source it
 cites, every anchor of the entry appears in one of them, and the coverage table accounts for every note of every spec.
+The check does not tell which clause of a note holding both tags an entry restates; those entries were read by hand at
+the Phase 1 review. The entry tables are the machine-readable form (five fixed cells per row, read by
+`tools/quirks.py`); there is no second file (plan 0057 Phase 1 review).
 
 ```mermaid
 flowchart LR
@@ -97,7 +104,7 @@ flowchart LR
 |---|---|---|---|---|
 | Q23 | `MulDiv` is signed and truncates toward zero in every branch; the 32-bit branch is the one every stock `MonLvlStats` call at creation takes. | [C] | fn:sub_00483360_MulDiv@0x00483360, run:2026-10-15-mon-stats | [monsters/stats § A](../monsters/stats.md#a-muldiv-and-monlvlstats) |
 | Q24 | Kill-experience level penalties are /256 factors (207/256, 13/256 …), not the community's rounded percentages. | [C] | data:g_XpPenaltyBelow@0x006E1668, run:2026-10-16-player | [player/creation § G](../player/creation.md#g-kill-experience--xp_compute) |
-| Q25 | The party share's quotient is stored as an f32, and each member's input is `trunc((f64) level × (f64) q_f32)`, the product never rounded to f32 (98 inputs of the run separate the two). | [C] | fn:XP_PartyShare@0x0057E6C0, fn:CRT_ftol2@0x00682FD0, run:2026-10-20-two-clients | [player/creation § J](../player/creation.md#j-other-level-and-experience-changes) |
+| Q25 | The party share's quotient is stored as an f32, and each member's input is `trunc((f64) level × (f64) q_f32)`, the product never rounded to f32 (98 inputs of the run separate the two; two-member parties, the run's case). | [C] | fn:XP_PartyShare@0x0057E6C0, fn:CRT_ftol2@0x00682FD0, run:2026-10-20-two-clients | [player/creation § J](../player/creation.md#j-other-level-and-experience-changes) |
 | Q26 | The chance to hit truncates `100·AR/(AR+DEF)` to an integer before the level factor; one combined expression gives other values. | [C] | 0x0057DB01, 0x0057DB30, run:2026-10-16-combat | [combat/to-hit](../combat/to-hit.md#reimplementation-notes) n2 |
 | Q27 | Calc `÷` is C division (toward zero), and a zero divisor gives 0 instead of a fault. | [C] | 0x006C0EC6, run:2026-10-17-sweep-emu | [data/calc](../data/calc.md#reimplementation-notes) n2 |
 | Q28 | The hireling list entry floors (`>> 3`) where `MERC_SetLevel` truncates (`÷ 8`, `÷ 4`); they differ for the negative products every stock row gives below its first band. The skill level floors (`>> 5`) in both. | [C] | fn:HIRELING_RollEntry@0x006637F0, fn:MERC_SetLevel@0x00572840, run:2026-10-16-hirelings | [hirelings](../hirelings/README.md#reimplementation-notes) n4 |
@@ -123,7 +130,7 @@ flowchart LR
 | Q43 | `MulDiv` returns a 64-bit quotient outside the 32-bit range wrapped (its low 32 bits), not saturated. | [C] | fn:sub_00483360_MulDiv@0x00483360, fn:CRT_alldiv@0x00684240, run:2026-10-17-sweep-emu2 | [monsters/stats § A](../monsters/stats.md#a-muldiv-and-monlvlstats) |
 | Q44 | Crash path: `MulDiv` faults when a 32-bit product wraps to `INT32_MIN` with `c` = −1 (`idiv` overflow). | [I] | 0x00483376, 0x0048338C | [monsters/stats § A](../monsters/stats.md#a-muldiv-and-monlvlstats) |
 | Q45 | Crash path: calc `INT32_MIN ÷ −1` raises the processor's divide error; only an edited formula with a variable divisor reaches it. | [I] | 0x006C0EC6 | [data/calc § D](../data/calc.md#d-the-evaluator--calc_eval) |
-| Q46 | `raritySum` wraps mod 256 with large `Rarity` values (13 × 2 at most on stock data). | [I] | fn:sub_005475E0_MonRegionPool@0x005475E0 | [monsters/pool](../monsters/pool.md#reimplementation-notes) n7 |
+| Q46 | `raritySum` wraps mod 256 with large `Rarity` values; stock data cannot reach it (13 × 2 at most), and no run exercised it. | [I] | fn:sub_005475E0_MonRegionPool@0x005475E0 | [monsters/pool](../monsters/pool.md#reimplementation-notes) n7 |
 | Q47 | `XP_Compute` clamps an input above `0x7FFFFF` to `0x7FFFFF`; no kill reached it. | [I] | 0x0057E480, 0x0057E4FF | [player/creation § G](../player/creation.md#g-kill-experience--xp_compute) |
 | Q48 | `XP_ApplyExpRatio` switches to `(exp >> s) × r` when `exp × r` would overflow the shift; no kill reached it. | [I] | 0x0057E390, 0x0057E3E7 | [player/creation § G](../player/creation.md#g-kill-experience--xp_compute) |
 | Q49 | A gold add over a cap writes 0, not the cap; callers clip first, so only paths that skip the clip (the PvP death write) differ. | [I] | fn:sub_0053FF00_UnitAddGoldStat@0x0053FF00 | [items/economy](../items/economy.md#reimplementation-notes) n8 |
@@ -171,7 +178,7 @@ flowchart LR
 | Q86 | Cube forced affix ids are block rows + 1, taken with no weighted draw. | [C] | fn:ITEMS_PickMagicAffix@0x005C1560, run:2026-10-15-cube | [items/cube](../items/cube.md#reimplementation-notes) n9 |
 | Q87 | A forced affix row skips the level window (row 17 took *of Spikes*, level 21, at alvl 19). | [C] | 0x005C16FE, 0x005C1713, fn:ITEMS_PickMagicAffix@0x005C1560, run:2026-10-27-sweep-cube | [items/cube](../items/cube.md#reimplementation-notes) n10 |
 | Q88 | That it skips only the level window has no separating stock case: the 8 stock forced ids pass every other test. | [I] | 0x005C16D3, 0x005C17AD, tbl:CubeMain.txt:output | [items/cube](../items/cube.md#reimplementation-notes) n11 |
-| Q89 | Crash path: on crafted rows 72, 83, 84 and 90 at a low output ilvl, a side with too few groups picks 0 against a filled slot and the duplicate test reads a NULL record; the 1.14d outcome stops there, it does not draw again. | [C] | 0x005C2460, run:2026-10-27-sweep-cube, tbl:MagicSuffix.txt:group | [items/cube](../items/cube.md#reimplementation-notes) n12 |
+| Q89 | Crash path: on crafted rows 72, 83, 84 and 90 at a low output ilvl, a side with too few groups picks 0 against a filled slot and the duplicate test reads a NULL record; the 1.14d outcome stops there, it does not draw again (the fault logged on row 83 only). | [C] | 0x005C2460, run:2026-10-27-sweep-cube, tbl:MagicSuffix.txt:group | [items/cube](../items/cube.md#reimplementation-notes) n12 |
 | Q90 | Cube `qty=` and `sock=` share one byte; the `sock` flag tells which. | [C] | 0x0056632A, run:2026-10-15-cube, run:2026-10-27-sweep-cube | [items/cube](../items/cube.md#reimplementation-notes) n14 |
 | Q91 | The socket count is `start mod cap + 1`, not a draw; keep `ItemData+0x10`, which a fallback rewrites. | [C] | fn:ITEMS_SetSockets@0x0062BCB0, run:2026-10-14-props-forced | [items/properties](../items/properties.md#reimplementation-notes) n4 |
 | Q92 | Durability and quantity draws never reach the top: `[⌊d/2⌋, 2⌊d/2⌋ − 1]` and `[lo, top − 1]`. | [C] | 0x00557C27, 0x00557C8D, run:2026-10-14-props-forced | [items/properties](../items/properties.md#reimplementation-notes) n8 |
@@ -205,7 +212,7 @@ flowchart LR
 
 | Id | Quirk | Tag | Anchors | Source |
 |---|---|---|---|---|
-| Q118 | The `n < 1` guard is not everywhere: `Range`/`RangeB` return 0 without drawing for `n < 1`, but `RangePow2` and inlined constant-modulus draws (the `% 7` of `DRLG_ActCreate`) have no guard and step anyway; each consuming spec states the form per site. | [C] | fn:RNG_RangePow2@0x00472210, fn:DRLG_ActCreate@0x00642DA0, run:2026-10-11-rng-emu | [rng/README](../rng/README.md#reimplementation-notes) n1 |
+| Q118 | The `n < 1` guard is not everywhere: `Range`/`RangeB` return 0 without drawing for `n < 1`, but `RangePow2` and inlined constant-modulus draws (the `% 7` of `DRLG_ActCreate`) have no guard and step anyway; each consuming spec states the form per site. | [C] | fn:RNG_RangePow2@0x00472210, fn:DRLG_ActCreate@0x00642DA0, run:2026-10-11-rng-emu, run:2026-10-11-seed-tree | [rng/README](../rng/README.md#reimplementation-notes) n1 |
 | Q119 | Reduce the new `low`: the step comes first and the result is taken from the updated state. | [C] | run:2026-10-11-rng-emu | [rng/README](../rng/README.md#reimplementation-notes) n2 |
 | Q120 | `RangePow2Plus` has no caller, and 14 inlined draw sites lie in 9 bodies with no static reference; a count of reachable draw sites leaves them out. | [I] | fn:RNG_RangePow2Plus@0x00472240 | [rng/README § Algorithm](../rng/README.md#algorithm) |
 | Q121 | Two roots: maps derive from the map seed `game+0x7C`; the game seed `+0xD0` feeds every server unit, not the act → level chain. | [C] | fn:GAME_InitSeeds@0x0052C280, run:2026-10-11-seed-tree-p1 | [rng/seeds](../rng/seeds.md#reimplementation-notes) n1 |
@@ -263,7 +270,7 @@ flowchart LR
 | Q173 | Each `LevelLinkBuild` steps a fresh copy of the act seed; only level 27's draw touches the act seed itself. | [C] | fn:sub_006772C0_LevelLinkBuild@0x006772C0, run:2026-10-15-drlg-maze | [drlg/warps](../drlg/warps.md#reimplementation-notes) n1 |
 | Q174 | A link pick draws only on its first try; a backtrack resets the entry, which draws again. Three picks draw on every call. | [C] | fn:sub_00676150_LinkPick@0x00676150, fn:sub_00676C00_LinkPick@0x00676C00, run:2026-10-15-drlg-maze | [drlg/warps](../drlg/warps.md#reimplementation-notes) n2 |
 | Q175 | `NearWarpTest` can activate a room (its seed draws and grid) and step the level seed; call it exactly where the game does. | [C] | fn:sub_0066B2B0_LevelPointFind@0x0066B2B0, run:2026-10-14-collision | [drlg/collision](../drlg/collision.md#reimplementation-notes) n9 |
-| Q176 | Release: one room-seed draw per mode-12 (dead) monster of a released room, taken before any other test; nothing else on the save path draws. | [C] | 0x00543260, run:2026-10-17-lifecycle | [drlg/lifecycle § Draw order](../drlg/lifecycle.md#draw-order-across-the-seeds); [drlg/lifecycle](../drlg/lifecycle.md#reimplementation-notes) n3 |
+| Q176 | Release: one room-seed draw per mode-12 (dead) monster of a released room, taken before any other test; nothing else on the save path draws. | [C] | 0x00543260, run:2026-10-17-lifecycle | [drlg/lifecycle § F](../drlg/lifecycle.md#f-the-save-rule); [drlg/lifecycle § Draw order](../drlg/lifecycle.md#draw-order-across-the-seeds); [drlg/lifecycle](../drlg/lifecycle.md#reimplementation-notes) n3 |
 | Q177 | A restored item record takes two game-seed draws even though its start seed is then overwritten. | [C] | run:2026-10-17-lifecycle, fn:sub_00542B40_RoomInactiveUnitsRestore@0x00542B40 | [drlg/lifecycle § Draw order](../drlg/lifecycle.md#draw-order-across-the-seeds); [drlg/lifecycle](../drlg/lifecycle.md#reimplementation-notes) n6 |
 | Q178 | A re-created monster is a new unit for the seeds: a new game-seed step, a new unit seed and a new `MonsterInit`, with only its id, class, cell, stats 13, 7 and 6 and its mods from the record. | [C] | fn:sub_005424F0_InactiveMonstersRestore@0x005424F0, run:2026-10-17-lifecycle | [chain](../chain/README.md#reimplementation-notes) n4; [drlg/lifecycle](../drlg/lifecycle.md#reimplementation-notes) n5 |
 | Q179 | So a restored minion's stat 12 is its level plus the handlers of mods 1–4 and its saved mods (a first instance at the pool level comes back 3 higher, later restores unchanged), and a restored champion's is the flag-1 handlers' result (+ 2). | [C] | run:2026-10-17-lifecycle, fn:sub_005A46E0_MinionRestore@0x005A46E0, fn:sub_005A4440_SpecialMonRestore@0x005A4440 | [drlg/lifecycle § H](../drlg/lifecycle.md#h-the-restore) |
@@ -271,7 +278,7 @@ flowchart LR
 | Q181 | `O`, the object-region stream, is one seed for the whole game, starting at game-seed draw 2; every theme roll, handler, `InitFn`, `PreOperate`, operate and timer event advances it. | [C] | fn:OBJRGN_Create@0x00546C60, fn:OBJRGN_GetSeed@0x00546FA0, run:2026-10-15-objects | [chain](../chain/README.md#reimplementation-notes) n2; [objects](../objects/README.md#reimplementation-notes) n1 |
 | Q182 | A room's seed outlives its pass: a later request on its tile, from another room's pass, draws from where the earlier pass left it. | [C] | fn:sub_005B2A00_MonSpawnTry@0x005B2A00 | [chain](../chain/README.md#reimplementation-notes) n3 |
 | Q183 | The region append is chain state: a class appended outside the model rolls its sets then, and later creations of that class read them. | [C] | fn:sub_00547BC0_MonRegionFindAdd@0x00547BC0 | [chain](../chain/README.md#reimplementation-notes) n6 |
-| Q184 | Vendors and hirelings share the store seed: the hire build draws on it, and it must run at a seller's first interaction start, before any menu action. | [C] | fn:NPCSTORE_GetSeed@0x00536B40, fn:HIRE_BuildStock@0x00576070, run:2026-10-15-vendors | [hirelings](../hirelings/README.md#reimplementation-notes) n1; [items/vendors](../items/vendors.md#reimplementation-notes) n5 |
+| Q184 | Vendors and hirelings share the store seed: the hire build draws on it, and it must run at a seller's first interaction start, before any menu action. | [C] | fn:NPCSTORE_GetSeed@0x00536B40, fn:HIRE_BuildStock@0x00576070, fn:sub_00572C10_NpcInteractStart@0x00572C10, run:2026-10-15-vendors, run:2026-10-27-sweep-vendors | [hirelings](../hirelings/README.md#reimplementation-notes) n1; [items/vendors](../items/vendors.md#reimplementation-notes) n5 |
 | Q185 | A hire build draws a seed for every name before any pick: always `n + 10` draws. | [C] | fn:HIRE_BuildStock@0x00576070, run:2026-10-16-hirelings | [hirelings](../hirelings/README.md#reimplementation-notes) n2 |
 | Q186 | Draw 1 of every affix pick is spent, even when `mustRoll` makes its bit irrelevant and even when no candidate exists. | [C] | 0x005C15FD, 0x005C1645, run:2026-10-14-affixes | [items/affixes](../items/affixes.md#reimplementation-notes) n1 |
 | Q187 | A failed rare pick does not use up the slot: close that side and retry on the other, with no side step once a side is closed. | [C] | 0x005C1DA6, 0x005C1DB8, run:2026-10-14-affixes | [items/affixes](../items/affixes.md#reimplementation-notes) n6 |
@@ -310,7 +317,7 @@ flowchart LR
 | Q220 | Ring and amulet slots 0 and 1 draw `lvl` and a pick, then replace the pick; their `lvl` is kept. | [C] | 0x0057893E, 0x00578950, run:2026-10-15-vendors | [items/vendors](../items/vendors.md#reimplementation-notes) n3 |
 | Q221 | The upgrade draw comes before each stock item's creation, after its quality draw (normal copies) or the magic count (magic copies); permanent items make it too in Nightmare and Hell. | [C] | fn:VENDOR_CreateStockItem@0x00576330, run:2026-10-15-vendors | [items/vendors](../items/vendors.md#reimplementation-notes) n6 |
 | Q222 | One region draw `R` runs through all levels in id order, appearance sets included: leaving out any drawing level shifts every later pool. | [C] | fn:sub_005479C0_MonRegionsBuild@0x005479C0, run:2026-10-12-mon-pool | [monsters/pool](../monsters/pool.md#reimplementation-notes) n1 |
-| Q223 | The region init's single draw is one step of the game seed, which the object regions, the store, quests and every later server unit step after it. | [C] | fn:sub_00530BF0_GameCreate@0x00530BF0, run:2026-10-15-objects | [monsters/pool](../monsters/pool.md#reimplementation-notes) n3 |
+| Q223 | The region init's single draw is one step of the game seed, which the object regions, the store, quests and every later server unit step after it. | [C] | fn:sub_00530BF0_GameCreate@0x00530BF0, run:2026-10-15-objects, run:2026-10-15-vendors, run:2026-10-16-quest-drops | [monsters/pool](../monsters/pool.md#reimplementation-notes) n3 |
 | Q224 | A dropped class still costs a pick: `isSpawn` is tested after the pick and the slot removal. | [C] | fn:sub_005475E0_MonRegionPool@0x005475E0, run:2026-10-12-mon-pool | [monsters/pool](../monsters/pool.md#reimplementation-notes) n4 |
 | Q225 | The `SpawnTypeRoll` result 1 is folded into 2 before dispatch, but the roll's last draw is kept. | [C] | 0x0054EE0B, run:2026-10-13-mon-spawn | [monsters/spawn](../monsters/spawn.md#reimplementation-notes) n1 |
 | Q226 | Champion or unique is a separate `Range(boss.seed, 100) < 20` after the boss is placed, not part of the type roll. | [C] | 0x005A0817, run:2026-10-13-mon-spawn | [monsters/spawn](../monsters/spawn.md#reimplementation-notes) n2 |
@@ -321,7 +328,7 @@ flowchart LR
 | Q231 | A unique's mod count is `Range(unit.seed, 1) + 1 + difficulty`: the `Range(1)` is a real draw. A superunique's extra picks have none. | [C] | fn:sub_005A0760_SpecialModsRoll@0x005A0760, run:2026-10-14-mon-special | [monsters/special](../monsters/special.md#reimplementation-notes) n2 |
 | Q232 | MonPlace 2 skips the champion roll: draw no `Range(100)` for it. | [C] | 0x005A07E7, run:2026-10-14-mon-special | [monsters/special](../monsters/special.md#reimplementation-notes) n3 |
 | Q233 | The minion count comes before `rndname`: the unique minions are made before the handlers run, so their creations fall between the boss's minion-count draw and its name-seed step. | [C] | fn:sub_005A2120_SpecialModsApply@0x005A2120, run:2026-10-14-mon-special | [monsters/special](../monsters/special.md#reimplementation-notes) n5 |
-| Q234 | `rndname` runs for champions and pack members too (mods 1–4 always run): every special's unit seed steps once in `SpecialModsApply`, twice for a superunique whose `Mod1` is `rndname`. | [C] | data:g_UModAlwaysMods@0x006E2168, run:2026-10-14-mon-special | [monsters/special](../monsters/special.md#reimplementation-notes) n6 |
+| Q234 | `rndname` runs for champions and pack members too (mods 1–4 always run): every special's unit seed steps once in `SpecialModsApply`, twice for a superunique whose `Mod1` is `rndname`. | [C] | data:g_UModAlwaysMods@0x006E2168, run:2026-10-13-mon-spawn, run:2026-10-14-mon-special | [monsters/special](../monsters/special.md#reimplementation-notes) n6 |
 | Q235 | A superunique with `MinGrp` 0 still makes one `RangeB(1)` draw on its unit seed. | [C] | fn:sub_005A0C00_UniqueMinions@0x005A0C00, run:2026-10-14-mon-special | [monsters/special](../monsters/special.md#reimplementation-notes) n9 |
 | Q236 | The aura draw `Range(Init(nameSeed), n)` is local and touches no seed of the game. | [C] | fn:sub_005A1650_UModAura@0x005A1650, run:2026-10-14-mon-special | [monsters/special](../monsters/special.md#reimplementation-notes) n10 |
 | Q237 | The monster HP range draws `RangeB(hi − lo + 1)`, also when `hi = lo` (one step, result 0); only a reversed range makes no step. | [C] | fn:RNG_RangeB@0x0045C3E0, run:2026-10-15-mon-stats, run:2026-10-11-rng-emu | [monsters/stats](../monsters/stats.md#reimplementation-notes) n1 |
@@ -363,7 +370,7 @@ flowchart LR
 | Q268 | The monster bit does not block a default spawn; only the `0x1000` centre bits do. | [C] | fn:COLL_PatternMark@0x0064EA90, run:2026-10-14-collision | [drlg/collision](../drlg/collision.md#reimplementation-notes) n6 |
 | Q269 | A wraith's creation pattern 5 lasts only until the refresh: mark it, then run the refresh before the next test. | [C] | fn:sub_00649CA0_PathPatternRefresh@0x00649CA0, run:2026-10-14-collision | [drlg/collision](../drlg/collision.md#reimplementation-notes) n7 |
 | Q270 | Unmarks are not reference-counted: clearing one footprint clears the shared bits of an overlapping unit. | [C] | fn:COLL_PatternUnmark@0x0064EC10, run:2026-10-14-collision | [drlg/collision](../drlg/collision.md#reimplementation-notes) n8 |
-| Q271 | `LogicBoxSingle` resets the level's region counter: flood ids after a single-box room restart from 1. | [C] | fn:sub_0066CCB0_LogicBoxSingle@0x0066CCB0, run:2026-10-14-collision | [drlg/collision](../drlg/collision.md#reimplementation-notes) n11 |
+| Q271 | `LogicBoxSingle` resets the level's region counter: flood ids after a single-box room restart from 1. | [C] | fn:sub_0066CCB0_LogicBoxSingle@0x0066CCB0, run:2026-10-14-collision, run:2026-10-15-objects | [drlg/collision](../drlg/collision.md#reimplementation-notes) n11 |
 | Q272 | The collision grid changes as a spawn pass runs: each placed monster marks cells later members test. | [C] | fn:sub_0064D9B0_CollisionTest@0x0064D9B0, run:2026-10-13-mon-spawn | [monsters/spawn](../monsters/spawn.md#reimplementation-notes) n10 |
 | Q273 | A re-created monster marks the grid like a pass creation, outside any window; leaving its marks out fails later position tests. | [C] | fn:COLL_WHTest@0x0064D800, run:2026-10-21-chain2 | [chain](../chain/README.md#reimplementation-notes) n5 |
 | Q274 | A restored room is not populated again: the new-rooms walk populates once and restores once per activation. | [C] | fn:sub_0052D160_NewRoomsUpdate@0x0052D160, run:2026-10-17-lifecycle | [drlg/lifecycle § D](../drlg/lifecycle.md#d-the-new-rooms-walk-populate-once-restore-once-per-activation); [drlg/lifecycle](../drlg/lifecycle.md#reimplementation-notes) n4 |
@@ -410,11 +417,11 @@ flowchart LR
 | Q315 | Runeword properties are applied with the rune as "the item": the seed, the weapon and armour tests and func 23 look at the child; the parent is only the target list. | [C] | fn:RUNEWORD_Apply@0x006600A0, run:2026-10-11-d2s-samples, run:2026-10-15-sockets | [items/sockets-runewords](../items/sockets-runewords.md#reimplementation-notes) n1 |
 | Q316 | Low quality qualifies for a runeword and ethereal is not tested; quality 9 is excluded with crafted. | [C] | 0x0062BEE7, 0x0062BEFD, run:2026-10-15-sockets | [items/sockets-runewords](../items/sockets-runewords.md#reimplementation-notes) n4 |
 | Q317 | Classic games accept runes in sockets and apply their group like any rune. | [C] | fn:ITEMS_InsertSocket@0x00562660, run:2026-10-15-sockets | [items/sockets-runewords](../items/sockets-runewords.md#reimplementation-notes) n7 |
-| Q318 | No runeword can form in a classic game: no stock row is classic-legal. | [I] | [Runes § Survey](../../tables/Runes.md#survey-of-the-stock-rows) | [items/sockets-runewords](../items/sockets-runewords.md#reimplementation-notes) n7 |
+| Q318 | No runeword can form in a classic game: no stock row is classic-legal. | [I] | tbl:Runes.txt:Rune1, [Runes § Survey](../../tables/Runes.md#survey-of-the-stock-rows) | [items/sockets-runewords § D](../items/sockets-runewords.md#d-the-runeword-match); [items/sockets-runewords](../items/sockets-runewords.md#reimplementation-notes) n7 |
 | Q319 | A loaded socket count is kept above the creation clamps (`SetSocketsOnLoad`). | [C] | fn:ITEMS_SetSocketsOnLoad@0x0062BE00, run:2026-10-15-sockets | [items/sockets-runewords](../items/sockets-runewords.md#reimplementation-notes) n8 |
 | Q320 | The quality socket clamps belong to creation only (`SetSockets`); no run executed them. | [I] | fn:ITEMS_SetSockets@0x0062BCB0 | [items/sockets-runewords](../items/sockets-runewords.md#reimplementation-notes) n8 |
 | Q321 | The TC level walk is forward-only from the base TC, which is kept even when its level is above mlvl. | [C] | fn:TC_GetByIndex@0x00654E00, run:2026-10-11-tc-drops | [items/tc](../items/tc.md#reimplementation-notes) n6 |
-| Q322 | Classic games differ in the draw total, the entry selection, the throwable re-pick and the Long Sword; the classic sessions reproduce the total, its two clauses, the scan, the refund, and (forced) the bound of 10 and `lsd`. | [C] | fn:TC_ResolveDrops@0x0055A6D0, run:2026-10-13-quality, run:2026-10-21-throw-forced | [items/tc](../items/tc.md#reimplementation-notes) n10 |
+| Q322 | Classic games differ in the draw total, the entry selection, the throwable re-pick and the Long Sword; the classic sessions reproduce the total, its two clauses, the scan, the refund, and (forced) the bound of 10 and `lsd`. | [C] | fn:TC_ResolveDrops@0x0055A6D0, run:2026-10-13-quality, run:2026-10-14-affixes, run:2026-10-21-throw-forced | [items/tc](../items/tc.md#reimplementation-notes) n10 |
 | Q323 | Classic item rejection and the ratio raises differ too; the expansion-only skip, the scan off the end and the `version` reject have no stock case. | [I] | 0x0055AAED, 0x0055AB33, 0x0055AC5F, 0x0055AF59 | [items/tc](../items/tc.md#reimplementation-notes) n10 |
 | Q324 | Set items take their version from their set and have no `enabled`, ladder or once-per-game test. | [C] | 0x005C2630, 0x005C26A2, tbl:Sets.txt:version, run:2026-10-14-props-forced | [items/uniques-sets](../items/uniques-sets.md#reimplementation-notes) n8 |
 | Q325 | Item version 0 builds by other rules (first match, no draw, ×5 durability for uniques; a set membership walk for sets); drops never reach them. | [I] | 0x005566DE, 0x00556849, fn:sub_005C2740_ItemBuildSetV0@0x005C2740 | [items/uniques-sets](../items/uniques-sets.md#reimplementation-notes) n12 |
@@ -449,7 +456,7 @@ flowchart LR
 | Q354 | Max life and mana come from the file (stats 7 and 9 are not recomputed at load); current life and mana are restored as read. | [C] | fn:D2S_LoadFinish@0x0056AF80, run:2026-10-12-d2s-io | [save/d2s](../save/d2s.md#reimplementation-notes) n5 |
 | Q355 | Item flags change on the way: the writer clears bit 19 and sets 23; the reader strips 25, sets 19 and clears 13. | [C] | fn:sub_00558CB0_ItemCreateFromSave@0x00558CB0, fn:ITEMS_SerializeBits@0x006312B0, run:2026-10-12-d2s-io | [save/d2s](../save/d2s.md#reimplementation-notes) n6 |
 | Q356 | The saved item seed is the unit seed's initial value: the loaded unit seed is `RNG_SeedInit`'s `{seed, 666}`, whatever state it had reached. | [C] | fn:RNG_SeedInit@0x00650E40, run:2026-10-12-d2s-io | [save/d2s](../save/d2s.md#reimplementation-notes) n7 |
-| Q357 | Fixed item fields apply `Save Add`. | [C] | 0x00630F5B, 0x00630FA3 | [save/d2s](../save/d2s.md#reimplementation-notes) n9 |
+| Q357 | Fixed item fields apply `Save Add`. | [C] | 0x00630A19, 0x00630CF3, run:2026-10-14-props-forced, run:2026-10-16-player | [save/d2s § I](../save/d2s.md#i-one-item); [save/d2s](../save/d2s.md#reimplementation-notes) n9 |
 | Q358 | Neither fixed fields nor followers apply `ValShift`. | [I] | 0x00630F5B, 0x00630FA3, 0x00630A19, 0x00630CF3 | [save/d2s](../save/d2s.md#reimplementation-notes) n9 |
 | Q359 | One delay state blocks all delayed skills, not only the one cast. | [I] | fn:SKILLS_DelayOk@0x006478F0 | [skills/dispatch](../skills/dispatch.md#reimplementation-notes) n5 |
 | Q360 | A monster's bit 6 is set by its AI, so its do runs only through the attack-frame handler and the mode-14 `Unit+0x4E = 4` case. | [I] | 0x005DEB08 | [skills/dispatch](../skills/dispatch.md#reimplementation-notes) n6 |
@@ -484,7 +491,7 @@ flowchart LR
 | Q384 | Rooms are released one by one as their own idle counts run out, per room, not per level. | [C] | fn:sub_0061A3F0_RoomReleaseAllowed@0x0061A3F0, run:2026-10-17-lifecycle | [drlg/lifecycle § E](../drlg/lifecycle.md#e-release); [drlg/lifecycle](../drlg/lifecycle.md#reimplementation-notes) n1 |
 | Q385 | Count release passes, not frames: a visit between two passes leaves the idle count running. | [C] | run:2026-10-17-lifecycle | [drlg/lifecycle § E](../drlg/lifecycle.md#e-release); [drlg/lifecycle](../drlg/lifecycle.md#reimplementation-notes) n2 |
 | Q386 | The first kill always gets the quest TC: the drop runs inside the death mode change, before the quest scripts receive the death. | [C] | fn:sub_0057CCB0_UnitKilled@0x0057CCB0, run:2026-10-16-quest-drops | [items/quest-drops](../items/quest-drops.md#reimplementation-notes) n1 |
-| Q387 | An act change by waypoint does not reset the old act's stores in single player; it marks those older than 240 s stale. A waypoint within the act resets them at once. | [C] | fn:NPCSTORE_ActStale@0x00537230, run:2026-10-15-vendors | [items/vendors](../items/vendors.md#reimplementation-notes) n10 |
+| Q387 | An act change by waypoint does not reset the old act's stores in single player; it marks stale those built more than 240 000 ms before, a `GetTickCount` test (wall-clock: the act branch is the trap, the clock is kept as the spec gives it). A waypoint within the act resets them at once. | [C] | fn:NPCSTORE_ActStale@0x00537230, run:2026-10-15-vendors | [items/vendors](../items/vendors.md#reimplementation-notes) n10 |
 | Q388 | A trap fires later: `OBJ_TrapFire` only queues event 4, and the effect comes 35 frames later among the timer events. | [C] | fn:OBJ_TrapFire@0x00582510, fn:OBJ_TrapEvent@0x005817A0, run:2026-10-19-h5b-objects | [objects](../objects/README.md#reimplementation-notes) n14 |
 | Q389 | An NPC act change moves the player before it writes the travel word. | [C] | fn:NPC_MenuAction@0x00579D60, fn:sub_005467E0_NpcActTravel@0x005467E0, run:2026-10-17-quests | [quests/travel § E](../quests/travel.md#e-act-change-through-an-npc); [quests/travel](../quests/travel.md#reimplementation-notes) n4 |
 | Q390 | While `+0x4C` = 1 the player can operate nothing and open no waypoint menu until packet 0x48. | [I] | fn:OBJ_OperateDispatch@0x00584420, fn:sub_00535060_PlayerIsBusy@0x00535060 | [quests/travel § E](../quests/travel.md#e-act-change-through-an-npc); [quests/travel](../quests/travel.md#reimplementation-notes) n5 |
@@ -514,7 +521,7 @@ These are faithful 1.14d behaviour that reads as a mistake, or that contradicts 
 | Id | Quirk | Tag | Anchors | Source |
 |---|---|---|---|---|
 | Q404 | No bias correction: the RNG takes `low mod n` directly, with no rejection of the top partial range. | [C] | run:2026-10-11-rng-emu | [rng/README](../rng/README.md#reimplementation-notes) n5 |
-| Q405 | `ToHitFactor` is a class constant added to the base attack rating before the percent; the chance to hit's level term `2·alvl/(alvl + dlvl)` has no class term (contradicts the community description). `BlockFactor` is added to stat 20 in the block chance. | [C] | fn:sub_00622560_PlayerBaseToHit@0x00622560, fn:sub_00622720_UnitBlockChance@0x00622720, run:2026-10-16-combat | [combat/to-hit](../combat/to-hit.md#reimplementation-notes) n1; [player/creation](../player/creation.md#reimplementation-notes) n8; [combat/README](../combat/README.md#reimplementation-notes) n7 |
+| Q405 | `ToHitFactor` is a class constant added to the base attack rating before the percent; the chance to hit's level term `2·alvl/(alvl + dlvl)` has no class term (contradicts the community description). `BlockFactor` is added to stat 20 in the block chance. | [C] | fn:sub_00622560_PlayerBaseToHit@0x00622560, struct:CharStatsRec+0x3C, fn:sub_00622720_UnitBlockChance@0x00622720, run:2026-10-16-combat, src:arreat-summit-character-basics | [combat/to-hit](../combat/to-hit.md#reimplementation-notes) n1; [player/creation](../player/creation.md#reimplementation-notes) n8; [combat/README](../combat/README.md#reimplementation-notes) n7 |
 | Q406 | Crushing blow is a share of the defender's current life before this hit's damage, 1/4 on uniques and champions, not the community's 1/8 (52 crushing blows on champions took 1/4). | [C] | fn:STATEVENT_CrushingBlow@0x005BFFC0, run:2026-10-16-combat, run:2026-10-20-shortfalls | [combat/delivery](../combat/delivery.md#reimplementation-notes) n1; [combat/README](../combat/README.md#reimplementation-notes) n7 |
 | Q407 | Burning never applies from a plain attack: the builder leaves `burn = 2` with `burnLen = 0`. | [I] | 0x0057BC2F, 0x0057BC8A | [combat/delivery](../combat/delivery.md#reimplementation-notes) n15 |
 | Q408 | The fire length is overwritten by the burn length in stat 315. | [I] | 0x0064AE2F | [skills/missiles](../skills/missiles.md#reimplementation-notes) n4 |
@@ -548,8 +555,8 @@ These are faithful 1.14d behaviour that reads as a mistake, or that contradicts 
 
 ## Crash and hang paths
 
-From the specs' code readings and runs; none was provoked for this page, and the harness never provokes one (owner
-decision 5). The entries are in their classes above: Q44, Q45, Q50, Q65, Q74, Q89, Q93.
+Six from the specs' code readings and one (Q89) a fault a kept run logged on row 83; none was provoked for this page,
+and the harness never provokes one (owner decision 5). The entries are in their classes above: Q44, Q45, Q50, Q65, Q74, Q89, Q93.
 
 ## Coverage
 
@@ -623,8 +630,6 @@ coverage check: `tools/quirks.py` (`harvest`, `check`).
 
 ## Open questions
 
-- Whether the index needs a machine-readable form (one line per quirk: class, tag, anchor) for the golden traces of
-  plan 0059; decided at the Phase 1 review (plan 0057).
 - The step notes of the reviewed specs were not swept beyond the ones named under Coverage; a later pass may add
   entries from them.
 - Community-known bugs are compared against the code in plan 0057 Phase 2 and enter this index in Phase 3.

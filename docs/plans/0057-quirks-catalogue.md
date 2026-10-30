@@ -95,8 +95,11 @@ was compared; and a wiki page gives the human reading.
 
 ## Open questions
 
-- Whether the index needs a machine-readable form (one line per quirk, class and anchor) for the golden traces of
-  plan 0059; decided at the Phase 1 review.
+- ~~Whether the index needs a machine-readable form (one line per quirk, class and anchor) for the golden traces of
+  plan 0059; decided at the Phase 1 review.~~ **Ruled at the Phase 1 review (2026-10-30): no second file.** The entry
+  tables are the form (five fixed cells, parsed by `tools/quirks.py`); the ids are permanent from that review (never
+  renumbered or reused, new entries take the next free id) because golden-trace cases cite them in their `quirks` list;
+  Phase 3 adds `tools/quirks.py list` (JSON Lines: id, class, tag, anchors, sources) for a consumer to read.
 
 ## Implementation log
 
@@ -119,3 +122,30 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   the specs that raise the same statement went to the backlog
   ([entry](../backlog/2026-10-30-spec-writer-spec-writer-quirks-harvest-tag-disagreements.md)). The machine-readable
   form stays the open question for the review.
+- **2026-10-30 — Phase 1 review (architect, Tier A, `lane/s57`): accept with fixes (17).** Merged `main` first (plan log
+  kept both entries; the research-map row keeps main's approval date with the lane's draft-spec status; ledger rows kept
+  both). `tools/quirks.py check` 0 errors; its tag test passes any entry whose cited note holds both tags, so all 64 such
+  entries were read by hand, with the 22 untagged-note entries, the 12 section-only ones, the 7 crash and hang paths and
+  about 30 single-tag entries across the nine classes (about 130 in all). The restatements hold; fixes, written into
+  the index: **anchors** (9: wrong anchor 2, omission 7) Q357's anchors were those of the `[I]` clause of save/d2s n9, now § I3's
+  (`0x00630A19`–`0x00630CF3`, the two runs) with § I cited; Q318 carried only a table-doc link (the gate's one W1 on the
+  page), now `tbl:Runes.txt:Rune1` with § D cited; Q118, Q184, Q223, Q234, Q271 and Q322 had dropped a run or function
+  their `[C]` note names, and Q405 the `src:` and `struct:` anchors of player/creation n8; **scope** (3: overclaim 2, other 1) Q25
+  the two-member parties of the run, Q89 the fault logged on row 83 only, Q46 "stock data cannot reach it" for a bare
+  parenthesis; **source** (1, omission) Q176's "before any other test" is lifecycle § F's step 1, now cited;
+  **definitions** (4: misread 2, omission 2) the page's crash-path text said "code readings only" and the lane
+  entry above "all from the specs' code readings", but Q89 is a `[C]` fault a kept run logged (six `[I]`, one `[C]`);
+  the table-rule skip was described as rules "the table docs already own", while 10 of the 12 are data/excel's and
+  data/calc's (the definition now says so and points the loader writer at data/excel's notes whole); Q387 keeps a
+  240 000 ms `GetTickCount` test the two wall-clock skips leave out (the definition now scopes the wall-clock skip to a
+  note that is only a clock rule, and Q387 says it is one); the page now says which entries the check cannot judge.
+  **Rulings:** (1) class boundaries accepted as drawn, including the wide data-dependent class and the comparison
+  off-by-ones under bounds; (2) the 29 skips stand, the 12 table-rule ones included (data/excel n3, n6 and n8 are traps,
+  but data/excel is the loader's own spec and its notes are read whole); the wall-clock and weaker-duplicate reasons are
+  accepted; (3) the three routed tag disagreements are real (combat/README n4 and n5, skills/README n2, anim/README n2
+  each keep `[I]` beside a `[C]` of the owning spec) and stay with the spec-writer; (4) merges across specs accepted;
+  (5) machine-readable form: no second file, ids permanent, `quirks.py list` in Phase 3 (open question above);
+  (6) ADR-0024 passes: the lane touched no finding and no document it does not own beyond its routing entry. Research
+  map row rewritten (P1 accepted, P2 next). **P2 may start** (reverser, static). Ledger: architect-review row;
+  the lane's usage left to the orchestrator. Categories: overclaim 2, misread 2, omission 10, wrong anchor 2,
+  other 1.
