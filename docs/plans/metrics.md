@@ -413,6 +413,7 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-10-30 | lane/h6gs audit | 0038 H6g shortfalls | architect-review | 117 526 | 39 | 6 | — (Tier A audit, no Ghidra, no harness) | accept with fixes | audit of lane/h6gs: 4: misread 1 (altar operate sends nothing with the quest active at step >= 4; SetStep/SetState omitted), stale cross-reference 1 (quests/0001 'instead closes'), omission 2 (grant step 0 QUESTS_SendPlayerRecord; anc session and J2 wording routed with no entry, two filed); Tier B missed all 4, none reject-grade |
 | 2026-10-30 | `lane/r52b` | 0052 P1.2 (batch 1) | reverser-static | 364 467 | 131 | 30 | — (static, Ghidra copy ghidra-r52b) | accept (Tier B check) | 0 |
 | 2026-10-30 | lane/r52b check | 0052 P1.2 b1 | architect-check | 69 796 | 20 | 2 | — (Tier B check, no harness) | accept | — |
+| 2026-10-30 | lane/r52c | 0052 P1.2 (batch 2) | reverser-static | 200 000 | 75 | 90 | — (static, Ghidra copy ghidra-r52c; tokens estimated) | — | — |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not

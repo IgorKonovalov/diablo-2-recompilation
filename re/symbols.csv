@@ -1008,6 +1008,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0058E990,func,sub_0058E990_A5Q0_NpcMessage,,I,quests/progression,docs/findings/quests/0001-progression.md
 0x0058EA50,func,sub_0058EA50_A5Q0_Init,,I,quests/progression,docs/findings/quests/0001-progression.md
 0x0058EBC0,func,sub_0058EBC0_AiCtlAlloc,,I,monsters/ai,docs/findings/ai/0001-machinery.md
+0x0058EC00,func,sub_0058EC00_AiCtlSetVar,,I,monsters/ai,docs/findings/ai/0003-pool-b.md
 0x0058EC90,func,sub_0058EC90_AiParamsAlloc,,I,monsters/ai,docs/findings/ai/0002-pool-a.md
 0x0058ED10,func,sub_0058ED10_AiParamsPop,,I,monsters/ai,docs/findings/ai/0002-pool-a.md
 0x0058EDE0,func,sub_0058EDE0_AiCtlParamsFree,,I,monsters/ai,docs/findings/ai/0001-machinery.md
@@ -1513,6 +1514,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005B0BD0,func,sub_005B0BD0_UnitDistSq,,I,monsters/ai,docs/findings/ai/0002-pool-a.md
 0x005B0CC0,func,sub_005B0CC0_AiNone,,I,monsters/ai,docs/findings/ai/0001-machinery.md
 0x005B0CD0,func,sub_005B0CD0_AiIdle,,I,monsters/ai,docs/findings/ai/0001-machinery.md
+0x005B0D00,func,sub_005B0D00_AiSameBaseNearCb,,I,monsters/ai,docs/findings/ai/0003-pool-b.md
 0x005B0E00,func,sub_005B0E00_MonAiInit,,I,monsters/ai,docs/findings/ai/0001-machinery.md
 0x005B0F50,func,sub_005B0F50_MonAiOpenDoor,,I,monsters/ai,docs/findings/ai/0001-machinery.md
 0x005B0FF0,func,sub_005B0FF0_MonAiKeepNear,,I,monsters/ai,docs/findings/ai/0001-machinery.md
@@ -2116,6 +2118,8 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005DE130,func,sub_005DE130_MonAiDelayEarlier,,I,monsters/ai,docs/findings/ai/0001-machinery.md
 0x005DE190,func,sub_005DE190_MonAiPathOverride,,I,drlg/collision,docs/findings/drlg/0009-room-lifecycle.md
 0x005DE200,func,sub_005DE200_MonAiWanderRing,,I,monsters/ai,docs/findings/ai/0001-machinery.md
+0x005DE440,func,sub_005DE440_MonAiMoveToPoint,,I,monsters/ai,docs/findings/ai/0003-pool-b.md
+0x005DE490,func,sub_005DE490_MonAiMoveToPointNoStop,,I,monsters/ai,docs/findings/ai/0003-pool-b.md
 0x005DE4E0,func,sub_005DE4E0_MonAiMoveToUnitDist,,I,monsters/ai,docs/findings/ai/0002-pool-a.md
 0x005DE6D0,func,sub_005DE6D0_MonAiWalkTowardUnit,,I,monsters/ai,docs/findings/ai/0002-pool-a.md
 0x005DE890,func,sub_005DE890_MonAiTargetOrIdle,,I,monsters/ai,docs/findings/ai/0001-machinery.md
@@ -2158,6 +2162,26 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005F1800,func,sub_005F1800_AiSandMaggot,,I,monsters/ai,docs/findings/ai/0002-pool-a.md
 0x005F1B60,func,sub_005F1B60_AiClawViper,,I,monsters/ai,docs/findings/ai/0002-pool-a.md
 0x005F1DE0,func,sub_005F1DE0_AiClawViperEx,,I,monsters/ai,docs/findings/ai/0002-pool-a.md
+0x005F20A0,func,sub_005F20A0_AiSandLeaper,,I,monsters/ai,docs/findings/ai/0003-pool-b.md
+0x005F22B0,func,sub_005F22B0_AiPantherWoman,,I,monsters/ai,docs/findings/ai/0003-pool-b.md
+0x005F2460,func,sub_005F2460_AiSwarm,,I,monsters/ai,docs/findings/ai/0003-pool-b.md
+0x005F2540,func,sub_005F2540_AiScarab,,I,monsters/ai,docs/findings/ai/0003-pool-b.md
+0x005F2850,func,sub_005F2850_AiMummy,,I,monsters/ai,docs/findings/ai/0003-pool-b.md
+0x005F2A00,func,sub_005F2A00_AiGreaterMummyCb,,I,monsters/ai,docs/findings/ai/0003-pool-b.md
+0x005F2B10,func,sub_005F2B10_AiGreaterMummy,,I,monsters/ai,docs/findings/ai/0003-pool-b.md
+0x005F2EB0,func,sub_005F2EB0_AiVultureTakeOff,,I,monsters/ai,docs/findings/ai/0003-pool-b.md
+0x005F2FC0,func,sub_005F2FC0_AiVultureLand,,I,monsters/ai,docs/findings/ai/0003-pool-b.md
+0x005F30F0,func,sub_005F30F0_AiWoundedNearCb,,I,monsters/ai,docs/findings/ai/0003-pool-b.md
+0x005F3170,func,sub_005F3170_AiVulture,,I,monsters/ai,docs/findings/ai/0003-pool-b.md
+0x005F3730,func,sub_005F3730_AiMosquito,,I,monsters/ai,docs/findings/ai/0003-pool-b.md
+0x005F3960,func,sub_005F3960_AiWispCb,,I,monsters/ai,docs/findings/ai/0003-pool-b.md
+0x005F39B0,func,sub_005F39B0_AiWillOWisp,,I,monsters/ai,docs/findings/ai/0003-pool-b.md
+0x005F4510,func,sub_005F4510_AiArach,,I,monsters/ai,docs/findings/ai/0003-pool-b.md
+0x005F4850,func,sub_005F4850_AiThornHulk,,I,monsters/ai,docs/findings/ai/0003-pool-b.md
+0x005F4A70,func,sub_005F4A70_AiVampire,,I,monsters/ai,docs/findings/ai/0003-pool-b.md
+0x005F4FD0,func,sub_005F4FD0_AiBatDemonAlt,,I,monsters/ai,docs/findings/ai/0003-pool-b.md
+0x005F5040,func,sub_005F5040_AiBatDemon,,I,monsters/ai,docs/findings/ai/0003-pool-b.md
+0x005F53E0,func,sub_005F53E0_AiFetish,,I,monsters/ai,docs/findings/ai/0003-pool-b.md
 0x005F72D0,func,sub_005F72D0_AiZakarumPriest,,I,drlg/collision,docs/findings/drlg/0009-room-lifecycle.md
 0x005FC860,func,sub_005FC860_BaalCloneSpawn,,I,items/quality,docs/findings/items/0002-quality-roll.md
 0x005FD350,func,sub_005FD350_SpawnClassCellTest,,C,monsters/spawn,docs/findings/drlg/0005-collision.md
@@ -2802,6 +2826,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x006507B0,func,sub_006507B0_PathStop,,I,anim/movement,docs/findings/anim/0003-movement-gates.md
 0x00650840,func,sub_00650840_PathStep,,C,drlg/collision,docs/findings/anim/0003-movement-gates.md
 0x00650BE0,func,sub_00650BE0_PathTargetRoomXY,,I,skills/catalogue,docs/findings/skills/0005-missile-do-19-36-damage.md
+0x00650D70,func,sub_00650D70_AlignSame02,,I,monsters/ai,docs/findings/ai/0003-pool-b.md
 0x00650DE0,func,RNG_EntropySeed,uint __fastcall RNG_EntropySeed(int salt),C,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x00650E30,func,RNG_SeedInitOne,void __fastcall RNG_SeedInitOne(uint * seed),C,rng,docs/findings/rng/0001-rng-core.md
 0x00650E40,func,RNG_SeedInit,"void __fastcall RNG_SeedInit(uint * seed, uint low)",C,rng,docs/findings/rng/0001-rng-core.md
