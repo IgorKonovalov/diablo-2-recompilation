@@ -98,7 +98,7 @@ several runs; the sweep manifests are the widest, `2026-10-21-sweep-monsters-a` 
 
 **The reader** turns each stamped log into one event stream: `(frame, kind, unit type, unit id, entry seeds, exit seeds)`,
 a begin/end pair folded into one event at the begin's frame, the end line's seeds as the exit. `check` consumes every
-stamped line of all 337 stamped logs (6 469 457 events; 0 lines left over, 0 unparsable) and compares its counts with
+stamped line of all 337 stamped logs (the 331 in the corpus and the stamped ones outside it: plan 0046's three, development logs) (6 469 457 events; 0 lines left over, 0 unparsable) and compares its counts with
 two run records: combat plan 0037 P2 (`c37p2-check.txt` over `c37p2-run.lst`: ha 1 259, ma 4 533, mas 5 060, md 1 957, pa 2 030,
 pm 519 = 15 358) and skills 2026-10-27 (`2026-10-27-skills-check.txt` over its manifest: `MAS.seed` 13 905, `CU.code`
 1 340, `MC.owner` 19 667): all equal (one `MC0` begin in `skills-spike-1.log` has no end line, so the record's 19 667 is

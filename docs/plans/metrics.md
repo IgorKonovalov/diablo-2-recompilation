@@ -409,6 +409,7 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-10-30 | lane/plans54 | plans 0054 (path search), 0055 (server frame, ADR-0022), drafts | architect | 136 535 | 30 | 7 | — (no Ghidra) | drafts; for the owner: 0054 Q1-8, 0055 Q1-8 | — |
 | 2026-10-30 | lane/appr | owner approval of plans 0054 and 0055 (as recommended) | architect | 66 794 | 17 | 2 | — (no Ghidra) | owner decisions recorded; 0055·P0 ready | — |
 | 2026-10-30 | lane/a55 | 0055 P0 | archivist | 160 000 | 48 | 55 | — (no Ghidra, no harness) | review requested | — |
+| 2026-10-30 | lane/a55 check | 0055 P0 | architect-check | 60 000 | 12 | 4 | — (Tier B check, no harness) | accept with fixes | 1: omission 1 (337 stamped logs vs the 331 corpus logs unexplained in inventory and plan entry) |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not
