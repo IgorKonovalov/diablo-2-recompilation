@@ -260,6 +260,15 @@ def cmd_recipes():
         with open(os.path.join(RDIR, "anim-%s-t%d-%s.json" % (cls, tier, fam)), "w") as f:
             json.dump(r, f, indent=1)
             f.write("\n")
+    for _c in OP_CLASSES:
+        for _t in (0, 1, 2):
+            with open(os.path.join(RDIR, "anim-%s-op-t%d.json" % (_c, _t)), "w") as f:
+                json.dump(op_recipe(_c, _t), f, indent=1)
+                f.write("\n")
+    for rec, (_, r, _) in op_special_recipes().items():
+        with open(os.path.join(RDIR, rec + ".json"), "w") as f:
+            json.dump(r, f, indent=1)
+            f.write("\n")
     for rec, (_, r, _) in list(special_recipes().items()) + list(p2_special_recipes().items()):
         with open(os.path.join(RDIR, rec + ".json"), "w") as f:
             json.dump(r, f, indent=1)
@@ -725,6 +734,158 @@ for _fam, _tag in _TAGS.items():
                 SAVES.pop("gh5/Anim%s%s%d" % (_c.capitalize(), _tag, _t), None)
 
 
+# --- part 3 (plan 0050 Phase 2 part 3, the owner's overpowered builds, 2026-10-30) ----------------------------------
+# anim-<cls>-op-t<k>: clvl 99 (experience 3 520 485 254), the clearing skill at 20 on F1 (the pilot's self-centred burst,
+# --nova-key F1), stock uniques at "roll": "max" in the slots that carry no FHR item, the FHR tier's own items
+# (armour and belt of Stability) kept as in the part 1 and 2 recipes (a tier is its FHR stat), the potion belt and
+# the 40 inventory potions of gh9, life sized from a development session (OP_LIFE), the Amazon with a mercenary.
+EXP99 = 3520485254
+OP_LIFE = 120
+OP_SKILL = {   # class: (clearing skill, level, extra skills)
+    "sor": ("Blizzard", 20, {"Frost Nova": 1, "Teleport": 1}),
+    "nec": ("Poison Nova", 20, {"Bone Armor": 1}),
+    "dru": ("Hurricane", 20, {"Volcano": 1}),
+    "ass": ("Lightning Sentry", 20, {"Death Sentry": 1}),
+    "ama": ("Valkyrie", 20, {"Dopplezon": 1}),
+    "bar": ("War Cry", 20, {}),
+    "pal": ("Holy Freeze", 20, {}),
+}
+OP_GEAR = {   # slot: unique (a name in uniqueitems.txt); none carries stat 99 (FHR), checked in the save
+    "head": "Harlequin Crest", "neck": "Mara's Kaleidoscope", "rrin": "Raven Frost", "lrin": "The Stone of Jordan",
+    "glov": "Magefist", "belt": "Arachnid Mesh", "tors": "Skin of the Vipermagi",
+}
+OP_MERC = {"id": 11, "seed": 4301, "name": 0, "exp": 999999999, "dead": False,   # Hireling.txt Id 11: Desert Mercenary Off-Nightmare
+           "items": [{"code": "7sr", "equip": "rarm"}, {"code": "uui", "equip": "tors"}, {"code": "xhm", "equip": "head"}]}
+
+
+def op_recipe(cls, tier, life=OP_LIFE, tag="O", seed0=8000, merc=None):
+    r = gh10_recipe(cls, tier)
+    r["name"] = "Anim%s%s%d" % (cls.capitalize(), tag, tier)
+    r["seed"] = seed0 + 10 * list(CLASSES).index(cls) + tier
+    skill, lvl, extra = OP_SKILL[cls]
+    r["stats"].update({"level": 99, "experience": EXP99, "hitpoints": life, "maxhp": life, "mana": 2000,
+                       "maxmana": 2000, "strength": 250, "dexterity": 150, "energy": 100, "stamina": 400, "maxstamina": 400})
+    r["skills"] = dict(extra, **{skill: lvl})
+    r["mouse"] = {"left": "Attack", "right": skill, "swap_left": "Attack", "swap_right": skill}
+    r["hotkeys"] = [skill] + r["hotkeys"]       # F1 the clearing skill; F2 Attack, F3 the cast, F4 Kick, F5 Throw/cast2
+    keep = ("rarm", "larm", "rarm2", "larm2", "feet")
+    items = [it for it in r["items"] if it.get("equip") in keep or "store" in it]
+    if tier >= 1:
+        items.append(magic("qui", STABILITY, "tors"))
+    for slot, name in OP_GEAR.items():
+        if (slot == "tors" and tier >= 1) or (slot == "belt" and tier == 2):
+            continue
+        items.append({"unique": name, "equip": slot, "roll": "max"})
+    if tier == 2:
+        items.append(magic("mbl", STABILITY, "belt"))
+    r["items"] = items
+    r["belt_fill"] = ["rvl", "rvl", "rvl", "rvl"]
+    if merc or cls == "ama":
+        r["merc"] = dict(merc or OP_MERC)
+    return r
+
+
+OP_CLASSES = ("ama", "nec", "sor", "dru", "ass")
+
+def op_special_recipes():
+    """the part 3 rare-branch builds: the Sorceress for Blood Raven in Hell (P1b-10, knockbacks: life 1500, the Hell
+    resistance penalty met by the gear's 65), the Sorceress with 12 stamina (the run that turns to a walk at 0), the
+    Druid with throwing axes in set 1 (P1b-3, the Druid's throws)"""
+    out = {}
+    r = op_recipe("sor", 0, 1500, "B", 8500)
+    r["stats"].update({"vitality": 100})
+    out["anim-sor-op-br"] = ("AnimSorB0", r, "smpsor")
+    r = op_recipe("sor", 0, OP_LIFE, "S", 8510)
+    r["stats"].update({"stamina": 12, "maxstamina": 12})
+    out["anim-sor-op-run"] = ("AnimSorS0", r, "smpsor")
+    r = op_recipe("dru", 1, OP_LIFE, "T", 8520)
+    r["items"] = [it for it in r["items"] if it.get("equip") not in ("rarm", "larm")] + [
+        {"code": "tax", "equip": "rarm", "quantity": 60}, {"code": "buc", "equip": "larm"}]
+    r["hotkeys"][4] = "Throw"
+    out["anim-dru-op-th"] = ("AnimDruT1", r, "smpdru")
+    return out
+
+
+SAVES.update({"op/" + name: (rec, base) for rec, (name, _, base) in op_special_recipes().items()})
+
+for _c in OP_CLASSES:
+    for _t in (0, 1, 2):
+        SAVES["op/Anim%sO%d" % (_c.capitalize(), _t)] = ("anim-%s-op-t%d" % (_c, _t), CLASSES[_c][1])
+
+
+def op_session(cls, tier, seed, fields=("1,2",), hops=40, diff="enter-nightmare", players=5, drink=0.62, radius=4,
+               swap=False):
+    """the overpowered build's get-hit session: for each field its waypoint, then the clearing skill on F1 cast at the
+    character's own position (explore with no --melee: NovaGate, --nova-key F1) once a monster is within `radius`
+    sub-tiles, walking, drinking below `drink` of the orb, in bursts too (belt, then the 40 inventory potions, the
+    counts kept in the session's potions.json). The first explore types /players. `swap` presses the weapon swap and
+    explores on in the same level (P1b-8: the Druid's one-handed hammer, then the two-handed sword)."""
+    ex = ["explore", "--walk", "--nova-key", "F1", "--nova", "1", "--burst", "6", "--radius", str(radius),
+          "--give-up", "10", "--nova-hold", "1.6", "--drink", str(drink), "--drink-in-burst", "--inv-potions", "40",
+          "--mana-col", "4", "--potion-state", "@STATE@", "--hops", str(hops)]
+    todo = []
+    for i, f in enumerate(fields):
+        todo += [wp(f), ("pilot", ex + (["--players", str(players)] if i == 0 else []), 120 + 14 * hops)]
+        if swap:
+            todo += [("keys", ["w"], 1.0), ("pilot", ex, 120 + 14 * hops)]
+    return ("op/Anim%sO%d" % (cls.capitalize(), tier), diff, seed, todo)
+
+
+for _k, _c in enumerate(CLASSES):
+    for _t in (0, 1, 2):
+        if _c in OP_CLASSES:
+            SESSIONS["op-%s-t%d" % (_c, _t)] = op_session(_c, _t, 8100 + 10 * _k + _t, swap=_c == "dru")
+            for _n in range(2, 9):      # the same save on other game seeds (other maps and packs)
+                SESSIONS["op-%s-t%d-%d" % (_c, _t, _n)] = op_session(_c, _t, 8100 + 100 * _n + 10 * _k + _t,
+                                                                     swap=_c == "dru")
+
+SESSIONS["dev-op-sor"] = op_session("sor", 0, 8999, fields=("1,2",))
+for _c in ("ama", "nec", "dru", "ass"):
+    SESSIONS["dev-op-%s" % _c] = op_session(_c, 1, 8990, fields=("1,2",))
+
+
+# batch 2 of the kept run: the same saves and options with 120 hops (batch 1's 40-hop caps ended 8 of 12 sessions alive,
+# frontier rooms left)
+for _k, _c in enumerate(CLASSES):
+    for _t in (0, 1, 2):
+        if _c in OP_CLASSES:
+            for _n in (1, 2, 3):
+                SESSIONS["op2-%s-t%d-%d" % (_c, _t, _n)] = op_session(_c, _t, 9000 + 100 * _n + 10 * _k + _t, hops=120,
+                                                                     swap=_c == "dru")
+BRNOVA3 = ["--nova-key", "F1", "--radius", "9", "--mana-col", "4", "--drink", "0.5", "--nova-hold", "1.6", "--max-res", "1000"]
+# P1b-10: Blood Raven in Hell as br-hell, the op Sorceress (Blizzard on F1)
+SESSIONS["op-br"] = ("op/AnimSorB0", "enter-hell", 4807,
+                     [wp("1,2"), ("pilot", ["explore", "--hops", "300", "--to-pdef", "108", "--pdef-any", "--persist",
+                                            "25"] + BRNOVA3, 400),
+                      ("pilot", ["hunt", "--mon-cls", "267", "--time", "240"] + BRNOVA3, 280)])
+SESSIONS["op-br2"] = SESSIONS["op-br"][:2] + (4808,) + SESSIONS["op-br"][3:]
+SESSIONS["op-br3"] = SESSIONS["op-br"][:2] + (4809,) + SESSIONS["op-br"][3:]
+# the run that turns to a walk at 0 stamina: 12 stamina, run on (r), hops of 10 sub-tiles on foot
+SESSIONS["op-run"] = ("op/AnimSorS0", "enter-normal", 8510,
+                      [wp("1,2"), ("keys", ["r"], 0.5),
+                       ("pilot", ["explore", "--walk", "--nova", "0", "--hops", "30", "--drink", "0.3",
+                                  "--mana-col", "4"], 500)])
+SESSIONS["op-dru-th"] = ("op/AnimDruT1", "enter-nightmare", 8520,
+                         [wp("1,2"), fight(["F5", "F5", "F5", "F1", "F5"], 30, extra=("--drink-in-burst",))])
+
+
+def op_rates(save):
+    """the rate and resistance stats of a built save's equipped items (d2s.py dump, location 1 items' property lists):
+    IAS 93, FHR 99, FCR 105, FBR 102, FRW 96, resistances 39/41/43/45, all skills 127, life 7 (stat ids of ItemStatCost)"""
+    out = subprocess.run(PY + ["tools/d2s.py", "dump", EXCEL, save], cwd=ROOT, capture_output=True, text=True).stdout
+    tot = {}
+    for ln in out.splitlines():
+        if "'location': 1," not in ln:
+            continue
+        for st, _, v in re.findall(r"\((\d+), (None|\d+|\[[^\]]*\]), \[([-\d, ]*)\]\)", ln):
+            pass
+        m = re.search(r"'props': (\[.*?\]), 'pad'", ln)
+        if m:
+            for st, par, vals in eval(m.group(1)):
+                tot[st] = tot.get(st, 0) + (vals[0] if vals else 0)
+    return {k: tot.get(k, 0) for k in (93, 99, 105, 102, 96, 39, 41, 43, 45, 127)}
+
+
 def sh(args, timeout=None, log=None):
     print("$ " + " ".join(args), flush=True)
     try:
@@ -735,7 +896,7 @@ def sh(args, timeout=None, log=None):
 
 
 def build(saves, only=None):
-    for d in ("gh", "gh2", "gh3", "gh4", "bk", "sp", "gh5"):
+    for d in ("gh", "gh2", "gh3", "gh4", "bk", "sp", "gh5", "op"):
         os.makedirs(os.path.join(saves, d), exist_ok=True)
     for name, (rec, base) in SAVES.items():
         if only and not any(name.startswith(o) for o in only):
@@ -758,6 +919,10 @@ def run_session(name, slot, tag, saves, run):
         del os.environ[k]
     os.environ.update(env)
     drv = None
+    try:
+        os.remove(os.path.join(ROOT, LOGDIR, "%s-%s.potions.json" % (run, name)))
+    except OSError:
+        pass
     for attempt in range(3):
         sh(PY + ["tools/saves.py", "--slot", str(slot), "restore", tag], 60)
         sh(PY + ["tools/saves.py", "--slot", str(slot), "aside", tag], 60)
@@ -803,6 +968,7 @@ def run_session(name, slot, tag, saves, run):
     for step in todo:
         if step[0] == "pilot":
             args, timeout = step[1], step[2]
+            args = [os.path.join(LOGDIR, "%s-%s.potions.json" % (run, name)) if a == "@STATE@" else a for a in args]
             sh(PY + ["tools/d2pilot.py", args[0], log, "--slot", str(slot)] + args[1:] + ["--shots", shots],
                timeout, out)
         elif step[0] == "wait":
@@ -828,6 +994,10 @@ def run_session(name, slot, tag, saves, run):
 
 
 def main(argv):
+    if argv and argv[0] == "oprates":
+        for f in argv[1:]:
+            print(os.path.basename(f), op_rates(f))
+        return 0
     if not argv or argv[0] not in ("list", "run", "build", "recipes"):
         print(__doc__)
         return 2

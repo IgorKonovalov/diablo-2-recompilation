@@ -2536,12 +2536,24 @@ def cmd_explore(args):
     hist = []
     npot = 0
     belt_used, inv_used = [0], [0]
+    if args.potion_state:               # plan 0050 part 3: the counts kept across the explores of one session
+        try:
+            with open(args.potion_state) as fh:
+                belt_used[0], inv_used[0] = json.load(fh)
+        except (OSError, ValueError):
+            pass
 
     def drink(col):
         """a life potion: belt column col until --belt-life belt drinks are spent, then (--inv-potions N) the next of
         the N inventory cells, column by column: the inventory opened, the cell right-clicked, the inventory closed
         (plan 0050 Phase 2 part 2); returns what was drunk"""
         belt_used[0] += 1
+        if args.potion_state:
+            try:
+                with open(args.potion_state, "w") as fh:
+                    json.dump([belt_used[0], inv_used[0] + (1 if belt_used[0] > args.belt_life else 0)], fh)
+            except OSError:
+                pass
         if not args.inv_potions or belt_used[0] <= args.belt_life or inv_used[0] >= args.inv_potions:
             p.potion(col)
             return "belt %d" % col
@@ -3263,6 +3275,8 @@ def main():
     ap.add_argument("--drink", type=float, default=0.6, help="drink a belt potion below this life-orb fill")
     ap.add_argument("--inv-potions", type=int, default=0, help="explore: after --belt-life belt drinks, drink the "
                     "next of this many inventory potions (cells column by column from the first; plan 0050 P2 part 2)")
+    ap.add_argument("--potion-state", help="explore --inv-potions: a JSON file holding the belt and inventory drink "
+                    "counts, read at the start and written at every drink (one session, several explores)")
     ap.add_argument("--belt-life", type=int, default=12, help="explore --inv-potions: belt drinks before the inventory")
     ap.add_argument("--inv-x0", type=int, default=432, help="explore --inv-potions: window x of the first cell's centre")
     ap.add_argument("--inv-y0", type=int, default=330, help="explore --inv-potions: window y of the first cell's centre")

@@ -324,3 +324,54 @@ Normal sessions for the catalogue and specials, Nightmare for the get-hit route;
   overwrote the aborted development log (a review-fix 6 miss of this lane; the session itself is the kept one now,
   `ckpt2` lists it). No claim rested on the aborted log.
 
+
+## run:2026-10-30-anim-p3
+
+**Status: checkpointed, not closed (`lane/p50g`, one lane run; owner pause at the token budget).** Phase 2 part 3: the
+short floors of part 2 with overpowered clvl 99 builds. 33 kept sessions on harness slot 1 (display `:8`), Act I
+Nightmare, Cold Plains, `/players 5`; stock data, single player.
+
+- **Question:** does `tools/anim.py` still reproduce with 0 mismatches over parts 1-3, and which get-hit floors do the
+  overpowered builds reach?
+- **Builds** (`anim_sessions.py` `op_recipe`, recipes `anim-<cls>-op-t<k>`, classes Amazon, Necromancer, Sorceress,
+  Druid, Assassin, tiers t0-t2): clvl 99 (experience 3 520 485 254), base life 120 (gear brings the total to about
+  300), mana 2 000, Strength 250, Dexterity 150; resistances 65 (t0) or 30 (t1, t2) each from stock uniques at
+  `"roll": "max"` in the slots that carry no rate item (Harlequin Crest, Mara's Kaleidoscope, Raven Frost, The Stone of
+  Jordan, Magefist, Arachnid Mesh, Skin of the Vipermagi); the FHR tier is the part 1 and 2 items (armour and belt of
+  Stability), and `anim_sessions.py oprates` on each save gives FHR 0 / 24 / 48 for every class (Crown of Ages was
+  dropped: it carries FHR 30). Clearing skill on F1 at level 20 (Sorceress Blizzard, Necromancer Poison Nova, Druid
+  Hurricane, Assassin Lightning Sentry, Amazon Valkyrie; Amazon also a Desert Mercenary Off-Nightmare, Id 11, which the
+  pilot did not feed), cast at the character's own position by `d2pilot.py explore` (NovaGate, radius 4), 40 inventory
+  rejuvenation potions and the belt, drunk below 0.62 of the orb (`--potion-state` keeps the counts across explores).
+  Weapons as gh10 (elite bases, *Ferocious*, the shield set first); the Druid swaps from the hammer to the two-handed sword
+  half way (P1b-8).
+- **Life sizing (development runs `dev-p3-*`, manifest `dev-p3-manifest.sha256`):** base life 180 (total 342) gave 7
+  get-hits in three fields and every hit below `maxHP / 8`; 10 (total 172) died at hop 34 with 3 get-hits; 40 died at hop
+  14; skill level 6 and `/players 8` died at hop 14 (3 get-hits). So the clearing skill is the thing that keeps the
+  character alive, the band is the thing that limits the count, and a get-hit per session stayed at 2-16.
+- **Result** (`2026-10-30-anim-p3-all3.lst` = part 2's `all2.lst` + `2026-10-30-anim-p3.lst`, 114 logs; check `--review`
+  `2026-10-30-anim-p3-check.txt`; summary `…-summary.txt`): **0 mismatches**, every kind
+  (`adv=4117/0 adv-seq=4133/0 block-gate=2524/0 dispatch=66026/0 drain=77009/0 ef-first=16244/0 endpending-E=1682/0
+  fire=66597/0 ghr=13094/0 kb-end=5027/0 name=473502/0 obj=1287/0 pathspeed=185272/0 pathspeed-step=213757/0
+  pma-seed=43644/0 rate=473502/0 record=473502/0 sched=43148/0 sched-len=43148/0 sched-rate=43148/0 seqstep=70598/0
+  startframe=42339/0 step=162048/0 step-point=158485/0`). The first check had 63 `sched`/`startframe` and 5 `fire`
+  mismatches, both fixed in `tools/anim.py` (below).
+- **Checker changes found by the run** (`tools/anim.py` `5c3b5852…`): (1) the Valkyrie (monster class 357, 63 schedules in
+  the three Amazon sessions) carries a player's record (`AMA12HT`) and its A1 start frame is 2, the logged `s0`: the start
+  frame is by display type (anim/0001 § 4), so the model now reads `g_AttackStartFrames[weapon][class]` from a monster
+  record's own player token and weapon code `[I]` (121/0 `startframe` over the Amazon t0 log afterwards); (2) 5 dying
+  Fallen whose end event fell on the log's last frame (the game was killed in that frame) counted as unfired: the
+  excuse now covers `fr == last frame` as its own tally `at-log-end-frame` (5).
+- **Floors** (get-hit mode starts per FHR rate, parts 1-3): Sorceress 50 / 35 / 38 and Assassin 40 / 42 / 52 **met**
+  (`get-hit rates30` 3); Necromancer 38 / 21 / 42 (2); Amazon 32 / 25 / 25 (1, two rates at 25 and 25); Druid 49 / 24 / 16
+  (1; its 179 is the werewolf form of part 1); Paladin and Barbarian unchanged. **Short with counts:** Amazon 179 (25) and
+  215 (25), Necromancer 179 (21), Druid 173 (24) and 208 (16). P1b-8: the Druid's hammer and two-handed sword get-hits
+  were played in `op2-dru-t1-1`, `op2-dru-t2-1` (swap half way), not counted per weapon here. **Not run:** the Druid's
+  throws (12 of 30; `anim-dru-op-th`, session `op-dru-th`, saves built, not played), the knockbacks (`op-br`, `anim-sor-op-br`),
+  the run that turns to a walk at 0 stamina (`op-run`, `anim-sor-op-run`), P1b-2, P1b-13/14/15 (Arachnid Mesh's Slows
+  Target is on the t0 and t1 belts; the tallies were not read for it), `VASCHTH` (no stock state transforms a player into
+  the vampire, part 2's check).
+- **Kept files:** manifest `2026-10-30-anim-p3-manifest.sha256` (205 lines, base `workspace/logs/anim/`, passes): logs,
+  pilot outputs, potion counts, screenshots, batch outputs 1-2, the saves of `saves-2026-10-30-anim-p3/`, lists, check,
+  summary. Tools: `tools/anim.py` `5c3b5852…`, `tools/anim_sessions.py` `bc1fb493…`, `tools/d2pilot.py` `62b6f4f7…`
+  (`--potion-state`). Batches: 1 = `op-<cls>-t<k>` (40 hops a field, 12 sessions), 2 = `op2-…` (120 hops, 21 sessions).
