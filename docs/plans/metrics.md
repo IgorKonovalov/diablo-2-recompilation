@@ -439,6 +439,7 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-10-30 | lane/r52d check | 0052 P1.2 b3 | architect-check | 78 463 | 25 | 3 | — (Tier B check, no harness) | accept with fixes (1) | overclaim 1 |
 | 2026-10-30 | lane/a7d | 0052 P1.2 | archivist | 67 466 | 18 | 2 | — (no Ghidra, no harness) | accept with fixes (Tier B check) | 1: misread 1 |
 | 2026-10-30 | lane/a7d check | 0052 P1.2 b3 tables | architect-check | 74 138 | 16 | 2 | — (Tier B check, no harness) | accept with fixes (1) | misread 1 |
+| 2026-10-30 | `lane/a59` | 0059 P1 | archivist | 0 | 36 | 35 | — | — | — |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not

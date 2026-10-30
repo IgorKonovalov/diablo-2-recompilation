@@ -97,3 +97,11 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 
 - **2026-10-30 — Drafted (architect, `lane/plans57`).** Status `draft`; rank 3 (high value to reimplementers, no slot,
   the archivist free); five owner questions.
+- **2026-10-30 — Phase 1 landed (archivist, `lane/a59`).** `docs/formats/golden-trace.md` (JSON Lines, version header,
+  `observed`/`predicted` per case, reserved `quirks` list), `tools/golden.py` (`emit`, `check`, `digest`, `fields`,
+  `sample`, `merge`), `tools/test_golden.py` (10 tests) and the 22-case sample `docs/formats/golden/sample-v1.jsonl`.
+  `emit --chain-check` on run:2026-10-21-chain2's 37 kept logs: 37 observed world cases and 3 784 observed drop cases,
+  0 failed, `chain.py check` exit 0; the set checks against itself. Full-set digest (local table set)
+  `210523526edd1af5d56516ff46fb14bd78b655a96efbe0e972ef1a29a5288c85`. No survey added to the gate (no input files to
+  survey; the tests cover it). Not in v1 fields: item seeds after the drop, room populations (chain § D–E); the
+  852-site call-count field is left to the review.
