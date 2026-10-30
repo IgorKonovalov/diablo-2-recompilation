@@ -1,8 +1,8 @@
 # Lane check (Tier B, ADR-0023)
 
 A diff-scoped check of a non-spec lane, run on Sonnet. It replaces the full Mode 3 review for the lane kinds below
-and is defined by [ADR-0023](../../../../docs/adrs/0023-review-tiers-and-gate-first-fixes.md) (accepted as a trial,
-measured by [plan 0053](../../../../docs/plans/0053-review-tiers-and-gate-checks.md)). This page is enough to run one:
+and is defined by [ADR-0023](../../../../docs/adrs/0023-review-tiers-and-gate-first-fixes.md) (accepted; settled by
+[plan 0053](../../../../docs/plans/done/0053-review-tiers-and-gate-checks.md) Phase 4). This page is enough to run one:
 the caller gives a worktree path and a lane branch, nothing else.
 
 ## Which lanes
@@ -29,7 +29,7 @@ Nothing else: no other findings, specs, plans or the research map. Run the gate 
 anchors, tag counts, the research map, the plans index, `Total` rows, table cells); a red gate is a lane fix, named
 as such.
 
-## The four checks
+## The checks
 
 1. **Corroboration.** Every `[C]` the diff adds or raises (a `+` line holding `[C]`, or a `[I]`/`[L]` → `[C]` change)
    names its second source in the statement: a `run:` id, an emulation, a table cell, a second function. "The
@@ -40,6 +40,16 @@ as such.
 3. **The lane's `review-fixes.md`.** Go through every rule and look for its fault in the diff.
 4. **The request answered.** Each item the review request (or the plan phase's *Done when*) lists is answered in the
    diff, or explicitly routed (a backlog entry, a later phase).
+5. **Every disagreement routed.** When the diff corrects, narrows or contradicts a statement in a document the lane
+   does not own (another finding, a table doc, a spec), the diff holds a backlog entry to that document's owner. A
+   route named in the text ("routed to …", "left to the spec-writer") with no entry, or a finding written around
+   in silence, is an omission fix: file the entry (`python3 -I tools/backlog.py new`). Both trial audits found one
+   (plan 0053 Phase 4).
+6. **No silent nits.** Every problem you see is either a fix or a listed item in the verdict, never noted and left.
+
+The rest of the trial's misses were stale sentences outside the diff hunks. [ADR-0024](../../../../docs/adrs/0024-lane-check-touched-documents-and-routing.md)
+(proposed) would add a grep-bounded pass over the touched documents and the findings they touch. Until the owner
+accepts it, the scope limit above stands.
 
 ## Escalate (Tier A takes over)
 
@@ -61,7 +71,7 @@ In conversation, not as a file:
 ```
 lane/<name> (Tier B check, <plan> <phase>): accept | accept with fixes (n) | escalate (<reason>)
 Fixes (n): <category> k, ... (<one clause per fix>)
-Checked: [C] added or raised n; anchors <a>, <b>, <c>; review-fixes rules 1..m; request items 1..k
+Checked: [C] added or raised n; anchors <a>, <b>, <c>; review-fixes rules 1..m; request items 1..k; disagreements routed d
 Gate: GREEN|RED, errors e, warnings w
 ```
 
