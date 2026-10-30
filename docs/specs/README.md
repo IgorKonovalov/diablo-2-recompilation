@@ -127,7 +127,7 @@ statement of its owning spec and links it, and the owning spec wins on disagreem
 
 | Subsystem | Depends on | Key tables | Status |
 |---|---|---|---|
-| `quirks`: the behaviour a faithful reimplementation must keep (arithmetic width and sign, rounding, wraps, table edges, draw order and dead draws, multiplayer edges) and the community-known bugs with a verdict each ([plan 0057](../plans/0057-quirks-catalogue.md), draft) | every reviewed row | — | not started |
+| `quirks`: the behaviour a faithful reimplementation must keep (arithmetic width and sign, rounding, wraps, table edges, draw order and dead draws, multiplayer edges) and the community-known bugs with a verdict each ([plan 0057](../plans/0057-quirks-catalogue.md), approved) | every reviewed row | — | **draft spec** · [quirks](quirks/README.md) (2026-10-30; C 334 / I 101 / L 0; plan 0057 P1: an index that restates and links, 435 entries in nine classes from 410 of the 439 *Reimplementation notes* bullets of 47 specs and nine step-note sections, 7 crash and hang paths, 29 notes skipped by reason; `tools/quirks.py check` holds every entry to its source's tag and anchors; P2, the community bugs, next) |
 | `conformance`: the golden traces, seeds and inputs with their expected world, drops and (later) events, observed or predicted, each field tied to a spec step ([plan 0059](../plans/0059-golden-traces.md), draft) | chain, every reviewed row a field tests | — | not started |
 
 ### Out of scope (ADR-0002, ADR-0005, ADR-0014)

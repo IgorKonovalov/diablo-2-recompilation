@@ -104,3 +104,17 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 
 - **2026-10-30 — Drafted (architect, `lane/plans57`).** Status `draft`; rank 1 of the 2026-10-30 batch (cheapest,
   no slot, no open dependency); five owner questions.
+- **2026-10-30 — Phase 1 done (spec-writer, `lane/s57`).** `docs/specs/quirks/README.md`, status `draft`, research-map
+  row `quirks` to `draft spec` (C 334 / I 101 / L 0). The harvest covers all 47 specs with a *Reimplementation notes*
+  section (the plan's count said 44), 439 bullets: 410 taken into 435
+  entries, 29 skipped (presentation 5, table rule 12, not a trap 9, wall-clock 2, weaker duplicate 1). Entries by class:
+  arithmetic width and sign 22, rounding and float 19, wrap and overflow 9, bounds and table edges 67, draw order and
+  dead draws 134, data-dependent branches 122, timing and frame edges 19, multiplayer edges 11, deliberate oddities 32;
+  7 of them are crash or hang paths, all from the specs' code readings. Step notes beyond the notes sections: player/creation
+  § G and § J, monsters/stats § A, stats/states § E, data/calc § D, rng/README § Algorithm. 37 notes (data/calc 4,
+  data/excel 11, drlg/lifecycle 8, quests/progression 8, quests/travel 6) carry no tag of their own; the 22 of them taken
+  cite the section that holds their tagged form. `tools/quirks.py` (`harvest`, `check`) holds each entry to its source's
+  tag and anchors and the coverage table to the notes; it reports 0 errors. Three tag disagreements between overviews and
+  the specs that raise the same statement went to the backlog
+  ([entry](../backlog/2026-10-30-spec-writer-spec-writer-quirks-harvest-tag-disagreements.md)). The machine-readable
+  form stays the open question for the review.
