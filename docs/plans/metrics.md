@@ -462,6 +462,7 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-10-30 | lane/s46 review | 0046 P3 | architect-review | 210 175 | 67 | 11 | — (two read-only helper agents, 315 379 tokens) | gave accept with fixes | — (on the lane row; boundary overclaims in §§ C–F and N; draw gates of handlers 20/21/30 and ItemTarget 2 restored; wiki re-seed edits kept; P4 released) |
 | 2026-10-30 | `lane/a60` | 0060 P0 + golden-v1 logs | archivist | 173 121 | 74 | 13 | — (no Ghidra, no harness) | accept with fixes (Tier B check) | 1: stale cross-reference 1 |
 | 2026-10-30 | lane/a60 check | 0060 P0 | architect-check | 74 774 | 22 | 3 | — (Tier B check, no harness) | accept with fixes | stale cross-reference 1 |
+| 2026-10-30 | lane/a62 | 0062 P2 | archivist | 0 | 0 | 0 | no Ghidra, no harness | — | — |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not
