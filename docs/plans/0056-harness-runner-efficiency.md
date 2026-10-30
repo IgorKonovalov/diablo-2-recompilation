@@ -226,3 +226,10 @@ _(lanes append dated entries as phases land)_
        `workspace/logs/h1a/p56a-manifest-dev.sha256` for both logs, their marks, status and check outputs, passing
        `sha256sum -c` from `workspace/logs/h1a`. Then file the Phase 1 review request.
   - **Next:** a slot for the two smoke sessions, then the Phase 1 review.
+- **2026-10-30 — Phase 1, smoke sessions run (reverser, `lane/p56a`, slot 2).** Main merged into the lane first (ledger
+  conflict kept both). Same save and seed (27204), cases `hdrshort,param`: pre-migration runner (`efac8f91`) and the
+  migrated runner each give `TOTAL H1A 19 comparisons, 0 failing; d2sio logs failing 0` (hdrshort 7, param 12); the
+  per-case lines are equal; only the `d2sio WRITE` sha differs (the saved file carries a time stamp). Each session 60 s
+  wall; migrated: launch to `ready` 6.6 s (the new `RDY` line, smoke OK), to first case start 14.6 s. `marks` (launch,
+  ready, two start/end pairs; starts equal the `.marks.jsonl` lines), `split` (2 pieces), `status` (kept 1) read right.
+  Manifest `workspace/logs/h1a/p56a-manifest-dev.sha256`. Slot 2 stopped, saves restored. Review request filed.
