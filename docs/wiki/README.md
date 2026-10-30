@@ -37,6 +37,7 @@ back to it. Then follow the game from the map to the loot, and on to the charact
 | 13 | [Saves](saves.md) | what a `.d2s` save file holds and how an item is stored in it |
 | 14 | [Quests and travel](quests.md) | how the quest record is kept and loaded, which events reach the quest scripts and in what order, how the game creator's finished quests are switched off, a few quests bit by bit, the quest-seed draws, and how waypoints, act changes, town portals, warps and resurrection place a player |
 | 15 | [Seed to world](seed-to-world.md) | how the pages above fit together in one game: the order in which the server builds levels, rooms, objects, monsters and drops from the game seed, which seed passes from one step to the next, and what (the player's walk, the fights) has to come from outside |
+| 16 | [Animation and timing](animation.md) | how long a unit's actions take on the server: the animation record, the scheduled and every-frame clocks, the rate from speed stats and weapon, breakpoints, the do frame, hit recovery, the block and the get-hit roll, and how far a walking, running or knocked-back unit moves each frame |
 | — | [How we know](how-we-know.md) | how the project works: the one binary, the three levels of confidence, runs, bit-exact and emulated reproduction, combat events, two-client games, what "not reachable on stock data" means, the sweep of inferred claims, and what "reviewed" means. Read it any time; it is the only page not based on a spec |
 
 ## Why the pages are cut this way
@@ -67,7 +68,8 @@ item creation and the other item paths, the [item economy](../specs/items/econom
 [stats and states](../specs/stats/README.md) (plan 0041, closed 2026-10-17), and
 [quests and travel](../specs/quests/README.md) (plan 0042, closed 2026-10-20), the composition of the core specs,
 [seed to world](../specs/chain/README.md) (plan 0048), and the third simulation row,
-[skills and missiles](../specs/skills/README.md) (plan 0045, its machinery and a named tier of skills). The room lifecycle
+[skills and missiles](../specs/skills/README.md) (plan 0045, its machinery and a named tier of skills), and the fourth,
+[animation and frame timing](../specs/anim/README.md) (plan 0050). The room lifecycle
 ([drlg/lifecycle](../specs/drlg/lifecycle.md), reviewed at the close of plan 0040 on 2026-10-17) has no page of its
 own: it is the section [Rooms that come and go](levels.md#rooms-that-come-and-go-release-and-restore) of the Levels
 page. Rows that are not reviewed get no page; the skills function catalogue (plan 0046), which specifies the numbered skill

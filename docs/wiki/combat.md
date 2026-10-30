@@ -442,7 +442,9 @@ From the specs' open questions ([overview](../specs/combat/README.md#open-questi
   the on-hit effects other than crushing blow, open wounds and freeze are now explained on the
   [skills and missiles](skills.md) page; what stays open there (the finisher in a run, the handlers no session fired,
   the numbered functions outside tier A) is listed at its end.
-- **Timing.** Hit recovery, knockback and stun lengths in time, and the get-hit and durability draws.
+- **Timing.** Hit recovery, block and knockback lengths in frames, the block gate and the get-hit roll are on the
+  [animation and timing](animation.md) page; what it leaves open is listed at its end. The durability draws are on the
+  [economy](economy.md) page.
 - **Branches the runs met too rarely or never.** A second run built for the rare branches settled most of the first
   run's list (above). Left: a walking player's full block chance (6 cases, and final: the extra session allowed was
   spent); the magic resistance cap (no unmodified item or skill reaches it); cold flat absorb (hit once, and final:
@@ -465,5 +467,5 @@ From the specs' open questions ([overview](../specs/combat/README.md#open-questi
 - Related wiki pages: [randomness](randomness.md) (unit seeds and draws), [monsters](monsters.md) (a monster's level,
   hit points and defence at creation), [characters](characters.md) (a class's base attributes),
   [stats and states](stats-and-states.md) (how a unit's stats add up), [skills and missiles](skills.md) (a skill's or a
-  missile's own hit), [items](items.md)
+  missile's own hit), [animation and timing](animation.md) (hit recovery, block and the get-hit roll), [items](items.md)
   (what drops at the kill) and [how we know](how-we-know.md).
