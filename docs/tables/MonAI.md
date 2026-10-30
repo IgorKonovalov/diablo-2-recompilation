@@ -74,22 +74,42 @@ mismatches** (layout `monai` in `tools/excel_layouts.py`). Observed values from 
 
 ### The second table at `0x0073D358` (found at the `lane/a52` review)
 
-`MonAiEntryGet` has a second branch, which this survey does not read. Reproduce with `objdump -s
---start-address=0x73d358 --stop-address=0x73d478 workspace/install/app/game.exe` and the function's disassembly
-(`0x005B15D0`–`0x005B163B`).
+[ai/0001](../findings/ai/0001-machinery.md) § 3 names it `g_MonAiStateRows`: 18 **state rows** of the first table's shape, indexed by the AI
+control's state word `AiCtl+0x00` (not by MonStats `AI`). Reproduce the bytes with
+`python3 -I tools/ai_survey.py states workspace/merged/data/global/excel workspace/install/app/game.exe` (prints the 18 rows and
+the first-table rows each repeats; the gate survey `ai` carries the `st_*` counts) or `objdump -s
+--start-address=0x73d358 --stop-address=0x73d478 workspace/install/app/game.exe`. The tags below are the finding's.
 
-- `[I]` With `EDX` ≠ 0 the function returns `0x0073D358 + 16·EDX` and does not read MonStats `AI`. For `EDX` 10, 11
-  and 12 it first calls `0x00623470` (with `ECX` from the unit's `+0x04`, or −1 with no unit) and falls back to the
-  `EDX` = 0 path when that returns 0. No bound on `EDX` is tested. The three callers pass `EDX` from a word they hold
-  (`0x005B0E81`, `0x005B0EBE`, `0x005B1663`). (fn:sub_005B15D0_MonAiEntryGet@0x005B15D0)
-- `[C]` As bytes, rows 0–17 have the same four-word shape as `g_MonAiTable`'s, with `+0` ∈ {0, 1, 2}. Row 0 is all zero.
-  At `0x0073D478` (row 18) the words become `.rdata` addresses (`0x006CC7xx`), so they are something else. Seven
-  rows reuse a `+8` word of the first table: 1 (`Idle`'s `0x005B0CD0`), 4 (`Hireable`'s `0x005E52D0`, with its `+C`
-  `0x005E5280`), 5 (60 `GoodNpcRanged`'s), 7 (67 `NecroPet`'s `0x005E4CF0`), 15 (117 `SuicideMinion`'s), and rows 10
-  and 17 share `0x005E8020`. The other ten rows (2, 3, 6, 8, 9, 11–14, 16) hold `+8` words that no `monai` row holds.
-- `[L]` The second table holds AIs that a unit gets from its AI state, not from its record: an override that a
-  hireling, a pet or a scripted monster takes. It has 18 rows. Both rest on the shape of the bytes alone. Owner:
-  reverser, plan 0052 P1.1 (§ Open questions).
+- `[I]` With `EDX` (the state) ≠ 0 `MonAiEntryGet` returns `0x0073D358 + 16·EDX` and does not read MonStats `AI`. For
+  states 10, 11 and 12 it first calls `0x00623470` (`ECX` from the unit's `+0x04`, or −1 with no unit) and falls back to
+  the `EDX` = 0 path when that returns 0: the gate is true when the class's `MonModeAllowed`, MonStats `+0x0C` bit 6
+  (`boss`) is clear and `+0x0E` bit 0 is set. No bound on `EDX` is tested there (fn:sub_005B15D0_MonAiEntryGet@0x005B15D0;
+  ai/0001 § 3 "Layout").
+- `[I]` The row count 18 comes from `MonAiInit`'s signed `state < 18` test (`cmp ebx,0x12; jge`, 0x005B0E4D), so the
+  stored state is 0..17 and `ST 0`–`ST 17` are the table; the dwords after (0x0073D478) are string pointers. A negative
+  argument passes the signed test (ai/0001 § 3 "The second table's bound").
+- `[I]` The three callers (ai/0001 § 3 "Who passes `EDX`"): 0x005B1663 in `MonAiTargetByKind` passes the stored
+  `AiCtl.state` (so the row kind that picks the target search is the state row's `+0` when the state is non-zero);
+  0x005B0E81 in `MonAiInit` passes the current state (only when `AiCtl.think` is non-zero); 0x005B0EBE in `MonAiInit`
+  passes the new state (the argument after the `< 18` test, or 1 when the class is at or past the MonStats count).
+- `[I]` Who sets a state, by `MonAiInit`'s 33 direct calls: 21 push an immediate (0, 5, 6, 10, 11, 13, 15, 16: no
+  immediate passes 1–4, 7–9, 12, 14 or 17); 12 pass a register. Immediates: 0 at 11 sites (including the state rows of
+  states 2, 3, 9, 12 and 16 sending the unit back to 0); 5 and 6 in the `Hireable` think function; 10 `CloakAreaCb`; 11
+  `MonFleeFrom`; 13 one `SuperUniqueSpawn` case; 15 `WhipChangeClass`; 16 `ImpAttach`. Registers: states 10, 12 or 11 from
+  `CurseApplyCb` by the skill's `auratargetstate` (Skills `+0x82` = 23, 27 or 56), else 0; the saved state of
+  `InactiveMonstersRestore`; a word of `SpawnOwnedMonster`'s block; and seven AI-function sites that load it through
+  a pointer, of which five stay unresolved. The writes to `AiCtl+0x00` outside `MonAiInit`'s two stores are not
+  scanned, so "0..17" holds for the immediate callers and the writers read.
+- `[C]` As bytes (the survey `states` command): `+0` is 0 in 7 rows (0, 1, 4–7, 12), 1 in 10 (2, 3, 8–11, 13–16) and 2
+  in row 17 (`st_w0_0=7`, `st_w0_1=10`, `st_w0_2=1`); row 0 is all zero; `+4` is set in states 3, 11 and 16 and `+C` in
+  state 4 alone; `+8` is set in 17 rows with 16 distinct values (10 and 17 share `0x005E8020`). Five rows repeat a first-table
+  `+8` word: state 1 `Idle` (row 1), 4 `Hireable` (row 61, with its `+C` `0x005E5280`), 5 (row 60 `GoodNpcRanged`),
+  7 (row 67 `NecroPet`) and 15 (row 117 `SuicideMinion`) (`st_fn8_in_first=5`); the finding's list also counts 10 and 17,
+  which share one word that no first-table row holds. The other twelve rows (2, 3, 6, 8, 9, 10–14, 16, 17) hold words
+  that no `monai` row holds. The finding names each state's function (e.g. state 2 `0x005B14E0` back to 0 when
+  `MonsterData+0x54` is 3 or 19 or the distance is below 4).
+- `[L]` Which units run each of the unshared state functions, beyond the immediate callers above, stays with the
+  reverser (plan 0052 P1): the five unresolved pointer loads.
 
 ## The index
 
@@ -354,6 +374,7 @@ skill (775 cells) in 97 AI rows.
 - `[L]` Whether any path sets a unit's AI to a row other than its MonStats record's (a hireling, a revived or
   converted monster, row 143). Owner: reverser, plan 0052 P1.1.
 - `[L]` The second table at `0x0073D358` (§ [The second table](#the-second-table-at-0x0073d358-found-at-the-lanea52-review)):
-  the word its callers pass as `EDX` and who sets it, its row count, what `0x00623470` tests for rows 10–12, and which
-  units run its ten unshared `+8` functions. Owner: reverser, plan 0052 P1.1; its rows join the catalogue (question 8).
-  Once named, `tools/ai_survey.py` reads it as the first table is read.
+  named and row-counted by [ai/0001](../findings/ai/0001-machinery.md) § 3 (the callers, the 18 rows, the `0x00623470`
+  gate, who sets each state, all `[I]`); what stays open is the five unresolved pointer-load sites that pass a state and
+  which units run each unshared state function. Owner: reverser, plan 0052 P1; its rows join the catalogue (question 8).
+  `tools/ai_survey.py states` reads it with the first table.

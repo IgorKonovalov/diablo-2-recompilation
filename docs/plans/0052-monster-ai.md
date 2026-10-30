@@ -398,7 +398,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Kept outputs:** six new files under `workspace/logs/r52/` (`entryget-callers.txt`, `entryget-windows.txt`,
     `aiinit-pushes.txt`, `aiinit-windows.txt`, `aiinit-regstates.txt`, `aicancel-pushes.txt`), from
     `tools/sweep_rbs3.py` (`callers`, `window`, `pushes`); manifest 46 lines, `sha256sum -c` passes from that directory.
-  - **Backlog:** [archivist](../backlog/2026-10-27-reverser-archivist-monai-second-table-named-by-ai-0001.md) (link
+  - **Backlog:** [archivist](../backlog/archive/2026-10-27-reverser-archivist-monai-second-table-named-by-ai-0001.md) (link
     MonAI.md's second table and its open question to ai/0001 § 3; the survey reads the state rows, ruling (e));
     the [review request](../backlog/archive/2026-10-27-reverser-architect-plan-0052-p1-1-review.md).
   - **To rule on.** (1) The tier proposal (16 AIs, § 13). (2) The batch list for P1.2 onward (§ 13; the architect's
