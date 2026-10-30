@@ -9,13 +9,15 @@ typedef struct DungeonRoomLife {  /* view of DungeonRoom (0x80, DUNGEON_RoomCrea
     uint8_t  _pad04[0x8];
     uint32_t idleCount;           /* +0x0C passes of sub_0052D240_RoomsDeactivate with no client (sub_0061A790_RoomIdleCount) */
     void   * pDrlgRoom;           /* +0x10 DRLG room */
-    uint8_t  _pad14[0x10];
+    uint8_t  deadIdx;             /* +0x14 next slot of +0x38, (i + 1) & 3 (sub_0061AFA0_RoomRecordDeath; ai/0002 § 4) */
+    uint8_t  _pad15[0xF];
     int32_t  nNear;               /* +0x24 */
     uint8_t  _pad28[0x4];
     void   * pAct;                /* +0x2C DUNGEON act */
     uint8_t  _pad30[0x4];
     uint32_t flags;               /* +0x34 bit 0 populated, bit 1 inactive units restored, 4 client copy */
-    uint8_t  _pad38[0x10];
+    uint32_t deadGuid[4];         /* +0x38 guids of the last four monsters whose death event ran here (sub_005A6FF0_MonDeathEvent
+                                     -> sub_0061AFA0_RoomRecordDeath); row 6 Fallen scans them (ai/0002 § 2.5) */
     void   ** ppClients;          /* +0x48 clients whose room's near list holds this room, sorted by pointer */
     uint8_t  _pad4C[0x20];
     uint32_t seed[2];             /* +0x6C active-room seed */

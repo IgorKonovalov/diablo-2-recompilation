@@ -456,3 +456,18 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   **P1.2 runs** (`lane/r52b`, static lane, the first catalogue batch of § The catalogue batches); the later batches
   follow in their order, one per static lane at a time. The path search plan and ADR-0022's plan are drafted now
   (`lane/plans54`, architect). P2's gate is unchanged (0050·P3's review passed; its own P1.1 and tier reviews).
+- **2026-10-30 — P1.2 catalogue batch 1 (pool-A) for review (reverser, static, `lane/r52b`, from `main` 8b33ab84).**
+  [ai/0002](../findings/ai/0002-pool-a.md): the sixteen think functions of rows 2–16 and 142 and row 15's `alt`, each
+  with its `aip` reads per record, its `AiCtl+0x14/+0x18/+0x1C` words, its draws in order (all on the acting unit's
+  seed; 0–6 per decision) and its command, plus the helpers first read here (`MonAiMoveToUnitDist`,
+  `MonAiRunToUnitStop`, the `AiCtl+0x20` parameter list, `UnitDistSq`, the room's ring of the last four dead monsters
+  that row 6 scans). [C] by emulation (run:2026-10-30-ai-cat-emu-1, `tools/ai_cat_emu.py`, 2 400 cases, 0 mismatches,
+  every control failing every case it separates; a development run kept under `emu/dev/`): the decision maps of rows 2,
+  3, 4, 5, 7, 9, 12, 14, 16 and 142 up to their first callee. [I]: rows 6 `Fallen`, 8, 10, 11, 13 `FallenShaman` and
+  15 (a callee with an undeclarable read set before the first draw), and everything after a boundary. Tier AIs in the
+  batch: 2 and 9 emulated, 6 and 13 static only. P1.1 review reopen condition (b) not met: the three unit walks (rows
+  6, 8, 13) draw nothing per unit. 30 `re/symbols.csv` rows (all I); `re/types/ai.h` `AiParam`, `re/types/lifecycle.h`
+  `DungeonRoomLife+0x14/+0x38`. Kept outputs `workspace/logs/r52b/` (manifest 8 lines; `emu/` 31, `emu/dev/` 31; each
+  passes from its directory). Backlog: the [review request](../backlog/archive/2026-10-30-reverser-architect-plan-0052-p1-2-batch-1-review.md),
+  [archivist](../backlog/2026-10-30-reverser-archivist-monstats-aip-and-levels-id-readers-named-by.md) (MonStats and
+  Levels readers). Next: batch 2 (pool-B, rows 17–30).
