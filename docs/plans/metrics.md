@@ -430,6 +430,7 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-10-30 | lane/a7c | backlog: ai/0003 readers, d2s corpse key | archivist | 100 903 | 33 | 5 | — | accept with fixes (Tier B check) | 4 |
 | 2026-10-30 | lane/a7c check | backlog: ai/0003 readers, d2s corpse key | architect-check | 83 269 | 20 | 3 | — | accept with fixes | 4: misread 1, omission 2, overclaim 1 |
 | 2026-10-30 | lane/plans56 | 0056 (harness runner efficiency), draft | architect | 72 176 | 24 | 4 | — (no Ghidra, no harness) | draft; for the owner: 0056 Q1-7 | — |
+| 2026-10-30 | lane/plans57 | plans 0057-0062 drafts; ADR-0024 accepted; 0056 approved | architect | 0 | 55 | 0 | — | drafts; for the owner: 0057 Q1-5, 0058 Q1-4, 0059 Q1-5, 0060 Q1-5, 0061 Q1-4, 0062 Q1-3 | — |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not

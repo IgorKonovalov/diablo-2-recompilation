@@ -1,6 +1,6 @@
 # ADR-0024 — The lane check reads the touched documents and the findings they touch (amends 0023)
 
-> **Status:** proposed (architect, 2026-10-30; owner decision needed: it widens the scope limit ADR-0023 set)
+> **Status:** accepted (owner, 2026-10-30); proposed by the architect 2026-10-30 (plan 0053 Phase 4)
 > **Date:** 2026-10-30
 > **Related plan(s):** [0053-review-tiers-and-gate-checks](../plans/done/0053-review-tiers-and-gate-checks.md)
 
@@ -48,7 +48,7 @@ Each pass reads at most 20 subjects. The check takes the subjects on raised `[C]
 subjects than that escalates to Tier A.
 
 The two rules need no reads outside ADR-0023's scope, so `lane-check.md` has carried them since plan 0053 Phase 4
-was settled. The two passes enter `lane-check.md` when this ADR is accepted. ADR-0023's tiers, audit rate and
+was settled. The two passes entered `lane-check.md` on acceptance (2026-10-30, checks 7 and 8). ADR-0023's tiers, audit rate and
 two-in-five rule are unchanged. The next two audits measure the amended check: the
 tokens of each check, and the fixes that the check missed by category.
 
