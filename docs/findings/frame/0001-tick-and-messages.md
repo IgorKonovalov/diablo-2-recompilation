@@ -259,7 +259,7 @@ if (frame % 11 == 0) for act 0..4: if (game->act[a]) 0x0061AA20(act);   // ActLe
   fn:sub_00619F90_RoomUpdatedList@0x00619F90)
 - [I] The room flag 4 is the client copy's bit (`DungeonRoomLife+0x34`, drlg/0009), so only server rooms list
   their units. (fn:sub_0061AB60_RoomFlag4@0x0061AB60)
-- [I] **Leaving a room unlinks the mark.** `0x0064C370(unit)` (30 direct call sites, not yet named) takes the unit out
+- [I] **Leaving a room unlinks the mark.** `0x0064C370(unit)` (`UnitRoomUnlink`, 30 direct call sites; frame/0002 § 7) takes the unit out
   of its room's unit list (`room+0x74` through the getter `0x00619F60`, next `+0xE8`), then calls `RoomUpdatedUnlink`
   (0x0064C42D, the unlink's only call site) and clears bit `0x2000` of `+0xC4` (0x0064C432). So a unit that changes
   room in a frame is no longer on the old room's list and can be marked again in the new one; the reset visits it in
@@ -471,3 +471,7 @@ sequenceDiagram
    pilot window measures them.
 6. **The room-removal function `0x0064C370`** (§ 3.3): its name and which of its 30 callers run inside a frame (a unit
    moving between rooms, a unit freed) are P1.2's, with the unit-event passes.
+   *2026-10-30 (P1.2, `lane/r55b`):* answered in [frame/0002 § 7](0002-unit-events-queue.md#7-unitroomunlink-0x0064c370-and-its-callers):
+   `UnitRoomUnlink`; 16 server callers reach a `GameTick` pass by Ghidra's references, 2 more from the AI table, 1
+   through an unfollowed quest callback, 6 are client-only and 4 sites lie in unreferenced code.
+   (fn:sub_0064C370_UnitRoomUnlink@0x0064C370)
