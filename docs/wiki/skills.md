@@ -3,6 +3,7 @@ based_on:
   - docs/specs/skills/README.md 2026-10-30
   - docs/specs/skills/dispatch.md 2026-10-30
   - docs/specs/skills/missiles.md 2026-10-30
+  - docs/specs/skills/catalogue.md 2026-10-30
 ---
 
 # Skills and missiles
@@ -20,8 +21,8 @@ Skills and missiles are the project's third *simulation* subject, after [combat]
 [stats and states](stats-and-states.md). Combat takes a skill's damage packet as given; this subject explains where
 it comes from. The specs cover the **machinery** that every skill goes through, and a named set of skills, called
 **tier A**, whose own functions are specified too. What each of the other numbered skill and missile functions does is
-the work of a later plan, the function catalogue
-([overview § Purpose](../specs/skills/README.md#purpose)). The specs were checked against two recorded runs of
+in the function catalogue ([catalogue § Purpose](../specs/skills/catalogue.md#purpose); see
+[the section below](#the-function-catalogue-what-every-other-skill-and-missile-function-does)). The specs were checked against two recorded runs of
 skill-using characters (the second built for what the first met too rarely) and against single functions run on their
 own under emulation, up to a call that ends the reproduced part ([how we know](how-we-know.md)). Life, mana and damage are kept in 1/256
 points, and time is counted in game frames.
@@ -72,8 +73,6 @@ Some inputs belong to other subjects and are taken as given, logged in the runs
 - **The frame on which the action happens.** Which frame of an animation carries the action is animation timing, the
   next simulation subject.
 - **A monster's choice** of skill, mode and target: monster AI, a later subject.
-- **The numbered functions outside tier A**: their effect on the seeds is taken from the logs until the function
-  catalogue specifies them.
 - **The path planner's points** and the cells a missile's step crosses, the order in which an area skill visits the
   units near it, and which pet the pet limit removes.
 - **A unit's final stats**, which [stats and states](stats-and-states.md) explains.
@@ -362,6 +361,90 @@ caster's seed moved by exactly the nested events' draws. Attack is confirmed by 
 one step above. Throw, Jab, Fists of Fire and Static Field were not measured: they are read from the code, and most
 of the tier-A functions were run under emulation up to a call that ends the reproduced part.
 
+## The function catalogue: what every other skill and missile function does
+
+Tier A names the skills whose own functions the machinery spec writes out. The
+[function catalogue](../specs/skills/catalogue.md#purpose) covers the rest: every numbered start, do, progressive,
+item-effect and periodic-state entry a stock Skills or States row uses, and every missile do, hit and damage entry a
+stock Missiles row uses (310 entries in all, counting the six general-purpose ones). Each entry says what it tests,
+what it writes, which missiles, units, states and packets it makes, and which random draws it makes in order. The
+general-purpose entries and the tier-A ones are written out in the machinery specs; the catalogue links them.
+
+### Finding a function
+
+A reader starts from a table row and follows one column to an entry number.
+
+| Starting from | Read the column | Then go to |
+|---|---|---|
+| A skill's start of animation | Skills `srvstfunc` | the class section below, or the monster sections, by skill row |
+| A skill's action frame | Skills `srvdofunc` (`srvprgfunc1..3` for a progressive skill) | the same sections |
+| An item that casts a skill | `ItemEffect` | the [item, charge and shrine callers](../specs/skills/catalogue.md#n-item-charge-and-shrine-callers-st-3-do-4-113-151) |
+| A timed state that acts each period | States `srvactivefunc` | the section of the class that owns the state |
+| A missile's every-frame code | Missiles server do function | [missile do entries](../specs/skills/catalogue.md#c-missile-do-entries-mdo-136) |
+| What happens when a missile hits | Missiles server hit function | the hit entries, [1 to 29](../specs/skills/catalogue.md#e-missile-hit-entries-129) and [31 to 59](../specs/skills/catalogue.md#f-missile-hit-entries-3159-and-row-568) |
+| How a missile's damage is built | Missiles server damage function | the [damage entries](../specs/skills/catalogue.md#d-missile-damage-entries-mdmg-114) |
+
+The spec's [first section](../specs/skills/catalogue.md#a-how-an-entry-is-written) fixes the naming (start entry,
+do entry, missile do, hit and damage entry) and says how far each statement reaches: an entry that ends in a
+callee is described up to that call, and what follows is marked as reading.
+
+### By class
+
+| Section | What it holds |
+|---|---|
+| [Sorceress](../specs/skills/catalogue.md#g-sorceress-st-1114-do-1729-144) | start entries 11 to 14; do entries 17 to 29 and 144 |
+| [Amazon](../specs/skills/catalogue.md#h-amazon-st-410-do-68-1016) | start entries 4 to 10; do entries 6 to 8 and 10 to 16 |
+| [Necromancer](../specs/skills/catalogue.md#i-necromancer-st-1521-do-3032-5563) | start entries 15 to 21; do entries 30 to 32 and 55 to 63 |
+| [Paladin](../specs/skills/catalogue.md#j-paladin-st-29-31-3537-do-6467-73-7982-150) | start entries 29, 31 and 35 to 37; do entries 64 to 67, 73, 79 to 82 and 150 |
+| [Barbarian](../specs/skills/catalogue.md#k-barbarian-st-3234-3841-do-2-9-6872-7478) | start entries 32 to 34 and 38 to 41; do entries 2, 9, 68 to 72 and 74 to 78 |
+| [Druid](../specs/skills/catalogue.md#l-druid-st-5658-do-114124-entries-145-146) | start entries 56 to 58; do entries 114 to 124, and entries 145 and 146 |
+| [Assassin](../specs/skills/catalogue.md#m-assassin-st-2228-do-3335-4252-54-progressive-3641-143) | start entries 22 to 28; do entries 33 to 35, 42 to 52 and 54; progressive entries 36 to 41 and 143 |
+| [Item, charge and shrine callers](../specs/skills/catalogue.md#n-item-charge-and-shrine-callers-st-3-do-4-113-151) | start entry 3; do entries 4, 113 and 151, and the callers of the stat-event handlers and shrines |
+| Monster skills, [Skills rows 156 to 189](../specs/skills/catalogue.md#o-monster-skills-skills-rows-156189-st-4253-do-8398-110-111), [190 to 289](../specs/skills/catalogue.md#p-monster-skills-skills-rows-190289-st-54-55-59-60-64-do-99109-112-125127-141-152) and [290 to 338](../specs/skills/catalogue.md#q-monster-skills-skills-rows-290338-st-6163-do-128137-139-140-147149) | the entries the monster Skills rows name, grouped by row range; which monster uses which skill, and when, is the monster-AI plan's ([plan 0052](../plans/README.md)) |
+
+### The draws, by seed
+
+Most entries draw nothing before the point where the description stops. The spec lists the ones that do, in one
+table ([every draw, by seed](../specs/skills/catalogue.md#b-every-draw-by-seed)). In plain words:
+
+- **The caster's seed** moves in a handful of skill functions: one roll of a hundred, one roll in a damage range,
+  or one bare step. One of them, `do 112`, steps before any test, so a refused cast still moves the seed.
+- **A missile's own seed** moves in a missile's do, hit and damage entries. Some of them first re-seed the missile
+  from a value the missile carries (its sub-position, for instance) and then draw, which is how the sub-missiles of
+  a storm or a fall of rocks scatter. A creation callback can re-seed the missile as it is made.
+- **Another unit's seed** moves in a few places: the missile do that draws on its target, the stat-event handlers
+  that draw on the unit they belong to, and the shrines on the shrine object.
+- **A seed no unit keeps**: the progressive (charge-up) entries step the caster once at entry, copy its seed into a
+  local one and draw from that; one monster start (start 55) draws from a local seed built from the target's and the
+  caster's ids.
+
+The same section's note on draws after a boundary lists the draws that
+lie past where the emulation stopped; those are the code reading's order, not a measured one. How the seeds are
+chained in general is on [randomness](randomness.md), and the re-seed sites on
+[the re-seed section below](#seeds-a-missile-is-given-the-re-seed-sites).
+
+### What the checks reached
+
+Every entry was run on its own code with synthetic and stock inputs, and a sample of one member per monster family
+and the item casts was played in the game and compared with the catalogue's reading
+([the sample](../specs/skills/catalogue.md#r-in-the-game-the-phase-2-sample)). That run also measured the re-seed of
+the catapult bolts. Entries are described only as far as that reach: where a function ends in a call the
+emulation did not follow, the spec stops its description there and marks the rest as reading.
+
+### Short floors left open
+
+[Open questions in the spec](../specs/skills/catalogue.md#open-questions) lists them. In short:
+
+- **Baal's tentacle skill** was not reached in a game, so one value that decides which of two draw counts it makes is
+  unknown.
+- **The charged suffix path and the item do function** were not played: no session used an inventory item, and the
+  game log does not say which do entry ran.
+- **No Act 2 monster of the first monster family** was logged.
+- **What the Iron Maiden handler draws when its damage kills the cursed unit** is unknown, and the check does not
+  cover that branch.
+- **Everything past each entry's stopping point**, which the spec lists per entry, waits for a game session or for
+  monster AI.
+
 ## Missiles: creation, speed, range, seed and damage
 
 A missile is a unit of its own, created by a skill, an item cast, a monster, a shrine, a quest or another missile
@@ -531,8 +614,8 @@ example 2 the order of the sub-missile creations is the code reading.
 From the specs' open questions ([overview](../specs/skills/README.md#open-questions),
 [dispatch](../specs/skills/dispatch.md#open-questions), [missiles](../specs/skills/missiles.md#open-questions)):
 
-- **What each numbered function outside tier A does**: the function catalogue, a later plan. Client-only skill and
-  missile code is presentation and out of scope.
+- **What each numbered function outside tier A does past its stopping point**: the catalogue's short floors are in
+  [its own section](#short-floors-left-open). Client-only skill and missile code is presentation and out of scope.
 - **The server's handling of a refused request** (codes 2 to 5 and 7, starting mana, item charges, Blood Mana, the
   town refusal), which a stock client never sends; it needs a two-client game or a patched client.
 - **Handlers no session fired**, and the effects of the measured ones beyond their draws.
@@ -554,7 +637,8 @@ From the specs' open questions ([overview](../specs/skills/README.md#open-questi
 
 - The specs: [skills overview](../specs/skills/README.md#reimplementation-notes),
   [dispatch](../specs/skills/dispatch.md#reimplementation-notes) and
-  [missiles](../specs/skills/missiles.md#reimplementation-notes). Each *Reimplementation notes* section lists the
+  [missiles](../specs/skills/missiles.md#reimplementation-notes), and the
+  [catalogue](../specs/skills/catalogue.md#reimplementation-notes) for the numbered functions. Each *Reimplementation notes* section lists the
   traps for someone rebuilding the system.
 - The [glossary](../glossary.md) for D2 terms: start and do functions, progressive charges and the finisher, the
   server missile, pet type and pet limit.

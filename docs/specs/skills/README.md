@@ -91,7 +91,7 @@ truncate toward zero unless stated; life, mana and damage are in 1/256 points.
 |---|---|---|
 | the frame on which a mode's do function runs (event code 1 or 2, `Unit+0x4E`) | a logged input until animation timing ([plan 0050](../../plans/0050-animation-frame-timing.md)) | [I] (fn:sub_00580460_PlrModeSkillFrame@0x00580460) |
 | a monster's choice of skill, mode and target | an input until monster AI (plan 0052) | [I] (fn:sub_005DEAD0_MonAiUseSkill@0x005DEAD0) |
-| the numbered functions outside tier A | value oracles, taking the logged exit seeds ([plan 0046](../../plans/0046-skills-function-catalogue.md)) | [I] (data:g_SkillDoFuncs@0x007322B0) |
+| the numbered functions outside tier A | value oracles, taking the logged exit seeds ([plan 0046](../../plans/done/0046-skills-function-catalogue.md)) | [I] (data:g_SkillDoFuncs@0x007322B0) |
 | the path planner's points and a step's cell list | value oracles | [I] (fn:sub_00649970_PathPlan@0x00649970) |
 | the unit order of the area helpers, the pet chosen for removal | logged values | [I] (fn:SKILLS_ForUnitsInRange@0x0056B7E0) |
 | a unit's final stats | [stats/aggregate](../stats/aggregate.md) | [I] (fn:SKILLS_EvalCalc@0x00646CA0) |

@@ -17,7 +17,7 @@ progressive row, `ItemEffect` for an item cast, States `srvactivefunc` for a per
 server do, hit and damage functions. The machinery that calls them, and the 40 tier-A entries, are
 [skills/dispatch](dispatch.md) and [skills/missiles](missiles.md). This spec gives every other entry a stock row uses:
 what it tests, what it writes, which missiles, units, states and packets it makes, and **every draw it makes, in
-order, with its seed**. It is the catalogue of [plan 0046](../../plans/0046-skills-function-catalogue.md): 310 entries,
+order, with its seed**. It is the catalogue of [plan 0046](../../plans/done/0046-skills-function-catalogue.md): 310 entries,
 304 read by its batches ([skills/0004](../../findings/skills/0004-missile-do-1-18.md)–[0018](../../findings/skills/0018-monster-8c.md))
 and the six `general` tier-A entries by plan 0045, which § A links and does not restate.
 
@@ -118,7 +118,7 @@ life and mana are in 1/256 points.
   draws are theirs. [I] (fn:sub_0056D940_SpawnOwnedMonster@0x0056D940, [skills/0002](../../findings/skills/0002-missiles.md))
 - A5. **The six `general` tier-A entries** (st 1, 2, 65; do 1, 3, 5) and the other tier-A entries are
   [dispatch § O](dispatch.md#o-tier-a-the-start-and-do-functions) and [missiles § G](missiles.md#g-the-function-tables);
-  this spec names them in their batch and links there. [I] (fn:SKILL_AttackDo@0x0056F070, [plan 0046](../../plans/0046-skills-function-catalogue.md),
+  this spec names them in their batch and links there. [I] (fn:SKILL_AttackDo@0x0056F070, [plan 0046](../../plans/done/0046-skills-function-catalogue.md),
   `lane/p46m15` review, ruling 2; [skills/0003 § 5](../../findings/skills/0003-handlers.md#5-tier-a-start-and-do-functions))
 
 ### B. Every draw, by seed

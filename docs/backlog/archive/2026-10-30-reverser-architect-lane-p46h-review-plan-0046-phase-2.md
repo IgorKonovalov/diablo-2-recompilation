@@ -4,7 +4,7 @@ to: architect
 date: 2026-10-30
 status: done
 context:
-  - ../../plans/0046-skills-function-catalogue.md
+  - ../../plans/done/0046-skills-function-catalogue.md
   - ../../findings/skills/experiments.md
   - ../../findings/skills/0003-handlers.md
 resolution: "lane/p46h check (Tier B): accept with fixes (2); rulings in plan 0046 log 2026-10-30; P3 released"

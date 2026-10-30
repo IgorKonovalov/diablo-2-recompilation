@@ -6,7 +6,7 @@ status: done
 context:
   - ../../findings/skills/0016-monster-8a.md
   - ../../findings/skills/experiments.md
-  - ../../plans/0046-skills-function-catalogue.md
+  - ../../plans/done/0046-skills-function-catalogue.md
 resolution: "Accepted with fixes (5: misread 3, omission 2): PathDirection's 0xF fold on the x-major branch; the wrap bound 258 not 257; 0x005CC5C0 is do 95's no-point or failed-MissileCreate call; do 88's one refusal case named; do 110's MissileRec(m) test. Rulings: Ghidra-less start entries, first-time helpers, guarded allocator, start 48's Fatal, case-writer restrictions, thin do 88/do 97 coverage, the do 96 draw scope, unfollowed callers to 8b/8c, no spec-writer entry, all admitted. Archivist entry released. Reverser rule 15 promoted. Review in plan 0046's log."
 ---
 

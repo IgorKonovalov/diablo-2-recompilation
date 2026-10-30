@@ -6,7 +6,7 @@ status: done
 context:
   - ../../findings/skills/0008-sorceress.md
   - ../../findings/skills/experiments.md
-  - ../../plans/0046-skills-function-catalogue.md
+  - ../../plans/done/0046-skills-function-catalogue.md
 resolution: "Reviewed 2026-10-20 (architect): accept with fixes (3: misread 1, overclaim 1, omission 1); rulings in plan 0046's log."
 ---
 

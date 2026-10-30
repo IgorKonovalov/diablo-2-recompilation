@@ -8,7 +8,7 @@ context:
   - ../../findings/skills/0011-paladin.md
   - ../../specs/stats/states.md
   - ../../specs/stats/README.md
-  - ../../plans/0046-skills-function-catalogue.md
+  - ../../plans/done/0046-skills-function-catalogue.md
 resolution: "Carried on lane/s46a: [C] one RNG_RangeB per drawing run (865 runs, 865 steps), once per run whatever the number of units hit [I] from the reading, in [stats/README § Draw order](../../specs/stats/README.md#draw-order), [states § H](../../specs/stats/states.md#h-draws-per-event-kind) (table row split, step note, reimplementation note) and the wiki (stats-and-states Sanctuary's draw, how-we-know)."
 ---
 

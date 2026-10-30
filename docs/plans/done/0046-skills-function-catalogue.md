@@ -1,6 +1,6 @@
 # 0046 — Skills and missiles, the function catalogue: every numbered skill and missile function (ADR-0014 phase 3, part 2)
 
-> **Status:** approved 2026-10-20 (owner); P2 and P3 accepted with fixes 2026-10-30; P4 (wiki section) released
+> **Status:** done (closed 2026-10-30). Approved 2026-10-20 (owner); P2, P3 and P4 accepted with fixes 2026-10-30
 > **Created:** 2026-10-20
 > **Owner skill(s):** archivist, reverser, spec-writer
 > **Related ADRs:** 0001-target-toolchain-evidence-sources, 0004-boundary-oracles-in-reproduction, 0011-harness-slots, 0013-forced-path-runs-cell-level, 0014-scope-game-simulation, 0015-emulated-reproduction, 0020-skills-phase-in-two-plans
@@ -12,12 +12,12 @@ missile function (server do, hit and damage) do: which states it applies, which 
 calcs and params it reads, and which draws it makes on which seed? When it is done, `docs/findings/skills/` holds one
 catalogue section per function, raised to `[C]` by emulation (ADR-0015) or by harness events, and
 `docs/specs/skills/catalogue.md` (or one file per class, as the spec-writer chooses at the start) specifies every
-function a stock row uses on the machinery of plan [0045](done/0045-skills-missiles-machinery.md).
+function a stock row uses on the machinery of plan [0045](0045-skills-missiles-machinery.md).
 
 ## Context
 
-- **Why a separate plan:** [ADR-0020](../adrs/0020-skills-phase-in-two-plans.md). Skills.txt has 64
-  distinct `srvstfunc` and 138 distinct `srvdofunc` values ([Skills](../tables/Skills.md)); the progressive functions
+- **Why a separate plan:** [ADR-0020](../../adrs/0020-skills-phase-in-two-plans.md). Skills.txt has 64
+  distinct `srvstfunc` and 138 distinct `srvdofunc` values ([Skills](../../tables/Skills.md)); the progressive functions
   and the missile functions come on top (counted by plan 0045's survey). Scripted play reaches few of them, so static
   reading and emulation carry this plan; the harness samples each family.
 - **Research map row:** `skills/catalogue` in the Simulation band, added when plan 0045 starts (ADR-0020
@@ -26,9 +26,9 @@ function a stock row uses on the machinery of plan [0045](done/0045-skills-missi
   Phase 2 after **0045·P3 is reviewed** (the model this plan's checker extends). This plan never gates phase (4)
   (ADR-0020).
 - **Inputs from the backlog and specs:** stats/states' Holy Shield and progressive skills beyond tier A, the timed
-  self-states (armours, shouts), the skill shrine's state 134 reader ([stats/states](../specs/stats/states.md)
+  self-states (armours, shouts), the skill shrine's state 134 reader ([stats/states](../../specs/stats/states.md)
   *Open questions*); the seven States rows with no immediate setter (6, 25, 29, 39, 116, 164, 171); objects' missile
-  and monster shrines ([objects](../specs/objects/README.md) *Open questions*); the backlog's `0x005C09E0` question
+  and monster shrines ([objects](../../specs/objects/README.md) *Open questions*); the backlog's `0x005C09E0` question
   (`2026-10-17-reverser-reverser-plan-0039-p1c-residues-not-blocking.md` (a), if plan 0049 has not answered it).
 
 ## Phases
@@ -37,7 +37,7 @@ function a stock row uses on the machinery of plan [0045](done/0045-skills-missi
 - **Owner skill:** archivist
 - **What:** from plan 0045's survey, the per-function index: for each function number, the stock rows that use it, the
   params and calcs those rows fill, and the batch it belongs to.
-- **Outputs:** [Skills](../tables/Skills.md) and `docs/tables/Missiles.md` § Function index; `tools/skills_survey.py
+- **Outputs:** [Skills](../../tables/Skills.md) and `docs/tables/Missiles.md` § Function index; `tools/skills_survey.py
   --index` printing it.
 - **Done when:** every function number used by a stock row is listed once, with its rows; the batch list below is
   filled with counts; the survey's `SURVEY` line matches; the gate is green.
@@ -48,7 +48,7 @@ function a stock row uses on the machinery of plan [0045](done/0045-skills-missi
 - **Batches** (counts from Phase 0): one per character class (seven), one for the monster-only skill functions, one
   for the missile do, hit and damage functions, one for the item, shrine and object callers of skills (`ctc`,
   charges, shrine missiles). Ten batches, fifteen after the review's split. *Filled 2026-10-20 (Phase 0, `lane/p46a`)*: entries of the start, do and
-  missile tables by the rule of [Skills § Function index](../tables/Skills.md#function-index-plan-0046-phase-0)
+  missile tables by the rule of [Skills § Function index](../../tables/Skills.md#function-index-plan-0046-phase-0)
   (`skills_survey.py --index`, `ix_batch_*`), with the tier-A entries plan 0045 already read in brackets:
   1. `ama` 17 (start 7, do 10; tier A 4);
   2. `sor` 18 (start 4, do 14; 5);
@@ -99,7 +99,7 @@ function a stock row uses on the machinery of plan [0045](done/0045-skills-missi
   what removes pets when `petmax` falls (a skill shrine wearing off). Each is filed back to plan 0045's spec as a
   correction.
 - **Outputs:** one finding per batch, `docs/findings/skills/NNNN-<batch>.md` numbered in landing order from 0004
-  (batch 9a is [skills/0004](../findings/skills/0004-missile-do-1-18.md); 0003 is P1.3's handlers; ruled at the
+  (batch 9a is [skills/0004](../../findings/skills/0004-missile-do-1-18.md); 0003 is P1.3's handlers; ruled at the
   `lane/p46m1` review), one sub-section per function;
   `re/symbols.csv` rows (subsystem `skills/catalogue`); emulation cases under `tools/` with their memory specs.
 - **Done when**, per batch: each function has, with addresses and `[I]` or better: its params and calcs read, the
@@ -141,7 +141,7 @@ function a stock row uses on the machinery of plan [0045](done/0045-skills-missi
 
 - **Synthetic-only functions.** A function no stock row reaches is specified from the code and its emulation, and
   flagged as such; edited-data cases are ADR-0013's.
-- **Monster AI.** Which monster uses which skill, and when, stays phase (5)'s (plan [0052](0052-monster-ai.md); phase (4)
+- **Monster AI.** Which monster uses which skill, and when, stays phase (5)'s (plan [0052](../0052-monster-ai.md); phase (4)
   is animation since the owner's 2026-10-20 swap).
 
 ## Implementation log
@@ -150,11 +150,11 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 
 - **2026-10-20 — Drafted (architect, `lane/plans45`).** Status `proposed`, with ADR-0020 (proposed).
 - **2026-10-20 — Approved (owner, via the orchestrator).** Plans 0045–0049 and ADR-0020 approved as proposed; the run
-  order of the [plans index](README.md#run-order-unattended-queue-set-2026-10-20-plans-00380049) is the current queue.
+  order of the [plans index](../README.md#run-order-unattended-queue-set-2026-10-20-plans-00380049) is the current queue.
 - **2026-10-20 — Phase 0 landed for review (archivist, `lane/p46a`, no harness, no Ghidra).** The function index:
-  `tools/skills_survey.py --index`, [Skills § Function index](../tables/Skills.md#function-index-plan-0046-phase-0)
+  `tools/skills_survey.py --index`, [Skills § Function index](../../tables/Skills.md#function-index-plan-0046-phase-0)
   (start table 64 entries; do table 149: `srvdofunc` 138, `srvprgfunc` 7, `ItemEffect` 2, States `srvactivefunc` 3)
-  and [Missiles § Function index](../tables/Missiles.md#function-index-plan-0046-phase-0) (do 34, hit 50, damage 13),
+  and [Missiles § Function index](../../tables/Missiles.md#function-index-plan-0046-phase-0) (do 34, hit 50, damage 13),
   each entry with its rows, row kinds, the `Param`/`calc` cells its rows fill, tier A and batch; `[C]` as data. The
   batch list above is filled (310 entries, 40 reached by tier A). **`skills` baseline changed** (rerun of the survey):
   46 new `ix_*` keys, the old keys unchanged; `excel_layout` unchanged. Four reverser entries closed: the Skills,
@@ -162,7 +162,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   MonPlace's row-24 sentence corrected. Surprises, in the batch list and the review request: the `monster` (70) and
   `missile` (97) batches outsize one lane run (a split proposed); `ItemEffect` 36 is Claws of Thunder's progressive
   entry 36; no Skills row has `srvdofunc` 146, which skills/0003 names so. Review request
-  [to the architect](../backlog/archive/2026-10-20-archivist-architect-lane-p46a-review-plan-0046-phase-0.md).
+  [to the architect](../../backlog/archive/2026-10-20-archivist-architect-lane-p46a-review-plan-0046-phase-0.md).
 - **2026-10-20 — Phase 0 reviewed: accept (architect, `lane/p46a` review).** Reran `gate.py --full=skills,excel_layout`
   (green) and `skills_survey.py --index`: the `skills` baseline is the survey's own output byte for byte (regenerated,
   not hand-edited; 46 `ix_*` keys added, none changed). An independent join over Skills, States and Missiles gives the
@@ -179,14 +179,14 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   itself after checking the data (no Skills row has `srvdofunc` 146; Armageddon and Hurricane both have 124; entry 146
   is state 145 `armageddon`'s `srvactivefunc`). Point (4) of the request (the `KnockBack` byte) stays as laid out.
 - **2026-10-20 — Phase 1 batch 9a landed for review (reverser, `lane/p46m1`, static, no harness).** Missile server do
-  functions 1–18: 17 entries, 14 read ([skills/0004](../findings/skills/0004-missile-do-1-18.md); do 1, 3, 5 tier A,
+  functions 1–18: 17 entries, 14 read ([skills/0004](../../findings/skills/0004-missile-do-1-18.md); do 1, 3, 5 tier A,
   cited). Draws: only `sub_005A9820_MissSubNearReseed` (do 8, 10, 17: the missile seed re-seeded from its position
   plus the elapsed frames, then two `RNG_RangeB`) and do 18 (two `RNG_RangeB` per gold drop). Raised by emulation
   (run:2026-10-20-cat-emu-9a, `tools/skills_catalogue_emu.py`, new `EmuBoundary.java`): 13 functions in nine families,
   13 800 cases, 0 mismatches; do 7 in part, do 13 not emulated (named). Surprises: entry 1 is a thunk; do 17 and 18
   read the raw `Range` column; Frozen Orb's `+0x28` is a direction index, not a seed word; the cairnstones portal and
   the Countess chest gold answer quests/0001's open question. Review request
-  [to the architect](../backlog/archive/2026-10-20-reverser-architect-lane-p46m1-review-plan-0046-batch-9a.md) (two rulings:
+  [to the architect](../../backlog/archive/2026-10-20-reverser-architect-lane-p46m1-review-plan-0046-batch-9a.md) (two rulings:
   the `observe` boundary under ADR-0015, and the finding's file name).
 - **2026-10-20 — `lane/p46m1` review (architect): batch 9a accepted with fixes (3: the boundary tags, the call-site check, the plan's output name).** Spot checks: objdump of
   `sub_005A9820_MissSubNearReseed` (`RNG_SeedInit(m+0x20, SubX + elapsed)` at 0x005A9877, then two
@@ -197,7 +197,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   regenerates the kept case and memory files byte for byte; `EmuTrace.java` is unchanged (`3255db0c…`, as on `main`).
   **Ruling (1):** a case that ends at an `observe` boundary does not meet ADR-0015 (1) and (3) as written (two
   treatments of a reached callee; no register arguments among (3)'s outputs). The method is sound, so the architect
-  drafted [ADR-0021](../adrs/0021-observed-boundaries-in-emulation.md), **proposed for the owner**; until it is
+  drafted [ADR-0021](../../adrs/0021-observed-boundaries-in-emulation.md), **proposed for the owner**; until it is
   accepted the boundary claims of skills/0004 (Answer, §§ 3–11, the Functions table, the dated notes in skills/0002
   §§ 4 and 8, experiments) are `[I]`, and the refusal paths that return are `[C]` (§ 2). ADR-0021 (b) needs the call
   site checked: the review checked it from the kept outputs (`workspace/logs/skills-cat-9a-review/callsites.txt`
@@ -210,7 +210,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   claims follow ADR-0021's fate like 9a's.
 - **2026-10-20 — Phase 1 batch 9b landed for review (reverser, `lane/p46m2`, static, no harness).** Missile server do
   functions 19–36 and damage functions 1–14: 30 entries, 28 read and the two tier-A ones (do 23, damage 3) emulated
-  too ([skills/0005](../findings/skills/0005-missile-do-19-36-damage.md)). Draws before the boundaries: do 28 (re-seed
+  too ([skills/0005](../../findings/skills/0005-missile-do-19-36-damage.md)). Draws before the boundaries: do 28 (re-seed
   from `+0x28`, two `RNG_Range`), do 30 (two `RNG_Range` on the **target unit's** seed), do 34 and 35 (re-seed, one
   inline step), do 25 (9a's `0x005A9820`); damage 3, 5, 12, 13, 14 on the missile seed; no other. Raised by emulation
   (run:2026-10-20-cat-emu-9b, `tools/skills_catalogue_emu.py --batch 9b`): 13 families, 17 100 cases, 0 mismatches,
@@ -222,8 +222,8 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   damage 1/12's 100 cap, which the decompile drops, matters only for a negative physical share; a rabies contagion
   carries an end frame (`+0x28 − frame` is its poison length); do 19 runs Redemption's corpse callback, do 36 spawns
   `tyrael3` under quest 36. Review request
-  [to the architect](../backlog/archive/2026-10-20-reverser-architect-lane-p46m2-review-plan-0046-batch-9b.md); column
-  readers [to the archivist](../backlog/archive/2026-10-20-reverser-archivist-plan-0046-9b-missiles-skills-column-readers.md).
+  [to the architect](../../backlog/archive/2026-10-20-reverser-architect-lane-p46m2-review-plan-0046-batch-9b.md); column
+  readers [to the archivist](../../backlog/archive/2026-10-20-reverser-archivist-plan-0046-9b-missiles-skills-column-readers.md).
 - **2026-10-20 — `lane/p46m2` review (architect): batch 9b accepted with fixes (5: misread 3, overclaim 2).**
   Checks (kept in `workspace/logs/skills-cat-9b-review/`, `manifest.sha256` `02466fbf…`): the run's
   `sha256sum -c manifest.sha256` passes (68 files); `check rabies reseed9b` from the kept outputs gives `check.txt`'s
@@ -257,14 +257,14 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   pointer). Kept `[I]`: the `Explosion` term (no output), the Functions table's names, the stock-row bullets, and the
   reading-only bullets of §§ 6, 17 and 18. skills/0003 § 6's dated note and the experiments conclusion updated.
   Review request closed
-  ([archive](../backlog/archive/2026-10-20-reverser-architect-lane-p46m2-review-plan-0046-batch-9b.md)); ledger rows
+  ([archive](../../backlog/archive/2026-10-20-reverser-architect-lane-p46m2-review-plan-0046-batch-9b.md)); ledger rows
   added. **Batch 9c may start** (missile hit 1–29), with 9b's checker conventions (call site asserted, two controls per
   family) and the untouched-seed check added to the model wherever a family writes seeds it should not step.
 - **2026-10-20 — ADR-0021 accepted by the owner (architect, `lane/adr21`, no run).** The owner accepted
-  [ADR-0021](../adrs/0021-observed-boundaries-in-emulation.md) (observed boundaries in emulated reproduction; amends
+  [ADR-0021](../../adrs/0021-observed-boundaries-in-emulation.md) (observed boundaries in emulated reproduction; amends
   ADR-0015 (1) and (3)). As the 9a review specified, the batch 9a claims held at `[I]` pending it return to `[C]`
   without a re-run, (b) supplied by the review's call-site check (`callsites.txt` `8ea8058b…`), each naming its
-  boundary and covering nothing after it: [skills/0004](../findings/skills/0004-missile-do-1-18.md) Answer 6 bullets
+  boundary and covering nothing after it: [skills/0004](../../findings/skills/0004-missile-do-1-18.md) Answer 6 bullets
   (draws, sub-missiles, Frozen Orb, scatter, towerchestspawner, homing), §§ 3–11 11 statements (§ 3 1, § 4 1, § 5 1,
   § 6 1, § 7 2, § 8 1, § 9 2, § 10 1, § 11 1), the Functions table 16 rows (do 7's row stays `I`, gates `[C]`, re-plan
   `[I]`), with § 2 recording the acceptance and the return address of every boundary; the dated notes in skills/0002
@@ -273,7 +273,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   stores after the plan, do 18's return value, and everything after a boundary. Batch 9b's `[I] (ADR-0021)` claims are
   its own review's. Evidence rules and the reverser's `emuboundary` text now cite ADR-0021.
 - **2026-10-20 — Phase 1 batch 9c landed for review (reverser, `lane/p46m3`, static, no harness).** Missile server
-  hit functions 1–29: 25 entries, all read ([skills/0006](../findings/skills/0006-missile-hit-1-29.md); hit 2, 3, 14,
+  hit functions 1–29: 25 entries, all read ([skills/0006](../../findings/skills/0006-missile-hit-1-29.md); hit 2, 3, 14,
   17 tier A, 3, 14, 17 emulated too, 2 not). Draws before the boundaries: hits 1, 9, 13 roll the missile's `EType` on
   its seed; hit 7's heal one `RNG_RangeB` (and the `MissileElemRoll` fallback) on the missile's seed; no other; no
   case steps the owner's or the target's seed. Raised by emulation (run:2026-10-20-cat-emu-9c,
@@ -287,9 +287,9 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   returns 2 (damage, flies on) until its frames run out; hits 16/19 apply the aura stats to the search's result, 0
   for a new list; hit 21's state test admits the States count; hit 4 reads all four `HitSubMissile` slots (the
   stride the table doc had as `[L]`). Corrections in skills/0003 § 6 (hits 2, 3, 14, 17, 22, 44). Review request
-  [to the architect](../backlog/archive/2026-10-20-reverser-architect-lane-p46m3-review-plan-0046-batch-9c.md) (three
+  [to the architect](../../backlog/archive/2026-10-20-reverser-architect-lane-p46m3-review-plan-0046-batch-9c.md) (three
   rulings: register values at a boundary, two weak controls, hit 2 unemulated); column readers
-  [to the archivist](../backlog/archive/2026-10-20-reverser-archivist-plan-0046-9c-missiles-skills-column-readers.md).
+  [to the archivist](../../backlog/archive/2026-10-20-reverser-archivist-plan-0046-9c-missiles-skills-column-readers.md).
 - **2026-10-20 — `lane/p46m3` review (architect): batch 9c accepted with fixes (2: overclaim 1, other 1).**
   Checks (kept in `workspace/logs/skills-cat-9c-review/`, `manifest.sha256` `b3761c63…`): the run's
   `sha256sum -c manifest.sha256` passes (28 files); the lane's tool (`412e3e5c…`) regenerates every kept case, memory
@@ -323,7 +323,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   (skills/0006 § 3, § 4's hit 44 and hit 14, the Answer, skills/0003 § 6's 9c note, the experiments conclusion)
   (overclaim); (2) hit 2's non-emulation given its destination (batch 9d) in skills/0006 § 16 and the experiments
   conclusion (other). Review request closed
-  ([archive](../backlog/archive/2026-10-20-reverser-architect-lane-p46m3-review-plan-0046-batch-9c.md)); ledger rows
+  ([archive](../../backlog/archive/2026-10-20-reverser-architect-lane-p46m3-review-plan-0046-batch-9c.md)); ledger rows
   added. **Batch 9d may start** (missile hit 31–59 and row 568's 64 948), with 9c's conventions (call site asserted,
   three seeds compared, pointed-to bytes compared, two controls per family). It also emulates hit 2, and it tags any
   value read from a non-argument register at a boundary `[I]`.
@@ -346,7 +346,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 - **2026-10-20 — Phase 1 batch 9d landed for review (reverser, `lane/p46m4`, static, no harness; resumed from the
   checkpoint above).** Missile server hit functions 31–59: the 24 filled entries (30, 34, 41, 42, 46, 49 and 60–70
   null, count 71), all read; 23 emulated (hit 44 is 9c's) and **hit 2** (tier A, carried from 9c by ruling 3)
-  ([skills/0007](../findings/skills/0007-missile-hit-31-59.md)). Draws before the boundaries: hit 31 (the `EType`
+  ([skills/0007](../../findings/skills/0007-missile-hit-31-59.md)). Draws before the boundaries: hit 31 (the `EType`
   roll), hit 43 (one `RNG_RangeB(PhysMax − PhysMin)`), hit 58 (re-seed from x, two `RNG_Range(2r + 1)`), all on the
   missile's seed; no case steps the owner's or the target's. Raised by emulation (run:2026-10-20-cat-emu-9d,
   `tools/skills_catalogue_emu.py --batch 9d`, `check.txt` `9ec69cf5…`, `manifest.sha256` `6fa68cd0…`): five
@@ -363,8 +363,8 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   call; the Skills `Kick` maximum divides by 3, not 4 (`[I]`). Row 568's 64 948: the four hit-table reads sit behind a
   signed `test ax, ax; jle` (scan `[C]`, meaning `[I]`). Tags: 38 `[C]`, 10 `[I]`, 4 `[L]` bullets; 28 symbols added
   (`I`). Dated notes in skills/0003 § 6 and skills/0006 § 16. Review request
-  [to the architect](../backlog/archive/2026-10-20-reverser-architect-lane-p46m4-review-plan-0046-batch-9d.md); column
-  readers [to the archivist](../backlog/archive/2026-10-20-reverser-archivist-plan-0046-9d-missiles-skills-column-readers.md).
+  [to the architect](../../backlog/archive/2026-10-20-reverser-architect-lane-p46m4-review-plan-0046-batch-9d.md); column
+  readers [to the archivist](../../backlog/archive/2026-10-20-reverser-archivist-plan-0046-9d-missiles-skills-column-readers.md).
 - **2026-10-20 — `lane/p46m4` review (architect): batch 9d accepted with fixes (4: overclaim 2, misread 1, miscount
   1).** Merged `main` (`9ef5f84`) first; no conflict, `backlog.py archive` moved nothing; 28 new symbols, no address
   or name twice in `re/symbols.csv` after the merge. **Re-run:** `sha256sum -c manifest.sha256` passes (29 files);
@@ -392,7 +392,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   and `ring_self` fails all 120 unit cases. No re-run. **Ruling (4), row 568:** the split holds. The scan
   (`tabread_scan`, every `.text` operand naming `0x73c840`, lea and push included) is `[C]`; my read of the four
   sites agrees. That the tested word is that row's `pSrvHitFunc` stays `[I]`: the layout (`+0x0E` u16) is `[C]` in
-  [Missiles](../tables/Missiles.md), but which record reaches sites 2–4 (`[ebp−4]`, `[edi]`) is the reading. Route to
+  [Missiles](../../tables/Missiles.md), but which record reaches sites 2–4 (`[ebp−4]`, `[edi]`) is the reading. Route to
   `[C]`: an emulated `MISSILE_HitUnit` case with the word at 64 948. **Ruling 1 of the 9c review held:** no claim
   rests on a non-argument register. ESI at the kick boundary is an argument and is not claimed. **Fixes, made in the
   documents:** (1) the Answer's creation bullet no longer carries hit 52's "creates class 0 (`arrow`)", nor hit 51's
@@ -401,13 +401,13 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   is in the Answer, § 2, the Functions table, the `nova9d` row, § 7 and Open questions, and in the experiments
   conclusion (misread); (4) `cls52`'s count is "120 of the 120 with `HitSubMissile1 ≠ 0`, of 173" (miscount). Review
   request closed
-  ([archive](../backlog/archive/2026-10-20-reverser-architect-lane-p46m4-review-plan-0046-batch-9d.md)); ledger rows
+  ([archive](../../backlog/archive/2026-10-20-reverser-architect-lane-p46m4-review-plan-0046-batch-9d.md)); ledger rows
   added. **The next batch (sorceress) may start**, with 9c and 9d's conventions. One addition: a meaning that a
   boundary callee gives to a compared argument or block word (a class, a mode, a monster id) is stated after the
   boundary, `[I]`, and is never part of the `[C]` sentence.
 - **2026-10-20 — Phase 1 batch `sor` landed for review (reverser, `lane/p46m5`, static, no harness).** The sorceress
   start functions 11–14 and do functions 17–29 and 144: 18 entries, all read; 17 emulated (do 27 Teleport read only)
-  with the Inferno helpers `0x005C8CA0` and `0x005C8E30` ([skills/0008](../findings/skills/0008-sorceress.md); tier A
+  with the Inferno helpers `0x005C8CA0` and `0x005C8E30` ([skills/0008](../../findings/skills/0008-sorceress.md); tier A
   do 18, 20, 22, 28 emulated too). Draws before the boundaries: do 21 (Telekinesis) only, one
   `RNG_Range(caster seed, 100)` against `Param2`; no case steps the target's seed. Raised by emulation
   (run:2026-10-20-cat-emu-sor, `tools/skills_catalogue_emu.py --batch sor`, `check.txt` `961ccef7…`,
@@ -421,8 +421,8 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   the re-arm switch; Hydra spawns classes `summon + 0..2`; do 22's velocity is read through a second missile table at
   `0x0096C794`; start 11's mana test covers any caster type. Tags: 34 `[C]`, 10 `[I]`, 4 `[L]` bullets; 25 symbols
   added (`I`). Dated note in skills/0003 § 5. Review request
-  [to the architect](../backlog/archive/2026-10-20-reverser-architect-lane-p46m5-review-plan-0046-batch-sor.md); column
-  readers [to the archivist](../backlog/archive/2026-10-20-reverser-archivist-plan-0046-sor-skills-missiles-column-readers.md).
+  [to the architect](../../backlog/archive/2026-10-20-reverser-architect-lane-p46m5-review-plan-0046-batch-sor.md); column
+  readers [to the archivist](../../backlog/archive/2026-10-20-reverser-archivist-plan-0046-sor-skills-missiles-column-readers.md).
 - **2026-10-20 — Batch `sor` reviewed (architect, on `lane/p46m5` at `d240aa5`): accept with fixes.** `main` had not
   moved past `43d534c`, so no merge. Re-run from the lane's tool (`7525830c…`): `check --batch sor` and
   `static --batch sor` reproduce `check.txt` `961ccef7…` and `static.txt` `91a6de74…` byte for byte;
@@ -471,12 +471,12 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   § 9 that do 27 returns `UnitTeleport`'s value, 0 without a room or a Levels record (omission). Counted: 3
   (misread 1, overclaim 1, omission 1). Tags after the
   review: 34 `[C]`, 11 `[I]`, 4 `[L]` bullets. Review request closed
-  ([archive](../backlog/archive/2026-10-20-reverser-architect-lane-p46m5-review-plan-0046-batch-sor.md)); ledger rows
+  ([archive](../../backlog/archive/2026-10-20-reverser-architect-lane-p46m5-review-plan-0046-batch-sor.md)); ledger rows
   added. **The next batch (amazon) may start**, with 9c, 9d and `sor`'s conventions and ruling 3's condition on
   writer scans.
 - **2026-10-20 — Phase 1 batch `ama` landed for review (reverser, `lane/p46m6`, static, no harness; resumed after the
   first session was killed by the system's out-of-memory handler, no commit lost).** The amazon start functions 4–10
-  and do functions 6, 7, 8 and 10–16: 17 entries, all read and all emulated ([skills/0009](../findings/skills/0009-amazon.md);
+  and do functions 6, 7, 8 and 10–16: 17 entries, all read and all emulated ([skills/0009](../../findings/skills/0009-amazon.md);
   tier A start 4, start 5, do 7, do 8 emulated too). Draws before the boundaries: none; no case steps the caster's or
   the target's seed (start 10's elemental `RNG_RangeB` comes after its hit test). Raised by emulation
   (run:2026-10-20-cat-emu-ama, `tools/skills_catalogue_emu.py --batch ama`, `check.txt` `03a40fde…`,
@@ -491,8 +491,8 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   pointer (Valkyrie); **do 13 (Fend, Zeal, Fury) returns 0 on every path**; do 8's fan steps perpendicular to the
   caster–point line, not along it (skills/0003 § 5 note); start 4 has no skill-record test. Tags: 31 `[C]`, 13 `[I]`,
   4 `[L]` bullets; 22 symbols added (`I`). Review request
-  [to the architect](../backlog/archive/2026-10-20-reverser-architect-lane-p46m6-review-plan-0046-batch-ama.md); column
-  readers [to the archivist](../backlog/archive/2026-10-20-reverser-archivist-plan-0046-ama-skills-column-readers.md).
+  [to the architect](../../backlog/archive/2026-10-20-reverser-architect-lane-p46m6-review-plan-0046-batch-ama.md); column
+  readers [to the archivist](../../backlog/archive/2026-10-20-reverser-archivist-plan-0046-ama-skills-column-readers.md).
 - **2026-10-20 — Batch `ama` reviewed (architect, on `lane/p46m6` at `a6eaf75`): accept with fixes.** `main` had not
   moved past `9b5dfa8`, so no merge. Re-run from the lane's tool (`69c01d13…`, unchanged since the checkpoint
   `9d0263c` that committed the killed session's tool section): `check --batch ama` and `static --batch ama` reproduce
@@ -541,13 +541,13 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   the first creation only, and `aurarangecalc` the "search radius" `[C]`; both now split the value (`[C]`) from the
   meaning (`[I]`) (overclaim). Counted: 4 (overclaim 3, stale cross-reference 1). Tags after the review: 31 `[C]`,
   13 `[I]`, 4 `[L]` bullets (no tag moved). Review request closed
-  ([archive](../backlog/archive/2026-10-20-reverser-architect-lane-p46m6-review-plan-0046-batch-ama.md)); the
+  ([archive](../../backlog/archive/2026-10-20-reverser-architect-lane-p46m6-review-plan-0046-batch-ama.md)); the
   archivist entry stays open for its lane; ledger rows added. **The next batch (necromancer, `nec`) may start**, with
   9c, 9d, `sor` and `ama`'s conventions, ruling 3 of the `sor` review on writer scans, and ruling 1's condition on
   nested boundaries.
 - **2026-10-20 — Phase 1 batch `nec` landed for review (reverser, `lane/p46m7`, static, no harness).** The necromancer
   start functions 15–21 and do functions 30–32 and 55–63: 19 entries, all read and all emulated
-  ([skills/0010](../findings/skills/0010-necromancer.md); tier A start 15, do 30, do 31 emulated too). Draws before the
+  ([skills/0010](../../findings/skills/0010-necromancer.md); tier A start 15, do 30, do 31 emulated too). Draws before the
   boundaries: none; no case steps the caster's or the target's seed (do 55's damage roll and do 58's life roll draw on
   the target's seed after their boundaries). Raised by emulation (run:2026-10-20-cat-emu-nec,
   `tools/skills_catalogue_emu.py --batch nec`, `check.txt` `10fec33a…`, `manifest.sha256` `792c0cb4…`): four families,
@@ -612,14 +612,14 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   ruling 1 (other); (8) the archivist entry's context now links MonStats and States, which it asks about (other).
   Counted: 8 (overclaim 2, misread 1, wrong anchor 1, omission 2, other 2). Tags after the review: 28 `[C]`,
   11 `[I]`, 5 `[L]` bullets (no tag moved). Review request closed
-  ([archive](../backlog/archive/2026-10-20-reverser-architect-lane-p46m7-review-plan-0046-batch-nec.md)); the
+  ([archive](../../backlog/archive/2026-10-20-reverser-architect-lane-p46m7-review-plan-0046-batch-nec.md)); the
   archivist entry stays open for its lane; ledger row added. **The next batch (paladin, `pal`) may start**, with
   9c, 9d, `sor`, `ama` and `nec`'s conventions, ruling 3 of the `sor` review on writer scans, and ruling 1's
   condition of the `ama` review on nested boundaries (a stack-slot compare or a single call site shown at each
   level of a helper chain).
 - **2026-10-20 — Phase 1 batch `pal` landed for review (reverser, `lane/p46m8`, static, no harness).** The paladin
   start functions 29, 31, 35, 36, 37 and do functions 64–67, 73, 79–82 and 150: 15 entries, all read and all emulated
-  ([skills/0011](../findings/skills/0011-paladin.md); tier A start 36, do 65, do 66 emulated too). Draws before the
+  ([skills/0011](../../findings/skills/0011-paladin.md); tier A start 36, do 65, do 66 emulated too). Draws before the
   boundaries: none; no case steps the caster's or the target's seed (the aura target passes, start 35's weapon roll
   and do 79's conversion roll draw after their boundaries, `[I]`). Raised by emulation (run:2026-10-20-cat-emu-pal,
   `tools/skills_catalogue_emu.py --batch pal`, `check.txt` `989e5367…`, `manifest.sha256` `12c8d5c0…`): three
@@ -637,8 +637,8 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   the batch tests the class or calls `0x005C2FF0`; Sacrifice's own self-hit has the same packet shape without the
   result word (`[I]`). Tags: 25 `[C]`, 12 `[I]`, 4 `[L]` bullets; 29 symbols added (`I`). Dated notes in skills/0003 § 5
   (rows 98, 102, 117 in step) and stats/0002 §§ 4, 7. Review request
-  [to the architect](../backlog/archive/2026-10-20-reverser-architect-lane-p46m8-review-plan-0046-batch-pal.md); column
-  readers [to the archivist](../backlog/archive/2026-10-20-reverser-archivist-plan-0046-pal-skills-charstats-column-readers.md).
+  [to the architect](../../backlog/archive/2026-10-20-reverser-architect-lane-p46m8-review-plan-0046-batch-pal.md); column
+  readers [to the archivist](../../backlog/archive/2026-10-20-reverser-archivist-plan-0046-pal-skills-charstats-column-readers.md).
 - **2026-10-20 — Batch `pal` reviewed (architect, on `lane/p46m8` at `d8c384b`): accept with fixes.** `main` had not
   moved past `e345eaf`, so no merge. Re-run from the lane's tool (`c1630af4…`): `check --batch pal` and
   `static --batch pal` reproduce `check.txt` `989e5367…` and `static.txt` `5fd43532…` byte for byte;
@@ -680,7 +680,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   (Answer, § 7 bullet and table row, § 8), and once per run whatever the number hit stays `[I]` (the dated note, no
   check of its own needed for the finding). The stats spec and the wiki repeat "per hit" (`states.md` asks a
   reimplementation to "consume one draw per hit"): carried to the spec-writer
-  ([backlog](../backlog/archive/2026-10-20-architect-spec-writer-stats-aura-draw-once-per-run.md)). A run with two or more
+  ([backlog](../../backlog/archive/2026-10-20-architect-spec-writer-stats-aura-draw-once-per-run.md)). A run with two or more
   units in range of one Sanctuary run would raise the per-run reading; not required.
   (4) **Do 81's 20 % roll stays `[I]`.** The seeds are compared at the self-call boundary, before `ForUnitsInRange`
   ever runs the callback `0x005D07C0`, so no case executes the LCG step; the seed compare says nothing about it.
@@ -711,17 +711,17 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   word in a column-reader entry's `[C]` is the second such fix (after `lane/p46m6`'s fix 4); added as a "Seen" line to
   reverser review-fixes rule 1. Tags after the review: 25 `[C]`, 12 `[I]`, 4 `[L]` bullets (no tag moved in
   skills/0011). Review request closed
-  ([archive](../backlog/archive/2026-10-20-reverser-architect-lane-p46m8-review-plan-0046-batch-pal.md)); the
+  ([archive](../../backlog/archive/2026-10-20-reverser-architect-lane-p46m8-review-plan-0046-batch-pal.md)); the
   archivist entry stays open for its lane; ledger row added. **The next batch (barbarian, `bar`) may start**, with
   9c, 9d, `sor`, `ama`, `nec` and `pal`'s conventions, ruling 3 of the `sor` review on writer scans, and ruling 1's
   condition of the `ama` review at each level of a helper chain.
 - **2026-10-21 — Two spec carries from the `pal` and 9a reviews landed for review (spec-writer, `lane/s46a`, static
   docs only).** (1) stats: Sanctuary's draw is one `RNG_RangeB` per drawing run `[C]` and once per run whatever the
-  number of units hit `[I]`, in [stats/README](../specs/stats/README.md#draw-order), [states § H](../specs/stats/states.md#h-draws-per-event-kind)
-  and the wiki (stats/overview I 2 → 3, stats/states I 47 → 50). (2) [quests/progression](../specs/quests/progression.md)
+  number of units hit `[I]`, in [stats/README](../../specs/stats/README.md#draw-order), [states § H](../../specs/stats/states.md#h-draws-per-event-kind)
+  and the wiki (stats/overview I 2 → 3, stats/states I 47 → 50). (2) [quests/progression](../../specs/quests/progression.md)
   W4c: missile do 17 and do 18 up to their boundary calls `[C]` and their stock rows `[I]` from skills/0004 §§ 7, 8;
   the open question narrowed to do 36 (C 116 → 117, I 321 → 322, L 6). Both backlog entries closed; review request
-  [to the architect](../backlog/archive/2026-10-21-spec-writer-architect-lane-s46a-review-stats-aura-draw-and-quests.md).
+  [to the architect](../../backlog/archive/2026-10-21-spec-writer-architect-lane-s46a-review-stats-aura-draw-and-quests.md).
 - **2026-10-21 — `lane/s46a` review (architect): accept with fixes.** Checked against stats/0002 § 7, skills/0011 § 3
   and skills/0004 §§ 7, 8 (do 17's portal test at 0x005AF2BA–0x005AF2DD re-read: it sits outside the scatter window,
   as W4c says). The `[C]` in stats/README and states § H is one `RNG_RangeB` per drawing run and the units-per-run
@@ -743,7 +743,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   row (C 13 / I 4 → C 14 / I 3, the architect's). Review request closed; ledger row added. Not merged here.
 - **2026-10-21 — Phase 1 batch `bar` landed for review (reverser, `lane/p46m9`, static, no harness).** The barbarian
   start functions 32–34 and 38–41 and do functions 2, 9, 68–72 and 74–78: 19 entries, all read and all emulated
-  ([skills/0012](../findings/skills/0012-barbarian.md); tier A start 32 and do 2 emulated too). Draws before the
+  ([skills/0012](../../findings/skills/0012-barbarian.md); tier A start 32 and do 2 emulated too). Draws before the
   boundaries: none; no case steps the caster's or the target's seed (do 69's and do 72's `RNG_Range` and do 69's
   inline step draw on the caster's seed after their `STATE_Set` boundary, `[I]`). Raised by emulation
   (run:2026-10-21-cat-emu-bar, `tools/skills_catalogue_emu.py --batch bar`, `check.txt` `13b1a4d2…`,
@@ -760,8 +760,8 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   `aurarangecalc`; start 41 aims two steps past the path's target point; do 72's rolls are on the caster's seed
   (items/0001 note). Tags: 31 `[C]`, 22 `[I]`, 4 `[L]` bullets; 32 symbols added (`I`). Dated notes in skills/0001
   § 11, skills/0003 § 5 (the Kick row in step) and items/0001. Review request
-  [to the architect](../backlog/archive/2026-10-21-reverser-architect-lane-p46m9-review-plan-0046-batch-bar.md); column
-  readers [to the archivist](../backlog/archive/2026-10-21-reverser-archivist-plan-0046-bar-skills-monstats2-column-readers.md).
+  [to the architect](../../backlog/archive/2026-10-21-reverser-architect-lane-p46m9-review-plan-0046-batch-bar.md); column
+  readers [to the archivist](../../backlog/archive/2026-10-21-reverser-archivist-plan-0046-bar-skills-monstats2-column-readers.md).
 - **2026-10-21 — `lane/p46m9` review (architect): accept with fixes.** Main (`8d9ecb5`) merged first (one conflict in
   this log, both sides kept; `backlog.py archive` moved nothing more). `check --batch bar` and `static --batch bar`
   from the lane's tool reproduce the kept `check.txt` (`13b1a4d2…`) and `static.txt` (`4808f177…`) byte for byte;
@@ -785,7 +785,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   cases); each family has one failing 90 or more. (4) **The corrections are sound as dated notes.** items/0001's row
   keeps `C` for its role (the call into `MonDropNoNoDrop`, on its harness logs) and the seed is `[I]` from objdump
   (`mov edi, edx` at `0x005D878D`, `add edi, 0x20` at `0x005D8808`, the two `RNG_Range` at `0x005D8814` and
-  `0x005D882F`): the split is sound. No spec relies on the monster's seed ([items/tc](../specs/items/tc.md) names only
+  `0x005D882F`): the split is sound. No spec relies on the monster's seed ([items/tc](../../specs/items/tc.md) names only
   the call chain, `[I]`), so no spec-writer entry is filed. **Also checked:** do 69's and do 72's draws are in `[I]`
   bullets after their `STATE_Set` boundary; do 2's `QueuedHitFind` 0 jumps to `0x0056F44F` (after the delivery call:
   1, bit 6 not set), and the found pointer is the node `+ 0x14`, so "the packet's `+0x04`" is right; do 9's and do 70's
@@ -808,13 +808,13 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   `0x005DA120` gives 0, the callee's value on bits 7 and 9) (omission); (5) § 2's "a control failing 72 or more" made
   "90 or more", as the request and this log say (other). Counted: 5 (overclaim 1, omission 3, other 1). Tags after the
   review: 31 `[C]`, 22 `[I]`, 4 `[L]` bullets (the fixes extend existing `[I]` bullets). Review request closed
-  ([archive](../backlog/archive/2026-10-21-reverser-architect-lane-p46m9-review-plan-0046-batch-bar.md)); the
+  ([archive](../../backlog/archive/2026-10-21-reverser-architect-lane-p46m9-review-plan-0046-batch-bar.md)); the
   archivist entry stays open for its lane; ledger row added. **The next batch (druid, `dru`) may start**, with 9c, 9d,
   `sor`, `ama`, `nec`, `pal` and `bar`'s conventions, and development outputs kept under their own names.
 - **2026-10-21 — Phase 1 batch `dru` landed for review (reverser, `lane/p46m10`, static, no harness).** The druid
   start functions 56–58, do functions 114–124 and do-table entries 145 and 146 (the States `srvactivefunc` of 144
   `hurricane` and 145 `armageddon`, run by `sub_0056D790_StateDoFunc` on unit event 5 with the event's skill id and
-  level): 16 entries, all read and all emulated ([skills/0013](../findings/skills/0013-druid.md); tier A do 114, do 117
+  level): 16 entries, all read and all emulated ([skills/0013](../../findings/skills/0013-druid.md); tier A do 114, do 117
   emulated too). Draws before the boundaries: do 124's `RNG_Range(caster, 0x10000)` and do 123's `RNG_Range(caster,
   0x100)`, both on the caster's seed; no case steps the target's seed (entry 146's re-seed of the caster and its point
   draws, entry 145's damage rolls and the hits' elemental rolls are after their boundaries, `[I]`). Raised by emulation
@@ -832,9 +832,9 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   `aurastat` calcs at the stack count (`[I]`); do 124's draw is the word Armageddon's first period re-seeds from
   (`[I]` after the boundary; skills/0003 § 9 note, rng/seeds open question to the spec-writer). Tags: 25 `[C]`, 25 `[I]`,
   4 `[L]` bullets; 20 symbols added (`I`). Dated notes in skills/0003 § 5 (the Firestorm row in step) and § 9. Review
-  request [to the architect](../backlog/archive/2026-10-21-reverser-architect-lane-p46m10-review-plan-0046-batch-dru.md); column
-  readers [to the archivist](../backlog/archive/2026-10-21-reverser-archivist-plan-0046-dru-skills-missiles-column-readers.md);
-  [to the spec-writer](../backlog/archive/2026-10-21-reverser-spec-writer-rng-seeds-armageddon-first-period.md) on rng/seeds.
+  request [to the architect](../../backlog/archive/2026-10-21-reverser-architect-lane-p46m10-review-plan-0046-batch-dru.md); column
+  readers [to the archivist](../../backlog/archive/2026-10-21-reverser-archivist-plan-0046-dru-skills-missiles-column-readers.md);
+  [to the spec-writer](../../backlog/archive/2026-10-21-reverser-spec-writer-rng-seeds-armageddon-first-period.md) on rng/seeds.
 - **2026-10-21 — `lane/p46m10` review (architect): accept with fixes.** Main (`f8f1e9f`) merged first (clean, no
   markers; `backlog.py archive` moved nothing). `check --batch dru` and `static --batch dru` from the lane's tool
   (`11b763dd…`) reproduce the kept `check.txt` (`592baf51…`) and `static.txt` (`d2c98496…`) byte for byte;
@@ -888,19 +888,19 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   fact over all 358 rows with `tbl:Skills.txt:ResultFlags` (omission); (7) the Answer's "no other draw before a
   boundary" scoped to constant calc programs (omission). Counted: 7 (overclaim 3, misread 1, omission 3). Tags after
   the review: 25 `[C]`, 25 `[I]`, 4 `[L]` bullets. Review request closed
-  ([archive](../backlog/archive/2026-10-21-reverser-architect-lane-p46m10-review-plan-0046-batch-dru.md)); the
+  ([archive](../../backlog/archive/2026-10-21-reverser-architect-lane-p46m10-review-plan-0046-batch-dru.md)); the
   archivist and spec-writer entries stay open for their lanes; ledger row added. **The last class batch (assassin,
   `ass`) may start**, with 9c, 9d, `sor`, `ama`, `nec`, `pal`, `bar` and `dru`'s conventions; a callee that an earlier
   batch observed may run emulated when its reads are declared, and the finding then says which paths of it were
   reached.
 - **2026-10-21 — The `dru` spec carry landed for review (spec-writer, `lane/srng`, static docs only).**
-  [rng/seeds](../specs/rng/seeds.md) *Reimplementation notes*, *Armageddon's cast draw*: do 124's
+  [rng/seeds](../../specs/rng/seeds.md) *Reimplementation notes*, *Armageddon's cast draw*: do 124's
   `RNG_Range(caster+0x20, 0x10000)` `[C]` (ADR-0021, run:2026-10-21-cat-emu-dru); the store with
   `UnitSkillSet18(used node, r)`, the node identity and the absence of another `+0x18` writer `[I]`; the open question
   narrowed to those two conditions until a run logs a first period (C 79 → 80, I 12 → 13, L 4). Wiki randomness
   updated. Backlog entry closed
-  ([archive](../backlog/archive/2026-10-21-reverser-spec-writer-rng-seeds-armageddon-first-period.md)); review request
-  [to the architect](../backlog/archive/2026-10-21-spec-writer-architect-lane-srng-review-rng-seeds-armageddon-cast-draw.md).
+  ([archive](../../backlog/archive/2026-10-21-reverser-spec-writer-rng-seeds-armageddon-first-period.md)); review request
+  [to the architect](../../backlog/archive/2026-10-21-spec-writer-architect-lane-srng-review-rng-seeds-armageddon-cast-draw.md).
 - **2026-10-21 — `lane/srng` review (architect): accept with fixes.** Read against skills/0013 §§ 1, 4, 5 and the
   Answer, skills/0003 § 9's dated note, run:2026-10-21-cat-emu-dru and the `lane/p46m10` review's rulings 2 and 3 and
   fixes 1, 5 and 7. The `[C]` paragraph of *Armageddon's cast draw* stops at do 124's `STATLIST_Alloc` @0x005C8295 or
@@ -915,12 +915,12 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   `SKILLS_ApplyAuraStats`, stats 350/351) in between (omission). Counted: 2 (omission 2). Spec-writer review-fixes rule
   4 gains this case. Research map rng/seeds row rewritten (updated 2026-10-21; C 80 / I 13 / L 4, the stale I 10
   replaced; the `dru` carry named). Review request closed
-  ([archive](../backlog/archive/2026-10-21-spec-writer-architect-lane-srng-review-rng-seeds-armageddon-cast-draw.md));
+  ([archive](../../backlog/archive/2026-10-21-spec-writer-architect-lane-srng-review-rng-seeds-armageddon-cast-draw.md));
   ledger row added (the lane's; the review's usage is the orchestrator's to add at the merge).
 - **2026-10-21 — Phase 1 batch `ass` landed for review (reverser, `lane/p46m11`, static, no harness).** The assassin
   start functions 22–28, do functions 33–52 and 54, and the progressive entries 36–41 and 143 (`srvprgfunc`, run by
   `COMBAT_PrgFinisher`; 36 also `ItemEffect` 36): 29 entries, all read and all emulated
-  ([skills/0014](../findings/skills/0014-assassin.md); tier A start 23, do 35, entries 38, 39, 143 emulated too). Draws
+  ([skills/0014](../../findings/skills/0014-assassin.md); tier A start 23, do 35, entries 38, 39, 143 emulated too). Draws
   before the boundaries: entries 37, 39, 41 and 143 step the caster's seed once inline at entry, before their record
   test, then draw on a stack seed seeded from the stepped low word (the ring's one step, 39's `RNG_Range(local, 2r)`
   pairs, 41's two steps) up to their first creation; no case steps the target's seed (do 33's knockback step and do
@@ -941,9 +941,9 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   instead of refusing; Dragon Flight alternates kick and teleport by the frame parity and reads Levels `Teleport`; do
   35 returns 1 where do 34 refuses (and after its hit path, `[I]`). Tags: 39 `[C]`, 28 `[I]`, 4 `[L]` bullets; 27 symbols added (`I`). Dated notes
   in skills/0001 § 12 and skills/0003 §§ 1, 5, 9. Review request
-  [to the architect](../backlog/archive/2026-10-21-reverser-architect-lane-p46m11-review-plan-0046-batch-ass.md); column
-  readers [to the archivist](../backlog/archive/2026-10-21-reverser-archivist-plan-0046-ass-skills-levels-column-readers.md);
-  [to the spec-writer](../backlog/archive/2026-10-21-reverser-spec-writer-combat-delivery-a3-finisher-callers-and-progressiv.md)
+  [to the architect](../../backlog/archive/2026-10-21-reverser-architect-lane-p46m11-review-plan-0046-batch-ass.md); column
+  readers [to the archivist](../../backlog/archive/2026-10-21-reverser-archivist-plan-0046-ass-skills-levels-column-readers.md);
+  [to the spec-writer](../../backlog/archive/2026-10-21-reverser-spec-writer-combat-delivery-a3-finisher-callers-and-progressiv.md)
   on combat/delivery A2/A3.
 - **2026-10-21 — `lane/p46m11` review (architect): accept with fixes.** Reviewed on the lane (head `a943188`), main not
   merged (it moved to `f805cdf` with the `srng` and `h2c` merges; neither touches skills findings or these symbols, and
@@ -989,9 +989,9 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   no-hit path; now the finisher only on a hit, then one `DeliverQueued(target, 0)` on either path (other); (4) the
   Answer's "After, from the reading" bullet had no anchor (gate W1); the after-boundary ranges of do 33, do 42, ring 37
   and the trap helper added (wrong anchor). Counted: 4 (misread 1, stale cross-reference 1, wrong anchor 1, other 1). Review request closed
-  ([archive](../backlog/archive/2026-10-21-reverser-architect-lane-p46m11-review-plan-0046-batch-ass.md)); the
-  [archivist entry](../backlog/archive/2026-10-21-reverser-archivist-plan-0046-ass-skills-levels-column-readers.md) and the
-  [spec-writer entry](../backlog/archive/2026-10-21-reverser-spec-writer-combat-delivery-a3-finisher-callers-and-progressiv.md)
+  ([archive](../../backlog/archive/2026-10-21-reverser-architect-lane-p46m11-review-plan-0046-batch-ass.md)); the
+  [archivist entry](../../backlog/archive/2026-10-21-reverser-archivist-plan-0046-ass-skills-levels-column-readers.md) and the
+  [spec-writer entry](../../backlog/archive/2026-10-21-reverser-spec-writer-combat-delivery-a3-finisher-callers-and-progressiv.md)
   (combat/delivery A2/A3, the five finisher callers and the entries' raises) are **released**, the latter with the
   negative-count and do 46 wording of fixes 1 and 3; lane ledger row added (the review's row is the orchestrator's at
   the merge). **Phase 1 status:** the seven class batches and 9a–9d are accepted, eleven of fifteen batches and 230 of
@@ -1001,14 +1001,14 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   carried `ITEMSKILL_Cast` helper items), on all the class batches' conventions; then 8a, 8b, 8c, unless the
   monster-AI plan pulls one forward. Phase 2 still waits for 0045·P3's review.
 - **2026-10-21 — The `ass` spec carry landed for review (spec-writer, `lane/s46c`, static docs only).**
-  [combat/delivery](../specs/combat/delivery.md) A2/A3 from [skills/0014](../findings/skills/0014-assassin.md) §§ 1, 4,
+  [combat/delivery](../../specs/combat/delivery.md) A2/A3 from [skills/0014](../../findings/skills/0014-assassin.md) §§ 1, 4,
   5 and run:2026-10-21-cat-emu-ass, with the `lane/p46m11` review's wording: the finisher's six callers and the
   finishing moves' calls `[C]` (do 46 runs it only on a hit, then one `DeliverQueued` on either path, `[I]` after the
   call); entries 36–41 and 143 `[C]` up to their first creation, the rest `[I]`; a ring count of 0 endless `[I]`, a
   negative count ending by the index wrap `[I]`, the stock values an `[L]` under *Open questions*. Tags {C59 I49 L3} →
   {C74 I58 L4}; open questions 3 → 4 `[L]`. Entry closed
-  ([archive](../backlog/archive/2026-10-21-reverser-spec-writer-combat-delivery-a3-finisher-callers-and-progressiv.md));
-  review request [to the architect](../backlog/archive/2026-10-21-spec-writer-architect-lane-s46c-review-combat-delivery-finisher-callers.md).
+  ([archive](../../backlog/archive/2026-10-21-reverser-spec-writer-combat-delivery-a3-finisher-callers-and-progressiv.md));
+  review request [to the architect](../../backlog/archive/2026-10-21-spec-writer-architect-lane-s46c-review-combat-delivery-finisher-callers.md).
 - **2026-10-21 — `lane/s46c` review (architect): accept with fixes.** Reviewed on the lane (head `b3c7c03`), main not
   merged (it moved to `945f2f7` with the items/tc and items/properties re-tag, which touches no combat file). Every new
   or changed claim of combat/delivery A2/A3 read against skills/0014 §§ 1, 4, 5, run:2026-10-21-cat-emu-ass (§ 2's
@@ -1034,13 +1034,13 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   after the first creation" (overclaim); (5) A2's bold "each finishing move delivers once" against do 42's second
   delivery in the same bullet (misread). Counted: 5 (overclaim 3, miscount 1, misread 1). Spec-writer review-fixes
   rule 2 gains this Seen line (a `[C]` boundary reached on one path stated for all). Review request closed
-  ([archive](../backlog/archive/2026-10-21-spec-writer-architect-lane-s46c-review-combat-delivery-finisher-callers.md));
+  ([archive](../../backlog/archive/2026-10-21-spec-writer-architect-lane-s46c-review-combat-delivery-finisher-callers.md));
   lane ledger row added (the review's row is the orchestrator's at the merge). Gate fast tier green.
 - **2026-10-21 — Phase 1 batch 10 `item` landed for review (reverser, `lane/p46m12`, static, no harness).** Unsummon's
   start 3 and do 4, do 113 (rows 217–220) and do 151 (row 53's `ItemEffect`), and the callers: `ITEMSKILL_Cast` with
   its `ItemTarget` helpers 2–4 and its two callers, the stat-event handlers 20, 21, 30, `SKILLS_PayCost`'s charge path,
   the shrine functions 19, 21, 22 and the object and quest `MissileCreateAt` sites
-  ([skills/0015](../findings/skills/0015-item.md)). All four entries and the ten callers emulated (the three helpers inside the cast)
+  ([skills/0015](../../findings/skills/0015-item.md)). All four entries and the ten callers emulated (the three helpers inside the cast)
   (run:2026-10-21-cat-emu-item, `tools/skills_catalogue_emu.py --batch item`, `check.txt` `22402718…`,
   `manifest.sha256` `3e974e32…`): five families, 12 000 cases, 0 mismatches, 31 boundary/call-site triples (site
   control 4 936 of 4 936), three seeds compared in every case; five to nine negative controls per family, the thin
@@ -1056,9 +1056,9 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   exploding and poison shrines drop 5–9 potions; Unsummon's `PetRemove` flag is a `push 1` left across
   `UnitSkillGet18`. Tags: 29 `[C]`, 22 `[I]`, 4 `[L]` bullets; 26 symbols added (`I`). Dated notes in skills/0001
   § 10 and skills/0003 §§ 2, 3. Review request
-  [to the architect](../backlog/archive/2026-10-21-reverser-architect-lane-p46m12-review-plan-0046-batch-item.md); column
-  readers [to the archivist](../backlog/archive/2026-10-21-reverser-archivist-plan-0046-item-skills-pettype-books-shrines-column.md);
-  [to the spec-writer](../backlog/archive/2026-10-21-reverser-spec-writer-combat-delivery-e5-item-cast-helpers-and-effect.md)
+  [to the architect](../../backlog/archive/2026-10-21-reverser-architect-lane-p46m12-review-plan-0046-batch-item.md); column
+  readers [to the archivist](../../backlog/archive/2026-10-21-reverser-archivist-plan-0046-item-skills-pettype-books-shrines-column.md);
+  [to the spec-writer](../../backlog/archive/2026-10-21-reverser-spec-writer-combat-delivery-e5-item-cast-helpers-and-effect.md)
   on combat/delivery E5.
 - **2026-10-21 — `lane/p46m12` review (architect): accept with fixes.** Reviewed on the lane (head `bcdb4ca`), main not
   merged (it moved to `483728e` with the items/tc, items/properties and combat/delivery A2/A3 merges; none touches a
@@ -1116,10 +1116,10 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   where § 4 has it `[I]` after the boundary (overclaim). Counted: 6 (overclaim 1, misread 1, omission 2, wrong anchor
   1, stale cross-reference 1). Promoted: fixes 1 and 2 are both a claim about callers with a caller path unnamed,
   reverser review-fixes rule 9 gains them as Seen lines. Review request closed
-  ([archive](../backlog/archive/2026-10-21-reverser-architect-lane-p46m12-review-plan-0046-batch-item.md)); the
-  [archivist entry](../backlog/archive/2026-10-21-reverser-archivist-plan-0046-item-skills-pettype-books-shrines-column.md)
+  ([archive](../../backlog/archive/2026-10-21-reverser-architect-lane-p46m12-review-plan-0046-batch-item.md)); the
+  [archivist entry](../../backlog/archive/2026-10-21-reverser-archivist-plan-0046-item-skills-pettype-books-shrines-column.md)
   (Skills, PetType, Books, Shrines and Misc column readers, with fix 3's wording) and the
-  [spec-writer entry](../backlog/archive/2026-10-21-reverser-spec-writer-combat-delivery-e5-item-cast-helpers-and-effect.md)
+  [spec-writer entry](../../backlog/archive/2026-10-21-reverser-spec-writer-combat-delivery-e5-item-cast-helpers-and-effect.md)
   (combat/delivery E5, with fixes 1, 2 and 6 and ruling 1's `[I]` for the composed chain) are **released**; lane
   ledger row added (the review's row is the orchestrator's at the merge). **Phase 1 status:** the seven class batches,
   9a–9d and batch 10 are accepted, twelve of fifteen batches and 234 of the 310 entries (the other 76: 8a–8c's 70 and
@@ -1128,18 +1128,18 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   the monster-AI plan pulls one forward or takes a function as a boundary oracle (ADR-0020). Phase 2 still waits for
   0045·P3's review.
 - **2026-10-21 — combat/delivery E5 from batch `item` landed for review (spec-writer, `lane/s46d`).** The released
-  [spec-writer entry](../backlog/archive/2026-10-21-reverser-spec-writer-combat-delivery-e5-item-cast-helpers-and-effect.md)
-  done: [combat/delivery](../specs/combat/delivery.md) E5 rewritten from [skills/0015](../findings/skills/0015-item.md)
+  [spec-writer entry](../../backlog/archive/2026-10-21-reverser-spec-writer-combat-delivery-e5-item-cast-helpers-and-effect.md)
+  done: [combat/delivery](../../specs/combat/delivery.md) E5 rewritten from [skills/0015](../../findings/skills/0015-item.md)
   §§ 4–7 with the `lane/p46m12` review's fixes 1, 2, 6 and ruling 1 (handlers 20/21/30, the callers, `ITEMSKILL_Cast`,
   helper 2's first try and do 151 `[C]` to their boundaries; the composed handler → helper chain, the effect flag only
   from handler 20 without `ItemTgtDo`, do 151 starting at the target unit `[I]`), A3's entry-36 bullet scoped, a
   `SKILLS_PayCost` reimplementation note, the helpers open question struck. Tags `{C: 74, I: 58, L: 4}` →
   `{C: 80, I: 63, L: 3}`; open questions with `[L]` 3. Review request
-  [to the architect](../backlog/archive/2026-10-21-spec-writer-architect-lane-s46d-review-combat-delivery-e5-item-cast.md).
+  [to the architect](../../backlog/archive/2026-10-21-spec-writer-architect-lane-s46d-review-combat-delivery-e5-item-cast.md).
 - **2026-10-21 — `lane/s46d` review (architect): accept with fixes.** Reviewed on the lane (head `0a87a81`), main not
   merged (it moved to `0e760e1` with the p48r2 merge, which touches no combat spec or skills finding). Every new or
   changed E5, A3, reimplementation-note, Inputs, Evidence and open-question claim read against
-  [skills/0015](../findings/skills/0015-item.md) §§ 4–7, run:2026-10-21-cat-emu-item (`check.txt`: `event_item` 3 000
+  [skills/0015](../../findings/skills/0015-item.md) §§ 4–7, run:2026-10-21-cat-emu-item (`check.txt`: `event_item` 3 000
   cases, outcomes `nounit=92 nochance=1328 norec=158 nobit2=332 nobit5=208 tgtdo=49 tgtdo_none=13`; `cast_item`
   `nogame=71 notarget=36 state54=184 PatternTest=163`), skills/0003 § 2, ADR-0021 and the `lane/p46m12` review's fixes
   and rulings; objdump read of handler 21 (`0x005C05A0`–`0x005C0668`), handler 30's head (`0x005C0670`–`0x005C06F9`)
@@ -1165,12 +1165,12 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   too): stated once for the three (omission). Counted: 4 (overclaim 1, misread 2, omission 1). **Research-map** combat
   row rewritten: C 236 / I 190 / L 23, the batch `item` clause, skills/0015 among the findings, plan 0046's `item`
   carry. Review request closed
-  ([archive](../backlog/archive/2026-10-21-spec-writer-architect-lane-s46d-review-combat-delivery-e5-item-cast.md));
+  ([archive](../../backlog/archive/2026-10-21-spec-writer-architect-lane-s46d-review-combat-delivery-e5-item-cast.md));
   lane ledger row added. Promoted: fix 1 as a Seen line on spec-writer rule 2 (a boundary reached on one path) and
   fix 4 on rule 3 (re-read each restated condition); both rules had earlier Seen lines.
 - **2026-10-21 — Phase 1 batch 8a landed for review (reverser, `lane/p46m13`, static, no harness).** The monster skill
   functions of Skills rows 156–189: start 42–53, do 83–98, 110, 111, 30 entries, all read and all emulated
-  ([skills/0016](../findings/skills/0016-monster-8a.md); six start entries have no Ghidra function and were read from
+  ([skills/0016](../../findings/skills/0016-monster-8a.md); six start entries have no Ghidra function and were read from
   objdump). Raised by emulation (run:2026-10-21-cat-emu-8a, `tools/skills_catalogue_emu.py --batch 8a`, `check.txt`
   `b06f25a1…`, `static.txt` `f4ed00d9…`, `manifest.sha256` `10a8ce1f…`): five families, 12 600 cases, 0 mismatches, 31 boundary/call-site triples
   (site control 5 135 of 5 135), both seeds compared in every case, every dumped byte written by its case; one to eight
@@ -1185,8 +1185,8 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   adds the MonStats chain position to `srvmissilea`; do 93's target words are offsets; do 98 falls back to the owner's
   room; thirteen entries make no id test. Tags: 34 `[C]`, 6 `[I]`, 4 `[L]` bullets; 38 symbols added (`I`). Dated
   note in skills/0003 § 4 (do 83). Review request
-  [to the architect](../backlog/archive/2026-10-21-reverser-architect-lane-p46m13-review-plan-0046-batch-8a.md); column readers
-  [to the archivist](../backlog/archive/2026-10-21-reverser-archivist-plan-0046-8a-skills-monstats-missiles-column-reade.md).
+  [to the architect](../../backlog/archive/2026-10-21-reverser-architect-lane-p46m13-review-plan-0046-batch-8a.md); column readers
+  [to the archivist](../../backlog/archive/2026-10-21-reverser-archivist-plan-0046-8a-skills-monstats-missiles-column-reade.md).
   No spec-writer entry: no spec states these functions yet (Phase 3 takes the finding).
 - **2026-10-21 — `lane/p46m13` review (architect): accept with fixes.** Reviewed on the lane (head `53060fe`), main not
   merged (it moved to `bce3d86` with the p48r2 and s46d merges; neither touches a skills finding, and none of the 38
@@ -1240,8 +1240,8 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   `MissileRec(m)` none → 0 on the `srvmissilea` path (`0x005CE264`) (omission). Counted: 5 (misread 3, omission 2).
   Promoted: fix 2 and the `lane/p46m11` review's ring-count wrap are both an integer wrap bound stated without the
   computation, reverser review-fixes rule 15. Review request closed
-  ([archive](../backlog/archive/2026-10-21-reverser-architect-lane-p46m13-review-plan-0046-batch-8a.md)); the
-  [archivist entry](../backlog/archive/2026-10-21-reverser-archivist-plan-0046-8a-skills-monstats-missiles-column-reade.md)
+  ([archive](../../backlog/archive/2026-10-21-reverser-architect-lane-p46m13-review-plan-0046-batch-8a.md)); the
+  [archivist entry](../../backlog/archive/2026-10-21-reverser-archivist-plan-0046-8a-skills-monstats-missiles-column-reade.md)
   (Skills `Param4`, `lob`, `summon`/`summode`, MonStats `spawn*` and `+0x4B`, Missiles `Vel`/`VelLev`, MonStats2
   `InfernoLen`/`InfernoAnim` readers; read against § 3–6, no fix touches it) is **released**; lane ledger row added (the
   review's row is the orchestrator's at the merge). **Phase 1 status:** the seven class batches, 9a–9d, batch 10 and
@@ -1252,7 +1252,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   0045·P3's review.
 - **2026-10-21 — Phase 1 batch 8b landed for review (reverser, `lane/p46m14`, static, no harness).** The monster skill
   functions of Skills rows 190–289: start 54, 55, 59, 60, 64, do 99–109, 112, 125–127, 141, 152, 22 entries, all read
-  and all emulated ([skills/0017](../findings/skills/0017-monster-8b.md)). Raised by emulation
+  and all emulated ([skills/0017](../../findings/skills/0017-monster-8b.md)). Raised by emulation
   (run:2026-10-21-cat-emu-8b, `tools/skills_catalogue_emu.py --batch 8b`, `check.txt` `2f000a04…`, `static.txt`
   `4c181a27…`, `manifest.sha256` `1c9c42ff…`): four families, 9 200 cases, 0 mismatches, 27 boundary/call-site triples
   (site control 3 698 of 3 698), both seeds compared in every case, every dumped byte written by its case; three to
@@ -1268,8 +1268,8 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   whatever the id; do 104 writes `summode` over its level argument and never uses it; do 105's missiles take their y
   position from the x offset; do 127's life unit is 0 for a player caster; start 59 is start 53 with calc1 for calc2.
   Tags: 32 `[C]`, 5 `[I]`, 3 `[L]` bullets; 28 symbols added (`I`). Review request
-  [to the architect](../backlog/archive/2026-10-21-reverser-architect-lane-p46m14-review-plan-0046-batch-8b.md); column readers
-  [to the archivist](../backlog/archive/2026-10-21-reverser-archivist-plan-0046-8b-skills-missiles-column-readers.md). No
+  [to the architect](../../backlog/archive/2026-10-21-reverser-architect-lane-p46m14-review-plan-0046-batch-8b.md); column readers
+  [to the archivist](../../backlog/archive/2026-10-21-reverser-archivist-plan-0046-8b-skills-missiles-column-readers.md). No
   spec-writer entry: no spec states these functions yet (Phase 3 takes the finding).
 - **2026-10-21 — `lane/p46m14` review (architect): accept with fixes.** Reviewed on the lane (head `f4e5227`), main not
   merged (it moved to `a12993b`: plan 0048 closed and moved to `plans/done/` with its links rewritten; none of it
@@ -1318,7 +1318,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   `0x005CD60D`), and the slot is not read after it; do 105's y position from `dx / 6` (`0x005CD81B`–`0x005CD838`, both
   position words from `esi`); do 127's life unit 0 for a non-monster caster (`0x005D1724`–`0x005D1743`). What the game
   shows for them stays under *Open questions*. (8) **The archivist entry is released**
-  ([entry](../backlog/archive/2026-10-21-reverser-archivist-plan-0046-8b-skills-missiles-column-readers.md); read against
+  ([entry](../../backlog/archive/2026-10-21-reverser-archivist-plan-0046-8b-skills-missiles-column-readers.md); read against
   §§ 3–5, no fix touches a column it names). **No spec-writer entry** is right: no spec states these functions;
   Phase 3 takes skills/0016 and 0017. (9) The tool's `near8` docstring still says "below 258" (the `lane/p46m13` review
   fix 2 left it to the next revision); it is carried to 8c's tool revision, the hash here being cited. `dev/notes.txt`
@@ -1331,7 +1331,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   `0x005CE31A`) (omission); (4) § 4 do 127: the cap reworded to `min(d, life)` from "the target's life when not above
   it" (other). Counted: 4 (misread 2, omission 1, other 1). Promoted: fix 1 is a third Seen line on reverser rule 15
   (name the operation that wraps and whether a wrapping path reaches a use). Review request closed
-  ([archive](../backlog/archive/2026-10-21-reverser-architect-lane-p46m14-review-plan-0046-batch-8b.md)); lane ledger
+  ([archive](../../backlog/archive/2026-10-21-reverser-architect-lane-p46m14-review-plan-0046-batch-8b.md)); lane ledger
   row added (the review's row is the orchestrator's at the merge). **Phase 1 status:** the seven class batches, 9a–9d,
   batch 10, 8a and 8b are accepted, fourteen of fifteen batches and 286 of the 310 entries (the other 24: 8c's 18 and
   the six `general` tier-A entries plan 0045 read). Phase 1 is **not** complete. **Next for 0046:** batch 8c, carrying
@@ -1340,7 +1340,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   0045·P3's review.
 - **2026-10-21 — Phase 1 batch 8c paused at the owner's request (reverser, `lane/p46m15`, static, no harness).** Done
   and committed: the monster skill functions of Skills rows 290–338, start 61–63, do 128–137, 139, 140, 147–149, 18
-  entries, all read and all emulated ([skills/0018](../findings/skills/0018-monster-8c.md), draft for review); run
+  entries, all read and all emulated ([skills/0018](../../findings/skills/0018-monster-8c.md), draft for review); run
   run:2026-10-21-cat-emu-8c (`tools/skills_catalogue_emu.py --batch 8c`, tool `8911d02a…`, `check.txt` `500b673c…`,
   `static.txt` `873640da…`, `manifest.sha256` `9dc63588…`): four families, 8 800 cases, 0 mismatches, 23
   boundary/call-site triples (site control 2 376 of 2 376), every control equal to its deciding class (18 `CLASS`
@@ -1360,7 +1360,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   plan 0045 read (start 1, 2, 65, do 1, 3, 5 of rows 0–5; Unsummon's start 3 and do 4 went to batch 10) — read by plan
   0045, not re-read by a 0046 batch; the architect to rule whether they count as covered for Phase 1's close.
 - **2026-10-21 — Phase 1 batch 8c landed for review (reverser, `lane/p46m15`, static, no harness; resumed after the
-  owner's pause).** [skills/0018](../findings/skills/0018-monster-8c.md): start 61–63, do 128–137, 139, 140, 147–149,
+  owner's pause).** [skills/0018](../../findings/skills/0018-monster-8c.md): start 61–63, do 128–137, 139, 140, 147–149,
   18 entries, all read and all emulated; run:2026-10-21-cat-emu-8c as in the paused entry above (8 800 cases, 0
   mismatches, site control 2 376 of 2 376 over 23 triples, 18 `CLASS` lines each equal to its control; counts rechecked
   against the kept `check.txt` `500b673c…`). Self-check against reverser review-fixes 1–15 made; one fix: § 2's "each
@@ -1370,8 +1370,8 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   Baal's arm of `0x0063EFA0` (two or three `RNG_Range` on the caster's seed, § 7 `[I]`), put to the review. No machinery
   path beyond plan 0045's spec (no 0045 correction filed); do 129's direct call of do 98 is a catalogue fact. Tags: 27
   `[C]`, 10 `[I]`, 3 `[L]` bullets; 30 symbols (`I`). Filed:
-  [archivist entry](../backlog/archive/2026-10-21-reverser-archivist-plan-0046-8c-skills-monstats-column-readers.md) (column
-  readers), [review request](../backlog/archive/2026-10-21-reverser-architect-lane-p46m15-review-plan-0046-batch-8c.md). **Next:**
+  [archivist entry](../../backlog/archive/2026-10-21-reverser-archivist-plan-0046-8c-skills-monstats-column-readers.md) (column
+  readers), [review request](../../backlog/archive/2026-10-21-reverser-architect-lane-p46m15-review-plan-0046-batch-8c.md). **Next:**
   the architect's review of 8c, and the ruling on the six `general` entries plan 0045 read for Phase 1's close.
 - **2026-10-21 — `lane/p46m15` review (architect): accept with fixes. Phase 1 closed.** Reviewed on the lane (head
   `b89926c`), main not merged (it moved to `fafcd32`: plan 0047 Phase 2b, combat and tools; it touches no skills
@@ -1419,7 +1419,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   emulation over a scratch image raises no symbol row). (8) **The surprises stand** as code readings inside the map (do
   148/149's one byte, do 132's slot write, do 136's point test before bit 6, the three entries with no id test, do 134's
   stock gate); what the game shows for them stays under *Open questions*. (9) **The archivist entry is released**
-  ([entry](../backlog/archive/2026-10-21-reverser-archivist-plan-0046-8c-skills-monstats-column-readers.md)) after fix 3. **No
+  ([entry](../../backlog/archive/2026-10-21-reverser-archivist-plan-0046-8c-skills-monstats-column-readers.md)) after fix 3. **No
   spec-writer entry** is right: no spec states these functions; Phase 3 takes skills/0004–0018. **Fixes, made in the
   documents:** (1) skills/0018 § 7 (and the Answer's draw bullet, and a new `[L]` under *Open questions*): the arm's two
   class constants are guarded by the MonStats count (570 or 562 when the count is above it, else −1); the five
@@ -1436,7 +1436,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   still read "thirteen accepted … 8b next" and is brought to Phase 1's close; the research map lacked the
   `skills/dispatch`, `skills/missiles` and `skills/catalogue` rows this plan's Context says are added when 0045 starts,
   added now as `findings in progress` (architect rule 8, Seen line added). Review request closed
-  ([archive](../backlog/archive/2026-10-21-reverser-architect-lane-p46m15-review-plan-0046-batch-8c.md)); lane ledger
+  ([archive](../../backlog/archive/2026-10-21-reverser-architect-lane-p46m15-review-plan-0046-batch-8c.md)); lane ledger
   rows added (the review's row is the orchestrator's at the merge). **Phase 1 status: closed.** All fifteen batches
   accepted (9a–9d, the seven classes, 10 `item`, 8a–8c), 304 entries read by this plan's batches and the six `general`
   entries by plan 0045: 310 of 310, in skills/0004–0018. **Next for 0046:** Phase 2 (harness sample, one slot) stays
@@ -1444,14 +1444,14 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   Phase 3 (spec-writer) is released by Phase 1's close as far as this plan goes, and runs in the spec-writer queue's
   order (after 0045·P3 and P4; it merges after any open 0045 spec change, ADR-0020). The static lane A that held 0046·P1
   is free.
-- **2026-10-30 — Unpaused (owner; architect, `lane/unp`).** [Plans README](README.md) § Owner decisions (2026-10-30).
+- **2026-10-30 — Unpaused (owner; architect, `lane/unp`).** [Plans README](../README.md) § Owner decisions (2026-10-30).
   **Phase 2 runs** (`lane/p46h`, harness slot 2, one slot as planned), with ruling 1's Baal Tentacle item. Its gate
   (0045·P3's review, 2026-10-27) is open and 0050·P2 has started (owner, 2026-10-25), so nothing waits.
 - **2026-10-30 — Phase 2 landed for review (reverser, `lane/p46h`, harness slot 2 only, no Ghidra; the owner unpaused
   all work today).** `run:2026-10-30-skills-catalogue`: 12 sessions (`tools/skills_catalogue_sessions.py`, logger rev 5
   unchanged; `SkillsSor` for the monster families, the new `SkillsChain` recipe for the item family), `tools/skills.py`
-  over the 12 logs **0 mismatches** after two additions the run forced, record in [experiments](../findings/skills/experiments.md#run2026-10-30-skills-catalogue)
-  and [skills/0003 § 17](../findings/skills/0003-handlers.md#17-plan-0046-phase-2-the-catalogue-sample-run2026-10-30-skills-catalogue).
+  over the 12 logs **0 mismatches** after two additions the run forced, record in [experiments](../../findings/skills/experiments.md#run2026-10-30-skills-catalogue)
+  and [skills/0003 § 17](../../findings/skills/0003-handlers.md#17-plan-0046-phase-2-the-catalogue-sample-run2026-10-30-skills-catalogue).
   **Families, each by one member at or above 30 events:** 8a 181 Resurrect (66 starts, 66 do events), 160 ShamanFire
   (39 · 37); 8b 282 Imp Inferno (33 · 1 004); 8c 299 Imp Fire Missile (213 · 198), 330 Imp Teleport (354 · 347), 295
   Overseer Whip (61 · 61); item 53 Chain Lightning cast by *of Chain Lightning* items (64 do events, effect argument 1).
@@ -1484,7 +1484,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   charged suffixes, do 151 itself, Act 2 8a, per-family chained pairs) meet the Done-when (a family is reached; absent members named with reasons).
   P3 carries them as short floors under Open questions; Baal Tentacle goes to the monster-AI plan or a wave-starting session; none blocks P3. Main was not
   merged; `test_d2s`'s `RECIPE_BASES` failure is pre-existing on the base and passes on main.
-- **2026-10-30 — Phase 3 landed for review (spec-writer, `lane/s46`, static docs only).** [skills/catalogue](../specs/skills/catalogue.md)
+- **2026-10-30 — Phase 3 landed for review (spec-writer, `lane/s46`, static docs only).** [skills/catalogue](../../specs/skills/catalogue.md)
   written, `draft`, tags C 255 / I 97 / L 7: § A how an entry is written (shapes, the boundary rule, "no draw" before
   the boundary, callees and tier A linked to skills/dispatch § O and skills/missiles § G, not restated); § B every
   draw by seed (one table; creation callbacks; the after-boundary draws `[I]`); §§ C–F the missile do, damage and hit
@@ -1541,8 +1541,22 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   restated 304 entries by hand; most fixes are compressions of the findings' maps that dropped a condition. The
   promotion is still right: every fix is in place and none needed new evidence. **Bookkeeping:** status `reviewed`;
   research map row rewritten; skills/README row; plans README row and this plan's status; review request closed
-  ([archive](../backlog/archive/2026-10-30-spec-writer-architect-lane-s46-review-plan-0046-phase-3-catalogue.md));
+  ([archive](../../backlog/archive/2026-10-30-spec-writer-architect-lane-s46-review-plan-0046-phase-3-catalogue.md));
   lane ledger row's verdict and fixes filled, review row appended (usage left to the orchestrator). **Promoted:** a
   Seen line on spec-writer rule 2 (past-boundary text in a `[C]` block) and on rule 3 (the handlers' chance exits,
   again). **Next for 0046:** Phase 4 (spec-writer): the catalogue section of wiki/skills, by class, `based_on` adding
   skills/catalogue.
+
+- **2026-10-30 — Phase 4 reviewed, plan closed: accept with fixes (3) (architect, Tier B lane check, `lane/w46`).**
+  The catalogue section of [skills and missiles](../../wiki/skills.md) and its README rows: no tags, no history, every
+  link and fragment resolves, the 310 entries, the class ranges, the draw summary and the short floors agree with
+  [skills/catalogue](../../specs/skills/catalogue.md). **Fixes (3):** misread 2 (the "seed no unit keeps" bullet gave
+  start 55 the progressive entries' copy of the caster's seed, while the spec draws it from a local seed built from the
+  target's and caster's ids; "310 entries" beside "the six general-purpose entries stay in the machinery specs" read as
+  310 without them, the spec counts them in), stale cross-reference 1 (the root README still listed 0046 as in flight
+  and its `skills/catalogue` row as "findings in progress"). **Rulings:** a class table that lists entry numbers only
+  is acceptable (the entries live in the spec, the wiki points at them). **Plan closed:** Phases 0 to 4 are all
+  accepted, so status is done, the plan is moved to `docs/plans/done/`, its links and the index row are fixed.
+  Request closed
+  ([archive](../../backlog/archive/2026-10-30-spec-writer-architect-lane-w46-review-plan-0046-phase-4-wiki.md));
+  review row appended.

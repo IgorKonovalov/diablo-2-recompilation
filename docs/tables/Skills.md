@@ -13,7 +13,7 @@ aura and passive stats, summon, item-type requirements, level and mana costs, da
 the reader so far is `items/affixes`: the staff-mods roll picks class skills by id and tests their item-type
 requirement ([items/0005 § 9](../findings/items/0005-affixes.md#9-staff-mods-items_rollstaffmodsitem-ecx-rec-edx-0x005c1260),
 plan 0021). The skills machinery (`skills/dispatch`, `skills/missiles`) is [plan 0045](../plans/done/0045-skills-missiles-machinery.md)
-and the function catalogue [plan 0046](../plans/0046-skills-function-catalogue.md); their columns are § [Dispatch](#dispatch-plan-0045-phase-0).
+and the function catalogue [plan 0046](../plans/done/0046-skills-function-catalogue.md); their columns are § [Dispatch](#dispatch-plan-0045-phase-0).
 Monster AI's choice of skill is ADR-0014 phase (5). Leads: no lead; derived from data.
 
 ## Row identity
@@ -793,7 +793,7 @@ The columns of the tables below:
   counts here), `item` (the four scroll and book rows) or `general` (rows 0–5, the `general` bit). `ItemEffect` users
   are not counted (an item cast of another row's skill); a `srvactivefunc`-only entry counts the Skills rows whose
   `aurastate` is that state.
-- **Batch**: the plan [0046](../plans/0046-skills-function-catalogue.md) Phase 1 batch, by rule: the class with most
+- **Batch**: the plan [0046](../plans/done/0046-skills-function-catalogue.md) Phase 1 batch, by rule: the class with most
   rows (a tie goes to the first in PlayerClass order), else `monster` when a monster row uses it, else `item` (a scroll
   row or an `ItemEffect` cast), else `general`. 12 entries have rows of two classes or more and 22 have class and
   monster rows; the rule puts them with the class (`ix_multiclass=12`, `ix_class_and_monster=22`).
@@ -1101,6 +1101,6 @@ The animation, sequence and delay columns, by the layout of [§ Animation, range
 - `[L]` Whether `Id` is a u16 or a u32 (`+0x002` is 0 in every record).
 - `[L]` Every meaning not tagged in the tables, and what each numbered function reads of its rows (the parameters,
   calcs, missiles and states of § [Function index](#function-index-plan-0046-phase-0)). Owner: reverser, plan
-  [0046](../plans/0046-skills-function-catalogue.md) Phase 1, by its batches.
+  [0046](../plans/done/0046-skills-function-catalogue.md) Phase 1, by its batches.
 - `[L]` `manashift` is laid out as a u16 (`+0x188`, values 2..8) and read as a byte by the formula variables; whether
   any reader takes the high byte (`+0x189`, 0 in every record).
