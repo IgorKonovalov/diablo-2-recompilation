@@ -133,4 +133,5 @@ def run_window(A, lid, w):
 
 
 
-main()
+if __name__ == "__main__":
+    main()

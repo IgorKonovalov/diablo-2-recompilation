@@ -1,13 +1,16 @@
 #!/usr/bin/env python3
-"""Golden traces: seeds and their expected world and drops, as conformance cases (plan 0059 Phase 1).
+"""Golden traces: seeds and their expected world and drops, as conformance cases (plan 0059 Phases 1-2).
 
     python3 -I tools/golden.py emit --out SET.jsonl [--run NAME] [--excel DIR] [--drops-per-log N] [--no-verify]
                                     [--chain-check] LOG [LOG ...]                        # observed cases from kept logs
+    python3 -I tools/golden.py emit --drlg --out SET.jsonl [--run NAME] [--excel DIR] LOG [LOG ...]
+                                                                               # observed DRLG windows (outdoor, maze)
     python3 -I tools/golden.py emit --out SET.jsonl --predicted --seeds 4802,100-103 [--diffs 0,1,2] [--exps 0,1]
                                     [--levels 1,57,103] [--excel DIR]                   # predicted cases from the model
     python3 -I tools/golden.py check SET.jsonl CANDIDATE.jsonl [--fields PREFIX] [--limit N]
     python3 -I tools/golden.py digest SET.jsonl          # the set's digest (header identity + canonical case lines)
     python3 -I tools/golden.py digest --value            # sha256 of the canonical JSON on stdin (bulky output values)
+    python3 -I tools/golden.py coverage SET              # cases per field pattern and kind, distinct levels reached
     python3 -I tools/golden.py fields                    # every field pattern with its spec step
     python3 -I tools/golden.py sample SET --out S.jsonl [--worlds N] [--drops N]   # a small spread subset of a set
     python3 -I tools/golden.py merge A.jsonl B.jsonl ... --out M.jsonl             # sets of one header, joined
@@ -48,6 +51,14 @@ DEFAULT_EXCEL = os.path.join(ROOT, "workspace", "merged", "data", "global", "exc
 VERSION = 1
 KINDS = ("observed", "predicted")
 SCOPE = "world,drops"
+SCOPE_WORDS = (("world", "world"), ("drop", "drops"), ("drlg", "drlg"))
+
+
+def scope_of(cases, base=""):
+    """The header's scope: the case types present, in the fixed order world, drops, drlg (plus a base scope's words)."""
+    have = {c["type"] for c in cases}
+    have_words = {w for t, w in SCOPE_WORDS if t in have} | {w for w in base.split(",") if w}
+    return ",".join(w for _t, w in SCOPE_WORDS if w in have_words)
 
 # field pattern -> (spec step, spec section). A trailing `.<n>` in a name is an index (level id, act number): the
 # pattern ends in `.N`. docs/formats/golden-trace.md lists the same table.
@@ -76,6 +87,14 @@ FIELDS = collections.OrderedDict([
     ("chain.G1.item", ("G1 [base item id, quality, unique/set index] per item", "items/quality")),
     ("chain.G1.count", ("G1 items made", "items/tc")),
     ("chain.G1.end_seed", ("G1 the dying unit's seed at TCEND", "items/tc")),
+    ("drlg.outdoor.seed_after", ("outdoor window: the level seed after the window (OD1)", "drlg/outdoor")),
+    ("drlg.outdoor.presets_digest", ("outdoor window: digest of the preset anchors [def, x, y, file index, grid0 flags]", "drlg/outdoor")),
+    ("drlg.outdoor.preset_count", ("outdoor window: preset anchors made", "drlg/outdoor")),
+    ("drlg.outdoor.rooms_digest", ("outdoor window: digest of the out rooms [x, y] in creation order", "drlg/outdoor")),
+    ("drlg.outdoor.room_count", ("outdoor window: out rooms made", "drlg/outdoor")),
+    ("drlg.maze.seed_after", ("maze window: the level seed after the window (MZ1)", "drlg/maze")),
+    ("drlg.maze.rooms_digest", ("maze window: digest of the rooms [x, y, w, h, def, index] relative to the bounding box, in order", "drlg/maze")),
+    ("drlg.maze.room_count", ("maze window: rooms made", "drlg/maze")),
 ])
 _PAT = [(re.compile("^" + re.escape(p).replace(r"\.N", r"\.\d+") + "$"), p) for p in FIELDS]
 
@@ -271,7 +290,8 @@ def drop_case(call, k, src):
     inp["tc"] = _i(tcr["tc"])
     inp["ilvl"] = _i(tcr["ilvl"])
     inp["unit_seed"] = tcr["seed"]
-    inp["game_seed"] = tcr["gseed"]
+    if "gseed" in tcr:                      # older drop loggers (before plan 0048) do not log the game seed
+        inp["game_seed"] = tcr["gseed"]
     inp["difficulty"] = _i(tcr["diff"])
     inp["expansion"] = _i(tcr["exp"])
     inp["source_type"] = _i(tcr["stype"])
@@ -336,6 +356,121 @@ def observed_drops(path, src, T, q, verify, limit):
     return cases, n, bad
 
 
+# --- DRLG windows (plans 0022 and 0026) ---------------------------------------------------------------------------
+_DRLG = {}
+
+
+def _drlg_mods(excel):
+    """Import the outdoor and maze replayers (their module-level argument parsing reads sys.argv) once."""
+    if _DRLG:
+        return _DRLG
+    root = os.path.dirname(os.path.dirname(os.path.dirname(excel.rstrip("/"))))
+    exe = os.path.join(ROOT, "workspace", "install", "app", "game.exe")
+    saved = sys.argv
+    try:
+        sys.argv = ["x", root, exe]
+        import drlg
+        drlg.load_outdoor(root, exe)
+        import outdoor_replay
+        sys.argv = ["x", excel.rstrip("/")]
+        import maze_replay
+    finally:
+        sys.argv = saved
+    _DRLG.update(drlg=drlg, od=outdoor_replay, mz=maze_replay)
+    return _DRLG
+
+
+def _parse_seed(txt):
+    lo, hi = txt.split(":")
+    return int(lo, 16), int(hi, 16)
+
+
+def observed_outdoor(path, excel, src, seen):
+    """Observed outdoor-window cases of one log (OD0 .. LI1, tools/outdoor_replay.py): (cases, windows, failed)."""
+    m = _drlg_mods(excel)
+    od, drlg = m["od"], m["drlg"]
+    ms, diff = od.log_meta(path)
+    wins, _ev = od.log_windows(path)
+    acts = {}
+    cases, n, bad = [], 0, 0
+    for w in wins:
+        lid = w["id"]
+        key = (ms, diff, lid, w["seed0"])
+        if key in seen:
+            continue
+        seen.add(key)
+        n += 1
+        a = drlg.LV[lid]["act"]
+        if a not in acts:
+            A = od.Act(a, ms, diff)
+            od.act_links(A)
+            acts[a] = A
+        ok, why = od.run_window(acts[a], lid, w)
+        if not ok:
+            bad += 1
+            print("%s: outdoor level %d seed %s not reproduced (%s)" % (src["log"], lid, w["seed0"], why[:100]))
+            continue
+        presets = [list(it[1:]) for it in w["items"] if it[0] == "P"]
+        rooms = [list(it[1:]) for it in w["items"] if it[0] == "R"]
+        ex = collections.OrderedDict()
+        ex["drlg.outdoor.seed_after"] = w["seed1"]
+        ex["drlg.outdoor.presets_digest"] = value_digest(presets)
+        ex["drlg.outdoor.preset_count"] = len(presets)
+        ex["drlg.outdoor.rooms_digest"] = value_digest(rooms)
+        ex["drlg.outdoor.room_count"] = len(rooms)
+        cases.append({"id": "drlg:o:outdoor:%d:d%d:l%d:%s" % (ms, diff, lid, w["seed0"].replace(":", "-")),
+                      "kind": "observed", "type": "drlg", "source": dict(src, window="OD0"),
+                      "inputs": {"generator": "outdoor", "map_seed": ms, "difficulty": diff, "level": lid,
+                                 "window_seed": w["seed0"]},
+                      "expected": ex, "quirks": []})
+    return cases, n, bad
+
+
+def observed_maze(path, excel, src, seen):
+    """Observed maze-window cases of one log (MZ0 .. MZ1, tools/maze_replay.py): (cases, windows, failed, skipped)."""
+    m = _drlg_mods(excel)
+    mz = m["mz"]
+    cases, n, bad, skip = [], 0, 0, 0
+    for mz0, mz1 in mz.parse(path):
+        lid = mz0["id"]
+        key = (lid, mz0["seed"])
+        lo, hi = _parse_seed(mz0["seed"])
+        L = mz.Level(lid, mz.Seed(lo, hi))
+        first = mz.first_room_seed(path, mz0)
+        try:
+            mz.run(L, first)
+        except NotImplementedError:
+            skip += 1
+            continue
+        got = [(R.x, R.y, R.w, R.h, R.d, R.idx) for R in L.rooms]
+        exp = [tuple(r[2:8]) for r in mz1["rooms"]]
+
+        def norm(lst):
+            mx = min(t[0] for t in lst)
+            my = min(t[1] for t in lst)
+            return [[t[0] - mx, t[1] - my] + list(t[2:]) for t in lst]
+        if "%08x:%08x" % (L.seed.lo, L.seed.hi) != mz1["seed"] or norm(got) != norm(exp):
+            n += 1
+            bad += 1
+            print("%s: maze level %d seed %s not reproduced" % (src["log"], lid, mz0["seed"]))
+            continue
+        if key in seen:
+            continue
+        seen.add(key)
+        n += 1
+        ex = collections.OrderedDict()
+        ex["drlg.maze.seed_after"] = mz1["seed"]
+        ex["drlg.maze.rooms_digest"] = value_digest(norm(exp))
+        ex["drlg.maze.room_count"] = len(exp)
+        ms = log_seed(path)
+        cases.append({"id": "drlg:o:maze:l%d:%s" % (lid, mz0["seed"].replace(":", "-")),
+                      "kind": "observed", "type": "drlg", "source": dict(src, window="MZ0"),
+                      "inputs": {"generator": "maze", "map_seed": ms, "level": lid, "window_seed": mz0["seed"],
+                                 "first_room_seed": "%08x:%08x" % (first.lo, first.hi)},
+                      "expected": ex, "quirks": []})
+    return cases, n, bad, skip
+
+
 def cmd_emit(ns):
     excel = ns.excel
     cases = []
@@ -349,6 +484,36 @@ def cmd_emit(ns):
         cases = list(predicted_cases(seeds, [int(x) for x in ns.diffs.split(",")],
                                      [int(x) for x in ns.exps.split(",")], levels, excel))
         name = ns.name or "predicted"
+    elif ns.drlg:
+        name = ns.name or ns.run or "drlg"
+        tot = collections.Counter()
+        seen_o, seen_m = set(), set()
+        for path in ns.logs:
+            src = {"log": os.path.basename(path), "log_sha256": file_sha(path)[:16]}
+            if ns.run:
+                src["run"] = ns.run
+            ms = log_seed(path)
+            if ms is None or not 1 <= ms <= 0x7FFFFFFF:     # -seed 0, negative or past 2^31-1 is not the map seed
+                tot["logs skipped (-seed is not the map seed)"] += 1
+                continue
+            has = open(path, errors="replace").read()
+            if "\nOD0 " in has:
+                c, n, bad = observed_outdoor(path, excel, src, seen_o)
+                cases.extend(c)
+                tot["outdoor windows (distinct)"] += n
+                tot["outdoor cases"] += len(c)
+                tot["outdoor windows failed"] += bad
+                rc |= bool(bad)
+            if "\nMZ0 " in has:
+                c, n, bad, skip = observed_maze(path, excel, src, seen_m)
+                cases.extend(c)
+                tot["maze windows (distinct)"] += n
+                tot["maze cases"] += len(c)
+                tot["maze windows failed"] += bad
+                tot["maze windows of unmodelled types"] += skip
+                rc |= bool(bad)
+        for k in sorted(tot):
+            print("  %-40s %d" % (k, tot[k]))
     else:
         import quality
         import tc
@@ -386,6 +551,7 @@ def cmd_emit(ns):
             if r.returncode:
                 rc = 1
     header = make_header(excel, name)
+    header["scope"] = scope_of(cases)
     with open(ns.out, "w") as fh:
         fh.write(canon(header) + "\n")
         for c in cases:
@@ -509,13 +675,16 @@ def cmd_sample(ns):
     header, cases = read_set(ns.set)
     w = collections.defaultdict(list)
     d = collections.defaultdict(list)
+    r = {"outdoor": collections.defaultdict(list), "maze": collections.defaultdict(list)}
     for c in sorted(cases, key=lambda c: c["id"]):
         i = c["inputs"]
         if c["type"] == "world":
             w[(i.get("difficulty"), i.get("expansion"))].append(c)
+        elif c["type"] == "drlg":
+            r[i["generator"]][i["level"]].append(c)
         else:
             d[(i["difficulty"], i["expansion"], c["expected"]["chain.G1.count"] > 0, len(c["expected"]["chain.G1.subtc"]) > 1)].append(c)
-    out = spread(w, ns.worlds) + spread(d, ns.drops)
+    out = spread(w, ns.worlds) + spread(d, ns.drops) + spread(r["outdoor"], (ns.drlg + 1) // 2) + spread(r["maze"], ns.drlg // 2)
     write_set(ns.out, header, out)
     print("%s: %d cases, set digest %s" % (ns.out, len(out), set_digest(header, out)))
     return 0
@@ -528,12 +697,13 @@ def cmd_merge(ns):
         h, cs = read_set(p)
         if header is None:
             header = h
-        for k in ("version", "game_exe_sha256", "tables_digest", "scope"):
+        for k in ("version", "game_exe_sha256", "tables_digest"):
             if h.get(k) != header.get(k):
                 raise SystemExit("%s: header %s differs" % (p, k))
         for c in cs:
             cases[c["id"]] = c
-    header = dict(header, set=ns.name or "+".join(os.path.basename(p) for p in ns.sets))
+    scope = scope_of(list(cases.values()), ",".join(read_set(p)[0].get("scope", "") for p in ns.sets))
+    header = dict(header, set=ns.name or "+".join(os.path.basename(p) for p in ns.sets), scope=scope)
     write_set(ns.out, header, list(cases.values()))
     print("%s: %d cases, set digest %s" % (ns.out, len(cases), set_digest(header, list(cases.values()))))
     return 0
@@ -542,6 +712,32 @@ def cmd_merge(ns):
 def cmd_fields(ns):
     for p, (step, sec) in FIELDS.items():
         print("%-36s %s  [%s]" % (p, step, sec))
+    return 0
+
+
+def cmd_coverage(ns):
+    """Per field pattern: cases and field values by kind, and the distinct indices (levels, acts) an indexed pattern
+    reaches; for DRLG cases, the generator's distinct levels."""
+    header, cases = read_set(ns.set)
+    cnt = collections.defaultdict(collections.Counter)
+    idx = collections.defaultdict(set)
+    for c in cases:
+        for f in c["expected"]:
+            p = pattern(f) or f
+            cnt[p][c["kind"] + " cases"] += 1
+            if p.endswith(".N"):
+                idx[p].add(int(f.rsplit(".", 1)[1]))
+    print("set %s: %d cases, scope %s" % (header.get("set"), len(cases), header.get("scope")))
+    for p in FIELDS:
+        c = cnt.get(p, collections.Counter())
+        print("%-36s observed %5d  predicted %5d%s" % (p, c["observed cases"], c["predicted cases"],
+              ("  indices %d" % len(idx[p])) if idx.get(p) else ""))
+    lv = collections.defaultdict(set)
+    for c in cases:
+        if c["type"] == "drlg":
+            lv[c["inputs"]["generator"]].add(c["inputs"]["level"])
+    for g in sorted(lv):
+        print("drlg %-8s distinct levels %d: %s" % (g, len(lv[g]), ",".join(map(str, sorted(lv[g])))))
     return 0
 
 
@@ -558,6 +754,7 @@ def build_parser():
     e.add_argument("--no-verify", action="store_true")
     e.add_argument("--chain-check", action="store_true")
     e.add_argument("--predicted", action="store_true")
+    e.add_argument("--drlg", action="store_true", help="observed DRLG window cases (outdoor OD0..OD1, maze MZ0..MZ1)")
     e.add_argument("--seeds", default="1")
     e.add_argument("--diffs", default="0,1,2")
     e.add_argument("--exps", default="0,1")
@@ -571,11 +768,14 @@ def build_parser():
     d.add_argument("set", nargs="?")
     d.add_argument("--value", action="store_true")
     sub.add_parser("fields")
+    co = sub.add_parser("coverage")
+    co.add_argument("set")
     sa = sub.add_parser("sample")
     sa.add_argument("set")
     sa.add_argument("--out", required=True)
     sa.add_argument("--worlds", type=int, default=6)
     sa.add_argument("--drops", type=int, default=8)
+    sa.add_argument("--drlg", type=int, default=0)
     m = sub.add_parser("merge")
     m.add_argument("sets", nargs="+")
     m.add_argument("--out", required=True)
@@ -590,7 +790,7 @@ def main(argv):
     if ns.cmd == "digest" and not ns.value and not ns.set:
         raise SystemExit("digest: give a set file or --value")
     return {"emit": cmd_emit, "check": cmd_check, "digest": cmd_digest, "fields": cmd_fields,
-            "sample": cmd_sample, "merge": cmd_merge}[ns.cmd](ns)
+            "sample": cmd_sample, "merge": cmd_merge, "coverage": cmd_coverage}[ns.cmd](ns)
 
 
 if __name__ == "__main__":

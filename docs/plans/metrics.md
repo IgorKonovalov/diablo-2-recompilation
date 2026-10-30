@@ -452,6 +452,8 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-10-30 | lane/p56a check | 0056 P1 | architect-check | 80 100 | 15 | 2 | — (Tier B check, no harness) | accept with fixes (2) | 2: stale cross-reference 1, omission 1 |
 | 2026-10-30 | lane/s57 | 0057 P1 | spec-writer | 268 082 | 67 | 20 | — | accept with fixes (Tier A) | 17: overclaim 2, misread 2, omission 10, wrong anchor 2, other 1 |
 | 2026-10-30 | lane/s57 review | 0057 P1 | architect-review | 203 571 | 80 | 10 | — (Tier A, no Ghidra, no harness) | accept with fixes (17) | overclaim 2, misread 2, omission 10, wrong anchor 2, other 1 |
+| 2026-10-30 | `lane/a59b` | 0059 P2 | archivist | 140 035 | 65 | 14 | — (no Ghidra, no harness) | accept with fixes (Tier B check) | 2: omission 1, overclaim 1 |
+| 2026-10-30 | lane/a59b check | 0059 P2 | architect-check | 78 893 | 33 | 9 | — (Tier B check, no harness) | accept with fixes (2) | omission 1, overclaim 1 |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not
