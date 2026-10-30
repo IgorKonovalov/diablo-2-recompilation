@@ -1,6 +1,6 @@
 # 0050 — Animation and frame timing: unit modes, frame counts, rates and breakpoints, movement speed (ADR-0014 phase 4)
 
-> **Status:** approved 2026-10-25 (owner), in effect 2026-10-27 (plan 0045 Phase 2 part 1 accepted); P0 accepted 2026-10-27; P1 batches P1.1–P1.3 accepted with fixes 2026-10-27; P1b part 2 accepted with fixes 2026-10-27 (Phase 1b done); P2 part 1 accepted with fixes 2026-10-27 (run:2026-10-27-anim, 0 mismatches); P2 part 2 accepted with fixes 2026-10-27 (`lane/p50f`, Tier B check; floors recorded short, survivability-bound; the build deviation and a part 3 open for the owner); P3 accepted with fixes 2026-10-27 (`lane/s50p3`); **P4 (wiki) next on unpause**
+> **Status:** approved 2026-10-25 (owner), in effect 2026-10-27 (plan 0045 Phase 2 part 1 accepted); P0 accepted 2026-10-27; P1 batches P1.1–P1.3 accepted with fixes 2026-10-27; P1b part 2 accepted with fixes 2026-10-27 (Phase 1b done); P2 part 1 accepted with fixes 2026-10-27 (run:2026-10-27-anim, 0 mismatches); P2 part 2 accepted with fixes 2026-10-27 (`lane/p50f`, Tier B check; floors recorded short, survivability-bound; the build deviation and a part 3 open for the owner); P3 accepted with fixes 2026-10-27 (`lane/s50p3`); **unpaused 2026-10-30 (owner): P4 (wiki) running (`lane/wiki50`); P2 part 3 approved (overpowered clvl 99 builds), ready for the next free harness slot**
 > **Created:** 2026-10-25
 > **Owner skill(s):** archivist, reverser, spec-writer
 > **Related ADRs:** 0001-target-toolchain-evidence-sources, 0003-runtime-experiments, 0004-boundary-oracles-in-reproduction, 0005-presentation-formats-tools-only, 0007-fetched-leads-only, 0011-harness-slots, 0013-forced-path-runs-cell-level, 0014-scope-game-simulation, 0015-emulated-reproduction, 0016-pipelined-simulation-phases, 0020-skills-phase-in-two-plans, 0021-observed-boundaries-in-emulation
@@ -316,6 +316,72 @@ client-side display of timing stay out (ADR-0005, ADR-0014 § Time): timing ente
   Not part 2 cases, ruled at the part 1 review: the object-start and `PlayerModeAllowed` chaining (the plan's own
   clause: a kind with no chained pair keeps its draw-order claims `[I]`), the optional `PlayerModeAllowed` draws under
   state 42 and the object operate ends, and a Frenzy after a missed first swing.
+
+#### Phase 2 part 3 — the short floors of part 2, with overpowered builds (owner, 2026-10-30)
+- **Owner skill:** reverser (agent-driven; **one slot** from 1–2, given in the prompt; no Ghidra)
+- **Status:** **ready for the next free harness slot** (queued behind H1c on slot 1 and 0046·P2 on slot 2; it takes
+  whichever frees first). Approved by the owner on 2026-10-30 (option (b) of the `lane/p50f` check, not closing the
+  floors short; [log](#implementation-log)).
+- **Why:** part 2 (run:2026-10-27-anim-p2, [record](../findings/anim/experiments.md#run2026-10-27-anim-p2)) holds 0
+  mismatches over 81 logs, but its get-hit and rare-branch floors are short because its characters died first:
+  survivability-bound at the route used (the `lane/p50f` check). The owner's reading: a character that kills the
+  swarm fast stops dying, so survival stops binding the count. Part 2's build deviation (clvl 70 and life 400, in
+  place of the 1 000 or more of part 2's route) **stays documented as it is**; part 3 does not rewrite part 2's record,
+  it adds sessions.
+- **Start:** part 2's tools (`tools/anim.py` `5be6c31f…`, logger rev 6, `tools/anim_sessions.py`, `tools/d2pilot.py`
+  with `--inv-potions` and `--drink-in-burst`); part 1's 55 and part 2's 26 logs stay kept and unchanged, and the floors
+  below count all three parts' events. Nothing may regress: the closing check runs over every log of parts 1–3.
+- **The build** (the lane may change the numbers, not the rule): **where a floor is per class, an overpowered clvl 99
+  character of that class** (the get-hit, block, throw and rate floors are the class's own animation records, so the
+  class is fixed by the floor): `stats` level 99 with its experience, top stock gear (`"unique"` and `"set"` items at
+  `"roll": "max"`, the d2s.py build keys), high life and every resistance at its cap from stock items, and a strong
+  clearing skill of the class at a high level (`skills`), cast as the pilot's burst. Burst casting is self-centred:
+  `--nova-key` presses the bound F-key and then Shift + right-click at the character's own position
+  (`d2pilot.py` `nova()`); `summon()` places a right skill at an offset from the character. So the clearing skill is
+  one that kills at or around the character (Blizzard, Nova or Frost Nova for the Sorceress; Poison Nova for the
+  Necromancer; Hurricane or Fissure for the Druid; a placed trap or Blade Fury for the Assassin; for the Amazon a
+  melee or placed skill, or a mercenary as the killer) — the lane picks per class from one development session.
+  **Where class does not matter** (the run's turn to a walk at 0 stamina, the player knockbacks, P1b-2's factor above
+  175 if a Sorceress build reaches it): **the owner's suggestion, a clvl 99 Blizzard Sorceress**. FHR, FBR, FCR and IAS
+  tiers are set by the stock rate items as in parts 1 and 2 (t0–t2: 0, 24, 48, or other stock values where two give
+  one rate), so the overpowered gear must leave the tier's rate stat at the tier's value: the lane checks each build's
+  rate stats in the save (`tools/d2s.py`) before the session.
+- **The get-hit band still binds** (`GetHitRoll`: a hit must reach `maxHP / 16`; anim/0003): life is sized so that the
+  chosen area's melee hits fall in `[maxHP / 16, maxHP / 4)`, from one development session's `GH` totals, not
+  maximised. Prefer resistances and kill speed over damage reduction or absorb stats, which shrink the hit the band
+  tests (the lane drops them if the development session shows hits falling under the band).
+- **No escort client.** A Blizzard Sorceress clearing for the logged character would be a second game: two clients
+  take both slots ([ADR-0011](../adrs/0011-harness-slots.md), plan 0044's runs), and this part has one. The clearing
+  partner, where a class's own skill is too weak, is a **mercenary** (the d2s.py `merc` key with its items; the pilot's
+  `--merc-drink` keeps it alive): an Act II Holy Freeze or Might mercenary, the lane's choice.
+- **Tools: nothing the archivist must add first.** `tools/d2s.py` already builds every key above (stats level 99 and
+  experience, skills at any level, uniques and sets at `"roll": "max"`, `item_stats`, `belt_fill`, `merc` with items;
+  the expansion bases `smp<cls>.d2s` of `p0005` cover all seven classes). The new recipes (`anim-<cls>-op-*`) need
+  their `RECIPE_BASES` rows in `tools/test_d2s.py` after the run, an archivist entry filed with the review request,
+  like part 2's (`2026-10-27-reverser-archivist-p50f-recipebases-rows-for-the-part-2-anim.md`, still open). A pilot
+  change (a targeted burst at the nearest monster rather than at the character) is the lane's own, if one development
+  session shows it is needed.
+- **Done when:** `run:YYYY-MM-DD-anim` (part 3) reproduces with **0 mismatches** over its logs and those of parts 1
+  and 2, and, with parts 1 and 2, the short floors of the `lane/p50f` check are met or named short with counts
+  (minimums are estimates):
+  - **get-hits:** 30 or more at each of three FHR rates (`get-hit rates30` ≥ 3) for the **Amazon, Necromancer,
+    Sorceress, Druid and Assassin** (part 2: Amazon and Necromancer none, the other three one rate each), each with its
+    schedule, its end and the first frame the player acts again; **the t2 tier** (rate 215, not run in part 2) among
+    them for every class whose third rate is t2; P1b-8's Druid get-hits (one-handed hammer, two-handed sword), 30 each;
+  - **throws:** the **Druid's** 30 (part 2: 12, `th-dru` died at hop 1);
+  - **rare branches** (about 30 each; short ones named with counts, their claims stay `[I]`): 30 player knockbacks
+    (mode 19 starts with the end predicted; Blood Raven in Hell, P1b-10, or another stock source); a run that turns to
+    a walk at 0 stamina (a low-stamina recipe on a long run, `r` pressed); P1b-2 (30 attacks with the factor above
+    175); P1b-13 (Slows Target), P1b-14 (a moving factor below 25), P1b-15 (a Charge at stat 67 ≤ 50), for which
+    part 2's record reports no outcome (`sp-pal-slow`): staged, or named unreachable with the survey; P1b-7's
+    `VASCHTH` stated unreachable with part 2's check (no stock state transforms a player into the vampire);
+  - **where the same sessions reach them** (not required): the FBR floor for the classes part 2's record does not
+    name, a third FCR rate for the Amazon, Barbarian and Assassin, the set-2 IAS rates, and `rv-req-*` per class.
+  The record states each build (class, level, life, resistances, the rate stats per tier, the clearing skill and
+  its level, the mercenary if any) and why it was chosen, so a reader can see what the sessions did not have to
+  survive.
+- **After it:** its reviewed raises re-tag K3, M3 and the open questions of anim/timing, anim/movement and combat,
+  a spec-writer pass of its own (the P3 review's ruling (b)); the wiki page (P4) does not wait for it.
 
 ### Phase 3 — Spec: animation and frame timing
 - **Owner skill:** spec-writer
@@ -1165,3 +1231,18 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     next on unpause**; 0052·P2's gate on this review is open, but nothing starts while the project is paused. The
     review request is closed. Ledger: the lane row's usage set (402 558 / 82 / 30) and its verdict and fixes filled;
     the review row appended.
+- **2026-10-30 — Owner decisions recorded (architect, `lane/unp`; no Ghidra, no harness).** The owner's answers to the
+  two points the `lane/p50f` check left open: **(a)** the build deviation of part 2 (clvl 70, life 400 in place of
+  1 000 or more) stays as documented in part 2's record; **(b)** a **part 3 runs** (not close-short), with an
+  **overpowered character**: the owner suggested a clvl 99 Blizzard Sorceress, which kills the swarm fast so that
+  survival stops binding. Written as [Phase 2 part 3](#phase-2-part-3--the-short-floors-of-part-2-with-overpowered-builds-owner-2026-10-30):
+  where a floor is per class (the get-hit FHR rates of the Amazon, Necromancer, Sorceress, Druid and Assassin, the t2
+  tier, P1b-8, the Druid's throws 12 of 30), an overpowered clvl 99 build of that class with a self-centred or placed
+  clearing skill the pilot's burst casts, or a mercenary as the killer; the Blizzard Sorceress where class does not
+  matter (the run's turn to a walk, the player knockbacks). No escort client (it would take the second slot); one
+  harness slot. Done when the short floors of the `lane/p50f` check (and the P1b-13/14/15 outcomes part 2 did not
+  report) are met or named short with counts. Tools: `tools/d2s.py` already builds every key (level 99, skills, uniques
+  and sets at max roll, `merc` with items), so nothing is asked of the archivist before the run; the new recipes'
+  `RECIPE_BASES` rows follow it, as part 2's. **Part 3 is ready for the next free harness slot** (queued behind H1c and
+  0046·P2, the two slots taken from 2026-10-30). **Unpause (owner, 2026-10-30):** P4 (the wiki page) runs now
+  (`lane/wiki50`); it does not wait for part 3, whose raises get a spec-writer re-tag pass of their own.
