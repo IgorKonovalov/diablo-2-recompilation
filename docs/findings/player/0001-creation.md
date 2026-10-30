@@ -687,13 +687,18 @@ S3B player addskill_sites=12 charstats_records=7 charstats_repeat_or_attack=0 pi
   no kept log covers. **Route:** spend two points on one class skill under `player.gdb` (an `AddSkill` line with the
   entry's level before and after), and, with H6g's level-98 save, one skill to its maximum.
   (fn:SKILLS_AddSkill@0x00647110, fn:SKILLS_GetMaxLevel@0x004AA8B0, struct:CharStatsRec+0xAE)
-- **player/creation 21** (L366) **raised.** [C] `MaxLvl(class)` is row 0, column `c` of the experience table, with `c` 0
-  for a class outside 0..6: `ExpMaxLevel` reads `[g_pExperience + 4c]` (0x00611854; column 0 at 0x00611847). Second code
+- **player/creation 21** (L366) **raised.** [C] `MaxLvl(class)` is row 0, column `c` of the experience table, for a
+  class `c` in 0..6. [I] For a class outside 0..6 `c` is 0 (see the correction below): `ExpMaxLevel` reads `[g_pExperience + 4c]` (0x00611854; column 0 at 0x00611847). Second code
   path: `EXP_LevelFromExp` loads the same cell with the same clamp as its loop bound (0x00611885, `cmp eax, esi` at
   0x00611895), and that function is `[C]` by run:2026-10-16-player (levels 1–98 from the total experience); `EXP_GetRatio`
   compares `L` with row 0, column 0 (0x00613E81). Data: row 0 (`MaxLvl`) holds 99 for all seven classes in the `.txt`
   and the `.bin`. (fn:sub_00611830_ExpMaxLevel@0x00611830, fn:EXP_LevelFromExp@0x00611860, fn:EXP_GetRatio@0x00613E60,
   data:g_pExperience@0x0096C8A8, tbl:Experience.txt:Amazon, run:2026-10-16-player)
+  - *Correction (2026-10-30, lane/rfix; lane/s38p review, player/creation F2 ruling):* the `[C]` first read "with `c`
+    0 for a class outside 0..6". That clamp branch is never reached: no class-7 player exists (§ Plan 0038 batch H1a,
+    rows 11, 20 and 34), and `EXP_LevelFromExp`'s "same clamp" is a second reading of the same pattern, not a case
+    that runs the branch. So the `[C]` covers the cell for classes 0..6; the column-0 clamp stays `[I]` (0x00611847,
+    fn:sub_00611830_ExpMaxLevel@0x00611830).
 - **player/creation 36** (L605) **raised.** [C] With stock data the shift count of G4's overflow bound is 10 or 11. Data
   behaviour over every row: `ExpRatio` takes 31 values from 5 to 1024 in the 100 level rows and is 10 in row 0, so
   `(r >> 10) + 10` is 11 for the 70 rows with 1024 and 10 for the other 30, and 10 for `r` = 0 (a level above `MaxLvl`).
@@ -995,13 +1000,15 @@ calls reproduced, 0 failed) and `tools/sweep_h6g.py check` (**0 mismatches**, `w
   at each (`SKX`, 3 cases); the other callers only appended (467 cases). **Remainder `[I]`:** the
   at-the-maximum side: a click on Frost Nova at level 20 sent no request (the client refuses it), so the add never
   saw a full entry. (fn:SKILLS_AddSkill@0x00647110, fn:PLAYER_SpendSkillPoint@0x00570080, run:2026-10-27-sweep-player)
-- **Rows 3, 30** (the death experience loss) **raised in part.** [C] `PLAYER_DeathExpLoss` reproduced in four deaths on
-  three difficulties: Normal (`deathn`, pen 0): loss 0, corpse 0; Nightmare (`deathnm`, pen 5, span 1 964 461): the
+- **Rows 3, 30** (the death experience loss) **raised in part.** [C] `PLAYER_DeathExpLoss` reproduced in five deaths, four
+  cases, on three difficulties: Normal (`deathn`, pen 0): loss 0, corpse 0; Nightmare (`deathnm`, pen 5, span 1 964 461): the
   loss 98 223 would take the experience below `T(39)`, so the kept amount is the clamp: 1 000 (17 271 791 - 17 270 791),
   the new experience `T(39) + 1`, the corpse share 750; Hell (`deathh`, pen 10, span 4 650 593): loss 465 059, new
   49 534 941, corpse share 348 794 (465 059 x 75 / 100, truncated); and a second Nightmare death at `T(39) + 1`: kept
   1, the experience unchanged, share 0. The gate (`DG0`) was entered with a monster killer of type 1 and no owner
-  every time (5). (fn:PLAYER_DeathExpLoss@0x005359F0, fn:sub_00535AB0_PlayerDeathExpLossGate@0x00535AB0,
+  every time (5). *Correction (2026-10-30, lane/rfix; lane/s38p review):* this bullet first read "four deaths on three
+  difficulties"; the kept logs hold five deaths, four cases: `deathn`, `deathh`, the first `deathnm` log and the two deaths of r5, the Nightmare clamp
+  case twice (the first `deathnm` death and r5's first); the `DG0` count is 5. (fn:PLAYER_DeathExpLoss@0x005359F0, fn:sub_00535AB0_PlayerDeathExpLossGate@0x00535AB0,
   fn:CLIENT_SetDeathExpLoss@0x005391E0, fn:PLAYER_CorpseCreate@0x0057F700, fn:CLIENT_GetDeathExpLoss@0x00539210,
   tbl:DifficultyLevels.txt:DeathExpPenalty, run:2026-10-27-sweep-player) **Remainder `[I]`:** the corpse pickup, the share going back to the
   owner. Four `deathnm` sessions (r2 to r5, the last kept) walked from the town to the corpse; the character died
@@ -1187,7 +1194,10 @@ unit list below), `static-h6gs.s` (`2f7ac4ec…`, the disassembly of the ranges 
 - ~~What triggers `sub_0058C5C0_ExpGrantCapped` (three callers `0x0058C6D0`, `0x0058C7E0`, `0x0058C9A0`; not read).~~
   The Ancients' death (Rite of Passage, word 39): [§ Plan 0039 batch P1c](#plan-0039-batch-p1c-2026-10-17).
 - Readers of `PercentStr..PercentVit` (maybe only the client, through `0x004833E0`).
-- The player-data fields `+0x50..+0x5C` zeroed at creation, and client `+0x3D4` bit 0.
+- The player-data fields `+0x50..+0x5C` zeroed at creation, and client `+0x3D4` bit 0. (2026-10-30, lane/rfix: the
+  `+0x3D4` half ran in [§ Plan 0038 batch H6g](#plan-0038-batch-h6g-run2026-10-27-sweep-player) row 12, raised in
+  part: bit 0 is already set by 0x005397A3 before the `or` at 0x00537993; a path reaching 0x00537970 with bit 0 clear
+  stays open. run:2026-10-27-sweep-player)
 - ~~The experience recovered with the corpse (75 % per src:arreat-summit-experience): find the code (the corpse pickup
   path) or show 1.14d has none.~~ Found: 75 % of the loss taken goes onto the corpse and back to its owner
   ([§ Plan 0039 batch P1c](#plan-0039-batch-p1c-2026-10-17)). A saved corpse does not keep it
@@ -1196,6 +1206,10 @@ unit list below), `static-h6gs.s` (`2f7ac4ec…`, the disassembly of the ranges 
 - Settled by run:2026-10-16-player (§ 11): nothing but `PlayerUnitInit` steps the game seed before the first item;
   `PLAYER_LevelUp` draws nothing; the starting items chain to the item model (`ITEMS_RollStaffMods` is its boundary).
 - Not run in Phase 2: `XP_PartyShare` (two clients), `PLAYER_DeathExpLoss`, the experience cap, class 7.
+  (2026-10-30, lane/rfix: run since, except `XP_PartyShare`: `PLAYER_DeathExpLoss` in H6g rows 3 and 30 (raised in
+  part, five deaths, the corpse pickup `[I]`) and the cap in H6g row 28 (raised), run:2026-10-27-sweep-player; class 7 in
+  [§ Plan 0038 batch H1a](#plan-0038-batch-h1a-run2026-10-27-sweep-d2s-load) row 11 (passes the class test, halts
+  before a player unit exists; rows 20 and 34 d-none), run:2026-10-27-sweep-d2s-load.)
 - The life value a Hell save writes (stat 6) is not the writer's runtime base entry when the character has taken
   damage (tools/d2sio.py reports `0x1FFFFF` against the base entry on six sessions): read the save path's source.
 

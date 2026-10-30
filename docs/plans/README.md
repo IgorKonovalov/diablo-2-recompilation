@@ -134,7 +134,7 @@ phase (5)'s path and 0046 gates nothing (ADR-0020).
    (player/creation J4, `[C]` for n = 2), so 0058 covers only n ≥ 3, the credit edges and one composed page;
    **monster awareness is dropped as a plan**: plan 0052 already covers the target search (ai/0001 § 6), the whole AI
    table with the town and NPC rows, and drlg/lifecycle the room activation; its one residual, whether any server code
-   reads light radius or a visibility term, is a [reverser backlog entry](../backlog/2026-10-30-architect-reverser-light-radius-server-readers.md).
+   reads light radius or a visibility term, is a [reverser backlog entry](../backlog/archive/2026-10-30-architect-reverser-light-radius-server-readers.md).
    0060 and 0061 each need a short scope ADR, drafted when the owner approves them.
 
 **Proposed run order for plans 0057–0062** (architect, for the owner; it fits the current lanes and adds no lane).
