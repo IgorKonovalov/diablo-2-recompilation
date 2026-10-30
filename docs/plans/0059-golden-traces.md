@@ -1,6 +1,6 @@
 # 0059 — Golden traces: seeds and their expected world, drops and events, as conformance tests for reimplementers
 
-> **Status:** draft (architect, `lane/plans57`, 2026-10-30), for the owner's approval
+> **Status:** approved (owner, 2026-10-30: "approve all of them", every scoping question answered as recommended); drafted 2026-10-30 (architect, `lane/plans57`)
 > **Created:** 2026-10-30
 > **Owner skill(s):** archivist (phases 1, 2, 4), spec-writer (phase 3)
 > **Related ADRs:** 0001-target-toolchain-evidence-sources, 0003-runtime-experiments, 0004-boundary-oracles-in-reproduction, 0015-emulated-reproduction, 0022-scope-server-frame
@@ -97,3 +97,4 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 
 - **2026-10-30 — Drafted (architect, `lane/plans57`).** Status `draft`; rank 3 (high value to reimplementers, no slot,
   the archivist free); five owner questions.
+- **2026-10-30 — Approved (owner; recorded by the architect, `lane/appr2`).** "Approve all of them": all five questions as recommended: the format, the tool and a sample set of about 20 cases in git, the full set regenerated locally with its digest committed; v1 the chain (world and drops) only; predicted cases in, labelled `predicted`, an observed case winning a disagreement; JSON Lines with a version header; a quirk that changes an output is a case tagged with its index id. **P1 starts now** (`lane/a59`, archivist). Status `approved`.

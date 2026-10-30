@@ -1,6 +1,6 @@
 # 0057 — Quirks catalogue: the behaviour a faithful reimplementation must keep, in one index
 
-> **Status:** draft (architect, `lane/plans57`, 2026-10-30), for the owner's approval
+> **Status:** approved (owner, 2026-10-30: "approve all of them", every scoping question answered as recommended); drafted 2026-10-30 (architect, `lane/plans57`)
 > **Created:** 2026-10-30
 > **Owner skill(s):** spec-writer (phases 1, 3, 4), reverser (phase 2)
 > **Related ADRs:** 0001-target-toolchain-evidence-sources, 0007-fetched-leads-only, 0012-human-wiki, 0015-emulated-reproduction
@@ -88,7 +88,7 @@ was compared; and a wiki page gives the human reading.
    values that merely look odd.
 3. **How many community claims in Phase 2?** *Recommendation: at most 30*, from two or three fetched pages, most-cited
    first; more can follow as a later batch.
-4. **Harness?** *Recommendation: none.* A quirk at `[I]` stays `[I]`, and the companion `[I]` sweep (queued after
+4. **Harness?** *Recommendation: none.* A quirk at `[I]` stays `[I]` (the companion sweep is **owner 2026-10-30: may be drafted, as `draft` only, never started** (no plan after the approved roster is approved or started)), and the companion `[I]` sweep (queued after
    0055·P2a) may take it as a target.
 5. **Crash and hang paths** (a read past a table's end, a null unit): *Recommendation: catalogue them from the code
    (`[I]`)*, never provoke them in the harness.
@@ -104,3 +104,4 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 
 - **2026-10-30 — Drafted (architect, `lane/plans57`).** Status `draft`; rank 1 of the 2026-10-30 batch (cheapest,
   no slot, no open dependency); five owner questions.
+- **2026-10-30 — Approved (owner; recorded by the architect, `lane/appr2`).** "Approve all of them": all five questions as recommended: an index row `quirks` that restates and links (the owning spec wins); a quirk is behaviour a reimplementer would plausibly "fix", by the eight classes, plus deliberate oddities; at most 30 community claims in Phase 2; no harness; crash and hang paths catalogued from the code (`[I]`), never provoked. **P1 starts now** (`lane/s57`, spec-writer). Status `approved`.
