@@ -464,6 +464,9 @@ named boundary only.
   `Range` ([quests/0001](../findings/quests/0001-progression.md); tbl:Missiles.txt:Range). The finding lists the field
   as unidentified; the column is named here (backlog to the reverser below).
 
+- `[I]` **Path request columns (plan 0054 P0).** `Size` (`+0x18A`) is the size a missile's path takes for `PATH_PatternFromSize` (see [PathTypes](PathTypes.md#columns-a-request-reads)). No Missiles column chooses a path type: the type is a constant in the code that creates the missile (`PathTypes § Stock rows that reach a type`). `[L]` Missiles row 195 `lightunique` (the H1 class-195 cases) is named by no cell of Skills, MonStats, MonStats2, Objects or Levels.
+
+
 ## Open questions
 
 - `[L]` Every meaning not tagged in the tables. The parameters, calcs and links as the do, hit and damage functions of
