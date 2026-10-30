@@ -735,7 +735,9 @@ run, so every statement here is inferred.
 - [I] The grant itself (§ 7): 1 400 000, 20 000 000 or 40 000 000 by difficulty, cut to `T(L + 1) − T(L)` (the
   width of level L + 1; [§ Plan 0038 H6g shortfalls](#plan-0038-h6g-shortfalls-static-read-2026-10-30)), then filled
   level by level with `PLAYER_LevelUp`. So the Ancients give at most one level. Each tested player is marked done (bit 0)
-  before the grant, so a player can get it once per difficulty. (fn:sub_0058C5C0_ExpGrantCapped@0x0058C5C0)
+  before the grant, so a player can get it once per difficulty. (Normal amount and cut `[C]` since run:2026-10-30-h6ga-anc,
+  [§ Plan 0038 H6g rows 2 and 29](#plan-0038-h6g-rows-2-and-29-the-ancients-grant-session-run2026-10-30-h6ga-anc).)
+  (fn:sub_0058C5C0_ExpGrantCapped@0x0058C5C0)
 
 ### Death loss and the corpse: 75 % comes back
 
@@ -1028,6 +1030,7 @@ calls reproduced, 0 failed) and `tools/sweep_h6g.py check` (**0 mismatches**, `w
   --boss-cls 540,541,542`): the first never found warp 76 in level 118 (40 hops, "no warp 76"); the second reached
   level 120 but `objop` found no object of class 546 ("level explored"), and no Ancient was met. No `EG0` line.
   Plan 0042's x-summit sessions operated the summit door (class 564) at this stage. Routed, not retried (backlog).
+  (Since run: [§ Plan 0038 H6g rows 2 and 29](#plan-0038-h6g-rows-2-and-29-the-ancients-grant-session-run2026-10-30-h6ga-anc), raised in part.)
   **Static read 2026-10-30:** class 546 is the altar (the route's object was right); the session never had the
   altar's room populated (no 546, 547 or statue object in any `OBJS` line). Rows 2 and 29 stay open; the route a
   later session needs is in [§ Plan 0038 H6g shortfalls](#plan-0038-h6g-shortfalls-static-read-2026-10-30).
@@ -1045,7 +1048,7 @@ unit list below), `static-h6gs.s` (`2f7ac4ec…`, the disassembly of the ranges 
 
 ### Rows 2 and 29: what the Ancients' grant needs, and why the `anc` session missed it
 
-- [I] **The grant, step by step** (`sub_0058C5C0_ExpGrantCapped(game)`, the player in `ESI`; 0x0058C5C0–0x0058C6CB):
+- [I] (steps 1 in Normal, 3 and 4 `[C]` by run:2026-10-30-h6ga-anc, see § Plan 0038 H6g rows 2 and 29, with the scope there; the rest `[I]`) **The grant, step by step** (`sub_0058C5C0_ExpGrantCapped(game)`, the player in `ESI`; 0x0058C5C0–0x0058C6CB):
   0. `QUESTS_SendPlayerRecord(game, player)` (0x0058C5CF), before anything else.
   1. `G` ← 1 400 000; 20 000 000 when the game's difficulty byte (`game+0x6D`) is 1; 40 000 000 when it is 2
      (0x0058C5D4–0x0058C5EE).
@@ -1176,7 +1179,8 @@ unit list below), `static-h6gs.s` (`2f7ac4ec…`, the disassembly of the ranges 
 ### Ledger moves (proposed; the review rules)
 
 - **Rows 2 and 29 stay open**, class (b), batch H6g. There is no static second source (above), so they need the
-  corrected `anc` route. They are not d-owner.
+  corrected `anc` route. They are not d-owner. (2026-10-30, lane/h6ga: the session ran; raised in part, see
+  [§ Plan 0038 H6g rows 2 and 29](#plan-0038-h6g-rows-2-and-29-the-ancients-grant-session-run2026-10-30-h6ga-anc).)
 - **Rows 3 and 30 stay "raised in part"**, with the remainder narrowed. `[C]` (narrowed to which fields): the pickup's two reads match
   the creation's two writes (stat 13 and inventory `+0x24`). Still `[I]`: the pickup's run (the zeroing and the add;
   fn:PLAYER_CorpsePickup@0x0057FB70, fn:PLAYER_CorpseCreate@0x0057F700, run:2026-10-27-sweep-player).
@@ -1184,6 +1188,63 @@ unit list below), `static-h6gs.s` (`2f7ac4ec…`, the disassembly of the ranges 
 - No class changes, so the totals stand.
 - Symbols: 7 new `[I]` rows (`0x0058D110`, `0x0058D150`, `0x0058D190`, `0x0058D240`, `0x00548A50`, `0x0063D430`,
   `0x0063D450`). None is raised: no run checks them.
+
+## Plan 0038 H6g rows 2 and 29, the Ancients' grant session (run:2026-10-30-h6ga-anc)
+
+Backlog `2026-10-30-architect-reverser-plan-0038-h6g-corrected-anc-session.md`: the corrected route of
+[§ Plan 0038 H6g shortfalls](#plan-0038-h6g-shortfalls-static-read-2026-10-30), played on slot 2. Run record
+[run:2026-10-30-h6ga-anc](experiments.md#run2026-10-30-h6ga-anc). Logger `tools/gdb/h6g-quest.gdb` (revision: `h6g.py`
+with the altar lines `AL0` and `ALS` added; `EG0`/`EGS`/`EGX` were already there), runner `tools/h6ga_sessions.py`
+(on `tools/harness_runner.py`), checker `tools/sweep_h6g.py check` extended with the grant model. Two kept logs, 0
+mismatches (`workspace/logs/h6g/check/check-h6ga.txt`, `db35aa62…`; manifest `manifest-h6ga.sha256`).
+
+- **The route worked as the static read gave it.** Waypoint 5,8 (level 118), `explore`, a walk to level 120, then
+  `objop --obj-cls 546 --to-pdef 1089` (the preset room of LvlPrest Def 1089) to the altar, one click, then `farm
+  --boss-cls 540,541,542` with Nova. No town portal was cast. Both kept logs list the three bosses' kills (`XK0`
+  `mcls` 540, 541 and 542, once each) before the one `EG0`.
+- [C] **The altar's branch at the join.** `AL0` at 0x0058D33F logs the quest record's `+0x09` = 1 (active), `+0x0B` = 0,
+  `+0x0C` = 3 (the step) and the altar data's `+0x0C` = 0 (no town portal) and mode 0, in both logs. So with this
+  recipe (word 39 bit 0 clear, `quests: all`) the quest is active at step 3, below 4: the altar took the active branch
+  and sent 0x4E22 (`ALS` site `active`, 0x0058D38F). (fn:sub_0058D310_A5Q5_AltarOperate@0x0058D310,
+  run:2026-10-30-h6ga-anc)
+- [C] **The cut, the level-up branch and the short branch** (level 25 character, Normal; fn:sub_0058C5C0_ExpGrantCapped@0x0058C5C0,
+  run:2026-10-30-h6ga-anc). The character had gained experience on the way, so `EG0` found level 26, experience
+  2 147 274, `nextexp` 2 563 061 (the checker reads each log's own values). `EGS` logged 640 765 at the first pass:
+  exactly T(27) − T(26) = 3 203 826 − 2 563 061, below the 1 400 000 of step 1, so the cut of step 3 bound.
+  The first pass levelled up (`need` 415 787 ≤ 640 765, `EGX` stat 29 = 415 787, stat 12 = 27), the second took the
+  short branch (224 978 < `need` 640 765; stat 13 += 224 978), the third saw G = 0: `EGX` experience 2 788 039,
+  `nextexp` 3 203 826. A grant without the cut would have ended at level 28, experience 3 547 274, so the session
+  separates the two readings. The first try (the dev session `dev-h6ga-dev1-s2-4314-anc25`, kept in `workspace/logs/h6g/` under its dev manifest) gave the same shape (experience 2 159 850, grant
+  640 765 then 237 554).
+- [C] **The fixed amount in Normal** (level 80 character, `anc80`): `EG0` level 81, difficulty byte 0, `EGS` 1 400 000 at the
+  first pass (the cut T(82) − T(81) is far above it, so it did not bind), no level-up (`need` 67 254 290 > 1 400 000: the
+  experience rose by exactly 1 400 000, 742 731 766 to 744 131 766), then G = 0.
+  (fn:sub_0058C5C0_ExpGrantCapped@0x0058C5C0, run:2026-10-30-h6ga-anc) This is step 1's Normal value.
+- [C] **Reproduction.** `tools/sweep_h6g.py check` models steps 1-4 from the `EG0` entries (difficulty byte, base entries 12,
+  13, 29, 30) and the experience table: the `EGS` values at every pass and the four entries at `EGX` match in both logs
+  (2 grants, 0 mismatches). A second code path is absent, so the `[C]` rests on the reproduction of the logged call
+  (evidence rule 1).
+  (fn:sub_0058C5C0_ExpGrantCapped@0x0058C5C0, run:2026-10-30-h6ga-anc)
+- **Not reached, so open.** The Nightmare (20 000 000) and Hell (40 000 000) amounts: no log has difficulty byte 1 or 2,
+  so those two immediates stay `[I]` (the cut would hide them anyway below level 65 and 73). Which of the three callers
+  made the call is not logged (`EG0` has no return address); the killer's grant, with its level test `20·(d + 1)`, is the
+  likely one `[I]`. The corpse pickup (rows 3/30) was not staged: four earlier `deathnm` tries died at the corpse, and a
+  survivable Nightmare death is not a cheap addition to this lane.
+
+### Ledger moves (proposed; the review rules)
+
+- **Rows 2 and 29: raised in part.** `[C]`: step 1's Normal amount (1 400 000), the cut of step 3 (min with the next
+  level's width, signed), both branches of step 4 and the re-read of the level, in Normal
+  (fn:sub_0058C5C0_ExpGrantCapped@0x0058C5C0, run:2026-10-30-h6ga-anc). Scope of "both branches": the compare `G < need`
+  met a clear less (224 978 < 640 765; 1 400 000 < 67 254 290) and a clear greater (640 765 > 415 787), never `G` = `need` (so the
+  `jb` against `jbe` edge at 0x0058C673 is not separated) and never a value at or above 2^31 (the signed cut and the
+  unsigned `need` compare are not told apart); the `L ≥ max` return and the `L < max` loop exit were not reached. They
+  stay `[I]`. **Remainder:** the 20 000 000 and 40 000 000
+  immediates (Nightmare and Hell sessions; the Ancients' route repeats in the other two difficulties with the recipe's
+  `difficulty` bits and a Nightmare entry).
+  (fn:sub_0058C5C0_ExpGrantCapped@0x0058C5C0, run:2026-10-30-h6ga-anc)
+- **Row 33** (J2): the capped grant is now run in Normal; its remainder is the same two immediates.
+- No class change, totals unchanged. Symbols: none new (all addresses cited already have reviewed rows).
 
 ## Open questions
 

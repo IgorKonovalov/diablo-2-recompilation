@@ -185,6 +185,7 @@ def check(excel, exe, logs):
         kept_last = None
         share_last = None
         pick = None
+        eg = None
         for i, (t, d) in enumerate(ev):
             th = d.get("th")
             try:
@@ -398,6 +399,37 @@ def check(excel, exe, logs):
                     S["death: PLAYER_DeathExpLoss reproduced, difficulty %d, %s" % (m["diff"], kind)] += 1
                     if not m.get("loss"):
                         kept_last = kept_last if kind == "loss 0" and kept_last else 0
+                elif t == "EG0":
+                    # sub_0058C5C0_ExpGrantCapped (player/0001 § Plan 0038 H6g shortfalls, steps 1-4)
+                    b = bd(d["b"])
+                    G = (1400000, 20000000, 40000000)[d["diff"]]
+                    L, ex, nx = bget(b, 12), bget(b, 13), bget(b, 30)
+                    cut = T.thr(0, L + 1) - T.thr(0, L) if L < T.maxlvl else 0
+                    G = min(G, cut)
+                    passes, lastexp = [], bget(b, 29)
+                    while L < T.maxlvl:
+                        passes.append(G)
+                        if G == 0:
+                            break
+                        need = nx - ex
+                        if G < need:
+                            ex += G
+                            G = 0
+                        else:
+                            ex, lastexp, L, G = nx, need, L + 1, G - need
+                            nx = T.thr(0, L)
+                    eg = {"passes": passes, "end": [L, ex, lastexp, nx], "got": [], "cut": cut,
+                          "uncut": (1400000, 20000000, 40000000)[d["diff"]], "L0": bget(b, 12)}
+                elif t == "EGS" and eg is not None:
+                    eg["got"].append(d["grant"])
+                elif t == "EGX" and eg is not None:
+                    b = bd(d["b"])
+                    eq("EGS values (the grant at each loop pass)", eg["passes"], eg["got"])
+                    eq("the base entries after the grant (12, 13, 29, 30)", eg["end"],
+                       [bget(b, 12), bget(b, 13), bget(b, 29), bget(b, 30)])
+                    S["grant: ExpGrantCapped reproduced (cut %s than the fixed amount, %d level-up(s))" % (
+                        "lower" if eg["cut"] < eg["uncut"] else "not lower", eg["end"][0] - eg["L0"])] += 1
+                    eg = None
                 elif t == "CC0":
                     v = d["v"]
                     if kept_last is not None:

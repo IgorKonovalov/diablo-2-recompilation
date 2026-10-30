@@ -36,7 +36,7 @@ RECIPES = os.path.join(HERE, "d2s_recipes")
 
 # Sorceress experience thresholds T(L) (experience.txt, the Sorceress column; T(L) is the experience that reaches
 # level L + 1): the recipes' experience values below are written from them
-T = {29: 4663553, 39: 17270791, 49: 47116709, 79: 681027665, 80: 742730244, 97: 3229426756, 98: 3520485254}
+T = {24: 1640359, 25: 2050449, 29: 4663553, 39: 17270791, 49: 47116709, 79: 681027665, 80: 742730244, 97: 3229426756, 98: 3520485254}
 
 NOVA_SKILLS = {"Lightning": 20, "Chain Lightning": 20, "Lightning Mastery": 20, "Charged Bolt": 1, "Static Field": 1,
                "Telekinesis": 20, "Nova": 20, "Teleport": 1, "Thunder Storm": 1, "Energy Shield": 20, "Warmth": 20,
@@ -106,6 +106,11 @@ def recipes():
     anc = nova("H6gAnc", 6707, 80, T[80] - 1000, diff=132)
     anc["quest_bits"] = {d: {"39": {"clear": [0]}, "40": {"clear": [0]}} for d in ("normal", "nightmare", "hell")}
     out["anc"] = anc
+    # rows 2 and 29 (lane h6ga): level 25 in Normal, 1000 below the level-26 start, so the cut binds
+    # (T(26) - T(25) = 512 612 at level 25; the run's character was level 26 at the grant, cut 640 765); same quest state as anc
+    anc25 = nova("H6gAnc25", 6708, 25, T[25] - 1000, diff=132)
+    anc25["quest_bits"] = anc["quest_bits"]
+    out["anc25"] = anc25
     for k, r in out.items():
         with open(os.path.join(RECIPES, "player-h6g-%s.json" % k), "w") as fh:
             json.dump(r, fh, indent=2)
