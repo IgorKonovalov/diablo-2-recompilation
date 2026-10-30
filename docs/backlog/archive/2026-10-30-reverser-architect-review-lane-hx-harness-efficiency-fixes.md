@@ -2,9 +2,9 @@
 from: reverser
 to: architect
 date: 2026-10-30
-status: open
+status: done
 context: []
-resolution: ""
+resolution: "lane/hx Tier B check: accept, 0 fixes. test_h1_ready 9 green, gate green; RDY before continue in both .gdb; anchors (wait_ready, READY, kept-log line 17 vs TBL line 18) match; the other runners' sweep stands; first H1a/H1c session is the live smoke for the new logger revision."
 ---
 
 Review lane/hx (owner-approved 2026-10-30 harness efficiency fixes; tooling and skill text only, no claims, no game session). Commits 0337e9f3 (tools) and aa597c3f (skills).
