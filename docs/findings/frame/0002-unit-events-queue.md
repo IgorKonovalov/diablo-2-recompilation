@@ -440,6 +440,11 @@ if (found) UnitClearRoom(unit);
   sites; the record's slot and position follow from §§ 2.1–2.2. The window volume estimate of frame/0001 § 7 did not
   count these lines (one per queued event). (fn:sub_005417D0_UnitQueueEvent@0x005417D0,
   fn:sub_005415E0_EventQueueEveryFrame@0x005415E0)
+  *2026-10-30 (P1.3, `lane/r55c`):* corrected in [frame/0003 § 9](0003-timers-activation.md#9-the-frame-window-log-design-closed-phase-2b):
+  `UnitQueueEvent`'s entry misses `UnitQueueEventCb`'s queue (0x0054181A, `UnitTeleport`'s one site), and an
+  unconditional `EventQueueEveryFrame` breakpoint logs a frame −1 record twice (its call 0x005416D7 from `EventQueueAt`);
+  the queue line is `EventQueueAt`'s entry 0x005416B0 plus `EventQueueEveryFrame`'s entry when its return address is
+  not 0x005416DC. (fn:sub_005416B0_EventQueueAt@0x005416B0)
 - *P1.2 review ruling:* the estimate is redone at **P1.3**, not at the pilot: P1.3 closes the log design (its `RU0`/`RU1`
   and `TM` sites) and re-runs `tools/frame_volume.py estimate` with the queue line and a stated queue rate per run
   event, so that the pilot's "three times its estimate" stop compares a measurement with an estimate that counts every
@@ -474,6 +479,12 @@ if (found) UnitClearRoom(unit);
    `0x00586850`, `0x00581410` are named by kind only; objects/0001 or a later batch reads them.
 2. **Kind 6's record at `Unit+0xA4`** (its frame from `0x006611D0`, freed by `0x006611A0`) and player kind 11's two
    calls (`0x005406A0`, `0x00575630`, every 30 frames) are not read.
+   *2026-10-30 (P1.3, `lane/r55c`):* answered in [frame/0003 §§ 6–7](0003-timers-activation.md#6-player-kind-11-frame0002-open-question-2):
+   `Unit+0xA4` is the overhead chat record (an end frame `8n + 125` after its creation); kind 11 sends the party's and
+   the pets' status packets after pruning dead pets with `PetRemove(guid, 0)`. Neither draws by direct reach (565 and
+   601 functions, `UninterruptibleEnd` unreachable from both, the pet release unreachable from kind 11), so both are
+   draw-free events of the frame model, not boundary oracles. The 118 RNG functions of § 5 for these entries come
+   through those two stops. (fn:sub_00580BE0_PlrEvent11Every30@0x00580BE0, fn:sub_00580B70_PlrEvent6Expire@0x00580B70)
 3. **Which unit types each `UnitQueueEvent` site queues for** is not enumerated (§ 3); a window logs kind and type.
 4. **`A5Q3_TownReturn`'s caller** and the four unreferenced `UnitRoomUnlink` sites: a window or a reading of the quest
    callback table settles whether the first runs in a frame.
