@@ -1,6 +1,6 @@
 # 0054 — Path search: the planner behind every path request, its points, its draws and its use of the collision grid (ADR-0014 phase 5, second part)
 
-> **Status:** draft (architect, 2026-10-30, `lane/plans54`); for the owner's approval with the scoping questions below
+> **Status:** approved (owner, 2026-10-30: "approve as recommended", all eight scoping questions answered as recommended); drafted 2026-10-30 (architect, `lane/plans54`)
 > **Created:** 2026-10-30
 > **Owner skill(s):** archivist, reverser, spec-writer
 > **Related ADRs:** 0003-runtime-experiments, 0004-boundary-oracles-in-reproduction, 0011-harness-slots, 0014-scope-game-simulation, 0015-emulated-reproduction, 0016-pipelined-simulation-phases, 0021-observed-boundaries-in-emulation, 0022-scope-server-frame
@@ -202,3 +202,9 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 
 - **2026-10-30 — Drafted (architect, `lane/plans54`).** Status `draft`; drafted on unpause as plan 0052's P1.1 review
   ruled; eight scoping questions for the owner.
+- **2026-10-30 — Approved (owner; recorded by the architect, `lane/appr`).** "Approve as recommended": all eight
+  scoping questions answered as recommended (every planner slot; every server-side caller; emulation first; unit marks
+  in; the client's planner out; row `path/search` under `docs/specs/path/`; one harness slot; run order as question 8).
+  Run order ([plans README](README.md#run-order-set-2026-10-25-plans-00380052)): P0 in the archivist's queue after
+  0055·P0; P1 in static lane B after 0055·P1, before 0052's later catalogue batches; P2 when a slot is free. Status
+  `approved`.
