@@ -145,3 +145,36 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   format rules are `[I]` pointing at the tool's tests; a field is `[C]` only where observed cases hold it. Two `[L]`
   under Open questions (extension or version 2 for item seeds and populations; who fills `quirks`). Awaiting the
   Tier A review.
+- **2026-10-30 — Phase 3 review (architect, `lane/s59`, Tier A): accept with fixes (15).** Checks: the 32 fields of
+  `golden.py fields` all have a row (11 world, 5 pool, 8 drop, 8 DRLG) and every `#fragment` resolves; the observed and
+  predicted counts match `docs/formats/golden-trace.md` § Set v1 (A1 and A3 37 / 612, B1 63 / 3 060, B2 624 / 52 632,
+  A2, A4, B2 digest and pools 0 / 612, drops 4 040, outdoor 334, maze 50; 5 073 cases in all); a field is `[C]` only with
+  observed cases; the 22 quirk ids cited exist in the catalogue and fit their stages; the two `[L]` sit under Open
+  questions; anchors spot-checked in `re/symbols.csv` (`GAME_InitSeeds`, `DRLG_ActCreate`, `DRLG_LevelCreate`,
+  `TC_ResolveDrops`, `MonRegionsInit`). Fixes, written into the page: *misread 5*: the order diagram drew the pools
+  after the DRLG and an edge from the pools to the drops, neither in the text (the region pools are built at game
+  creation on the A2 seed; the drop and DRLG cases take their seeds as inputs), now each edge is a stated bullet; the
+  RNG bullet's "a wrong `Step` breaks `chain.A1.game_seed` first" (A1 is `Init` only) and "the first field that takes a
+  draw" (the seed fields take raw steps; `Range` first appears in the pools, windows and drops); mismatch rule 1's "the
+  B seeds derive from the game and map seeds" (B1 starts from the map seed alone); rule 3's "a wrong `seed_after`
+  means a draw was reordered" (a seed after k steps does not depend on their order, so `seed_after` tests the step
+  count only); rule 5's "`nodrop` ... come before `quality`" (a pick's quality roll follows that pick on the same seed).
+  *Wrong anchor 5*: 41 `fmt:golden-trace` anchors without a resolvable section, now `fmt:golden-trace#<heading>`; the
+  order statement's `[C]` anchored to a run named twice and to "header tags", now the chain's A, B, D and G functions
+  and runs; the outdoor `presets_digest` and `rooms_digest` rows linked to §§ B–E and D, while the rooms and presets
+  are `OutdoorRoomsCreate`'s, now drlg/outdoor § Outputs and drlg/overview step 8 (maze rows gain § Outputs), and the
+  five DRLG `[C]` rows gained the generator function and the spec's run beside the set; the `predicted` row anchored to
+  the observed runs; "every field is a row" anchored to § Checking, not § Fields. *Under-claim 3*: step 4, the
+  self-check paragraph and the mismatch report's form raised to `[C]`, as golden-trace § Checking states them by its
+  tests. *Overclaim 1*: the quirks table called "the entries the catalogue lists" for those specs; it is a selection.
+  *Omission 1*: `chain.G1.end_seed` without items/quality's draw order. Rulings. (1) **The `fmt:golden-trace` anchor
+  is accepted** for the page's statements about the format and its tool: the claims are about a project format with no
+  game-side evidence, the format doc owns them, and E4 resolves the anchor to it; the anchor takes the evidence rules'
+  `fmt:<name>#<field>` form, here the heading slug, and test names stay plain citations beside it. Such a statement takes
+  the format doc's tag (`[C]` where § Checking or § File layout states it by the tests, else `[I]`); a field row's `[C]`
+  may rest on `fmt:golden-trace#set-v1-coverage-per-spec-step` (the observed cases, counted `[C]` by script) only beside
+  the spec's own game anchor. (2) The page states no game mechanic of its own: its one new `[C]` (the pools at A2)
+  restates chain A and monsters/pool §§ A–B with their anchors. (3) No wiki page: the page is itself a reader's guide;
+  the wiki may link it when plan 0059 closes. No promotion re-check applies (the page imports no finding `[C]`).
+  Tags after the fixes: C 22 / I 35 / L 2; status reviewed; research-map row rewritten; Phase 3 done; Phase 4 waits on
+  0052·P3a and 0055·P3.

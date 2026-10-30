@@ -465,6 +465,7 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-10-30 | lane/w46 | 0046 P4 | wiki | 75 536 | 16 | 2 | — (no Ghidra, no harness) | accept with fixes (Tier B check) | 3: misread 2, stale cross-reference 1 |
 | 2026-10-30 | lane/w46 check | 0046 P4 | architect-check | 97 607 | 32 | 4 | — | accept with fixes | misread 2, stale cross-reference 1 |
 | 2026-10-30 | lane/s59 | 0059 P3 | spec | 0 | 28 | 0 | — (no Ghidra, no harness) | — | — |
+| 2026-10-30 | lane/s59 review | 0059 P3 | architect-review | 0 | 45 | 30 | — (Tier A, no Ghidra, no harness) | accept with fixes (15) | misread 5, wrong anchor 5, under-claim 3, overclaim 1, omission 1 |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not
