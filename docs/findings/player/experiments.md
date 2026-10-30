@@ -249,8 +249,11 @@ run:2026-10-27-sweep-player; ADR-0013 § Neutral; the recipes are test states: w
 Logger `tools/gdb/h6g-quest.gdb` (`h6g.py` with `AL0` and `ALS` at 0x0058D33F, 0x0058D361 and 0x0058D38F added; smoked by
 the dev session below: it armed, the runner's ready line `PLR` arrived, each tag the checker reads appeared). Runner
 `tools/h6ga_sessions.py` (on `tools/harness_runner.py`, tool revision = the commit of this run's finding), checks
-`tools/sweep_h6g.py check` (with the grant model added). Kept under `workspace/logs/h6g/` (`manifest-h6ga.sha256`, 7 lines,
-passes from that directory; `manifest-dev-h6ga.sha256`, 2 lines, passes from that directory).
+`tools/sweep_h6g.py check` (with the grant model added). Kept under `workspace/logs/h6g/` (`manifest-h6ga.sha256`, 15 lines: logs, marks,
+pilot files, the check output and the 8 kept screenshots; `manifest-dev-h6ga.sha256`, 7 lines: the dev session's log, pilot
+file, marks and 4 screenshots; both pass from that directory). The check command, re-run at the Tier B check with the same
+output (`db35aa62…`): `python3 -I tools/sweep_h6g.py check workspace/merged/data/global/excel workspace/install/app/game.exe
+workspace/logs/h6g/h6ga-s2-4314-anc25.log workspace/logs/h6g/h6ga-s2-4314-anc80.log`.
 
 | Session | Seed | Save | Mode | What it covers |
 |---|---|---|---|---|

@@ -1794,7 +1794,7 @@ open, `+0x4C` altar mode, `+0x50` altar id, `+0x54` live players on 120, `+0x58.
 
 - [I] **Experience reward:** each credit calls `sub_0058C5C0_ExpGrantCapped` (player/0001): 1 400 000 (Normal),
   20 000 000 (Nightmare), 40 000 000 (Hell), capped at `T(L + 1) − T(L)`, the width of the level after the
-  current one (read 2026-10-30, [player/0001 § Plan 0038 H6g shortfalls](../player/0001-creation.md#plan-0038-h6g-shortfalls-static-read-2026-10-30)). No draw.
+  current one (read 2026-10-30, [player/0001 § Plan 0038 H6g shortfalls](../player/0001-creation.md#plan-0038-h6g-shortfalls-static-read-2026-10-30)). No draw. (The Normal amount and the cut are `[C]` by run:2026-10-30-h6ga-anc, [player/0001](../player/0001-creation.md#plan-0038-h6g-rows-2-and-29-the-ancients-grant-session-run2026-10-30-h6ga-anc); the Nightmare and Hell amounts stay `[I]`; this bullet's tag stays for the credit paths.)
   (fn:sub_0058C5C0_ExpGrantCapped@0x0058C5C0, fn:sub_0058C6D0_A5Q5_PartyExpGrant@0x0058C6D0,
   fn:sub_0058C7E0_A5Q5_SummitExpGrant@0x0058C7E0)
 - [I] **Arming:** the altar (OperateFn 65 = `0x0058D310`, object 546) sends message 0x4E22 to e11: if `+0x0C` = 0 and

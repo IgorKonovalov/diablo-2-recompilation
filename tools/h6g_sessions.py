@@ -106,8 +106,8 @@ def recipes():
     anc = nova("H6gAnc", 6707, 80, T[80] - 1000, diff=132)
     anc["quest_bits"] = {d: {"39": {"clear": [0]}, "40": {"clear": [0]}} for d in ("normal", "nightmare", "hell")}
     out["anc"] = anc
-    # rows 2 and 29 (lane h6ga): level 25 in Normal, 1000 below the level-26 start, so the cut T(26) - T(25) = 512 612
-    # binds (the uncut 1 400 000 would level up three times); same quest state as anc
+    # rows 2 and 29 (lane h6ga): level 25 in Normal, 1000 below the level-26 start, so the cut binds
+    # (T(26) - T(25) = 512 612 at level 25; the run's character was level 26 at the grant, cut 640 765); same quest state as anc
     anc25 = nova("H6gAnc25", 6708, 25, T[25] - 1000, diff=132)
     anc25["quest_bits"] = anc["quest_bits"]
     out["anc25"] = anc25

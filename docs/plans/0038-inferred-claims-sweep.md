@@ -6046,3 +6046,22 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Ledger:** rows 2 and 29 raised in part (the Normal amount, the cut, both loop branches); remainder the 20 000 000
     and 40 000 000 immediates (a Nightmare and a Hell session). Row 33's J2 remainder is the same. Corpse pickup (rows
     3/30) not staged. Totals unchanged (1 526): a part-raise does not move a row.
+- **2026-10-30 — `lane/h6ga` Tier B check (architect), H6g rows 2/29: accept with fixes (5).** Rulings: (1) the
+  part-raise stands: the Normal amount 1 400 000, the cut `T(L + 1) − T(L)`, the level-up and short branches and the level
+  re-read are `[C]` by the reproduction of the logged calls (the second source of evidence rule 1; `anc25` separates cut from
+  no-cut: uncut it would end at level 28 / 3 547 274, the log has 27 / 2 788 039; `anc80` shows the fixed amount uncut). Re-run
+  of `sweep_h6g.py check` on the two kept logs under `systemd-run --scope -p MemoryMax=4G`: output byte-identical to
+  `check-h6ga.txt` (`db35aa62…`), 0 mismatches; `AL0`/`EG0`/`EGS`/`EGX` lines read by hand agree. (2) Scope added to the
+  `[C]`: the `G = need` edge (`jb` vs `jbe`), values at or above 2^31 (signed cut, unsigned `need`), the `L ≥ max` return and
+  the loop exit were never reached, so they stay `[I]`. (3) Nightmare/Hell amounts and the caller identity stay `[I]`; no
+  Nightmare/Hell session is ordered now (the cut hides them below level 65 and 73 and they need two further difficulties);
+  the pickup (rows 3/30) is unstaged. (4) Totals unchanged (1 526), correct for a part-raise. (5) The spec's J2 does need a
+  re-tag (Normal amount, cut, steps 3/4, the "has not run" sentences, the Entry points row, quests/progression, wiki/characters):
+  routed to the spec-writer,
+  [`2026-10-30-architect-spec-writer-player-creation-j2-normal-grant-raised.md`](../backlog/2026-10-30-architect-spec-writer-player-creation-j2-normal-grant-raised.md).
+  The only change under `docs/specs/` in the diff is a link rewrite by `backlog.py archive` (no claim), so no escalation.
+  Fixes (5): overclaim 1 (the `[C]` edges above), other 2 (the dev manifest said to pass from `h6g/` listed
+  `../` paths and failed; the 8 kept screenshots and the dev marks/shots were outside both manifests, now 15 and 7 lines, both
+  `sha256sum -c` green; the check command now stated), stale cross-reference 2 (player/0001 § H6g ledger, step list and
+  trigger bullets, quests/0001's reward bullet, the recipe comment's cut at level 25 where the run's character was 26 at the
+  grant). Omission 0 beyond the spec-writer entry above.

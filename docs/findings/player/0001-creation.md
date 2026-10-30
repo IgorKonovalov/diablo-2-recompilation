@@ -735,7 +735,9 @@ run, so every statement here is inferred.
 - [I] The grant itself (§ 7): 1 400 000, 20 000 000 or 40 000 000 by difficulty, cut to `T(L + 1) − T(L)` (the
   width of level L + 1; [§ Plan 0038 H6g shortfalls](#plan-0038-h6g-shortfalls-static-read-2026-10-30)), then filled
   level by level with `PLAYER_LevelUp`. So the Ancients give at most one level. Each tested player is marked done (bit 0)
-  before the grant, so a player can get it once per difficulty. (fn:sub_0058C5C0_ExpGrantCapped@0x0058C5C0)
+  before the grant, so a player can get it once per difficulty. (Normal amount and cut `[C]` since run:2026-10-30-h6ga-anc,
+  [§ Plan 0038 H6g rows 2 and 29](#plan-0038-h6g-rows-2-and-29-the-ancients-grant-session-run2026-10-30-h6ga-anc).)
+  (fn:sub_0058C5C0_ExpGrantCapped@0x0058C5C0)
 
 ### Death loss and the corpse: 75 % comes back
 
@@ -1028,6 +1030,7 @@ calls reproduced, 0 failed) and `tools/sweep_h6g.py check` (**0 mismatches**, `w
   --boss-cls 540,541,542`): the first never found warp 76 in level 118 (40 hops, "no warp 76"); the second reached
   level 120 but `objop` found no object of class 546 ("level explored"), and no Ancient was met. No `EG0` line.
   Plan 0042's x-summit sessions operated the summit door (class 564) at this stage. Routed, not retried (backlog).
+  (Since run: [§ Plan 0038 H6g rows 2 and 29](#plan-0038-h6g-rows-2-and-29-the-ancients-grant-session-run2026-10-30-h6ga-anc), raised in part.)
   **Static read 2026-10-30:** class 546 is the altar (the route's object was right); the session never had the
   altar's room populated (no 546, 547 or statue object in any `OBJS` line). Rows 2 and 29 stay open; the route a
   later session needs is in [§ Plan 0038 H6g shortfalls](#plan-0038-h6g-shortfalls-static-read-2026-10-30).
@@ -1045,7 +1048,7 @@ unit list below), `static-h6gs.s` (`2f7ac4ec…`, the disassembly of the ranges 
 
 ### Rows 2 and 29: what the Ancients' grant needs, and why the `anc` session missed it
 
-- [I] **The grant, step by step** (`sub_0058C5C0_ExpGrantCapped(game)`, the player in `ESI`; 0x0058C5C0–0x0058C6CB):
+- [I] (steps 1 in Normal, 3 and 4 `[C]` by run:2026-10-30-h6ga-anc, see § Plan 0038 H6g rows 2 and 29, with the scope there; the rest `[I]`) **The grant, step by step** (`sub_0058C5C0_ExpGrantCapped(game)`, the player in `ESI`; 0x0058C5C0–0x0058C6CB):
   0. `QUESTS_SendPlayerRecord(game, player)` (0x0058C5CF), before anything else.
   1. `G` ← 1 400 000; 20 000 000 when the game's difficulty byte (`game+0x6D`) is 1; 40 000 000 when it is 2
      (0x0058C5D4–0x0058C5EE).
@@ -1211,7 +1214,7 @@ mismatches (`workspace/logs/h6g/check/check-h6ga.txt`, `db35aa62…`; manifest `
   The first pass levelled up (`need` 415 787 ≤ 640 765, `EGX` stat 29 = 415 787, stat 12 = 27), the second took the
   short branch (224 978 < `need` 640 765; stat 13 += 224 978), the third saw G = 0: `EGX` experience 2 788 039,
   `nextexp` 3 203 826. A grant without the cut would have ended at level 28, experience 3 547 274, so the session
-  separates the two readings. The first, discarded-to-`dev/` try gave the same shape (experience 2 159 850, grant
+  separates the two readings. The first try (the dev session `dev-h6ga-dev1-s2-4314-anc25`, kept in `workspace/logs/h6g/` under its dev manifest) gave the same shape (experience 2 159 850, grant
   640 765 then 237 554).
 - [C] **The fixed amount in Normal** (level 80 character, `anc80`): `EG0` level 81, difficulty byte 0, `EGS` 1 400 000 at the
   first pass (the cut T(82) − T(81) is far above it, so it did not bind), no level-up (`need` 67 254 290 > 1 400 000: the
@@ -1232,7 +1235,11 @@ mismatches (`workspace/logs/h6g/check/check-h6ga.txt`, `db35aa62…`; manifest `
 
 - **Rows 2 and 29: raised in part.** `[C]`: step 1's Normal amount (1 400 000), the cut of step 3 (min with the next
   level's width, signed), both branches of step 4 and the re-read of the level, in Normal
-  (fn:sub_0058C5C0_ExpGrantCapped@0x0058C5C0, run:2026-10-30-h6ga-anc). **Remainder:** the 20 000 000 and 40 000 000
+  (fn:sub_0058C5C0_ExpGrantCapped@0x0058C5C0, run:2026-10-30-h6ga-anc). Scope of "both branches": the compare `G < need`
+  met a clear less (224 978 < 640 765; 1 400 000 < 67 254 290) and a clear greater (640 765 > 415 787), never `G` = `need` (so the
+  `jb` against `jbe` edge at 0x0058C673 is not separated) and never a value at or above 2^31 (the signed cut and the
+  unsigned `need` compare are not told apart); the `L ≥ max` return and the `L < max` loop exit were not reached. They
+  stay `[I]`. **Remainder:** the 20 000 000 and 40 000 000
   immediates (Nightmare and Hell sessions; the Ancients' route repeats in the other two difficulties with the recipe's
   `difficulty` bits and a Nightmare entry).
   (fn:sub_0058C5C0_ExpGrantCapped@0x0058C5C0, run:2026-10-30-h6ga-anc)
