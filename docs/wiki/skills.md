@@ -557,7 +557,8 @@ From the specs' open questions ([overview](../specs/skills/README.md#open-questi
   traps for someone rebuilding the system.
 - The [glossary](../glossary.md) for D2 terms: start and do functions, progressive charges and the finisher, the
   server missile, pet type and pet limit.
-- Related wiki pages: [combat](combat.md) (what a skill hit or a missile hit enters), [stats and states](stats-and-states.md)
+- Related wiki pages: [animation and timing](animation.md) (the do frame, the skill delay and the length of a cast or
+  attack), [combat](combat.md) (what a skill hit or a missile hit enters), [stats and states](stats-and-states.md)
   (the timed states, auras and the stats a skill reads), [randomness](randomness.md) (unit seeds and re-seeds),
   [monsters](monsters.md) (a summon's creation and stats), [economy](economy.md) (ammunition and wear) and
   [how we know](how-we-know.md).
