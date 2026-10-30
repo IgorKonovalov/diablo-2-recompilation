@@ -147,3 +147,8 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
     −2³¹ exactly), and the collision walk's "at most 10 crossings" without what the 10th does (the full step taken
     unchecked, flag `0x8`) or the halved increment it walks by (`lane/p50d` review,
     [0050](../../../../docs/plans/0050-animation-frame-timing.md)); the saved name's `first + name` u16 add left without its bound (for the Rogue, 62 124 fits, 62 125 wraps to 0 and is kept; `lane/h6f` review, [0038](../../../../docs/plans/0038-inferred-claims-sweep.md)).
+16. **A runner's readiness wait keys on a line that appears before the first case** (the logger's ready or armed
+    line, or `PLR` when the steps enter the game), never on one only a case produces, and it returns when the driver
+    has exited. Seen: `tools/h1a_sessions.py` and `h1c_sessions.py` waited for three `TBL` lines, which only the
+    runner's first load writes (the first case mark of H1a's kept log sits at line 17, before any `TBL`), so every
+    session ran out the 120 s timeout; now `RDY` (harness efficiency fixes, `lane/hx`).

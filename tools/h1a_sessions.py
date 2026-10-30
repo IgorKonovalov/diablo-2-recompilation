@@ -123,6 +123,24 @@ def lines(log, tag):
         return []
 
 
+READY = "RDY"   # the logger's ready line: tools/gdb/d2s-h1a.gdb (and d2s-h1c.gdb) echo it once every logger file
+#                is sourced, right before `continue`. It keys the start wait on a line that precedes the first case:
+#                the TBL lines this wait once counted come only from a load, which the runner itself starts.
+
+
+def wait_ready(log, secs, gone=lambda: False, tick=lambda: None, step=0.5):
+    """Wait until the log holds the logger's RDY line (True), the driver is gone (False, without waiting out
+    secs) or secs pass (False). tick runs once per poll (the runner hides the window there)."""
+    t0 = time.time()
+    while True:
+        tick()
+        if lines(log, READY):
+            return True
+        if gone() or time.time() - t0 >= secs:
+            return False
+        time.sleep(step)
+
+
 def wait_count(log, tag, n, secs):
     t0 = time.time()
     while time.time() - t0 < secs:
@@ -165,13 +183,14 @@ def run_session(name, slot, tag, cases, run, only=None):
                                  "--install", tag, src(loads[0][1]), "--log", log],
                            cwd=ROOT, stdout=out, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL,
                            start_new_session=True)
-    t0 = time.time()
-    while time.time() - t0 < 120:
-        time.sleep(2)
-        hide_window(slot)
-        if len(lines(log, "TBL")) >= 3 or any(ln.startswith("# gdb") for ln in lines(log, "#")):
-            break
-    time.sleep(8)
+    t1 = time.time()
+    ok = wait_ready(log, 120, gone=lambda: drv.poll() is not None, tick=lambda: hide_window(slot))
+    print("  %s after %.0f s" % ("RDY seen" if ok else "no RDY line", time.time() - t1), flush=True)
+    if drv.poll() is not None:
+        print("  driver gone before the first case: stop", flush=True)
+        out.close()
+        return 1
+    time.sleep(8)   # the steps file starts up to --attach-wait (5 s) after the exec of gdb and lasts 2 s
     hide_window(slot)
 
     def xd(*a):
