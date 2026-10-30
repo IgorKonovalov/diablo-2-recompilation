@@ -921,6 +921,16 @@ unless a finding is cited.
   36, 61, 67, 114, 119, 122, 133, 142. A catalogue entry reads each record's slots, not one per AI.
   (tbl:MonStats.txt:aip1)
 
+- `[I]` **Readers named by the pool-A batch** ([ai/0002](../findings/ai/0002-pool-a.md) § 2, plan 0052 P1.2 batch 1, AI
+  rows 2-16 and 142; the per-AI meanings stay in the finding, this table claims none):
+  - `aip1`..`aip8`: each think function of those rows reads its slots per record and difficulty, one pseudocode block per
+    row (§ 2.1-2.15; e.g. row 8 `aip5` and `aip6`, row 11 `aip1` and `aip5`).
+  - `aidel`, `aidel(N)`, `aidel(H)`: row 8 (`SandRaider`, § 2.7) waits `aidel[d] + 1` frames at its overlay.
+  - `Velocity`, `Run`: row 11 (`Baboon`, § 2.10) takes a speed bonus `Run * 100 / Velocity - 100` when the quotient is at
+    least 100, capped at 120 (both read from `+0x32` and `+0x34`; a `Velocity` of 0 gives no bonus).
+  - `Skill1`..`Skill3`, `Sk1mode`..`Sk3mode`: row 8 `Skill1` (Fire Hit); row 13 `Skill1` (Resurrect, mode 14, no
+    `Sk1mode`) and `Skill2` with `Sk2mode`; row 15 `Skill1..3`; rows 16 and 142 `Skill1` (§ 2.7, 2.11, 2.13-2.15).
+
 ## Open questions
 
 - Answered `[I]` in [data/0001 §8](../findings/data/0001-excel-loader.md#8-answers-to-the-archivists-phase-1-questions): monster

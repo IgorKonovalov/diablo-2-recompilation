@@ -15,6 +15,7 @@ archives d2data → d2exp → LoD patch_d2; see [mpq.md](../formats/mpq.md)). Ge
   (`Aiparms`, `MonName`, `SoundEnviron`, `TreasureClass`, `WeaponClass`), 5 are `.bin` only
   (`leveldefs` plus four `*code.bin` files). No excel file comes from d2data: d2exp or patch_d2
   overrides all 56 of its tables.
+- `[C]` **One table is not an excel file:** [PathTypes](PathTypes.md), the 17 path types (`g_PathPlanFuncs` and its flags table read from the pinned image), plan 0054 Phase 0.
 - `[C]` **Every one of the 87 pairs agrees on record count.** The `.bin`'s leading u32 equals the
   `.txt` data rows (57 tables), or the data rows minus the `Expansion` marker rows (30 tables).
   `(size − 4)` is an exact multiple of that count in every case ([excel-bin.md](../formats/excel-bin.md)).

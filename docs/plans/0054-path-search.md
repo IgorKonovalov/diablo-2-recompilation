@@ -208,3 +208,13 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   Run order ([plans README](README.md#run-order-set-2026-10-25-plans-00380052)): P0 in the archivist's queue after
   0055·P0; P1 in static lane B after 0055·P1, before 0052's later catalogue batches; P2 when a slot is free. Status
   `approved`.
+- **2026-10-30, Phase 0 (archivist, `lane/a54`).** `docs/tables/PathTypes.md`: the 17 slots of `g_PathPlanFuncs`
+  (`0x006EB6D8`) and the flags table (`0x006EB690`) read from the pinned image by `tools/path_survey.py` (gate survey
+  `path`, baseline `tools/gate/baselines/path.txt`). `[C]` data: 14 slots hold a planner (10 distinct addresses; 11 have
+  a name in `re/symbols.csv`), types 4, 10 and 14 hold 0 and are exactly the three with flag `0x40000`; the table matches
+  ai/0001 § 8 on every type. Columns linked: MonStats2 `SizeX` (0..3), Missiles `Size` (1..3, 183 blank), the player's fixed
+  size, Objects `SizeX/Y`, and Skills `srvstfunc`/`srvdofunc` with the five stock rows the findings tie to a type (Whirlwind
+  7, Swarm Move 2, Blessed Hammer 14, DiabRun 1, Firestorm 10). Surprises: no excel column chooses a path type (it is a
+  constant in the creating code); the H1 class-195 missile is Missiles row 195 `lightunique`, named by no cell of the six
+  tables scanned (so it is created by index in code: P1.3's H1 item); a flags word (`0x1E604`) carries a bit outside the 8 to
+  18 that `PathSetType` replaces (P1.1 reads the mask). Meanings of every flags bit stay `[L]`.

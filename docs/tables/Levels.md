@@ -19,6 +19,8 @@ object groups, names and the entry file. Read by `drlg/*`, `monsters/*` and seed
 - `[I]` **(corrected)** `Id` is compiled as a **u8** (descriptor type 4); `+0x001` is never written (0 in
   every record), so a reader of `+0x000` as a u16 sees the same values in stock data. ([data/0004](../findings/data/0004-cell-converters.md),
   tbl:Levels.txt:Id)
+- `[I]` Reader of `Id` 17 (`Act 1 - Graveyard`): AI row 3 (`Zombie`, `RoomGetLevelId(room) != 17` test) sends the zombies
+  on a run there instead of wandering ([ai/0002 § 2.2](../findings/ai/0002-pool-a.md); tbl:Levels.txt:Id).
 - `[C]` `levels.bin` and `leveldefs.bin` both have one record per row in the same order. Each
   `Levels.txt` column is in exactly one of them (`excel_bin.py diff` refuses a column mapped in both).
 

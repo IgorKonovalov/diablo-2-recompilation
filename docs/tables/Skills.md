@@ -1091,6 +1091,9 @@ The animation, sequence and delay columns, by the layout of [§ Animation, range
   through its `aurastat*`/`passivestat*` columns: 33 cells name `velocitypercent`, `attackrate`, `other_animrate` or
   `item_slow` ([ItemStatCost § Timing](ItemStatCost.md#timing-plan-0050-phase-0), `rate_stat_skill_cells`).
 
+- `[I]` **Path types (plan 0054 P0).** The `srvstfunc` / `srvdofunc` numbers tied to a path type by the findings (start 38 type 7, start 48 type 2, do 73 type 14, do 103 type 1, do 117 type 10) and the five stock rows they select are in [PathTypes § Stock rows that reach a type](PathTypes.md#stock-rows-that-reach-a-type); the type is set by the function, not read from a column.
+
+
 ## Open questions
 
 - `[L]` How the per-class lists at `DataTables+0xBA4..+0xBAC` are built at load (their builder is not read). What
