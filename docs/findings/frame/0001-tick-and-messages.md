@@ -388,6 +388,11 @@ seeds (ADR-0022). Proposed lines (sites for P1.2 and P1.3 to confirm):
 | `RU0`, `RU1` | the room population (P1.3: `NewRoomsUpdate`, `RoomUpdateOne`) | room, room seed, game seed | per activation |
 | `TM` | the three timer calls | which, frame | 0.23 (1/20 + 1/12 + 1/11) |
 
+*2026-10-30 (P1.3, `lane/r55c`):* the `RU0`/`RU1` and `TM` sites, the new `TQ`, `RC`, `RR` lines and the queue line
+(`QE`, `QF`) are in [frame/0003 § 9](0003-timers-activation.md#9-the-frame-window-log-design-closed-phase-2b), with the
+re-estimate (15.9–50.9 lines per frame at the mid queue rates; `MSG` counted at 2 lines per message, where the estimate
+below counts 1). (fn:sub_0052D160_NewRoomsUpdate@0x0052D160, 0x0052D920)
+
 - **The estimate** (`tools/frame_volume.py estimate`, `volume-estimate.txt`): from stated per-scene inputs (a
   player's events, monsters awake, the share in an every-frame mode, slot events per monster per frame, missiles,
   object and item events, messages):

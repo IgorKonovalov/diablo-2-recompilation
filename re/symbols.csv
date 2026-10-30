@@ -176,6 +176,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0052D0F0,func,sub_0052D0F0_RoomUpdateOne,,C,monsters/spawn,docs/findings/monsters/0002-room-population.md
 0x0052D160,func,sub_0052D160_NewRoomsUpdate,,C,rng/seeds,docs/findings/monsters/0002-room-population.md
 0x0052D240,func,sub_0052D240_RoomsDeactivate,,C,objects,docs/findings/objects/0001-object-population.md
+0x0052D310,func,sub_0052D310_ExpirySweepTick,,I,sim/frame,docs/findings/frame/0003-timers-activation.md
 0x0052D350,func,sub_0052D350_AutosaveTick,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x0052D440,func,sub_0052D440_ClientsRoomSync,,I,drlg/lifecycle,docs/findings/drlg/0009-room-lifecycle.md
 0x0052D720,func,sub_0052D720_GameFpsStats,,I,sim/frame,docs/findings/frame/0001-tick-and-messages.md
@@ -232,6 +233,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005347D0,func,DEBUG_ReduceRowStub,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x005347E0,func,DEBUG_AbsorbStub,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x005348C0,func,sub_005348C0_PlayerUnitAlloc,,I,player/creation,docs/findings/player/0001-creation.md
+0x00534AD0,func,sub_00534AD0_PlrPlaceEventsInit,,I,sim/frame,docs/findings/frame/0003-timers-activation.md
 0x00534B30,func,sub_00534B30_StartItemToInventory,,C,player/creation,docs/findings/player/0001-creation.md
 0x00534BB0,func,sub_00534BB0_StartItemEquip,,C,player/creation,docs/findings/player/0001-creation.md
 0x00534C70,func,sub_00534C70_StartItemCreate,,C,player/creation,docs/findings/player/0001-creation.md
@@ -297,6 +299,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0053B280,func,sub_0053B280_ClientQueuePacket,,I,sim/frame,docs/findings/frame/0001-tick-and-messages.md
 0x0053BDA0,func,sub_0053BDA0_ClientSendUnitPacket6,,I,sim/frame,docs/findings/frame/0001-tick-and-messages.md
 0x0053C900,func,sub_0053C900_ClientSendActClock,,I,sim/frame,docs/findings/frame/0001-tick-and-messages.md
+0x0053CDF0,func,sub_0053CDF0_ClientSendPartyUnit,,I,sim/frame,docs/findings/frame/0003-timers-activation.md
 0x0053D670,func,sub_0053D670_SendQuestRecord,,I,save/d2s,docs/findings/save/0002-quest-words.md
 0x0053E2E0,func,sub_0053E2E0_MonUnitPacketBuild,,I,monsters/special,docs/findings/monsters/0003-special-monsters.md
 0x0053F100,func,sub_0053F100_SrvClientMsgDispatch,,I,items/economy,docs/findings/items/0011-economy.md
@@ -308,6 +311,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00540510,func,sub_00540510_PartyForEach,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
 0x005405A0,func,sub_005405A0_PartyForEachInLevel,,C,items/tc,docs/findings/items/0001-tc-resolution.md
 0x00540650,func,sub_00540650_PartyGoldClip,,I,items/economy,docs/findings/multiplayer/0002-trade-and-party-gold.md
+0x005406A0,func,sub_005406A0_PlrPartyStatusSend,,I,sim/frame,docs/findings/frame/0003-timers-activation.md
 0x00540710,func,sub_00540710_PartyIdOfUnit,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x005408E0,func,sub_005408E0_PartyCountInLevel,,C,items/tc,docs/findings/items/0001-tc-resolution.md
 0x00540900,func,sub_00540900_PartyGoldShare,,I,items/economy,docs/findings/items/0011-economy.md
@@ -342,6 +346,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00541FE0,func,sub_00541FE0_InactiveMonAiSave,,I,drlg/lifecycle,docs/findings/drlg/0009-room-lifecycle.md
 0x005421A0,func,sub_005421A0_InactiveMonsterSave,,C,drlg/lifecycle,docs/findings/drlg/0009-room-lifecycle.md
 0x005424F0,func,sub_005424F0_InactiveMonstersRestore,,C,objects,docs/findings/objects/0001-object-population.md
+0x00542AC0,func,sub_00542AC0_ActInactiveItemRecsExpire,,I,sim/frame,docs/findings/frame/0003-timers-activation.md
 0x00542B40,func,sub_00542B40_RoomInactiveUnitsRestore,,C,monsters/spawn,docs/findings/monsters/0002-room-population.md
 0x00542E10,func,sub_00542E10_InactiveRecordSave,,C,drlg/lifecycle,docs/findings/drlg/0009-room-lifecycle.md
 0x00542E30,func,sub_00542E30_InactiveUnitSave,,C,objects,docs/findings/objects/0001-object-population.md
@@ -432,6 +437,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005490E0,func,sub_005490E0_PktIsCursorItem,,I,items/sockets-runewords,docs/findings/items/0007-sockets-runewords.md
 0x005491B0,func,sub_005491B0_PktIsOwnStoredItem,,I,items/sockets-runewords,docs/findings/items/0007-sockets-runewords.md
 0x00549570,func,sub_00549570_WaypointTravelCheck,,I,quests/travel,docs/findings/quests/0002-travel.md
+0x0054A290,func,sub_0054A290_SrvPkt14OverheadChat,,I,sim/frame,docs/findings/frame/0003-timers-activation.md
 0x0054B650,func,SOCK_PacketInsert,,C,items/sockets-runewords,docs/findings/items/0007-sockets-runewords.md
 0x0054B830,func,sub_0054B830_NpcTravelMove,,I,quests/travel,docs/findings/quests/0002-travel.md
 0x0054BA90,func,sub_0054BA90_Pkt31NpcMessage,,I,quests/progression,docs/findings/quests/0001-progression.md
@@ -502,12 +508,14 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00552FD0,func,sub_00552FD0_UnitGetOwner,,I,skills/missiles,docs/findings/skills/0002-missiles.md
 0x00553010,func,sub_00553010_UnitStoredUnit9C,,I,skills/catalogue,docs/findings/skills/0015-item.md
 0x00553180,func,sub_00553180_PlayerSetClient,,I,save/d2s,docs/findings/save/0001-d2s-io.md
+0x005531C0,func,sub_005531C0_PlayerGetClient,,I,sim/frame,docs/findings/frame/0003-timers-activation.md
 0x00553220,func,sub_00553220_UnitFrameReset,,I,save/d2s,docs/findings/save/0001-d2s-io.md
 0x00553380,func,sub_00553380_UnitSetEvent,,I,items/cube,docs/findings/items/0008-cube.md
 0x005533D0,func,SUNIT_AnimInit,,I,anim/timing,docs/findings/anim/0001-modes-frames.md
 0x00553570,func,SUNIT_SetMode,,I,anim/timing,docs/findings/anim/0001-modes-frames.md
 0x00553720,func,sub_00553720_PortalPartnerGet,,I,quests/travel,docs/findings/quests/0002-travel.md
 0x005537D0,func,sub_005537D0_GameForEachUnit,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
+0x005538D0,func,sub_005538D0_GamePlayersForEach,,I,sim/frame,docs/findings/frame/0003-timers-activation.md
 0x00553970,func,sub_00553970_UnitEventChainSet,,I,sim/frame,docs/findings/frame/0002-unit-events-queue.md
 0x00553980,func,sub_00553980_UnitEventChainGet,,I,sim/frame,docs/findings/frame/0002-unit-events-queue.md
 0x00553990,func,SUNIT_CancelModeEvents,,I,anim/timing,docs/findings/anim/0001-modes-frames.md
@@ -528,6 +536,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00554340,func,sub_00554340_MonAlignPatternRefresh,,I,drlg/collision,docs/findings/drlg/0005-collision.md
 0x005543B0,func,sub_005543B0_MonAlignSet,,I,drlg/collision,docs/findings/drlg/0005-collision.md
 0x005544B0,func,sub_005544B0_UninterruptibleEnd,,I,sim/frame,docs/findings/frame/0002-unit-events-queue.md
+0x00554630,func,sub_00554630_UnitPartyId,,I,sim/frame,docs/findings/frame/0003-timers-activation.md
 0x00554650,func,sub_00554650_PacketHitClassSet,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x00554850,func,sub_00554850_SUnitPathCreate,,I,drlg/collision,docs/findings/drlg/0005-collision.md
 0x00554A30,func,sub_00554A30_UnitRelocate,,I,drlg/lifecycle,docs/findings/drlg/0009-room-lifecycle.md
@@ -575,6 +584,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00558640,func,ITEMS_DropRollQuality,,C,items/quality,docs/findings/items/0002-quality-roll.md
 0x005589A0,func,sub_005589A0_DropGoldFind,,C,items/tc,docs/findings/items/0001-tc-resolution.md
 0x00558A10,func,sub_00558A10_ItemGroundExpiry,,C,drlg/lifecycle,docs/findings/drlg/0009-room-lifecycle.md
+0x00558B90,func,sub_00558B90_ActExpiredItemsFree,,I,sim/frame,docs/findings/frame/0003-timers-activation.md
 0x00558C50,func,sub_00558C50_ItemRemoveRuneword,,C,items/cube,docs/findings/items/0008-cube.md
 0x00558CB0,func,sub_00558CB0_ItemCreateFromSave,,C,save/d2s,docs/findings/save/0001-d2s-io.md
 0x00558D90,func,sub_00558D90_ItemCreate,,C,items/tc,docs/findings/items/0001-tc-resolution.md
@@ -767,12 +777,17 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00573CB0,func,sub_00573CB0_MonStatsInit,,C,monsters/pool,docs/findings/monsters/0001-level-pool.md
 0x00574250,func,sub_00574250_MonsterInit,,I,monsters/pool,docs/findings/monsters/0001-level-pool.md
 0x00574370,func,sub_00574370_MonChangeClass,,I,skills/catalogue,docs/findings/skills/0018-monster-8c.md
+0x00574410,func,sub_00574410_PetRemovedSendCb,,I,sim/frame,docs/findings/frame/0003-timers-activation.md
+0x00574450,func,sub_00574450_PetUnitRelease,,I,sim/frame,docs/findings/frame/0003-timers-activation.md
+0x00574850,func,sub_00574850_PetListUnlink,,I,sim/frame,docs/findings/frame/0003-timers-activation.md
 0x005749B0,func,PETS_SetInfo,,I,hirelings,docs/findings/hirelings/0001-hirelings.md
 0x00574A20,func,sub_00574A20_PetTypeOfGuid,,I,skills/catalogue,docs/findings/skills/0015-item.md
 0x00574BD0,func,PETS_GetInfo,,I,hirelings,docs/findings/hirelings/0001-hirelings.md
 0x00574EC0,func,PETS_GetUnitOfType,,I,hirelings,docs/findings/hirelings/0001-hirelings.md
 0x005750E0,func,sub_005750E0_PetRemove,,I,skills/catalogue,docs/findings/skills/0015-item.md
 0x005751A0,func,PETS_OnDeath,,C,hirelings,docs/findings/hirelings/0001-hirelings.md
+0x00575590,func,sub_00575590_PetListPrune,,I,sim/frame,docs/findings/frame/0003-timers-activation.md
+0x00575630,func,sub_00575630_PlrPetsStatusSend,,I,sim/frame,docs/findings/frame/0003-timers-activation.md
 0x00575720,func,sub_00575720_PetGroupClear,,I,skills/dispatch,docs/findings/skills/0003-handlers.md
 0x00575850,func,sub_00575850_PetLimit,,I,skills/dispatch,docs/findings/skills/0003-handlers.md
 0x00575900,func,sub_00575900_PetLimitRefresh,,I,skills/catalogue,docs/findings/skills/0015-item.md
@@ -2170,6 +2185,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005DE130,func,sub_005DE130_MonAiDelayEarlier,,I,monsters/ai,docs/findings/ai/0001-machinery.md
 0x005DE190,func,sub_005DE190_MonAiPathOverride,,I,drlg/collision,docs/findings/drlg/0009-room-lifecycle.md
 0x005DE200,func,sub_005DE200_MonAiWanderRing,,I,monsters/ai,docs/findings/ai/0001-machinery.md
+0x005DE330,func,sub_005DE330_UnitOverheadNumber,,I,sim/frame,docs/findings/frame/0003-timers-activation.md
 0x005DE440,func,sub_005DE440_MonAiMoveToPoint,,I,monsters/ai,docs/findings/ai/0003-pool-b.md
 0x005DE490,func,sub_005DE490_MonAiMoveToPointNoStop,,I,monsters/ai,docs/findings/ai/0003-pool-b.md
 0x005DE4E0,func,sub_005DE4E0_MonAiMoveToUnitDist,,I,monsters/ai,docs/findings/ai/0002-pool-a.md
@@ -2361,6 +2377,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0061A790,func,sub_0061A790_RoomIdleCount,,C,drlg/lifecycle,docs/findings/drlg/0009-room-lifecycle.md
 0x0061A840,func,DUNGEON_RoomFree,,I,drlg/collision,docs/findings/drlg/0005-collision.md
 0x0061A910,func,sub_0061A910_ActiveRoomFree,,C,drlg/lifecycle,docs/findings/drlg/0009-room-lifecycle.md
+0x0061AA20,func,sub_0061AA20_ActLevelsUnloadTickWrap,,I,sim/frame,docs/findings/frame/0003-timers-activation.md
 0x0061AA40,func,sub_0061AA40_DungeonRoomIsOutdoors,,I,drlg/preset,docs/findings/drlg/0004-preset-units.md
 0x0061AA60,func,sub_0061AA60_ActClockPtr,,I,sim/frame,docs/findings/frame/0001-tick-and-messages.md
 0x0061AAF0,func,sub_0061AAF0_LevelIsTown,,I,quests/travel,docs/findings/quests/0002-travel.md
@@ -3054,6 +3071,9 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00660EC0,func,WAYPOINT_Set,,I,save/d2s,docs/findings/save/0002-quest-words.md
 0x00661030,func,WAYPOINT_Load,,C,save/d2s,docs/findings/save/0001-d2s-io.md
 0x006610B0,func,WAYPOINT_Save,,C,save/d2s,docs/findings/save/0001-d2s-io.md
+0x00661110,func,sub_00661110_ChatRecordNew,,I,sim/frame,docs/findings/frame/0003-timers-activation.md
+0x006611A0,func,sub_006611A0_ChatRecordFree,,I,sim/frame,docs/findings/frame/0003-timers-activation.md
+0x006611D0,func,sub_006611D0_ChatRecordEnd,,I,sim/frame,docs/findings/frame/0003-timers-activation.md
 0x00663270,func,sub_00663270_MissileSpeedAtLevel,,I,skills/catalogue,docs/findings/skills/0008-sorceress.md
 0x006632C0,func,sub_006632C0_PlrSeqColumn,,I,anim/timing,docs/findings/anim/0001-modes-frames.md
 0x00663310,func,sub_00663310_UnitSeqRecord,,I,anim/timing,docs/findings/anim/0001-modes-frames.md

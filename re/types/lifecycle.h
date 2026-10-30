@@ -108,12 +108,20 @@ typedef struct InactiveItemRec {  /* 0x0F + n bytes, sub_00541B10_InactiveItemSa
 } InactiveItemRec;
 
 typedef struct DungeonActFrame {  /* view of the DUNGEON act (Game+0xBC + 4*act, DungeonRoomLife+0x2C): the fields the
-                                     server frame touches (frame/0001 §§ 3.1, 3.3, 3.4) */
+                                     server frame touches (frame/0001 §§ 3.1, 3.3, 3.4; frame/0003 § 4) */
     uint32_t updatedDirty;        /* +0x00 set by sub_00619F90_RoomUpdatedList with EDX != 0; walked and cleared by
                                      sub_0053B000_ActUnitsFrameReset */
     struct ActClock * pClock;     /* +0x04 the act light clock (sub_0061AA60_ActClockPtr) */
-    uint8_t  _pad08[0x50];
-    uint32_t removalsDirty;       /* +0x58 set by sub_0061A270_RoomUnitOp, cleared by sub_0053A820_ActsRoomRemovalsClear */
+    uint8_t  _pad08[0x08];
+    struct DungeonRoomLife * pRoomsHead; /* +0x10 active rooms, newest first (DUNGEON_RoomCreate's head push 0x0061991F,
+                                     next room +0x7C; sub_0061A180_ActRoomsHead) */
+    uint8_t  _pad14[0x38];
+    void   (*pfnRoomCreated)(void); /* +0x4C called with the new room in ECX when non-zero (0x00619954); writer not
+                                     read (frame/0003 open question 7) */
+    uint32_t _x50;                /* +0x50 DUNGEON_ActCreate's third argument (0x006194DA), not read */
+    uint32_t newRooms;            /* +0x54 set by DUNGEON_RoomCreate (0x00619925), cleared by
+                                     sub_0052D160_NewRoomsUpdate after its walk (0x0052D21D) */
+    uint32_t removalsDirty;     /* +0x58 set by sub_0061A270_RoomUnitOp, cleared by sub_0053A820_ActsRoomRemovalsClear */
 } DungeonActFrame;
 
 typedef struct ActClock {         /* the act's light clock, stepped once a frame by sub_0061C040_ActClockTick */
