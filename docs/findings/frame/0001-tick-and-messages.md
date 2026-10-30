@@ -46,7 +46,8 @@ Static reading of the pinned `Game.exe` in Ghidra (project copy `workspace/ghidr
   (run:2026-10-30-frame-emu, fn:sub_0061C040_ActClockTick@0x0061C040, fn:sub_0064C040_UnitMarkUpdated@0x0064C040,
   fn:sub_0064C160_RoomUpdatedClear@0x0064C160)
 - [I] So `ActUnitsFrameReset`, which walks that list from its head, visits a room's updated units **newest first**;
-  the list holds the units marked this frame (§ 3.3). (0x0053B044,
+  the list holds the units marked this frame that are still in that room: a unit taken out of a room's unit list is
+  unlinked from its updated list and loses bit `0x2000` (§ 3.3). (0x0053B044,
   fn:sub_0053B000_ActUnitsFrameReset@0x0053B000)
 - [I] **Client messages are applied between frames, never inside `GameTick`.** `SrvDrainMessages` empties three FIFO
   queues one after the other: queue 0 (system messages: create, join; `SrvClientMsgDispatch`), queue 1 (in-game
@@ -58,9 +59,12 @@ Static reading of the pinned `Game.exe` in Ghidra (project copy `workspace/ghidr
   indirect calls not followed) every RNG call takes its seed through a pointer and no absolute address is a seed
   argument; the absolute writes in game code are the frames-per-second counters, the hit-class counter
   (`g_HitClassCounter`, process-wide), the null-parent seed salt, a scratch list inside `ITEMS_BuildUnique`, the client
-  tables, the save counter and the data caches. One of these changes behaviour across games: **`g_HitClassCounter`**,
-  so the hit class a hit picks in one game depends on hits picked in the others. (§ 6;
-  data:g_HitClassCounter@0x0088CAD0)
+  tables, the save counter and the data caches. One of these carries game state across games:
+  **`g_HitClassCounter`**, a byte with one writer that nothing resets, so the element nibble a hit picks in one game
+  depends on the hits picked before it in the process (other games, and earlier games of the same process). It decides
+  the nibble only for a hit with two or more of its four element fields above 0, and the one server reader found
+  (`GetHitRoll`'s divisor) gives the same result for every element nibble. (§ 6; data:g_HitClassCounter@0x0088CAD0,
+  0x0057CE4F)
 - **The frame-window estimate (for the P1 review)**: 12.5–36.3 lines per frame (town, outdoor pack, maze boss), or
   3 100–9 100 lines per 250-frame window and 31 000–91 000 for the ten windows of Phase 2b, against plan 0045's
   measured 4.09 lines per frame and 17 786 lines per session. So a window session logs 3 to 9 times plan 0045's rate per
@@ -255,6 +259,12 @@ if (frame % 11 == 0) for act 0..4: if (game->act[a]) 0x0061AA20(act);   // ActLe
   fn:sub_00619F90_RoomUpdatedList@0x00619F90)
 - [I] The room flag 4 is the client copy's bit (`DungeonRoomLife+0x34`, drlg/0009), so only server rooms list
   their units. (fn:sub_0061AB60_RoomFlag4@0x0061AB60)
+- [I] **Leaving a room unlinks the mark.** `0x0064C370(unit)` (30 direct call sites, not yet named) takes the unit out
+  of its room's unit list (`room+0x74` through the getter `0x00619F60`, next `+0xE8`), then calls `RoomUpdatedUnlink`
+  (0x0064C42D, the unlink's only call site) and clears bit `0x2000` of `+0xC4` (0x0064C432). So a unit that changes
+  room in a frame is no longer on the old room's list and can be marked again in the new one; the reset visits it in
+  the new room's list only. Which of the 30 callers run inside a frame (a move between rooms, a free) is P1.2's.
+  (0x0064C3BF, 0x0064C42D–0x0064C432, fn:sub_0064C1B0_RoomUpdatedUnlink@0x0064C1B0)
 - [I] `UnitMarkUpdated` has 78 direct call sites (`xrefscan.txt`; Ghidra lists 74, the other four, 0x00570A6F,
   0x00570B4F, 0x005717B2 and 0x0064FAC7, lie in code Ghidra has no function for): among them `UNIT_SetMode` (2),
   `STATE_Set`, `STATE_ApplyTimed`, `UnitSetStateBit` (2), `COMBAT_GetHit` (3), `ClientRoomSync`, `UnitTeleport` (2),
@@ -267,7 +277,7 @@ if (frame % 11 == 0) for act 0..4: if (game->act[a]) 0x0061AA20(act);   // ActLe
   `+0xE0` link, the head becomes 0, the act word is untouched (the getter's `EDX` is 0). (run:2026-10-30-frame-emu,
   fn:sub_0064C160_RoomUpdatedClear@0x0064C160)
 - [I] So within one room the reset visits the units in the **reverse** of the order they were first marked this frame
-  (a push on the front; a unit already marked is not pushed again), and rooms in `ActRoomsHead` order (P1.3 reads
+  (a push on the front; a unit already marked is not pushed again while it stays in the room), and rooms in `ActRoomsHead` order (P1.3 reads
   that order). (0x0053B02C–0x0053B054, 0x0064C0AD–0x0064C0B5)
 
 #### 3.4 `ActsRoomRemovalsClear` and the removal notes
@@ -352,8 +362,14 @@ if (frame % 11 == 0) for act 0..4: if (game->act[a]) 0x0061AA20(act);   // ActLe
   `0x00552E67`; every seed is reached through a register. The window of six instructions is the tool's; a seed address
   loaded earlier into a register is not excluded by it, and the 145 indirect calls are not followed.
 - [I] So for one game the frame touches no other game's state except through `g_HitClassCounter` (and the process-wide
-  caches, which hold file data). A reimplementation that runs one game reproduces the hit-class sequence only if no
-  other game picks a hit class in between; ADR-0022's one-game scope (0055 Q5) holds with that one exception. (data:g_HitClassCounter@0x0088CAD0,
+  caches, which hold file data). The counter is a byte (`mov dl, [0x0088CAD0]`, `add dl, 1`, store at 0x0057CE4F), past
+  `.data`'s raw size in the image and so 0 at load, and its one store is the increment: no game create or close resets
+  it. A reimplementation that runs one game reproduces the hit-class sequence only if it carries the counter's value
+  in, from the process start or from the hits of every game before or beside it. Its effect is the element nibble of a
+  hit with two or more of cold, fire, lightning and poison above 0 (with one or none the scan finds the same entry from
+  any start; anim/0003 § 7); `GetHitRoll` gives one divisor for every element nibble, and the other readers of
+  `Unit+0xB0` are not enumerated (anim/0003, open questions). ADR-0022's one-game scope (0055 Q5) holds with the counter
+  as a process-wide input (ruled at the P1.1 review, plan 0055 log). (data:g_HitClassCounter@0x0088CAD0,
   fn:sub_0057CE30_HitClassPick@0x0057CE30, 0x0057CE4F)
 
 ### 7. The frame-window log design (Phase 2b)
@@ -363,7 +379,7 @@ seeds (ADR-0022). Proposed lines (sites for P1.2 and P1.3 to confirm):
 
 | Line | Site | Fields | Per frame |
 |---|---|---|---|
-| `FT0`, `FT1` | `GameTick` entry 0x0052D870, return 0x0052D974 | frame, game seed (`Game+0xD0`) | 2 |
+| `FT0`, `FT1` | `GameTick` entry 0x0052D870, return 0x0052D974 | frame, game seed (`Game+0xD0`); at `FT0` also the byte `g_HitClassCounter` (P1.1 review) | 2 |
 | `FP` | the pass call sites 0x0052D8DF … 0x0052D96C | site, game seed; written only when the game seed differs from the last logged value | 0 when no pass draws |
 | `ACL` | after `ActClockTick`, 0x0052D7D7, non-zero returns only | act, period, counter | rare |
 | `UE0`, `UE1` | the unit-event runner's dispatch and return (P1.2: the per-type lists of `GameRunUnitEvents`) | unit type, guid, list (every-frame or slot), kind, unit seed, game seed | 2 per event |
@@ -392,7 +408,10 @@ seeds (ADR-0022). Proposed lines (sites for P1.2 and P1.3 to confirm):
   window session of three 250-frame windows logs 9 400–27 200 lines, 0.5–1.5 times a plan-0045 session; the whole
   Phase 2b run 1.8–5.1 times. The trigger is not met on volume. The rate per frame is 3–9 times plan 0045's mean
   (12.5–36.3 against 4.09; plan 0045's Necromancer sessions reached 10.9 and 12.5), that is 310–910 breakpoint stops
-  per game second at 25 frames per second, which slows the game under gdb. The frame clock keeps at most one interval
+  per game second at 25 frames per second, which slows the game under gdb. Those are logged lines; the breakpoint
+  stops are more, since a conditional site stops whether or not it writes: the eight unconditional `FP` sites and the
+  `ACL` site once per loaded act add at least 9 stops a frame, about 21–45 stops per frame or 530–1 140 per game
+  second (P1.1 review). The frame clock keeps at most one interval
   of debt (§ 1), so a slowed game still runs every frame in order, only later; the inputs' frames are logged. The pilot
   window decides whether gdb keeps up.
 - **Window and scene proposal**: as 0055 Phase 2b, with the scenes made concrete: a pilot window in the Act I town (the
@@ -450,3 +469,5 @@ sequenceDiagram
 4. **The 78 marking sites** are not each read; the order claim (newest first) holds for whatever marks a unit.
 5. **The window estimate's inputs** (events per unit per frame) are readings and assumptions, not measurements: the
    pilot window measures them.
+6. **The room-removal function `0x0064C370`** (§ 3.3): its name and which of its 30 callers run inside a frame (a unit
+   moving between rooms, a unit freed) are P1.2's, with the unit-event passes.

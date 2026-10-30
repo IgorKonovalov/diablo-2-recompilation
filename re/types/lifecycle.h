@@ -119,7 +119,7 @@ typedef struct DungeonActFrame {  /* view of the DUNGEON act (Game+0xBC + 4*act,
 typedef struct ActClock {         /* the act's light clock, stepped once a frame by sub_0061C040_ActClockTick */
     int32_t  period;              /* +0x00 0..5, row of g_ActClockTable0/1/2 */
     int32_t  value;               /* +0x04 the row's second dword */
-    int32_t  counter;             /* +0x08 +1 a frame (act index 3: +16; act index 2 in a type-2 row: +10; other type-2: +2) */
+    int32_t  counter;             /* +0x08 +1 a frame; with tableFlag 0: act index 3 +16, else in a type-2 row +2 (act index 2: +10) */
     uint8_t  _pad0C[0xC];
     uint8_t  colour[3];           /* +0x18..+0x1A written by 0x0061BCE0 */
     uint8_t  _pad1B[0xD];

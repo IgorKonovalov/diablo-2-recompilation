@@ -418,6 +418,7 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-10-30 | lane/a54 | 0052 backlog link + 0054 P0 | archivist | 122 746 | 47 | 8 | — (no Ghidra, no harness) | accept (Tier B check) | 0 |
 | 2026-10-30 | lane/a54 check | 0054 P0 | architect-check | 70 642 | 20 | 2 | — (Tier B check, no harness) | accept | — |
 | 2026-10-30 | `lane/r55` | 0055 P1.1 | reverser-static | 240 000 | 150 | 80 | — (static, Ghidra copy ghidra-r55) | — | — |
+| 2026-10-30 | `lane/r55` review | 0055 P1.1 | architect-review | 130 000 | 45 | 25 | — (Tier A, objdump, no Ghidra, no harness; tokens, tools and wall estimated) | accept with fixes; rulings: Q2 pilot tests set, Q1 floors confirmed (2 windows per scene), ai/0001 routed by backlog, one game with g_HitClassCounter a process input; P1.2 go | 5: omission 2 (0x0064C370 unlink of the updated list; breakpoint stops beyond lines), overclaim 1 (g_HitClassCounter behaviour coupling scoped), wrong anchor 1 (lifecycle.h clock-counter comment), miscount 1 (main merged not named) |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not
