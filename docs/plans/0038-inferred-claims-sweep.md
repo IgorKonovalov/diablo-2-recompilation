@@ -5895,3 +5895,28 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     (the counts 86 `OBJS`, 14 `PLR`, 3 callers and 7 symbols come from kept commands or the `re/symbols.csv` diff),
     rule 6 (outputs and the script hashed), rule 9 (every caller is named: 1 for the pickup, 3 for the interact, 3
     for the grant), rule 12 (the cut is carried to four places).
+  - **Tier A audit (architect, 2026-10-30; ADR-0023 audit sample, plan 0053 Phase 3): accept with fixes (4).** The
+    full review re-read the lane's `static-h6gs.s` (manifest passes, 6 lines), the two dispatch tables in the pinned
+    `Game.exe` (`g_ObjInitFns` 63/64/65/72 → `0x0058D150`/`0x0058D190`/`0x0058D110`/`0x0058D240`, `g_ObjOperateFns`
+    65/66/71 → `0x0058D310`/`0x0058D400`/`0x0058D6A0`) and `objects.txt` (rows 474–476, 546, 547, 564 as tabled). The
+    grant's steps, compares (signed `jge`/`jle`, unsigned `jb`), the level floor `20·(d + 1)` (both grants), the bit
+    order, the interact's distance cases, the pickup's two reads and the creation's two writes all match the
+    disassembly; `grant-cut.txt` gives 1–35/1–65/1–73, 512 612 and 67 255 812 as filed. The narrowed `[C]` stands
+    (evidence rule 1, a second code path agreeing on the fields). Fixes:
+    - Misread 1: the altar bullet said the operate sends message 0x4E22 whatever the quest state ("no quest state is
+      needed"). With the quest active and its step (`+0x0C`) at 4 or more it sends nothing (`jae` 0x0058D371), and
+      while active with a step below 4 it also calls `QUESTS_SetStep(2)` and `QUESTS_SetState(3)`; corrected in
+      player/0001, and the route's note now says the step at the join is not read.
+    - Rule 12 (stale cross-reference) 1: quests/0001's arming bullet still said the altar "instead" closes the town
+      portals when `+0x0C` > 0; the lane's own reading (close, then send) and the step-4 exit carried there.
+    - Omission 1: the grant's step list left out its first call, `QUESTS_SendPlayerRecord` (0x0058C5CF); added as
+      step 0.
+    - Omission 1 (rule 11): the routing entry was closed "routed to a corrected `anc` session" and ruling (2) sent the
+      J2 wording to the spec-writer, with no entry for either; filed
+      [`2026-10-30-architect-reverser-plan-0038-h6g-corrected-anc-session.md`](../backlog/2026-10-30-architect-reverser-plan-0038-h6g-corrected-anc-session.md)
+      and [`2026-10-30-architect-spec-writer-player-creation-j2-grant-cut-wording.md`](../backlog/2026-10-30-architect-spec-writer-player-creation-j2-grant-cut-wording.md)
+      (the spec's § J2 and `wiki/characters.md` still say "one level span").
+    - **What the Tier B check missed** (for the trial): the altar misread (it read the decompile summary, not the
+      branch at 0x0058D36D, outside its scope limit), the stale quests/0001 sentence (another finding, outside its
+      scope), the step-0 omission, and the unhomed routes (rule 11 is a reverser rule it did run, but the closure was
+      its own). None is reject-grade: no `[C]` rests on them and rows 2/29 stay open. Totals unchanged (1 526).

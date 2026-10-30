@@ -409,6 +409,7 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-10-30 | lane/plans54 | plans 0054 (path search), 0055 (server frame, ADR-0022), drafts | architect | 136 535 | 30 | 7 | — (no Ghidra) | drafts; for the owner: 0054 Q1-8, 0055 Q1-8 | — |
 | 2026-10-30 | `lane/h6gs` | 0038 H6g shortfalls (static read) | reverser-static | 223 795 | 117 | 18 | — (no slot; Ghidra copy ghidra-h6gs, -Xmx3G, 5 decompile runs) | accept with fixes (Tier B check) | 2: overclaim 1, other 1 (see the check row) |
 | 2026-10-30 | lane/h6gs check | 0038 H6g shortfalls | architect-check | 60 000 | 20 | 6 | — (Tier B check, no harness) | accept with fixes | 2: overclaim 1 (proposed [C] said no others decide the return and carried the zeroing), other 1 (manifest sixth line unnamed) |
+| 2026-10-30 | lane/h6gs audit | 0038 H6g shortfalls | architect-review | 90 000 | 30 | 1 | — (Tier A audit, no Ghidra, no harness; usage estimated) | accept with fixes | audit of lane/h6gs: 4: misread 1 (altar operate sends nothing with the quest active at step >= 4; SetStep/SetState omitted), stale cross-reference 1 (quests/0001 'instead closes'), omission 2 (grant step 0 QUESTS_SendPlayerRecord; anc session and J2 wording routed with no entry, two filed); Tier B missed all 4, none reject-grade |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not

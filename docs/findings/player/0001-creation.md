@@ -1018,6 +1018,7 @@ unit list below), `static-h6gs.s` (`2f7ac4ec…`, the disassembly of the ranges 
 ### Rows 2 and 29: what the Ancients' grant needs, and why the `anc` session missed it
 
 - [I] **The grant, step by step** (`sub_0058C5C0_ExpGrantCapped(game)`, the player in `ESI`; 0x0058C5C0–0x0058C6CB):
+  0. `QUESTS_SendPlayerRecord(game, player)` (0x0058C5CF), before anything else.
   1. `G` ← 1 400 000; 20 000 000 when the game's difficulty byte (`game+0x6D`) is 1; 40 000 000 when it is 2
      (0x0058C5D4–0x0058C5EE).
   2. `max` ← `ExpMaxLevel(class)`, `L` ← `STATS_GetUnitStat(player, 12)`. Nothing when `L ≥ max` (signed, 0x0058C624).
@@ -1065,12 +1066,15 @@ unit list below), `static-h6gs.s` (`2f7ac4ec…`, the disassembly of the ranges 
   after 3 hops ("level explored"). The origin rests on one logged point; a session with a different map seed may
   place level 120 elsewhere, so a route should go by the door's logged position.
   (fn:sub_005559A0_RoomPresetUnits@0x005559A0, fn:DS1_Parse@0x00665950)
-- [I] **What arms the fight** (no quest state is needed for it; fn:sub_0058D310_A5Q5_AltarOperate@0x0058D310,
+- [I] **What arms the fight** (the quest need not be active; fn:sub_0058D310_A5Q5_AltarOperate@0x0058D310,
   fn:sub_0058BF40_A5Q5_StatuesArm@0x0058BF40, fn:sub_0058C9A0_A5Q5_AncientDeath@0x0058C9A0):
-  - The altar's OperateFn (`0x0058D310`) acts while the altar is in mode 0. If a town portal stands on level 120
-    (quest data `+0x0C > 0`) it closes them first (`GameForEachUnit(0x0058D2C0)`), then sends message 0x4E22 to the
-    quest; it sets the altar to mode 1 and `+0x4C` = 2. It moves the quest log on (`0x00544300`) only when the quest
-    is active and its state is below 4. (0x0058D310–0x0058D3F0)
+  - The altar's OperateFn (`0x0058D310`) acts while the altar is in mode 0. When the quest is inactive (`+0x09` = 0),
+    or active with its step (the quest object's `+0x0C`) below 4: if a town portal stands on level 120 (quest data
+    `+0x0C > 0`) it closes them first (`GameForEachUnit(0x0058D2C0)`), then sends message 0x4E22 to the quest. While
+    active with a step below 4 it also sets the step to 2 when it is below 2 (`QUESTS_SetStep`, 0x0058D3B0) and the
+    state to 3 when it is not 3 (`QUESTS_SetState`, 0x0058D3CA). With the quest active and its step at 4 or more it
+    sends nothing (`jae`, 0x0058D371). In every case it then sets the altar to mode 1 and `+0x4C` = 2.
+    (0x0058D310–0x0058D3F0)
   - Message 0x4E22 (`0x0058C30F`): arms only with `+0x0C ≤ 0` and the three statue modes (`+0x30..+0x38`) all 0, and
     only when `sub_0058BF40_A5Q5_StatuesArm` finds all three statue units by the ids their InitFns stored (`+0x14`,
     `+0x18`, `+0x1C`; −1 without a unit). A missing statue returns 0, with no arming and no message. Otherwise each
@@ -1095,7 +1099,7 @@ unit list below), `static-h6gs.s` (`2f7ac4ec…`, the disassembly of the ranges 
   the width of level 81 is 67 255 812, so the `anc` character as built (level 80, experience `T(80) − 1000`, so
   `need` = 1 000) meets only the uncut grant. It levels up once and keeps the other 1 399 000 inside level 81: that
   covers step 4's level-up branch but not the cut. The cut needs a character at level 20–35 in Normal (20 is the
-  floor of the credit test); at level 25, for example, the cut is 512 612. The recipe's quest bits (word 39 clear,
+  floor of the credit test); at level 25, for example, the cut is 512 612. The altar sends its message only while quest 35 is inactive or its step is below 4 (above); the step at the join is not read here. The recipe's quest bits (word 39 clear,
   `quests: all` setting bit 0 only, `tools/d2s.py`) leave quest 35 active at the join. This is a harness batch, not
   d-owner.
 

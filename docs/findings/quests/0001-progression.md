@@ -1799,8 +1799,10 @@ open, `+0x4C` altar mode, `+0x50` altar id, `+0x54` live players on 120, `+0x58.
   fn:sub_0058C7E0_A5Q5_SummitExpGrant@0x0058C7E0)
 - [I] **Arming:** the altar (OperateFn 65 = `0x0058D310`, object 546) sends message 0x4E22 to e11: if `+0x0C` = 0 and
   all three statue modes are 0, `0x0058BF40` pins the statues' rooms, puts the three statues (474–476) in mode 3 and
-  queues their object event 7 at frame + 20, and sets `+0x10`/`+0x11`. With `+0x0C` > 0 the altar instead closes every
-  player's town portal that stands on level 120 (`0x0058D2C0` → `0x00535430`). Event 7 of a statue is `0x0058C0E0`
+  queues their object event 7 at frame + 20, and sets `+0x10`/`+0x11`. With `+0x0C` > 0 the altar first closes every
+  player's town portal that stands on level 120 (`0x0058D2C0` → `0x00535430`) and then sends the message too, which
+  arms only if `+0x0C` is 0 by then (whether the close lowers it at once is not read); with the quest active and its
+  step at 4 or more it sends nothing (0x0058D371; read 2026-10-30, player/0001 § Plan 0038 H6g shortfalls). Event 7 of a statue is `0x0058C0E0`
   (items/0010 § 9): it spawns superunique `DataTables+0xB36/+0xB38/+0xB3A` with `0x00545C30` (PresetMonSpawn), or
   resets the fight (`0x0058C000`) when `+0x0C` > 0. The statues' own OperateFns 62–64 only refuse
   (`UnitSetEvent(…, 0x13)`). (0x0058C290, 0x0058BF40, 0x0058C0E0, 0x0058D1E0)
