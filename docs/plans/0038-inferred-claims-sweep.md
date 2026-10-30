@@ -5930,7 +5930,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     player-creation 1), open 0.** Remainders: the act dependence of the Id `0xFFFF` row, the `<= 89` experience cutoff
     (no 88..91 build), the `PlayerLoad` path to `NewCharLegacy`. Sock 1's piece: the version-71 insert at 0x005311B5
     ran twice, 0x005313F0 (corpse list) did not (no corpse in the builder; archivist entry
-    [h1c-v71-corpse-list-builder-key](../backlog/2026-10-30-reverser-archivist-h1c-v71-corpse-list-builder-key.md)).
+    [h1c-v71-corpse-list-builder-key](../backlog/archive/2026-10-30-reverser-archivist-h1c-v71-corpse-list-builder-key.md)).
   - **Added:** recipes `leg71sock` and `leg71act2` (`RECIPE_BASES` entries), `tools/gdb/d2s-h1c.gdb`/`.py`,
     `tools/h1c_sessions.py`, `tools/sweep_h1c.py`. The first logger revision's duplicate return lines (stale one-shot
     breakpoints) are kept as development logs in `dev1/`.
