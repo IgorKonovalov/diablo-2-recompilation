@@ -984,7 +984,7 @@ Harness batch H6d of [plan 0038](../../plans/0038-inferred-claims-sweep.md) (run
 The batch's other ledgers are in [items/0010 § Plan 0038 batch H6d](0010-quest-drops.md#plan-0038-batch-h6d-2026-10-17)
 and [items/0001](0001-tc-resolution.md#plan-0038-batch-h6d-2026-10-17).
 
-- **us 21** (L290, the restore path `rec+0x2C` ≠ 0 of the unique builder) **reclassified: b, H1a.** The route the
+- **us 21** (L290, the restore path `rec+0x2C` ≠ 0 of the unique builder) **reclassified: b, H1a** *(raised at [§ Plan 0038 batch H1c](#plan-0038-batch-h1c-run2026-10-27-sweep-d2s-legacy))*. The route the
   inventory gave ("Larzuk or Anya on a unique") cannot reach the branch. Their copy is not a creation through
   `ItemCreateByQuality`: `sub_0055A2A0_ItemCopy` serialises the item and recreates it with
   `sub_00558CB0_ItemCreateFromSave`, which does not call `ItemCreate` ([save/0001 § 8](../save/0001-d2s-io.md#8-plan-0015-phase-3-framing-details-and-item-flag-bit-13),
@@ -1103,6 +1103,29 @@ a model with 0 mismatches in run:2026-10-20-sweep-items-chain; the evidence colu
 (fn:sub_00552E90_ItemSeedInit@0x00552E90, fn:sub_00557320_ItemFallbackSuperior@0x00557320,
 fn:sub_00556B60_ItemRollSockets@0x00556B60, fn:sub_0062BC20_ItemMaxSockets@0x0062BC20, fn:ITEMS_SetSockets@0x0062BCB0,
 run:2026-10-20-sweep-items-chain)
+
+## Plan 0038 batch H1c (run:2026-10-27-sweep-d2s-legacy)
+
+Harness batch H1c of [plan 0038](../../plans/0038-inferred-claims-sweep.md), row 21 of
+[the inventory](../../plans/0038-inventory/items-uniques-sets.md) (reclassified to H1a at the H6d batch; a shortfall
+there). Run record: [save/experiments](../save/experiments.md#run2026-10-27-sweep-d2s-legacy); counts from its `check/sweep-h1c-check.txt` (272 comparisons over 7 cases, 0 failing).
+The load is of `leg71uniq`, a tool-built version-71 save (ADR-0013 § Neutral) with six items: The Gnasher (unique row 0),
+Deathspade (unique row 1), Civerb's Ward (set row 0, unit seed 1234567, item seed 7654321), Civerb's Icon (set row 1), a
+jewel and a belt potion.
+
+- **us 21** (L290, the restore path `rec+0x2C` ≠ 0 of the unique builder) **raised.** [C] `ITEMS_BuildUnique` was
+  entered twice, for the two uniques (`UB0`), each time with the creation record's `+0x2C` = 1, and took the restore
+  branch both times (`UBR`, 0x00556757): the record's `+0x40` was **0** for The Gnasher and **1** for Deathspade, the
+  row itself and not row + 1, and the write-back held unique rows 0 and 1 (quality 7, `hax` and `axe`), where a row + 1
+  reading would have written 1 and 2. The items were created by `sub_00530F40_ItemCreateFromOldRec` (six `OIC` lines, six
+  returns) from `sub_00533350_ItemListReadV71`, each placed by `sub_00531040_OldItemPlace` (returned 0 each time).
+  The set items came back with their rows too (the Ward `lrg` row 0, the Icon `amu` row 1, quality 5), the Ward with
+  unit seed 1234567; the record's two seeds are distinct (1234567, 7654321) and the write-back holds one seed field,
+  1234567. [I] The item version the builder tested, the return of 0x0062A670, was 3 for both uniques, so the branch
+  of **version 0** (`rec+0x2C` = 0, the first row in table order) is not exercised; it stays the inventory's d-none
+  half (a drop never has version 0). The jewel was written magic (quality 4) where the build said 2: the game
+  rolled it; a built-state fact, no claim. (fn:ITEMS_BuildUnique@0x005566B0, fn:sub_00530F40_ItemCreateFromOldRec@0x00530F40,
+  fn:sub_00533350_ItemListReadV71@0x00533350, 0x00556751, 0x00556757, run:2026-10-27-sweep-d2s-legacy)
 
 ## Data touched
 

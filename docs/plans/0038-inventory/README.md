@@ -1651,6 +1651,29 @@ c-emu awaiting a batch 0, blocked 431** (d-none 302, d-edit 73, d-sim 28, d-2c 1
 raised 17: 1 526.** (Recounted after merging `main` at `5c7f1c5e`; any reclassification of rows 2, 29 or 23's
 remainder is the review's.)
 
+**H1c (filed 2026-10-30, reverser, `lane/h1c`): 6 statements, the H1a shortfalls (hirelings 3, 30, 33; player/creation 1;
+items/uniques-sets 21; save/d2s 126), plus the piece of sock 1 routed by the `lane/h6b` review.** run:2026-10-27-sweep-d2s-legacy,
+7 kept sessions on slot 1 (the five `lane/a72` recipes, and `leg71sock` and `leg71act2` added here), logger
+`tools/gdb/d2s-h1c.gdb` (H1a's files and `d2s-h1c.py`), `tools/sweep_h1c.py check` **272 comparisons, 0 failing**
+(`check/sweep-h1c-check.txt`). The evidence is in the "Plan 0038 batch H1c" sections of
+[save/0001](../../findings/save/0001-d2s-io.md#plan-0038-batch-h1c-run2026-10-27-sweep-d2s-legacy),
+[hirelings/0001](../../findings/hirelings/0001-hirelings.md#plan-0038-batch-h1c-run2026-10-27-sweep-d2s-legacy),
+[player/0001](../../findings/player/0001-creation.md#plan-0038-batch-h1c-run2026-10-27-sweep-d2s-legacy),
+[items/0004](../../findings/items/0004-uniques-sets.md#plan-0038-batch-h1c-run2026-10-27-sweep-d2s-legacy) and
+[items/0007](../../findings/items/0007-sockets-runewords.md#plan-0038-batch-h1c-run2026-10-27-sweep-d2s-legacy).
+
+- **Raised (3):** hirelings 3 (`ReadMercOldSave`, both forms), items/uniques-sets 21 (the restore branch, rows 0 and 1;
+  the version-0 half stays the d-none half), save/d2s 126 (the 1.09 widths and per-id overrides on a version-92 item).
+- **Raised in part (3):** hirelings 30 (the Id `0xFFFF` and its result 1; "the act's first row" not separated by an
+  Act II file), hirelings 33 (the version-87 conversion and the version-71 absence; the 89 cutoff needs a 90 or 91
+  file), player/creation 1 (`NewCharLegacy` reached by the legacy reader and the new character built; the
+  `PlayerLoad` caller not met).
+- **Open:** none of the six. Sock 1's piece: the first version-71 insert site ran twice, the second (0x005313F0, the
+  corpse path) not (the builder writes no corpse; archivist entry filed); the row stays counted in H6b.
+
+No row changed class: the totals stand on `main`'s (`c0ee3e05`, merged before this entry): **static 567, harness 509,
+c-emu awaiting a batch 0, blocked 431, deferred 2, raised 17: 1 526**; any move of the in-part rows is the review's.
+
 ## 3. Blocked rows, for the plan's open questions
 
 - **d-2c, 14 statements** (items/tc 3, items/vendors 5, items/quest-drops 3, hirelings 1, player/creation 2). This is
