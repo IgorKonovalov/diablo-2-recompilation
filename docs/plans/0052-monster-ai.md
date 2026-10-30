@@ -517,3 +517,21 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   misses are of one kind: text outside the diff that the diff makes stale, and a disagreement with a finding left
   unrouted; a diff-scoped check reads neither unless rule 4's "re-read the findings a column touches" is run over the
   whole doc. Gate GREEN after the fixes.
+- **2026-10-30 — P1.2 catalogue batch 3 (pool-C) for review (reverser, static, `lane/r52d`, from `main` 66b96ae8).**
+  [ai/0004](../findings/ai/0004-pool-c.md): the seventeen think functions of rows 33, 35–40, 43, 45–49, 52, 56, 57 and
+  63 and row 52's `alt`, each with its `aip` reads per record, its `AiCtl+0x14/+0x18/+0x1C` words, its draws in order
+  (all on the acting unit's seed; 0–6 per decision) and its command, plus the pieces first read here
+  (`MonAiStepAwayXY`, the nest init shared with row 129's, the priest's heal callback, `PathSetFacing` and the trap's
+  facing tables). [C] by emulation (run:2026-10-30-ai-cat-emu-3, `tools/ai_cat_emu3.py`, 3 360 cases, 0 mismatches,
+  every control failing every case it separates; development runs kept under `emu/dev-1/` and `emu/dev-2/` with their
+  tool copies): the decision maps of rows 33, 36, 38, 39, 40, 43, 45, 46, 47, 52, 57 and 52's `alt` up to their first
+  callee, `AiCtl+0x14/+0x18/+0x1C` and `Unit+0xC4` included; rows 37 and 63 their draw-free state and timer tests only.
+  Left [I]: rows 35 and 37 past `FindHostile`, 48 and 49 (`UnitLifePct` first), 56 (`MonsterOwner`'s `GameFindUnit`
+  first), and everything after a boundary. Tier AIs in the batch: 35 static only, 37 its state test emulated. P1.1
+  review reopen condition (b) not met: the one search callback (`AiZakarumHealCb`) draws nothing by its body and direct
+  calls (its callees not followed). No call of the action helpers (`grep -c` in `b3-asm.txt`: 0). 23 `re/symbols.csv`
+  rows (all I). Kept outputs `workspace/logs/r52d/` (manifest 10 lines, with the lane check's nest and sarcophagus control; `emu/` 57, `emu/dev-1/` 58, `emu/dev-2/` 58; each
+  passes from its directory). Backlog: the
+  [review request](../backlog/archive/2026-10-30-reverser-architect-plan-0052-p1-2-batch-3-review.md),
+  [archivist](../backlog/2026-10-30-reverser-archivist-monstats-and-monstats2-readers-named-by-ai-0004.md) (MonStats and
+  MonStats2 readers). Next: batch 4 (pool-D).
