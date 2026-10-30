@@ -319,7 +319,8 @@ def items(x, args):
         if not (0 < lv <= 96):  # the windows L-3 < level <= L for L = 3, 6, ..., 96
             continue
         for tc in auto_types:
-            if of_type(r["type"], ci(tc)) and (ci(tc) == "tpot" or not of_type(r["type"], "tpot")):
+            tys = (r["type"], r.get("type2", ""))  # ITEMS_IsType tests type, then type2
+            if any(of_type(ty, ci(tc)) for ty in tys) and (ci(tc) == "tpot" or not any(of_type(ty, "tpot") for ty in tys)):
                 B.setdefault("auto_tc", set()).add(n)
                 break
     codes = {ci(r["code"]): n for n, (t, r) in enumerate(allr)}

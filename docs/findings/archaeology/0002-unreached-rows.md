@@ -97,11 +97,13 @@ Reach: named by Skills `aurastate`, `auratargetstate`, `passivestate`, `State1..
 - [C] 58 States rows are named by no cell: 0, 6, 7, 12, 18, 21, 25, 29, 39, 52, 54, 62, 85, 86, 90–93, 96, 98, 99, 102, 104, 105,
   107–110, 115, 116, 118, 121, 128–137, 142, 146, 154, 164–173, 175, 176, 184. (tool:unreached.py --table states,
   tbl:States.txt:state)
-- [I] [stats/0002 § Phase 0 surprise (f)](../stats/0002-states.md#phase-0-surprise-f-the-56-rows-no-data-names) counted 56 rows no
-  data names and traced them to code setters (shrines 128–137, set bonuses 165–170, `STATE_ApplyTimed`/`STATE_Set` immediates).
-  The tool's 58 are that list plus 175 `fullsetgeneric` and 176 `monsterset` (named by the stat 98 parameter, not by a
-  column), less 57 `attract`, 100 `healthpot` and 106 `manapot`, which the table readers do name here. (fn:STATE_Set@0x00639DB0,
-  fn:STATE_ApplyTimed@0x0056E970, tbl:States.txt:state)
+- [I] [stats/0002 § Phase 0 surprise (f)](../stats/0002-states.md#phase-0-surprise-f-the-56-rows-no-data-names) is headed "the 56
+  rows no data names"; the rows its body lists are 59, of which 57 `attract`, 100 `healthpot` and 106 `manapot` are named by Misc
+  (its "tested only" bullet), leaving 56, all of them in the tool's 58. The two more are 175 `fullsetgeneric` and 176
+  `monsterset` (named by the stat 98 parameter, not by a column; stats/0002 does not list them). The setters stats/0002 traces
+  (shrines 128–137, set bonuses 165–170, `STATE_ApplyTimed`/`STATE_Set` immediates) are code paths this tool does not read. The
+  disagreement (56 vs 58) is routed to the owner of stats/0002 (backlog 2026-10-30, archivist to reverser).
+  (fn:STATE_Set@0x00639DB0, fn:STATE_ApplyTimed@0x0056E970, tbl:States.txt:state)
 - [I] Of the 58, the code scan of stats/0002 finds no immediate setter for seven (6 `resistmagic`, 25 `fetishaura`, 29
   `convicted`, 39 `lightningbolt`, 116 `dragonflight`, 164 `debugcontrol`, 171 `runeword`), the same seven left under that
   finding's open questions; for the other rows that finding names setters. (fn:STATE_Set@0x00639DB0)
@@ -113,7 +115,7 @@ Reach: an item is reached when it is in an auto item-type TC (`quest` 0, `spawna
 cell (114), has a vendor `Max` or `MagicMax` above 0 and `spawnable` ≠ 0 (151), is a CubeMain output (68), a CharStats start
 item (11) or a MonEquip item (31). Items with `quest` set are counted apart.
 
-- [I] The auto-TC test is items/tc I1, with "of type t" read through `Equiv1`/`Equiv2`; the vendor test is items/vendors B1.
+- [I] The auto-TC test is items/tc I1, with "of type t" read through `Equiv1`/`Equiv2` for both the item's `type` and `type2` (`ITEMS_IsType`; `type2` changes no count); the vendor test is items/vendors B1.
   (fn:TC_BuildAutoTCs@0x006541C0, fn:VENDOR_BuildList@0x00536D50, tbl:ItemTypes.txt:TreasureClass, tbl:Weapons.txt:spawnable)
 - [C] 609 are reached, 24 are quest items none of the readers names, and 26 (all Misc) are unreached: 23 with `spawnable` 0 (`hpo`,
   `mpo`, `hpf`, `mpf`, `tch`, `ear`, `hrb`, the small and large `rps`/`rpl`/`bps`/`bpl` potions, thirteen rows named `Not used`
