@@ -180,3 +180,49 @@ _(lanes append dated entries as phases land)_
   0050·P2 part 3 does not wait; Q4 the Phase 2 probe takes the next free slot after 0050·P2 part 3; Q5 if `-seed` does
   not hold, cases switch inside one game, no in-memory seed patching; Q6 the case-and-process ADR is proposed at Phase
   4; Q7 Opus for Phase 1, Sonnet for the probe and pilot sessions. **Phase 1 starts after `lane/hx` merges.**
+- **2026-10-30 — Phase 1, no-game part landed (`bef3f51d`); smoke sessions pending a slot (reverser, `lane/p56a`, from `main`
+  `b75144a9`; no slot, no Ghidra).**
+  - **Library:** `tools/harness_runner.py`: `new_stem`, `install` (restore when aside, aside, install; each return
+    code checked), `launch` (`d2run.py` in a new session group, `--mem-max 4G` explicit, a `launch` mark), `wait_ready`
+    (the first line tagged `ready`, or starting with it when it holds a space; outcomes `ready`, `timeout`, `gone`, the
+    log read incrementally), `wait_count`, `mark` (`<stem>.marks.tsv`: case, event ∈ launch/ready/start/end/fail, wall
+    time, line count, note), `split` (one log per `start` mark, optional `--at TAG` snap to a game-start line before
+    the next mark, the header repeated with a `# split` line), `stop` (`slots.py stop N`, then `slots.busy(N)` empty
+    within 30 s), `batch` (one JSON status file at the end, also when interrupted: kept, failed, rerun, wall per case),
+    `bg` (detached start, one `tail --pid` wait). Documented in tooling.md § The runner library.
+  - **Tests:** `python3 -I tools/test_harness_runner.py`: 44 tests, OK (fake logs, fake and short real child processes,
+    fake clocks; the worked example's session end to end on fakes). `tools/test_h1_ready.py` (9) OK; its source check
+    now looks for the library call in h1a.
+  - **Worked example: `tools/h1a_sessions.py`** (the pilot's own runner, `tools/ai_sessions.py` for 0052·P2, does not
+    exist yet and is written on the library under the migration rule; H1a is the deterministic, several-loads-per-
+    process runner whose checker `tools/sweep_h1a.py` gives a comparable result). Session table, clicks and sleeps
+    unchanged; it still writes `<stem>.marks.jsonl` for the checker, plus the library's `.marks.tsv`; `run` is one
+    `batch` with `workspace/logs/h1a/<RUN>-s<N>.status.json`. `tools/h1c_sessions.py` is untouched and still imports
+    h1a's bool `wait_ready`. `tools/anim_sessions.py`, `tools/skills_sessions.py` and their loggers are untouched.
+  - **Migration rule:** harness-play.md § Runners and the library.
+  - **Resume note: the two smoke sessions (Done when), on the slot N the next prompt gives (1 or 2).** Same save
+    (`workspace/runtime/h1a`, the 38 kept H1a case directories, already built) and same seed (session `order`, 27204),
+    two of its loads (`hdrshort`: a menu load refused with a code; `param`: a load that passes, then Save and Exit):
+    1. `python3 -I tools/slots.py status` shows slot N with no game, driver or aside left; nothing else of another
+       lane is touched.
+    2. **Pre-migration copy**: `tools/h1a_sessions.py` at `efac8f91`. Check that the main checkout still holds it
+       (`git -C /home/igor/Work/recompilcation-project diff --quiet efac8f91 -- tools/h1a_sessions.py` exits 0 while
+       this lane is unmerged); otherwise `git worktree add --detach <scratch>/pre efac8f91` with a `workspace` symlink
+       to the main `workspace/`, and run from there. Command (run from that checkout):
+       `python3 -I tools/h1a_sessions.py run --slot N --tag p56a --cases workspace/runtime/h1a --run dev-p56a-pre --only hdrshort,param order`
+    3. **Migrated runner**, from this worktree:
+       `python3 -I tools/h1a_sessions.py run --slot N --tag p56a --cases workspace/runtime/h1a --run dev-p56a-lib --only hdrshort,param order`
+       Run 2 then 3 as one background command with output to the lane's scratch, and wait once (`tail --pid`); about
+       3 min each.
+    4. Cleanup: `python3 -I tools/slots.py stop N`, `python3 -I tools/saves.py --slot N restore p56a`, `saves.py --slot N
+       status` (no aside), `slots.py status`.
+    5. Check both with the plan's checker, output to files:
+       `python3 -I tools/sweep_h1a.py check workspace/merged/data/global/excel workspace/runtime/h1a workspace/logs/h1a/dev-p56a-pre-sN-27204-order.log`
+       and the same for `dev-p56a-lib-…`. Done when both give the same comparison count and 0 failing, and the
+       per-case lines are equal once the log names are replaced. Also on the lib log: `harness_runner.py marks`
+       (launch, ready, two start/end pairs; the `.marks.tsv` start lines equal the `.marks.jsonl` lines),
+       `harness_runner.py split` (two pieces), `harness_runner.py status workspace/logs/h1a/dev-p56a-lib-sN.status.json`
+       (kept 1). Both are dev logs (`dev-` names, outside the H1a kept glob): write
+       `workspace/logs/h1a/p56a-manifest-dev.sha256` for both logs, their marks, status and check outputs, passing
+       `sha256sum -c` from `workspace/logs/h1a`. Then file the Phase 1 review request.
+  - **Next:** a slot for the two smoke sessions, then the Phase 1 review.
