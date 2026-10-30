@@ -273,6 +273,7 @@ prints the normal (240), nightmare/hell (342) and `umon` (234) subsets. Counts a
   [drlg/0005 § 6](../findings/drlg/0005-collision.md#6-the-u16-word-bit-by-bit). (fn:sub_0064D9B0_CollisionTest@0x0064D9B0,
   fn:PATH_PatternFromSize@0x00648580, data:g_CollPatternBySize@0x006EB3DC, fn:COLL_PatternMark@0x0064EA90,
   fn:UNIT_GetSizeX@0x00620510, tbl:MonStats2.txt:SizeX)
+- `[I]` `SizeX` is also the unit size a path request passes to `PATH_PatternFromSize` for a monster (plan 0054 P0; the value counts, 0 (45), 1 (12), 2 (356), 3 (196), and the other size sources are in [PathTypes § Columns a request reads](PathTypes.md#columns-a-request-reads)); what the planners do with the pattern is plan 0054 Phase 1's.
 - `[I]` `UNIT_GetSizeY` reads a monster's `+0x009` (`SizeY`), but only object marks use a Y size, so no monster
   footprint depends on it. (fn:UNIT_GetSizeY@0x006205A0, [drlg/0005 § 5](../findings/drlg/0005-collision.md#5-unit-marks))
 - `[I]` **`spawnCol` → spawn test mask:** 0 (and 4+) `0x3C01`, 1 `0x01C0`, 2 `0x3F11`, 3 `0`; per-bit readers in
