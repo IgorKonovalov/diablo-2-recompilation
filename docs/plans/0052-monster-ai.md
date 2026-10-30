@@ -471,3 +471,22 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   passes from its directory). Backlog: the [review request](../backlog/archive/2026-10-30-reverser-architect-plan-0052-p1-2-batch-1-review.md),
   [archivist](../backlog/archive/2026-10-30-reverser-archivist-monstats-aip-and-levels-id-readers-named-by.md) (MonStats and
   Levels readers). Next: batch 2 (pool-B, rows 17–30).
+- **2026-10-30 — P1.2 catalogue batch 2 (pool-B) for review (reverser, static, `lane/r52c`, from `main` 9edf83d8).**
+  [ai/0003](../findings/ai/0003-pool-b.md): the fourteen think functions of rows 17–30 and row 29's `alt`, each with its
+  `aip` reads per record, its `AiCtl+0x14/+0x18/+0x1C` words, its draws in order (all on the acting unit's seed; 0–6 per
+  decision) and its command, plus the helpers first read here (four search callbacks, the vulture's take-off and
+  landing, `MonAiMoveToPoint` and its no-stop twin, `AiCtlSetVar`, `AlignSame02`). [C] by emulation
+  (run:2026-10-30-ai-cat-emu-2, `tools/ai_cat_emu2.py`, 2 400 cases, 0 mismatches, every control failing every case it
+  separates; a development run kept under `emu/dev-1/` with its tool copy): the decision maps of rows 17, 18, 19, 20,
+  21, 22, 24 and 27 up to their first callee, `AiCtl+0x14/+0x18` and the unit-search blocks included; row 30's record
+  test and row 29's `alt` (no draw before their boundaries). [I]: rows 23, 25, 26, 28, 29's think and 30 past its record
+  test (`UnitDistSq`/`UnitGetRoom`, `UnitLifePct` or `MonAiFindHostile` before the first draw), and everything after a
+  boundary. Tier AIs in the batch: 20, 21, 22 emulated, 28, 29, 30 static only (30's record test emulated). P1.1 review
+  reopen condition (b) not met: the four search callbacks draw nothing, row 25's loop over the wisps it found draws
+  nothing per wisp. No call of the action helpers (`0x005DF850`, `0x005DF990`, `0x005DFA00`, `0x005DFBF0`) in the batch
+  (`grep -c 'call   0x5df850\|call   0x5df990\|call   0x5dfa00\|call   0x5dfbf0' b2-asm.txt`: 0). 25 `re/symbols.csv` rows (all I). Kept outputs `workspace/logs/r52c/` (manifest 7 lines; `emu/` 31,
+  `emu/dev-1/` 32; each passes from its directory). Backlog: the
+  [review request](../backlog/archive/2026-10-30-reverser-architect-plan-0052-p1-2-batch-2-review.md),
+  [archivist](../backlog/2026-10-30-reverser-archivist-monstats-and-itemstatcost-readers-named-by-ai-0003.md)
+  (MonStats, ItemStatCost and States readers). Next: batch 3 (pool-C).
+- **2026-10-30 — P1.2 batch 2 Tier B check (architect, `lane/r52c`): accept with fixes (1).** Fix: omission, the search callbacks' "draw nothing" gains its scope (direct calls of `AiSameBaseNearCb`, callees not followed). Rulings: the five unemulated rows stay `[I]` for the batch's done-when (as batch 1); P1.1 reopen condition (b) not met; the three open questions stand (the dance tables and the opposite-word parameter record to the writer read, the stat 80 grant to Phase 2). Gate green. Review request closed.
