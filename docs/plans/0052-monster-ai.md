@@ -553,7 +553,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   in opposite orders (open question). 24 `re/symbols.csv` rows (all I). Kept outputs `workspace/logs/r52e/` (manifest
   8 lines; `emu/` 77, `emu/dev-1/` 78; each passes from its directory). Backlog: the
   [review request](../backlog/archive/2026-10-30-reverser-architect-plan-0052-p1-2-batch-4-review.md),
-  [archivist](../backlog/2026-10-30-reverser-archivist-monstats-and-skills-readers-named-by-ai-0005.md) (MonStats and
+  [archivist](../backlog/archive/2026-10-30-reverser-archivist-monstats-and-skills-readers-named-by-ai-0005.md) (MonStats and
   Skills readers). Next: batch 5 (summons).
 - **2026-10-30 — P1.2 batch 4 Tier B check (architect, `lane/r52e`): accept with fixes (2).** Fixes: omission, the
   opposite word orders of rows 65 and 75 are two writer/reader pairs already held by the findings (row 30 `Fetish` reads
