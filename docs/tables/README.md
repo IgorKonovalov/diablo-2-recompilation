@@ -70,9 +70,9 @@ match (`=` exact, `= (−n marker)` once the `n` `Expansion` marker rows are dro
 | ArmType | `ArmType.txt` (d2exp) | `.bin` (d2exp) | 3 | 3 | 52 | = | [ArmType](armtype.md) |
 | automagic | `automagic.txt` (d2exp) | `.bin` (patch_d2) | 36 | 36 | 144 | = | [AutoMagic](AutoMagic.md) |
 | AutoMap | `AutoMap.txt` (d2exp) | `.bin` (d2exp) | 3286 | 3287 | 44 | = (−1 marker) | — |
-| belts | `belts.txt` (d2exp) | `.bin` (d2exp) | 14 | 15 | 264 | = (−1 marker) | — |
+| belts | `belts.txt` (d2exp) | `.bin` (d2exp) | 14 | 15 | 264 | = (−1 marker) | [Belts](Belts.md) (box counts and order) |
 | bodylocs | `bodylocs.txt` (d2exp) | `.bin` (d2exp) | 11 | 11 | 4 | = | — |
-| books | `books.txt` (patch_d2) | `.bin` (patch_d2) | 3 | 3 | 32 | = | [Books](Books.md) (tome prices) |
+| books | `books.txt` (patch_d2) | `.bin` (patch_d2) | 3 | 3 | 32 | = | [Books](Books.md) (tome prices, item use) |
 | charstats | `charstats.txt` (patch_d2) | `.bin` (patch_d2) | 7 | 8 | 196 | = (−1 marker) | [CharStats](CharStats.md) |
 | CharTemplate | `CharTemplate.txt` (d2exp) | `.bin` (d2exp) | 30 | 30 | 240 | = | [CharTemplate](CharTemplate.md) |
 | colors | `colors.txt` (d2exp) | `.bin` (d2exp) | 21 | 21 | 4 | = | [colors](colors.md) |
@@ -90,7 +90,7 @@ match (`=` exact, `= (−n marker)` once the `n` `Expansion` marker rows are dro
 | hiredesc | `hiredesc.txt` (d2exp) | `.bin` (d2exp) | 9 | 9 | 4 | = | [HireDesc](HireDesc.md) |
 | hireling | `hireling.txt` (patch_d2) | `.bin` (patch_d2) | 120 | 120 | 280 | = | [Hireling](Hireling.md) (costs) |
 | HitClass | `HitClass.txt` (d2exp) | `.bin` (d2exp) | 14 | 14 | 4 | = | [HitClass](HitClass.md) |
-| inventory | `inventory.txt` (patch_d2) | `.bin` (d2exp) | 32 | 33 | 240 | = (−1 marker) | — |
+| inventory | `inventory.txt` (patch_d2) | `.bin` (d2exp) | 32 | 33 | 240 | = (−1 marker) | [Inventory](Inventory.md) (grid sizes, body slots) |
 | itemratio | `itemratio.txt` (patch_d2) | `.bin` (patch_d2) | 6 | 6 | 68 | = | [ItemRatio](ItemRatio.md) |
 | itemscode | — | `.bin` (patch_d2) ⚠ no count header | — | — | — | — | — |
 | itemstatcost | `itemstatcost.txt` (patch_d2) | `.bin` (patch_d2) | 359 | 359 | 324 | = | [ItemStatCost](ItemStatCost.md) (save, combat, aggregation, price, timing columns) |
@@ -105,7 +105,7 @@ match (`=` exact, `= (−n marker)` once the `n` `Expansion` marker rows are dro
 | LvlWarp | `LvlWarp.txt` (d2exp) | `.bin` (d2exp) | 88 | 89 | 48 | = (−1 marker) | [LvlWarp](LvlWarp.md) |
 | magicprefix | `magicprefix.txt` (patch_d2) | `.bin` (patch_d2) | 669 | 670 | 144 | = (−1 marker) | [MagicPrefix](MagicPrefix.md) (price) |
 | magicsuffix | `magicsuffix.txt` (patch_d2) | `.bin` (patch_d2) | 747 | 748 | 144 | = (−1 marker) | [MagicSuffix](MagicSuffix.md) (price) |
-| misc | `misc.txt` (patch_d2) | `.bin` (patch_d2) | 151 | 152 | 424 | = (−1 marker) | [Misc](Misc.md) (economy) |
+| misc | `misc.txt` (patch_d2) | `.bin` (patch_d2) | 151 | 152 | 424 | = (−1 marker) | [Misc](Misc.md) (economy, item use) |
 | misscalc | `misscalc.txt` (patch_d2) | `.bin` (patch_d2) | 43 | 43 | 4 | = | [MissCalc](MissCalc.md) |
 | misscode | — | `.bin` (patch_d2) ⚠ no count header | — | — | — | — | — |
 | Missiles | `Missiles.txt` (patch_d2) | `.bin` (patch_d2) | 684 | 684 | 420 | = | [Missiles](Missiles.md) (layout, function index, motion, collision, damage, links) |

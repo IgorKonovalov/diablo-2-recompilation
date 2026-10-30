@@ -2,7 +2,7 @@
 
 > **Source archive:** patch_d2 (`.txt` and `.bin`)   **Rows:** 151 (152 data rows − 1 `Expansion` marker)   **Record:** 424 B
 > **sha256:** `.txt` `f7fa37ae4f7cdb3f5337a28a55b3876fc27aef066822b3268933e56b636b50f0`, `.bin` `4c0b0e6c2f888847b7a71225d15caf8708c1dd33a9cc8420b6cbbf594963bc1b`
-> **Doc status:** columns listed, `.bin` layout complete (shared item record), semantics pending except [§ Fields the base-stat roll reads](#fields-the-base-stat-roll-reads-plan-0024-phase-1) (`[I]`, plan 0024 Phase 1); vendor columns in [§ Vendor columns](#vendor-columns-plan-0031-phase-0) (plan 0031 Phase 0; `[I]` meanings from items/0009)
+> **Doc status:** columns listed, `.bin` layout complete (shared item record), item-use columns in [§ Item-use columns](#item-use-columns-plan-0060-phase-0) (plan 0060 Phase 0; the dispatch table `[C]`, handler bodies `[I]` or `[L]`); semantics pending except [§ Fields the base-stat roll reads](#fields-the-base-stat-roll-reads-plan-0024-phase-1) (`[I]`, plan 0024 Phase 1); vendor columns in [§ Vendor columns](#vendor-columns-plan-0031-phase-0) (plan 0031 Phase 0; `[I]` meanings from items/0009)
 
 ## Purpose
 
@@ -342,6 +342,92 @@ The fields, their offsets, the readers named so far and the survey command are i
   neither scroll's `cost` (`tsc` 100, `isc` 80). `[I]` A tome's base price is `CostPerCharge × q + cost` (this
   `cost`, not `BaseCost`); a quiver's is `cost × q / 1024` with the repair value `MaxStack × cost / 1024`; a body part's
   `cost + 8 × MonStats Level` of its monster for the difficulty; an ear's `earLevel × cost` ([items/0011 § 1](../findings/items/0011-economy.md#1-the-price-core-inputs-and-the-base)).
+
+## Item-use columns (plan 0060 Phase 0)
+
+The columns a used, stacked or belted item reads, with the readers the findings name. `python3 -I tools/excel_bin.py
+diff` checks every offset below (0 mismatches over the 151 rows); the counts are over the 151 misc rows and were
+computed from the `.txt`. Whatever a function does beyond what is quoted is Phase 1.1 and 1.2 of
+[plan 0060](../plans/0060-item-use-inventory.md).
+
+### The use dispatch: `pSpell` selects a `g_ItemUseFns` entry
+
+- `[C]` (data, the pinned image) `g_ItemUseFns` (`0x00741790`, count 31 at `0x0074178C`) is an array of `{test, use}`
+  address pairs, one per `pSpell`. Entries 1..11 hold a `use` address, entries 0 and 12..30 are zero, and only entry 1 has a
+  `test` (`0x005BE130`); the `use` addresses are 1 `0x005BE230`, 2 `0x005BE290`, 3 `0x005BE3F0`, 4 `0x005BE7B0`,
+  5 `0x005BEAC0`, 6 `0x005BEF90`, 7 `0x005BF0C0`, 8 `0x005BF060`, 9 `0x005BEDA0`, 10 `0x005BF170`, 11 `0x005BF1F0`.
+  (data:g_ItemUseFns@0x00741790, tbl:Misc.txt:pSpell)
+- `[I]` `sub_005BF240_ItemUse` (`.\SKILLS\SkillItem.cpp`) runs the entry of the used item's `pSpell` (`+0x094`) as
+  `use(ECX game, EDX the user, stack: the item, …)`; a scroll or tome reaches it through skill do 113, whose handler
+  finds the scroll or book in the inventory and calls `InvUse` (item page 1) or `BeltUse` (page 2)
+  ([data/0005](../findings/data/0005-calc.md), [skills/0015 § 4](../findings/skills/0015-item.md#4-do-113-and-do-151),
+  fn:sub_005BF240_ItemUse@0x005BF240, fn:sub_005BF3D0_SkillDo113UseBookScroll@0x005BF3D0).
+- The stock rows per value (`[C]` data; 22 rows have a `pSpell`, 129 are blank, and all 22 have `useable` 1):
+
+| `pSpell` | Rows | `use` (what the findings say) | Tag |
+|---|---|---|---|
+| 1 | `isc`, `ibk` (identify scroll, book) | `0x005BE230` with the only `test`, `0x005BE130`; body not read | address [C]; body `[L]` |
+| 2 | `tsc`, `tbk` (town portal) | `ITEMUSE_TownPortal`, `0x005BE290` ([quests/0002](../findings/quests/0002-travel.md)) | [I] |
+| 3 | `hp1`..`hp5`, `mp1`..`mp5` (10 healing and mana potions) | `0x005BE3F0`: `len` read at `0x005BE430`, `calc1..3` at `0x005BE4D9` | [I] |
+| 4 | none | `0x005BE7B0` | address [C]; body `[L]` |
+| 5 | `rvs`, `rvl` (rejuvenation) | `0x005BEAC0` | [I] |
+| 6 | `yps` (antidote), `wms` (thawing) | `0x005BEF90`, which calls `0x005BEDA0` | [I] |
+| 7 | `box` (Horadric Cube) | `0x005BF0C0`; body not read | address [C]; body `[L]` |
+| 8 | `elx` (elixir) | `0x005BF060`; body not read | address [C]; body `[L]` |
+| 9 | `vps` (stamina), `hrb` (herb) | `sub_005BEDA0_ItemUseTimedState` | [C] |
+| 10, 11 | none | cast skill 47 at level 1 ([skills/0015 § 1](../findings/skills/0015-item.md#1-the-table-slots-the-stock-rows-and-the-callers)) | [I] |
+
+- `[C]` (data) Of the 35 `useable` rows, the 13 with no `pSpell` are `hpo`, `mpo`, `hpf`, `mpf` (the full and plain
+  healing and mana potions of types `hpot`/`mpot`, `belt` 1), `rps`, `rpl`, `bps`, `bpl` (the small and large red and
+  blue potions, `belt` 0, stackable 5..10), `xyz`, `ass`, `tr2`, `toa` (quest items of type `ques`) and `0sc` (a scroll).
+  So `useable` is not what picks a handler; the dispatch is `pSpell` alone, and what `useable` gates is read nowhere in
+  the findings (`[L]`).
+
+### Timed states: `state`, `cstate1`, `cstate2`, `len`, `stat1..3`, `calc1..3`
+
+- `[C]` (data) 14 rows have a `state`: `healthpot` (`hp1`..`hp5`), `manapot` (`mp1`..`mp5`), `staminapot` (`vps`),
+  `antidote` (`yps`, with `cstate1` `poison`), `thawing` (`wms`, with `cstate1` `freeze` and `cstate2` `cold`) and
+  `innersight` (`hrb`). `len` is set on 14 rows (potions 128..256 for the 10 healing and mana potions, 750 for `vps`,
+  `yps`, `wms`, 1000 for `hrb`; a bytecode offset that decodes to an integer constant). `stat1`/`calc1` is set on 17 rows
+  (`stat2`/`calc2` on 4: `yps` and `wms` the max resistance, `rvs` and `rvl` mana), `stat3`/`calc3` never.
+- `[I]` `sub_005BEDA0_ItemUseTimedState`: the record's `state` (`+0x098`) must be a valid state and `len` at least 1; the
+  state is set, or extended, for `len` frames on a stat list of the user with a timer event 12 at its end, and each of
+  `stat1..3` (`+0x09E`) gets `calc1..3` (`+0x0A4`) when non-zero (after stat 28, when stat 10 is below stat 11, stat 10
+  is set to stat 11 + 256). The potions run the group clear before they apply
+  ([data/0005](../findings/data/0005-calc.md), [stats/states](../specs/stats/states.md) B3, fn:sub_005BEDA0_ItemUseTimedState@0x005BEDA0).
+  The healing potions' `stat1` is `hpregen` (stat 74) and the mana potions' `manarecovery` (stat 26), the amounts
+  `calc1`: 30, 60, 100, 180, 320 and 20, 40, 80, 150, 250. The life tick adds stat 74 every frame whatever its sign, so
+  the healing potion's `hpregen` is added to life (stat 6) at each tick while the state lasts (`[C]` the tick,
+  [stats/states](../specs/stats/states.md) E2, fn:sub_00580610_LifeRegenTick@0x00580610).
+- `[C]` (data) The one-shot rows have no `state` and no `len`: `rvs`/`rvl` (`pSpell` 5) carry `hitpoints` 35/100 and `mana`
+  35/100 as `stat1`/`stat2`/`calc1`/`calc2`, and `elx` (`pSpell` 8) carries `experience` 5. `[L]` how `0x005BEAC0`
+  and `0x005BF060` apply them (a flat value or a percentage of the maximum): the findings do not read them.
+
+### Display columns of the same rows
+
+`[C]` (data) `spelldesc` is 1 on `rvs`/`rvl` (string key `spelldescstr` `ItemStatsrejuv1`/`2`, no calc) and 2 on the
+ten healing and mana potions (`ItemStats1q`, `spelldesccalc` = the potion's amount: 30..320, 20..250). They are
+tooltip text and numbers, the client's; the code anchors in [data/0004](../findings/data/0004-cell-converters.md) are
+the converters only. `durwarning` is 0 in all 151 rows and `qntwarning` is 1 on `aqv` and `cqv` (the arrows and bolts)
+only; `usesound` is blank on `sol`, `j34`, `g34`, `box`. `[L]` the warning columns' readers.
+
+### Belt and stack columns
+
+- `belt` (`+0x130`, u8): 1 on 22 rows (`hpo`, `mpo`, `hpf`, `mpf`, `vps`, `yps`, `rvs`, `rvl`, `wms`, `tsc`, `isc`,
+  `hp1`..`hp5`, `mp1`..`mp5`, `hrb`), 0 on the other 129; `autobelt` (`+0x131`, u8): 1 on 14 (`hpo`, `hpf`, `rvs`,
+  `rvl`, `hp1`..`hp5`, `mp1`..`mp5`). `[C]` (data) `autobelt` is a subset of `belt`, and the eight stock rows `mpo`, `mpf`, `tsc`, `isc`, `vps`,
+  `yps`, `wms`, `hrb` are beltable without it. `[C]` The start-item belt placement runs the potion column search and then boxes 0..3 "when the item record's byte
+  `+0x131` is set" (`autobelt`, player/0001); the beltable test itself is
+  `ItemTypes.Beltable` ([player/0001 § Placement](../findings/player/0001-creation.md),
+  [ItemTypes](ItemTypes.md), fn:sub_0055E9B0_ItemToBelt@0x0055E9B0, fn:sub_0063C600_BeltFreeSlot@0x0063C600).
+  `[L]` what `belt` (`+0x130`) selects, and how a belt's size (`Armor.belt`, [Belts](Belts.md)) restricts the boxes.
+- `stackable`, `minstack`, `maxstack`, `spawnstack`: 10 stackable rows (`tbk`, `ibk`, `gld`, `aqv`, `cqv`, `key`, `rps`,
+  `rpl`, `bps`, `bpl`) with `minstack`/`maxstack`/`spawnstack` 1/20/5, 1/20/5, 0/5000/0, 100/350/200, 60/250/150,
+  1/12/6, and 5/10/0 on the four small and large potions. The creation draw is
+  [§ base-stat roll](#fields-the-base-stat-roll-reads-plan-0024-phase-1) above; the merge and split rules (the
+  largest stack a pickup merges into, the cap by stat 254) are Phase 1.2's `[L]`.
+- `[C]` (data) `useable`, `belt`, `autobelt`, `stackable`: 35, 22, 14 and 10 rows with 1; `Books` (3 rows) is
+  [Books](Books.md) (the scroll and tome codes, the skills, the tome price). `[L]` `usesound`'s consumer.
 
 ## Open questions
 
