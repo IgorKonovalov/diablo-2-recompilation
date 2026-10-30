@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, items/vendors, monsters/pool, monsters/stats, data/strings, data/excel, save/d2s]
 consumed_by: [items/quality, monsters/pool, save/d2s]
-tags: {C: 137, I: 43, L: 7}
-updated: 2026-10-27
+tags: {C: 141, I: 43, L: 7}
+updated: 2026-10-30
 ---
 
 # Hirelings: the hire list, the hire, the mercenary's stats and its creation from a save
@@ -69,7 +69,7 @@ flowchart TD
 | Quest gift, Act I (Kashya's talk with Act I quest word 2 bit 1 set and bit 0 clear), expansion | fn:sub_00590980_A1Q2_NpcMessage@0x00590980 → fn:HIRE_GiveFreeMerc@0x00579180, run:2026-10-27-sweep-hirelings | [C] |
 | Quest gift, Act III (Asheara, word 19 bit 7) | 0x005B94CE → fn:HIRE_GiveFreeMerc@0x00579180 | [I] |
 | A save with a mercenary header is loaded | fn:D2S_ReadMercHeader@0x0056AA50 → fn:MERC_Create@0x005774F0, run:2026-10-16-hirelings | [C] |
-| A save older than version 92 | fn:sub_00533C70_ReadMercOldSave@0x00533C70 | [I] |
+| A save older than version 92 (versions 87 and 71 run) | fn:sub_00534020_ReadSaveLegacy@0x00534020 → fn:sub_00533C70_ReadMercOldSave@0x00533C70 → fn:MERC_Create@0x005774F0, run:2026-10-27-sweep-d2s-legacy | [C] |
 
 ## Inputs
 
@@ -613,7 +613,7 @@ H11. a ← GetAct(vflag, 0, name)
      if vflag = 0 and (a < 0 or a ≠ the player's act): return none                        ; classic only
 H12. if the seller's hire table exists and the entry of name is not listed: mark it hired  [I] (fn:MERC_Create@0x005774F0, 0x005775E2–0x00577605) ; not reached (step notes)
 H13. row ← GetRecord(vflag, id, 1)
-     if id = 0xFFFF: row ← the first NextByActDiff(vflag, act, difficulty) row          [I] (fn:MERC_Create@0x005774F0) ; not exercised
+     if id = 0xFFFF: row ← the first NextByActDiff(vflag, act, difficulty) row          [I] (fn:MERC_Create@0x005774F0) ; the act dependence: step notes
 H14. merc ← SUnitCreate(type 1, row.Class, …, mode = dead ? 12 : 1)
      MERC_Init(merc, id, {name, seed}, dead)                                               ; § F, no SetLevel there (id ≠ 0xFFFF)
 ```
@@ -667,9 +667,26 @@ Step notes:
   ([save/d2s § H](../save/d2s.md#h-item-lists)). (fn:D2S_ReadMercItems@0x0056AC10, fn:D2S_ReadSaveV92@0x0056B180,
   0x0056B32D, run:2026-10-27-sweep-d2s-load,
   [hirelings/0001 § Plan 0038 batch H1a](../../findings/hirelings/0001-hirelings.md#plan-0038-batch-h1a-run2026-10-27-sweep-d2s-load))
-- [I] Saves older than version 92 go through `sub_00533C70_ReadMercOldSave`, which does the same after converting
-  the experience of versions below 90; version 71 saves carry no Id and are created with id `0xFFFF`.
-  (fn:sub_00533C70_ReadMercOldSave@0x00533C70, fn:sub_00533BF0_MercExpFromOldSave@0x00533BF0)
+- [C] **Saves older than version 92** go through `sub_00533C70_ReadMercOldSave`, in two forms told apart by the
+  version (the run loaded versions 87 and 71; versions 72–86 and 88–91 are the code's reading). A version-87 file's 0x12-byte record (then the mercenary's item list) gave its seed and Id to
+  `MERC_Create` (seed 12345, Id 1, the name word 3414 = the Rogue's first name 3411 + 3), and the game's write-back
+  held seed 12345, Id 1, name 3, alive, and the built item on the mercenary. A version-71 file's record holds only the
+  seed and the name (8 bytes: `JM`, the seed, the name); they went to `MERC_Create` as (name 3, seed 12345, Id `0xFFFF`), and the
+  write-back held seed 12345. (fn:sub_00533C70_ReadMercOldSave@0x00533C70, fn:MERC_Create@0x005774F0,
+  run:2026-10-27-sweep-d2s-legacy, [hirelings/0001 § Plan 0038 batch H1c](../../findings/hirelings/0001-hirelings.md#plan-0038-batch-h1c-run2026-10-27-sweep-d2s-legacy))
+- H13. [C] **A version-71 mercenary is created with Id `0xFFFF`** and comes back as Id 1: both version-71 files (one
+  in Act I, header byte `0x80`; one in Act II, `0x81`) were loaded with Id `0xFFFF`, `MERC_Create` returned a unit,
+  and the write-back held Id 1 both times. (fn:MERC_Create@0x005774F0, run:2026-10-27-sweep-d2s-legacy)
+- H13. [I] **That the row follows the act** (the first `NextByActDiff(vflag, act, difficulty)` row) is read from the
+  code: the two files gave the same Id 1, and the act the lookup used, the owner's at the call, is not logged (the
+  Act II file's act byte was written back unchanged). (fn:MERC_Create@0x005774F0)
+- [C] **The version-87 experience is converted.** `sub_00533BF0_MercExpFromOldSave` was called once, with (Id 1,
+  experience 100 000), and returned 546 210, which the write-back held as the mercenary's experience. A version-71
+  record holds no experience and no Id, and the function is not called for it. (fn:sub_00533BF0_MercExpFromOldSave@0x00533BF0,
+  run:2026-10-27-sweep-d2s-legacy)
+- [I] **The conversion's cutoff and arithmetic** are read from the code: versions 89 and below convert, 90 and above
+  do not (0x00533D4F), and no file of version 88 to 91 was loaded (a version-92 file goes to `D2S_ReadMercHeader`);
+  the conversion's arithmetic is not modelled. (fn:sub_00533BF0_MercExpFromOldSave@0x00533BF0, 0x00533D4F)
 
 ### I. Monster class and the monster level
 
@@ -898,8 +915,8 @@ on the in-game screen.
 - [L] **Not reached by a run** (each one inferred above): a classic hire at Greiz, the Act III gift and the gift's
   classic and refusal tests, resurrection at Greiz, Asheara and Tyrael, `VENDOR_StockLevel` outside Normal, a
   mercenary at `M` (98) gaining experience and a level-up of more than one level, a hire by a second player from the
-  shared table, and saves older than version 92 (`ReadMercOldSave`, the Id `0xFFFF` of a version-71 save, the
-  experience conversion; plan 0038 batch H1c). None changes the draw order of § D.
+  shared table, the act dependence of a version-71 mercenary's row (H13), and the old-save experience conversion's
+  cutoff at version 89 and its arithmetic (no file of version 88 to 91 is built). None changes the draw order of § D.
 - [L] **Two reads behind the refusals and `MERC_Create`** (reverser entry
   [2026-10-27-architect-reverser-h6f-review-client-hire-line-and-merc-create](../../backlog/2026-10-27-architect-reverser-h6f-review-client-hire-line-and-merc-create.md)):
   whether the client test that drops the hire line matches `HIRE_Hire`'s quest gates in every state (F1), and what

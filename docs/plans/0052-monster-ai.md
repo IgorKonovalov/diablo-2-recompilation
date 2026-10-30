@@ -398,7 +398,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Kept outputs:** six new files under `workspace/logs/r52/` (`entryget-callers.txt`, `entryget-windows.txt`,
     `aiinit-pushes.txt`, `aiinit-windows.txt`, `aiinit-regstates.txt`, `aicancel-pushes.txt`), from
     `tools/sweep_rbs3.py` (`callers`, `window`, `pushes`); manifest 46 lines, `sha256sum -c` passes from that directory.
-  - **Backlog:** [archivist](../backlog/2026-10-27-reverser-archivist-monai-second-table-named-by-ai-0001.md) (link
+  - **Backlog:** [archivist](../backlog/archive/2026-10-27-reverser-archivist-monai-second-table-named-by-ai-0001.md) (link
     MonAI.md's second table and its open question to ai/0001 § 3; the survey reads the state rows, ruling (e));
     the [review request](../backlog/archive/2026-10-27-reverser-architect-plan-0052-p1-1-review.md).
   - **To rule on.** (1) The tier proposal (16 AIs, § 13). (2) The batch list for P1.2 onward (§ 13; the architect's
@@ -487,6 +487,51 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   (`grep -c 'call   0x5df850\|call   0x5df990\|call   0x5dfa00\|call   0x5dfbf0' b2-asm.txt`: 0). 25 `re/symbols.csv` rows (all I). Kept outputs `workspace/logs/r52c/` (manifest 7 lines; `emu/` 31,
   `emu/dev-1/` 32; each passes from its directory). Backlog: the
   [review request](../backlog/archive/2026-10-30-reverser-architect-plan-0052-p1-2-batch-2-review.md),
-  [archivist](../backlog/2026-10-30-reverser-archivist-monstats-and-itemstatcost-readers-named-by-ai-0003.md)
+  [archivist](../backlog/archive/2026-10-30-reverser-archivist-monstats-and-itemstatcost-readers-named-by-ai-0003.md)
   (MonStats, ItemStatCost and States readers). Next: batch 3 (pool-C).
 - **2026-10-30 — P1.2 batch 2 Tier B check (architect, `lane/r52c`): accept with fixes (1).** Fix: omission, the search callbacks' "draw nothing" gains its scope (direct calls of `AiSameBaseNearCb`, callees not followed). Rulings: the five unemulated rows stay `[I]` for the batch's done-when (as batch 1); P1.1 reopen condition (b) not met; the three open questions stand (the dance tables and the opposite-word parameter record to the writer read, the stat 80 grant to Phase 2). Gate green. Review request closed.
+- **2026-10-30 — `lane/a7c` Tier B check (architect): accept with fixes (4).** Fixes: misread 1 (the vampire `aip5` value list read `4, 6-9` as bare numbers; they are the records `vampire4`, `vampire6..9`), omission 2 (the flee parameter's state 2 condition; `d` in the stat 80 grant undefined), overclaim 1 (the `Velocity` > 0 guard is in the reverser's request, not in ai/0003 § 2.12: kept with a note, routed to the reverser). The per-row `aip` lists in MonStats checked against ai/0003 § 2 for rows 17-30: all 14 match (row 28 has no `aip6`, row 27 `aip2..6`). No `[C]` added; anchors `sub_005F2A00_AiGreaterMummyCb`, `sub_005F4A70_AiVampire`, `UNIT_HasState` match their rows. Whole-document re-read of MonStats, ItemStatCost, States and the d2s.md corpse paragraph: nothing else stale. Gate green. Review request closed.
+- **2026-10-30 — `lane/a7b` Tier A audit (architect; ADR-0023 audit sample, plan 0053 Phase 3) of the Tier B check
+  (44a12049, accept, 0 fixes): accept with fixes (5).** `main` (66b96ae8) merged into the lane first (one ledger
+  conflict, both sides kept in merge order). The full review re-ran `tools/ai_survey.py states` on the pinned image:
+  every byte count in MonAI § The second table holds (`+0` 7/10/1, `+4` in 3, 11, 16, `+C` in 4, `+8` 17 set and 16
+  distinct, five words shared with `g_MonAiTable`, twelve not); the lane's "five, not seven" is right. Anchors read
+  with objdump: `cmp ebx,0x12; jge` at 0x005B0E4D, `edx = [[esi]]` before the call at 0x005B1663, the two curse calls
+  0x005C3520/0x005C352E and 0x005E817B. The 49 `RECIPE_BASES` rows were matched by script against
+  `2026-10-27-anim-p2-manifest-ckpt2.sha256` (49 of its 52 saves, 49 distinct hashes, 0 mismatches; the other three,
+  `AnimSorMon`, `sp/AnimAssBos`, `sp/AnimPalChg`, equal existing rows) and `tools/test_d2s.py` passes (60 tests): that
+  part is clean. Fixes, all in `docs/tables/MonAI.md`:
+  - Omission 1 (archivist rule 6): the register-site list named 10 of the 12 sites; added state 11's function
+    0x005E817B (`eax` = 0) and the curse path's twin 0x005C352E, with the sites' addresses and the two pointer loads
+    that pass the current state. The Tier B check saw the first as a nit and left it.
+  - Stale cross-reference 3 (archivist rule 4, outside the diff, in the same doc): § The AI table in the image still said
+    only `+8` has a meaning from a finding while the lane's new text uses `+0` as the row kind (ai/0001 § 3 names all
+    four, `[I]`); § Batches still said the state rows are in no batch and P1.1 adds them (this plan's § The catalogue
+    batches places all 18); the first and third *Open questions* still asked what `+0`/`+4`/`+C` are and whether any
+    path overrides the record's row, which ai/0001 § 3 answers in part (narrowed to row 143 and to a first-table row
+    other than the record's).
+  - Omission 1 (routing): the lane found ai/0001 § 3's "seven state rows reuse a first-table think word" overcounts
+    (states 10 and 17 share a word with each other only) and wrote around it with no entry to the finding's owner;
+    filed [reverser](../backlog/2026-10-30-architect-reverser-ai-0001-state-rows-reusing-a-first-table.md).
+  **What the Tier B check missed:** all five, none reject-grade (no `[C]` without its source, no wrong address). The
+  misses are of one kind: text outside the diff that the diff makes stale, and a disagreement with a finding left
+  unrouted; a diff-scoped check reads neither unless rule 4's "re-read the findings a column touches" is run over the
+  whole doc. Gate GREEN after the fixes.
+- **2026-10-30 — P1.2 catalogue batch 3 (pool-C) for review (reverser, static, `lane/r52d`, from `main` 66b96ae8).**
+  [ai/0004](../findings/ai/0004-pool-c.md): the seventeen think functions of rows 33, 35–40, 43, 45–49, 52, 56, 57 and
+  63 and row 52's `alt`, each with its `aip` reads per record, its `AiCtl+0x14/+0x18/+0x1C` words, its draws in order
+  (all on the acting unit's seed; 0–6 per decision) and its command, plus the pieces first read here
+  (`MonAiStepAwayXY`, the nest init shared with row 129's, the priest's heal callback, `PathSetFacing` and the trap's
+  facing tables). [C] by emulation (run:2026-10-30-ai-cat-emu-3, `tools/ai_cat_emu3.py`, 3 360 cases, 0 mismatches,
+  every control failing every case it separates; development runs kept under `emu/dev-1/` and `emu/dev-2/` with their
+  tool copies): the decision maps of rows 33, 36, 38, 39, 40, 43, 45, 46, 47, 52, 57 and 52's `alt` up to their first
+  callee, `AiCtl+0x14/+0x18/+0x1C` and `Unit+0xC4` included; rows 37 and 63 their draw-free state and timer tests only.
+  Left [I]: rows 35 and 37 past `FindHostile`, 48 and 49 (`UnitLifePct` first), 56 (`MonsterOwner`'s `GameFindUnit`
+  first), and everything after a boundary. Tier AIs in the batch: 35 static only, 37 its state test emulated. P1.1
+  review reopen condition (b) not met: the one search callback (`AiZakarumHealCb`) draws nothing by its body and direct
+  calls (its callees not followed). No call of the action helpers (`grep -c` in `b3-asm.txt`: 0). 23 `re/symbols.csv`
+  rows (all I). Kept outputs `workspace/logs/r52d/` (manifest 10 lines, with the lane check's nest and sarcophagus control; `emu/` 57, `emu/dev-1/` 58, `emu/dev-2/` 58; each
+  passes from its directory). Backlog: the
+  [review request](../backlog/archive/2026-10-30-reverser-architect-plan-0052-p1-2-batch-3-review.md),
+  [archivist](../backlog/2026-10-30-reverser-archivist-monstats-and-monstats2-readers-named-by-ai-0004.md) (MonStats and
+  MonStats2 readers). Next: batch 4 (pool-D).

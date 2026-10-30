@@ -133,12 +133,16 @@ build recipe (JSON object; every key optional; example tools/d2s_recipes/lightso
   <= 92 per-id encodings (stat 83 by class param, 107 skill/level, 126 param 1, 188, 195/198/201) and a set item's
   Sets id; a remapped or folded id, a param in the generic path, 204 and the five-class fold are refused.
   save_version 87 and 71 write the legacy layout (0x82-byte header, Woo!, WS, NPCs, 'gf' with a 3-byte mask over
-  stats 0..15, 'if', items, an empty corpse list, the mercenary, for 87 the hotkey tail; no checksum, no size):
+  stats 0..15, 'if', items, an empty corpse list (or one corpse, key "corpse" below), the mercenary, for 87 the hotkey tail; no checksum, no size):
   87 items in the 1.09 form with the <= 89 widths (magic, rare, crafted and class-affix items refused), the
   0x12-byte mercenary record and its item list; 71 items as version-71 records (classic index form, or the code
   form for an item with no version-0 row), the mercenary as 'JM' + seed + name, no item list.
   legacy_new_char: true (71, 87) sets status bit 0 (sub_00532590_NewCharLegacy). item "v71": {"form": "index" |
   "code", "unit_seed", "item_seed", "file_index", "page"} overrides the version-71 record fields. item
+  corpse (71, 87; backlog 2026-10-30 H1c): {"unk": 24 hex digits, the corpse record's 12 bytes the reader skips (default
+  zeros), "items": [item specs placed like the character's, "equip"/"store", "filled" for sockets, "v71" at 71]}
+  writes one corpse ('JM' count 1, the 12 bytes, a 'JM' item list of the file's version) instead of the empty list.
+  Layout [I] from d2s.md § Corpses, as the rest of the legacy builder: no file of these versions has been loaded.
   "item_props": [[stat id, param, value], ...] adds param entries to the property list (any version).
   Read back with parse(b, isc, kinds, extended=True) (92) or parse_legacy(b, isc, kinds, classic_codes(t)).
 Unique properties come from the row's prop/par/min/max through properties.txt (funcs 1, 2, 3, 7, 8,
@@ -1921,12 +1925,18 @@ def build(excel_dir, recipe_path, src, dst):
                    [it for g in merc_groups if in_hand(g) for it in g]
             tail = (bytes(b[f["items_end"]:f["corpses_end"]]) + b"jf" + encode_items(merc, isc, t.kinds, ver=ver)
                     + bytes(b[f["kf_off"]:]))
+    corpse = None
+    if "corpse" in rc:
+        corpse = corpse_spec(t, rc["corpse"], rng)
+        corpse["groups"] = [old_set_ids(t, g, ver) for g in corpse["groups"]]
+        check_layout([it for g in corpse["groups"] for it in g], item_sizes(t))
     if rc.get("legacy_new_char") and ver not in LEGACY_VERSIONS:
         raise D2sError("legacy_new_char needs save_version 71 or 87")
-    if any("v71" in it for it in allit + [it for g in merc_groups for it in g]) and ver != 71:
+    if any("v71" in it for it in allit + [it for g in merc_groups for it in g]
+           + [it for g in (corpse or {}).get("groups", []) for it in g]) and ver != 71:
         raise D2sError("item key v71 needs save_version 71")
     if ver in LEGACY_VERSIONS:
-        out = legacy_image(t, rc, b, stats, skills, allit, merc_groups, ver, in_hand)
+        out = legacy_image(t, rc, b, stats, skills, allit, merc_groups, ver, in_hand, corpse)
         parse_legacy(out, isc, t.kinds, classic_codes(t))  # must read back
         with open(dst, "wb") as fh:
             fh.write(out)
@@ -1958,10 +1968,13 @@ def ext_version(rc, f):
     extension absent). save_version: 71, 87, 92 (the legacy builder) or 93..96; stat_slots alone, skill_count alone
     or an item with "realm" give 96."""
     items = list(rc.get("items", [])) + list(rc.get("merc", {}).get("items", []))
+    items += list(rc.get("corpse", {}).get("items", []))
     items += [c for it in list(items) for c in it.get("filled", [])]
-    if not any(k in rc for k in EXT_KEYS) and not any("realm" in it for it in items):
+    if not any(k in rc for k in EXT_KEYS) and "corpse" not in rc and not any("realm" in it for it in items):
         return None
     ver = rc.get("save_version", 96)
+    if "corpse" in rc and ver not in LEGACY_VERSIONS:
+        raise D2sError("corpse: the key is built at save_version 71 or 87 only (the legacy layouts)")
     if ver not in BUILD_VERSIONS:
         raise D2sError("save_version %r: 71, 87, 92 or 93..96 (the other legacy versions 72..91 are not built: their "
                        "item forms differ by version; d2s.md § Legacy versions)" % (ver,))
@@ -2479,14 +2492,34 @@ def legacy_items(items, isc, kinds, ver, classic):
     return encode_items(items, isc, kinds, ver=ver)
 
 
-def legacy_image(t, rc, b, stats, skills, allit, merc_groups, ver, in_hand):
+def corpse_spec(t, spec, rng):
+    """The recipe key "corpse" (legacy builder, versions 71 and 87; backlog 2026-10-30 H1c): {"unk": 24 hex digits,
+    the corpse record's 12 bytes the reader skips (default zeros), "items": [item specs as in "items", placed by
+    "equip"/"store" like a character's]}. Returns dict(unk=bytes, groups=[[parent, child...]...])."""
+    if not isinstance(spec, dict) or set(spec) - {"unk", "items"}:
+        raise D2sError("corpse: an object with the keys unk and items")
+    try:
+        unk = bytes.fromhex(spec.get("unk", "00" * 12))
+    except (ValueError, TypeError):
+        raise D2sError("corpse unk %r: 24 hex digits" % (spec.get("unk"),))
+    if len(unk) != 12:
+        raise D2sError("corpse unk: 12 bytes, got %d" % len(unk))
+    return dict(unk=unk, groups=[new_group(t, s, rng) for s in spec.get("items", [])])
+
+
+def legacy_image(t, rc, b, stats, skills, allit, merc_groups, ver, in_hand, corpse=None):
     """A whole legacy file (lane/rlg (a) Order and framing): header, the quest, waypoint and NPC sections as the
     version-96 ones, gf, if, items, corpses (none), the mercenary, the hotkey tail (>= 73). No checksum, no size."""
     isc, kinds, classic = t.isc, t.kinds, classic_codes(t)
     out = legacy_header(t, rc, b, stats, ver) + bytes(b[QUEST_OFF:HEADER_SIZE])
     out += legacy_stats(stats) + b"if" + bytes(skills)
     out += legacy_items(allit, isc, kinds, ver, classic)
-    out += b"JM\0\0"                                  # no corpse
+    if corpse is None:
+        out += b"JM\0\0"                              # no corpse
+    else:                                             # one corpse: 12 bytes the reader skips, then an item list
+        cit = [it for g in corpse["groups"] if not in_hand(g) for it in g] + \
+              [it for g in corpse["groups"] if in_hand(g) for it in g]
+        out += b"JM\1\0" + corpse["unk"] + legacy_items(cit, isc, kinds, ver, classic)
     flags, seed, name, mid, exp = struct.unpack_from("<IIHHI", b, 0xAF)
     merc = [it for g in merc_groups if not in_hand(g) for it in g] + [it for g in merc_groups if in_hand(g) for it in g]
     if ver == 71:
@@ -2558,9 +2591,15 @@ def parse_legacy(b, isc, kinds, classic=None):
         return dict(count=count, items=out), p
     f = dict(header=h, ver=ver, stats=stats, skills=skills)
     f["items"], p = items_at(p)
-    if b[p:p + 2] != b"JM" or u16(b, p + 2):
-        raise D2sError("corpse list at 0x%X: 'JM' and count 0 expected" % p)
-    p += 4
+    if b[p:p + 2] != b"JM" or u16(b, p + 2) > 1:
+        raise D2sError("corpse list at 0x%X: 'JM' and count 0 or 1 expected" % p)
+    f["corpses"] = []
+    if u16(b, p + 2):
+        unk = bytes(b[p + 4:p + 16])
+        lst, p = items_at(p + 16)
+        f["corpses"].append(dict(unk=unk, items=lst))
+    else:
+        p += 4
     if ver == 71:
         if b[p:p + 2] != b"JM":
             raise D2sError("v71 mercenary 'JM' missing at 0x%X" % p)

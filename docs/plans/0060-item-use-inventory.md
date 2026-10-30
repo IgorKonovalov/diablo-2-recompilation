@@ -1,0 +1,102 @@
+# 0060 — Item use and inventory: potions, scrolls and tomes, belts, stacks, pickup and drop, ground items, identify
+
+> **Status:** draft (architect, `lane/plans57`, 2026-10-30), for the owner's approval; needs a scope ADR (question 1)
+> **Created:** 2026-10-30
+> **Owner skill(s):** archivist (phase 0), reverser (phases 1, 2), spec-writer (phases 3, 4)
+> **Related ADRs:** 0014-scope-game-simulation, 0017-scope-quests-travel-economy, 0021-observed-boundaries-in-emulation
+
+## TL;DR
+
+What does the server do, end to end, when a player uses, moves, picks up, drops or identifies an item? Which slot an
+item can go to (inventory and stash grids, the belt's rows, the cursor), how stacks merge and split, what a potion,
+scroll or tome does and in which order, where a dropped item lands, how long a ground item lives, and when charms
+count. When this plan is done, `docs/specs/items/use.md` and `docs/specs/items/inventory.md` (row `items/use`) state
+it with the request handlers as entry points, the draws in order, and the integer arithmetic.
+
+## Context
+
+- **Scope.** The 2026-10-27 proposal ("player-side game rules, an ADR-0017-style extension; not recommended now")
+  named this; the owner's 2026-10-30 instruction opens it. It needs a short scope ADR beside ADR-0017 (question 1).
+  The client's UI (drag, tooltips, the belt display) stays out: the claims are the server's outcomes (ADR-0014).
+- **Where the pieces live now:** potions' group clear before apply, stats/states B3 (`ItemUseTimedState`, `[I]`) and
+  the regeneration tick E2 (stat 74 by sign, `[C]`); charm linking, stats/aggregate § the item refresh
+  (`ITEMS_IsActiveCharm`); the starting items' belt and inventory placement, player/creation § E (`ItemToBelt`
+  `0x0055E9B0`, `[C]`); scroll and book use as skills, skills/0015 (do 113, `PlayerUseBeltItem` `0x00562390`); the
+  town portal tome and its town refusal, quests/travel G1 (`[C]`); gold pickup and the party share, items/economy G
+  (`GoldPickup`, `[I]`); Cain's identify cost, items/economy G14 (`[I]`); quantity wear, items/economy; identify's
+  attach and the cursor consume, items/quest-drops (`ItemIdentifyAttach` `0x0055FE00`, `CursorItemConsume`
+  `0x0055EEA0`, `[C]`); ground items' collision mark, drlg/collision (bit 9, `[C]`); the inactive item record, its
+  expiry and the 1 500-frame sweep, drlg/lifecycle (`[C]`/`[I]`); the client request table `g_SrvPacketTable`
+  (`0x006E0D18`, items/0008).
+- **The gap:** the use dispatch for each `Misc` use type, the potion amounts and their states, the grids and their
+  sizes, the placement search (inventory, belt row by belt type, the ground drop's cell search), stacking and splitting,
+  pickup rules (ownership, `nopickup`, the cursor), the stash, scroll-of-identify, and the ground item's lifetime when
+  its room stays active.
+- **Dependencies:** all the cited specs are reviewed. 0055·P1's drain reading helps (the request handlers are queue-1
+  packets) but does not gate.
+
+## Phases
+
+### Phase 0 — Tables
+- **Owner skill:** archivist
+- **What:** table docs for `belts` (record 264 bytes, loader site `0x00660C22`) and `inventory` (240 bytes,
+  `0x0065C0F7`), both loaded ([data/0001](../findings/data/0001-excel-loader.md)) and undocumented in `docs/tables/`; the
+  `Misc` use columns (`useable`, `stackable`, `pSpell`, `spelldesc`, `calc*`, the potion amounts) and `Books`, with the
+  readers already named in `re/symbols.csv`.
+- **Done when:** each table the game loads has a doc with its in-memory layout, and the gate's survey covers it.
+
+### Phase 1 — Static, in three batches
+- **Owner skill:** reverser (static; one headless Ghidra `-Xmx3G`; emulation where a value decides)
+- **What:** P1.1 the use request and the dispatch by use type (potions, rejuvenation, scrolls and tomes, identify,
+  keys, the other `pSpell` kinds), each with its draws; P1.2 the grids, the placement search, belt rows, stacking and
+  splitting, the cursor, pickup and its refusals, the stash; P1.3 the ground drop's cell search, ground-item lifetime
+  and despawn in an active room, and the item request handlers' order inside one drain.
+- **Outputs:** `docs/findings/items/00NN-use-inventory.md` (the next free items number); `re/symbols.csv`; a
+  `tools/inventory.py` model.
+- **Done when:** each batch names its functions with `[I]` or better, the draws per seed, and a list of harness cases
+  for Phase 2; one Tier B check per batch.
+
+### Phase 2 — Harness (one slot)
+- **Owner skill:** reverser (harness, one of slots 1–2; MemoryMax=4G)
+- **What:** the Phase 1 cases with logged inputs: uses of each potion and scroll kind, belt fills by belt type, stack
+  merges, pickups refused and accepted, drops in crowded cells, ground items left past the lifetime.
+- **Done when:** each case is predicted by `tools/inventory.py` before it is checked, with 0 mismatches or each
+  mismatch explained, and the counts meet the Done-when Phase 1 sets.
+
+### Phase 3 — Spec
+- **Owner skill:** spec-writer (Opus)
+- **Outputs:** `docs/specs/items/use.md`, `docs/specs/items/inventory.md`; links from the cited specs; row `items/use`.
+- **Done when:** a Tier A review accepts it.
+
+### Phase 4 — Wiki
+- **Owner skill:** spec-writer (wiki; Sonnet)
+- **Done when:** `docs/wiki/items.md` (or its own page) covers it, no claims of its own.
+
+## Resources and limits
+
+- Static batches fit lane A or B when 0052's catalogue or 0055/0054 frees one; never a third static lane. One harness
+  slot for one or two lane runs. One Ghidra per batch.
+- **Estimate:** P0 one archivist run; P1 three reverser runs; P2 one or two; P3 one or two; P4 one.
+
+## Owner questions (recommendations)
+
+1. **Scope ADR.** *Recommendation: a short ADR beside ADR-0017* ("item use and inventory as game rules; the server's
+   outcomes only, the UI out"), drafted by the architect when the plan is approved.
+2. **Stash and the cube's moves.** *Recommendation: the stash in; the cube's grid as an inventory page in, its
+   transmute stays items/cube's.*
+3. **Trading.** *Recommendation: out* (multiplayer/0002 covers the trade test; a full trade flow is a later plan).
+4. **Ground-item lifetime.** *Recommendation: in*, it is a server timer a reimplementation must keep.
+5. **One slot, after which plans?** *Recommendation: after 0050·P2 part 3 and 0046·P2*, before the companion sweep,
+   on whichever slot frees.
+
+## Open questions
+
+- Which of `belts` and `inventory`'s columns the server reads (the client reads the screen coordinates): settled in
+  Phase 0's reader survey and Phase 1.2.
+
+## Implementation log
+
+_(lanes append dated entries as phases land: what was found, the confidence reached, surprises)_
+
+- **2026-10-30 — Drafted (architect, `lane/plans57`).** Status `draft`; rank 4 (high value, large; scope ADR needed);
+  five owner questions.

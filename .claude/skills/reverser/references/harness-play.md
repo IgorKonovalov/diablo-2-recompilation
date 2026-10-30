@@ -177,6 +177,42 @@ sets display and prefix together; a `--display` or `--prefix` that contradicts i
 - `workspace/wineprefix2` is plan 0011's joiner prefix (ADR-0008). It is not a slot; it used `:8`, which is now slot
   1's display, so a new two-client run uses slot 1 for the joiner instead.
 
+## Before the batch
+
+A batch is the set of kept sessions a run's claims rest on. Development sessions come first and stay out of it.
+
+- **One smoke session per logger revision.** Every new or edited logger file (the `.gdb` and every `.py` it
+  sources) gets one short smoke session on your slot before the batch: the logger arms, the runner's ready line
+  arrives (next section), each tag the checker reads appears at least once, and the checker runs on that log. A
+  batch launched on an unsmoked revision that dies at its first case costs the whole batch's wall time.
+- **Pre-check the pilot's targets in a dev session**: each waypoint the batch hops to is in the save's waypoint
+  bits, each seal, chest or shrine the pilot operates is where the steps expect it, each NPC the pilot talks to is
+  reachable from the town start and offers the menu line it clicks. Fix the recipe or the steps there, not in the
+  batch.
+- **Build survivable characters in the recipe** (§ The character: Energy Shield, rejuvenation belt, resist and life
+  gear for the difficulty), so a death never needs a corpse run. A session whose character died is a dev log, and the
+  case is rerun from a fresh install.
+- **Dev logs apart from kept logs.** Smoke, pre-check and rerun sessions write `dev-` logs (or a `dev/`
+  subdirectory) that the checker's batch glob does not match; the batch's manifest lists kept logs only. Keep both
+  (§ Cleanup, partial logs).
+
+## Running a batch unattended
+
+- **The runner's ready wait keys on a line that appears before the first case**: the logger's own armed or ready
+  line (`RDY` in `tools/gdb/d2s-h1a.gdb` and `d2s-h1c.gdb`, `CUBE logger armed`), or `PLR` when the steps file enters
+  the game. Never a line only a case produces (a load's `TBL`): the wait then runs out its full timeout every session.
+  A new runner's wait also returns at once when its driver has exited.
+- **Launch the whole batch in the background, in one command** (the runner's `run` with every session, or one shell
+  loop), with its output to a file under the lane's scratch area.
+- **Wait once**: one Monitor until-loop on the batch's end, or `tail --pid=<runner pid> -f /dev/null`. Not a turn per
+  poll: each polling turn re-reads the whole context to learn nothing.
+- **Draft the write-up while it runs**: the experiment record's header, the run's case list, the finding's sections
+  the batch will fill.
+- **Run the checker once, at the end**, on the kept logs, with its output to a file; read back the summary lines
+  (`tail`, `grep` for the totals and the failures), never the whole log or the whole check.
+- **Keep the context small.** Long outputs (runner stdout, pilot transcripts, checker detail, decompile dumps) go to
+  files; read back only what the next step needs. Screenshots only where a case failed.
+
 ## Showing the game to the owner
 
 The owner often watches runs. Each slot's Xwayland (`:7` for slot 0, `:(7+N)` for slot N) lives on Hyprland's hidden

@@ -64,7 +64,7 @@ each row.
 | [`items/tc`](docs/specs/items/tc.md) | treasure class resolution, picks, NoDrop, player-count scaling | reviewed | 2026-10-21 |
 | [`items/quality`](docs/specs/items/quality.md) | the unique/set/rare/magic/superior/normal/low roll; magic find | reviewed | 2026-10-20 |
 | [`items/affixes`](docs/specs/items/affixes.md) | alvl, prefix/suffix selection, rare affix counts, automagic | reviewed | 2026-10-27 |
-| [`items/uniques-sets`](docs/specs/items/uniques-sets.md) | unique and set candidate selection, fallback rules | reviewed | 2026-10-27 |
+| [`items/uniques-sets`](docs/specs/items/uniques-sets.md) | unique and set candidate selection, fallback rules | reviewed | 2026-10-30 |
 | [`items/properties`](docs/specs/items/properties.md) | stat rolls, sockets, ethereal, durability, defense | reviewed | 2026-10-27 |
 | [`monsters/pool`](docs/specs/monsters/pool.md) | which monster types a level can host | reviewed | 2026-10-27 |
 | [`monsters/spawn`](docs/specs/monsters/spawn.md) | packs, density, placement, minions | reviewed | 2026-10-27 |
@@ -86,7 +86,7 @@ each row.
 | [`data/strings`](docs/specs/data/strings.md) | string-table lookup by key and index, as used by name rolls | reviewed | 2026-10-27 |
 | [`rng/seeds`](docs/specs/rng/seeds.md) | game seed → act → level → room → unit seed derivation | reviewed | 2026-10-27 |
 | [`drlg/collision`](docs/specs/drlg/collision.md) | room collision grid, logic regions, the placement tests used by spawning and objects | reviewed | 2026-10-27 |
-| [`save/d2s`](docs/specs/save/d2s.md) | save layout, item bitstream, persisted seeds and quest state | reviewed | 2026-10-27 |
+| [`save/d2s`](docs/specs/save/d2s.md) | save layout, item bitstream, persisted seeds and quest state | reviewed | 2026-10-30 |
 | [`drlg/lifecycle`](docs/specs/drlg/lifecycle.md) | room activation and release, the inactive records, the restore of monsters, objects and ground items, the wanderer tick | reviewed | 2026-10-27 |
 
 **Creation paths** ([ADR-0002](docs/adrs/0002-scope-creation-paths-and-enablers.md))
@@ -98,8 +98,8 @@ each row.
 | [`items/sockets-runewords`](docs/specs/items/sockets-runewords.md) | socket filling, gems, runes and jewels, runeword activation | reviewed | 2026-10-27 |
 | [`items/quest-drops`](docs/specs/items/quest-drops.md) | quest-state TC switches, first-kill and special drops, quest rewards | reviewed | 2026-10-27 |
 | [`monsters/stats`](docs/specs/monsters/stats.md) | HP, damage, AC and XP per difficulty and player count, mod effects | reviewed | 2026-10-27 |
-| [`hirelings`](docs/specs/hirelings/README.md) | hireling stock, per-difficulty stats, name rolls | reviewed | 2026-10-27 |
-| [`player/creation`](docs/specs/player/creation.md) | starting stats and items, experience curve, level-up | reviewed | 2026-10-21 |
+| [`hirelings`](docs/specs/hirelings/README.md) | hireling stock, per-difficulty stats, name rolls | reviewed | 2026-10-30 |
+| [`player/creation`](docs/specs/player/creation.md) | starting stats and items, experience curve, level-up | reviewed | 2026-10-30 |
 
 **Simulation** ([ADR-0014](docs/adrs/0014-scope-game-simulation.md))
 
