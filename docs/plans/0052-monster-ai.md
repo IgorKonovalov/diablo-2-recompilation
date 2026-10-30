@@ -566,3 +566,24 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   draw-free maps, with the `==` and sign tests stated uncontrolled; (4) the remaining open questions stand (row 71's
   state 1, the `MonsterData+0x0E` gate on the dkmag records, the `+0x54` writer, the group's class). Gate green.
   Review request closed.
+- **2026-10-30 — P1.2 catalogue batch 5 (summons) for review (reverser, static, `lane/r52f`, from `main` 08f54ba0; `main` f3005398 merged before the run's totals).**
+  [ai/0006](../findings/ai/0006-summons.md): the 23 init and think entries of rows 67, 84, 86, 101–112 and 143 and
+  state row 7 (15 think, 8 init), each with its `aip` reads, its `AiCtl+0x14/+0x18/+0x1C` words, its draws in order
+  (all on the acting unit's seed) and its command, plus 18 helpers first read here (the pet guard 0x005E45D0 and the
+  pet mover 0x005E3EA0 shared by the followers, the sentries' charge, the shadow skill helpers, two search callbacks)
+  and `SkillLevelClamped` (0x00644AA0). **H3 answered statically `[I]`:** `MonOwnerSkillDamage` reads the owner for
+  every term (`SkillDamagePair(ESI skill, EDI owner)`: the owner's clamped level in the summon's `SkillDamage` skill,
+  then `PhysMin`/`PhysMax >> 8` and `ToHit` at the owner); the Raven attacks by `SetModeAtUnit(4, t)`, so each of
+  H3's Raven calls carries that pair; the 2 218 calls stay P2's. [C] by emulation (run:2026-10-30-ai-cat-emu-5,
+  `tools/ai_cat_emu5.py`, 23 families, 5 520 cases, 0 mismatches; `le`, `d0`, `cmp`, the new `u16` (Skill1 unsigned)
+  and the site control fail every case they separate; `EDGES` per family; a development run under `emu/dev-1/` with its
+  tool copy): full maps of row 84 (init and think), 86, the inits of 101/104, 102, 107 and 110/111, row 102's Skill1
+  bound, 106/143's skill-list test and 108's class dispatch; the entry calls of the other followers. Left [I]: every
+  follower past `MonsterOwner` (a guid lookup), so the tier AI 67 past its entry call (Phase 2's logs). Found: rows 105
+  and 106 read `aip8`'s three cells as three parameters (`shadowmaster`'s 279 in Normal only is the summon skill id).
+  P1.1 review reopen condition (b) not met (the two callbacks draw nothing by their bodies and direct calls; row 106's
+  loops run over skills). No call of the action helpers. 42 `re/symbols.csv` rows (all I). Kept outputs
+  `workspace/logs/r52f/` (manifest 11 lines; `emu/` 93, `emu/dev-1/` 94; each passes from its directory). Backlog: the
+  [review request](../backlog/2026-10-30-reverser-architect-plan-0052-p1-2-batch-5-review.md),
+  [archivist](../backlog/2026-10-30-reverser-archivist-monstats-and-skills-readers-named-by-ai-0006.md) (MonStats and
+  Skills readers). Next: batch 6 (hirelings).
