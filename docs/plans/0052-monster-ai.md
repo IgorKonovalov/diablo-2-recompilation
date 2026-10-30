@@ -468,6 +468,6 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   batch: 2 and 9 emulated, 6 and 13 static only. P1.1 review reopen condition (b) not met: the three unit walks (rows
   6, 8, 13) draw nothing per unit. 30 `re/symbols.csv` rows (all I); `re/types/ai.h` `AiParam`, `re/types/lifecycle.h`
   `DungeonRoomLife+0x14/+0x38`. Kept outputs `workspace/logs/r52b/` (manifest 8 lines; `emu/` 31, `emu/dev/` 31; each
-  passes from its directory). Backlog: the [review request](../backlog/2026-10-30-reverser-architect-plan-0052-p1-2-batch-1-review.md),
+  passes from its directory). Backlog: the [review request](../backlog/archive/2026-10-30-reverser-architect-plan-0052-p1-2-batch-1-review.md),
   [archivist](../backlog/2026-10-30-reverser-archivist-monstats-aip-and-levels-id-readers-named-by.md) (MonStats and
   Levels readers). Next: batch 2 (pool-B, rows 17–30).
