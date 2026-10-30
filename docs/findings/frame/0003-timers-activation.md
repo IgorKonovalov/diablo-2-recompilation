@@ -8,7 +8,7 @@
 > log-free build take as the activation-order record? Added at the P1.2 review: what do player kind 11's two callees
 > (`0x005406A0`, `0x00575630`) and kind 6's `Unit+0xA4` record do, and do they draw? And: the window log design closed
 > and its volume re-estimated with the queue line.
-> **Date:** 2026-10-30   **Plan:** 0055 (Phase 1, batch P1.3)   **Status:** open (closes Phase 1; review requested)
+> **Date:** 2026-10-30   **Plan:** 0055 (Phase 1, batch P1.3)   **Status:** open (closes Phase 1; reviewed 2026-10-30, the P1 review: accepted with fixes)
 
 Static reading of the pinned `Game.exe` in Ghidra (project copy `workspace/ghidra-r55c`, symbols replayed from
 `re/symbols.csv` at lane start) and objdump, plus five emulated families (run:2026-10-30-frame-emu-3,
@@ -61,7 +61,9 @@ that directory; `commands.txt` gives the command of each file). Names below are 
   each given only the wanderer tick (one draw on its own room seed). The act's flag is cleared **after** the walk
   (0x0052D21D), so a room activated during the walk itself (`NearWarpTest`'s level-point lookup can activate one,
   drlg/0005 § 9) is linked ahead of the walk's position and loses the flag that would bring a next walk: it waits,
-  unpopulated, for the next frame in which another room of its act is created. (§ 4; fn:sub_0052D160_NewRoomsUpdate@0x0052D160,
+  unpopulated, for the next frame in which another room of its act is created. That is a room of the act being
+  walked; one created in a later act is walked in the same pass, one in an earlier act in the next frame (P1 review).
+  (§ 4; fn:sub_0052D160_NewRoomsUpdate@0x0052D160,
   0x0052D1B0, 0x0052D21D)
 - [I] **The activation-order record.** A log-free build needs, per frame: for each client in the game's client list
   (newest client first, `ClientCreate`'s front push 0x00539B42–0x00539B53) whose player's room at pass 5 differs from
@@ -78,10 +80,13 @@ that directory; `commands.txt` gives the command of each file). Names below are 
   its flag. With the specified entries, `LevelInit` (level builds on the level's seed), `AutosaveTick` and
   `UninterruptibleEnd` as stops its graph holds no RNG function (1 180 functions); the reference callbacks
   (`g_DrlgRefEnterFns`, `g_DrlgRefLeaveFns`, called indirectly) reach one, `DRLG_PresetUnitDropRolls`, through enter
-  3's DS1 load (drlg/preset, on the level seed). (§ 3; fn:sub_0052D440_ClientsRoomSync@0x0052D440,
-  data:g_DrlgRefEnterFns@0x00744384)
-- [I] **Player kind 11 draws nothing on a live party's or pet's data.** Every 30 frames for each player (first 250
-  frames after its placement, `0x00534AD0`) it runs `sub_005406A0_PlrPartyStatusSend` (to the player's own client,
+  3's DS1 load (drlg/preset, on the level seed). *(P1 review:)* "nothing of its own" holds with the two saves
+  stopped: the frame-8 192 save (`SaveGameClients`, 0x0052D4BD, when `AutosaveTick` leaves the flag 0, as it does
+  when it returns at its `0x00730FFC` test, 0x0052D353; the caller sets the flag 0 first, 0x0052D461) and `AutosaveTick` reach 28 RNG functions through item paths,
+  not read for their seed here; the frame model treats a frame `≡ 0 (mod 8 192)` as a boundary (§ 3).
+  (§ 3; fn:sub_0052D440_ClientsRoomSync@0x0052D440, data:g_DrlgRefEnterFns@0x00744384, 0x0052D4AE–0x0052D4BD)
+- [I] **Player kind 11 draws nothing on a live party's or pet's data.** Every 30 frames for each player (the first
+  run 250 frames after its placement, `0x00534AD0`) it runs `sub_005406A0_PlrPartyStatusSend` (to the player's own client,
   packet 0x7F about each other party member, and 0x90 for one beyond 50 subtiles) and
   `sub_00575630_PlrPetsStatusSend`, which first prunes the
   player's pet lists of every pet whose unit is missing or dead (`PetRemove(guid, 0)`, mercenaries excepted) and then
@@ -107,6 +112,17 @@ that directory; `commands.txt` gives the command of each file). Names below are 
   a three-window session 11 896–38 169 lines, 0.67–2.15 plan-0045 sessions. That is 27–40 % above P1.1's 12.5–36.3, the
   queue line most of the rise. 0055 Q2's volume trigger (a session above 177 860 lines) is not met at the high rates
   either (42 902). Breakpoint stops: 32.9–67.9 per frame, 820–1 700 per game second. (§ 9)
+- [I] **The frame's shared seeds** (P1 review, from frame/0001 § 4, frame/0002 § 5 and §§ 1–7 here): a seed that two
+  units' or two rooms' draws in one frame can both step, so that their order decides the values. (1) The **game seed**:
+  every unit creation (population and the inactive restore in pass 3, two draws per restored item; the unit events;
+  the quest timers' spawns; the drain's handlers). (2) **Each level's seed**: the DS1 preset rolls of the rooms its
+  activations load (pass 5, and on-demand activations), the level-point lookups inside a population (pass 3) and the
+  Tristram portal timer; a level build itself does not depend on build order. (3) The **object-region seed**, carried
+  across rooms, operates and timer events (chain/0001 § 3.2, `[C]` there). (4) The **quest seed** (A3Q7's step). A
+  room's own seed (the activation re-seed, its tiles, its wanderer tick on every walk of its act) is stepped by that
+  room alone. The saves at frames `≡ 0 (mod 8 192)` are not read for their seed (§ 3). (fn:sub_00555230_SUnitCreate@0x00555230,
+  fn:DRLG_PresetUnitDropRolls@0x00667620, fn:sub_0054DB50_NearWarpTest@0x0054DB50, fn:OBJRGN_Create@0x00546C60,
+  fn:QUESTS_GetSeed@0x005438B0, fn:sub_0054F060_RoomWandererTick@0x0054F060)
 
 ## Leads used
 
@@ -293,7 +309,12 @@ ctl->running = 0;
   554 functions, none), the save and host callbacks, the player and unit walks' callbacks and the stat-list
   callbacks, not followed. So the room sync's draws are the room activations' (drlg/room-tiles: the re-seed and the
   tile draws on the room's own seed), the level builds' (on each level's seed) and the preset rolls (drlg/preset), all
-  on per-level and per-room seeds, never the game seed, by direct reach. (fn:sub_0061B390_DrlgRefAddNear@0x0061B390,
+  on per-level and per-room seeds, never the game seed, by direct reach **with the saves stopped**. *(P1 review:)* the
+  save half is open: `AutosaveTick` (every frame) and `SaveGameClients` (a frame `≡ 0 (mod 8 192)` with the flag 0,
+  0x0052D4AE–0x0052D4BD) carry the "autosave's item paths, 28" above, whose seed is not read; in single player
+  `AutosaveTick` does not save (save/0001 row 2, run:2026-10-27-sweep-d2s-play), but whether the frame-8 192
+  `SaveGameClients` runs there is not read. A window that holds such a frame logs it as a boundary (Phase 2b).
+  (fn:sub_0061B390_DrlgRefAddNear@0x0061B390,
   fn:DRLG_PresetUnitDropRolls@0x00667620, fn:sub_006424A0_LevelInit@0x006424A0)
 
 ### 4. The act room list and the new-room walk
@@ -305,6 +326,9 @@ ctl->running = 0;
   head) to its next (0x0061A93E–0x0061A975); its two calls are `RoomsDeactivate` (0x0052D2BB) and `RoomTilesRelease`
   (0x0066F1CA, the client's leave-3 path). So the list holds the act's active rooms, most recently created first,
   relative order otherwise kept. (fn:DUNGEON_RoomCreate@0x00619890, fn:sub_0061A910_ActiveRoomFree@0x0061A910)
+- [I] *(P1 review:)* after the near list (0x00619931–0x00619946) `DUNGEON_RoomCreate` calls the act's `+0x4C` with
+  the new room in `ECX` when it is non-zero (0x0061994B–0x00619954), before its return. Its writer is not read
+  (open question 7); the frame model assumes it is 0 on the server. (fn:DUNGEON_RoomCreate@0x00619890, 0x00619954)
 - [I] **Its walkers** (`ActRoomsHead`, 11 call sites by the raw scan, 10 in Ghidra functions): `NewRoomsUpdate`,
   `RoomsDeactivate`, `ActsRoomRemovalsClear`, `ActUnitsFrameReset`, `ActExpiredItemsFree`, `0x005545C0`,
   `0x00573C00`, `A4Q2_DiabloSummon` on the server; `0x0044C750` and `0x0046B0D0` on the client; and a site at
@@ -328,7 +352,11 @@ ctl->running = 0;
   § 9, 17 times in run:2026-10-14-collision) is linked before the walk's position, so it is not visited, and the flag
   its creation set is cleared at the walk's end. It is populated at the next walk of its act, which needs another room
   of that act to be created (or `RoomUpdateOne`). Not checked against a log: no kept log stamps both the activation
-  and the population with a frame (open question 2). (0x0052D1B0, 0x0052D21D, fn:sub_0061B730_RoomActivateB@0x0061B730)
+  and the population with a frame (open question 2). *(P1 review:)* this holds for a room of the act being walked.
+  A room created in a later act (index above the current one) is linked before that act's head is read
+  (0x0052D1B0) and its flag is read at 0x0052D1A9, so it is populated in the same pass. A room created in an earlier
+  act, whose walk is over, keeps its flag and is populated in the next frame's walk. (0x0052D1B0, 0x0052D21D,
+  fn:sub_0061B730_RoomActivateB@0x0061B730)
 
 ```mermaid
 sequenceDiagram
@@ -462,7 +490,7 @@ queue line:
 
 | Line | Site | Fields | Per frame (estimate inputs) |
 |---|---|---|---|
-| `TM` | the call sites 0x0052D920 (timers), 0x0052D938 (deactivation), 0x0052D95F (unload, per act), and 0x0052D322 (the sweep's branch, when `frame % 1500 = 0`) | which, frame, game seed | 0.224 |
+| `TM` | the call sites 0x0052D920 (timers), 0x0052D938 (deactivation), 0x0052D95F (unload, per act), and 0x0052D322 (the sweep's branch, when `frame % 1500 = 0`) | which, frame, game seed | 0.224 (one act loaded: 1/20 + 1/12 + 1/11; each further loaded act adds 1/11 and the sweep 1/1 500; P1 review) |
 | `TQ` | `QUESTS_TimersRun`'s callback call 0x00543E85, and its return | callback, quest, due, tick; at the return `AL` and the game seed | rare (a quest timer due) |
 | `RU0`, `RU1` | `NewRoomsUpdate`'s per-room call 0x0052D1C4 and the next-room load 0x0052D211; `RoomUpdateOne`'s entry 0x0052D0F0 and returns 0x0052D133, 0x0052D151 | act, room, `+0x34`, the room seed (`+0x6C`), the game seed; `RoomUpdateOne`'s return address | 2 per room walked: every active room of an act each time one of its rooms was created |
 | `RC` | `DUNGEON_RoomCreate`'s return 0x0061995E | act, room, its DRLG room and level, frame | per room created |
@@ -475,8 +503,10 @@ queue line:
   `UnitTeleport`), and `EventQueueEveryFrame` three (0x00541666 in `UnitQueueEveryFrame`, 0x00541698 in the
   unreferenced `0x00541680`, 0x005416D7 in `EventQueueAt`'s frame −1 branch) (`xrefscan`). So `UnitQueueEvent`'s
   entry misses the teleport's queue and an every-frame breakpoint without the return test logs a frame −1 queue
-  twice; the two sites above log every record once. (fn:sub_005416B0_EventQueueAt@0x005416B0,
-  fn:sub_005415E0_EventQueueEveryFrame@0x005415E0)
+  twice; the two sites above log every record once. *(P1 review:)* a `QE` line is a request: a kind of 15 or more
+  (signed `jge`, 0x005416B7–0x005416BF) logs a `QE` and queues nothing, and the state-54 branch of frame/0002 runs
+  after the entry, so the order model pairs `QE` lines with records, not one to one with lines.
+  (fn:sub_005416B0_EventQueueAt@0x005416B0, fn:sub_005415E0_EventQueueEveryFrame@0x005415E0)
 - [I] **The breakpoint sites that stop without writing a line**: frame/0001 § 7's 9 (`FP`, `ACL`), the act loop of
   `NewRoomsUpdate` when no act is flagged (none: `RU0` is per room), the `TM` sites (conditional, at most 3 a frame);
   the estimate counts 17 fixed stops a frame. (0x0052D1A9, 0x0052D920–0x0052D95F)
@@ -539,3 +569,7 @@ queue line:
 5. **`0x0053B0BF`**, the eleventh `ActRoomsHead` call, lies in code Ghidra gives no function; not read.
 6. **The mercenary exception** of `PetListPrune` (type 7 skipped): a dead mercenary stays in its list; where it
    leaves is not read here.
+7. **The act's room-create callback** (`+0x4C`, called by `DUNGEON_RoomCreate` at 0x00619954, § 4; P1 review): its
+   writer is not read. A lead only: the client's `DUNGEON_ActCreate` call (0x0044E13D) passes two code pointers,
+   0x00459150 and 0x004591A0, as its last two arguments, where the server's (0x0053ACA0) passes 0; that
+   `+0x4C` is one of them, so 0 on the server, is `[L]`.
