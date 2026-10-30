@@ -5855,10 +5855,68 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   unpaused (owner, 2026-10-30; [plans README](README.md) § Owner decisions (2026-10-30)). **Running from today:** H1c
   (`d2s-legacy`, `lane/h1c`, harness slot 1) and the H6g static read (`lane/h6gs`, static). **H6g's shortfalls** (rows 2
   and 29, the Ancients' reward; rows 3 and 30 remainder, the corpse pickup): owner play is postponed, so the backlog
-  entry [`2026-10-27-reverser-architect-plan-0038-h6g-shortfalls-ancients-altar-and-corpse.md`](../backlog/2026-10-27-reverser-architect-plan-0038-h6g-shortfalls-ancients-altar-and-corpse.md)
+  entry [`2026-10-27-reverser-architect-plan-0038-h6g-shortfalls-ancients-altar-and-corpse.md`](../backlog/archive/2026-10-27-reverser-architect-plan-0038-h6g-shortfalls-ancients-altar-and-corpse.md)
   is re-addressed `to: reverser` and routed to a **reverser static read now** (the Ancients' spawn, the altar or
   object that starts the encounter and the reward's grant; the corpse pickup handler, its share and a Teleport route to
   the corpse), with a routed next step per row (raised statically, a corrected harness session in the next free slot,
   or the owner-play option, which stays open as a later choice). The entry stays open until that read's review.
   Totals unchanged (1 526). **Queued:** the player/creation Phase 3 re-tag and hirelings rows 3/30/33, after H1c's
   review.
+- **2026-10-30 — H6g shortfalls, static read filed, review requested (reverser, `lane/h6gs`, static; Ghidra on a
+  project copy, objdump, `tools/ds1.py`; no harness slot; `main` merged at `8dddf4c5`).** Read in
+  [player/0001 § Plan 0038 H6g shortfalls, static read](../findings/player/0001-creation.md#plan-0038-h6g-shortfalls-static-read-2026-10-30);
+  kept outputs `workspace/logs/h6gs/manifest-h6gs.sha256` (6 lines).
+  - **Rows 2 and 29 stay open** (b, H6g). There is no static second source for J2: the three amounts are immediates
+    of `0x0058C5C0` only, which has three direct callers. Class 546 is the altar (OperateFn 65), so `objop:546` was
+    right. The `anc` session never populated the altar's room: no 546, 547 or 474–476 in its 86 `OBJS` lines, and the
+    player stayed at least 25 subtiles south of the altar. The corrected route: from the logged summit door, walk to
+    about + (−9, −49), operate 546 once, cast no town portal on level 120, then farm classes 540–542. A level-20–35
+    Normal character is needed to reach the cut (it binds for L 1–35 in Normal, `grant-cut.txt`), plus a new `EG0`
+    line. This is a harness session, not d-owner.
+  - **Rows 3 and 30 stay raised in part**, with the remainder narrowed. Proposed `[C]` (rule 1, a writer/reader pair
+    with the writer logged at `CCX`): the pickup reads the corpse's stat 13 and its inventory owner id, the two fields
+    `PLAYER_CorpseCreate` writes. Still `[I]`: the pickup's run. It is reached through `UnitInteract`'s type-0 case
+    (distance ≤ 8 picks up, 9–50 walks there and then picks up), with no difficulty test. It needs a Nightmare or Hell
+    death and a click within 50 in the same game.
+  - **Refinement** carried to player/0001 § 7, § P1c and its Functions row, and to quests/0001 word 39: the grant's
+    cut is `T(L + 1) − T(L)`, the width of level L + 1.
+  - **Totals:** no class change, so `main`'s 1 526 stand. **Symbols:** 7 new `[I]`, none raised.
+  - **Review request:** `2026-10-30-reverser-architect-review-h6gs-static-read.md`. The routing entry is annotated
+    and left open for the review to close.
+  - **Tier B check (architect, 2026-10-30): accept with fixes (2).** Overclaim 1: the proposed `[C]` said "no others
+    decide the return" and carried the pickup's zeroing; narrowed to the field correspondence (rows 3/30 stay raised in
+    part, the pickup's run `[I]`). Other 1: the manifest's sixth line (`README.txt`) was unnamed. Rulings: (1) the
+    writer/reader pair, writer logged, moves the field correspondence only, as filed; (2) the spec J2 wording (for the
+    spec-writer): the grant is cut to `T(L + 1) − T(L)` `[I]`, not "one level span"; J2 stays open until the corrected
+    `anc` session. Rows 2/29 stay open (b, H6g), not d-owner; totals unchanged (1 526). Anchors checked:
+    `PLAYER_CorpsePickup` 0x0057FB70 (one caller 0x00548E56, `callers.txt`), `sub_0058C5C0_ExpGrantCapped` (three
+    callers), the 86 `OBJS` / 14 `PLR` counts of the `anc` log; manifest passes.
+  - **Review-fixes pass:** rule 1 (every new reading is `[I]`; the one `[C]` is proposed and names its pair), rule 2
+    (the counts 86 `OBJS`, 14 `PLR`, 3 callers and 7 symbols come from kept commands or the `re/symbols.csv` diff),
+    rule 6 (outputs and the script hashed), rule 9 (every caller is named: 1 for the pickup, 3 for the interact, 3
+    for the grant), rule 12 (the cut is carried to four places).
+  - **Tier A audit (architect, 2026-10-30; ADR-0023 audit sample, plan 0053 Phase 3): accept with fixes (4).** The
+    full review re-read the lane's `static-h6gs.s` (manifest passes, 6 lines), the two dispatch tables in the pinned
+    `Game.exe` (`g_ObjInitFns` 63/64/65/72 → `0x0058D150`/`0x0058D190`/`0x0058D110`/`0x0058D240`, `g_ObjOperateFns`
+    65/66/71 → `0x0058D310`/`0x0058D400`/`0x0058D6A0`) and `objects.txt` (rows 474–476, 546, 547, 564 as tabled). The
+    grant's steps, compares (signed `jge`/`jle`, unsigned `jb`), the level floor `20·(d + 1)` (both grants), the bit
+    order, the interact's distance cases, the pickup's two reads and the creation's two writes all match the
+    disassembly; `grant-cut.txt` gives 1–35/1–65/1–73, 512 612 and 67 255 812 as filed. The narrowed `[C]` stands
+    (evidence rule 1, a second code path agreeing on the fields). Fixes:
+    - Misread 1: the altar bullet said the operate sends message 0x4E22 whatever the quest state ("no quest state is
+      needed"). With the quest active and its step (`+0x0C`) at 4 or more it sends nothing (`jae` 0x0058D371), and
+      while active with a step below 4 it also calls `QUESTS_SetStep(2)` and `QUESTS_SetState(3)`; corrected in
+      player/0001, and the route's note now says the step at the join is not read.
+    - Rule 12 (stale cross-reference) 1: quests/0001's arming bullet still said the altar "instead" closes the town
+      portals when `+0x0C` > 0; the lane's own reading (close, then send) and the step-4 exit carried there.
+    - Omission 1: the grant's step list left out its first call, `QUESTS_SendPlayerRecord` (0x0058C5CF); added as
+      step 0.
+    - Omission 1 (rule 11): the routing entry was closed "routed to a corrected `anc` session" and ruling (2) sent the
+      J2 wording to the spec-writer, with no entry for either; filed
+      [`2026-10-30-architect-reverser-plan-0038-h6g-corrected-anc-session.md`](../backlog/2026-10-30-architect-reverser-plan-0038-h6g-corrected-anc-session.md)
+      and [`2026-10-30-architect-spec-writer-player-creation-j2-grant-cut-wording.md`](../backlog/2026-10-30-architect-spec-writer-player-creation-j2-grant-cut-wording.md)
+      (the spec's § J2 and `wiki/characters.md` still say "one level span").
+    - **What the Tier B check missed** (for the trial): the altar misread (it read the decompile summary, not the
+      branch at 0x0058D36D, outside its scope limit), the stale quests/0001 sentence (another finding, outside its
+      scope), the step-0 omission, and the unhomed routes (rule 11 is a reverser rule it did run, but the closure was
+      its own). None is reject-grade: no `[C]` rests on them and rows 2/29 stay open. Totals unchanged (1 526).

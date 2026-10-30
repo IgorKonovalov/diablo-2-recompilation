@@ -139,7 +139,7 @@ branches § 11 and the summary list as not exercised stay `[I]` in the text.
 | `0x0057E5A0` | `sub_0057E5A0_PartyXpCollect` | party members alive, same level, within distance² 6400 | I |
 | `0x0057E990` | `XP_OnMonsterKill` | experience of a killed monster to the credited player | C |
 | `0x0057EAB0` | `sub_0057EAB0_AddExperienceDirect` | unadjusted grant to a player | I |
-| `0x0058C5C0` | `sub_0058C5C0_ExpGrantCapped` | grant 1,400,000 / 20,000,000 / 40,000,000 by difficulty, one level span at most per step | I |
+| `0x0058C5C0` | `sub_0058C5C0_ExpGrantCapped` | grant 1,400,000 / 20,000,000 / 40,000,000 by difficulty, cut to `T(L + 1) − T(L)` (§ H6g static read) | I |
 | `0x005359F0` | `PLAYER_DeathExpLoss` | `DeathExpPenalty`% of the level span | C (plan 0038 H6g) |
 | `0x00570D60` | `PLAYER_SpendStatPoint` | `statpts` − 1, attribute + 1 | C (plan 0038 H6g) |
 | `0x00570A80` | `PLAYER_SpendEnergy` | energy and `ManaPerMagic` | C (plan 0038 H6g) |
@@ -151,6 +151,13 @@ branches § 11 and the summary list as not exercised stay `[I]` in the text.
 | `0x0057F700` | `PLAYER_CorpseCreate` | the corpse with 75 % of the kept amount | C (plan 0038 H6g) |
 | `0x006253B0` | `STATS_GetUnitBaseStat` | `(unit, id, param)`: base entries; the kill's stat 13 read | C (plan 0038 H6g) |
 | `0x00537970` | `sub_00537970_ClientFlag3D4Set` | `client +0x3D4 \|= 1` (0x00537993) | I |
+| `0x0058D110` | `sub_0058D110_A5Q5_Statue476Init` | InitFn 65 (object 476): its id to quest data `+0x14` | I |
+| `0x0058D150` | `sub_0058D150_A5Q5_Statue474Init` | InitFn 63 (object 474): its id to `+0x18` | I |
+| `0x0058D190` | `sub_0058D190_A5Q5_Statue475Init` | InitFn 64 (object 475): its id to `+0x1C` | I |
+| `0x0058D240` | `sub_0058D240_A5Q5_AltarInit` | InitFn 72 (object 546): its id to `+0x50`, its mode from `+0x4C` | I |
+| `0x00548A50` | `sub_00548A50_InteractWalkTo` | `UnitInteract` beyond reach: `PLAYER_ModeCmdUnit(0, 3, …)` | I |
+| `0x0063D430` | `INV_SetOwnerId` | inventory `+0x24` ← id (signature `0x01020304` checked) | I |
+| `0x0063D450` | `INV_GetOwnerId` | inventory `+0x24`, −1 without an inventory | I |
 | `0x0054D520` | `sub_0054D520_SrvPacket63Handler` | handler of packet 0x63 (`g_PacketTable` 0x006E0D18, index 0x63; read), calls `BeltFreeSlot` at 0x0054D5BF | I |
 | `0x00570C80` | `sub_00570C80_StatsResetToBase` | attributes back to the CharStats values | I |
 | `0x00622560` | `sub_00622560_PlayerBaseToHit` | `(dex − 7) × 5 + stat 19 + ToHitFactor` | I |
@@ -444,9 +451,11 @@ AddStat(unit, 5 newskills, d);
 - [I] Other level-ups: `PLAYER_GrantLevel(game, unit, lvl)` gives `Exp[lvl] − exp` when the level is below lvl, so the
   player reaches level **lvl + 1** (`-act 2..5` → levels 16, 21, 27, 33); this runs inside `PLAYER_InitBaseStats`,
   before the starting items, which therefore get that level as ilvl. `sub_0058C5C0_ExpGrantCapped` grants
-  1,400,000 (Normal), 20,000,000 (Nightmare) or 40,000,000 (Hell) but at most one level span, filling the current
-  level and calling `PLAYER_LevelUp` per level until the grant is used or MaxLvl. (0x0057EB10–0x0057EB7E,
-  0x0058C5C0–0x0058C6A0)
+  1,400,000 (Normal), 20,000,000 (Nightmare) or 40,000,000 (Hell) but at most `T(L + 1) − T(L)` (`T` =
+  `EXP_GetThreshold`, `L` the level: the width of level L + 1), filling the current level and calling
+  `PLAYER_LevelUp` per level until the grant is used or MaxLvl; the exact steps are in
+  [§ Plan 0038 H6g shortfalls](#plan-0038-h6g-shortfalls-static-read-2026-10-30). (0x0057EB10–0x0057EB7E,
+  0x0058C5C0–0x0058C6CB)
 
 ### 8. CharTemplate
 
@@ -718,7 +727,8 @@ run, so every statement here is inferred.
   (fn:sub_0058C9A0_A5Q5_AncientDeath@0x0058C9A0, fn:sub_0058C7E0_A5Q5_SummitExpGrant@0x0058C7E0,
   fn:sub_0058C6D0_A5Q5_PartyExpGrant@0x0058C6D0, fn:sub_005537D0_GameForEachUnit@0x005537D0,
   fn:sub_00540510_PartyForEach@0x00540510, fn:QUESTRECORD_GetState@0x0065C310)
-- [I] The grant itself (§ 7): 1 400 000, 20 000 000 or 40 000 000 by difficulty, cut to one level span, then filled
+- [I] The grant itself (§ 7): 1 400 000, 20 000 000 or 40 000 000 by difficulty, cut to `T(L + 1) − T(L)` (the
+  width of level L + 1; [§ Plan 0038 H6g shortfalls](#plan-0038-h6g-shortfalls-static-read-2026-10-30)), then filled
   level by level with `PLAYER_LevelUp`. So the Ancients give at most one level. Each tested player is marked done (bit 0)
   before the grant, so a player can get it once per difficulty. (fn:sub_0058C5C0_ExpGrantCapped@0x0058C5C0)
 
@@ -974,7 +984,10 @@ calls reproduced, 0 failed) and `tools/sweep_h6g.py check` (**0 mismatches**, `w
   fn:CLIENT_SetDeathExpLoss@0x005391E0, fn:PLAYER_CorpseCreate@0x0057F700, fn:CLIENT_GetDeathExpLoss@0x00539210,
   tbl:DifficultyLevels.txt:DeathExpPenalty, run:2026-10-27-sweep-player) **Remainder `[I]`:** the corpse pickup, the share going back to the
   owner. Four `deathnm` sessions (r2 to r5, the last kept) walked from the town to the corpse; the character died
-  again at or before it each time (life 60), so no `CP0` line was logged.
+  again at or before it each time (life 60), so no `CP0` line was logged. **Static read 2026-10-30:** the remainder is
+  narrowed (the fields the pickup reads are the ones the creation writes; proposed `[C]` by a writer/reader pair); the
+  pickup's own run stays `[I]`:
+  [§ Plan 0038 H6g shortfalls](#plan-0038-h6g-shortfalls-static-read-2026-10-30).
 - **Row 12** (`client +0x3D4 |= 1` at 0x00537970) **raised in part.** [C] After the call the word equals the word at
   `NC0` with bit 0 set (4 new characters). [C] Bit 0 is already set at `NC0`, by 0x005397A3 in
   `sub_00539760_ClientAddPlayerToGame` (`C3W` before = 0 at 0x005397A3: 8, before = 1 at 0x00537993: 2 and at
@@ -986,8 +999,163 @@ calls reproduced, 0 failed) and `tools/sweep_h6g.py check` (**0 mismatches**, `w
   route (seed 6718, then 4314: `towp2`, `wp:5,8`, `explore:40`, `warp:76:150`, `clickwarp:76:1`, `objop:546:1`, `farm
   --boss-cls 540,541,542`): the first never found warp 76 in level 118 (40 hops, "no warp 76"); the second reached
   level 120 but `objop` found no object of class 546 ("level explored"), and no Ancient was met. No `EG0` line.
-  Plan 0042's x-summit sessions operated the summit door (class 564) at this stage; the altar object was not
-  identified. Routed, not retried (backlog).
+  Plan 0042's x-summit sessions operated the summit door (class 564) at this stage. Routed, not retried (backlog).
+  **Static read 2026-10-30:** class 546 is the altar (the route's object was right); the session never had the
+  altar's room populated (no 546, 547 or statue object in any `OBJS` line). Rows 2 and 29 stay open; the route a
+  later session needs is in [§ Plan 0038 H6g shortfalls](#plan-0038-h6g-shortfalls-static-read-2026-10-30).
+
+## Plan 0038 H6g shortfalls, static read (2026-10-30)
+
+The two H6g shortfalls (rows 2/29 and the remainder of rows 3/30 of
+[the inventory](../../plans/0038-inventory/player-creation.md)), read statically on the owner's decision of 2026-10-30
+(owner play postponed): backlog entry `2026-10-27-reverser-architect-plan-0038-h6g-shortfalls-ancients-altar-and-corpse.md`.
+No game run. Tools: Ghidra on a project copy, objdump, `tools/ds1.py`. Kept outputs under `workspace/logs/h6gs/`
+(manifest `manifest-h6gs.sha256`, 6 lines, passes from that directory; the sixth is `README.txt`): `mtntop-units.txt` (`9f08e785…`, the DS1
+unit list below), `static-h6gs.s` (`2f7ac4ec…`, the disassembly of the ranges cited here), `callers.txt`
+(`9b5d4888…`, direct call sites of `0x0057FB70`, `0x00548B00` and `0x0058C5C0` over the whole `.text`),
+`grant-cut.py` (`f4e9eb94…`) and its output `grant-cut.txt` (`30c6c81b…`).
+
+### Rows 2 and 29: what the Ancients' grant needs, and why the `anc` session missed it
+
+- [I] **The grant, step by step** (`sub_0058C5C0_ExpGrantCapped(game)`, the player in `ESI`; 0x0058C5C0–0x0058C6CB):
+  0. `QUESTS_SendPlayerRecord(game, player)` (0x0058C5CF), before anything else.
+  1. `G` ← 1 400 000; 20 000 000 when the game's difficulty byte (`game+0x6D`) is 1; 40 000 000 when it is 2
+     (0x0058C5D4–0x0058C5EE).
+  2. `max` ← `ExpMaxLevel(class)`, `L` ← `STATS_GetUnitStat(player, 12)`. Nothing when `L ≥ max` (signed, 0x0058C624).
+  3. `G` ← `min(G, T(L + 1) − T(L))`, `T` = `EXP_GetThreshold(class, ·)`, a signed compare (`cmp ebx, ecx; jle`,
+     0x0058C649). `T(L)` is the experience at which level L + 1 starts (F1), so the cut is the width of level L + 1,
+     not of the current level.
+  4. Loop while `G ≠ 0` and `L < max`: `need` ← base stat 30 − base stat 13 (`nextexp − experience`). When `G < need`
+     (unsigned, `jb` at 0x0058C673): stat 13 ← stat 13 + `G`, `G` ← 0. Otherwise stat 13 ← stat 30, stat 29
+     (`lastexp`) ← `need`, `PLAYER_LevelUp`, `G` ← `G − need`, `L` re-read (0x0058C675–0x0058C6A2).
+
+  A player who starts the grant inside level L levels up at most once: `need` at level L is `T(L) − exp` > 0, so what
+  is left after the level-up is below `T(L + 1) − T(L)`, the `need` of level L + 1.
+  (fn:sub_0058C5C0_ExpGrantCapped@0x0058C5C0, fn:EXP_GetThreshold@0x00611800, fn:sub_00611830_ExpMaxLevel@0x00611830,
+  fn:PLAYER_LevelUp@0x00570880)
+- [I] **No second code path.** The three grant amounts appear as immediates only in this function (the one other
+  `0x2625A00` in `.text`, 0x0051E697, is a 64-bit time compare), and the three direct calls (0x0058C741, 0x0058C89D,
+  0x0058CAAB, `callers.txt`) are the party, summit and killer grants already read. A static second source for J2 does
+  not exist, so rows 2 and 29 need the session.
+- [I] **The killer's grant** passes the game and the event block's killer (`[esi+0xC]`): the record is the killer's,
+  bits 0 then 13 are set, and its base level is tested against `20·(d + 1)` (`cmp eax, edx; jl`, 0x0058CA8D)
+  (0x0058CA58–0x0058CAAB). The summit grant sets bit 13 then bit 0 (0x0058C885, 0x0058C897).
+- [I] **The altar is object 546**, so the route's `objop:546` named the right class. Level 120 is one preset (LvlPrest
+  Def 1089, `expansion/mountaintop/MtnTop.ds1`, 20 × 28 tiles, act index 4). Its six units, after `DS1_Parse`'s
+  table (`g_Ds1ObjectIds`) and its act-index-4 rewrites of MonStats 537–539 into objects (0x00665CB2),
+  `mtntop-units.txt`:
+
+  | DS1 (x, y) | Object | Name | OperateFn / InitFn |
+  |---|---|---|---|
+  | (57, 127) | 564 | summit door | 71 `0x0058D6A0` / 76 |
+  | (48, 78) | 546 | `ancientsaltar` | 65 `0x0058D310` / 72 `0x0058D240` |
+  | (48, 25) | 547 | Worldstone Keep door | 66 `0x0058D400` / 73 |
+  | (37, 77) | 475 (from 538) | statue | 63 / 64 `0x0058D190` |
+  | (48, 67) | 476 (from 537) | statue | 64 / 65 `0x0058D110` |
+  | (58, 77) | 474 (from 539) | statue | 62 / 63 `0x0058D150` |
+
+  The OperateFn and InitFn numbers are `tbl:objects.txt:OperateFn` and `tbl:objects.txt:InitFn`; the addresses are
+  the entries of `data:g_ObjOperateFns@0x00732D18` and `data:g_ObjInitFns@0x00731BC0` at those indices.
+  (fn:DS1_Parse@0x00665950, data:g_Ds1ObjectIds@0x00748AD8)
+- [I] **Why the session missed it.** In the second `anc` try (seed 4314, `dev/dev2-h6g-s2-4314-anc.log`) the summit
+  door is logged at (10057, 12667) in 4 of the 86 `OBJS` lines, which puts the preset's origin at (10000, 12540) and
+  the altar at (10048, 12618), the door's position + (−9, −49). No line lists class 546, 547, 474, 475 or 476
+  (0 hits each), and `OBJS` walks every object of the game's lists (`tools/gdb/vendors.py`, game `+0x1520`), so none of
+  these units existed: their rooms were never populated (`sub_005559A0_RoomPresetUnits`). The 14 `PLR` lines on level
+  120 stay within x 10058–10068 and y 12643–12670, at least 25 subtiles south of the altar; the pilot's `farm` gave up
+  after 3 hops ("level explored"). The origin rests on one logged point; a session with a different map seed may
+  place level 120 elsewhere, so a route should go by the door's logged position.
+  (fn:sub_005559A0_RoomPresetUnits@0x005559A0, fn:DS1_Parse@0x00665950)
+- [I] **What arms the fight** (the quest need not be active; fn:sub_0058D310_A5Q5_AltarOperate@0x0058D310,
+  fn:sub_0058BF40_A5Q5_StatuesArm@0x0058BF40, fn:sub_0058C9A0_A5Q5_AncientDeath@0x0058C9A0):
+  - The altar's OperateFn (`0x0058D310`) acts while the altar is in mode 0. When the quest is inactive (`+0x09` = 0),
+    or active with its step (the quest object's `+0x0C`) below 4: if a town portal stands on level 120 (quest data
+    `+0x0C > 0`) it closes them first (`GameForEachUnit(0x0058D2C0)`), then sends message 0x4E22 to the quest. While
+    active with a step below 4 it also sets the step to 2 when it is below 2 (`QUESTS_SetStep`, 0x0058D3B0) and the
+    state to 3 when it is not 3 (`QUESTS_SetState`, 0x0058D3CA). With the quest active and its step at 4 or more it
+    sends nothing (`jae`, 0x0058D371). In every case it then sets the altar to mode 1 and `+0x4C` = 2.
+    (0x0058D310–0x0058D3F0)
+  - Message 0x4E22 (`0x0058C30F`): arms only with `+0x0C ≤ 0` and the three statue modes (`+0x30..+0x38`) all 0, and
+    only when `sub_0058BF40_A5Q5_StatuesArm` finds all three statue units by the ids their InitFns stored (`+0x14`,
+    `+0x18`, `+0x1C`; −1 without a unit). A missing statue returns 0, with no arming and no message. Otherwise each
+    statue's room is pinned (`sub_0061AED0_RoomPinSet`), the statue goes to mode 3, its collision is cleared, and its
+    event 7 is queued at frame + 20; then `+0x40` (spawned) ← 0, `+0x44` (alive) ← 0, `+0x10` ← `+0x11` ← 1.
+    (0x0058C30F–0x0058C37C, 0x0058BF40–0x0058BFEF)
+  - Statue event 7 (`0x0058C0E0`): for statue 474, 475 or 476, while `+0x40 < 3` and the statue is not in mode 4. With
+    `+0x0C > 0` it resets the fight (`0x0058C000`). Otherwise it spawns the superunique whose id is the word at
+    `DataTables+0xB3A`, `+0xB36` or `+0xB38` (writer not read) with `sub_00545C30_QuestPresetMonSpawn(position, 2,
+    id)` at the statue. If that fails, it queues event 7 again at frame + 10. If it succeeds, the statue goes to mode
+    4, the monster's id is stored, and `+0x40`, `+0x44` and `+0x48` are updated. (0x0058C0E0–0x0058C208)
+  - The death callback (`0x0058C9A0`) counts only with `+0x11`, `+0x10` and `+0x0C = 0`, and only for classes 540–542.
+    The grants run when `+0x44` reaches 0 and the quest is active (`+0x09`). (0x0058C9A0–0x0058CB91)
+- **What a later session needs** (route, not a claim): the `anc` save as built (word 39 bit 0 clear, character level
+  80 ≥ 20 in Normal); after arriving on level 120, walk from the logged summit door to about door + (−9, −49) until
+  `OBJS` lists 546 and 474–476; operate 546 once; cast no town portal on level 120; kill the three bosses of classes
+  540–542 (`farm --boss-cls 540,541,542`) without leaving the level (the warps out are refused, `0x0058D090`). The
+  logger then needs `EG0` at `0x0058C5C0` with the player's stats 12, 13, 29 and 30 before and after, so the checker
+  can reproduce steps 1–4 above. The cut of step 3 separates readings only where it binds, `T(L + 1) − T(L) < G`. In
+  stock data (`patch_d2` `experience.txt`, the seven class columns equal on every row) it binds for L 1–35 in Normal,
+  1–65 in Nightmare and 1–73 in Hell (`workspace/logs/h6gs/grant-cut.py` → `grant-cut.txt`). At level 80 in Normal
+  the width of level 81 is 67 255 812, so the `anc` character as built (level 80, experience `T(80) − 1000`, so
+  `need` = 1 000) meets only the uncut grant. It levels up once and keeps the other 1 399 000 inside level 81: that
+  covers step 4's level-up branch but not the cut. The cut needs a character at level 20–35 in Normal (20 is the
+  floor of the credit test); at level 25, for example, the cut is 512 612. The altar sends its message only while quest 35 is inactive or its step is below 4 (above); the step at the join is not read here. The recipe's quest bits (word 39 clear,
+  `quests: all` setting bit 0 only, `tools/d2s.py`) leave quest 35 active at the join. This is a harness batch, not
+  d-owner.
+
+### Rows 3 and 30, remainder: the corpse pickup
+
+- [I] **How the pickup is reached.** `PLAYER_CorpsePickup` has one direct caller, in `sub_00548B00_UnitInteract`'s
+  unit-type-0 case (0x00548E56), and no address-table reference (a raw scan of the file for the dword `0x0057FB70`
+  finds none). `UnitInteract` has three direct callers: the two packet handlers (0x0054AAC4, 0x0054AB27) and
+  `sub_00580C20_PlrModeMoveFrame` (0x00580E73, the interaction stored at player data `+0x158`/`+0x15C` once a walk
+  ends) (`callers.txt`). In the type-0 case (0x00548DE8–0x00548E66), with `d` the unit distance (`0x00641530`):
+  - `d > 50` (unsigned): nothing.
+  - `9 ≤ d ≤ 50`: `sub_00548A50_InteractWalkTo` starts a walk to the unit (`PLAYER_ModeCmdUnit(0, 3, …)`).
+  - `d ≤ 8` and the target is in mode `0x11`: `PLAYER_CorpsePickup`, but only when `0x005678A0` returns 0 for the
+    picker and for the corpse (`0x00554100` finds no linked unit with flag 0 that still exists; not read further).
+    Otherwise the interaction goes to `sub_00566E60_TradeRequest`.
+
+  A click on the corpse from up to 50 away therefore walks there and picks up when the walk ends. The share is not
+  saved (§ Plan 0049 Phase 1 (d)), so the pickup has to happen in the game where the character died.
+  (fn:sub_00548B00_UnitInteract@0x00548B00, fn:sub_00548A50_InteractWalkTo@0x00548A50,
+  fn:PLAYER_ModeCmdUnit@0x00580A70, fn:sub_00580C20_PlrModeMoveFrame@0x00580C20, fn:PLAYER_CorpsePickup@0x0057FB70)
+- [C] **The fields the pickup reads are the two the creation writes** (evidence rule 1, a writer/reader pair with the
+  writer logged; fn:PLAYER_CorpseCreate@0x0057F700, fn:PLAYER_CorpsePickup@0x0057FB70,
+  run:2026-10-27-sweep-player). Scope: which fields only; what the pickup does with them, and the other conditions on
+  its path (the `0x005678A0` test of the caller, below), stay `[I]`:
+  - The share. The creation passes it to `UnitSetStat(corpse, 13, share)` (0x0057F883; the share logged at `CCX` in
+    all five deaths of run:2026-10-27-sweep-player). The pickup reads `STATS_GetUnitStat(corpse, 13, 0)` (0x0057FBBB).
+  - The owner. The creation writes the dead player's id (`[ebx+0xC]`) into the corpse inventory's `+0x24` with
+    `INV_SetOwnerId` (0x0057F8B5). The pickup reads it with `INV_GetOwnerId` (0x0057FBA1) and compares it with the
+    picker's id (0x0057FBB2).
+  - [I] Read from the code, not corroborated: the pickup returns nothing when stat 13 is 0 and writes 0 back
+    (0x0057FBCE) before the add.
+
+  (fn:PLAYER_CorpseCreate@0x0057F700, fn:PLAYER_CorpsePickup@0x0057FB70, fn:INV_SetOwnerId@0x0063D430,
+  fn:INV_GetOwnerId@0x0063D450, run:2026-10-27-sweep-player)
+- [I] **The add**: `sub_0057EAB0_AddExperienceDirect(game, picker, value)`. For a player (type 0) it calls
+  `PLAYER_AddExperience(game, player, base stat 12, value)`, so the returned share goes through that function's level
+  cap. For a monster (type 1) whose owner is a player, it calls `MERC_AddExp` with the monster and that owner instead; this pickup never
+  passes a monster, because the owner test needs the picker's id. `PLAYER_AddExperience` takes the player in `ESI`, which holds the picker here (0x0057EAB5). (0x0057EAB0–0x0057EB0B,
+  fn:PLAYER_AddExperience@0x0057E510, fn:MERC_AddExp@0x0057E860)
+- **Remainder `[I]`** (fn:PLAYER_CorpsePickup@0x0057FB70): that a stock pickup runs this path, the zeroing and the add (`CP0`/`CPS`/`CPA`/`AED`, `XA0` of
+  750). **What a later session needs:** a Nightmare or Hell death (Normal's penalty is 0, so the share is 0), then a
+  click on the corpse from within 50 of it. Two ways to get there: a character who survives the return (more life, or
+  a death to a single scripted monster that the pilot kills after respawning), or a return by waypoint and Teleport
+  to a corpse near the waypoint. Leaving the game in between loses the share.
+
+### Ledger moves (proposed; the review rules)
+
+- **Rows 2 and 29 stay open**, class (b), batch H6g. There is no static second source (above), so they need the
+  corrected `anc` route. They are not d-owner.
+- **Rows 3 and 30 stay "raised in part"**, with the remainder narrowed. `[C]` (narrowed to which fields): the pickup's two reads match
+  the creation's two writes (stat 13 and inventory `+0x24`). Still `[I]`: the pickup's run (the zeroing and the add;
+  fn:PLAYER_CorpsePickup@0x0057FB70, fn:PLAYER_CorpseCreate@0x0057F700, run:2026-10-27-sweep-player).
+- **Row 33** is unchanged: its J2 remainder is rows 2 and 29.
+- No class changes, so the totals stand.
+- Symbols: 7 new `[I]` rows (`0x0058D110`, `0x0058D150`, `0x0058D190`, `0x0058D240`, `0x00548A50`, `0x0063D430`,
+  `0x0063D450`). None is raised: no run checks them.
 
 ## Open questions
 

@@ -391,6 +391,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00547D20,func,sub_00547D20_MonRegionsInit,,C,monsters/pool,docs/findings/monsters/0001-level-pool.md
 0x00547ED0,func,sub_00547ED0_MonRegionUnitLeave,,C,monsters/spawn,docs/findings/monsters/0002-room-population.md
 0x00547F50,func,sub_00547F50_PlayerWaypointRecord,,I,save/d2s,docs/findings/save/0002-quest-words.md
+0x00548A50,func,sub_00548A50_InteractWalkTo,,I,player/creation,docs/findings/player/0001-creation.md
 0x00548B00,func,sub_00548B00_UnitInteract,,I,quests/travel,docs/findings/quests/0002-travel.md
 0x005490E0,func,sub_005490E0_PktIsCursorItem,,I,items/sockets-runewords,docs/findings/items/0007-sockets-runewords.md
 0x005491B0,func,sub_005491B0_PktIsOwnStoredItem,,I,items/sockets-runewords,docs/findings/items/0007-sockets-runewords.md
@@ -974,6 +975,10 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0058CF00,func,sub_0058CF00_A5Q5_SummitPortalAdd,,I,quests/progression,docs/findings/quests/0001-progression.md
 0x0058CF50,func,sub_0058CF50_A5Q5_SummitPortalRemove,,I,quests/progression,docs/findings/quests/0001-progression.md
 0x0058D090,func,sub_0058D090_A5Q5_SummitWarpBlocked,,I,quests/progression,docs/findings/quests/0001-progression.md
+0x0058D110,func,sub_0058D110_A5Q5_Statue476Init,,I,quests/progression,docs/findings/player/0001-creation.md
+0x0058D150,func,sub_0058D150_A5Q5_Statue474Init,,I,quests/progression,docs/findings/player/0001-creation.md
+0x0058D190,func,sub_0058D190_A5Q5_Statue475Init,,I,quests/progression,docs/findings/player/0001-creation.md
+0x0058D240,func,sub_0058D240_A5Q5_AltarInit,,I,quests/progression,docs/findings/player/0001-creation.md
 0x0058D310,func,sub_0058D310_A5Q5_AltarOperate,,I,quests/progression,docs/findings/quests/0001-progression.md
 0x0058D400,func,sub_0058D400_A5Q5_KeepDoorOperate,,I,quests/progression,docs/findings/quests/0001-progression.md
 0x0058D560,func,sub_0058D560_A5Q5_SummitEmptyReset,,I,quests/progression,docs/findings/quests/0001-progression.md
@@ -2544,6 +2549,8 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0063C600,func,sub_0063C600_BeltFreeSlot,,C,player/creation,docs/findings/player/0001-creation.md
 0x0063C790,func,sub_0063C790_BeltPlace,,I,player/creation,docs/findings/player/0001-creation.md
 0x0063CD60,func,INV_GetItemCount,,I,items/sockets-runewords,docs/findings/items/0007-sockets-runewords.md
+0x0063D430,func,INV_SetOwnerId,,I,player/creation,docs/findings/player/0001-creation.md
+0x0063D450,func,INV_GetOwnerId,,I,player/creation,docs/findings/player/0001-creation.md
 0x0063D690,func,sub_0063D690_ArmorPartsRead,,I,items/graphics,docs/findings/items/0003-item-graphics.md
 0x0063D710,func,sub_0063D710_CompTokenTableBuild,,I,items/graphics,docs/findings/items/0003-item-graphics.md
 0x0063D900,func,sub_0063D900_CompTokenIndex,,I,items/graphics,docs/findings/items/0003-item-graphics.md
