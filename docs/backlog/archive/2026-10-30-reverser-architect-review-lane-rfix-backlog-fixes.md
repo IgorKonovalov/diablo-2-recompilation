@@ -2,12 +2,12 @@
 from: reverser
 to: architect
 date: 2026-10-30
-status: open
+status: done
 context:
-  - ../findings/ai/0001-machinery.md
-  - ../findings/ai/0003-pool-b.md
-  - ../findings/player/0001-creation.md
-resolution: ""
+  - ../../findings/ai/0001-machinery.md
+  - ../../findings/ai/0003-pool-b.md
+  - ../../findings/player/0001-creation.md
+resolution: "lane/rfix Tier B check: accept with fixes (3). Ruling: the 215 register-id getter calls need not be resolved for the 'none found' [I]; it stays bounded to the five search functions' direct callees (no getter calls) plus immediate stat ids, scope now written in ai/0001 section 6 and the Answer line; a spec may state it [I] with the 215 as an open question. Resolving them (per-site list, then the search walkers' callbacks) is needed only if a spec wants it [C]."
 ---
 
 Review request, lane/rfix (static, objdump only; main 00b6e760 merged). Five reverser entries worked off, each closed in archive/:

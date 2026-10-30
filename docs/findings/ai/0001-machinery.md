@@ -72,7 +72,9 @@ emulated maps (run:2026-10-27-ai-emu). Table dumps, AI-row usage and pool counts
   `rngcg-machinery.txt`, `ai-entries.txt`)
 - [I] **No light radius in the target search** (2026-10-30): the search's functions call no stat getter, no code in
   the image reads stat 89 by an immediate id, and the item `lightradius` byte's one reader feeds client code only;
-  the server's one visibility term is state 146 (`invis`) in `AiHostileCandidate` (§ 6, scope there).
+  the server's one visibility term is state 146 (`invis`) in `AiHostileCandidate`. Scope: the five search functions'
+  direct callees, and stat ids that are immediates; the 215 getter calls with a register id are unresolved (§ 6, ruling
+  of the lane/rfix check: they stay an open question for a spec that relies on this).
   (fn:sub_005DD7F0_MonAiFindTarget@0x005DD7F0, fn:sub_0063EBD0_MonComponentLightRadius@0x0063EBD0,
   fn:sub_005DC970_AiHostileCandidate@0x005DC970)
 
@@ -151,7 +153,7 @@ anchors where this batch builds on them (anim/0001's event queue, drlg/0009's pa
 - [I] **The frame.** `sub_0052FC20_ServerGamesFrame` runs one frame per interval (`timeGetTime`, the interval at
   0x00883D60) over the 1 024 game slots `0x00882D38`–`0x00883D37`, calling `GameTick` for each live one
   (0x0052FD17); `sub_005645E0_GameTickAlt` is `GameTick`'s other caller (0x00564603). `GameTick` increments
-  `Game+0xA8`, runs two act passes, `NewRoomsUpdate`, then **`GameRunUnitEvents`** (0x0052D8EB), the client room sync
+  `Game+0xA8`, runs two act passes, `NewRoomsUpdate`, then **`GameRunUnitEvents`** (0x0052D8F2; see the correction below), the client room sync
   and the timers (drlg/lifecycle § A). (fn:sub_0052FC20_ServerGamesFrame@0x0052FC20, fn:sub_005645E0_GameTickAlt@0x005645E0,
   fn:sub_0052D870_GameTick@0x0052D870)
   - *Correction (2026-10-30, lane/rfix, from frame/0001 § 2; plan 0055 P1.1 review):* the call to `GameTick` is at
@@ -437,7 +439,8 @@ flowchart TD
     with the immediate 0x59 is a stat read (assert line numbers, a packet byte at 0x0053E934, UI coordinates,
     property and save readers' compares). The 215 calls whose stat id is in a register are not resolved one by one,
     and the generic paths that carry every stat (property apply, stat lists, the stat messages) carry 89 like any
-    other.
+    other. The scan keeps no per-site list of them, so none is placed in or out of the walkers' and callbacks' code: the claim
+    is bounded to the search functions' direct callees plus the immediate-id lines.
   - the item record's `lightradius` byte (`+0x12F`, tbl:Weapons.txt:lightradius) has one reader,
     `sub_0063EBD0_MonComponentLightRadius` (0x0063EC36): for a monster (type 1) the largest `+0x12F` over its 16
     component slots' item codes (`MonComponentCode`, the codes `lit `, `med `, `hvy ` skipped). Its two calls are
