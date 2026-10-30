@@ -216,7 +216,9 @@ games: one launch and four menu returns, `tools/probe0056.py`; numbers in the pl
 switch is `harness_runner.next_case`: Save and Exit, the next save copied over at the menu, SINGLE PLAYER, OK, the
 difficulty box, then the next `PLR` line. It costs about 19.5 s (18.5 to 19.5 over four switches, of which about 15 s
 are the fixed sleeps), a launch to its first `PLR` about 21 s (20.1 to 21.2 over four launches, install and launch included): a switch saves the
-launch's wine start and gdb attach, not the clicks, and the session's `slots.py stop`, aside and install.
+launch's wine start and gdb attach, not the clicks. The probe did not time the session's `slots.py stop`, restore, aside
+and install around a launch: that the baseline's 60 s was mostly this bookkeeping is `[I]` (a subtraction), to be
+measured by the next batch that launches.
 
 **A case starts a fresh process** (a new `launch`, after `slots.py stop N`) when any of these holds:
 
@@ -225,7 +227,9 @@ launch's wine start and gdb attach, not the clicks, and the session's `slots.py 
    `HitClassPick` read the value the previous game's last pick left: 0, 1, 2, then 3, 4, 5, then 6, 7, 8, in games 0, 2, 4;
    `PST` and `HCP` lines of `tools/gdb/probe-state.py`), `/players` (`g_PlayersOverride` was 5 in all four later games
    after `/players 5` in game 0), the DRLG tile lists (game 0 wrote 634 `TL` lines, game 2 143, games 1, 3 and 4 none:
-   a later game does not reload the DT1 tiles it already holds, so `tools/drlg.py` fails on it, the h4b precedent). A
+   a later game does not reload the DT1 tiles it already holds, so `tools/drlg.py` fails on it, the h4b precedent
+   (`docs/findings/monsters/experiments.md`, session 5b); `parse_log`'s refusal keys on a second `WNDARM` line with
+   `levels`, which this probe's log holds once, so it does not guard a piece cut by `split`). A
    checker that reads one of these, or any state not listed, takes a fresh process unless it was shown to start from the
    carried value.
 3. **Its plan says so** (0055 Phase 2b: a fresh single-player process per session, for `g_HitClassCounter`).
@@ -235,7 +239,8 @@ launch's wine start and gdb attach, not the clicks, and the session's `slots.py 
 5. **The previous case in the process failed or timed out** (a death, a halt, a load that did not reach `PLR`, a
    stall): its state is unknown. Rerun the failed case in a fresh process, and start the rest of the batch in one too.
 
-**Every other case may share a process.** Cases that share must be independent of 2 above for their checker, and
+**Every other case may share a process, when the batch opts in** (owner answer 2 of plan 0056: the lane's prompt says
+whether a batch may share a process; without it, every case is fresh). Cases that share must be independent of 2 above for their checker, and
 their logs are cut with the library: `next_case(..., stem=, case=)` writes the case's `start` mark just before the OK
 click, so `split(log)` cuts each game where it begins (the cut log starts with the game's own first `WND` line).
 Switch with the save file of the same name (the game rewrites an installed save at Save and Exit: reinstall the next
@@ -243,7 +248,8 @@ case's copy every time, which `next_case` does). A case switch is by menu return
 walk between cases that share a save) was not measured, because every case here needs its own character or its own
 seed and the plan's rule is a fresh process for any seed-dependent case.
 
-**Cap per launch: 8 games and 40 minutes of wall time**, whichever comes first, then a fresh process. Measured: after
+**Cap per launch: 8 games and 40 minutes of wall time**, whichever comes first, then a fresh process (at the measured
+rates, 8 games with short fights take under 10 minutes, so the 40 minutes binds only for long cases). Measured: after
 five games and 292 s the game's scope held 227 MB (peak 227 MB, game 0 had 223 MB; no growth trend), the log was
 8.7 MB with three 40 s fights in it (about 14 000 lines per fight), so the 4G limit is not what binds; the cap keeps a
 launch's log, its split and its checkers small, and bounds what a stuck game costs. The 8 is an extrapolation `[I]`:

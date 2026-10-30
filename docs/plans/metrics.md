@@ -451,6 +451,7 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-10-30 | lane/p46h check | 0046 P2 | architect-check | 76 554 | 18 | 2 | — (Tier B check, no harness) | accept with fixes (2) | omission 1, stale cross-reference 1 |
 | 2026-10-30 | lane/p56a check | 0056 P1 | architect-check | 80 100 | 15 | 2 | — (Tier B check, no harness) | accept with fixes (2) | 2: stale cross-reference 1, omission 1 |
 | 2026-10-30 | lane/p56b | 0056 P2 | reverser-harness | 0 | 75 | 75 | slot 2 (3 dev sessions, 1 kept probe run of 5 games), no Ghidra; tokens not measured | — | — |
+| 2026-10-30 | lane/p56b | 0056-P2 | architect-check | 0 | 0 | 0 | — | accept with fixes | overclaim 1, omission 3 |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not
