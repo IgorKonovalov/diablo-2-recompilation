@@ -327,6 +327,12 @@ the group names stay readings of the names.
   reproduced in run:2026-10-16-combat (combat/0001 § 15). (fn:STATEVENT_CrushingBlow@0x005BFFC0,
   fn:STATEVENT_OpenWounds@0x005BFE60, run:2026-10-16-combat)
 
+- `[I]` **Readers named by the AI catalogue** ([ai/0003](../findings/ai/0003-pool-b.md) § 2.9, § 2.13, plan 0052 P1.2 batch 2): row 74
+  `hpregen` is raised by `aip5`/8 of itself (signed, truncated) by row 29 `BatDemon` while it perches and the same
+  amount taken back when it leaves; row 80 `item_magicbonus` is granted by row 25 `WillOWisp` to a living player target
+  as 50 * (d + 1) for 1 728 000 frames at each advance of the four-wisp dance. This is the two readers the finding
+  names, not a full reader list for either row. (tbl:ItemStatCost.txt:hpregen, tbl:ItemStatCost.txt:item_magicbonus)
+
 ## Aggregation (plan 0041 Phase 0)
 
 The columns the stat-list code is expected to read when it sums a unit's lists and derives one stat from another

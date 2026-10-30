@@ -931,6 +931,23 @@ unless a finding is cited.
   - `Skill1`..`Skill3`, `Sk1mode`..`Sk3mode`: row 8 `Skill1` (Fire Hit); row 13 `Skill1` (Resurrect, mode 14, no
     `Sk1mode`) and `Skill2` with `Sk2mode`; row 15 `Skill1..3`; rows 16 and 142 `Skill1` (§ 2.7, 2.11, 2.13-2.15).
 
+- `[I]` **Readers named by the pool-B batch** ([ai/0003](../findings/ai/0003-pool-b.md) § 2, plan 0052 P1.2 batch 2, AI rows 17-30; the per-AI
+  meanings stay in the finding, this table claims none):
+  - `lUndead` (`+0x0D` bit 3): `sub_005F2A00_AiGreaterMummyCb`, row 22's corpse and wounded search (§ 2.6), unless the
+    searcher is Radament (MonStats row 229), which takes any undead through `MONSTATS_IsUndead`.
+    (fn:sub_005F2A00_AiGreaterMummyCb)
+  - `Velocity` (`+0x32`) and `Run` (`+0x34`): `sub_005F4A70_AiVampire`, row 28 ([§ 2.12](../findings/ai/0003-pool-b.md#212-row-28-vampire-0x005f4a70)): the
+    flee override parameter `clamp(Run * 100 / Velocity - 100, 0, 120)`, only when `Velocity` > 0.
+    (fn:sub_005F4A70_AiVampire@0x005F4A70)
+  - `Skill4` (`+0x176`) and `Sk4mode` (`+0x183`): the vampire's Fireball and VampireMissile pair, drawn 50/50 with
+    `Skill1`/`Sk1mode`.
+  - `aip1`..`aip6`, read per record and difficulty, by row (finding section in brackets): 17 `aip1` (§ 2.1); 18 `aip3`,
+    `aip4` (§ 2.2); 19 `aip2` (§ 2.3); 20 `aip3`, `aip5` (§ 2.4); 21 `aip1`, `aip2`, `aip3`, `aip5` (§ 2.5); 22 `aip1`..`aip5`
+    (§ 2.6); 23 `aip1`..`aip5` (§ 2.7); 24 `aip3`, `aip5` (§ 2.8); 25 `aip1`..`aip3` (§ 2.9); 26 `aip1`..`aip5` (§ 2.10); 27
+    `aip2`..`aip6` (§ 2.11); 28 `aip1`..`aip5` (§ 2.12); 29 `aip1`..`aip5` (§ 2.13); 30 `aip1`..`aip4` (§ 2.14). Row 28's
+    `aip5` is a bit set, not a count: bit 0 the Fireball/Missile pair, bit 1 `Skill2`, bit 2 `Skill3` (3 in `vampire1`, 5 in
+    `vampire2`, 7 in `vampire3`, 4, 6-9, 1 in `vampire5`).
+
 ## Open questions
 
 - Answered `[I]` in [data/0001 §8](../findings/data/0001-excel-loader.md#8-answers-to-the-archivists-phase-1-questions): monster
