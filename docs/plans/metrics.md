@@ -404,6 +404,7 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-10-27 | `lane/s50p3` | 0050 P3 (anim/timing, anim/movement, anim/overview; skills/dispatch, combat, objects, monsters/stats updates) | spec-writer | 402 558 | 82 | 30 | — (no slot, no Ghidra, no harness) | accept with fixes (Tier A, after 0050 P2 part 2's merge; rulings: the re-tag pass from part 2 done at review; the short floors keep their statements `[I]` whatever the owner rules on the build deviation) | 4: under-claim 1, stale cross-reference 1, overclaim 1, omission 1 (the catalogue queue's partial raise not carried; "part 2 (not yet run)" text in timing, movement, the overview and combat; B3's fallback steps inside the `[C]`; the advance's restart rule and C1's scope) |
 | 2026-10-27 | `lane/s50p3` review | 0050 P3 | architect-review | 205 688 | 64 | 10 | — (static, objdump, no Ghidra, no harness) | gave accept with fixes | — (on the lane row) |
 | 2026-10-30 | lane/p46h | 0046 P2 | reverser-harness | 330 000 | 150 | 135 | slot 2, no Ghidra (r2 for one function) | — | — |
+| 2026-10-30 | lane/p46h | 0046 P2 | architect-check | 0 | 30 | 0 | — | accept with fixes (2) | omission 1, stale cross-reference 1 |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not

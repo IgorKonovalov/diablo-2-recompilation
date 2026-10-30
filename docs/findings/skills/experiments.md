@@ -284,6 +284,7 @@ Coverage against the *Done when* of part 2 (part 1 and part 2 together, `tally-b
   (do 37), `0x005D5BF0` (a catalogue hit function, skills/0007), the call at `0x005AC073` (in `0x005AC040`, reached from the hit functions at
   `0x005AC14B` and `0x005AC525`), and `0x00645390` (no reference in the image). `0x005C9290`: 168 more (`MC.cbseed`, 38 steps
   after the Init each, a monster's class-195 missiles).
+  *2026-10-30:* the call at `0x005AC073` is reached, in 36 creations ([run:2026-10-30-skills-catalogue](#run2026-10-30-skills-catalogue)).
 - **C2: short.** 22 `spike2` creations (Normal Dark Wood's quill rats, `amaj-3` and `ass-3`), all at level 1, where
   `(VelLev · 1) / 8` is 0 and so does not separate the `VelLev` term; the Nightmare sessions met no quill rat.
   **C4: met.** 271 `blaze` creations (`LevRange` 25) at Blaze level 2 while walking, every range checked (`MC.range`).

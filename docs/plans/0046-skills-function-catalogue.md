@@ -1468,3 +1468,16 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   already failing before this lane with 49 recipes unlisted). Slot 2 stopped, saves restored (aside empty), no
   background process. **Next for 0046:** the architect's review of Phase 2; Phase 3 (spec-writer) takes
   skills/0004–0018 and this run's § 17 where a catalogue entry has a logged counterpart.
+- **2026-10-30 — Phase 2 lane check (architect, `lane/p46h`, Tier B): accept with fixes (2); Phase 3 released.** Checked: `[C]` raised 3
+  (`0x005AC040` re-seed, 36 of 36 at 10 steps; family floors; the item handler's fires), anchors `0x005C0470`, `0x005D1F70`, `0x0056F7F0`, `0x005C5F50`
+  (symbols match), reverser review-fixes rules, request items; `tools/test_skills.py` 15 OK, `tools/skills.py check` over the 12 logs again: 0 mismatches;
+  gate green. **Fixes (2, omission/stale cross-reference):** the "unreached" note of experiments (run:2026-10-27-skills) and skills/0007's callback
+  sentence now point at § 17; `docs/specs/rng/seeds.md` and missiles.md § H still say the other sites were not reached: routed to spec-writer
+  (backlog `…seeds-0x005ac040-raised-to-c`). **Rulings:** (1) the lane's families (8a, 8b, 8c, item) are right: they are the
+  batches with tier-A count 0 in the plan's list; each reached by one member at or above 30 events. (2) `MC.cbseed2` and the `0x005AC040` raise to `[C]`
+  stand: second source is the 36-case run against the stream (about 5 000 in 2^64 by chance); plan 0045 part 2's "unreached" was a no-breakpoint
+  statement, annotated in the places above, not contradicted. The three-call split of the 10 steps stays `[I]`. (3) `ReturnDamage` kill case: reported,
+  not checked, `[I]`, one case; accepted; the kill branch is a hole in `EVH.seed` and P3 states it as such. (4) Shortfalls (Baal Tentacle do 140, do 113 and
+  charged suffixes, do 151 itself, Act 2 8a, per-family chained pairs) meet the Done-when (a family is reached; absent members named with reasons).
+  P3 carries them as short floors under Open questions; Baal Tentacle goes to the monster-AI plan or a wave-starting session; none blocks P3. Main was not
+  merged; `test_d2s`'s `RECIPE_BASES` failure is pre-existing on the base and passes on main.
