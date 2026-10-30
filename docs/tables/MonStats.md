@@ -949,6 +949,25 @@ unless a finding is cited.
     `aip5` is a bit set, not a count: bit 0 the Fireball/Missile pair, bit 1 `Skill2`, bit 2 `Skill3` (3 in `vampire1`, 5 in
     `vampire2`, 7 in `vampire3`, `vampire4` and `vampire6`..`vampire9`, 1 in `vampire5`).
 
+- `[I]` **Readers named by the pool-C batch** ([ai/0004](../findings/ai/0004-pool-c.md) § 2, plan 0052 P1.2 batch 3, AI rows 33, 35-40, 43,
+  45-49, 52, 56, 57, 63; the per-AI meanings stay in the finding, this table claims none):
+  - `Velocity` (`+0x32`) and `Run` (`+0x34`): `sub_005F6E60_AiZakarumZealot`, row 48 ([§ 2.10](../findings/ai/0004-pool-c.md#210-row-48-zakarumzealot-0x005f6e60)):
+    the override parameter `clamp(Run * 100 / Velocity - 100, 0, 120)` (signed `idiv`; `run` stays 0 unless `Velocity` > 0),
+    the same expression as the vampire's above, for its step away and its run. (fn:sub_005F6E60_AiZakarumZealot@0x005F6E60)
+  - `Skill4` (`+0x176`) and `Sk4mode` (`+0x183`): `sub_005F72D0_AiZakarumPriest`, row 49 ([§ 2.11](../findings/ai/0004-pool-c.md#211-row-49-zakarumpriest-0x005f72d0)):
+    `MonBlizzard`, behind a `Skill4 >= 0` test and a cooldown. (fn:sub_005F72D0_AiZakarumPriest@0x005F72D0)
+  - `aip1`..`aip8`, read per record and difficulty (the finding's `chance(K)` is `draw < aipK`), by row (finding section in
+    brackets): 33 `aip1`..`aip3` (§ 2.1); 35 and 36 `aip1`..`aip8` (§ 2.2, 2.3); 37 `aip1`..`aip5` (§ 2.4); 38
+    `aip1`..`aip4` and 39 `aip1`..`aip6` (§ 2.5); 40 `aip1`, `aip2` (§ 2.6); 43 and 45 `aip1`, `aip3` (§ 2.7); 46 `aip1`..`aip3`
+    (§ 2.8); 47 `aip1`..`aip4` (§ 2.9); 48 `aip1`..`aip4` (§ 2.10); 49 `aip1`..`aip6` (§ 2.11); 52 `aip1`..`aip8` (§ 2.13); 56
+    and 57 `aip1`..`aip6` (§ 2.14, 2.15); 63 `aip1`..`aip4` (§ 2.16). Treat the lists as the slots the code names; the
+    finding's pseudocode is the authority per row.
+  - Rows 35 and 36 read their skill-draw slots only behind their `Skill2`/`Skill3` tests, which is the per-record slot
+    disagreement of the `ai_aip_slots_differ` entry above for those two rows: `cr_archer1..5` and `cr_lancer1..5` have no
+    skills and 0 in those slots, records 6-8 have skills and set them ([§ 1](../findings/ai/0004-pool-c.md#1-the-rows-their-records-and-the-per-record-slots)).
+    Which slots: row 35 `aip6`/`aip7` (§ 1 and § 2.2 agree); row 36 `aip6`/`aip7` in § 1 but `aip7`/`aip8` in the § 2.3
+    pseudocode (the table here follows neither; routed to the reverser, backlog 2026-10-30).
+
 ## Open questions
 
 - Answered `[I]` in [data/0001 §8](../findings/data/0001-excel-loader.md#8-answers-to-the-archivists-phase-1-questions): monster

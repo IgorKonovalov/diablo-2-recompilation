@@ -437,6 +437,7 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-10-30 | lane/plans57 | plans 0057-0062 drafts; ADR-0024 accepted; 0056 approved | architect | 159 866 | 64 | 10 | — | drafts; for the owner: 0057 Q1-5, 0058 Q1-4, 0059 Q1-5, 0060 Q1-5, 0061 Q1-4, 0062 Q1-3 | — |
 | 2026-10-30 | lane/r52d | 0052 P1.2 (batch 3) | reverser-static | 341 050 | 136 | 32 | — (static, Ghidra copy ghidra-r52d) | accept with fixes (Tier B check) | 1: overclaim 1 |
 | 2026-10-30 | lane/r52d check | 0052 P1.2 b3 | architect-check | 78 463 | 25 | 3 | — (Tier B check, no harness) | accept with fixes (1) | overclaim 1 |
+| 2026-10-30 | lane/a7d | 0052 P1.2 | archivist | 0 | 0 | 0 | — | — | — |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not
