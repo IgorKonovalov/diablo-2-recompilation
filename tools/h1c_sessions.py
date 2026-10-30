@@ -39,6 +39,7 @@ if HERE not in sys.path:
     sys.path.insert(0, HERE)
 
 import slots  # noqa: E402
+from h1a_sessions import wait_ready  # noqa: E402  (the RDY start wait, shared with H1a)
 
 PY = [sys.executable, "-I"]
 LOGS = os.path.join(ROOT, "workspace", "logs", "h1c")
@@ -130,13 +131,14 @@ def run_session(name, slot, tag, cases, run, only=None):
                                  "--install", tag, src(loads[0][1]), "--log", log],
                            cwd=ROOT, stdout=out, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL,
                            start_new_session=True)
-    t0 = time.time()
-    while time.time() - t0 < 120:
-        time.sleep(2)
-        hide_window(slot)
-        if len(lines(log, "TBL")) >= 3 or any(ln.startswith("# gdb") for ln in lines(log, "#")):
-            break
-    time.sleep(8)
+    t1 = time.time()
+    ok = wait_ready(log, 120, gone=lambda: drv.poll() is not None, tick=lambda: hide_window(slot))
+    print("  %s after %.0f s" % ("RDY seen" if ok else "no RDY line", time.time() - t1), flush=True)
+    if drv.poll() is not None:
+        print("  driver gone before the first case: stop", flush=True)
+        out.close()
+        return 1
+    time.sleep(8)   # the steps file starts up to --attach-wait (5 s) after the exec of gdb and lasts 2 s
     hide_window(slot)
 
     def xd(*a):

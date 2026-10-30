@@ -2,6 +2,8 @@
 # (tools/gdb/d2s-io.py, unchanged) plus tools/gdb/d2s-h1b.py (section, mercenary-header, hotkey, graphics, LoadFinish,
 # item-stat, runeword and bit-13 lines), with tools/gdb/pilot.py for the pilot's PLR/RL/CB lines. Run through
 # tools/d2run.py (or tools/h1a_sessions.py); check with python3 -I tools/sweep_h1a.py check.
+# Ready line (lane/hx): RDY {"logger": ...} once every file below is sourced, before `continue`; the runner keys
+# its start wait on it (the TBL lines come only from a load the runner starts).
 set pagination off
 set debuginfod enabled off
 set confirm off
@@ -15,4 +17,5 @@ source tools/gdb/pilot.py
 source tools/gdb/d2s-io.py
 source tools/gdb/d2s-h1b.py
 source tools/gdb/d2s-h1a.py
+echo RDY {"logger":"d2s-h1a"}\n
 continue
