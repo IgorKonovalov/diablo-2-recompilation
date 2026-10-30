@@ -1,6 +1,6 @@
 # 0055 — The server frame: the game tick, the unit update order, the event queue and the timers, checked in frame windows (ADR-0022, simulation phase 6)
 
-> **Status:** draft (architect, 2026-10-30, `lane/plans54`); for the owner's approval with the scoping questions below
+> **Status:** approved (owner, 2026-10-30: "approve as recommended", all eight scoping questions answered as recommended); drafted 2026-10-30 (architect, `lane/plans54`)
 > **Created:** 2026-10-30
 > **Owner skill(s):** archivist, reverser, spec-writer
 > **Related ADRs:** 0003-runtime-experiments, 0004-boundary-oracles-in-reproduction, 0011-harness-slots, 0014-scope-game-simulation, 0015-emulated-reproduction, 0016-pipelined-simulation-phases, 0021-observed-boundaries-in-emulation, 0022-scope-server-frame
@@ -192,3 +192,12 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 
 - **2026-10-30 — Drafted (architect, `lane/plans54`).** Status `draft`; the plan ADR-0022 calls for, drafted on unpause;
   its static gate (0052·P1.1 reviewed) is met; eight scoping questions for the owner.
+- **2026-10-30 — Approved (owner; recorded by the architect, `lane/appr`).** "Approve as recommended": all eight
+  scoping questions answered as recommended. Q1 the window and scene floor as Phase 2b states (confirmed or changed at
+  the P1 review); Q2 no injected logger now (gdb first, pilot window); **Q3 Phase 2a may run before 0052·P3a** (once P1
+  is reviewed; reading confirmed); Q4 the message drain point and order in, arrival out; Q5 one game; **Q6 the
+  companion `[I]` sweep is queued** as its own plan, drafted by the architect after this plan's Phase 2a lands; Q7 run
+  order as recommended; Q8 its own wiki page. Run order
+  ([plans README](README.md#run-order-set-2026-10-25-plans-00380052)): **P0 ready to start now** (the archivist is
+  free); P1 in static lane B when a static lane frees (both busy on 2026-10-30: `lane/r52b`, `lane/h6gs`); P2a after
+  P1's review; P2b after 0052·P3a's review. Status `approved`.
