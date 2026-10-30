@@ -427,6 +427,7 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-10-30 | lane/a7b check | 0052 backlog + 0050 P2 RECIPE_BASES | architect-check | 59 309 | 13 | 3 | — (Tier B check, no harness) | accept | — |
 | 2026-10-30 | lane/a7b audit | 0052 backlog + 0050 P2 RECIPE_BASES | architect-review | 111 770 | 43 | 8 | — (Tier A audit, no Ghidra, no harness) | accept with fixes | audit of lane/a7b: 5: omission 2 (register-site list missing 0x005E817B and the curse twin 0x005C352E; ai/0001 'seven state rows reuse' overcount written around with no entry, reverser entry filed), stale cross-reference 3 (MonAI 'only +8 has a meaning' vs ai/0001 MonAiRow; § Batches 'state rows in no batch' vs 0052 catalogue batches; open questions 1 and 3 narrowed); RECIPE_BASES 49 rows clean; Tier B missed all 5 (1 seen as a nit), none reject-grade |
 | 2026-10-30 | lane/p53e | 0053 P3 close, P4 | architect | 92 694 | 28 | 5 | — (no Ghidra, no harness) | trial settled: ADR-0023 accepted; ADR-0024 proposed for the owner | — |
+| 2026-10-30 | lane/plans56 | 0056 (harness runner efficiency), draft | architect | 0 | 22 | 15 | — (no Ghidra, no harness) | draft; for the owner: 0056 Q1-7 | — |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not

@@ -1,6 +1,6 @@
 # Plans index
 
-Next free number: **0056**
+Next free number: **0057**
 
 Lane runs (agent usage, review verdicts, fix counts by category) are logged in the [lane run ledger](metrics.md).
 
@@ -61,6 +61,7 @@ Lane runs (agent usage, review verdicts, fix counts by category) are logged in t
 | [0053](done/0053-review-tiers-and-gate-checks.md) | Review tiers and gate checks for the mechanical fix categories (ADR-0023) | done | closed 2026-10-30: E14–E16 and W7 in the gate (E14 demoted until the reverser's entry); trial of 11 Tier B checks (mean 70 868 tokens vs 146 247 at Tier A, 36% saved per lane with audits) and 2 audits (0 reject-grade misses, 9 non-blocking); ADR-0023 accepted, lane-check gains the routing and no-silent-nit checks, ADR-0024 (touched-document pass) proposed to the owner |
 | [0054](0054-path-search.md) | Path search: the planner behind every path request, its points, its draws and its use of the collision grid (ADR-0014 phase 5, second part) | approved | **approved by the owner 2026-10-30** ("approve as recommended", all eight questions); drafted 2026-10-30 (`lane/plans54`) on unpause, as 0052·P1.1's review ruled; P0 archivist (the 17 path types), P1 three static batches with emulation over predicted grids, P1b, P2 one slot, P3 spec (row `path/search`), P4 wiki; gates nothing |
 | [0055](0055-server-frame.md) | The server frame: the game tick, the unit update order, the event queue and the timers, checked in frame windows (ADR-0022, simulation phase 6) | approved | **approved by the owner 2026-10-30** ("approve as recommended", all eight questions); **P0 ready to start now** (archivist); drafted 2026-10-30 (`lane/plans54`) on unpause, the plan ADR-0022 calls for; P0 archivist (the kept-log corpus), P1 three static batches (gate met: 0052·P1.1 reviewed), P2a the order model on kept logs (no game), P2b frame windows (one slot, after 0052·P3a's review), P3 spec (row `sim/frame`), P4 wiki |
+| [0056](0056-harness-runner-efficiency.md) | Harness runner efficiency: one shared runner library (`tools/harness_runner.py`) and several cases per game launch, with a fresh-process rule | draft | drafted 2026-10-30 (`lane/plans56`) after the owner's go on the 17-transcript harness analysis; P1 reverser (library, no-game tests, one slot for two smoke sessions; starts after `lane/hx` merges), P2 reverser (one slot: the multi-case probe and § Fresh process), P3 pilot inside the next batch that needs it (recommended 0052·P2; 0055·P2b's pilot window library-only), P4 architect (evaluation, ADR on case and process); target ≤ 9.0 min and ≤ 43k tokens per kept session (baseline mean 11.95 min, 57k); owner questions 1–7 open |
 
 ## Run order (set 2026-10-25, plans 0038–0052)
 
