@@ -110,9 +110,7 @@ the first-table rows each repeats; the gate survey `ai` carries the `st_*` count
   in row 17 (`st_w0_0=7`, `st_w0_1=10`, `st_w0_2=1`); row 0 is all zero; `+4` is set in states 3, 11 and 16 and `+C` in
   state 4 alone; `+8` is set in 17 rows with 16 distinct values (10 and 17 share `0x005E8020`). Five rows repeat a first-table
   `+8` word: state 1 `Idle` (row 1), 4 `Hireable` (row 61, with its `+C` `0x005E5280`), 5 (row 60 `GoodNpcRanged`),
-  7 (row 67 `NecroPet`) and 15 (row 117 `SuicideMinion`) (`st_fn8_in_first=5`); the finding's list also counts 10 and 17,
-  which share one word that no first-table row holds (sent to the reverser:
-  [backlog](../backlog/2026-10-30-architect-reverser-ai-0001-state-rows-reusing-a-first-table.md)). The other twelve rows (2, 3, 6, 8, 9, 10–14, 16, 17) hold words
+  7 (row 67 `NecroPet`) and 15 (row 117 `SuicideMinion`) (`st_fn8_in_first=5`); states 10 and 17 share one word that no first-table row holds (the finding agrees since 2026-10-30; [backlog](../backlog/archive/2026-10-30-architect-reverser-ai-0001-state-rows-reusing-a-first-table.md)). The other twelve rows (2, 3, 6, 8, 9, 10–14, 16, 17) hold words
   that no `monai` row holds. The finding names each state's function (e.g. state 2 `0x005B14E0` back to 0 when
   `MonsterData+0x54` is 3 or 19 or the distance is below 4).
 - `[L]` Which units run each of the unshared state functions, beyond the immediate callers above, stays with the

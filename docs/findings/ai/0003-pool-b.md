@@ -438,6 +438,14 @@ if (--ctl->v14 < 1) ctl->v18 = 3;
   or `Idle(10)`); else Skill2/Skill3 as above at `t`; else without bit 0, a hostile, or with `hd` > 20 `Walk(t, 7)`;
   else a draw above 74 a drawn-type walk, else the pair at the hostile.
   (0x005F4AD0–0x005F4FBB, tbl:MonStats.txt:Skill4, tbl:MonStats.txt:Velocity, tbl:MonStats.txt:Run)
+  - *Refinement (2026-10-30, lane/rfix; backlog ai-0003-vampire-flee-velocity-guard):* the flee step's override
+    parameter is computed only when `Velocity > 0`, as a signed 16-bit test (`movzx ecx, word [esi+0x32]; test cx, cx;
+    jle`, 0x005F4BC0–0x005F4BC9); otherwise it is 0. With the guard met: `q = (s16 Run · 100) / (s16 Velocity)`, a
+    signed `idiv` (truncation toward zero), then `q − 100`; a result ≤ 0 becomes 0 (`setle; sub 1; and`) and one
+    ≥ 120 becomes 120 (0x005F4BCB–0x005F4BEC). So `p = Velocity > 0 ? clamp(Run·100/Velocity − 100, 0, 120) : 0`,
+    passed to `MonAiPathOverride(unit, 0, p, 0)` (0x005F4BF8) before the step 8 away (0x005F4C09). This is the one
+    such computation in 0x005F4A70–0x005F4FBB; the engaged flee's step takes no override. `Run · 100` cannot wrap
+    (|s16| · 100 ≤ 3 276 800). (fn:sub_005DE190_MonAiPathOverride@0x005DE190, tbl:MonStats.txt:Velocity)
 - [I] Not emulated: `MonAiFindHostile` is the first callee (ai/0002 § 3). (fn:sub_005DDC30_MonAiFindHostile@0x005DDC30)
 
 #### 2.13 Row 29 `BatDemon` (think 0x005F5040, alt 0x005F4FD0)
