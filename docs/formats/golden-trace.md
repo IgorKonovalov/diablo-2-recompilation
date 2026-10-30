@@ -46,7 +46,7 @@ The header holds no date or path, so a set's digest is reproducible.
 reviewed models reproduced them before the case was written (a case that does not reproduce is not written); a
 failure against an observed case is a reason to reopen the spec. `predicted`: the expected values come from the
 reviewed model alone, for seeds no run kept; as good as the spec. An observed case wins any disagreement with a
-predicted one. [C]
+predicted one. (A format rule of this project, not a game fact; `emit` writes an observed case only after the models reproduce it, `tools/test_golden.py` `test_drop_case`.)
 
 **Inputs by type.**
 
@@ -57,7 +57,7 @@ predicted one. [C]
   `fq`, `super_unique`, `killer_type`, `killer_class`, `g6a`, `players`, `party`, `cap` (the last three when the log
   shows them). All are the `TCR` line's and its context lines' ([tc § D](../specs/items/tc.md#d-the-resolver--tc_resolvedrops)).
 
-Seeds are written `low:high`, 8 hex digits each, lower case, as in the specs. [C]
+Seeds are written `low:high`, 8 hex digits each, lower case, as in the specs. (A format rule; `tools/test_golden.py` `test_canon`.)
 
 ## Fields
 
@@ -121,7 +121,7 @@ logs regenerate the same digest.
   sub-class depth); `merge` joins sets of one header.
 
 Nothing in a case is a table row or file bytes: seeds, indices, codes, counts, class ids of a region pool (as in the
-chain worked example) and digests. [C] (the field list)
+chain worked example) and digests. This is by construction of the field list, which holds no string field, and the sample holds no string value except two `monster_flags` bytes. [I]
 
 ## Evidence
 

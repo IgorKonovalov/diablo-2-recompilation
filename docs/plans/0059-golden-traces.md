@@ -88,8 +88,8 @@ for the chain (world and drops) first and the simulation events after plans 0052
 
 ## Open questions
 
-- Whether an observed case should also carry the 852-site RNG call counts as a field (a strong check, but tied to the
-  binary's inlining); decided at the Phase 1 review.
+- _Closed at the Phase 1 review:_ no 852-site call-count field (tied to the binary's inlining; it tests the build, not a
+  behaviour a reimplementation can match).
 
 ## Implementation log
 
@@ -105,3 +105,11 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   `210523526edd1af5d56516ff46fb14bd78b655a96efbe0e972ef1a29a5288c85`. No survey added to the gate (no input files to
   survey; the tests cover it). Not in v1 fields: item seeds after the drop, room populations (chain § D–E); the
   852-site call-count field is left to the review.
+- **2026-10-30 — Phase 1 check (architect, Tier B, `lane/a59`): accept with fixes (2, overclaim).** Rulings: (1) no
+  call-count field, ever; (2) item seeds (G2/G3) and room populations go into a later set version, after Phase 2 (the
+  format takes new fields without a version bump of the header; unknown fields in `expected` are the set's, so a
+  candidate that omits them is a missing field, as `check` already reports); (3) no gate survey, agreed; (4) `quirks`
+  stays reserved and empty until plan 0057 assigns ids, and `check` treats ids as opaque strings. Sample content: 6
+  observed and 8 predicted world cases and 8 observed drop cases of derived values only (seeds, ids, counts, region
+  pool class ids, digests); no strings except two `monster_flags` bytes, no table rows or file bytes, so it is not
+  game data under the CLAUDE.md rule. Test run 10 OK; the sample checks against itself (22 cases, 0 different).
