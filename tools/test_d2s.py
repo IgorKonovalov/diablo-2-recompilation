@@ -397,141 +397,191 @@ RECIPE_BASES = {
     "sock-h6b-refuse": (BASE_X, "a9afe50254561549f5d134b8632d33208cdff598c7b4a8992426cef9c6ba65b8"),
     "sock-h6b-svc": (BASE_X, "a0aa3e8ce029d439cae03c8fbc787c0203e02a413bce9d604c0c72d5f46bd783"),
     # plan 0050 Phase 2 (tools/anim_sessions.py SAVES, bases p0005/smp<cls>.d2s): hashes equal the kept saves of
-    # run:2026-10-27-anim (2026-10-27-anim-manifest.sha256); each built twice with the same bytes (lane/a4t)
+    # run:2026-10-27-anim (2026-10-27-anim-manifest.sha256); each built twice with the same bytes (lane/a4t); the part 2
+    # recipes (gh5-gh10, th, slow) equal the saves of run:2026-10-27-anim-p2 (2026-10-27-anim-p2-manifest-ckpt2.sha256)
     "anim-ama-t0": (os.path.join(P0005, "smpama.d2s"), "4aa14ba936cb2ddb34631b734dd3f234ccd752ee996defbd228d13d3ee681549"),  # run:2026-10-27-anim AnimAma0
     "anim-ama-t0-bk": (os.path.join(P0005, "smpama.d2s"), "d7da37549a107bf1fbd346af842493b5a9f37e772f7a1971c89bc0646c6ce2f0"),  # run:2026-10-27-anim bk/AnimAmaB0
     "anim-ama-t0-gh": (os.path.join(P0005, "smpama.d2s"), "56947ae53ef954d48fd4e016490fa2d7868d167c42f7e6febba4e96339c6fe81"),  # run:2026-10-27-anim gh/AnimAma0
+    "anim-ama-t0-gh10": (os.path.join(P0005, "smpama.d2s"), "eebc2373432027f95cc2bf078274ecba061d833e4f3594218b20d48faa4a782d"),  # run:2026-10-27-anim-p2 gh5/AnimAmaR0
     "anim-ama-t0-gh2": (os.path.join(P0005, "smpama.d2s"), "ad0ba7b788aaacb1798a96f88b0752a3cfd16be009e0447af54b6ac97ee6c07f"),  # run:2026-10-27-anim gh2/AnimAmaH0
     "anim-ama-t0-gh3": (os.path.join(P0005, "smpama.d2s"), "fc06d8e27058f2154e831248bf9eff807cff312df9339f745bd3803657725cfb"),  # run:2026-10-27-anim gh3/AnimAmaL0
     "anim-ama-t0-gh4": (os.path.join(P0005, "smpama.d2s"), "9b977e47b615f829291fe1cc84cdaa773b9fd0ad6fe86af8f40e3ee8ce5fc998"),  # run:2026-10-27-anim gh4/AnimAmaM0
+    "anim-ama-t0-gh9": (os.path.join(P0005, "smpama.d2s"), "40f09344d396471f7fc2c4bd13714bd3a1a1580c2ca5dc3034519ad43139ffb0"),  # run:2026-10-27-anim-p2 gh5/AnimAmaQ0
     "anim-ama-t1": (os.path.join(P0005, "smpama.d2s"), "9236413fedcb2f533d51d2c30a568ae7c3ebbabd612307b5e3bafbc1bc673b72"),  # run:2026-10-27-anim AnimAma1
     "anim-ama-t1-bk": (os.path.join(P0005, "smpama.d2s"), "d9394b9b3b8cc6ef2ea7ef2655ea779a39ecf11738258a877e3871526c979dcf"),  # run:2026-10-27-anim bk/AnimAmaB1
     "anim-ama-t1-gh": (os.path.join(P0005, "smpama.d2s"), "eab475fe08b4760ae3d5c443c59155ddfc4ef7fd5d25701f2bbfd44fe226cf3a"),  # run:2026-10-27-anim gh/AnimAma1
+    "anim-ama-t1-gh10": (os.path.join(P0005, "smpama.d2s"), "b4297b4abfda212add3ecb661fc39ac3ce161c5b41769d01a7f5a3b30435dbfa"),  # run:2026-10-27-anim-p2 gh5/AnimAmaR1
     "anim-ama-t1-gh2": (os.path.join(P0005, "smpama.d2s"), "4fc22ccc3081cce43a3b772f5582bfd39ed2f7cc8a1a5741126dad9600d4b932"),  # run:2026-10-27-anim gh2/AnimAmaH1
     "anim-ama-t1-gh3": (os.path.join(P0005, "smpama.d2s"), "0deaa4b4329b5a1f7ec8724be2a05e3a0b98955e86b776c1783a4eb078e4c3f3"),  # run:2026-10-27-anim gh3/AnimAmaL1
     "anim-ama-t1-gh4": (os.path.join(P0005, "smpama.d2s"), "b16d7c84c2728b96264394c47cbab2e88fa3617f5f11a1c7addfd973205113f8"),  # run:2026-10-27-anim gh4/AnimAmaM1
+    "anim-ama-t1-gh9": (os.path.join(P0005, "smpama.d2s"), "430d69b1707d9ab3c1aeec28557c6184cb3a4262e7d230da158c280aa869f057"),  # run:2026-10-27-anim-p2 gh5/AnimAmaQ1
     "anim-ama-t2": (os.path.join(P0005, "smpama.d2s"), "5aad38743d51aabd3963bae53af731f2f493d9dc353c2dc4730010f6201be329"),  # run:2026-10-27-anim AnimAma2
     "anim-ama-t2-bk": (os.path.join(P0005, "smpama.d2s"), "82bcf7b05ea362b1d565c4176c14931db5a104c7bcadce98575a66d1df79536d"),  # run:2026-10-27-anim bk/AnimAmaB2
     "anim-ama-t2-gh": (os.path.join(P0005, "smpama.d2s"), "3b61644b6fbb98bd5c608197bef9fc37316af6b2d2481cd990430e447c24d08e"),  # run:2026-10-27-anim gh/AnimAma2
+    "anim-ama-t2-gh10": (os.path.join(P0005, "smpama.d2s"), "2dd52c0ce00459bf0e22b03809a5baa939284bc9001b3781a415300879aa6de8"),  # run:2026-10-27-anim-p2 gh5/AnimAmaR2
     "anim-ama-t2-gh2": (os.path.join(P0005, "smpama.d2s"), "f219eee3b794833dca8e22231eab740e25bab26d5ac98fb2ee764253239e0627"),  # run:2026-10-27-anim gh2/AnimAmaH2
     "anim-ama-t2-gh3": (os.path.join(P0005, "smpama.d2s"), "7e8857a0bc957352b96e2c0ac37481fc475f1bf3b17fdb75cac6d84d1a9ac567"),  # run:2026-10-27-anim gh3/AnimAmaL2
     "anim-ama-t2-gh4": (os.path.join(P0005, "smpama.d2s"), "c6d06aa69abefaa354140e00d6fe216abce3dfa35dabc4341b73c57a853078fc"),  # run:2026-10-27-anim gh4/AnimAmaM2
+    "anim-ama-t2-gh9": (os.path.join(P0005, "smpama.d2s"), "6de1a5d02c05722149839003647eec5cf5ccd4bf48edb0882914af0bcc221584"),  # run:2026-10-27-anim-p2 gh5/AnimAmaQ2
     "anim-ass-bos": (os.path.join(P0005, "smpasn.d2s"), "74154b8f76ea61ec6d551f9f739608c41dc382b271b1cca257ab467b7bc87a8f"),  # run:2026-10-27-anim sp/AnimAssBos
     "anim-ass-t0": (os.path.join(P0005, "smpasn.d2s"), "aa1a83d9c058fc40ea13d56148dc34b4d7e0d5f46f0dc4af4e2318f2d10df27e"),  # run:2026-10-27-anim AnimAss0
     "anim-ass-t0-bk": (os.path.join(P0005, "smpasn.d2s"), "04a236f0adc6658238286fdecd0c6775a77a9f4754914f78b0c078e52210571c"),  # run:2026-10-27-anim bk/AnimAssB0
     "anim-ass-t0-gh": (os.path.join(P0005, "smpasn.d2s"), "a4fdafe66b778365182471c4f62ac5f89022f3dbc294e07abb617c381a812b9e"),  # run:2026-10-27-anim gh/AnimAss0
+    "anim-ass-t0-gh10": (os.path.join(P0005, "smpasn.d2s"), "241bb232e78ae268cee3c4e0db42f0ad19851bc4037c91da9cd6e16ec53bd80c"),  # run:2026-10-27-anim-p2 gh5/AnimAssR0
     "anim-ass-t0-gh2": (os.path.join(P0005, "smpasn.d2s"), "a2f0c596b0efc0f1258bf5ae8fdac8fce2e57d4056c0bab9735045c2bf631cff"),  # run:2026-10-27-anim gh2/AnimAssH0
     "anim-ass-t0-gh3": (os.path.join(P0005, "smpasn.d2s"), "17c1e76768d28220c0f388160ef832760bf77ef0ecefee8fd1301b9626df2871"),  # run:2026-10-27-anim gh3/AnimAssL0
     "anim-ass-t0-gh4": (os.path.join(P0005, "smpasn.d2s"), "5bd03059c3d23707140c8dce94d334938ca0dd8b0c84e73c33fef7863db8fd56"),  # run:2026-10-27-anim gh4/AnimAssM0
+    "anim-ass-t0-gh9": (os.path.join(P0005, "smpasn.d2s"), "9c807ea56e85e38512811c059be958ee50e718645832b961a1a9bc5dce200ff4"),  # run:2026-10-27-anim-p2 gh5/AnimAssQ0
     "anim-ass-t1": (os.path.join(P0005, "smpasn.d2s"), "b0d6002c321d87fbcb2462e6e563251583404f3efa904ae1a4ec7a3f8b99dec9"),  # run:2026-10-27-anim AnimAss1
     "anim-ass-t1-bk": (os.path.join(P0005, "smpasn.d2s"), "8526a02d2b806ec175b59d73d7285197a52bac798bba705aa5c6d1023ab35323"),  # run:2026-10-27-anim bk/AnimAssB1
     "anim-ass-t1-gh": (os.path.join(P0005, "smpasn.d2s"), "73401cc52b29cf8536fd958f7d0f562c25c25ce3912bcaa6bd5afa3f124d62ee"),  # run:2026-10-27-anim gh/AnimAss1
+    "anim-ass-t1-gh10": (os.path.join(P0005, "smpasn.d2s"), "46c03705f4e0abede27d2d2635e15503f54191ab6ae44da6fb28012e0f41003b"),  # run:2026-10-27-anim-p2 gh5/AnimAssR1
     "anim-ass-t1-gh2": (os.path.join(P0005, "smpasn.d2s"), "7da5a9c9d8ccf4399b07054d366d4242479a1cf7f6b889eb4e8ffb03db6c5257"),  # run:2026-10-27-anim gh2/AnimAssH1
     "anim-ass-t1-gh3": (os.path.join(P0005, "smpasn.d2s"), "8d85be9854a4562aaff0e758e11ebc1682694c8523de423c3b8d1314d8b37353"),  # run:2026-10-27-anim gh3/AnimAssL1
     "anim-ass-t1-gh4": (os.path.join(P0005, "smpasn.d2s"), "16be5e102b31a974b2975c2d0aa3aea9993d6f0620cf3202fb0934699d62c8c0"),  # run:2026-10-27-anim gh4/AnimAssM1
+    "anim-ass-t1-gh9": (os.path.join(P0005, "smpasn.d2s"), "6be5dcaa639ec2a334887ac55166d48b199dd813df4d082cd41232dd347cdb2f"),  # run:2026-10-27-anim-p2 gh5/AnimAssQ1
     "anim-ass-t2": (os.path.join(P0005, "smpasn.d2s"), "9111863df74cbddbff63eeaf3185aa8eeb09e5aea9ac55b3098ac195fe5e989d"),  # run:2026-10-27-anim AnimAss2
     "anim-ass-t2-bk": (os.path.join(P0005, "smpasn.d2s"), "50e5ed3f5edaf90cf8bb57ad258ab0103ee213b38f2d73bbbe11a416b1361612"),  # run:2026-10-27-anim bk/AnimAssB2
     "anim-ass-t2-gh": (os.path.join(P0005, "smpasn.d2s"), "5d7d58b8ea77a1046b7a110e5a7c71904480a86214433c3373f1947abb95e1d9"),  # run:2026-10-27-anim gh/AnimAss2
+    "anim-ass-t2-gh10": (os.path.join(P0005, "smpasn.d2s"), "8b4b1c585261742fec22b1b9780cbfa1251fd5e998a4408d979be563b625fe6f"),  # run:2026-10-27-anim-p2 gh5/AnimAssR2
     "anim-ass-t2-gh2": (os.path.join(P0005, "smpasn.d2s"), "eed786d8f8145143f351668439140f3d2dd7fee0420134751f121f30af0317c1"),  # run:2026-10-27-anim gh2/AnimAssH2
     "anim-ass-t2-gh3": (os.path.join(P0005, "smpasn.d2s"), "7fff306b0c1fc19f6dc44278091e59ace1e3ad8c8f6e1e9e890d8f67f15d2c23"),  # run:2026-10-27-anim gh3/AnimAssL2
     "anim-ass-t2-gh4": (os.path.join(P0005, "smpasn.d2s"), "02aa2f5c7a9ee65249f9273434dfb008dcd6e12600b8ef7ff370ab3d7c229a15"),  # run:2026-10-27-anim gh4/AnimAssM2
+    "anim-ass-t2-gh9": (os.path.join(P0005, "smpasn.d2s"), "862d398baa2e90dd0184355af7d194b7558988d244382f058b89bfeb3c37346c"),  # run:2026-10-27-anim-p2 gh5/AnimAssQ2
     "anim-bar-dw": (os.path.join(P0005, "smpbar.d2s"), "a5f0ac076e7f302eeb624eeda6215aca9a5331510e68741186775f0f43e162cc"),  # run:2026-10-27-anim sp/AnimBarDw
     "anim-bar-t0": (os.path.join(P0005, "smpbar.d2s"), "69e2a08fc917e9f9228a8092ac0c7f6a65c14d8419fdb08f7a25f8f70ff5902a"),  # run:2026-10-27-anim AnimBar0
     "anim-bar-t0-bk": (os.path.join(P0005, "smpbar.d2s"), "b69f5e1e8fa8055da48bcb1e202b03ffb4a72f9e39340215ee4008c6a1a67a7b"),  # run:2026-10-27-anim bk/AnimBarB0
     "anim-bar-t0-gh": (os.path.join(P0005, "smpbar.d2s"), "cbde0ea4e43bdfd43d8ca81ae60030b4c3a3bd2ac2e10565bf741a700da5f4ab"),  # run:2026-10-27-anim gh/AnimBar0
+    "anim-bar-t0-gh10": (os.path.join(P0005, "smpbar.d2s"), "1c6615916246de2fd162cd1f5d62c9b903440d296e84cb18d4f2403a6427f2f1"),  # run:2026-10-27-anim-p2 gh5/AnimBarR0
     "anim-bar-t0-gh2": (os.path.join(P0005, "smpbar.d2s"), "b97a05137a72d597a3fa92f19daaaff4c0bb72580229c41a4f9e900e76bddc6c"),  # run:2026-10-27-anim gh2/AnimBarH0
     "anim-bar-t0-gh3": (os.path.join(P0005, "smpbar.d2s"), "c0f1bfb30c44d05e68e7fb76f4a273fb18e3a0f6af242698fa40058127102843"),  # run:2026-10-27-anim gh3/AnimBarL0
     "anim-bar-t0-gh4": (os.path.join(P0005, "smpbar.d2s"), "824535b30c1f4e41cfebd45a6e1f4c9f14e2c6c110622d96fc98c3925db4d26d"),  # run:2026-10-27-anim gh4/AnimBarM0
+    "anim-bar-t0-gh7": (os.path.join(P0005, "smpbar.d2s"), "351bcb61e7df4f0365875b9d7075f5812019487d3926cf96771a1838d476e81f"),  # run:2026-10-27-anim-p2 gh5/AnimBarK0
+    "anim-bar-t0-gh8": (os.path.join(P0005, "smpbar.d2s"), "6f1c21c6fee04cda1dff306b25e6a74601a5de0a72fc1b4a26ac38692382a5ef"),  # run:2026-10-27-anim-p2 gh5/AnimBarP0
+    "anim-bar-t0-gh9": (os.path.join(P0005, "smpbar.d2s"), "f2c083d6c4d6832285fbada796c0c301a3933c0533341388fff7adf78471519a"),  # run:2026-10-27-anim-p2 gh5/AnimBarQ0
     "anim-bar-t1": (os.path.join(P0005, "smpbar.d2s"), "56800d91726315691c929c9bcdef7d24e26899d4acc60edbb56eed6739926054"),  # run:2026-10-27-anim AnimBar1
     "anim-bar-t1-bk": (os.path.join(P0005, "smpbar.d2s"), "b900610cf6e9083d8d99b97d4bab75c25ea6140d2d90217e6787cde41d9196f5"),  # run:2026-10-27-anim bk/AnimBarB1
     "anim-bar-t1-gh": (os.path.join(P0005, "smpbar.d2s"), "da5257db719af6cd9de7cd610c00bb5947185e8e89bef81de29da974b2feebc0"),  # run:2026-10-27-anim gh/AnimBar1
+    "anim-bar-t1-gh10": (os.path.join(P0005, "smpbar.d2s"), "43146945ef54e1897d0d2505b79872958a344d920673057b1b2d8fb9da0c2d07"),  # run:2026-10-27-anim-p2 gh5/AnimBarR1
     "anim-bar-t1-gh2": (os.path.join(P0005, "smpbar.d2s"), "2d502fc814f8ed0e3ba06ee6669525ff86074e8641e1f3464300818bbe04dfb5"),  # run:2026-10-27-anim gh2/AnimBarH1
     "anim-bar-t1-gh3": (os.path.join(P0005, "smpbar.d2s"), "638bd747f99143e6b170f3a36334fcc36ebad0e629bdeb89c00cb18af7504e0d"),  # run:2026-10-27-anim gh3/AnimBarL1
     "anim-bar-t1-gh4": (os.path.join(P0005, "smpbar.d2s"), "5551114336b7ea7609bec6feddd870ab9f7eca8c2c57c131d10a6f0872fa1b9e"),  # run:2026-10-27-anim gh4/AnimBarM1
+    "anim-bar-t1-gh9": (os.path.join(P0005, "smpbar.d2s"), "db32ce717d292da734d57e7d7da5bd57d6c88146c51a97ea7c1e162339f3f32c"),  # run:2026-10-27-anim-p2 gh5/AnimBarQ1
     "anim-bar-t2": (os.path.join(P0005, "smpbar.d2s"), "b732059f7a4132498d535a9bfc932e86dd79015f2f1543e34e8b4b69fdd8f9df"),  # run:2026-10-27-anim AnimBar2
     "anim-bar-t2-bk": (os.path.join(P0005, "smpbar.d2s"), "401652187739c0711a2b8be11de83707985505f23cdbba0284831dafd6d0a02f"),  # run:2026-10-27-anim bk/AnimBarB2
     "anim-bar-t2-gh": (os.path.join(P0005, "smpbar.d2s"), "9a2c501d24af6c0b432c704b81cb8308cb73129e0554b31f72ada852ca2592c4"),  # run:2026-10-27-anim gh/AnimBar2
+    "anim-bar-t2-gh10": (os.path.join(P0005, "smpbar.d2s"), "e8396696046b6f6651c64d71e3067cb11c5c2e28bbb10d6931aae03cfd410afb"),  # run:2026-10-27-anim-p2 gh5/AnimBarR2
     "anim-bar-t2-gh2": (os.path.join(P0005, "smpbar.d2s"), "efb89bc0250dd229d9959d1685a2af741a3dfc6793a554547ec475d60c451ba5"),  # run:2026-10-27-anim gh2/AnimBarH2
     "anim-bar-t2-gh3": (os.path.join(P0005, "smpbar.d2s"), "8de4122ad2a676d27ddd2659833b0e0a6ccded472fbc99240e9e31d22a482c9a"),  # run:2026-10-27-anim gh3/AnimBarL2
     "anim-bar-t2-gh4": (os.path.join(P0005, "smpbar.d2s"), "e5af502340a58f5f07149103f241339fba8481c18b4e3f78a202a4673316890a"),  # run:2026-10-27-anim gh4/AnimBarM2
+    "anim-bar-t2-gh9": (os.path.join(P0005, "smpbar.d2s"), "27a8c20d2772ae381a5105877b62b1b158b36edd1b2fbc3de86621c96f4c7317"),  # run:2026-10-27-anim-p2 gh5/AnimBarQ2
     "anim-dru-2hs": (os.path.join(P0005, "smpdru.d2s"), "e39c19aca9f20d8d2e63e88f841665e9b6d7dea979fdfbb68737999eeedbab72"),  # run:2026-10-27-anim sp/AnimDruH2s
     "anim-dru-form": (os.path.join(P0005, "smpdru.d2s"), "2d951e7bebb446adf8a818876fb1facd52305fe5aa30fa32500b36d231f6c26c"),  # run:2026-10-27-anim sp/AnimDruForm
     "anim-dru-form2": (os.path.join(P0005, "smpdru.d2s"), "cf767a1e8f9620eec8dbf0d58bdc8005fc92e132b40dbae27af787b38cddb7d5"),  # run:2026-10-27-anim sp/AnimDruForm2
     "anim-dru-t0": (os.path.join(P0005, "smpdru.d2s"), "01671fee56ebd6dff9c6a452e6406b4263875fc73739aa00e22d0a90b594e5c7"),  # run:2026-10-27-anim AnimDru0
     "anim-dru-t0-bk": (os.path.join(P0005, "smpdru.d2s"), "167640b2e53373511a929d8a1c794f264a30ae68846920c8c1ccf172a412eab7"),  # run:2026-10-27-anim bk/AnimDruB0
     "anim-dru-t0-gh": (os.path.join(P0005, "smpdru.d2s"), "3ce856c737a4859900a6273c27a0486bd28752c52e1b63adade6b976545d86d4"),  # run:2026-10-27-anim gh/AnimDru0
+    "anim-dru-t0-gh10": (os.path.join(P0005, "smpdru.d2s"), "c158fdd413cfdb80d98abbbcd273f443cbafa95d439f39461504ebceb53efd81"),  # run:2026-10-27-anim-p2 gh5/AnimDruR0
     "anim-dru-t0-gh2": (os.path.join(P0005, "smpdru.d2s"), "28036a9f2d58316a9c7f6a0aa9e72f258d6c9b6133e283c680265e29f0510142"),  # run:2026-10-27-anim gh2/AnimDruH0
     "anim-dru-t0-gh3": (os.path.join(P0005, "smpdru.d2s"), "4e668990063dfb0bebd3ac51b6786b6d64e8212919f67d18863f33f4a5854b58"),  # run:2026-10-27-anim gh3/AnimDruL0
     "anim-dru-t0-gh4": (os.path.join(P0005, "smpdru.d2s"), "40a608be23604732a2c94e92d8a51acfc884f914fe8324a538399accf0c9fadd"),  # run:2026-10-27-anim gh4/AnimDruM0
+    "anim-dru-t0-gh9": (os.path.join(P0005, "smpdru.d2s"), "92f6243749ab17237ffb56d7fcc6f44cbd7c15e805c1dea2a5a97a0720f455ab"),  # run:2026-10-27-anim-p2 gh5/AnimDruQ0
     "anim-dru-t1": (os.path.join(P0005, "smpdru.d2s"), "ff33317ce3a3e75b6d4e858c296e908af5e58e1198a72b495f863faf787a3c6c"),  # run:2026-10-27-anim AnimDru1
     "anim-dru-t1-bk": (os.path.join(P0005, "smpdru.d2s"), "26906db5fe46931a7f2f4ef79c31a06e1697aefd238d07e8ad186a05afcf7a12"),  # run:2026-10-27-anim bk/AnimDruB1
     "anim-dru-t1-gh": (os.path.join(P0005, "smpdru.d2s"), "b8abf9cb34ab3b9b3c94c297f5baab15f1f108bf598952f2c3c59adeb7b3ca6b"),  # run:2026-10-27-anim gh/AnimDru1
+    "anim-dru-t1-gh10": (os.path.join(P0005, "smpdru.d2s"), "817b1bf7904294296fe33f71927ce076bbe2a582172f58d3cb28553b73d72f70"),  # run:2026-10-27-anim-p2 gh5/AnimDruR1
     "anim-dru-t1-gh2": (os.path.join(P0005, "smpdru.d2s"), "3d75ea5a91419b448c447c2846683c8afa4f28f208d35d8de022d7598290edea"),  # run:2026-10-27-anim gh2/AnimDruH1
     "anim-dru-t1-gh3": (os.path.join(P0005, "smpdru.d2s"), "526d4cef44ee574ff790247cda5c961d37fa914b064098661e85a72b3c6f91c1"),  # run:2026-10-27-anim gh3/AnimDruL1
     "anim-dru-t1-gh4": (os.path.join(P0005, "smpdru.d2s"), "5758c963a6ead5b515c45ddf42080898dbb126f9e6b7faf8a0e771a50353f661"),  # run:2026-10-27-anim gh4/AnimDruM1
+    "anim-dru-t1-gh9": (os.path.join(P0005, "smpdru.d2s"), "2e4ad9b7ec3ed7d87c481ab2119dc7832c70cbf9d68ade4c911053dd2b17c97f"),  # run:2026-10-27-anim-p2 gh5/AnimDruQ1
     "anim-dru-t2": (os.path.join(P0005, "smpdru.d2s"), "8ff19ebcc0d8bdef6ae3ddbc781ba6022a3311c8787d8060041da7fe764ce948"),  # run:2026-10-27-anim AnimDru2
     "anim-dru-t2-bk": (os.path.join(P0005, "smpdru.d2s"), "7bdabe5858c143a3e573bb8fb6cc683cf07341435b02965bc016703f8cce1324"),  # run:2026-10-27-anim bk/AnimDruB2
     "anim-dru-t2-gh": (os.path.join(P0005, "smpdru.d2s"), "a20ab213a3aedd631260b5f19efa36961fada64d036c26ae5ede2e4df0bf4d59"),  # run:2026-10-27-anim gh/AnimDru2
+    "anim-dru-t2-gh10": (os.path.join(P0005, "smpdru.d2s"), "b367e40afc2c149f3a563780547394d9ea50297a6d20f9878a2af80d94b9da78"),  # run:2026-10-27-anim-p2 gh5/AnimDruR2
     "anim-dru-t2-gh2": (os.path.join(P0005, "smpdru.d2s"), "7e4c6a2e90a3ecee93d9b8cc0e2ed9642ccdd5fe2a62a526aac2f18bf5a5dc4e"),  # run:2026-10-27-anim gh2/AnimDruH2
     "anim-dru-t2-gh3": (os.path.join(P0005, "smpdru.d2s"), "bf758aae914c60e0cc4ee21c3533f41162d94d8cefc4e9e0c944649e22a2f5a4"),  # run:2026-10-27-anim gh3/AnimDruL2
     "anim-dru-t2-gh4": (os.path.join(P0005, "smpdru.d2s"), "ea98fe8dce3c9e2989f1ee2fae57ca9b92e20416d6469dafa9fe728d930b63d5"),  # run:2026-10-27-anim gh4/AnimDruM2
+    "anim-dru-t2-gh9": (os.path.join(P0005, "smpdru.d2s"), "4737bc6cebba52fadf7a8b6e6327c5eb31b25c8119f2ca84041f9a188d2a3807"),  # run:2026-10-27-anim-p2 gh5/AnimDruQ2
+    "anim-dru-th": (os.path.join(P0005, "smpdru.d2s"), "d8a4769100b290733c4ab6cd2253421e92cc300b7caf270b31e0b7d17279bdc2"),  # run:2026-10-27-anim-p2 gh5/AnimDruT0
     "anim-nec-t0": (os.path.join(P0005, "smpnec.d2s"), "03e2c90824e47b2c35f38e8ec553833432c08d13400a9e68522db698fdcba664"),  # run:2026-10-27-anim AnimNec0
     "anim-nec-t0-bk": (os.path.join(P0005, "smpnec.d2s"), "50281e20537b37e58e26acdd0eaeedfb42e50ba93a2f7dc67a0184d8b0023094"),  # run:2026-10-27-anim bk/AnimNecB0
     "anim-nec-t0-gh": (os.path.join(P0005, "smpnec.d2s"), "2dbc062130a0a806a5c58e76de4409aabc3a64138a9f75753e4c5541aa61a4cd"),  # run:2026-10-27-anim gh/AnimNec0
+    "anim-nec-t0-gh10": (os.path.join(P0005, "smpnec.d2s"), "38f064a7d19ec8f434debd21d6826079b6c03b7a6e4039e6a3c36e6f13d5104d"),  # run:2026-10-27-anim-p2 gh5/AnimNecR0
     "anim-nec-t0-gh2": (os.path.join(P0005, "smpnec.d2s"), "c1748ea66eb6460974c06c1bb24be87cf4fd75315259a10edd6382fff5adf128"),  # run:2026-10-27-anim gh2/AnimNecH0
     "anim-nec-t0-gh3": (os.path.join(P0005, "smpnec.d2s"), "fb7f87fd2c0f4658fb17038468d35737fca59abc539b6e2147cb92186f6f005e"),  # run:2026-10-27-anim gh3/AnimNecL0
     "anim-nec-t0-gh4": (os.path.join(P0005, "smpnec.d2s"), "fdb9c518e3915248d19f6bb04f6d2438a6cf74358a2e737d2a02d10cbee1502d"),  # run:2026-10-27-anim gh4/AnimNecM0
+    "anim-nec-t0-gh9": (os.path.join(P0005, "smpnec.d2s"), "1e42aa1709cd3e562c9161b9e28d5e02fd5f8b2ac594be2ca0228d839fd1ba87"),  # run:2026-10-27-anim-p2 gh5/AnimNecQ0
     "anim-nec-t1": (os.path.join(P0005, "smpnec.d2s"), "b11119eba34bc05983be5538e9aaf15ec306b495eb38f8721244696a823759e6"),  # run:2026-10-27-anim AnimNec1
     "anim-nec-t1-bk": (os.path.join(P0005, "smpnec.d2s"), "87a354ef7158fafbd69aa0bd1706a8b8e955452771015ae21a303498d6a62b80"),  # run:2026-10-27-anim bk/AnimNecB1
     "anim-nec-t1-gh": (os.path.join(P0005, "smpnec.d2s"), "2735f88b6d86dc6ef6c71f2ca382d55f73d4bbc30a2d783bdccff182e20f1a8f"),  # run:2026-10-27-anim gh/AnimNec1
+    "anim-nec-t1-gh10": (os.path.join(P0005, "smpnec.d2s"), "1b3364d6812832b1630c35a0abe640aeb71f6a609b3235e7488167903e7f2522"),  # run:2026-10-27-anim-p2 gh5/AnimNecR1
     "anim-nec-t1-gh2": (os.path.join(P0005, "smpnec.d2s"), "7a54a7d572c1a67371423310ea46cc9d1e8a5003e1db46f0aaa1899c384e43cc"),  # run:2026-10-27-anim gh2/AnimNecH1
     "anim-nec-t1-gh3": (os.path.join(P0005, "smpnec.d2s"), "fa0b89f4d8bccca9f05b5c6f31d1e87d4812f737ba1a0cfbfcab2f788e6008de"),  # run:2026-10-27-anim gh3/AnimNecL1
     "anim-nec-t1-gh4": (os.path.join(P0005, "smpnec.d2s"), "49805555e6eb0d385057d387e09550c27f3c7e46da45cbdca667d1b2a5fe27e3"),  # run:2026-10-27-anim gh4/AnimNecM1
+    "anim-nec-t1-gh9": (os.path.join(P0005, "smpnec.d2s"), "3762986f0a7460297a04ff7b6a0857c41997e4f47c22723e55e36d7a31f11939"),  # run:2026-10-27-anim-p2 gh5/AnimNecQ1
     "anim-nec-t2": (os.path.join(P0005, "smpnec.d2s"), "8ba189145f726a1549cd06f1883f3850b7ff92a613259020612feb8515b53800"),  # run:2026-10-27-anim AnimNec2
     "anim-nec-t2-bk": (os.path.join(P0005, "smpnec.d2s"), "bc8cd878943dc336b7cb7205654daa3a6b90cbaa985fd4fe50b4bc16b1a8570c"),  # run:2026-10-27-anim bk/AnimNecB2
     "anim-nec-t2-gh": (os.path.join(P0005, "smpnec.d2s"), "69dbda8e9ce817b8784d19798d56152e0b54ebb908b891d7f32644c2bff3c8e2"),  # run:2026-10-27-anim gh/AnimNec2
+    "anim-nec-t2-gh10": (os.path.join(P0005, "smpnec.d2s"), "30ae561679e7b78dff26d8ac50656f2e6605cd5aba3fb63d196751487cbbc377"),  # run:2026-10-27-anim-p2 gh5/AnimNecR2
     "anim-nec-t2-gh2": (os.path.join(P0005, "smpnec.d2s"), "bad2b1113659b434edc3bdec7f40dae18d3623c31bc26bb1c559450ba6e63239"),  # run:2026-10-27-anim gh2/AnimNecH2
     "anim-nec-t2-gh3": (os.path.join(P0005, "smpnec.d2s"), "d2db63ad0ebf2563772d11772abd4a33cc841d714b519ab4f47328e963138bac"),  # run:2026-10-27-anim gh3/AnimNecL2
     "anim-nec-t2-gh4": (os.path.join(P0005, "smpnec.d2s"), "9c988ae839a4601d0d2e1790ae31bc168b7a3fc0d7d6e09b7af91c2eb2dee4ff"),  # run:2026-10-27-anim gh4/AnimNecM2
+    "anim-nec-t2-gh9": (os.path.join(P0005, "smpnec.d2s"), "827e10f8e5b21ab2449cc0332d6254f7ab698ca20c3528fc5d57ba010811e2eb"),  # run:2026-10-27-anim-p2 gh5/AnimNecQ2
     "anim-pal-chg": (os.path.join(P0005, "smppal.d2s"), "549ba36d63d844a88d394f64544e128d22ffff52418ac199202e13554ea3ebd6"),  # run:2026-10-27-anim sp/AnimPalChg
+    "anim-pal-slow": (os.path.join(P0005, "smppal.d2s"), "da6912a7da9c336cab0e07433a633299c0ada78c2340c2a6ef5914d2dcc79110"),  # run:2026-10-27-anim-p2 gh5/AnimPalS1
     "anim-pal-t0": (os.path.join(P0005, "smppal.d2s"), "7d8ae2c4948db8d651114f1a26bfdd000f6ad12cbe18010b39040dc7d8d38a21"),  # run:2026-10-27-anim AnimPal0
     "anim-pal-t0-bk": (os.path.join(P0005, "smppal.d2s"), "7e1512ca733a09d581b0e3d931a850779aa32516d7ac944a8dd2ed3153c87bb3"),  # run:2026-10-27-anim bk/AnimPalB0
     "anim-pal-t0-gh": (os.path.join(P0005, "smppal.d2s"), "577f587ced8db018764d0c452f27bc06c6d7955b54d64afa86d9a4a51df2cdf0"),  # run:2026-10-27-anim gh/AnimPal0
+    "anim-pal-t0-gh10": (os.path.join(P0005, "smppal.d2s"), "9db3a24e0c9f1370bf88c2a3c570b8283e5ca6cd02a61c394b24a284d55ef83e"),  # run:2026-10-27-anim-p2 gh5/AnimPalR0
     "anim-pal-t0-gh2": (os.path.join(P0005, "smppal.d2s"), "13077c68c18b620407280c0324bf78ab4e9ed6bd769de789a0a936aab957fdeb"),  # run:2026-10-27-anim gh2/AnimPalH0
     "anim-pal-t0-gh3": (os.path.join(P0005, "smppal.d2s"), "05341120c13cb211fea948959f804e81441b001b97f6e86604f9509a911274a6"),  # run:2026-10-27-anim gh3/AnimPalL0
     "anim-pal-t0-gh4": (os.path.join(P0005, "smppal.d2s"), "7820ec36727d7339650ca2aa385238bdb87c99f38d13f5801eb07220ceb622eb"),  # run:2026-10-27-anim gh4/AnimPalM0
+    "anim-pal-t0-gh9": (os.path.join(P0005, "smppal.d2s"), "f2e587a0024e2cab4b9b8ca0214117e30c5267a9ce64d60230da097293e8c8d4"),  # run:2026-10-27-anim-p2 gh5/AnimPalQ0
     "anim-pal-t1": (os.path.join(P0005, "smppal.d2s"), "f1900646554ce9de4239b87a2b50e85d52343024e28e79830cdd80fe3468efef"),  # run:2026-10-27-anim AnimPal1
     "anim-pal-t1-bk": (os.path.join(P0005, "smppal.d2s"), "e4feee94abdf846d8511b9da9d02b69326e33ca74931b7f891fc0ca628f9514f"),  # run:2026-10-27-anim bk/AnimPalB1
     "anim-pal-t1-gh": (os.path.join(P0005, "smppal.d2s"), "b2fc52e420ef3732996ae973b470362701ecf7081b03d1f7353c1bb325fe3d5b"),  # run:2026-10-27-anim gh/AnimPal1
+    "anim-pal-t1-gh10": (os.path.join(P0005, "smppal.d2s"), "422916766813ddbae4bdf5cdb9948a2ae7e0a7ab1056e1fe842005c54614b880"),  # run:2026-10-27-anim-p2 gh5/AnimPalR1
     "anim-pal-t1-gh2": (os.path.join(P0005, "smppal.d2s"), "23638474786a0599107609f7684aec72fe4f486c240d414e40c05ba7b706abde"),  # run:2026-10-27-anim gh2/AnimPalH1
     "anim-pal-t1-gh3": (os.path.join(P0005, "smppal.d2s"), "81f6b0f44f75385d3a44761ceef7bbb138a96ec8d772d0c7ea9ebc68a3390bc9"),  # run:2026-10-27-anim gh3/AnimPalL1
     "anim-pal-t1-gh4": (os.path.join(P0005, "smppal.d2s"), "65c24fe559e7c583f0fc693e9fea5a985cf5d0933306cef429f9dff3aa017698"),  # run:2026-10-27-anim gh4/AnimPalM1
+    "anim-pal-t1-gh9": (os.path.join(P0005, "smppal.d2s"), "690a6cd32c2154eaa10a217b6b1780019e5bcf5f2151428b094ef296dc945e6c"),  # run:2026-10-27-anim-p2 gh5/AnimPalQ1
     "anim-pal-t2": (os.path.join(P0005, "smppal.d2s"), "f5e1177f0729a512b63b95849c93b9257eef13b4d014b997fdb6ceef44151bbe"),  # run:2026-10-27-anim AnimPal2
     "anim-pal-t2-bk": (os.path.join(P0005, "smppal.d2s"), "94eb827465b6be2e7b230fcc2c2c126e60e48e77cd726fab46226132eeccf122"),  # run:2026-10-27-anim bk/AnimPalB2
     "anim-pal-t2-gh": (os.path.join(P0005, "smppal.d2s"), "cd4220feff47bd415ef47a5044530c8ed9e69a38492b435f18ee7f96b47d98b3"),  # run:2026-10-27-anim gh/AnimPal2
+    "anim-pal-t2-gh10": (os.path.join(P0005, "smppal.d2s"), "62c21965bdb833585f423446ecf97bbef13e316a8b54a8d8ae061d73836c9e63"),  # run:2026-10-27-anim-p2 gh5/AnimPalR2
     "anim-pal-t2-gh2": (os.path.join(P0005, "smppal.d2s"), "1526b332d41b7738f2694f5632e23d311932321035629eaf8fd8d400d1fad1f0"),  # run:2026-10-27-anim gh2/AnimPalH2
     "anim-pal-t2-gh3": (os.path.join(P0005, "smppal.d2s"), "76be8d4bba5544d446cd2b8acb89383ce65dd336bcf832cf861bb884fe1545a0"),  # run:2026-10-27-anim gh3/AnimPalL2
     "anim-pal-t2-gh4": (os.path.join(P0005, "smppal.d2s"), "4102034a460b1c25bd21c90592196a3f9744c6da3f1a9656f6b6e0b72bace9de"),  # run:2026-10-27-anim gh4/AnimPalM2
+    "anim-pal-t2-gh9": (os.path.join(P0005, "smppal.d2s"), "ee74c100de3980e69d530f6dd245e97e597020c92f01d0e8d52c87a0bb88d805"),  # run:2026-10-27-anim-p2 gh5/AnimPalQ2
     "anim-sor-br": (os.path.join(P0005, "smpsor.d2s"), "a6a7b0d259749fa6783dae72135c33ccb633cae55b7a629dce2a869343e396b4"),  # run:2026-10-27-anim sp/AnimSorBr
     "anim-sor-mon": (os.path.join(P0005, "smpsor.d2s"), "4d675f3fe9f6cc95c891ea5c6cb5dc523ec3c7bac76e45b9d2e7c7328445891e"),  # run:2026-10-27-anim AnimSorMon
     "anim-sor-t0": (os.path.join(P0005, "smpsor.d2s"), "11f111c5e2af199184a72e247a6336a161ff3cda39929f89fe3ac693045d1776"),  # run:2026-10-27-anim AnimSor0
     "anim-sor-t0-bk": (os.path.join(P0005, "smpsor.d2s"), "5d8defea7c210a2143cbc387686d32abd588fd5f1190c0e4cc4338f644b2925a"),  # run:2026-10-27-anim bk/AnimSorB0
     "anim-sor-t0-gh": (os.path.join(P0005, "smpsor.d2s"), "6eb7e04d2c465e2711a012d490a77c27e9db1c91c809de17f3fbc9d1bbf37159"),  # run:2026-10-27-anim gh/AnimSor0
+    "anim-sor-t0-gh10": (os.path.join(P0005, "smpsor.d2s"), "8af338ddf5f4f30bd4ce6c32a5029ef7bb68b44e281deb3b59b15c8c609d4b05"),  # run:2026-10-27-anim-p2 gh5/AnimSorR0
     "anim-sor-t0-gh2": (os.path.join(P0005, "smpsor.d2s"), "94aa769d45f42aee559840ebd679a6f1a2d2db639bc507bfd30b12efa1f0af40"),  # run:2026-10-27-anim gh2/AnimSorH0
     "anim-sor-t0-gh3": (os.path.join(P0005, "smpsor.d2s"), "bf45d135d83d21e450d18c48e8217b17f21b9c0caecf357c0fdf954cec643c8c"),  # run:2026-10-27-anim gh3/AnimSorL0
     "anim-sor-t0-gh4": (os.path.join(P0005, "smpsor.d2s"), "1a8afad5131b92a2af2ecf9d3fc6b1cdb0e4332a0c0e66327faa56ed67ea9396"),  # run:2026-10-27-anim gh4/AnimSorM0
+    "anim-sor-t0-gh5": (os.path.join(P0005, "smpsor.d2s"), "6371c936360b4414120bb7ff2194de57e662ddbbf1b7b263982887be48d5fc02"),  # run:2026-10-27-anim-p2 gh5/AnimSorG0
+    "anim-sor-t0-gh6": (os.path.join(P0005, "smpsor.d2s"), "6c94e8c7dd51279dae43cff8e90401c70e466a0b24af06cd15f45f1abff52ef3"),  # run:2026-10-27-anim-p2 gh5/AnimSorJ0
+    "anim-sor-t0-gh7": (os.path.join(P0005, "smpsor.d2s"), "3b0cf5f022c7ef1b447891a6ea351b61f17ea41d9e653838755ba5e51a1e686c"),  # run:2026-10-27-anim-p2 gh5/AnimSorK0
+    "anim-sor-t0-gh9": (os.path.join(P0005, "smpsor.d2s"), "8e6862295982f0a4bc1c23eb68a616cac833c59bf56030529d3772a7698b8348"),  # run:2026-10-27-anim-p2 gh5/AnimSorQ0
     "anim-sor-t1": (os.path.join(P0005, "smpsor.d2s"), "b7b60852bea49fcd44900991b3b98201b0a85d8364492263edb861b71406599e"),  # run:2026-10-27-anim AnimSor1
     "anim-sor-t1-bk": (os.path.join(P0005, "smpsor.d2s"), "bcdb169a5098b77d9203b2ed10d7fa606991b7ff9b654c791a5c4417856d94d1"),  # run:2026-10-27-anim bk/AnimSorB1
     "anim-sor-t1-gh": (os.path.join(P0005, "smpsor.d2s"), "7c2839b54cb316db6809a3d19a7504671de15d43b4f8800f00cea1dad9e78531"),  # run:2026-10-27-anim gh/AnimSor1
+    "anim-sor-t1-gh10": (os.path.join(P0005, "smpsor.d2s"), "5c331672c4a79f31eba00d3cb7ac3513578afe4721072d38240c344b16b8c052"),  # run:2026-10-27-anim-p2 gh5/AnimSorR1
     "anim-sor-t1-gh2": (os.path.join(P0005, "smpsor.d2s"), "d4812cc38c2a18fa5491e292cbd253e61b50750d925d0ae7de8b24c4736d707a"),  # run:2026-10-27-anim gh2/AnimSorH1
     "anim-sor-t1-gh3": (os.path.join(P0005, "smpsor.d2s"), "aae5478030551160f3537603a87608c584d909ade801ac12ac179262b7a559ef"),  # run:2026-10-27-anim gh3/AnimSorL1
     "anim-sor-t1-gh4": (os.path.join(P0005, "smpsor.d2s"), "b7824ab917d9fc011f35229db59edbfc3b1184c25f0b878da1a6d1cb78b924ab"),  # run:2026-10-27-anim gh4/AnimSorM1
+    "anim-sor-t1-gh9": (os.path.join(P0005, "smpsor.d2s"), "fb25a1842168b80678696b4b0494f6f879b83fce52b60c95dabbf8f782780bc8"),  # run:2026-10-27-anim-p2 gh5/AnimSorQ1
     "anim-sor-t2": (os.path.join(P0005, "smpsor.d2s"), "87db5a5684cda29c3c9957d42e073f2ca99d8afc5521dba6e8f1d8dc6476f2e4"),  # run:2026-10-27-anim AnimSor2
     "anim-sor-t2-bk": (os.path.join(P0005, "smpsor.d2s"), "fcb84d7e53188ef7f77a33a479e8959d3a9ab197153e5a675d595d268c956091"),  # run:2026-10-27-anim bk/AnimSorB2
     "anim-sor-t2-gh": (os.path.join(P0005, "smpsor.d2s"), "bdc10bf9853ddcc092fe0c4236e97726ebacd3d1ce6e2620caf94171ecb477fa"),  # run:2026-10-27-anim gh/AnimSor2
+    "anim-sor-t2-gh10": (os.path.join(P0005, "smpsor.d2s"), "5c30c2f9debe26c03a37f762f8e50a2246a8e4009cca75a7ba48ef1b714a7a19"),  # run:2026-10-27-anim-p2 gh5/AnimSorR2
     "anim-sor-t2-gh2": (os.path.join(P0005, "smpsor.d2s"), "4a2645f19c32669ce2a0fa1d28e252f3e1ff9fd6301537c3f68ba9f9182b46ff"),  # run:2026-10-27-anim gh2/AnimSorH2
     "anim-sor-t2-gh3": (os.path.join(P0005, "smpsor.d2s"), "816bd267c30957e647091a3442b75a4e748d2ec9279d6a0c7192cb2ce3be7917"),  # run:2026-10-27-anim gh3/AnimSorL2
     "anim-sor-t2-gh4": (os.path.join(P0005, "smpsor.d2s"), "3a74647031c9c34de079b84a1fc2d5e988af02425c06961901d37dd6a37e67c0"),  # run:2026-10-27-anim gh4/AnimSorM2
+    "anim-sor-t2-gh9": (os.path.join(P0005, "smpsor.d2s"), "2c4d391904e510efd5d5dbfc4777133ad0d711da40c824c6e6a6d9d58e79c539"),  # run:2026-10-27-anim-p2 gh5/AnimSorQ2
     "vend-h6c-low": (BASE_X, "b0334a6eb3f6ae25c6dfd1b08fb79e16b144e970701d953123f26a3a3419161c"),  # run:2026-10-27-sweep-vendors
     "vend-h6c-lvl": (BASE_X, "45223841c311618199df65291cccab69a9be2f6ea74c247c4aa79f34f14522a0"),
     "vend-h6c-h99e": (BASE_X, "b7e77e44c6c5ec6bf235a0a2a52ef46b3e3a50afd19c5310cec44bf87feed8ea"),

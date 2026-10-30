@@ -398,7 +398,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Kept outputs:** six new files under `workspace/logs/r52/` (`entryget-callers.txt`, `entryget-windows.txt`,
     `aiinit-pushes.txt`, `aiinit-windows.txt`, `aiinit-regstates.txt`, `aicancel-pushes.txt`), from
     `tools/sweep_rbs3.py` (`callers`, `window`, `pushes`); manifest 46 lines, `sha256sum -c` passes from that directory.
-  - **Backlog:** [archivist](../backlog/2026-10-27-reverser-archivist-monai-second-table-named-by-ai-0001.md) (link
+  - **Backlog:** [archivist](../backlog/archive/2026-10-27-reverser-archivist-monai-second-table-named-by-ai-0001.md) (link
     MonAI.md's second table and its open question to ai/0001 § 3; the survey reads the state rows, ruling (e));
     the [review request](../backlog/archive/2026-10-27-reverser-architect-plan-0052-p1-1-review.md).
   - **To rule on.** (1) The tier proposal (16 AIs, § 13). (2) The batch list for P1.2 onward (§ 13; the architect's
@@ -490,3 +490,29 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   [archivist](../backlog/2026-10-30-reverser-archivist-monstats-and-itemstatcost-readers-named-by-ai-0003.md)
   (MonStats, ItemStatCost and States readers). Next: batch 3 (pool-C).
 - **2026-10-30 — P1.2 batch 2 Tier B check (architect, `lane/r52c`): accept with fixes (1).** Fix: omission, the search callbacks' "draw nothing" gains its scope (direct calls of `AiSameBaseNearCb`, callees not followed). Rulings: the five unemulated rows stay `[I]` for the batch's done-when (as batch 1); P1.1 reopen condition (b) not met; the three open questions stand (the dance tables and the opposite-word parameter record to the writer read, the stat 80 grant to Phase 2). Gate green. Review request closed.
+- **2026-10-30 — `lane/a7b` Tier A audit (architect; ADR-0023 audit sample, plan 0053 Phase 3) of the Tier B check
+  (44a12049, accept, 0 fixes): accept with fixes (5).** `main` (66b96ae8) merged into the lane first (one ledger
+  conflict, both sides kept in merge order). The full review re-ran `tools/ai_survey.py states` on the pinned image:
+  every byte count in MonAI § The second table holds (`+0` 7/10/1, `+4` in 3, 11, 16, `+C` in 4, `+8` 17 set and 16
+  distinct, five words shared with `g_MonAiTable`, twelve not); the lane's "five, not seven" is right. Anchors read
+  with objdump: `cmp ebx,0x12; jge` at 0x005B0E4D, `edx = [[esi]]` before the call at 0x005B1663, the two curse calls
+  0x005C3520/0x005C352E and 0x005E817B. The 49 `RECIPE_BASES` rows were matched by script against
+  `2026-10-27-anim-p2-manifest-ckpt2.sha256` (49 of its 52 saves, 49 distinct hashes, 0 mismatches; the other three,
+  `AnimSorMon`, `sp/AnimAssBos`, `sp/AnimPalChg`, equal existing rows) and `tools/test_d2s.py` passes (60 tests): that
+  part is clean. Fixes, all in `docs/tables/MonAI.md`:
+  - Omission 1 (archivist rule 6): the register-site list named 10 of the 12 sites; added state 11's function
+    0x005E817B (`eax` = 0) and the curse path's twin 0x005C352E, with the sites' addresses and the two pointer loads
+    that pass the current state. The Tier B check saw the first as a nit and left it.
+  - Stale cross-reference 3 (archivist rule 4, outside the diff, in the same doc): § The AI table in the image still said
+    only `+8` has a meaning from a finding while the lane's new text uses `+0` as the row kind (ai/0001 § 3 names all
+    four, `[I]`); § Batches still said the state rows are in no batch and P1.1 adds them (this plan's § The catalogue
+    batches places all 18); the first and third *Open questions* still asked what `+0`/`+4`/`+C` are and whether any
+    path overrides the record's row, which ai/0001 § 3 answers in part (narrowed to row 143 and to a first-table row
+    other than the record's).
+  - Omission 1 (routing): the lane found ai/0001 § 3's "seven state rows reuse a first-table think word" overcounts
+    (states 10 and 17 share a word with each other only) and wrote around it with no entry to the finding's owner;
+    filed [reverser](../backlog/2026-10-30-architect-reverser-ai-0001-state-rows-reusing-a-first-table.md).
+  **What the Tier B check missed:** all five, none reject-grade (no `[C]` without its source, no wrong address). The
+  misses are of one kind: text outside the diff that the diff makes stale, and a disagreement with a finding left
+  unrouted; a diff-scoped check reads neither unless rule 4's "re-read the findings a column touches" is run over the
+  whole doc. Gate GREEN after the fixes.
