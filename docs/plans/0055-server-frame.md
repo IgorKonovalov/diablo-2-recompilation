@@ -438,3 +438,23 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   `EventQueueEveryFrame` callers, the return test) and is carried by a dated note there. **Phase 2a: go** (reverser, no
   game, no slot, no Ghidra; replays under `MemoryMax=4G`; P0 accepted, P1 reviewed). **Phase 2b: gate unchanged**: P1
   is reviewed; it waits on plan 0052's P3a review (ADR-0022, ADR-0016), and its pilot uses plan 0056's runner library.
+- **2026-10-30 — Phase 2a checkpoint, not started in substance (reverser, `lane/p55a`; owner pause).** Paused on the
+  owner's token-budget stop before any tool was written: no `tools/frame.py`, no replay, no run record, no finding,
+  nothing kept under `workspace/logs/`. Read so far: this plan's Phase 2a and the P1 review (Phase 2a go),
+  `tools/frame_corpus.py` (`read_events` gives per log `(frame, kind, unit type, unit id, entry seeds, exit seeds,
+  line, sub)`, a begin/end pair folded at the begin's line) and the corpus block of `docs/inventory.md` (331 stamped
+  corpus logs, 9 stamped loggers; `stats`, `economy*` and `h6b` without unit ids, `h6b` without seeds). **Resume
+  steps** for a fresh lane on this branch: (1) read the pass order in frame/0001 § 2 and § 5 (the drain runs before
+  `GameTick`; check at which point each logger reads its frame number relative to `GameTick`'s `Game+0xA8`
+  increment, since a drain event logged before the increment carries the previous frame), frame/0002 §§ 1–2 (the ten
+  walks: missiles, players, monsters, objects, items, then each type's every-frame list newest first and its slot
+  oldest first) and frame/0003 §§ 1–4 (the periodic calls after the room sync); (2) write `tools/frame.py` (the plan's
+  name) with tests: a kind-to-pass map per logger, kept in the tool with its anchor per kind, each logged event given
+  its pass rank from its kind and unit type (nested events take their caller's pass), `check` predicting the order of
+  every frame with two or more events and the seed hand-off of each same-seed pair in a frame; (3) dev runs under
+  `workspace/logs/p55a/dev/`, the kept run as run:2026-10-30-frame-order under `workspace/logs/p55a/` with a manifest,
+  each replay `systemd-run --user --scope -p MemoryMax=4G python3 -I tools/frame.py …`, one session at a time;
+  (4) count per logger and kind the events compared, the mismatches (0 or each explained), the limits (no unit id,
+  no seed), the re-chained resynchronised entries of plans 0045 and 0052 (Done-when), and the cross-type every-frame
+  runs per receiving type that the kept logs hold (P1.2 review ruling 1); (5) findings in frame/0004 and the run in
+  frame/experiments, the lane's usage row, the review request.
