@@ -584,6 +584,16 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   P1.1 review reopen condition (b) not met (the two callbacks draw nothing by their bodies and direct calls; row 106's
   loops run over skills). No call of the action helpers. 42 `re/symbols.csv` rows (all I). Kept outputs
   `workspace/logs/r52f/` (manifest 11 lines; `emu/` 93, `emu/dev-1/` 94; each passes from its directory). Backlog: the
-  [review request](../backlog/2026-10-30-reverser-architect-plan-0052-p1-2-batch-5-review.md),
+  [review request](../backlog/archive/2026-10-30-reverser-architect-plan-0052-p1-2-batch-5-review.md),
   [archivist](../backlog/2026-10-30-reverser-archivist-monstats-and-skills-readers-named-by-ai-0006.md) (MonStats and
   Skills readers). Next: batch 6 (hirelings).
+- **2026-10-30 — P1.2 batch 5 Tier B check (architect, `lane/r52f`): accept (0 fixes).** Checked: 42 `[C]` lines, each
+  naming run:2026-10-30-ai-cat-emu-5 and the case family, with the meaning readings kept in the `[I]` bullets beside them;
+  anchors `MonOwnerSkillDamage` 0x0056E050 (objdump: `MonsterOwner` result `eax` moved to `edi` at 0x0056E0A9, `SkillDamagePair`
+  called at 0x0056E0AB, `SkillLevelClamped(edi, esi)` at 0x0056E006), `SkillLevelClamped` 0x00644AA0 (unit at `[ebp+8]`) and
+  the 42 `re/symbols.csv` rows (42 I); the manifest passes. Rulings: (1) rows 67 and the other followers stay `[I]` past
+  their entry call for the batch's done-when (as batches 1-4); (2) the H3 owner pair stays `[I]` (objdump; the
+  summon's own level is not read) and agrees with skills/0001 § 18 and skills/experiments (`MAS.seed`/`MAS.stats`): both
+  only say the Raven class has a `SkillDamage` owner pair the checker does not model, and none names the unit whose level
+  it reads, so no disagreement and no route; the plan's H3 "unresolved" is answered here for Phase 2. Check 8: no finding
+  states a contradicting `aip8` or owner-level reading. Gate green. Review request closed.
