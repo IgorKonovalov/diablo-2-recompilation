@@ -10,7 +10,12 @@ typedef struct DungeonRoomLife {  /* view of DungeonRoom (0x80, DUNGEON_RoomCrea
     uint32_t idleCount;           /* +0x0C passes of sub_0052D240_RoomsDeactivate with no client (sub_0061A790_RoomIdleCount) */
     void   * pDrlgRoom;           /* +0x10 DRLG room */
     uint8_t  deadIdx;             /* +0x14 next slot of +0x38, (i + 1) & 3 (sub_0061AFA0_RoomRecordDeath; ai/0002 § 4) */
-    uint8_t  _pad15[0xF];
+    uint8_t  _pad15[0x3];
+    void   * pRemovals;           /* +0x18 removal notes {type, guid, next} (sub_0061A270_RoomUnitOp), sent by the client
+                                     room sync, freed by sub_0053A820_ActsRoomRemovalsClear (frame/0001 § 3.4) */
+    void   * pUpdated;            /* +0x1C units marked updated this frame, newest first, next = unit+0xE0, bit 0x2000 of
+                                     unit+0xC4 (sub_0064C040_UnitMarkUpdated; frame/0001 § 3.3) */
+    uint8_t  _pad20[0x4];
     int32_t  nNear;               /* +0x24 */
     uint8_t  _pad28[0x4];
     void   * pAct;                /* +0x2C DUNGEON act */
@@ -101,3 +106,25 @@ typedef struct InactiveItemRec {  /* 0x0F + n bytes, sub_00541B10_InactiveItemSa
     uint16_t nBytes;              /* +0x0C */
     uint8_t  bytes[1];            /* +0x0E ITEMS_Serialize(item, .., 0x400, 1, 1, 0), socketed children included */
 } InactiveItemRec;
+
+typedef struct DungeonActFrame {  /* view of the DUNGEON act (Game+0xBC + 4*act, DungeonRoomLife+0x2C): the fields the
+                                     server frame touches (frame/0001 §§ 3.1, 3.3, 3.4) */
+    uint32_t updatedDirty;        /* +0x00 set by sub_00619F90_RoomUpdatedList with EDX != 0; walked and cleared by
+                                     sub_0053B000_ActUnitsFrameReset */
+    struct ActClock * pClock;     /* +0x04 the act light clock (sub_0061AA60_ActClockPtr) */
+    uint8_t  _pad08[0x50];
+    uint32_t removalsDirty;       /* +0x58 set by sub_0061A270_RoomUnitOp, cleared by sub_0053A820_ActsRoomRemovalsClear */
+} DungeonActFrame;
+
+typedef struct ActClock {         /* the act's light clock, stepped once a frame by sub_0061C040_ActClockTick */
+    int32_t  period;              /* +0x00 0..5, row of g_ActClockTable0/1/2 */
+    int32_t  value;               /* +0x04 the row's second dword */
+    int32_t  counter;             /* +0x08 +1 a frame; with tableFlag 0: act index 3 +16, else in a type-2 row +2 (act index 2: +10) */
+    uint8_t  _pad0C[0xC];
+    uint8_t  colour[3];           /* +0x18..+0x1A written by 0x0061BCE0 */
+    uint8_t  _pad1B[0xD];
+    int32_t  scale;               /* +0x28 k: the period starts are start * k, the wrap k * 360 */
+    uint8_t  _pad2C[0x4];
+    int32_t  tableFlag;           /* +0x30 0: g_ActClockTable0; else g_ActClockTable2 (act index 3 compares against Table1) */
+    int32_t  lastBucket;          /* +0x34 counter / scale at the last reported change */
+} ActClock;

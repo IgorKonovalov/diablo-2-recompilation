@@ -421,6 +421,8 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-10-30 | lane/h1c check | 0038 H1c | architect-check | 75 916 | 12 | 2 | — (Tier B check, no harness) | accept with fixes | 1: overclaim 1 (NewCharLegacy symbol row raised to C with the unmet PlayerLoad caller half in its description; marked [I]) |
 | 2026-10-30 | lane/r52c | 0052 P1.2 (batch 2) | reverser-static | 333 494 | 98 | 26 | — (static, Ghidra copy ghidra-r52c) | accept with fixes (Tier B check) | 1: omission 1 |
 | 2026-10-30 | lane/r52c check | 0052 P1.2 b2 | architect-check | 76 765 | 21 | 3 | — (Tier B check, no harness) | accept with fixes (1) | omission 1 |
+| 2026-10-30 | `lane/r55` | 0055 P1.1 | reverser-static | 356 838 | 196 | 37 | — (static, Ghidra copy ghidra-r55) | accept with fixes (Tier A) | 5: omission 2, overclaim 1, wrong anchor 1, miscount 1 |
+| 2026-10-30 | `lane/r55` review | 0055 P1.1 | architect-review | 138 348 | 61 | 11 | — (Tier A, objdump, no Ghidra, no harness) | accept with fixes; rulings: Q2 pilot tests set, Q1 floors confirmed (2 windows per scene), ai/0001 routed by backlog, one game with g_HitClassCounter a process input; P1.2 go | 5: omission 2 (0x0064C370 unlink of the updated list; breakpoint stops beyond lines), overclaim 1 (g_HitClassCounter behaviour coupling scoped), wrong anchor 1 (lifecycle.h clock-counter comment), miscount 1 (main merged not named) |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not
