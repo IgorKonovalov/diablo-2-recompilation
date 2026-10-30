@@ -164,6 +164,10 @@ fn:sub_0054F060_RoomWandererTick@0x0054F060)
   the unit events, `sub_0052D440_ClientsRoomSync`, two more passes, `0x00543E10` when `frame % 20 = 0`, `RoomsDeactivate`
   when `frame % 12 = 0`, the level-unload tick of each act when `frame % 11 = 0`, and `0x0052D310`. The remainders are
   signed `%` on the incremented frame. (fn:sub_0052D870_GameTick@0x0052D870, 0x0052D8EB, 0x0052D938)
+  *2026-10-30 (plan 0055 P1.1, `lane/r55`):* the two per-frame passes are `sub_0052D7B0_ActsClockPass` (the act light
+  clock, 0x0052D8DF) and `sub_0052D720_GameFpsStats` (0x0052D8E6); the two after the sync are
+  `sub_0053B000_ActUnitsFrameReset` (0x0052D900) and `sub_0053A820_ActsRoomRemovalsClear` (0x0052D907)
+  ([frame/0001 § 2](../frame/0001-tick-and-messages.md#2-gametick)).
 - [I] So a room activated on frame N (units move in the unit events, the client sync runs after them) is populated or
   restored by `NewRoomsUpdate` at the start of frame N+1. Three other callers populate a room at once through
   `RoomUpdateOne`: a unit spawn at coordinates whose room was not active (`0x00553720`), the creation of a

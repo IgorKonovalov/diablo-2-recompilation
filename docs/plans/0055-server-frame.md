@@ -219,3 +219,25 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   several runs, listed in the index); (3) 5 harness logs are named by a run's directory only (development logs) and 18 by
   no run (plan 0046's 2026-10-30 catalogue logs among them), so they are indexed but not counted; (4) five runs name no
   harness log (four emulated runs and `sweep-emu2`), two named runs (`d2s-samples`, `cube-saves`) have no section.
+- **2026-10-30 — P1.1 the tick and the messages (reverser, static, `lane/r55`; review requested).**
+  [frame/0001](../findings/frame/0001-tick-and-messages.md), [frame/experiments](../findings/frame/experiments.md)
+  (run:2026-10-30-frame-emu), 48 new `re/symbols.csv` rows (39 functions, 9 data; all `I`, subsystem `sim/frame`), new
+  tools `tools/frame_emu.py`, `tools/frame_globals.py`, `tools/frame_volume.py`; static outputs under
+  `workspace/logs/r55/static/` (manifest `07094f49…`, 19 lines), emulation under `workspace/logs/r55/emu/` (manifest
+  `60d57be2…`, 10 lines). Totals taken after merging `main` `ae673b64`. Found: `ServerGamesFrame` ticks every live game
+  once per 40 ms (`1000 / 25`), slot order, at most one interval of debt; `GameTickAlt` is unreached (its only caller is
+  an unreferenced stub). `GameTick`'s seven passes are named: the "two act passes" are the act light clock
+  (`ActsClockPass`) and a frames-per-second counter, the "two more" the updated-unit reset (`ActUnitsFrameReset`, which
+  walks only the units marked this frame, newest first per room) and the room-removal clear. None of the four draws of
+  its own; their routes to a draw are `EquipReqRefresh` (on an act clock change) and `UnitFree` (an inventory item at
+  the reset). Client messages are drained before the frame from three FIFO queues (system, in-game packets of every
+  client in arrival order, host), never inside `GameTick`. Two games share no seed; the one behavioural coupling is the
+  process-wide `g_HitClassCounter`. The empty-game close (`1500 < frame < 7500`, the "7 500-frame test") is in the
+  post-frame flush, not `GameTick` (P1.3 may cite it from here). Three emulated maps `[C]` (840 cases, 0 mismatches).
+  **The lines-per-frame estimate for the P1 review:** 12.5–36.3 lines per frame (town, outdoor pack, maze boss), 3 100–
+  9 100 per 250-frame window, 31 000–91 000 for ten windows, against plan 0045's measured 4.09 lines per frame and
+  17 786 per session: 0055 Q2's ten-times trigger is not met on volume (a whole Phase 2b run is 1.8–5.1 plan-0045
+  sessions); the rate per frame (310–910 breakpoint stops per game second) is what the pilot window must show gdb can
+  carry. Window design and scene proposal in frame/0001 § 7. Corrections for other findings: drlg/0009 § 1 (dated note
+  added); ai/0001 §§ 1 and 11 (the unnamed passes; `Room+0x1C` is the updated-unit list, not all units) left to its
+  owner lane (`lane/r52b` active) or Phase 3.
