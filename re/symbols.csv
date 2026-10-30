@@ -2676,6 +2676,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0063E9F0,func,MONSTATS_IsBoss,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x0063EA40,func,sub_0063EA40_MonIsDeathMode,,I,drlg/collision,docs/findings/drlg/0005-collision.md
 0x0063EA70,func,sub_0063EA70_SkillSummonRec,,I,skills/dispatch,docs/findings/skills/0003-handlers.md
+0x0063EBD0,func,sub_0063EBD0_MonComponentLightRadius,,I,monsters/ai,docs/findings/ai/0001-machinery.md
 0x0063EC70,func,sub_0063EC70_LevelClassVariant,,C,monsters/special,docs/findings/monsters/0003-special-monsters.md
 0x0063EDC0,func,MONSTATS_IsPrimeEvil,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x0063EE90,func,sub_0063EE90_HirelingType,,C,monsters/pool,docs/findings/monsters/0001-level-pool.md

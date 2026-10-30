@@ -70,6 +70,11 @@ emulated maps (run:2026-10-27-ai-emu). Table dumps, AI-row usage and pool counts
   Hirelings enter through row 61 `Hireable` (state rows 4–7 for its states), summons through rows 1, 67, 69, 84, 86,
   101–112 and 117. (fn:sub_005DE200_MonAiWanderRing@0x005DE200, fn:sub_005DC970_AiHostileCandidate@0x005DC970,
   `rngcg-machinery.txt`, `ai-entries.txt`)
+- [I] **No light radius in the target search** (2026-10-30): the search's functions call no stat getter, no code in
+  the image reads stat 89 by an immediate id, and the item `lightradius` byte's one reader feeds client code only;
+  the server's one visibility term is state 146 (`invis`) in `AiHostileCandidate` (§ 6, scope there).
+  (fn:sub_005DD7F0_MonAiFindTarget@0x005DD7F0, fn:sub_0063EBD0_MonComponentLightRadius@0x0063EBD0,
+  fn:sub_005DC970_AiHostileCandidate@0x005DC970)
 
 ## Leads used
 
@@ -81,7 +86,7 @@ anchors where this batch builds on them (anim/0001's event queue, drlg/0009's pa
 | Address | Name | Role | Tag |
 |---|---|---|---|
 | `0x0052FC20` | `sub_0052FC20_ServerGamesFrame` | the server loop: paced by `timeGetTime`, `GameTick` on each live game of the 1 024 game slots | I |
-| `0x005645E0` | `sub_005645E0_GameTickAlt` | the other caller of `GameTick` | I |
+| `0x005645E0` | `sub_005645E0_GameTickAlt` | the other caller of `GameTick`; unreached (§ 1 correction of 2026-10-30) | I |
 | `0x0052D870` | `sub_0052D870_GameTick` | the frame: `GameRunUnitEvents` after `NewRoomsUpdate` | I |
 | `0x005414D0` | `sub_005414D0_GameRunUnitEvents` | per type: every-frame list, then the slot list | I |
 | `0x00541060` | `sub_00541060_MonEventsRun` | the monster lists, records without a callback to `MonEventDispatch` | I |
@@ -137,6 +142,7 @@ anchors where this batch builds on them (anim/0001's event queue, drlg/0009's pa
 | `0x006259B0` | `sub_006259B0_UnitAlignGet` | stat 172 of state list 105; 2 for other unit types | I |
 | `0x006E3300` | `g_AiSearchKinds` | 13 search kinds `{walker, callback}` | I |
 | `0x0073D358` | `g_MonAiStateRows` | the 18 state rows | I |
+| `0x0063EBD0` | `sub_0063EBD0_MonComponentLightRadius` | a monster's largest item `lightradius` (`+0x12F`) over its 16 component codes; client callers only (§ 6) | I |
 
 ## Walkthrough
 
@@ -148,6 +154,14 @@ anchors where this batch builds on them (anim/0001's event queue, drlg/0009's pa
   `Game+0xA8`, runs two act passes, `NewRoomsUpdate`, then **`GameRunUnitEvents`** (0x0052D8EB), the client room sync
   and the timers (drlg/lifecycle § A). (fn:sub_0052FC20_ServerGamesFrame@0x0052FC20, fn:sub_005645E0_GameTickAlt@0x005645E0,
   fn:sub_0052D870_GameTick@0x0052D870)
+  - *Correction (2026-10-30, lane/rfix, from frame/0001 § 2; plan 0055 P1.1 review):* the call to `GameTick` is at
+    0x0052FD19 (0x0052FD17 is the `mov ecx, esi` before it), and `GameRunUnitEvents` is called at 0x0052D8F2
+    (0x0052D8EB is `NewRoomsUpdate`'s call). The two act passes are `sub_0052D7B0_ActsClockPass` (0x0052D8DF) and
+    `sub_0052D720_GameFpsStats` (0x0052D8E6); after the client room sync (0x0052D8F9) come
+    `sub_0053B000_ActUnitsFrameReset` (0x0052D900) and `sub_0053A820_ActsRoomRemovalsClear` (0x0052D907), then the
+    timers. `GameTickAlt`'s call at 0x00564603 is unreached: its only caller is the stub `sub_00564C70_GameTickAltStub`
+    (call at 0x00564C97), which no call, jump or pointer references (`tools/xrefscan.py 0x00564C70`: 0 hits), so every
+    frame is run by `ServerGamesFrame`. (0x0052D8DF–0x0052D907, 0x0052FD19, fn:sub_00564C70_GameTickAltStub@0x00564C70)
 - [I] **The pass.** `GameRunUnitEvents` writes `frame & 63` into the event control and runs, in order, missiles,
   players, **monsters**, objects, items; for each type the every-frame list (`MonEventsRun(0)`, no frame test) and
   then the slot list (`MonEventsRun(1)`, records whose frame equals `Game+0xA8`, walked from the oldest, each freed
@@ -227,9 +241,14 @@ flowchart TD
 - [I] **The second table's bound.** `MonAiEntryGet` does not bound `EDX`: `MonAiInit` refuses `state ≥ 18` (signed,
   0x005B0E4D) before it stores one, so the stored state is 0..17 and the table holds 18 rows (`ST 0`–`ST 17`; the next
   dwords, 0x0073D478, are string pointers). The fall back to row 0 for an out-of-range `AI` is on the `EDX = 0` branch
-  only. Seven state rows reuse a first-table think word: 1 `Idle`, 4 `Hireable` (with its `alt`), 5 `GoodNpcRanged`
-  (row 60), 7 `NecroPet`, 15 `SuicideMinion`, and 10 and 17, which share 0x005E8020. (fn:sub_005B15D0_MonAiEntryGet@0x005B15D0,
-  data:g_MonAiStateRows@0x0073D358, `ai-rows.txt`)
+  only. Five state rows reuse a first-table think word (`g_MonAiTable +8`): 1 `Idle`, 4 `Hireable` (with its `alt`),
+  5 `GoodNpcRanged` (row 60), 7 `NecroPet` and 15 `SuicideMinion`. States 10 and 17 share 0x005E8020 with each other
+  and with no first-table row. (fn:sub_005B15D0_MonAiEntryGet@0x005B15D0, data:g_MonAiStateRows@0x0073D358,
+  `ai-rows.txt`; `tools/ai_survey.py` keys `st_fn8_in_first=5`, `st_fn8_set=17`, `st_fn8_distinct=16`)
+  - *Correction (2026-10-30, lane/rfix; backlog ai-0001-state-rows-reusing-a-first-table):* this sentence read
+    "Seven state rows reuse a first-table think word: …, and 10 and 17, which share 0x005E8020". By the bytes five
+    do; the shared word of 10 and 17 is not in the first table (`tools/xrefscan.py 0x005E8020`: two dword hits, 0x0073D400
+    and 0x0073D470, the `+8` of state rows 10 and 17, none in 0x0073CA18–0x0073D357). MonAI.md § The second table states it the same way.
 - [I] **Who passes `EDX`.** `MonAiEntryGet` has three direct calls, in two functions, and no dword reference in the
   image (`entryget-callers.txt`: `N 0x005B15D0 3 sites 2 functions`; excerpts in `entryget-windows.txt`). At each,
   `ECX` is the unit (`edi`) and `EDX` is an AI state word:
@@ -405,6 +424,35 @@ flowchart TD
   fn:sub_005DC480_AiDistToPointSized@0x005DC480)
 - [C] `AiDistToPoint`'s map matches the emulation in 240 cases over the six unit types; the control `(dx + dy) / 2`
   fails all 240. (run:2026-10-27-ai-emu, `dist`)
+- [I] **No light radius term (static scan of 2026-10-30, `lane/rfix`; backlog light-radius-server-readers).** Neither
+  `MonAiFindTarget` nor `MonAiForcedTarget`, `MonAiPreferDecoy`, `AiUnitSearch` and `AiHostileCandidate` calls a stat
+  getter: their direct callees (the scan's `CALLEES` lines, 104 calls) are the position, room, distance, line, melee,
+  alignment, state, death and path accessors, the asserts and five short unnamed accessors (0x00451F30, 0x00541860,
+  0x005DC920, 0x00648E30 with no call; 0x00621A70 with the assert only). Their distance tests take the positions, the
+  unit size and the range only. The walkers and the other search kinds' callbacks are not listed one by one; the
+  image-wide lines below cover them. Over the whole image, by `tools/light_radius_scan.py`
+  (`workspace/logs/rfix/light-radius-scan.txt`, sha256 in `manifest-rfix.txt`):
+  - stat 89 (`lightradius`) is never the immediate stat id of a call to the ten stat getters (1 418 calls; 1 203
+    with an immediate id, 162 distinct ids, none 89; `STATIMM89 0`, `GET59 0`), and none of the 39 other instructions
+    with the immediate 0x59 is a stat read (assert line numbers, a packet byte at 0x0053E934, UI coordinates,
+    property and save readers' compares). The 215 calls whose stat id is in a register are not resolved one by one,
+    and the generic paths that carry every stat (property apply, stat lists, the stat messages) carry 89 like any
+    other.
+  - the item record's `lightradius` byte (`+0x12F`, tbl:Weapons.txt:lightradius) has one reader,
+    `sub_0063EBD0_MonComponentLightRadius` (0x0063EC36): for a monster (type 1) the largest `+0x12F` over its 16
+    component slots' item codes (`MonComponentCode`, the codes `lit `, `med `, `hvy ` skipped). Its two calls are
+    client code, `ClientMonAssign` (0x0046096C) and `ClientMonModsApply` (0x004AE26C), each taking the larger of it
+    and the MonStats2 `Light` byte (`+0x11E`, tbl:MonStats2.txt:Light). The other three `+0x12F` reads are the
+    Missiles `Holy` bits (0x0064BA5E–0x0064BA7C).
+  - the visibility term the server has is state 146 (`invis`): `AiHostileCandidate` tests it on the candidate
+    (0x005DC9CB; the draw above). The only other server test of it is AI row 132's think function `0x005EEAA0`
+    (`AncientStatue`, 0x005EEAC0), on the statue itself. The other four (`ItemCelDrawUi` 0x00471478, 0x00471648;
+    0x004CC436; `GfxDescFromUnit` 0x004DC825) are client code. Tests through `UNIT_HasState`/`UNIT_HasStateFlag` with
+    `push 0x92` only (`ST146 6`).
+
+  So the server's target search reads no light radius, and the one light-radius column reader found feeds the
+  client. (fn:sub_005DD7F0_MonAiFindTarget@0x005DD7F0, fn:sub_0063EBD0_MonComponentLightRadius@0x0063EBD0,
+  fn:sub_005DC970_AiHostileCandidate@0x005DC970, 0x0046096C, 0x004AE26C, 0x005EEAC0)
 
 ### 7. The command (H2) and the move helpers
 
@@ -564,6 +612,13 @@ flowchart TD
   client list of a room `Room+0x48`, count `+0x78`; the act's rooms from `ActRoomsHead`, next `Room+0x7C`, whose units
   (`Room+0x1C`, next `Unit+0xE0`) `ActUnitsFrameReset` walks each frame. (fn:sub_005DCE60_AiSearchNearRooms@0x005DCE60,
   fn:sub_005DCEE0_AiSearchNearClients@0x005DCEE0, fn:sub_0053B000_ActUnitsFrameReset@0x0053B000)
+  - *Correction (2026-10-30, lane/rfix, from frame/0001 § 3.3; plan 0055 P1.1 review):* `Room+0x1C` (next
+    `Unit+0xE0`) is not the room's unit list. It holds only the units marked updated this frame
+    (`sub_0064C040_UnitMarkUpdated` sets bit `0x2000` of `Unit+0xC4` and pushes the unit on the front;
+    run:2026-10-30-frame-emu) that are still in that room: `0x0064C370`, which takes a unit out of the room's
+    `+0x74` list, unlinks it there through `sub_0064C1B0_RoomUpdatedUnlink` (call at 0x0064C42D) and clears the bit
+    (0x0064C432). `ActUnitsFrameReset` walks it only for the acts whose dirty word (`act+0x00`) is set
+    (0x0053B02C–0x0053B054). (fn:sub_0064C040_UnitMarkUpdated@0x0064C040, fn:sub_0064C1B0_RoomUpdatedUnlink@0x0064C1B0)
 - [I] **The event lists**: `Game+0xB8` (per type the 64 frame slots and the every-frame list; `g_UnitTypeEventList`
   maps unit type to list), the unit's chain `Unit+0xDC` (anim/0001 § 6). **The target lists** `Game+0x10F8[10]` (§ 6)
   and **the minion groups** (`AiCtl+0x28..+0x34`). The clients: `Game+0x88`, next `+0x4A8`. (struct:Game+0xB8,

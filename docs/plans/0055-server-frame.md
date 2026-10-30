@@ -279,7 +279,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   one room activation, 20 shared-seed pairs); the scenes are the lane's (Act I town pilot, Blood Moor or Cold Plains,
   Den of Evil with Corpsefire), held to 0052 P3a's tier. **(3) ai/0001 §§ 1 and 11:** not edited here (`lane/r52c` is
   active in `docs/findings/ai/`); routed to the reverser as
-  [backlog entry](../backlog/2026-10-30-architect-reverser-ai-0001-frame-corrections.md) (also the 0x0052D8F2 call site
+  [backlog entry](../backlog/archive/2026-10-30-architect-reverser-ai-0001-frame-corrections.md) (also the 0x0052D8F2 call site
   and `GameTickAlt` unreached); Phase 3 cites frame/0001, not ai/0001 § 1, for the passes. **(4) One game and
   `g_HitClassCounter`:** Q5's one-game scope stands; the counter is a process-wide input of the frame model, not a
   reason to widen it: the spec states it as process state (0 at load, carried across games), every window session
