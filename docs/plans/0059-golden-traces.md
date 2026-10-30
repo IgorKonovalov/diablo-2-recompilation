@@ -137,3 +137,11 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   outdoor case (its 6 `drlg` were all maze; `sample` now takes outdoor and maze half and half, 3 + 3, test extended),
   and the `difficulty` tag. Checks: 15 tests OK; sample against the full set 28 cases, 0 different, 0 missing; full-set
   digest `d73f29f6…09e08` reproduces; sample audit: every `drlg` string is a seed, a sha256 or `outdoor`/`maze`.
+- **2026-10-30 — Phase 3 landed (spec-writer, `lane/s59`).** `docs/specs/conformance/README.md` (draft; C 18 / I 39 / L 2;
+  research-map row `conformance` rewritten): what a reimplementer runs (the sample or the v1 set, `golden.py check`,
+  `--fields` by stage), the order RNG, seeds, DRLG, population, drops (flow diagram), every one of the 32 fields of
+  `golden.py fields` linked to its spec section with its observed and predicted counts, reading a mismatch, the two
+  case kinds, the reserved `quirks` field with the catalogue entries to read per stage, and what v1 leaves out. Tags: the
+  format rules are `[I]` pointing at the tool's tests; a field is `[C]` only where observed cases hold it. Two `[L]`
+  under Open questions (extension or version 2 for item seeds and populations; who fills `quirks`). Awaiting the
+  Tier A review.
