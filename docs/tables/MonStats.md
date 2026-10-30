@@ -937,7 +937,8 @@ unless a finding is cited.
     searcher is Radament (MonStats row 229), which takes any undead through `MONSTATS_IsUndead`.
     (fn:sub_005F2A00_AiGreaterMummyCb)
   - `Velocity` (`+0x32`) and `Run` (`+0x34`): `sub_005F4A70_AiVampire`, row 28 ([§ 2.12](../findings/ai/0003-pool-b.md#212-row-28-vampire-0x005f4a70)): the
-    flee override parameter `clamp(Run * 100 / Velocity - 100, 0, 120)`, only when `Velocity` > 0.
+    flee override parameter `clamp(Run * 100 / Velocity - 100, 0, 120)` for the step away while fleeing (state 2). The
+    guard "only when `Velocity` > 0" is the reverser's request wording, not in § 2.12 (routed, backlog 2026-10-30).
     (fn:sub_005F4A70_AiVampire@0x005F4A70)
   - `Skill4` (`+0x176`) and `Sk4mode` (`+0x183`): the vampire's Fireball and VampireMissile pair, drawn 50/50 with
     `Skill1`/`Sk1mode`.
@@ -946,7 +947,7 @@ unless a finding is cited.
     (§ 2.6); 23 `aip1`..`aip5` (§ 2.7); 24 `aip3`, `aip5` (§ 2.8); 25 `aip1`..`aip3` (§ 2.9); 26 `aip1`..`aip5` (§ 2.10); 27
     `aip2`..`aip6` (§ 2.11); 28 `aip1`..`aip5` (§ 2.12); 29 `aip1`..`aip5` (§ 2.13); 30 `aip1`..`aip4` (§ 2.14). Row 28's
     `aip5` is a bit set, not a count: bit 0 the Fireball/Missile pair, bit 1 `Skill2`, bit 2 `Skill3` (3 in `vampire1`, 5 in
-    `vampire2`, 7 in `vampire3`, 4, 6-9, 1 in `vampire5`).
+    `vampire2`, 7 in `vampire3`, `vampire4` and `vampire6`..`vampire9`, 1 in `vampire5`).
 
 ## Open questions
 
