@@ -1,6 +1,6 @@
 # 0046 — Skills and missiles, the function catalogue: every numbered skill and missile function (ADR-0014 phase 3, part 2)
 
-> **Status:** approved 2026-10-20 (owner)
+> **Status:** approved 2026-10-20 (owner); P2 running from 2026-10-30 (owner, unpause; `lane/p46h`, harness slot 2)
 > **Created:** 2026-10-20
 > **Owner skill(s):** archivist, reverser, spec-writer
 > **Related ADRs:** 0001-target-toolchain-evidence-sources, 0004-boundary-oracles-in-reproduction, 0011-harness-slots, 0013-forced-path-runs-cell-level, 0014-scope-game-simulation, 0015-emulated-reproduction, 0020-skills-phase-in-two-plans
@@ -1444,3 +1444,6 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   Phase 3 (spec-writer) is released by Phase 1's close as far as this plan goes, and runs in the spec-writer queue's
   order (after 0045·P3 and P4; it merges after any open 0045 spec change, ADR-0020). The static lane A that held 0046·P1
   is free.
+- **2026-10-30 — Unpaused (owner; architect, `lane/unp`).** [Plans README](README.md) § Owner decisions (2026-10-30).
+  **Phase 2 runs** (`lane/p46h`, harness slot 2, one slot as planned), with ruling 1's Baal Tentacle item. Its gate
+  (0045·P3's review, 2026-10-27) is open and 0050·P2 has started (owner, 2026-10-25), so nothing waits.

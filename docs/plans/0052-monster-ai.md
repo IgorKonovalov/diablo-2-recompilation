@@ -1,6 +1,6 @@
 # 0052 — Monster AI: the AI tick, target and skill choice, and the path request it makes (ADR-0014 phase 5)
 
-> **Status:** approved (owner, 2026-10-27; scoping answers in the [plans README](README.md) owner decisions: questions 1–7 as recommended, question 8 the whole AI table); **paused after P1.1** (owner ruling, 2026-10-27): P1.2 is next on unpause
+> **Status:** approved (owner, 2026-10-27; scoping answers in the [plans README](README.md) owner decisions: questions 1–7 as recommended, question 8 the whole AI table); paused after P1.1 (owner ruling, 2026-10-27); **unpaused 2026-10-30 (owner): P1.2 running** (`lane/r52b`, static); the path search plan and ADR-0022's plan being drafted (`lane/plans54`)
 > **Created:** 2026-10-25
 > **Owner skill(s):** archivist, reverser, spec-writer
 > **Related ADRs:** 0003-runtime-experiments, 0004-boundary-oracles-in-reproduction, 0011-harness-slots, 0013-forced-path-runs-cell-level, 0014-scope-game-simulation, 0015-emulated-reproduction, 0016-pipelined-simulation-phases, 0020-skills-phase-in-two-plans, 0021-observed-boundaries-in-emulation
@@ -124,7 +124,7 @@ Data first, then code, then spec. Phase numbers follow plans 0045 and 0050.
 
 #### The catalogue batches (P1.2 onward; set at the P1.1 review, owner question 8)
 
-**Status: next on unpause.** The project is paused after the P1.1 review (owner ruling); no batch is dispatched.
+**Status: running from 2026-10-30** (owner, unpause): P1.2, the first batch, on `lane/r52b` (static); the later batches follow one per static lane at a time. (Paused after the P1.1 review, 2026-10-27, owner ruling.)
 Every one of the 148 rows of `g_MonAiTable` and the 18 rows of `g_MonAiStateRows` (`0x0073D358`, ai/0001 § 3) is in
 exactly one batch, P1.1 included. Rows are grouped by the think functions' address ranges and families (ai/0001
 § 13), cut at about 18 rows; *tier* marks the Phase 2 tier AIs a batch holds. The order is the run order: the
@@ -452,3 +452,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   **Index:** the plans README row and the architect and static-lane run-order rows changed only where these rulings
   change them (the batch count, the path search plan and ADR-0022's plan deferred to the unpause). Review request
   closed.
+- **2026-10-30 — Unpaused (owner; architect, `lane/unp`).** [Plans README](README.md) § Owner decisions (2026-10-30).
+  **P1.2 runs** (`lane/r52b`, static lane, the first catalogue batch of § The catalogue batches); the later batches
+  follow in their order, one per static lane at a time. The path search plan and ADR-0022's plan are drafted now
+  (`lane/plans54`, architect). P2's gate is unchanged (0050·P3's review passed; its own P1.1 and tier reviews).

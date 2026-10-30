@@ -1,6 +1,6 @@
 # 0038 — Inferred-claims sweep: raising `[I]` to `[C]` in the reviewed specs
 
-> **Status:** approved (2026-10-16, by the owner, to run unattended)
+> **Status:** approved (2026-10-16, by the owner, to run unattended); unpaused 2026-10-30 (owner): H1c running (`lane/h1c`, slot 1), the H6g shortfalls' static read running (`lane/h6gs`)
 > **Created:** 2026-10-16
 > **Owner skill(s):** architect (Phase 0), reverser, spec-writer
 > **Related ADRs:** 0001-target-toolchain-evidence-sources, 0003-runtime-experiments, 0004-boundary-oracles-in-reproduction, 0008-two-client-harness, 0010-forced-path-runs, 0011-harness-slots, 0013-forced-path-runs-cell-level, 0014-scope-game-simulation
@@ -5851,3 +5851,14 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   Totals: no row class changed in the diff (`player-creation.md` untouched) and `main` has no later total, so static 567,
   harness 509, blocked 431, deferred 2, raised 17 = 1 526 stand. Fix: the run id added to seven [C] bullets of
   player/0001's H6g ledger (rows 3/30, 12, 16, 18, 22, 25, 28).
+- **2026-10-30 — Owner decisions: unpause, H6g's shortfalls to a static read (architect, `lane/unp`).** The project is
+  unpaused (owner, 2026-10-30; [plans README](README.md) § Owner decisions (2026-10-30)). **Running from today:** H1c
+  (`d2s-legacy`, `lane/h1c`, harness slot 1) and the H6g static read (`lane/h6gs`, static). **H6g's shortfalls** (rows 2
+  and 29, the Ancients' reward; rows 3 and 30 remainder, the corpse pickup): owner play is postponed, so the backlog
+  entry [`2026-10-27-reverser-architect-plan-0038-h6g-shortfalls-ancients-altar-and-corpse.md`](../backlog/2026-10-27-reverser-architect-plan-0038-h6g-shortfalls-ancients-altar-and-corpse.md)
+  is re-addressed `to: reverser` and routed to a **reverser static read now** (the Ancients' spawn, the altar or
+  object that starts the encounter and the reward's grant; the corpse pickup handler, its share and a Teleport route to
+  the corpse), with a routed next step per row (raised statically, a corrected harness session in the next free slot,
+  or the owner-play option, which stays open as a later choice). The entry stays open until that read's review.
+  Totals unchanged (1 526). **Queued:** the player/creation Phase 3 re-tag and hirelings rows 3/30/33, after H1c's
+  review.
