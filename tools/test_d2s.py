@@ -1398,6 +1398,41 @@ class LegacyTest(Scratch):
         self.refused(dict(save_version=87, stat_slots=16), "header fields")
         self.refused(dict(save_version=87, stats=dict(self.STATS, **{"16": 1})), "stats 0..15")
 
+    def test_corpse_key(self):
+        """backlog 2026-10-30 H1c: the "corpse" key writes one corpse ('JM' 1, 12 bytes, an item list) at 71 and 87."""
+        unk = "0102030405060708090a0b0c"
+        for ver in (71, 87):
+            b = self.build(dict(save_version=ver,
+                                items=[dict(code="cap", store="inventory", x=0, y=0)],
+                                corpse=dict(unk=unk, items=[dict(code="cap", equip="head"),
+                                                            dict(code="hp1", store="inventory", x=0, y=0)])))
+            f = self.legacy(b)
+            self.assertEqual(len(f["corpses"]), 1)
+            c = f["corpses"][0]
+            self.assertEqual((c["unk"].hex(), c["items"]["count"]), (unk, 2))
+            self.assertEqual([it["code"].strip() for it in c["items"]["items"]], ["cap", "hp1"])
+            e = f["items"]["items"][-1]["end"]
+            self.assertEqual((b[e:e + 4], b[e + 4:e + 16].hex()), (b"JM\1\0", unk))
+            self.assertEqual(b[e + 16:e + 20], b"JM\2\0")
+            self.assertEqual(f["items"]["count"], 1)
+        # default unk is zeros; an empty item list is one corpse with no items; a socketed item follows its parent
+        b = self.build(dict(save_version=71, corpse=dict()))
+        f = self.legacy(b)
+        self.assertEqual((f["corpses"][0]["unk"], f["corpses"][0]["items"]["count"]), (bytes(12), 0))
+        sock = [dict(code="cap", equip="head", sockets=1, filled=[dict(code="r01")])]
+        b = self.build(dict(save_version=71, corpse=dict(items=sock)))
+        its = self.legacy(b)["corpses"][0]["items"]["items"]
+        self.assertEqual((its[0].get("n_filled"), len(its), its[1].get("parent")), (1, 2, its[0]["off"]))
+        # no corpse key: the empty list, and no corpses in the read-back
+        self.assertEqual(self.legacy(self.build(dict(save_version=71)))["corpses"], [])
+        self.refused(dict(save_version=71, corpse=dict(unk="00")), "12 bytes")
+        self.refused(dict(save_version=71, corpse=dict(unk="zz")), "hex")
+        self.refused(dict(save_version=71, corpse=dict(bad=1)), "keys unk and items")
+        self.refused(dict(save_version=92, corpse=dict()), "71 or 87 only")
+        self.refused(dict(corpse=dict()), "71 or 87 only")
+        self.refused(dict(save_version=71, corpse=dict(items=[dict(code="cap", equip="head"),
+                                                              dict(code="cap", equip="head")])), "")
+
     def test_v71_layout(self):
         t = tables()
         classic = d2s.classic_codes(t)

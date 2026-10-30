@@ -164,6 +164,11 @@ fn:COMBAT_LengthImmunities@0x0057C140, run:2026-10-16-combat, tbl:States.txt:sta
   such a state (`wolf` 139, `bear` 140) delivers its melee hit directly, without the charged-skill finisher.
   (fn:UNIT_HasStateFlag@0x0063A7B0, fn:sub_0056C2D0_AttackDeliverMeleeOnly@0x0056C2D0, tbl:States.txt:meleeonly)
 
+- `[I]` **State row 22 `spiderlay`** is tested by row 26 `Arach` ([ai/0003](../findings/ai/0003-pool-b.md) § 2.10, plan 0052 P1.2 batch 2):
+  below `aip5` percent life, in melee range, the spider lays (`Skill1`, no target) only while `UNIT_HasState(U, 22)` is
+  false. States.txt row 22 is `spiderlay` (the flag-bit grid's 22 is a column, `rlblue`, a different index space).
+  This is the one reader the finding names. (fn:UNIT_HasState@0x00639DF0, tbl:States.txt:spiderlay)
+
 ## States by row (plan 0041 Phase 0)
 
 What each row carries and which data names it, for the state code plan 0041 Phase 1 reads. Fields are § Columns
