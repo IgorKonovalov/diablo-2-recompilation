@@ -668,7 +668,7 @@ Step notes:
   0x0056B32D, run:2026-10-27-sweep-d2s-load,
   [hirelings/0001 § Plan 0038 batch H1a](../../findings/hirelings/0001-hirelings.md#plan-0038-batch-h1a-run2026-10-27-sweep-d2s-load))
 - [C] **Saves older than version 92** go through `sub_00533C70_ReadMercOldSave`, in two forms told apart by the
-  version. A version-87 file's 0x12-byte record (then the mercenary's item list) gave its seed and Id to
+  version (the run loaded versions 87 and 71; versions 72–86 and 88–91 are the code's reading). A version-87 file's 0x12-byte record (then the mercenary's item list) gave its seed and Id to
   `MERC_Create` (seed 12345, Id 1, the name word 3414 = the Rogue's first name 3411 + 3), and the game's write-back
   held seed 12345, Id 1, name 3, alive, and the built item on the mercenary. A version-71 file's record holds only the
   seed and the name (8 bytes: `JM`, the seed, the name); they went to `MERC_Create` as (name 3, seed 12345, Id `0xFFFF`), and the

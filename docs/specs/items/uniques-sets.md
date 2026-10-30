@@ -118,7 +118,7 @@ Not read: `carry1`, `lvl req` (either table), `Sets.level` (not compiled) and It
 | `item.fileIndex` | i32 at struct:ItemData+0x28; −1 none | the chosen `UniqueItems` or `SetItems` row |
 | `ilvl` | i32 at struct:ItemData+0x2C; `ITEMS_GetItemLevel` raises it to 1 and writes it back | the resolver's item level ([items/tc § H](tc.md#h-item-pick-and-hand-off)) |
 | `itemVersion` | u16 at struct:ItemData+0x30, copied from `Game+0x78` | ≥ 100 in an expansion game, 1..99 in a classic game, never 0 on a drop |
-| `rec` | the 0x84-byte creation record, `struct:ItemCreateRec` | `+0x2C` restore flag (0 on drops), `+0x30` quality, `+0x40` row + 1 (0 none), `+0x80` flags (bit 0: `hellbovine` source) |
+| `rec` | the 0x84-byte creation record, `struct:ItemCreateRec` | `+0x2C` restore flag (0 on drops), `+0x30` quality, `+0x40` row + 1 (0 none; the row itself on the restore path, C2), `+0x80` flags (bit 0: `hellbovine` source) |
 | `game.gameType` | u8 at struct:Game+0x6A | 3 in single player, 2 in TCP/IP (logged, items/0001) |
 | `game.ladder` | at struct:Game+0x74 | 0 in the runs |
 | `game.uniqueMade` | 128 × u32 at struct:Game+0x1B24, bit `row` | cleared by fn:sub_00530BF0_GameCreate@0x00530BF0 |

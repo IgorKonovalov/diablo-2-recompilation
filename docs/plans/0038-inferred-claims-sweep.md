@@ -5988,3 +5988,46 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     reader), 6 (map rows whole), 7 (stale "not run" notes and open questions rewritten in all four specs), 8 (each raise
     stated at its strength) and 9 (anchors from each ledger line).
   - **Next:** architect review of `lane/s38p`. player/creation keeps rows 2/29 open for the corrected `anc` session.
+- **2026-10-30 — `lane/s38p` review (architect, Tier A, plan 0038 Phase 3 player/creation and the H1c re-tags): accept
+  with fixes (10).** Every raised `[C]` was checked against its ledger line (S3a, S3b, H1a, H1c, H6g, the h6gs static
+  read with its Tier B check and Tier A audit). The H6g and H1c statements, checked at Tier B only, were re-read under
+  the promotion re-check, and their anchors were read in the pinned image with objdump: `0x0057F883` (`UnitSetStat`, stat 13),
+  `0x0057F8B5`/`0x0057FBA1` (the owner id written and read), `0x0057FBB2`, `0x0057FBBB`, `0x00647256` (`cmp [unit], 1`),
+  `0x0057E3B9`/`0x0057E3C1`, `0x00611847`/`0x00611854`, `0x0056A172` (`cmp class, 7`), `0x00553185`, `0x0058C5CF`,
+  `0x0058C649` (`jle`), `0x0058C673` (`jb`), `0x00533D4F` (`cmp 0x59; ja`). The 284 `fn:`/`data:` anchors of the six touched
+  documents all resolve. Counts are from the gate's reader after the fixes: **player/creation C 121, I 41, L 1** (the
+  two new inline `[I]`); hirelings C 141 / I 43 / L 7, save/d2s C 244 / I 68 / L 3, uniques-sets C 101 / I 38 / L 4
+  as filed. No row changed class, so the totals stand (1 526).
+  - **Rulings.** (1) **Rows 3/30's split stands**: the loss and the corpse share below `0x100000` are `[C]` on the run,
+    the field correspondence on the h6gs writer/reader pair, and the killer-type skip, the share above `0x100000` and
+    the pickup's run stay `[I]`. (2) **F2: the column-0 clamp stays `[I]`.** S3b's raise covers the cell for classes 0..6.
+    The clamp is the same unreached branch as row 20's (d-none: no class-7 player exists, H1a ruling 2). The second code
+    path's "same clamp" is a second reading of one pattern, not a run of the branch. S3b's finding sentence still has
+    the clamp inside its `[C]`; it is routed to the reverser for narrowing. (3) **Row 1 as two Entry points rows**:
+    accepted. (4) **save/d2s D3b's legacy-reader `[C]`**: accepted. It imports a statement of save/0001 § H1c that the
+    run separates and that was checked at Tier B. No ledger row is needed, because the lane/rlg readings were never a
+    spec `[I]` row. (5) **The wiki rewrites** are accepted, with the saves fix below.
+  - **Fixes:**
+    - Overclaim 4: player/creation J3's pseudocode under its raised header had a death at level 1 and the `max(0, …)`
+      floor that no case met; J5's had the `statpts` = 0 refusal and the mana clamp. Each now has an inline `[I]` line.
+      hirelings § H's "saves older than version 92" `[C]` is scoped to the versions run (87 and 71). save/d2s J's version < 93
+      bound: version 93 itself was never loaded, now said in the existing `[I]` sentence.
+    - Under-claim 1: J3's skip note called the stored kept amount "also as read". The corpse shares show it is the kept
+      one (750 from 1 000), so only the order before the stat write stays `[I]`.
+    - Miscount 1: "four deaths" in J3 and the Entry points row. The kept logs hold five deaths (four cases, the
+      Nightmare clamp case twice), and the spec itself said "all five deaths" two notes later.
+    - Omission 1: the disagreements with player/0001 were left unrouted (the H6g bullet's "four deaths", S3b row 21's
+      clamp inside a `[C]`, and the stale *Open questions* on the death loss, the cap, class 7 and `+0x3D4`). Filed
+      [`2026-10-30-architect-reverser-s38p-review-player-0001-counts-and-s3b-clamp.md`](../backlog/2026-10-30-architect-reverser-s38p-review-player-0001-counts-and-s3b-clamp.md).
+    - Stale cross-reference 2: wiki/saves still called the corpse's 75 % "read from the code", although J3 raises the
+      share at creation. quests/progression's word-39 bullets still said the grant is capped "between the current and the next level" and that the altar
+      "instead" closes the portals. Both bullets now give `T(L + 1) − T(L)` and the audit's close-then-send with the step-4
+      exit; their tags and the spec's `updated` are unchanged. This one is the reviewer's own omission: the h6gs audit
+      routed the cut to player/creation and wiki/characters only.
+    - Other 1: items/uniques-sets' runtime-state row read `+0x40` only as "row + 1"; it now names the restore path's
+      row itself (C2).
+  - **Bookkeeping:** the research-map row of player/creation now reads I 41. The review request is closed. The
+    lane's ledger row has its verdict and fixes, and an `architect-review` row is added. A rule example was added to
+    spec-writer review-fixes rules 2 and 5 and to architect rule 3.
+  - **Next:** merge `lane/s38p`. player/creation rows 2/29 wait for the corrected `anc` session (backlog). The pickup
+    remainder of rows 3/30 waits for a death-and-pickup session. The (k) S1b leftovers of the H1a entry stay open.

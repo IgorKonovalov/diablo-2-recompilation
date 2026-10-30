@@ -272,9 +272,9 @@ Each list starts with `JM` and a count ([save/d2s § H](../specs/save/d2s.md#h-i
   test. The rest of this bullet is read from the code. With more than one corpse, the writer keeps the
   one whose items (gold aside) are worth the most, ties going to the later one. The corpse record's 12 bytes are not
   read back on load, and its first value is whatever the writer's stack held, so a reimplementation may write
-  anything there. In play a corpse carries three quarters of the experience its death cost, returned to its owner on
-  pickup ([player/creation § J](../specs/player/creation.md#j-other-level-and-experience-changes), read from the
-  code). A saved corpse does not keep it: the reader re-creates the corpse with no experience on it, so picking it up
+  anything there. In play a corpse carries three quarters of the experience its death cost (confirmed on test deaths
+  in Nightmare and Hell), and it is returned to its owner on pickup (read from the code: no pickup was run;
+  [player/creation § J](../specs/player/creation.md#j-other-level-and-experience-changes)). A saved corpse does not keep it: the reader re-creates the corpse with no experience on it, so picking it up
   after a load returns nothing (read from the code).
 - In an expansion game, `jf` carries the mercenary's items (confirmed with a hired mercenary), and `kf` carries one
   byte and, when the player has an Iron Golem holding an item, that item (read from the code).

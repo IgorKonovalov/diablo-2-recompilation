@@ -1150,8 +1150,9 @@ J2. ITEMS_ReadProperty:                                          [C] framing, sc
   override would shift every later field. (fn:ITEMS_ReadFull@0x0062CBE0, fn:ITEMS_ReadProperty@0x0062AC80,
   run:2026-10-27-sweep-d2s-legacy, [save/0001 § Plan 0038 batch H1c](../../findings/save/0001-d2s-io.md#plan-0038-batch-h1c-run2026-10-27-sweep-d2s-legacy))
 - J. [I] The clamp at the bounds (the only stored value at a bound is a 1-bit stat 153 = 1, which tests
-  nothing) rests on the code read, and so does a version < 93 set item reading a `Sets` id (the built set item's row
-  is 0 in both tables). (0x00630E3B–0x00631245, 0x0062D9AE–0x0062E1A9)
+  nothing) rests on the code read, and so do a version < 93 set item reading a `Sets` id (the built set item's row
+  is 0 in both tables) and the bound's place at 93: version 92 is the one version below it that a run loaded, and no
+  version-93 save was built, so the widths of version 93 itself are the code's reading. (0x00630E3B–0x00631245, 0x0062D9AE–0x0062E1A9)
 
 Reproduce the bit accounting with
 

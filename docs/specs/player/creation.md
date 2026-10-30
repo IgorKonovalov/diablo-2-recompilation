@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, data/excel, items/uniques-sets, items/properties, items/affixes, monsters/stats, save/d2s]
 consumed_by: [save/d2s, combat/to-hit, stats/aggregate]
-tags: {C: 121, I: 39, L: 1}
+tags: {C: 121, I: 41, L: 1}
 updated: 2026-10-30
 ---
 
@@ -53,7 +53,7 @@ flowchart TD
 | A monster is killed: experience to the credited player | fn:XP_OnMonsterKill@0x0057E990 → fn:XP_PartyShare@0x0057E6C0, run:2026-10-16-player (32 kills, one player) | [C] |
 | Any experience change that changes the level | fn:PLAYER_AddExperience@0x0057E510 → fn:PLAYER_LevelUp@0x00570880, run:2026-10-16-player (20 level-ups) | [C] |
 | The Ancients' reward (quest a5q5, Rite of Passage): a capped grant of 1.4M / 20M / 40M experience | fn:sub_0058C9A0_A5Q5_AncientDeath@0x0058C9A0 → fn:sub_0058C5C0_ExpGrantCapped@0x0058C5C0 | [I] |
-| Death to a monster with no owner: the loss, then the corpse's share written at the corpse's creation | fn:sub_00535AB0_PlayerDeathExpLossGate@0x00535AB0 → fn:PLAYER_DeathExpLoss@0x005359F0; fn:PLAYER_CorpseCreate@0x0057F700, run:2026-10-27-sweep-player (the loss reproduced on four deaths over three difficulties) | [C] |
+| Death to a monster with no owner: the loss, then the corpse's share written at the corpse's creation | fn:sub_00535AB0_PlayerDeathExpLossGate@0x00535AB0 → fn:PLAYER_DeathExpLoss@0x005359F0; fn:PLAYER_CorpseCreate@0x0057F700, run:2026-10-27-sweep-player (the loss reproduced on five deaths over three difficulties) | [C] |
 | The gate's caller, `sub_00580EC0_PlayerDeath`; no loss when the killer is a player or a player's monster; the share returns on the owner's pickup of the corpse | fn:sub_00580EC0_PlayerDeath@0x00580EC0, fn:sub_00535AB0_PlayerDeathExpLossGate@0x00535AB0, fn:PLAYER_CorpsePickup@0x0057FB70 (one caller, `sub_00548B00_UnitInteract` 0x00548E56) | [I] |
 | An attribute point is spent | fn:PLAYER_SpendStatPoint@0x00570D60, run:2026-10-27-sweep-player (four spends) | [C] |
 
@@ -593,6 +593,7 @@ J3. PLAYER_DeathExpLoss (character level lvl > 1):                       [C] (fn
       if loss ≠ 0:
         new ← exp − loss;  kept ← loss
         if new ≤ Exp[lvl − 1]: new ← Exp[lvl − 1] + 1;  kept ← max(0, exp − Exp[lvl − 1])
+      ; not met: a death at lvl 1, the floor at 0 (every kept amount was positive)   [I] (fn:PLAYER_DeathExpLoss@0x005359F0)
         client.deathLoss ← kept                                          ; client +0x508, before the stat write
         exp ← new
       ; the level never drops
@@ -606,6 +607,7 @@ J5. PLAYER_SpendStatPoint(unit, which): needs statpts ≠ 0; statpts −= 1; [C]
       strength or dexterity + 1
       energy + 1:   maxmana += ManaPerMagic × 64;  mana likewise, clamped to maxmana
       vitality + 1: maxhp += LifePerVitality × 64;  maxstamina += StaminaPerVitality × 64;  current values likewise
+      ; not met: the refusal at statpts = 0, the clamp of mana to maxmana (J5 note)   [I] (fn:PLAYER_SpendEnergy@0x00570A80)
 ```
 
 Step notes:
@@ -656,7 +658,8 @@ Step notes:
   (fn:sub_0058C9A0_A5Q5_AncientDeath@0x0058C9A0, fn:sub_0058C7E0_A5Q5_SummitExpGrant@0x0058C7E0,
   fn:sub_0058C6D0_A5Q5_PartyExpGrant@0x0058C6D0, fn:sub_0058CE30_A5Q5_Init@0x0058CE30, fn:QUESTRECORD_GetState@0x0065C310;
   [player/0001 § Plan 0039 batch P1c](../../findings/player/0001-creation.md#plan-0039-batch-p1c-2026-10-17))
-- J3. **The loss, reproduced.** Four deaths over three difficulties, each killed by a monster with no owner:
+- J3. **The loss, reproduced.** Five deaths over three difficulties (four cases: the Nightmare clamp case ran twice),
+  each killed by a monster with no owner:
   Normal (penalty 0): loss 0, corpse share 0. Nightmare (penalty 5, span 1 964 461): the loss 98 223 would take the
   experience below `Exp[39]`, so the experience became `Exp[39] + 1` and the amount kept is the clamp's, 1 000
   (`exp − Exp[39]`), not `loss`. Hell (penalty 10, span 4 650 593): loss 465 059, no clamp. A second Nightmare death at
@@ -664,8 +667,9 @@ Step notes:
   fn:CLIENT_SetDeathExpLoss@0x005391E0, tbl:DifficultyLevels.txt:DeathExpPenalty, run:2026-10-27-sweep-player)
 - J3. **When the loss is skipped.** `PlayerDeath` calls the gate with the killer; the gate skips the loss when the
   killer is a player (type 0) or a monster whose owner is a player, and otherwise calls `PLAYER_DeathExpLoss`. The run's
-  killers were all monsters with no owner, so the skip is read from the code. The kept amount is stored at client
-  `+0x508` before the stat write, also as read. [I] (0x00535A61–0x00535A8A, fn:sub_00535AB0_PlayerDeathExpLossGate@0x00535AB0,
+  killers were all monsters with no owner, so the skip is read from the code. That the stored amount is the kept one
+  shows in the corpse shares (the 75 % note: 750 from the kept 1 000, not from the loss 98 223); the order, client
+  `+0x508` written before the stat write, is read from the code. [I] (0x00535A61–0x00535A8A, fn:sub_00535AB0_PlayerDeathExpLossGate@0x00535AB0,
   fn:sub_0058F0D0_MonsterOwner@0x0058F0D0, fn:CLIENT_SetDeathExpLoss@0x005391E0)
 - J3. **75 % goes on the corpse.** When the death mode ends, `PLAYER_CorpseCreate` makes the corpse unit and writes its
   stat 13 (experience) from `v` = the stored amount, `v·75/100` when `v` ≤ `0x100000` (signed, truncating): shares 750
