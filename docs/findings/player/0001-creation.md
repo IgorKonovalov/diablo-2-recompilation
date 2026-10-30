@@ -112,7 +112,7 @@ branches § 11 and the summary list as not exercised stay `[I]` in the text.
 | `0x00611860` | `EXP_LevelFromExp` | count of thresholds ≤ exp, capped at MaxLvl | C |
 | `0x00613E60` | `EXP_GetRatio` | `ExpRatio` of level L; L ≤ 0 → the MaxLvl row's; L > `record[0].perClass[0]` → 0 | C |
 | `0x00569F80` | `sub_00569F80_NewCharFromStub` | the new-character path from a stub | I |
-| `0x00532590` | `sub_00532590_NewCharLegacy` | the same steps, reached from the version < 92 reader and `sub_005345A0_PlayerLoad` | I |
+| `0x00532590` | `sub_00532590_NewCharLegacy` | the same steps, reached from the version < 92 reader (run:2026-10-27-sweep-d2s-legacy; the call from `sub_005345A0_PlayerLoad` stays `[I]`, not met) | C |
 | `0x00569F20` | `sub_00569F20_PlayerUnitInit` | client link, name, game-seed step, mode 1, player data `+0x50..+0x5C` = 0 | C |
 | `0x00532520` | `sub_00532520_PlayerUnitInitLegacy` | the same, for `0x00532590` | I |
 | `0x005348C0` | `sub_005348C0_PlayerUnitAlloc` | `SUnitCreate`'s player branch: inventory, skill list, stat list | I |
@@ -894,7 +894,28 @@ saves swapped in after the character screen read its list) and the counts of `wo
   `EXP_GetThreshold` callers moves row 20 back to (b). (fn:EXP_GetThreshold@0x00611800)
 - **Row 1** (the version < 92 reader reaches the same steps through `sub_00532590_NewCharLegacy`) **shortfall.** No
   save in the legacy layout was built; the one legacy load (a version-96 body labelled 91) was refused (14) by
-  `sub_00534020_ReadSaveLegacy`.
+  `sub_00534020_ReadSaveLegacy`. *(Plan 0038 batch H1c: `leg87new` loaded; row 1 raised in part,
+  [§ Plan 0038 batch H1c](#plan-0038-batch-h1c-run2026-10-27-sweep-d2s-legacy).)*
+
+## Plan 0038 batch H1c (run:2026-10-27-sweep-d2s-legacy)
+
+Harness batch H1c of [plan 0038](../../plans/0038-inferred-claims-sweep.md), row 1 of
+[inventory player-creation](../../plans/0038-inventory/player-creation.md) (H1a's shortfall). Run record: [save/experiments](../save/experiments.md#run2026-10-27-sweep-d2s-legacy);
+counts from its `check/sweep-h1c-check.txt` (272 comparisons over 7 cases, 0 failing). The load is of a tool-built save
+(`leg87new`: version 87, header status bit 0 set, the rest of the file a full character; ADR-0013 § Neutral).
+
+- **Row 1** (the version < 92 reader reaches the same steps through `sub_00532590_NewCharLegacy`) **raised in part.**
+  [C] The legacy reader (`LEG` version 87, 718 bytes) called its header reader once, which returned 0 with the new-character
+  flag, and no other section: the log has no `SEC` line after `header`. `sub_00532590_NewCharLegacy` was then called
+  once (`NCL`) and returned 0 (`NCLR`), the reader returned 0 (`LEGR`), `PlayerLoad` 0 (`PLD`). The character was built
+  fresh, not from the file: seven items were created (`B13S` seven times: 4 `hp1` in the belt, `tsc`, `isc` in the
+  inventory, `sst` on the right hand), and the write-back held level 1, strength/energy/dexterity/vitality 10/35/25/10,
+  no skill, the status word `0x20` (the file's `0x21` with bit 0 cleared), all 16 hotkeys empty, while the build held level 30,
+  60/60/25/100, one point in six skills and two items. So the stats, skills and items of the file are not read when
+  the header's bit 0 is set. [I] "The same steps" as the `PlayerLoad` path: the H1a `stubok` stub (class 4) wrote four
+  `hp1`, `tsc`, `isc` and its class gear by the other path, the same structure, but `NCL` was not logged there and the
+  caller at 0x00534607 (`sub_005345A0_PlayerLoad`) was not met, so that path's equality with `NewCharLegacy` is the static reading
+  only. (fn:sub_00532590_NewCharLegacy@0x00532590, fn:sub_00534020_ReadSaveLegacy@0x00534020, 0x00534098, run:2026-10-27-sweep-d2s-legacy)
 
 ## Plan 0038 batch H3b (run:2026-10-27-sweep-data-load)
 

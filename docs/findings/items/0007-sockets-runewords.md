@@ -1111,6 +1111,7 @@ reproduces run:2026-10-15-sockets (351 inserts, 357 client verdicts, 0 failed; `
   cap left the inventory (the end screenshot) and no `ItemCopy` call was logged between the packet and the personalize,
   so on this path `NPC_SellItem` takes the branch at 0x00579736 that skips its copy (0x00579747): the sale is not a
   copier case `[I]`.
+  *Plan 0038 batch H1c: the first site (0x005311B5) ran twice and the second (0x005313F0) did not, [§ Plan 0038 batch H1c](#plan-0038-batch-h1c-run2026-10-27-sweep-d2s-legacy).*
   *`lane/h6b` review:* the two version-71 sites (0x005311B5, 0x005313F0) are reachable now: `lane/a72`'s builder writes
   version-71 saves (`leg71*`, on `main` since `a30c7245` and merged into this lane before the run). The piece (a
   `leg71` build holding a socketed item with a child, loaded under the `INS` lines) is routed to H1c; the row stays
@@ -1259,6 +1260,28 @@ timers and the name bullet get dated notes pointing here.
   and what the copier's own unit as the player argument does in the insert's player branches (`sub_0055BF50`, the
   update queue at 0x00562883–0x0056289B; not followed).
 - `0x00568770`, the other caller of `0x00563350`: what it copies (unfollowed).
+
+## Plan 0038 batch H1c (run:2026-10-27-sweep-d2s-legacy)
+
+Harness batch H1c of [plan 0038](../../plans/0038-inferred-claims-sweep.md), the piece of sock 1
+([inventory](../../plans/0038-inventory/items-sockets-runewords.md); the row stays counted in H6b) that the `lane/h6b`
+review routed here: the version-71 list reader's inserts. Run record: [save/experiments](../save/experiments.md#run2026-10-27-sweep-d2s-legacy). The load is of `leg71sock`, a
+tool-built version-71 save (ADR-0013 § Neutral): two caps, each flagged socketed with one `gsv` child record after it.
+
+- **sock 1, the version-71 list reader's first insert site (0x005311B5)** **raised.** [C] `ITEMS_InsertSocket` was
+  called twice from the return address 0x005311BA (`INS`: child unit 2 and parent unit 1, then child 4 and parent 3),
+  both returned 1 (`INSR`), and the write-back held each `gsv` at location 6 straight after its cap (cap, gsv, cap, gsv;
+  the caps with one child each). The call sits in `sub_00531040_OldItemPlace` (the save's own list, argument 0), which
+  `sub_00533350_ItemListReadV71` called four times (`OPL`: from 0x0053312D for each cap, from 0x005331A7 for each
+  socketed record; all returned 0). (fn:ITEMS_InsertSocket@0x00562660, fn:sub_00531040_OldItemPlace@0x00531040,
+  0x005311B5, 0x005311BA, run:2026-10-27-sweep-d2s-legacy)
+- **The second site (0x005313F0, `sub_00531390_OldItemPlaceCorpse`)** **not reached; stays `[I]`.** The builder writes no
+  corpse, so the corpse list was empty and `sub_00531390_OldItemPlaceCorpse` was not called (no `OPL` line from it).
+  A corpse with a socketed item needs a builder key for the 12 unread bytes and a corpse list; filed with the review
+  request.
+- **Observation, no claim:** the write-back held two sockets (`sockets` 2) on each cap where the recipe said 1 and
+  the version-71 record carries only the child count (`+0x01`) and the socketed flag, no socket count; where the 2
+  comes from was not followed.
 
 ## Data touched
 

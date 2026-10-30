@@ -5920,3 +5920,28 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
       branch at 0x0058D36D, outside its scope limit), the stale quests/0001 sentence (another finding, outside its
       scope), the step-0 omission, and the unhomed routes (rule 11 is a reverser rule it did run, but the closure was
       its own). None is reject-grade: no `[C]` rests on them and rows 2/29 stay open. Totals unchanged (1 526).
+- **2026-10-30 — H1c (`d2s-legacy`) filed, review requested (reverser, `lane/h1c`, harness slot 1, from `main`
+  `c0ee3e05`).** Run id run:2026-10-27-sweep-d2s-legacy
+  ([save/experiments](../findings/save/experiments.md#run2026-10-27-sweep-d2s-legacy)); slot 1 stopped, its saves directory
+  restored (no aside left); no game, driver or gdb of the lane remains. Seven sessions (seeds 27301–27307), each a
+  `leg*` build loaded, *Save and Exit*, the version-96 write-back kept and compared with the build by
+  `tools/sweep_h1c.py check` (272 comparisons, 0 failing), under the `lane/a72` review's ruling 3 (a)–(e).
+  - **Ledger (6): raised 3 (hirelings 3, items-uniques-sets 21, save-d2s 126), raised in part 3 (hirelings 30 and 33,
+    player-creation 1), open 0.** Remainders: the act dependence of the Id `0xFFFF` row, the `<= 89` experience cutoff
+    (no 88..91 build), the `PlayerLoad` path to `NewCharLegacy`. Sock 1's piece: the version-71 insert at 0x005311B5
+    ran twice, 0x005313F0 (corpse list) did not (no corpse in the builder; archivist entry
+    [h1c-v71-corpse-list-builder-key](../backlog/2026-10-30-reverser-archivist-h1c-v71-corpse-list-builder-key.md)).
+  - **Added:** recipes `leg71sock` and `leg71act2` (`RECIPE_BASES` entries), `tools/gdb/d2s-h1c.gdb`/`.py`,
+    `tools/h1c_sessions.py`, `tools/sweep_h1c.py`. The first logger revision's duplicate return lines (stale one-shot
+    breakpoints) are kept as development logs in `dev1/`.
+  - **Totals:** no row changed class: static 567, harness 509, blocked 431, deferred 2, raised 17 = 1 526 stand
+    (inventory § 2.6 H1c block).
+  - **Symbols:** 8 raised to `[C]` (`sub_00534020_ReadSaveLegacy`, `sub_00532690_ReadHeaderLegacy`,
+    `sub_00532DA0_ReadStatsLegacy`, `sub_00532E90_ReadSkillsLegacy`, `sub_00533F70_ReadHotkeysLegacy`,
+    `sub_00533C70_ReadMercOldSave`, `sub_00532590_NewCharLegacy`, `sub_00533350_ItemListReadV71`); the Functions-table rows
+    moved. `sub_00533BF0_MercExpFromOldSave` stays `[I]` (its arithmetic is not modelled).
+  - **For the spec-writer, after the review:** re-tag hirelings § H, player/creation's entry points, items/uniques-sets §
+    C's restore path and save/d2s § D's legacy statements (the stale "not run-checked" bullet).
+  - **Review-fixes pass:** rules 1 (the act reading kept `[I]`), 2 (counts from `check/sweep-h1c-check.txt`), 4 (the
+    version-0 half and the cutoff named as unseparated), 8 (rows 30, 33 and player 1 headed "in part"), 10 (the Id 1 of
+    both acts does not separate) and 14 (8 symbols) checked.

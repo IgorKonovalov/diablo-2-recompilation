@@ -417,6 +417,8 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-10-30 | lane/a55 check | 0055 P0 | architect-check | 54 060 | 9 | 3 | — (Tier B check, no harness) | accept with fixes | 1: omission 1 (337 stamped logs vs the 331 corpus logs unexplained in inventory and plan entry) |
 | 2026-10-30 | lane/a54 | 0052 backlog link + 0054 P0 | archivist | 122 746 | 47 | 8 | — (no Ghidra, no harness) | accept (Tier B check) | 0 |
 | 2026-10-30 | lane/a54 check | 0054 P0 | architect-check | 70 642 | 20 | 2 | — (Tier B check, no harness) | accept | — |
+| 2026-10-30 | lane/h1c | 0038 H1c | reverser-harness | 274 025 | 101 | 52 | slot 1 (7 kept sessions), no Ghidra; Sonnet | accept with fixes (Tier B check) | 1: overclaim 1 |
+| 2026-10-30 | lane/h1c check | 0038 H1c | architect-check | 75 916 | 12 | 2 | — (Tier B check, no harness) | accept with fixes | 1: overclaim 1 (NewCharLegacy symbol row raised to C with the unmet PlayerLoad caller half in its description; marked [I]) |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not
