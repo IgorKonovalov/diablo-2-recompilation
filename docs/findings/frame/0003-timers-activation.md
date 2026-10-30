@@ -35,8 +35,8 @@ that directory; `commands.txt` gives the command of each file). Names below are 
 - [C] **Five emulated maps** (1 300 cases, 0 mismatches, no traced access outside the declared image; at each observed
   boundary the boundary, its arguments and its call site asserted): `QUESTS_TimersRun`'s walk (head first, the
   unsigned `due < tick`, the unlink of a timer whose callback returns 1, the re-arm `due = tick + period`, the wrap of
-  every `due` at tick `0xFFFFFFFF`), `RoomsDeactivate`'s idle count and the first room it would release (acts 0..4,
-  each act's list from its head, `count > 10`), the 1 500-frame sweep (the period, acts 0..4, an act's expired items
+  every `due` at tick `0xFFFFFFFF`), `RoomsDeactivate`'s idle count up to the first room whose count passes 10 (acts 0..4,
+  each act's list from its head; the case ends at `RoomReleaseAllowed`), the 1 500-frame sweep (the period, acts 0..4, an act's expired items
   `expiry ≤ frame` before its inactive records `expiry < frame`), the kind-6 handlers of players and monsters (the
   unsigned `frame ≤ Game+0xA8` test, the free or the re-queue at the record's frame) and `NewRoomsUpdate`'s act walk
   (acts 0..4 whose `+0x54` is set, the room list from its head, the flag cleared after the walk). Each half has a

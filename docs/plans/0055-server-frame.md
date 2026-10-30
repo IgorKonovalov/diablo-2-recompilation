@@ -353,3 +353,28 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   half, not per family. **P1.3: go** (static lane B; one Ghidra), with question 2 above and the re-estimate added to its
   done-when. ADR-0022's early gate: plan 0052 has landed only P1.2 batch 3 since P1.1 (`49a5dec7`), which P1.2 does not
   use; no re-ruling.
+- **2026-10-30 — P1.3 the timers and the activation order (reverser, static, `lane/r55c`; review requested, closes
+  Phase 1).** [frame/0003](../findings/frame/0003-timers-activation.md), [frame/experiments](../findings/frame/experiments.md)
+  (run:2026-10-30-frame-emu-3), 20 new `re/symbols.csv` rows (all functions, all `I`, subsystem `sim/frame`), new tool
+  `tools/frame_timers.py` (`adds`, `cbscan`, the five families' cases, check and manifest), `tools/frame_volume.py
+  estimate13` (its `estimate` unchanged); static outputs under `workspace/logs/r55c/static/` (manifest `abfc7c4d…`, 80
+  lines), emulation under `workspace/logs/r55c/emu/` (manifest `269cde48…`, 21 lines), development runs under
+  `workspace/logs/r55c/dev/` (five manifests, each passing from `dev/`). Totals taken after merging `main` `11102c87`
+  (gate green). Found: the four periodic calls draw nothing of their own; the quest timers run **newest registered
+  first** (a front push), 26 registrations of 21 callbacks, 6 of which draw through quest content (spawns, the
+  Tristram portal's level point, the Dark Wanderer's quest-seed step); the unload test can **build** a vis level
+  (`DRLG_LevelCreate`, on that level's seed); the 1 500-frame sweep frees items `expiry ≤ frame` before records
+  `expiry < frame`, act by act. An act's room list is **newest first** (`DUNGEON_RoomCreate`'s head push, one caller),
+  so a frame's new rooms are populated in reverse creation order, acts 0..4, the next frame; a room created during
+  the walk itself waits for its act's next walk (a reading; open question 2). `ClientsRoomSync` draws on per-room and
+  per-level seeds only, by direct reach. The activation-order record (frame/0003 § 5): per frame each client's new
+  room at pass 5, every on-demand activation and the pins; derivable from those with the near lists, but the room of
+  each player needs movement, so without a movement model it is a logged input (the chain spec's `[L]` answered with
+  that limit). Added scope: player kind 11 and kind 6 are **draw-free** by direct reach (kind 6's `Unit+0xA4` is the
+  overhead chat record), so both are modelled events, not boundary oracles. Five emulated maps `[C]` (1 300 cases, 0
+  mismatches, every boundary asserted with its call site; separating counts per half in frame/0003 § 8). The window log
+  design is closed (`TM`, `TQ`, `RU0`/`RU1`, `RC`, `RR`, and the queue line moved to `EventQueueAt`'s entry, which
+  frame/0002 § 8's site missed for `UnitTeleport`); **the re-estimate**: 15.9–50.9 lines per frame at the mid queue
+  rates (14.9–57.2 low to high), 39 653–127 231 for ten windows, a three-window session 0.67–2.15 plan-0045 sessions;
+  Q2's 177 860 not met at any rate; 32.9–67.9 breakpoint stops per frame. Dev-run note: an `EmuBoundary` memory-spec
+  `bytes` directive of 0x1000 bytes or more is not re-applied per case (frame/0003 *Dead ends*).
