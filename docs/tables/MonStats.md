@@ -937,8 +937,9 @@ unless a finding is cited.
     searcher is Radament (MonStats row 229), which takes any undead through `MONSTATS_IsUndead`.
     (fn:sub_005F2A00_AiGreaterMummyCb)
   - `Velocity` (`+0x32`) and `Run` (`+0x34`): `sub_005F4A70_AiVampire`, row 28 ([§ 2.12](../findings/ai/0003-pool-b.md#212-row-28-vampire-0x005f4a70)): the
-    flee override parameter `clamp(Run * 100 / Velocity - 100, 0, 120)` for the step away while fleeing (state 2). The
-    guard "only when `Velocity` > 0" is the reverser's request wording, not in § 2.12 (routed, backlog 2026-10-30).
+    flee override parameter `p = Velocity > 0 ? clamp(Run * 100 / Velocity - 100, 0, 120) : 0` for the step away while fleeing
+    (state 2); the code tests `Velocity` as a signed 16-bit value (`test cx, cx; jle`, 0x005F4BC0-0x005F4BC9) and passes 0
+    otherwise, and the division is a signed `idiv` (truncating).
     (fn:sub_005F4A70_AiVampire@0x005F4A70)
   - `Skill4` (`+0x176`) and `Sk4mode` (`+0x183`): the vampire's Fireball and VampireMissile pair, drawn 50/50 with
     `Skill1`/`Sk1mode`.
