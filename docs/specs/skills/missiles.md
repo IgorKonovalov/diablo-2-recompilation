@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, skills/dispatch, combat/overview, combat/to-hit, combat/delivery, drlg/collision, data/calc]
 consumed_by: [combat/overview, combat/delivery, drlg/collision, items/economy, rng/seeds]
-tags: {C: 46, I: 95, L: 7}
-updated: 2026-10-27
+tags: {C: 48, I: 95, L: 7}
+updated: 2026-10-30
 ---
 
 # Missiles: creation, the seed, the per-frame step, collision, the hit and the end of life
@@ -18,7 +18,7 @@ setup), the damage it carries from its creation, its own seed and the draws its 
 its step every frame (the do function, motion, the range countdown, the collision test against the room grid and the
 units), the hit (the filters, pierce, the to-hit roll, the hit and damage functions, the packet it builds on its own
 seed), sub-missiles and the sites that re-seed a missile, and the end of its life. What each numbered missile do, hit
-and damage function does outside the tier-A rows is plan 0046's catalogue. Overview: [skills](README.md); the skill
+and damage function does outside the tier-A rows is plan 0046's [catalogue](catalogue.md). Overview: [skills](README.md); the skill
 side is [skills/dispatch](dispatch.md).
 
 ```mermaid
@@ -81,7 +81,7 @@ Column semantics are the table docs': [Missiles](../../tables/Missiles.md),
 | Input | Kind | Tag |
 |---|---|---|
 | the path planner's points (`PathPlan`, path types 7 and 10) and the cells a step crosses | value oracles | [I] (fn:sub_00649970_PathPlan@0x00649970, fn:sub_00648F40_PathStepCells@0x00648F40) |
-| the numbered do, hit and damage functions outside § G's table | value oracles: plan 0046 | [I] (data:g_MissileSrvDoFuncs@0x0073C768) |
+| the numbered do, hit and damage functions outside § G's table | value oracles of the checker; specified in the [catalogue](catalogue.md) §§ C–F | [I] (data:g_MissileSrvDoFuncs@0x0073C768) |
 | the result of a hit that does not miss | logged as the hit's return in run:2026-10-25-skills | [I] (fn:MISSILE_HitUnit@0x005ADF10) |
 | the room collision word | [drlg/collision](../drlg/collision.md) | [I] (fn:sub_00648EB0_PathCellCollision@0x00648EB0) |
 
@@ -559,7 +559,7 @@ re-seed the missile's draws are a function of the creator's value, not of the ga
 | callback `0x005D4680` (ring 143) | the new missile | the argument | inline steps for a zig-zag path | [I] (fn:sub_005D4680_MissCbReseedZigzag@0x005D4680) |
 | callback `0x005C9290` (Firestorm and others) | the new missile | `Init(path +0x10 (u16) + the argument)` | its path calls step the new seed | [C] (run:2026-10-25-skills: 450 of 450) |
 | callback `0x005CD110` | the new missile | path `+0x10` + the argument | 1 inline | [I] (fn:sub_005CD110_MissCbReseedRoll@0x005CD110) |
-| callback `0x005AC040` | the new missile | path `+0x10` | none | [I] (fn:sub_005AC040_MissCbReseedPathX@0x005AC040) |
+| callback `0x005AC040` (catalogue mhit 38, 45) | the new missile | `Init(path +0x10)` | its path calls step the new seed: 10 steps | [C] (run:2026-10-30-skills-catalogue: 36 of 36) |
 | `0x005A9820` (do 8, 10, 17, 25) | the parent missile | `SubX + elapsed` | 2 `RangeB` | [I] (0x005A9820) |
 | hit 58 (`0x005ACDF0`, row 654) | the missile | `SubX` | 2 `Range` | [C] up to its creation (ADR-0021, run:2026-10-20-cat-emu-9d) |
 | do 28 (`0x005AFB80`) | the missile | `MissileData+0x28` | 2 `Range`, then `+0x28 ← low` | [I] (0x005AFB80) |
@@ -575,9 +575,18 @@ re-seed the missile's draws are a function of the creator's value, not of the ga
 - H2. The callbacks are stored at the parameter block's `+0x54` and called by `MissileCreate` with the new missile
   before the damage block (B1). [I] (fn:sub_0059FA30_MissileCreate@0x0059FA30)
 - H3. The other re-seed sites of the table are not reached by run:2026-10-25-skills or run:2026-10-27-skills (no
-  breakpoint on them, and no session's row on their paths): `0x005ACDF0` (hit 58), `0x005D40F0` (do 37), `0x005D5BF0`,
-  the call at `0x005AC073` and `0x00645390` (no reference in the image). `0x005C9290` re-seeded 168 more times in
-  run:2026-10-27-skills, 38 steps past the Init each. [I] (run:2026-10-25-skills, run:2026-10-27-skills)
+  breakpoint on them, and no session's row on their paths): `0x005ACDF0` (hit 58), `0x005D40F0` (do 37), `0x005D5BF0`
+  and `0x00645390` (no reference in the image). `0x005C9290` re-seeded 168 more times in run:2026-10-27-skills, 38
+  steps past the Init each. [I] (run:2026-10-25-skills, run:2026-10-27-skills) The call at `0x005AC073` was among
+  them until run:2026-10-30-skills-catalogue reached it (H4).
+- H4. **`0x005AC040`, measured.** In 36 of 36 creations of a class-408 missile (`catapultchargedballbolt`) by a
+  catapult spotter (class 516), the new missile's seed at `MissileCreate`'s exit lies on the stream of
+  `Init(path word +0x10)` (high `0x29A`), 10 steps past it in all 36; the same three path calls as `0x005C9290`'s
+  follow the `Init`. [C] (fn:sub_005AC040_MissCbReseedPathX@0x005AC040, 0x005AC073, run:2026-10-30-skills-catalogue,
+  [skills/0003 § 17](../../findings/skills/0003-handlers.md#17-plan-0046-phase-2-the-catalogue-sample-run2026-10-30-skills-catalogue))
+  Which path call makes the 10 steps, that the low word is `0x00648A00(path)`'s value, and which of the two hit
+  entries passing the callback made these creations are not read. [I] (fn:sub_00649970_PathPlan@0x00649970,
+  [catalogue § R](catalogue.md#r-in-the-game-the-phase-2-sample))
 
 ### I. Draws and seeds per event kind
 
@@ -586,7 +595,7 @@ re-seed the missile's draws are a function of the creator's value, not of the ga
 | create | `MissileCreate` | `SUnitCreate`: one step | game | [C] (run:2026-10-25-skills) |
 | create | the damage block | the critical chain, 1 to 3 for weapon or source damage | owner (or the source missile) | [C] for one step (run:2026-10-25-skills) |
 | create | the pierce count | up to 4 | local, from stat 328 | [C] (run:2026-10-25-skills) |
-| create | a re-seeding callback | § H | the new missile | [C] for `0x005C9290` (run:2026-10-25-skills) |
+| create | a re-seeding callback | § H | the new missile | [C] for `0x005C9290` and `0x005AC040` (run:2026-10-25-skills, run:2026-10-30-skills-catalogue) |
 | frame | `MissileDoFrame` | the do function's; do 1 none of its own | missile | [C] (run:2026-10-25-skills) |
 | hit | `MISSILE_HitUnit` | `ToHit` roll | owner | [C] (run:2026-10-25-skills) |
 | hit | `MISSILE_BuildDamage` | up to 7 `RangeB` | missile | [C] (run:2026-10-25-skills) |
@@ -657,8 +666,8 @@ the reading. [I] (fn:sub_005C7160_SkillDo117Firestorm@0x005C7160)
   beyond 1; the code reads `(VelLev · lvl) ÷ 8 + Vel` (contradicted, from the code); no run has separated them (22
   `spike2` at level 1). A `spike1` (`VelLev` 8) at level 1 would (velocity 11 against the lead's 10): carried to a
   later Blood Moor log. Also open: the slow-missiles scaling, the `SubLoop` loops and the distance refusal.
-- [L] **The re-seed sites other than `0x005C9290`** in a run (named unreached by both runs, H3), and which of
-  `0x005C9290`'s path calls steps the new seed.
+- [L] **The re-seed sites other than `0x005C9290` and `0x005AC040`** in a run (H3), and which of the two
+  callbacks' path calls steps the new seed (H1, H4).
 - [L] The critical chain's second and third steps in a run.
 - [L] **Whether a missile's stat list ever carries its owner's masteries** (329–332, 357), so that F1's mastery term
   is non-zero: no logged `MH0` list holds one (skills/0002 § 6). A logged build by a caster with Fire Mastery settles it.

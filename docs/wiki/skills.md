@@ -1,8 +1,8 @@
 ---
 based_on:
-  - docs/specs/skills/README.md 2026-10-27
-  - docs/specs/skills/dispatch.md 2026-10-27
-  - docs/specs/skills/missiles.md 2026-10-27
+  - docs/specs/skills/README.md 2026-10-30
+  - docs/specs/skills/dispatch.md 2026-10-30
+  - docs/specs/skills/missiles.md 2026-10-30
 ---
 
 # Skills and missiles
@@ -463,11 +463,12 @@ code. One stock row (a Royal Strike chain lightning) holds a function number tha
 ## Seeds a missile is given: the re-seed sites
 
 A missile's seed is private: only the missile draws on it, except where the code that creates it sets it from the
-creator's value ([missiles § H](../specs/skills/missiles.md#h-re-seed-sites), [randomness](randomness.md)). One
-such site is confirmed: **Firestorm's sub-missiles** (and those of one monster missile) get the seed `Init(w + k)`,
+creator's value ([missiles § H](../specs/skills/missiles.md#h-re-seed-sites), [randomness](randomness.md)). Two
+such sites are confirmed. **Firestorm's sub-missiles** (and those of one monster missile) get the seed `Init(w + k)`,
 `w` a position word of the new missile's path and `k` the creator's argument (for Firestorm, the sub-missile's index), and the new missile's own path setup
-then steps that seed (20 steps for Firestorm's, 38 for the monster's) in 450 of 450 creations. Which of the path
-calls makes the steps is not read. The other sites (the Assassin's rings and zig-zags, several missile functions)
+then steps that seed (20 steps for Firestorm's, 38 for the monster's) in 450 of 450 creations. **The bolts made for
+a catapult spotter** get `Init(w)` from the same path word alone, and the same path setup
+steps it 10 times, in 36 of 36 creations. Which of the path calls makes the steps is not read for either. The other sites (the Assassin's rings and zig-zags, several missile functions)
 are read from the code and none was reached by the runs.
 
 ## Draw order and chaining
@@ -544,7 +545,7 @@ From the specs' open questions ([overview](../specs/skills/README.md#open-questi
 - **The finisher** in a run.
 - **Missiles**: the end of a hit for rows with a hit function, the filters before the build, the "always explode"
   rows and the end-of-life branch in a run; the speed's per-level term, the slow-missiles scaling, the extra loops and
-  the distance refusal; the re-seed sites other than Firestorm's, and which path call steps Firestorm's; the critical
+  the distance refusal; the re-seed sites other than Firestorm's and the catapult bolts', and which path call steps either; the critical
   chain's second and third rolls; how a new missile joins the every-frame list; and the unit filter of a missile used
   as a skill's unit, and the fifth list of the frame pass; and whether a missile ever carries its owner's elemental
   mastery, which no logged missile did.

@@ -5,7 +5,7 @@ target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, data/calc, combat/overview, combat/delivery, stats/states, monsters/spawn, monsters/stats]
 consumed_by: [skills/missiles, combat/overview, combat/delivery, stats/states, items/economy, monsters/stats]
 tags: {C: 76, I: 191, L: 8}
-updated: 2026-10-27
+updated: 2026-10-30
 ---
 
 # Skill dispatch: the request, the checks, the start and do functions, costs, the skill packet, handlers, summons
@@ -18,7 +18,7 @@ its **do function** (`srvdofunc`) on the mode's action frame, creates the skill'
 delay. This page specifies that machinery for players and monsters, item-granted skills and item-event casts, the
 skill packet a skill hit builds, progressive charges and the finisher, the stat-event handler table, summons and the
 pet limit, monster skill use, and ammunition and weapon wear, with every draw named by its seed. What each numbered
-start and do function does outside the tier-A rows is plan 0046's catalogue; the missile a skill creates is
+start and do function does outside the tier-A rows is plan 0046's [catalogue](catalogue.md); the missile a skill creates is
 [skills/missiles](missiles.md). Overview and boundary: [skills](README.md).
 
 ```mermaid
@@ -93,7 +93,7 @@ Column semantics are the table docs': [Skills § Dispatch](../../tables/Skills.m
 |---|---|---|
 | the frame of a mode that carries event code 1 or 2 (players), `Unit+0x4E` (monster sequences) | a logged input: animation timing is [plan 0050](../../plans/0050-animation-frame-timing.md)'s | [I] (fn:sub_00580460_PlrModeSkillFrame@0x00580460, fn:sub_005A8670_MonSeqFrame@0x005A8670) |
 | the monster's choice of skill, mode and target | an input: monster AI is plan 0052's | [I] (fn:sub_005DEAD0_MonAiUseSkill@0x005DEAD0) |
-| the numbered start and do functions outside § O | value oracles: plan 0046's catalogue | [I] (data:g_SkillDoFuncs@0x007322B0) |
+| the numbered start and do functions outside § O | value oracles of the checker; specified in the [catalogue](catalogue.md) | [I] (data:g_SkillDoFuncs@0x007322B0) |
 | `SKILLS_ForUnitsInRange`'s and `SkillForUnitsNearTarget`'s unit order, `SkillUnitFilter` | logged as the list of units the callback ran on | [I] (fn:SKILLS_ForUnitsInRange@0x0056B7E0) |
 | the pet chosen for removal | a logged value | [I] (fn:sub_00575850_PetLimit@0x00575850) |
 | a calc's value | [data/calc](../data/calc.md) | [I] (fn:SKILLS_EvalCalc@0x00646CA0) |
@@ -762,7 +762,7 @@ K1. UNIT_DispatchEvent(unit, event, other, packet):                  [I] (fn:UNI
 | 1 | Chilling Armor | `hitbymissile` | the skill's `srvmissilea` from the unit toward a hostile missile's owner | the creation's | [I] (fn:sub_005CAB40_StatEv01MissileAtSource@0x005CAB40) |
 | 2 | Frozen Armor | `damagedinmelee` | a packet, result `0x20`, `+0x34 = calc1`, on the attacker | none | [I] (fn:sub_005CAC50_StatEv02CalcHitAttacker@0x005CAC50) |
 | 3 | Shiver Armor | `attackedinmelee` | `SKILLS_RollElemDamage` into a packet on the attacker | 1 (2 for `EType` 10) | [I] (fn:sub_005CAD40_StatEv03ElemHitAttacker@0x005CAD40) |
-| 4 | Iron Maiden | `domeleedamage` | the cursed attacker takes back a share of its damage | none | [I] (fn:sub_005C5F50_StatEv04ReturnDamage@0x005C5F50) |
+| 4 | Iron Maiden | `domeleedamage` | the cursed attacker takes back a share of its damage | none while the cursed unit survives; one step when the returned damage kills it (1 case, outside the checker's handler-seed check: [catalogue § R](catalogue.md#r-in-the-game-the-phase-2-sample) R3) | [I] (fn:sub_005C5F50_StatEv04ReturnDamage@0x005C5F50, run:2026-10-30-skills-catalogue) |
 | 5 | Life Tap | `damagedinmelee`, `damagedbymissile` | the attacker heals `MulDiv(damage, calc1, 100)` | none | [C] draws (run:2026-10-27-skills: 2 calls); [I] effect (fn:sub_005C61E0_StatEv05LifeTap@0x005C61E0) |
 | 6 | stat 78 | `damagedinmelee` | physical `stat << 8` to the attacker | none | [C] draws (run:2026-10-27-skills: 7 calls); [I] effect (fn:sub_005BF670_StatEv06ThornsPhys@0x005BF670) |
 | 7 | stat 81 | `domeleedamage`, `domissiledamage` | knockback: `low & 0x7F < c` sets result bit 3, `c` 64 or 32/128 by MonStats2 flags | 1 inline | [C] draws (run:2026-10-27-skills: 103 calls); [I] effect (fn:sub_005BF960_StatEv07Knockback@0x005BF960) |
