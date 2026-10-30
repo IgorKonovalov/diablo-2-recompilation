@@ -566,3 +566,28 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   draw-free maps, with the `==` and sign tests stated uncontrolled; (4) the remaining open questions stand (row 71's
   state 1, the `MonsterData+0x0E` gate on the dkmag records, the `+0x54` writer, the group's class). Gate green.
   Review request closed.
+- **2026-10-30 — P1.2 catalogue batch 8 (pool-E) checkpoint (reverser, static, `lane/r52h`, from `main` 53705a30; owner pause, token budget).**
+  Nothing filed for review yet; no finding, symbol row or tool committed. Done: symbols replayed into the project copy
+  `workspace/ghidra-r52h`, then the scratch signatures (`b8-scratch.py` → `b8-sym-scratch.csv`, a reading aid, not
+  symbol rows); objdump of `0x005E0100`–`0x005E1C00` and `0x005E3700`–`0x005E3B00` (`b8-asm-a.txt`, `b8-asm-b.txt`);
+  Ghidra decompiles of `0x005E0160`–`0x005E1B60` and `0x005E3840`–`0x005E3A00` (`b8-dec-a.c`, `b8-dec-b.c`), all under
+  `workspace/logs/r52h/` (no manifest yet). Read from the decompiles so far (to be re-read from objdump, all `[I]`): the
+  thirteen think functions are rows 82 `0x005E0160`, 83 `0x005E0260`, 85 `0x005E0490`, 94 `0x005E0980`, 89 `0x005E0C80`,
+  93 `0x005E0F60`, 95 `0x005E1080`, 96 `0x005E1250`, 114 `0x005E1540`, 113 `0x005E1860`, 115 `0x005E1900`, 97
+  `0x005E3840`, 98 `0x005E3890`; no row of the batch has a `+4` or `+C` word (MonAI § The AI table in the image). Three
+  helpers in the range: `0x005E0430` (row 85's search callback, a living same-side monster below 76 % life, nearest by
+  life), `0x005E1720` (rows 113/115's search callback, a class-chain test on MonStats row 492, no owner, a `+0x14` of −1)
+  and `0x005E17E0` (writes the found guid into the AI control's `+0x14`); `0x005E3900` is batch 5's
+  `AiPetCrowdCb` (`lane/r52f`), `0x005E3930` not yet placed. Draw shapes seen: 82, 83, 93, 94 and 113 draw nothing
+  before their boundaries; 85 inline steps, `RNG_Range` and one `RNG_RangePow2(seed, 4)` (a direction pick into
+  `0x006E337C`); 89 (tier) starts with the `Skill1` sign test then `SkillFindByOwner` (entry-like, as row 65); 95
+  starts with `MonAiFindHostile` (entry); 96 reads `AiParamsHead` (kinds 1 and 14) before `MonAiFindHostile`; 114 sets
+  `Unit+0xC4 |= 0xE`; 115 starts with `UnitGetOwner` (entry). **Next steps:** (1) read rows 97 and 98 (`b8-dec-b.c`)
+  and place `0x005E3930`; (2) re-read every function from objdump (register and stack arguments, call sites), count
+  draws with a `b8-draws.py` (copy of r52e's `b4-draws.py`, range list changed); (3) `b8-rows.txt` from
+  `python3 -I tools/ai_survey.py rows workspace/merged/data/global/excel <row>` for the 13 rows (the `aip` slots per
+  record); (4) `tools/ai_cat_emu8.py` from `ai_cat_emu4.py`/`ai_cat_emu5.py` (`le`, `d0`, `cmp`, `u16` where `Skill1`/
+  `Skill2` is bounded, site control, `EDGES`), families per think function, `AiParamsHead`, the position getters and
+  `RNG_RangePow2` run on the image; a dev run under `emu/dev-1/`, then the kept run run:2026-10-30-ai-cat-emu-8 inside
+  `systemd-run --user --scope -p MemoryMax=4G`; (5) `docs/findings/ai/0009-batch8.md`, symbol rows, merge `main`,
+  ledger row, review request.
