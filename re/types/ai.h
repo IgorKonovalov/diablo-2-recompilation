@@ -1,6 +1,6 @@
 /* Monster AI machinery (plan 0052 phase 1.1): the AI table row, the per-monster AI control and path control blocks,
  * the AI event's context and the monster mode command. Field names are ours. Evidence:
- * docs/findings/ai/0001-machinery.md. [I] unless noted; the AI table's row selection and five helper maps are [C]
+ * docs/findings/ai/0001-machinery.md, docs/findings/ai/0002-pool-a.md. [I] unless noted; the AI table's row selection and five helper maps are [C]
  * by emulation (run:2026-10-27-ai-emu), which covers the code's map only. */
 #include <stdint.h>
 
@@ -57,6 +57,20 @@ typedef struct AiCtx {            /* 0x24, on the stack of sub_005B1740_MonAiEve
     void    *pMonStats;           /* +0x1C MonStats record (0x1A8): aip1..8 at +0x56 + 6k + 2*difficulty */
     void    *pMonStats2;          /* +0x20 MonStats2 record (0x134) of MonStats +0x18 */
 } AiCtx;
+
+typedef struct AiParam {          /* 0x1C, a record of the circular list at AiCtl+0x20 (head) / +0x24
+                                     (.\Ai\AiGeneral.cpp; docs/findings/ai/0002-pool-a.md § 4). sub_0058EC90_AiParamsAlloc,
+                                     sub_0058EF40_AiParamsPush (copies +0x08..+0x18 of a block and makes it the head),
+                                     sub_0058EE80_AiParamsHead, sub_0058ED10_AiParamsPop, sub_0058EEF0_AiParamsFind */
+    struct AiParam *next;         /* +0x00 */
+    struct AiParam *prev;         /* +0x04 */
+    uint32_t kind;                /* +0x08 1 = a group call (sub_0058F730_MonHelpBlock from rows 6 and 13), 10 = a saved
+                                     point (ai/0001 § 4), 14 = row 15's alt; 3, 4, 5, 7 by other AIs (later batches) */
+    uint32_t w0C;                 /* +0x0C row 14 reads a unit type here */
+    uint32_t w10;                 /* +0x10 row 14 reads a unit guid here */
+    uint32_t w14;                 /* +0x14 */
+    uint32_t w18;                 /* +0x18 row 15's alt tests 1 */
+} AiParam;
 
 typedef struct MonCmd {           /* 0x20, built by sub_005A7E60_MonCmdInit(unit, mode, cmd), run by sub_005A7C20_MonSetMode */
     uint32_t mode;                /* +0x00 monster mode, < 16 */
