@@ -27,6 +27,7 @@ Rules this library implements are stated in .claude/skills/reverser/references/h
 """
 import json
 import os
+import shutil
 import subprocess
 import sys
 import time
@@ -407,6 +408,55 @@ def detach(argv, out_path):
 
 
 _DETACHED = []
+
+
+# ---- several cases per process (plan 0056 Phase 2) -----------------------------------------------------------
+
+MENU_STEPS = {"activate": (700, 150), "single": (400, 307), "ok": (690, 556), "normal": (400, 280),
+              "nightmare": (400, 315), "hell": (400, 350), "exit": (400, 268)}
+
+
+def xd(slot, args, out=None, run=None):
+    """One tools/xdrive.py call on the slot's game window (window-relative coordinates)."""
+    return (run or sh)([*PY, tool("xdrive.py"), "--slot", str(slot), "--window", "Diablo II"] + [str(a) for a in args],
+                       30, out)
+
+
+def next_case(slot, log, saves=(), diff=None, tag="PLR", leave=True, menu_wait=8.0, load_timeout=90, out=None,
+              run=None, copy=None, clock=time.time, sleep=time.sleep, ws=None, stem=None, case=None):
+    """The menu return: Save and Exit the running game (Escape, the menu's Save and Exit line), install the next
+    case's `saves` (.d2s paths, copied over the same names in the slot's saves directory: the game is up, so
+    saves.py refuses; the slot's aside, taken at the batch start, stays), SINGLE PLAYER, OK (and `diff` = normal |
+    nightmare | hell when the character offers the difficulty box), then wait for the next `tag` line (PLR: the
+    player's first position mark). `leave=False` skips the exit (the game is already at the menu). Returns
+    {"ok", "secs" (Escape to the new tag line), "n0" (tag lines before), "line" (the log's line count at the
+    Escape)}: a caller decides what a failure costs (harness-play.md Fresh process). With `stem` and `case`, the
+    case's `start` mark is written just before the OK click, when the previous game's lines are all in the log and
+    the new game's are not yet: `split(log)` then cuts the games exactly where the games begin; the caller writes the
+    `end` mark (and a `fail` mark when ok is False)."""
+    run = run or sh
+    copy = copy or shutil.copy2
+    n0, l0, t0 = len(lines(log, tag)), line_count(log), clock()
+    if leave:
+        xd(slot, ["key", "Escape"], out, run)
+        sleep(1.5)
+        xd(slot, ["click", *MENU_STEPS["exit"]], out, run)
+    sleep(menu_wait)
+    dst = slots.saves_dir(slot, ws or WS)
+    for f in saves:
+        copy(f, os.path.join(dst, os.path.basename(f)))
+    xd(slot, ["click", *MENU_STEPS["activate"]], out, run)
+    sleep(1)
+    xd(slot, ["click", *MENU_STEPS["single"]], out, run)
+    sleep(3)
+    if stem and case:
+        mark(stem, case, "start", log, "menu return")
+    xd(slot, ["click", *MENU_STEPS["ok"]], out, run)
+    if diff:
+        sleep(2)
+        xd(slot, ["click", *MENU_STEPS[diff]], out, run)
+    ok = wait_count(log, tag, n0 + 1, load_timeout, None, clock=clock, sleep=sleep)
+    return {"ok": bool(ok), "secs": round(clock() - t0, 1), "n0": n0, "line": l0}
 
 
 # ---- command line --------------------------------------------------------------------------------------------

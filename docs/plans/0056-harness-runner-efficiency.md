@@ -243,3 +243,58 @@ _(lanes append dated entries as phases land)_
   now matches the first word (a bare tag line counts) and the table now says so; the plans index still read "P1
   starts after `lane/hx` merges". The ledger row set to 226 708 tokens, 80 calls, 15 min. Phase 2 may start; it takes
   the next free slot after 0050·P2 part 3 (Q4).
+- **2026-10-30 — Phase 2 probe (lane/p56b, reverser, slot 2): several games in one process; `-seed` holds; § Fresh process written.**
+  Tools: `harness_runner.next_case` (the menu return, 3 tests added, 47 OK), `tools/probe0056.py`, logger
+  `tools/gdb/probe-0056.gdb` (= `mon-special.gdb` + `tools/gdb/probe-state.py`: `PST` g_HitClassCounter `0x0088CAD0` and
+  g_PlayersOverride `0x00883D70` once a second on the `PLR` hook, `HCP` at `HitClassPick` `0x0057CE30`). Smoke: dev1
+  (1 switch), dev2 (2 switches, 2 fights), dev3 (the `start` mark placement and `split`); dev logs `dev-dev*-s2-4801-probe.*`
+  apart from the kept run, `workspace/logs/p56b/run:2026-10-30-multicase-probe-s2-4801-probe.log` (47 653 lines, 8.7 MB,
+  sha256 `f3bf2381b4d042f5…`), seed 4801, expansion normal, UniqNova / ProbeB (a tool-built copy of the recipe under another
+  name) alternating, `/players 5` in game 0, Nova fights (City of the Damned) in games 0, 2, 4; 292 s for five games.
+  Marks of the kept run were written by the first revision of `next_case` (`start` after the load); the numbers below
+  are cut by the `end` marks, and dev3 shows the final placement splits exactly at each game's first `WND` line.
+  1. **Does `-seed N` set the map seed of the second and later games? Yes `[C]`.** The `LC0` level seed of every level id
+     is the same in all five games (103 to 108: `75e10186:0000029a` … `75e1018b:0000029a`, `base` 1977680159), with two
+     different characters alternating and in all three dev runs. The game seed `gs` of the `RW` lines is not constant (it
+     is drawn from) and is not the test.
+  2. **Does a save installed at the menu load? Yes `[C]`.** Four of four switches: the file copied over the same name in
+     the slot's saves directory while the game sat at the menu (`saves.py` refuses while the slot is busy, so a plain copy),
+     SINGLE PLAYER, OK, the difficulty box, and a new `PLR` within 90 s each time (plus 5 more in the dev runs).
+  3. **What carries over `[C]`:** `g_HitClassCounter` (0..3 in game 0, the first pick of game 2 read 3, then 6 in game 4;
+     games 1 and 3 had no hits), `g_PlayersOverride` (0 then 5 in game 0, 5 in games 1 to 4), the DT1 tile lists
+     (`TL` lines 634 in game 0, 143 in game 2, none in games 1, 3, 4; `TINIT` 97, 25, 109, 21, 106), and, from earlier
+     records (`docs/findings/monsters/experiments.md` h4b session 5, `tools/drlg.py` `parse_log`), `/players` through Save and Exit
+     and the DRLG failure on a second game; the `parse_log` refusal itself does not fire on this probe's log (one `WNDARM`
+     line with `levels`). Not carried: the level seeds
+     (question 1) and the character (the save). No other state was looked for beyond these.
+  4. **Cost.** Switch (Escape to the next `PLR`): 18.5, 19.5, 19.4, 19.5 s, about 15.5 s of it the runner's fixed
+     sleeps (1.5 + 8 + 1 + 3 + 2) and about 4 s the game's own load. Launch to the first `PLR` (install, launch, the
+     steps' clicks): 20.1, 20.6, 20.9, 21.2 s on this logger. The 60 s of the baseline therefore is not the game's boot
+     here `[I]`: by subtraction it would be the sum of stop, restore, aside, install and the ready wait around it, which
+     this probe did not time (lane check ruling 2). The saving per case is that
+     bookkeeping, and the switch's sleeps could be cut (`menu_wait` 8 s was not tuned). Memory: the game's scope held
+     203 to 227 MB (peak 227.5 MB) across the five games; gdb 66 MB; no trend.
+  The in-game switch (waypoint or walk) was not measured: question 1 came out so that the menu return keeps the seed,
+  and the seed-dependent cases take a fresh process by rule. § Fresh process in harness-play.md names the five conditions
+  and the cap (8 games or 40 min per launch, `[I]` beyond the five measured). Slot 2 stopped, saves restored (no aside).
+- **2026-10-30 — Phase 2 lane check (lane/p56b, Tier B, architect): accept with fixes (4); Phase 3 may start.**
+  Recounted from the kept log with `tools/probe0056_check.py` (new; output `...probe.check.txt`, manifest
+  `workspace/logs/p56b/manifest-run-multicase-probe.sha256`, dev files in `manifest-dev.sha256`, both `sha256sum -c` OK;
+  47 tests OK, gate green): `LC0` one (seed, base) pair per level id 103 to 108 over the five games; `PST`/`HCP` counter
+  0..3, 3..6, 6..9 with picks 0,1,2 / 3,4,5 / 6,7,8 in games 0, 2, 4; `g_PlayersOverride` 0 then 5, then 5; `TL` 634, 0,
+  143, 0, 0; `TINIT` 97, 25, 109, 21, 106; switches from the marks 18.5, 19.5, 19.4, 19.5 s. All four answers stand `[C]`
+  (answer 1 for seed 4801 and Act IV only). Rulings:
+  1. **Cap 8 games / 40 min stays `[I]`**; the memory readings (203 to 227 MB, peak 227.5 MB) show no trend over five games.
+  2. **The "~60 s boot" is not the game's boot on this logger (launch to first `PLR` about 21 s), but "it was runner
+     bookkeeping" is `[I]`**: stop, restore, aside and install were not timed. **Phase 3 still makes sense**, with a
+     smaller prize: a switch (19.5 s) saves about 1.5 s against a launch to `PLR` (21 s) plus the bookkeeping, so the
+     multi-case target ("launches per kept case <= 0.5") is reachable but its wall saving is the bookkeeping only, and
+     the `<= 9.0 min` per kept session has to come from the library, fewer dev launches and shorter waits. Phase 3 times
+     stop, restore, aside and install per fresh case and the sleeps of `next_case` (15.5 s of the 19.5; `menu_wait` 8 s
+     untuned), and reports both against the baseline.
+  3. **Fresh-process rule against the owner's answers:** 0055 P2b (condition 3) and seed (condition 4) match; Q2's opt-in was
+     missing from § Fresh process and is added. The in-game switch of the Phase 2 text was not measured; owner Q5 needed it
+     only if `-seed` failed, so the omission is within scope.
+  4. **Not caught by `parse_log`:** a `split` piece of a later game holds no `WNDARM` with `levels`, so `tools/drlg.py` runs
+     on it unchecked; § Fresh process rule 2 is the only guard. Noted for Phase 3's checkers (tools/drlg.py is the
+     archivist/static lane's; no backlog entry, the rule already covers it).
