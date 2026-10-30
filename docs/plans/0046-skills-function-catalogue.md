@@ -1444,3 +1444,27 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   Phase 3 (spec-writer) is released by Phase 1's close as far as this plan goes, and runs in the spec-writer queue's
   order (after 0045·P3 and P4; it merges after any open 0045 spec change, ADR-0020). The static lane A that held 0046·P1
   is free.
+- **2026-10-30 — Phase 2 landed for review (reverser, `lane/p46h`, harness slot 2 only, no Ghidra; the owner unpaused
+  all work today).** `run:2026-10-30-skills-catalogue`: 12 sessions (`tools/skills_catalogue_sessions.py`, logger rev 5
+  unchanged; `SkillsSor` for the monster families, the new `SkillsChain` recipe for the item family), `tools/skills.py`
+  over the 12 logs **0 mismatches** after two additions the run forced, record in [experiments](../findings/skills/experiments.md#run2026-10-30-skills-catalogue)
+  and [skills/0003 § 17](../findings/skills/0003-handlers.md#17-plan-0046-phase-2-the-catalogue-sample-run2026-10-30-skills-catalogue).
+  **Families, each by one member at or above 30 events:** 8a 181 Resurrect (66 starts, 66 do events), 160 ShamanFire
+  (39 · 37); 8b 282 Imp Inferno (33 · 1 004); 8c 299 Imp Fire Missile (213 · 198), 330 Imp Teleport (354 · 347), 295
+  Overseer Whip (61 · 61); item 53 Chain Lightning cast by *of Chain Lightning* items (64 do events, effect argument 1).
+  **What the run found:** (1) the creation callback `0x005AC040` re-seeds a class-408 missile (catapult spotters) from
+  `Init(path +0x10)` with 10 steps after it in 36 of 36 creations (12 `MC.seed` mismatches before the checker took
+  it; `sub_005AC040_MissCbReseedPathX` raised to `[C]`; the call at `0x005AC073` was named unreached by plan 0045 part 2);
+  (2) `ReturnDamage` (Iron Maiden) steps the cursed unit's seed once when it kills the unit (1 case, `[I]`, reported,
+  not checked). **Shortfalls, named with reasons:** **Baal Tentacle (do 140) not reached**: the throne route of
+  plan 0038 H6d ran (waypoint 5,9, two warps, a 421 s sweep, the portal step, a 420 s hunt) but the waves never
+  started and class 544 was never seen, so ruling 1's stale-word question stays `[I]` (monster-AI plan, or a
+  session that gets the waves started); do 113 (scroll and book rows) and the `charged` suffixes not attempted (no
+  session step uses an inventory item); do 151 not shown as the function run (the logger does not record it); no Act 2
+  monster of the 8a rows; chained pairs counted over the run (36 540 missile-creation, 13 671 caster, 20 caster+logged),
+  not per family. **Tools:** `tools/skills.py`, `tools/test_skills.py` (15 tests), `tools/skills_sessions.py` (an
+  `until` step), `tools/skills_catalogue_sessions.py`, `tools/skills_catalogue_tally.py`, the recipe
+  `tools/d2s_recipes/skills-chain.json` (pinned in `tools/test_d2s.py`; that file's `test_every_recipe_has_a_base` was
+  already failing before this lane with 49 recipes unlisted). Slot 2 stopped, saves restored (aside empty), no
+  background process. **Next for 0046:** the architect's review of Phase 2; Phase 3 (spec-writer) takes
+  skills/0004–0018 and this run's § 17 where a catalogue entry has a logged counterpart.

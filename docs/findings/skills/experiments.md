@@ -8,6 +8,149 @@ evidence rules: ADR-0003, ADR-0004, ADR-0011, ADR-0013, ADR-0014;
 Plan 0045 Phase 2's harness runs come first (part 2, run:2026-10-27-skills, then part 1, run:2026-10-25-skills); plan
 0046's emulated runs (ADR-0015) follow.
 
+## run:2026-10-30-skills-catalogue
+
+Plan 0046 **Phase 2** (harness sample): for each skill family with no tier-A member, one representative logged on the
+machinery of `tools/skills.py`, so the catalogue's draws and outputs are checked in the game and not only under
+emulation. The families are the plan's batches with no tier-A entry: the monster skills **8a** (Skills rows 156–189),
+**8b** (190–289) and **8c** (290–338), and the **item** casts (batch 10; `ItemEffect` 53 Chain Lightning, do 151 and the
+stat-event handler 20 path of skills/0003 § 2). The Baal Tentacle item carried from batch 8c is under *Shortfalls*.
+
+- **Question:** does `tools/skills.py` reproduce sessions in which monsters of each family use their skills and a
+  player's item casts Chain Lightning, with 0 mismatches, and does one member of each family reach 30 events?
+- **Setup:** 12 agent-driven sessions on harness slot 2 only (display `:9`, prefix `workspace/wineprefix-2`; slot 1
+  held by another lane), single player, the pinned `game.exe` in `workspace/runtime/game` (stock data), gdb by
+  `tools/d2run.py` with `-seed` per session. Logger `tools/gdb/skills.gdb` and `tools/gdb/skills.py` **rev 5**
+  (unchanged from run:2026-10-27-skills; `sha256sum` of the `SKILLSLOG` revision line in each log), driver
+  `tools/skills_catalogue_sessions.py` over `tools/skills_sessions.py` (its `until` step and `last_level` are this
+  run's addition: a pilot command repeated until the player's level is the target) over `tools/d2pilot.py`
+  (unchanged). Per session: `saves.py --slot 2 restore`/`aside p46h`, `d2run.py --install`, the steps, `slots.py stop
+  2`; `saves.py --slot 2 restore p46h` at the end (aside empty, slot idle). The pilot only decides where to click.
+- **Characters** (ADR-0013 § Neutral: tool-built, stock items and skill points, no test-state key), into
+  `workspace/logs/skills/2026-10-30-skills-catalogue-saves/`: `SkillsSor` (`tools/d2s_recipes/skills-sor.json`, the
+  run:2026-10-27-skills save byte for byte, sha256 `d033b674…`: Nova F1, Frost Nova F2, Static Field F3, Fire Bolt F4,
+  Meteor F5, Blaze F6, Teleport on Shift + left) for the monster sessions, and the new **`SkillsChain`**
+  (`tools/d2s_recipes/skills-chain.json`, sha256 `94f0b491…`, pinned in `tools/test_d2s.py` `RECIPE_BASES`; Barbarian
+  clvl 85 on the stock `smpbar` base: two short swords, two rings and an amulet, each a magic item with the suffix
+  record 443 *of Chain Lightning* (MagicSuffix `att-skill` 53, 8 % at skill level 5), Howltusk, Corpsemourn and
+  Nosferatu's Coil at `roll: max`; Attack F1, Bash F2) for the item family. The monster sessions send the Sorceress
+  with `farm --wp TAB,ROW` and `explore --melee --melee-button 3 --curse-keys F1…F6 --keys-cycle` (skills_sessions'
+  `cast_explore`), 200 hops; the monsters act on their own. The item sessions walk the Barbarian with Attack.
+
+### Sessions
+
+| session | save | difficulty | seed | waypoint, area | what |
+|---|---|---|---:|---|---|
+| cat-a1-1 | SkillsSor | Normal | 5101 | 1,3 Stony Field | 8a (Nest only) |
+| cat-a1-3, cat-a1-4 | SkillsSor | Normal | 5109, 5110 | 1,2 Cold Plains | 8a: fallen shamans (ShamanFire 160, Resurrect 181) |
+| cat-a3-1, cat-a3-2 | SkillsSor | Normal | 5103, 5104 | 3,4 · 3,3 (Flayer Jungle, Great Marsh) | 8a: Submerge 176, FetishInferno 178; 8b: MonFrenzy 215 |
+| cat-a5-1, cat-a5-2 | SkillsSor | Normal | 5105, 5106 | 5,2 Frigid Highlands · 5,3 Arreat Plateau | 8b: Imp Inferno 282, Imp Fireball 283; 8c: Imp Fire Missile 299, Imp Teleport 330, Overseer Whip 295, Cry Help 290, Healing Vortex 291 |
+| cat-a5-3 | SkillsSor | Nightmare | 5107 | 5,2 | 8c: Overseer Whip, Healing Vortex |
+| cat-baal-1 | SkillsSor | Normal | 5121 | 5,9, two Baal Temple Down warps, Throne of Destruction (131) | Baal route of tools/h6d_sessions.py `baal()`; Baal never reached (Shortfalls); BloodLordFrenzy 328 |
+| cat-chain-1 … 3 | SkillsChain | Normal | 5111–5113 | 1,2 · 1,3 · 1,4 | item: Chain Lightning cast by the *of Chain Lightning* items on strike |
+
+No session was aborted for the kept set. Logs `workspace/logs/skills/2026-10-30-skills-catalogue-<session>.log`
+with `.pilot.txt` and `-shots/`. Two development logs, `dev-p46h-cat-a1-1` (a 50-hop first try that finished in 86 s)
+and `dev-p46h-cat-baal-1` (the same Baal route started with `wpchain 5,9`, whose waypoint list did not open on this map
+seed), are kept under `dev-p46h-manifest.sha256`; no claim rests on them. One first Baal try was killed by the lane
+after that `wpchain` failure, before any result.
+
+- **Procedure** (from the worktree; the check under a 4 GB scope; kept outputs by `systemd-run --user --scope -p
+  MemoryMax=4G python3 -I <worktree>/tools/skills.py …` from `workspace/logs/skills`):
+  ```
+  python3 -I tools/d2s.py build workspace/merged/data/global/excel tools/d2s_recipes/skills-chain.json \
+      workspace/runtime/saves-backup/p0005/smpbar.d2s workspace/logs/skills/2026-10-30-skills-catalogue-saves/SkillsChain.d2s
+  python3 -I tools/saves.py --slot 2 aside p46h
+  python3 -I tools/skills_catalogue_sessions.py run --slot 2 --tag p46h \
+      --saves workspace/logs/skills/2026-10-30-skills-catalogue-saves --run 2026-10-30-skills-catalogue \
+      cat-a1-1 cat-a3-1 cat-a5-1 cat-chain-1 cat-chain-2 cat-chain-3 cat-a1-3 cat-a1-4 cat-a5-2 cat-a3-2 cat-a5-3 cat-baal-1
+  cd workspace/logs/skills
+  skills.py check 2026-10-30-skills-catalogue-cat-*.log --json …-check.json --gaps …-gaps.txt > …-check.txt
+  skills.py tally 2026-10-30-skills-catalogue-cat-*.log > …-tally.txt
+  skills_catalogue_tally.py 2026-10-30-skills-catalogue-cat-*.log > …-families.txt
+  ```
+  (the sessions ran in four `run` calls, in this order of sets: a1-1, a3-1, a5-1; chain-1; chain-2, chain-3, a1-3,
+  a1-4, a5-2, a3-2, a5-3; baal-1).
+- **Tool revisions** (all in this commit): `tools/skills.py` `f8a2f6e0…`, `tools/test_skills.py` `85d963eb…` (15 tests,
+  passing: the 13 of run:2026-10-27-skills and two new, each both ways), `tools/skills_sessions.py` `f230e15a…`,
+  `tools/skills_catalogue_sessions.py` `6d964045…`, `tools/skills_catalogue_tally.py` `c059f0a7…`. The checker's two
+  additions (both found by this run): the creation callback `0x005AC040` (§ Result) and `ReturnDamage` when the
+  returned damage kills the cursed unit.
+- **Kept:** `workspace/logs/skills/2026-10-30-skills-catalogue-manifest.sha256` (`dc673ebd…`, 81 files: the 12 logs and
+  their pilot files and screenshots, the two saves, `check.txt` `2bd2b4fb…`, `check.json`, `gaps.txt`, `tally.txt`,
+  `families.txt`); `sha256sum -c` from that directory passes.
+
+### Result
+
+**0 mismatches** over the 12 logs (`check.txt`: every row 0; `mismatches: 0`). Counts: 44 773 missile creations
+(`MC.gameseed`, `MC.seed` 44 737 and `MC.cbseed2` 36, `MC.range`, `MC.vel`, `MC.accel` each 44 773), 13 576 hit ends
+(`MH.end`), 2 612 `SDO.seed` and 2 616 `SST.seed` (the modelled player rows), 13 671 `CHAIN.caster` and 36 540
+`CHAIN.gameseed` chained pairs, 20 `CHAIN.caster+logged`, 13 881 `BD.seed` builds, 4 813 `PAY`, 22 751 `MAS.seed` and 22 484 `MAS.stats`
+calls. The two additions the run forced:
+
+- **12 `MC.seed` mismatches in the first check** (cat-a5-1, before the checker was changed): a class-408 missile
+  (`catapultchargedballbolt`) created by a catapult spotter (class 516, the skills of rows 287 and 288) whose seed
+  was not the creation seed `Init(step(game).low)`. Its parameter block's `+0x54` word is `0x005AC040`
+  (`sub_005AC040_MissCbReseedPathX`), a creation callback no logger line covers. Reading it with `r2` (`pD` at
+  `0x005AC040`): `0x0064A300` clamps the range to 255, `0x00648A00(path)` gives the word that `0x00650E40` takes as
+  the new seed's low (high `0x029A`) at `0x005AC073`, then `0x00648CF0(path, 10)`, `0x00648E70` and `0x00649970(path,
+  missile, 0)` follow, the same three path calls as `0x005C9290`'s. `skills.py` now checks that the creation seed lies on the
+  stream from `Init(path word +0x10, 0x029A)` (`MC.cbseed2`): **36 of 36 creations at 10 steps** (24 in cat-a5-2,
+  12 in cat-a5-1), and the unmodelled steps are reported (`0x005AC040 steps after the Init`).
+- **1 `EVH.seed` mismatch** (cat-chain-3, `n=1802`): `ReturnDamage` (`0x005C5F50`, Iron Maiden 76, event 5) is a
+  no-draw handler in the table, and the cursed monster's seed stepped once. Its life went from 1 173 to 0 in the
+  handler (EVR `st` has no stat 6), the next events being the player's kill events. The checker now reports, and does
+  not check, the steps of a `ReturnDamage` call that kills the cursed unit (one case, 1 step); the same handler where
+  the unit survives stays a no-draw check.
+
+Coverage (`families.txt`, `tally.txt`; the do events of a monster mode that repeats per frame are many more than its
+starts, both are given):
+
+| family | member logged | SrvStart | SrvDo | floor |
+|---|---|---:|---:|---|
+| 8a | 181 Resurrect (do 97) | 66 | 66 | met (≥ 30) |
+| 8a | 160 ShamanFire (do 85) | 39 | 37 | met |
+| 8a | 176 Submerge (st 51, do 94) | 58 | 4 971 | met; 178 FetishInferno 12 · 14, 167 Nest 11 |
+| 8b | 282 Imp Inferno (st 59, do 126) | 33 | 1 004 | met; 283 Imp Fireball 48 · 43, 215 MonFrenzy 26 · 15 |
+| 8c | 299 Imp Fire Missile (do 132) | 213 | 198 | met |
+| 8c | 330 Imp Teleport (do 129) | 354 | 347 | met |
+| 8c | 295 Overseer Whip (do 131) | 61 | 61 | met; 328 BloodLordFrenzy 538 · 980 (do 109, shared with 8b), 291 Healing Vortex 22 · 21, 290 Cry Help 17 · 14 |
+| item | 53 Chain Lightning, cast by the *of Chain Lightning* items (do 26 with the item argument; `ItemEffect` 53) | 0 (item casts skip `SKILLS_SrvStart`) | 64 | met |
+
+The 64 item casts are the 64 `EVH SkillOnEvent roll succeeded (cast: a boundary)` fires of event 7 (`EVH.seed1`: at
+least the one roll draw, 64 of 64, the steps after the first reported: 1 in each, as in the 28 casts of
+run:2026-10-27-skills); 102 more fires failed the roll with exactly one draw (`EVH.seed`).
+
+Draws of the logged monster rows (caster's seed steps from `SDO` entry to exit, from `check.txt`; reported, the
+rows are not in `SDO.seed`'s modelled list): 0 in every do event of 160 (37), 176 (4 971), 178 (14), 181 (66), 282
+(1 004), 283 (43), 290 (14), 291 (21); 1 in all 61 of 295 and 198 of 299; 0 in 285 and 1 in 62 of 330's 347 (the
+nested missile creation's or the delivery's, listed with the lines between in `gaps.txt`); 1 in 11 and 4 in 4 of
+215's, 1 in 350 and 4 in 630 of 328's (do 109's restart and hit, which the batch left `[I]`); one 9-step Nest event
+(10 of 11 with 0). `MC owner draws` give 1 305 critical rolls and 43 468 creations with none (run:2026-10-30-skills-catalogue).
+
+### Shortfalls
+
+- **Baal Tentacle (do 140, the stale-word question of skills/0018 § 7): not reached.** `cat-baal-1` followed
+  tools/h6d_sessions.py's route: the Worldstone Keep 2 waypoint, the two Baal Temple Down warps (levels 130 and 131),
+  a 421 s sweep of the Throne of Destruction (456 hops, 7 Nova casts), the
+  Worldstone Chamber portal step (`objop` 563: 0 of 1 in 100 s, no portal) and a 420 s hunt for class 544 ("class
+  544 never seen"), the player at 2 % life after Blood Lord Frenzy hits. No `baalcrab` (class 544) line, so no do 140
+  event: the arm's two-or-three draw question stays `[I]`, to the monster-AI plan or a session that gets the waves
+  started (fn:sub_005D2C20_SkillDo140BaalTentacle@0x005D2C20, run:2026-10-30-skills-catalogue). Why they did not start is not established: this session differs from h6d's `baal-fresh` in the save (here
+  `SkillsSor`, every quest done, no Energy Shield key) and the map seed.
+- **Item family: only the `att-skill` Chain Lightning cast.** The scroll and book rows (do 113) and the `charged`
+  suffixes (records 529, 530, casting through the item's charges) were not attempted: no session step uses an
+  inventory item. The 64 casts are `SKILLS_SrvDo` calls of skill 53 at level 5 with the item argument set and the
+  effect argument 1 in all 64 (the argument that selects the `ItemEffect` entry, skills/0015 § 4); the logger does not
+  record which do function ran, so do 151 itself is not shown, and the checker has no model of its outputs: the
+  caster's steps are reported (`SDO skill 53 caster steps: 0 x64`), not checked. Two Iron Maiden casts (76, level 2,
+  effect 0) came from another proc source of the recipe (Corpsemourn), not from the suffix.
+- **Per-family chained pairs:** the checker counts `CHAIN.gameseed` (36 540) and `CHAIN.caster` (13 671) over the
+  whole run, not per family. Missile creations by monster casters are 44 773 − the player's; a per-family split was
+  not made. The monster-caster resyncs are plan 0052's, as in run:2026-10-27-skills (`gaps.txt`: 2 059 lines).
+- **8a is mostly Act 1 and Act 3:** no Act 2 monster of rows 156–168 (sand raiders 156, unravelers 157, maggots)
+  was logged.
+
 ## run:2026-10-27-skills
 
 Plan 0045 Phase 2 **part 2** (ruled at the part 1 review, 2026-10-27): the models and sessions part 1 lacked. Part 1's

@@ -163,7 +163,8 @@ code windows R1–R7; `p45b-rows.txt` `cbf9c64a…`, the stock-row values compar
 | `0x005717C0`, `0x00571840` | `sub_005717C0_UnitMsg99`, `sub_00571840_UnitMsg9A` | the item-cast messages (at a unit, at a point) | I |
 | `0x005FDCA0`, `0x005FDD60` | `sub_005FDCA0_ItemCastAtUnit`, `sub_005FDD60_ItemCastAtXY` | `ITEMSKILL_Cast` callers | I |
 | `0x005CAB40` … `0x005C0670` | `sub_005CAB40_StatEv01MissileAtSource` … (table in § 3) | stat-event handlers | I |
-| `0x005D40F0`, `0x005D4680`, `0x005CD110`, `0x005AC040` | `sub_…_MissCbReseed…` (§ 9) | missile-creation callbacks that re-seed the missile | I |
+| `0x005D40F0`, `0x005D4680`, `0x005CD110` | `sub_…_MissCbReseed…` (§ 9) | missile-creation callbacks that re-seed the missile | I |
+| `0x005AC040` | `sub_005AC040_MissCbReseedPathX` (§ 9, § 17) | creation callback: `Init(path +0x10)`, then the path calls; the creation seed on that stream, 36 of 36 | C |
 | `0x005C9290` | `sub_005C9290_MissCbReseedPathXPlusArg` (§ 9) | the re-seed `Init(path x + arg)`, the new seed logged at its `ret` in 450 creations (§ 15) | C |
 | `0x005CAF30` | `sub_005CAF30_SkillDo83DeliverRestart` | `srvdofunc` 83 (Fire Hit) | I |
 | `0x005CDF10`, `0x005CDDD0` | `sub_005CDF10_SkillDo109Frenzy`, `sub_005CDDD0_SkillDo109Hit` | `srvdofunc` 109 (MonFrenzy, BloodLordFrenzy) | I |
@@ -663,7 +664,7 @@ if (m) { m->c4 &= ~4; SetStat(m, 74, 0); SummonSetLevel(m, max(calc2, 1), lvl); 
 | `0x005D4680` (callback) | new missile `+0x20` | the argument (ring 143's local low word) | inline steps on the new seed for a zig-zag path: 2 at the start (a sign from `low & 1`, a step size `low % 3 +` a global), 1 more at every `*0x00741B0C`-th path point | `0x005D4870` (do 143) |
 | `0x005C9290` (callback) | new missile `+0x20` | path `+0x10` (u16) + the argument (an index) | range capped at 77, then `sub_00648CF0_PathSetType(path, 10)`, `sub_00648E70_PathSetByte90(path, range)` and `sub_00649970_PathPlan(path, missile, 0)`, which step the new seed (20 or 38 steps in the run; corrected 2026-10-25, first read "none", note below) | do 117 Firestorm, `0x005C7040`, `0x005C9300`, `0x005D1C30`, `0x005DB850`, monsters `0x005A29A0`, `0x005A2EE0`, `0x005A3490` |
 | `0x005CD110` (callback) | new missile `+0x20` | path `+0x10` + the argument | 1 inline: `low % 100 > 19` → path type 10 | `0x005CD1C0` |
-| `0x005AC040` (callback) | new missile `+0x20` | path `+0x10` | none | `0x005AC14B`, `0x005AC525` (missile hit functions) |
+| `0x005AC040` (callback) | new missile `+0x20` | path `+0x10` | none by its own code; 10 steps after the Init in 36 logged creations (path calls, § 17) | `0x005AC14B`, `0x005AC525` (missile hit functions) |
 | `0x005A9820` | parent missile `+0x20` | `SubX + elapsed` | 2 `RangeB` | missile do 8, 10, 17, 25 |
 | `0x005ACDF0` (hit 58) | missile `+0x20` | `SubX` | 2 `Range` | row 654 |
 | `0x005AFB80` (do 28) | missile `+0x20` | `MissileData+0x28` | 2 `Range`, then `+0x28 = RNG_GetLow` | rows with do 28 |
@@ -936,6 +937,7 @@ remainder:
 - [I] **The re-seed sites other than `0x005C9290` are not reached** (no breakpoint on them, and no session's row on
   their *Reached by* paths in § 9): `0x005ACDF0` (hit 58), `0x005D40F0` (do 37), `0x005D5BF0`, the call at `0x005AC073`,
   `0x00645390` (no reference). `0x005C9290`: 168 more re-seeds, 38 steps past the Init each. (run:2026-10-27-skills)
+  *2026-10-30:* the call at `0x005AC073` (callback `0x005AC040`) is reached, in 36 creations: § 17.
 - [C] **The handler audit** (part 1 review ruling (b)): the 3 461 handler fires of run:2026-10-16-combat,
   run:2026-10-17-stats and the *Fleshripper* log (`tools/gdb/combat.py`'s `EVH`/`EVR`, with the handler unit's seed
   before and after) are reproduced by the handler model for their seed effects, 0 mismatches
@@ -944,6 +946,50 @@ remainder:
   run:2026-10-16-combat, run:2026-10-27-skills)
 - [I] Those logs carry no handler stat value, so the heal-after-kill life and the skill-on-attack roll are not
   replaced; the crushing-blow and open-wounds outcomes stay combat.py's checks. (run:2026-10-27-skills)
+
+### 17. Plan 0046 Phase 2: the catalogue sample (run:2026-10-30-skills-catalogue)
+
+12 sessions of `SkillsSor` and the new `SkillsChain` on slot 2 (the record: [experiments § run:2026-10-30-skills-catalogue](experiments.md#run2026-10-30-skills-catalogue)),
+logger rev 5 unchanged; `tools/skills.py` over the 12 logs: **0 mismatches**
+(`workspace/logs/skills/2026-10-30-skills-catalogue-check.txt`), after two additions the run forced (below). It
+logs one representative per family with no tier-A member and does not restate the catalogue's maps (skills/0004–0018).
+
+- [C] **Family floors** (SrvStart / SrvDo events of one member, `families.txt`): 8a 181 Resurrect 66 / 66, 160
+  ShamanFire 39 / 37; 8b 282 Imp Inferno 33 / 1 004; 8c 299 Imp Fire Missile 213 / 198, 330 Imp Teleport 354 / 347, 295
+  Overseer Whip 61 / 61; item: 53 Chain Lightning with the item argument and effect argument 1, 0 / 64. Every
+  creation of the 12 logs (44 773) and every hit end (13 576) is checked by the existing `MC.*` and `MH.end` rows, and
+  the player rows' seeds by `SDO.seed` / `SST.seed` (2 612 / 2 616). The monster rows' caster steps are reported, not
+  checked (they are not in the modelled list of the module docstring). (fn:SKILLS_SrvDo@0x0056F7F0,
+  fn:SKILLS_SrvStart@0x0056F640, run:2026-10-30-skills-catalogue)
+- [C] **`0x005AC040`'s re-seed** (§ 9): in 36 of 36 creations of a class-408 missile by a catapult spotter (class
+  516; parameter block `+0x54` = `0x005AC040`) the new missile's seed at `MissileCreate`'s exit lies on the stream of
+  `Init(path word +0x10, 0x029A)`, **10 steps** past the Init in all 36 (the same three path calls as § 9's
+  `0x005C9290`); a seed made any other way lies within 5 000 steps of that Init by chance with odds of about 5 000 in
+  2⁶⁴. The 12 `MC.seed` mismatches the first check gave (the model took the creation seed) are this callback.
+  (fn:sub_005AC040_MissCbReseedPathX@0x005AC040, 0x005AC073, run:2026-10-30-skills-catalogue)
+- [I] Which of the three path calls makes the 10 steps is not read (as § 9 for the 20 and 38); that the Init's low
+  word is the value `0x00648A00(path)` returns, read as path `+0x10`, is read from the comparison alone (it fits in
+  36 of 36). The callback is reached from the hit functions `0x005AC14B` and `0x005AC525` by § 9; which of the two
+  made these creations is not logged. (fn:sub_005AC040_MissCbReseedPathX@0x005AC040)
+- [I] **`ReturnDamage` (`0x005C5F50`, Iron Maiden) steps the cursed unit's seed once when its returned damage kills
+  that unit** (1 case, cat-chain-3 `n=1802`: the monster's life 1 173 to 0 inside the handler, 1 step between the
+  handler's entry and its return); in the survivors it stays a no-draw check. The step is the death's processing
+  or something else the handler calls after the damage; which draw is not read. (fn:sub_005C5F50_StatEv04ReturnDamage@0x005C5F50,
+  run:2026-10-30-skills-catalogue)
+- [I] Observations of the catalogue's monster rows against the batches (not checks): Overseer Whip (do 131) steps the
+  caster once in 61 of 61, in the events with a `STA` or `MAS` line (a monster target; skills/0018's Answer: one draw for a minion target); Imp Fire Missile (do 132) once in 198 of 198 (the nested creation's critical roll is the likely source: cat-a5-1 has 185
+  events and 185 creations with an owner draw); Imp Teleport (do 129) 62 of 347, with no nested line (inside its `UnitTeleport` boundary); Frenzy (do 109)
+  1 in 361 and 4 in 634 of 995 (the restart and hit, left `[I]` by skills/0017 § 7); the others none. (fn:sub_005D1F70_SkillDo131OverseerWhip@0x005D1F70,
+  fn:sub_005D2090_SkillDo132ImpFireMissile@0x005D2090, fn:sub_005D1AB0_SkillDo129ImpTeleport@0x005D1AB0,
+  fn:sub_005CDF10_SkillDo109Frenzy@0x005CDF10, run:2026-10-30-skills-catalogue)
+- [C] **The item cast's handler** (§ 3, event 20): 166 `SkillOnEvent` fires (event 7), 102 failing the roll with one draw,
+  64 passing it and casting Chain Lightning at level 5 (at least the roll's draw each, one after the first); 16
+  `SkillOnGetHit` fires (at least one draw each; 2 logged Iron Maiden 76 casts, the recipe's Corpsemourn). (fn:sub_005C0470_StatEv20SkillOnEvent@0x005C0470,
+  fn:sub_005C05A0_StatEv21SkillOnGetHit@0x005C05A0, run:2026-10-30-skills-catalogue)
+- [I] **Shortfalls** (the record): Baal Tentacle (do 140) not reached, so the stale-word question of skills/0018 § 7
+  stays `[I]`; the scroll and book rows (do 113) and the charged suffixes not attempted; do 151 itself is not shown (the
+  logger does not record the do function that ran); Act 2 monsters of the 8a rows are absent; chained pairs are counted
+  over the run, not per family. (run:2026-10-30-skills-catalogue)
 
 ## Kept outputs
 
@@ -969,6 +1015,10 @@ control: the same command with `--excel` a scratch copy of `skills.bin` whose ro
 `kick-targets.txt` `b789b936…` (each Kick do span's `AD0`/`DQ0` defender's `(type, class)` over the three `barh`
 logs, from the review's `kick_targets.py` `b2109c2a…`, kept beside it), `xrefs.txt` `78d1fb0a…` (`tools/xrefscan.py`
 over the five targets; the 18 + 18 + 3 + 2 + 1 sites as above).
+
+`workspace/logs/skills/` (plan 0046 Phase 2, manifest `2026-10-30-skills-catalogue-manifest.sha256` `dc673ebd…`, 81 files, `sha256sum -c` from
+that directory): the 12 logs, `…-check.txt` `2bd2b4fb…`, `…-families.txt` `97ad3388…`, `…-tally.txt` `6c22dc3a…`, `…-gaps.txt` `b30c38dd…`; the development logs
+under `dev-p46h-manifest.sha256`.
 
 ## Data touched
 

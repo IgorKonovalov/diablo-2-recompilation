@@ -18,6 +18,7 @@ The casting: `explore --melee --melee-button 3 --curse-keys K1,K2,...` presses t
 the nearest live monster (the right skill is cast at it; a self-centred skill such as Nova is cast where the player
 stands), Teleport stays on Shift + left for the hops.
 """
+import json
 import os
 import re
 import subprocess
@@ -157,6 +158,21 @@ SESSIONS["spike-2"] = ("SkillsSor", "enter-nightmare", 4627, [wp("1,5"), ("pilot
 SESSIONS["spike-3"] = ("SkillsSor", "enter-normal", 4628, [wp("1,4"), ("pilot", cast_explore(SOR_KEYS, 50), 700)])
 
 
+def last_level(log):
+    """The level id of the last PLR line of the log (tools/gdb/pilot.py)."""
+    lid = None
+    try:
+        for ln in open(os.path.join(ROOT, log), errors="replace"):
+            if ln.startswith("PLR "):
+                try:
+                    lid = json.loads(ln[4:])["lid"]
+                except (ValueError, KeyError):
+                    pass
+    except OSError:
+        pass
+    return lid
+
+
 def sh(args, timeout=None, log=None):
     print("$ " + " ".join(args), flush=True)
     try:
@@ -242,6 +258,18 @@ def run_session(name, slot, tag, saves, run):
             for k in step[1]:
                 sh(PY + ["tools/xdrive.py", "--slot", str(slot), "key", k], 30)
                 time.sleep(step[2])
+        elif step[0] == "until":
+            # plan 0046 Phase 2: repeat a pilot command until the player's level is the target, at most n times (an
+            # explore between failed tries); the session goes on whatever the end
+            lid, pargs, tmo, tries = step[1]
+            for t in range(tries):
+                if last_level(log) == lid:
+                    break
+                if t % 2 == 1:
+                    sh(PY + ["tools/d2pilot.py", "explore", log, "--slot", str(slot), "--hops", "12"] + ["--drink", "0.5", "--mana-col", "4"] +
+                       ["--shots", shots], 120, out)
+                sh(PY + ["tools/d2pilot.py", pargs[0], log, "--slot", str(slot)] + pargs[1:] + ["--shots", shots],
+                   tmo, out)
         elif step[0] == "cast":
             for k in step[1]:
                 sh(PY + ["tools/xdrive.py", "--slot", str(slot), "key", k], 30)

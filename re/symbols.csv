@@ -1431,7 +1431,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005ABEE0,func,sub_005ABEE0_MissHit35ObjectPin,,I,skills/catalogue,docs/findings/skills/0007-missile-hit-31-59.md
 0x005ABF70,func,sub_005ABF70_MissHit36SubAtEnd,,I,skills/missiles,docs/findings/skills/0003-handlers.md
 0x005AC020,func,sub_005AC020_MissHit37UnitRet2,,I,skills/catalogue,docs/findings/skills/0007-missile-hit-31-59.md
-0x005AC040,func,sub_005AC040_MissCbReseedPathX,,I,skills/missiles,docs/findings/skills/0003-handlers.md
+0x005AC040,func,sub_005AC040_MissCbReseedPathX,,C,skills/missiles,docs/findings/skills/0003-handlers.md
 0x005AC0A0,func,sub_005AC0A0_MissHit38Nova,,I,skills/catalogue,docs/findings/skills/0007-missile-hit-31-59.md
 0x005AC1D0,func,sub_005AC1D0_MissHit39SpawnMon,,I,skills/catalogue,docs/findings/skills/0007-missile-hit-31-59.md
 0x005AC250,func,sub_005AC250_MissHit40Scatter,,I,skills/catalogue,docs/findings/skills/0007-missile-hit-31-59.md

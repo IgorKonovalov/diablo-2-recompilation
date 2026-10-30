@@ -240,6 +240,45 @@ class Model(unittest.TestCase):
         self.assertEqual((C.ok["EVH.seed"], C.ok["EVH.mana"], sum(C.bad.values())), (1, 1, 0))
         self.assertEqual(self.run_lines(ev(0x005C0130, 6, skills.sd_fmt(s0), st0, st0, e=9)).bad["EVH.mana"], 1)
 
+    def test_mc_callback_5ac040(self):
+        # plan 0046 Phase 2: the creation callback 0x005AC040 (block +0x54) re-seeds the missile from Init(path +0x10) and
+        # the path calls step it: the creation seed lies on that stream (10 steps here); anything else is a mismatch
+        own = "65031f47:06897ace"
+        after = skills.sd_fmt(skills.step(skills.sd_parse(own)))
+        path = {"v": 2688, "mx": 3584, "a": 0, "x10": 5000}
+        md = {"act": 40, "sk": 0, "lv": 1, "rng": 40, "rem": 40}
+        st = (5000, skills.INIT_HIGH)
+        for _ in range(10):
+            st = skills.step(st)
+
+        def lines(mseed):
+            ls = self.mc_lines(13, 1, path, md, mseed, own, after)
+            blk = bytearray(bytes.fromhex(ls[0][1]["p"]))
+            struct.pack_into("<I", blk, 0x54, 0x005AC040)
+            ls[0][1]["p"] = blk.hex()
+            return ls
+        C = self.run_lines(lines(skills.sd_fmt(st)))
+        self.assertEqual((C.ok["MC.cbseed2"], sum(C.bad.values())), (1, 0), C.miss)
+        self.assertEqual(self.run_lines(lines("00000001:0000029a")).bad["MC.cbseed2"], 1)
+
+    def test_handler_return_damage(self):
+        # Iron Maiden's ReturnDamage (0x005C5F50) draws nothing; when it kills the cursed unit (stat 6 to 0) the death's
+        # step is reported, not checked
+        s0 = (0x2000, 0x29A)
+        one = skills.sd_fmt(skills.step(s0))
+
+        def ev(after, st0, st1):
+            return [("EVH", {"fn": 0x005C5F50, "e": 5, "u": {"u": 1, "t": 1, "c": 20, "id": 1, "m": 5,
+                                                            "s": skills.sd_fmt(s0), "st": st0},
+                             "o": 2, "par": 76, "so": "0:0", "sv": 0, "ot": {"u": 2, "t": 0, "c": 4, "id": 9},
+                             "n": 1}),
+                    ("EVR", {"k": 1, "r": 1, "su": after, "so": "0:0", "st": st1, "n": 2})]
+        self.assertEqual(self.run_lines(ev(skills.sd_fmt(s0), {"6": 500}, {"6": 400})).ok["EVH.seed"], 1)
+        self.assertEqual(self.run_lines(ev(one, {"6": 500}, {"6": 400})).bad["EVH.seed"], 1)       # survives: a mismatch
+        C = self.run_lines(ev(one, {"6": 500}, {}))                                                 # dies: reported
+        self.assertEqual(sum(C.bad.values()), 0, C.miss)
+        self.assertEqual(C.info["EVH ReturnDamage kills the cursed unit (steps reported)"], 1)
+
     def test_canuse(self):
         # Meteor (56): a cost above the mana is code 1; in a delay state (DLY at frame 100 for 30 frames) code 8
         P = self.T.srec(56)
