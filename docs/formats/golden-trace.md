@@ -60,7 +60,7 @@ predicted one. (A format rule of this project, not a game fact; `emit` writes an
 
 - `drlg`: `generator` (`outdoor` or `maze`), `map_seed` (the `-seed` of the log), `level` (the level id), `window_seed`
   (the level seed at the window's opening line, `OD0` or `MZ0`); outdoor adds `difficulty` (0 to 2; the replayer's, read from the
-  log's name, since a log does not show it; it selects the level sizes), maze adds `first_room_seed` (`low:high`, the
+  log's name, since a log does not show it; it selects the level sizes) [I]: `hell` in the name is 2, `nightmare` 1, else 0, so the 67 outdoor cases of logs whose name carries neither word rest on the default (a wrong difficulty that changed a level size would not have reproduced; one that did not is unchecked), maze adds `first_room_seed` (`low:high`, the
   room seed the window starts the first room from, from the log's preceding `RC` line, as `tools/maze_replay.py` takes it).
   The case holds the window's output, not the level: an outdoor window is the generator from `OD0` to the end of
   `OutdoorRoomsCreate`, a maze window `MZ0` to `MZ1` (before the placement shift). A DRLG case is observed only.
@@ -143,7 +143,7 @@ room differs; the set's `inputs` and a replay of the kept log do. [I] (a convent
 - Predicted: `golden.py emit --predicted --seeds 4802,100-103 --diffs 0,1,2 --exps 0,1 --levels 1,57`.
 - `merge` joins sets (cases by id; the scope is the union); `coverage` prints, per field pattern, the observed and predicted
   cases and the distinct levels reached.
-- `sample` takes a spread subset (worlds by difficulty and game type, drops by difficulty, game type, item or none,
+- `sample` takes a spread subset (worlds by difficulty and game type, DRLG windows by generator and level (outdoor and maze half and half), drops by difficulty, game type, item or none,
   sub-class depth); `merge` joins sets of one header.
 
 Nothing in a case is a table row or file bytes: seeds, indices, codes, counts, class ids of a region pool (as in the

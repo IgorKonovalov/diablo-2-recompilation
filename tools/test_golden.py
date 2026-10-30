@@ -227,13 +227,15 @@ class Drlg(unittest.TestCase):
 
     def test_sample_keeps_drlg(self):
         h, c = mini()
-        c += [drlg_case("m%d" % i, "maze", i) for i in range(5)]
+        c += [drlg_case("m%d" % i, "maze", i) for i in range(5)] + [drlg_case("o%d" % i, "outdoor", 40 + i) for i in range(2)]
         c[1]["inputs"] = {"difficulty": 0, "expansion": 1}
         c[1]["expected"]["chain.G1.subtc"] = []
         write(self.p("a"), dict(h, scope=golden.scope_of(c)), c)
         golden.cmd_sample(NS(set=self.p("a"), out=self.p("s"), worlds=1, drops=1, drlg=3))
         _h, cs = golden.read_set(self.p("s"))
         self.assertEqual(sorted(x["type"] for x in cs), ["drlg", "drlg", "drlg", "drop", "world"])
+        # both generators are sampled: 2 outdoor, 1 maze for an odd n
+        self.assertEqual(sorted(x["inputs"]["generator"] for x in cs if x["type"] == "drlg"), ["maze", "outdoor", "outdoor"])
 
     def test_drop_case_without_game_seed(self):
         call = [("TCR", dict(tc="470", ilvl="84", seed="1:2", diff="2", exp="1", stype="1", sclass="453", mflags="10")),

@@ -2,9 +2,9 @@
 from: archivist
 to: architect
 date: 2026-10-30
-status: open
+status: done
 context: []
-resolution: ""
+resolution: "Tier B check accept with fixes (2): drlg type in scope (plan P2 What names DRLG replays); difficulty-from-name stays [I], tagged; sample lacked outdoor cases, fixed; skips accepted"
 ---
 
 The request: what is needed, from whom, and why. Not blocking / blocking <what>.

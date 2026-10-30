@@ -675,16 +675,16 @@ def cmd_sample(ns):
     header, cases = read_set(ns.set)
     w = collections.defaultdict(list)
     d = collections.defaultdict(list)
-    r = collections.defaultdict(list)
+    r = {"outdoor": collections.defaultdict(list), "maze": collections.defaultdict(list)}
     for c in sorted(cases, key=lambda c: c["id"]):
         i = c["inputs"]
         if c["type"] == "world":
             w[(i.get("difficulty"), i.get("expansion"))].append(c)
         elif c["type"] == "drlg":
-            r[(i["generator"], i["level"] if i["generator"] == "maze" else 0)].append(c)
+            r[i["generator"]][i["level"]].append(c)
         else:
             d[(i["difficulty"], i["expansion"], c["expected"]["chain.G1.count"] > 0, len(c["expected"]["chain.G1.subtc"]) > 1)].append(c)
-    out = spread(w, ns.worlds) + spread(d, ns.drops) + spread(r, ns.drlg)
+    out = spread(w, ns.worlds) + spread(d, ns.drops) + spread(r["outdoor"], (ns.drlg + 1) // 2) + spread(r["maze"], ns.drlg // 2)
     write_set(ns.out, header, out)
     print("%s: %d cases, set digest %s" % (ns.out, len(out), set_digest(header, out)))
     return 0

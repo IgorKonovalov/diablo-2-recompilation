@@ -127,3 +127,13 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   (23) are not cases; maze types other than 3, 10 and 13 are not modelled by the replayer; no predicted DRLG;
   item seeds and populations wait for a later set version (P1 ruling 2). Surprises: the `sweep-roomk` s9/s10 logs
   carry a `-seed` the game does not use as the map seed (0 and clamp), so their windows are skipped.
+- **2026-10-30 — Phase 2 lane check (architect, `lane/a59b`, Tier B): accept with fixes (2).** Rulings. (1) The `drlg`
+  case type is in scope: the approved Phase 2 *What* names "the DRLG replays of plans 0022 and 0026" and Phase 3's order
+  runs RNG, seeds, DRLG, population, drops; owner question 2 ("the chain, world and drops, only") separates the chain from
+  the simulation events of Phase 4 and is not narrowed by it. Observed windows only, no new claim; no owner decision
+  changes, so no Tier A. (2) `difficulty` from the log's name stays `[I]`, now tagged in the format doc with the 67
+  default-Normal outdoor cases named. (3) Skips accepted: `-seed` not the map seed (2 logs), unmodelled maze types
+  (184 windows), forced-variant items-chain logs (23), A2/A4/pool fields predicted-only. Fixes: the sample held no
+  outdoor case (its 6 `drlg` were all maze; `sample` now takes outdoor and maze half and half, 3 + 3, test extended),
+  and the `difficulty` tag. Checks: 15 tests OK; sample against the full set 28 cases, 0 different, 0 missing; full-set
+  digest `d73f29f6…09e08` reproduces; sample audit: every `drlg` string is a seed, a sha256 or `outdoor`/`maze`.
