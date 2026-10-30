@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, data/excel, items/uniques-sets, items/properties, items/affixes, monsters/stats, save/d2s]
 consumed_by: [save/d2s, combat/to-hit, stats/aggregate]
-tags: {C: 85, I: 49, L: 1}
-updated: 2026-10-21
+tags: {C: 121, I: 39, L: 1}
+updated: 2026-10-30
 ---
 
 # New character, starting items, experience and level-up
@@ -47,13 +47,15 @@ flowchart TD
 | When | Function | Tag |
 |---|---|---|
 | A player joins with a version 92..96 save whose status has bit 0 set and which ends at the header | fn:D2S_ReadSaveV92@0x0056B180 → fn:sub_00569F80_NewCharFromStub@0x00569F80, run:2026-10-16-player (35 characters) | [C] |
-| The same steps from the version < 92 reader and from `sub_005345A0_PlayerLoad` | 0x00532590 (`sub_00532590_NewCharLegacy`), reached from 0x00534020 and 0x00534607 | [I] |
+| A version < 92 save whose header status has bit 0 set: the legacy reader calls its header section only, then `sub_00532590_NewCharLegacy`, and the character is built new from its class (level 1, the class's start stats and kit), not from the file | fn:sub_00534020_ReadSaveLegacy@0x00534020 → fn:sub_00532590_NewCharLegacy@0x00532590, run:2026-10-27-sweep-d2s-legacy (one version-87 file) | [C] |
+| That `NewCharLegacy` takes the same steps as `NewCharFromStub`, and its other caller, `sub_005345A0_PlayerLoad` | 0x00534607 (`sub_005345A0_PlayerLoad`); the call from `PlayerLoad` was not met | [I] |
 | The game was started with `-act N` (N = 2..5): inside `PLAYER_InitBaseStats` | fn:PLAYER_GrantLevel@0x0057EB10, run:2026-10-16-player (6 characters) | [C] |
 | A monster is killed: experience to the credited player | fn:XP_OnMonsterKill@0x0057E990 → fn:XP_PartyShare@0x0057E6C0, run:2026-10-16-player (32 kills, one player) | [C] |
 | Any experience change that changes the level | fn:PLAYER_AddExperience@0x0057E510 → fn:PLAYER_LevelUp@0x00570880, run:2026-10-16-player (20 level-ups) | [C] |
 | The Ancients' reward (quest a5q5, Rite of Passage): a capped grant of 1.4M / 20M / 40M experience | fn:sub_0058C9A0_A5Q5_AncientDeath@0x0058C9A0 → fn:sub_0058C5C0_ExpGrantCapped@0x0058C5C0 | [I] |
-| Death, unless the killer is a player or a player's monster; the corpse's share returns on its pickup | fn:sub_00580EC0_PlayerDeath@0x00580EC0 → fn:sub_00535AB0_PlayerDeathExpLossGate@0x00535AB0 → fn:PLAYER_DeathExpLoss@0x005359F0; fn:PLAYER_CorpseCreate@0x0057F700, fn:PLAYER_CorpsePickup@0x0057FB70 | [I] |
-| An attribute point is spent | fn:PLAYER_SpendStatPoint@0x00570D60 | [I] |
+| Death to a monster with no owner: the loss, then the corpse's share written at the corpse's creation | fn:sub_00535AB0_PlayerDeathExpLossGate@0x00535AB0 → fn:PLAYER_DeathExpLoss@0x005359F0; fn:PLAYER_CorpseCreate@0x0057F700, run:2026-10-27-sweep-player (the loss reproduced on four deaths over three difficulties) | [C] |
+| The gate's caller, `sub_00580EC0_PlayerDeath`; no loss when the killer is a player or a player's monster; the share returns on the owner's pickup of the corpse | fn:sub_00580EC0_PlayerDeath@0x00580EC0, fn:sub_00535AB0_PlayerDeathExpLossGate@0x00535AB0, fn:PLAYER_CorpsePickup@0x0057FB70 (one caller, `sub_00548B00_UnitInteract` 0x00548E56) | [I] |
+| An attribute point is spent | fn:PLAYER_SpendStatPoint@0x00570D60, run:2026-10-27-sweep-player (four spends) | [C] |
 
 ## Inputs
 
@@ -126,26 +128,31 @@ A1. Client, StubBuild(name, status, class) → 335-byte image:          [C] (fn:
       0x29 16;  0x2A 30;  0x2B level 1;  0x2C and 0x30 time(NULL)
       0x88..0x97 the 16 bytes at 0x0070CCC8;  0x98..0xA7 0xFF
       everything else 0 (so act bytes 0xA8..0xAA and map seed 0xAB are 0)
-    the checksum at 0x0C is added when the stub is written            [I] (fn:sub_0043C6B0_StubWrite@0x0043C6B0)
-A2. Server, D2S_ReadHeader, in this order:                            [I] (fn:D2S_ReadHeader@0x0056A090, 0x0056A0AF–0x0056A1B1)
+    the checksum at 0x0C is added when the stub is written            [C] (fn:sub_0043C6B0_StubWrite@0x0043C6B0, fn:D2S_Checksum@0x00411130, 0x0043C71A, 0x0043C731, run:2026-10-16-player)
+      ; D2S_Checksum(stub, 0x14F) stored at +0x0C before the file is written
+A2. Server, D2S_ReadHeader, in this order:                            [C] (fn:D2S_ReadHeader@0x0056A090, 0x0056A0AF–0x0056A1B1, run:2026-10-27-sweep-d2s-load)
       length < 0x14F → fail 4
       checksum (0x0C zeroed) ≠ u32[0x0C] → fail 6
       u32[0x08] ≠ length → fail 5
       version ∉ 92..96 → fail 7
-      client name null → fail 3;  name ≠ client name ignoring case → fail 7
+      client name null → fail 3                                       [I] (fn:D2S_ReadHeader@0x0056A090) not met: a single-player client always has its name
+      name ≠ client name ignoring case → fail 7
       D2S_CheckStatus(status) ≠ 0 → its code                          ; save/d2s § D1
       class byte > 7 → fail 4;  CLIENT_SetClass(class)
 A3.   if status & 1:                                                  [C] (fn:D2S_ReadHeader@0x0056A090, run:2026-10-16-player)
         clear bit 0 in the buffer and in the client;  return 2        ; before act, map seed, hot keys are read
 A4. D2S_ReadSaveV92: return 2 and the cursor at the file's end        [C] (fn:D2S_ReadSaveV92@0x0056B180, run:2026-10-16-player)
       → NewCharFromStub(client, game)  (§ B)
-    return 2 with bytes after the header → internal 2 → load error 9  [I] (0x0056B1C6–0x0056B1E2, data:g_D2sLoadErrorMap@0x006E1208)
+    return 2 with bytes after the header → internal 2 → load error 9  [C] (0x0056B1C6–0x0056B1E2, data:g_D2sLoadErrorMap@0x006E1208, run:2026-10-27-sweep-d2s-load)
 ```
 
 Step notes:
 
-- A1. Hardcore is bit 2 (`0x04`) of the status word the character screen passes; the screen also ORs `0x20` for class
-  5 or 6 before the call. [I] (0x00436360–0x004363CE)
+- A1. Hardcore is bit 2 (`0x04`) of the status word the character screen passes: it is set in the 3 stubs of the
+  hardcore characters and in none of the 32 others, and every class 5 or 6 stub carries `0x20`. [C]
+  (0x00436360–0x004363CE, fn:sub_0043C540_StubBuild@0x0043C540, run:2026-10-16-player) That the screen also ORs
+  `0x20` for class 5 or 6 before the call, as `StubBuild` does, is read from the code: it ORs a bit already set, so no
+  value shows it. [I] (0x00436360–0x004363CE)
 - A1. **Where the screen's status bits come from.** In an expansion install (`HasExpansionMpq`), selecting any class
   sets `0x20` (`or word [status+0x1EF], 0x20`); the "expansion" checkbox toggles it (`xor 0x20`, only with the
   expansion MPQ present), and class 5 or 6 forces it again. So a classic character of classes 0–4 is the default
@@ -162,8 +169,17 @@ Step notes:
   player, TCP/IP and Open Battle.net only the ladder checkbox sets it. The realm meaning is that of the button
   strings. [I] (0x00435CD0, 0x00435D30, 0x00435D10, 0x00431A40, 0x00435DB4, 0x00435B31, 0x00435C04, 0x0043491D,
   fn:sub_00433BF0_CreateClassSelect@0x00433BF0, [player/0001 § Plan 0049 Phase 1 (c)](../../findings/player/0001-creation.md#c-the-front-end-mode-word-0x007795ec))
-- A2. Every stub of the run passed these checks, so none of the failure codes was observed. Class 7 passes the class
-  test although CharStats has records 0..6 only; see § J. [I] (0x0056A172)
+- A2. **The order.** Every stub of run:2026-10-16-player passed. On tool-built saves each test failed alone gave its
+  code, and each case failing two tests gave the earlier one's: the checksum before the version and before the size,
+  the name before the status, the status before the class. [C] (fn:D2S_ReadHeader@0x0056A090,
+  run:2026-10-27-sweep-d2s-load; [save/d2s § D3](../save/d2s.md#d3d5-reading-a-save))
+- A4. A stub with 10 bytes after its 335 returned 2 from the header and failed with load error 9; the same stub
+  without them made a new character. [C] (0x0056B1C6–0x0056B1E2, run:2026-10-27-sweep-d2s-load)
+- A2. **Class 7 passes the class test** although CharStats has records 0..6 only, and the game then halts: a class-7
+  full save and a class-7 stub both passed the header, the class-7 player unit was not made, and
+  `sub_00553180_PlayerSetClient` stopped on the null unit (from `sub_00569F20_PlayerUnitInit` for the full save, from
+  `sub_00569F80_NewCharFromStub` for the stub). [C] (0x0056A172, 0x00553185–0x00553187, run:2026-10-27-sweep-d2s-load)
+  So no class-7 player exists; § J gives what the code would do with one.
 
 ### B. `NewCharFromStub`: the order of a new character
 
@@ -184,7 +200,7 @@ sequenceDiagram
 ```
 
 ```
-B1. client.flags3D4 |= 1                                                 [I] (0x00537970)
+B1. client.flags3D4 |= 1                                                 [C] (fn:sub_00537970_ClientFlag3D4Set@0x00537970, run:2026-10-27-sweep-player)
 B2. unit ← SUnitCreate(UNIT_PLAYER, client.class, game)                  [C] (fn:sub_00555230_SUnitCreate@0x00555230, run:2026-10-16-player)
       ; type 0: no unit seed, no game-seed draw (rng/seeds 7a); the skill list of § D is built here
 B3. PlayerUnitInit(game, unit, client):                                  [C] (fn:sub_00569F20_PlayerUnitInit@0x00569F20, 0x00569F53, run:2026-10-16-player)
@@ -194,7 +210,7 @@ B3. PlayerUnitInit(game, unit, client):                                  [C] (fn
       UNIT_SetMode(unit, 1)                                              ; no draw for a player
       player data +0x50, +0x54, +0x58, +0x5C ← 0
 B4. send the unit to the client (0x00571F90)                             [C] no draw (run:2026-10-16-player)
-B5. act: i32 ← client.act                                                [I] (fn:CLIENT_GetAct@0x005382B0, 0x0056A1F7)
+B5. act: i32 ← client.act                                                [C] (fn:CLIENT_GetAct@0x005382B0, 0x0056A1F7, run:2026-10-16-player)
 B6. PLAYER_InitBaseStats(game, unit, act)                                ; § C
 B7. PLAYER_GiveStartItems(unit, game, act)                               ; § E
 B8. pd.leftSkill ← 0;  pd.rightSkill ← 0                                 [C] (fn:sub_00569F80_NewCharFromStub@0x00569F80, run:2026-10-16-player, all of B8–B9)
@@ -206,14 +222,20 @@ B10. QuestsPlayerJoin(game, unit, 1)                                     [C] no 
 
 Step notes:
 
+- B1. After the call the word equals its value at the entry of `NewCharFromStub` with bit 0 set (4 new characters).
+  Bit 0 was already set at that entry, by `sub_00539760_ClientAddPlayerToGame` (0x005397A3), so the `or` at
+  0x00537993 changed nothing in these sessions. [C] (fn:sub_00537970_ClientFlag3D4Set@0x00537970,
+  run:2026-10-27-sweep-player) A path that reaches B1 with bit 0 clear was not met. [I] (0x00537993)
 - B3–B10. **The game-seed budget of a new character is `1 + 2 × (number of item copies)`.** The game seed logged
   after `SUnitCreate`, after the unit is sent, after `PLAYER_InitBaseStats`, after the items and after
   `QuestsPlayerJoin` matched the model on all 35 characters; no RNG-function call inside `NewCharFromStub` is on the
   game seed or the player's unit seed (all 142 are on item unit seeds or item seeds). [C]
   (fn:sub_00569F80_NewCharFromStub@0x00569F80, run:2026-10-16-player)
-- B5. The act is not read from the stub (A3 returns first). The client record gets `g_StartAct` at creation, which is 0
-  unless `-act N` set it to `N − 1`. [I] (data:g_StartAct@0x00883D44, fn:sub_0044D5A0_ApplyActOption@0x0044D5A0,
-  0x0052FB90)
+- B5. The act is the client's: the six `-act N` characters reached `PLAYER_InitBaseStats` with act `N − 1` and were
+  granted that act's level, the 29 others with 0. It is not read from the stub (A3 returns first): all 35 stubs have
+  act bytes 0. [C] (fn:CLIENT_GetAct@0x005382B0, fn:D2S_ReadHeader@0x0056A090, run:2026-10-16-player) The client
+  record gets the value from `g_StartAct` at creation, which is 0 unless `-act N` set it to `N − 1`; no line logs that
+  global. [I] (data:g_StartAct@0x00883D44, fn:sub_0044D5A0_ApplyActOption@0x0044D5A0, 0x0052FB90, 0x0052FB97)
 - B9. A blank `StartSkill` is −1 (`0xFFFF`), so it passes the `≠ 0` test and fails in `SKILLS_GetUnitSkill`. Only
   the Sorceress (36 Fire Bolt) and the Necromancer (70 Raise Skeleton) have one in stock data; under `-act N` the
   right skill stays Attack. [C] (fn:SKILLS_GetUnitSkill@0x006439F0, run:2026-10-16-player)
@@ -274,8 +296,15 @@ D4. once item1 is equipped, StartSkill appears as the last list entry, base leve
 
 Step notes:
 
-- D1. An existing entry is raised by 1 while below the skill's maximum level instead of appended. [I]
-  (fn:SKILLS_AddSkill@0x00647110)
+- D1. **An existing entry is raised by 1** instead of appended (the entry with the same Skills record and item ref
+  −1). No stock creation reaches this: no CharStats record repeats a skill in `Skill 1..10` or names Attack. The
+  skill-point spend reaches it (`PLAYER_SpendSkillPoint`: `newskills` ≥ the cost, minus the cost, then the add): Ice
+  Bolt appended at level 1, then raised 1 → 2, and Frozen Armor raised 19 → 20, the Skills maximum; the other callers
+  only appended (467 calls). [C] (fn:SKILLS_AddSkill@0x00647110, fn:PLAYER_SpendSkillPoint@0x00570080,
+  run:2026-10-27-sweep-player) The test against the maximum (`SKILLS_GetMaxLevel`: Skills `+0x12C`, 20 when that cell
+  is ≤ 0) is read from the code: a full entry never reached the add, because the client sent no request for a skill
+  at its maximum. For a monster unit (type 1) the entry is raised at or above the maximum too. [I]
+  (fn:SKILLS_GetMaxLevel@0x004AA8B0, 0x0064724F–0x0064725E, 0x00647256)
 - D1. Stock lists: every class gets Attack (0), Throw (2), Kick (1), the scrolls and books of Identify and Town Portal
   (217–220) and Unsummon (3); the Barbarian adds Left Hand Throw (4) and Left Hand Swing (5), the Assassin Left Hand
   Swing. A new character's class-skill bytes in the save are all 0. [C] (struct:CharStatsRec+0xAE,
@@ -369,8 +398,11 @@ Step notes:
 - E6. **Belt.** `BeltFreeSlot` first looks for a column whose box among 0..3 already holds the same item and takes the
   first free box down that column, below the belt's box count; failing that, when the item record's byte `+0x131` is
   set, the first free box of 0..3. On the default belt the column search never finds room, so the four `hp1` land in
-  boxes 0, 1, 2, 3. [C] for the box 0..3 path; the column path is as read [I]. (fn:sub_0063C600_BeltFreeSlot@0x0063C600,
-  run:2026-10-16-player)
+  boxes 0, 1, 2, 3. [C] (fn:sub_0063C600_BeltFreeSlot@0x0063C600, run:2026-10-16-player) The column path, the
+  first-free path and the no-box result are each met in play: four potions sent to an 8-box belt took the column
+  path at box 4 (the same class in column 0), the first free box at 1 and at 2, and the column path at box 5, and
+  every call of the run gave the box the logged boxes predict. [C] (fn:sub_0063C600_BeltFreeSlot@0x0063C600,
+  run:2026-10-27-sweep-player)
 - E6. **Inventory spot.** An item one cell high is placed by `InvSpotFindRow` (columns from the right, rows from the
   bottom), any other by `InvSpotFind` (rows from the top, columns from the left); each candidate that fits is scored by
   `InvSpotScore` (the occupied or outside cells along its four sides, 255 when enclosed), a spot replaces the best only
@@ -389,8 +421,8 @@ Step notes:
 ```
 F1. EXP_GetThreshold(class, L) = Experience[L + 1].col[c]                [C] (fn:EXP_GetThreshold@0x00611800, run:2026-10-16-player)
       ; the experience at which level L + 1 starts; no bound check on L
-    c ← class if 0 ≤ class ≤ 6 else 0                                    [I] (fn:EXP_GetThreshold@0x00611800)
-F2. MaxLvl(class) = Experience[0].col[c]                                 [I] (fn:sub_00611830_ExpMaxLevel@0x00611830)
+    c ← class if 0 ≤ class ≤ 6 else 0                                    [I] (fn:EXP_GetThreshold@0x00611800) ; no class-7 player reaches it (A2)
+F2. MaxLvl(class) = Experience[0].col[c]                                 [C] (fn:sub_00611830_ExpMaxLevel@0x00611830, 0x00611854, fn:EXP_LevelFromExp@0x00611860, run:2026-10-16-player)
 F3. EXP_LevelFromExp(class, exp: u32) → i32:                             [C] (fn:EXP_LevelFromExp@0x00611860, run:2026-10-16-player)
       n ← 0
       while n < MaxLvl(class) and exp ≥ Experience[n + 1].col[c]:  n ← n + 1    ; unsigned compare
@@ -406,6 +438,15 @@ Step notes:
 - F3. With stock data level 1 is 0..499, level 2 starts at 500, level 99 at 3 520 485 254; values from the row
   labelled 93 on exceed 2³¹, so a signed compare would break the top levels. [C] (fn:EXP_LevelFromExp@0x00611860,
   tbl:Experience.txt:Amazon, run:2026-10-16-player: level 98 reached at 3 229 426 756)
+- F1. **The clamp's reach.** The clamp is read from the code (0x00611806–0x0061180F). Its out-of-range inputs are a
+  class 7, which no player has (A2), and the −1 of the callers' inlined null-unit test (0x005342DE, 0x00535A0A,
+  0x0056B13D), which no run or reading meets; a null-unit call at any of the 13 `EXP_GetThreshold` callers would be the
+  case that reaches it. [I] (fn:EXP_GetThreshold@0x00611800)
+- F2. `ExpMaxLevel` reads `[g_pExperience + 4c]`, and `EXP_LevelFromExp`, whose results F3 matches, loads the same
+  cell as its loop bound; stock row 0 holds 99 for all seven classes. [C] (fn:sub_00611830_ExpMaxLevel@0x00611830,
+  0x00611854, fn:EXP_LevelFromExp@0x00611860, 0x00611885, data:g_pExperience@0x0096C8A8, tbl:Experience.txt:Amazon,
+  run:2026-10-16-player) Its column 0 for a class outside 0..6 (0x00611847) is a clamp like F1's, which no class-7
+  player reaches. [I] (fn:sub_00611830_ExpMaxLevel@0x00611830)
 - F4. `ExpRatio` is 1024 for levels 0–69 and falls to 5 at 99; the run used 1024, 8 (level 97) and 6 (level 98). [C]
   (tbl:Experience.txt:ExpRatio, run:2026-10-16-player)
 
@@ -415,11 +456,11 @@ Step notes:
 G0. XP_OnMonsterKill credits the killer, or the player owning a minion;  [C] (fn:XP_OnMonsterKill@0x0057E990, run:2026-10-16-player)
     XP_PartyShare collects the members (J4); with one member:
       add ← XP_Compute(exp, clvl, mlvl);  PLAYER_AddExperience(add)      ; § H
-    exp is the killed monster's experience (monsters/stats)              [I] (fn:XP_OnMonsterKill@0x0057E990)
+    exp is the killed monster's base stat 13 (monsters/stats)            [C] (fn:XP_OnMonsterKill@0x0057E990, fn:STATS_GetUnitBaseStat@0x006253B0, run:2026-10-27-sweep-player)
 G1. XP_Compute(exp: i32, clvl: i32, mlvl: i32) → i32:
-      if exp > 0x7FFFFF: exp ← 0x7FFFFF                                  [I] (0x0057E480–0x0057E4FF, all of G1–G2)
+      if exp > 0x7FFFFF: exp ← 0x7FFFFF                                  [I] (0x0057E480–0x0057E4FF, all of G1)
       else if exp ≤ 0: return 1
-G2.   if clvl ≥ MaxLvl(class): return 0
+G2.   if clvl ≥ MaxLvl(class): return 0                                 [C] (fn:XP_Compute@0x0057E480, run:2026-10-27-sweep-player)
 G3.   XP_LevelDiffPenalty:                                               [C] (fn:XP_LevelDiffPenalty@0x0057E2F0, run:2026-10-16-player, all of G3)
         if mlvl ≤ clvl:            f ← g_XpPenaltyBelow[min(clvl − mlvl, 10)]
         else if clvl ≥ 25 and mlvl > 0:  exp ← MulDiv(exp, clvl, mlvl);  f ← 256
@@ -429,9 +470,9 @@ G4.   XP_ApplyExpRatio:  r ← EXP_GetRatio(clvl);  s ← EXP_GetRatio(0)    [C]
         if 1 ≤ s ≤ 31:
           exp ← (exp × r) >> s                                           ; signed, arithmetic shift
           but if exp > (0x7FFFFFFF >> ((r >> s) + s)): exp ← (exp >> s) × r    [I] (0x0057E390–0x0057E3E7)
-G5.   s85 ← stat 85 (item_addexperience) of the player                   [I] (0x0057E480–0x0057E4FF)
+G5.   s85 ← stat 85 (item_addexperience) of the player                   [C] (fn:XP_Compute@0x0057E480, 0x0057E480–0x0057E4FF, run:2026-10-27-sweep-player)
       if s85 ≠ 0: exp ← exp + MulDiv(exp, s85, 100)
-G6.   0x0057E3F0: no change for a player (it caps a mercenary's gain)    [I] (0x0057E3F0)
+G6.   0x0057E3F0: no change for a player (it caps a mercenary's gain)    [C] (0x0057E3F0, fn:XP_Compute@0x0057E480, run:2026-10-16-player)
       return exp
 ```
 
@@ -443,15 +484,24 @@ Step notes:
   (fn:sub_00483360_MulDiv@0x00483360, run:2026-10-16-player)
 - G3. **Use the /256 factors, not percentages.** 207/256 is 80.9 %, 13/256 is 5.1 %; the community's rounded
   percentages give different integers. [C] (data:g_XpPenaltyBelow@0x006E1668, run:2026-10-16-player)
-- G1, G2, G4 overflow branch, G5. No kill of the run reached the clamp, a non-positive experience, the level cap, the
-  overflow test or a non-zero stat 85 (largest input 18 713, stat 85 always 0). [I] (run:2026-10-16-player)
+- G0. In 145 kills the input of `XP_Compute` equalled the killed monster's base stat 13, read with
+  `STATS_GetUnitBaseStat`. [C] (fn:XP_OnMonsterKill@0x0057E990, run:2026-10-27-sweep-player)
+- G2, G5. **The level cap and stat 85 are met.** At clvl 99 (`≥ MaxLvl`) `XP_Compute` returned 0 on 71 of 71 kills.
+  With an Annihilus carried (stat 85 = 10, the unique's `addxp` maximum) the term `exp + MulDiv(exp, 10, 100)` was
+  added on all 73 kills of that session, each reproduced. [C] (fn:XP_Compute@0x0057E480, tbl:UniqueItems.txt:addxp,
+  run:2026-10-27-sweep-player)
+- G6. In the 32 kills of run:2026-10-16-player (stat 85 0) the value `XP_Compute` returned equalled the one after
+  `XP_ApplyExpRatio`. [C] (0x0057E3F0, run:2026-10-16-player)
+- G1, G4 overflow branch. No kill reached the clamp, a non-positive experience or the overflow test (largest input
+  18 713 in run:2026-10-16-player; 145 of 145 inputs positive in run:2026-10-27-sweep-player). [I]
+  (fn:XP_Compute@0x0057E480, fn:XP_ApplyExpRatio@0x0057E390)
 
 ### H. Adding experience — `PLAYER_AddExperience`
 
 ```
 H1. PLAYER_AddExperience(game, oldLevel, add), player in ESI:            [C] (fn:PLAYER_AddExperience@0x0057E510, run:2026-10-16-player: 38 calls)
       exp: u32 ← stat 13;  new: u32 ← exp + add                          ; wraps mod 2^32
-      cap: u32 ← EXP_GetThreshold(class, MaxLvl(class) − 1)               [I] (0x0057E522–0x0057E540)
+      cap: u32 ← EXP_GetThreshold(class, MaxLvl(class) − 1)               [C] (0x0057E522–0x0057E540, run:2026-10-27-sweep-player)
       new ← min(new, cap)                                                ; unsigned; a wrapped sum is not caught
       SetStat 29 (lastexp) ← new − exp;  SetStat 13 ← new
 H2.   if EXP_LevelFromExp(class, new) ≠ oldLevel:
@@ -461,8 +511,9 @@ H2.   if EXP_LevelFromExp(class, new) ≠ oldLevel:
 
 Step notes:
 
-- H1. The cap is the threshold of level `MaxLvl` (3 520 485 254 for 99). No run reached it. [I]
-  (fn:PLAYER_AddExperience@0x0057E510)
+- H1. **The cap is the threshold of level `MaxLvl`** (3 520 485 254 for 99). A level-98 Hell save at `T(98) − 2`
+  gained 5 from one kill and ended at `T(98)` exactly, at level 99, through `PLAYER_LevelUp`; every later kill (71)
+  returned 0 (G2). [C] (fn:PLAYER_AddExperience@0x0057E510, run:2026-10-27-sweep-player)
 
 ### I. Level-up — `PLAYER_LevelUp`
 
@@ -524,10 +575,18 @@ J1. PLAYER_GrantLevel(game, unit, lvl):                                  [C] (fn
       if the player's level < lvl:
         PLAYER_AddExperience(EXP_GetThreshold(class, lvl) − stat 13)    ; reaches level lvl + 1
       ; -act 2, 3, 4, 5 → levels 16, 21, 27, 33, before the starting items
-J2. ExpGrantCapped: grant 1 400 000 (Normal), 20 000 000 (Nightmare),    [I] (fn:sub_0058C5C0_ExpGrantCapped@0x0058C5C0, 0x0058C5C0–0x0058C6A0)
-      40 000 000 (Hell), at most one level span per step, filling the current level and calling
-      PLAYER_LevelUp per level until the grant is used or MaxLvl
-J3. PLAYER_DeathExpLoss (character level lvl > 1):                       [I] (fn:PLAYER_DeathExpLoss@0x005359F0, tbl:DifficultyLevels.txt:DeathExpPenalty)
+J2. ExpGrantCapped(game), the player in ESI:                              [I] (fn:sub_0058C5C0_ExpGrantCapped@0x0058C5C0, 0x0058C5C0–0x0058C6CB, all of J2)
+      QUESTS_SendPlayerRecord(game, player)                              ; first, 0x0058C5CF
+      G: i32 ← 1 400 000;  20 000 000 when game+0x6D = 1;  40 000 000 when it is 2
+      max ← ExpMaxLevel(class);  L ← stat 12
+      if L ≥ max: return                                                 ; signed
+      G ← min(G, T(L + 1) − T(L))                                        ; signed compare; T(n) = EXP_GetThreshold(class, n)
+      while G ≠ 0 and L < max:
+        need: u32 ← base stat 30 − base stat 13                          ; nextexp − experience
+        if G < need (unsigned):  stat 13 ← stat 13 + G;  G ← 0
+        else: stat 13 ← stat 30;  stat 29 (lastexp) ← need;  PLAYER_LevelUp(player)
+              G ← G − need;  L ← stat 12
+J3. PLAYER_DeathExpLoss (character level lvl > 1):                       [C] (fn:PLAYER_DeathExpLoss@0x005359F0, fn:CLIENT_SetDeathExpLoss@0x005391E0, tbl:DifficultyLevels.txt:DeathExpPenalty, run:2026-10-27-sweep-player)
       ; not called when the killer is a player or a monster owned by one (note J3)
       span: u32 ← Exp[lvl] − Exp[lvl − 1]                                ; Exp[n] = EXP_GetThreshold(class, n)
       loss: u32 ← DeathExpPenalty × span ÷ 100
@@ -543,7 +602,7 @@ J4. XP_PartyShare with n ≥ 2 members (alive, same level, distance² ≤ 6400, 
       for each member i in collection order:
         in_i: i32 ← trunc((f64) level_i × (f64) q)                         ; exact in f64, never rounded to f32; CRT_ftol2 truncates
         PLAYER_AddExperience(XP_Compute(in_i, level_i, mlvl))
-J5. PLAYER_SpendStatPoint(unit, which): needs statpts ≠ 0; statpts −= 1; [I] (fn:PLAYER_SpendStatPoint@0x00570D60, fn:PLAYER_SpendEnergy@0x00570A80, fn:PLAYER_SpendVitality@0x00570B60)
+J5. PLAYER_SpendStatPoint(unit, which): needs statpts ≠ 0; statpts −= 1; [C] (fn:PLAYER_SpendStatPoint@0x00570D60, fn:PLAYER_SpendEnergy@0x00570A80, fn:PLAYER_SpendVitality@0x00570B60, run:2026-10-27-sweep-player)
       strength or dexterity + 1
       energy + 1:   maxmana += ManaPerMagic × 64;  mana likewise, clamped to maxmana
       vitality + 1: maxhp += LifePerVitality × 64;  maxstamina += StaminaPerVitality × 64;  current values likewise
@@ -575,29 +634,61 @@ Step notes:
 - J4. The distance bound is bracketed, not met at its edge: 5 of the 9 kills beyond it were within 800 of 6400, and
   no kill inside it came that close. More than two members and the cap at 8 need a third client. [I]
   (fn:sub_0057E5A0_PartyXpCollect@0x0057E5A0)
-- J2–J5 apart from J4. Not run: death loss, the experience cap and the capped grant were not reached. [I] (run:2026-10-16-player)
+- J3, J5 and the cap of § H ran in run:2026-10-27-sweep-player (notes below and H1). [C] (fn:PLAYER_DeathExpLoss@0x005359F0,
+  fn:PLAYER_SpendStatPoint@0x00570D60, run:2026-10-27-sweep-player) J2, the capped grant, has not run: two tries of
+  the Ancients' route never had the altar's room populated. [I] (fn:sub_0058C5C0_ExpGrantCapped@0x0058C5C0,
+  [player/0001 § Plan 0038 H6g shortfalls](../../findings/player/0001-creation.md#plan-0038-h6g-shortfalls-static-read-2026-10-30))
+- J2. **The cut is the width of level L + 1**, `T(L + 1) − T(L)`, not of the current level: `T(L)` is the experience at
+  which level L + 1 starts (F1). A player who starts the grant inside level L levels up at most once: the `need` of
+  level L is `T(L) − exp` > 0, so what is left after that level-up is below `T(L + 1) − T(L)`, the `need` of level
+  L + 1. The cut binds only where `T(L + 1) − T(L) < G`: in stock data (the seven class columns equal on every row) for
+  L 1–35 in Normal, 1–65 in Nightmare and 1–73 in Hell; at level 25 in Normal it is 512 612. The three amounts are
+  immediates of this function only, so no second code path backs them. [I] (fn:sub_0058C5C0_ExpGrantCapped@0x0058C5C0,
+  0x0058C649, 0x0058C673, fn:EXP_GetThreshold@0x00611800, fn:sub_00611830_ExpMaxLevel@0x00611830,
+  fn:PLAYER_LevelUp@0x00570880, tbl:Experience.txt:Amazon,
+  [player/0001 § Plan 0038 H6g shortfalls](../../findings/player/0001-creation.md#rows-2-and-29-what-the-ancients-grant-needs-and-why-the-anc-session-missed-it))
 - J2. **The trigger is the Ancients' reward** (quest record word 39, `a5q5`). The quest's monster-death callback acts on
   classes 540–542 (`ancientbarb1`–`3`) and counts them down; when the last dies and the quest is active, the grant goes
   first to the killing player, then to each player standing in level 120 (the Arreat Summit), and, for a player there in
   a party, to each party member in an Act V level. Each player is granted only when its word-39 bit 0 is clear and its
   base level is at least 20·(d + 1) (20, 40, 60), and bit 0 is set before the grant, so a player gets it once per
-  difficulty. With the one-span cut of J2, the reward is at most one level. [I]
+  difficulty. With J2's cut, the reward is at most one level-up. [I]
   (fn:sub_0058C9A0_A5Q5_AncientDeath@0x0058C9A0, fn:sub_0058C7E0_A5Q5_SummitExpGrant@0x0058C7E0,
   fn:sub_0058C6D0_A5Q5_PartyExpGrant@0x0058C6D0, fn:sub_0058CE30_A5Q5_Init@0x0058CE30, fn:QUESTRECORD_GetState@0x0065C310;
   [player/0001 § Plan 0039 batch P1c](../../findings/player/0001-creation.md#plan-0039-batch-p1c-2026-10-17))
-- J3. **When the loss is taken.** `PlayerDeath` calls the gate with the killer; the gate skips the loss when the killer is
-  a player (type 0) or a monster whose owner is a player, and otherwise calls `PLAYER_DeathExpLoss`. When the clamp
-  applies, the amount kept is `exp − Exp[lvl − 1]` (floored at 0), not `loss`; it is stored at client `+0x508` before the
-  stat write. [I] (0x00535A61–0x00535A8A, fn:sub_00535AB0_PlayerDeathExpLossGate@0x00535AB0,
+- J3. **The loss, reproduced.** Four deaths over three difficulties, each killed by a monster with no owner:
+  Normal (penalty 0): loss 0, corpse share 0. Nightmare (penalty 5, span 1 964 461): the loss 98 223 would take the
+  experience below `Exp[39]`, so the experience became `Exp[39] + 1` and the amount kept is the clamp's, 1 000
+  (`exp − Exp[39]`), not `loss`. Hell (penalty 10, span 4 650 593): loss 465 059, no clamp. A second Nightmare death at
+  `Exp[39] + 1` kept 1 and left the experience unchanged. The level never dropped. [C] (fn:PLAYER_DeathExpLoss@0x005359F0,
+  fn:CLIENT_SetDeathExpLoss@0x005391E0, tbl:DifficultyLevels.txt:DeathExpPenalty, run:2026-10-27-sweep-player)
+- J3. **When the loss is skipped.** `PlayerDeath` calls the gate with the killer; the gate skips the loss when the
+  killer is a player (type 0) or a monster whose owner is a player, and otherwise calls `PLAYER_DeathExpLoss`. The run's
+  killers were all monsters with no owner, so the skip is read from the code. The kept amount is stored at client
+  `+0x508` before the stat write, also as read. [I] (0x00535A61–0x00535A8A, fn:sub_00535AB0_PlayerDeathExpLossGate@0x00535AB0,
   fn:sub_0058F0D0_MonsterOwner@0x0058F0D0, fn:CLIENT_SetDeathExpLoss@0x005391E0)
 - J3. **75 % goes on the corpse.** When the death mode ends, `PLAYER_CorpseCreate` makes the corpse unit and writes its
-  stat 13 (experience) from `v` = the stored amount: `v·75/100` when `v` ≤ `0x100000`, `(v/100)·75` above it (signed,
-  truncating); it then clears the stored amount and moves the items and gold onto the corpse. [I]
-  (0x0057F80F–0x0057F875, fn:PLAYER_CorpseCreate@0x0057F700, fn:CLIENT_GetDeathExpLoss@0x00539210,
-  fn:sub_0057FCA0_PlayerDeathModeEnd@0x0057FCA0)
-- J3. **It returns only to the owner.** `PLAYER_CorpsePickup` needs the permission test and a corpse whose owner id is
-  the picker's; a non-zero stat 13 is then zeroed and added with `sub_0057EAB0_AddExperienceDirect`. Another player's
-  pickup returns nothing. [I] (fn:PLAYER_CorpsePickup@0x0057FB70, fn:sub_0057EAB0_AddExperienceDirect@0x0057EAB0)
+  stat 13 (experience) from `v` = the stored amount, `v·75/100` when `v` ≤ `0x100000` (signed, truncating): shares 750
+  (from 1 000), 348 794 (from 465 059) and 0 in the run. [C] (fn:PLAYER_CorpseCreate@0x0057F700,
+  fn:CLIENT_GetDeathExpLoss@0x00539210, run:2026-10-27-sweep-player) Above `0x100000` it is `(v/100)·75`, which no
+  death reached; the creation then clears the stored amount and moves the items and gold onto the corpse. [I]
+  (0x0057F80F–0x0057F875, fn:PLAYER_CorpseCreate@0x0057F700, fn:sub_0057FCA0_PlayerDeathModeEnd@0x0057FCA0)
+- J3. **The pickup reads the two fields the creation writes.** The share: the creation writes it with
+  `UnitSetStat(corpse, 13, share)` (0x0057F883; the share logged in all five deaths), the pickup reads
+  `STATS_GetUnitStat(corpse, 13, 0)` (0x0057FBBB). The owner: the creation writes the dead player's id into the corpse
+  inventory's `+0x24` (`INV_SetOwnerId`, 0x0057F8B5), the pickup reads it (`INV_GetOwnerId`, 0x0057FBA1) and compares
+  it with the picker's id (0x0057FBB2). [C] (fn:PLAYER_CorpseCreate@0x0057F700, fn:PLAYER_CorpsePickup@0x0057FB70,
+  fn:INV_SetOwnerId@0x0063D430, fn:INV_GetOwnerId@0x0063D450, run:2026-10-27-sweep-player)
+- J3. **It returns only to the owner** (the pickup's run, read from the code). `PLAYER_CorpsePickup` has one caller,
+  the unit-type-0 case of `sub_00548B00_UnitInteract`: a click on a corpse in mode `0x11` within distance 8 picks up,
+  from 9 to 50 walks there and picks up when the walk ends, beyond 50 does nothing. The pickup needs the permission
+  test (`0x005678A0` returning 0 for the picker and the corpse) and the owner's id; a non-zero stat 13 is then zeroed
+  and added with `sub_0057EAB0_AddExperienceDirect`, which for a player calls `PLAYER_AddExperience`, so the share
+  passes § H's cap. Another player's pickup returns nothing. No run reached a pickup. [I]
+  (fn:PLAYER_CorpsePickup@0x0057FB70, 0x00548E56, fn:sub_00548B00_UnitInteract@0x00548B00,
+  fn:sub_00548A50_InteractWalkTo@0x00548A50, fn:sub_0057EAB0_AddExperienceDirect@0x0057EAB0,
+  fn:PLAYER_AddExperience@0x0057E510,
+  [player/0001 § Plan 0038 H6g shortfalls](../../findings/player/0001-creation.md#rows-3-and-30-remainder-the-corpse-pickup))
 - J3. **A saved corpse loses the share.** `D2S_WriteCorpses` writes no stat, and `D2S_ReadCorpses` re-creates each corpse
   (a type-0 unit in mode `0x11`, state 7 `playerbody`, its item list) with no stat write, so the re-created corpse has
   no stat 13. `PLAYER_CorpseCreate`, the only writer of a corpse's stat 13 read so far, runs only at the death mode's end. The
@@ -605,8 +696,14 @@ Step notes:
   with its corpse on the ground. [I] (0x0056A91E–0x0056A9D1, fn:D2S_WriteCorpses@0x005697F0, fn:D2S_ReadCorpses@0x0056A830,
   fn:PLAYER_CorpseCreate@0x0057F700, fn:PLAYER_CorpsePickup@0x0057FB70,
   [player/0001 § Plan 0049 Phase 1 (d)](../../findings/player/0001-creation.md#d-a-saved-corpse-loses-its-experience))
-- J. **Class 7** passes the header check (A2), but every CharStats reader tests `class < 7`, so it gets no attributes,
-  no items and no start skill, and the experience lookups read class 0's column. [I] (0x005706FD, 0x00611808)
+- J5. Four spends in one town session, each reproduced with every base entry 0–11 compared: strength 35 → 36,
+  dexterity 25 → 26, vitality 30 → 31 (maxhp and hp + `LifePerVitality` × 64, maxstamina + `StaminaPerVitality` × 64)
+  and energy 35 → 36 (maxmana and mana + `ManaPerMagic` × 64), `statpts` − 1 at each. [C]
+  (fn:PLAYER_SpendStatPoint@0x00570D60, run:2026-10-27-sweep-player) The refusal at `statpts` = 0 and the clamp of mana
+  to maxmana were not met. [I] (fn:PLAYER_SpendEnergy@0x00570A80)
+- J. **Class 7.** Every CharStats reader tests `class < 7`, so a class-7 player would get no attributes, no items and no
+  start skill, and the experience lookups would read class 0's column. No class-7 player is ever made (A2: the game
+  halts first), so this is the code's reading only. [I] (0x005706FD, 0x00611808)
 
 ## Outputs
 
@@ -689,9 +786,12 @@ the Barbarian has one copy more (the buckler), so only its eighth copy (`isc`) t
   and stored as `u32`. [C] (fn:EXP_LevelFromExp@0x00611860, run:2026-10-16-player)
 - **The level is recomputed from the total experience stat**, not the base entry, and `level`/`nextexp` are written
   even when `d ≤ 0`. [C] (fn:PLAYER_LevelUp@0x00570880, run:2026-10-16-player)
-- **`XP_Compute` returns 1, not 0, for a non-positive input**, and 0 at the level cap. [I] (fn:XP_Compute@0x0057E480)
-- With stock `ExpRatio` (≤ 1024) and shift 10, the shift count `(r >> s) + s` of G4 is 10 or 11. [I]
-  (fn:XP_ApplyExpRatio@0x0057E390, tbl:Experience.txt:ExpRatio)
+- **`XP_Compute` returns 0 at the level cap** (71 kills at level 99). [C] (fn:XP_Compute@0x0057E480,
+  run:2026-10-27-sweep-player) For a non-positive input it returns 1, not 0; no input of the runs was ≤ 0. [I]
+  (fn:XP_Compute@0x0057E480)
+- With stock `ExpRatio` (≤ 1024) and shift 10, the shift count `(r >> s) + s` of G4 is 10 or 11: `ExpRatio` is 1024
+  in 70 level rows (11), below 1024 in the other 30 (10), and `r` = 0 above `MaxLvl` gives 10. [C]
+  (fn:XP_ApplyExpRatio@0x0057E390, 0x0057E3B9, 0x0057E3C1, tbl:Experience.txt:ExpRatio)
 - **`ToHitFactor` is an attack-rating term, not a level bonus.** The class constant (Amazon 5, Sorceress −15,
   Necromancer −10, Paladin 20, Barbarian 20, Druid 5, Assassin 15) is added to the player's base attack rating
   `(dex − 7)·5 + stat 19` before the percent, and the chance to hit's level term has no class constant
@@ -704,7 +804,13 @@ the Barbarian has one copy more (the buckler), so only its eighth copy (`isc`) t
 ## Evidence
 
 - [findings/player/0001-creation.md](../../findings/player/0001-creation.md): summary, §§ 1–7 and § 11 (the
-  reproduction), the Functions table.
+  reproduction), the Functions table; the plan 0038 sections S3a, S3b, H1a, H1c, H6g and the H6g shortfalls' static
+  read (the re-tags of this spec).
+- [findings/player/experiments.md § run:2026-10-27-sweep-player](../../findings/player/experiments.md#run2026-10-27-sweep-player)
+  (H6g: 9 kept logs, 145 kills, four stat spends, the death loss on three difficulties, the level-99 cap), and the
+  save runs [run:2026-10-27-sweep-d2s-load](../../findings/save/experiments.md#run2026-10-27-sweep-d2s-load) (H1a:
+  the header checks, class 7) and [run:2026-10-27-sweep-d2s-legacy](../../findings/save/experiments.md#run2026-10-27-sweep-d2s-legacy)
+  (H1c: `NewCharLegacy`).
 - [findings/player/experiments.md § run:2026-10-16-player](../../findings/player/experiments.md#run2026-10-16-player):
   35 new characters, 269 item copies (11 `ITEMS_RollStaffMods` oracles), 32 kills, 20 level-ups, 0 mismatches; its
   *Answers* and *Observed* bullets.
@@ -717,8 +823,16 @@ the Barbarian has one copy more (the buckler), so only its eighth copy (`isc`) t
 ## Open questions
 
 - ~~What triggers `ExpGrantCapped`~~, ~~whether the corpse returns part of the death loss~~ and ~~which UI path sets
-  status bits `0x20` and `0x40`~~: answered from the code in J2, J3 and A1 ([player/0001 § Plan 0039 batch P1c](../../findings/player/0001-creation.md#plan-0039-batch-p1c-2026-10-17)). None was run. The corpse's 75 %
-  agrees in substance with a community page; its *Leads used* verdict waits for a re-fetch (reverser backlog).
+  status bits `0x20` and `0x40`~~: answered from the code in J2, J3 and A1 ([player/0001 § Plan 0039 batch P1c](../../findings/player/0001-creation.md#plan-0039-batch-p1c-2026-10-17)).
+  Plan 0038 H6g ran J3's loss and the corpse's share at its creation (J3 notes); the pickup and J2 have not run. The
+  corpse's 75 % agrees in substance with a community page; its *Leads used* verdict waits for a re-fetch (reverser
+  backlog).
+- J2's grant and its cut stay inferred until a session reaches the altar: the corrected route (a Normal character at level
+  20–35, the altar operated once, no town portal on level 120) is in
+  [player/0001 § Plan 0038 H6g shortfalls](../../findings/player/0001-creation.md#rows-2-and-29-what-the-ancients-grant-needs-and-why-the-anc-session-missed-it),
+  routed by the backlog entry [2026-10-30-architect-reverser-plan-0038-h6g-corrected-anc-session](../../backlog/2026-10-30-architect-reverser-plan-0038-h6g-corrected-anc-session.md).
+  The corpse pickup needs a Nightmare or Hell death and a click on the corpse within 50 in the same game. [I]
+  (fn:sub_0058C5C0_ExpGrantCapped@0x0058C5C0, fn:PLAYER_CorpsePickup@0x0057FB70)
 - ~~Whether a corpse saved with its character keeps its stat 13, and what sets the create screen's mode word
   `0x007795EC`~~: answered from the code in J3 and A1 ([player/0001 § Plan 0049 Phase 1](../../findings/player/0001-creation.md#plan-0049-phase-1-2026-10-20-static)):
   it does not, and the word is 1 on the *Battle.net* path. Neither was run.

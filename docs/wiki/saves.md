@@ -1,8 +1,8 @@
 ---
 based_on:
-  - docs/specs/save/d2s.md 2026-10-27
-  - docs/specs/player/creation.md 2026-10-21
-  - docs/specs/hirelings/README.md 2026-10-27
+  - docs/specs/save/d2s.md 2026-10-30
+  - docs/specs/player/creation.md 2026-10-30
+  - docs/specs/hirelings/README.md 2026-10-30
 ---
 
 # Saves: what a `.d2s` file holds
@@ -84,10 +84,12 @@ When a save is loaded ([save/d2s § D3–D5](../specs/save/d2s.md#d3d5-reading-a
 Codes 6 and 5 both reach the player as error 14, and you are back at the main menu. The checksum is tested before
 the size, so a file with a wrong size and a right checksum fails with 5, one with a wrong checksum fails with 6, and
 one with **both** wrong fails with 6 too. These steps were checked with deliberately broken saves: each failed with
-the code above, mapped to the error the player sees through the game's table, and versions 91, 94, 96 and 97 behaved
-as described (92, 93 and 95 were not tried). Where a file failed two tests, the code named the earlier one; the
-size and version tests were not told apart. A few codes were never met, and the older reader was never fed a real
-old save. In single player, a short file, a bad magic number, a wrong version or a status that does not fit the game
+the code above, mapped to the error the player sees through the game's table, and versions 71, 87, 91, 92, 94, 96 and
+97 behaved as described (93 and 95 were not tried). Where a file failed two tests, the code named the earlier one; the
+size and version tests were not told apart. A few codes were never met. The older reader was fed test saves in the
+real version-87 and version-71 layouts: it has no checksum or size test, it read every section and the game wrote
+back what was built, and a version-87 file marked "new" became a fresh character. Its failure paths and the
+versions between 72 and 91 other than 87 are read from the code only. In single player, a short file, a bad magic number, a wrong version or a status that does not fit the game
 can only reach the reader if the file changes after the character screen has listed it, because that screen checks
 those first (read from the code); the tests swapped the file in at that moment.
 
@@ -372,8 +374,9 @@ How sure this is: the framing was decoded over every property list of the 146 sa
 48, 50, 52 (on one item), 54 and 57 were seen, and after group 57 the reader sets a poison counter to 1. Three dropped items saved
 after pickup held exactly the lists logged when they were created. Maximum life and mana are stored without their 8
 fraction bits and multiplied back by 256 on load (confirmed). An item's property parameter is read as an unsigned
-number. The rest is read from the code only: a follower written without its head, whether the shift is
-signed, and the old item lists of saves before version 93.
+number. A version-92 test save showed the older widths and the special encodings of saves before version 93: its
+properties came back exactly as built. The rest is read from the code only: a follower written without its head,
+whether the shift is signed, and a set item in a save before version 93.
 
 ## The mercenary header
 
@@ -388,7 +391,9 @@ play) the header held the mercenary's seed, name, Id and experience, and a dead 
 play, was written with the dead flag and came back dead. The all-zero "no mercenary" header gives no mercenary and
 the load goes on. A test save whose name was past the end of its range loaded with the range's first name; how the
 name's 16-bit addition wraps for a huge value is read from the code. A test save with experience far past level 99
-loaded at 99. How the level and stats follow from these values is on the
+loaded at 99. Saves older than version 92 hold the mercenary in an older form, which test saves of versions 87 and
+71 exercised: version 87 keeps the Id and has its experience converted on load, and version 71 keeps only the seed
+and the name, so the game picks the Id (Id 1 for both test saves, in Act I and Act II). How the level and stats follow from these values is on the
 [characters](characters.md) page and in
 [hirelings § H](../specs/hirelings/README.md#h-the-mercenary-from-a-save-d2s_readmercheader-merc_create).
 
@@ -465,7 +470,7 @@ From [save/d2s § Open questions](../specs/save/d2s.md#open-questions):
 - what item flag bit 13 means, and how soon after a drop the game clears it;
 - not exercised in a run: ground positions, a hotkey bound to an item, realm data on a simple item, gold items, the
   golem section, a mercenary name id past its hireling row's last name (since run on a test save, [hirelings § H](../specs/hirelings/README.md#h-the-mercenary-from-a-save-d2s_readmercheader-merc_create)), two or more corpses, a few reader error
-  codes, the older reader on a real old save, character stats with a parameter or a sign, a save above 8 KiB, a classic game's items, and stats beyond those the runs
+  codes, the older reader's failures and the old versions other than 71 and 87, character stats with a parameter or a sign, a save above 8 KiB, a classic game's items, and stats beyond those the runs
   saved;
 - what the character-creation screen means by status bit 1.
 

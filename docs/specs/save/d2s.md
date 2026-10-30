@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, data/excel]
 consumed_by: [items/tc, items/quality, items/affixes, items/uniques-sets, items/properties, items/sockets-runewords, hirelings, player/creation]
-tags: {C: 240, I: 68, L: 3}
-updated: 2026-10-27
+tags: {C: 244, I: 68, L: 3}
+updated: 2026-10-30
 ---
 
 # Character save (`.d2s`): writer, reader, header and item bitstream
@@ -312,7 +312,7 @@ Each row gives the runtime source the writer reads and the runtime field the rea
 | Offset | Width | Field | Written from | Write | Read into | Read | Anchors |
 |---|---|---|---|---|---|---|---|
 | `0x000` | u32 | `magic` | `0xAA55AA55` | [C] | checked by `D2S_ReadSave` (9, returned unmapped) | [C] | fn:D2S_WriteHeader@0x00568F20, fn:D2S_ReadSave@0x00534330, run:2026-10-12-d2s-io, run:2026-10-27-sweep-d2s-load |
-| `0x004` | u32 | `version` | 96 | [C] | < 92 → legacy reader `0x00534020`; 92..96 accepted; else (7) | [C] 91, 94, 96, 97; [I] 92, 93, 95 | fn:D2S_WriteHeader@0x00568F20, fn:D2S_ReadSave@0x00534330, 0x0056A117, run:2026-10-12-d2s-io, run:2026-10-27-sweep-d2s-load |
+| `0x004` | u32 | `version` | 96 | [C] | < 92 → legacy reader `0x00534020`; 92..96 accepted; else (7) | [C] 71, 87, 91, 92, 94, 96, 97; [I] 93, 95 | fn:D2S_WriteHeader@0x00568F20, fn:D2S_ReadSave@0x00534330, 0x0056A117, run:2026-10-12-d2s-io, run:2026-10-27-sweep-d2s-load, run:2026-10-27-sweep-d2s-legacy |
 | `0x008` | u32 | `file_size` | bytes written | [C] | must equal bytes read (5) | [C] | fn:D2S_WriteHeader@0x00568F20, fn:D2S_ReadHeader@0x0056A090, run:2026-10-12-d2s-io |
 | `0x00C` | u32 | `checksum` | `Checksum` (§ B) | [C] | recomputed and compared (6) | [C] | fn:D2S_WriteHeader@0x00568F20, fn:D2S_ReadHeader@0x0056A090, run:2026-10-12-d2s-io |
 | `0x010` | u32 | `weapon_set` | bit 0 = client `+0x45C` ≠ 0 (swap set active) | [C] | bit 0 → client `+0x45C` | [C] | fn:D2S_WriteHeader@0x00568F20, fn:D2S_ReadHeader@0x0056A090, run:2026-10-16-player, run:2026-10-27-sweep-d2s-play |
@@ -396,8 +396,12 @@ side with the logged client and player-data fields after `D2S_ReadHeader`; [save
   rows above. The all-zero header gives no mercenary and the load goes on: its result is not tested (hire's first
   read). (fn:D2S_WriteMercHeader@0x00568E60, fn:D2S_ReadMercHeader@0x0056AA50, 0x0056B318–0x0056B32A,
   run:2026-10-27-sweep-d2s-play)
-- [I] **Not run-checked in the mercenary header:** a name past `+0x116` (reset to `+0x114`); the save builder refuses
-  a name outside the row's range. (fn:D2S_ReadMercHeader@0x0056AA50)
+- [C] **A name past `+0x116` is reset to `+0x114`.** A tool-built save with a saved name id of 50 (the Rogue range is
+  0..40) gave `3411 + 50 = 3461 > 3451` and was reset to 3411; the in-range loads kept `3411 + name`.
+  (0x0056AAA0–0x0056AABB, run:2026-10-27-sweep-hirelings; [hirelings § H](../hirelings/README.md#h-the-mercenary-from-a-save-d2s_readmercheader-merc_create), H3)
+- [I] The widths of that test are read, not separated (a name of 50 gives the same result under any width): the add
+  is a u16 add and the compare unsigned, so a name equal to `+0x116` is kept and one past `0xFFFF − first` wraps
+  (hirelings H3). (0x0056AAA0–0x0056AABB)
 - [C] **The act is clamped.** An act (`b & 0x7F`) of 5 or more is read as 0: bytes `0x85` and `0x86` both gave act 0
   (6 rules out a modulo 5), and both writes stored `80 00 00`. (fn:D2S_ReadHeader@0x0056A090, 0x0056A1E8–0x0056A1F1,
   run:2026-10-27-sweep-d2s-load)
@@ -502,8 +506,22 @@ D3. Load(client):
 - D3b. [C] A 7-byte file and a file with a bad magic were each read whole and refused with 9 before
   `D2S_ReadHeader`; the 9 comes from `D2S_ReadSave` itself, not through the failure exit and the map, and
   `PlayerLoad` passes it to the join as is. Version 91 went to the legacy reader, which refused the version-96 body
-  with 14; the legacy reader on a real version 71 or 87 layout was not run (no such save is built).
-  (fn:D2S_ReadSave@0x00534330, fn:sub_00534020_ReadSaveLegacy@0x00534020, run:2026-10-27-sweep-d2s-load)
+  with 14. (fn:D2S_ReadSave@0x00534330, fn:sub_00534020_ReadSaveLegacy@0x00534020, run:2026-10-27-sweep-d2s-load)
+- D3b. [C] **The legacy reader on real layouts.** Tool-built files of versions 87 and 71 in the legacy layout
+  ([d2s.md § Legacy versions](../../formats/d2s.md#legacy-versions-7191)) reached `sub_00534020_ReadSaveLegacy` and returned 0 with no
+  `D2S_ReadHeader` call, so a file with no checksum and no size field was accepted. Its section readers ran in the
+  layout's order (header, quests, waypoints, NPCs, stats, skills, items, corpses, the mercenary, the hotkey tail, which
+  version 71 lacks), each returning 0, and the game's version-96 write-back held as built the name, class, level,
+  stats 0–3 and 6–15, the skills, the mouse skills, hotkey slots 0–7 (and at version 87 slots 8 and 9 and the swap
+  skills, from the tail) and the items. A version-87 file whose header status has bit 0 called the header section
+  only, then `sub_00532590_NewCharLegacy`: the character was built new
+  ([player/creation](../player/creation.md#entry-points)). (fn:sub_00534020_ReadSaveLegacy@0x00534020,
+  fn:sub_00532690_ReadHeaderLegacy@0x00532690, fn:sub_00533350_ItemListReadV71@0x00533350,
+  fn:sub_00532590_NewCharLegacy@0x00532590, run:2026-10-27-sweep-d2s-legacy,
+  [save/0001 § Plan 0038 batch H1c](../../findings/save/0001-d2s-io.md#plan-0038-batch-h1c-run2026-10-27-sweep-d2s-legacy))
+- D3b. [I] Not run on the legacy layouts: the failures of the item, corpse and mercenary sections, the legacy header's
+  status tests and act bound, a corpse list with items, the ear, magic, rare and crafted records of the version-71
+  form, versions 72–86 and 88–91. (fn:sub_00534020_ReadSaveLegacy@0x00534020)
 - D3c. [C] Internal codes 6 and 5 are both mapped to **14**, and the player is back at the main menu. The checksum
   test comes first: a file with a wrong size field and a correct checksum fails with 5, a file with a wrong checksum
   fails with 6, and a file with both wrong fails with 6. The map as met: 2 → 9, 4 → 9, 6 → 14, 7 → 1, 8 → 24, 9 → 23,
@@ -1080,7 +1098,7 @@ J2. ITEMS_ReadProperty:                                          [C] framing, sc
       grouped ids (17, 48, 50, 52, 54, 57): the followers' values as in J1
       a follower id read on its own (no head before it) takes the default path above   [I] (0x0062D99C, 0x0062E1A1)
       after the 57 group, stat 326 (poison_count) ← 1                [C] (fn:ITEMS_ReadProperty@0x0062AC80, run:2026-10-27-sweep-d2s-play)
-      save version < 93: 1.09-Save Bits / 1.09-Save Add instead, plus per-id width overrides   [I] (0x0062D9AE–0x0062E1A9)
+      save version < 93: 1.09-Save Bits / 1.09-Save Add instead, plus per-id width overrides   [C] (0x0062D9AE–0x0062E1A9, run:2026-10-27-sweep-d2s-legacy)
 ```
 
 - J. [C] **Scope of the framing `[C]`** (code anchor plus data behaviour, evidence rule 2): `tools/d2s.py` decodes
@@ -1126,9 +1144,14 @@ J2. ITEMS_ReadProperty:                                          [C] framing, sc
 - J. [C] **The clamp saturates as unsigned.** `ClampU` compares the value as a u32, so a sum that is negative as an
   s32 is written as `2^n − 1`, not as 0: emulated reproduction of `BITBUF_WriteClamped` and the inlined copy's operand
   map (note I1). (fn:BITBUF_WriteClamped@0x0062AF50, 0x00630F38–0x00630F4E, run:2026-10-17-sweep-emu)
+- J. [C] **The version < 93 widths.** A tool-built version-92 save went to `D2S_ReadSaveV92`, and its cap, built with
+  stats 0, 7 and 39 in the 1.09 widths and the per-id encodings of stats 83, 107, 126, 188 and 195, was read to exactly
+  those stats and written back with the same list; no item after the cap changed, where a wrong width or a missing
+  override would shift every later field. (fn:ITEMS_ReadFull@0x0062CBE0, fn:ITEMS_ReadProperty@0x0062AC80,
+  run:2026-10-27-sweep-d2s-legacy, [save/0001 § Plan 0038 batch H1c](../../findings/save/0001-d2s-io.md#plan-0038-batch-h1c-run2026-10-27-sweep-d2s-legacy))
 - J. [I] The clamp at the bounds (the only stored value at a bound is a 1-bit stat 153 = 1, which tests
-  nothing), and the version < 93 paths (the 1.09 widths: no version-92 item list was built) rest on the code read.
-  (0x00630E3B–0x00631245, 0x0062D9AE–0x0062E1A9)
+  nothing) rests on the code read, and so does a version < 93 set item reading a `Sets` id (the built set item's row
+  is 0 in both tables). (0x00630E3B–0x00631245, 0x0062D9AE–0x0062E1A9)
 
 Reproduce the bit accounting with
 
@@ -1344,10 +1367,10 @@ python3 -I tools/d2sio.py check workspace/merged/data/global/excel workspace/log
   *Plan 0038 H1b ran the case:* five drops cleared by that pass on the ground (I6); the watchpoint logged no write, not
   even the logged clear, so it was not live, and whether anything writes the bit outside `ITEMS_SetFlag` is untested
   ([save/0001 § Plan 0038 batch H1b](../../findings/save/0001-d2s-io.md#plan-0038-batch-h1b-run2026-10-27-sweep-d2s-play)).
-- [L] **Not exercised** (after plan 0038 H1b and H1a): ground positions (modes 3, 5; no item record in those modes is
-  written or read), an item-ref hotkey, realm data in a simple item, gold items, a name past `+0x116` in the
-  mercenary header, the golem section, a corpse count of 2 or more, reader codes 3, 15, 17–19 and 25/26, the legacy
-  reader on a version 71 or 87 layout and an item list in the 1.09 widths (no such save is built), signed and param
+- [L] **Not exercised** (after plan 0038 H1b, H1a and H1c): ground positions (modes 3, 5; no item record in those modes is
+  written or read), an item-ref hotkey, realm data in a simple item, gold items, the golem section, a corpse count of
+  2 or more, reader codes 3, 15, 17–19 and 25/26, the legacy reader's failures and the layouts of versions 72–86 and
+  88–91 (D3b), a version < 93 set item (J), signed and param
   character stats (none in the shipped table), a write above 8 KiB, a classic game's item version 2, stats past the
   runs' lists.
 - ~~**The condition for `has_class`** and the encoder of the fixed stat fields~~: answered in I3 from [save/0001 §8](../../findings/save/0001-d2s-io.md#8-plan-0015-phase-3-framing-details-and-item-flag-bit-13)

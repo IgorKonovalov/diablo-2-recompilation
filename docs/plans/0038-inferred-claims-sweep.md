@@ -5914,7 +5914,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     - Omission 1 (rule 11): the routing entry was closed "routed to a corrected `anc` session" and ruling (2) sent the
       J2 wording to the spec-writer, with no entry for either; filed
       [`2026-10-30-architect-reverser-plan-0038-h6g-corrected-anc-session.md`](../backlog/2026-10-30-architect-reverser-plan-0038-h6g-corrected-anc-session.md)
-      and [`2026-10-30-architect-spec-writer-player-creation-j2-grant-cut-wording.md`](../backlog/2026-10-30-architect-spec-writer-player-creation-j2-grant-cut-wording.md)
+      and [`2026-10-30-architect-spec-writer-player-creation-j2-grant-cut-wording.md`](../backlog/archive/2026-10-30-architect-spec-writer-player-creation-j2-grant-cut-wording.md)
       (the spec's § J2 and `wiki/characters.md` still say "one level span").
     - **What the Tier B check missed** (for the trial): the altar misread (it read the decompile summary, not the
       branch at 0x0058D36D, outside its scope limit), the stale quests/0001 sentence (another finding, outside its
@@ -5945,3 +5945,46 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Review-fixes pass:** rules 1 (the act reading kept `[I]`), 2 (counts from `check/sweep-h1c-check.txt`), 4 (the
     version-0 half and the cutoff named as unseparated), 8 (rows 30, 33 and player 1 headed "in part"), 10 (the Id 1 of
     both acts does not separate) and 14 (8 symbols) checked.
+- **2026-10-30 — Phase 3, player/creation, and the H1c re-tags (spec-writer, `lane/s38p`, from `main` `4bf3391d`).**
+  Batches S3a, S3b, H1a, H1c and H6g, all accepted, with the H6g shortfalls' static read (`lane/h6gs`, its Tier B
+  check and Tier A audit); each restated statement checked against its section of
+  [player/0001](../findings/player/0001-creation.md), [hirelings/0001](../findings/hirelings/0001-hirelings.md),
+  [save/0001](../findings/save/0001-d2s-io.md) and [items/0004](../findings/items/0004-uniques-sets.md). Counts with
+  the gate's tag reader.
+  - **player/creation** {C 85, I 49, L 1} → **{C 121, I 39, L 1}** (line diff +37 / −1 `[C]`, +23 / −33 `[I]`). Raised:
+    S3a 7, 13, 26, and in part 10 (the screen's OR `[I]`) and 14 (`g_StartAct` `[I]`); S3b 21 (F2; the column-0 clamp
+    `[I]`) and 36; H1a 8 (the "client name null" test `[I]`), 9, 11 (the class-7 halt, A2); H1c 1 in part (the legacy
+    new-character branch; the `PlayerLoad` caller `[I]`, its own Entry points row); H6g 4 and 32 (J5; the refusal and
+    the mana clamp `[I]`), 18 (E6's column path), 22, 25, 28 ×2, and in part 3/30 (the loss on three difficulties and
+    the clamp's kept amount; the corpse share below `0x100000`; the pickup's two fields matching the creation's, the
+    h6gs `[C]`; the killer-type skip, the share above `0x100000`, the pickup's run `[I]`), 12 (bit 0 already set;
+    a path with it clear `[I]`), 16 (the skill-point raise; the maximum test and the monster case `[I]`), 23/35 (the
+    level-cap return; the clamp and the return of 1 `[I]`), 27 (G2, G5 met; the clamp, ≤ 0 and overflow `[I]`), 33
+    (J3, J5 and H ran; J2 not). Kept `[I]`: rows 2/29 (J2, open), 5, 6, 15, 17, 19, 20, 24, 34, 37 (d-none, d-owner,
+    d-2c). Rows 20 and 34 written as what no class-7 player reaches, with F1's reach condition (H1a ruling 2).
+  - **J2** rewritten from the static read (backlog entry closed): step 0 `QUESTS_SendPlayerRecord`, the signed cut
+    `G ← min(G, T(L + 1) − T(L))`, the unsigned `need` compare, at most one level-up, the cut binding for L 1–35 /
+    1–65 / 1–73 (stock data), all `[I]`; the "one level span" wording gone from the spec and wiki/characters.
+  - **hirelings** {C 137, I 43, L 7} → **{C 141, I 43, L 7}**: row 3 `[C]` (Entry points and § H: both forms of
+    `ReadMercOldSave`), row 30 in part (H13: the Id `0xFFFF` loaded as Id 1 in Act I and Act II `[C]`; the row
+    following the act `[I]`), row 33 in part (the version-87 conversion 100 000 → 546 210 and the version-71 absence
+    `[C]`; the cutoff at 89 and the arithmetic `[I]`). Open questions' item narrowed to the two `[I]` halves.
+  - **save/d2s** {C 240, I 68, L 3} → **{C 244, I 68, L 3}**: § D's stale "not run-checked" name bullet now hirelings
+    H3's (the reset `[C]` on a built save, the widths `[I]`); D3b gains the legacy reader on version-87 and 71 layouts
+    `[C]` and its unrun parts `[I]`; row 126 (J2's version < 93 widths and the J note) `[C]`, a version < 93 set item
+    `[I]`; the `version` row's met values 71, 87, 92 added; the *Not exercised* list updated.
+  - **items/uniques-sets** {C 100, I 38, L 4} → **{C 101, I 38, L 4}**: row 21 `[C]` (C2: the restore branch takes
+    `rec+0x40` as the row, rows 0 and 1 on a version-71 save); the version-0 builder stays `[I]` (d-none half).
+  - **Wiki:** [characters](../wiki/characters.md) (stub, act, class 7, skills, belt, kill experience, the cap, the
+    Ancients' cut, death, spending, older mercenaries, *What is not known yet*), [saves](../wiki/saves.md) (versions,
+    the older reader, the 1.09 widths, older mercenaries) and [items](../wiki/items.md) (`based_on` only); all
+    `based_on` 2026-10-30.
+  - **Map and README:** the four research-map rows rewritten whole; the root README rows dated 2026-10-30.
+  - **Backlog:** closed the [J2 wording entry](../backlog/archive/2026-10-30-architect-spec-writer-player-creation-j2-grant-cut-wording.md);
+    annotated the [H1a entry](../backlog/2026-10-27-reverser-spec-writer-h1a-save-d2s-player-creation-raises.md)
+    (only (k), the S1b leftovers in data/calc and rng/seeds, stays open); review request filed. Ledger row added.
+  - **Review-fixes pass:** rules 1 (the wiki follows the spec's split halves), 2 (every `[C]` scoped to the cases met:
+    the death skip, the share above `0x100000`, the mana clamp, the act pick split out), 5 (counts from the gate's
+    reader), 6 (map rows whole), 7 (stale "not run" notes and open questions rewritten in all four specs), 8 (each raise
+    stated at its strength) and 9 (anchors from each ledger line).
+  - **Next:** architect review of `lane/s38p`. player/creation keeps rows 2/29 open for the corrected `anc` session.

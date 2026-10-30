@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, items/tc, items/quality, data/excel]
 consumed_by: [items/affixes, items/properties, items/vendors, items/cube, save/d2s, stats/aggregate, chain]
-tags: {C: 100, I: 38, L: 4}
-updated: 2026-10-27
+tags: {C: 101, I: 38, L: 4}
+updated: 2026-10-30
 ---
 
 # Unique and set selection, and the creation fallbacks
@@ -307,12 +307,19 @@ C9. item.flags.identified ← 0                                               [C
 Step notes:
 
 - C2. For an item of version 0 (never a drop) the builder first multiplies stats 72/73 by 5 (cap 255) and takes the
-  first matching row in table order with no `lvl` test and no draw. With `rec.restore` ≠ 0 (an existing item being
-  restored) `rec+0x40` is the row itself, set with no filter and no draw. Drops reach neither. The restore flag's
-  only constant store is in `sub_00530F40_ItemCreateFromOldRec`, whose two calls sit in helpers called only from the
-  reader of a version-`0x47` item list, so only an old-format save would reach the restore path; no save in that
-  layout was built. [I] (0x005566DE–0x0055674B, 0x0055674E–0x005567A9, 0x005567AC–0x00556849,
-  fn:sub_005564A0_UniqueMadeTestV0@0x005564A0, fn:sub_00530F40_ItemCreateFromOldRec@0x00530F40, 0x00530FDA)
+  first matching row in table order with no `lvl` test and no draw. Drops do not reach it. On the restore path
+  (`rec.restore` ≠ 0) the row is set with no filter and no draw. The restore flag's only constant store is in `sub_00530F40_ItemCreateFromOldRec`, whose two calls sit in helpers called only from the
+  reader of a version-`0x47` item list, so only an old-format save reaches the restore path. [I]
+  (0x005566DE–0x0055674B, 0x0055674E–0x005567A9, 0x005567AC–0x00556849, fn:sub_005564A0_UniqueMadeTestV0@0x005564A0,
+  fn:sub_00530F40_ItemCreateFromOldRec@0x00530F40, 0x00530FDA)
+- C2. [C] **The restore path takes the row itself.** Loading a tool-built version-71 save with two uniques,
+  `ITEMS_BuildUnique` was entered with `rec+0x2C` = 1 for each and took the restore branch, with `rec+0x40` = 0 for The
+  Gnasher and 1 for Deathspade, and the write-back held unique rows 0 and 1, where a row + 1 reading would have
+  written 1 and 2. The items came from `sub_00530F40_ItemCreateFromOldRec`, called by the version-71 item-list reader.
+  The item version the builder tested was 3 for both, so the version-0 branch is not exercised by it.
+  (fn:ITEMS_BuildUnique@0x005566B0, 0x00556751, 0x00556757, fn:sub_00530F40_ItemCreateFromOldRec@0x00530F40,
+  fn:sub_00533350_ItemListReadV71@0x00533350, run:2026-10-27-sweep-d2s-legacy,
+  [items/0004 § Plan 0038 batch H1c](../../findings/items/0004-uniques-sets.md#plan-0038-batch-h1c-run2026-10-27-sweep-d2s-legacy))
 - C2. [C] **A service copy is not a restore.** Larzuk's and Anya's copies serialise the item and recreate it from the
   bytes (`sub_0055A2A0_ItemCopy` → `sub_00558CB0_ItemCreateFromSave`), which makes no creation record: the 15 Larzuk
   and 15 Anya services of run:2026-10-16-quest-drops have no `ItemCreateByQuality` entry between the menu action and
@@ -789,7 +796,7 @@ made test, the fallback and the seed only. Classic Nightmare, item 320 `brs`, il
   set are code-read only. Needs a base whose type cannot be rare reaching a unique failure, or a long hunt.
 - [L] **Not reached in the runs:** a `unique`-flag base with no candidate (C4), a quest base skipping the made
   test (C6), a set-29 row taken on a `hellbovine` record (D2), a TC-named row on stock data (§ F, only `Annihilus` in
-  `ROP (N)`/`ROP (H)`), the restore path (C2; it needs a version 71 or 87 save, which no tool builds), and a type-11
+  `ROP (N)`/`ROP (H)`), the version-0 builder (C2; no drop has version 0), and a type-11
   item drawing on the item seed before the pick (A3 note; no stock carrier). Each stays inferred. The
   TC-named row was logged on a forced path (run:2026-10-15-uniques-tcnamed-forced, 108 creations reproduced), which
   agrees with § F but cannot promote it: the edited TC cells are the claims' input (ADR-0010, architect review

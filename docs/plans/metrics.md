@@ -419,6 +419,7 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-10-30 | lane/a54 check | 0054 P0 | architect-check | 70 642 | 20 | 2 | — (Tier B check, no harness) | accept | — |
 | 2026-10-30 | lane/h1c | 0038 H1c | reverser-harness | 274 025 | 101 | 52 | slot 1 (7 kept sessions), no Ghidra; Sonnet | accept with fixes (Tier B check) | 1: overclaim 1 |
 | 2026-10-30 | lane/h1c check | 0038 H1c | architect-check | 75 916 | 12 | 2 | — (Tier B check, no harness) | accept with fixes | 1: overclaim 1 (NewCharLegacy symbol row raised to C with the unmet PlayerLoad caller half in its description; marked [I]) |
+| 2026-10-30 | `lane/s38p` | 0038 P3 player/creation (S3a, S3b, H1a, H1c, H6g, h6gs) and the H1c re-tags (hirelings 3/30/33, save/d2s, uniques-sets 21) | spec-writer | 0 | 75 | 0 | — (no slot, no Ghidra, no harness; tokens and wall unknown to the lane, 0) | — | — |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not
