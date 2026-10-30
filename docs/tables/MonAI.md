@@ -48,7 +48,10 @@ mismatches** (layout `monai` in `tools/excel_layouts.py`). Observed values from 
 
 `[C]` as bytes: `python3 -I tools/ai_survey.py index <excel-dir> workspace/install/app/game.exe` reads the 148 rows of
 16 bytes at `0x0073CA18` from the pinned image (it refuses another hash) as four u32 words, `+0`, `+4`, `+8`, `+C`
-(keys `tbl_*`). Only the `+8` word has a meaning from a finding; the other three are named here by offset alone.
+(keys `tbl_*`). `[I]` [ai/0001](../findings/ai/0001-machinery.md) § 3 names the four words `{+0 searchKind, +4 init,
++8 think, +C alt}` (`MonAiRow`): `MonAiInit` calls `init` and installs `think` (or `alt`), and the event's target
+search reads `+0` (data:g_MonAiTable@0x0073CA18, fn:sub_005B0E00_MonAiInit@0x005B0E00); the survey reads them by
+offset.
 
 - `[C]` The row after the last (index 148, `0x0073D358`) is 16 zero bytes. `[I]` A MonStats `AI` past 147 (or
   negative) reaches no row of this table: `MonAiEntryGet` then returns row 0 (`0x005B1626`–`0x005B163B`), but only on
@@ -95,17 +98,21 @@ the first-table rows each repeats; the gate survey `ai` carries the `st_*` count
 - `[I]` Who sets a state, by `MonAiInit`'s 33 direct calls: 21 push an immediate (0, 5, 6, 10, 11, 13, 15, 16: no
   immediate passes 1–4, 7–9, 12, 14 or 17); 12 pass a register. Immediates: 0 at 11 sites (including the state rows of
   states 2, 3, 9, 12 and 16 sending the unit back to 0); 5 and 6 in the `Hireable` think function; 10 `CloakAreaCb`; 11
-  `MonFleeFrom`; 13 one `SuperUniqueSpawn` case; 15 `WhipChangeClass`; 16 `ImpAttach`. Registers: states 10, 12 or 11 from
-  `CurseApplyCb` by the skill's `auratargetstate` (Skills `+0x82` = 23, 27 or 56), else 0; the saved state of
-  `InactiveMonstersRestore`; a word of `SpawnOwnedMonster`'s block; and seven AI-function sites that load it through
-  a pointer, of which five stay unresolved. The writes to `AiCtl+0x00` outside `MonAiInit`'s two stores are not
+  `MonFleeFrom`; 13 one `SuperUniqueSpawn` case; 15 `WhipChangeClass`; 16 `ImpAttach`. Registers: 0 from state 11's
+  function (0x005E817B, `eax` = 0 after `test eax,eax; jne`); states 10, 12 or 11 from `CurseApplyCb`'s callee
+  `0x005C34B0` by the skill's `auratargetstate` (Skills `+0x82` = 23, 27 or 56), else 0 (0x005C3520, and its twin
+  0x005C352E on the no-monster-data branch, where the ctl is 0 and `MonAiInit` returns); the saved state of
+  `InactiveMonstersRestore` (0x0054286B); a word of `SpawnOwnedMonster`'s block (0x0056DA6A); and seven AI-function
+  sites that load it through a pointer, of which two (0x005F17D6, 0x005F501E) pass the ctl's own current state and
+  five stay unresolved. The writes to `AiCtl+0x00` outside `MonAiInit`'s two stores are not
   scanned, so "0..17" holds for the immediate callers and the writers read.
 - `[C]` As bytes (the survey `states` command): `+0` is 0 in 7 rows (0, 1, 4–7, 12), 1 in 10 (2, 3, 8–11, 13–16) and 2
   in row 17 (`st_w0_0=7`, `st_w0_1=10`, `st_w0_2=1`); row 0 is all zero; `+4` is set in states 3, 11 and 16 and `+C` in
   state 4 alone; `+8` is set in 17 rows with 16 distinct values (10 and 17 share `0x005E8020`). Five rows repeat a first-table
   `+8` word: state 1 `Idle` (row 1), 4 `Hireable` (row 61, with its `+C` `0x005E5280`), 5 (row 60 `GoodNpcRanged`),
   7 (row 67 `NecroPet`) and 15 (row 117 `SuicideMinion`) (`st_fn8_in_first=5`); the finding's list also counts 10 and 17,
-  which share one word that no first-table row holds. The other twelve rows (2, 3, 6, 8, 9, 10–14, 16, 17) hold words
+  which share one word that no first-table row holds (sent to the reverser:
+  [backlog](../backlog/2026-10-30-architect-reverser-ai-0001-state-rows-reusing-a-first-table.md)). The other twelve rows (2, 3, 6, 8, 9, 10–14, 16, 17) hold words
   that no `monai` row holds. The finding names each state's function (e.g. state 2 `0x005B14E0` back to 0 when
   `MonsterData+0x54` is 3 or 19 or the distance is below 4).
 - `[L]` Which units run each of the unshared state functions, beyond the immediate callers above, stays with the
@@ -336,7 +343,8 @@ exactly one batch (`batch_rows=148`; the test `test_batches_cover_each_row_once`
   whole-table coverage (question 8) adds the unreferenced and the many one-record AIs; P1.1 regroups by shared code.
 - Hydra (86) is in summons although `hydra2` and `hydra3` carry no S mark: only `hydra1` is a Skills `summon`.
 - The rows of the second table (§ [The second table](#the-second-table-at-0x0073d358-found-at-the-lanea52-review)) are
-  in no batch: P1.1 names the table and adds them (`lane/a52` review).
+  in none of these 13: plan 0052 § The catalogue batches, which supersedes this proposal, places all 18 state rows
+  (each once) in its twelve batches.
 
 ## AI columns of MonStats
 
@@ -368,11 +376,13 @@ skill (775 cells) in 97 AI rows.
 
 ## Open questions
 
-- `[L]` What the `+0`, `+4` and `+C` words of a `g_MonAiTable` row are, and whether row 143 is ever installed on a unit
-  (its name and its `+4` word against row 106's). Owner: reverser, plan 0052 P1.1 (the machinery) and the summons batch.
+- `[L]` Whether row 143 is ever installed on a unit (its name and its `+4` word against row 106's; the four words are
+  named by ai/0001 § 3, § [The AI table in the image](#the-ai-table-in-the-image)). Owner: reverser, plan 0052 summons
+  batch.
 - `[L]` What each `aip<k>` slot means per AI. Owner: reverser, plan 0052 P1 (each catalogue batch).
-- `[L]` Whether any path sets a unit's AI to a row other than its MonStats record's (a hireling, a revived or
-  converted monster, row 143). Owner: reverser, plan 0052 P1.1.
+- `[L]` Whether any path installs a first-table row other than its MonStats record's (a revived or converted monster,
+  row 143). A non-zero AI state already replaces the record's row with a state row (ai/0001 § 3; who sets each state,
+  § [The second table](#the-second-table-at-0x0073d358-found-at-the-lanea52-review)). Owner: reverser, plan 0052 P1.
 - `[L]` The second table at `0x0073D358` (§ [The second table](#the-second-table-at-0x0073d358-found-at-the-lanea52-review)):
   named and row-counted by [ai/0001](../findings/ai/0001-machinery.md) § 3 (the callers, the 18 rows, the `0x00623470`
   gate, who sets each state, all `[I]`); what stays open is the five unresolved pointer-load sites that pass a state and
