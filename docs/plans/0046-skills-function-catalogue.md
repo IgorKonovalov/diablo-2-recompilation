@@ -1447,3 +1447,40 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 - **2026-10-30 — Unpaused (owner; architect, `lane/unp`).** [Plans README](README.md) § Owner decisions (2026-10-30).
   **Phase 2 runs** (`lane/p46h`, harness slot 2, one slot as planned), with ruling 1's Baal Tentacle item. Its gate
   (0045·P3's review, 2026-10-27) is open and 0050·P2 has started (owner, 2026-10-25), so nothing waits.
+- **2026-10-30 — Phase 2 landed for review (reverser, `lane/p46h`, harness slot 2 only, no Ghidra; the owner unpaused
+  all work today).** `run:2026-10-30-skills-catalogue`: 12 sessions (`tools/skills_catalogue_sessions.py`, logger rev 5
+  unchanged; `SkillsSor` for the monster families, the new `SkillsChain` recipe for the item family), `tools/skills.py`
+  over the 12 logs **0 mismatches** after two additions the run forced, record in [experiments](../findings/skills/experiments.md#run2026-10-30-skills-catalogue)
+  and [skills/0003 § 17](../findings/skills/0003-handlers.md#17-plan-0046-phase-2-the-catalogue-sample-run2026-10-30-skills-catalogue).
+  **Families, each by one member at or above 30 events:** 8a 181 Resurrect (66 starts, 66 do events), 160 ShamanFire
+  (39 · 37); 8b 282 Imp Inferno (33 · 1 004); 8c 299 Imp Fire Missile (213 · 198), 330 Imp Teleport (354 · 347), 295
+  Overseer Whip (61 · 61); item 53 Chain Lightning cast by *of Chain Lightning* items (64 do events, effect argument 1).
+  **What the run found:** (1) the creation callback `0x005AC040` re-seeds a class-408 missile (catapult spotters) from
+  `Init(path +0x10)` with 10 steps after it in 36 of 36 creations (12 `MC.seed` mismatches before the checker took
+  it; `sub_005AC040_MissCbReseedPathX` raised to `[C]`; the call at `0x005AC073` was named unreached by plan 0045 part 2);
+  (2) `ReturnDamage` (Iron Maiden) steps the cursed unit's seed once when it kills the unit (1 case, `[I]`, reported,
+  not checked). **Shortfalls, named with reasons:** **Baal Tentacle (do 140) not reached**: the throne route of
+  plan 0038 H6d ran (waypoint 5,9, two warps, a 421 s sweep, the portal step, a 420 s hunt) but the waves never
+  started and class 544 was never seen, so ruling 1's stale-word question stays `[I]` (monster-AI plan, or a
+  session that gets the waves started); do 113 (scroll and book rows) and the `charged` suffixes not attempted (no
+  session step uses an inventory item); do 151 not shown as the function run (the logger does not record it); no Act 2
+  monster of the 8a rows; chained pairs counted over the run (36 540 missile-creation, 13 671 caster, 20 caster+logged),
+  not per family. **Tools:** `tools/skills.py`, `tools/test_skills.py` (15 tests), `tools/skills_sessions.py` (an
+  `until` step), `tools/skills_catalogue_sessions.py`, `tools/skills_catalogue_tally.py`, the recipe
+  `tools/d2s_recipes/skills-chain.json` (pinned in `tools/test_d2s.py`; that file's `test_every_recipe_has_a_base` was
+  already failing before this lane with 49 recipes unlisted). Slot 2 stopped, saves restored (aside empty), no
+  background process. **Next for 0046:** the architect's review of Phase 2; Phase 3 (spec-writer) takes
+  skills/0004–0018 and this run's § 17 where a catalogue entry has a logged counterpart.
+- **2026-10-30 — Phase 2 lane check (architect, `lane/p46h`, Tier B): accept with fixes (2); Phase 3 released.** Checked: `[C]` raised 3
+  (`0x005AC040` re-seed, 36 of 36 at 10 steps; family floors; the item handler's fires), anchors `0x005C0470`, `0x005D1F70`, `0x0056F7F0`, `0x005C5F50`
+  (symbols match), reverser review-fixes rules, request items; `tools/test_skills.py` 15 OK, `tools/skills.py check` over the 12 logs again: 0 mismatches;
+  gate green. **Fixes (2, omission/stale cross-reference):** the "unreached" note of experiments (run:2026-10-27-skills) and skills/0007's callback
+  sentence now point at § 17; `docs/specs/rng/seeds.md` and missiles.md § H still say the other sites were not reached: routed to spec-writer
+  (backlog `…seeds-0x005ac040-raised-to-c`). **Rulings:** (1) the lane's families (8a, 8b, 8c, item) are right: they are the
+  batches with tier-A count 0 in the plan's list; each reached by one member at or above 30 events. (2) `MC.cbseed2` and the `0x005AC040` raise to `[C]`
+  stand: second source is the 36-case run against the stream (about 5 000 in 2^64 by chance); plan 0045 part 2's "unreached" was a no-breakpoint
+  statement, annotated in the places above, not contradicted. The three-call split of the 10 steps stays `[I]`. (3) `ReturnDamage` kill case: reported,
+  not checked, `[I]`, one case; accepted; the kill branch is a hole in `EVH.seed` and P3 states it as such. (4) Shortfalls (Baal Tentacle do 140, do 113 and
+  charged suffixes, do 151 itself, Act 2 8a, per-family chained pairs) meet the Done-when (a family is reached; absent members named with reasons).
+  P3 carries them as short floors under Open questions; Baal Tentacle goes to the monster-AI plan or a wave-starting session; none blocks P3. Main was not
+  merged; `test_d2s`'s `RECIPE_BASES` failure is pre-existing on the base and passes on main.

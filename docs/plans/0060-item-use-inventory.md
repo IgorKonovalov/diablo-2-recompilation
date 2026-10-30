@@ -1,9 +1,9 @@
 # 0060 — Item use and inventory: potions, scrolls and tomes, belts, stacks, pickup and drop, ground items, identify
 
-> **Status:** draft (architect, `lane/plans57`, 2026-10-30), for the owner's approval; needs a scope ADR (question 1)
+> **Status:** approved (owner, 2026-10-30: "approve all of them", every scoping question answered as recommended); drafted 2026-10-30 (architect, `lane/plans57`)
 > **Created:** 2026-10-30
 > **Owner skill(s):** archivist (phase 0), reverser (phases 1, 2), spec-writer (phases 3, 4)
-> **Related ADRs:** 0014-scope-game-simulation, 0017-scope-quests-travel-economy, 0021-observed-boundaries-in-emulation
+> **Related ADRs:** 0014-scope-game-simulation, 0017-scope-quests-travel-economy, 0021-observed-boundaries-in-emulation, 0025-scope-item-use-inventory
 
 ## TL;DR
 
@@ -100,3 +100,4 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 
 - **2026-10-30 — Drafted (architect, `lane/plans57`).** Status `draft`; rank 4 (high value, large; scope ADR needed);
   five owner questions.
+- **2026-10-30 — Approved (owner; recorded by the architect, `lane/appr2`).** "Approve all of them": all five questions as recommended: the scope ADR is [ADR-0025](../adrs/0025-scope-item-use-inventory.md) (accepted with this approval: the server's outcomes only, beside ADR-0017); the stash in, the cube's grid as an inventory page in, its transmute items/cube's; trading out; the ground-item lifetime in; the slot after 0050·P2 part 3 and 0046·P2, (the companion sweep it was to precede may be drafted but not started, owner 2026-10-30). P0 takes the archivist after 0059·P2 per the run order. Status `approved`.

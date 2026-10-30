@@ -344,6 +344,7 @@ RECIPE_BASES = {
     "skills-dru": (os.path.join(P0005, "smpdru.d2s"), "6ed45fc4394835746383c91d640fbe490edae294bfec630a74997361a86b02e9"),  # run:2026-10-27-skills
     "skills-bar": (os.path.join(P0005, "smpbar.d2s"), "acefd40dfe0bd209aa497d9221f967ab1f4837715d908ac24ce57a024fcb2c2b"),  # run:2026-10-27-skills
     "skills-barh": (os.path.join(P0005, "smpbar.d2s"), "8d5978557b2532f67660c31a909c43630985f7a3dd0a83a7cdbb46852ae86373"),  # run:2026-10-27-skills
+    "skills-chain": (os.path.join(P0005, "smpbar.d2s"), "94f0b491decdb72fc3dc9cb85c339e96acfb3945c49ed24df13d85592380e7da"),  # run:2026-10-30-skills-catalogue
     "skills-pal": (os.path.join(P0005, "smppal.d2s"), "d5dcb6aba4e3408613ad1479e5ef6f792e214d22b0604d12efed878bad6efeb3"),  # run:2026-10-27-skills
     "skills-ass": (os.path.join(P0005, "smpasn.d2s"), "a89fc6e77b20559f6fc888703dd1cde8ad0db290a74608cc34aa615a842a603f"),  # run:2026-10-27-skills
     # recipes committed by session lanes without a base entry here (found by test_every_recipe_has_a_base, lane/arc5)
