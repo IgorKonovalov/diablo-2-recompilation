@@ -1,6 +1,6 @@
 # Plans index
 
-Next free number: **0057**
+Next free number: **0063**
 
 Lane runs (agent usage, review verdicts, fix counts by category) are logged in the [lane run ledger](metrics.md).
 
@@ -61,7 +61,13 @@ Lane runs (agent usage, review verdicts, fix counts by category) are logged in t
 | [0053](done/0053-review-tiers-and-gate-checks.md) | Review tiers and gate checks for the mechanical fix categories (ADR-0023) | done | closed 2026-10-30: E14–E16 and W7 in the gate (E14 demoted until the reverser's entry); trial of 11 Tier B checks (mean 70 868 tokens vs 146 247 at Tier A, 36% saved per lane with audits) and 2 audits (0 reject-grade misses, 9 non-blocking); ADR-0023 accepted, lane-check gains the routing and no-silent-nit checks, ADR-0024 (touched-document pass) proposed to the owner |
 | [0054](0054-path-search.md) | Path search: the planner behind every path request, its points, its draws and its use of the collision grid (ADR-0014 phase 5, second part) | approved | **approved by the owner 2026-10-30** ("approve as recommended", all eight questions); drafted 2026-10-30 (`lane/plans54`) on unpause, as 0052·P1.1's review ruled; P0 archivist (the 17 path types), P1 three static batches with emulation over predicted grids, P1b, P2 one slot, P3 spec (row `path/search`), P4 wiki; gates nothing |
 | [0055](0055-server-frame.md) | The server frame: the game tick, the unit update order, the event queue and the timers, checked in frame windows (ADR-0022, simulation phase 6) | approved | **approved by the owner 2026-10-30** ("approve as recommended", all eight questions); **P0 ready to start now** (archivist); drafted 2026-10-30 (`lane/plans54`) on unpause, the plan ADR-0022 calls for; P0 archivist (the kept-log corpus), P1 three static batches (gate met: 0052·P1.1 reviewed), P2a the order model on kept logs (no game), P2b frame windows (one slot, after 0052·P3a's review), P3 spec (row `sim/frame`), P4 wiki |
-| [0056](0056-harness-runner-efficiency.md) | Harness runner efficiency: one shared runner library (`tools/harness_runner.py`) and several cases per game launch, with a fresh-process rule | draft | drafted 2026-10-30 (`lane/plans56`) after the owner's go on the 17-transcript harness analysis; P1 reverser (library, no-game tests, one slot for two smoke sessions; starts after `lane/hx` merges), P2 reverser (one slot: the multi-case probe and § Fresh process), P3 pilot inside the next batch that needs it (recommended 0052·P2; 0055·P2b's pilot window library-only), P4 architect (evaluation, ADR on case and process); target ≤ 9.0 min and ≤ 43k tokens per kept session (baseline mean 11.95 min, 57k); owner questions 1–7 open |
+| [0056](0056-harness-runner-efficiency.md) | Harness runner efficiency: one shared runner library (`tools/harness_runner.py`) and several cases per game launch, with a fresh-process rule | approved | **approved by the owner 2026-10-30** ("as recommended", questions 1–7); **P1 starts after `lane/hx` merges**; drafted 2026-10-30 (`lane/plans56`) after the owner's go on the 17-transcript harness analysis; P1 reverser (library, no-game tests, one slot for two smoke sessions; starts after `lane/hx` merges), P2 reverser (one slot: the multi-case probe and § Fresh process), P3 pilot inside the next batch that needs it (recommended 0052·P2; 0055·P2b's pilot window library-only), P4 architect (evaluation, ADR on case and process); target ≤ 9.0 min and ≤ 43k tokens per kept session (baseline mean 11.95 min, 57k) |
+| [0057](0057-quirks-catalogue.md) | Quirks catalogue: the behaviour a faithful reimplementation must keep (439 *Reimplementation notes* over 44 reviewed specs harvested into one index), and the community-known bugs with a verdict each | draft | drafted 2026-10-30 (`lane/plans57`), rank 1; P1 spec-writer harvest (row `quirks`), P2 reverser community-bug verdicts (static, ≤ 30 claims, no slot), P3 spec-writer fold, P4 wiki; no open dependency; owner questions 1–5 open |
+| [0058](0058-party-and-player-count.md) | Party and player count: the experience split for n = 3 to 8 by emulation, the credit edges, and every player-count effect in one page | draft | drafted 2026-10-30 (`lane/plans57`), rank 2; the split is already specified (player/creation J4, `[C]` for n = 2), so P1 reverser emulation of `XP_PartyShare` for n ≥ 3 (no slot), P2 spec-writer page (row `player/party`), P3 wiki; owner questions 1–4 open |
+| [0059](0059-golden-traces.md) | Golden traces: seeds and inputs with their expected world, drops and later events, observed or predicted, as conformance tests (`tools/golden.py`) | draft | drafted 2026-10-30 (`lane/plans57`), rank 3; P1 archivist format and tool, P2 archivist v1 set (chain, world and drops, from kept logs and `chain.py`), P3 spec-writer conformance page (row `conformance`), P4 archivist v2 events (after 0052·P3a and 0055·P3); no slot, no Ghidra; owner questions 1–5 open |
+| [0060](0060-item-use-inventory.md) | Item use and inventory: potions, scrolls and tomes, belts, grids, stacking, pickup and drop, the ground drop and lifetime, identify | draft | drafted 2026-10-30 (`lane/plans57`), rank 4; needs a scope ADR beside ADR-0017 (question 1); P0 archivist (`belts`, `inventory`, the `Misc` use columns), P1 three static batches, P2 one slot, P3 spec (row `items/use`), P4 wiki; owner questions 1–5 open |
+| [0061](0061-message-catalogue.md) | Client–server message catalogue: every in-game message both directions, its fields, its handler or send condition | draft | drafted 2026-10-30 (`lane/plans57`), rank 5; needs a scope ADR (the network protocol is out by ADR-0002 and ADR-0014; question 1); recommended after 0055·P3; P1 three static batches, P2 one short slot (gdb capture), P3 spec (row `net/messages`), P4 wiki; owner questions 1–4 open |
+| [0062](0062-debug-and-cut-content.md) | Debug and cut content: developer switches and command-line options, and the table rows and code no stock path reaches | draft | drafted 2026-10-30 (`lane/plans57`), rank 6 (low priority); P1 reverser static (switches), P2 archivist (unreached rows), P3 spec-writer (behaviour-changing switches into their specs); no slot; owner questions 1–3 open |
 
 ## Run order (set 2026-10-25, plans 0038–0052)
 
@@ -107,6 +113,40 @@ lanes and the archivist (closed 2026-10-27); its Phase 0 also gives 0045·P3 and
 column readers. 0050 is small and mostly data, and its P1 can run while the harness lanes finish 0045·P2 and the 0038
 batches; its P2 takes one slot, so 0038 keeps the other. 0050·P2 goes before 0046·P2 on the harness because it is on
 phase (5)'s path and 0046 gates nothing (ADR-0020).
+
+**Owner decisions (2026-10-30, ADR-0024 and new research):**
+1. **ADR-0024 accepted** ([ADR-0024](../adrs/0024-lane-check-touched-documents-and-routing.md)): from now on every Tier B
+   check runs the grep-bounded **touched-document** and **touched-findings** passes (at most 20 subjects each; more
+   escalates to Tier A), beside the routing and no-silent-nit rules. Written into
+   [`lane-check.md`](../../.claude/skills/architect/references/lane-check.md) (checks 7 and 8) and the architect
+   skill's Mode 3. The next two audits measure the amended check (tokens per check, missed fixes by category).
+2. **Plan 0056 approved** ([0056](0056-harness-runner-efficiency.md)), "as recommended", all seven questions: incremental
+   runner migration; several cases per launch opt-in per batch, § Fresh process wins; the full pilot is 0052·P2's
+   first batch, 0055·P2b's pilot window tests the library only, 0050·P2 part 3 does not wait; the Phase 2 probe takes
+   the next free slot after 0050·P2 part 3; if `-seed` does not hold, cases switch inside one game, no in-memory seed
+   patching; the case-and-process ADR is proposed at Phase 4; Opus for Phase 1, Sonnet for the probe and pilot
+   sessions. **Phase 1 starts after `lane/hx` merges.**
+3. **"Plan as many as you can, starting from low-hanging and most impactful."** Six plans drafted (`lane/plans57`),
+   ranked by value over effort: [0057](0057-quirks-catalogue.md) quirks catalogue, [0058](0058-party-and-player-count.md)
+   party and player count, [0059](0059-golden-traces.md) golden traces, [0060](0060-item-use-inventory.md) item use and
+   inventory, [0061](0061-message-catalogue.md) message catalogue, [0062](0062-debug-and-cut-content.md) debug and cut
+   content. Each is `draft` with its owner questions. Survey notes: the **experience split is already specified**
+   (player/creation J4, `[C]` for n = 2), so 0058 covers only n ≥ 3, the credit edges and one composed page;
+   **monster awareness is dropped as a plan**: plan 0052 already covers the target search (ai/0001 § 6), the whole AI
+   table with the town and NPC rows, and drlg/lifecycle the room activation; its one residual, whether any server code
+   reads light radius or a visibility term, is a [reverser backlog entry](../backlog/2026-10-30-architect-reverser-light-radius-server-readers.md).
+   0060 and 0061 each need a short scope ADR, drafted when the owner approves them.
+
+**Proposed run order for plans 0057–0062** (architect, for the owner; it fits the current lanes and adds no lane).
+Phases of plans 0038, 0046, 0050, 0052, 0054, 0055 and 0056 keep their places; these fill free capacity.
+
+| Lane | Now (2026-10-30) | Proposed additions, in order |
+|---|---|---|
+| **static A** | 0052 catalogue (`lane/r52d`) | unchanged; 0052·P1b after the catalogue |
+| **static B** | 0055·P1 (`lane/r55b`), then 0054·P1 | after 0054·P1: **0058·P1** (short, emulation) → **0057·P2** (community bugs) → **0060·P1.1–P1.3** → **0061·P1** (after 0055·P3) → 0062·P1; 0058·P1 and 0057·P2 may also fill a static lane that waits on a review |
+| **harness slots 1–2** | 0050·P2 part 3 (`lane/p50g`), 0046·P2 (`lane/p46h`) | 0056·P1 smoke and P2 probe as approved → 0052·P2 (with 0056's pilot) → **0060·P2** → 0055·P2b → **0061·P2**; the companion `[I]` sweep takes the slots 0038 leaves |
+| **archivist** | free | **0059·P1 → 0059·P2** → **0060·P0** → 0062·P2 → 0059·P4 (after 0052·P3a and 0055·P3) |
+| **spec-writer** | `lane/s38p` | **0057·P1** next → 0058·P2 (after 0058·P1) → 0057·P3 → 0059·P3 → the wiki phases (0057·P4, 0058·P3); the existing queue (0046·P3, 0052·P3a/b, 0054·P3, 0055·P3) goes first whenever one of its phases is ready |
 
 **Owner decisions (2026-10-30, plans 0054 and 0055):** plans [0054](0054-path-search.md) (path search) and
 [0055](0055-server-frame.md) (the server frame, ADR-0022) are **approved**, "as recommended": all eight scoping

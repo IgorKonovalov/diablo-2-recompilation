@@ -1,6 +1,6 @@
 # 0056 — Harness runner efficiency: one shared runner library, and several cases per game launch
 
-> **Status:** draft (architect, `lane/plans56`, 2026-10-30), for the owner's approval
+> **Status:** approved (owner, 2026-10-30, "as recommended": questions 1–7); drafted by the architect (`lane/plans56`, 2026-10-30)
 > **Created:** 2026-10-30
 > **Owner skill(s):** reverser (phases 1–3), architect (phase 4)
 > **Related ADRs:** 0003-runtime-experiments, 0011-harness-slots, 0014-scope-game-simulation, 0022-scope-server-frame
@@ -174,3 +174,9 @@ table and the command kinds. The launch skeleton is the same in every runner.
 ## Implementation log
 
 _(lanes append dated entries as phases land)_
+- **2026-10-30 — Approved (owner; recorded by the architect, `lane/plans57`).** "As recommended": all seven owner
+  questions answered as the plan recommends. Q1 incremental migration; Q2 several cases per launch opt-in per batch, §
+  Fresh process wins; Q3 the full pilot is 0052·P2's first batch, 0055·P2b's pilot window tests the library only, and
+  0050·P2 part 3 does not wait; Q4 the Phase 2 probe takes the next free slot after 0050·P2 part 3; Q5 if `-seed` does
+  not hold, cases switch inside one game, no in-memory seed patching; Q6 the case-and-process ADR is proposed at Phase
+  4; Q7 Opus for Phase 1, Sonnet for the probe and pilot sessions. **Phase 1 starts after `lane/hx` merges.**
