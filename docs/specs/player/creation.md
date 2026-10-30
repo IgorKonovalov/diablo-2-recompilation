@@ -834,7 +834,7 @@ the Barbarian has one copy more (the buckler), so only its eighth copy (`isc`) t
 - J2's grant and its cut stay inferred until a session reaches the altar: the corrected route (a Normal character at level
   20–35, the altar operated once, no town portal on level 120) is in
   [player/0001 § Plan 0038 H6g shortfalls](../../findings/player/0001-creation.md#rows-2-and-29-what-the-ancients-grant-needs-and-why-the-anc-session-missed-it),
-  routed by the backlog entry [2026-10-30-architect-reverser-plan-0038-h6g-corrected-anc-session](../../backlog/2026-10-30-architect-reverser-plan-0038-h6g-corrected-anc-session.md).
+  routed by the backlog entry [2026-10-30-architect-reverser-plan-0038-h6g-corrected-anc-session](../../backlog/archive/2026-10-30-architect-reverser-plan-0038-h6g-corrected-anc-session.md).
   The corpse pickup needs a Nightmare or Hell death and a click on the corpse within 50 in the same game. [I]
   (fn:sub_0058C5C0_ExpGrantCapped@0x0058C5C0, fn:PLAYER_CorpsePickup@0x0057FB70)
 - ~~Whether a corpse saved with its character keeps its stat 13, and what sets the create screen's mode word

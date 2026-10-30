@@ -5913,7 +5913,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
       step 0.
     - Omission 1 (rule 11): the routing entry was closed "routed to a corrected `anc` session" and ruling (2) sent the
       J2 wording to the spec-writer, with no entry for either; filed
-      [`2026-10-30-architect-reverser-plan-0038-h6g-corrected-anc-session.md`](../backlog/2026-10-30-architect-reverser-plan-0038-h6g-corrected-anc-session.md)
+      [`2026-10-30-architect-reverser-plan-0038-h6g-corrected-anc-session.md`](../backlog/archive/2026-10-30-architect-reverser-plan-0038-h6g-corrected-anc-session.md)
       and [`2026-10-30-architect-spec-writer-player-creation-j2-grant-cut-wording.md`](../backlog/archive/2026-10-30-architect-spec-writer-player-creation-j2-grant-cut-wording.md)
       (the spec's § J2 and `wiki/characters.md` still say "one level span").
     - **What the Tier B check missed** (for the trial): the altar misread (it read the decompile summary, not the
@@ -6031,3 +6031,18 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     spec-writer review-fixes rules 2 and 5 and to architect rule 3.
   - **Next:** merge `lane/s38p`. player/creation rows 2/29 wait for the corrected `anc` session (backlog). The pickup
     remainder of rows 3/30 waits for a death-and-pickup session. The (k) S1b leftovers of the H1a entry stay open.
+- **2026-10-30 — H6g rows 2 and 29, the corrected Ancients session (reverser, `lane/h6ga`, harness slot 2; from `main`
+  `f3005398`).** Run id run:2026-10-30-h6ga-anc
+  ([player/experiments](../findings/player/experiments.md#run2026-10-30-h6ga-anc)); slot 2 stopped, saves restored (no
+  aside), no game, driver or gdb of the lane remains. Backlog entry
+  `2026-10-30-architect-reverser-plan-0038-h6g-corrected-anc-session.md` closed.
+  - **Result:** the route of player/0001 § Plan 0038 H6g shortfalls reached the altar and the three Ancients on the first
+    try (`objop --to-pdef 1089`, class 546, then `farm --boss-cls 540,541,542`; no town portal). `AL0` read the quest at
+    the join: active, step 3 (below 4), so the altar sent 0x4E22. Level 25 character: `EGS` 640 765 = T(27) − T(26),
+    the cut, one level-up then the short branch, end level 27 / experience 2 788 039 (uncut: level 28 / 3 547 274). Level
+    80 character: `EGS` 1 400 000, no level-up. `tools/sweep_h6g.py check` (grant model added) over the 2 kept logs: 0
+    mismatches. New `tools/h6ga_sessions.py` (on the library), `AL0`/`ALS` logger lines (smoked in the dev session),
+    recipe `player-h6g-anc25.json`.
+  - **Ledger:** rows 2 and 29 raised in part (the Normal amount, the cut, both loop branches); remainder the 20 000 000
+    and 40 000 000 immediates (a Nightmare and a Hell session). Row 33's J2 remainder is the same. Corpse pickup (rows
+    3/30) not staged. Totals unchanged (1 526): a part-raise does not move a row.
