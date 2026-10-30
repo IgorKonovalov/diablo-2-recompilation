@@ -5855,7 +5855,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   unpaused (owner, 2026-10-30; [plans README](README.md) § Owner decisions (2026-10-30)). **Running from today:** H1c
   (`d2s-legacy`, `lane/h1c`, harness slot 1) and the H6g static read (`lane/h6gs`, static). **H6g's shortfalls** (rows 2
   and 29, the Ancients' reward; rows 3 and 30 remainder, the corpse pickup): owner play is postponed, so the backlog
-  entry [`2026-10-27-reverser-architect-plan-0038-h6g-shortfalls-ancients-altar-and-corpse.md`](../backlog/2026-10-27-reverser-architect-plan-0038-h6g-shortfalls-ancients-altar-and-corpse.md)
+  entry [`2026-10-27-reverser-architect-plan-0038-h6g-shortfalls-ancients-altar-and-corpse.md`](../backlog/archive/2026-10-27-reverser-architect-plan-0038-h6g-shortfalls-ancients-altar-and-corpse.md)
   is re-addressed `to: reverser` and routed to a **reverser static read now** (the Ancients' spawn, the altar or
   object that starts the encounter and the reward's grant; the corpse pickup handler, its share and a Teleport route to
   the corpse), with a routed next step per row (raised statically, a corrected harness session in the next free slot,
@@ -5883,6 +5883,14 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Totals:** no class change, so `main`'s 1 526 stand. **Symbols:** 7 new `[I]`, none raised.
   - **Review request:** `2026-10-30-reverser-architect-review-h6gs-static-read.md`. The routing entry is annotated
     and left open for the review to close.
+  - **Tier B check (architect, 2026-10-30): accept with fixes (2).** Overclaim 1: the proposed `[C]` said "no others
+    decide the return" and carried the pickup's zeroing; narrowed to the field correspondence (rows 3/30 stay raised in
+    part, the pickup's run `[I]`). Other 1: the manifest's sixth line (`README.txt`) was unnamed. Rulings: (1) the
+    writer/reader pair, writer logged, moves the field correspondence only, as filed; (2) the spec J2 wording (for the
+    spec-writer): the grant is cut to `T(L + 1) − T(L)` `[I]`, not "one level span"; J2 stays open until the corrected
+    `anc` session. Rows 2/29 stay open (b, H6g), not d-owner; totals unchanged (1 526). Anchors checked:
+    `PLAYER_CorpsePickup` 0x0057FB70 (one caller 0x00548E56, `callers.txt`), `sub_0058C5C0_ExpGrantCapped` (three
+    callers), the 86 `OBJS` / 14 `PLR` counts of the `anc` log; manifest passes.
   - **Review-fixes pass:** rule 1 (every new reading is `[I]`; the one `[C]` is proposed and names its pair), rule 2
     (the counts 86 `OBJS`, 14 `PLR`, 3 callers and 7 symbols come from kept commands or the `re/symbols.csv` diff),
     rule 6 (outputs and the script hashed), rule 9 (every caller is named: 1 for the pickup, 3 for the interact, 3

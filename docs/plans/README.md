@@ -117,7 +117,7 @@ roster left open:
    One harness slot; queued for the next free one.
 2. **H6g's shortfalls** (plan 0038, the Ancients rows 2/29 and the corpse pickup rows 3/30): the owner cannot play
    now, so play is **postponed** and a **reverser static read** runs now; owner play stays a later option
-   ([backlog](../backlog/2026-10-27-reverser-architect-plan-0038-h6g-shortfalls-ancients-altar-and-corpse.md)).
+   ([backlog](../backlog/archive/2026-10-27-reverser-architect-plan-0038-h6g-shortfalls-ancients-altar-and-corpse.md)).
 3. **Unpause all.** Running from 2026-10-30: plan 0038 **H1c** (`lane/h1c`, harness slot 1); **0046·P2**
    (`lane/p46h`, harness slot 2); **0052·P1.2** (`lane/r52b`, static); the **H6g static read** (`lane/h6gs`, static);
    **0050·P4**, the wiki page (`lane/wiki50`, spec-writer); the **path search plan and ADR-0022's plan**, drafts

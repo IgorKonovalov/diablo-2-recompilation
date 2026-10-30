@@ -1010,7 +1010,7 @@ The two H6g shortfalls (rows 2/29 and the remainder of rows 3/30 of
 [the inventory](../../plans/0038-inventory/player-creation.md)), read statically on the owner's decision of 2026-10-30
 (owner play postponed): backlog entry `2026-10-27-reverser-architect-plan-0038-h6g-shortfalls-ancients-altar-and-corpse.md`.
 No game run. Tools: Ghidra on a project copy, objdump, `tools/ds1.py`. Kept outputs under `workspace/logs/h6gs/`
-(manifest `manifest-h6gs.sha256`, 6 lines, passes from that directory): `mtntop-units.txt` (`9f08e785…`, the DS1
+(manifest `manifest-h6gs.sha256`, 6 lines, passes from that directory; the sixth is `README.txt`): `mtntop-units.txt` (`9f08e785…`, the DS1
 unit list below), `static-h6gs.s` (`2f7ac4ec…`, the disassembly of the ranges cited here), `callers.txt`
 (`9b5d4888…`, direct call sites of `0x0057FB70`, `0x00548B00` and `0x0058C5C0` over the whole `.text`),
 `grant-cut.py` (`f4e9eb94…`) and its output `grant-cut.txt` (`30c6c81b…`).
@@ -1116,15 +1116,17 @@ unit list below), `static-h6gs.s` (`2f7ac4ec…`, the disassembly of the ranges 
   saved (§ Plan 0049 Phase 1 (d)), so the pickup has to happen in the game where the character died.
   (fn:sub_00548B00_UnitInteract@0x00548B00, fn:sub_00548A50_InteractWalkTo@0x00548A50,
   fn:PLAYER_ModeCmdUnit@0x00580A70, fn:sub_00580C20_PlrModeMoveFrame@0x00580C20, fn:PLAYER_CorpsePickup@0x0057FB70)
-- **Proposed `[C]` (evidence rule 1, a writer/reader pair, the writer logged; fn:PLAYER_CorpseCreate@0x0057F700,
-  fn:PLAYER_CorpsePickup@0x0057FB70, run:2026-10-27-sweep-player):** the pickup reads the two corpse fields
-  that `PLAYER_CorpseCreate` writes, and no others decide the return:
+- [C] **The fields the pickup reads are the two the creation writes** (evidence rule 1, a writer/reader pair with the
+  writer logged; fn:PLAYER_CorpseCreate@0x0057F700, fn:PLAYER_CorpsePickup@0x0057FB70,
+  run:2026-10-27-sweep-player). Scope: which fields only; what the pickup does with them, and the other conditions on
+  its path (the `0x005678A0` test of the caller, below), stay `[I]`:
   - The share. The creation passes it to `UnitSetStat(corpse, 13, share)` (0x0057F883; the share logged at `CCX` in
-    all five deaths of run:2026-10-27-sweep-player). The pickup reads `STATS_GetUnitStat(corpse, 13, 0)` (0x0057FBBB),
-    returns nothing when it is 0, and writes 0 back (0x0057FBCE) before the add.
+    all five deaths of run:2026-10-27-sweep-player). The pickup reads `STATS_GetUnitStat(corpse, 13, 0)` (0x0057FBBB).
   - The owner. The creation writes the dead player's id (`[ebx+0xC]`) into the corpse inventory's `+0x24` with
     `INV_SetOwnerId` (0x0057F8B5). The pickup reads it with `INV_GetOwnerId` (0x0057FBA1) and compares it with the
     picker's id (0x0057FBB2).
+  - [I] Read from the code, not corroborated: the pickup returns nothing when stat 13 is 0 and writes 0 back
+    (0x0057FBCE) before the add.
 
   (fn:PLAYER_CorpseCreate@0x0057F700, fn:PLAYER_CorpsePickup@0x0057FB70, fn:INV_SetOwnerId@0x0063D430,
   fn:INV_GetOwnerId@0x0063D450, run:2026-10-27-sweep-player)
@@ -1143,7 +1145,7 @@ unit list below), `static-h6gs.s` (`2f7ac4ec…`, the disassembly of the ranges 
 
 - **Rows 2 and 29 stay open**, class (b), batch H6g. There is no static second source (above), so they need the
   corrected `anc` route. They are not d-owner.
-- **Rows 3 and 30 stay "raised in part"**, with the remainder narrowed. Proposed `[C]`: the pickup's two reads match
+- **Rows 3 and 30 stay "raised in part"**, with the remainder narrowed. `[C]` (narrowed to which fields): the pickup's two reads match
   the creation's two writes (stat 13 and inventory `+0x24`). Still `[I]`: the pickup's run (the zeroing and the add;
   fn:PLAYER_CorpsePickup@0x0057FB70, fn:PLAYER_CorpseCreate@0x0057F700, run:2026-10-27-sweep-player).
 - **Row 33** is unchanged: its J2 remainder is rows 2 and 29.

@@ -407,7 +407,8 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-10-30 | `lane/wiki50` | 0050 P4 | wiki | 128 394 | 25 | 4 | — (no slot, no Ghidra, no harness) | accept with fixes (Tier B check) | 2: stale cross-reference 1, overclaim 1 (see the check row) |
 | 2026-10-30 | lane/wiki50 check | 0050 P4 | architect-check | 74 320 | 20 | 2 | — (Tier B check, no harness) | accept with fixes | 2: stale cross-reference 1 (plan 0050 status line and plans index still said P4 next), overclaim 1 (the non-interruptible-skill rule stated flat; spec M4 keeps it [I]) |
 | 2026-10-30 | lane/plans54 | plans 0054 (path search), 0055 (server frame, ADR-0022), drafts | architect | 136 535 | 30 | 7 | — (no Ghidra) | drafts; for the owner: 0054 Q1-8, 0055 Q1-8 | — |
-| 2026-10-30 | `lane/h6gs` | 0038 H6g shortfalls (static read) | reverser-static | 160 000 | 72 | 55 | — (no slot; Ghidra copy ghidra-h6gs, -Xmx3G, 5 decompile runs) | — | — |
+| 2026-10-30 | `lane/h6gs` | 0038 H6g shortfalls (static read) | reverser-static | 223 795 | 117 | 18 | — (no slot; Ghidra copy ghidra-h6gs, -Xmx3G, 5 decompile runs) | accept with fixes (Tier B check) | 2: overclaim 1, other 1 (see the check row) |
+| 2026-10-30 | lane/h6gs check | 0038 H6g shortfalls | architect-check | 60 000 | 20 | 6 | — (Tier B check, no harness) | accept with fixes | 2: overclaim 1 (proposed [C] said no others decide the return and carried the zeroing), other 1 (manifest sixth line unnamed) |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not
