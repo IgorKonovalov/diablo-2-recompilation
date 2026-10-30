@@ -442,6 +442,8 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-10-30 | lane/rfix | backlog (0052, 0055, 0038) | reverser-static | 157 089 | 107 | 14 | — (objdump, no Ghidra, no harness) | accept with fixes (Tier B check) | 3: stale cross-reference 2, omission 1 |
 | 2026-10-30 | lane/rfix check | backlog (0052, 0055, 0038) | architect-check | 74 900 | 15 | 2 | — (Tier B check, no harness) | accept with fixes (3) | stale cross-reference 2, omission 1 |
 | 2026-10-30 | lane/appr2 | plans 0057-0062 approved; ADR-0025, ADR-0026 accepted | architect | 105 927 | 32 | 5 | — | recorded: owner approval of 0057-0062, scope ADRs 0025/0026, roster limit (draft but not start) | — |
+| 2026-10-30 | `lane/r55b` | 0055 P1.2 | reverser-static | 369 791 | 145 | 39 | — (static, Ghidra copy ghidra-r55b) | accept with fixes (Tier A) | 9: under-claim 1, overclaim 2, omission 3, stale cross-reference 3 |
+| 2026-10-30 | `lane/r55b` review | 0055 P1.2 | architect-review | 178 764 | 87 | 13 | — (Tier A, objdump, no Ghidra) | accept with fixes (9) | under-claim 1, overclaim 2, omission 3, stale cross-reference 3 |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not
