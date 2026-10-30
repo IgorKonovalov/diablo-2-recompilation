@@ -472,6 +472,8 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-10-30 | `lane/r52f` check | 0052 P1.2 (batch 5) | architect-check | 81 518 | 32 | 3 | — | accept | 0 |
 | 2026-10-30 | lane/h6ga | 0038 H6g rows 2/29 | reverser-harness | 154 310 | 79 | 24 | slot 2 (2 kept sessions, 1 dev), no Ghidra | accept with fixes (Tier B check) | 5: overclaim 1, other 2, stale cross-reference 2 |
 | 2026-10-30 | lane/h6ga check | 0038 H6g rows 2/29 | architect-check | 103 312 | 33 | 3 | — | accept with fixes (5) | 5: overclaim 1, other 2, stale cross-reference 2 |
+| 2026-10-30 | lane/s59 | 0059 P3 | spec-writer | 102 463 | 28 | 5 | — (no Ghidra, no harness) | accept with fixes (Tier A) | 15: misread 5, wrong anchor 5, under-claim 3, overclaim 1, omission 1 |
+| 2026-10-30 | lane/s59 review | 0059 P3 | architect-review | 128 940 | 55 | 8 | — (Tier A, no Ghidra, no harness) | accept with fixes (15) | misread 5, wrong anchor 5, under-claim 3, overclaim 1, omission 1 |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not
