@@ -252,6 +252,48 @@ it whenever a run logs nothing.
   a slot its command line does not tell); `status` shows the directory, open asides and the harness state. This tool is allow-listed in
   `.claude/settings.json`; do not move or delete saves by hand.
 
+### The runner library (plan 0056, `tools/harness_runner.py`)
+
+The launch skeleton every `tools/*_sessions.py` repeats, in one module; a runner keeps only its session table and its
+command kinds. Which runners use it, and when one moves, is harness-play.md § Runners and the library.
+
+| Call | Does | Returns |
+|---|---|---|
+| `new_stem(logs, run, slot, seed, name)` | `<logs>/<run>-s<slot>-<seed>-<name>`, `-r2`, `-r3` … when that log exists | the stem |
+| `install(slot, tag, saves=())` | `saves.py restore TAG` (only when TAG is aside on the slot), `aside TAG`, then `install TAG SAVES…` if given; each return code checked | raises `HarnessError` on a refusal |
+| `launch(slot, seed, log, gdb, steps, after, install=(tag, [d2s]), game_args, mem_max="4G", out, stem)` | `d2run.py` in a new session group, `--mem-max 4G` explicit, stdin closed, output to `out`; a `launch` mark when `stem` is given; slot 0 refused | the `Popen` (gdb's: `poll()` is set once the game is gone) |
+| `wait_ready(log, ready, timeout, proc=…, tick=…)` | waits for the first line whose tag (first word) is `ready` (`RDY`; `PLR` for a runner whose steps enter the game), or that starts with `ready` when it holds a space (`CUBE logger armed`); reads the log incrementally; `tick` once per poll (`hide_window`) | `READY`, `TIMEOUT`, or `GONE` as soon as `proc` exits without it |
+| `wait_count(log, tag, n, timeout, proc)` | waits for `n` lines of `tag`; stops early once `proc` is gone | bool |
+| `mark(stem, case, event, log, note)` | one row of `<stem>.marks.tsv`: `case event time line note`; event ∈ launch, ready, start, end, fail; `line` = the log's line count then (the next line's 0-based index) | the row |
+| `split(log, marks=None, out_dir=None, at=None, head=True)` | one log per `start` mark, `<stem>-<case>.log` (a repeated case `-2` …); `at=TAG` moves each cut to the first `TAG` line before the next mark; `head` repeats the lines before the first cut, then a `# split … lines=a-b at=…` line | `[{case, path, first, end, snapped}]` |
+| `stop(slot, proc=None, timeout=30, out=None)` | `slots.py stop N`, reaps `proc`, then polls `slots.busy(N)` (the pids `slots.py status` shows) for up to 30 s; slot 0 refused | True when the slot is idle |
+| `batch(cases, run_case, status_path, reruns=0, pidfile=None)` | runs the cases in order; `run_case` returns True/False or `(outcome, note)`, an exception is a failed case; `reruns` is the batch's budget of reruns; writes one JSON status file at the end, also when interrupted (`done: false`) | `{kept, failed, rerun, wall, done, cases: [{case, outcome, tries, wall, note}]}` |
+| `sh`, `hide_window`, `lines`, `line_count`, `tag_of`, `Tail` | the helpers every runner had its own copy of; `lines(log, tag)` matches the line's first word (`tag_of`), so a bare `TAG` line with no space counts, which the old `startswith(tag + " ")` did not | |
+
+Offline: `python3 -I tools/harness_runner.py split LOG [--at TAG] [--out DIR] [--no-head]`, `marks LOG`, `status
+STATUS.json` (the summary line and the failed cases; exit 1 on a failure or an early stop), and `bg OUT -- CMD …`
+(starts the batch detached, prints its pid; wait once with `tail --pid=PID -f /dev/null`). No-game tests:
+`python3 -I tools/test_harness_runner.py` (fake logs, fake and short real child processes, fake clocks, and the
+worked example's session on fakes).
+
+**Worked example: `tools/h1a_sessions.py`.** On the library since plan 0056 Phase 1; its session table, clicks and
+sleeps are unchanged (the kept H1a logs were made by the pre-library revision at `main` `efac8f91`). It still writes
+`<stem>.marks.jsonl`, which `tools/sweep_h1a.py` reads, beside the library's `<stem>.marks.tsv`, and its `run` is one
+`batch`: `workspace/logs/h1a/<RUN>-s<N>.status.json` (or `--status F`). Its `wait_ready(log, secs, …)` stays a bool
+wrapper, because `tools/h1c_sessions.py` imports it. The skeleton of a runner on the library:
+
+```python
+stem = hr.new_stem(LOGS, run, slot, seed, name); log = stem + ".log"
+hr.install(slot, tag)
+drv = hr.launch(slot, seed, log, gdb=GDB, steps=STEPS, after=3000, install=(tag, [save]), out=out, stem=stem)
+r = hr.wait_ready(log, "RDY", 120, proc=drv, tick=lambda: hr.hide_window(slot))
+hr.mark(stem, "-", "ready" if r == hr.READY else "fail", log, r)
+for case in cases:
+    hr.mark(stem, case, "start", log); ...  # the runner's own commands
+    hr.mark(stem, case, "end", log)
+hr.stop(slot, drv, out=out)
+```
+
 ### Inventory actions (plan 0029, run:2026-10-15-sockets)
 
 `tools/d2pilot.py insert <log> TOKEN… --slot N` plays inventory clicks against a `tools/gdb/sockets.gdb` log:

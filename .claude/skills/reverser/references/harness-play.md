@@ -196,6 +196,19 @@ A batch is the set of kept sessions a run's claims rest on. Development sessions
   subdirectory) that the checker's batch glob does not match; the batch's manifest lists kept logs only. Keep both
   (§ Cleanup, partial logs).
 
+## Runners and the library
+
+`tools/harness_runner.py` holds the launch skeleton (install, launch, ready wait, case marks, stop, split, batch;
+[tooling.md](tooling.md) § The runner library). The migration rule (plan 0056):
+
+- **A runner moves to the library when its plan next uses it**, not before: the lane that next runs it migrates it
+  first, keeps its session table, clicks and timings, and smokes the migrated runner (§ Before the batch) before its
+  batch. Runners nobody reruns stay as they are.
+- **A runner is never deleted while a kept log's record cites it.** Migrate in place; the record's tool revision is
+  the commit it names, and the migration's commit message says the steps are unchanged.
+- **A new runner is written on the library.** No new copy of `run_session`'s launch, wait or stop.
+- `tools/h1a_sessions.py` is the worked example.
+
 ## Running a batch unattended
 
 - **The runner's ready wait keys on a line that appears before the first case**: the logger's own armed or ready

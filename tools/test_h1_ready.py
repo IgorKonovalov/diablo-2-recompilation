@@ -95,9 +95,11 @@ class ReadyWait(unittest.TestCase):
             self.assertTrue(rows[-2][len("echo "):].startswith(h1a_sessions.READY + " "), name)
 
     def test_runners_wait_on_rdy(self):
-        for mod in ("h1a_sessions.py", "h1c_sessions.py"):
-            src = open(os.path.join(HERE, mod)).read()
-            self.assertIn("wait_ready(log, 120", src, mod)
+        # h1a waits through the library since plan 0056 Phase 1 (tools/harness_runner.py), h1c through h1a's wrapper
+        for mod, call in (("h1a_sessions.py", "hr.wait_ready(log, READY, 120"), ("h1c_sessions.py", "wait_ready(log, 120")):
+            with open(os.path.join(HERE, mod)) as f:
+                src = f.read()
+            self.assertIn(call, src, mod)
             self.assertNotIn('lines(log, "TBL")) >= 3', src, mod)
 
 
