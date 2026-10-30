@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, data/calc, combat/overview, stats/states, monsters/spawn, monsters/stats, drlg/collision]
 consumed_by: [combat/overview, combat/delivery, stats/states, items/economy, monsters/stats, rng/seeds]
-tags: {C: 23, I: 25, L: 2}
-updated: 2026-10-27
+tags: {C: 23, I: 25, L: 1}
+updated: 2026-10-30
 ---
 
 # Skills and missiles: the machinery
@@ -19,8 +19,8 @@ simulation phase of [ADR-0014](../../adrs/0014-scope-game-simulation.md), part 1
 [ADR-0020](../../adrs/0020-skills-phase-in-two-plans.md) ([plan 0045](../../plans/done/0045-skills-missiles-machinery.md)):
 the dispatch tables, every check and its order, the costs and their rounding, the skill packet, progressive charges,
 the handler table, summons, and the missile's life, with every draw named by its seed. What each numbered start, do,
-progressive, missile do, hit and damage function does is the catalogue of plan 0046; here the tier-A rows are
-specified and the rest are value oracles. Unit stats are inputs ([stats/aggregate](../stats/aggregate.md)); the combat
+progressive, missile do, hit and damage function does is the [catalogue](catalogue.md) of plan 0046; here the tier-A
+rows are specified, and the checker of plan 0045 takes the rest as value oracles. Unit stats are inputs ([stats/aggregate](../stats/aggregate.md)); the combat
 chain a skill hit enters is [combat](../combat/README.md).
 
 ```mermaid
@@ -46,6 +46,7 @@ flowchart LR
 |---|---|---|
 | [dispatch.md](dispatch.md) | the request, the checks, the start and do functions, costs, delay, periodic and aura skills, item skills and casts, the skill packet, progressive charges, the stat-event handlers, summons, monster skill use, ammunition and wear, the tier-A start and do functions | reviewed |
 | [missiles.md](missiles.md) | creation, the damage block, the missile's seed, the frame pass and the do function, motion, collision, the hit and its packet, the function tables, the tier-A missile functions, the re-seed sites, the end of life | reviewed |
+| [catalogue.md](catalogue.md) | every numbered start, do, progressive, item and periodic-state entry and every missile do, hit and damage entry a stock row uses: tests, outputs, boundaries, and every draw by seed; the plan 0046 Phase 2 sample | draft |
 
 Names are ours ([skills/0001](../../findings/skills/0001-dispatch.md), [skills/0002](../../findings/skills/0002-missiles.md),
 [skills/0003](../../findings/skills/0003-handlers.md), `re/types/skills.h`). Primitives (`Step`, `Range`, `RangeB`,
@@ -179,6 +180,7 @@ run:2026-10-25-skills. [C] (run:2026-10-25-skills, fn:sub_005C49E0_SummonSetLeve
 - ~~Plan 0045 Phase 2 part 2's targets.~~ Re-tagged from its reviewed raises (run:2026-10-27-skills); what stays open
   is in [dispatch](dispatch.md#open-questions) and [missiles](missiles.md#open-questions): the server's handling of a
   refused request, the handlers no session fired, the rest of `MonAttackStats` and of the summon's stats, C2's
-  `VelLev`, the re-seed sites other than `0x005C9290`, and the caster gaps left.
-- [L] The catalogue of the numbered functions outside tier A ([plan 0046](../../plans/0046-skills-function-catalogue.md)).
+  `VelLev`, the re-seed sites other than `0x005C9290` and `0x005AC040`, and the caster gaps left.
+- ~~The catalogue of the numbered functions outside tier A.~~ Written: [catalogue](catalogue.md) (plan 0046 Phase 3,
+  draft); its short floors are its [Open questions](catalogue.md#open-questions).
 - [L] Client-only skills and missiles (`cltmissile*`, the description tables) are presentation and out of scope.

@@ -1484,3 +1484,20 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   charged suffixes, do 151 itself, Act 2 8a, per-family chained pairs) meet the Done-when (a family is reached; absent members named with reasons).
   P3 carries them as short floors under Open questions; Baal Tentacle goes to the monster-AI plan or a wave-starting session; none blocks P3. Main was not
   merged; `test_d2s`'s `RECIPE_BASES` failure is pre-existing on the base and passes on main.
+- **2026-10-30 — Phase 3 landed for review (spec-writer, `lane/s46`, static docs only).** [skills/catalogue](../specs/skills/catalogue.md)
+  written, `draft`, tags C 255 / I 97 / L 7: § A how an entry is written (shapes, the boundary rule, "no draw" before
+  the boundary, callees and tier A linked to skills/dispatch § O and skills/missiles § G, not restated); § B every
+  draw by seed (one table; creation callbacks; the after-boundary draws `[I]`); §§ C–F the missile do, damage and hit
+  entries (9a–9d, row 568); §§ G–M the seven classes; § N the item, charge and shrine callers; §§ O–Q the monster
+  batches, do 140 with both arms of `0x0063EFA0` and the stale `EBP − 0x1C` word `[I]` (ruling 1 of the `lane/p46m15`
+  review); § R the Phase 2 sample (family floors `[C]`, the `0x005AC040` re-seed `[C]`, the `ReturnDamage` kill step
+  `[I]` stated as a hole in the handler-seed check `EVH.seed`, the monster rows' steps as observations); a worked
+  example (do 140's count and tries, computed); Reimplementation notes; seven `[L]` under Open questions, the five
+  Phase 2 shortfalls among them as short floors. Diagrams: overview, § A, § B, § M (sequence), § N, § Q. Carried in
+  the same lane: skills/missiles § H (the `0x005AC040` row raised, H3 rewritten, H4 new, § I row, an open question
+  narrowed; C 46 → 48), rng/seeds' callbacks paragraph (`0x005AC040` `[C]`; C 81 → 82), skills/dispatch § K row 4
+  (handler 4's kill step), skills/README (the file listed, the catalogue `[L]` struck; L 2 → 1), the research-map
+  rows, and the three wiki pages' re-seed sentences and `based_on` dates (wiki/skills, wiki/randomness,
+  wiki/seed-to-world). The architect backlog entry on `0x005AC040` is closed. What stays `[I]`: every step past an
+  observed boundary (ADR-0021 covers nothing after the call), the tier-A composition, data joins read from
+  `rows.txt`, and Baal's arm of `0x0063EFA0`, whose branch turns on a stack word no run has logged.
