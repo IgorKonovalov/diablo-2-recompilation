@@ -448,7 +448,8 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-10-30 | lane/a59 check | 0059 P1 | architect-check | 61 979 | 15 | 4 | — (Tier B check, no harness) | accept with fixes (2) | overclaim 2 |
 | 2026-10-30 | lane/p46h | 0046 P2 | reverser-harness | 300 391 | 144 | 131 | slot 2, no Ghidra (r2 for one function) | accept with fixes (Tier B check) | 2: omission 1, stale cross-reference 1 |
 | 2026-10-30 | lane/p46h check | 0046 P2 | architect-check | 76 554 | 18 | 2 | — (Tier B check, no harness) | accept with fixes (2) | omission 1, stale cross-reference 1 |
-| 2026-10-30 | lane/s46 | 0046 P3 | spec-writer | 0 | 62 | 0 | — | — | — |
+| 2026-10-30 | lane/s46 | 0046 P3 | spec-writer | 0 | 62 | 0 | — | accept with fixes (Tier A) | 40: misread 10, overclaim 11, omission 15, under-claim 1, wrong anchor 2, stale cross-reference 1 |
+| 2026-10-30 | lane/s46 review | 0046 P3 | architect-review | 0 | 60 | 30 | — (two read-only helper agents, 315 379 tokens) | gave accept with fixes | — (on the lane row; boundary overclaims in §§ C–F and N; draw gates of handlers 20/21/30 and ItemTarget 2 restored; wiki re-seed edits kept; P4 released) |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not

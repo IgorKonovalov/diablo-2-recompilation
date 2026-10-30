@@ -46,7 +46,7 @@ flowchart LR
 |---|---|---|
 | [dispatch.md](dispatch.md) | the request, the checks, the start and do functions, costs, delay, periodic and aura skills, item skills and casts, the skill packet, progressive charges, the stat-event handlers, summons, monster skill use, ammunition and wear, the tier-A start and do functions | reviewed |
 | [missiles.md](missiles.md) | creation, the damage block, the missile's seed, the frame pass and the do function, motion, collision, the hit and its packet, the function tables, the tier-A missile functions, the re-seed sites, the end of life | reviewed |
-| [catalogue.md](catalogue.md) | every numbered start, do, progressive, item and periodic-state entry and every missile do, hit and damage entry a stock row uses: tests, outputs, boundaries, and every draw by seed; the plan 0046 Phase 2 sample | draft |
+| [catalogue.md](catalogue.md) | every numbered start, do, progressive, item and periodic-state entry and every missile do, hit and damage entry a stock row uses: tests, outputs, boundaries, and every draw by seed; the plan 0046 Phase 2 sample | reviewed |
 
 Names are ours ([skills/0001](../../findings/skills/0001-dispatch.md), [skills/0002](../../findings/skills/0002-missiles.md),
 [skills/0003](../../findings/skills/0003-handlers.md), `re/types/skills.h`). Primitives (`Step`, `Range`, `RangeB`,
@@ -182,5 +182,5 @@ run:2026-10-25-skills. [C] (run:2026-10-25-skills, fn:sub_005C49E0_SummonSetLeve
   refused request, the handlers no session fired, the rest of `MonAttackStats` and of the summon's stats, C2's
   `VelLev`, the re-seed sites other than `0x005C9290` and `0x005AC040`, and the caster gaps left.
 - ~~The catalogue of the numbered functions outside tier A.~~ Written: [catalogue](catalogue.md) (plan 0046 Phase 3,
-  draft); its short floors are its [Open questions](catalogue.md#open-questions).
+  reviewed); its short floors are its [Open questions](catalogue.md#open-questions).
 - [L] Client-only skills and missiles (`cltmissile*`, the description tables) are presentation and out of scope.

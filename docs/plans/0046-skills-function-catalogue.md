@@ -1,6 +1,6 @@
 # 0046 — Skills and missiles, the function catalogue: every numbered skill and missile function (ADR-0014 phase 3, part 2)
 
-> **Status:** approved 2026-10-20 (owner); P2 running from 2026-10-30 (owner, unpause; `lane/p46h`, harness slot 2)
+> **Status:** approved 2026-10-20 (owner); P2 and P3 accepted with fixes 2026-10-30; P4 (wiki section) released
 > **Created:** 2026-10-20
 > **Owner skill(s):** archivist, reverser, spec-writer
 > **Related ADRs:** 0001-target-toolchain-evidence-sources, 0004-boundary-oracles-in-reproduction, 0011-harness-slots, 0013-forced-path-runs-cell-level, 0014-scope-game-simulation, 0015-emulated-reproduction, 0020-skills-phase-in-two-plans
@@ -1501,3 +1501,48 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   wiki/seed-to-world). The architect backlog entry on `0x005AC040` is closed. What stays `[I]`: every step past an
   observed boundary (ADR-0021 covers nothing after the call), the tier-A composition, data joins read from
   `rows.txt`, and Baal's arm of `0x0063EFA0`, whose branch turns on a stack word no run has logged.
+- **2026-10-30 — Phase 3 review (architect, `lane/s46`, Tier A): accept with fixes (40); spec reviewed; Phase 4 released.**
+  Checked: every section against skills/0004–0018 and the batch reviews' rulings (§§ C–F: 26 of 27 C entries and all of
+  D–F; §§ G–P: at least three entries per section and all of § N; all of §§ A, B, Q and R myself), more than 130 anchors
+  against `re/symbols.csv` (all resolve), the boundary rule (ADR-0021), the six diagrams, the tier-A link choices, the
+  worked example (recomputed: `n = 4`, tries (100, 199), (96, 200), seeds as tabled), the carried edits (missiles § H,
+  rng/seeds, dispatch § K row 4, skills/README, research map, three wiki pages) and the gate. **Promotion re-check
+  (ADR-0023):** the batch findings had Tier A reviews; the only `[C]` raised since is skills/0003 § 17 (P2, Tier B check):
+  family floors, the `0x005AC040` re-seed (second source the 36-case stream fit) and the item handler's fires, each
+  read again as a raise; they stand. **Touched findings (ADR-0024):** skills/0013 § 6's 2026-10-27 correction (the
+  `DataTables+0x17C` list holds the `disguise` rows, built by `STATES_Load`) was not carried into L8 (fixed). **Touched
+  documents:** anim/timing's "plan 0046's catalogue" row still holds (its outputs are not compared); skills/0002's
+  2026-10-20 note on `0x005AC073` says read, not unreached; nothing else stale. **Fixes, made in the spec** (40: misread
+  10, overclaim 11, omission 15, under-claim 1, wrong anchor 2, stale cross-reference 1): (a) **past-boundary text inside
+  `[C]`** (ADR-0021): C10's chest-found `+0x2C` store, C11's "Redemption's corpse callback … without the chance roll"
+  (now the two callback addresses, their meaning `[I]`), C12's path-case `left ← 10`, E3's area hit, E4's stat-134
+  clear and disc, F2's life write after the overlay, F12's "line 0xF0D", Q7's "stock gate", G's and O's "one draw in
+  the batch" (scoped to before the boundaries), N5's restore on every path; (b) **draw conditions and order**: handlers
+  20, 21 and 30 lost their no-unit and chance ≤ 0 exits, which come before any draw (a repeat of the `lane/s46d` fix,
+  spec-writer rule 3); `ItemTarget` 2's room test comes before its two steps, so a roomless caster draws nothing (§ B
+  rows and § N diagram too); mhit 7's heal is `(calc1 << 8) + RangeB(…)`, replaced (not added to) by `0x005A8910` when
+  ≤ 0 (§ B row too); (c) **misreads**: C9's path target is an offset from `(SubX, SubY)`; C14's pair is written on frames
+  0 and 1 and the creation runs on each flag-8 frame; C15's cell mask 0x45; E2's radius `sHitPar1 > 0 ? : max(…, 1)`;
+  F6's mhit 59 (loops 0, flags 0x17); F8's source and target; G6's two branches (search or state, not both); O7 st 53's
+  node write before the state test; (d) **omissions**: C3's gates, C7's period scope, C18's window, period, radius and
+  `− r`, C19's whole-point guard, C25's `+0x28 = 0`, C2's no-path exit, E11's frames-left exit, F17's no-unit test, F18's
+  mhit 33, O6 do 96's arithmetic, G8's `lvl > 0` term, Q1's loop going on after a spawn (more draws) and the static-path
+  word's wrap, N5's other low bytes, the worked example's arm and the loop after the spawn, the tier-A labels of st 4,
+  5, 15, 23, 32, 36 and do 2 (each linked to dispatch § O); (e) D12 mdmg 8 raised to `[C]` up to `0x00621E40`
+  (under-claim; the 9b review raised it); E18, E20 and F6 given their addresses. Tags now C 256 / I 102 / L 7 (gate
+  E6). **Rulings:** (1) **The tier-A entries kept in their batches stand** (H1 st 4, H6 do 8, I5 do 31, J1 do 65/66 and
+  the unlisted I1, I4, K1, K3, J4, M1): each adds the batch's map past dispatch § O's one line; each section now names
+  them tier A and links § O. (2) **The wiki edits stay in this lane**: wiki/skills, wiki/randomness and
+  wiki/seed-to-world only close text the `0x005AC040` raise made stale and bump `based_on` (spec-writer rule 7); they add
+  no catalogue content, which is Phase 4's. (3) **Do 140's worked example** stays `[I]` (arithmetic over Q1, not a
+  case); it now says stock Baal takes the other arm. (4) **The `ReturnDamage` kill step** is stated as a hole in
+  `EVH.seed` in § R and dispatch § K row 4, `[I]`, as the P2 check ruled. (5) **No diagram carries a fact of its own**
+  after the § N diagram's two corrections; § Q's matches Q1. (6) The fix count is high for one spec because the lane
+  restated 304 entries by hand; most fixes are compressions of the findings' maps that dropped a condition. The
+  promotion is still right: every fix is in place and none needed new evidence. **Bookkeeping:** status `reviewed`;
+  research map row rewritten; skills/README row; plans README row and this plan's status; review request closed
+  ([archive](../backlog/archive/2026-10-30-spec-writer-architect-lane-s46-review-plan-0046-phase-3-catalogue.md));
+  lane ledger row's verdict and fixes filled, review row appended (usage left to the orchestrator). **Promoted:** a
+  Seen line on spec-writer rule 2 (past-boundary text in a `[C]` block) and on rule 3 (the handlers' chance exits,
+  again). **Next for 0046:** Phase 4 (spec-writer): the catalogue section of wiki/skills, by class, `based_on` adding
+  skills/catalogue.
