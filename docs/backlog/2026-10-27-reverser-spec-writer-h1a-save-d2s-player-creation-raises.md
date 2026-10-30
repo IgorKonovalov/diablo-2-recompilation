@@ -33,3 +33,11 @@ and (k), the S1b leftovers.
 § D's "not run-checked in the mercenary header: a name past `+0x116`" bullet and its *Open questions* item in line with
 hirelings H3, where the `lane/h6f` review accepted the reset `[C]` on a built save (row 27; the widths stay `[I]`).
 wiki/saves already follows hirelings § H.
+
+*Annotation (spec-writer, 2026-10-30, `lane/s38p`, plan 0038 Phase 3, player/creation and the H1c re-tags):* the
+player/creation part is applied in [player/creation](../specs/player/creation.md): rows 8, 9 and 11 `[C]` (A2's order
+with the "client name null" test `[I]`, A4's load error 9, the class-7 halt), (h) and (j) on § A2, F1 and § J (the
+halt `[C]`; rows 20 and 34 kept `[I]` as what no class-7 player reaches, with F1's reach condition), and row 1 in part
+after H1c (the legacy new-character branch `[C]`, the `PlayerLoad` caller `[I]`). The H1c rows of hirelings (3, 30,
+33), save/d2s (126 and § D's name bullet) and items/uniques-sets (21) are applied too. **Open:** only (k), the S1b
+leftovers in data/calc L417 and rng/seeds L362, which no Phase 3 round has taken yet.

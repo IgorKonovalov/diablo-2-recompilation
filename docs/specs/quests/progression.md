@@ -1487,11 +1487,13 @@ stateDiagram-v2
 | b4 | set | e11 message 0x4EC9 (`OperateFn` 69, object 561, with b0 set and b4 clear) | 0x0058C39C | [I] (fn:sub_0058C290_A5Q5_NpcMessage@0x0058C290) |
 | b5–b9 | set | e11 from NPC 511 → b5, 520 → b6, 512 → b7, 513 → b8, 515 → b9 | 0x0058C40B | [I] (fn:sub_0058C290_A5Q5_NpcMessage@0x0058C290) |
 
-- [I] **Experience**: 1 400 000 (Normal), 20 000 000 (Nightmare), 40 000 000 (Hell), capped at the experience between the
-  current and the next level. (fn:sub_0058C5C0_ExpGrantCapped@0x0058C5C0)
+- [I] **Experience**: 1 400 000 (Normal), 20 000 000 (Nightmare), 40 000 000 (Hell), capped at `T(L + 1) − T(L)`, the width
+  of the level after the current one ([player/creation § J](../player/creation.md#j-other-level-and-experience-changes),
+  J2). (fn:sub_0058C5C0_ExpGrantCapped@0x0058C5C0)
 - [I] **Arming and resets.** The altar (`OperateFn` 65) with no town portal on 120 and all statues in mode 0 puts the
-  three statues in mode 3 and queues their event 7 (each spawns an Ancient, oracle); with a portal on 120 it instead
-  closes every player's portal there. A town portal created on 120 before the quest is done, or no living player left
+  three statues in mode 3 and queues their event 7 (each spawns an Ancient, oracle); with a portal on 120 it first
+  closes every player's portal there and then sends its message too, and with the quest active and its step at 4 or
+  more it sends nothing (0x0058D371). A town portal created on 120 before the quest is done, or no living player left
   on 120, resets the fight. (fn:sub_0058D310_A5Q5_AltarOperate@0x0058D310, fn:sub_0058C000_A5Q5_AncientsReset@0x0058C000,
   fn:sub_0058D560_A5Q5_SummitEmptyReset@0x0058D560)
 - [C] **The summit door** (object 564, `OperateFn` 71) reads only quest 35's private "done in this game" byte and refuses
