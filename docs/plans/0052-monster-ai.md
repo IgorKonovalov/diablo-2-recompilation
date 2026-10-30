@@ -535,3 +535,23 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   [review request](../backlog/archive/2026-10-30-reverser-architect-plan-0052-p1-2-batch-3-review.md),
   [archivist](../backlog/archive/2026-10-30-reverser-archivist-monstats-and-monstats2-readers-named-by-ai-0004.md) (MonStats and
   MonStats2 readers). Next: batch 4 (pool-D).
+- **2026-10-30 — P1.2 catalogue batch 4 (pool-D) for review (reverser, static, `lane/r52e`, from `main` d4996fb8).**
+  [ai/0005](../findings/ai/0005-pool-d.md): the eighteen think functions of rows 64–66, 68–80, 87 and 92 and row 65's
+  `alt`, each with its `aip` reads per record, its `AiCtl+0x14/+0x18/+0x1C` words, its draws in order (all on the
+  acting unit's seed; 0–5 per decision) and its command, plus the pieces first read here (three search callbacks, the
+  vile mother's skill placer 0x005F9E30, the trap arrows' region kind 0x005FB650 with its one `RNG_RandLoHi` draw per
+  level region). [C] by emulation (run:2026-10-30-ai-cat-emu-4, `tools/ai_cat_emu4.py`, 4 560 cases, 0 mismatches;
+  the `le`, `d0`, new `cmp` (strictness of every non-draw compare, each met at equality in some case) and `r4`
+  controls and the site control fail every case they separate; a development run kept under `emu/dev-1/` with its
+  tool copy): the decision maps of rows 66, 69, 71, 72, 75, 76, 77, 78, 79, 80, 87 and 92 up to their first callee
+  (row 66's return included), row 65's skill-sign test, and the entry calls of rows 64, 65's `alt`, 68, 70, 73 and 74.
+  Left [I]: everything after a boundary, so rows 64, 65, 68, 70, 73 and 74 past their entry call (`FindHostile`,
+  `SkillFindByOwner`/`HasState`, `MONSTATS_GetClassChainPos`, `UnitLifePct`, `AiUnitSearch`). Tier AI in the batch:
+  64, its entry call only (Phase 2's logs). P1.1 review reopen condition (b) not met: the three search callbacks
+  have no draw in their bodies and no RNG entry among their direct calls (callees not followed). No call of the
+  action helpers (`grep -c` in `b4-asm.txt`: 0). Found: rows 65 and 75 write the `MonHelpBlock` block's `+0x0C`/`+0x10`
+  in opposite orders (open question). 24 `re/symbols.csv` rows (all I). Kept outputs `workspace/logs/r52e/` (manifest
+  8 lines; `emu/` 77, `emu/dev-1/` 78; each passes from its directory). Backlog: the
+  [review request](../backlog/2026-10-30-reverser-architect-plan-0052-p1-2-batch-4-review.md),
+  [archivist](../backlog/2026-10-30-reverser-archivist-monstats-and-skills-readers-named-by-ai-0005.md) (MonStats and
+  Skills readers). Next: batch 5 (summons).

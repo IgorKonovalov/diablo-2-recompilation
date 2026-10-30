@@ -1,0 +1,12 @@
+---
+from: reverser
+to: architect
+date: 2026-10-30
+status: open
+context:
+  - ../findings/ai/0005-pool-d.md
+  - ../plans/0052-monster-ai.md#implementation-log
+resolution: ""
+---
+
+Review of plan 0052 P1.2, catalogue batch 4 (pool-D: AI rows 64-66, 68-80, 87, 92; tier AI 64), lane/r52e. Finding [ai/0005](../findings/ai/0005-pool-d.md): the eighteen think functions and row 65's alt read with their aip slots, AI-control words (+0x14/+0x18/+0x1C), draw order and commands, plus five helpers first read here (three search callbacks 0x005F99A0, 0x005FA690, 0x005FAE40; the vile mother's skill placer 0x005F9E30; the trap arrows' region kind 0x005FB650, one RNG_RandLoHi(unit seed; 0, 3) per level region from level 40 up). [C] by emulation (run:2026-10-30-ai-cat-emu-4, tools/ai_cat_emu4.py, 19 families, 4 560 cases, 0 mismatches, 0 stopped, 0 traced; the le, d0, cmp and r4 controls and the site control fail every case they separate; a development run kept under emu/dev-1/ with its own tool copy, models unchanged): the decision maps of rows 66 (its return included), 69, 71, 72, 75, 76, 77, 78, 79, 80, 87 and 92 to their first callee, row 65's skill-sign test, and the entry calls of rows 64, 65's alt, 68, 70, 73 and 74. New here, after the batch 3 lesson: a cmp control switching the strictness of every non-draw compare, and an EDGES line per family counting the cases that meet each compare at equality; every threshold compare of the covered maps is met at equality at least once; the == and sign tests have no strictness control (stated in § 3). [I]: everything after a boundary, so rows 64, 65, 68, 70, 73 and 74 past their entry call. 24 new re/symbols.csv rows (24 func, all I). To rule on: (1) rows 64 (tier), 65, 68, 70, 73, 74 [I] past their entry call for the batch's done-when (as batches 1-3); (2) P1.1 reopen condition (b): not met (the three callbacks have no multiplier site or RNG call and none of their direct calls is an RNG entry; callees not followed); (3) the cmp control and the EDGES count as the substitute controls for the draw-free maps (rows 66, 71, 76, 77, 80, 92); (4) open questions: the MonHelpBlock word order that rows 65 and 75 write in opposite orders, the writer of the region's +0x2D4, row 71's state 1 that no code of the function sets, the MonsterData+0x0E gate of rows 73-74 on the dkmag records, the MonsterData+0x54 writer. No call of the action helpers in the batch. Usage row: docs/plans/metrics.md (tokens and wall unknown, 0). Not blocking. Next batch: 5 (summons).
