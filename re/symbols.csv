@@ -311,17 +311,28 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00540710,func,sub_00540710_PartyIdOfUnit,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x005408E0,func,sub_005408E0_PartyCountInLevel,,C,items/tc,docs/findings/items/0001-tc-resolution.md
 0x00540900,func,sub_00540900_PartyGoldShare,,I,items/economy,docs/findings/items/0011-economy.md
+0x00540BB0,func,sub_00540BB0_EventBlockNew,,I,sim/frame,docs/findings/frame/0002-unit-events-queue.md
+0x00540C30,func,sub_00540C30_EventRecordTake,,I,sim/frame,docs/findings/frame/0002-unit-events-queue.md
+0x00540CD0,func,sub_00540CD0_EventFree,,I,sim/frame,docs/findings/frame/0002-unit-events-queue.md
+0x00540DF0,func,sub_00540DF0_EventRecordAlloc,,I,sim/frame,docs/findings/frame/0002-unit-events-queue.md
+0x00540EA0,func,sub_00540EA0_UnitCancelEventsByCb,,I,sim/frame,docs/findings/frame/0002-unit-events-queue.md
+0x00540EE0,func,sub_00540EE0_UnitFreeAllEvents,,I,sim/frame,docs/findings/frame/0002-unit-events-queue.md
+0x00540F30,func,sub_00540F30_UnitEventsReset,,I,sim/frame,docs/findings/frame/0002-unit-events-queue.md
 0x00540F60,func,sub_00540F60_PlayerEventsRun,,I,anim/timing,docs/findings/anim/0001-modes-frames.md
 0x00541060,func,sub_00541060_MonEventsRun,,I,anim/timing,docs/findings/anim/0001-modes-frames.md
 0x00541160,func,sub_00541160_ObjEventsRun,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
 0x00541240,func,sub_00541240_MissileEventsRun,,I,anim/timing,docs/findings/anim/0001-modes-frames.md
 0x00541320,func,sub_00541320_ItemEventsRun,,I,anim/timing,docs/findings/anim/0001-modes-frames.md
+0x00541400,func,sub_00541400_GameEventCtlFree,,I,sim/frame,docs/findings/frame/0002-unit-events-queue.md
+0x00541470,func,sub_00541470_GameEventCtlCreate,,I,sim/frame,docs/findings/frame/0002-unit-events-queue.md
 0x005414D0,func,sub_005414D0_GameRunUnitEvents,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
 0x005415A0,func,sub_005415A0_UnitEventFirstFrame,,I,anim/timing,docs/findings/anim/0003-movement-gates.md
 0x005415E0,func,sub_005415E0_EventQueueEveryFrame,,I,anim/timing,docs/findings/anim/0001-modes-frames.md
 0x00541650,func,sub_00541650_UnitQueueEveryFrame,,I,anim/timing,docs/findings/anim/0001-modes-frames.md
+0x00541680,func,sub_00541680_UnitQueueEveryFrameCb,,I,sim/frame,docs/findings/frame/0002-unit-events-queue.md
 0x005416B0,func,sub_005416B0_EventQueueAt,,I,anim/timing,docs/findings/anim/0001-modes-frames.md
 0x005417D0,func,sub_005417D0_UnitQueueEvent,,C,anim/timing,docs/findings/anim/0001-modes-frames.md
+0x00541800,func,sub_00541800_UnitQueueEventCb,,I,sim/frame,docs/findings/frame/0002-unit-events-queue.md
 0x005418C0,func,sub_005418C0_InactiveRecordTake,,I,objects,docs/findings/objects/0001-object-population.md
 0x00541990,func,sub_00541990_InactiveItemRestoreOne,,C,drlg/lifecycle,docs/findings/drlg/0009-room-lifecycle.md
 0x00541AC0,func,sub_00541AC0_InactiveItemsRestore,,I,objects,docs/findings/objects/0001-object-population.md
@@ -497,6 +508,8 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00553570,func,SUNIT_SetMode,,I,anim/timing,docs/findings/anim/0001-modes-frames.md
 0x00553720,func,sub_00553720_PortalPartnerGet,,I,quests/travel,docs/findings/quests/0002-travel.md
 0x005537D0,func,sub_005537D0_GameForEachUnit,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
+0x00553970,func,sub_00553970_UnitEventChainSet,,I,sim/frame,docs/findings/frame/0002-unit-events-queue.md
+0x00553980,func,sub_00553980_UnitEventChainGet,,I,sim/frame,docs/findings/frame/0002-unit-events-queue.md
 0x00553990,func,SUNIT_CancelModeEvents,,I,anim/timing,docs/findings/anim/0001-modes-frames.md
 0x005539B0,func,SUNIT_ScheduleModeEvents,,C,anim/timing,docs/findings/anim/0001-modes-frames.md
 0x00553B10,func,sub_00553B10_RescheduleFromPct,,I,anim/timing,docs/findings/anim/0001-modes-frames.md
@@ -514,6 +527,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005542C0,func,sub_005542C0_SkillPetTest,,I,skills/catalogue,docs/findings/skills/0006-missile-hit-1-29.md
 0x00554340,func,sub_00554340_MonAlignPatternRefresh,,I,drlg/collision,docs/findings/drlg/0005-collision.md
 0x005543B0,func,sub_005543B0_MonAlignSet,,I,drlg/collision,docs/findings/drlg/0005-collision.md
+0x005544B0,func,sub_005544B0_UninterruptibleEnd,,I,sim/frame,docs/findings/frame/0002-unit-events-queue.md
 0x00554650,func,sub_00554650_PacketHitClassSet,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x00554850,func,sub_00554850_SUnitPathCreate,,I,drlg/collision,docs/findings/drlg/0005-collision.md
 0x00554A30,func,sub_00554A30_UnitRelocate,,I,drlg/lifecycle,docs/findings/drlg/0009-room-lifecycle.md
@@ -523,6 +537,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005550B0,func,sub_005550B0_WarpExitPos,,C,drlg/warps,docs/findings/drlg/0007-warps.md
 0x00555230,func,sub_00555230_SUnitCreate,,C,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x00555500,func,sub_00555500_PlayerInteractEnd,,I,items/vendors,docs/findings/items/0009-vendors.md
+0x00555580,func,sub_00555580_UnitDetach,,I,sim/frame,docs/findings/frame/0002-unit-events-queue.md
 0x00555600,func,sub_00555600_UnitFree,,I,items/cube,docs/findings/items/0008-cube.md
 0x005557D0,func,sub_005557D0_PresetUnitDispatch,,C,drlg/preset,docs/findings/drlg/0004-preset-units.md
 0x00555910,func,sub_00555910_PresetUnitSpawn,,I,monsters/spawn,docs/findings/monsters/0002-room-population.md
@@ -589,6 +604,8 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0055CA40,func,sub_0055CA40_InvHoldsQuestDup,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
 0x0055DB00,func,sub_0055DB00_ItemUsableBy,,I,items/sockets-runewords,docs/findings/items/0007-sockets-runewords.md
 0x0055DBC0,func,sub_0055DBC0_EquipReqRefresh,,C,items/sockets-runewords,docs/findings/items/0007-sockets-runewords.md
+0x0055F120,func,sub_0055F120_ItemEvent4Nop,,I,sim/frame,docs/findings/frame/0002-unit-events-queue.md
+0x0055F130,func,sub_0055F130_ItemEvent12TimedExpire,,I,sim/frame,docs/findings/frame/0002-unit-events-queue.md
 0x0055F590,func,sub_0055F590_ItemInvNonEmpty,,I,items/cube,docs/findings/items/0008-cube.md
 0x0055F850,func,sub_0055F850_ItemBreak,,I,items/sockets-runewords,docs/findings/items/0007-sockets-runewords.md
 0x0055F900,func,sub_0055F900_ItemRepairBroken,,C,items/cube,docs/findings/items/0008-cube.md
@@ -602,6 +619,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00562660,func,ITEMS_InsertSocket,,C,items/sockets-runewords,docs/findings/items/0007-sockets-runewords.md
 0x00562C40,func,sub_00562C40_ReplenishStep,,I,items/economy,docs/findings/items/0011-economy.md
 0x00562D30,func,ITEMEVENT_Replenish,,I,items/economy,docs/findings/items/0011-economy.md
+0x00562DA0,func,sub_00562DA0_ItemEventDispatch,,I,sim/frame,docs/findings/frame/0002-unit-events-queue.md
 0x00563470,func,sub_00563470_ItemDiscardInvalid,,I,items/sockets-runewords,docs/findings/items/0007-sockets-runewords.md
 0x005645E0,func,sub_005645E0_GameTickAlt,,I,monsters/ai,docs/findings/ai/0001-machinery.md
 0x00564C70,func,sub_00564C70_GameTickAltStub,,I,sim/frame,docs/findings/frame/0001-tick-and-messages.md
@@ -870,12 +888,15 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00580800,func,EVENT_TimedListExpire,,C,stats/states,docs/findings/stats/0002-states.md
 0x00580810,func,sub_00580810_RegenEvent,,C,combat/formulas,docs/findings/combat/0001-formulas.md
 0x005809D0,func,sub_005809D0_PlayerModeCmd,,I,quests/travel,docs/findings/quests/0002-travel.md
+0x00580B70,func,sub_00580B70_PlrEvent6Expire,,I,sim/frame,docs/findings/frame/0002-unit-events-queue.md
+0x00580BE0,func,sub_00580BE0_PlrEvent11Every30,,I,sim/frame,docs/findings/frame/0002-unit-events-queue.md
 0x00580C20,func,sub_00580C20_PlrModeMoveFrame,,I,anim/timing,docs/findings/anim/0001-modes-frames.md
 0x00580EC0,func,sub_00580EC0_PlayerDeath,,I,player/creation,docs/findings/player/0001-creation.md
 0x00581020,func,sub_00581020_PlayerModeEnd,,I,player/creation,docs/findings/player/0001-creation.md
 0x005811D0,func,sub_005811D0_PlayerModeFrameEvent,,I,anim/timing,docs/findings/anim/0001-modes-frames.md
 0x00581220,func,sub_00581220_PlayerEventDispatch,,I,anim/timing,docs/findings/anim/0001-modes-frames.md
 0x00581490,func,sub_00581490_ObjEvOperateEnd,,I,anim/timing,docs/findings/anim/0003-movement-gates.md
+0x005814D0,func,sub_005814D0_ObjEvent5ShrineReset,,I,sim/frame,docs/findings/frame/0002-unit-events-queue.md
 0x005817A0,func,OBJ_TrapEvent,,C,objects,docs/findings/objects/0001-object-population.md
 0x00581A10,func,sub_00581A10_ObjEvent7Thunk,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
 0x005822F0,func,OBJTRAP_MonsterSpawn,,I,objects,docs/findings/objects/0001-object-population.md
@@ -1379,6 +1400,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005A2CC0,func,sub_005A2CC0_PartyDeadKillMember,,I,items/quality,docs/findings/items/0002-quality-roll.md
 0x005A2D10,func,sub_005A2D10_UModPartyDeadDeath,,I,items/quality,docs/findings/items/0002-quality-roll.md
 0x005A4270,func,sub_005A4270_UModEventRun,,I,skills/missiles,docs/findings/skills/0003-handlers.md
+0x005A4370,func,sub_005A4370_MonEvent7UMod,,I,sim/frame,docs/findings/frame/0002-unit-events-queue.md
 0x005A43B0,func,sub_005A43B0_MissileOwnerUModEvent,,I,skills/missiles,docs/findings/skills/0003-handlers.md
 0x005A43E0,func,sub_005A43E0_SpecialMonSpawn,,C,monsters/spawn,docs/findings/monsters/0002-room-population.md
 0x005A4440,func,sub_005A4440_SpecialMonRestore,,C,monsters/special,docs/findings/monsters/0003-special-monsters.md
@@ -1411,6 +1433,9 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005A7BE0,func,sub_005A7BE0_MonModeEndEvent,,I,anim/timing,docs/findings/anim/0001-modes-frames.md
 0x005A7C20,func,sub_005A7C20_MonSetMode,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
 0x005A7E60,func,sub_005A7E60_MonCmdInit,,I,drlg/collision,docs/findings/drlg/0009-room-lifecycle.md
+0x005A7EF0,func,sub_005A7EF0_MonEvent12TimedExpire,,I,sim/frame,docs/findings/frame/0002-unit-events-queue.md
+0x005A7F00,func,sub_005A7F00_MonEvent6Expire,,I,sim/frame,docs/findings/frame/0002-unit-events-queue.md
+0x005A7F70,func,sub_005A7F70_MonEvent10TargetClear,,I,sim/frame,docs/findings/frame/0002-unit-events-queue.md
 0x005A7F80,func,sub_005A7F80_MonEventDispatch,,I,anim/timing,docs/findings/anim/0001-modes-frames.md
 0x005A8000,func,sub_005A8000_MonDropNoNoDrop,,C,items/tc,docs/findings/items/0001-tc-resolution.md
 0x005A8030,func,sub_005A8030_MonModeEndGeneric,,I,anim/timing,docs/findings/anim/0001-modes-frames.md
@@ -2292,6 +2317,8 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00619890,func,DUNGEON_RoomCreate,,C,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x00619DF0,func,sub_00619DF0_RectContainsPt,,I,drlg/collision,docs/findings/drlg/0005-collision.md
 0x00619E50,func,sub_00619E50_ActLevelPointFind,,I,drlg/collision,docs/findings/drlg/0005-collision.md
+0x00619F20,func,sub_00619F20_RoomPlayerCountDec,,I,sim/frame,docs/findings/frame/0002-unit-events-queue.md
+0x00619F60,func,sub_00619F60_RoomUnitListPtr,,I,sim/frame,docs/findings/frame/0002-unit-events-queue.md
 0x00619F90,func,sub_00619F90_RoomUpdatedList,,I,sim/frame,docs/findings/frame/0001-tick-and-messages.md
 0x0061A010,func,DUNGEON_GetCollMap,,I,drlg/collision,docs/findings/drlg/0005-collision.md
 0x0061A040,func,DUNGEON_SetCollMap,,I,drlg/collision,docs/findings/drlg/0005-collision.md
@@ -2367,6 +2394,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x006205A0,func,UNIT_GetSizeY,,C,drlg/collision,docs/findings/drlg/0005-collision.md
 0x006209D0,func,UNIT_GetCollMask,,C,drlg/collision,docs/findings/drlg/0005-collision.md
 0x00620A70,func,UNIT_CollMarkRect,,C,drlg/collision,docs/findings/drlg/0005-collision.md
+0x00620B50,func,sub_00620B50_UnitClearRoom,,I,sim/frame,docs/findings/frame/0002-unit-events-queue.md
 0x00620BB0,func,sub_00620BB0_UnitGetRoom,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x00620C10,func,sub_00620C10_UnitSetPathTargetUnit,,I,skills/missiles,docs/findings/skills/0003-handlers.md
 0x00620E80,func,sub_00620E80_RunVelocityStat,,I,player/creation,docs/findings/player/0001-creation.md
@@ -2676,6 +2704,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0063E9F0,func,MONSTATS_IsBoss,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x0063EA40,func,sub_0063EA40_MonIsDeathMode,,I,drlg/collision,docs/findings/drlg/0005-collision.md
 0x0063EA70,func,sub_0063EA70_SkillSummonRec,,I,skills/dispatch,docs/findings/skills/0003-handlers.md
+0x0063EBD0,func,sub_0063EBD0_MonComponentLightRadius,,I,monsters/ai,docs/findings/ai/0001-machinery.md
 0x0063EC70,func,sub_0063EC70_LevelClassVariant,,C,monsters/special,docs/findings/monsters/0003-special-monsters.md
 0x0063EDC0,func,MONSTATS_IsPrimeEvil,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x0063EE90,func,sub_0063EE90_HirelingType,,C,monsters/pool,docs/findings/monsters/0001-level-pool.md
@@ -2813,6 +2842,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0064C160,func,sub_0064C160_RoomUpdatedClear,,I,sim/frame,docs/findings/frame/0001-tick-and-messages.md
 0x0064C1B0,func,sub_0064C1B0_RoomUpdatedUnlink,,I,sim/frame,docs/findings/frame/0001-tick-and-messages.md
 0x0064C2C0,func,sub_0064C2C0_RoomUnitAdd,,C,objects,docs/findings/objects/0001-object-population.md
+0x0064C370,func,sub_0064C370_UnitRoomUnlink,,I,sim/frame,docs/findings/frame/0002-unit-events-queue.md
 0x0064C4C0,func,COLL_StampTile,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
 0x0064C580,func,COLL_ClearTile,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
 0x0064C640,func,COLL_SetTile,,I,drlg/collision,docs/findings/drlg/0005-collision.md

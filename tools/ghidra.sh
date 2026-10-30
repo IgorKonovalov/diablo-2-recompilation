@@ -28,6 +28,9 @@
 #   rngcallgraph <class-file|-> <root>...
 #                               call graph under the roots; every function with an LCG step or an
 #                               RNG call, matched against a classification file (RngCallGraph.java)
+#   callersup <max-depth> <root:0xADDR=LABEL|0xADDR>...
+#                               referrers of each target walked upward (calls and table pointers) to the declared
+#                               roots; per target every root reached with a shortest path (CallersUp.java, plan 0055)
 #
 # Run from the repo root. Logs: workspace/logs/ghidra-build-<UTC stamp>.log (build) and
 # $GHIDRA_LOG (the most recent other command; see GHIDRA_LOG below), each with a .stderr next to it. Query commands open
@@ -153,5 +156,6 @@ case "$cmd" in
 		run_script 1 DecompileRange.java "$@"
 		grep -oE 'DecompileRange: .*' "$GHIDRA_LOG" ;;
 	rngcallgraph) query RngCallGraph.java "$@" ;;
+	callersup) query CallersUp.java "$@" ;;
 	*) usage ;;
 esac

@@ -512,7 +512,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     other than the record's).
   - Omission 1 (routing): the lane found ai/0001 § 3's "seven state rows reuse a first-table think word" overcounts
     (states 10 and 17 share a word with each other only) and wrote around it with no entry to the finding's owner;
-    filed [reverser](../backlog/2026-10-30-architect-reverser-ai-0001-state-rows-reusing-a-first-table.md).
+    filed [reverser](../backlog/archive/2026-10-30-architect-reverser-ai-0001-state-rows-reusing-a-first-table.md).
   **What the Tier B check missed:** all five, none reject-grade (no `[C]` without its source, no wrong address). The
   misses are of one kind: text outside the diff that the diff makes stale, and a disagreement with a finding left
   unrouted; a diff-scoped check reads neither unless rule 4's "re-read the findings a column touches" is run over the

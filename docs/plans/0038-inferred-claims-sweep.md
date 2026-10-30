@@ -6018,7 +6018,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
       Nightmare clamp case twice), and the spec itself said "all five deaths" two notes later.
     - Omission 1: the disagreements with player/0001 were left unrouted (the H6g bullet's "four deaths", S3b row 21's
       clamp inside a `[C]`, and the stale *Open questions* on the death loss, the cap, class 7 and `+0x3D4`). Filed
-      [`2026-10-30-architect-reverser-s38p-review-player-0001-counts-and-s3b-clamp.md`](../backlog/2026-10-30-architect-reverser-s38p-review-player-0001-counts-and-s3b-clamp.md).
+      [`2026-10-30-architect-reverser-s38p-review-player-0001-counts-and-s3b-clamp.md`](../backlog/archive/2026-10-30-architect-reverser-s38p-review-player-0001-counts-and-s3b-clamp.md).
     - Stale cross-reference 2: wiki/saves still called the corpse's 75 % "read from the code", although J3 raises the
       share at creation. quests/progression's word-39 bullets still said the grant is capped "between the current and the next level" and that the altar
       "instead" closes the portals. Both bullets now give `T(L + 1) − T(L)` and the audit's close-then-send with the step-4

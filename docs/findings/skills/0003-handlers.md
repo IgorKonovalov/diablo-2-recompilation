@@ -82,6 +82,8 @@ offsets are record offsets. This batch continues [skills/0001](0001-dispatch.md)
 - [I] **The frame pass** (`sub_005414D0_GameRunUnitEvents`) runs the unit-event lists in this order: missiles, players,
   monsters, objects, then a fifth list; each first its every-frame list, then the current frame's bucket. So every
   missile steps before any player or monster acts in a frame. (0x005414EE–0x00541589)
+  *2026-10-30 (plan 0055 P1.2 review):* the fifth list is the items' (`ItemEventsRun`, list 4); the per-list order is in
+  frame/0002 § 2. (fn:sub_00541320_ItemEventsRun@0x00541320)
 - [I] **Corrections.** P1.2's hit function 22 is `0x005ADD20` (row 233's chained area hit); the `CallDoFunc` caller
   `0x005ACFC0` is hit **23**, which no stock row uses. The ally test in `SKILLS_StartUsedSkill` never refuses: it reads
   the same skill, which the caller has just found without `TargetAlly`. `TgtPlaceCheck` has one server reader, the

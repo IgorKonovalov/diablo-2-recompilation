@@ -1,6 +1,6 @@
 # ADR index
 
-Next free number: **0025**
+Next free number: **0027**
 
 | # | Title | Status |
 |---|---|---|
@@ -28,3 +28,5 @@ Next free number: **0025**
 | [0022](0022-scope-server-frame.md) | After phase (5): the server frame composed, so simulation events chain across units (amends 0014, 0016) | accepted (owner, 2026-10-27) |
 | [0023](0023-review-tiers-and-gate-first-fixes.md) | Review tiers: a full review at spec promotion, a diff-scoped Sonnet check for other lanes with a 1-in-5 audit, and gate checks for the mechanical fix categories | accepted (owner, 2026-10-27, as a trial; settled by plan 0053 Phase 4, 2026-10-30; Tier B scope amended by 0024, accepted 2026-10-30) |
 | [0024](0024-lane-check-touched-documents-and-routing.md) | The lane check reads the touched documents and the findings they touch, and routes every disagreement (amends 0023) | accepted (owner, 2026-10-30) |
+| [0025](0025-scope-item-use-inventory.md) | Item use and inventory enter scope as game rules: the server's outcomes only, stash and ground-item lifetime in, trading out (amends 0002, beside 0017) | accepted (owner, 2026-10-30, with plan 0060) |
+| [0026](0026-scope-in-game-message-layer.md) | The in-game message layer enters scope, both directions; transport, compression, encryption, Battle.net, realm and handshake stay out (amends 0002, 0014) | accepted (owner, 2026-10-30, with plan 0061) |

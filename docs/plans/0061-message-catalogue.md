@@ -1,9 +1,9 @@
 # 0061 — Client–server message catalogue: every in-game message in both directions, its fields and its send condition
 
-> **Status:** draft (architect, `lane/plans57`, 2026-10-30), for the owner's approval; needs a scope ADR (question 1)
+> **Status:** approved (owner, 2026-10-30: "approve all of them", every scoping question answered as recommended); drafted 2026-10-30 (architect, `lane/plans57`)
 > **Created:** 2026-10-30
 > **Owner skill(s):** reverser (phases 1, 2), spec-writer (phases 3, 4)
-> **Related ADRs:** 0002-scope-creation-paths-and-enablers, 0008-two-client-harness, 0014-scope-game-simulation, 0022-scope-server-frame
+> **Related ADRs:** 0002-scope-creation-paths-and-enablers, 0008-two-client-harness, 0014-scope-game-simulation, 0022-scope-server-frame, 0026-scope-in-game-message-layer
 
 ## TL;DR
 
@@ -87,3 +87,4 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 
 - **2026-10-30 — Drafted (architect, `lane/plans57`).** Status `draft`; rank 5 (needs a scope ADR; after 0055·P3);
   four owner questions.
+- **2026-10-30 — Approved (owner; recorded by the architect, `lane/appr2`).** "Approve all of them": all four questions as recommended: the scope ADR is [ADR-0026](../adrs/0026-scope-in-game-message-layer.md) (accepted with this approval: the in-game message layer only; transport, compression, encryption, Battle.net, realm and the handshake out); both directions, client to server first; P1 after 0055·P3; gdb capture, no injected logger. Status `approved`.
