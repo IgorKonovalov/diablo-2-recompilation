@@ -965,8 +965,9 @@ unless a finding is cited.
   - Rows 35 and 36 read their skill-draw slots only behind their `Skill2`/`Skill3` tests, which is the per-record slot
     disagreement of the `ai_aip_slots_differ` entry above for those two rows: `cr_archer1..5` and `cr_lancer1..5` have no
     skills and 0 in those slots, records 6-8 have skills and set them ([§ 1](../findings/ai/0004-pool-c.md#1-the-rows-their-records-and-the-per-record-slots)).
-    Which slots: row 35 `aip6`/`aip7` (§ 1 and § 2.2 agree); row 36 `aip6`/`aip7` in § 1 but `aip7`/`aip8` in the § 2.3
-    pseudocode (the table here follows neither; routed to the reverser, backlog 2026-10-30).
+    Which slots: row 35 `aip6` (Skill2) and `aip7` (Skill3) ([§ 2.2](../findings/ai/0004-pool-c.md#22-row-35-corruptarcher-0x005f5a20));
+    row 36 `aip6` (the Jab draw, `Skill1`), `aip7` (`Skill2`) and `aip8` (`Skill3`), the records setting `aip6` and `aip7`
+    ([§ 1](../findings/ai/0004-pool-c.md#1-the-rows-their-records-and-the-per-record-slots), [§ 2.3](../findings/ai/0004-pool-c.md#23-row-36-corruptlancer-0x005f5d50): `chance(6)` is the `Skill1` draw).
 
 ## Open questions
 
