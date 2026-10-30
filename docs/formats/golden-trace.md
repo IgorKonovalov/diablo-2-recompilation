@@ -139,7 +139,8 @@ room differs; the set's `inputs` and a replay of the kept log do. [I] (a convent
   with the log. A window already written from an earlier log (same map seed, difficulty, level and window seed; maze:
   same level and seed) is not written twice. A log whose `-seed` is 0, negative or past 2^31-1 is skipped: the game does
   not use it as the map seed (drlg experiments, `sweep-roomk` s9 and s10). Maze windows of level types
-  `tools/maze_replay.py` does not model are counted and skipped.
+  `tools/maze_replay.py` does not model are counted and skipped. A log can therefore write no case without a fault: of the 133 logs with an `OD0` or `MZ0` line in the v1 build, 21 wrote none,
+  the 2 skipped for their `-seed` and 19 whose outdoor windows (and duplicate or unmodelled maze windows) an earlier log of the list had already written (`[C]`, by script, 2026-10-30; which log writes a shared window depends on the order of the list).
 - Predicted: `golden.py emit --predicted --seeds 4802,100-103 --diffs 0,1,2 --exps 0,1 --levels 1,57`.
 - `merge` joins sets (cases by id; the scope is the union); `coverage` prints, per field pattern, the observed and predicted
   cases and the distinct levels reached.

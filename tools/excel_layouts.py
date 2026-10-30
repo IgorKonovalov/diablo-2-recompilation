@@ -1539,3 +1539,42 @@ LAYOUTS["pettype"] = dict(size=0xE0, fields=[
 ] + [U("unk_%03X" % o, o, "u32") for o in range(0x0BC, 0x0E0, 4)],
     txt_only={"pet type": "key; the record holds idx (= row index) instead",
               "eol": "end-of-line marker column; not compiled"})
+
+# ------------------------------------------------------------------ belts (264 B = 0x108)
+# Plan 0060 Phase 0 (docs/tables/Belts.md). +0x000 is 0 in every record (the name is not compiled), numboxes is a
+# u32, then 16 slots of four u32 (left, right, top, bottom) at 0x008 + 16*(n-1); slots past numboxes are 0.
+# boxwidth/boxheight (29 in every row) have no field.
+def _belt_boxes():
+    f = []
+    for n in range(1, 17):
+        o = 0x008 + 16 * (n - 1)
+        f += [I("box%dleft" % n, o, "u32"), I("box%dright" % n, o + 4, "u32"),
+              I("box%dtop" % n, o + 8, "u32"), I("box%dbottom" % n, o + 12, "u32")]
+    return f
+
+
+LAYOUTS["belts"] = dict(size=0x108, fields=[
+    U("pad_000", 0x000, "u32"), I("numboxes", 0x004, "u32"),
+] + _belt_boxes(), txt_only={
+    "name": "key; the record holds 0 in +0x000 (the row index is the belt type)",
+    "boxwidth": "29 in every row; no field",
+    "boxheight": "29 in every row; no field"})
+
+# ------------------------------------------------------------------ inventory (240 B = 0xF0)
+# Plan 0060 Phase 0 (docs/tables/Inventory.md). Four u32 rects (inv, grid), the grid's cell counts and box size as
+# bytes, then ten 0x14-byte slot records: left, right, top, bottom (u32), width, height (u8), 2 pad bytes.
+def _inv_slots():
+    f = []
+    for k, name in enumerate(["rArm", "torso", "lArm", "head", "neck", "rHand", "lHand", "belt", "feet", "gloves"]):
+        o = 0x028 + 0x14 * k
+        f += [I(name + "Left", o, "u32"), I(name + "Right", o + 4, "u32"), I(name + "Top", o + 8, "u32"),
+              I(name + "Bottom", o + 12, "u32"), I(name + "Width", o + 16, "u8"), I(name + "Height", o + 17, "u8")]
+    return f
+
+
+LAYOUTS["inventory"] = dict(size=0xF0, fields=[
+    I("invLeft", 0x000, "u32"), I("invRight", 0x004, "u32"), I("invTop", 0x008, "u32"), I("invBottom", 0x00C, "u32"),
+    I("gridX", 0x010, "u8"), I("gridY", 0x011, "u8"),
+    I("gridLeft", 0x014, "u32"), I("gridRight", 0x018, "u32"), I("gridTop", 0x01C, "u32"), I("gridBottom", 0x020, "u32"),
+    I("gridBoxWidth", 0x024, "u8"), I("gridBoxHeight", 0x025, "u8"),
+] + _inv_slots(), txt_only={"class": "key; the record holds no name (the row index is the page, see the doc)"})

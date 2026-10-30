@@ -124,6 +124,7 @@ the same digest). Header: `game_exe_sha256` the pinned one; `tables_digest`
 
 By kind and type: observed 37 `world`, 4 040 `drop`, 384 `drlg`; predicted 612 `world`. Not cases: 0 windows or calls that
 failed to reproduce in the runs above; 2 logs skipped (`-seed` not the map seed); 184 maze windows of unmodelled level types;
+21 of the 133 logs wrote no DRLG case (`[C]`, by script over the 133 listed logs, 2026-10-30): the 2 skipped ones, and 19 whose every outdoor window (same map seed, difficulty, level and window seed) was already written from an earlier log of the list, 14 of them with no maze window, 2 with maze windows that are duplicates too and 3 whose maze windows (17) are all of unmodelled level types (which log is the first to write a window depends on the list order);
 the 23 forced-variant items-chain logs.
 
 ## Classes
