@@ -68,8 +68,8 @@ To change one, supersede it.
 
 ### Mode 3 — Review (a closed plan, a findings batch, or a spec)
 
-**Tiers** ([ADR-0023](../../../docs/adrs/0023-review-tiers-and-gate-first-fixes.md), accepted as a trial, measured by
-plan 0053):
+**Tiers** ([ADR-0023](../../../docs/adrs/0023-review-tiers-and-gate-first-fixes.md), accepted; settled by
+plan 0053 Phase 4; [ADR-0024](../../../docs/adrs/0024-lane-check-touched-documents-and-routing.md) proposed):
 
 - **Tier B, the lane check** (`references/lane-check.md`, Sonnet, diff-scoped): `reverser-static`,
   `reverser-harness`, `archivist` and `wiki` lanes. Its verdicts are `accept`, `accept with fixes` or `escalate`.

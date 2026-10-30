@@ -1,9 +1,9 @@
 # 0053 — Review tiers and gate checks for the mechanical fix categories
 
-> **Status:** approved (owner, 2026-10-27; ADR-0023 accepted as a trial); Phases 0–2 done 2026-10-27, Phase 3 (the trial) next
+> **Status:** done (closed 2026-10-30; approved 2026-10-27 by the owner; ADR-0023 accepted, ADR-0024 proposed)
 > **Created:** 2026-10-27
 > **Owner skill(s):** archivist (phases 0–1), architect (phases 2 and 4), human (phase 3)
-> **Related ADRs:** [0023-review-tiers-and-gate-first-fixes](../adrs/0023-review-tiers-and-gate-first-fixes.md) (accepted, trial), [0006-docs-gate](../adrs/0006-docs-gate.md)
+> **Related ADRs:** [0023-review-tiers-and-gate-first-fixes](../../adrs/0023-review-tiers-and-gate-first-fixes.md) (accepted), [0024-lane-check-touched-documents-and-routing](../../adrs/0024-lane-check-touched-documents-and-routing.md) (proposed), [0006-docs-gate](../../adrs/0006-docs-gate.md)
 
 ## TL;DR
 
@@ -204,3 +204,98 @@ E14, E15, E16 and W7 are in `evidence-rules.md` § Mechanical checks.
 
 **Next: Phase 3** (human, the orchestrator): the next ten non-spec lanes through `lane-check.md` on Sonnet, the fifth
 and tenth also at Tier A as audits, every run in the ledger.
+
+### 2026-10-30 — Phase 3 closed (architect, `lane/p53e`, from `main` 2a43b9f1)
+
+The trial's *Done when* holds. The ledger has 11 `architect-check` rows and 2 audit rows, each with tokens, tool uses,
+wall minutes, a verdict and fixes by category:
+
+- the checks: `lane/r52`, `p50f`, `h6g`, `wiki50`, `h6gs`, `r52b`, `a55`, `a54`, `h1c`, `r52c`, `a7b`;
+- the audits: `lane/h6gs` (reverser-static) and `lane/a7b` (archivist).
+
+One check is extra. In ledger order the audits fell on the 5th and the 11th Tier B lane, not on the 5th and the 10th
+(`lane/r52c`). The orchestrator's merge subjects call `lane/a7b` "the 10th-check audit", so its count left one check
+out. That does not bias the sample: the audit was taken on the next lane, and from now on it falls on every fifth row
+in ledger order. No lane was escalated. One Tier A lane fell inside the trial, `lane/r55`, which plan 0055 sent to
+Tier A as a P1.1 gate.
+
+### 2026-10-30 — Phase 4: evaluation, and ADR-0023 settled (architect, `lane/p53e`)
+
+**Cost.** These figures come from `metrics.py summary --by kind` and from the ledger's `architect-review` rows, each
+joined to the kind of the lane it reviewed (by lane name, with the trial's two audits included).
+
+| Lane kind | Tier B checks | Tier B mean | Tier A reviews | Tier A mean |
+|---|--:|--:|--:|--:|
+| reverser-static | 4 | 70 825 | 59 | 149 150 |
+| reverser-harness | 3 | 79 308 | 33 | 171 589 |
+| archivist | 3 | 61 337 | 24 | 112 407 |
+| wiki | 1 | 74 320 | 12 | 129 965 |
+| Every kind (means over all runs) | 11 | 70 868 | 128 | 146 247 |
+
+- A check costs 48% of a Tier A review of the same kind. It takes 9 to 21 tool uses and 2 to 3 wall minutes.
+- The two audits cost 117 526 and 111 770 (mean 114 648).
+- Counting the audits, a Tier B lane costs 70 868 + 114 648 / 5 = 93 798 tokens, against 146 247 at Tier A: a saving of
+  52 449 per lane (36%).
+- Over the trial's 11 lanes the saving is 11 × 146 247 − (779 553 + 229 296) = 599 868 tokens.
+
+**Quality.**
+
+- The checks made 12 fixes in 11 lanes (1.1 per lane): overclaim 5, omission 4, stale cross-reference 2, other 1.
+  Four lanes got none. The seed's Tier A rate for these kinds was 3.7 to 5.6 fixes per reviewed run.
+- In the two audited lanes the checks found 2 fixes and the audits found 9 more. The checks therefore found 2 of the
+  11 fixes in those lanes (18%).
+- **Reject-grade misses: none in either audit.** No miss was a `[C]` without its source that later work rests on, or a
+  wrong address under a claim.
+- **The 9 misses by category:** stale cross-reference 4, omission 4, misread 1.
+- **The 9 misses by cause:**
+  - (a) 3 stale sentences in the same document outside the diff hunks (MonAI.md § The AI table, § Batches, open
+    questions 1 and 3; `lane/a7b`);
+  - (b) 1 stale sentence in a finding the diff contradicted (quests/0001's arming bullet; `lane/h6gs`);
+  - (c) 2 disagreements with another finding, "routed" or written around with no backlog entry (the corrected `anc`
+    session and the J2 wording; ai/0001's state-row overcount);
+  - (d) 1 problem inside the diff that the check saw and left as a nit (two missing register sites);
+  - (e) 2 that needed the disassembly (the altar operate's step-4 exit, a misread; the grant's step-0 call, an
+    omission).
+
+  Causes (a) to (d), 7 of the 9, are what the two auditors named: a pass over the touched document and the findings it
+  touches, and a routing entry for every disagreement. Cause (e) is outside Tier B by design. The promotion re-check
+  holds it.
+
+**Promotion re-check.**
+
+- One spec promotion fell in the trial: `lane/s50p3`, 2026-10-27, Tier A ([plan 0050](../0050-animation-frame-timing.md)
+  § Phase 3 review).
+- It re-checked the two finding statements that had been raised under a Tier B check (`lane/p50f`): `UnitQueueEvent`'s
+  partial raise and the restart correction. Both held, and neither got a fix.
+- The re-check's cost cannot be separated from the 205 688-token review. Open question 2 (a gate helper that lists a
+  finding's statements changed since a commit) therefore stays deferred: one promotion with two imported statements
+  does not justify it.
+
+**Decision.**
+
+- **ADR-0023 is `accepted`.** By its own rule, no lane kind goes back to Tier A: the audits found 0 reject-grade
+  misses, and the rule needs 2 in 5 audits of one kind to trigger.
+- The audits so far cover one reverser-static lane and one archivist lane. Harness and wiki have no audit yet. The
+  every-fifth rotation continues in ledger order.
+- The misses, 4 to 5 per audited lane, are real but cheap. Two kinds of them do not resurface on their own, so they are
+  settled in two parts:
+  1. **In `lane-check.md` now:** check 5 (every disagreement with a document the lane does not own has a backlog entry
+     in the diff, or the check files one, counted as an omission) and check 6 (no silent nits). Both stay inside
+     ADR-0023's scope limit, because they read only the diff. Causes (c) and (d), 3 of the 9.
+  2. **Proposed in [ADR-0024](../../adrs/0024-lane-check-touched-documents-and-routing.md)**, for the owner: a pass
+     bounded by greps over each touched findings, table, format or wiki document, and over `docs/findings/`, for the
+     subjects of the changed lines. Causes (a) and (b), 4 of the 9. It widens the scope limit that ADR-0023 § Decision
+     states, so it needs the owner's approval. The estimated cost is +15k to 25k tokens per check, which brings the
+     saving from 36% down to about 20%. The next two audits measure both the misses and the cost.
+- `SKILL.md` Mode 3 and `lane-check.md` now name ADR-0023 as accepted and ADR-0024 as proposed.
+
+**Residual.** E14 is still in `DEMOTED`. It waits for the reverser's open entry
+[`2026-10-27-archivist-reverser-e14-table-rows-with-an-extra-cell-in.md`](../../backlog/2026-10-27-archivist-reverser-e14-table-rows-with-an-extra-cell-in.md),
+whose lander empties the set (see Phase 2). This plan closes with the entry homed there.
+
+**Owner question.** Accept ADR-0024? That means widening Tier B's scope with the grep-bounded touched-document and
+touched-findings passes, at about +20k tokens per check. The alternative is to keep ADR-0023's diff-only scope and
+accept about 2 stale sentences per lane that wait for a later touch or a promotion.
+
+**Plan closed:** status `done`, moved to `done/`, the plans index updated. The ADR index has 0023 `accepted` and 0024
+`proposed`, and the next free ADR number is 0025.

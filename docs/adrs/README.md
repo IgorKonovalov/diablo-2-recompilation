@@ -1,6 +1,6 @@
 # ADR index
 
-Next free number: **0024**
+Next free number: **0025**
 
 | # | Title | Status |
 |---|---|---|
@@ -26,4 +26,5 @@ Next free number: **0024**
 | [0020](0020-skills-phase-in-two-plans.md) | Simulation phase 3 (skills and missiles) in two plans: the machinery, then the function catalogue (amends 0014, 0016) | accepted 2026-10-20 (owner) |
 | [0021](0021-observed-boundaries-in-emulation.md) | Observed boundaries in emulated reproduction: a case may end at a declared callee's entry (amends 0015) | accepted 2026-10-20 (owner) |
 | [0022](0022-scope-server-frame.md) | After phase (5): the server frame composed, so simulation events chain across units (amends 0014, 0016) | accepted (owner, 2026-10-27) |
-| [0023](0023-review-tiers-and-gate-first-fixes.md) | Review tiers: a full review at spec promotion, a diff-scoped Sonnet check for other lanes with a 1-in-5 audit, and gate checks for the mechanical fix categories | accepted (trial; owner, 2026-10-27; settled by plan 0053 Phase 4) |
+| [0023](0023-review-tiers-and-gate-first-fixes.md) | Review tiers: a full review at spec promotion, a diff-scoped Sonnet check for other lanes with a 1-in-5 audit, and gate checks for the mechanical fix categories | accepted (owner, 2026-10-27, as a trial; settled by plan 0053 Phase 4, 2026-10-30; Tier B scope amendment proposed in 0024) |
+| [0024](0024-lane-check-touched-documents-and-routing.md) | The lane check reads the touched documents and the findings they touch, and routes every disagreement (amends 0023) | proposed (owner decision needed) |
