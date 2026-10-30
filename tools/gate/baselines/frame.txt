@@ -1,0 +1,1 @@
+SURVEY frame runs_named=79 runs_unsectioned=2 runs_with_logs=72 runs_no_logs=5 inscope_logs=1574 framed_inscope=331 unframed_inscope=1243 framed_lines_inscope=6805992 inscope_framed_loggers=9

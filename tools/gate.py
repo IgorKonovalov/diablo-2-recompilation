@@ -224,6 +224,9 @@ SURVEYS = [
     # (docs/tables/MonAI.md)
     Survey("ai", ["tools/ai_survey.py", "summary", "workspace/merged/data/global/excel",
                   "workspace/install/app/game.exe"]),
+    # plan 0055 P0: the kept harness logs of the runs plans 0037-0052 name (classified by frame stamp, unit id and seeds;
+    # docs/inventory.md, Kept-log corpus). Reads ~5.6 GB of logs, so opt-in; with workspace/logs absent the tier skips.
+    Survey("frame", ["tools/frame_corpus.py", "summary", "workspace/logs"], opt_in=True),
 ]
 
 # E9: Mermaid parser shipped with VS Code (no download); cache under the checkout's workspace/

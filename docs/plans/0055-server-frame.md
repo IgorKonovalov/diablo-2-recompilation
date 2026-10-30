@@ -201,3 +201,21 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   ([plans README](README.md#run-order-set-2026-10-25-plans-00380052)): **P0 ready to start now** (the archivist is
   free); P1 in static lane B when a static lane frees (both busy on 2026-10-30: `lane/r52b`, `lane/h6gs`); P2a after
   P1's review; P2b after 0052·P3a's review. Status `approved`.
+- **2026-10-30 — Phase 0 landed (archivist, `lane/a55`; review requested).** `tools/frame_corpus.py` (`index`, `summary`,
+  `read`, `check`), gate survey `frame` (opt-in, 81 s) with its baseline, and the *Kept-log corpus* block of
+  [`docs/inventory.md`](../inventory.md). Result (`[C]`, by script): of 1 657 `*.log` files under `workspace/logs/`, 1 597
+  are harness logs; the 79 runs plans 0037-0052 name (77 with a run section) attribute **1 574** of them to 72 runs, by name,
+  glob or the `.lst` and manifest files the sections name; **331 are frame-stamped** (6 805 992 lines, 9 of the 72 loggers:
+  `anim`, `stats`, `skills`, `combat`, `economy`, `economy2`, `economy-hire`, `two-combat`, `h6b`), **1 243 are not** and cannot
+  test the order model (open question 1 answered). Unit ids: `anim`, `skills`, `combat` and `two-combat` carry `{u,t,id}`
+  on part of their kinds; `stats`, `economy*` and `h6b` stamp frames but carry **no unit id**, so for them the model can
+  check order by frame and seed chain only; `h6b` (`RPE`, `RPS`) also holds no seed. Entry and exit seeds exist as `TAG0`
+  and `TAG1`/`TAGX` pairs in 327 of the 337 stamped logs (the reader folds a pair into one event at the begin's frame).
+  The reader consumes every stamped line of all 337 stamped logs (the 331 in the corpus plus those outside it) (6 469 457 events, 0 unparsed, 0 left over) and its
+  per-kind counts equal two run records exactly (combat 0037 P2: 15 358 events over 19 logs; skills 2026-10-27: `MAS.seed`
+  13 905, `CU.code` 1 340, `MC.owner` 19 667, the last with one begin that has no end line excluded). **Gaps:** (1) the
+  anim, stats and economy run records state tallies that do not map to a line kind one to one, so their counts are
+  not compared to the reader; (2) attribution by manifest is wide (a sweep manifest names 1 295 logs; a log can belong to
+  several runs, listed in the index); (3) 5 harness logs are named by a run's directory only (development logs) and 18 by
+  no run (plan 0046's 2026-10-30 catalogue logs among them), so they are indexed but not counted; (4) five runs name no
+  harness log (four emulated runs and `sweep-emu2`), two named runs (`d2s-samples`, `cube-saves`) have no section.
