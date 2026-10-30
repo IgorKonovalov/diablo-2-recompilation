@@ -1,6 +1,6 @@
 # 0062 — Debug and cut content: developer switches left in the exe, and data and code the stock game never reaches
 
-> **Status:** draft (architect, `lane/plans57`, 2026-10-30), for the owner's approval
+> **Status:** approved (owner, 2026-10-30: "approve all of them", every scoping question answered as recommended); drafted 2026-10-30 (architect, `lane/plans57`)
 > **Created:** 2026-10-30
 > **Owner skill(s):** reverser (phase 1), archivist (phase 2), spec-writer (phase 3)
 > **Related ADRs:** 0001-target-toolchain-evidence-sources, 0002-scope-creation-paths-and-enablers
@@ -80,3 +80,4 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 
 - **2026-10-30 — Drafted (architect, `lane/plans57`).** Status `draft`; rank 6 (archaeology, low priority); three
   owner questions.
+- **2026-10-30 — Approved (owner; recorded by the architect, `lane/appr2`).** "Approve all of them": all three questions as recommended: findings only, no spec row and no wiki page (a behaviour-changing switch goes into its owning spec in Phase 3); last of this batch, filling a static slot when nothing higher is ready; no harness beyond the switches it already uses. Status `approved`.

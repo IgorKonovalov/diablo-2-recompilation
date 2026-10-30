@@ -174,7 +174,7 @@ the recommendations, and an answer that differs changes the phase it names.
 6. **The companion sweep** (ADR-0022's first alternative: an inferred-claims sweep over the simulation and game-rules
    specs, 1 087 `[I]` over eight rows on 2026-10-27). *Recommendation:* the architect drafts it as its own plan after
    this plan's Phase 2a lands, so its draw-order targets can use the order model; it takes the harness slots plan 0038
-   leaves once its batches drain. No ADR is needed. The owner decides now whether to queue it.
+   leaves once its batches drain. No ADR is needed. The owner decides now whether to queue it. *(Owner, 2026-10-30, later: **owner 2026-10-30: may be drafted, as `draft` only, never started** (no plan after the approved roster is approved or started).)*
 7. **Run order across 0052, 0054 and this plan.** *Recommendation:* static lane A keeps 0052's catalogue (tier batches
    first, since they gate 0052·P2); static lane B takes this plan's P1.1–P1.3, then plan 0054's P1 batches, then 0052's
    remaining batches beside lane A; the archivist takes this plan's P0, then 0054's P0; harness lane H2 keeps 0052·P2
@@ -286,3 +286,4 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   starts from a fresh single-player process and logs the counter at `FT0`. **P1.2: go** (static lane B, when a headless
   Ghidra frees; both in use on 2026-10-30). Its additions from this review: name `0x0064C370` and say which of its
   callers run in a frame. ADR-0022's early gate needs no re-ruling: 0052's P2 and P3a have not landed, so nothing P1.1 used has moved.
+- **2026-10-30 — Companion sweep drafted only (owner; recorded by the architect, `lane/appr2`).** "You can draft plans but do not start them": the Q6 companion `[I]` sweep may still be drafted after this plan's Phase 2a lands, as `draft` only, and is not approved or started; this plan runs to completion as approved.

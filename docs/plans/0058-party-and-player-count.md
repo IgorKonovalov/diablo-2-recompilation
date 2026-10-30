@@ -1,6 +1,6 @@
 # 0058 — Party and player count: the experience split, the share radius and every player-count effect, in one page
 
-> **Status:** draft (architect, `lane/plans57`, 2026-10-30), for the owner's approval
+> **Status:** approved (owner, 2026-10-30: "approve all of them", every scoping question answered as recommended); drafted 2026-10-30 (architect, `lane/plans57`)
 > **Created:** 2026-10-30
 > **Owner skill(s):** reverser (phase 1), spec-writer (phases 2, 3)
 > **Related ADRs:** 0008-two-client-harness, 0015-emulated-reproduction, 0017-scope-quests-travel-economy
@@ -72,7 +72,7 @@ party and player-count rule with links to the owning sections.
    inputs). A three-client run needs slot 0 and the owner; keep it an optional owner session.
 3. **Row or section?** *Recommendation: its own file and row `player/party`* under Creation paths, since it is read by
    six specs.
-4. **The death loss (J3) and the experience cap:** *Recommendation: leave them to the companion `[I]` sweep* (queued
+4. **The death loss (J3) and the experience cap:** (the companion sweep is **owner 2026-10-30: may be drafted, as `draft` only, never started** (no plan after the approved roster is approved or started), so both stay `[I]` as stated) *Recommendation: leave them to the companion `[I]` sweep* (queued
    after 0055·P2a), which has the harness slots; name them there as targets.
 
 ## Open questions
@@ -87,3 +87,4 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 - **2026-10-30 — Drafted (architect, `lane/plans57`).** Status `draft`; rank 2. The survey found the split already
   specified (player/creation J4, `[C]` for n = 2), so the plan covers only n ≥ 3, the credit edges and the composed
   page; four owner questions.
+- **2026-10-30 — Approved (owner; recorded by the architect, `lane/appr2`).** "Approve all of them": all four questions as recommended: this small plan; n ≥ 3 by emulation (a three-client run stays an optional owner session); its own file and row `player/party`; the death loss (J3) and the experience cap left to the companion `[I]` sweep, which the owner then limited to a draft that is not started, so they stay `[I]`. P1 takes static lane B after 0054·P1 per the run order. Status `approved`.
