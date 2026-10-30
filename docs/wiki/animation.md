@@ -255,8 +255,9 @@ The divisors 32 and 64 were met but not separated from 16 in the run.
 Whether a get-hit, block or knockback may start during a skill is decided by `PlayerModeAllowed`
 ([timing § M4](../specs/anim/timing.md#m-hit-recovery-the-block-the-get-hit-roll-the-mode-tests-stun-and-the-hit-class)). A skill with no
 interrupt flag blocks all of them (12 player skills, among them Kick, Jab, Zeal, Frenzy and Whirlwind); a skill with an
-interrupt flag is only protected under Concentration, which refuses with a probability of its stat 164 in percent. That
-draw (`Range(100)` on the player's seed) is read from the code; none of the 26 696 logged calls was under the state.
+interrupt flag is only protected under Concentration, which refuses with a probability of its stat 164 in percent. Both
+rules and the draw (`Range(100)` on the player's seed) are read from the code; the 26 696 logged calls left the seed
+unchanged and none was under the state.
 
 ## Movement
 
