@@ -266,9 +266,9 @@ command kinds. Which runners use it, and when one moves, is harness-play.md § R
 | `wait_count(log, tag, n, timeout, proc)` | waits for `n` lines of `tag`; stops early once `proc` is gone | bool |
 | `mark(stem, case, event, log, note)` | one row of `<stem>.marks.tsv`: `case event time line note`; event ∈ launch, ready, start, end, fail; `line` = the log's line count then (the next line's 0-based index) | the row |
 | `split(log, marks=None, out_dir=None, at=None, head=True)` | one log per `start` mark, `<stem>-<case>.log` (a repeated case `-2` …); `at=TAG` moves each cut to the first `TAG` line before the next mark; `head` repeats the lines before the first cut, then a `# split … lines=a-b at=…` line | `[{case, path, first, end, snapped}]` |
-| `stop(slot, proc)` | `slots.py stop N`, then polls `slots.busy(N)` (the pids `slots.py status` shows) for up to 30 s; slot 0 refused | True when the slot is idle |
+| `stop(slot, proc=None, timeout=30, out=None)` | `slots.py stop N`, reaps `proc`, then polls `slots.busy(N)` (the pids `slots.py status` shows) for up to 30 s; slot 0 refused | True when the slot is idle |
 | `batch(cases, run_case, status_path, reruns=0, pidfile=None)` | runs the cases in order; `run_case` returns True/False or `(outcome, note)`, an exception is a failed case; `reruns` is the batch's budget of reruns; writes one JSON status file at the end, also when interrupted (`done: false`) | `{kept, failed, rerun, wall, done, cases: [{case, outcome, tries, wall, note}]}` |
-| `sh`, `hide_window`, `lines`, `line_count`, `tag_of`, `Tail` | the helpers every runner had its own copy of | |
+| `sh`, `hide_window`, `lines`, `line_count`, `tag_of`, `Tail` | the helpers every runner had its own copy of; `lines(log, tag)` matches the line's first word (`tag_of`), so a bare `TAG` line with no space counts, which the old `startswith(tag + " ")` did not | |
 
 Offline: `python3 -I tools/harness_runner.py split LOG [--at TAG] [--out DIR] [--no-head]`, `marks LOG`, `status
 STATUS.json` (the summary line and the failed cases; exit 1 on a failure or an early stop), and `bg OUT -- CMD …`

@@ -233,3 +233,13 @@ _(lanes append dated entries as phases land)_
   wall; migrated: launch to `ready` 6.6 s (the new `RDY` line, smoke OK), to first case start 14.6 s. `marks` (launch,
   ready, two start/end pairs; starts equal the `.marks.jsonl` lines), `split` (2 pieces), `status` (kept 1) read right.
   Manifest `workspace/logs/h1a/p56a-manifest-dev.sha256`. Slot 2 stopped, saves restored. Review request filed.
+- **2026-10-30 — Phase 1 lane check (lane/p56a, Tier B, architect): accept with fixes (2); Phase 2 (the probe) released.**
+  Tests re-run: `test_harness_runner.py` 44 OK, `test_h1_ready.py` 9 OK, `test_slots.py` 33 OK; `sha256sum -c` of
+  `p56a-manifest-dev.sha256` OK (all lines); gate green. API read against tooling.md § The runner library and
+  harness-play.md § Runners and the library: matches. Rules kept: `--mem-max 4G` is in every launch command line (and
+  tested), `launch`, `launch_argv` and `stop` refuse slot 0 (tested), `stop` returns True only once `slots.busy(N)` is
+  empty and h1a turns a busy slot into a failed session. The migrated h1a keeps its steps, clicks and sleeps; `h1c`'s
+  import of the bool `wait_ready` still works. Fixes: the table's `stop` signature omitted `timeout`/`out`; `lines()`
+  now matches the first word (a bare tag line counts) and the table now says so; the plans index still read "P1
+  starts after `lane/hx` merges". The ledger row set to 226 708 tokens, 80 calls, 15 min. Phase 2 may start; it takes
+  the next free slot after 0050·P2 part 3 (Q4).
