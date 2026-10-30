@@ -324,7 +324,7 @@ return 1;
 - [I] After the first creation (0x0056D539–0x0056D5E2): `n − 1` more, in rings of up to 5 (target offsets products of
   the tables at `0x006E1510`/`0x006E14F4` and `0x006E14E4`/`0x006E14C8`). The callback `0x005AC040` re-seeds each new
   missile from its path x (`RNG_SeedInit`), sets path type 10, a range `min(MissileData range, 255)` and plans its
-  path (`sub_005AC040_MissCbReseedPathX`, skills/0003 § 6).
+  path (`sub_005AC040_MissCbReseedPathX`, skills/0003 § 6; the creation seed lies on the Init's stream, 10 steps past it in 36 of 36 logged creations, [skills/0003 § 17](0003-handlers.md#17-plan-0046-phase-2-the-catalogue-sample-run2026-10-30-skills-catalogue)).
 - [I] On stock rows: hit 38's 407 catapultchargedball (`sHitPar1` 4, `sHitPar2` 2) gives `n = 2·lvl + 2`, so a
   missile level of 20 or more reaches the fatal path (whether a catapult's missile level gets there is not read, Open
   questions); hit 45's rows give `n` 10 and 18 with the callback (`sHitPar2` 1). (`rows.txt`,

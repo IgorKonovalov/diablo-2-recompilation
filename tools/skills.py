@@ -331,6 +331,16 @@ class Checker:
                 self.check("MC.cbseed", k is not None, log, n,
                            "callback x %s + arg %s -> %s" % (cb0["x10"], cb0["arg"], cb["s"]))
                 self.dist["MCB steps after the Init (the path calls)"][k if k is not None else ">5000"] += 1
+            elif struct.unpack_from("<I", blk, 0x54)[0] == 0x005AC040 and path.get("x10") is not None:
+                # plan 0046 Phase 2: the creation callback 0x005AC040 (sub_005AC040_MissCbReseedPathX, skills/0003 § 9;
+                # no logger line): Init(word at path +0x10, high 0x29A) at 0x005AC073 (0x00650E40), then the path
+                # calls 0x00648CF0, 0x00648E70 and 0x00649970 (as 0x005C9290's) step the new seed: the creation
+                # seed lies on the stream from that Init (the steps reported)
+                self.info["MC re-seeded by callback 0x005AC040 (no logger line)"] += 1
+                k = steps_between((path["x10"] & M32, INIT_HIGH), sd_parse(m["s"]), 5000)
+                self.check("MC.cbseed2", k is not None, log, n, "0x005AC040: Init(path x %s) -> %s" %
+                           (path["x10"], m["s"]))
+                self.dist["0x005AC040 steps after the Init (the path calls)"][k if k is not None else ">5000"] += 1
             else:
                 self.check("MC.seed", sd_parse(m["s"]) == want, log, n, "seed %s, got %s" % (sd_fmt(want), m["s"]))
         else:
@@ -769,6 +779,12 @@ class Checker:
         sv = h0.get("sv")
         if draws is None:
             self.dist["EVH %s steps" % name][k] += 1
+            return
+        if num == 4 and isinstance(u, dict) and stat(u.get("st"), 6) > 0 and stat(h1.get("st"), 6) <= 0:
+            # plan 0046 Phase 2: the returned damage kills the cursed unit (its life stat 6 > 0 at the entry, 0 at the
+            # exit): the death's own processing draws on that unit's seed (1 step in the log); reported, not checked
+            self.info["EVH ReturnDamage kills the cursed unit (steps reported)"] += 1
+            self.dist["EVH ReturnDamage steps when the cursed unit dies"][k] += 1
             return
         if draws == 0:
             self.check("EVH.seed", k == 0, log, n, "%s: no draw, steps %s" % (name, k))
