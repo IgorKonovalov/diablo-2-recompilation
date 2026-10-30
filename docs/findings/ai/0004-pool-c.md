@@ -597,8 +597,14 @@ Idle(aip4);
 
   `skelbow`, `frogalt` and `garg` reach their boundaries with no draw and no `aip` read, so no control separates them;
   their `[C]` is the map of their state, mode and timer tests only. The `nest` and `sarco` draw (the idle's
-  `low mod 10`) is compared with nothing, so `le` cannot separate it; their frame, count and distance tests are
-  separated by `d0` only. Not covered: every callee and everything after it. (run:2026-10-30-ai-cat-emu-3)
+  `low mod 10`) is compared with nothing, so `le` cannot separate it, and `d0` only moves the `aip` column, not the
+  direction of a compare. The draw is checked by its value (the `Idle` argument `seed mod 10 + 20` and the moved seed
+  match in all 28 and 79 drawing cases). Two substitute controls, run at the lane check on the kept outputs
+  (`workspace/logs/r52d/ctl-nest-sarco.py`, output `ctl-nest-sarco.txt`, both in the manifest): the death compare
+  flipped (`>=` for `>` and back) separates 53 nest and 72 sarcophagus cases and fails all of them; the range test
+  moved by one (`dist > R+1`) separates 30 and 24 and fails all of them. The cases do reach the equality edges of
+  the death and range tests; the `e >= aip1` edge has no control. Not covered: every callee and everything after it.
+  (run:2026-10-30-ai-cat-emu-3)
 - [I] **The development runs** (rule 6): `emu/dev-1/` (3 360 cases, all matching, with the case writer before the
   nest, sarcophagus, elemental beast and tentacle head tuning) and `emu/dev-2/` (3 360 cases, all matching, before the
   tentacle head's distance tuning), each checked by its own copy of the tool (`ai_cat_emu3.py.rev`); the models are

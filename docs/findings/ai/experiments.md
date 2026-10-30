@@ -200,4 +200,6 @@
   the committed tool (`cases` into a scratch directory, `check` on the kept outputs there, compared with `cmp`).
 - **Conclusion:** the fourteen maps are `[C]` in ai/0004 §§ 2–3, each up to its first boundary; `skelbow`'s,
   `frogalt`'s and `garg`'s only as the maps of their draw-free tests. Not the callees, nothing after them. No symbol
-  raise (ADR-0015 scope, review-fixes rule 14). (run:2026-10-30-ai-cat-emu-3)
+  raise (ADR-0015 scope, review-fixes rule 14). For `nest` and `sarco`, where `le` separates nothing, the lane check
+  added two controls on these outputs (compare flipped, range moved by one; ai/0004 § 3), both failing every case
+  they separate. (run:2026-10-30-ai-cat-emu-3)

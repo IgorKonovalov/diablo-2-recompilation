@@ -422,6 +422,7 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-10-30 | lane/r52c | 0052 P1.2 (batch 2) | reverser-static | 333 494 | 98 | 26 | — (static, Ghidra copy ghidra-r52c) | accept with fixes (Tier B check) | 1: omission 1 |
 | 2026-10-30 | lane/r52c check | 0052 P1.2 b2 | architect-check | 76 765 | 21 | 3 | — (Tier B check, no harness) | accept with fixes (1) | omission 1 |
 | 2026-10-30 | lane/r52d | 0052 P1.2 (batch 3) | reverser-static | 0 | 85 | 0 | — (static, Ghidra copy ghidra-r52d; tokens and wall unknown) | — | — |
+| 2026-10-30 | lane/r52d check | 0052 P1.2 b3 | architect-check | 0 | 24 | 0 | — | accept with fixes (1) | overclaim 1 |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not

@@ -503,8 +503,8 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   first), and everything after a boundary. Tier AIs in the batch: 35 static only, 37 its state test emulated. P1.1
   review reopen condition (b) not met: the one search callback (`AiZakarumHealCb`) draws nothing by its body and direct
   calls (its callees not followed). No call of the action helpers (`grep -c` in `b3-asm.txt`: 0). 23 `re/symbols.csv`
-  rows (all I). Kept outputs `workspace/logs/r52d/` (manifest 8 lines; `emu/` 57, `emu/dev-1/` 58, `emu/dev-2/` 58; each
+  rows (all I). Kept outputs `workspace/logs/r52d/` (manifest 10 lines, with the lane check's nest and sarcophagus control; `emu/` 57, `emu/dev-1/` 58, `emu/dev-2/` 58; each
   passes from its directory). Backlog: the
-  [review request](../backlog/2026-10-30-reverser-architect-plan-0052-p1-2-batch-3-review.md),
+  [review request](../backlog/archive/2026-10-30-reverser-architect-plan-0052-p1-2-batch-3-review.md),
   [archivist](../backlog/2026-10-30-reverser-archivist-monstats-and-monstats2-readers-named-by-ai-0004.md) (MonStats and
   MonStats2 readers). Next: batch 4 (pool-D).
