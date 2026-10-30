@@ -4,7 +4,13 @@
 
     python3 -I tools/h1a_saves.py <excel-dir> workspace/runtime/h1a      # the cases
     python3 -I tools/h1a_sessions.py list
-    python3 -I tools/h1a_sessions.py run --slot N --tag TAG --cases DIR --run RUN [--only K,K..] NAME [NAME ...]
+    python3 -I tools/h1a_sessions.py run --slot N --tag TAG --cases DIR --run RUN [--only K,K..] [--status F]
+                                         NAME [NAME ...]
+
+Written on the shared runner library tools/harness_runner.py (plan 0056 Phase 1, its worked example): install, launch,
+the RDY wait, the case marks, stop and the batch come from there; the session table and the load steps below are this
+runner's own. The kept H1a logs (run:2026-10-27-sweep-d2s-load) were made by the pre-library revision at main
+efac8f91, whose steps and timings these are unchanged.
 
 Each session: the slot's saves directory restored to TAG's aside and set aside again, the session's first listed
 save installed alone (tools/d2run.py --install), the game started at the main menu (tools/gdb/h1a-menu.steps) with
@@ -22,14 +28,17 @@ the logger attached there, then one load per entry of the session's list, all in
        `then` = "menu": screenshots and a click on empty background (a failed load is back at the main menu);
        a load that passed is saved and exited all the same, its file not kept
     7. when the game process is gone (a halt), the session stops after that case
-Each case's first log line is recorded in workspace/logs/h1a/<stem>.marks.jsonl. The copies are made by this runner into the slot's saves directory only while TAG is set aside (the session's own
-characters; tools/saves.py restores the directory at the next session and at the end). The session ends with
-tools/slots.py stop N. Stdlib only.
+Each case's first log line is recorded in workspace/logs/h1a/<stem>.marks.jsonl (tools/sweep_h1a.py reads it), and
+the library's marks (launch, ready, each case's start and end) in <stem>.marks.tsv. The copies are made by this runner
+into the slot's saves directory only while TAG is set aside (the session's own characters; tools/saves.py restores the
+directory at the next session and at the end). The session ends with tools/slots.py stop N, confirmed idle. The names
+run as one batch (hr.batch): one status file at the end, workspace/logs/h1a/<RUN>-s<N>.status.json unless --status
+names another (a session is kept when every load ran and the slot stopped idle; a halt after a case is a kept end).
+Stdlib only.
 """
 import json
 import os
 import shutil
-import subprocess
 import sys
 import time
 
@@ -38,6 +47,7 @@ ROOT = os.path.dirname(HERE)
 if HERE not in sys.path:
     sys.path.insert(0, HERE)
 
+import harness_runner as hr  # noqa: E402
 import slots  # noqa: E402
 
 PY = [sys.executable, "-I"]
@@ -91,37 +101,9 @@ SESSIONS = {
 }
 
 
-def sh(args, timeout=None, log=None):
-    print("$ " + " ".join(args), flush=True)
-    try:
-        return subprocess.run(args, cwd=ROOT, timeout=timeout, stdout=log, stderr=subprocess.STDOUT,
-                              stdin=subprocess.DEVNULL).returncode
-    except subprocess.TimeoutExpired:
-        print("  (timeout after %s s)" % timeout, flush=True)
-        return None
-
-
-def hide_window(slot):
-    """Keep the slot's Xwayland on Hyprland's hidden special workspace d2harness (harness-play.md)."""
-    title = "Xwayland on :%d" % (7 + slot)
-    try:
-        cl = json.loads(subprocess.run(["hyprctl", "clients", "-j"], capture_output=True, text=True,
-                                       timeout=10).stdout)
-    except (OSError, ValueError, subprocess.TimeoutExpired):
-        return
-    for c in cl:
-        if c.get("title") == title and (c.get("workspace") or {}).get("name") != "special:d2harness":
-            subprocess.run(["hyprctl", "dispatch", 'hl.dsp.window.move({ workspace = "special:d2harness", '
-                            'follow = false, window = "address:%s" })' % c["address"]], capture_output=True,
-                           timeout=10)
-
-
-def lines(log, tag):
-    try:
-        return [ln for ln in open(log, errors="replace") if ln.startswith(tag + " ")]
-    except OSError:
-        return []
-
+sh = hr.sh
+hide_window = hr.hide_window
+lines = hr.lines
 
 READY = "RDY"   # the logger's ready line: tools/gdb/d2s-h1a.gdb (and d2s-h1c.gdb) echo it once every logger file
 #                is sourced, right before `continue`. It keys the start wait on a line that precedes the first case:
@@ -129,28 +111,14 @@ READY = "RDY"   # the logger's ready line: tools/gdb/d2s-h1a.gdb (and d2s-h1c.gd
 
 
 def wait_ready(log, secs, gone=lambda: False, tick=lambda: None, step=0.5):
-    """Wait until the log holds the logger's RDY line (True), the driver is gone (False, without waiting out
-    secs) or secs pass (False). tick runs once per poll (the runner hides the window there)."""
-    t0 = time.time()
-    while True:
-        tick()
-        if lines(log, READY):
-            return True
-        if gone() or time.time() - t0 >= secs:
-            return False
-        time.sleep(step)
-
-
-def wait_count(log, tag, n, secs):
-    t0 = time.time()
-    while time.time() - t0 < secs:
-        if len(lines(log, tag)) >= n:
-            return True
-        time.sleep(0.5)
-    return False
+    """The library's wait (tools/harness_runner.py) on the RDY line, as a bool: True once the log holds it, False
+    when the driver is gone (without waiting out secs) or secs pass. tools/h1c_sessions.py imports it."""
+    return hr.wait_ready(log, READY, secs, gone=gone, tick=tick, step=step) == hr.READY
 
 
 def run_session(name, slot, tag, cases, run, only=None):
+    """One session on the library (tools/harness_runner.py): install, launch, the RDY wait, the loads, stop.
+    True when every load ran and the slot stopped idle; (False, why) otherwise."""
     cname, seed, loads = SESSIONS[name]
     if only:
         loads = [ld for ld in loads if ld[0] in only]
@@ -160,36 +128,33 @@ def run_session(name, slot, tag, cases, run, only=None):
     def src(case):
         return os.path.join(cases, case, cname + ".d2s")
 
-    os.makedirs(LOGS, exist_ok=True)
-    stem = "%s-s%d-%d-%s" % (run, slot, seed, name)
-    k = 2
-    while os.path.exists(os.path.join(LOGS, stem + ".log")):
-        stem = "%s-s%d-%d-%s-r%d" % (run, slot, seed, name, k)
-        k += 1
-    log = os.path.join(LOGS, stem + ".log")
-    shots = os.path.join(LOGS, stem + "-shots")
-    keep = os.path.join(LOGS, stem + "-saves")
-    marks = os.path.join(LOGS, stem + ".marks.jsonl")
+    stem = hr.new_stem(LOGS, run, slot, seed, name)
+    log = stem + ".log"
+    shots = stem + "-shots"
+    keep = stem + "-saves"
+    marks = stem + ".marks.jsonl"   # the checker's input (tools/sweep_h1a.py); <stem>.marks.tsv is the library's
     os.makedirs(shots, exist_ok=True)
-    out = open(os.path.join(LOGS, stem + ".pilot.txt"), "a")
+    out = open(stem + ".pilot.txt", "a")
     print("=== %s: %s, seed %d -> %s" % (name, cname, seed, log), flush=True)
-    sh(PY + [os.path.join(HERE, "saves.py"), "--slot", str(slot), "restore", tag], 60)
-    if sh(PY + [os.path.join(HERE, "saves.py"), "--slot", str(slot), "aside", tag], 60) != 0:
-        print("aside refused; stop", flush=True)
-        return 1
-    drv = subprocess.Popen(PY + [os.path.join(HERE, "d2run.py"), "--slot", str(slot), "--seed", str(seed), "--gdb",
-                                 os.path.join(HERE, "gdb", "d2s-h1a.gdb"), "--steps",
-                                 os.path.join(HERE, "gdb", "h1a-menu.steps"), "--after", "3000",
-                                 "--install", tag, src(loads[0][1]), "--log", log],
-                           cwd=ROOT, stdout=out, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL,
-                           start_new_session=True)
+    try:
+        hr.install(slot, tag)
+    except hr.HarnessError as e:
+        print("%s; stop" % e, flush=True)
+        out.close()
+        return False, str(e)
+    drv = hr.launch(slot, seed, log, gdb=os.path.join(HERE, "gdb", "d2s-h1a.gdb"),
+                    steps=os.path.join(HERE, "gdb", "h1a-menu.steps"), after=3000, install=(tag, [src(loads[0][1])]),
+                    out=out, stem=stem)
     t1 = time.time()
-    ok = wait_ready(log, 120, gone=lambda: drv.poll() is not None, tick=lambda: hide_window(slot))
-    print("  %s after %.0f s" % ("RDY seen" if ok else "no RDY line", time.time() - t1), flush=True)
+    r = hr.wait_ready(log, READY, 120, proc=drv, tick=lambda: hide_window(slot))
+    print("  %s after %.0f s" % ({hr.READY: "RDY seen", hr.TIMEOUT: "no RDY line", hr.GONE: "driver gone"}[r],
+                                 time.time() - t1), flush=True)
+    hr.mark(stem, "-", "ready" if r == hr.READY else "fail", log, r)
     if drv.poll() is not None:
         print("  driver gone before the first case: stop", flush=True)
+        hr.stop(slot, drv, out=out)
         out.close()
-        return 1
+        return False, "driver gone before the first case"
     time.sleep(8)   # the steps file starts up to --attach-wait (5 s) after the exec of gdb and lasts 2 s
     hide_window(slot)
 
@@ -201,12 +166,14 @@ def run_session(name, slot, tag, cases, run, only=None):
         shutil.copyfile(src(case), target)
         print("  copied %s -> %s" % (src(case), target), flush=True)
 
+    ran, why = 0, ""
     for case, lst, swap, diff, then in loads:
         print("--- %s: list %s, swap %s, %s, %s" % (case, lst, swap, diff, then), flush=True)
         with open(marks, "a") as fm:  # where each case starts in the log: its line count before the case
-            nl = sum(1 for _ in open(log, errors="replace")) if os.path.exists(log) else 0
+            nl = hr.line_count(log)
             fm.write(json.dumps({"case": case, "list": lst, "swap": swap, "diff": diff, "then": then,
                                  "line": nl, "time": time.time()}) + "\n")
+        hr.mark(stem, case, "start", log, "list=%s swap=%s diff=%s then=%s" % (lst, swap, diff, then))
         n0 = len(lines(log, "PLD"))
         put(lst)
         xd("click", "700", "150")
@@ -219,7 +186,7 @@ def run_session(name, slot, tag, cases, run, only=None):
         time.sleep(2)
         if diff in DIFF_Y:
             xd("click", "400", str(DIFF_Y[diff]))
-        ok = wait_count(log, "PLD", n0 + 1, 40)
+        ok = hr.wait_count(log, "PLD", n0 + 1, 40)
         pld = lines(log, "PLD")
         code = json.loads(pld[-1].split(" ", 1)[1])["code"] if ok else None
         print("  PLD %s -> code %s" % ("seen" if ok else "missing", code), flush=True)
@@ -231,7 +198,7 @@ def run_session(name, slot, tag, cases, run, only=None):
                 xd("key", "Escape")
                 time.sleep(1.5)
                 xd("click", "400", "268")
-                if wait_count(log, "WDONE", n0w + 2, 30):
+                if hr.wait_count(log, "WDONE", n0w + 2, 30):
                     break
             time.sleep(6)
             dst = os.path.join(keep, case, cname + ".d2s")
@@ -251,20 +218,23 @@ def run_session(name, slot, tag, cases, run, only=None):
                 xd("key", "Escape")
                 time.sleep(1.5)
                 xd("click", "400", "268")
-                wait_count(log, "WDONE", n0w + 2, 30)
+                hr.wait_count(log, "WDONE", n0w + 2, 30)
                 time.sleep(6)
         hide_window(slot)
+        ran += 1
         if drv.poll() is not None:
+            # a halt (class7, stub7) is a case's expected end: the case is logged, the session stops after it
+            hr.mark(stem, case, "end", log, "pld=%s driver gone" % code)
             print("  driver gone after %s: stop" % case, flush=True)
+            why = "driver gone after %s" % case
             break
+        hr.mark(stem, case, "end", log, "pld=%s" % code)
     xd("shot", os.path.join(shots, "end.png"))
-    sh(PY + [os.path.join(HERE, "slots.py"), "stop", str(slot)], 60)
-    try:
-        drv.wait(30)
-    except subprocess.TimeoutExpired:
-        pass
+    idle = hr.stop(slot, drv, out=out)
     out.close()
-    return 0
+    if not idle:
+        return False, "slot %d not idle after stop" % slot
+    return True, "%d of %d loads%s" % (ran, len(loads), "; " + why if why else "")
 
 
 def main(argv):
@@ -278,7 +248,7 @@ def main(argv):
     a = argv[1:]
     opt, names, k = {}, [], 0
     while k < len(a):
-        if a[k] in ("--slot", "--tag", "--cases", "--run", "--only"):
+        if a[k] in ("--slot", "--tag", "--cases", "--run", "--only", "--status"):
             opt[a[k][2:]] = a[k + 1]
             k += 2
         else:
@@ -291,9 +261,12 @@ def main(argv):
         print("slot 0 is the owner's")
         return 2
     only = set(opt["only"].split(",")) if "only" in opt else None
-    for n in names:
-        run_session(n, int(opt["slot"]), opt["tag"], opt["cases"], opt["run"], only)
-    return 0
+    slot = int(opt["slot"])
+    os.makedirs(LOGS, exist_ok=True)
+    status = opt.get("status") or os.path.join(LOGS, "%s-s%d.status.json" % (opt["run"], slot))
+    st = hr.batch(names, lambda n: run_session(n, slot, opt["tag"], opt["cases"], opt["run"], only), status)
+    print("BATCH %s -> %s" % (hr.summary(st), status), flush=True)
+    return 0 if st["done"] and not st["failed"] else 1
 
 
 if __name__ == "__main__":

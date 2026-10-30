@@ -66,8 +66,8 @@ typedef struct AiParam {          /* 0x1C, a record of the circular list at AiCt
     struct AiParam *prev;         /* +0x04 */
     uint32_t kind;                /* +0x08 1 = a group call (sub_0058F730_MonHelpBlock from rows 6 and 13), 10 = a saved
                                      point (ai/0001 § 4), 14 = row 15's alt; 3, 4, 5, 7 by other AIs (later batches) */
-    uint32_t w0C;                 /* +0x0C row 14 reads a unit type here */
-    uint32_t w10;                 /* +0x10 row 14 reads a unit guid here */
+    uint32_t w0C;                 /* +0x0C row 14 reads a unit type here; row 30 a guid (ai/0005 2.18) */
+    uint32_t w10;                 /* +0x10 row 14 reads a unit guid here; row 30 a type */
     uint32_t w14;                 /* +0x14 */
     uint32_t w18;                 /* +0x18 row 15's alt tests 1 */
 } AiParam;

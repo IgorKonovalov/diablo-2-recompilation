@@ -576,7 +576,8 @@ Ovr(13, 50, 0); Walk(t, 7);
 - Row 25's dance offset tables (the `(x, y)` pairs written on the stack at entry, 0x005F39E1–0x005F3E07): their values
   are not transcribed; an emulation dump of the stack after the prologue, or a P2 log of a dance, settles them.
 - Who posts a kind-1 or kind-14 record naming a unit to a fetish (§ 2.14), and in which word order: the fetish reads the
-  type from `+0x10`, the quill rat (ai/0002 § 2.12) from `+0x0C`. One of the two readers disagrees with the writer of
-  its record, or the writers differ; a writer read (the shaman rows of later batches) settles it.
+  type from `+0x10`, the quill rat (ai/0002 § 2.12) from `+0x0C`. **Answered [I] in [ai/0005](0005-pool-d.md) § 2.18**:
+  row 65 `FetishShaman` writes the guid at `+0x0C` and the type at `+0x10` (the fetish's order), row 75 `QuillMother`
+  the type at `+0x0C` (the quill rat's); the readers and writers agree in pairs (0x005F9AE8, 0x005FB2CA, fn:sub_0058F730_MonHelpBlock@0x0058F730).
 - Who writes `MonsterData+0x54` (the 3-or-19 test, rows 21, 26, 28, 29): still unnamed (ai/0001's open question).
 - What unit event 12 queued on the player at the end of the wisp grant does: not read here.

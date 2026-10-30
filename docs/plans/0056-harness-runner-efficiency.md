@@ -180,3 +180,121 @@ _(lanes append dated entries as phases land)_
   0050·P2 part 3 does not wait; Q4 the Phase 2 probe takes the next free slot after 0050·P2 part 3; Q5 if `-seed` does
   not hold, cases switch inside one game, no in-memory seed patching; Q6 the case-and-process ADR is proposed at Phase
   4; Q7 Opus for Phase 1, Sonnet for the probe and pilot sessions. **Phase 1 starts after `lane/hx` merges.**
+- **2026-10-30 — Phase 1, no-game part landed (`bef3f51d`); smoke sessions pending a slot (reverser, `lane/p56a`, from `main`
+  `b75144a9`; no slot, no Ghidra).**
+  - **Library:** `tools/harness_runner.py`: `new_stem`, `install` (restore when aside, aside, install; each return
+    code checked), `launch` (`d2run.py` in a new session group, `--mem-max 4G` explicit, a `launch` mark), `wait_ready`
+    (the first line tagged `ready`, or starting with it when it holds a space; outcomes `ready`, `timeout`, `gone`, the
+    log read incrementally), `wait_count`, `mark` (`<stem>.marks.tsv`: case, event ∈ launch/ready/start/end/fail, wall
+    time, line count, note), `split` (one log per `start` mark, optional `--at TAG` snap to a game-start line before
+    the next mark, the header repeated with a `# split` line), `stop` (`slots.py stop N`, then `slots.busy(N)` empty
+    within 30 s), `batch` (one JSON status file at the end, also when interrupted: kept, failed, rerun, wall per case),
+    `bg` (detached start, one `tail --pid` wait). Documented in tooling.md § The runner library.
+  - **Tests:** `python3 -I tools/test_harness_runner.py`: 44 tests, OK (fake logs, fake and short real child processes,
+    fake clocks; the worked example's session end to end on fakes). `tools/test_h1_ready.py` (9) OK; its source check
+    now looks for the library call in h1a.
+  - **Worked example: `tools/h1a_sessions.py`** (the pilot's own runner, `tools/ai_sessions.py` for 0052·P2, does not
+    exist yet and is written on the library under the migration rule; H1a is the deterministic, several-loads-per-
+    process runner whose checker `tools/sweep_h1a.py` gives a comparable result). Session table, clicks and sleeps
+    unchanged; it still writes `<stem>.marks.jsonl` for the checker, plus the library's `.marks.tsv`; `run` is one
+    `batch` with `workspace/logs/h1a/<RUN>-s<N>.status.json`. `tools/h1c_sessions.py` is untouched and still imports
+    h1a's bool `wait_ready`. `tools/anim_sessions.py`, `tools/skills_sessions.py` and their loggers are untouched.
+  - **Migration rule:** harness-play.md § Runners and the library.
+  - **Resume note: the two smoke sessions (Done when), on the slot N the next prompt gives (1 or 2).** Same save
+    (`workspace/runtime/h1a`, the 38 kept H1a case directories, already built) and same seed (session `order`, 27204),
+    two of its loads (`hdrshort`: a menu load refused with a code; `param`: a load that passes, then Save and Exit):
+    1. `python3 -I tools/slots.py status` shows slot N with no game, driver or aside left; nothing else of another
+       lane is touched.
+    2. **Pre-migration copy**: `tools/h1a_sessions.py` at `efac8f91`. Check that the main checkout still holds it
+       (`git -C /home/igor/Work/recompilcation-project diff --quiet efac8f91 -- tools/h1a_sessions.py` exits 0 while
+       this lane is unmerged); otherwise `git worktree add --detach <scratch>/pre efac8f91` with a `workspace` symlink
+       to the main `workspace/`, and run from there. Command (run from that checkout):
+       `python3 -I tools/h1a_sessions.py run --slot N --tag p56a --cases workspace/runtime/h1a --run dev-p56a-pre --only hdrshort,param order`
+    3. **Migrated runner**, from this worktree:
+       `python3 -I tools/h1a_sessions.py run --slot N --tag p56a --cases workspace/runtime/h1a --run dev-p56a-lib --only hdrshort,param order`
+       Run 2 then 3 as one background command with output to the lane's scratch, and wait once (`tail --pid`); about
+       3 min each.
+    4. Cleanup: `python3 -I tools/slots.py stop N`, `python3 -I tools/saves.py --slot N restore p56a`, `saves.py --slot N
+       status` (no aside), `slots.py status`.
+    5. Check both with the plan's checker, output to files:
+       `python3 -I tools/sweep_h1a.py check workspace/merged/data/global/excel workspace/runtime/h1a workspace/logs/h1a/dev-p56a-pre-sN-27204-order.log`
+       and the same for `dev-p56a-lib-…`. Done when both give the same comparison count and 0 failing, and the
+       per-case lines are equal once the log names are replaced. Also on the lib log: `harness_runner.py marks`
+       (launch, ready, two start/end pairs; the `.marks.tsv` start lines equal the `.marks.jsonl` lines),
+       `harness_runner.py split` (two pieces), `harness_runner.py status workspace/logs/h1a/dev-p56a-lib-sN.status.json`
+       (kept 1). Both are dev logs (`dev-` names, outside the H1a kept glob): write
+       `workspace/logs/h1a/p56a-manifest-dev.sha256` for both logs, their marks, status and check outputs, passing
+       `sha256sum -c` from `workspace/logs/h1a`. Then file the Phase 1 review request.
+  - **Next:** a slot for the two smoke sessions, then the Phase 1 review.
+- **2026-10-30 — Phase 1, smoke sessions run (reverser, `lane/p56a`, slot 2).** Main merged into the lane first (ledger
+  conflict kept both). Same save and seed (27204), cases `hdrshort,param`: pre-migration runner (`efac8f91`) and the
+  migrated runner each give `TOTAL H1A 19 comparisons, 0 failing; d2sio logs failing 0` (hdrshort 7, param 12); the
+  per-case lines are equal; only the `d2sio WRITE` sha differs (the saved file carries a time stamp). Each session 60 s
+  wall; migrated: launch to `ready` 6.6 s (the new `RDY` line, smoke OK), to first case start 14.6 s. `marks` (launch,
+  ready, two start/end pairs; starts equal the `.marks.jsonl` lines), `split` (2 pieces), `status` (kept 1) read right.
+  Manifest `workspace/logs/h1a/p56a-manifest-dev.sha256`. Slot 2 stopped, saves restored. Review request filed.
+- **2026-10-30 — Phase 1 lane check (lane/p56a, Tier B, architect): accept with fixes (2); Phase 2 (the probe) released.**
+  Tests re-run: `test_harness_runner.py` 44 OK, `test_h1_ready.py` 9 OK, `test_slots.py` 33 OK; `sha256sum -c` of
+  `p56a-manifest-dev.sha256` OK (all lines); gate green. API read against tooling.md § The runner library and
+  harness-play.md § Runners and the library: matches. Rules kept: `--mem-max 4G` is in every launch command line (and
+  tested), `launch`, `launch_argv` and `stop` refuse slot 0 (tested), `stop` returns True only once `slots.busy(N)` is
+  empty and h1a turns a busy slot into a failed session. The migrated h1a keeps its steps, clicks and sleeps; `h1c`'s
+  import of the bool `wait_ready` still works. Fixes: the table's `stop` signature omitted `timeout`/`out`; `lines()`
+  now matches the first word (a bare tag line counts) and the table now says so; the plans index still read "P1
+  starts after `lane/hx` merges". The ledger row set to 226 708 tokens, 80 calls, 15 min. Phase 2 may start; it takes
+  the next free slot after 0050·P2 part 3 (Q4).
+- **2026-10-30 — Phase 2 probe (lane/p56b, reverser, slot 2): several games in one process; `-seed` holds; § Fresh process written.**
+  Tools: `harness_runner.next_case` (the menu return, 3 tests added, 47 OK), `tools/probe0056.py`, logger
+  `tools/gdb/probe-0056.gdb` (= `mon-special.gdb` + `tools/gdb/probe-state.py`: `PST` g_HitClassCounter `0x0088CAD0` and
+  g_PlayersOverride `0x00883D70` once a second on the `PLR` hook, `HCP` at `HitClassPick` `0x0057CE30`). Smoke: dev1
+  (1 switch), dev2 (2 switches, 2 fights), dev3 (the `start` mark placement and `split`); dev logs `dev-dev*-s2-4801-probe.*`
+  apart from the kept run, `workspace/logs/p56b/run:2026-10-30-multicase-probe-s2-4801-probe.log` (47 653 lines, 8.7 MB,
+  sha256 `f3bf2381b4d042f5…`), seed 4801, expansion normal, UniqNova / ProbeB (a tool-built copy of the recipe under another
+  name) alternating, `/players 5` in game 0, Nova fights (City of the Damned) in games 0, 2, 4; 292 s for five games.
+  Marks of the kept run were written by the first revision of `next_case` (`start` after the load); the numbers below
+  are cut by the `end` marks, and dev3 shows the final placement splits exactly at each game's first `WND` line.
+  1. **Does `-seed N` set the map seed of the second and later games? Yes `[C]`.** The `LC0` level seed of every level id
+     is the same in all five games (103 to 108: `75e10186:0000029a` … `75e1018b:0000029a`, `base` 1977680159), with two
+     different characters alternating and in all three dev runs. The game seed `gs` of the `RW` lines is not constant (it
+     is drawn from) and is not the test.
+  2. **Does a save installed at the menu load? Yes `[C]`.** Four of four switches: the file copied over the same name in
+     the slot's saves directory while the game sat at the menu (`saves.py` refuses while the slot is busy, so a plain copy),
+     SINGLE PLAYER, OK, the difficulty box, and a new `PLR` within 90 s each time (plus 5 more in the dev runs).
+  3. **What carries over `[C]`:** `g_HitClassCounter` (0..3 in game 0, the first pick of game 2 read 3, then 6 in game 4;
+     games 1 and 3 had no hits), `g_PlayersOverride` (0 then 5 in game 0, 5 in games 1 to 4), the DT1 tile lists
+     (`TL` lines 634 in game 0, 143 in game 2, none in games 1, 3, 4; `TINIT` 97, 25, 109, 21, 106), and, from earlier
+     records (`docs/findings/monsters/experiments.md` h4b session 5, `tools/drlg.py` `parse_log`), `/players` through Save and Exit
+     and the DRLG failure on a second game; the `parse_log` refusal itself does not fire on this probe's log (one `WNDARM`
+     line with `levels`). Not carried: the level seeds
+     (question 1) and the character (the save). No other state was looked for beyond these.
+  4. **Cost.** Switch (Escape to the next `PLR`): 18.5, 19.5, 19.4, 19.5 s, about 15.5 s of it the runner's fixed
+     sleeps (1.5 + 8 + 1 + 3 + 2) and about 4 s the game's own load. Launch to the first `PLR` (install, launch, the
+     steps' clicks): 20.1, 20.6, 20.9, 21.2 s on this logger. The 60 s of the baseline therefore is not the game's boot
+     here `[I]`: by subtraction it would be the sum of stop, restore, aside, install and the ready wait around it, which
+     this probe did not time (lane check ruling 2). The saving per case is that
+     bookkeeping, and the switch's sleeps could be cut (`menu_wait` 8 s was not tuned). Memory: the game's scope held
+     203 to 227 MB (peak 227.5 MB) across the five games; gdb 66 MB; no trend.
+  The in-game switch (waypoint or walk) was not measured: question 1 came out so that the menu return keeps the seed,
+  and the seed-dependent cases take a fresh process by rule. § Fresh process in harness-play.md names the five conditions
+  and the cap (8 games or 40 min per launch, `[I]` beyond the five measured). Slot 2 stopped, saves restored (no aside).
+- **2026-10-30 — Phase 2 lane check (lane/p56b, Tier B, architect): accept with fixes (4); Phase 3 may start.**
+  Recounted from the kept log with `tools/probe0056_check.py` (new; output `...probe.check.txt`, manifest
+  `workspace/logs/p56b/manifest-run-multicase-probe.sha256`, dev files in `manifest-dev.sha256`, both `sha256sum -c` OK;
+  47 tests OK, gate green): `LC0` one (seed, base) pair per level id 103 to 108 over the five games; `PST`/`HCP` counter
+  0..3, 3..6, 6..9 with picks 0,1,2 / 3,4,5 / 6,7,8 in games 0, 2, 4; `g_PlayersOverride` 0 then 5, then 5; `TL` 634, 0,
+  143, 0, 0; `TINIT` 97, 25, 109, 21, 106; switches from the marks 18.5, 19.5, 19.4, 19.5 s. All four answers stand `[C]`
+  (answer 1 for seed 4801 and Act IV only). Rulings:
+  1. **Cap 8 games / 40 min stays `[I]`**; the memory readings (203 to 227 MB, peak 227.5 MB) show no trend over five games.
+  2. **The "~60 s boot" is not the game's boot on this logger (launch to first `PLR` about 21 s), but "it was runner
+     bookkeeping" is `[I]`**: stop, restore, aside and install were not timed. **Phase 3 still makes sense**, with a
+     smaller prize: a switch (19.5 s) saves about 1.5 s against a launch to `PLR` (21 s) plus the bookkeeping, so the
+     multi-case target ("launches per kept case <= 0.5") is reachable but its wall saving is the bookkeeping only, and
+     the `<= 9.0 min` per kept session has to come from the library, fewer dev launches and shorter waits. Phase 3 times
+     stop, restore, aside and install per fresh case and the sleeps of `next_case` (15.5 s of the 19.5; `menu_wait` 8 s
+     untuned), and reports both against the baseline.
+  3. **Fresh-process rule against the owner's answers:** 0055 P2b (condition 3) and seed (condition 4) match; Q2's opt-in was
+     missing from § Fresh process and is added. The in-game switch of the Phase 2 text was not measured; owner Q5 needed it
+     only if `-seed` failed, so the omission is within scope.
+  4. **Not caught by `parse_log`:** a `split` piece of a later game holds no `WNDARM` with `levels`, so `tools/drlg.py` runs
+     on it unchecked; § Fresh process rule 2 is the only guard. Noted for Phase 3's checkers (tools/drlg.py is the
+     archivist/static lane's; no backlog entry, the rule already covers it).

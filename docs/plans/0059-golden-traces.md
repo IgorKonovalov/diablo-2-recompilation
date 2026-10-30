@@ -88,8 +88,8 @@ for the chain (world and drops) first and the simulation events after plans 0052
 
 ## Open questions
 
-- Whether an observed case should also carry the 852-site RNG call counts as a field (a strong check, but tied to the
-  binary's inlining); decided at the Phase 1 review.
+- _Closed at the Phase 1 review:_ no 852-site call-count field (tied to the binary's inlining; it tests the build, not a
+  behaviour a reimplementation can match).
 
 ## Implementation log
 
@@ -98,3 +98,42 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 - **2026-10-30 — Drafted (architect, `lane/plans57`).** Status `draft`; rank 3 (high value to reimplementers, no slot,
   the archivist free); five owner questions.
 - **2026-10-30 — Approved (owner; recorded by the architect, `lane/appr2`).** "Approve all of them": all five questions as recommended: the format, the tool and a sample set of about 20 cases in git, the full set regenerated locally with its digest committed; v1 the chain (world and drops) only; predicted cases in, labelled `predicted`, an observed case winning a disagreement; JSON Lines with a version header; a quirk that changes an output is a case tagged with its index id. **P1 starts now** (`lane/a59`, archivist). Status `approved`.
+- **2026-10-30 — Phase 1 landed (archivist, `lane/a59`).** `docs/formats/golden-trace.md` (JSON Lines, version header,
+  `observed`/`predicted` per case, reserved `quirks` list), `tools/golden.py` (`emit`, `check`, `digest`, `fields`,
+  `sample`, `merge`), `tools/test_golden.py` (10 tests) and the 22-case sample `docs/formats/golden/sample-v1.jsonl`.
+  `emit --chain-check` on run:2026-10-21-chain2's 37 kept logs: 37 observed world cases and 3 784 observed drop cases,
+  0 failed, `chain.py check` exit 0; the set checks against itself. Full-set digest (local table set)
+  `210523526edd1af5d56516ff46fb14bd78b655a96efbe0e972ef1a29a5288c85`. No survey added to the gate (no input files to
+  survey; the tests cover it). Not in v1 fields: item seeds after the drop, room populations (chain § D–E); the
+  852-site call-count field is left to the review.
+- **2026-10-30 — Phase 1 check (architect, Tier B, `lane/a59`): accept with fixes (2, overclaim).** Rulings: (1) no
+  call-count field, ever; (2) item seeds (G2/G3) and room populations go into a later set version, after Phase 2 (the
+  format takes new fields without a version bump of the header; unknown fields in `expected` are the set's, so a
+  candidate that omits them is a missing field, as `check` already reports); (3) no gate survey, agreed; (4) `quirks`
+  stays reserved and empty until plan 0057 assigns ids, and `check` treats ids as opaque strings. Sample content: 6
+  observed and 8 predicted world cases and 8 observed drop cases of derived values only (seeds, ids, counts, region
+  pool class ids, digests); no strings except two `monster_flags` bytes, no table rows or file bytes, so it is not
+  game data under the CLAUDE.md rule. Test run 10 OK; the sample checks against itself (22 cases, 0 different).
+- **2026-10-30 — Phase 2 landed (archivist, `lane/a59b`).** The v1 set, local under `workspace/golden-v1-full.jsonl`
+  (5 073 cases, scope `world,drops,drlg`, digest `d73f2385…09e08`; parts and digests in the inventory block). Observed:
+  chain2 37 `world` + 3 784 `drop` (the P1 digest reproduces), items-chain 256 `drop` (the 8 stock logs with a drop;
+  `tc_sweep`'s 256 reproduced), 334 outdoor and 50 maze `drlg` windows from 112 kept logs, each written only after
+  `tools/drlg.py` (outdoor) or `tools/maze_replay.py` reproduced the seed after the window and the room lists; 0
+  failed. Predicted: 612 `world` (102 seeds x 3 x 2, 86 levels). `tools/golden.py` gained `emit --drlg`, `coverage`,
+  a scope that follows the case types, `sample --drlg`, an optional drop `game_seed` (the 2026-10-15 loggers do not
+  log it); `tools/outdoor_replay.py` got a `__main__` guard so the module imports; `tools/test_golden.py` 15 tests; the
+  sample is 28 cases (6 `drlg` added). Coverage per spec step: `docs/formats/golden-trace.md` § Set v1. Gaps: A2, A4,
+  B2 digest and the monster pools are predicted only (no kept log shows them); forced-variant items-chain logs
+  (23) are not cases; maze types other than 3, 10 and 13 are not modelled by the replayer; no predicted DRLG;
+  item seeds and populations wait for a later set version (P1 ruling 2). Surprises: the `sweep-roomk` s9/s10 logs
+  carry a `-seed` the game does not use as the map seed (0 and clamp), so their windows are skipped.
+- **2026-10-30 — Phase 2 lane check (architect, `lane/a59b`, Tier B): accept with fixes (2).** Rulings. (1) The `drlg`
+  case type is in scope: the approved Phase 2 *What* names "the DRLG replays of plans 0022 and 0026" and Phase 3's order
+  runs RNG, seeds, DRLG, population, drops; owner question 2 ("the chain, world and drops, only") separates the chain from
+  the simulation events of Phase 4 and is not narrowed by it. Observed windows only, no new claim; no owner decision
+  changes, so no Tier A. (2) `difficulty` from the log's name stays `[I]`, now tagged in the format doc with the 67
+  default-Normal outdoor cases named. (3) Skips accepted: `-seed` not the map seed (2 logs), unmodelled maze types
+  (184 windows), forced-variant items-chain logs (23), A2/A4/pool fields predicted-only. Fixes: the sample held no
+  outdoor case (its 6 `drlg` were all maze; `sample` now takes outdoor and maze half and half, 3 + 3, test extended),
+  and the `difficulty` tag. Checks: 15 tests OK; sample against the full set 28 cases, 0 different, 0 missing; full-set
+  digest `d73f29f6…09e08` reproduces; sample audit: every `drlg` string is a seed, a sha256 or `outdoor`/`maze`.
