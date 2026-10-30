@@ -1,6 +1,6 @@
 # Plans index
 
-Next free number: **0054**
+Next free number: **0056**
 
 Lane runs (agent usage, review verdicts, fix counts by category) are logged in the [lane run ledger](metrics.md).
 
@@ -59,6 +59,8 @@ Lane runs (agent usage, review verdicts, fix counts by category) are logged in t
 | [0051](done/0051-backlog-sweep-6.md) | Backlog sweep 6: the catalogue's column readers, the static optionals and the routing of the rest | done | — (closed 2026-10-27; P0a accepted, P0b, P1a, P1b and the States item 3a fold (`lane/a51f`) accepted with fixes; the sixteen archivist entries closed, the Phase 1a entries annotated for their plan 0038 batches, the two Phase 1b entries closed; P2: the plan 0042 owner play closed at approval, the patch_d2, Diablo-pair and plan 0044 owner entries annotated "stay open" (owner, 2026-10-25); the plan 0044 shortfalls entry stays open for the optional two-client run) |
 | [0052](0052-monster-ai.md) | Monster AI: the AI tick, target and skill choice, and the path request it makes (ADR-0014 phase 5) | approved | **approved by the owner 2026-10-27** (scoping answers in the owner decisions below; question 8: the whole AI table); first draft 2026-10-25 (`lane/plans50`); approvable since 0045·P3's review (2026-10-27; ADR-0020); **re-drafted 2026-10-27** (`lane/plans52`): P0 archivist, P1.1 machinery (reviewed 2026-10-27; tier 18 AIs) then twelve catalogue batches (set at the P1.1 review; **paused, P1.2 next on unpause**), P1b, P2 one slot (after 0050·P3's review and its own P1.1 and tier reviews), P3a machinery and tier, P3b catalogue, P4 wiki; the path search a boundary with its own plan, drafted on unpause; [ADR-0022](../adrs/0022-scope-server-frame.md) accepted |
 | [0053](0053-review-tiers-and-gate-checks.md) | Review tiers and gate checks for the mechanical fix categories (ADR-0023) | approved | Phases 0–2 done 2026-10-27 (E14–E16 and W7 in the gate, E14 demoted until the reverser's entry; `lane-check.md` and the Mode 3 tiers); next: Phase 3, the trial (human: ten Tier B checks, two audits) |
+| [0054](0054-path-search.md) | Path search: the planner behind every path request, its points, its draws and its use of the collision grid (ADR-0014 phase 5, second part) | draft | drafted 2026-10-30 (`lane/plans54`) on unpause, as 0052·P1.1's review ruled; eight scoping questions for the owner; P0 archivist (the 17 path types), P1 three static batches with emulation over predicted grids, P1b, P2 one slot, P3 spec (row `path/search`), P4 wiki; gates nothing |
+| [0055](0055-server-frame.md) | The server frame: the game tick, the unit update order, the event queue and the timers, checked in frame windows (ADR-0022, simulation phase 6) | draft | drafted 2026-10-30 (`lane/plans54`) on unpause, the plan ADR-0022 calls for; eight scoping questions for the owner; P0 archivist (the kept-log corpus), P1 three static batches (gate met: 0052·P1.1 reviewed), P2a the order model on kept logs (no game), P2b frame windows (one slot, after 0052·P3a's review), P3 spec (row `sim/frame`), P4 wiki |
 
 ## Run order (set 2026-10-25, plans 0038–0052)
 
