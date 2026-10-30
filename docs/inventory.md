@@ -48,6 +48,63 @@ name recovery) and the merged gameplay tree (30,488 files, manifest with per-fil
 `workspace/logs/merged-manifest.tsv`) are documented in [formats/mpq.md](formats/mpq.md). The excel
 tables are catalogued in [tables/README.md](tables/README.md).
 
+## Kept-log corpus (plan 0055 Phase 0)
+
+The harness logs of the runs that plans 0037 to 0052 name, classified as test data for the server-frame order model
+([plan 0055](plans/0055-server-frame.md)). The logs stay under `workspace/logs/` (never in git). `tools/frame_corpus.py`
+classifies them (`index`), reads the frame-stamped ones as one event stream per session (`read`) and checks the reader
+(`check`); gate survey `frame` (opt-in: it reads about 5.6 GB) pins the counts. The per-log index (path, size, logger,
+slot, date, seed, line and frame-stamped counts, runs, sha256 of every attributed log) and the per-log per-kind counts
+are written by `index` to `workspace/logs/frame-corpus/frame-corpus-logs.tsv` (`12c71c1c271b0341a74d93f98a2d29b3651bb1b32e1b8299c9fa5e60d16d1cff`)
+and `frame-corpus-tags.tsv` (`c1f6508dccd969e39dfcad603546477e044db6ab7b17bb477aae4ca2c2f596c1`).
+
+**Counts** (`[C]`, by script; the corpus as of 2026-10-30). 1 657 `*.log` files under `workspace/logs/`: 1 597 harness
+logs (first line `# d2run`, written by `tools/d2run.py`) and 60 other files. Plans 0037 to 0052 name 79 runs
+(`run:<id>`); 77 have a `## run:` section in a `docs/findings/*/experiments.md`, 2 do not (`2026-10-11-d2s-samples`,
+`2026-10-15-cube-saves`: no logs to index). A log is *in the corpus* when a run's section names it: by its name, a glob,
+or a `.lst` or manifest file the section names (the file's lines name the logs). Result: **1 574 corpus logs** under
+72 runs; the other 5 sectioned runs name no harness log (`rng-emu`, `calc-emu`, `sweep-emu`, `anim-rates-emu`: emulated
+runs; `sweep-emu2` names only a Ghidra log). **331 corpus logs are frame-stamped**
+(6 805 992 stamped lines), **1 243 are not**. 5 harness logs are named by a run's directory only
+(`anim/dev-p50f-dev-*.log`, `h2b/drafts-pause/*`; development logs, indexed, not counted) and 18 harness logs
+are named by no run (7 under `h1a/` of 2026-10-27, 8 under `h1c/` of 2026-10-30: none stamped; and 3 under `skills/` of
+2026-10-30, stamped, from plan 0046's catalogue runs, which no run record names yet). The 60 non-harness files
+(Ghidra, Xwayland and wine logs, firewall tests) are not classified further.
+
+**What "frame-stamped" means.** A line `TAG {json}` whose JSON holds `"fr":N` (every logger) or `"frame":N` (the `g`
+block of the combat and skills event lines, and h6b's `RPE`/`RPS`). Only 9 of the 72 loggers (`gdb=` script of the header)
+stamp frames; the other 63 hold no frame number and cannot test an order model (plan 0055 open question 1). Typed unit
+references are `"<role>":{"u":addr,"t":type,"c":n,"id":id,...}` (anim's `PS0` and combat's `RGN` carry `"u":addr,"t":type`
+without `id`). Seeds are `hhhhhhhh:llllllll` strings. A begin/end pair is `TAG0` with `TAG1` or `TAGX` in the same log.
+
+| logger (`gdb=`) | corpus logs | stamped | stamped lines | typed-unit lines | seeded lines | what the stamped kinds hold |
+|---|---:|---:|---:|---:|---:|---|
+| `stats.gdb` | 66 | 65 | 4 538 109 | 0 | 1 157 727 | 49 kinds; game and unit seeds (`gs`, `us`) at entry and exit of the pairs (`TK0`/`TK1`, `PRP`/`PRX`, `LNK`/`LNX`, `AU0`/`AU1`, `STA0`/`STA1`); **no unit id**; `RD` (2 228 518) and `CA`, `CW` carry frame only |
+| `anim.gdb` | 96 | 93 | 1 762 331 | 859 653 | 91 793 | 26 kinds; unit `{u,t,id}` on `SR`, `MSET`, `SCH`, `WIN`, `FREE`, address and type on `PS0`; seeds on `PA0`/`PA1`, `GH`, `GR0`/`GR1`, `OA0`/`OA1`; `CAN` (427 523), `EF`, `CT`, `CQ` carry frame only |
+| `skills.gdb` | 41 | 41 | 216 778 | 174 630 | 215 102 | 14 kinds; unit and seed at entry (`MH0`, `MC0`, `MAS0`, `SDO0`, `SST0`, `CU0`, `SP0`, `EVH`), exit seed on the paired `…1` line |
+| `combat.gdb` | 77 | 75 | 168 667 | 63 559 | 127 391 | 8 kinds; `EV0`/`EVX` (attacker and defender `{u,t,id}`, `sa`/`sd` at entry and exit), `MS0`/`MSX`, `MAS0`, `AD0`; `RGN`, `STA` frame only |
+| `economy.gdb` | 39 | 38 | 96 761 | 0 | 93 702 | 51 kinds; `PR0`/`PR1` and the other pairs hold the seed pair `sn.gs`, `sn.ps`; **no unit id** |
+| `economy2.gdb` | 6 | 6 | 19 434 | 0 | 19 277 | the same family, 43 kinds |
+| `economy-hire.gdb` | 1 | 1 | 2 444 | 0 | 2 442 | the same family, 14 kinds |
+| `two-combat.gdb` | 2 | 2 | 846 | 342 | 846 | combat's kinds in the two-client runs |
+| `h6b.gdb` | 10 | 10 | 622 | 0 | 0 | `RPE` and `RPS` only: **frame, no unit id, no seed** |
+
+Per-kind counts for every log are in the tags file. Frame-stamped corpus logs by run (`runs` column of the logs
+file): 2026-10-27-anim 149 of 154, anim-p2 83 of 83, 2026-10-25-skills 61 of 62, 2026-10-27-skills 72 of 73,
+2026-10-16-combat 40 of 41, 2026-10-20-shortfalls 88 of 90, 2026-10-21-shortfalls2 99 of 110, 2026-10-17-stats 87 of 97,
+2026-10-17-economy 43 of 55, 2026-10-19-economy2 6 of 17, 2026-10-17-h7a-lifecycle 71 of 572 (a sweep manifest), and the
+others a few. A manifest or list that spans several runs attributes each of its logs to every run that names it (a log can have
+several runs; the sweep manifests are the widest, `2026-10-21-sweep-monsters-a` names 1 295 logs, 211 of them stamped).
+
+**The reader** turns each stamped log into one event stream: `(frame, kind, unit type, unit id, entry seeds, exit seeds)`,
+a begin/end pair folded into one event at the begin's frame, the end line's seeds as the exit. `check` consumes every
+stamped line of all 337 stamped logs (6 469 457 events; 0 lines left over, 0 unparsable) and compares its counts with
+two run records: combat plan 0037 P2 (`c37p2-check.txt` over `c37p2-run.lst`: ha 1 259, ma 4 533, mas 5 060, md 1 957, pa 2 030,
+pm 519 = 15 358) and skills 2026-10-27 (`2026-10-27-skills-check.txt` over its manifest: `MAS.seed` 13 905, `CU.code`
+1 340, `MC.owner` 19 667): all equal (one `MC0` begin in `skills-spike-1.log` has no end line, so the record's 19 667 is
+the reader's 19 668 less that one). The other families' records (anim, stats, economy) state tallies the reader does not
+map to a line kind one to one; their counts are not compared (plan 0055 Phase 2a compares their effects).
+
 ## Classes
 
 | class | files | bytes | meaning |
