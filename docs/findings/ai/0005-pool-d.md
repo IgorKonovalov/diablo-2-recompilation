@@ -87,10 +87,13 @@ seed (`low mod n`, 0 and no step for `n < 1`); `rchance(K)` = `Range(100) < aipK
   row 75 a kind-1 record; row 65's `alt` clears state 12. (§§ 2.2, 2.3, 2.4, 2.12, 2.13, 2.14, 2.18,
   fn:sub_0063EFA0_SpawnClassByBase@0x0063EFA0, fn:sub_005B2F20_SpawnAtPos@0x005B2F20,
   fn:sub_0058F730_MonHelpBlock@0x0058F730, fn:sub_005DDFC0_MonAiSetMode@0x005DDFC0)
-- [I] **The two group-call blocks disagree on their word order.** Row 65 writes the target's guid at the block's
-  `+0x0C` and its type at `+0x10` (both of its blocks); row 75 writes the type at `+0x0C` and the guid at `+0x10`, the
-  order row 14's reader takes (re/types/ai.h `AiParam`). One of the two is read wrongly by its consumer, or the
-  consumers differ; not settled here. (0x005F9AE8–0x005F9B0E, 0x005F9C14–0x005F9C2C, 0x005FB2CA–0x005FB2EE; § 2.18)
+- [I] **The two group-call blocks write opposite word orders, and each matches its own reader.** Row 65 writes the
+  target's guid at the block's `+0x0C` and its type at `+0x10` (both of its blocks), the order row 30 `Fetish` reads
+  (`GameFindUnit(G, rec+0x10, rec+0x0C)`, ai/0003 summary, 0x005F5424–0x005F542B); row 75 writes the type at `+0x0C`
+  and the guid at `+0x10`, the order row 14 `QuillRat` reads (`GameFindUnit(G, rec+0x0C, rec+0x10)`, ai/0002 § 2.12,
+  re/types/ai.h `AiParam`). So the two orders are two writer/reader pairs, not a defect; that the shaman's group is the
+  fetishes and the quill mother's the quill rats is read from the row names and not checked in the spawn data.
+  (0x005F9AE8–0x005F9B0E, 0x005F9C14–0x005F9C2C, 0x005FB2CA–0x005FB2EE; § 2.18)
 
 ## Leads used
 
@@ -606,8 +609,9 @@ return r->+0x2D4;
 
 - [I] One kind per level's monster region, chosen by the first arrow trap that shoots there, on that trap's own
   seed; 0 below level 40. `RNG_RandLoHi(ECX seed, EDX lo; hi)` returns `lo` for `hi ≤ lo` and otherwise steps once and
-  returns `lo + low mod (hi − lo)` (here `hi − lo` = 3 is not a power of two; 0x004BC500–0x004BC54E). Which code
-  writes −1 into `+0x2D4` (the region's creation) is not read. (0x005FB650–0x005FB6B1,
+  returns `lo + low mod (hi − lo)` (here `hi − lo` = 3 is not a power of two; 0x004BC500–0x004BC54E). The −1 is
+  written at the region's creation: `MonRegionsBuild` sets `+0x2D4 = +0x0C = −1` in every region it builds for levels
+  1 and up (monsters/0001 § 2, fn:sub_005479C0_MonRegionsBuild@0x005479C0); no other writer of `+0x2D4` is read here. (0x005FB650–0x005FB6B1,
   fn:sub_0061A1B0_RoomGetLevelId@0x0061A1B0, fn:sub_00547BB0_MonRegionGet@0x00547BB0, fn:RNG_RandLoHi@0x004BC500)
 - [C] Inside rows 78 and 79: the region word before and after, the step and its `mod 3`, the `lvl < 40` edge
   (`cmp ebx,0x28; jge`, met at level 40 in 7 cases of each family). (run:2026-10-30-ai-cat-emu-4, `trarrow`, `tlarrow`)
@@ -620,6 +624,15 @@ return r->+0x2D4;
   corpse's guid, `+0x10` 1 (0x005F9C14–0x005F9C2C). Row 75: kind 1, `+0x0C` the type (6 for none), `+0x10` the guid
   (−1 for none) (0x005FB2CA–0x005FB2EE). Row 14's reader takes `+0x0C` as a type and `+0x10` as a guid (re/types/ai.h);
   `+0x14` and `+0x18` are left as the stack held them in all three. (fn:sub_0058F730_MonHelpBlock@0x0058F730)
+- [I] **Each order matches its reader.** Row 30 `Fetish` takes a kind-1 or kind-14 head record's unit as
+  `GameFindUnit(G, rec+0x10, rec+0x0C)` (type from `+0x10`, id from `+0x0C`; ai/0003, 0x005F5424–0x005F542B): row
+  65's order, and its kind-14 block's `+0x10` = 1 is the monster type that `GameFindUnit(G, 1, guid)` takes
+  (ai/0002 § 2.5). Row 14 `QuillRat` takes `GameFindUnit(G, rec+0x0C, rec+0x10)` (ai/0002 § 2.12,
+  0x005F1173–0x005F1177): row 75's order. This answers ai/0003's open question on the writer of a fetish's record.
+  The words were re-read in `b4-asm.txt`: the block base is `ebp−0x28`, so `+0x0C` is `[ebp−0x1C]` and `+0x10` is
+  `[ebp−0x18]`; row 65 stores the guid (`[eax+0xC]`, 0x005F9B00) at `−0x1C` and the type (`[eax]`, 0x005F9B0C) at `−0x18`,
+  row 75 the type (`[ebx]`, 0x005FB2DD) at `−0x1C` and the guid (`[ebx+0xC]`, 0x005FB2EB) at `−0x18`.
+  (fn:sub_0058F730_MonHelpBlock@0x0058F730)
 
 #### 2.19 The parameter list and the action helpers
 
@@ -711,10 +724,10 @@ return r->+0x2D4;
 
 ## Open questions
 
-- Rows 65 and 75 write the group-call block's `+0x0C`/`+0x10` in opposite orders (§ 2.18): which consumer reads a
-  kind-1 or kind-14 record from these rows, and whether one order is a defect. A P2 log of a `fetishshaman` breath and
-  a `quillbear` in the 3-or-19 state settles what the minions do with it.
-- Who writes the region's `+0x2D4` (the trap-arrow kind's −1, § 2.17) and whether every region starts at −1.
+- Whether the shaman's group call reaches `Fetish` minions and the quill mother's `QuillRat` ones (§ 2.18: the
+  orders match those two readers; the group's class is not read from the spawn data). A P2 log of a `fetishshaman`
+  breath and a `quillbear` in the 3-or-19 state settles it.
+- Whether any code but `MonRegionsBuild` writes the region's `+0x2D4` (§ 2.17; the build sets −1 in every region).
 - Row 71's state 1 (`AiCtl+0x14` = 1) is tested but set by no code of the function (§ 2.8): whether another path
   sets it (an `alt`, a parameter record), or the branch is unreachable on stock data.
 - Row 73's and 74's `DoomKnightMissile` gate on `MonsterData+0x0E < 4` (§§ 2.10, 2.11): the stock classes 311 and 312

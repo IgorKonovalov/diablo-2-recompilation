@@ -552,6 +552,17 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   action helpers (`grep -c` in `b4-asm.txt`: 0). Found: rows 65 and 75 write the `MonHelpBlock` block's `+0x0C`/`+0x10`
   in opposite orders (open question). 24 `re/symbols.csv` rows (all I). Kept outputs `workspace/logs/r52e/` (manifest
   8 lines; `emu/` 77, `emu/dev-1/` 78; each passes from its directory). Backlog: the
-  [review request](../backlog/2026-10-30-reverser-architect-plan-0052-p1-2-batch-4-review.md),
+  [review request](../backlog/archive/2026-10-30-reverser-architect-plan-0052-p1-2-batch-4-review.md),
   [archivist](../backlog/2026-10-30-reverser-archivist-monstats-and-skills-readers-named-by-ai-0005.md) (MonStats and
   Skills readers). Next: batch 5 (summons).
+- **2026-10-30 — P1.2 batch 4 Tier B check (architect, `lane/r52e`): accept with fixes (2).** Fixes: omission, the
+  opposite word orders of rows 65 and 75 are two writer/reader pairs already held by the findings (row 30 `Fetish` reads
+  type `+0x10`/guid `+0x0C`, row 14 `QuillRat` the reverse; ai/0003, ai/0002 § 2.12), written into ai/0005's summary,
+  § 2.18 and open question 1, and into ai/0003's matching open question and `re/types/ai.h` `AiParam` (no defect, no
+  Tier A); stale cross-reference, the −1 of the region's `+0x2D4` is written by `MonRegionsBuild` for every region
+  (monsters/0001 § 2), now cited in § 2.17 and open question 2. Rulings: (1) rows 64, 65, 68, 70, 73, 74 past their
+  entry call stay `[I]` for the batch's done-when (as batches 1–3); (2) P1.1 reopen condition (b) not met (callbacks
+  scoped to direct calls); (3) the `cmp` control and the `EDGES` count stand as the substitute controls for the
+  draw-free maps, with the `==` and sign tests stated uncontrolled; (4) the remaining open questions stand (row 71's
+  state 1, the `MonsterData+0x0E` gate on the dkmag records, the `+0x54` writer, the group's class). Gate green.
+  Review request closed.

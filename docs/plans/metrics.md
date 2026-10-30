@@ -453,6 +453,7 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-10-30 | lane/s57 | 0057 P1 | spec-writer | 268 082 | 67 | 20 | — | accept with fixes (Tier A) | 17: overclaim 2, misread 2, omission 10, wrong anchor 2, other 1 |
 | 2026-10-30 | lane/s57 review | 0057 P1 | architect-review | 203 571 | 80 | 10 | — (Tier A, no Ghidra, no harness) | accept with fixes (17) | overclaim 2, misread 2, omission 10, wrong anchor 2, other 1 |
 | 2026-10-30 | `lane/r52e` | 0052 P1.2 (batch 4) | reverser-static | 0 | 110 | 0 | — (static, Ghidra copy ghidra-r52e) | — | — |
+| 2026-10-30 | `lane/r52e` check | 0052 P1.2 (batch 4) | architect-check | 0 | 0 | 0 | — | accept with fixes (2) | 2: omission 1, stale cross-reference 1 |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not
