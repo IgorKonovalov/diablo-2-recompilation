@@ -48,7 +48,7 @@ rows: 4 A1, 5 A2, 7 SC, 8 S1, 9 S2, 10 S3, 11 S4.
   `RNG_Range`, 2 `RNG_RangeB` and 1 `RNG_RangePow2` calls, all on `U+0x20`, `b2-draws.txt`); 0–6 per decision, in the
   order of § 2's pseudocode. Draws on other seeds come only from callees (`MonAiFindHostile` in rows 22 and 28; the move
   helpers as in ai/0001 § 7). No function of the batch loops over units with a draw (P1.1 review, reopen condition
-  (b)): the four search callbacks draw nothing, and row 25's loop over the wisps it found sets three words and an idle
+  (b)): the four search callbacks draw nothing (three counted in `b2-draws.txt`; `AiSameBaseNearCb` by its direct calls, `MonBaseId`, `MonIsDeathMode` and `UnitDistSq`, none an RNG entry; their own callees not followed), and row 25's loop over the wisps it found sets three words and an idle
   per wisp. (§ 2, `b2-draws.txt`, fn:sub_005F2A00_AiGreaterMummyCb@0x005F2A00, fn:sub_005F30F0_AiWoundedNearCb@0x005F30F0,
   fn:sub_005B0D00_AiSameBaseNearCb@0x005B0D00, fn:sub_005F3960_AiWispCb@0x005F3960)
 - [I] **Effects outside the unit.** Row 22's Radament class (MonStats row 229) calls `A2Q1_BossSeen` and widens its

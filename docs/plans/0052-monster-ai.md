@@ -486,6 +486,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   nothing per wisp. No call of the action helpers (`0x005DF850`, `0x005DF990`, `0x005DFA00`, `0x005DFBF0`) in the batch
   (`grep -c 'call   0x5df850\|call   0x5df990\|call   0x5dfa00\|call   0x5dfbf0' b2-asm.txt`: 0). 25 `re/symbols.csv` rows (all I). Kept outputs `workspace/logs/r52c/` (manifest 7 lines; `emu/` 31,
   `emu/dev-1/` 32; each passes from its directory). Backlog: the
-  [review request](../backlog/2026-10-30-reverser-architect-plan-0052-p1-2-batch-2-review.md),
+  [review request](../backlog/archive/2026-10-30-reverser-architect-plan-0052-p1-2-batch-2-review.md),
   [archivist](../backlog/2026-10-30-reverser-archivist-monstats-and-itemstatcost-readers-named-by-ai-0003.md)
   (MonStats, ItemStatCost and States readers). Next: batch 3 (pool-C).
+- **2026-10-30 — P1.2 batch 2 Tier B check (architect, `lane/r52c`): accept with fixes (1).** Fix: omission, the search callbacks' "draw nothing" gains its scope (direct calls of `AiSameBaseNearCb`, callees not followed). Rulings: the five unemulated rows stay `[I]` for the batch's done-when (as batch 1); P1.1 reopen condition (b) not met; the three open questions stand (the dance tables and the opposite-word parameter record to the writer read, the stat 80 grant to Phase 2). Gate green. Review request closed.
