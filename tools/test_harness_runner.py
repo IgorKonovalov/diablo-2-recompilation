@@ -540,5 +540,44 @@ class Example(Base):
                                                 "stub7"]), 2)
 
 
+class NextCase(Base):
+    """The menu return (plan 0056 Phase 2) on fakes: the click sequence, the save copy, the wait for the next PLR."""
+
+    def run_it(self, leave=True, new_plr=True, diff="normal"):
+        self.write(HEAD + ['PLR {"x":1}\n'])
+        calls, copies, c = [], [], Clock()
+
+        def fake_run(argv, timeout=None, out=None):
+            calls.append(argv[argv.index("Diablo II") + 1:])
+            if len(calls) == (5 if leave else 3) and new_plr:      # the OK click: the game logs its first position
+                self.write(['PLR {"x":2}\n'], mode="a")
+            return 0
+
+        r = hr.next_case(2, self.log, ["/x/A.d2s"], diff=diff, leave=leave, run=fake_run, clock=c, sleep=c.sleep,
+                         copy=lambda a, b: copies.append((a, os.path.basename(b))), load_timeout=30,
+                         stem=self.log[:-4], case="g1")
+        return r, calls, copies
+
+    def test_sequence(self):
+        r, calls, copies = self.run_it()
+        self.assertEqual(calls, [["key", "Escape"], ["click", "400", "268"], ["click", "700", "150"],
+                                 ["click", "400", "307"], ["click", "690", "556"], ["click", "400", "280"]])
+        self.assertEqual(copies, [("/x/A.d2s", "A.d2s")])
+        self.assertTrue(r["ok"])
+        self.assertEqual(r["n0"], 1)
+        m = hr.read_marks(hr.marks_path(self.log[:-4]))
+        self.assertEqual([(x["case"], x["event"], x["line"]) for x in m], [("g1", "start", len(HEAD) + 1)])
+
+    def test_no_leave_no_diff(self):
+        r, calls, _ = self.run_it(leave=False, diff=None)
+        self.assertEqual(calls, [["click", "700", "150"], ["click", "400", "307"], ["click", "690", "556"]])
+        self.assertTrue(r["ok"])
+
+    def test_load_fails(self):
+        r, _, _ = self.run_it(new_plr=False)
+        self.assertFalse(r["ok"])
+        self.assertGreaterEqual(r["secs"], 30)
+
+
 if __name__ == "__main__":
     unittest.main()
