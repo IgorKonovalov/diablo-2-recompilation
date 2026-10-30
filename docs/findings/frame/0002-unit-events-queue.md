@@ -50,10 +50,18 @@ file). Names below are `re/symbols.csv` names.
   never run after it: the walker keeps its next in `Event+0xA18`, which the free moves on. A unit freed during a pass
   loses all its records at once (`UnitFreeAllEvents`, from each type's free). A unit moved between rooms keeps its
   records: no record holds a room. (fn:sub_00540EE0_UnitFreeAllEvents@0x00540EE0, 0x00540CE8–0x00540CF3)
+- [C] **Raised in part** (P1.2 review, a logged second source): the every-frame half above for **players and
+  monsters**. anim/0001's `ef-first` check (run:2026-10-27-anim, `2026-10-27-anim-check.txt` `2c3a7ddb…`, 9 682
+  starts, 0 mismatched) logs every `SUNIT_ModeEveryFrame` start with the runner's phase: the 658 monster starts queued
+  during the missile or player walks (`ef-first-ps-m-offset=0` 481 and `ef-first-ad-m-offset=0` 177; logger phases
+  1–4) ran in that frame, where "a walk sees only its list as it stood when the pass began" puts them in the next; the
+  2 819 monster starts queued in or after the monster walks and all 6 205 player starts ran in the next frame. The
+  objects', items' and missiles' every-frame cases stay `[I]` (no logged start), as does the rest of the bullet above.
+  (run:2026-10-27-anim, fn:SUNIT_ModeEveryFrame@0x00553F00, 0x0054150D)
 - [I] **The event tables** (kind 0..14): players `g_PlayerEventFuncs` (10 entries), monsters `g_MonEventFuncs` (11),
   objects `g_ObjEventFns` (12, kinds 0..11), items `g_ItemEventFuncs` (3: kinds 3, 4, 12); every missile event runs
   `MissileDoFrame` whatever its kind. Kind 0 is the mode frame, 1 the mode end, 2 the monster AI, 3 the regeneration
-  (players, monsters) and the item replenish, 12 the timed stat-list expiry of every type. The 269 queue sites push a
+  (players, monsters) and the item replenish, 12 the timed stat-list expiry of players, monsters and items (an object's entries 12–14 are null, which its dispatch treats as fatal; 0x006E19E0). The 269 queue sites push a
   constant kind (265 `UnitQueueEvent` sites; 0x00541800 at kind 14, with a callback, from `UnitTeleport`; 3 every-frame
   sites, kinds 0, 0, 5). (§ 3, `event-tables.txt`, `event-kinds.txt`)
 - [I] **The freeze drop** (a frozen monster): `MonEventDispatch` runs only kinds 3, 4, 5, 8 and 12 for a monster with
@@ -233,9 +241,14 @@ if (ctl->slotHead[L][s] == 0) ctl->slotHead[L][s] = rec;
   chain order (newest first), each of the unit's records whose kind byte equals `kind` and whose `a` equals `a` when
   `a` ≠ 0 (60 cases); `UnitCancelEventsByCb` the same on the callback, with no zero shortcut (27); `UnitFreeAllEvents`
   frees every record and clears its `unit` field, then sets the chain head to 0 (27), `UnitEventsReset` likewise
-  (36). The next record of the chain is read before each free. The control "kind only" separates 3 cases only and fails
-  them; the `a` test's separation is that thin. (run:2026-10-30-frame-emu-2, fn:UNIT_CancelEvents@0x00540E60,
-  fn:sub_00540EE0_UnitFreeAllEvents@0x00540EE0)
+  (36). The run's control "kind only" separates 3 cases and fails them; the P1.2 review scored three more wrong
+  readings against the kept `cancel.out` (`tools/frame_queue_controls.py` `758a1eea…`, `workspace/logs/r55b/review/cancel-controls.txt`
+  `063b97d8…`): `a` compared even when 0 separates 10, a callback of 0 taken as "any" separates 3 (`UnitCancelEventsByCb`),
+  the chain walked oldest first separates 5; each fails every case it separates. Thin but sufficient: each half is
+  matched byte for byte where a wrong reading differs, and no reading tried passes a separating case.
+  (run:2026-10-30-frame-emu-2, fn:UNIT_CancelEvents@0x00540E60, fn:sub_00540EE0_UnitFreeAllEvents@0x00540EE0)
+- [I] The next record of the chain is read before each free (0x00540E79, 0x00540EB9, 0x00540F00). No case separates
+  it: `EventFree` leaves `+0x24` as it was, so a read after the free gives the same dumps. (fn:UNIT_CancelEvents@0x00540E60)
 - [I] **Who frees all of a unit's records**: `UnitFreeAllEvents` has 6 references: `UnitEventsReset` and one per unit
   type's free (0x00534A45 in `0x005349D0`, players; 0x0057373A in `0x005736A0`, monsters; 0x00552A34 in `0x00552A00`,
   objects; 0x0059F8F6 in `0x0059F8E0`, missiles; 0x00557F08 in `0x00557EE0`, items), each called from `UnitFree`'s
@@ -277,8 +290,9 @@ for (rec = head; rec; rec = ctl->walkNext) {
 
 ### 3. The event tables per unit type
 
-From `event-tables.txt` (names from `re/symbols.csv`; the dispatch: players and monsters test `kind < 15` and a null
-entry, objects and items call `IsBadCodePtr` on the entry and stop the process on a bad one, missiles ignore the kind):
+From `event-tables.txt` (names from `re/symbols.csv`; the dispatch: players and monsters test `kind < 15`, unsigned
+(0x00581226, 0x005A7F89), and a null entry, objects and items (no kind bound, 0x00586AD7, 0x00562DA7) call `IsBadCodePtr` on the
+entry and stop the process on a bad one, missiles ignore the kind):
 
 | Kind | Players (`g_PlayerEventFuncs`) | Monsters (`g_MonEventFuncs`) | Objects (`g_ObjEventFns`) | Items (`g_ItemEventFuncs`) |
 |---:|---|---|---|---|
@@ -312,7 +326,8 @@ entry, objects and items call `IsBadCodePtr` on the entry and stop the process o
 
 ```c
 // fn:sub_005A7F80_MonEventDispatch@0x005A7F80 (ECX game, EDX unit; kind, a, b)
-if (kind >= 15) return;
+if ((unsigned)kind > 14) return;                              // cmp 0xE / ja: the runner passes the kind byte zero-extended,
+                                                              // so a negative kind EventQueueAt accepted arrives as 241..255, dropped
 if (kind not in {3, 4, 5, 8, 12} && UNIT_HasState(unit, 1) && !UnitIsDead(unit)) return;   // dropped
 if (g_MonEventFuncs[kind]) g_MonEventFuncs[kind](game, unit, a, b);
 ```
@@ -357,8 +372,8 @@ if (g_MonEventFuncs[kind]) g_MonEventFuncs[kind](game, unit, a, b);
   `UnitEventFirstFrame` (its 12 sites: 2 here, `ItemReplenishDurTimer`, `ItemReplenishQtyTimer`, `ItemCopy` ×2,
   `PlrModeEndPending`, `PlrSeqLeaveOk`, `MonModeStartNeutral`, `MonAiDelayEarlier`, `AiThornHulk` ×2; `xrefs-chain.txt`) and none of them reads the
   chain otherwise (the getter's call sites, § 2.3). The unit is then freed, and its records with it.
-- [I] **Restore.** `RoomInactiveUnitsRestore`, for a shrine object with a saved frame `f = hi << 16 | lo`, `f ≠ 0` and
-  `hi ≥ 0` as a signed 16-bit value: `UnitQueueEvent(5, max(f, frame + 1))` (0x00542C60–0x00542C87). Another object
+- [I] **Restore.** `RoomInactiveUnitsRestore`, for a shrine object whose saved record's `+0x14` is non-zero (0x00542C5A, the field not read here) with a saved
+  frame `f = hi << 16 | lo`, `f ≠ 0` and `hi ≥ 0` as a signed 16-bit value: `UnitQueueEvent(5, max(f, frame + 1))` (0x00542C60–0x00542C87). Another object
   branch queues `n` kind-2 events at `frame + k·d`, k = 1..n, from saved counters (0x00542D66–0x00542DB0; not read
   further). The monster restore (`InactiveMonstersRestore`) has no queue call site of its own (`event-kinds.txt`); where a
   restored monster's first events come from is not read here.
@@ -425,6 +440,10 @@ if (found) UnitClearRoom(unit);
   sites; the record's slot and position follow from §§ 2.1–2.2. The window volume estimate of frame/0001 § 7 did not
   count these lines (one per queued event). (fn:sub_005417D0_UnitQueueEvent@0x005417D0,
   fn:sub_005415E0_EventQueueEveryFrame@0x005415E0)
+- *P1.2 review ruling:* the estimate is redone at **P1.3**, not at the pilot: P1.3 closes the log design (its `RU0`/`RU1`
+  and `TM` sites) and re-runs `tools/frame_volume.py estimate` with the queue line and a stated queue rate per run
+  event, so that the pilot's "three times its estimate" stop compares a measurement with an estimate that counts every
+  line it logs. (plan 0055 log, 2026-10-30)
 
 ## Data touched
 
@@ -445,7 +464,9 @@ if (found) UnitClearRoom(unit);
 - A byte test for the kind (`push imm8` right before the call) finds the constant at only 67 of the 265 sites; the
   push nearest the call over the disassembly finds all 265.
 - The cross-type case (a record of one type queueing an every-frame record for a unit of another type) cannot be
-  built with the game's own callback, which queues for the record's own unit; it stays a reading of § 1.
+  built with the game's own callback, which queues for the record's own unit; in the emulation it stays a reading of
+  § 1. *P1.2 review:* the kept anim logs carry it for a monster's every-frame start queued during the missile or player
+  walks (658 starts, run:2026-10-27-anim; Answer bullet "Raised in part"); objects and items stay a reading.
 
 ## Open questions
 
@@ -459,3 +480,11 @@ if (found) UnitClearRoom(unit);
 5. **The frame counter's wrap** (§ 1) is a bound, not a behaviour anyone reaches (994 days).
 6. **The second block's link** (`EventRecordTake` links a new block second) and the allocator path are not emulated:
    no case uses more than 32 records.
+
+*P1.2 review (2026-10-30), which of these gate the next steps:* none gates P1.3 or Phase 2a. Phase 2a orders logged
+events, which questions 1, 3, 4 and 6 do not change (the order is the queue order whatever a handler does or which
+block a record sits in), and question 5 is out of reach. Question 2 is **added to P1.3's scope**: player kind 11 runs
+for every player every 30 frames, so about eight times in every 250-frame window of Phase 2b, and its two callees (and
+kind 6's record at `Unit+0xA4`) must be read for their draws before the pilot, or be ruled boundary oracles at the P1
+review. Questions 1 and 4 bear on Phase 2b's scenes only (object events and the Act V quest), and question 3 is logged
+by a window's `UE0` line.

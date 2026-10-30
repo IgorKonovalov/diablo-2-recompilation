@@ -106,3 +106,16 @@
   list). Not covered: the dispatches and every event function, the block allocator, `UninterruptibleEnd`, a callback
   that frees another record, a frame counter near 2³¹. No symbol raise (ADR-0015 scope, review-fixes rule 14).
   (run:2026-10-30-frame-emu-2)
+- **Review addendum (P1.2 review, 2026-10-30): `cancel`'s controls.** The run's control separates 3 cases. Three more
+  wrong readings scored against the kept `cancel.out` (no re-run): `python3 -I tools/frame_queue_controls.py >
+  workspace/logs/r55b/review/cancel-controls.txt` (tool `758a1eea…`, output `063b97d8…`, `review/manifest.sha256`
+  `ebb50d18…`, 1 line, passes from `review/`):
+  ```
+  FR55BC cancel neg=cancel-kindonly separating=3 passed=0 by_op=cancel:3
+  FR55BC cancel neg=always-a separating=10 passed=0 by_op=cancel:10
+  FR55BC cancel neg=cb-zero separating=3 passed=0 by_op=cancelcb:3
+  FR55BC cancel neg=reverse separating=5 passed=0 by_op=cancel:5
+  FR55BC result=ok
+  ```
+  "The chain's next is read before the free" separates no case (`EventFree` leaves `+0x24`) and is `[I]` in
+  frame/0002 § 2.3. (run:2026-10-30-frame-emu-2)

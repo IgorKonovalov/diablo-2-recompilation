@@ -86,6 +86,9 @@ Data first, then code, then spec.
     `ClientsRoomSync` and `NewRoomsUpdate`: the order in which a frame's newly active rooms are populated, and the
     order of an act's rooms (`ActRoomsHead`) that the passes walk; **the activation-order record** the chain spec asks
     for (what a log-free build would take as input, or why it cannot be derived).
+    Added at the P1.2 review: player kind 11's two callees (`0x005406A0`, `0x00575630`) and kind 6's `Unit+0xA4` record
+    read for their draws (frame/0002 open question 2), and the window volume re-estimated with the queue line
+    (frame/0002 § 8) beside P1.3's own `RU0`/`RU1` and `TM` lines.
 - **The P1 review** (one review after P1.3, or one per batch as the lanes land) rules the frame model's draw table (the
   shared-seed points: the game seed's draws in a frame, a seed hit by two units' events), the window design and Phase 2's
   floors, and re-rules ADR-0022's early gate if plan 0052 has moved anything P1 used.
@@ -202,6 +205,7 @@ the recommendations, and an answer that differs changes the phase it names.
   divergence is a message-arrival effect (ADR-0022 § Negative) or a missed input; the record says which.
 - **The per-unit order within a list.** Whether a list's order is insertion order or a hash order (the unit hash lists
   key on `guid & 0x7F`) decides how much of a window a reimplementer must reproduce from creation; P1.2 answers it.
+  *Answered at P1.2 (reviewed 2026-10-30):* queue order, not a hash order (frame/0002 § 2).
 
 ## Implementation log
 
@@ -308,3 +312,43 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   answered there by a dated note). Six emulated families `[C]` (1 400 cases, 0 mismatches, byte for byte over the
   control, both blocks and the units; six negative controls, `cancel`'s separating only 3 cases). The window's `UE0`/
   `UE1` sites (20, four per runner) and the queue line the § 7 estimate did not count: frame/0002 § 8.
+- **2026-10-30 — P1.2 review (architect, Tier A: rulings asked; `lane/r55b`).** **Accept with fixes (9)**, written
+  into the lane's files. Anchors spot-checked against the pinned image by objdump: the ten head loads and calls of
+  `GameRunUnitEvents` (0x005414EE–0x00541589, each head read after the previous walk returns), `EventQueueAt`'s signed
+  bound, frame −1 push of callback 0 (0x005416D5) and raise (0x005416E9), `EventQueueEveryFrame`'s front push
+  (0x00541633–0x00541646), the cancel loops (0x00540E60–0x00540F50), the player runner's four call sites (§ 8), the
+  freeze byte map of `MonEventDispatch` (0x005A7FE8: kinds 3, 4, 5, 8, 12 direct), `UnitRoomUnlink`'s tail
+  (0x0064C42D, 0x0064C432), the 30 direct calls (a full objdump count), the two `g_MonAiTable` think pointers (rows 131
+  and 138, 16-byte rows), the shrine save and restore (0x00542FE4–0x00543005, 0x00542C5A–0x00542C87); kept manifests
+  (static `99488028…` 52 lines, emu `b1b00fea…` 19 lines, the three dev manifests) pass, tool hashes match, the 29
+  symbol rows clash with none, gate green. Fixes: **under-claim 1**: the cross-type every-frame case was already
+  logged: anim/0001's `ef-first` check (run:2026-10-27-anim) has 658 monster starts queued during the missile or player
+  walks that ran in that frame, so frame/0002's every-frame half for players and monsters is `[C]`, raised in part
+  (objects, items, missiles stay `[I]`); the Dead ends bullet corrected. **overclaim 2**: "the next record of the chain is
+  read before each free" sat inside the `cancel` `[C]` though no case can separate it (`EventFree` leaves `+0x24`), now
+  its own `[I]`; kind 12 "the timed stat-list expiry of every type" scoped to players, monsters and items (the object
+  table's entries 12–14 are null, fatal in its dispatch). **omission 3**: `cancel`'s thin control: the review scored
+  three more wrong readings against the kept `cancel.out` (`tools/frame_queue_controls.py`, new; `a` compared at 0
+  separates 10, callback 0 as "any" 3, chain oldest first 5, each failing every case it separates; experiments
+  addendum); the dispatches' kind bounds (players and monsters unsigned, objects and items none, so a negative kind
+  `EventQueueAt` accepts is dropped at dispatch); the shrine restore's `+0x14 ≠ 0` test (0x00542C5A). **stale
+  cross-reference 3**: frame/0001 § 3.3's "is P1.2's" and its § 7 `UE` row now point at frame/0002 §§ 7–8;
+  skills/0003's "a fifth list" given a dated note (items); this plan's open question 3 marked answered, and the
+  research-map row and plans index brought to "P1.1 and P1.2 reviewed, P1.3 next" (left stale since the P1.1 review).
+  Rulings: **(1) the cross-type case**: `[I]` is acceptable where no log holds it (objects, items, missiles); for
+  monsters it is `[C]` already (above). Phase 2b's record counts the cross-type every-frame runs it logs (a record
+  queued by an earlier type's walk run in the same frame) per receiving type, which is the route to raise the
+  objects' and items' half. **(2) the window volume** is re-estimated at **P1.3**, not at the pilot: P1.3 closes the log
+  design (`RU0`/`RU1`, `TM`) and re-runs `tools/frame_volume.py estimate` with the queue line (`UnitQueueEvent` and
+  `EventQueueEveryFrame` entries, one per queued event) and a stated queue rate per run event, so that the pilot's
+  "three times its estimate" stop and Q2's volume test compare a measurement with an estimate of every line logged.
+  **(3) the open questions**: none gates P1.3 or Phase 2a (2a orders logged events; the queue order holds whatever a
+  handler does or which block a record uses). frame/0002's question 2 (player kind 11's `0x005406A0` and
+  `0x00575630`, every 30 frames for every player, and kind 6's `Unit+0xA4` record) is **added to P1.3's scope**: read for
+  draws by direct reach before the pilot, or ruled boundary oracles at the P1 review; questions 1 and 4 bear on the
+  choice of Phase 2b scenes only; 3 is logged by `UE0`; 5 and 6 are bounds. **The thin `cancel` control** is sufficient
+  with the added readings: every half of the map has a separating case that a wrong reading fails, and the claim is
+  byte for byte, so no reading matches by chance; the lane's next emulation family states the separating count per
+  half, not per family. **P1.3: go** (static lane B; one Ghidra), with question 2 above and the re-estimate added to its
+  done-when. ADR-0022's early gate: plan 0052 has landed only P1.2 batch 3 since P1.1 (`49a5dec7`), which P1.2 does not
+  use; no re-ruling.

@@ -438,6 +438,7 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-10-30 | lane/r52d | 0052 P1.2 (batch 3) | reverser-static | 341 050 | 136 | 32 | — (static, Ghidra copy ghidra-r52d) | accept with fixes (Tier B check) | 1: overclaim 1 |
 | 2026-10-30 | lane/r52d check | 0052 P1.2 b3 | architect-check | 78 463 | 25 | 3 | — (Tier B check, no harness) | accept with fixes (1) | overclaim 1 |
 | 2026-10-30 | `lane/r55b` | 0055 P1.2 | reverser-static | 0 | 110 | 45 | — (static, Ghidra copy ghidra-r55b) | — | — |
+| 2026-10-30 | `lane/r55b` review | 0055 P1.2 | architect-review | 0 | 62 | 0 | — | accept with fixes (9) | under-claim 1, overclaim 2, omission 3, stale cross-reference 3 |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not

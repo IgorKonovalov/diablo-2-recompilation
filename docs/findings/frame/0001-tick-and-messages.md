@@ -263,7 +263,7 @@ if (frame % 11 == 0) for act 0..4: if (game->act[a]) 0x0061AA20(act);   // ActLe
   of its room's unit list (`room+0x74` through the getter `0x00619F60`, next `+0xE8`), then calls `RoomUpdatedUnlink`
   (0x0064C42D, the unlink's only call site) and clears bit `0x2000` of `+0xC4` (0x0064C432). So a unit that changes
   room in a frame is no longer on the old room's list and can be marked again in the new one; the reset visits it in
-  the new room's list only. Which of the 30 callers run inside a frame (a move between rooms, a free) is P1.2's.
+  the new room's list only. Which of the 30 callers run inside a frame (a move between rooms, a free): frame/0002 § 7 (P1.2).
   (0x0064C3BF, 0x0064C42D–0x0064C432, fn:sub_0064C1B0_RoomUpdatedUnlink@0x0064C1B0)
 - [I] `UnitMarkUpdated` has 78 direct call sites (`xrefscan.txt`; Ghidra lists 74, the other four, 0x00570A6F,
   0x00570B4F, 0x005717B2 and 0x0064FAC7, lie in code Ghidra has no function for): among them `UNIT_SetMode` (2),
@@ -382,7 +382,7 @@ seeds (ADR-0022). Proposed lines (sites for P1.2 and P1.3 to confirm):
 | `FT0`, `FT1` | `GameTick` entry 0x0052D870, return 0x0052D974 | frame, game seed (`Game+0xD0`); at `FT0` also the byte `g_HitClassCounter` (P1.1 review) | 2 |
 | `FP` | the pass call sites 0x0052D8DF … 0x0052D96C | site, game seed; written only when the game seed differs from the last logged value | 0 when no pass draws |
 | `ACL` | after `ActClockTick`, 0x0052D7D7, non-zero returns only | act, period, counter | rare |
-| `UE0`, `UE1` | the unit-event runner's dispatch and return (P1.2: the per-type lists of `GameRunUnitEvents`) | unit type, guid, list (every-frame or slot), kind, unit seed, game seed | 2 per event |
+| `UE0`, `UE1` | the unit-event runner's dispatch and return (P1.2: the per-type lists of `GameRunUnitEvents`; the 20 sites in frame/0002 § 8) | unit type, guid, list (every-frame or slot), kind, unit seed, game seed | 2 per event |
 | `MSG0`, `MSG1` | `SrvPacketDispatch` entry 0x0054D750 and return | `Game+0xA8`, client, opcode, length; at the return the player's seed and the game seed | 2 per packet (logged inputs) |
 | `SYS` | `SrvClientMsgDispatch` 0x0053F100 | type | rare |
 | `RU0`, `RU1` | the room population (P1.3: `NewRoomsUpdate`, `RoomUpdateOne`) | room, room seed, game seed | per activation |
