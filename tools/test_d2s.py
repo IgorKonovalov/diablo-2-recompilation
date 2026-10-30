@@ -74,11 +74,13 @@ SAMPLES = os.path.join(WS, "samples", "d2s")                               # run
 
 # recipe -> (base save, sha256 of the built save as a run record gives it, or None)
 RECIPE_BASES = {
-    "leg71merc": (BASE_X, None),    # backlog 2026-10-27 legacy builder: hirelings 30, 33 (not run)
-    "leg71uniq": (BASE_X, None),    # backlog 2026-10-27 legacy builder: items-uniques-sets 21 (not run)
-    "leg87merc": (BASE_X, None),    # backlog 2026-10-27 legacy builder: hirelings 3, 33 (not run)
-    "leg87new": (BASE_X, None),     # backlog 2026-10-27 legacy builder: player-creation 1 (not run)
-    "leg92props": (BASE_X, None),   # backlog 2026-10-27 legacy builder: save-d2s 126 (not run)
+    "leg71act2": (BASE_X, None),    # plan 0038 H1c: leg71merc with the act II header byte (run:2026-10-27-sweep-d2s-legacy)
+    "leg71merc": (BASE_X, None),    # backlog 2026-10-27 legacy builder: hirelings 30, 33 (run:2026-10-27-sweep-d2s-legacy)
+    "leg71sock": (BASE_X, None),    # plan 0038 H1c: a socketed item with a child at version 71 (run:2026-10-27-sweep-d2s-legacy)
+    "leg71uniq": (BASE_X, None),    # backlog 2026-10-27 legacy builder: items-uniques-sets 21 (run:2026-10-27-sweep-d2s-legacy)
+    "leg87merc": (BASE_X, None),    # backlog 2026-10-27 legacy builder: hirelings 3, 33 (run:2026-10-27-sweep-d2s-legacy)
+    "leg87new": (BASE_X, None),     # backlog 2026-10-27 legacy builder: player-creation 1 (run:2026-10-27-sweep-d2s-legacy)
+    "leg92props": (BASE_X, None),   # backlog 2026-10-27 legacy builder: save-d2s 126 (run:2026-10-27-sweep-d2s-legacy)
     "calc-ama": (os.path.join(P0005, "smpama.d2s"), "527952cb6672585f2fc465a99b763fe7dd036a4f383ed4c9fa56cfa167afc944"),  # run:2026-10-16-calc
     "calc-ama-field": (os.path.join(P0005, "smpama.d2s"), "3ae9a886bad294ca3f17b3bd4695929cd3e1f8485afe729c31d18edfa70fc15a"),  # run:2026-10-16-calc
     "calc-ass": (os.path.join(P0005, "smpasn.d2s"), "d28ac300eaeac7176c59e028caa2b735cd457349ed00c9a4d181a5ccdd89820f"),  # run:2026-10-16-calc

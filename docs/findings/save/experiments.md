@@ -411,3 +411,79 @@
 - **Conclusion:** see [save/0001 § Plan 0038 batch H1a](0001-d2s-io.md#plan-0038-batch-h1a-run2026-10-27-sweep-d2s-load),
   [hirelings/0001 § Plan 0038 batch H1a](../hirelings/0001-hirelings.md#plan-0038-batch-h1a-run2026-10-27-sweep-d2s-load)
   and [player/0001 § Plan 0038 batch H1a](../player/0001-creation.md#plan-0038-batch-h1a-run2026-10-27-sweep-d2s-load).
+
+## run:2026-10-27-sweep-d2s-legacy
+
+- **Question:** (plan 0038 Phase 2, batch H1c, [inventory § 5](../../plans/0038-inventory/README.md#harness-batches))
+  the six H1a shortfall rows that waited for a save in the legacy layout: [hirelings](../../plans/0038-inventory/hirelings-README.md)
+  3, 30, 33, [player-creation](../../plans/0038-inventory/player-creation.md) 1,
+  [items-uniques-sets](../../plans/0038-inventory/items-uniques-sets.md) 21 and
+  [save-d2s](../../plans/0038-inventory/save-d2s.md) 126, plus the piece the `lane/h6b` review routed here from
+  [items-sockets-runewords](../../plans/0038-inventory/items-sockets-runewords.md) 1 (the version-71 list reader's
+  inserts, 0x005311B5 and 0x005313F0). What the legacy reader (`sub_00534020_ReadSaveLegacy`) and the version-92
+  reader do with a file in the version 71, 87 and 92 layouts of `lane/a72`'s builder, observed under the rules of the
+  `lane/a72` review ruling 3: the reader path and its return logged, and the game's version-96 write-back compared
+  field by field with the build.
+- **Setup:** the ADR-0003 harness on **slot 1** (display `:8`, prefix `workspace/wineprefix-1`), agent-driven, no owner
+  play, stock data, the shared game directory unchanged. The slot's empty saves directory was set aside as tag `h1c`
+  and restored before each launch and after the last (empty, all sha256 match).
+  - **Builds** (`python3 -I tools/d2s.py build workspace/merged/data/global/excel tools/d2s_recipes/<case>.json
+    workspace/samples/d2s-owner/smpsor-l50.d2s workspace/runtime/h1c/<case>/<Name>.d2s`; the base is the owner sample
+    `smpsor-l50.d2s`; sha256 of each build in `workspace/logs/h1c/check/builds.sha256`): the five `lane/a72` recipes
+    `leg87merc` (`Leg87Merc`, 825 bytes), `leg87new` (718), `leg71merc` (696), `leg71uniq` (835), `leg92props` (964), and
+    two added here: `leg71sock` (777: two caps with one socket and one `gsv` child each, version 71, for the insert
+    piece) and `leg71act2` (696: `leg71merc` with difficulty byte `0x81`, the header's act II). Tool-built, ADR-0013 §
+    Neutral: they back the reader's handling of the built bytes, never how a game makes them.
+  - **Logger** `tools/gdb/d2s-h1c.gdb` (`29f38445…`): `pilot.py`, `d2s-io.py`, `d2s-h1b.py` and `d2s-h1a.py` (all
+    unchanged) and the new `tools/gdb/d2s-h1c.py` (`2a731e36…`; lines `NCL`, `MOS`, `MXO`, `MCR`, `SEC`, `V71`, `OPL`,
+    `OIC`, `INS`, `UB0`, `UBR`, each with a return line `…R` at the caller's return address; addresses in its header).
+    The kept logs are from the revision that disables a return breakpoint after it fires; the first revision
+    (`dev1/`) logged one return line more per earlier call of the same function and is kept as a development log, no
+    claim rests on it.
+  - **Runner** `tools/h1c_sessions.py` (`83b37e18…`, `tools/h1a_sessions.py`'s with one build per session): the file
+    copied over the character's `.d2s`, *Single Player* (the character screen lists it), the same file again (no swap),
+    OK, Normal, wait for `PLD`, *Save and Exit* and the written file kept under `workspace/logs/h1c/<stem>-saves/<case>/`.
+    One game process per session; seeds 27301–27307.
+  - **Checker** `tools/sweep_h1c.py` (`2d101ea1…`): for each case the log's reader path (`LEG`, `SEC`, `LEGR`, `RSV`,
+    `PLD`; for 92 `RHRET`, `RSTV`, `RSKC`) and the kept write-back compared with the build (`tools/d2s.py`'s
+    `parse_legacy` or `parse`): header, stats, skills, hotkeys, mouse skills, every item, the mercenary and its items.
+- **Procedure** (`python3 -I tools/h1c_sessions.py run --slot 1 --tag h1c --cases workspace/runtime/h1c --run h1c NAME`):
+  one session per case: `leg87new` (27302), `leg87merc` (27301), `leg71merc` (27303), `leg71uniq` (27304), `leg92props`
+  (27305), `leg71sock` (27306), `leg71act2` (27307). All seven loaded (`PLD` 0) and were saved and exited.
+- **Check:** `python3 -I tools/sweep_h1c.py check workspace/merged/data/global/excel workspace/runtime/h1c
+  workspace/logs/h1c` → `workspace/logs/h1c/check/sweep-h1c-check.txt` (`3f1894dd…`): **272 comparisons over 7 cases
+  (45, 21, 36, 56, 40, 38, 36), 0 failing.** (The unrelated `tools/test_d2s.py` run: 60 tests, the one failure is
+  `test_every_recipe_has_a_base` for 49 `anim-*` recipes that are not in `RECIPE_BASES`; the seven `leg*` recipes are.)
+- **Observed:**
+  ```
+  case        file      reader path                                         write-back vs the build
+  leg87new    87, 718   LEG 87; header section only (status bit 0); NCL 0   NOT the build: level 1, stats 10/35/25/10, no skills,
+                                                                              4 hp1 + tsc + isc + sst; status 0x20; hotkeys none
+  leg87merc   87, 825   LEG 87; 8 sections + the mercenary's list + tail 0   stats, skills, hotkeys 0..9, mouse skills L R A B,
+                        MOS 87 (record 0x12, then list), MXO (1, 100000)     2 items; merc seed 12345, Id 1, name 3,
+                        -> 546210, MCR (3414, 12345, 1, 271, 0), MOSR len 46  exp 546210 = MXOR; merc list: cap, head
+  leg71merc   71, 696   LEG 71; V71 1 record (OIC, OPL); MOS 71 ("JM",       stats, skills, hotkeys 0..7, mouse L R only;
+                        12345, 3), no MXO, MCR (3, 12345, 0xFFFF, 0, 0),     cap; merc seed 12345, Id 1, name 0, exp 2649150
+                        MOSR len 8
+  leg71act2   71, 696   as leg71merc, difficulty byte 0x81                    as leg71merc: merc Id 1; written byte 0xA8 = 0x81
+  leg71uniq   71, 835   V71 6 records; UB0/UBR twice (rec+0x2C = 1,           uniques rows 0 and 1, set rows 0 and 1, the Ward's
+                        rec+0x40 = 0, 1)                                      unit seed 1234567; the jewel written magic (4)
+  leg71sock   71, 777   V71 4 records; INS twice from 0x005311BA (child 2,     children at location 6 after each parent
+                        parent 1; child 4, parent 3), INSR 1 each; none        (cap, gsv, cap, gsv)
+                        from 0x005313F5
+  leg92props  92, 964   no LEG; RHRET 0; RSTV 92/16; RSKC 92/30; 3 items       cap's stats 0, 7, 39, 83(1), 107(54), 126(1), 188(8),
+                                                                                195(3075) = the build's; the Ward; the potion
+  ```
+- **Raw data:** `workspace/logs/h1c/` (logs, marks, pilot output, screenshots, kept saves), manifest
+  `manifest.sha256` (51 lines, `38aaf22c…`; `sha256sum -c` from `workspace/logs/h1c`). The development logs of the
+  first logger revision are in `dev1/` with `dev1/manifest-dev.sha256` (43 lines, `06ec3120…`, from `dev1/`).
+- **Deviations and limits:** the builder writes no corpse, so the corpse list's reader (0x005339A0, the second
+  version-71 insert site 0x005313F0, `sub_00531390_OldItemPlaceCorpse`) read an empty list and was not exercised. Only
+  versions 71, 87 and 92 were loaded (88, 89, 90, 91 are not built). One act in the mercenary cases' game (the
+  character loads in the act the unit starts in). The item version the unique builder tested is the return of
+  0x0062A670, which was 3 for both uniques.
+- **Conclusion:** see [save/0001 § Plan 0038 batch H1c](0001-d2s-io.md#plan-0038-batch-h1c-run2026-10-27-sweep-d2s-legacy),
+  [hirelings/0001 § Plan 0038 batch H1c](../hirelings/0001-hirelings.md#plan-0038-batch-h1c-run2026-10-27-sweep-d2s-legacy),
+  [player/0001 § Plan 0038 batch H1c](../player/0001-creation.md#plan-0038-batch-h1c-run2026-10-27-sweep-d2s-legacy),
+  [items/0004 § Plan 0038 batch H1c](../items/0004-uniques-sets.md#plan-0038-batch-h1c-run2026-10-27-sweep-d2s-legacy)
+  and [items/0007 § Plan 0038 batch H1c](../items/0007-sockets-runewords.md#plan-0038-batch-h1c-run2026-10-27-sweep-d2s-legacy).
