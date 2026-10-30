@@ -286,3 +286,25 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   starts from a fresh single-player process and logs the counter at `FT0`. **P1.2: go** (static lane B, when a headless
   Ghidra frees; both in use on 2026-10-30). Its additions from this review: name `0x0064C370` and say which of its
   callers run in a frame. ADR-0022's early gate needs no re-ruling: 0052's P2 and P3a have not landed, so nothing P1.1 used has moved.
+- **2026-10-30 — P1.2 the unit events and the queue (reverser, static, `lane/r55b`; review requested).**
+  [frame/0002](../findings/frame/0002-unit-events-queue.md), [frame/experiments](../findings/frame/experiments.md)
+  (run:2026-10-30-frame-emu-2), 29 new `re/symbols.csv` rows (all functions, all `I`, subsystem `sim/frame`), new
+  tools `tools/frame_queue_emu.py`, `tools/frame_events.py`, `re/ghidra_scripts/CallersUp.java` (`tools/ghidra.sh
+  callersup`); `re/types/anim.h` (`UnitEvent` flags, `EventCtl`, `EventBlock`); static outputs under
+  `workspace/logs/r55b/static/` (manifest `99488028…`, 52 lines), emulation under `workspace/logs/r55b/emu/`
+  (manifest `b1b00fea…`, 19 lines), development runs under `workspace/logs/r55b/dev/` (three manifests, each passing
+  from `dev/`). Totals taken after merging `main` `49a5dec7` (gate green). Found: `GameRunUnitEvents` makes ten
+  walks, missiles, players, monsters, objects, items, each every-frame list (newest first: a front push) and then
+  its current slot (oldest queued first: a tail append; only records due this frame run, each freed after its run);
+  list order is queue order, not a hash order (open question 3 answered). A timed record queued in a pass never runs
+  in that frame (frame raised to current + 1); an every-frame one runs in it only if its list is walked later. A
+  freed record is never run after it (the walker's saved next is moved on); a record freed while running is freed
+  after its run; a freed unit loses every record at once; a room change touches no record. Frame −1 drops the
+  callback. The four event tables are listed per kind; the freeze drop keeps kinds 3, 4, 5, 8, 12. The pass and the
+  queue draw nothing of their own, except `EventQueueAt`'s state-54 branch for a monster's AI event
+  (`UninterruptibleEnd`, kill or hit under state 92). Inactive units keep no record but a shrine's earliest kind-5
+  frame. `0x0064C370` is `UnitRoomUnlink`: 16 server callers reach a `GameTick` pass by Ghidra's references, 2 from the
+  AI table, 1 through an unfollowed quest callback, 6 client-only, 4 unreferenced sites (frame/0001 open question 6
+  answered there by a dated note). Six emulated families `[C]` (1 400 cases, 0 mismatches, byte for byte over the
+  control, both blocks and the units; six negative controls, `cancel`'s separating only 3 cases). The window's `UE0`/
+  `UE1` sites (20, four per runner) and the queue line the § 7 estimate did not count: frame/0002 § 8.
