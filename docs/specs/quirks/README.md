@@ -3,7 +3,7 @@ spec: quirks
 status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [every reviewed spec listed under Coverage]
-consumed_by: [docs/wiki (plan 0057 Phase 4)]
+consumed_by: [docs/wiki/quirks.md]
 tags: {C: 355, I: 128, L: 3}
 updated: 2026-11-04
 ---
@@ -17,7 +17,7 @@ draw skipped because its result is thrown away, a `≤` turned into `<`, a table
 specs state these traps, scattered over their *Reimplementation notes* and step notes. This page lists them in one
 place, by class, so that a reimplementation can be checked against the whole list.
 
-This is an **index, not a spec of its own** ([plan 0057](../../plans/0057-quirks-catalogue.md), owner decision 1). Each
+This is an **index, not a spec of its own** ([plan 0057](../../plans/done/0057-quirks-catalogue.md), owner decision 1). Each
 entry restates one statement of a reviewed spec, with that statement's tag and anchors, and links the section that
 holds it. It claims nothing new. **The owning spec wins on any disagreement**: read the linked section before you
 implement an entry, because the one-line restatement leaves out the conditions the spec gives in full.

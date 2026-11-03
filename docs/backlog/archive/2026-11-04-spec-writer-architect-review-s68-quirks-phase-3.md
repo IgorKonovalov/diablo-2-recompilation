@@ -7,7 +7,7 @@ context: []
 resolution: "Reviewed 2026-11-04: accept with fixes (10); quirks promoted to reviewed; rulings in plan 0057's log; the finding's cells routed to the reverser."
 ---
 
-`lane/s68`: plan 0057 Phase 3 for its Tier A review (P1 + P3 share one). The [log entry](../../plans/0057-quirks-catalogue.md#implementation-log) lists each statement.
+`lane/s68`: plan 0057 Phase 3 for its Tier A review (P1 + P3 share one). The [log entry](../../plans/done/0057-quirks-catalogue.md#implementation-log) lists each statement.
 
 Worth reading first:
 

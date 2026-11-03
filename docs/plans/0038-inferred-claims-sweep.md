@@ -6081,7 +6081,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   code only" list rewritten; `based_on` dates of wiki/characters, wiki/saves and wiki/quests moved to 2026-11-03.
   Research-map rows of both specs updated (counts, the clause, the plan status). Open questions: none added.
 - **2026-11-03 — `lane/s63` Tier A review (architect), both entries (this plan's H6g J2 re-tag and
-  [plan 0057](0057-quirks-catalogue.md#implementation-log)'s routing entry): accept with fixes (2).** Rulings: (1) the J2
+  [plan 0057](done/0057-quirks-catalogue.md#implementation-log)'s routing entry): accept with fixes (2).** Rulings: (1) the J2
   re-tag matches [player/0001 § Plan 0038 H6g rows 2 and 29](../findings/player/0001-creation.md#plan-0038-h6g-rows-2-and-29-the-ancients-grant-session-run2026-10-30-h6ga-anc)
   and the `lane/h6ga` check's rulings: the Normal amount, the cut, both loop branches and the level re-read `[C]` with
   run:2026-10-30-h6ga-anc named in each statement; step 0, the 20M/40M immediates, the `L ≥ max` return, the cut's
