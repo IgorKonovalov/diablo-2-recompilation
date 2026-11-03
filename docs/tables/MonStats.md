@@ -1012,8 +1012,8 @@ unless a finding is cited.
     the `ai_aip_slots_differ` disagreement for that row (`reanimatedhorde6` has `aip8` 0 where records 1-5 have 30/22/15, and
     also different `aip2` and `aip3` values) ([§ 1, § 2.11](../findings/ai/0009-batch8.md)). `[I]`
   - Count guards on class references: row 82 (`InvisoSpawner`) spawns the level's variant of class 96, row 83 (`MosquitoNest`)
-    tests the cell for class 334, each behind the image's `count > id ? id : -1` select; `[C]` by
-    run:2026-11-03-ai-cat-emu-8 ([§ 2.1, § 2.2](../findings/ai/0009-batch8.md)). The imp callback `AiImpNearCb` (rows 113, 115) matches `MonBaseId` 492
+    tests the cell for class 334, each behind the image's `count > id ? id : -1` select, `[I]` ([§ 2.1](../findings/ai/0009-batch8.md)); the
+    map's calls with the class as argument are `[C]` by run:2026-11-03-ai-cat-emu-8 ([§ 2.1, § 2.2](../findings/ai/0009-batch8.md)). The imp callback `AiImpNearCb` (rows 113, 115) matches `MonBaseId` 492
     (`imp1`) behind the same guard, `[I]` ([§ 2.12](../findings/ai/0009-batch8.md)).
 
 ## Open questions
