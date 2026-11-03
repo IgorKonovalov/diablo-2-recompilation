@@ -6102,3 +6102,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   `fd2ca68a` gives the same error; routed to the spec-writer,
   [2026-11-03-architect-spec-writer-quirks-catalogue-coverage-row](../backlog/archive/2026-11-03-architect-spec-writer-quirks-catalogue-coverage-row.md).
   Gate green. Fixes (2): overclaim 2.
+
+- 2026-11-03 (`lane/a65`, archivist): `RECIPE_BASES` row for `player-h6g-anc25` (H6g, `lane/h6ga`) added, base `BASE_X`, built-save sha256
+  `63ea2a2e...` equal to the installed-save hash in the `run:2026-10-30-h6ga-anc` log header (the manifest lists logs, not the save; the
+  header does), so the reverser half of the entry was not needed; `tools/test_d2s.py` 61 tests pass. Entry closed.
