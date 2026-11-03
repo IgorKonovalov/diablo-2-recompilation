@@ -214,7 +214,7 @@ Its verdicts therefore often mean "1.14d differs", and the spec must say so.
 | `0x0057E860` | `MERC_AddExp` | adds 2·gain while below the owner's level (and `ExpMaxLevel(0) − 1`); levels up to at most `ExpMaxLevel(0) − 1` | C |
 | `0x00579C00` | `MERC_Resurrect` | resurrection at an NPC | C |
 | `0x005E4D30` | `MERCAI_PickSkill` | combat skill choice from `DefaultChance`, `Chance`, `ChancePerLvl` (named only) | I |
-| `0x00533C70` | `sub_00533C70_ReadMercOldSave` | the older save versions' mercenary reader | I |
+| `0x00533C70` | `sub_00533C70_ReadMercOldSave` | the older save versions' mercenary reader (both forms, run:2026-10-27-sweep-d2s-legacy) | C |
 | `0x00533BF0` | `sub_00533BF0_MercExpFromOldSave` | experience conversion for save versions below 90 | I |
 | `0x00574BD0` | `PETS_GetInfo` | a pet's 12-byte info by unit | I |
 | `0x00574EC0` | `PETS_GetUnitOfType` | first pet of a type (dead ones only when asked) | I |
@@ -541,7 +541,9 @@ With L = 15 and `Level` 67, `d = −52`: strength `110 + (10·−52) ÷8 = 110 �
 
 The pre-1.07 save reader `sub_00533C70_ReadMercOldSave` does the same, after converting experience for versions below
 90 (`sub_00533BF0_MercExpFromOldSave`); version 71 saves carry no Id and are created with id `0xFFFF`. [I]
-(fn:sub_00533C70_ReadMercOldSave@0x00533C70)
+(fn:sub_00533C70_ReadMercOldSave@0x00533C70) *(Plan 0038 batch H1c: met for 87 and 71, the conversion called with the
+record's Id and experience and its result written back, the 71 call made with `0xFFFF`; the cutoff and the act
+dependence stay `[I]`, [§ Plan 0038 batch H1c](#plan-0038-batch-h1c-run2026-10-27-sweep-d2s-legacy).)*
 
 ### 8. MonStats class and the E2 level path
 
@@ -821,7 +823,46 @@ with the counts of `workspace/logs/h1a/check/sweep-h1a-check.txt`.
   `MercExpFromOldSave`) **shortfall.** No save in the version 71 or 87 layout was built (no builder, no format doc;
   archivist entry [2026-10-27-reverser-archivist-h1a-d2s-legacy-layouts-and-parser-gaps](../../backlog/archive/2026-10-27-reverser-archivist-h1a-d2s-legacy-layouts-and-parser-gaps.md)).
   The one legacy load, a version-96 body labelled 91, was refused by `sub_00534020_ReadSaveLegacy` (14) before any
-  mercenary step.
+  mercenary step. *(Plan 0038 batch H1c: the legacy builds were loaded; row 3 raised, 30 and 33 raised in part,
+  [§ Plan 0038 batch H1c](#plan-0038-batch-h1c-run2026-10-27-sweep-d2s-legacy).)*
+
+## Plan 0038 batch H1c (run:2026-10-27-sweep-d2s-legacy)
+
+Harness batch H1c of [plan 0038](../../plans/0038-inferred-claims-sweep.md) took the three hirelings rows that H1a left as
+shortfalls ([inventory](../../plans/0038-inventory/hirelings-README.md), rows 3, 30, 33). Run record:
+[save/experiments](../save/experiments.md#run2026-10-27-sweep-d2s-legacy); every count below is from its
+`check/sweep-h1c-check.txt` (`tools/sweep_h1c.py check`, 272 comparisons over 7 cases, 0 failing). The loads are of
+tool-built saves (`leg87merc`, `leg71merc`, `leg71act2`; ADR-0013 § Neutral), observed under the `lane/a72` review
+ruling 3: the reader path and its return logged, the game's version-96 write-back compared with the build.
+
+- **hirelings 3** (saves older than version 92 go through `ReadMercOldSave`, both forms) **raised.** [C] The version-87
+  file reached `sub_00533C70_ReadMercOldSave` once (`MOS`: version 87, 102 bytes left, the 0x12-byte record; returned 0,
+  length written 46 = 0x12 + the mercenary's item list of 28) and the version-71 file once (`MOS`: version 71, the
+  record `JM`, seed 12345, name 3; returned 0, length 8). The 87 record's seed (12345) and Id (1) were passed to
+  `MERC_Create` (`MCR`: name 3414, seed 12345, Id 1, `+0x08` 271, dead 0) and the write-back held mercenary seed 12345,
+  Id 1, name 3 (the name word minus the Rogue's record base 3411), dead 0, and the built cap equipped on the head (body
+  location 1); the 71 record's seed and name went to `MERC_Create` as (3, 12345, `0xFFFF`, 0, 0) and the write-back held
+  seed 12345. The two forms are told apart by the version (a different length and no `MXO` for 71).
+  (fn:sub_00533C70_ReadMercOldSave@0x00533C70, fn:MERC_Create@0x005774F0, run:2026-10-27-sweep-d2s-legacy)
+- **hirelings 30** (a version-71 save has no Id: `MERC_Create` is called with `0xFFFF`, which picks the act's first row)
+  **raised in part.** [C] `MERC_Create` was called with the Id `0xFFFF` for both version-71 files (`leg71merc`: header
+  difficulty byte `0x80`, Act I; `leg71act2`: `0x81`, Act II), and the write-back held mercenary Id **1** both times
+  (`MCRR` returned a unit). [I] "The act's first row": both files gave the same Id, so the run does not show the row
+  following the file's act. The act the lookup `NextByActDiff(act, difficulty)` used is the owner's at the call, which is
+  not logged (the file's act byte was written back unchanged as `0x81`).
+  (fn:MERC_Create@0x005774F0, run:2026-10-27-sweep-d2s-legacy)
+- **hirelings 33** (old saves convert experience; v71 has no Id) **raised in part.** [C] Version 87:
+  `sub_00533BF0_MercExpFromOldSave` was called once with (Id 1, experience 100 000) and returned **546 210**, which the
+  write-back held as the mercenary's experience; the call changed the value the file held. [C] Version 71: no call to it
+  (`MXO` absent) and no Id in the record (hirelings 30). The experience the 71 mercenary was written with, 2 649 150, is
+  not in the file (the record holds seed and name only). [I] The cutoff (a version of 89 or below converts, 90 and above
+  does not: 0x00533D4F) is not separated: the builder writes 71 and 87 only, so no file at 88–91 was loaded, and a
+  version-92 file goes to the other reader (`D2S_ReadMercHeader`). The conversion's arithmetic is not modelled here.
+  (fn:sub_00533BF0_MercExpFromOldSave@0x00533BF0, 0x00533D4F, run:2026-10-27-sweep-d2s-legacy)
+
+**Re-tag for [hirelings § H](../../specs/hirelings/README.md#h-the-mercenary-from-a-save-d2s_readmercheader-merc_create):**
+row 3 `[C]`; row 30 `[C]` for the Id `0xFFFF` and the result 1 at Act I, `[I]` for "the act's first row"; row 33 `[C]`
+for the version-87 conversion and the version-71 absence, `[I]` for the cutoff.
 
 ## Plan 0038 batch H6f (run:2026-10-27-sweep-hirelings)
 

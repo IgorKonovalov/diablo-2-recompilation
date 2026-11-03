@@ -6,7 +6,7 @@ status: done
 context:
   - ../../findings/skills/0013-druid.md
   - ../../findings/skills/experiments.md
-  - ../../plans/0046-skills-function-catalogue.md
+  - ../../plans/done/0046-skills-function-catalogue.md
 resolution: "Reviewed 2026-10-21: accept with fixes (7: overclaim 3, misread 1, omission 3); COLL_WHTest run emulated admitted, sor unaffected; the two draws [C] up to their boundaries; entries 145/146 maps stand, 146's re-seed [I]; register arguments admitted; weak controls enough (sd_first's class restated); dated notes sound. Plan 0046 log, lane/p46m10 review. The ass batch may start."
 ---
 

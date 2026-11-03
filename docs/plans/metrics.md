@@ -418,6 +418,63 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-10-30 | lane/a54 | 0052 backlog link + 0054 P0 | archivist | 122 746 | 47 | 8 | — (no Ghidra, no harness) | accept (Tier B check) | 0 |
 | 2026-10-30 | lane/a54 check | 0054 P0 | architect-check | 70 642 | 20 | 2 | — (Tier B check, no harness) | accept | — |
 | 2026-10-30 | lane/p50g | 0050 | reverser-harness | 0 | 0 | 0 | 1 | checkpoint, no review | — |
+| 2026-10-30 | lane/h1c | 0038 H1c | reverser-harness | 274 025 | 101 | 52 | slot 1 (7 kept sessions), no Ghidra; Sonnet | accept with fixes (Tier B check) | 1: overclaim 1 |
+| 2026-10-30 | lane/h1c check | 0038 H1c | architect-check | 75 916 | 12 | 2 | — (Tier B check, no harness) | accept with fixes | 1: overclaim 1 (NewCharLegacy symbol row raised to C with the unmet PlayerLoad caller half in its description; marked [I]) |
+| 2026-10-30 | lane/r52c | 0052 P1.2 (batch 2) | reverser-static | 333 494 | 98 | 26 | — (static, Ghidra copy ghidra-r52c) | accept with fixes (Tier B check) | 1: omission 1 |
+| 2026-10-30 | lane/r52c check | 0052 P1.2 b2 | architect-check | 76 765 | 21 | 3 | — (Tier B check, no harness) | accept with fixes (1) | omission 1 |
+| 2026-10-30 | `lane/r55` | 0055 P1.1 | reverser-static | 356 838 | 196 | 37 | — (static, Ghidra copy ghidra-r55) | accept with fixes (Tier A) | 5: omission 2, overclaim 1, wrong anchor 1, miscount 1 |
+| 2026-10-30 | `lane/r55` review | 0055 P1.1 | architect-review | 138 348 | 61 | 11 | — (Tier A, objdump, no Ghidra, no harness) | accept with fixes; rulings: Q2 pilot tests set, Q1 floors confirmed (2 windows per scene), ai/0001 routed by backlog, one game with g_HitClassCounter a process input; P1.2 go | 5: omission 2 (0x0064C370 unlink of the updated list; breakpoint stops beyond lines), overclaim 1 (g_HitClassCounter behaviour coupling scoped), wrong anchor 1 (lifecycle.h clock-counter comment), miscount 1 (main merged not named) |
+| 2026-10-30 | lane/a7b | 0052 backlog + 0050 P2 RECIPE_BASES | archivist | 101 370 | 40 | 6 | — (no Ghidra, no harness) | accept (Tier B check) | 0 |
+| 2026-10-30 | lane/a7b check | 0052 backlog + 0050 P2 RECIPE_BASES | architect-check | 59 309 | 13 | 3 | — (Tier B check, no harness) | accept | — |
+| 2026-10-30 | lane/a7b audit | 0052 backlog + 0050 P2 RECIPE_BASES | architect-review | 111 770 | 43 | 8 | — (Tier A audit, no Ghidra, no harness) | accept with fixes | audit of lane/a7b: 5: omission 2 (register-site list missing 0x005E817B and the curse twin 0x005C352E; ai/0001 'seven state rows reuse' overcount written around with no entry, reverser entry filed), stale cross-reference 3 (MonAI 'only +8 has a meaning' vs ai/0001 MonAiRow; § Batches 'state rows in no batch' vs 0052 catalogue batches; open questions 1 and 3 narrowed); RECIPE_BASES 49 rows clean; Tier B missed all 5 (1 seen as a nit), none reject-grade |
+| 2026-10-30 | lane/p53e | 0053 P3 close, P4 | architect | 92 694 | 28 | 5 | — (no Ghidra, no harness) | trial settled: ADR-0023 accepted; ADR-0024 proposed for the owner | — |
+| 2026-10-30 | lane/a7c | backlog: ai/0003 readers, d2s corpse key | archivist | 100 903 | 33 | 5 | — | accept with fixes (Tier B check) | 4 |
+| 2026-10-30 | lane/a7c check | backlog: ai/0003 readers, d2s corpse key | architect-check | 83 269 | 20 | 3 | — | accept with fixes | 4: misread 1, omission 2, overclaim 1 |
+| 2026-10-30 | lane/plans56 | 0056 (harness runner efficiency), draft | architect | 72 176 | 24 | 4 | — (no Ghidra, no harness) | draft; for the owner: 0056 Q1-7 | — |
+| 2026-10-30 | lane/hx | harness efficiency | reverser-harness | 92 715 | 49 | 6 | no slot (static), no Ghidra | — | — |
+| 2026-10-30 | lane/hx check | harness efficiency fixes | architect-check | 63 106 | 15 | 2 | — (Tier B check, no harness) | accept | — |
+| 2026-10-30 | `lane/s38p` | 0038 P3 player/creation (S3a, S3b, H1a, H1c, H6g, h6gs) and the H1c re-tags (hirelings 3/30/33, save/d2s, uniques-sets 21) | spec-writer | 254 654 | 113 | 17 | — (no slot, no Ghidra, no harness; tokens and wall unknown to the lane, 0) | accept with fixes (rulings: rows 3/30's split stands; F2's column-0 clamp stays `[I]`, S3b's finding sentence routed for narrowing; row 1 as two rows; D3b's legacy-reader `[C]` from save/0001 § H1c needs no ledger row; player/creation C 121 / I 41 / L 1) | 10: overclaim 4, under-claim 1, miscount 1, omission 1, stale cross-reference 2, other 1 (J3's and J5's untagged unmet lines; hirelings' versions-before-92 scope; save/d2s's bound at 93; J3's stored amount; four deaths for five; finding disagreements unrouted; wiki/saves' corpse share; quests/progression's cap and altar wording; `+0x40` label) |
+| 2026-10-30 | `lane/s38p` review | 0038 P3 player/creation and the H1c re-tags | architect-review | 214 981 | 77 | 11 | — (static, objdump, no Ghidra, no harness) | gave accept with fixes | — (on the lane row; F2 clamp kept `[I]`; reverser entry for player/0001 counts and S3b clamp; quests/progression word-39 wording) |
+| 2026-10-30 | lane/plans57 | plans 0057-0062 drafts; ADR-0024 accepted; 0056 approved | architect | 159 866 | 64 | 10 | — | drafts; for the owner: 0057 Q1-5, 0058 Q1-4, 0059 Q1-5, 0060 Q1-5, 0061 Q1-4, 0062 Q1-3 | — |
+| 2026-10-30 | `lane/p56a` | 0056 P1 | reverser-harness | 226 708 | 80 | 15 | slot 2 (two smoke sessions, 19 comparisons 0 failing each), no Ghidra; two agents (170 376 + 56 332 tokens, 61 + 19 calls, 11 + 4 min) | accept with fixes (Tier B check) | 2: stale cross-reference 1, omission 1 |
+| 2026-10-30 | lane/r52d | 0052 P1.2 (batch 3) | reverser-static | 341 050 | 136 | 32 | — (static, Ghidra copy ghidra-r52d) | accept with fixes (Tier B check) | 1: overclaim 1 |
+| 2026-10-30 | lane/r52d check | 0052 P1.2 b3 | architect-check | 78 463 | 25 | 3 | — (Tier B check, no harness) | accept with fixes (1) | overclaim 1 |
+| 2026-10-30 | lane/a7d | 0052 P1.2 | archivist | 67 466 | 18 | 2 | — (no Ghidra, no harness) | accept with fixes (Tier B check) | 1: misread 1 |
+| 2026-10-30 | lane/a7d check | 0052 P1.2 b3 tables | architect-check | 74 138 | 16 | 2 | — (Tier B check, no harness) | accept with fixes (1) | misread 1 |
+| 2026-10-30 | lane/rfix | backlog (0052, 0055, 0038) | reverser-static | 157 089 | 107 | 14 | — (objdump, no Ghidra, no harness) | accept with fixes (Tier B check) | 3: stale cross-reference 2, omission 1 |
+| 2026-10-30 | lane/rfix check | backlog (0052, 0055, 0038) | architect-check | 74 900 | 15 | 2 | — (Tier B check, no harness) | accept with fixes (3) | stale cross-reference 2, omission 1 |
+| 2026-10-30 | lane/appr2 | plans 0057-0062 approved; ADR-0025, ADR-0026 accepted | architect | 105 927 | 32 | 5 | — | recorded: owner approval of 0057-0062, scope ADRs 0025/0026, roster limit (draft but not start) | — |
+| 2026-10-30 | `lane/r55b` | 0055 P1.2 | reverser-static | 369 791 | 145 | 39 | — (static, Ghidra copy ghidra-r55b) | accept with fixes (Tier A) | 9: under-claim 1, overclaim 2, omission 3, stale cross-reference 3 |
+| 2026-10-30 | `lane/r55b` review | 0055 P1.2 | architect-review | 178 764 | 87 | 13 | — (Tier A, objdump, no Ghidra) | accept with fixes (9) | under-claim 1, overclaim 2, omission 3, stale cross-reference 3 |
+| 2026-10-30 | `lane/a59` | 0059 P1 | archivist | 114 224 | 32 | 11 | — (no Ghidra, no harness) | accept with fixes (Tier B check) | 2: overclaim 2 |
+| 2026-10-30 | lane/a59 check | 0059 P1 | architect-check | 61 979 | 15 | 4 | — (Tier B check, no harness) | accept with fixes (2) | overclaim 2 |
+| 2026-10-30 | lane/p46h | 0046 P2 | reverser-harness | 300 391 | 144 | 131 | slot 2, no Ghidra (r2 for one function) | accept with fixes (Tier B check) | 2: omission 1, stale cross-reference 1 |
+| 2026-10-30 | lane/p46h check | 0046 P2 | architect-check | 76 554 | 18 | 2 | — (Tier B check, no harness) | accept with fixes (2) | omission 1, stale cross-reference 1 |
+| 2026-10-30 | lane/p56a check | 0056 P1 | architect-check | 80 100 | 15 | 2 | — (Tier B check, no harness) | accept with fixes (2) | 2: stale cross-reference 1, omission 1 |
+| 2026-10-30 | lane/s57 | 0057 P1 | spec-writer | 268 082 | 67 | 20 | — | accept with fixes (Tier A) | 17: overclaim 2, misread 2, omission 10, wrong anchor 2, other 1 |
+| 2026-10-30 | lane/s57 review | 0057 P1 | architect-review | 203 571 | 80 | 10 | — (Tier A, no Ghidra, no harness) | accept with fixes (17) | overclaim 2, misread 2, omission 10, wrong anchor 2, other 1 |
+| 2026-10-30 | `lane/a59b` | 0059 P2 | archivist | 140 035 | 65 | 14 | — (no Ghidra, no harness) | accept with fixes (Tier B check) | 2: omission 1, overclaim 1 |
+| 2026-10-30 | lane/a59b check | 0059 P2 | architect-check | 78 893 | 33 | 9 | — (Tier B check, no harness) | accept with fixes (2) | omission 1, overclaim 1 |
+| 2026-10-30 | `lane/r52e` | 0052 P1.2 (batch 4) | reverser-static | 393 719 | 148 | 32 | — (static, Ghidra copy ghidra-r52e) | accept with fixes (Tier B check) | 2: omission 1, stale cross-reference 1 |
+| 2026-10-30 | `lane/r52e` check | 0052 P1.2 (batch 4) | architect-check | 99 179 | 29 | 5 | — (Tier B check, no harness) | accept with fixes (2) | 2: omission 1, stale cross-reference 1 |
+| 2026-10-30 | lane/p56b | 0056 P2 | reverser-harness | 149 474 | 67 | 18 | slot 2 (3 dev sessions, 1 kept probe run of 5 games), no Ghidra | accept with fixes (Tier B check) | 4: overclaim 1, omission 3 |
+| 2026-10-30 | lane/p56b check | 0056 P2 | architect-check | 92 133 | 29 | 4 | — (Tier B check, no harness) | accept with fixes | overclaim 1, omission 3 |
+| 2026-10-30 | lane/s46 | 0046 P3 | spec-writer | 288 306 | 90 | 19 | — | accept with fixes (Tier A) | 40: misread 10, overclaim 11, omission 15, under-claim 1, wrong anchor 2, stale cross-reference 1 |
+| 2026-10-30 | lane/s46 review | 0046 P3 | architect-review | 210 175 | 67 | 11 | — (two read-only helper agents, 315 379 tokens) | gave accept with fixes | — (on the lane row; boundary overclaims in §§ C–F and N; draw gates of handlers 20/21/30 and ItemTarget 2 restored; wiki re-seed edits kept; P4 released) |
+| 2026-10-30 | `lane/a60` | 0060 P0 + golden-v1 logs | archivist | 173 121 | 74 | 13 | — (no Ghidra, no harness) | accept with fixes (Tier B check) | 1: stale cross-reference 1 |
+| 2026-10-30 | lane/a60 check | 0060 P0 | architect-check | 74 774 | 22 | 3 | — (Tier B check, no harness) | accept with fixes | stale cross-reference 1 |
+| 2026-10-30 | lane/w46 | 0046 P4 | wiki | 75 536 | 16 | 2 | — (no Ghidra, no harness) | accept with fixes (Tier B check) | 3: misread 2, stale cross-reference 1 |
+| 2026-10-30 | lane/w46 check | 0046 P4 | architect-check | 97 607 | 32 | 4 | — | accept with fixes | misread 2, stale cross-reference 1 |
+| 2026-10-30 | lane/r55c | 0055 P1.3 | reverser-static | 372 829 | 182 | 46 | — (static, Ghidra copy ghidra-r55c) | accept with fixes (Tier A) | 8: overclaim 1, misread 1, omission 5, stale cross-reference 1 |
+| 2026-10-30 | `lane/r55c` review | 0055 P1.3 | architect-review | 218 756 | 112 | 15 | — (Tier A, the P1 review, objdump, no Ghidra) | accept with fixes (8) | overclaim 1, misread 1, omission 5, stale cross-reference 1 |
+| 2026-10-30 | lane/a62 | 0062 P2 + two closures | archivist | 155 083 | 66 | 10 | — (no Ghidra, no harness) | accept with fixes (Tier B check) | 3: misread 1, omission 1, overclaim 1 |
+| 2026-10-30 | lane/a62 check | 0062 P2 | architect-check | 73 215 | 25 | 2 | — (Tier B check, no harness) | accept with fixes | misread 1, omission 1, overclaim 1 |
+| 2026-10-30 | `lane/r52f` | 0052 P1.2 (batch 5) | reverser-static | 359 961 | 149 | 30 | — (static, Ghidra copy ghidra-r52f) | accept (Tier B check) | 0 |
+| 2026-10-30 | `lane/r52f` check | 0052 P1.2 (batch 5) | architect-check | 81 518 | 32 | 3 | — | accept | 0 |
+| 2026-10-30 | lane/h6ga | 0038 H6g rows 2/29 | reverser-harness | 154 310 | 79 | 24 | slot 2 (2 kept sessions, 1 dev), no Ghidra | accept with fixes (Tier B check) | 5: overclaim 1, other 2, stale cross-reference 2 |
+| 2026-10-30 | lane/h6ga check | 0038 H6g rows 2/29 | architect-check | 103 312 | 33 | 3 | — | accept with fixes (5) | 5: overclaim 1, other 2, stale cross-reference 2 |
+| 2026-10-30 | lane/s59 | 0059 P3 | spec-writer | 102 463 | 28 | 5 | — (no Ghidra, no harness) | accept with fixes (Tier A) | 15: misread 5, wrong anchor 5, under-claim 3, overclaim 1, omission 1 |
+| 2026-10-30 | lane/s59 review | 0059 P3 | architect-review | 128 940 | 55 | 8 | — (Tier A, no Ghidra, no harness) | accept with fixes (15) | misread 5, wrong anchor 5, under-claim 3, overclaim 1, omission 1 |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not

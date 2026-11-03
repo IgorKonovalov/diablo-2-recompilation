@@ -6,7 +6,7 @@ status: done
 context:
   - ../../findings/skills/0017-monster-8b.md
   - ../../findings/skills/experiments.md
-  - ../../plans/0046-skills-function-catalogue.md
+  - ../../plans/done/0046-skills-function-catalogue.md
 resolution: "Reviewed 2026-10-21 (architect): accept with fixes (4: misread 2, omission 1, other 1); see the lane/p46m14 review entry in plans/0046."
 ---
 

@@ -112,7 +112,7 @@ branches § 11 and the summary list as not exercised stay `[I]` in the text.
 | `0x00611860` | `EXP_LevelFromExp` | count of thresholds ≤ exp, capped at MaxLvl | C |
 | `0x00613E60` | `EXP_GetRatio` | `ExpRatio` of level L; L ≤ 0 → the MaxLvl row's; L > `record[0].perClass[0]` → 0 | C |
 | `0x00569F80` | `sub_00569F80_NewCharFromStub` | the new-character path from a stub | I |
-| `0x00532590` | `sub_00532590_NewCharLegacy` | the same steps, reached from the version < 92 reader and `sub_005345A0_PlayerLoad` | I |
+| `0x00532590` | `sub_00532590_NewCharLegacy` | the same steps, reached from the version < 92 reader (run:2026-10-27-sweep-d2s-legacy; the call from `sub_005345A0_PlayerLoad` stays `[I]`, not met) | C |
 | `0x00569F20` | `sub_00569F20_PlayerUnitInit` | client link, name, game-seed step, mode 1, player data `+0x50..+0x5C` = 0 | C |
 | `0x00532520` | `sub_00532520_PlayerUnitInitLegacy` | the same, for `0x00532590` | I |
 | `0x005348C0` | `sub_005348C0_PlayerUnitAlloc` | `SUnitCreate`'s player branch: inventory, skill list, stat list | I |
@@ -687,13 +687,18 @@ S3B player addskill_sites=12 charstats_records=7 charstats_repeat_or_attack=0 pi
   no kept log covers. **Route:** spend two points on one class skill under `player.gdb` (an `AddSkill` line with the
   entry's level before and after), and, with H6g's level-98 save, one skill to its maximum.
   (fn:SKILLS_AddSkill@0x00647110, fn:SKILLS_GetMaxLevel@0x004AA8B0, struct:CharStatsRec+0xAE)
-- **player/creation 21** (L366) **raised.** [C] `MaxLvl(class)` is row 0, column `c` of the experience table, with `c` 0
-  for a class outside 0..6: `ExpMaxLevel` reads `[g_pExperience + 4c]` (0x00611854; column 0 at 0x00611847). Second code
+- **player/creation 21** (L366) **raised.** [C] `MaxLvl(class)` is row 0, column `c` of the experience table, for a
+  class `c` in 0..6. [I] For a class outside 0..6 `c` is 0 (see the correction below): `ExpMaxLevel` reads `[g_pExperience + 4c]` (0x00611854; column 0 at 0x00611847). Second code
   path: `EXP_LevelFromExp` loads the same cell with the same clamp as its loop bound (0x00611885, `cmp eax, esi` at
   0x00611895), and that function is `[C]` by run:2026-10-16-player (levels 1–98 from the total experience); `EXP_GetRatio`
   compares `L` with row 0, column 0 (0x00613E81). Data: row 0 (`MaxLvl`) holds 99 for all seven classes in the `.txt`
   and the `.bin`. (fn:sub_00611830_ExpMaxLevel@0x00611830, fn:EXP_LevelFromExp@0x00611860, fn:EXP_GetRatio@0x00613E60,
   data:g_pExperience@0x0096C8A8, tbl:Experience.txt:Amazon, run:2026-10-16-player)
+  - *Correction (2026-10-30, lane/rfix; lane/s38p review, player/creation F2 ruling):* the `[C]` first read "with `c`
+    0 for a class outside 0..6". That clamp branch is never reached: no class-7 player exists (§ Plan 0038 batch H1a,
+    rows 11, 20 and 34), and `EXP_LevelFromExp`'s "same clamp" is a second reading of the same pattern, not a case
+    that runs the branch. So the `[C]` covers the cell for classes 0..6; the column-0 clamp stays `[I]` (0x00611847,
+    fn:sub_00611830_ExpMaxLevel@0x00611830).
 - **player/creation 36** (L605) **raised.** [C] With stock data the shift count of G4's overflow bound is 10 or 11. Data
   behaviour over every row: `ExpRatio` takes 31 values from 5 to 1024 in the 100 level rows and is 10 in row 0, so
   `(r >> 10) + 10` is 11 for the 70 rows with 1024 and 10 for the other 30, and 10 for `r` = 0 (a level above `MaxLvl`).
@@ -730,7 +735,9 @@ run, so every statement here is inferred.
 - [I] The grant itself (§ 7): 1 400 000, 20 000 000 or 40 000 000 by difficulty, cut to `T(L + 1) − T(L)` (the
   width of level L + 1; [§ Plan 0038 H6g shortfalls](#plan-0038-h6g-shortfalls-static-read-2026-10-30)), then filled
   level by level with `PLAYER_LevelUp`. So the Ancients give at most one level. Each tested player is marked done (bit 0)
-  before the grant, so a player can get it once per difficulty. (fn:sub_0058C5C0_ExpGrantCapped@0x0058C5C0)
+  before the grant, so a player can get it once per difficulty. (Normal amount and cut `[C]` since run:2026-10-30-h6ga-anc,
+  [§ Plan 0038 H6g rows 2 and 29](#plan-0038-h6g-rows-2-and-29-the-ancients-grant-session-run2026-10-30-h6ga-anc).)
+  (fn:sub_0058C5C0_ExpGrantCapped@0x0058C5C0)
 
 ### Death loss and the corpse: 75 % comes back
 
@@ -894,7 +901,28 @@ saves swapped in after the character screen read its list) and the counts of `wo
   `EXP_GetThreshold` callers moves row 20 back to (b). (fn:EXP_GetThreshold@0x00611800)
 - **Row 1** (the version < 92 reader reaches the same steps through `sub_00532590_NewCharLegacy`) **shortfall.** No
   save in the legacy layout was built; the one legacy load (a version-96 body labelled 91) was refused (14) by
-  `sub_00534020_ReadSaveLegacy`.
+  `sub_00534020_ReadSaveLegacy`. *(Plan 0038 batch H1c: `leg87new` loaded; row 1 raised in part,
+  [§ Plan 0038 batch H1c](#plan-0038-batch-h1c-run2026-10-27-sweep-d2s-legacy).)*
+
+## Plan 0038 batch H1c (run:2026-10-27-sweep-d2s-legacy)
+
+Harness batch H1c of [plan 0038](../../plans/0038-inferred-claims-sweep.md), row 1 of
+[inventory player-creation](../../plans/0038-inventory/player-creation.md) (H1a's shortfall). Run record: [save/experiments](../save/experiments.md#run2026-10-27-sweep-d2s-legacy);
+counts from its `check/sweep-h1c-check.txt` (272 comparisons over 7 cases, 0 failing). The load is of a tool-built save
+(`leg87new`: version 87, header status bit 0 set, the rest of the file a full character; ADR-0013 § Neutral).
+
+- **Row 1** (the version < 92 reader reaches the same steps through `sub_00532590_NewCharLegacy`) **raised in part.**
+  [C] The legacy reader (`LEG` version 87, 718 bytes) called its header reader once, which returned 0 with the new-character
+  flag, and no other section: the log has no `SEC` line after `header`. `sub_00532590_NewCharLegacy` was then called
+  once (`NCL`) and returned 0 (`NCLR`), the reader returned 0 (`LEGR`), `PlayerLoad` 0 (`PLD`). The character was built
+  fresh, not from the file: seven items were created (`B13S` seven times: 4 `hp1` in the belt, `tsc`, `isc` in the
+  inventory, `sst` on the right hand), and the write-back held level 1, strength/energy/dexterity/vitality 10/35/25/10,
+  no skill, the status word `0x20` (the file's `0x21` with bit 0 cleared), all 16 hotkeys empty, while the build held level 30,
+  60/60/25/100, one point in six skills and two items. So the stats, skills and items of the file are not read when
+  the header's bit 0 is set. [I] "The same steps" as the `PlayerLoad` path: the H1a `stubok` stub (class 4) wrote four
+  `hp1`, `tsc`, `isc` and its class gear by the other path, the same structure, but `NCL` was not logged there and the
+  caller at 0x00534607 (`sub_005345A0_PlayerLoad`) was not met, so that path's equality with `NewCharLegacy` is the static reading
+  only. (fn:sub_00532590_NewCharLegacy@0x00532590, fn:sub_00534020_ReadSaveLegacy@0x00534020, 0x00534098, run:2026-10-27-sweep-d2s-legacy)
 
 ## Plan 0038 batch H3b (run:2026-10-27-sweep-data-load)
 
@@ -974,13 +1002,15 @@ calls reproduced, 0 failed) and `tools/sweep_h6g.py check` (**0 mismatches**, `w
   at each (`SKX`, 3 cases); the other callers only appended (467 cases). **Remainder `[I]`:** the
   at-the-maximum side: a click on Frost Nova at level 20 sent no request (the client refuses it), so the add never
   saw a full entry. (fn:SKILLS_AddSkill@0x00647110, fn:PLAYER_SpendSkillPoint@0x00570080, run:2026-10-27-sweep-player)
-- **Rows 3, 30** (the death experience loss) **raised in part.** [C] `PLAYER_DeathExpLoss` reproduced in four deaths on
-  three difficulties: Normal (`deathn`, pen 0): loss 0, corpse 0; Nightmare (`deathnm`, pen 5, span 1 964 461): the
+- **Rows 3, 30** (the death experience loss) **raised in part.** [C] `PLAYER_DeathExpLoss` reproduced in five deaths, four
+  cases, on three difficulties: Normal (`deathn`, pen 0): loss 0, corpse 0; Nightmare (`deathnm`, pen 5, span 1 964 461): the
   loss 98 223 would take the experience below `T(39)`, so the kept amount is the clamp: 1 000 (17 271 791 - 17 270 791),
   the new experience `T(39) + 1`, the corpse share 750; Hell (`deathh`, pen 10, span 4 650 593): loss 465 059, new
   49 534 941, corpse share 348 794 (465 059 x 75 / 100, truncated); and a second Nightmare death at `T(39) + 1`: kept
   1, the experience unchanged, share 0. The gate (`DG0`) was entered with a monster killer of type 1 and no owner
-  every time (5). (fn:PLAYER_DeathExpLoss@0x005359F0, fn:sub_00535AB0_PlayerDeathExpLossGate@0x00535AB0,
+  every time (5). *Correction (2026-10-30, lane/rfix; lane/s38p review):* this bullet first read "four deaths on three
+  difficulties"; the kept logs hold five deaths, four cases: `deathn`, `deathh`, the first `deathnm` log and the two deaths of r5, the Nightmare clamp
+  case twice (the first `deathnm` death and r5's first); the `DG0` count is 5. (fn:PLAYER_DeathExpLoss@0x005359F0, fn:sub_00535AB0_PlayerDeathExpLossGate@0x00535AB0,
   fn:CLIENT_SetDeathExpLoss@0x005391E0, fn:PLAYER_CorpseCreate@0x0057F700, fn:CLIENT_GetDeathExpLoss@0x00539210,
   tbl:DifficultyLevels.txt:DeathExpPenalty, run:2026-10-27-sweep-player) **Remainder `[I]`:** the corpse pickup, the share going back to the
   owner. Four `deathnm` sessions (r2 to r5, the last kept) walked from the town to the corpse; the character died
@@ -1000,6 +1030,7 @@ calls reproduced, 0 failed) and `tools/sweep_h6g.py check` (**0 mismatches**, `w
   --boss-cls 540,541,542`): the first never found warp 76 in level 118 (40 hops, "no warp 76"); the second reached
   level 120 but `objop` found no object of class 546 ("level explored"), and no Ancient was met. No `EG0` line.
   Plan 0042's x-summit sessions operated the summit door (class 564) at this stage. Routed, not retried (backlog).
+  (Since run: [§ Plan 0038 H6g rows 2 and 29](#plan-0038-h6g-rows-2-and-29-the-ancients-grant-session-run2026-10-30-h6ga-anc), raised in part.)
   **Static read 2026-10-30:** class 546 is the altar (the route's object was right); the session never had the
   altar's room populated (no 546, 547 or statue object in any `OBJS` line). Rows 2 and 29 stay open; the route a
   later session needs is in [§ Plan 0038 H6g shortfalls](#plan-0038-h6g-shortfalls-static-read-2026-10-30).
@@ -1017,7 +1048,7 @@ unit list below), `static-h6gs.s` (`2f7ac4ec…`, the disassembly of the ranges 
 
 ### Rows 2 and 29: what the Ancients' grant needs, and why the `anc` session missed it
 
-- [I] **The grant, step by step** (`sub_0058C5C0_ExpGrantCapped(game)`, the player in `ESI`; 0x0058C5C0–0x0058C6CB):
+- [I] (steps 1 in Normal, 3 and 4 `[C]` by run:2026-10-30-h6ga-anc, see § Plan 0038 H6g rows 2 and 29, with the scope there; the rest `[I]`) **The grant, step by step** (`sub_0058C5C0_ExpGrantCapped(game)`, the player in `ESI`; 0x0058C5C0–0x0058C6CB):
   0. `QUESTS_SendPlayerRecord(game, player)` (0x0058C5CF), before anything else.
   1. `G` ← 1 400 000; 20 000 000 when the game's difficulty byte (`game+0x6D`) is 1; 40 000 000 when it is 2
      (0x0058C5D4–0x0058C5EE).
@@ -1148,7 +1179,8 @@ unit list below), `static-h6gs.s` (`2f7ac4ec…`, the disassembly of the ranges 
 ### Ledger moves (proposed; the review rules)
 
 - **Rows 2 and 29 stay open**, class (b), batch H6g. There is no static second source (above), so they need the
-  corrected `anc` route. They are not d-owner.
+  corrected `anc` route. They are not d-owner. (2026-10-30, lane/h6ga: the session ran; raised in part, see
+  [§ Plan 0038 H6g rows 2 and 29](#plan-0038-h6g-rows-2-and-29-the-ancients-grant-session-run2026-10-30-h6ga-anc).)
 - **Rows 3 and 30 stay "raised in part"**, with the remainder narrowed. `[C]` (narrowed to which fields): the pickup's two reads match
   the creation's two writes (stat 13 and inventory `+0x24`). Still `[I]`: the pickup's run (the zeroing and the add;
   fn:PLAYER_CorpsePickup@0x0057FB70, fn:PLAYER_CorpseCreate@0x0057F700, run:2026-10-27-sweep-player).
@@ -1156,6 +1188,63 @@ unit list below), `static-h6gs.s` (`2f7ac4ec…`, the disassembly of the ranges 
 - No class changes, so the totals stand.
 - Symbols: 7 new `[I]` rows (`0x0058D110`, `0x0058D150`, `0x0058D190`, `0x0058D240`, `0x00548A50`, `0x0063D430`,
   `0x0063D450`). None is raised: no run checks them.
+
+## Plan 0038 H6g rows 2 and 29, the Ancients' grant session (run:2026-10-30-h6ga-anc)
+
+Backlog `2026-10-30-architect-reverser-plan-0038-h6g-corrected-anc-session.md`: the corrected route of
+[§ Plan 0038 H6g shortfalls](#plan-0038-h6g-shortfalls-static-read-2026-10-30), played on slot 2. Run record
+[run:2026-10-30-h6ga-anc](experiments.md#run2026-10-30-h6ga-anc). Logger `tools/gdb/h6g-quest.gdb` (revision: `h6g.py`
+with the altar lines `AL0` and `ALS` added; `EG0`/`EGS`/`EGX` were already there), runner `tools/h6ga_sessions.py`
+(on `tools/harness_runner.py`), checker `tools/sweep_h6g.py check` extended with the grant model. Two kept logs, 0
+mismatches (`workspace/logs/h6g/check/check-h6ga.txt`, `db35aa62…`; manifest `manifest-h6ga.sha256`).
+
+- **The route worked as the static read gave it.** Waypoint 5,8 (level 118), `explore`, a walk to level 120, then
+  `objop --obj-cls 546 --to-pdef 1089` (the preset room of LvlPrest Def 1089) to the altar, one click, then `farm
+  --boss-cls 540,541,542` with Nova. No town portal was cast. Both kept logs list the three bosses' kills (`XK0`
+  `mcls` 540, 541 and 542, once each) before the one `EG0`.
+- [C] **The altar's branch at the join.** `AL0` at 0x0058D33F logs the quest record's `+0x09` = 1 (active), `+0x0B` = 0,
+  `+0x0C` = 3 (the step) and the altar data's `+0x0C` = 0 (no town portal) and mode 0, in both logs. So with this
+  recipe (word 39 bit 0 clear, `quests: all`) the quest is active at step 3, below 4: the altar took the active branch
+  and sent 0x4E22 (`ALS` site `active`, 0x0058D38F). (fn:sub_0058D310_A5Q5_AltarOperate@0x0058D310,
+  run:2026-10-30-h6ga-anc)
+- [C] **The cut, the level-up branch and the short branch** (level 25 character, Normal; fn:sub_0058C5C0_ExpGrantCapped@0x0058C5C0,
+  run:2026-10-30-h6ga-anc). The character had gained experience on the way, so `EG0` found level 26, experience
+  2 147 274, `nextexp` 2 563 061 (the checker reads each log's own values). `EGS` logged 640 765 at the first pass:
+  exactly T(27) − T(26) = 3 203 826 − 2 563 061, below the 1 400 000 of step 1, so the cut of step 3 bound.
+  The first pass levelled up (`need` 415 787 ≤ 640 765, `EGX` stat 29 = 415 787, stat 12 = 27), the second took the
+  short branch (224 978 < `need` 640 765; stat 13 += 224 978), the third saw G = 0: `EGX` experience 2 788 039,
+  `nextexp` 3 203 826. A grant without the cut would have ended at level 28, experience 3 547 274, so the session
+  separates the two readings. The first try (the dev session `dev-h6ga-dev1-s2-4314-anc25`, kept in `workspace/logs/h6g/` under its dev manifest) gave the same shape (experience 2 159 850, grant
+  640 765 then 237 554).
+- [C] **The fixed amount in Normal** (level 80 character, `anc80`): `EG0` level 81, difficulty byte 0, `EGS` 1 400 000 at the
+  first pass (the cut T(82) − T(81) is far above it, so it did not bind), no level-up (`need` 67 254 290 > 1 400 000: the
+  experience rose by exactly 1 400 000, 742 731 766 to 744 131 766), then G = 0.
+  (fn:sub_0058C5C0_ExpGrantCapped@0x0058C5C0, run:2026-10-30-h6ga-anc) This is step 1's Normal value.
+- [C] **Reproduction.** `tools/sweep_h6g.py check` models steps 1-4 from the `EG0` entries (difficulty byte, base entries 12,
+  13, 29, 30) and the experience table: the `EGS` values at every pass and the four entries at `EGX` match in both logs
+  (2 grants, 0 mismatches). A second code path is absent, so the `[C]` rests on the reproduction of the logged call
+  (evidence rule 1).
+  (fn:sub_0058C5C0_ExpGrantCapped@0x0058C5C0, run:2026-10-30-h6ga-anc)
+- **Not reached, so open.** The Nightmare (20 000 000) and Hell (40 000 000) amounts: no log has difficulty byte 1 or 2,
+  so those two immediates stay `[I]` (the cut would hide them anyway below level 65 and 73). Which of the three callers
+  made the call is not logged (`EG0` has no return address); the killer's grant, with its level test `20·(d + 1)`, is the
+  likely one `[I]`. The corpse pickup (rows 3/30) was not staged: four earlier `deathnm` tries died at the corpse, and a
+  survivable Nightmare death is not a cheap addition to this lane.
+
+### Ledger moves (proposed; the review rules)
+
+- **Rows 2 and 29: raised in part.** `[C]`: step 1's Normal amount (1 400 000), the cut of step 3 (min with the next
+  level's width, signed), both branches of step 4 and the re-read of the level, in Normal
+  (fn:sub_0058C5C0_ExpGrantCapped@0x0058C5C0, run:2026-10-30-h6ga-anc). Scope of "both branches": the compare `G < need`
+  met a clear less (224 978 < 640 765; 1 400 000 < 67 254 290) and a clear greater (640 765 > 415 787), never `G` = `need` (so the
+  `jb` against `jbe` edge at 0x0058C673 is not separated) and never a value at or above 2^31 (the signed cut and the
+  unsigned `need` compare are not told apart); the `L ≥ max` return and the `L < max` loop exit were not reached. They
+  stay `[I]`. **Remainder:** the 20 000 000 and 40 000 000
+  immediates (Nightmare and Hell sessions; the Ancients' route repeats in the other two difficulties with the recipe's
+  `difficulty` bits and a Nightmare entry).
+  (fn:sub_0058C5C0_ExpGrantCapped@0x0058C5C0, run:2026-10-30-h6ga-anc)
+- **Row 33** (J2): the capped grant is now run in Normal; its remainder is the same two immediates.
+- No class change, totals unchanged. Symbols: none new (all addresses cited already have reviewed rows).
 
 ## Open questions
 
@@ -1166,7 +1255,10 @@ unit list below), `static-h6gs.s` (`2f7ac4ec…`, the disassembly of the ranges 
 - ~~What triggers `sub_0058C5C0_ExpGrantCapped` (three callers `0x0058C6D0`, `0x0058C7E0`, `0x0058C9A0`; not read).~~
   The Ancients' death (Rite of Passage, word 39): [§ Plan 0039 batch P1c](#plan-0039-batch-p1c-2026-10-17).
 - Readers of `PercentStr..PercentVit` (maybe only the client, through `0x004833E0`).
-- The player-data fields `+0x50..+0x5C` zeroed at creation, and client `+0x3D4` bit 0.
+- The player-data fields `+0x50..+0x5C` zeroed at creation, and client `+0x3D4` bit 0. (2026-10-30, lane/rfix: the
+  `+0x3D4` half ran in [§ Plan 0038 batch H6g](#plan-0038-batch-h6g-run2026-10-27-sweep-player) row 12, raised in
+  part: bit 0 is already set by 0x005397A3 before the `or` at 0x00537993; a path reaching 0x00537970 with bit 0 clear
+  stays open. run:2026-10-27-sweep-player)
 - ~~The experience recovered with the corpse (75 % per src:arreat-summit-experience): find the code (the corpse pickup
   path) or show 1.14d has none.~~ Found: 75 % of the loss taken goes onto the corpse and back to its owner
   ([§ Plan 0039 batch P1c](#plan-0039-batch-p1c-2026-10-17)). A saved corpse does not keep it
@@ -1175,6 +1267,10 @@ unit list below), `static-h6gs.s` (`2f7ac4ec…`, the disassembly of the ranges 
 - Settled by run:2026-10-16-player (§ 11): nothing but `PlayerUnitInit` steps the game seed before the first item;
   `PLAYER_LevelUp` draws nothing; the starting items chain to the item model (`ITEMS_RollStaffMods` is its boundary).
 - Not run in Phase 2: `XP_PartyShare` (two clients), `PLAYER_DeathExpLoss`, the experience cap, class 7.
+  (2026-10-30, lane/rfix: run since, except `XP_PartyShare`: `PLAYER_DeathExpLoss` in H6g rows 3 and 30 (raised in
+  part, five deaths, the corpse pickup `[I]`) and the cap in H6g row 28 (raised), run:2026-10-27-sweep-player; class 7 in
+  [§ Plan 0038 batch H1a](#plan-0038-batch-h1a-run2026-10-27-sweep-d2s-load) row 11 (passes the class test, halts
+  before a player unit exists; rows 20 and 34 d-none), run:2026-10-27-sweep-d2s-load.)
 - The life value a Hell save writes (stat 6) is not the writer's runtime base entry when the character has taken
   damage (tools/d2sio.py reports `0x1FFFFF` against the base entry on six sessions): read the save path's source.
 

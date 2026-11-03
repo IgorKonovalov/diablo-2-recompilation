@@ -86,7 +86,7 @@ has no column for (7 878 cells, all at the missing-column default).
 | `transtbl` | int, always 5 | `+0x12D` u8 | — | [C] |
 | `quivered` | int, always 0 | — (weapons: 1 on 42 bows/crossbows, but no byte or bit in the record follows it; not compiled) | — | — |
 | `lightradius` | int 0..5 (6 distinct) | `+0x12F` u8 | — | [C] |
-| `belt` | int 0..6 (6 distinct) | `+0x130` u8 | — | [C] |
+| `belt` | int 0..6 (6 distinct) | `+0x130` u8 | [Belts](Belts.md) row `[I]` (data match) | [C] |
 | `quest` | int, always 0 | `+0x12A` u8 | — | [C] |
 | `missiletype` | int, always 0 | `+0x0FA` u16 | — | [C] |
 | `durwarning` | int 1..6 (6 distinct) | `+0x135` u8 | — | [C] |

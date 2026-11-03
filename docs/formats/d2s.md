@@ -1441,7 +1441,7 @@ these files has been loaded by the game yet. Read back: `parse(…, extended=Tru
 - **87**: the legacy layout: the header from the base's (and the recipe's) fields, the quest, waypoint and NPC
   sections as the base's bytes, `gf` with the 3-byte mask (stats 0..15 only), `if` and the 30 class skill bytes,
   the items in the version-92 form with the ≤ 89 widths of stats 74, 79, 80 and stat 134 as 16 bits of 0, an empty
-  corpse list (`JM 00 00`), the `0x12`-byte mercenary and its item list (or the byte 0), the hotkey tail with the
+  corpse list (`JM 00 00`, or one corpse with the corpse key below), the `0x12`-byte mercenary and its item list (or the byte 0), the hotkey tail with the
   swap skills. Refused at 87: magic, rare and crafted items and a class affix (the 72..88 base adjustment and the
   rare-affix step are read but not laid out for a writer), and stats 23, 24 (≤ 89) and 93, 96, 99, 102, 105 (≤ 87),
   whose adds under the narrower widths are not stated. (Stats 1 and 3's ≤ 85 pairs and the ≤ 81 widths do not apply
@@ -1453,6 +1453,14 @@ these files has been loaded by the game yet. Read back: `parse(…, extended=Tru
 - Recipe keys: `legacy_new_char: true` (71, 87) sets status bit 0; item `"v71": {"form", "unit_seed", "item_seed",
   "file_index", "page"}` overrides the record's fields (71 only); item `"item_props": [[id, param, value], …]` adds
   param entries to an extended item's list (any version).
+- `[I]` **Corpse key** (versions 71 and 87; backlog 2026-10-30 H1c): `"corpse": {"unk": "<24 hex digits>", "items":
+  [item specs]}` writes one corpse in place of the empty list: `JM`, count 1, the 12 bytes (default zeros, any value
+  because the reader skips them, [§ Corpses](#common-part)), then an item list of the file's version with the same
+  placement, socket (`"filled"`) and `"v71"` keys as the character's items (at 71 the 25-byte records, a child after its
+  parent). The read-back `tools/d2s.py parse_legacy` takes a count of 0 or 1 and returns `corpses`. Refused: the key at
+  another version, an `unk` that is not 12 bytes, other sub-keys, and two corpse items in one slot. Not built: two corpses
+  (the writer keeps one) and versions 72..86 and 88..91. No game has loaded a file with it, so the layout is the
+  reader's reading of save/0001, not a run. (tools/test_d2s.py `LegacyTest.test_corpse_key`)
 - **Builder choices, not from the findings** (each a piece for the load that would test it, [§ Open questions](#open-questions)):
   the legacy status word is the base's `0x024` u16 (bits 0, 2, 3, 5 and the progression in bits 8–12 read the same
   as the current status word) with bit 13 when the base's weapon set (`0x010`) is non-zero; `+0x1C` = 0, `+0x1E` = 16;

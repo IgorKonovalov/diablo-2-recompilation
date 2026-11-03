@@ -4,7 +4,7 @@ to: architect
 date: 2026-10-27
 status: done
 context:
-  - ../../plans/0053-review-tiers-and-gate-checks.md
+  - ../../plans/done/0053-review-tiers-and-gate-checks.md
 resolution: "Fixed in the lane/p53a review commit f4506c2a: monsters/pool and monsters/spawn read '**reviewed** · ', player/creation updated 2026-10-21, stats/aggregate C 65 / I 42 / L 4 (updated 2026-10-20, plan 0047 P1 J4); (4) and (5) settled as map conventions, not exemptions: a spec's own group first after its link (skills row rewritten), a sum in words (combat row), every group gives C, I and L. E15 is an error again (DEMOTED holds only E14). Rule text in evidence-rules.md § Mechanical checks."
 ---
 

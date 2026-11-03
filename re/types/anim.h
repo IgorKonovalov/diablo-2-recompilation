@@ -57,7 +57,7 @@ typedef struct MonModePerFrame {
 typedef struct UnitEvent {
     uint8_t  kind;                /* +0x00 0 mode frame, 1 mode end, 2 monster AI, ... (< 15) */
     uint8_t  _pad01;
-    uint16_t flags;               /* +0x02 bit 0 running, bit 2 every frame, bit 3 (every-frame list only) free after running; a slot event is always freed */
+    uint16_t flags;               /* +0x02 bit 0 running, bit 1 on the free list (set to exactly 2 by 0x00540CD0), bit 2 every frame, bit 3 free asked while running (the runner frees it after the run; a slot event is always freed) (frame/0002 § 2) */
     int32_t  frame;               /* +0x04 game frame it runs at; -1 every frame; never <= the current frame */
     struct Unit * pUnit;          /* +0x08 passed in EDX to the dispatch */
     uint32_t unitGuid;            /* +0x0C the unit's guid, -1 without a unit (0x00540DF0) */
@@ -68,8 +68,26 @@ typedef struct UnitEvent {
     struct UnitEvent * pPrev;     /* +0x20 */
     struct UnitEvent * pUnitNext; /* +0x24 the unit's own chain from Unit+0xDC (0x00540DF0; UNIT_CancelEvents walks it) */
     struct UnitEvent * pUnitPrev; /* +0x28 */
-    void    (*pfnCallback)(void); /* +0x2C 0: the unit type's dispatch */
-} UnitEvent;
+    void    (*pfnCallback)(void); /* +0x2C 0: the unit type's dispatch; else called (ECX game, EDX unit; kind, a, b) */
+} UnitEvent;                      /* 0x30 bytes; 600 to a block (0x00540BB0) */
+
+/* The game's event control, Game+0xB8 (0xA20 bytes, zeroed at game create, 0x00541470; freed by 0x00541400).
+ * List index L from g_UnitTypeEventList (0x006E0B9C): player 0, monster 1, object 3, missile 2, item 4.
+ * Evidence: docs/findings/frame/0002-unit-events-queue.md § 1-2 (run:2026-10-30-frame-emu-2). */
+typedef struct EventCtl {
+    int32_t  curSlot;                     /* +0x000 Game+0xA8 % 64 (signed remainder), written by GameRunUnitEvents */
+    struct UnitEvent * slotHead[5][64];   /* +0x004 [L][frame % 64]: the oldest queued record of the slot */
+    struct UnitEvent * slotTail[5][64];   /* +0x504 the newest; EventQueueAt appends here */
+    struct UnitEvent * everyHead[5];      /* +0xA04 the every-frame list: newest first (pushed on the front) */
+    struct UnitEvent * walkNext;          /* +0xA18 the runner's saved next; EventFree moves it past a freed record */
+    struct EventBlock * pBlocks;          /* +0xA1C the first record block (free records go back to this one) */
+} EventCtl;
+
+typedef struct EventBlock {
+    struct UnitEvent recs[600];           /* +0x0000 */
+    struct UnitEvent * pFree;             /* +0x7080 free list, linked by UnitEvent +0x1C, last freed first */
+    struct EventBlock * pNext;            /* +0x7084 a new block is linked second, after the first */
+} EventBlock;                             /* 0x7088 */
 
 /* The rate bonus table g_AnimRateBonus (0x006E8E24, 6 entries), read by sub_00621740_AnimRateBonus (EAX the entry):
  * B = (type == 1 && s != 0) ? k*s/(k+s) (imul, idiv) : s, s the unit's full stat. Entries 0..4: (120, 93 IAS),

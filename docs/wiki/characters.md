@@ -1,9 +1,9 @@
 ---
 based_on:
   - docs/specs/player/README.md 2026-10-16
-  - docs/specs/player/creation.md 2026-10-21
-  - docs/specs/hirelings/README.md 2026-10-27
-  - docs/specs/save/d2s.md 2026-10-27
+  - docs/specs/player/creation.md 2026-10-30
+  - docs/specs/hirelings/README.md 2026-10-30
+  - docs/specs/save/d2s.md 2026-10-30
 ---
 
 # Characters and hirelings
@@ -55,13 +55,17 @@ This layout was checked on 35 stubs
 The server then checks the stub in a fixed order: length, checksum, the size field, the version (92 to 96), the
 name, the status word and the class byte. Every stub of the creation run passed. The same header checks, run later
 on deliberately broken saves, confirmed each failure code and the order wherever two tests could be told apart
-([save/d2s § D3–D5](../specs/save/d2s.md#d3d5-reading-a-save), the [saves](saves.md) page). That the client adds the checksum when it writes the stub is also read
-from the code only. When the "new" bit is set, the server clears it and builds a fresh character instead of
-reading the rest of the file; a stub followed by extra bytes would be a load error, which is again read from the
-code only. The status word and the rest of the header are explained on the [saves](saves.md) page.
+([save/d2s § D3–D5](../specs/save/d2s.md#d3d5-reading-a-save), the [saves](saves.md) page). The client adds the
+checksum when it writes the stub, and every stub the server read carried it. When the "new" bit is set, the server
+clears it and builds a fresh character instead of reading the rest of the file; a test stub followed by 10 extra
+bytes failed with load error 9, and the same stub without them made a new character. An older save (version 87 in
+the test) marked "new" is also built fresh, from its class and not from the rest of the file; that the older reader
+then takes the same steps as for a stub is read from the code. The status word and the rest of the header are
+explained on the [saves](saves.md) page.
 
-Hardcore is bit 2 of the status word, and the character screen sets the expansion bit `0x20` for the Druid and the
-Assassin (classes 5 and 6) before it builds the stub. Both are read from the code. Also read from the code
+Hardcore is bit 2 of the status word: it was set in the stubs of the hardcore characters and in no other. Every Druid
+and Assassin (classes 5 and 6) stub carries the expansion bit `0x20`; that the character screen sets it for them
+before it builds the stub, as the stub builder does, is read from the code. Also read from the code
 ([creation § A](../specs/player/creation.md#a-the-stub-and-the-servers-checks)): in an expansion install, selecting
 any class turns the expansion bit on, and the "expansion" checkbox turns it off again, so a classic character of the
 five classic classes is made by clearing the box. The hardcore and ladder checkboxes toggle bits `0x04` and `0x40`, and
@@ -88,9 +92,10 @@ seed), so the characters of a batch shared their item seeds.
 The player's own seed is drawn at creation and never saved; only the items keep their seeds
 ([player/creation § Reimplementation notes](../specs/player/creation.md#reimplementation-notes)).
 
-The starting act does not come from the stub. The client record gets it when it is created: 0, unless the game
-was started with the `-act N` option. That path is read from the code; what the option then does is confirmed
-(see *Other ways to gain or lose experience* below).
+The starting act does not come from the stub: every stub's act bytes were 0, and the act the character was built
+with was the client's, 0 or `N − 1` under the `-act N` option. That the client record takes it from the option when
+it is created is read from the code; what the option then does is confirmed (see *Other ways to gain or lose
+experience* below).
 
 ## Starting attributes
 
@@ -119,9 +124,10 @@ the block chance. Both are confirmed by the combat run; see the [combat](combat.
 Life, mana and stamina are stored with 8 fraction bits, so a Sorceress's 40 life is held as 10240. Every class
 starts at level 1 with 500 experience needed for level 2 and gets 5 attribute points per level.
 
-The header accepts a class byte of 7, although `CharStats` only has rows 0 to 6. Read from the code, such a
-character would get no attributes, no items and no start skill, and its experience lookups would use the Amazon
-column ([player/creation § J](../specs/player/creation.md#j-other-level-and-experience-changes)).
+The header accepts a class byte of 7, although `CharStats` only has rows 0 to 6, but no class-7 character is ever
+made: with a class-7 save or stub the game halts when it makes the player. Read from the code, such a character
+would get no attributes, no items and no start skill, and its experience lookups would use the Amazon column
+([player/creation § A and § J](../specs/player/creation.md#j-other-level-and-experience-changes)).
 
 ## Starting skills
 
@@ -134,8 +140,9 @@ The class's `StartSkill` is not a skill point. It comes from the first starting 
 carries Fire Bolt and the Necromancer's wand carries Raise Skeleton, as a +1 single-skill bonus. Once that item is
 equipped, the skill shows up at the end of the list at base level 0, and it becomes the right mouse skill when the
 character starts in Act I. The other classes have no `StartSkill`, so their right skill stays Attack. If a skill is
-added that the list already holds, its level is raised by 1 (while below the skill's maximum level) instead of a
-second entry being added; that is read from the code only.
+added that the list already holds, its level is raised by 1 instead of a second entry being added: spending skill
+points raised Ice Bolt from 1 to 2 and Frozen Armor from 19 to its maximum of 20. That a skill already at its maximum
+is not raised is read from the code only (the client sends no request for it).
 
 ## The starting kit
 
@@ -158,9 +165,10 @@ Each copy takes exactly two game-seed steps: one for the item unit's seed, one f
 Placement is the same for every stock kit. The class weapon goes in the right hand, a buckler in the left for every
 class but the Sorceress and the Necromancer, the four minor healing potions into belt boxes 0 to 3, and the Town
 Portal and Identify scrolls into the inventory at cells (9, 3) and (9, 2). A starting weapon or shield then has its
-current durability set to its maximum. The belt's column search, the fallback to the inventory when the belt or an
-equip fails, and the quiver rule (250 arrows when equipped, 100 when not; no stock kit has one) are read from the
-code only.
+current durability set to its maximum. The belt first looks for a column already holding the same kind of potion,
+then for the first free box; both paths were seen when potions were added to a larger belt in play. The fallback to
+the inventory when the belt or an equip fails, and the quiver rule (250 arrows when equipped, 100 when not; no stock
+kit has one) are read from the code only.
 
 ## Experience and levels
 
@@ -174,7 +182,7 @@ The [ExpRatio](../glossary.md) column scales kill experience at the player's lev
 
 **What a kill is worth** ([player/creation § G](../specs/player/creation.md#g-kill-experience--xp_compute)):
 
-1. Start from the killed monster's experience value. That this is the monster's own value is read from the code.
+1. Start from the killed monster's experience value (its own value, checked over 145 kills).
 2. Apply the level difference between the character (clvl) and the monster's [mlvl](../glossary.md), as a factor
    out of 256:
 
@@ -189,12 +197,14 @@ The [ExpRatio](../glossary.md) column scales kill experience at the player's lev
 3. Multiply by `ExpRatio` and divide by 1024.
 4. Add the `item_addexperience` bonus, if any.
 
-Several edges of this are read from the code only, because no kill in the run reached them: the clamp of a very
-large experience value, the rule that a monster worth 0 or less still gives 1, the rule that a character at the
-maximum level gets 0, an overflow guard in step 3, and a non-zero experience bonus in step 4.
+A character at the maximum level gets 0 (71 kills at level 99), and the experience bonus of step 4 was seen with an
+Annihilus carried (10 %, 73 kills). Three edges are read from the code only, because no kill reached them: the clamp
+of a very large experience value, the rule that a monster worth 0 or less still gives 1, and an overflow guard in
+step 3.
 
-The experience is then added. The total is capped at the threshold of the maximum level (read from the code; no
-run reached it), and when the level computed from the new total differs from the old one, a level-up follows
+The experience is then added. The total is capped at the threshold of the maximum level (a level-98 character two
+points below it gained 5 and stopped exactly at the cap, at level 99), and when the level computed from the new
+total differs from the old one, a level-up follows
 ([player/creation § H](../specs/player/creation.md#h-adding-experience--player_addexperience)).
 
 ## Level-up
@@ -236,15 +246,20 @@ These are in [player/creation § J](../specs/player/creation.md#j-other-level-an
   its items are made, so the starting items get that ilvl, and its right skill stays Attack. This was confirmed on
   game-made characters.
 - **The Ancients' reward.** Killing the last of the three Ancients (the Rite of Passage quest) grants 1 400 000
-  experience in Normal, 20 000 000 in Nightmare and 40 000 000 in Hell, cut to one level span, so at most one level.
+  experience in Normal, 20 000 000 in Nightmare and 40 000 000 in Hell, cut to the width of the level after the
+  current one (`T(L + 1) − T(L)`, where `T(L)` is the experience at which level L + 1 starts), so at most one level-up.
+  The cut matters only at low levels: in Normal up to level 35, in Nightmare up to 65, in Hell up to 73.
   It goes to the killer, to every player standing on the Arreat Summit, and to their party members who are in Act V,
   each only once per difficulty and only from character level 20 (40 in Nightmare, 60 in Hell)
   ([creation § J](../specs/player/creation.md#j-other-level-and-experience-changes)). Read from the code only.
 - **Death.** The character loses the difficulty's `DeathExpPenalty` percent of the current level's span, and the
-  level never drops. Nothing is lost when the killer is a player or a player's monster. Three quarters of the
-  experience actually lost (rounded down) is put on the corpse, and the owner gets it back on picking the corpse up;
-  another player picking it up gets nothing. A corpse still on the ground when the character is saved comes back at
-  the next load without that share, so picking it up then returns nothing. All of this is read from the code only.
+  level never drops: when the loss would go below the level's start, the experience stops one point above it and
+  only what was actually lost counts. Three quarters of that (rounded down) is put on the corpse. Both were confirmed
+  on deaths in all three difficulties, to monsters. Read from the code only: nothing is lost when the killer is a
+  player or a player's monster; the owner gets the share back on picking the corpse up (the pickup reads the share
+  and the owner exactly where the corpse's creation wrote them, which is confirmed, but no pickup was run); another
+  player picking it up gets nothing; and a corpse still on the ground when the character is saved comes back at the
+  next load without that share, so picking it up then returns nothing.
 - **Party share.** With two or more members (alive, in the same level, close enough, at most 8), the kill's
   experience is raised by 89/256 per extra member and split in proportion to the members' levels, and each share
   then goes through the kill formula with that member's level. Confirmed for two players in a two-client game (385
@@ -253,8 +268,9 @@ These are in [player/creation § J](../specs/player/creation.md#j-other-level-an
   the member's level times that ratio is truncated without rounding it to single precision first, which a
   reimplementation gets by multiplying in double precision. Three or more members and the exact edge of "close enough"
   are read from the code only.
-- **Spending attribute points.** Vitality adds `LifePerVitality` and `StaminaPerVitality`, energy adds
-  `ManaPerMagic`, all in quarter points. Read from the code only.
+- **Spending attribute points.** Each spend uses one unspent point and adds 1 to the attribute. Vitality also adds
+  `LifePerVitality` and `StaminaPerVitality`, energy `ManaPerMagic`, all in quarter points, to the maximum and the
+  current value. Confirmed on one spend of each attribute.
 
 ## Hirelings: the hire list
 
@@ -389,6 +405,13 @@ after the header ([save/d2s § D](../specs/save/d2s.md#d-header-fields)). A test
 its range loaded with the range's first name; how the name's 16-bit addition wraps for a huge value is read from the
 code. The header layout is on the [saves](saves.md) page.
 
+Saves older than version 92 hold the mercenary in an older form, run on test saves
+([hirelings § H](../specs/hirelings/README.md#h-the-mercenary-from-a-save-d2s_readmercheader-merc_create)). A
+version-87 record keeps the seed, the name and the Id, and its experience is converted on load (100 000 became
+546 210 in the test). A version-71 record keeps only the seed and the name, so the mercenary is created with no Id
+and the game picks one: Id 1 for both test saves, one in Act I and one in Act II. That the pick follows the act, and
+which versions convert the experience (89 and below), are read from the code only.
+
 Resurrection costs `min(50000, (L² ÷ 2) × 15)` gold, with `L` the mercenary's level, paid like a hire; runs at
 Qual-Kehk and Kashya checked the price and the payment, and a resurrection you cannot afford takes no gold. That
 Greiz, Asheara and Tyrael resurrect too is read from the code. When a mercenary dies it stays in the pet list,
@@ -458,14 +481,15 @@ From [player/creation § Open questions](../specs/player/creation.md#open-questi
 
 - the first save's appearance bytes are not predicted.
 
-Also read from the code only, not run: party sharing with three or more members, death loss and the corpse's share, the Ancients' reward,
-attribute spending, the experience cap, and the edge cases of kill experience listed above.
+Also read from the code only, not run: party sharing with three or more members, the Ancients' reward, picking up
+a corpse, and the edge cases of kill experience listed above.
 
 From [hirelings § Open questions](../specs/hirelings/README.md#open-questions):
 
 - not reached by a run: a classic hire at Greiz, the Act III gift, resurrection at Greiz, Asheara and Tyrael, a
-  mercenary at the level-98 bound, a second player hiring from the shared table, and mercenaries in saves older than
-  version 92;
+  mercenary at the level-98 bound, a second player hiring from the shared table, and two details of mercenaries in
+  saves older than version 92 (whether a version-71 mercenary's Id follows the act, and the version cutoff of the
+  experience conversion);
 - not yet read: whether the client's hire-line test matches the server's quest checks in every state, and what fills
   the list of a third caller (`PlayerPlaceInAct`) that can also create a mercenary;
 - whether the client ever shows its own rolled values instead of the server's.

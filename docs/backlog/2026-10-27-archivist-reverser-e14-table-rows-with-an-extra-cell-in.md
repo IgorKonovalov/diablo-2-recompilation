@@ -4,7 +4,7 @@ to: reverser
 date: 2026-10-27
 status: open
 context:
-  - ../plans/0053-review-tiers-and-gate-checks.md
+  - ../plans/done/0053-review-tiers-and-gate-checks.md
 resolution: ""
 ---
 

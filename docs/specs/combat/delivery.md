@@ -757,12 +757,12 @@ against a `fallen2` at life 74776 with physical resistance 15). Reduced packet: 
   the dated Phase 1b note), 12 (the finisher's seed save and restore; its callers, as corrected by the dated 2026-10-21 note).
 - [skills/0014](../../findings/skills/0014-assassin.md) §§ 1 (the finisher's six calls, `ItemEffect` 36), 4 (the
   finishing moves' calls of the finisher and `DeliverQueued`), 5 (entries 36–41 and 143 up to their first creation and
-  the rings' step count), with its review in the [plan 0046 log](../../plans/0046-skills-function-catalogue.md)
+  the rings' step count), with its review in the [plan 0046 log](../../plans/done/0046-skills-function-catalogue.md)
   (`lane/p46m11`); [skills/experiments § run:2026-10-21-cat-emu-ass](../../findings/skills/experiments.md#run2026-10-21-cat-emu-ass)
   (8 700 cases, 0 mismatches).
 - [skills/0015](../../findings/skills/0015-item.md) §§ 4 (do 151), 5 (`ITEMSKILL_Cast`, its `ItemTarget` helpers and
   its two callers), 6 (handlers 20, 21, 30 and the item effect flag), 7 (`SKILLS_PayCost`), with its review in the
-  [plan 0046 log](../../plans/0046-skills-function-catalogue.md) (`lane/p46m12`: fixes 1, 2 and 6, ruling 1);
+  [plan 0046 log](../../plans/done/0046-skills-function-catalogue.md) (`lane/p46m12`: fixes 1, 2 and 6, ruling 1);
   [skills/experiments § run:2026-10-21-cat-emu-item](../../findings/skills/experiments.md#run2026-10-21-cat-emu-item)
   (12 000 cases, 0 mismatches).
 - [skills/0003](../../findings/skills/0003-handlers.md) §§ 1 (the `srvprgfunc` entries, the finisher's tail and stock

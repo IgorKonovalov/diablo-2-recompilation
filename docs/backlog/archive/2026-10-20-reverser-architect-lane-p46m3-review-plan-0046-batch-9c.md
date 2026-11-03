@@ -6,7 +6,7 @@ status: done
 context:
   - ../../findings/skills/0006-missile-hit-1-29.md
   - ../../findings/skills/experiments.md
-  - ../../plans/0046-skills-function-catalogue.md
+  - ../../plans/done/0046-skills-function-catalogue.md
 resolution: "Reviewed 2026-10-20 (architect): batch 9c accepted with fixes (2). Ruling 1: the radius held in a callee-saved register at BuildDamage (hits 24, 44, 14) is not an argument and stays [I]; the path tests stay [C] (ADR-0021). Ruling 2: the two weak controls are enough (each family has a control failing 80+ cases; the 8 and 4 cases separate the claim deterministically). Ruling 3: hit 2 unemulated accepted, its emulation carried to batch 9d. Batch 9d may start. See plan 0046 log."
 ---
 

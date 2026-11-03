@@ -5913,10 +5913,155 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
       step 0.
     - Omission 1 (rule 11): the routing entry was closed "routed to a corrected `anc` session" and ruling (2) sent the
       J2 wording to the spec-writer, with no entry for either; filed
-      [`2026-10-30-architect-reverser-plan-0038-h6g-corrected-anc-session.md`](../backlog/2026-10-30-architect-reverser-plan-0038-h6g-corrected-anc-session.md)
-      and [`2026-10-30-architect-spec-writer-player-creation-j2-grant-cut-wording.md`](../backlog/2026-10-30-architect-spec-writer-player-creation-j2-grant-cut-wording.md)
+      [`2026-10-30-architect-reverser-plan-0038-h6g-corrected-anc-session.md`](../backlog/archive/2026-10-30-architect-reverser-plan-0038-h6g-corrected-anc-session.md)
+      and [`2026-10-30-architect-spec-writer-player-creation-j2-grant-cut-wording.md`](../backlog/archive/2026-10-30-architect-spec-writer-player-creation-j2-grant-cut-wording.md)
       (the spec's § J2 and `wiki/characters.md` still say "one level span").
     - **What the Tier B check missed** (for the trial): the altar misread (it read the decompile summary, not the
       branch at 0x0058D36D, outside its scope limit), the stale quests/0001 sentence (another finding, outside its
       scope), the step-0 omission, and the unhomed routes (rule 11 is a reverser rule it did run, but the closure was
       its own). None is reject-grade: no `[C]` rests on them and rows 2/29 stay open. Totals unchanged (1 526).
+- **2026-10-30 — H1c (`d2s-legacy`) filed, review requested (reverser, `lane/h1c`, harness slot 1, from `main`
+  `c0ee3e05`).** Run id run:2026-10-27-sweep-d2s-legacy
+  ([save/experiments](../findings/save/experiments.md#run2026-10-27-sweep-d2s-legacy)); slot 1 stopped, its saves directory
+  restored (no aside left); no game, driver or gdb of the lane remains. Seven sessions (seeds 27301–27307), each a
+  `leg*` build loaded, *Save and Exit*, the version-96 write-back kept and compared with the build by
+  `tools/sweep_h1c.py check` (272 comparisons, 0 failing), under the `lane/a72` review's ruling 3 (a)–(e).
+  - **Ledger (6): raised 3 (hirelings 3, items-uniques-sets 21, save-d2s 126), raised in part 3 (hirelings 30 and 33,
+    player-creation 1), open 0.** Remainders: the act dependence of the Id `0xFFFF` row, the `<= 89` experience cutoff
+    (no 88..91 build), the `PlayerLoad` path to `NewCharLegacy`. Sock 1's piece: the version-71 insert at 0x005311B5
+    ran twice, 0x005313F0 (corpse list) did not (no corpse in the builder; archivist entry
+    [h1c-v71-corpse-list-builder-key](../backlog/archive/2026-10-30-reverser-archivist-h1c-v71-corpse-list-builder-key.md)).
+  - **Added:** recipes `leg71sock` and `leg71act2` (`RECIPE_BASES` entries), `tools/gdb/d2s-h1c.gdb`/`.py`,
+    `tools/h1c_sessions.py`, `tools/sweep_h1c.py`. The first logger revision's duplicate return lines (stale one-shot
+    breakpoints) are kept as development logs in `dev1/`.
+  - **Totals:** no row changed class: static 567, harness 509, blocked 431, deferred 2, raised 17 = 1 526 stand
+    (inventory § 2.6 H1c block).
+  - **Symbols:** 8 raised to `[C]` (`sub_00534020_ReadSaveLegacy`, `sub_00532690_ReadHeaderLegacy`,
+    `sub_00532DA0_ReadStatsLegacy`, `sub_00532E90_ReadSkillsLegacy`, `sub_00533F70_ReadHotkeysLegacy`,
+    `sub_00533C70_ReadMercOldSave`, `sub_00532590_NewCharLegacy`, `sub_00533350_ItemListReadV71`); the Functions-table rows
+    moved. `sub_00533BF0_MercExpFromOldSave` stays `[I]` (its arithmetic is not modelled).
+  - **For the spec-writer, after the review:** re-tag hirelings § H, player/creation's entry points, items/uniques-sets §
+    C's restore path and save/d2s § D's legacy statements (the stale "not run-checked" bullet).
+  - **Review-fixes pass:** rules 1 (the act reading kept `[I]`), 2 (counts from `check/sweep-h1c-check.txt`), 4 (the
+    version-0 half and the cutoff named as unseparated), 8 (rows 30, 33 and player 1 headed "in part"), 10 (the Id 1 of
+    both acts does not separate) and 14 (8 symbols) checked.
+- **2026-10-30 — Phase 3, player/creation, and the H1c re-tags (spec-writer, `lane/s38p`, from `main` `4bf3391d`).**
+  Batches S3a, S3b, H1a, H1c and H6g, all accepted, with the H6g shortfalls' static read (`lane/h6gs`, its Tier B
+  check and Tier A audit); each restated statement checked against its section of
+  [player/0001](../findings/player/0001-creation.md), [hirelings/0001](../findings/hirelings/0001-hirelings.md),
+  [save/0001](../findings/save/0001-d2s-io.md) and [items/0004](../findings/items/0004-uniques-sets.md). Counts with
+  the gate's tag reader.
+  - **player/creation** {C 85, I 49, L 1} → **{C 121, I 39, L 1}** (line diff +37 / −1 `[C]`, +23 / −33 `[I]`). Raised:
+    S3a 7, 13, 26, and in part 10 (the screen's OR `[I]`) and 14 (`g_StartAct` `[I]`); S3b 21 (F2; the column-0 clamp
+    `[I]`) and 36; H1a 8 (the "client name null" test `[I]`), 9, 11 (the class-7 halt, A2); H1c 1 in part (the legacy
+    new-character branch; the `PlayerLoad` caller `[I]`, its own Entry points row); H6g 4 and 32 (J5; the refusal and
+    the mana clamp `[I]`), 18 (E6's column path), 22, 25, 28 ×2, and in part 3/30 (the loss on three difficulties and
+    the clamp's kept amount; the corpse share below `0x100000`; the pickup's two fields matching the creation's, the
+    h6gs `[C]`; the killer-type skip, the share above `0x100000`, the pickup's run `[I]`), 12 (bit 0 already set;
+    a path with it clear `[I]`), 16 (the skill-point raise; the maximum test and the monster case `[I]`), 23/35 (the
+    level-cap return; the clamp and the return of 1 `[I]`), 27 (G2, G5 met; the clamp, ≤ 0 and overflow `[I]`), 33
+    (J3, J5 and H ran; J2 not). Kept `[I]`: rows 2/29 (J2, open), 5, 6, 15, 17, 19, 20, 24, 34, 37 (d-none, d-owner,
+    d-2c). Rows 20 and 34 written as what no class-7 player reaches, with F1's reach condition (H1a ruling 2).
+  - **J2** rewritten from the static read (backlog entry closed): step 0 `QUESTS_SendPlayerRecord`, the signed cut
+    `G ← min(G, T(L + 1) − T(L))`, the unsigned `need` compare, at most one level-up, the cut binding for L 1–35 /
+    1–65 / 1–73 (stock data), all `[I]`; the "one level span" wording gone from the spec and wiki/characters.
+  - **hirelings** {C 137, I 43, L 7} → **{C 141, I 43, L 7}**: row 3 `[C]` (Entry points and § H: both forms of
+    `ReadMercOldSave`), row 30 in part (H13: the Id `0xFFFF` loaded as Id 1 in Act I and Act II `[C]`; the row
+    following the act `[I]`), row 33 in part (the version-87 conversion 100 000 → 546 210 and the version-71 absence
+    `[C]`; the cutoff at 89 and the arithmetic `[I]`). Open questions' item narrowed to the two `[I]` halves.
+  - **save/d2s** {C 240, I 68, L 3} → **{C 244, I 68, L 3}**: § D's stale "not run-checked" name bullet now hirelings
+    H3's (the reset `[C]` on a built save, the widths `[I]`); D3b gains the legacy reader on version-87 and 71 layouts
+    `[C]` and its unrun parts `[I]`; row 126 (J2's version < 93 widths and the J note) `[C]`, a version < 93 set item
+    `[I]`; the `version` row's met values 71, 87, 92 added; the *Not exercised* list updated.
+  - **items/uniques-sets** {C 100, I 38, L 4} → **{C 101, I 38, L 4}**: row 21 `[C]` (C2: the restore branch takes
+    `rec+0x40` as the row, rows 0 and 1 on a version-71 save); the version-0 builder stays `[I]` (d-none half).
+  - **Wiki:** [characters](../wiki/characters.md) (stub, act, class 7, skills, belt, kill experience, the cap, the
+    Ancients' cut, death, spending, older mercenaries, *What is not known yet*), [saves](../wiki/saves.md) (versions,
+    the older reader, the 1.09 widths, older mercenaries) and [items](../wiki/items.md) (`based_on` only); all
+    `based_on` 2026-10-30.
+  - **Map and README:** the four research-map rows rewritten whole; the root README rows dated 2026-10-30.
+  - **Backlog:** closed the [J2 wording entry](../backlog/archive/2026-10-30-architect-spec-writer-player-creation-j2-grant-cut-wording.md);
+    annotated the [H1a entry](../backlog/2026-10-27-reverser-spec-writer-h1a-save-d2s-player-creation-raises.md)
+    (only (k), the S1b leftovers in data/calc and rng/seeds, stays open); review request filed. Ledger row added.
+  - **Review-fixes pass:** rules 1 (the wiki follows the spec's split halves), 2 (every `[C]` scoped to the cases met:
+    the death skip, the share above `0x100000`, the mana clamp, the act pick split out), 5 (counts from the gate's
+    reader), 6 (map rows whole), 7 (stale "not run" notes and open questions rewritten in all four specs), 8 (each raise
+    stated at its strength) and 9 (anchors from each ledger line).
+  - **Next:** architect review of `lane/s38p`. player/creation keeps rows 2/29 open for the corrected `anc` session.
+- **2026-10-30 — `lane/s38p` review (architect, Tier A, plan 0038 Phase 3 player/creation and the H1c re-tags): accept
+  with fixes (10).** Every raised `[C]` was checked against its ledger line (S3a, S3b, H1a, H1c, H6g, the h6gs static
+  read with its Tier B check and Tier A audit). The H6g and H1c statements, checked at Tier B only, were re-read under
+  the promotion re-check, and their anchors were read in the pinned image with objdump: `0x0057F883` (`UnitSetStat`, stat 13),
+  `0x0057F8B5`/`0x0057FBA1` (the owner id written and read), `0x0057FBB2`, `0x0057FBBB`, `0x00647256` (`cmp [unit], 1`),
+  `0x0057E3B9`/`0x0057E3C1`, `0x00611847`/`0x00611854`, `0x0056A172` (`cmp class, 7`), `0x00553185`, `0x0058C5CF`,
+  `0x0058C649` (`jle`), `0x0058C673` (`jb`), `0x00533D4F` (`cmp 0x59; ja`). The 284 `fn:`/`data:` anchors of the six touched
+  documents all resolve. Counts are from the gate's reader after the fixes: **player/creation C 121, I 41, L 1** (the
+  two new inline `[I]`); hirelings C 141 / I 43 / L 7, save/d2s C 244 / I 68 / L 3, uniques-sets C 101 / I 38 / L 4
+  as filed. No row changed class, so the totals stand (1 526).
+  - **Rulings.** (1) **Rows 3/30's split stands**: the loss and the corpse share below `0x100000` are `[C]` on the run,
+    the field correspondence on the h6gs writer/reader pair, and the killer-type skip, the share above `0x100000` and
+    the pickup's run stay `[I]`. (2) **F2: the column-0 clamp stays `[I]`.** S3b's raise covers the cell for classes 0..6.
+    The clamp is the same unreached branch as row 20's (d-none: no class-7 player exists, H1a ruling 2). The second code
+    path's "same clamp" is a second reading of one pattern, not a run of the branch. S3b's finding sentence still has
+    the clamp inside its `[C]`; it is routed to the reverser for narrowing. (3) **Row 1 as two Entry points rows**:
+    accepted. (4) **save/d2s D3b's legacy-reader `[C]`**: accepted. It imports a statement of save/0001 § H1c that the
+    run separates and that was checked at Tier B. No ledger row is needed, because the lane/rlg readings were never a
+    spec `[I]` row. (5) **The wiki rewrites** are accepted, with the saves fix below.
+  - **Fixes:**
+    - Overclaim 4: player/creation J3's pseudocode under its raised header had a death at level 1 and the `max(0, …)`
+      floor that no case met; J5's had the `statpts` = 0 refusal and the mana clamp. Each now has an inline `[I]` line.
+      hirelings § H's "saves older than version 92" `[C]` is scoped to the versions run (87 and 71). save/d2s J's version < 93
+      bound: version 93 itself was never loaded, now said in the existing `[I]` sentence.
+    - Under-claim 1: J3's skip note called the stored kept amount "also as read". The corpse shares show it is the kept
+      one (750 from 1 000), so only the order before the stat write stays `[I]`.
+    - Miscount 1: "four deaths" in J3 and the Entry points row. The kept logs hold five deaths (four cases, the
+      Nightmare clamp case twice), and the spec itself said "all five deaths" two notes later.
+    - Omission 1: the disagreements with player/0001 were left unrouted (the H6g bullet's "four deaths", S3b row 21's
+      clamp inside a `[C]`, and the stale *Open questions* on the death loss, the cap, class 7 and `+0x3D4`). Filed
+      [`2026-10-30-architect-reverser-s38p-review-player-0001-counts-and-s3b-clamp.md`](../backlog/archive/2026-10-30-architect-reverser-s38p-review-player-0001-counts-and-s3b-clamp.md).
+    - Stale cross-reference 2: wiki/saves still called the corpse's 75 % "read from the code", although J3 raises the
+      share at creation. quests/progression's word-39 bullets still said the grant is capped "between the current and the next level" and that the altar
+      "instead" closes the portals. Both bullets now give `T(L + 1) − T(L)` and the audit's close-then-send with the step-4
+      exit; their tags and the spec's `updated` are unchanged. This one is the reviewer's own omission: the h6gs audit
+      routed the cut to player/creation and wiki/characters only.
+    - Other 1: items/uniques-sets' runtime-state row read `+0x40` only as "row + 1"; it now names the restore path's
+      row itself (C2).
+  - **Bookkeeping:** the research-map row of player/creation now reads I 41. The review request is closed. The
+    lane's ledger row has its verdict and fixes, and an `architect-review` row is added. A rule example was added to
+    spec-writer review-fixes rules 2 and 5 and to architect rule 3.
+  - **Next:** merge `lane/s38p`. player/creation rows 2/29 wait for the corrected `anc` session (backlog). The pickup
+    remainder of rows 3/30 waits for a death-and-pickup session. The (k) S1b leftovers of the H1a entry stay open.
+- **2026-10-30 — H6g rows 2 and 29, the corrected Ancients session (reverser, `lane/h6ga`, harness slot 2; from `main`
+  `f3005398`).** Run id run:2026-10-30-h6ga-anc
+  ([player/experiments](../findings/player/experiments.md#run2026-10-30-h6ga-anc)); slot 2 stopped, saves restored (no
+  aside), no game, driver or gdb of the lane remains. Backlog entry
+  `2026-10-30-architect-reverser-plan-0038-h6g-corrected-anc-session.md` closed.
+  - **Result:** the route of player/0001 § Plan 0038 H6g shortfalls reached the altar and the three Ancients on the first
+    try (`objop --to-pdef 1089`, class 546, then `farm --boss-cls 540,541,542`; no town portal). `AL0` read the quest at
+    the join: active, step 3 (below 4), so the altar sent 0x4E22. Level 25 character: `EGS` 640 765 = T(27) − T(26),
+    the cut, one level-up then the short branch, end level 27 / experience 2 788 039 (uncut: level 28 / 3 547 274). Level
+    80 character: `EGS` 1 400 000, no level-up. `tools/sweep_h6g.py check` (grant model added) over the 2 kept logs: 0
+    mismatches. New `tools/h6ga_sessions.py` (on the library), `AL0`/`ALS` logger lines (smoked in the dev session),
+    recipe `player-h6g-anc25.json`.
+  - **Ledger:** rows 2 and 29 raised in part (the Normal amount, the cut, both loop branches); remainder the 20 000 000
+    and 40 000 000 immediates (a Nightmare and a Hell session). Row 33's J2 remainder is the same. Corpse pickup (rows
+    3/30) not staged. Totals unchanged (1 526): a part-raise does not move a row.
+- **2026-10-30 — `lane/h6ga` Tier B check (architect), H6g rows 2/29: accept with fixes (5).** Rulings: (1) the
+  part-raise stands: the Normal amount 1 400 000, the cut `T(L + 1) − T(L)`, the level-up and short branches and the level
+  re-read are `[C]` by the reproduction of the logged calls (the second source of evidence rule 1; `anc25` separates cut from
+  no-cut: uncut it would end at level 28 / 3 547 274, the log has 27 / 2 788 039; `anc80` shows the fixed amount uncut). Re-run
+  of `sweep_h6g.py check` on the two kept logs under `systemd-run --scope -p MemoryMax=4G`: output byte-identical to
+  `check-h6ga.txt` (`db35aa62…`), 0 mismatches; `AL0`/`EG0`/`EGS`/`EGX` lines read by hand agree. (2) Scope added to the
+  `[C]`: the `G = need` edge (`jb` vs `jbe`), values at or above 2^31 (signed cut, unsigned `need`), the `L ≥ max` return and
+  the loop exit were never reached, so they stay `[I]`. (3) Nightmare/Hell amounts and the caller identity stay `[I]`; no
+  Nightmare/Hell session is ordered now (the cut hides them below level 65 and 73 and they need two further difficulties);
+  the pickup (rows 3/30) is unstaged. (4) Totals unchanged (1 526), correct for a part-raise. (5) The spec's J2 does need a
+  re-tag (Normal amount, cut, steps 3/4, the "has not run" sentences, the Entry points row, quests/progression, wiki/characters):
+  routed to the spec-writer,
+  [`2026-10-30-architect-spec-writer-player-creation-j2-normal-grant-raised.md`](../backlog/2026-10-30-architect-spec-writer-player-creation-j2-normal-grant-raised.md).
+  The only change under `docs/specs/` in the diff is a link rewrite by `backlog.py archive` (no claim), so no escalation.
+  Fixes (5): overclaim 1 (the `[C]` edges above), other 2 (the dev manifest said to pass from `h6g/` listed
+  `../` paths and failed; the 8 kept screenshots and the dev marks/shots were outside both manifests, now 15 and 7 lines, both
+  `sha256sum -c` green; the check command now stated), stale cross-reference 2 (player/0001 § H6g ledger, step list and
+  trigger bullets, quests/0001's reward bullet, the recipe comment's cut at level 25 where the run's character was 26 at the
+  grant). Omission 0 beyond the spec-writer entry above.

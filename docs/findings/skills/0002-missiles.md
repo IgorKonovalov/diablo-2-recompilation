@@ -606,7 +606,7 @@ return 1;
 - [I] `g_MissileSrvDoFuncs[n](ECX game, EDX m)` → 1 keep, 2 free; `g_MissileSrvHitFuncs[n](ECX game, EDX m; unit)` → the
   result flags; `g_MissileSrvDmgFuncs[n](ECX game, EDX m; unit, packet)`. Used numbers on stock data: do 34 (1..36; 4 and
   24 unused, 23 and 24 the same function `0x005AF790`), hit 49 (non-null and unused: 5, 6, 11, 23), damage 13 (6 unused).
-  What each number does is plan [0046](../../plans/0046-skills-function-catalogue.md), tier A's at P1.3.
+  What each number does is plan [0046](../../plans/done/0046-skills-function-catalogue.md), tier A's at P1.3.
   (`missiles-scan.txt` `DO`/`HIT`/`DMG`, `missiles-rows.txt` `ROWS`)
 
 ### 8. `CallDoFunc` from missiles

@@ -86,6 +86,9 @@ Data first, then code, then spec.
     `ClientsRoomSync` and `NewRoomsUpdate`: the order in which a frame's newly active rooms are populated, and the
     order of an act's rooms (`ActRoomsHead`) that the passes walk; **the activation-order record** the chain spec asks
     for (what a log-free build would take as input, or why it cannot be derived).
+    Added at the P1.2 review: player kind 11's two callees (`0x005406A0`, `0x00575630`) and kind 6's `Unit+0xA4` record
+    read for their draws (frame/0002 open question 2), and the window volume re-estimated with the queue line
+    (frame/0002 § 8) beside P1.3's own `RU0`/`RU1` and `TM` lines.
 - **The P1 review** (one review after P1.3, or one per batch as the lanes land) rules the frame model's draw table (the
   shared-seed points: the game seed's draws in a frame, a seed hit by two units' events), the window design and Phase 2's
   floors, and re-rules ADR-0022's early gate if plan 0052 has moved anything P1 used.
@@ -110,13 +113,38 @@ Data first, then code, then spec.
   with the frame it is applied in. An unspecified catalogue, AI or path function ends the chain at its call (a boundary
   oracle); scenes are chosen to avoid them, and the claim is limited to the scenes run. Outside windows, ADR-0014's log
   volume rules apply.
-- **Done when** (estimates, confirmed at the P1 review): `run:YYYY-MM-DD-frame` reproduces with **0 mismatches** over at
-  least **10 windows of at least 250 consecutive frames** each, in at least **three scenes** (a town, an outdoor level
-  with a monster pack, a maze level with a boss or a superunique), at least **5 000 chained events** in all, each window
-  chained from its first frame to its last; at least one window holds each timer's period (a frame `mod 20`, `mod 12`,
+- **The pilot** (ruled at the P1.1 review, 2026-10-30): the first session's first window, in the Act I town. It passes
+  when (a) it is **whole**: an `FT0` and an `FT1` for each of 250 consecutive frame numbers, no gap or repeat, every
+  opened line pair closed in its frame, 0 lines the reader cannot parse; (b) it is **unmoved**: every entry seed chains,
+  every mismatch is traced, and none is traced to the logger (a breakpoint that changes a value or an order); (c) it is
+  **carried**: the window completes inside one harness session (the rotation bound) with no crash, hang, lost input or
+  watchdog stop. The record states wall seconds per window, frames per wall second, gdb's hit count per breakpoint and
+  the lines per frame against frame/0003 § 9's estimate (`estimate13`, mid queue rates), and the measured queue rate
+  (`QE`+`QF` per `UE0`) against its stated inputs (P1 review). A failure of (a), (b) or (c), or a measured session above ten times plan
+  0045's 17 786 lines (177 860), is Q2's trigger: the architect drafts the injected-logger ADR. Slow but passing is a
+  pass; the architect re-plans the session count from the measured rate. The town pilot is estimated at 15.9 lines
+  and 32.9 breakpoint stops per frame (1.3 times plan 0045's highest carried rate, 12.45 lines per frame), the pack and
+  maze at 41.3 and 50.9 lines (3.3 and 4.1 times it; 58.3 and 67.9 stops), so **the first window
+  of each other scene is a pilot** by the same three tests; a failure there is Q2's trigger for that scene, and the
+  passed scenes' windows still count. A scene whose measured lines per frame exceed three times its estimate (town
+  47.6, pack 123.9, maze 152.7) stops after that window for the architect to re-rule its floors.
+- **Done when** (confirmed at the P1.1 review, 2026-10-30): `run:YYYY-MM-DD-frame` reproduces with **0 mismatches** over at
+  least **10 windows of at least 250 consecutive frames** each, in at least **three scenes** with **at least two windows
+  each** (the Act I town; Blood Moor or Cold Plains with a pack; Den of Evil with Corpsefire), at least **5 000 chained
+  events** in all (frame/0001 § 7 estimates 12 800–42 300 for ten windows; the floor stays until the pilot measures),
+  each window chained from its first frame to its last, a passing pilot counting as a town window; every session in
+  single player (one game in the process) from a fresh process, `g_HitClassCounter` logged at each `FT0`; the pack's and
+  Corpsefire's monster kinds in plan 0052 P3a's reviewed tier (else the lane names a substitute scene in its prompt
+  request and the architect rules), the player using only specified skill functions; at least one window holds each timer's period (a frame `mod 20`, `mod 12`,
   `mod 11`) and one a room activation; at least 20 shared-seed pairs (two units' events on the game seed in one frame)
   in the right order. The record states the lines per window against P1.1's estimate.
   A window that cannot be logged whole falls back to resynchronised events and is named, not counted.
+  *Added at the P1 review (2026-10-30):* the lines are frame/0003 § 9's closed design (`TM`, `TQ`, `RU0`/`RU1`, `RC`,
+  `RR`, `QE`/`QF`, with P1.1's and P1.2's), and the record states lines per window against `estimate13`; at least one
+  window holds a frame `≡ 0 (mod 1 500)` (the expiry sweep); a window that holds a frame `≡ 0 (mod 8 192)` logs
+  `SaveGameClients` there as a boundary oracle (frame/0003 § 3: the save's seed is not read); the record counts the
+  kind-11 and kind-6 runs whose entry and exit seeds are equal on every seed logged (their draw-free reading, § 6–7),
+  and names any activation made during a `NewRoomsUpdate` walk (frame/0003 open question 2).
 
 ### Phase 3 — Spec: the server frame
 - **Owner skill:** spec-writer
@@ -157,7 +185,7 @@ the recommendations, and an answer that differs changes the phase it names.
 6. **The companion sweep** (ADR-0022's first alternative: an inferred-claims sweep over the simulation and game-rules
    specs, 1 087 `[I]` over eight rows on 2026-10-27). *Recommendation:* the architect drafts it as its own plan after
    this plan's Phase 2a lands, so its draw-order targets can use the order model; it takes the harness slots plan 0038
-   leaves once its batches drain. No ADR is needed. The owner decides now whether to queue it.
+   leaves once its batches drain. No ADR is needed. The owner decides now whether to queue it. *(Owner, 2026-10-30, later: **owner 2026-10-30: may be drafted, as `draft` only, never started** (no plan after the approved roster is approved or started).)*
 7. **Run order across 0052, 0054 and this plan.** *Recommendation:* static lane A keeps 0052's catalogue (tier batches
    first, since they gate 0052·P2); static lane B takes this plan's P1.1–P1.3, then plan 0054's P1 batches, then 0052's
    remaining batches beside lane A; the archivist takes this plan's P0, then 0054's P0; harness lane H2 keeps 0052·P2
@@ -185,6 +213,7 @@ the recommendations, and an answer that differs changes the phase it names.
   divergence is a message-arrival effect (ADR-0022 § Negative) or a missed input; the record says which.
 - **The per-unit order within a list.** Whether a list's order is insertion order or a hash order (the unit hash lists
   key on `guid & 0x7F`) decides how much of a window a reimplementer must reproduce from creation; P1.2 answers it.
+  *Answered at P1.2 (reviewed 2026-10-30):* queue order, not a hash order (frame/0002 § 2).
 
 ## Implementation log
 
@@ -219,3 +248,193 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   several runs, listed in the index); (3) 5 harness logs are named by a run's directory only (development logs) and 18 by
   no run (plan 0046's 2026-10-30 catalogue logs among them), so they are indexed but not counted; (4) five runs name no
   harness log (four emulated runs and `sweep-emu2`), two named runs (`d2s-samples`, `cube-saves`) have no section.
+- **2026-10-30 — P1.1 the tick and the messages (reverser, static, `lane/r55`; review requested).**
+  [frame/0001](../findings/frame/0001-tick-and-messages.md), [frame/experiments](../findings/frame/experiments.md)
+  (run:2026-10-30-frame-emu), 48 new `re/symbols.csv` rows (39 functions, 9 data; all `I`, subsystem `sim/frame`), new
+  tools `tools/frame_emu.py`, `tools/frame_globals.py`, `tools/frame_volume.py`; static outputs under
+  `workspace/logs/r55/static/` (manifest `07094f49…`, 19 lines), emulation under `workspace/logs/r55/emu/` (manifest
+  `60d57be2…`, 10 lines). Totals taken after merging `main` `ae673b64` (the branch then merged `main` `e4fa8a2e`, gate green; P1.1 review). Found: `ServerGamesFrame` ticks every live game
+  once per 40 ms (`1000 / 25`), slot order, at most one interval of debt; `GameTickAlt` is unreached (its only caller is
+  an unreferenced stub). `GameTick`'s seven passes are named: the "two act passes" are the act light clock
+  (`ActsClockPass`) and a frames-per-second counter, the "two more" the updated-unit reset (`ActUnitsFrameReset`, which
+  walks only the units marked this frame, newest first per room) and the room-removal clear. None of the four draws of
+  its own; their routes to a draw are `EquipReqRefresh` (on an act clock change) and `UnitFree` (an inventory item at
+  the reset). Client messages are drained before the frame from three FIFO queues (system, in-game packets of every
+  client in arrival order, host), never inside `GameTick`. Two games share no seed; the one behavioural coupling is the
+  process-wide `g_HitClassCounter`. The empty-game close (`1500 < frame < 7500`, the "7 500-frame test") is in the
+  post-frame flush, not `GameTick` (P1.3 may cite it from here). Three emulated maps `[C]` (840 cases, 0 mismatches).
+  **The lines-per-frame estimate for the P1 review:** 12.5–36.3 lines per frame (town, outdoor pack, maze boss), 3 100–
+  9 100 per 250-frame window, 31 000–91 000 for ten windows, against plan 0045's measured 4.09 lines per frame and
+  17 786 per session: 0055 Q2's ten-times trigger is not met on volume (a whole Phase 2b run is 1.8–5.1 plan-0045
+  sessions); the rate per frame (310–910 breakpoint stops per game second) is what the pilot window must show gdb can
+  carry. Window design and scene proposal in frame/0001 § 7. Corrections for other findings: drlg/0009 § 1 (dated note
+  added); ai/0001 §§ 1 and 11 (the unnamed passes; `Room+0x1C` is the updated-unit list, not all units) left to its
+  owner lane (`lane/r52b` active) or Phase 3.
+- **2026-10-30 — P1.1 reviewed (architect, Tier A, `lane/r55`): accept with fixes (5).** Anchors spot-checked on the
+  pinned image with objdump: `GameTick`'s eleven call sites 0x0052D8DF–0x0052D96C and its three signed `idiv`s,
+  `ServerGamesFrame`'s slot range `0x00882D38`–`0x00883D38` and its one `GameTick` call 0x0052FD19, the drain's queue
+  order (0x0052CFFF, 0x0052D02C, 0x0052D05C), the four drain and three frame call sites, the mark's front push
+  (0x0064C0AD–0x0064C0B5), `HitClassPick`'s byte counter (0x0057CE30, 0x0057CE4F), the stub 0x00564C70 with no reference
+  (raw dword scan: 0); both manifests pass `sha256sum -c` (19 and 10 lines), `check.txt` as filed. Fixes, written into the
+  lane's files: **omission 2**: the updated list's unlink (`0x0064C370`, 30 call sites, unlinks at 0x0064C42D and clears
+  bit `0x2000`), so the list holds the units marked this frame *and still in the room* (frame/0001 summary, § 3.3, open
+  question 6); the breakpoint stops beyond the logged lines (at least 9 a frame from the conditional sites; § 7).
+  **overclaim 1**: `g_HitClassCounter` "changes behaviour across games" scoped to what is read: a byte, 0 at load, one
+  store, never reset; it decides the element nibble only for a hit with two or more element fields above 0, and the
+  one server reader found is indifferent to it (summary, § 6). **wrong anchor 1**: `lifecycle.h`'s clock counter
+  comment left out the flag-0 condition of the act steps. **miscount 1** (reverser rule 3, the `main` named): the P1.1 entry named only the
+  first `main` merged (`ae673b64`), not `e4fa8a2e`. Rulings: **(1) Q2, the logger:** the volume trigger is not met (a
+  three-window session estimates 0.5–1.5 plan-0045 sessions); the rate is not a Q2 trigger by itself, but the pilot's
+  pass and fail tests are now Phase 2b's *The pilot* (whole, unmoved, carried; the first window of each scene a pilot),
+  and a measured session over 177 860 lines replaces the estimate in Q2's volume test. **(2) Q1, windows and scenes:**
+  confirmed as Phase 2b now states (10 × 250 frames, three scenes with two windows each, 5 000 chained events, timers,
+  one room activation, 20 shared-seed pairs); the scenes are the lane's (Act I town pilot, Blood Moor or Cold Plains,
+  Den of Evil with Corpsefire), held to 0052 P3a's tier. **(3) ai/0001 §§ 1 and 11:** not edited here (`lane/r52c` is
+  active in `docs/findings/ai/`); routed to the reverser as
+  [backlog entry](../backlog/archive/2026-10-30-architect-reverser-ai-0001-frame-corrections.md) (also the 0x0052D8F2 call site
+  and `GameTickAlt` unreached); Phase 3 cites frame/0001, not ai/0001 § 1, for the passes. **(4) One game and
+  `g_HitClassCounter`:** Q5's one-game scope stands; the counter is a process-wide input of the frame model, not a
+  reason to widen it: the spec states it as process state (0 at load, carried across games), every window session
+  starts from a fresh single-player process and logs the counter at `FT0`. **P1.2: go** (static lane B, when a headless
+  Ghidra frees; both in use on 2026-10-30). Its additions from this review: name `0x0064C370` and say which of its
+  callers run in a frame. ADR-0022's early gate needs no re-ruling: 0052's P2 and P3a have not landed, so nothing P1.1 used has moved.
+- **2026-10-30 — Companion sweep drafted only (owner; recorded by the architect, `lane/appr2`).** "You can draft plans but do not start them": the Q6 companion `[I]` sweep may still be drafted after this plan's Phase 2a lands, as `draft` only, and is not approved or started; this plan runs to completion as approved.
+- **2026-10-30 — P1.2 the unit events and the queue (reverser, static, `lane/r55b`; review requested).**
+  [frame/0002](../findings/frame/0002-unit-events-queue.md), [frame/experiments](../findings/frame/experiments.md)
+  (run:2026-10-30-frame-emu-2), 29 new `re/symbols.csv` rows (all functions, all `I`, subsystem `sim/frame`), new
+  tools `tools/frame_queue_emu.py`, `tools/frame_events.py`, `re/ghidra_scripts/CallersUp.java` (`tools/ghidra.sh
+  callersup`); `re/types/anim.h` (`UnitEvent` flags, `EventCtl`, `EventBlock`); static outputs under
+  `workspace/logs/r55b/static/` (manifest `99488028…`, 52 lines), emulation under `workspace/logs/r55b/emu/`
+  (manifest `b1b00fea…`, 19 lines), development runs under `workspace/logs/r55b/dev/` (three manifests, each passing
+  from `dev/`). Totals taken after merging `main` `49a5dec7` (gate green). Found: `GameRunUnitEvents` makes ten
+  walks, missiles, players, monsters, objects, items, each every-frame list (newest first: a front push) and then
+  its current slot (oldest queued first: a tail append; only records due this frame run, each freed after its run);
+  list order is queue order, not a hash order (open question 3 answered). A timed record queued in a pass never runs
+  in that frame (frame raised to current + 1); an every-frame one runs in it only if its list is walked later. A
+  freed record is never run after it (the walker's saved next is moved on); a record freed while running is freed
+  after its run; a freed unit loses every record at once; a room change touches no record. Frame −1 drops the
+  callback. The four event tables are listed per kind; the freeze drop keeps kinds 3, 4, 5, 8, 12. The pass and the
+  queue draw nothing of their own, except `EventQueueAt`'s state-54 branch for a monster's AI event
+  (`UninterruptibleEnd`, kill or hit under state 92). Inactive units keep no record but a shrine's earliest kind-5
+  frame. `0x0064C370` is `UnitRoomUnlink`: 16 server callers reach a `GameTick` pass by Ghidra's references, 2 from the
+  AI table, 1 through an unfollowed quest callback, 6 client-only, 4 unreferenced sites (frame/0001 open question 6
+  answered there by a dated note). Six emulated families `[C]` (1 400 cases, 0 mismatches, byte for byte over the
+  control, both blocks and the units; six negative controls, `cancel`'s separating only 3 cases). The window's `UE0`/
+  `UE1` sites (20, four per runner) and the queue line the § 7 estimate did not count: frame/0002 § 8.
+- **2026-10-30 — P1.2 review (architect, Tier A: rulings asked; `lane/r55b`).** **Accept with fixes (9)**, written
+  into the lane's files. Anchors spot-checked against the pinned image by objdump: the ten head loads and calls of
+  `GameRunUnitEvents` (0x005414EE–0x00541589, each head read after the previous walk returns), `EventQueueAt`'s signed
+  bound, frame −1 push of callback 0 (0x005416D5) and raise (0x005416E9), `EventQueueEveryFrame`'s front push
+  (0x00541633–0x00541646), the cancel loops (0x00540E60–0x00540F50), the player runner's four call sites (§ 8), the
+  freeze byte map of `MonEventDispatch` (0x005A7FE8: kinds 3, 4, 5, 8, 12 direct), `UnitRoomUnlink`'s tail
+  (0x0064C42D, 0x0064C432), the 30 direct calls (a full objdump count), the two `g_MonAiTable` think pointers (rows 131
+  and 138, 16-byte rows), the shrine save and restore (0x00542FE4–0x00543005, 0x00542C5A–0x00542C87); kept manifests
+  (static `99488028…` 52 lines, emu `b1b00fea…` 19 lines, the three dev manifests) pass, tool hashes match, the 29
+  symbol rows clash with none, gate green. Fixes: **under-claim 1**: the cross-type every-frame case was already
+  logged: anim/0001's `ef-first` check (run:2026-10-27-anim) has 658 monster starts queued during the missile or player
+  walks that ran in that frame, so frame/0002's every-frame half for players and monsters is `[C]`, raised in part
+  (objects, items, missiles stay `[I]`); the Dead ends bullet corrected. **overclaim 2**: "the next record of the chain is
+  read before each free" sat inside the `cancel` `[C]` though no case can separate it (`EventFree` leaves `+0x24`), now
+  its own `[I]`; kind 12 "the timed stat-list expiry of every type" scoped to players, monsters and items (the object
+  table's entries 12–14 are null, fatal in its dispatch). **omission 3**: `cancel`'s thin control: the review scored
+  three more wrong readings against the kept `cancel.out` (`tools/frame_queue_controls.py`, new; `a` compared at 0
+  separates 10, callback 0 as "any" 3, chain oldest first 5, each failing every case it separates; experiments
+  addendum); the dispatches' kind bounds (players and monsters unsigned, objects and items none, so a negative kind
+  `EventQueueAt` accepts is dropped at dispatch); the shrine restore's `+0x14 ≠ 0` test (0x00542C5A). **stale
+  cross-reference 3**: frame/0001 § 3.3's "is P1.2's" and its § 7 `UE` row now point at frame/0002 §§ 7–8;
+  skills/0003's "a fifth list" given a dated note (items); this plan's open question 3 marked answered, and the
+  research-map row and plans index brought to "P1.1 and P1.2 reviewed, P1.3 next" (left stale since the P1.1 review).
+  Rulings: **(1) the cross-type case**: `[I]` is acceptable where no log holds it (objects, items, missiles); for
+  monsters it is `[C]` already (above). Phase 2b's record counts the cross-type every-frame runs it logs (a record
+  queued by an earlier type's walk run in the same frame) per receiving type, which is the route to raise the
+  objects' and items' half. **(2) the window volume** is re-estimated at **P1.3**, not at the pilot: P1.3 closes the log
+  design (`RU0`/`RU1`, `TM`) and re-runs `tools/frame_volume.py estimate` with the queue line (`UnitQueueEvent` and
+  `EventQueueEveryFrame` entries, one per queued event) and a stated queue rate per run event, so that the pilot's
+  "three times its estimate" stop and Q2's volume test compare a measurement with an estimate of every line logged.
+  **(3) the open questions**: none gates P1.3 or Phase 2a (2a orders logged events; the queue order holds whatever a
+  handler does or which block a record uses). frame/0002's question 2 (player kind 11's `0x005406A0` and
+  `0x00575630`, every 30 frames for every player, and kind 6's `Unit+0xA4` record) is **added to P1.3's scope**: read for
+  draws by direct reach before the pilot, or ruled boundary oracles at the P1 review; questions 1 and 4 bear on the
+  choice of Phase 2b scenes only; 3 is logged by `UE0`; 5 and 6 are bounds. **The thin `cancel` control** is sufficient
+  with the added readings: every half of the map has a separating case that a wrong reading fails, and the claim is
+  byte for byte, so no reading matches by chance; the lane's next emulation family states the separating count per
+  half, not per family. **P1.3: go** (static lane B; one Ghidra), with question 2 above and the re-estimate added to its
+  done-when. ADR-0022's early gate: plan 0052 has landed only P1.2 batch 3 since P1.1 (`49a5dec7`), which P1.2 does not
+  use; no re-ruling.
+- **2026-10-30 — P1.3 the timers and the activation order (reverser, static, `lane/r55c`; review requested, closes
+  Phase 1).** [frame/0003](../findings/frame/0003-timers-activation.md), [frame/experiments](../findings/frame/experiments.md)
+  (run:2026-10-30-frame-emu-3), 20 new `re/symbols.csv` rows (all functions, all `I`, subsystem `sim/frame`), new tool
+  `tools/frame_timers.py` (`adds`, `cbscan`, the five families' cases, check and manifest), `tools/frame_volume.py
+  estimate13` (its `estimate` unchanged); static outputs under `workspace/logs/r55c/static/` (manifest `abfc7c4d…`, 80
+  lines), emulation under `workspace/logs/r55c/emu/` (manifest `269cde48…`, 21 lines), development runs under
+  `workspace/logs/r55c/dev/` (five manifests, each passing from `dev/`). Totals taken after merging `main` `11102c87`
+  (gate green). Found: the four periodic calls draw nothing of their own; the quest timers run **newest registered
+  first** (a front push), 26 registrations of 21 callbacks, 6 of which draw through quest content (spawns, the
+  Tristram portal's level point, the Dark Wanderer's quest-seed step); the unload test can **build** a vis level
+  (`DRLG_LevelCreate`, on that level's seed); the 1 500-frame sweep frees items `expiry ≤ frame` before records
+  `expiry < frame`, act by act. An act's room list is **newest first** (`DUNGEON_RoomCreate`'s head push, one caller),
+  so a frame's new rooms are populated in reverse creation order, acts 0..4, the next frame; a room created during
+  the walk itself waits for its act's next walk (a reading; open question 2). `ClientsRoomSync` draws on per-room and
+  per-level seeds only, by direct reach. The activation-order record (frame/0003 § 5): per frame each client's new
+  room at pass 5, every on-demand activation and the pins; derivable from those with the near lists, but the room of
+  each player needs movement, so without a movement model it is a logged input (the chain spec's `[L]` answered with
+  that limit). Added scope: player kind 11 and kind 6 are **draw-free** by direct reach (kind 6's `Unit+0xA4` is the
+  overhead chat record), so both are modelled events, not boundary oracles. Five emulated maps `[C]` (1 300 cases, 0
+  mismatches, every boundary asserted with its call site; separating counts per half in frame/0003 § 8). The window log
+  design is closed (`TM`, `TQ`, `RU0`/`RU1`, `RC`, `RR`, and the queue line moved to `EventQueueAt`'s entry, which
+  frame/0002 § 8's site missed for `UnitTeleport`); **the re-estimate**: 15.9–50.9 lines per frame at the mid queue
+  rates (14.9–57.2 low to high), 39 653–127 231 for ten windows, a three-window session 0.67–2.15 plan-0045 sessions;
+  Q2's 177 860 not met at any rate; 32.9–67.9 breakpoint stops per frame. Dev-run note: an `EmuBoundary` memory-spec
+  `bytes` directive of 0x1000 bytes or more is not re-applied per case (frame/0003 *Dead ends*).
+- **2026-10-30 — P1.3 review, the P1 review (architect, Tier A: rulings asked; `lane/r55c`).** **Accept with fixes
+  (8)**, written into the lane's files. Anchors spot-checked against the pinned image by objdump: `QUESTS_TimerAdd`'s
+  front push (0x00543F51 head load, 0x00543F6D next, 0x00543F83 head store) and `QUESTS_TimersRun`'s unsigned
+  `jae` (0x00543E6E) and `AL` test (0x00543E87); the periodic calls (0x0052D912–0x0052D96C, signed `idiv` by 20, 12,
+  11; the unload per act slot); the sweep tick (0x0052D316–0x0052D33D: `idiv` 1 500, items then records, acts 0..4),
+  the items' signed `jg` (0x00558BEA, so `≤`) and the records' `jle` (0x00542AFF, so `<`); `DUNGEON_RoomCreate`'s head
+  push and flag (0x0061991F–0x00619925); `NewRoomsUpdate`'s flag test, head read, wanderer call, bit tests and flag
+  clear (0x0052D1A9–0x0052D21D, `RoomRestoredGet`/`Set` on bit 1); `ClientsRoomSync`'s `0x80001FFF` mask and the save
+  call (0x0052D45C, 0x0052D4AE–0x0052D4BD); both kind-6 handlers' unsigned `ja` and re-queue (0x00580B8B–0x00580BC8);
+  kind 11's body (0x00580BE6–0x00580C08) and its first queue at +250 (0x00534B1D); the prune's `PetRemove(guid, 0)`
+  (0x005755FB) and the two release tests (0x00575132, 0x005748CC); `EventQueueAt`'s register use from both callers
+  (0x005417E8, 0x0054181A) and the frame −1 call's return 0x005416DC. A full objdump call count matches every count the
+  finding gives (`DUNGEON_RoomCreate` 1, `EventQueueAt` 2, `EventQueueEveryFrame` 3, `ActiveRoomFree` 2, `ActRoomsHead`
+  11, `QUESTS_TimerAdd` 26). Kept manifests pass (static `abfc7c4d…` 80 lines, emu `269cde48…` 21, the five dev
+  manifests), `check.txt` matches § 8's 19 separating counts, the tool hashes match, `frame_volume.py estimate` still
+  equals P1.1's `volume-estimate.txt` byte for byte and `estimate13` its kept output; the 20 symbol rows clash with none;
+  gate green. Fixes: **overclaim 1**: `ClientsRoomSync` "never the game seed" holds with the two saves stopped; the
+  frame-8 192 `SaveGameClients` (0x0052D4BD) and `AutosaveTick` carry the 28 RNG functions of the item paths, whose seed
+  is not read (summary, § 3). **misread 1**: kind 11 "first 250 frames after its placement" where its first run is at
+  +250 (summary). **omission 5**: the frame's shared seeds listed in one place (summary bullet: the game seed, each
+  level's seed, the object-region seed of chain/0001 § 3.2, the quest seed; the request's list lacked the last two);
+  a room created during the walk in a later act is walked in the same pass, in an earlier act the next frame (§ 4 and
+  summary); `DUNGEON_RoomCreate`'s call of the act's `+0x4C` (0x0061994B–0x00619954; open question 7, the writer
+  unread); `TM`'s 0.224 assumes one loaded act and leaves out the sweep, and a `QE` line is a request (a kind ≥ 15 at
+  0x005416B7 queues nothing) (§ 9); `re/types/lifecycle.h`'s `DungeonActFrame` given `+0x10`, `+0x4C`, `+0x54`.
+  **stale cross-reference 1**: Phase 2b's pilot paragraph still gave P1.1's "2.5–2.9 times" and frame/0001 § 7 as the
+  estimate (now `estimate13`'s per-scene values and stops). Rulings: **(1) the draw table**: accepted with the shared
+  seeds above, `[I]` by direct reach; a pair of events on one seed in one frame is a shared-seed pair for any of the
+  four, and Phase 2b's 20-pair floor stays on the game seed. The frames `≡ 0 (mod 8 192)` are a boundary until the
+  save's seed is read. **(2) the closed log design** (frame/0003 § 9) is Phase 2b's; the floors stay and gain (Phase 2b
+  *Added at the P1 review*): a window holding a multiple of 1 500, the save frame as a boundary oracle, the kind-11 and
+  kind-6 seed-equality counts, and any in-walk activation named. **(3) 0055 Q1** stands at 10 windows × 250 frames,
+  three scenes, two per scene, 5 000 chained events: the new estimate (15.9–50.9 lines per frame, 3 965–12 723 per
+  window) moves no floor; Q2's volume test is not met at the high rates (42 902 < 177 860); the 820–1 700 stops per game
+  second are what the pilot's *carried* test measures, and the three-times stop is now per scene (47.6, 123.9, 152.7).
+  **(4) kinds 11 and 6** are modelled draw-free events, not boundary oracles: the stops are justified (the pet release
+  only under a non-zero `PetRemove` argument, read at both tests; `UninterruptibleEnd` only for a monster's kind 2), the
+  prune branch needs a dead pet, which no planned scene holds, so the windows test the live-pet half only; the packets
+  stay outside the model. **(5) the activation-order record** (§ 5) answers the chain spec's activation `[L]` with its
+  limit: Phase 3 restates it as `[I]` from (a)–(c), (a) a logged input until a movement model exists (plans 0050 and
+  0054); the per-level seed makes the order of activations within a level part of the record, which (a)–(c) already
+  give. **(6) ADR-0022's early gate**: plan 0052 landed P1.2 batch 4 (`f3005398`, ai/ only) since the P1.2 review;
+  P1.3 cites drlg/0009, monsters/0002, quests/0001, drlg/0005 and no 0052 output; no re-ruling. **The EmuBoundary
+  problem**: a scan of the 421 memory specs under `workspace/logs/` finds per-case directives of 0x1000 bytes or more in
+  six earlier kept runs (sweep-s1e `calcvar`, `eval`; sweep-s1f `calcvar2`, `varroll`; calc-emu `eval`, EmuCall;
+  p51s `calcemu/eval`); no case writes into any of them, so only a store by the emulated code could carry between
+  cases, and these are table readers: no kept claim is known to move. Routed as a tools fix and a byte-for-byte re-run
+  ([backlog entry](../backlog/2026-10-30-architect-reverser-emu-page-directive-reapply.md)); `const` directives are
+  written once by design. **The frame/0002 § 8 correction** is right (two `EventQueueAt` callers, three
+  `EventQueueEveryFrame` callers, the return test) and is carried by a dated note there. **Phase 2a: go** (reverser, no
+  game, no slot, no Ghidra; replays under `MemoryMax=4G`; P0 accepted, P1 reviewed). **Phase 2b: gate unchanged**: P1
+  is reviewed; it waits on plan 0052's P3a review (ADR-0022, ADR-0016), and its pilot uses plan 0056's runner library.

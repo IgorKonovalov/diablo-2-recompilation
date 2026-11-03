@@ -6,7 +6,7 @@ status: done
 context:
   - ../../findings/skills/0018-monster-8c.md
   - ../../findings/skills/experiments.md
-  - ../../plans/0046-skills-function-catalogue.md
+  - ../../plans/done/0046-skills-function-catalogue.md
 resolution: "Reviewed 2026-10-21 (architect): accept with fixes (3: omission 1, misread 1, overclaim 1). Rulings: Baal's arm of 0x0063EFA0 read at [I] meets the done-when, its stale-word branch carried to Phase 2; the six general tier-A entries plan 0045 read count as covered. Phase 1 closed. See the plan 0046 log."
 ---
 

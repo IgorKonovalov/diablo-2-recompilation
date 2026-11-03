@@ -470,7 +470,7 @@ named boundary only.
 ## Open questions
 
 - `[L]` Every meaning not tagged in the tables. The parameters, calcs and links as the do, hit and damage functions of
-  plan [0046](../plans/0046-skills-function-catalogue.md) Phase 1 use them are linked in the rows (*2026-10-25*); the
+  plan [0046](../plans/done/0046-skills-function-catalogue.md) Phase 1 use them are linked in the rows (*2026-10-25*); the
   readers of the 2026-10-21 batches (8a, 8b, `dru`) follow in plan [0051](../plans/done/0051-backlog-sweep-6.md) Phase 0 (P0b).
 - ~~What the server does with hit function 64 948.~~ *2026-10-20:* never called, a bounds test of the signed value
   ([skills/0002 § 5](../findings/skills/0002-missiles.md#5-the-hit)).

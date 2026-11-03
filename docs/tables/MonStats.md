@@ -931,6 +931,61 @@ unless a finding is cited.
   - `Skill1`..`Skill3`, `Sk1mode`..`Sk3mode`: row 8 `Skill1` (Fire Hit); row 13 `Skill1` (Resurrect, mode 14, no
     `Sk1mode`) and `Skill2` with `Sk2mode`; row 15 `Skill1..3`; rows 16 and 142 `Skill1` (§ 2.7, 2.11, 2.13-2.15).
 
+- `[I]` **Readers named by the pool-B batch** ([ai/0003](../findings/ai/0003-pool-b.md) § 2, plan 0052 P1.2 batch 2, AI rows 17-30; the per-AI
+  meanings stay in the finding, this table claims none):
+  - `lUndead` (`+0x0D` bit 3): `sub_005F2A00_AiGreaterMummyCb`, row 22's corpse and wounded search (§ 2.6), unless the
+    searcher is Radament (MonStats row 229), which takes any undead through `MONSTATS_IsUndead`.
+    (fn:sub_005F2A00_AiGreaterMummyCb)
+  - `Velocity` (`+0x32`) and `Run` (`+0x34`): `sub_005F4A70_AiVampire`, row 28 ([§ 2.12](../findings/ai/0003-pool-b.md#212-row-28-vampire-0x005f4a70)): the
+    flee override parameter `p = Velocity > 0 ? clamp(Run * 100 / Velocity - 100, 0, 120) : 0` for the step away while fleeing
+    (state 2); the code tests `Velocity` as a signed 16-bit value (`test cx, cx; jle`, 0x005F4BC0-0x005F4BC9) and passes 0
+    otherwise, and the division is a signed `idiv` (truncating).
+    (fn:sub_005F4A70_AiVampire@0x005F4A70)
+  - `Skill4` (`+0x176`) and `Sk4mode` (`+0x183`): the vampire's Fireball and VampireMissile pair, drawn 50/50 with
+    `Skill1`/`Sk1mode`.
+  - `aip1`..`aip6`, read per record and difficulty, by row (finding section in brackets): 17 `aip1` (§ 2.1); 18 `aip3`,
+    `aip4` (§ 2.2); 19 `aip2` (§ 2.3); 20 `aip3`, `aip5` (§ 2.4); 21 `aip1`, `aip2`, `aip3`, `aip5` (§ 2.5); 22 `aip1`..`aip5`
+    (§ 2.6); 23 `aip1`..`aip5` (§ 2.7); 24 `aip3`, `aip5` (§ 2.8); 25 `aip1`..`aip3` (§ 2.9); 26 `aip1`..`aip5` (§ 2.10); 27
+    `aip2`..`aip6` (§ 2.11); 28 `aip1`..`aip5` (§ 2.12); 29 `aip1`..`aip5` (§ 2.13); 30 `aip1`..`aip4` (§ 2.14). Row 28's
+    `aip5` is a bit set, not a count: bit 0 the Fireball/Missile pair, bit 1 `Skill2`, bit 2 `Skill3` (3 in `vampire1`, 5 in
+    `vampire2`, 7 in `vampire3`, `vampire4` and `vampire6`..`vampire9`, 1 in `vampire5`).
+
+- `[I]` **Readers named by the pool-C batch** ([ai/0004](../findings/ai/0004-pool-c.md) § 2, plan 0052 P1.2 batch 3, AI rows 33, 35-40, 43,
+  45-49, 52, 56, 57, 63; the per-AI meanings stay in the finding, this table claims none):
+  - `Velocity` (`+0x32`) and `Run` (`+0x34`): `sub_005F6E60_AiZakarumZealot`, row 48 ([§ 2.10](../findings/ai/0004-pool-c.md#210-row-48-zakarumzealot-0x005f6e60)):
+    the override parameter `clamp(Run * 100 / Velocity - 100, 0, 120)` (signed `idiv`; `run` stays 0 unless `Velocity` > 0),
+    the same expression as the vampire's above, for its step away and its run. (fn:sub_005F6E60_AiZakarumZealot@0x005F6E60)
+  - `Skill4` (`+0x176`) and `Sk4mode` (`+0x183`): `sub_005F72D0_AiZakarumPriest`, row 49 ([§ 2.11](../findings/ai/0004-pool-c.md#211-row-49-zakarumpriest-0x005f72d0)):
+    `MonBlizzard`, behind a `Skill4 >= 0` test and a cooldown. (fn:sub_005F72D0_AiZakarumPriest@0x005F72D0)
+  - `aip1`..`aip8`, read per record and difficulty (the finding's `chance(K)` is `draw < aipK`), by row (finding section in
+    brackets): 33 `aip1`..`aip3` (§ 2.1); 35 and 36 `aip1`..`aip8` (§ 2.2, 2.3); 37 `aip1`..`aip5` (§ 2.4); 38
+    `aip1`..`aip4` and 39 `aip1`..`aip6` (§ 2.5); 40 `aip1`, `aip2` (§ 2.6); 43 and 45 `aip1`, `aip3` (§ 2.7); 46 `aip1`..`aip3`
+    (§ 2.8); 47 `aip1`..`aip4` (§ 2.9); 48 `aip1`..`aip4` (§ 2.10); 49 `aip1`..`aip6` (§ 2.11); 52 `aip1`..`aip8` (§ 2.13); 56
+    and 57 `aip1`..`aip6` (§ 2.14, 2.15); 63 `aip1`..`aip4` (§ 2.16). Treat the lists as the slots the code names; the
+    finding's pseudocode is the authority per row.
+  - Rows 35 and 36 read their skill-draw slots only behind their `Skill2`/`Skill3` tests, which is the per-record slot
+    disagreement of the `ai_aip_slots_differ` entry above for those two rows: `cr_archer1..5` and `cr_lancer1..5` have no
+    skills and 0 in those slots, records 6-8 have skills and set them ([§ 1](../findings/ai/0004-pool-c.md#1-the-rows-their-records-and-the-per-record-slots)).
+    Which slots: row 35 `aip6` (Skill2) and `aip7` (Skill3) ([§ 2.2](../findings/ai/0004-pool-c.md#22-row-35-corruptarcher-0x005f5a20));
+    row 36 `aip6` (the Jab draw, `Skill1`), `aip7` (`Skill2`) and `aip8` (`Skill3`), the records setting `aip6` and `aip7`
+    ([§ 1](../findings/ai/0004-pool-c.md#1-the-rows-their-records-and-the-per-record-slots), [§ 2.3](../findings/ai/0004-pool-c.md#23-row-36-corruptlancer-0x005f5d50): `chance(6)` is the `Skill1` draw).
+
+- `[I]` **Readers named by the pool-D batch** ([ai/0005](../findings/ai/0005-pool-d.md) § 2, plan 0052 P1.2 batch 4, AI rows 64-66, 68-80, 87, 92; the
+  per-AI meanings stay in the finding, this table claims none):
+  - `aip1`..`aip8`, read per record and difficulty, by row (finding section in brackets): 64 `aip1`..`aip8` ([§ 2.1](../findings/ai/0005-pool-d.md#21-row-64-skeletonmage-0x005f96c0));
+    row 64's `aip2` is both the approach distance and, by its low byte, the walk-stop distance; 65 `aip2` the revive filter
+    (0..3) and `aip3` a **squared**-distance comparison (§ 2.3); 66 `aip1` the brood size and `aip2` the delay, with
+    `Idle(25*aip2)` (§ 2.4); 68 (§ 2.5); 69 (§ 2.6); 70 (§ 2.7); 71 (§ 2.8); 73 (§ 2.10); 74 `aip3` a curse timer in frames
+    (§ 2.11); 76 `aip1` the spawn stock and `aip2` the spawn interval in frames (§ 2.13); the trap rows 77, 80, 92 and 78/79,
+    87 (§§ 2.14-2.16). The finding's pseudocode is the authority per row.
+  - `Velocity` (`+0x32`) and `Run` (`+0x34`): `sub_005FA380_AiFingerMage`, row 70 ([§ 2.7](../findings/ai/0005-pool-d.md#27-row-70-fingermage-0x005fa380)): the same
+    `clamp(Run * 100 / Velocity - 100, 0, 120)` override parameter as the vampire's and the zealot's above.
+    (fn:sub_005FA380_AiFingerMage)
+  - `Skill2` and `Sk2mode`: `sub_005FAB80_AiAbyssKnight`, row 73 (§ 2.10). `Skill4`/`Sk4mode` and `Skill6`/`Sk6mode`:
+    `sub_005FAF00_AiOblivionKnight`, row 74 (§ 2.11). (fn:sub_005FAB80_AiAbyssKnight, fn:sub_005FAF00_AiOblivionKnight)
+  - Skills the think functions do not read: rows 64 (`SkeletonRaise`), 76 (`Nest`) and 78/79 (`Skill2`) carry skills the
+    batch's think functions never read ([§ 1](../findings/ai/0005-pool-d.md#1-the-rows-their-records-and-the-per-record-slots), § 2.16).
+
 ## Open questions
 
 - Answered `[I]` in [data/0001 §8](../findings/data/0001-excel-loader.md#8-answers-to-the-archivists-phase-1-questions): monster

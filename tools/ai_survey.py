@@ -3,6 +3,7 @@
 Usage:
   python3 -I tools/ai_survey.py index   <excel-dir> [<game.exe>]
   python3 -I tools/ai_survey.py rows    <excel-dir> [<AI name or index>]
+  python3 -I tools/ai_survey.py states  <excel-dir> <game.exe>
   python3 -I tools/ai_survey.py hire    <excel-dir>
   python3 -I tools/ai_survey.py aiparms <excel-dir>
   python3 -I tools/ai_survey.py md      <excel-dir> [<game.exe>]
@@ -15,6 +16,9 @@ index    one line per row of the AI table (monai.txt, 148 rows; the MonStats `AI
          and the reach marks: P the record is a pool class (Levels mon/nmon/umon), U a superunique's class
          (SuperUniques Class), S a summon (a Skills row with a `pettype` names it in `summon`, or a PetType `mclass`
          cell names it), H a hireling class (Hireling Class), - no stock MonStats record names the row.
+states   the 18 rows of the second table g_MonAiStateRows (0x0073D358) read from the pinned image, indexed by the AI
+         control's state word (docs/findings/ai/0001-machinery.md section 3): the state, the four u32 words
+         (+0 kind, +4, +8, +C), and the first-table rows whose +8 word the state row repeats.
 rows     one line per MonStats record (all, or those of one AI): record, Id, AI index and name, aidel per
          difficulty, aidist per difficulty, aip1..8 per difficulty (n/N/H), Skill1..8 with Sk<k>mode and Sk<k>lvl.
 hire     one line per Hireling (Version, Id) group: its class and the class's AI, DefaultChance, and per skill slot
@@ -50,6 +54,8 @@ import excel_layouts as L  # noqa: E402
 PINNED_SHA256 = "631066c1649c4ea9ffe48bf97e24c00bca1f7a6759c21150f1a79982589adaaf"
 AI_TABLE = 0x0073CA18      # data:g_MonAiTable (items/0001), 16-byte rows
 AI_ROW = 16
+AI_STATES = 0x0073D358     # data:g_MonAiStateRows (ai/0001 § 3), 18 rows of 16 bytes (MonAiInit refuses state >= 18)
+AI_STATE_ROWS = 18
 DIFF = ("", "(N)", "(H)")
 
 BATCH_RULE = """\
@@ -75,6 +81,14 @@ def ai_table_rows(exe, n):
     if hashlib.sha256(data).hexdigest() != PINNED_SHA256:
         raise SystemExit("ai_survey: %s is not the pinned Game.exe" % exe)
     return table_from_image(data, AI_TABLE, n)
+
+
+def state_table_rows(exe):
+    """The 18 rows of g_MonAiStateRows (four u32 each) from the pinned image."""
+    data = open(exe, "rb").read()
+    if hashlib.sha256(data).hexdigest() != PINNED_SHA256:
+        raise SystemExit("ai_survey: %s is not the pinned Game.exe" % exe)
+    return table_from_image(data, AI_STATES, AI_STATE_ROWS)
 
 
 def table_from_image(data, va, n, row=AI_ROW):
@@ -165,6 +179,7 @@ class Data:
         for c in self.hire_classes:
             self.mark[c].add("H")
         self.table = ai_table_rows(exe, len(self.ai_names)) if exe else None
+        self.states = state_table_rows(exe) if exe else None
 
     def skill_ok(self, v):
         return 0 <= v < len(self.skn)
@@ -341,6 +356,18 @@ def cmd_index(d):
     return 0
 
 
+def cmd_states(d):
+    if not d.states:
+        raise SystemExit("ai_survey: states needs <game.exe>")
+    print("# state | g_MonAiStateRows +0 +4 +8 +C | first-table rows with the same +8 word")
+    for i, w in enumerate(d.states):
+        same = [a for a, t in enumerate(d.table) if w[2] and t[2] == w[2]]
+        print("%2d | %s | %s" % (i, " ".join("%08X" % x for x in w),
+                                 " ".join("%d(%s)" % (a, d.ai_names[a]) for a in same) or "-"))
+    print("SURVEY ai states=%d" % len(d.states))
+    return 0
+
+
 def cmd_rows(d, want):
     sel = None
     if want is not None:
@@ -498,6 +525,16 @@ def summary(d):
         kv["tbl_w0_max"] = max(w[0] for w in t)
         for v in range(kv["tbl_w0_max"] + 1):
             kv["tbl_w0_%d" % v] = sum(1 for w in t if w[0] == v)
+    if d.states:
+        st = d.states
+        kv["st_rows"] = len(st)
+        kv["st_fn8_set"] = sum(1 for w in st if w[2])
+        kv["st_fn8_distinct"] = len({w[2] for w in st if w[2]})
+        kv["st_fn8_in_first"] = sum(1 for w in st if w[2] and any(t[2] == w[2] for t in d.table))
+        kv["st_fn4_set"] = sum(1 for w in st if w[1])
+        kv["st_fnc_set"] = sum(1 for w in st if w[3])
+        for v in range(max(w[0] for w in st) + 1):
+            kv["st_w0_%d" % v] = sum(1 for w in st if w[0] == v)
     return kv
 
 
@@ -510,16 +547,18 @@ def cmd_summary(d):
 
 
 def main(argv):
-    if len(argv) < 2 or argv[0] not in ("index", "rows", "hire", "aiparms", "md", "batches", "summary"):
+    if len(argv) < 2 or argv[0] not in ("index", "rows", "hire", "aiparms", "md", "batches", "summary", "states"):
         print(__doc__)
         return 2
     cmd, excel = argv[0], argv[1]
-    exe = argv[2] if cmd in ("index", "md", "batches", "summary") and len(argv) > 2 else None
+    exe = argv[2] if cmd in ("index", "md", "batches", "summary", "states") and len(argv) > 2 else None
     d = Data(excel, exe)
     if cmd == "index":
         return cmd_index(d)
     if cmd == "rows":
         return cmd_rows(d, argv[2] if len(argv) > 2 else None)
+    if cmd == "states":
+        return cmd_states(d)
     if cmd == "hire":
         return cmd_hire(d)
     if cmd == "aiparms":

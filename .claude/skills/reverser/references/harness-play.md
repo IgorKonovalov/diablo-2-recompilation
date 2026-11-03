@@ -177,6 +177,106 @@ sets display and prefix together; a `--display` or `--prefix` that contradicts i
 - `workspace/wineprefix2` is plan 0011's joiner prefix (ADR-0008). It is not a slot; it used `:8`, which is now slot
   1's display, so a new two-client run uses slot 1 for the joiner instead.
 
+## Before the batch
+
+A batch is the set of kept sessions a run's claims rest on. Development sessions come first and stay out of it.
+
+- **One smoke session per logger revision.** Every new or edited logger file (the `.gdb` and every `.py` it
+  sources) gets one short smoke session on your slot before the batch: the logger arms, the runner's ready line
+  arrives (next section), each tag the checker reads appears at least once, and the checker runs on that log. A
+  batch launched on an unsmoked revision that dies at its first case costs the whole batch's wall time.
+- **Pre-check the pilot's targets in a dev session**: each waypoint the batch hops to is in the save's waypoint
+  bits, each seal, chest or shrine the pilot operates is where the steps expect it, each NPC the pilot talks to is
+  reachable from the town start and offers the menu line it clicks. Fix the recipe or the steps there, not in the
+  batch.
+- **Build survivable characters in the recipe** (§ The character: Energy Shield, rejuvenation belt, resist and life
+  gear for the difficulty), so a death never needs a corpse run. A session whose character died is a dev log, and the
+  case is rerun from a fresh install.
+- **Dev logs apart from kept logs.** Smoke, pre-check and rerun sessions write `dev-` logs (or a `dev/`
+  subdirectory) that the checker's batch glob does not match; the batch's manifest lists kept logs only. Keep both
+  (§ Cleanup, partial logs).
+
+## Runners and the library
+
+`tools/harness_runner.py` holds the launch skeleton (install, launch, ready wait, case marks, stop, split, batch;
+[tooling.md](tooling.md) § The runner library). The migration rule (plan 0056):
+
+- **A runner moves to the library when its plan next uses it**, not before: the lane that next runs it migrates it
+  first, keeps its session table, clicks and timings, and smokes the migrated runner (§ Before the batch) before its
+  batch. Runners nobody reruns stay as they are.
+- **A runner is never deleted while a kept log's record cites it.** Migrate in place; the record's tool revision is
+  the commit it names, and the migration's commit message says the steps are unchanged.
+- **A new runner is written on the library.** No new copy of `run_session`'s launch, wait or stop.
+- `tools/h1a_sessions.py` is the worked example.
+
+## Fresh process
+
+Plan 0056 Phase 2 measured several games in one game process (run:2026-10-30-multicase-probe, slot 2, seed 4801, five
+games: one launch and four menu returns, `tools/probe0056.py`; numbers in the plan's implementation log). A case
+switch is `harness_runner.next_case`: Save and Exit, the next save copied over at the menu, SINGLE PLAYER, OK, the
+difficulty box, then the next `PLR` line. It costs about 19.5 s (18.5 to 19.5 over four switches, of which about 15 s
+are the fixed sleeps), a launch to its first `PLR` about 21 s (20.1 to 21.2 over four launches, install and launch included): a switch saves the
+launch's wine start and gdb attach, not the clicks. The probe did not time the session's `slots.py stop`, restore, aside
+and install around a launch: that the baseline's 60 s was mostly this bookkeeping is `[I]` (a subtraction), to be
+measured by the next batch that launches.
+
+**A case starts a fresh process** (a new `launch`, after `slots.py stop N`) when any of these holds:
+
+1. **It is the first case of a batch**, or the first of a launch: the cap below ends a launch.
+2. **Its checker models process state.** Carried across games, measured: `g_HitClassCounter` (a game's first
+   `HitClassPick` read the value the previous game's last pick left: 0, 1, 2, then 3, 4, 5, then 6, 7, 8, in games 0, 2, 4;
+   `PST` and `HCP` lines of `tools/gdb/probe-state.py`), `/players` (`g_PlayersOverride` was 5 in all four later games
+   after `/players 5` in game 0), the DRLG tile lists (game 0 wrote 634 `TL` lines, game 2 143, games 1, 3 and 4 none:
+   a later game does not reload the DT1 tiles it already holds, so `tools/drlg.py` fails on it, the h4b precedent
+   (`docs/findings/monsters/experiments.md`, session 5b); `parse_log`'s refusal keys on a second `WNDARM` line with
+   `levels`, which this probe's log holds once, so it does not guard a piece cut by `split`). A
+   checker that reads one of these, or any state not listed, takes a fresh process unless it was shown to start from the
+   carried value.
+3. **Its plan says so** (0055 Phase 2b: a fresh single-player process per session, for `g_HitClassCounter`).
+4. **The map seed is not controlled for it.** Not the case today: `-seed N` held for every later game in the process
+   (five games, the level seed of every `LC0` the same per level id in all five, 103 to 108 in Act IV, with two
+   different characters alternating). A launch with a different `-seed` is a different process anyway.
+5. **The previous case in the process failed or timed out** (a death, a halt, a load that did not reach `PLR`, a
+   stall): its state is unknown. Rerun the failed case in a fresh process, and start the rest of the batch in one too.
+
+**Every other case may share a process, when the batch opts in** (owner answer 2 of plan 0056: the lane's prompt says
+whether a batch may share a process; without it, every case is fresh). Cases that share must be independent of 2 above for their checker, and
+their logs are cut with the library: `next_case(..., stem=, case=)` writes the case's `start` mark just before the OK
+click, so `split(log)` cuts each game where it begins (the cut log starts with the game's own first `WND` line).
+Switch with the save file of the same name (the game rewrites an installed save at Save and Exit: reinstall the next
+case's copy every time, which `next_case` does). A case switch is by menu return; the in-game switch (a waypoint or a
+walk between cases that share a save) was not measured, because every case here needs its own character or its own
+seed and the plan's rule is a fresh process for any seed-dependent case.
+
+**Cap per launch: 8 games and 40 minutes of wall time**, whichever comes first, then a fresh process (at the measured
+rates, 8 games with short fights take under 10 minutes, so the 40 minutes binds only for long cases). Measured: after
+five games and 292 s the game's scope held 227 MB (peak 227 MB, game 0 had 223 MB; no growth trend), the log was
+8.7 MB with three 40 s fights in it (about 14 000 lines per fight), so the 4G limit is not what binds; the cap keeps a
+launch's log, its split and its checkers small, and bounds what a stuck game costs. The 8 is an extrapolation `[I]`:
+raise it only with a measured scope reading from a longer launch (`next_case` plus a read of the game's
+`memory.peak`, as the probe does).
+
+Rules for the batch loop on `next_case`: it is `ok: False` when no new `PLR` arrived in `load_timeout`; mark the case
+`fail`, apply 5, and do not click on (the clicks are blind). Dev logs apart from kept logs (§ Before the batch) hold for
+case-loop runs too.
+
+## Running a batch unattended
+
+- **The runner's ready wait keys on a line that appears before the first case**: the logger's own armed or ready
+  line (`RDY` in `tools/gdb/d2s-h1a.gdb` and `d2s-h1c.gdb`, `CUBE logger armed`), or `PLR` when the steps file enters
+  the game. Never a line only a case produces (a load's `TBL`): the wait then runs out its full timeout every session.
+  A new runner's wait also returns at once when its driver has exited.
+- **Launch the whole batch in the background, in one command** (the runner's `run` with every session, or one shell
+  loop), with its output to a file under the lane's scratch area.
+- **Wait once**: one Monitor until-loop on the batch's end, or `tail --pid=<runner pid> -f /dev/null`. Not a turn per
+  poll: each polling turn re-reads the whole context to learn nothing.
+- **Draft the write-up while it runs**: the experiment record's header, the run's case list, the finding's sections
+  the batch will fill.
+- **Run the checker once, at the end**, on the kept logs, with its output to a file; read back the summary lines
+  (`tail`, `grep` for the totals and the failures), never the whole log or the whole check.
+- **Keep the context small.** Long outputs (runner stdout, pilot transcripts, checker detail, decompile dumps) go to
+  files; read back only what the next step needs. Screenshots only where a case failed.
+
 ## Showing the game to the owner
 
 The owner often watches runs. Each slot's Xwayland (`:7` for slot 0, `:(7+N)` for slot N) lives on Hyprland's hidden
