@@ -533,6 +533,7 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-11-03 | `lane/r54b` check | 0054 P1.2 | architect-check | 113 136 | 29 | 4 | — | accept with fixes (4) | overclaim 2, stale cross-reference 1, omission 1 |
 | 2026-11-03 | `lane/r58a` | 0058 P1 | reverser-static | 325 701 | 48 | 31 | — (static, Ghidra copy ghidra-r58a) | accept with fixes (Tier A) | 9: overclaim 4, omission 4, tool not kept 1 |
 | 2026-11-03 | `lane/r58a` review | 0058 P1 | architect-review | 197 794 | 30 | 11 | — | accept with fixes (9) | overclaim 4, omission 4, tool not kept 1 |
+| 2026-11-03 | lane/a67 | 0054 P1.2 follow-ups (2 entries) | archivist | 0 | 0 | 0 | — | — | — |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not

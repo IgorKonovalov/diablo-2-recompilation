@@ -331,4 +331,10 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   `objects.bin` record's `IsDoor` / `Orientation` `[I]`, the entry closed. 7 new `re/symbols.csv` rows (4 func, 3 data, all I) and 3 rows' evidence moved. Kept outputs
   `workspace/logs/r54b/` (manifest 12 lines; `emu/` 156; `emu/dev-1/` 153; each passes from its directory). Backlog: the
   [review request](../backlog/archive/2026-11-03-reverser-architect-plan-0054-p1-2-review.md),
-  [archivist](../backlog/2026-11-03-reverser-archivist-pathtypes-objects-bytes-and-b1c-from-path-0002.md).
+  [archivist](../backlog/archive/2026-11-03-reverser-archivist-pathtypes-objects-bytes-and-b1c-from-path-0002.md).
+- **2026-11-03 — P1.2 follow-ups from path/0002, archivist (`lane/a67`).** Two entries closed. [Objects](../tables/Objects.md) `IsDoor` / `Orientation`
+  and [PathTypes](../tables/PathTypes.md)' object-record entry at `[I]` (path/0002 § 10); path `+0x92` (the types 0 and 16 search's last bound) and `+0x91`
+  (unread by that planner) linked at `[C]` (path/0002 § 6, that planner only). The largest-room scan (`tools/room_extent.py`, `tools/test_room_extent.py`,
+  outputs `workspace/logs/a67/` with a manifest): largest stock room 12 × 12 tiles = 60 × 60 subtiles, same-room rectangle 80 × 80, clear 7 396 cells against
+  the 50 010-cell frame and the 198 × 198 threshold; sizes `[C]`, reach `[I]`, pairs of rooms outside the answer ([Levels](../tables/Levels.md)). Reverser entry filed to move
+  path/0002's open question; [review request](../backlog/2026-11-03-archivist-architect-lane-a67-review-request.md).
