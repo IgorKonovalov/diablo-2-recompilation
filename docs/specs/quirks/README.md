@@ -4,7 +4,7 @@ status: draft
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [every reviewed spec listed under Coverage]
 consumed_by: [docs/wiki (plan 0057 Phase 4)]
-tags: {C: 340, I: 104, L: 0}
+tags: {C: 340, I: 105, L: 0}
 updated: 2026-11-03
 ---
 
@@ -69,8 +69,8 @@ flowchart LR
 | [6. Data-dependent branches](#6-data-dependent-branches) | 122 | 96 | 26 |
 | [7. Timing and frame edges](#7-timing-and-frame-edges) | 19 | 10 | 9 |
 | [8. Multiplayer edges](#8-multiplayer-edges) | 11 | 9 | 2 |
-| [9. Deliberate oddities that look like bugs](#9-deliberate-oddities-that-look-like-bugs) | 36 | 27 | 9 |
-| **Total** | 444 | 340 | 104 |
+| [9. Deliberate oddities that look like bugs](#9-deliberate-oddities-that-look-like-bugs) | 37 | 27 | 10 |
+| **Total** | 445 | 340 | 105 |
 
 ### 1. Arithmetic width and sign
 
@@ -562,6 +562,7 @@ These are faithful 1.14d behaviour that reads as a mistake, or that contradicts 
 | Q442 | What follows from mhit 52's unwritten class word: its missiles are row 0 by the callee's reading. | [I] | 0x005AC940 | [skills/catalogue](../skills/catalogue.md#reimplementation-notes) n3 |
 | Q443 | Return values that look wrong: mdo 14 with a skill or level ≤ 0 returns 2 without running mdo 1, and do 63 returns 1 for a bad missile class. | [C] | run:2026-10-20-cat-emu-9a, run:2026-10-20-cat-emu-nec | [skills/catalogue](../skills/catalogue.md#reimplementation-notes) n6 |
 | Q444 | do 13 returns 0 on every path. | [I] | fn:sub_005DBC60_SkillDo13Fend@0x005DBC60 | [skills/catalogue](../skills/catalogue.md#reimplementation-notes) n6 |
+| Q445 | No Uber event was found in this image to port: classes 704, 705 and 709 have no creator and no driver found, within the limits the source states; keep their class-gated code. | [I] | fn:sub_005E9DF0_AiUberDiablo@0x005E9DF0, fn:sub_005FD200_AiUberBaal@0x005FD200, fn:sub_005F81C0_AiUberMephisto@0x005F81C0 | [monsters/special](../monsters/special.md#reimplementation-notes) n12 |
 
 ## Crash and hang paths
 
@@ -614,7 +615,7 @@ wall-clock 2, weaker duplicate 0.
 | [items/vendors](../items/vendors.md#reimplementation-notes) | 10 | 10 | — | — | — | — | — |
 | [monsters/pool](../monsters/pool.md#reimplementation-notes) | 11 | 11 | — | — | — | — | — |
 | [monsters/spawn](../monsters/spawn.md#reimplementation-notes) | 13 | 13 | — | — | — | — | — |
-| [monsters/special](../monsters/special.md#reimplementation-notes) | 11 | 10 | n1 | — | — | — | — |
+| [monsters/special](../monsters/special.md#reimplementation-notes) | 12 | 11 | n1 | — | — | — | — |
 | [monsters/stats](../monsters/stats.md#reimplementation-notes) | 11 | 11 | — | — | — | — | — |
 | [objects/README](../objects/README.md#reimplementation-notes) | 16 | 16 | — | — | — | — | — |
 | [player/creation](../player/creation.md#reimplementation-notes) | 9 | 9 | — | — | — | — | — |
@@ -629,7 +630,7 @@ wall-clock 2, weaker duplicate 0.
 | [skills/missiles](../skills/missiles.md#reimplementation-notes) | 10 | 10 | — | — | — | — | — |
 | [stats/aggregate](../stats/aggregate.md#reimplementation-notes) | 6 | 6 | — | — | — | — | — |
 | [stats/states](../stats/states.md#reimplementation-notes) | 7 | 7 | — | — | — | — | — |
-| **Total** | 447 | 418 | — | — | — | — | — |
+| **Total** | 448 | 419 | — | — | — | — | — |
 
 Step notes taken beyond the *Reimplementation notes*: player/creation § G (the /256 factors, the `0x7FFFFF` clamp,
 the ratio shift's overflow branch) and § J (the party share's f32 quotient), monsters/stats § A (`MulDiv`), stats/states

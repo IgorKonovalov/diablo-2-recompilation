@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, monsters/pool, monsters/spawn, monsters/special, items/properties, data/excel]
 consumed_by: [items/tc, hirelings, combat/overview, combat/damage, stats/aggregate, chain]
-tags: {C: 135, I: 50, L: 5}
-updated: 2026-10-27
+tags: {C: 135, I: 51, L: 5}
+updated: 2026-11-03
 ---
 
 # Monster stats: hit points, defence, experience, resistances, MonProp and the mod effects
@@ -847,6 +847,7 @@ fn:sub_005A1910_UModFast@0x005A1910, run:2026-10-15-mon-stats)
 
 ## Evidence
 
+- [findings/ai/0016-uber-event.md](../../findings/ai/0016-uber-event.md): no creator of classes 704, 705 or 709 found in this image, for the hpregen note under *Open questions*.
 - [findings/monsters/0004-stats.md](../../findings/monsters/0004-stats.md): §§ 1–9 (the reading), § 10 (the boundary),
   § 11 (the stat callback), § 12 (the Phase 2 results), *Leads used* (the Phase 1b cross-check; four contradicted claims:
   the `L-` columns in single player, Spectral Hit + 20, the berserker level, `UniqueDamageBonus`, the last downgraded to not
@@ -900,7 +901,9 @@ fn:sub_005A1910_UModFast@0x005A1910, run:2026-10-15-mon-stats)
   members), `poisonhit`,
   `always_run_ai`, MonEquip's level skip, second row, `k` of 2 or 3
   and occupied location (no stock row reaches them; the one-row path is reproduced, B12), a MonProp slot with `chance` > 0,
-  the `MonHpAddPct` overflow branches, the hpregen overflow branch (only the Uber Tristram classes 704–709 can pass it),
+  the `MonHpAddPct` overflow branches, the hpregen overflow branch (only the Uber Tristram classes 704–709 can pass it; [I] no table path names those classes and no code
+  creating 704, 705 or 709 was found in this image, within the limits of [monsters/special § J](special.md#j-other-entry-paths-and-pre-existing-mods),
+  so those three do not meet it from stock play on this reading, and 706–708 stay open there; [ai/0016](../../findings/ai/0016-uber-event.md), fn:sub_005E9DF0_AiUberDiablo@0x005E9DF0),
   `fast`/`fanatic` at `Velocity` 8 and 9, and player counts ≥ 9. The reversed HP range, the doomknight `Range(4)` and the
   `MulDiv` branches are closed by plan 0038 (§ B7, § B3, § A1).
 - [L] **MonProp in normal, corrected by plan 0038 S3b** (§ F3): the `druidhawk` normal row was said unreachable, but a
