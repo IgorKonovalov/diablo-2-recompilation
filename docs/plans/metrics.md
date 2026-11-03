@@ -540,6 +540,7 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-11-03 | `lane/r57b` | 0057 P2 | reverser-static | 301 261 | 54 | 14 | — (static, Ghidra copy ghidra-r57b) | accept with fixes (Tier B check 3, audit 10) | 13: other 3; misread 2, under-claim 2, overclaim 1, omission 5 |
 | 2026-11-03 | `lane/r57b` check | 0057 P2 | architect-check | 74 507 | 14 | 2 | — | accept with fixes (3) | tag 1, wording 1, bookkeeping 1 |
 | 2026-11-03 | `lane/r57b` review | 0057 P2 | architect-review | 247 479 | 43 | 12 | — | accept with fixes (10) | audit of lane/r57b: misread 2, under-claim 2, overclaim 1, omission 5; reject-grade missed: yes (row 11 reversed verdict with a wrong address; row 12 [C] with no second source); reverser-static audits to date h6gs, r52l, r57b: 1 miss in 3 |
+| 2026-11-03 | lane/r60a | 0060 P1.1 | reverser-static | 298 000 | 22 | 0 | — (static, Ghidra copy ghidra-r60a) | — | — |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not
