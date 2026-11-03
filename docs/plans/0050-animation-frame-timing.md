@@ -1272,3 +1272,26 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   `[I]`); the first check of `op-run2` flagged 3 `ef-first` mismatches that are this branch, not a regression. Filed: the
   `RECIPE_BASES` backlog entry for the `anim-*-op-*` recipes (archivist) and the review request (architect). Usage on the
   ledger. Nothing of this lane runs; slot 1 stopped with the saves restored.
+- **2026-11-03 - Part 3 re-tag pass (spec-writer, `lane/s65`; no game, no Ghidra).** Closes the architect's re-tag
+  request ([backlog](../backlog/archive/2026-11-03-architect-spec-writer-plan-0050-part-3-re-tag-pass.md)) from
+  [run:2026-10-30-anim-p3](../findings/anim/experiments.md#run2026-10-30-anim-p3) and
+  [run:2026-10-30-anim-p3b](../findings/anim/experiments.md#run2026-10-30-anim-p3b) (131 logs, 0 mismatches).
+  **anim/timing:** K3's `[I]` "three FHR rates of 30 for any class" split out into a new `[C]` bullet, the get-hit FHR
+  tiers of five classes (Amazon 128/179/215: 32/40/33, Necromancer 38/32/42, Sorceress 50/35/38, Assassin 40/42/52,
+  Druid 124/173/208: 49/35/32; FHR 0, 24, 48 at clvl 99; `sched-len` 46 722 and `ghr` 13 932 over 131 logs), anchored
+  to `SUNIT_ScheduleModeEvents` and `AnimRateBonus` and both part 3 runs; K3's first `[C]` keeps the Barbarian (two
+  rates) and Paladin (one) and gains the 131-log count; K3's `[I]` short list keeps the Barbarian and Paladin tiers, the
+  third FCR rate, the set-2 IAS rates and the FBR rates. M3's `[C]` tail scoped to the five classes' three rates (head
+  stays `[I]`); M1's knockback note and I1's run-turn line pointed at part 3; the Open-questions bullet rewritten
+  (the Druid's throws 29 of 30, player knockbacks none new, P1b-2/13/14/15 with their counts or "not played").
+  **anim/movement:** D2 `[I]` with part 3's counts; a new Open-questions `[I]` bullet for the run's turn (81 events in
+  `op-run2` to `op-run6`, `ef-first-run-turn` offset 0 in 75, offset 1 in 6, unexplained); A1, A6, E2, F2 and the
+  `[L]` bullet updated for part 3 (P1b-13: 13 player slow windows, 327 monster; P1b-14/15 not played; knockbacks
+  none). **anim/README and combat/README:** their Open-questions bullets rewritten for part 3 (no tag change).
+  Totals: timing C 64 / I 134 / L 23 (was C 63), movement C 25 / I 44 / L 9 (was I 43), overview C 14 / I 13 / L 2
+  and combat overview C 43 / I 43 / L 5 unchanged; research-map rows: counts and dates only (the anim rows' status
+  text still says "a part 3 ... is the owner's call", the architect's to rewrite). Wiki/animation reconciled (FHR tiers,
+  run turn, knockbacks, short list), `based_on` timing and movement moved to 2026-11-03. Filed: a reverser entry for
+  anim/0003's "turn to a walk ... not reached" line
+  ([backlog](../backlog/2026-11-03-spec-writer-reverser-anim-0003-run-turn-cross-reference.md)); the review request
+  to the architect.

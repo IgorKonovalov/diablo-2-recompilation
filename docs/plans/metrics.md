@@ -497,6 +497,7 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-11-03 | `lane/p55a` check | 0055 P2a | architect-check | 96 863 | 20 | 3 | — | accept with fixes (2) | overclaim 1, omission 1 |
 | 2026-11-03 | `lane/p50g` (resume: part 3b) | 0050 P2 | reverser-harness | 130 952 | 72 | 91 | 1 | accept (Tier B check) | 0 (wording tightened at merge) |
 | 2026-11-03 | `lane/p50g` check | 0050 P2 part 3 | architect-check | 69 866 | 10 | 1 | — | accept | 0 (2 listed: wording, anim/0003 cross-reference to the re-tag pass) |
+| 2026-11-03 | `lane/s65` | 0050 P2 part 3 re-tag | spec-writer | 0 | 40 | 15 | — (no Ghidra, no harness) | — | — |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not

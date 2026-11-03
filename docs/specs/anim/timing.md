@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, stats/aggregate, stats/states, monsters/stats, skills/dispatch, combat/overview, combat/delivery, objects]
 consumed_by: [anim/movement, skills/dispatch, skills/missiles, combat/overview, combat/delivery, objects]
-tags: {C: 63, I: 134, L: 23}
-updated: 2026-10-27
+tags: {C: 64, I: 134, L: 23}
+updated: 2026-11-03
 ---
 
 # Animation timing: modes, records, the schedule, the frame advance, rates, breakpoints and the gates
@@ -492,7 +492,8 @@ stateDiagram-v2
 - I1. [I] `PlayerModeEnd` (kind 1, or a frame function's 2): for modes 7, 8, 11 or a used skill with Skills
   `durability` it refreshes the hands first; then mode 0 → `PlayerDeathModeEnd(17)`; mode 19 → a get-hit start after
   `PlayerModeAllowed(4)`; every other mode → neutral. (fn:sub_00581020_PlayerModeEnd@0x00581020, tbl:Skills.txt:durability)
-- I1. [I] `PlrModeStartMove`: a run with stamina 0 becomes a walk; walk and town walk become 6 in a town, else 2;
+- I1. [I] `PlrModeStartMove`: a run with stamina 0 becomes a walk (reached 81 times in Phase 2 part 3, its frame
+  open: [anim/movement § D](movement.md#d-the-run-drain)); walk and town walk become 6 in a town, else 2;
   knockback sets path type 8; a refused path gives neutral; otherwise `SUNIT_SetMode`, cancel, `SUNIT_ModeEveryFrame`.
   `PlrModeMoveFrame` steps ([anim/movement § C](movement.md#c-who-steps)), drains a run ([anim/movement § D](movement.md#d-the-run-drain)),
   and on arrival sets neutral (or runs the queued interact or skill) and returns 2; so `PlayerModeEnd` sees mode 1 or
@@ -739,17 +740,24 @@ K3. The least item stat for a bonus ≥ y:                               [I] (de
   256, event at frame 7) at FCR 0, 9, 20, 37, 63, 105, 200 lasts 14, 13, 12, 11, 10, 9, 8 frames (`n`; the last at the
   cap, any FCR ≥ 200 the same); `PAGHHTH` (5 frames) at FHR 0, 7, 15, 27, 48, 86, 200 lasts 10, 9, 8, 7, 6, 5, 4.
   (fn:SUNIT_ScheduleModeEvents@0x005539B0, [anim/0002 § 7](../../findings/anim/0002-rates.md#7-the-breakpoint-function-derived-not-copied))
-- K3. [C] The schedule lengths equal `n(r)` at every logged rate over both parts (`sched-len` 34 647): three FCR rates
-  of 30 events for the Sorceress, Necromancer, Paladin and Druid; three FBR rates of 30 for the Paladin and Druid; one
-  A1 record per class at three IAS rates of 30; get-hits at an FHR rate with 30 starts for the Barbarian (two rates),
-  Paladin, Druid, Assassin and Sorceress. (fn:SUNIT_ScheduleModeEvents@0x005539B0, run:2026-10-27-anim,
-  run:2026-10-27-anim-p2) [I] **Recorded short** (Phase 2 part 2, survivability-bound at the build used, not a
-  mismatch): three FHR rates of 30 for any class (308 get-hit starts in all; the Amazon and Necromancer reach no rate
-  of 30), a third FCR rate for the Amazon, Barbarian and Assassin, a second weapon type of the IAS rates, and two FBR
-  rates of 30 for the classes the records do not name (part 1 had two for three classes; part 2's record names the
-  Paladin and Druid at three); their breakpoints stand on
-  K1–K3 and the `[C]` inputs only. Whether a part 3 reopens them is the owner's call (plan 0050 log).
-  (run:2026-10-27-anim-p2)
+- K3. [C] The schedule lengths equal `n(r)` at every logged rate (`sched-len` 34 647 over the 81 logs of parts 1 and 2,
+  46 722 over the 131 logs of parts 1–3, 0 mismatches): three FCR rates of 30 events for the Sorceress, Necromancer,
+  Paladin and Druid; three FBR rates of 30 for the Paladin and Druid; one A1 record per class at three IAS rates of 30;
+  get-hits at an FHR rate with 30 starts for the Barbarian (two rates) and the Paladin. (fn:SUNIT_ScheduleModeEvents@0x005539B0,
+  run:2026-10-27-anim, run:2026-10-27-anim-p2, run:2026-10-30-anim-p3b)
+- K3. [C] **The get-hit FHR tiers of five classes** (Phase 2 part 3: clvl 99 builds at FHR 0, 24 and 48, single
+  player, Act I Nightmare): the get-hit schedule lasts `n(r)` at three FHR rates with 30 starts or more each, counted
+  over parts 1–3, for the Amazon (rates 128 / 179 / 215: 32 / 40 / 33 starts), the Necromancer (38 / 32 / 42), the
+  Sorceress (50 / 35 / 38), the Assassin (40 / 42 / 52) and the Druid (rates 124 / 173 / 208: 49 / 35 / 32; its 179 is
+  the werewolf form's); the closing check over the 131 logs holds `sched-len` 46 722 and `ghr` 13 932 with 0
+  mismatches. (fn:SUNIT_ScheduleModeEvents@0x005539B0, fn:sub_00621740_AnimRateBonus@0x00621740,
+  run:2026-10-30-anim-p3, run:2026-10-30-anim-p3b)
+- K3. [I] **Recorded short** (not a mismatch): three FHR rates of 30 for the Barbarian (two) and the Paladin (one),
+  which part 3 did not build; and, survivability-bound at part 2's build and not part 3's target, a third FCR rate
+  for the Amazon, Barbarian and Assassin, a second weapon type of the IAS rates, and two FBR rates of 30 for the
+  classes the records do not name (part 1 had two for three classes; part 2's record names the Paladin and Druid at
+  three). Their breakpoints stand on K1–K3 and the `[C]` inputs only. (run:2026-10-27-anim-p2,
+  run:2026-10-30-anim-p3b)
 
 ### L. The frame events as gates
 
@@ -829,7 +837,9 @@ M2. GetHitRoll(def, pkt, hc) → i32 (0 get hit, 1 not):              [C] (fn:su
   (MonProp `knock`), 12 set the player to neutral in the hit's own frame and one later; 2 by class 462 started
   mode 19. (fn:COMBAT_GetHit@0x0057CEE0, run:2026-10-27-anim) [I] Why Blood Raven's knockback commands end in neutral at once
   (the planner's point equal to the start, or a refusal in the mode command) is not logged; the length of mode 19 (two
-  starts) stays unstaged (Phase 2 part 2 names player knockbacks short); its reading is [anim/movement § E](movement.md#e-knockback).
+  starts) stays unstaged (Phase 2 parts 2 and 3 name player knockbacks short: part 3's three Hell sessions never met
+  Blood Raven, class 267, and logged no new player knockback, run:2026-10-30-anim-p3b); its reading is
+  [anim/movement § E](movement.md#e-knockback).
   (fn:sub_0057F090_PlrModeStartMove@0x0057F090)
 - M2. [C] All 7 195 logged calls return what M2 gives with 0–2 draws on the defender's seed (none 5 977, one 928, two
   290): early returns 809, below `hp ÷ D` 4 518, the two drawing bands 605 and 613, at `hp ÷ (D ÷ 4)` and above 650; `D`
@@ -844,7 +854,9 @@ M2. GetHitRoll(def, pkt, hc) → i32 (0 get hit, 1 not):              [C] (fn:su
   100⌋` (J2), `n(r) = max(2, ⌈256 F / r⌉)` frames (start frame 0), then neutral (I1); a monster's the same with its
   record. **The block's length** is the block mode's schedule at the block rate. (fn:sub_0057FE30_PlrModeStartGetHit@0x0057FE30,
   fn:sub_0057FDC0_PlrModeStartBlock@0x0057FDC0, fn:SUNIT_ScheduleModeEvents@0x005539B0) [C] Both rates and both
-  schedules hold at every logged call and schedule (E2, J2); the per-class FHR tiers are short (K3). (run:2026-10-27-anim)
+  schedules hold at every logged call and schedule (E2, J2), 0 mismatches over the 131 logs of parts 1–3; the get-hit's
+  at three FHR rates of 30 starts or more for the Amazon, Necromancer, Sorceress, Druid and Assassin (K3). The
+  Barbarian's and Paladin's FHR tiers stay short (K3). (run:2026-10-27-anim, run:2026-10-30-anim-p3b)
 
 ```
 M4. Player mode tests (both mode commands; the second unless forced):
@@ -976,6 +988,9 @@ run:2026-10-27-anim's schedules hold `n(r)` at every logged rate (E2), but these
 - Runs: [run:2026-10-27-anim](../../findings/anim/experiments.md#run2026-10-27-anim) (55 logs, 0 mismatches),
   [run:2026-10-27-anim-p2](../../findings/anim/experiments.md#run2026-10-27-anim-p2) (part 2: 26 logs, the closing
   check over 81 with 0 mismatches; the catalogue queue, the restart rule),
+  [run:2026-10-30-anim-p3](../../findings/anim/experiments.md#run2026-10-30-anim-p3) and
+  [run:2026-10-30-anim-p3b](../../findings/anim/experiments.md#run2026-10-30-anim-p3b) (part 3: 33 and 17 kept
+  sessions, the closing check over 131 logs with 0 mismatches; the get-hit FHR tiers of five classes),
   [run:2026-10-27-anim-rates-emu](../../findings/anim/experiments.md#run2026-10-27-anim-rates-emu) (the bonus and
   advance maps).
 - Formats and tables: [formats/animdata](../../formats/animdata.md), [MonSeq](../../tables/MonSeq.md),
@@ -1001,13 +1016,18 @@ run:2026-10-27-anim's schedules hold `n(r)` at every logged rate (E2), but these
 - [L] `SkillEntry+0x0C` bit 12, which turns a move-first skill back to the default rate branch, and item flag `0x4000`,
   which empties a hand for the dual-wield term, are not named.
 - [L] `sub_0057ED90_PlrSeqLeaveOk` past its first test.
-- [L] **Left short by plan 0050 Phase 2 part 2** (run:2026-10-27-anim-p2, reviewed; survivability-bound at clvl 70 /
-  life 400, the owner's build deviation and a part 3 open): three FHR rates of 30 per class, two FBR rates of 30 for
-  the classes the records do not name, the Druid's throws (12 of 30), the set-2 IAS rates, a third FCR rate for the Amazon, Barbarian and
-  Assassin; P1b-1's restart against the request frame for the other classes and action modes; the rare branches
-  (player knockbacks, the turn to a walk, `VASCHTH`: no stock state transforms a player into the vampire), and
-  P1b-13 and P1b-14 (session `sp-pal-slow`) and P1b-15, whose outcome the part 2 record does not report. Their statements stay `[I]`;
-  none is waiting on a mismatch (0 over 81 logs).
+- [L] **Left short by plan 0050 Phase 2 parts 2 and 3** (run:2026-10-27-anim-p2, survivability-bound at clvl 70 /
+  life 400; run:2026-10-30-anim-p3 and run:2026-10-30-anim-p3b, clvl 99 builds; all reviewed): three FHR rates of 30
+  for the Barbarian and the Paladin (part 3 built the other five classes, whose tiers K3 states); two FBR rates of 30
+  for the classes the records do not name; the Druid's throws, 29 of 30 over parts 1–3 (12, then 17 in part 3's
+  `op-dru-th`); the set-2 IAS rates; a third FCR rate for the Amazon, Barbarian and Assassin; P1b-1's restart against
+  the request frame for the other classes and action modes; P1b-2's 30 attacks with the factor above 175 (not played
+  in part 3; the clamp stands on part 1's 31 calls, *Constants*); player knockbacks (none new in part 3: Blood Raven,
+  class 267, never seen in three Hell sessions); `VASCHTH` (no stock state transforms a player into the vampire);
+  P1b-13 (13 player movement windows under a slow over the 131 logs, not a 30; 327 for monsters), P1b-14 and P1b-15
+  (not played in part 3; part 2's record reports no outcome for them). Their statements stay `[I]`; none is waiting
+  on a mismatch (0 over 131 logs). The run's turn to a walk at 0 stamina, reached in part 3, is
+  [anim/movement § Open questions](movement.md#open-questions).
 
 ### Community sources: differences of 1.14d
 
