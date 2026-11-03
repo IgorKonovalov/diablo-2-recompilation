@@ -3,7 +3,7 @@
 > **Source:** the pinned `Game.exe` image (no excel file)   **Rows:** 17 (types 0..16)   **Record:** two u32 words per type
 > **Doc status:** the 17 slots listed with address and flags, matching the survey; the setter, the third table, the flags
 > `PathPlan` and `PathSetType` read and the server callers' types anchored to [path/0001](../findings/path/0001-pathplan-register.md)
-> (plan 0054 P1.1); the planners' own reads of the flags and the three unnamed planners stay `[L]` (P1.2, P1.3)
+> (plan 0054 P1.1); the planners' own reads of the flags and the three unnamed planners stay `[L]` (P1.3; the types 0 and 16 planner reads no path field but `+0x30`, [path/0002 § 6](../findings/path/0002-search.md))
 
 ## Purpose
 
@@ -83,7 +83,7 @@ calls, 34 server and 34 client, 51 direct `PathSetType` calls; the client's are 
   (§ [Stock rows](#stock-rows-that-reach-a-type)). ([drlg/0009 § 11.1](../findings/drlg/0009-room-lifecycle.md))
 
 **The flags** (path/0001 § 8 *The flags' uses*: memory-immediate tests and stores on `[reg+0x34]` in the path module, 51 instructions over 18 bits;
-register-held tests are not in that scan; the planners' own tests are P1.2's and P1.3's):
+register-held tests are not in that scan; the planners' own tests are P1.3's):
 
 | Bit | What `PathPlan` / `PathSetType` do with it | Tag |
 |---|---|---|
@@ -95,8 +95,8 @@ register-held tests are not in that scan; the planners' own tests are P1.2's and
 | `0x8000` | `PathSetType` saves the speed into `+0x80` when the word has it, unless `+0x34` has `0x10000`; `PathMoveReset` restores it | `[C]` (`PathSetType`), `[I]` (`PathMoveReset`) |
 | `0x4000`, `0x10000` | suppress the type and the speed save of `PathSetType` respectively (a test of the path's existing flags) | `[C]` |
 | `0x20`, bit 0, `0x200` | the moving flag, the points-outside-room flag, the facing turn by 32 (path/0001 § 9) | `[I]` |
-| `0x100`, `0x400` | no reader in that scan beyond the masks that replace them (`PATH_DynamicCreate`, `PathSetType`); a planner's test is P1.2's and P1.3's | `[L]` |
-| `0x20000` | path/0001 § 8 does not name this bit among the scan's uses; `PathSetType`'s bits 8 to 18 mask replaces it. A planner's test is P1.2's and P1.3's | `[L]` |
+| `0x100`, `0x400` | no reader in that scan beyond the masks that replace them (`PATH_DynamicCreate`, `PathSetType`); a planner's test is P1.3's | `[L]` |
+| `0x20000` | path/0001 § 8 does not name this bit among the scan's uses; `PathSetType`'s bits 8 to 18 mask replaces it. A planner's test is P1.3's | `[L]` |
 
 - `[I]` Types 8, 9 and 11 (words with both `0x2000` and `0x8000`) are the temporary ones a `PathMoveReset` undoes (path/0001 § 8).
 - `[L]` The draws of types 3, 11 and 12 are unfollowed ([ai/0001 § 8](../findings/ai/0001-machinery.md#8-the-path-request), path/0001 *Open questions*).
@@ -107,9 +107,9 @@ register-held tests are not in that scan; the planners' own tests are P1.2's and
   (0: 548, 1: 25) and `+0x13C` `Orientation` (3: 429, 0: 60, 1: 58, 2: 26). (fn:OBJECTS_GetRecord@0x00640E90, fn:sub_00555230_SUnitCreate@0x00555230)
 - `[C]` **Path `+0x92` and `+0x91` under the search planner** (types 0 and 16; [path/0002 § 6](../findings/path/0002-search.md), emulation to the return,
   run:2026-11-03-path-emu-2, 2 116 cases, 0 mismatches). `+0x92` is `ctx.b1C`, the search's last bound: type 0 runs the bound from `h0` up in steps of 5 while below
-  `max(h0, b1C)`, type 16 from `h0 + h0 / 2` likewise (`b1C` at or below `h0` leaves type 0 one pass). `+0x91` is `ctx.limit` (path/0001 § 1): neither of the
-  two planners reads it (no traced read in any case; `traced=0`). Scope: these two planners only; the other planners' reads are P1.3's, and what a server request's
-  `b1C` is stays an open question of path/0002 (`[L]`).
+  `max(h0, b1C)`, type 16 from `h0 + h0 / 2` likewise, until a walk finds a node or the 900-node store fills (`b1C` at or below `h0` leaves type 0 one pass). `+0x91` is `ctx.limit` (path/0001 § 1): neither of the
+  two planners reads it (no traced read in any case; `traced=0`). Scope: these two planners only; the other planners' reads are P1.3's, and what a get-hit request's
+  `b1C` is on the server stays an open question of path/0002 (`[L]`).
 
 ## Columns a request reads
 

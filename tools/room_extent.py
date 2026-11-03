@@ -10,12 +10,16 @@ room rules of docs/findings/drlg/0003-generator-dispatch.md and drlg/0004-preset
 
   preset rect (DrlgType 2): rooms of min(8, rest) x min(8, rest) tiles, so at most 8 x 8;
   outdoor level (DrlgType 3): one 8 x 8 room per cell;
-  maze level (DrlgType 1): the room is LvlMaze SizeX x SizeY; a room of at most 12 x 12 is one room, a larger one
-  is split into the 8 x 8 blocks.
+  maze level (DrlgType 1): the maze room is LvlMaze SizeX x SizeY; a maze room of at most 12 x 12 is one room, a larger
+  one is split into the 8 x 8 blocks. The test is on the maze room, but the rooms are cut from the preset instance, whose
+  size is the LvlPrest record's when both its sizes are non-zero: so the scan also checks the records of the maze types
+  that keep the room whole (SMALL_MAZE_DEFS, drlg/0006's blocks).
 
 A room's subtile rectangle is its tile rectangle x 5 (drlg/0005). The search's rectangle for a same-room request
 is room + 20 on each axis (path/0002 § 2); it asserts when w*h > 50 000 and its clear covers (w + 6)(h + 6) cells of
-a frame that holds 50 010 before the saved EBP (path/0002 § 9). The report prints the largest room, its levels and
+a frame that holds 50 010 before the saved EBP (path/0002 § 9). A rectangle over two rooms joined by the near list's gap
+rule (below 6 tiles on both axes, drlg/0007) has a side of at most room + 5 tiles + room; a warp-paired room has no gap
+rule, and only PathPlan's window of 100 subtiles bounds it. The report prints the largest room, its levels and
 the rectangle numbers, writes report.txt and the per-source tables to --out and a manifest.sha256. Stdlib only.
 Read-only on the data tree.
 """
@@ -37,7 +41,15 @@ MARGIN = 20              # the search rectangle's margin on each axis (room + 20
 ASSERT_AREA = 50000      # PathSearchRun asserts when w*h exceeds it
 FRAME_CELLS = 50010      # cells from the grid start to the saved EBP
 CLEAR_PAD = 6            # the clear covers (w + 6)(h + 6) cells
+NEAR_GAP_MAX = 5         # the near list takes a gap below 6 tiles on both axes (drlg/0007)
+WINDOW = 100             # PathPlan refuses a target past 100 subtiles on either axis (path/0001)
 DRLG_MAZE, DRLG_PRESET, DRLG_OUTDOOR = 1, 2, 3
+# Record Defs of the maze types whose LvlMaze size is at most 12 x 12: base + 1 to the last special, drlg/0006 § 8 and its
+# table of special blocks (the fixed entries of Lair 509, Sewer A3 735-738 and Arcane's arms inside them).
+SMALL_MAZE_DEFS = {
+    "4 Crypt": (109, 158), "8 Jail": (206, 255), "10 Catacombs": (258, 298), "13 Sewer A2": (302, 352),
+    "18 Lair": (482, 509), "19 Arcane": (510, 528), "25 Sewer A3": (705, 746), "22 Durance": (754, 795),
+}
 
 
 def maze_room(sx, sy):
@@ -67,6 +79,25 @@ def threshold_square():
         if r["asserts"]:
             return None
         n += 1
+
+
+def pair_side_near(wt):
+    """Longest side (subtiles) of a two-room rectangle for near-list rooms of at most wt tiles a side."""
+    return (wt + NEAR_GAP_MAX + wt) * SUBTILES
+
+
+def pair_side_window(wt):
+    """Longest side (subtiles) of a two-room rectangle bounded only by PathPlan's window."""
+    return wt * SUBTILES + WINDOW + wt * SUBTILES
+
+
+def small_maze_records(prest):
+    """Per maze type that keeps rooms whole: the record count and the largest side of its Def block."""
+    out = {}
+    for name, (lo, hi) in SMALL_MAZE_DEFS.items():
+        k = [p for p in prest if lo <= p["defn"] <= hi]
+        out[name] = (len(k), max(max(p["sx"], p["sy"]) for p in k), min(min(p["sx"], p["sy"]) for p in k))
+    return out
 
 
 def rect_numbers_sub(w, h):
@@ -169,8 +200,8 @@ def report(root):
     L.append("lvlmaze SizeX/SizeY: max %dx%d" % (max(s[0] for v in maze.values() for s in v), max(s[1] for v in maze.values() for s in v)))
     L.append("lvlprest SizeX/SizeY: max %dx%d" % (max(p["sx"] for p in prest), max(p["sy"] for p in prest)))
     ds = [(d[1], d[2], d[0]) for p in prest for d in p["ds1"]]
-    L.append("DS1 named by lvlprest: %d files; max size_x %d, max size_y %d" % (
-        len(ds), max((d[0] for d in ds), default=0), max((d[1] for d in ds), default=0)))
+    L.append("DS1 named by lvlprest: %d File slots, %d distinct names; max size_x %d, max size_y %d" % (
+        len(ds), len({d[2].lower() for d in ds}), max((d[0] for d in ds), default=0), max((d[1] for d in ds), default=0)))
     L.append("levels with DrlgType 3 (outdoor) max SizeX/SizeY: %dx%d" % (
         max(max(l["sx"]) for l in lv if l["drlg"] == DRLG_OUTDOOR), max(max(l["sy"]) for l in lv if l["drlg"] == DRLG_OUTDOOR)))
     L.append("LARGEST ROOM %dx%d tiles = %dx%d subtiles; %d sources:" % (w, h, w * SUBTILES, h * SUBTILES, len(top)))
@@ -181,6 +212,14 @@ def report(root):
             L.append("  %s: %s" % (r[0], r[2]))
     L.append("same-room rectangle %dx%d, product %d (assert > %d: %s), clear %d (overrun > %d: %s)" % (
         nums["rect"][0], nums["rect"][1], nums["product"], ASSERT_AREA, nums["asserts"], nums["clear"], FRAME_CELLS, nums["overruns"]))
+    sm = small_maze_records(prest)
+    L.append("records of the maze types with a whole room (records, largest side, smallest side): " + "; ".join(
+        "%s %d, %d, %d" % (k, v[0], v[1], v[2]) for k, v in sm.items()))
+    L.append("a record larger than the 12 x 12 test in those blocks: %s" % any(v[1] > SINGLE_MAX for v in sm.values()))
+    for label, side in (("near-list pair", pair_side_near(w)), ("window-only pair", pair_side_window(w))):
+        n = rect_numbers_sub(side - MARGIN, side - MARGIN)
+        L.append("%s: side at most %d, product %d (assert: %s), clear %d (overrun: %s)" % (
+            label, side, n["product"], n["asserts"], n["clear"], n["overruns"]))
     t = threshold_square()
     L.append("smallest square room (subtiles) that overruns while passing the assert: %s = %s tiles" % (t, t / SUBTILES if t else None))
     L.append("headroom: largest room %d subtiles a side against %s" % (w * SUBTILES, t))

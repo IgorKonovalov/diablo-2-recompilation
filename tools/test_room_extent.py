@@ -39,6 +39,26 @@ class Rules(unittest.TestCase):
         self.assertEqual(n["clear"], 86 * 86)
         self.assertFalse(n["overruns"])
 
+    def test_threshold_band(self):
+        # 198..203 pass the assert and overrun, 204 asserts first (rectangle 224 x 224, path/0002 § 9)
+        self.assertTrue(R.rect_numbers_sub(203, 203)["overruns"])
+        self.assertFalse(R.rect_numbers_sub(203, 203)["asserts"])
+        self.assertTrue(R.rect_numbers_sub(204, 204)["asserts"])
+
+    def test_pair_bounds(self):
+        self.assertEqual(R.pair_side_near(12), 145)
+        self.assertEqual(R.pair_side_window(12), 220)
+        near = R.rect_numbers_sub(145 - R.MARGIN, 145 - R.MARGIN)
+        win = R.rect_numbers_sub(220 - R.MARGIN, 220 - R.MARGIN)
+        self.assertEqual((near["clear"], near["overruns"]), (151 * 151, False))
+        self.assertEqual((win["clear"], win["overruns"], win["asserts"]), (226 * 226, True, False))
+
+    def test_small_maze_records(self):
+        recs = [dict(defn=d, sx=12, sy=12) for lo, hi in R.SMALL_MAZE_DEFS.values() for d in range(lo, hi + 1)]
+        self.assertTrue(all(v[1] == 12 for v in R.small_maze_records(recs).values()))
+        recs[0]["sx"] = 16
+        self.assertEqual(R.small_maze_records(recs)["4 Crypt"][1], 16)
+
 
 def rec(size, fields):
     b = bytearray(size)
@@ -58,11 +78,13 @@ class Scan(unittest.TestCase):
             put("leveldefs", [rec(156, [(0x30, "<I", 1), (0x0C, "<i", 0)]),
                               rec(156, [(0x30, "<I", 3), (0x0C, "<i", 80), (0x18, "<i", 80)])])
             put("lvlmaze", [rec(28, [(0, "<I", 0), (0x10, "<i", 12), (0x14, "<i", 12)])])
-            put("lvlprest", [rec(432, [(0, "<i", 1), (0x28, "<i", 40), (0x2C, "<i", 24)])])
+            put("lvlprest", [rec(432, [(0, "<i", d), (0x28, "<i", 40), (0x2C, "<i", 24)])
+                             for lo, hi in R.SMALL_MAZE_DEFS.values() for d in (lo, hi)])
             open(os.path.join(ex, "levels.txt"), "wb").write(b"Name\tId\r\nA\t0\r\nB\t1\r\n")
             L, rooms, lv, maze, prest = R.report(root)
             self.assertTrue(any("LARGEST ROOM 12x12 tiles = 60x60 subtiles" in x for x in L))
-            self.assertEqual(sorted(r[0] for r in rooms), ["maze", "outdoor", "preset"])
+            self.assertEqual(sorted(set(r[0] for r in rooms)), ["maze", "outdoor", "preset"])
+            self.assertTrue(any("a record larger than the 12 x 12 test in those blocks: True" in x for x in L))
 
 
 if __name__ == "__main__":

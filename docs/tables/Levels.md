@@ -289,28 +289,31 @@ column is `[I]` only where a finding names its reader, and Phase 1 of plan 0042 
 
 ## Largest room a stock level can have (plan 0054 P1.2 follow-up)
 
-Asked by [path/0002 § 9](../findings/path/0002-search.md): whether a stock room makes the search's frame overrun (a same-room
-rectangle is the room plus 20 subtiles on each axis; the clear covers `(w + 6)(h + 6)` cells of a 50 010-cell frame, which a room of
-198 × 198 subtiles or more passes). Script: `python3 -I tools/room_extent.py scan <merged-root> --out workspace/logs/a67`
-(tests: `tools/test_room_extent.py`; output `report.txt`, `levels.tsv`, `lvlprest.tsv` and `manifest.sha256` under `workspace/logs/a67/`).
+Asked by [path/0002 § 9](../findings/path/0002-search.md): whether a stock room makes the search's frame overrun. A same-room rectangle is the room plus 20 subtiles on
+each axis (§ 2: 10 each side, so a 60-subtile room gives 80). The clear covers `(w + 6)(h + 6)` cells of a frame that holds 50 010 before the saved `EBP`. So a square room of 197 fits, 198 to 203 pass the
+50 000 assert and overrun, and 204 and up assert first (rectangle 224 × 224). **This section answers for one room and bounds a pair; it does not say the overrun cannot happen:** the mechanism is `[C]` in path/0002 § 9, and one kind of pair stays open below.
+Script: `python3 -I tools/room_extent.py scan <merged-root> --out workspace/logs/a67` (tests: `tools/test_room_extent.py`; output `report.txt`, `levels.tsv`, `lvlprest.tsv` and `manifest.sha256` under `workspace/logs/a67/`).
 
 - `[C]` **Sizes in the tables** (counts over every row, per source): `Levels` `DrlgType` 3 (outdoor) `SizeX` up to 240 and `SizeY` up to
   192 tiles, the same in all three difficulties; `lvlmaze.bin` `SizeX`/`SizeY` up to 64 × 64 over its 81 rows (70 of them for `DrlgType` 1 levels;
   the 11 other rows, for levels 0, 13–16, 25, 37, 90, 91, 93 and 132, are 8 × 8 to 24 × 24); `lvlprest.bin` `SizeX`/`SizeY` up to 64 × 64 over
-  1 091 records; the 2 058 DS1 files its `File1..6` name have `size_x` and `size_y` up to 84 (header values, as [ds1](../formats/ds1.md)).
-  These are the sizes of a level, a maze room or a preset rect, not of a DRLG room.
-- `[C]` **The room is cut from them** by the builders ([drlg/0003](../findings/drlg/0003-generator-dispatch.md)): a preset rect and an outdoor cell
-  make rooms of `min(8, rest)` tiles a side; a maze room of at most 12 × 12 tiles is one room and a larger one is cut into those 8 × 8 blocks.
-  [I] These are the only three room-making callers (`PresetRoomsCreate`'s three callers, [drlg/0004](../findings/drlg/0004-preset-units.md) § Shared DS1 buffers).
-- `[C]` **Largest room from the stock tables: 12 × 12 tiles, 60 × 60 subtiles** (a tile is 5 subtiles, [drlg/0005](../findings/drlg/0005-collision.md)),
-  in the maze levels whose `lvlmaze` size is 12 × 12 and keep the room whole: levels 29, 30, 31 (Jail 1–3), 34, 35, 36 (Catacombs 1–3), 47, 48, 49 and 65
-  (Sewer 1 A–C and 2 A), 74 (Arcane), 92 (Act III Sewer 1), 100 and 101 (Mephisto 1–2). Every other room is 8 × 8 tiles (40 subtiles) or smaller
-  (the largest preset room, from the 8 × 40 record 2, is 8 × 8; `Act 1 - Barracks` 10 × 14 is cut). The 11 `lvlmaze` rows of levels that are not maze levels
-  are not read as rooms here ([drlg/0006](../findings/drlg/0006-maze.md) § 8 (e) looks up by `Level` for maze levels).
-- `[C]` **Against the threshold, in data terms:** the same-room rectangle of the largest room is 80 × 80 (product 6 400, below the 50 000 assert; clear 7 396 cells,
-  below the 50 010 frame). No stock room is within a factor of three of the 198 × 198 subtile threshold (60 against 198). Outside the answer, as the
-  rule of [path/0002 § 2](../findings/path/0002-search.md) joins two rooms into a rectangle by their positions: a pair's rectangle depends on the generated layout and on the target's room, so no
-  table gives its size. Tag on the reach in play: `[I]` (the room counts rest on the three callers above), the sizes themselves `[C]` as listed.
+  1 091 records; its `File1..6` hold 2 058 DS1 names (2 043 distinct) whose `size_x` and `size_y` go up to 84 (header values, as [ds1](../formats/ds1.md)).
+  These are the sizes of a level, a maze room, a preset rect or a file, not of a DRLG room.
+- `[C]` **The room is cut from them** by the builders ([drlg/0003](../findings/drlg/0003-generator-dispatch.md)): an outdoor plain cell makes one 8 × 8 room (`OutRoomCreate`), and a preset instance
+  makes rooms of `min(8, rest)` tiles a side, or one room over its whole rect when the maze builder passes `single = (M.w ≤ 12 && M.h ≤ 12)`. The test reads the maze room `M`; the rect is the instance's,
+  the `LvlPrest` record's `SizeX` × `SizeY` when both are non-zero, else `M`'s. So a maze room of 12 × 12 with a larger record would make one room of the record's size.
+- `[C]` **No stock record does that, by data.** The 8 maze types with a `LvlMaze` size of at most 12 × 12 are Crypt 8 × 8, Lair 10 × 10, and Jail, Catacombs, Sewer A2, Arcane, Durance and Sewer A3 12 × 12. Every record of their
+  `Def` blocks in [drlg/0006](../findings/drlg/0006-maze.md) has its type's size (109–158, 482–509, 206–255, 258–298, 302–352, 510–528, 754–795, 705–746). `[I]` Those blocks are what these types place (drlg/0006 § 8 (c): no other code writes a maze `Def`, apart from the fixed starts and the level 28 and 107 paths).
+- `[I]` **Largest room from the stock tables: 12 × 12 tiles, 60 × 60 subtiles** (a tile is 5 subtiles, [drlg/0005](../findings/drlg/0005-collision.md)),
+  in the 14 maze levels whose `lvlmaze` size is 12 × 12: levels 29, 30, 31 (Jail 1–3), 34, 35, 36 (Catacombs 1–3), 47, 48, 49 and 65
+  (Sewer 1 A–C and 2 A), 74 (Arcane), 92 (Act III Sewer 1), 100 and 101 (Mephisto 1–2). Every other room is 8 × 8 tiles (40 subtiles) or smaller, or Lair's 10 × 10
+  (preset records of any size are cut: 8 × 40 record 2 and `Act 1 - Barracks` 10 × 14 give 8 × 8 at most). The rows of the 11 non-maze levels are not rooms: `[C]` `LvlMazeByLevel` has one caller, for `DrlgType` 1
+  ([drlg/0006](../findings/drlg/0006-maze.md) S4b row 2, raising § 8 (e)). Levels 37 and 93 have 12 × 12 rows, so reading them would add two names, not a larger room.
+  The rooms counted are those of the three generators of drlg/0003: `PresetRoomsCreate`'s three callers ([drlg/0004](../findings/drlg/0004-preset-units.md) § Shared DS1 buffers) and the outdoor plain cell's `OutRoomCreate`. No finding here lists `DRLG_RoomCreate`'s callers whole, hence `[I]`.
+- `[I]` **This is the search's rectangle.** `PathPlanSearch` reads `RoomRectGet`, `DungeonRoom +0x4C` (path/0002 § 2), and drlg/0005 states the same field as the DRLG room's tile rectangle × 5 (`[C]`, 1 439 activation dumps; fn:sub_00619730_RoomRectGet@0x00619730, struct:DungeonRoom+0x4C). path/0002's 40 and 60 subtiles agree; they come from the model grids of four levels, not from this scan.
+- `[I]` **One room does not overrun.** The largest same-room rectangle is 80 × 80: product 6 400, below the 50 000 assert; clear 86 × 86 = 7 396 cells, below 50 010. 60 subtiles against 198.
+- `[I]` **Two rooms, on the near list's gap rule, do not overrun.** With a target in another room the rectangle follows § 2's rule by the two rooms' positions, so its size depends on the generated layout and no table gives it. The target's room comes from the unit's room's near list ([path/0001 § 1](../findings/path/0001-pathplan-register.md)), which holds the rooms of the level with a gap below 6 tiles on both axes and the seam rooms under the same gap ([drlg/0007](../findings/drlg/0007-warps.md)). Such a pair has a side of at most 12 + 5 + 12 tiles = 145 subtiles: clear at most 151 × 151 = 22 801 cells.
+- **Not answered: a warp-paired room.** A room `WarpPairRoomFind` appends with a warp id has no gap rule. Only `PathPlan`'s window (`|dx|`, `|dy|` ≤ 100) bounds that pair, to a side of about 60 + 100 + 60 = 220 subtiles, and 220 × 220 passes the assert (48 400) and overruns (226 × 226 = 51 076). It needs two 12 × 12 rooms some 96 subtiles or more apart on both axes. Whether a stock pair lies so is in § Open questions.
 
 ## Columns
 
@@ -690,6 +693,7 @@ s32) · `+0x088` `Intensity`, `Red`, `Green`, `Blue` (u8) · `+0x08C` `Portal`, 
 
 ## Open questions
 
+- `[L]` Whether a stock warp-paired room lies within `PathPlan`'s window of the source room and far enough to make a rectangle past the frame (§ [Largest room](#largest-room-a-stock-level-can-have-plan-0054-p12-follow-up)): reverser, path/0002 *Open questions*.
 - Answered `[I]`: monster references (`mon*`/`nmon*`/`umon*`) are used as record positions, so after
   the duplicate `cr_lancer8` they point one record early
   ([data/0001 §8](../findings/data/0001-excel-loader.md#8-answers-to-the-archivists-phase-1-questions), [MonStats.md](MonStats.md#open-questions)).
