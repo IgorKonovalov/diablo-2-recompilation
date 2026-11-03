@@ -187,7 +187,7 @@ flowchart TD
   creation gives a player 73 and a monster 14 (0x00649E86, 0x00649E4D). `+0x92` is 70 for a player (0x00649E8D) and
   is written otherwise in the path module only by `sub_00648F00_PathSetByte92`, which asserts a path of type 0. `+0x93` is the
   stop range (`PathSetStopDist`), `+0x94` the re-plan budget (§ 9), `+0x98` the type parameter. How the planners use
-  `ctx.limit`, `ctx.b1C` and `+0x98`: the search reads `b1C` only and not `limit` (path/0002 § 6); the other planners are P1.3's.
+  `ctx.limit`, `ctx.b1C` and `+0x98`: the search reads `b1C` only and not `limit` (path/0002 § 6); greedy reads `limit` and `+0x98`, type 15 and the random walk the byte `+0x91` itself, type 1 neither (path/0003 §§ 1–8, 0x00679D3B, 0x0067C312, 0x0067A27F).
 - [I] **Writers** (`p1-writers-9x.txt`, byte stores to `[reg+0x90..0x94]` over `.text`): in the path module only the
   setters, `PATH_DynamicCreate` and `PathStepMove`'s `+0x90` decrement (0x00650724); two client copies (0x004651B6–
   0x004651DC, 0x00447060, 0x0044706F); 14 stores in 0x0058929F–0x00594647 (the range corrected by path/0002 § 10, which also
@@ -310,7 +310,7 @@ return 1;
   flag, `0x200` turns the facing by 32 (§ 9), `0x4000` / `0x10000` keep the saved type and speed. Bits `0x100`,
   `0x400`, `0x2000` and `0x8000` are only replaced by `PATH_DynamicCreate`'s and `PathSetType`'s masks in this
   scan; `0x2000` and `0x8000` are read from the type's word in `PathSetType` (a register test). The planners' tests
-  of the flags: the search reads none (path/0002 § 6); the other planners' are P1.3's.
+  of the flags: the search reads none (path/0002 § 6); of the short planners only `PathAimNextPoint`'s `0x200`, through greedy's first line (path/0003 § 1).
 
 ### 9. The consumers: `PathAimNextPoint`, `PathFaceDir`, `PathReplan`
 
@@ -355,7 +355,7 @@ return 1;
   not the path's; unfollowed here.
 - [I] So in this batch every draw of a plan lies in the planner: the random walk (type 10, P1.3) and the search's
   type-16 branch (P1.2), as ai/0001 § 8 found; the slots of types 3, 11 and 12 (0x00679E50, 0x00679FD0, 0x00679E60) were
-  roots of neither graph, so their draws are unfollowed (P1.3). (fn:sub_0067A240_PathPlanRandomWalk@0x0067A240)
+  roots of neither graph, so their draws were unfollowed here; path/0003 § 5 follows them: none. (fn:sub_0067A240_PathPlanRandomWalk@0x0067A240)
 
 ### 11. The request register
 
@@ -393,8 +393,8 @@ records reaches (0x006E22C0). Owners and types:
   4, 7, 8, 9, 10, 14, 15, 16 and 101, and four register arguments (the reach test's restore, `MonPathPlanType`'s
   argument, `MonAiPreferDecoy`'s restore, `PathMoveReset`'s saved type); 13 is written directly by `PathReplan` and
   through `MonPathPlanType` (ai/0001 § 8), 5 and 6 through it, 2 directly by `PATH_DynamicCreate`. **No server code
-  sets 3, 11 or 12**: 11 has three client calls (0x004614A6, 0x004B04BF, 0x004C8870). Unfollowed: a `+0x3C` store
-  that is not a `PathSetType` call outside the path module.
+  sets 3, 11 or 12**: 11 has three client calls (0x004614A6, 0x004B04BF, 0x004C8870). The `+0x3C` stores that are not a `PathSetType` call
+  outside the path module: path/0003 § 12's scan, with its remainder of 18 unresolved server bases.
 
 ### 12. Emulation (run:2026-11-03-path-emu-1)
 
@@ -486,8 +486,6 @@ records reaches (0x006E22C0). Owners and types:
 
 - Whether a server-created object unit's record is the only one the refresh meets: answered for `SUnitCreate`'s units (*Data
   touched*); a client unit's data is out of scope (owner decision 5).
-- `[L]` What the planners of P1.3 do with `ctx.limit` (+0x91), `ctx.b1C` (+0x92), `ctx.refresh` and `+0x98`; the search's
-  use is path/0002 (P1.2).
-- `[L]` Whether a planner of P1.3 can return more than 78 points (the tail has no bound); the search's bound is path/0002 § 9.
+- What the planners do with `ctx.limit`, `ctx.b1C`, `ctx.refresh` and `+0x98`, and whether one can return more than 78 points: answered, path/0002 § 9 and path/0003 § 11 (no server planner passes 78; greedy fills all 78 at limit 77; client type 12 can).
 - `[L]` The type-16 setters (no reference) and the client sites of types 3, 11 and 12: a harness break line in Phase 2
   would show whether anything reaches them on the server (ai/0001 *Open questions*).

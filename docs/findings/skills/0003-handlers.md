@@ -57,7 +57,7 @@ offsets are record offsets. This batch continues [skills/0001](0001-dispatch.md)
   skill level 20; § 5's "none" corrected; raised in part: one input, the level gate and class 364 unreached); the
   summon level is `min(max(L · 3/4 + skill level, 1), L)` (8 of 8, case C1, one input: raised in part, the clamps
   unreached) or the given level (207); `0x005C9290` re-seeds the new missile from `Init(path x + arg)` (450 of 450), and its
-  path calls then step that seed (§ 9's "none" corrected; which call, `[I]`). (fn:sub_005C4430_SummonClassRoll@0x005C4430,
+  path calls then step that seed (§ 9's "none" corrected; which call: `PathPlan`'s random walk, path/0003 § 10, 2026-11-04). (fn:sub_005C4430_SummonClassRoll@0x005C4430,
   fn:sub_005C49E0_SummonSetLevel@0x005C49E0, fn:sub_005C9290_MissCbReseedPathXPlusArg@0x005C9290, run:2026-10-25-skills)
 - [C] *2026-10-27:* **Part 2** (§ 16, run:2026-10-27-skills, 0 mismatches), raised in part: the § 3 handlers' own
   draws in 1 303 calls (none, one, or one before an item cast), heal after kill's capped addition, open wounds' roll,
@@ -687,8 +687,8 @@ if (m) { m->c4 &= ~4; SetStat(m, 74, 0); SummonSetLevel(m, max(calc2, 1), lvl); 
   `sub_00648CF0_PathSetType(path, 0xA)` (`0x005C92D9`), `sub_00648E70_PathSetByte90(path, range)` (`0x005C92E0`) and
   `sub_00649970_PathPlan(path, missile, 0)` (`0x005C92E9`), and the missile's seed at the callback's `ret` lies 20
   steps (442 Firestorm sub-missiles) or 38 steps (8 class-195 missiles of a monster) past the Init in the run (§ 15).
-  The first reading's `DRAW` line looked for steps inside `0x005C9290` only; which of the three calls steps, and why
-  20 or 38, is not read (the path planner is a value oracle under § 14). (fn:sub_005C9290_MissCbReseedPathXPlusArg@0x005C9290,
+  The first reading's `DRAW` line looked for steps inside `0x005C9290` only. *2026-11-04 (plan 0054 P1.3a), answered:* `PathPlan` steps it, through
+  the random walk, `min(Range, 77) >> 1` times; `Range` 40 gives 20 and 98 gives 38 ([path/0003 § 10](../path/0003-short-planners.md#10-missiles-h1-and-the-other-callback)), run:2026-11-03-path-emu-3. (fn:sub_005C9290_MissCbReseedPathXPlusArg@0x005C9290,
   fn:sub_00649970_PathPlan@0x00649970, run:2026-10-25-skills)
 - [I] As above (`DRAW` lines: `SeedInit` and `lcg` per site; `REF` lines: the callbacks' only references are the
   `mov [ebp−…], callback` stores of their creators). So the server re-seeds a **unit** seed only at do 146 among the
@@ -872,7 +872,7 @@ RunList(lists->a14, every); RunList(lists->bucket[4], frame);     // fifth list 
   past it in the 442 of Firestorm's sub-missiles and 38 in the 8 of a monster's class-195 missiles; a seed made any
   other way lies within 5 000 steps of that Init by chance with odds of about 5 000 in 2⁶⁴. (fn:sub_005C9290_MissCbReseedPathXPlusArg@0x005C9290,
   run:2026-10-25-skills)
-- [I] Which of the callback's three path calls makes the 20 or 38 steps is not read (§ 9 note). The other re-seed
+- [C] Which of the callback's three path calls makes the 20 or 38 steps: `PathPlan`'s random walk (§ 9 note, *2026-11-04*; fn:sub_0067A240_PathPlanRandomWalk@0x0067A240, run:2026-11-03-path-emu-3). The other re-seed
   sites of § 9 are not reached. (run:2026-10-25-skills)
 - [I] **Not checked by the run** (named in the record as shortfalls): the stat-event handlers of § 3 (284 fires
   logged, oracles), state 52 (never applied), the progressive entries of § 1 (56 finisher calls, oracles), Kick, Left
@@ -969,7 +969,7 @@ logs one representative per family with no tier-A member and does not restate th
   `0x005C9290`); a seed made any other way lies within 5 000 steps of that Init by chance with odds of about 5 000 in
   2⁶⁴. The 12 `MC.seed` mismatches the first check gave (the model took the creation seed) are this callback.
   (fn:sub_005AC040_MissCbReseedPathX@0x005AC040, 0x005AC073, run:2026-10-30-skills-catalogue)
-- [I] Which of the three path calls makes the 10 steps is not read (as § 9 for the 20 and 38); that the Init's low
+- [C] The 10 steps are `PathPlan`'s random walk, class 408's `Range` 20 `>> 1` (path/0003 § 10; fn:sub_0067A240_PathPlanRandomWalk@0x0067A240, run:2026-11-03-path-emu-3). [I] That the Init's low
   word is the value `0x00648A00(path)` returns, read as path `+0x10`, is read from the comparison alone (it fits in
   36 of 36). The callback is reached from the hit functions `0x005AC14B` and `0x005AC525` by § 9; which of the two
   made these creations is not logged. (fn:sub_005AC040_MissCbReseedPathX@0x005AC040)

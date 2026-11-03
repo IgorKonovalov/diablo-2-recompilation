@@ -946,6 +946,8 @@ def read_out(path):
             calls[-1]["args"] = bytes.fromhex(p[1])
         elif p[0] == "U":
             calls[-1]["u"].append((int(p[1], 16), int(p[2], 16), int(p[3]), int(p[4])))
+        elif p[0] == "UX":                                           # EmuScratch past its U-line cap (plan 0054 P1.3): fails the case
+            calls[-1]["u"].append((0, 0, 0, int(p[1])))
         elif p[0] == "D":
             calls[-1]["dumps"][int(p[1], 16)] = bytes.fromhex(p[2]) if len(p) > 2 else b""
         elif p[0] in ("R", "W"):

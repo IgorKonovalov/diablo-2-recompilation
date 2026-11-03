@@ -296,4 +296,4 @@ From `p2-bounds.txt` (`tools/path_emu2.py bounds`), each with its emulation wher
 
 - `[L]` Whether any stock room or pair of rooms makes a rectangle whose `(w + 6)(h + 6)` passes 50 010: the observed rooms are 40 and 60 subtiles on a side. A scan of the largest active room rectangle (DS1 sizes against `DUNGEON_RoomCreate`) would settle it; 198 × 198 subtiles is the same-room threshold.
 - `[L]` What a get-hit request's `ctx.b1C` is on the server: `+0x92` is written in the path module only at creation (70 a player) and by `PathSetByte92`, so a monster's would be 0 and type 0 one pass at `h0`; Phase 2's `PLC` line logs it.
-- `[L]` `PathPlanType1`, `PathPlanType15`, greedy-near in full (P1.3a).
+- `PathPlanType1`, `PathPlanType15`, greedy-near in full: answered, path/0003 §§ 3, 6, 7.
