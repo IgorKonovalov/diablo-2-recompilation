@@ -504,6 +504,9 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-11-03 | `lane/s65` | 0050 P2 part 3 re-tag | spec-writer | 139 580 | 54 | 7 | — (no Ghidra, no harness) | accept with fixes (Tier A) | 5: overclaim 2, wrong anchor 1, other 2 |
 | 2026-11-03 | `lane/s65` review | 0050 P2 part 3 re-tag | architect-review | 123 390 | 44 | 5 | — | accept with fixes (5) | overclaim 2, wrong anchor 1, other 2 |
 | 2026-11-03 | `lane/c50` | 0050 close | architect-check | 58 339 | 13 | 2 | — | plan closed | — |
+| 2026-11-03 | `lane/a64` | 0050 part 3 recipes; 0052 P1.2 batches 9-10 readers (3 entries) | archivist | 148 969 | 39 | 7 | — | accept with fixes (Tier B check 2, audit 6) | 9: stale 2, omission-route 1, under-claim 3, misread 2, omission 1 |
+| 2026-11-03 | `lane/a64` check | 0050 part 3 recipes; 0052 batches 9-10 readers | architect-check | 115 710 | 24 | 5 | — | accept with fixes (2) | stale 2, omission-route 1 |
+| 2026-11-03 | `lane/a64` review | 0050 part 3 recipes; 0052 batches 9-10 readers | architect-review | 156 301 | 38 | 5 | — | accept with fixes (6) | audit of lane/a64: under-claim 3, misread 2, omission 1; reject-grade missed: no |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not
