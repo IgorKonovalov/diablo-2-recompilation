@@ -325,3 +325,37 @@ review). A tool fix and its test, then a re-run of the kept emulations it could 
   runs; the drain's stamp for the skill-request handlers; the seed hand-offs; 926 monster cross-type every-frame queues;
   7 more resyncs re-chained (142 of 281 player gaps, 0 of 331 monster gaps). No symbol raise (no logged return compared;
   review-fixes rule 14). (run:2026-11-03-frame-order)
+
+## run:2026-11-03-frame-order-2
+
+- **Question:** (plan 0055 Phase 2a-ii) With the pointer tables and stored callbacks behind the 74 open hooks declared, how many hooks get a pass, how many frames place two or more events, and does the order still hold? ([frame/0005](0005-dispatchers.md))
+- **Setup:** no game, no wine, no slot. Input as run:2026-11-03-frame-order: the 331 corpus logs (`frame-corpus-logs.tsv` `12c71c1c…`) and the pinned `game.exe` (`631066c1…`). Tool `tools/frame.py`: `check` and `check --direct` on `a21171fc…` (commit `966613c8`); `kinds`, `reach` and the tests on `9d6487a6…` (commit `6cb4a3a2`, one anchor string changed, no logic). `tools/test_frame.py` `02d81f8c…`, 23 tests; `tools/frame_corpus.py` `287f3761…`, unchanged. Every replay under `systemd-run --user --scope -p MemoryMax=4G`, one at a time. Kept files in `workspace/logs/r55f/`, `manifest.sha256` (`2109a8b4…`, 24 lines); `sha256sum -c manifest.sha256` from that directory passes.
+- **Procedure:**
+  ```
+  K=workspace/logs/r55f
+  python3 -I tools/test_frame.py > $K/test.txt 2>&1
+  systemd-run --user --scope -q -p MemoryMax=4G python3 -I tools/frame.py kinds --resolved > $K/kinds.tsv
+  systemd-run --user --scope -q -p MemoryMax=4G python3 -I tools/frame.py reach > $K/reach.txt
+  systemd-run --user --scope -q -p MemoryMax=4G python3 -I tools/frame.py reach <42 dispatchers> > $K/dispatchers.txt
+  systemd-run --user --scope -q -p MemoryMax=4G python3 -I tools/frame.py check --out $K/check workspace/logs \
+      > /dev/null 2> $K/check-progress.txt
+  systemd-run --user --scope -q -p MemoryMax=4G python3 -I tools/frame.py check --direct --out $K/check-direct \
+      workspace/logs > /dev/null 2> $K/check-direct-progress.txt
+  ```
+  Exit codes 0 for both checks (`check-rc.txt`). `classes.txt` and `pairs.txt` are awk sums over `check/check.txt`. `reads/` holds the Ghidra decompiles read (`dec1.c`–`dec7.c`), `edges.py` with `edges.txt` (the declared edges by class) and `chains-example.py` with `chains-example.txt`.
+- **Observed** (`check/check.txt` `f4f4499d…`, 507 lines; `check/frame-check-logs.tsv` `0989184c…`; `check-direct/check.txt` `dd1bf530…`; `kinds.tsv` `c7d1a1e0…`, 115 kinds; `reach.txt` `072d76ca…`, 89 hooks; `dispatchers.txt` `b4249d9b…`; `test.txt` `eb79a834…`, `OK`):
+  ```
+  hooks 89: reach 16, dispatch 8, universal 65; of the 74 open in Phase 2a: dispatch 8, reach 1, universal 65
+  open functions 54 (50 shared by the 65)
+  logs 331  events 6436250  segments 331
+  frames2 501689  events in frames2 6176531  frames placed2 383349
+  compared 3713293  compared own 646824  separating 17254  mismatch 0  nesting conflicts 0
+  frames placed2 any 501659  events placed any 6168827  frames2 all placed 494897
+  separating without the logged phase 9029; with a hook closed by a declared edge 4436
+    (PS0 3820, AD0 568, DR0 90, KBE 1)
+  controls: monsters-before-players 42148 / 19242; slot-before-every-frame 9608 / 7924;
+            missiles-after-items 8885 / 729; drain-before-the-tick 95 / 95
+  ```
+  `check --direct` equals run:2026-11-03-frame-order in its totals, controls, separating pairs and later sections; only the new counter lines differ. The slot, every-frame, cross-type and seed sections of `check/check.txt` equal that run's.
+- **Development runs** (not cited for a count): `workspace/logs/r55f/dev/`: `run1/` (five logs); `reach-dev1..4` (the declarations growing); `diag-before-entries.txt` (88 of 89 closed, before table entries became function entries); `downward-closure.txt`; `aborted1/` (a full check stopped at about 105 logs when three table bounds proved too long; `ef673711`). `dev/manifest-dev.sha256` (`e72339cd…`, 18 lines) passes from `dev/`.
+- **Conclusion:** frame/0005's `[C]` claims: 0 mismatches over 383 349 frames with two or more closed sets, with the separating pairs and controls above; the passes of `PathStep` (monsters' half), `UNIT_AnimAdvance` and `RunStaminaDrain` by their pair counts. Phase 2a's Done-when stays unmet as written: 118 340 frames hold fewer than two closed sets. No symbol raise (no logged return compared; review-fixes rule 14). (run:2026-11-03-frame-order-2)

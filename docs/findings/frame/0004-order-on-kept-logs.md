@@ -64,7 +64,7 @@ run `2026-10-30-frame-order`; it ran on 2026-11-03 and carries that date.
   but its seed moved between the lines; 52 with no line naming the unit; 11 with a defender's line). So of part 1's 3 459 consecutive pairs, 3 155 chain at once, 90 by
   `skills.py`'s walk, 0 more here, and 214 stay open. (run:2026-11-03-frame-order, run:2026-10-25-skills,
   run:2026-10-27-skills)
-- [I] **The limit.** Phase 2a's Done-when ("0 mismatches over every frame-stamped frame with two or more events") is
+- [I] *(Dated note, 2026-11-03: the counts of this bullet are Phase 2a's; [frame/0005](0005-dispatchers.md) replaces them, and fn:sub_00578ED0_NpcHealDead@0x00578ED0 is one of the callers that had kept a hook open.)* **The limit.** Phase 2a's Done-when ("0 mismatches over every frame-stamped frame with two or more events") is
   not met as written: see the 309 395 frames below. The model places an event only when its pass follows from its kind: 15 of the 89 hooked functions
   of the kind map have a direct-call reach that closes on pass roots; 74 reach a function with no direct caller that
   is no pass root: pointer-reached callbacks (skill, mode, AI, missile, quest) that the reach does not follow, and
@@ -245,7 +245,7 @@ None (logs only). `struct:Game+0xA8` is the stamp every logger reads.
 
 ## Open questions
 
-1. The 74 open hooks: the pass of a pointer-reached function needs its table's dispatcher read (the skill, mode, AI and
+1. *(2026-11-03: answered in part by [frame/0005](0005-dispatchers.md), run:2026-11-03-frame-order-2: 9 of the 74 close, 65 stay open at every rank; 383 349 frames now hold two or more closed sets, 0 mismatches, 17 254 separating pairs.)* The 74 open hooks: the pass of a pointer-reached function needs its table's dispatcher read (the skill, mode, AI and
    missile function tables) or a phase marker in the logger. Phase 2b's window logs carry `UE0`/`UE1` per event run
    (frame/0001 § 7, frame/0003 § 9), which places every line between them.
 2. The objects', items' and missiles' every-frame cross-type runs: no kept line; Phase 2b counts them (ruling 1).
