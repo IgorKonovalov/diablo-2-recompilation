@@ -157,8 +157,11 @@ Its verdicts therefore often mean "1.14d differs", and the spec must say so.
   Detail: 1.14d hard-codes divisor 2, multiplier 15 and cap 50 000 (`MERC_ResurrectCost`, 0x006637B0–0x006637DE);
   named only.
 - [L] src:d2dfg-blizzard: skill choice in combat from `DefaultChance` and `Chance_i + ChancePerLvl_i · d / 4`.
-  **not covered**
-  Detail: `MERCAI_PickSkill` is named only (ADR-0002).
+  **held with refinement** `[I]` (2026-11-03 note: was "not covered")
+  Detail: [ai/0007](../ai/0007-hirelings.md) § 2.4 reads `MERCAI_PickSkill` (0x005E4D30) `[I]`: the total starts at
+  `DefaultChance` and adds `Chance_k + (ChancePerLvl_k · dl) / 4` per usable skill (signed truncating `/4`, `dl = max(0,
+  L − h->Level)`), one draw `r` from `0 .. total` (mod `total + 1`), and `DefaultChance` as the fallback when `r` is
+  below it; the formula is the claim's, with the per-skill gates and the `dl` offset added. (fn:MERCAI_PickSkill@0x005E4D30)
 - [L] src:rpgkdh-hireling-guide: `Resist/Lvl` is the "Amount (in 8ths) of additional All Resist given at lvl up".
   **contradicted**
   Detail: 1.14d divides by 4 (`cdq; and edx, 3; add; sar eax, 2` at 0x00572A7D–0x00572A83, re-read). Phase 2 required
@@ -213,7 +216,7 @@ Its verdicts therefore often mean "1.14d differs", and the spec must say so.
 | `0x0057E3F0` | `MERC_CapExpGain` | caps one gain at `(ExpForLevel(L+1) − ExpForLevel(L)) >> 6` | C |
 | `0x0057E860` | `MERC_AddExp` | adds 2·gain while below the owner's level (and `ExpMaxLevel(0) − 1`); levels up to at most `ExpMaxLevel(0) − 1` | C |
 | `0x00579C00` | `MERC_Resurrect` | resurrection at an NPC | C |
-| `0x005E4D30` | `MERCAI_PickSkill` | combat skill choice from `DefaultChance`, `Chance`, `ChancePerLvl` (named only) | I |
+| `0x005E4D30` | `MERCAI_PickSkill` | combat skill choice from `DefaultChance`, `Chance`, `ChancePerLvl` (read in [ai/0007](../ai/0007-hirelings.md) § 2.4, `[I]`) | I |
 | `0x00533C70` | `sub_00533C70_ReadMercOldSave` | the older save versions' mercenary reader (both forms, run:2026-10-27-sweep-d2s-legacy) | C |
 | `0x00533BF0` | `sub_00533BF0_MercExpFromOldSave` | experience conversion for save versions below 90 | I |
 | `0x00574BD0` | `PETS_GetInfo` | a pet's 12-byte info by unit | I |
@@ -579,8 +582,8 @@ dependence stay `[I]`, [§ Plan 0038 batch H1c](#plan-0038-batch-h1c-run2026-10-
   fn:MERC_ResurrectCost@0x006637B0)
 - [C] Death: `PETS_OnDeath` sets the pet node's dead bit (bit 0); a mercenary (pet type 7) stays in the list
   ([§ Plan 0038 batch H6f](#plan-0038-batch-h6f-run2026-10-27-sweep-hirelings)). (fn:PETS_OnDeath@0x005751A0)
-- [I] Combat skill choice: `MERCAI_PickSkill` reads `DefaultChance`, `Chance_i`, `ChancePerLvl_i` and `Mode_i`. Out of
-  scope (ADR-0002). (fn:MERCAI_PickSkill@0x005E4D30, tbl:Hireling.txt:DefaultChance, tbl:Hireling.txt:Chance1,
+- [I] Combat skill choice: `MERCAI_PickSkill` reads `DefaultChance`, `Chance_i`, `ChancePerLvl_i` and `Mode_i`. 2026-11-03 note: read in
+  [ai/0007](../ai/0007-hirelings.md) § 2.4 `[I]` (the formula, the draw and the fallbacks); no longer "out of scope". (fn:MERCAI_PickSkill@0x005E4D30, tbl:Hireling.txt:DefaultChance, tbl:Hireling.txt:Chance1,
   tbl:Hireling.txt:ChancePerLvl1, tbl:Hireling.txt:Mode1)
 
 ### 11. Phase 2 boundary (recommendation; the architect rules)
