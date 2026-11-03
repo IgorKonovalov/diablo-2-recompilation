@@ -5,7 +5,7 @@ target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, items/tc, items/quality, items/affixes, items/properties, items/sockets-runewords, items/cube, save/d2s]
 consumed_by: [items/tc, objects, monsters/pool]
 tags: {C: 159, I: 80, L: 2}
-updated: 2026-10-27
+updated: 2026-11-03
 ---
 
 # Quest drops, quest rewards and special drops
@@ -552,8 +552,9 @@ D6. BaalDeath, killer present, killer word 40 bit 0 clear:          [C] (fn:sub_
   is compared here. (fn:MONSTER_DropItems@0x005A6600)
 - [I] `sub_005E0070_UberTristramDrop` (death handlers of 704, 705, 709) drops, once all three have died, `cm2` with
   quality 7 (charges refilled) and `Game+0x8C` copies of `std` with quality 2. The portals to those levels cannot open
-  in this `Game.exe` ([save/0002 § 6](../../findings/save/0002-quest-words.md)), so stock play never reaches it.
-  (fn:sub_005E0070_UberTristramDrop@0x005E0070)
+  in this `Game.exe` ([save/0002 § 6](../../findings/save/0002-quest-words.md)), and no creator of the three classes was found in this image, within the limits
+  of [monsters/special § J](../monsters/special.md#j-other-entry-paths-and-pre-existing-mods), so on this reading stock play does not reach it.
+  (fn:sub_005E0070_UberTristramDrop@0x005E0070, [ai/0016](../../findings/ai/0016-uber-event.md))
 
 ### E. Quest items
 
@@ -1057,6 +1058,7 @@ logs of run:2026-10-16-quest-drops (`workspace/logs/quests-s3-<seed>-….log`, p
 
 ## Evidence
 
+- [findings/ai/0016-uber-event.md](../../findings/ai/0016-uber-event.md): no creator of classes 704, 705 or 709 found in this image, for § D7's reach of the Uber drop.
 - [findings/items/0010-quest-drops.md](../../findings/items/0010-quest-drops.md): §§ 1–7 (the quest objects and seed,
   B6 and the killer, the three bits per class, the special drops, the quest items, the NPC services, the `boss` test),
   § 8 (the boundary), [§ Plan 0039 batch P1b](../../findings/items/0010-quest-drops.md#plan-0039-batch-p1b-2026-10-17)

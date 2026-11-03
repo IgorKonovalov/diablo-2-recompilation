@@ -5,7 +5,7 @@ based_on:
   - docs/specs/combat/damage.md 2026-10-21
   - docs/specs/combat/reductions.md 2026-10-21
   - docs/specs/combat/delivery.md 2026-10-27
-  - docs/specs/monsters/stats.md 2026-10-27
+  - docs/specs/monsters/stats.md 2026-11-03
 ---
 
 # Combat

@@ -3,8 +3,8 @@ based_on:
   - docs/specs/monsters/README.md 2026-10-16
   - docs/specs/monsters/pool.md 2026-10-27
   - docs/specs/monsters/spawn.md 2026-10-27
-  - docs/specs/monsters/special.md 2026-10-27
-  - docs/specs/monsters/stats.md 2026-10-27
+  - docs/specs/monsters/special.md 2026-11-03
+  - docs/specs/monsters/stats.md 2026-11-03
   - docs/specs/drlg/collision.md 2026-10-27
   - docs/specs/drlg/lifecycle.md 2026-10-27
 ---
@@ -426,6 +426,10 @@ Some monsters hold mods before any special code runs: the creation step writes t
   code, outside the uber classes, only the Maggot Queen's 23 calls a mod handler. Only Nihlathak's row is confirmed: he left his
   placement holding 22 and then held 22 and 30, as logged, and a model without his case fails. The other bosses that
   were logged were created where no mod list was compared, so their rows rest on the code.
+  The uber sets describe what such a unit would get: **a search of this game file found no code that creates Uber Mephisto, Uber Diablo or
+  Uber Baal and no driver of their own**, and the levels of that event are not reached from stock play on the same reading. The search
+  cannot see a class number worked out at run time, no stock session has watched the spawn helpers, and it says nothing about other builds or the realm
+  ([special § J](../specs/monsters/special.md#j-other-entry-paths-and-pre-existing-mods)).
 
 By the code, mods from either helper count as already held: the special's mod roll treats them as taken, and a superunique's fixed
 mods come after them.
