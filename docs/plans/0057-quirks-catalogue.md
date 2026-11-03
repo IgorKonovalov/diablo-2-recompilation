@@ -120,7 +120,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   cite the section that holds their tagged form. `tools/quirks.py` (`harvest`, `check`) holds each entry to its source's
   tag and anchors and the coverage table to the notes; it reports 0 errors. Three tag disagreements between overviews and
   the specs that raise the same statement went to the backlog
-  ([entry](../backlog/2026-10-30-spec-writer-spec-writer-quirks-harvest-tag-disagreements.md)). The machine-readable
+  ([entry](../backlog/archive/2026-10-30-spec-writer-spec-writer-quirks-harvest-tag-disagreements.md)). The machine-readable
   form stays the open question for the review.
 - **2026-10-30 — Phase 1 review (architect, Tier A, `lane/s57`): accept with fixes (17).** Merged `main` first (plan log
   kept both entries; the research-map row keeps main's approval date with the lane's draft-spec status; ledger rows kept
@@ -149,3 +149,17 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   map row rewritten (P1 accepted, P2 next). **P2 may start** (reverser, static). Ledger: architect-review row;
   the lane's usage left to the orchestrator. Categories: overclaim 2, misread 2, omission 10, wrong anchor 2,
   other 1.
+- **2026-11-03 — Phase 1 routing entry: the three tag disagreements fixed (spec-writer, `lane/s63`, from `main`
+  `00c53f7f`).** Backlog [2026-10-30-spec-writer-spec-writer-quirks-harvest-tag-disagreements](../backlog/archive/2026-10-30-spec-writer-spec-writer-quirks-harvest-tag-disagreements.md)
+  closed. Each overview note split, the clause the owning spec raises stated `[C]` with that spec's anchor and run:
+  [combat/README](../specs/combat/README.md#reimplementation-notes) n4 (entries 37, 39, 41 and 143 step once at entry
+  `[C]`, ADR-0021, run:2026-10-21-cat-emu-ass, as combat/delivery n9 and skills/dispatch n4; the peek and entry 38
+  `[I]`) and n5 (stat 337 drawn at 0 `[C]`, run:2026-10-25-skills, as skills/missiles n3; deadly strike and mastery
+  `[I]`): C 41 → 43; [skills/README](../specs/skills/README.md#reimplementation-notes) n2 (stat 337 at 0 `[C]`; "not
+  the melee build's" `[I]`): C 23 → 24; [anim/README](../specs/anim/README.md#reimplementation-notes) n2 `[I]` → `[C]`
+  (run:2026-10-27-anim, as anim/timing n1, the server's start scoped to L4's cases): C 13 / I 14 → C 14 / I 13. The
+  quirks index adds no second version: Q136, Q138 and Q374 now also cite the overview notes, Q140's stat-337 clause
+  points at Q138, the anim/README coverage row takes n2 (taken 411 of 439, weaker duplicate 0). `tools/quirks.py
+  check`: the one error left (Q3 `skills/catalogue.md` has no coverage row) is on `main` before this lane. Wiki
+  `based_on` dates of combat, skills and animation moved to 2026-11-03 (their text already said what the raised
+  clauses say). Research-map rows of the three overviews and the quirks row updated.

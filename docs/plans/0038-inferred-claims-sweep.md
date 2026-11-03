@@ -6058,10 +6058,25 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   the pickup (rows 3/30) is unstaged. (4) Totals unchanged (1 526), correct for a part-raise. (5) The spec's J2 does need a
   re-tag (Normal amount, cut, steps 3/4, the "has not run" sentences, the Entry points row, quests/progression, wiki/characters):
   routed to the spec-writer,
-  [`2026-10-30-architect-spec-writer-player-creation-j2-normal-grant-raised.md`](../backlog/2026-10-30-architect-spec-writer-player-creation-j2-normal-grant-raised.md).
+  [`2026-10-30-architect-spec-writer-player-creation-j2-normal-grant-raised.md`](../backlog/archive/2026-10-30-architect-spec-writer-player-creation-j2-normal-grant-raised.md).
   The only change under `docs/specs/` in the diff is a link rewrite by `backlog.py archive` (no claim), so no escalation.
   Fixes (5): overclaim 1 (the `[C]` edges above), other 2 (the dev manifest said to pass from `h6g/` listed
   `../` paths and failed; the 8 kept screenshots and the dev marks/shots were outside both manifests, now 15 and 7 lines, both
   `sha256sum -c` green; the check command now stated), stale cross-reference 2 (player/0001 § H6g ledger, step list and
   trigger bullets, quests/0001's reward bullet, the recipe comment's cut at level 25 where the run's character was 26 at the
   grant). Omission 0 beyond the spec-writer entry above.
+- **2026-11-03 — H6g rows 2/29 re-tag of player/creation J2 (spec-writer, `lane/s63`, from `main` `00c53f7f`).** Backlog
+  [2026-10-30-architect-spec-writer-player-creation-j2-normal-grant-raised](../backlog/archive/2026-10-30-architect-spec-writer-player-creation-j2-normal-grant-raised.md)
+  closed, within the scope of [player/0001 § Plan 0038 H6g rows 2 and 29](../findings/player/0001-creation.md#plan-0038-h6g-rows-2-and-29-the-ancients-grant-session-run2026-10-30-h6ga-anc).
+  [player/creation](../specs/player/creation.md#j-other-level-and-experience-changes) J2: the header `[I]` → `[C]` in Normal
+  (run:2026-10-30-h6ga-anc), for the 1 400 000 amount, the cut, both loop branches and the level re-read; `[I]` lines
+  kept inside the block for step 0 (`QUESTS_SendPlayerRecord`), the 20 000 000 / 40 000 000 immediates, the `L ≥ max`
+  return, the cut's signedness, and `G` = `need`, a value ≥ 2^31 and the `L < max` exit. Step notes: the "J2 has not
+  run" sentence `[I]` → `[C]`, a new run note (the level-26 and level-81 grants) `[C]` with its not-reached remainder
+  `[I]`; "the cut is the width of level L + 1" split, the cut and the Normal amount on the run's reproduction `[C]`,
+  the at-most-one-level-up argument and the binding ranges `[I]`. Entry points row split (Normal `[C]`; 20M/40M and
+  the caller `[I]`); the Open-questions bullet struck to its remainder; Evidence lists the run. Tags C 121 / I 41 / L 1
+  → C 126 / I 45 / L 1. [quests/progression](../specs/quests/progression.md) *Experience* bullet split (Normal `[C]`,
+  Nightmare/Hell `[I]`): C 117 → 118. [wiki/characters](../wiki/characters.md) Ancients bullet and its "read from the
+  code only" list rewritten; `based_on` dates of wiki/characters, wiki/saves and wiki/quests moved to 2026-11-03.
+  Research-map rows of both specs updated (counts, the clause, the plan status). Open questions: none added.

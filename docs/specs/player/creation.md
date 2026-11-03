@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, data/excel, items/uniques-sets, items/properties, items/affixes, monsters/stats, save/d2s]
 consumed_by: [save/d2s, combat/to-hit, stats/aggregate]
-tags: {C: 121, I: 41, L: 1}
-updated: 2026-10-30
+tags: {C: 126, I: 45, L: 1}
+updated: 2026-11-03
 ---
 
 # New character, starting items, experience and level-up
@@ -52,7 +52,8 @@ flowchart TD
 | The game was started with `-act N` (N = 2..5): inside `PLAYER_InitBaseStats` | fn:PLAYER_GrantLevel@0x0057EB10, run:2026-10-16-player (6 characters) | [C] |
 | A monster is killed: experience to the credited player | fn:XP_OnMonsterKill@0x0057E990 → fn:XP_PartyShare@0x0057E6C0, run:2026-10-16-player (32 kills, one player) | [C] |
 | Any experience change that changes the level | fn:PLAYER_AddExperience@0x0057E510 → fn:PLAYER_LevelUp@0x00570880, run:2026-10-16-player (20 level-ups) | [C] |
-| The Ancients' reward (quest a5q5, Rite of Passage): a capped grant of 1.4M / 20M / 40M experience | fn:sub_0058C9A0_A5Q5_AncientDeath@0x0058C9A0 → fn:sub_0058C5C0_ExpGrantCapped@0x0058C5C0 | [I] |
+| The Ancients' reward (quest a5q5, Rite of Passage) in Normal: a grant of 1 400 000 experience, cut to the width of the next level | fn:sub_0058C5C0_ExpGrantCapped@0x0058C5C0, run:2026-10-30-h6ga-anc (two grants, levels 26 and 81) | [C] |
+| The same grant's 20M (Nightmare) and 40M (Hell), and its caller: `sub_0058C9A0_A5Q5_AncientDeath` and the summit and party grants (the run did not log which) | fn:sub_0058C9A0_A5Q5_AncientDeath@0x0058C9A0 → fn:sub_0058C5C0_ExpGrantCapped@0x0058C5C0 | [I] |
 | Death to a monster with no owner: the loss, then the corpse's share written at the corpse's creation | fn:sub_00535AB0_PlayerDeathExpLossGate@0x00535AB0 → fn:PLAYER_DeathExpLoss@0x005359F0; fn:PLAYER_CorpseCreate@0x0057F700, run:2026-10-27-sweep-player (the loss reproduced on five deaths over three difficulties) | [C] |
 | The gate's caller, `sub_00580EC0_PlayerDeath`; no loss when the killer is a player or a player's monster; the share returns on the owner's pickup of the corpse | fn:sub_00580EC0_PlayerDeath@0x00580EC0, fn:sub_00535AB0_PlayerDeathExpLossGate@0x00535AB0, fn:PLAYER_CorpsePickup@0x0057FB70 (one caller, `sub_00548B00_UnitInteract` 0x00548E56) | [I] |
 | An attribute point is spent | fn:PLAYER_SpendStatPoint@0x00570D60, run:2026-10-27-sweep-player (four spends) | [C] |
@@ -575,17 +576,20 @@ J1. PLAYER_GrantLevel(game, unit, lvl):                                  [C] (fn
       if the player's level < lvl:
         PLAYER_AddExperience(EXP_GetThreshold(class, lvl) − stat 13)    ; reaches level lvl + 1
       ; -act 2, 3, 4, 5 → levels 16, 21, 27, 33, before the starting items
-J2. ExpGrantCapped(game), the player in ESI:                              [I] (fn:sub_0058C5C0_ExpGrantCapped@0x0058C5C0, 0x0058C5C0–0x0058C6CB, all of J2)
-      QUESTS_SendPlayerRecord(game, player)                              ; first, 0x0058C5CF
-      G: i32 ← 1 400 000;  20 000 000 when game+0x6D = 1;  40 000 000 when it is 2
+J2. ExpGrantCapped(game), the player in ESI:                              [C] in Normal, the lines below without their own tag (fn:sub_0058C5C0_ExpGrantCapped@0x0058C5C0, 0x0058C5C0–0x0058C6CB, run:2026-10-30-h6ga-anc: two grants reproduced, the cut binding at level 26 and not at level 81)
+      QUESTS_SendPlayerRecord(game, player)                              ; first, 0x0058C5CF   [I] (fn:sub_0058C5C0_ExpGrantCapped@0x0058C5C0)
+      G: i32 ← 1 400 000                                                 ; Normal (game+0x6D = 0)
+      G ← 20 000 000 when game+0x6D = 1;  40 000 000 when it is 2       ; not logged   [I] (fn:sub_0058C5C0_ExpGrantCapped@0x0058C5C0, 0x0058C5D4–0x0058C5EE)
       max ← ExpMaxLevel(class);  L ← stat 12
-      if L ≥ max: return                                                 ; signed
-      G ← min(G, T(L + 1) − T(L))                                        ; signed compare; T(n) = EXP_GetThreshold(class, n)
+      if L ≥ max: return                                                 ; signed, not reached   [I] (fn:sub_0058C5C0_ExpGrantCapped@0x0058C5C0, 0x0058C624)
+      G ← min(G, T(L + 1) − T(L))                                        ; T(n) = EXP_GetThreshold(class, n)
+      ; the compare is signed (jle): no value ≥ 2^31 met, signed and unsigned not told apart   [I] (fn:sub_0058C5C0_ExpGrantCapped@0x0058C5C0, 0x0058C649)
       while G ≠ 0 and L < max:
         need: u32 ← base stat 30 − base stat 13                          ; nextexp − experience
         if G < need (unsigned):  stat 13 ← stat 13 + G;  G ← 0
         else: stat 13 ← stat 30;  stat 29 (lastexp) ← need;  PLAYER_LevelUp(player)
               G ← G − need;  L ← stat 12
+      ; not met: G = need (jb against jbe), a value ≥ 2^31 (the unsigned need compare), the L < max exit   [I] (fn:sub_0058C5C0_ExpGrantCapped@0x0058C5C0, 0x0058C673)
 J3. PLAYER_DeathExpLoss (character level lvl > 1):                       [C] (fn:PLAYER_DeathExpLoss@0x005359F0, fn:CLIENT_SetDeathExpLoss@0x005391E0, tbl:DifficultyLevels.txt:DeathExpPenalty, run:2026-10-27-sweep-player)
       ; not called when the killer is a player or a monster owned by one (note J3)
       span: u32 ← Exp[lvl] − Exp[lvl − 1]                                ; Exp[n] = EXP_GetThreshold(class, n)
@@ -637,15 +641,31 @@ Step notes:
   no kill inside it came that close. More than two members and the cap at 8 need a third client. [I]
   (fn:sub_0057E5A0_PartyXpCollect@0x0057E5A0)
 - J3, J5 and the cap of § H ran in run:2026-10-27-sweep-player (notes below and H1). [C] (fn:PLAYER_DeathExpLoss@0x005359F0,
-  fn:PLAYER_SpendStatPoint@0x00570D60, run:2026-10-27-sweep-player) J2, the capped grant, has not run: two tries of
-  the Ancients' route never had the altar's room populated. [I] (fn:sub_0058C5C0_ExpGrantCapped@0x0058C5C0,
-  [player/0001 § Plan 0038 H6g shortfalls](../../findings/player/0001-creation.md#plan-0038-h6g-shortfalls-static-read-2026-10-30))
+  fn:PLAYER_SpendStatPoint@0x00570D60, run:2026-10-27-sweep-player) J2, the capped grant, ran in Normal in a second
+  session on the Ancients' route, with the altar's room populated (notes below). [C] (fn:sub_0058C5C0_ExpGrantCapped@0x0058C5C0,
+  run:2026-10-30-h6ga-anc,
+  [player/0001 § Plan 0038 H6g rows 2 and 29](../../findings/player/0001-creation.md#plan-0038-h6g-rows-2-and-29-the-ancients-grant-session-run2026-10-30-h6ga-anc))
+- J2. **The grant in Normal, run.** Two kept logs, two grants, 0 mismatches against a model of the steps above (the
+  difficulty byte, base stats 12, 13, 29 and 30 and the experience table). At level 26 (experience 2 147 274, `nextexp`
+  2 563 061) the first pass granted 640 765 = T(27) − T(26), below 1 400 000, so the cut bound; that pass levelled up
+  (`need` 415 787), the second took the short branch (224 978 < `need` 640 765), the third saw G = 0, ending at level 27,
+  experience 2 788 039. A grant without the cut would have ended at level 28, experience 3 547 274. At level 81 the
+  first pass granted 1 400 000 uncut and took the short branch (`need` 67 254 290): experience 742 731 766 to
+  744 131 766. [C] (fn:sub_0058C5C0_ExpGrantCapped@0x0058C5C0, run:2026-10-30-h6ga-anc,
+  [player/0001 § Plan 0038 H6g rows 2 and 29](../../findings/player/0001-creation.md#plan-0038-h6g-rows-2-and-29-the-ancients-grant-session-run2026-10-30-h6ga-anc))
+  Not reached: the Nightmare and Hell amounts (no log has difficulty byte 1 or 2), `G` = `need`, a value at or above
+  2^31, the `L ≥ max` return and the `L < max` exit; which of the three callers made the call is not logged. [I]
+  (fn:sub_0058C5C0_ExpGrantCapped@0x0058C5C0, 0x0058C673)
 - J2. **The cut is the width of level L + 1**, `T(L + 1) − T(L)`, not of the current level: `T(L)` is the experience at
-  which level L + 1 starts (F1). A player who starts the grant inside level L levels up at most once: the `need` of
-  level L is `T(L) − exp` > 0, so what is left after that level-up is below `T(L + 1) − T(L)`, the `need` of level
-  L + 1. The cut binds only where `T(L + 1) − T(L) < G`: in stock data (the seven class columns equal on every row) for
-  L 1–35 in Normal, 1–65 in Nightmare and 1–73 in Hell; at level 25 in Normal it is 512 612. The three amounts are
-  immediates of this function only, so no second code path backs them. [I] (fn:sub_0058C5C0_ExpGrantCapped@0x0058C5C0,
+  which level L + 1 starts (F1). In Normal the run met it: the cut T(27) − T(26) bound at level 26, one level-up, then
+  the short branch. The three amounts are immediates of this function only, so no second code path backs them; the
+  Normal amount and the cut rest on the run's reproduction of the logged call (evidence rule 1). [C] (fn:sub_0058C5C0_ExpGrantCapped@0x0058C5C0,
+  0x0058C649, 0x0058C673, run:2026-10-30-h6ga-anc,
+  [player/0001 § Plan 0038 H6g rows 2 and 29](../../findings/player/0001-creation.md#plan-0038-h6g-rows-2-and-29-the-ancients-grant-session-run2026-10-30-h6ga-anc))
+  A player who starts the grant inside level L levels up at most once: the `need` of level L is `T(L) − exp` > 0, so
+  what is left after that level-up is below `T(L + 1) − T(L)`, the `need` of level L + 1. Where the cut binds is a
+  table reading: `T(L + 1) − T(L) < G` in stock data (the seven class columns equal on every
+  row) for L 1–35 in Normal, 1–65 in Nightmare and 1–73 in Hell; at level 25 in Normal it is 512 612. [I] (fn:sub_0058C5C0_ExpGrantCapped@0x0058C5C0,
   0x0058C649, 0x0058C673, fn:EXP_GetThreshold@0x00611800, fn:sub_00611830_ExpMaxLevel@0x00611830,
   fn:PLAYER_LevelUp@0x00570880, tbl:Experience.txt:Amazon,
   [player/0001 § Plan 0038 H6g shortfalls](../../findings/player/0001-creation.md#rows-2-and-29-what-the-ancients-grant-needs-and-why-the-anc-session-missed-it))
@@ -809,12 +829,14 @@ the Barbarian has one copy more (the buckler), so only its eighth copy (`isc`) t
 
 - [findings/player/0001-creation.md](../../findings/player/0001-creation.md): summary, §§ 1–7 and § 11 (the
   reproduction), the Functions table; the plan 0038 sections S3a, S3b, H1a, H1c, H6g and the H6g shortfalls' static
-  read (the re-tags of this spec).
+  read (the re-tags of this spec), and H6g rows 2 and 29 (J2 in Normal).
 - [findings/player/experiments.md § run:2026-10-27-sweep-player](../../findings/player/experiments.md#run2026-10-27-sweep-player)
   (H6g: 9 kept logs, 145 kills, four stat spends, the death loss on three difficulties, the level-99 cap), and the
   save runs [run:2026-10-27-sweep-d2s-load](../../findings/save/experiments.md#run2026-10-27-sweep-d2s-load) (H1a:
   the header checks, class 7) and [run:2026-10-27-sweep-d2s-legacy](../../findings/save/experiments.md#run2026-10-27-sweep-d2s-legacy)
   (H1c: `NewCharLegacy`).
+- [findings/player/experiments.md § run:2026-10-30-h6ga-anc](../../findings/player/experiments.md#run2026-10-30-h6ga-anc)
+  (H6g rows 2 and 29: two kept logs, the Ancients' grant in Normal at levels 26 and 81, 0 mismatches).
 - [findings/player/experiments.md § run:2026-10-16-player](../../findings/player/experiments.md#run2026-10-16-player):
   35 new characters, 269 item copies (11 `ITEMS_RollStaffMods` oracles), 32 kills, 20 level-ups, 0 mismatches; its
   *Answers* and *Observed* bullets.
@@ -828,13 +850,13 @@ the Barbarian has one copy more (the buckler), so only its eighth copy (`isc`) t
 
 - ~~What triggers `ExpGrantCapped`~~, ~~whether the corpse returns part of the death loss~~ and ~~which UI path sets
   status bits `0x20` and `0x40`~~: answered from the code in J2, J3 and A1 ([player/0001 § Plan 0039 batch P1c](../../findings/player/0001-creation.md#plan-0039-batch-p1c-2026-10-17)).
-  Plan 0038 H6g ran J3's loss and the corpse's share at its creation (J3 notes); the pickup and J2 have not run. The
-  corpse's 75 % agrees in substance with a community page; its *Leads used* verdict waits for a re-fetch (reverser
-  backlog).
-- J2's grant and its cut stay inferred until a session reaches the altar: the corrected route (a Normal character at level
-  20–35, the altar operated once, no town portal on level 120) is in
-  [player/0001 § Plan 0038 H6g shortfalls](../../findings/player/0001-creation.md#rows-2-and-29-what-the-ancients-grant-needs-and-why-the-anc-session-missed-it),
-  routed by the backlog entry [2026-10-30-architect-reverser-plan-0038-h6g-corrected-anc-session](../../backlog/archive/2026-10-30-architect-reverser-plan-0038-h6g-corrected-anc-session.md).
+  Plan 0038 H6g ran J3's loss and the corpse's share at its creation (J3 notes) and J2 in Normal (J2 notes); the pickup
+  has not run. The corpse's 75 % agrees in substance with a community page; its *Leads used* verdict waits for a
+  re-fetch (reverser backlog).
+- ~~J2's grant and its cut stay inferred until a session reaches the altar~~: run in Normal on the corrected route
+  (run:2026-10-30-h6ga-anc, [player/0001 § Plan 0038 H6g rows 2 and 29](../../findings/player/0001-creation.md#plan-0038-h6g-rows-2-and-29-the-ancients-grant-session-run2026-10-30-h6ga-anc)).
+  The Nightmare (20 000 000) and Hell (40 000 000) amounts need the same route in those difficulties; `G` = `need`, a
+  value at or above 2^31 and the `L ≥ max` return were not met, and the caller is not logged.
   The corpse pickup needs a Nightmare or Hell death and a click on the corpse within 50 in the same game. [I]
   (fn:sub_0058C5C0_ExpGrantCapped@0x0058C5C0, fn:PLAYER_CorpsePickup@0x0057FB70)
 - ~~Whether a corpse saved with its character keeps its stat 13, and what sets the create screen's mode word
