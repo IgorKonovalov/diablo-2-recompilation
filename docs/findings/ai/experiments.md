@@ -636,7 +636,7 @@
   `workspace/ghidra-r52k` (symbols replayed from the scratch `workspace/logs/r52k/b11-sym-scratch.csv`; emulation does
   not use them), heap 3 GB (`GHIDRA_HEADLESS_MAXMEM=3G`), each of the twenty headless runs inside its own
   `systemd-run --user --scope -p MemoryMax=4G`, one Ghidra at a time. No wine, no slot. Models and case writer
-  `tools/ai_cat_emu11.py` (`d5ece728…`), every draw from `random.Random("r52k-<family>")`. Files in
+  `tools/ai_cat_emu11.py` (`d5ece728…`; a docstring-only revision of 2026-11-03, `3a831a19…`, regenerates the same cases, and the run's revision is kept as `workspace/logs/r67/ai_cat_emu11.py.d5ece728`), every draw from `random.Random("r52k-<family>")`. Files in
   `workspace/logs/r52k/emu/`, `manifest.sha256` (`434a1e4b…`, 81 lines, `check.txt` `57f25e1a…`); `sha256sum -c
   manifest.sha256` from that directory passes.
 - **Procedure:**

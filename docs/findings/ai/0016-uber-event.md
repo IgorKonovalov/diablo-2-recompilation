@@ -20,6 +20,7 @@ Static reading of the pinned `Game.exe` in objdump (`workspace/logs/r52n/c1-asm.
   `Uber` twice, `ubercode`, `UberCodeOddsGood` and `UberCodeOddsNormal`, and none of the three class names). The nine live controls are functions that the same scan
   must find by a table pointer (`RELOC`) or by a direct call (`REL32`); they show the two views work, not that every route is covered. (`c1-refs.txt`, `c1-classes.txt`,
   fn:sub_005E9DF0_AiUberDiablo@0x005E9DF0, fn:sub_005FD200_AiUberBaal@0x005FD200, fn:sub_005F81C0_AiUberMephisto@0x005F81C0)
+- [I] **Classes 706, 707, 708 (dated note of 2026-11-03, `lane/r67`):** the same negative holds as far as the extended scan sees: no site passes them as an immediate class to a spawn function, and their one class tests are client display and `MonPostCreateBoss` (§ 2). Its limits are stated there. (0x00454D27, 0x005B1D6D, 0x00591BE5, 0x0059947A)
 - [I] **The driver of each boss, if one is ever created, is the generic machinery and nothing else.** All three:
   `MonAiEvent` (0x005B1740) with row kind 1. Without a target `MonAiTargetOrIdle` idles or ring-walks; with a target the
   boss sight pause fires once, then the think returns and **no next AI event is queued** by that event (§ 5). Uber Mephisto also has
@@ -109,6 +110,23 @@ describe is not in the file. (fn:sub_005E9DD0_UberDemonHoleSpawn@0x005E9DD0, fn:
 
 - [I] **No site passes 704, 705 or 709 as a class to a spawn function.** The ten data words equal to those values in `.rdata`/`.data` (`c1-classes.txt` `DATA`) are a prime list (0x006D016C), LvlPrest ids
   (0x006F01E8, 0x006F0228), halves of floats (0x006F4C4C, 0x006F4EE8, 0x00707B2C), a code pointer's low half (0x0073CA80), a UI block (0x0070DBA4) and two bit tables (0x0074B996, 0x0074BE0E). (`c1-classes.txt`)
+- [I] *Dated note (2026-11-03, `lane/r67`), classes 706, 707, 708:* **no site passes 706, 707 or 708 as an immediate class to a spawn function, and no table names them as anything but their own rows, within the limits below.** The kept scan is `r67-classes.py`; its output is `r67-classes.txt` under `workspace/logs/r67/`, and a run with one row dropped fails on it (`r67-classes-control.txt`). The operand view rebuilds `c1-classes.txt` line for line (`REPRO`, 704, 705 and 709 as the control) and classifies all 54 rows of the three values (`r67-classes.txt` `CLS`, 0x00591BE5, 0x0059947A):
+
+  | sites | rows | reading |
+  |---|---|---|
+  | `[ebp-0x2C4]` displacements | 34 | not a class: frame slots |
+  | 0x0054EFD9, 0x0054F041 | 2 | not a class: a record's `+0x2C4` counter (`MonRegionGet`'s result at 0x0054F041) |
+  | 0x00654AA8 | 1 | not a class: a word of a loader's field descriptor in its frame |
+  | 0x00444332, 0x0044435B, 0x00444384 | 3 | not a class: `ECX` of `STRTABLE_GetByIndex` |
+  | 0x0040AB90, 0x004FBB97, 0x004FBBBB, 0x004FBBC7 | 4 | not a class: the line pushed for a fatal path (0x00408090) |
+  | 0x004C0036, 0x004C0047 | 2 | not a class: the line after `.\UI\UseItem.cpp` (0x006DAB50) for 0x0040B3C0 |
+  | 0x00591BE5, 0x0059947A | 2 | not a class: the word pushed after a file string (`…/Quests/a1q3.cpp`, `…/Quests/a2q1.cpp`) for `QUESTS_SetStep`, which never reads either (no `[ebp+8]` or `[ebp+0xC]` in 0x00544350–0x005443A6, `ret 8`) |
+  | 0x00454D27, 0x00454D2F, 0x00454D37 | 3 | class test, client: a frame word = 4 |
+  | 0x005B1D6D, 0x005B1EDF, 0x005B1F3D | 3 | class test, server: `MonPostCreateBoss` (§ 6) |
+
+  **Other views.** `RAW`: the dwords and their negatives at every byte offset of `.text` give 87 hits: 54 are those rows, 27 are rel32s of decoded jumps and calls, and 6 straddle other operands, none of those 33 following a `push` or `mov`-immediate opcode byte. `DATA`: the 8 words at 2-aligned offsets of `.rdata` and `.data` (the same pass at 704, 705 and 709 gives `c1-classes.txt`'s ten) are LvlPrest `Def`s 706 and 708 (0x006F01C8, 0x006F01D8, 0x006F0208, 0x006F0218; pointers near them at 0x00672F38, 0x00672F51), an import hint (0x00703220), a float's low half (0x00707F2C) and the x of two UI control records (0x0070E6E4 in the record pushed at 0x00445B23, 0x0070E7D4 in the one pushed at 0x00445D0B); the 6 odd-offset words are listed and read as parts of longer byte runs. `SPAWN`: 179 direct calls of twelve creating functions, with the immediates before each, hold none of the three. **Its live control:** classes 301, 266, 284, 404, 511 and 534 at referenced creators (0x00544A8B, 0x0054E927, 0x0054E951, 0x00550821, 0x005878A4, 0x0058862F), and 711 at the unreferenced 0x005E9DE0, appear in both this pass and the operand view. `TBL`: across every excel `.txt`, a whole cell naming the three occurs only as `Id` in MonStats and MonStats2, and as `uberizual` in `AI` in MonStats and MonAI; the `ubermephisto` control gives the same four. `tools/unreached.py` holds all three unreached (`c1-unreached.txt`). `STR`: no class name in the image, ASCII or UTF-16, with `TreasureClassEx` found as the control.
+
+  **What this cannot see:** a class computed at run time (a base plus a small offset, as `lea edx,[eax-0x2E]` computes a step at 0x00599484), read from a file or a packet, or passed through an indirect call; a name inside a longer cell; and a creator outside the twelve functions except through the operand view. It is a static result for this image: no run looks for such a unit, and nothing here speaks of another build or the realm. (0x00591BE5, 0x0059947A, fn:QUESTS_SetStep@0x00544350, fn:sub_005B1CF0_MonPostCreateBoss@0x005B1CF0, tbl:MonStats.txt:Id)
 - [I] **The 3 state immediates:** 0x005F7FFC, 0x005FD1EB (unreferenced helpers) and 0x005FB54F (`AiEvilHole`, live, only for class 711). Widening to every `push`/`mov` of `0xB8` (21 sites, `c1-classes.txt` `ST`) adds one reader, 0x004AFC29 (`UNIT_HasState(unit, 184)` in fn:sub_004AFC10_ClientState184Fx@0x004AFC10), and no other state
   use: the rest are skill 184 (`UModTeleport` 0x005A1619, `UModTeleportTry` 0x005B13AE, the client's 0x004ACD8A), a size or a line. `stats/0002`'s row lists setters, and they hold. (fn:STATE_Set@0x00639DB0, fn:UNIT_HasState@0x00639DF0)
 
