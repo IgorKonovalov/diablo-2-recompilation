@@ -879,8 +879,9 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0057E3F0,func,MERC_CapExpGain,,C,hirelings,docs/findings/hirelings/0001-hirelings.md
 0x0057E480,func,XP_Compute,,C,player/creation,docs/findings/player/0001-creation.md
 0x0057E510,func,PLAYER_AddExperience,,C,player/creation,docs/findings/player/0001-creation.md
-0x0057E5A0,func,sub_0057E5A0_PartyXpCollect,,I,player/creation,docs/findings/player/0001-creation.md
-0x0057E6C0,func,XP_PartyShare,,I,player/creation,docs/findings/player/0001-creation.md
+0x0057E5A0,func,sub_0057E5A0_PartyXpCollect,,C,player/creation,docs/findings/player/0002-party.md
+0x0057E6C0,func,XP_PartyShare,,C,player/creation,docs/findings/player/0002-party.md
+0x0057E7B0,func,sub_0057E7B0_XpCreditPlayer,,I,player/creation,docs/findings/player/0002-party.md
 0x0057E860,func,MERC_AddExp,,C,hirelings,docs/findings/hirelings/0001-hirelings.md
 0x0057E990,func,XP_OnMonsterKill,,C,player/creation,docs/findings/player/0001-creation.md
 0x0057EAB0,func,sub_0057EAB0_AddExperienceDirect,,I,player/creation,docs/findings/player/0001-creation.md
@@ -1432,6 +1433,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005A48C0,func,sub_005A48C0_ChampionMemberMark,,C,monsters/spawn,docs/findings/monsters/0002-room-population.md
 0x005A4940,func,sub_005A4940_MonMakeSpecial,,I,monsters/special,docs/findings/monsters/0003-special-monsters.md
 0x005A49B0,func,sub_005A49B0_SuperUniqueSpawn,,C,monsters/special,docs/findings/monsters/0003-special-monsters.md
+0x005A4EF0,func,sub_005A4EF0_KillExpGate,,I,player/creation,docs/findings/player/0002-party.md
 0x005A4F20,func,sub_005A4F20_PlayerDmgBonus,,I,monsters/stats,docs/findings/monsters/0004-stats.md
 0x005A4F50,func,sub_005A4F50_MonAttackStats,,C,monsters/stats,docs/findings/monsters/0004-stats.md
 0x005A5470,func,sub_005A5470_MonHitTest,,I,combat/formulas,docs/findings/combat/0001-formulas.md

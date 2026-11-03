@@ -99,6 +99,8 @@ GHIDRA_PROJ_DIR=workspace/ghidra-<lane> GHIDRA_HEADLESS_MAXMEM=3G \
 
 ### `tools/ghidra.sh emuboundary <cases> <mem>` (`EmuBoundary.java`, plan 0046)
 
+A `trace <addr>` line in the spec prints a `T` line (registers, 128 stack bytes) each time the pc reaches `addr` and runs on: nothing is patched and the callee runs emulated, so one case can show a loop's successive calls (plan 0058, `tools/party_emu.py`).
+
 `EmuTrace.java` (left unchanged, its records cite its hash) plus one memory-spec directive, `observe <addr>`: a case
 whose pc reaches that address ends there and prints `C <n> <fn> OBS <pc> steps= eax= ebx= ecx= edx= esi= edi= ebp=
 esp=` and an `A <64 bytes at ESP>` line (the return address, then the stack arguments); `d` dumps follow as usual, so

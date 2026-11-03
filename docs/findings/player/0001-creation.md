@@ -135,8 +135,8 @@ branches § 11 and the summary list as not exercised stay `[I]` in the text.
 | `0x0057E480` | `XP_Compute` | clamp, max-level test, level-difference factor, `ExpRatio`, `item_addexperience` | C |
 | `0x0057E2F0` | `XP_LevelDiffPenalty` | the two 11-entry /256 tables, or `exp × clvl / mlvl` | C |
 | `0x0057E390` | `XP_ApplyExpRatio` | `exp × ratio >> shift` with an overflow branch | C |
-| `0x0057E6C0` | `XP_PartyShare` | party bonus and level-weighted split | I |
-| `0x0057E5A0` | `sub_0057E5A0_PartyXpCollect` | party members alive, same level, within distance² 6400 | I |
+| `0x0057E6C0` | `XP_PartyShare` | party bonus and level-weighted split ([player/0002](0002-party.md)) | C |
+| `0x0057E5A0` | `sub_0057E5A0_PartyXpCollect` | members alive, within distance² 6400 of the killed monster; the cap ([player/0002](0002-party.md)) | C |
 | `0x0057E990` | `XP_OnMonsterKill` | experience of a killed monster to the credited player | C |
 | `0x0057EAB0` | `sub_0057EAB0_AddExperienceDirect` | unadjusted grant to a player | I |
 | `0x0058C5C0` | `sub_0058C5C0_ExpGrantCapped` | grant 1,400,000 / 20,000,000 / 40,000,000 by difficulty, cut to `T(L + 1) − T(L)` (§ H6g static read) | I |
@@ -400,13 +400,13 @@ for (slot = 0; slot < 10; slot++) {                       // PLAYER_GiveStartIte
 - [I] `EXP_GetRatio(L)`: table null → 0; `L ≤ 0` → `record[0].ExpRatio`; `L > record[0].perClass[0]` (Amazon's
   MaxLvl) → 0; else `record[L + 1].ExpRatio` (1024 up to level 69 in stock data, falling to 5 at 99).
   (0x00613E60–0x00613E88, struct:ExperienceRec+0x1C)
-- [I] Party: `XP_OnMonsterKill` credits the killer (or the owning player of a minion), then `XP_PartyShare` collects
-  the credited player's party members that are alive, in the same level and within squared distance 6400 (up to 8).
-  One member → `XP_Compute` and `PLAYER_AddExperience`. More: `total = exp + ((n − 1) × exp × 89) / 256` (signed,
-  truncating), `q = (float)total / (float)Σlevels` stored as a 32-bit float, and each member gets
-  `XP_Compute(ftol((float)level_i × q))` (`CRT_ftol2`, truncation) in collection order. The player-count factor on the
-  monster's experience is applied when the monster is made ([monsters/0004](../monsters/0004-stats.md)).
-  (0x0057E736–0x0057E79D, 0x0057E642–0x0057E6A8)
+- [C] Party (corrected 2026-11-03, plan 0058): `XP_OnMonsterKill` credits the killer, a minion's owner, or the caster of
+  an `exp` state; `XP_PartyShare` takes the credited player's party members in its level that are alive and within squared
+  distance 6400 **of the killed monster**, the credited player tested like the others; a ninth that passes is fatal. n = 0: nothing. **n = 1: the credited
+  player, whoever the member was**, at its own level. More: `total = exp + ((n − 1) × exp × 89) / 256` (i32, truncating),
+  `q` the f32 quotient by Σlevels, and each member gets `XP_Compute(trunc(level_i × q))` in list order (the float steps [I] for n ≥ 3, ADR-0015 (5)). A player in no party has
+  no test. The player-count factor on the monster's experience is applied when the monster is made ([monsters/0004](../monsters/0004-stats.md)).
+  (fn:XP_PartyShare@0x0057E6C0, fn:sub_0057E5A0_PartyXpCollect@0x0057E5A0, run:2026-11-03-party-emu; [player/0002](0002-party.md))
 - [I] Death: `PLAYER_DeathExpLoss` (character level `lvl` > 1): `span = Exp[lvl] − Exp[lvl − 1]`, `loss = DeathExpPenalty × span / 100`
   (unsigned); if `loss ≠ 0`, `exp = exp − loss`, raised to `Exp[lvl − 1] + 1` when it falls to or below the level's start.
   The level never drops. (fn:PLAYER_DeathExpLoss@0x005359F0, tbl:DifficultyLevels.txt:DeathExpPenalty)
@@ -522,7 +522,7 @@ nothing to a tag.
 - [L] src:arreat-summit-experience: the kill's experience is increased by 35 % "when a party member of the killer is in
   the same named area". **held with refinement**
   Detail: `XP_PartyShare` adds `(n − 1) × exp × 89 / 256` (34.77 % per member beyond the first, truncated), counting
-  members alive in the same level and within squared distance 6400 of the killer (the page: "within 2 screens").
+  members alive in the same level and within squared distance 6400 of the killed monster, corrected from "of the killer" 2026-11-03 (the page: "within 2 screens"; fn:sub_0057E5A0_PartyXpCollect@0x0057E5A0, run:2026-11-03-party-emu).
 - [L] src:arreat-summit-experience: each member's share is its level divided by the sum of the levels. **held with
   refinement**
   Detail: computed in single-precision float, truncated (`CRT_ftol2`), then each share goes through `XP_Compute` with
@@ -1276,5 +1276,6 @@ mismatches (`workspace/logs/h6g/check/check-h6ga.txt`, `db35aa62…`; manifest `
 
 ## Change notes
 
+- 2026-11-03 (reverser, `lane/r58a`, plan 0058 Phase 1): the Party bullet, the Functions rows and the distance detail corrected: the origin of the distance is the killed monster and n = 1 pays the credited player ([player/0002](0002-party.md)).
 - 2026-10-16 (reverser, backlog 2026-10-16 spec-writer → reverser): § 1 walkthrough states the class-byte branch
   exactly: above 7 is an error return with code 4, not a clamp. save/0001 header row `0x028` aligned.

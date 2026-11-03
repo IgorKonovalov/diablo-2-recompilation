@@ -189,7 +189,7 @@ check held, with the commands and their output.
   rune and a socketed item for the joiner); MP21 (plan 0040's lifecycle logger not merged into these loggers); MP27
   (no `QuestFlag` portal session); MP28 (b), (c); MP30 (logger); MP31, MP32 (no prediction written before the run,
   Phase 1 ruling d); the MP23 in-town defender and the MP24 below-9 and outside-town server branches; MP25's offensive
-  auras; MP20's per-player attribution; MP16 had no kill near the bound on the inside (d² ≤ 6400 within 800).
+  auras; MP20's per-player attribution; MP16 had no kill near the bound on the inside (d² ≤ 6400 within 800). Addendum 2026-11-03 (`lane/r58a`): measured from the killed monster, the bound's true origin (fn:sub_0057E5A0_PartyXpCollect@0x0057E5A0), 3 pairs lie within 800 inside and 3 outside, and all 431 pairs decide as from the killer (run:2026-11-03-party-emu, `check-xpshare-all.txt`).
 - **Counts vs Done-when** (`p44h-run/check-run.txt`, `p44h-run/count-run.txt` from `drivers/count_events.py`):
   party kills with drops (party ≥ 2 at the drop): **417** (309 with 2 players, 95 with 3, 13 with 8; ≥ 100); party experience shares
   (n = 2): **385** (≥ 20); vendor stock events with two players (TO, BS0, STALE, RESET while the last PLRS line listed both):
