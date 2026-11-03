@@ -525,7 +525,7 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-11-03 | `lane/c56` | 0056 P4 | architect-review | 154 913 | 20 | 10 | no slot; corrects `lane/p52a` Slot cell: 3.6 withdrawn, 4.5 min per kept case by lane wall, 3.0 and 3.5 harness | evaluated; plan closed, ADR-0028 proposed | 1: miscount 1 (the wall figure) |
 | 2026-11-03 | `lane/r52n` | 0052 P1c (Uber event) | reverser-static | 339 349 | 50 | 23 | — (static, Ghidra copy ghidra-r52n) | accept with fixes (Tier B check) | 6: omission 3, stale cross-reference 3 |
 | 2026-11-03 | `lane/r52n` check | 0052 P1c (Uber event) | architect-check | 101 556 | 28 | 4 | — | accept with fixes (6) | omission 3, stale cross-reference 3 |
-| 2026-11-03 | lane/a66 | 0052 readers of ai/0012, ai/0013 into the table docs (2 entries) | archivist | 0 | 48 | 0 | — | — | — |
+| 2026-11-03 | lane/a66 | 0052 readers of ai/0012, ai/0013 into the table docs (2 entries) | archivist | 0 | 48 | 0 | — | accept with fixes (Tier A, ADR-0027) | 16: overclaim 3, misread 4, omission 6, wrong anchor 2, stale cross-reference 1 |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not

@@ -5,7 +5,7 @@ date: 2026-11-03
 status: done
 context:
   - ../../findings/ai/0012-batch11.md
-resolution: "Linked in MonStats (threat, aip1..aip5 of row 128, aip1 of row 138, Skill1..Skill8 of rows 51, 128, 135, 140, new boss-B reader block) and Skills (attackrank, aurastate); tags are the finding's, Baal's curse sign tests [C] as the bact control row gives; [MonStats](../../tables/MonStats.md#ai-columns-plan-0052-phase-0), [Skills](../../tables/Skills.md)"
+resolution: "Linked in MonStats (threat, aip1..aip5 of row 128, aip1 of row 138, Skill1..Skill8 of rows 51, 128, 135, 140, new boss-B reader block) and Skills (attackrank, aurastate); tags are the finding's, the negative Skill6 test [C] as the bact control row gives, Skill7 lowered to [I] at the Tier A review; [MonStats](../../tables/MonStats.md#ai-columns-plan-0052-phase-0), [Skills](../../tables/Skills.md)"
 ---
 
 The request: what is needed, from whom, and why. Not blocking / blocking <what>.
