@@ -3569,3 +3569,39 @@ run id). Evidence in [items/0010 § Plan 0038 batch H6e2](0010-quest-drops.md#pl
   free at a player's removal (vendors 29, 32) need a second player; the level-up's note queue and a quest event were
   not looked at; no build passed 32 failures (most 27); the refusals by `Cracked`, base type 7, flag `0x1000000` and
   `0x0055F590` were not reached. The store's cell search is not modelled (a column-major first fit is close but not it).
+
+## run:2026-11-03-use-emu
+
+- **Question.** Do the item-use entries (plan 0060 P1.1) map their inputs as `tools/item_inventory.py` says, up to their first
+  callee?
+- **Setup.** No game run. Ghidra's p-code emulator, `re/ghidra_scripts/EmuBoundary.java` unchanged, project copy
+  `workspace/ghidra-r60a` (`-Xmx3G`, `MemoryMax=4G`). `tools/use_emu.py`, `tools/item_inventory.py`. Every case draw from
+  `random.Random("r60a-<family>")`. Image writes on image addresses are inputs: `g_pDataTables` (`0x00744304`), the items
+  table count and pointer (`0x0096CA58`, `0x0096CA5C`), the books table's (`0x0096CC60`, `0x0096CC64`). Each scratch
+  structure is written field by field. Guards `0x00408A60`, `0x00681E09`, `0x0040B4B0`, `0x0040B430`, `0x0040B480`; `0x00408090` is
+  observed.
+- **Procedure.**
+  1. `python3 -I tools/use_emu.py cases --dir workspace/logs/r60a/emu`
+  2. per family `GHIDRA_PROJ_DIR=workspace/ghidra-r60a GHIDRA_HEADLESS_MAXMEM=3G systemd-run --user --scope -p MemoryMax=4G
+     tools/ghidra.sh emuboundary D/<f>.cases D/<f>.mem > D/<f>.out`
+  3. `python3 -I tools/use_emu.py check --dir D > D/check.txt`; `... static --dir D`; `tools/ghidra.sh rngcallgraph - <root>
+     > D/rcg/<root>.txt` for 15 roots, `D/rcg-summary.txt` their counts; `... manifest --dir D --write`.
+- **Observed** (`check.txt`, `manifest.txt` and `manifest-rcg.txt` under `workspace/logs/r60a/emu`, each passing `sha256sum -c`
+  from there; `dev-1/` is the first development run, 7 320 cases on the narrower generator, also 0 mismatches, hashed in
+  `manifest-dev-1.txt`, passing from `dev-1/`):
+  ```
+  classmul 800  stat3 2400  stat4 800  stat5 1200  golem 300  elix 200  idtest 120  idfn 300  cube 300  dispatch 600  key 300
+  total cases 7320 mismatches 0 stops 0
+  controls failing cases: draw1=905 nodraw=905 half=51 floordiv=120 sar=20 nocap=207 pctflat=252 no100=28
+  traced accesses outside the declared memory: 112, unaccounted 0
+  ```
+  Every traced read is the image's constant data or a switch table, listed by `ACCOUNTED` in the tool. No write was traced.
+- **What the controls separate.** `draw1` and `nodraw` the two draws (the seed at the boundary and the doubling); `half` the
+  `>> 1`; `floordiv` truncation in the rate (negative rates only, reached by scratch base rates); `sar` `v + (v >> 1)` from
+  `3v / 2` (negative odd amounts only, no stock input); `nocap` the cap; `pctflat` percent from flat; `no100` the exact 100.
+- **Limits.** The map only, ADR-0015: not the game's values at these offsets, not when these run. Every family stops at its
+  boundary, so nothing after the first callee is covered; slot 0's rate on the stock path is not reached (the event queue
+  call stands before it). Kinds 2, 6, 9, 10, 11 are reached only at their entry through `dispatch`. `stat3`'s return count
+  (1 143) is mostly refusals and zero amounts by construction.
+- **Conclusion.** [items/0012](0012-use-inventory.md) §§ 2, 4, 6, 8: the claims tagged [C] (ADR-0021). No symbol raised.
+

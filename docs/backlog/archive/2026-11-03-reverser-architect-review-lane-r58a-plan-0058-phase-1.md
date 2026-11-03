@@ -4,7 +4,7 @@ to: architect
 date: 2026-11-03
 status: done
 context:
-  - ../../plans/0058-party-and-player-count.md
+  - ../../plans/done/0058-party-and-player-count.md
   - ../../findings/player/0002-party.md
   - ../../findings/player/experiments.md
 resolution: "Reviewed 2026-11-03 (Tier A): accept with fixes (9); both corrections hold at the disassembly as the code's map, no live case required; rulings in the plan 0058 log; Phase 2 may start after the merge."

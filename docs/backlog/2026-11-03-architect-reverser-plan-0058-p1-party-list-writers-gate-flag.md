@@ -4,7 +4,7 @@ to: reverser
 date: 2026-11-03
 status: open
 context:
-  - ../plans/0058-party-and-player-count.md
+  - ../plans/done/0058-party-and-player-count.md
   - ../findings/player/0002-party.md
 resolution: ""
 ---
