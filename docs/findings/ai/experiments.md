@@ -348,3 +348,70 @@
 - **Conclusion:** the full maps are `[C]` in ai/0006 §§ 2, 4, each up to its first boundary or return; the entry
   calls `[C]` as calls, with the `AiCtl` stores before them. Not the callees, nothing after them. No symbol raise
   (ADR-0015 scope, review-fixes rule 14). (run:2026-10-30-ai-cat-emu-5)
+
+## run:2026-10-30-ai-cat-emu-6
+
+- **Question:** (plan 0052 Phase 1, catalogue batches 6 and 7) Do the functions of row 61 (think and `alt`), state rows
+  5 and 6, `MERCAI_PickSkill`, the hireling's fight and follow steps, and rows 34, 44, 50 (and its target pick), 53,
+  55, 59 (init and think), 90, 144 and 146 map their declared inputs to the first callee they reach (or the return),
+  its call site, its arguments, the unit seed and `AiCtl+0x14/+0x18/+0x1C` (and, for the pick, its search block) as
+  [ai/0007](0007-hirelings.md) § 2 and [ai/0008](0008-bosses-a.md) § 2 read them?
+- **Setup:** Ghidra p-code emulator via `re/ghidra_scripts/EmuBoundary.java` (`286393aa…`, unchanged), lane project
+  copy `workspace/ghidra-r52g` (emulation does not use the scratch signatures), heap 3 GB (`GHIDRA_HEADLESS_MAXMEM=3G`),
+  each headless run inside its own `systemd-run --user --scope -p MemoryMax=4G`, one Ghidra at a time. No wine, no
+  slot. Models and case writer `tools/ai_cat_emu6.py` (`866f330d…`), every draw from `random.Random("r52g-<family>")`.
+  Files in `workspace/logs/r52g/emu/`, `manifest.sha256` (`888adf58…`, 73 lines, `check.txt` `f57b484e…`);
+  `sha256sum -c manifest.sha256` from that directory passes.
+- **Procedure:**
+  ```
+  D=workspace/logs/r52g/emu
+  python3 -I tools/ai_cat_emu6.py cases --dir $D
+  for f in hire hirealt st5 st6 pick fight follow andariel duriel mephisto mpick summoner izual brinit braven \
+           griswold uizual umeph; do
+    GHIDRA_PROJ_DIR=workspace/ghidra-r52g GHIDRA_HEADLESS_MAXMEM=3G systemd-run --user --scope -q -p MemoryMax=4G \
+      tools/ghidra.sh emuboundary $D/$f.cases $D/$f.mem > $D/$f.out 2> $D/$f.err
+  done
+  python3 -I tools/ai_cat_emu6.py check --dir $D > $D/check.txt
+  python3 -I tools/ai_cat_emu6.py manifest --dir $D --write
+  ```
+  Each case writes the game's difficulty and frame, the unit (type 1, class, mode, monster data, seed, path, `+0xC4`)
+  and its path's point and room, the target (type, guid, dynamic and static path words), an owner unit for the
+  hireling helpers, the monster data and AI control (state, `+0x14/+0x18/+0x1C/+0x20`), the `AiCtx`, the MonStats
+  `aidel`, `aip` block, `Skill1..8` and `Sk1..8mode`, and the DataTables pointer with the MonStats and Skills counts and
+  records and one Skills record's `aurastate`; the memory spec observes 78 callees and guards the allocator and fatal
+  entries (6).
+- **Observed** (`check.txt`, first line of each family):
+  ```
+  AI52G hire cases=240 match=240 bad=0 stopped=0 traced=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 site_control_passed=0 boundaries=1
+  AI52G hirealt cases=240 match=240 bad=0 stopped=0 traced=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 site_control_passed=0 boundaries=1
+  AI52G st5 cases=240 match=240 bad=0 stopped=0 traced=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 site_control_passed=0 boundaries=2
+  AI52G st6 cases=240 match=240 bad=0 stopped=0 traced=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 site_control_passed=0 boundaries=2
+  AI52G pick cases=240 match=240 bad=0 stopped=0 traced=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=25 cmp_passed=0 site_control_passed=0 boundaries=2
+  AI52G fight cases=240 match=240 bad=0 stopped=0 traced=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=31 cmp_passed=0 site_control_passed=0 boundaries=2
+  AI52G follow cases=240 match=240 bad=0 stopped=0 traced=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 site_control_passed=0 boundaries=1
+  AI52G andariel cases=240 match=240 bad=0 stopped=0 traced=0 drew=204 le_separating=24 le_passed=0 d0_separating=53 d0_passed=0 cmp_separating=0 cmp_passed=0 site_control_passed=0 boundaries=6
+  AI52G duriel cases=240 match=240 bad=0 stopped=0 traced=0 drew=149 le_separating=27 le_passed=0 d0_separating=44 d0_passed=0 cmp_separating=0 cmp_passed=0 site_control_passed=0 boundaries=7
+  AI52G mephisto cases=240 match=240 bad=0 stopped=0 traced=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 site_control_passed=0 boundaries=1
+  AI52G mpick cases=240 match=240 bad=0 stopped=0 traced=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 site_control_passed=0 boundaries=1
+  AI52G summoner cases=240 match=240 bad=0 stopped=0 traced=0 drew=93 le_separating=8 le_passed=0 d0_separating=16 d0_passed=0 cmp_separating=36 cmp_passed=0 site_control_passed=0 boundaries=3
+  AI52G izual cases=240 match=240 bad=0 stopped=0 traced=0 drew=78 le_separating=10 le_passed=0 d0_separating=40 d0_passed=0 cmp_separating=51 cmp_passed=0 site_control_passed=0 boundaries=8
+  AI52G brinit cases=240 match=240 bad=0 stopped=0 traced=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 site_control_passed=0 boundaries=1
+  AI52G braven cases=240 match=240 bad=0 stopped=0 traced=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 site_control_passed=0 boundaries=1
+  AI52G griswold cases=240 match=240 bad=0 stopped=0 traced=0 drew=240 le_separating=11 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 site_control_passed=0 boundaries=3
+  AI52G uizual cases=240 match=240 bad=0 stopped=0 traced=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=30 cmp_passed=0 site_control_passed=0 boundaries=2
+  AI52G umeph cases=240 match=240 bad=0 stopped=0 traced=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 site_control_passed=0 boundaries=1
+  AI52G total cases=4320 match=4320
+  AI52G result=ok
+  ```
+  The `SITES` line under each family counts the cases per boundary and call site (42 site/boundary pairs and three
+  families' return over the 18 families); the `EDGES` line the cases that meet each non-draw compare and each draw at
+  equality; `drew` the cases whose seed moved before the boundary. **Development run** (rule 6): `emu/dev-1/` (the
+  same writer and models; its copy `dev-1/ai_cat_emu6.py.rev` has the same bytes as the kept run's tool,
+  `866f330d…`): 4 320 cases, 4 320 matching, 0 stopped, 0 traced, every control failing every case it separates
+  (`dev-1/check.txt` `f57b484e…`, the same bytes as the kept one; `dev-1/manifest.sha256` `764776ff…`, 74 lines, passing
+  from its directory). The kept run ran into `emu/`, not over `dev-1/`; its case and memory files regenerate
+  identically with the committed tool (`cases` into a scratch directory, compared with `cmp`), and its 18 `.out` files
+  equal dev-1's byte for byte.
+- **Conclusion:** the full maps are `[C]` in ai/0007 § 4 and ai/0008 § 4, each up to its first boundary or return; the
+  entry calls `[C]` as calls. Not the callees, nothing after them. No symbol raise (ADR-0015 scope, review-fixes
+  rule 14). (run:2026-10-30-ai-cat-emu-6)

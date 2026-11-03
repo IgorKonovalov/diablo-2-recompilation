@@ -475,6 +475,7 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-10-30 | lane/s59 | 0059 P3 | spec-writer | 102 463 | 28 | 5 | — (no Ghidra, no harness) | accept with fixes (Tier A) | 15: misread 5, wrong anchor 5, under-claim 3, overclaim 1, omission 1 |
 | 2026-10-30 | lane/s59 review | 0059 P3 | architect-review | 128 940 | 55 | 8 | — (Tier A, no Ghidra, no harness) | accept with fixes (15) | misread 5, wrong anchor 5, under-claim 3, overclaim 1, omission 1 |
 | 2026-10-30 | lane/r52g | 0052 P1.2 (batches 6-7, checkpoint) | reverser-static | 0 | 75 | 0 | — | — | — |
+| 2026-11-03 | lane/r52g | 0052 P1.2 (batches 6-7) | reverser-static | 341 200 | 88 | 0 | — (static, Ghidra copy ghidra-r52g) | — | — |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not

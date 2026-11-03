@@ -628,3 +628,25 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   `v14 + 40 + 2·level` capped 95 (98 for classes 338, 560, 561), one draw, and `aip1` = 0 as the ranged branch;
   Mephisto's melee test is `draw <= aip1` (state 2, else 3); in the target pick, the block's `+0x14` is set only for a
   searcher of type 0, so a second draw against `aip3` happens only when a player searches.
+- **2026-11-03 — P1.2 catalogue batches 6 (hirelings) and 7 (bosses-A) for review (reverser, static, `lane/r52g`,
+  resumed from the 2026-10-30 checkpoint; `main` dda63dfd merged before the run).** [ai/0007](../findings/ai/0007-hirelings.md):
+  row 61 `Hireable` and state row 4 (think 0x005E52D0, `alt` 0x005E5280, also row 128's `+C`), states 5 (0x005E7AC0,
+  also row 60's think) and 6 (0x005E7C10), the fight step 0x005E5050, the follow step 0x005E3930 and
+  `MERCAI_PickSkill`: the owner test, the `v14` distance bands, the crowding draw, the hit chance and its `v14` writes,
+  the weighted pick over the Hireling row's `Skill`/`Chance`/`ChancePerLvl`/`Mode` onto `DefaultChance` and the class
+  fallback; the plan's skill-list question answered `[I]` (the Hireling row's list; MonStats `Skill1` only for the
+  rogue's fallback and state 5). [ai/0008](../findings/ai/0008-bosses-a.md): the ten entries of rows 34, 44, 50, 53,
+  55, 59 (init and think), 90, 144, 146, Mephisto's target pick 0x005F77C0 and callback 0x005F7700, the jump table
+  0x005F7EF0, `A4Q1_IzualSeen` 0x005B4390, and the unreferenced 0x005F7F10 and 0x005F8010; `aidist` not read by rows
+  50/146's functions (`b67-aidist.txt`, 0 reads), so it is the machinery's search's only. [C] by emulation
+  (run:2026-10-30-ai-cat-emu-6, `tools/ai_cat_emu6.py`, 18 families, 4 320 cases, 0 mismatches; `le`, `d0`, `cmp` and
+  the site control fail every case they separate; `EDGES` per family; kept run in `workspace/logs/r52g/emu/`, not over
+  `dev-1/`): full maps of 34 (tier), 90, 59's init, 146, Duriel without `Skill4`, Izual with `v14` ≠ 0, the pick's class
+  bounds, the fight step's class dispatch, states 5 and 6 to `RoomIsTown`, Summoner and UberIzual to their first stat or
+  state call; entry calls of 61 (tier), its `alt`, the follow step, 50, its pick (with its block) and 59's think. P1.1
+  review reopen condition (b) not met (Mephisto's pick callback draws nothing by its body and direct calls). 22
+  `re/symbols.csv` rows (21 func, 1 data, all I). Kept outputs `workspace/logs/r52g/` (manifest 22 lines; `emu/` 73,
+  `emu/dev-1/` 74; each passes from its directory). Backlog: the
+  [review request](../backlog/2026-11-03-reverser-architect-plan-0052-p1-2-batches-6-7-review.md),
+  [archivist](../backlog/2026-11-03-reverser-archivist-hireling-chance-columns-read-by-ai-0007.md) (Hireling chance
+  columns). Next: batch 8 (pool-E).
