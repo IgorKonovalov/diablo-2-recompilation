@@ -400,12 +400,11 @@ for (slot = 0; slot < 10; slot++) {                       // PLAYER_GiveStartIte
 - [I] `EXP_GetRatio(L)`: table null → 0; `L ≤ 0` → `record[0].ExpRatio`; `L > record[0].perClass[0]` (Amazon's
   MaxLvl) → 0; else `record[L + 1].ExpRatio` (1024 up to level 69 in stock data, falling to 5 at 99).
   (0x00613E60–0x00613E88, struct:ExperienceRec+0x1C)
-- [C] Party (corrected 2026-11-03, plan 0058): `XP_OnMonsterKill` credits the killer, a minion's owner, or the caster of
-  an `exp` state; `XP_PartyShare` takes the credited player's party members in its level that are alive and within squared
-  distance 6400 **of the killed monster**, the credited player tested like the others; a ninth that passes is fatal. n = 0: nothing. **n = 1: the credited
+- [C] Party (corrected 2026-11-03, plan 0058): `XP_OnMonsterKill` credits the killer, a minion's owner, or, with an `exp` state on the killer or the victim, the owner of a stat list with flag `0x800`; `XP_PartyShare` takes the credited player's party members in its level that are alive and within squared
+  distance 6400 **of the killed monster**, the credited player tested like the others; a ninth that passes reaches the fatal path. n = 0: nothing. **n = 1: the credited
   player, whoever the member was**, at its own level. More: `total = exp + ((n − 1) × exp × 89) / 256` (i32, truncating),
   `q` the f32 quotient by Σlevels, and each member gets `XP_Compute(trunc(level_i × q))` in list order (the float steps [I] for n ≥ 3, ADR-0015 (5)). A player in no party has
-  no test. The player-count factor on the monster's experience is applied when the monster is made ([monsters/0004](../monsters/0004-stats.md)).
+  no test. The code's map (ADR-0015 (3)): no logged kill separates the origin or the n = 1 credit. The player-count factor on the monster's experience is applied when the monster is made ([monsters/0004](../monsters/0004-stats.md)).
   (fn:XP_PartyShare@0x0057E6C0, fn:sub_0057E5A0_PartyXpCollect@0x0057E5A0, run:2026-11-03-party-emu; [player/0002](0002-party.md))
 - [I] Death: `PLAYER_DeathExpLoss` (character level `lvl` > 1): `span = Exp[lvl] − Exp[lvl − 1]`, `loss = DeathExpPenalty × span / 100`
   (unsigned); if `loss ≠ 0`, `exp = exp − loss`, raised to `Exp[lvl − 1] + 1` when it falls to or below the level's start.

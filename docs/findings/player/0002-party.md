@@ -20,7 +20,7 @@ Run: run:2026-11-03-party-emu, 6 166 emulated kills, 15 628 `XP_Compute` calls, 
   At n = 1 the code uses `EBX` (the credited player, 0x0057E6D3, 0x0057E726) and the level argument (0x0057E718), not the
   block's slot. So in a party, a credited player beyond the bound or dead with one other member in range takes the whole
   award, at its own level and with no bonus, and the member in range gets nothing (243 such cases, 309 with the credited
-  player as the member; control `n1member` fails 282). At n = 0 nobody gets anything. A player in no party has no test at
+  player as the member; control `n1member` fails 282: those 243, and 39 of `evaluated-n1`, where the member is the credited player and only the level differs). At n = 0 nobody gets anything. A player in no party has no test at
   all. (0x0057E70D–0x0057E733, 0x0057EA64–0x0057EAA1, run:2026-11-03-party-emu)
 
 The rest:
@@ -43,8 +43,13 @@ The rest:
   `gain × 86 ÷ 256` unless the mercenary is the killer. § 5. (fn:XP_OnMonsterKill@0x0057E990, fn:MERC_CapExpGain@0x0057E3F0, run:2026-11-03-party-emu)
 - [C] Re-checked on the game's own logs: the corrected model predicts every member set **in order** and every input of
   run:2026-10-20-two-clients's six logs, now with the 40 mercenary kills: 689 of 690 kills (the other cut off by the session's end),
-  267 single and 844 share inputs. **No kill there separates the two readings of the distance** (431 pairs alike, 0
-  apart; every credited player in range); only the emulation does. (`tools/mp_check.py xpshare`, run:2026-11-03-party-emu)
+  267 single and 844 share inputs. **No kill there separates either correction:** the two distances decide 431 pairs alike and
+  0 apart (4 partied kills have no `KILL` line and take the killer's position, so their pairs are alike by construction), and all 648
+  partied credited players are in range, so every sole member there is the credited player. (`tools/mp_check.py xpshare`, run:2026-11-03-party-emu)
+- [C] **What each correction rests on.** Both are the code's map (ADR-0015 (3)), read at the instructions above and separated by `fromcredit` and `n1member` under emulation; no
+  logged kill separates them. What the game's own logs do give: the pointer at `[esp+4]` of 0x0057E990 is the killed monster (`XK0` logs it, and at n = 1 the input equals its base stat 13),
+  and its X is non-zero at that moment, since partied kills pay (the `X = 0` return would give n = 0). (0x0057E9C9, 0x0057EA6D, 0x0057E620, run:2026-10-20-two-clients)
+- [I] The position getters on the victim and on a member are one route (`sub_0045ADF0_UnitGetSubX`, `sub_006488C0_PathGetX`, both `I`); their meaning, the sub-tile position, is carried by the member sets the logged player positions predict, not by the emulation. (0x0057E5D9–0x0057E620, 0x0057E62B–0x0057E636)
 - [I] The float steps stay as J4 states them: `q`, the product and `CRT_ftol2` agree with the model in every case on both
   `CRT_ftol2` paths, but ADR-0015 (5) keeps x87 results out of emulation's evidence; run:2026-10-20-two-clients shows them
   at n = 2, 98 inputs separating, on the same instructions. (0x0057E754–0x0057E77B, fn:CRT_ftol2@0x00682FD0)
@@ -121,6 +126,7 @@ Collect(u, block):
   at each member's `XP_Compute`, the f32 bit pattern of `q` compared, and each player's stats 13 and 29 after the kill.
   (fn:XP_OnMonsterKill@0x0057E990, fn:XP_PartyShare@0x0057E6C0, fn:sub_0057E5A0_PartyXpCollect@0x0057E5A0,
   fn:sub_005405A0_PartyForEachInLevel@0x005405A0, run:2026-11-03-party-emu)
+- [I] The chain's first two lines are not in that map: every case enters at 0x0057E990 or 0x0057E6C0 (`*.cases`), so `sub_0057CCB0_UnitKilled`'s call and the gate are read and pinned, not run. (0x0057CD51, 0x005A4EFE–0x005A4F12)
 - [C] `level[i]` comes from `STATS_GetUnitStat` (the evaluated list, 0x0057E68F), `clvl` from `STATS_GetUnitBaseStat`
   (0x0057EA53). They differ only if a list changes stat 12, which this finding did not look for; tags `evaluated`,
   `evaluated-n1`. (fn:STATS_GetUnitStat@0x00625480, fn:STATS_GetUnitBaseStat@0x006253B0, run:2026-11-03-party-emu)
@@ -196,7 +202,7 @@ credit(killer, game, victim):
   `MERC_CapExpGain`: for a player unchanged (0x0057E3FD–0x0057E400), else `min(gain, (ExpForLevel(L + 1) − ExpForLevel(L)) >> 6)`, an unsigned compare, with
   `ExpForLevel(L) = (L + 1) × L × L × row.Exp/Lvl`, or 0 with no owner link (`merc-nolink`). The cap's run is hirelings G4.
   (fn:XP_Compute@0x0057E480, fn:MERC_CapExpGain@0x0057E3F0, fn:HIRELING_ExpForLevel@0x00663790, run:2026-11-03-party-emu, run:2026-10-27-sweep-hirelings)
-- [C] `gain × 86 ÷ 256` is signed truncating, not applied when the killer is the mercenary (`merc-kills`; control `mercfull` fails 353). (0x0057EA28–0x0057EA39, run:2026-11-03-party-emu)
+- [C] `gain × 86 ÷ 256` is signed truncating, not applied when the killer is the mercenary (`merc-kills`, compared at the full gain). Control `mercfull`, no cut at all, fails 353 on the other tags: it separates the cut; the exemption rests on `merc-kills`' comparison. (0x0057EA28–0x0057EA39, run:2026-11-03-party-emu)
 - [C] A first node with flag bit 0 is skipped (`merc-flag`), only such nodes give no mercenary (`merc-dead`), no table too (`nopets`), a node whose unit is gone likewise (`merc-lost`). (fn:PETS_GetUnitOfType@0x00574EC0, run:2026-11-03-party-emu)
 
 ## 6. Wrap bounds (kept: `check.txt`, the last block)
@@ -232,7 +238,7 @@ credit(killer, game, victim):
 - **Boundaries (ADR-0021):** `0x00408090` (arguments: line 0xF25, site 0x0057E671) and `PLAYER_LevelUp` 0x00570880 (128 cases; ECX game, EDX unit, site 0x0057E57E). Every other callee ran emulated, `XP_Compute` and `PLAYER_AddExperience` included. **Not covered:** the level-up and every later member of such a case; the fatal path past its first call; `MERC_AddExp` past its owner's-level test (generated L ≥ the owner's level; its run is hirelings G5).
 - **Declared reads:** 118 traced read sites, all image constants: the two `XP_Compute` factor tables, the hash offsets at 0x006E10E0, the stat masks 0x006CE270 and 0x006CE278, and 0x00624DD0's switch. 0 traced writes. The Experience table and hire rows are synthetic; this covers no stock row.
 - **Reached:** all of the tags above, 5 families; both `CRT_ftol2` paths (489 share cases at flag 0, 2 993 at 1); the static victim's branch (types 2, 4, 5), the null victim (direct calls only: the single call site passes a checked non-null).
-- **Not reached:** a member of another type (the static branch of `sub_0045ADF0_UnitGetSubX`); a party id with no record (it was found in one); the `0x00540734` and `0x0054029A` fatals; pets row bound `DataTables+0xBF0` ≤ 7; `MERC_CapExpGain` with no pet info or no hire row (hirelings G4 `[I]`).
+- **Not reached:** a member of another type (the static branch of `sub_0045ADF0_UnitGetSubX`); a member with y = 0 (`mem-y` is y = 30 000; read: only x is tested, 0x0057E63B–0x0057E640); a party id with no record (it was found in one); the `0x00540734` and `0x0054029A` fatals; pets row bound `DataTables+0xBF0` ≤ 7; `MERC_CapExpGain` with no pet info or no hire row (hirelings G4 `[I]`).
 - **Tool limits (ADR-0015 (5)):** Ghidra 12.1; x87 values as stated in the Answer.
 
 ## Data touched
