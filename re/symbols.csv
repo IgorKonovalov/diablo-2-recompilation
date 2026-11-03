@@ -2094,6 +2094,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005D5080,func,sub_005D5080_SkillPrgDo41Scatter,,I,skills/dispatch,docs/findings/skills/0003-handlers.md
 0x005D5220,func,COMBAT_PrgFinisher,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x005D54B0,func,sub_005D54B0_SkillKickPhysDamage,,I,skills/catalogue,docs/findings/skills/0003-handlers.md
+0x005D5880,func,sub_005D5880_DragonTalonHit,,I,skills/catalogue,docs/findings/quirks/0001-community-bugs.md
 0x005D5970,func,sub_005D5970_SkillSt24DragonTalon,,I,skills/catalogue,docs/findings/skills/0014-assassin.md
 0x005D5A30,func,sub_005D5A30_SkillDo42DragonTalon,,I,skills/catalogue,docs/findings/skills/0014-assassin.md
 0x005D5BF0,func,sub_005D5BF0_MissScatterAtTarget,,I,skills/catalogue,docs/findings/skills/0007-missile-hit-31-59.md
@@ -3013,6 +3014,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00645CA0,func,sub_00645CA0_LeapAttackPoint,,I,skills/catalogue,docs/findings/skills/0012-barbarian.md
 0x00645F00,func,sub_00645F00_UnitRangedMissile,,I,skills/missiles,docs/findings/skills/0003-handlers.md
 0x00646170,func,sub_00646170_WereformAttackBase,,C,anim/timing,docs/findings/anim/0002-rates.md
+0x00646280,func,sub_00646280_KickItemDamage,,I,skills/catalogue,docs/findings/quirks/0001-community-bugs.md
 0x00646D60,func,SKILLS_RefreshPassive,,C,stats/states,docs/findings/stats/0002-states.md
 0x00646F20,func,SKILLS_RefreshPassivesInState,,I,stats/states,docs/findings/stats/0002-states.md
 0x00647110,func,SKILLS_AddSkill,,C,player/creation,docs/findings/player/0001-creation.md
