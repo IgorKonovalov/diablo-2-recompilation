@@ -273,3 +273,78 @@
 - **Conclusion:** the thirteen maps are `[C]` in ai/0005 §§ 2–3, each up to its first boundary (row 65 its skill-sign
   test only); the six entry calls `[C]` as calls. Not the callees, nothing after them. No symbol raise (ADR-0015
   scope, review-fixes rule 14). (run:2026-10-30-ai-cat-emu-4)
+
+## run:2026-10-30-ai-cat-emu-5
+
+- **Question:** (plan 0052 Phase 1, catalogue batch 5) Do the init and think functions of rows 84 (both), 86, 101/104
+  (init), 102 (both), 107 (init), 110/111 (init), 106/143 (think) and 108 map their declared inputs to the first callee
+  they reach (or the return), its call site, its arguments, the unit seed and `AiCtl+0x14/+0x18/+0x1C` as
+  [ai/0006](0006-summons.md) § 2 reads them; and do the other followers (rows 67 and state row 7, 101, 103, 104, 105
+  and its init, 106's and 143's inits, 107, 109–112) reach their entry call with the arguments and `AiCtl` stores § 2
+  gives?
+- **Setup:** Ghidra p-code emulator via `re/ghidra_scripts/EmuBoundary.java` (`286393aa…`, unchanged), lane project
+  copy `workspace/ghidra-r52f` (symbols replayed from a scratch copy of `re/symbols.csv` with reading signatures,
+  `workspace/logs/r52f/b5-sym-scratch.csv`; emulation does not use them), heap 3 GB (`GHIDRA_HEADLESS_MAXMEM=3G`), each
+  batch of headless runs inside `systemd-run --user --scope -p MemoryMax=4G`, one Ghidra at a time. No wine, no slot.
+  Models and case writer `tools/ai_cat_emu5.py` (`656b7c70…`), every draw from `random.Random("r52f-<family>")`. Files
+  in `workspace/logs/r52f/emu/`, `manifest.sha256` (`1a5726ad…`, 93 lines, `check.txt` `ab9cec17…`); `sha256sum -c
+  manifest.sha256` from that directory passes.
+- **Procedure:**
+  ```
+  D=workspace/logs/r52f/emu
+  python3 -I tools/ai_cat_emu5.py cases
+  for f in bwinit bwall necropet hydra sentinit asentry bladeinit blade inviso dsentry swinit swarrior sminit \
+           sm2init smaster vinit vines cycle ravinit raven dwolf bear totem; do
+    GHIDRA_PROJ_DIR=workspace/ghidra-r52f GHIDRA_HEADLESS_MAXMEM=3G \
+      tools/ghidra.sh emuboundary $D/$f.cases $D/$f.mem > $D/$f.out 2> $D/$f.err
+  done                                   # in two systemd-run --user --scope -p MemoryMax=4G invocations (12 + 11)
+  python3 -I tools/ai_cat_emu5.py check > $D/check.txt
+  python3 -I tools/ai_cat_emu5.py manifest --write
+  ```
+  Each case writes the game's difficulty and frame, the unit (type 1, class, mode, monster data, seed, path, skill
+  list head `+0xA8`, `+0xC4`), the monster data and AI control (state, `+0x14/+0x18/+0x1C`, no parameter record), the
+  `AiCtx`, the MonStats `aip` block, `Skill1..3` and `Sk1..3mode`, and the DataTables pointer with the Skills count,
+  the Skills records pointer (for one case in eight of `bwinit` and `blade` a pointer that puts the case's record at
+  address 0) and that record's `Param2`; the memory spec observes 44 callees and guards the allocator and fatal
+  entries (6).
+- **Observed** (`check.txt`, first line of each family):
+  ```
+  AI52F bwinit cases=240 match=240 bad=0 stopped=0 traced=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=51 cmp_passed=0 u16_separating=94 u16_passed=0 site_control_passed=0 boundaries=1
+  AI52F bwall cases=240 match=240 bad=0 stopped=0 traced=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=44 cmp_passed=0 u16_separating=0 u16_passed=0 site_control_passed=0 boundaries=2
+  AI52F necropet cases=240 match=240 bad=0 stopped=0 traced=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 site_control_passed=0 boundaries=1
+  AI52F hydra cases=240 match=240 bad=0 stopped=0 traced=0 drew=121 le_separating=21 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=58 cmp_passed=0 u16_separating=0 u16_passed=0 site_control_passed=0 boundaries=3
+  AI52F sentinit cases=240 match=240 bad=0 stopped=0 traced=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 site_control_passed=0 boundaries=1
+  AI52F asentry cases=240 match=240 bad=0 stopped=0 traced=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 site_control_passed=0 boundaries=1
+  AI52F bladeinit cases=240 match=240 bad=0 stopped=0 traced=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 site_control_passed=0 boundaries=1
+  AI52F blade cases=240 match=240 bad=0 stopped=0 traced=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=12 cmp_passed=0 u16_separating=46 u16_passed=0 site_control_passed=0 boundaries=2
+  AI52F inviso cases=240 match=240 bad=0 stopped=0 traced=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 site_control_passed=0 boundaries=1
+  AI52F dsentry cases=240 match=240 bad=0 stopped=0 traced=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 site_control_passed=0 boundaries=1
+  AI52F swinit cases=240 match=240 bad=0 stopped=0 traced=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 site_control_passed=0 boundaries=1
+  AI52F swarrior cases=240 match=240 bad=0 stopped=0 traced=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 site_control_passed=0 boundaries=1
+  AI52F sminit cases=240 match=240 bad=0 stopped=0 traced=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 site_control_passed=0 boundaries=1
+  AI52F sm2init cases=240 match=240 bad=0 stopped=0 traced=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 site_control_passed=0 boundaries=1
+  AI52F smaster cases=240 match=240 bad=0 stopped=0 traced=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 site_control_passed=0 boundaries=2
+  AI52F vinit cases=240 match=240 bad=0 stopped=0 traced=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 site_control_passed=0 boundaries=1
+  AI52F vines cases=240 match=240 bad=0 stopped=0 traced=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 site_control_passed=0 boundaries=1
+  AI52F cycle cases=240 match=240 bad=0 stopped=0 traced=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 site_control_passed=0 boundaries=1
+  AI52F ravinit cases=240 match=240 bad=0 stopped=0 traced=0 drew=240 le_separating=0 le_passed=0 d0_separating=153 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 site_control_passed=0 boundaries=1
+  AI52F raven cases=240 match=240 bad=0 stopped=0 traced=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 site_control_passed=0 boundaries=1
+  AI52F dwolf cases=240 match=240 bad=0 stopped=0 traced=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 site_control_passed=0 boundaries=2
+  AI52F bear cases=240 match=240 bad=0 stopped=0 traced=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 site_control_passed=0 boundaries=1
+  AI52F totem cases=240 match=240 bad=0 stopped=0 traced=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 site_control_passed=0 boundaries=1
+  AI52F total cases=5520 match=5520
+  AI52F result=ok
+  ```
+  The `SITES` line under each family counts the cases per boundary and call site (24 site/boundary pairs and the five
+  inits' return over the 23 families); the `EDGES` line the cases that meet each non-draw compare and each draw at
+  equality; `drew` the cases whose seed moved before the boundary. **Development run** (rule 6): `emu/dev-1/` (the
+  writer before two tunings, a Skills count of 0x10000 for `bwinit` and `blade` and `hydra` seeds with a first draw of
+  59–61; its copy `dev-1/ai_cat_emu5.py.rev` `37add132…`; the models are the same): 5 520 cases, 5 520 matching, 0
+  stopped, 0 traced, every control failing every case it separates (`dev-1/check.txt` `a538919f…`, regenerated
+  identically by `python3 -I dev-1/ai_cat_emu5.py.rev check --dir dev-1`; `dev-1/manifest.sha256` `5eca94e8…`, 94
+  lines, passing from its directory). It ran into its own directory; the kept run's files are separate. The kept
+  run's case and memory files and `check.txt` regenerate identically with the committed tool (`cases` into a scratch
+  directory, `check` on the kept outputs there, compared with `cmp`).
+- **Conclusion:** the full maps are `[C]` in ai/0006 §§ 2, 4, each up to its first boundary or return; the entry
+  calls `[C]` as calls, with the `AiCtl` stores before them. Not the callees, nothing after them. No symbol raise
+  (ADR-0015 scope, review-fixes rule 14). (run:2026-10-30-ai-cat-emu-5)

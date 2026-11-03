@@ -45,6 +45,10 @@
 # The capped grant (sub_0058C5C0_ExpGrantCapped, ESI player, [esp+4] game):
 #   EG0   entry: the player's base entries 12, 13, 30; EGS 0x0058C650 the grant after the cut (EBX), each loop pass;
 #   EGX   0x0058C6C6: the base entries
+# The Ancients' altar (sub_0058D310_A5Q5_AltarOperate; plan 0038 rows 2/29, lane h6ga):
+#   AL0   0x0058D33F after the quest and altar-data fetch: ESI the quest record, EBX the altar data; quest +0x09 (active),
+#         +0x0B (state), +0x0C (step), altar data +0x0C (town-portal count) and +0x4C (mode)
+#   ALS   0x0058D361 / 0x0058D38F the send of message 0x4E22 (site "idle" / "active")
 import json
 import struct
 
@@ -283,6 +287,20 @@ def _h6g_main():
         u = reg("esi")
         emit("EGX", {"unit": u, "b": some(u, (12, 13, 29, 30))})
 
+    def on_al0():
+        q = reg("esi")
+        a = reg("ebx")
+        emit("AL0", {"q": q, "active": u8(q + 9), "state": u8(q + 0xB), "step": u8(q + 0xC), "portals": s32(a + 0xC),
+                     "mode": s32(a + 0x4C)})
+
+    def als(site):
+        def f():
+            emit("ALS", {"site": site})
+        return f
+
+    Bp(0x0058D33F, on_al0)
+    Bp(0x0058D361, als("idle"))
+    Bp(0x0058D38F, als("active"))
     Bp(0x00569F8F, on_ncf)
     for a, r in ((0x005397A3, "esi"), (0x00537993, "ecx"), (0x00539594, "ebx"), (0x0053A3F0, "esi")):
         Bp(a, c3w(a, r))

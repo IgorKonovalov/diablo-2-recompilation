@@ -81,3 +81,8 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 - **2026-10-30 — Drafted (architect, `lane/plans57`).** Status `draft`; rank 6 (archaeology, low priority); three
   owner questions.
 - **2026-10-30 — Approved (owner; recorded by the architect, `lane/appr2`).** "Approve all of them": all three questions as recommended: findings only, no spec row and no wiki page (a behaviour-changing switch goes into its owning spec in Phase 3); last of this batch, filling a static slot when nothing higher is ready; no harness beyond the switches it already uses. Status `approved`.
+
+- 2026-10-30 (archivist, `lane/a62`): Phase 2 done. `tools/unreached.py` and `docs/findings/archaeology/0002-unreached-rows.md`
+  (numbered 0002 as named; 0001 is Phase 1's and does not exist yet). Unreached by table readers: Levels 5 of 137, MonStats
+  129 of 734 (98 enabled), Skills 13 of 357, States 58 of 185, Misc 26 of 659 items (Weapons and Armor 0). All counts are upper
+  bounds where code passes an immediate id; the finding's Gaps list what was not read (Objects, Missiles, Shrines, recipes).
