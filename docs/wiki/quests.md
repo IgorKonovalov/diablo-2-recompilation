@@ -1,7 +1,7 @@
 ---
 based_on:
   - docs/specs/quests/README.md 2026-10-20
-  - docs/specs/quests/progression.md 2026-10-21
+  - docs/specs/quests/progression.md 2026-11-03
   - docs/specs/quests/travel.md 2026-10-21
 ---
 
