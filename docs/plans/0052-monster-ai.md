@@ -639,7 +639,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   P1.1 review reopen condition (b) not met (the callbacks and the host setter draw nothing by their bodies and direct
   calls). No call of the action helpers. 16 `re/symbols.csv` rows (all I). Kept outputs `workspace/logs/r52h/`
   (manifest 11 lines; `emu/` 53, `emu/dev-1/` 54; each passes from its directory). Backlog: the
-  [review request](../backlog/2026-11-03-reverser-architect-plan-0052-p1-2-batch-8-review.md),
+  [review request](../backlog/archive/2026-11-03-reverser-architect-plan-0052-p1-2-batch-8-review.md),
   [archivist](../backlog/archive/2026-11-03-reverser-archivist-monstats-missiles-skills-readers-named-by-ai-0009.md) (MonStats,
   Missiles and Skills readers). Next: the remaining batches (6, 7, 9–12).
 - **2026-10-30 — P1.2 batches 6 (hirelings) and 7 (bosses-A) checkpoint (reverser, static, `lane/r52g`, from `main`
@@ -692,7 +692,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   review reopen condition (b) not met (Mephisto's pick callback draws nothing by its body and direct calls). 22
   `re/symbols.csv` rows (21 func, 1 data, all I). Kept outputs `workspace/logs/r52g/` (manifest 22 lines; `emu/` 73,
   `emu/dev-1/` 74; each passes from its directory). Backlog: the
-  [review request](../backlog/2026-11-03-reverser-architect-plan-0052-p1-2-batches-6-7-review.md),
+  [review request](../backlog/archive/2026-11-03-reverser-architect-plan-0052-p1-2-batches-6-7-review.md),
   [archivist](../backlog/archive/2026-11-03-reverser-archivist-hireling-chance-columns-read-by-ai-0007.md) (Hireling chance
   columns). Next: batch 8 (pool-E).
 
@@ -732,7 +732,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   left unnamed for batch 12. 18 `re/symbols.csv` rows (all I). Kept outputs `workspace/logs/r52i/` (manifest 14 lines;
   `emu/` 53, `emu/dev-1/` 54, `emu/dev-2/` 54; `emu-recheck/` 52, the kept cases re-run under `lane/r55e`'s fixed
   `EmuBoundary.java` after merging `main` fd2ca68a, outputs byte-identical; each passes from its directory). Backlog: the
-  [review request](../backlog/2026-11-03-reverser-architect-plan-0052-p1-2-batch-9-review.md),
+  [review request](../backlog/archive/2026-11-03-reverser-architect-plan-0052-p1-2-batch-9-review.md),
   [archivist](../backlog/archive/2026-11-03-reverser-archivist-monstats-skills-readers-named-by-ai-0010.md) (MonStats and
   Skills readers). Next: batch 10 (pool-G).
 - **2026-11-03 — P1.2 catalogue batch 10 (pool-G) for review (reverser, static, `lane/r52j`, from `main` 7fddf41d; `main` 3960ea23 (batch 9) merged before the run, `main` c7d3ee1d before filing).**
@@ -754,7 +754,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   equal to the States count, row 134 does not. P1.1 review reopen condition (b) not met. No tier AI. 26
   `re/symbols.csv` rows (24 func, 2 data, all I). Kept outputs `workspace/logs/r52j/` (manifest 16 lines; `emu/` 61,
   `emu/dev-1/` 62; each passes from its directory). Backlog: the
-  [review request](../backlog/2026-11-03-reverser-architect-plan-0052-p1-2-batch-10-review.md),
+  [review request](../backlog/archive/2026-11-03-reverser-architect-plan-0052-p1-2-batch-10-review.md),
   [archivist](../backlog/archive/2026-11-03-reverser-archivist-monstats-skills-readers-named-by-ai-0011.md) (MonStats and
   Skills readers). Next: batches 11 (bosses-B) and 12 (towns, NPCs, the state rows).
 - **2026-11-03 — Readers of batches 9 and 10 linked (archivist, `lane/a64`).** [MonStats](../tables/MonStats.md) gains two reader
