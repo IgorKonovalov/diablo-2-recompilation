@@ -483,6 +483,7 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-11-03 | `lane/a63` | 0052 P1.2 / 0055 readers (4 entries) | archivist | 118 174 | 33 | 4 | — | accept with fixes (Tier B check 2, audit 7) | 9: tag 1, omission-route 1, misread 4, omission 2, stale cross-reference 1 |
 | 2026-11-03 | `lane/a63` check | 0052 P1.2 / 0055 readers | architect-check | 83 351 | 21 | 2 | — | accept with fixes (2) | tag 1, omission-route 1 |
 | 2026-11-03 | `lane/a63` review | 0052 P1.2 / 0055 readers | architect-review | 124 678 | 30 | 4 | — | accept with fixes (7) | audit of lane/a63: misread 4, omission 2, stale cross-reference 1; reject-grade missed: no |
+| 2026-11-03 | `lane/r52i` | 0052 P1.2 (batch 9) | reverser-static | 403 000 | 100 | 45 | — (static, Ghidra copy ghidra-r52i) | — | — |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not

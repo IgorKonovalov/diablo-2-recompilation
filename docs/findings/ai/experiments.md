@@ -478,3 +478,74 @@
 - **Conclusion:** the full maps are `[C]` in ai/0007 § 4 and ai/0008 § 4, each up to its first boundary or return; the
   entry calls `[C]` as calls. Not the callees, nothing after them. No symbol raise (ADR-0015 scope, review-fixes
   rule 14). (run:2026-10-30-ai-cat-emu-6)
+
+## run:2026-11-03-ai-cat-emu-9
+
+- **Question:** (plan 0052 Phase 1, catalogue batch 9, pool-F) Do the functions of rows 116–125, row 122's init and
+  state row 16's init map their declared inputs to the first boundary they reach (or their return), its call site,
+  its arguments, the unit seed, `AiCtl+0x14/+0x18/+0x1C` and `Unit+0xC4` as [ai/0010](0010-batch9.md) § 2 reads them,
+  with the action helper 0x005DF850 run inside row 122; does row 124 reach `SKILLS_GetUnitSkill` or `HasState` on its
+  skill-sign test; and does state row 16's think reach `HasState(U, 143)` with the arguments § 2.10 gives?
+- **Setup:** Ghidra p-code emulator via `re/ghidra_scripts/EmuBoundary.java` (`286393aa…`, unchanged), lane project
+  copy `workspace/ghidra-r52i` (symbols replayed from a scratch copy, `workspace/logs/r52i/b9-sym-scratch.csv`;
+  emulation does not use them), heap 3 GB (`GHIDRA_HEADLESS_MAXMEM=3G`), each of the thirteen headless runs inside its
+  own `systemd-run --user --scope -p MemoryMax=4G`, one Ghidra at a time. No wine, no slot. Models and case writer
+  `tools/ai_cat_emu9.py` (`70a14f85…`), every draw from `random.Random("r52i-<family>")`. Files in
+  `workspace/logs/r52i/emu/`, `manifest.sha256` (`6fb58421…`, 53 lines, `check.txt` `8872c3de…`); `sha256sum -c
+  manifest.sha256` from that directory passes.
+- **Procedure:**
+  ```
+  D=workspace/logs/r52i/emu
+  python3 -I tools/ai_cat_emu9.py cases
+  export GHIDRA_PROJ_DIR=workspace/ghidra-r52i GHIDRA_HEADLESS_MAXMEM=3G
+  for f in minion suicide succubus witch overseer spawner imp16i imp16 impi imp catapult horror blood; do
+    systemd-run --user --scope -q -p MemoryMax=4G \
+      tools/ghidra.sh emuboundary $D/$f.cases $D/$f.mem > $D/$f.out 2> $D/$f.err
+  done
+  python3 -I tools/ai_cat_emu9.py check > $D/check.txt
+  python3 -I tools/ai_cat_emu9.py manifest --write
+  ```
+  Each case writes the game's difficulty, frame, an empty quest list and the one unit hash slot a lookup reads; the
+  unit (type 1, class, mode, monster data, seed, path, game, owner and stored-unit type and guid, skill list,
+  `+0xC4`, `+0xC8`) and its path; the target (type, guid, mode, path or none with its x, y and static words, stat list
+  or none with one node, `+0xC6`, `+0xE4`); a second unit for the lookups; the monster data (`+0x28`, `+0x54`) and AI
+  control (state, `+0x14/+0x18/+0x1C`, `+0x20` 0 or a parameter record of kind 0, 1, 2 or 14 for row 116); the
+  `AiCtx`; the unit's MonStats record (`+0x03E`, the `aip` block, `Skill1..8`, `Sk1..8mode`) at the class's place
+  under `DataTables+0xA78`, the `aip` blocks of the records 492–495, the skill nodes for state 16's init, and the
+  DataTables pointer with the MonStats base and count; the memory spec observes 38 callees and guards the allocator
+  and fatal entries (6).
+- **Observed** (`check.txt`, first line of each family):
+  ```
+  AI52I minion cases=240 match=240 bad=0 stopped=0 traced=0 accounted=5 drew=85 le_separating=12 le_passed=0 d0_separating=44 d0_passed=0 cmp_separating=4 cmp_passed=0 u16_separating=0 u16_passed=0 own_separating=0 own_passed=0 site_control_passed=0 boundaries=7
+  AI52I suicide cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=44 le_separating=6 le_passed=0 d0_separating=83 d0_passed=0 cmp_separating=21 cmp_passed=0 u16_separating=0 u16_passed=0 own_separating=0 own_passed=0 site_control_passed=0 boundaries=3
+  AI52I succubus cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=218 le_separating=26 le_passed=0 d0_separating=125 d0_passed=0 cmp_separating=22 cmp_passed=0 u16_separating=69 u16_passed=0 own_separating=0 own_passed=0 site_control_passed=0 boundaries=9
+  AI52I witch cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=223 le_separating=40 le_passed=0 d0_separating=135 d0_passed=0 cmp_separating=20 cmp_passed=0 u16_separating=64 u16_passed=0 own_separating=0 own_passed=0 site_control_passed=0 boundaries=13
+  AI52I overseer cases=240 match=240 bad=0 stopped=0 traced=0 accounted=5 drew=132 le_separating=13 le_passed=0 d0_separating=31 d0_passed=0 cmp_separating=7 cmp_passed=0 u16_separating=0 u16_passed=0 own_separating=0 own_passed=0 site_control_passed=0 boundaries=5
+  AI52I spawner cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=0 le_separating=0 le_passed=0 d0_separating=120 d0_passed=0 cmp_separating=107 cmp_passed=0 u16_separating=0 u16_passed=0 own_separating=0 own_passed=0 site_control_passed=0 boundaries=4
+  AI52I imp16i cases=240 match=240 bad=0 stopped=0 traced=0 accounted=6 drew=240 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 own_separating=0 own_passed=0 site_control_passed=0 boundaries=1
+  AI52I imp16 cases=240 match=240 bad=0 stopped=0 traced=0 accounted=5 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 own_separating=0 own_passed=0 site_control_passed=0 boundaries=1
+  AI52I impi cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 own_separating=0 own_passed=0 site_control_passed=0 boundaries=1
+  AI52I imp cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=152 le_separating=14 le_passed=0 d0_separating=69 d0_passed=0 cmp_separating=6 cmp_passed=0 u16_separating=52 u16_passed=0 own_separating=119 own_passed=0 site_control_passed=0 boundaries=9
+  AI52I catapult cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=240 le_separating=22 le_passed=0 d0_separating=54 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 own_separating=0 own_passed=0 site_control_passed=0 boundaries=2
+  AI52I horror cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=96 u16_passed=0 own_separating=0 own_passed=0 site_control_passed=0 boundaries=2
+  AI52I blood cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=240 le_separating=31 le_passed=0 d0_separating=143 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 own_separating=0 own_passed=0 site_control_passed=0 boundaries=5
+  AI52I total cases=3120 match=3120
+  AI52I result=ok
+  ```
+  The `SITES` line under each family counts the cases per boundary and call site (62 site/boundary pairs over the 13
+  families, a return counted as one); the `EDGES` line the cases that meet each non-draw compare and each draw at
+  equality; the `TAGS` line (rows 116, 120, 122) the paths ai/0010 § 3 names; `drew` the cases whose seed moved before
+  the boundary; `accounted` the traced reads the checker accounts as `g_UnitHashOffsets` (`0x006E10E0 + 4·type` at
+  0x00552F9C) and state 16's slot table (`0x006E34E0 + 8k` at 0x005E2D16 and 0x005E2D55, `0x006E34E4 + 8k` at
+  0x005E2D61); it fails a family when one is missing. **Development runs** (rule 6): `emu/dev-1/` (the first case
+  writer; its copy `dev-1/ai_cat_emu9.py.rev` `ddfcf5fa…`; `dev-1/check.txt` `a0f4dc23…`, `result=ok`;
+  `dev-1/manifest.sha256` `6d717e7b…`, 54 lines) and `emu/dev-2/` (the tuned writer before row 120's stored-player
+  cases and the `TAGS` line; its copy `dev-2/ai_cat_emu9.py.rev` `1343d84d…`; `dev-2/check.txt` `1ec2bee3…`,
+  `result=ok`; `dev-2/manifest.sha256` `cf3c5f7c…`, 54 lines): 3 120 cases each, all matching, 0 stopped, every
+  control failing every case it separates; each passes from its directory. dev-2's files were written into `emu/` and
+  moved into `dev-2/` before the kept run (its copy regenerates its case files and its `check.txt` byte for byte).
+  The kept run's case and memory files and `check.txt` regenerate identically with the committed tool (`cases` into a
+  scratch directory, `check` on the kept outputs, compared with `cmp`).
+- **Conclusion:** the maps are `[C]` in ai/0010 §§ 2, 3, each up to its first boundary or return; the entry call of
+  state 16's think and row 124's sign test `[C]` as calls. Not the callees, nothing after them. No symbol raise
+  (ADR-0015 scope, review-fixes rule 14). (run:2026-11-03-ai-cat-emu-9)
