@@ -316,7 +316,7 @@ flowchart TD
     this was seen in play, including that the product of a level and the ratio is truncated from a double-precision
     product, not rounded to single precision first (a case where a single-precision product would give 42 and the
     game's 41). For three to eight the integer steps were checked under emulation and the float steps are the same
-    instructions, which agreed in every emulated case, but they have not been seen in a game.
+    instructions, which agreed in every emulated case; emulation does not count as evidence for those steps, and they have not been seen in a game.
   - Eight is the most the code collects. A ninth member that passes every test reaches the fatal-error call, not a clip.
     Whether a party list can hold nine was not read.
 - **What a far or dead killer means** (read from the code only; none of it has been seen in a game). Because one
