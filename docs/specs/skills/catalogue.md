@@ -571,7 +571,7 @@ H4. st 6 (Power Strike, Charged Strike), st 10 (Lightning Strike), st 7 (Impale)
       do 7 is tier A (dispatch § O, its monster caster's MonAttackStats(caster, 8) first)
       after: a is the AR percent, so the ToHit columns of Power Strike, MonPowerStrike and MonIceSpear do not
         reach st 6's test; st 10's elemental RangeB(caster, max − min); the damage, the queue, the delivery
-                                                                         [I] (fn:SKILLS_GetToHit@0x006449F0)
+                                                                         [I] (fn:SKILLS_GetToHit@0x006449F0, fn:sub_005DA940_SkillSt06Hit@0x005DA940)
 H5. do 6 (0x005DB1C0, Inner Sight, Slow Missiles):                     [C] → SKILLS_ForUnitsInRange (run:2026-10-20-cat-emu-ama)
       auratargetstate (s16) in the States count and aurastat1 (s16) in the ItemStatCost count (−1 refused):
         block {id, lvl, auralencalc, auratargetstate, aurastat1, aurastatcalc1};

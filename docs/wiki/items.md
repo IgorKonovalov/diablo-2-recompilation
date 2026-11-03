@@ -129,8 +129,8 @@ A TC is a weighted list of up to ten entries, each an item, an item-type TC such
   Down a chain of sub-TCs each word takes the larger of parent and child, so a good parent's ratios reach the item
   even through plain sub-TCs. Confirmed in a recorded game.
 - A monster drop stops at six items in total across the whole walk; the sixth item ends it at once. Confirmed in
-  recorded games ([TC § H](../specs/items/tc.md#h-item-pick-and-hand-off)). The stock boss rows have `Picks` 7, and the stop
-  holds against them.
+  recorded games ([TC § H](../specs/items/tc.md#h-item-pick-and-hand-off)). Only the five act bosses' rows have `Picks` 7, and
+  the stop is logged ending Duriel's drops with picks left; that it does the same for the other four is read from the code.
 
 The item-type TCs (`weapN`, `armoN`, `bowN`, `meleN`, `abowN`; for example `bow3`) are built by the game at load:
 for each item type that has one, a TC for every N = 3, 6, … 96, holding every spawnable, non-quest base of that type

@@ -233,7 +233,7 @@ while the hit is built, so a weapon's elemental damage stays out and other items
 ([dispatch § I](../specs/skills/dispatch.md#i-the-skill-packet)). The weapon masteries enter
 through the combat build and the missile damage, the synergies through the skill's formulas, read from the code.
 
-**Three skills that look like slips**, all read from the code ([catalogue § J](../specs/skills/catalogue.md#j-paladin-st-29-31-3537-do-6467-73-7982-150),
+**Three things that look like slips**, all read from the code ([catalogue § J](../specs/skills/catalogue.md#j-paladin-st-29-31-3537-do-6467-73-7982-150),
 [§ M](../specs/skills/catalogue.md#m-assassin-st-2228-do-3335-4252-54-progressive-3641-143)). A player's Smite runs its hit test
 with its draws and then forces the hit bit; a monster's Smite takes its `A2` stats whatever mode it used. The knockback chance
 of Dragon Talon and Psychic Hammer adds the skill level to the target's level and subtracts the target's level again, so the

@@ -306,8 +306,9 @@ before this hit's damage**:
   built for them, most in Nightmare at 8 players). Community pages give 1/8 for champions and uniques; 1.14d does
   neither. A champion carries the special mark that every champion, unique and superunique gets, as well as its
   own champion mark (no monster in 74 logs had the champion mark alone), and crushing blow looks at neither.
-- Physical resistance cuts the share by its percent, capped at 100, whatever the defender is, so 100 or more cancels it.
-  The formula is confirmed; a player's own divisor of 10 is read from the code.
+- Physical resistance cuts the share by its percent, confirmed at resistances from 15 to 90 on monsters. Read from the
+  code, and in no run: the cut has no branch on the defender's kind, it is capped at 100, so 100 or more cancels the blow,
+  and a player's own divisor is 10.
 - The share shrinks with the number of players the monster was **created** for: the divisor 4 grows by 50 % per
   player beyond the first, so at 8 players it is 18. Confirmed at 2, 3 and 8 players. Community pages say the player
   count does not matter; in 1.14d it does.

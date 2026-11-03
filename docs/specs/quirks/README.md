@@ -1,6 +1,6 @@
 ---
 spec: quirks
-status: draft
+status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [every reviewed spec listed under Coverage]
 consumed_by: [docs/wiki (plan 0057 Phase 4)]
@@ -215,9 +215,9 @@ flowchart LR
 | Q447 | The party distance's edge is inclusive and unsigned: d² = 6400 shares, 6401 does not. | [C] | 0x0057E654, 0x0057E65A, run:2026-11-03-party-emu | [player/party](../player/party.md#reimplementation-notes) n6; [player/creation § J](../player/creation.md#j-other-level-and-experience-changes) |
 | Q448 | The party member cap is a fatal path, not a clip: a ninth member that passes every test reaches `0x00408090(0xF25)`, while one failing a test first does not count (the code's map, to that call; not a game outcome). | [C] | 0x0057E662, 0x0057E665, run:2026-11-03-party-emu | [player/party](../player/party.md#reimplementation-notes) n5; [player/creation § J](../player/creation.md#j-other-level-and-experience-changes) |
 | Q449 | Past Q448's call, and whether a party list can hold nine players, is unread. | [I] | 0x0057E671, 0x0057E681, 0x005408CB | [player/party](../player/party.md#reimplementation-notes) n5; [player/creation § J](../player/creation.md#j-other-level-and-experience-changes) |
-| Q455 | The crushing-blow cut is `cb − MulDiv(cb, min(stat 36, 100), 100)` with no branch on the defender's kind, so `cb` is 0 at stat 36 of 100 or more. | [C] | fn:STATEVENT_CrushingBlow@0x005BFFC0, run:2026-10-16-combat | [combat/delivery § E](../combat/delivery.md#e-the-stat-events-crushing-blow-open-wounds-freeze) |
-| Q456 | A player at stat 36 of 100 or more takes no crushing blow: the same cut, after the player's divisor 10. | [I] | 0x005C0031, 0x005C00F6 | [combat/delivery § E](../combat/delivery.md#e-the-stat-events-crushing-blow-open-wounds-freeze) |
-| Q457 | `MAX_DROP` stops a monster's call at 6 items against the stock boss rows' `Picks` 7; do not raise it to the picks. | [C] | fn:TC_ResolveDrops@0x0055A6D0, tbl:TreasureClassEx.txt:Picks, run:2026-10-12-quality | [items/tc](../items/tc.md#constants) |
+| Q455 | The crushing-blow cut is `cb − MulDiv(cb, min(stat 36, 100), 100)` for a positive stat 36, logged at 15 to 90 on a monster defender. | [C] | fn:STATEVENT_CrushingBlow@0x005BFFC0, run:2026-10-16-combat | [combat/delivery § E](../combat/delivery.md#e-the-stat-events-crushing-blow-open-wounds-freeze) |
+| Q456 | At stat 36 of 100 or more the cap makes `cb` 0, no run met it, and the cut has no branch on the defender's kind, so a player there takes no crushing blow: the same cut, after the player's divisor 10. | [I] | 0x005C0031, 0x005C00F6 | [combat/delivery § E](../combat/delivery.md#e-the-stat-events-crushing-blow-open-wounds-freeze) |
+| Q457 | `MAX_DROP` stops a monster's call at 6 items against `Picks` 7, the act bosses' rows, logged on Duriel's; do not raise it to the picks. | [C] | fn:TC_ResolveDrops@0x0055A6D0, tbl:TreasureClassEx.txt:Picks, run:2026-10-12-quality, run:2026-10-16-quest-drops | [items/tc](../items/tc.md#constants) |
 | Q458 | The TC level walk reads `TC[idx+1]` with no bound check; stock data never reaches the table's end, by a full-table check. | [C] | fn:TC_GetByIndex@0x00654E00, tbl:TreasureClassEx.txt:group | [items/tc § C](../items/tc.md#c-level-upgrade--tc_dropbyindex-and-tc_getbyindex) |
 
 ### 5. Draw order and dead draws
@@ -582,7 +582,7 @@ These are faithful 1.14d behaviour that reads as a mistake, or that contradicts 
 | Q462 | Dragon Talon's knockback chance reads the target's level twice, `level(target) + slvl − level(target)`, so the level difference is `slvl`. | [I] | 0x005D5AEB, 0x005D5AF7, fn:sub_005D5A30_SkillDo42DragonTalon@0x005D5A30 | [skills/catalogue § M](../skills/catalogue.md#m-assassin-st-2228-do-3335-4252-54-progressive-3641-143) |
 | Q463 | Psychic Hammer's knockback chance has the same form: both level reads are the target's. | [I] | 0x005D31D9, 0x005D31E5, fn:sub_005D3140_SkillDo33PsychicHammer@0x005D3140 | [skills/catalogue § M](../skills/catalogue.md#m-assassin-st-2228-do-3335-4252-54-progressive-3641-143) |
 | Q464 | Stat 137 counts twice with boots worn, on the kicks `SkillKickPhysDamage` builds: once alone, once with the boots' values. | [I] | 0x005D560F, fn:sub_00646280_KickItemDamage@0x00646280 | [skills/dispatch § I](../skills/dispatch.md#i-the-skill-packet) |
-| Q465 | The `ToHit` columns of Power Strike, MonPowerStrike and MonIceSpear do not reach st 6's hit test, which passes an attack-rating percent of 0. | [I] | fn:SKILLS_GetToHit@0x006449F0 | [skills/catalogue § H](../skills/catalogue.md#h-amazon-st-410-do-68-1016) |
+| Q465 | The `ToHit` columns of Power Strike, MonPowerStrike and MonIceSpear do not reach st 6's hit test, which passes an attack-rating percent of 0. | [I] | fn:SKILLS_GetToHit@0x006449F0, fn:sub_005DA940_SkillSt06Hit@0x005DA940 | [skills/catalogue § H](../skills/catalogue.md#h-amazon-st-410-do-68-1016) |
 | Q466 | Do 150 (Smite) has no access to `Unit+0xC4`, so it does not set the flag `0x40` do 2 sets there; the callees past `COMBAT_ResolveAndQueue` and `COMBAT_DeliverQueued` are unfollowed. | [I] | 0x005CE9F0, 0x005CEC50, 0x0056F42A | [skills/catalogue § J](../skills/catalogue.md#j-paladin-st-29-31-3537-do-6467-73-7982-150) |
 | Q467 | A monster's Smite passes mode 5 to `MonAttackStats` whatever mode it used, so it takes its `A2` stats. | [I] | 0x005CEBB6, fn:sub_005A4F50_MonAttackStats@0x005A4F50 | [skills/catalogue § J](../skills/catalogue.md#j-paladin-st-29-31-3537-do-6467-73-7982-150); [monsters/stats § H](../monsters/stats.md#h-to-hit-and-damage-at-attack-time-reference-only) |
 | Q468 | `El2` and `El3` take `El1`'s minimum, maximum and length, through `MonLvlStats`' mask `0x40 + e`. | [I] | 0x005A51D7, fn:sub_006538A0_MonLvlStats@0x006538A0 | [monsters/stats § H](../monsters/stats.md#h-to-hit-and-damage-at-attack-time-reference-only) |
@@ -591,7 +591,7 @@ These are faithful 1.14d behaviour that reads as a mistake, or that contradicts 
 | Q471 | A monster's line missile counts stat 19 twice, as the missile's `arPct` from the creation and as the stat at the hit, when the record byte `+0x18B` is set; the dexterity term is not doubled, and the lob form sets no flag. | [I] | fn:sub_0056ECB0_SkillMissileCreate@0x0056ECB0, fn:MISSILE_HitUnit@0x005ADF10, fn:COMBAT_ToHitRoll@0x0057D9B0 | [combat/to-hit § A](../combat/to-hit.md#a-the-chance-to-hit-combat_tohitroll); [skills/missiles § E](../skills/missiles.md#e-the-hit) |
 | Q472 | Neither skill creator adds a skill's to-hit bonus to a player's missile; do 74 (Double Throw) is the one exception read, and other creators are unfollowed. | [I] | fn:sub_0056ECB0_SkillMissileCreate@0x0056ECB0, fn:sub_0056EE90_SkillMissileCreateLob@0x0056EE90, 0x005D8943, 0x005D896E, fn:SKILLS_GetToHit@0x006449F0 | [skills/missiles § B](../skills/missiles.md#b-creation); [skills/catalogue § K](../skills/catalogue.md#k-barbarian-st-3234-3841-do-2-9-6872-7478) |
 | Q473 | Blessed Aim and Penetrate both name `penetrate` in `passivestate`, so a running Blessed Aim removes Penetrate's list from its caster. | [I] | 0x005CEFD5, 0x005CEFFD, fn:AURA_ApplyToTarget@0x005CEDC0, tbl:Skills.txt:passivestate | [skills/catalogue § J](../skills/catalogue.md#j-paladin-st-29-31-3537-do-6467-73-7982-150) |
-| Q474 | A monster's drain roll takes the packet's field as its base, and the result is added to that field: `field + (field + roll) × srcdam ÷ 128`, so a drain already in the packet counts again. | [I] | 0x0057BA71, 0x0057BAF3, fn:COMBAT_RollElemStat@0x0057A8E0 | [combat/damage § A](../combat/damage.md#a-combat_builddamage-in-order) |
+| Q474 | A monster's drain roll takes the packet's field as its base, and the result is added to that field: `field + max(field + roll, 0) × srcdam ÷ 128`, so a drain already in the packet counts again. | [I] | 0x0057BA71, 0x0057BAF3, fn:COMBAT_RollElemStat@0x0057A8E0 | [combat/damage § A](../combat/damage.md#a-combat_builddamage-in-order) |
 
 ## Crash and hang paths
 
@@ -721,7 +721,9 @@ Step notes taken beyond the *Reimplementation notes*: player/creation § G (the 
 the ratio shift's overflow branch) and § J (the party share's f32 quotient, its wraps, edge and cap, the distance's origin and the n = 1 credit), monsters/stats § A (`MulDiv`), stats/states
 § E (stat 74's sign), data/calc § D (the `INT32_MIN ÷ −1` fault), rng/README § Algorithm (`RangePow2Plus`), and the
 sections that hold the tagged form of an untagged note (data/calc § B, data/excel § G–I, drlg/lifecycle § B, D, E, H and
-its draw-order list, quests/progression § A–C and G, quests/travel § E and its draw list).
+its draw-order list, quests/progression § A–C and G, quests/travel § E and its draw list). Q454–Q473 take the step notes
+the community verdicts name, and Q474 combat/damage § A's step 5 note: it answers no verdict of its own, and row 12's
+"does not hold" text points at it.
 
 ## Evidence
 

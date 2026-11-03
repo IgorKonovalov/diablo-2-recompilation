@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, data/excel]
 consumed_by: [items/quality, items/quest-drops, objects]
-tags: {C: 120, I: 60, L: 5}
+tags: {C: 120, I: 61, L: 5}
 updated: 2026-11-04
 ---
 
@@ -104,9 +104,14 @@ Offsets are byte offsets into the owner; struct names are ours ([`re/types/game.
   array; the stop at 6 reproduces the 111 calls that made 6 items, and in 4 of them picks were left, which a model
   without the stop gets wrong. (fn:TC_ResolveDrops@0x0055A6D0, run:2026-10-12-quality, run:2026-10-16-quest-drops,
   [items/0001 § Plan 0038 batch S2a](../../findings/items/0001-tc-resolution.md#plan-0038-batch-s2a-2026-10-16))
-- [C] **The stop holds against the stock boss rows' `Picks` 7**, so such a call makes at most 6 items. The history and the
-  intent of the limit are not decidable from this image. (fn:TC_ResolveDrops@0x0055A6D0, tbl:TreasureClassEx.txt:Picks,
-  run:2026-10-12-quality, [quirks/0001](../../findings/quirks/0001-community-bugs.md#verdicts) row 22)
+- [C] **The stop holds against `Picks` 7.** The 30 stock rows with `Picks` 7, the table's largest, are the five act bosses'
+  (plain and quest, three difficulties; Duriel's are the `- Base` rows under a `Picks` 5 row). The 4 logged calls the stop
+  decided are all Duriel's: `Durielq (N)` in run:2026-10-12-quality, `Durielq` twice and `Duriel` in
+  run:2026-10-16-quest-drops. The history and the intent of the limit are not decidable from this image.
+  (fn:TC_ResolveDrops@0x0055A6D0, tbl:TreasureClassEx.txt:Picks, run:2026-10-12-quality, run:2026-10-16-quest-drops,
+  [quirks/0001](../../findings/quirks/0001-community-bugs.md#verdicts) row 22)
+- [I] The other four bosses' rows meet the same stop, which reads no row: no logged call of theirs is among the 4.
+  (fn:TC_ResolveDrops@0x0055A6D0, tbl:TreasureClassEx.txt:Picks)
 - [C] **`THROW_RETRIES` and `LONG_SWORD`** (forced run: a loose `treasureclassex.bin` whose `Act 1 Junk` names three
   classic throwables; ADR-0013). Over 100 classic resolver calls with a throwable pick the counter runs 0, 1, 2… from 0
   in each call; all 937 refunds are at counter 0–9 and all 141 Long Swords at 10 or 11, and in each of the 93 calls that
