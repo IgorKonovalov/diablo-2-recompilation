@@ -23,7 +23,7 @@ script ([plan 0054](../plans/0054-path-search.md) Phase 0; readers: `path/search
   and `setters`, 760 cases, 0 mismatches). The largest word is `0x60000`. ([path/0001 § Answer and § 8](../findings/path/0001-pathplan-register.md#8-creation-pathsettype-the-setters-and-the-flags),
   fn:sub_00648CF0_PathSetType@0x00648CF0)
 - `[C]` **A third per-type table**, `g_PathTypeParam98` at `0x006EB648`: 17 u32 words that `PathSetType` writes into the path's `+0x98`
-  (path/0001 § 8, `[C]` by emulation). Read by script over the pinned image (`python3 -I` with `tools/path_survey.py`'s `read_u32s`): 2 for
+  (path/0001 § 8, `[C]` by emulation). The values are path/0001's own (§ Answer: 2, -2, -4 at types 5, 6, 12, else 0; the emulation lists the table among its accounted image reads), and `tools/path_scan.py tables` prints them from the pinned image (the `path` survey does not carry this table): 2 for
   type 5, -2 for type 6, -4 for type 12 and 0 for the other 14 types. The table sits 0x48 bytes before the flags array.
   (data:g_PathTypeParam98@0x006EB648, fn:sub_00648CF0_PathSetType@0x00648CF0) The symbol's own tag in `re/symbols.csv` is `I`.
 - `[C]` **Three slots hold 0 as the planner (types 4, 10 and 14)** and these are exactly the three whose flags word carries
@@ -90,12 +90,13 @@ register-held tests are not in that scan; the planners' own tests are P1.2's and
 | `0x40000` | `PathPlan` sends the path to the straight planner before any other test (above). Separately `PathStep` skips the target revalidation (`p.flags & 0x40000 or PathStepTargetCheck(p)`, [anim/movement B1](../specs/anim/movement.md), fn:sub_00650840_PathStep@0x00650840) | `[C]` entry; `[I]` PathStep |
 | `0x800` | `PathPlan` unmarks the target (`UNIT_CollUnmark` of the target) after the unit's own unmark; shown on the units whose unmark returns at once (`plannoop`) | `[C]` (emulation to the slot read) |
 | `0x1000` | `PathPlan` runs the free-target step (`sub_00648120_PathTargetFree`, "moves a blocked target"; the player extension is to 5 subtiles) | `[C]` (emulation) |
-| `0x10` | keeps the target point after a plan: the last point goes into `+0x10` only without a target unit or flag `0x10`; also the re-plan (path/0001 § 9). `SUnitPathCreate`'s flag argument sets it | `[I]` (the tail of `PathPlan` is past the import and not emulated) |
+| `0x10` | keeps the target point after a plan: the last point goes into `+0x10` only without a target unit or flag `0x10`; also the re-plan (path/0001 § 9). `PATH_DynamicCreate`'s flag argument sets it, and all three `SUnitPathCreate` sites pass 0 (path/0001 § 8) | `[I]` (the tail of `PathPlan` is past the import and not emulated) |
 | `0x2000` | `PathSetType` saves the type into `+0x40` when the type's word has it, unless `+0x34` has `0x4000`; `PathMoveReset` restores it for a non-player | `[C]` (`PathSetType`), `[I]` (`PathMoveReset`) |
 | `0x8000` | `PathSetType` saves the speed into `+0x80` when the word has it, unless `+0x34` has `0x10000`; `PathMoveReset` restores it | `[C]` (`PathSetType`), `[I]` (`PathMoveReset`) |
 | `0x4000`, `0x10000` | suppress the type and the speed save of `PathSetType` respectively (a test of the path's existing flags) | `[C]` |
 | `0x20`, bit 0, `0x200` | the moving flag, the points-outside-room flag, the facing turn by 32 (path/0001 § 9) | `[I]` |
-| `0x100`, `0x400`, `0x20000` | no reader in that scan beyond the masks that replace them (`PATH_DynamicCreate`, `PathSetType`); a planner's test is P1.2's and P1.3's | `[L]` |
+| `0x100`, `0x400` | no reader in that scan beyond the masks that replace them (`PATH_DynamicCreate`, `PathSetType`); a planner's test is P1.2's and P1.3's | `[L]` |
+| `0x20000` | path/0001 § 8 does not name this bit among the scan's uses; `PathSetType`'s bits 8 to 18 mask replaces it. A planner's test is P1.2's and P1.3's | `[L]` |
 
 - `[I]` Types 8, 9 and 11 (words with both `0x2000` and `0x8000`) are the temporary ones a `PathMoveReset` undoes (path/0001 § 8).
 - `[L]` The draws of types 3, 11 and 12 are unfollowed ([ai/0001 § 8](../findings/ai/0001-machinery.md#8-the-path-request), path/0001 *Open questions*).
