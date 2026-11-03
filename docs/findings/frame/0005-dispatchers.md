@@ -28,7 +28,7 @@ No new name and no symbol row. A table with no row in `re/symbols.csv` is writte
 ### 1. How the reach follows a table
 
 - [I] **Edges.** `reach` walks callers upward. To the direct calls it adds, as call edges: a declared table's entry → the function holding each dispatch site; a callback passed to a function that calls it before returning (an *iterator*) → the passing function; a callback stored by a *registrar* → the invoker; a quest record field → its invokers; a callback in a stack block → the block's consumer; a conditional branch into another function's entry (0x00542E1C → `InactiveUnitSave`). (fn:sub_00542E30_InactiveUnitSave@0x00542E30, `reach.txt`, tools/frame.py)
-- [I] **Self-checks.** The tool refuses to start if a declared site is not an indirect call or jump (or a direct call to an iterator), or if a `DEAD` function has a reference. (tools/frame.py `_follow`, `test_site_and_dead_checks`)
+- [I] **Self-checks.** The tool refuses to start if a declared site is not an indirect call or jump (or a direct call to an iterator), or if a `DEAD` function has a reference. (tools/frame.py `_follow`, `test_site_and_dead_checks`) (run:2026-11-03-frame-order-2)
 - [I] **Function entries.** Table entries and code pointers after `int3` padding become function entries. Without this, a body with no symbol row folded into the function before it: a first pass closed 88 of 89 hooks falsely (§ Dead ends). The well use 0x00585720 was one such case. (`dev/reach-dev3.txt`, `reach.txt`)
 - [I] **Unexplained references.** `reach` lists references in a hook's closure that no declared edge accounts for, since one could be an undeclared caller. Of the 24 closed hooks, 21 have none; `UNIT_AnimAdvance`, `PathStep` and `PathStepCollide` have 5, 8 and 8, all to functions at 0x00480810, 0x004D30C0, 0x004D3630 and 0x004D37F0, unread. (`reach.txt`)
 - [I] **Rank 21 is outside the tick.** Everything that does not run under `GameTick` while the stamp reads N runs after tick N's passes and before tick N + 1's, because `GameTick` raises the stamp before its first pass. So the host loops take the drain's rank. This assumes one thread runs both the client frame and the ticks, which is the single-player loop of frame/0001 § 1; the open-server thread of modes 6 and 8 would break it. `GameTick` itself is a root of ranks 1–20. (0x0052D87B, fn:sub_0052D870_GameTick@0x0052D870, 0x0044F136–0x0044F162)
@@ -175,7 +175,7 @@ No new name and no symbol row. A table with no row in `re/symbols.csv` is writte
 
 ### 6. The replay
 
-- [C] Totals of `check/check.txt` (`f4f4499d…`):
+- [C] Totals of `check/check.txt` (`f4f4499d…`): (run:2026-11-03-frame-order-2)
 
   | logger | frames with 2+ events | 2+ closed sets | separating pairs |
   |---|---:|---:|---:|
@@ -193,7 +193,7 @@ No new name and no symbol row. A table with no row in `re/symbols.csv` is writte
 - [C] Separating pairs that involve a hook closed here: 4 436 of the 17 254 (`pairs.txt`). The largest: `PDS` → `PS0` 3 135, `EF` → `PS0` 642, `PDS` → `AD0` 296, `EF` → `AD0` 272, `DR0` → `PS0` 43. Through the return-address rule, which now closes more often: `PDS` → `MSET` 2 222, `PDS` → `CAN` 487, `MF0` → `SDO0` 184 (6 in Phase 2a). (`check/check.txt`, run:2026-11-03-frame-order-2)
 - [C] What a pair shows: `PDS` → `PS0` excludes "this step ran before the players' slot walk". It does not separate the monsters' two walks from rank 21, and a player-typed `PS0` keeps rank 21 in its set, so it separates nothing after it. (`check/check.txt`, run:2026-11-03-frame-order-2)
 - [C] Seed hand-offs: unchanged from Phase 2a, 1 023 086 handed, 42 310 stepped, 0 reversed, 0 off (they use the logged order and do not depend on the kind map). `rechain` was not re-run, for the same reason. (`check/check.txt`, run:2026-11-03-frame-order-2)
-- [I] Events still unplaced in frames with 2+ events: 7 704 of 6 176 531. The kinds with no set are `EF` without a phase (2 932 events), the logger's `WINX` (4 534 in such frames), `SWC` (207) and `NS1` (11). These counts are per kind and are not split further. (`classes.txt`, `check/check.txt`)
+- [I] Events still unplaced in frames with 2+ events: 7 704 of 6 176 531. The kinds with no set are `EF` without a phase (2 932 events), the logger's `WINX` (4 534 in such frames), `SWC` (207) and `NS1` (11). These counts are per kind and are not split further. (`classes.txt`, `check/check.txt`) (run:2026-11-03-frame-order-2)
 
 ### 7. What stays open
 
