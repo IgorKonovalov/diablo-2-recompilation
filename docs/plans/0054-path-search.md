@@ -317,3 +317,18 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   with the `+0x3C` scope; `0x100`, `0x400`, `0x20000` stay `[L]`. `+0x13A` / `+0x13C` are `IsDoor` / `Orientation` by offset
   ([Objects](../tables/Objects.md)) but stay `[L]` (ruling 5; the record behind 0x00621A70 / 0x00621AC0 is not stated). The `path` survey
   baseline is unchanged (the edit reads nothing the survey reads).
+- **2026-11-03 — Phase 1, batch P1.2, the search, for review (reverser, static, `lane/r54b`, from `main` 908ad0f9; `main` ad0c039e merged before the totals).**
+  [path/0002](../findings/path/0002-search.md) and `re/types/path.h` (`PathSearchNode`, `PathSearchStore`). **First item:** neither
+  `PathPlanType1` (its own best-first search, 200 nodes) nor `PathPlanType15` (a line with wall following) calls `PathSearchRun`, and
+  greedy-near's switch calls `PathPlanType1`; all stay with **P1.3a** `[I]`. **The search** `[C]` by emulation at the planner
+  (run:2026-11-03-path-emu-2, `tools/path_emu2.py`, new `EmuScratch.java`, 8 families, 2 236 cases, 0 mismatches, 0 stopped, 0
+  unaccounted traced accesses, the frame as scratch with two accounted reads; every control passes 0 of what it separates): an
+  iterative-deepening depth-first walk with no open list; straight 2, diagonal 3, `h = 2 max + min`; first bound `h0` (type 16 `h0 + h0/2`), step 5,
+  to `max(first, path +0x92)`; the fan of § 5 (root 8 tries, child 5) as the tie-break; ends at the target, outside the rectangle or
+  within `2 × ctx.refresh`; 10 000 tries a pass, 900 nodes. **Point bound:** 2..77 kept, 78 and 1 return 0, against 78 slots; `ctx.limit` is not read. **The assert:**
+  50 000 passes, 50 001 asserts, but the clear covers `(w + 6)(h + 6)` cells and overruns the frame from 50 011, before the assert for most shapes
+  (stock reach open). **Type 16** draws per child and per turn. **The 14 byte stores** are quest private data `[I]` (range corrected to 0x0058929F–0x00594647); **`+0x13A` / `+0x13C`** are the
+  `objects.bin` record's `IsDoor` / `Orientation` `[I]`, the entry closed. 7 new `re/symbols.csv` rows (4 func, 3 data, all I) and 3 rows' evidence moved. Kept outputs
+  `workspace/logs/r54b/` (manifest 12 lines; `emu/` 156; `emu/dev-1/` 153; each passes from its directory). Backlog: the
+  [review request](../backlog/archive/2026-11-03-reverser-architect-plan-0054-p1-2-review.md),
+  [archivist](../backlog/2026-11-03-reverser-archivist-pathtypes-objects-bytes-and-b1c-from-path-0002.md).
