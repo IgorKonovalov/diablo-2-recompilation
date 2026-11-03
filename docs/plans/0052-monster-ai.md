@@ -764,3 +764,5 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   (`Sk1lvl`), the constant-skill rows and the count guards; the `genericSpawn` row has its reader (row 129's class pick, `[I]`).
   [Skills](../tables/Skills.md) `aurastate` and `auratargetstate` gain the rows 133 and 134 readers. All `[I]` as the findings give;
   `[C]` only for the maps to their first boundary, scoped in each block. Both archivist entries closed.
+
+- 2026-11-03 (`lane/r66`): two reverser cross-references closed. [hirelings/0001](../findings/hirelings/0001-hirelings.md) points its three "named only" / "out of scope" places at [ai/0007](../findings/ai/0007-hirelings.md) § 2.4 (`[I]`, 0x005E4D30) and re-verdicts the d2dfg-blizzard skill-choice claim held with refinement `[I]`; [skills/0001](../findings/skills/0001-dispatch.md) § 13 carries ai/0006's H3 answer for the owner's level (`[I]`). No tag raised.
