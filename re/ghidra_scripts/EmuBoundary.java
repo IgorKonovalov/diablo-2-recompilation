@@ -3,7 +3,10 @@
 // observe address has run the program's own code, unpatched, from its entry to that call: the record claims the map
 // from the inputs to the call's arguments (and the bytes written before it), and nothing after it.
 // Usage (headless): -postScript EmuBoundary.java <out-file> <cases-file> <memory-spec>
-// Memory spec, applied before every case, one directive per line ('#' comments):
+// Memory spec, applied before every case, one directive per line ('#' comments). Each case writes a fresh copy of every
+// directive's bytes: Ghidra 12.1's MemoryPageBank.setPage keeps the caller's array as the page (no copy) when the
+// write starts on a 4 KiB page boundary and is 0x1000 bytes or more, so the emulated code's stores went into the
+// spec's own buffer and the next case re-wrote the stored bytes (plan 0055, lane/r55e; test workspace/logs/r55e/zerotest):
 //   load  <hex addr> <path>      write the file's bytes at addr
 //   dword <hex addr> <hex value> write one u32
 //   bytes <hex addr> <hex>       write the bytes
@@ -145,7 +148,7 @@ public class EmuBoundary extends GhidraScript {
 				if (!f[0].equals("call")) throw new IllegalArgumentException("cases: " + line);
 				n++;
 				caseMem.clear();
-				for (int i = 0; i < where.size(); i++) helper.writeMemory(where.get(i), what.get(i));
+				for (int i = 0; i < where.size(); i++) helper.writeMemory(where.get(i), what.get(i).clone()); // a copy: see the header
 				List<String[]> regs = new ArrayList<>();
 				for (String[] p : pre) {
 					if (p[0].equals("r")) { regs.add(p); continue; }
