@@ -7,9 +7,10 @@
 
 Static reading of the pinned `Game.exe` (objdump and the lane's Ghidra copy `ghidra-r60a`), then emulation under ADR-0015
 and ADR-0021 with `re/ghidra_scripts/EmuBoundary.java` (unchanged), `tools/use_emu.py` against the model
-`tools/item_inventory.py` (run:2026-11-03-use-emu: **7 320 cases, 0 mismatches, 0 stops**, 11 families).
+`tools/item_inventory.py` (run:2026-11-03-use-emu: **7 320 cases, 0 mismatches, 0 stops**, 11 families; each case ends at its entry's first callee against declared scratch
+memory, so nothing after that callee is covered).
 
-**Tag convention.** A claim marked **[C] (ADR-0021)** rests on cases that end at a named callee's entry: nothing is
+**Tag convention.** A claim marked **[C] (ADR-0021)** (run:2026-11-03-use-emu) rests on cases that end at a named callee's entry: nothing is
 patched, the checker asserts per case the boundary, the return address, the arguments and the user's seed at it, and
 **the callee and all code after it are not covered** (written "after, `[I]`"). The image is declared scratch, not the
 game's own structures, so the `[C]` is the code's map from the bytes it reads (ADR-0015), and no symbol row is raised
@@ -65,6 +66,9 @@ game's own structures, so the `[C]` is the code's map from the bytes it reads (A
 - [I] **Corrections.** Healing and mana potions do **not** run the group clear: kind 3 has no call of `STATE_GroupClear`
   (its only call in the use entries is `0x005BEE15`, in `ItemUseTimedState`, so kinds 6 and 9); stats/states B3 says
   "potions" (§ 9). `calc1` is not added per tick (Misc, § 9). (0x005BE3F0, 0x005BEE15)
+
+- [I] **Draws over a whole use are not bounded.** The counts above (0 draws for kinds 4, 5, 7, 8, 1, keys; 2 for kind 3) hold
+  only up to each entry's first callee. Whether a callee draws is open until Phase 2 (§ 8). (fn:sub_005BF240_ItemUse@0x005BF240, `rcg-summary.txt`)
 
 ## Leads used
 
@@ -189,7 +193,7 @@ for (k = 0; k < 3; k++) {
         UnitAddStat(user, s, v, 0);
     } else {
         end = frame + rem + len;
-        if (!L) L = new list(end) ... ;              // after, [I]: § 5
+        if (!L) L = new list(end) ... ;              // after, [I]: § 5, 0x005BE607
         SetEnd(L, end);                              // bit 2 when end > 0
         old = L.base(s);
         if (k == 0) QueueEvent(user, 12, end);
@@ -205,11 +209,11 @@ for (k = 0; k < 3; k++) {
   boundary for a slot after the first, because slot 0's event queue comes first; the cases reach it by a slot 0 whose
   amount is 0. So the **stock** path's rate (slot 0) is the same instructions after the queue call, not itself observed:
   `[I]` for slot 0 until Phase 2. After, `[I]`: every effect of the callees.
-- [C] (ADR-0021) What separates: control `draw1` (one draw) and `nodraw` fail 905 cases each; `half` (`r2 < r1`) 51;
+- [C] (ADR-0021) What separates (run:2026-11-03-use-emu, fn:sub_005BE3F0_ItemUsePotion@0x005BE3F0): control `draw1` (one draw) and `nodraw` fail 905 cases each; `half` (`r2 < r1`) 51;
   `floordiv` 120; `nocap` 207; `pctflat` 252; `no100` 28; `sar` 20 in `classmul`. (`check.txt`)
 - [C] **The class scales** return exactly as stated for all 7 classes, other classes and types, odd and negative
   amounts, and a null unit (`2v` life, `v` mana); 800 cases, no boundary. The non-player rule is `2v` for life and `v` for
-  mana. (family `classmul`)
+  mana. (family `classmul`, run:2026-11-03-use-emu, fn:sub_0062A5D0_PotionLifeMul@0x0062A5D0, fn:sub_0062A620_PotionManaMul@0x0062A620)
 - [I] **The draw's chance** for `n`: `Σ min(100, r >> 1) / (100 n)` over `r < n`, from `tools/item_inventory.py`
   `double_chance`: 2.0 % at 10, 5.76 % at 25, 12.0 % at 50, 24.5 % at 100, 49.5 % at 200, 79.8 % at 500. The stats read are
   `STATS_GetUnitStat(user, 3 or 1, 0)`; on a non-player user they are whatever its list holds, usually none, so no draw.
@@ -217,7 +221,7 @@ for (k = 0; k < 3; k++) {
 - [I] **Stock totals** (`python3 -I tools/item_inventory.py stock`): `hp1` 30 → 7 680 stored units for a Sorceress, 11 520 for
   an Amazon, 15 360 for a Barbarian, i.e. 30, 45 or 60 life. The stored rate truncates: `hp3` (100, `len` 171) gives
   25 600 / 171 = 149 per frame, 25 479 over the 171 frames, 99 life and a remainder. Stock `ValShift` of stats 26 and 74 is
-  blank, so 0.
+  blank, so 0. (tools/item_inventory.py, fn:sub_005BE3F0_ItemUsePotion@0x005BE3F0)
 - [C] (ADR-0021) **Kind 5 (§ 4).** The slot is skipped, not ended, for a bad stat, a stat with no `maxstat`, or `calc ≤ 0`.
   `MulDiv(max, calc, 100)` is the `sub_00483360_MulDiv` of three branches, so above `0x100000` it may be `(max / 100) ·
   calc`; at exactly 100 the maximum is taken instead (`no100` fails 28 cases). The cap uses the same `max`, read
@@ -255,16 +259,16 @@ first is carried and spread over the longer window. (0x005BE678–0x005BE6CF)
   `0x0055FA40`, read as far as its walk of page-0 items. The return is 0, so `PlayerUseInvItem` falls to § 3's quest codes
   and returns 0: the cube stays.
 - [C] (ADR-0021) **Kind 8.** § Answer. (family `elix` 200) `elx` carries `stat1` `experience`, `calc1` 5 in Misc: this
-  code reads neither.
+  code reads neither. (fn:sub_005BF060_ItemUseElixir@0x005BF060, run:2026-11-03-use-emu)
 - [I] **Kinds 10, 11** cast skill 47 at level 1; no stock row, skills/0015. (0x005BF170, 0x005BF1F0)
 - [C] (ADR-0021) **Blood Golem.** For a positive life amount on a player: pet type 3, class `0x122`; the row's MonStats
   `+0x170` names a Skills row, whose `+0x15C` is a percent. `share = v · p / 100` truncated goes to `GolemHeal`, up to the
   golem's maximum, and the player keeps `v − returned` (after, `[I]`). No such pet or another class returns `v`.
-  (family `golem` 300, and 27 + 11 cases of `stat3`, `stat5`) [I] `v = 0` sets the golem to full; no use entry sends it.
+  (family `golem` 300, and 27 + 11 cases of `stat3`, `stat5`, run:2026-11-03-use-emu, fn:sub_005BE3F0_ItemUsePotion@0x005BE3F0) [I] `v = 0` sets the golem to full; no use entry sends it.
 
 ## 7. What the columns gate
 
-`[C]` The counts are `static.txt`'s, an image-wide scan of `u8` reads at the offset plus the getter calls. Reading a
+`[C]` (run:2026-11-03-use-emu, `static.txt`) The counts are `static.txt`'s, an image-wide scan of `u8` reads at the offset plus the getter calls. Reading a
 `0x4xxxxx` address as client code is the project's convention, `[I]` per site.
 
 | Column | Readers | Gate |
@@ -272,8 +276,8 @@ first is carried and spread over the longer window. (0x005BE678–0x005BE6CF)
 | `useable` `+0x11D` | 10 `u8` matches: `0x00628C5B` and `0x0063C8B1` on an item record; `0x00498A5B`, `0x004AF989`, `0x004AFAD2` and the five at `0x006910EA`..`0x0069BB63` not classified; getter `0x00628C20` has 5 calls: `0x00487844`, `0x00499229`, `0x00499331`, and the server's `0x0055E212`, `0x00562433` | `[I]` Both use requests require it. Its absence sets the refuse flag, so the handler returns 3. It does not select a kind |
 | `belt` `+0x130` | 9: `0x00543390` is on a 0x134-byte row of `DataTables+0xA90` reached from MonStats `+0x18`, not this table; six at `0x004C56A7`..`0x004CDAAF` not classified; `0x00621F12` getter (3 calls: `0x0049907F`, `0x0056091B`, `0x0063C6A3`), `0x0063C8B9` | `[I]` **No use.** `0x0056091B` passes it to `0x00660CB0`, the Belts record path (P1.2). `sub_0063C830_BeltBoxQuery` tests `useable` and `belt` both 1 with size 1 × 1, called only from `0x004979AD`, so a client rule on this reading |
 | `autobelt` `+0x131` | 8, the server's `0x00628BEA`, `0x0063C731` | `[I]` P1.2 (placement), player/0001 |
-| `durwarning` `+0x135` | 5, all `0x4xxxxx` but the getter `0x006297E9`, which has 0 direct calls | `[I]` no server gate found; the column is 0 in all rows |
-| `qntwarning` `+0x136` | 3: `0x004CD8D5`, `0x00629849` (getter, 1 call `0x00497EAF`), and `0x0059FD01`, which is in `sub_0059FA30_MissileCreate` on a Missiles record, not this table | `[I]` no server gate found |
+| `durwarning` `+0x135` | 5, all `0x4xxxxx` but the getter `0x006297E9`, which has 0 direct calls | `[I]` no server gate found among direct calls; indirect callers unfollowed; the column is 0 in all rows |
+| `qntwarning` `+0x136` | 3: `0x004CD8D5`, `0x00629849` (getter, 1 call `0x00497EAF`), and `0x0059FD01`, which is in `sub_0059FA30_MissileCreate` on a Missiles record, not this table | `[I]` no server gate found among direct calls; indirect callers unfollowed |
 
 Scope: indirect calls and table pointers to the getters are not followed; the scan is direct calls.
 
@@ -281,14 +285,14 @@ Scope: indirect calls and table pointers to the getters are not followed; the sc
 
 | Use | Draws | Seed | Tag |
 |---|---|---|---|
-| Kind 3 `hp1..5`, `mp1..5` | 2 per stat with an amount slot when vitality or energy > 0, else 0: one slot on all ten | the user's (`unit+0x20`) | [C] (ADR-0021) before the boundary |
+| Kind 3 `hp1..5`, `mp1..5` | 2 per stat with an amount slot when vitality or energy > 0, else 0: one slot on all ten | the user's (`unit+0x20`) | [C] (ADR-0021) before the boundary (fn:sub_005BE3F0_ItemUsePotion@0x005BE3F0, run:2026-11-03-use-emu) |
 | Kind 4 | 0 | | [C] (ADR-0021) before the boundary, no stock row |
-| Kind 5 | 0 | | [C] (ADR-0021) before the boundary |
-| Kind 8 | 0 | | [C] (ADR-0021) before the boundary |
-| Kind 1 test, use | 0 | | [C] (ADR-0021) before the boundary |
-| Kind 7 | 0 | | [C] (ADR-0021) before the boundary |
-| Key | 0 | | [C] (ADR-0021) before the boundary |
-| Kinds 2, 6, 9 | 0 in the entry's own body | | [I] direct calls |
+| Kind 5 | 0 | | [C] (ADR-0021) before the boundary (fn:sub_005BEAC0_ItemUseRejuv@0x005BEAC0, run:2026-11-03-use-emu) |
+| Kind 8 | 0 | | [C] (ADR-0021) before the boundary (fn:sub_005BF060_ItemUseElixir@0x005BF060, run:2026-11-03-use-emu) |
+| Kind 1 test, use | 0 | | [C] (ADR-0021) before the boundary (fn:sub_005BE130_ItemUseIdentifyTest@0x005BE130, fn:sub_005BE230_ItemUseIdentify@0x005BE230, run:2026-11-03-use-emu) |
+| Kind 7 | 0 | | [C] (ADR-0021) before the boundary (fn:sub_005BF0C0_ItemUseCube@0x005BF0C0, run:2026-11-03-use-emu) |
+| Key | 0 | | [C] (ADR-0021) before the boundary (fn:sub_0055F140_KeyConsume@0x0055F140, run:2026-11-03-use-emu) |
+| Kinds 2, 6, 9 | 0 in the entry's own body | | [I] direct calls (fn:sub_005BEDA0_ItemUseTimedState@0x005BEDA0, `rcg-summary.txt`) |
 
 [I] **No bound past the boundaries.** `rcg-summary.txt` gives, for `0x0055E000`, `0x0055E0D0`, `0x0055F140`, `0x00561E70`,
 `0x00562590` and the entries 1, 2, 5, 6, 7, 9, 2 097..2 115 functions with 118 holding a seed step (119 under entry 3: its
@@ -302,8 +306,8 @@ stays open; Phase 2's seed comparison settles it.
 - [I] stats/states B3 "**Potions** … run the group clear": only kinds 6 and 9 (`yps`, `wms`, `vps`, `hrb`). The nine call
   sites of `0x0056C740` hold `0x005BEE15` as the only one in `0x005BE130..0x005BF3D0`. Spec-writer entry filed.
 - [I] Misc § Timed states "the amounts `calc1`… added to life at each tick": `calc1` is a total, scaled, and divided by
-  `len` into the frame rate. The tick's own reading stands. Archivist entry filed.
-- [I] Misc's `[L]` flat-or-percent is answered: kind 5 percent of the maximum, kind 8 reads neither.
+  `len` into the frame rate. The tick's own reading stands. Archivist entry filed. (fn:sub_005BE3F0_ItemUsePotion@0x005BE3F0, fn:sub_00580610_LifeRegenTick@0x00580610)
+- [I] Misc's `[L]` flat-or-percent is answered: kind 5 percent of the maximum, kind 8 reads neither. (fn:sub_005BEAC0_ItemUseRejuv@0x005BEAC0, fn:sub_005BF060_ItemUseElixir@0x005BF060)
 - [I] data/0005's reading of `ItemUseTimedState` stands for what it covers; the note "the potions" there came from the
   same table row. 0x005BE430 and 0x005BE4D9 were the `len` and `calc` reads of a different function. (0x005BE3F0)
 
