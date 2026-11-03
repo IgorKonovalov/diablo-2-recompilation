@@ -12,7 +12,7 @@ typedef struct PathPlanCtx {
     void   * pRoom;               /* +0x08 the unit's room: path +0x1C */
     void   * pTargetRoom;         /* +0x0C RoomAtSubtile(pRoom, tx, ty) */
     uint32_t unset10;             /* +0x10 not written by PathPlan */
-    uint8_t  refresh;             /* +0x14 0x006498A0's result: 1 (no target unit, a player, monster or missile), 2 (an
+    uint8_t  refresh;             /* +0x14 0x006498A0's result: 1 (no target unit, a player, monster, missile or tile), 2 (an
                                      object or item; an object of +0x13A moves the target 2 subtiles), 0 (no position) */
     uint8_t  _pad15[3];
     uint32_t limit;               /* +0x18 path +0x91 (movzx): PathSetByte90's value, at most 77 */

@@ -42,8 +42,8 @@ manifest and tool copy). The emulator scripts are the `lane/r55e` revisions (§ 
   `sub_006485F0_PathFaceDir`. The collision tests run on the declared grids, interior points only (§ 12).
   (run:2026-11-03-path-emu-1, fn:sub_006498A0_PathTargetRefresh@0x006498A0, fn:sub_00648120_PathTargetFree@0x00648120,
   fn:sub_006483A0_PathTargetNotTown@0x006483A0, fn:sub_0064FE40_PathAimNextPoint@0x0064FE40)
-- [C] **Type 4 is `PathPlanToUnit`'s one point**, run to its return through `PathPlanStraight` (35 cases of `plan`
-  and `plannoop`): the target unit's position into `+0x10/+0x12`, a refusal at 100 subtiles or more on an axis or a
+- [C] **Type 4 is `PathPlanToUnit`'s one point**, run to its return through `PathPlanStraight` (47 cases of `plan`
+  and `plannoop`: 35 one point, 12 refused): the target unit's position into `+0x10/+0x12`, a refusal at 100 subtiles or more on an axis or a
   target coordinate 0, else one point, `+0x28 = 1`, `+0x38 = 0`, `PathAimNextPoint(path, 1; 1)`, flag bit 0 when the
   point is outside the path's room, flag `0x20`; types 10 and 14 reach `PathPlanRandomWalk` and `PathPlanSpiral`
   with `ECX` the path and `EDX` the unit's seed (100 cases). (fn:sub_006492F0_PathPlanToUnit@0x006492F0,
@@ -196,9 +196,9 @@ flowchart TD
 
 - [C] `sub_006498A0_PathTargetRefresh` (EBX ctx), run in `plan` and `plannoop` over target types 0–5 (405 cases reach it
   with a target unit, `check.txt` `OUTCOMES`): no target unit → 1; else the unit's position into `+0x10/+0x12` (words), 0 when both are 0, then by type
-  (jump table 0x00649958): 0 and 1 → 1, after `sub_00679190_PathTargetOffsetX87` when `+0x68` ≠ 0 (an observed
-  boundary: 37 cases end there); 2 → 2, through the object step when the object record's `+0x13A` is set
-  (47 cases); 3 → 1; 4 → 2. (fn:sub_006498A0_PathTargetRefresh@0x006498A0, data:0x00649958)
+  (jump table 0x00649958): 0 and 1 → 1 when the path's `+0x68` is 0, else a call of `sub_00679190_PathTargetOffsetX87` (an observed
+  boundary: 37 cases end there; the 1 returned after it, 0x00649950, is `[I]`); 2 → 2, through the object step when the object record's `+0x13A` is set
+  (47 cases); 3 → 1; 4 → 2; 5, above the table (`cmp eax,4; ja`, 0x0064991F), → 1 (49 cases). (fn:sub_006498A0_PathTargetRefresh@0x006498A0, data:0x00649958)
 - [C] The object step `sub_006497D0_PathTargetObjectStep`: when the record's `+0x13C` is 1 the target `y` moves 2
   toward the start (`−2` when the start's y is below the object's `+0x10` dword, unsigned compare, else `+2`), else the
   target `x` by the same rule on `+0x0C`. The step never tests the grid. (0x00649836–0x0064988E)
@@ -330,7 +330,8 @@ return 1;
 - [C] `PathReplan` (unit, flag), to its first boundary (family `replan`, 300 cases): no path → 0; without flag
   `0x10`: a monster with `+0x94 = 0` → 0, else `UnitMarkUpdated(unit)` (boundary; after it, `[I]`: `+0xC4 |= 1` and
   `PathAddByte94(path, −iPoint)`); then types 2, 13, 15 write `+0x3C` directly (13 with the flag, else 2 and `+0x10 =
-  +0x18`, the request's own target) and plan; on 0, type 15 and plan again; other types plan as they are. The `swap`
+  +0x18`, the request's own target) and plan (the boundary); other types plan as they are. After a first plan of 2, 13 or 15 that returns 0, type 15 is
+  written and a second plan made (0x006503D2–0x006503DD): past the boundary, `[I]`. The `swap`
   control fails all 63 it separates. (fn:sub_00650350_PathReplan@0x00650350)
 - [I] Since `PathReplan` writes `+0x3C` without `PathSetType`, a re-plan keeps the flags word of the type before it:
   a 13 re-planned as 2 keeps `0x100`, a 2 re-planned as 15 lacks 15's `0x800`. (0x006503AF–0x006503D2)
@@ -352,7 +353,8 @@ return 1;
   (`PlayerModeAllowed` via 0x005809D0, `MonAttackStats` via `MonSetMode`): the mode machine's and the population's,
   not the path's; unfollowed here.
 - [I] So in this batch every draw of a plan lies in the planner: the random walk (type 10, P1.3) and the search's
-  type-16 branch (P1.2), as ai/0001 § 8 found. (fn:sub_0067A240_PathPlanRandomWalk@0x0067A240)
+  type-16 branch (P1.2), as ai/0001 § 8 found; the slots of types 3, 11 and 12 (0x00679E50, 0x00679FD0, 0x00679E60) were
+  roots of neither graph, so their draws are unfollowed (P1.3). (fn:sub_0067A240_PathPlanRandomWalk@0x0067A240)
 
 ### 11. The request register
 
