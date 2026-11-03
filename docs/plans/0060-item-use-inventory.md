@@ -52,7 +52,7 @@ it with the request handlers as entry points, the draws in order, and the intege
   splitting, the cursor, pickup and its refusals, the stash; P1.3 the ground drop's cell search, ground-item lifetime
   and despawn in an active room, and the item request handlers' order inside one drain.
 - **Outputs:** `docs/findings/items/00NN-use-inventory.md` (the next free items number); `re/symbols.csv`; a
-  `tools/inventory.py` model.
+  `tools/item_inventory.py` model.
 - **Done when:** each batch names its functions with `[I]` or better, the draws per seed, and a list of harness cases
   for Phase 2; one Tier B check per batch. P1.1 also reads the bodies of
   `g_ItemUseFns` entries 1 (test `0x005BE130`, use `0x005BE230`), 4, 7 (`0x005BF0C0`), 8 (`0x005BF060`) and the rejuvenation
@@ -66,7 +66,7 @@ it with the request handlers as entry points, the draws in order, and the intege
 - **Owner skill:** reverser (harness, one of slots 1–2; MemoryMax=4G)
 - **What:** the Phase 1 cases with logged inputs: uses of each potion and scroll kind, belt fills by belt type, stack
   merges, pickups refused and accepted, drops in crowded cells, ground items left past the lifetime.
-- **Done when:** each case is predicted by `tools/inventory.py` before it is checked, with 0 mismatches or each
+- **Done when:** each case is predicted by `tools/item_inventory.py` before it is checked, with 0 mismatches or each
   mismatch explained, and the counts meet the Done-when Phase 1 sets.
 
 ### Phase 3 — Spec
@@ -108,3 +108,5 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   five owner questions.
 - **2026-10-30 — Approved (owner; recorded by the architect, `lane/appr2`).** "Approve all of them": all five questions as recommended: the scope ADR is [ADR-0025](../adrs/0025-scope-item-use-inventory.md) (accepted with this approval: the server's outcomes only, beside ADR-0017); the stash in, the cube's grid as an inventory page in, its transmute items/cube's; trading out; the ground-item lifetime in; the slot after 0050·P2 part 3 and 0046·P2, (the companion sweep it was to precede may be drafted but not started, owner 2026-10-30). P0 takes the archivist after 0059·P2 per the run order. Status `approved`.
 - **2026-10-30 — Phase 0 landed (archivist, `lane/a60`).** [Belts](../tables/Belts.md) and [Inventory](../tables/Inventory.md) written with their in-memory layouts (`LAYOUTS["belts"]` 14 records × 65 fields, `LAYOUTS["inventory"]` 32 × 72, 0 mismatches; both in the gate's `excel_layout` survey, baseline updated, tables 74 to 76); [Misc § Item-use columns](../tables/Misc.md#item-use-columns-plan-0060-phase-0) lists the use columns with the `g_ItemUseFns` entries read from the pinned image (`[C]`, entries 1..11, only 1 has a `test`) and the handlers the findings name; Books was already complete ([Books](../tables/Books.md)). Surprises: the `inventory`/`belts` `.bin` carry a second set (rows 16..31, 7..13) for the other screen layout; the Druid and Assassin rows are 14 and 15, not 5 and 6; `autobelt` is a subset of `belt` but 8 beltable rows lack it; the bodies of use entries 1, 4, 7, 8 are unread (folded into Phase 1 Done-when). The server-side reader survey for `belts`/`inventory` is the findings' scope notes only, no new xref (no Ghidra in this lane).
+- **2026-11-03 — Phase 1.1 landed (reverser, `lane/r60a`).** [items/0012](../findings/items/0012-use-inventory.md) reads the requests `0x20`, `0x26`, `0x27`, `0x61` and all use kinds; run:2026-11-03-use-emu (`tools/use_emu.py`, 11 families, 7 320 cases, 0 mismatches, ADR-0021 boundaries) against the new `tools/item_inventory.py` (the plan's `tools/inventory.py` is the archivist's file-inventory script, so the model took this name; Phase 2 predicts from it); 40 `re/symbols.csv` rows at I; 20 harness cases for Phase 2 in its § 10. Surprises: a healing or mana potion's `calc1` is a total divided by `len`, and **it makes two draws on the user's seed that can double the amount** (`r2 < r1 >> 1`, `r1` under vitality or energy); those potions do **not** run the group clear (only kinds 6 and 9), which corrects stats/states B3 and Misc (entries filed); the elixir reads neither `stat1` nor `calc1`; `belt` and the warning columns gate no use; a used belt scroll on a target not in a grid is removed unused. Open: slot 0's rate on the stock path and whole-use draws (Phase 2), the object case at `0x00581DBC`.
+
