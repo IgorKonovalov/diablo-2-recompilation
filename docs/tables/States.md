@@ -3,7 +3,7 @@
 > **Source archive:** patch_d2 (`.txt` and `.bin`)   **Rows:** 185   **Record:** 60 B (0x3C)
 > **sha256:** `.txt` `898806c2b69e55e316ecfed48dde95aa2933829b94fdad234bdabc27bdbc23e1`, `.bin` `534886c9d40229282d69128d30b1c1457a73a21976ba0ca22546bd4a8f373291`
 > **Doc status:** every row's flags, value columns and naming data listed (plan 0041 Phase 0); combat rows listed (plan 0037 Phase 0); layout complete (`attred`, `immed`, the red bits and `group`'s width from the loader's descriptor, plan 0039 P1b); semantics for `exp`
-> ([items/0010](../findings/items/0010-quest-drops.md)), the flag bits `life` and `meleeonly` and the combat rows ([combat/0001](../findings/combat/0001-formulas.md), plan 0039 A1), `group`, `curse`, `plrstaydeath`, `monstaydeath` and `aura` ([stats/0002](../findings/stats/0002-states.md), plan 0041 Phase 1); everything else columns listed
+> ([items/0010](../findings/items/0010-quest-drops.md), [player/0002](../findings/player/0002-party.md)), the flag bits `life` and `meleeonly` and the combat rows ([combat/0001](../findings/combat/0001-formulas.md), plan 0039 A1), `group`, `curse`, `plrstaydeath`, `monstaydeath` and `aura` ([stats/0002](../findings/stats/0002-states.md), plan 0041 Phase 1); everything else columns listed
 
 ## Purpose
 
@@ -11,7 +11,7 @@ One row per unit state: the timed or permanent conditions a skill, an aura, a cu
 (`freeze`, `poison`, `conversion`, `might`…), with their overlays, sounds, colour tints, flag bits and the stat
 and functions they apply. Readers so far: `exp` feeds the killer resolution of the quest TC switch
 ([items/0010 § 2](../findings/items/0010-quest-drops.md#2-b6-the-quest-tc-switch-and-the-killer); research map row
-`items/quest-drops`), and the combat code sets and reads the rows of § Combat readers. Plan 0041 (stats and states)
+`items/quest-drops`) and the kill's experience credit ([player/0002 § 4](../findings/player/0002-party.md#4-g0-the-credit-sub_0057e7b0_xpcreditplayer)), and the combat code sets and reads the rows of § Combat readers. Plan 0041 (stats and states)
 reads the state lifecycle; [§ States by row](#states-by-row-plan-0041-phase-0) lists, for it, what each row carries and
 which data names it.
 
@@ -363,8 +363,18 @@ reach a state two ways, both data (`python3 -I tools/anim_survey.py skills works
   fn:MONSTER_DropItems@0x005A6600, 0x00618B77, tbl:States.txt:exp)
 - `[C]` The flag bit of `exp` agrees between the finding (bit 30 from the descriptor) and the data (`+0x013` bit 6
   over all 185 records), a code anchor plus data behaviour.
-- `[L]` The column name suggests the experience credit of a kill by a converted or confused monster also goes to the
-  caster; only the quest-TC reader has been read.
+- `[C]` **`exp` has a second reader, the kill's experience credit.** `sub_0057E7B0_XpCreditPlayer` (G0) starts from the
+  killer: a player killer is credited itself, a monster killer's owner link gives the owner. Then, if the killer carries
+  a state of the `exp` mask (53 `conversion`, 57 `attract`, 59 `confuse`), the stat list with flag `0x800` is taken from
+  the killer; if the victim exists and carries one, the victim's list replaces it (the victim's wins, even a none). When
+  a list was taken, the credited unit becomes the owner of that list (looked up again in the game; a lost link does not
+  come back), and the result counts only if it is a player, else no one is credited. A player killer returns itself
+  before any of this, so a state on the victim is ignored then. The mask test is the same `exp` set as the quest-TC
+  reader's. What holds the `0x800` list in play, "the caster", keeps [items/0010](../findings/items/0010-quest-drops.md)'s
+  tag (`[I]`). ([player/0002 § 4](../findings/player/0002-party.md#4-g0-the-credit-sub_0057e7b0_xpcreditplayer),
+  fn:sub_0057E7B0_XpCreditPlayer@0x0057E7B0, fn:sub_0063A690_UnitHasExpState@0x0063A690,
+  fn:sub_00625760_StatListFindFlag@0x00625760, 0x0057E7E4, 0x0057E802, tbl:States.txt:exp,
+  run:2026-11-03-party-emu)
 - `[I]` **`udead` is flag bit 33** (the loader's bit-set at `DataTables+0x150` = `0xCC + 4·33`): when a room is
   released, a dead monster that carries any state of that set is not saved (`InactiveMonsterSaveTest` step 2). In the
   shipped data 13 rows set it (§ Flag bits by row). (fn:sub_005431F0_InactiveMonsterSaveTest@0x005431F0,
