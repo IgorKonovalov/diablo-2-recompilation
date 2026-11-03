@@ -535,6 +535,8 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-11-03 | `lane/r58a` review | 0058 P1 | architect-review | 197 794 | 30 | 11 | — | accept with fixes (9) | overclaim 4, omission 4, tool not kept 1 |
 | 2026-11-03 | `lane/r67` | 0052 (ai notes), 706-708 creator scope | reverser-static | 223 593 | 44 | 15 | — (objdump, no Ghidra) | accept with fixes (Tier B check) | 2: omission 2 |
 | 2026-11-03 | `lane/r67` check | 0052 (ai notes), 706-708 creator scope | architect-check | 94 670 | 28 | 3 | — | accept with fixes (2) | omission 2 |
+| 2026-11-03 | `lane/a67` | 0054 P1.2 follow-ups (2 entries) | archivist | 128 755 | 49 | 7 | — | accept with fixes (Tier A, ADR-0027) | 11: omission 4, misread 2, overclaim 2, miscount 1, under-claim 1, stale cross-reference 1 |
+| 2026-11-03 | `lane/a67` review | 0054 P1.2 follow-ups | architect-review | 171 040 | 26 | 8 | — | accept with fixes (11) | omission 4, misread 2, overclaim 2, miscount 1, under-claim 1, stale cross-reference 1 |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not

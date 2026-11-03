@@ -95,7 +95,7 @@ counts from `python3 -I tools/obj_survey.py objects workspace/merged/data/global
 |---|---|---|---|---|---|
 | `SizeX`, `SizeY` | int 0..32 each; pairs 1×1: 190, 3×3: 95, 0×0: 49, 2×2: 47, 3×1: 24 | `+0x0D0`, `+0x0D4` u32 | `[I]` the footprint in sub-tiles that the object marks in the room collision grid, X × Y (fn:UNIT_GetSizeX@0x00620510, fn:UNIT_GetSizeY@0x006205A0, [drlg/0005 § 5](../findings/drlg/0005-collision.md#5-unit-marks)) | — | [C] |
 | `HasCollision0..7` | int 0/1 (mode 0: 473 set, falling to 210 for mode 7) | `+0x120..+0x127` u8 | `[I]` the object marks its footprint when `HasCollision[mode]` is set (read at `+0x120 + mode`, fn:UNIT_CollMarkRect@0x00620A70, drlg/0005 § 5) | `objmode` row | [C] (4/5 by stride) |
-| `IsDoor` | int {0: 548, 1: 25} | `+0x13A` u8 | `[I]` door: mask `0x806` with `BlocksVis`, `0x804` with `BlockMissile`, else `0x400` (fn:UNIT_GetCollMask@0x006209D0, drlg/0005 § 5) | — | [C] |
+| `IsDoor` | int {0: 548, 1: 25} | `+0x13A` u8 | `[I]` door: mask `0x806` with `BlocksVis`, `0x804` with `BlockMissile`, else `0x400` (fn:UNIT_GetCollMask@0x006209D0, drlg/0005 § 5); `[I]` a set value also sends a type-2 path target through the object step (path/0001 § 3, record identified by [path/0002 § 10](../findings/path/0002-search.md)) | — | [C] |
 | `BlocksVis` | int {0: 552, 1: 21} | `+0x13B` u8 | `[I]` a door that also blocks sight (mask `0x806`, drlg/0005 § 5) | — | [C] |
 | `BlockMissile` | int {0: 547, 1: 26} | `+0x1B6` u8 | `[I]` adds `0x4` to a non-door mask, `0x804` for a door (drlg/0005 § 5) | — | [C] |
 | `CollisionSubst` | int {0: 561, 1: 12} | `+0x19D` u8 | — (`probe` match only; no reader read) | — | [C] |
@@ -116,7 +116,7 @@ counts from `python3 -I tools/obj_survey.py objects workspace/merged/data/global
 | `CycleAnim0..7` | int 0/1 | `+0x108..+0x10F` u8 | mode k loops | `objmode` row | [C] (4..7 by stride) |
 | `Lit0..7` | int 0..25 | `+0x110..+0x117` u8 | light radius in mode k | `objmode` row | [C] (4..7 by stride) |
 | `OrderFlag0..7` | int 0..2 | `+0x131..+0x138` u8 | draw order in mode k | `objmode` row | [C] (3..7 by stride) |
-| `Orientation` | int {3: 429, 0: 60, 1: 58, 2: 26} | `+0x13C` u8 | — | — | [C] |
+| `Orientation` | int {3: 429, 0: 60, 1: 58, 2: 26} | `+0x13C` u8 | `[I]` also the axis of the path target refresh's object step (value 1 moves `y`, else `x`; path/0001 § 3 with the identification of [path/0002 § 10](../findings/path/0002-search.md); readers 0x00621A70, 0x00621AC0); placement use in [§ Code semantics](#code-semantics-plan-0023-phase-1) | — | [C] |
 | `PreOperate` | int {0: 513, 1: 60} | `+0x13D` u8 | the object can be created already operated (name) | — | [C] |
 | `Trans` | int {0: 563, 7: 9, 1: 1} | `+0x13E` u8 | palette transform | — | [C] |
 | `Xoffset`, `Yoffset` | int −45..20 / −130..20 | `+0x148`, `+0x14C` s32 | sprite offset in pixels | — | [C] |
@@ -161,7 +161,8 @@ the layout above and verified by the diff (`[C]` layout). Meanings stay where dr
 |---|---|---|---|
 | tbl:Objects.txt:SizeX, tbl:Objects.txt:SizeY | `+0x0D0`, `+0x0D4` | fn:UNIT_GetSizeX@0x00620510, fn:UNIT_GetSizeY@0x006205A0 | [I] |
 | tbl:Objects.txt:HasCollision0 (`..7`) | `+0x120 + mode` | fn:UNIT_CollMarkRect@0x00620A70 (via `SUnitCreate`, fn:sub_00555230_SUnitCreate@0x00555230) | [I] |
-| tbl:Objects.txt:IsDoor | `+0x13A` | fn:UNIT_GetCollMask@0x006209D0 | [I] |
+| tbl:Objects.txt:IsDoor | `+0x13A` | fn:UNIT_GetCollMask@0x006209D0; readers 0x00621A70, 0x00621AC0 of the record the path target refresh reads ([path/0002 § 10](../findings/path/0002-search.md)) | [I] |
+| tbl:Objects.txt:Orientation | `+0x13C` | readers 0x00621A70, 0x00621AC0 of the record the path target refresh reads ([path/0002 § 10](../findings/path/0002-search.md)); fn:OBJ_PlaceByOrientation@0x00550A30 for placement | [I] |
 | tbl:Objects.txt:BlocksVis | `+0x13B` | fn:UNIT_GetCollMask@0x006209D0 | [I] |
 | tbl:Objects.txt:SubClass | `+0x167` | fn:UNIT_GetCollMask@0x006209D0 (bit 2), fn:DRLG_PresetMapScan@0x00667970 (bit 6) | [I] |
 | tbl:Objects.txt:BlockMissile | `+0x1B6` | fn:UNIT_GetCollMask@0x006209D0 | [I] |
