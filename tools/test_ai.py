@@ -93,6 +93,78 @@ class SynthTest(unittest.TestCase):
             self.assertNotIn(th, reg)
 
 
+def fallen_log(path, modes):
+    """A fake log of Fallen decisions (hand map, row 6): one per mode in `modes`, each with the boundary the map
+    predicts (CancelEvents at 0x005F02FD, or none in modes 0 and 12)."""
+    seed = "00000001:00000002"
+    out = ["AI logger armed rev 3"]
+    for k, m in enumerate(modes):
+        n = 10 * (k + 1)
+        aid = {"u": 0x2000, "id": k + 1, "c": 7, "ai": 6, "st": 0, "th": 0x005F02C0, "cx": 0x7000, "g": 0x1000,
+               "mdp": 0x5000, "ctlp": 0x4000, "hp": 0, "md": 0, "m": m, "c4": 0, "x": 1, "y": 1, "s0": seed, "s": seed,
+               "fr": 100, "diff": 0, "ms": 0x6000, "ms2": 0x2E0, "ctx": [0x4000, 0, 0x3000, 0, 0, 0, 0, 0x6000, 0],
+               "ctl": "00" * 0x40, "head": None, "aip": "00" * 48, "sk": "00" * 24, "ad": [0, 0], "t": None,
+               "pl": [0, 0], "n": n}
+        out.append("AID " + json.dumps(aid))
+        if m not in (0, 12):
+            out.append("AIB " + json.dumps({"k": n, "fn": 0x00540E60, "ra": 0x005F02FD, "ecx": 0x1000, "edx": 0x2000,
+                                            "a": [2, 0, 0, 0, 0, 0], "b": {}, "s": seed, "c": [0, 0, 0], "c4": 0,
+                                            "fr": 100, "n": n + 1}))
+        out.append("AIX " + json.dumps({"k": n, "s": seed, "nb": 0 if m in (0, 12) else 1, "fr": 100, "n": n + 2}))
+    with open(path, "w") as fh:
+        fh.write("\n".join(out) + "\n")
+
+
+class MixControlTest(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.tmp = tempfile.mkdtemp()
+        cls.synth = os.path.join(cls.tmp, "synth.log")
+        ai.synth_log(cls.synth, ai.TIER_MODELS)
+        cls.fal = os.path.join(cls.tmp, "fallen.log")
+        fallen_log(cls.fal, [1, 1, 1, 4, 4])            # no decision in mode 0 or 12: one outcome
+
+    def test_mix_counts_outcomes_per_ai(self):
+        text, r = ai.run_check([self.synth])
+        self.assertIn("MIX ", text)
+        self.assertEqual(sum(sum(v.values()) for v in r["mix"].values()), r["decisions"])
+        self.assertRegex(text, r"MIXSUM tier_ais_with_one_outcome=\d+")
+
+    def test_one_outcome_ai_is_flagged(self):
+        text, r = ai.run_check([self.fal])
+        self.assertEqual(r["mismatches"], 0)
+        self.assertRegex(text, r"MIX 6 th=005f02c0 .*ONE-OUTCOME: 00540e60@005f02fd=5")
+        self.assertIn("rows=6", text.split("MIXSUM")[1].split("\n")[0])
+
+    def test_mode_0_and_12_make_a_second_outcome(self):
+        p = os.path.join(self.tmp, "fallen2.log")
+        fallen_log(p, [1, 4, 0, 12])
+        text, r = ai.run_check([p])
+        self.assertEqual(r["mismatches"], 0)
+        self.assertRegex(text, r"MIX 6 th=005f02c0 .*outcomes=2")
+        self.assertIn("return@-=2", text)
+
+    def test_controls_fail_on_the_kept_shape(self):
+        text, r = ai.run_check([self.fal], controls=True)
+        ctl = dict(r["controls"])
+        self.assertTrue(ctl["site"] and ctl["fallen"])
+        self.assertRegex(text, r"CONTROL site compared=5 failed=5")
+        self.assertRegex(text, r"CONTROL fallen compared=5 failed=5")
+        # the melee control does not separate Fallen: nothing in the decision reads the flag
+        self.assertRegex(text, r"CONTROL-ROW melee 6 Fallen\s+compared=5 failed=0")
+
+    def test_a_control_that_passes_is_reported_wrongly_passed(self):
+        # the inverted Fallen map predicts a return in modes other than 0 and 12; a log whose decisions in those modes
+        # carry no boundary makes it match: the control then PASSES and the run says so
+        p = os.path.join(self.tmp, "fallen3.log")
+        fallen_log(p, [1, 4])
+        lines = [ln for ln in open(p) if not ln.startswith("AIB ")]
+        open(p, "w").writelines(lines)
+        text, r = ai.run_check([p], controls=True)
+        self.assertGreater(r["mismatches"], 0)           # the real map fails (it predicts CancelEvents)
+        self.assertIn("fallen=PASSED-WRONGLY", text)
+
+
 class PartsTest(unittest.TestCase):
     def test_reach(self):
         s = (123, 456)
