@@ -57,7 +57,7 @@ offsets are record offsets. This batch continues [skills/0001](0001-dispatch.md)
   skill level 20; § 5's "none" corrected; raised in part: one input, the level gate and class 364 unreached); the
   summon level is `min(max(L · 3/4 + skill level, 1), L)` (8 of 8, case C1, one input: raised in part, the clamps
   unreached) or the given level (207); `0x005C9290` re-seeds the new missile from `Init(path x + arg)` (450 of 450), and its
-  path calls then step that seed (§ 9's "none" corrected; which call, `[I]`). (fn:sub_005C4430_SummonClassRoll@0x005C4430,
+  path calls then step that seed (§ 9's "none" corrected; which call: `PathPlan`'s random walk, path/0003 § 10, 2026-11-04). (fn:sub_005C4430_SummonClassRoll@0x005C4430,
   fn:sub_005C49E0_SummonSetLevel@0x005C49E0, fn:sub_005C9290_MissCbReseedPathXPlusArg@0x005C9290, run:2026-10-25-skills)
 - [C] *2026-10-27:* **Part 2** (§ 16, run:2026-10-27-skills, 0 mismatches), raised in part: the § 3 handlers' own
   draws in 1 303 calls (none, one, or one before an item cast), heal after kill's capped addition, open wounds' roll,

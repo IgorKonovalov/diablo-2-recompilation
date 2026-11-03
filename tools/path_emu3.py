@@ -1551,9 +1551,9 @@ def check_probe(d):
     bad_u2 = [u for u in o["u"] if (u[0], u[2], u[3]) not in U_OK]
     res.append("PROBE overflow: memcpy over unwritten stack: U lines=%d overflow marker UX=%d case_fails=%s" % (
         len(o["u"]), o["ux"], "yes" if (o["ux"] and bad_u2) else "NO"))
-    res.append("PROBE tightened: the same pc with another size or count is not accounted: %s" % (
-        "yes" if (0x006831D7, 4, 3) not in U_OK and (0x006831D7, 2, 2) not in U_OK else "NO"))
-    return res, bool(bad_u and o["ux"] and bad_u2)
+    tight = (0x006831D7, 4, 3) not in U_OK and (0x006831D7, 2, 2) not in U_OK
+    res.append("PROBE tightened: the same pc with another size or count is not accounted: %s" % ("yes" if tight else "NO"))
+    return res, bool(bad_u and o["ux"] and bad_u2 and tight)
 
 
 def check_family(fam, d):
