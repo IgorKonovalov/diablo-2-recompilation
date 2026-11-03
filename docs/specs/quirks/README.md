@@ -562,7 +562,7 @@ These are faithful 1.14d behaviour that reads as a mistake, or that contradicts 
 | Q442 | What follows from mhit 52's unwritten class word: its missiles are row 0 by the callee's reading. | [I] | 0x005AC940 | [skills/catalogue](../skills/catalogue.md#reimplementation-notes) n3 |
 | Q443 | Return values that look wrong: mdo 14 with a skill or level ≤ 0 returns 2 without running mdo 1, and do 63 returns 1 for a bad missile class. | [C] | run:2026-10-20-cat-emu-9a, run:2026-10-20-cat-emu-nec | [skills/catalogue](../skills/catalogue.md#reimplementation-notes) n6 |
 | Q444 | do 13 returns 0 on every path. | [I] | fn:sub_005DBC60_SkillDo13Fend@0x005DBC60 | [skills/catalogue](../skills/catalogue.md#reimplementation-notes) n6 |
-| Q445 | No Uber event was found in this image to port: classes 704, 705 and 709 have no creator and no driver found, within the limits the source states; keep their class-gated code. | [I] | fn:sub_005E9DF0_AiUberDiablo@0x005E9DF0, fn:sub_005FD200_AiUberBaal@0x005FD200, fn:sub_005F81C0_AiUberMephisto@0x005F81C0 | [monsters/special](../monsters/special.md#reimplementation-notes) n12 |
+| Q445 | No Uber event was found in this image to port: classes 704, 705 and 709 have no creator and no Uber-specific driver found, within the limits the source states; keep their class-gated code. | [I] | fn:sub_005E9DF0_AiUberDiablo@0x005E9DF0, fn:sub_005FD200_AiUberBaal@0x005FD200, fn:sub_005F81C0_AiUberMephisto@0x005F81C0 | [monsters/special](../monsters/special.md#reimplementation-notes) n12 |
 
 ## Crash and hang paths
 

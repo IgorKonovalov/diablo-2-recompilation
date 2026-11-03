@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, monsters/spawn, monsters/pool, data/excel, drlg/collision]
 consumed_by: [monsters/stats, monsters/spawn, items/tc, chain]
-tags: {C: 151, I: 91, L: 6}
+tags: {C: 154, I: 90, L: 6}
 updated: 2026-11-03
 ---
 
@@ -116,7 +116,7 @@ Constant data in `Game.exe`:
 | `PACK_MOD` | 16 `champion`, the only mod of a pack member or a preset champion | fn:sub_005A48C0_ChampionMemberMark@0x005A48C0, run:2026-10-14-mon-special | [C] |
 | `QUEST_MOD` | 22 `questcomplete`, appended to every superunique | fn:sub_005A49B0_SuperUniqueSpawn@0x005A49B0, run:2026-10-14-mon-special | [C] |
 | `THIEF` | 24, dropped from a superunique's fixed mods | 0x005A4AF0–0x005A4B22 | [I] |
-| aura classes | 704 `ubermephisto`: Conviction at level 20 (the arm's map emulated, its reach in play unread: § C3, § J); superunique 37 (Lord De Seis): index 5 | fn:sub_005A1650_UModAura@0x005A1650, 0x005A175C, run:2026-11-03-ai-uber | [I] |
+| aura classes | 704 `ubermephisto`: Conviction (skill 123) at level 20; superunique 37 (Lord De Seis): index 5 | fn:sub_005A1650_UModAura@0x005A1650 | [C] the 704 arm to `UnitSkillAdd`, not its reach in play: § C3, § J (0x005A175C, run:2026-11-03-ai-uber); [I] index 5 (0x005A172C) |
 | name formats | `string.tbl` 1721 `"%0 %1"`, 1722 `"%0 %1 %2"`; `patchstring.tbl` 11072 `"%0 %1"` | fn:sub_004AC870_ClientMonNameBuild@0x004AC870, run:2026-10-16-sweep-monsters-b (§ I1) | [C] |
 
 ### Inputs and oracles
@@ -323,7 +323,7 @@ C3. UModAura(unit, flag):  mod 30                                [C] for the dra
       local: Seed ← Init(unit.nameSeed)                          ; [I] Init(0x1506) without MonsterData, not reachable for a monster (0x005A1704)
       i: u32 ← Range(local, n)                                   ; local-seed draw, also for the two cases below
       if unit.superUniqueId = 37: i ← 5                          ; [I] Lord De Seis, not reached (0x005A172C)
-      if unit.class = 704: Conviction at skill level 20; return  ; [I] ubermephisto; map emulated, reach in play unread, § C3 (0x005A1748, 0x005A175C, run:2026-11-03-ai-uber)
+      if unit.class = 704: Conviction at skill level 20; return  ; [C] ubermephisto, to UnitSkillAdd, not its reach in play, § C3 (0x005A1748, 0x005A175C, run:2026-11-03-ai-uber)
       k: i32 ← (AuraTable[i].add + lvl) × mul ÷ div              ; [C] signed, lvl the guarded level (0x005A1776, run:2026-10-16-sweep-monsters-b)
       if k ≤ 1: k ← 1;  if k ≥ 99: k ← 99                        ; [I] neither met (0x005A1795–0x005A17A4)
       skill ← AuraTable[i].skill;  level ← k                     ; [C] to UnitSkillAdd (0x005A17AF, run:2026-10-16-sweep-monsters-b); effect: stats.md § G
@@ -366,10 +366,10 @@ seed and gives the same index: Bremm Sparkfist (record 28, `Mod1` 30) logged two
 and index 2, and the same row 2 written twice, the second after `SpecialModsApply`'s exit; the kept logs hold two more such
 records. [C] (fn:sub_005A49B0_SuperUniqueSpawn@0x005A49B0, run:2026-10-21-sweep-monsters-a, [monsters/0003 § Plan 0038 batch H4a](../../findings/monsters/0003-special-monsters.md#plan-0038-batch-h4a-run2026-10-21-sweep-monsters-a)) The draw comes before the Lord De Seis and
 class-704 tests, so `ubermephisto` and Lord De Seis also take one step of their local seed, which no persistent seed sees.
-[I] (0x005A1727, 0x005A1748) With a non-zero flag on class 704, the arm reaches `UnitSkillAdd(unit, 123, 20, 1)` under
-emulation, each case ending at that call (ADR-0021): the local seed before it is not compared and the `PlayerSetSkill` after it is
-not covered. Reach in play is unread, since no creator of class 704 was found in this image (§ J). [I] (0x005A175C,
-run:2026-11-03-ai-uber, [ai/0016 § 6](../../findings/ai/0016-uber-event.md#6-what-the-classes-do-get)) The two guards map a level ≤ 0 to 1, which the skill-level formula then uses too, and a row
+[I] (0x005A1727, 0x005A1748) With a non-zero flag on class 704, the arm reaches `UnitSkillAdd(unit, 123, 20, 1)` (71 emulated cases, each a unit
+with no stat list, so level 1, and each ending at that call, ADR-0021), and any other class does not take that call site, the only thing its cases compare. [C] (0x005A175C,
+run:2026-11-03-ai-uber, [ai/0016 § 6](../../findings/ai/0016-uber-event.md#6-what-the-classes-do-get)) The tag ends at the call: the local seed before it is not
+compared, the `PlayerSetSkill(unit, 0, 123, −1)` after it and the return are the code's reading, and the run says nothing of reach in play, since no creator of class 704 was found in this image (§ J). [I] (0x005A1769, 0x005A1773) The two guards map a level ≤ 0 to 1, which the skill-level formula then uses too, and a row
 count of 0 to 1, so `Range(local, 1)` returns 0 and row 0 is used. Stock data reaches neither: the first rows have
 `minLevel` 0 and a monster's level is ≥ 1. [I] (0x005A1685, 0x005A16EE, data:g_UModAuraTable@0x0073BF68)
 
@@ -792,9 +792,10 @@ fn:sub_00653E20_UNameTablesFree@0x00653E20, tbl:UniqueTitle.txt:Name, run:2026-1
   names). No stock session has watched the helpers (case G4 of ai/0016 § 8). This is a property of the pinned `Game.exe` and says nothing about any other build or about
   the realm. The creator statement names 704, 705 and 709; for 706–708 only the table result is stated (*Open questions*).
   ([ai/0016 Answer](../../findings/ai/0016-uber-event.md#answer-summary), 0x005E9DCC, fn:sub_005E9DF0_AiUberDiablo@0x005E9DF0)
-- [I] **The driver, if one of the three existed,** is the generic machinery alone: `MonAiEvent` with row kind 1, and rows 145, 146 and 147
-  have thinks that only return and queue no next event. Those rows' entries in the monster AI catalogue (plan 0052 P3b) take this statement
-  and its limits when they are written. (fn:sub_005B1740_MonAiEvent@0x005B1740, fn:sub_005E9DF0_AiUberDiablo@0x005E9DF0, fn:sub_005FD200_AiUberBaal@0x005FD200, fn:sub_005F81C0_AiUberMephisto@0x005F81C0)
+- [I] **The driver, if one of the three existed,** is the generic machinery alone: `MonAiEvent` with row kind 1 (rows 145, 146 and 147). With no target
+  the think does not run and `MonAiTargetOrIdle` idles or ring-walks; with a target the boss sight pause fires once, then the think only returns and that event queues no next
+  one, so the next AI event needs a mode change from outside. Those rows' entries in the monster AI catalogue (plan 0052 P3b) take this statement
+  and its limits when they are written. (fn:sub_005B1740_MonAiEvent@0x005B1740, fn:sub_005DE890_MonAiTargetOrIdle@0x005DE890, fn:sub_005B1140_MonAiBossSightPause@0x005B1140, fn:sub_005E9DF0_AiUberDiablo@0x005E9DF0, fn:sub_005FD200_AiUberBaal@0x005FD200, fn:sub_005F81C0_AiUberMephisto@0x005F81C0)
 
 - [C] **Nihlathak's mod 22 is `MonPostCreateBoss`'s.** Nihlathak (`BaseId` 526, superunique record 60) leaves
   `SpecialMonPlace` with `[22]` (the `SMPX` line) and holds `[22, 30]` at the `SU1` line, as logged; a model without
@@ -1021,10 +1022,11 @@ The name is format 1722 with prefix, suffix and appellation, from the keys `Fire
 - **The expansion flag matters only to the picks.** It enters the special path through `ModEligible`'s `version` test
   alone, which leaves classic champions with `champion` (16) as their only candidate. [C] (struct:Game+0x070,
   run:2026-10-14-mon-special)
-- **No Uber event to port from this image.** With no creator of classes 704, 705 or 709 and no driver found, within the limits of
+- **No Uber event to port from this image.** With no creator of classes 704, 705 or 709 and no Uber-specific driver found, within the limits of
   [§ J](#j-other-entry-paths-and-pre-existing-mods), those three are table rows, and a reimplementation of this image adds no event for them. It keeps
   the class-gated code that would run if such a unit existed: the creation mods and aura arm here, the death drop in
-  [items/quest-drops § D7](../items/quest-drops.md#d7-scripts-that-create-nothing-and-uber-tristram). Other builds and the realm are not read. [I]
+  [items/quest-drops § D7](../items/quest-drops.md#d7-scripts-that-create-nothing-and-uber-tristram), 705's skip of the `MonModeAllowed(6)` test in `COMBAT_GetHit` (0x0057D066),
+  the 704..709 return from `PreventHealHook` (0x0057D83B) and the client's name build (§ I). Other builds and the realm are not read. [I]
   (fn:sub_005E9DF0_AiUberDiablo@0x005E9DF0, fn:sub_005FD200_AiUberBaal@0x005FD200, fn:sub_005F81C0_AiUberMephisto@0x005F81C0, fn:sub_005E0070_UberTristramDrop@0x005E0070)
 
 ## Evidence
