@@ -9,7 +9,7 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
    give. Seen: S1e rows 51/64 ([0038](../../../../docs/plans/0038-inferred-claims-sweep.md), 2026-10-17); `0x400` "good/evil"
    ([0040](../../../../docs/plans/done/0040-drlg-room-lifecycle.md) P1 review); a meaning word ("the missile count", "the
    charge speed", "moves the unit's path to its owner's point") inside a `[C]` of the batch's column-reader entry (`lane/p46m6`, `lane/p46m8` and `lane/p46m15` reviews,
-   [0046](../../../../docs/plans/0046-skills-function-catalogue.md)); "the unit's full stat" for the `s` of anim/0002's ADR-0015 bonus map, where the map
+   [0046](../../../../docs/plans/done/0046-skills-function-catalogue.md)); "the unit's full stat" for the `s` of anim/0002's ADR-0015 bonus map, where the map
    covers `UnitGetStat(unit, stat, 0)` only (`lane/p50b` review, [0050](../../../../docs/plans/0050-animation-frame-timing.md)).
    A pushed argument is not a test until the callee reads it: `RUNEWORD_Apply`'s `0x40` was modelled and stated as a flag test, but `UnitFindStatList` ignores it when the state is non-zero. Also, sock 17's reason for the empty cursor slot (`0x0063AAF0`, a reading) sat inside the logged `[C]` (`lane/h6b` review, 0038).
 2. **Recount every count from the binary with a kept command**, never from memory or a partial scan:
@@ -46,7 +46,7 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
    output hashed, logs under `workspace/logs/` with a manifest line, one path base per manifest so `sha256sum -c` passes from one directory (H7a review, 0038; again 0043 P2 review), and every tool revision behind a cited output named. Seen: the unseeded `eval` case
    writer (S1e, 0038); the *Fleshripper* log left in session scratch (resume lane, 0037). An aborted session's
    partial log is kept as a development log, not deleted (0040 P2 review). A development run's outputs are written under their own names, not overwritten by the kept run
-   (`lane/p46m9` review, [0046](../../../../docs/plans/0046-skills-function-catalogue.md)), and no kept file is renamed or
+   (`lane/p46m9` review, [0046](../../../../docs/plans/done/0046-skills-function-catalogue.md)), and no kept file is renamed or
    reused under a name a kept manifest lists: the stub renamed so a session could run under its name broke one line of
    `manifest-r2-ckpt1.txt` (`lane/p48r2` review, [0048](../../../../docs/plans/done/0048-seed-to-world.md)); `-r2` reruns
    whose save copies overwrote the first sessions' copies under the same directory, and a dev manifest said to pass from
@@ -71,7 +71,7 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
 9. **Name the path for every claim about a caller**, or say "unfollowed" with the count. Seen: the
    superunique minion path (0039 P1b, Q19); the 8/9 case's `RoomTileSetFlags` call (0039 P1a); "the effect flag is 1
    only from handler 20" without `SKILLS_SrvDo`'s seven other calls, and `SKILLS_PayCost`'s 0 for a zero-cost row
-   without its three calls, none of which tests it (`lane/p46m12` review, [0046](../../../../docs/plans/0046-skills-function-catalogue.md));
+   without its three calls, none of which tests it (`lane/p46m12` review, [0046](../../../../docs/plans/done/0046-skills-function-catalogue.md));
    "the only RNG call" of a call graph with 3 indirect calls unfollowed, and the mode graph's 118, left out of the
    text (`lane/p50a` review, [0050](../../../../docs/plans/0050-animation-frame-timing.md)); a logged load chain written
    without the two frames between `PlayerLoad` and the logged returns (`PlayerLoadFromFile`, `PlayerLoadFromClient`;
@@ -101,7 +101,7 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
     ([0042](../../../../docs/plans/done/0042-quests-travel.md) P2 part 1 review); NPC 266's two draws, word 40's bit map and
     the switched-off reward writes, left in § 16 only (0042 P2 part 2 review); skills/0001's *Leads used* detail still
     naming start 25 for do 46's finisher calls after the § 12 note corrected it (`lane/p46m11` review,
-    [0046](../../../../docs/plans/0046-skills-function-catalogue.md)); skills/0003 § 2's `EDX`-the-skill note filed under the
+    [0046](../../../../docs/plans/done/0046-skills-function-catalogue.md)); skills/0003 § 2's `EDX`-the-skill note filed under the
     bullet after the one that still said `EDX` the level (`lane/p46m12` review, 0046); class 312's remainder met by H4a but
     still `[I]` in monsters/0004's H4b section (`lane/h4a` review, 0038); special 66's mod 12, met by H4a (special 68)
     but still `[I]` in monsters/0003's H4b section (`lane/p51r` review, [0051](../../../../docs/plans/done/0051-backlog-sweep-6.md));
@@ -119,7 +119,7 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
     (a class word, a register it must preserve, a mode) and every later call go in "After, `[I]`", also in the Answer
     summary. Seen: the radius of hits 24, 44 and 14 in a callee-saved register (`lane/p46m3` review); hit 52's row 0
     (`arrow`) and hits 51/52's later creations under `[C]` (`lane/p46m4` review, both
-    [0046](../../../../docs/plans/0046-skills-function-catalogue.md)); the Inifuss tree's `bks` filed "created … quality 2" from
+    [0046](../../../../docs/plans/done/0046-skills-function-catalogue.md)); the Inifuss tree's `bks` filed "created … quality 2" from
     the `QDI` argument, where the next `ICQ` line shows the creation at 7 (`lane/h6e2` review, [0038](../../../../docs/plans/0038-inferred-claims-sweep.md)). P1b-1's "`N` is the interval between two held actions" filed `[C]` as a server rule, where every restart is in its request's frame, the request being an oracle (the client's cadence), and 23 casts restarted before `T + N`; also an uncompared path (a catalogue queue the logger does not read) called "a boundary oracle": an oracle is a logged output taken as given, ADR-0004 (`lane/p50e` review, 0050).
 14. **Raise the symbols your run checks.** A function whose logged return the run compares with a model or a table row
     (and whose consumer agrees) is `[C]` in `re/symbols.csv` and the finding's Functions table, evidence column moved
@@ -127,7 +127,7 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
     `sub_00633680_ItemIndexByCode`, `lsd ` → 31 logged 141 times (`lane/h2c` review, both
     [0038](../../../../docs/plans/0038-inferred-claims-sweep.md)). Scope: the return logged by the game on its own data. An
     ADR-0015/0021 emulation over a declared scratch image confirms the map, not the role the name states, and raises no
-    symbol row (`lane/p46m12` review ruling 7, [0046](../../../../docs/plans/0046-skills-function-catalogue.md)).
+    symbol row (`lane/p46m12` review ruling 7, [0046](../../../../docs/plans/done/0046-skills-function-catalogue.md)).
     Seen also: `D2S_WriteMercItems` left I beside a raised `D2S_ReadMercItems` and `D2S_WriteCorpses` on the same evidence (`lane/h1b`
     review, 0038). `DRLG_LoadLevels` raised in `re/symbols.csv` but left I in data/0001's Functions table (`lane/h3b`
     review, 0038). `sub_005B1CF0_MonPostCreateBoss` (its 526 case compared at `SMPX`) and `sub_0063EC70_LevelClassVariant`
@@ -140,7 +140,7 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
     `(minor << 16) × 0x7F` said to wrap past 257 subtiles, where 258 still fits (`lane/p46m13` review); do 105's
     `h·A` said to wrap as a 32-bit product where it cannot on any path that uses it, the subtraction after it being
     what wraps: name the operation that wraps and whether a wrapping path reaches a use (`lane/p46m14` review, all
-    three [0046](../../../../docs/plans/0046-skills-function-catalogue.md)); do 140's try offsets said not to wrap "below
+    three [0046](../../../../docs/plans/done/0046-skills-function-catalogue.md)); do 140's try offsets said not to wrap "below
     2³¹ − 9" where 2³¹ − 9 itself still fits (`lane/p46m15` review, 0046); `x − 90q` said to wrap "for `x` within 270
     of `INT32_MIN`" where the bound is `x < INT32_MIN + 90q` (`lane/p51s` review, [0051](../../../../docs/plans/done/0051-backlog-sweep-6.md));
     the step product's wrap from `v` 32 768 stated without its sign case (a component of +4096 wraps, −4096 reaches

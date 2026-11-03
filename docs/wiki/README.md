@@ -33,7 +33,7 @@ back to it. Then follow the game from the map to the loot, and on to the charact
 | 9 | [Characters and hirelings](characters.md) | what a new character starts with, how experience and level-up work, and how hirelings are listed, hired and saved |
 | 10 | [Combat](combat.md) | what happens when one unit hits another: the chance to hit, block and avoid, the damage build, resistances and absorb, crushing blow, open wounds, leech and the life change, and whose seed each draw is on |
 | 11 | [Stats and states](stats-and-states.md) | how a character's final stats add up from items, set bonuses, passives and states, item requirements and the 136-frame refresh, how a timed state is applied, refreshed, refused, replaced and ended, group clears, the regeneration of life, mana and stamina, auras, and shrines and wells |
-| 12 | [Skills and missiles](skills.md) | what the server does when a unit uses a skill: the request and its checks, the start and do functions, mana cost and delay, a skill's melee hit, charge-up skills and the finisher, the item-stat and skill handlers that react to hits and kills, summons, and a missile's creation, flight, collision and hit, with whose seed each draw is on |
+| 12 | [Skills and missiles](skills.md) | what the server does when a unit uses a skill: the request and its checks, the start and do functions, mana cost and delay, a skill's melee hit, charge-up skills and the finisher, the item-stat and skill handlers that react to hits and kills, summons, and a missile's creation, flight, collision and hit, with whose seed each draw is on, and the catalogue of the other numbered skill and missile functions: how to find one and which ones draw |
 | 13 | [Saves](saves.md) | what a `.d2s` save file holds and how an item is stored in it |
 | 14 | [Quests and travel](quests.md) | how the quest record is kept and loaded, which events reach the quest scripts and in what order, how the game creator's finished quests are switched off, a few quests bit by bit, the quest-seed draws, and how waypoints, act changes, town portals, warps and resurrection place a player |
 | 15 | [Seed to world](seed-to-world.md) | how the pages above fit together in one game: the order in which the server builds levels, rooms, objects, monsters and drops from the game seed, which seed passes from one step to the next, and what (the player's walk, the fights) has to come from outside |
@@ -68,18 +68,15 @@ item creation and the other item paths, the [item economy](../specs/items/econom
 [stats and states](../specs/stats/README.md) (plan 0041, closed 2026-10-17), and
 [quests and travel](../specs/quests/README.md) (plan 0042, closed 2026-10-20), the composition of the core specs,
 [seed to world](../specs/chain/README.md) (plan 0048), and the third simulation row,
-[skills and missiles](../specs/skills/README.md) (plan 0045, its machinery and a named tier of skills), and the fourth,
+[skills and missiles](../specs/skills/README.md) (plan 0045, its machinery and a named tier of skills; plan 0046, the function catalogue of every other numbered skill and missile function), and the fourth,
 [animation and frame timing](../specs/anim/README.md) (plan 0050). The room lifecycle
 ([drlg/lifecycle](../specs/drlg/lifecycle.md), reviewed at the close of plan 0040 on 2026-10-17) has no page of its
 own: it is the section [Rooms that come and go](levels.md#rooms-that-come-and-go-release-and-restore) of the Levels
-page. Rows that are not reviewed get no page; the skills function catalogue (plan 0046), which specifies the numbered skill
-and missile functions outside tier A, has no reviewed spec yet.
+page. Rows that are not reviewed get no page.
 
 The plans still open are listed in the [plan index](../plans/README.md):
 - **0038**, a sweep that tries to confirm inferred claims with another run, a re-check of kept logs or a second code
   path; its batches are still running, and the specs are re-tagged cluster by cluster;
-- **0046**, the skills and missiles function catalogue: no spec yet (plan 0045, the machinery, closed 2026-10-27
-  with its page [Skills and missiles](skills.md));
 - **0047**, the simulation shortfalls (the named remainders of the combat, stats and travel runs), **0048**, seed to
   world (the core specs composed end to end), and **0049**, backlog sweep 5: approved 2026-10-20.
 

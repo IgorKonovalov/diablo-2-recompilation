@@ -110,7 +110,7 @@ each row.
 | [`stats/states`](docs/specs/stats/states.md) | timed state apply, refresh, `group`, expiry, the regeneration ticks, auras, shrines and wells | reviewed | 2026-10-27 |
 | [`skills/dispatch`](docs/specs/skills/dispatch.md) | the skill request, start checks, start and do function dispatch, charges, costs, the skill packet, event handlers, summons, monster skill use ([overview](docs/specs/skills/README.md), 2026-10-27) | reviewed | 2026-10-27 |
 | [`skills/missiles`](docs/specs/skills/missiles.md) | missile creation, seed, motion, collision, hit, pierce, sub-missiles, end of life | reviewed | 2026-10-27 |
-| `skills/catalogue` | every numbered skill and missile function a stock row uses (plan 0046) | findings in progress | — |
+| [`skills/catalogue`](docs/specs/skills/catalogue.md) | every numbered skill and missile function a stock row uses: what each tests, writes and creates, and the draws it makes in order, by seed | reviewed | 2026-10-30 |
 | [`anim/timing`](docs/specs/anim/timing.md) | unit modes and frame counts, event frames, attack, cast, hit-recovery and block rates and their breakpoints ([overview](docs/specs/anim/README.md)) | reviewed | 2026-10-27 |
 | [`anim/movement`](docs/specs/anim/movement.md) | walk and run speed, the slowing states, the per-frame step along a path | reviewed | 2026-10-27 |
 | `monsters/ai` | the AI tick, target, mode and skill choice, following, the path request and its draws (plan 0052) | not started | — |
@@ -130,7 +130,6 @@ In flight ([plans index](docs/plans/README.md)):
 - **[0038](docs/plans/0038-inferred-claims-sweep.md)**: the inferred-claims sweep, raising the reviewed specs'
   inferred points to confirmed where a run, a re-check of kept logs or a static second source allows; Phase 3
   re-tags the specs cluster by cluster.
-- **[0046](docs/plans/0046-skills-function-catalogue.md)**: the skills and missiles function catalogue.
 - **[0050](docs/plans/0050-animation-frame-timing.md)**: animation and frame timing.
 - **[0052](docs/plans/0052-monster-ai.md)**: monster AI.
 

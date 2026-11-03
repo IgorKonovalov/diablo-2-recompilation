@@ -69,7 +69,7 @@ take them as soon as the plan is approved.
 - **Read first.** Several entries were released "with fixes" at their plan 0046 batch reviews, and some carry a
   correction made at the review (for example the `item` entry's shrine count, the `ass` entry's `Teleport` and
   `PrgCalcByCharge` re-reads). For each entry, read its batch review in the
-  [plan 0046 log](../0046-skills-function-catalogue.md#implementation-log) and apply the entry as the review left it.
+  [plan 0046 log](0046-skills-function-catalogue.md#implementation-log) and apply the entry as the review left it.
 - **Three data questions in the entries** may need code, not layouts: the `bar` entry's Skills `+0x005` bit 0 (which
   column sets it), the `dru` entry's DataTables `+0x17C`/`+0x180` state list (which loader and which States column),
   and the `8c` entry's monster-data bytes `+0x0E`/`+0x0F` (whether a column fills them). The archivist answers what

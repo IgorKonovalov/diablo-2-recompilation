@@ -3,7 +3,7 @@
 > **Status:** accepted (decided by the owner 2026-10-20; drafted by the architect at the `lane/p46m1` review, 2026-10-20)
 > **Date:** 2026-10-20
 > **Amends:** [ADR-0015](0015-emulated-reproduction.md) (conditions (1) and (3))
-> **Related plan(s):** [0046-skills-function-catalogue](../plans/0046-skills-function-catalogue.md) (Phase 1, batch 9a and later)
+> **Related plan(s):** [0046-skills-function-catalogue](../plans/done/0046-skills-function-catalogue.md) (Phase 1, batch 9a and later)
 
 ## Context
 

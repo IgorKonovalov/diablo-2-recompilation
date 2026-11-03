@@ -6,7 +6,7 @@ status: done
 context:
   - ../../findings/skills/0011-paladin.md
   - ../../findings/skills/experiments.md
-  - ../../plans/0046-skills-function-catalogue.md
+  - ../../plans/done/0046-skills-function-catalogue.md
 resolution: "Reviewed 2026-10-20 (architect, lane/p46m8 at d8c384b): accept with fixes, 6 (overclaim 4, omission 2); aura boundary's ECX/EDX are arguments ([C]); thin claims admitted; stats/0002 § 7 [C] narrowed to the run's count; do 81's roll stays [I]; next batch bar. Plan 0046 log."
 ---
 

@@ -6,7 +6,7 @@ status: done
 context:
   - ../../findings/skills/0007-missile-hit-31-59.md
   - ../../findings/skills/experiments.md
-  - ../../plans/0046-skills-function-catalogue.md
+  - ../../plans/done/0046-skills-function-catalogue.md
 resolution: "Reviewed 2026-10-20 (architect): batch 9d accepted with fixes (4: overclaim 2, misread 1, miscount 1). Rulings in the plan 0046 log: hit 52's class word left 0 [C] (ADR-0021), row 0 'arrow' is MissileCreate's reading [I]; the nova helper's fatal path [C] up to 0x00408090, which is mov eax,[esp]; ret (the line 0xF0D is 0x00408A60's argument), after [I]; weak controls and hit 2's 3 end-of-life cases suffice; row 568 scan [C], meaning [I]. Sorceress batch may start."
 ---
 

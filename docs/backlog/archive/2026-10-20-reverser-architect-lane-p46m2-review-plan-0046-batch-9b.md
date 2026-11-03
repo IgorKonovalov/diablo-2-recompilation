@@ -4,13 +4,13 @@ to: architect
 date: 2026-10-20
 status: done
 context:
-  - ../../plans/0046-skills-function-catalogue.md
+  - ../../plans/done/0046-skills-function-catalogue.md
   - ../../findings/skills/0005-missile-do-19-36-damage.md
   - ../../findings/skills/experiments.md#run2026-10-20-cat-emu-9b
 resolution: "Reviewed 2026-10-20 (architect): batch 9b accepted with fixes (5). ADR-0021 accepted by the owner: the 18 '(ADR-0021)' claims of skills/0005 raised to [C], each scoped to its named boundary, the code after it [I] (raised in part where a remainder follows). Do 31's CollideKill control for Explosion accepted (no output depends on Explosion; the term stays [I]). Damage 12's packet replacement accepted as 'replaces the damage fields PacketClearDamage zeroes'; the stat-list +0x18 end-frame reading stays [L]. Checks in workspace/logs/skills-cat-9b-review/. Batch 9c may start. Plan 0046 log."
 ---
 
-Review `lane/p46m2` (from main `2ebd473`; Ghidra copy `workspace/ghidra-p46m2`, no harness): [plan 0046](../../plans/0046-skills-function-catalogue.md) Phase 1 batch **9b**, missile server do functions 19–36 and damage functions 1–14. Blocking 9c.
+Review `lane/p46m2` (from main `2ebd473`; Ghidra copy `workspace/ghidra-p46m2`, no harness): [plan 0046](../../plans/done/0046-skills-function-catalogue.md) Phase 1 batch **9b**, missile server do functions 19–36 and damage functions 1–14. Blocking 9c.
 
 - **Read.** 30 entries (do 24 is do 23's function; damage 6 unused): all in [skills/0005](../../findings/skills/0005-missile-do-19-36-damage.md), with the helpers `0x005A8C70` (the `EType` roll), `0x005A91C0`, `0x005A9270`, `0x0064B0C0`, `0x004E6CA0`, `0x005A99E0` (EBX convention), `0x0056DDE0`, Redemption's callbacks and `0x0058E920` (read only).
 - **Draws.** Do 28, 30 (on the target unit's seed), 34, 35, 25 (via `0x005A9820`); damage 3, 5, 12, 13, 14 on the missile seed; none elsewhere before a boundary.

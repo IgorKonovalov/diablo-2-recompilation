@@ -5,7 +5,7 @@ date: 2026-10-21
 status: done
 context:
   - ../../specs/combat/delivery.md
-  - ../../plans/0046-skills-function-catalogue.md#implementation-log
+  - ../../plans/done/0046-skills-function-catalogue.md#implementation-log
 resolution: "lane/s46c reviewed 2026-10-21: accept with fixes (5: overclaim 3, miscount 1, misread 1), made in combat/delivery and combat/README B5; research map combat row C 230 / I 185 / L 24; see the plan 0046 log."
 ---
 

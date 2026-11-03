@@ -6,7 +6,7 @@ status: done
 context:
   - ../../findings/skills/0012-barbarian.md
   - ../../findings/skills/experiments.md
-  - ../../plans/0046-skills-function-catalogue.md
+  - ../../plans/done/0046-skills-function-catalogue.md
 resolution: "Reviewed 2026-10-21: accept with fixes (5: overclaim 1, omission 3, other 1); register arguments admitted; thin claims stand; weak controls enough; corrections sound, no spec relies on the monster's seed; next batch dru. See plan 0046 log."
 ---
 

@@ -10,7 +10,7 @@ context:
   - ../../wiki/stats-and-states.md
   - ../../wiki/how-we-know.md
   - ../../wiki/quests.md
-  - ../../plans/0046-skills-function-catalogue.md
+  - ../../plans/done/0046-skills-function-catalogue.md
 resolution: "Accepted with fixes 2026-10-21 (plan 0046 log): 5 fixes (overclaim 2, misread 1, omission 1, stale cross-reference 1), made in the documents; research map rows updated by the architect."
 ---
 

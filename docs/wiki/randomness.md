@@ -1,7 +1,7 @@
 ---
 based_on:
   - docs/specs/rng/README.md 2026-10-17
-  - docs/specs/rng/seeds.md 2026-10-27
+  - docs/specs/rng/seeds.md 2026-10-30
   - docs/specs/drlg/room-tiles.md 2026-10-27
 ---
 
@@ -287,9 +287,10 @@ From the [RNG core open questions](../specs/rng/README.md#open-questions) and th
 - Every function that initialises a seed is now classified, by reading the code. Besides the tree above there are seeds that never feed
   gameplay: the client automap's own seed, two title-screen seeds and short-lived local seeds. The places in the
   skill and missile code that re-seed something are read from the code too: they restart a missile's seed or a
-  short-lived one, except Armageddon, which restarts its caster's seed from a number it keeps. One of them is
-  confirmed by a run: the sub-missiles of Firestorm (and of some monster missiles) get a seed made from a position
-  word plus their index, which the new missile's own path setup then advances (20 steps for Firestorm's; see
+  short-lived one, except Armageddon, which restarts its caster's seed from a number it keeps. Two of them are
+  confirmed by runs: the sub-missiles of Firestorm (and of some monster missiles) get a seed made from a position
+  word plus their index, which the new missile's own path setup then advances (20 steps for Firestorm's), and the
+  bolts made for a catapult spotter get one from the position word alone, advanced 10 steps (see
   [skills and missiles](skills.md#seeds-a-missile-is-given-the-re-seed-sites)). Casting Armageddon
   draws one number below 65 536 from the caster's own seed, and a run has confirmed that draw. Reading the code, the
   cast then stores that number in the skill's slot for the first time Armageddon fires. Whether that first firing

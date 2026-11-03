@@ -6,7 +6,7 @@ status: done
 context:
   - ../../findings/skills/0010-necromancer.md
   - ../../findings/skills/experiments.md
-  - ../../plans/0046-skills-function-catalogue.md
+  - ../../plans/done/0046-skills-function-catalogue.md
 resolution: "Reviewed 2026-10-20 (architect, lane/p46m7 at 4118630): accept with fixes (8: overclaim 2, misread 1, wrong anchor 1, omission 2, other 2); rulings in plan 0046's log; the paladin batch may start."
 ---
 
