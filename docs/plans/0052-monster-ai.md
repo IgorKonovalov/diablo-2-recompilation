@@ -766,3 +766,29 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   `[C]` only for the maps to their first boundary, scoped in each block. Both archivist entries closed.
 
 - 2026-11-03 (`lane/r66`): two reverser cross-references closed. [hirelings/0001](../findings/hirelings/0001-hirelings.md) points its three "named only" / "out of scope" places at [ai/0007](../findings/ai/0007-hirelings.md) § 2.4 (`[I]`, 0x005E4D30) and re-verdicts the d2dfg-blizzard skill-choice claim held with refinement `[I]`; [skills/0001](../findings/skills/0001-dispatch.md) § 13 carries ai/0006's H3 answer for the owner's level (`[I]`). No tag raised.
+- **2026-11-03 — P1.2 catalogue batch 11 (bosses-B) for review (reverser, static, `lane/r52k`, from `main` eda954d8; `main` 26e00331 merged before the run, `main` 908ad0f9 before filing).**
+  [ai/0012](../findings/ai/0012-batch11.md): the think functions of rows 51, 128, 135, 138, 140, 145 and 147, row 128's init
+  (`ret 4`), the shared `alt`s 0x005E8480 (rows 51, 147) and 0x005FCF30 (rows 135, 140, 145) with their home-point restore,
+  and what is first read here: Diablo's decision 0x005E8810 (three 17-word weight tables over sixteen actions, jump table
+  0x005E9704), his pick callback 0x005E8EB0, batch 10's scorer 0x005E8530 (the threat score), Baal's pick 0x005FBDD0 with score
+  0x005FBB00 and callback 0x005FC000, his decision 0x005FC630 with the tables 0x005FC1C0, 0x005FC300, 0x005FC450 and the
+  area-skill tests 0x005FC0C0, 0x005FC070, his action 0x005FCB60 (jump table 0x005FCEF0), the clone spawn 0x005FC860 with its
+  callback 0x005FC830, row 138's callback 0x005EF5E0 and the quest step 0x0058BC40. `aip` per record: only rows 128 and 138 read
+  any (`b11-aip.txt`, 7 reads); no `aidist` read. Draws all on the acting unit's seed (18 multiplier loads, 4 of them in
+  unreferenced functions, no RNG entry call). Of the action helpers only 0x005DF850, twice, by row 128. [C] by emulation
+  (run:2026-11-03-ai-cat-emu-11, `tools/ai_cat_emu11.py`, 20 families, 4 800 cases, 0 mismatches, 0 stopped, 20 traced reads all
+  accounted; `le`, `d0`, `cmp`, `u16`, the new `abs` and `uns` and the site control fail every case they separate; `EDGES` and
+  `TAGS` per family; development runs under `emu/dev-1/` (`result=FAIL`, first-model errors named in ai/0012 § 4) and
+  `emu/dev-2/`, each with its tool copy): full maps of the callbacks, the weighted pick 0x005FC130, rows 145 and 147 and row 128's
+  init; Baal's action for every `k` to each first callee; both decisions, rows 51, 135, 138, 140, the `alt`s and row 128 through
+  its quest step to their first boundary; the three Baal tables at their first call. Left [I]: everything after a boundary
+  (Diablo's switch, the weight edits and picks, both scores, Nihlathak's body, the clone spawn). Found: row 145's and 147's thinks
+  are `ret 4` as row 146's, with the Uber spawn helpers 0x005E9DD0, 0x005FD0F0 and 0x005F7F10 and the counter 0x005DD140 unreferenced
+  and Baal's class-709 teleport unreached (what drives the Uber bosses stays open); Diablo's portal prison passes `(NULL, guid, 2)`;
+  Baal's portal flag zeroes a weight already 0; two of ai/0001 § 3's unresolved `MonAiInit` sites (0x005E84D8, 0x005FCF88) pass the
+  current state. P1.1 review reopen condition (b) not met (callbacks and scores draw nothing by their bodies and direct calls). The
+  H6d Diablo owner pair concerns his death record and quest TC, not this AI: untouched. 32 `re/symbols.csv` rows (30 func, 2 data, all
+  I). Kept outputs `workspace/logs/r52k/` (manifest 21 lines; `emu/` 81, `emu/dev-1/` and `emu/dev-2/` 82 each; each passes from its
+  directory). Backlog: the [review request](../backlog/2026-11-03-reverser-architect-plan-0052-p1-2-batch-11-review.md),
+  [archivist](../backlog/2026-11-03-reverser-archivist-monstats-skills-readers-named-by-ai-0012.md) (MonStats `threat`, Skills
+  `attackrank` and slot readers). Next: batch 12 (towns, NPCs and the state rows).
