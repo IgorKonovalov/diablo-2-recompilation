@@ -165,5 +165,17 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   clauses say). Research-map rows of the three overviews and the quirks row updated.
 - **2026-11-03 — `lane/s63` Tier A review (architect): accept with fixes (2)**, both in the player/creation half; this
   entry's three overview notes and the index edits pass unchanged. The review and the Q3 route
-  ([2026-11-03-architect-spec-writer-quirks-catalogue-coverage-row](../backlog/2026-11-03-architect-spec-writer-quirks-catalogue-coverage-row.md))
+  ([2026-11-03-architect-spec-writer-quirks-catalogue-coverage-row](../backlog/archive/2026-11-03-architect-spec-writer-quirks-catalogue-coverage-row.md))
   are in [plan 0038's log](0038-inferred-claims-sweep.md#implementation-log).
+- **2026-11-03 — Q3 coverage row: skills/catalogue harvested (spec-writer, `lane/s64`, from `main` `7fddf41d`).**
+  Backlog [2026-11-03-architect-spec-writer-quirks-catalogue-coverage-row](../backlog/archive/2026-11-03-architect-spec-writer-quirks-catalogue-coverage-row.md)
+  closed. The 8 [skills/catalogue](../specs/skills/catalogue.md#reimplementation-notes) notes, harvested by Phase 1's
+  rules: 7 taken, 1 skipped. Nine new entries, each at the end of its class: Q436 (n7, the signed and unsigned tests,
+  class 1, C), Q437 (n4, the fatal path `0x00408090` on reachable data, class 4, C, a crash path), Q438 (n1, do 112's
+  step before any test, class 5, C), Q439 and Q440 (n2, the draws on a seed not the caster's, class 5, C and I), Q441
+  and Q442 (n3, the words read before any write and mhit 52's row-0 missiles, class 9, C and I), Q443 and Q444 (n6, the
+  return values, class 9, C and I). No second version: n1's finisher half is Q136 and n8's endless loop is Q50, which
+  now also cite the catalogue notes. n5 (identical bodies) is skipped as not a trap: it says which functions share
+  code, which a reimplementation built from the catalogue's blocks gets right either way. Index: 444 entries, C 340 /
+  I 104 / L 0; coverage 447 notes, 418 taken, 29 skipped (not a trap 10); crash and hang paths 8 (Q437 the second
+  reached in a kept run). `tools/quirks.py check` 0 errors. Research-map quirks row counts updated.
