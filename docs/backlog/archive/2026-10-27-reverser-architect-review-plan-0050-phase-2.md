@@ -4,7 +4,7 @@ to: architect
 date: 2026-10-27
 status: done
 context:
-  - ../../plans/0050-animation-frame-timing.md#implementation-log
+  - ../../plans/done/0050-animation-frame-timing.md#implementation-log
   - ../../findings/anim/experiments.md#run2026-10-27-anim
 resolution: "Reviewed 2026-10-27 (architect, lane/p50e at 16c783e7): Phase 2 part 1 accept with fixes (5); Phase 2 part 2 filed in plan 0050 with its Done when (get-hits by FHR via a high-life character with rejuvenation potions, blocks, throws, rate tiers, the catalogue queue logged); 0050 P3 may start beside it, its review waits for part 2's; 0052 P2 stays closed. Rulings in the plan 0050 log."
 ---

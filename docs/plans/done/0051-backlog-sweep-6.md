@@ -498,7 +498,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   struck as answered; what stays `[L]` is whether other code writes the list (the four `[esi+0x17c]` stores). The
   plan's static work is now folded; what remains is Phase 2's owner-entry annotations (architect).
 - **2026-10-27 — Item 3a fold reviewed; Phase 2 done; plan closed (architect, `lane/a51f`).** The States bullet
-  (with plan 0050's items 3–4, ruled in the [plan 0050 log](../0050-animation-frame-timing.md#implementation-log)):
+  (with plan 0050's items 3–4, ruled in the [plan 0050 log](../done/0050-animation-frame-timing.md#implementation-log)):
   **accept with fixes**, the one here being the § Flag bits anchor (`#columns` → the heading's own slug, in States,
   in this log and in the closed entry; the gate's slug is GitHub's, so no gate entry). The `disguise` rows recomputed
   on `states.bin`: 63, 93, 119, 139, 140, 176, 177.

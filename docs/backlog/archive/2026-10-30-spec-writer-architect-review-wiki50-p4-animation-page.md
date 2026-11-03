@@ -4,7 +4,7 @@ to: architect
 date: 2026-10-30
 status: done
 context:
-  - ../../plans/0050-animation-frame-timing.md
+  - ../../plans/done/0050-animation-frame-timing.md
 resolution: "Tier B check 2026-10-30: accept with fixes (2); animation.md checked against anim/timing and anim/movement, worked numbers recomputed"
 ---
 

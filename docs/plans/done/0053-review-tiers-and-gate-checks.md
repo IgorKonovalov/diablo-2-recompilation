@@ -263,7 +263,7 @@ joined to the kind of the lane it reviewed (by lane name, with the trial's two a
 
 **Promotion re-check.**
 
-- One spec promotion fell in the trial: `lane/s50p3`, 2026-10-27, Tier A ([plan 0050](../0050-animation-frame-timing.md)
+- One spec promotion fell in the trial: `lane/s50p3`, 2026-10-27, Tier A ([plan 0050](../done/0050-animation-frame-timing.md)
   § Phase 3 review).
 - It re-checked the two finding statements that had been raised under a Tier B check (`lane/p50f`): `UnitQueueEvent`'s
   partial raise and the restart correction. Both held, and neither got a fix.

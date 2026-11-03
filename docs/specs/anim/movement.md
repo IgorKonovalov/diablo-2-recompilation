@@ -356,7 +356,7 @@ E1. PathPlanKnockback (path type 8):                               [I] (fn:sub_0
 - Tables: the § Timing sections of [CharStats](../../tables/CharStats.md#timing-plan-0050-phase-0),
   [MonStats](../../tables/MonStats.md#timing-plan-0050-phase-0), [States](../../tables/States.md#timing-plan-0050-phase-0),
   [ItemStatCost](../../tables/ItemStatCost.md#timing-plan-0050-phase-0).
-- Tools: `tools/anim.py`, `tools/anim_moves.py`. Plan: [0050](../../plans/0050-animation-frame-timing.md).
+- Tools: `tools/anim.py`, `tools/anim_moves.py`. Plan: [0050](../../plans/done/0050-animation-frame-timing.md).
 
 ## Open questions
 

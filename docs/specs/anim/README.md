@@ -16,7 +16,7 @@ Every unit action the server runs is timed by its animation: the mode a unit ent
 from the unit's stats and weapon, and frame events that run the do function, the melee strike and the sequence
 steps; its end starts the next mode. A moving unit's position advances once per game frame at a speed the same rate
 code sets. This subsystem specifies that timing, phase (4) of [ADR-0014](../../adrs/0014-scope-game-simulation.md)
-([plan 0050](../../plans/0050-animation-frame-timing.md)): the record lookup, the schedule and the per-frame advance,
+([plan 0050](../../plans/done/0050-animation-frame-timing.md)): the record lookup, the schedule and the per-frame advance,
 the mode machines of players, monsters and objects, the rates and the breakpoints they give, the gates that sit on
 the frame clock (the do frame, the skill delay, hit recovery, the block, the get-hit roll, the player's mode tests),
 and movement. Timing enters as frame counts and event frames; which cel is drawn, and the client's own clock, stay
@@ -145,7 +145,7 @@ fn:UNIT_AnimSetRate@0x00623F50, fn:sub_00650840_PathStep@0x00650840, fn:sub_0057
   [anim/0003](../../findings/anim/0003-movement-gates.md), [anim/leads](../../findings/anim/leads.md),
   [anim/experiments](../../findings/anim/experiments.md) (run:2026-10-27-anim, run:2026-10-27-anim-p2,
   run:2026-10-30-anim-p3 and run:2026-10-30-anim-p3b).
-- Plan: [0050](../../plans/0050-animation-frame-timing.md). Upstream: [rng](../rng/README.md),
+- Plan: [0050](../../plans/done/0050-animation-frame-timing.md). Upstream: [rng](../rng/README.md),
   [stats/aggregate](../stats/aggregate.md). Downstream: [skills/dispatch](../skills/dispatch.md),
   [combat](../combat/README.md), [objects](../objects/README.md), [monsters/stats](../monsters/stats.md).
 

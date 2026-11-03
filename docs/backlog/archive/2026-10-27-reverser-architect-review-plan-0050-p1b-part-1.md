@@ -4,7 +4,7 @@ to: architect
 date: 2026-10-27
 status: done
 context:
-  - ../../plans/0050-animation-frame-timing.md#implementation-log
+  - ../../plans/done/0050-animation-frame-timing.md#implementation-log
   - ../../findings/anim/leads.md
 resolution: "Accepted with fixes at the lane/p50c review (plan 0050 log, 2026-10-27): Version column per claim (19 D2R-only, 5 1.09-only rows); the tables-not-copied wording corrected; the blind rule widened to P1.1 with a log statement and review check. Hammerman's prose offsets within policy; the source stays a lead."
 ---
