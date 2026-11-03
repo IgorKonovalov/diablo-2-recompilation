@@ -84,14 +84,14 @@ unguarded modulus and in principle has no bound. Entries: [class 5](../specs/qui
 Behaviour that depends on which row, flag or value is in play. A monster's critical strike doubles every damage field,
 physical and elemental, while the index records a player's critical or deadly strike as doubling only the physical part
 (that second one is read from the code). Leech uses the reduced, life-capped physical damage, and elemental damage never
-leeches. A monster with few hit points has no regeneration at all, because the product rounds to 0. A formula the game
+leeches. A monster with few hit points has no regeneration at all, because the product rounds to 0 (read from the code). A formula the game
 cannot compile is stored as an error and evaluates to 0, where a forgiving parser would succeed. Entries:
 [class 6](../specs/quirks/README.md#6-data-dependent-branches).
 
 ### 7. Timing and frame edges
 
 When things happen, in frames. A scheduled action ends a number of frames after it starts, and the community
-breakpoint tables count one less. An action does not follow a rate change made after it starts. A monster's attack
+breakpoint tables count one less. An action does not follow a rate change made after it starts (read from the code). A monster's attack
 rolls its extra-damage draws when the attack begins, and the to-hit and damage at the hit frame, with the monster's
 own thinking drawing in between. Nearly half of this class is read from the code only (10 of 19 confirmed). Entries:
 [class 7](../specs/quirks/README.md#7-timing-and-frame-edges).
