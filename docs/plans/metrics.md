@@ -553,6 +553,9 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-11-04 | `lane/r54c` check | 0054 P1.3 | architect-check | 116 083 | 31 | 3 | — | accept with fixes (6) | overclaim 1, miscount 2, other 1, stale cross-reference 1, omission 1 |
 | 2026-11-04 | `lane/s68` | 0057 P3 | spec-writer | 213 197 | 40 | 14 | — (no Ghidra, no harness) | accept with fixes (Tier A) | 10: overclaim 3, misread 1, wrong anchor 2, miscount 2, omission 2 |
 | 2026-11-04 | `lane/s68` review | 0057 P3 | architect-review | 201 321 | 45 | 9 | — | accept with fixes (10) | overclaim 3, misread 1, wrong anchor 2, miscount 2, omission 2 |
+| 2026-11-04 | `lane/w57` | 0057 P4 | wiki | 83 027 | 21 | 2 | — | accept with fixes (Tier B check 2, audit 15) | 17: other 2; overclaim 6, misread 4, miscount 2, omission 1, other 2 |
+| 2026-11-04 | `lane/w57` check | 0057 P4 | architect-check | 81 371 | 16 | 2 | — | accept with fixes (2) | other 2 |
+| 2026-11-04 | `lane/w57` review | 0057 P4 | architect-review | 134 208 | 18 | 5 | — | accept with fixes (15) | audit of lane/w57: overclaim 6, misread 4, miscount 2, omission 1, other 2; reject-grade missed: no |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not
