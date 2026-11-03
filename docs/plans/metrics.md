@@ -469,6 +469,7 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-10-30 | `lane/r55c` review | 0055 P1.3 | architect-review | 218 756 | 112 | 15 | — (Tier A, the P1 review, objdump, no Ghidra) | accept with fixes (8) | overclaim 1, misread 1, omission 5, stale cross-reference 1 |
 | 2026-10-30 | lane/a62 | 0062 P2 + two closures | archivist | 155 083 | 66 | 10 | — (no Ghidra, no harness) | accept with fixes (Tier B check) | 3: misread 1, omission 1, overclaim 1 |
 | 2026-10-30 | lane/a62 check | 0062 P2 | architect-check | 73 215 | 25 | 2 | — (Tier B check, no harness) | accept with fixes | misread 1, omission 1, overclaim 1 |
+| 2026-10-30 | `lane/p55a` (to checkpoint) | 0055 P2a | reverser-static | 87 717 | 20 | 2 | — (no Ghidra, no harness) | — (checkpoint, owner pause) | — |
 | 2026-10-30 | `lane/r52f` | 0052 P1.2 (batch 5) | reverser-static | 359 961 | 149 | 30 | — (static, Ghidra copy ghidra-r52f) | accept (Tier B check) | 0 |
 | 2026-10-30 | `lane/r52f` check | 0052 P1.2 (batch 5) | architect-check | 81 518 | 32 | 3 | — | accept | 0 |
 | 2026-10-30 | lane/h6ga | 0038 H6g rows 2/29 | reverser-harness | 154 310 | 79 | 24 | slot 2 (2 kept sessions, 1 dev), no Ghidra | accept with fixes (Tier B check) | 5: overclaim 1, other 2, stale cross-reference 2 |
@@ -491,6 +492,8 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-11-03 | `lane/r52i` check | 0052 P1.2 (batch 9) | architect-check | 89 217 | 15 | 2 | — | accept with fixes (1) | stale cross-reference 1 |
 | 2026-11-03 | `lane/s64` | 0057 P1 | spec-writer | 92 021 | 31 | 4 | — (no Ghidra, no harness) | accept (Tier A) | 0 |
 | 2026-11-03 | `lane/s64` review | 0057 P1 | architect-review | 83 028 | 24 | 4 | — | accept | 0 |
+| 2026-11-03 | `lane/p55a` | 0055 P2a | reverser-static | 388 894 | 135 | 66 | — (no Ghidra, no harness; replays under MemoryMax=4G) | accept with fixes (Tier B check), P2a met in part | 2: overclaim 1, omission 1 |
+| 2026-11-03 | `lane/p55a` check | 0055 P2a | architect-check | 96 863 | 20 | 3 | — | accept with fixes (2) | overclaim 1, omission 1 |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not
