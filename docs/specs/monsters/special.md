@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, monsters/spawn, monsters/pool, data/excel, drlg/collision]
 consumed_by: [monsters/stats, monsters/spawn, items/tc, chain]
-tags: {C: 154, I: 90, L: 6}
+tags: {C: 161, I: 92, L: 5}
 updated: 2026-11-03
 ---
 
@@ -762,12 +762,12 @@ fn:sub_00653E20_UNameTablesFree@0x00653E20, tbl:UniqueTitle.txt:Name, run:2026-1
 
   | `BaseId` (classes) | Mods, in call order | Other calls | Tag |
   |---|---|---|---|
-  | 156 `andariel` | 22; `uberandariel` (707): 23, 6, 29 | quest hook 6 | [I] (fn:sub_005B1CF0_MonPostCreateBoss@0x005B1CF0) |
-  | 211 `duriel` | none; `uberduriel` (708): 6, 18 | quest hooks 13, 9 | [I] (fn:sub_005B1CF0_MonPostCreateBoss@0x005B1CF0) |
-  | 242 `mephisto` | 22; `ubermephisto` (704): 22, 30, 17, 8, 6 | quest hook 20 | [I] (fn:sub_005B1CF0_MonPostCreateBoss@0x005B1CF0) |
-  | 243 `diablo`, `diabloclone` | 22; `uberdiablo` (705): 22, 8, 6 | quest hook 23 | [I] (fn:sub_005B1CF0_MonPostCreateBoss@0x005B1CF0) |
-  | 256 `izual` | 22; `uberizual` (706): 6, 18 | quest hook 22 | [I] (fn:sub_005B1CF0_MonPostCreateBoss@0x005B1CF0) |
-  | 544 `baalcrab` | 22; `uberbaal` (709): 22, 18, 8, 6 | quest hook 36 | [I] (fn:sub_005B1CF0_MonPostCreateBoss@0x005B1CF0) |
+  | 156 `andariel` | 22; `uberandariel` (707): 23, 6, 29 | quest hook 6 | [C] the first call only: `andariel` mod 22, class 707 mod 23 (fn:sub_005B1CF0_MonPostCreateBoss@0x005B1CF0, run:2026-11-03-ai-uber); [I] the later calls (fn:sub_005B1CF0_MonPostCreateBoss@0x005B1CF0) |
+  | 211 `duriel` | none; `uberduriel` (708): 6, 18 | quest hooks 13, 9 | [C] the first call only: `duriel` quest hook 13, class 708 mod 6 (fn:sub_005B1CF0_MonPostCreateBoss@0x005B1CF0, run:2026-11-03-ai-uber); [I] the later calls (fn:sub_005B1CF0_MonPostCreateBoss@0x005B1CF0) |
+  | 242 `mephisto` | 22; `ubermephisto` (704): 22, 30, 17, 8, 6 | quest hook 20 | [C] the first call only: `mephisto` quest hook 20, class 704 mod 22 (fn:sub_005B1CF0_MonPostCreateBoss@0x005B1CF0, run:2026-11-03-ai-uber); [I] the later calls (fn:sub_005B1CF0_MonPostCreateBoss@0x005B1CF0) |
+  | 243 `diablo`, `diabloclone` | 22; `uberdiablo` (705): 22, 8, 6 | quest hook 23 | [C] the first call only: `diablo` and `diabloclone` mod 22, class 705 mod 22 (fn:sub_005B1CF0_MonPostCreateBoss@0x005B1CF0, run:2026-11-03-ai-uber); [I] the later calls (fn:sub_005B1CF0_MonPostCreateBoss@0x005B1CF0) |
+  | 256 `izual` | 22; `uberizual` (706): 6, 18 | quest hook 22 | [C] the first call only: `izual` mod 22, class 706 mod 6 (fn:sub_005B1CF0_MonPostCreateBoss@0x005B1CF0, run:2026-11-03-ai-uber); [I] the later calls (fn:sub_005B1CF0_MonPostCreateBoss@0x005B1CF0) |
+  | 544 `baalcrab` | 22; `uberbaal` (709): 22, 18, 8, 6 | quest hook 36 | [C] the first call only: `baalcrab` and class 570 quest hook 36, class 709 mod 22 (fn:sub_005B1CF0_MonPostCreateBoss@0x005B1CF0, run:2026-11-03-ai-uber); [I] the later calls (fn:sub_005B1CF0_MonPostCreateBoss@0x005B1CF0) |
   | 267 `bloodraven` | 12, 22 | quest hook 2; `0x00639DB0(unit, 0x76, 1)` | [I] (fn:sub_005B1CF0_MonPostCreateBoss@0x005B1CF0) |
   | 284 `maggotqueen1`..`5` | 23, 22 | — | [I] (fn:sub_005B1CF0_MonPostCreateBoss@0x005B1CF0) |
   | 292 `firegolem` | 31 (flag 0) | — | [I] (fn:sub_005B1CF0_MonPostCreateBoss@0x005B1CF0) |
@@ -776,6 +776,8 @@ fn:sub_00653E20_UNameTablesFree@0x00653E20, tbl:UniqueTitle.txt:Name, run:2026-1
   | 526 `nihlathakboss` | 22 | quest hook 34 | [C] the mod (run:2026-10-21-sweep-monsters-a); [I] the hook (0x005B2002) |
   | 175 `warriv2`, 229 `radament`, 250 `summoner`, 340–343 `boneprison1`..`4`, 407 `fetish11`, 409 `hephasto`, 434 `prisondoor`, 540 `ancientbarb1`..`3` | none | quest hooks (229: 8; 250: 12, then unit flag `0x800`; 407: 17; 409: 24; 434: 32); unit flag `0x20000` (340–343); `0x005B1C50`, the gear call (540); `0x005447A0` (175) | [I] (fn:sub_005B1CF0_MonPostCreateBoss@0x005B1CF0) |
 
+- [C] **The first call of `MonPostCreateBoss`, for six `BaseId`s.** For `BaseId`s 156, 211, 242, 243, 256 and 544, the table's rows above: by class, the first `ModAppendApply(game, unit, mod, 1)` or `QUESTS_HookMonster` is the one each row names, so `mephisto` and `baalcrab` reach their quest hook before their mod 22, and `duriel` its hook 13 first. Each case ends at that first callee (ADR-0021). This covers neither the callee, nor the later mods (704 → 22, 30, 17, 8, 6; 705 → 22, 8, 6; 709 → 22, 18, 8, 6, which stay `[I]`), nor reach: a p-code run says nothing about whether a unit of an uber class exists. (fn:sub_005B1CF0_MonPostCreateBoss@0x005B1CF0, run:2026-11-03-ai-uber,
+  [ai/0016 § 6](../../findings/ai/0016-uber-event.md#6-what-the-classes-do-get))
 - [I] **No Uber event found in this image.** The `uber*` cases above, the aura arm (§ C3) and the other class-gated code say what a
   unit of those classes would get. [ai/0016](../../findings/ai/0016-uber-event.md) finds no Uber-specific driver and no creator of classes 704, 705 or 709 in
   the pinned `Game.exe`: no site passes one of the three as a class to a spawn function; no table path names 704–709 (no Levels slot,
@@ -785,12 +787,13 @@ fn:sub_00653E20_UNameTablesFree@0x00653E20, tbl:UniqueTitle.txt:Name, run:2026-1
   (fn:sub_005E9DF0_AiUberDiablo@0x005E9DF0, fn:sub_005FD200_AiUberBaal@0x005FD200, fn:sub_005F81C0_AiUberMephisto@0x005F81C0, fn:sub_005E9DD0_UberDemonHoleSpawn@0x005E9DD0,
   fn:sub_005F7F10_UberMinionSpawn@0x005F7F10, fn:sub_005FD0F0_UberBaalMinionSpawn@0x005FD0F0, fn:CUBE_PandemoniumPortalStub@0x00594270,
   fn:CUBE_PandemoniumFinalePortalStub@0x00594280, tbl:MonStats.txt:minion1)
+- [I] **Classes 706, 707 and 708.** No site passes them as an immediate class to a spawn function, and no table names them as anything but their own rows; their class tests left are client display (0x00454D27) and `MonPostCreateBoss` (0x005B1D6D, 0x005B1EDF, 0x005B1F3D). Besides the limits below, that scan does not see a creator outside its twelve spawn functions except through the operand view, or a name inside a longer cell. ([ai/0016 § 2](../../findings/ai/0016-uber-event.md#2-the-37-class-immediates-and-the-wider-scan), fn:sub_005B1CF0_MonPostCreateBoss@0x005B1CF0, tbl:MonStats.txt:Id)
 - [I] **What that search covers.** The whole-image references of the helpers (absolute by `.reloc`, direct by a raw rel32 sweep, exports,
   RVA words), every operand naming the classes, the data words holding them, the level ids and the table paths. It cannot see a class
   number or an address computed at run time (a base plus an offset, a pointer built in a buffer, a value read from a file or a packet),
   or a class named by a string looked up in `MonStats` (a string search of the image, with no kept output, finds none of the three class
   names). No stock session has watched the helpers (case G4 of ai/0016 § 8). This is a property of the pinned `Game.exe` and says nothing about any other build or about
-  the realm. The creator statement names 704, 705 and 709; for 706–708 only the table result is stated (*Open questions*).
+  the realm.
   ([ai/0016 Answer](../../findings/ai/0016-uber-event.md#answer-summary), 0x005E9DCC, fn:sub_005E9DF0_AiUberDiablo@0x005E9DF0)
 - [I] **The driver, if one of the three existed,** is the generic machinery alone: `MonAiEvent` with row kind 1 (rows 145, 146 and 147). With no target
   the think does not run and `MonAiTargetOrIdle` idles or ring-walks; with a target the boss sight pause fires once, then the think only returns and that event queues no next
@@ -1022,7 +1025,7 @@ The name is format 1722 with prefix, suffix and appellation, from the keys `Fire
 - **The expansion flag matters only to the picks.** It enters the special path through `ModEligible`'s `version` test
   alone, which leaves classic champions with `champion` (16) as their only candidate. [C] (struct:Game+0x070,
   run:2026-10-14-mon-special)
-- **No Uber event to port from this image.** With no creator of classes 704, 705 or 709 and no Uber-specific driver found, within the limits of
+- **No Uber event to port from this image.** With no creator of classes 704, 705 or 709 (nor of 706–708, as far as the scan of § J sees) and no Uber-specific driver found, within the limits of
   [§ J](#j-other-entry-paths-and-pre-existing-mods), those three are table rows, and a reimplementation of this image adds no event for them. It keeps
   the class-gated code that would run if such a unit existed: the creation mods and aura arm here, the death drop in
   [items/quest-drops § D7](../items/quest-drops.md#d7-scripts-that-create-nothing-and-uber-tristram), 705's skip of the `MonModeAllowed(6)` test in `COMBAT_GetHit` (0x0057D066),
@@ -1047,7 +1050,7 @@ The name is format 1722 with prefix, suffix and appellation, from the keys `Fire
   [H4a](../../findings/monsters/0003-special-monsters.md#plan-0038-batch-h4a-run2026-10-21-sweep-monsters-a) (run:2026-10-21-sweep-monsters-a: the second aura call,
   the tails, rows 10, 12 and 13, the placed bit, Blood Raven's and the fixed boss names).
 - [findings/ai/0016-uber-event.md](../../findings/ai/0016-uber-event.md): the Answer and §§ 2–6 (no Uber driver or creator found in this image, the scan's limits,
-  the class-704 arm's map by run:2026-11-03-ai-uber).
+  the class-704 arm's map and `MonPostCreateBoss`'s first calls by run:2026-11-03-ai-uber).
 - `tools/monspecial.py`: the model behind the confirmed tags (run inside `tools/monspawn.py check`).
 - Tables: [MonUMod](../../tables/MonUMod.md), [SuperUniques](../../tables/SuperUniques.md),
   [UniquePrefix](../../tables/UniquePrefix.md), [UniqueSuffix](../../tables/UniqueSuffix.md),
@@ -1083,8 +1086,6 @@ The name is format 1722 with prefix, suffix and appellation, from the keys `Fire
 - [L] **The Uber event as realm-only.** Community documents (src:d2dfg-blizzard, [ai/0014](../../findings/ai/0014-community-cross-check.md) C28 to C30,
   [items/0008 § 5.2](../../findings/items/0008-cube.md)) describe the Uber event as realm-only behaviour. That stays a lead, not a claim about this
   image: nothing in the image confirms or refutes it beyond the search of § J, and the realm's behaviour cannot be read from this image.
-- [L] **Creators of classes 706–708.** ai/0016's creator statement names 704, 705 and 709 and its table result 704–709; whether its kept scans
-  also settle code that creates 706, 707 or 708 is asked in [the reverser entry](../../backlog/archive/2026-11-03-spec-writer-reverser-ai-0016-classes-706-708-creator-scope.md).
 - [L] **Lord De Seis** (record 37): the `thief` drop, the forced aura index 5, the local-seed step and his tail are
   code reads only; seal 394 was logged but the pilot never operated it, so he was never created (plan 0038 H4a). An
   owner-played Chaos Sanctuary session with `tools/gdb/mon-h4a-obj.gdb` (Nightmare, seed 4907) that opens seal 394 and

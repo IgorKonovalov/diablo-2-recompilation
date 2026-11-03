@@ -1,8 +1,8 @@
 ---
 based_on:
-  - docs/specs/player/README.md 2026-10-16
+  - docs/specs/player/README.md 2026-11-03
   - docs/specs/player/creation.md 2026-11-03
-  - docs/specs/hirelings/README.md 2026-10-30
+  - docs/specs/hirelings/README.md 2026-11-03
   - docs/specs/save/d2s.md 2026-10-30
 ---
 
@@ -263,14 +263,21 @@ These are in [player/creation § J](../specs/player/creation.md#j-other-level-an
   and the owner exactly where the corpse's creation wrote them, which is confirmed, but no pickup was run); another
   player picking it up gets nothing; and a corpse still on the ground when the character is saved comes back at the
   next load without that share, so picking it up then returns nothing.
-- **Party share.** With two or more members (alive, in the same level, close enough, at most 8), the kill's
-  experience is raised by 89/256 per extra member and split in proportion to the members' levels, and each share
-  then goes through the kill formula with that member's level. Confirmed for two players in a two-client game (385
-  shares, and the cases where only the killer gets the experience: the other too far, in another level, dead or not
-  in the party). One detail matters for exact results: the per-level ratio is kept as a single-precision float, but
+- **Party share** ([creation § J](../specs/player/creation.md#j-other-level-and-experience-changes)). A kill is credited
+  to one player: the killer, or the owner of the monster that killed. A credited player in no party takes the whole
+  award, with no test at all. For one in a party, the game collects the members in the credited player's level who are
+  alive and within a distance of **the killed monster** (squared distance at most 6400, the edge included); the credited player is
+  tested like the others. With two or more collected, the kill's experience is raised by 89/256 per extra member and split in
+  proportion to the members' levels, and each share then goes through the kill formula with that member's level.
+  With exactly one collected, the whole award goes to the **credited player**, at its own level, whoever that member was; with none, nobody gets anything.
+  Eight is the most the code collects: its path for a ninth that passes every test is the fatal error call, not a clip, and whether a party list can hold nine was not read.
+  Member sets and shares were confirmed for two players in a two-client game (385 shares, and kills where one player took the award).
+  That game never separates the distance's origin or who is paid at one member, because the two players were never placed so as to tell them apart: those two rules,
+  the edge and the integer steps up to eight members were checked by running the code itself under emulation. What they lead to in play is read from the code only: a partied player whose hireling or summon kills far from it
+  still takes the whole award alone when one other member is near the monster, gets nothing when no member is near, and a dead killer with one living member near is paid while the living member is not.
+  One detail matters for exact results: the per-level ratio is kept as a single-precision float, but
   the member's level times that ratio is truncated without rounding it to single precision first, which a
-  reimplementation gets by multiplying in double precision. Three or more members and the exact edge of "close enough"
-  are read from the code only.
+  reimplementation gets by multiplying in double precision. That float step is confirmed for two members; for three or more it is the same code, read but not confirmed in a game.
 - **Spending attribute points.** Each spend uses one unspent point and adds 1 to the attribute. Vitality also adds
   `LifePerVitality` and `StaminaPerVitality`, energy `ManaPerMagic`, all in quarter points, to the maximum and the
   current value. Confirmed on one spend of each attribute.
@@ -382,8 +389,8 @@ mercenary kills a monster, the [magic find](../glossary.md) used is its own plus
 ([hirelings § J](../specs/hirelings/README.md#j-magic-find-on-a-mercenarys-kill)).
 
 **Levelling in play** ([hirelings § G](../specs/hirelings/README.md#levelling-in-play-merc_addexp)). When a monster
-dies, the owner's mercenary gets its own share, worked out at the mercenary's level (that path is read from the
-code), and capped at a sixty-fourth of that level's experience span. If someone else made the kill, the mercenary keeps `86/256` of it, rounded toward zero;
+dies, the credited player's own mercenary gets its own share before the party share and whatever that does, worked out at the
+mercenary's level (checked by running the code under emulation; other members' mercenaries get nothing), and capped at a sixty-fourth of that level's experience span. If someone else made the kill, the mercenary keeps `86/256` of it, rounded toward zero;
 its own kill gives it the full amount. The mercenary then adds **twice** that value, but only while it is below its
 owner's level: in a run, a level-85 mercenary under a level-80 owner gained nothing. The upper bound, level 98 on the
 stock tables, is read from the code: at that level the mercenary would gain nothing, and the level loop stops there.

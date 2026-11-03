@@ -19,4 +19,4 @@ Points to check:
 4. **ai/0016 § 2's limits.** The result is `[I]` for immediates. A class computed at run time, read from a file or packet, or passed indirectly is not seen. The `RAW` pass checks dwords only; 16-bit operands rest on the decoded view. The `SPAWN` pass reads direct calls of twelve functions, back to the previous call or 14 instructions.
 5. **Usage row.** `lane/r67`'s ledger row carries 0 for tokens, tools and wall time, as this lane has no counter figure; it is yours to measure.
 
-Filed for other lanes: [archivist](../2026-11-03-reverser-archivist-ai-0013-notes-h5b70-interact-record-state-11.md), [spec-writer](../2026-11-03-reverser-spec-writer-ai-0016-classes-706-708-creator-result.md).
+Filed for other lanes: [archivist](../2026-11-03-reverser-archivist-ai-0013-notes-h5b70-interact-record-state-11.md), [spec-writer](2026-11-03-reverser-spec-writer-ai-0016-classes-706-708-creator-result.md).
