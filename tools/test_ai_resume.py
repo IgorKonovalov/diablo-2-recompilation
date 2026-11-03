@@ -63,7 +63,7 @@ def aib(n, fn, ra, a, s="00000001:00000002", ecx=None, edx=None):
 
 
 def air(b, eax, s="00000001:00000002"):
-    return {"k": 10, "b": b, "eax": eax, "s": s, "c": [0, 0, 0], "c4": 0, "bl": {}}
+    return {"k": 10, "b": b, "n": b + 0.5, "eax": eax, "s": s, "c": [0, 0, 0], "c4": 0, "bl": {}}
 
 
 # the think function: unit mode 1 calls F1(7); a result of 0 calls F2(1), else F3(2); then returns
@@ -135,6 +135,19 @@ class ResumeTest(unittest.TestCase):
         r = R.check_decision(self.m, d)
         self.assertEqual(r.status, "stop")
         self.assertIn("capped", r.why)
+
+    def test_calls_made_inside_a_pending_boundary_call_are_not_offered(self):
+        # the log holds F1's own AIB (n 11), a call made inside it (n 12, before F1's AIR at 11.5 ... here 13), F1's AIR (13)
+        # and then F2: the nested line is dropped before matching
+        b1 = aib(11, F1, self.ra1, [7])
+        inner = aib(12, F3, 0x2222, [0])
+        r1 = air(11, 0)
+        r1["n"] = 13
+        log = [(b1, r1), (inner, air(12, 0)), (aib(14, F2, self.ra3, [1]), air(14, 5))]
+        d = self.dec(log)
+        self.assertEqual([b["n"] for b in R.top_level(d)], [11, 14])
+        r = R.check_decision(self.m, d)
+        self.assertEqual((r.status, r.matched, r.end), ("ok", 2, True), r.why)
 
     def test_negative_control_inverts_the_known_branches(self):
         m = R.Machine(self.code, BND, invert=True, windows=WIN)

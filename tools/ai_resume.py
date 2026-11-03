@@ -43,7 +43,7 @@ PATH_U = 0x7A100000     # synthetic blocks (their addresses are not compared wit
 PATH_T = 0x7A200000
 THINK_WINDOWS = ((0x005B14E0, 0x005B1650), (0x005E0000, 0x00600000), (0x0058F0D0, 0x0058F130), (0x005DE830, 0x005DE8C0),
                  (0x005DF850, 0x005DFC00))
-NESTED = ((0x0058F0D0, 0x0058F130),)          # a logged call from inside a boundary function that is not executed
+NESTED = ()
 # callees that are executed rather than treated as opaque: RNG_Range, RNG_RangeB, the unit position getters, the AI
 # distance, the two helpers whose windows the logger covers (0x005DE830, 0x005DF850)
 EXEC = (0x0045C390, 0x0045C3E0, 0x0045ADF0, 0x0045AE20, 0x005DC530, 0x006488C0, 0x00648900, 0x005DE830, 0x005DF850)
@@ -593,7 +593,7 @@ class Machine:
             if fn is None:
                 raise Stop("unresolved call target %s at %08x" % (tgt, st.eip))
         in_win = any(lo <= ra < hi for lo, hi in self.windows)
-        if fn in self.bnd and in_win and not any(lo <= ra < hi for lo, hi in NESTED):
+        if fn in self.bnd and in_win:
             st.eip = ra
             raise Event(st, fn, ra)
         if fn in EXEC or any(lo <= fn < hi for lo, hi in EXEC_WINDOWS):
@@ -610,7 +610,10 @@ class Machine:
         words = [st.rd(sp + 4 * k, 4) if sp is not None else None for k in range(n // 4)]
         for v in [st.r["ecx"], st.r["edx"]] + words:
             if v is not None and (STK_TOP - 0x4000) <= v < STK_TOP + 0x10:
-                st.forget(v, 64)          # a block on the stack: not the saved words and return addresses (st.prot)
+                # a block on the stack: a local of the running function (below its EBP) up to 64 bytes, else 16; the saved
+                # words and return addresses are never cleared (st.prot)
+                bp = st.r["ebp"]
+                st.forget(v, min(64, bp - v) if bp is not None and v < bp else 16)
         st.r["eax"] = st.r["ecx"] = st.r["edx"] = None
         st.f.update({"ZF": None, "SF": None, "CF": None, "OF": None})
         st.r["esp"] = None if sp is None else (sp + n) & M32
@@ -778,8 +781,15 @@ def apply_result(m, ev, b, r, aid):
         st.wr(ctl + 0x14 + 4 * k, 4, r["c"][k])
     st.wr(u + 0xC4, 4, r["c4"])
     for i, blk in (r.get("bl") or {}).items():
-        a = b["a"][int(i)]
+        a = ev.st.rd(sp + 4 * int(i), 4)            # the pointer the model passed (its own stack, not the live address)
+        if a is None:
+            continue
+        before = (b.get("b") or {}).get(i)
         for k, w in enumerate(blk):
+            if before is not None and before[k] == w:
+                continue                             # a word the callee did not change is not an output
+            if any((a + 4 * k + j) in st.prot for j in range(4)):
+                continue
             st.wr(a + 4 * k, 4, w)
     st.eip = ev.ra
     return st
@@ -795,11 +805,19 @@ class Result:
         self.nlog = 0
 
 
+def top_level(dec):
+    """The logged boundary calls the think function itself made: a logged call that lies between another call's AIB line and
+    its AIR line was made inside that callee (a boundary function whose body is in the logger's windows, MonsterOwner, a
+    search) and is not offered by the model, which does not execute boundary functions."""
+    spans = [(b["n"], dec["air"][b["n"]]["n"]) for b in dec["aib"] if b["n"] in dec["air"]]
+    return [b for b in dec["aib"] if not any(lo < b["n"] < hi for lo, hi in spans)]
+
+
 def check_decision(m, dec):
     """Resume one decision (a tools/ai.py parse() record) at each logged boundary. -> Result."""
     res = Result()
     aid = dec["aid"]
-    log = [b for b in dec["aib"] if not any(lo <= b["ra"] < hi for lo, hi in NESTED)]
+    log = top_level(dec)
     res.nlog = len(log)
     try:
         states = [init_state(aid)]

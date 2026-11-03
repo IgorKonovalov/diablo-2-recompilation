@@ -20,7 +20,7 @@
 #   AIB   a call of one of the boundary functions BND (the observed boundaries of the tools/ai_cat_emu*.py models) from
 #         the think function's code (return address in 0x005B14E0..0x005B1650 or 0x005E0000..0x005FFFFF, from rev 3 also in the three callee
 #         windows of THINK_LO) while the
-#         decision is open: k, fn, ra, ecx, edx, a (six stack words), b (8 dwords at a stack-pointing argument, by
+#         decision is open (rev 4: not those made inside a still-pending boundary call unless AI_NESTED=1): k, fn, ra, ecx, edx, a (six stack words), b (8 dwords at a stack-pointing argument, by
 #         argument index), s (the unit seed), c (AiCtl +0x14, +0x18, +0x1C), c4; at most AI_BMAX (8) per decision
 #   AIR   the return of the AIB call "b" (the AIB line's n): k, b, fn, ra, eax, ecx, edx, s (the unit seed after the call), c (AiCtl
 #         +0x14, +0x18, +0x1C), c4, bl (8 dwords at each stack argument that pointed at the stack, after the call: the
@@ -61,6 +61,7 @@ def _ai_main():
     RADIUS = int(os.environ.get("AI_RADIUS", "80"))
     BMAX = int(os.environ.get("AI_BMAX", "48"))
     RETSITES = os.environ.get("AI_RETSITES", "tools/gdb/ai-retsites.txt")
+    NESTED = os.environ.get("AI_NESTED", "0") == "1"     # 1: also log the calls made inside a pending boundary call (rev 3 did)
     BND = (
         0x00463740, 0x00463860, 0x0046ACE0, 0x00472210, 0x004E6C70, 0x004EFCB0, 0x00540E60, 0x005415A0, 0x005417D0,
         0x00544300, 0x0054DA60, 0x0054DC40, 0x00552F60, 0x00552FD0, 0x00553540, 0x00554010, 0x005541B0, 0x00554200,
@@ -299,6 +300,8 @@ def _ai_main():
                 if cur["out"] > 600:
                     arm_bnd(False)            # the boundary breakpoints only: the pending returns (a search) stay armed
                 return
+            if st["pend"] and not NESTED:
+                return                    # made inside a boundary callee still pending: the model never offers it
             if cur["nb"] >= BMAX:
                 return
             cur["nb"] += 1

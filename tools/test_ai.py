@@ -214,6 +214,17 @@ class PartsTest(unittest.TestCase):
         steps, bad = ai.accounting(dict(d, sst=[t]))
         self.assertEqual(bad, [])
 
+    def test_parse_reads_air_lines_and_the_bmax_of_the_logger_line(self):
+        with tempfile.NamedTemporaryFile("w", suffix=".log", delete=False) as fh:
+            fh.write('AI logger armed rev 4 bmax 48\nAID {"n":3,"ai":2}\nAIB {"k":3,"fn":1,"n":4}\n'
+                     'AIR {"k":3,"b":4,"eax":7,"n":5}\nAIR {"k":99,"b":4,"n":6}\n')
+            p = fh.name
+        r = ai.parse(p)
+        os.unlink(p)
+        self.assertEqual(r["dec"][0]["bmax"], 48)
+        self.assertEqual(r["dec"][0]["air"][4]["eax"], 7)
+        self.assertEqual(len(r["dec"][0]["air"]), 1)
+
     def test_parse_skips_foreign_lines(self):
         with tempfile.NamedTemporaryFile("w", suffix=".log", delete=False) as fh:
             fh.write('PLR {"x":1}\nAID {"n":3,"ai":2}\nAIB {"k":3,"fn":1}\nAIB {"k":99,"fn":2}\nnoise\n')
