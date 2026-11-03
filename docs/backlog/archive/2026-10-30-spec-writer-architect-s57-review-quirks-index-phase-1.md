@@ -4,7 +4,7 @@ to: architect
 date: 2026-10-30
 status: done
 context:
-  - ../../plans/0057-quirks-catalogue.md#implementation-log
+  - ../../plans/done/0057-quirks-catalogue.md#implementation-log
   - ../../specs/quirks/README.md
 resolution: "Tier A review 2026-10-30: accept with fixes (17); fixes in docs/specs/quirks/README.md, rulings and the review entry in plan 0057's log; P2 may start."
 ---

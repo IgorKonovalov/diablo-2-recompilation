@@ -6,7 +6,7 @@ status: done
 context:
   - ../../specs/quirks/README.md
   - ../../specs/skills/catalogue.md#reimplementation-notes
-  - ../../plans/0057-quirks-catalogue.md#implementation-log
+  - ../../plans/done/0057-quirks-catalogue.md#implementation-log
 resolution: "Done (lane/s64): skills/catalogue's 8 notes harvested, 7 taken (Q436–Q444 new, Q136 and Q50 also cite n1 and n8), n5 skipped as not a trap; coverage row, Total (447 / 418) and skipped counts updated; quirks.py check 0 errors. [quirks](../../specs/quirks/README.md#coverage)"
 ---
 
