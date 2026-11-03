@@ -3,8 +3,8 @@ spec: player/creation
 status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, data/excel, items/uniques-sets, items/properties, items/affixes, monsters/stats, save/d2s]
-consumed_by: [save/d2s, combat/to-hit, stats/aggregate]
-tags: {C: 126, I: 46, L: 1}
+consumed_by: [save/d2s, combat/to-hit, stats/aggregate, player/party]
+tags: {C: 139, I: 50, L: 1}
 updated: 2026-11-03
 ---
 
@@ -51,6 +51,7 @@ flowchart TD
 | That `NewCharLegacy` takes the same steps as `NewCharFromStub`, and its other caller, `sub_005345A0_PlayerLoad` | 0x00534607 (`sub_005345A0_PlayerLoad`); the call from `PlayerLoad` was not met | [I] |
 | The game was started with `-act N` (N = 2..5): inside `PLAYER_InitBaseStats` | fn:PLAYER_GrantLevel@0x0057EB10, run:2026-10-16-player (6 characters) | [C] |
 | A monster is killed: experience to the credited player | fn:XP_OnMonsterKill@0x0057E990 → fn:XP_PartyShare@0x0057E6C0, run:2026-10-16-player (32 kills, one player) | [C] |
+| The call above that entry: `sub_0057CCB0_UnitKilled` to `sub_005A4EF0_KillExpGate`; no call when a unit is null or the victim has flag bit 26 of `+0xC4` | 0x0057CD51, 0x005A4EFE–0x005A4F12, fn:sub_005A4EF0_KillExpGate@0x005A4EF0 | [I] |
 | Any experience change that changes the level | fn:PLAYER_AddExperience@0x0057E510 → fn:PLAYER_LevelUp@0x00570880, run:2026-10-16-player (20 level-ups) | [C] |
 | The Ancients' reward (quest a5q5, Rite of Passage) in Normal: a grant of 1 400 000 experience, cut to the width of the next level | fn:sub_0058C5C0_ExpGrantCapped@0x0058C5C0, run:2026-10-30-h6ga-anc (two grants, levels 26 and 81) | [C] |
 | The same grant's 20M (Nightmare) and 40M (Hell), and its caller: `sub_0058C9A0_A5Q5_AncientDeath` and the summit and party grants (the run did not log which) | fn:sub_0058C9A0_A5Q5_AncientDeath@0x0058C9A0 → fn:sub_0058C5C0_ExpGrantCapped@0x0058C5C0 | [I] |
@@ -103,8 +104,9 @@ The record index of CharStats is the class id 0..6 (`Expansion` marker row not c
 | level-difference factors, monster at or below | `256 ×6, 207, 159, 110, 61, 13` (/256) | data:g_XpPenaltyBelow@0x006E1668 | [C] |
 | level-difference factors, monster above | `256 ×6, 225, 174, 92, 38, 5` (/256) | data:g_XpPenaltyAbove@0x006E1694 | [C] |
 | kill experience clamp | `0x7FFFFF` | 0x0057E480 | [I] |
-| party bonus | `89/256` per extra member | fn:XP_PartyShare@0x0057E6C0 | [C] (run:2026-10-20-two-clients, two members) |
-| party distance² | 6400 | fn:sub_0057E5A0_PartyXpCollect@0x0057E5A0 | [I] |
+| party bonus | `89/256` per extra member | fn:XP_PartyShare@0x0057E6C0 | [C] (run:2026-10-20-two-clients, two members; run:2026-11-03-party-emu, the integer step for n up to 8) |
+| party distance² | 6400, from the killed monster, inclusive, unsigned (J4) | fn:sub_0057E5A0_PartyXpCollect@0x0057E5A0, 0x0057E654, 0x0057E65A | [C] the code's map (run:2026-11-03-party-emu) |
+| party member cap | 8 collected; a ninth that passes every test reaches the fatal path (J4) | 0x0057E662, 0x0057E665, 0x0057E66C | [C] the code's map (run:2026-11-03-party-emu) |
 | starting item creation record | ilvl = level, `+0x18` 4, `+0x28` 1, quality 2, flags `0x0A` | fn:ITEMS_CreateForStore@0x00559CE0 | [C] |
 | starter item flag | `0x20000` (save flag bit 17) | 0x00534DB6 | [C] |
 
@@ -454,13 +456,29 @@ Step notes:
 ### G. Kill experience — `XP_Compute`
 
 ```
-G0. XP_OnMonsterKill credits the killer, or the player owning a minion;  [C] (fn:XP_OnMonsterKill@0x0057E990, run:2026-10-16-player)
-    XP_PartyShare collects the members (J4); with one member:
-      add ← XP_Compute(exp, clvl, mlvl);  PLAYER_AddExperience(add)      ; § H
+G0. XP_OnMonsterKill(game, killer, victim), as the code's map:           [C] (fn:XP_OnMonsterKill@0x0057E990, 0x0057E9B6–0x0057EAA1, run:2026-11-03-party-emu; one player: run:2026-10-16-player)
+      if killer or victim is null, or killer's type is not 0 or 1: end
+      exp: i32 ← victim's base stat 13;  if exp ≤ 0 (signed): end
+      credit ← XpCreditPlayer(killer, game, victim);  if none: end
+      mlvl: i32 ← victim's base stat 12
+      the mercenary's award                                              ; G6 note: before the party test, whatever the share does
+      clvl: i32 ← credit's base stat 12
+      if UnitPartyId(credit) = 0xFFFF:                                   ; in no party: no alive test, no distance test
+        add ← XP_Compute(exp, clvl, mlvl);  PLAYER_AddExperience(credit, clvl, add)   ; § H
+      else:
+        XP_PartyShare(credit, exp, game, victim, clvl, mlvl)             ; J4: n = 0 pays nobody, n = 1 pays credit, n ≥ 2 splits
     exp is the killed monster's base stat 13 (monsters/stats)            [C] (fn:XP_OnMonsterKill@0x0057E990, fn:STATS_GetUnitBaseStat@0x006253B0, run:2026-10-27-sweep-player)
+    XpCreditPlayer(killer, game, victim) → player or none, as the code's map:   [C] (fn:sub_0057E7B0_XpCreditPlayer@0x0057E7B0, fn:sub_0058F0D0_MonsterOwner@0x0058F0D0, fn:sub_0063A690_UnitHasExpState@0x0063A690, fn:sub_00625760_StatListFindFlag@0x00625760, run:2026-11-03-party-emu)
+      if killer's type = 0: return killer                                ; a state on the victim is not read
+      owner ← MonsterOwner(killer)                                       ; AI control +0x28 game, +0x2C id, +0x30 type, by GameFindUnit
+      s ← none
+      if UnitHasExpState(killer): s ← StatListFindFlag(killer, 0x800)
+      if UnitHasExpState(victim): s ← StatListFindFlag(victim, 0x800)    ; the victim's wins, even a none
+      if s ≠ none: owner ← GameFindUnit(game, type of s's owner, id of s's owner)
+      return owner if owner is a player, else none
 G1. XP_Compute(exp: i32, clvl: i32, mlvl: i32) → i32:
       if exp > 0x7FFFFF: exp ← 0x7FFFFF                                  [I] (0x0057E480–0x0057E4FF, all of G1)
-      else if exp ≤ 0: return 1
+      else if exp ≤ 0: return 1                                          [C] the code's map (0x0057E4A1–0x0057E4AA, run:2026-11-03-party-emu)
 G2.   if clvl ≥ MaxLvl(class): return 0                                 [C] (fn:XP_Compute@0x0057E480, run:2026-10-27-sweep-player)
 G3.   XP_LevelDiffPenalty:                                               [C] (fn:XP_LevelDiffPenalty@0x0057E2F0, run:2026-10-16-player, all of G3)
         if mlvl ≤ clvl:            f ← g_XpPenaltyBelow[min(clvl − mlvl, 10)]
@@ -487,13 +505,30 @@ Step notes:
   percentages give different integers. [C] (data:g_XpPenaltyBelow@0x006E1668, run:2026-10-16-player)
 - G0. In 145 kills the input of `XP_Compute` equalled the killed monster's base stat 13, read with
   `STATS_GetUnitBaseStat`. [C] (fn:XP_OnMonsterKill@0x0057E990, run:2026-10-27-sweep-player)
+- G0. **The credit, in full.** A player killer is credited itself. A monster killer's owner link is, unless a state in
+  the `exp` mask (53 `conversion`, 57 `attract`, 59 `confuse`) sits on the killer and then on the victim: the victim's
+  test comes last and wins even when it finds no list. The result counts only if it is a player. [C] the code's map,
+  with a mask state outside the three (60) doing nothing; 40 mercenary kills in the game's own logs credit the owner.
+  (fn:sub_0057E7B0_XpCreditPlayer@0x0057E7B0, 0x0057E7E4, 0x0057E7F3, tbl:States.txt:exp, run:2026-11-03-party-emu, run:2026-10-20-two-clients;
+  [player/0002 § 4](../../findings/player/0002-party.md#4-g0-the-credit-sub_0057e7b0_xpcreditplayer))
+- G0. A player as the victim passes this code: its base stat 13 stands for `exp` and its base stat 12 for `mlvl`. [C] the code's
+  map (0x0057CD28–0x0057CD51, run:2026-11-03-party-emu) No log holds such a kill, and whether play reaches it past the
+  gate's flag is not read. [I] (fn:sub_005A4EF0_KillExpGate@0x005A4EF0, 0x005A4EFE–0x005A4F0A)
 - G2, G5. **The level cap and stat 85 are met.** At clvl 99 (`≥ MaxLvl`) `XP_Compute` returned 0 on 71 of 71 kills.
   With an Annihilus carried (stat 85 = 10, the unique's `addxp` maximum) the term `exp + MulDiv(exp, 10, 100)` was
   added on all 73 kills of that session, each reproduced. [C] (fn:XP_Compute@0x0057E480, tbl:UniqueItems.txt:addxp,
   run:2026-10-27-sweep-player)
 - G6. In the 32 kills of run:2026-10-16-player (stat 85 0) the value `XP_Compute` returned equalled the one after
   `XP_ApplyExpRatio`. [C] (0x0057E3F0, run:2026-10-16-player)
-- G1, G4 overflow branch. No kill reached the clamp, a non-positive experience or the overflow test (largest input
+- G6. **The mercenary's award runs before the share and does not depend on it.** Only the credited player's own pet of
+  type 7 is paid (the first node with flag bit 0 clear); other members' mercenaries get nothing. `XP_Compute` runs at the monster's
+  full experience and the mercenary's level, with MaxLvl from class column 0 and its own stat 85, and ends in `MERC_CapExpGain`: `min(gain,
+  (ExpForLevel(L + 1) − ExpForLevel(L)) >> 6)`, unsigned, or 0 with no owner link. Then `gain × 86 ÷ 256`, signed and truncating, unless
+  the mercenary is the killer. The owner then takes J4's outcome, whichever it is. [C] the code's map (0x0057E9F9–0x0057EA46,
+  0x0057EA28–0x0057EA39, fn:XP_Compute@0x0057E480, fn:MERC_CapExpGain@0x0057E3F0, fn:PETS_GetUnitOfType@0x00574EC0, run:2026-11-03-party-emu,
+  [player/0002 § 5](../../findings/player/0002-party.md#5-g6-the-mercenarys-credit)) The rest of the award and its run:
+  [hirelings § G](../hirelings/README.md#levelling-in-play-merc_addexp).
+- G1, G4 overflow branch. No logged kill reached the clamp, a non-positive experience or the overflow test (largest input
   18 713 in run:2026-10-16-player; 145 of 145 inputs positive in run:2026-10-27-sweep-player). [I]
   (fn:XP_Compute@0x0057E480, fn:XP_ApplyExpRatio@0x0057E390)
 
@@ -601,12 +636,28 @@ J3. PLAYER_DeathExpLoss (character level lvl > 1):                       [C] (fn
         client.deathLoss ← kept                                          ; client +0x508, before the stat write
         exp ← new
       ; the level never drops
-J4. XP_PartyShare with n ≥ 2 members (alive, same level, distance² ≤ 6400, at most 8):   [C] for n = 2 (fn:XP_PartyShare@0x0057E6C0, fn:sub_0057E5A0_PartyXpCollect@0x0057E5A0, 0x0057E736–0x0057E79D, run:2026-10-20-two-clients)
-      total: i32 ← exp + ((n − 1) × exp × 89) ÷ 256
-      q: f32 ← (f32) ((f64) total / (f64) Σ levels)                        ; real division, not ÷: fild total, fidiv Σ levels, rounded once to f32 by fstp dword
+J4. XP_PartyShare(credit, exp, game, victim, clvl, mlvl), for a credited player in a party:   [C] for n up to 8 as the code's map, every line below not tagged otherwise; no logged kill separates the origin or the n = 1 credit (fn:XP_PartyShare@0x0057E6C0, fn:sub_0057E5A0_PartyXpCollect@0x0057E5A0, fn:sub_005405A0_PartyForEachInLevel@0x005405A0, run:2026-11-03-party-emu)
+      n: i32 ← 0;  Σ: i32 ← 0
+      if credit has no room: Collect(credit) alone
+      else for each node of the first party record of UnitPartyId(credit), in list order:
+        u ← the player of the node's guid;  skip if none, if u has no room, or if u's level id ≠ credit's level id
+        Collect(u)
+      Collect(u):
+        if u is dead: return                                               ; the credited player is tested like every member
+        (X, Y) ← victim's position;  if X = 0: return                      ; Y = 0 is not tested
+        (x, y) ← u's position;       if x = 0: return
+        d²: u32 ← (Y − y)² + (X − x)²                                      ; imul, imul, add: wraps at 32 bits
+        if d² > 6400 (unsigned): return                                    ; the distance is to the killed monster; 6400 stays in
+        if n ≥ 8: fatal path 0x00408090(0xF25)                             ; a ninth that passes; no clip
+        unit[n] ← u;  level[n] ← evaluated stat 12 of u;  Σ ← Σ + level[n];  n ← n + 1
+      if n ≤ 0 or Σ ≤ 0: end                                               ; n = 0 pays nobody
+      if n = 1:                                                            ; pays credit at clvl, whoever the member was; no bonus
+        add ← XP_Compute(exp, clvl, mlvl);  PLAYER_AddExperience(credit, clvl, add);  end
+      total: i32 ← exp + ((n − 1) × exp × 89) ÷ 256                        ; every product i32, ÷ truncates
+      q: f32 ← (f32) ((f64) total / (f64) Σ)                               [C] for n = 2 (0x0057E736–0x0057E79D, run:2026-10-20-two-clients); [I] for n ≥ 3, ADR-0015 (5) (0x0057E754–0x0057E77B, fn:CRT_ftol2@0x00682FD0) ; both this line and in_i. Real division, not ÷: fild total, fidiv Σ, rounded once to f32 by fstp dword
       for each member i in collection order:
         in_i: i32 ← trunc((f64) level_i × (f64) q)                         ; exact in f64, never rounded to f32; CRT_ftol2 truncates
-        PLAYER_AddExperience(XP_Compute(in_i, level_i, mlvl))
+        PLAYER_AddExperience(unit[i], level_i, XP_Compute(in_i, level_i, mlvl))
 J5. PLAYER_SpendStatPoint(unit, which): needs statpts ≠ 0; statpts −= 1; [C] (fn:PLAYER_SpendStatPoint@0x00570D60, fn:PLAYER_SpendEnergy@0x00570A80, fn:PLAYER_SpendVitality@0x00570B60, run:2026-10-27-sweep-player)
       strength or dexterity + 1
       energy + 1:   maxmana += ManaPerMagic × 64;  mana likewise, clamped to maxmana
@@ -620,13 +671,32 @@ Step notes:
   `PLAYER_LevelUp` call each. [C] (fn:PLAYER_GrantLevel@0x0057EB10, run:2026-10-16-player)
 - J4. **The party share with two players.** In plan 0044's two-client run, 690 kills were logged, and the 649 with a
   player killer and a complete log had every member set predicted from the logged positions: 385 shares to two members
-  (alive, same level, d² ≤ 6400 of the credited player), and the killer alone in the others, with the other member
+  (alive, same level, d² ≤ 6400), and the killer alone in the others, with the other member
   beyond 6400, in another level, dead or not partied;
-  each of the 770 share inputs and 264 single inputs was predicted (the record's branch counts 9 + 106 + 108 + 42 sum to
-  265, one more than the single inputs; filed to the reverser), and `player.py` reproduced every `XP_Compute`,
-  `AddExperience` and `LevelUp`. Scope: n = 2. [C] (fn:XP_PartyShare@0x0057E6C0,
-  fn:sub_0057E5A0_PartyXpCollect@0x0057E5A0, run:2026-10-20-two-clients,
+  each of the 770 share inputs and 264 single inputs was predicted, and `player.py` reproduced every `XP_Compute`,
+  `AddExperience` and `LevelUp`. With the run's 40 mercenary kills the same model holds for 689 of the 690 (the other cut off by the session's end), 844 share and 267 single inputs. Scope: n = 2. [C] (fn:XP_PartyShare@0x0057E6C0,
+  fn:sub_0057E5A0_PartyXpCollect@0x0057E5A0, run:2026-10-20-two-clients, run:2026-11-03-party-emu,
   [multiplayer/0001 § 6](../../findings/multiplayer/0001-cases.md#6-phase-2-results-run2026-10-20-two-clients))
+- J4. **The distance is to the killed monster, not to the credited player.** `XP_OnMonsterKill` passes the victim as `XP_PartyShare`'s
+  second stack argument (0x0057EA6D–0x0057EA75), which stores it at the collector's block `+0x00` (0x0057E6DA, 0x0057E6E7), and the
+  collector reads that unit's position (0x0057E5BE–0x0057E620). [C] the code's map, separated under emulation (the old reading fails 1 775 cases); no logged kill
+  separates it: the two distances decide all 431 logged pairs alike. The logs do give that the argument is the killed monster and that its X is non-zero there. (run:2026-11-03-party-emu, run:2026-10-20-two-clients,
+  [player/0002](../../findings/player/0002-party.md#answer-summary))
+- J4. **n = 1 pays the credited player, whoever the sole member was.** That arm uses the credited player (0x0057E6D3, 0x0057E726) and the level
+  argument (0x0057E718), not the block's slot. n = 0 pays nobody. [C] the code's map (0x0057E70D–0x0057E733, 0x0057E6FB–0x0057E707, run:2026-11-03-party-emu); no logged kill
+  separates it: all 648 partied credited players of the logs were in range, so every sole member there was the credited player.
+- J4. What follows in play from those two: a partied player whose hireling or summon kills more than 80 sub-tiles from it
+  takes the whole award alone when one other member is near the victim, and with no member near nobody gets any, while an unpartied player in the same place
+  gets it all; a dead killer with one living member in range is paid and the living member is not. [I] (0x0057E6FB–0x0057E733, 0x0057E654–0x0057E65A,
+  [player/0002 § 1](../../findings/player/0002-party.md#1-the-chain))
+- J4. **The edge is inclusive and the cap is not a clip.** `cmp edx,0x1900` then `ja` (0x0057E654, 0x0057E65A): d² = 6400 stays in, 6401 is out.
+  `cmp eax,8` then `jl` (0x0057E662, 0x0057E665): a ninth member that passes every test reaches `0x00408090(0xF25)` at 0x0057E66C; members that fail a test first do not count, so
+  eight in a longer list is fine. [C] the code's map, as far as that call (run:2026-11-03-party-emu) What follows that call is the fatal path of the other findings, not run, and whether a party list can hold
+  nine players was not read, so this is the code's path and not a game outcome. [I] (0x0057E671–0x0057E681, 0x005408CB)
+- J4. **Wraps.** `d²` is 32-bit: |dx| = |dy| = 46 341 gives 9 266, and dx = 65 534, dy = 512 gives 4, which passes. The total's product is i32: it first wraps at `exp` = 24 129 030 for n = 2 and 3 447 005 for n = 8, where it truncates toward zero and
+  the total may go negative (−4 941 601 at that n = 8 value); each member's input is then ≤ 0 and `XP_Compute` returns 1. [C] the code's map (0x0057E64C–0x0057E65A, 0x0057E739–0x0057E74B, 0x0057E4A1–0x0057E4AA, run:2026-11-03-party-emu,
+  [player/0002 § 6](../../findings/player/0002-party.md#6-wrap-bounds-kept-checktxt-the-last-block)) No level the finding knows spans those distances, and neither that nor whether a monster's frozen stat 13 reaches those values was checked.
+- J4. **The party and the level are the credited player's**; the victim's level is not read. A member's level is `STATS_GetUnitStat` (the evaluated list), `clvl` is `STATS_GetUnitBaseStat`; they differ only if a list changes stat 12. [C] the code's map (0x005405C7–0x00540636, 0x0057E68F, 0x0057EA53, fn:STATS_GetUnitStat@0x00625480, fn:STATS_GetUnitBaseStat@0x006253B0, run:2026-11-03-party-emu)
 - J4. **The member's input is not rounded to f32.** `q` is stored as an f32 (`fstp dword`, 0x0057E754–0x0057E75D);
   each member's `fild` level is multiplied by that dword on the x87 stack (0x0057E775–0x0057E778) and passed to
   `CRT_ftol2` (0x00682FD0), whose SSE2 and x87 paths both truncate the unrounded product. A level (≤ 99) times an f32
@@ -637,9 +707,8 @@ Step notes:
   and the `fstp dword` rounds it to f32, and at 24-, 53- or 64-bit precision that equals one rounding of the exact
   quotient (an f64 or wider intermediate has at least 2 × 24 + 2 bits), so the f64 division then the f32 cast above
   gives the game's `q`. [I] (fn:XP_PartyShare@0x0057E6C0, 0x0057E754–0x0057E75D)
-- J4. The distance bound is bracketed, not met at its edge: 5 of the 9 kills beyond it were within 800 of 6400, and
-  no kill inside it came that close. More than two members and the cap at 8 need a third client. [I]
-  (fn:sub_0057E5A0_PartyXpCollect@0x0057E5A0)
+- J4. **n ≥ 3 for the float steps.** `q`, the product and `CRT_ftol2` run the same instructions as the logged n = 2 and agree with this model in every emulated case on both `CRT_ftol2`
+  paths (n up to 8), but ADR-0015 (5) keeps x87 results out of emulation's evidence, so they stay inferred; a session with three or more players is the only way up. [I] (0x0057E754–0x0057E77B, fn:CRT_ftol2@0x00682FD0)
 - J3, J5 and the cap of § H ran in run:2026-10-27-sweep-player (notes below and H1). [C] (fn:PLAYER_DeathExpLoss@0x005359F0,
   fn:PLAYER_SpendStatPoint@0x00570D60, run:2026-10-27-sweep-player) J2, the capped grant, ran in Normal in a second
   session on the Ancients' route, with the altar's room populated (notes below). [C] (fn:sub_0058C5C0_ExpGrantCapped@0x0058C5C0,
@@ -845,7 +914,8 @@ the Barbarian has one copy more (the buckler), so only its eighth copy (`isc`) t
 - Upstream: [rng](../rng/README.md), [rng/seeds](../rng/seeds.md) step 7a, [items/uniques-sets § A](../items/uniques-sets.md#a-the-item-seed-at-entry),
   [items/properties §§ A, F](../items/properties.md), [items/affixes §§ H–J](../items/affixes.md),
   [monsters/stats](../monsters/stats.md) (the monster's experience, `MulDiv`).
-- Downstream: [save/d2s](../save/d2s.md) (§ D1 bit 0, the first save).
+- [findings/player/0002-party.md](../../findings/player/0002-party.md), [findings/player/experiments.md § run:2026-11-03-party-emu](../../findings/player/experiments.md#run2026-11-03-party-emu): the credit, the collector, the mercenary's award and the split as the code's map.
+- Downstream: [save/d2s](../save/d2s.md) (§ D1 bit 0, the first save); [player/party](party.md) composes § G0, § G6 and § J4 with every player-count reader.
 
 ## Open questions
 

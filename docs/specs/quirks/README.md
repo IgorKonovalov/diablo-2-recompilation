@@ -4,7 +4,7 @@ status: draft
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [every reviewed spec listed under Coverage]
 consumed_by: [docs/wiki (plan 0057 Phase 4)]
-tags: {C: 340, I: 105, L: 0}
+tags: {C: 346, I: 107, L: 0}
 updated: 2026-11-03
 ---
 
@@ -39,8 +39,8 @@ out: presentation (displayed names, strings, the quest log); a note whose whole 
 rules of data/excel and data/calc's pools, with two row-index and code-resolution notes of hirelings and
 items/properties, which a loader built to those specs implements as written (read
 [data/excel's notes](../data/excel.md#reimplementation-notes) whole when writing the loader). Crash and hang paths are
-listed as the specs state them: six from code readings (inferred) and two reached in kept runs before this plan
-(confirmed): Q89, a fault logged on one crafted row, and Q437, the fatal path reached on three paths under emulation; none was
+listed as the specs state them: six from code readings (inferred) and three reached in kept runs
+(confirmed): Q89, a fault logged on one crafted row, Q437, the fatal path reached on three paths under emulation, and Q448, the party's ninth member under emulation; none was
 provoked for this page (owner decision 5).
 
 `python3 -I tools/quirks.py check` verifies the page mechanically: every entry's tag appears in each tagged source it
@@ -63,14 +63,14 @@ flowchart LR
 |---|---|---|---|
 | [1. Arithmetic width and sign](#1-arithmetic-width-and-sign) | 23 | 17 | 6 |
 | [2. Rounding and float](#2-rounding-and-float) | 19 | 14 | 5 |
-| [3. Wrap and overflow](#3-wrap-and-overflow) | 9 | 2 | 7 |
-| [4. Bounds, comparisons and table edges](#4-bounds-comparisons-and-table-edges) | 68 | 49 | 19 |
+| [3. Wrap and overflow](#3-wrap-and-overflow) | 10 | 3 | 7 |
+| [4. Bounds, comparisons and table edges](#4-bounds-comparisons-and-table-edges) | 71 | 51 | 20 |
 | [5. Draw order and dead draws](#5-draw-order-and-dead-draws) | 137 | 116 | 21 |
 | [6. Data-dependent branches](#6-data-dependent-branches) | 122 | 96 | 26 |
 | [7. Timing and frame edges](#7-timing-and-frame-edges) | 19 | 10 | 9 |
-| [8. Multiplayer edges](#8-multiplayer-edges) | 11 | 9 | 2 |
+| [8. Multiplayer edges](#8-multiplayer-edges) | 15 | 12 | 3 |
 | [9. Deliberate oddities that look like bugs](#9-deliberate-oddities-that-look-like-bugs) | 37 | 27 | 10 |
-| **Total** | 445 | 340 | 105 |
+| **Total** | 453 | 346 | 107 |
 
 ### 1. Arithmetic width and sign
 
@@ -137,6 +137,7 @@ flowchart LR
 | Q48 | `XP_ApplyExpRatio` switches to `(exp >> s) × r` when `exp × r` would overflow the shift; no kill reached it. | [I] | 0x0057E390, 0x0057E3E7 | [player/creation § G](../player/creation.md#g-kill-experience--xp_compute) |
 | Q49 | A gold add over a cap writes 0, not the cap; callers clip first, so only paths that skip the clip (the PvP death write) differ. | [I] | fn:sub_0053FF00_UnitAddGoldStat@0x0053FF00 | [items/economy](../items/economy.md#reimplementation-notes) n8 |
 | Q50 | Hang and crash path: a progressive ring's step count is used untested; 0 never ends, a negative count reads below the direction tables until the index wraps. | [I] | 0x005D4657, 0x005D467D, 0x005D4D77, 0x005D4DAA | [combat/delivery](../combat/delivery.md#reimplementation-notes) n11; [skills/catalogue](../skills/catalogue.md#reimplementation-notes) n8 |
+| Q446 | The party share's wraps: `d²` is 32-bit, compared unsigned, so a wrapped value inside the bound passes; the total's product is i32, and past its wrap each member's input is ≤ 0, for which `XP_Compute` returns 1. | [C] | 0x0057E654, 0x0057E65A, 0x0057E739, 0x0057E74B, run:2026-11-03-party-emu | [player/party](../player/party.md#reimplementation-notes) n6; [player/creation § J](../player/creation.md#j-other-level-and-experience-changes) |
 
 ### 4. Bounds, comparisons and table edges
 
@@ -210,6 +211,9 @@ flowchart LR
 | Q116 | Missile `LevRange` counts every level: `LevRange · lvl + Range`, not from level 2. | [C] | fn:sub_0059FA30_MissileCreate@0x0059FA30, run:2026-10-27-skills | [skills/missiles](../skills/missiles.md#reimplementation-notes) n8 |
 | Q117 | The path's tenth subtile crossing is unchecked: a very fast step can pass a blocked subtile after ten free crossings. | [I] | 0x00650292, 0x006502AA | [anim/movement](../anim/movement.md#reimplementation-notes) n4 |
 | Q437 | Crash path on reachable data: `MissNovaCreate` with `n ≥ 41` (mhit 38, 45), do 123's class at or past the Missiles count and st 20's item class past the item count reach the fatal path `0x00408090`. | [C] | 0x00408090, run:2026-10-20-cat-emu-9d, run:2026-10-21-cat-emu-dru, run:2026-10-20-cat-emu-nec | [skills/catalogue](../skills/catalogue.md#reimplementation-notes) n4 |
+| Q447 | The party distance's edge is inclusive and unsigned: d² = 6400 shares, 6401 does not. | [C] | 0x0057E654, 0x0057E65A, run:2026-11-03-party-emu | [player/party](../player/party.md#reimplementation-notes) n6; [player/creation § J](../player/creation.md#j-other-level-and-experience-changes) |
+| Q448 | The party member cap is a fatal path, not a clip: a ninth member that passes every test reaches `0x00408090(0xF25)`, while one failing a test first does not count (the code's map, to that call; not a game outcome). | [C] | 0x0057E662, 0x0057E665, run:2026-11-03-party-emu | [player/party](../player/party.md#reimplementation-notes) n5; [player/creation § J](../player/creation.md#j-other-level-and-experience-changes) |
+| Q449 | Past Q448's call, and whether a party list can hold nine players, is unread. | [I] | 0x0057E671, 0x0057E681, 0x005408CB | [player/party](../player/party.md#reimplementation-notes) n5; [player/creation § J](../player/creation.md#j-other-level-and-experience-changes) |
 
 ### 5. Draw order and dead draws
 
@@ -519,6 +523,10 @@ flowchart LR
 | Q401 | Server units do not use the room seed: the room-seed rule is the client's, and a server-side reimplementation seeds monsters, objects, NPCs and items from the game seed. | [C] | fn:sub_00555230_SUnitCreate@0x00555230, run:2026-10-11-seed-tree-p1 | [rng/seeds](../rng/seeds.md#reimplementation-notes) n7 |
 | Q402 | The client copy of a preset room has more units: the river objects are added only with the client flag (`flags` bit 0). | [C] | fn:DRLG_PresetClientObjects@0x006663C0, run:2026-10-13-drlg-preset | [drlg/preset](../drlg/preset.md#reimplementation-notes) n8 |
 | Q403 | The saved map seed survives only in single player, without `-seed`, and only for the difficulty saved in. | [C] | 0x0056A1FC, 0x0056A217, run:2026-10-12-d2s-io | [save/d2s](../save/d2s.md#reimplementation-notes) n4 |
+| Q450 | The party distance is measured from the killed monster, not from the killer or the credited player, and the credited player is tested like every member (the code's map; no logged kill separates it). | [C] | fn:sub_0057E5A0_PartyXpCollect@0x0057E5A0, 0x0057E6E7, run:2026-11-03-party-emu, run:2026-10-20-two-clients | [player/party](../player/party.md#reimplementation-notes) n1; [player/creation § J](../player/creation.md#j-other-level-and-experience-changes) |
+| Q451 | With one member collected, the award goes to the credited player at its own level, whoever that member was; with none, nobody gets anything (the code's map; no logged kill separates it). | [C] | 0x0057E70D, 0x0057E733, run:2026-11-03-party-emu | [player/party](../player/party.md#reimplementation-notes) n2; [player/creation § J](../player/creation.md#j-other-level-and-experience-changes) |
+| Q452 | What Q450 and Q451 lead to in play: a far hireling's or summon's kill can pay its far owner alone or nobody, and a dead killer can be paid while the living member is not. | [I] | 0x0057E6FB, 0x0057E733, 0x0057E654, 0x0057E65A | [player/party](../player/party.md#reimplementation-notes) n3; [player/creation § J](../player/creation.md#j-other-level-and-experience-changes) |
+| Q453 | A credited player in no party has no alive or distance test; only the party branch has them. | [C] | 0x0057EA64, 0x0057EAA1, run:2026-11-03-party-emu | [player/party](../player/party.md#reimplementation-notes) n4; [player/creation § G](../player/creation.md#g-kill-experience--xp_compute) |
 
 ### 9. Deliberate oddities that look like bugs
 
@@ -566,9 +574,9 @@ These are faithful 1.14d behaviour that reads as a mistake, or that contradicts 
 
 ## Crash and hang paths
 
-Six from the specs' code readings and two reached in kept runs: Q89, a fault logged on row 83, and Q437, the fatal path
-`0x00408090` reached under emulation on three paths of the catalogue. None was provoked for this page, and the harness never
-provokes one (owner decision 5). The entries are in their classes above: Q44, Q45, Q50, Q65, Q74, Q89, Q93, Q437; Q50's
+Six from the specs' code readings and three reached in kept runs: Q89, a fault logged on row 83, Q437, the fatal path
+`0x00408090` reached under emulation on three paths of the catalogue, and Q448, the same call reached under emulation by a party's ninth member (Q449: past that call, and whether a list can hold nine, is unread). None was provoked for this page, and the harness never
+provokes one (owner decision 5). The entries are in their classes above: Q44, Q45, Q50, Q65, Q74, Q89, Q93, Q437, Q448; Q50's
 hang is also the catalogue's endless-loop note.
 
 ## Coverage
@@ -619,6 +627,7 @@ wall-clock 2, weaker duplicate 0.
 | [monsters/stats](../monsters/stats.md#reimplementation-notes) | 11 | 11 | — | — | — | — | — |
 | [objects/README](../objects/README.md#reimplementation-notes) | 16 | 16 | — | — | — | — | — |
 | [player/creation](../player/creation.md#reimplementation-notes) | 9 | 9 | — | — | — | — | — |
+| [player/party](../player/party.md#reimplementation-notes) | 6 | 6 | — | — | — | — | — |
 | [quests/progression](../quests/progression.md#reimplementation-notes) | 8 | 5 | n8 | — | n5 | n7 | — |
 | [quests/travel](../quests/travel.md#reimplementation-notes) | 6 | 5 | — | — | — | n1 | — |
 | [rng/README](../rng/README.md#reimplementation-notes) | 5 | 5 | — | — | — | — | — |
@@ -630,10 +639,10 @@ wall-clock 2, weaker duplicate 0.
 | [skills/missiles](../skills/missiles.md#reimplementation-notes) | 10 | 10 | — | — | — | — | — |
 | [stats/aggregate](../stats/aggregate.md#reimplementation-notes) | 6 | 6 | — | — | — | — | — |
 | [stats/states](../stats/states.md#reimplementation-notes) | 7 | 7 | — | — | — | — | — |
-| **Total** | 448 | 419 | — | — | — | — | — |
+| **Total** | 454 | 425 | — | — | — | — | — |
 
 Step notes taken beyond the *Reimplementation notes*: player/creation § G (the /256 factors, the `0x7FFFFF` clamp,
-the ratio shift's overflow branch) and § J (the party share's f32 quotient), monsters/stats § A (`MulDiv`), stats/states
+the ratio shift's overflow branch) and § J (the party share's f32 quotient, its wraps, edge and cap, the distance's origin and the n = 1 credit), monsters/stats § A (`MulDiv`), stats/states
 § E (stat 74's sign), data/calc § D (the `INT32_MIN ÷ −1` fault), rng/README § Algorithm (`RangePow2Plus`), and the
 sections that hold the tagged form of an untagged note (data/calc § B, data/excel § G–I, drlg/lifecycle § B, D, E, H and
 its draw-order list, quests/progression § A–C and G, quests/travel § E and its draw list).
