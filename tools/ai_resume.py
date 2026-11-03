@@ -87,21 +87,33 @@ class Code:
         out = subprocess.run(["objdump", "-d", "-M", "intel", "--start-address=0x%x" % a, "--stop-address=0x%x" % (a + 0x200),
                               self.exe], capture_output=True, text=True).stdout
         last = None
+        got = []
+        new = set()           # the instructions this load added (a continuation line extends only those)
+        ended = False
         for ln in out.splitlines():
             m = re.match(r"\s*([0-9a-f]+):\t([0-9a-f ]+?)\s*\t(.*)", ln)
             if not m:
                 c = re.match(r"\s*([0-9a-f]+):\t([0-9a-f ]+?)\s*$", ln)     # the bytes objdump wraps after seven
-                if c and last is not None and last in self.ins:
+                if c and last is not None and last in new:
                     n, mn, ops = self.ins[last]
                     self.ins[last] = (n + len(c.group(2).split()), mn, ops)
                 continue
             ad = int(m.group(1), 16)
             ins = self._parse(len(m.group(2).split()), m.group(3))
-            self.ins.setdefault(ad, ins)
-            self.loaded.add(ad)
+            if ad not in self.ins:
+                self.ins[ad] = ins
+                new.add(ad)
+            got.append(ad)
             last = ad
             if ins[1] in ("ret", "retn", "jmp", "int3"):
+                ended = True
                 break
+        if not ended and got:           # the window cut the last instruction short: do not keep that decode
+            if got[-1] != a:
+                if got[-1] in new:
+                    del self.ins[got[-1]]
+                got.pop()
+        self.loaded.update(got)
 
     @staticmethod
     def _parse(n, text):

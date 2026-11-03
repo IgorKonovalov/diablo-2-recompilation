@@ -222,6 +222,8 @@ class PartsTest(unittest.TestCase):
         subprocess.run = lambda *a, **k: P()
         try:
             c._load(0x5f95ff)
+            c.loaded = set()
+            c._load(0x5f95ff)          # a second sweep over the same bytes must not lengthen the instruction again
         finally:
             subprocess.run = real
         self.assertEqual(c.ins[0x5f95ff][0], 8)

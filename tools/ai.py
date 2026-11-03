@@ -587,7 +587,7 @@ def run_check(paths, out=None, controls=False):
     if controls:
         ctl_fail = []
         for mut, what in (("site", "predicted call site shifted by one byte: every compared decision must fail"),
-                          ("fallen", "row 6 (Fallen) mode test inverted: must fail where mode is 0 or 12 or not"),
+                          ("fallen", "row 6 (Fallen) mode test inverted: must fail on every decision whose mode the test separates"),
                           ("melee", "melee flag of the model input flipped: fails where the flag decides the outcome")):
             tot = {}
             for d in decs:
