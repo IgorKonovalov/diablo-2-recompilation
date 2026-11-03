@@ -483,12 +483,24 @@ struct:StatList+0x18, struct:ShrineEffect+0x8.
 
 - [I] Set by code, from this finding: 128–137 (the shrine table), 165–170 (`g_SetBonusStates`: the item `aprop`
   lists and the wearer's set lists), 85 `nomanaregen` (the aura mana check), and, from combat/0001, 52, 62, 107, 115.
-  Tested only: 7 `playerbody` (equip refused), 57 `attract` (curses refused), 100 `healthpot` and 106 `manapot` (named
-  by Misc; freed by the ticks). (data:g_ShrineEffects@0x006E1850, data:g_SetBonusStates@0x006EE424,
-  fn:sub_005CF010_PalAuraDo@0x005CF010)
+  Tested only: 7 `playerbody` (equip refused). Listed here for their tests, but outside the 56 because Misc names them:
+  57 `attract` (curses refused), 100 `healthpot` and 106 `manapot` (freed by the ticks). (data:g_ShrineEffects@0x006E1850,
+  data:g_SetBonusStates@0x006EE424, fn:sub_005CF010_PalAuraDo@0x005CF010)
 - The rest (0, 6, 12, 18, 21, 25, 29, 39, 54, 86, 90–93, 96, 98, 99, 102, 104, 105, 108–110, 116, 118, 121, 142,
   146, 154, 164, 171–173, 184): their setters are listed by the scan of § Surprise (f) setters scan below; the
   functions it names are not read.
+- [C] *2026-11-03 (lane/r55e, count reconciled with [archaeology/0002 § 4](../archaeology/0002-unreached-rows.md#4-states-185-rows)).*
+  The section lists 59 rows: the 56 (21 placed by code, row 7 tested only, the 34 of the scan) and 57, 100, 106, which
+  Misc names. [archaeology/0002](../archaeology/0002-unreached-rows.md)'s tool counts 58 rows named by no Skills or
+  Misc cell: these 56 and 175 `fullsetgeneric` and 176 `monsterset` (`states-reconcile.txt` in
+  `workspace/logs/r55e/`: 58 unreached, 56 in common, 57/100/106 listed but named, 175/176 unreached but not listed).
+  (tool:unreached.py --table states, tbl:States.txt:state)
+- [C] 175 and 176 stay out of the 56: data names them, through the `state` blocks' parameter cells of six Sets rows
+  (`FParam5..7`, a name compiled to the States row). Plan 0041 Phase 0's count took them as named (129 of 185: the
+  tool's 185 − 58 = 127 named by Skills or Misc, 119 and 9 with one row in both, and these two by Sets), so 185 − 129 =
+  56; the archaeology tool does not read Sets. (tbl:Sets.txt:FParam5, tool:unreached.py --table states)
+- [I] Their setter is the `state` stat's callback (§ 2, stat 98 with param 175 or 176), not one of the immediate
+  setters the scan below walks. (fn:sub_0055B800_MonStatCallback@0x0055B800)
 
 ### Surprise (f) setters scan (plan 0041 P1 review follow-up (b), 2026-10-17)
 
