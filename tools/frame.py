@@ -283,15 +283,15 @@ TABLES = (
      ((0x00580A60, 0, None), (0x00580B61, 4, None), (0x00580F44, 0, 1), (0x00581174, 0, 4)),
      "player mode (0..19); field 0 at a point, 4 at a unit", "PlayerModeCmd 0x00580A60; PLAYER_ModeCmdUnit 0x00580B61; "
      "PlayerDeath 0x00580F44 (row 1); PlayerModeEnd 0x00581174 (row 4)"),
-    ("g_PlayerModeFrameFuncs", 0x00732C10, 4, (0,), 40, ((0x00581204, 0, None),),
-     "a mode's frame-event function number", "PlayerModeFrameEvent 0x005811D0: call 0x00581204"),
+    ("g_PlayerModeFrameFuncs", 0x00732C10, 4, (0,), 20, ((0x00581204, 0, None),),
+     "player mode (Unit+0x10)", "PlayerModeFrameEvent 0x005811D0: load 0x005811F1, call 0x00581204"),
     ("g_MonModeRecords", 0x006E2260, 0x10, (0, 4, 8), 21,
      ((0x005A7D67, 0, None), (0x005A7BD6, 4, None), (0x005A7C16, 8, None)),
      "monster mode (0..15) and five class records; via MonModeRecord 0x005A78A0",
      "MonSetMode 0x005A7D67 (start); MonModeFrameEvent 0x005A7BD6 (frame); MonModeEndEvent 0x005A7C16 (end)"),
-    ("g_ShrineEffects", 0x006E1850, 0xC, (0,), 30, ((0x00583DD4, 0, None),),
+    ("g_ShrineEffects", 0x006E1850, 0xC, (0,), 23, ((0x00583DD4, 0, None),),
      "Shrines.txt effect class", "OBJOP_Shrine 0x00583C70: load 0x00583DCC, call 0x00583DD4"),
-    ("g_MonDmgHandlers", 0x006E2218, 4, (0,), 9, ((0x005A605C, 0, None),),
+    ("tbl_006E2218", 0x006E2218, 4, (0,), 9, ((0x005A605C, 0, None),),
      "0x005A6000's first argument", "0x005A6000: load 0x005A604D, call 0x005A605C"),
     ("g_ObjInitFns", 0x00731BC0, 4, (0,), 80, ((0x0054F6F9, 0, None),),
      "Objects.txt InitFn", "OBJ_ServerInit 0x0054F6F9"),
@@ -302,7 +302,7 @@ TABLES = (
     ("g_ObjTrapFns", 0x00732CEC, 4, (0,), 11,
      ((0x005818AA, 0, None), (0x00581810, 0, 2), (0x00581843, 0, 2), (0x0058187A, 0, 2)),
      "Objects.txt trap kind", "OBJ_TrapEvent 0x005818AA (jmp, any row), 0x00581810, 0x00581843, 0x0058187A (row 2)"),
-    ("g_ObjOperateFns", 0x00732D18, 4, (0,), 163, ((0x0058450E, 0, None),),
+    ("g_ObjOperateFns", 0x00732D18, 4, (0,), 101, ((0x0058450E, 0, None),),
      "Objects.txt OperateFn", "OBJ_OperateDispatch 0x0058450E"),
     ("g_UModHandlers", 0x0073C008, 4, (0,), 44,
      ((0x005A2113, 0, None), (0x005A2153, 0, None), (0x005A21AC, 0, None), (0x005A4815, 0, None), (0x005A4834, 0, None),
@@ -351,7 +351,7 @@ TABLES = (
      "the cube portal output", "RecipeOutputCreate 0x00565D45"),
     ("g_QuestDescs", 0x00731510, 0x18, (0,), 37, ((0x00545E2B, 0, None),),
      "quest number (count 0x00731888)", "QUESTS_InitGame 0x00545E2B"),
-    ("g_QuestIntroDescs", 0x0073188C, 8, (0,), 4, ((0x00545EDA, 0, None),),
+    ("tbl_0073188C", 0x0073188C, 8, (0,), 4, ((0x00545EDA, 0, None),),
      "intro record (count 0x007318AC)", "QUESTS_InitGame 0x00545EDA"),
     # the client's tables (their dispatchers run in the client's own code, outside GameTick)
     ("g_ClientPktHandlers", 0x007114D0, 0xC, (0, 8), 0xAF, ((0x0045F8E9, 0, None), (0x0045FAE0, 8, None)),
@@ -359,9 +359,9 @@ TABLES = (
      "entry 0x0045FAC3, call 0x0045FAE0 (field 8)"),
     ("g_ClientUModHandlers", 0x00724D78, 4, (0,), 44, ((0x004AD080, 0, None), (0x004AD0A5, 0, None)),
      "MonUMod row (client)", "ClientMonModsApply 0x004AD080, 0x004AD0A5"),
-    ("g_ClientStatFuncs", 0x0072D7F8, 4, (0,), 8, ((0x004EDB1F, 0, None),),
+    ("tbl_0072D7F8", 0x0072D7F8, 4, (0,), 8, ((0x004EDB1F, 0, None),),
      "0x004EDA80's index", "0x004EDA80: load 0x004EDB17, call 0x004EDB1F"),
-    ("g_UiMsgHandlers", 0x006D61B0, 0xC, (8,), 11, ((0x00420054, 8, None), (0x00420281, 8, None), (0x004202E1, 8, None)),
+    ("tbl_006D61B0", 0x006D61B0, 0xC, (8,), 11, ((0x00420054, 8, None), (0x00420281, 8, None), (0x004202E1, 8, None)),
      "{kind, window message, handler} records", "registered by 0x00451DB0 -> 0x00451C70 -> 0x00420BF0.. -> "
      "0x00420A70; called by the message dispatch 0x00420054, 0x00420281, 0x004202E1"),
 )
@@ -793,6 +793,21 @@ class Binary:
         res = (sorted(got), sorted(opened), len(seen))
         self._cache[(f, direct)] = res
         return res
+
+    def closure(self, addr):
+        """The functions of a hook's reach (roots included), and the references among them that no declared edge
+        accounts for: [(function, reference address)]. A reference left over may be an undeclared caller."""
+        f = addr if addr in self.funcs else self.func_of(addr)
+        seen, todo = {f}, [f]
+        while todo:
+            x = todo.pop()
+            if x in self.roots or x in self.dead:
+                continue
+            for c in self.rev.get(x, ()):
+                if c not in seen:
+                    seen.add(c)
+                    todo.append(c)
+        return seen, sorted((x, r) for x in seen if x not in self.roots for r in self.unexplained.get(x, ()))
 
     def chain(self, addr, root=None):
         """One shortest caller chain from the hook up to a pass root (or the given root): [(function, the anchor of
@@ -1618,9 +1633,12 @@ def cmd_reach(a):
             ranks |= g[1]
         for o in opened:
             opens[o] += 1
-        print("0x%08X fn 0x%08X visited %d roots %d open %d -> %s %s; ranks reached %s; chain %s%s" % (
-            h, f, n, len(got), len(opened), st, set_name(s) if s else "-", set_name(frozenset(ranks)) if ranks else "-",
-            chain_text(bin_, ch), "" if not opened else "; open e.g. " + ",".join("0x%08X" % x for x in opened[:5])))
+        unex = bin_.closure(h)[1] if not a.direct else []
+        print("0x%08X fn 0x%08X visited %d roots %d open %d unexplained %d -> %s %s; ranks reached %s; chain %s%s%s" % (
+            h, f, n, len(got), len(opened), len(unex), st, set_name(s) if s else "-",
+            set_name(frozenset(ranks)) if ranks else "-", chain_text(bin_, ch),
+            "" if not opened else "; open e.g. " + ",".join("0x%08X" % x for x in opened[:5]),
+            "" if not unex or opened else "; unexplained " + ",".join("0x%08X@0x%08X" % u for u in unex[:8])))
     if opens and not a.direct:
         print("open functions (no caller once the tables are followed), by hooks reaching them:")
         for o, c in opens.most_common():

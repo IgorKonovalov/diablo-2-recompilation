@@ -319,6 +319,10 @@ class Dispatch(unittest.TestCase):
         self.assertEqual(frame.hook_status(b, 0x401300)[0], "dispatch")
         self.assertEqual(frame.hook_status(b, 0x401600)[0], "universal")
         self.assertEqual(frame._closed(b, [0x401200], None), (frozenset({9}), "dispatch"))
+        b.unexplained[0x401200].append(0x6D1000)
+        seen, unex = b.closure(0x401200)
+        self.assertEqual(seen, {0x401200, 0x401100, 0x401000})
+        self.assertEqual(unex, [(0x401200, 0x6D1000)])
 
     def test_site_and_dead_checks(self):
         frame.TABLES = (("T", 0x6D0000, 4, (0,), 2, ((0x401120, 0, None),), "idx", "a push is no call"),)
