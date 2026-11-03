@@ -26,14 +26,21 @@ file). Names below are `re/symbols.csv` names.
   (`Game+0xB8`, 0xA20 bytes) and makes ten walks in a fixed order: missiles, players, monsters, objects, items; for
   each type first its **every-frame list**, then **the current slot** of its 64-slot ring. Each walk reads its list's
   head when it starts, so a record queued during an earlier walk of the same frame is found by a later walk of its
-  own list. (fn:sub_005414D0_GameRunUnitEvents@0x005414D0, 0x005414EC–0x00541589)
+  own list. (fn:sub_005414D0_GameRunUnitEvents@0x005414D0, 0x005414EC–0x00541589) *2026-11-03 (Phase 2a):* held in the game's
+  own runs, `[C]` in part: players' slot walk before the monsters' (3 007 dispatch pairs placed by call site), the
+  monsters' every-frame walk before their slot walk, the missiles' walks before the players' and monsters' events, the
+  objects' after them; the items' walks and the objects' and missiles' own every-frame/slot order are not separated
+  ([frame/0004](0004-order-on-kept-logs.md) § 2, run:2026-11-03-frame-order).
 - [I] **The order inside a list is the queue order, not a hash order.** An every-frame record is pushed on the
   **front** of its type's every-frame list, so that list runs **newest first**; a timed record is appended at the
   **tail** of slot `frame % 64` of its type, so a slot runs **oldest queued first**, and of its records only those
   whose frame equals `Game+0xA8` run (each freed after its run); the others (frames 64·k later) are passed over.
   The unit type picks the list through `g_UnitTypeEventList` (player 0, monster 1, object 3, missile 2, item 4). This
   answers the plan's open question 3. (fn:sub_005415E0_EventQueueEveryFrame@0x005415E0,
-  fn:sub_005416B0_EventQueueAt@0x005416B0, data:g_UnitTypeEventList@0x006E0B9C)
+  fn:sub_005416B0_EventQueueAt@0x005416B0, data:g_UnitTypeEventList@0x006E0B9C) *2026-11-03 (Phase 2a):* held in the game's own
+  runs, `[C]` in part: the monsters' and players' slot lists oldest queued first (4 579 consecutive dispatch pairs
+  matched to logged queue calls, 0 inverted) and the missiles' every-frame list newest first (24 652 pairs, 0 oldest
+  first; frame/0004 § 3, run:2026-11-03-frame-order).
 - [C] **The queue and the walks, emulated** (1 400 cases, 0 mismatches, no traced access outside the declared image,
   every case compared byte for byte over the control, both record blocks and eight units): the kind bound
   (`kind < 15`, signed), the raise of a frame ≤ the current one to the current + 1, frame −1 sent to the every-frame

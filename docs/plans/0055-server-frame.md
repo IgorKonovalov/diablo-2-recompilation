@@ -458,3 +458,32 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   no seed), the re-chained resynchronised entries of plans 0045 and 0052 (Done-when), and the cross-type every-frame
   runs per receiving type that the kept logs hold (P1.2 review ruling 1); (5) findings in frame/0004 and the run in
   frame/experiments, the lane's usage row, the review request.
+- **2026-11-03 — Phase 2a the order model on the kept logs (reverser, `lane/p55a`; review requested).**
+  [frame/0004](../findings/frame/0004-order-on-kept-logs.md), [frame/experiments](../findings/frame/experiments.md)
+  (run:2026-11-03-frame-order; the checkpoint's name `2026-10-30-frame-order`, run on 2026-11-03 and dated so), new
+  tool `tools/frame.py` (`73715f53…`: `kinds`, `reach`, `check`, `rechain`) with `tools/test_frame.py` (18 tests);
+  kept outputs under `workspace/logs/p55a/` (manifest `11056497…`, 8 lines), development runs under
+  `workspace/logs/p55a/dev/` (manifest `dabf2b83…`, 39 lines, passing from `dev/`). No symbol rows. Totals taken after
+  merging `main` `dda63dfd`. The model: 21 ranks per stamp (`GameTick`'s passes, the ten walks, the drain after the
+  tick), a kind-to-pass map of 115 kinds over six logger families with an anchor per kind (the hook's direct-call
+  reach to pass roots, the return address's, a dispatch call site, anim's logged phase, the unit type; nested events
+  take their pair's set). Found, over the 331 frame-stamped corpus logs (6 436 250 events): **0 mismatches** in the
+  192 294 frames with two or more placed events (1 719 463 placed, 267 695 by their own kind), 14 061 separating pairs
+  (3 105 without the logged phase), four control orders failing (17 040, 9 608, 110 and 87 events); the slot lists
+  oldest queued first (4 579 pairs, 0 inverted) and the missiles' every-frame list newest first (24 652 pairs, 0 oldest
+  first) in the game's own runs; a skill request in the drain carries the preceding tick's stamp (87 pairs; frame/0001
+  § 5 raised in part); 1 065 396 one-frame seed hand-offs, 1 023 086 handed, 42 310 stepped, 0 reversed, 0 off (game
+  seed: 440 754, 4 675 stepped). **Done-when:** the 309 395 other frames of the 501 689 with two or more events hold
+  fewer than two placed events (74 of the 89 hooks are reached through pointers the reach does not follow), so they
+  test nothing; the record names it as the limit (frame/0004 § 1, open question 1). Re-chained: 7 more player resyncs
+  (part 2's "nested" class), so 142 of the 281 player gaps; 0 of the 331 monster gaps (no AI line in their logs); of
+  the 3 459 pairs 3 155 + 90 chain, 214 stay open, each named with its first unclosed link (`rechain-gaps.txt`).
+  Cross-type every-frame queues the kept logs hold (P1.2 review ruling 1): monsters 926 (79 in the missiles'
+  every-frame walk, 847 in the players' slot walk), players 0; objects, items and missiles none logged. Limits per
+  logger: stats, economy (all three) and h6b carry no unit id, h6b no seed; combat, two-combat, economy-hire and h6b
+  have no frame with two placed events. frame/0002 §§ 1–2's walk and list order and frame/0001 § 5's stamp carry dated
+  `[C]`-in-part notes. **Review request (architect):** the model's ranks and the kind map's rules (is the
+  return-address rule a fair anchor; the `EF` phase as an observation, not a prediction, and the 3 105 pairs without
+  it); the Done-when reading (0 mismatches where anything is placed, the unplaced frames as the stated limit, or a
+  re-scope); the 7 nested re-chains; the dated notes in frame/0001 and frame/0002. The research-map row and the plans
+  index are not touched (architect's files).
