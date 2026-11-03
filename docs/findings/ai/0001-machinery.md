@@ -306,6 +306,7 @@ flowchart TD
   from the curse path; the rest only through the five unresolved pointer loads, if at all). (data:g_MonAiStateRows@0x0073D358, fn:sub_005B0E00_MonAiInit@0x005B0E00,
   fn:sub_005DDD00_MonFleeFrom@0x005DDD00, fn:sub_005D18E0_ImpAttach@0x005D18E0, fn:sub_005C35C0_CurseApplyCb@0x005C35C0,
   tbl:Skills.txt:auratargetstate)
+  *2026-11-03 (batch 11):* two of the five unresolved pointer loads, 0x005E84D8 and 0x005FCF88, are the `alt`s of rows 51/147 and 135/140/145 and pass the current state (`ctl.state`, the state the switch stored), read in [ai/0012](0012-batch11.md) § 2.1 `[I]`; three stay unresolved. (fn:sub_005E8480_AiDiabloAlt@0x005E8480, fn:sub_005FCF30_AiBaalAlt@0x005FCF30)
 - [I] **`MonAiInit(ECX game, EDX unit; ctl, state)`** returns at once unless game, unit and ctl are non-null, `state < 18`
   (signed) and the unit is a monster; a class at or past the MonStats count forces state 1. When `AiCtl.think` is
   non-zero, equals the `think` of the row of the **current** `AiCtl.state`, and that row has an `alt`: `AiCtl.state ←

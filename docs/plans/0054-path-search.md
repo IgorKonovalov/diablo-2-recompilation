@@ -91,16 +91,26 @@ Data first, then code, then spec.
     built from predicted room grids (`tools/collision.py`) and the unit marks (`PATH_SetMarkMask`), and how large the
     search context is; the log design for Phase 2 (one line per plan: entry, the points, the return, entry and exit
     seed; the volume estimate).
-  - **P1.2 the search.** `PathPlanSearch` and `PathSearchRun` (types 0 and 16): the node store in the context, the
-    cost and the heuristic, the neighbour order and the tie-break, the limits (node count, distance), how the found
-    route is reduced to the path's points, and `PathSearchDirDraw` and the other draws under type 16 (unreachable, read
-    because they share the code). `PathPlanType1` and `PathPlanType15` if P1.1 finds they call the search.
-  - **P1.3 the short planners.** `PathPlanGreedy`, `PathPlanGreedyNear` (its `dx² + dy² < 325` switch to type 1),
-    `PathPlanKnockback`, `PathPlanOnePoint`, the three unnamed slots (3, 11, 12, with their draws now followed),
-    `PathPlanStraight` with its three modes, `PathPlanSpiral` and `PathPlanRandomWalk`; **missiles H1**: which of the
-    callback's three path calls steps the seed, and why 20 for a Firestorm sub-missile and 38 for class 195, emulated.
-- The P1.1 review rules the batch cut of P1.2 and P1.3 (it may merge or split them on the register), the emulation
-  image and the Phase 2 floors.
+  - **P1.2 the search** (cut ruled at the P1.1 review, 2026-11-03). `PathPlanSearch` and `PathSearchRun` (types 0 and
+    16): the node store in `PathSearchRun`'s 0x36FF8-byte stack frame, the cost and the heuristic, the neighbour order and
+    the tie-break, the limits (node count, distance, the 50 000-cell rectangle assert at 0x0067AABC), how the found route
+    is reduced to the path's points, and `PathSearchDirDraw` and the other draws under type 16 (unreachable, read because
+    they share the code; the seed at frame `+0x36FD4`). First item: a reading of `PathPlanType1`, `PathPlanType15` and
+    `PathPlanGreedyNear`'s type-1 switch; each that calls `PathSearchRun` joins this batch, the others go to P1.3a. Also:
+    the search's largest point count against the record's 78 slots (review-fixes rule 15), and the 14 byte stores at the
+    request offsets in 0x0058AB9C–0x00594647 (path records or not; path/0001 § 2). The emulation enters at the planner
+    with a declared `PathPlanCtx` in `ECX` (`PathPlan`'s `IsBadCodePtr` import blocks a run through it) over multi-room
+    images (P1.1 review ruling 2).
+  - **P1.3a the server-reached short planners.** `PathPlanGreedy` (2, 5, 6, 13, with `+0x98`), `PathPlanGreedyNear` (7,
+    its `dx² + dy² < 325` switch to type 1), `PathPlanKnockback` (8), `PathPlanOnePoint` (9), `PathPlanType1` and
+    `PathPlanType15` unless P1.2 took them, `PathPlanStraight`'s modes 10 and 14 with `PathPlanSpiral` and
+    `PathPlanRandomWalk` (type 4 is P1.1's); **missiles H1**: which of the callback's three path calls steps the seed,
+    and why 20 for a Firestorm sub-missile and 38 for class 195, emulated. Each planner's largest point count against 78.
+  - **P1.3b the client-only slots** (3, 11, 12: 0x00679E50, 0x00679FD0, 0x00679E60), from the code alone, their draws
+    followed (`[I]`, named unreached by server code), and the follow of the `+0x3C` stores outside the path module that
+    P1.1 left unfollowed (the remainder of "no server code sets 3, 11 or 12"). It may run in P1.3a's lane after P1.3a
+    or in its own.
+- The P1.1 review ruled the batch cut (above), the emulation image and the Phase 2 floors (implementation log, 2026-11-03).
 
 ### Phase 1b — Community cross-check
 - **Owner skill:** reverser (no Ghidra)
@@ -118,8 +128,17 @@ Data first, then code, then spec.
   marks inside the search's bounds (as P1.1 designs them); outputs the points, the return and the exit seed. Filtered
   to the logged character's rooms and capped per type and per session (ADR-0014 § Log volume).
 - **Done when** (estimates, confirmed at the P1.1 review): `run:YYYY-MM-DD-path` reproduces with **0 mismatches** over
-  - 2 000 plans in all, at least 100 per type that a stock caller reaches, over player moves, monster AI requests and
-    missile paths, in at least three acts (a town, an outdoor level and a maze level);
+  - 2 000 plans in all over player moves, monster AI requests and missile paths, in at least three acts (a town, an
+    outdoor level and a maze level): at least **100 each for types 1, 2, 4, 7, 8, 10, 13 and 15**, at least **30 each for
+    5, 6, 9 and 14** (few stock callers: two AI override sites, the leap and jump skills, Blessed Hammer), type 0 counted
+    where a `current` site plans it, no floor; types 3, 11, 12 and 16 have no server request (path/0001 § 11) and no
+    floor, and each session breaks on their planners and on the two type-16 functions with the `PathPlan` caller
+    logged, a server-caller hit being a mismatch routed to P1.3b; the absence counts only beside a live control (the
+    same break firing on a reached planner in the same window);
+  - the log as path/0001 § 13 designs it (`PLN`, `PLC`, `PLX`), with the conditions of the P1.1 review ruling 3: the
+    `PLC` line carries every context field the planner reads, the unit list every unit whose marks are in the window
+    with whether it is marked at the call, and the first 10 plans of each session also a dump of the window's live
+    cells, compared with the predicted grid plus the unit list (the tie of scoping question 3);
   - **missiles H1:** the 450 creations of run:2026-10-25-skills re-walked from the kept logs with the planner's draws
     modelled (the 442 Firestorm and 8 class-195 cases), and at least 50 new type-10 plans with their draws chained to
     the next event on the missile seed;
@@ -191,7 +210,9 @@ the recommendations, and an answer that differs changes the phase it names.
 
 - **The unit marks' volume.** If the marks inside a search's bounds are too many to log per plan, Phase 2 may need the
   injected logger that plan 0052 question 3 and ADR-0022 hold in reserve; P1.1's estimate decides whether to raise it.
-- **The three unfollowed slots** (3, 11, 12): whether any draws is P1.3's first item; if one does and a stock caller
+  *Answered at the P1.1 review (ruling 3):* not needed; the marks are logged as a unit list (path/0001 § 13), about
+  6 000 lines and 2 MB a session under ADR-0014's caps (an estimate).
+- **The three unfollowed slots** (3, 11, 12): whether any draws is P1.3b's (P1.1 review ruling 1); if one does and a stock caller
   reaches it, Phase 2 adds it to its chained-draw floor.
 - **The type-16 setters** (no reference in the image): a wine run that breaks on them would settle whether anything
   reaches them (ai/0001 *Open questions*); it costs one break line in Phase 2's sessions.
@@ -218,3 +239,81 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   constant in the creating code); the H1 class-195 missile is Missiles row 195 `lightunique`, named by no cell of the six
   tables scanned (so it is created by index in code: P1.3's H1 item); a flags word (`0x1E604`) carries a bit outside the 8 to
   18 that `PathSetType` replaces (P1.1 reads the mask). Meanings of every flags bit stay `[L]`.
+- **2026-11-03 — Phase 1, batch P1.1, `PathPlan` and the request register, for review (reverser, static, `lane/r54a`,
+  from `main` 00c53f7f; `main` c7d3ee1d merged before the totals).** [path/0001](../findings/path/0001-pathplan-register.md)
+  (new directory `docs/findings/path/`, with [experiments.md](../findings/path/experiments.md)) and `re/types/path.h`:
+  `PathPlan`'s entry and its 0x34-byte request context, the target refresh and object step, `PathTargetNotTown`,
+  the unmarks, the flag-0x1000 free-target walk and the player extension, the slot read, the tail after the planner
+  (`[I]`: the `IsBadCodePtr` import sits between the slot read and the planner call), `PathPlanStraight` with
+  `PathPlanToUnit`, `PATH_DynamicCreate`, `SUnitPathCreate`, `PathSetType` (and its third table `g_PathTypeParam98`),
+  the setters, `PathMoveReset`, `PathAimNextPoint` and `PathReplan`; the record's request fields (78 point slots,
+  `+0x91` the planner's limit, `+0x92`..`+0x94`). Draws: none in any function read (`[I]`, `tools/path_scan.py
+  draws` and `RngCallGraph`). **Register:** 68 calls in 58 functions, 34 server (player 2, mode machine 5, AI 3,
+  skill 10, missile 10, movement 2, unreferenced 2) and 34 client; the player's walk plans type 7; no server code sets
+  3, 11 or 12. **[C] by emulation** (run:2026-11-03-path-emu-1, `tools/path_emu1.py`, 10 families, 4 320 cases, 0
+  mismatches, 0 stopped, 0 unaccounted traced accesses; the image built from `tools/collision.py`'s predicted grids
+  of two kept run:2026-10-14-collision logs, a town beside an outdoor level and a maze level, with seeded unit marks;
+  every negative and the site control fail what they separate; development run under `emu/dev-1/`). The emulator
+  scripts `EmuTrace.java`, `EmuBoundary.java` and `EmuCall.java` were copied unchanged from `lane/r55e` before the
+  run (identical to `main` after the merge). Not emulated, with the reason: the tail, `PATH_DynamicCreate` (allocator
+  first), the unmark and mark (they write the declared grid), the x87 target offset, the planners. The search context
+  is a 0x36FF8-byte stack frame of `PathSearchRun` (P1.2 needs no image for it). Proposed cut (finding § 14): P1.2 as
+  planned; P1.3 in two parts, the server-reached short planners with missiles H1 first, then the client-only slots
+  3, 11, 12 from the code; Phase 2's floors without 3, 11, 12 and 16; the log design and volume in § 13. 27
+  `re/symbols.csv` rows (21 func, 6 data, all I). Kept outputs `workspace/logs/r54a/` (manifest 18 lines; `emu/`
+  51; `emu/dev-1/` 51; each passes from its directory). Backlog: the
+  [review request](../backlog/archive/2026-11-03-reverser-architect-plan-0054-p1-1-review.md),
+  [archivist](../backlog/archive/2026-11-03-reverser-archivist-pathtypes-meanings-anchored-by-path-0001.md) (PathTypes
+  meanings, the object bytes +0x13A/+0x13C).
+- **2026-11-03 — Phase 1, batch P1.1 reviewed (architect, Tier A, `lane/r54a`): accept with fixes (6).** Read: the
+  diff against `main` (7f48a7db, db792e14, daa18409), path/0001 in full, its experiments entry, `re/types/path.h`, the
+  27 `re/symbols.csv` rows (21 func, 6 data, all I, no clash; every anchor spot-checked resolves), and the kept
+  outputs: the three manifests pass from their directories (18, 51, 51 lines); `check.txt` (`4f5353f5…`) gives 4 320 of
+  4 320, the controls' separating counts and the 1 382 boundary cases as filed; the refresh's 405 cases, the x87
+  boundary's 37, the object step's 47, the slot's 241, the type-10/14 hand-offs' 100 recounted from its `OUTCOMES`
+  and `SITES` lines; `p1-register.txt` gives 68 sites, 58 functions, owners 2/5/3/10/10/2/2 and 34 client, force
+  `0x0` 66, `EDI` 1, `EAX` 1; `p1-settypes.txt` 51 calls (34 server, 17 client), no server 3, 11 or 12. The tool
+  revisions in the run directories equal `tools/path_scan.py` and `tools/path_emu1.py`. Fixes (applied in the review
+  commit): **overclaim 2**: `PathReplan`'s second plan (type 15 after a failed first plan) sat inside the `[C]` past
+  the first `PathPlan` boundary, now `[I]` (§ 9, rule 13); the refresh's return of 1 after the x87 offset call, a
+  boundary in all 37 cases, now `[I]` (§ 3). **omission 3**: the refresh's unit type 5 (above the jump table, → 1, 49
+  cases) missing from § 3 and `path.h`; § 10's "every draw lies in the planner" without the slots 3, 11, 12 that no
+  graph rooted (rule 9); the new directory missing from `docs/findings/README.md`'s index. **miscount 1**: the summary's
+  type-4 bullet "35 cases" for the 47 it covers (35 one point, 12 refused). Also the archivist entry's item (4) tagged
+  `[I]` (no claim changed). Research map row `path/search` updated.
+  **Rulings.** (1) **The cut** (§ Phase 1 amended): P1.2 as the lane proposed (types 0 and 16, `PathSearchRun` and its
+  draws), its first item a reading of `PathPlanType1`, `PathPlanType15` and greedy-near's type-1 switch, each that calls
+  the search joining P1.2; plus the 14 byte stores and the search's point bound. P1.3a the server-reached short planners
+  with missiles H1; P1.3b the client-only slots 3, 11, 12 from the code with their draws followed, and the `+0x3C`
+  follow of ruling 4; P1.3b may share P1.3a's lane. (2) **The image** is fit for P1.2/P1.3 as a base (predicted grids
+  equal to the logged ones in 406 checks, seeded marks), not as it stands: a planner emulation enters at the planner
+  with a declared `PathPlanCtx` (the import blocks a run through `PathPlan`), with the unit's own marks (and the target's
+  under `0x800`) absent as `PathPlan` leaves them; its blocks cover the search's window (±100 subtiles: up to 6 × 6
+  rooms of 40, 4 × 4 of 60, with near lists), cells outside every declared room accounted as no room; the "one subtile
+  inside a room" domain is dropped, since a route crosses room edges, so the edge branches of `COLL_PlusTestBool` and
+  `COLL_RectTestBool` run inside the case and the case writer models them (drlg/collision's reading); the 0x36FF8-byte
+  frame stays on the declared stack (1 MB, `_chkstk` probing it), compared as scratch (a read of a frame byte before
+  its write is a traced access and fails the case), not dumped per case; type 10's unit seed and type 16's frame seed
+  declared, the RNG functions run inside the case, their draws compared as seed writes; cases at and past the 50 000-cell
+  assert. (3) **Phase 2's floors** (§ Phase 2 amended): 100 each for types 1, 2, 4, 7, 8, 10, 13, 15; 30 each for 5, 6, 9,
+  14; type 0 counted where a `current` site plans it; 3, 11, 12, 16 without a floor, watched by break lines with the
+  caller logged and a live control. The log design of § 13 stands with three conditions: the `PLC` line carries every
+  context field (`limit`, `b1C`, `refresh`, `+0x98`, `+0x34`), the unit list every marking unit in the window with its
+  marked state at the call, and the first 10 plans per session a live-cell dump of the window as the grid-and-marks tie;
+  the ~6 000 lines a session is an estimate, and the injected logger is not raised (open question answered). (4) **"No
+  server code sets 3, 11 or 12" stands at `[I]`**: the direct `PathSetType` calls, the four register arguments (each a
+  restore or an enumerated AI type, ai/0001 § 8: 1, 2, 5, 6, 7, 13, 15, 100, 101) and `PathReplan`'s and
+  `PATH_DynamicCreate`'s direct stores leave only register stores to `+0x3C` outside the path module; a reviewer's spot
+  check (objdump of the pinned image, not kept, no claim rests on it) finds no `mov dword [reg+0x3c], 3 | 0xB | 0xC`
+  anywhere in it. P1.3b closes the remainder with a kept scan, Phase 2's break lines observe it. (5) **Open questions**:
+  `+0x13A`/`+0x13C` stay `[L]` with the archivist entry; the 14 byte stores go to P1.2's first items; the 78-point bound
+  to each planner batch (P1.2 for the search, P1.3a/b for the rest), stated as rule 15 asks; the type-16 setters and
+  the client slots to Phase 2's break lines. Ledger: verdict and fixes in the lane's row. Next: P1.2 (static lane B).
+
+- 2026-11-03 (`lane/a65`, archivist): [PathTypes](../tables/PathTypes.md) linked to path/0001 (entry
+  `2026-11-03-reverser-archivist-pathtypes-meanings-anchored-by-path-0001`, closed). `PathSetType`'s mask and whole-word OR `[C]`,
+  `g_PathTypeParam98` (17 words, read by script: 2, -2, -4 at types 5, 6, 12) `[C]`, `PathPlan`'s entry flags `0x40000`, `0x800`, `0x1000` `[C]`,
+  `PathSetType`'s `0x2000`, `0x8000`, `0x4000`, `0x10000` `[C]`, `0x10`, `0x20`, bit 0, `0x200` `[I]`, the server callers and item (4) `[I]`
+  with the `+0x3C` scope; `0x100`, `0x400`, `0x20000` stay `[L]`. `+0x13A` / `+0x13C` are `IsDoor` / `Orientation` by offset
+  ([Objects](../tables/Objects.md)) but stay `[L]` (ruling 5; the record behind 0x00621A70 / 0x00621AC0 is not stated). The `path` survey
+  baseline is unchanged (the edit reads nothing the survey reads).

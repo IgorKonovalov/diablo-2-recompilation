@@ -554,3 +554,144 @@
 - **Conclusion:** the maps are `[C]` in ai/0010 §§ 2, 3, each up to its first boundary or return; the entry call of
   state 16's think and row 124's sign test `[C]` as calls. Not the callees, nothing after them. No symbol raise
   (ADR-0015 scope, review-fixes rule 14). (run:2026-11-03-ai-cat-emu-9)
+
+## run:2026-11-03-ai-cat-emu-10
+
+- **Question:** (plan 0052 Phase 1, catalogue batch 10, pool-G) Do the think functions of rows 126, 127, 129, 130,
+  132, 134, 136, 137, 139 and 141, the inits of rows 127, 129 and 134, row 133's class jump with the quest test of its
+  three class thinks, and row 131's entry map their declared inputs to the first boundary they reach (or their
+  return), its call site, its arguments, the unit seed, `AiCtl+0x14/+0x18/+0x1C/+0x3C` and `Unit+0xC4` as
+  [ai/0011](0011-batch10.md) § 2 reads them?
+- **Setup:** Ghidra p-code emulator via `re/ghidra_scripts/EmuBoundary.java` (`0c88b790…`, `lane/r55e`'s per-case copy
+  fix, unchanged), lane project copy `workspace/ghidra-r52j` (symbols replayed from `re/symbols.csv` and the scratch
+  `workspace/logs/r52j/b10-sym-scratch.csv`; emulation does not use them), heap 3 GB (`GHIDRA_HEADLESS_MAXMEM=3G`),
+  each of the fifteen headless runs inside its own `systemd-run --user --scope -p MemoryMax=4G`, one Ghidra at a time.
+  No wine, no slot. Models and case writer `tools/ai_cat_emu10.py` (`db68ae1d…`), every draw from
+  `random.Random("r52j-<family>")`. Files in `workspace/logs/r52j/emu/`, `manifest.sha256` (`f5b88301…`, 61 lines,
+  `check.txt` `a348deef…`); `sha256sum -c manifest.sha256` from that directory passes.
+- **Procedure:**
+  ```
+  D=workspace/logs/r52j/emu
+  python3 -I tools/ai_cat_emu10.py cases
+  export GHIDRA_PROJ_DIR=workspace/ghidra-r52j GHIDRA_HEADLESS_MAXMEM=3G
+  for f in spotter barbi barb genspi genspawn mauler wussie statue ancient thronei throne taunt defiler tentacle bminion; do
+    systemd-run --user --scope -q -p MemoryMax=4G \
+      tools/ghidra.sh emuboundary $D/$f.cases $D/$f.mem > $D/$f.out 2> $D/$f.err
+  done
+  python3 -I tools/ai_cat_emu10.py check > $D/check.txt
+  python3 -I tools/ai_cat_emu10.py manifest --write
+  ```
+  Each case writes the game's difficulty, frame and quest list (none, or one or two nodes with an id, a data pointer
+  and the data's `+0x0C` word and `+0x11` byte), and the one unit hash slot a lookup reads (row 139's owner); the unit
+  (type 1, class, mode, monster data, seed, path, game, owner type and guid, `+0xC4`, `+0xC8`, `+0xD0`) and its path
+  (x, y, room); the target (type, guid, mode, path or none with its `+0x00` word, x, y, static words and room,
+  `+0xC6`, `+0xE4`) or none; a second unit for the lookup; the monster data's `+0x28` and the AI control (state,
+  `+0x14/+0x18/+0x1C`, `+0x3C`); the `AiCtx` (with `+0x1C` 0 in row 134's `mnull` cases); the unit's MonStats record
+  (the `aip` block, `Skill1..8`, `Sk1..8mode`) at the class's place under `DataTables+0xA78`, and the DataTables pointer
+  with the MonStats base and count; the memory spec observes 36 callees and guards the allocator and fatal entries (6).
+- **Observed** (`check.txt`, first line of each family):
+  ```
+  AI52J spotter cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=200 le_separating=5 le_passed=0 d0_separating=123 d0_passed=0 cmp_separating=27 cmp_passed=0 u16_separating=0 u16_passed=0 abs_separating=0 abs_passed=0 self_separating=53 self_passed=0 site_control_passed=0 boundaries=3
+  AI52J barbi cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 abs_separating=0 abs_passed=0 self_separating=0 self_passed=0 site_control_passed=0 boundaries=1
+  AI52J barb cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=115 le_separating=4 le_passed=0 d0_separating=31 d0_passed=0 cmp_separating=15 cmp_passed=0 u16_separating=0 u16_passed=0 abs_separating=0 abs_passed=0 self_separating=0 self_passed=0 site_control_passed=0 boundaries=4
+  AI52J genspi cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 abs_separating=0 abs_passed=0 self_separating=0 self_passed=0 site_control_passed=0 boundaries=1
+  AI52J genspawn cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=0 le_separating=0 le_passed=0 d0_separating=45 d0_passed=0 cmp_separating=54 cmp_passed=0 u16_separating=0 u16_passed=0 abs_separating=26 abs_passed=0 self_separating=0 self_passed=0 site_control_passed=0 boundaries=4
+  AI52J mauler cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=240 le_separating=33 le_passed=0 d0_separating=81 d0_passed=0 cmp_separating=34 cmp_passed=0 u16_separating=11 u16_passed=0 abs_separating=0 abs_passed=0 self_separating=0 self_passed=0 site_control_passed=0 boundaries=4
+  AI52J wussie cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 abs_separating=0 abs_passed=0 self_separating=0 self_passed=0 site_control_passed=0 boundaries=1
+  AI52J statue cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 abs_separating=0 abs_passed=0 self_separating=0 self_passed=0 site_control_passed=0 boundaries=2
+  AI52J ancient cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 abs_separating=0 abs_passed=0 self_separating=0 self_passed=0 site_control_passed=0 boundaries=7
+  AI52J thronei cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 abs_separating=0 abs_passed=0 self_separating=0 self_passed=0 site_control_passed=0 boundaries=1
+  AI52J throne cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=19 cmp_passed=0 u16_separating=0 u16_passed=0 abs_separating=0 abs_passed=0 self_separating=0 self_passed=0 site_control_passed=0 boundaries=3
+  AI52J taunt cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=0 le_separating=0 le_passed=0 d0_separating=72 d0_passed=0 cmp_separating=55 cmp_passed=0 u16_separating=0 u16_passed=0 abs_separating=0 abs_passed=0 self_separating=0 self_passed=0 site_control_passed=0 boundaries=4
+  AI52J defiler cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 abs_separating=0 abs_passed=0 self_separating=0 self_passed=0 site_control_passed=0 boundaries=2
+  AI52J tentacle cases=240 match=240 bad=0 stopped=0 traced=0 accounted=5 drew=129 le_separating=7 le_passed=0 d0_separating=99 d0_passed=0 cmp_separating=17 cmp_passed=0 u16_separating=0 u16_passed=0 abs_separating=0 abs_passed=0 self_separating=0 self_passed=0 site_control_passed=0 boundaries=3
+  AI52J bminion cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=240 le_separating=41 le_passed=0 d0_separating=135 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=4 u16_passed=0 abs_separating=0 abs_passed=0 self_separating=0 self_passed=0 site_control_passed=0 boundaries=5
+  AI52J total cases=3600 match=3600
+  AI52J result=ok
+  ```
+  The `SITES` line under each family counts the cases per boundary and call site (45 site/boundary pairs over the 15
+  families, a return counted as one); the `EDGES` line the cases that meet each non-draw compare and each draw at
+  equality; the `TAGS` line (rows 126, 133, 139) the paths ai/0011 § 3 names; `drew` the cases whose seed moved before
+  the boundary; `accounted` the traced reads the checker accounts as `g_UnitHashOffsets` (`0x006E10E0 + 4·type` at
+  0x00552F9C); it fails a family when one is missing. **Development run** (rule 6): `emu/dev-1/` (the first case
+  writer; its first check had 53 mismatches, all `genspawn` cases expecting row 129's `v18 ≥ aip3` command at the
+  call 0x005E620B where the code's is 0x005E624C, ai/0011 § 3; the model was corrected, the outputs were not rerun);
+  its copy `dev-1/ai_cat_emu10.py.rev` (`94625ccf…`, the corrected model with the first writer) regenerates its case
+  files byte for byte; `dev-1/check.txt` (`2fdf2ac6…`): 3 600 cases, all matching, 0 stopped, every control failing
+  every case it separates, `result=ok`; `dev-1/manifest.sha256` (`c45d64df…`, 62 lines) passes from its directory.
+  The kept run's case and memory files and `check.txt` regenerate identically with the committed tool (`cases` into a
+  scratch directory, `check` on the kept outputs, compared with `cmp`).
+- **Conclusion:** the maps are `[C]` in ai/0011 §§ 2, 3, each up to its first boundary or return; row 131's entry
+  call and row 133's quest tests `[C]` as calls. Not the callees, nothing after them. No symbol raise (ADR-0015 scope,
+  review-fixes rule 14). (run:2026-11-03-ai-cat-emu-10)
+
+## run:2026-11-03-ai-cat-emu-11
+
+- **Question:** (plan 0052 Phase 1, catalogue batch 11, bosses-B) Do the think, init and `alt` functions of rows 51,
+  128, 135, 138, 140, 145 and 147, Diablo's decision 0x005E8810, Baal's decision 0x005FC630, its three tables and its
+  action 0x005FCB60, the pick callbacks 0x005E8EB0, 0x005FC000, 0x005EF5E0 and the unreferenced weighted pick 0x005FC130
+  map their declared inputs to the first boundary they reach (or their return), its call site, its arguments, the
+  unit seed and `AiCtl+0x14/+0x18/+0x1C` as [ai/0012](0012-batch11.md) § 2 reads them?
+- **Setup:** Ghidra p-code emulator via `re/ghidra_scripts/EmuBoundary.java` (`0c88b790…`, unchanged), lane project copy
+  `workspace/ghidra-r52k` (symbols replayed from the scratch `workspace/logs/r52k/b11-sym-scratch.csv`; emulation does
+  not use them), heap 3 GB (`GHIDRA_HEADLESS_MAXMEM=3G`), each of the twenty headless runs inside its own
+  `systemd-run --user --scope -p MemoryMax=4G`, one Ghidra at a time. No wine, no slot. Models and case writer
+  `tools/ai_cat_emu11.py` (`d5ece728…`), every draw from `random.Random("r52k-<family>")`. Files in
+  `workspace/logs/r52k/emu/`, `manifest.sha256` (`434a1e4b…`, 81 lines, `check.txt` `57f25e1a…`); `sha256sum -c
+  manifest.sha256` from that directory passes.
+- **Procedure:**
+  ```
+  D=workspace/logs/r52k/emu
+  python3 -I tools/ai_cat_emu11.py cases --dir $D
+  export GHIDRA_PROJ_DIR=workspace/ghidra-r52k GHIDRA_HEADLESS_MAXMEM=3G
+  for f in dalt balt diablo ddec dcb bcb nihli nihl stairs pcb bcrab bclone bdec bact bmelee bblock branged wpick uberd uberb; do
+    systemd-run --user --scope -p MemoryMax=4G \
+      tools/ghidra.sh emuboundary $D/$f.cases $D/$f.mem > $D/$f.out 2> $D/$f.err
+  done
+  python3 -I tools/ai_cat_emu11.py check --dir $D > $D/check.txt
+  (cd $D && sha256sum <every file but the manifest> > manifest.sha256)
+  ```
+  Each case writes the image the tool's docstring declares (the game, the unit and its path, the target and its path,
+  two more units for the lookups, the monster data and the AI control with its parameter ring and owner words, the
+  `AiCtx`, the MonStats record, the DataTables pointer, the quest list for `nihl`, the hash slots for `bclone`, the
+  weight block for `wpick`); register arguments by `r` lines (`EAX` in `bdec`, `bmelee`, `branged`, `wpick`; `ESI` in
+  `bblock`); the memory spec observes 44 callees and guards the allocator and fatal entries (6).
+- **Observed** (`check.txt`, first line of each family):
+  ```
+  AI52K dalt cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 abs_separating=0 abs_passed=0 uns_separating=0 uns_passed=0 site_control_passed=0 boundaries=1
+  AI52K balt cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 abs_separating=0 abs_passed=0 uns_separating=0 uns_passed=0 site_control_passed=0 boundaries=1
+  AI52K diablo cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 abs_separating=0 abs_passed=0 uns_separating=0 uns_passed=0 site_control_passed=0 boundaries=2
+  AI52K ddec cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 abs_separating=0 abs_passed=0 uns_separating=0 uns_passed=0 site_control_passed=0 boundaries=4
+  AI52K dcb cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=27 cmp_passed=0 u16_separating=0 u16_passed=0 abs_separating=21 abs_passed=0 uns_separating=0 uns_passed=0 site_control_passed=0 boundaries=1
+  AI52K bcb cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=26 cmp_passed=0 u16_separating=0 u16_passed=0 abs_separating=7 abs_passed=0 uns_separating=0 uns_passed=0 site_control_passed=0 boundaries=1
+  AI52K nihli cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 abs_separating=0 abs_passed=0 uns_separating=0 uns_passed=0 site_control_passed=0 boundaries=1
+  AI52K nihl cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=25 cmp_passed=0 u16_separating=0 u16_passed=0 abs_separating=0 abs_passed=0 uns_separating=0 uns_passed=0 site_control_passed=0 boundaries=2
+  AI52K stairs cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 abs_separating=0 abs_passed=0 uns_separating=0 uns_passed=0 site_control_passed=0 boundaries=1
+  AI52K pcb cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 abs_separating=0 abs_passed=0 uns_separating=0 uns_passed=0 site_control_passed=0 boundaries=2
+  AI52K bcrab cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 abs_separating=0 abs_passed=0 uns_separating=0 uns_passed=0 site_control_passed=0 boundaries=1
+  AI52K bclone cases=240 match=240 bad=0 stopped=0 traced=0 accounted=5 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 abs_separating=0 abs_passed=0 uns_separating=0 uns_passed=0 site_control_passed=0 boundaries=2
+  AI52K bdec cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 abs_separating=0 abs_passed=0 uns_separating=0 uns_passed=0 site_control_passed=0 boundaries=5
+  AI52K bact cases=240 match=240 bad=0 stopped=0 traced=0 accounted=15 drew=0 le_separating=0 le_passed=0 d0_separating=6 d0_passed=0 cmp_separating=29 cmp_passed=0 u16_separating=6 u16_passed=0 abs_separating=0 abs_passed=0 uns_separating=0 uns_passed=0 site_control_passed=0 boundaries=16
+  AI52K bmelee cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=0 le_separating=0 le_passed=0 d0_separating=160 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 abs_separating=0 abs_passed=0 uns_separating=0 uns_passed=0 site_control_passed=0 boundaries=1
+  AI52K bblock cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=0 le_separating=0 le_passed=0 d0_separating=160 d0_passed=0 cmp_separating=26 cmp_passed=0 u16_separating=0 u16_passed=0 abs_separating=0 abs_passed=0 uns_separating=0 uns_passed=0 site_control_passed=0 boundaries=1
+  AI52K branged cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=0 le_separating=0 le_passed=0 d0_separating=160 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 abs_separating=0 abs_passed=0 uns_separating=0 uns_passed=0 site_control_passed=0 boundaries=1
+  AI52K wpick cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=138 le_separating=41 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 abs_separating=0 abs_passed=0 uns_separating=19 uns_passed=0 site_control_passed=0 boundaries=1
+  AI52K uberd cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 abs_separating=0 abs_passed=0 uns_separating=0 uns_passed=0 site_control_passed=0 boundaries=1
+  AI52K uberb cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 abs_separating=0 abs_passed=0 uns_separating=0 uns_passed=0 site_control_passed=0 boundaries=1
+  AI52K total cases=4800 match=4800
+  AI52K result=ok
+  ```
+  The `SITES` line under each family counts the cases per boundary and call site (46 site/boundary pairs over the 20
+  families, a return counted as one); the `EDGES` line the cases that meet each ordered compare at equality; the
+  `TAGS` line the paths ai/0012 § 4 names; `drew` the cases whose seed moved before the boundary; `accounted` the traced
+  reads the checker accounts (`g_UnitHashOffsets` at 0x00552F9C in `bclone`, the jump table `0x005FCEF0 + 4(k−1)` at
+  0x005FCBC0 in `bact`); it fails a family when one is missing. **Development runs** (rule 6): `emu/dev-1/` (the first
+  tool, `dev-1/ai_cat_emu11.py.dev1` `9167167d…`; `check.txt` `90ba44e7…`, `result=FAIL`: `bcrab` 240 and `bclone` 38
+  register mismatches at the pick, `bdec` 240 ended at its own entry on the observe list, 56 and 15 unaccounted traced
+  reads; ai/0012 § 4) and `emu/dev-2/` (the corrected models, `dev-2/ai_cat_emu11.py.dev2` `97008dcc…`; `check.txt`
+  `391a669e…`, 4 800 cases, all matching, `result=ok`); manifests `c8e22d3b…` and `50b004fc…`, 82 lines each, each passes
+  from its directory. Each tool copy regenerates its run's case and memory files byte for byte and reproduces its
+  `check.txt`; the kept run's case and memory files and `check.txt` regenerate identically with the committed tool
+  (`cases` into a scratch directory, `check` on the kept outputs, compared with `cmp`).
+- **Conclusion:** the maps are `[C]` in ai/0012 §§ 2, 4, each up to its first boundary or return. Not the callees,
+  nothing after them. No symbol raise (ADR-0015 scope, review-fixes rule 14). (run:2026-11-03-ai-cat-emu-11)

@@ -562,11 +562,13 @@ crushing blow at `/players 8` ([delivery](delivery.md#worked-example)). [C] (run
   seed, the hit class and its divisor, stun's timing effects, the player's mode tests) and
   [anim/movement § E](../anim/movement.md#e-knockback) (knockback's distance, speed and length), plan 0050; the
   durability draws are [items/economy § H](../items/economy.md#h-wear-durability-quantity-charges-replenish).
-- [L] **Left short by plan 0050 Phase 2 part 2** (run:2026-10-27-anim-p2, survivability-bound at its build; a part 3
-  is the owner's call): get-hits at three FHR rates of 30 per class, two FBR rates of 30 for the classes its record
-  does not name, and a player's knockback length (mode 19, two starts in run:2026-10-27-anim, none staged in part 2).
-  The get-hit and block lengths hold at every logged rate; the per-class tiers stay `[I]` in
-  [anim/timing](../anim/timing.md#open-questions).
+- [L] **Left short by plan 0050 Phase 2 parts 2 and 3** (run:2026-10-27-anim-p2, survivability-bound at its build;
+  run:2026-10-30-anim-p3b, clvl 99 builds): get-hits at three FHR rates of 30 for the Barbarian and the Paladin, two
+  FBR rates of 30 for the classes the records do not name, and a player's knockback length (mode 19, two starts in
+  run:2026-10-27-anim, none in parts 2 and 3: Blood Raven never met in part 3's three Hell sessions). Part 3 met the
+  get-hit FHR tiers of the Amazon, Necromancer, Sorceress, Druid and Assassin (three rates of 30 starts or more each,
+  [anim/timing § K](../anim/timing.md#k-breakpoints-derived)); the get-hit and block lengths hold at every logged
+  rate (0 mismatches over 131 logs); the short tiers stay `[I]` in [anim/timing](../anim/timing.md#open-questions).
 - ~~**Shortfalls of run:2026-10-16-combat** (plan 0037 Phase 2): crushing blow on a champion, the cold, lightning and
   magic caps, magic immunity, the negative absorbed amount, evade, weapon block, dodge, avoid, freeze, flat absorb,
   the negative total, the walking block.~~ Closed by run:2026-10-20-shortfalls (plan 0047 Phase 2). Reached, each to

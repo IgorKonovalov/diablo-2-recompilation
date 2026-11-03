@@ -6,8 +6,8 @@ status: done
 context:
   - ../../findings/anim/0001-modes-frames.md#2-records-the-token-the-lookup-and-the-fallback
   - ../../findings/anim/0001-modes-frames.md#5-sequences
-  - ../../plans/0050-animation-frame-timing.md#phase-0--animdatad2-monseq-and-the-timing-columns
-resolution: "Items 3-4 done on lane/a51f (items 1-2 by plan 0050 P0): [PlrType](../../tables/PlrType.md), [ObjType](../../tables/ObjType.md) (layouts plrtype, objtype); anim/0001 linked from the Timing notes of PlrMode, MonMode, ObjMode, MonStats2, MonStats, Objects and Skills; [plan 0050 log](../../plans/0050-animation-frame-timing.md#implementation-log)"
+  - ../../plans/done/0050-animation-frame-timing.md#phase-0--animdatad2-monseq-and-the-timing-columns
+resolution: "Items 3-4 done on lane/a51f (items 1-2 by plan 0050 P0): [PlrType](../../tables/PlrType.md), [ObjType](../../tables/ObjType.md) (layouts plrtype, objtype); anim/0001 linked from the Timing notes of PlrMode, MonMode, ObjMode, MonStats2, MonStats, Objects and Skills; [plan 0050 log](../../plans/done/0050-animation-frame-timing.md#implementation-log)"
 ---
 
 Plan 0050 Phase 0 inputs from the P1.1 code reading ([anim/0001](../../findings/anim/0001-modes-frames.md)), for the

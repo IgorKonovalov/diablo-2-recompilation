@@ -1,8 +1,9 @@
 # PathTypes (`g_PathPlanFuncs` and the flags table in `Game.exe`): the 17 path types
 
 > **Source:** the pinned `Game.exe` image (no excel file)   **Rows:** 17 (types 0..16)   **Record:** two u32 words per type
-> **Doc status:** the 17 slots listed with address and flags, matching the survey; meanings `[L]` until plan 0054 Phase 1
-> anchors them (the call-site facts of [ai/0001 § 8](../findings/ai/0001-machinery.md#8-the-path-request) are cited `[I]`)
+> **Doc status:** the 17 slots listed with address and flags, matching the survey; the setter, the third table, the flags
+> `PathPlan` and `PathSetType` read and the server callers' types anchored to [path/0001](../findings/path/0001-pathplan-register.md)
+> (plan 0054 P1.1); the planners' own reads of the flags and the three unnamed planners stay `[L]` (P1.2, P1.3)
 
 ## Purpose
 
@@ -17,13 +18,21 @@ script ([plan 0054](../plans/0054-path-search.md) Phase 0; readers: `path/search
 - `[C]` **Two parallel arrays of 17 u32 words**, read by script from the image whose sha256 is the pinned one
   (`path_types=17`): the flags words at `0x006EB690` (type × 4) and the planner addresses `g_PathPlanFuncs` at
   `0x006EB6D8` (type × 4); the flags array ends at `0x006EB6D4`, four bytes before the planner array. (data:g_PathPlanFuncs@0x006EB6D8, data:0x006EB690)
-- `[I]` `PathSetType` replaces **bits 8 to 18** of the path's `+0x34` with the flags word of the type (0x00648D62–0x00648D6D). The largest word is `0x60000`; a word may carry bits outside 8 to 18 (`0x1E604` has bit 2), and how the copy masks them is Phase 1.1's. ([drlg/0009 § 11.1](../findings/drlg/0009-room-lifecycle.md),
+- `[C]` `PathSetType` replaces **bits 8 to 18** of the path's `+0x34` (`& 0xFFF800FF`) and then ORs the **whole** flags word in, so a
+  word's bits outside 8 to 18 are set too: type 11's word `0x1E604` sets bit 2. By emulation (run:2026-11-03-path-emu-1, families `settype`
+  and `setters`, 760 cases, 0 mismatches). The largest word is `0x60000`. ([path/0001 § Answer and § 8](../findings/path/0001-pathplan-register.md#8-creation-pathsettype-the-setters-and-the-flags),
   fn:sub_00648CF0_PathSetType@0x00648CF0)
+- `[C]` **A third per-type table**, `g_PathTypeParam98` at `0x006EB648`: 17 u32 words that `PathSetType` writes into the path's `+0x98`
+  (path/0001 § 8, `[C]` by emulation). The values are path/0001's own (§ Answer: 2, -2, -4 at types 5, 6, 12, else 0; the emulation lists the table among its accounted image reads), and `tools/path_scan.py tables` prints them from the pinned image (the `path` survey does not carry this table): 2 for
+  type 5, -2 for type 6, -4 for type 12 and 0 for the other 14 types. The table sits 0x48 bytes before the flags array.
+  (data:g_PathTypeParam98@0x006EB648, fn:sub_00648CF0_PathSetType@0x00648CF0) The symbol's own tag in `re/symbols.csv` is `I`.
 - `[C]` **Three slots hold 0 as the planner (types 4, 10 and 14)** and these are exactly the three whose flags word carries
-  `0x40000` (types 4, 10 and 14 by `types`; `path_no_planner_types=3`, `path_no_planner_and_40000=3`, `path_flags_40000=3`). `[I]` `PathPlan` sends a path with `+0x34` bit `0x40000` to
-  `sub_00649760_PathPlanStraight` before it reads the table (0x006499AE), so no table call is made for them; the same finding
-  names the straight planner's three modes (to unit, random walk, spiral) for 4, 10 and 14 respectively
-  ([ai/0001 § 8](../findings/ai/0001-machinery.md#8-the-path-request), [drlg/0009 § 11.1](../findings/drlg/0009-room-lifecycle.md)).
+  `0x40000` (types 4, 10 and 14 by `types`; `path_no_planner_types=3`, `path_no_planner_and_40000=3`, `path_flags_40000=3`). `[C]` `PathPlan` sends a path with `+0x34` bit `0x40000` to
+  `sub_00649760_PathPlanStraight` before any other test (emulation, families `plan` and `plannoop`, 1 200 cases, 0 mismatches;
+  0x006499AE), so no table call is made for them. `[C]` Type 4 is `PathPlanToUnit`'s one point (47 cases) and types 10 and 14 reach
+  `PathPlanRandomWalk` and `PathPlanSpiral` (100 cases) ([path/0001 § Answer](../findings/path/0001-pathplan-register.md#answer-summary),
+  fn:sub_00649760_PathPlanStraight@0x00649760); the modes' own bodies are P1.3's. The earlier reading is
+  [ai/0001 § 8](../findings/ai/0001-machinery.md#8-the-path-request), [drlg/0009 § 11.1](../findings/drlg/0009-room-lifecycle.md).
 - `[C]` 14 slots hold a planner and they name **10 distinct addresses** (`path_planner_slots_set=14`, `path_planner_distinct=10`):
   `0x00679C80` for types 2, 5, 6 and 13 (flags 0, 0, 0, `0x100`), `0x0067AD00` for types 0 and 16 (flags `0x21900`, 0).
   11 slots have a non-zero flags word (`path_flags_nonzero=11`).
@@ -55,17 +64,47 @@ there is one (`path_planner_named=11`); the three unnamed planners (types 3, 11,
 
 ## Meanings
 
-All `[L]` as to what a flags bit does; the table above is `[C]`. What the code around the table states is cited `[I]`
-and stays in the findings:
+The table above is `[C]`. What a flags bit does is below, each with the finding's tag and scope.
 
-- `[I]` The AI's types are 1, 2, 5, 6, 7, 13 and 15; the mode machine sets 0 after a get-hit start and 8 for knockback;
-  `MonMovePlan` falls back to 15 after a failed plan of 2, 7, 9 or 13. Types 3, 11 and 12 have no AI call; types 4, 10
-  and 14 are set on missiles (§ [Stock rows](#stock-rows-that-reach-a-type)). ([ai/0001 § 8](../findings/ai/0001-machinery.md#8-the-path-request),
-  [drlg/0009 § 11.1](../findings/drlg/0009-room-lifecycle.md))
-- `[I]` Flag `0x40000` makes the step skip the target revalidation (`PathStep`: `p.flags & 0x40000 or PathStepTargetCheck(p)`)
-  ([anim/movement B1](../specs/anim/movement.md), fn:sub_00650840_PathStep@0x00650840).
-- `[L]` Every other flags bit (`0x100`, `0x800`, `0x1000`, `0x2000`..., `0x20000`): which reader tests it is Phase 1.1's.
-- `[L]` The draws of types 3, 11 and 12 are unfollowed ([ai/0001 § 8](../findings/ai/0001-machinery.md#8-the-path-request)).
+**Who sets a type on the server** ([path/0001 § 11](../findings/path/0001-pathplan-register.md#11-the-request-register), `[I]`: 68 `PathPlan`
+calls, 34 server and 34 client, 51 direct `PathSetType` calls; the client's are out of scope):
+
+- `[I]` Player: the walk, run or town-walk start plans type 7 after `PathMoveReset`, mode 19 (knockback) plans 8; the packet 0x5F reach test plans 15.
+  Mode machine: the request's type (`MonPathPlanType`), 15 as its fallback, the current type, and 8 at the knockback start. AI: three test plans of type 2.
+  Skill: 8, 9, 2 then 1, 1, the current type, 14 (Blessed Hammer), 7 (Whirlwind) and 9 then 8 (`LeapAttackPath`). Missile: 4 at `MissileCreate`, 10 in the four
+  reseed callbacks, the current type for the guided missiles. Movement (`PathReplan`): 13 or 2, then 15 or the current type. A monster path starts at
+  type 2 (`PATH_DynamicCreate` writes it directly), a player's at 7, a missile's at 4 (`PathSetType(4)`).
+  (fn:sub_00648CF0_PathSetType@0x00648CF0, fn:sub_005A6290_MonPathPlanType@0x005A6290)
+- `[I]` **No server code sets 3, 11 or 12.** 11 has three client calls (0x004614A6, 0x004B04BF, 0x004C8870). Type 16 is planned from two sites in functions
+  nothing references (0x00663E1B, 0x00663EEB). Scope: the reading is of direct `PathSetType` calls and `PathPlan` sites; a `+0x3C` store outside the
+  path module that is not a `PathSetType` call is unfollowed, so these stay `[I]` (path/0001 § 11; the P1.1 review left the follow to P1.3b and Phase 2).
+- `[I]` The AI's types in [ai/0001 § 8](../findings/ai/0001-machinery.md#8-the-path-request) are 1, 2, 5, 6, 7, 13 and 15 (5 and 6 through
+  `MonPathPlanType`, 13 by `PathReplan`); `MonMovePlan` falls back to 15 after a failed plan of 2, 7, 9 or 13; types 4, 10 and 14 are set on missiles
+  (§ [Stock rows](#stock-rows-that-reach-a-type)). ([drlg/0009 § 11.1](../findings/drlg/0009-room-lifecycle.md))
+
+**The flags** (path/0001 § 8 *The flags' uses*: memory-immediate tests and stores on `[reg+0x34]` in the path module, 51 instructions over 18 bits;
+register-held tests are not in that scan; the planners' own tests are P1.2's and P1.3's):
+
+| Bit | What `PathPlan` / `PathSetType` do with it | Tag |
+|---|---|---|
+| `0x40000` | `PathPlan` sends the path to the straight planner before any other test (above). Separately `PathStep` skips the target revalidation (`p.flags & 0x40000 or PathStepTargetCheck(p)`, [anim/movement B1](../specs/anim/movement.md), fn:sub_00650840_PathStep@0x00650840) | `[C]` entry; `[I]` PathStep |
+| `0x800` | `PathPlan` unmarks the target (`UNIT_CollUnmark` of the target) after the unit's own unmark; shown on the units whose unmark returns at once (`plannoop`) | `[C]` (emulation to the slot read) |
+| `0x1000` | `PathPlan` runs the free-target step (`sub_00648120_PathTargetFree`, "moves a blocked target"; the player extension is to 5 subtiles) | `[C]` (emulation) |
+| `0x10` | keeps the target point after a plan: the last point goes into `+0x10` only without a target unit or flag `0x10`; also the re-plan (path/0001 § 9). `PATH_DynamicCreate`'s flag argument sets it, and all three `SUnitPathCreate` sites pass 0 (path/0001 § 8) | `[I]` (the tail of `PathPlan` is past the import and not emulated) |
+| `0x2000` | `PathSetType` saves the type into `+0x40` when the type's word has it, unless `+0x34` has `0x4000`; `PathMoveReset` restores it for a non-player | `[C]` (`PathSetType`), `[I]` (`PathMoveReset`) |
+| `0x8000` | `PathSetType` saves the speed into `+0x80` when the word has it, unless `+0x34` has `0x10000`; `PathMoveReset` restores it | `[C]` (`PathSetType`), `[I]` (`PathMoveReset`) |
+| `0x4000`, `0x10000` | suppress the type and the speed save of `PathSetType` respectively (a test of the path's existing flags) | `[C]` |
+| `0x20`, bit 0, `0x200` | the moving flag, the points-outside-room flag, the facing turn by 32 (path/0001 § 9) | `[I]` |
+| `0x100`, `0x400` | no reader in that scan beyond the masks that replace them (`PATH_DynamicCreate`, `PathSetType`); a planner's test is P1.2's and P1.3's | `[L]` |
+| `0x20000` | path/0001 § 8 does not name this bit among the scan's uses; `PathSetType`'s bits 8 to 18 mask replaces it. A planner's test is P1.2's and P1.3's | `[L]` |
+
+- `[I]` Types 8, 9 and 11 (words with both `0x2000` and `0x8000`) are the temporary ones a `PathMoveReset` undoes (path/0001 § 8).
+- `[L]` The draws of types 3, 11 and 12 are unfollowed ([ai/0001 § 8](../findings/ai/0001-machinery.md#8-the-path-request), path/0001 *Open questions*).
+- `[L]` **The object record bytes the target refresh reads.** For a unit-type-2 (object) target the refresh goes through the object step when the record's
+  `+0x13A` is set, and the step moves `y` (record `+0x13C` is 1) or `x` by 2 subtiles toward the start (path/0001 § 3, `[C]`; readers 0x00621A70 and
+  0x00621AC0 per the finding's open question). By offset these are [Objects](Objects.md#columns) `IsDoor` (`+0x13A`, 0: 548, 1: 25) and `Orientation`
+  (`+0x13C`, 3: 429, 0: 60, 1: 58, 2: 26), but path/0001 does not say the record is the `objects.bin` record `OBJECTS_GetRecord` returns, so the identification
+  stays `[L]` (P1.1 review ruling 5).
 
 ## Columns a request reads
 
@@ -113,5 +152,6 @@ The stock Skills rows whose start or do number a finding ties to one type (scrip
 
 ## Open questions
 
-- `[L]` The meaning of each flags bit and the three unnamed planners (types 3, 11, 12): plan 0054 P1.1 and P1.3.
+- `[L]` The planners' own reads of the flags (and of `+0x91`, `+0x92`, `+0x98`) and the three unnamed planners (types 3, 11, 12): plan 0054 P1.2 and P1.3.
+- `[L]` Whether the record bytes `+0x13A` / `+0x13C` the target refresh reads are `IsDoor` / `Orientation` (reverser: the record behind 0x00621A70 / 0x00621AC0).
 - `[L]` The Missiles rows that reach the four missile callbacks (0x005C9290, 0x005CD110, 0x005D40F0, 0x005AC040): P1.1's request register.

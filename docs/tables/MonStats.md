@@ -413,7 +413,7 @@ only where a finding anchors it; readings of the names are `[L]`.
 | `isSpawn` | `+0x00C` bit 0 | 570 records; all 362 pool classes but the three `ancientbarb*` | kept by the pool build only if set ([MonStats § Pool and level columns](#pool-and-level-columns-plan-0012-phase-0)) | [C] |
 | `rangedtype` | `+0x00F` bit 4 | 140 records, 113 pool classes | the `rangedspawn` first-pick redraw ([MonStats § Pool and level columns](#pool-and-level-columns-plan-0012-phase-0)) | [C] |
 | `sparsePopulate` | `+0x031` u8 | 40 on one record, `evilhut`; 0 elsewhere (in no pool) | when non-zero, a normal group spawns only if a game-seed roll `low mod 100 ≤ sparsePopulate`; a failed roll spawns nothing. Stock data never reaches the roll (`evilhut` is in no pool), and the community describes the opposite sense ([monsters/0002](../findings/monsters/0002-room-population.md) § 5, 0x0054EE4D, 0x0054EE8C) | [I] |
-| `genericSpawn` | `+0x00E` bit 5 | 55 records, 41 pool classes (`deathmauler*`, `frozenhorror*`, `imp*` …) | name | [L] |
+| `genericSpawn` | `+0x00E` bit 5 | 55 records, 41 pool classes (`deathmauler*`, `frozenhorror*`, `imp*` …) | name; `[I]` a reader: AI row 129's class pick 0x005E6020 tests `+0x0E & [0x006CE27C]` (0x20) on the classes of the level's monster region ([ai/0011 § 2.3](../findings/ai/0011-batch10.md); § Readers named by the pool-G batch) | meaning [L]; reader [I] |
 | `zoo` | `+0x00E` bit 6 | 152 records, 119 pool classes | name | [L] |
 | `neverCount` | `+0x00E` bit 2 | 77 records, 1 pool class (`baaltaunt`, a `umon` entry) | read after each creation by `MonSpawnTry`, with request flag 8, for the region live-count update `0x00547D90`; that callee is named only, so whether the unit is left out of the count is a reading of the name ([monsters/0002](../findings/monsters/0002-room-population.md) § 6, fn:sub_005B2A00_MonSpawnTry@0x005B2A00) | [I] read; meaning [L] |
 | `threat` | `+0x04E` u8 | pool classes: 10 ×343, 12 ×11, 11 ×7, 0 ×1 | name | [L] |
@@ -904,9 +904,9 @@ unless a finding is cited.
 |---|---|---|---|---|
 | `AI` | `+0x01E` u16 | 146 of the 148 [MonAI](MonAI.md) rows; none blank; every cell resolves to the row of the same name (case-exact) | the index of `g_MonAiTable` on `MonAiEntryGet`'s `EDX` = 0 branch (the other branch reads a second table, [MonAI § The second table](MonAI.md#the-second-table-at-0x0073d358-found-at-the-lanea52-review)), whose `+8` word is the AI function ([items/0001](../findings/items/0001-tc-resolution.md), fn:sub_005B15D0_MonAiEntryGet@0x005B15D0, data:g_MonAiTable@0x0073CA18) | [C] data; use [I] |
 | `aidel`, `aidel(N)`, `aidel(H)` | `+0x04F`..`+0x051` u8 | Normal: 15 (710 records), 1 (5), 6 (1), 0 (18 blank); Nightmare and Hell take 9 and 10 values (Nightmare mostly 14, Hell mostly 13); 455 records differ between difficulties | `MonModeStartNeutral` (also the refusal fallback) sets mode 1; **when the next AI event is not later than now**, it re-queues the event at `T + 45` under state 21 (`stunned`), else at `T +` the delay (`aidel(N)`/`aidel(H)` by difficulty when `Game+0x6A` or `Game+0x74` is non-zero), **15 when the cell is 0**; the finding names no re-queue when the next event is later than now ([anim/0001 § 10](../findings/anim/0001-modes-frames.md#10-monster-modes), fn:sub_005A73E0_MonModeStartNeutral@0x005A73E0, struct:Game+0x6A) | [I] |
-| `aidist`, `aidist(N)`, `aidist(H)` | `+0x052`..`+0x054` u8 | set on 2 records only: 242 `mephisto` and 704 `ubermephisto`, 0 / 40 / 46 | none | [L] |
-| `aip1`..`aip8` (each n, N, H) | `+0x056 + 6(k−1) + 2d` u16 | records with slot k non-zero: 573, 551, 526, 461, 327, 144, 106, 82 (k = 1..8); 588 records set a slot; 497 differ between difficulties; blank and 0 both store 0 | the AI parameters per difficulty (plan 0052 P1 reads them per AI; the readers by batch are in § Readers named by the pool-A to pool-E and summons batches below; `[I]` rows 105, 106 and 143 read the three `aip8` cells as three parameters, not per difficulty, [ai/0006 § 2.10, § 2.11](../findings/ai/0006-summons.md)); the inactive save keeps "AI parameters" ([drlg/lifecycle § G](../specs/drlg/lifecycle.md#g-the-records), fn:sub_00541FE0_InactiveMonAiSave@0x00541FE0) | layout [C]; meaning [L] |
-| `Skill1..8`, `Sk1mode..Sk8mode`, `Sk1lvl..Sk8lvl` | `+0x170` u16, `+0x180` u8 and `+0x188` s16, `+0x198` u8 | 393 records name a skill, 775 cells in 97 AI rows; 319 of the cells give a `seq_*` mode (`xx` and a sequence); 5 cells have `Sk lvl` 0 | at creation each `Skill` ≥ 0 with `Sk lvl` > 0 is added at `Sk lvl` + `MonsterSkillBonus` (§ Readers at creation, [monsters/0004](../findings/monsters/0004-stats.md)); which skill the AI uses and when is plan 0052's | [I] creation; AI use [L] |
+| `aidist`, `aidist(N)`, `aidist(H)` | `+0x052`..`+0x054` u8 | set on 2 records only: 242 `mephisto` and 704 `ubermephisto`, 0 / 40 / 46 | `[I]` the range of the target search for a searcher of alignment 0, `aidist[difficulty]` (`+0x52 + Game+0x6D`), 35 when 0 ([ai/0001 § 6](../findings/ai/0001-machinery.md#6-target-search), fn:sub_005DD7F0_MonAiFindTarget@0x005DD7F0); no instruction of rows 50 and 146's think functions reads it ([ai/0008](../findings/ai/0008-bosses-a.md)) | [C] data; use [I] |
+| `aip1`..`aip8` (each n, N, H) | `+0x056 + 6(k−1) + 2d` u16 | records with slot k non-zero: 573, 551, 526, 461, 327, 144, 106, 82 (k = 1..8); 588 records set a slot; 497 differ between difficulties; blank and 0 both store 0 | the AI parameters per difficulty (plan 0052 P1 reads them per AI; the readers by batch are in § Readers named by the pool-A to pool-G and summons batches below; `[I]` rows 105, 106 and 143 read the three `aip8` cells as three parameters, not per difficulty, [ai/0006 § 2.10, § 2.11](../findings/ai/0006-summons.md)); the inactive save keeps "AI parameters" ([drlg/lifecycle § G](../specs/drlg/lifecycle.md#g-the-records), fn:sub_00541FE0_InactiveMonAiSave@0x00541FE0) | layout [C]; meaning [L] |
+| `Skill1..8`, `Sk1mode..Sk8mode`, `Sk1lvl..Sk8lvl` | `+0x170` u16, `+0x180` u8 and `+0x188` s16, `+0x198` u8 | 393 records name a skill, 775 cells in 97 AI rows; 319 of the cells give a `seq_*` mode (`xx` and a sequence); 5 cells have `Sk lvl` 0 | at creation each `Skill` ≥ 0 with `Sk lvl` > 0 is added at `Sk lvl` + `MonsterSkillBonus` (§ Readers at creation, [monsters/0004](../findings/monsters/0004-stats.md)); which skill the AI uses and when is plan 0052's (the per-row reads of rows 118-125 and state 16 are in § Readers named by the pool-F batch, those of rows 126-141 in § Readers named by the pool-G batch, below; `[I]`) | [I] creation; AI use [L] |
 | `switchai` | `+0x00E` bit 0 | 585 records | none | [L] |
 | `threat` | `+0x04E` u8 | 1..14, 144 blank (§ Columns) | none | [L] |
 
@@ -920,8 +920,12 @@ unless a finding is cited.
   (tbl:MonStats.txt:aip8)
 - `[C]` In 13 AI rows the records disagree on which `aip` slots they set (`ai_aip_slots_differ=13`): 1, 8, 11, 30, 35,
   36, 61, 67, 114, 119, 122, 133, 142. A catalogue entry reads each record's slots, not one per AI. `[I]` For row 114 the think
-  function reads `aip1`..`aip7` and not `aip8` ([ai/0009](../findings/ai/0009-batch8.md) § 1, § 2.11).
-  (tbl:MonStats.txt:aip1)
+  function reads `aip1`..`aip7` and not `aip8` ([ai/0009](../findings/ai/0009-batch8.md) § 1, § 2.11). `[I]` Row 122
+  reads none of its own slots but those of the fixed records 492-495 (`imp1`..`imp4`), so its disagreement is a parameter
+  table shared by every imp ([ai/0010](../findings/ai/0010-batch9.md) § 1); row 119's `succubuswitch1` differs in `aip3`
+  (0/0/0), which is the curse and step-away chance ([ai/0010 § 1](../findings/ai/0010-batch9.md)); row 133's three records
+  each feed their own class think, so a slot means something else per Ancient ([ai/0011](../findings/ai/0011-batch10.md)
+  § 1, § 2.8). (tbl:MonStats.txt:aip1)
 
 - `[I]` **Readers named by the pool-A batch** ([ai/0002](../findings/ai/0002-pool-a.md) § 2, plan 0052 P1.2 batch 1, AI
   rows 2-16 and 142; the per-AI meanings stay in the finding, this table claims none):
@@ -1016,6 +1020,84 @@ unless a finding is cited.
     tests the cell for class 334, each behind the image's `count > id ? id : -1` select, `[I]` ([§ 2.1](../findings/ai/0009-batch8.md)); the
     map's calls with the class as argument are `[C]` by run:2026-11-03-ai-cat-emu-8 ([§ 2.1, § 2.2](../findings/ai/0009-batch8.md)). The imp callback `AiImpNearCb` (rows 113, 115) matches `MonBaseId` 492
     (`imp1`) behind the same guard, `[I]` ([§ 2.12](../findings/ai/0009-batch8.md)).
+
+- `[I]` **Readers named by the pool-F batch** ([ai/0010](../findings/ai/0010-batch9.md), plan 0052 P1.2 batch 9, AI rows 116-125 and state
+  rows 15 and 16; the per-AI meanings stay in the finding, this table claims none). `[C]` only for the decision maps up to their
+  first boundary, where [§ 2 and § 3](../findings/ai/0010-batch9.md) say so (run:2026-11-03-ai-cat-emu-9); the slot and skill lists
+  below are `[I]`.
+  - `aip1`..`aip8` read per row, as [§ 1](../findings/ai/0010-batch9.md) lists them from the think functions of [§ 2](../findings/ai/0010-batch9.md)
+    (stock values are the finding's): 116 `aip1`..`aip4` (its 11 records differ only in `aip5`, which is not read); 117 `aip2`,
+    `aip3`, `aip5` (`aip1` and `aip4` not read); 118 and 119 `aip1`..`aip8`; 120 `aip1`..`aip7` (`aip8` not read); 121
+    `aip1`..`aip4` (`aip5` not read); 123 `aip1`; 124 `aip1`..`aip4`; 125 `aip1`..`aip4`. Row 117 also serves state row 15.
+  - **Row 122 `Imp` reads none of its own `aip` slots.** Its think reads `imp1`'s `aip1`..`aip3`, `imp2`'s `aip1`, `imp3`'s
+    `aip1`..`aip4` and `imp4`'s `aip3`, `aip4`; state row 16 reads `imp2`'s `aip2`..`aip4` and `imp1`'s `aip2`
+    ([§ 1, §§ 2.8, 2.10](../findings/ai/0010-batch9.md)). That settles the row 122 entry of the `ai_aip_slots_differ` list above:
+    the stock spread of its slots (`imp1`..`imp4` set different ones, `imp5`..`imp8` none) is a parameter table shared by every
+    imp, whatever its own record. The `[C]` map of row 122 (to `UnitAlignGet`, `AiLifePct`, `StepAway`, the action helper,
+    `FindHostile`, `WalkStop`, `Ring` and `Idle`) reads the slots from the records 492-495 (the `own` control fails every case it separates);
+    the host branch past `UnitAlignGet` and the fire missile past `FindHostile` are not covered
+    ([§ 3](../findings/ai/0010-batch9.md), run:2026-11-03-ai-cat-emu-9).
+  - Row 119 `SuccubusWitch`: `aip3` is 0/0/0 in `succubuswitch1`, 0/25/35 in 2, 0/30/40 in 3 and 0/30/50 in 4-9; it is both the
+    curse chance and the step-away chance, so `succubuswitch1` never curses and never steps away by it and no witch does in Normal
+    ([§ 1, § 2.4](../findings/ai/0010-batch9.md)).
+  - `Skill1`..`Skill5` with `Sk1mode`..`Sk5mode`, by row ([§ 1, §§ 2.3-2.13](../findings/ai/0010-batch9.md)): 118 `Skill1`..`Skill5`,
+    each tested `> 0` (a skill id 0 is never used), each cast in its own `SkKmode`; 119 the same five, `Skill1`..`Skill4` tested `> 0`
+    and `Skill5` tested `>= 0` (`jl`, 0x005E23BA) with an S2 at the hostile when `Skill5 < 0`; 120 `Skill1`, `Skill2` tested `>= 0`
+    and `Skill3` tested `!= 0` (`je`, 0x005E29EB), each in its own mode (`Skill4` not read); 121 `Skill1`, tested `>= 0`; 122 `Skill1`
+    and `Skill4` of its own record, each tested `>= 0`, `Sk1mode` read sign-extended for the action helper 0x005DF850 where `UseSkill` callers elsewhere zero-extend
+    (0x005E31D2, 0x005E32A3); 124 `Skill1`, tested `>= 0`; 125 `Skill1` with the **constant mode 5** (not `Sk1mode`) and **no sign test**
+    (0x005E3799); 116, 117 and 123 read no skill. The sign tests of rows 118, 119 and 122 lie inside their `[C]` maps (the `u16` control, which reads the
+    skill words unsigned, separates 69 cases of row 118, 64 of row 119 and 52 of row 122 and fails each); row 124's is `[C]` to
+    `SKILLS_GetUnitSkill`, and to `HasState(U, 12)` for a `Skill1 < 0`; row 120's `Skill1` test lies inside its `[C]` map with no `u16` case separating it, its `Skill2` and `Skill3` tests and row 121's lie after the search (not covered), and row 125 has none
+    ([§ 3](../findings/ai/0010-batch9.md)).
+  - State row 16 (`ImpAttach`, [§ 2.10](../findings/ai/0010-batch9.md)): its init picks slot 2 (`Skill3`) or 4 (`Skill5`), trying first the one the low bit of one seed step
+    selects, by the first one whose skill the imp has **in its own record** (`SkillFindByOwner`); its think, inside `imp2.aip2` of its
+    target and on `Range(100) < imp2.aip3`, casts `imp1`'s skill at that slot with `imp1`'s
+    mode when the id is `>= 0` (else `Idle(20)`), and `imp1`'s `Skill1` (Imp Teleport) with `imp1`'s `Sk1mode` for the detach. State row 15 reads row 117's
+    slots and no skill ([§ 2.2](../findings/ai/0010-batch9.md)). The init's map is `[C]` to its return; the think only to its entry call
+    `HasState(U, 143)`.
+  - `Sk1lvl` for row 124 `FrozenHorror` ([§ 2.12](../findings/ai/0010-batch9.md)): the blast is gated on `Skill1 >= 0`, `dist < max(lv, 0)`, `chance(3)` and the unit not in state 12 (`HasState(U, 12)` 0; state 12 is cleared otherwise), with `lv` the
+    unit's level of `Skill1` from `SKILLS_GetSkillLevel(U, s, 1)` (default 0, clamped at 0 by `setl; sub 1; and`, 0x005E3593-0x005E359D);
+    the finding gives the stock `Sk1lvl` of Horror Arctic Blast as 4-6 and names no read of the cell by this function itself (creation
+    adds it, § Readers at creation). `[I]`; only the skill-sign test is `[C]`.
+  - Count guards: the records 492-495 (`imp1`..`imp4`) are non-null only while the MonStats count exceeds the class
+    ([notation](../findings/ai/0010-batch9.md), [§ 2.8](../findings/ai/0010-batch9.md)); the callback 0x005E26D0 of row 120 (and row 128's
+    0x005EE906) counts monsters of `MonBaseId` 453 (`minion1`, "in range of the MonStats count", [§ 2.5](../findings/ai/0010-batch9.md)),
+    and row 121's callback 0x005E2B70 those of 453 or 461 (`minion1`, `suicideminion1`) behind the image's `count > id ? id : -1` select
+    ([§ 2.6](../findings/ai/0010-batch9.md)). Neither callback is emulated. `[I]`
+
+- `[I]` **Readers named by the pool-G batch** ([ai/0011](../findings/ai/0011-batch10.md), plan 0052 P1.2 batch 10, AI rows 126, 127, 129-134,
+  136, 137, 139 and 141; the per-AI meanings stay in the finding, this table claims none). `[C]` only for the decision maps up to
+  their first boundary where [§ 2 and § 3](../findings/ai/0011-batch10.md) say so (run:2026-11-03-ai-cat-emu-10); row 133's class thinks are
+  `[C]` for the class dispatch and the quest test only, so their slot and skill reads below are `[I]`; the slot and skill lists are `[I]`.
+  - `aip1`..`aip5` read per row ([§ 1](../findings/ai/0011-batch10.md), values as the finding gives them): 126 `aip1`, `aip2`, `aip4`,
+    `aip5` (`aip3` not read); 127 `aip1`..`aip3`; 129 `aip1`, `aip3` (`aip2` not read); 130 `aip1`..`aip4`, where `aip3` (15, 18, 19, 20, 21, 21)
+    and `aip4` (50, 60, 70, 80, 90, 90) **differ per record** (`deathmauler1..6`) and are the Death Maul range and chance
+    ([§ 2.4](../findings/ai/0011-batch10.md)); 131 and 132 read no slot; 134 `aip1`; 136 `aip1`..`aip3`; 137 `aip1`, `aip2`; 139 `aip1`..`aip3`,
+    where `aip1` (70, 80, 90, 90, 90) and `aip2` (24, 22, 20, 18, 16) **differ per record**; 141 `aip1`..`aip4`.
+  - Row 133 `Ancient`: each class think reads its own record. `ancientbarb1` reads `aip1`..`aip4`, `ancientbarb2` `aip1`..`aip5`,
+    `ancientbarb3` `aip1`..`aip3`; the three records disagree slot by slot and each slot means something else per think
+    ([§ 1, § 2.8](../findings/ai/0011-batch10.md)), so a catalogue entry reads the slots per Ancient, not per AI row. Row 133's `[C]` is the class
+    dispatch (540, 541, 542) and each think's quest-35 test, before its first slot read.
+  - `genericSpawn` (`+0x00E` bit 5): row 129's class pick 0x005E6020 takes a random entry of the unit's level monster region that is a MonStats
+    record with `+0x0E & [0x006CE27C]` (0x20), else the first such entry, else 496 (`imp5`, or -1 when the MonStats count is `<= 496`); its default
+    is 453 (-1 at a count `<= 453`) ([§ 2.3](../findings/ai/0011-batch10.md)). `[I]`; the `[C]` map of row 129's think covers the cell test of its own
+    class 528 and the `v18 >= aip3` command, not the pick (the finding's function table tags 0x005E6020 `I` with no emulation note, [Functions](../findings/ai/0011-batch10.md)).
+    This gives the bit a reader; its meaning in the bit-column table stays by name `[L]` there.
+  - `Skill1` and `Sk1mode`, by row ([§ 1, §§ 2.4, 2.8, 2.9, 2.13](../findings/ai/0011-batch10.md)): 130 `Skill1` tested `>= 0`, cast in `Sk1mode` (stock: sequence
+    mode); 133 `Skill1`/`Sk1mode` per class (the finding's § 1 lists Whirlwind, Shout and Leap Attack; `ancientbarb1` tests `Skill1 > 0` and casts with
+    `(s8) Sk1mode`, `ancientbarb2` tests `0 < Skill1 < Skills count` and casts in `Sk1mode` with no target, `ancientbarb3` tests `Skill1 > 0` and passes
+    it to `UseSeq`, whose map carries no mode argument); 134 `Skill1` tested `> 0` after its kind-3 search found a unit, with `Sk1mode` (`Skill2`..`Skill4`
+    not read); 141 `Skill1` tested `>= 0`, with `Sk1mode`. Constant skills replace the records' slots in 126 (the five of 0x006E3514: 287, 288, 303, 304,
+    305, which are also its records' `Skill1..5`), 129 (Nest, 167), 132 (302, its records' `Skill1`), 134 (285 and 286), 136 (Baal Taunt, 284) and 137
+    (Impregnate, 300); 127, 131 and 139 use no skill. The `Skill1` sign tests of rows 130 and 141 lie inside their `[C]` maps (the `u16` control separates 11 cases of row 130 and 4 of row 141 and fails each, [§ 3](../findings/ai/0011-batch10.md)).
+  - Skills `aurastate` (`+0x080`) and `auratargetstate` (`+0x082`) of that `Skill1` have two AI readers: `ancientbarb2` admits each as `0 < v <= States count`
+    (the state equal to the count included: `jg`, 0x005EEED5, 0x005EEF01) and casts only when neither is present (`aurastate` on itself, `auratargetstate` on
+    its target) and on `chance(3)` ([§ 2.8](../findings/ai/0011-batch10.md)); row 134, after its search finds a unit, tests each only inside `[0, States count)` (`jl`/`jge`,
+    0x005EF539-0x005EF572: a value equal to the count is refused), the `aurastate` on the throne and the `auratargetstate` on its target, and then casts on
+    `Range(100) < aip1` ([§ 2.9](../findings/ai/0011-batch10.md)). `[I]` (the part after the search is read from the code, not emulated); see [Skills](Skills.md).
+  - Count guards ([§ 2.3](../findings/ai/0011-batch10.md)): row 129's cell test takes the count `> 528 ? 528 : -1` (the hut's own class `evilhut`) as its `ECX`, inside the think's `[C]` map
+    (met at 528 and 529, an edge no control moves); its class pick's defaults above are `[I]`.
 
 ## Open questions
 
