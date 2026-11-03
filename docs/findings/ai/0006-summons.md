@@ -118,7 +118,7 @@ findings named in place are cited by their anchors.
 | `0x005E45D0` | `sub_005E45D0_AiPetGuard` | `(ECX game, EDX pet; target, owner, melee, ctx, flag, dist)`: picks the `AiPetMove` kind from the owner's distance and state | I |
 | `0x005E4830` | `sub_005E4830_AiNecroPetMelee` | row 67's think when `v14` = 0 | I |
 | `0x005E4AC0` | `sub_005E4AC0_AiNecroPetRanged` | row 67's think when `v14` ≠ 0 (`Skill1`) | I |
-| `0x005E4CF0` | `sub_005E4CF0_AiNecroPet` | row 67 `NecroPet` and state row 7 think | I (entry call `[C]`, § 4) |
+| `0x005E4CF0` | `sub_005E4CF0_AiNecroPet` | row 67 `NecroPet` and state row 7 think | I (entry call `[C]`, § 4); first boundary live `C`, ai/0015 |
 | `0x005E9E60` | `sub_005E9E60_AiHydra` | row 86 `Hydra` think | I (map `[C]`, § 4) |
 | `0x005EA290` | `sub_005EA290_AiSentryInit` | rows 101, 104 init: `v14 = T`, `v18 = −1` | I (map `[C]`, § 4) |
 | `0x005EA2B0` | `sub_005EA2B0_AiSentryCharge` | `(ECX game, EDX unit; ctx, use)`: the sentries' shot count in `v18`; 1 = the sentry was ended | I (entry call `[C]` inside rows 101, 104, § 4) |

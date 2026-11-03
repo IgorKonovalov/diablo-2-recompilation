@@ -110,7 +110,7 @@ hirelings/0001 are cited by their anchors.
 | `0x005E4D30` | `MERCAI_PickSkill` | `(ECX game, EDX unit; class, id, target, seed)`: the Hireling row's weighted skill pick, the class fallback | I (class bounds `[C]`, § 4) |
 | `0x005E5050` | `sub_005E5050_AiHireFight` | `(ECX game, EDX unit; class, owner, target, seed, ctx)`: the hit draw, the range test, then `MERCAI_PickSkill` | I (class dispatch `[C]`, § 4) |
 | `0x005E5280` | `sub_005E5280_AiHireableAlt` | row 61's and state row 4's `alt` (also row 128's `+C`): clears state 12, `MonAiInit(ctl, ctl.state)`, `Idle(1)` | I (entry call `[C]`, § 4) |
-| `0x005E52D0` | `sub_005E52D0_AiHireable` | row 61 `Hireable` and state row 4 think | I (entry call `[C]`, § 4) |
+| `0x005E52D0` | `sub_005E52D0_AiHireable` | row 61 `Hireable` and state row 4 think | I (entry call `[C]`, § 4); first boundary live `C`, ai/0015 |
 | `0x005E7AC0` | `sub_005E7AC0_AiGoodNpcRanged` | state row 5 and table row 60 `GoodNpcRanged` think | I (map to `RoomIsTown` `[C]`, § 4) |
 | `0x005E7C10` | `sub_005E7C10_AiHireUnowned` | state row 6 think | I (map to `RoomIsTown` `[C]`, § 4) |
 

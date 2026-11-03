@@ -791,9 +791,9 @@
   from the think code, `MonSetMode` and `PathPlan` entry and exit seeds, `SKILLS_SrvStart` entry and exit, and the event
   exit (`0x005B1876`); filter: server monsters within 80 sub-tiles of the first player per axis; caps per game 200 per AI
   row, 3 000 decisions, 600 events that end before the think call.
-- **Cases:** 31 kept case logs in 10 kept launches (`<RUN>-s2-<seed>-L<k>.log` with `.marks.tsv`, cut by
+- **Cases:** 31 kept case logs in 9 launches (a tenth launch, 5401, kept nothing and was run again as 5402) (`<RUN>-s2-<seed>-L<k>.log` with `.marks.tsv`, cut by
   `harness_runner.py split` into `-<case>.log`): launches 5201 (8 cases), 5202 (7), 5203 and 5204 (one case each, fresh
-  processes, the repeats of `a1-jail` and `a2-halls`), 5301 (8), 5302 (`a1-necro`), 5402 (4), 5501 and 5502 (`a1-andariel-p8`,
+  processes, the repeats of `a1-jail` and `a2-halls`), 5301 (8), 5302 (`a1-necro`), 5402 (5), 5501 and 5502 (`a1-andariel-p8`,
   `/players 8`, two fresh processes). Stages: Jail 1, Stony Field, Dark Wood, Black Marsh, Inner Cloister, Catacombs 2–4
   (Andariel), Halls of the Dead 2, Far Oasis, Arcane Sanctuary, Palace Cellar 1, Flayer Jungle, Travincal, Durance 2,
   City of the Damned, River of Flame, Crystalline Passage, Halls of Pain, Glacial Trail (each: the waypoint from the
@@ -805,10 +805,20 @@
 - **Result** (`check-run-2026-11-03-ai.txt`, in the manifest): 14 645 decisions in 31 logs, 17 679 more events
   that ended before the think call. 10 374 compared with an emulated model, 2 240 with a hand map, 2 016 in rows with no
   model (batches 10–12 not emulated, town rows 32 and 54, three rows with an unlogged input), 15 not comparable (rev 2
-  window, Scarab, § below): **0 mismatches** in the 12 614 compared. Tier AIs (decisions, all compared): Skeleton (row 2) 357,
+  window, Scarab, § below): **0 mismatches** in the 12 614 compared, at each decision's first boundary only; the 2 016 no-model decisions, the 15 not comparable and the 17 679 events that end before the think call are outside the 0. Tier AIs (decisions, all compared): Skeleton (row 2) 357,
   Fallen (6) 1 393, Wraith (9) 70, FallenShaman (13) 363, Scarab (20) 180 (15 not comparable), Mummy (21) 168, GreaterMummy (22) 71,
   Vampire (28) 279, BatDemon (29) 115, Fetish (30) 130, Andariel (34) 64, CorruptArcher (35) 95, SkeletonBow (37) 278,
   Hireable (61) 5 697, SkeletonMage (64) 226, NecroPet (67) 184, Megademon (89) 98, BloodLord (125) 55: every tier AI has at least 50.
+- **What the comparison separates** (architect check, `tools/ai.py` models and hand maps run over the 31 logs, distinct
+  predicted (function, call site) first boundaries per tier AI over its compared decisions; the checker prints no such
+  line, so this is a recount, not a kept output): Skeleton 4 of 357, Fallen 1 of 1 393, Wraith 3 of 70, FallenShaman 2
+  (358 and 5), Scarab 5, Mummy 5, GreaterMummy 3, Vampire 1 of 279, BatDemon 1 of 115 (110 think, 5 alt), Fetish 1 of 130,
+  Andariel 5 of 64, CorruptArcher 1 of 95, SkeletonBow 1 of 278, Hireable 1 of 5 697, SkeletonMage 1 of 226, NecroPet 1
+  of 184, Megademon 1 of 98, BloodLord 5 of 55. Ten tier AIs have one predicted first boundary in this window, so for them
+  the 0 shows that first callee, its registers, stack words and seed (emulated models also the control words and the
+  block), not a branch choice; the Fallen hand map's mode 0/12 return branch was never taken. No live negative control was
+  run: the separation controls are the no-game ones of `tools/test_ai.py` (a corrupted site, seed, function or `aip` block
+  on a synthetic log is found).
 - **Unlogged sites.** The rev 2 window did not cover the `GameFindUnit` call inside `MonsterOwner` (`0x0058F0FF`), which
   the Scarab model predicts as its first boundary when the owner words are set: 15 first-batch Scarab decisions are
   counted `unlogged`, not as matches; rev 3 covers it and the 95 Scarab decisions of `a2-oasis-3` all compare.
@@ -826,11 +836,11 @@
   summons, no curse, cloak, flee or super-unique case staged. So the control (an event in a non-zero state) is absent and
   the reading "no setter" for state rows 2, 3, 8, 9, 14, 17 is not tested by absence here; it needs a window with a live
   control (a curse by Amplify Damage or Terror on a monster, `MonFleeFrom`).
-- **Library pilot (plan 0056 Phase 3).** Launches 19 (10 kept-batch, 9 development); kept case logs 31 (15 of the first
+- **Library pilot (plan 0056 Phase 3).** Launches 19 (10 batch, 9 development; 9 with kept cases); kept case logs 31 (15 of the first
   batch's 17 runner-kept cases, 9, 5 and 2); launches per kept case 10/31 = 0.32 (19/31 = 0.61 with development); case
   switch 18.7 s (`a2-halls`, launch 5202 onward `next_case`), batches 2 237 s (17 cases), 1 744 s (9), 1 195 s (5), 360 s
-  (2) of wall, 131, 194, 239 and 180 s per case. The prompt's pilot description is taken as the opt-in to share processes
-  (harness-play.md § Fresh process): the checker models no process state, and the two fresh-process repeats (`a1-jail` 385
+  (2) of wall, 131, 194, 239 and 180 s per case. The lane's prompt supplied the per-batch opt-in to share processes (owner answer 2 of plan 0056, harness-play.md §
+  Fresh process; plan 0056 Phase 3 names this batch as the pilot, so no further owner decision is needed): the checker models no process state, and the two fresh-process repeats (`a1-jail` 385
   decisions, `a2-halls` 522) check with 0 mismatches as the shared-process cases do. Waypoint clicks: 9 retries in the
   first and third batches, 3 cases without a level change.
 - **Not done in this run** (named short): the 331 monster gaps of the H1 oracle replacement (the kept skills logs of

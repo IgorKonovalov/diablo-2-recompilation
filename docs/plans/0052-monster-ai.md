@@ -843,7 +843,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   library, recipe `tools/d2s_recipes/ai-nec.json`. Record: [experiments.md run:2026-11-03-ai](../findings/ai/experiments.md),
   finding [ai/0015](../findings/ai/0015-phase2-first-run.md) (19 symbol rows `I` → `C`: `MonAiEvent` and 18 think
   functions; the compared decisions' first boundaries only). **Counts:** 31 kept case logs in 10 launches, 14 645
-  decisions (12 614 compared, **0 mismatches**; 15 not comparable, rev 2 window; 2 016 in rows with no model), 17 679 more
+  decisions (12 614 compared, **0 mismatches** at the first boundary; 15 not comparable, rev 2 window; 2 016 in rows with no model), 17 679 more
   events that end before the think call. Per tier AI (decisions): Skeleton 357, Fallen 1 393, Wraith 70, FallenShaman
   363, Scarab 180, Mummy 168, GreaterMummy 71, Vampire 279, BatDemon 115, Fetish 130, Andariel 64, CorruptArcher 95,
   SkeletonBow 278, Hireable 5 697, SkeletonMage 226, NecroPet 184, Megademon 98, BloodLord 55: **all 18 at least 50**,
@@ -853,13 +853,13 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   Vampire 35, GreaterMummy 37, Scarab 13, Andariel 15…). `PathPlan` seed unchanged on 9 618 plan calls (types 2, 5, 6, 7,
   13, 15; the review's condition (b) checked). **State record** (coordinator message, required item): `AiCtl.state` is
   logged at every event: 0 at all 32 324, no state 10–13 event, so the window has no live control and does not test the
-  "no setter" reading of state rows 2, 3, 8, 9, 14, 17 (and 4, 7); it needs a window with a curse (Amplify Damage,
+  "no setter" reading of state rows 2, 3, 8, 9, 14, 17 ; it needs a window with a curse (Amplify Damage,
   Terror) or `MonFleeFrom` on a monster. **Catalogue sample:** compared with models, at least 20 decisions, batches 1–4,
   8, 9 (e.g. Zombie 135, Swarm 71, Pinhead 202, Frog 200, Vile Mother 71, Arcane Tower 24, Frozen Horror 95); batches 10
   (row 130, 85) and 12 (rows 32, 54, 99) logged without a model. **Pilot figures (plan 0056 Phase 3):** 19 launches
   (10 in the kept batches, 9 development), 31 kept sessions = 31 kept cases (3 case runs not kept: two stayed in the town,
-  one first try), 10 launches that were dev or rerun (9 development, 1 rerun) = 53 %, launches per kept case 10/31 = 0.32
-  (0.61 with development), harness wall about 110 min for 31 cases = 3.6 min per kept session (lane wall in the ledger row), tokens about 17 k per kept session; two cases (`a1-jail`, `a2-halls`) re-run in fresh processes, 385 and
+  one first try), 10 launches that were dev or rerun (9 development, 1 rerun) = 53 % (63 % counting the two fresh comparison launches 5203 and 5204 as reruns), launches per kept case 10/31 = 0.32
+  (0.61 with development), harness wall about 110 min for 31 cases = 3.6 min per kept session (lane wall in the ledger row), tokens about 18 k per kept session (560 000 over 31); two cases (`a1-jail`, `a2-halls`) re-run in fresh processes, 385 and
   522 decisions, 0 mismatches. **Short against the Done-when, with counts:** the 331 monster gaps of the H1 oracle
   replacement (0 close: the kept skills logs hold 0 `AID`/`AIB` lines; needs a session with both loggers), H3's 2 218
   Raven `MonAttackStats` calls (not modelled), the Phase 1b cases P1b-1 (Duriel, 0 of 300 melee decisions; needs Tal

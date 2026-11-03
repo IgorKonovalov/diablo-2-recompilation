@@ -75,19 +75,19 @@ anchors.
 
 | Address | Name | Role | Tag |
 |---|---|---|---|
-| `0x005EFCF0` | `sub_005EFCF0_AiSkeleton` | row 2 `Skeleton` think | I (map `[C]`, § 3) |
+| `0x005EFCF0` | `sub_005EFCF0_AiSkeleton` | row 2 `Skeleton` think | I (map `[C]`, § 3); first boundary live `C`, ai/0015 |
 | `0x005EFE20` | `sub_005EFE20_AiZombie` | row 3 `Zombie` think | I (map `[C]`, § 3) |
 | `0x005EFF50` | `sub_005EFF50_AiBighead` | row 4 `Bighead` think | I (map `[C]`, § 3) |
 | `0x005F00E0` | `sub_005F00E0_AiBloodHawk` | row 5 `BloodHawk` think | I (map `[C]`, § 3) |
-| `0x005F02C0` | `sub_005F02C0_AiFallen` | row 6 `Fallen` think | I |
+| `0x005F02C0` | `sub_005F02C0_AiFallen` | row 6 `Fallen` think | C (first boundary only, ai/0015) |
 | `0x005EFB80` | `sub_005EFB80_AiBrute` | row 7 `Brute` think | I (map `[C]`, § 3) |
 | `0x005F0700` | `sub_005F0700_AiSandRaider` | row 8 `SandRaider` think | I |
 | `0x005F06B0` | `sub_005F06B0_AiNearAllyCb` | row 8's search callback: the nearest other alignment-0 living monster | I |
-| `0x005F0A20` | `sub_005F0A20_AiWraith` | row 9 `Wraith` think | I (map `[C]`, § 3) |
+| `0x005F0A20` | `sub_005F0A20_AiWraith` | row 9 `Wraith` think | I (map `[C]`, § 3); first boundary live `C`, ai/0015 |
 | `0x005F0B00` | `sub_005F0B00_AiCorruptRogue` | row 10 `CorruptRogue` think | I |
 | `0x005F0CD0` | `sub_005F0CD0_AiBaboon` | row 11 `Baboon` think | I |
 | `0x005F12A0` | `sub_005F12A0_AiGoatman` | row 12 `Goatman` think | I (map `[C]`, § 3) |
-| `0x005F1440` | `sub_005F1440_AiFallenShaman` | row 13 `FallenShaman` think | I |
+| `0x005F1440` | `sub_005F1440_AiFallenShaman` | row 13 `FallenShaman` think | C (first boundary only, ai/0015) |
 | `0x005F1380` | `sub_005F1380_AiFallenCorpseCb` | row 13's search callback (a unique shaman): a dead Fallen or shaman in range | I |
 | `0x005F1140` | `sub_005F1140_AiQuillRat` | row 14 `QuillRat` think | I (map `[C]`, § 3) |
 | `0x005F1800` | `sub_005F1800_AiSandMaggot` | row 15 `SandMaggot` think | I |

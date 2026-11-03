@@ -74,9 +74,9 @@ cited by their anchors.
 | `0x005F20A0` | `sub_005F20A0_AiSandLeaper` | row 17 `SandLeaper` think | I (map `[C]`, § 3) |
 | `0x005F22B0` | `sub_005F22B0_AiPantherWoman` | row 18 `PantherWoman` think | I (map `[C]`, § 3) |
 | `0x005F2460` | `sub_005F2460_AiSwarm` | row 19 `Swarm` think | I (map `[C]`, § 3) |
-| `0x005F2540` | `sub_005F2540_AiScarab` | row 20 `Scarab` think | I (map `[C]`, § 3) |
-| `0x005F2850` | `sub_005F2850_AiMummy` | row 21 `Mummy` think | I (map `[C]`, § 3) |
-| `0x005F2B10` | `sub_005F2B10_AiGreaterMummy` | row 22 `GreaterMummy` think | I (map `[C]`, § 3) |
+| `0x005F2540` | `sub_005F2540_AiScarab` | row 20 `Scarab` think | I (map `[C]`, § 3); first boundary live `C`, ai/0015 |
+| `0x005F2850` | `sub_005F2850_AiMummy` | row 21 `Mummy` think | I (map `[C]`, § 3); first boundary live `C`, ai/0015 |
+| `0x005F2B10` | `sub_005F2B10_AiGreaterMummy` | row 22 `GreaterMummy` think | I (map `[C]`, § 3); first boundary live `C`, ai/0015 |
 | `0x005F2A00` | `sub_005F2A00_AiGreaterMummyCb` | row 22's search callback: a corpse and a wounded ally in range | I |
 | `0x005F3170` | `sub_005F3170_AiVulture` | row 23 `Vulture` think | I |
 | `0x005F2EB0` | `sub_005F2EB0_AiVultureTakeOff` | clears `Unit+0xC4` bits 1–3 and the unit's collision, pattern 5, mask 0, `Delay(12)` | I |
@@ -87,10 +87,10 @@ cited by their anchors.
 | `0x005F3960` | `sub_005F3960_AiWispCb` | row 25's room-search callback: a living monster of base 118 (`willowisp1`) | I |
 | `0x005F4510` | `sub_005F4510_AiArach` | row 26 `Arach` think | I |
 | `0x005F4850` | `sub_005F4850_AiThornHulk` | row 27 `ThornHulk` think | I (map `[C]`, § 3) |
-| `0x005F4A70` | `sub_005F4A70_AiVampire` | row 28 `Vampire` think | I |
-| `0x005F5040` | `sub_005F5040_AiBatDemon` | row 29 `BatDemon` think | I |
+| `0x005F4A70` | `sub_005F4A70_AiVampire` | row 28 `Vampire` think | C (first boundary only, ai/0015) |
+| `0x005F5040` | `sub_005F5040_AiBatDemon` | row 29 `BatDemon` think | C (first boundary only, ai/0015) |
 | `0x005F4FD0` | `sub_005F4FD0_AiBatDemonAlt` | row 29's `alt` | I (map `[C]`, § 3) |
-| `0x005F53E0` | `sub_005F53E0_AiFetish` | row 30 `Fetish` think | I (record map `[C]`, § 3) |
+| `0x005F53E0` | `sub_005F53E0_AiFetish` | row 30 `Fetish` think | I (record map `[C]`, § 3); first boundary live `C`, ai/0015 |
 | `0x005B0D00` | `sub_005B0D00_AiSameBaseNearCb` | row 18's search callback: the nearest other living monster of the searcher's base class | I |
 | `0x005DE440` | `sub_005DE440_MonAiMoveToPoint` | `(ECX game, EDX unit; x, y, mode)`: command `mode` to the point, stop distance 1 | I |
 | `0x005DE490` | `sub_005DE490_MonAiMoveToPointNoStop` | the same with stop distance 0 | I |

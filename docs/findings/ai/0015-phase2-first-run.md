@@ -12,11 +12,15 @@ the emulation of that think function treats as a boundary (ADR-0021).
 
 ## Answer (summary)
 
-- [C] (run:2026-11-03-ai, 0x005B186F) For 13 tier AIs (rows 2, 9, 20, 21, 22, 34, 37, 61, 64, 67, 89, 125 and 29's alt) each live decision's first boundary (function, call site, registers and stack words, unit seed, the AI
+- [C] (run:2026-11-03-ai, 0x005B186F) For 13 tier AIs (rows 2, 9, 20, 21, 22, 30, 34, 37, 61, 64, 67, 89, 125, and BatDemon's alt branch of row 29) each live decision's first boundary (function, call site, registers and stack words, unit seed, the AI
   control words, and the block a pointer argument addresses) equals the model of the emulated map: 10 374 decisions,
   0 mismatches. The five unemulated tier AIs (Fallen 6, FallenShaman 13, Vampire 28, BatDemon 29's think, CorruptArcher
-  35) match the first-callee maps read from the findings and objdump: 2 240 decisions, 0 mismatches. Every tier AI has at least
-  50 compared decisions. Claim ends at the first boundary; what the boundary's callee returns and everything after is
+  35) match the first-callee maps read from the findings and objdump (`HAND` in `tools/ai.py`, unchanged since the first
+  tool commit, before the first kept launch): 2 240 decisions, 0 mismatches. Every tier AI has at least
+  50 compared decisions. The 0 excludes 2 016 decisions in rows with no model, 15 Scarab decisions the rev 2 window
+  could not compare and the 17 679 events that end before the think call. Ten tier AIs show one predicted first
+  boundary in the window (experiments.md, what the comparison separates), so for them the 0 checks that first callee
+  and its arguments, not a branch. Claim ends at the first boundary; what the boundary's callee returns and everything after is
   `[I]` (ADR-0021, ADR-0004). (run:2026-11-03-ai, fn:sub_005B1740_MonAiEvent@0x005B1740)
 - [C] The think call at 0x005B186F is reached by 14 645 of 32 324 logged events; 17 679 end before it (pre-checks, the
   search, `MonSpcWalk`), and `AiCtl.state` is 0 at all of them. (run:2026-11-03-ai, 0x005B186F, 0x005B1876)
@@ -69,7 +73,7 @@ calls `UnitLifePct` (0x005F5070). (fn:sub_005B1740_MonAiEvent@0x005B1740)
 
 ### 2. Counts
 
-See experiments.md: 14 645 decisions, 12 614 compared, 0 mismatches, 15 not comparable; per tier AI 55 (BloodLord) to
+See experiments.md: 14 645 decisions, 12 614 compared, 0 mismatches at the first boundary, 15 not comparable; per tier AI 55 (BloodLord) to
 5 697 (Hireable). The mercenary dominates because it thinks every few frames; the logger's cap of 200 per row per game
 limits it. The 17 679 events that end before the think call are logged without inputs (AIN lines).
 
