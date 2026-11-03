@@ -859,7 +859,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   (row 130, 85) and 12 (rows 32, 54, 99) logged without a model. **Pilot figures (plan 0056 Phase 3):** 19 launches
   (10 in the kept batches, 9 development), 31 kept sessions = 31 kept cases (3 case runs not kept: two stayed in the town,
   one first try), 10 launches that were dev or rerun (9 development, 1 rerun) = 53 % (63 % counting the two fresh comparison launches 5203 and 5204 as reruns), launches per kept case 10/31 = 0.32
-  (0.61 with development), harness wall about 110 min for 31 cases = 3.6 min per kept session (lane wall in the ledger row), tokens about 17 k per kept session (530 967 measured over 31); two cases (`a1-jail`, `a2-halls`) re-run in fresh processes, 385 and
+  (0.61 with development), harness wall 3.6 min per kept session as first stated, withdrawn by [plan 0056 Phase 4](done/0056-harness-runner-efficiency.md#implementation-log): 3.0 (the four batches, 92.3 min) and 3.5 (all 19 launches, 108.1 min) harness, 4.5 by the baseline's lane wall (139 min), tokens about 17 k per kept session (530 967 measured over 31); two cases (`a1-jail`, `a2-halls`) re-run in fresh processes, 385 and
   522 decisions, 0 mismatches. **Short against the Done-when, with counts:** the 331 monster gaps of the H1 oracle
   replacement (0 close: the kept skills logs hold 0 `AID`/`AIB` lines; needs a session with both loggers), H3's 2 218
   Raven `MonAttackStats` calls (not modelled), the Phase 1b cases P1b-1 (Duriel, 0 of 300 melee decisions; needs Tal

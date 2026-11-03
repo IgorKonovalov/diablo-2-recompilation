@@ -4,7 +4,7 @@ to: architect
 date: 2026-10-30
 status: done
 context:
-  - ../../plans/0056-harness-runner-efficiency.md
+  - ../../plans/done/0056-harness-runner-efficiency.md
 resolution: "Phase 1 accepted with fixes (2) by the Tier B lane check; Phase 2 released"
 ---
 
