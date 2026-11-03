@@ -1,8 +1,9 @@
 ---
 based_on:
-  - docs/specs/player/README.md 2026-10-16
+  - docs/specs/player/README.md 2026-11-03
   - docs/specs/player/creation.md 2026-11-03
-  - docs/specs/hirelings/README.md 2026-10-30
+  - docs/specs/hirelings/README.md 2026-11-03
+  - docs/specs/player/party.md 2026-11-03
   - docs/specs/save/d2s.md 2026-10-30
 ---
 
@@ -10,9 +11,10 @@ based_on:
 
 This page follows a single-player character from the moment it is created to its first level-ups, and then
 follows the [mercenaries](../glossary.md) a player can hire. It covers what a new character starts with (attributes, skills and
-the starting kit), how a kill turns into experience, what a level-up changes, how a seller's hire list is made,
-what a mercenary's stats are at each level, and how a saved mercenary comes back. It restates three reviewed
-specs: [player](../specs/player/README.md#purpose), [player/creation](../specs/player/creation.md#purpose) and
+the starting kit), how a kill turns into experience, what a level-up changes, how a kill's experience is shared in a party and what the number of players changes, how a seller's hire list is made,
+what a mercenary's stats are at each level, and how a saved mercenary comes back. It restates four reviewed
+specs: [player](../specs/player/README.md#purpose), [player/creation](../specs/player/creation.md#purpose),
+[player/party](../specs/player/party.md#purpose) and
 [hirelings](../specs/hirelings/README.md#purpose). Skill effects, the skill tree and mercenary combat AI are not
 covered by those specs, so they are not covered here either.
 
@@ -263,17 +265,97 @@ These are in [player/creation § J](../specs/player/creation.md#j-other-level-an
   and the owner exactly where the corpse's creation wrote them, which is confirmed, but no pickup was run); another
   player picking it up gets nothing; and a corpse still on the ground when the character is saved comes back at the
   next load without that share, so picking it up then returns nothing.
-- **Party share.** With two or more members (alive, in the same level, close enough, at most 8), the kill's
-  experience is raised by 89/256 per extra member and split in proportion to the members' levels, and each share
-  then goes through the kill formula with that member's level. Confirmed for two players in a two-client game (385
-  shares, and the cases where only the killer gets the experience: the other too far, in another level, dead or not
-  in the party). One detail matters for exact results: the per-level ratio is kept as a single-precision float, but
-  the member's level times that ratio is truncated without rounding it to single precision first, which a
-  reimplementation gets by multiplying in double precision. Three or more members and the exact edge of "close enough"
-  are read from the code only.
+- **Party share.** A kill's experience is shared among the credited player's party members near the monster; the rules, what
+  was seen in play and what was only read from the code are in [Parties and the player count](#parties-and-the-player-count) below.
 - **Spending attribute points.** Each spend uses one unspent point and adds 1 to the attribute. Vitality also adds
   `LifePerVitality` and `StaminaPerVitality`, energy `ManaPerMagic`, all in quarter points, to the maximum and the
   current value. Confirmed on one spend of each attribute.
+
+## Parties and the player count
+
+This section restates [player/party](../specs/player/party.md#purpose), which composes the rules of
+[player/creation § G and § J](../specs/player/creation.md#j-other-level-and-experience-changes) with every place the
+game reads the number of players. Two words are used throughout. **Seen in play** means a game-made log of a real or
+test session showed it. **Read from the code** means the game's code was read, or run on its own under emulation with a
+declared memory image, and no session showed it; that tells what the code does with the bytes it reads, not how often
+play reaches it.
+
+### Who gets the experience
+
+```mermaid
+flowchart TD
+  K["a monster dies"] --> C["one player is credited: the killer, or the owner of the killing monster"]
+  C --> M["that player's own mercenary is paid first"]
+  M --> P{"credited player in a party?"}
+  P -->|no| W["the whole award, no further test"]
+  P -->|yes| S["collect party members near the dead monster"]
+  S -->|none| N["nobody is paid"]
+  S -->|one| O["the whole award to the credited player"]
+  S -->|"two to eight"| T["raised, then split by level"]
+```
+
+- **Who is credited.** A player who kills is credited itself. For a monster killer, its owner is credited, except that
+  three states on the killer or the victim (conversion, attract, confuse) can replace the owner. The 40 mercenary kills
+  in the two-client logs credited the owner (seen in play); the three states and the player-kills-player case are read
+  from the code only, and no log holds a player's award from a player.
+- **A player in no party** takes the whole award at its own level, with no distance or alive test. This is read from the
+  code.
+- **A player in a party.** The game walks the credited player's party list and collects the members who are in the same
+  level as the credited player, alive, and within a squared distance of 6400 of **the dead monster** (the edge counts as
+  in; the credited player is tested like any member). The distance is measured from the monster, not from the killer.
+  For two players the collected sets were predicted for 689 of 690 logged kills (the last was cut off by the session's
+  end) (seen in play), but no logged kill separates the monster from the killer as the origin, because the two players
+  were never on opposite sides of the bound. That rule was settled by running the code under emulation (6 166 kills, no
+  mismatch), so it is read from the code.
+- **How many were collected decides the payment.**
+  - None: nobody is paid.
+  - One: the whole award goes to the **credited player**, at its own level, with no bonus, whoever the one member was.
+    The code does this; no logged kill tests it.
+  - Two to eight: the kill's experience is raised by 89/256 for each member beyond the first and split in proportion to
+    the members' levels; each share then goes through the usual kill formula at that member's level. For two players
+    this was seen in play, including that the product of a level and the ratio is truncated from a double-precision
+    product, not rounded to single precision first (a case where a single-precision product would give 42 and the
+    game's 41). For three to eight the integer steps were checked under emulation and the float steps are the same
+    instructions, which agreed in every emulated case; emulation does not count as evidence for those steps, and they have not been seen in a game.
+  - Eight is the most the code collects. A ninth member that passes every test reaches the fatal-error call, not a clip.
+    Whether a party list can hold nine was not read.
+- **What a far or dead killer means** (read from the code only; none of it has been seen in a game). Because one
+  collected member pays the credited player, a partied player whose hireling or summon kills far from it takes the whole
+  award alone when one other member is near the monster, and nobody is paid when no member is near; an unpartied player
+  in the same place gets it all. A dead killer with one living member in range is paid, and the living member is not.
+  A reimplementation that wants the game's results keeps these.
+- **The mercenary** of the credited player is paid before and independently of the share, at the monster's full
+  experience and its own level, cut to 86/256 unless it is the killer. Other members' mercenaries get nothing (read from
+  the code, with the owner credit for mercenary kills seen in play). The kill experience and the death loss are on the
+  sections above; the death loss reads no party.
+- **Draws.** The credit and the share make no random draw; this is read from the code by following the direct calls
+  only.
+
+### What the number of players changes
+
+The game counts live players at the moment of the call. The `/players` setting is a maximum, not an addition, in single
+player and on a TCP/IP host, where only the server's setting counts (seen in play). Which states exclude a player from
+the count, and whether game type 1 takes it, are read from the code.
+
+| What | Which count | What it changes | Seen or read |
+|---|---|---|---|
+| a monster's hit points and experience | the count at its creation, kept in the monster | 50 % more per player beyond the first, never recomputed afterwards | seen in play |
+| a monster's stored player count | at creation: the count for a monster whose alignment value is 0, 1 for any other | feeds the rows below; a hireling gets 1 and no bonus | seen in play |
+| crushing blow | the stored count | the divisor grows with it | seen in play |
+| a monster's damage | the stored count | expansion, Nightmare and Hell only: a share of 1/16 per player beyond the first, up to eight | read from the code |
+| no-drop chance of a treasure class | the count now, and the party count now | the count is taken as the party plus half of the players outside it, then scaled | seen in play, for two players |
+| the cap on that count | the stored count of a monster source; an object source has none | the count cannot exceed it; the cap never acted in a logged drop | read from the code (no cap on an object source: seen in play) |
+| experience share | the party list and positions; no player count | the rules above | read from the code |
+| gold pickup, quest credit, the Ancients' grant | party lists | splits and grants among members | read from the code (one partied quest member seen in the Rogue Encampment) |
+
+Things the number does not change: group size, minions and density do not scale with players (seen in play at
+`/players` 1, 3 and 8). Changing `/players` in a running game changes nothing for monsters already made, which kept their
+stats over 13 changes (seen in play); monsters made later and later drops take the new count (read from the code). Four
+boss and corrupt-rogue decision functions compute the count again when they think but read only the difficulty from the
+result, so a changed `/players` has no effect there (read from the code).
+
+What is not known: a player's award from a player in play, a live case of a far hireling's kill in a party, and how the
+party gold split behaves in a game ([player/party § Open questions](../specs/player/party.md#open-questions)).
 
 ## Hirelings: the hire list
 
@@ -382,8 +464,8 @@ mercenary kills a monster, the [magic find](../glossary.md) used is its own plus
 ([hirelings § J](../specs/hirelings/README.md#j-magic-find-on-a-mercenarys-kill)).
 
 **Levelling in play** ([hirelings § G](../specs/hirelings/README.md#levelling-in-play-merc_addexp)). When a monster
-dies, the owner's mercenary gets its own share, worked out at the mercenary's level (that path is read from the
-code), and capped at a sixty-fourth of that level's experience span. If someone else made the kill, the mercenary keeps `86/256` of it, rounded toward zero;
+dies, the credited player's own mercenary gets its own share before the party share and whatever that does, worked out at the
+mercenary's level (checked by running the code under emulation; other members' mercenaries get nothing), and capped at a sixty-fourth of that level's experience span. If someone else made the kill, the mercenary keeps `86/256` of it, rounded toward zero;
 its own kill gives it the full amount. The mercenary then adds **twice** that value, but only while it is below its
 owner's level: in a run, a level-85 mercenary under a level-80 owner gained nothing. The upper bound, level 98 on the
 stock tables, is read from the code: at that level the mercenary would gain nothing, and the level loop stops there.
@@ -484,7 +566,7 @@ From [player/creation § Open questions](../specs/player/creation.md#open-questi
 
 - the first save's appearance bytes are not predicted.
 
-Also read from the code only, not run: party sharing with three or more members, the Ancients' reward in Nightmare
+Also read from the code only, not run: party sharing with three or more members, a far or dead killer in a party, the Ancients' reward in Nightmare
 and Hell, picking up a corpse, and the edge cases of kill experience listed above.
 
 From [hirelings § Open questions](../specs/hirelings/README.md#open-questions):
@@ -499,7 +581,8 @@ From [hirelings § Open questions](../specs/hirelings/README.md#open-questions):
 
 ## Where to read more
 
-- The specs: [player](../specs/player/README.md#files), [player/creation](../specs/player/creation.md#algorithm) and
+- The specs: [player](../specs/player/README.md#files), [player/creation](../specs/player/creation.md#algorithm),
+  [player/party](../specs/player/party.md#algorithm) and
   [hirelings](../specs/hirelings/README.md#algorithm), with their *Reimplementation notes*.
 - How the first save and a mercenary's header are stored: the [saves](saves.md) page and
   [save/d2s § D](../specs/save/d2s.md#d-header-fields).

@@ -2,9 +2,9 @@
 based_on:
   - docs/specs/drlg/README.md 2026-10-21
   - docs/specs/drlg/room-tiles.md 2026-10-27
-  - docs/specs/drlg/preset.md 2026-10-17
+  - docs/specs/drlg/preset.md 2026-11-03
   - docs/specs/drlg/collision.md 2026-10-27
-  - docs/specs/drlg/maze.md 2026-10-17
+  - docs/specs/drlg/maze.md 2026-11-03
   - docs/specs/drlg/warps.md 2026-10-17
   - docs/specs/drlg/outdoor.md 2026-10-20
   - docs/specs/drlg/lifecycle.md 2026-10-27
@@ -672,8 +672,8 @@ section.
 - **Preset units** ([preset § Open questions](../specs/drlg/preset.md#open-questions)): the Blood Moor centre monster
   and the river objects of all six preset types are now reached in runs. What stays read from the code has no case in
   the shipped data: the row skip for floor tiles other than the one the Act I town uses, the Courtyard's index 2 from
-  the side-1 formula, the Black Marsh ending on side 2, a few map-entry branches no shipped map uses, and the special filters of levels 133–136, which
-  cannot be reached. The reader of the `Outdoors` flag is found, by the code: a test of whether a room is outdoors,
+  the side-1 formula, the Black Marsh ending on side 2, a few map-entry branches no shipped map uses. The special filters of levels 133–136 were checked by running the code under emulation, up to the first
+  spawn of a walk, and never in a game: no code path found opens a portal to those levels, so on that reading stock play does not reach them. The reader of the `Outdoors` flag is found, by the code: a test of whether a room is outdoors,
   called by the client when the player changes room and by one server walk in the skill code; what the client does
   with the result is presentation and not found. On the server a preset monster's path is detached when the monster
   is spawned, which takes the path over (confirmed by a run); who detaches it on the client copy is unknown, and so is what

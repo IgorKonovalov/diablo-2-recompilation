@@ -531,6 +531,24 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-11-03 | `lane/a66` | 0052 readers of ai/0012, ai/0013 into the table docs (2 entries) | archivist | 187 967 | 46 | 9 | — | accept with fixes (Tier A, ADR-0027) | 16: overclaim 3, misread 4, omission 6, wrong anchor 2, stale cross-reference 1 |
 | 2026-11-03 | `lane/a66` review | 0052 readers of ai/0012, ai/0013 | architect-review | 207 612 | 37 | 10 | — | accept with fixes (16) | overclaim 3, misread 4, omission 6, wrong anchor 2, stale cross-reference 1 |
 | 2026-11-03 | `lane/r54b` check | 0054 P1.2 | architect-check | 113 136 | 29 | 4 | — | accept with fixes (4) | overclaim 2, stale cross-reference 1, omission 1 |
+| 2026-11-03 | `lane/r58a` | 0058 P1 | reverser-static | 325 701 | 48 | 31 | — (static, Ghidra copy ghidra-r58a) | accept with fixes (Tier A) | 9: overclaim 4, omission 4, tool not kept 1 |
+| 2026-11-03 | `lane/r58a` review | 0058 P1 | architect-review | 197 794 | 30 | 11 | — | accept with fixes (9) | overclaim 4, omission 4, tool not kept 1 |
+| 2026-11-03 | `lane/r67` | 0052 (ai notes), 706-708 creator scope | reverser-static | 223 593 | 44 | 15 | — (objdump, no Ghidra) | accept with fixes (Tier B check) | 2: omission 2 |
+| 2026-11-03 | `lane/r67` check | 0052 (ai notes), 706-708 creator scope | architect-check | 94 670 | 28 | 3 | — | accept with fixes (2) | omission 2 |
+| 2026-11-03 | `lane/a67` | 0054 P1.2 follow-ups (2 entries) | archivist | 128 755 | 49 | 7 | — | accept with fixes (Tier A, ADR-0027) | 11: omission 4, misread 2, overclaim 2, miscount 1, under-claim 1, stale cross-reference 1 |
+| 2026-11-03 | `lane/a67` review | 0054 P1.2 follow-ups | architect-review | 171 040 | 26 | 8 | — | accept with fixes (11) | omission 4, misread 2, overclaim 2, miscount 1, under-claim 1, stale cross-reference 1 |
+| 2026-11-03 | `lane/r57b` | 0057 P2 | reverser-static | 301 261 | 54 | 14 | — (static, Ghidra copy ghidra-r57b) | accept with fixes (Tier B check 3, audit 10) | 13: other 3; misread 2, under-claim 2, overclaim 1, omission 5 |
+| 2026-11-03 | `lane/r57b` check | 0057 P2 | architect-check | 74 507 | 14 | 2 | — | accept with fixes (3) | tag 1, wording 1, bookkeeping 1 |
+| 2026-11-03 | `lane/r57b` review | 0057 P2 | architect-review | 247 479 | 43 | 12 | — | accept with fixes (10) | audit of lane/r57b: misread 2, under-claim 2, overclaim 1, omission 5; reject-grade missed: yes (row 11 reversed verdict with a wrong address; row 12 [C] with no second source); reverser-static audits to date h6gs, r52l, r57b: 1 miss in 3 |
+| 2026-11-03 | `lane/s67` | 0058 P2, 0052 P1c remainder | spec-writer | 257 970 | 47 | 14 | — (no Ghidra, no harness) | accept with fixes (Tier A) | 6: overclaim 1, misread 1, wrong anchor 1, omission 2, other 1 |
+| 2026-11-03 | `lane/s67` review | 0058 P2, 0052 P1c remainder | architect-review | 238 405 | 41 | 12 | — | accept with fixes (6) | overclaim 1, misread 1, wrong anchor 1, omission 2, other 1 |
+| 2026-11-03 | `lane/w58` | 0058 P3 | wiki | 77 793 | 13 | 1 | — | accept with fixes (Tier B check) | 1: overclaim 1 |
+| 2026-11-03 | `lane/w58` check | 0058 P3 | architect-check | 72 320 | 11 | 1 | — | accept with fixes (1) | overclaim 1 |
+| 2026-11-03 | `lane/r60a` | 0060 P1.1 | reverser-static | 300 772 | 48 | 23 | — (static, Ghidra copy ghidra-r60a) | accept with fixes (Tier B check) | 6: other 1, overclaim 2, omission 2, wording 1 |
+| 2026-11-03 | `lane/r60a` check | 0060 P1.1 | architect-check | 83 978 | 23 | 3 | — | accept with fixes (6) | W1 anchors 1, scope 2, routes 2, wording 1 |
+| 2026-11-03 | `lane/a68` | 0058 P1 / 0052 readers (2 entries) | archivist | 73 589 | 17 | 2 | — | accept with fixes (Tier A, ADR-0027) | 6: overclaim 1, omission 2, stale cross-reference 3 |
+| 2026-11-04 | `lane/a68` review | 0058 P1 / 0052 readers | architect-review | 116 538 | 29 | 7 | — | accept with fixes (6) | overclaim 1, omission 2, stale cross-reference 3 |
+| 2026-11-04 | `lane/c58` | 0058 close | architect-check | 57 303 | 14 | 1 | — | plan closed | — |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not

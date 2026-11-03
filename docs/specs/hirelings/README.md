@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, items/vendors, monsters/pool, monsters/stats, data/strings, data/excel, save/d2s]
 consumed_by: [items/quality, monsters/pool, save/d2s]
-tags: {C: 141, I: 43, L: 7}
-updated: 2026-10-30
+tags: {C: 143, I: 41, L: 7}
+updated: 2026-11-03
 ---
 
 # Hirelings: the hire list, the hire, the mercenary's stats and its creation from a save
@@ -516,7 +516,7 @@ Step notes:
 #### Levelling in play (`MERC_AddExp`)
 
 ```
-MercKillAward(victim, killer, merc, owner):                              [I] (fn:XP_OnMonsterKill@0x0057E990) ; the call path, read from the code
+MercKillAward(victim, killer, merc, owner):                              [C] the call path from XP_OnMonsterKill's entry, as the code's map (fn:XP_OnMonsterKill@0x0057E990, 0x0057E9F9–0x0057EA46, run:2026-11-03-party-emu); before the party share, whatever it does: player/creation G6 note
 G2. L: i32 ← merc's level
     gain: i32 ← XP_Compute(victim's experience, at level L), ending in MERC_CapExpGain(merc, gain, L)   ; G4
 G3. if merc ≠ killer: gain ← (gain × 86) ÷ 256                           [C] (fn:XP_OnMonsterKill@0x0057E990, 0x0057EA2D–0x0057EA39, run:2026-10-27-sweep-hirelings) ; i32, truncating
@@ -544,9 +544,10 @@ G7. i: i32 ← L                                                          ; row:
 
 Step notes:
 
-- G2. [I] The award reads the victim's experience through `XP_Compute` at the mercenary's level,
-  for the owner's living mercenary (pet type 7), and passes the capped value on; the run checked each later step,
-  not `XP_Compute`'s own value. (fn:XP_OnMonsterKill@0x0057E990, fn:MERC_CapExpGain@0x0057E3F0)
+- G2. [C] The award reads the victim's full experience through `XP_Compute` at the mercenary's level,
+  for the credited player's mercenary only (the first pet node of type 7 with flag bit 0 clear), and passes the capped value on, before the party share and whatever it does. This is the code's map; run:2026-10-27-sweep-hirelings checked each later step,
+  not `XP_Compute`'s own value, and the 40 mercenary kills of run:2026-10-20-two-clients reproduce under the same model. (fn:XP_OnMonsterKill@0x0057E990, fn:MERC_CapExpGain@0x0057E3F0, run:2026-11-03-party-emu,
+  [player/0002 § 5](../../findings/player/0002-party.md#5-g6-the-mercenarys-credit))
 - G3. [C] **A kill by another unit gives the mercenary `·86 >> 8` of its gain** (signed, truncating toward zero: `imul
   0x56; cdq; and edx, 0xFF; add; sar 8`): 39 awards for another unit's kill were `gain·86/256` truncated, and 3 for
   the mercenary's own kill were the full gain. (fn:XP_OnMonsterKill@0x0057E990, 0x0057EA2D–0x0057EA39,

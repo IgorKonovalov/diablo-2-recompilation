@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, drlg/overview, drlg/room-tiles]
 consumed_by: [monsters/spawn, monsters/special, objects, drlg/collision, drlg/warps]
-tags: {C: 137, I: 25, L: 2}
-updated: 2026-10-17
+tags: {C: 139, I: 25, L: 2}
+updated: 2026-11-03
 ---
 
 # Preset units: the DS1 unit list, the keep/drop rolls and the LvlPrest columns
@@ -471,10 +471,9 @@ This spec's output ends at the room list. The rest of this section names what th
   type-2 creator (`0x00666170`) has no caller. (fn:sub_0066BF30_PresetUnitCreate@0x0066BF30,
   fn:sub_0066D9E0_Orient89Unit@0x0066D9E0, fn:DRLG_PresetClientUnitsA@0x006661A0,
   fn:sub_0066FA10_LvlSubPresetUnits@0x0066FA10, data:g_Orient89Units@0x006EF194)
-- [I] Levels 133–136 add filters to the walk, none reached in the run: level 136 makes only the first pass (no
-  preset monster spawns) and skips objects 26, 268 and 269; levels 133 and 135 skip object 397; level 134 skips
-  object 402 and the one object at which a per-game counter (`game +0x1DE4`) reaches `game +0x7C mod 3 + 3`.
-  (fn:sub_005559A0_RoomPresetUnits@0x005559A0)
+- [C] Levels 133–136 add filters to the walk, as the code's map up to the first `PresetUnitSpawn` of the walk. In the first pass (every unit that is not type 1 and has flags bit 0 clear): level 136 skips type-2 objects 26, 268 and 269; levels 133 and 135 skip object 397; level 134 skips object 402 and increments the per-game counter `game +0x1DE4` for any other type-2 object, skipping the one where the new value equals `game +0x7C mod 3 + 3`, unsigned. The second pass (type 1) does not run on level 136. Past the first spawn, the callee and reach are not covered. (fn:sub_005559A0_RoomPresetUnits@0x005559A0, run:2026-11-03-ai-uber,
+  [ai/0016 § 3](../../findings/ai/0016-uber-event.md#3-levels-133-to-136))
+- [I] No game reached those filters, and on the portal reading stock play does not: no code passes 133–136 as an immediate to a portal or level creator, and the two Pandemonium portal stubs return 0. That is the absence of a code path found, within ai/0016's limits, not a run. (fn:CUBE_PandemoniumPortalStub@0x00594270, fn:CUBE_PandemoniumFinalePortalStub@0x00594280, [ai/0016 § 3](../../findings/ai/0016-uber-event.md#3-levels-133-to-136))
 
 Step notes:
 
@@ -762,7 +761,7 @@ The seed after the rolls is the second draw's (`954E7521:1858544F` and `3385BAE3
   were reached in run:2026-10-16-sweep-mazes (step 4 notes 1, 2). The rest have no stock case and stay inferred above:
   the row skip for floor mains other than 16 (no shipped DS1 holds them in a placed column), level 27's index 2 from
   link value 1 (step 7 note 2), `v` = 2 (step 7 note 5), the DS1 skip, path drop and unused `MapId` branches (step 1
-  note 6), and the level 133–136 walk filters (levels 133–136 are unreachable). Difficulty independence of the rolls
+  note 6), and the level 133–136 walk filters, `[C]` as the code's map only and with no case in a game (stock play does not reach those levels on the portal reading and the absence of a code path found, see the walk's note). Difficulty independence of the rolls
   rests on run:2026-10-13-drlg-preset (step 3 note 6).
 - Who detaches a preset monster's path on the **client** copy? The server copy's detach is `PresetUnitSpawn` (step 5
   note 4, [drlg/0009 § 8](../../findings/drlg/0009-room-lifecycle.md#8-the-preset-questions-of-drlgpreset)). Owner

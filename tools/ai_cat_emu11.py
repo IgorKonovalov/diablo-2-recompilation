@@ -60,7 +60,8 @@ Families (function, row):
 
 Controls: `le` compares each draw (the weighted pick's draw against its cumulative weight) with `<=` instead of `<`;
 `d0` reads the difficulty as Normal; `cmp` switches the strictness of every compare that is not a draw (`<` and `<=`,
-`>` and `>=`); `u16` reads the Skill6/Skill7 tests of Baal's action unsigned; `abs` drops the pick callbacks'
+`>` and `>=`); `u16` reads the Skill6/Skill7 tests of Baal's action unsigned, though the kept run's 6 separating cases all hold a
+negative Skill6 and none separates the Skill7 test (ai/0012 section 4); `abs` drops the pick callbacks'
 absolute values; `uns` reads the weighted pick's cumulative compare unsigned; `site` expects each call site one byte
 later. Each must fail every case it separates. The `EDGES` line under each family counts, per compare, the cases that
 meet it at equality (the only cases in which a strictness control can separate that compare); a compare missing from

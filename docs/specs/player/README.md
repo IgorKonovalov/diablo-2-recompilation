@@ -2,10 +2,10 @@
 spec: player/overview
 status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
-depends_on: [rng, rng/seeds, items/uniques-sets, items/properties, items/affixes, monsters/stats, save/d2s]
+depends_on: [rng, rng/seeds, items/uniques-sets, items/properties, items/affixes, monsters/stats, save/d2s, items/tc, combat/delivery, items/economy, quests/progression]
 consumed_by: [save/d2s]
 tags: {C: 0, I: 0, L: 0}
-updated: 2026-10-16
+updated: 2026-11-03
 ---
 
 # Player: new character, experience and level-up
@@ -20,7 +20,8 @@ experience a kill is worth, and the level-up. This page is the map; the claims, 
 
 | File | Covers | Status |
 |---|---|---|
-| [creation.md](creation.md) | the stub and its checks, `NewCharFromStub` in order, starting values per class, starting skills, starting items (creation record, draws, belt / equip / inventory placement), the experience table, `XP_Compute`, `PLAYER_AddExperience`, `PLAYER_LevelUp`, the `-act` grant, party share, death loss, attribute spending | reviewed |
+| [creation.md](creation.md) | the stub and its checks, `NewCharFromStub` in order, starting values per class, starting skills, starting items (creation record, draws, belt / equip / inventory placement), the experience table, the credit and `XP_Compute` (§ G), `PLAYER_AddExperience`, `PLAYER_LevelUp`, the `-act` grant, party share (§ J4: the distance is to the killed monster), death loss, attribute spending | reviewed |
+| [party.md](party.md) | who is credited and who shares a kill, how much each gets, and every player-count reader with its input (the monster's frozen stat 100 or the current count), each rule restated with its tag and a link | reviewed |
 
 Not covered: skill effects and the skill tree (ADR-0002), Battle.net and ladder characters, CharTemplate (read only
 for a template game's class), mercenaries (their levels come from `Hireling`).
@@ -30,5 +31,6 @@ for a template game's class), mercenaries (their levels come from `Hireling`).
 - Upstream: [rng](../rng/README.md) and [rng/seeds](../rng/seeds.md) (the game seed and unit seeds), the item model
   ([items/uniques-sets § A](../items/uniques-sets.md#a-the-item-seed-at-entry), [items/properties](../items/properties.md),
   [items/affixes](../items/affixes.md)) for each starting item, [monsters/stats](../monsters/stats.md) for a monster's
-  experience.
+  experience; the experience arithmetic of a kill is [creation § G](creation.md#g-kill-experience--xp_compute), and a
+  party's share of it [creation § J](creation.md#j-other-level-and-experience-changes), composed in [party.md](party.md).
 - Downstream: [save/d2s](../save/d2s.md) writes the first save of a new character.
