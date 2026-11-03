@@ -495,8 +495,8 @@ def own_set(bin_, fam, e, ptypes):
         return (s, "reach") if s else (None, "open")
     if kind == RA:
         field, hooks = args
-        if fam == "skills" and e.kind == "CU0" and e.raw.get("cl"):
-            return None, "client"
+        if fam == "skills" and e.kind == "CU0" and (e.raw.get("cl") or e.raw.get("ret") == 0x004D9FCA):
+            return None, "client"         # the client's per-frame button check (return 0x004D9FCA; "cl" from rev 5)
         ra = e.raw.get(field)
         if isinstance(ra, int) and 0x401000 <= ra < 0x6CC000:
             s = bin_.passes([ra], utype)
@@ -540,9 +540,23 @@ def steps(a, b, limit=4096):
     return None
 
 
+def _unit_obj(e, role):
+    """A unit's seed object: ('unit', pointer) when the line gives the pointer (the server's and the client's copies
+    of one unit share type and id), else ('unit-id', type, id)."""
+    p = e.raw.get(role)
+    if isinstance(p, dict) and isinstance(p.get("u"), int):
+        return ("unit", p["u"])
+    if isinstance(p, int) and p > 0xFFFF:
+        return ("unit", p)
+    obj = e.units.get(role)
+    if obj and obj[1] is not None:
+        return ("unit-id",) + tuple(obj)
+    return None
+
+
 def seed_objects(e, side):
     """{seed object: value} of one event's entry (side 'entry') or exit seeds. Objects: ('game',), ('player',) for
-    the stats and economy families' gs/us/ps, (type, id) of a typed unit role, ('ptr', pointer) of an untyped one."""
+    the stats and economy families' gs/us/ps, ('unit', pointer) of a unit role (or ('unit-id', type, id))."""
     seeds = e.entry if side == "entry" else e.exit
     out = {}
     for k, v in seeds.items():
@@ -558,31 +572,21 @@ def seed_objects(e, side):
             if w in ("h", "m"):
                 # stats' STA0 (target "t") and AU0 ("u") of a hireling or a monster: that unit's seed
                 p = e.raw.get("t") if e.kind == "STA0" else e.raw.get("u")
-                out[("ptr", p) if isinstance(p, int) else ("unknown",)] = v
+                out[("unit", p) if isinstance(p, int) else ("unknown",)] = v
             else:
                 out[("player",)] = v
             continue
         if role is not None and leaf == "s":
-            obj = e.units.get(role)
-            if obj and obj[1] is not None:
-                out[("unit",) + tuple(obj)] = v
-            elif isinstance(e.raw.get(role), dict) and isinstance(e.raw[role].get("u"), int):
-                out[("ptr", e.raw[role]["u"])] = v
+            obj = _unit_obj(e, role)
+            if obj:
+                out[obj] = v
             continue
         if role is None and leaf in ("s", "sa", "sd", "sb", "su", "so", "sm"):
             r = {"s": None, "sa": "a", "sd": "d", "sb": "b", "su": "u", "so": "o", "sm": "m"}[leaf]
-            cand = [r] if r else ["u", "o", "d", "m", "mi"]
-            for c in cand:
-                obj = e.units.get(c)
-                if obj and obj[1] is not None:
-                    out[("unit",) + tuple(obj)] = v
-                    break
-                p = e.raw.get(c)
-                if isinstance(p, int):
-                    out[("ptr", p)] = v
-                    break
-                if isinstance(p, dict) and isinstance(p.get("u"), int):
-                    out[("ptr", p["u"])] = v
+            for c in ([r] if r else ["u", "o", "d", "m", "mi"]):
+                obj = _unit_obj(e, c)
+                if obj:
+                    out[obj] = v
                     break
     return out
 
@@ -666,6 +670,13 @@ class Check:
             sets[e.line] = (s, cls)
             self.kind[(fam, e.kind)]["events"] += 1
             self.kind[(fam, e.kind)]["class " + cls] += 1
+            row["events"] += 1
+            if e.uid is None:
+                row["no unit id"] += 1
+                self.kind[(fam, e.kind)]["no unit id"] += 1
+            if not e.entry and not e.exit:
+                row["no seed"] += 1
+                self.kind[(fam, e.kind)]["no seed"] += 1
         # nesting: intersect with every closed pair the event lies in
         opened = []
         eff = {}
@@ -712,6 +723,8 @@ class Check:
             for e, s in placed:
                 self.kind[(fam, e.kind)]["compared"] += 1
                 self.kind[(fam, e.kind)]["compared as " + ("nested" if eff[e.line][1] == "nested" else "own")] += 1
+                if eff[e.line][1] != "nested":
+                    row["compared own"] += 1
                 row["compared"] += 1
             bad = place([(i, s) for i, (e, s) in enumerate(placed)])
             for i in bad:
@@ -930,8 +943,7 @@ def cmd_check(a):
         with open(os.path.join(a.out, "check.txt"), "w") as fh:
             fh.write(text)
         with open(os.path.join(a.out, "frame-check-logs.tsv"), "w") as fh:
-            keys = ["segments", "frames2", "events in frames2", "frames placed2", "compared", "separating",
-                    "mismatch", "no-frame"]
+            keys = ROW_KEYS
             fh.write("log\tlogger\t" + "\t".join(keys) + "\n")
             for rel, logger, row in ck.rows:
                 fh.write("%s\t%s\t%s\n" % (rel, logger, "\t".join(str(row[k]) for k in keys)))
@@ -942,6 +954,10 @@ def cmd_check(a):
     return 1 if mism else 0
 
 
+ROW_KEYS = ["events", "no unit id", "no seed", "segments", "frames2", "events in frames2", "frames placed2", "compared",
+            "compared own", "separating", "mismatch", "no-frame"]
+
+
 def report(ck, bin_, todo):
     L = []
     L.append("frame.py check (plan 0055 Phase 2a); game.exe %s" % bin_.sha256)
@@ -949,18 +965,27 @@ def report(ck, bin_, todo):
     L.append("logs %d" % len(todo))
     L.append("")
     L.append("== totals")
-    for k in ("logs", "segments", "frames2", "events in frames2", "frames placed2", "compared", "separating",
-              "mismatch", "nesting conflicts", "no-frame"):
+    for k in ["logs"] + ROW_KEYS + ["nesting conflicts"]:
         L.append("  %-22s %d" % (k, ck.c[k]))
+    L.append("")
+    L.append("== per logger (gdb script): logs, " + ", ".join(ROW_KEYS))
+    by = collections.defaultdict(collections.Counter)
+    nlogs = collections.Counter()
+    for _rel, logger, row in ck.rows:
+        by[logger].update(row)
+        nlogs[logger] += 1
+    for logger in sorted(by):
+        L.append("  %-17s logs %3d  %s" % (logger, nlogs[logger], "  ".join("%s %d" % (k, by[logger][k]) for k in ROW_KEYS)))
     L.append("")
     L.append("== per family and kind: events, in frames with 2+ events, compared (placed, in a frame with 2+ "
              "placed), mismatches; the rule's outcome per event")
     for (fam, kind) in sorted(ck.kind):
         c = ck.kind[(fam, kind)]
         cls = " ".join("%s=%d" % (k[6:], v) for k, v in sorted(c.items()) if k.startswith("class "))
-        L.append("  %-8s %-6s events %8d  in-frames2 %8d  compared %8d (own %d, nested %d)  mismatch %d  [%s]" % (
-            fam, kind, c["events"], c["in frames2"], c["compared"], c["compared as own"], c["compared as nested"],
-            c["mismatch"], cls))
+        L.append("  %-8s %-6s events %8d  in-frames2 %8d  compared %8d (own %d, nested %d)  mismatch %d  "
+                 "no-uid %d  no-seed %d  [%s]" % (
+                     fam, kind, c["events"], c["in frames2"], c["compared"], c["compared as own"],
+                     c["compared as nested"], c["mismatch"], c["no unit id"], c["no seed"], cls))
     L.append("")
     L.append("== separating pairs (consecutive placed events whose sets do not overlap), by set")
     for (a, b), v in sorted(ck.sep.items(), key=lambda x: -x[1]):
