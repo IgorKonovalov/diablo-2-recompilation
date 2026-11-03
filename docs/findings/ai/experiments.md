@@ -546,6 +546,11 @@
   moved into `dev-2/` before the kept run (its copy regenerates its case files and its `check.txt` byte for byte).
   The kept run's case and memory files and `check.txt` regenerate identically with the committed tool (`cases` into a
   scratch directory, `check` on the kept outputs, compared with `cmp`).
+- **Re-check under the fixed script** (`main` fd2ca68a, `lane/r55e`'s per-case copy fix, `EmuBoundary.java`
+  `0c88b790…`): the kept run's 26 case and memory files copied unchanged into `workspace/logs/r52i/emu-recheck/` and
+  the thirteen `emuboundary` runs repeated the same way; all 13 `.out` files are byte-identical with the kept run's
+  (`cmp`, 0 differences; `emu-recheck/manifest.sha256` `ae55d8b3…`, 52 lines, passing from that directory). This run's
+  memory spec has no data directive (only `observe` and `guard` lines), so the fix had nothing to change here.
 - **Conclusion:** the maps are `[C]` in ai/0010 §§ 2, 3, each up to its first boundary or return; the entry call of
   state 16's think and row 124's sign test `[C]` as calls. Not the callees, nothing after them. No symbol raise
   (ADR-0015 scope, review-fixes rule 14). (run:2026-11-03-ai-cat-emu-9)

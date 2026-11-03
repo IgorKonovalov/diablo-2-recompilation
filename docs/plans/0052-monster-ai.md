@@ -730,7 +730,8 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   with the constant mode 5 and no sign test. P1.1 review reopen condition (b) not met (the callbacks and 0x005DE830
   draw nothing by their bodies and direct calls). State row 14's think 0x005E2610 lies in the range, read in passing,
   left unnamed for batch 12. 18 `re/symbols.csv` rows (all I). Kept outputs `workspace/logs/r52i/` (manifest 14 lines;
-  `emu/` 53, `emu/dev-1/` 54, `emu/dev-2/` 54; each passes from its directory). Backlog: the
+  `emu/` 53, `emu/dev-1/` 54, `emu/dev-2/` 54; `emu-recheck/` 52, the kept cases re-run under `lane/r55e`'s fixed
+  `EmuBoundary.java` after merging `main` fd2ca68a, outputs byte-identical; each passes from its directory). Backlog: the
   [review request](../backlog/2026-11-03-reverser-architect-plan-0052-p1-2-batch-9-review.md),
   [archivist](../backlog/2026-11-03-reverser-archivist-monstats-skills-readers-named-by-ai-0010.md) (MonStats and
   Skills readers). Next: batch 10 (pool-G).
