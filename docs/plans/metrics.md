@@ -511,6 +511,7 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-11-03 | `lane/r66` check | 0052, 0050 (3 finding cross-references) | architect-check | 60 549 | 9 | 1 | — | accept with fixes (1) | wording beyond source 1 |
 | 2026-11-03 | `lane/a65` | 0054 P1.1 PathTypes; 0038 recipe row (2 entries) | archivist | 87 140 | 26 | 4 | — | accept with fixes (Tier B check) | 3: wrong citation 1, scope 2 |
 | 2026-11-03 | `lane/a65` check | 0054 P1.1 PathTypes; 0038 recipe row | architect-check | 76 681 | 16 | 4 | — | accept with fixes (3) | wrong citation 1, scope 2, omission-route 1 |
+| 2026-11-03 | `lane/r54b` | 0054 P1.2 | reverser-static | 378 472 | 70 | 114 | — (static, Ghidra copy ghidra-r54b) | accept with fixes (Tier B check) | 4: overclaim 2, stale cross-reference 1, omission 1 |
 | 2026-11-03 | `lane/r52k` | 0052 P1.2 (batch 11) | reverser-static | 527 078 | 143 | 39 | — (static, Ghidra copy ghidra-r52k) | accept with fixes (Tier B check) | 2: omission 2 |
 | 2026-11-03 | `lane/r52k` check | 0052 P1.2 (batch 11) | architect-check | 108 626 | 28 | 3 | — | accept with fixes (2) | omission 2 |
 | 2026-11-03 | `lane/r55f` | 0055 P2a-ii | reverser-static | 506 164 | 176 | 52 | — (static, Ghidra copy ghidra-r55f) | accept with fixes (Tier B check) | 3: overclaim 2, omission 1 |
@@ -529,7 +530,10 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-11-03 | `lane/s66` review | 0052 P1c spec wording | architect-review | 147 379 | 25 | 6 | — | accept with fixes (4) | overclaim 2, misread 1, omission 1 |
 | 2026-11-03 | `lane/a66` | 0052 readers of ai/0012, ai/0013 into the table docs (2 entries) | archivist | 187 967 | 46 | 9 | — | accept with fixes (Tier A, ADR-0027) | 16: overclaim 3, misread 4, omission 6, wrong anchor 2, stale cross-reference 1 |
 | 2026-11-03 | `lane/a66` review | 0052 readers of ai/0012, ai/0013 | architect-review | 207 612 | 37 | 10 | — | accept with fixes (16) | overclaim 3, misread 4, omission 6, wrong anchor 2, stale cross-reference 1 |
-| 2026-11-03 | r67 | 0052 | reverser-static | 0 | 0 | 0 | — | — | — |
+| 2026-11-03 | `lane/r54b` check | 0054 P1.2 | architect-check | 113 136 | 29 | 4 | — | accept with fixes (4) | overclaim 2, stale cross-reference 1, omission 1 |
+| 2026-11-03 | `lane/r58a` | 0058 P1 | reverser-static | 325 701 | 48 | 31 | — (static, Ghidra copy ghidra-r58a) | accept with fixes (Tier A) | 9: overclaim 4, omission 4, tool not kept 1 |
+| 2026-11-03 | `lane/r58a` review | 0058 P1 | architect-review | 197 794 | 30 | 11 | — | accept with fixes (9) | overclaim 4, omission 4, tool not kept 1 |
+| 2026-11-03 | `lane/r67` | 0052 | reverser-static | 0 | 0 | 0 | — | — | — |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not
