@@ -160,8 +160,8 @@ Its verdicts therefore often mean "1.14d differs", and the spec must say so.
   **held with refinement** `[I]` (2026-11-03 note: was "not covered")
   Detail: [ai/0007](../ai/0007-hirelings.md) § 2.4 reads `MERCAI_PickSkill` (0x005E4D30) `[I]`: the total starts at
   `DefaultChance` and adds `Chance_k + (ChancePerLvl_k · dl) / 4` per usable skill (signed truncating `/4`, `dl = max(0,
-  L − h->Level)`), one draw `r` from `0 .. total` (mod `total + 1`), and `DefaultChance` as the fallback when `r` is
-  below it; the formula is the claim's, with the per-skill gates and the `dl` offset added. (fn:MERCAI_PickSkill@0x005E4D30)
+  L − h->Level)`), one draw `r` from `0 .. total` (mod `total + 1`), and no listed skill is used when `r` is
+  below `DefaultChance` (the class fallbacks or an idle follow); the formula is the claim's, with the per-skill gates and the `dl` offset added. (fn:MERCAI_PickSkill@0x005E4D30)
 - [L] src:rpgkdh-hireling-guide: `Resist/Lvl` is the "Amount (in 8ths) of additional All Resist given at lvl up".
   **contradicted**
   Detail: 1.14d divides by 4 (`cdq; and edx, 3; add; sar eax, 2` at 0x00572A7D–0x00572A83, re-read). Phase 2 required
