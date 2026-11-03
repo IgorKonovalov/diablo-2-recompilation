@@ -1,6 +1,6 @@
 # ADR index
 
-Next free number: **0028**
+Next free number: **0029**
 
 | # | Title | Status |
 |---|---|---|
@@ -31,3 +31,4 @@ Next free number: **0028**
 | [0025](0025-scope-item-use-inventory.md) | Item use and inventory enter scope as game rules: the server's outcomes only, stash and ground-item lifetime in, trading out (amends 0002, beside 0017) | accepted (owner, 2026-10-30, with plan 0060) |
 | [0026](0026-scope-in-game-message-layer.md) | The in-game message layer enters scope, both directions; transport, compression, encryption, Battle.net, realm and handshake stay out (amends 0002, 0014) | accepted (owner, 2026-10-30, with plan 0061) |
 | [0027](0027-archivist-reader-lanes-tier-a.md) | Archivist reader lanes take the full review instead of the lane check (amends 0023) | accepted (owner, 2026-11-03) |
+| [0028](0028-case-and-process-in-experiment-records.md) | A case is what an experiment record cites, a process may hold several cases, and the marks and the split are provenance; sharing stays opt-in with a stated reason (amends 0003) | proposed (2026-11-03, for the owner) |

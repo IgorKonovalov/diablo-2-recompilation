@@ -400,6 +400,7 @@ think59:
 
 ## Open questions
 
+- *2026-11-03 (Phase 1c, `lane/r52n`):* answered in [ai/0016](0016-uber-event.md): no Uber-specific driver found. Refinement of § 2.7: the stack argument of 0x005F7F10, written `flag` there, is the unit to spawn near, or 0 for the caller (0x005F7FAF–0x005F7FE3, read as `EDX`). (fn:sub_005F7F10_UberMinionSpawn@0x005F7F10)
 - Row 146 `UberMephisto` commands nothing from its think: what moves and casts Uber Mephisto (another function by
   class or by state, a skill's own logic, or the two unreferenced functions reached by a computed address) is not
   read here (a scan for the class 704 and the state 184 outside the AI table; batch 11 holds Uber Diablo and Baal).

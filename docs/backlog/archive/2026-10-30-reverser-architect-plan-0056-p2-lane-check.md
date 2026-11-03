@@ -4,7 +4,7 @@ to: architect
 date: 2026-10-30
 status: done
 context:
-  - ../../plans/0056-harness-runner-efficiency.md
+  - ../../plans/done/0056-harness-runner-efficiency.md
 resolution: "Tier B lane check 2026-10-30 (lane/p56b): accept with fixes (4); Phase 3 may start; see the plan 0056 log"
 ---
 

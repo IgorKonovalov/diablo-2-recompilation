@@ -522,6 +522,13 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-11-03 | `lane/r52m` check | 0052 P1b | architect-check | 109 489 | 26 | 3 | — | accept with fixes (3) | misread 2, other 1; listed item (P1b-2 difficulty and class id) fixed at merge |
 | 2026-11-03 | `lane/p52a` | 0052 P2 (first run; 0056 P3 pilot) | reverser-harness | 530 967 | 228 | 139 | slot 2, no Ghidra; pilot: 19 launches (9 dev, 1 rerun), 31 kept sessions/cases, 0.32 launches per kept case, 3.6 harness min and about 17 k tokens per kept session (measured), 14 645 decisions 0 mismatches at the first boundary | accept with fixes (Tier B check) | 8: overclaim 2, omission 1, stale cross-reference 1, miscount 3, other 1 |
 | 2026-11-03 | `lane/p52a` check | 0052 P2 (first run; 0056 P3 pilot) | architect-check | 115 028 | 29 | 4 | — | accept with fixes (8) | overclaim 2, omission 1, stale cross-reference 1, miscount 3, other 1 |
+| 2026-11-03 | `lane/c56` | 0056 P4 | architect-review | 154 913 | 20 | 10 | no slot; corrects `lane/p52a` Slot cell: 3.6 withdrawn, 4.5 min per kept case by lane wall, 3.0 and 3.5 harness | evaluated; plan closed, ADR-0028 proposed | 1: miscount 1 (the wall figure) |
+| 2026-11-03 | `lane/r52n` | 0052 P1c (Uber event) | reverser-static | 339 349 | 50 | 23 | — (static, Ghidra copy ghidra-r52n) | accept with fixes (Tier B check) | 6: omission 3, stale cross-reference 3 |
+| 2026-11-03 | `lane/r52n` check | 0052 P1c (Uber event) | architect-check | 101 556 | 28 | 4 | — | accept with fixes (6) | omission 3, stale cross-reference 3 |
+| 2026-11-03 | `lane/s66` | 0052 P1c spec wording | spec-writer | 138 331 | 21 | 6 | — (no Ghidra, no harness) | accept with fixes (Tier A) | 4: overclaim 2, misread 1, omission 1 |
+| 2026-11-03 | `lane/s66` review | 0052 P1c spec wording | architect-review | 147 379 | 25 | 6 | — | accept with fixes (4) | overclaim 2, misread 1, omission 1 |
+| 2026-11-03 | `lane/a66` | 0052 readers of ai/0012, ai/0013 into the table docs (2 entries) | archivist | 187 967 | 46 | 9 | — | accept with fixes (Tier A, ADR-0027) | 16: overclaim 3, misread 4, omission 6, wrong anchor 2, stale cross-reference 1 |
+| 2026-11-03 | `lane/a66` review | 0052 readers of ai/0012, ai/0013 | architect-review | 207 612 | 37 | 10 | — | accept with fixes (16) | overclaim 3, misread 4, omission 6, wrong anchor 2, stale cross-reference 1 |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not

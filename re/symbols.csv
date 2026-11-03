@@ -108,6 +108,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x004AC870,func,sub_004AC870_ClientMonNameBuild,,C,monsters/special,docs/findings/monsters/0003-special-monsters.md
 0x004AD020,func,sub_004AD020_ClientMonModsApply,,I,monsters/special,docs/findings/monsters/0003-special-monsters.md
 0x004AE320,func,sub_004AE320_ClientMonIsChampion,,I,monsters/special,docs/findings/monsters/0003-special-monsters.md
+0x004AFC10,func,sub_004AFC10_ClientState184Fx,,I,monsters/ai,docs/findings/ai/0016-uber-event.md
 0x004B1090,func,sub_004B1090_ClientMercInit,,C,hirelings,docs/findings/hirelings/0001-hirelings.md
 0x004B32D0,func,sub_004B32D0_ClientQuestRecord,,I,save/d2s,docs/findings/save/0002-quest-words.md
 0x004B5C60,func,sub_004B5C60_ClientHireListDraw,,C,hirelings,docs/findings/hirelings/0001-hirelings.md
@@ -1423,6 +1424,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005A2620,func,sub_005A2620_MonDeathDamage,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x005A2CC0,func,sub_005A2CC0_PartyDeadKillMember,,I,items/quality,docs/findings/items/0002-quality-roll.md
 0x005A2D10,func,sub_005A2D10_UModPartyDeadDeath,,I,items/quality,docs/findings/items/0002-quality-roll.md
+0x005A3250,func,sub_005A3250_UModQuestCompleteDeath,,I,monsters/ai,docs/findings/ai/0016-uber-event.md
 0x005A4270,func,sub_005A4270_UModEventRun,,I,skills/missiles,docs/findings/skills/0003-handlers.md
 0x005A4370,func,sub_005A4370_MonEvent7UMod,,I,sim/frame,docs/findings/frame/0002-unit-events-queue.md
 0x005A43B0,func,sub_005A43B0_MissileOwnerUModEvent,,I,skills/missiles,docs/findings/skills/0003-handlers.md
@@ -2177,6 +2179,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005DCF70,func,sub_005DCF70_AiSearchNearRoomsNoTown,,I,monsters/ai,docs/findings/ai/0001-machinery.md
 0x005DD050,func,sub_005DD050_AiSearchOwnerGroup,,I,monsters/ai,docs/findings/ai/0001-machinery.md
 0x005DD0B0,func,sub_005DD0B0_AiUnitSearch,,I,monsters/ai,docs/findings/ai/0001-machinery.md
+0x005DD140,func,sub_005DD140_UberCountCb,,I,monsters/ai,docs/findings/ai/0016-uber-event.md
 0x005DD220,func,sub_005DD220_AiCtlFlagTest,,I,drlg/collision,docs/findings/drlg/0009-room-lifecycle.md
 0x005DD230,func,sub_005DD230_AiCtlFlagSet,,I,monsters/ai,docs/findings/ai/0001-machinery.md
 0x005DD250,func,sub_005DD250_AiCtlTeleportFlagSet,,I,drlg/collision,docs/findings/drlg/0009-room-lifecycle.md

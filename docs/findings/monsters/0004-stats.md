@@ -646,6 +646,7 @@ stat-7 callback calls writing stat 6: stock 825, forced 260; every product an in
 - **stats 16** (L237) **reclassified d-owner.** The hpregen overflow branch never ran (4446 creations with `DamageRegen` ≠ 0).
   Only classes 704–709 (`ubermephisto` … `uberbaal`) can pass `(hp << 8) > 0x7FFFFFFF ÷ r` at their levels with 8 players
   (`tables`), and they appear only in Uber Tristram and the Pandemonium portals.
+  *2026-11-03 (plan 0052 Phase 1c, `lane/r52n`):* in this image no code was found that creates classes 704, 705 or 709 and levels 133–136 are not reached from stock play, so these classes are not met in play at all ([ai/0016](../ai/0016-uber-event.md) § 2, § 3). The d-sim reclassification stands. (fn:sub_005E9DF0_AiUberDiablo@0x005E9DF0)
 - **stats 26, 27** (L384, L386) **reclassified d-sim.** At creation every stat-7 rescale happens at full life (`cur` = `old`),
   so the product is an integer equal to `new` in all 1085 logged calls: 53- and 64-bit precision agree, and so do truncation
   and rounding to nearest. A fractional product needs a rescale of a damaged monster, which is combat state (ADR-0014).

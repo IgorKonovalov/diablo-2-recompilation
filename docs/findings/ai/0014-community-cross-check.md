@@ -108,6 +108,8 @@ Anchors name the catalogue section (finding, section, function). A column says w
 | C29 | Über Mephisto summons Returned, Horror Archers, Burning Dead and Horror Mages, Bone Mages | ai/0008 § 2.6 (row 146 fn:sub_005F81C0_AiUberMephisto@0x005F81C0 is `ret 4`) | not covered | As C28. |
 | C30 | Über Baal summons Specters and Dark Lords; Vile Effigy follows Hoarfrost | ai/0012 § 2.10 (row 145 fn:sub_005FD200_AiUberBaal@0x005FD200 is `ret 4`; class-709 teleport unreached) | not covered | As C28. |
 
+*2026-11-03 (Phase 1c, `lane/r52n`):* C28 to C30 stay `not covered`; "what drives the event is open" is answered in [ai/0016](0016-uber-event.md): no Uber-specific driver and no creator of classes 704, 705, 709 was found in this image, and the helpers that would spawn the minions have no caller. (fn:sub_005FD200_AiUberBaal@0x005FD200)
+
 #### 2.3 Tier and catalogue AIs (`src:arreat-summit-bestiary`)
 
 | # | Source and claim [L] | Catalogue anchor | Verdict | Why |

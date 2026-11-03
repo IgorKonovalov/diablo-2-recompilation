@@ -84,6 +84,7 @@ save, Acts I–V by waypoint) reached the branches that run left: every drawing 
   133–136 the walk has extra filters (not reached): level 136 makes only the first pass, so no preset monster spawns,
   and skips objects 26, 268 and 269; levels 133 and 135 skip object 397; level 134 skips object 402 and the one object
   at which a per-game counter (`game +0x1DE4`) reaches `game +0x7C % 3 + 3`. (fn:sub_005557D0_PresetUnitDispatch@0x005557D0, fn:sub_005559A0_RoomPresetUnits@0x005559A0)
+  *2026-11-03 (plan 0052 Phase 1c, `lane/r52n`):* these filters are mapped by emulation up to the first `PresetUnitSpawn` of the walk, `[C]` as a map, not as reach ([ai/0016](../ai/0016-uber-event.md) § 3, run:2026-11-03-ai-uber). (fn:sub_005559A0_RoomPresetUnits@0x005559A0)
 - **LvlPrest columns** (§ LvlPrest columns):
   - [C] `Populate` 0 sets room flag `0x800000`, for which `sub_0061A1F0_RoomPopLevelId` returns 0: no random population
     (241 calls on `Populate` 0 rooms, all 0). Preset units still spawn: 48 preset monsters created in `Populate` 0
