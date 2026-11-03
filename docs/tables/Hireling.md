@@ -3,7 +3,7 @@
 > **Source archive:** patch_d2 (`.txt` and `.bin`)   **Rows:** 120 (no `Expansion` marker)   **Record:** 280 B (`0x118`)
 > **sha256:** `.txt` `c743a6489456bd2c29143ae55312fda8fb6acb226d55a637c2c8f54a555afa78`, `.bin` `540ec2865297d57a4faa0793476858cb7226aa27a457b3ac2d9845151b9d95f7`
 > **Doc status:** layout complete (plan 0033 Phase 0); semantics from [hirelings/0001](../findings/hirelings/0001-hirelings.md)
-> (plan 0033 Phase 1); `Share` and the equipment columns have no reader in 1.14d (plan 0039 P1c); the combat-skill columns' meaning remains `[L]`
+> (plan 0033 Phase 1); `Share` and the equipment columns have no reader in 1.14d (plan 0039 P1c); the combat-skill columns read `[I]` by ai/0007 § 2.4
 
 ## Purpose
 
@@ -80,15 +80,15 @@ non-negative product, which every stock row gives (every per-level column is ≥
 | `Share` | int 1..6, 10 blank | `+0x04C` s32 | copied, clamped at 0, into the hire entry (`+0x28`) by `HIRELING_RollEntry` `[I]` ([§ 4](../findings/hirelings/0001-hirelings.md#4-an-entry-type-level-price-and-the-displayed-stats)); `[I]` none of the entry's four readers reads `+0x28`, so it has no effect in 1.14d ([hirelings/0001 § Plan 0039 batch P1c](../findings/hirelings/0001-hirelings.md#plan-0039-batch-p1c-2026-10-17)) | — | [C] |
 | `Dmg-Min`, `Dmg-Max`, `Dmg/Lvl` | int 1..61; 3..65; {2, 4, 6, 8} | `+0x050`, `+0x054`, `+0x058` s32 | damage `max(0, Dmg-Min + Dmg/Lvl·d ÷8)` and `max(1, Dmg-Max + Dmg/Lvl·d ÷8)`, eighths `[C]` for `d ≥ 0` ([§ 6](../findings/hirelings/0001-hirelings.md#6-the-stats-per-level-merc_setlevel)) | — | [C] |
 | `Resist`, `Resist/Lvl` | int 0..148; 4..8 | `+0x05C`, `+0x060` s32 | one pair for all four resistances (fire, lightning, cold, poison): `max(0, Resist + Resist/Lvl·d ÷4)`, quarters `[I]` (one code path, [§ 6](../findings/hirelings/0001-hirelings.md#6-the-stats-per-level-merc_setlevel)) | — | [C] |
-| `DefaultChance` | int {10, 30, 50, 75}, one per kind | `+0x064` s32 | read by the combat skill choice `MERCAI_PickSkill` (named only, out of scope) `[I]` ([§ 10](../findings/hirelings/0001-hirelings.md#10-named-only)); its formula `[L]` | — | [C] |
+| `DefaultChance` | int {10, 30, 50, 75}, one per kind | `+0x064` s32 | read by the combat skill choice `MERCAI_PickSkill` `[I]` ([§ 10](../findings/hirelings/0001-hirelings.md#10-named-only)); `[I]` the running sum starts at `DefaultChance`, and a draw `r < DefaultChance` takes the class fallback (§ AI of the hirelings; [ai/0007](../findings/ai/0007-hirelings.md) § 2.4; fn:MERCAI_PickSkill@0x005E4D30) | — | [C] |
 | `Head`, `Weapon` | int {0, 2} (both: 0 on the 24 Barbarian rows, 2 elsewhere) | `+0x068` `Head`, `+0x070` `Weapon` s32 | `[I]` no reader in 1.14d ([hirelings/0001 § Plan 0039 batch P1c](../findings/hirelings/0001-hirelings.md#plan-0039-batch-p1c-2026-10-17)); equipment-related by name `[L]` | — | [C] (the descriptor names the offsets, [hirelings/0001 § 1](../findings/hirelings/0001-hirelings.md#1-the-table-and-its-lookups)) |
 | `Torso` | int {0, 1, 2}: 1 on the Rogues, 2 on Acts II–III, 0 on Barbarians | `+0x06C` s32 | `[I]` no reader in 1.14d ([hirelings/0001 § Plan 0039 batch P1c](../findings/hirelings/0001-hirelings.md#plan-0039-batch-p1c-2026-10-17)) | — | [C] |
 | `Shield` | int {0, 1}: 1 on the 36 Eastern Sorceror rows | `+0x074` s32 | `[I]` no reader in 1.14d ([hirelings/0001 § Plan 0039 batch P1c](../findings/hirelings/0001-hirelings.md#plan-0039-batch-p1c-2026-10-17)) | — | [C] |
 | `Skill1` … `Skill3` | str: `Skill1` 6 distinct, `Skill2` 12, `Skill3` only `Ice Blast` (12 rows, 108 blank) | `+0x078 + 4(k−1)` s32 row index, blank −1 | the hireling's skills, added in slot order; the loop stops at the first `Skill_k` < 1 or ≥ the skill count; a skill is added only when its `reqlevel` ≤ the mercenary's level `[I]` ([§ 6](../findings/hirelings/0001-hirelings.md#6-the-stats-per-level-merc_setlevel)) | [Skills](Skills.md) `skill` | [C] |
 | `Skill4` … `Skill6` | always blank | `+0x084`, `+0x088`, `+0x08C` | as `Skill1..3`; blank ends the loop | — | [C] value −1; slots in the descriptor ([hirelings/0001 § 1](../findings/hirelings/0001-hirelings.md#1-the-table-and-its-lookups)) [C] |
-| `Chance1..6` | int 10..152; 10..1000; 240; slots 4–6 blank | `+0x090 + 4(k−1)` s32 | read by `MERCAI_PickSkill` (out of scope) `[I]` ([§ 10](../findings/hirelings/0001-hirelings.md#10-named-only)); its use `[L]` | — | [C] (6 × s32 in the descriptor) |
-| `ChancePerLvl1..6` | int {0, 4}; {0, 2, 5, 8}; 0 | `+0x0A8 + 4(k−1)` s32 | read by `MERCAI_PickSkill` `[I]` ([§ 10](../findings/hirelings/0001-hirelings.md#10-named-only)); its use `[L]` | — | [C] (6 × s32 in the descriptor) |
-| `Mode1..6` | int {4, 5, 7, 14}; {1, 4, 5, 7}; 7 | `+0x0C0 + (k−1)` s8 | read by `MERCAI_PickSkill` `[I]`; `MERC_SetLevel`'s skill loop also stops at `Mode_k` > 15 (signed) `[I]` ([§ 6](../findings/hirelings/0001-hirelings.md#6-the-stats-per-level-merc_setlevel), [§ 10](../findings/hirelings/0001-hirelings.md#10-named-only)) | — | [C] (6 × s8 in the descriptor) |
+| `Chance1..6` | int 10..152; 10..1000; 240; slots 4–6 blank | `+0x090 + 4(k−1)` s32 | read by `MERCAI_PickSkill` `[I]` ([§ 10](../findings/hirelings/0001-hirelings.md#10-named-only)); `[I]` skill k adds `Chance_k + (ChancePerLvl_k · δ) / 4` to the running sum (signed, truncating; δ = max(0, level − `Level`)) when the mercenary has the skill at level > 0 ([ai/0007](../findings/ai/0007-hirelings.md) § 2.4) | — | [C] (6 × s32 in the descriptor) |
+| `ChancePerLvl1..6` | int {0, 4}; {0, 2, 5, 8}; 0 | `+0x0A8 + 4(k−1)` s32 | read by `MERCAI_PickSkill` `[I]` ([§ 10](../findings/hirelings/0001-hirelings.md#10-named-only)); `[I]` the per-level term of the sum above (§ `Chance1..6`; [ai/0007](../findings/ai/0007-hirelings.md) § 2.4) | — | [C] (6 × s32 in the descriptor) |
+| `Mode1..6` | int {4, 5, 7, 14}; {1, 4, 5, 7}; 7 | `+0x0C0 + (k−1)` s8 | read by `MERCAI_PickSkill` `[I]`, which uses `Mode_k` as the mode of the `UseSkill` for the first slot whose sum is ≥ `r` ([ai/0007](../findings/ai/0007-hirelings.md) § 2.4); `MERC_SetLevel`'s skill loop also stops at `Mode_k` > 15 (signed) `[I]` ([§ 6](../findings/hirelings/0001-hirelings.md#6-the-stats-per-level-merc_setlevel), [§ 10](../findings/hirelings/0001-hirelings.md#10-named-only)) | — | [C] (6 × s8 in the descriptor) |
 | `Level1..6` | int 1..27; 1..25; 6..27 | `+0x0C6 + (k−1)` s8 | skill level at the band start: `slvl = min(32, Level_k + (LvlPerLvl_k·d >> 5))`, added when ≥ 1 `[C]` for `d ≥ 0` ([§ 6](../findings/hirelings/0001-hirelings.md#6-the-stats-per-level-merc_setlevel)) | — | [C] (6 × s8 in the descriptor) |
 | `LvlPerLvl1..6` | int {0, 5, 10}; {0, 7, 8, 10}; 10 | `+0x0CC + (k−1)` s8 | skill level growth in 1/32 per level (the `>> 5` above, a floor) `[C]` for `d ≥ 0` ([§ 6](../findings/hirelings/0001-hirelings.md#6-the-stats-per-level-merc_setlevel)) | — | [C] (6 × s8 in the descriptor) |
 | `HireDesc` | str, 8 codes, 24 blank (the Barbarians) | `+0x0D2` u8 row index, blank → 0 | the description of the hire list entry; `HIRELING_RollEntry` copies the byte into the entry, the text is not read `[I]` ([§ 4](../findings/hirelings/0001-hirelings.md#4-an-entry-type-level-price-and-the-displayed-stats)) | [HireDesc](HireDesc.md) `Code` | [C] |
@@ -183,13 +183,18 @@ fn:MERCAI_PickSkill@0x005E4D30). The skill-choice columns per kind, over both ve
 - `[C]` The hireling classes' own MonStats skills: `roguehire` names RogueMissile (`A1`, level 1) and `act2hire` Jab
   (`xx`, level 1); `act3hire`, `act5hire1` and `act5hire2` name none. Which of the two lists the hireling's AI uses is
   plan 0052's hirelings batch. (tbl:MonStats.txt:Skill1)
-- `[L]` The formula over `DefaultChance`, `Chance_k`, `ChancePerLvl_k` and `Mode_k` (§ Open questions). Owner:
-  reverser, plan 0052 P1 hirelings batch.
+- `[I]` The formula ([ai/0007](../findings/ai/0007-hirelings.md) § 2.4, fn:MERCAI_PickSkill@0x005E4D30): `total` starts at
+  `DefaultChance`; for each skill slot k = 1..6 (the loop stops at the first `Skill_k` < 1 or past the Skills count) the
+  mercenary has at level > 0, skipping an `aitype` 1 skill whose `aurastate` it already has (and Inferno, skill 41, when
+  the target is out of its range), `total += Chance_k + (ChancePerLvl_k · δ) / 4` (signed division, truncating) with
+  δ = max(0, mercenary level − `Level`), and `cum_k = total`. Then `r = draw mod (total + 1)` (a mask when `total + 1` is a
+  power of two); `r < DefaultChance` takes the class fallback, else the first slot with `cum_k ≥ r` (signed) is used with
+  `Mode_k`. With no weight added only `r = DefaultChance` passes the first test and the slot search reads stack contents
+  (open in the finding).
 
 ## Open questions
 
 - ~~What `Share`, the equipment columns (`Head`, `Torso`, `Weapon`, `Shield`) do~~: no reader in 1.14d `[I]`
   ([hirelings/0001 § Plan 0039 batch P1c](../findings/hirelings/0001-hirelings.md#plan-0039-batch-p1c-2026-10-17)).
-- `[L]` How `MERCAI_PickSkill` uses `DefaultChance`, `Chance_k`, `ChancePerLvl_k` and `Mode_k` (combat AI, out of
-  scope under ADR-0002; [hirelings/0001 § 10](../findings/hirelings/0001-hirelings.md#10-named-only)). *(2026-10-27:
-  in scope of [plan 0052](../plans/0052-monster-ai.md)'s hirelings batch; the data is § AI of the hirelings.)*
+- ~~How `MERCAI_PickSkill` uses `DefaultChance`, `Chance_k`, `ChancePerLvl_k` and `Mode_k`~~: answered `[I]` by
+  [ai/0007](../findings/ai/0007-hirelings.md) § 2.4 (§ AI of the hirelings above).

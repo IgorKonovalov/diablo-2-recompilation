@@ -585,7 +585,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   loops run over skills). No call of the action helpers. 42 `re/symbols.csv` rows (all I). Kept outputs
   `workspace/logs/r52f/` (manifest 11 lines; `emu/` 93, `emu/dev-1/` 94; each passes from its directory). Backlog: the
   [review request](../backlog/archive/2026-10-30-reverser-architect-plan-0052-p1-2-batch-5-review.md),
-  [archivist](../backlog/2026-10-30-reverser-archivist-monstats-and-skills-readers-named-by-ai-0006.md) (MonStats and
+  [archivist](../backlog/archive/2026-10-30-reverser-archivist-monstats-and-skills-readers-named-by-ai-0006.md) (MonStats and
   Skills readers). Next: batch 6 (hirelings).
 - **2026-10-30 — P1.2 batch 5 Tier B check (architect, `lane/r52f`): accept (0 fixes).** Checked: 42 `[C]` lines, each
   naming run:2026-10-30-ai-cat-emu-5 and the case family, with the meaning readings kept in the `[I]` bullets beside them;
@@ -640,7 +640,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   calls). No call of the action helpers. 16 `re/symbols.csv` rows (all I). Kept outputs `workspace/logs/r52h/`
   (manifest 11 lines; `emu/` 53, `emu/dev-1/` 54; each passes from its directory). Backlog: the
   [review request](../backlog/2026-11-03-reverser-architect-plan-0052-p1-2-batch-8-review.md),
-  [archivist](../backlog/2026-11-03-reverser-archivist-monstats-missiles-skills-readers-named-by-ai-0009.md) (MonStats,
+  [archivist](../backlog/archive/2026-11-03-reverser-archivist-monstats-missiles-skills-readers-named-by-ai-0009.md) (MonStats,
   Missiles and Skills readers). Next: the remaining batches (6, 7, 9–12).
 - **2026-10-30 — P1.2 batches 6 (hirelings) and 7 (bosses-A) checkpoint (reverser, static, `lane/r52g`, from `main`
   11102c87; owner pause for the token budget). Not for review yet.** Done: read with the Ghidra copy `ghidra-r52g` (symbols
@@ -693,5 +693,13 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   `re/symbols.csv` rows (21 func, 1 data, all I). Kept outputs `workspace/logs/r52g/` (manifest 22 lines; `emu/` 73,
   `emu/dev-1/` 74; each passes from its directory). Backlog: the
   [review request](../backlog/2026-11-03-reverser-architect-plan-0052-p1-2-batches-6-7-review.md),
-  [archivist](../backlog/2026-11-03-reverser-archivist-hireling-chance-columns-read-by-ai-0007.md) (Hireling chance
+  [archivist](../backlog/archive/2026-11-03-reverser-archivist-hireling-chance-columns-read-by-ai-0007.md) (Hireling chance
   columns). Next: batch 8 (pool-E).
+
+- **2026-11-03 — Table readers for ai/0006, ai/0007 and ai/0009 (archivist, `lane/a63`; three backlog entries closed).**
+  [MonStats](../tables/MonStats.md): two reader blocks (summons batch: `aip8` of rows 105/106/143, `SkillDamage` at the owner's
+  level; pool-E batch: `MissS1`, row 114 reads `aip1`..`aip7` not `aip8`, count guards of rows 82, 83 and the imp
+  callback) and the `aip` row, the `SkillDamage` bullet (the owner's level now `[I]`), the `aip8` and `ai_aip_slots_differ`
+  bullets. [Skills](../tables/Skills.md): `calc4`, `aitype`, `aibonus`, `Param2`, `Param5` rows. [Missiles](../tables/Missiles.md):
+  `Range`. [Hireling](../tables/Hireling.md): `DefaultChance`, `Chance1..6`, `ChancePerLvl1..6`, `Mode1..6` and the formula
+  now `[I]` (ai/0007 § 2.4); its open question struck. Tags are the findings' own; no column meaning changed.
