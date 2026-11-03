@@ -769,6 +769,90 @@
 - **Conclusion:** [C] the maps of ai/0013 § 5, each ending at its first callee (ADR-0021); the code as a map over a declared image, no symbol raised (ADR-0015, `lane/p46m12` ruling 7). Separation: `le` 205, `cmp` 272, `u16` 7, `lo8` 47, `arg` 1 255 cases, none passing; `d0` separates none, no emulated path reading the difficulty before a boundary; the site control passes none. (run:2026-11-03-ai-cat-emu-12, fn:sub_005E6AE0_AiNpcScriptStep@0x005E6AE0)
 - **Left `[I]`:** everything after a boundary, among them the five path actions' walk and their records past `Ovr` or `MonModeAllowed` (`SITES`), `AiNpcNearPlayer`'s body (past the search), the size branch of `UNIT_GetSizeX`, the unit-null guards, the unsigned reading of row 99's positions. (fn:sub_005E68F0_AiNpcNearPlayer@0x005E68F0)
 
+## run:2026-11-03-ai
+
+- **Question:** (plan 0052 Phase 2, first lane run, also plan 0056 Phase 3's pilot on the runner library) Do the AI
+  decisions of the game, logged per event, match the first-boundary maps of [ai/0002](0002-pool-a.md)–[ai/0010](0010-batch9.md)
+  (the emulated think functions) and the first-callee maps read for the five unemulated tier AIs, and what do the
+  events' seeds, commands, path plans and skill starts do around them?
+- **Setup:** slot 2 (display `:9`, `workspace/wineprefix-2`), game 1.14d expansion, Normal, character `CombatSor`
+  (`tools/d2s_recipes/combatsor.json` on `workspace/samples/d2s-owner/smpsor-l50.d2s`, `1d9de374…`; clvl 85
+  Sorceress, Teleport and Nova, Act V Barbarian mercenary) and, for the Necromancer case, `AiNec`
+  (`tools/d2s_recipes/ai-nec.json` on `workspace/samples/d2s/smpnec.d2s`, `ea62db6a…`; Clay Golem, Raise Skeleton).
+  Logger `tools/gdb/ai.gdb` + `tools/gdb/ai.py` (rev 2 for the first batch, rev 3 for the later ones; rev 1 only in the
+  development logs), sessions `tools/ai_sessions.py` on `tools/harness_runner.py`, driven by `tools/d2pilot.py farm`
+  (waypoint, Nova sweep) and `hunt`, checker `tools/ai.py` (`check` over the kept case logs; `tools/test_ai.py`, 12
+  no-game tests). Tool revisions: the first batch (launches 5201–5204, 17 cases) ran with `706dccdf`; the later batches
+  with `70b2f480`, `008aff02` and `d56f99d6` (changes between them: the logger's return-address windows (rev 3), the
+  staged-level check, the case table, the checker's chain and histogram lines; no change to a kept session's clicks).
+  Logger: the unit seed and the AI control at the event entry, the think call (`0x005B186F`, the AiCtx, the AI
+  control's 0x40 bytes, the parameter head record, MonStats `aip` and skills, the target), the first eight calls of the
+  models' boundary functions (136 addresses, the union of the emulations' `OBSERVE` sets without the image-run helpers)
+  from the think code, `MonSetMode` and `PathPlan` entry and exit seeds, `SKILLS_SrvStart` entry and exit, and the event
+  exit (`0x005B1876`); filter: server monsters within 80 sub-tiles of the first player per axis; caps per game 200 per AI
+  row, 3 000 decisions, 600 events that end before the think call.
+- **Cases:** 31 kept case logs in 9 launches (a tenth launch, 5401, kept nothing and was run again as 5402) (`<RUN>-s2-<seed>-L<k>.log` with `.marks.tsv`, cut by
+  `harness_runner.py split` into `-<case>.log`): launches 5201 (8 cases), 5202 (7), 5203 and 5204 (one case each, fresh
+  processes, the repeats of `a1-jail` and `a2-halls`), 5301 (8), 5302 (`a1-necro`), 5402 (5), 5501 and 5502 (`a1-andariel-p8`,
+  `/players 8`, two fresh processes). Stages: Jail 1, Stony Field, Dark Wood, Black Marsh, Inner Cloister, Catacombs 2–4
+  (Andariel), Halls of the Dead 2, Far Oasis, Arcane Sanctuary, Palace Cellar 1, Flayer Jungle, Travincal, Durance 2,
+  City of the Damned, River of Flame, Crystalline Passage, Halls of Pain, Glacial Trail (each: the waypoint from the
+  Act IV town, Nova sweep 130–300 s). Not kept: two cases of launch 5202 that stayed in the town (the waypoint list did not
+  open, `a4-cotd`, `a5-crystal`; kept as `dev-stayed-in-town-*`) and the first try of `a1-jail-2` (5401, same cause,
+  `dev-failed-try-*`); launch 5401 was run again as 5402. Development: 9 launches (`dev-*`, `dev-aborted-r1-*`; manifest
+  `manifest-dev.sha256`, 44 lines): the first logger, the wrong waypoint click point, rev 1's missing `MonSetMode`
+  argument read (the command is the second stack word) and PathPlan's three late returns, the Necromancer smoke.
+- **Result** (`check-run-2026-11-03-ai.txt`, in the manifest): 14 645 decisions in 31 logs, 17 679 more events
+  that ended before the think call. 10 374 compared with an emulated model, 2 240 with a hand map, 2 016 in rows with no
+  model (batches 10–12 not emulated, town rows 32 and 54, three rows with an unlogged input), 15 not comparable (rev 2
+  window, Scarab, § below): **0 mismatches** in the 12 614 compared, at each decision's first boundary only; the 2 016 no-model decisions, the 15 not comparable and the 17 679 events that end before the think call are outside the 0. Tier AIs (decisions, all compared): Skeleton (row 2) 357,
+  Fallen (6) 1 393, Wraith (9) 70, FallenShaman (13) 363, Scarab (20) 180 (15 not comparable), Mummy (21) 168, GreaterMummy (22) 71,
+  Vampire (28) 279, BatDemon (29) 115, Fetish (30) 130, Andariel (34) 64, CorruptArcher (35) 95, SkeletonBow (37) 278,
+  Hireable (61) 5 697, SkeletonMage (64) 226, NecroPet (67) 184, Megademon (89) 98, BloodLord (125) 55: every tier AI has at least 50.
+- **What the comparison separates** (architect check, `tools/ai.py` models and hand maps run over the 31 logs, distinct
+  predicted (function, call site) first boundaries per tier AI over its compared decisions; the checker prints no such
+  line, so this is a recount, not a kept output): Skeleton 4 of 357, Fallen 1 of 1 393, Wraith 3 of 70, FallenShaman 2
+  (358 and 5), Scarab 5, Mummy 5, GreaterMummy 3, Vampire 1 of 279, BatDemon 1 of 115 (110 think, 5 alt), Fetish 1 of 130,
+  Andariel 5 of 64, CorruptArcher 1 of 95, SkeletonBow 1 of 278, Hireable 1 of 5 697, SkeletonMage 1 of 226, NecroPet 1
+  of 184, Megademon 1 of 98, BloodLord 5 of 55. Ten tier AIs have one predicted first boundary in this window, so for them
+  the 0 shows that first callee, its registers, stack words and seed (emulated models also the control words and the
+  block), not a branch choice; the Fallen hand map's mode 0/12 return branch was never taken. No live negative control was
+  run: the separation controls are the no-game ones of `tools/test_ai.py` (a corrupted site, seed, function or `aip` block
+  on a synthetic log is found).
+- **Unlogged sites.** The rev 2 window did not cover the `GameFindUnit` call inside `MonsterOwner` (`0x0058F0FF`), which
+  the Scarab model predicts as its first boundary when the owner words are set: 15 first-batch Scarab decisions are
+  counted `unlogged`, not as matches; rev 3 covers it and the 95 Scarab decisions of `a2-oasis-3` all compare.
+- **Chaining.** Decision pairs on one seed (a decision's exit seed is the unit's next decision's entry seed): 12 368,
+  9 687 of them with draws; 37 rows have at least 20 drawing pairs; short with counts: rows 7 (3), 11 (2), 14 (15), 30
+  Fetish (2), 34 Andariel (5), 36 (6), 65 (12), 70 (15), 95 (6), 98 (1), 114 (9). Decision to `SKILLS_SrvStart`: 899
+  skill starts run inside a decision's event (between the think call and the exit), all 899 at the decision's last
+  logged seed advanced 0–12 steps (the steps per row in `SKCHAIN`), and all 899 exit with the event's exit seed.
+- **Plan and seeds.** `PathPlan`: 9 618 entry/exit pairs inside decisions, 0 with a changed unit seed (types 2, 5, 6, 7,
+  13, 15 observed, 148/217/203/1 961/5 825/1 580). Seed accounting: every logged point of every decision (entry, think
+  call, boundaries, `MonSetMode`, `PathPlan`, skill start, exit) follows the previous one by whole LCG steps of the same
+  unit seed, 0 violations (steps 0–7).
+- **State.** `AiCtl.state` is 0 at all 32 324 events (14 645 decisions and 17 679 others); no event in states 10–13.
+  Window: the 31 kept logs, Normal, the stages above, a clvl 85 character and a Barbarian mercenary or a Necromancer's
+  summons, no curse, cloak, flee or super-unique case staged. So the control (an event in a non-zero state) is absent and
+  the reading "no setter" for state rows 2, 3, 8, 9, 14, 17 is not tested by absence here; it needs a window with a live
+  control (a curse by Amplify Damage or Terror on a monster, `MonFleeFrom`).
+- **Library pilot (plan 0056 Phase 3).** Launches 19 (10 batch, 9 development; 9 with kept cases); kept case logs 31 (15 of the first
+  batch's 17 runner-kept cases, 9, 5 and 2); launches per kept case 10/31 = 0.32 (19/31 = 0.61 with development); case
+  switch 18.7 s (`a2-halls`, launch 5202 onward `next_case`), batches 2 237 s (17 cases), 1 744 s (9), 1 195 s (5), 360 s
+  (2) of wall, 131, 194, 239 and 180 s per case. The lane's prompt supplied the per-batch opt-in to share processes (owner answer 2 of plan 0056, harness-play.md §
+  Fresh process; plan 0056 Phase 3 names this batch as the pilot, so no further owner decision is needed): the checker models no process state, and the two fresh-process repeats (`a1-jail` 385
+  decisions, `a2-halls` 522) check with 0 mismatches as the shared-process cases do. Waypoint clicks: 9 retries in the
+  first and third batches, 3 cases without a level change.
+- **Not done in this run** (named short): the 331 monster gaps of the H1 oracle replacement (the kept skills logs of
+  run:2026-10-25-skills and run:2026-10-27-skills hold 0 `AID` or `AIB` lines, so none can close from them; the re-walk
+  needs a session with both loggers); H3's Raven calls; the Phase 1b cases P1b-1 (Duriel, 300 melee decisions) and P1b-2
+  (Greater Mummy and a champion corpse); a live control for the state record; one pilot of each P1 batch outside the
+  tier for batches 5 (rows 84, 86, 101–112), 7 (Duriel…), 10 (row 130 logged, no model), 11 and 12 (rows 32, 54 logged,
+  no model).
+- **Conclusion** (run:2026-11-03-ai, 0x005B186F): the first-boundary maps are `[C]` against live decisions for the 18 tier AIs (13 emulated maps, five
+  first-callee maps) up to their first boundary, nothing after it; the rest are `[I]` as before. See
+  [ai/0015](0015-phase2-first-run.md). Manifests: `workspace/logs/ai/manifest-run-2026-11-03-ai.sha256` (72 lines,
+  `sha256sum -c` passes from `workspace/logs/ai`), `manifest-dev.sha256` (44 lines).
 ## run:2026-11-03-ai-uber
 
 - **Question:** (plan 0052 Phase 1c, the Uber event) Do the unreferenced helpers 0x005DD140, 0x005E9DD0, 0x005F7F10, 0x005FD0F0, the drop 0x005E0070, the death callee 0x005A3250, the preset walk 0x005559A0, Baal's action at `k` 14, `UModAura` and `MonPostCreateBoss` map their declared inputs to the first boundary they reach (or their return), its call site, arguments, the unit seed and the named memory, as [ai/0016](0016-uber-event.md) § 7 reads them?

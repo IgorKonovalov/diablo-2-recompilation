@@ -837,4 +837,39 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   with a unique corpse as control; log the callback's `corpse` slot (0x005F2A00–0x005F2B03) and `MonSkillTargetOk`'s
   verdict (0x005FD470), and whether Resurrect2 is commanded. Phase 1b is done once the architect accepts; the two cases
   join Phase 2's "Phase 1b cases" line. Backlog: the review request (reverser to architect).
-- **2026-11-03 — `lane/r52n`, Phase 1c, the Uber event, for review.** [ai/0016](../findings/ai/0016-uber-event.md), [run:2026-11-03-ai-uber](../findings/ai/experiments.md#run2026-11-03-ai-uber): ten families, 3 629 cases, 0 mismatches. **Drivers:** no Uber-specific driver and no creator of classes 704, 705, 709 found, for all three bosses; the generic `MonAiEvent` (0x005B1740) with kind-1 search is what would run, and past the sight pause the think queues no next event. **Helpers:** 0x005E9DD0, 0x005FD0F0, 0x005F7F10, 0x005DD140 unreferenced after the kept scan (`.reloc`, raw rel32, exports, RVA words, nine live controls). **Levels 133–136:** no event handler; the readers are the preset filter, portal, waypoint and town-portal gates, DRLG tests. **The 37 sites:** 20 class tests, 12 not classes, 5 fields; 3 state setters plus one client reader. **Baal's 709 arm:** no stock caller. **Counts:** one unit per helper call, no caller; `demonhole` 3 spawns. Dated notes in ai/0008, ai/0012, archaeology/0002; one refinement, no contradiction. Game cases G1–G5 listed for a later session. Backlog: the [review request](../backlog/2026-11-03-reverser-architect-plan-0052-phase-1c-uber-event-review.md).
+- **2026-11-03 — Phase 2, first lane run (`lane/p52a`, reverser, harness, slot 2; also plan 0056's Phase 3 pilot).**
+  Tools: `tools/gdb/ai.gdb` + `tools/gdb/ai.py` (rev 3), `tools/ai.py` (model and `check`; models imported from
+  `tools/ai_cat_emu*.py`, five hand maps), `tools/test_ai.py` (12 no-game tests), `tools/ai_sessions.py` on the runner
+  library, recipe `tools/d2s_recipes/ai-nec.json`. Record: [experiments.md run:2026-11-03-ai](../findings/ai/experiments.md),
+  finding [ai/0015](../findings/ai/0015-phase2-first-run.md) (19 symbol rows `I` → `C`: `MonAiEvent` and 18 think
+  functions; the compared decisions' first boundaries only). **Counts:** 31 kept case logs in 10 launches, 14 645
+  decisions (12 614 compared, **0 mismatches** at the first boundary; 15 not comparable, rev 2 window; 2 016 in rows with no model), 17 679 more
+  events that end before the think call. Per tier AI (decisions): Skeleton 357, Fallen 1 393, Wraith 70, FallenShaman
+  363, Scarab 180, Mummy 168, GreaterMummy 71, Vampire 279, BatDemon 115, Fetish 130, Andariel 64, CorruptArcher 95,
+  SkeletonBow 278, Hireable 5 697, SkeletonMage 226, NecroPet 184, Megademon 98, BloodLord 55: **all 18 at least 50**,
+  9 823 over the tier against 1 500. Chaining: 12 368 decision pairs on one seed, at least 20 drawing pairs for
+  every tier AI but Fetish (2) and Andariel (5) (short, counted); decision → `SKILLS_SrvStart` 899 starts inside the
+  event, 899 exit with the event's exit seed (the floor of 20 on one monster seed met on monsters: FallenShaman 155,
+  Vampire 35, GreaterMummy 37, Scarab 13, Andariel 15…). `PathPlan` seed unchanged on 9 618 plan calls (types 2, 5, 6, 7,
+  13, 15; the review's condition (b) checked). **State record** (coordinator message, required item): `AiCtl.state` is
+  logged at every event: 0 at all 32 324, no state 10–13 event, so the window has no live control and does not test the
+  "no setter" reading of state rows 2, 3, 8, 9, 14, 17 ; it needs a window with a curse (Amplify Damage,
+  Terror) or `MonFleeFrom` on a monster. **Catalogue sample:** compared with models, at least 20 decisions, batches 1–4,
+  8, 9 (e.g. Zombie 135, Swarm 71, Pinhead 202, Frog 200, Vile Mother 71, Arcane Tower 24, Frozen Horror 95); batches 10
+  (row 130, 85) and 12 (rows 32, 54, 99) logged without a model. **Pilot figures (plan 0056 Phase 3):** 19 launches
+  (10 in the kept batches, 9 development), 31 kept sessions = 31 kept cases (3 case runs not kept: two stayed in the town,
+  one first try), 10 launches that were dev or rerun (9 development, 1 rerun) = 53 % (63 % counting the two fresh comparison launches 5203 and 5204 as reruns), launches per kept case 10/31 = 0.32
+  (0.61 with development), harness wall about 110 min for 31 cases = 3.6 min per kept session (lane wall in the ledger row), tokens about 17 k per kept session (530 967 measured over 31); two cases (`a1-jail`, `a2-halls`) re-run in fresh processes, 385 and
+  522 decisions, 0 mismatches. **Short against the Done-when, with counts:** the 331 monster gaps of the H1 oracle
+  replacement (0 close: the kept skills logs hold 0 `AID`/`AIB` lines; needs a session with both loggers), H3's 2 218
+  Raven `MonAttackStats` calls (not modelled), the Phase 1b cases P1b-1 (Duriel, 0 of 300 melee decisions; needs Tal
+  Rasha's tomb route) and P1b-2 (Greater Mummy corpse callback, not staged), the state control above, the catalogue
+  sample for batches 5, 7, 10, 11 and 12 (unmodelled rows logged), Fetish and Andariel chained pairs below 20, and the
+  decision tree past each first boundary (the log keeps the first eight boundary calls without their results).
+  **Resume note for the next lane run:** (1) log boundary results (a return line per `AIB`) and run a resumable model, so
+  the claim goes past the first boundary; (2) stage P1b-1 (`/players` 1, Normal, Duriel in Tal Rasha's tomb, at least
+  300 melee decisions, `MSM0` already logs the command) and P1b-2; (3) a state-control window (Amplify Damage or Terror on
+  a monster; `MonFleeFrom`); (4) re-walk the H1 gaps with `tools/gdb/ai.gdb` loaded beside the skills logger; (5) Raven;
+  (6) Fetish and Andariel at `/players 8` for more drawing pairs. The case table of `tools/ai_sessions.py` and the
+  library's cap (8 games or 40 min per launch) hold; the Act IV waypoint click needs one retry in about 1 of 10 runs.
+- **2026-11-03 — `lane/r52n`, Phase 1c, the Uber event, for review.** [ai/0016](../findings/ai/0016-uber-event.md), [run:2026-11-03-ai-uber](../findings/ai/experiments.md#run2026-11-03-ai-uber): ten families, 3 629 cases, 0 mismatches. **Drivers:** no Uber-specific driver and no creator of classes 704, 705, 709 found, for all three bosses; the generic `MonAiEvent` (0x005B1740) with kind-1 search is what would run, and past the sight pause the think queues no next event. **Helpers:** 0x005E9DD0, 0x005FD0F0, 0x005F7F10, 0x005DD140 unreferenced after the kept scan (`.reloc`, raw rel32, exports, RVA words, nine live controls). **Levels 133–136:** no event handler; the readers are the preset filter, portal, waypoint and town-portal gates, DRLG tests. **The 37 sites:** 20 class tests, 12 not classes, 5 fields; 3 state setters plus one client reader. **Baal's 709 arm:** no stock caller. **Counts:** one unit per helper call, no caller; `demonhole` 3 spawns. Dated notes in ai/0008, ai/0012, archaeology/0002; one refinement, no contradiction. Game cases G1–G5 listed for a later session. Merged `main` c3df75a9 before filing. Backlog: the [review request](../backlog/2026-11-03-reverser-architect-plan-0052-phase-1c-uber-event-review.md).

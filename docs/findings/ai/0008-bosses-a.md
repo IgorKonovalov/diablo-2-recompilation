@@ -78,7 +78,7 @@ cited by their anchors.
 | `0x005E5AC0` | `sub_005E5AC0_AiGriswold` | row 90 `Griswold` think | I (map `[C]`, § 4) |
 | `0x005E6300` | `sub_005E6300_AiBloodRavenInit` | row 59's init: `v1C = 0` | I (map `[C]`, § 4) |
 | `0x005E6320` | `sub_005E6320_AiBloodRaven` | row 59 `BloodRaven` think | I (entry call `[C]`, § 4) |
-| `0x005F5830` | `sub_005F5830_AiAndariel` | row 34 `Andariel` think | I (map `[C]`, § 4) |
+| `0x005F5830` | `sub_005F5830_AiAndariel` | row 34 `Andariel` think | I (map `[C]`, § 4); first boundary live `C`, ai/0015 |
 | `0x005F67B0` | `sub_005F67B0_AiDuriel` | row 44 `Duriel` think | I (map `[C]`, § 4) |
 | `0x005F7700` | `sub_005F7700_AiMephistoPickCb` | the pick's search callback: counts, nearest, lowest life, nearest for a player searcher | I |
 | `0x005F77C0` | `sub_005F77C0_AiMephistoPickTarget` | `(ECX game, EDX unit; M, t)`: the lowest-life hostile within 32 on `aip2`, else `t` | I (entry call `[C]`, § 4) |
