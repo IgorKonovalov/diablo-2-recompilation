@@ -7,8 +7,6 @@ context: []
 resolution: ""
 ---
 
-The request: what is needed, from whom, and why. Not blocking / blocking <what>.
-
 Plan 0057 Phase 3 and the owning specs: [quirks/0001](../findings/quirks/0001-community-bugs.md) gives 30 verdicts. Not blocking.
 
 **Rows with no owning statement** (the code reading is `[I]`; take them into the owning spec, or link the finding from the index until one does):
