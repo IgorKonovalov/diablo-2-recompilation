@@ -286,7 +286,7 @@ Scope: indirect calls and table pointers to the getters are not followed; the sc
 | Use | Draws | Seed | Tag |
 |---|---|---|---|
 | Kind 3 `hp1..5`, `mp1..5` | 2 per stat with an amount slot when vitality or energy > 0, else 0: one slot on all ten | the user's (`unit+0x20`) | [C] (ADR-0021) before the boundary (fn:sub_005BE3F0_ItemUsePotion@0x005BE3F0, run:2026-11-03-use-emu) |
-| Kind 4 | 0 | | [C] (ADR-0021) before the boundary, no stock row |
+| Kind 4 | 0 | | [C] (ADR-0021) before the boundary, no stock row (fn:sub_005BE7B0_ItemUseStatPlain@0x005BE7B0, run:2026-11-03-use-emu) |
 | Kind 5 | 0 | | [C] (ADR-0021) before the boundary (fn:sub_005BEAC0_ItemUseRejuv@0x005BEAC0, run:2026-11-03-use-emu) |
 | Kind 8 | 0 | | [C] (ADR-0021) before the boundary (fn:sub_005BF060_ItemUseElixir@0x005BF060, run:2026-11-03-use-emu) |
 | Kind 1 test, use | 0 | | [C] (ADR-0021) before the boundary (fn:sub_005BE130_ItemUseIdentifyTest@0x005BE130, fn:sub_005BE230_ItemUseIdentify@0x005BE230, run:2026-11-03-use-emu) |
