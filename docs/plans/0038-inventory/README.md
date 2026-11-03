@@ -1645,6 +1645,8 @@ whose ledger gives each statement's `[C]` part and remainder.
 - **Open, shortfall (2):** 2 and 29 (`ExpGrantCapped`): two tries of the Ancients route did not reach the altar (no warp
   76 on seed 6718, no object 546 at level 120 on seed 4314); filed to the architect for a route ruling (d-owner or a
   further route with the summit door of class 564).
+  (2026-10-30, `lane/h6ga`: run since; rows 2 and 29 raised in part, the Normal amount, the cut and both loop branches
+  `[C]`, the 20 000 000 and 40 000 000 immediates open; [player/0001](../../findings/player/0001-creation.md#plan-0038-h6g-rows-2-and-29-the-ancients-grant-session-run2026-10-30-h6ga-anc). Totals unchanged.)
 
 No row changed class: the 17 stay in (b) until the review, so the totals stand on `main`'s: **static 567, harness 509,
 c-emu awaiting a batch 0, blocked 431** (d-none 302, d-edit 73, d-sim 28, d-2c 10, d-owner 10, d-0032 8), **deferred 2,

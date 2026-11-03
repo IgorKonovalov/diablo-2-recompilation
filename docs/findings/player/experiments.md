@@ -239,3 +239,30 @@ the Ancients' reward (`anc`, seeds 6718 and 4314 in `dev/`: no warp 76 on the fi
 second). Checks: `tools/sweep_h6g.py check` over the 9 kept logs, 0 mismatches (`check/check-final.txt`, sha256
 `bec4893d…`), `tools/sweep_h6g.py static` 31 pins, 0 failing (`check/static-final.txt`). Backs
 [player/0001 § Plan 0038 batch H6g](0001-creation.md#plan-0038-batch-h6g-run2026-10-27-sweep-player).
+
+
+## run:2026-10-30-h6ga-anc
+
+Plan 0038 H6g rows 2 and 29 (`player`), slot 2, expansion install, stock excel data, Normal, map seed 4314, tool-built saves
+(`tools/d2s.py build` of `tools/d2s_recipes/player-h6g-anc25.json` and `player-h6g-anc.json`, on the `H6gAnc` save of
+run:2026-10-27-sweep-player; ADR-0013 § Neutral; the recipes are test states: word 39 and 40 bit 0 clear, `quests: all`).
+Logger `tools/gdb/h6g-quest.gdb` (`h6g.py` with `AL0` and `ALS` at 0x0058D33F, 0x0058D361 and 0x0058D38F added; smoked by
+the dev session below: it armed, the runner's ready line `PLR` arrived, each tag the checker reads appeared). Runner
+`tools/h6ga_sessions.py` (on `tools/harness_runner.py`, tool revision = the commit of this run's finding), checks
+`tools/sweep_h6g.py check` (with the grant model added). Kept under `workspace/logs/h6g/` (`manifest-h6ga.sha256`, 15 lines: logs, marks,
+pilot files, the check output and the 8 kept screenshots; `manifest-dev-h6ga.sha256`, 7 lines: the dev session's log, pilot
+file, marks and 4 screenshots; both pass from that directory). The check command, re-run at the Tier B check with the same
+output (`db35aa62…`): `python3 -I tools/sweep_h6g.py check workspace/merged/data/global/excel workspace/install/app/game.exe
+workspace/logs/h6g/h6ga-s2-4314-anc25.log workspace/logs/h6g/h6ga-s2-4314-anc80.log`.
+
+| Session | Seed | Save | Mode | What it covers |
+|---|---|---|---|---|
+| anc25 | 4314 | `H6gAnc25` (level 25, 1 000 below level 26) | Normal | the grant with the cut binding: level-up and short branches (rows 2, 29) |
+| anc80 | 4314 | `H6gAnc` (level 80) | Normal | the grant uncut: the fixed amount 1 400 000 (rows 2, 29) |
+
+Route (the pilot's options are in each `.pilot.txt`): `quest_sessions.py act towp2 wp:5,8 explore:40`, `farm --descend 76
+--time 1`, `objop --obj-cls 546 --to-pdef 1089 --obj-mem --times 1 --time 90`, `farm --boss-cls 540,541,542 --time 240
+--sweep`, wait for `EGX`. Dev (not kept): `dev-h6ga-dev1-s2-4314-anc25` (the logger smoke and the route's first pass; the
+grant ran there too, killed after `EGX`). Not staged: the corpse pickup (rows 3, 30). Check: 2 kept logs, 0 mismatches
+(`check/check-h6ga.txt`). Backs
+[player/0001 § Plan 0038 H6g rows 2 and 29](0001-creation.md#plan-0038-h6g-rows-2-and-29-the-ancients-grant-session-run2026-10-30-h6ga-anc).
