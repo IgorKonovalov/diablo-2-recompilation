@@ -298,3 +298,14 @@ _(lanes append dated entries as phases land)_
   4. **Not caught by `parse_log`:** a `split` piece of a later game holds no `WNDARM` with `levels`, so `tools/drlg.py` runs
      on it unchecked; § Fresh process rule 2 is the only guard. Noted for Phase 3's checkers (tools/drlg.py is the
      archivist/static lane's; no backlog entry, the rule already covers it).
+- **2026-11-03 — Phase 3 pilot ran on plan 0052·P2's first lane run (`lane/p52a`, slot 2, `tools/ai_sessions.py` on the
+  library).** Figures in [0052's log](0052-monster-ai.md) and [ai/experiments.md run:2026-11-03-ai](../findings/ai/experiments.md):
+  19 launches (10 kept-batch, 9 development; one kept-batch launch was a rerun), 31 kept sessions = 31 kept cases,
+  launches per kept case 0.32 (target ≤ 0.5: met; 0.61 counting development), dev or rerun launches 10 of 19 = 53 %
+  (target ≤ 10 %: **missed**, the logger and the waypoint staging were new; two of the comparison launches are by
+  design), harness wall 3.6 min per kept session (target ≤ 9.0: met; the stretch 7.4: met), tokens about 17 k per kept
+  session (target ≤ 43 k: met, provisional until the ledger row), two cases re-run in a fresh process, 0 mismatches
+  (met). A case switch by menu return took 18.7 s; the shared-process cases checked like the fresh ones (the checker
+  models no process state); the prompt's pilot description was taken as the owner opt-in of § Fresh process. The
+  library needed nothing new; a runner-side staged-level check (a case that never left its start level is failed and
+  re-run in a fresh process) is in `tools/ai_sessions.py`, not in the library.
