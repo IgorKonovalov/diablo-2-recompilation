@@ -317,7 +317,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   with the `+0x3C` scope; `0x100`, `0x400`, `0x20000` stay `[L]`. `+0x13A` / `+0x13C` are `IsDoor` / `Orientation` by offset
   ([Objects](../tables/Objects.md)) but stay `[L]` (ruling 5; the record behind 0x00621A70 / 0x00621AC0 is not stated). The `path` survey
   baseline is unchanged (the edit reads nothing the survey reads).
-- **2026-11-03 — Phase 1, batch P1.2, the search, for review (reverser, static, `lane/r54b`, from `main` 908ad0f9).**
+- **2026-11-03 — Phase 1, batch P1.2, the search, for review (reverser, static, `lane/r54b`, from `main` 908ad0f9; `main` ad0c039e merged before the totals).**
   [path/0002](../findings/path/0002-search.md) and `re/types/path.h` (`PathSearchNode`, `PathSearchStore`). **First item:** neither
   `PathPlanType1` (its own best-first search, 200 nodes) nor `PathPlanType15` (a line with wall following) calls `PathSearchRun`, and
   greedy-near's switch calls `PathPlanType1`; all stay with **P1.3a** `[I]`. **The search** `[C]` by emulation at the planner
