@@ -37,6 +37,7 @@ import harness_runner as hr  # noqa: E402
 LOGS = os.path.join(ROOT, "workspace", "logs", "ai")
 EXCEL = os.path.join("workspace", "merged", "data", "global", "excel")
 BASE = os.path.join("workspace", "samples", "d2s-owner", "smpsor-l50.d2s")
+BASE_NEC = os.path.join("workspace", "samples", "d2s", "smpnec.d2s")
 GDB = "tools/gdb/ai.gdb"
 CAP_GAMES, CAP_SECS = 8, 40 * 60
 
@@ -53,14 +54,15 @@ def stage(wp, secs=130, more=()):
     return [(["farm", "--sweep", "--wp", wp, "--time", str(secs)] + NOVA + list(more), secs + 150)]
 
 
-def catacombs(secs=60):
+def catacombs(secs=60, hold=False):
     """Catacombs Level 2 waypoint, two descents (Level 3 holds Vampires), then Andariel (Level 4): the combat
     sessions' route (tools/combat_sessions.py andariel_nova)."""
     return [(["farm", "--sweep", "--wp", "1,9", "--descend", "18", "--descend-time", "300", "--time", "15",
               "--max-res", "1000"] + NOVA0, 380),
             (["farm", "--sweep", "--descend", "18", "--descend-time", "300", "--time", "15", "--max-res", "1000"]
              + NOVA0, 360),
-            (["hunt", "--mon-cls", "156", "--time", str(secs * 4)] + NOVA0, secs * 4 + 40)]
+            (["hunt", "--mon-cls", "156", "--time", str(secs * 4)] + NOVA0 + (["--radius", "1"] if hold else []),
+             secs * 4 + 40)]
 
 
 # case: (difficulty, [pilot steps (args, timeout[, level])], what the stage holds [MonStats AI rows, Levels mon cols])
@@ -80,23 +82,46 @@ CASES = {
     "a4-cotd": ("normal", stage("4,2"), "City of the Damned: BatDemon 29, Megademon 89"),
     "a5-crystal": ("normal", stage("5,4"), "Crystalline Passage: BloodLord 125"),
     "a5-glacial": ("normal", stage("5,5"), "Glacial Trail: BloodLord 125"),
+    # rev 3 batch (plan 0052 Phase 2, second launch group)
+    "a2-oasis-3": ("normal", stage("2,5"), "Far Oasis again, for the Scarab sites the rev 2 logger window missed"),
+    "a2-halls-long": ("normal", stage("2,4", 260), "Halls of the Dead 2, longer: GreaterMummy 22, Mummy 21, BatDemon 29"),
+    "a1-cloister-2": ("normal", stage("1,8", 200), "Inner Cloister again: SkeletonMage 64, CorruptArcher 35"),
+    "a4-river": ("normal", stage("4,3"), "River of Flame: Megademon 89"),
+    "a5-pain": ("normal", stage("5,6"), "Halls of Pain: BloodLord 125"),
+    "a1-andariel": ("normal", catacombs(120, hold=True), "Catacombs to Andariel; she is kept alive: Andariel 34"),
     "nm-a2-halls": ("nightmare", stage("2,4"), "Halls of the Dead 2, Nightmare"),
     "h-a4-cotd": ("hell", stage("4,2"), "City of the Damned, Hell"),
+    # the Necromancer (tools/d2s_recipes/ai-nec.json, built on samples/d2s/smpnec.d2s): a golem and skeletons fight
+    # beside her (the summons' AI, row 67). Steps: ("wp", TAB, ROW), ("keys", [key..], s), ("rclick", x, y, s),
+    # ("wait", s), then d2pilot commands as above.
+    "a1-necro": ("normal", [("wp", "1", "7"), ("keys", ["F2"], 0.6), ("rclick", 440, 330, 1.0), ("keys", ["F2"], 0.6),
+                            ("rclick", 360, 330, 1.0),
+                            (["explore", "--walk", "--hops", "60", "--hop", "8", "--nova-key", "F1", "--radius", "9",
+                              "--mana-col", "4", "--drink", "0.5", "--give-up", "8"] + WP, 330),
+                            ("keys", ["F3"], 0.6), ("rclick", 440, 330, 1.0)],
+                 "Jail Level 1 with Clay Golem and Raise Skeleton: NecroPet 67", "AiNec"),
 }
 CHAR = "CombatSor"
 
 
+def case_of(name):
+    c = CASES[name]
+    return c[0], c[1], c[2], (c[3] if len(c) > 3 else CHAR)
+
+
 def cmd_list():
-    for k, (diff, steps, what) in CASES.items():
-        print("%-14s %-10s %d step(s)  %s" % (k, diff, len(steps), what))
+    for k in CASES:
+        diff, steps, what, save = case_of(k)
+        print("%-14s %-10s %-9s %d step(s)  %s" % (k, diff, save, len(steps), what))
     return 0
 
 
 def cmd_build(saves):
     os.makedirs(saves, exist_ok=True)
-    out = os.path.join(saves, CHAR + ".d2s")
-    return subprocess.run([*hr.PY, "tools/d2s.py", "build", EXCEL, "tools/d2s_recipes/combatsor.json", BASE, out],
-                          cwd=ROOT).returncode
+    rc = subprocess.run([*hr.PY, "tools/d2s.py", "build", EXCEL, "tools/d2s_recipes/combatsor.json", BASE,
+                         os.path.join(saves, CHAR + ".d2s")], cwd=ROOT).returncode
+    return rc or subprocess.run([*hr.PY, "tools/d2s.py", "build", EXCEL, "tools/d2s_recipes/ai-nec.json", BASE_NEC,
+                                 os.path.join(saves, "AiNec.d2s")], cwd=ROOT).returncode
 
 
 class Proc:
@@ -108,11 +133,12 @@ class Proc:
         self.t0 = 0.0
         self.dead = False
         self.launches = 0
+        self.save = None
 
 
 def run(slot, tag, saves, run_id, names, dev=False, status=None, seed0=5201, reruns=1):
     os.makedirs(LOGS, exist_ok=True)
-    save = os.path.join(os.path.abspath(saves), CHAR + ".d2s")
+    saves = os.path.abspath(saves)
     runname = ("dev-" if dev else "") + run_id
     out_path = os.path.join(LOGS, "%s-s%d.pilot.txt" % (runname, slot))
     out = open(out_path, "a")
@@ -130,7 +156,7 @@ def run(slot, tag, saves, run_id, names, dev=False, status=None, seed0=5201, rer
         hr.stop(slot, pr.drv, out=out)
         pr.drv = None
 
-    def launch(case, diff):
+    def launch(case, diff, save):
         seed = seed0 + pr.launches
         pr.launches += 1
         pr.stem = hr.new_stem(LOGS, runname, slot, seed, "L%d" % pr.launches)
@@ -147,13 +173,17 @@ def run(slot, tag, saves, run_id, names, dev=False, status=None, seed0=5201, rer
 
     def run_case(case):
         name = case[6:] if case.startswith("fresh:") else case
-        diff, steps, what = CASES[name]
+        diff, steps, what, savename = case_of(name)
+        save = os.path.join(saves, savename + ".d2s")
         t_case = time.time()
         fresh = case.startswith("fresh:")
-        need_new = (pr.drv is None or pr.dead or fresh or pr.games >= CAP_GAMES or time.time() - pr.t0 >= CAP_SECS)
+        # a case with another character than the process holds starts a new process (one character per saves directory)
+        need_new = (pr.drv is None or pr.dead or fresh or pr.games >= CAP_GAMES or time.time() - pr.t0 >= CAP_SECS
+                    or pr.save != savename)
         if need_new:
             close("new launch for %s" % case)
-            ok = launch(case, diff)
+            ok = launch(case, diff, save)
+            pr.save = savename
             note = "launch"
         else:
             res = hr.next_case(slot, pr.log, [save], diff=diff, out=out, stem=pr.stem, case=case)
@@ -166,7 +196,23 @@ def run(slot, tag, saves, run_id, names, dev=False, status=None, seed0=5201, rer
         if not ok:
             return ("failed", "no PLR (%s)" % note)
         n_before = sum(1 for ln in open(pr.log, errors="replace") if ln.startswith("AID "))
+        lid_start = level_of(pr.log)
+        xd = [*hr.PY, os.path.join(HERE, "xdrive.py"), "--slot", str(slot), "--window", "Diablo II"]
         for step in steps:
+            if step[0] == "wait":                       # ("wait", seconds)
+                time.sleep(step[1])
+                continue
+            if step[0] == "keys":                       # ("keys", [key, ...], seconds between)
+                for key in step[1]:
+                    hr.sh(xd + ["key", key], 30, out)
+                    time.sleep(step[2])
+                continue
+            if step[0] == "rclick":                     # ("rclick", x, y, seconds after)
+                hr.sh(xd + ["rclick", str(step[1]), str(step[2])], 30, out)
+                time.sleep(step[3])
+                continue
+            if step[0] == "wp":                         # ("wp", tab, row): town waypoint travel
+                step = (["wp", step[1], step[2]] + WP, 120)
             if len(step) > 2 and level_of(pr.log) == step[2]:
                 continue
             args, timeout = step[0], step[1]
@@ -197,6 +243,9 @@ def run(slot, tag, saves, run_id, names, dev=False, status=None, seed0=5201, rer
                                "wall": round(time.time() - t_case, 1)}
         if pr.dead:
             return ("failed", "pilot timeout")
+        if level_of(pr.log) == lid_start:        # the waypoint never took the character out of town: not a stage
+            pr.dead = True
+            return ("failed", "stayed in level %s" % lid_start)
         return ("kept", "decisions=%d wall=%.0f s" % (n_after - n_before, time.time() - t_case))
 
     status = status or os.path.join(LOGS, "%s-s%d.status.json" % (runname, slot))

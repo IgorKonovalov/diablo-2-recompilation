@@ -53,6 +53,11 @@ CTRL = {"ai_cat_emu": ("c14",), "ai_cat_emu2": ("c14", "c18"), "ai_cat_emu3": ("
 HAS_BLOCK = {"ai_cat_emu": False, "ai_cat_emu2": True, "ai_cat_emu3": True, "ai_cat_emu4": True, "ai_cat_emu5": False,
              "ai_cat_emu6": True, "ai_cat_emu8": True, "ai_cat_emu9": True}
 
+# Call sites outside the logger's return-address window for revisions up to 2 (0x005B14E0..0x005B1650 and
+# 0x005E0000..0x005FFFFF): the call of GameFindUnit inside MonsterOwner (0x0058F0D0) and two helpers' calls. A model
+# whose first boundary is at one of them cannot be compared with such a log (counted as "unlogged", not a match).
+UNLOGGED_SITES = (0x0058F0FF, 0x005DE864, 0x005DF97B)
+
 # AI row (MonStats AI, +0x1E) of each think address: docs/tables/MonAI.md; the rows the models cover
 THINK_ROW = {}
 
@@ -153,9 +158,13 @@ def parse(path):
     """The AI lines of a log: {"dec": [decision], "ain": [..], "sst": [..], "cap": [..], "lines": n}."""
     dec, byk, ain, sst, sstk, cap = [], {}, [], [], {}, []
     n_lines = 0
+    rev = None
     with open(path, errors="replace") as fh:
         for ln in fh:
             n_lines += 1
+            if ln.startswith("AI logger armed rev "):
+                rev = int(ln.split()[-1])
+                continue
             sp = ln.find(" ")
             tag = ln[:sp] if sp > 0 else ln.strip()
             if tag not in TAGS:
@@ -189,7 +198,9 @@ def parse(path):
                 sstk[d["k"]]["exit"] = d
             elif tag == "CAP":
                 cap.append(d)
-    return {"dec": dec, "ain": ain, "sst": sst, "cap": cap, "lines": n_lines}
+    for d in dec:
+        d["rev"] = rev
+    return {"dec": dec, "ain": ain, "sst": sst, "cap": cap, "lines": n_lines, "rev": rev}
 
 
 # ----------------------------------------------------------------------------------------------------- inputs
@@ -344,6 +355,8 @@ def check_decision(dec):
             res = mod.run_model(i)
         except KeyError as e:        # an input the logger does not carry (the trap rows' level and region words)
             return "none", mn + ":" + fam, []
+        if res[1] in UNLOGGED_SITES and (dec.get("rev") or 0) <= 2:
+            return "unlogged", mn + ":" + fam, []
         b = first_aib(dec, set(mod.OBSERVE))
         if b is None:
             return "model", mn + ":" + fam, ["no boundary logged, %08x predicted" % res[0]]
@@ -437,7 +450,7 @@ def run_check(paths, out=None):
         aid = d["aid"]
         row = aid["ai"]
         kind, name, diffs = check_decision(d)
-        e = per.setdefault(row, {"n": 0, "model": 0, "hand": 0, "none": 0, "bad": 0, "name": name, "th": aid["th"],
+        e = per.setdefault(row, {"n": 0, "model": 0, "hand": 0, "none": 0, "unlogged": 0, "bad": 0, "name": name, "th": aid["th"],
                                  "logs": set()})
         e["n"] += 1
         e[kind] += 1
@@ -466,16 +479,16 @@ def run_check(paths, out=None):
     lines = []
     lines.append("CHECK logs=%d decisions=%d ain=%d sst=%d caps=%d" % (len(paths), len(decs), len(ains), len(ssts),
                                                                       len(caps)))
-    tot = {"model": 0, "hand": 0, "none": 0}
+    tot = {"model": 0, "hand": 0, "none": 0, "unlogged": 0}
     for row in sorted(per, key=lambda r: (r is None, r)):
         e = per[row]
         for k in tot:
             tot[k] += e[k]
-        lines.append("ROW %s %-28s th=%08x decisions=%d model=%d hand=%d unmodelled=%d mismatches=%d logs=%d"
-                     % (row, e["name"], e["th"] or 0, e["n"], e["model"], e["hand"], e["none"], e["bad"],
+        lines.append("ROW %s %-28s th=%08x decisions=%d model=%d hand=%d unmodelled=%d unlogged=%d mismatches=%d logs=%d"
+                     % (row, e["name"], e["th"] or 0, e["n"], e["model"], e["hand"], e["none"], e["unlogged"], e["bad"],
                         len(e["logs"])))
-    lines.append("TOTAL decisions=%d model=%d hand=%d unmodelled=%d mismatches=%d" % (
-        len(decs), tot["model"], tot["hand"], tot["none"], len(mism)))
+    lines.append("TOTAL decisions=%d model=%d hand=%d unmodelled=%d unlogged=%d mismatches=%d" % (
+        len(decs), tot["model"], tot["hand"], tot["none"], tot["unlogged"], len(mism)))
     lines.append("PLAN pp_pairs=%d seed_changed=%d msm_pairs=%d" % (pp_n, pp_bad, msm_n))
     for t in TIER:
         e = per.get(t)
@@ -507,12 +520,12 @@ def run_check(paths, out=None):
 
 
 # ---------------------------------------------------------------------------------------------------- selftest
-def synth_log(path, rows):
+def synth_log(path, rows, rev=3):
     """A fake log built from the emulation case writers' inputs: for every tier family, the model's own first boundary
     as the logged AIB line. Used by selftest and tools/test_ai.py (no game)."""
     import random
     mods = load_mods()
-    out = []
+    out = ["AI logger armed rev %d" % rev]
     n = 0
     for mn, fam in rows:
         mod = mods[mn]

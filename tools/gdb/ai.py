@@ -18,7 +18,8 @@
 #         hex), ad [aidel +0x4F, aidist +0x52], t (the target: type, class, id, mode, x, y, path flag) or null,
 #         pl [x, y] of the first player
 #   AIB   a call of one of the boundary functions BND (the observed boundaries of the tools/ai_cat_emu*.py models) from
-#         the think function's code (return address in 0x005B14E0..0x005B1650 or 0x005E0000..0x005FFFFF) while the
+#         the think function's code (return address in 0x005B14E0..0x005B1650 or 0x005E0000..0x005FFFFF, from rev 3 also in the three callee
+#         windows of THINK_LO) while the
 #         decision is open: k, fn, ra, ecx, edx, a (six stack words), b (8 dwords at a stack-pointing argument, by
 #         argument index), s (the unit seed), c (AiCtl +0x14, +0x18, +0x1C), c4; at most AI_BMAX (8) per decision
 #   MSM0/MSM1  sub_005A7C20_MonSetMode (stack: game, cmd, flag) entry and its five rets, while a decision is open:
@@ -39,7 +40,9 @@ import struct
 
 import gdb
 
-REV = 2   # rev 1: the development logs (dev-*); rev 2: the six PathPlan rets (rev 1 logged the first three)
+REV = 3   # rev 1: the development logs (dev-*); rev 2: the six PathPlan rets (rev 1 logged the first three); rev 3: the
+#          return-address windows of MonsterOwner, 0x005DE830 and 0x005DF850 (the models' sites 0x0058F0FF, 0x005DE864,
+#          0x005DF97B)
 
 
 def _ai_main():
@@ -69,7 +72,11 @@ def _ai_main():
         0x00648A20, 0x00648A30, 0x00648AD0, 0x00649070, 0x00649180, 0x0064C040, 0x0064CB30, 0x0064D910, 0x006510C0,
         0x006562F0,
     )
-    THINK_LO = ((0x005B14E0, 0x005B1650), (0x005E0000, 0x00600000))
+    # return-address windows of a boundary call: the think functions (state row 2 and the AI code 0x005E0000..) and
+    # three callees the emulations run on the image (rev 3): MonsterOwner (0x0058F0D0, its GameFindUnit call at
+    # 0x0058F0FF), the overseer's stored-unit helper (0x005DE830) and the skill helper 0x005DF850
+    THINK_LO = ((0x005B14E0, 0x005B1650), (0x005E0000, 0x00600000), (0x0058F0D0, 0x0058F130),
+                (0x005DE830, 0x005DE8C0), (0x005DF850, 0x005DFC00))
     st = {"game": 0, "n": {}, "capped": set(), "line": 0, "stk": [], "plr": 0, "row": {}, "tot": 0, "sst": {},
           "msm": {}, "pp": {}}
 

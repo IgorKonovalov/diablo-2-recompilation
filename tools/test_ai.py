@@ -44,6 +44,17 @@ class SynthTest(unittest.TestCase):
             fh.writelines(lines)
         return ai.run_check([out])[1]
 
+    def test_rev2_marks_the_unlogged_sites(self):
+        # a rev 2 log: a model whose first boundary is at a call site the rev 2 window does not cover is "unlogged"
+        p = os.path.join(self.tmp, "rev2.log")
+        ai.synth_log(p, [("ai_cat_emu2", "scarab")], rev=2)
+        text, r = ai.run_check([p])
+        self.assertEqual(r["mismatches"], 0)
+        self.assertRegex(text, r"unlogged=[1-9]")
+        p3 = os.path.join(self.tmp, "rev3.log")
+        ai.synth_log(p3, [("ai_cat_emu2", "scarab")], rev=3)
+        self.assertIn("unlogged=0", ai.run_check([p3])[0])
+
     def test_site_control(self):
         r = self._corrupt("AIB", "ra", lambda d: d.__setitem__("ra", d["ra"] + 1))
         self.assertEqual(r["mismatches"], self.n)
