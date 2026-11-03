@@ -3,6 +3,7 @@
 
     python3 -I tools/quirks.py harvest [--root DIR] [--spec PATH ...] [--full]
     python3 -I tools/quirks.py check [--root DIR]
+    python3 -I tools/quirks.py list [--root DIR]
 
 harvest: every spec under docs/specs/ with a `## Reimplementation notes` section, its status, and each top-level
 bullet of that section numbered n1, n2, ... in file order (indented lines belong to the bullet above), with the
@@ -19,11 +20,19 @@ check: reads docs/specs/quirks/README.md and verifies, for the plan's Phase 1 Do
   Q3 the coverage table (rows whose first cell links a spec, columns: spec | notes | taken | skipped ...)
      lists every spec that has a notes section, once; `notes` equals the harvest count; the note numbers
      named in the skip cells and the note numbers cited by entries are disjoint and together cover n1..nN;
-     `taken` equals the number of notes cited.
-Exit 1 on any error. Stdlib only; reads only docs/specs/.
+     `taken` equals the number of notes cited;
+  Q4 the table under `## Community claims` (plan 0057 Phase 3) has one row per verdict of the finding, the same verdict,
+     and sends it to what the verdict asks: a confirmed row to entries that exist, a contradicted or not-in-1.14d row to
+     the "do not hold" table, a not-found row to an open question.
+Exit 1 on any error.
+
+list: one JSON object per entry, in page order: id, class, tag, anchors, sources (spec, fragment, notes).
+
+Stdlib only; reads only docs/specs/, and for Q4 docs/findings/quirks/.
 """
 
 import argparse
+import json
 import os
 import re
 import sys
@@ -44,6 +53,9 @@ RE_DOCLINK = re.compile(r"\]\((\.\./\.\./[^)\s]+)\)")
 RE_LINK = re.compile(r"\[[^\]]*\]\(\.\./([^)#\s]+\.md)#([^)\s]+)\)((?:\s*n\d+)*)")
 RE_SPECLINK = re.compile(r"\[[^\]]*\]\(\.\./([^)#\s]+\.md)(?:#[^)\s]*)?\)")
 RE_NOTE = re.compile(r"n(\d+)")
+RE_CLASS = re.compile(r"^### (\d+)\. ")
+RE_QID = re.compile(r"\bQ\d+\b")
+FINDING = os.path.join("docs", "findings", "quirks", "0001-community-bugs.md")
 
 
 def slug(heading):
@@ -271,11 +283,84 @@ def cmd_check(a):
             errs.append(f"{ln}: Q3 {rel}: n{min(miss)} neither cited nor skipped ({len(miss)} such)")
         if taken != len(c):
             errs.append(f"{ln}: Q3 {rel}: taken {taken} but entries cite {len(c)} notes")
+    errs.extend(check_community(a.root, ibody, ids))
     for e in errs:
         print("quirks:", e)
     print(f"SUMMARY entries={entries} specs={len(coverage)} notes={sum(want.values())} "
           f"taken={sum(len(v) for v in cited.values())} errors={len(errs)}")
     return 1 if errs else 0
+
+
+def section_rows(body, heading):
+    """The table rows, as cells, of the first numbered column under `heading` (to the next heading)."""
+    rows = []
+    on = False
+    for line in body.split("\n"):
+        if line.startswith("#"):
+            on = line.strip() == heading
+        elif on and line.startswith("|"):
+            c = cells(line)
+            if c[0].isdigit():
+                rows.append(c)
+    return rows
+
+
+def check_community(root, ibody, ids):
+    """Q4: every verdict of the finding lands once, where its verdict says."""
+    with open(os.path.join(root, FINDING), encoding="utf-8") as fh:
+        verdicts = {c[0]: c[3] for c in section_rows(fh.read(), "## Verdicts")}
+    errs = []
+    rows = section_rows(ibody, "## Community claims")
+    held = {c[0] for c in section_rows(ibody, "### Community claims that do not hold")}
+    seen = {c[0] for c in rows}
+    for r in sorted(set(verdicts) - seen, key=int):
+        errs.append(f"Q4 finding row {r} has no row under Community claims")
+    for c in rows:
+        r, verdict, where = c[0], c[1], c[2]
+        if r not in verdicts:
+            errs.append(f"Q4 row {r} is not in the finding")
+            continue
+        if not verdicts[r].startswith(verdict):
+            errs.append(f"Q4 row {r}: verdict {verdict!r} but the finding says {verdicts[r][:30]!r}")
+        if verdict == "confirmed":
+            qs = RE_QID.findall(where)
+            if not qs or any(q not in ids for q in qs):
+                errs.append(f"Q4 row {r}: confirmed needs entries that exist, got {where!r}")
+        elif verdict in ("contradicted", "not in 1.14d"):
+            if r not in held:
+                errs.append(f"Q4 row {r}: {verdict} but not in the do-not-hold table")
+        elif verdict == "not found":
+            if "open question" not in where:
+                errs.append(f"Q4 row {r}: not found needs an open question, got {where!r}")
+        else:
+            errs.append(f"Q4 row {r}: unknown verdict {verdict!r}")
+    for r in sorted(held - seen, key=int):
+        errs.append(f"Q4 do-not-hold row {r} is not a compared row")
+    return errs
+
+
+def cmd_list(a):
+    idx = os.path.join(a.root, "docs", "specs", "quirks", "README.md")
+    with open(idx, encoding="utf-8") as fh:
+        _, ibody = strip_fm(fh.read())
+    cls = None
+    for line in ibody.split("\n"):
+        m = RE_CLASS.match(line)
+        if m:
+            cls = int(m.group(1))
+        if not line.startswith("|"):
+            continue
+        c = cells(line)
+        if re.fullmatch(r"Q\d+", c[0]) and len(c) >= 5:
+            print(json.dumps({
+                "id": c[0],
+                "class": cls,
+                "tag": "".join(RE_TAG.findall(c[2])),
+                "anchors": RE_ANCHOR.findall(c[3]) + RE_DOCLINK.findall(c[3]),
+                "sources": [{"spec": rel, "fragment": frag, "notes": [int(x) for x in RE_NOTE.findall(nums)]}
+                            for rel, frag, nums in RE_LINK.findall(c[4])],
+            }, ensure_ascii=False))
+    return 0
 
 
 def main():
@@ -286,8 +371,9 @@ def main():
     h.add_argument("--spec", action="append")
     h.add_argument("--full", action="store_true")
     sub.add_parser("check")
+    sub.add_parser("list")
     a = p.parse_args()
-    return cmd_harvest(a) if a.cmd == "harvest" else cmd_check(a)
+    return {"harvest": cmd_harvest, "check": cmd_check, "list": cmd_list}[a.cmd](a)
 
 
 if __name__ == "__main__":

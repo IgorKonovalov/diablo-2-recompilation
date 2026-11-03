@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, skills/dispatch, combat/overview, combat/to-hit, combat/delivery, drlg/collision, data/calc]
 consumed_by: [combat/overview, combat/delivery, drlg/collision, items/economy, rng/seeds]
-tags: {C: 48, I: 95, L: 7}
-updated: 2026-10-30
+tags: {C: 48, I: 97, L: 7}
+updated: 2026-11-04
 ---
 
 # Missiles: creation, the seed, the per-frame step, collision, the hit and the end of life
@@ -235,6 +235,12 @@ B4. MissileCreateAt(game, unit, skill, lvl, cls, x, y):              (at a point
   else line), at five monster functions (six sites), at `0x005CBF90` and at both calls of `0x005D88B0`; 0 everywhere
   else, `SKILLS_SrvDo` included. The use acts only for a player owner. [I] (fn:SKILL_AttackDo@0x0056F070,
   fn:sub_0056F460_SkillThrowDo@0x0056F460, fn:PLAYER_UseAmmo@0x0056C3F0)
+- B2. **No to-hit for a player's skill missile.** `SkillMissileCreate` sets flag `0x1000` for a monster owner only and
+  `SkillMissileCreateLob` sets none, so neither adds the skill's `SKILLS_GetToHit` to the missile. The one exception read
+  is do 74, Double Throw, which adds it to the missile's stat 19 after creating the missile
+  ([catalogue § K](catalogue.md#k-barbarian-st-3234-3841-do-2-9-6872-7478)). Other creators of a to-hit flag or stat are
+  unfollowed. [I] (fn:sub_0056ECB0_SkillMissileCreate@0x0056ECB0, fn:sub_0056EE90_SkillMissileCreateLob@0x0056EE90,
+  fn:SKILLS_GetToHit@0x006449F0, 0x005D8943–0x005D896E, tbl:Skills.txt:srvdofunc, [quirks/0001](../../findings/quirks/0001-community-bugs.md#verdicts) row 18)
 - B5. **The other creators**: skills core helpers (`0x0056D400` the nova of 64, `0x0056D4E0`), shrine effects 19, 21
   and 22, the Act V quest functions, three monster functions, 30 missile functions (the sub-missile helpers and the
   numbered functions) and 40 skill functions; 97 sites in 82 functions. Items create missiles only through
@@ -461,7 +467,9 @@ E1. MISSILE_HitUnit(game, m, unit, end) → 1 keep, 2 free:            [I] (fn:M
   roll returns 2 and frees the missile at that unit, a `Pierce` row having spent one pierce first: 105 misses, 7 with
   a pierce left. [C] (fn:COMBAT_ToHitRoll@0x0057D9B0, fn:MISSILE_HitUnit@0x005ADF10, run:2026-10-25-skills) The
   chance is [combat/to-hit § C](../combat/to-hit.md#c-the-hit-test-and-the-defence-rolls)'s with the missile's
-  stat 19 as `arPct`. [I] (fn:COMBAT_ToHitRoll@0x0057D9B0)
+  stat 19 as `arPct`. [I] (fn:COMBAT_ToHitRoll@0x0057D9B0) For a monster owner that is its own stat 19 from the creation
+  (B2), and the monster formula adds it to the stat 19 it reads at the hit, so the attack rating counts it twice:
+  [to-hit A2](../combat/to-hit.md#a-the-chance-to-hit-combat_tohitroll). [I] (fn:MISSILE_HitUnit@0x005ADF10)
 - E2. **`justhit`**: for a `NextHit` row, a timed list of state 86 on the hit unit ending at `frame + NextDelay`
   (unit event 12), so any `NextHit` missile skips that unit until then. [I]
   (fn:sub_005ADB00_MissileJustHitState@0x005ADB00, tbl:Missiles.txt:NextDelay)

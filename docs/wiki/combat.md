@@ -1,11 +1,11 @@
 ---
 based_on:
   - docs/specs/combat/README.md 2026-11-03
-  - docs/specs/combat/to-hit.md 2026-10-21
-  - docs/specs/combat/damage.md 2026-10-21
+  - docs/specs/combat/to-hit.md 2026-11-04
+  - docs/specs/combat/damage.md 2026-11-04
   - docs/specs/combat/reductions.md 2026-10-21
-  - docs/specs/combat/delivery.md 2026-10-27
-  - docs/specs/monsters/stats.md 2026-11-03
+  - docs/specs/combat/delivery.md 2026-11-04
+  - docs/specs/monsters/stats.md 2026-11-04
 ---
 
 # Combat
@@ -120,6 +120,11 @@ lowering the target's defence, and the bonuses against demons and undead
 game compute an attack rating (one adds `ToHitFactor` twice, the character screen rounds differently), and
 neither is used by an attack.
 
+**A monster's line missile counts its attack rating twice**, read from the code: a monster's missile is created with the
+monster's attack rating, the hit passes that as the percent input when the missile's record asks for a to-hit roll, and the
+monster formula adds that input to the same stat. Dexterity is not doubled, and the lob form carries no rating
+([to-hit § A](../specs/combat/to-hit.md#a-the-chance-to-hit-combat_tohitroll)).
+
 ## Defence
 
 A unit's defence is its defence stat plus a quarter of its dexterity, then raised by its defence percents
@@ -208,7 +213,13 @@ Skipping the draw shifts every later draw of the attacker. The draw and the valu
 the general formula behind it is read from the code.
 
 **A player's critical or deadly strike doubles physical damage only**; that is read from the code. A monster's `Crit`
-doubles physical and elemental damage alike, which is confirmed.
+doubles physical and elemental damage alike, which is confirmed for the melee build; that a monster's missile calls the same
+doubling is read from the code.
+
+**A monster's drain roll hides a base**, read from the code: the roll is given the packet's drain field and returns it with
+the roll, and the result is added to the same field, so a drain already in the packet counts again. No stock skill row has a
+life, mana or stamina element, and other writers of those fields were not followed
+([damage § A](../specs/combat/damage.md#a-combat_builddamage-in-order)).
 
 **Conversion** of physical damage into an element exists in the build, and a skill with an element type sets it up:
 when the skill hits, its hit code copies that element type and the skill's conversion percent into the attack, if the
@@ -295,6 +306,9 @@ before this hit's damage**:
   built for them, most in Nightmare at 8 players). Community pages give 1/8 for champions and uniques; 1.14d does
   neither. A champion carries the special mark that every champion, unique and superunique gets, as well as its
   own champion mark (no monster in 74 logs had the champion mark alone), and crushing blow looks at neither.
+- Physical resistance cuts the share by its percent, confirmed at resistances from 15 to 90 on monsters. Read from the
+  code, and in no run: the cut has no branch on the defender's kind, it is capped at 100, so 100 or more cancels the blow,
+  and a player's own divisor is 10.
 - The share shrinks with the number of players the monster was **created** for: the divisor 4 grows by 50 % per
   player beyond the first, so at 8 players it is 18. Confirmed at 2, 3 and 8 players. Community pages say the player
   count does not matter; in 1.14d it does.
@@ -328,6 +342,9 @@ mercenary and monsters:
   two orders apart.
 - Monster leech (a monster attacker healing itself, by up to the damage it dealt and the defender's mana and stamina)
   is confirmed over 80 events in Nightmare and Hell.
+- A `manahit` boss takes 256 times the mana the same value takes through an `El` column, up to the mana the defender holds:
+  the mod multiplies by 256 and the roll shifts by 8 again. That factor is composed from the code and was not run
+  ([delivery § B](../specs/combat/delivery.md#b-delivery-combat_applydamage)).
 
 **The life change** is confirmed: the total is subtracted from the defender's life, and **a result below one life
 point is 0**, a kill. A total of zero or less (for example, when magic damage reduction drove every element negative)

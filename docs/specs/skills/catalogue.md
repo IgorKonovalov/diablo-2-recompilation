@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, skills/dispatch, skills/missiles, combat/delivery, stats/states, data/calc, monsters/stats]
 consumed_by: [skills/overview, skills/dispatch, skills/missiles, monsters/ai]
-tags: {C: 256, I: 102, L: 7}
-updated: 2026-10-30
+tags: {C: 256, I: 109, L: 7}
+updated: 2026-11-04
 ---
 
 # The function catalogue: every numbered skill and missile function
@@ -571,7 +571,7 @@ H4. st 6 (Power Strike, Charged Strike), st 10 (Lightning Strike), st 7 (Impale)
       do 7 is tier A (dispatch § O, its monster caster's MonAttackStats(caster, 8) first)
       after: a is the AR percent, so the ToHit columns of Power Strike, MonPowerStrike and MonIceSpear do not
         reach st 6's test; st 10's elemental RangeB(caster, max − min); the damage, the queue, the delivery
-                                                                         [I] (fn:SKILLS_GetToHit@0x006449F0)
+                                                                         [I] (fn:SKILLS_GetToHit@0x006449F0, fn:sub_005DA940_SkillSt06Hit@0x005DA940)
 H5. do 6 (0x005DB1C0, Inner Sight, Slow Missiles):                     [C] → SKILLS_ForUnitsInRange (run:2026-10-20-cat-emu-ama)
       auratargetstate (s16) in the States count and aurastat1 (s16) in the ItemStatCost count (−1 refused):
         block {id, lvl, auralencalc, auratargetstate, aurastat1, aurastatcalc1};
@@ -713,6 +713,25 @@ J10. do 73 (0x005D0040, Blessed Hammer), do 80 (0x005D0670, Fist of the Heavens)
       do 80: a target unit; no bit 6; {flags 1, owner, class, +0x14/+0x18 the target's position, id, lvl}
 ```
 
+- J1. **Blessed Aim removes Penetrate.** Both rows name `penetrate` in `passivestate`, and Blessed Aim's `aurastate` is
+  its own. Do 65 passes that `passivestate` at block `+0x48`, and `AURA_ApplyToTarget` frees that list and clears the state
+  on the unit it applies to, so a running Blessed Aim removes Penetrate's list from its caster
+  ([stats/states](../stats/states.md) `+0x48`). The other direction, Penetrate's refresh against the aura, is not read.
+  [I] (0x005CEFD5–0x005CEFFD, fn:AURA_ApplyToTarget@0x005CEDC0, fn:SKILLS_RefreshPassive@0x00646D60,
+  tbl:Skills.txt:passivestate, tbl:Skills.txt:aurastate, [quirks/0001](../../findings/quirks/0001-community-bugs.md#verdicts) row 19)
+- J2. **A player's Smite draws its hit test, then forces the hit.** Past the boundary, the player branch of do 150 rolls the
+  weapon damage, calls `COMBAT_MeleeHitTest(target, 0, 0)` at 0x005CEBA8 and does `or ax, 1` at 0x005CEBB0: the test's
+  draws run, and the hit bit is set whatever it returned. The defence bits it returned stay in the word; how
+  `ResolveAndQueue` treats a word with both is not followed. [I] (fn:sub_005CE9F0_SkillDo150Smite@0x005CE9F0,
+  [quirks/0001 § 3](../../findings/quirks/0001-community-bugs.md#3-smite-rows-68))
+- J2. **A monster's Smite uses its `A2` stats whatever mode it used.** The monster branch passes mode 5 to
+  `MonAttackStats` (0x005CEBB6), and mode 5 selects `A2`
+  ([monsters/stats § H](../monsters/stats.md#h-to-hit-and-damage-at-attack-time-reference-only)); it keeps the test's
+  result. [I] (fn:sub_005A4F50_MonAttackStats@0x005A4F50, fn:sub_005CE9F0_SkillDo150Smite@0x005CE9F0, [quirks/0001](../../findings/quirks/0001-community-bugs.md#verdicts) row 8)
+- J2. **Smite sets no flag `0x40`.** Do 150 itself has no access to `Unit+0xC4`, where do 2 does `or [edi+0xC4], 0x40`; the
+  callees past `COMBAT_ResolveAndQueue` and `COMBAT_DeliverQueued` are unfollowed. [I] (0x005CE9F0–0x005CEC50, 0x0056F42A,
+  [quirks/0001](../../findings/quirks/0001-community-bugs.md#verdicts) row 7)
+
 ### K. Barbarian (st 32–34, 38–41; do 2, 9, 68–72, 74–78)
 
 [skills/0012](../../findings/skills/0012-barbarian.md#answer-summary), 19 entries, all emulated; no draw before the
@@ -782,6 +801,11 @@ K16. do 77 (0x005DA370): → UNIT_CancelEvents(game, caster; 1, 0)      [C] → 
 K17. do 78 (0x005DA7E0): no record test; → 0x005DA120 (+0x0C bit 8), 0x005D9F70 (bit 7), 0x005DA660 (bit 9),
       in that order; else +0x0C ← 0x1000, return 1                       [C] (run:2026-10-21-cat-emu-bar)
 ```
+
+- K14. **Do 74 adds the skill's to-hit to its missile.** Past the boundary, it adds `SKILLS_GetToHit` to the missile's
+  stat 19 after creating the missile, the one exception read to
+  [missiles B2](missiles.md#b-creation)'s "no to-hit for a player's skill missile". [I] (0x005D8943–0x005D896E,
+  fn:sub_005D88B0_SkillDo74DoubleThrow@0x005D88B0, fn:SKILLS_GetToHit@0x006449F0, [quirks/0001](../../findings/quirks/0001-community-bugs.md#verdicts) row 18)
 
 ### L. Druid (st 56–58; do 114–124; entries 145, 146)
 
@@ -939,6 +963,12 @@ M4. traps, states, areas:                                              [C] → e
 M5. ItemEffect 36 (rows 44 Frost Nova, 48 Nova): an item cast of those skills runs prg 36, a nova of the row's
       srvmissilea (119 frostnova, 90 nova) centred on the cast's target unit; nothing without one   [I] (0x005D4DB0)
 ```
+
+- M2. **The knockback's level difference is `slvl`.** Dragon Talon's do reads stat 12 of the target (`push edi`) twice,
+  so its chance computes `level(target) + slvl − level(target)`. [I] (0x005D5AEB, 0x005D5AF7,
+  fn:sub_005D5A30_SkillDo42DragonTalon@0x005D5A30, [quirks/0001](../../findings/quirks/0001-community-bugs.md#verdicts) row 1)
+- M2. Psychic Hammer's do has the same form: both reads are `push ebx`, the target. [I] (0x005D31D9, 0x005D31E5,
+  fn:sub_005D3140_SkillDo33PsychicHammer@0x005D3140, [quirks/0001](../../findings/quirks/0001-community-bugs.md#verdicts) row 2)
 
 ### N. Item, charge and shrine callers (st 3, do 4, 113, 151)
 
