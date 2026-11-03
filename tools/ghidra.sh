@@ -22,6 +22,8 @@
 #                               stack, the spec and the case memory (EmuTrace.java)
 #   emuboundary <cases> <mem>   emutrace plus `observe <addr>` lines in <mem>: a case ends at that call and its
 #                               registers and stack arguments are printed (EmuBoundary.java, plan 0046 batch 9a)
+#   emuscratch <cases> <mem>    emuboundary plus a scratch check of the declared stack: a read of a stack byte before the
+#                               case wrote it prints a U line (EmuScratch.java, plan 0054 P1.2)
 #   strings <addr|name>...      strings each function references (source paths tell the module)
 #   decompile-range <out> <lo> <hi>
 #                               C of every function with entry in [lo, hi) into <out> (slow: grep it after)
@@ -150,6 +152,7 @@ case "$cmd" in
 	emucall) query EmuCall.java "$@" ;;
 	emutrace) query EmuTrace.java "$@" ;;
 	emuboundary) query EmuBoundary.java "$@" ;;
+	emuscratch) query EmuScratch.java "$@" ;;
 	strings) query StringsIn.java "$@" ;;
 	decompile-range)
 		[ $# -eq 3 ] || usage

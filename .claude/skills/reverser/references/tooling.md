@@ -52,6 +52,12 @@ dependency. To check they compile without a project: `javac -proc:none -cp "$(fi
 
 Headless runs lock the project. Never run two at once, and never while the GUI has it open.
 
+### `tools/ghidra.sh emuscratch <cases> <mem>` (`EmuScratch.java`, plan 0054 P1.2)
+
+`emuboundary` plus a scratch check of the declared stack, for a large frame compared as scratch and not dumped: a read of a stack
+byte before the case wrote it prints `U <pc> <addr> <size> <unwritten bytes>` after the case's `C` line; the top 256 KiB under the
+entry ESP is refilled per case; step limit 400 000 000. `tools/path_emu2.py` is its checker.
+
 ### `tools/ghidra.sh emutrace <cases> <mem>` (`EmuTrace.java`, ADR-0015)
 
 The emulator route of ADR-0015 (plan 0038 batches S1e and S1f; `tools/sweep_s1e.py` and `tools/sweep_s1f.py` write

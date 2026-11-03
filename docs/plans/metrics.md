@@ -511,6 +511,7 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-11-03 | `lane/r66` check | 0052, 0050 (3 finding cross-references) | architect-check | 60 549 | 9 | 1 | — | accept with fixes (1) | wording beyond source 1 |
 | 2026-11-03 | `lane/a65` | 0054 P1.1 PathTypes; 0038 recipe row (2 entries) | archivist | 87 140 | 26 | 4 | — | accept with fixes (Tier B check) | 3: wrong citation 1, scope 2 |
 | 2026-11-03 | `lane/a65` check | 0054 P1.1 PathTypes; 0038 recipe row | architect-check | 76 681 | 16 | 4 | — | accept with fixes (3) | wrong citation 1, scope 2, omission-route 1 |
+| 2026-11-03 | `lane/r54b` | 0054 P1.2 | reverser-static | 0 | 42 | 125 | — (static, Ghidra copy ghidra-r54b) | — | — |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not

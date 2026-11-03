@@ -190,7 +190,8 @@ flowchart TD
   `ctx.limit`, `ctx.b1C` and `+0x98` is P1.2's and P1.3's.
 - [I] **Writers** (`p1-writers-9x.txt`, byte stores to `[reg+0x90..0x94]` over `.text`): in the path module only the
   setters, `PATH_DynamicCreate` and `PathStepMove`'s `+0x90` decrement (0x00650724); two client copies (0x004651B6–
-  0x004651DC, 0x00447060, 0x0044706F); 14 stores in 0x0058AB9C–0x00594647 not identified as path writes (unfollowed).
+  0x004651DC, 0x00447060, 0x0044706F); 14 stores in 0x0058929F–0x00594647 (the range corrected by path/0002 § 10, which also
+  follows them): each stores into a quest's private data, none into a path record. (fn:QUESTS_FindById@0x00543640, 0x0058A98F)
 
 ### 3. The target refresh
 
@@ -463,7 +464,10 @@ records reaches (0x006E22C0). Owners and types:
 
 - `tbl:MonStats.txt:npc` (`+0x0D`, MonIsNpc), MonStats `+0x18` (the MonStats2 index) and MonStats2 `+0x08`
   (`tbl:MonStats2.txt:SizeX`, `UNIT_GetSizeX` for a monster target); `tbl:Objects.txt:SizeX` (`+0xD0`, an object
-  target's size) and the object record bytes `+0x13A` and `+0x13C` (not identified with a column; open question).
+  target's size), `tbl:Objects.txt:IsDoor` (`+0x13A`) and `tbl:Objects.txt:Orientation` (`+0x13C`): `[I]` the readers
+  0x00621A70 and 0x00621AC0 read `unit +0x14 -> +0x00 -> +0x13A / +0x13C`, and `SUnitCreate` stores
+  `OBJECTS_GetRecord(class)` at `unit +0x14 -> +0x00` (0x005553D7–0x005553E2), the 0x1C0-byte record at 0x0096D470 + class × 0x1C0
+  (0x00640EC8). (fn:OBJECTS_GetRecord@0x00640E90, fn:sub_00555230_SUnitCreate@0x00555230)
 - `struct:PathPlanCtx`, `struct:PathRequestFields`, `struct:PathMove`, `struct:DynPathColl`, `struct:DungeonRoom`,
   `struct:CollMap`.
 - Image tables: `data:g_PathPlanFuncs@0x006EB6D8`, `data:g_PathTypeFlags@0x006EB690`, `data:g_PathTypeParam98@0x006EB648`,
@@ -480,11 +484,10 @@ records reaches (0x006E22C0). Owners and types:
 
 ## Open questions
 
-- `[L]` The object record bytes `+0x13A` and `+0x13C` that send an object target through the 2-subtile step: which
-  Objects columns they are (archivist; the reader 0x00621A70 / 0x00621AC0).
-- `[L]` What the planners do with `ctx.limit` (+0x91), `ctx.b1C` (+0x92), `ctx.refresh` and `+0x98` (P1.2, P1.3;
-  `PathPlanSearch` doubles `ctx.refresh` at 0x0067AD15).
-- `[L]` Whether a planner can return more than 78 points (P1.2/P1.3; the tail has no bound).
-- `[L]` The 14 byte stores in 0x0058AB9C–0x00594647 at the request fields' offsets: path records or other structures.
+- Whether a server-created object unit's record is the only one the refresh meets: answered for `SUnitCreate`'s units (*Data
+  touched*); a client unit's data is out of scope (owner decision 5).
+- `[L]` What the planners of P1.3 do with `ctx.limit` (+0x91), `ctx.b1C` (+0x92), `ctx.refresh` and `+0x98`; the search's
+  use is path/0002 (P1.2).
+- `[L]` Whether a planner of P1.3 can return more than 78 points (the tail has no bound); the search's bound is path/0002 § 9.
 - `[L]` The type-16 setters (no reference) and the client sites of types 3, 11 and 12: a harness break line in Phase 2
   would show whether anything reaches them on the server (ai/0001 *Open questions*).

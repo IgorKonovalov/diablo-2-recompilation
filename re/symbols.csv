@@ -3475,6 +3475,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00678B80,func,sub_00678B80_DirOctantIndex,,C,drlg/outdoor,docs/findings/drlg/0008-outdoor.md
 0x00678C10,func,sub_00678C10_PathDirCell,,I,path/search,docs/findings/path/0001-pathplan-register.md
 0x00678CF0,func,sub_00678CF0_DirFromDelta,,C,drlg/outdoor,docs/findings/drlg/0008-outdoor.md
+0x00678D10,func,sub_00678D10_PathDirOctant,,I,path/search,docs/findings/path/0002-search.md
 0x00678DF0,func,sub_00678DF0_PathDirTriple,,I,path/search,docs/findings/path/0001-pathplan-register.md
 0x00679190,func,sub_00679190_PathTargetOffsetX87,,I,path/search,docs/findings/path/0001-pathplan-register.md
 0x00679C80,func,sub_00679C80_PathPlanGreedy,,I,monsters/ai,docs/findings/ai/0001-machinery.md
@@ -3483,9 +3484,12 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0067A000,func,sub_0067A000_PathPlanKnockback,,I,anim/movement,docs/findings/anim/0003-movement-gates.md
 0x0067A140,func,sub_0067A140_PathPlanSpiral,,I,drlg/collision,docs/findings/drlg/0009-room-lifecycle.md
 0x0067A240,func,sub_0067A240_PathPlanRandomWalk,,I,drlg/collision,docs/findings/drlg/0009-room-lifecycle.md
-0x0067A630,func,sub_0067A630_PathSearchDirDraw,,I,monsters/ai,docs/findings/ai/0001-machinery.md
-0x0067AAA0,func,sub_0067AAA0_PathSearchRun,,I,monsters/ai,docs/findings/ai/0001-machinery.md
-0x0067AD00,func,sub_0067AD00_PathPlanSearch,,I,monsters/ai,docs/findings/ai/0001-machinery.md
+0x0067A630,func,sub_0067A630_PathSearchDirDraw,,I,path/search,docs/findings/path/0002-search.md
+0x0067A690,func,sub_0067A690_PathSearchAdvance,,I,path/search,docs/findings/path/0002-search.md
+0x0067A740,func,sub_0067A740_PathSearchWalk,,I,path/search,docs/findings/path/0002-search.md
+0x0067A9F0,func,sub_0067A9F0_PathSearchReduce,,I,path/search,docs/findings/path/0002-search.md
+0x0067AAA0,func,sub_0067AAA0_PathSearchRun,,I,path/search,docs/findings/path/0002-search.md
+0x0067AD00,func,sub_0067AD00_PathPlanSearch,,I,path/search,docs/findings/path/0002-search.md
 0x0067B850,func,sub_0067B850_PathPlanType1,,I,monsters/ai,docs/findings/ai/0001-machinery.md
 0x0067C2D0,func,sub_0067C2D0_PathPlanType15,,I,monsters/ai,docs/findings/ai/0001-machinery.md
 0x0067C480,func,sub_0067C480_GridValid,,C,drlg/outdoor,docs/findings/drlg/0008-outdoor.md
@@ -3694,6 +3698,9 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x006F13F0,data,g_JungleSideDefs,,C,drlg/outdoor,docs/findings/drlg/0008-outdoor.md
 0x006F1518,data,g_DirOctant,,C,drlg/outdoor,docs/findings/drlg/0008-outdoor.md
 0x006F1648,data,g_PathDirTriples,,I,path/search,docs/findings/path/0001-pathplan-register.md
+0x006F17D8,data,g_PathSearchTurnRows,,I,path/search,docs/findings/path/0002-search.md
+0x006F18D8,data,g_PathSearchDrawAdd,,I,path/search,docs/findings/path/0002-search.md
+0x006F1958,data,g_PathSearchStep8,,I,path/search,docs/findings/path/0002-search.md
 0x006F1F7C,data,g_LinkArreatOffsets,,C,drlg/warps,docs/findings/drlg/0007-warps.md
 0x006F1F9C,data,g_A5CaveEntries,,C,drlg/outdoor,docs/findings/drlg/0008-outdoor.md
 0x006F1FD8,data,g_A5RavineStep,,C,drlg/outdoor,docs/findings/drlg/0008-outdoor.md
