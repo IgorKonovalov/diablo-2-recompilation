@@ -596,8 +596,8 @@ These are faithful 1.14d behaviour that reads as a mistake, or that contradicts 
 ## Crash and hang paths
 
 Six from the specs' code readings and three reached in kept runs: Q89, a fault logged on row 83, Q437, the fatal path
-`0x00408090` reached under emulation on three paths of the catalogue, and Q448, the same call reached under emulation by a party's ninth member (Q449: past that call, and whether a list can hold nine, is unread). None was provoked for this page, and the harness never
-provokes one (owner decision 5). The entries are in their classes above: Q44, Q45, Q50, Q65, Q74, Q89, Q93, Q437, Q448; Q50's
+`0x00408090` reached under emulation on three paths of the catalogue, and Q448, the same call reached under emulation by a party's ninth member (Q449: past that call, and whether a list can hold nine, is unread). None was provoked for this page, and since owner decision 5
+(2026-10-30) the harness provokes none; Q89's fault is older, from run:2026-10-27-sweep-cube, whose `craftlow` session expected it. The entries are in their classes above: Q44, Q45, Q50, Q65, Q74, Q89, Q93, Q437, Q448; Q50's
 hang is also the catalogue's endless-loop note.
 
 ## Community claims

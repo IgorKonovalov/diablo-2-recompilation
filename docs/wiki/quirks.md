@@ -42,7 +42,7 @@ Integers in the game are of a fixed width, and whether a divide, a compare or a 
 changes the result for large or negative values. The random number generator's range reduction divides unsigned, so a
 signed rebuild goes wrong once the low word reaches 2^31. Experience is unsigned all the way up. The string-table hash
 reads key bytes as signed characters, so a byte of 0x80 or more lands in another slot than the textbook hash gives.
-Trade prices divide one sum signed and another unsigned, so with more than one term a negative stat sum divides as a huge number. Objects with a negative spacing in the table step 249 to 255 subtiles, not backwards.
+Trade prices divide one sum signed and another unsigned by a stackable item's stack size, so with a stack size above 1 a negative stat sum divides as a huge number. Objects with a negative spacing in the table step 249 to 255 subtiles, not backwards.
 Entries: [class 1](../specs/quirks/README.md#1-arithmetic-width-and-sign).
 
 ### 2. Rounding and float
@@ -59,14 +59,14 @@ Entries: [class 2](../specs/quirks/README.md#2-rounding-and-float).
 
 Some values wrap around instead of saturating. A level's seed is a 32-bit sum that wraps rather than a draw from the act
 seed, and the multiply-divide helper keeps the low 32 bits of a quotient that does not fit. This class also holds
-several paths that the specs read in the code and that would crash or hang the game (an integer divide that overflows,
-a progressive ring whose step count is never tested); most of those are marked as read from the code and were not
-provoked. Entries: [class 3](../specs/quirks/README.md#3-wrap-and-overflow).
+three paths that the specs read in the code and that would crash or hang the game (an integer divide that overflows,
+in two places, and a progressive ring whose step count is never tested); all three are read from the code only and were
+not provoked. Entries: [class 3](../specs/quirks/README.md#3-wrap-and-overflow).
 
 ### 4. Bounds, comparisons and table edges
 
-The edge of a range is where rebuilds drift. The to-hit clamp tests "5 or less" and "95 or more", so an attack is never
-certain and never impossible. A damage maximum is exclusive: the roll never reaches it. Life below 256 internal units
+The edge of a range is where rebuilds drift. The to-hit clamp tests "5 or less" and "95 or more", so a rolled attack is
+never certain and never impossible. A damage maximum is exclusive: the roll never reaches it. Life below 256 internal units
 counts as zero, so a hit that leaves less than one life point kills. The command-line seed 0 cannot be asked for,
 because 0 means "use the clock". Entries: [class 4](../specs/quirks/README.md#4-bounds-comparisons-and-table-edges).
 
@@ -91,7 +91,7 @@ cannot compile is stored as an error and evaluates to 0, where a forgiving parse
 ### 7. Timing and frame edges
 
 When things happen, in frames. A scheduled action ends a number of frames after it starts, and the community
-breakpoint tables count one less. An action does not follow a rate change made after it starts (read from the code). A monster's attack
+breakpoint tables count one less. A scheduled action does not follow a rate change made after it starts, while an every-frame monster takes the new rate at its next advance (read from the code). A monster's attack
 rolls its extra-damage draws when the attack begins, and the to-hit and damage at the hit frame, with the monster's
 own thinking drawing in between. Nearly half of this class is read from the code only (10 of 19 confirmed). Entries:
 [class 7](../specs/quirks/README.md#7-timing-and-frame-edges).
@@ -109,16 +109,18 @@ not from the killer. Entries: [class 8](../specs/quirks/README.md#8-multiplayer-
 Behaviour that reads as a mistake and is faithful, or that contradicts a community description. The random number
 generator takes the remainder directly, with no correction for bias. The two place-group modes keep three quarters
 and one quarter, the reverse of what the names suggest. Rares have 3 to 6 affixes, not 2 to 6. Magic find is linear up
-to 10. Crushing blow takes a quarter of the defender's life on uniques and champions, not an eighth. A hireling's
+to 10. With one player, crushing blow takes a quarter of the defender's current life on uniques and champions, not an eighth; more players raise the divisor. A hireling's
 experience curve is cubic, not quadratic. Keep them all. Entries:
 [class 9](../specs/quirks/README.md#9-deliberate-oddities-that-look-like-bugs).
 
 ## Crash and hang paths
 
-The index lists nine such paths, wherever the specs state them; they live in the classes above. Six come from readings
-of the code. Three were reached in kept runs: a fault logged on one crafted cube row, the game's fatal path reached
-under emulation on three paths of the skill catalogue, and the same path reached under emulation by a party's ninth
-member. None was provoked for the index and the project's harness never provokes one
+The index lists nine such paths, wherever the specs state them; they live in the classes above. Only one of the nine
+happened in a game: on one of the cube's crafting recipes, at a low item level, a recorded run logged the game's fault.
+Two more were reached only under emulation, the game's own code run on its own and not in a game: the game's fatal path
+on three paths of the skill catalogue, and the same path for a party's ninth member, where whether a party can hold nine
+is unread. The other six come from readings of the code. None was provoked for the index, and the harness has provoked
+none since that rule; the logged fault is older, from a run that expected it
 ([crash and hang paths](../specs/quirks/README.md#crash-and-hang-paths)).
 
 ## Community claims
@@ -126,22 +128,24 @@ member. None was provoked for the index and the project's harness never provokes
 Thirty claims from community bug lists were compared with the code
 ([community claims](../specs/quirks/README.md#community-claims)): 20 hold, 4 are contradicted, 3 do not apply to
 1.14d and 3 could not be settled. Agreement with a community page proves nothing by itself, because much of that
-knowledge comes from older versions; each confirmed claim is listed as an ordinary entry with the code behind it.
+knowledge comes from older versions. Each claim that holds is listed as an ordinary entry at its own level, and most of
+those are read from the code only: of their 21 entries, 5 are confirmed and 16 are not.
 
 The claims that do not hold are
 [listed in the index](../specs/quirks/README.md#community-claims-that-do-not-hold). A rebuild must not restore them.
 
-- **Monsters with life, mana or stamina steal do not do double melee damage.** A monster's life drain is one term added
-  to the physical damage, which it does not repeat. What can double is a drain already in the packet; that part is read
-  from the code.
+- **Monsters with life, mana or stamina steal do not do double melee damage.** A monster's life drain, a hireling's
+  aside, is one term added to the physical damage, which it does not repeat. Mana and stamina drains are not in that
+  total, and what can double is a drain already in the packet; those two parts are read from the code.
 - **Curse resistance does not cut every timed list.** The cut applies when the state is a curse, and Fade's cell is
   blank (read from the code).
 - **Hratli's magic level is 0, not 1.** The community is right that a misspelled header is the cause; the value is the
   default for an absent column.
 - **Eth does not make the target's defence negative.** The percent is clamped to 0 to 100 and halved on a boss, player,
   superunique or hireling (read from the code).
-- **Kick does not take elemental damage from weapons in 1.14d.** Kick skips the build, and a weapon's damage stats are
-  unlinked before it builds (read from the code).
+- **Kick does not take elemental damage from weapons in 1.14d.** Kick's own start skips the damage build, and the build the
+  kicks do use first unlinks the damage stats of a weapon in either hand; elemental stats from other items still reach
+  it (read from the code).
 - **No runeword property code is misspelled.** None of the 508 code cells in 169 rows is unknown.
 - **The "n minus 1" bug, a ranged modifier that never reaches its maximum, is not in 1.14d.**
 
@@ -149,15 +153,15 @@ Three more claims stay open leads, with the reason each could not be settled: a 
 effects, delayed trapped-soul drops that ignore gold and magic find, and a Cloak of Shadows crash near the Ancients
 ([open questions](../specs/quirks/README.md#open-questions)).
 
-## Seen in play, or read from the code
+## Seen in play, emulated, or read from the code
 
 The index ([how to read an entry](../specs/quirks/README.md#how-to-read-an-entry)) follows the project's tags ([How we know](how-we-know.md#three-levels-of-confidence)), and a reader of this
 page should keep two things apart.
 
-- **Confirmed does not always mean seen in play.** A map of the code that emulation reproduced is read from the code, not
-  seen in play. Many confirmed entries rest on a recorded run of the real game. Some
-  rest on the game's own code run on its own in an emulator, or on a second reading of the code that agrees with the
-  first. An entry marked as "the code's map" says that no logged case separates the possibilities; it describes what the
+- **Confirmed does not always mean seen in play.** A map of the code that emulation reproduced is confirmed as what the
+  code does, and it was not seen in play. Many confirmed entries rest on a recorded run of the real game. Some
+  rest on the game's own code run on its own in an emulator, or on a second code path or a game data table that agrees with the
+  reading. An entry marked as "the code's map" says that no logged case separates the possibilities; it describes what the
   code does, not something a player saw. The party-share distance rule is one such: the code's map reproduced under
   emulation, with no logged kill separating it. Emulation shows what a function does with its inputs, not who calls it
   or how often in a real game ([what emulation can confirm](how-we-know.md#emulated-reproduction-one-function-run-on-its-own)).
@@ -165,12 +169,13 @@ page should keep two things apart.
   code and not yet checked against anything independent. A trap in this group is probably real and has not been
   tested.
 
-When a statement here carries a number ("20 of 30", "508 cells"), it is a count from the spec that owns it, and in the
-spec it is tied to the runs that were kept.
+When a statement here carries a number ("20 hold", "508 cells"), it is a count from the index or the spec that owns it,
+tied there to the runs or the table reads behind it.
 
 ## What is not known yet
 
 - The step notes of the reviewed specs were not all swept for entries; a later pass may add more
   ([open questions](../specs/quirks/README.md#open-questions)).
 - Three community claims are unsettled, as above.
-- Crash and hang paths are not provoked, so for six of the nine the outcome is the code's, not a recorded crash.
+- Only the cube fault is a recorded crash. For the other eight crash and hang paths the outcome is the code's: six read,
+  two reached under emulation.
