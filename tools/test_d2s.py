@@ -366,6 +366,7 @@ RECIPE_BASES = {
     "quest-h6e2-questmsfn-a4": (BASE_X, "1b6796d678b1c05b7f54ec26c2fd66258508effcbfe9cb40a185d38145846a52"),
     "h3brare": (BASE_X, "ce57d8f76eaabcad6bdb6eea7b06082ae400ae8c01be85404ec11dfa9cf86317"),  # run:2026-10-27-sweep-data-load
     "player-h6g-anc": (BASE_X, "b7366902ea1892ba8253c6845b9511b3bc1c28c5b0a813fcca8577ec460bb335"),  # run:2026-10-27-sweep-player
+    "player-h6g-anc25": (BASE_X, "63ea2a2edfc6f106ff044e6195541a0d2c5b0f9d20462388da783cf9d93d6e66"),  # run:2026-10-30-h6ga-anc (H6gAnc25.d2s, tools/h6ga_sessions.py)
     "player-h6g-cap98": (BASE_X, "374fc7eb7e644e04a5832bb4eaf078a194e23ad65902d645129928b51189e702"),  # run:2026-10-27-sweep-player
     "player-h6g-deathh": (BASE_X, "36d99e01ddcd346649d43ac7452cf7b7acc130c0f711106a35000a3ea98f39e1"),  # run:2026-10-27-sweep-player
     "player-h6g-deathn": (BASE_X, "bc6150bd83d5276c1f1cb4f79fe12b6a81a315cde108737bec41b8c98d5ffdfd"),  # run:2026-10-27-sweep-player

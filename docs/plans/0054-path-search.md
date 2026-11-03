@@ -263,7 +263,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   `re/symbols.csv` rows (21 func, 6 data, all I). Kept outputs `workspace/logs/r54a/` (manifest 18 lines; `emu/`
   51; `emu/dev-1/` 51; each passes from its directory). Backlog: the
   [review request](../backlog/archive/2026-11-03-reverser-architect-plan-0054-p1-1-review.md),
-  [archivist](../backlog/2026-11-03-reverser-archivist-pathtypes-meanings-anchored-by-path-0001.md) (PathTypes
+  [archivist](../backlog/archive/2026-11-03-reverser-archivist-pathtypes-meanings-anchored-by-path-0001.md) (PathTypes
   meanings, the object bytes +0x13A/+0x13C).
 - **2026-11-03 — Phase 1, batch P1.1 reviewed (architect, Tier A, `lane/r54a`): accept with fixes (6).** Read: the
   diff against `main` (7f48a7db, db792e14, daa18409), path/0001 in full, its experiments entry, `re/types/path.h`, the
@@ -309,3 +309,11 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   `+0x13A`/`+0x13C` stay `[L]` with the archivist entry; the 14 byte stores go to P1.2's first items; the 78-point bound
   to each planner batch (P1.2 for the search, P1.3a/b for the rest), stated as rule 15 asks; the type-16 setters and
   the client slots to Phase 2's break lines. Ledger: verdict and fixes in the lane's row. Next: P1.2 (static lane B).
+
+- 2026-11-03 (`lane/a65`, archivist): [PathTypes](../tables/PathTypes.md) linked to path/0001 (entry
+  `2026-11-03-reverser-archivist-pathtypes-meanings-anchored-by-path-0001`, closed). `PathSetType`'s mask and whole-word OR `[C]`,
+  `g_PathTypeParam98` (17 words, read by script: 2, -2, -4 at types 5, 6, 12) `[C]`, `PathPlan`'s entry flags `0x40000`, `0x800`, `0x1000` `[C]`,
+  `PathSetType`'s `0x2000`, `0x8000`, `0x4000`, `0x10000` `[C]`, `0x10`, `0x20`, bit 0, `0x200` `[I]`, the server callers and item (4) `[I]`
+  with the `+0x3C` scope; `0x100`, `0x400`, `0x20000` stay `[L]`. `+0x13A` / `+0x13C` are `IsDoor` / `Orientation` by offset
+  ([Objects](../tables/Objects.md)) but stay `[L]` (ruling 5; the record behind 0x00621A70 / 0x00621AC0 is not stated). The `path` survey
+  baseline is unchanged (the edit reads nothing the survey reads).

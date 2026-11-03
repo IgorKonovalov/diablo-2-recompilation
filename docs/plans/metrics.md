@@ -509,6 +509,8 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-11-03 | `lane/a64` review | 0050 part 3 recipes; 0052 batches 9-10 readers | architect-review | 156 301 | 38 | 5 | — | accept with fixes (6) | audit of lane/a64: under-claim 3, misread 2, omission 1; reject-grade missed: no |
 | 2026-11-03 | `lane/r66` | 0052, 0050 (3 finding cross-references) | reverser-static | 59 489 | 13 | 1 | — (no Ghidra, no harness) | accept with fixes (Tier B check) | 1: wording beyond source 1 |
 | 2026-11-03 | `lane/r66` check | 0052, 0050 (3 finding cross-references) | architect-check | 60 549 | 9 | 1 | — | accept with fixes (1) | wording beyond source 1 |
+| 2026-11-03 | `lane/a65` | 0054 P1.1 PathTypes; 0038 recipe row (2 entries) | archivist | 87 140 | 26 | 4 | — | accept with fixes (Tier B check) | 3: wrong citation 1, scope 2 |
+| 2026-11-03 | `lane/a65` check | 0054 P1.1 PathTypes; 0038 recipe row | architect-check | 76 681 | 16 | 4 | — | accept with fixes (3) | wrong citation 1, scope 2, omission-route 1 |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not
