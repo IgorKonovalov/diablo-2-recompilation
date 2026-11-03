@@ -188,3 +188,140 @@
   saves, the frees, the population calls, the writes after each boundary, and the next-pointer reads before the
   deactivation's and the sweep's tests (no case separates them). No symbol raise (ADR-0015 scope, review-fixes rule 14).
   (run:2026-10-30-frame-emu-3)
+
+## run:2026-11-03-emu-spec-reapply
+
+Static, no game and no slot (plan 0055, `lane/r55e`; backlog 2026-10-30 architect → reverser, from the plan 0055 P1
+review). A tool fix and its test, then a re-run of the kept emulations it could have touched.
+
+- **Question:** (1) Why did a per-case memory-spec directive of 0x1000 bytes or more keep the previous case's writes
+  (frame/0003 *Dead ends*), and does the fixed `EmuTrace.java`, `EmuBoundary.java` and `EmuCall.java` re-apply every
+  per-case directive for every case? (2) Do the six kept emulations whose per-case specs hold such a directive give the
+  same output with the fixed scripts?
+- **Cause** (Ghidra 12.1.2's own source, `Emulation-src.zip`): `EmulatorHelper.writeMemory` calls
+  `MemoryState.setChunk`, which splits the write into pages; `MemoryPageBank.setPage` (inherited by the
+  `FilteredMemoryPageOverlay` that `DefaultEmulator` uses) stores `new MemoryPage(val)` when a chunk is a whole page
+  *and* its offset in the caller's buffer is 0, and `MemoryPage(byte[])` keeps that array as the page's data, with no
+  copy. So for a directive that starts on a 4 KiB boundary and is 0x1000 bytes or more, the first page *is* the spec's
+  byte array: the case's `w` writes and the emulated code's stores into that page went into the array, and the next
+  case's re-apply wrote them back. A later whole page of the directive has a non-zero buffer offset and is copied, as
+  is every partial page. The scripts kept one array per directive for the whole run, so every case after the first was
+  exposed.
+- **Fix:** each case writes `what.get(i).clone()`, a fresh copy, for every per-case directive (one line in each of the
+  three scripts, with a header note). `const` directives are still written once, from their own array, by design.
+  Revisions: `EmuTrace.java` `3255db0c…` → `0753a291…`, `EmuBoundary.java` `286393aa…` → `0c88b790…`, `EmuCall.java`
+  `d7e4bb10…` → `0cba26de…` (pre-fix hashes at `dda63dfd`). `EmuFastcall.java` and `EmuCalcFunc.java` write only
+  8-byte seeds and fresh 4-byte arrays per case and are not affected.
+- **Setup:** lane project copy `workspace/ghidra-r55e`, heap 3 GB, each headless run under
+  `systemd-run --user --scope -p MemoryMax=4G`, one instance. New tools: `tools/emu_zerotest.py` (`afc4d1b1…`, the
+  no-case-dependence test, deterministic, uses `tools/rng.py`'s `rng_range`) and `tools/emu_spec_scan.py`
+  (`d013c72b…`, lists every memory spec under a log tree with a per-case directive that starts page-aligned and is
+  0x1000 bytes or more). Files in `workspace/logs/r55e/`: `manifest.txt` (`c26d6048…`, the top-level files and the two manifests
+  below), `commands.txt`, `tools-revisions.txt`, `scan.txt` (`e3dd2634…`); `zerotest/` with
+  `manifest-zerotest.sha256` (`b4ec7155…`, 76 lines, passes from `zerotest/`), `zerotest/check.txt` (`ca2ecb7f…`) and the
+  pre-fix control scripts (`control-scripts/`, the `dda63dfd` files with their classes renamed `*Old`); `rerun/` with
+  `manifest-rerun.sha256` (`50e90a44…`, 10 lines, passes from `rerun/`) and `rerun/compare.txt` (`33aac500…`). Each
+  manifest sits beside its directory and passes with `sha256sum -c ../manifest-<name>.sha256` run inside it.
+- **Procedure:** `commands.txt`. The test: a spec of one directive with the 64-bit seed `0x9ABCDEF0:12345678` at
+  `+0x78`; three identical cases of `RNG_Range(seed, 0x10000)` (`call 0045c390 <start+0x78> 00010000`), the first with a
+  `w` of `05000000` at `+0x100`, each dumping the seed and `+0x100` (EmuCall: three identical `ecx edx` lines). Specs:
+  `bytes` of 0x800, 0xFFF, 0x1000, 0x1800 at `0x10300000`, 0x2000 at `0x10300800` (unaligned), `load` of 0x1000 at
+  `0x10300000` and 0x46230 at `0x7F800000` (EmuTrace and EmuBoundary); `load` of 0x800, 0x1000, 0x1800 at `0x10300000`,
+  0x2000 at `0x10300800` and 0x46230 at `0x7F800000` (EmuCall). One headless run ran the fixed scripts and the controls
+  over all of them (`zerotest/run.sh`); `emu_zerotest.py check` scores each output against the model. The re-run:
+  `rerun/run.sh`, one headless run, the kept cases and specs read in place (never rewritten), outputs under `rerun/`,
+  then `cmp` of each with the kept output.
+- **Observed** (`zerotest/check.txt`, `ZT` lines summarised; `pass` = all three cases return the model's `0x0000E948`
+  and the model's seed, and the `w` bytes appear in case 1 only):
+  ```
+  fixed   EmuTrace 7/7 pass, EmuBoundary 7/7 pass, EmuCall 5/5 pass
+  control EmuTraceOld, EmuBoundaryOld: pass b800 bFFF b2000u, fail b1000 b1800 l1000 l46230   (eax e948 cefc 2e19)
+          EmuCallOld: pass l800 l2000u, fail l1000 l1800 l46230                             (eax e948 cefc 2e19)
+  ZT summary outcomes_unexpected=0
+  ```
+  A failing control returns the model's first draw, then the second and third draws of the same seed: each case
+  started from the seed the previous case left. The controls fail exactly the specs whose directive starts on a page
+  boundary and is 0x1000 bytes or more; the unaligned 0x2000 directive (first page partial, second page copied) passes
+  before the fix too.
+  `scan.txt` (`SUMMARY specs=483 affected_specs=18 affected_directives=55`, `workspace/logs/r55e/` itself skipped):
+  the six kept runs the entry names, and twelve development specs of `lane/r55c` (`r55c/dev/emu1/`, `dev/emu2/`,
+  `dev/zerotest/z0x1000`, `z0x1800`). No spec under `r52*/emu/` (the plan 0052 `ai-cat-emu` runs, 233 `.mem` files) holds a
+  directive of 0x1000 bytes or more, per-case or `const`. Every long directive in the tree is page-aligned (no
+  `LONG-UNALIGNED` line); the 26 others are `const`.
+  `rerun/compare.txt`:
+  ```
+  sweep-s1e/calcvar.out        5 053 lines  identical (27754eb9…)
+  sweep-s1e/eval.out          18 083 lines  identical (c98c70db…)
+  sweep-s1f/calcvar2.out       3 010 lines  identical (77d49abf…)
+  sweep-s1f/varroll.out        9 000 lines  identical (b322281e…)
+  calc-emu/eval/eval.out         236 lines  identical (93337d6b…)   EmuCall 0x0064B7C0
+  p51s/emu/calcemu/eval.out      242 lines  identical (85e8e041…)
+  ```
+- **Conclusion:** `[C]` the three scripts now re-apply every per-case directive for every case, whatever its length
+  and alignment, on the test's 19 script-and-spec runs (7 specs under EmuTrace and EmuBoundary each, 5 under EmuCall);
+  the pre-fix scripts did not on exactly the 11 runs whose spec is aligned and 0x1000 bytes or more. `[C]` the six kept emulations are byte-identical with the fixed scripts, so no claim resting on them changes
+  and no finding note is needed (data/0005, run:2026-10-16-calc-emu; run:2026-10-27-p51s-emu; the S1e and S1f records
+  in [data/experiments.md](../data/experiments.md)). `[I]` the two `deact` mismatches of `r55c/dev/emu1/` and
+  `dev/emu2/` are this effect (an empty-room case dumping the previous case's room from a page-aligned directive); those
+  development runs are not re-run. (fn:RNG_Range@0x0045C390, fn:MISS_EvalCalc@0x0064B7C0, run:2026-11-03-emu-spec-reapply)
+## run:2026-11-03-frame-order
+
+- **Question:** (plan 0055 Phase 2a) Does the frame order of [frame/0001](0001-tick-and-messages.md)–[0003](0003-timers-activation.md)
+  predict the logged order of every frame of the kept corpus with two or more events, and the seed hand-off of every
+  pair of events on one seed in one frame? How many of the resynchronised skill entries of plans 0045 and 0052 does it
+  re-chain, and how many cross-type every-frame runs do the kept logs hold? ([frame/0004](0004-order-on-kept-logs.md))
+- **Setup:** no game, no wine, no slot, no Ghidra: a replay of kept logs. Input: the 331 frame-stamped, run-attributed
+  corpus logs of plan 0055 Phase 0 (`workspace/logs/frame-corpus/frame-corpus-logs.tsv` `12c71c1c…`, each log's sha256
+  in it), read by `tools/frame_corpus.py` (`287f3761…`, unchanged) `read_events`; the pinned `game.exe` (`631066c1…`)
+  disassembled by `objdump` for the reach; the kept gap lists of run:2026-10-27-skills
+  (`workspace/logs/skills/2026-10-27-skills-part1-gaps.txt` `5f43d175…`, `2026-10-27-skills-gaps.txt` `6843be4a…`).
+  Tool `tools/frame.py` (`73715f53…`, commit `eb962968`), tests `tools/test_frame.py` (`d3e87689…`, 18 tests). Every
+  replay under `systemd-run --user --scope -p MemoryMax=4G`, one at a time. Kept files in `workspace/logs/p55a/`,
+  `manifest.sha256` (`11056497…`, 8 lines); `sha256sum -c manifest.sha256` from that directory passes.
+- **Procedure:**
+  ```
+  K=workspace/logs/p55a
+  python3 -I tools/test_frame.py > $K/test.txt 2>&1
+  python3 -I tools/frame.py kinds > $K/kinds.tsv
+  systemd-run --user --scope -q -p MemoryMax=4G python3 -I tools/frame.py reach > $K/reach.txt
+  systemd-run --user --scope -q -p MemoryMax=4G python3 -I tools/frame.py check --out $K/check workspace/logs \
+      > /dev/null 2> $K/check-progress.txt
+  systemd-run --user --scope -q -p MemoryMax=4G python3 -I tools/frame.py rechain --out $K/rechain-gaps.txt \
+      workspace/logs workspace/logs/skills/2026-10-27-skills-part1-gaps.txt workspace/logs/skills/2026-10-27-skills-gaps.txt \
+      > $K/rechain.txt
+  ```
+  Exit codes 0 (`check` exits 1 on any order mismatch, nesting conflict, inverted slot pair, oldest-first missile pair
+  or reversed hand-off).
+- **Observed** (`check/check.txt` `106aa180…`, 471 lines; `check/frame-check-logs.tsv` `17825a3c…`, one row per log;
+  `kinds.tsv` `e1f30175…`, 115 kinds; `reach.txt` `e8277d18…`, 89 hooks; `rechain.txt` `40258860…`;
+  `rechain-gaps.txt` `7f1c951c…`, 477 gaps; `test.txt` `5b2b5ea9…`, `OK`; `check-progress.txt` `7b9623da…`, 331 logs):
+  ```
+  logs 331  events 6436250  no unit id 5338066  no seed 5061144  segments 331
+  frames2 501689  events in frames2 6176531  frames placed2 192294
+  compared 1719463  compared own 267695  separating 14061  mismatch 0  nesting conflicts 0
+  controls: monsters-before-players events 17040 frames 5997; slot-before-every-frame 9608 / 7924;
+            missiles-after-items 110 / 46; drain-before-the-tick 87 / 87
+  slot order: MDS pairs in queue order 4566, PDS 13, inverted 0 (matched MDS 41178 of 51842, PDS 17476 of 19125;
+              records cancelled 9812)
+  every-frame order: MF0 pairs newest first 24652 in 4710 frames, oldest first 0
+  cross-type EF: monster 926 this frame (mis-ef 79, plr-slot 847); player 0 (2 in mon-slot: next frame)
+  seed hand-offs: handed 1023086, stepped 42310, reversed 0, off 0
+  rechain: part 1 player 43 listed 0 re-chained, monster 171 / 0; part 2 player 103 / 7, monster 160 / 0
+  ```
+  Per logger (events; compared, of them by own kind; separating): anim 1 762 331; 66 404, 66 404; 13 967. skills
+  209 310; 32 583, 29 810; 94. stats 4 275 908; 1 619 807, 171 283; 0. economy 50 189; 486, 122; 0. economy2 9 807;
+  183, 76; 0. combat 126 285, two-combat 575, economy-hire 1 223, h6b 622: none compared. Mismatches 0 in each. The
+  limits: stats, economy, economy2, economy-hire and h6b carry no unit id on any event, h6b no seed (`check.txt` § per
+  logger).
+- **Development runs** (not cited): `workspace/logs/p55a/dev/`: `run1-crash.err` (the first full pass stopped on a
+  list-valued `w` field of stats' `RNGA`); `run2/` (tool `c8298557…`, uncommitted: 2 277 `MDS` mismatches from `EF`
+  lines without a phase, 4 inverted slot pairs from cancels not applied); `run3/` (`cd936f2b…`, uncommitted: both fixed,
+  0 mismatches); `run4/` (`a8e183f8…`, commit `6fba3cd1`: 4 "off" hand-offs between the server's and the client's
+  player); `run5/` (`b8731d13…`, `8f6d9fa6`: 20 "off" across pointers reused in a frame); `run6/` (`1d930258…`,
+  `6ecfb7db`) and `run7/` (`4117be67…`, `a7fb027b`): the kept counts, without the return-address list and the
+  separating pairs by rule. `dev/manifest-dev.sha256` (`dabf2b83…`, 39 lines) passes from `dev/`.
+- **Conclusion:** frame/0004's `[C]` claims: the pass and walk order with 0 mismatches and the separating pairs and
+  controls above; the slot lists oldest queued first and the missiles' every-frame list newest first in the game's own
+  runs; the drain's stamp for the skill-request handlers; the seed hand-offs; 926 monster cross-type every-frame queues;
+  7 more resyncs re-chained (142 of 281 player gaps, 0 of 331 monster gaps). No symbol raise (no logged return compared;
+  review-fixes rule 14). (run:2026-11-03-frame-order)

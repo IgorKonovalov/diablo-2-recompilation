@@ -433,7 +433,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   six earlier kept runs (sweep-s1e `calcvar`, `eval`; sweep-s1f `calcvar2`, `varroll`; calc-emu `eval`, EmuCall;
   p51s `calcemu/eval`); no case writes into any of them, so only a store by the emulated code could carry between
   cases, and these are table readers: no kept claim is known to move. Routed as a tools fix and a byte-for-byte re-run
-  ([backlog entry](../backlog/2026-10-30-architect-reverser-emu-page-directive-reapply.md)); `const` directives are
+  ([backlog entry](../backlog/archive/2026-10-30-architect-reverser-emu-page-directive-reapply.md)); `const` directives are
   written once by design. **The frame/0002 § 8 correction** is right (two `EventQueueAt` callers, three
   `EventQueueEveryFrame` callers, the return test) and is carried by a dated note there. **Phase 2a: go** (reverser, no
   game, no slot, no Ghidra; replays under `MemoryMax=4G`; P0 accepted, P1 reviewed). **Phase 2b: gate unchanged**: P1
@@ -442,3 +442,86 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 - **2026-11-03 — PetType `partysend` readers (archivist, `lane/a63`).** [PetType](../tables/PetType.md) `partysend` links the
   two readers of [frame/0003 § 6](../findings/frame/0003-timers-activation.md) (`PlrPetsStatusSend`, `PetListPrune`), `[I]`.
   Backlog entry closed.
+- **2026-11-03 — The emulator spec re-apply fix and the re-run (reverser, static, `lane/r55e`; review requested).**
+  Closes the [backlog entry](../backlog/archive/2026-10-30-architect-reverser-emu-page-directive-reapply.md) of the P1 review,
+  and, beside it, the [States count entry](../backlog/archive/2026-10-30-architect-reverser-states-unreached-58-vs-56.md).
+  Record: [run:2026-11-03-emu-spec-reapply](../findings/frame/experiments.md#run2026-11-03-emu-spec-reapply).
+  **Cause**: Ghidra 12.1.2's `MemoryPageBank.setPage` keeps the caller's byte array as the page, with no copy, when a
+  chunk is a whole page at buffer offset 0, so a directive that starts on a 4 KiB boundary and is 0x1000 bytes or more
+  shared its first page with the spec's own array; stores there survived into the next case's re-apply. **Fix**:
+  `EmuTrace.java`, `EmuBoundary.java` and `EmuCall.java` write a fresh copy of each per-case directive for every case
+  (`const` unchanged, written once). **Test**: `tools/emu_zerotest.py`, the kept form of `r55c/dev/zerotest`: three
+  identical `RNG_Range` cases on a seed inside the directive, plus a first-case `w`; 19 script-and-spec runs (lengths
+  0x800 to 0x46230, `bytes` and `load`, aligned and unaligned) all pass with the fix; the pre-fix control copies fail
+  exactly the 11 aligned long ones (each case drawing from the previous case's seed) and pass the other 8.
+  **Re-run**: the six kept emulations the entry names (`sweep-s1e` `calcvar`, `eval`; `sweep-s1f` `calcvar2`,
+  `varroll`; `calc-emu/eval` under EmuCall; `p51s/emu/calcemu` `eval`) are byte-identical with the fixed scripts; no
+  finding changes. `tools/emu_spec_scan.py` over the 483 memory specs under `workspace/logs/` finds those six and
+  twelve `lane/r55c` development specs, nothing else. **For the batch lanes**: no kept `ai-cat-emu-*` run (plan 0052,
+  `workspace/logs/r52*/emu/`, 233 `.mem` files, through `r52h`; `r52i` had written none at the scan) holds a directive
+  of 0x1000 bytes or more, per-case or `const`, and their per-case `w` writes were always fresh arrays, so none needs a
+  re-run; from now on the batch lanes run the fixed scripts. **States**: stats/0002 surprise (f) now says it lists 59
+  rows (the 56, plus 57/100/106 named by Misc) and why 175 `fullsetgeneric` and 176 `monsterset`, archaeology/0002's two
+  more, stay out (named by Sets `state` parameters; set by the stat 98 callback), from a kept comparison
+  (`workspace/logs/r55e/states-reconcile.txt`). No symbol changes.
+- **2026-10-30 — Phase 2a checkpoint, not started in substance (reverser, `lane/p55a`; owner pause).** Paused on the
+  owner's token-budget stop before any tool was written: no `tools/frame.py`, no replay, no run record, no finding,
+  nothing kept under `workspace/logs/`. Read so far: this plan's Phase 2a and the P1 review (Phase 2a go),
+  `tools/frame_corpus.py` (`read_events` gives per log `(frame, kind, unit type, unit id, entry seeds, exit seeds,
+  line, sub)`, a begin/end pair folded at the begin's line) and the corpus block of `docs/inventory.md` (331 stamped
+  corpus logs, 9 stamped loggers; `stats`, `economy*` and `h6b` without unit ids, `h6b` without seeds). **Resume
+  steps** for a fresh lane on this branch: (1) read the pass order in frame/0001 § 2 and § 5 (the drain runs before
+  `GameTick`; check at which point each logger reads its frame number relative to `GameTick`'s `Game+0xA8`
+  increment, since a drain event logged before the increment carries the previous frame), frame/0002 §§ 1–2 (the ten
+  walks: missiles, players, monsters, objects, items, then each type's every-frame list newest first and its slot
+  oldest first) and frame/0003 §§ 1–4 (the periodic calls after the room sync); (2) write `tools/frame.py` (the plan's
+  name) with tests: a kind-to-pass map per logger, kept in the tool with its anchor per kind, each logged event given
+  its pass rank from its kind and unit type (nested events take their caller's pass), `check` predicting the order of
+  every frame with two or more events and the seed hand-off of each same-seed pair in a frame; (3) dev runs under
+  `workspace/logs/p55a/dev/`, the kept run as run:2026-10-30-frame-order under `workspace/logs/p55a/` with a manifest,
+  each replay `systemd-run --user --scope -p MemoryMax=4G python3 -I tools/frame.py …`, one session at a time;
+  (4) count per logger and kind the events compared, the mismatches (0 or each explained), the limits (no unit id,
+  no seed), the re-chained resynchronised entries of plans 0045 and 0052 (Done-when), and the cross-type every-frame
+  runs per receiving type that the kept logs hold (P1.2 review ruling 1); (5) findings in frame/0004 and the run in
+  frame/experiments, the lane's usage row, the review request.
+- **2026-11-03 — Phase 2a the order model on the kept logs (reverser, `lane/p55a`; review requested).**
+  [frame/0004](../findings/frame/0004-order-on-kept-logs.md), [frame/experiments](../findings/frame/experiments.md)
+  (run:2026-11-03-frame-order; the checkpoint's name `2026-10-30-frame-order`, run on 2026-11-03 and dated so), new
+  tool `tools/frame.py` (`73715f53…`: `kinds`, `reach`, `check`, `rechain`) with `tools/test_frame.py` (18 tests);
+  kept outputs under `workspace/logs/p55a/` (manifest `11056497…`, 8 lines), development runs under
+  `workspace/logs/p55a/dev/` (manifest `dabf2b83…`, 39 lines, passing from `dev/`). No symbol rows. Totals taken after
+  merging `main` `dda63dfd`. The model: 21 ranks per stamp (`GameTick`'s passes, the ten walks, the drain after the
+  tick), a kind-to-pass map of 115 kinds over six logger families with an anchor per kind (the hook's direct-call
+  reach to pass roots, the return address's, a dispatch call site, anim's logged phase, the unit type; nested events
+  take their pair's set). Found, over the 331 frame-stamped corpus logs (6 436 250 events): **0 mismatches** in the
+  192 294 frames with two or more placed events (1 719 463 placed, 267 695 by their own kind), 14 061 separating pairs
+  (3 105 without the logged phase), four control orders failing (17 040, 9 608, 110 and 87 events); the slot lists
+  oldest queued first (4 579 pairs, 0 inverted) and the missiles' every-frame list newest first (24 652 pairs, 0 oldest
+  first) in the game's own runs; a skill request in the drain carries the preceding tick's stamp (87 pairs; frame/0001
+  § 5 raised in part); 1 065 396 one-frame seed hand-offs, 1 023 086 handed, 42 310 stepped, 0 reversed, 0 off (game
+  seed: 440 754, 4 675 stepped). **Done-when:** the 309 395 other frames of the 501 689 with two or more events hold
+  fewer than two placed events (74 of the 89 hooks are reached through pointers the reach does not follow), so they
+  test nothing; the record names it as the limit (frame/0004 § 1, open question 1). Re-chained: 7 more player resyncs
+  (part 2's "nested" class), so 142 of the 281 player gaps; 0 of the 331 monster gaps (no AI line in their logs); of
+  the 3 459 pairs 3 155 + 90 chain, 214 stay open, each named with its first unclosed link (`rechain-gaps.txt`).
+  Cross-type every-frame queues the kept logs hold (P1.2 review ruling 1): monsters 926 (79 in the missiles'
+  every-frame walk, 847 in the players' slot walk), players 0; objects, items and missiles none logged. Limits per
+  logger: stats, economy (all three) and h6b carry no unit id, h6b no seed; combat, two-combat, economy-hire and h6b
+  have no frame with two placed events. frame/0002 §§ 1–2's walk and list order and frame/0001 § 5's stamp carry dated
+  `[C]`-in-part notes. **Review request (architect):** the model's ranks and the kind map's rules (is the
+  return-address rule a fair anchor; the `EF` phase as an observation, not a prediction, and the 3 105 pairs without
+  it); the Done-when reading (0 mismatches where anything is placed, the unplaced frames as the stated limit, or a
+  re-scope); the 7 nested re-chains; the dated notes in frame/0001 and frame/0002. The research-map row and the plans
+  index are not touched (architect's files).
+- **2026-11-03 — Phase 2a Tier B check (architect, `lane/p55a`): accept with fixes (2); Phase 2a met in part.** Fixes:
+  overclaim 1 (frame/0004's headline now says the order is tested by the 14 061 separating pairs, anim 13 967 and skills
+  94, and that the stats logs' 162 249 placed frames hold none; the Done-when "every frame" is not met as written),
+  omission 1 (the thin items of frame/0002's part-`[C]` note carry their pair counts, 7 and 7, 4 by call site). Rulings:
+  (a) the stated limit does not meet the Done-when as written; the second clause (re-chains and a reason per remaining
+  gap) is met; (b) the return-address anchor is a fair `[I]` placement, used for the six listed functions only, with the
+  caveat that "closes" cannot see pointer-table callers; (c) the `EF` phase is rightly an observation. **Re-scope
+  (architect, plan owner):** Phase 2a stays open as *met in part*. Its remainder is closed by either of two steps,
+  recorded here as **P2a-ii**: a static read of the dispatchers behind the pointer tables that reach the 74 open hooks
+  (reverser, no game, one Ghidra; the cheaper cross-check, queued for the next free static lane after 0054·P1), and
+  Phase 2b's `UE0`/`UE1` lines, which close it by observation. Phase 2a closes when P2a-ii lands or 2b's first window
+  places the open hooks, whichever first. The research map's `sim/frame` row says "P2a met in part".

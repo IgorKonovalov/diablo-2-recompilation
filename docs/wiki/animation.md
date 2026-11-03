@@ -1,6 +1,6 @@
 ---
 based_on:
-  - docs/specs/anim/README.md 2026-10-27
+  - docs/specs/anim/README.md 2026-11-03
   - docs/specs/anim/timing.md 2026-10-27
   - docs/specs/anim/movement.md 2026-10-27
 ---

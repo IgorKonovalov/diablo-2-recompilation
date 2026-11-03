@@ -4,8 +4,8 @@ status: draft
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [every reviewed spec listed under Coverage]
 consumed_by: [docs/wiki (plan 0057 Phase 4)]
-tags: {C: 334, I: 101, L: 0}
-updated: 2026-10-30
+tags: {C: 340, I: 104, L: 0}
+updated: 2026-11-03
 ---
 
 # Quirks: the behaviour a faithful reimplementation must keep
@@ -39,8 +39,9 @@ out: presentation (displayed names, strings, the quest log); a note whose whole 
 rules of data/excel and data/calc's pools, with two row-index and code-resolution notes of hirelings and
 items/properties, which a loader built to those specs implements as written (read
 [data/excel's notes](../data/excel.md#reimplementation-notes) whole when writing the loader). Crash and hang paths are
-listed as the specs state them: six from code readings (inferred) and one fault a kept run logged before this plan (Q89,
-confirmed); none was provoked for this page (owner decision 5).
+listed as the specs state them: six from code readings (inferred) and two reached in kept runs before this plan
+(confirmed): Q89, a fault logged on one crafted row, and Q437, the fatal path reached on three paths under emulation; none was
+provoked for this page (owner decision 5).
 
 `python3 -I tools/quirks.py check` verifies the page mechanically: every entry's tag appears in each tagged source it
 cites, every anchor of the entry appears in one of them, and the coverage table accounts for every note of every spec.
@@ -60,16 +61,16 @@ flowchart LR
 
 | Class | Entries | C | I |
 |---|---|---|---|
-| [1. Arithmetic width and sign](#1-arithmetic-width-and-sign) | 22 | 16 | 6 |
+| [1. Arithmetic width and sign](#1-arithmetic-width-and-sign) | 23 | 17 | 6 |
 | [2. Rounding and float](#2-rounding-and-float) | 19 | 14 | 5 |
 | [3. Wrap and overflow](#3-wrap-and-overflow) | 9 | 2 | 7 |
-| [4. Bounds, comparisons and table edges](#4-bounds-comparisons-and-table-edges) | 67 | 48 | 19 |
-| [5. Draw order and dead draws](#5-draw-order-and-dead-draws) | 134 | 114 | 20 |
+| [4. Bounds, comparisons and table edges](#4-bounds-comparisons-and-table-edges) | 68 | 49 | 19 |
+| [5. Draw order and dead draws](#5-draw-order-and-dead-draws) | 137 | 116 | 21 |
 | [6. Data-dependent branches](#6-data-dependent-branches) | 122 | 96 | 26 |
 | [7. Timing and frame edges](#7-timing-and-frame-edges) | 19 | 10 | 9 |
 | [8. Multiplayer edges](#8-multiplayer-edges) | 11 | 9 | 2 |
-| [9. Deliberate oddities that look like bugs](#9-deliberate-oddities-that-look-like-bugs) | 32 | 25 | 7 |
-| **Total** | 435 | 334 | 101 |
+| [9. Deliberate oddities that look like bugs](#9-deliberate-oddities-that-look-like-bugs) | 36 | 27 | 9 |
+| **Total** | 444 | 340 | 104 |
 
 ### 1. Arithmetic width and sign
 
@@ -97,6 +98,7 @@ flowchart LR
 | Q20 | `CSvParam` is read signed in the `gf` list; no stock row reads one. | [I] | fn:D2S_ReadStatsBits@0x0056A4F0 | [save/d2s](../save/d2s.md#reimplementation-notes) n13 |
 | Q21 | Missile function numbers are tested as s16, `> 0` first, so row 568's hit function does not run. | [I] | 0x005ADA0D, 0x005ADA1F | [skills/missiles](../skills/missiles.md#reimplementation-notes) n1 |
 | Q22 | The regeneration tick adds stat 74 whatever its sign: positive heals up to the maximum, negative (poison) bleeds the player. | [C] | fn:sub_00580610_LifeRegenTick@0x00580610, run:2026-10-17-stats | [stats/states § E](../stats/states.md#e-the-regeneration-tick) |
+| Q436 | Signed and unsigned tests: a blank `SubMissile1` (−1) passes the `≠ 0` test of mdo 21, 22, 23, 25 and 26; class 0 passes do 68's test while do 73 and 80 refuse it; do 31 tests `pettype` signed, do 49 unsigned, and do 44 and 45 turn a bad one into 0. | [C] | run:2026-10-20-cat-emu-9b, run:2026-10-21-cat-emu-bar, run:2026-10-20-cat-emu-pal, run:2026-10-20-cat-emu-nec, run:2026-10-21-cat-emu-ass | [skills/catalogue](../skills/catalogue.md#reimplementation-notes) n7 |
 
 ### 2. Rounding and float
 
@@ -134,7 +136,7 @@ flowchart LR
 | Q47 | `XP_Compute` clamps an input above `0x7FFFFF` to `0x7FFFFF`; no kill reached it. | [I] | 0x0057E480, 0x0057E4FF | [player/creation § G](../player/creation.md#g-kill-experience--xp_compute) |
 | Q48 | `XP_ApplyExpRatio` switches to `(exp >> s) × r` when `exp × r` would overflow the shift; no kill reached it. | [I] | 0x0057E390, 0x0057E3E7 | [player/creation § G](../player/creation.md#g-kill-experience--xp_compute) |
 | Q49 | A gold add over a cap writes 0, not the cap; callers clip first, so only paths that skip the clip (the PvP death write) differ. | [I] | fn:sub_0053FF00_UnitAddGoldStat@0x0053FF00 | [items/economy](../items/economy.md#reimplementation-notes) n8 |
-| Q50 | Hang and crash path: a progressive ring's step count is used untested; 0 never ends, a negative count reads below the direction tables until the index wraps. | [I] | 0x005D4657, 0x005D467D, 0x005D4D77, 0x005D4DAA | [combat/delivery](../combat/delivery.md#reimplementation-notes) n11 |
+| Q50 | Hang and crash path: a progressive ring's step count is used untested; 0 never ends, a negative count reads below the direction tables until the index wraps. | [I] | 0x005D4657, 0x005D467D, 0x005D4D77, 0x005D4DAA | [combat/delivery](../combat/delivery.md#reimplementation-notes) n11; [skills/catalogue](../skills/catalogue.md#reimplementation-notes) n8 |
 
 ### 4. Bounds, comparisons and table edges
 
@@ -207,6 +209,7 @@ flowchart LR
 | Q115 | The writer's buffer is 8 KiB; no write passed it. | [I] | fn:PLRSAVE_Save@0x00532400 | [save/d2s](../save/d2s.md#reimplementation-notes) n14 |
 | Q116 | Missile `LevRange` counts every level: `LevRange · lvl + Range`, not from level 2. | [C] | fn:sub_0059FA30_MissileCreate@0x0059FA30, run:2026-10-27-skills | [skills/missiles](../skills/missiles.md#reimplementation-notes) n8 |
 | Q117 | The path's tenth subtile crossing is unchecked: a very fast step can pass a blocked subtile after ten free crossings. | [I] | 0x00650292, 0x006502AA | [anim/movement](../anim/movement.md#reimplementation-notes) n4 |
+| Q437 | Crash path on reachable data: `MissNovaCreate` with `n ≥ 41` (mhit 38, 45), do 123's class at or past the Missiles count and st 20's item class past the item count reach the fatal path `0x00408090`. | [C] | 0x00408090, run:2026-10-20-cat-emu-9d, run:2026-10-21-cat-emu-dru, run:2026-10-20-cat-emu-nec | [skills/catalogue](../skills/catalogue.md#reimplementation-notes) n4 |
 
 ### 5. Draw order and dead draws
 
@@ -230,11 +233,11 @@ flowchart LR
 | Q133 | Draws that do not happen: a chance of 0 (block, dodge, deadly strike, crushing blow, open wounds) and a degenerate damage range `hi ≤ lo` draw nothing, on the paths the run checked; the monster HP roll differs (it draws `RangeB(hi − lo + 1)`). | [C] | fn:COMBAT_RollRange@0x0057A880, run:2026-10-16-combat | [combat/README](../combat/README.md#reimplementation-notes) n3; [combat/damage](../combat/damage.md#reimplementation-notes) n4 |
 | Q134 | Elements are built in the order fire, lightning, cold, magic. | [C] | 0x0057B932, 0x0057BA4C, run:2026-10-16-combat | [combat/damage](../combat/damage.md#reimplementation-notes) n3 |
 | Q135 | `COMBAT_PrgFinisher` peeks: it steps a copy of the attacker's seed and restores it, so advancing the real seed there shifts every later attacker draw. | [I] | fn:COMBAT_PrgFinisher@0x005D5220, 0x005D5368, 0x005D538C | [combat/delivery](../combat/delivery.md#reimplementation-notes) n8; [combat/README](../combat/README.md#reimplementation-notes) n4 |
-| Q136 | The finisher's entries 37, 39, 41 and 143 step the attacker's seed once at entry, before their record test, even when they create nothing. | [C] | run:2026-10-21-cat-emu-ass, 0x005D4E80, 0x005D4F50 | [combat/delivery](../combat/delivery.md#reimplementation-notes) n9; [skills/dispatch](../skills/dispatch.md#reimplementation-notes) n4 |
+| Q136 | The finisher's entries 37, 39, 41 and 143 step the attacker's seed once at entry, before their record test, even when they create nothing. | [C] | run:2026-10-21-cat-emu-ass, 0x005D4E80, 0x005D4F50 | [combat/delivery](../combat/delivery.md#reimplementation-notes) n9; [skills/dispatch](../skills/dispatch.md#reimplementation-notes) n4; [combat/README](../combat/README.md#reimplementation-notes) n4; [skills/catalogue](../skills/catalogue.md#reimplementation-notes) n1 |
 | Q137 | Entry 38 draws two or three times on the attacker's seed after delivering the queued hit. | [I] | 0x0056E1C4 | [combat/delivery](../combat/delivery.md#reimplementation-notes) n9; [combat/README](../combat/README.md#reimplementation-notes) n4 |
-| Q138 | A weapon-share missile steps its owner's seed at least once for stat 337, whatever its value. | [C] | fn:sub_0064A850_MissileCritRoll@0x0064A850, run:2026-10-25-skills | [skills/missiles](../skills/missiles.md#reimplementation-notes) n3 |
+| Q138 | A weapon-share missile steps its owner's seed at least once for stat 337, whatever its value. | [C] | fn:sub_0064A850_MissileCritRoll@0x0064A850, run:2026-10-25-skills | [skills/missiles](../skills/missiles.md#reimplementation-notes) n3; [combat/README](../combat/README.md#reimplementation-notes) n5; [skills/README](../skills/README.md#reimplementation-notes) n2 |
 | Q139 | The missile's deadly strike and mastery steps still need a chance above 0. | [I] | fn:sub_0064A850_MissileCritRoll@0x0064A850, 0x0064A864, 0x0064A890 | [combat/README](../combat/README.md#reimplementation-notes) n5 |
-| Q140 | Do not merge the two critical chains: the missile's (stat 337 first, drawn at 0) is not the melee build's. | [I] | fn:sub_0064A850_MissileCritRoll@0x0064A850, fn:COMBAT_BuildDamage@0x0057B7D0 | [skills/README](../skills/README.md#reimplementation-notes) n2 |
+| Q140 | Do not merge the two critical chains: the missile's (stat 337 first, Q138) is not the melee build's. | [I] | fn:sub_0064A850_MissileCritRoll@0x0064A850, fn:COMBAT_BuildDamage@0x0057B7D0 | [skills/README](../skills/README.md#reimplementation-notes) n2 |
 | Q141 | A stat-event handler draws on its own unit's seed: shiver armour (3) and skill on get-hit (21) on the defender's, skill on death (30) on the dying unit's, knockback, howl, stupidity, skill on attack or hit and reanimate on the attacker's. | [I] | data:g_StatEventFuncs@0x007325B0, 0x005BF9CF, 0x005C0603 | [combat/delivery](../combat/delivery.md#reimplementation-notes) n12 |
 | Q142 | Defence comes before the block: a miss draws no block; a running defender skips the to-hit draw but still draws the block. | [I] | fn:COMBAT_MeleeHitTest@0x0057EC10 | [combat/to-hit](../combat/to-hit.md#reimplementation-notes) n6 |
 | Q143 | Stat 328 (the request counter) rises on every skill request, before the checks, and seeds every pierce count: a refused request still changes later pierce counts. | [I] | 0x00549D50, fn:sub_0059F940_MissilePierceCount@0x0059F940 | [skills/dispatch](../skills/dispatch.md#reimplementation-notes) n1; [skills/README](../skills/README.md#reimplementation-notes) n3 |
@@ -346,6 +349,9 @@ flowchart LR
 | Q249 | An object's opened mode is set without an animation start: no start draw at the operate end. | [I] | fn:sub_00581490_ObjEvOperateEnd@0x00581490 | [anim/timing](../anim/timing.md#reimplementation-notes) n6 |
 | Q250 | A damaging aura's run consumes one draw on the caster's seed in each run that draws, even when the state code itself draws nothing. | [C] | fn:SKILLS_RollElemDamage@0x0056E0C0, run:2026-10-17-stats | [stats/states](../stats/states.md#reimplementation-notes) n7 |
 | Q251 | Draw once per aura run, not once per unit hit: the one roll's packet is copied to every unit the run hits. | [I] | fn:sub_005CF3A0_AuraHitDo@0x005CF3A0, fn:sub_005CF2A0_AuraHitUnitCb@0x005CF2A0 | [stats/states](../stats/states.md#reimplementation-notes) n7 |
+| Q438 | do 112 (`MonCurseCast`) steps the caster's seed once before any test, so a refused cast still moves the seed by one (the finisher entries' form is Q136). | [C] | run:2026-10-21-cat-emu-8b | [skills/catalogue](../skills/catalogue.md#reimplementation-notes) n1 |
+| Q439 | Not the caster's seed: mdo 30 draws on the target unit's seed, the shrine entries on the shrine object's, st 55 on a local seed no unit keeps. | [C] | run:2026-10-20-cat-emu-9b, run:2026-10-21-cat-emu-8b, run:2026-10-21-cat-emu-item | [skills/catalogue](../skills/catalogue.md#reimplementation-notes) n2 |
+| Q440 | do 55 and do 58 (after their boundaries) draw on the target's seed, and do 81's per-unit roll on each unit's. | [I] | 0x005C4DF0, 0x005C56C0, 0x005D0920 | [skills/catalogue](../skills/catalogue.md#reimplementation-notes) n2 |
 
 ### 6. Data-dependent branches
 
@@ -478,7 +484,7 @@ flowchart LR
 
 | Id | Quirk | Tag | Anchors | Source |
 |---|---|---|---|---|
-| Q374 | A scheduled mode's end is `n` frames after its start; the community breakpoint tables count `N = n − 1`. With the stock client a held normal action restarts at `T + N`, held Lightning at `T + n`; the server starts the next action in the frame its request arrives. | [C] | fn:SUNIT_ScheduleModeEvents@0x005539B0, run:2026-10-27-anim | [anim/timing](../anim/timing.md#reimplementation-notes) n1 |
+| Q374 | A scheduled mode's end is `n` frames after its start; the community breakpoint tables count `N = n − 1`. With the stock client a held normal action restarts at `T + N`, held Lightning at `T + n`; the server starts the next action in the frame its request arrives. | [C] | fn:SUNIT_ScheduleModeEvents@0x005539B0, run:2026-10-27-anim | [anim/timing](../anim/timing.md#reimplementation-notes) n1; [anim/README](../anim/README.md#reimplementation-notes) n2 |
 | Q375 | A scheduled mode does not follow a rate change: its events stay where its start put them; an every-frame monster takes the new rate at its next advance. | [I] | fn:UNIT_AnimSetRate@0x00623F50 | [anim/README](../anim/README.md#reimplementation-notes) n1 |
 | Q376 | Two rate calls per server start: the first, before `+0x48` is written, sees the previous mode's length; the schedule uses the second. | [I] | fn:UNIT_AnimInit@0x00624390, fn:SUNIT_AnimInit@0x005533D0 | [anim/timing](../anim/timing.md#reimplementation-notes) n2 |
 | Q377 | A monster's frame-function result is ignored: an every-frame attack or skill mode with no end call of its own lasts until another command. | [I] | fn:sub_005A7BA0_MonModeFrameEvent@0x005A7BA0 | [anim/timing](../anim/timing.md#reimplementation-notes) n5 |
@@ -552,23 +558,30 @@ These are faithful 1.14d behaviour that reads as a mistake, or that contradicts 
 | Q433 | Quest bit 15 survives: only word 9's first-join check clears it, so a character that saved with a reward pending carries it on. | [I] | 0x00599293 | [quests/progression § A](../quests/progression.md#a-the-quest-record) |
 | Q434 | The ally test of `StartUsedSkill` is dead: do not add a refusal there. | [I] | 0x0056FBB2, 0x0056FBC4 | [skills/dispatch](../skills/dispatch.md#reimplementation-notes) n8 |
 | Q435 | The stat take test for ops 2–5 reads the source row's `+0x0DE + 6k` word, `strength` (0) on every stock source; do not "fix" it to `op base`. | [C] | 0x006267C0, run:2026-10-17-stats | [stats/aggregate](../stats/aggregate.md#reimplementation-notes) n2 |
+| Q441 | Words read before anything writes them: do 57's block word `+0x24` is the frame slot `ebp−0x10`, do 140's class out word is `EBP − 0x1C`, and mhit 52's class word `+0x10` is never written; keep the stale values, which only a logged case gives. | [C] | run:2026-10-20-cat-emu-nec, run:2026-10-21-cat-emu-8c, run:2026-10-20-cat-emu-9d | [skills/catalogue](../skills/catalogue.md#reimplementation-notes) n3 |
+| Q442 | What follows from mhit 52's unwritten class word: its missiles are row 0 by the callee's reading. | [I] | 0x005AC940 | [skills/catalogue](../skills/catalogue.md#reimplementation-notes) n3 |
+| Q443 | Return values that look wrong: mdo 14 with a skill or level ≤ 0 returns 2 without running mdo 1, and do 63 returns 1 for a bad missile class. | [C] | run:2026-10-20-cat-emu-9a, run:2026-10-20-cat-emu-nec | [skills/catalogue](../skills/catalogue.md#reimplementation-notes) n6 |
+| Q444 | do 13 returns 0 on every path. | [I] | fn:sub_005DBC60_SkillDo13Fend@0x005DBC60 | [skills/catalogue](../skills/catalogue.md#reimplementation-notes) n6 |
 
 ## Crash and hang paths
 
-Six from the specs' code readings and one (Q89) a fault a kept run logged on row 83; none was provoked for this page,
-and the harness never provokes one (owner decision 5). The entries are in their classes above: Q44, Q45, Q50, Q65, Q74, Q89, Q93.
+Six from the specs' code readings and two reached in kept runs: Q89, a fault logged on row 83, and Q437, the fatal path
+`0x00408090` reached under emulation on three paths of the catalogue. None was provoked for this page, and the harness never
+provokes one (owner decision 5). The entries are in their classes above: Q44, Q45, Q50, Q65, Q74, Q89, Q93, Q437; Q50's
+hang is also the catalogue's endless-loop note.
 
 ## Coverage
 
 One row per spec with a *Reimplementation notes* section: its note count, the notes taken (cited by at least one entry),
 and the skipped ones by reason. "Weaker duplicate" is a note that restates, at a weaker tag, a statement another spec
 holds raised; the entry takes the raised statement and the disagreement is routed to the spec-writer's backlog
-([entry](../../backlog/2026-10-30-spec-writer-spec-writer-quirks-harvest-tag-disagreements.md)). Skipped: 29 notes,
-presentation 5, table rule 12, not a trap 9, wall-clock 2, weaker duplicate 1.
+([entry](../../backlog/archive/2026-10-30-spec-writer-spec-writer-quirks-harvest-tag-disagreements.md); the three overviews it
+named now state the raised clause, so none is left). Skipped: 29 notes, presentation 5, table rule 12, not a trap 10,
+wall-clock 2, weaker duplicate 0.
 
 | Spec | Notes | Taken | Presentation | Table rule | Not a trap | Wall-clock | Weaker duplicate |
 |---|---|---|---|---|---|---|---|
-| [anim/README](../anim/README.md#reimplementation-notes) | 2 | 1 | — | — | — | — | n2 |
+| [anim/README](../anim/README.md#reimplementation-notes) | 2 | 2 | — | — | — | — | — |
 | [anim/movement](../anim/movement.md#reimplementation-notes) | 4 | 4 | — | — | — | — | — |
 | [anim/timing](../anim/timing.md#reimplementation-notes) | 7 | 7 | — | — | — | — | — |
 | [chain/README](../chain/README.md#reimplementation-notes) | 6 | 6 | — | — | — | — | — |
@@ -611,11 +624,12 @@ presentation 5, table rule 12, not a trap 9, wall-clock 2, weaker duplicate 1.
 | [rng/seeds](../rng/seeds.md#reimplementation-notes) | 12 | 11 | — | — | n9 | — | — |
 | [save/d2s](../save/d2s.md#reimplementation-notes) | 14 | 14 | — | — | — | — | — |
 | [skills/README](../skills/README.md#reimplementation-notes) | 3 | 3 | — | — | — | — | — |
+| [skills/catalogue](../skills/catalogue.md#reimplementation-notes) | 8 | 7 | — | — | n5 | — | — |
 | [skills/dispatch](../skills/dispatch.md#reimplementation-notes) | 8 | 8 | — | — | — | — | — |
 | [skills/missiles](../skills/missiles.md#reimplementation-notes) | 10 | 10 | — | — | — | — | — |
 | [stats/aggregate](../stats/aggregate.md#reimplementation-notes) | 6 | 6 | — | — | — | — | — |
 | [stats/states](../stats/states.md#reimplementation-notes) | 7 | 7 | — | — | — | — | — |
-| **Total** | 439 | 410 | — | — | — | — | — |
+| **Total** | 447 | 418 | — | — | — | — | — |
 
 Step notes taken beyond the *Reimplementation notes*: player/creation § G (the /256 factors, the `0x7FFFFF` clamp,
 the ratio shift's overflow branch) and § J (the party share's f32 quotient), monsters/stats § A (`MulDiv`), stats/states

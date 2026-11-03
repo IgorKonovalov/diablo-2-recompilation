@@ -555,6 +555,11 @@ queue line:
 - **The emulator's memory spec**: a `bytes` directive of 0x1000 bytes or more was not applied before each case (the
   previous case's writes stayed), while 0x200–0xFFF bytes were (`dev/zerotest/`); the kept run's spec writes 0x800-byte
   directives. No earlier kept run of this subsystem uses a directive that long (P1.1 and P1.2's memory specs scanned).
+  *2026-11-03 (lane/r55e):* `[C]` the cause was Ghidra's page store keeping the spec's own byte array as the page
+  for a directive that starts on a 4 KiB boundary and is 0x1000 bytes or more; the three emulator scripts now write a
+  fresh copy per case, the no-case-dependence test passes for every length and alignment and its pre-fix control fails
+  exactly the aligned long ones, and the six earlier kept emulations with such a directive re-run byte-identical.
+  The kept run of this finding (0x800-byte directives) is unaffected. (run:2026-11-03-emu-spec-reapply)
 
 ## Open questions
 

@@ -1,6 +1,6 @@
 ---
 based_on:
-  - docs/specs/skills/README.md 2026-10-30
+  - docs/specs/skills/README.md 2026-11-03
   - docs/specs/skills/dispatch.md 2026-10-30
   - docs/specs/skills/missiles.md 2026-10-30
   - docs/specs/skills/catalogue.md 2026-10-30

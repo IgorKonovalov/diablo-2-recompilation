@@ -120,7 +120,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   cite the section that holds their tagged form. `tools/quirks.py` (`harvest`, `check`) holds each entry to its source's
   tag and anchors and the coverage table to the notes; it reports 0 errors. Three tag disagreements between overviews and
   the specs that raise the same statement went to the backlog
-  ([entry](../backlog/2026-10-30-spec-writer-spec-writer-quirks-harvest-tag-disagreements.md)). The machine-readable
+  ([entry](../backlog/archive/2026-10-30-spec-writer-spec-writer-quirks-harvest-tag-disagreements.md)). The machine-readable
   form stays the open question for the review.
 - **2026-10-30 — Phase 1 review (architect, Tier A, `lane/s57`): accept with fixes (17).** Merged `main` first (plan log
   kept both entries; the research-map row keeps main's approval date with the lane's draft-spec status; ledger rows kept
@@ -149,3 +149,52 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   map row rewritten (P1 accepted, P2 next). **P2 may start** (reverser, static). Ledger: architect-review row;
   the lane's usage left to the orchestrator. Categories: overclaim 2, misread 2, omission 10, wrong anchor 2,
   other 1.
+- **2026-11-03 — Phase 1 routing entry: the three tag disagreements fixed (spec-writer, `lane/s63`, from `main`
+  `00c53f7f`).** Backlog [2026-10-30-spec-writer-spec-writer-quirks-harvest-tag-disagreements](../backlog/archive/2026-10-30-spec-writer-spec-writer-quirks-harvest-tag-disagreements.md)
+  closed. Each overview note split, the clause the owning spec raises stated `[C]` with that spec's anchor and run:
+  [combat/README](../specs/combat/README.md#reimplementation-notes) n4 (entries 37, 39, 41 and 143 step once at entry
+  `[C]`, ADR-0021, run:2026-10-21-cat-emu-ass, as combat/delivery n9 and skills/dispatch n4; the peek and entry 38
+  `[I]`) and n5 (stat 337 drawn at 0 `[C]`, run:2026-10-25-skills, as skills/missiles n3; deadly strike and mastery
+  `[I]`): C 41 → 43; [skills/README](../specs/skills/README.md#reimplementation-notes) n2 (stat 337 at 0 `[C]`; "not
+  the melee build's" `[I]`): C 23 → 24; [anim/README](../specs/anim/README.md#reimplementation-notes) n2 `[I]` → `[C]`
+  (run:2026-10-27-anim, as anim/timing n1, the server's start scoped to L4's cases): C 13 / I 14 → C 14 / I 13. The
+  quirks index adds no second version: Q136, Q138 and Q374 now also cite the overview notes, Q140's stat-337 clause
+  points at Q138, the anim/README coverage row takes n2 (taken 411 of 439, weaker duplicate 0). `tools/quirks.py
+  check`: the one error left (Q3 `skills/catalogue.md` has no coverage row) is on `main` before this lane. Wiki
+  `based_on` dates of combat, skills and animation moved to 2026-11-03 (their text already said what the raised
+  clauses say). Research-map rows of the three overviews and the quirks row updated.
+- **2026-11-03 — `lane/s63` Tier A review (architect): accept with fixes (2)**, both in the player/creation half; this
+  entry's three overview notes and the index edits pass unchanged. The review and the Q3 route
+  ([2026-11-03-architect-spec-writer-quirks-catalogue-coverage-row](../backlog/archive/2026-11-03-architect-spec-writer-quirks-catalogue-coverage-row.md))
+  are in [plan 0038's log](0038-inferred-claims-sweep.md#implementation-log).
+- **2026-11-03 — Q3 coverage row: skills/catalogue harvested (spec-writer, `lane/s64`, from `main` `7fddf41d`).**
+  Backlog [2026-11-03-architect-spec-writer-quirks-catalogue-coverage-row](../backlog/archive/2026-11-03-architect-spec-writer-quirks-catalogue-coverage-row.md)
+  closed. The 8 [skills/catalogue](../specs/skills/catalogue.md#reimplementation-notes) notes, harvested by Phase 1's
+  rules: 7 taken, 1 skipped. Nine new entries, each at the end of its class: Q436 (n7, the signed and unsigned tests,
+  class 1, C), Q437 (n4, the fatal path `0x00408090` on reachable data, class 4, C, a crash path), Q438 (n1, do 112's
+  step before any test, class 5, C), Q439 and Q440 (n2, the draws on a seed not the caster's, class 5, C and I), Q441
+  and Q442 (n3, the words read before any write and mhit 52's row-0 missiles, class 9, C and I), Q443 and Q444 (n6, the
+  return values, class 9, C and I). No second version: n1's finisher half is Q136 and n8's endless loop is Q50, which
+  now also cite the catalogue notes. n5 (identical bodies) is skipped as not a trap: it says which functions share
+  code, which a reimplementation built from the catalogue's blocks gets right either way. Index: 444 entries, C 340 /
+  I 104 / L 0; coverage 447 notes, 418 taken, 29 skipped (not a trap 10); crash and hang paths 8 (Q437 the second
+  reached in a kept run). `tools/quirks.py check` 0 errors. Research-map quirks row counts updated.
+- **2026-11-03 — `lane/s64` Tier A review (architect): accept.** Each of the nine entries was read against its
+  catalogue note and § table. The tags are the owner's: n2, n3 and n6 split by tag into Q439/Q440, Q441/Q442 and
+  Q443/Q444. Q438's "before any test" is the catalogue § draw table's do 112 row and the P2 block's `draw#1`. Anchors
+  are copied from the notes. Ids are at the end of their classes. One version only: Q438 holds do 112 alone and points
+  to Q136 for prg 37, 39, 41 and 143. Q442 is n3's `[I]` consequence (row 0 by the callee's reading), not a restatement
+  of Q441's unwritten words. The three rulings: (1) **n5 skip upheld.** do 152 = do 95, st 59 = st 53 with calc1 for
+  calc2, and do 148/149 differing in the monster-data byte (+0x0E or +0x0F) are each stated in the catalogue's own
+  block. A reimplementation built from those blocks gets the same behaviour whether or not it shares code, and the one
+  difference a merge could lose is the one the blocks spell out. The note is about how the code is organised, not a
+  trap. (2) **n3 in class 9 upheld.** A read of a stack slot or struct word no one has written looks like a bug, and a
+  careful reimplementer would "fix" it by zeroing. Class 9 is where the index keeps such behaviour (Q74's heap
+  over-read sits in class 4 because its trap is the buffer edge, not the stale value). (3) **n8 folded into Q50
+  upheld.** n8's rings of prg 37 and 143 and their range 0x005D4657–0x005D467D fall inside combat/delivery n11, which
+  Q50 restates. Both are `[I]`, and n11 adds the negative count, so a separate entry would be a second, narrower version
+  of the same statement. Counts recounted by script: front matter and by-class (23/19/9/68/137/122/19/11/36, C 340 /
+  I 104 / L 0, 444 entries), coverage 48 rows, 447 notes, 418 taken, 29 skipped (presentation 5, table rule 12, not a
+  trap 10, wall-clock 2). The crash list has 8 entries (six `[I]` code readings, plus Q89 and Q437 reached in runs dated
+  before this plan's approval). The research-map row was rewritten whole and matches. `tools/quirks.py check`: 0
+  errors. Gate green, W7 0 warnings, no warning on a touched file. Fixes (0).

@@ -54,7 +54,9 @@ Static reading of the pinned `Game.exe` in Ghidra (project copy `workspace/ghidr
   packets of every client of every game, in arrival order; `SrvProcessClientMessage` → `SrvPacketDispatch`), queue 2
   (host control; `SrvHostMessage`). Each in-game packet takes its game's lock and runs its handler at once. So a packet
   applied while `Game+0xA8 = N` acts before every pass of frame `N + 1`. (fn:sub_0052CFE0_SrvDrainMessages@0x0052CFE0,
-  fn:sub_006BEAD0_NetQueuePop@0x006BEAD0, fn:sub_0053F3D0_SrvProcessClientMessage@0x0053F3D0)
+  fn:sub_006BEAD0_NetQueuePop@0x006BEAD0, fn:sub_0053F3D0_SrvProcessClientMessage@0x0053F3D0) *2026-11-03 (Phase 2a):* the stamp half is `[C]` in part: 87 skill
+  requests (`PLRMSG_SkillAtXY`, `PLRMSG_SkillAtUnit`) are logged after a missile frame of their own stamp, which a drain
+  before the tick could not give ([frame/0004](0004-order-on-kept-logs.md) § 2, run:2026-11-03-frame-order).
 - [I] **Two games share no seed; one global couples them.** In `GameTick`'s whole closure (2 429 functions; 771
   indirect calls not followed) every RNG call takes its seed through a pointer and no absolute address is a seed
   argument; the absolute writes in game code are the frames-per-second counters, the hit-class counter

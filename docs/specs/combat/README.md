@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, monsters/stats, player/creation, items/properties, data/calc]
 consumed_by: [items/tc]
-tags: {C: 41, I: 43, L: 5}
-updated: 2026-10-27
+tags: {C: 43, I: 43, L: 5}
+updated: 2026-11-03
 ---
 
 # Combat formulas: the attack event, its seeds and its branches
@@ -489,13 +489,16 @@ crushing blow at `/players 8` ([delivery](delivery.md#worked-example)). [C] (run
   0x0057BC2F–0x0057BC8A, 0x0057C560–0x0057C568, 0x0057B0FA–0x0057B124, run:2026-10-16-combat)
 - **Draws that do not happen**: a chance of 0 (block, dodge, deadly strike, crushing blow, open wounds) and a
   degenerate damage range draw nothing, on the paths the run checked: § B1, B2 and the player's side of B3. [C] (run:2026-10-16-combat)
-- **The finisher peeks; its entries draw.** `COMBAT_PrgFinisher` steps a copy of the attacker's seed and restores
-  it, but entries 37, 39, 41 and 143 step the real seed once at entry and 38 draws two or three times on it (B5). A
-  reimplementation advances the seed for the entries and not for the peek. [I] (0x005D5368–0x005D538C, 0x005D4E80,
-  0x005D4F50, 0x0056E1C4)
-- **The missile creation's critical strike draws at 0.** A weapon-share missile always steps its owner's seed once
-  for stat 337, whatever its value (B4); its deadly strike and mastery steps still need a chance above 0. [I]
-  (fn:sub_0064A850_MissileCritRoll@0x0064A850, 0x0064A864–0x0064A890)
+- **The finisher peeks; its entries draw.** Entries 37, 39, 41 and 143 step the attacker's real seed once at entry,
+  before their record test (B5; [combat/delivery](delivery.md#reimplementation-notes) note 9). [C] (ADR-0021,
+  run:2026-10-21-cat-emu-ass, 0x005D4E80, 0x005D4F50) `COMBAT_PrgFinisher` itself steps a copy of the attacker's seed
+  and restores it, and entry 38 draws two or three times on the real seed; a reimplementation advances the seed for
+  the entries and not for the peek. [I] (0x005D5368–0x005D538C, 0x0056E1C4)
+- **The missile creation's critical strike draws at 0.** A weapon-share missile steps its owner's seed once for stat
+  337 even when it is 0 (B4): in the run, one step per creation of a row that takes weapon damage and none for any
+  other row ([skills/missiles](../skills/missiles.md#reimplementation-notes) note 3, C2). [C]
+  (fn:sub_0064A850_MissileCritRoll@0x0064A850, run:2026-10-25-skills) Its deadly strike and mastery steps still need
+  a chance above 0. [I] (0x0064A864–0x0064A890)
 - **A monster attack and its `MonAttackStats` are two moments.** The `El` draws happen when the attack mode starts,
   the to-hit and build at the hit frame, with the monster's AI drawing in between. [C]
   (fn:sub_005A4F50_MonAttackStats@0x005A4F50, run:2026-10-16-combat)
