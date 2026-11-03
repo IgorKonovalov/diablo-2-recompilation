@@ -10,7 +10,7 @@
 **Question:** on each frame a monster (or a summon, or a hireling) is active, what does its AI do: when does it
 think, which target does it pick, which mode or skill does it choose, which path request does it make, and which draws
 does it make on which seed? This is phase (5) of [ADR-0014](../adrs/0014-scope-game-simulation.md), the last one,
-after animation and frame timing (phase (4), plan [0050](0050-animation-frame-timing.md)). When it is done:
+after animation and frame timing (phase (4), plan [0050](done/0050-animation-frame-timing.md)). When it is done:
 - `docs/tables/MonAI.md` (the AI index) and the gate survey `ai` list every AI a stock row uses;
 - `docs/findings/ai/` names the AI tick, the shared machinery and every AI function a stock row reaches, each with
   its draws per seed;

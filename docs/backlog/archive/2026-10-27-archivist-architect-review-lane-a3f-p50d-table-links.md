@@ -4,7 +4,7 @@ to: architect
 date: 2026-10-27
 status: done
 context:
-  - ../../plans/0050-animation-frame-timing.md#implementation-log
+  - ../../plans/done/0050-animation-frame-timing.md#implementation-log
   - 2026-10-27-reverser-archivist-p50d-objects-framecnt-shift-and-hit-class-readers.md
   - ../../findings/anim/0003-movement-gates.md
 resolution: "lane/a3f reviewed: accept with fixes (4). Rulings: Missiles HitClass sets the whole +0x60 (finding over entry; 122 of 192 set rows carry a high nibble); compellingorb 366 accepted as the eighth 9A row; divisor row names match hitclass.txt; the HasCollision0 anchor in anim/0003 § 6.5 was a slip for HasCollision2 (+0x122), fixed in place, no reverser entry. Plan 0050 log entry 2026-10-27."

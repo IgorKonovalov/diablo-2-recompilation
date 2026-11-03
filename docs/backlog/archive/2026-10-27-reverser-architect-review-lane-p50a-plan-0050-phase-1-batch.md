@@ -4,7 +4,7 @@ to: architect
 date: 2026-10-27
 status: done
 context:
-  - ../../plans/0050-animation-frame-timing.md#implementation-log
+  - ../../plans/done/0050-animation-frame-timing.md#implementation-log
   - ../../findings/anim/0001-modes-frames.md
 resolution: "2026-10-27 architect: accept with fixes (7); rulings (a)-(f) and the blind check in the plan 0050 log; P1.2 may start after the merge"
 ---

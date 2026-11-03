@@ -5,7 +5,7 @@ date: 2026-10-27
 status: done
 context:
   - ../../../tools/test_d2s.py
-  - ../../plans/0050-animation-frame-timing.md
+  - ../../plans/done/0050-animation-frame-timing.md
 resolution: "Reviewed at 65923cc2: accept (plan 0050 log). All 134 pins equal the run:2026-10-27-anim manifest; 10 rebuilt identical; test_d2s 60 OK."
 ---
 

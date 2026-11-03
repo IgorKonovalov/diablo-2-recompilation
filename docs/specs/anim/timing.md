@@ -323,7 +323,7 @@ E1. SUNIT_ScheduleModeEvents(game, unit):                         [C] (fn:SUNIT_
   (fn:SUNIT_ScheduleModeEvents@0x005539B0, 0x00553A16, 0x00553A0C–0x00553AF1)
 - E2. [I] On stock data a player never reaches the no-event case (the start frames 1 and 2 are A1's and A2's and no
   stock record with an event reaches `r ≥ 256 (F − S)` at a factor ≤ 175); a two-frame monster record would need
-  `r ≥ 512`, which no stock source gives. ([plan 0050 log](../../plans/0050-animation-frame-timing.md#implementation-log),
+  `r ≥ 512`, which no stock source gives. ([plan 0050 log](../../plans/done/0050-animation-frame-timing.md#implementation-log),
   P1.2 review rulings (f) and `lane/a50t` (c); fn:SUNIT_ScheduleModeEvents@0x005539B0)
 - E3. [I] **Reschedules (catalogue).** Three functions cancel kinds 0 and 1 and rebuild the list from an elapsed
   position `p` (frames): steps `256 p + k r < L`, the scan from frame `p − 1`, every code 1–4 queued with `b = 0`, no
@@ -1000,7 +1000,7 @@ run:2026-10-27-anim's schedules hold `n(r)` at every logged rate (E2), but these
   [PlrType](../../tables/PlrType.md), [ObjType](../../tables/ObjType.md), and the § Timing sections of CharStats,
   MonStats, MonStats2, Weapons, Skills, States, ItemStatCost and Objects.
 - Tools: `tools/anim.py` (the model and `check`), `tools/anim_rates.py` (the rate tables and `bp`), `tools/anim_scan.py`,
-  `tools/animdata.py`, `tools/anim_survey.py`. Plan: [0050](../../plans/0050-animation-frame-timing.md).
+  `tools/animdata.py`, `tools/anim_survey.py`. Plan: [0050](../../plans/done/0050-animation-frame-timing.md).
 - Upstream: [rng](../rng/README.md), [stats/aggregate](../stats/aggregate.md), [monsters/stats](../monsters/stats.md).
   Downstream: [skills/dispatch](../skills/dispatch.md), [combat](../combat/README.md), [objects](../objects/README.md),
   [anim/movement](movement.md).

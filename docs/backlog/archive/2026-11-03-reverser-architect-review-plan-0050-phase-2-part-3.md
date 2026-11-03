@@ -5,7 +5,7 @@ date: 2026-11-03
 status: done
 context:
   - ../../findings/anim/experiments.md
-  - ../../plans/0050-animation-frame-timing.md
+  - ../../plans/done/0050-animation-frame-timing.md
 resolution: "Tier B check 2026-11-03 (lane/p50g): accept, 0 fixes; merged at f9f0738d. Part 3 complete; the Done-when is met or named short with counts. Two items listed: the 81-versus-3 wording (tightened at merge) and the anim/0003 cross-reference of the run-turn measurement (carried by the spec-writer re-tag pass)."
 ---
 

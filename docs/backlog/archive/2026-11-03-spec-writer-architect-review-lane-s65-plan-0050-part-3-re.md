@@ -4,7 +4,7 @@ to: architect
 date: 2026-11-03
 status: done
 context:
-  - ../../plans/0050-animation-frame-timing.md#implementation-log
+  - ../../plans/done/0050-animation-frame-timing.md#implementation-log
   - ../../findings/anim/experiments.md#run2026-10-30-anim-p3b
 resolution: "Tier A review 2026-11-03: accept with fixes (5: overclaim 2, wrong anchor 1, other 2), applied on lane/s65; research-map anim rows rewritten; plan 0050 ready to close."
 ---
