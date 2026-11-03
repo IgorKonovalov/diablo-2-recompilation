@@ -337,6 +337,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005416B0,func,sub_005416B0_EventQueueAt,,I,anim/timing,docs/findings/anim/0001-modes-frames.md
 0x005417D0,func,sub_005417D0_UnitQueueEvent,,C,anim/timing,docs/findings/anim/0001-modes-frames.md
 0x00541800,func,sub_00541800_UnitQueueEventCb,,I,sim/frame,docs/findings/frame/0002-unit-events-queue.md
+0x00541860,func,sub_00541860_MonAiCtlGet,,I,monsters/ai,docs/findings/ai/0010-batch9.md
 0x005418C0,func,sub_005418C0_InactiveRecordTake,,I,objects,docs/findings/objects/0001-object-population.md
 0x00541990,func,sub_00541990_InactiveItemRestoreOne,,C,drlg/lifecycle,docs/findings/drlg/0009-room-lifecycle.md
 0x00541AC0,func,sub_00541AC0_InactiveItemsRestore,,I,objects,docs/findings/objects/0001-object-population.md
@@ -2191,6 +2192,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005DE490,func,sub_005DE490_MonAiMoveToPointNoStop,,I,monsters/ai,docs/findings/ai/0003-pool-b.md
 0x005DE4E0,func,sub_005DE4E0_MonAiMoveToUnitDist,,I,monsters/ai,docs/findings/ai/0002-pool-a.md
 0x005DE6D0,func,sub_005DE6D0_MonAiWalkTowardUnit,,I,monsters/ai,docs/findings/ai/0002-pool-a.md
+0x005DE830,func,sub_005DE830_AiStoredHostile,,I,monsters/ai,docs/findings/ai/0010-batch9.md
 0x005DE890,func,sub_005DE890_MonAiTargetOrIdle,,I,monsters/ai,docs/findings/ai/0001-machinery.md
 0x005DE9D0,func,sub_005DE9D0_MonAiTargetOrWait,,I,monsters/ai,docs/findings/ai/0001-machinery.md
 0x005DEAD0,func,sub_005DEAD0_MonAiUseSkill,,I,drlg/collision,docs/findings/drlg/0009-room-lifecycle.md
@@ -2211,6 +2213,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005DF530,func,sub_005DF530_MonAiWanderNearUnit,,I,monsters/ai,docs/findings/ai/0001-machinery.md
 0x005DF680,func,sub_005DF680_MonAiRunNearUnit,,I,monsters/ai,docs/findings/ai/0001-machinery.md
 0x005DF7D0,func,sub_005DF7D0_MonAiWalkToUnitType56,,I,monsters/ai,docs/findings/ai/0001-machinery.md
+0x005DF850,func,sub_005DF850_AiUseSkillNearSelf,,I,monsters/ai,docs/findings/ai/0010-batch9.md
 0x005E0070,func,sub_005E0070_UberTristramDrop,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
 0x005E0160,func,sub_005E0160_AiInvisoSpawner,,I,monsters/ai,docs/findings/ai/0009-batch8.md
 0x005E0260,func,sub_005E0260_AiMosquitoNest,,I,monsters/ai,docs/findings/ai/0009-batch8.md
@@ -2228,6 +2231,21 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005E17E0,func,sub_005E17E0_AiImpSetHost,,I,monsters/ai,docs/findings/ai/0009-batch8.md
 0x005E1860,func,sub_005E1860_AiSiegeTower,,I,monsters/ai,docs/findings/ai/0009-batch8.md
 0x005E1900,func,sub_005E1900_AiSiegeBeast,,I,monsters/ai,docs/findings/ai/0009-batch8.md
+0x005E1B60,func,sub_005E1B60_AiMinion,,I,monsters/ai,docs/findings/ai/0010-batch9.md
+0x005E1D30,func,sub_005E1D30_AiSuicideMinion,,I,monsters/ai,docs/findings/ai/0010-batch9.md
+0x005E1E00,func,sub_005E1E00_AiSuccubus,,I,monsters/ai,docs/findings/ai/0010-batch9.md
+0x005E2120,func,sub_005E2120_AiSuccubusWitch,,I,monsters/ai,docs/findings/ai/0010-batch9.md
+0x005E26D0,func,sub_005E26D0_AiOverseerMinionCb,,I,monsters/ai,docs/findings/ai/0010-batch9.md
+0x005E27A0,func,sub_005E27A0_AiOverseer,,I,monsters/ai,docs/findings/ai/0010-batch9.md
+0x005E2B70,func,sub_005E2B70_AiMinionCountCb,,I,monsters/ai,docs/findings/ai/0010-batch9.md
+0x005E2BD0,func,sub_005E2BD0_AiMinionSpawner,,I,monsters/ai,docs/findings/ai/0010-batch9.md
+0x005E2CD0,func,sub_005E2CD0_AiImpAttachedInit,,I,monsters/ai,docs/findings/ai/0010-batch9.md
+0x005E2D80,func,sub_005E2D80_AiImpAttached,,I,monsters/ai,docs/findings/ai/0010-batch9.md
+0x005E2FD0,func,sub_005E2FD0_AiImpInit,,I,monsters/ai,docs/findings/ai/0010-batch9.md
+0x005E2FF0,func,sub_005E2FF0_AiImp,,I,monsters/ai,docs/findings/ai/0010-batch9.md
+0x005E34C0,func,sub_005E34C0_AiCatapult,,I,monsters/ai,docs/findings/ai/0010-batch9.md
+0x005E3530,func,sub_005E3530_AiFrozenHorror,,I,monsters/ai,docs/findings/ai/0010-batch9.md
+0x005E36F0,func,sub_005E36F0_AiBloodLord,,I,monsters/ai,docs/findings/ai/0010-batch9.md
 0x005E3840,func,sub_005E3840_AiSpirit,,I,monsters/ai,docs/findings/ai/0009-batch8.md
 0x005E3890,func,sub_005E3890_AiSmith,,I,monsters/ai,docs/findings/ai/0009-batch8.md
 0x005E3900,func,sub_005E3900_AiPetCrowdCb,,I,monsters/ai,docs/findings/ai/0006-summons.md

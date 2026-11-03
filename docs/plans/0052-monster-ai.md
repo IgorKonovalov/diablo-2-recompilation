@@ -703,3 +703,35 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   bullets. [Skills](../tables/Skills.md): `calc4`, `aitype`, `aibonus`, `Param2`, `Param5` rows. [Missiles](../tables/Missiles.md):
   `Range`. [Hireling](../tables/Hireling.md): `DefaultChance`, `Chance1..6`, `ChancePerLvl1..6`, `Mode1..6` and the formula
   now `[I]` (ai/0007 § 2.4); its open question struck. Tags are the findings' own; no column meaning changed.
+- **2026-11-03 — P1.2 catalogue batch 9 (pool-F) for review (reverser, static, `lane/r52i`, from `main` dda63dfd; `main` 00c53f7f merged before the run's totals).**
+  [ai/0010](../findings/ai/0010-batch9.md): the ten think functions of rows 116–125 (all row kind 1), row 122's init
+  0x005E2FD0 (row 121's init is `AiNestInit`), state row 15 (row 117's think 0x005E1D30) and state row 16 (init
+  0x005E2CD0, think 0x005E2D80), each with its `aip` reads per record, its `AiCtl+0x14/+0x18/+0x1C` words, its draws in
+  order (all on the acting unit's seed: 37 multiplier loads, 2 of them in state row 14's function, and 9 `RNG_Range`;
+  0–6 per decision) and its command, plus what is first read here: the callbacks 0x005E26D0 (row 120's minion search,
+  also pushed by row 128) and 0x005E2B70 (row 121's minion count), 0x005DE830 (the overseer's stored hostile),
+  0x00541860 (the AI-control getter) and the **action helper 0x005DF850** (`UseSkill` at a random point within `r` of
+  the unit, two inline draws; three calls here, two in row 128). **State rows answered `[I]`:** 15 is set by
+  `WhipChangeClass` (0x005D1EC0) after Overseer Whip's class change of a `minion1`-based target, so a whipped minion
+  runs row 117's think; 16 by `ImpAttach` (0x005D19A4, 0x005D19B9) when an imp's Imp Teleport reaches a tower or a
+  beast; state 16's think returns to state 0 itself (0x005E2FB4). **The imp host word** (batch 8's open item): read by
+  row 122's think (0x005E30AB, 0x005E30C6), set −1 by its init, at 0x005E3194 and by state 16's detach; `AiImpNearCb`
+  reads it through 0x00541860. [C] by emulation (run:2026-11-03-ai-cat-emu-9, `tools/ai_cat_emu9.py`, 13 families,
+  3 120 cases, 0 mismatches, 0 stopped, 21 traced reads all accounted (`g_UnitHashOffsets`, state 16's slot table
+  0x006E34E0); `le`, `d0`, `cmp`, `u16`, the new `own` (row 122's slots read from its own record instead of the records
+  492–495) and the site control fail every case they separate; `EDGES` and `TAGS` per family; development runs under
+  `emu/dev-1/` and `emu/dev-2/` with their tool copies): full maps of 117/state 15, 123, the tier AI 125, row 122's
+  and state 16's inits; the maps of 116, 118, 119, 120 (to its minion search), 121 and 122 (the helper inside) to their
+  first boundary; row 124's skill-sign test; state 16's think to `HasState(U, 143)`. Left [I]: everything after a
+  boundary. Found: row 122 reads none of its own `aip` slots (the records `imp1`..`imp4` are a shared parameter table,
+  which explains MonStats' row-122 slot disagreement), and its far fire-missile band lies inside the near one, so the
+  second test is dead for stock data; state 16's think discards two `Range` results (only when `v1C ≠ 0`, which its
+  init never writes); row 121 gives no command once spent; row 123 attacks with a null target; row 125 uses `Skill1`
+  with the constant mode 5 and no sign test. P1.1 review reopen condition (b) not met (the callbacks and 0x005DE830
+  draw nothing by their bodies and direct calls). State row 14's think 0x005E2610 lies in the range, read in passing,
+  left unnamed for batch 12. 18 `re/symbols.csv` rows (all I). Kept outputs `workspace/logs/r52i/` (manifest 14 lines;
+  `emu/` 53, `emu/dev-1/` 54, `emu/dev-2/` 54; `emu-recheck/` 52, the kept cases re-run under `lane/r55e`'s fixed
+  `EmuBoundary.java` after merging `main` fd2ca68a, outputs byte-identical; each passes from its directory). Backlog: the
+  [review request](../backlog/2026-11-03-reverser-architect-plan-0052-p1-2-batch-9-review.md),
+  [archivist](../backlog/2026-11-03-reverser-archivist-monstats-skills-readers-named-by-ai-0010.md) (MonStats and
+  Skills readers). Next: batch 10 (pool-G).
