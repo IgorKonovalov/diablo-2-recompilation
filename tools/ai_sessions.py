@@ -54,13 +54,13 @@ def stage(wp, secs=130, more=()):
     return [(["farm", "--sweep", "--wp", wp, "--time", str(secs)] + NOVA + list(more), secs + 150)]
 
 
-def catacombs(secs=60, hold=False):
+def catacombs(secs=60, hold=False, players=0):
     """Catacombs Level 2 waypoint, descents to Level 4 (Level 3 holds Vampires; a descent is skipped once the player
     stands in level 37), then Andariel (Level 4): the combat sessions' route (tools/combat_sessions.py andariel with
     guard). With `hold` the Nova radius is 1, so that she is not killed at once and thinks for a while."""
     down = ["farm", "--sweep", "--descend", "18", "--descend-time", "300", "--time", "15", "--max-res", "1000"] + NOVA0
     first = ["farm", "--sweep", "--wp", "1,9", "--descend", "18", "--descend-time", "300", "--time", "15",
-             "--max-res", "1000"] + NOVA0
+             "--max-res", "1000"] + NOVA0 + (["--players", str(players)] if players else [])
     return [(first, 380, 37), (down, 360, 37), (down, 360, 37), (down, 360, 37),
             (["hunt", "--mon-cls", "156", "--time", str(secs * 4)] + NOVA0 + (["--radius", "1"] if hold else []),
              secs * 4 + 40)]
@@ -96,6 +96,9 @@ CASES = {
     "a4-cotd-long": ("normal", stage("4,2", 300), "City of the Damned, longer: Megademon 89, BatDemon 29"),
     "a4-river-long": ("normal", stage("4,3", 300), "River of Flame, longer: Megademon 89"),
     "a1-andariel-2": ("normal", catacombs(120, hold=True), "Catacombs to Andariel with the level guards: Andariel 34"),
+    # /players 8: Andariel has 4.5 times the life, so the mercenary needs longer and she thinks for longer (a process
+    # holds /players across games: run it as a fresh case)
+    "a1-andariel-p8": ("normal", catacombs(120, hold=True, players=8), "Catacombs to Andariel at /players 8: Andariel 34"),
     "nm-a2-halls": ("nightmare", stage("2,4"), "Halls of the Dead 2, Nightmare"),
     "h-a4-cotd": ("hell", stage("4,2"), "City of the Damned, Hell"),
     # the Necromancer (tools/d2s_recipes/ai-nec.json, built on samples/d2s/smpnec.d2s): a golem and skeletons fight

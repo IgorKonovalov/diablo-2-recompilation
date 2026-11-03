@@ -490,6 +490,17 @@ def run_check(paths, out=None):
                     pp_bad += 1
                     pp_ex.append((d["log"], d["aid"]["n"], d["aid"]["ai"], p0["ty"], p0["s"], p1["s"]))
     msm_n = sum(1 for d in decs for m0, m1 in d["msm"] if m1 is not None)
+    ptypes, cmodes = {}, {}
+    for d in decs:
+        for p0, p1 in d["pp"]:
+            ptypes[p0["ty"]] = ptypes.get(p0["ty"], 0) + 1
+        for m0, m1 in d["msm"]:
+            key = "%d/%d" % (m0["cmd"][0], m0["cmd"][5])
+            cmodes[key] = cmodes.get(key, 0) + 1
+    perlog = {}
+    for d in decs:
+        e = perlog.setdefault(os.path.basename(d["log"]), {})
+        e[d["aid"]["ai"]] = e.get(d["aid"]["ai"], 0) + 1
     lines = []
     lines.append("CHECK logs=%d decisions=%d ain=%d sst=%d caps=%d" % (len(paths), len(decs), len(ains), len(ssts),
                                                                       len(caps)))
@@ -504,6 +515,11 @@ def run_check(paths, out=None):
     lines.append("TOTAL decisions=%d model=%d hand=%d unmodelled=%d unlogged=%d mismatches=%d" % (
         len(decs), tot["model"], tot["hand"], tot["none"], tot["unlogged"], len(mism)))
     lines.append("PLAN pp_pairs=%d seed_changed=%d msm_pairs=%d" % (pp_n, pp_bad, msm_n))
+    lines.append("PLANTYPES %s" % json.dumps({str(k): ptypes[k] for k in sorted(ptypes)}))
+    lines.append("CMDS mode/pathtype=%s" % json.dumps({k: cmodes[k] for k in sorted(cmodes, key=lambda x: -cmodes[x])}))
+    for lg in sorted(perlog):
+        lines.append("LOG %s decisions=%d rows=%s" % (lg, sum(perlog[lg].values()), json.dumps(
+            {str(k): perlog[lg][k] for k in sorted(perlog[lg], key=lambda x: -perlog[lg][x])[:6]})))
     for t in TIER:
         e = per.get(t)
         lines.append("TIER %d %-14s decisions=%d checked=%d floor50=%s" % (
