@@ -86,9 +86,9 @@ cited by their anchors.
 | Address | Name | Role | Tag |
 |---|---|---|---|
 | `0x005F56D0` | `sub_005F56D0_AiHellMeteor` | row 33 `HellMeteor` think | I (map `[C]`, § 3) |
-| `0x005F5A20` | `sub_005F5A20_AiCorruptArcher` | row 35 `CorruptArcher` think | I |
+| `0x005F5A20` | `sub_005F5A20_AiCorruptArcher` | row 35 `CorruptArcher` think | C (first boundary only, ai/0015) |
 | `0x005F5D50` | `sub_005F5D50_AiCorruptLancer` | row 36 `CorruptLancer` think | I (map `[C]`, § 3) |
-| `0x005F6070` | `sub_005F6070_AiSkeletonBow` | row 37 `SkeletonBow` think | I (state test `[C]`, § 3) |
+| `0x005F6070` | `sub_005F6070_AiSkeletonBow` | row 37 `SkeletonBow` think | I (state test `[C]`, § 3); first boundary live `C`, ai/0015 |
 | `0x005F6220` | `sub_005F6220_AiMaggotLarva` | row 38 `MaggotLarva` think | I (map `[C]`, § 3) |
 | `0x005F6340` | `sub_005F6340_AiPinHead` | row 39 `PinHead` think | I (map `[C]`, § 3) |
 | `0x005F6530` | `sub_005F6530_AiMaggotEgg` | row 40 `MaggotEgg` think | I (map `[C]`, § 3) |

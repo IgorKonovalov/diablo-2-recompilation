@@ -93,7 +93,7 @@ anchors where this batch builds on them (anim/0001's event queue, drlg/0009's pa
 | `0x005414D0` | `sub_005414D0_GameRunUnitEvents` | per type: every-frame list, then the slot list | I |
 | `0x00541060` | `sub_00541060_MonEventsRun` | the monster lists, records without a callback to `MonEventDispatch` | I |
 | `0x005A7F80` | `sub_005A7F80_MonEventDispatch` | drops kind 2 while frozen and alive | I |
-| `0x005B1740` | `sub_005B1740_MonAiEvent` | **the AI tick** (monster event kind 2) | I |
+| `0x005B1740` | `sub_005B1740_MonAiEvent` | **the AI tick** (monster event kind 2) | C (first boundary only, ai/0015) |
 | `0x005B10E0` | `sub_005B10E0_MonAiPreChecks` | stun, doors, keep-near | I |
 | `0x005B0F50` | `sub_005B0F50_MonAiOpenDoor` | `opendoors` monsters operate a door object on their cell | I |
 | `0x005B0FF0` | `sub_005B0FF0_MonAiKeepNear` | leader and taunter following (`AiCtl+0x0C`) | I |
