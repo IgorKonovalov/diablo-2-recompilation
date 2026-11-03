@@ -4,7 +4,7 @@ to: spec-writer
 date: 2026-11-03
 status: done
 context:
-  - ../../plans/0058-party-and-player-count.md
+  - ../../plans/done/0058-party-and-player-count.md
   - ../../findings/player/0002-party.md
 resolution: "Done on lane/s67. All items (1) to (14): J4 and its notes, G0's credit and one-member wording, G6's award, the constants rows, the 265 and 'at most 8' and 'bracketed' notes in [player/creation](../../specs/player/creation.md); the tag split, the map's scope and the cap's scope as ruled; [hirelings](../../specs/hirelings/README.md) G2 and the call path linked to player/0002 section 5 and raised there as the code's map; [wiki/characters](../../wiki/characters.md) Party share; [player/README](../../specs/player/README.md)'s pointer; quirks Q446 to Q453 ([index](../../specs/quirks/README.md)); the /players answer in [player/party](../../specs/player/party.md) section E."
 ---

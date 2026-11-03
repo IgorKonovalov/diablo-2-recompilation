@@ -4,7 +4,7 @@ to: archivist
 date: 2026-11-03
 status: done
 context:
-  - ../../plans/0058-party-and-player-count.md
+  - ../../plans/done/0058-party-and-player-count.md
   - ../../findings/player/0002-party.md
 resolution: "States.md § exp: the [L] replaced by the second reader (the kill's experience credit), [C] from player/0002 § 4, 'the caster' kept under items/0010's [I] [States](../../tables/States.md)"
 ---

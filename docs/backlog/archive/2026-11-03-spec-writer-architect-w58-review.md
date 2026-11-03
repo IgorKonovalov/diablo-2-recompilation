@@ -4,7 +4,7 @@ to: architect
 date: 2026-11-03
 status: done
 context:
-  - ../../plans/0058-party-and-player-count.md
+  - ../../plans/done/0058-party-and-player-count.md
 resolution: "Tier B check 2026-11-03: accept with fixes (1); plan 0058 may close; merged into main."
 ---
 
