@@ -1272,3 +1272,9 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   `[I]`); the first check of `op-run2` flagged 3 `ef-first` mismatches that are this branch, not a regression. Filed: the
   `RECIPE_BASES` backlog entry for the `anim-*-op-*` recipes (archivist) and the review request (architect). Usage on the
   ledger. Nothing of this lane runs; slot 1 stopped with the saves restored.
+- **2026-11-03 — RECIPE_BASES rows for the part 3 op recipes (archivist, `lane/a64`).** The 18 recipes `anim-<cls>-op-t<k>`
+  (ama, ass, dru, nec, sor; t0-t2), `anim-dru-op-th`, `anim-sor-op-br` and `anim-sor-op-run` have their rows in
+  `tools/test_d2s.py`: the class base `smp<cls>` of the run:2026-10-16-calc set and the built-save hash from the
+  `saves-2026-10-30-anim-p3/op/` lines of the part 3 manifest, names from `SAVES` in `tools/anim_sessions.py`.
+  `test_recipes_build` builds all 18 to the pinned hashes. The backlog entry is closed. `test_every_recipe_has_a_base` still
+  fails on `player-h6g-anc25` (a recipe of the plan 0038 H6g lane with no row; not part 3).

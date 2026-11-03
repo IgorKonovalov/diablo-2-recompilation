@@ -733,7 +733,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   `emu/` 53, `emu/dev-1/` 54, `emu/dev-2/` 54; `emu-recheck/` 52, the kept cases re-run under `lane/r55e`'s fixed
   `EmuBoundary.java` after merging `main` fd2ca68a, outputs byte-identical; each passes from its directory). Backlog: the
   [review request](../backlog/2026-11-03-reverser-architect-plan-0052-p1-2-batch-9-review.md),
-  [archivist](../backlog/2026-11-03-reverser-archivist-monstats-skills-readers-named-by-ai-0010.md) (MonStats and
+  [archivist](../backlog/archive/2026-11-03-reverser-archivist-monstats-skills-readers-named-by-ai-0010.md) (MonStats and
   Skills readers). Next: batch 10 (pool-G).
 - **2026-11-03 — P1.2 catalogue batch 10 (pool-G) for review (reverser, static, `lane/r52j`, from `main` 7fddf41d; `main` 3960ea23 (batch 9) merged before the run, `main` c7d3ee1d before filing).**
   [ai/0011](../findings/ai/0011-batch10.md): the twelve think functions of rows 126, 127, 129–134, 136, 137, 139 and
@@ -755,5 +755,12 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   `re/symbols.csv` rows (24 func, 2 data, all I). Kept outputs `workspace/logs/r52j/` (manifest 16 lines; `emu/` 61,
   `emu/dev-1/` 62; each passes from its directory). Backlog: the
   [review request](../backlog/2026-11-03-reverser-architect-plan-0052-p1-2-batch-10-review.md),
-  [archivist](../backlog/2026-11-03-reverser-archivist-monstats-skills-readers-named-by-ai-0011.md) (MonStats and
+  [archivist](../backlog/archive/2026-11-03-reverser-archivist-monstats-skills-readers-named-by-ai-0011.md) (MonStats and
   Skills readers). Next: batches 11 (bosses-B) and 12 (towns, NPCs, the state rows).
+- **2026-11-03 — Readers of batches 9 and 10 linked (archivist, `lane/a64`).** [MonStats](../tables/MonStats.md) gains two reader
+  blocks under § AI columns, "pool-F" ([ai/0010](../findings/ai/0010-batch9.md)) and "pool-G" ([ai/0011](../findings/ai/0011-batch10.md)):
+  the `aip` slots read per row (row 122's from the records `imp1`..`imp4`, which settles its entry of the 13 differing rows as a
+  shared parameter table; row 133's per Ancient), the `Skill`/`SkMode` reads with the finding's sign tests, row 124's skill level
+  (`Sk1lvl`), the constant-skill rows and the count guards; the `genericSpawn` row has its reader (row 129's class pick, `[I]`).
+  [Skills](../tables/Skills.md) `aurastate` and `auratargetstate` gain the rows 133 and 134 readers. All `[I]` as the findings give;
+  `[C]` only for the maps to their first boundary, scoped in each block. Both archivist entries closed.
