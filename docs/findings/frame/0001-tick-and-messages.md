@@ -197,7 +197,7 @@ if (frame % 11 == 0) for act 0..4: if (game->act[a]) 0x0061AA20(act);   // ActLe
 
 - [I] The order above is read from the call sequence 0x0052D8DF–0x0052D96C, which has no branch between the seven
   passes. The debug switch `Game+0x1DC8` is written only by a host command (0x0052F6B7 in `0x0052F630`) and is 0 in
-  a normal game. (fn:sub_0052D870_GameTick@0x0052D870)
+  a normal game. (fn:sub_0052D870_GameTick@0x0052D870) Refined by [archaeology/0001](../archaeology/0001-switches.md) § 8: [I] the one identified writer, `0x0052F630`, has no reference of any kind (0 calls, 0 pointers), so the switch is unreachable in the stock image; `0x00450950` copies the offset between two objects of unread type and may be a second writer. (fn:sub_0052F630_HostAbendMsg@0x0052F630, 0x00450C99)
 - [I] **Corrections to the earlier readings.** ai/0001 § 1 and drlg/0009 § 1 place "two act passes" before
   `NewRoomsUpdate` and "two more passes" after the room sync without naming them: they are `ActsClockPass`,
   `GameFpsStats`, `ActUnitsFrameReset` and `ActsRoomRemovalsClear` (§ 3). ai/0001 § 11 says `ActUnitsFrameReset`
