@@ -324,8 +324,11 @@ def main(argv):
     ap.add_argument("--status")
     ap.add_argument("--seed", type=int, default=5201)
     ap.add_argument("--reruns", type=int, default=1)
+    ap.add_argument("--fresh", action="store_true", help="every case in its own game process (plan 0056 Phase 4: the default for kept runs)")
     ap.add_argument("cases", nargs="+")
     a = ap.parse_args(argv[1:])
+    if a.fresh:
+        a.cases = [c if c.startswith("fresh:") else "fresh:" + c for c in a.cases]
     for c in a.cases:
         if (c[6:] if c.startswith("fresh:") else c) not in CASES:
             print("unknown case %s" % c)

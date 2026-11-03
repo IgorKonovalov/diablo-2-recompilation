@@ -22,6 +22,11 @@
 #         windows of THINK_LO) while the
 #         decision is open: k, fn, ra, ecx, edx, a (six stack words), b (8 dwords at a stack-pointing argument, by
 #         argument index), s (the unit seed), c (AiCtl +0x14, +0x18, +0x1C), c4; at most AI_BMAX (8) per decision
+#   AIR   the return of the AIB call "b" (the AIB line's n): k, b, fn, ra, eax, ecx, edx, s (the unit seed after the call), c (AiCtl
+#         +0x14, +0x18, +0x1C), c4, bl (8 dwords at each stack argument that pointed at the stack, after the call: the
+#         output block of a search), fr. The breakpoint is at the return address, one of tools/gdb/ai-retsites.txt (the
+#         call sites of the think windows to BND, from tools/ai_retsites.py), armed only while its call is pending; an
+#         AIB whose ra is not in the file is logged with "nr":1 and has no AIR. Rev 4.
 #   MSM0/MSM1  sub_005A7C20_MonSetMode (stack: game, cmd, flag) entry and its five rets, while a decision is open:
 #         k, ra, the command block (mode, unit, target, x, y, +0x15, +0x18, +0x1C), s; exit: eax, s
 #   PP0/PP1    sub_00649970_PathPlan entry (stack: path, unit, flag) and its six rets, while a decision is open: k, the
@@ -40,7 +45,8 @@ import struct
 
 import gdb
 
-REV = 3   # rev 1: the development logs (dev-*); rev 2: the six PathPlan rets (rev 1 logged the first three); rev 3: the
+REV = 4   # rev 4: AIR lines (the result of each logged boundary call, from the return-site breakpoints of
+#          tools/gdb/ai-retsites.txt) and 48 boundary calls per decision (rev 3: 8); rev 1: the development logs (dev-*); rev 2: the six PathPlan rets (rev 1 logged the first three); rev 3: the
 #          return-address windows of MonsterOwner, 0x005DE830 and 0x005DF850 (the models' sites 0x0058F0FF, 0x005DE864,
 #          0x005DF97B)
 
@@ -53,7 +59,8 @@ def _ai_main():
     CAP_AIN = int(os.environ.get("AI_CAP_AIN", "600"))
     CAP_SST = int(os.environ.get("AI_CAP_SST", "4000"))
     RADIUS = int(os.environ.get("AI_RADIUS", "80"))
-    BMAX = int(os.environ.get("AI_BMAX", "8"))
+    BMAX = int(os.environ.get("AI_BMAX", "48"))
+    RETSITES = os.environ.get("AI_RETSITES", "tools/gdb/ai-retsites.txt")
     BND = (
         0x00463740, 0x00463860, 0x0046ACE0, 0x00472210, 0x004E6C70, 0x004EFCB0, 0x00540E60, 0x005415A0, 0x005417D0,
         0x00544300, 0x0054DA60, 0x0054DC40, 0x00552F60, 0x00552FD0, 0x00553540, 0x00554010, 0x005541B0, 0x00554200,
@@ -78,7 +85,7 @@ def _ai_main():
     THINK_LO = ((0x005B14E0, 0x005B1650), (0x005E0000, 0x00600000), (0x0058F0D0, 0x0058F130),
                 (0x005DE830, 0x005DE8C0), (0x005DF850, 0x005DFC00))
     st = {"game": 0, "n": {}, "capped": set(), "line": 0, "stk": [], "plr": 0, "row": {}, "tot": 0, "sst": {},
-          "msm": {}, "pp": {}}
+          "msm": {}, "pp": {}, "pend": [], "retarmed": set()}
 
     def mem(a, n):
         return bytes(inf.read_memory(a, n))
@@ -161,9 +168,19 @@ def _ai_main():
 
     bnd_bps = []
 
-    def arm(on):
+    retbp = {}
+
+    def arm_bnd(on):
         for b in bnd_bps:
             b.enabled = on
+
+    def arm(on):
+        arm_bnd(on)
+        if not on:
+            for ra in list(st["retarmed"]):
+                retbp[ra].enabled = False
+            st["retarmed"].clear()
+            st["pend"] = []
 
     def top():
         s = st["stk"]
@@ -280,7 +297,7 @@ def _ai_main():
             if not in_think(ra):
                 cur["out"] += 1
                 if cur["out"] > 600:
-                    arm(False)
+                    arm_bnd(False)            # the boundary breakpoints only: the pending returns (a search) stay armed
                 return
             if cur["nb"] >= BMAX:
                 return
@@ -296,9 +313,52 @@ def _ai_main():
             u = cur["u"]
             md = u32(u + 0x14)
             ctl = u32(md + 0x28)
-            emit("AIB", {"k": cur["k"], "fn": fn, "ra": ra, "ecx": reg("ecx"), "edx": reg("edx"), "a": a, "b": b,
-                         "s": sd(u), "c": list(struct.unpack("<3I", mem(ctl + 0x14, 12))), "c4": u32(u + 0xC4),
-                         "fr": frame()})
+            rec = {"k": cur["k"], "fn": fn, "ra": ra, "ecx": reg("ecx"), "edx": reg("edx"), "a": a, "b": b,
+                   "s": sd(u), "c": list(struct.unpack("<3I", mem(ctl + 0x14, 12))), "c4": u32(u + 0xC4),
+                   "fr": frame()}
+            if ra not in retbp:
+                rec["nr"] = 1
+            n = emit("AIB", rec)
+            if ra in retbp:
+                st["pend"].append({"ra": ra, "esp": esp, "n": n, "k": cur["k"], "fn": fn, "u": u,
+                                   "ptr": [int(i) for i in b]})
+                retbp[ra].enabled = True
+                st["retarmed"].add(ra)
+        return f
+
+    def on_ret(ra):
+        def f():
+            esp = reg("esp")
+            pend = st["pend"]
+            hit = None
+            for p in reversed(pend):
+                if p["ra"] == ra and p["esp"] < esp <= p["esp"] + 0x48:
+                    hit = p
+                    break
+            if hit is None:
+                return
+            pend.remove(hit)
+            u = hit["u"]
+            md = u32(u + 0x14)
+            ctl = u32(md + 0x28)
+            bl = {}
+            a = hit.get("args")
+            for i in hit["ptr"]:
+                v = u32(hit["esp"] + 4 + 4 * i)
+                try:
+                    bl[str(i)] = list(struct.unpack("<8I", mem(v, 32)))
+                except gdb.MemoryError:
+                    pass
+            emit("AIR", {"k": hit["k"], "b": hit["n"], "fn": hit["fn"], "ra": ra, "eax": reg("eax"), "ecx": reg("ecx"),
+                         "edx": reg("edx"), "s": sd(u), "c": list(struct.unpack("<3I", mem(ctl + 0x14, 12))),
+                         "c4": u32(u + 0xC4), "bl": bl, "fr": frame()})
+            if not any(p["ra"] == ra for p in pend):
+                retbp[ra].enabled = False
+                st["retarmed"].discard(ra)
+            cur = top()
+            if cur and not pend and cur["out"] > 600:      # the search that hit the limit is over: log the rest of the decision
+                cur["out"] = 0
+                arm_bnd(True)
         return f
 
     def on_msm0():
@@ -360,6 +420,16 @@ def _ai_main():
     Bp(0x005B1876, on_exit)
     for a in BND:
         Bp(a, on_bnd(a), bnd_bps)
+    try:
+        with open(RETSITES) as fh:
+            for ln in fh:
+                if ln.strip() and not ln.startswith("#"):
+                    ra = int(ln.strip(), 16)
+                    b = Bp(ra, on_ret(ra))
+                    b.enabled = False
+                    retbp[ra] = b
+    except OSError as e:
+        gdb.write("LOGERR ai retsites %r\n" % (e,))
     Bp(0x005A7C20, on_msm0, bnd_bps)
     for a in (0x005A7C3E, 0x005A7CA2, 0x005A7D99, 0x005A7E0A, 0x005A7E51):
         Bp(a, on_msm1, bnd_bps)
@@ -370,7 +440,7 @@ def _ai_main():
     for a in (0x0056F6E8, 0x0056F7D0, 0x0056F7D9):
         Bp(a, on_sst1)
     arm(False)
-    gdb.write("AI logger armed rev %d\n" % REV)
+    gdb.write("AI logger armed rev %d bmax %d\n" % (REV, BMAX))
 
 
 _ai_main()
