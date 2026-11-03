@@ -742,8 +742,8 @@ blank 0) hold one value for all difficulties; `El<e>Pct`, `El<e>MinD`, `El<e>Max
   readers, below.
 - `[I]` **(plan 0045 P1.1)** `SkillDamage` (`+0x0A8`): for a monster with an owner whose own class names a skill here (the
   four summon classes), `MonAttackStats` adds that skill's physical minimum and maximum (`SKILLS_GetPhysMin/Max >> 8`)
-  and its to-hit to the A1/A2/S1 attack before the classic and player-count adjustments (which unit's skill level is
-  read is not resolved there)
+  and its to-hit to the A1/A2/S1 attack before the classic and player-count adjustments (`[I]` the **owner's** level in
+  that skill, never the summon's: [ai/0006](../findings/ai/0006-summons.md) Answer, H3 bullet)
   ([skills/0001 § 13](../findings/skills/0001-dispatch.md#13-monster-skill-use); fn:sub_0056E050_MonOwnerSkillDamage@0x0056E050).
 
 ### Combat readers (plan 0037 Phase 1, plan 0039 A1)
@@ -905,7 +905,7 @@ unless a finding is cited.
 | `AI` | `+0x01E` u16 | 146 of the 148 [MonAI](MonAI.md) rows; none blank; every cell resolves to the row of the same name (case-exact) | the index of `g_MonAiTable` on `MonAiEntryGet`'s `EDX` = 0 branch (the other branch reads a second table, [MonAI § The second table](MonAI.md#the-second-table-at-0x0073d358-found-at-the-lanea52-review)), whose `+8` word is the AI function ([items/0001](../findings/items/0001-tc-resolution.md), fn:sub_005B15D0_MonAiEntryGet@0x005B15D0, data:g_MonAiTable@0x0073CA18) | [C] data; use [I] |
 | `aidel`, `aidel(N)`, `aidel(H)` | `+0x04F`..`+0x051` u8 | Normal: 15 (710 records), 1 (5), 6 (1), 0 (18 blank); Nightmare and Hell take 9 and 10 values (Nightmare mostly 14, Hell mostly 13); 455 records differ between difficulties | `MonModeStartNeutral` (also the refusal fallback) sets mode 1; **when the next AI event is not later than now**, it re-queues the event at `T + 45` under state 21 (`stunned`), else at `T +` the delay (`aidel(N)`/`aidel(H)` by difficulty when `Game+0x6A` or `Game+0x74` is non-zero), **15 when the cell is 0**; the finding names no re-queue when the next event is later than now ([anim/0001 § 10](../findings/anim/0001-modes-frames.md#10-monster-modes), fn:sub_005A73E0_MonModeStartNeutral@0x005A73E0, struct:Game+0x6A) | [I] |
 | `aidist`, `aidist(N)`, `aidist(H)` | `+0x052`..`+0x054` u8 | set on 2 records only: 242 `mephisto` and 704 `ubermephisto`, 0 / 40 / 46 | none | [L] |
-| `aip1`..`aip8` (each n, N, H) | `+0x056 + 6(k−1) + 2d` u16 | records with slot k non-zero: 573, 551, 526, 461, 327, 144, 106, 82 (k = 1..8); 588 records set a slot; 497 differ between difficulties; blank and 0 both store 0 | the AI parameters per difficulty (plan 0052 P1 reads them per AI); the inactive save keeps "AI parameters" ([drlg/lifecycle § G](../specs/drlg/lifecycle.md#g-the-records), fn:sub_00541FE0_InactiveMonAiSave@0x00541FE0) | layout [C]; meaning [L] |
+| `aip1`..`aip8` (each n, N, H) | `+0x056 + 6(k−1) + 2d` u16 | records with slot k non-zero: 573, 551, 526, 461, 327, 144, 106, 82 (k = 1..8); 588 records set a slot; 497 differ between difficulties; blank and 0 both store 0 | the AI parameters per difficulty (plan 0052 P1 reads them per AI; the readers by batch are in § Readers named by the pool-A to pool-E and summons batches below; `[I]` rows 105, 106 and 143 read the three `aip8` cells as three parameters, not per difficulty, [ai/0006 § 2.10, § 2.11](../findings/ai/0006-summons.md)); the inactive save keeps "AI parameters" ([drlg/lifecycle § G](../specs/drlg/lifecycle.md#g-the-records), fn:sub_00541FE0_InactiveMonAiSave@0x00541FE0) | layout [C]; meaning [L] |
 | `Skill1..8`, `Sk1mode..Sk8mode`, `Sk1lvl..Sk8lvl` | `+0x170` u16, `+0x180` u8 and `+0x188` s16, `+0x198` u8 | 393 records name a skill, 775 cells in 97 AI rows; 319 of the cells give a `seq_*` mode (`xx` and a sequence); 5 cells have `Sk lvl` 0 | at creation each `Skill` ≥ 0 with `Sk lvl` > 0 is added at `Sk lvl` + `MonsterSkillBonus` (§ Readers at creation, [monsters/0004](../findings/monsters/0004-stats.md)); which skill the AI uses and when is plan 0052's | [I] creation; AI use [L] |
 | `switchai` | `+0x00E` bit 0 | 585 records | none | [L] |
 | `threat` | `+0x04E` u8 | 1..14, 144 blank (§ Columns) | none | [L] |
@@ -915,10 +915,12 @@ unless a finding is cited.
   (MonAI reach S). `[I]` The creation reader above skips them; whether the summon code gives them a level is plan 0052's
   summons batch. (tbl:MonStats.txt:Sk1lvl)
 - `[C]` `shadowmaster` (418) sets `aip8` to 279 in Normal (0 in Nightmare and Hell), the Skills row of Shadow Master;
-  row 143 `ShadowMasterNoInit` labels its `*aip8` `summoning skill` (a lead, [MonAI § Leads](MonAI.md#leads)).
+  row 143 `ShadowMasterNoInit` labels its `*aip8` `summoning skill` (a lead, [MonAI § Leads](MonAI.md#leads)); `[I]` the inits of
+  rows 105, 106 and 143 read `aip8[n]` as the skill id in every difficulty (279 here, 268 `Shadow Warrior` in row 105's record) ([ai/0006](../findings/ai/0006-summons.md) § 2.10, § 2.11).
   (tbl:MonStats.txt:aip8)
 - `[C]` In 13 AI rows the records disagree on which `aip` slots they set (`ai_aip_slots_differ=13`): 1, 8, 11, 30, 35,
-  36, 61, 67, 114, 119, 122, 133, 142. A catalogue entry reads each record's slots, not one per AI.
+  36, 61, 67, 114, 119, 122, 133, 142. A catalogue entry reads each record's slots, not one per AI. `[I]` For row 114 the think
+  function reads `aip1`..`aip7` and not `aip8` ([ai/0009](../findings/ai/0009-batch8.md) § 1, § 2.11).
   (tbl:MonStats.txt:aip1)
 
 - `[I]` **Readers named by the pool-A batch** ([ai/0002](../findings/ai/0002-pool-a.md) § 2, plan 0052 P1.2 batch 1, AI
@@ -985,6 +987,35 @@ unless a finding is cited.
     `sub_005FAF00_AiOblivionKnight`, row 74 (§ 2.11). (fn:sub_005FAB80_AiAbyssKnight, fn:sub_005FAF00_AiOblivionKnight)
   - Skills the think functions do not read: rows 64 (`SkeletonRaise`), 76 (`Nest`) and 78/79 (`Skill2`) carry skills the
     batch's think functions never read ([§ 1](../findings/ai/0005-pool-d.md#1-the-rows-their-records-and-the-per-record-slots), § 2.16).
+
+- `[I]` **Readers named by the summons batch** ([ai/0006](../findings/ai/0006-summons.md), plan 0052 P1.2 batch 5, AI rows 67, 84, 86, 101-112 and 143,
+  and the owner pair of H3; the per-AI meanings stay in the finding, this table claims none):
+  - `aip8`: rows 105 `ShadowWarrior` and 106/143 `ShadowMaster` read its three cells at fixed offsets as three parameters, not
+    per difficulty: `aip8[n]` is a Skills row id (268 `Shadow Warrior`, 279 `Shadow Master`) whose owner level the init keeps in
+    `v1C`; `aip8[m]` and `aip8[h]` are the bounds of row 105's counter (5, 64). Row 106 reads `aip1` and `aip2` at fixed
+    offsets in the same way ([§ 2.10, § 2.11](../findings/ai/0006-summons.md), and the Answer's `aip8` bullet). `[I]`
+    (tbl:MonStats.txt:aip8)
+  - `SkillDamage` (`+0x0A8`): `MonOwnerSkillDamage` reads it for a monster with an owner and evaluates the skill's `PhysMin`,
+    `PhysMax` and `ToHit` **at the owner's level in that skill**, for `0 < s <= Skills count`; the summon's own level is not
+    read ([Answer, H3 bullet](../findings/ai/0006-summons.md); fn:sub_0056E050_MonOwnerSkillDamage@0x0056E050). `[I]`
+  - Skills cells the summons' think functions read, with the finding's tag: `Param2` (`+0x14C`, row 84's bone wall life
+    `v14 = T + Param2`, `[C]` by emulation, [§ 2.1](../findings/ai/0006-summons.md), run:2026-10-30-ai-cat-emu-5), `calc4` (`+0x144`, the sentries' shot
+    count and the blade creeper's life, `[I]`, [§ 2.4, § 2.5](../findings/ai/0006-summons.md)), `aitype` and `aibonus` (`+0x230`/`+0x232`, row 106's
+    skill scoring, `[I]`, [§ 2.11](../findings/ai/0006-summons.md)); see [Skills](Skills.md).
+
+- `[I]` **Readers named by the pool-E batch** ([ai/0009](../findings/ai/0009-batch8.md), plan 0052 P1.2 batch 8, AI rows 82, 83, 85, 89, 93-98 and
+  113-115; the per-AI meanings stay in the finding, this table claims none):
+  - `MissS1` (`+0x03E`): row 85 `HighPriest`'s first pass (`v14` 0) commands mode S1 on `aip5` only when `MissS1 > 0` and the target is
+    nearer than that missile's `Range - 2` (read through `MissileRec`); its second pass commands S1 on `aip7` (in melee, or
+    within 6) with no `MissS1` test ([§ 2.3](../findings/ai/0009-batch8.md); see [Missiles](Missiles.md) `Range`). `[I]`
+    (tbl:MonStats.txt:MissS1)
+  - `aip1`..`aip8` of row 114 (`ReanimatedHorde`): the think function reads `aip1`..`aip7` and **not `aip8`**, which settles
+    the `ai_aip_slots_differ` disagreement for that row (`reanimatedhorde6` has `aip8` 0 where records 1-5 have 30/22/15, and
+    also different `aip2` and `aip3` values) ([§ 1, § 2.11](../findings/ai/0009-batch8.md)). `[I]`
+  - Count guards on class references: row 82 (`InvisoSpawner`) spawns the level's variant of class 96, row 83 (`MosquitoNest`)
+    tests the cell for class 334, each behind the image's `count > id ? id : -1` select, `[I]` ([§ 2.1](../findings/ai/0009-batch8.md)); the
+    map's calls with the class as argument are `[C]` by run:2026-11-03-ai-cat-emu-8 ([§ 2.1, § 2.2](../findings/ai/0009-batch8.md)). The imp callback `AiImpNearCb` (rows 113, 115) matches `MonBaseId` 492
+    (`imp1`) behind the same guard, `[I]` ([§ 2.12](../findings/ai/0009-batch8.md)).
 
 ## Open questions
 

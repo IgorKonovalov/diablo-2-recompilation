@@ -438,3 +438,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   `EventQueueEveryFrame` callers, the return test) and is carried by a dated note there. **Phase 2a: go** (reverser, no
   game, no slot, no Ghidra; replays under `MemoryMax=4G`; P0 accepted, P1 reviewed). **Phase 2b: gate unchanged**: P1
   is reviewed; it waits on plan 0052's P3a review (ADR-0022, ADR-0016), and its pilot uses plan 0056's runner library.
+
+- **2026-11-03 — PetType `partysend` readers (archivist, `lane/a63`).** [PetType](../tables/PetType.md) `partysend` links the
+  two readers of [frame/0003 § 6](../findings/frame/0003-timers-activation.md) (`PlrPetsStatusSend`, `PetListPrune`), `[I]`.
+  Backlog entry closed.
