@@ -319,7 +319,7 @@ several.
 - **Rows set by code, from findings.** `[C]` 165–169 `itemset1`–`itemset5` hold a set item's `aprop` pairs
   ([SetItems § Property block](SetItems.md#property-block-plan-0024-phase-1), data:g_SetAPropStates@0x006EDB40).
   `[I]` 1, 2, 11, 21, 47, 52, 54, 62, 92, 101, 107, 115, 131 and 133 have the readers of § Combat readers; 53, 57 and
-  59 (`exp`) the quest-TC reader of § Interpretation notes.
+  59 (`exp`) the quest-TC reader and the kill's experience credit of § Interpretation notes.
 - `[L]` **Shrines.** Shrines has no state column. The ten timed effects (codes 6–15, `Duration in frames` > 0,
   [Shrines § Effects](Shrines.md#effects-plan-0041-phase-0)) match the ten rows 128–137 by name: 6 → 128
   `shrine_armor`, 7 → 129 `shrine_combat`, 8 → 131 `shrine_resist_fire`, 9 → 132 `shrine_resist_cold`, 10 → 130
@@ -363,18 +363,24 @@ reach a state two ways, both data (`python3 -I tools/anim_survey.py skills works
   fn:MONSTER_DropItems@0x005A6600, 0x00618B77, tbl:States.txt:exp)
 - `[C]` The flag bit of `exp` agrees between the finding (bit 30 from the descriptor) and the data (`+0x013` bit 6
   over all 185 records), a code anchor plus data behaviour.
-- `[C]` **`exp` has a second reader, the kill's experience credit.** `sub_0057E7B0_XpCreditPlayer` (G0) starts from the
-  killer: a player killer is credited itself, a monster killer's owner link gives the owner. Then, if the killer carries
-  a state of the `exp` mask (53 `conversion`, 57 `attract`, 59 `confuse`), the stat list with flag `0x800` is taken from
-  the killer; if the victim exists and carries one, the victim's list replaces it (the victim's wins, even a none). When
-  a list was taken, the credited unit becomes the owner of that list (looked up again in the game; a lost link does not
-  come back), and the result counts only if it is a player, else no one is credited. A player killer returns itself
-  before any of this, so a state on the victim is ignored then. The mask test is the same `exp` set as the quest-TC
-  reader's. What holds the `0x800` list in play, "the caster", keeps [items/0010](../findings/items/0010-quest-drops.md)'s
-  tag (`[I]`). ([player/0002 § 4](../findings/player/0002-party.md#4-g0-the-credit-sub_0057e7b0_xpcreditplayer),
+- `[C]` as the code's map (ADR-0015 (3)): **`exp` has a second reader, the kill's experience credit.**
+  `sub_0057E7B0_XpCreditPlayer` (G0) starts from the killer. A player killer is credited itself and returns before any
+  of this, so a state on the victim is ignored then; a killer of any other type but a monster returns none (it cannot
+  arrive, `XP_OnMonsterKill` filters it first, 0x0057E9B6–0x0057E9BF). A monster killer's owner link gives the owner.
+  Then, if the killer carries a state of the `exp` mask (53 `conversion`, 57 `attract`, 59 `confuse`), the stat list
+  with flag `0x800` is taken from the killer; if the victim exists and carries one, the victim's list replaces it (the
+  victim's wins, even a none). When a list was taken, the credited unit becomes the owner of that list (looked up again
+  in the game; a lost link does not come back). With a list or without one, the result counts only if it is a player,
+  else no one is credited. The mask test is the same `exp` set as the quest-TC reader's.
+  **What this covers:** the routine under emulation, on generated units and stat lists with a declared mask of those
+  three rows (a state outside it, 60, does nothing). It is not a thing seen in play: the game's logged kills give 40
+  mercenary killers crediting their owner, and the `XK0` logger reads no state, so no log shows an `exp` state on a
+  killer or on a victim, or the `player` case's state on a player killer's victim.
+  What holds the `0x800` list in play, "the caster", keeps [items/0010](../findings/items/0010-quest-drops.md)'s tag
+  (`[I]`). ([player/0002 §§ 4, 9](../findings/player/0002-party.md#4-g0-the-credit-sub_0057e7b0_xpcreditplayer),
   fn:sub_0057E7B0_XpCreditPlayer@0x0057E7B0, fn:sub_0063A690_UnitHasExpState@0x0063A690,
   fn:sub_00625760_StatListFindFlag@0x00625760, 0x0057E7E4, 0x0057E802, tbl:States.txt:exp,
-  run:2026-11-03-party-emu)
+  run:2026-11-03-party-emu, run:2026-10-20-two-clients)
 - `[I]` **`udead` is flag bit 33** (the loader's bit-set at `DataTables+0x150` = `0xCC + 4·33`): when a room is
   released, a dead monster that carries any state of that set is not saved (`InactiveMonsterSaveTest` step 2). In the
   shipped data 13 rows set it (§ Flag bits by row). (fn:sub_005431F0_InactiveMonsterSaveTest@0x005431F0,

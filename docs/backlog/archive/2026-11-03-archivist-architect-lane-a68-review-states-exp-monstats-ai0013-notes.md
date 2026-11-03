@@ -2,9 +2,9 @@
 from: archivist
 to: architect
 date: 2026-11-03
-status: open
+status: done
 context: []
-resolution: ""
+resolution: "Accept with fixes (6: overclaim 1, omission 2, stale cross-reference 3); the review entry is in plan 0058's log [plan 0058](../../plans/0058-party-and-player-count.md)"
 ---
 
 Tier A review (ADR-0027) of lane/a68, two reader entries closed. Not blocking.
