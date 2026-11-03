@@ -179,3 +179,22 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   code, which a reimplementation built from the catalogue's blocks gets right either way. Index: 444 entries, C 340 /
   I 104 / L 0; coverage 447 notes, 418 taken, 29 skipped (not a trap 10); crash and hang paths 8 (Q437 the second
   reached in a kept run). `tools/quirks.py check` 0 errors. Research-map quirks row counts updated.
+- **2026-11-03 — `lane/s64` Tier A review (architect): accept.** Each of the nine entries was read against its
+  catalogue note and § table. The tags are the owner's: n2, n3 and n6 split by tag into Q439/Q440, Q441/Q442 and
+  Q443/Q444. Q438's "before any test" is the catalogue § draw table's do 112 row and the P2 block's `draw#1`. Anchors
+  are copied from the notes. Ids are at the end of their classes. One version only: Q438 holds do 112 alone and points
+  to Q136 for prg 37, 39, 41 and 143. Q442 is n3's `[I]` consequence (row 0 by the callee's reading), not a restatement
+  of Q441's unwritten words. The three rulings: (1) **n5 skip upheld.** do 152 = do 95, st 59 = st 53 with calc1 for
+  calc2, and do 148/149 differing in the monster-data byte (+0x0E or +0x0F) are each stated in the catalogue's own
+  block. A reimplementation built from those blocks gets the same behaviour whether or not it shares code, and the one
+  difference a merge could lose is the one the blocks spell out. The note is about how the code is organised, not a
+  trap. (2) **n3 in class 9 upheld.** A read of a stack slot or struct word no one has written looks like a bug, and a
+  careful reimplementer would "fix" it by zeroing. Class 9 is where the index keeps such behaviour (Q74's heap
+  over-read sits in class 4 because its trap is the buffer edge, not the stale value). (3) **n8 folded into Q50
+  upheld.** n8's rings of prg 37 and 143 and their range 0x005D4657–0x005D467D fall inside combat/delivery n11, which
+  Q50 restates. Both are `[I]`, and n11 adds the negative count, so a separate entry would be a second, narrower version
+  of the same statement. Counts recounted by script: front matter and by-class (23/19/9/68/137/122/19/11/36, C 340 /
+  I 104 / L 0, 444 entries), coverage 48 rows, 447 notes, 418 taken, 29 skipped (presentation 5, table rule 12, not a
+  trap 10, wall-clock 2). The crash list has 8 entries (six `[I]` code readings, plus Q89 and Q437 reached in runs dated
+  before this plan's approval). The research-map row was rewritten whole and matches. `tools/quirks.py check`: 0
+  errors. Gate green, W7 0 warnings, no warning on a touched file. Fixes (0).
