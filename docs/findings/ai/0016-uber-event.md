@@ -25,8 +25,8 @@ Static reading of the pinned `Game.exe` in objdump (`workspace/logs/r52n/c1-asm.
   0x005E9750: `RELOC=0 REL32=0 EXPORT=0 RVAWORD=0` each, with nine live controls hitting (§ 1). (`c1-refs.txt`)
 - [I] **Baal's class-709 teleport is unreachable on the stock table:** 0x005FCB60 is called from rows 135 and 140 (and itself), and class 709 is on row 145
   alone. (0x005FD0C9, 0x005FD306, 0x005FCDED, tbl:MonStats.txt:AI)
-- [I] **No event handler reads levels 133–136.** The eight readers of those ids are a preset filter, a town-portal gate, a waypoint exit
-  and DRLG build tests (§ 3). The `archaeology/0002` wording "the Uber Tristram handlers" named code that is not there (dated note filed).
+- [I] **No event handler reads levels 133–136.** The eight readers of those ids are a preset filter, a portal-object test, a town-portal gate, a waypoint
+  exit and DRLG build tests (§ 3). The `archaeology/0002` wording "the Uber Tristram handlers" named code that is not there (dated note filed). (fn:sub_005559A0_RoomPresetUnits@0x005559A0, fn:sub_0056D130_PortalObjectCreate@0x0056D130, 0x005BE2EE)
 - [I] **The bosses' class-gated code that survives** is at creation (mods), at death (`cm2` and `std` once all three died), one combat test, one heal test and
   client display (§ 2, § 6). (fn:sub_005B1CF0_MonPostCreateBoss@0x005B1CF0, fn:sub_005A3250_UModQuestCompleteDeath@0x005A3250,
   fn:sub_005E0070_UberTristramDrop@0x005E0070)
@@ -118,7 +118,7 @@ describe is not in the file. (fn:sub_005E9DD0_UberDemonHoleSpawn@0x005E9DD0, fn:
 ### 4. The spawns and the counts
 
 - [I] **The three bosses.** No creator found (§ 2). The table has no path either: no Levels slot, SuperUniques `Class`, MonPreset `Place`, `minion`/`spawn`, `summon`, `PetType` or `NextInClass` names them (`tools/unreached.py`, `c1-unreached.txt`: 704–709 unreached; `c1-tables.txt` `SU uber []`, `MP uber []`). `MinGrp`/`MaxGrp` 1/1, `minion1`, `PartyMin` blank. (tool:unreached.py, tbl:MonStats.txt:minion1)
-- [I] **Each helper makes one unit per call; with no caller there is no count.** No loop in any.
+- [I] **Each helper makes one unit per call; with no caller there is no count.** No loop in any. (0x005E9DE5, 0x005F7FE5, 0x005FD1D6)
   - `0x005E9DD0(ECX game; unit)`: with a non-null `unit`, `SpawnNearUnitNoBox(unit, 711, mode 1, radius 4, 0x40)`. (0x005E9DE5)
   - `0x005F7F10(ECX game, EDX self; near)`: one step of `self`'s seed, `k = low & 7`, class `{725, 725, 726, 726, 727, 728, 729, 730}[k]`, `SpawnNearUnitNoBox(near or self, class, mode 8, radius 4, 0)`; `+0xC4 |= 0x4000000`, state 184. The eight modes are all 8. Its two leading position calls discard their results. (0x005F7FA3, 0x005F7FE5, 0x005F7FFC)
   - `0x005FD0F0(ECX game, EDX self)`: one step, `low & 1`: class 732 mode 1 or 731 mode 7 (733 with 8 is never indexed), `FreeNearFallback`, `SpawnAtPos`, `+0xC4 |= 0x4000000`, state 184. (0x005FD17D, 0x005FD1BC, 0x005FD1EB)
@@ -144,7 +144,7 @@ describe is not in the file. (fn:sub_005E9DD0_UberDemonHoleSpawn@0x005E9DD0, fn:
 
 ### 7. Emulation (run:2026-11-03-ai-uber)
 
-- [C] Ten families, 3 629 cases, all matching, none stopped (`emu/check.txt`). What each declares and where it ends is the docstring of `tools/ai_uber_emu.py`; `ucount`, `dhole`, `umin`, `bmin`, `drop`, `presets`, `bact14`, `aura`, `postc` 240 each, `qdeath` 1 469 (every class in mode 0 and another mode, and a null unit). Controls fail every case they separate, the site control passes none:
+- [C] Ten families, 3 629 cases, all matching, none stopped (`emu/check.txt`). What each declares and where it ends is the docstring of `tools/ai_uber_emu.py`; `ucount`, `dhole`, `umin`, `bmin`, `drop`, `presets`, `bact14`, `aura`, `postc` 240 each, `qdeath` 1 469 (every class in mode 0 and another mode, and a null unit). Controls fail every case they separate, the site control passes none. (run:2026-11-03-ai-uber)
 
   | family | function | separating (control) |
   |---|---|---|
