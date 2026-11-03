@@ -1,9 +1,14 @@
 #!/usr/bin/env python3
-"""The server-frame order model over the kept frame-stamped logs (plan 0055 Phase 2a).
+"""The server-frame order model over the kept frame-stamped logs (plan 0055 Phase 2a, 2a-ii).
 
-    python3 -I tools/frame.py reach [--exe EXE] [ADDR ...]   the pass set of every hook of KINDS (or of the addresses
-                                                             given): the direct-call reach up to a pass root
-    python3 -I tools/frame.py kinds                          the kind-to-pass map, one line per logger family and kind
+    python3 -I tools/frame.py reach [--exe EXE] [--direct] [ADDR ...]
+                                                             the pass set of every hook of KINDS (or of the addresses
+                                                             given): the reach up to a pass root through direct calls
+                                                             and the declared tables and callbacks (TABLES ..., below;
+                                                             --direct: Phase 2a's direct-call reach), with one caller
+                                                             chain and the functions left open
+    python3 -I tools/frame.py kinds [--resolved [--direct]]  the kind-to-pass map, one line per logger family and kind
+                                                             (--resolved: each hook's status, set and chain)
     python3 -I tools/frame.py check [--exe EXE] [--out DIR] <logs-root> [LOG ...]
                                                              the order and seed check over the corpus logs (the
                                                              frame-stamped, run-attributed rows of the Phase 0 index
@@ -31,6 +36,11 @@ The kind-to-pass map (KINDS). Each logged kind has a rule:
                runner's only dispatch), the drain and its dispatchers, the packet table's handlers. A function with
                no direct caller that is no root (a pointer-reached function: a skill, mode, AI, missile or quest
                callback) leaves the set open; an open set places nothing (the event is not compared).
+               Phase 2a-ii (frame/0005): the reach follows the declared pointer tables, iterators, registrars, quest
+               fields and stored callbacks as call edges (TABLES ... below), with the host loops as roots of rank 21.
+               Its classes: 'reach' (closed by direct calls), 'dispatch' (closed through a declared table or
+               callback), 'universal' (still open: every rank, sound and uninformative, left out of the frame and pair
+               counts of the placed events; reported as "frames placed2 any").
   ra F H       as reach, from the function holding the event's own return address (field F) when its reach closes,
                else from H.
   site S       a fixed pass set read from one call site (the dispatch calls of the slot branches).
@@ -241,19 +251,230 @@ RPE_HOOK = {252: 0x00558530, 253: 0x00558580}
 SKIP_ALWAYS = {"CAP"}
 
 
+# ---------------------------------------------------------------------------------------------- dispatchers (P2a-ii)
+# Plan 0055 Phase 2a-ii (frame/0005): the pointer tables and stored callbacks behind the hooks that the direct-call
+# reach left open, each read statically (Ghidra, objdump). `reach` follows them as call edges:
+#   TABLES       an entry (the dword at base + stride * row + field, a function entry) is called by the function
+#                holding each dispatch site. A site is the indirect call or jump through the table (or through a
+#                register loaded from it), or a direct call to an ITERATOR that is passed the entry, or (stored) the
+#                invoker's indirect call of a record the entry was copied into. `row` restricts a site to one row.
+#                Rows are the table's own bound (a count global or the code's index test, frame/0005 § 2).
+#   ITERATORS    a function that calls its callback argument before it returns (the call site inside named): a
+#                function whose address is passed to it (pushed, or loaded into ECX/EDX, before the call) is called by
+#                the passing function.
+#   REGISTRARS   a function that stores its callback argument in a record; the invokers call it later: a function
+#                passed to it is called by each invoker.
+#   QUEST_FIELDS a quest record's callback field (`Quest+off`), stored by the quest code (QUEST_CODE ranges) and called
+#                by the invokers listed.
+#   STORED       a callback stored by one function into a record and called by an invoker (one-off pairs).
+#   HOST_ROOTS   the host loops (rank 21: outside GameTick, after tick N's passes while the stamp reads N); GameTick
+#                itself (its body between the passes, ranks 1..20); ServerGamesFrame (around the ticks: rank 21).
+#   DEAD         functions with no call, jump, branch or pointer reference in the image (checked by `reach`).
+# Each entry: (..., anchor). Sites are addresses in the pinned image; `reach` checks every site's instruction.
+TABLES = (
+    # name, base, stride, fields, rows, sites [(site, field, row or None)], index meaning, anchor
+    ("g_SkillStartFuncs", 0x00732140, 4, (0,), 66, ((0x0056F784, 0, None),),
+     "Skills.txt srvstfunc", "SKILLS_SrvStart 0x0056F640: load 0x0056F76D, call 0x0056F784"),
+    ("g_SkillDoFuncs", 0x007322B0, 4, (0,), 153,
+     ((0x0056F968, 0, None), (0x0056D805, 0, None), (0x0056D831, 0, None), (0x005D53F8, 0, None), (0x005D544C, 0, None)),
+     "Skills.txt srvdofunc", "SKILLS_SrvDo 0x0056F968; StateDoFunc 0x0056D805; CallDoFunc 0x0056D831; "
+     "COMBAT_PrgFinisher 0x005D53F8, 0x005D544C"),
+    ("g_PlayerModeStartFuncs", 0x006E1740, 8, (0, 4), 20,
+     ((0x00580A60, 0, None), (0x00580B61, 4, None), (0x00580F44, 0, 1), (0x00581174, 0, 4)),
+     "player mode (0..19); field 0 at a point, 4 at a unit", "PlayerModeCmd 0x00580A60; PLAYER_ModeCmdUnit 0x00580B61; "
+     "PlayerDeath 0x00580F44 (row 1); PlayerModeEnd 0x00581174 (row 4)"),
+    ("g_PlayerModeFrameFuncs", 0x00732C10, 4, (0,), 20, ((0x00581204, 0, None),),
+     "player mode (Unit+0x10)", "PlayerModeFrameEvent 0x005811D0: load 0x005811F1, call 0x00581204"),
+    ("g_MonModeRecords", 0x006E2260, 0x10, (0, 4, 8), 21,
+     ((0x005A7D67, 0, None), (0x005A7BD6, 4, None), (0x005A7C16, 8, None)),
+     "monster mode (0..15) and five class records; via MonModeRecord 0x005A78A0",
+     "MonSetMode 0x005A7D67 (start); MonModeFrameEvent 0x005A7BD6 (frame); MonModeEndEvent 0x005A7C16 (end)"),
+    ("g_ShrineEffects", 0x006E1850, 0xC, (0,), 23, ((0x00583DD4, 0, None),),
+     "Shrines.txt effect class", "OBJOP_Shrine 0x00583C70: load 0x00583DCC, call 0x00583DD4"),
+    ("tbl_006E2218", 0x006E2218, 4, (0,), 9, ((0x005A605C, 0, None),),
+     "0x005A6000's first argument", "0x005A6000: load 0x005A604D, call 0x005A605C"),
+    ("g_ObjInitFns", 0x00731BC0, 4, (0,), 80, ((0x0054F6F9, 0, None),),
+     "Objects.txt InitFn", "OBJ_ServerInit 0x0054F6F9"),
+    ("g_ObjPopulateFns", 0x00731D00, 4, (0,), 10, ((0x005527EE, 0, None), (0x005528C8, 0, None), (0x005529F3, 0, None)),
+     "Objects.txt PopulateFn", "RoomObjectsPopulate 0x005527EE, 0x005528C8, 0x005529F3"),
+    ("g_ObjPseudoFns", 0x00731D28, 4, (0,), 10, ((0x0054F514, 0, None),),
+     "the preset pseudo-object kind", "OBJ_PresetPseudoDispatch 0x0054F514"),
+    ("g_ObjTrapFns", 0x00732CEC, 4, (0,), 11,
+     ((0x005818AA, 0, None), (0x00581810, 0, 2), (0x00581843, 0, 2), (0x0058187A, 0, 2)),
+     "Objects.txt trap kind", "OBJ_TrapEvent 0x005818AA (jmp, any row), 0x00581810, 0x00581843, 0x0058187A (row 2)"),
+    ("g_ObjOperateFns", 0x00732D18, 4, (0,), 101, ((0x0058450E, 0, None),),
+     "Objects.txt OperateFn", "OBJ_OperateDispatch 0x0058450E"),
+    ("g_UModHandlers", 0x0073C008, 4, (0,), 44,
+     ((0x005A2113, 0, None), (0x005A2153, 0, None), (0x005A21AC, 0, None), (0x005A4815, 0, None), (0x005A4834, 0, None),
+      (0x005A48B0, 0, None)),
+     "MonUMod row", "UModHandlerThunk 0x005A2113; SpecialModsApply 0x005A2153, 0x005A21AC; MinionRestore 0x005A4815, "
+     "0x005A4834; ModAppendApply 0x005A48B0"),
+    ("g_UModEventFns", 0x0073C0B8, 4, (0,), 390, ((0x005A42F2, 0, None), (0x005A432D, 0, None)),
+     "6 * MonUMod row + event", "0x005A4270: load 0x005A42DD, call 0x005A42F2; event 5 load 0x005A4317, call 0x005A432D"),
+    ("g_MissileCollideTypes", 0x0073C720, 8, (0,), 9, ((0x005AE3A4, 0, None),),
+     "Missiles.txt CollideType", "MissileMoveCollide 0x005AE1F0 passes it to FindUnitAtCell (call 0x005AE3A4)"),
+    ("g_MissileSrvDoFuncs", 0x0073C768, 4, (0,), 0x35, ((0x005ADCA7, 0, None),),
+     "Missiles.txt pSrvDoFunc (count 0x0073C71C)", "MissileDoFrame 0x005ADCA7"),
+    ("g_MissileSrvHitFuncs", 0x0073C840, 4, (0,), 0x47,
+     ((0x005AE0BB, 0, None), (0x005AE126, 0, None), (0x005B02F0, 0, None)),
+     "Missiles.txt pSrvHitFunc (count 0x0073C83C)", "MISSILE_HitUnit 0x005AE0BB, 0x005AE126; MissDo31SidePair 0x005B02F0"),
+    ("g_MissileSrvDmgFuncs", 0x0073C960, 4, (0,), 0x1F, ((0x005AE17F, 0, None),),
+     "Missiles.txt pSrvDmgFunc (count 0x0073C95C)", "MISSILE_HitUnit 0x005AE17F"),
+    ("g_MonAiTable", 0x0073CA18, 0x10, (4, 8, 12), 148,
+     ((0x005B0F18, 4, None), (0x005B186F, 8, None), (0x005B186F, 12, None)),
+     "MonStats AI number (< 0x94); via MonAiEntryGet 0x005B15D0",
+     "MonAiInit 0x005B0F18 (field 4); fields 8 and 12 stored at AiCtl+4 by MonAiInit, called by MonAiEvent 0x005B186F"),
+    ("g_MonAiStateRows", 0x0073D358, 0x10, (4, 8, 12), 18,
+     ((0x005B0F18, 4, None), (0x005B186F, 8, None), (0x005B186F, 12, None)),
+     "the AI state (< 0x12); via MonAiEntryGet 0x005B15D0", "as g_MonAiTable"),
+    ("g_StatEventFuncs", 0x007325B0, 4, (0,), 50, ((0x005C0C8E, 0, None),),
+     "stat event kind (< 0x32)", "AddStatEvent 0x0056E740 passes the entry to UNIT_AddEvent 0x005C0AD0 (stored in the "
+     "unit's +0x90 list); UNIT_DispatchEvent 0x005C0C8E calls it"),
+    ("g_PropFuncTable", 0x007462F8, 4, (0,), 0x25, ((0x0065FDF5, 0, None),),
+     "Properties.txt func (count g_nPropFuncs 0x00745B54)", "PROP_ApplyBlock 0x0065FDF5"),
+    ("g_ItemUseFns", 0x00741790, 8, (0, 4), 0x1F, ((0x005BF31E, 0, None), (0x005BF388, 4, None)),
+     "Misc/item pSpell (count 0x0074178C); field 0 test, 4 use", "ItemUse 0x005BF31E (test), 0x005BF388 (use)"),
+    ("g_SkillsCalcFuncs", 0x00745774, 4, (0,), 14, "passed", "calc function number",
+     "pushed to CALC_Eval 0x006C0BC0 by its callers (SKILLS_GetToHit 0x00644A69 and six more)"),
+    ("g_MissCalcFuncs", 0x00745828, 4, (0,), 8, "passed", "calc function number",
+     "pushed to CALC_Eval by MISS_EvalCalc 0x0064B840"),
+    ("g_ItemCalcFuncs", 0x0074463C, 4, (0,), 8, "passed", "calc function number",
+     "pushed to CALC_Eval by ITEMS_EvalCalc 0x00627C6A"),
+    ("g_DrlgRefEnterFns", 0x00744384, 4, (0,), 4,
+     ((0x0061B388, 0, None), (0x0061B410, 0, None), (0x0061B469, 0, None), (0x0061B4DA, 0, None)),
+     "room status", "RoomPrepareFiles 0x0061B388; DrlgRefAddNear 0x0061B410, 0x0061B469; DrlgRefAdd 0x0061B4DA"),
+    ("g_DrlgRefLeaveFns", 0x00744394, 4, (0,), 4,
+     ((0x0061B5AA, 0, None), (0x0061B5E0, 0, None), (0x0061B62E, 0, None), (0x0061B71E, 0, 0), (0x0061B6DA, 0, 1)),
+     "room status", "DrlgLeave3Release 0x0061B5AA; DrlgRefRemoveNear 0x0061B5E0, 0x0061B62E; DrlgRefMove 0x0061B71E "
+     "(row 0); 0x0061B690 0x0061B6DA (row 1)"),
+    ("g_CubePortalFns", 0x006E11C8, 4, (0,), 4, ((0x00565D45, 0, None),),
+     "the cube portal output", "RecipeOutputCreate 0x00565D45"),
+    ("g_QuestDescs", 0x00731510, 0x18, (0,), 37, ((0x00545E2B, 0, None),),
+     "quest number (count 0x00731888)", "QUESTS_InitGame 0x00545E2B"),
+    ("tbl_0073188C", 0x0073188C, 8, (0,), 4, ((0x00545EDA, 0, None),),
+     "intro record (count 0x007318AC)", "QUESTS_InitGame 0x00545EDA"),
+    # the client's tables (their dispatchers run in the client's own code, outside GameTick)
+    ("g_ClientPktHandlers", 0x007114D0, 0xC, (0, 8), 0xAF, ((0x0045F8E9, 0, None), (0x0045FAE0, 8, None)),
+     "server-to-client packet id (< 0xAF)", "0x0045F7B0: entry 0x0045F823, call 0x0045F8E9 (field 0); 0x0045FA40: "
+     "entry 0x0045FAC3, call 0x0045FAE0 (field 8)"),
+    ("g_ClientUModHandlers", 0x00724D78, 4, (0,), 44, ((0x004AD080, 0, None), (0x004AD0A5, 0, None)),
+     "MonUMod row (client)", "ClientMonModsApply 0x004AD080, 0x004AD0A5"),
+    ("tbl_0072D7F8", 0x0072D7F8, 4, (0,), 8, ((0x004EDB1F, 0, None),),
+     "0x004EDA80's index", "0x004EDA80: load 0x004EDB17, call 0x004EDB1F"),
+    ("tbl_006D61B0", 0x006D61B0, 0xC, (8,), 11, ((0x00420054, 8, None), (0x00420281, 8, None), (0x004202E1, 8, None)),
+     "{kind, window message, handler} records", "registered by 0x00451DB0 -> 0x00451C70 -> 0x00420BF0.. -> "
+     "0x00420A70; called by the message dispatch 0x00420054, 0x00420281, 0x004202E1"),
+)
+ITERATORS = {
+    0x005537D0: ((0x00553871,), "GameForEachUnit"),
+    0x005538D0: ((0x00553914,), "GamePlayersForEach (EDX)"),
+    0x0056B7E0: ((0x0056B98C,), "SKILLS_ForUnitsInRange"),
+    0x00540510: ((0x00540585,), "PartyForEach"),
+    0x005405A0: ((0x005405BC, 0x005405E9, 0x00540636), "PartyForEachInLevel"),
+    0x0058F380: ((0x0058F42C,), "MonGroupForEach"),
+    0x0056E780: ((0x0056E8D1,), "SkillForUnitsNearTarget"),
+    0x0065A800: ((0x0065A8C2,), "NearestUnitFind"),
+    0x00641CB0: ((0x00641EA7,), "FindUnitAtCell"),
+    0x0056DCC0: ((0x0056DDB7,), "SkillAreaBlock"),
+    0x0056DDE0: ((0x0056DDB7,), "UnitsInRangeCall (jumps to SkillAreaBlock)"),
+    0x005DD0B0: ((0x005DCF40, 0x005DCFEC, 0x005DCEAA), "AiUnitSearch (through its three searchers)"),
+    0x006C0BC0: ((0x006C0C28, 0x006C0C5C, 0x006C0C8F, 0x006C0D5C, 0x006C0D9B), "CALC_Eval"),
+    0x00544300: ((0x00553871,), "QUESTS_SetState (passes it to GameForEachUnit)"),
+    0x0062FE60: ((0x0062FF45,), "RepairCost"),
+    0x0056B740: ((0x0056B75C,), "SkillCallOnSelf"),
+    0x00574DE0: ((0x00574E88,), "0x00574DE0 (callback first stack argument)"),
+    0x0056DBC0: ((0x0056DC9F,), "0x0056DBC0"),
+    0x005E8F20: ((0x005E8FFF,), "0x005E8F20"),
+    0x0052DED0: ((0x0052DF2A,), "0x0052DED0 (EDX, moved to EDI)"),
+}
+# a callback pushed before a branch or another call: the push address -> the iterator call it is an argument of
+ARG_SITES = {0x00578182: 0x00578199, 0x00596524: 0x0059653B, 0x005B099F: 0x005B0A2A, 0x005B09A8: 0x005B0A2A,
+             0x005B09B5: 0x005B0A2A, 0x005F14F7: 0x005F150E}
+# a callback stored in a stack parameter block ([ebp-X]) whose address is passed to the function: 'self' when the
+# function calls it before returning (the storing function is its caller), else the invokers of the record it is
+# copied into
+BLOCKS = {
+    0x0056E970: ((0x00626BE7,), "STATE_ApplyTimed (block +0x20 -> STATLIST_SetRemoveCallback) -> STATLIST_Unlink"),
+    0x0059FA30: ("self", "MissileCreate (params +0x54, called at 0x0059FE35)"),
+    0x0056DCC0: ("self", "SkillAreaBlock (block callback, called at 0x0056DDB7)"),
+}
+REGISTRARS = {
+    0x00543F10: ((0x00543E85,), "QUESTS_TimerAdd (EDX) -> QUESTS_TimersRun"),
+    0x005C0AD0: ((0x005C0C8E,), "UNIT_AddEvent -> UNIT_DispatchEvent"),
+    0x00625CE0: ((0x00626BE7,), "STATLIST_SetRemoveCallback (+0x38) -> STATLIST_Unlink"),
+    0x00626D40: ((0x0062513E, 0x006251E4), "UnitStatListCreate (+0x5C) -> STATLIST_CacheAdd, STATLIST_CacheWrite"),
+    0x00582800: ((0x00626BE7,), "SHRINE_ApplyState (5th argument -> its state block +0x20, STATE_ApplyTimed 0x00582850; "
+                 "the list's remove callback) -> STATLIST_Unlink"),
+}
+# structured exception handlers: pushed into the fs:0 chain, called only by the exception dispatch (no frame event)
+SEH_HANDLERS = (0x006CA530,)
+QUEST_CODE = ((0x00543000, 0x00547000), (0x00586C80, 0x0059F600), (0x005B37F0, 0x005BDB00))
+_QEV = (0x00543965, 0x005439F9)          # QUESTS_DispatchEvent, QUESTS_DispatchUnitEvent: Quest+0xA0 + 4 * event
+QUEST_FIELDS = dict([(off, _QEV) for off in range(0xA0, 0xDC, 4)])
+QUEST_FIELDS[0xC4] = _QEV + (0x00543C87,)            # QuestsInvItemEvent
+QUEST_FIELDS[0xAC] = _QEV + (0x00546AA3,)            # NpcActTravel
+QUEST_FIELDS[0xD4] = _QEV + (0x00546393,)            # QuestsPlayerJoin
+QUEST_FIELDS[0xD8] = _QEV + (0x005465B3,)            # QuestsPlayerJoin
+QUEST_FIELDS[0xE8] = (0x005442AD, 0x00546135)        # QUESTS_SendLogState, QUESTS_SendPlayerQuestInfo
+QUEST_FIELDS[0xEC] = (0x005446A0,)                   # QUESTS_NpcHasQuest
+QUEST_FIELDS[0xF0] = (                               # QuestsPlayerJoin (5), then the quest code's own 42 calls
+    0x0054640F, 0x00546455, 0x0054649B, 0x005464E4, 0x0054652A, 0x00586FA2, 0x005875BF, 0x00587C08, 0x00588448,
+    0x005891C8, 0x0058B1B8, 0x0058CB6A, 0x0058CD98, 0x0058FEE2, 0x0059067F, 0x00590AA7, 0x0059116E, 0x005915F6,
+    0x00591647, 0x00591EBE, 0x005924C0, 0x00593E07, 0x00594B19, 0x005952AA, 0x00598B9F, 0x00598BEF, 0x0059921F,
+    0x0059A4DF, 0x0059B4EB, 0x0059CCCF, 0x0059D4C1, 0x0059ED15, 0x005B393A, 0x005B3ABA, 0x005B5FB9, 0x005B627B,
+    0x005B795A, 0x005B7D2F, 0x005B81B8, 0x005B93B2, 0x005B9678, 0x005BA607, 0x005BA810, 0x005BA847, 0x005BB3AF,
+    0x005BB46F, 0x005BBB2B)
+STORED = (
+    (0x005943B0, (0x005E7A51,), "0x005E7880 loads it at 0x005E7A41 (beside 0x0058A820 at 0x005E7A48) and calls EAX at "
+     "0x005E7A51"),
+    (0x005D0770, (0x00626BE7,), "HolyFreezeRemoveCb: stored at 0x005D0A02 in the block [ebp-0xB8] (+0x34, its state block "
+     "+0x2C's remove callback +0x20), passed with AURA_ApplyToTarget 0x005CEDC0 to SkillCallOnSelf (0x005D0A7B); "
+     "AURA_ApplyToTarget applies it with STATE_ApplyTimed (0x005CEE38), whose list's remove callback STATLIST_Unlink "
+     "calls at 0x00626BE7"),
+)
+HOST_ROOTS = ((0x0044EFA0, (21,), "ClientMainFrame"), (0x0044CF20, (21,), "OpenServerThread"),
+              (0x0044BD20, (21,), "ClientWaitDrain"), (0x0052FC20, (21,), "ServerGamesFrame"),
+              (0x0052D870, tuple(range(1, 21)), "GameTick"),
+              (0x006827A5, (21,), "CRT_tmainCRTStartup (the image's entry point)"),
+              (0x00433BF0, (21,), "CreateClassSelect (a front-end control callback; 11 records of the front-end's "
+               "control tables at 0x0070AEF0.., no code reference)"))
+DEAD = (0x005368F0, 0x00564C70, 0x00578ED0, 0x00579090, 0x005A5470, 0x005AD9D0, 0x005F7F10, 0x00534630, 0x00530930,
+        0x00543CE0, 0x00543DE0, 0x00595160)
+# referenced only from their own body (a callback passed to an iterator for recursion): unreachable from outside
+DEAD_SELF = (0x005EEB10,)
+
+
 # ---------------------------------------------------------------------------------------------- the binary
 class Binary:
-    """Direct calls of the pinned image (objdump) and its pointer tables, for the reach of a hook."""
+    """Direct calls of the pinned image (objdump), its pointer tables and stored callbacks, for the reach of a hook.
+    follow=False keeps Phase 2a's direct-call reach (the tables of the pass roots only)."""
 
-    def __init__(self, exe=EXE):
+    def __init__(self, exe=EXE, follow=True):
         self.exe = exe
+        self.follow = follow
         with open(exe, "rb") as fh:
             self.img = fh.read()
         self.sha256 = hashlib.sha256(self.img).hexdigest()
-        out = subprocess.run(["objdump", "-d", "--no-show-raw-insn", exe], check=True, capture_output=True,
-                             text=True).stdout
-        rx = re.compile(r"^\s+([0-9a-f]+):\s+(call|jmp)\s+0x([0-9a-f]+)\s*$", re.M)
-        calls = [(int(a, 16), k, int(t, 16)) for a, k, t in rx.findall(out)]
+        out = subprocess.run(["objdump", "-d", "--no-show-raw-insn", "-M", "intel", exe], check=True,
+                             capture_output=True, text=True).stdout
+        rxi = re.compile(r"^\s+([0-9a-f]+):\s+(.*?)\s*$", re.M)
+        self.ia, self.it = [], []
+        for a, t in rxi.findall(out):
+            self.ia.append(int(a, 16))
+            self.it.append(t)
+        del out
+        rx = re.compile(r"^(call|jmp)\s+0x([0-9a-f]+)$")
+        rj = re.compile(r"^(j[a-z]+)\s+0x([0-9a-f]+)$")
+        calls, jccs = [], []
+        for a, t in zip(self.ia, self.it):
+            m = rx.match(t)
+            if m:
+                calls.append((a, m.group(1), int(m.group(2), 16)))
+                continue
+            if self.follow:
+                m = rj.match(t)
+                if m and m.group(1) not in ("jmp",):
+                    jccs.append((a, int(m.group(2), 16)))
         funcs = set()
         with open(os.path.join(ROOT, "re", "symbols.csv")) as fh:
             for row in csv.reader(fh):
@@ -263,9 +484,27 @@ class Binary:
                     except ValueError:
                         pass
         funcs.update(t for _a, k, t in calls if k == "call")
+        if self.follow:
+            # the declared tables' entries and the callbacks' targets are function entries too (some are no call
+            # target and have no symbol row: without them, their bodies would fold into the function before them)
+            self.reloc_refs = collections.defaultdict(list)
+            for r in self.relocs():
+                self.reloc_refs[self.dword(r)].append(r)
+            starts = set(self.ia)
+            for name, base, stride, fields, rows, _s, _ix, _an in TABLES:
+                for row in range(rows):
+                    for fld in fields:
+                        v = self.dword(base + stride * row + fld)
+                        if v in starts:
+                            funcs.add(v)
+            for t, rs in self.reloc_refs.items():
+                if t in starts and t not in funcs and any(r < 0x6CC000 for r in rs) and \
+                        self.img[t - BASE - 1] == 0xCC:
+                    funcs.add(t)       # a code pointer to an instruction after int3 padding: a callback's entry
         self.funcs = funcs
         self.flist = sorted(funcs)
         self.rev = collections.defaultdict(set)
+        self.lab = {}             # (callee, caller) -> the anchor of an edge that is no direct call
         for a, k, t in calls:
             f = self.func_of(a)
             if k == "jmp" and self.func_of(t) == f:
@@ -273,8 +512,223 @@ class Binary:
             if k == "jmp" and t not in funcs:
                 continue          # a jump into another body that is no function entry: not a call edge
             self.rev[t].add(f)
+        for a, t in jccs:
+            f = self.func_of(a)
+            if t in funcs and f != t and self.func_of(t) != f:
+                self._edge(t, f, "branch 0x%08X" % a)     # a conditional tail branch into another function's entry
+        self.dead = set()
+        self.unexplained = collections.defaultdict(list)
+        if self.follow:
+            self._follow()
         self.roots = self._roots()
         self._cache = {}
+
+    # -- instructions and references
+    def ins(self, a):
+        """-> index of the instruction holding address a."""
+        return bisect.bisect_right(self.ia, a) - 1
+
+    def _edge(self, callee, caller, label):
+        if caller is None:
+            return
+        if caller not in self.rev[callee]:
+            self.rev[callee].add(caller)
+            self.lab[(callee, caller)] = label
+
+    def relocs(self):
+        """The image's HIGHLOW base relocations: the addresses of every absolute pointer (code or data)."""
+        pe = struct.unpack_from("<I", self.img, 0x3C)[0]
+        nsec = struct.unpack_from("<H", self.img, pe + 6)[0]
+        opt = struct.unpack_from("<H", self.img, pe + 20)[0]
+        sec = pe + 24 + opt
+        out = []
+        for i in range(nsec):
+            name = self.img[sec + 40 * i:sec + 40 * i + 8].rstrip(b"\0")
+            if name == b".reloc":
+                vsz, va, rsz, raw = struct.unpack_from("<IIII", self.img, sec + 40 * i + 8)
+                p, end = raw, raw + min(vsz, rsz)
+                while p < end:
+                    page, bs = struct.unpack_from("<II", self.img, p)
+                    if bs == 0:
+                        break
+                    for j in range((bs - 8) // 2):
+                        e = struct.unpack_from("<H", self.img, p + 8 + 2 * j)[0]
+                        if e >> 12 == 3:
+                            out.append(BASE + page + (e & 0xFFF))
+                    p += bs
+        return out
+
+    def _indirect(self, site):
+        """True when the instruction at site is an indirect call or jump, or a direct call to an ITERATOR."""
+        i = self.ins(site)
+        if i < 0 or self.ia[i] != site:
+            return False
+        t = self.it[i]
+        m = re.match(r"(call|jmp)\s+0x([0-9a-f]+)$", t)
+        if m:
+            return int(m.group(2), 16) in ITERATORS
+        return bool(re.match(r"(call|jmp)\s+(e[a-z]{2}|DWORD PTR )", t))
+
+    def _next_call(self, i, reg):
+        """The target of the first direct call after instruction i that the value (pushed, or in reg) can reach as an
+        argument: within 16 instructions, before a ret or jmp; with a register, before it is reloaded."""
+        for k in range(1, 17):
+            if i + k >= len(self.it):
+                return None
+            u = self.it[i + k]
+            m = re.match(r"call\s+0x([0-9a-f]+)$", u)
+            if m:
+                return int(m.group(1), 16)
+            if u.startswith("ret") or u.startswith("jmp"):
+                return None
+            if reg and re.match(r"(mov|lea|xor|pop)\s+%s," % reg, u):
+                return None
+        return None
+
+    def _follow(self):
+        for name, sites in [(n, s) for n, (s, _a) in ITERATORS.items()] + [(n, s) for n, (s, _a) in REGISTRARS.items()]:
+            for s in sites:
+                if not self._indirect(s):
+                    raise SystemExit("frame.py: callback site 0x%08X of 0x%08X is no indirect call" % (s, name))
+        for vs in QUEST_FIELDS.values():
+            for s in vs:
+                if not self._indirect(s):
+                    raise SystemExit("frame.py: quest field site 0x%08X is no indirect call" % s)
+        for cb, sites, _an in STORED:
+            for s in sites:
+                if not self._indirect(s):
+                    raise SystemExit("frame.py: stored callback site 0x%08X is no indirect call" % s)
+        # the dead functions: no reference of any kind (no direct call, jump or branch; no pointer)
+        for f in DEAD:
+            if self.rev.get(f) or self.reloc_refs.get(f):
+                raise SystemExit("frame.py: DEAD 0x%08X has a reference" % f)
+            self.dead.add(f)
+        for f in DEAD_SELF:
+            if any(c != f for c in self.rev.get(f, ())) or any(self.func_of(r) != f for r in self.reloc_refs.get(f, ())):
+                raise SystemExit("frame.py: DEAD_SELF 0x%08X has an outside reference" % f)
+            self.dead.add(f)
+        explained = set()       # reloc addresses an edge accounts for
+        for name, base, stride, fields, rows, sites, _ix, _an in TABLES:
+            if sites == "passed":
+                for r in self.reloc_refs.get(base, ()):
+                    if r >= 0x6CC000:
+                        continue
+                    i = self.ins(r)
+                    t = self.it[i]
+                    m = re.match(r"mov\s+(e[a-z]{2}),0x", t)
+                    tgt = self._next_call(i, m.group(1) if m else None) if (t.startswith("push") or m) else None
+                    if tgt in ITERATORS:
+                        for row in range(rows):
+                            for fld in fields:
+                                v = self.dword(base + stride * row + fld)
+                                if v in self.funcs:
+                                    self._edge(v, self.func_of(self.ia[i]), "%s[%d] passed to %s at 0x%08X" % (
+                                        name, row, ITERATORS[tgt][1], self.ia[i]))
+                continue
+            for s, _f, _r in sites:
+                if not self._indirect(s):
+                    raise SystemExit("frame.py: table %s site 0x%08X is no indirect call" % (name, s))
+            for row in range(rows):
+                for fld in fields:
+                    loc = base + stride * row + fld
+                    v = self.dword(loc)
+                    if v not in self.funcs:
+                        continue
+                    explained.add(loc)
+                    for s, sf, sr in sites:
+                        if sf == fld and (sr is None or sr == row):
+                            self._edge(v, self.func_of(s), "%s[%d]%s @0x%08X" % (
+                                name, row, "+%d" % fld if stride > 4 else "", s))
+        stored = {cb: sites for cb, sites, _an in STORED}
+        for t, rs in self.reloc_refs.items():
+            if t not in self.funcs:
+                continue
+            for r in rs:
+                if r >= 0x6CC000:
+                    continue
+                i = self.ins(r)
+                f = self.func_of(self.ia[i])
+                if f == t:
+                    continue
+                ins = self.it[i]
+                done = False
+                m = re.match(r"mov\s+DWORD PTR \[e[a-z]{2}\+(0x[0-9a-f]+)\],0x", ins)
+                if m and int(m.group(1), 16) in QUEST_FIELDS and any(lo <= self.ia[i] < hi for lo, hi in QUEST_CODE):
+                    for s in QUEST_FIELDS[int(m.group(1), 16)]:
+                        self._edge(t, self.func_of(s), "Quest+%s stored at 0x%08X, called @0x%08X" % (
+                            m.group(1), self.ia[i], s))
+                    done = True
+                if not done and re.match(r"mov\s+DWORD PTR \[(e[a-z]{2})\],0x", ins) and \
+                        any(lo <= self.ia[i] < hi for lo, hi in QUEST_CODE):
+                    reg = re.match(r"mov\s+DWORD PTR \[(e[a-z]{2})\]", ins).group(1)
+                    j = i - 1
+                    while j > 0 and self.ia[j] >= f and not re.match(r"lea\s+%s,\[e[a-z]{2}\+0xa0\]$" % reg, self.it[j]):
+                        j -= 1
+                    if j > 0 and self.ia[j] >= f:      # the register holds Quest+0xA0 (the Init's memset base)
+                        for s in QUEST_FIELDS[0xA0]:
+                            self._edge(t, self.func_of(s), "Quest+0xa0 stored at 0x%08X (lea 0x%08X), called @0x%08X" % (
+                                self.ia[i], self.ia[j], s))
+                        done = True
+                if not done and re.match(r"mov\s+DWORD PTR \[ebp-0x[0-9a-f]+\],0x", ins):
+                    for k in range(1, 61):
+                        u = self.it[i + k]
+                        if u.startswith("ret"):
+                            break
+                        mm = re.match(r"call\s+0x([0-9a-f]+)$", u)
+                        if mm and int(mm.group(1), 16) in BLOCKS:
+                            inv, lab = BLOCKS[int(mm.group(1), 16)]
+                            for s in ((None,) if inv == "self" else inv):
+                                self._edge(t, f if s is None else self.func_of(s), "block of %s stored at 0x%08X, "
+                                           "passed at 0x%08X" % (lab.split(" ")[0], self.ia[i], self.ia[i + k]))
+                            done = True
+                            break
+                if not done:
+                    m = re.match(r"mov\s+(e[a-z]{2}),0x", ins)
+                    if ins.startswith("push") or m:
+                        tgt = self._next_call(i, m.group(1) if m else None)
+                        if self.ia[i] in ARG_SITES:
+                            j = self.ins(ARG_SITES[self.ia[i]])
+                            mm = re.match(r"call\s+0x([0-9a-f]+)$", self.it[j])
+                            tgt = int(mm.group(1), 16) if mm and self.ia[j] == ARG_SITES[self.ia[i]] else None
+                            if tgt not in ITERATORS:
+                                raise SystemExit("frame.py: ARG_SITES 0x%08X is no iterator call" % self.ia[i])
+                        if tgt in ITERATORS:
+                            self._edge(t, f, "callback of %s at 0x%08X" % (ITERATORS[tgt][1], self.ia[i]))
+                            done = True
+                        elif tgt in REGISTRARS:
+                            for s in REGISTRARS[tgt][0]:
+                                self._edge(t, self.func_of(s), "registered by %s at 0x%08X, called @0x%08X" % (
+                                    REGISTRARS[tgt][1].split(" ")[0], self.ia[i], s))
+                            done = True
+                if not done and (re.match(r"mov\s+(e[a-z]{2}),0x", ins) or
+                                 re.match(r"mov\s+DWORD PTR \[ebp[-+]0x[0-9a-f]+\],0x", ins)):
+                    m = re.match(r"mov\s+(e[a-z]{2}|DWORD PTR \[ebp[-+]0x[0-9a-f]+\]),0x", ins)
+                    slot = m.group(1)
+                    for k in range(1, 31):
+                        u = self.it[i + k]
+                        if u.startswith("ret"):
+                            break
+                        if u in ("call   %s" % slot, "jmp    %s" % slot):
+                            self._edge(t, f, "loaded at 0x%08X, called through %s at 0x%08X" % (
+                                self.ia[i], slot.replace("DWORD PTR ", ""), self.ia[i + k]))
+                            done = True
+                            break
+                        if slot.startswith("e") and re.match(r"(mov|lea|xor|pop)\s+%s," % slot, u):
+                            break
+                if not done and t in SEH_HANDLERS and re.match(r"push\s+0x", ins) and "fs:0x0" in self.it[i + 1]:
+                    self.dead.add(t)       # an exception handler: no caller in a frame
+                    done = True
+                if not done and t in stored:
+                    for s in stored[t]:
+                        self._edge(t, self.func_of(s), "stored at 0x%08X, called @0x%08X" % (self.ia[i], s))
+                    done = True
+                if not done:
+                    self.unexplained[t].append(r)
+        for t, rs in self.reloc_refs.items():
+            if t in self.funcs:
+                for r in rs:
+                    if r >= 0x6CC000 and r not in explained:
+                        self.unexplained[t].append(r)
 
     def dword(self, va):
         return struct.unpack_from("<I", self.img, va - BASE)[0]
@@ -308,20 +762,28 @@ class Binary:
             f = self.dword(PACKET_TABLE + 8 * op)
             if 0x401000 <= f < 0x6CC000:
                 put(f, {21}, None, "pkt%02X" % op)
+        if self.follow:
+            for a, ranks, n in HOST_ROOTS:
+                put(a, ranks, None, n)
         return roots
 
-    def reach(self, addr):
-        """-> (roots reached [(addr, ranks, utype, name)], open roots [addr], functions visited)."""
+    def reach(self, addr, direct=False):
+        """-> (roots reached [(addr, ranks, utype, name)], open roots [addr], functions visited). direct: by direct
+        calls, jumps and branches only (no edge of the declared tables and callbacks)."""
         f = addr if addr in self.funcs else self.func_of(addr)
-        if f in self._cache:
-            return self._cache[f]
+        if (f, direct) in self._cache:
+            return self._cache[(f, direct)]
         seen, todo, got, opened = {f}, [f], [], []
         while todo:
             x = todo.pop()
             if x in self.roots:
                 got.append((x,) + self.roots[x])
                 continue
+            if x in self.dead:
+                continue
             callers = self.rev.get(x, ())
+            if direct:
+                callers = [c for c in callers if (x, c) not in self.lab]
             new = [c for c in callers if c not in seen]
             if not callers:
                 opened.append(x)
@@ -329,14 +791,57 @@ class Binary:
                 seen.add(c)
                 todo.append(c)
         res = (sorted(got), sorted(opened), len(seen))
-        self._cache[f] = res
+        self._cache[(f, direct)] = res
         return res
 
-    def passes(self, addrs, utype=None):
+    def closure(self, addr):
+        """The functions of a hook's reach (roots included), and the references among them that no declared edge
+        accounts for: [(function, reference address)]. A reference left over may be an undeclared caller."""
+        f = addr if addr in self.funcs else self.func_of(addr)
+        seen, todo = {f}, [f]
+        while todo:
+            x = todo.pop()
+            if x in self.roots or x in self.dead:
+                continue
+            for c in self.rev.get(x, ()):
+                if c not in seen:
+                    seen.add(c)
+                    todo.append(c)
+        return seen, sorted((x, r) for x in seen if x not in self.roots for r in self.unexplained.get(x, ()))
+
+    def chain(self, addr, root=None):
+        """One shortest caller chain from the hook up to a pass root (or the given root): [(function, the anchor of
+        the edge to the next function up: 'call' for a direct call)], root last."""
+        f = addr if addr in self.funcs else self.func_of(addr)
+        prev = {f: None}
+        q = collections.deque([f])
+        hit = None
+        while q:
+            x = q.popleft()
+            if (root is None and x in self.roots) or x == root:
+                hit = x
+                break
+            if x in self.roots or x in self.dead:
+                continue
+            for c in sorted(self.rev.get(x, ())):
+                if c not in prev:
+                    prev[c] = x
+                    q.append(c)
+        if hit is None:
+            return None
+        out = []
+        x = hit
+        while x is not None:
+            out.append(x)
+            x = prev[x]
+        out.reverse()          # hook first
+        return [(x, self.lab.get((x, out[i + 1]), "call") if i + 1 < len(out) else None) for i, x in enumerate(out)]
+
+    def passes(self, addrs, utype=None, direct=False):
         """The pass set of a list of hooks, narrowed by the unit type; None when any reach is open or empty."""
         out = set()
         for a in addrs:
-            got, opened, _n = self.reach(a)
+            got, opened, _n = self.reach(a, direct)
             if opened or not got:
                 return None
             typed = [g for g in got if g[2] is not None]
@@ -476,8 +981,7 @@ def own_set(bin_, fam, e, ptypes):
             hook = RPE_HOOK.get(e.raw.get("stat"))
             if hook is None:
                 return None, "open"
-            s = bin_.passes([hook], 4)
-            return (s, "reach") if s else (None, "open")
+            return _closed(bin_, [hook], 4)
         if fam == "combat":
             t = e.raw.get("t")
         else:
@@ -488,11 +992,9 @@ def own_set(bin_, fam, e, ptypes):
         hooks = args.get(t) if isinstance(args, dict) else None
         if hooks is None:
             return None, "open"
-        s = bin_.passes(hooks, t)
-        return (s, "reach") if s else (None, "open")
+        return _closed(bin_, hooks, t)
     if kind == R:
-        s = bin_.passes(args, utype)
-        return (s, "reach") if s else (None, "open")
+        return _closed(bin_, args, utype)
     if kind == RA:
         field, hooks = args
         if fam == "skills" and e.kind == "CU0" and (e.raw.get("cl") or e.raw.get("ret") == 0x004D9FCA):
@@ -502,9 +1004,25 @@ def own_set(bin_, fam, e, ptypes):
             s = bin_.passes([ra], utype)
             if s:
                 return s, "ra"
-        s = bin_.passes(hooks, utype) if hooks else None
-        return (s, "reach") if s else (None, "open")
+        if not hooks:
+            return None, "open"
+        return _closed(bin_, hooks, utype)
     return None, "unmapped"
+
+
+def _closed(bin_, hooks, utype):
+    """-> (set, class) of a reach rule: 'reach' when the direct calls close it, 'dispatch' when it closes through a
+    declared table or callback (P2a-ii), 'universal' (every rank) when it stays open with the tables followed: an open
+    remainder may call the hook from any pass, so only the whole set is sound; else (None, 'open')."""
+    s = bin_.passes(hooks, utype)
+    follow = getattr(bin_, "follow", False)
+    if s:
+        if follow and bin_.passes(hooks, utype, direct=True) != s:
+            return s, "dispatch"
+        return s, "reach"
+    if follow:
+        return ALL, "universal"
+    return None, "open"
 
 
 def set_name(s):
@@ -697,7 +1215,9 @@ class Check:
                 cs = [x[1] for x in opened if x[1] is not None]
                 if cs:
                     inter = frozenset.intersection(*cs)
-                    if s is None:
+                    if cls == "universal":
+                        s, cls = inter, "nested"
+                    elif s is None:
                         s, cls = inter, "nested"
                     else:
                         s2 = s & inter
@@ -709,7 +1229,7 @@ class Check:
                         s = s2
                 eff[e.line] = (s if s else None, cls)
             if e.end is not None and e.end > e.line:
-                ins = sets[e.line][0] if sets[e.line][1] not in ("skip", "client") else None
+                ins = sets[e.line][0] if sets[e.line][1] not in ("skip", "client", "universal") else None
                 if eff[e.line][0] is not None:
                     ins = eff[e.line][0]
                 opened.append((e.end, ins))
@@ -720,10 +1240,16 @@ class Check:
                 continue
             row["frames2"] += 1
             row["events in frames2"] += len(real)
-            placed = [(e, eff[e.line][0]) for e in real if eff[e.line][0] is not None]
+            anyp = [e for e in real if eff[e.line][0] is not None]
+            placed = [(e, eff[e.line][0]) for e in anyp if eff[e.line][1] != "universal"]
             for e in real:
                 self.kind[(fam, e.kind)]["in frames2"] += 1
             self.seeds(rel, fr, real, eff, fam)
+            if len(anyp) >= 2:
+                row["frames placed2 any"] += 1
+                row["events placed any"] += len(anyp)
+                if len(anyp) == len(real):
+                    row["frames2 all placed"] += 1
             if len(placed) < 2:
                 continue
             row["frames placed2"] += 1
@@ -934,7 +1460,7 @@ def corpus_logs(index=INDEX):
 
 
 def cmd_check(a):
-    bin_ = Binary(a.exe)
+    bin_ = Binary(a.exe, follow=not a.direct)
     ck = Check(bin_)
     if a.logs:
         idx = {p: g for p, g in corpus_logs()}
@@ -964,12 +1490,14 @@ def cmd_check(a):
 
 
 ROW_KEYS = ["events", "no unit id", "no seed", "segments", "frames2", "events in frames2", "frames placed2", "compared",
-            "compared own", "separating", "mismatch", "no-frame"]
+            "compared own", "separating", "mismatch", "no-frame", "frames placed2 any", "events placed any",
+            "frames2 all placed"]
 
 
 def report(ck, bin_, todo):
     L = []
-    L.append("frame.py check (plan 0055 Phase 2a); game.exe %s" % bin_.sha256)
+    L.append("frame.py check (plan 0055 Phase 2a%s); game.exe %s" % (
+        "" if not bin_.follow else "-ii: the declared tables followed, open hooks universal", bin_.sha256))
     L.append("tool sha256 %s; frame_corpus.py %s" % (_sha(__file__), _sha(frame_corpus.__file__)))
     L.append("logs %d" % len(todo))
     L.append("")
@@ -1047,36 +1575,86 @@ def _sha(p):
 
 
 # ---------------------------------------------------------------------------------------------- reach / kinds
+def kind_hooks(fam, rule, args):
+    """The hooked functions a kind's rule reaches from."""
+    if rule == R:
+        return list(args)
+    if rule == RA:
+        return list(args[1])
+    if rule == TYPE and isinstance(args, dict):
+        return sorted({h for v in args.values() for h in v})
+    if rule == TYPE and fam == "h6b":
+        return sorted(RPE_HOOK.values())
+    return []
+
+
+def hook_status(bin_, h):
+    """-> (status, set, chain) of one hook: 'reach' (closed by direct calls), 'dispatch' (closed through a declared
+    table or callback), 'universal' (open with the tables followed: any rank), 'open', or 'dead'."""
+    got, opened, _n = bin_.reach(h)
+    s = bin_.passes([h])
+    ch = bin_.chain(h)
+    if s:
+        return ("dispatch" if bin_.follow and bin_.passes([h], direct=True) != s else "reach"), s, ch
+    if not got and not opened:
+        return "dead", None, None
+    return ("universal" if bin_.follow else "open"), None, ch
+
+
+def chain_text(bin_, ch):
+    if not ch:
+        return "-"
+    out = []
+    for x, lab in ch:
+        n = bin_.roots[x][2] if x in bin_.roots else "0x%08X" % x
+        out.append(n if lab in (None, "call") else "%s [%s]" % (n, lab))
+    return " <- ".join(out)
+
+
 def cmd_reach(a):
-    bin_ = Binary(a.exe)
+    bin_ = Binary(a.exe, follow=not a.direct)
     addrs = [int(x, 16) for x in a.addrs]
     if not addrs:
         for fam, ks in sorted(KINDS.items()):
             for kind, (rule, args, _an) in sorted(ks.items()):
-                hooks = []
-                if rule == R:
-                    hooks = args
-                elif rule == RA:
-                    hooks = args[1]
-                elif rule == TYPE and isinstance(args, dict):
-                    hooks = sorted({h for v in args.values() for h in v})
-                elif rule == TYPE and fam == "h6b":
-                    hooks = sorted(RPE_HOOK.values())
-                for h in hooks:
-                    addrs.append(h)
-    print("game.exe %s; %d functions, %d roots" % (bin_.sha256, len(bin_.flist), len(bin_.roots)))
+                addrs.extend(kind_hooks(fam, rule, args))
+    print("game.exe %s; %d functions, %d roots; %s; tool %s" % (
+        bin_.sha256, len(bin_.flist), len(bin_.roots), "direct calls only" if a.direct else
+        "tables %d, iterators %d, registrars %d, quest fields %d, stored %d, host roots %d, dead %d" % (
+            len(TABLES), len(ITERATORS), len(REGISTRARS), len(QUEST_FIELDS), len(STORED), len(HOST_ROOTS), len(DEAD)),
+        _sha(__file__)))
+    opens = collections.Counter()
     for h in sorted(set(addrs)):
         got, opened, n = bin_.reach(h)
         f = h if h in bin_.funcs else bin_.func_of(h)
-        s = bin_.passes([h])
-        print("0x%08X fn 0x%08X visited %d roots %d open %d -> %s; roots %s%s" % (
-            h, f, n, len(got), len(opened), set_name(s) if s else "open",
-            ",".join(sorted({g[3] for g in got}))[:300], "" if not opened else "; open e.g. " +
-            ",".join("0x%08X" % x for x in opened[:5])))
+        st, s, ch = hook_status(bin_, h)
+        ranks = set()
+        for g in got:
+            ranks |= g[1]
+        for o in opened:
+            opens[o] += 1
+        unex = bin_.closure(h)[1] if not a.direct else []
+        print("0x%08X fn 0x%08X visited %d roots %d open %d unexplained %d -> %s %s; ranks reached %s; chain %s%s%s" % (
+            h, f, n, len(got), len(opened), len(unex), st, set_name(s) if s else "-",
+            set_name(frozenset(ranks)) if ranks else "-", chain_text(bin_, ch),
+            "" if not opened else "; open e.g. " + ",".join("0x%08X" % x for x in opened[:5]),
+            "" if not unex or opened else "; unexplained " + ",".join("0x%08X@0x%08X" % u for u in unex[:8])))
+    if opens and not a.direct:
+        print("open functions (no caller once the tables are followed), by hooks reaching them:")
+        for o, c in opens.most_common():
+            refs = []
+            for r in bin_.reloc_refs.get(o, [])[:3]:
+                if r < 0x6CC000:
+                    i = bin_.ins(r)
+                    refs.append("code 0x%08X in 0x%08X: %s" % (bin_.ia[i], bin_.func_of(bin_.ia[i]), bin_.it[i]))
+                else:
+                    refs.append("data 0x%08X" % r)
+            print("  0x%08X hooks %d; %s" % (o, c, " | ".join(refs) if refs else "no reference"))
     return 0
 
 
-def cmd_kinds(_a):
+def cmd_kinds(a):
+    bin_ = Binary(a.exe, follow=not a.direct) if a.resolved else None
     for fam, ks in sorted(KINDS.items()):
         for kind, (rule, args, anchor) in sorted(ks.items()):
             if rule in (R,):
@@ -1089,7 +1667,15 @@ def cmd_kinds(_a):
                 arg = ";".join("%s:%s" % (t, ",".join("0x%08X" % h for h in v)) for t, v in sorted(args.items()))
             else:
                 arg = ""
-            print("%s\t%s\t%s\t%s\t%s" % (fam, kind, rule, arg, anchor))
+            line = "%s\t%s\t%s\t%s\t%s" % (fam, kind, rule, arg, anchor)
+            if bin_ is not None:
+                res = []
+                for h in kind_hooks(fam, rule, args):
+                    st, s, ch = hook_status(bin_, h)
+                    res.append("0x%08X %s %s: %s" % (h, st, set_name(s) if s else ("any rank" if st == "universal"
+                                                                                  else "-"), chain_text(bin_, ch)))
+                line += "\t" + (" | ".join(res) if res else "(no hook: %s)" % rule)
+            print(line)
     return 0
 
 
@@ -1227,10 +1813,15 @@ def main(argv):
     sub = ap.add_subparsers(dest="cmd")
     p = sub.add_parser("reach")
     p.add_argument("--exe", default=EXE)
+    p.add_argument("--direct", action="store_true", help="Phase 2a's reach: direct calls only, no declared table")
     p.add_argument("addrs", nargs="*")
-    sub.add_parser("kinds")
+    p = sub.add_parser("kinds")
+    p.add_argument("--exe", default=EXE)
+    p.add_argument("--resolved", action="store_true", help="add each hook's status, pass set and caller chain")
+    p.add_argument("--direct", action="store_true")
     p = sub.add_parser("check")
     p.add_argument("--exe", default=EXE)
+    p.add_argument("--direct", action="store_true", help="Phase 2a's model: direct calls only, no universal class")
     p.add_argument("--out")
     p.add_argument("root")
     p.add_argument("logs", nargs="*")

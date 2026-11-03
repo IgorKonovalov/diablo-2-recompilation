@@ -525,3 +525,23 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   (reverser, no game, one Ghidra; the cheaper cross-check, queued for the next free static lane after 0054·P1), and
   Phase 2b's `UE0`/`UE1` lines, which close it by observation. Phase 2a closes when P2a-ii lands or 2b's first window
   places the open hooks, whichever first. The research map's `sim/frame` row says "P2a met in part".
+- **2026-11-03 — Phase 2a-ii the static dispatcher read (reverser, static, `lane/r55f`; review requested).**
+  [frame/0005](../findings/frame/0005-dispatchers.md), [frame/experiments](../findings/frame/experiments.md)
+  (run:2026-11-03-frame-order-2), `tools/frame.py` (`9d6487a6…`; the check on `a21171fc…`, commit `966613c8`) with
+  `tools/test_frame.py` (23 tests); kept outputs under `workspace/logs/r55f/` (manifest `2109a8b4…`, 24 lines), development
+  runs under `dev/` (`e72339cd…`, 18 lines). No symbol rows. Declared: 35 tables, 20 iterators, 5 registrars, 18 quest
+  field offsets, 2 one-off callbacks, 18 block stores, 7 host roots, 12 dead functions. **Found:** of the 74 open hooks, 9
+  close (8 through a declared edge, `PayGold` by a dead caller) and 65 do not: each reaches 19 of the 21 ranks and keeps 50
+  open functions, callbacks whose client-side registrars were not read, so the tool gives each every rank (`universal`).
+  Closing them could not narrow them, because the reach has no calling context. **Replay:** 501 689 frames with two or more
+  events; 383 349 hold two or more closed sets (192 294 in Phase 2a), 0 mismatches, 0 nesting conflicts; 17 254 separating
+  pairs (14 061), 9 029 without the logged phase (3 105), anim 16 935, skills 319, the other loggers 0; four controls fail;
+  hand-offs unchanged, 0 reversed; `check --direct` reproduces Phase 2a. Three passes `[C]` by pair count: `PathStep`
+  monsters' half 3 820, `UNIT_AnimAdvance` 568, `RunStaminaDrain` 90. **Done-when: not met as written.** 118 340 frames hold
+  fewer than two closed sets. Counting universal events, 501 659 frames place two or more and 494 897 place all, which tests
+  nothing and is not offered as meeting it. **Remains for Phase 2b:** the 65 universal hooks, by its `UE0`/`UE1` lines; the
+  second clause stands as ruled. **Review request (architect):** whether this closes P2a-ii with the remainder moved to
+  Phase 2b; the rule that a hook left open takes every rank; rank 21 for everything outside `GameTick`, and
+  `CreateClassSelect` as a judgement root; the stack-block match, read by name only. The research-map row and the plans index
+  are not touched (architect's files).
+- **2026-11-03 — Phase 2a-ii Tier B check (architect, `lane/r55f`): accept with fixes (3); P2a-ii closed, Phase 2a stays *met in part*.** Fixes: overclaim 2 (frame/0005's three-hook `[C]` and the run's conclusion now say the pairs show the order against the logged neighbours, not the rank within the set; the summary says the frames without a separating pair agree trivially), omission 1 (the per-hook pair counts overlap by the 43 `DR0` → `PS0` pairs, and `RunStaminaDrain`'s 90 are split by anchor kind; frame/0004's headline carries a dated pointer to the wider counts). Rulings: (1) P2a-ii is closed as the static step it was; Phase 2a's Done-when is still not met as written (118 340 frames hold fewer than two closed sets, 65 hooks open), so Phase 2a stays open as met in part and closes at Phase 2b's first window that places the 65 hooks by `UE0`/`UE1`; the second clause stays met. (2) A hook left open takes every rank: sound (only widens), `[I]`, tests nothing, and its events are not counted as placed. (3) Rank 21 outside `GameTick` is a fair `[I]` for the single-player corpus (the scope is stated); `CreateClassSelect` as a root adds a rank to its callees only and cannot close a hook falsely. (4) The stack-block match can only add false edges, which widen a set; `[I]` stands, and its 18 are in the kept `reads/edges.txt`. `PayGold`'s closure rests on 0x00578ED0 having no reference, checked by the tool at each start and recorded `[I]` in items/0011; `PayGold` has no pair and stays `[I]`. The research map's `sim/frame` row says "P2a met in part; P2a-ii landed, 9 of 74 hooks closed, 65 to Phase 2b".
