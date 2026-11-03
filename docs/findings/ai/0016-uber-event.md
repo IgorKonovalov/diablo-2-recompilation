@@ -12,9 +12,13 @@ Static reading of the pinned `Game.exe` in objdump (`workspace/logs/r52n/c1-asm.
 
 ## Answer (summary)
 
-- [I] **No Uber-specific driver exists in this image, and nothing in it creates the three bosses.** Searched: the whole-image
+- [I] **No Uber-specific driver and no creator of the three bosses was found in this image.** This is a property of the pinned `Game.exe` and says nothing about any other build or about the realm. Searched: the whole-image
   references of the helpers (absolute by `.reloc`, direct by a raw rel32 sweep, exports, RVA words), every operand naming the
-  classes (§ 2), the data words holding them, the level ids 133–136 (§ 3), and the table paths (§ 4). (`c1-refs.txt`, `c1-classes.txt`,
+  classes (§ 2), the data words holding them, the level ids 133–136 (§ 3), and the table paths (§ 4). **What this cannot see:** a class number or an address
+  computed at run time (a base plus an offset that lands inside a function or equals a class, a pointer built in a buffer, a value read from a file or a packet),
+  and a class named by a string looked up in `MonStats` (the architect's check of 2026-11-03, no kept output: `grep -a -o -i 'uber[a-z]*'` over the pinned image finds
+  `Uber` twice, `ubercode`, `UberCodeOddsGood` and `UberCodeOddsNormal`, and none of the three class names). The nine live controls are functions that the same scan
+  must find by a table pointer (`RELOC`) or by a direct call (`REL32`); they show the two views work, not that every route is covered. (`c1-refs.txt`, `c1-classes.txt`,
   fn:sub_005E9DF0_AiUberDiablo@0x005E9DF0, fn:sub_005FD200_AiUberBaal@0x005FD200, fn:sub_005F81C0_AiUberMephisto@0x005F81C0)
 - [I] **The driver of each boss, if one is ever created, is the generic machinery and nothing else.** All three:
   `MonAiEvent` (0x005B1740) with row kind 1. Without a target `MonAiTargetOrIdle` idles or ring-walks; with a target the
@@ -30,6 +34,9 @@ Static reading of the pinned `Game.exe` in objdump (`workspace/logs/r52n/c1-asm.
 - [I] **The bosses' class-gated code that survives** is at creation (mods), at death (`cm2` and `std` once all three died), one combat test, one heal test and
   client display (§ 2, § 6). (fn:sub_005B1CF0_MonPostCreateBoss@0x005B1CF0, fn:sub_005A3250_UModQuestCompleteDeath@0x005A3250,
   fn:sub_005E0070_UberTristramDrop@0x005E0070)
+- **For a reimplementer:** in this image the three Uber bosses are table rows with no code that makes one, and levels 133–136 are not reached from stock play (§ 3).
+  A reimplementation of this image has no Uber event to port, only the class-gated code of § 6 that would run if a unit of class 704, 705 or 709 existed. Whether
+  another build or the realm drives them is not read here (Open questions).
 - [C] The maps of § 7, ten families, 3 629 cases, 0 mismatches, each ending at its first callee or return (ADR-0021); not the callees and not reach.
   (run:2026-11-03-ai-uber)
 - **Contradictions:** none with a reading of ai/0008 or ai/0012; one refinement (ai/0008's `flag` of 0x005F7F10 is a unit pointer, § 4) and
@@ -163,7 +170,7 @@ describe is not in the file. (fn:sub_005E9DD0_UberDemonHoleSpawn@0x005E9DD0, fn:
 
 ### 8. Cases that need the game (for a later harness or owner-play session)
 
-None is scheduled by this lane; Phase 2 does not need them.
+None is scheduled by this lane; Phase 2 does not need them. Routed by the Tier B check: G4 to the next Phase 2 lane run (backlog, architect to reverser), G1, G2, G3 and G5 to the owner (backlog, architect to human); neither blocks.
 
 - **G1, forced (ADR-0010, -0013):** a Levels `mon` slot edited to `ubermephisto`, `uberdiablo`, `uberbaal` in a reachable level, the AI log on: think runs, no command, the clock stops, what a hit restarts. The claims of § 5 read no edited cell except the pool's, which is the delivery.
 - **G2, forced, owner-play or harness:** kill the three in one game: the mod-22 death path, the flags, `cm2` then `std` per player.
@@ -184,3 +191,5 @@ None is scheduled by this lane; Phase 2 does not need them.
 
 - Who else could set `AiCtl` flag 0x20 for an Uber class: only mod 26's handler is named (ai/0001); not scanned for other writers here.
 - The realm-side behaviour (why the helpers stayed and their callers did not) cannot be read from this image.
+- [L] Community documents (src:d2dfg-blizzard, ai/0014 C28 to C30, items/0008 § 5.2) describe the Uber event as realm-only behaviour. No such document was read by this lane to
+  settle anything; the statement stays a lead, not a claim about this image, and nothing in the image confirms or refutes it beyond § 1 to § 4.
