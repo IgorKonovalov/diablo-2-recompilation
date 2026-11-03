@@ -34,7 +34,8 @@ tool copy).
   pass at exactly `h0`**: only a route of the unblocked octile length is found. The cell grid is kept across passes.
   (0x0067AC3E–0x0067ACD4)
 - [C] **The neighbour order** (§ 5): the root tries 8 directions from `want`, the octant to the target: `d, d+1, d−1, d+2, d−2,
-  d+3, d−3, d+4`. A child tries 5, from a row of `g_PathSearchTurnRows` chosen by `(want − parent's direction) & 7`.
+  d+3, d−3, d+4`. A child tries 5, from a row of `g_PathSearchTurnRows` chosen by `(want − parent's direction) & 7`. Under type 0 the order
+  rests on 5 cases of `open` and 5 of `rect` that the controls `row` and `tries` separate; none of `real0`'s does (§ 5).
   (data:g_PathSearchTurnRows@0x006F17D8, fn:sub_0067A690_PathSearchAdvance@0x0067A690)
 - [C] **How a walk ends:** at the target; at a node outside the rectangle, or with `h < 2 × ctx.refresh` (both are returned as
   found); or with nothing: the root spent, more than 10 000 passes of the loop, or the 900-node store full (the last ends the
@@ -259,8 +260,8 @@ From `p2-bounds.txt` (`tools/path_emu2.py bounds`), each with its emulation wher
 
 - [C] **Points: at most 77, against 78 slots.** The reduction stops at 78 stored into a 78-slot local (0x148 − 0x10 = 312 bytes), keeps 2..77, returns 0 at 78, and `PathSearchRun` tests `< 78` again
   (0x0067ACE9). 77 × 4 = 308 bytes into the record's 312. `stair`: 77 returned (`maxpoints=77`), 78 refused (`points78:target` 42). A route of 78 corners fits inside `PathPlan`'s window: a staircase of `dx` 78, `dy` 39 has `g = h0 = 195`. (run:2026-11-03-path-emu-2)
-- [C] **The node store is out of reach under `PathPlan`'s window.** `|dx|, |dy| ≤ 100` gives `h0 ≤ 300`; the last bound is at most `max(300, 254) = 300` (type 0) or `max(450, 254) = 450` (type 16); `g ≤ bound` and each step costs at least 2, so
-  the depth is at most 150 or 225 and the nodes 151 or 226, below 900. Past the window, `corr` reaches it: 899 steps fit, the 900th step's child returns 0 and ends the search (`none:nodes` 22, `maxnodes=900`). The largest counts
+- [I] **The node store is out of reach under `PathPlan`'s window** (a bound derived from the `[C]` costs and bounds above and path/0001's window; no case lies inside the window to separate it). `|dx|, |dy| ≤ 100` gives `h0 ≤ 300`; the last bound is at most `max(300, 254) = 300` (type 0) or `max(450, 254) = 450` (type 16); `g ≤ bound` and each step costs at least 2, so
+  the depth is at most 150 or 225 and the nodes 151 or 226, below 900. Past the window, `corr` reaches it ([C]): 899 steps fit, the 900th step's child returns 0 and ends the search (`none:nodes` 22, `maxnodes=900`). The largest counts
   elsewhere: `real16` 103 and `rect` 130, inside the window; `open` 150, whose targets lie up to 126 off. (run:2026-11-03-path-emu-2, fn:sub_00649970_PathPlan@0x00649970)
 - [C] **The assert and the frame.** `w h` is a signed product against 50 000 (0x0067AAB9–0x0067AAC3): 50 000 passes, 50 001 asserts with line 0x171 (35 assert cases in `grid`, 73 at the clear with length `4 (w + 6)(h + 6)`). The grid has 50 000 cells to the flag, and `EBP` lies 50 010 cells from its start: **a clear of 50 011 cells zeroes the saved `EBP`,
   50 012 the return address, 50 013 the context argument** (`over`, 12 cases, the three words dumped after the clear). [I] The next read of the argument, 0x0067AB67, then loads 0 and faults at 0x0067AB74. Square rectangles: 217 × 217 fits (49 729 cells), 218 × 218 passes the assert (47 524) and overruns (50 176); 223 × 223 passes (49 729), 224 × 224 asserts. The smallest passing product that overruns is 1 × 7 139. For a same-room rectangle (room + 20), a room of 197 × 197 fits and 198 × 198 overruns. (run:2026-11-03-path-emu-2)

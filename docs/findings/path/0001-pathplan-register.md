@@ -187,7 +187,7 @@ flowchart TD
   creation gives a player 73 and a monster 14 (0x00649E86, 0x00649E4D). `+0x92` is 70 for a player (0x00649E8D) and
   is written otherwise in the path module only by `sub_00648F00_PathSetByte92`, which asserts a path of type 0. `+0x93` is the
   stop range (`PathSetStopDist`), `+0x94` the re-plan budget (§ 9), `+0x98` the type parameter. How the planners use
-  `ctx.limit`, `ctx.b1C` and `+0x98` is P1.2's and P1.3's.
+  `ctx.limit`, `ctx.b1C` and `+0x98`: the search reads `b1C` only and not `limit` (path/0002 § 6); the other planners are P1.3's.
 - [I] **Writers** (`p1-writers-9x.txt`, byte stores to `[reg+0x90..0x94]` over `.text`): in the path module only the
   setters, `PATH_DynamicCreate` and `PathStepMove`'s `+0x90` decrement (0x00650724); two client copies (0x004651B6–
   0x004651DC, 0x00447060, 0x0044706F); 14 stores in 0x0058929F–0x00594647 (the range corrected by path/0002 § 10, which also
@@ -310,7 +310,7 @@ return 1;
   flag, `0x200` turns the facing by 32 (§ 9), `0x4000` / `0x10000` keep the saved type and speed. Bits `0x100`,
   `0x400`, `0x2000` and `0x8000` are only replaced by `PATH_DynamicCreate`'s and `PathSetType`'s masks in this
   scan; `0x2000` and `0x8000` are read from the type's word in `PathSetType` (a register test). The planners' tests
-  of the flags are P1.2's and P1.3's.
+  of the flags: the search reads none (path/0002 § 6); the other planners' are P1.3's.
 
 ### 9. The consumers: `PathAimNextPoint`, `PathFaceDir`, `PathReplan`
 
