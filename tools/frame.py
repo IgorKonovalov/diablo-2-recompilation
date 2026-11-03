@@ -636,6 +636,7 @@ class Check:
         self.mf = collections.Counter()
         self.cross = collections.Counter()
         self.ra = collections.Counter()
+        self.sep_rule = collections.Counter()
         self.notes = []
         self.rows = []
 
@@ -746,6 +747,8 @@ class Check:
             for (ea, sa), (eb, sb) in zip(placed, placed[1:]):
                 if max(sa) < min(sb):
                     self.sep[(set_name(sa), set_name(sb))] += 1
+                    self.sep_rule[("%s %s" % (fam, ea.kind), eff[ea.line][1], "%s %s" % (fam, eb.kind),
+                                   eff[eb.line][1])] += 1
                     row["separating"] += 1
         if fam == "anim":
             self.slot_order(rel, evs, frames, ptypes)
@@ -1000,6 +1003,10 @@ def report(ck, bin_, todo):
     L.append("== separating pairs (consecutive placed events whose sets do not overlap), by set")
     for (a, b), v in sorted(ck.sep.items(), key=lambda x: -x[1]):
         L.append("  %8d  %s -> %s" % (v, a, b))
+    L.append("")
+    L.append("== separating pairs by kind and rule (first kind, its rule, second kind, its rule); ph is the logged phase")
+    for k, v in sorted(ck.sep_rule.items(), key=lambda x: -x[1]):
+        L.append("  %8d  %s [%s] -> %s [%s]" % (v, k[0], k[1], k[2], k[3]))
     L.append("")
     L.append("== control orders: events that cannot be placed, frames failing")
     for name in CONTROLS:
