@@ -767,4 +767,4 @@
   AI52L result=ok
   ```
 - **Conclusion:** [C] the maps of ai/0013 § 5, each ending at its first callee (ADR-0021); the code as a map over a declared image, no symbol raised (ADR-0015, `lane/p46m12` ruling 7). Separation: `le` 205, `cmp` 272, `u16` 7, `lo8` 47, `arg` 1 255 cases, none passing; `d0` separates none, no emulated path reading the difficulty before a boundary; the site control passes none. (run:2026-11-03-ai-cat-emu-12, fn:sub_005E6AE0_AiNpcScriptStep@0x005E6AE0)
-- **Left `[I]`:** everything after a boundary, `AiNpcNearPlayer`'s body (past the search), the size branch of `UNIT_GetSizeX`, the unit-null guards, the unsigned reading of row 99's positions. (fn:sub_005E68F0_AiNpcNearPlayer@0x005E68F0)
+- **Left `[I]`:** everything after a boundary, among them the five path actions' walk and their records past `Ovr` or `MonModeAllowed` (`SITES`), `AiNpcNearPlayer`'s body (past the search), the size branch of `UNIT_GetSizeX`, the unit-null guards, the unsigned reading of row 99's positions. (fn:sub_005E68F0_AiNpcNearPlayer@0x005E68F0)

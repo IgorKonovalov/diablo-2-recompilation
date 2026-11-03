@@ -1093,7 +1093,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0058F380,func,sub_0058F380_MonGroupForEach,,C,monsters/special,docs/findings/monsters/0003-special-monsters.md
 0x0058F710,func,sub_0058F710_MonLinkClass3C,,I,skills/catalogue,docs/findings/skills/0016-monster-8a.md
 0x0058F730,func,sub_0058F730_MonHelpBlock,,I,skills/catalogue,docs/findings/skills/0018-monster-8c.md
-0x0058F810,func,sub_0058F810_AiCtlListsFree,,I,monsters/ai,docs/findings/ai/0013-batch12.md
+0x0058F810,func,sub_0058F810_AiCtlFree,,I,monsters/ai,docs/findings/ai/0013-batch12.md
 0x0058F870,func,sub_0058F870_A1Intro_NpcMessage,,I,quests/progression,docs/findings/quests/0001-progression.md
 0x0058F8F0,func,sub_0058F8F0_A1Intro_NpcTalk,,I,quests/progression,docs/findings/quests/0001-progression.md
 0x0058F9B0,func,sub_0058F9B0_A1Intro_LogState,,I,quests/progression,docs/findings/quests/0001-progression.md
