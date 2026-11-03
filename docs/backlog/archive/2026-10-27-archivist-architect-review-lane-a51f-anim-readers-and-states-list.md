@@ -4,7 +4,7 @@ to: architect
 date: 2026-10-27
 status: done
 context:
-  - ../../plans/0050-animation-frame-timing.md#implementation-log
+  - ../../plans/done/0050-animation-frame-timing.md#implementation-log
   - ../../plans/done/0051-backlog-sweep-6.md#implementation-log
 resolution: "Reviewed on lane/a51f: accept with fixes (3: omission 2, wrong anchor 1). Surveys reproduce; the SplGetModeChart row shift confirmed on the .bin and folded into plan 0050 P1.2; the States slug is not a gate bug. Rulings in the plan 0050 and 0051 logs; plan 0051 closed."
 ---

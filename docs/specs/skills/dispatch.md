@@ -91,7 +91,7 @@ Column semantics are the table docs': [Skills § Dispatch](../../tables/Skills.m
 
 | Input | Kind | Tag |
 |---|---|---|
-| the frame of a mode that carries event code 1 or 2 (players), `Unit+0x4E` (monster sequences) | a logged input: animation timing is [plan 0050](../../plans/0050-animation-frame-timing.md)'s | [I] (fn:sub_00580460_PlrModeSkillFrame@0x00580460, fn:sub_005A8670_MonSeqFrame@0x005A8670) |
+| the frame of a mode that carries event code 1 or 2 (players), `Unit+0x4E` (monster sequences) | a logged input: animation timing is [plan 0050](../../plans/done/0050-animation-frame-timing.md)'s | [I] (fn:sub_00580460_PlrModeSkillFrame@0x00580460, fn:sub_005A8670_MonSeqFrame@0x005A8670) |
 | the monster's choice of skill, mode and target | an input: monster AI is plan 0052's | [I] (fn:sub_005DEAD0_MonAiUseSkill@0x005DEAD0) |
 | the numbered start and do functions outside § O | value oracles of the checker; specified in the [catalogue](catalogue.md) | [I] (data:g_SkillDoFuncs@0x007322B0) |
 | `SKILLS_ForUnitsInRange`'s and `SkillForUnitsNearTarget`'s unit order, `SkillUnitFilter` | logged as the list of units the callback ran on | [I] (fn:SKILLS_ForUnitsInRange@0x0056B7E0) |

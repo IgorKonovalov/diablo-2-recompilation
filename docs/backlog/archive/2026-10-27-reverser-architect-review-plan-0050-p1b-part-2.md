@@ -4,7 +4,7 @@ to: architect
 date: 2026-10-27
 status: done
 context:
-  - ../../plans/0050-animation-frame-timing.md#implementation-log
+  - ../../plans/done/0050-animation-frame-timing.md#implementation-log
   - ../../findings/anim/leads.md
   - ../../findings/anim/0001-modes-frames.md#leads-used
   - ../../findings/anim/0002-rates.md#leads-used

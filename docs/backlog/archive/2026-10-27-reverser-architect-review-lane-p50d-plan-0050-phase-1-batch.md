@@ -7,7 +7,7 @@ context:
   - ../../findings/anim/0003-movement-gates.md
   - ../../findings/anim/0001-modes-frames.md#1-the-units-animation-fields
   - ../../findings/combat/0001-formulas.md#6-resolve-queue-deliver
-  - ../../plans/0050-animation-frame-timing.md#implementation-log
+  - ../../plans/done/0050-animation-frame-timing.md#implementation-log
 resolution: "Reviewed 2026-10-27 (architect): accept with fixes (4: the collision walk's halved increment and 10-crossing exit, the wrap's sign case, the block gate's stat-95 write, a stale § 6.7). Rulings in plan 0050's log: § 9's boundary accepted with the collision test as an oracle and folded into Phase 2; Phase 1's batches done; P1b part 2 and 0050·P2 may start."
 ---
 

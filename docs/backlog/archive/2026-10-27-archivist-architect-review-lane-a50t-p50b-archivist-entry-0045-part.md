@@ -6,7 +6,7 @@ status: done
 context:
   - ../../tables/MonStats.md
   - ../../tables/ItemStatCost.md
-  - ../../plans/0050-animation-frame-timing.md
+  - ../../plans/done/0050-animation-frame-timing.md
   - ../../formats/d2s.md
 resolution: "Reviewed 2026-10-27 (architect): accept with fixes (3). Rulings in plan 0050's log: item 3 adds no required case, a 9A trap S1 is an optional Phase 2 case, two static reads go into P1.3's Done when; the test_d2s failures are routed to the archivist (2026-10-27-architect-archivist-test-d2s-recipe-bases-and-mp-saves-pin)."
 ---

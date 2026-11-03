@@ -499,6 +499,18 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-11-03 | `lane/p50g` check | 0050 P2 part 3 | architect-check | 69 866 | 10 | 1 | — | accept | 0 (2 listed: wording, anim/0003 cross-reference to the re-tag pass) |
 | 2026-11-03 | `lane/r52j` | 0052 P1.2 (batch 10) | reverser-static | 389 159 | 139 | 34 | — (static, Ghidra copy ghidra-r52j) | accept with fixes (Tier B check) | 1: other 1 (unclear dev-run wording) |
 | 2026-11-03 | `lane/r52j` check | 0052 P1.2 (batch 10) | architect-check | 78 391 | 18 | 2 | — | accept with fixes (1) | other 1 (unclear dev-run wording) |
+| 2026-11-03 | `lane/r54a` | 0054 P1.1 | reverser-static | 530 539 | 175 | 53 | — (static, Ghidra copy ghidra-r54a) | accept with fixes (Tier A review) | 6: overclaim 2, omission 3, miscount 1 |
+| 2026-11-03 | `lane/r54a` review | 0054 P1.1 | architect-review | 161 545 | 47 | 8 | — | accept with fixes (6) | overclaim 2, omission 3, miscount 1 |
+| 2026-11-03 | `lane/s65` | 0050 P2 part 3 re-tag | spec-writer | 139 580 | 54 | 7 | — (no Ghidra, no harness) | accept with fixes (Tier A) | 5: overclaim 2, wrong anchor 1, other 2 |
+| 2026-11-03 | `lane/s65` review | 0050 P2 part 3 re-tag | architect-review | 123 390 | 44 | 5 | — | accept with fixes (5) | overclaim 2, wrong anchor 1, other 2 |
+| 2026-11-03 | `lane/c50` | 0050 close | architect-check | 58 339 | 13 | 2 | — | plan closed | — |
+| 2026-11-03 | `lane/a64` | 0050 part 3 recipes; 0052 P1.2 batches 9-10 readers (3 entries) | archivist | 148 969 | 39 | 7 | — | accept with fixes (Tier B check 2, audit 6) | 9: stale 2, omission-route 1, under-claim 3, misread 2, omission 1 |
+| 2026-11-03 | `lane/a64` check | 0050 part 3 recipes; 0052 batches 9-10 readers | architect-check | 115 710 | 24 | 5 | — | accept with fixes (2) | stale 2, omission-route 1 |
+| 2026-11-03 | `lane/a64` review | 0050 part 3 recipes; 0052 batches 9-10 readers | architect-review | 156 301 | 38 | 5 | — | accept with fixes (6) | audit of lane/a64: under-claim 3, misread 2, omission 1; reject-grade missed: no |
+| 2026-11-03 | `lane/r66` | 0052, 0050 (3 finding cross-references) | reverser-static | 59 489 | 13 | 1 | — (no Ghidra, no harness) | accept with fixes (Tier B check) | 1: wording beyond source 1 |
+| 2026-11-03 | `lane/r66` check | 0052, 0050 (3 finding cross-references) | architect-check | 60 549 | 9 | 1 | — | accept with fixes (1) | wording beyond source 1 |
+| 2026-11-03 | `lane/a65` | 0054 P1.1 PathTypes; 0038 recipe row (2 entries) | archivist | 87 140 | 26 | 4 | — | accept with fixes (Tier B check) | 3: wrong citation 1, scope 2 |
+| 2026-11-03 | `lane/a65` check | 0054 P1.1 PathTypes; 0038 recipe row | architect-check | 76 681 | 16 | 4 | — | accept with fixes (3) | wrong citation 1, scope 2, omission-route 1 |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not

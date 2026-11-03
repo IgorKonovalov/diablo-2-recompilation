@@ -698,8 +698,8 @@ speed writers (Charge, Leap Attack) and the mode requests are oracles.
   `[I]`. (fn:sub_00621360_AnimPathBaseSpeed@0x00621360, fn:sub_00620E80_RunVelocityStat@0x00620E80,
   fn:UNIT_AnimSetRate@0x00623F50, run:2026-10-27-anim)
 - **The run drain** (§ 1) **raised in part.** [C] 37 434 run frames take
-  `max(1, RunDrain · 2 · (armour speed / 10 + 1) + ⌊that · stat 154 / 100⌋)` from stat 10 (`drain`). [I] The turn to a walk at 0 is not reached (no run ran out of
-  stamina). (fn:sub_0057F240_RunStaminaDrain@0x0057F240, run:2026-10-27-anim)
+  `max(1, RunDrain · 2 · (armour speed / 10 + 1) + ⌊that · stat 154 / 100⌋)` from stat 10 (`drain`). [I] The turn to a walk at 0 is not reached in this run (no run ran out of
+  stamina). 2026-11-03 note: [run:2026-10-30-anim-p3b](experiments.md#run2026-10-30-anim-p3b) reached it, `[I]` as the record tags it: 81 turns from mode 3 to mode 2 in `op-run2`–`op-run6`, tally `ef-first-run-turn` offset 0 in 75 and offset 1 in 6, the six unexplained and not separated by the tally; the 81 pairs sit outside `ef-first`'s 0. (fn:sub_0057F240_RunStaminaDrain@0x0057F240, run:2026-10-27-anim)
 - **The monster knockback** (§ 4) **raised.** [C] 541 monster knockbacks end (`MonKnockbackEnd`) in the frame their
   advance reaches the length, and no knockback frame before it ends one (`kb-end` 3 585 frames).
   (fn:sub_005A8520_MonKnockbackEnd@0x005A8520, fn:UNIT_AnimAtEnd@0x006217C0, run:2026-10-27-anim)

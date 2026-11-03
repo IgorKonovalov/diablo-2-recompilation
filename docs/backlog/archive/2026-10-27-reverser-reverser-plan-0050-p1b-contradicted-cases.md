@@ -8,7 +8,7 @@ context:
   - ../../findings/anim/0002-rates.md#leads-used
   - ../../findings/anim/0003-movement-gates.md#leads-used
   - ../../findings/anim/leads.md
-  - ../../plans/0050-animation-frame-timing.md#implementation-log
+  - ../../plans/done/0050-animation-frame-timing.md#implementation-log
 resolution: "Phase 2 run closed (lane/p50e): each case's outcome, met or short with its count, is in the record's Covers and Readings ([run:2026-10-27-anim](../../findings/anim/experiments.md#run2026-10-27-anim)); met: P1b-3, -4, -6, -8, -9, -10 (15 results, 12 to neutral at once), -11, -12; in part: P1b-1 (A2 separated in 23 A1 restarts), -5, -7 (no VASCHTH), -15 (no slowed charge); short: P1b-2 (31 calls), -13 (not staged), -14 (no factor below 25)"
 ---
 
