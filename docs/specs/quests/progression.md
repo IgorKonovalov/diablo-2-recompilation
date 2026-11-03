@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, save/d2s, items/quest-drops, objects, monsters/spawn, monsters/special, quests/travel]
 consumed_by: [items/quest-drops, items/cube, objects, monsters/spawn, monsters/special, quests/travel, save/d2s]
-tags: {C: 117, I: 322, L: 6}
-updated: 2026-10-21
+tags: {C: 118, I: 322, L: 6}
+updated: 2026-11-03
 ---
 
 # Quest progression: the record, the events, every quest's bits and the quest draws
@@ -1487,9 +1487,11 @@ stateDiagram-v2
 | b4 | set | e11 message 0x4EC9 (`OperateFn` 69, object 561, with b0 set and b4 clear) | 0x0058C39C | [I] (fn:sub_0058C290_A5Q5_NpcMessage@0x0058C290) |
 | b5–b9 | set | e11 from NPC 511 → b5, 520 → b6, 512 → b7, 513 → b8, 515 → b9 | 0x0058C40B | [I] (fn:sub_0058C290_A5Q5_NpcMessage@0x0058C290) |
 
-- [I] **Experience**: 1 400 000 (Normal), 20 000 000 (Nightmare), 40 000 000 (Hell), capped at `T(L + 1) − T(L)`, the width
-  of the level after the current one ([player/creation § J](../player/creation.md#j-other-level-and-experience-changes),
-  J2). (fn:sub_0058C5C0_ExpGrantCapped@0x0058C5C0)
+- [C] **Experience** in Normal: 1 400 000, capped at `T(L + 1) − T(L)`, the width of the level after the current one
+  ([player/creation § J](../player/creation.md#j-other-level-and-experience-changes), J2; two grants reproduced, the cut
+  binding at level 26 and not at level 81). (fn:sub_0058C5C0_ExpGrantCapped@0x0058C5C0, run:2026-10-30-h6ga-anc)
+- [I] **Experience** in Nightmare and Hell: 20 000 000 and 40 000 000, under the same cap; no session logged either
+  difficulty. (fn:sub_0058C5C0_ExpGrantCapped@0x0058C5C0)
 - [I] **Arming and resets.** The altar (`OperateFn` 65) with no town portal on 120 and all statues in mode 0 puts the
   three statues in mode 3 and queues their event 7 (each spawns an Ancient, oracle); with a portal on 120 it first
   closes every player's portal there and then sends its message too, and with the quest active and its step at 4 or

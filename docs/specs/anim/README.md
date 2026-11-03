@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, stats/aggregate, skills/dispatch, combat/overview, monsters/stats, objects, drlg/collision]
 consumed_by: [skills/dispatch, skills/missiles, combat/overview, combat/delivery, objects, monsters/stats]
-tags: {C: 13, I: 14, L: 2}
-updated: 2026-10-27
+tags: {C: 14, I: 13, L: 2}
+updated: 2026-11-03
 ---
 
 # Animation and frame timing: the machinery
@@ -134,9 +134,10 @@ fn:UNIT_AnimSetRate@0x00623F50, fn:sub_00650840_PathStep@0x00650840, fn:sub_0057
 - [I] **A scheduled mode does not follow a rate change.** Its events stay where its start put them; only a catalogue
   reschedule moves them. An every-frame monster takes the new rate at its next advance.
   ([timing § J](timing.md#j-the-rate-unit_animsetrate), fn:UNIT_AnimSetRate@0x00623F50)
-- [I] **The breakpoint tables count `N = n − 1`.** The schedule's end is at `T + n`; the server starts the next
-  action at its request, and the stock client's held request comes at `T + N` ([timing § L](timing.md#l-the-frame-events-as-gates)).
-  (fn:SUNIT_ScheduleModeEvents@0x005539B0)
+- [C] **The breakpoint tables count `N = n − 1`.** The schedule's end is at `T + n`; the server starts the next
+  action in the frame its request arrives (after A1, a cast, a throw and a kick), and the stock client's held request
+  for a normal action comes at `T + N` ([timing § L](timing.md#l-the-frame-events-as-gates),
+  [timing](timing.md#reimplementation-notes) note 1). (fn:SUNIT_ScheduleModeEvents@0x005539B0, run:2026-10-27-anim)
 
 ## Evidence
 

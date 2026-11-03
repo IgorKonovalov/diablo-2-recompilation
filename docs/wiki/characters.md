@@ -1,7 +1,7 @@
 ---
 based_on:
   - docs/specs/player/README.md 2026-10-16
-  - docs/specs/player/creation.md 2026-10-30
+  - docs/specs/player/creation.md 2026-11-03
   - docs/specs/hirelings/README.md 2026-10-30
   - docs/specs/save/d2s.md 2026-10-30
 ---
@@ -251,7 +251,10 @@ These are in [player/creation § J](../specs/player/creation.md#j-other-level-an
   The cut matters only at low levels: in Normal up to level 35, in Nightmare up to 65, in Hell up to 73.
   It goes to the killer, to every player standing on the Arreat Summit, and to their party members who are in Act V,
   each only once per difficulty and only from character level 20 (40 in Nightmare, 60 in Hell)
-  ([creation § J](../specs/player/creation.md#j-other-level-and-experience-changes)). Read from the code only.
+  ([creation § J](../specs/player/creation.md#j-other-level-and-experience-changes)). The Normal grant and its cut
+  were confirmed in a test session at two levels: at level 26 the cut held the grant to 640 765, one level-up and the
+  rest of it; at level 81 the full 1 400 000 arrived without a level-up. The Nightmare and Hell amounts, the
+  "at most one level-up" argument, where the cut matters and who receives the grant are read from the code only.
 - **Death.** The character loses the difficulty's `DeathExpPenalty` percent of the current level's span, and the
   level never drops: when the loss would go below the level's start, the experience stops one point above it and
   only what was actually lost counts. Three quarters of that (rounded down) is put on the corpse. Both were confirmed
@@ -481,8 +484,8 @@ From [player/creation § Open questions](../specs/player/creation.md#open-questi
 
 - the first save's appearance bytes are not predicted.
 
-Also read from the code only, not run: party sharing with three or more members, the Ancients' reward, picking up
-a corpse, and the edge cases of kill experience listed above.
+Also read from the code only, not run: party sharing with three or more members, the Ancients' reward in Nightmare
+and Hell, picking up a corpse, and the edge cases of kill experience listed above.
 
 From [hirelings § Open questions](../specs/hirelings/README.md#open-questions):
 

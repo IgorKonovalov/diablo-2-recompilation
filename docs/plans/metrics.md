@@ -485,6 +485,8 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-11-03 | `lane/a63` review | 0052 P1.2 / 0055 readers | architect-review | 124 678 | 30 | 4 | — | accept with fixes (7) | audit of lane/a63: misread 4, omission 2, stale cross-reference 1; reject-grade missed: no |
 | 2026-11-03 | `lane/r55e` | 0055 tools fix | reverser-static | 171 442 | 89 | 16 | — (static, Ghidra copy ghidra-r55e, 2 headless runs) | accept with fixes (Tier B check) | 1: stale cross-reference 1 |
 | 2026-11-03 | `lane/r55e` check | 0055 tools fix | architect-check | 65 527 | 11 | 1 | — | accept with fixes (1) | stale cross-reference 1 |
+| 2026-11-03 | `lane/s63` | 0038 H6g, 0057 P1 | spec-writer | 130 975 | 78 | 10 | — (no Ghidra, no harness) | accept with fixes (Tier A) | 2: overclaim 2 |
+| 2026-11-03 | `lane/s63` review | 0038 H6g, 0057 P1 | architect-review | 107 193 | 31 | 5 | — | accept with fixes (2) | overclaim 2 |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not

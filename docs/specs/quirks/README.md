@@ -5,7 +5,7 @@ target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [every reviewed spec listed under Coverage]
 consumed_by: [docs/wiki (plan 0057 Phase 4)]
 tags: {C: 334, I: 101, L: 0}
-updated: 2026-10-30
+updated: 2026-11-03
 ---
 
 # Quirks: the behaviour a faithful reimplementation must keep
@@ -230,11 +230,11 @@ flowchart LR
 | Q133 | Draws that do not happen: a chance of 0 (block, dodge, deadly strike, crushing blow, open wounds) and a degenerate damage range `hi ≤ lo` draw nothing, on the paths the run checked; the monster HP roll differs (it draws `RangeB(hi − lo + 1)`). | [C] | fn:COMBAT_RollRange@0x0057A880, run:2026-10-16-combat | [combat/README](../combat/README.md#reimplementation-notes) n3; [combat/damage](../combat/damage.md#reimplementation-notes) n4 |
 | Q134 | Elements are built in the order fire, lightning, cold, magic. | [C] | 0x0057B932, 0x0057BA4C, run:2026-10-16-combat | [combat/damage](../combat/damage.md#reimplementation-notes) n3 |
 | Q135 | `COMBAT_PrgFinisher` peeks: it steps a copy of the attacker's seed and restores it, so advancing the real seed there shifts every later attacker draw. | [I] | fn:COMBAT_PrgFinisher@0x005D5220, 0x005D5368, 0x005D538C | [combat/delivery](../combat/delivery.md#reimplementation-notes) n8; [combat/README](../combat/README.md#reimplementation-notes) n4 |
-| Q136 | The finisher's entries 37, 39, 41 and 143 step the attacker's seed once at entry, before their record test, even when they create nothing. | [C] | run:2026-10-21-cat-emu-ass, 0x005D4E80, 0x005D4F50 | [combat/delivery](../combat/delivery.md#reimplementation-notes) n9; [skills/dispatch](../skills/dispatch.md#reimplementation-notes) n4 |
+| Q136 | The finisher's entries 37, 39, 41 and 143 step the attacker's seed once at entry, before their record test, even when they create nothing. | [C] | run:2026-10-21-cat-emu-ass, 0x005D4E80, 0x005D4F50 | [combat/delivery](../combat/delivery.md#reimplementation-notes) n9; [skills/dispatch](../skills/dispatch.md#reimplementation-notes) n4; [combat/README](../combat/README.md#reimplementation-notes) n4 |
 | Q137 | Entry 38 draws two or three times on the attacker's seed after delivering the queued hit. | [I] | 0x0056E1C4 | [combat/delivery](../combat/delivery.md#reimplementation-notes) n9; [combat/README](../combat/README.md#reimplementation-notes) n4 |
-| Q138 | A weapon-share missile steps its owner's seed at least once for stat 337, whatever its value. | [C] | fn:sub_0064A850_MissileCritRoll@0x0064A850, run:2026-10-25-skills | [skills/missiles](../skills/missiles.md#reimplementation-notes) n3 |
+| Q138 | A weapon-share missile steps its owner's seed at least once for stat 337, whatever its value. | [C] | fn:sub_0064A850_MissileCritRoll@0x0064A850, run:2026-10-25-skills | [skills/missiles](../skills/missiles.md#reimplementation-notes) n3; [combat/README](../combat/README.md#reimplementation-notes) n5; [skills/README](../skills/README.md#reimplementation-notes) n2 |
 | Q139 | The missile's deadly strike and mastery steps still need a chance above 0. | [I] | fn:sub_0064A850_MissileCritRoll@0x0064A850, 0x0064A864, 0x0064A890 | [combat/README](../combat/README.md#reimplementation-notes) n5 |
-| Q140 | Do not merge the two critical chains: the missile's (stat 337 first, drawn at 0) is not the melee build's. | [I] | fn:sub_0064A850_MissileCritRoll@0x0064A850, fn:COMBAT_BuildDamage@0x0057B7D0 | [skills/README](../skills/README.md#reimplementation-notes) n2 |
+| Q140 | Do not merge the two critical chains: the missile's (stat 337 first, Q138) is not the melee build's. | [I] | fn:sub_0064A850_MissileCritRoll@0x0064A850, fn:COMBAT_BuildDamage@0x0057B7D0 | [skills/README](../skills/README.md#reimplementation-notes) n2 |
 | Q141 | A stat-event handler draws on its own unit's seed: shiver armour (3) and skill on get-hit (21) on the defender's, skill on death (30) on the dying unit's, knockback, howl, stupidity, skill on attack or hit and reanimate on the attacker's. | [I] | data:g_StatEventFuncs@0x007325B0, 0x005BF9CF, 0x005C0603 | [combat/delivery](../combat/delivery.md#reimplementation-notes) n12 |
 | Q142 | Defence comes before the block: a miss draws no block; a running defender skips the to-hit draw but still draws the block. | [I] | fn:COMBAT_MeleeHitTest@0x0057EC10 | [combat/to-hit](../combat/to-hit.md#reimplementation-notes) n6 |
 | Q143 | Stat 328 (the request counter) rises on every skill request, before the checks, and seeds every pierce count: a refused request still changes later pierce counts. | [I] | 0x00549D50, fn:sub_0059F940_MissilePierceCount@0x0059F940 | [skills/dispatch](../skills/dispatch.md#reimplementation-notes) n1; [skills/README](../skills/README.md#reimplementation-notes) n3 |
@@ -478,7 +478,7 @@ flowchart LR
 
 | Id | Quirk | Tag | Anchors | Source |
 |---|---|---|---|---|
-| Q374 | A scheduled mode's end is `n` frames after its start; the community breakpoint tables count `N = n − 1`. With the stock client a held normal action restarts at `T + N`, held Lightning at `T + n`; the server starts the next action in the frame its request arrives. | [C] | fn:SUNIT_ScheduleModeEvents@0x005539B0, run:2026-10-27-anim | [anim/timing](../anim/timing.md#reimplementation-notes) n1 |
+| Q374 | A scheduled mode's end is `n` frames after its start; the community breakpoint tables count `N = n − 1`. With the stock client a held normal action restarts at `T + N`, held Lightning at `T + n`; the server starts the next action in the frame its request arrives. | [C] | fn:SUNIT_ScheduleModeEvents@0x005539B0, run:2026-10-27-anim | [anim/timing](../anim/timing.md#reimplementation-notes) n1; [anim/README](../anim/README.md#reimplementation-notes) n2 |
 | Q375 | A scheduled mode does not follow a rate change: its events stay where its start put them; an every-frame monster takes the new rate at its next advance. | [I] | fn:UNIT_AnimSetRate@0x00623F50 | [anim/README](../anim/README.md#reimplementation-notes) n1 |
 | Q376 | Two rate calls per server start: the first, before `+0x48` is written, sees the previous mode's length; the schedule uses the second. | [I] | fn:UNIT_AnimInit@0x00624390, fn:SUNIT_AnimInit@0x005533D0 | [anim/timing](../anim/timing.md#reimplementation-notes) n2 |
 | Q377 | A monster's frame-function result is ignored: an every-frame attack or skill mode with no end call of its own lasts until another command. | [I] | fn:sub_005A7BA0_MonModeFrameEvent@0x005A7BA0 | [anim/timing](../anim/timing.md#reimplementation-notes) n5 |
@@ -563,12 +563,13 @@ and the harness never provokes one (owner decision 5). The entries are in their 
 One row per spec with a *Reimplementation notes* section: its note count, the notes taken (cited by at least one entry),
 and the skipped ones by reason. "Weaker duplicate" is a note that restates, at a weaker tag, a statement another spec
 holds raised; the entry takes the raised statement and the disagreement is routed to the spec-writer's backlog
-([entry](../../backlog/2026-10-30-spec-writer-spec-writer-quirks-harvest-tag-disagreements.md)). Skipped: 29 notes,
-presentation 5, table rule 12, not a trap 9, wall-clock 2, weaker duplicate 1.
+([entry](../../backlog/archive/2026-10-30-spec-writer-spec-writer-quirks-harvest-tag-disagreements.md); the three overviews it
+named now state the raised clause, so none is left). Skipped: 28 notes, presentation 5, table rule 12, not a trap 9,
+wall-clock 2, weaker duplicate 0.
 
 | Spec | Notes | Taken | Presentation | Table rule | Not a trap | Wall-clock | Weaker duplicate |
 |---|---|---|---|---|---|---|---|
-| [anim/README](../anim/README.md#reimplementation-notes) | 2 | 1 | — | — | — | — | n2 |
+| [anim/README](../anim/README.md#reimplementation-notes) | 2 | 2 | — | — | — | — | — |
 | [anim/movement](../anim/movement.md#reimplementation-notes) | 4 | 4 | — | — | — | — | — |
 | [anim/timing](../anim/timing.md#reimplementation-notes) | 7 | 7 | — | — | — | — | — |
 | [chain/README](../chain/README.md#reimplementation-notes) | 6 | 6 | — | — | — | — | — |
@@ -615,7 +616,7 @@ presentation 5, table rule 12, not a trap 9, wall-clock 2, weaker duplicate 1.
 | [skills/missiles](../skills/missiles.md#reimplementation-notes) | 10 | 10 | — | — | — | — | — |
 | [stats/aggregate](../stats/aggregate.md#reimplementation-notes) | 6 | 6 | — | — | — | — | — |
 | [stats/states](../stats/states.md#reimplementation-notes) | 7 | 7 | — | — | — | — | — |
-| **Total** | 439 | 410 | — | — | — | — | — |
+| **Total** | 439 | 411 | — | — | — | — | — |
 
 Step notes taken beyond the *Reimplementation notes*: player/creation § G (the /256 factors, the `0x7FFFFF` clamp,
 the ratio shift's overflow branch) and § J (the party share's f32 quotient), monsters/stats § A (`MulDiv`), stats/states

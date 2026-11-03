@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, data/calc, combat/overview, stats/states, monsters/spawn, monsters/stats, drlg/collision]
 consumed_by: [combat/overview, combat/delivery, stats/states, items/economy, monsters/stats, rng/seeds]
-tags: {C: 23, I: 25, L: 1}
-updated: 2026-10-30
+tags: {C: 24, I: 25, L: 1}
+updated: 2026-11-03
 ---
 
 # Skills and missiles: the machinery
@@ -161,8 +161,10 @@ run:2026-10-25-skills. [C] (run:2026-10-25-skills, fn:sub_005C49E0_SummonSetLeve
 
 - **Run the frame pass in order**: missiles, players, monsters, objects, the fifth list. [I]
   (fn:sub_005414D0_GameRunUnitEvents@0x005414D0)
-- **Do not merge the two critical chains.** The missile's (stat 337 first, drawn at 0) is not the melee build's. [I]
-  (fn:sub_0064A850_MissileCritRoll@0x0064A850, fn:COMBAT_BuildDamage@0x0057B7D0)
+- **Do not merge the two critical chains.** The missile's starts with stat 337, drawn even at 0
+  ([missiles](missiles.md#reimplementation-notes) note 3). [C] (fn:sub_0064A850_MissileCritRoll@0x0064A850,
+  run:2026-10-25-skills) That chain is not the melee build's. [I] (fn:sub_0064A850_MissileCritRoll@0x0064A850,
+  fn:COMBAT_BuildDamage@0x0057B7D0)
 - **Keep the request counter**: stat 328 seeds every pierce count. [I] (0x00549D50)
 
 ## Evidence
