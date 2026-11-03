@@ -872,3 +872,25 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   a monster; `MonFleeFrom`); (4) re-walk the H1 gaps with `tools/gdb/ai.gdb` loaded beside the skills logger; (5) Raven;
   (6) Fetish and Andariel at `/players 8` for more drawing pairs. The case table of `tools/ai_sessions.py` and the
   library's cap (8 games or 40 min per launch) hold; the Act IV waypoint click needs one retry in about 1 of 10 runs.
+- **2026-11-03 — Phase 2, second lane run, CHECKPOINT (`lane/p52b`, reverser, harness, slot 2, rotated at about 360 k tokens; no kept session; `main` 8e26c91a merged).**
+  Finding [ai/0017](../findings/ai/0017-phase2-second-run.md), record [experiments.md run:2026-11-03-ai-2](../findings/ai/experiments.md). **Done (mandatory item 1 and
+  the machinery of item 2):** `tools/ai.py check` prints the outcome mix per (row, think) and `--controls` runs live negative controls (`c0fd95ec`); over the 31 kept logs of
+  run:2026-11-03-ai (`check-mix-2026-11-03-ai.txt`): ten tier AIs with one predicted first boundary (6, 28, 29, 30, 35, 37, 61, 64, 67, 89), eight with two to five; the wrong
+  maps fail (call site shifted: 12 629 of 12 629; Fallen's mode test inverted: 1 393 of 1 393; the melee flag flipped: 2 114 of 12 620, none of the ten one-outcome rows), so the
+  0 of ai/0015 stays a first-callee claim for those ten. Logger rev 4 logs each boundary's result (`AIR`, 2 285 armed return sites, `tools/ai_retsites.py`) and 48 boundary
+  calls per decision; `tools/ai_resume.py` runs the think function from its entry over the pinned game.exe with logged inputs and resumes at each boundary with the logged
+  result (unknown values fork; an unfollowed path is a `stop`, not a mismatch): on four **development** logs 1 313 decisions, 1 028 resumed to the end, 0 mismatches,
+  14 485 boundary calls matched, 13 173 after the first; controls (known branches reversed, seed off by one step) fail 1 200 and 1 312 of 1 313. 18 + 14 no-game tests.
+  This backlog entry is answered: [the separation line](../backlog/archive/2026-11-03-architect-reverser-plan-0056-p4-separation-line-in-tools-ai.md). **Not done (state):**
+  the kept batch with rev 4 and the model over it, so no claim past the first boundary is `[C]` yet; the staged variety sessions (branches each map leaves unseen: not recorded);
+  the state control window (recipes `ai-nec-curse.json`, `ai-barb.json` build; no session: states 10, 11, 12 not observed, the "no setter" rows stay `[I]` with no window named);
+  P1b-1 (no route yet: Duriel's lair is level 73, reached by the staff in the orifice of the one real Tal Rasha tomb of seven; the old driver of plan 0032's sessions is not in
+  `tools/`) and P1b-2; H1; H3; Fetish and Andariel at `/players 8`; the catalogue sample; the 3.6 min figure item (the coordinator ruled it: 4.5 min by lane wall stands, 3.0 and
+  3.5 harness). **Launch 5202's rule 5 lapse** is now noted in the first run's record. **Resume note for the next lane run:** (1) run the kept batch of the tier AIs with
+  `tools/ai_sessions.py run --fresh` (every case its own process; the first-try waypoint click left the case in the town in 4 of 7 development launches, so budget reruns, seed 5601
+  failed twice) and run `tools/ai_resume.py check --controls` over the case logs, then record per tier AI the matched boundary calls past the first, the stops with reasons, the
+  `ambiguous_steps` and which branches of each map stay unseen; the cap and the `call esi` stops (row 32) are the known ones; (2) the state window: Necromancer `AiNecC` (Dim Vision
+  F1, Terror F2, `d2pilot explore --melee --melee-button 3 --curse-keys F1,F2 --keys-cycle`) and Barbarian `AiBar` (Howl, Taunt), the logger already records `AiCtl.state`
+  at every event (`st` of AID and AIN); (3) P1b-1 needs a Duriel route (read the plan 0032 Duriel sessions' routing, experiments of items/ lines 2028 on; level 73), P1b-2 the
+  Greater Mummy case; (4) H1 with `tools/gdb/ai.gdb` loaded beside the skills logger; (5) Raven; (6) `/players 8`. `workspace/runtime` copies: none; slot 2 is stopped and its saves restored.
+
