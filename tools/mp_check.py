@@ -10,17 +10,19 @@
 xpshare: the party share of kill experience (docs/findings/player/0001-creation.md, the Party bullet; spec
 docs/specs/player/creation.md J4; case MP16 of docs/findings/multiplayer/0001-cases.md), from a host log of
 tools/gdb/two-kills.gdb. For every XP_OnMonsterKill (the PLRK line of tools/gdb/two-players.py, then the XK0 line of
-tools/gdb/player.py, both at 0x0057E990) it predicts, from the logged players before the kill:
-  - the credited player: the killer when it is a player (XK0 ktype 0); a monster killer (a minion) is counted and
-    not predicted;
-  - the members XP_PartyShare collects: the credited player alone when it is in no party; else every member of its
-    party that is alive (dead bit 0), in the same level id and within squared distance 6400 (sub-tiles) of the
-    credited player, the credited player included;
-  - the XP_Compute calls that follow (XC0 lines on the same thread, up to the next XK0): one per member, each on that
-    member's unit (PLRS "u" = XC0 "unit"); with one member the input experience is the monster's experience (its base
-    stat 13 in XK0 "mb"); with n >= 2, total = E + ((n - 1) * E * 89) // 256 (signed 32-bit), q = (f32) total /
-    (f32) sum of the members' levels (each XC0's clvl), and member i's input = trunc(level_i * q). The product is
-    taken exactly (x87) and, as a separate count, the cases where rounding it to f32 first would give another value.
+tools/gdb/player.py, both at 0x0057E990) it predicts, from the logged players before the kill and the killed monster's
+position (the KILL line of the same kill, the drop's source; plan 0058 corrected the model, tools/player.py kill_events):
+  - the credited player: the killer when it is a player (XK0 ktype 0); a monster killer in --merc-owner's session (a
+    mercenary): that player, its XC0 first, at the monster's full experience;
+  - the members XP_PartyShare collects, in the party list's order (PLRS "pty"): the credited player alone when it is in
+    no party; else every member in the credited player's level id that is alive (dead bit 0) and within squared distance
+    6400 (sub-tiles) of the killed monster, the credited player tested like the others. A kill with no KILL line takes
+    the killer's position, counted;
+  - the XP_Compute calls that follow (XC0 lines on the same thread, up to the next XK0): none at n = 0; at n = 1 one, on
+    the credited player whoever the member is, at the monster's experience (its base stat 13 in XK0 "mb"); else one per
+    member in order: total = E + ((n - 1) * E * 89) / 256 (i32, truncating), q = (f32) (total / sum of the members'
+    levels (each XC0's clvl)), and member i's input = trunc(level_i * q). The product is taken exactly (x87) and, as a
+    separate count, the cases where rounding it to f32 first would give another value.
 What XP_Compute and PLAYER_AddExperience do with each input is tools/player.py check's (the same log).
 
 gates: case MP24 (docs/findings/multiplayer/0001-cases.md § 4), from a host log with tools/gdb/two-players.py's
@@ -52,8 +54,15 @@ Prints one SURVEY line per check; exit 1 on any mismatch. Stdlib only; reads onl
 """
 import collections
 import json
+import os
 import struct
 import sys
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+if HERE not in sys.path:
+    sys.path.insert(0, HERE)
+
+import player  # noqa: E402
 
 PARTY_D2 = 6400
 
@@ -77,8 +86,8 @@ def share_inputs(E, levels):
     n = len(levels)
     if n == 1:
         return [E], [False]
-    total = i32(E + i32((n - 1) * E * 89) // 256) if E >= 0 else i32(E + -((-(n - 1) * E * 89) // 256))
-    q = f32(f32(total) / f32(sum(levels)))
+    total = player.xp_share_total(E, n)
+    q = player.xp_share_q(total, sum(levels))
     out, sep = [], []
     for lv in levels:
         exact = ftol(float(lv) * q)
@@ -91,6 +100,12 @@ def events(path):
     with open(path, errors="replace") as f:
         for line in f:
             tag, _, rest = line.rstrip("\n").partition(" ")
+            if tag == "KILL":
+                try:
+                    yield tag, dict(x.split("=", 1) for x in rest.split())
+                except ValueError:
+                    pass
+                continue
             if tag not in ("PLRK", "XK0", "XC0", "XA0"):
                 continue
             try:
@@ -106,7 +121,7 @@ def stat(entries, sid):
     return None
 
 
-def check_xpshare(paths, verbose):
+def check_xpshare(paths, verbose, merc_owner=1):
     S = collections.Counter()
     bad = []
     for path in paths:
@@ -117,24 +132,32 @@ def check_xpshare(paths, verbose):
             if k is None:
                 return
             S["kills (XK0)"] += 1
-            if eof and not k["xc"]:
-                S["  not predicted: cut off by the end of the log (the session stopped)"] += 1
-                return
             if k["skip"]:
                 S["  not predicted: %s" % k["skip"]] += 1
                 return
-            want = k["members"]
+            if eof and not k["xc"]:
+                S["  not predicted: cut off by the end of the log (the session stopped)"] += 1
+                pairs(k, count_only=True)
+                return
+            want, kind, why = pairs(k)
             got = k["xc"]
             ids_by_u = k["ids_by_u"]
-            got_ids = sorted(ids_by_u.get(x["unit"], "u%x" % x["unit"]) for x in got)
-            if sorted(want) != got_ids:
+            if k["merc"]:
+                if not got or got[0]["unit"] in ids_by_u or got[0]["exp"] != k["E"]:
+                    bad.append("%s: mercenary kill of monster %s: first XP_Compute %s" % (path, k["mid"], got[:1]))
+                    return
+                S["  mercenary kill: the mercenary's XP_Compute first, at E"] += 1
+                got = got[1:]
+            got_ids = [ids_by_u.get(x["unit"], "u%x" % x["unit"]) for x in got]
+            expect = want if len(want) != 1 else [k["credit"]]
+            if expect != got_ids:
                 bad.append("%s: kill of monster %s by %s: members predicted %s, XP_Compute on %s (%s)" % (
-                    path, k["mid"], k["kid"], sorted(want), got_ids, k["why"]))
+                    path, k["mid"], k["kid"], expect, got_ids, why))
                 return
-            S["  members predicted = XP_Compute calls"] += 1
-            S["  n = %d (%s)" % (len(want), k["kind"])] += 1
+            S["  members predicted = XP_Compute calls, in order"] += 1
+            S["  n = %d (%s)" % (len(want), kind)] += 1
             levels = [x["clvl"] for x in got]
-            pred, sep = share_inputs(k["E"], levels)
+            pred, sep = share_inputs(k["E"], levels) if got else ([], [])
             for x, p, s in zip(got, pred, sep):
                 if x["exp"] != p:
                     bad.append("%s: kill of monster %s: member %s level %d: XP_Compute input %d, predicted %d (E %d, "
@@ -147,67 +170,74 @@ def check_xpshare(paths, verbose):
             if verbose and len(want) > 1:
                 print("share: monster %s E %d levels %s -> %s" % (k["mid"], k["E"], levels, [x["exp"] for x in got]))
 
+        def pairs(k, count_only=False):
+            """-> (members in list order, kind, why) from the kill's snapshot; every pair is counted once."""
+            snap_k = k["snap"]
+            pl = {e["id"]: e for e in snap_k["p"]}
+            me = pl[k["credit"]]
+            party = next((p["m"] for p in snap_k.get("pty", []) if me["id"] in p["m"]), None)
+            if party is None:
+                return [me["id"]], "not partied", "no party"
+            mxy = k.get("mxy")
+            if mxy is None:
+                S["  no KILL line: the killer's position stands for the monster's"] += 1
+                mxy = (me["x"], me["y"])
+            mem, why = [], []
+            for uid in party:
+                e = pl.get(uid)
+                if e is None:
+                    why.append("%s not listed" % uid)
+                    continue
+                dm = None if e["x"] is None else (e["x"] - mxy[0]) ** 2 + (e["y"] - mxy[1]) ** 2
+                dk = None if e["x"] is None or me["x"] is None else (e["x"] - me["x"]) ** 2 + (e["y"] - me["y"]) ** 2
+                role = "credited player" if uid == me["id"] else "other member"
+                if e["dead"] or e.get("mode") in (0, 17):
+                    why.append("%s dead" % uid)
+                    pk = "dead"
+                elif e["lid"] != me["lid"]:
+                    why.append("%s in level %s" % (uid, e["lid"]))
+                    pk = "in another level"
+                elif dm is None or dm > PARTY_D2:
+                    why.append("%s at d2 %s" % (uid, dm))
+                    pk = "beyond d2 6400 of the monster"
+                else:
+                    mem.append(uid)
+                    why.append("%s at d2 %d" % (uid, dm))
+                    pk = "alive, same level, d2 <= 6400 of the monster"
+                S["  pair: %s %s" % (role, pk)] += 1
+                if uid != me["id"] and pk.endswith("monster") and dk is not None:
+                    if (dk <= PARTY_D2) != (dm <= PARTY_D2):
+                        S["  pair the killer's distance and the monster's would decide differently"] += 1
+                    else:
+                        S["  pair the two distances decide alike"] += 1
+                    if 5600 <= dm <= 7200:
+                        S["  pair within 800 of the 6400 bound of the monster (d2 %s)" % ("<= 6400" if dm <= PARTY_D2 else "> 6400")] += 1
+            return mem, "partied", "; ".join(why)
+
         for tag, d in events(path):
             if tag == "PLRK":
                 snap = d
                 continue
+            if tag == "KILL":
+                if open_k is not None and "mxy" not in open_k:
+                    open_k["mxy"] = (int(d["sx"]), int(d["sy"]))
+                continue
             if tag == "XK0":
                 close(open_k)
-                open_k = {"mid": d.get("mid"), "kid": d.get("kid"), "xc": [], "skip": None, "members": [],
-                          "ids_by_u": {}, "kind": "", "why": "", "th": d.get("th")}
+                open_k = {"mid": d.get("mid"), "kid": d.get("kid"), "xc": [], "skip": None, "ids_by_u": {},
+                          "th": d.get("th"), "snap": snap, "merc": d.get("ktype") != 0}
                 E = stat(d.get("mb"), 13)
                 open_k["E"] = E
-                if d.get("ktype") != 0:
-                    open_k["skip"] = "killer not a player (ktype %s)" % d.get("ktype")
-                    continue
+                open_k["credit"] = d.get("kid") if d.get("ktype") == 0 else merc_owner
                 if snap is None:
                     open_k["skip"] = "no PLRK before the kill"
                     continue
                 if E is None:
                     open_k["skip"] = "no monster experience (stat 13)"
                     continue
-                pl = {e["id"]: e for e in snap["p"]}
                 open_k["ids_by_u"] = {e.get("u"): e["id"] for e in snap["p"]}
-                me = pl.get(d["kid"])
-                if me is None:
+                if open_k["credit"] not in {e["id"] for e in snap["p"]}:
                     open_k["skip"] = "credited player not in PLRK"
-                    continue
-                party = next((p["m"] for p in snap.get("pty", []) if me["id"] in p["m"]), None)
-                if party is None:
-                    open_k["members"] = [me["id"]]
-                    open_k["kind"] = "not partied"
-                    open_k["why"] = "no party"
-                    continue
-                mem, why = [], []
-                for uid in party:
-                    e = pl.get(uid)
-                    if e is None:
-                        why.append("%s not listed" % uid)
-                        continue
-                    if uid == me["id"]:
-                        mem.append(uid)
-                        continue
-                    d2 = None if e["x"] is None or me["x"] is None else \
-                        (e["x"] - me["x"]) ** 2 + (e["y"] - me["y"]) ** 2
-                    if e["dead"] or e.get("mode") in (0, 17):
-                        why.append("%s dead" % uid)
-                        kind = "partied, other member dead"
-                    elif e["lid"] != me["lid"]:
-                        why.append("%s in level %s" % (uid, e["lid"]))
-                        kind = "partied, other member in another level"
-                    elif d2 is None or d2 > PARTY_D2:
-                        why.append("%s at d2 %s" % (uid, d2))
-                        kind = "partied, other member beyond d2 6400"
-                    else:
-                        mem.append(uid)
-                        why.append("%s at d2 %d" % (uid, d2))
-                        kind = "partied, other member alive, same level, d2 <= 6400"
-                    S["  pair: " + kind] += 1
-                    if d2 is not None and e["lid"] == me["lid"] and not e["dead"] and 5600 <= d2 <= 7200:
-                        S["  pair within 800 of the 6400 bound (d2 %s)" % ("<= 6400" if d2 <= PARTY_D2 else "> 6400")] += 1
-                open_k["members"] = mem
-                open_k["kind"] = "partied"
-                open_k["why"] = "; ".join(why)
                 continue
             if tag == "XC0" and open_k is not None and d.get("th") == open_k["th"]:
                 open_k["xc"].append(d)

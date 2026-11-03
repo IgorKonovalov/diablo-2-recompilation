@@ -14,6 +14,8 @@
 //                                writes there are (a const range must stay unwritten)
 //   guard <hex addr>             stop a case whose pc reaches addr (an allocator or fatal-path entry: plan 0038 S1f)
 //   observe <hex addr>           end a case whose pc reaches addr (a callee outside the claim): print an OBS line
+//   trace <hex addr>             print a T line each time the pc reaches addr and run on: nothing is patched and the
+//                                callee runs emulated, so one case can show a loop's successive calls (plan 0058, lane/r58a)
 // Cases file: blocks of lines, each ended by a call line:
 //   w <hex addr> <hex bytes>     write before this call (this case only; the spec is re-applied before the next)
 //   d <hex addr> <dec len>       dump these bytes after the call
@@ -25,6 +27,7 @@
 //   C <n> <fn> STOP <pc> steps=<dec> <message>               (did not return: fault, limit, guard or decode error)
 //   C <n> <fn> OBS <pc> steps=<dec> eax= ebx= ecx= edx= esi= edi= ebp= esp=   (reached an observe address)
 //   A <hex 64 bytes at ESP>                                   (after an OBS line: return address, then stack arguments)
+//   T <n> <pc> eax= ebx= ecx= edx= esi= edi= ebp= esp= <hex 128 bytes at ESP>   (before the C line of its case, once per `trace` pass)
 //   D <hex addr> <hex bytes>
 // and once at the end, every traced access, aggregated over all cases:
 //   R <hex pc> <hex addr> <size> <count>                       (a read outside the stack, spec and case memory)
@@ -69,7 +72,7 @@ public class EmuBoundary extends GhidraScript {
 
 	// declared ranges [lo, hi)
 	final List<long[]> spec = new ArrayList<>(), constSpec = new ArrayList<>(), caseMem = new ArrayList<>();
-	final java.util.Set<Long> guards = new java.util.HashSet<>(), observes = new java.util.HashSet<>();
+	final java.util.Set<Long> guards = new java.util.HashSet<>(), observes = new java.util.HashSet<>(), traces = new java.util.HashSet<>();
 	final Map<String, long[]> reads = new TreeMap<>(), writes = new TreeMap<>();
 	EmulatorHelper helper;
 
@@ -119,6 +122,7 @@ public class EmuBoundary extends GhidraScript {
 			long a = Long.parseLong(f[1], 16);
 			if (f[0].equals("guard") && !once) { guards.add(a); continue; }
 			if (f[0].equals("observe") && !once) { observes.add(a); continue; }
+			if (f[0].equals("trace") && !once) { traces.add(a); continue; }
 			byte[] b;
 			if (f[0].equals("load")) b = Files.readAllBytes(Paths.get(f[2]));
 			else if (f[0].equals("dword")) b = le32(Long.parseLong(f[2], 16));
@@ -179,6 +183,15 @@ public class EmuBoundary extends GhidraScript {
 						Address pc = helper.getExecutionAddress();
 						if (pc.equals(ret)) break;
 						if (observes.contains(pc.getOffset())) { obs = true; break; }
+						if (traces.contains(pc.getOffset())) {
+							StringBuilder ts = new StringBuilder();
+							for (String g : new String[] { "EAX", "EBX", "ECX", "EDX", "ESI", "EDI", "EBP", "ESP" })
+								ts.append(String.format(" %s=%08x", g.toLowerCase(), helper.readRegister(g).longValue() & 0xFFFFFFFFL));
+							long tesp = helper.readRegister("ESP").longValue() & 0xFFFFFFFFL;
+							StringBuilder tb = new StringBuilder();
+							for (byte x : helper.readMemory(toAddr(tesp), 128)) tb.append(String.format("%02x", x & 0xFF));
+							w.printf("T %d %s%s %s%n", n + 0, pc, ts, tb);
+						}
 						if (guards.contains(pc.getOffset())) { stop = "guard address reached"; break; }
 						if (!currentProgram.getMemory().getExecuteSet().contains(pc)) { stop = "pc outside the image's code"; break; }
 						if (steps >= MAX_STEPS) { stop = "step limit"; break; }
