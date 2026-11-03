@@ -635,6 +635,7 @@ class Check:
         self.slot = collections.Counter()
         self.mf = collections.Counter()
         self.cross = collections.Counter()
+        self.ra = collections.Counter()
         self.notes = []
         self.rows = []
 
@@ -670,6 +671,9 @@ class Check:
         for e in evs:
             s, cls = own_set(self.bin, fam, e, ptypes)
             sets[e.line] = (s, cls)
+            if cls == "ra":
+                ra = e.raw.get(KINDS[fam][e.kind][1][0])
+                self.ra[(fam, e.kind, self.bin.func_of(ra), set_name(s))] += 1
             self.kind[(fam, e.kind)]["events"] += 1
             self.kind[(fam, e.kind)]["class " + cls] += 1
             row["events"] += 1
@@ -988,6 +992,10 @@ def report(ck, bin_, todo):
                  "no-uid %d  no-seed %d  [%s]" % (
                      fam, kind, c["events"], c["in frames2"], c["compared"], c["compared as own"],
                      c["compared as nested"], c["mismatch"], c["no unit id"], c["no seed"], cls))
+    L.append("")
+    L.append("== events placed by their return address (family, kind, the function holding it, the set)")
+    for (fam, kind, f, sn), v in sorted(ck.ra.items()):
+        L.append("  %-8s %-6s 0x%08X %-24s %d" % (fam, kind, f, sn, v))
     L.append("")
     L.append("== separating pairs (consecutive placed events whose sets do not overlap), by set")
     for (a, b), v in sorted(ck.sep.items(), key=lambda x: -x[1]):
