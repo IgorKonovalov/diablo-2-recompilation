@@ -494,6 +494,7 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-11-03 | `lane/s64` review | 0057 P1 | architect-review | 83 028 | 24 | 4 | — | accept | 0 |
 | 2026-11-03 | `lane/p55a` | 0055 P2a | reverser-static | 388 894 | 135 | 66 | — (no Ghidra, no harness; replays under MemoryMax=4G) | accept with fixes (Tier B check), P2a met in part | 2: overclaim 1, omission 1 |
 | 2026-11-03 | `lane/p55a` check | 0055 P2a | architect-check | 96 863 | 20 | 3 | — | accept with fixes (2) | overclaim 1, omission 1 |
+| 2026-11-03 | `lane/r52j` | 0052 P1.2 (batch 10) | reverser-static | 385 000 | 100 | 70 | — (static, Ghidra copy ghidra-r52j) | — (for review) | — |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not
