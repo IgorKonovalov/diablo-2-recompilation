@@ -2,7 +2,10 @@
 // after each call, and a trace of every memory access outside the stack and the bytes the spec and the case wrote
 // (ADR-0015 condition 2: the record accounts for each traced address). Plan 0038 batch S1e.
 // Usage (headless): -postScript EmuTrace.java <out-file> <cases-file> <memory-spec>
-// Memory spec, applied before every case, one directive per line ('#' comments):
+// Memory spec, applied before every case, one directive per line ('#' comments). Each case writes a fresh copy of every
+// directive's bytes: Ghidra 12.1's MemoryPageBank.setPage keeps the caller's array as the page (no copy) when the
+// write starts on a 4 KiB page boundary and is 0x1000 bytes or more, so the emulated code's stores went into the
+// spec's own buffer and the next case re-wrote the stored bytes (plan 0055, lane/r55e; test workspace/logs/r55e/zerotest):
 //   load  <hex addr> <path>      write the file's bytes at addr
 //   dword <hex addr> <hex value> write one u32
 //   bytes <hex addr> <hex>       write the bytes
@@ -140,7 +143,7 @@ public class EmuTrace extends GhidraScript {
 				if (!f[0].equals("call")) throw new IllegalArgumentException("cases: " + line);
 				n++;
 				caseMem.clear();
-				for (int i = 0; i < where.size(); i++) helper.writeMemory(where.get(i), what.get(i));
+				for (int i = 0; i < where.size(); i++) helper.writeMemory(where.get(i), what.get(i).clone()); // a copy: see the header
 				List<String[]> regs = new ArrayList<>();
 				for (String[] p : pre) {
 					if (p[0].equals("r")) { regs.add(p); continue; }
