@@ -1,9 +1,9 @@
 ---
 based_on:
   - docs/specs/skills/README.md 2026-11-03
-  - docs/specs/skills/dispatch.md 2026-10-30
-  - docs/specs/skills/missiles.md 2026-10-30
-  - docs/specs/skills/catalogue.md 2026-10-30
+  - docs/specs/skills/dispatch.md 2026-11-04
+  - docs/specs/skills/missiles.md 2026-11-04
+  - docs/specs/skills/catalogue.md 2026-11-04
 ---
 
 # Skills and missiles
@@ -227,8 +227,18 @@ maximum is a third of the same, read from the code. Kick's own start function, a
 its row's `MinDam` itself (read from the code), which is 0 for Kick. Read from the code, the `Kick`-flagged damage is reached by the
 Assassin's Dragon Talon, Dragon Tail and Dragon Flight (strength and dexterity for the Assassin, three times the
 level for the two shadow monsters that cast Dragon Flight), and not by a direct call of Kick's own functions; the
-calls that pass a skill chosen at run time are not followed. The weapon masteries enter
+calls that pass a skill chosen at run time are not followed. On those kicks, read from the code, the kick damage stat counts
+twice when boots are worn (once alone, once with the boots' values), and the damage stats of a weapon in either hand are unlinked
+while the hit is built, so a weapon's elemental damage stays out and other items' still reaches it
+([dispatch § I](../specs/skills/dispatch.md#i-the-skill-packet)). The weapon masteries enter
 through the combat build and the missile damage, the synergies through the skill's formulas, read from the code.
+
+**Three things that look like slips**, all read from the code ([catalogue § J](../specs/skills/catalogue.md#j-paladin-st-29-31-3537-do-6467-73-7982-150),
+[§ M](../specs/skills/catalogue.md#m-assassin-st-2228-do-3335-4252-54-progressive-3641-143)). A player's Smite runs its hit test
+with its draws and then forces the hit bit; a monster's Smite takes its `A2` stats whatever mode it used. The knockback chance
+of Dragon Talon and Psychic Hammer adds the skill level to the target's level and subtracts the target's level again, so the
+difference is always the skill level. A running Blessed Aim removes Penetrate's list from its caster, because both rows name
+the same `passivestate`.
 
 ## Charge-up skills and the finisher
 
@@ -307,6 +317,8 @@ Raven, at the target point, read from the code).
 - **The pet limit**, players only, read from the code: a new summon removes the owner's pets of the other types of
   its group, and while the owner has more pets of its type than the skill allows, removes the first pet of the list
   (not necessarily the oldest) ([glossary](../glossary.md)).
+- **No `noRatio` test**, read from the code: a summon gets its level-table defence and to-hit added whole, whatever its class's
+  `noRatio` bit ([dispatch § L](../specs/skills/dispatch.md#l-summons)).
 
 ## A monster's attack stats
 
@@ -593,7 +605,8 @@ sequenceDiagram
 [Overview § C](../specs/skills/README.md#c-branches), read from the code: difficulty enters Static Field, curse
 lengths and a summon's level-table stats; expansion and player count change nothing in the machinery itself (a monster
 skill hit's terms are its attack stats'). Players and monsters differ in the costs, ammunition, delay, checks and the
-town rules above, and a skill's line missile carries the owner's to-hit only for a monster. Party auras and player against player were not
+town rules above, and a skill's line missile carries the owner's to-hit only for a monster (Double Throw, which adds the skill's to-hit to its
+missile after creating it, is the one exception read). Party auras and player against player were not
 run.
 
 ## Worked examples

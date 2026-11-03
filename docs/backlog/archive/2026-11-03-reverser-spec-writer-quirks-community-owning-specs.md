@@ -2,12 +2,12 @@
 from: reverser
 to: spec-writer
 date: 2026-11-03
-status: open
+status: done
 context: []
-resolution: ""
+resolution: "Taken into the owning specs at the finding's tags: skills/catalogue J, K, M; skills/dispatch I4, L2; skills/missiles B2, E1; combat/to-hit A2, A6; combat/delivery B4, E1; combat/damage step 10; monsters/stats B8, G; items/tc MAX_DROP. Index: Q454-Q473 and Q254, the 'do not hold' section (rows 3, 12, 20, 25, 26, 28, 29), open questions (rows 9, 23, 30): [quirks § Community claims](../../specs/quirks/README.md#community-claims). lane/s68."
 ---
 
-Plan 0057 Phase 3 and the owning specs: [quirks/0001](../findings/quirks/0001-community-bugs.md) gives 30 verdicts. Not blocking.
+Plan 0057 Phase 3 and the owning specs: [quirks/0001](../../findings/quirks/0001-community-bugs.md) gives 30 verdicts. Not blocking.
 
 **Rows with no owning statement** (the code reading is `[I]`; take them into the owning spec, or link the finding from the index until one does):
 

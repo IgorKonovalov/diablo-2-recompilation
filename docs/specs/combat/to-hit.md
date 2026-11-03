@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, combat/overview, player/creation, monsters/stats]
 consumed_by: [combat/overview, combat/damage, combat/delivery]
-tags: {C: 39, I: 30, L: 5}
-updated: 2026-10-21
+tags: {C: 39, I: 33, L: 5}
+updated: 2026-11-04
 ---
 
 # Combat: the hit test, chance to hit and the defence rolls
@@ -67,7 +67,7 @@ flowchart TD
 |---|---|---|
 | attacker and defender units | `Unit`, type 0 player, 1 monster, 3 missile | the attack event ([combat/overview](README.md)) |
 | attacker seed, defender seed | `Seed` at `Unit+0x20` | [rng/seeds](../rng/seeds.md) |
-| `arPct` | i32, the caller's attack-rating percent | 0 for a monster, stat 325 for the player's normal attack, `SKILLS_GetToHit` for a skill |
+| `arPct` | i32, the caller's attack-rating percent | 0 for a monster's melee test, the missile's stat 19 for its line missile [I] (0x005AE05F–0x005AE06F, fn:MISSILE_HitUnit@0x005ADF10); stat 325 for the player's normal attack, `SKILLS_GetToHit` for a skill |
 | unit stats | i32 values of the unit's stat lists | value inputs (ADR-0014); see the stat ids below |
 | unit mode | the unit's animation mode | 2 walk, 3 run, 6 (player); 2, 15 (monster) |
 | game type | `Game+0x70`, 0 classic, else expansion | game creation |
@@ -143,9 +143,19 @@ Step notes:
 - A2. The monster's attack rating `stat 19 + arPct + 5·dex` with `pct` = stat 119 is [C]; a monster's stat 19 at
   that moment is the value `MonAttackStats` wrote at its mode change ([monsters/stats § H](../monsters/stats.md#h-to-hit-and-damage-at-attack-time-reference-only)).
   [C] (fn:COMBAT_ToHitRoll@0x0057D9B0, run:2026-10-16-combat)
+- A2. **A monster's line missile counts stat 19 twice.** `SkillMissileCreate` sets flag `0x1000` with the owner's stat 19
+  for a monster owner, which becomes the missile's stat 19 ([skills/missiles B2](../skills/missiles.md#b-creation));
+  `MISSILE_HitUnit` passes that as `arPct` when the missile's record byte `+0x18B` is set, and without it there is no
+  to-hit roll (§ C4); the monster formula above adds `arPct` to stat 19. So the factor is 2 on stat 19 only: the dexterity
+  term is not doubled, the two stat 19s are read at the creation and at the hit, and `SkillMissileCreateLob` sets no
+  flag. [I] (fn:sub_0056ECB0_SkillMissileCreate@0x0056ECB0, fn:sub_0059FA30_MissileCreate@0x0059FA30,
+  fn:sub_0056EE90_SkillMissileCreateLob@0x0056EE90, 0x005AE04C–0x005AE06F, fn:MISSILE_HitUnit@0x005ADF10,
+  fn:COMBAT_ToHitRoll@0x0057D9B0, [quirks/0001 § 2](../../findings/quirks/0001-community-bugs.md#2-the-monster-missiles-attack-rating-row-17))
 - A6. The draw is the inlined LCG on `att.seed` with the unsigned `low mod 100`, the same value as `Range(att.seed,
   100)`. Before the test the binary passes `c` and `r` to an empty debug stub. [C] (0x0057DB35–0x0057DB79,
   fn:DEBUG_ToHitRollStub@0x005347B0, run:2026-10-16-combat)
+- A6. `PreventHealHook` tests for a player attacker (`*unit = 0`), so stat 117 on a mercenary's items applies no state. [I]
+  (fn:sub_0057D810_PreventHealHook@0x0057D810, [quirks/0001](../../findings/quirks/0001-community-bugs.md#verdicts) row 27)
 - A6. On a hit, `PreventHealHook` runs inside `COMBAT_ToHitRoll`'s success branch, after the draw: for a player
   attacker with stat 117 ≠ 0 and a monster defender whose class is outside 704–709, it applies state 52 (`STATE_ApplyTimed`)
   for 120 000 frames with stat 31 = 0. [I] (fn:sub_0057D810_PreventHealHook@0x0057D810, 0x0057DB80, 0x0057D869–0x0057D891,

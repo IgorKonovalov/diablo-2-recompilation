@@ -169,7 +169,7 @@ list->pfnRemove = req->pfnRemove ? req->pfnRemove : STATE_DefaultRemoveCB;
 - [I] Callers: open wounds (state 62, 200 frames), prevent-heal, the aura target callback, the shrines, and about
   twenty skill functions; poison, burn, cold and freeze use their own appliers (combat/0001 § 9) with the same list
   shape. (fn:STATEVENT_OpenWounds@0x005BFE60, fn:sub_0057D810_PreventHealHook@0x0057D810, fn:COMBAT_ApplyPoison@0x0057AC50)
-- [I] **Potions** (`sub_005BEDA0_ItemUseTimedState`, data/0005) call `STATE_GroupClear` before applying, so an
+- [I] **The antidote, thawing and stamina potions and `hrb`** (kinds 6 and 9, `sub_005BEDA0_ItemUseTimedState`, data/0005; not the healing and mana potions of kind 3, fn:sub_005BE3F0_ItemUsePotion@0x005BE3F0) call `STATE_GroupClear` before applying, so an
   antidote, thawing or stamina potion replaces another state of its group. (fn:sub_005BEDA0_ItemUseTimedState@0x005BEDA0,
   fn:STATE_GroupClear@0x0056C740)
 - [I] **The `state` stat (98).** When a list gains stat 98 with param `s` (the property `state`, Sets blocks of

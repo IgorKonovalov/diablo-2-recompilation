@@ -41,7 +41,7 @@ The header holds no date or path, so a set's digest is reproducible.
 | `source` | object | observed: `log` (file name), `log_sha256` (first 16 hex of the kept log), `run` (the experiment record, when given), `call` (a drop's index among the log's TC calls), `window` (a DRLG case: the log line that opens the window, `OD0` or `MZ0`). Predicted: `model` (the tool that produced it) |
 | `inputs` | object | what a reimplementation is given (below). Names are plain, not spec fields |
 | `expected` | object | field name to value; only the fields in the table below |
-| `quirks` | list of strings | ids from the quirks catalogue ([plan 0057](../plans/0057-quirks-catalogue.md)) of the quirks that change an output of this case. Reserved: version 1 files carry `[]`, and `emit` never invents an id. A mismatch report prints a failing case's ids so the implementer sees which trap it hit |
+| `quirks` | list of strings | ids from the quirks catalogue ([plan 0057](../plans/done/0057-quirks-catalogue.md)) of the quirks that change an output of this case. Reserved: version 1 files carry `[]`, and `emit` never invents an id. A mismatch report prints a failing case's ids so the implementer sees which trap it hit |
 
 **Kinds, never mixed.** `observed`: the expected values are those of a kept log of the real game, and the
 reviewed models reproduced them before the case was written (a case that does not reproduce is not written); a

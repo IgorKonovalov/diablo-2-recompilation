@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, combat/overview, combat/to-hit, combat/damage, combat/reductions, monsters/stats]
 consumed_by: [combat/overview, items/tc, stats/states, items/economy]
-tags: {C: 80, I: 64, L: 4}
-updated: 2026-10-27
+tags: {C: 81, I: 67, L: 4}
+updated: 2026-11-04
 ---
 
 # Combat: queue, delivery, on-hit effects and the life change
@@ -344,6 +344,16 @@ Step notes:
 - B4. For a player attacker the defender's mana and stamina losses read the steal fields after `Leech` scaled them
   (`<< 6` and the divisor), so a monster defender with mana loses `manaSteal·64/divisor` in 1/256 units. [I]
   (0x0057C879–0x0057C889)
+- B4. **A `manahit` boss takes `256·v` mana** where the same value `v` through an `El` column takes `v`. The mod writes
+  stats 62 and 63 × 256 ([monsters/stats § G](../monsters/stats.md#g-the-mod-handlers-stat-effects)) and
+  `MonAttackStats`' type 7 writes the plain value; the build's roll shifts by 8 either way
+  ([combat/damage § C](damage.md#c-one-element-combat_rollelemstat-combat_rollrange)), scaled by `srcdam ÷ 128`; `Leech`
+  shifts the field up by 6 and, for a monster attacker, back (§ C); the subtraction above is in 1/256 units, with 0
+  below 256, so the loss stops at the mana held. `v << 22` passes through `Leech`: 511 still fits in i32, 512 reaches 2³¹
+  and wraps, and whether a wrapped value reaches a use is not read. The factor is composed from the stated halves and the
+  code, and was not run. [I] (fn:sub_005A1F90_UModManaHit@0x005A1F90, fn:sub_005A4F50_MonAttackStats@0x005A4F50,
+  fn:COMBAT_RollElemStat@0x0057A8E0, fn:COMBAT_Leech@0x0057C420, 0x0057C879–0x0057C889,
+  [quirks/0001 § 1](../../findings/quirks/0001-community-bugs.md#1-the-mana-drains-factor-row-13))
 - B5. A dead monster goes to `COMBAT_GetHit` and `sub_0057CCB0_UnitKilled`, the hand-off to the death and drop path
   ([items/tc](../items/tc.md)). [I] (fn:COMBAT_GetHit@0x0057CEE0, fn:sub_0057CCB0_UnitKilled@0x0057CCB0)
 
@@ -461,7 +471,7 @@ E1. CrushingBlow(att, def, pkt, event):                              [C] (fn:STA
         k ← k + MulDiv(k, PlayerHpPct(n), 100)                       ; + 50 % per player beyond the first
       if event = 6: k ← k × 2                                        ; missile, [I] (0x005C0031–0x005C00F6)
       cb: i32 ← stat(def, 6) ÷ k
-      if stat(def, 36) > 0: cb ← cb − MulDiv(cb, min(stat(def, 36), 100), 100)
+      if stat(def, 36) > 0: cb ← cb − MulDiv(cb, min(stat(def, 36), 100), 100)    ; the cap at 100 [I] (0x005C00C5–0x005C00E0)
       stat(def, 6) ← max(stat(def, 6) − cb, 0);  if 0: pkt.result |= 0x2
       if cb > 0: overlay 147
 
@@ -501,6 +511,12 @@ E3. Freeze(att, def, pkt, event):                                    [C] on a me
   holds 72 such events among the 163 it counted as uniques (`0x08`). [C] (fn:sub_005A0320_MonMarkSpecial@0x005A0320,
   fn:STATEVENT_CrushingBlow@0x005BFFC0, run:2026-10-20-shortfalls, run:2026-10-16-combat)
 - E1. There is **no difficulty and no classic branch** in crushing blow. [I] (fn:STATEVENT_CrushingBlow@0x005BFFC0)
+- E1. **Stat 36 cuts the blow.** The cut `cb − MulDiv(cb, min(stat 36, 100), 100)` is logged at stat 36 from 15 to 90 on a
+  monster defender. [C] for those values (fn:STATEVENT_CrushingBlow@0x005BFFC0, run:2026-10-16-combat)
+  **At 100 or more it cancels the blow, read from the code.** No kept combat log has a crushing blow at stat 36 of 100 or
+  more ([plan 0057](../../plans/done/0057-quirks-catalogue.md#implementation-log), the `lane/s68` review's survey), so the cap, `cb` = 0
+  there, the cut's having no branch on the defender's kind and a player at that resistance, with the player's divisor 10,
+  are the code reading. [I] (0x005C0031–0x005C00F6, [quirks/0001](../../findings/quirks/0001-community-bugs.md#verdicts) row 15)
 - E1. `k = 8` for MonStats `boss` (act bosses) and superuniques reproduced with 0 mismatches on an act boss (34
   events, Andariel, Normal, `/players` 8) and on superuniques (55), with the same draw, player-count scaling and
   physical-resistance step as `k = 4`. [C] (fn:MONSTATS_IsBoss@0x0063E9F0, run:2026-10-16-combat)
