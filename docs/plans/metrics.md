@@ -464,6 +464,7 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-10-30 | lane/a60 check | 0060 P0 | architect-check | 74 774 | 22 | 3 | — (Tier B check, no harness) | accept with fixes | stale cross-reference 1 |
 | 2026-10-30 | lane/w46 | 0046 P4 | wiki | 75 536 | 16 | 2 | — (no Ghidra, no harness) | accept with fixes (Tier B check) | 3: misread 2, stale cross-reference 1 |
 | 2026-10-30 | lane/w46 check | 0046 P4 | architect-check | 97 607 | 32 | 4 | — | accept with fixes | misread 2, stale cross-reference 1 |
+| 2026-10-30 | `lane/r52h` (to checkpoint) | 0052 P1.2 (batch 8) | reverser-static | 141 850 | 39 | 5 | — (static, Ghidra copy ghidra-r52h) | — (checkpoint, owner pause) | — |
 | 2026-10-30 | lane/r55c | 0055 P1.3 | reverser-static | 372 829 | 182 | 46 | — (static, Ghidra copy ghidra-r55c) | accept with fixes (Tier A) | 8: overclaim 1, misread 1, omission 5, stale cross-reference 1 |
 | 2026-10-30 | `lane/r55c` review | 0055 P1.3 | architect-review | 218 756 | 112 | 15 | — (Tier A, the P1 review, objdump, no Ghidra) | accept with fixes (8) | overclaim 1, misread 1, omission 5, stale cross-reference 1 |
 | 2026-10-30 | lane/a62 | 0062 P2 + two closures | archivist | 155 083 | 66 | 10 | — (no Ghidra, no harness) | accept with fixes (Tier B check) | 3: misread 1, omission 1, overclaim 1 |
@@ -474,6 +475,11 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-10-30 | lane/h6ga check | 0038 H6g rows 2/29 | architect-check | 103 312 | 33 | 3 | — | accept with fixes (5) | 5: overclaim 1, other 2, stale cross-reference 2 |
 | 2026-10-30 | lane/s59 | 0059 P3 | spec-writer | 102 463 | 28 | 5 | — (no Ghidra, no harness) | accept with fixes (Tier A) | 15: misread 5, wrong anchor 5, under-claim 3, overclaim 1, omission 1 |
 | 2026-10-30 | lane/s59 review | 0059 P3 | architect-review | 128 940 | 55 | 8 | — (Tier A, no Ghidra, no harness) | accept with fixes (15) | misread 5, wrong anchor 5, under-claim 3, overclaim 1, omission 1 |
+| 2026-11-03 | `lane/r52h` | 0052 P1.2 (batch 8) | reverser-static | 354 483 | 131 | 22 | — (static, Ghidra copy ghidra-r52h) | accept with fixes (Tier B check) | 1: miscount 1 |
+| 2026-11-03 | `lane/r52h` check | 0052 P1.2 (batch 8) | architect-check | 90 522 | 19 | 2 | — | accept with fixes (1) | miscount 1 |
+| 2026-10-30 | `lane/r52g` (to checkpoint) | 0052 P1.2 (batches 6-7) | reverser-static | 278 377 | 85 | 19 | — (static, Ghidra copy ghidra-r52g) | — (checkpoint, owner pause) | — |
+| 2026-11-03 | `lane/r52g` | 0052 P1.2 (batches 6-7) | reverser-static | 346 175 | 125 | 24 | — (static, Ghidra copy ghidra-r52g) | accept with fixes (Tier B check) | 1: omission 1 |
+| 2026-11-03 | `lane/r52g` check | 0052 P1.2 (batches 6-7) | architect-check | 86 260 | 18 | 2 | — | accept with fixes (1) | omission 1 |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not
