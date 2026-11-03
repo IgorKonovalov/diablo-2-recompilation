@@ -686,6 +686,11 @@ class Checker:
                 L = frames << 8
                 self.ok("sched-len", x["L"] == L, ("L", x["n"], nm, L, x["L"]))
                 S = d.start_frame(u["c"], u["m"], sr.get("eq", []) if sr else []) if u["t"] == 0 else 0
+                if u["t"] == 1 and rec and rec[0][:2] in PLR_TOKEN and rec[0][2:4] in ("A1", "A2"):
+                    # (plan 0050 part 3) the start frame is by display type (anim/0001 § 4): a monster whose record
+                    # is a player's (the Valkyrie, class 357: AMA12HT) takes g_AttackStartFrames[weapon][class] from
+                    # the record's own token and weapon code
+                    S = d.start[d.iwcls.get(rec[0][4:7].lower(), 0)][PLR_TOKEN.index(rec[0][:2])]
                 ev = lambda f, e=events: e[f] if f < 144 else 0  # noqa: E731
                 if "s0" in x:
                     self.ok("startframe", x["s0"] == S, ("S", x["n"], u, S, x["s0"]))
@@ -726,6 +731,11 @@ class Checker:
                     continue
                 if fr > last_fr:
                     self.tally["after-log-end"] += 1
+                    continue
+                if fr == last_fr:
+                    # (plan 0050 part 3) the frame the log ends on: the game was killed in it, before or after its
+                    # dispatches were logged; counted apart so that the excuse is visible
+                    self.tally["at-log-end-frame"] += 1
                     continue
                 self.tally["unfired-nocancel"] += 1
                 self.ok("fire", False, ("unfired", uu, sn, kind, fr, a, b))
@@ -816,8 +826,15 @@ class Checker:
         # anim/0003's open question: the first run of an every-frame event queued at a mode start (EF) during the
         # frame's unit-list run: the offset of the unit's first PathStep (PS0) or advance (AD0) after its EF line
         pend = {}
+        drfr = {}
         for tag, x in lines:
+            if tag == "DR0":
+                drfr[x["u"]] = x["fr"]
             if tag == "EF":
+                if drfr.get(x["u"]) == x["fr"] and x["m"] == 2:
+                    # a run turned to a walk by the stamina drain inside the unit's own step (anim/0003 run drain): the
+                    # mode change runs in the unit's own phase-3 walk, so its step usually follows in the same frame
+                    x = dict(x, ph=-1)
                 pend[x["u"]] = x
             elif tag in ("PS0", "AD0") and x["u"] in pend:
                 e = pend.pop(x["u"])
@@ -825,7 +842,10 @@ class Checker:
                     who = "p" if x.get("t", 1) == 0 else "m"
                     off = x["fr"] - e["fr"]
                     self.tally["ef-first-%s-%s-offset=%d" % (tag[:2].lower(), who, off)] += 1
-                    if "ph" in e:
+                    if e.get("ph") == -1:
+                        self.tally["ef-first-run-turn-offset=%d" % off] += 1
+                        # a measurement, not a check: offsets 0 and 1 both occur (plan 0050 part 3's record)
+                    elif "ph" in e:
                         # queued at the head of the type's every-frame list: run in this frame only if that list's
                         # walk (phase 3 players, 5 monsters) is still to come
                         want = 0 if e["ph"] < (3 if who == "p" else 5) else 1

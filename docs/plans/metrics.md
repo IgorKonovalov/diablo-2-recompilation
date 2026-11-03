@@ -417,6 +417,7 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-10-30 | lane/a55 check | 0055 P0 | architect-check | 54 060 | 9 | 3 | — (Tier B check, no harness) | accept with fixes | 1: omission 1 (337 stamped logs vs the 331 corpus logs unexplained in inventory and plan entry) |
 | 2026-10-30 | lane/a54 | 0052 backlog link + 0054 P0 | archivist | 122 746 | 47 | 8 | — (no Ghidra, no harness) | accept (Tier B check) | 0 |
 | 2026-10-30 | lane/a54 check | 0054 P0 | architect-check | 70 642 | 20 | 2 | — (Tier B check, no harness) | accept | — |
+| 2026-10-30 | `lane/p50g` (to checkpoint) | 0050 P2 part 3 | reverser-harness | 247 433 | 129 | 145 | 1 | — (checkpoint, owner pause) | — |
 | 2026-10-30 | lane/h1c | 0038 H1c | reverser-harness | 274 025 | 101 | 52 | slot 1 (7 kept sessions), no Ghidra; Sonnet | accept with fixes (Tier B check) | 1: overclaim 1 |
 | 2026-10-30 | lane/h1c check | 0038 H1c | architect-check | 75 916 | 12 | 2 | — (Tier B check, no harness) | accept with fixes | 1: overclaim 1 (NewCharLegacy symbol row raised to C with the unmet PlayerLoad caller half in its description; marked [I]) |
 | 2026-10-30 | lane/r52c | 0052 P1.2 (batch 2) | reverser-static | 333 494 | 98 | 26 | — (static, Ghidra copy ghidra-r52c) | accept with fixes (Tier B check) | 1: omission 1 |
@@ -494,6 +495,8 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-11-03 | `lane/s64` review | 0057 P1 | architect-review | 83 028 | 24 | 4 | — | accept | 0 |
 | 2026-11-03 | `lane/p55a` | 0055 P2a | reverser-static | 388 894 | 135 | 66 | — (no Ghidra, no harness; replays under MemoryMax=4G) | accept with fixes (Tier B check), P2a met in part | 2: overclaim 1, omission 1 |
 | 2026-11-03 | `lane/p55a` check | 0055 P2a | architect-check | 96 863 | 20 | 3 | — | accept with fixes (2) | overclaim 1, omission 1 |
+| 2026-11-03 | `lane/p50g` (resume: part 3b) | 0050 P2 | reverser-harness | 130 952 | 72 | 91 | 1 | accept (Tier B check) | 0 (wording tightened at merge) |
+| 2026-11-03 | `lane/p50g` check | 0050 P2 part 3 | architect-check | 69 866 | 10 | 1 | — | accept | 0 (2 listed: wording, anim/0003 cross-reference to the re-tag pass) |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not

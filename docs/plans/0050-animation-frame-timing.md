@@ -319,7 +319,7 @@ client-side display of timing stay out (ADR-0005, ADR-0014 § Time): timing ente
 
 #### Phase 2 part 3 — the short floors of part 2, with overpowered builds (owner, 2026-10-30)
 - **Owner skill:** reverser (agent-driven; **one slot** from 1–2, given in the prompt; no Ghidra)
-- **Status:** **ready for the next free harness slot** (queued behind H1c on slot 1 and 0046·P2 on slot 2; it takes
+- **Status:** **done 2026-11-03 (`lane/p50g`), review requested ([log](#implementation-log)).** The checkpoint of 2026-10-30 was resumed; was: ready for the next free harness slot (queued behind H1c on slot 1 and 0046·P2 on slot 2; it takes
   whichever frees first). Approved by the owner on 2026-10-30 (option (b) of the `lane/p50f` check, not closing the
   floors short; [log](#implementation-log)).
 - **Why:** part 2 (run:2026-10-27-anim-p2, [record](../findings/anim/experiments.md#run2026-10-27-anim-p2)) holds 0
@@ -1246,3 +1246,29 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   `RECIPE_BASES` rows follow it, as part 2's. **Part 3 is ready for the next free harness slot** (queued behind H1c and
   0046·P2, the two slots taken from 2026-10-30). **Unpause (owner, 2026-10-30):** P4 (the wiki page) runs now
   (`lane/wiki50`); it does not wait for part 3, whose raises get a spec-writer re-tag pass of their own.
+- **2026-10-30 - Phase 2 part 3 checkpoint (reverser, `lane/p50g`; harness slot 1, no Ghidra; owner pause at the token budget).**
+  Record [run:2026-10-30-anim-p3](../findings/anim/experiments.md#run2026-10-30-anim-p3). **Ran:** the `anim-<cls>-op-t<k>`
+  builds (clvl 99, FHR 0/24/48 checked per save by `anim_sessions.py oprates`) for five classes, 33 kept sessions
+  (batches 1 and 2), closing check over 114 logs: **0 mismatches** after two checker fixes (the Valkyrie's start frame by
+  display type; the log's last frame). **Floors:** get-hits at three FHR rates of 30 met for the Sorceress and Assassin;
+  short: Amazon 179/215 (25/25), Necromancer 179 (21), Druid 173/208 (24/16). **Not run:** Druid throws, knockbacks, the run
+  at 0 stamina, P1b-2/13/14/15 (sessions and saves exist: `op-dru-th`, `op-br`, `op-br2`, `op-br3`, `op-run`). **Learned:**
+  base life 120 (total about 300) with Blizzard-class clearing at level 20 yields 2-16 get-hits a session; deaths end
+  some; 120-hop sessions help. **Resume (same branch and worktree, slot 1, aside tag `p50g`):** build the kept saves with
+  `anim_sessions.py build --saves workspace/logs/anim/saves-2026-10-30-anim-p3 op` (recipes with
+  `anim_sessions.py recipes`); run, under a new run name (`2026-10-30-anim-p3b`, never over the kept names), repeats
+  `op2-ama-t1-N op2-ama-t2-N op2-nec-t1-N op2-dru-t1-N op2-dru-t2-N` (`-3` is unused for every cell; `-1` and `-2` were played for ama, nec, ass, sor and `-1` for dru) until the
+  five short rates reach 30, then `op-dru-th`, `op-br` x3, `op-run`; closing check over `…-all3.lst` plus the new lists;
+  then the `RECIPE_BASES` backlog entry for the `anim-*-op-*` recipes (not yet filed), the review request, the ledger
+  row's usage. No review request was filed (Done-when not met). Dev logs `dev-p3-*` are separate (`dev-p3-manifest.sha256`).
+- **2026-11-03 - Phase 2 part 3 done, review requested (reverser, `lane/p50g`; harness slot 1, no Ghidra).** Record
+  [run:2026-10-30-anim-p3b](../findings/anim/experiments.md#run2026-10-30-anim-p3b) (17 kept sessions, 131 logs over parts
+  1-3b). **Closing check: 0 mismatches** over every kind. **Floors:** the five short get-hit rates reached 30 (Amazon
+  179/215 at 40/33, Necromancer 179 at 32, Druid 173/208 at 35/32); `get-hit rates30` 3 for the Amazon, Necromancer,
+  Sorceress, Druid and Assassin. **Named short:** the Druid's throws 29 of 30; player knockbacks 0 (Blood Raven not seen in three
+  Hell sessions); P1b-2, P1b-14, P1b-15 not played; P1b-13 13 player slow windows. **New:** the run's turn to a walk at 0
+  stamina is reached, 81 events (the first `op-run` held walking because the `r` press toggled the default run off; its
+  successors omit it); `ef-first` carries a new tally `ef-first-run-turn` (offset 0 in 75, 1 in 6, the latter unexplained
+  `[I]`); the first check of `op-run2` flagged 3 `ef-first` mismatches that are this branch, not a regression. Filed: the
+  `RECIPE_BASES` backlog entry for the `anim-*-op-*` recipes (archivist) and the review request (architect). Usage on the
+  ledger. Nothing of this lane runs; slot 1 stopped with the saves restored.
