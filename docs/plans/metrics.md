@@ -520,6 +520,7 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-11-03 | `lane/r52l` review | 0052 P1.2 (batch 12) | architect-review | 260 691 | 37 | 13 | — | accept with fixes (6) | audit of lane/r52l: overclaim 1, misread 1, omission 1, wrong anchor 1, miscount 1, tool not kept 1; reject-grade missed: no |
 | 2026-11-03 | `lane/r52m` | 0052 P1b | reverser-static | 285 415 | 131 | 17 | — (no Ghidra, no harness) | accept with fixes (Tier B check) | 3: misread 2, other 1 |
 | 2026-11-03 | `lane/r52m` check | 0052 P1b | architect-check | 109 489 | 26 | 3 | — | accept with fixes (3) | misread 2, other 1; listed item (P1b-2 difficulty and class id) fixed at merge |
+| 2026-11-03 | `lane/r52n` | 0052 P1c (Uber event) | reverser-static | 329 000 | 22 | 1 | — | — | — |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not
