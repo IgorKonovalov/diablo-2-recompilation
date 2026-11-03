@@ -216,9 +216,11 @@ games: one launch and four menu returns, `tools/probe0056.py`; numbers in the pl
 switch is `harness_runner.next_case`: Save and Exit, the next save copied over at the menu, SINGLE PLAYER, OK, the
 difficulty box, then the next `PLR` line. It costs about 19.5 s (18.5 to 19.5 over four switches, of which about 15 s
 are the fixed sleeps), a launch to its first `PLR` about 21 s (20.1 to 21.2 over four launches, install and launch included): a switch saves the
-launch's wine start and gdb attach, not the clicks. The probe did not time the session's `slots.py stop`, restore, aside
-and install around a launch: that the baseline's 60 s was mostly this bookkeeping is `[I]` (a subtraction), to be
-measured by the next batch that launches.
+launch's wine start and gdb attach, not the clicks. **The pilot's marks (run:2026-11-03-ai, plan 0056 Phase 4) settle the
+wall:** one launch's end to the next, stop, restore, aside and install together, 0.49 to 0.66 s (6 gaps), then 18.1 to 19.1 s to
+ready (10 launches, mean 18.6), against a switch of 18.2 to 20.4 s (24, mean 18.8). **Sharing saved about 0.4 s per case on that
+logger, so do not opt in for speed**; about 15 s of the switch are sleeps nobody has tuned. The bookkeeping reading of the
+baseline's 60 s is refuted there, and the 60 s itself is unexplained.
 
 **A case starts a fresh process** (a new `launch`, after `slots.py stop N`) when any of these holds:
 
@@ -237,7 +239,11 @@ measured by the next batch that launches.
    (five games, the level seed of every `LC0` the same per level id in all five, 103 to 108 in Act IV, with two
    different characters alternating). A launch with a different `-seed` is a different process anyway.
 5. **The previous case in the process failed or timed out** (a death, a halt, a load that did not reach `PLR`, a
-   stall): its state is unknown. Rerun the failed case in a fresh process, and start the rest of the batch in one too.
+   stall, or a stage not reached, such as a waypoint that never left the town): its state is unknown. Rerun the failed case in a fresh process, and start the rest of the batch in one too.
+   **A batch that shares a process checks each case's stage before the switch**; a runner that cannot tell has no opt-in
+   (`tools/ai_sessions.py` holds the check today). A failure found only afterwards, at the split or the check, leaves the
+   later cases of that process named in the record, kept only if their checker reads no carried state (2) and the record
+   gives the result without them; otherwise they are run again fresh (plan 0056 Phase 4, launch 5202).
 
 **Every other case may share a process, when the batch opts in** (owner answer 2 of plan 0056: the lane's prompt says
 whether a batch may share a process; without it, every case is fresh). Cases that share must be independent of 2 above for their checker, and
@@ -252,9 +258,10 @@ seed and the plan's rule is a fresh process for any seed-dependent case.
 rates, 8 games with short fights take under 10 minutes, so the 40 minutes binds only for long cases). Measured: after
 five games and 292 s the game's scope held 227 MB (peak 227 MB, game 0 had 223 MB; no growth trend), the log was
 8.7 MB with three 40 s fights in it (about 14 000 lines per fight), so the 4G limit is not what binds; the cap keeps a
-launch's log, its split and its checkers small, and bounds what a stuck game costs. The 8 is an extrapolation `[I]`:
-raise it only with a measured scope reading from a longer launch (`next_case` plus a read of the game's
-`memory.peak`, as the probe does).
+launch's log, its split and its checkers small, and bounds what a stuck game costs. Settled by plan 0056 Phase 4: the pilot's peaks were
+269.8 and 270.3 MB at 8 games (19.9 and 26.2 min), and up to 620.7 MB in one-game launches, so games do not drive the peak.
+The 40 minutes was never reached and stays `[I]`. Nothing measured favours raising the cap (the `d2run-<pid>.scope`
+line of the user journal gives a launch's peak).
 
 Rules for the batch loop on `next_case`: it is `ok: False` when no new `PLR` arrived in `load_timeout`; mark the case
 `fail`, apply 5, and do not click on (the clicks are blind). Dev logs apart from kept logs (§ Before the batch) hold for
