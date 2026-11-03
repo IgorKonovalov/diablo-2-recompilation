@@ -1086,7 +1086,7 @@ The name is format 1722 with prefix, suffix and appellation, from the keys `Fire
   [items/0008 § 5.2](../../findings/items/0008-cube.md)) describe the Uber event as realm-only behaviour. That stays a lead, not a claim about this
   image: nothing in the image confirms or refutes it beyond the search of § J, and the realm's behaviour cannot be read from this image.
 - [L] **Creators of classes 706–708.** ai/0016's creator statement names 704, 705 and 709 and its table result 704–709; whether its kept scans
-  also settle code that creates 706, 707 or 708 is asked in [the reverser entry](../../backlog/2026-11-03-spec-writer-reverser-ai-0016-classes-706-708-creator-scope.md).
+  also settle code that creates 706, 707 or 708 is asked in [the reverser entry](../../backlog/archive/2026-11-03-spec-writer-reverser-ai-0016-classes-706-708-creator-scope.md).
 - [L] **Lord De Seis** (record 37): the `thief` drop, the forced aura index 5, the local-seed step and his tail are
   code reads only; seal 394 was logged but the pilot never operated it, so he was never created (plan 0038 H4a). An
   owner-played Chaos Sanctuary session with `tools/gdb/mon-h4a-obj.gdb` (Nightmare, seed 4907) that opens seal 394 and
