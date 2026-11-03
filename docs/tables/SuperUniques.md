@@ -112,6 +112,11 @@ one line per record (class, mods by MonUMod name, group, flags, the class's MonS
    (records 6, 10, 26, 27, 29, 36–39, 42–45, 60, 62: Countess, Radament's escort with one `Range(unit.seed, 5)` draw,
    council and seal bosses, Cow King, Siege Boss, Ancient Barbarians, Nihlathak, Baal Subject 2), and finally mod 22
    `questcomplete` on every record.
+4. `[I]` The tail of record **6** (The Countess) sets her AI state: case word 6 of the switch at 0x005A4BF7 ends in a
+   `MonAiInit(ctl, 13)` call at 0x005A4C1A, the only caller in the image that passes state 13. State 13's think is the
+   second-table row 13 (0x005E5C50); it reads `aip1`..`aip3` and `Skill1` of the unit's MonStats record ([MonStats § Readers named by batch 12](MonStats.md#ai-columns-plan-0052-phase-0)).
+   ([ai/0013 § 3](../findings/ai/0013-batch12.md),
+   `b12-su13.txt`; fn:sub_005A49B0_SuperUniqueSpawn@0x005A49B0, fn:sub_005B0E00_MonAiInit@0x005B0E00, tbl:SuperUniques.txt:Superunique)
 
 `[I]` Not read on this path: `hcIdx` (`+0x00`), `EClass`, `Replaceable`, `Utrans*`, `MonSound`
 ([monsters/0003 § Data touched](../findings/monsters/0003-special-monsters.md#data-touched)). `Name` is read by the client name builder ([§ 8](../findings/monsters/0003-special-monsters.md#8-names-server-seed-client-roll)).

@@ -898,3 +898,36 @@
   P1b-2; H1; H3; Fetish and Andariel at `/players 8`; the catalogue sample; the review request.
 - **Conclusion:** [C] the outcome mix and the negative control on the first run's kept logs (above); [I] the resume model's figures (development logs). See
   [ai/0017](0017-phase2-second-run.md). Manifests: `workspace/logs/ai/manifest-run-2026-11-03-ai-2.sha256`, `manifest-dev-2.sha256`.
+## run:2026-11-03-ai-uber
+
+- **Question:** (plan 0052 Phase 1c, the Uber event) Do the unreferenced helpers 0x005DD140, 0x005E9DD0, 0x005F7F10, 0x005FD0F0, the drop 0x005E0070, the death callee 0x005A3250, the preset walk 0x005559A0, Baal's action at `k` 14, `UModAura` and `MonPostCreateBoss` map their declared inputs to the first boundary they reach (or their return), its call site, arguments, the unit seed and the named memory, as [ai/0016](0016-uber-event.md) § 7 reads them?
+- **Setup:** Ghidra p-code emulator via `re/ghidra_scripts/EmuBoundary.java` (unchanged), lane project copy `workspace/ghidra-r52n` (symbols replayed from `re/symbols.csv`; emulation does not use them), heap 3 GB, the runs in sequence inside one `systemd-run --user --scope -p MemoryMax=4G`, one Ghidra at a time. No wine, no slot. Models and case writer `tools/ai_uber_emu.py`, its run copy `emu/ai_uber_emu.py.rev` (`6049fb90…`), every draw from `random.Random("r52n-<family>")`. Files in `workspace/logs/r52n/emu/`, `manifest.sha256` (`04983652…`, 42 lines, `check.txt` `d3c307f4…`); `sha256sum -c manifest.sha256` from that directory passes. Development run `emu/dev-1/` (own manifest, 42 lines, tool copy `ai_uber_emu.py.dev1`): `result=FAIL` on one unaccounted static read in each of two families (the `UNIT_GetSizeX` jump table, 0x00620521 → 0x00620580), all cases matching; its cases differ from the kept run's in `presets` only, the generator raised to separate `pass` and `cnt` (7 and 7 cases there, 30 and 21 here).
+- **Procedure:**
+  ```
+  D=workspace/logs/r52n/emu
+  python3 -I tools/ai_uber_emu.py cases --dir $D
+  export GHIDRA_PROJ_DIR=workspace/ghidra-r52n GHIDRA_HEADLESS_MAXMEM=3G
+  systemd-run --user --scope -p MemoryMax=4G bash -c 'for f in ucount dhole umin bmin drop qdeath presets bact14 aura postc; do
+    tools/ghidra.sh emuboundary $D/$f.cases $D/$f.mem > $D/$f.out 2> $D/$f.err; done'
+  python3 -I tools/ai_uber_emu.py check --dir $D > $D/check.txt
+  (cd $D && sha256sum *.cases *.mem *.out *.err check.txt ai_uber_emu.py.rev > manifest.sha256)
+  ```
+  Each case writes the image the tool's docstring declares; the memory spec observes the boundaries and guards the allocator and fatal entries.
+- **Observed** (`check.txt`):
+  ```
+  AI52N ucount cases=240 match=240 bad=0 stopped=0 traced=0 accounted=1 cmp_separating=21 cmp_passed=0 cls_separating=7 cls_passed=0
+  AI52N dhole cases=240 match=240 bad=0 stopped=0 traced=0 boundaries=2
+  AI52N umin cases=240 match=240 drew=240 lo3_separating=210 lo3_passed=0
+  AI52N bmin cases=240 match=240 drew=240 lo3_separating=114 lo3_passed=0
+  AI52N drop cases=240 match=240 cls_separating=49 cls_passed=0 boundaries=3
+  AI52N qdeath cases=1469 match=1469 accounted=341 boundaries=9
+  AI52N presets cases=240 match=240 pass_separating=30 pass_passed=0 cnt_separating=21 cnt_passed=0 boundaries=4
+  AI52N bact14 cases=240 match=240 accounted=2 b709_separating=87 b709_passed=0 boundaries=2
+  AI52N aura cases=240 match=240 accounted=32 boundaries=3
+  AI52N postc cases=240 match=240 accounted=10 base_separating=124 base_passed=0 boundaries=10
+  AI52N total cases=3629 match=3629
+  AI52N result=ok
+    ARM 005e0070 classes 704,705,709
+  ```
+  Trimmed; every family's `site_control_passed=0`, `bad=0`, `stopped=0`, `traced=0`.
+- **Conclusion:** [C] the maps of ai/0016 §§ 3, 5, 6, 7, each ending at its first callee or return (ADR-0021). Not the callees, not reach, nothing after a boundary; `qdeath`'s tables come from the image. No symbol raise (ADR-0015 scope, review-fixes rule 14). (run:2026-11-03-ai-uber, fn:sub_005A3250_UModQuestCompleteDeath@0x005A3250)
