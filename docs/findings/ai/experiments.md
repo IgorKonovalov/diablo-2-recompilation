@@ -695,3 +695,76 @@
   (`cases` into a scratch directory, `check` on the kept outputs, compared with `cmp`).
 - **Conclusion:** the maps are `[C]` in ai/0012 §§ 2, 4, each up to its first boundary or return. Not the callees,
   nothing after them. No symbol raise (ADR-0015 scope, review-fixes rule 14). (run:2026-11-03-ai-cat-emu-11)
+
+## run:2026-11-03-ai-cat-emu-12
+
+- **Question:** (plan 0052 Phase 1, catalogue batch 12, towns, NPCs and the state rows) Do the think and init functions of rows 31, 32, 41, 42,
+  54, 58, 62, 81, 88, 91, 99, 100, of state rows 2, 3, 8–14 and 17, and the town helpers `AiNpcSaveHome`, `AiNpcHomeLeash`, `AiNpcScriptStep`,
+  `AiNpcPathPick` with its five actions, 0x005E7350, 0x005E77A0, `AiPathSkillStep`, 0x005E5710, 0x005E7D30, `AiNearestPlayer` with its callback and
+  the two list tests map their declared inputs to the first boundary they reach (or their return), its call site, its arguments, the unit seed, the AI
+  control words and the named memory as [ai/0013](0013-batch12.md) § 2 reads them?
+- **Setup:** Ghidra p-code emulator via `re/ghidra_scripts/EmuBoundary.java` (`0c88b790…`, unchanged), lane project copy `workspace/ghidra-r52l`
+  (symbols replayed from `re/symbols.csv`; emulation does not use them), heap 3 GB (`GHIDRA_HEADLESS_MAXMEM=3G`), the runs in sequence inside one
+  `systemd-run --user --scope -p MemoryMax=4G`, one Ghidra at a time. No wine, no slot. Models and case writer `tools/ai_cat_emu12.py` (`a8b42f49…`),
+  every draw from `random.Random("r52l-<family>")`. Files in `workspace/logs/r52l/emu/`, `manifest.sha256` (`31a52769…`, 165 lines, `check.txt`
+  `f2d6e75f…`); `sha256sum -c manifest.sha256` from that directory passes. Development run `emu/dev-1/` (own manifest, 166 lines, its tool copy
+  `ai_cat_emu12.py.rev`), `result=FAIL` on the first-model errors of ai/0013 § 5.
+- **Procedure:**
+  ```
+  D=workspace/logs/r52l/emu
+  python3 -I tools/ai_cat_emu12.py cases --dir $D
+  export GHIDRA_PROJ_DIR=workspace/ghidra-r52l GHIDRA_HEADLESS_MAXMEM=3G
+  systemd-run --user --scope -p MemoryMax=4G bash -c 'for f in <the 41 families>; do
+      tools/ghidra.sh emuboundary $D/$f.cases $D/$f.mem > $D/$f.out 2> $D/$f.err; done'
+  python3 -I tools/ai_cat_emu12.py check --dir $D > $D/check.txt
+  python3 -I tools/ai_cat_emu12.py manifest --dir $D --write
+  ```
+  Each case writes the image the tool's docstring declares; the memory spec observes 79 callees and guards the allocator and fatal entries (6). No `r` lines.
+- **Observed** (`check.txt`, first line of each family):
+  ```
+  AI52L npc cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 lo8_separating=0 lo8_passed=0 arg_separating=0 arg_passed=0 site_control_passed=0 boundaries=7
+  AI52L nstat cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 lo8_separating=0 lo8_passed=0 arg_separating=0 arg_passed=0 site_control_passed=0 boundaries=4
+  AI52L towner cases=240 match=240 bad=0 stopped=0 traced=0 accounted=7 drew=72 le_separating=15 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=83 cmp_passed=0 u16_separating=0 u16_passed=0 lo8_separating=0 lo8_passed=0 arg_separating=0 arg_passed=0 site_control_passed=0 boundaries=17
+  AI52L jarjar cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 lo8_separating=0 lo8_passed=0 arg_separating=0 arg_passed=0 site_control_passed=0 boundaries=2
+  AI52L oot cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 lo8_separating=0 lo8_passed=0 arg_separating=0 arg_passed=0 site_control_passed=0 boundaries=6
+  AI52L trogue cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 lo8_separating=0 lo8_passed=0 arg_separating=0 arg_passed=0 site_control_passed=0 boundaries=1
+  AI52L st8 cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 lo8_separating=0 lo8_passed=0 arg_separating=0 arg_passed=0 site_control_passed=0 boundaries=1
+  AI52L navi cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 lo8_separating=0 lo8_passed=0 arg_separating=0 arg_passed=0 site_control_passed=0 boundaries=3
+  AI52L buffy cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 lo8_separating=0 lo8_passed=0 arg_separating=0 arg_passed=0 site_control_passed=0 boundaries=2
+  AI52L st9 cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 lo8_separating=0 lo8_passed=0 arg_separating=0 arg_passed=0 site_control_passed=0 boundaries=2
+  AI52L st10 cases=240 match=240 bad=0 stopped=0 traced=0 accounted=1 drew=152 le_separating=41 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 lo8_separating=0 lo8_passed=0 arg_separating=0 arg_passed=0 site_control_passed=0 boundaries=3
+  AI52L st11i cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 lo8_separating=0 lo8_passed=0 arg_separating=0 arg_passed=0 site_control_passed=0 boundaries=1
+  AI52L st11 cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 lo8_separating=0 lo8_passed=0 arg_separating=0 arg_passed=0 site_control_passed=0 boundaries=1
+  AI52L st12 cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 lo8_separating=0 lo8_passed=0 arg_separating=0 arg_passed=0 site_control_passed=0 boundaries=1
+  AI52L vendor cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=240 le_separating=62 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 lo8_separating=0 lo8_passed=0 arg_separating=0 arg_passed=0 site_control_passed=0 boundaries=2
+  AI52L soul cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=26 cmp_passed=0 u16_separating=0 u16_passed=0 lo8_separating=0 lo8_passed=0 arg_separating=0 arg_passed=0 site_control_passed=0 boundaries=7
+  AI52L illus cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 lo8_separating=0 lo8_passed=0 arg_separating=0 arg_passed=0 site_control_passed=0 boundaries=2
+  AI52L dark cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 lo8_separating=0 lo8_passed=0 arg_separating=0 arg_passed=0 site_control_passed=0 boundaries=1
+  AI52L st2 cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=73 le_separating=13 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=16 cmp_passed=0 u16_separating=0 u16_passed=0 lo8_separating=47 lo8_passed=0 arg_separating=0 arg_passed=0 site_control_passed=0 boundaries=4
+  AI52L st3i cases=240 match=240 bad=0 stopped=0 traced=0 accounted=1 drew=98 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 lo8_separating=0 lo8_passed=0 arg_separating=0 arg_passed=0 site_control_passed=0 boundaries=1
+  AI52L st3 cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 lo8_separating=0 lo8_passed=0 arg_separating=0 arg_passed=0 site_control_passed=0 boundaries=2
+  AI52L st13 cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 lo8_separating=0 lo8_passed=0 arg_separating=0 arg_passed=0 site_control_passed=0 boundaries=3
+  AI52L st14 cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=240 le_separating=29 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 lo8_separating=0 lo8_passed=0 arg_separating=0 arg_passed=0 site_control_passed=0 boundaries=3
+  AI52L h6800 cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 lo8_separating=0 lo8_passed=0 arg_separating=192 arg_passed=0 site_control_passed=0 boundaries=2
+  AI52L h6860 cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=4 cmp_passed=0 u16_separating=0 u16_passed=0 lo8_separating=0 lo8_passed=0 arg_separating=46 arg_passed=0 site_control_passed=0 boundaries=3
+  AI52L h6ae0 cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=3 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=75 cmp_passed=0 u16_separating=0 u16_passed=0 lo8_separating=0 lo8_passed=0 arg_separating=69 arg_passed=0 site_control_passed=0 boundaries=13
+  AI52L h7080 cases=240 match=240 bad=0 stopped=0 traced=0 accounted=7 drew=190 le_separating=45 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 lo8_separating=0 lo8_passed=0 arg_separating=226 arg_passed=0 site_control_passed=0 boundaries=5
+  AI52L act1 cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 lo8_separating=0 lo8_passed=0 arg_separating=192 arg_passed=0 site_control_passed=0 boundaries=2
+  AI52L act2 cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 lo8_separating=0 lo8_passed=0 arg_separating=181 arg_passed=0 site_control_passed=0 boundaries=3
+  AI52L act3 cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 lo8_separating=0 lo8_passed=0 arg_separating=188 arg_passed=0 site_control_passed=0 boundaries=2
+  AI52L act4 cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 lo8_separating=0 lo8_passed=0 arg_separating=80 arg_passed=0 site_control_passed=0 boundaries=4
+  AI52L act5 cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 lo8_separating=0 lo8_passed=0 arg_separating=81 arg_passed=0 site_control_passed=0 boundaries=4
+  AI52L h7350 cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 lo8_separating=0 lo8_passed=0 arg_separating=0 arg_passed=0 site_control_passed=0 boundaries=2
+  AI52L h77a0 cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 lo8_separating=0 lo8_passed=0 arg_separating=0 arg_passed=0 site_control_passed=0 boundaries=4
+  AI52L h5b70 cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=45 cmp_passed=0 u16_separating=7 u16_passed=0 lo8_separating=0 lo8_passed=0 arg_separating=0 arg_passed=0 site_control_passed=0 boundaries=2
+  AI52L h5710 cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 lo8_separating=0 lo8_passed=0 arg_separating=0 arg_passed=0 site_control_passed=0 boundaries=2
+  AI52L h7d30 cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 lo8_separating=0 lo8_passed=0 arg_separating=0 arg_passed=0 site_control_passed=0 boundaries=2
+  AI52L hp cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 lo8_separating=0 lo8_passed=0 arg_separating=0 arg_passed=0 site_control_passed=0 boundaries=2
+  AI52L hcb cases=240 match=240 bad=0 stopped=0 traced=0 accounted=2 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=23 cmp_passed=0 u16_separating=0 u16_passed=0 lo8_separating=0 lo8_passed=0 arg_separating=0 arg_passed=0 site_control_passed=0 boundaries=2
+  AI52L il0 cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 lo8_separating=0 lo8_passed=0 arg_separating=0 arg_passed=0 site_control_passed=0 boundaries=1
+  AI52L il1 cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 lo8_separating=0 lo8_passed=0 arg_separating=0 arg_passed=0 site_control_passed=0 boundaries=1
+  AI52L total cases=9840 match=9840
+  AI52L result=ok
+  ```
+- **Conclusion:** [C] the maps of ai/0013 § 5, each ending at its first callee (ADR-0021); the code as a map over a declared image, no symbol raised (ADR-0015, `lane/p46m12` ruling 7). Separation: `le` 205, `cmp` 272, `u16` 7, `lo8` 47, `arg` 1 255 cases, none passing; `d0` separates none, no emulated path reading the difficulty before a boundary; the site control passes none. (run:2026-11-03-ai-cat-emu-12, fn:sub_005E6AE0_AiNpcScriptStep@0x005E6AE0)
+- **Left `[I]`:** everything after a boundary, `AiNpcNearPlayer`'s body (past the search), the size branch of `UNIT_GetSizeX`, the unit-null guards, the unsigned reading of row 99's positions. (fn:sub_005E68F0_AiNpcNearPlayer@0x005E68F0)

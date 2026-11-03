@@ -33,7 +33,10 @@ typedef struct AiCtl {            /* 0x40, MonsterData+0x28, sub_0058EBC0_AiCtlA
     uint32_t ownerGuid;           /* +0x2C -1 at allocation */
     uint32_t ownerType;           /* +0x30 1 at allocation */
     void    *pMinions;            /* +0x34 minion list {guid, next} (sub_0058F380_MonGroupForEach) */
-    uint8_t  _pad38[0x8];
+    void    *pPathList;           /* +0x38 DS1 path {count, 12-byte nodes {action, x, y}}, moved here by
+                                     sub_00555910_PresetUnitSpawn; read by sub_005E7080_AiNpcPathPick and
+                                     sub_005E5B70_AiPathSkillStep; freed by sub_0058F810_AiCtlListsFree */
+    uint8_t  _pad3C[0x4];
 } AiCtl;
 
 typedef struct MonPathCtl {       /* 0x24, MonsterData+0x2C, sub_005A6490_MonPathCtlAlloc (.\MONSTER\MonsterMode.cpp) */
