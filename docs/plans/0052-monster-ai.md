@@ -642,3 +642,56 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   [review request](../backlog/2026-11-03-reverser-architect-plan-0052-p1-2-batch-8-review.md),
   [archivist](../backlog/2026-11-03-reverser-archivist-monstats-missiles-skills-readers-named-by-ai-0009.md) (MonStats,
   Missiles and Skills readers). Next: the remaining batches (6, 7, 9–12).
+- **2026-10-30 — P1.2 batches 6 (hirelings) and 7 (bosses-A) checkpoint (reverser, static, `lane/r52g`, from `main`
+  11102c87; owner pause for the token budget). Not for review yet.** Done: read with the Ghidra copy `ghidra-r52g` (symbols
+  replayed from `re/symbols.csv`, then the scratch `__fastcall` signatures `b67-sym-scratch.csv`, a reading aid) and objdump
+  (`b67-asm.txt`: the batches' ranges 0x005E3930–0x005E3EA0, 0x005E4D30–0x005E5710, 0x005E7AC0–0x005E7D30,
+  0x005E5AC0–0x005E5B70, 0x005E6300–0x005E6800, 0x005F5830–0x005F5A20, 0x005F67B0–0x005F6A10, 0x005F7700–0x005F81D0,
+  0x005F85C0–0x005F8F80); multiplier sites, RNG calls and callees per function counted by `b67-draws.py` (`b67-draws.txt`);
+  stock records `b67-rows.txt`. Functions found: row 61 think 0x005E52D0 and `alt` 0x005E5280 (state row 4's pair), states
+  5 0x005E7AC0 and 6 0x005E7C10, `MERCAI_PickSkill` 0x005E4D30, the hireling's fight step 0x005E5050 (its one caller row
+  61, 0x005E55BB) and follow step 0x005E3930 (only row 61's five calls, kinds 0, 1, 3), 0x005E3900 (a callback that
+  0x005E3930 and batch 5's 0x005E3EA0 push; left unnamed for batch 5); rows 34 0x005F5830, 44 0x005F67B0, 50 0x005F78B0
+  (a five-way state dispatch at 0x005F7B36, its table 0x005F7EF0, and the target pick 0x005F77C0 with callback
+  0x005F7700), 53 0x005F85C0, 55 0x005F89B0 (calls 0x005B4390, the A4Q1 quest step), 59 init 0x005E6300 and think
+  0x005E6320, 90 0x005E5AC0, 144 0x005F8C80, 146 0x005F81C0 (`ret 4` alone); 0x005F7F10 (spawns one of classes 725–730
+  with state 184) and 0x005F8010 (a weighted pick over the eight player slots at `G+0x10F8`) have no call, jump, push or
+  data-word reference in the image. **Emulated, development run only:** `tools/ai_cat_emu6.py`, 18 families, 4 320
+  cases, all matching, every `le`/`d0`/`cmp` control failing every case it separates, site control 0
+  (`workspace/logs/r52g/emu/dev-1/`, `check.txt`, manifest 74 lines with the tool copy `ai_cat_emu6.py.rev`, passes from
+  that directory); lane outputs `workspace/logs/r52g/manifest-ckpt1.sha256` (12 lines). No finding written yet, no
+  symbol rows yet. **Next (a fresh lane on `lane/r52g`):** (1) run the kept run `run:2026-10-30-ai-cat-emu-6` into
+  `workspace/logs/r52g/emu/` (`cases`, the 18 `emuboundary` calls under `systemd-run --user --scope -p MemoryMax=4G`,
+  `check > check.txt`, `manifest --write`), never over `dev-1/`; (2) write ai/0007 (batch 6: row 61, states 4–6,
+  `MERCAI_PickSkill` with the Hireling `Skill1..6`/`Chance`/`ChancePerLvl`/`DefaultChance`/`Mode` reads, the fight and
+  follow steps) and ai/0008 (batch 7, `aidist` read by the hostile search only, ai/0001 § 6: no think function of rows 50
+  and 146 reads MonStats `+0x52..+0x54`) per batch 4's layout, with the family table, `EDGES` counts and uncontrolled
+  edges from the kept `check.txt`; (3) about 20 `re/symbols.csv` rows (all I); (4) one review request for both
+  batches. Readings to carry: row 61's distance bands from `AiCtl+0x14` (17–19: `2v`, `v`, `v>>1`; else 24, 16, 5),
+  owner mode 2/6 walk and 3 run; `MERCAI_PickSkill` draws `low mod (total + 1)` (a power of two takes the mask) and the
+  fallback by class (271 MonStats `Skill1`, 338/359/560/561 A1 in melee range, else `Idle(10)`); the fight step's
+  `v14 + 40 + 2·level` capped 95 (98 for classes 338, 560, 561), one draw, and `aip1` = 0 as the ranged branch;
+  Mephisto's melee test is `draw <= aip1` (state 2, else 3); in the target pick, the block's `+0x14` is set only for a
+  searcher of type 0, so a second draw against `aip3` happens only when a player searches.
+- **2026-11-03 — P1.2 catalogue batches 6 (hirelings) and 7 (bosses-A) for review (reverser, static, `lane/r52g`,
+  resumed from the 2026-10-30 checkpoint; `main` dda63dfd merged before the run).** [ai/0007](../findings/ai/0007-hirelings.md):
+  row 61 `Hireable` and state row 4 (think 0x005E52D0, `alt` 0x005E5280, also row 128's `+C`), states 5 (0x005E7AC0,
+  also row 60's think) and 6 (0x005E7C10), the fight step 0x005E5050, the follow step 0x005E3930 and
+  `MERCAI_PickSkill`: the owner test, the `v14` distance bands, the crowding draw, the hit chance and its `v14` writes,
+  the weighted pick over the Hireling row's `Skill`/`Chance`/`ChancePerLvl`/`Mode` onto `DefaultChance` and the class
+  fallback; the plan's skill-list question answered `[I]` (the Hireling row's list; MonStats `Skill1` only for the
+  rogue's fallback and state 5). [ai/0008](../findings/ai/0008-bosses-a.md): the ten entries of rows 34, 44, 50, 53,
+  55, 59 (init and think), 90, 144, 146, Mephisto's target pick 0x005F77C0 and callback 0x005F7700, the jump table
+  0x005F7EF0, `A4Q1_IzualSeen` 0x005B4390, and the unreferenced 0x005F7F10 and 0x005F8010; `aidist` not read by rows
+  50/146's functions (`b67-aidist.txt`, 0 reads), so it is the machinery's search's only. [C] by emulation
+  (run:2026-10-30-ai-cat-emu-6, `tools/ai_cat_emu6.py`, 18 families, 4 320 cases, 0 mismatches; `le`, `d0`, `cmp` and
+  the site control fail every case they separate; `EDGES` per family; kept run in `workspace/logs/r52g/emu/`, not over
+  `dev-1/`): full maps of 34 (tier), 90, 59's init, 146, Duriel without `Skill4`, Izual with `v14` ≠ 0, the pick's class
+  bounds, the fight step's class dispatch, states 5 and 6 to `RoomIsTown`, Summoner and UberIzual to their first stat or
+  state call; entry calls of 61 (tier), its `alt`, the follow step, 50, its pick (with its block) and 59's think. P1.1
+  review reopen condition (b) not met (Mephisto's pick callback draws nothing by its body and direct calls). 22
+  `re/symbols.csv` rows (21 func, 1 data, all I). Kept outputs `workspace/logs/r52g/` (manifest 22 lines; `emu/` 73,
+  `emu/dev-1/` 74; each passes from its directory). Backlog: the
+  [review request](../backlog/2026-11-03-reverser-architect-plan-0052-p1-2-batches-6-7-review.md),
+  [archivist](../backlog/2026-11-03-reverser-archivist-hireling-chance-columns-read-by-ai-0007.md) (Hireling chance
+  columns). Next: batch 8 (pool-E).
