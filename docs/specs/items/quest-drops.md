@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, items/tc, items/quality, items/affixes, items/properties, items/sockets-runewords, items/cube, save/d2s]
 consumed_by: [items/tc, objects, monsters/pool]
-tags: {C: 159, I: 80, L: 2}
+tags: {C: 162, I: 80, L: 2}
 updated: 2026-11-03
 ---
 
@@ -550,8 +550,9 @@ D6. BaalDeath, killer present, killer word 40 bit 0 clear:          [C] (fn:sub_
   [items/0010 § Plan 0038 batch S2c](../../findings/items/0010-quest-drops.md#plan-0038-batch-s2c-2026-10-16) qd 28)
 - [I] So their drops are their TCs (Diablo's through B6); Diablo was not killed in any run, and no kill of the others
   is compared here. (fn:MONSTER_DropItems@0x005A6600)
-- [I] `sub_005E0070_UberTristramDrop` (death handlers of 704, 705, 709) drops, once all three have died, `cm2` with
-  quality 7 (charges refilled) and `Game+0x8C` copies of `std` with quality 2. The portals to those levels cannot open
+- [C] **The death handler's class map** (mod 22, event 1, `g_UModEventFns[6·22 + 1]` = 0x005A3250, at 0x0073C2CC): over all 734 classes in mode 0, classes 704, 705 and 709 and no other reach `sub_005E0070_UberTristramDrop`; the classes 156, 229, 242, 256, 267, 479 and 540–542 have their own callee, the rest none; any other mode none. Each case ends at the arm's callee or the return, and the handler's byte and jump tables are read from the image, so this is the code against its own tables with the arms' call sites as the check. (fn:sub_005A3250_UModQuestCompleteDeath@0x005A3250, data:g_UModEventFns@0x0073C0B8, run:2026-11-03-ai-uber)
+- [C] **The drop's flags and first call:** class 709 sets `Game+0x1DE8`, 705 `+0x1DEC`, 704 `+0x1DF0`; while any of the three is zero it returns; with all three non-zero the unit's `+0xB8` becomes `cm2 ` and `DropItemAtUnit(game, unit, 7, &ilvl, 0, −1, 0)` runs; any other class, and a null unit, takes the fatal line path 0xE6. The case ends at that call. (0x005E0108, fn:sub_005E0070_UberTristramDrop@0x005E0070, fn:sub_00559A30_DropItemAtUnit@0x00559A30, run:2026-11-03-ai-uber) Neither `[C]` above implies reach, and neither covers `DropItemAtUnit` itself.
+- [I] After that call: `cm2`'s quality 7 means charges refilled, and `Game+0x8C` copies of `std` with quality 2 follow. The portals to those levels cannot open
   in this `Game.exe` ([save/0002 § 6](../../findings/save/0002-quest-words.md)), and no creator of the three classes was found in this image, within the limits
   of [monsters/special § J](../monsters/special.md#j-other-entry-paths-and-pre-existing-mods), so on this reading stock play does not reach it.
   (fn:sub_005E0070_UberTristramDrop@0x005E0070, [ai/0016](../../findings/ai/0016-uber-event.md))
@@ -1058,7 +1059,7 @@ logs of run:2026-10-16-quest-drops (`workspace/logs/quests-s3-<seed>-….log`, p
 
 ## Evidence
 
-- [findings/ai/0016-uber-event.md](../../findings/ai/0016-uber-event.md): no creator of classes 704, 705 or 709 found in this image, for § D7's reach of the Uber drop.
+- [findings/ai/0016-uber-event.md](../../findings/ai/0016-uber-event.md): no creator of classes 704, 705 or 709 found in this image, for § D7's reach of the Uber drop; § 6 and § 7, the `drop` and `qdeath` maps of run:2026-11-03-ai-uber.
 - [findings/items/0010-quest-drops.md](../../findings/items/0010-quest-drops.md): §§ 1–7 (the quest objects and seed,
   B6 and the killer, the three bits per class, the special drops, the quest items, the NPC services, the `boss` test),
   § 8 (the boundary), [§ Plan 0039 batch P1b](../../findings/items/0010-quest-drops.md#plan-0039-batch-p1b-2026-10-17)

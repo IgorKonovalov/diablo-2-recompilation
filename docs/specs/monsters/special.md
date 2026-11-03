@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, monsters/spawn, monsters/pool, data/excel, drlg/collision]
 consumed_by: [monsters/stats, monsters/spawn, items/tc, chain]
-tags: {C: 154, I: 90, L: 6}
+tags: {C: 161, I: 91, L: 6}
 updated: 2026-11-03
 ---
 
@@ -762,12 +762,12 @@ fn:sub_00653E20_UNameTablesFree@0x00653E20, tbl:UniqueTitle.txt:Name, run:2026-1
 
   | `BaseId` (classes) | Mods, in call order | Other calls | Tag |
   |---|---|---|---|
-  | 156 `andariel` | 22; `uberandariel` (707): 23, 6, 29 | quest hook 6 | [I] (fn:sub_005B1CF0_MonPostCreateBoss@0x005B1CF0) |
-  | 211 `duriel` | none; `uberduriel` (708): 6, 18 | quest hooks 13, 9 | [I] (fn:sub_005B1CF0_MonPostCreateBoss@0x005B1CF0) |
-  | 242 `mephisto` | 22; `ubermephisto` (704): 22, 30, 17, 8, 6 | quest hook 20 | [I] (fn:sub_005B1CF0_MonPostCreateBoss@0x005B1CF0) |
-  | 243 `diablo`, `diabloclone` | 22; `uberdiablo` (705): 22, 8, 6 | quest hook 23 | [I] (fn:sub_005B1CF0_MonPostCreateBoss@0x005B1CF0) |
-  | 256 `izual` | 22; `uberizual` (706): 6, 18 | quest hook 22 | [I] (fn:sub_005B1CF0_MonPostCreateBoss@0x005B1CF0) |
-  | 544 `baalcrab` | 22; `uberbaal` (709): 22, 18, 8, 6 | quest hook 36 | [I] (fn:sub_005B1CF0_MonPostCreateBoss@0x005B1CF0) |
+  | 156 `andariel` | 22; `uberandariel` (707): 23, 6, 29 | quest hook 6 | [C] the first call only: `andariel` mod 22, class 707 mod 23 (fn:sub_005B1CF0_MonPostCreateBoss@0x005B1CF0, run:2026-11-03-ai-uber); [I] the later calls (fn:sub_005B1CF0_MonPostCreateBoss@0x005B1CF0) |
+  | 211 `duriel` | none; `uberduriel` (708): 6, 18 | quest hooks 13, 9 | [C] the first call only: `duriel` quest hook 13, class 708 mod 6 (fn:sub_005B1CF0_MonPostCreateBoss@0x005B1CF0, run:2026-11-03-ai-uber); [I] the later calls (fn:sub_005B1CF0_MonPostCreateBoss@0x005B1CF0) |
+  | 242 `mephisto` | 22; `ubermephisto` (704): 22, 30, 17, 8, 6 | quest hook 20 | [C] the first call only: `mephisto` quest hook 20, class 704 mod 22 (fn:sub_005B1CF0_MonPostCreateBoss@0x005B1CF0, run:2026-11-03-ai-uber); [I] the later calls (fn:sub_005B1CF0_MonPostCreateBoss@0x005B1CF0) |
+  | 243 `diablo`, `diabloclone` | 22; `uberdiablo` (705): 22, 8, 6 | quest hook 23 | [C] the first call only: `diablo` and `diabloclone` mod 22, class 705 mod 22 (fn:sub_005B1CF0_MonPostCreateBoss@0x005B1CF0, run:2026-11-03-ai-uber); [I] the later calls (fn:sub_005B1CF0_MonPostCreateBoss@0x005B1CF0) |
+  | 256 `izual` | 22; `uberizual` (706): 6, 18 | quest hook 22 | [C] the first call only: `izual` mod 22, class 706 mod 6 (fn:sub_005B1CF0_MonPostCreateBoss@0x005B1CF0, run:2026-11-03-ai-uber); [I] the later calls (fn:sub_005B1CF0_MonPostCreateBoss@0x005B1CF0) |
+  | 544 `baalcrab` | 22; `uberbaal` (709): 22, 18, 8, 6 | quest hook 36 | [C] the first call only: `baalcrab` and class 570 quest hook 36, class 709 mod 22 (fn:sub_005B1CF0_MonPostCreateBoss@0x005B1CF0, run:2026-11-03-ai-uber); [I] the later calls (fn:sub_005B1CF0_MonPostCreateBoss@0x005B1CF0) |
   | 267 `bloodraven` | 12, 22 | quest hook 2; `0x00639DB0(unit, 0x76, 1)` | [I] (fn:sub_005B1CF0_MonPostCreateBoss@0x005B1CF0) |
   | 284 `maggotqueen1`..`5` | 23, 22 | — | [I] (fn:sub_005B1CF0_MonPostCreateBoss@0x005B1CF0) |
   | 292 `firegolem` | 31 (flag 0) | — | [I] (fn:sub_005B1CF0_MonPostCreateBoss@0x005B1CF0) |
@@ -776,6 +776,8 @@ fn:sub_00653E20_UNameTablesFree@0x00653E20, tbl:UniqueTitle.txt:Name, run:2026-1
   | 526 `nihlathakboss` | 22 | quest hook 34 | [C] the mod (run:2026-10-21-sweep-monsters-a); [I] the hook (0x005B2002) |
   | 175 `warriv2`, 229 `radament`, 250 `summoner`, 340–343 `boneprison1`..`4`, 407 `fetish11`, 409 `hephasto`, 434 `prisondoor`, 540 `ancientbarb1`..`3` | none | quest hooks (229: 8; 250: 12, then unit flag `0x800`; 407: 17; 409: 24; 434: 32); unit flag `0x20000` (340–343); `0x005B1C50`, the gear call (540); `0x005447A0` (175) | [I] (fn:sub_005B1CF0_MonPostCreateBoss@0x005B1CF0) |
 
+- [C] **The first call of `MonPostCreateBoss`, for six `BaseId`s.** For `BaseId`s 156, 211, 242, 243, 256 and 544, the table's rows above: by class, the first `ModAppendApply(game, unit, mod, 1)` or `QUESTS_HookMonster` is the one each row names, so `mephisto` and `baalcrab` reach their quest hook before their mod 22, and `duriel` its hook 13 first. Each case ends at that first callee (ADR-0021). This covers neither the callee, nor the later mods (704 → 22, 30, 17, 8, 6; 705 → 22, 8, 6; 709 → 22, 18, 8, 6, which stay `[I]`), nor reach: a p-code run says nothing about whether a unit of an uber class exists. (fn:sub_005B1CF0_MonPostCreateBoss@0x005B1CF0, run:2026-11-03-ai-uber,
+  [ai/0016 § 6](../../findings/ai/0016-uber-event.md#6-what-the-classes-do-get))
 - [I] **No Uber event found in this image.** The `uber*` cases above, the aura arm (§ C3) and the other class-gated code say what a
   unit of those classes would get. [ai/0016](../../findings/ai/0016-uber-event.md) finds no Uber-specific driver and no creator of classes 704, 705 or 709 in
   the pinned `Game.exe`: no site passes one of the three as a class to a spawn function; no table path names 704–709 (no Levels slot,
@@ -1047,7 +1049,7 @@ The name is format 1722 with prefix, suffix and appellation, from the keys `Fire
   [H4a](../../findings/monsters/0003-special-monsters.md#plan-0038-batch-h4a-run2026-10-21-sweep-monsters-a) (run:2026-10-21-sweep-monsters-a: the second aura call,
   the tails, rows 10, 12 and 13, the placed bit, Blood Raven's and the fixed boss names).
 - [findings/ai/0016-uber-event.md](../../findings/ai/0016-uber-event.md): the Answer and §§ 2–6 (no Uber driver or creator found in this image, the scan's limits,
-  the class-704 arm's map by run:2026-11-03-ai-uber).
+  the class-704 arm's map and `MonPostCreateBoss`'s first calls by run:2026-11-03-ai-uber).
 - `tools/monspecial.py`: the model behind the confirmed tags (run inside `tools/monspawn.py check`).
 - Tables: [MonUMod](../../tables/MonUMod.md), [SuperUniques](../../tables/SuperUniques.md),
   [UniquePrefix](../../tables/UniquePrefix.md), [UniqueSuffix](../../tables/UniqueSuffix.md),

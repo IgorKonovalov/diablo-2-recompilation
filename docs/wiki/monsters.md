@@ -425,7 +425,9 @@ Some monsters hold mods before any special code runs: the creation step writes t
   Maggot Queen 23 and 22 and the fire golem 31; Duriel gets none from this helper; the uber bosses get longer sets of their own. By the
   code, outside the uber classes, only the Maggot Queen's 23 calls a mod handler. Only Nihlathak's row is confirmed: he left his
   placement holding 22 and then held 22 and 30, as logged, and a model without his case fails. The other bosses that
-  were logged were created where no mod list was compared, so their rows rest on the code.
+  were logged were created where no mod list was compared, so their rows rest on the code. For Andariel, Duriel, Mephisto,
+  Diablo, Izual and Baal and each one's uber class, only the first call of the helper was checked by running the code under emulation: Mephisto, Baal and Duriel call their quest
+  hook first, the others a mod (the uber classes: mod 22, 23 or 6). The later mods stay read from the code.
   The uber sets describe what such a unit would get: **a search of this game file found no code that creates Uber Mephisto, Uber Diablo or
   Uber Baal and no driver of their own**, and the levels of that event are not reached from stock play on the same reading. The search
   cannot see a class number worked out at run time, no stock session has watched the spawn helpers, and it says nothing about other builds or the realm
