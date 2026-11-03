@@ -83,3 +83,40 @@ typedef struct PathSearchStore {
     PathSearchNode rootInit;      /* +0x36FD8 copied to nodes[0] before each pass */
     int32_t  lastBound;           /* +0x36FF4 at EBP-4 */
 } PathSearchStore;
+
+/* PathPlanType1's store: its 0x32F4-byte frame from EBP-0x32F4 (sub_0067B850_PathPlanType1). docs/findings/path/0003 § 6. Emulated as scratch,
+ * run:2026-11-03-path-emu-3. */
+typedef struct T1Node {           /* 0x38 */
+    uint16_t x, y;                /* +0x00 */
+    int16_t  f;                   /* +0x04 g + h: the list's key */
+    uint16_t h;                   /* +0x06 2 max + min to the target */
+    int16_t  g;                   /* +0x08 straight 2, diagonal 3 */
+    struct T1Node * parent;       /* +0x0C */
+    struct T1Node * links[8];     /* +0x10 neighbours seen, in order */
+    struct T1Node * hashNext;     /* +0x30 */
+    struct T1Node * listNext;     /* +0x34 */
+} T1Node;
+
+typedef struct T1Store {
+    T1Node * open[128];           /* +0x0000 */
+    T1Node * closed[128];         /* +0x0200 */
+    T1Node * list;                /* +0x0400 sorted by f; new before equals; not re-sorted on a better g */
+    T1Node   nodes[200];          /* +0x0404 */
+    int32_t  nNodes;              /* +0x2FC4 */
+    T1Node * stack[200];          /* +0x2FC8 T1Propagate's */
+    int32_t  nStack;              /* +0x32E8 */
+} T1Store;
+
+/* One of T15Follow's two walkers (sub_0067BDF0_T15Follow, 0x338 bytes each). docs/findings/path/0003 § 7. */
+typedef struct T15Walker {
+    int32_t  dir;                 /* +0x00 index into g_T15Step; the first one can reach 14 */
+    int32_t  count;               /* +0x04 cells walked */
+    uint32_t pos;                 /* +0x08 x | y << 16 */
+    uint32_t next;                /* +0x0C */
+    int32_t  hard;                /* +0x10 1 after three turns; written, read by nothing here */
+    const int32_t * nextDir;      /* +0x14 g_T15NextA / g_T15NextB */
+    const int32_t * turnDir;      /* +0x18 g_T15TurnA / g_T15TurnB */
+    int32_t  mark;                /* +0x1C the other's count when this one met its position; holds the move */
+    int32_t  stop;                /* +0x20 */
+    uint32_t cells[201];          /* +0x24 */
+} T15Walker;

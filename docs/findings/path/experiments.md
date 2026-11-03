@@ -106,3 +106,49 @@
 - **Conclusion:** the maps of path/0002 §§ 2–7 and the limits of § 9 are `[C]` to the planner's return (`grid`, `over`: to their boundaries) over the declared
   images; not what the game stores in a context, not `PathPlan`'s tail, not any other planner. No symbol raise (ADR-0015 scope,
   review-fixes rule 14). (run:2026-11-03-path-emu-2)
+
+## run:2026-11-03-path-emu-3
+
+- **Question:** (plan 0054 Phase 1, batches P1.3a and P1.3b) Do the short planners, `PathPlanType1`, `PathPlanType15`, the random walk, the client slots 3, 11, 12 and the two missile callbacks map a declared context or path over declared images to their return and the whole path record, as [path/0003](0003-short-planners.md) reads them, and does the scratch check catch an unaccounted read?
+- **Setup:** Ghidra p-code emulator via `re/ghidra_scripts/EmuScratch.java` (`f359776b…`, with the `UX` line of the P1.2 check), lane project copy `workspace/ghidra-r54c`, heap 3 GB, under `systemd-run --user --scope -p MemoryMax=4G`; started 2026-11-03 23:50, ended 2026-11-04 00:00. No wine, no slot. Model and case writer `tools/path_emu3.py` (`3e18f991…`, copy `path_emu3.py.rev`; the revision differs from the one that ran only in `bounds`, and re-running `check` gives the same `check.txt`), every draw from `random.Random("r54c-…")`. Images in path/0003 § 13. Files in `workspace/logs/r54c/emu/`, `manifest.sha256` (`04850d1f…`, 201 lines; `check.txt` `b629fe5b…`); `sha256sum -c manifest.sha256` passes from that directory. Development runs under `emu/dev-1/`, `dev-2/`, `dev-3/`, each with its own manifest (161, 196, 183 lines); no claim cites them; path/0003 *Dead ends* says what moved.
+- **Procedure:**
+  ```
+  D=workspace/logs/r54c/emu
+  python3 -I tools/path_emu3.py grids --dir $D > $D/grids.txt
+  python3 -I tools/path_emu3.py cases --dir $D > $D/cases.txt
+  for f in probe greedy g98 gbound near knock onept t1real t1syn t1stair t15real t15syn t15stair rwalk spiral spiralobs h1 h1obs client; do
+    GHIDRA_PROJ_DIR=workspace/ghidra-r54c GHIDRA_HEADLESS_MAXMEM=3G systemd-run --user --scope -q -p MemoryMax=4G \
+      tools/ghidra.sh emuscratch $D/$f.cases $D/$f.mem > $D/$f.out 2> $D/$f.err
+  done
+  python3 -I tools/path_emu3.py check --dir $D > $D/check.txt
+  ```
+  Boundaries: every family observes the assert entry 0x00408090; `spiralobs` also 0x0040B330; `h1obs` also 0x00649970. Fatal and allocator entries are guards.
+- **Observed** (`check.txt`; `...` the table reads and the controls, in full in the file):
+  ```
+  PROBE read: a planner entered with ECX below the stack's written bytes: U lines=2 unaccounted=2 first=pc=00679f78 size=4 unwritten=4 case_fails=yes
+  PROBE overflow: memcpy over unwritten stack: U lines=200 overflow marker UX=312 case_fails=yes
+  PROBE tightened: the same pc with another size or count is not accounted: yes
+  PATH54C greedy cases=600 match=600 bad=0 stopped=0 traced=0 distinct=364 ... maxret=36
+  PATH54C g98 cases=300 match=300 bad=0 stopped=0 traced=0 distinct=180 ... maxret=76
+  PATH54C gbound cases=30 match=30 bad=0 stopped=0 traced=0 distinct=29 ... maxret=78
+  PATH54C near cases=480 match=480 bad=0 stopped=0 traced=0 distinct=296 ... maxret=20 maxnodes=200 maxstack=5
+  PATH54C knock cases=300 match=300 bad=0 stopped=0 traced=0 distinct=159 ... maxret=1
+  PATH54C onept cases=200 match=200 bad=0 stopped=0 traced=0 distinct=65 ... maxret=1
+  PATH54C t1real cases=400 match=400 bad=0 stopped=0 traced=0 distinct=223 ... maxret=11 maxnodes=200 maxstack=23
+  PATH54C t1syn cases=240 match=240 bad=0 stopped=0 traced=0 distinct=240 ... maxret=24 maxnodes=200 maxstack=23
+  PATH54C t1stair cases=40 match=40 bad=0 stopped=0 traced=0 distinct=26 ... maxret=77 maxnodes=200
+  PATH54C t15real cases=400 match=400 bad=0 stopped=0 traced=0 distinct=178 ... maxret=40 maxn=51 maxline=70
+  PATH54C t15syn cases=300 match=300 bad=0 stopped=0 traced=0 distinct=236 ... maxret=56 maxn=72 maxline=73
+  PATH54C t15stair cases=40 match=40 bad=0 stopped=0 traced=0 distinct=34 ... maxret=12 maxn=69 maxline=57
+  PATH54C rwalk cases=300 match=300 bad=0 stopped=0 traced=0 distinct=300 ... maxret=39 draws=5092
+  PATH54C spiral cases=90 match=90 bad=0 stopped=0 traced=0 distinct=90 ... maxret=77 maxiters=95   (against the model that ROUNDS: path/0003 § 9)
+  PATH54C spiralobs cases=30 match=30 bad=0 stopped=0 traced=0
+  PATH54C h1 cases=300 match=300 bad=0 stopped=0 traced=0 distinct=300 ... maxret=39 draws=8192
+  PATH54C h1obs cases=100 match=100 bad=0 stopped=0 traced=0
+  PATH54C client cases=180 match=180 bad=0 stopped=0 traced=0 distinct=138 ... maxret=14
+  PATH54C total cases=4330 match=4330
+  PATH54C result=ok
+  ```
+  What each control separates is in path/0003 §§ 1–10; every one passes 0 of the cases it separates and separates at least one. Distinct outcomes per family are `distinct=` (return and point list) and the `OUTCOMES` lines.
+- **Also kept**, `workspace/logs/r54c/manifest.sha256` (`9b81743a…`, 11 lines; it passes from that directory): `p3-h1log.txt` (the 45 logs of run:2026-10-25-skills, run:2026-10-27-skills and run:2026-10-30-skills-catalogue, 654 creations, 0 mismatches), `p3-stock.txt`, `p3-bounds.txt`, `p3-scan3c.txt`, `p3-rngcg.txt`, the disassembly and the decompile.
+- **Conclusion:** the maps of path/0003 §§ 1–8 and 10 are `[C]` to each planner's return over the declared images; `spiralobs`, `h1obs` and the assert cases to their boundaries. Not what the game stores in a context, not `PathPlan`'s tail, not x87. The spiral stays `[I]`: the emulator's `FISTP` ignores the rounding field the code sets. H1's draws are also `[C]` from the game's logs. (run:2026-11-03-path-emu-3)

@@ -1,7 +1,8 @@
 // EmuScratch.java (plan 0054 P1.2, lane/r54b): EmuBoundary.java plus a scratch check of the declared stack, for a function
 // whose large frame is compared as scratch and not dumped (PathSearchRun's 0x36FF8 bytes). Below the entry ESP each case
 // starts with no byte written: a read that covers a byte the case has not written prints one line after the case's C line,
-//   U <hex pc> <hex addr> <size> <unwritten bytes>        (one line per pc and address, at most 200 per case)
+//   U <hex pc> <hex addr> <size> <unwritten bytes>        (one line per pc, address and size, at most 200 per case)
+//   UX <dropped>                                           (past the cap: how many more distinct keys were dropped; plan 0054 P1.3)
 // and the top 0x40000 bytes under the entry ESP are filled with a per-case byte first, so a value read from them differs
 // from case to case. The step limit is 400 000 000 (a search re-walks its bound). Everything else as EmuBoundary.java:
 // EmuTrace.java (plan 0038 batch S1e, unchanged in what it shares) plus one directive, `observe`: a declared boundary
@@ -81,6 +82,7 @@ public class EmuScratch extends GhidraScript {
 	EmulatorHelper helper;
 	final java.util.BitSet written = new java.util.BitSet((int) (STACK - STACK_LO));
 	final Map<String, int[]> unwritten = new TreeMap<>();
+	final java.util.Set<String> droppedKeys = new java.util.HashSet<>();
 
 	boolean declared(long a, int n, boolean write) {
 		if (a >= STACK_LO && a + n <= STACK_HI) return true;
@@ -104,10 +106,15 @@ public class EmuScratch extends GhidraScript {
 			if (!spc.getName().equals("ram")) return;
 			if (helper.getEmulator().getEmulateExecutionState() == EmulateExecutionState.INSTRUCTION_DECODE) return;
 			if (!declared(off, size, false)) note(reads, off, size);
-			if (off >= STACK_LO && off + size <= STACK && unwritten.size() < 200) {
+			if (off >= STACK_LO && off + size <= STACK) {
 				int lo = (int) (off - STACK_LO), un = 0;
 				for (int i = 0; i < size; i++) if (!written.get(lo + i)) un++;
-				if (un > 0) unwritten.putIfAbsent(String.format("%08x %08x %d", helper.getEmulator().getExecuteAddress().getOffset(), off, size), new int[] { un });
+				if (un > 0) {
+					String k = String.format("%08x %08x %d", helper.getEmulator().getExecuteAddress().getOffset(), off, size);
+					if (unwritten.containsKey(k)) { }
+					else if (unwritten.size() < 200) unwritten.put(k, new int[] { un });
+					else droppedKeys.add(k);
+				}
 			}
 		}
 
@@ -194,6 +201,7 @@ public class EmuScratch extends GhidraScript {
 				helper.writeMemory(toAddr(STACK - POISON), fill);
 				written.clear();
 				unwritten.clear();
+				droppedKeys.clear();
 				long steps = 0;
 				String stop = null;
 				boolean obs = false;
@@ -233,6 +241,7 @@ public class EmuScratch extends GhidraScript {
 					w.printf("C %d %08x eax=%08x edx=%08x pop=%d steps=%d%n", n, fn, eax, edx, esp - STACK - 4, steps);
 				}
 				for (Map.Entry<String, int[]> e : unwritten.entrySet()) w.printf("U %s %d%n", e.getKey(), e.getValue()[0]);
+				if (!droppedKeys.isEmpty()) w.printf("UX %d%n", droppedKeys.size());
 				for (long[] d : dumps) {
 					byte[] b = helper.readMemory(toAddr(d[0]), (int) d[1]);
 					StringBuilder sb = new StringBuilder();
