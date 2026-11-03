@@ -433,7 +433,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   six earlier kept runs (sweep-s1e `calcvar`, `eval`; sweep-s1f `calcvar2`, `varroll`; calc-emu `eval`, EmuCall;
   p51s `calcemu/eval`); no case writes into any of them, so only a store by the emulated code could carry between
   cases, and these are table readers: no kept claim is known to move. Routed as a tools fix and a byte-for-byte re-run
-  ([backlog entry](../backlog/2026-10-30-architect-reverser-emu-page-directive-reapply.md)); `const` directives are
+  ([backlog entry](../backlog/archive/2026-10-30-architect-reverser-emu-page-directive-reapply.md)); `const` directives are
   written once by design. **The frame/0002 § 8 correction** is right (two `EventQueueAt` callers, three
   `EventQueueEveryFrame` callers, the return test) and is carried by a dated note there. **Phase 2a: go** (reverser, no
   game, no slot, no Ghidra; replays under `MemoryMax=4G`; P0 accepted, P1 reviewed). **Phase 2b: gate unchanged**: P1
@@ -442,3 +442,25 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 - **2026-11-03 — PetType `partysend` readers (archivist, `lane/a63`).** [PetType](../tables/PetType.md) `partysend` links the
   two readers of [frame/0003 § 6](../findings/frame/0003-timers-activation.md) (`PlrPetsStatusSend`, `PetListPrune`), `[I]`.
   Backlog entry closed.
+- **2026-11-03 — The emulator spec re-apply fix and the re-run (reverser, static, `lane/r55e`; review requested).**
+  Closes the [backlog entry](../backlog/archive/2026-10-30-architect-reverser-emu-page-directive-reapply.md) of the P1 review,
+  and, beside it, the [States count entry](../backlog/archive/2026-10-30-architect-reverser-states-unreached-58-vs-56.md).
+  Record: [run:2026-11-03-emu-spec-reapply](../findings/frame/experiments.md#run2026-11-03-emu-spec-reapply).
+  **Cause**: Ghidra 12.1.2's `MemoryPageBank.setPage` keeps the caller's byte array as the page, with no copy, when a
+  chunk is a whole page at buffer offset 0, so a directive that starts on a 4 KiB boundary and is 0x1000 bytes or more
+  shared its first page with the spec's own array; stores there survived into the next case's re-apply. **Fix**:
+  `EmuTrace.java`, `EmuBoundary.java` and `EmuCall.java` write a fresh copy of each per-case directive for every case
+  (`const` unchanged, written once). **Test**: `tools/emu_zerotest.py`, the kept form of `r55c/dev/zerotest`: three
+  identical `RNG_Range` cases on a seed inside the directive, plus a first-case `w`; 19 script-and-spec runs (lengths
+  0x800 to 0x46230, `bytes` and `load`, aligned and unaligned) all pass with the fix; the pre-fix control copies fail
+  exactly the 11 aligned long ones (each case drawing from the previous case's seed) and pass the other 8.
+  **Re-run**: the six kept emulations the entry names (`sweep-s1e` `calcvar`, `eval`; `sweep-s1f` `calcvar2`,
+  `varroll`; `calc-emu/eval` under EmuCall; `p51s/emu/calcemu` `eval`) are byte-identical with the fixed scripts; no
+  finding changes. `tools/emu_spec_scan.py` over the 483 memory specs under `workspace/logs/` finds those six and
+  twelve `lane/r55c` development specs, nothing else. **For the batch lanes**: no kept `ai-cat-emu-*` run (plan 0052,
+  `workspace/logs/r52*/emu/`, 233 `.mem` files, through `r52h`; `r52i` had written none at the scan) holds a directive
+  of 0x1000 bytes or more, per-case or `const`, and their per-case `w` writes were always fresh arrays, so none needs a
+  re-run; from now on the batch lanes run the fixed scripts. **States**: stats/0002 surprise (f) now says it lists 59
+  rows (the 56, plus 57/100/106 named by Misc) and why 175 `fullsetgeneric` and 176 `monsterset`, archaeology/0002's two
+  more, stay out (named by Sets `state` parameters; set by the stat 98 callback), from a kept comparison
+  (`workspace/logs/r55e/states-reconcile.txt`). No symbol changes.
