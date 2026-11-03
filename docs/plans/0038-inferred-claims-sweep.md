@@ -6080,3 +6080,25 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   Nightmare/Hell `[I]`): C 117 → 118. [wiki/characters](../wiki/characters.md) Ancients bullet and its "read from the
   code only" list rewritten; `based_on` dates of wiki/characters, wiki/saves and wiki/quests moved to 2026-11-03.
   Research-map rows of both specs updated (counts, the clause, the plan status). Open questions: none added.
+- **2026-11-03 — `lane/s63` Tier A review (architect), both entries (this plan's H6g J2 re-tag and
+  [plan 0057](0057-quirks-catalogue.md#implementation-log)'s routing entry): accept with fixes (2).** Rulings: (1) the J2
+  re-tag matches [player/0001 § Plan 0038 H6g rows 2 and 29](../findings/player/0001-creation.md#plan-0038-h6g-rows-2-and-29-the-ancients-grant-session-run2026-10-30-h6ga-anc)
+  and the `lane/h6ga` check's rulings: the Normal amount, the cut, both loop branches and the level re-read `[C]` with
+  run:2026-10-30-h6ga-anc named in each statement; step 0, the 20M/40M immediates, the `L ≥ max` return, the cut's
+  signedness, `G` = `need`, values ≥ 2^31, the loop exit and the caller `[I]`. Two overclaims fixed in the worktree: J2's
+  `max ← ExpMaxLevel(class); L ← stat 12` line sat untagged under the `[C]` header, while the finding keeps step 2
+  `[I]` ("steps 1 in Normal, 3 and 4 `[C]` … the rest `[I]`"), now tagged `[I]`; the cut note's "the three amounts
+  are immediates of this function only, so no second code path backs them" (the finding's *No second code path* `[I]`
+  bullet) sat inside the `[C]` statement, now moved into the `[I]` remainder. Tags C 126 / I 46 / L 1 (was I 45);
+  research-map row updated (count and the `[I]` clause). quests/progression's split (C 118) and wiki/characters'
+  bullet match the spec. (2) The three overview notes now state the owning specs' clauses at their tags with the same
+  anchors and runs (combat/delivery n9, skills/missiles n3 and C2, anim/timing n1 and L4); combat/README C 43, skills/README
+  C 24, anim/README C 14 / I 13. The quirks index keeps one version per statement (Q136, Q138, Q374 add a source
+  citation; Q140 stays `[I]` for the "not the melee build's" half); coverage Total 411 of 439, the tool's `taken`
+  agrees. (3) The six `based_on` moves are legitimate: wiki/characters was reconciled; wiki/combat, skills, animation,
+  quests and saves already said what the raised clauses say (skills' "first roll draws even when its chance is 0",
+  animation's "Counting the end") or do not state them. (4) Q3 (`skills/catalogue.md` has 8 notes, no coverage row)
+  predates the lane: the catalogue's notes landed in `2b68bf75` after the Phase 1 harvest `4063e701`, and `main`
+  `fd2ca68a` gives the same error; routed to the spec-writer,
+  [2026-11-03-architect-spec-writer-quirks-catalogue-coverage-row](../backlog/2026-11-03-architect-spec-writer-quirks-catalogue-coverage-row.md).
+  Gate green. Fixes (2): overclaim 2.

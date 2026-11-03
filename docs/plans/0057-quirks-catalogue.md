@@ -163,3 +163,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   check`: the one error left (Q3 `skills/catalogue.md` has no coverage row) is on `main` before this lane. Wiki
   `based_on` dates of combat, skills and animation moved to 2026-11-03 (their text already said what the raised
   clauses say). Research-map rows of the three overviews and the quirks row updated.
+- **2026-11-03 — `lane/s63` Tier A review (architect): accept with fixes (2)**, both in the player/creation half; this
+  entry's three overview notes and the index edits pass unchanged. The review and the Q3 route
+  ([2026-11-03-architect-spec-writer-quirks-catalogue-coverage-row](../backlog/2026-11-03-architect-spec-writer-quirks-catalogue-coverage-row.md))
+  are in [plan 0038's log](0038-inferred-claims-sweep.md#implementation-log).

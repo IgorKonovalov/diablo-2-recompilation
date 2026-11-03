@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, data/excel, items/uniques-sets, items/properties, items/affixes, monsters/stats, save/d2s]
 consumed_by: [save/d2s, combat/to-hit, stats/aggregate]
-tags: {C: 126, I: 45, L: 1}
+tags: {C: 126, I: 46, L: 1}
 updated: 2026-11-03
 ---
 
@@ -580,7 +580,7 @@ J2. ExpGrantCapped(game), the player in ESI:                              [C] in
       QUESTS_SendPlayerRecord(game, player)                              ; first, 0x0058C5CF   [I] (fn:sub_0058C5C0_ExpGrantCapped@0x0058C5C0)
       G: i32 ← 1 400 000                                                 ; Normal (game+0x6D = 0)
       G ← 20 000 000 when game+0x6D = 1;  40 000 000 when it is 2       ; not logged   [I] (fn:sub_0058C5C0_ExpGrantCapped@0x0058C5C0, 0x0058C5D4–0x0058C5EE)
-      max ← ExpMaxLevel(class);  L ← stat 12
+      max ← ExpMaxLevel(class);  L ← stat 12                            ; step 2's entry reads   [I] (fn:sub_0058C5C0_ExpGrantCapped@0x0058C5C0, fn:sub_00611830_ExpMaxLevel@0x00611830)
       if L ≥ max: return                                                 ; signed, not reached   [I] (fn:sub_0058C5C0_ExpGrantCapped@0x0058C5C0, 0x0058C624)
       G ← min(G, T(L + 1) − T(L))                                        ; T(n) = EXP_GetThreshold(class, n)
       ; the compare is signed (jle): no value ≥ 2^31 met, signed and unsigned not told apart   [I] (fn:sub_0058C5C0_ExpGrantCapped@0x0058C5C0, 0x0058C649)
@@ -658,11 +658,12 @@ Step notes:
   (fn:sub_0058C5C0_ExpGrantCapped@0x0058C5C0, 0x0058C673)
 - J2. **The cut is the width of level L + 1**, `T(L + 1) − T(L)`, not of the current level: `T(L)` is the experience at
   which level L + 1 starts (F1). In Normal the run met it: the cut T(27) − T(26) bound at level 26, one level-up, then
-  the short branch. The three amounts are immediates of this function only, so no second code path backs them; the
-  Normal amount and the cut rest on the run's reproduction of the logged call (evidence rule 1). [C] (fn:sub_0058C5C0_ExpGrantCapped@0x0058C5C0,
+  the short branch. The Normal amount and the cut rest on the run's reproduction of the logged call (evidence
+  rule 1). [C] (fn:sub_0058C5C0_ExpGrantCapped@0x0058C5C0,
   0x0058C649, 0x0058C673, run:2026-10-30-h6ga-anc,
   [player/0001 § Plan 0038 H6g rows 2 and 29](../../findings/player/0001-creation.md#plan-0038-h6g-rows-2-and-29-the-ancients-grant-session-run2026-10-30-h6ga-anc))
-  A player who starts the grant inside level L levels up at most once: the `need` of level L is `T(L) − exp` > 0, so
+  The three amounts are immediates of this function only, so no second code path backs them. A player who starts the
+  grant inside level L levels up at most once: the `need` of level L is `T(L) − exp` > 0, so
   what is left after that level-up is below `T(L + 1) − T(L)`, the `need` of level L + 1. Where the cut binds is a
   table reading: `T(L + 1) − T(L) < G` in stock data (the seven class columns equal on every
   row) for L 1–35 in Normal, 1–65 in Nightmare and 1–73 in Hell; at level 25 in Normal it is 512 612. [I] (fn:sub_0058C5C0_ExpGrantCapped@0x0058C5C0,
