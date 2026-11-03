@@ -622,3 +622,23 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   `RNG_RangePow2` run on the image; a dev run under `emu/dev-1/`, then the kept run run:2026-10-30-ai-cat-emu-8 inside
   `systemd-run --user --scope -p MemoryMax=4G`; (5) `docs/findings/ai/0009-batch8.md`, symbol rows, merge `main`,
   ledger row, review request.
+- **2026-11-03 — P1.2 catalogue batch 8 (pool-E) for review (reverser, static, `lane/r52h`, resumed from the 2026-10-30 checkpoint; `main` dda63dfd merged before the run's totals).**
+  [ai/0009](../findings/ai/0009-batch8.md): the thirteen think functions of rows 82, 83, 85, 89, 93–98 and 113–115
+  (no `init`, no `alt`; row 83 kind 0, the others kind 1), each with its `aip` reads per record, its
+  `AiCtl+0x14/+0x18/+0x1C` words, its draws in order (all on the acting unit's seed: 22 inline steps, 8 `RNG_Range`,
+  one `RNG_RangePow2`; 0–7 per decision) and its command, plus three helpers first read here (row 85's heal search
+  callback 0x005E0430, the siege imp callback 0x005E1720 and the imp host setter 0x005E17E0). `0x005E3930` placed: the
+  hireling think's helper (five calls in 0x005E5446–0x005E561C), batch 6's, unnamed. [C] by emulation
+  (run:2026-11-03-ai-cat-emu-8, `tools/ai_cat_emu8.py`, 13 families, 3 120 cases, 0 mismatches, 0 stopped, no
+  unaccounted traced read; row 85's corner table 0x006E337C read from the image at all four rows; `le`, `d0`, `cmp`,
+  `u16` and the site control fail every case they separate; `EDGES` per family; a development run under `emu/dev-1/`
+  with its tool copy): the maps of rows 82, 83, 85, 93, 94, 96, 97, 98 and 114 to their first callee, row 89's
+  skill-sign test, the entry calls of 95, 113 and 115. Left [I]: everything after a boundary, so the tier AI 89 past
+  `SkillFindByOwner`/`HasState` (Phase 2's logs). Found: row 113 calls `Idle(aip1)` twice when its imp search succeeds;
+  the imp callback tests the searcher's owner; row 114 does not read `aip8` (the `reanimatedhorde6` disagreement).
+  P1.1 review reopen condition (b) not met (the callbacks and the host setter draw nothing by their bodies and direct
+  calls). No call of the action helpers. 16 `re/symbols.csv` rows (all I). Kept outputs `workspace/logs/r52h/`
+  (manifest 11 lines; `emu/` 53, `emu/dev-1/` 54; each passes from its directory). Backlog: the
+  [review request](../backlog/2026-11-03-reverser-architect-plan-0052-p1-2-batch-8-review.md),
+  [archivist](../backlog/2026-11-03-reverser-archivist-monstats-missiles-skills-readers-named-by-ai-0009.md) (MonStats,
+  Missiles and Skills readers). Next: the remaining batches (6, 7, 9–12).
