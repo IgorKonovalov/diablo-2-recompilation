@@ -287,6 +287,31 @@ column is `[I]` only where a finding names its reader, and Phase 1 of plan 0042 
   the column set and no call; its waypoint (index 17) does not come from this pass. (tbl:Levels.txt:SubWaypoint,
   fn:sub_00674B70_OutWaypointPlace@0x00674B70, fn:sub_0067F980_OutdoorAct2@0x0067F980)
 
+## Largest room a stock level can have (plan 0054 P1.2 follow-up)
+
+Asked by [path/0002 § 9](../findings/path/0002-search.md): whether a stock room makes the search's frame overrun (a same-room
+rectangle is the room plus 20 subtiles on each axis; the clear covers `(w + 6)(h + 6)` cells of a 50 010-cell frame, which a room of
+198 × 198 subtiles or more passes). Script: `python3 -I tools/room_extent.py scan <merged-root> --out workspace/logs/a67`
+(tests: `tools/test_room_extent.py`; output `report.txt`, `levels.tsv`, `lvlprest.tsv` and `manifest.sha256` under `workspace/logs/a67/`).
+
+- `[C]` **Sizes in the tables** (counts over every row, per source): `Levels` `DrlgType` 3 (outdoor) `SizeX` up to 240 and `SizeY` up to
+  192 tiles, the same in all three difficulties; `lvlmaze.bin` `SizeX`/`SizeY` up to 64 × 64 over its 81 rows (70 of them for `DrlgType` 1 levels;
+  the 11 other rows, for levels 0, 13–16, 25, 37, 90, 91, 93 and 132, are 8 × 8 to 24 × 24); `lvlprest.bin` `SizeX`/`SizeY` up to 64 × 64 over
+  1 091 records; the 2 058 DS1 files its `File1..6` name have `size_x` and `size_y` up to 84 (header values, as [ds1](../formats/ds1.md)).
+  These are the sizes of a level, a maze room or a preset rect, not of a DRLG room.
+- `[C]` **The room is cut from them** by the builders ([drlg/0003](../findings/drlg/0003-generator-dispatch.md)): a preset rect and an outdoor cell
+  make rooms of `min(8, rest)` tiles a side; a maze room of at most 12 × 12 tiles is one room and a larger one is cut into those 8 × 8 blocks.
+  [I] These are the only three room-making callers (`PresetRoomsCreate`'s three callers, [drlg/0004](../findings/drlg/0004-preset-units.md) § Shared DS1 buffers).
+- `[C]` **Largest room from the stock tables: 12 × 12 tiles, 60 × 60 subtiles** (a tile is 5 subtiles, [drlg/0005](../findings/drlg/0005-collision.md)),
+  in the maze levels whose `lvlmaze` size is 12 × 12 and keep the room whole: levels 29, 30, 31 (Jail 1–3), 34, 35, 36 (Catacombs 1–3), 47, 48, 49 and 65
+  (Sewer 1 A–C and 2 A), 74 (Arcane), 92 (Act III Sewer 1), 100 and 101 (Mephisto 1–2). Every other room is 8 × 8 tiles (40 subtiles) or smaller
+  (the largest preset room, from the 8 × 40 record 2, is 8 × 8; `Act 1 - Barracks` 10 × 14 is cut). The 11 `lvlmaze` rows of levels that are not maze levels
+  are not read as rooms here ([drlg/0006](../findings/drlg/0006-maze.md) § 8 (e) looks up by `Level` for maze levels).
+- `[C]` **Against the threshold, in data terms:** the same-room rectangle of the largest room is 80 × 80 (product 6 400, below the 50 000 assert; clear 7 396 cells,
+  below the 50 010 frame). No stock room is within a factor of three of the 198 × 198 subtile threshold (60 against 198). Outside the answer, as the
+  rule of [path/0002 § 2](../findings/path/0002-search.md) joins two rooms into a rectangle by their positions: a pair's rectangle depends on the generated layout and on the target's room, so no
+  table gives its size. Tag on the reach in play: `[I]` (the room counts rest on the three callers above), the sizes themselves `[C]` as listed.
+
 ## Columns
 
 `[C]` layout tags are by data behaviour: `python3 -I tools/excel_bin.py diff <excel-dir> levels` and `leveldefs` decodes every record and compares it with every mapped cell (blank cells and encoding rules as in [excel-bin.md](../formats/excel-bin.md#cell-encoding-rules)). A field is tagged `[C]` when the column's values pin its offset (a probe over every record finds no other offset that fits), `[I]` when the column is constant or identical to a sibling column, so its position comes from the neighbouring fields or the stride of its group. Widths are `[C]` with the same proviso; signedness is `[I]` (`s` where the column holds negative values). **Meaning:** no column semantics are claimed here; they come from reverser findings. The `.bin field` cell names the file.

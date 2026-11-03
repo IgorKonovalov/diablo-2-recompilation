@@ -100,11 +100,16 @@ register-held tests are not in that scan; the planners' own tests are P1.2's and
 
 - `[I]` Types 8, 9 and 11 (words with both `0x2000` and `0x8000`) are the temporary ones a `PathMoveReset` undoes (path/0001 § 8).
 - `[L]` The draws of types 3, 11 and 12 are unfollowed ([ai/0001 § 8](../findings/ai/0001-machinery.md#8-the-path-request), path/0001 *Open questions*).
-- `[L]` **The object record bytes the target refresh reads.** For a unit-type-2 (object) target the refresh goes through the object step when the record's
-  `+0x13A` is set, and the step moves `y` (record `+0x13C` is 1) or `x` by 2 subtiles toward the start (path/0001 § 3, `[C]`; readers 0x00621A70 and
-  0x00621AC0 per the finding's open question). By offset these are [Objects](Objects.md#columns) `IsDoor` (`+0x13A`, 0: 548, 1: 25) and `Orientation`
-  (`+0x13C`, 3: 429, 0: 60, 1: 58, 2: 26), but path/0001 does not say the record is the `objects.bin` record `OBJECTS_GetRecord` returns, so the identification
-  stays `[L]` (P1.1 review ruling 5).
+- `[I]` **The object record bytes the target refresh reads are `objects.bin` columns.** For a unit-type-2 (object) target the refresh goes through the object
+  step when the record's `+0x13A` is set, and the step moves `y` (record `+0x13C` is 1) or `x` by 2 subtiles toward the start (path/0001 § 3, `[C]`).
+  The record is the `objects.bin` record: the readers 0x00621A70 and 0x00621AC0 read `unit +0x14 -> +0x00 -> +0x13A / +0x13C`, and `SUnitCreate` stores
+  `OBJECTS_GetRecord(class)` there (0x005553D7-0x005553E2; [path/0002 § 10](../findings/path/0002-search.md), `[I]`). So `+0x13A` is [Objects](Objects.md#columns) `IsDoor`
+  (0: 548, 1: 25) and `+0x13C` `Orientation` (3: 429, 0: 60, 1: 58, 2: 26). (fn:OBJECTS_GetRecord@0x00640E90, fn:sub_00555230_SUnitCreate@0x00555230)
+- `[C]` **Path `+0x92` and `+0x91` under the search planner** (types 0 and 16; [path/0002 § 6](../findings/path/0002-search.md), emulation to the return,
+  run:2026-11-03-path-emu-2, 2 116 cases, 0 mismatches). `+0x92` is `ctx.b1C`, the search's last bound: type 0 runs the bound from `h0` up in steps of 5 while below
+  `max(h0, b1C)`, type 16 from `h0 + h0 / 2` likewise (`b1C` at or below `h0` leaves type 0 one pass). `+0x91` is `ctx.limit` (path/0001 § 1): neither of the
+  two planners reads it (no traced read in any case; `traced=0`). Scope: these two planners only; the other planners' reads are P1.3's, and what a server request's
+  `b1C` is stays an open question of path/0002 (`[L]`).
 
 ## Columns a request reads
 
@@ -152,6 +157,5 @@ The stock Skills rows whose start or do number a finding ties to one type (scrip
 
 ## Open questions
 
-- `[L]` The planners' own reads of the flags (and of `+0x91`, `+0x92`, `+0x98`) and the three unnamed planners (types 3, 11, 12): plan 0054 P1.2 and P1.3.
-- `[L]` Whether the record bytes `+0x13A` / `+0x13C` the target refresh reads are `IsDoor` / `Orientation` (reverser: the record behind 0x00621A70 / 0x00621AC0).
+- `[L]` The planners' own reads of the flags (and of `+0x98`; `+0x91` and `+0x92` for the types 0 and 16 planner are above) and the three unnamed planners (types 3, 11, 12): plan 0054 P1.3.
 - `[L]` The Missiles rows that reach the four missile callbacks (0x005C9290, 0x005CD110, 0x005D40F0, 0x005AC040): P1.1's request register.
