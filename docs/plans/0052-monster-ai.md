@@ -807,3 +807,25 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 - **2026-11-03 — Owner decision: the Uber event is a phase of this plan (Phase 1c).** The batch 11 check found it had no
   home; the architect recommended a phase here, and the owner accepted ("as recommended"). Phase 1c follows batch 12's
   review and gates nothing.
+- **2026-11-03 — Phase 1b: the community cross-check (`lane/r52m`, reverser, no Ghidra; `main` a292a88f).** Finding
+  [ai/0014](../findings/ai/0014-community-cross-check.md): 67 claims compared with ai/0001–0012 (ai/0013 read from the
+  `lane/r52l` copy, 65af21bd; it held no comparable claim beyond the Imp row of ai/0010), verdicts **35 held, 23 held with
+  refinement, 6 not covered, 3 contradicted** (counted with `awk -F'|' '/^\| C[0-9][0-9] \|/{gsub(/[* ]/,"",$5); print $5}'
+  docs/findings/ai/0014-community-cross-check.md | sort | uniq -c`). Sources registered in `docs/sources.md`:
+  `arreat-summit-boss-pages` (15 pages), `arreat-summit-bestiary` (23), `arreat-summit-summon-skills` (3),
+  `d2mods-monstats-guide`, `wue-d2-ai-slides`, `arreat-summit-hirelings` re-fetched; `diablowiki-d2-monsters` (HTTP 403) and
+  `lurker-monster-ai-threads` (HTTP 409) registered as not read. "The AI Compendium" was not found. No page held code.
+  Compared: the machinery (AI column, `aip` cells, Imp, Scarab), the boss pages (skill lists, Duriel's attack choice,
+  Diablo's prison, Baal's teleport and clone, the curse split), 28 monster behaviours and skill lists of the tiers and
+  catalogue, minion warp and revive, hireling follow and skills. **Not compared:** monsters whose pages hold only stats
+  or flavour (Wraith, Bat Demon, Baboon, Skeleton Mage, Skeleton Archer, Finger Mage, Vile Child, most of the 148 rows),
+  the Über drivers (rows 145–147 return; Phase 1c), the despawn of minions, summon target weights, the skills' own effects
+  and tables (Smite, Jab, trap shot counts), and every page behind HTTP 403 or 409. Agreement promoted nothing.
+  **Required cases for the Phase 2 lane** (every `contradicted` claim, all reachable on stock data):
+  **P1b-1** Duriel's melee decision (C10, C11): row 44 (MonStats 211; 708 only if the Über event can be staged),
+  Normal, at least 300 melee decisions; the page predicts Smite 33, Jab 50, A1 17 percent, the code's two independent
+  draws give 33, 33.5, 33.5 (`aip2` 33, `aip3` 50, `aip4` 0); log the command per decision. **P1b-2** a champion corpse
+  for a Greater Mummy (C40): row 22, a champion mummy dying within `aip5` of the Greater Mummy in the same near rooms,
+  with a unique corpse as control; log the callback's `corpse` slot (0x005F2A00–0x005F2B03) and `MonSkillTargetOk`'s
+  verdict (0x005FD470), and whether Resurrect2 is commanded. Phase 1b is done once the architect accepts; the two cases
+  join Phase 2's "Phase 1b cases" line. Backlog: the review request (reverser to architect).

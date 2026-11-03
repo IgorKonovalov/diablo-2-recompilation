@@ -515,6 +515,7 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-11-03 | `lane/r52k` check | 0052 P1.2 (batch 11) | architect-check | 108 626 | 28 | 3 | — | accept with fixes (2) | omission 2 |
 | 2026-11-03 | `lane/r55f` | 0055 P2a-ii | reverser-static | 506 164 | 176 | 52 | — (static, Ghidra copy ghidra-r55f) | accept with fixes (Tier B check) | 3: overclaim 2, omission 1 |
 | 2026-11-03 | `lane/r55f` check | 0055 P2a-ii | architect-check | 92 703 | 21 | 3 | — | accept with fixes (3) | overclaim 2, omission 1 |
+| 2026-11-03 | r52m | 0052 | reverser-static | 0 | 95 | 60 | - | pending | - |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not
