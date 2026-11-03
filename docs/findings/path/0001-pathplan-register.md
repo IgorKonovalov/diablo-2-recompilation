@@ -20,7 +20,7 @@ manifest and tool copy). The emulator scripts are the `lane/r55e` revisions (§ 
 ## Answer (summary)
 
 - [C] **`PathPlan`'s entry, by emulation to its first boundary** (run:2026-11-03-path-emu-1, families `plan` and
-  `plannoop`, 1 200 cases, 0 mismatches): a null path returns 0; a path with flag `0x40000` goes to
+  `plannoop`, 1 200 cases, 0 mismatches; a null path's return 0 is read, not run): a path with flag `0x40000` goes to
   `PathPlanStraight` before any other test; otherwise `+0x54 = 0`, a target unit at subtile x or y 0 returns 0 with
   nothing else written, a start of (0, 0), a refreshed target of (0, 0), a target equal to the start, `|dx|` or
   `|dy|` above 100 (100 itself passes), no unit room or no room at the target, and a target room whose level is a
@@ -250,7 +250,8 @@ return 1;
 
 - [C] The argument of the `IsBadCodePtr` call (IAT slot 0x006CC34C, observed at its value in the emulator image,
   0x00303946; site 0x00649B93) is `g_PathPlanFuncs[type]`, read at 0x00649B85, for every type 0–16, 0 for the empty
-  slots 4, 10, 14 of a path without flag `0x40000` (241 cases; 241 slot and 241 IAT reads accounted).
+  slots 4, 10, 14 of a path without flag `0x40000` (241 cases, every type 0–16 among them, 3 to 21 each; 241 slot
+  and 241 IAT reads accounted).
   (data:g_PathPlanFuncs@0x006EB6D8, 0x00649B82–0x00649B8D)
 - [I] After it: `IsBadCodePtr` non-zero is fatal 0x37E; the planner is called with `ECX = &ctx` (0x00649BAE), its
   `EAX` stored in `+0x28` (also 0 when `go` was 0); the start is checked (fatal 0x389); the target is re-marked when

@@ -218,3 +218,29 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   constant in the creating code); the H1 class-195 missile is Missiles row 195 `lightunique`, named by no cell of the six
   tables scanned (so it is created by index in code: P1.3's H1 item); a flags word (`0x1E604`) carries a bit outside the 8 to
   18 that `PathSetType` replaces (P1.1 reads the mask). Meanings of every flags bit stay `[L]`.
+- **2026-11-03 — Phase 1, batch P1.1, `PathPlan` and the request register, for review (reverser, static, `lane/r54a`,
+  from `main` 00c53f7f; `main` c7d3ee1d merged before the totals).** [path/0001](../findings/path/0001-pathplan-register.md)
+  (new directory `docs/findings/path/`, with [experiments.md](../findings/path/experiments.md)) and `re/types/path.h`:
+  `PathPlan`'s entry and its 0x34-byte request context, the target refresh and object step, `PathTargetNotTown`,
+  the unmarks, the flag-0x1000 free-target walk and the player extension, the slot read, the tail after the planner
+  (`[I]`: the `IsBadCodePtr` import sits between the slot read and the planner call), `PathPlanStraight` with
+  `PathPlanToUnit`, `PATH_DynamicCreate`, `SUnitPathCreate`, `PathSetType` (and its third table `g_PathTypeParam98`),
+  the setters, `PathMoveReset`, `PathAimNextPoint` and `PathReplan`; the record's request fields (78 point slots,
+  `+0x91` the planner's limit, `+0x92`..`+0x94`). Draws: none in any function read (`[I]`, `tools/path_scan.py
+  draws` and `RngCallGraph`). **Register:** 68 calls in 58 functions, 34 server (player 2, mode machine 5, AI 3,
+  skill 10, missile 10, movement 2, unreferenced 2) and 34 client; the player's walk plans type 7; no server code sets
+  3, 11 or 12. **[C] by emulation** (run:2026-11-03-path-emu-1, `tools/path_emu1.py`, 10 families, 4 320 cases, 0
+  mismatches, 0 stopped, 0 unaccounted traced accesses; the image built from `tools/collision.py`'s predicted grids
+  of two kept run:2026-10-14-collision logs, a town beside an outdoor level and a maze level, with seeded unit marks;
+  every negative and the site control fail what they separate; development run under `emu/dev-1/`). The emulator
+  scripts `EmuTrace.java`, `EmuBoundary.java` and `EmuCall.java` were copied unchanged from `lane/r55e` before the
+  run (identical to `main` after the merge). Not emulated, with the reason: the tail, `PATH_DynamicCreate` (allocator
+  first), the unmark and mark (they write the declared grid), the x87 target offset, the planners. The search context
+  is a 0x36FF8-byte stack frame of `PathSearchRun` (P1.2 needs no image for it). Proposed cut (finding § 14): P1.2 as
+  planned; P1.3 in two parts, the server-reached short planners with missiles H1 first, then the client-only slots
+  3, 11, 12 from the code; Phase 2's floors without 3, 11, 12 and 16; the log design and volume in § 13. 27
+  `re/symbols.csv` rows (21 func, 6 data, all I). Kept outputs `workspace/logs/r54a/` (manifest 18 lines; `emu/`
+  51; `emu/dev-1/` 51; each passes from its directory). Backlog: the
+  [review request](../backlog/2026-11-03-reverser-architect-plan-0054-p1-1-review.md),
+  [archivist](../backlog/2026-11-03-reverser-archivist-pathtypes-meanings-anchored-by-path-0001.md) (PathTypes
+  meanings, the object bytes +0x13A/+0x13C).
