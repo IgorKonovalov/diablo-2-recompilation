@@ -512,6 +512,24 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-11-03 | `lane/a65` | 0054 P1.1 PathTypes; 0038 recipe row (2 entries) | archivist | 87 140 | 26 | 4 | — | accept with fixes (Tier B check) | 3: wrong citation 1, scope 2 |
 | 2026-11-03 | `lane/a65` check | 0054 P1.1 PathTypes; 0038 recipe row | architect-check | 76 681 | 16 | 4 | — | accept with fixes (3) | wrong citation 1, scope 2, omission-route 1 |
 | 2026-11-03 | `lane/r54b` | 0054 P1.2 | reverser-static | 0 | 42 | 125 | — (static, Ghidra copy ghidra-r54b) | — | — |
+| 2026-11-03 | `lane/r52k` | 0052 P1.2 (batch 11) | reverser-static | 527 078 | 143 | 39 | — (static, Ghidra copy ghidra-r52k) | accept with fixes (Tier B check) | 2: omission 2 |
+| 2026-11-03 | `lane/r52k` check | 0052 P1.2 (batch 11) | architect-check | 108 626 | 28 | 3 | — | accept with fixes (2) | omission 2 |
+| 2026-11-03 | `lane/r55f` | 0055 P2a-ii | reverser-static | 506 164 | 176 | 52 | — (static, Ghidra copy ghidra-r55f) | accept with fixes (Tier B check) | 3: overclaim 2, omission 1 |
+| 2026-11-03 | `lane/r55f` check | 0055 P2a-ii | architect-check | 92 703 | 21 | 3 | — | accept with fixes (3) | overclaim 2, omission 1 |
+| 2026-11-03 | `lane/r52l` | 0052 P1.2 (batch 12) | reverser-static | 409 810 | 78 | 27 | — (static, Ghidra copy ghidra-r52l) | accept (Tier B check), accept with fixes (audit) | 6: overclaim 1, misread 1, omission 1, wrong anchor 1, miscount 1, tool not kept 1 |
+| 2026-11-03 | `lane/r52l` check | 0052 P1.2 (batch 12) | architect-check | 78 701 | 14 | 2 | — | accept | 0 |
+| 2026-11-03 | `lane/r52l` review | 0052 P1.2 (batch 12) | architect-review | 260 691 | 37 | 13 | — | accept with fixes (6) | audit of lane/r52l: overclaim 1, misread 1, omission 1, wrong anchor 1, miscount 1, tool not kept 1; reject-grade missed: no |
+| 2026-11-03 | `lane/r52m` | 0052 P1b | reverser-static | 285 415 | 131 | 17 | — (no Ghidra, no harness) | accept with fixes (Tier B check) | 3: misread 2, other 1 |
+| 2026-11-03 | `lane/r52m` check | 0052 P1b | architect-check | 109 489 | 26 | 3 | — | accept with fixes (3) | misread 2, other 1; listed item (P1b-2 difficulty and class id) fixed at merge |
+| 2026-11-03 | `lane/p52a` | 0052 P2 (first run; 0056 P3 pilot) | reverser-harness | 530 967 | 228 | 139 | slot 2, no Ghidra; pilot: 19 launches (9 dev, 1 rerun), 31 kept sessions/cases, 0.32 launches per kept case, 3.6 harness min and about 17 k tokens per kept session (measured), 14 645 decisions 0 mismatches at the first boundary | accept with fixes (Tier B check) | 8: overclaim 2, omission 1, stale cross-reference 1, miscount 3, other 1 |
+| 2026-11-03 | `lane/p52a` check | 0052 P2 (first run; 0056 P3 pilot) | architect-check | 115 028 | 29 | 4 | — | accept with fixes (8) | overclaim 2, omission 1, stale cross-reference 1, miscount 3, other 1 |
+| 2026-11-03 | `lane/c56` | 0056 P4 | architect-review | 154 913 | 20 | 10 | no slot; corrects `lane/p52a` Slot cell: 3.6 withdrawn, 4.5 min per kept case by lane wall, 3.0 and 3.5 harness | evaluated; plan closed, ADR-0028 proposed | 1: miscount 1 (the wall figure) |
+| 2026-11-03 | `lane/r52n` | 0052 P1c (Uber event) | reverser-static | 339 349 | 50 | 23 | — (static, Ghidra copy ghidra-r52n) | accept with fixes (Tier B check) | 6: omission 3, stale cross-reference 3 |
+| 2026-11-03 | `lane/r52n` check | 0052 P1c (Uber event) | architect-check | 101 556 | 28 | 4 | — | accept with fixes (6) | omission 3, stale cross-reference 3 |
+| 2026-11-03 | `lane/s66` | 0052 P1c spec wording | spec-writer | 138 331 | 21 | 6 | — (no Ghidra, no harness) | accept with fixes (Tier A) | 4: overclaim 2, misread 1, omission 1 |
+| 2026-11-03 | `lane/s66` review | 0052 P1c spec wording | architect-review | 147 379 | 25 | 6 | — | accept with fixes (4) | overclaim 2, misread 1, omission 1 |
+| 2026-11-03 | `lane/a66` | 0052 readers of ai/0012, ai/0013 into the table docs (2 entries) | archivist | 187 967 | 46 | 9 | — | accept with fixes (Tier A, ADR-0027) | 16: overclaim 3, misread 4, omission 6, wrong anchor 2, stale cross-reference 1 |
+| 2026-11-03 | `lane/a66` review | 0052 readers of ai/0012, ai/0013 | architect-review | 207 612 | 37 | 10 | — | accept with fixes (16) | overclaim 3, misread 4, omission 6, wrong anchor 2, stale cross-reference 1 |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not

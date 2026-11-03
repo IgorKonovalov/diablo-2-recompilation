@@ -66,6 +66,7 @@ the act lists, not proof that a DS1 uses the entry), MonStats `minion1`/`minion2
 - [C] Illustrative unreached enabled rows: 34–37 `gorgon1..4`, 73 `clawviper1`, 157/158 `bird1/2`, 313–317 `quillbear1..5`, 348–350
   `turret1..3`, 704–709's uber bosses (all six `uber*`), 333 `diabloclone`; and six `npc` rows (`act2child`, `cain5`, `rogue2`,
   `act2guard2`, `izualghost`, `drehyaiced`). (tool:unreached.py --table monstats --list, tbl:MonStats.txt:Id)
+- *2026-11-03 (plan 0052 Phase 1c, `lane/r52n`):* the "Uber Tristram handlers" of the next bullet were not found: no code in this image creates classes 704, 705 or 709, and the three stay unreached with no code reader ([ai/0016](../ai/0016-uber-event.md) § 2, § 4). (fn:sub_005E9DF0_AiUberDiablo@0x005E9DF0)
 - [I] The upper bound is loose for classes the code creates by id: the uber bosses by the Uber Tristram handlers, the
   traps and turrets by skill spawn functions, the `evilhole` and `suckernest` families by their spawners. `SpawnClassByBase`
   (do 140) and the death handlers name some; no list of the code-created class ids exists, so those rows stay under

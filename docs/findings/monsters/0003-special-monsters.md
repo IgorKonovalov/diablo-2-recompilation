@@ -494,6 +494,7 @@ SpecialModsApply(game, unit, EDX = box, ECX = min, EAX = max, minions):   ; fn:s
   (`leveladd`) in the 10 expansion cases but was the bare MonStats `Level(N)` (50, not 53) in the 2 classic nightmare cases;
   that rule is `monsters/stats` (*Open questions*), and both give n = 7 there. Lord De Seis and class 704 were not reached.
   (fn:sub_005A1650_UModAura@0x005A1650, fn:sub_005A0E40_UModLevelAdd@0x005A0E40, run:2026-10-14-mon-special)
+  *2026-11-03 (plan 0052 Phase 1c, `lane/r52n`):* the class-704 arm is now mapped by emulation: with a non-zero flag, `UnitSkillAdd(unit, 123, 20, 1)` is reached (0x005A175C), a non-704 class does not take that site; the following `PlayerSetSkill` and reach in play are not covered ([ai/0016](../ai/0016-uber-event.md) § 6). (fn:sub_005A1650_UModAura@0x005A1650, run:2026-11-03-ai-uber)
 
 ### 5. Minions and `xfer`
 

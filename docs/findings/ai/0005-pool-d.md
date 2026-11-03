@@ -104,7 +104,7 @@ findings named in place are cited by their anchors.
 
 | Address | Name | Role | Tag |
 |---|---|---|---|
-| `0x005F96C0` | `sub_005F96C0_AiSkeletonMage` | row 64 `SkeletonMage` think | I (entry call `[C]`, § 3) |
+| `0x005F96C0` | `sub_005F96C0_AiSkeletonMage` | row 64 `SkeletonMage` think | I (entry call `[C]`, § 3); first boundary live `C`, ai/0015 |
 | `0x005F9950` | `sub_005F9950_AiFetishShamanAlt` | row 65's `alt`: clear state 12, `MonAiInit`, `Idle(1)` | I (entry call `[C]`, § 3) |
 | `0x005F99A0` | `sub_005F99A0_AiFetishReviveCb` | row 65's search callback: the nearest dead and the nearest living fetish | I |
 | `0x005F9A80` | `sub_005F9A80_AiFetishShaman` | row 65 `FetishShaman` think | I (skill-sign test `[C]`, § 3) |

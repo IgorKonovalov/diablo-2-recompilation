@@ -93,7 +93,7 @@ anchors where this batch builds on them (anim/0001's event queue, drlg/0009's pa
 | `0x005414D0` | `sub_005414D0_GameRunUnitEvents` | per type: every-frame list, then the slot list | I |
 | `0x00541060` | `sub_00541060_MonEventsRun` | the monster lists, records without a callback to `MonEventDispatch` | I |
 | `0x005A7F80` | `sub_005A7F80_MonEventDispatch` | drops kind 2 while frozen and alive | I |
-| `0x005B1740` | `sub_005B1740_MonAiEvent` | **the AI tick** (monster event kind 2) | I |
+| `0x005B1740` | `sub_005B1740_MonAiEvent` | **the AI tick** (monster event kind 2) | C (first boundary only, ai/0015) |
 | `0x005B10E0` | `sub_005B10E0_MonAiPreChecks` | stun, doors, keep-near | I |
 | `0x005B0F50` | `sub_005B0F50_MonAiOpenDoor` | `opendoors` monsters operate a door object on their cell | I |
 | `0x005B0FF0` | `sub_005B0FF0_MonAiKeepNear` | leader and taunter following (`AiCtl+0x0C`) | I |
@@ -306,6 +306,8 @@ flowchart TD
   from the curse path; the rest only through the five unresolved pointer loads, if at all). (data:g_MonAiStateRows@0x0073D358, fn:sub_005B0E00_MonAiInit@0x005B0E00,
   fn:sub_005DDD00_MonFleeFrom@0x005DDD00, fn:sub_005D18E0_ImpAttach@0x005D18E0, fn:sub_005C35C0_CurseApplyCb@0x005C35C0,
   tbl:Skills.txt:auratargetstate)
+  *2026-11-03 (batch 11):* two of the five unresolved pointer loads, 0x005E84D8 and 0x005FCF88, are the `alt`s of rows 51/147 and 135/140/145 and pass the current state (`ctl.state`, the state the switch stored), read in [ai/0012](0012-batch11.md) § 2.1 `[I]`; three stay unresolved. (fn:sub_005E8480_AiDiabloAlt@0x005E8480, fn:sub_005FCF30_AiBaalAlt@0x005FCF30)
+  *2026-11-03 (batch 12):* the remaining three, 0x005E52B5, 0x005F8240 and 0x005F9985, are the `alt`s of rows 61/128, of the frog demons and of the fetish shamans and pass the current state too; no register site gives a new value, `SpawnOwnedMonster`'s block `+0x0C` is 0 at all 15 callers, and states 2, 3, 8, 9, 14 and 17 have no setter ([ai/0013](0013-batch12.md) § 3 `[I]`). (fn:sub_005E5280_AiHireableAlt@0x005E5280, fn:sub_005F81D0_AiFrogDemonAlt@0x005F81D0, fn:sub_005F9950_AiFetishShamanAlt@0x005F9950)
 - [I] **`MonAiInit(ECX game, EDX unit; ctl, state)`** returns at once unless game, unit and ctl are non-null, `state < 18`
   (signed) and the unit is a monster; a class at or past the MonStats count forces state 1. When `AiCtl.think` is
   non-zero, equals the `think` of the row of the **current** `AiCtl.state`, and that row has an `alt`: `AiCtl.state ←

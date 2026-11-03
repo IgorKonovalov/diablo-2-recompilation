@@ -624,3 +624,266 @@
 - **Conclusion:** the maps are `[C]` in ai/0011 §§ 2, 3, each up to its first boundary or return; row 131's entry
   call and row 133's quest tests `[C]` as calls. Not the callees, nothing after them. No symbol raise (ADR-0015 scope,
   review-fixes rule 14). (run:2026-11-03-ai-cat-emu-10)
+
+## run:2026-11-03-ai-cat-emu-11
+
+- **Question:** (plan 0052 Phase 1, catalogue batch 11, bosses-B) Do the think, init and `alt` functions of rows 51,
+  128, 135, 138, 140, 145 and 147, Diablo's decision 0x005E8810, Baal's decision 0x005FC630, its three tables and its
+  action 0x005FCB60, the pick callbacks 0x005E8EB0, 0x005FC000, 0x005EF5E0 and the unreferenced weighted pick 0x005FC130
+  map their declared inputs to the first boundary they reach (or their return), its call site, its arguments, the
+  unit seed and `AiCtl+0x14/+0x18/+0x1C` as [ai/0012](0012-batch11.md) § 2 reads them?
+- **Setup:** Ghidra p-code emulator via `re/ghidra_scripts/EmuBoundary.java` (`0c88b790…`, unchanged), lane project copy
+  `workspace/ghidra-r52k` (symbols replayed from the scratch `workspace/logs/r52k/b11-sym-scratch.csv`; emulation does
+  not use them), heap 3 GB (`GHIDRA_HEADLESS_MAXMEM=3G`), each of the twenty headless runs inside its own
+  `systemd-run --user --scope -p MemoryMax=4G`, one Ghidra at a time. No wine, no slot. Models and case writer
+  `tools/ai_cat_emu11.py` (`d5ece728…`), every draw from `random.Random("r52k-<family>")`. Files in
+  `workspace/logs/r52k/emu/`, `manifest.sha256` (`434a1e4b…`, 81 lines, `check.txt` `57f25e1a…`); `sha256sum -c
+  manifest.sha256` from that directory passes.
+- **Procedure:**
+  ```
+  D=workspace/logs/r52k/emu
+  python3 -I tools/ai_cat_emu11.py cases --dir $D
+  export GHIDRA_PROJ_DIR=workspace/ghidra-r52k GHIDRA_HEADLESS_MAXMEM=3G
+  for f in dalt balt diablo ddec dcb bcb nihli nihl stairs pcb bcrab bclone bdec bact bmelee bblock branged wpick uberd uberb; do
+    systemd-run --user --scope -p MemoryMax=4G \
+      tools/ghidra.sh emuboundary $D/$f.cases $D/$f.mem > $D/$f.out 2> $D/$f.err
+  done
+  python3 -I tools/ai_cat_emu11.py check --dir $D > $D/check.txt
+  (cd $D && sha256sum <every file but the manifest> > manifest.sha256)
+  ```
+  Each case writes the image the tool's docstring declares (the game, the unit and its path, the target and its path,
+  two more units for the lookups, the monster data and the AI control with its parameter ring and owner words, the
+  `AiCtx`, the MonStats record, the DataTables pointer, the quest list for `nihl`, the hash slots for `bclone`, the
+  weight block for `wpick`); register arguments by `r` lines (`EAX` in `bdec`, `bmelee`, `branged`, `wpick`; `ESI` in
+  `bblock`); the memory spec observes 44 callees and guards the allocator and fatal entries (6).
+- **Observed** (`check.txt`, first line of each family):
+  ```
+  AI52K dalt cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 abs_separating=0 abs_passed=0 uns_separating=0 uns_passed=0 site_control_passed=0 boundaries=1
+  AI52K balt cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 abs_separating=0 abs_passed=0 uns_separating=0 uns_passed=0 site_control_passed=0 boundaries=1
+  AI52K diablo cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 abs_separating=0 abs_passed=0 uns_separating=0 uns_passed=0 site_control_passed=0 boundaries=2
+  AI52K ddec cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 abs_separating=0 abs_passed=0 uns_separating=0 uns_passed=0 site_control_passed=0 boundaries=4
+  AI52K dcb cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=27 cmp_passed=0 u16_separating=0 u16_passed=0 abs_separating=21 abs_passed=0 uns_separating=0 uns_passed=0 site_control_passed=0 boundaries=1
+  AI52K bcb cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=26 cmp_passed=0 u16_separating=0 u16_passed=0 abs_separating=7 abs_passed=0 uns_separating=0 uns_passed=0 site_control_passed=0 boundaries=1
+  AI52K nihli cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 abs_separating=0 abs_passed=0 uns_separating=0 uns_passed=0 site_control_passed=0 boundaries=1
+  AI52K nihl cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=25 cmp_passed=0 u16_separating=0 u16_passed=0 abs_separating=0 abs_passed=0 uns_separating=0 uns_passed=0 site_control_passed=0 boundaries=2
+  AI52K stairs cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 abs_separating=0 abs_passed=0 uns_separating=0 uns_passed=0 site_control_passed=0 boundaries=1
+  AI52K pcb cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 abs_separating=0 abs_passed=0 uns_separating=0 uns_passed=0 site_control_passed=0 boundaries=2
+  AI52K bcrab cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 abs_separating=0 abs_passed=0 uns_separating=0 uns_passed=0 site_control_passed=0 boundaries=1
+  AI52K bclone cases=240 match=240 bad=0 stopped=0 traced=0 accounted=5 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 abs_separating=0 abs_passed=0 uns_separating=0 uns_passed=0 site_control_passed=0 boundaries=2
+  AI52K bdec cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 abs_separating=0 abs_passed=0 uns_separating=0 uns_passed=0 site_control_passed=0 boundaries=5
+  AI52K bact cases=240 match=240 bad=0 stopped=0 traced=0 accounted=15 drew=0 le_separating=0 le_passed=0 d0_separating=6 d0_passed=0 cmp_separating=29 cmp_passed=0 u16_separating=6 u16_passed=0 abs_separating=0 abs_passed=0 uns_separating=0 uns_passed=0 site_control_passed=0 boundaries=16
+  AI52K bmelee cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=0 le_separating=0 le_passed=0 d0_separating=160 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 abs_separating=0 abs_passed=0 uns_separating=0 uns_passed=0 site_control_passed=0 boundaries=1
+  AI52K bblock cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=0 le_separating=0 le_passed=0 d0_separating=160 d0_passed=0 cmp_separating=26 cmp_passed=0 u16_separating=0 u16_passed=0 abs_separating=0 abs_passed=0 uns_separating=0 uns_passed=0 site_control_passed=0 boundaries=1
+  AI52K branged cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=0 le_separating=0 le_passed=0 d0_separating=160 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 abs_separating=0 abs_passed=0 uns_separating=0 uns_passed=0 site_control_passed=0 boundaries=1
+  AI52K wpick cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=138 le_separating=41 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 abs_separating=0 abs_passed=0 uns_separating=19 uns_passed=0 site_control_passed=0 boundaries=1
+  AI52K uberd cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 abs_separating=0 abs_passed=0 uns_separating=0 uns_passed=0 site_control_passed=0 boundaries=1
+  AI52K uberb cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 abs_separating=0 abs_passed=0 uns_separating=0 uns_passed=0 site_control_passed=0 boundaries=1
+  AI52K total cases=4800 match=4800
+  AI52K result=ok
+  ```
+  The `SITES` line under each family counts the cases per boundary and call site (46 site/boundary pairs over the 20
+  families, a return counted as one); the `EDGES` line the cases that meet each ordered compare at equality; the
+  `TAGS` line the paths ai/0012 § 4 names; `drew` the cases whose seed moved before the boundary; `accounted` the traced
+  reads the checker accounts (`g_UnitHashOffsets` at 0x00552F9C in `bclone`, the jump table `0x005FCEF0 + 4(k−1)` at
+  0x005FCBC0 in `bact`); it fails a family when one is missing. **Development runs** (rule 6): `emu/dev-1/` (the first
+  tool, `dev-1/ai_cat_emu11.py.dev1` `9167167d…`; `check.txt` `90ba44e7…`, `result=FAIL`: `bcrab` 240 and `bclone` 38
+  register mismatches at the pick, `bdec` 240 ended at its own entry on the observe list, 56 and 15 unaccounted traced
+  reads; ai/0012 § 4) and `emu/dev-2/` (the corrected models, `dev-2/ai_cat_emu11.py.dev2` `97008dcc…`; `check.txt`
+  `391a669e…`, 4 800 cases, all matching, `result=ok`); manifests `c8e22d3b…` and `50b004fc…`, 82 lines each, each passes
+  from its directory. Each tool copy regenerates its run's case and memory files byte for byte and reproduces its
+  `check.txt`; the kept run's case and memory files and `check.txt` regenerate identically with the committed tool
+  (`cases` into a scratch directory, `check` on the kept outputs, compared with `cmp`).
+- **Conclusion:** the maps are `[C]` in ai/0012 §§ 2, 4, each up to its first boundary or return. Not the callees,
+  nothing after them. No symbol raise (ADR-0015 scope, review-fixes rule 14). (run:2026-11-03-ai-cat-emu-11)
+
+## run:2026-11-03-ai-cat-emu-12
+
+- **Question:** (plan 0052 Phase 1, catalogue batch 12, towns, NPCs and the state rows) Do the think and init functions of rows 31, 32, 41, 42,
+  54, 58, 62, 81, 88, 91, 99, 100, of state rows 2, 3, 8–14 and 17, and the town helpers `AiNpcSaveHome`, `AiNpcHomeLeash`, `AiNpcScriptStep`,
+  `AiNpcPathPick` with its five actions, 0x005E7350, 0x005E77A0, `AiPathSkillStep`, 0x005E5710, 0x005E7D30, `AiNearestPlayer` with its callback and
+  the two list tests map their declared inputs to the first boundary they reach (or their return), its call site, its arguments, the unit seed, the AI
+  control words and the named memory as [ai/0013](0013-batch12.md) § 2 reads them?
+- **Setup:** Ghidra p-code emulator via `re/ghidra_scripts/EmuBoundary.java` (`0c88b790…`, unchanged), lane project copy `workspace/ghidra-r52l`
+  (symbols replayed from `re/symbols.csv`; emulation does not use them), heap 3 GB (`GHIDRA_HEADLESS_MAXMEM=3G`), the runs in sequence inside one
+  `systemd-run --user --scope -p MemoryMax=4G`, one Ghidra at a time. No wine, no slot. Models and case writer `tools/ai_cat_emu12.py` (`a8b42f49…`),
+  every draw from `random.Random("r52l-<family>")`. Files in `workspace/logs/r52l/emu/`, `manifest.sha256` (`31a52769…`, 165 lines, `check.txt`
+  `f2d6e75f…`); `sha256sum -c manifest.sha256` from that directory passes. Development run `emu/dev-1/` (own manifest, 166 lines, its tool copy
+  `ai_cat_emu12.py.rev`), `result=FAIL` on the first-model errors of ai/0013 § 5.
+- **Procedure:**
+  ```
+  D=workspace/logs/r52l/emu
+  python3 -I tools/ai_cat_emu12.py cases --dir $D
+  export GHIDRA_PROJ_DIR=workspace/ghidra-r52l GHIDRA_HEADLESS_MAXMEM=3G
+  systemd-run --user --scope -p MemoryMax=4G bash -c 'for f in <the 41 families>; do
+      tools/ghidra.sh emuboundary $D/$f.cases $D/$f.mem > $D/$f.out 2> $D/$f.err; done'
+  python3 -I tools/ai_cat_emu12.py check --dir $D > $D/check.txt
+  python3 -I tools/ai_cat_emu12.py manifest --dir $D --write
+  ```
+  Each case writes the image the tool's docstring declares; the memory spec observes 79 callees and guards the allocator and fatal entries (6). No `r` lines.
+- **Observed** (`check.txt`, first line of each family):
+  ```
+  AI52L npc cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 lo8_separating=0 lo8_passed=0 arg_separating=0 arg_passed=0 site_control_passed=0 boundaries=7
+  AI52L nstat cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 lo8_separating=0 lo8_passed=0 arg_separating=0 arg_passed=0 site_control_passed=0 boundaries=4
+  AI52L towner cases=240 match=240 bad=0 stopped=0 traced=0 accounted=7 drew=72 le_separating=15 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=83 cmp_passed=0 u16_separating=0 u16_passed=0 lo8_separating=0 lo8_passed=0 arg_separating=0 arg_passed=0 site_control_passed=0 boundaries=17
+  AI52L jarjar cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 lo8_separating=0 lo8_passed=0 arg_separating=0 arg_passed=0 site_control_passed=0 boundaries=2
+  AI52L oot cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 lo8_separating=0 lo8_passed=0 arg_separating=0 arg_passed=0 site_control_passed=0 boundaries=6
+  AI52L trogue cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 lo8_separating=0 lo8_passed=0 arg_separating=0 arg_passed=0 site_control_passed=0 boundaries=1
+  AI52L st8 cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 lo8_separating=0 lo8_passed=0 arg_separating=0 arg_passed=0 site_control_passed=0 boundaries=1
+  AI52L navi cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 lo8_separating=0 lo8_passed=0 arg_separating=0 arg_passed=0 site_control_passed=0 boundaries=3
+  AI52L buffy cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 lo8_separating=0 lo8_passed=0 arg_separating=0 arg_passed=0 site_control_passed=0 boundaries=2
+  AI52L st9 cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 lo8_separating=0 lo8_passed=0 arg_separating=0 arg_passed=0 site_control_passed=0 boundaries=2
+  AI52L st10 cases=240 match=240 bad=0 stopped=0 traced=0 accounted=1 drew=152 le_separating=41 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 lo8_separating=0 lo8_passed=0 arg_separating=0 arg_passed=0 site_control_passed=0 boundaries=3
+  AI52L st11i cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 lo8_separating=0 lo8_passed=0 arg_separating=0 arg_passed=0 site_control_passed=0 boundaries=1
+  AI52L st11 cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 lo8_separating=0 lo8_passed=0 arg_separating=0 arg_passed=0 site_control_passed=0 boundaries=1
+  AI52L st12 cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 lo8_separating=0 lo8_passed=0 arg_separating=0 arg_passed=0 site_control_passed=0 boundaries=1
+  AI52L vendor cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=240 le_separating=62 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 lo8_separating=0 lo8_passed=0 arg_separating=0 arg_passed=0 site_control_passed=0 boundaries=2
+  AI52L soul cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=26 cmp_passed=0 u16_separating=0 u16_passed=0 lo8_separating=0 lo8_passed=0 arg_separating=0 arg_passed=0 site_control_passed=0 boundaries=7
+  AI52L illus cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 lo8_separating=0 lo8_passed=0 arg_separating=0 arg_passed=0 site_control_passed=0 boundaries=2
+  AI52L dark cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 lo8_separating=0 lo8_passed=0 arg_separating=0 arg_passed=0 site_control_passed=0 boundaries=1
+  AI52L st2 cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=73 le_separating=13 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=16 cmp_passed=0 u16_separating=0 u16_passed=0 lo8_separating=47 lo8_passed=0 arg_separating=0 arg_passed=0 site_control_passed=0 boundaries=4
+  AI52L st3i cases=240 match=240 bad=0 stopped=0 traced=0 accounted=1 drew=98 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 lo8_separating=0 lo8_passed=0 arg_separating=0 arg_passed=0 site_control_passed=0 boundaries=1
+  AI52L st3 cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 lo8_separating=0 lo8_passed=0 arg_separating=0 arg_passed=0 site_control_passed=0 boundaries=2
+  AI52L st13 cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 lo8_separating=0 lo8_passed=0 arg_separating=0 arg_passed=0 site_control_passed=0 boundaries=3
+  AI52L st14 cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=240 le_separating=29 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 lo8_separating=0 lo8_passed=0 arg_separating=0 arg_passed=0 site_control_passed=0 boundaries=3
+  AI52L h6800 cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 lo8_separating=0 lo8_passed=0 arg_separating=192 arg_passed=0 site_control_passed=0 boundaries=2
+  AI52L h6860 cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=4 cmp_passed=0 u16_separating=0 u16_passed=0 lo8_separating=0 lo8_passed=0 arg_separating=46 arg_passed=0 site_control_passed=0 boundaries=3
+  AI52L h6ae0 cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=3 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=75 cmp_passed=0 u16_separating=0 u16_passed=0 lo8_separating=0 lo8_passed=0 arg_separating=69 arg_passed=0 site_control_passed=0 boundaries=13
+  AI52L h7080 cases=240 match=240 bad=0 stopped=0 traced=0 accounted=7 drew=190 le_separating=45 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 lo8_separating=0 lo8_passed=0 arg_separating=226 arg_passed=0 site_control_passed=0 boundaries=5
+  AI52L act1 cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 lo8_separating=0 lo8_passed=0 arg_separating=192 arg_passed=0 site_control_passed=0 boundaries=2
+  AI52L act2 cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 lo8_separating=0 lo8_passed=0 arg_separating=181 arg_passed=0 site_control_passed=0 boundaries=3
+  AI52L act3 cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 lo8_separating=0 lo8_passed=0 arg_separating=188 arg_passed=0 site_control_passed=0 boundaries=2
+  AI52L act4 cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 lo8_separating=0 lo8_passed=0 arg_separating=80 arg_passed=0 site_control_passed=0 boundaries=4
+  AI52L act5 cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 lo8_separating=0 lo8_passed=0 arg_separating=81 arg_passed=0 site_control_passed=0 boundaries=4
+  AI52L h7350 cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 lo8_separating=0 lo8_passed=0 arg_separating=0 arg_passed=0 site_control_passed=0 boundaries=2
+  AI52L h77a0 cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 lo8_separating=0 lo8_passed=0 arg_separating=0 arg_passed=0 site_control_passed=0 boundaries=4
+  AI52L h5b70 cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=45 cmp_passed=0 u16_separating=7 u16_passed=0 lo8_separating=0 lo8_passed=0 arg_separating=0 arg_passed=0 site_control_passed=0 boundaries=2
+  AI52L h5710 cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 lo8_separating=0 lo8_passed=0 arg_separating=0 arg_passed=0 site_control_passed=0 boundaries=2
+  AI52L h7d30 cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 lo8_separating=0 lo8_passed=0 arg_separating=0 arg_passed=0 site_control_passed=0 boundaries=2
+  AI52L hp cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 lo8_separating=0 lo8_passed=0 arg_separating=0 arg_passed=0 site_control_passed=0 boundaries=2
+  AI52L hcb cases=240 match=240 bad=0 stopped=0 traced=0 accounted=2 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=23 cmp_passed=0 u16_separating=0 u16_passed=0 lo8_separating=0 lo8_passed=0 arg_separating=0 arg_passed=0 site_control_passed=0 boundaries=2
+  AI52L il0 cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 lo8_separating=0 lo8_passed=0 arg_separating=0 arg_passed=0 site_control_passed=0 boundaries=1
+  AI52L il1 cases=240 match=240 bad=0 stopped=0 traced=0 accounted=0 drew=0 le_separating=0 le_passed=0 d0_separating=0 d0_passed=0 cmp_separating=0 cmp_passed=0 u16_separating=0 u16_passed=0 lo8_separating=0 lo8_passed=0 arg_separating=0 arg_passed=0 site_control_passed=0 boundaries=1
+  AI52L total cases=9840 match=9840
+  AI52L result=ok
+  ```
+- **Conclusion:** [C] the maps of ai/0013 § 5, each ending at its first callee (ADR-0021); the code as a map over a declared image, no symbol raised (ADR-0015, `lane/p46m12` ruling 7). Separation: `le` 205, `cmp` 272, `u16` 7, `lo8` 47, `arg` 1 255 cases, none passing; `d0` separates none, no emulated path reading the difficulty before a boundary; the site control passes none. (run:2026-11-03-ai-cat-emu-12, fn:sub_005E6AE0_AiNpcScriptStep@0x005E6AE0)
+- **Left `[I]`:** everything after a boundary, among them the five path actions' walk and their records past `Ovr` or `MonModeAllowed` (`SITES`), `AiNpcNearPlayer`'s body (past the search), the size branch of `UNIT_GetSizeX`, the unit-null guards, the unsigned reading of row 99's positions. (fn:sub_005E68F0_AiNpcNearPlayer@0x005E68F0)
+
+## run:2026-11-03-ai
+
+- **Question:** (plan 0052 Phase 2, first lane run, also plan 0056 Phase 3's pilot on the runner library) Do the AI
+  decisions of the game, logged per event, match the first-boundary maps of [ai/0002](0002-pool-a.md)–[ai/0010](0010-batch9.md)
+  (the emulated think functions) and the first-callee maps read for the five unemulated tier AIs, and what do the
+  events' seeds, commands, path plans and skill starts do around them?
+- **Setup:** slot 2 (display `:9`, `workspace/wineprefix-2`), game 1.14d expansion, Normal, character `CombatSor`
+  (`tools/d2s_recipes/combatsor.json` on `workspace/samples/d2s-owner/smpsor-l50.d2s`, `1d9de374…`; clvl 85
+  Sorceress, Teleport and Nova, Act V Barbarian mercenary) and, for the Necromancer case, `AiNec`
+  (`tools/d2s_recipes/ai-nec.json` on `workspace/samples/d2s/smpnec.d2s`, `ea62db6a…`; Clay Golem, Raise Skeleton).
+  Logger `tools/gdb/ai.gdb` + `tools/gdb/ai.py` (rev 2 for the first batch, rev 3 for the later ones; rev 1 only in the
+  development logs), sessions `tools/ai_sessions.py` on `tools/harness_runner.py`, driven by `tools/d2pilot.py farm`
+  (waypoint, Nova sweep) and `hunt`, checker `tools/ai.py` (`check` over the kept case logs; `tools/test_ai.py`, 12
+  no-game tests). Tool revisions: the first batch (launches 5201–5204, 17 cases) ran with `706dccdf`; the later batches
+  with `70b2f480`, `008aff02` and `d56f99d6` (changes between them: the logger's return-address windows (rev 3), the
+  staged-level check, the case table, the checker's chain and histogram lines; no change to a kept session's clicks).
+  Logger: the unit seed and the AI control at the event entry, the think call (`0x005B186F`, the AiCtx, the AI
+  control's 0x40 bytes, the parameter head record, MonStats `aip` and skills, the target), the first eight calls of the
+  models' boundary functions (136 addresses, the union of the emulations' `OBSERVE` sets without the image-run helpers)
+  from the think code, `MonSetMode` and `PathPlan` entry and exit seeds, `SKILLS_SrvStart` entry and exit, and the event
+  exit (`0x005B1876`); filter: server monsters within 80 sub-tiles of the first player per axis; caps per game 200 per AI
+  row, 3 000 decisions, 600 events that end before the think call.
+- **Cases:** 31 kept case logs in 9 launches (a tenth launch, 5401, kept nothing and was run again as 5402) (`<RUN>-s2-<seed>-L<k>.log` with `.marks.tsv`, cut by
+  `harness_runner.py split` into `-<case>.log`): launches 5201 (8 cases), 5202 (7), 5203 and 5204 (one case each, fresh
+  processes, the repeats of `a1-jail` and `a2-halls`), 5301 (8), 5302 (`a1-necro`), 5402 (5), 5501 and 5502 (`a1-andariel-p8`,
+  `/players 8`, two fresh processes). Stages: Jail 1, Stony Field, Dark Wood, Black Marsh, Inner Cloister, Catacombs 2–4
+  (Andariel), Halls of the Dead 2, Far Oasis, Arcane Sanctuary, Palace Cellar 1, Flayer Jungle, Travincal, Durance 2,
+  City of the Damned, River of Flame, Crystalline Passage, Halls of Pain, Glacial Trail (each: the waypoint from the
+  Act IV town, Nova sweep 130–300 s). Not kept: two cases of launch 5202 that stayed in the town (the waypoint list did not
+  open, `a4-cotd`, `a5-crystal`; kept as `dev-stayed-in-town-*`) and the first try of `a1-jail-2` (5401, same cause,
+  `dev-failed-try-*`); launch 5401 was run again as 5402. Development: 9 launches (`dev-*`, `dev-aborted-r1-*`; manifest
+  `manifest-dev.sha256`, 44 lines): the first logger, the wrong waypoint click point, rev 1's missing `MonSetMode`
+  argument read (the command is the second stack word) and PathPlan's three late returns, the Necromancer smoke.
+- **Result** (`check-run-2026-11-03-ai.txt`, in the manifest): 14 645 decisions in 31 logs, 17 679 more events
+  that ended before the think call. 10 374 compared with an emulated model, 2 240 with a hand map, 2 016 in rows with no
+  model (batches 10–12 not emulated, town rows 32 and 54, three rows with an unlogged input), 15 not comparable (rev 2
+  window, Scarab, § below): **0 mismatches** in the 12 614 compared, at each decision's first boundary only; the 2 016 no-model decisions, the 15 not comparable and the 17 679 events that end before the think call are outside the 0. Tier AIs (decisions, all compared): Skeleton (row 2) 357,
+  Fallen (6) 1 393, Wraith (9) 70, FallenShaman (13) 363, Scarab (20) 180 (15 not comparable), Mummy (21) 168, GreaterMummy (22) 71,
+  Vampire (28) 279, BatDemon (29) 115, Fetish (30) 130, Andariel (34) 64, CorruptArcher (35) 95, SkeletonBow (37) 278,
+  Hireable (61) 5 697, SkeletonMage (64) 226, NecroPet (67) 184, Megademon (89) 98, BloodLord (125) 55: every tier AI has at least 50.
+- **What the comparison separates** (architect check, `tools/ai.py` models and hand maps run over the 31 logs, distinct
+  predicted (function, call site) first boundaries per tier AI over its compared decisions; the checker prints no such
+  line, so this is a recount, not a kept output): Skeleton 4 of 357, Fallen 1 of 1 393, Wraith 3 of 70, FallenShaman 2
+  (358 and 5), Scarab 5, Mummy 5, GreaterMummy 3, Vampire 1 of 279, BatDemon 1 of 115 (110 think, 5 alt), Fetish 1 of 130,
+  Andariel 5 of 64, CorruptArcher 1 of 95, SkeletonBow 1 of 278, Hireable 1 of 5 697, SkeletonMage 1 of 226, NecroPet 1
+  of 184, Megademon 1 of 98, BloodLord 5 of 55. Ten tier AIs have one predicted first boundary in this window, so for them
+  the 0 shows that first callee, its registers, stack words and seed (emulated models also the control words and the
+  block), not a branch choice; the Fallen hand map's mode 0/12 return branch was never taken. No live negative control was
+  run: the separation controls are the no-game ones of `tools/test_ai.py` (a corrupted site, seed, function or `aip` block
+  on a synthetic log is found).
+- **Unlogged sites.** The rev 2 window did not cover the `GameFindUnit` call inside `MonsterOwner` (`0x0058F0FF`), which
+  the Scarab model predicts as its first boundary when the owner words are set: 15 first-batch Scarab decisions are
+  counted `unlogged`, not as matches; rev 3 covers it and the 95 Scarab decisions of `a2-oasis-3` all compare.
+- **Chaining.** Decision pairs on one seed (a decision's exit seed is the unit's next decision's entry seed): 12 368,
+  9 687 of them with draws; 37 rows have at least 20 drawing pairs; short with counts: rows 7 (3), 11 (2), 14 (15), 30
+  Fetish (2), 34 Andariel (5), 36 (6), 65 (12), 70 (15), 95 (6), 98 (1), 114 (9). Decision to `SKILLS_SrvStart`: 899
+  skill starts run inside a decision's event (between the think call and the exit), all 899 at the decision's last
+  logged seed advanced 0–12 steps (the steps per row in `SKCHAIN`), and all 899 exit with the event's exit seed.
+- **Plan and seeds.** `PathPlan`: 9 618 entry/exit pairs inside decisions, 0 with a changed unit seed (types 2, 5, 6, 7,
+  13, 15 observed, 148/217/203/1 961/5 825/1 580). Seed accounting: every logged point of every decision (entry, think
+  call, boundaries, `MonSetMode`, `PathPlan`, skill start, exit) follows the previous one by whole LCG steps of the same
+  unit seed, 0 violations (steps 0–7).
+- **State.** `AiCtl.state` is 0 at all 32 324 events (14 645 decisions and 17 679 others); no event in states 10–13.
+  Window: the 31 kept logs, Normal, the stages above, a clvl 85 character and a Barbarian mercenary or a Necromancer's
+  summons, no curse, cloak, flee or super-unique case staged. So the control (an event in a non-zero state) is absent and
+  the reading "no setter" for state rows 2, 3, 8, 9, 14, 17 is not tested by absence here; it needs a window with a live
+  control (a curse by Amplify Damage or Terror on a monster, `MonFleeFrom`).
+- **Library pilot (plan 0056 Phase 3).** Launches 19 (10 batch, 9 development; 9 with kept cases); kept case logs 31 (15 of the first
+  batch's 17 runner-kept cases, 9, 5 and 2); launches per kept case 10/31 = 0.32 (19/31 = 0.61 with development); case
+  switch 18.7 s (`a2-halls`, launch 5202 onward `next_case`), batches 2 237 s (17 cases), 1 744 s (9), 1 195 s (5), 360 s
+  (2) of wall, 131, 194, 239 and 180 s per case. The lane's prompt supplied the per-batch opt-in to share processes (owner answer 2 of plan 0056, harness-play.md §
+  Fresh process; plan 0056 Phase 3 names this batch as the pilot, so no further owner decision is needed): the checker models no process state, and the two fresh-process repeats (`a1-jail` 385
+  decisions, `a2-halls` 522) check with 0 mismatches as the shared-process cases do. Waypoint clicks: 9 retries in the
+  first and third batches, 3 cases without a level change.
+- **Deviation, § Fresh process rule 5** (recorded by plan 0056 Phase 4, architect; recount `tools/pilot0056_recount.py`, `workspace/logs/p56/phase4-recount.txt`). Launch 5202 ran `a5-glacial`, `a1-cloister`, `a1-catacombs` and `a3-durance` after `a4-cotd` and `a5-crystal` had stayed in the town: the first batch's runner had no stage check and reported them kept. The four stay, since the checker reads no carried state; without them, 27 logs, 13 355 decisions, 11 472 compared, 0 mismatches, every tier AI still at least 50 (Andariel 60, BloodLord 55, Wraith 68). Batch wall sums to 92.3 min, 3.0 per kept case.
+- **Not done in this run** (named short): the 331 monster gaps of the H1 oracle replacement (the kept skills logs of
+  run:2026-10-25-skills and run:2026-10-27-skills hold 0 `AID` or `AIB` lines, so none can close from them; the re-walk
+  needs a session with both loggers); H3's Raven calls; the Phase 1b cases P1b-1 (Duriel, 300 melee decisions) and P1b-2
+  (Greater Mummy and a champion corpse); a live control for the state record; one pilot of each P1 batch outside the
+  tier for batches 5 (rows 84, 86, 101–112), 7 (Duriel…), 10 (row 130 logged, no model), 11 and 12 (rows 32, 54 logged,
+  no model).
+- **Conclusion** (run:2026-11-03-ai, 0x005B186F): the first-boundary maps are `[C]` against live decisions for the 18 tier AIs (13 emulated maps, five
+  first-callee maps) up to their first boundary, nothing after it; the rest are `[I]` as before. See
+  [ai/0015](0015-phase2-first-run.md). Manifests: `workspace/logs/ai/manifest-run-2026-11-03-ai.sha256` (72 lines,
+  `sha256sum -c` passes from `workspace/logs/ai`), `manifest-dev.sha256` (44 lines).
+## run:2026-11-03-ai-uber
+
+- **Question:** (plan 0052 Phase 1c, the Uber event) Do the unreferenced helpers 0x005DD140, 0x005E9DD0, 0x005F7F10, 0x005FD0F0, the drop 0x005E0070, the death callee 0x005A3250, the preset walk 0x005559A0, Baal's action at `k` 14, `UModAura` and `MonPostCreateBoss` map their declared inputs to the first boundary they reach (or their return), its call site, arguments, the unit seed and the named memory, as [ai/0016](0016-uber-event.md) § 7 reads them?
+- **Setup:** Ghidra p-code emulator via `re/ghidra_scripts/EmuBoundary.java` (unchanged), lane project copy `workspace/ghidra-r52n` (symbols replayed from `re/symbols.csv`; emulation does not use them), heap 3 GB, the runs in sequence inside one `systemd-run --user --scope -p MemoryMax=4G`, one Ghidra at a time. No wine, no slot. Models and case writer `tools/ai_uber_emu.py`, its run copy `emu/ai_uber_emu.py.rev` (`6049fb90…`), every draw from `random.Random("r52n-<family>")`. Files in `workspace/logs/r52n/emu/`, `manifest.sha256` (`04983652…`, 42 lines, `check.txt` `d3c307f4…`); `sha256sum -c manifest.sha256` from that directory passes. Development run `emu/dev-1/` (own manifest, 42 lines, tool copy `ai_uber_emu.py.dev1`): `result=FAIL` on one unaccounted static read in each of two families (the `UNIT_GetSizeX` jump table, 0x00620521 → 0x00620580), all cases matching; its cases differ from the kept run's in `presets` only, the generator raised to separate `pass` and `cnt` (7 and 7 cases there, 30 and 21 here).
+- **Procedure:**
+  ```
+  D=workspace/logs/r52n/emu
+  python3 -I tools/ai_uber_emu.py cases --dir $D
+  export GHIDRA_PROJ_DIR=workspace/ghidra-r52n GHIDRA_HEADLESS_MAXMEM=3G
+  systemd-run --user --scope -p MemoryMax=4G bash -c 'for f in ucount dhole umin bmin drop qdeath presets bact14 aura postc; do
+    tools/ghidra.sh emuboundary $D/$f.cases $D/$f.mem > $D/$f.out 2> $D/$f.err; done'
+  python3 -I tools/ai_uber_emu.py check --dir $D > $D/check.txt
+  (cd $D && sha256sum *.cases *.mem *.out *.err check.txt ai_uber_emu.py.rev > manifest.sha256)
+  ```
+  Each case writes the image the tool's docstring declares; the memory spec observes the boundaries and guards the allocator and fatal entries.
+- **Observed** (`check.txt`):
+  ```
+  AI52N ucount cases=240 match=240 bad=0 stopped=0 traced=0 accounted=1 cmp_separating=21 cmp_passed=0 cls_separating=7 cls_passed=0
+  AI52N dhole cases=240 match=240 bad=0 stopped=0 traced=0 boundaries=2
+  AI52N umin cases=240 match=240 drew=240 lo3_separating=210 lo3_passed=0
+  AI52N bmin cases=240 match=240 drew=240 lo3_separating=114 lo3_passed=0
+  AI52N drop cases=240 match=240 cls_separating=49 cls_passed=0 boundaries=3
+  AI52N qdeath cases=1469 match=1469 accounted=341 boundaries=9
+  AI52N presets cases=240 match=240 pass_separating=30 pass_passed=0 cnt_separating=21 cnt_passed=0 boundaries=4
+  AI52N bact14 cases=240 match=240 accounted=2 b709_separating=87 b709_passed=0 boundaries=2
+  AI52N aura cases=240 match=240 accounted=32 boundaries=3
+  AI52N postc cases=240 match=240 accounted=10 base_separating=124 base_passed=0 boundaries=10
+  AI52N total cases=3629 match=3629
+  AI52N result=ok
+    ARM 005e0070 classes 704,705,709
+  ```
+  Trimmed; every family's `site_control_passed=0`, `bad=0`, `stopped=0`, `traced=0`.
+- **Conclusion:** [C] the maps of ai/0016 §§ 3, 5, 6, 7, each ending at its first callee or return (ADR-0021). Not the callees, not reach, nothing after a boundary; `qdeath`'s tables come from the image. No symbol raise (ADR-0015 scope, review-fixes rule 14). (run:2026-11-03-ai-uber, fn:sub_005A3250_UModQuestCompleteDeath@0x005A3250)

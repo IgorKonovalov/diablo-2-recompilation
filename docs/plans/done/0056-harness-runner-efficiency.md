@@ -1,9 +1,9 @@
 # 0056 — Harness runner efficiency: one shared runner library, and several cases per game launch
 
-> **Status:** approved (owner, 2026-10-30, "as recommended": questions 1–7); drafted by the architect (`lane/plans56`, 2026-10-30)
+> **Status:** done (closed 2026-11-03, `lane/c56`; ADR-0028 proposed, for the owner); approved by the owner 2026-10-30 ("as recommended": questions 1–7); drafted by the architect (`lane/plans56`, 2026-10-30)
 > **Created:** 2026-10-30
 > **Owner skill(s):** reverser (phases 1–3), architect (phase 4)
-> **Related ADRs:** 0003-runtime-experiments, 0011-harness-slots, 0014-scope-game-simulation, 0022-scope-server-frame
+> **Related ADRs:** 0028-case-and-process-in-experiment-records (proposed), 0003-runtime-experiments, 0011-harness-slots, 0014-scope-game-simulation, 0022-scope-server-frame
 
 ## TL;DR
 
@@ -298,3 +298,116 @@ _(lanes append dated entries as phases land)_
   4. **Not caught by `parse_log`:** a `split` piece of a later game holds no `WNDARM` with `levels`, so `tools/drlg.py` runs
      on it unchecked; § Fresh process rule 2 is the only guard. Noted for Phase 3's checkers (tools/drlg.py is the
      archivist/static lane's; no backlog entry, the rule already covers it).
+- **2026-11-03 — Phase 3 pilot ran on plan 0052·P2's first lane run (`lane/p52a`, slot 2, `tools/ai_sessions.py` on the
+  library).** Figures in [0052's log](../0052-monster-ai.md) and [ai/experiments.md run:2026-11-03-ai](../../findings/ai/experiments.md):
+  19 launches (10 kept-batch, 9 development; one kept-batch launch was a rerun), 31 kept sessions = 31 kept cases,
+  launches per kept case 0.32 (target ≤ 0.5: met; 0.61 counting development), dev or rerun launches 10 of 19 = 53 % (63 % with the two fresh comparison launches counted as reruns)
+  (target ≤ 10 %: **missed**, the logger and the waypoint staging were new; two of the comparison launches are by
+  design), harness wall 3.6 min per kept session (withdrawn by the Phase 4 entry below: 4.5 against the target, 3.0 and 3.5 harness; target ≤ 9.0: met; the stretch 7.4: met), tokens about 17 k (measured) per kept
+  session (target ≤ 43 k: met, provisional until the ledger row), two cases re-run in a fresh process, 0 mismatches
+  (met). A case switch by menu return took 18.7 s; the shared-process cases checked like the fresh ones (the checker
+  models no process state); the lane's prompt supplied the per-batch opt-in (owner answer 2); Phase 3 names this batch as the pilot. The
+  library needed nothing new; a runner-side staged-level check (a case that never left its start level is failed and
+  re-run in a fresh process) is in `tools/ai_sessions.py`, not in the library.
+- **2026-11-03 — Phase 4, evaluated and closed (architect, `lane/c56`).** Recount: `tools/pilot0056_recount.py`, output
+  `workspace/logs/p56/phase4-recount.txt`; `d2run-<pid>` scope lines of the journal, matched to the marks' pids, kept as
+  `phase4-scope-peaks.txt`; `manifest-phase4.sha256`, `sha256sum -c` OK. The pilot beside the baseline (wall and tokens as the
+  baseline counts them: lane wall and lane tokens over kept sessions, here 139 min and 530 967 over 31 kept cases):
+
+  | Lane | Plan batch | Kept sessions | Wall / kept (min) | Tokens / kept |
+  |---|---|---|---|---|
+  | `lane/h1c` | 0038 H1c | 7 | 7.4 | 39k |
+  | `lane/h6g` | 0038 H6g | 8 | 13.3 | 67k |
+  | `lane/p50e` + `lane/p50f` | 0050 P2 parts 1–2 | about 80 | 5.6 | 21k |
+  | `lane/h6c` | 0038 H6c | 6 | 21.5 | 101k |
+  | Mean of the four | | | 11.95 | 57k |
+  | **`lane/p52a` (pilot)** | 0052 P2 first run | 31 cases in 9 kept launches | **4.5** | **17.1k** |
+
+  | Target | Limit | Pilot | Verdict |
+  |---|---|---|---|
+  | Wall per kept session | ≤ 9.0 min (stretch < 7.4) | 4.5 min | **met**, stretch met |
+  | Tokens per kept session | ≤ 43k (stretch < 39k) | 17.1k | **met**, stretch met |
+  | Dev or rerun launches | ≤ 10 % | 10 of 19 = 53 % (63 % with the two fresh comparison launches) | **missed** |
+  | Launches per kept case | ≤ 0.5 | 10/31 = 0.32 (0.61 with development) | **met**, reading below |
+  | Fresh comparison | at least 2 cases, 0 mismatches | `a1-jail` 385, `a2-halls` 522 decisions, 0 mismatches | **met**, weak test below |
+
+  **The miss.** The cause is the batch kind: a new logger and new waypoint staging. The 9 development launches were the first
+  logger, a wrong click point, rev 1's missing argument read, `PathPlan`'s late returns and the Necromancer smoke; the rerun
+  was a waypoint list that did not open. None was a readiness wait, a crash or a wrong install, the classes the library was
+  written against. Two things make the percentage look worse than the cost. Development took 15.9 of the 108.1 harness minutes
+  (15 %, 16 % with the failed try), and sharing shrinks the denominator: counted per case run, 13 of 44 were development or
+  not kept, 30 %, against about 25 % in the analysed transcripts. So the pilot does **not** show fewer dev runs. That the
+  logger's newness explains the miss stays `[I]`.
+
+  **Wall figure.** "3.6 min per kept session" **does not stand**; it is withdrawn here and in 0052's log. The kept launches
+  sum to 91.15 min (2.94 per case), the four batches to 92.26 min (2.98; 91.15 plus the failed try and the runner's seams), all
+  19 launches to 108.07 min (3.49). The "about 110 min" was probably that last sum rounded up, and 110/31 gives 3.55, not 3.6;
+  the first launch to the last end is 118.89 min (3.84). No record gives 3.6. **The figure against the target is 4.5**, because
+  the baseline divides lane wall. The harness figures are **3.0** (kept batches) and **3.5** (with development). The ledger row's
+  Slot cell still says 3.6; the ledger takes appends only, so this review's row states the correction.
+
+  **What gave the gain. Not the shared process.** Phase 2's lane check (ruling 2) asked Phase 3 to time the bookkeeping; the lane
+  did not, and the marks give it. A fresh process costs 0.49 to 0.66 s from one launch's end to the next (stop, restore,
+  aside, install; 6 gaps; not separated further) plus 18.1 to 19.1 s to ready (10 launches, mean 18.6). A switch costs 18.2 to 20.4 s
+  (24 switches, mean 18.8). The saving is about 0.4 s per case, about 10 s of 92 min. The bookkeeping reading of the "60 s" boot is
+  **refuted on this logger**, and the origin of the 60 s stays unknown. The launches-per-case target is met and buys almost
+  nothing. The sleeps of `next_case` (about 15 s, untuned) are the only visible room, and nobody has measured a tuned switch. The
+  gain must come from the library's one-wait batch and from the case kind; one lane cannot separate those.
+
+  **Fairness.** One lane. Its cases are unattended: a clvl 85 Sorceress, a waypoint and a Nova sweep of 130 to 300 s, no route
+  to find, no survivability risk, no owner step. That is the cheapest kind of log. The 62 % and 70 % under the mean compare it
+  with vendor and route work (`lane/h6c`, `lane/h6g`) and are not a fair measure of the library. The nearest baseline kind is
+  `lane/p50e` + `lane/p50f`: **20 % under on wall and 18 % on tokens**, and even that is not controlled. Counted per kept process
+  (9), the lane is 15.4 min and 59k, so the verdicts rest on a case counting as a session. The record shows that was the plan's
+  intent (Phase 3 asks for both), but the two units are not the same work. Against the analysis's reference, non-harness wall
+  was 30.9 of 139 min (22 %, against 30 % generation); that is not a generation measure.
+
+  **Launches per kept case.** The target is about sharing inside a batch, and development has its own target, so 0.32 is the
+  reading; 0.61 is stated beside it.
+
+  **Fresh comparison.** Met, and weak. The repeats ran under other seeds (5203, 5204), so the logs differ. Each decision's
+  inputs come from its own log, and the checker models no process state. It shows the checker's result does not depend on
+  sharing, not that the process is unaffected.
+
+  **Rule 5 ruling.** Launch 5202 ran `a5-glacial`, `a1-cloister`, `a1-catacombs` and `a3-durance` after `a4-cotd` and `a5-crystal`
+  had stayed in the town. The runner of that batch had no stage check and reported both as kept; they were found afterwards.
+  Against the rule's text this is outside its list; against its reason (a process whose state is not known) it is a deviation.
+  The record did not state it, and now does. Ruling: **the rule stands and is widened.** (a) A stage not reached is a failure.
+  (b) A batch that shares a process checks each case's stage before the switch; the check is only in `tools/ai_sessions.py`, so
+  [a backlog entry](../../backlog/2026-11-03-architect-reverser-plan-0056-p4-stage-check-in-the-library.md) moves it to the
+  library. Once it existed the rule worked: 5401's failure sent the batch to a fresh 5402. (c) A failure found only afterwards
+  leaves the later cases of that process named in the record, kept only if their checker reads no carried state and the
+  record gives the result without them. **The four cases stay.** Without them: 27 logs, 13 355 decisions, 11 472 compared, 0
+  mismatches, every tier AI still at least 50 (Andariel 60, BloodLord 55, Wraith 68). The switches after the town cases took a
+  normal 18.2 and 18.7 s. No conclusion leans on the four. harness-play.md § Fresh process holds the new text.
+
+  **Evidence cost.** The weak separation is real, but the data do not lay it mainly on session length. Each of the rows with one
+  logged first boundary showed it at the first decision and never another, up to 5 697 decisions (Hireable), 1 393 (Fallen). Long
+  and short cases agree on three pairs (`a4-cotd` Megademon 90 and 8 decisions, one boundary each; `a2-halls` Mummy 81 and 36, five
+  each; thin, and the per-game cap of 200 clips Hireable). The same rows show 2 to 22 distinct logged call sequences of up to
+  eight boundaries (SkeletonMage 22, Vampire 19, SkeletonBow 12; FallenShaman, with two first boundaries, 35), which the checker does not compare. So most
+  of the cost is **depth** (the claim stops at the first boundary) and **breadth** (one character, Normal, no curse, `AiCtl.state` 0
+  at all 32 324 events), and neither is bought back by longer sessions. **Length does cost** where a row was still finding outcomes:
+  BloodLord's last new boundary came at decision 52 of 55, in its one log. (Scarab's count mixes logger revisions, so it is no test.) The speed therefore cost little evidence in
+  itself, but **the efficiency target is blind to it**: `a1-cloister` (60 decisions, 30 s) and `a1-andariel` (518, 636 s) each count as
+  one kept case, and 39 % of all decisions are one Hireable outcome. The `[C]` is correctly scoped to first boundaries and
+  stands. Lane speed should be read beside separation, not alone: ADR-0028 item 7, [the checker's line](../../backlog/2026-11-03-architect-reverser-plan-0056-p4-separation-line-in-tools-ai.md),
+  and the resume note of 0052 (a resumable model, state-control windows) are the remedy.
+
+  **Cap settled: 8 games or 40 minutes.** Peaks of the kept scopes: 269.8 MB (8 games, 19.9 min), 270.3 (8, 26.2 min), 277.4 (7, 12.7 min), 351.4 (5,
+  18.9 min), and one-game launches 254.6 to 620.7 MB; swap peak at most 140.8 MB. The game count does not drive the peak and the 4G
+  limit is not close. The 40 minutes was never reached, so it stays `[I]`. Nothing measured favours raising the cap: fewer launches
+  buy nothing.
+
+  **Migration rule confirmed unchanged:** h1a migrated with an equal check, `tools/ai_sessions.py` was written on the library, and
+  the library needed nothing new but the stage gate above. No runner was deleted.
+
+  **`lane/p52b` is not counted before closing.** Done-when does not ask for it, and no verdict or ADR item would flip: wall and tokens
+  are far inside their limits and the sharing arithmetic would come out the same on the same logger. It is useful as the only test of
+  the `[I]` above, because it reuses this staging and changes the logger less. Its ledger row should carry the same figures in the
+  Slot cell, and 0052's log the reading. If its dev share again sits far over 10 %, the attribution is wrong, and that goes to a
+  backlog entry, not back to this plan. 0055·P2b's library-only window is recorded the same way when it runs (Phase 3).
+
+  **Open questions, at close.** Generation time: not separable here (22 % non-harness wall). A `split` cut on a ready line: not needed
+  by this pilot, left open. **ADR-0028 is proposed, not accepted; the owner decides.** The plan closes on Done-when, which asks
+  for the ADR to be proposed; items 1 to 7 of the ADR do not reopen this plan.

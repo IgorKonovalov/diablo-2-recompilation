@@ -102,6 +102,7 @@
   ```
   (`...` the image-table reads and the two accounted scratch reads, and every control's separating, type-0 and passed counts, in
   full in `check.txt`; every control passes 0 of the cases it separates and separates at least one.)
+  Distinct outcomes per family are the `OUTCOMES` lines: `real0` 8 end tags (431 exhausted, 72 past the tries, 81 of one point, 216 routes), `real16` 7, `stair` 4, `corr` 3, `open` 5, `rect` 8; each case also compares its own point list.
 - **Conclusion:** the maps of path/0002 §§ 2–7 and the limits of § 9 are `[C]` to the planner's return (`grid`, `over`: to their boundaries) over the declared
   images; not what the game stores in a context, not `PathPlan`'s tail, not any other planner. No symbol raise (ADR-0015 scope,
   review-fixes rule 14). (run:2026-11-03-path-emu-2)

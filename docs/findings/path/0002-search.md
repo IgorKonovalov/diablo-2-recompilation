@@ -50,7 +50,7 @@ tool copy).
   50 000 passes. But the clear covers `(w + 6)(h + 6)` cells, and the frame holds 50 010 before the saved `EBP`: a rectangle can pass
   the assert and overrun the frame (§ 9). Whether a stock room is that large is open. (0x0067AABC, 0x0067AAFB)
 - [I] **The 14 byte stores are not path writes:** each stores into a quest's private data (§ 10). The object record of the target refresh
-  is the `objects.bin` record (§ 10), closing the entry on `+0x13A` / `+0x13C`.
+  is the `objects.bin` record (§ 10), closing the entry on `+0x13A` / `+0x13C`. (0x0058A98F, 0x005553E2)
 
 ## Leads used
 
@@ -116,7 +116,7 @@ return PathSearchRun(&r, ctx);
   below the unit's room, and a start beyond it ends the walk at the root: count 0, return 0. (run:2026-11-03-path-emu-2, family `rect`:
   `startout=24`, all with count 0; the other families' are 0)
 - [I] Rooms on one row with equal rectangles get the 10-subtile margin only across (`r.h == own.h`), since `r.w` differs. A
-  rectangle's `x1 = x + w` and `y1 = y + h` are **both inside** (§ 4), one column and row past the room's own end.
+  rectangle's `x1 = x + w` and `y1 = y + h` are **both inside** (§ 4), one column and row past the room's own end. (0x0067AD97, 0x0067ADA6, 0x0067A78F)
 
 ### 3. The store
 
@@ -201,7 +201,7 @@ next:
 | 6 | 0, 7, 7, 7, 7 | `0, −1, −2, −3, −4` |
 | 7 | 0, 7, 2, 5, 7 | `0, −1, +1, −2, −3` |
 
-- [I] The first try keeps the parent's direction in rows 0, 1, 2, 6 and 7: the walk runs straight until the bound or a wall turns it.
+- [I] The first try keeps the parent's direction in rows 0, 1, 2, 6 and 7: the walk runs straight until the bound or a wall turns it. (data:g_PathSearchTurnRows@0x006F17D8)
 - [C] **Backtrack:** past a node's fifth try the walk goes to the parent, which turns once and counts its try, repeating while a parent is spent too; at
   the root spent it returns 0. (fn:sub_0067A690_PathSearchAdvance@0x0067A690, run:2026-11-03-path-emu-2)
 
@@ -265,8 +265,8 @@ From `p2-bounds.txt` (`tools/path_emu2.py bounds`), each with its emulation wher
 - [C] **The assert and the frame.** `w h` is a signed product against 50 000 (0x0067AAB9–0x0067AAC3): 50 000 passes, 50 001 asserts with line 0x171 (35 assert cases in `grid`, 73 at the clear with length `4 (w + 6)(h + 6)`). The grid has 50 000 cells to the flag, and `EBP` lies 50 010 cells from its start: **a clear of 50 011 cells zeroes the saved `EBP`,
   50 012 the return address, 50 013 the context argument** (`over`, 12 cases, the three words dumped after the clear). [I] The next read of the argument, 0x0067AB67, then loads 0 and faults at 0x0067AB74. Square rectangles: 217 × 217 fits (49 729 cells), 218 × 218 passes the assert (47 524) and overruns (50 176); 223 × 223 passes (49 729), 224 × 224 asserts. The smallest passing product that overruns is 1 × 7 139. For a same-room rectangle (room + 20), a room of 197 × 197 fits and 198 × 198 overruns. (run:2026-11-03-path-emu-2)
 - [C] **The signed product wraps** from 46 341² (2 147 488 281 → −2 147 479 015), which passes the assert; 46 340² (2 147 395 600) still fits. Cases `(46340, 46340)`, `(46341, 46341)`, `(65536, 65536)`, `(65536, 32768)` in `grid` show it at the boundary. No such room is known: it needs a rectangle of 46 341 subtiles. (run:2026-11-03-path-emu-2)
-- [I] **`g` and `f` are u16 read as i16.** Under the store `g ≤ 899 × 3 = 2 697`; `f` stays below 32 768 while `h` does, which holds in any rectangle under 10 000 subtiles a side. No wrap is reached by a case.
-- [I] **The bounds of a search:** at most 51 passes (`h0` ≥ 2, `b1C` ≤ 255), each at most 10 000 tries. `real0` reached 14 passes and 19 046 tries in a case, `open` 38 and 57 797 (case writers resample above 25 000 and 60 000 tries, a run-time limit of the emulator, not of the game).
+- [I] **`g` and `f` are u16 read as i16.** Under the store `g ≤ 899 × 3 = 2 697`; `f` stays below 32 768 while `h` does, which holds in any rectangle under 10 000 subtiles a side. No wrap is reached by a case. (0x0067A88B–0x0067A8DD)
+- [I] **The bounds of a search:** at most 51 passes (`h0` ≥ 2, `b1C` ≤ 255), each at most 10 000 tries. `real0` reached 14 passes and 19 046 tries in a case, `open` 38 and 57 797 (case writers resample above 25 000 and 60 000 tries, a run-time limit of the emulator, not of the game). (0x0067ACB0, 0x0067A77E)
 
 ### 10. The byte stores and the object record
 
