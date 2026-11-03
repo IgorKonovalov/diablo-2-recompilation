@@ -489,6 +489,8 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-11-03 | `lane/s63` review | 0038 H6g, 0057 P1 | architect-review | 107 193 | 31 | 5 | — | accept with fixes (2) | overclaim 2 |
 | 2026-11-03 | `lane/r52i` | 0052 P1.2 (batch 9) | reverser-static | 426 731 | 161 | 36 | — (static, Ghidra copy ghidra-r52i) | accept with fixes (Tier B check) | 1: stale cross-reference 1 |
 | 2026-11-03 | `lane/r52i` check | 0052 P1.2 (batch 9) | architect-check | 89 217 | 15 | 2 | — | accept with fixes (1) | stale cross-reference 1 |
+| 2026-11-03 | `lane/s64` | 0057 P1 | spec-writer | 92 021 | 31 | 4 | — (no Ghidra, no harness) | accept (Tier A) | 0 |
+| 2026-11-03 | `lane/s64` review | 0057 P1 | architect-review | 83 028 | 24 | 4 | — | accept | 0 |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not
