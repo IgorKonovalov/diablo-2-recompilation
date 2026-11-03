@@ -916,7 +916,7 @@ unless a finding is cited.
   summons batch. (tbl:MonStats.txt:Sk1lvl)
 - `[C]` `shadowmaster` (418) sets `aip8` to 279 in Normal (0 in Nightmare and Hell), the Skills row of Shadow Master;
   row 143 `ShadowMasterNoInit` labels its `*aip8` `summoning skill` (a lead, [MonAI § Leads](MonAI.md#leads)); `[I]` the inits of
-  rows 105, 106 and 143 read `aip8[n]` as that skill id in every difficulty ([ai/0006](../findings/ai/0006-summons.md) § 2.10, § 2.11).
+  rows 105, 106 and 143 read `aip8[n]` as the skill id in every difficulty (279 here, 268 `Shadow Warrior` in row 105's record) ([ai/0006](../findings/ai/0006-summons.md) § 2.10, § 2.11).
   (tbl:MonStats.txt:aip8)
 - `[C]` In 13 AI rows the records disagree on which `aip` slots they set (`ai_aip_slots_differ=13`): 1, 8, 11, 30, 35,
   36, 61, 67, 114, 119, 122, 133, 142. A catalogue entry reads each record's slots, not one per AI. `[I]` For row 114 the think
@@ -1005,8 +1005,9 @@ unless a finding is cited.
 
 - `[I]` **Readers named by the pool-E batch** ([ai/0009](../findings/ai/0009-batch8.md), plan 0052 P1.2 batch 8, AI rows 82, 83, 85, 89, 93-98 and
   113-115; the per-AI meanings stay in the finding, this table claims none):
-  - `MissS1` (`+0x03E`): row 85 `HighPriest` commands mode S1 only when `MissS1 > 0` and the target is nearer than that
-    missile's `Range - 2` (read through `MissileRec`; [§ 2.3](../findings/ai/0009-batch8.md); see [Missiles](Missiles.md) `Range`). `[I]`
+  - `MissS1` (`+0x03E`): row 85 `HighPriest`'s first pass (`v14` 0) commands mode S1 on `aip5` only when `MissS1 > 0` and the target is
+    nearer than that missile's `Range - 2` (read through `MissileRec`); its second pass commands S1 on `aip7` (in melee, or
+    within 6) with no `MissS1` test ([§ 2.3](../findings/ai/0009-batch8.md); see [Missiles](Missiles.md) `Range`). `[I]`
     (tbl:MonStats.txt:MissS1)
   - `aip1`..`aip8` of row 114 (`ReanimatedHorde`): the think function reads `aip1`..`aip7` and **not `aip8`**, which settles
     the `ai_aip_slots_differ` disagreement for that row (`reanimatedhorde6` has `aip8` 0 where records 1-5 have 30/22/15, and

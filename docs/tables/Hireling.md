@@ -86,9 +86,9 @@ non-negative product, which every stock row gives (every per-level column is ≥
 | `Shield` | int {0, 1}: 1 on the 36 Eastern Sorceror rows | `+0x074` s32 | `[I]` no reader in 1.14d ([hirelings/0001 § Plan 0039 batch P1c](../findings/hirelings/0001-hirelings.md#plan-0039-batch-p1c-2026-10-17)) | — | [C] |
 | `Skill1` … `Skill3` | str: `Skill1` 6 distinct, `Skill2` 12, `Skill3` only `Ice Blast` (12 rows, 108 blank) | `+0x078 + 4(k−1)` s32 row index, blank −1 | the hireling's skills, added in slot order; the loop stops at the first `Skill_k` < 1 or ≥ the skill count; a skill is added only when its `reqlevel` ≤ the mercenary's level `[I]` ([§ 6](../findings/hirelings/0001-hirelings.md#6-the-stats-per-level-merc_setlevel)) | [Skills](Skills.md) `skill` | [C] |
 | `Skill4` … `Skill6` | always blank | `+0x084`, `+0x088`, `+0x08C` | as `Skill1..3`; blank ends the loop | — | [C] value −1; slots in the descriptor ([hirelings/0001 § 1](../findings/hirelings/0001-hirelings.md#1-the-table-and-its-lookups)) [C] |
-| `Chance1..6` | int 10..152; 10..1000; 240; slots 4–6 blank | `+0x090 + 4(k−1)` s32 | read by `MERCAI_PickSkill` `[I]` ([§ 10](../findings/hirelings/0001-hirelings.md#10-named-only)); `[I]` skill k adds `Chance_k + (ChancePerLvl_k · δ) / 4` to the running sum (signed, truncating; δ = max(0, level − `Level`)) when the mercenary has the skill at level > 0 ([ai/0007](../findings/ai/0007-hirelings.md) § 2.4) | — | [C] (6 × s32 in the descriptor) |
+| `Chance1..6` | int 10..152; 10..1000; 240; slots 4–6 blank | `+0x090 + 4(k−1)` s32 | read by `MERCAI_PickSkill` `[I]` ([§ 10](../findings/hirelings/0001-hirelings.md#10-named-only)); `[I]` skill k adds `Chance_k + (ChancePerLvl_k · δ) / 4` to the running sum (signed, truncating; δ = max(0, level − `Level`)) when the mercenary has the skill at level > 0 and it passes the skips of § AI of the hirelings ([ai/0007](../findings/ai/0007-hirelings.md) § 2.4) | — | [C] (6 × s32 in the descriptor) |
 | `ChancePerLvl1..6` | int {0, 4}; {0, 2, 5, 8}; 0 | `+0x0A8 + 4(k−1)` s32 | read by `MERCAI_PickSkill` `[I]` ([§ 10](../findings/hirelings/0001-hirelings.md#10-named-only)); `[I]` the per-level term of the sum above (§ `Chance1..6`; [ai/0007](../findings/ai/0007-hirelings.md) § 2.4) | — | [C] (6 × s32 in the descriptor) |
-| `Mode1..6` | int {4, 5, 7, 14}; {1, 4, 5, 7}; 7 | `+0x0C0 + (k−1)` s8 | read by `MERCAI_PickSkill` `[I]`, which uses `Mode_k` as the mode of the `UseSkill` for the first slot whose sum is ≥ `r` ([ai/0007](../findings/ai/0007-hirelings.md) § 2.4); `MERC_SetLevel`'s skill loop also stops at `Mode_k` > 15 (signed) `[I]` ([§ 6](../findings/hirelings/0001-hirelings.md#6-the-stats-per-level-merc_setlevel), [§ 10](../findings/hirelings/0001-hirelings.md#10-named-only)) | — | [C] (6 × s8 in the descriptor) |
+| `Mode1..6` | int {4, 5, 7, 14}; {1, 4, 5, 7}; 7 | `+0x0C0 + (k−1)` s8 | read by `MERCAI_PickSkill` `[I]`, which uses `Mode_k` as the mode of the `UseSkill` for the first slot whose sum is ≥ `r`, unless that skill is an aura (then it is set as the right skill and the unit idles 10) ([ai/0007](../findings/ai/0007-hirelings.md) § 2.4); `MERC_SetLevel`'s skill loop also stops at `Mode_k` > 15 (signed) `[I]` ([§ 6](../findings/hirelings/0001-hirelings.md#6-the-stats-per-level-merc_setlevel), [§ 10](../findings/hirelings/0001-hirelings.md#10-named-only)) | — | [C] (6 × s8 in the descriptor) |
 | `Level1..6` | int 1..27; 1..25; 6..27 | `+0x0C6 + (k−1)` s8 | skill level at the band start: `slvl = min(32, Level_k + (LvlPerLvl_k·d >> 5))`, added when ≥ 1 `[C]` for `d ≥ 0` ([§ 6](../findings/hirelings/0001-hirelings.md#6-the-stats-per-level-merc_setlevel)) | — | [C] (6 × s8 in the descriptor) |
 | `LvlPerLvl1..6` | int {0, 5, 10}; {0, 7, 8, 10}; 10 | `+0x0CC + (k−1)` s8 | skill level growth in 1/32 per level (the `>> 5` above, a floor) `[C]` for `d ≥ 0` ([§ 6](../findings/hirelings/0001-hirelings.md#6-the-stats-per-level-merc_setlevel)) | — | [C] (6 × s8 in the descriptor) |
 | `HireDesc` | str, 8 codes, 24 blank (the Barbarians) | `+0x0D2` u8 row index, blank → 0 | the description of the hire list entry; `HIRELING_RollEntry` copies the byte into the entry, the text is not read `[I]` ([§ 4](../findings/hirelings/0001-hirelings.md#4-an-entry-type-level-price-and-the-displayed-stats)) | [HireDesc](HireDesc.md) `Code` | [C] |
@@ -181,15 +181,16 @@ fn:MERCAI_PickSkill@0x005E4D30). The skill-choice columns per kind, over both ve
   skill of a row has one mode; `Chance_k` and `ChancePerLvl_k` vary with the level row (the Rogue's attack arrow: 25
   with a per-level 2, 5 or 8 in the first band, 36 to 69 with 0 later). (tbl:Hireling.txt:Mode1, tbl:Hireling.txt:Chance1)
 - `[C]` The hireling classes' own MonStats skills: `roguehire` names RogueMissile (`A1`, level 1) and `act2hire` Jab
-  (`xx`, level 1); `act3hire`, `act5hire1` and `act5hire2` name none. Which of the two lists the hireling's AI uses is
-  plan 0052's hirelings batch. (tbl:MonStats.txt:Skill1)
+  (`xx`, level 1); `act3hire`, `act5hire1` and `act5hire2` name none. `[I]` The AI's skill choice uses the Hireling row's
+  list; MonStats `Skill1` is read only for the rogue's fallback (and by state 5), and `act2hire`'s `Jab` by no batch 6
+  function ([ai/0007](../findings/ai/0007-hirelings.md) Answer). (tbl:MonStats.txt:Skill1)
 - `[I]` The formula ([ai/0007](../findings/ai/0007-hirelings.md) § 2.4, fn:MERCAI_PickSkill@0x005E4D30): `total` starts at
-  `DefaultChance`; for each skill slot k = 1..6 (the loop stops at the first `Skill_k` < 1 or past the Skills count) the
+  `DefaultChance`; for each skill slot k = 1..6 (the loop stops at the first `Skill_k` < 1 or ≥ the Skills count) the
   mercenary has at level > 0, skipping an `aitype` 1 skill whose `aurastate` it already has (and Inferno, skill 41, when
   the target is out of its range), `total += Chance_k + (ChancePerLvl_k · δ) / 4` (signed division, truncating) with
-  δ = max(0, mercenary level − `Level`), and `cum_k = total`. Then `r = draw mod (total + 1)` (a mask when `total + 1` is a
-  power of two); `r < DefaultChance` takes the class fallback, else the first slot with `cum_k ≥ r` (signed) is used with
-  `Mode_k`. With no weight added only `r = DefaultChance` passes the first test and the slot search reads stack contents
+  δ = max(0, mercenary level − `Level`), and `cum_k = total` (0 for a slot that fails a test). Then `r = draw mod (total + 1)` (a mask when `total + 1` is a
+  power of two; `r` = 0 with no step when `total + 1 < 1`); `r < DefaultChance` takes the class fallback, else the first slot with `cum_k ≥ r` (signed) is used with
+  `Mode_k`, or, for an aura (Skills `+0x04` bit `0x20`), set as the right skill with `Idle(10)`. With no weight added only `r = DefaultChance` passes the first test and the slot search reads stack contents
   (open in the finding).
 
 ## Open questions
