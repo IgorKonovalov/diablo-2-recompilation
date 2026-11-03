@@ -130,7 +130,7 @@ In flight ([plans index](docs/plans/README.md)):
 - **[0038](docs/plans/0038-inferred-claims-sweep.md)**: the inferred-claims sweep, raising the reviewed specs'
   inferred points to confirmed where a run, a re-check of kept logs or a static second source allows; Phase 3
   re-tags the specs cluster by cluster.
-- **[0050](docs/plans/0050-animation-frame-timing.md)**: animation and frame timing.
+- **[0050](docs/plans/done/0050-animation-frame-timing.md)**: animation and frame timing.
 - **[0052](docs/plans/0052-monster-ai.md)**: monster AI.
 
 Closed plans are in `docs/plans/done/`, listed in the [plans index](docs/plans/README.md).

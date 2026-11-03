@@ -698,7 +698,9 @@ return 1;
   SKILLS_GetPhysMax(…) >> 8`, `toHit = SKILLS_GetToHit(…)`, with `lvl` from `0x00644AA0` (the entry's `baseLevel`
   plus the bonus when it is the unit's own, clamped to `[0, ExpMaxLevel(0)]`); these three are added to the A1/A2/S1
   min, max and to-hit before the classic and player-count adjustments. Which unit (`EDI`/`ESI`) is read for the level
-  is register-passed and not resolved here. (fn:sub_005A4F50_MonAttackStats@0x005A4F50,
+  is register-passed and not resolved here. 2026-11-03 note: [ai/0006](../ai/0006-summons.md) (H3 bullet) answers it
+  `[I]`: `SkillDamagePair` takes the owner `O = MonsterOwner(unit)` for every term, `lvl = SkillLevelClamped(O, s)`
+  (0x00644AA0), and the summon's own level is not read. (fn:sub_0056E050_MonOwnerSkillDamage@0x0056E050) (fn:sub_005A4F50_MonAttackStats@0x005A4F50,
   fn:sub_0056E000_SkillDamagePair@0x0056E000, tbl:MonStats.txt:SkillDamage)
 
 ### 14. Ammunition and weapon wear

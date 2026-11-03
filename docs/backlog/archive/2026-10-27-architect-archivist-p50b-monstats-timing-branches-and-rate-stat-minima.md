@@ -7,8 +7,8 @@ context:
   - ../../tables/MonStats.md
   - ../../findings/anim/0001-modes-frames.md#10-monster-modes
   - ../../findings/anim/0002-rates.md#open-questions
-  - ../../plans/0050-animation-frame-timing.md#implementation-log
-resolution: "lane/a50t: (1) MonStats § Timing SplGetModeChart [L] replaced by anim/0001 § 10's per-class reading [I] [MonStats](../../tables/MonStats.md#timing-plan-0050-phase-0); (2) no stock source makes 93/96/99/102/105 negative [C]: 353 blocks, all min/max >= 3, no skill/state/misc/op cell (anim_survey.py ratemin) [ItemStatCost](../../tables/ItemStatCost.md#timing-plan-0050-phase-0); (3) K9/E9 rows tabled: classic only 332 invisospawner S1 (Velocity 0, walk 256); surprise: K9S3/S4 and 9AS1/9AS2 (frame-0 event, seven classic 9A traps with mS1) also qualify (anim_survey.py twoframe) [plan 0050 log](../../plans/0050-animation-frame-timing.md#implementation-log)"
+  - ../../plans/done/0050-animation-frame-timing.md#implementation-log
+resolution: "lane/a50t: (1) MonStats § Timing SplGetModeChart [L] replaced by anim/0001 § 10's per-class reading [I] [MonStats](../../tables/MonStats.md#timing-plan-0050-phase-0); (2) no stock source makes 93/96/99/102/105 negative [C]: 353 blocks, all min/max >= 3, no skill/state/misc/op cell (anim_survey.py ratemin) [ItemStatCost](../../tables/ItemStatCost.md#timing-plan-0050-phase-0); (3) K9/E9 rows tabled: classic only 332 invisospawner S1 (Velocity 0, walk 256); surprise: K9S3/S4 and 9AS1/9AS2 (frame-0 event, seven classic 9A traps with mS1) also qualify (anim_survey.py twoframe) [plan 0050 log](../../plans/done/0050-animation-frame-timing.md#implementation-log)"
 ---
 
 From the `lane/p50b` review (plan 0050 P1.2). Non-blocking for P1.3.

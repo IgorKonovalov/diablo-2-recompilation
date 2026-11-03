@@ -1,6 +1,6 @@
 # ADR index
 
-Next free number: **0027**
+Next free number: **0028**
 
 | # | Title | Status |
 |---|---|---|
@@ -30,3 +30,4 @@ Next free number: **0027**
 | [0024](0024-lane-check-touched-documents-and-routing.md) | The lane check reads the touched documents and the findings they touch, and routes every disagreement (amends 0023) | accepted (owner, 2026-10-30) |
 | [0025](0025-scope-item-use-inventory.md) | Item use and inventory enter scope as game rules: the server's outcomes only, stash and ground-item lifetime in, trading out (amends 0002, beside 0017) | accepted (owner, 2026-10-30, with plan 0060) |
 | [0026](0026-scope-in-game-message-layer.md) | The in-game message layer enters scope, both directions; transport, compression, encryption, Battle.net, realm and handshake stay out (amends 0002, 0014) | accepted (owner, 2026-10-30, with plan 0061) |
+| [0027](0027-archivist-reader-lanes-tier-a.md) | Archivist reader lanes take the full review instead of the lane check (amends 0023) | accepted (owner, 2026-11-03) |

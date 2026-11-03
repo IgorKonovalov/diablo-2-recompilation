@@ -1,0 +1,380 @@
+{
+ "game": "expansion",
+ "class": "Amazon",
+ "seed": 8002,
+ "name": "AnimAmaO2",
+ "progression": 15,
+ "difficulty": [
+  131,
+  131,
+  131
+ ],
+ "waypoints": {
+  "normal": "all",
+  "nightmare": "all",
+  "hell": "all"
+ },
+ "quests": "all",
+ "stats": {
+  "strength": 250,
+  "energy": 100,
+  "dexterity": 150,
+  "vitality": 25,
+  "hitpoints": 120,
+  "maxhp": 120,
+  "mana": 2000,
+  "maxmana": 2000,
+  "stamina": 400,
+  "maxstamina": 400,
+  "level": 99,
+  "experience": 3520485254
+ },
+ "skills": {
+  "Dopplezon": 1,
+  "Valkyrie": 20
+ },
+ "mouse": {
+  "left": "Attack",
+  "right": "Valkyrie",
+  "swap_left": "Attack",
+  "swap_right": "Valkyrie"
+ },
+ "hotkeys": [
+  "Valkyrie",
+  "Attack",
+  "Inner Sight",
+  "Kick",
+  "Throw",
+  "Jab"
+ ],
+ "belt_fill": [
+  "rvl",
+  "rvl",
+  "rvl",
+  "rvl"
+ ],
+ "items": [
+  {
+   "code": "vbt",
+   "equip": "feet",
+   "suffix": 113
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 0,
+   "y": 0
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 0,
+   "y": 1
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 0,
+   "y": 2
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 0,
+   "y": 3
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 1,
+   "y": 0
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 1,
+   "y": 1
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 1,
+   "y": 2
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 1,
+   "y": 3
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 2,
+   "y": 0
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 2,
+   "y": 1
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 2,
+   "y": 2
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 2,
+   "y": 3
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 3,
+   "y": 0
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 3,
+   "y": 1
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 3,
+   "y": 2
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 3,
+   "y": 3
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 4,
+   "y": 0
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 4,
+   "y": 1
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 4,
+   "y": 2
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 4,
+   "y": 3
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 5,
+   "y": 0
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 5,
+   "y": 1
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 5,
+   "y": 2
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 5,
+   "y": 3
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 6,
+   "y": 0
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 6,
+   "y": 1
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 6,
+   "y": 2
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 6,
+   "y": 3
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 7,
+   "y": 0
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 7,
+   "y": 1
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 7,
+   "y": 2
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 7,
+   "y": 3
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 8,
+   "y": 0
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 8,
+   "y": 1
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 8,
+   "y": 2
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 8,
+   "y": 3
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 9,
+   "y": 0
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 9,
+   "y": 1
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 9,
+   "y": 2
+  },
+  {
+   "code": "rvl",
+   "store": "inventory",
+   "x": 9,
+   "y": 3
+  },
+  {
+   "code": "7cr",
+   "equip": "rarm",
+   "suffix": 18,
+   "prefix": 192
+  },
+  {
+   "code": "buc",
+   "equip": "larm",
+   "suffix": 172
+  },
+  {
+   "code": "jav",
+   "equip": "rarm2",
+   "quantity": 60
+  },
+  {
+   "code": "buc",
+   "equip": "larm2",
+   "suffix": 172
+  },
+  {
+   "code": "qui",
+   "equip": "tors",
+   "suffix": 263
+  },
+  {
+   "unique": "Harlequin Crest",
+   "equip": "head",
+   "roll": "max"
+  },
+  {
+   "unique": "Mara's Kaleidoscope",
+   "equip": "neck",
+   "roll": "max"
+  },
+  {
+   "unique": "Raven Frost",
+   "equip": "rrin",
+   "roll": "max"
+  },
+  {
+   "unique": "The Stone of Jordan",
+   "equip": "lrin",
+   "roll": "max"
+  },
+  {
+   "unique": "Magefist",
+   "equip": "glov",
+   "roll": "max"
+  },
+  {
+   "code": "mbl",
+   "equip": "belt",
+   "suffix": 263
+  }
+ ],
+ "merc": {
+  "id": 11,
+  "seed": 4301,
+  "name": 0,
+  "exp": 999999999,
+  "dead": false,
+  "items": [
+   {
+    "code": "7sr",
+    "equip": "rarm"
+   },
+   {
+    "code": "uui",
+    "equip": "tors"
+   },
+   {
+    "code": "xhm",
+    "equip": "head"
+   }
+  ]
+ }
+}

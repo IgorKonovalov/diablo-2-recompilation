@@ -10,7 +10,7 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
    ([0040](../../../../docs/plans/done/0040-drlg-room-lifecycle.md) P1 review); a meaning word ("the missile count", "the
    charge speed", "moves the unit's path to its owner's point") inside a `[C]` of the batch's column-reader entry (`lane/p46m6`, `lane/p46m8` and `lane/p46m15` reviews,
    [0046](../../../../docs/plans/done/0046-skills-function-catalogue.md)); "the unit's full stat" for the `s` of anim/0002's ADR-0015 bonus map, where the map
-   covers `UnitGetStat(unit, stat, 0)` only (`lane/p50b` review, [0050](../../../../docs/plans/0050-animation-frame-timing.md)).
+   covers `UnitGetStat(unit, stat, 0)` only (`lane/p50b` review, [0050](../../../../docs/plans/done/0050-animation-frame-timing.md)).
    A pushed argument is not a test until the callee reads it: `RUNEWORD_Apply`'s `0x40` was modelled and stated as a flag test, but `UnitFindStatList` ignores it when the state is non-zero. Also, sock 17's reason for the empty cursor slot (`0x0063AAF0`, a reading) sat inside the logged `[C]` (`lane/h6b` review, 0038).
 2. **Recount every count from the binary with a kept command**, never from memory or a partial scan:
    writers, call sites, instructions, items. Copy a run's counts from the kept, hashed check output, never from an
@@ -18,7 +18,7 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
    ([0039](../../../../docs/plans/done/0039-backlog-sweep-4.md) P1b review); S4b row 17 short by 9, "7" instructions for 8 (0038);
    eight wear and resurrection counts one off `check-run.txt` ([0043](../../../../docs/plans/done/0043-items-economy.md) P2 review);
    pool 12's "six of the 25 `boss` classes" met for five (`lane/h4a` review, 0038); "2 708 do events" in the record for the logs' 1 840, which hid the 2 000 skill-use floor's shortfall (`lane/p45h` review, [0045](../../../../docs/plans/done/0045-skills-missiles-machinery.md)); 318 pattern-5 creations for `patterns.txt`'s 360 (`lane/h5d` review, 0038); a 27-line manifest filed as "26 lines", and the 9 non-ItemStatCost `UpdateAnimRate` sites
-   described without the scan's own breakdown (2 unidentified among them; `lane/p50b` review, 0050); "ten readers" raised for the eleven of `re/symbols.csv`'s diff (`lane/h1a` review, 0038); "four of the six" brain-chest positions at a corner for `brain91.txt`'s five files (`lane/rdp` review, 0038). The review request's "14 symbol raises" for the lane's 15 `re/symbols.csv` rows (`lane/h6e1` review, 0038). "Six" register stores of the UI word, where `check-static.txt` lists seven, and five of them resolve to constants (`lane/h6b` review, 0038). The catalogue exclusion filed as "124 kind-1 dispatches" where the kept check gives 110 kind 0 and 14 kind 1, and the MonUMod champion rows "16, 36, 37, 39" for the table's 16 and 36–39 (`lane/p50e` review, [0050](../../../../docs/plans/0050-animation-frame-timing.md)).
+   described without the scan's own breakdown (2 unidentified among them; `lane/p50b` review, 0050); "ten readers" raised for the eleven of `re/symbols.csv`'s diff (`lane/h1a` review, 0038); "four of the six" brain-chest positions at a corner for `brain91.txt`'s five files (`lane/rdp` review, 0038). The review request's "14 symbol raises" for the lane's 15 `re/symbols.csv` rows (`lane/h6e1` review, 0038). "Six" register stores of the UI word, where `check-static.txt` lists seven, and five of them resolve to constants (`lane/h6b` review, 0038). The catalogue exclusion filed as "124 kind-1 dispatches" where the kept check gives 110 kind 0 and 14 kind 1, and the MonUMod champion rows "16, 36, 37, 39" for the table's 16 and 36–39 (`lane/p50e` review, [0050](../../../../docs/plans/done/0050-animation-frame-timing.md)).
 3. **Take totals against `main` after merging it**, not against the totals your batch started from.
    Seen: S2c, S3b and S1a reviews (0038), each recomputed; H3b's totals taken before the `lane/r1h` moves had landed
    (`lane/h3b` review, 0038). Check the routes after the merge too: sock 1 still read "needs a version-71 save" after `lane/a72`'s `leg71` builder had been merged (`lane/h6b` review, 0038). Name the `main` you merged: H6c's totals said `ffa5b957` where the lane had merged `a105ae13` (`lane/h6c` review, 0038).
@@ -31,7 +31,7 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
    line (0043 P2b review); 304 caster resyncs "not logged by this run" where 87 match the caster's own logged `THR`
    rolls (`lane/p45h` review, [0045](../../../../docs/plans/done/0045-skills-missiles-machinery.md)); "the breakpoint tables
    are not copied" where the lane's own check transcribes all 39 (`lane/p50c` review,
-   [0050](../../../../docs/plans/0050-animation-frame-timing.md)); `PlrModeSkillFrame` writing the event index "at every
+   [0050](../../../../docs/plans/done/0050-animation-frame-timing.md)); `PlrModeSkillFrame` writing the event index "at every
    player frame event" where a unit with no used skill returns 2 first (`lane/p50a` review, 0050); "the periodic save
    does not save without a host callback" with a logger at the entry only, where `0x00730FFC` and the time tests come
    before the callback test (`lane/h1b` review, [0038](../../../../docs/plans/0038-inferred-claims-sweep.md)); "no code reads a class-7
@@ -41,7 +41,7 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
    before you name it; rename your side. Seen: six addresses named twice, `lane/p41r`
    ([0041](../../../../docs/plans/done/0041-stats-and-states.md) P1 review). The same holds inside `re/types/`
    comments: `MON_ModeEveryFrame` for the row's `sub_005A6B10_MonModeEveryFrame` (`lane/p50a` review,
-   [0050](../../../../docs/plans/0050-animation-frame-timing.md)).
+   [0050](../../../../docs/plans/done/0050-animation-frame-timing.md)).
 6. **Keep the tool behind every claim**: the script in `tools/` (seeded, if it generates cases), its
    output hashed, logs under `workspace/logs/` with a manifest line, one path base per manifest so `sha256sum -c` passes from one directory (H7a review, 0038; again 0043 P2 review), and every tool revision behind a cited output named. Seen: the unseeded `eval` case
    writer (S1e, 0038); the *Fleshripper* log left in session scratch (resume lane, 0037). An aborted session's
@@ -58,7 +58,7 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
    Seen: the resume lane's experiments addendum (0037); `lane/w1`'s 104 W1 lines (0039); the levels
    `+0x033..+0x035` refinement and the 18th `-txt`-only (`sounds`) call filed without their writer and call addresses
    (`lane/h3b` review, 0038); 28 of the 61 anim verdicts in the findings' *Leads used* filed with a section number and no
-   address or `fn:` (`lane/p50v` review, [0050](../../../../docs/plans/0050-animation-frame-timing.md)).
+   address or `fn:` (`lane/p50v` review, [0050](../../../../docs/plans/done/0050-animation-frame-timing.md)).
 8. **Split a raise where it has a remainder** and head the row "raised in part", in the ledger itself.
    Seen: special 65 (H4b), sock 14 (S2c), special 43 (S3b), all 0038; five `[C]` bullets of drlg/0009 § 11 with an
    unreached branch inside (the wanderer gate's `+0x78`, the item drop on expiry; [0040](../../../../docs/plans/done/0040-drlg-room-lifecycle.md) P2 review);
@@ -73,7 +73,7 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
    only from handler 20" without `SKILLS_SrvDo`'s seven other calls, and `SKILLS_PayCost`'s 0 for a zero-cost row
    without its three calls, none of which tests it (`lane/p46m12` review, [0046](../../../../docs/plans/done/0046-skills-function-catalogue.md));
    "the only RNG call" of a call graph with 3 indirect calls unfollowed, and the mode graph's 118, left out of the
-   text (`lane/p50a` review, [0050](../../../../docs/plans/0050-animation-frame-timing.md)); a logged load chain written
+   text (`lane/p50a` review, [0050](../../../../docs/plans/done/0050-animation-frame-timing.md)); a logged load chain written
    without the two frames between `PlayerLoad` and the logged returns (`PlayerLoadFromFile`, `PlayerLoadFromClient`;
    `lane/h1b` review, [0038](../../../../docs/plans/0038-inferred-claims-sweep.md)); an undisassembled reader of the
    host callback, 0x0052BFC0, left "callers unfollowed" when one raw scan settles it, and the nearest indexed store
@@ -90,7 +90,7 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
     `ItemCopy`'s "two more seed steps per child" from the one copy that had a child (`lane/h6a` review, 0038);
     a constant one-frame offset over 76 table rows filed `contradicted` when the rows cannot tell a different count
     (the schedule's steps `N = n − 1` against its end `n`) from a different behaviour, A1's source naming the
-    convention (`lane/p50v` review, [0050](../../../../docs/plans/0050-animation-frame-timing.md)); Kick's 25 logged
+    convention (`lane/p50v` review, [0050](../../../../docs/plans/done/0050-animation-frame-timing.md)); Kick's 25 logged
     physicals of 0 set against `GetPhysMin`'s ≥ 49 920 without saying the packet at `ApplyDamage` is already reduced, so
     that a physical-immune target would also log 0: name what the observed value has been through, and rule it out
     (`lane/rk` review, 0038). The imbued `cap` filed as the unidentified case of "an imbued item is repaired when created identified", where it was ethereal too and already at 7 of 7, so "refused" and "repaired" give the same line (`lane/h6e1` review, 0038). The saved name's u16 add and unsigned compare filed `[C]` on one name, 50, which every width gives alike, and `MERC_CapExpGain`'s "unsigned" on gains that were all positive (`lane/h6f` review, 0038).
@@ -111,7 +111,7 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
     and with op 7's "value" unnamed, and multiplayer/0001's MP31 cell calling the clipped offer a cancel (`lane/p51s`
     review, 0051); `re/types/anim.h` saying a monster frame function's 2 "ends the mode" against the finding's own § 6
     (the return is not read), and the summary's "S3 to S4" for a generic S3 that queues no event (`lane/p50a` review,
-    [0050](../../../../docs/plans/0050-animation-frame-timing.md)); skills/0001's Answer bullet giving, inside its `[C]`, the client
+    [0050](../../../../docs/plans/done/0050-animation-frame-timing.md)); skills/0001's Answer bullet giving, inside its `[C]`, the client
     filter as the reason no refused request reached the server, which § 18 holds `[I]` (`lane/p45k` review,
     [0045](../../../../docs/plans/done/0045-skills-missiles-machinery.md)); `brain_mem`'s docstring in `tools/h6e2_sessions.py` still saying
     `OBJS` lists "only the objects near the player" after the finding corrected it (`lane/rdp` review, 0038). The imbue-repair refinement left out of items/0011's "never: the imbued item is built unidentified" and items/0010's Answer bullet "all three repair" (`lane/h6e1` review, 0038). `MERC_AddExp`'s Functions-table row still "levels up while below the owner's level" after the section read the loop's bound as `ExpMaxLevel(0) − 1`, itself written as the constant 98 (`lane/h6f` review, 0038).
@@ -146,7 +146,7 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
     the step product's wrap from `v` 32 768 stated without its sign case (a component of +4096 wraps, −4096 reaches
     −2³¹ exactly), and the collision walk's "at most 10 crossings" without what the 10th does (the full step taken
     unchecked, flag `0x8`) or the halved increment it walks by (`lane/p50d` review,
-    [0050](../../../../docs/plans/0050-animation-frame-timing.md)); the saved name's `first + name` u16 add left without its bound (for the Rogue, 62 124 fits, 62 125 wraps to 0 and is kept; `lane/h6f` review, [0038](../../../../docs/plans/0038-inferred-claims-sweep.md)).
+    [0050](../../../../docs/plans/done/0050-animation-frame-timing.md)); the saved name's `first + name` u16 add left without its bound (for the Rogue, 62 124 fits, 62 125 wraps to 0 and is kept; `lane/h6f` review, [0038](../../../../docs/plans/0038-inferred-claims-sweep.md)).
 16. **A runner's readiness wait keys on a line that appears before the first case** (the logger's ready or armed
     line, or `PLR` when the steps enter the game), never on one only a case produces, and it returns when the driver
     has exited. Seen: `tools/h1a_sessions.py` and `h1c_sessions.py` waited for three `TBL` lines, which only the

@@ -10,7 +10,7 @@
 **Question:** on each frame a monster (or a summon, or a hireling) is active, what does its AI do: when does it
 think, which target does it pick, which mode or skill does it choose, which path request does it make, and which draws
 does it make on which seed? This is phase (5) of [ADR-0014](../adrs/0014-scope-game-simulation.md), the last one,
-after animation and frame timing (phase (4), plan [0050](0050-animation-frame-timing.md)). When it is done:
+after animation and frame timing (phase (4), plan [0050](done/0050-animation-frame-timing.md)). When it is done:
 - `docs/tables/MonAI.md` (the AI index) and the gate survey `ai` list every AI a stock row uses;
 - `docs/findings/ai/` names the AI tick, the shared machinery and every AI function a stock row reaches, each with
   its draws per seed;
@@ -168,6 +168,18 @@ batches holding the tier come first, since Phase 2 waits for their review.
 - **Done when:** each compared claim has a verdict; every `contradicted` claim reachable on stock data is a required
   case of Phase 2; agreement promotes nothing. May run beside any P1 batch; lands before Phase 2's last session batch.
 
+### Phase 1c — The Uber event
+- **Owner skill:** reverser (static; one Ghidra, emulation as P1's batches)
+- **Starts when:** batch 12 is reviewed. It does not gate Phase 2 and holds no tier AI. Added by the owner, 2026-11-03.
+- **What:** what drives Uber Diablo, Uber Baal and Uber Mephisto, whose think functions (rows 145, 146, 147) only
+  return (ai/0008, ai/0012 § 2.10): the event handlers on levels 133 to 136, the spawns and minion counts, the helpers with
+  no static reference from the AI table (`0x005E9DD0`, `0x005FD0F0`, `0x005F7F10`, `0x005DD140`), Baal's class-709 teleport,
+  and the 37 class and 3 state immediates of the batch 11 scan that lie outside the AI ranges.
+- **Done when:** each named helper has a caller or is stated as unreferenced after a kept scan; the driver of each of the
+  three bosses is named with its address at `[I]` or better, or stated as not found with what was searched; what can be
+  emulated is, with controls, as in P1; any case that needs the game is listed for a later harness or owner-play session.
+- **Spec:** the result goes into P3b's entries for rows 145 to 147.
+
 ### Phase 2 — Per-event reproduction
 - **Owner skill:** reverser (harness; **one slot** from 1–2, given in the prompt; a second only when no plan 0038 batch
   or 0046·P2 session needs it)
@@ -192,7 +204,12 @@ batches holding the tier come first, since Phase 2 waits for their review.
   - H3's 2 218 Raven `MonAttackStats` calls modelled with the owner pair, from the kept logs;
   - a catalogue sample: one AI per P1 batch outside the tier, at least 20 decisions each, where the pilot can stage
     it; the rest stay at their batch's emulated `[C]` or `[I]`;
-  - the Phase 1b cases, and H4 and H5's cases if the reviews moved them here.
+  - the Phase 1b cases, and H4 and H5's cases if the reviews moved them here;
+  - **the state log (required, `lane/r52l` audit):** the AI log records `AiCtl.state` per decision over stock play, with a
+    live control: states 10, 11, 12 and 13 observed in the same window (a `Dim Vision` or `Cloak` target, `Terror` or a
+    fleeing monster, `Taunt`, The Countess), and the record names the window covered (frames, levels, difficulties). A
+    "no setter" row of ai/0013 § 3 (2, 3, 8, 9, 14, 17; 4 and 7 meet the same scan) moves past `[I]` only on that log; until
+    then P3b does not call them dead;
 
   Rare-branch minimums may fall short, named in the record with their counts; their claims stay `[I]`.
 
@@ -639,7 +656,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   P1.1 review reopen condition (b) not met (the callbacks and the host setter draw nothing by their bodies and direct
   calls). No call of the action helpers. 16 `re/symbols.csv` rows (all I). Kept outputs `workspace/logs/r52h/`
   (manifest 11 lines; `emu/` 53, `emu/dev-1/` 54; each passes from its directory). Backlog: the
-  [review request](../backlog/2026-11-03-reverser-architect-plan-0052-p1-2-batch-8-review.md),
+  [review request](../backlog/archive/2026-11-03-reverser-architect-plan-0052-p1-2-batch-8-review.md),
   [archivist](../backlog/archive/2026-11-03-reverser-archivist-monstats-missiles-skills-readers-named-by-ai-0009.md) (MonStats,
   Missiles and Skills readers). Next: the remaining batches (6, 7, 9–12).
 - **2026-10-30 — P1.2 batches 6 (hirelings) and 7 (bosses-A) checkpoint (reverser, static, `lane/r52g`, from `main`
@@ -692,7 +709,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   review reopen condition (b) not met (Mephisto's pick callback draws nothing by its body and direct calls). 22
   `re/symbols.csv` rows (21 func, 1 data, all I). Kept outputs `workspace/logs/r52g/` (manifest 22 lines; `emu/` 73,
   `emu/dev-1/` 74; each passes from its directory). Backlog: the
-  [review request](../backlog/2026-11-03-reverser-architect-plan-0052-p1-2-batches-6-7-review.md),
+  [review request](../backlog/archive/2026-11-03-reverser-architect-plan-0052-p1-2-batches-6-7-review.md),
   [archivist](../backlog/archive/2026-11-03-reverser-archivist-hireling-chance-columns-read-by-ai-0007.md) (Hireling chance
   columns). Next: batch 8 (pool-E).
 
@@ -732,6 +749,91 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   left unnamed for batch 12. 18 `re/symbols.csv` rows (all I). Kept outputs `workspace/logs/r52i/` (manifest 14 lines;
   `emu/` 53, `emu/dev-1/` 54, `emu/dev-2/` 54; `emu-recheck/` 52, the kept cases re-run under `lane/r55e`'s fixed
   `EmuBoundary.java` after merging `main` fd2ca68a, outputs byte-identical; each passes from its directory). Backlog: the
-  [review request](../backlog/2026-11-03-reverser-architect-plan-0052-p1-2-batch-9-review.md),
-  [archivist](../backlog/2026-11-03-reverser-archivist-monstats-skills-readers-named-by-ai-0010.md) (MonStats and
+  [review request](../backlog/archive/2026-11-03-reverser-architect-plan-0052-p1-2-batch-9-review.md),
+  [archivist](../backlog/archive/2026-11-03-reverser-archivist-monstats-skills-readers-named-by-ai-0010.md) (MonStats and
   Skills readers). Next: batch 10 (pool-G).
+- **2026-11-03 — P1.2 catalogue batch 10 (pool-G) for review (reverser, static, `lane/r52j`, from `main` 7fddf41d; `main` 3960ea23 (batch 9) merged before the run, `main` c7d3ee1d before filing).**
+  [ai/0011](../findings/ai/0011-batch10.md): the twelve think functions of rows 126, 127, 129–134, 136, 137, 139 and
+  141, the inits of rows 127 and 134 (`ret 4` alone) and 129 (`AiNestInit`, `v3C = −1`), row 133's class jump to the
+  three Ancient thinks (0x005EEB70, 0x005EEDA0, 0x005EF010), each with its `aip` reads per record (rows 130 and 139
+  read slots that differ per record), its AI-control words, its draws in order (all on the acting unit's seed: 21
+  inline steps and 14 `RNG_Range`; 0–8 per decision) and its command, plus the helpers first read here: row 129's
+  class pick 0x005E6020 (`genericSpawn`), row 126's catapult probe 0x005EDF70, the Ancients' target pick 0x005E8F20
+  (also Diablo's) and callback 0x005EEB10, row 134's wave step 0x005EF210, row 137's callback 0x005EFA50, and the tables
+  0x006E3514 and 0x006E3528. No call of the four action helpers. [C] by emulation (run:2026-11-03-ai-cat-emu-10,
+  `tools/ai_cat_emu10.py`, 15 families, 3 600 cases, 0 mismatches, 0 stopped, no unaccounted traced read; `le`, `d0`,
+  `cmp`, `u16`, the new `abs` and `self` and the site control fail every case they separate; `EDGES` per family; a
+  development run under `emu/dev-1/` with its tool copy): the maps of 126, 127, 129, 130, 132, 134 (to its search), 136,
+  137 (to its search), 139, 141 and the three inits to their first boundary or return, row 133's class jump with each
+  class think's quest test, row 131's entry call. Left [I]: everything after a boundary (the Ancients past the pick, the
+  throne's waves, the A5Q2 paths of row 131). Found: row 134 idles a negative count during its waits; row 129's
+  `SetMode(0)` after a failed pick is unreachable (the pick returns 1 on every path); `ancientbarb2` admits a state
+  equal to the States count, row 134 does not. P1.1 review reopen condition (b) not met. No tier AI. 26
+  `re/symbols.csv` rows (24 func, 2 data, all I). Kept outputs `workspace/logs/r52j/` (manifest 16 lines; `emu/` 61,
+  `emu/dev-1/` 62; each passes from its directory). Backlog: the
+  [review request](../backlog/archive/2026-11-03-reverser-architect-plan-0052-p1-2-batch-10-review.md),
+  [archivist](../backlog/archive/2026-11-03-reverser-archivist-monstats-skills-readers-named-by-ai-0011.md) (MonStats and
+  Skills readers). Next: batches 11 (bosses-B) and 12 (towns, NPCs, the state rows).
+- **2026-11-03 — Readers of batches 9 and 10 linked (archivist, `lane/a64`).** [MonStats](../tables/MonStats.md) gains two reader
+  blocks under § AI columns, "pool-F" ([ai/0010](../findings/ai/0010-batch9.md)) and "pool-G" ([ai/0011](../findings/ai/0011-batch10.md)):
+  the `aip` slots read per row (row 122's from the records `imp1`..`imp4`, which settles its entry of the 13 differing rows as a
+  shared parameter table; row 133's per Ancient), the `Skill`/`SkMode` reads with the finding's sign tests, row 124's skill level
+  (`Sk1lvl`), the constant-skill rows and the count guards; the `genericSpawn` row has its reader (row 129's class pick, `[I]`).
+  [Skills](../tables/Skills.md) `aurastate` and `auratargetstate` gain the rows 133 and 134 readers. All `[I]` as the findings give;
+  `[C]` only for the maps to their first boundary, scoped in each block. Both archivist entries closed.
+
+- 2026-11-03 (`lane/r66`): two reverser cross-references closed. [hirelings/0001](../findings/hirelings/0001-hirelings.md) points its three "named only" / "out of scope" places at [ai/0007](../findings/ai/0007-hirelings.md) § 2.4 (`[I]`, 0x005E4D30) and re-verdicts the d2dfg-blizzard skill-choice claim held with refinement `[I]`; [skills/0001](../findings/skills/0001-dispatch.md) § 13 carries ai/0006's H3 answer for the owner's level (`[I]`). No tag raised.
+- **2026-11-03 — P1.2 catalogue batch 11 (bosses-B) for review (reverser, static, `lane/r52k`, from `main` eda954d8; `main` 26e00331 merged before the run, `main` 908ad0f9 before filing).**
+  [ai/0012](../findings/ai/0012-batch11.md): the think functions of rows 51, 128, 135, 138, 140, 145 and 147, row 128's init
+  (`ret 4`), the shared `alt`s 0x005E8480 (rows 51, 147) and 0x005FCF30 (rows 135, 140, 145) with their home-point restore,
+  and what is first read here: Diablo's decision 0x005E8810 (three 17-word weight tables over sixteen actions, jump table
+  0x005E9704), his pick callback 0x005E8EB0, batch 10's scorer 0x005E8530 (the threat score), Baal's pick 0x005FBDD0 with score
+  0x005FBB00 and callback 0x005FC000, his decision 0x005FC630 with the tables 0x005FC1C0, 0x005FC300, 0x005FC450 and the
+  area-skill tests 0x005FC0C0, 0x005FC070, his action 0x005FCB60 (jump table 0x005FCEF0), the clone spawn 0x005FC860 with its
+  callback 0x005FC830, row 138's callback 0x005EF5E0 and the quest step 0x0058BC40. `aip` per record: only rows 128 and 138 read
+  any (`b11-aip.txt`, 7 reads); no `aidist` read. Draws all on the acting unit's seed (18 multiplier loads, 4 of them in
+  unreferenced functions, no RNG entry call). Of the action helpers only 0x005DF850, twice, by row 128. [C] by emulation
+  (run:2026-11-03-ai-cat-emu-11, `tools/ai_cat_emu11.py`, 20 families, 4 800 cases, 0 mismatches, 0 stopped, 20 traced reads all
+  accounted; `le`, `d0`, `cmp`, `u16`, the new `abs` and `uns` and the site control fail every case they separate; `EDGES` and
+  `TAGS` per family; development runs under `emu/dev-1/` (`result=FAIL`, first-model errors named in ai/0012 § 4) and
+  `emu/dev-2/`, each with its tool copy): full maps of the callbacks, the weighted pick 0x005FC130, rows 145 and 147 and row 128's
+  init; Baal's action for every `k` to each first callee; both decisions, rows 51, 135, 138, 140, the `alt`s and row 128 through
+  its quest step to their first boundary; the three Baal tables at their first call. Left [I]: everything after a boundary
+  (Diablo's switch, the weight edits and picks, both scores, Nihlathak's body, the clone spawn). Found: row 145's and 147's thinks
+  are `ret 4` as row 146's, with the Uber spawn helpers 0x005E9DD0, 0x005FD0F0 and 0x005F7F10 and the counter 0x005DD140 unreferenced
+  and Baal's class-709 teleport unreached (what drives the Uber bosses stays open); Diablo's portal prison passes `(NULL, guid, 2)`;
+  Baal's portal flag zeroes a weight already 0; two of ai/0001 § 3's unresolved `MonAiInit` sites (0x005E84D8, 0x005FCF88) pass the
+  current state. P1.1 review reopen condition (b) not met (callbacks and scores draw nothing by their bodies and direct calls). The
+  H6d Diablo owner pair concerns his death record and quest TC, not this AI: untouched. 32 `re/symbols.csv` rows (30 func, 2 data, all
+  I). Kept outputs `workspace/logs/r52k/` (manifest 21 lines; `emu/` 81, `emu/dev-1/` and `emu/dev-2/` 82 each; each passes from its
+  directory). Backlog: the [review request](../backlog/archive/2026-11-03-reverser-architect-plan-0052-p1-2-batch-11-review.md),
+  [archivist](../backlog/2026-11-03-reverser-archivist-monstats-skills-readers-named-by-ai-0012.md) (MonStats `threat`, Skills
+  `attackrank` and slot readers). Next: batch 12 (towns, NPCs and the state rows).
+- **2026-11-03 — Owner decision: the Uber event is a phase of this plan (Phase 1c).** The batch 11 check found it had no
+  home; the architect recommended a phase here, and the owner accepted ("as recommended"). Phase 1c follows batch 12's
+  review and gates nothing.
+- **2026-11-03 — P1.2 catalogue batch 12 (towns, NPCs and the state rows), the last, for review (reverser, static, `lane/r52l`, from `main` c34cb3cb; `main` a292a88f merged before filing).**
+  [ai/0013](../findings/ai/0013-batch12.md): the thinks of rows 31, 32, 41, 42, 54, 58, 62, 81, 88, 91, 99, 100 (row 60 is batch 6's), state rows 2, 3, 8–14, 17 with the `init`s of 3 and 11, and the town chain first read here: `AiNpcSaveHome` 0x005E6800, `AiNpcNearPlayer` 0x005E68F0, `AiNpcScriptStep` 0x005E6AE0, `AiNpcPathPick` 0x005E7080 with `g_NpcPathActions` 0x00741D74 (DS1 path actions 1–5, `AiCtl+0x38`), `AiPathSkillStep` 0x005E5B70, `AiNearestPlayer` 0x005DDF20. Row 62 and state 8 are the same code; states 10 and 17 differ by search kind only; `aip` only in state 13 (`corruptrogue3`, four sites, `b12-aip.txt`); no `aidist`; none of the four action helpers. **Setters:** 10 `CloakAreaCb`, `CurseSetAiState`; 11 `MonFleeFrom`, `CurseSetAiState`; 12 `CurseSetAiState`; 13 `SuperUniqueSpawn`, The Countess only; **2, 3, 8, 9, 14, 17 none** (`[I]`, scope in ai/0013 § 3). **The five register sites** are all `alt`s passing the current state; `SpawnOwnedMonster`'s block word is 0 at all 15 callers; the restore replays the saved state. **Catalogue recount** (`b12-recount.txt`): 148 table rows and 18 state rows, each in one batch, each with its `init`, think and `alt` words in its finding; rows left short: none. [C] by emulation (run:2026-11-03-ai-cat-emu-12, `tools/ai_cat_emu12.py`, 41 families, 9 840 cases, 0 mismatches, 0 stopped, 18 traced reads all accounted; `le`, `cmp`, `u16`, the new `lo8` and `arg` and the site control fail every case they separate, `d0` separates none; `EDGES` per family; development run `emu/dev-1/`, `result=FAIL`, first-model errors named in ai/0013 § 5). Left [I]: everything after a boundary, `AiNpcNearPlayer`'s body and row 54's and 58's near branches (past `AiUnitSearch`), the 25 quest callees. P1.1 review reopen condition (b) not met. 48 `re/symbols.csv` rows (46 func, 2 data, all I; the finding's commit subject says 49, a miscount); `re/types/ai.h` names `AiCtl+0x38`; ai/0001 § 3 gains a dated note. Kept outputs `workspace/logs/r52l/` (manifest 26 lines; `emu/` 165, `emu/dev-1/` 166; each passes from its directory). Backlog: the [review request](../backlog/archive/2026-11-03-reverser-architect-plan-0052-p1-2-batch-12-review.md), [archivist](../backlog/2026-11-03-reverser-archivist-monstats-skills-readers-named-by-ai-0013.md). Next: the catalogue's review closes P1.2.
+- **2026-11-03 — `lane/r52l` Tier A audit (architect; ADR-0023 audit sample) of the Tier B check (Sonnet, accept, 0 fixes): accept with fixes (6).** Read against `objdump` of the pinned image: state 13 0x005E5C50 whole (its 4 `aip` sites, `aip3` +0x62, `aip2` +0x5C twice, `aip1` +0x56, `corruptrogue3`'s row), `CurseSetAiState` 0x005C34B0–0x005C3535 with its map (+0x82: 23 → 10, 27 → 12, 56 → 11, else 0), `MonFleeFrom`'s 0x005DDE10, `SuperUniqueSpawn` 0x005A4BE4–0x005A4C1A (word 6 only, The Countess; row 10 `CorruptRogue` has no `alt`, so `MonAiInit` takes the state), all seven `alt` sites, `MonAiInit` and `MonAiEntryGet`, `SpawnOwnedMonster`'s 15 callers, rows 42, 62, 88, 99, states 2, 8, 9, 10/17, 11, 14, `AiPathSkillStep`, `AiNpcPathPick`, `AiNpcScriptStep`, acts 1, 4, `AiNearestPlayer` with its callback. Every § 2 statement read holds. Row 62 and state 8: the same 91 bytes but three displacements, all three resolving to one callee; rows 10 and 17 differ in the kind word alone (raw table). Kept outputs against claims: manifests pass, `check.txt`'s sums are the finding's, the recount is 148 + 18. **Fixes (ledger: overclaim 1, misread 1, omission 1, wrong anchor 1, miscount 1, tool not kept 1):** overclaim, § 5's and the Answer's `[C]` said the five path actions' records were met, where `SITES` shows acts 1 and 3 ending at `Ovr` or a return, act 2's `R4` met at distance 0 only, acts 4 and 5 at `MonModeAllowed`, scoped, and experiments' *Left `[I]`*; misread, `AiCtlListsFree` also frees the parameter records and the control (0x0058F865), renamed `sub_0058F810_AiCtlFree` here (a row of this lane, `re/symbols.csv`, `re/types/ai.h`, the finding); omission, the whole-struct scope gap the check named and left: a kept scan settles the fixed-size copy (`workspace/logs/r52l/aud/`: one allocator caller, zeroed; 8 of 239 `rep movs` and 3 of 186 `memcpy` calls at 0x40 bytes, none on a control; 61 loads of the pointer shape, no store at offset 0), and § 3 states what stays open; wrong anchor, the kept `src@` of 0x005E817B and 0x005F8240 and `OWNED` 0x005C5CB5 print a textual last write, not the value, § 3 now reads each; miscount, the open question's "three" of four callees; tool not kept, `corruptrogue3`'s `aip` values and `Skill1` had no kept output (the 13 rows of `b12-rows.txt` do not hold it), now `aud/aud-ctlcopy.txt` `STOCK`. **Rulings:** the six rows stay `[I]`, the check's ruling stands, and § Phase 2's *Done when* now requires the `AiCtl.state` log with states 10–13 as its live control and the window named; 4 and 7 are noted with them. The review request's four questions: (1) as that ruling; (2) and (3) stand as filed. The recount tests presence not depth, as the finding says; P3b's entries are as deep as each batch's § Emulation. **Audit of `lane/r52l`:** the check missed 6 by the categories above; reject-grade missed: no (the overclaim is a scope on one `[C]` clause, every `[I]` reading under it holds). **P1.2's catalogue is complete; Phase 1c may start** (its *Starts when* is this review). Backlog: the [review request](../backlog/archive/2026-11-03-reverser-architect-plan-0052-p1-2-batch-12-review.md) closed.
+- **2026-11-03 — Phase 1b: the community cross-check (`lane/r52m`, reverser, no Ghidra; `main` a292a88f).** Finding
+  [ai/0014](../findings/ai/0014-community-cross-check.md): 67 claims compared with ai/0001–0012 (ai/0013 read from the
+  `lane/r52l` copy, 65af21bd; it held no comparable claim beyond the Imp row of ai/0010), verdicts **35 held, 23 held with
+  refinement, 6 not covered, 3 contradicted** (counted with `awk -F'|' '/^\| C[0-9][0-9] \|/{gsub(/[* ]/,"",$5); print $5}'
+  docs/findings/ai/0014-community-cross-check.md | sort | uniq -c`). Sources registered in `docs/sources.md`:
+  `arreat-summit-boss-pages` (15 pages), `arreat-summit-bestiary` (23), `arreat-summit-summon-skills` (3),
+  `d2mods-monstats-guide`, `wue-d2-ai-slides`, `arreat-summit-hirelings` re-fetched; `diablowiki-d2-monsters` (HTTP 403) and
+  `lurker-monster-ai-threads` (HTTP 409) registered as not read. "The AI Compendium" was not found. No page held code.
+  Compared: the machinery (AI column, `aip` cells, Imp, Scarab), the boss pages (skill lists, Duriel's attack choice,
+  Diablo's prison, Baal's teleport and clone, the curse split), 28 monster behaviours and skill lists of the tiers and
+  catalogue, minion warp and revive, hireling follow and skills. **Not compared:** monsters whose pages hold only stats
+  or flavour (Wraith, Bat Demon, Baboon, Skeleton Mage, Skeleton Archer, Finger Mage, Vile Child, most of the 148 rows),
+  the Über drivers (rows 145–147 return; Phase 1c), the despawn of minions, summon target weights, the skills' own effects
+  and tables (Smite, Jab, trap shot counts), and every page behind HTTP 403 or 409. Agreement promoted nothing.
+  **Required cases for the Phase 2 lane** (every `contradicted` claim, all reachable on stock data):
+  **P1b-1** Duriel's melee decision (C10, C11): row 44 (MonStats 211; 708 only if the Über event can be staged),
+  Normal, at least 300 melee decisions; the page predicts Smite 33, Jab 50, A1 17 percent, the code's two independent
+  draws give 33, 33.5, 33.5 (`aip2` 33, `aip3` 50, `aip4` 0); log the command per decision. **P1b-2** a champion corpse
+  for a Greater Mummy (C40): row 22, a champion mummy dying within `aip5` of the Greater Mummy in the same near rooms,
+  with a unique corpse as control; log the callback's `corpse` slot (0x005F2A00–0x005F2B03) and `MonSkillTargetOk`'s
+  verdict (0x005FD470), and whether Resurrect2 is commanded. Phase 1b is done once the architect accepts; the two cases
+  join Phase 2's "Phase 1b cases" line. Backlog: the review request (reverser to architect).

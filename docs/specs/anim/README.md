@@ -16,7 +16,7 @@ Every unit action the server runs is timed by its animation: the mode a unit ent
 from the unit's stats and weapon, and frame events that run the do function, the melee strike and the sequence
 steps; its end starts the next mode. A moving unit's position advances once per game frame at a speed the same rate
 code sets. This subsystem specifies that timing, phase (4) of [ADR-0014](../../adrs/0014-scope-game-simulation.md)
-([plan 0050](../../plans/0050-animation-frame-timing.md)): the record lookup, the schedule and the per-frame advance,
+([plan 0050](../../plans/done/0050-animation-frame-timing.md)): the record lookup, the schedule and the per-frame advance,
 the mode machines of players, monsters and objects, the rates and the breakpoints they give, the gates that sit on
 the frame clock (the do frame, the skill delay, hit recovery, the block, the get-hit roll, the player's mode tests),
 and movement. Timing enters as frame counts and event frames; which cel is drawn, and the client's own clock, stay
@@ -143,8 +143,9 @@ fn:UNIT_AnimSetRate@0x00623F50, fn:sub_00650840_PathStep@0x00650840, fn:sub_0057
 
 - Findings: [anim/0001](../../findings/anim/0001-modes-frames.md), [anim/0002](../../findings/anim/0002-rates.md),
   [anim/0003](../../findings/anim/0003-movement-gates.md), [anim/leads](../../findings/anim/leads.md),
-  [anim/experiments](../../findings/anim/experiments.md) (run:2026-10-27-anim and run:2026-10-27-anim-p2).
-- Plan: [0050](../../plans/0050-animation-frame-timing.md). Upstream: [rng](../rng/README.md),
+  [anim/experiments](../../findings/anim/experiments.md) (run:2026-10-27-anim, run:2026-10-27-anim-p2,
+  run:2026-10-30-anim-p3 and run:2026-10-30-anim-p3b).
+- Plan: [0050](../../plans/done/0050-animation-frame-timing.md). Upstream: [rng](../rng/README.md),
   [stats/aggregate](../stats/aggregate.md). Downstream: [skills/dispatch](../skills/dispatch.md),
   [combat](../combat/README.md), [objects](../objects/README.md), [monsters/stats](../monsters/stats.md).
 
@@ -152,7 +153,9 @@ fn:UNIT_AnimSetRate@0x00623F50, fn:sub_00650840_PathStep@0x00650840, fn:sub_0057
 
 - [L] Plan 0050 Phase 2 part 2 (run:2026-10-27-anim-p2) compared the catalogue queue and left short, survivability-bound
   at its build, the FHR tiers per class, some FBR rates, the Druid's throws, the set-2 IAS rates, a third FCR rate for
-  three classes, P1b-1's restart for the other classes and modes, and the rare branches; their statements stay `[I]`.
-  Whether a part 3 reopens them is the owner's call ([timing § Open questions](timing.md#open-questions),
-  [movement § Open questions](movement.md#open-questions)).
+  three classes, P1b-1's restart for the other classes and modes, and the rare branches. Part 3 (run:2026-10-30-anim-p3,
+  run:2026-10-30-anim-p3b, 131 logs, 0 mismatches) met the get-hit FHR tiers of the Amazon, Necromancer, Sorceress,
+  Druid and Assassin (timing K3) and reached the run's turn to a walk (81 turns, its frame open); the rest stays
+  short, the Druid's throws at 29 of 30 and the player knockbacks at none new, and their statements stay `[I]`
+  ([timing § Open questions](timing.md#open-questions), [movement § Open questions](movement.md#open-questions)).
 - [L] Two clients: party-wide rate auras on another player's unit (plan 0050 § Open questions).

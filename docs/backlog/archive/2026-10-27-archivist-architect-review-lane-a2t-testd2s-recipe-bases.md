@@ -5,7 +5,7 @@ date: 2026-10-27
 status: done
 context:
   - 2026-10-27-architect-archivist-test-d2s-recipe-bases-and-mp-saves-pin.md
-  - ../../plans/0050-animation-frame-timing.md#implementation-log
+  - ../../plans/done/0050-animation-frame-timing.md#implementation-log
 resolution: "Accepted at the lane/a2t review (plan 0050 log): 47 tests pass, the 13 rows check against the skills manifest and two scratch rebuilds, 30/21 matches the p51r review; no fixes."
 ---
 

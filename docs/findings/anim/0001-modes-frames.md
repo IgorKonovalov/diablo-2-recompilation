@@ -638,7 +638,7 @@ for (; f <= (unit->animFrame >> 8); f++) take(f);
 
 ## Plan 0050 Phase 2 (run:2026-10-27-anim)
 
-Phase 2 of [plan 0050](../../plans/0050-animation-frame-timing.md): `tools/anim.py check`, the model of this
+Phase 2 of [plan 0050](../../plans/done/0050-animation-frame-timing.md): `tools/anim.py check`, the model of this
 finding, [anim/0002](0002-rates.md) and [anim/0003](0003-movement-gates.md), over the 55 kept session logs of
 [run:2026-10-27-anim](experiments.md#run2026-10-27-anim) (logger rev 4 and 5). Every count below is printed by the
 closing check (`2026-10-27-anim-check.txt`) or by `tools/anim.py summary` over it (`2026-10-27-anim-summary.txt`);

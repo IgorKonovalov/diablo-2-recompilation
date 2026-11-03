@@ -70,13 +70,14 @@ To change one, supersede it.
 
 **Tiers** ([ADR-0023](../../../docs/adrs/0023-review-tiers-and-gate-first-fixes.md), accepted; settled by
 plan 0053 Phase 4; amended by [ADR-0024](../../../docs/adrs/0024-lane-check-touched-documents-and-routing.md),
-accepted 2026-10-30):
+accepted 2026-10-30, and by [ADR-0027](../../../docs/adrs/0027-archivist-reader-lanes-tier-a.md), accepted 2026-11-03):
 
 - **Tier B, the lane check** (`references/lane-check.md`, Sonnet, diff-scoped): `reverser-static`,
-  `reverser-harness`, `archivist` and `wiki` lanes. Its verdicts are `accept`, `accept with fixes` or `escalate`.
+  `reverser-harness`, `wiki` lanes, and `archivist` lanes that are not reader lanes. Its verdicts are `accept`, `accept with fixes` or `escalate`.
   Besides the diff it runs the grep-bounded touched-document and touched-findings passes (at most 20 subjects each;
   more escalates), and every disagreement with a document the lane does not own needs a backlog entry (ADR-0024).
-- **Tier A, this mode in full**: every `spec-writer` lane, every change to an ADR or to `references/evidence-rules.md`,
+- **Tier A, this mode in full**: every `spec-writer` lane, every archivist reader lane (its diff adds or changes a
+  table or format statement taken from a finding), every change to an ADR or to `references/evidence-rules.md`,
   every lane a Tier B check escalates, and the audit sample.
 - **Promotion re-check.** A Tier A review of a spec promotion also re-checks every `[C]` the spec imports from a
   finding statement written or raised since that finding's last Tier A review. Find them with

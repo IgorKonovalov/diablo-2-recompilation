@@ -7,7 +7,7 @@ context:
   - ../../findings/anim/0002-rates.md
   - ../../findings/anim/0001-modes-frames.md#10-monster-modes
   - ../../findings/anim/experiments.md#run2026-10-27-anim-rates-emu
-  - ../../plans/0050-animation-frame-timing.md#implementation-log
+  - ../../plans/done/0050-animation-frame-timing.md#implementation-log
 resolution: "Reviewed 2026-10-27 (architect): accept with fixes (6); rulings (a)-(i) in the plan 0050 log; Phase 2 required case for classic monsters' S1-S4 added; archivist entry filed for the MonStats Timing [L], rate-stat minima and the K9/E9 records; P1.3 may start once merged."
 ---
 
