@@ -745,15 +745,16 @@ K3. The least item stat for a bonus ≥ y:                               [I] (de
   Paladin and Druid; three FBR rates of 30 for the Paladin and Druid; one A1 record per class at three IAS rates of 30;
   get-hits at an FHR rate with 30 starts for the Barbarian (two rates) and the Paladin. (fn:SUNIT_ScheduleModeEvents@0x005539B0,
   run:2026-10-27-anim, run:2026-10-27-anim-p2, run:2026-10-30-anim-p3b)
-- K3. [C] **The get-hit FHR tiers of five classes** (Phase 2 part 3: clvl 99 builds at FHR 0, 24 and 48, single
-  player, Act I Nightmare): the get-hit schedule lasts `n(r)` at three FHR rates with 30 starts or more each, counted
+- K3. [C] **The get-hit FHR tiers of five classes** (FHR 0, 24 and 48 from the same stock rate items in every part,
+  single player; part 3 added clvl 99 builds in Act I Nightmare to the starts of parts 1 and 2, whose builds and
+  difficulties differ): the get-hit schedule lasts `n(r)` at three FHR rates with 30 starts or more each, counted
   over parts 1–3, for the Amazon (rates 128 / 179 / 215: 32 / 40 / 33 starts), the Necromancer (38 / 32 / 42), the
   Sorceress (50 / 35 / 38), the Assassin (40 / 42 / 52) and the Druid (rates 124 / 173 / 208: 49 / 35 / 32; its 179 is
   the werewolf form's); the closing check over the 131 logs holds `sched-len` 46 722 and `ghr` 13 932 with 0
   mismatches. (fn:SUNIT_ScheduleModeEvents@0x005539B0, fn:sub_00621740_AnimRateBonus@0x00621740,
   run:2026-10-30-anim-p3, run:2026-10-30-anim-p3b)
-- K3. [I] **Recorded short** (not a mismatch): three FHR rates of 30 for the Barbarian (two) and the Paladin (one),
-  which part 3 did not build; and, survivability-bound at part 2's build and not part 3's target, a third FCR rate
+- K3. [I] **Recorded short** (not a mismatch): three FHR rates of 30 for the Barbarian (it has two) and the Paladin
+  (it has one), which part 3 did not build; and, survivability-bound at part 2's build and not part 3's target, a third FCR rate
   for the Amazon, Barbarian and Assassin, a second weapon type of the IAS rates, and two FBR rates of 30 for the
   classes the records do not name (part 1 had two for three classes; part 2's record names the Paladin and Druid at
   three). Their breakpoints stand on K1–K3 and the `[C]` inputs only. (run:2026-10-27-anim-p2,
@@ -1022,7 +1023,7 @@ run:2026-10-27-anim's schedules hold `n(r)` at every logged rate (E2), but these
   for the classes the records do not name; the Druid's throws, 29 of 30 over parts 1–3 (12, then 17 in part 3's
   `op-dru-th`); the set-2 IAS rates; a third FCR rate for the Amazon, Barbarian and Assassin; P1b-1's restart against
   the request frame for the other classes and action modes; P1b-2's 30 attacks with the factor above 175 (not played
-  in part 3; the clamp stands on part 1's 31 calls, *Constants*); player knockbacks (none new in part 3: Blood Raven,
+  in part 3; the clamp stands on part 1's 31 player calls, J2); player knockbacks (none new in part 3: Blood Raven,
   class 267, never seen in three Hell sessions); `VASCHTH` (no stock state transforms a player into the vampire);
   P1b-13 (13 player movement windows under a slow over the 131 logs, not a 30; 327 for monsters), P1b-14 and P1b-15
   (not played in part 3; part 2's record reports no outcome for them). Their statements stay `[I]`; none is waiting

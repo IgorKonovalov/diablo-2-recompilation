@@ -160,8 +160,8 @@ bonus map above. A few of the tool's illustrations, for stock records (the tool'
   86, 200 FHR.
 
 The lengths the formulas give equal the schedule's lengths at every rate the run logged. The formulas for the other
-rates rest on that and on the bonus map. Runs with level 99 characters logged hit recovery at FHR 0, 24 and 48, at least
-30 hits at each, for the Amazon, Necromancer, Sorceress, Druid and Assassin, and every length matched. The runs are
+rates rest on that and on the bonus map. The runs, the last with level 99 characters, logged hit recovery at FHR 0, 24 and 48, at least
+30 get-hits at each, for the Amazon, Necromancer, Sorceress, Druid and Assassin, and every length matched. The runs are
 short of some rates: three FHR rates of 30 events for the Barbarian and the Paladin, a third FCR
 rate for three classes and two others ([timing § K3](../specs/anim/timing.md#k-breakpoints-derived)). Those
 breakpoints are derived, not seen.
@@ -321,7 +321,7 @@ Each frame of a run takes `RunDrain * 2` from stamina (1/256 units), times `armo
 speed 10 or more, plus `stat 154` percent, at least 1 ([movement § D](../specs/anim/movement.md#d-the-run-drain)). 37 434
 logged run frames agreed. In a town it costs nothing (read from the code). At 0 stamina the run becomes a walk
 (read from the code). A Sorceress's run turned into a walk 81 times in the runs; the checker pairs each turn with
-the unit's next position at offset 0 in 75 of them and offset 1 in 6, which is not explained, so the turn's frame
+the unit's next path step at offset 0 in 75 of them and offset 1 in 6, which is not explained, so the turn's frame
 stays inferred ([movement § Open questions](../specs/anim/movement.md#open-questions)).
 
 ### Knockback
