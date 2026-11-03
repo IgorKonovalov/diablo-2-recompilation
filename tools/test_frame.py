@@ -8,8 +8,12 @@ No game file is read: the binary's reach is a stub, and the logs are written to 
     the slot dispatches against their queued records (oldest first; a cancelled record not matched);
   - the seed hand-off: handed, stepped, reversed;
   - the cross-type every-frame count;
-  - the gap walk of `rechain`.
+  - the gap walk of `rechain`;
+  - the dispatchers (plan 0055 P2a-ii): a declared table's entry called by its dispatcher, a callback passed to an
+    iterator, the caller chain and its anchors, an orphan left open, a DEAD function with a reference refused; the rule
+    classes 'reach', 'dispatch' and 'universal', and a universal event left out of the separating pairs.
 """
+import collections
 import os
 import sys
 import tempfile
@@ -25,16 +29,19 @@ HDR = "# d2run seed=1 gdb=tools/gdb/anim.gdb slot=2 t=2026-10-30T00:00:00\n"
 
 
 class StubBin:
-    """passes(): a fixed set per hook address, None (open) otherwise."""
+    """passes(): a fixed set per hook address, None (open) otherwise; with follow, `direct` gives the sets of the
+    direct-call reach (a hook absent there closes only through a declared table)."""
     sha256 = "0" * 64
 
-    def __init__(self, table=None):
+    def __init__(self, table=None, follow=False, direct=None):
         self.table = table or {}
+        self.follow = follow
+        self.direct = self.table if direct is None else direct
 
-    def passes(self, addrs, utype=None):
+    def passes(self, addrs, utype=None, direct=False):
         out = set()
         for a in addrs:
-            s = self.table.get(a)
+            s = (self.direct if direct else self.table).get(a)
             if s is None:
                 return None
             out |= s
@@ -123,9 +130,9 @@ class Rules(unittest.TestCase):
         self.assertEqual(frame.own_set(b, "combat", ev("RGN", raw={"t": 0}), self.ut)[0], frozenset({6, 7}))
 
 
-def run_check(lines, table=None, hdr=HDR):
+def run_check(lines, table=None, hdr=HDR, bin_=None):
     d, rel = write(lines, hdr)
-    ck = frame.Check(StubBin(table))
+    ck = frame.Check(bin_ or StubBin(table))
     ck._abs = os.path.join(d, rel)
     ck.log(d, rel, "anim.gdb")
     return ck
@@ -222,6 +229,105 @@ class AnimLog(unittest.TestCase):
         self.assertEqual(ck.cross["monster cross-type, this frame"], 1)
         self.assertEqual(ck.cross["monster queued in its own or a later walk (mon-ef): next frame"], 1)
         self.assertEqual(ck.cross["player queued outside the walks (ph 11): next frame's walk"], 1)
+
+
+class Classes(unittest.TestCase):
+    def test_reach_dispatch_universal(self):
+        ut = frame.UnitTypes([])
+        b = StubBin({0x00581490: frozenset({10, 11}), 0x00555600: frozenset({7})}, follow=True,
+                    direct={0x00581490: frozenset({10, 11})})
+        self.assertEqual(frame.own_set(b, "anim", ev("OEV"), ut), (frozenset({10, 11}), "reach"))
+        self.assertEqual(frame.own_set(b, "anim", ev("FREE"), ut), (frozenset({7}), "dispatch"))
+        self.assertEqual(frame.own_set(b, "anim", ev("GH"), ut), (frame.ALL, "universal"))
+        self.assertEqual(frame.own_set(StubBin(), "anim", ev("GH"), ut), (None, "open"))
+
+    def test_universal_left_out_of_the_pairs(self):
+        # PDS, an open (universal) FREE, MDS: one separating pair PDS -> MDS, two compared, the frame placed in full
+        ck = run_check([
+            'PDS {"u":10,"m":1,"k":1,"a":0,"b":0,"fr":5,"n":1}',
+            'FREE {"u":10,"t":0,"c":0,"m":1,"fr":5,"n":2}',
+            'MDS {"u":20,"m":1,"k":1,"a":0,"b":0,"fr":5,"n":3}',
+        ], bin_=StubBin(follow=True))
+        self.assertEqual(ck.c["separating"], 1)
+        self.assertEqual(ck.c["compared"], 2)
+        self.assertEqual(ck.c["frames placed2 any"], 1)
+        self.assertEqual(ck.c["frames2 all placed"], 1)
+        self.assertEqual(ck.kind[("anim", "FREE")]["class universal"], 1)
+
+    def test_universal_nested_takes_the_pair_set(self):
+        pa0 = 'PA0 {"u":{"u":10,"t":0,"c":0,"id":1,"m":1},"fr":7,"s":"%s","n":1}' % seed(1)
+        ck = run_check([pa0, 'FREE {"u":10,"t":0,"c":0,"m":1,"fr":7,"n":2}', 'PA1 {"k":1,"r":1,"s":"%s","n":3}' % seed(1),
+                        'MDS {"u":20,"m":1,"k":1,"a":0,"b":0,"fr":7,"n":4}'],
+                       bin_=StubBin({0x0057EEC0: frozenset({7})}, follow=True))
+        self.assertEqual(ck.kind[("anim", "FREE")]["compared as nested"], 1)
+        self.assertEqual(ck.c["separating"], 1)
+
+
+def synthetic_binary():
+    """A Binary over a made-up image: root R (rank 9) calls dispatcher D; D calls through table T (two entries E1, E2)
+    at 0x401150 and passes callback C to iterator I; O has no caller."""
+    b = frame.Binary.__new__(frame.Binary)
+    b.follow = True
+    b.img = bytearray(0x2D0010)
+    for k, v in enumerate((0x401200, 0x401300)):
+        b.img[0x2D0000 + 4 * k:0x2D0004 + 4 * k] = v.to_bytes(4, "little")
+    code = [(0x401000, "push   ebp"), (0x401010, "call   0x401100"), (0x401100, "push   ebp"),
+            (0x401120, "push   0x401500"), (0x401125, "call   0x401400"), (0x401150, "call   eax"),
+            (0x401200, "push   ebp"), (0x401300, "push   ebp"), (0x401400, "push   ebp"),
+            (0x401450, "call   DWORD PTR [ebp+0x8]"), (0x401500, "push   ebp"), (0x401600, "push   ebp"),
+            (0x401700, "ret")]
+    b.ia = [a for a, _t in code]
+    b.it = [t for _a, t in code]
+    b.funcs = {0x401000, 0x401100, 0x401200, 0x401300, 0x401400, 0x401500, 0x401600}
+    b.flist = sorted(b.funcs)
+    b.rev = collections.defaultdict(set, {0x401100: {0x401000}, 0x401400: {0x401100}})
+    b.lab = {}
+    b.reloc_refs = collections.defaultdict(list, {0x401500: [0x401121], 0x401200: [0x6D0000], 0x401300: [0x6D0004]})
+    b.dead = set()
+    b.unexplained = collections.defaultdict(list)
+    b._cache = {}
+    return b
+
+
+class Dispatch(unittest.TestCase):
+    DECL = dict(TABLES=(("T", 0x6D0000, 4, (0,), 2, ((0x401150, 0, None),), "idx", "D 0x401150"),),
+                ITERATORS={0x401400: ((0x401450,), "Iter")}, REGISTRARS={}, QUEST_FIELDS={}, STORED=(), DEAD=(),
+                DEAD_SELF=(), SEH_HANDLERS=(), BLOCKS={}, ARG_SITES={}, QUEST_CODE=())
+
+    def setUp(self):
+        self.saved = {k: getattr(frame, k) for k in self.DECL}
+        for k, v in self.DECL.items():
+            setattr(frame, k, v)
+
+    def tearDown(self):
+        for k, v in self.saved.items():
+            setattr(frame, k, v)
+
+    def test_table_and_callback_edges(self):
+        b = synthetic_binary()
+        b._follow()
+        b.roots = {0x401000: (frozenset({9}), 1, "R")}
+        self.assertEqual(b.passes([0x401300]), frozenset({9}))
+        self.assertIsNone(b.passes([0x401300], direct=True))
+        self.assertEqual(b.passes([0x401500]), frozenset({9}))
+        ch = b.chain(0x401300)
+        self.assertEqual([x for x, _l in ch], [0x401300, 0x401100, 0x401000])
+        self.assertIn("T[1] @0x00401150", ch[0][1])
+        self.assertIn("callback of Iter", b.chain(0x401500)[0][1])
+        self.assertIsNone(b.passes([0x401600]))
+        self.assertEqual(b.reach(0x401600)[1], [0x401600])
+        self.assertEqual(frame.hook_status(b, 0x401300)[0], "dispatch")
+        self.assertEqual(frame.hook_status(b, 0x401600)[0], "universal")
+        self.assertEqual(frame._closed(b, [0x401200], None), (frozenset({9}), "dispatch"))
+
+    def test_site_and_dead_checks(self):
+        frame.TABLES = (("T", 0x6D0000, 4, (0,), 2, ((0x401120, 0, None),), "idx", "a push is no call"),)
+        with self.assertRaises(SystemExit):
+            synthetic_binary()._follow()
+        frame.TABLES = self.DECL["TABLES"]
+        frame.DEAD = (0x401200,)
+        with self.assertRaises(SystemExit):
+            synthetic_binary()._follow()
 
 
 class Gap(unittest.TestCase):
