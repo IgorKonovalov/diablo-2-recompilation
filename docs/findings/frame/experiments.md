@@ -264,3 +264,64 @@ review). A tool fix and its test, then a re-run of the kept emulations it could 
   in [data/experiments.md](../data/experiments.md)). `[I]` the two `deact` mismatches of `r55c/dev/emu1/` and
   `dev/emu2/` are this effect (an empty-room case dumping the previous case's room from a page-aligned directive); those
   development runs are not re-run. (fn:RNG_Range@0x0045C390, fn:MISS_EvalCalc@0x0064B7C0, run:2026-11-03-emu-spec-reapply)
+## run:2026-11-03-frame-order
+
+- **Question:** (plan 0055 Phase 2a) Does the frame order of [frame/0001](0001-tick-and-messages.md)–[0003](0003-timers-activation.md)
+  predict the logged order of every frame of the kept corpus with two or more events, and the seed hand-off of every
+  pair of events on one seed in one frame? How many of the resynchronised skill entries of plans 0045 and 0052 does it
+  re-chain, and how many cross-type every-frame runs do the kept logs hold? ([frame/0004](0004-order-on-kept-logs.md))
+- **Setup:** no game, no wine, no slot, no Ghidra: a replay of kept logs. Input: the 331 frame-stamped, run-attributed
+  corpus logs of plan 0055 Phase 0 (`workspace/logs/frame-corpus/frame-corpus-logs.tsv` `12c71c1c…`, each log's sha256
+  in it), read by `tools/frame_corpus.py` (`287f3761…`, unchanged) `read_events`; the pinned `game.exe` (`631066c1…`)
+  disassembled by `objdump` for the reach; the kept gap lists of run:2026-10-27-skills
+  (`workspace/logs/skills/2026-10-27-skills-part1-gaps.txt` `5f43d175…`, `2026-10-27-skills-gaps.txt` `6843be4a…`).
+  Tool `tools/frame.py` (`73715f53…`, commit `eb962968`), tests `tools/test_frame.py` (`d3e87689…`, 18 tests). Every
+  replay under `systemd-run --user --scope -p MemoryMax=4G`, one at a time. Kept files in `workspace/logs/p55a/`,
+  `manifest.sha256` (`11056497…`, 8 lines); `sha256sum -c manifest.sha256` from that directory passes.
+- **Procedure:**
+  ```
+  K=workspace/logs/p55a
+  python3 -I tools/test_frame.py > $K/test.txt 2>&1
+  python3 -I tools/frame.py kinds > $K/kinds.tsv
+  systemd-run --user --scope -q -p MemoryMax=4G python3 -I tools/frame.py reach > $K/reach.txt
+  systemd-run --user --scope -q -p MemoryMax=4G python3 -I tools/frame.py check --out $K/check workspace/logs \
+      > /dev/null 2> $K/check-progress.txt
+  systemd-run --user --scope -q -p MemoryMax=4G python3 -I tools/frame.py rechain --out $K/rechain-gaps.txt \
+      workspace/logs workspace/logs/skills/2026-10-27-skills-part1-gaps.txt workspace/logs/skills/2026-10-27-skills-gaps.txt \
+      > $K/rechain.txt
+  ```
+  Exit codes 0 (`check` exits 1 on any order mismatch, nesting conflict, inverted slot pair, oldest-first missile pair
+  or reversed hand-off).
+- **Observed** (`check/check.txt` `106aa180…`, 471 lines; `check/frame-check-logs.tsv` `17825a3c…`, one row per log;
+  `kinds.tsv` `e1f30175…`, 115 kinds; `reach.txt` `e8277d18…`, 89 hooks; `rechain.txt` `40258860…`;
+  `rechain-gaps.txt` `7f1c951c…`, 477 gaps; `test.txt` `5b2b5ea9…`, `OK`; `check-progress.txt` `7b9623da…`, 331 logs):
+  ```
+  logs 331  events 6436250  no unit id 5338066  no seed 5061144  segments 331
+  frames2 501689  events in frames2 6176531  frames placed2 192294
+  compared 1719463  compared own 267695  separating 14061  mismatch 0  nesting conflicts 0
+  controls: monsters-before-players events 17040 frames 5997; slot-before-every-frame 9608 / 7924;
+            missiles-after-items 110 / 46; drain-before-the-tick 87 / 87
+  slot order: MDS pairs in queue order 4566, PDS 13, inverted 0 (matched MDS 41178 of 51842, PDS 17476 of 19125;
+              records cancelled 9812)
+  every-frame order: MF0 pairs newest first 24652 in 4710 frames, oldest first 0
+  cross-type EF: monster 926 this frame (mis-ef 79, plr-slot 847); player 0 (2 in mon-slot: next frame)
+  seed hand-offs: handed 1023086, stepped 42310, reversed 0, off 0
+  rechain: part 1 player 43 listed 0 re-chained, monster 171 / 0; part 2 player 103 / 7, monster 160 / 0
+  ```
+  Per logger (events; compared, of them by own kind; separating): anim 1 762 331; 66 404, 66 404; 13 967. skills
+  209 310; 32 583, 29 810; 94. stats 4 275 908; 1 619 807, 171 283; 0. economy 50 189; 486, 122; 0. economy2 9 807;
+  183, 76; 0. combat 126 285, two-combat 575, economy-hire 1 223, h6b 622: none compared. Mismatches 0 in each. The
+  limits: stats, economy, economy2, economy-hire and h6b carry no unit id on any event, h6b no seed (`check.txt` § per
+  logger).
+- **Development runs** (not cited): `workspace/logs/p55a/dev/`: `run1-crash.err` (the first full pass stopped on a
+  list-valued `w` field of stats' `RNGA`); `run2/` (tool `c8298557…`, uncommitted: 2 277 `MDS` mismatches from `EF`
+  lines without a phase, 4 inverted slot pairs from cancels not applied); `run3/` (`cd936f2b…`, uncommitted: both fixed,
+  0 mismatches); `run4/` (`a8e183f8…`, commit `6fba3cd1`: 4 "off" hand-offs between the server's and the client's
+  player); `run5/` (`b8731d13…`, `8f6d9fa6`: 20 "off" across pointers reused in a frame); `run6/` (`1d930258…`,
+  `6ecfb7db`) and `run7/` (`4117be67…`, `a7fb027b`): the kept counts, without the return-address list and the
+  separating pairs by rule. `dev/manifest-dev.sha256` (`dabf2b83…`, 39 lines) passes from `dev/`.
+- **Conclusion:** frame/0004's `[C]` claims: the pass and walk order with 0 mismatches and the separating pairs and
+  controls above; the slot lists oldest queued first and the missiles' every-frame list newest first in the game's own
+  runs; the drain's stamp for the skill-request handlers; the seed hand-offs; 926 monster cross-type every-frame queues;
+  7 more resyncs re-chained (142 of 281 player gaps, 0 of 331 monster gaps). No symbol raise (no logged return compared;
+  review-fixes rule 14). (run:2026-11-03-frame-order)

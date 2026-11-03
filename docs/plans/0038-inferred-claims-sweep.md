@@ -6100,5 +6100,5 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   animation's "Counting the end") or do not state them. (4) Q3 (`skills/catalogue.md` has 8 notes, no coverage row)
   predates the lane: the catalogue's notes landed in `2b68bf75` after the Phase 1 harvest `4063e701`, and `main`
   `fd2ca68a` gives the same error; routed to the spec-writer,
-  [2026-11-03-architect-spec-writer-quirks-catalogue-coverage-row](../backlog/2026-11-03-architect-spec-writer-quirks-catalogue-coverage-row.md).
+  [2026-11-03-architect-spec-writer-quirks-catalogue-coverage-row](../backlog/archive/2026-11-03-architect-spec-writer-quirks-catalogue-coverage-row.md).
   Gate green. Fixes (2): overclaim 2.
