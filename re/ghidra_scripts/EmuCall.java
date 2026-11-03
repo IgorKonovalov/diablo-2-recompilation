@@ -2,7 +2,10 @@
 // Ghidra's p-code emulator on the program's own bytes. For pure-enough functions that read tables through a global
 // pointer (patch the pointer to a scratch image).
 // Usage (headless): -postScript EmuCall.java <out-file> <function addr> <cases-file> <memory-spec>
-// Memory spec, applied before every case, one directive per line ('#' comments):
+// Memory spec, applied before every case, one directive per line ('#' comments). Each case writes a fresh copy of every
+// directive's bytes: Ghidra 12.1's MemoryPageBank.setPage keeps the caller's array as the page (no copy) when the
+// write starts on a 4 KiB page boundary and is 0x1000 bytes or more, so the emulated code's stores went into the
+// spec's own buffer and the next case re-wrote the stored bytes (plan 0055, lane/r55e; test workspace/logs/r55e/zerotest):
 //   load  <hex addr> <path>      write the file's bytes at addr
 //   dword <hex addr> <hex value> write one u32
 // Cases: one "ecx edx arg1 ... argN" line each (hex u32; N may be 0); the arguments are pushed as for __stdcall /
@@ -59,7 +62,7 @@ public class EmuCall extends GhidraScript {
 			while ((line = r.readLine()) != null) {
 				if (line.isBlank()) continue;
 				String[] f = line.trim().split("\\s+");
-				for (int i = 0; i < where.size(); i++) emu.writeMemory(where.get(i), what.get(i));
+				for (int i = 0; i < where.size(); i++) emu.writeMemory(where.get(i), what.get(i).clone()); // a copy: see the header
 				emu.writeMemory(toAddr(STACK), le32(SENTINEL));
 				for (int i = 2; i < f.length; i++) emu.writeMemory(toAddr(STACK + 4L * (i - 1)), le32(Long.parseLong(f[i], 16)));
 				emu.writeRegister("ESP", BigInteger.valueOf(STACK));

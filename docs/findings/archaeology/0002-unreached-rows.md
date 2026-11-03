@@ -100,9 +100,9 @@ Reach: named by Skills `aurastate`, `auratargetstate`, `passivestate`, `State1..
 - [I] [stats/0002 § Phase 0 surprise (f)](../stats/0002-states.md#phase-0-surprise-f-the-56-rows-no-data-names) is headed "the 56
   rows no data names"; the rows its body lists are 59, of which 57 `attract`, 100 `healthpot` and 106 `manapot` are named by Misc
   (its "tested only" bullet), leaving 56, all of them in the tool's 58. The two more are 175 `fullsetgeneric` and 176
-  `monsterset` (named by the stat 98 parameter, not by a column; stats/0002 does not list them). The setters stats/0002 traces
+  `monsterset` (named by the stat 98 parameter, not by a column; stats/0002 does not list them, and since 2026-11-03 its surprise (f) says why). The setters stats/0002 traces
   (shrines 128–137, set bonuses 165–170, `STATE_ApplyTimed`/`STATE_Set` immediates) are code paths this tool does not read. The
-  disagreement (56 vs 58) is routed to the owner of stats/0002 (backlog 2026-10-30, archivist to reverser).
+  disagreement (56 vs 58) is reconciled in stats/0002 surprise (f) (59 rows listed, 175/176 out; lane/r55e).
   (fn:STATE_Set@0x00639DB0, fn:STATE_ApplyTimed@0x0056E970, tbl:States.txt:state)
 - [I] Of the 58, the code scan of stats/0002 finds no immediate setter for seven (6 `resistmagic`, 25 `fetishaura`, 29
   `convicted`, 39 `lightningbolt`, 116 `dragonflight`, 164 `debugcontrol`, 171 `runeword`), the same seven left under that

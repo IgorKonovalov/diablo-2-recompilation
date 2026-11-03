@@ -188,3 +188,79 @@
   saves, the frees, the population calls, the writes after each boundary, and the next-pointer reads before the
   deactivation's and the sweep's tests (no case separates them). No symbol raise (ADR-0015 scope, review-fixes rule 14).
   (run:2026-10-30-frame-emu-3)
+
+## run:2026-11-03-emu-spec-reapply
+
+Static, no game and no slot (plan 0055, `lane/r55e`; backlog 2026-10-30 architect → reverser, from the plan 0055 P1
+review). A tool fix and its test, then a re-run of the kept emulations it could have touched.
+
+- **Question:** (1) Why did a per-case memory-spec directive of 0x1000 bytes or more keep the previous case's writes
+  (frame/0003 *Dead ends*), and does the fixed `EmuTrace.java`, `EmuBoundary.java` and `EmuCall.java` re-apply every
+  per-case directive for every case? (2) Do the six kept emulations whose per-case specs hold such a directive give the
+  same output with the fixed scripts?
+- **Cause** (Ghidra 12.1.2's own source, `Emulation-src.zip`): `EmulatorHelper.writeMemory` calls
+  `MemoryState.setChunk`, which splits the write into pages; `MemoryPageBank.setPage` (inherited by the
+  `FilteredMemoryPageOverlay` that `DefaultEmulator` uses) stores `new MemoryPage(val)` when a chunk is a whole page
+  *and* its offset in the caller's buffer is 0, and `MemoryPage(byte[])` keeps that array as the page's data, with no
+  copy. So for a directive that starts on a 4 KiB boundary and is 0x1000 bytes or more, the first page *is* the spec's
+  byte array: the case's `w` writes and the emulated code's stores into that page went into the array, and the next
+  case's re-apply wrote them back. A later whole page of the directive has a non-zero buffer offset and is copied, as
+  is every partial page. The scripts kept one array per directive for the whole run, so every case after the first was
+  exposed.
+- **Fix:** each case writes `what.get(i).clone()`, a fresh copy, for every per-case directive (one line in each of the
+  three scripts, with a header note). `const` directives are still written once, from their own array, by design.
+  Revisions: `EmuTrace.java` `3255db0c…` → `0753a291…`, `EmuBoundary.java` `286393aa…` → `0c88b790…`, `EmuCall.java`
+  `d7e4bb10…` → `0cba26de…` (pre-fix hashes at `dda63dfd`). `EmuFastcall.java` and `EmuCalcFunc.java` write only
+  8-byte seeds and fresh 4-byte arrays per case and are not affected.
+- **Setup:** lane project copy `workspace/ghidra-r55e`, heap 3 GB, each headless run under
+  `systemd-run --user --scope -p MemoryMax=4G`, one instance. New tools: `tools/emu_zerotest.py` (`afc4d1b1…`, the
+  no-case-dependence test, deterministic, uses `tools/rng.py`'s `rng_range`) and `tools/emu_spec_scan.py`
+  (`d013c72b…`, lists every memory spec under a log tree with a per-case directive that starts page-aligned and is
+  0x1000 bytes or more). Files in `workspace/logs/r55e/`: `manifest.txt` (`c26d6048…`, the top-level files and the two manifests
+  below), `commands.txt`, `tools-revisions.txt`, `scan.txt` (`e3dd2634…`); `zerotest/` with
+  `manifest-zerotest.sha256` (`b4ec7155…`, 76 lines, passes from `zerotest/`), `zerotest/check.txt` (`ca2ecb7f…`) and the
+  pre-fix control scripts (`control-scripts/`, the `dda63dfd` files with their classes renamed `*Old`); `rerun/` with
+  `manifest-rerun.sha256` (`50e90a44…`, 10 lines, passes from `rerun/`) and `rerun/compare.txt` (`33aac500…`). Each
+  manifest sits beside its directory and passes with `sha256sum -c ../manifest-<name>.sha256` run inside it.
+- **Procedure:** `commands.txt`. The test: a spec of one directive with the 64-bit seed `0x9ABCDEF0:12345678` at
+  `+0x78`; three identical cases of `RNG_Range(seed, 0x10000)` (`call 0045c390 <start+0x78> 00010000`), the first with a
+  `w` of `05000000` at `+0x100`, each dumping the seed and `+0x100` (EmuCall: three identical `ecx edx` lines). Specs:
+  `bytes` of 0x800, 0xFFF, 0x1000, 0x1800 at `0x10300000`, 0x2000 at `0x10300800` (unaligned), `load` of 0x1000 at
+  `0x10300000` and 0x46230 at `0x7F800000` (EmuTrace and EmuBoundary); `load` of 0x800, 0x1000, 0x1800 at `0x10300000`,
+  0x2000 at `0x10300800` and 0x46230 at `0x7F800000` (EmuCall). One headless run ran the fixed scripts and the controls
+  over all of them (`zerotest/run.sh`); `emu_zerotest.py check` scores each output against the model. The re-run:
+  `rerun/run.sh`, one headless run, the kept cases and specs read in place (never rewritten), outputs under `rerun/`,
+  then `cmp` of each with the kept output.
+- **Observed** (`zerotest/check.txt`, `ZT` lines summarised; `pass` = all three cases return the model's `0x0000E948`
+  and the model's seed, and the `w` bytes appear in case 1 only):
+  ```
+  fixed   EmuTrace 7/7 pass, EmuBoundary 7/7 pass, EmuCall 5/5 pass
+  control EmuTraceOld, EmuBoundaryOld: pass b800 bFFF b2000u, fail b1000 b1800 l1000 l46230   (eax e948 cefc 2e19)
+          EmuCallOld: pass l800 l2000u, fail l1000 l1800 l46230                             (eax e948 cefc 2e19)
+  ZT summary outcomes_unexpected=0
+  ```
+  A failing control returns the model's first draw, then the second and third draws of the same seed: each case
+  started from the seed the previous case left. The controls fail exactly the specs whose directive starts on a page
+  boundary and is 0x1000 bytes or more; the unaligned 0x2000 directive (first page partial, second page copied) passes
+  before the fix too.
+  `scan.txt` (`SUMMARY specs=483 affected_specs=18 affected_directives=55`, `workspace/logs/r55e/` itself skipped):
+  the six kept runs the entry names, and twelve development specs of `lane/r55c` (`r55c/dev/emu1/`, `dev/emu2/`,
+  `dev/zerotest/z0x1000`, `z0x1800`). No spec under `r52*/emu/` (the plan 0052 `ai-cat-emu` runs, 233 `.mem` files) holds a
+  directive of 0x1000 bytes or more, per-case or `const`. Every long directive in the tree is page-aligned (no
+  `LONG-UNALIGNED` line); the 26 others are `const`.
+  `rerun/compare.txt`:
+  ```
+  sweep-s1e/calcvar.out        5 053 lines  identical (27754eb9…)
+  sweep-s1e/eval.out          18 083 lines  identical (c98c70db…)
+  sweep-s1f/calcvar2.out       3 010 lines  identical (77d49abf…)
+  sweep-s1f/varroll.out        9 000 lines  identical (b322281e…)
+  calc-emu/eval/eval.out         236 lines  identical (93337d6b…)   EmuCall 0x0064B7C0
+  p51s/emu/calcemu/eval.out      242 lines  identical (85e8e041…)
+  ```
+- **Conclusion:** `[C]` the three scripts now re-apply every per-case directive for every case, whatever its length
+  and alignment, on the test's 19 script-and-spec runs (7 specs under EmuTrace and EmuBoundary each, 5 under EmuCall);
+  the pre-fix scripts did not on exactly the 11 runs whose spec is aligned and 0x1000 bytes or more. `[C]` the six kept emulations are byte-identical with the fixed scripts, so no claim resting on them changes
+  and no finding note is needed (data/0005, run:2026-10-16-calc-emu; run:2026-10-27-p51s-emu; the S1e and S1f records
+  in [data/experiments.md](../data/experiments.md)). `[I]` the two `deact` mismatches of `r55c/dev/emu1/` and
+  `dev/emu2/` are this effect (an empty-room case dumping the previous case's room from a page-aligned directive); those
+  development runs are not re-run. (fn:RNG_Range@0x0045C390, fn:MISS_EvalCalc@0x0064B7C0, run:2026-11-03-emu-spec-reapply)
