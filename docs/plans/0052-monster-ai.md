@@ -168,6 +168,18 @@ batches holding the tier come first, since Phase 2 waits for their review.
 - **Done when:** each compared claim has a verdict; every `contradicted` claim reachable on stock data is a required
   case of Phase 2; agreement promotes nothing. May run beside any P1 batch; lands before Phase 2's last session batch.
 
+### Phase 1c — The Uber event
+- **Owner skill:** reverser (static; one Ghidra, emulation as P1's batches)
+- **Starts when:** batch 12 is reviewed. It does not gate Phase 2 and holds no tier AI. Added by the owner, 2026-11-03.
+- **What:** what drives Uber Diablo, Uber Baal and Uber Mephisto, whose think functions (rows 145, 146, 147) only
+  return (ai/0008, ai/0012 § 2.10): the event handlers on levels 133 to 136, the spawns and minion counts, the helpers with
+  no static reference from the AI table (`0x005E9DD0`, `0x005FD0F0`, `0x005F7F10`, `0x005DD140`), Baal's class-709 teleport,
+  and the 37 class and 3 state immediates of the batch 11 scan that lie outside the AI ranges.
+- **Done when:** each named helper has a caller or is stated as unreferenced after a kept scan; the driver of each of the
+  three bosses is named with its address at `[I]` or better, or stated as not found with what was searched; what can be
+  emulated is, with controls, as in P1; any case that needs the game is listed for a later harness or owner-play session.
+- **Spec:** the result goes into P3b's entries for rows 145 to 147.
+
 ### Phase 2 — Per-event reproduction
 - **Owner skill:** reverser (harness; **one slot** from 1–2, given in the prompt; a second only when no plan 0038 batch
   or 0046·P2 session needs it)
@@ -792,3 +804,6 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   directory). Backlog: the [review request](../backlog/archive/2026-11-03-reverser-architect-plan-0052-p1-2-batch-11-review.md),
   [archivist](../backlog/2026-11-03-reverser-archivist-monstats-skills-readers-named-by-ai-0012.md) (MonStats `threat`, Skills
   `attackrank` and slot readers). Next: batch 12 (towns, NPCs and the state rows).
+- **2026-11-03 — Owner decision: the Uber event is a phase of this plan (Phase 1c).** The batch 11 check found it had no
+  home; the architect recommended a phase here, and the owner accepted ("as recommended"). Phase 1c follows batch 12's
+  review and gates nothing.
