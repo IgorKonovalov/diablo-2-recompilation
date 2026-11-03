@@ -880,8 +880,9 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0057E3F0,func,MERC_CapExpGain,,C,hirelings,docs/findings/hirelings/0001-hirelings.md
 0x0057E480,func,XP_Compute,,C,player/creation,docs/findings/player/0001-creation.md
 0x0057E510,func,PLAYER_AddExperience,,C,player/creation,docs/findings/player/0001-creation.md
-0x0057E5A0,func,sub_0057E5A0_PartyXpCollect,,I,player/creation,docs/findings/player/0001-creation.md
-0x0057E6C0,func,XP_PartyShare,,I,player/creation,docs/findings/player/0001-creation.md
+0x0057E5A0,func,sub_0057E5A0_PartyXpCollect,,C,player/creation,docs/findings/player/0002-party.md
+0x0057E6C0,func,XP_PartyShare,,C,player/creation,docs/findings/player/0002-party.md
+0x0057E7B0,func,sub_0057E7B0_XpCreditPlayer,,I,player/creation,docs/findings/player/0002-party.md
 0x0057E860,func,MERC_AddExp,,C,hirelings,docs/findings/hirelings/0001-hirelings.md
 0x0057E990,func,XP_OnMonsterKill,,C,player/creation,docs/findings/player/0001-creation.md
 0x0057EAB0,func,sub_0057EAB0_AddExperienceDirect,,I,player/creation,docs/findings/player/0001-creation.md
@@ -1434,6 +1435,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005A48C0,func,sub_005A48C0_ChampionMemberMark,,C,monsters/spawn,docs/findings/monsters/0002-room-population.md
 0x005A4940,func,sub_005A4940_MonMakeSpecial,,I,monsters/special,docs/findings/monsters/0003-special-monsters.md
 0x005A49B0,func,sub_005A49B0_SuperUniqueSpawn,,C,monsters/special,docs/findings/monsters/0003-special-monsters.md
+0x005A4EF0,func,sub_005A4EF0_KillExpGate,,I,player/creation,docs/findings/player/0002-party.md
 0x005A4F20,func,sub_005A4F20_PlayerDmgBonus,,I,monsters/stats,docs/findings/monsters/0004-stats.md
 0x005A4F50,func,sub_005A4F50_MonAttackStats,,C,monsters/stats,docs/findings/monsters/0004-stats.md
 0x005A5470,func,sub_005A5470_MonHitTest,,I,combat/formulas,docs/findings/combat/0001-formulas.md
@@ -3558,6 +3560,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00678B80,func,sub_00678B80_DirOctantIndex,,C,drlg/outdoor,docs/findings/drlg/0008-outdoor.md
 0x00678C10,func,sub_00678C10_PathDirCell,,I,path/search,docs/findings/path/0001-pathplan-register.md
 0x00678CF0,func,sub_00678CF0_DirFromDelta,,C,drlg/outdoor,docs/findings/drlg/0008-outdoor.md
+0x00678D10,func,sub_00678D10_PathDirOctant,,I,path/search,docs/findings/path/0002-search.md
 0x00678DF0,func,sub_00678DF0_PathDirTriple,,I,path/search,docs/findings/path/0001-pathplan-register.md
 0x00679190,func,sub_00679190_PathTargetOffsetX87,,I,path/search,docs/findings/path/0001-pathplan-register.md
 0x00679C80,func,sub_00679C80_PathPlanGreedy,,I,monsters/ai,docs/findings/ai/0001-machinery.md
@@ -3566,9 +3569,12 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0067A000,func,sub_0067A000_PathPlanKnockback,,I,anim/movement,docs/findings/anim/0003-movement-gates.md
 0x0067A140,func,sub_0067A140_PathPlanSpiral,,I,drlg/collision,docs/findings/drlg/0009-room-lifecycle.md
 0x0067A240,func,sub_0067A240_PathPlanRandomWalk,,I,drlg/collision,docs/findings/drlg/0009-room-lifecycle.md
-0x0067A630,func,sub_0067A630_PathSearchDirDraw,,I,monsters/ai,docs/findings/ai/0001-machinery.md
-0x0067AAA0,func,sub_0067AAA0_PathSearchRun,,I,monsters/ai,docs/findings/ai/0001-machinery.md
-0x0067AD00,func,sub_0067AD00_PathPlanSearch,,I,monsters/ai,docs/findings/ai/0001-machinery.md
+0x0067A630,func,sub_0067A630_PathSearchDirDraw,,I,path/search,docs/findings/path/0002-search.md
+0x0067A690,func,sub_0067A690_PathSearchAdvance,,I,path/search,docs/findings/path/0002-search.md
+0x0067A740,func,sub_0067A740_PathSearchWalk,,I,path/search,docs/findings/path/0002-search.md
+0x0067A9F0,func,sub_0067A9F0_PathSearchReduce,,I,path/search,docs/findings/path/0002-search.md
+0x0067AAA0,func,sub_0067AAA0_PathSearchRun,,I,path/search,docs/findings/path/0002-search.md
+0x0067AD00,func,sub_0067AD00_PathPlanSearch,,I,path/search,docs/findings/path/0002-search.md
 0x0067B850,func,sub_0067B850_PathPlanType1,,I,monsters/ai,docs/findings/ai/0001-machinery.md
 0x0067C2D0,func,sub_0067C2D0_PathPlanType15,,I,monsters/ai,docs/findings/ai/0001-machinery.md
 0x0067C480,func,sub_0067C480_GridValid,,C,drlg/outdoor,docs/findings/drlg/0008-outdoor.md
@@ -3777,6 +3783,9 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x006F13F0,data,g_JungleSideDefs,,C,drlg/outdoor,docs/findings/drlg/0008-outdoor.md
 0x006F1518,data,g_DirOctant,,C,drlg/outdoor,docs/findings/drlg/0008-outdoor.md
 0x006F1648,data,g_PathDirTriples,,I,path/search,docs/findings/path/0001-pathplan-register.md
+0x006F17D8,data,g_PathSearchTurnRows,,I,path/search,docs/findings/path/0002-search.md
+0x006F18D8,data,g_PathSearchDrawAdd,,I,path/search,docs/findings/path/0002-search.md
+0x006F1958,data,g_PathSearchStep8,,I,path/search,docs/findings/path/0002-search.md
 0x006F1F7C,data,g_LinkArreatOffsets,,C,drlg/warps,docs/findings/drlg/0007-warps.md
 0x006F1F9C,data,g_A5CaveEntries,,C,drlg/outdoor,docs/findings/drlg/0008-outdoor.md
 0x006F1FD8,data,g_A5RavineStep,,C,drlg/outdoor,docs/findings/drlg/0008-outdoor.md

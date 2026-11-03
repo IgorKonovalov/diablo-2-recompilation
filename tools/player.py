@@ -37,6 +37,9 @@ check, experience (any XK0 / XC0 / XA0 / LU0 line): XP_Compute from (exp, player
   level); PLAYER_LevelUp: level, nextexp, maxhp/maxmana/maxstamina + per-level x d x 64, the refill, statpts +
   StatPerLevel x d, newskills + d; the game seed and the player's unit seed unchanged, and no RNG-function call between
   LU0 and LUX.
+kill_events (no log; tools/party_emu.py compares it with the code under the emulator, plan 0058 Phase 1): XP_OnMonsterKill
+  (0x0057E990) on a declared world: the credit, the mercenary's award, the party share or the single award, as the list
+  of XP_Compute, MERC_AddExp and PLAYER_AddExperience calls the code makes and the boundary it ends at.
 loadcheck: a built save and the file the game wrote back after loading it: every header field, stat, skill byte,
   item field, mercenary and golem field equal, except last_played, checksum, map_seed, the difficulty act bytes and
   an item's flag 0x2000 ("new") going from 1 to 0, which are listed and counted.
@@ -197,8 +200,9 @@ def muldiv(a, b, c):
     return i32(tdiv(i32(a * b), c))
 
 
-def xp_compute(T, exp, clvl, mlvl, cls, s85, out=None):
-    """XP_Compute (0x0057E480) for a player unit."""
+def xp_compute(T, exp, clvl, mlvl, cls, s85, out=None, cap=None):
+    """XP_Compute (0x0057E480). A player's last step (MERC_CapExpGain 0x0057E3F0) changes nothing; `cap` is that step for
+    another unit: called with the gain only when the code reaches it (not on the two early returns)."""
     exp = i32(exp)
     if exp > 0x7FFFFF:
         exp = 0x7FFFFF
@@ -229,7 +233,291 @@ def xp_compute(T, exp, clvl, mlvl, cls, s85, out=None):
         out["ratio"] = exp
     if s85:
         exp = i32(exp + muldiv(exp, s85, 100))
-    return exp
+    return cap(exp) if cap is not None else exp
+
+
+# ---------------------------------------------------------------- the kill's experience: credit, mercenary, party
+
+PARTY_D2_BOUND = 6400   # 0x0057E654 cmp edx,0x1900 / 0x0057E65A ja: d2 = 6400 stays in (unsigned, wrapped 32-bit d2)
+PARTY_CAP = 8           # 0x0057E662 cmp eax,8 / 0x0057E665 jl: a ninth eligible member reaches the fatal path
+SITE_FATAL = 0x0057E671  # return address of the fatal path's 0x00408090(0xF25)
+XP_MERC_NUM = 86        # 0x0057EA2D imul eax,eax,0x56: the mercenary's part of a kill by another unit
+
+
+def trunc_sar8(v):
+    """cdq; and edx,0xFF; add eax,edx; sar eax,8: signed v / 256, truncated toward zero."""
+    v = i32(v)
+    return i32(v + 255 if v < 0 else v) >> 8
+
+
+def f32(x):
+    """The value an fstp dword keeps."""
+    return struct.unpack("<f", struct.pack("<f", x))[0]
+
+
+def xp_share_total(exp, n, floor=False):
+    """0x0057E736-0x0057E74B: total = exp + ((n - 1) * exp * 89) / 256, every step i32 (the product wraps; a wrapped
+    negative product truncates toward zero). `floor` is a negative control."""
+    prod = i32(i32((n - 1) * exp) * 89)
+    return i32(exp + (i32(prod) >> 8 if floor else trunc_sar8(prod)))
+
+
+def xp_share_q(total, sigma):
+    """0x0057E754-0x0057E75D: fild total; fidiv sigma; fstp dword: the quotient rounded once to f32."""
+    return f32(float(total) / float(sigma))
+
+
+def xp_share_input(level, q, f32_product=False):
+    """0x0057E775-0x0057E77B: fild level; fmul dword q; CRT_ftol2: the exact product truncated (f32_product is a control)."""
+    x = float(level) * q
+    return int(f32(x) if f32_product else x)
+
+
+def xp_share_inputs(exp, levels):
+    """The XP_Compute inputs of the share for n = len(levels) >= 2 members, in order."""
+    q = xp_share_q(xp_share_total(exp, len(levels)), sum(levels))
+    return [xp_share_input(lv, q) for lv in levels]
+
+
+def unit_is_dead(u):
+    """sub_005541B0_UnitIsDead (0x005541B0): no unit, flag bit 0 of +0xC6, a player in mode 0 or 0x11, a monster in mode
+    0 or 0xC, or any other unit type."""
+    if u is None or u.get("c6", 0) & 1:
+        return True
+    if u["type"] == 0:
+        return u["mode"] in (0, 0x11)
+    if u["type"] == 1:
+        return u["mode"] in (0, 0xC)
+    return True
+
+
+def unit_xy(u):
+    """The sub-tile words of a unit's path (+0x2C: +0x02, +0x06; none: 0, 0), or a static unit's dwords (types 2, 4, 5:
+    +0x0C, +0x10). 0x0057E5C8-0x0057E620, sub_0045ADF0_UnitGetSubX, sub_0045AE20_UnitGetSubY."""
+    if u["type"] != 2 and not 3 < u["type"] <= 5 and not u.get("path", 1):
+        return 0, 0
+    return u["x"], u["y"]
+
+
+def unit_room_level(u):
+    """sub_00620BB0_UnitGetRoom then sub_0061A1B0_RoomGetLevelId: None when the unit has no room."""
+    return u.get("room")
+
+
+class KillWorld:
+    """A declared world for kill_events. units: dicts with type, id, cls, mode, c6, path, x, y, room (level id or None),
+    base {stat: value}, ev {stat: value} (the evaluated list; base when absent), inv (None, a guid, or "bad"), game (the
+    +0x80 word is non-zero), states (one state id the unit holds), flag0x800 ((owner type, id) of a stat list
+    with flag 0x800, or None), link ((type, id) of the monster's owner link, or None), merc ((flags, unit id), ...) of pet
+    type 7. parties: [{"id": word, "guids": [...]}], first match wins. hire_factor: the hire row's Exp/Lvl, None for no row."""
+
+    EXP_STATES = (53, 57, 59)    # tbl:States.txt:exp: conversion, attract, confuse (the image's mask at DataTables+0x144)
+
+    def __init__(self, units, parties=(), hire_factor=None, expansion=1):
+        self.units = units
+        self.parties = list(parties)
+        self.hire_factor = hire_factor
+        self.expansion = expansion
+
+    def find(self, typ, uid):
+        for u in self.units:
+            if u.get("hash", u["type"]) == typ and u["id"] == uid:
+                return u
+        return None
+
+    def base(self, u, stat):
+        return u["base"].get(stat, 0)
+
+    def stat(self, u, stat):
+        ev = u.get("ev")
+        return (ev if ev is not None else u["base"]).get(stat, 0)
+
+    def party_id(self, u):
+        """sub_00554630_UnitPartyId then sub_00540710_PartyIdOfUnit: the first party whose list holds the unit's guid
+        (+0x0C, or inventory +0x24 when it has an inventory, -1 for a bad one), else 0xFFFF."""
+        if u is None or u["type"] != 0 or not u.get("game", 1):
+            return 0xFFFF
+        guid = u["id"]
+        if u.get("inv") is not None:
+            guid = 0xFFFFFFFF if u["inv"] == "bad" else u["inv"]
+        for p in self.parties:
+            if guid in p["guids"]:
+                return p["id"] & 0xFFFF
+        return 0xFFFF
+
+    def credit(self, killer, monster):
+        """0x0057E7B0: a player killer is the credit; a monster killer's owner link, replaced by the owner of a stat
+        list with flag 0x800 when the killer, then the victim (which wins), has a state in the `exp` mask; the result
+        counts only when it is a player."""
+        if killer is None:
+            return None
+        if killer["type"] == 0:
+            return killer
+        if killer["type"] != 1:
+            return None
+        owner = None
+        link = killer.get("link")
+        if link is not None:
+            owner = self.find(*link)
+        s = None
+        if killer.get("states") in self.EXP_STATES:
+            s = killer.get("flag0x800")
+        if monster is not None and monster.get("states") in self.EXP_STATES:
+            s = monster.get("flag0x800")
+        if s is not None:
+            owner = self.find(*s)
+        return owner if owner is not None and owner["type"] == 0 else None
+
+    def merc_of(self, credit):
+        """PETS_GetUnitOfType(game, credit, 7, 0): the first node of pet type 7 without flag bit 0; its unit (hash 1)."""
+        for flags, uid in credit.get("merc", ()):
+            if not flags & 1:
+                return self.find(1, uid)
+        return None
+
+
+class KillOpts:
+    """Negative controls of tools/party_emu.py. None of them is the code."""
+    bound = PARTY_D2_BOUND
+    strict = False           # d2 < bound
+    cap = PARTY_CAP
+    from_credit = False      # distance from the credited player (the model before plan 0058)
+    n1_member = False        # n = 1 credits the collected member (the model before plan 0058)
+    unwrapped = False        # d2 not reduced to 32 bits
+    f32_product = False
+    floor_total = False
+    merc_full = False        # the mercenary's gain never reduced
+
+
+def party_collect(W, credit, monster, O=KillOpts):
+    """sub_005405A0_PartyForEachInLevel with sub_0057E5A0_PartyXpCollect as its callback. -> (members, fatal). The party
+    and the level are the credited player's; the alive and distance tests are on each member, the credited player
+    included; the distance is to the killed monster. members: [(unit, level)], collection order."""
+    out = []
+
+    def visit(u):
+        if unit_is_dead(u):
+            return False
+        ref = credit if O.from_credit else monster
+        if ref is not None:
+            rx, ry = unit_xy(ref)
+            if rx == 0:
+                return False
+            mx, my = unit_xy(u)
+            if mx == 0:
+                return False
+            dx, dy = i32(ry - my), i32(rx - mx)
+            d2 = dx * dx + dy * dy
+            if not O.unwrapped:
+                d2 &= M32
+            if d2 > O.bound or (O.strict and d2 == O.bound):
+                return False
+        if len(out) >= O.cap:
+            return True
+        out.append((u, W.stat(u, 12)))
+        return False
+
+    room = unit_room_level(credit)
+    pid = W.party_id(credit)
+    if room is None or pid == 0xFFFF:
+        return out, visit(credit)
+    party = next((p for p in W.parties if p["id"] & 0xFFFF == pid), None)
+    if party is None:
+        return out, False
+    for guid in party["guids"]:
+        u = W.find(0, guid)
+        if u is None or unit_room_level(u) != room:
+            continue
+        if visit(u):
+            return out, True
+    return out, False
+
+
+def kill_events(W, T, killer, monster, O=KillOpts, entry="kill", direct=None):
+    """XP_OnMonsterKill (0x0057E990) on world W with experience tables T. -> (events, end): events in call order,
+    ("XC", unit id, exp, level, mlvl, site), ("MA", gain, merc id, owner id, level, site), ("AE", unit id, level, add, site)
+    and ("SHARE", n, sigma, q) before a share's first member; end is "ret" or (boundary, site, argument).
+    entry="share" starts at XP_PartyShare with direct = (credit, exp, clvl, mlvl). PLAYER_AddExperience's stat writes are
+    applied to the unit's base dict; a level-up ends the case at PLAYER_LevelUp, which is not modelled."""
+    ev = []
+
+    def xc(u, exp, level, mlvl, site, cap=None):
+        ev.append(("XC", u["id"], i32(exp), level, mlvl, site))
+        cls = u["cls"] if u["type"] == 0 else 0
+        return xp_compute(T, exp, level, mlvl, cls, W.stat(u, 85), cap=cap)
+
+    class Stop(Exception):
+        pass
+
+    def add_exp(u, level, add, site):
+        ev.append(("AE", u["id"], level, i32(add), site))
+        cls = u["cls"]
+        old = W.base(u, 13) & M32
+        new = (old + add) & M32
+        top = T.threshold(cls, T.maxlvl(cls) - 1)
+        new = min(new, top)
+        u["base"][29] = i32(new - old)
+        u["base"][13] = i32(new)
+        if T.level_from_exp(cls, new) != level:
+            raise Stop((0x00570880, 0x0057E57E, u["id"]))
+
+    def share(credit, exp, clvl, mlvl):
+        members, fatal = party_collect(W, credit, monster, O)
+        if fatal:
+            raise Stop((0x00408090, SITE_FATAL, 0xF25))
+        n, sigma = len(members), sum(lv for _, lv in members)
+        if n <= 0 or sigma <= 0:
+            return
+        if n == 1:
+            who, level = (members[0] if O.n1_member else (credit, clvl))
+            add = xc(who, exp, level, mlvl, 0x0057E721)
+            add_exp(who, level, add, 0x0057E72D)
+            return
+        q = xp_share_q(xp_share_total(exp, n, O.floor_total), sigma)
+        ev.append(("SHARE", n, sigma, q, tuple(u["id"] for u, _ in members), tuple(lv for _, lv in members)))
+        for u, lv in members:
+            add = xc(u, xp_share_input(lv, q, O.f32_product), lv, mlvl, 0x0057E78A)
+            add_exp(u, lv, add, 0x0057E794)
+
+    def merc_cap(merc, level):
+        def cap(gain):
+            f = W.hire_factor
+            owner = W.find(*merc["link"]) if merc.get("link") else None
+            if owner is None or owner["type"] != 0 or f is None:
+                return 0
+            top = (((level + 1) * (level + 1) * (level + 2) * f - (level + 1) * level * level * f) & M32) >> 6
+            return i32(gain) if gain & M32 <= top else top
+        return cap
+
+    try:
+        if entry == "share":
+            share(*direct)
+            return ev, "ret"
+        if killer is None or monster is None or killer["type"] not in (0, 1):
+            return ev, "ret"
+        exp = i32(W.base(monster, 13))
+        if exp <= 0:
+            return ev, "ret"
+        credit = W.credit(killer, monster)
+        if credit is None:
+            return ev, "ret"
+        mlvl = W.base(monster, 12)
+        merc = W.merc_of(credit)
+        if merc is not None:
+            lv = W.base(merc, 12)
+            gain = xc(merc, exp, lv, mlvl, 0x0057EA28, cap=merc_cap(merc, lv))
+            if merc is not killer and not O.merc_full:
+                gain = trunc_sar8(i32(gain) * XP_MERC_NUM)
+            ev.append(("MA", i32(gain), merc["id"], credit["id"], lv, 0x0057EA4B))
+        clvl = W.base(credit, 12)
+        if W.party_id(credit) != 0xFFFF:
+            share(credit, exp, clvl, mlvl)
+        else:
+            add = xc(credit, exp, clvl, mlvl, 0x0057EA98)
+            add_exp(credit, clvl, add, 0x0057EAA6)
+    except Stop as e:
+        return ev, e.args[0]
+    return ev, "ret"
 
 
 # ---------------------------------------------------------------- stat dicts

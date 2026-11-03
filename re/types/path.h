@@ -1,5 +1,6 @@
 /* The path request as PathPlan builds it, and the path record fields the request reads and writes (plan 0054 P1.1,
- * docs/findings/path/0001-pathplan-register.md). Field names are ours. [I] unless the finding says [C] (by emulation,
+ * docs/findings/path/0001-pathplan-register.md) and the search's store (plan 0054 P1.2, docs/findings/path/0002-search.md).
+ * Field names are ours. [I] unless the finding says [C] (by emulation,
  * run:2026-11-03-path-emu-1). The movement fields are re/types/anim.h PathMove, the collision fields
  * re/types/collision.h DynPathColl. Coordinates are subtiles; a point is a u16 pair (x | y << 16). */
 #include <stdint.h>
@@ -13,10 +14,11 @@ typedef struct PathPlanCtx {
     void   * pTargetRoom;         /* +0x0C RoomAtSubtile(pRoom, tx, ty) */
     uint32_t unset10;             /* +0x10 not written by PathPlan */
     uint8_t  refresh;             /* +0x14 0x006498A0's result: 1 (no target unit, a player, monster, missile or tile), 2 (an
-                                     object or item; an object of +0x13A moves the target 2 subtiles), 0 (no position) */
+                                     object or item; an object of +0x13A, Objects IsDoor, moves the target 2 subtiles), 0 (no
+                                     position). Doubled by PathPlanSearch (0x0067AD15), then the search's stop radius */
     uint8_t  _pad15[3];
-    uint32_t limit;               /* +0x18 path +0x91 (movzx): PathSetByte90's value, at most 77 */
-    uint8_t  b1C;                 /* +0x1C path +0x92 */
+    uint32_t limit;               /* +0x18 path +0x91 (movzx): PathSetByte90's value, at most 77; the search does not read it */
+    uint8_t  b1C;                 /* +0x1C path +0x92: the search's last bound for types 0 and 16 (PathSearchRun 0x0067AC69) */
     uint8_t  _pad1D[3];
     int32_t  type;                /* +0x20 path +0x3C */
     int32_t  size;                /* +0x24 path +0x44 (UNIT_GetSizeX at creation) */
@@ -52,3 +54,32 @@ typedef struct PathRequestFields {
     int32_t  typeParam;           /* +0x98 g_PathTypeParam98[type] (PathSetType): 2 for type 5, -2 for 6, -4 for 12 */
     uint32_t points[78];          /* +0x9C the point list, 78 slots to +0x1D3 (+0x1D4 is the crossed-subtile count) */
 } PathRequestFields;
+
+/* PathSearchRun's store: its 0x36FF8-byte frame from EBP-0x36FF8 (sub_0067AAA0_PathSearchRun), passed in EDI to
+ * sub_0067A740_PathSearchWalk. Compared as scratch by run:2026-11-03-path-emu-2. */
+typedef struct PathSearchNode {   /* 0x1C */
+    int16_t  f;                   /* +0x00 g + h */
+    uint16_t h;                   /* +0x02 2 max(|dx|, |dy|) + min(|dx|, |dy|) to the target */
+    uint16_t g;                   /* +0x04 the cost from the start: 2 a straight step, 3 a diagonal one */
+    int16_t  tries;               /* +0x06 -3 the root, 0 a child; a node is spent at 5 (8 and 5 directions) */
+    uint16_t x, y;                /* +0x08 */
+    const int32_t * turn;         /* +0x0C the next entry of g_PathSearchTurnRows */
+    int32_t  dir;                 /* +0x10 the direction of the try, 0..7 (g_PathSearchStep8) */
+    struct PathSearchNode * parent; /* +0x14 */
+    struct PathSearchNode * child;  /* +0x18 one slot, reused after a backtrack */
+} PathSearchNode;
+
+typedef struct PathSearchStore {
+    PathSearchNode * root;        /* +0x00 = &nodes[0] */
+    PathSearchNode nodes[900];    /* +0x04 */
+    int32_t  nNodes;              /* +0x6274 */
+    uint16_t x0, y0, x1, y1;      /* +0x6278 the rectangle (x1 = x0 + w, y1 = y0 + h: both ends inside) */
+    uint16_t w, h;                /* +0x6280 */
+    int32_t  stride;              /* +0x6284 w + 6 */
+    int32_t  offX, offY;          /* +0x6288 3 - x0, 3 - y0: cell (x, y) = (y + offY) * stride + offX + x */
+    uint32_t cells[50000];        /* +0x6290 0 unseen, 1 blocked, else the least g written; cleared (w + 6)(h + 6) cells */
+    int32_t  drawing;             /* +0x36FD0 1 under type 16 */
+    uint32_t * seed;              /* +0x36FD4 the unit's seed (unit +0x20) under type 16 */
+    PathSearchNode rootInit;      /* +0x36FD8 copied to nodes[0] before each pass */
+    int32_t  lastBound;           /* +0x36FF4 at EBP-4 */
+} PathSearchStore;

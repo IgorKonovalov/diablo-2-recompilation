@@ -58,3 +58,51 @@
   over the declared domain (collision test points one subtile inside a room for the plus and 3 × 3 patterns); not
   `PathPlan`'s tail after the import, not `PATH_DynamicCreate`, not the planners, not what the game stores at the
   declared offsets. No symbol raise (ADR-0015 scope, review-fixes rule 14). (run:2026-11-03-path-emu-1)
+
+## run:2026-11-03-path-emu-2
+
+- **Question:** (plan 0054 Phase 1, batch P1.2) Do `PathPlanSearch` and `PathSearchRun` (types 0 and 16), with
+  `PathSearchWalk`, `PathSearchAdvance`, `PathSearchDirDraw`, `PathSearchReduce` and the collision tests' edge branches,
+  map a declared `PathPlanCtx` over declared images to their return, the point list, `ctx +0x14` and the type-16 seed, or
+  to the assert and the clear at the rectangle's size, as [path/0002](0002-search.md) reads them?
+- **Setup:** Ghidra p-code emulator via `re/ghidra_scripts/EmuScratch.java` (`902f7c1e…`, new in this lane: `EmuBoundary.java`
+  plus the frame's scratch check), lane project copy `workspace/ghidra-r54b` (symbols replayed), heap 3 GB, under
+  `systemd-run --user --scope -p MemoryMax=4G`. No wine, no slot. Model and case writer `tools/path_emu2.py` (`752fe51f…`,
+  copy `path_emu2.py.rev`), every draw from `random.Random("r54b-…")`. Entry at the planner, per the P1.1 review's ruling 2;
+  images in path/0002 § 11 (`grids.txt`, `grids.json`: 362, 44, 215 model checks, 0 failures). Files in
+  `workspace/logs/r54b/emu/`, `manifest.sha256` (`48f3f74a…`, 156 lines, `check.txt` `ea17c633…`); `sha256sum -c manifest.sha256`
+  passes from that directory. The development run is under `emu/dev-1/` (its own manifest, 153 lines; same case files; its tool
+  copy the revision before the `_type0` print and the `bounds` wording).
+- **Procedure:**
+  ```
+  D=workspace/logs/r54b/emu
+  python3 -I tools/path_emu2.py grids --dir $D
+  python3 -I tools/path_emu2.py cases --dir $D
+  for f in real0 real16 stair corr open rect grid over; do
+    GHIDRA_PROJ_DIR=workspace/ghidra-r54b GHIDRA_HEADLESS_MAXMEM=3G systemd-run --user --scope -q -p MemoryMax=4G \
+      tools/ghidra.sh emuscratch $D/$f.cases $D/$f.mem > $D/$f.out 2> $D/$f.err
+  done
+  python3 -I tools/path_emu2.py check --dir $D > $D/check.txt
+  python3 -I tools/path_emu2.py manifest --dir $D --write
+  ```
+  Boundaries: `grid` observes the assert entry 0x00408090 and the clear's `memset` 0x00681EF0; `over` the instruction after the
+  `memset`, 0x0067AB00, with the saved `EBP`, return address and argument dumped. Fatal and allocator entries are guards elsewhere.
+- **Observed** (`check.txt`):
+  ```
+  PATH54 real0 cases=800 match=800 bad=0 stopped=0 traced=0 ... maxvisits=19046 maxiters=14 maxnodes=81 maxpoints=5 draws=0 startout=0
+  PATH54 real16 cases=400 match=400 bad=0 stopped=0 traced=0 ... maxvisits=23980 maxiters=13 maxnodes=103 maxpoints=77 draws=994022 startout=0
+  PATH54 stair cases=318 match=318 bad=0 stopped=0 traced=0 ... maxvisits=523 maxiters=1 maxnodes=91 maxpoints=77 draws=5948 startout=0
+  PATH54 corr cases=38 match=38 bad=0 stopped=0 traced=0 ... maxvisits=4232 maxiters=1 maxnodes=900 maxpoints=2 draws=65623 startout=0
+  PATH54 open cases=160 match=160 bad=0 stopped=0 traced=0 ... maxvisits=57797 maxiters=38 maxnodes=150 maxpoints=42 draws=291846 startout=0
+  PATH54 rect cases=400 match=400 bad=0 stopped=0 traced=0 ... maxvisits=10001 maxiters=9 maxnodes=130 maxpoints=59 draws=355627 startout=24
+  PATH54 grid cases=108 match=108 bad=0 stopped=0 traced=0 ... site_control_passed=0   (assert 35, memset 73)
+  PATH54 over cases=12 match=12 bad=0 stopped=0 traced=0 ... site_control_passed=0
+  PATH54 total cases=2236 match=2236
+  PATH54 result=ok
+  ```
+  (`...` the image-table reads and the two accounted scratch reads, and every control's separating, type-0 and passed counts, in
+  full in `check.txt`; every control passes 0 of the cases it separates and separates at least one.)
+  Distinct outcomes per family are the `OUTCOMES` lines: `real0` 8 end tags (431 exhausted, 72 past the tries, 81 of one point, 216 routes), `real16` 7, `stair` 4, `corr` 3, `open` 5, `rect` 8; each case also compares its own point list.
+- **Conclusion:** the maps of path/0002 §§ 2–7 and the limits of § 9 are `[C]` to the planner's return (`grid`, `over`: to their boundaries) over the declared
+  images; not what the game stores in a context, not `PathPlan`'s tail, not any other planner. No symbol raise (ADR-0015 scope,
+  review-fixes rule 14). (run:2026-11-03-path-emu-2)
