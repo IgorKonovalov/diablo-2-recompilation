@@ -20,7 +20,9 @@ run `2026-10-30-frame-order`; it ran on 2026-11-03 and carries that date.
   `read_events`), 501 689 frames hold two or more events; in the 192 294 of them that hold two or more events the model
   places, the 1 719 463 placed events (267 695 by their own kind, 1 451 768 by the pair they are nested in) fall in the
   pass order in every frame: 0 mismatches, 0 nesting conflicts. 14 061 consecutive placed pairs separate the order
-  (their pass sets do not overlap), 3 105 of them with neither event placed by the anim logger's phase field. Four
+  (their pass sets do not overlap), 3 105 of them with neither event placed by the anim logger's phase field; by logger
+  the separating pairs are anim 13 967, skills 94 and stats, economy and the rest 0, so the frames that test the order are
+  those holding such a pair, and the other placed frames (the stats logs' 162 249 among them) agree trivially. Four
   control orders each fail: monsters' walks before players' (17 040 events, 5 997 frames), slot before every-frame
   (9 608, 7 924), missiles after items (110, 46), the drain before the tick (87, 87). (run:2026-11-03-frame-order,
   fn:sub_005414D0_GameRunUnitEvents@0x005414D0, fn:sub_0052D870_GameTick@0x0052D870)
@@ -62,7 +64,8 @@ run `2026-10-30-frame-order`; it ran on 2026-11-03 and carries that date.
   but its seed moved between the lines; 52 with no line naming the unit; 11 with a defender's line). So of part 1's 3 459 consecutive pairs, 3 155 chain at once, 90 by
   `skills.py`'s walk, 0 more here, and 214 stay open. (run:2026-11-03-frame-order, run:2026-10-25-skills,
   run:2026-10-27-skills)
-- [I] **The limit.** The model places an event only when its pass follows from its kind: 15 of the 89 hooked functions
+- [I] **The limit.** Phase 2a's Done-when ("0 mismatches over every frame-stamped frame with two or more events") is
+  not met as written: see the 309 395 frames below. The model places an event only when its pass follows from its kind: 15 of the 89 hooked functions
   of the kind map have a direct-call reach that closes on pass roots; 74 reach a function with no direct caller that
   is no pass root: pointer-reached callbacks (skill, mode, AI, missile, quest) that the reach does not follow, and
   for the shared functions also the client's own loops (0x0044EFA0, 0x0044CF20). Most events are placed only through the pair they

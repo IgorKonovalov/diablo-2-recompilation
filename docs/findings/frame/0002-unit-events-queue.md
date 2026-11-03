@@ -28,8 +28,8 @@ file). Names below are `re/symbols.csv` names.
   head when it starts, so a record queued during an earlier walk of the same frame is found by a later walk of its
   own list. (fn:sub_005414D0_GameRunUnitEvents@0x005414D0, 0x005414EC–0x00541589) *2026-11-03 (Phase 2a):* held in the game's
   own runs, `[C]` in part: players' slot walk before the monsters' (3 007 dispatch pairs placed by call site), the
-  monsters' every-frame walk before their slot walk, the missiles' walks before the players' and monsters' events, the
-  objects' after them; the items' walks and the objects' and missiles' own every-frame/slot order are not separated
+  monsters' every-frame walk before their slot walk, the missiles' walks before the aura ticks of the players' and monsters' walks (7 pairs), the
+  objects' after their slot walks (7 pairs, 4 placed by call site); the items' walks and the objects' and missiles' own every-frame/slot order are not separated
   ([frame/0004](0004-order-on-kept-logs.md) § 2, run:2026-11-03-frame-order).
 - [I] **The order inside a list is the queue order, not a hash order.** An every-frame record is pushed on the
   **front** of its type's every-frame list, so that list runs **newest first**; a timed record is appended at the
