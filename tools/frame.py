@@ -540,21 +540,22 @@ def steps(a, b, limit=4096):
     return None
 
 
-def _unit_obj(e, role):
-    """A unit's seed object: ('unit', pointer) when the line gives the pointer (the server's and the client's copies
-    of one unit share type and id), else ('unit-id', type, id)."""
+def _unit_obj(e, role, ptypes=None):
+    """A unit's seed object: ('unit', pointer, type) when the line gives the pointer (the server's and the client's
+    copies of one unit share type and id; a freed unit's pointer is reused, by any type, even within a frame), else
+    ('unit-id', type, id)."""
     p = e.raw.get(role)
     if isinstance(p, dict) and isinstance(p.get("u"), int):
-        return ("unit", p["u"])
+        return ("unit", p["u"], p.get("t"))
     if isinstance(p, int) and p > 0xFFFF:
-        return ("unit", p)
+        return ("unit", p, ptypes.at(p, e.line) if ptypes else None)
     obj = e.units.get(role)
     if obj and obj[1] is not None:
         return ("unit-id",) + tuple(obj)
     return None
 
 
-def seed_objects(e, side):
+def seed_objects(e, side, ptypes=None):
     """{seed object: value} of one event's entry (side 'entry') or exit seeds. Objects: ('game',), ('player',) for
     the stats and economy families' gs/us/ps, ('unit', pointer) of a unit role (or ('unit-id', type, id))."""
     seeds = e.entry if side == "entry" else e.exit
@@ -572,19 +573,19 @@ def seed_objects(e, side):
             if w in ("h", "m"):
                 # stats' STA0 (target "t") and AU0 ("u") of a hireling or a monster: that unit's seed
                 p = e.raw.get("t") if e.kind == "STA0" else e.raw.get("u")
-                out[("unit", p) if isinstance(p, int) else ("unknown",)] = v
+                out[("unit", p, 1) if isinstance(p, int) else ("unknown",)] = v   # a hireling or a monster
             else:
                 out[("player",)] = v
             continue
         if role is not None and leaf == "s":
-            obj = _unit_obj(e, role)
+            obj = _unit_obj(e, role, ptypes)
             if obj:
                 out[obj] = v
             continue
         if role is None and leaf in ("s", "sa", "sd", "sb", "su", "so", "sm"):
             r = {"s": None, "sa": "a", "sd": "d", "sb": "b", "su": "u", "so": "o", "sm": "m"}[leaf]
             for c in ([r] if r else ["u", "o", "d", "m", "mi"]):
-                obj = _unit_obj(e, c)
+                obj = _unit_obj(e, c, ptypes)
                 if obj:
                     out[obj] = v
                     break
@@ -646,6 +647,7 @@ class Check:
         path = os.path.join(root, rel)
         evs = load(path)
         ptypes = UnitTypes(evs)
+        self.ptypes = ptypes
         # an EXTRA_PAIRS end line is its begin's call: the seed hand-off takes the two as one event
         ends = {e.end: e for e in evs if e.end}
         self.canon = {e.line: ends[e.line] for e in evs if e.kind in EXTRA_PAIRS and e.line in ends}
@@ -758,9 +760,9 @@ class Check:
         obs = []
         for e in real:
             e = self.canon.get(e.line, e)
-            for obj, v in seed_objects(e, "entry").items():
+            for obj, v in seed_objects(e, "entry", self.ptypes).items():
                 obs.append((e.line, 0, obj, v, e))
-            for obj, v in seed_objects(e, "exit").items():
+            for obj, v in seed_objects(e, "exit", self.ptypes).items():
                 obs.append((e.end if e.end else e.line, 1, obj, v, e))
         obs.sort(key=lambda x: (x[0], x[1]))
         last = {}
