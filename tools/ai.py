@@ -382,6 +382,10 @@ def accounting(dec):
             pts.append((p0["n"], "PP0", p0["s"]))
             if p1 and p1["s"]:
                 pts.append((p1["n"], "PP1", p1["s"]))
+    for t in dec.get("sst", []):
+        pts.append((t["n"], "SST0", t["s"]))
+        if t.get("exit"):
+            pts.append((t["exit"]["n"], "SST1", t["exit"]["s"]))
     if dec["aix"]:
         pts.append((dec["aix"]["n"], "AIX", dec["aix"]["s"]))
     pts.sort(key=lambda p: (p[0], 0))
@@ -410,24 +414,27 @@ def chains(decs, ssts):
                 r = pairs.setdefault(row, [0, 0])
                 r[0] += 1
                 r[1] += int(drew)
+    # decision -> SrvStart (ADR-0014): SKILLS_SrvStart of the decision's own unit runs inside the event (between the AID
+    # and the AIX line); the chain is "the unit seed at the skill start is the decision's last logged seed advanced n
+    # steps, and the exit of the skill start is the event's exit seed"
     skill = {}
-    sst_by = {}
-    for s in ssts:
-        sst_by.setdefault((s["log"], s["u"], s["id"]), []).append(s)
-    for k, lst in by_unit.items():
-        ss = sorted(sst_by.get(k, []), key=lambda s: s["n"])
-        for j, a in enumerate(lst):
-            if not a["aix"]:
-                continue
-            nxt = lst[j + 1]["aid"]["n"] if j + 1 < len(lst) else 1 << 60
-            for s in ss:
-                if a["aix"]["n"] < s["n"] < nxt:
-                    row = a["aid"]["ai"]
-                    r = skill.setdefault(row, [0, 0])
-                    r[1] += 1
-                    if s["s"] == a["aix"]["s"]:
-                        r[0] += 1
-                    break
+    for d in decs:
+        for t in d.get("sst", []):
+            row = d["aid"]["ai"]
+            r = skill.setdefault(row, [0, 0, 0, {}])
+            r[2] += 1                                  # a skill start inside the decision
+            prev = [d["aid"]["s"]] + [b["s"] for b in d["aib"] if b["n"] < t["n"]] + \
+                [m0["s"] for m0, m1 in d["msm"] if m0["n"] < t["n"] and m0["s"] and m0["cmd"][1] == d["aid"]["u"]]
+            last = max([(d["aid"]["n"], d["aid"]["s"])] + [(b["n"], b["s"]) for b in d["aib"] if b["n"] < t["n"]] +
+                       [(m0["n"], m0["s"]) for m0, m1 in d["msm"] if m0["n"] < t["n"] and m0["s"] and
+                        m0["cmd"][1] == d["aid"]["u"]])[1]
+            n = reach(seedval(last), seedval(t["s"]), 12)
+            ex_ok = bool(t.get("exit")) and d["aix"] is not None and t["exit"]["s"] == d["aix"]["s"]
+            if n is not None:
+                r[1] += 1
+                r[3][n] = r[3].get(n, 0) + 1
+            if ex_ok:
+                r[0] += 1
     return pairs, skill
 
 
@@ -442,6 +449,13 @@ def run_check(paths, out=None):
             ssts.append(s)
         ains += r["ain"]
         caps += r["cap"]
+    sst_by = {}
+    for t in ssts:
+        sst_by.setdefault((t["log"], t["u"]), []).append(t)
+    for d in decs:
+        a = d["aid"]
+        x = d["aix"]["n"] if d["aix"] else a["n"]
+        d["sst"] = [t for t in sst_by.get((d["log"], a["u"]), []) if a["n"] < t["n"] < x]
     per = {}
     mism = []
     acc_bad = []
@@ -501,10 +515,18 @@ def run_check(paths, out=None):
     cd = sum(v[1] for v in pairs.values())
     lines.append("CHAIN decision_pairs=%d drawing=%d rows=%s" % (ct, cd, json.dumps({str(k): v for k, v in
                                                                                     sorted(pairs.items())})))
-    st_ = sum(v[0] for v in skill.values())
-    sa = sum(v[1] for v in skill.values())
-    lines.append("CHAIN decision_to_skillstart on_exit_seed=%d next_sst=%d rows=%s" % (
-        st_, sa, json.dumps({str(k): v for k, v in sorted(skill.items())})))
+    lines.append("CHAIN decision_to_skillstart inside=%d entry_within_12_steps=%d exit_seed_is_event_exit=%d" % (
+        sum(v[2] for v in skill.values()), sum(v[1] for v in skill.values()), sum(v[0] for v in skill.values())))
+    for row in sorted(skill):
+        v = skill[row]
+        lines.append("SKCHAIN %s %-14s inside=%d entry_within12=%d exit_is_event_exit=%d steps=%s" % (
+            row, (per.get(row) or {}).get("name", "?"), v[2], v[1], v[0],
+            json.dumps({str(k): v[3][k] for k in sorted(v[3])})))
+    for row in sorted(pairs):
+        v = pairs[row]
+        lines.append("DCHAIN %s %-14s pairs=%d drawing=%d floor20=%s" % (
+            row, (per.get(row) or {}).get("name", "?"), v[0], v[1], "met" if v[1] >= 20 else
+            ("n/a (no draw)" if v[1] == 0 else "SHORT")))
     for m in mism[:60]:
         lines.append("MISMATCH %s n=%d row=%s %s: %s" % (os.path.basename(m[0]), m[1], m[2], m[3], "; ".join(m[4])))
     for m in pp_ex[:20]:

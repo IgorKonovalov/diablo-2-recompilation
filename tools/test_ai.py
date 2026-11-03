@@ -123,14 +123,24 @@ class PartsTest(unittest.TestCase):
         self.assertEqual(ai.hand_vampire(i)[1], 0x005F4AD5)
 
     def test_chain_counts(self):
-        def dec(n, u, s0, s, sx, nx):
-            return {"log": "x", "aid": {"n": n, "u": u, "id": 5, "ai": 2, "s0": s0, "s": s}, "aix": {"s": sx, "n": nx}}
+        def dec(n, u, s0, s, sx, nx, sst=()):
+            return {"log": "x", "aid": {"n": n, "u": u, "id": 5, "ai": 2, "s0": s0, "s": s}, "aix": {"s": sx, "n": nx},
+                    "aib": [], "msm": [], "pp": [], "sst": list(sst)}
         a = dec(10, 1, "00000001:00000000", "00000001:00000000", "0000000a:00000000", 12)
         b = dec(20, 1, "0000000a:00000000", "0000000a:00000000", "0000000b:00000000", 22)
         c = dec(30, 1, "0000000c:00000000", "0000000c:00000000", "0000000d:00000000", 32)
-        pairs, skill = ai.chains([a, b, c], [{"log": "x", "u": 1, "id": 5, "n": 13, "s": "0000000a:00000000"}])
+        pairs, skill = ai.chains([a, b, c], [])
         self.assertEqual(pairs, {2: [1, 1]})
-        self.assertEqual(skill, {2: [1, 1]})
+        self.assertEqual(skill, {})
+        # a skill start inside a decision: entry two LCG steps on from the decision's seed, exit seed = the event's
+        s1 = ai.step(ai.step((5, 0)))
+        s2 = "%08x:%08x" % ai.step(s1)
+        t = {"n": 41, "u": 1, "id": 5, "s": "%08x:%08x" % s1, "exit": {"n": 42, "s": s2}}
+        d = dec(40, 1, "00000005:00000000", "00000005:00000000", s2, 43, [t])
+        pairs, skill = ai.chains([d], [t])
+        self.assertEqual(skill, {2: [1, 1, 1, {2: 1}]})
+        steps, bad = ai.accounting(dict(d, sst=[t]))
+        self.assertEqual(bad, [])
 
     def test_parse_skips_foreign_lines(self):
         with tempfile.NamedTemporaryFile("w", suffix=".log", delete=False) as fh:
