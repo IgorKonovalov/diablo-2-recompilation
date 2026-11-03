@@ -3605,3 +3605,29 @@ run id). Evidence in [items/0010 § Plan 0038 batch H6e2](0010-quest-drops.md#pl
   (1 143) is mostly refusals and zero amounts by construction.
 - **Conclusion.** [items/0012](0012-use-inventory.md) §§ 2, 4, 6, 8: the claims tagged [C] (ADR-0021). No symbol raised.
 
+## run:2026-11-04-inventory-emu
+
+- **Question.** Do the placement search, the row and record readers, the belt search and the stack rules (plan 0060 P1.2) map their inputs as `tools/item_inventory.py` says, and which wrong readings can the run tell apart?
+- **Setup.** No game run. Ghidra's p-code emulator, `re/ghidra_scripts/EmuBoundary.java` unchanged, project copy `workspace/ghidra-r60b` (`-Xmx3G`, `MemoryMax=4G`). `tools/item_emu2.py` (sha256 1beeb89e596e722f…), `tools/item_inventory.py` (c4933983e21e0bc1…), `tools/test_item_inventory.py` (e334633562266290…, 14 tests pass). Every case draw from `random.Random("r60b-<family>")`. Image writes on image addresses are inputs: `g_pDataTables`, the items table (`0x0096CA58`, `0x0096CA5C`), `inventory` and `belts` (`0x0096D4F0`, `0x0096D4F4`, `0x0096D4F8`). Guards `0x00408A60`, `0x00681E09`, `0x0040B4B0`, `0x0040B430`, `0x0040B480`; `0x00408090` is observed. The second belts set's counts are declared unlike the stock's, and `inventory` bytes `+0x12`, `+0x13` non-zero, so that a wrong read would show.
+- **Procedure.**
+  1. `python3 -I tools/item_emu2.py cases --dir workspace/logs/r60b/emu`
+  2. per family `GHIDRA_PROJ_DIR=workspace/ghidra-r60b GHIDRA_HEADLESS_MAXMEM=3G systemd-run --user --scope -p MemoryMax=4G tools/ghidra.sh emuboundary D/<f>.cases D/<f>.mem > D/<f>.out`
+  3. `python3 -I tools/item_emu2.py check --dir D > D/check.txt`; `... static --dir D`; `tools/ghidra.sh rngcallgraph - <root> > D/rcg-<root>.txt` for 13 roots, `D/rcg-summary.txt` their counts; `... manifest --dir D --write`.
+- **Observed** (`check.txt`, `static.txt`, `manifest.txt` under `workspace/logs/r60b/emu`, `sha256sum -c manifest.txt` passing from there; `check.txt` badff1be5aef5cc3…, `manifest.txt` ffb28cfb6c8d732f…): **9 560 cases, 0 mismatches, 0 stops**, 1 578 traced accesses outside the declared memory, 0 unaccounted (the row copies' other fields and the named image tables). `search`, `belt`, `rowfor`, `invrec`, `beltrec`, `stackok` run to the return; `place` and `beltplace` end at `0x0063AFD0`, `put` at `0x0063AAF0`, `merge` at `0x00627260`, and nothing after a boundary is covered.
+
+| Family | Entry | Cases | Distinct outcomes |
+|---|---|---|---|
+| `search` | `0x0063B850` | 4 000 | 112 |
+| `place` | `0x0063B950` | 500 | 275 |
+| `put` | `0x0063AFD0` | 800 | 6 |
+| `belt` | `0x0063C600` | 2 000 | 15 |
+| `beltplace` | `0x0063C790` | 400 | 15 |
+| `rowfor` | `0x00621050` | 400 | 16 |
+| `invrec` | `0x0065C1F0` | 200 | 160 |
+| `beltrec` | `0x00660CB0` | 100 | 100 |
+| `stackok` | `0x0062C850` | 660 | 2 |
+| `merge` | `0x0055E590` | 500 | 134 |
+
+- **Controls** (`check.txt`, failing cases): `search` of 4 000: `geq` 707, `no255` 0, `noedge` 898, `rowfirst` 74, `colright` 362, `h1general` 723, `firstall` 543, `bestall` 575, `wide` 2 465. `place` of 500: `geq` 113, `firstall` 76, `bestall` 47. `put` of 800: `wide` 397. `belt` of 2 000: `secondset` 237, `defaultbelt` 160, `nogroup` 126, `walk1` 192, `noauto` 337. `rowfor` of 400: `stashsmall` 20. `no255`'s 0 is structural: 255 is the highest score. `wide`'s model in `search` is a refusal, which is what `0x0063ADD0` would give for a page unequal to the row.
+- **Development runs.** `dev-1/` (3 families), `dev-2/` (523 mismatches: the model's null owner where the image kept an earlier case's, a wrong return-address constant, a JSON key type in the checker) and `dev-3/` (0 mismatches, the kept generator) are kept with their own `manifest.txt`. The tool revision that wrote `static.txt` and the manifest differs from the cases' only in `cmd_static` and `cmd_manifest`.
+- **Limits.** Declared scratch memory: the code's map, not the game's own data (ADR-0015), and no symbol raised. The claims are in docs/findings/items/0013-grids-belts-stacks.md under its convention.
