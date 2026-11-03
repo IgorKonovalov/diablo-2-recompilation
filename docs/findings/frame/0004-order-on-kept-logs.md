@@ -16,7 +16,7 @@ run `2026-10-30-frame-order`; it ran on 2026-11-03 and carries that date.
 
 ## Answer (summary)
 
-- [C] **No order mismatch in the corpus.** Over the 331 frame-stamped corpus logs (6 436 250 events by
+- [C] *(Dated note, 2026-11-03: the counts of this bullet are Phase 2a's; [frame/0005](0005-dispatchers.md) § 6 gives the wider model's, 383 349 frames, 17 254 separating pairs and the controls' 42 148, 9 608, 8 885 and 95 events.)* **No order mismatch in the corpus.** Over the 331 frame-stamped corpus logs (6 436 250 events by
   `read_events`), 501 689 frames hold two or more events; in the 192 294 of them that hold two or more events the model
   places, the 1 719 463 placed events (267 695 by their own kind, 1 451 768 by the pair they are nested in) fall in the
   pass order in every frame: 0 mismatches, 0 nesting conflicts. 14 061 consecutive placed pairs separate the order
