@@ -16,8 +16,8 @@ one file per section; `dev/` and `dev/pass2/` hold the earlier passes, each with
   (data:g_CmdLineOptions@0x00705040, fn:sub_004058A0_ConfigParseCmdLine@0x004058A0,
   fn:sub_00406340_ModStateFromCmdLine@0x00406340, fn:sub_0044B6B0_ClientInitOptions@0x0044B6B0)
 - [I] **Of A's 58 rows, 17 have no reader and no writer in the traced code**: `-fr -i -nm -m -minfo -md -rare -unique
-  -msglog -safe -nopk -cheats -teen -npl -lem -questall -openc`. They parse and nothing follows. `-opengl` has a reader that
-  can't see it set, since the bootstrap clears the byte after parsing. So the classic developer switches for monsters,
+  -msglog -safe -nopk -cheats -teen -npl -lem -questall -openc`. They parse and no traced code follows ("no traced use", not "unused": `-fr -i -openc` rest on the pointer walk alone, § *What the scan covers*). `-opengl` has a reader that
+  can't see it set, since the bootstrap clears the byte after parsing. So, within the traced code, the classic developer switches for monsters,
   items, invincibility and cheats do nothing in 1.14d. (`dead.txt`, 0x00406595, fn:sub_004064C0_GameMain@0x004064C0)
 - [I] The switches that change a specified outcome are `-seed`, `-act`, `-txt`, `-direct`, `-nosave`, `-gametype`, the class
   rows with `-name`, `-arena`, `-ctemp` and the chat command `/players` (§ 7 names each one's section). `-nosave`
@@ -159,7 +159,7 @@ for each index i of text:
 | `-lq` | 0 | `+0x00F` | `InitGame` 0x00405DA5 → toggles `0x0072DA50` |
 | `-gamma` | 1 | `+0x010` | `InitGame` 0x00405DB0, 0x0044D7D0 → 0x004F5230 |
 | `-vsync` | 0 | `+0x014` | `InitGame` 0x00405DBD, 0x0044D7E0 → `0x0072DA58` = 1, a word with **no reader** in the scan |
-| `-fr` | 1 | `+0x015` | None |
+| `-fr` | 1 | `+0x015` | None traced (97 raw hits unread; walk only) |
 | `-gametype` | 1 | `+0x019` | 0x0044D62D → `g_ClientGameMode` (34 other references); `ClientRun` 0x0044B927 (== 6), 0x0044B9C5 (exit switch); launcher and multiplayer write it |
 | `-joinid` | 1 | `+0x01D` | 0x0044D636 (word) → `0x007A0520`, read at 0x0044F4AA for the join message 0x00477F70 |
 | `-gamename` | 2 | `+0x01F` | 0x0044D61F → `g_ClientGameName`, read at 0x0044F459 for `ClientGameCreateMsg`; getter 0x0044B7C0 |
@@ -167,9 +167,9 @@ for each index i of text:
 | `-bn` | 2 | `+0x04F` | 0x0044D659 only tests it; the copy to `0x0070F028` takes **`+0x37`**, not this field (0x0044D66E) |
 | `-mcpip` | 2 | `+0x067` | 0x0044D682 → `0x0070F130`, which nothing else references |
 | `-nopk` | 0 | `+0x083` | None |
-| `-openc` | 0 | `+0x084` | None |
+| `-openc` | 0 | `+0x084` | None traced (129 raw hits unread; walk only) |
 | `-ama` `-pal` `-sor` `-nec` `-bar` | 0 | `+0x085`..`+0x089` | 0x0044D6B0 → `g_ClientClass` = 0, 3, 1, 2, 4; later bytes win. `+0x08A` → 5 and `+0x08B` → 6 have **no switch** (the launcher writes them, 0x00431E70) |
-| `-i` | 0 | `+0x08C` | None |
+| `-i` | 0 | `+0x08C` | None traced (124 raw hits unread; walk only) |
 | `-name` | 2 | `+0x0BD` | 0x0044D892: unless `"0"`, first 16 bytes → `g_ClientName`; also 0x0044E5C2, multiplayer and launcher |
 | `-realm` | 2 | `+0x0D5` | 0x0044D902 → `0x007A0500` (read 0x00457FA8, 0x004696BA); launcher clears |
 | `-ctemp` | 1 | `+0x1ED` | 0x0044D960 (low byte) → `g_CTemp`, overwriting the image's 1; `CTempGet` at 0x00477CEC and 0x00477FBC |
@@ -230,6 +230,7 @@ for each index i of text:
 | `-arena N` | the create message's word at `+0x207`, and through the overlap the low word of `+0x209`, which `ClientGameCreateMsg` tests against 0 and, if 0, writes `4 | 0x100000` (0x00477D15, 0x00477D24) | [items/economy](../../specs/items/economy.md) § G | **not stated**: Phase 3, server reader open (open question 1) |
 | `/players N` | `g_PlayersOverride` | [items/tc](../../specs/items/tc.md) § F; [player/party](../../specs/player/party.md) § E | stated; the client-mode gate 0, 1, 6, 8 to be checked by Phase 3 |
 
+- [I] **Open, priority (open question 5): every kept run is under `-ns`, and whether `-ns` changes any tracked seed is NOT known.** With `-ns` set, `InitGame` skips the sound start (0x00405E09 → 0x00514530) and 0x004DCA30 returns early (0x004DCA38); neither was read past its first lines, and `RNG_Range`/`RNG_RangeB` have 200+ call sites in 0x004Bxxxx–0x004Fxxxx, so a draw in the sound path is not excluded. If it draws from a seed a spec tracks, every kept run differs from normal play. Routed as a priority entry to the reverser. (0x00405E09, 0x004DCA38, fn:RNG_Range@0x0045C390)
 - [I] Harness: `-w -ns -seed N` are what `tools/d2run.py` passes, `-act`, `-direct`, `-txt` on request. `-w` and `-ns` reach video and sound code only as far as read here; no spec names an outcome that depends on them, and this phase did not check that the sound path takes no draw. (0x00405CD2, 0x00405E09, 0x004DCA38)
 - [I] The rest change no specified outcome: the video rows, `-log`, `-build`, `-sndbkg`, `-nocompress`, the network addresses, `-comint`, `-skiptobnet`, `/fps`, `/framerate`, and `/nopickup` and `soundchaosdebug` (client input and client sound, which no spec covers).
 
@@ -266,7 +267,7 @@ for each index i of text:
 | `0x0044B430`, `0x0044B8A0` | `sub_0044B430_ClientModuleEntry`, `sub_0044B8A0_ClientRun` | the client's run; stores `g_ClientConfig` | I |
 | `0x0044B6B0` | `sub_0044B6B0_ClientInitOptions` | parser C and `ApplyOptions` | I |
 | `0x0044B7A0`, `0x0044B7B0` | `sub_0044B7A0_ClientGetConfig`, `sub_0044B7B0_ClientGetComInt` | getters | I |
-| `0x0044D580`, `0x0044D5F0`, `0x0044D650`, `0x0044D680`, `0x0044D6B0`, `0x0044D890`, `0x0044D960` | `sub_…_Apply…` | handlers, § 5 | I |
+| `0x0044D580`, `0x0044D5F0`, `0x0044D650`, `0x0044D680`, `0x0044D6B0`, `0x0044D890`, `0x0044D960` | `sub_0044D580_ApplyNoSaveOption`, `sub_0044D5F0_ApplyNetOptions`, `sub_0044D650_ApplyBnOption`, `sub_0044D680_ApplyMcpOption`, `sub_0044D6B0_ApplyClassOptions`, `sub_0044D890_ApplyNameOption`, `sub_0044D960_ApplyCTempOption` | handlers, § 5 | I |
 | `0x00451260` | `sub_00451260_RegisterLngOption` | registers `-lng` | I |
 | `0x0047A980`, `0x0047A9A0`, `0x0047AA30` | `sub_0047A980_ClientFlagBit1`, `sub_0047A9A0_ClientFlagsSet`, `sub_0047AA30_ClientFlagBit8` | `g_ClientFlags` accessors | I |
 | `0x0047AA10`, `0x0047AA20` | `sub_0047AA10_CTempSet`, `sub_0047AA20_CTempGet` | `g_CTemp` | I |
@@ -291,4 +292,4 @@ Data: `g_ModuleTable`, `g_ModStateNames`, `g_ModuleState`, `g_ClientOptionTable`
 2. `0x0051ED00`'s `delete`/`extract`/`execute` commands: read who feeds it the text. Lead only that it belongs to a patcher; nothing read says so.
 3. `-r`, `-p`: follow `0x00451980` and `0x00451910`'s callers. Registry-only, so low value.
 4. `0x00450950`'s copy of `+0x1DC8`: name the two objects. If one is a `Game`, it is a second writer.
-5. Whether the sound path behind `-ns` draws from a seed a spec tracks: read 0x00514530 and 0x004DCA30's callees. All kept runs are under `-ns` unless `--sound`.
+5. **Priority.** Whether the sound path behind `-ns` draws from a seed a spec tracks: read 0x00514530 and 0x004DCA30's callees. All kept runs are under `-ns` unless `--sound`.
