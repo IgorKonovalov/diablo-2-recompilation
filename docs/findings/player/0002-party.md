@@ -212,6 +212,7 @@ credit(killer, game, victim):
   4 021 505; 8: 3 447 004 / 3 447 005. Past it the wrapped product truncates toward zero and the total may go negative (n = 8,
   E = 3 447 005: −4 941 601); each member's input is then ≤ 0, and `XP_Compute` returns 1 for that (tag `wrap-total`; control `floortotal`
   fails 92). Whether a monster's frozen stat 13 reaches these was not checked. (0x0057E739–0x0057E74B, 0x0057E4A1–0x0057E4AA, run:2026-11-03-party-emu)
+- [I] *Dated note (2026-11-03, `lane/s67` review):* in the bullet above, "each member's input is then ≤ 0" passes the float steps, so by ADR-0015 (5) that clause is `[I]`, like the Answer's last bullet. The total's value and `XP_Compute`'s return of 1 for an input ≤ 0 stay `[C]`. (0x0057E754–0x0057E77B)
 - [C] d² is `imul`, `imul`, `add` in 32 bits, compared unsigned, with `dx`, `dy` differences of u16 words for a unit with a path. |dx| = |dy| = 46 340
   gives 4 294 791 200, which fits; 46 341 gives 4 294 976 562, which wraps to 9 266. A wrapped value inside the bound passes: dx = 65 534,
   dy = 512 is 2³² + 4, so d² = 4 (tag `wrap`; control `unwrapped` fails 4). No level this finding knows spans that; nothing was checked for it. (0x0057E64C–0x0057E65A, run:2026-11-03-party-emu)
@@ -221,9 +222,8 @@ credit(killer, game, victim):
 - [C] No traced read in any case touches `data:g_PlayersOverride@0x00883D70`, and no traced site lies in `sub_00535790_PlayerCount`: the split reads the
   party, not the player count. The count reaches a kill only through the monster's stat 13, frozen at creation (monsters/stats C1). (`check.txt` read list, run:2026-11-03-party-emu)
 - [I] This answers the plan's open question from the code. `sub_00535790_PlayerCount` has 2 direct references: `TC_ResolveDrops` (0x0055A8F4, at the event) and
-  `sub_00573930_MonPlayerBonus` (0x00573974); `MonPlayerBonus` has 5: `sub_00573CB0_MonStatsInit` (0x00573DBC, frozen at creation) and **four think functions that ask at their own run**:
-  `sub_005E8810_AiDiabloDecide` (0x005E8D61), `sub_005E9750_AiDiabloDecideUnref` (0x005E9C82), `sub_005F0B00_AiCorruptRogue` (0x005F0B32), `sub_005FC450_AiBaalDecideRanged` (0x005FC542): a changed `/players` is re-read
-  there; what each does with it is in ai/ and not re-read here. `data:g_PlayersOverride@0x00883D70` is named by two instructions: the setter 0x00535785 and the reader 0x005357B9.
+  `sub_00573930_MonPlayerBonus` (0x00573974); `MonPlayerBonus` has 5: `sub_00573CB0_MonStatsInit` (0x00573DBC, frozen at creation) and **four think functions that call it at their own run**:
+  `sub_005E8810_AiDiabloDecide` (0x005E8D61), `sub_005E9750_AiDiabloDecideUnref` (0x005E9C82), `sub_005F0B00_AiCorruptRogue` (0x005F0B32), `sub_005FC450_AiBaalDecideRanged` (0x005FC542). *Corrected 2026-11-03, `lane/s67` review (this bullet said a changed `/players` is re-read there):* each reads only the block's word `+0x0C`, the difficulty (0x005E8D6B, 0x005E9C8C, 0x005F0B37, 0x005FC54C; [ai/0012 § 2.3](../ai/0012-batch11.md#23-diablos-decision-fnsub_005e8810_aidiablodecide0x005e8810)), so the count computed there goes unread. `data:g_PlayersOverride@0x00883D70` is named by two instructions: the setter 0x00535785 and the reader 0x005357B9.
   `sub_00540900_PartyGoldShare` has no direct reference to the count; its callees past the party walk were not followed. Indirect calls not followed. (`static.txt`)
 
 ## 8. The 265/264 entry

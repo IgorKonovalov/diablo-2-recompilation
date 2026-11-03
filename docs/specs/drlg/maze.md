@@ -5,7 +5,7 @@ target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, drlg/overview]
 consumed_by: [drlg/overview, drlg/warps, drlg/room-tiles, drlg/collision, monsters/spawn, objects]
 tags: {C: 122, I: 11, L: 2}
-updated: 2026-10-17
+updated: 2026-11-03
 ---
 
 # Maze generator: room growth, `Def`s, special rooms and themes
@@ -484,7 +484,7 @@ Jail 31, tombs 55, 56, 59, 60, 66–68, 70, 71, Lair 63, 64, Dungeon 87, 89, Baa
 run:2026-10-16-sweep-mazes, every window matched room for room with its draws; level 10 in the kept logs of
 run:2026-10-15-drlg-outdoor and run:2026-10-15-acts-3-5, re-run at the H5e review; Jail 31 and lava 126, 127 on the server
 copy only, as a window carries every draw ([drlg/0006 § Plan 0038 batch H5e](../../findings/drlg/0006-maze.md#plan-0038-batch-h5e-run2026-10-16-sweep-mazes)). Levels 133 and 135
-have no stock build: 133–136 are unreachable ([outdoor.md § Entry points](outdoor.md#entry-points)))
+have no stock build: stock play does not reach 133–136 on the portal reading and the absence of a code path found ([outdoor.md § Entry points](outdoor.md#entry-points), [ai/0016 § 3](../../findings/ai/0016-uber-event.md#3-levels-133-to-136)))
 
 - F1. [C] The table order is the call order: start shape, then growth, then the finisher draw `r`, then the specials.
   The single-room Ice levels and level 61 break out of the chain after their fixed room, with no growth and no

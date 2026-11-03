@@ -137,7 +137,7 @@ flowchart LR
 | Q48 | `XP_ApplyExpRatio` switches to `(exp >> s) × r` when `exp × r` would overflow the shift; no kill reached it. | [I] | 0x0057E390, 0x0057E3E7 | [player/creation § G](../player/creation.md#g-kill-experience--xp_compute) |
 | Q49 | A gold add over a cap writes 0, not the cap; callers clip first, so only paths that skip the clip (the PvP death write) differ. | [I] | fn:sub_0053FF00_UnitAddGoldStat@0x0053FF00 | [items/economy](../items/economy.md#reimplementation-notes) n8 |
 | Q50 | Hang and crash path: a progressive ring's step count is used untested; 0 never ends, a negative count reads below the direction tables until the index wraps. | [I] | 0x005D4657, 0x005D467D, 0x005D4D77, 0x005D4DAA | [combat/delivery](../combat/delivery.md#reimplementation-notes) n11; [skills/catalogue](../skills/catalogue.md#reimplementation-notes) n8 |
-| Q446 | The party share's wraps: `d²` is 32-bit, compared unsigned, so a wrapped value inside the bound passes; the total's product is i32, and past its wrap each member's input is ≤ 0, for which `XP_Compute` returns 1. | [C] | 0x0057E654, 0x0057E65A, 0x0057E739, 0x0057E74B, run:2026-11-03-party-emu | [player/party](../player/party.md#reimplementation-notes) n6; [player/creation § J](../player/creation.md#j-other-level-and-experience-changes) |
+| Q446 | The party share's wraps: `d²` is 32-bit, compared unsigned, so a wrapped value inside the bound passes; the total's product is i32, so past its wrap the total may go negative. | [C] | 0x0057E654, 0x0057E65A, 0x0057E739, 0x0057E74B, run:2026-11-03-party-emu | [player/party](../player/party.md#reimplementation-notes) n6; [player/creation § J](../player/creation.md#j-other-level-and-experience-changes) |
 
 ### 4. Bounds, comparisons and table edges
 

@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, data/excel, items/uniques-sets, items/properties, items/affixes, monsters/stats, save/d2s]
 consumed_by: [save/d2s, combat/to-hit, stats/aggregate, player/party]
-tags: {C: 139, I: 50, L: 1}
+tags: {C: 140, I: 52, L: 1}
 updated: 2026-11-03
 ---
 
@@ -477,7 +477,7 @@ G0. XP_OnMonsterKill(game, killer, victim), as the code's map:           [C] (fn
       if s ≠ none: owner ← GameFindUnit(game, type of s's owner, id of s's owner)
       return owner if owner is a player, else none
 G1. XP_Compute(exp: i32, clvl: i32, mlvl: i32) → i32:
-      if exp > 0x7FFFFF: exp ← 0x7FFFFF                                  [I] (0x0057E480–0x0057E4FF, all of G1)
+      if exp > 0x7FFFFF: exp ← 0x7FFFFF                                  [I] (0x0057E480–0x0057E4FF, all of G1 not tagged otherwise)
       else if exp ≤ 0: return 1                                          [C] the code's map (0x0057E4A1–0x0057E4AA, run:2026-11-03-party-emu)
 G2.   if clvl ≥ MaxLvl(class): return 0                                 [C] (fn:XP_Compute@0x0057E480, run:2026-10-27-sweep-player)
 G3.   XP_LevelDiffPenalty:                                               [C] (fn:XP_LevelDiffPenalty@0x0057E2F0, run:2026-10-16-player, all of G3)
@@ -512,8 +512,10 @@ Step notes:
   (fn:sub_0057E7B0_XpCreditPlayer@0x0057E7B0, 0x0057E7E4, 0x0057E7F3, tbl:States.txt:exp, run:2026-11-03-party-emu, run:2026-10-20-two-clients;
   [player/0002 § 4](../../findings/player/0002-party.md#4-g0-the-credit-sub_0057e7b0_xpcreditplayer))
 - G0. A player as the victim passes this code: its base stat 13 stands for `exp` and its base stat 12 for `mlvl`. [C] the code's
-  map (0x0057CD28–0x0057CD51, run:2026-11-03-party-emu) No log holds such a kill, and whether play reaches it past the
-  gate's flag is not read. [I] (fn:sub_005A4EF0_KillExpGate@0x005A4EF0, 0x005A4EFE–0x005A4F0A)
+  map (fn:XP_OnMonsterKill@0x0057E990, run:2026-11-03-party-emu) No log holds such a kill, and whether play reaches it past the
+  gate's flag is not read. [I] (0x0057CD28–0x0057CD51, fn:sub_005A4EF0_KillExpGate@0x005A4EF0, 0x005A4EFE–0x005A4F0A)
+- G1. **An input ≤ 0 returns 1, zero included.** `test esi,esi`, `jg`, `mov eax,1`, `ret 8`. Under emulation 90 negative and 93 zero inputs each returned 1. [C] the code's map (0x0057E4A1–0x0057E4AC, run:2026-11-03-party-emu)
+  G0 ends before `XP_Compute` at a monster's `exp` ≤ 0, so only a share's input comes here: past the wrap of J4, or a share that truncates to 0, as for a low member beside a high one on a small `exp` (level 1 beside level 99 at `exp` 50: total 67, `q` = 67 / 100, input 0), and that member then gets the 1. No logged kill had one. [I] (0x0057E775–0x0057E778, 0x0057E4A1–0x0057E4AC)
 - G2, G5. **The level cap and stat 85 are met.** At clvl 99 (`≥ MaxLvl`) `XP_Compute` returned 0 on 71 of 71 kills.
   With an Annihilus carried (stat 85 = 10, the unique's `addxp` maximum) the term `exp + MulDiv(exp, 10, 100)` was
   added on all 73 kills of that session, each reproduced. [C] (fn:XP_Compute@0x0057E480, tbl:UniqueItems.txt:addxp,
@@ -694,8 +696,8 @@ Step notes:
   eight in a longer list is fine. [C] the code's map, as far as that call (run:2026-11-03-party-emu) What follows that call is the fatal path of the other findings, not run, and whether a party list can hold
   nine players was not read, so this is the code's path and not a game outcome. [I] (0x0057E671–0x0057E681, 0x005408CB)
 - J4. **Wraps.** `d²` is 32-bit: |dx| = |dy| = 46 341 gives 9 266, and dx = 65 534, dy = 512 gives 4, which passes. The total's product is i32: it first wraps at `exp` = 24 129 030 for n = 2 and 3 447 005 for n = 8, where it truncates toward zero and
-  the total may go negative (−4 941 601 at that n = 8 value); each member's input is then ≤ 0 and `XP_Compute` returns 1. [C] the code's map (0x0057E64C–0x0057E65A, 0x0057E739–0x0057E74B, 0x0057E4A1–0x0057E4AA, run:2026-11-03-party-emu,
-  [player/0002 § 6](../../findings/player/0002-party.md#6-wrap-bounds-kept-checktxt-the-last-block)) No level the finding knows spans those distances, and neither that nor whether a monster's frozen stat 13 reaches those values was checked.
+  the total may go negative (−4 941 601 at that n = 8 value). [C] the code's map (0x0057E64C–0x0057E65A, 0x0057E739–0x0057E74B, run:2026-11-03-party-emu,
+  [player/0002 § 6](../../findings/player/0002-party.md#6-wrap-bounds-kept-checktxt-the-last-block)) Each member's input is then ≤ 0 through the float steps, which ADR-0015 (5) keeps out of emulation's evidence, and G1 returns 1 for it. [I] (0x0057E754–0x0057E77B) No level the finding knows spans those distances, and neither that nor whether a monster's frozen stat 13 reaches those values was checked.
 - J4. **The party and the level are the credited player's**; the victim's level is not read. A member's level is `STATS_GetUnitStat` (the evaluated list), `clvl` is `STATS_GetUnitBaseStat`; they differ only if a list changes stat 12. [C] the code's map (0x005405C7–0x00540636, 0x0057E68F, 0x0057EA53, fn:STATS_GetUnitStat@0x00625480, fn:STATS_GetUnitBaseStat@0x006253B0, run:2026-11-03-party-emu)
 - J4. **The member's input is not rounded to f32.** `q` is stored as an f32 (`fstp dword`, 0x0057E754–0x0057E75D);
   each member's `fild` level is multiplied by that dword on the x87 stack (0x0057E775–0x0057E778) and passed to
