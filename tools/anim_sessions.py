@@ -849,7 +849,7 @@ for _c in ("ama", "nec", "dru", "ass"):
 for _k, _c in enumerate(CLASSES):
     for _t in (0, 1, 2):
         if _c in OP_CLASSES:
-            for _n in (1, 2, 3):
+            for _n in (1, 2, 3, 4, 5, 6, 7, 8):
                 SESSIONS["op2-%s-t%d-%d" % (_c, _t, _n)] = op_session(_c, _t, 9000 + 100 * _n + 10 * _k + _t, hops=120,
                                                                      swap=_c == "dru")
 BRNOVA3 = ["--nova-key", "F1", "--radius", "9", "--mana-col", "4", "--drink", "0.5", "--nova-hold", "1.6", "--max-res", "1000"]
@@ -865,6 +865,21 @@ SESSIONS["op-run"] = ("op/AnimSorS0", "enter-normal", 8510,
                       [wp("1,2"), ("keys", ["r"], 0.5),
                        ("pilot", ["explore", "--walk", "--nova", "0", "--hops", "30", "--drink", "0.3",
                                   "--mana-col", "4"], 500)])
+# the same without the r press (the first press left the player walking all session: mode 2 in every PS0 line)
+SESSIONS["op-run2"] = ("op/AnimSorS0", "enter-normal", 8511,
+                       [wp("1,2"),
+                        ("pilot", ["explore", "--walk", "--nova", "0", "--hops", "30", "--drink", "0.3",
+                                   "--mana-col", "4"], 500)])
+# a longer run for the turn to a walk at 0 stamina (op-run2 reached 3 turns in 30 hops)
+SESSIONS["op-run3"] = ("op/AnimSorS0", "enter-normal", 8512,
+                       [wp("1,2"),
+                        ("pilot", ["explore", "--walk", "--nova", "0", "--hops", "200", "--drink", "0.3",
+                                   "--mana-col", "4"], 1500)])
+for _n in (4, 5, 6):
+    SESSIONS["op-run%d" % _n] = ("op/AnimSorS0", "enter-normal", 8510 + _n,
+                                 [wp("1,2"),
+                                  ("pilot", ["explore", "--walk", "--nova", "0", "--hops", "200", "--drink", "0.3",
+                                             "--mana-col", "4"], 1500)])
 SESSIONS["op-dru-th"] = ("op/AnimDruT1", "enter-nightmare", 8520,
                          [wp("1,2"), fight(["F5", "F5", "F5", "F1", "F5"], 30, extra=("--drink-in-burst",))])
 

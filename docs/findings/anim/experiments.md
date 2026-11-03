@@ -327,7 +327,7 @@ Normal sessions for the catalogue and specials, Nightmare for the get-hit route;
 
 ## run:2026-10-30-anim-p3
 
-**Status: checkpointed, not closed (`lane/p50g`, one lane run; owner pause at the token budget).** Phase 2 part 3: the
+**Status: checkpointed, not closed here; continued by run:2026-10-30-anim-p3b below (`lane/p50g`, one lane run; owner pause at the token budget).** Phase 2 part 3: the
 short floors of part 2 with overpowered clvl 99 builds. 33 kept sessions on harness slot 1 (display `:8`), Act I
 Nightmare, Cold Plains, `/players 5`; stock data, single player.
 
@@ -375,3 +375,39 @@ Nightmare, Cold Plains, `/players 5`; stock data, single player.
   pilot outputs, potion counts, screenshots, batch outputs 1-2, the saves of `saves-2026-10-30-anim-p3/`, lists, check,
   summary. Tools: `tools/anim.py` `5c3b5852…`, `tools/anim_sessions.py` `bc1fb493…`, `tools/d2pilot.py` `62b6f4f7…`
   (`--potion-state`). Batches: 1 = `op-<cls>-t<k>` (40 hops a field, 12 sessions), 2 = `op2-…` (120 hops, 21 sessions).
+
+## run:2026-10-30-anim-p3b
+
+**Status: closed for review (`lane/p50g`, resumed after the owner pause).** Phase 2 part 3, second half: the short get-hit
+floors of [run:2026-10-30-anim-p3](#run2026-10-30-anim-p3) and its unplayed sessions. Harness slot 1 (display `:8`), stock
+data, single player, the same saves (`saves-2026-10-30-anim-p3/`, unchanged), `/players 5`.
+
+- **Played (17 kept sessions, logs `2026-10-30-anim-p3b-<session>.log`):** `op2-ama-t1-3`, `op2-ama-t2-3`, `op2-nec-t1-3`,
+  `op2-dru-t1-2`, `op2-dru-t1-3`, `op2-dru-t2-2`, `op2-dru-t2-3` (120 hops, the p3 options), `op-dru-th`, `op-br`, `op-br2`,
+  `op-br3`, `op-run` and five more run sessions: `op-run2` (without the `r` press, 30 hops), `op-run3` to `op-run6` (200 hops,
+  seeds 8512, 8514, 8515, 8516), new session rows in `tools/anim_sessions.py` (additive; the `op2-*` repeat range widened to 1-8).
+- **Result** (`2026-10-30-anim-p3b-all4.lst` = p3's `all3.lst` + `2026-10-30-anim-p3b.lst`, 131 logs; check
+  `--review` `2026-10-30-anim-p3b-check.txt`; summary `2026-10-30-anim-p3b-summary.txt`): **0 mismatches** over every kind
+  (`adv=4117/0 block-gate=2569/0 dispatch=71433/0 drain=88103/0 ef-first=18310/0 fire=72014/0 ghr=13932/0 kb-end=5027/0
+  name=541068/0 pathspeed=216788/0 sched=46722/0 startframe=45913/0 step=179727/0 step-point=175511/0` and the rest).
+- **Floors** (get-hit starts per FHR rate, parts 1-3 and 3b): Amazon 128:32 179:40 215:33; Necromancer 128:38 179:32
+  215:42; Druid 124:49 173:35 208:32 (179:7 is the werewolf form); Sorceress and Assassin as before. **All five short rates
+  reached 30** (`get-hit rates30` 3 for the Amazon, Necromancer, Sorceress, Druid and Assassin).
+- **Named short, with counts:** the Druid's throws 29 of 30 (`op-dru-th` 17 more, 12 before); player knockbacks 0 new (the
+  three Hell sessions `op-br`, `op-br2`, `op-br3` explored 200-220 hops each and the hunt ended "class 267 never seen";
+  `kb-end` unchanged at 5027, all monsters); P1b-2, P1b-14, P1b-15 not played; P1b-13: 13 player movement windows under a
+  slow (`win-slow-p`) over the 131 logs, from the Slows Target belts (not a 30), 327 for monsters.
+- **The run's turn to a walk at 0 stamina (new):** `op-run` held walking all session (`r` toggled the default run off: mode 2
+  in every `PS0`); the default is a run (mode 3), so `op-run2` to `op-run6` omit the key. The Sorceress (the run drains stat 10) turned from mode 3 to mode 2 by `MSET` 81 times in the five logs (3, 8, 11, 22, 31 per log;
+  75 + 6 as below). 81 events is the count of the checker's tally `ef-first-run-turn`, which pairs the turn's
+  `EF` line (queued the same frame as a drain `DR0` line) with the unit's next `PS0`: **offset 0 in 75, offset 1 in 6** `[I]`
+  (a measurement; the 6 offset-1 cases are not explained: not every `EF` after a drain is the turn's own, and the tally
+  does not separate them). The first check of `op-run2` alone flagged 3 `ef-first` mismatches (the old rule, "an `EF`
+  queued in phase 3 runs next frame"): those three are the turn inside the unit's own walk, so they are excluded from
+  `ef-first` and counted in the new tally.
+- **Checker change** (`tools/anim.py` `d05f5354…`): an `EF` for mode 2 in the frame of the unit's own `DR0` is tallied as
+  `ef-first-run-turn-offset=N`, not checked against the phase rule. `tools/anim_sessions.py` `e066777b…`.
+- **Not done:** the plan's Done-when is met for the get-hit rows; the rest is named short above. Dev logs: none for 3b.
+- **Kept files:** manifest `2026-10-30-anim-p3b-manifest.sha256` (122 lines, base `workspace/logs/anim/`, passes): logs,
+  pilot outputs, potion counts, screenshots, batch outputs 1-6, lists, check, summary. The p3 manifest still passes.
+

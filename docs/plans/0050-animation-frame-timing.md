@@ -319,7 +319,7 @@ client-side display of timing stay out (ADR-0005, ADR-0014 § Time): timing ente
 
 #### Phase 2 part 3 — the short floors of part 2, with overpowered builds (owner, 2026-10-30)
 - **Owner skill:** reverser (agent-driven; **one slot** from 1–2, given in the prompt; no Ghidra)
-- **Status:** **checkpointed 2026-10-30 (`lane/p50g`, owner pause), not closed; resume note in the [log](#implementation-log).** Was: ready for the next free harness slot (queued behind H1c on slot 1 and 0046·P2 on slot 2; it takes
+- **Status:** **done 2026-11-03 (`lane/p50g`), review requested ([log](#implementation-log)).** The checkpoint of 2026-10-30 was resumed; was: ready for the next free harness slot (queued behind H1c on slot 1 and 0046·P2 on slot 2; it takes
   whichever frees first). Approved by the owner on 2026-10-30 (option (b) of the `lane/p50f` check, not closing the
   floors short; [log](#implementation-log)).
 - **Why:** part 2 (run:2026-10-27-anim-p2, [record](../findings/anim/experiments.md#run2026-10-27-anim-p2)) holds 0
@@ -1261,4 +1261,14 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   five short rates reach 30, then `op-dru-th`, `op-br` x3, `op-run`; closing check over `…-all3.lst` plus the new lists;
   then the `RECIPE_BASES` backlog entry for the `anim-*-op-*` recipes (not yet filed), the review request, the ledger
   row's usage. No review request was filed (Done-when not met). Dev logs `dev-p3-*` are separate (`dev-p3-manifest.sha256`).
-
+- **2026-11-03 - Phase 2 part 3 done, review requested (reverser, `lane/p50g`; harness slot 1, no Ghidra).** Record
+  [run:2026-10-30-anim-p3b](../findings/anim/experiments.md#run2026-10-30-anim-p3b) (17 kept sessions, 131 logs over parts
+  1-3b). **Closing check: 0 mismatches** over every kind. **Floors:** the five short get-hit rates reached 30 (Amazon
+  179/215 at 40/33, Necromancer 179 at 32, Druid 173/208 at 35/32); `get-hit rates30` 3 for the Amazon, Necromancer,
+  Sorceress, Druid and Assassin. **Named short:** the Druid's throws 29 of 30; player knockbacks 0 (Blood Raven not seen in three
+  Hell sessions); P1b-2, P1b-14, P1b-15 not played; P1b-13 13 player slow windows. **New:** the run's turn to a walk at 0
+  stamina is reached, 81 events (the first `op-run` held walking because the `r` press toggled the default run off; its
+  successors omit it); `ef-first` carries a new tally `ef-first-run-turn` (offset 0 in 75, 1 in 6, the latter unexplained
+  `[I]`); the first check of `op-run2` flagged 3 `ef-first` mismatches that are this branch, not a regression. Filed: the
+  `RECIPE_BASES` backlog entry for the `anim-*-op-*` recipes (archivist) and the review request (architect). Usage on the
+  ledger. Nothing of this lane runs; slot 1 stopped with the saves restored.
