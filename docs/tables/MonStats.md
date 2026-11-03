@@ -1046,11 +1046,14 @@ unless a finding is cited.
     and `Skill3` tested `!= 0` (`je`, 0x005E29EB), each in its own mode (`Skill4` not read); 121 `Skill1`, tested `>= 0`; 122 `Skill1`
     and `Skill4` of its own record, each tested `>= 0`, the mode byte read sign-extended where `UseSkill` callers elsewhere zero-extend
     (0x005E31D2, 0x005E32A3); 124 `Skill1`, tested `>= 0`; 125 `Skill1` with the **constant mode 5** (not `Sk1mode`) and **no sign test**
-    (0x005E3799); 116, 117 and 123 read no skill. Of the sign tests, only row 124's is `[C]` (to `SKILLS_GetUnitSkill`, and to
-    `HasState(U, 12)` for a `Skill1 < 0`, [§ 3](../findings/ai/0010-batch9.md)); the `u16` control separates 69 cases of row 118, 64 of row 119 and 52 of row 122.
-  - State row 16 (`ImpAttach`, [§ 2.10](../findings/ai/0010-batch9.md)): its init picks slot 2 (`Skill3`) or 4 (`Skill5`) by the first
-    one whose skill the imp has **in its own record** (`SkillFindByOwner`); its think casts `imp1`'s skill at that slot with `imp1`'s
-    mode when the id is `>= 0`, and `imp1`'s `Skill1` (Imp Teleport) with `imp1`'s `Sk1mode` for the detach. State row 15 reads row 117's
+    (0x005E3799); 116, 117 and 123 read no skill. The sign tests of rows 118, 119 and 122 lie inside their `[C]` maps (the `u16` control, which reads the
+    skill words unsigned, separates 69 cases of row 118, 64 of row 119 and 52 of row 122 and fails each); row 124's is `[C]` to
+    `SKILLS_GetUnitSkill`, and to `HasState(U, 12)` for a `Skill1 < 0`; no control separates those of rows 120, 121 and 125
+    ([§ 3](../findings/ai/0010-batch9.md)).
+  - State row 16 (`ImpAttach`, [§ 2.10](../findings/ai/0010-batch9.md)): its init picks slot 2 (`Skill3`) or 4 (`Skill5`), trying first the one the low bit of one seed step
+    selects, by the first one whose skill the imp has **in its own record** (`SkillFindByOwner`); its think, inside `imp2.aip2` of its
+    target and on `Range(100) < imp2.aip3`, casts `imp1`'s skill at that slot with `imp1`'s
+    mode when the id is `>= 0` (else `Idle(20)`), and `imp1`'s `Skill1` (Imp Teleport) with `imp1`'s `Sk1mode` for the detach. State row 15 reads row 117's
     slots and no skill ([§ 2.2](../findings/ai/0010-batch9.md)). The init's map is `[C]` to its return; the think only to its entry call
     `HasState(U, 143)`.
   - `Sk1lvl` for row 124 `FrozenHorror` ([§ 2.12](../findings/ai/0010-batch9.md)): the blast is gated on `dist < max(lv, 0)`, with `lv` the
