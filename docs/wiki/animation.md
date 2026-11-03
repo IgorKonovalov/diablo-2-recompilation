@@ -1,8 +1,8 @@
 ---
 based_on:
   - docs/specs/anim/README.md 2026-11-03
-  - docs/specs/anim/timing.md 2026-10-27
-  - docs/specs/anim/movement.md 2026-10-27
+  - docs/specs/anim/timing.md 2026-11-03
+  - docs/specs/anim/movement.md 2026-11-03
 ---
 
 # Animation and timing
@@ -160,9 +160,11 @@ bonus map above. A few of the tool's illustrations, for stock records (the tool'
   86, 200 FHR.
 
 The lengths the formulas give equal the schedule's lengths at every rate the run logged. The formulas for the other
-rates rest on that and on the bonus map. The run was short of some rates, because the characters it could build did not
-survive long enough: three FHR rates of 30 events for each class, a third FCR rate for three classes and two others
-([timing § K3](../specs/anim/timing.md#k-breakpoints-derived)). Those breakpoints are derived, not seen.
+rates rest on that and on the bonus map. The runs, the last with level 99 characters, logged hit recovery at FHR 0, 24 and 48, at least
+30 get-hits at each, for the Amazon, Necromancer, Sorceress, Druid and Assassin, and every length matched. The runs are
+short of some rates: three FHR rates of 30 events for the Barbarian and the Paladin, a third FCR
+rate for three classes and two others ([timing § K3](../specs/anim/timing.md#k-breakpoints-derived)). Those
+breakpoints are derived, not seen.
 
 **Counting the end.** A mode ends `n` frames after its start, while the community tables count `N = n - 1`, the last
 step. The server starts the next action in the frame its request arrives. The stock client's held request arrives at
@@ -208,7 +210,8 @@ read from the code and not compared against a run, apart from the points mention
 
 - **Players.** Neutral, walk, run, attack, cast and skill modes, get-hit, block, knockback and death. An action ends
   in neutral at its kind-1 end; a walk or run ends in neutral when the path runs out, and a run at stamina 0 becomes
-  a walk (not met). Death goes to the dead mode.
+  a walk (seen 81 times; the exact frame of the turn is not settled). Death goes to the
+  dead mode.
 - **Monsters.** A table per mode says whether it is scheduled, what its frame function does and what ends it. A
   walk or run ends on arrival; a knockback ends in the frame its animation reaches the end of the get-hit record
   (541 logged ends, none earlier), then a get-hit command; ten monster classes override some attack modes.
@@ -224,7 +227,8 @@ refusals are read from the code only (no refusal was reached).
 
 Hit recovery is the get-hit mode's schedule at the FHR rate; the block's length is the block mode's schedule at the
 FBR rate ([timing § M3](../specs/anim/timing.md#m-hit-recovery-the-block-the-get-hit-roll-the-mode-tests-stun-and-the-hit-class)).
-Both rates and schedules matched in the run.
+Both rates and schedules matched in every run, hit recovery at three FHR rates for five classes (not yet for the
+Barbarian and the Paladin).
 
 **Whether a hit makes the unit react.** When combat has decided a hit lands, the get-hit code looks at the result:
 
@@ -246,7 +250,8 @@ Both rates and schedules matched in the run.
 - The **hit class** is a code in the damage packet (a weapon's or a monster's `hit class`, with an element nibble
   added by delivery). The server gate found on it is the roll's divisor; the rest is client presentation.
 - A **player's knockback**: 12 of Blood Raven's 13 knockback results left the player in neutral in the hit's own
-  frame, and two starts of mode 19 were seen; why the others end at once is not logged.
+  frame, and two starts of mode 19 were seen; why the others end at once is not logged. The three sessions aimed at
+  it met none.
 
 The divisors 32 and 64 were met but not separated from 16 in the run.
 
@@ -315,7 +320,9 @@ step returns "arrived".
 Each frame of a run takes `RunDrain * 2` from stamina (1/256 units), times `armour speed / 10 + 1` for body armour with
 speed 10 or more, plus `stat 154` percent, at least 1 ([movement § D](../specs/anim/movement.md#d-the-run-drain)). 37 434
 logged run frames agreed. In a town it costs nothing (read from the code). At 0 stamina the run becomes a walk
-(not reached in either run).
+(read from the code). A Sorceress's run turned into a walk 81 times in the runs; the checker pairs each turn with
+the unit's next path step at offset 0 in 75 of them and offset 1 in 6, which is not explained, so the turn's frame
+stays inferred ([movement § Open questions](../specs/anim/movement.md#open-questions)).
 
 ### Knockback
 
@@ -352,11 +359,11 @@ From the specs' open questions ([timing](../specs/anim/timing.md#open-questions)
   and a generic `S3` queues nothing; presumably the AI's next command ends them (the AI is a later phase).
 - **The monster AI and the path planner.** What command a monster gets, when, and the path it follows are inputs
   here. The knockback point's final adjustment is not read.
-- **Branches the runs left short.** The characters the run could build did not survive long enough for some rates
-  (three FHR rates for each class, some FBR and FCR rates, the Druid's throws, a second set of IAS rates), for a run
-  turning into a walk at 0 stamina, a player's knockback length, the moving-factor floor of 25, Charge at a low
-  stat 67, and Slows Target. The statements stay "read from the code" and none waits on a mismatch. Whether a further
-  harness run settles them is for the project owner.
+- **Branches the runs left short.** Some rates (three FHR rates for the Barbarian and the Paladin, some FBR and FCR
+  rates, a second set of IAS rates), the Druid's throws (29 of the 30 wanted), a player's knockback length (two starts in all),
+  the moving-factor floor of 25, Charge at a low stat 67, and Slows Target. The statements stay "read from the code" and none waits on a mismatch.
+- **The frame of the run's turn to a walk.** Seen 81 times; 6 of them pair at offset 1 rather than the 75 at offset
+  0, and the runs do not say why.
 - **Reading of the code left open.** A few functions were not read (two called when a mode is set, part of the
   sequence mode test), the order of an every-frame event against slot events in one frame, whether a player's
   knockback-to-get-hit branch is ever reached, and the two flags that switch a move-first skill's rate branch and

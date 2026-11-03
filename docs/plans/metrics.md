@@ -501,6 +501,8 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-11-03 | `lane/r52j` check | 0052 P1.2 (batch 10) | architect-check | 78 391 | 18 | 2 | — | accept with fixes (1) | other 1 (unclear dev-run wording) |
 | 2026-11-03 | `lane/r54a` | 0054 P1.1 | reverser-static | 530 539 | 175 | 53 | — (static, Ghidra copy ghidra-r54a) | accept with fixes (Tier A review) | 6: overclaim 2, omission 3, miscount 1 |
 | 2026-11-03 | `lane/r54a` review | 0054 P1.1 | architect-review | 161 545 | 47 | 8 | — | accept with fixes (6) | overclaim 2, omission 3, miscount 1 |
+| 2026-11-03 | `lane/s65` | 0050 P2 part 3 re-tag | spec-writer | 139 580 | 54 | 7 | — (no Ghidra, no harness) | accept with fixes (Tier A) | 5: overclaim 2, wrong anchor 1, other 2 |
+| 2026-11-03 | `lane/s65` review | 0050 P2 part 3 re-tag | architect-review | 123 390 | 44 | 5 | — | accept with fixes (5) | overclaim 2, wrong anchor 1, other 2 |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not

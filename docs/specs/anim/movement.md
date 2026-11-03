@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [anim/timing, stats/aggregate, stats/states, monsters/stats, drlg/collision]
 consumed_by: [anim/timing, combat/overview, skills/missiles]
-tags: {C: 25, I: 43, L: 9}
-updated: 2026-10-27
+tags: {C: 25, I: 44, L: 9}
+updated: 2026-11-03
 ---
 
 # Movement: speeds, the per-frame step, the run drain and knockback
@@ -108,7 +108,7 @@ A2. RunVelocityStat(class, unit), from UNIT_AnimInit for a player form in mode 3
   speeds); each windowed step's speed equals the last such call's (131 167 steps). Walk `v` 1 536 and run 2 304 for
   every player at `X` 100 and 150. (fn:UNIT_AnimSetRate@0x00623F50, fn:sub_00620E80_RunVelocityStat@0x00620E80,
   run:2026-10-27-anim)
-- A1. [I] **The floor 25** is reached by no logged call (P1b-14; Phase 2 part 2's record reports no outcome for it). The path base has no mode argument:
+- A1. [I] **The floor 25** is reached by no logged call (P1b-14; not played in Phase 2 part 3, and part 2's record reports no outcome for it). The path base has no mode argument:
   a running monster's path base is its walk `Velocity`; the RN record's speed changes only its animation rate.
   `PathSetSpeed` also sets path `+0x38 = 15` when the speed changed. (fn:sub_00648690_PathSetSpeed@0x00648690,
   0x006241A9–0x006241C9)
@@ -155,7 +155,7 @@ A4. MonStatsSpeeds, for each MonStats row i at load:              [C] (fn:sub_00
 - A6. [I] Charge's start sets `MulDiv(RunVelocity << 8, max(stat 67, 50) + Param1, 100)`, `Param1` 150
   ([skills/0011 § 5](../../findings/skills/0011-paladin.md)); the run's 160 Charge steps ran at 5 760 at stat 67 100
   (`2 304 · 250 / 100`, what that reading gives), but the speed is a catalogue writer's, taken as given and not
-  compared, and Charge at stat 67 ≤ 50 (P1b-15) is not met. (fn:sub_005CF6B0_SkillSt31Charge@0x005CF6B0,
+  compared, and Charge at stat 67 ≤ 50 (P1b-15) is not met (not played in Phase 2 part 3). (fn:sub_005CF6B0_SkillSt31Charge@0x005CF6B0,
   run:2026-10-27-anim)
 
 ### B. The per-frame step
@@ -257,8 +257,9 @@ D1. RunStaminaDrain(unit) → bool, each run frame:                 [C] (fn:sub_
   from stat 10. (fn:sub_0057F240_RunStaminaDrain@0x0057F240, tbl:CharStats.txt:RunDrain, tbl:Armor.txt:speed,
   run:2026-10-27-anim) [I] The town and no-inventory returns are read from the code. (0x0057F290–0x0057F2E6)
 - D2. [I] **The turn to a walk.** On 0, `PlrModeMoveFrame` restarts the move (`PlrModeStartMove`), which turns a run
-  with stamina 0 into a walk, before this frame's step; no run reached 0 stamina in either part of the run (Phase 2
-  part 2 names the turn to a walk short, not staged).
+  with stamina 0 into a walk, before this frame's step. Phase 2 part 3 reached it: a Sorceress turned from mode 3 to
+  mode 2 81 times in five run sessions, and the turn's `EF` against the unit's next `PS0` sits at offset 0 in 75 and
+  at offset 1 in 6, which are not explained (run:2026-10-30-anim-p3b; [Open questions](#open-questions)).
   (fn:sub_00580C20_PlrModeMoveFrame@0x00580C20, fn:sub_0057F090_PlrModeStartMove@0x0057F090)
 
 ### E. Knockback
@@ -280,8 +281,9 @@ E1. PathPlanKnockback (path type 8):                               [I] (fn:sub_0
 - E2. [C] **Speed.** The knockback branch sets the path speed to `0x1000`, one subtile per frame on an axis (A1).
   (run:2026-10-27-anim)
 - E2. [I] **A player's length**: the path's, 3 frames for `n` 3 on an axis and 5 on the diagonal (6 and 9 for `n` 6),
-  fewer when the collision walk stops it; then neutral. The run met two mode-19 starts (part 1; Phase 2 part 2 names
-  player knockbacks short, not staged); 12 of Blood Raven's 13 knockback results put the player in neutral in the hit's own frame
+  fewer when the collision walk stops it; then neutral. The run met two mode-19 starts (part 1; Phase 2 parts 2 and 3
+  name player knockbacks short: part 3's three Hell sessions never met Blood Raven and logged no player knockback,
+  `kb-end` 5 027 all monsters', run:2026-10-30-anim-p3b); 12 of Blood Raven's 13 knockback results put the player in neutral in the hit's own frame
   ([anim/timing § M](timing.md#m-hit-recovery-the-block-the-get-hit-roll-the-mode-tests-stun-and-the-hit-class)).
   (fn:sub_00580C20_PlrModeMoveFrame@0x00580C20)
 - E3. [C] **A monster's length**: its knockback ends on its animation, in the frame its advance reaches the `GH`
@@ -301,7 +303,9 @@ E1. PathPlanKnockback (path type 8):                               [I] (fn:sub_0
   (run:2026-10-27-anim)
 - F2. [I] **Slows Target** sets stats 68 and 69 only (attack and default rate), capped at 50 for players, bosses,
   hirelings and a `MonTypeFlag`, else 75 or 90; it has no velocity effect. Not staged in part 1 (P1b-13); Phase 2
-  part 2's session `sp-pal-slow` ran, but its record reports no outcome for it. (fn:sub_005C0310_StatEv19Slow@0x005C0310)
+  part 2's session `sp-pal-slow` ran, but its record reports no outcome for it; part 3's record counts 13 player
+  movement windows under a slow (`win-slow-p`) over the 131 logs, from the Slows Target belts, not a floor of 30, and
+  327 for monsters (run:2026-10-30-anim-p3b). (fn:sub_005C0310_StatEv19Slow@0x005C0310)
 
 ### G. Draws
 
@@ -344,7 +348,11 @@ E1. PathPlanKnockback (path type 8):                               [I] (fn:sub_0
   § 9.1, [anim/leads](../../findings/anim/leads.md) (§ 10, § 12).
 - Runs: [run:2026-10-27-anim](../../findings/anim/experiments.md#run2026-10-27-anim);
   [run:2026-10-27-anim-p2](../../findings/anim/experiments.md#run2026-10-27-anim-p2) (part 2's closing check over 81
-  logs: `step` 125 141, `pathspeed` 150 696, `drain` 49 914, 0 mismatches; no movement claim raised by it).
+  logs: `step` 125 141, `pathspeed` 150 696, `drain` 49 914, 0 mismatches; no movement claim raised by it);
+  [run:2026-10-30-anim-p3](../../findings/anim/experiments.md#run2026-10-30-anim-p3) and
+  [run:2026-10-30-anim-p3b](../../findings/anim/experiments.md#run2026-10-30-anim-p3b) (part 3's closing check over
+  131 logs: `step` 179 727, `pathspeed` 216 788, `drain` 88 103, 0 mismatches; the run's turn to a walk reached, no
+  movement claim raised).
 - Tables: the § Timing sections of [CharStats](../../tables/CharStats.md#timing-plan-0050-phase-0),
   [MonStats](../../tables/MonStats.md#timing-plan-0050-phase-0), [States](../../tables/States.md#timing-plan-0050-phase-0),
   [ItemStatCost](../../tables/ItemStatCost.md#timing-plan-0050-phase-0).
@@ -355,9 +363,17 @@ E1. PathPlanKnockback (path type 8):                               [I] (fn:sub_0
 - [L] Whether a stock source gives a moving `X` of 854 (a `Velocity`-15 monster) or 2 134 (a player) or more, where the
   step product wraps (B6).
 - [L] `0x00679720`, the knockback point's adjustment, and the planners (phase (5)).
-- [L] Whether the moving floor 25 and a run's turn to a walk at 0 stamina are reached by a stock recipe (P1b-14 and
-  the low-stamina run); Charge at stat 67 ≤ 50 (P1b-15); Slows Target (P1b-13); a player's knockback length. Phase 2
-  part 2 left them short or unreported; a part 3 is the owner's call (plan 0050 log).
+- [L] Whether the moving floor 25 is reached by a stock recipe (P1b-14); Charge at stat 67 ≤ 50 (P1b-15); Slows
+  Target on a player (P1b-13: 13 player movement windows under a slow over the 131 logs, not a 30); a player's
+  knockback length (two mode-19 starts in part 1, none in parts 2 and 3). Phase 2 parts 2 and 3 left them short or
+  unreported; P1b-14 and P1b-15 were not played in part 3 (run:2026-10-30-anim-p3b).
+- [I] **The run's turn to a walk at 0 stamina (D2), reached in Phase 2 part 3.** A Sorceress, whose run drains stat
+  10, turned from mode 3 to mode 2 by `MSET` 81 times in five run sessions (`op-run2` to `op-run6`: 3, 8, 11, 22 and 31
+  a log). The checker's tally `ef-first-run-turn` pairs the turn's `EF` line, queued in the frame of a drain `DR0`
+  line, with the unit's next `PS0`: offset 0 in 75, offset 1 in 6. The six offset-1 cases are not explained (not
+  every `EF` after a drain is the turn's own, and the tally does not separate them), and the 81 pairs are left out of
+  `ef-first`'s phase rule, so its 0 mismatches do not cover the turn; the turn's frame stays inferred.
+  (run:2026-10-30-anim-p3b, fn:sub_00580C20_PlrModeMoveFrame@0x00580C20, fn:sub_0057F090_PlrModeStartMove@0x0057F090)
 - [L] Whether a player under stun is refused anything other than through the get-hit it takes.
 
 ### Community sources: differences of 1.14d
