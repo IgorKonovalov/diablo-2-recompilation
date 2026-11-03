@@ -548,6 +548,7 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-11-03 | `lane/r60a` check | 0060 P1.1 | architect-check | 83 978 | 23 | 3 | — | accept with fixes (6) | W1 anchors 1, scope 2, routes 2, wording 1 |
 | 2026-11-03 | `lane/a68` | 0058 P1 / 0052 readers (2 entries) | archivist | 73 589 | 17 | 2 | — | accept with fixes (Tier A, ADR-0027) | 6: overclaim 1, omission 2, stale cross-reference 3 |
 | 2026-11-04 | `lane/a68` review | 0058 P1 / 0052 readers | architect-review | 116 538 | 29 | 7 | — | accept with fixes (6) | overclaim 1, omission 2, stale cross-reference 3 |
+| 2026-11-04 | `lane/c58` | 0058 close | architect-check | 57 303 | 14 | 1 | — | plan closed | — |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not
