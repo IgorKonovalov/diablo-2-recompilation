@@ -735,3 +735,25 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   [review request](../backlog/2026-11-03-reverser-architect-plan-0052-p1-2-batch-9-review.md),
   [archivist](../backlog/2026-11-03-reverser-archivist-monstats-skills-readers-named-by-ai-0010.md) (MonStats and
   Skills readers). Next: batch 10 (pool-G).
+- **2026-11-03 — P1.2 catalogue batch 10 (pool-G) for review (reverser, static, `lane/r52j`, from `main` 7fddf41d; `main` 3960ea23 (batch 9) merged before the run, `main` c7d3ee1d before filing).**
+  [ai/0011](../findings/ai/0011-batch10.md): the twelve think functions of rows 126, 127, 129–134, 136, 137, 139 and
+  141, the inits of rows 127 and 134 (`ret 4` alone) and 129 (`AiNestInit`, `v3C = −1`), row 133's class jump to the
+  three Ancient thinks (0x005EEB70, 0x005EEDA0, 0x005EF010), each with its `aip` reads per record (rows 130 and 139
+  read slots that differ per record), its AI-control words, its draws in order (all on the acting unit's seed: 21
+  inline steps and 14 `RNG_Range`; 0–8 per decision) and its command, plus the helpers first read here: row 129's
+  class pick 0x005E6020 (`genericSpawn`), row 126's catapult probe 0x005EDF70, the Ancients' target pick 0x005E8F20
+  (also Diablo's) and callback 0x005EEB10, row 134's wave step 0x005EF210, row 137's callback 0x005EFA50, and the tables
+  0x006E3514 and 0x006E3528. No call of the four action helpers. [C] by emulation (run:2026-11-03-ai-cat-emu-10,
+  `tools/ai_cat_emu10.py`, 15 families, 3 600 cases, 0 mismatches, 0 stopped, no unaccounted traced read; `le`, `d0`,
+  `cmp`, `u16`, the new `abs` and `self` and the site control fail every case they separate; `EDGES` per family; a
+  development run under `emu/dev-1/` with its tool copy): the maps of 126, 127, 129, 130, 132, 134 (to its search), 136,
+  137 (to its search), 139, 141 and the three inits to their first boundary or return, row 133's class jump with each
+  class think's quest test, row 131's entry call. Left [I]: everything after a boundary (the Ancients past the pick, the
+  throne's waves, the A5Q2 paths of row 131). Found: row 134 idles a negative count during its waits; row 129's
+  `SetMode(0)` after a failed pick is unreachable (the pick returns 1 on every path); `ancientbarb2` admits a state
+  equal to the States count, row 134 does not. P1.1 review reopen condition (b) not met. No tier AI. 26
+  `re/symbols.csv` rows (24 func, 2 data, all I). Kept outputs `workspace/logs/r52j/` (manifest 16 lines; `emu/` 61,
+  `emu/dev-1/` 62; each passes from its directory). Backlog: the
+  [review request](../backlog/2026-11-03-reverser-architect-plan-0052-p1-2-batch-10-review.md),
+  [archivist](../backlog/2026-11-03-reverser-archivist-monstats-skills-readers-named-by-ai-0011.md) (MonStats and
+  Skills readers). Next: batches 11 (bosses-B) and 12 (towns, NPCs, the state rows).
