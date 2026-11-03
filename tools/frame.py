@@ -310,7 +310,7 @@ TABLES = (
      "MonUMod row", "UModHandlerThunk 0x005A2113; SpecialModsApply 0x005A2153, 0x005A21AC; MinionRestore 0x005A4815, "
      "0x005A4834; ModAppendApply 0x005A48B0"),
     ("g_UModEventFns", 0x0073C0B8, 4, (0,), 390, ((0x005A42F2, 0, None), (0x005A432D, 0, None)),
-     "6 * MonUMod row + event", "0x005A4280: load 0x005A42DD, call 0x005A42F2; event 5 load 0x005A4317, call 0x005A432D"),
+     "6 * MonUMod row + event", "0x005A4270: load 0x005A42DD, call 0x005A42F2; event 5 load 0x005A4317, call 0x005A432D"),
     ("g_MissileCollideTypes", 0x0073C720, 8, (0,), 9, ((0x005AE3A4, 0, None),),
      "Missiles.txt CollideType", "MissileMoveCollide 0x005AE1F0 passes it to FindUnitAtCell (call 0x005AE3A4)"),
     ("g_MissileSrvDoFuncs", 0x0073C768, 4, (0,), 0x35, ((0x005ADCA7, 0, None),),
