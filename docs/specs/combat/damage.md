@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, combat/overview, combat/to-hit, monsters/stats, items/properties]
 consumed_by: [combat/reductions, combat/delivery]
-tags: {C: 34, I: 30, L: 5}
-updated: 2026-10-21
+tags: {C: 34, I: 32, L: 5}
+updated: 2026-11-04
 ---
 
 # Combat: the attacker's damage build
@@ -104,9 +104,9 @@ BuildDamage(att, def, pkt, critFlag: i32, srcdam: i32):              [I] (fn:COM
     pkt.cold  ← ElemRoll(att, 54, 55, 331, pkt.cold,  srcdam)
     pkt.magic ← ElemRoll(att, 52, 53, 357, pkt.magic, srcdam)
 5.  if att is a monster and not a hireling:                                         [C] (0x0057BA55–0x0057BB5A, run:2026-10-16-combat)
-      unless pkt.flags & 0x04: pkt.lifeSteal += Roll(60, 61) × srcdam ÷ 128         ; drain rolls, draws as § C
-      unless pkt.flags & 0x08: pkt.manaSteal += Roll(62, 63) × srcdam ÷ 128
-      unless pkt.flags & 0x10: pkt.stamSteal += Roll(64, 65) × srcdam ÷ 128
+      unless pkt.flags & 0x04: pkt.lifeSteal += Roll(60, 61, base: pkt.lifeSteal) × srcdam ÷ 128   ; drain rolls, draws as § C; the base: note 5
+      unless pkt.flags & 0x08: pkt.manaSteal += Roll(62, 63, base: pkt.manaSteal) × srcdam ÷ 128
+      unless pkt.flags & 0x10: pkt.stamSteal += Roll(64, 65, base: pkt.stamSteal) × srcdam ÷ 128
     else:
       pkt.lifeSteal += stat(att, 60);  pkt.manaSteal += stat(att, 62)              ; percents, no draw
       if stat(att, 103): pkt.flags |= 0x100;  if stat(att, 104): pkt.flags |= 0x200;  if stat(att, 106): pkt.flags |= 0x400
@@ -154,6 +154,12 @@ Step notes:
 - 5. A player's or a hireling's steal fields are the percents of stats 60 and 62 as they stand; the leech itself is
   computed at delivery ([combat/delivery § C](delivery.md#c-leech-combat_leech)). A monster's are rolled drain
   amounts. [C] (0x0057BA55–0x0057BB5A, run:2026-10-16-combat)
+- 5. **A drain roll hides the packet's base.** `COMBAT_RollElemStat` is given the packet's field and returns it with the
+  roll, and the result is added to the same field: the field becomes `field + (field + roll) × srcdam ÷ 128`, and
+  `field + max(field, 0) × srcdam ÷ 128` when the stat is below the roll's floor. A field that enters empty gets the roll
+  alone; a drain already in the packet counts again. No stock `Skills` row has `EType` life, mana or stam, and the other
+  writers of these fields are unfollowed. [I] (0x0057BA71–0x0057BAF3, 0x0057A8F7–0x0057A905,
+  fn:COMBAT_RollElemStat@0x0057A8E0, tbl:Skills.txt:EType, [quirks/0001](../../findings/quirks/0001-community-bugs.md#verdicts) row 12)
 - 7. **The unconditional `RangeB(att.seed, 1)`.** It steps the attacker's seed once on every build and always returns
   0. With a zero `burn` field the result is `316 ÷ 128` = 2, so a plain attack carries `burn = 2` and `burnLen = 0`,
   and no burning is applied ([combat/delivery](delivery.md)). The constant 316 equals the `burningmin` stat id, which
@@ -168,6 +174,8 @@ Step notes:
   packet's `+0x60` flag. [C] (fn:sub_005A5560_MonCritDouble@0x005A5560, fn:sub_00554650_PacketHitClassSet@0x00554650,
   run:2026-10-16-combat) The overlay 54 on the defender is put only when the hit-class flag was already taken. [I]
   (fn:sub_005A5560_MonCritDouble@0x005A5560)
+- 10. `MISSILE_ApplyDamage` calls the same doubling, so a monster's missile takes it too. The runs' 89 doublings are the
+  melee build's. [I] (0x005AD884, fn:sub_005A5560_MonCritDouble@0x005A5560, [quirks/0001](../../findings/quirks/0001-community-bugs.md#verdicts) row 11)
 
 ### B. The physical roll (`COMBAT_RollPhysical`)
 

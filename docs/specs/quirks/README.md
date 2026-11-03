@@ -4,8 +4,8 @@ status: draft
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [every reviewed spec listed under Coverage]
 consumed_by: [docs/wiki (plan 0057 Phase 4)]
-tags: {C: 346, I: 107, L: 0}
-updated: 2026-11-03
+tags: {C: 355, I: 128, L: 3}
+updated: 2026-11-04
 ---
 
 # Quirks: the behaviour a faithful reimplementation must keep
@@ -47,7 +47,7 @@ provoked for this page (owner decision 5).
 cites, every anchor of the entry appears in one of them, and the coverage table accounts for every note of every spec.
 The check does not tell which clause of a note holding both tags an entry restates; those entries were read by hand at
 the Phase 1 review. The entry tables are the machine-readable form (five fixed cells per row, read by
-`tools/quirks.py`); there is no second file (plan 0057 Phase 1 review).
+`tools/quirks.py`, and `list` prints them as JSON Lines); there is no second file (plan 0057 Phase 1 review).
 
 ```mermaid
 flowchart LR
@@ -62,15 +62,15 @@ flowchart LR
 | Class | Entries | C | I |
 |---|---|---|---|
 | [1. Arithmetic width and sign](#1-arithmetic-width-and-sign) | 23 | 17 | 6 |
-| [2. Rounding and float](#2-rounding-and-float) | 19 | 14 | 5 |
+| [2. Rounding and float](#2-rounding-and-float) | 20 | 14 | 6 |
 | [3. Wrap and overflow](#3-wrap-and-overflow) | 10 | 3 | 7 |
-| [4. Bounds, comparisons and table edges](#4-bounds-comparisons-and-table-edges) | 71 | 51 | 20 |
-| [5. Draw order and dead draws](#5-draw-order-and-dead-draws) | 137 | 116 | 21 |
-| [6. Data-dependent branches](#6-data-dependent-branches) | 122 | 96 | 26 |
+| [4. Bounds, comparisons and table edges](#4-bounds-comparisons-and-table-edges) | 75 | 54 | 21 |
+| [5. Draw order and dead draws](#5-draw-order-and-dead-draws) | 138 | 116 | 22 |
+| [6. Data-dependent branches](#6-data-dependent-branches) | 124 | 97 | 27 |
 | [7. Timing and frame edges](#7-timing-and-frame-edges) | 19 | 10 | 9 |
 | [8. Multiplayer edges](#8-multiplayer-edges) | 15 | 12 | 3 |
-| [9. Deliberate oddities that look like bugs](#9-deliberate-oddities-that-look-like-bugs) | 37 | 27 | 10 |
-| **Total** | 453 | 346 | 107 |
+| [9. Deliberate oddities that look like bugs](#9-deliberate-oddities-that-look-like-bugs) | 50 | 27 | 23 |
+| **Total** | 474 | 350 | 124 |
 
 ### 1. Arithmetic width and sign
 
@@ -123,6 +123,7 @@ flowchart LR
 | Q39 | The life rescale truncates a float32, and never takes current life below 1. | [C] | fn:sub_0055B800_MonStatCallback@0x0055B800, run:2026-10-17-stats | [stats/aggregate](../stats/aggregate.md#reimplementation-notes) n5 |
 | Q40 | A path step that would pass its point lands on the subtile centre, so frames per point are a ceiling and the next step starts from the centre. | [I] | fn:sub_00650090_PathStepSnap@0x00650090 | [anim/movement](../anim/movement.md#reimplementation-notes) n3 |
 | Q41 | The missile step direction is a lookup in `g_PathDirTable`, not a trigonometric function. | [I] | data:g_PathDirTable@0x006EB7E0 | [skills/missiles](../skills/missiles.md#reimplementation-notes) n10 |
+| Q454 | A monster with few hit points has no regeneration: stat 74 is `((hp << 8) × r) >> 12`, so 0 while `hp × r < 16`. | [I] | 0x00573FF6, 0x00574058, tbl:MonStats.txt:DamageRegen | [monsters/stats § B](../monsters/stats.md#b-monstatsinit-in-order) |
 
 ### 3. Wrap and overflow
 
@@ -214,6 +215,10 @@ flowchart LR
 | Q447 | The party distance's edge is inclusive and unsigned: d² = 6400 shares, 6401 does not. | [C] | 0x0057E654, 0x0057E65A, run:2026-11-03-party-emu | [player/party](../player/party.md#reimplementation-notes) n6; [player/creation § J](../player/creation.md#j-other-level-and-experience-changes) |
 | Q448 | The party member cap is a fatal path, not a clip: a ninth member that passes every test reaches `0x00408090(0xF25)`, while one failing a test first does not count (the code's map, to that call; not a game outcome). | [C] | 0x0057E662, 0x0057E665, run:2026-11-03-party-emu | [player/party](../player/party.md#reimplementation-notes) n5; [player/creation § J](../player/creation.md#j-other-level-and-experience-changes) |
 | Q449 | Past Q448's call, and whether a party list can hold nine players, is unread. | [I] | 0x0057E671, 0x0057E681, 0x005408CB | [player/party](../player/party.md#reimplementation-notes) n5; [player/creation § J](../player/creation.md#j-other-level-and-experience-changes) |
+| Q455 | The crushing-blow cut is `cb − MulDiv(cb, min(stat 36, 100), 100)` with no branch on the defender's kind, so `cb` is 0 at stat 36 of 100 or more. | [C] | fn:STATEVENT_CrushingBlow@0x005BFFC0, run:2026-10-16-combat | [combat/delivery § E](../combat/delivery.md#e-the-stat-events-crushing-blow-open-wounds-freeze) |
+| Q456 | A player at stat 36 of 100 or more takes no crushing blow: the same cut, after the player's divisor 10. | [I] | 0x005C0031, 0x005C00F6 | [combat/delivery § E](../combat/delivery.md#e-the-stat-events-crushing-blow-open-wounds-freeze) |
+| Q457 | `MAX_DROP` stops a monster's call at 6 items against the stock boss rows' `Picks` 7; do not raise it to the picks. | [C] | fn:TC_ResolveDrops@0x0055A6D0, tbl:TreasureClassEx.txt:Picks, run:2026-10-12-quality | [items/tc](../items/tc.md#constants) |
+| Q458 | The TC level walk reads `TC[idx+1]` with no bound check; stock data never reaches the table's end, by a full-table check. | [C] | fn:TC_GetByIndex@0x00654E00, tbl:TreasureClassEx.txt:group | [items/tc § C](../items/tc.md#c-level-upgrade--tc_dropbyindex-and-tc_getbyindex) |
 
 ### 5. Draw order and dead draws
 
@@ -356,6 +361,7 @@ flowchart LR
 | Q438 | do 112 (`MonCurseCast`) steps the caster's seed once before any test, so a refused cast still moves the seed by one (the finisher entries' form is Q136). | [C] | run:2026-10-21-cat-emu-8b | [skills/catalogue](../skills/catalogue.md#reimplementation-notes) n1 |
 | Q439 | Not the caster's seed: mdo 30 draws on the target unit's seed, the shrine entries on the shrine object's, st 55 on a local seed no unit keeps. | [C] | run:2026-10-20-cat-emu-9b, run:2026-10-21-cat-emu-8b, run:2026-10-21-cat-emu-item | [skills/catalogue](../skills/catalogue.md#reimplementation-notes) n2 |
 | Q440 | do 55 and do 58 (after their boundaries) draw on the target's seed, and do 81's per-unit roll on each unit's. | [I] | 0x005C4DF0, 0x005C56C0, 0x005D0920 | [skills/catalogue](../skills/catalogue.md#reimplementation-notes) n2 |
+| Q459 | A player's Smite runs its hit test and its draws, then forces the hit bit (`or ax, 1`): the result is ignored, the draws are not, and the defence bits stay in the word. | [I] | 0x005CEBA8, 0x005CEBB0, fn:sub_005CE9F0_SkillDo150Smite@0x005CE9F0 | [skills/catalogue § J](../skills/catalogue.md#j-paladin-st-29-31-3537-do-6467-73-7982-150) |
 
 ### 6. Data-dependent branches
 
@@ -483,6 +489,8 @@ flowchart LR
 | Q371 | A player's run speed is the walk base plus a +50 stat-67 list that lives while the run lasts; a monster runs at its walk path speed unless its AI command carries a velocity. | [I] | fn:sub_00620E80_RunVelocityStat@0x00620E80, fn:sub_005A6380_MonModeVelocity@0x005A6380 | [anim/movement](../anim/movement.md#reimplementation-notes) n1 |
 | Q372 | Two bases: the path speed moves the unit, the animation base only paces the animation; both take the same factor `X`. | [I] | fn:UNIT_AnimSetRate@0x00623F50 | [anim/movement](../anim/movement.md#reimplementation-notes) n2 |
 | Q373 | A shapeshifted player takes the form's record, start frame and rate, with the mode mapped through `g_PlrToMonMode` and the MonStats2 fallback. | [I] | fn:UNIT_AnimTransform@0x00645270 | [anim/timing](../anim/timing.md#reimplementation-notes) n4 |
+| Q460 | Champions and uniques pick from `umon` in Normal only; in Nightmare and Hell they come from the region pool. | [C] | fn:sub_005BDE80_MonRegionPickClass@0x005BDE80, tbl:Levels.txt:umon1, run:2026-10-14-mon-special | [monsters/pool](../monsters/pool.md#consumers-named-only) |
+| Q461 | Prevent Monster Heal's hook tests for a player attacker, so stat 117 on a mercenary's items applies no state. | [I] | fn:sub_0057D810_PreventHealHook@0x0057D810 | [combat/to-hit § A](../combat/to-hit.md#a-the-chance-to-hit-combat_tohitroll) |
 
 ### 7. Timing and frame edges
 
@@ -571,6 +579,19 @@ These are faithful 1.14d behaviour that reads as a mistake, or that contradicts 
 | Q443 | Return values that look wrong: mdo 14 with a skill or level ≤ 0 returns 2 without running mdo 1, and do 63 returns 1 for a bad missile class. | [C] | run:2026-10-20-cat-emu-9a, run:2026-10-20-cat-emu-nec | [skills/catalogue](../skills/catalogue.md#reimplementation-notes) n6 |
 | Q444 | do 13 returns 0 on every path. | [I] | fn:sub_005DBC60_SkillDo13Fend@0x005DBC60 | [skills/catalogue](../skills/catalogue.md#reimplementation-notes) n6 |
 | Q445 | No Uber event was found in this image to port: classes 704, 705 and 709 have no creator and no Uber-specific driver found, within the limits the source states; keep their class-gated code. | [I] | fn:sub_005E9DF0_AiUberDiablo@0x005E9DF0, fn:sub_005FD200_AiUberBaal@0x005FD200, fn:sub_005F81C0_AiUberMephisto@0x005F81C0 | [monsters/special](../monsters/special.md#reimplementation-notes) n12 |
+| Q462 | Dragon Talon's knockback chance reads the target's level twice, `level(target) + slvl − level(target)`, so the level difference is `slvl`. | [I] | 0x005D5AEB, 0x005D5AF7, fn:sub_005D5A30_SkillDo42DragonTalon@0x005D5A30 | [skills/catalogue § M](../skills/catalogue.md#m-assassin-st-2228-do-3335-4252-54-progressive-3641-143) |
+| Q463 | Psychic Hammer's knockback chance has the same form: both level reads are the target's. | [I] | 0x005D31D9, 0x005D31E5, fn:sub_005D3140_SkillDo33PsychicHammer@0x005D3140 | [skills/catalogue § M](../skills/catalogue.md#m-assassin-st-2228-do-3335-4252-54-progressive-3641-143) |
+| Q464 | Stat 137 counts twice with boots worn, on the kicks `SkillKickPhysDamage` builds: once alone, once with the boots' values. | [I] | 0x005D560F, fn:sub_00646280_KickItemDamage@0x00646280 | [skills/dispatch § I](../skills/dispatch.md#i-the-skill-packet) |
+| Q465 | The `ToHit` columns of Power Strike, MonPowerStrike and MonIceSpear do not reach st 6's hit test, which passes an attack-rating percent of 0. | [I] | fn:SKILLS_GetToHit@0x006449F0 | [skills/catalogue § H](../skills/catalogue.md#h-amazon-st-410-do-68-1016) |
+| Q466 | Do 150 (Smite) has no access to `Unit+0xC4`, so it does not set the flag `0x40` do 2 sets there; the callees past `COMBAT_ResolveAndQueue` and `COMBAT_DeliverQueued` are unfollowed. | [I] | 0x005CE9F0, 0x005CEC50, 0x0056F42A | [skills/catalogue § J](../skills/catalogue.md#j-paladin-st-29-31-3537-do-6467-73-7982-150) |
+| Q467 | A monster's Smite passes mode 5 to `MonAttackStats` whatever mode it used, so it takes its `A2` stats. | [I] | 0x005CEBB6, fn:sub_005A4F50_MonAttackStats@0x005A4F50 | [skills/catalogue § J](../skills/catalogue.md#j-paladin-st-29-31-3537-do-6467-73-7982-150); [monsters/stats § H](../monsters/stats.md#h-to-hit-and-damage-at-attack-time-reference-only) |
+| Q468 | `El2` and `El3` take `El1`'s minimum, maximum and length, through `MonLvlStats`' mask `0x40 + e`. | [I] | 0x005A51D7, fn:sub_006538A0_MonLvlStats@0x006538A0 | [monsters/stats § H](../monsters/stats.md#h-to-hit-and-damage-at-attack-time-reference-only) |
+| Q469 | A `manahit` boss takes `256·v` mana where the same value through an `El` column takes `v`, capped by the mana held; `v << 22` wraps i32 at 512. | [I] | fn:sub_005A1F90_UModManaHit@0x005A1F90, fn:COMBAT_RollElemStat@0x0057A8E0, 0x0057C879, 0x0057C889 | [combat/delivery § B](../combat/delivery.md#b-delivery-combat_applydamage); [monsters/stats § G](../monsters/stats.md#g-the-mod-handlers-stat-effects) |
+| Q470 | A summon gets its MonLvl defence and to-hit added whole, with no `noRatio` test. | [I] | fn:sub_005C49E0_SummonSetLevel@0x005C49E0 | [skills/dispatch § L](../skills/dispatch.md#l-summons) |
+| Q471 | A monster's line missile counts stat 19 twice, as the missile's `arPct` from the creation and as the stat at the hit, when the record byte `+0x18B` is set; the dexterity term is not doubled, and the lob form sets no flag. | [I] | fn:sub_0056ECB0_SkillMissileCreate@0x0056ECB0, fn:MISSILE_HitUnit@0x005ADF10, fn:COMBAT_ToHitRoll@0x0057D9B0 | [combat/to-hit § A](../combat/to-hit.md#a-the-chance-to-hit-combat_tohitroll); [skills/missiles § E](../skills/missiles.md#e-the-hit) |
+| Q472 | Neither skill creator adds a skill's to-hit bonus to a player's missile; do 74 (Double Throw) is the one exception read, and other creators are unfollowed. | [I] | fn:sub_0056ECB0_SkillMissileCreate@0x0056ECB0, fn:sub_0056EE90_SkillMissileCreateLob@0x0056EE90, 0x005D8943, 0x005D896E, fn:SKILLS_GetToHit@0x006449F0 | [skills/missiles § B](../skills/missiles.md#b-creation); [skills/catalogue § K](../skills/catalogue.md#k-barbarian-st-3234-3841-do-2-9-6872-7478) |
+| Q473 | Blessed Aim and Penetrate both name `penetrate` in `passivestate`, so a running Blessed Aim removes Penetrate's list from its caster. | [I] | 0x005CEFD5, 0x005CEFFD, fn:AURA_ApplyToTarget@0x005CEDC0, tbl:Skills.txt:passivestate | [skills/catalogue § J](../skills/catalogue.md#j-paladin-st-29-31-3537-do-6467-73-7982-150) |
+| Q474 | A monster's drain roll takes the packet's field as its base, and the result is added to that field: `field + (field + roll) × srcdam ÷ 128`, so a drain already in the packet counts again. | [I] | 0x0057BA71, 0x0057BAF3, fn:COMBAT_RollElemStat@0x0057A8E0 | [combat/damage § A](../combat/damage.md#a-combat_builddamage-in-order) |
 
 ## Crash and hang paths
 
@@ -578,6 +599,61 @@ Six from the specs' code readings and three reached in kept runs: Q89, a fault l
 `0x00408090` reached under emulation on three paths of the catalogue, and Q448, the same call reached under emulation by a party's ninth member (Q449: past that call, and whether a list can hold nine, is unread). None was provoked for this page, and the harness never
 provokes one (owner decision 5). The entries are in their classes above: Q44, Q45, Q50, Q65, Q74, Q89, Q93, Q437, Q448; Q50's
 hang is also the catalogue's endless-loop note.
+
+## Community claims
+
+[quirks/0001](../../findings/quirks/0001-community-bugs.md#verdicts) compares 30 claims from community bug lists with the code (plan 0057 Phase 2): 20 confirmed, 4
+contradicted, 3 not in 1.14d, 3 not found. Agreement with a page raises no tag: each entry states what the code does, in the
+owning spec's words. Every verdict lands here once; `tools/quirks.py check` holds this table to the finding's.
+
+| Row | Verdict | Where |
+|---|---|---|
+| 1 | confirmed | Q462 |
+| 2 | confirmed | Q463 |
+| 3 | not in 1.14d | [does not hold](#community-claims-that-do-not-hold) |
+| 4 | confirmed | Q464 |
+| 5 | confirmed | Q465 |
+| 6 | confirmed | Q459 |
+| 7 | confirmed | Q466 |
+| 8 | confirmed | Q467 |
+| 9 | not found | [open question 1](#open-questions) |
+| 10 | confirmed | Q468 |
+| 11 | confirmed | Q254 |
+| 12 | contradicted | [does not hold](#community-claims-that-do-not-hold) |
+| 13 | confirmed | Q469 |
+| 14 | confirmed | Q454 |
+| 15 | confirmed | Q455, Q456 |
+| 16 | confirmed | Q470 |
+| 17 | confirmed | Q471 |
+| 18 | confirmed | Q472 |
+| 19 | confirmed | Q473 |
+| 20 | contradicted | [does not hold](#community-claims-that-do-not-hold) |
+| 21 | confirmed | Q460 |
+| 22 | confirmed | Q457 |
+| 23 | not found | [open question 2](#open-questions) |
+| 24 | confirmed | Q458 |
+| 25 | not in 1.14d | [does not hold](#community-claims-that-do-not-hold) |
+| 26 | contradicted | [does not hold](#community-claims-that-do-not-hold) |
+| 27 | confirmed | Q461 |
+| 28 | contradicted | [does not hold](#community-claims-that-do-not-hold) |
+| 29 | not in 1.14d | [does not hold](#community-claims-that-do-not-hold) |
+| 30 | not found | [open question 3](#open-questions) |
+
+### Community claims that do not hold
+
+A reimplementer must not "restore" these. No reviewed statement changes because of them.
+
+| Row | The claim | What the code does | Tag | Anchors | Statement |
+|---|---|---|---|---|---|
+| 12 | Melee monsters with life, mana or stamina steal do twice the damage | No field counts twice on the `El` path. A non-hireling monster's life drain is one term of `total`, added to the physical damage, which it does not repeat. | [C] | fn:COMBAT_ApplyReductions@0x0057C1E0, run:2026-10-16-combat | [combat/reductions § A](../combat/reductions.md) |
+| 12 | (the same) | `El` type `life` writes only stats 60 and 61; mana and stamina leave stats 8 and 10 and are not in `total`. What can double is a drain already in the packet (Q474). | [I] | 0x005A53B5, 0x005A53C5, 0x0057C879, 0x0057C889, fn:COMBAT_ApplyDamage@0x0057C6C0 | [combat/delivery B4](../combat/delivery.md#b-delivery-combat_applydamage), [combat/damage step 5](../combat/damage.md#a-combat_builddamage-in-order) |
+| 20 | Curse resistance cuts every timed list, Fade's among them | The cut on a player target is as stated. | [C] | fn:STATE_ApplyTimed@0x0056E970, run:2026-10-17-stats | [stats/states B1](../stats/states.md) |
+| 20 | (the same) | The cut runs only `if curse`, the state's `curse` flag, and `fade` has that cell blank. | [I] | 0x0056E9C9, 0x0056EA4A, tbl:States.txt:curse | [stats/states B1](../stats/states.md) |
+| 26 | Hratli's magic level is 1, by a misspelled header | The header is right about the cause, and the value is 0, the absent-column default. | [C] | tbl:Weapons.txt:HratliMagicLvl | [items/vendors D3](../items/vendors.md) |
+| 28 | Eth's target defence reduction goes negative, so it works as "ignores target defence", on bosses too | The percent is clamped to 0..100 and halved on a boss, player, superunique or hireling. | [I] | fn:COMBAT_ToHitTargetMods@0x0057D8A0, tbl:Properties.txt:stat1 | [combat/to-hit A7](../combat/to-hit.md#a-the-chance-to-hit-combat_tohitroll) |
+| 3 | Kick skills receive elemental damage from weapons | Not in 1.14d on the four `Kick` rows: Kick's start 2 skips the build, and `SkillKickPhysDamage` unlinks the damage stats of a `weap` item in either hand before it builds. Elemental stats from other items still reach that build. | [I] | 0x005D57DB, 0x005D586A, fn:sub_005D54B0_SkillKickPhysDamage@0x005D54B0 | [skills/dispatch I4](../skills/dispatch.md#i-the-skill-packet) |
+| 25 | Some runeword property codes are misspelled | Not in 1.14d: 0 unknown codes in 508 `T1Code` cells of 169 rows. | [C] | tbl:Runes.txt:T1Code1, tbl:Properties.txt:code | [items/sockets-runewords E2](../items/sockets-runewords.md) |
+| 29 | The "n−1" bug: a ranged modifier never reaches its maximum | Not in 1.14d: `lo + Range(hi − lo + 1)`. | [C] | fn:PROP_RollValue@0x0065E9E0, run:2026-10-14-props | [items/properties D1](../items/properties.md#d-the-value-roll-and-the-stat-writer) |
 
 ## Coverage
 
@@ -649,11 +725,23 @@ its draw-order list, quests/progression § A–C and G, quests/travel § E and i
 
 ## Evidence
 
-Every entry links its owning spec section; the specs carry the findings, runs and table docs. The harvest and the
-coverage check: `tools/quirks.py` (`harvest`, `check`).
+Every entry links its owning spec section; the specs carry the findings, runs and table docs. The community verdicts:
+[quirks/0001](../../findings/quirks/0001-community-bugs.md). The harvest, the coverage check and the entries as JSON Lines: `tools/quirks.py` (`harvest`,
+`check`, `list`).
 
 ## Open questions
 
 - The step notes of the reviewed specs were not swept beyond the ones named under Coverage; a later pass may add
   entries from them.
-- Community-known bugs are compared against the code in plan 0057 Phase 2 and enter this index in Phase 3.
+
+Three community claims stay leads, with the finding's reasons ([quirks/0001 § Open questions](../../findings/quirks/0001-community-bugs.md#open-questions)):
+
+1. [L] **Row 9, a shared timeout id for delayed boss death effects.** The mods' death functions run through a table not
+   walked. Resolve by listing the death slot of `data:g_UModEventFns@0x0073C0B8` and each queue call's event id.
+   (fn:sub_005A2620_MonDeathDamage@0x005A2620, src:d2-massive-bug-list)
+2. [L] **Row 23, delayed trapped-soul drops ignoring gold and magic find.** `OBJOP_TrappedSoul`'s `r ≥ 90` branch queues
+   object events 1 and 9, and their handler was not found. Resolve by reading that handler and what it passes as the killer
+   to `TC_ResolveDrops`. (fn:OBJOP_TrappedSoul@0x005869F0, 0x00586A9D, 0x00586AB7, src:d2-massive-bug-list)
+3. [L] **Row 30, a Cloak of Shadows crash near the Ancients and stationary spawners.** The page gives only theories, and
+   which AI would fault was not read; owner decision 5 forbids provoking it. Resolve by reading mode 10's dispatch against
+   those units' AI. (fn:sub_005D6520_CloakAreaCb@0x005D6520, fn:sub_005B0E00_MonAiInit@0x005B0E00, src:pd-gamebreaking-bugs)

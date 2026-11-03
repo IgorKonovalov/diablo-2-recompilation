@@ -33,7 +33,7 @@ Four claims do not hold in this image, and a reimplementer must not "restore" th
 
 Verdicts are the plan's: `confirmed`, `contradicted`, `not in 1.14d`, `not found`. A row's tag is the tag of the reviewed
 statement it rests on, or the inferred tag where this lane read the code. "none" under *Owning spec* means no reviewed spec section
-states the behaviour; those rows go to the spec-writer ([backlog entry](../../backlog/2026-11-03-reverser-spec-writer-quirks-community-owning-specs.md)).
+states the behaviour; those rows go to the spec-writer ([backlog entry](../../backlog/archive/2026-11-03-reverser-spec-writer-quirks-community-owning-specs.md)).
 
 | # | Claim (paraphrased) | Source | Verdict | Tag | Anchor | Owning spec section |
 |---|---|---|---|---|---|---|
