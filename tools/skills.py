@@ -188,6 +188,10 @@ def parse(path):
                 d = json.loads(ln[sp + 1:])
             except ValueError:
                 continue
+            if tag == "SST0" and not isinstance(d.get("u"), dict):
+                continue            # tools/gdb/ai.py's skill start (plan 0052 H1, both loggers in one log)
+            if tag == "SST1" and "eax" in d and "r" not in d:
+                continue
             out.append((tag, d))
     return out
 
@@ -983,6 +987,14 @@ class Checker:
                 tags.append("MC")
             elif tt == "MC1" and ("MC", dd.get("k")) in open_spans and dd.get("so"):
                 t = sd_parse(dd["so"])
+            elif tt == "AID" and dd.get("u") == u and dd.get("s0"):
+                # plan 0052 H1: a monster's AI decision (tools/gdb/ai.py loaded beside this logger): the unit seed at the
+                # event's entry is an observation, and the decision's logged exit (AIX) is the seed after it
+                obs = dd["s0"]
+                open_spans[("AI", dd["n"])] = 1
+                tags.append("AI")
+            elif tt == "AIX" and ("AI", dd.get("k")) in open_spans and dd.get("s"):
+                t = sd_parse(dd["s"])
             elif tt == "RSK0" and dd.get("u") == u:
                 obs = dd["s"]
                 open_spans[("RSK", dd["n"])] = 1

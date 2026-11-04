@@ -332,5 +332,35 @@ class Model(unittest.TestCase):
         self.assertEqual((C.bad["BD.seed"], C.bad["BD.elem"]), (1, 1))
 
 
+class AiSpanInGap(unittest.TestCase):
+    """plan 0052 H1: a monster's AI decision (AID .. AIX of tools/gdb/ai.py) between two skill events carries its seed."""
+
+    def gap(self, between, s_prev, s_next_entry):
+        C = skills.Checker(None)
+        C.caster_gap("x.log", 77, 1, s_prev, s_next_entry, between, 3, 99)
+        return C
+
+    def test_decision_closes_a_gap_and_a_wrong_entry_does_not(self):
+        p = (0x1234, 0x5678)
+        e = skills.step_n(p, 3)          # the decision's exit, three steps on
+        fmt = skills.sd_fmt
+        span = [("AID", {"u": 77, "s0": fmt(p), "n": 10}), ("AIX", {"k": 10, "s": fmt(e)})]
+        C = self.gap(span, p, e)
+        self.assertEqual(C.ok["CHAIN.caster+logged"], 1)
+        self.assertEqual(sum(C.info[k] for k in C.info if k.startswith("CHAIN.caster resync left")), 0)
+        # control 1: the decision's entry seed is not the walking seed: the gap stays (an observation fails)
+        bad = [("AID", {"u": 77, "s0": fmt(skills.step(p)), "n": 10}), ("AIX", {"k": 10, "s": fmt(e)})]
+        C = self.gap(bad, p, e)
+        self.assertEqual(C.ok["CHAIN.caster+logged"], 0)
+        self.assertEqual(len(C.gaps), 1)
+        # control 2: the next event's entry is not the decision's exit: the gap stays
+        C = self.gap(span, p, skills.step(e))
+        self.assertEqual(C.ok["CHAIN.caster+logged"], 0)
+        # control 3: another unit's decision is not this unit's span
+        other = [("AID", {"u": 78, "s0": fmt(p), "n": 10}), ("AIX", {"k": 10, "s": fmt(e)})]
+        C = self.gap(other, p, e)
+        self.assertEqual(C.ok["CHAIN.caster+logged"], 0)
+
+
 if __name__ == "__main__":
     unittest.main()

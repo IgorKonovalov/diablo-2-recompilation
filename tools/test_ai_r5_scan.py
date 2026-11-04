@@ -36,7 +36,8 @@ class Scan(unittest.TestCase):
         self.assertEqual(r["states"], {0: 2, 13: 1})
         self.assertEqual((r["ail"], r["ail_pend0"]), (2, 1))
         self.assertEqual((r["msm_spans"], r["msm_open"]), (2, 1))
-        self.assertEqual((r["aib"], r["aib_in_msm"]), (3, 2))       # the AIB at n 11 and the one in the open span at 21
+        self.assertEqual((r["aib"], r["aib_in_msm"]), (3, 1))       # n 11 in a closed span; n 21 is in an open one
+        self.assertEqual((r["aib_in_open_span"], r["aib_in_open_span_ail"]), (1, 0))
 
 
 if __name__ == "__main__":
