@@ -1,0 +1,387 @@
+{
+ "game": "expansion",
+ "class": "Sorceress",
+ "seed": 6002002,
+ "name": "InvSor2",
+ "progression": 15,
+ "difficulty": [
+  131,
+  131,
+  131
+ ],
+ "waypoints": {
+  "normal": "all",
+  "nightmare": "all",
+  "hell": "all"
+ },
+ "stats": {
+  "strength": 400,
+  "energy": 150,
+  "dexterity": 400,
+  "vitality": 150,
+  "hitpoints": 6000,
+  "maxhp": 6000,
+  "mana": 3000,
+  "maxmana": 3000,
+  "stamina": 800,
+  "maxstamina": 800,
+  "level": 85,
+  "experience": 1145236814
+ },
+ "skills": {
+  "Teleport": 1,
+  "Warmth": 20,
+  "Nova": 20,
+  "Lightning Mastery": 20,
+  "Static Field": 1,
+  "Telekinesis": 1
+ },
+ "mouse": {
+  "left": "Teleport",
+  "right": "Attack",
+  "swap_left": "Teleport",
+  "swap_right": "Attack"
+ },
+ "hotkeys": [
+  "Attack",
+  "Nova"
+ ],
+ "items": [
+  {
+   "unique": "Ginther's Rift",
+   "equip": "rarm",
+   "roll": "max"
+  },
+  {
+   "unique": "Steelclash",
+   "equip": "larm",
+   "roll": "max"
+  },
+  {
+   "unique": "Rockstopper",
+   "equip": "head",
+   "roll": "max"
+  },
+  {
+   "unique": "Rockfleece",
+   "equip": "tors",
+   "roll": "max"
+  },
+  {
+   "unique": "Venom Grip",
+   "equip": "glov",
+   "roll": "max"
+  },
+  {
+   "unique": "Goldwrap",
+   "equip": "belt",
+   "roll": "max"
+  },
+  {
+   "unique": "Gorerider",
+   "equip": "feet",
+   "roll": "max"
+  },
+  {
+   "unique": "Nokozan Relic",
+   "equip": "neck",
+   "roll": "max"
+  },
+  {
+   "unique": "Raven Frost",
+   "equip": "rrin",
+   "roll": "max"
+  },
+  {
+   "unique": "Manald Heal",
+   "equip": "lrin",
+   "roll": "max"
+  },
+  {
+   "code": "hp1",
+   "store": "inventory",
+   "x": 0,
+   "y": 0
+  },
+  {
+   "code": "hp1",
+   "store": "inventory",
+   "x": 1,
+   "y": 0
+  },
+  {
+   "code": "hp1",
+   "store": "inventory",
+   "x": 2,
+   "y": 0
+  },
+  {
+   "code": "hp1",
+   "store": "inventory",
+   "x": 3,
+   "y": 0
+  },
+  {
+   "code": "hp1",
+   "store": "inventory",
+   "x": 4,
+   "y": 0
+  },
+  {
+   "code": "hp1",
+   "store": "inventory",
+   "x": 5,
+   "y": 0
+  },
+  {
+   "code": "hp1",
+   "store": "inventory",
+   "x": 6,
+   "y": 0
+  },
+  {
+   "code": "hp1",
+   "store": "inventory",
+   "x": 7,
+   "y": 0
+  },
+  {
+   "code": "mp1",
+   "store": "inventory",
+   "x": 8,
+   "y": 0
+  },
+  {
+   "code": "mp1",
+   "store": "inventory",
+   "x": 9,
+   "y": 0
+  },
+  {
+   "code": "mp1",
+   "store": "inventory",
+   "x": 0,
+   "y": 1
+  },
+  {
+   "code": "mp1",
+   "store": "inventory",
+   "x": 1,
+   "y": 1
+  },
+  {
+   "unique": "Raven Frost",
+   "roll": "max",
+   "store": "inventory",
+   "x": 2,
+   "y": 1
+  },
+  {
+   "unique": "Nokozan Relic",
+   "roll": "max",
+   "store": "inventory",
+   "x": 3,
+   "y": 1
+  },
+  {
+   "set": "Civerb's Icon",
+   "store": "inventory",
+   "x": 4,
+   "y": 1
+  },
+  {
+   "set": "Angelic Halo",
+   "store": "inventory",
+   "x": 5,
+   "y": 1
+  },
+  {
+   "code": "rin",
+   "rare": [
+    160,
+    121
+   ],
+   "store": "inventory",
+   "x": 6,
+   "y": 1
+  },
+  {
+   "code": "amu",
+   "rare": [
+    161,
+    122
+   ],
+   "store": "inventory",
+   "x": 7,
+   "y": 1
+  },
+  {
+   "code": "rin",
+   "crafted": [
+    160,
+    121
+   ],
+   "store": "inventory",
+   "x": 8,
+   "y": 1
+  },
+  {
+   "code": "rin",
+   "suffix": 112,
+   "store": "inventory",
+   "x": 9,
+   "y": 1
+  },
+  {
+   "code": "amu",
+   "suffix": 16,
+   "store": "inventory",
+   "x": 0,
+   "y": 2
+  },
+  {
+   "code": "rin",
+   "quality": "superior",
+   "store": "inventory",
+   "x": 1,
+   "y": 2
+  },
+  {
+   "code": "rin",
+   "quality": "low",
+   "store": "inventory",
+   "x": 2,
+   "y": 2
+  },
+  {
+   "code": "rin",
+   "store": "inventory",
+   "x": 3,
+   "y": 2
+  },
+  {
+   "code": "gcv",
+   "store": "inventory",
+   "x": 4,
+   "y": 2
+  },
+  {
+   "code": "gcg",
+   "store": "inventory",
+   "x": 5,
+   "y": 2
+  },
+  {
+   "code": "r01",
+   "store": "inventory",
+   "x": 6,
+   "y": 2
+  },
+  {
+   "code": "r02",
+   "store": "inventory",
+   "x": 7,
+   "y": 2
+  },
+  {
+   "code": "jew",
+   "store": "inventory",
+   "x": 8,
+   "y": 2
+  },
+  {
+   "code": "rvs",
+   "store": "inventory",
+   "x": 9,
+   "y": 2
+  },
+  {
+   "code": "hp2",
+   "store": "inventory",
+   "x": 0,
+   "y": 3
+  },
+  {
+   "code": "rvs",
+   "store": "inventory",
+   "x": 1,
+   "y": 3
+  },
+  {
+   "code": "hp2",
+   "store": "inventory",
+   "x": 2,
+   "y": 3
+  },
+  {
+   "code": "rvs",
+   "store": "inventory",
+   "x": 3,
+   "y": 3
+  },
+  {
+   "code": "hp2",
+   "store": "inventory",
+   "x": 4,
+   "y": 3
+  },
+  {
+   "code": "rvs",
+   "store": "inventory",
+   "x": 5,
+   "y": 3
+  },
+  {
+   "code": "hp2",
+   "store": "inventory",
+   "x": 6,
+   "y": 3
+  },
+  {
+   "code": "rvs",
+   "store": "inventory",
+   "x": 7,
+   "y": 3
+  },
+  {
+   "code": "hp2",
+   "store": "inventory",
+   "x": 8,
+   "y": 3
+  },
+  {
+   "code": "rvs",
+   "store": "inventory",
+   "x": 9,
+   "y": 3
+  }
+ ],
+ "belt_fill": [
+  "hp1",
+  "hp1",
+  "mp1",
+  "rvs"
+ ],
+ "quests": "all",
+ "merc": {
+  "id": 24,
+  "seed": 370701,
+  "name": 3,
+  "exp": 62208000,
+  "dead": false,
+  "items": [
+   {
+    "code": "crs",
+    "equip": "rarm"
+   },
+   {
+    "code": "brs",
+    "equip": "tors"
+   },
+   {
+    "code": "hlm",
+    "equip": "head"
+   }
+  ]
+ }
+}

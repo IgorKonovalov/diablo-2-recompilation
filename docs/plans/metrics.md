@@ -586,6 +586,8 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-11-04 | `lane/p54b` | 0054 | reverser-static | 249 932 | 54 | 25 | — | accept with fixes (Tier A) | 13: overclaim 1, under-claim 1, misread 6, miscount 1, omission 3, wrong anchor 1 |
 | 2026-11-04 | `lane/p54b` review | 0054 P2 (grid rules) | architect-review | 237 311 | 61 | 16 | — | accept with fixes (13) | overclaim 1, under-claim 1, misread 6, miscount 1, omission 3, wrong anchor 1 |
 | 2026-11-04 | `lane/p52c` review | 0052 P2 (third run, no game) | architect-review | 245 222 | 57 | 71 | — | accept with fixes (13) | overclaim 3, omission 5, stale cross-reference 3, tool not kept 1, other 1 |
+| 2026-11-04 | `lane/p60b` | 0060 | reverser-harness | 313 181 | 143 | 91 | 2 | accept with fixes (Tier B check) | 7: overclaim 3, misread 1, omission 1, stale cross-reference 2 |
+| 2026-11-04 | `lane/p60b` check | 0060 P2 (second run) | architect-check | 139 809 | 39 | 6 | — | accept with fixes (7) | overclaim 3, misread 1, omission 1, stale cross-reference 2 |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not
