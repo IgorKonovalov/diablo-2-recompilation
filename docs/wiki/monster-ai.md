@@ -437,7 +437,13 @@ that paragraph before relying on a block outside its read set. Within that sampl
 
 ### Row 106's pick
 
-**Short, by name** ([catalogue, Open questions](../specs/monsters/ai/catalogue.md#open-questions)). A Shadow Master scores its skills to pick one. The finding gives the score's inputs and shape, not each `aitype`'s terms and target, and a rebuild cannot pick the same skill without them. Row 143 shares this think, and no MonStats row names it.
+**Read from the code; no log holds a decision of this row** ([catalogue, row 106 in batch 5](../specs/monsters/ai/catalogue.md#batch-5-summons)). A Shadow Master scores its skills to pick one. A skill's score starts from the skill's own numbers and the target's resistance to its element, and its `aitype` adds terms from a few words the think computes once: how near and how many hostiles are, its life, its line to the target, its owner's surroundings. Most `aitype`s also take one draw on the unit's seed, and that draw comes before the test for the list, so a skill the list does not keep has still drawn. A skill joins the list only when it beats the score of the last one in, so the list rises, and the pick walks it from the top, each entry taking a seed step that can pass it over, down to the plain attack. A skill that targets the unit itself can hold the top of the list and commands nothing.
+
+The spec's reading was run against the think's instructions as a check of the transcription, with every call it makes stubbed, so it says the two agree and raises nothing. As data, no stock skill reaches three of the `aitype` cases. Row 143 shares this think, and no MonStats row names it.
+
+### The tables of rows 25 and 94
+
+Will-o'-wisps dance and desert turrets sweep by tables held in the code. [Row 25's](../specs/monsters/ai/catalogue.md#batch-2-pool-b-acts-ii-and-iii) and [row 94's](../specs/monsters/ai/catalogue.md#batch-8-pool-e-towers-turrets-javelins-and-blowguns-venom-lords-the-siege) are given in the catalogue, listed or by a rule, and **each value is compared with the game's image**, which says what they hold and not how they were made. How the thinks use them is **read from the code**, and no log holds a decision of either row. The wisp's grant to a player ends by the timed list's expiry, and death may free it first, also read from the code. As data, row 25's wisps are in the spawn columns of some levels and one superunique.
 
 ### The Uber rows
 
@@ -467,7 +473,8 @@ What the runs did not reach, each stated as it stands ([overview § Open questio
 
 From the specs' open questions ([overview](../specs/monsters/ai/README.md#open-questions), [machinery](../specs/monsters/ai/machinery.md#open-questions), [catalogue](../specs/monsters/ai/catalogue.md#open-questions)):
 
-- **Rows short of their own decision tree.** Rows 106 and 143's score terms ([above](#row-106s-pick)), and the tables of rows 25 and 94, which a rebuild needs and no finding transcribes.
+- **Rows 25, 94, 106 and 143 in play.** No log holds a decision of these rows, so their readings are untested there ([above](#row-106s-pick)).
+- **Row 94's tables.** Whether one odd cell of the turning table is a slip, which changes nothing a rebuild needs, as the code reads the table as it is; and whether the step table points the way the direction index names, which is not read.
 - **What moves and casts the Uber classes**, given thinks that command nothing.
 - **Unnamed here:** the column behind the gate of states 10 to 12, the writer of the unit word the ring walk tests, the third block a monster gets at creation, and the game field in the `aidel` choice.
 - **The register stat getters,** which would need a resolver before a spec could say the walkers and callbacks read no light radius.
