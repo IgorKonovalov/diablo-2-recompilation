@@ -74,6 +74,16 @@ def last_pos(log):
     return pos
 
 
+def first_pos_off_town(log, town=103):
+    """(x, y) of the first PLR line whose level is not the town: the waypoint the pilot arrived at."""
+    for line in open(log, errors="replace").read().splitlines():
+        if line.startswith("PLR "):
+            d = json.loads(line[4:])
+            if d["lid"] != town:
+                return d["x"], d["y"]
+    return 0, 0
+
+
 def goto(log, xd, out, tx, ty, centre=(200, 265), tries=14):
     """Walk to (tx, ty) by clicks with the inventory open: each click goes toward the target along the isometric axes
     (a sub-tile is 16 px across and 8 px down per axis step), at most 130 px from the character, who stays at `centre`.
@@ -130,12 +140,12 @@ SESSIONS = {
                 ("click", 70, 410, 3.0), ("shot", "wall")] + drop_cells(range(0, 12))
                + [("goto", 5048, 5043), ("shot", "back")]
                + drop_cells(range(12, 36)) + [("shot", "after24"), ("keys", ["i"], 0.8),
-                ("pilot", ["farm", "--wp", "4,2", "--time", "4"] + NOVA, 200), ("wait", 3), ("shot", "city"),
+                ("pilot", ["farm", "--wp", "4,2", "--time", "4"] + NOVA, 200), ("wait", 3), ("mark_pos", "city"), ("shot", "city"),
                 ("keys", ["i"], 1.0)] + drop_cells(range(36, 40)) + [("keys", ["i"], 0.8), ("wait", 3),
                 ("pilot", ["hop", "30", "0"], 60), ("pilot", ["hop", "30", "0"], 60), ("pilot", ["hop", "30", "0"], 60),
                 ("shot", "away"), ("wait", 20),
                 ("pilot", ["hop", "-30", "0"], 60), ("pilot", ["hop", "-30", "0"], 60), ("pilot", ["hop", "-30", "0"], 60),
-                ("keys", ["i"], 0.8), ("goto", 5708, 5448), ("keys", ["i"], 0.8), ("wait", 8), ("shot", "back2"),
+                ("keys", ["i"], 0.8), ("goto", "city"), ("keys", ["i"], 0.8), ("wait", 8), ("shot", "back2"),
                 ("pilot", ["farm", "--wp", "4,1", "--time", "4"] + NOVA_CITY, 200), ("wait", 8), ("shot", "town2"),
                 ("wait", 380), ("shot", "mid"), ("wait", 380), ("shot", "end")]),
 }
@@ -164,6 +174,7 @@ def run(slot, tag, run_id, names, dev=False, seed0=6001):
     os.environ["INV_SLOT"] = str(slot)
     os.environ["INV_RUNTIME"] = os.path.join(ROOT, "workspace", "runtime")
     launches = [0]
+    marks = {}
 
     def run_case(name):
         seed = seed0 + launches[0]
@@ -195,8 +206,11 @@ def run(slot, tag, run_id, names, dev=False, seed0=6001):
                     time.sleep(step[3])
                 elif k == "shot":
                     hr.sh(xd + ["shot", os.path.join(shots, "%s-%s.png" % (name, step[1]))], 30, out)
+                elif k == "mark_pos":
+                    marks[step[1]] = first_pos_off_town(log)
                 elif k == "goto":
-                    goto(log, xd, out, step[1], step[2])
+                    tx, ty = marks[step[1]] if isinstance(step[1], str) else (step[1], step[2])
+                    goto(log, xd, out, tx, ty)
                 elif k == "arm":
                     with open(arm, "w") as f:
                         f.write(step[1] + "\n")
