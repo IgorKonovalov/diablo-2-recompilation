@@ -34,7 +34,7 @@ bytes it reads, and no symbol row is raised (review-fixes 14). A plain `[I]` is 
 
 ## Leads used
 
-No community source was compared; every claim is from the code.
+No community source was compared; every claim is from the code. **2026-11-04 (`lane/r60d`):** the comparison was made afterwards, with these statements as they stood; every verdict is in [items/0017](0017-community-cross-check.md), and no tag moved.
 
 ## Functions
 
@@ -158,7 +158,7 @@ score: n = 0
 - [I] **`ItemAutoBeltTest` is always 1** on an item: an `autobelt` row returns 1, any other compares `BeltHoldsSameGroup` (0 or 1) with −1. So the pickup's belt branch always calls `BeltPlace`, and the column search in it decides. (0x00628BFD, 0x00563716, `static.txt`)
 - [I] **`0x23` does not test `numboxes`:** `ItemToBelt(guid, box, 0)` → `BeltPutItem` needs 1 × 1, beltable, `box < 16`; `InvGridPut` refuses an occupied box. Whether a box past the belt's count stays is Phase 2's. (0x0063C4C0, fn:sub_0063C4F0_BeltPutItem@0x0063C4F0, fn:sub_0055E9B0_ItemToBelt@0x0055E9B0)
 - [I] `0x24` → the box's column shifts down (`BeltColumnShift`, items/0012 § 3 at `0x0055EDC0`). `0x25` swaps in place with no shift. `0x63` needs page 0 and an empty cursor, and returns 0 with no room. (fn:sub_00562250_BeltToCursor@0x00562250, fn:sub_0055EDC0_BeltColumnShift@0x0055EDC0, fn:sub_0055EB30_BeltSwapCursor@0x0055EB30, fn:sub_0054D520_SrvPacket63Handler@0x0054D520)
-- [I] **A smaller belt:** `BeltOverflow(new belt or null)` walks boxes 0..15; each item at or above the new `numboxes` is removed, set to page 0 and placed by the search, and if that fails dropped by the cell search (`0x00555DA0`, P1.3). Its callers are the body moves' belt-type branches. (fn:sub_005608C0_BeltOverflow@0x005608C0, 0x00560C45, 0x00563D20)
+- [I] **A smaller belt:** `BeltOverflow(new belt or null)` walks boxes 0..15; each item at or above the new `numboxes` is removed, set to page 0 and placed by the search, and if that fails dropped by the cell search (`0x00555DA0`, P1.3). Its callers are the body moves' belt-type branches. *Corrected 2026-11-04 (`lane/r60d` review): 4 direct calls: 0x00560E18, 0x00561058, 0x00563EE4, and 0x0057F47A on a corpse's making, with a null belt; 0x00560C45 is its own call of the ground search (`tools/call_arg_sites.py`, items/0017 B8).* (fn:sub_005608C0_BeltOverflow@0x005608C0, 0x00560C45, 0x00563D20, 0x0057F47A)
 
 ## 7. Stacks
 

@@ -64,6 +64,19 @@ class T(unittest.TestCase):
         self.assertEqual(inv.double_chance(0), (0, 1))
         self.assertEqual(inv.double_chance(4), (0 + 0 + 1 + 1, 400))
 
+    def test_chance_published_closed_forms(self):
+        # items/0017 H0: the forms src:arreat-summit-character-basics publishes, as exact fractions
+        from fractions import Fraction as F
+
+        def published(n):
+            if n <= 200:
+                return F(n - 2, 4) if n % 2 == 0 else F((n - 1) ** 2, 4 * n)
+            return F(100 * (n - 101), n)
+
+        for n in range(2, 5001):
+            hits, cases = inv.double_chance(n)
+            self.assertEqual(F(hits * 100, cases), published(n), n)
+
     def test_stock_total(self):
         self.assertEqual(inv.potion_total(4, inv.HPREGEN, 30), 15360)
         self.assertEqual(inv.potion_total(1, inv.MANAREC, 20), 10240)

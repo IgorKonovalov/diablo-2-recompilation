@@ -600,6 +600,8 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-11-04 | `lane/r29` review | ADR-0029 raises (0060) | architect-review | 225 573 | 45 | 41 | — | accept with fixes (9) | audit of lane/r29: n/a, no check ran; overclaim 4, omission 2, misread 1, miscount 1, other 1 |
 | 2026-11-04 | `lane/s60` | 0060 P3 | spec-writer | 343 088 | 47 | 18 | — | accept with fixes (Tier A, 21) | omission 10, misread 2, under-claim 2, wrong anchor 2, stale cross-reference 2, miscount 1, overclaim 1, other 1 |
 | 2026-11-04 | `lane/s60` review | 0060 P3 | architect-review | 381 506 | 46 | 16 | — | accept with fixes (21); items/use and items/inventory reviewed | omission 10, misread 2, under-claim 2, wrong anchor 2, stale cross-reference 2, miscount 1, overclaim 1, other 1 |
+| 2026-11-04 | `lane/r60d` | 0060 cross-check | reverser-static | 296 221 | 63 | 17 | — (no game, no Ghidra; verdict lane) | accept with fixes (Tier A, ADR-0030, 16) | misread 5, omission 5, tool not kept 2, other 2, wrong anchor 1, under-claim 1 |
+| 2026-11-04 | `lane/r60d` review | 0060 cross-check | architect-review | 220 770 | 41 | 12 | — | accept with fixes (16) | misread 5, omission 5, tool not kept 2, other 2, wrong anchor 1, under-claim 1; audit: n/a, Tier A |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not
