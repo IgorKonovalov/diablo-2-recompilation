@@ -4,7 +4,7 @@ status: draft
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, monsters/ai/overview, monsters/ai/machinery, skills/dispatch, path/overview]
 consumed_by: [monsters/ai/overview, monsters/ai/machinery, hirelings]
-tags: {C: 187, I: 181, L: 2}
+tags: {C: 205, I: 242, L: 4}
 updated: 2026-11-04
 ---
 
@@ -91,7 +91,7 @@ ret 4                                                                       [I] 
 Stub: no behaviour of its own; no MonStats record names it, and a class whose `AI` is outside 0..147 gets it ([README D1](README.md#d-the-ai-table-and-its-dispatch)).
 
 - R0i. [C] As data: kind 0, no `init`, no `alt`; 0 records (—); reach none; `aip` set —; `aidel` —; skills —. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
-- R0l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding.
+- R0l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 #### R1. Row 1 `Idle` (fn:sub_005B0CD0_AiIdle@0x005B0CD0)
 
@@ -286,7 +286,7 @@ wait:
 - R8d. [I] Not emulated: the unit search lies before its draws. ([ai/0002 § 3](../../../findings/ai/0002-pool-a.md#3-emulation-run2026-10-30-ai-cat-emu-1))
 
 - R8i. [C] As data: kind 1, no `init`, no `alt`; 10 records (29-33 sandraider1..sandraider5, 599-603 sandraider6..sandraider10); reach PU; `aip` set 1,2,3,4,5,6,7; `aidel` 15/9,14/7,13; skills Fire Hit. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
-- R8l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding.
+- R8l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 #### R9. Row 9 `Wraith` (fn:sub_005F0A20_AiWraith@0x005F0A20)
 
@@ -319,7 +319,7 @@ Tier AI: [machinery § T9](machinery.md#t9-row-9-wraith-fnsub_005f0a20_aiwraith0
 - R10b. [I] Not emulated: `MonPlayerBonus` and the room lie before its first draw. ([ai/0002 § 3](../../../findings/ai/0002-pool-a.md#3-emulation-run2026-10-30-ai-cat-emu-1))
 
 - R10i. [C] As data: kind 1, no `init`, no `alt`; 6 records (43-47 corruptrogue1..corruptrogue5, 721 corruptrogue6); reach PU; `aip` set 1,2,3,4,5; `aidel` 15/14/13; skills CountessFirewall. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
-- R10l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding.
+- R10l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 #### R11. Row 11 `Baboon` (fn:sub_005F0CD0_AiBaboon@0x005F0CD0)
 
@@ -504,7 +504,7 @@ else:
 - R16b. [C] The map, family `viper`, 240 cases, 7 boundaries; the controls fail the 18 and 87 that separate them. (run:2026-10-30-ai-cat-emu-1)
 
 - R16i. [C] As data: kind 1, no `init`, no `alt`; 5 records (73-77 clawviper1..clawviper5); reach PU; `aip` set 1,2,3,4,5,6; `aidel` 15/14/13; skills SerpentCharge. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
-- R16l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding.
+- R16l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 #### R142. Row 142 `ClawViperEx` (fn:sub_005F1DE0_AiClawViperEx@0x005F1DE0)
 
@@ -537,27 +537,81 @@ else:
 - R142b. [C] The map up to the A1 command: family `viperex`, 240 cases, 8 boundaries; the controls fail the 28 and 114 that separate them. The `+0x18` store after it is a reading only. (run:2026-10-30-ai-cat-emu-1)
 
 - R142i. [C] As data: kind 1, no `init`, no `alt`; 5 records (594-598 clawviper6..clawviper10); reach P; `aip` set 1,2,3,4,5,6,7,8; `aidel` 15/14/13; skills Charge. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
-- R142l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding.
+- R142l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 ### Batch 2: pool-B (acts II and III)
 
 #### R17. Row 17 `SandLeaper` (fn:sub_005F20A0_AiSandLeaper@0x005F20A0)
 
-<!-- body R17 -->
+| Slot | Meaning (code reading) |
+|---|---|
+| `aip(1)` | below 5: chance of the leap (20–25 by difficulty, as data) |
+| `aip(2)` | in melee range: chance of A2 |
+| `aip(3)` | within 10, out of melee range: chance to walk at `t` |
+| `aip(4)` | then: chance of a `T56` walk |
+
+```
+1. if Skill1 ≥ 0 and dist < 5 and chance(1) and MonSkillTargetOk(Skill1, t, 0, 0):   [I] (0x005F20A0, 0x005F22A8)
+     UseSkill1(t); return                        ; draw#1 only when the two tests before it pass; Leap
+2. if not melee:
+     if dist > 10: Ovr(0, 75, 0);  WanderNear(t, 5); return       ; no draw
+     if chance(3): Walk(t, 7); return            ; draw#1 or #2
+     if chance(4): T56(t, 4, 0); return
+   else if chance(2): SetModeAtUnit(5, t); return
+3. Idle(10)
+```
+
+- R17a. [I] In melee range it only ever uses A2. (fn:sub_005DF530_MonAiWanderNearUnit@0x005DF530, tbl:MonStats.txt:Skill1)
+- R17b. [C] The map, family `leaper`, 240 cases, 6 boundaries; the `≤` and Normal-column controls fail the 17 and 45 that separate them. (run:2026-10-30-ai-cat-emu-2)
 
 - R17i. [C] As data: kind 1, no `init`, no `alt`; 7 records (78-82 sandleaper1..sandleaper5, 629-630 sandleaper6..sandleaper7); reach P; `aip` set 1,2,3,4; `aidel` 15/14/13; skills Leap. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
-- R17l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding.
+- R17l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 #### R18. Row 18 `PantherWoman` (fn:sub_005F22B0_AiPantherWoman@0x005F22B0)
 
-<!-- body R18 -->
+| Slot | Meaning (code reading) |
+|---|---|
+| `aip(1)` | out of melee range: chance of the fast approach |
+| `aip(2)` | in melee range: chance of A1 |
+| `aip(3)` | the distance to its nearest packmate past which it rejoins (8–24, as data) |
+| `aip(4)` | the idle wait |
+
+```
+1. if melee:                                                               [I] (0x005F22B0, 0x005F2455)
+     if chance(2): SetModeAtUnit(4, t); return   ; draw#1
+     Idle(aip(4)); return
+2. if chance(1):                                 ; draw#1
+     Ovr(0, 75, 0);  Walk13(t, 7); return
+3. s ← {unit 0, best 0x7FFFFFFF};  AiUnitSearch(G, U, &s, AiSameBaseNearCb, 1)
+4. if s.unit ≠ 0 and aip(3)·aip(3) < s.best:
+     Ovr(0, 75, 0);  Walk(s.unit, 7); return
+5. if D100() < 25: T56(t, 3, 0)                  ; draw#2
+   else: Idle(aip(4))
+```
+
+- R18a. [I] The callback takes a monster (`Unit+0x00` = 1) other than the searcher with the searcher's `MonBaseId`, not in a death mode, and keeps the nearest by `UnitDistSq`. The search block is a stack block `{+0x00 unit, +0x04 best}` at `EBP − 0x2C`. (fn:sub_005B0D00_AiSameBaseNearCb@0x005B0D00, fn:sub_00463860_MonBaseId@0x00463860, fn:sub_0063EA40_MonIsDeathMode@0x0063EA40)
+- R18b. [C] The map up to the search, the block's two words included: family `panther`, 240 cases, 4 boundaries; the controls fail the 26 and 99 that separate them. (run:2026-10-30-ai-cat-emu-2)
 
 - R18i. [C] As data: kind 1, no `init`, no `alt`; 6 records (83-86 pantherwoman1..pantherwoman4, 627-628 pantherwoman5..pantherwoman6); reach PU; `aip` set 1,2,3,4,5; `aidel` 15/13,14/12,13; skills —. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
-- R18l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding.
+- R18l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 #### R19. Row 19 `Swarm` (fn:sub_005F2460_AiSwarm@0x005F2460)
 
-<!-- body R19 -->
+| Slot | Meaning (code reading) |
+|---|---|
+| `aip(1)` | out of melee range: chance to walk at `t` |
+| `aip(2)` | the idle wait (12–20, as data) |
+| `aip(3)` | in melee range: chance of A1 |
+
+```
+1. if not melee:                                                           [I] (0x005F2460, 0x005F252D)
+     if chance(1): Walk(t, 7); return            ; draw#1
+   else if chance(3):                            ; draw#1
+     SetModeAtUnit(4, t); return
+2. Idle(aip(2))
+```
+
+- R19a. [C] The map, family `swarm`, 240 cases, 3 boundaries; the controls fail the 34 and 120 that separate them. (run:2026-10-30-ai-cat-emu-2)
 
 - R19i. [C] As data: kind 1, no `init`, no `alt`; 5 records (87-90 swarm1..swarm4, 715 swarm5); reach P; `aip` set 1,2,3; `aidel` 15/14/13; skills Swarm Move. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
 - R19l. [C] First boundary: 193 decisions compared (71 + 82 + 40), 0 mismatches, 3 first-call outcomes. (run:2026-11-03-ai, run:2026-11-03-ai-3, run:2026-11-04-ai-r5, 0x005B186F)
@@ -577,7 +631,56 @@ Tier AI: [machinery § T22](machinery.md#t22-row-22-greatermummy-fnsub_005f2b10_
 
 #### R23. Row 23 `Vulture` (fn:sub_005F3170_AiVulture@0x005F3170)
 
-<!-- body R23 -->
+| Slot | Meaning (code reading) |
+|---|---|
+| `aip(1)` | on the ground, in melee range: chance of A1 |
+| `aip(2)` | the wait, by `Delay` |
+| `aip(3)` | the percent of life at or below which a near unit makes it land |
+| `aip(4)` | on the ground: chance of a `T56` walk against `Toward(t, 9, 0)` |
+| `aip(5)` | on the ground: chance to move at all; skipped in the event after a landing |
+
+`fly ← v14`: above 0 airborne events left, 0 on the ground, −1 just landed.
+
+```
+1. fly ← v14;  far ← UnitDistSq(U, t) > 144                                [I] (0x005F3170, 0x005F3190, 0x005F3340, 0x005F35C0, 0x005F3728)
+2. if RoomOf(t) ≠ RoomOf(U) and far:
+     if fly < 1: Toward(t, 9, 0); return
+     if AiVultureLand(U):
+       MoveToUnitDist(U, 9, 2, 3);  Delay(12);  v14 ← −1; return    ; the unit itself as the target
+3. if fly = 0 and MonsterOwner(U) = 0 and far and Range(100) < 60:   ; take off
+     AiVultureTakeOff(U);  v14 ← 24 + Pow2(8);  MoveToUnitDist(t, 8, 8, 8);  Delay(12); return
+4. s ← {unit 0, bound 121, pct aip(3)};  AiUnitSearch(G, U, &s, AiWoundedNearCb, 1)
+5. if fly ≥ 2:
+     if s.unit ≠ 0 or (dist < 6 and Range(100) < 15):
+       v14 ← 1;  goto land
+     AiVultureTakeOff(U)
+     if v18 = 0 or v1C = 0 or AiPathDistToPoint(U, v18, v1C) < 2:    ; a new circling point
+       c ← fly + 8
+       x ← tx − c + RangeB(2c);  y ← ty − c + RangeB(2c)
+       r ← clamp(2c, 12, 36)
+       while AiPathDistToPoint(U, x, y) < r:
+         step x and y one away from U's position; if at it, both + 1
+       v18 ← x;  v1C ← y;  Ovr(1, 0, 0);  MoveToPoint(x, y, 8);  Delay(12);  v14 ← v14 − 1; return
+     FreeNearFallback(room of t, then of U, (v18, v1C), size, 0xFFFF, 1) → (v18, v1C) when found
+     v14 ← v14 − 1;  Ovr(7, 0, 0);  MoveToPoint(v18, v1C, 8);  Delay(12); return
+6. if fly = 1:
+   land:
+     if AiVultureLand(U):
+       MoveToUnitDist(t, 9, 2, 3);  Delay(12);  v14 ← −1; return
+     v14 ← 8;  Delay(12)                                             ; no room to land: fly 8 more
+7. if melee:
+     if chance(1): SetModeAtUnit(4, t); return
+     Delay(aip(2)); return
+8. if fly ≠ −1 and Range(100) ≥ aip(5): Delay(aip(2)); return
+9. if Range(100) < aip(4): T56(t, 6, 0)
+   else: Toward(t, 9, 0)
+10. v14 ← 0;  Delay(12)
+```
+
+- R23a. [I] `v14` is the flight counter. A vulture with no owner, more than 12 subtiles from its target (squared 144), takes off on 60 % of events for 24–31 airborne events, circles points drawn around the target (`RNG_RangeB` twice, a square of half-side `fly + 8`) at least `clamp(2(fly + 8), 12, 36)` from itself, and lands when the counter reaches 1, when the callback finds a unit, or within 6 on 15 %. `v18` and `v1C` hold the circling point. Modes 8 and 9 are the move commands' modes here. (fn:sub_005F3170_AiVulture@0x005F3170, fn:sub_005F2EB0_AiVultureTakeOff@0x005F2EB0, fn:sub_005F2FC0_AiVultureLand@0x005F2FC0, fn:RNG_RangeB@0x0045C3E0, fn:RNG_RangePow2@0x00472210, struct:AiCtl+0x18)
+- R23b. [I] **The callback** `AiWoundedNearCb`: a monster or player other than itself, not dying, `UnitDistSq` ≤ 121, stat 6 ≤ `UnitGetMaxHp ÷ 100 · aip(3)`, keeping the nearest. (fn:sub_005F30F0_AiWoundedNearCb@0x005F30F0, tbl:ItemStatCost.txt:hitpoints)
+- R23c. [I] Not emulated: the first callee is `UnitDistSq` and the next two `UnitGetRoom`, before any draw. (0x005F31C4, 0x005F31DB, 0x005F31E3)
+- R23d. [I] The 8 mismatches below all lie in the rev 4 logs, each stopping at 0x00620BB0 called at 0x005F33EC; the logger's limit of 600 non-think calls is the cause read, and rev 6's 256 decisions have 0, but only 2 `AIL` lines are this row's, so the reading is untested. (run:2026-11-04-ai-resume, run:2026-11-04-ai-r5, 0x005F33EC)
 
 - R23i. [C] As data: kind 1, no `init`, no `alt`; 5 records (110-113 vulture1..vulture4, 608 vulture5); reach P; `aip` set 1,2,3,4,5; `aidel` 15/13,14/11,13; skills —. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
 - R23l. [I] Logged, not compared: 1062 decisions (375 + 431 + 256) in a row with no model, so the first boundary of this row is not raised. (run:2026-11-03-ai, run:2026-11-03-ai-3, run:2026-11-04-ai-r5, 0x005B186F)
@@ -585,21 +688,135 @@ Tier AI: [machinery § T22](machinery.md#t22-row-22-greatermummy-fnsub_005f2b10_
 
 #### R24. Row 24 `Mosquito` (fn:sub_005F3730_AiMosquito@0x005F3730)
 
-<!-- body R24 -->
+| Slot | Meaning (code reading) |
+|---|---|
+| `aip(3)` | in melee range: chance to keep attacking |
+| `aip(4)` | chance of the skill against A1 |
+| `aip(5)` | ring points of the retreat, less one (5 in every record, as data) |
+
+```
+1. if melee:                                                               [I] (0x005F3730, 0x005F394F)
+     if chance(3) or v18 = 0:                 ; draw#1, always taken
+       v18 ← v18 + 1
+       if Skill1 ≥ 0 and chance(4): UseSkill1(t); return    ; the drain
+       SetModeAtUnit(4, t); return
+     if D100() > 20: Idle(15); return         ; draw#2
+     v14 ← 2;  v18 ← 0
+2. switch v14:
+     0: Ovr(13, 100, 0);  Walk(t, 0)
+     1: Ovr(0, 50, 0);  Ring(4);  v18 ← v18 + 1;  if v18 > aip(5): v14 ← 0;  v18 ← 0
+     2: Ovr(2, 100, 0);  StepAway(t, 10, 1);  v14 ← 1;  v18 ← 0
+     else: v14 ← 0;  v18 ← 0;  Idle(10)
+```
+
+- R24a. [I] An attack-and-retreat cycle: `v18` counts the attacks of a melee bout, the first free of the `aip(3)` test; a failed `aip(3)` draw then 21 % of the time starts the retreat, then `aip(5)` + 1 ring points, then the approach under override type 13. (struct:AiCtl+0x18)
+- R24b. [C] The map, `AiCtl+0x14/+0x18` at the boundary included: family `mosquito`, 240 cases, 7 boundaries; the controls fail the 16 and 26 that separate them. (run:2026-10-30-ai-cat-emu-2)
 
 - R24i. [C] As data: kind 1, no `init`, no `alt`; 4 records (114-117 mosquito1..mosquito4); reach P; `aip` set 3,4,5; `aidel` 15/14/13; skills Mosquito. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
-- R24l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding.
+- R24l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 #### R25. Row 25 `WillOWisp` (fn:sub_005F39B0_AiWillOWisp@0x005F39B0)
 
-<!-- body R25 -->
+| Slot | Meaning (code reading) |
+|---|---|
+| `aip(1)` | in the plain states: chance of S1, or of the cast out of melee range |
+| `aip(2)` | in melee range: chance of A1 |
+| `aip(3)` | chance to walk at `t` against a ring point |
+
+`v14` is the state below: 0–3 plain, 4 the gather, 5 and 6–12 the dance. `v1C` is the gather cooldown frame outside the dance and the wisp's place in it.
+
+```
+gather trigger, at entry:                                                  [I] (0x005F3E0A, 0x005F3E46)
+  if v1C < G.frame and UnitDistSq(U, t) < 1024 and v14 < 4 and Range(1000) ≤ d + 2: v14 ← 4
+
+state 4:                                                                   [I] (0x005F3E5B, 0x005F4051)
+  a room unit search of radius 32 around U (RoomUnitSearchInit, flags 0x583; AiWispCb)
+  exactly 4 found: each gets v14 ← 6, v18 ← 0, v1C ← its index 1..4 (AiCtlSetVar), Idle(337 − G.frame mod 337)
+  exactly 5 found: state 5 and indices 1..5, the same idle
+  then U itself idles to the same frame
+  any other count: v14 ← 2;  Idle(8)
+
+the dance, states 5 and 6..12:                                             [I] (0x005F4054, 0x005F4366)
+  point ← origin + the offset table's entry                 ; four wisps: index place + 4·state
+  if AiPathDistToPoint(U, point) > 3:
+    on 34 %: Ring(4)
+    else: MoveToPointNoStop(x, y, 2)
+  else:
+    wait for a frame multiple of 67
+    for three sub-steps: MonAiSetMode(7, x', y') at a second table's offset, when non-zero;  count v18
+    after three, the four-wisp dance: next state; past 12 it ends (v14 ← 2, cooldown v1C ← G.frame + 1800)
+    the five-wisp dance (state 5) ends after three sub-steps, with no grant
+
+the grant, at each four-wisp advance, after Idle(337 − G.frame mod 337):    [I] (0x005F41AA, 0x005F4271)
+  if t is a living player (Unit+0x00 = 0, not UnitIsDead):
+    a new stat list on t (STATLIST_Alloc flags 2): stat 80 ← 50·(d + 1), ending at G.frame + 1 728 000 (StatListSetEnd)
+    a unit event 12 queued on t at that frame;  the list linked to t
+
+state 1 (after an approach):                                               [I] (0x005F4366, 0x005F4500)
+  if v18 < 1:
+    if melee: SetModeAtUnit(8, 0);  v14 ← 3
+    else if chance(1): SetModeAtUnit(8, 0);  v14 ← 2
+  else:
+    v18 ← v18 − 1
+    if Range(100) < aip(3): walk to t
+    else: Ring(6);  v14 ← 1
+
+states 0, 2, 3:                                                            [I] (0x005F4366, 0x005F4500)
+  if not melee and (v14 = 2 or chance(1)): SetModeAtUnit(7, t);  v14 ← 0   ; SC, Chain Lightning by Skill1's mode
+  else if melee and (v14 = 3 or chance(2)): A1;  v14 ← 0
+  else:
+    if Range(100) < aip(3): walk to t
+    else: Ring(4)
+    v14 ← 1;  v18 ← 3
+```
+
+- R25a. [I] The trigger's `Range(1000) ≤ d + 2` is 3, 4 or 5 in 1000. `AiWispCb`: a monster not dying whose `MonBaseId` is 118, `willowisp1`'s row. The stack table's entries are 8-byte `(x, y)` from `EBP − 0x2F4`. The four-wisp origin is the target's subtile position (0x005F407E–0x005F40AA). (fn:sub_005F3960_AiWispCb@0x005F3960, fn:sub_0058EC00_AiCtlSetVar@0x0058EC00, fn:sub_0065A950_RoomUnitSearchInit@0x0065A950)
+- R25b. [I] Each of the four wisps grants on each of its seven advances: the end-of-dance reset is skipped over, not the grant. (fn:STATLIST_Alloc@0x006251F0, fn:STATLIST_LinkToUnit@0x00626E10, fn:sub_005417D0_UnitQueueEvent@0x005417D0, tbl:ItemStatCost.txt:item_magicbonus)
+- R25c. [I] The finding states the dance in prose; this block is that prose in order, and the finding's walk of the plain states does not say what the A1 command's argument is beyond "attacks A1", so none is added. The offset tables' values, the five-wisp origin and what event 12 does are Open questions. Not emulated: `UnitDistSq` comes first on most events and the room search in state 4. (0x005F3E1C, 0x005F3F14)
 
 - R25i. [C] As data: kind 1, no `init`, no `alt`; 8 records (118-121 willowisp1..willowisp4, 639-641 willowisp5..willowisp7, 733 willowisp8); reach PU; `aip` set 1,2,3; `aidel` 15/14/13; skills Chain Lightning. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
-- R25l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding.
+- R25l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 #### R26. Row 26 `Arach` (fn:sub_005F4510_AiArach@0x005F4510)
 
-<!-- body R26 -->
+| Slot | Meaning (code reading) |
+|---|---|
+| `aip(1)` | in melee range: chance of A1; while retreating, `aip(1) − 25` is the attack chance |
+| `aip(2)` | life at or above `aip(5)`: chance of a `T56` walk |
+| `aip(3)` | retreat over: chance to approach; cycle's approach draw |
+| `aip(4)` | while retreating: the distance at or past which it stops |
+| `aip(5)` | life percent below which it lays (25–45, as data) |
+
+```
+1. life ← UnitLifePct(U)                                                   [I] (0x005F4510, 0x005F4840)
+2. if v14 = 1:                                       ; retreating after a lay
+     v18 ← 0
+     if life > 75:
+       v14 ← 0
+       if chance(3): v14 ← 2;  Walk13(t, 0); return
+       T56(t, 6, 0); return
+     if melee and aip(1) > 25 and Range(100) < aip(1) − 25: SetModeAtUnit(4, t); return
+     if dist ≥ aip(4) and not St3or19: v14 ← 0;  T56(t, 12, 0); return
+     StepAway(t, 4, 0); return
+3. if not melee:
+     if St3or19 or v18 = 1: v18 ← 1;  Walk13(t, 0); return
+     v1C ← v1C + 1;  if v1C > 20: v1C ← 0
+     v18 ← 0
+     if v1C = 1 and Range(100) < aip(3): v18 ← 1;  Walk13(t, 0); return
+     if Range(100) < 20: Ring(6); return
+     Idle(15); return
+4. v14 ← 2
+5. if chance(1): SetModeAtUnit(4, t); return         ; draw#1
+6. if life ≥ aip(5):
+     if Range(100) < aip(2): T56(t, 4, 0); return
+     Idle(15); return
+7. v14 ← 1
+8. if Skill1 ≥ 0 and not UNIT_HasState(U, 22): MonAiUseSkill(Sk1mode, Skill1, 0, 0, 0); return  ; SpiderLay, no target
+9. StepAway(t, 8, 0)
+```
+
+- R26a. [I] Below `aip(5)` percent life a spider in melee range lays (state 22 `spiderlay` not yet set) and retreats until above 75 % life; `v1C` is a 21-event cycle that gives one approach draw per cycle out of melee range. (fn:UNIT_HasState@0x00639DF0, tbl:States.txt:spiderlay)
+- R26b. [I] Not emulated: `UnitLifePct` is the first callee. (fn:sub_00621F20_UnitLifePct@0x00621F20)
 
 - R26i. [C] As data: kind 1, no `init`, no `alt`; 7 records (122-126 arach1..arach5, 685 arach6, 717 arach7); reach PU; `aip` set 1,2,3,4,5; `aidel` 15/14/13; skills SpiderLay. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
 - R26l. [I] Logged, not compared: 119 decisions (73 + 28 + 18) in a row with no model, so the first boundary of this row is not raised. (run:2026-11-03-ai, run:2026-11-03-ai-3, run:2026-11-04-ai-r5, 0x005B186F)
@@ -607,10 +824,39 @@ Tier AI: [machinery § T22](machinery.md#t22-row-22-greatermummy-fnsub_005f2b10_
 
 #### R27. Row 27 `ThornHulk` (fn:sub_005F4850_AiThornHulk@0x005F4850)
 
-<!-- body R27 -->
+| Slot | Meaning (code reading) |
+|---|---|
+| `aip(1)` | in melee range: chance to attack at all |
+| `aip(2)` | a plain attack: A2 against A1 |
+| `aip(3)` | on a failed `aip(1)`: chance of a `T56` walk |
+| `aip(4)` | chance to start a frenzy bout |
+| `aip(5)` | the frames added to the mode's first event as a delay |
+| `aip(6)` | the bout's repeat count (3–5; 5 in `thornhulk5`, as data) |
+
+```
+1. if not melee: v14 ← 0;  Walk13(t, 7); return                            [I] (0x005F4850, 0x005F4A60)
+2. if v14 < 1:
+     if not chance(1):                               ; draw#1
+       if Range(100) < aip(3): T56(t, 4, 0); return
+       Idle(15); return
+     if v18 < 1 and Range(100) < aip(4):             ; draw#2, only when v18 < 1
+       MonAiUseSkill(5, Skill1, t, 0, 0)             ; MonFrenzy, in mode A2
+       f ← UnitEventFirstFrame(G, U, 1)
+       if G.frame < f: Delay(aip(5) − G.frame + f)
+       v14 ← aip(6); return
+     v18 ← v18 − 1
+     SetModeAtUnit(Range(100) < aip(2) ? 5 : 4, t); return
+3. MonAiUseSkill(5, Skill1, t, 0, 0)
+4. f ← UnitEventFirstFrame(G, U, 1)
+   if G.frame < f: Delay(aip(5) − G.frame + f)
+5. v14 ← v14 − 1;  if v14 < 1: v18 ← 3
+```
+
+- R27a. [I] A frenzy bout: once started the hulk repeats the skill for `aip(6)` events, then `v18` = 3 makes the next three melee decisions plain attacks. The skill is always used in mode 5, not `Sk1mode`. `v18` keeps decreasing below 0 on further plain attacks. (fn:sub_005415A0_UnitEventFirstFrame@0x005415A0, tbl:MonStats.txt:aip6)
+- R27b. [C] The map up to the first callee: family `thornhulk`, 240 cases, 7 boundaries; the controls fail the 28 and 42 that separate them. The `Delay` and the stores after the skill are readings. (run:2026-10-30-ai-cat-emu-2)
 
 - R27i. [C] As data: kind 1, no `init`, no `alt`; 5 records (127-130 thornhulk1..thornhulk4, 609 thornhulk5); reach PU; `aip` set 1,2,3,4,5,6; `aidel` 15/13,14/12,13; skills MonFrenzy. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
-- R27l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding.
+- R27l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 #### R28. Row 28 `Vampire` (fn:sub_005F4A70_AiVampire@0x005F4A70)
 
@@ -628,7 +874,18 @@ Tier AI: [machinery § T30](machinery.md#t30-row-30-fetish-fnsub_005f53e0_aifeti
 
 #### R33. Row 33 `HellMeteor` (fn:sub_005F56D0_AiHellMeteor@0x005F56D0)
 
-<!-- body R33 -->
+**`aip`:** 1 chance to cast; 2 the idle wait; 3 half the side of the square around itself (10, as data).
+
+```
+1. if Skill1 ≥ 0 and chance(1):                 ; draw#1                   [I] (0x005F56D0, 0x005F5828)
+     x ← U.x + RangeB(2·aip(3)) − aip(3)        ; draw#2
+     y ← U.y + RangeB(2·aip(3)) − aip(3)        ; draw#3
+     MonAiUseSkill(Sk1mode, Skill1, 0, x, y); return
+2. Idle(aip(2))
+```
+
+- R33a. [I] The point runs from `−aip(3)` to `aip(3) − 1` off itself on each axis, with no target unit. The x getter runs before the first `RangeB` and the y getter between the two. Widths: `aip(3)` i16, `2·aip(3)` and the sums 32-bit, the position u16 zero-extended, so nothing wraps. (fn:RNG_RangeB@0x0045C3E0)
+- R33b. [C] The map, family `meteor`, 240 cases, 157 with a draw, 2 boundaries; the `≤` and Normal-column controls fail the 16 and 151 that separate them. (run:2026-10-30-ai-cat-emu-3)
 
 - R33i. [C] As data: kind 1, no `init`, no `alt`; 1 records (153 hellmeteor); reach ·; `aip` set 1,2,3; `aidel` 15/15/15; skills HellMeteor. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
 - R33l. [C] First boundary: 56 decisions compared (56), 0 mismatches, 2 first-call outcomes. (run:2026-11-03-ai, 0x005B186F)
@@ -639,7 +896,26 @@ Tier AI: [machinery § T35](machinery.md#t35-row-35-corruptarcher-fnsub_005f5a20
 
 #### R36. Row 36 `CorruptLancer` (fn:sub_005F5D50_AiCorruptLancer@0x005F5D50)
 
-<!-- body R36 -->
+**`aip`:** 1 out of melee range: chance to approach; 2 melee: chance to attack, skipped after a charge; 3 the idle wait; 4 chance to run against a walk (0 in Normal in every record, as data, so a lancer never runs to its target in Normal); 5 the charge distance; 6 chance of `Skill1`; 7 of `Skill2`; 8 of `Skill3`. `cr_lancer1..5` have no skills and `aip(6)`, `aip(7)` 0; `cr_lancer6..8` have `Jab` and a second skill and set them, as data.
+
+```
+1. if dist > aip(5):                                                       [I] (0x005F5D50, 0x005F6067)
+     PathSetStopDist(U.path, MeleeRng);  Ovr(13, 100, 0);  RunStop(t, MeleeRng);  v14 ← 1; return   ; the charge
+2. if not melee:
+     if not chance(1): Idle(aip(3)); return                    ; draw#1
+     PathSetStopDist(U.path, MeleeRng)
+     if not chance(4): WalkStop(t, 3); return                  ; draw#2
+     Ovr(13, 100, 0);  RunStop(t, MeleeRng); return
+3. if v14 = 0 and not chance(2): Idle(aip(3)); return          ; draw#1
+4. v14 ← 0
+5. if Skill1 ≥ 0 and chance(6): UseSkill1(t); return           ; Jab
+6. if Skill2 ≥ 0 and Range(100) < aip(7): UseSkill2(t); return
+7. if Skill3 ≥ 0 and Range(100) < aip(8): UseSkill3(t); return
+8. SetModeAtUnit(4, t)
+```
+
+- R36a. [I] `MeleeRng` is the MonStats2 byte `+0x0E`. After a charge the first melee decision attacks without the `aip(2)` draw. Up to four draws. (fn:sub_00649070_PathSetStopDist@0x00649070, tbl:MonStats2.txt:MeleeRng, struct:AiCtl+0x14)
+- R36b. [C] The map, family `lancer`, 240 cases, 160 with a draw, 8 boundaries; the controls fail the 25 and 106 that separate them. (run:2026-10-30-ai-cat-emu-3)
 
 - R36i. [C] As data: kind 1, no `init`, no `alt`; 9 records (165-169 cr_lancer1..cr_lancer5, 615-617 cr_lancer6..cr_lancer8, 723 cr_lancer8); reach P; `aip` set 1,2,3,4,5,6,7; `aidel` 15/13,14/12,13; skills Jab, MonPowerStrike, MonIceSpear. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
 - R36l. [C] First boundary: 4 decisions compared (4), 0 mismatches, 2 first-call outcomes. (run:2026-11-03-ai, 0x005B186F) Outside it: 32 decisions of the row's classes with no model (another think, a state row, or a case the model refuses).
@@ -650,21 +926,59 @@ Tier AI: [machinery § T37](machinery.md#t37-row-37-skeletonbow-fnsub_005f6070_a
 
 #### R38. Row 38 `MaggotLarva` (fn:sub_005F6220_AiMaggotLarva@0x005F6220)
 
-<!-- body R38 -->
+**`aip`:** 1 melee: chance of A1; 2 the wait in melee range; 3 out of melee range: chance to walk; 4 the wait out of it.
+
+```
+1. if not melee:                                                           [I] (0x005F6220, 0x005F6336)
+     v14 ← 0
+     if chance(3): Walk(t, 1); return     ; draw#1
+     Idle(aip(4)); return
+2. if v14 = 0 and chance(1):              ; draw#1, only when v14 = 0
+     v14 ← 1;  SetModeAtUnit(4, t); return
+3. v14 ← 0;  Idle(aip(2))
+```
+
+- R38a. [I] The larva alternates an attack with a wait: `v14` set by the attack, cleared by the next decision. (struct:AiCtl+0x14)
+- R38b. [C] The map, family `larva`, 240 cases, 153 with a draw, 4 boundaries; the controls fail the 20 and 131 that separate them. (run:2026-10-30-ai-cat-emu-3)
 
 - R38i. [C] As data: kind 1, no `init`, no `alt`; 6 records (180-184 maggotbaby1..maggotbaby5, 680 maggotbaby6); reach ·; `aip` set 1,2,3,4,5; `aidel` 15/14/13; skills —. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
-- R38l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding.
+- R38l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 #### R39. Row 39 `PinHead` (fn:sub_005F6340_AiPinHead@0x005F6340)
 
-<!-- body R39 -->
+**`aip`:** 1 melee after the first decision: chance to act; 2 the wait in melee range; 3 out of melee range: chance to walk; 4 the wait out of it; 5 chance of `Skill1`; 6 chance of `Skill2`.
+
+```
+1. if not melee:                                                           [I] (0x005F6340, 0x005F6529)
+     v14 ← 0
+     if chance(3): Walk(t, 7); return     ; draw#1
+     Idle(aip(4)); return
+2. if v14 ≠ 0 and not chance(1): Idle(aip(2)); return   ; draw#1, only when v14 ≠ 0
+3. v14 ← 1
+4. if Skill1 ≥ 0 and chance(5): UseSkill1(t); return    ; Smite
+5. if Skill2 ≥ 0 and chance(6): UseSkill2(t); return
+6. SetModeAtUnit(4, t)
+```
+
+- R39a. [I] It skips the `aip(1)` draw on its first melee decision (`v14` = 0) and makes it after that; the skill draws come after it either way. (struct:AiCtl+0x14)
+- R39b. [C] The map, family `pinhead`, 240 cases, 237 with a draw, 6 boundaries; the controls fail the 23 and 116 that separate them. (run:2026-10-30-ai-cat-emu-3)
 
 - R39i. [C] As data: kind 1, no `init`, no `alt`; 6 records (186-189 blunderbore1..blunderbore4, 618-619 blunderbore5..blunderbore6); reach P; `aip` set 1,2,3,4,5; `aidel` 15/13,14/12,13; skills Smite. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
 - R39l. [C] First boundary: 202 decisions compared (202), 0 mismatches, 4 first-call outcomes. (run:2026-11-03-ai, 0x005B186F)
 
 #### R40. Row 40 `MaggotEgg` (fn:sub_005F6530_AiMaggotEgg@0x005F6530)
 
-<!-- body R40 -->
+**`aip`:** 1 the delay and the idle (the delay after hatching: 250 down to 150 in Normal, 200 above, as data); 2 chance to hatch.
+
+```
+1. if Skill1 ≥ 0 and v14 ≠ 1 and chance(2):             ; draw#1           [I] (0x005F6530, 0x005F661F)
+     UseSkill1(t);  Delay(aip(1));  v14 ← 1; return      ; hatch
+2. if v14 = 1: UnitKilled(G, U, UNIT_GetTargetUnit(G, U), 1)    ; no return
+3. Idle(aip(1))
+```
+
+- R40a. [I] One hatch per egg: after it, the next event kills the egg with its own last target as the killer and still queues `Idle(aip(1))` (0x005F6601–0x005F6614, no jump between the two calls). (fn:UNIT_GetTargetUnit@0x00553540, fn:sub_0057CCB0_UnitKilled@0x0057CCB0)
+- R40b. [C] The map up to the skill, `UNIT_GetTargetUnit` (its stack arguments `G`, `U` and `UnitKilled`'s pending 1) or the idle: family `egg`, 240 cases, 110 with a draw, 3 boundaries; the controls fail the 11 and 98 that separate them. (run:2026-10-30-ai-cat-emu-3)
 
 - R40i. [C] As data: kind 1, no `init`, no `alt`; 6 records (190-194 maggotegg1..maggotegg5, 681 maggotegg6); reach ·; `aip` set 1,2; `aidel` 15/14,15/13,15; skills MaggotEgg. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
 - R40l. [C] First boundary: 7 decisions compared (1 + 5 + 1), 0 mismatches, 1 first-call outcome. (run:2026-11-03-ai, run:2026-11-03-ai-3, run:2026-11-04-ai-r5, 0x005B186F)
@@ -672,7 +986,25 @@ Tier AI: [machinery § T37](machinery.md#t37-row-37-skeletonbow-fnsub_005f6070_a
 
 #### R43. Row 43 `FoulCrowNest` (fn:sub_005F6650_AiFoulCrowNest@0x005F6650)
 
-<!-- body R43 -->
+**`aip`:** 1 the frames between spawns (100/80/70, as data); 3 the spawn count (6–15 in Normal up to 15–24 in Hell, as data).
+
+```
+init 0x005F6630:  v14 ← T;  v18 ← 0                                        [I] (0x005F6630, 0x005F6649)
+
+1. if dist > 20: Idle(25); return                                          [I] (0x005F6650, 0x005F67A9)
+2. if v18 ≥ aip(3):
+     U+0xC4 ← U+0xC4 | 0x20000;  MonAiSetMode(0, 0, 0); return             ; die
+3. e ← |T − v14|                        ; 32-bit subtract, then neg if negative
+4. if Skill1 ≥ 0 and e ≥ aip(1):
+     v14 ← T
+     cls ← MonStats count > 206 ? 206 : −1
+     if SpawnClassCellTest(cls, UnitGetRoom(U), U.x, U.y, 0):
+       v18 ← v18 + 1;  UseSkill1(t); return      ; Nest
+5. Idle(20 + low mod 10)                ; draw#1
+```
+
+- R43a. [I] The nest moves its timer to `T` before the cell test, so a failed test waits a full `aip(1)` again. The class compare is inlined as `((count > C) − 1 & mask) + C`; row 206 is `crownest1`, for all four nest records. The only draw is the idle's, the inline `0xCCCCCCCD` divide, unsigned. `e` cannot wrap on a timer that holds a past frame; for `T − v14 = −2³¹` the `neg` leaves `−2³¹`, below any `aip(1)`. (fn:sub_005FD350_SpawnClassCellTest@0x005FD350, fn:sub_00620BB0_UnitGetRoom@0x00620BB0, struct:Unit+0xC4)
+- R43b. [C] The map up to `SpawnClassCellTest` (its `ECX` class, `EDX` room and the position arguments), the death command (with `Unit+0xC4`) or an idle: family `nest`, 240 cases, 28 with a draw, 4 boundaries. `≤` cannot separate the draw, which is compared with nothing, and the Normal column separates 48; the draw is checked by its value (`Idle` argument and moved seed in all 28). Two controls at the lane check, the death compare flipped and the range test moved by one, fail all the 53 and 30 they separate. The `e ≥ aip(1)` edge has no control. (run:2026-10-30-ai-cat-emu-3)
 
 - R43i. [C] As data: kind 1, `init` 0x005F6630, no `alt`; 4 records (206-209 crownest1..crownest4); reach P; `aip` set 1,3; `aidel` 15/15/15; skills Nest. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
 - R43l. [C] First boundary: 32 decisions compared (32), 0 mismatches, 3 first-call outcomes. (run:2026-11-03-ai-3, 0x005B186F)
@@ -680,28 +1012,115 @@ Tier AI: [machinery § T37](machinery.md#t37-row-37-skeletonbow-fnsub_005f6070_a
 
 #### R45. Row 45 `Sarcophagus` (fn:sub_005F6A10_AiSarcophagus@0x005F6A10)
 
-<!-- body R45 -->
+**`aip`:** 1 the frames between spawns (125/110/90, as data); 3 one less than the spawn count.
+
+```
+init 0x005F6630:  v14 ← T;  v18 ← 0                                        [I] (0x005F6630, 0x005F6649)
+
+1. if dist > 25: Idle(25); return                                          [I] (0x005F6A10, 0x005F6B69)
+2. if v18 > aip(3):
+     U+0xC4 ← U+0xC4 | 0x20000;  MonAiSetMode(0, 0, 0); return             ; die
+3. e ← |T − v14|                        ; 32-bit subtract, then neg if negative
+4. if Skill1 ≥ 0 and e ≥ aip(1):
+     cls ← MonStats count > 228 ? 228 : −1
+     if SpawnClassCellTest(cls, UnitGetRoom(U), U.x, U.y, 0):
+       v18 ← v18 + 1;  v14 ← T;  UseSkill1(t); return      ; Nest
+5. Idle(20 + low mod 10)                ; draw#1
+```
+
+- R45a. [I] Row 43's code differs by these three: the bound (`>` against `≥`), the distance and class, and that the sarcophagus moves its timer only on success, so it tries again at the next event. Row 228 is `sarcophagus`. (fn:sub_005FD350_SpawnClassCellTest@0x005FD350, struct:Unit+0xC4)
+- R45b. [C] The map up to the same three ends: family `sarco`, 240 cases, 79 with a draw, 4 boundaries, the draw checked by its value; `≤` separates none, the Normal column 84, and the two lane-check controls fail all the 72 and 24 they separate. The `e ≥ aip(1)` edge has no control. (run:2026-10-30-ai-cat-emu-3)
 
 - R45i. [C] As data: kind 1, `init` 0x005F6630, no `alt`; 1 records (228 sarcophagus); reach ·; `aip` set 1,3; `aidel` 15/15/15; skills Nest. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
-- R45l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding.
+- R45l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 #### R46. Row 46 `ElementalBeast` (fn:sub_005F6B70_AiElementalBeast@0x005F6B70)
 
-<!-- body R46 -->
+**`aip`:** 1 chance of a walk against a ring (20, as data); 2 the distance at which it wakes (16–24, as data); 3 the idle wait.
+
+```
+switch v14:                                                                [I] (0x005F6B70, 0x005F6C9B)
+  2: UnitKilled(G, U, t, 1)
+  0: if dist < aip(2) or St3or19:
+       SetModeAtUnit(8, t);  v14 ← 1
+     else: Idle(aip(3))
+  1: if melee:
+       SetModeAtUnit(8, t);  UnitQueueEvent(G, U, 0, T + 1, 0, 0);  v14 ← 2
+     else if Range(100) < aip(1): Walk(t, 0)     ; draw#1
+     else: Ring(8)
+  else: Idle(aip(3))
+```
+
+- R46a. [I] The orb casts S1 once when woken, flies at the target, in melee range casts S1 again and queues a kind-0 event (the mode frame event, code 0, index 0) at `T + 1`, then dies at the event after, the target as killer. (fn:sub_005417D0_UnitQueueEvent@0x005417D0, struct:AiCtl+0x14)
+- R46b. [C] The map, family `beast`, 240 cases, 49 with a draw, 6 boundaries; the controls fail the 5 and 46 that separate them. (run:2026-10-30-ai-cat-emu-3)
 
 - R46i. [C] As data: kind 1, no `init`, no `alt`; 4 records (230-233 firebeast..poisonorb); reach ·; `aip` set 1,2,3; `aidel` 15/15/15; skills —. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
-- R46l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding.
+- R46l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 #### R47. Row 47 `FlyingScimitar` (fn:sub_005F6CA0_AiFlyingScimitar@0x005F6CA0)
 
-<!-- body R47 -->
+**`aip`:** 1 out of melee range, both approach draws (90, as data); 2 melee: chance of A1; 3 the idle wait; 4 melee: chance of a `T56` walk.
+
+```
+1. if not melee:                                                           [I] (0x005F6CA0, 0x005F6E17)
+     if chance(1): Toward(t, 8, 1); return     ; draw#1
+     if chance(1): Walk(t, 7); return          ; draw#2, aip(1) again
+   else:
+     if chance(2): SetModeAtUnit(4, t); return ; draw#1
+     if chance(4): T56(t, 2, 0); return        ; draw#2
+2. Idle(aip(3))
+```
+
+- R47a. [C] The map, family `scimitar`, 240 cases, all with a draw, 5 boundaries; the controls fail the 35 and 120 that separate them. (run:2026-10-30-ai-cat-emu-3)
 
 - R47i. [C] As data: kind 1, no `init`, no `alt`; 1 records (234 flyingscimitar); reach ·; `aip` set 1,2,3,4; `aidel` 15/13/10; skills Charge. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
-- R47l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding.
+- R47l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 #### R48. Row 48 `ZakarumZealot` (fn:sub_005F6E60_AiZakarumZealot@0x005F6E60)
 
-<!-- body R48 -->
+**`aip`:** 1 melee after an attack: chance to attack again; 2 chance of A2 against A1 (50–65, as data); 3 the life percent below which it steps away (35–50, as data); 4 out of melee range: `not chance(4)` walks, else runs (50–90, as data).
+
+```
+1. run: i32 ← 0                                                            [I] (0x005F6E60, 0x005F6F7D)
+   if Velocity > 0:
+     run ← Run·100 ÷ Velocity − 100       ; i16 fields, signed idiv
+     if run < 1: run ← 0
+     if run ≥ 120: run ← 120
+2. life ← UnitLifePct(U)
+3. if t ≠ 0:
+     p ← t
+     if t.type = 1:
+       MonsterOwnerRef(t, &guid, &type)
+       if type = 0: p ← GameFindUnit(G, 0, guid)
+     if p ≠ 0 and p.type = 0 and DRLG_ActFromLevelId(RoomGetLevelId(UnitGetRoom(U))) = 2
+          and QUESTRECORD_GetState(PlayerData(p).quests[d], 21, 0):
+       Ovr(0, run, 0)
+       if StepAwayXY(t, 8, 1): return
+       Ring(6); return
+4. if St3or19:                                                             [I] (0x005F6F7D, 0x005F722F)
+     if v18 = 0 and life < aip(3):
+       v14 ← 0;  Ovr(0, run, 0)
+       if StepAwayXY(t, 8, 1): return
+       v18 ← 5
+     if COLL_CellTestAt(UnitGetRoom(U), U.x, U.y, 0x40):
+       if melee: T56(t, 4, 0)
+       else: Walk(t, 7)
+       return
+5. if v18 ≠ 0: v18 ← v18 − 1
+6. if not melee:
+     v14 ← 0
+     if not chance(4): Walk(t, 7); return     ; draw#1
+     Ovr(0, run, 0);  RunToUnit(t); return
+7. if v14 ≠ 0 and not chance(1):              ; draw#1, only when v14 ≠ 0
+     v14 ← 0
+     if Range(100) < 80: Idle(10); return     ; draw#2
+     T56(t, 4, 0); return
+8. v14 ← 1
+9. SetModeAtUnit(chance(2) ? 5 : 4, t)        ; draw#1 or #2
+```
+
+- R48a. [I] **The act III truce.** In an act III level (act index 2) a zealot whose target is a player, or a monster whose owner record names a player (`MonsterOwnerRef` type 0, found by GUID), steps 8 away from it and wanders when that player's quest record of the game's difficulty has quest word 21 bit 0, the word the Durance portal tests. (fn:sub_0058F090_MonsterOwnerRef@0x0058F090, fn:DRLG_ActFromLevelId@0x006427F0, fn:UNIT_GetPlayerData@0x006221A0, fn:QUESTRECORD_GetState@0x0065C310, tbl:MonStats.txt:Run, tbl:MonStats.txt:Velocity)
+- R48b. [I] With `MonsterData+0x54` 3 or 19 and life below `aip(3)` it steps away once and then holds a five-decision cooldown in `v18`; with that state and a cell that fails mask `0x40` it moves. Up to two draws. Not emulated: `UnitLifePct` is the first call (0x005F6EC6). (fn:COLL_CellTestAt@0x0064CB30, struct:AiCtl+0x18, tbl:MonStats.txt:aip3)
 
 - R48i. [C] As data: kind 1, no `init`, no `alt`; 5 records (235-237 zealot1..zealot3, 671-672 zealot4..zealot5); reach P; `aip` set 1,2,3,4; `aidel` 15/14/13; skills —. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
 - R48l. [I] Logged, not compared: 321 decisions (200 + 121) in a row with no model, so the first boundary of this row is not raised. (run:2026-11-03-ai, run:2026-11-04-ai-r5, 0x005B186F)
@@ -709,7 +1128,36 @@ Tier AI: [machinery § T37](machinery.md#t37-row-37-skeletonbow-fnsub_005f6070_a
 
 #### R49. Row 49 `ZakarumPriest` (fn:sub_005F72D0_AiZakarumPriest@0x005F72D0)
 
-<!-- body R49 -->
+**`aip`:** 1 melee: chance of A1, and the blocked line's draw; 2 chance of the Blizzard; 3 chance of `Skill2`; 4 clear line: chance to cast; 5 the Blizzard's cooldown (120 frames, as data), and a quarter of the teleport's (480); 6 the heal search's distance.
+
+```
+1. life ← UnitLifePct(U)                                                   [I] (0x005F72D0, 0x005F76F1)
+2. if melee or St3or19:
+     if Skill3 ≥ 0 and life < 33 and T > v14:              ; MonTeleport
+       v14 ← T + 4·aip(5)
+       s ← melee ? 2 : 0
+       x ← t.x + ((t.x − U.x) << s);  y ← t.y + ((t.y − U.y) << s)
+       if MonSkillTargetOk(Skill3, 0, x, y):
+         MonAiUseSkill(Sk3mode, Skill3, 0, x, y); return
+     if melee and chance(1): SetModeAtUnit(4, t); return   ; draw#1
+3. s ← {unit 0, count 0, best 0x7FFFFFFF, bound aip(6)²}
+   AiUnitSearch(G, U, &s, AiZakarumHealCb, 1)
+4. if Skill1 ≥ 0 and s.unit ≠ 0 and D100() < 25:           ; ZakarumHeal, unsigned compare
+     UseSkill1(s.unit); return
+5. if not AiLineClear(U, t):
+     if chance(1) and Skill4 ≥ 0 and v18 < T and Range(100) < aip(2): goto blizzard
+   else if chance(4):
+     if Skill4 ≥ 0 and v18 < T and Range(100) < aip(2):
+   blizzard:
+       UseSkill4(t);  v18 ← T + aip(5); return             ; MonBlizzard
+     if Skill2 ≥ 0 and v1C < T and Range(100) < aip(3):
+       UseSkill2(t);  v1C ← T + 20; return                 ; ZakarumLightning
+6. if D100() < 30: T56(t, 4, 0); return
+7. Idle(20)
+```
+
+- R49a. [I] **The teleport** goes to the far side of the target: the target's point plus the unit-to-target offset, ×4 in melee range, ×1 otherwise. The first `GetSubX/Y` pair is the unit's, the second the target's (`ECX` = `[ebp−4]` then `[ebp+8]`, 0x005F7350–0x005F737B). The offset is a u16 difference, so `<< 2` cannot wrap. A blocked line (`AiLineClear` 0: `UnitLineBlocked(U, t, 4)` non-zero) allows only Blizzard. Up to six draws. Not emulated: `UnitLifePct` is the first call (0x005F72F9). (fn:sub_005FD470_MonSkillTargetOk@0x005FD470, fn:sub_005DD290_AiLineClear@0x005DD290, fn:sub_005DD0B0_AiUnitSearch@0x005DD0B0, struct:AiCtl+0x1C)
+- R49b. [I] **`AiZakarumHealCb`** takes a monster other than the searcher, `AlignSame02` with it, alignment not 2, not in a death mode, whose `MonClassCheck(MonBaseId)` is 235 (`zealot1`) or 238 (`cantor1`), with `UnitDistSq ≤ bound` and `UnitLifePct ≤ 60`; each such unit adds one to `+0x04` and becomes `+0x00`, since `+0x08` stays `0x7FFFFFFF` (written only when below 1) and every life is below it. It returns 0, so the search goes on: the unit kept is the last taken. Block `{+0x00 unit, +0x04 count, +0x08 best, +0x0C bound}` at `EBP − 0x4C`. (fn:sub_005F7240_AiZakarumHealCb@0x005F7240, fn:sub_00650D70_AlignSame02@0x00650D70, fn:sub_006259B0_UnitAlignGet@0x006259B0, fn:sub_00463900_MonClassCheck@0x00463900)
 
 - R49i. [C] As data: kind 1, no `init`, no `alt`; 6 records (238-241 cantor1..cantor4, 673-674 cantor5..cantor6); reach P; `aip` set 1,2,3,4,5,6; `aidel` 15/14/13; skills ZakarumHeal, ZakarumLightning, MonTeleport, MonBlizzard. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
 - R49l. [I] Logged, not compared: 74 decisions (57 + 17) in a row with no model, so the first boundary of this row is not raised. (run:2026-11-03-ai, run:2026-11-04-ai-r5, 0x005B186F)
@@ -717,7 +1165,47 @@ Tier AI: [machinery § T37](machinery.md#t37-row-37-skeletonbow-fnsub_005f6070_a
 
 #### R52. Row 52 `FrogDemon` (fn:sub_005F8260_AiFrogDemon@0x005F8260)
 
-<!-- body R52 -->
+**`aip`:** 1 melee: chance of A1, after `aip(2)`; 2 melee: chance of A2; 3 melee: chance of a `T56` walk; 4 chance of a `T56` walk out of it; 5 within `aip(6)`: chance of A2; 6 that distance; 7 the delay; 8 submerged: the distance at which it surfaces (9, as data).
+
+`v1C`: 0 start, 1 submerged, 2 surfaced. `Skill1` is `Submerge`, `Skill2` `Emerge`.
+
+```
+1. if v1C = 0:                                                             [I] (0x005F8260, 0x005F85B8)
+     if Skill1 ≥ 0 and dist > 12:
+       UseSkill1(t);  Delay(8);  v1C ← 1;  AiVultureTakeOff(G, U); return
+     if Skill2 ≥ 0 and AiVultureLand(G, U): goto emerge
+     if not COLL_CellTestAt(UnitGetRoom(U), U.x, U.y, 0xC01): v1C ← 2
+     Idle(12); return
+2. if v1C = 1:
+     if Skill2 ≥ 0 and ((dist < aip(8) and AiVultureLand(G, U))
+                        or (dist < 20 and v18 > 64 and AiVultureLand(G, U))):
+   emerge:
+       MonAiUseSkill(Sk2mode, Skill2, U, 0, 0);  v1C ← 2; return
+     AiVultureTakeOff(G, U);  Delay(24);  v18 ← v18 + 1;  v1C ← 1; return
+3. if t = 0: Delay(32); return
+4. if melee:
+     if Range(100) < aip(2): SetModeAtUnit(5, t); return
+     if Range(100) < aip(1): SetModeAtUnit(4, t); return
+     if Range(100) < aip(3): T56(t, 3, 0); return
+     Delay(aip(7)); return
+5. if dist < aip(6):
+     if Range(100) < aip(5): SetModeAtUnit(5, t); return
+     if Range(100) < aip(4): T56(t, 4, 0); return
+     Delay(aip(7)); return
+6. if Range(100) < aip(4): T56(t, 3, 0); return
+7. WalkStop(t, 4)
+```
+
+The alt, [I] (0x005F81D0, 0x005F8254, fn:sub_005B0E00_MonAiInit@0x005B0E00):
+
+```
+if ctl.state ≠ 10 and ctl.state ≠ 11 and Skill1 ≥ 0 and v1C ≥ 2:
+  UseSkill1(t);  v1C ← 1;  AiVultureTakeOff(G, U); return
+MonAiInit(G, U, ctl, ctl.state);  Delay(1)
+```
+
+- R52a. [I] The frog uses the vulture's take-off and landing helpers, the collision off and on, for its submerge and emerge. Each failed submerged event adds one to `v18`. Kind 5: with no target a surfaced frog delays 32. The `alt` runs when `MonAiInit` swaps the think: a surfaced frog whose state changes to anything but 10 or 11 submerges first. The skill's `x, y` are 0 (the pushed `EDX` is the zero `v1C`, 0x005F82A7). Up to three draws. (fn:sub_005F2EB0_AiVultureTakeOff@0x005F2EB0, fn:sub_005F2FC0_AiVultureLand@0x005F2FC0, struct:AiCtl+0x1C)
+- R52b. [C] Both maps up to the first callee, the landing helper, the cell test (its stack arguments, room, `U.x`, `U.y`, `0xC01`), the take-off, the commands and delays: families `frog` (240 cases, 95 with a draw, 14 boundaries; the controls fail the 18 and 54 that separate them) and `frogalt` (240 cases, no draw, 2 boundaries, so no control separates it, and its `[C]` is the map of its state tests only). (run:2026-10-30-ai-cat-emu-3)
 
 - R52i. [C] As data: kind 5, no `init`, `alt` 0x005F81D0; 3 records (247-249 frogdemon1..frogdemon3); reach P; `aip` set 1,2,3,4,5,6,7,8; `aidel` 15/14/13; skills Submerge, Emerge. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
 - R52l. [C] First boundary: 600 decisions compared (200 + 400), 0 mismatches, 2 first-call outcomes. (run:2026-11-03-ai, run:2026-11-03-ai-3, 0x005B186F)
@@ -725,21 +1213,79 @@ Tier AI: [machinery § T37](machinery.md#t37-row-37-skeletonbow-fnsub_005f6070_a
 
 #### R56. Row 56 `Tentacle` (fn:sub_005F8F80_AiTentacle@0x005F8F80)
 
-<!-- body R56 -->
+**`aip`:** 1 melee: chance of A1; 2 out of melee range: chance to submerge; 3 the submerged minimum, in 25-frame units (300–400 frames, as data); 4 the surfaced minimum, the same units; 5 the wait; 6 the distance past which it submerges and within which it surfaces.
+
+`v1C`: 0 start, 1 submerged, 2 surfaced. `Skill1` is `Submerge`, `Skill2` `Emerge`.
+
+```
+1. o ← MonsterOwner(U)                                                     [I] (0x005F8F80, 0x005F9263)
+2. if o = 0: UnitKilled(G, U, 0, 1); return
+3. if o.mode = 12 and D100() < 40:              ; draw#1, unsigned
+     UnitKilled(G, U, UNIT_GetTargetUnit(G, o), 1); return
+4. if Skill1 ≥ 0:
+     if v1C = 0: goto submerge8
+     if v1C = 2 and v18 < T and (dist > aip(6) or (not melee and Range(100) < aip(2))
+                                 or (o.mode = 14 and Range(100) < 50)):
+   submerge8:
+       UseSkill1(t);  Delay(8);  v18 ← T + 25·aip(3);  v1C ← 1; return
+5. if Skill2 ≥ 0:
+     if v1C ≠ 1: goto act
+     if v18 < T and (melee or dist < aip(6) or (o.mode ≠ 14 and Range(100) < 5)):
+       MonAiUseSkill(Sk2mode, Skill2, U, 0, 0);  v18 ← T + 25·aip(4);  v1C ← 2; return
+6. if v1C = 1: Delay(aip(5)); return
+act:
+7. if melee and Range(100) < aip(1): SetModeAtUnit(4, t); return
+8. Idle(aip(5))
+```
+
+- R56a. [I] A tentacle follows its owner, the head (row 57): it dies with none, and with 40 percent per event once the owner is in mode 12, the owner's target the killer; it submerges with 50 percent while the owner is in mode 14 and surfaces by itself (5 percent) only while it is not. `25·aip` is 32-bit and fits for every i16; the sum with `T` wraps only past frame `2³¹ − 819 176`. Up to four draws. Not emulated: `MonsterOwner`'s `GameFindUnit` comes before the first draw (0x005F8FAC). (fn:sub_0058F0D0_MonsterOwner@0x0058F0D0, struct:AiCtl+0x18)
 
 - R56i. [C] As data: kind 2, no `init`, no `alt`; 3 records (258-260 tentacle1..tentacle3); reach ·; `aip` set 1,2,3,4,5,6; `aidel` 15/15/15; skills Submerge, Emerge. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
 - R56l. [I] Logged, not compared: 16 decisions (16) in a row with no model, so the first boundary of this row is not raised. (run:2026-11-03-ai, 0x005B186F)
 
 #### R57. Row 57 `TentacleHead` (fn:sub_005F9270_AiTentacleHead@0x005F9270)
 
-<!-- body R57 -->
+**`aip`:** as row 56 for 2, 3, 4, 5, 6 (`aip(6)` 12–14, as data), and 1 the chance of A1 at its own hostile.
+
+```
+1. if Skill1 ≥ 0:                                                          [I] (0x005F9270, 0x005F947E)
+     if v1C = 0:
+       UseSkill1(t);  Delay(8);  goto arm
+     if v1C = 2 and v18 < T and (dist > aip(6) or (not melee and Range(100) < aip(2))):
+       UseSkill1(t);  Delay(20)
+   arm:
+       v18 ← T + 25·aip(3);  v1C ← 1; return
+2. if Skill2 ≥ 0 and v1C = 1 and v18 < T and (melee or dist < aip(6)):
+     MonAiUseSkill(Sk2mode, Skill2, U, 0, 0);  v18 ← T + 25·aip(4);  v1C ← 2; return
+3. if v1C = 1: Delay(aip(5)); return
+4. r ← dist;  h ← FindHostile(&r, 0)
+5. if chance(1): SetModeAtUnit(4, h); return      ; the draw after the search
+6. Idle(aip(5))
+```
+
+- R57a. [I] The head surfaces only when the target is close, never by chance, and its A1 is aimed at its own hostile `h`, which may be 0 when `FindHostile` finds none: the call is made with it. Its later submerges delay 20, the first 8. (fn:sub_005DDC30_MonAiFindHostile@0x005DDC30)
+- R57b. [C] The map up to the skills, the delay or `FindHostile` (the word at its pointer argument, `EBP − 4`, holding `dist`): family `thead`, 240 cases, 18 with a draw, 5 boundaries; the controls fail the 3 and 27 that separate them. (run:2026-10-30-ai-cat-emu-3)
 
 - R57i. [C] As data: kind 2, no `init`, no `alt`; 3 records (261-263 tentaclehead1..tentaclehead3); reach ·; `aip` set 1,2,3,4,5,6; `aidel` 15/15/15; skills Submerge, Emerge. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
 - R57l. [C] First boundary: 8 decisions compared (8), 0 mismatches, 2 first-call outcomes. (run:2026-11-03-ai, 0x005B186F)
 
 #### R63. Row 63 `GargoyleTrap` (fn:sub_005F9490_AiGargoyleTrap@0x005F9490)
 
-<!-- body R63 -->
+**`aip`:** 1 the shooting range (24–28, as data); 2 chance to shoot (20/50/80, as data); 3 the idle after a shot (12/10/8 frames, as data); 4 the idle after no shot (15/7/0, as data).
+
+```
+1. if v14 > 0: Idle(v14);  v14 ← 0; return       ; the cooldown after a shot  [I] (0x005F9490, 0x005F96B0)
+2. UnitSetPathTargetUnit(U, t)
+3. dx ← t.x − U.x;  dy ← t.y − U.y
+   (px, py) ← |dx| < |dy| ? (U.x, t.y) : (t.x, U.y)       ; on the unit's row or column
+4. PathSetFacing(U.path, g_FacingOfClass4[g_FacingClass64[(u8) UnitDirToPoint(U, px, py)]])
+5. if (|dx| ≤ 5 or |dy| ≤ 5) and Skill1 ≥ 0 and dist < aip(1) and chance(2):  ; draw#1
+     UseSkill1(t);  v14 ← aip(3); return
+6. Idle(aip(4))
+```
+
+- R63a. [I] The trap turns to one of four facings and shoots only at a target within 5 subtiles of its row or column. `UnitDirToPoint`'s low byte indexes the 64-byte table, whose quarter indexes the four bytes: directions 57–63 and 0–8 → 31, 9–24 → 49, 25–40 → 0, 41–56 → 17. (fn:sub_00621DC0_UnitDirToPoint@0x00621DC0, fn:sub_006488A0_PathSetFacing@0x006488A0, data:g_FacingClass64@0x006E3540, data:g_FacingOfClass4@0x006E353C)
+- R63b. [C] The cooldown test up to `Idle` or `UnitSetPathTargetUnit` only: family `garg`, 240 cases, no draw before them, 2 boundaries, so no control separates it. (run:2026-10-30-ai-cat-emu-3)
 
 - R63i. [C] As data: kind 1, no `init`, no `alt`; 1 records (273 gargoyletrap); reach ·; `aip` set 1,2,3,4; `aidel` 15/15/15; skills GargoyleTrap. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
 - R63l. [C] First boundary: 145 decisions compared (91 + 54), 0 mismatches, 2 first-call outcomes. (run:2026-11-03-ai, run:2026-11-03-ai-3, 0x005B186F)
@@ -764,7 +1310,7 @@ Tier AI: [machinery § T64](machinery.md#t64-row-64-skeletonmage-fnsub_005f96c0_
 <!-- body R66 -->
 
 - R66i. [C] As data: kind 0, no `init`, no `alt`; 5 records (284-288 maggotqueen1..maggotqueen5); reach U; `aip` set 1,2; `aidel` 15/15/15; skills MagottUp, MagottDown, MagottLay, QueenDeath. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
-- R66l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding.
+- R66l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 #### R68. Row 68 `VileMother` (fn:sub_005FA010_AiVileMother@0x005FA010)
 
@@ -803,7 +1349,7 @@ Tier AI: [machinery § T64](machinery.md#t64-row-64-skeletonmage-fnsub_005f96c0_
 <!-- body R72 -->
 
 - R72i. [C] As data: kind 1, no `init`, no `alt`; 3 records (310 doomknight1, 699-700 dkfig1..dkfig2); reach P; `aip` set 1,2,3,4; `aidel` 15/14/13; skills —. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
-- R72l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding.
+- R72l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 #### R73. Row 73 `AbyssKnight` (fn:sub_005FAB80_AiAbyssKnight@0x005FAB80)
 
@@ -818,28 +1364,28 @@ Tier AI: [machinery § T64](machinery.md#t64-row-64-skeletonmage-fnsub_005f96c0_
 <!-- body R74 -->
 
 - R74i. [C] As data: kind 1, no `init`, no `alt`; 4 records (312 doomknight3, 701-702 dkmag1..dkmag2, 713 dkmag3); reach PU; `aip` set 1,2,3,4,5,6,7,8; `aidel` 15/14/13; skills DoomKnightMissile, MonBoneArmor, MonBoneSpirit, Decrepify, Bestow, MonCurseCast. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
-- R74l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding.
+- R74l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 #### R75. Row 75 `QuillMother` (fn:sub_005FB2A0_AiQuillMother@0x005FB2A0)
 
 <!-- body R75 -->
 
 - R75i. [C] As data: kind 1, no `init`, no `alt`; 5 records (313-317 quillbear1..quillbear5); reach ·; `aip` set 1,2,3,4; `aidel` 15/15/15; skills —. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
-- R75l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding.
+- R75l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 #### R76. Row 76 `EvilHole` (fn:sub_005FB410_AiEvilHole@0x005FB410)
 
 <!-- body R76 -->
 
 - R76i. [C] As data: kind 1, no `init`, no `alt`; 6 records (321-325 evilhole1..evilhole5, 711 demonhole); reach ·; `aip` set 1,2; `aidel` 15/15/15; skills Nest. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
-- R76l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding.
+- R76l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 #### R77. Row 77 `Trap-Missile` (fn:sub_005FB5B0_AiTrapMissile@0x005FB5B0)
 
 <!-- body R77 -->
 
 - R77i. [C] As data: kind 2, no `init`, no `alt`; 2 records (326 trap-firebolt, 330 trap-lightning); reach ·; `aip` set 1,2,3; `aidel` 15/15/15; skills —. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
-- R77l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding.
+- R77l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 #### R78. Row 78 `Trap-RightArrow` (fn:sub_005FB6C0_AiTrapRightArrow@0x005FB6C0)
 
@@ -862,21 +1408,21 @@ Tier AI: [machinery § T64](machinery.md#t64-row-64-skeletonmage-fnsub_005f96c0_
 <!-- body R80 -->
 
 - R80i. [C] As data: kind 2, no `init`, no `alt`; 1 records (329 trap-poisoncloud); reach ·; `aip` set 1,2,3; `aidel` 15/15/15; skills PrimePoisonNova. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
-- R80l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding.
+- R80l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 #### R87. Row 87 `Trap-Melee` (fn:sub_005FBA60_AiTrapMelee@0x005FBA60)
 
 <!-- body R87 -->
 
 - R87i. [C] As data: kind 1, no `init`, no `alt`; 1 records (354 trap-melee); reach ·; `aip` set 1,2; `aidel` 15/15/15; skills —. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
-- R87l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding.
+- R87l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 #### R92. Row 92 `Trap-Nova` (fn:sub_005FB9B0_AiTrapNova@0x005FB9B0)
 
 <!-- body R92 -->
 
 - R92i. [C] As data: kind 1, no `init`, no `alt`; 1 records (369 trap-nova); reach ·; `aip` set 1,2,3; `aidel` 15/15/15; skills Trap Nova. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
-- R92l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding.
+- R92l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 ### Batch 5: summons
 
@@ -889,105 +1435,105 @@ Tier AI: [machinery § T67](machinery.md#t67-row-67-necropet-and-state-7-fnsub_0
 <!-- body R84 -->
 
 - R84i. [C] As data: kind 0, `init` 0x005E0390, no `alt`; 1 records (344 bonewall); reach S; `aip` set —; `aidel` 15/15/15; skills Bone Wall. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
-- R84l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding.
+- R84l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 #### R86. Row 86 `Hydra` (fn:sub_005E9E60_AiHydra@0x005E9E60)
 
 <!-- body R86 -->
 
 - R86i. [C] As data: kind 2, no `init`, no `alt`; 3 records (351-353 hydra1..hydra3); reach S; `aip` set —; `aidel` 15/15/15; skills HydraMissile. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
-- R86l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding.
+- R86l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 #### R101. Row 101 `AssassinSentry` (fn:sub_005EA3D0_AiAssassinSentry@0x005EA3D0)
 
 <!-- body R101 -->
 
 - R101i. [C] As data: kind 0, `init` 0x005EA290, no `alt`; 4 records (410-412 wakeofdestruction..lightningsentry, 415 infernosentry); reach S; `aip` set 1,2,3,4; `aidel` 15/15/15; skills Wake Of Destruction Sentry, BoltSentry, Shock Field, sentry lightning, mon inferno sentry, Wake of Fire Sentry. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
-- R101l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding.
+- R101l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 #### R102. Row 102 `BladeCreeper` (fn:sub_005EA540_AiBladeCreeper@0x005EA540)
 
 <!-- body R102 -->
 
 - R102i. [C] As data: kind 0, `init` 0x005EA510, no `alt`; 1 records (413 bladecreeper); reach S; `aip` set —; `aidel` 15/15/15; skills Blade Sentinel. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
-- R102l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding.
+- R102l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 #### R103. Row 103 `InvisoPet` (fn:sub_005EA7A0_AiInvisoPet@0x005EA7A0)
 
 <!-- body R103 -->
 
 - R103i. [C] As data: kind 0, no `init`, no `alt`; 1 records (414 invisopet); reach ·; `aip` set 1,2; `aidel` 15/15/15; skills —. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
-- R103l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding.
+- R103l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 #### R104. Row 104 `DeathSentry` (fn:sub_005EA980_AiDeathSentry@0x005EA980)
 
 <!-- body R104 -->
 
 - R104i. [C] As data: kind 0, `init` 0x005EA290, no `alt`; 1 records (416 deathsentry); reach S; `aip` set 1,3,4; `aidel` 15/15/15; skills mon death sentry, death sentry ltng. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
-- R104l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding.
+- R104l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 #### R105. Row 105 `ShadowWarrior` (fn:sub_005EAFA0_AiShadowWarrior@0x005EAFA0)
 
 <!-- body R105 -->
 
 - R105i. [C] As data: kind 2, `init` 0x005EAF50, no `alt`; 1 records (417 shadowwarrior); reach S; `aip` set 1,2,3,4,8; `aidel` 15/15/15; skills Fists of Fire, Blade Fury, Blades of Ice, Dragon Claw, Dragon Flight, Claws of Thunder, Attack. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
-- R105l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding.
+- R105l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 #### R106. Row 106 `ShadowMaster` (fn:sub_005EB970_AiShadowMaster@0x005EB970)
 
 <!-- body R106 -->
 
 - R106i. [C] As data: kind 2, `init` 0x005EB490, no `alt`; 1 records (418 shadowmaster); reach S; `aip` set 1,2,3,8; `aidel` 15/15/15; skills Fists of Fire, Blade Fury, Blades of Ice, Dragon Claw, Dragon Flight, Claws of Thunder, Attack. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
-- R106l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding.
+- R106l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 #### R107. Row 107 `Raven` (fn:sub_005ECC10_AiRaven@0x005ECC10)
 
 <!-- body R107 -->
 
 - R107i. [C] As data: kind 2, `init` 0x005ECB70, no `alt`; 1 records (419 druidhawk); reach S; `aip` set 1,2,3,4,5; `aidel` 15/15/15; skills Raven. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
-- R107l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding.
+- R107l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 #### R108. Row 108 `DruidWolf` (fn:sub_005ED710_AiDruidWolf@0x005ED710)
 
 <!-- body R108 -->
 
 - R108i. [C] As data: kind 0, no `init`, no `alt`; 2 records (420-421 spiritwolf..fenris); reach S; `aip` set 1,2,3,4,5; `aidel` 15/15/15; skills Teleport 2, fenris rage. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
-- R108l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding.
+- R108l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 #### R109. Row 109 `Totem` (fn:sub_005ED9E0_AiTotem@0x005ED9E0)
 
 <!-- body R109 -->
 
 - R109i. [C] As data: kind 0, no `init`, no `alt`; 3 records (422-424 spiritofbarbs..oaksage); reach S; `aip` set 1,2,3,4; `aidel` 15/15/15; skills —. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
-- R109l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding.
+- R109l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 #### R110. Row 110 `Vines` (fn:sub_005EC6C0_AiVines@0x005EC6C0)
 
 <!-- body R110 -->
 
 - R110i. [C] As data: kind 2, `init` 0x005EC6A0, no `alt`; 1 records (425 plaguepoppy); reach S; `aip` set 1,2,3,4,5; `aidel` 15/15/15; skills Vine Attack. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
-- R110l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding.
+- R110l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 #### R111. Row 111 `CycleOfLife` (fn:sub_005EC8C0_AiCycleOfLife@0x005EC8C0)
 
 <!-- body R111 -->
 
 - R111i. [C] As data: kind 2, `init` 0x005EC6A0, no `alt`; 2 records (426-427 cycleoflife..vinecreature); reach S; `aip` set 1,2,3,4,5; `aidel` 15/15/15; skills CorpseCycler, VineCycler. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
-- R111l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding.
+- R111l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 #### R112. Row 112 `DruidBear` (fn:sub_005ED730_AiDruidBear@0x005ED730)
 
 <!-- body R112 -->
 
 - R112i. [C] As data: kind 0, no `init`, no `alt`; 1 records (428 druidbear); reach S; `aip` set 1,2,3; `aidel` 15/15/15; skills BearSmite. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
-- R112l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding.
+- R112l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 #### R143. Row 143 `ShadowMasterNoInit` (fn:sub_005EB970_AiShadowMaster@0x005EB970)
 
 <!-- body R143 -->
 
 - R143i. [C] As data: kind 2, `init` 0x005EB5C0, no `alt`; 0 records (—); reach none; `aip` set —; `aidel` —; skills —. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
-- R143l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding.
+- R143l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 #### S7. State row 7 (fn:sub_005E4CF0_AiNecroPet@0x005E4CF0)
 
@@ -1030,56 +1576,56 @@ Tier AI: [machinery § T34](machinery.md#t34-row-34-andariel-fnsub_005f5830_aian
 <!-- body R44 -->
 
 - R44i. [C] As data: kind 1, no `init`, no `alt`; 2 records (211 duriel, 708 uberduriel); reach ·; `aip` set 1,2,3; `aidel` 15/15/15; skills Charge, Jab, Smite, Holy Freeze. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
-- R44l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding.
+- R44l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 #### R50. Row 50 `Mephisto` (fn:sub_005F78B0_AiMephisto@0x005F78B0)
 
 <!-- body R50 -->
 
 - R50i. [C] As data: kind 1, no `init`, no `alt`; 1 records (242 mephisto); reach ·; `aip` set 1,2,3; `aidel` 15/10/6; skills PrimeLightning, PrimeBolt, PrimePoisonNova, MephistoMissile, MephFrostNova, Blizzard. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
-- R50l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding.
+- R50l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 #### R53. Row 53 `Summoner` (fn:sub_005F85C0_AiSummoner@0x005F85C0)
 
 <!-- body R53 -->
 
 - R53i. [C] As data: kind 1, no `init`, no `alt`; 1 records (250 summoner); reach U; `aip` set 1,2,3,4,5,6,7,8; `aidel` 15/13/10; skills Glacial Spike, Frost Nova, Fire Ball, VampireFirewall, Weaken. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
-- R53l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding.
+- R53l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 #### R55. Row 55 `Izual` (fn:sub_005F89B0_AiIzual@0x005F89B0)
 
 <!-- body R55 -->
 
 - R55i. [C] As data: kind 1, no `init`, no `alt`; 1 records (256 izual); reach ·; `aip` set 1,2,3,4,5,6; `aidel` 15/12/8; skills Frost Nova. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
-- R55l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding.
+- R55l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 #### R59. Row 59 `BloodRaven` (fn:sub_005E6320_AiBloodRaven@0x005E6320)
 
 <!-- body R59 -->
 
 - R59i. [C] As data: kind 1, `init` 0x005E6300, no `alt`; 1 records (267 bloodraven); reach ·; `aip` set —; `aidel` 15/13/10; skills Nest, Quick Strike. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
-- R59l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding.
+- R59l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 #### R90. Row 90 `Griswold` (fn:sub_005E5AC0_AiGriswold@0x005E5AC0)
 
 <!-- body R90 -->
 
 - R90i. [C] As data: kind 1, no `init`, no `alt`; 1 records (365 griswold); reach U; `aip` set —; `aidel` 15/13/10; skills —. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
-- R90l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding.
+- R90l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 #### R144. Row 144 `UberIzual` (fn:sub_005F8C80_AiUberIzual@0x005F8C80)
 
 <!-- body R144 -->
 
 - R144i. [C] As data: kind 1, no `init`, no `alt`; 1 records (706 uberizual); reach ·; `aip` set 1,2,3,4,5,6; `aidel` 15/12/8; skills Frost Nova, Chilling Armor, MonTeleport. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
-- R144l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding.
+- R144l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 #### R146. Row 146 `UberMephisto` (fn:sub_005F81C0_AiUberMephisto@0x005F81C0)
 
 <!-- body R146 -->
 
 - R146i. [C] As data: kind 1, no `init`, no `alt`; 1 records (704 ubermephisto); reach ·; `aip` set 1,2,3; `aidel` 15/10/6; skills PrimeLightning, PrimeBolt, PrimePoisonNova, MephistoMissile, MephFrostNova, Blizzard. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
-- R146l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding.
+- R146l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 ### Batch 8: pool-E (towers, turrets, javelins and blowguns, Venom Lords, the siege)
 
@@ -1088,21 +1634,21 @@ Tier AI: [machinery § T34](machinery.md#t34-row-34-andariel-fnsub_005f5830_aian
 <!-- body R82 -->
 
 - R82i. [C] As data: kind 1, no `init`, no `alt`; 1 records (332 invisospawner); reach ·; `aip` set 1,2,3; `aidel` 15/15/15; skills —. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
-- R82l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding.
+- R82l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 #### R83. Row 83 `MosquitoNest` (fn:sub_005E0260_AiMosquitoNest@0x005E0260)
 
 <!-- body R83 -->
 
 - R83i. [C] As data: kind 0, no `init`, no `alt`; 4 records (334-337 suckernest1..suckernest4); reach ·; `aip` set 1,2,3; `aidel` 15/15/15; skills Nest. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
-- R83l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding.
+- R83l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 #### R85. Row 85 `HighPriest` (fn:sub_005E0490_AiHighPriest@0x005E0490)
 
 <!-- body R85 -->
 
 - R85i. [C] As data: kind 1, no `init`, no `alt`; 4 records (345-347 councilmember1..councilmember3, 557 baalhighpriest); reach U; `aip` set 1,2,3,4,5,6,7,8; `aidel` 15/13,14/12,13; skills Hydra, ZakarumHeal. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
-- R85l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding.
+- R85l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 #### R89. Row 89 `Megademon` (fn:sub_005E0C80_AiMegademon@0x005E0C80)
 
@@ -1120,7 +1666,7 @@ Tier AI: [machinery § T89](machinery.md#t89-row-89-megademon-fnsub_005e0c80_aim
 <!-- body R94 -->
 
 - R94i. [C] As data: kind 1, no `init`, no `alt`; 4 records (348-350 turret1..turret3, 372 firetower); reach ·; `aip` set 1,2,3,4,5; `aidel` 15/15/15; skills DesertTurret. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
-- R94l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding.
+- R94l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 #### R95. Row 95 `PantherJavelin` (fn:sub_005E1080_AiPantherJavelin@0x005E1080)
 
@@ -1143,7 +1689,7 @@ Tier AI: [machinery § T89](machinery.md#t89-row-89-megademon-fnsub_005e0c80_aim
 <!-- body R97 -->
 
 - R97i. [C] As data: kind 1, no `init`, no `alt`; 1 records (401 mephistospirit); reach ·; `aip` set —; `aidel` 15/15/15; skills —. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
-- R97l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding.
+- R97l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 #### R98. Row 98 `Smith` (fn:sub_005E3890_AiSmith@0x005E3890)
 
@@ -1157,7 +1703,7 @@ Tier AI: [machinery § T89](machinery.md#t89-row-89-megademon-fnsub_005e0c80_aim
 <!-- body R113 -->
 
 - R113i. [C] As data: kind 1, no `init`, no `alt`; 1 records (435 barricadetower); reach ·; `aip` set 1; `aidel` 15/15/15; skills —. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
-- R113l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding.
+- R113l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 #### R114. Row 114 `ReanimatedHorde` (fn:sub_005E1540_AiReanimatedHorde@0x005E1540)
 
@@ -1172,7 +1718,7 @@ Tier AI: [machinery § T89](machinery.md#t89-row-89-megademon-fnsub_005e0c80_aim
 <!-- body R115 -->
 
 - R115i. [C] As data: kind 1, no `init`, no `alt`; 5 records (441-445 siegebeast1..siegebeast5); reach PU; `aip` set 1,2,3,4,5,6,7; `aidel` 15/14/13; skills Siege Beast Stomp, Charge. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
-- R115l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding.
+- R115l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 ### Batch 9: pool-F (act V minions)
 
@@ -1181,14 +1727,14 @@ Tier AI: [machinery § T89](machinery.md#t89-row-89-megademon-fnsub_005e0c80_aim
 <!-- body R116 -->
 
 - R116i. [C] As data: kind 1, no `init`, no `alt`; 11 records (453-460 minion1..minion8, 682-684 minion9..minion11); reach PU; `aip` set 1,2,3,4,5; `aidel` 15/14/13; skills —. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
-- R116l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding.
+- R116l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 #### R117. Row 117 `SuicideMinion` (fn:sub_005E1D30_AiSuicideMinion@0x005E1D30)
 
 <!-- body R117 -->
 
 - R117i. [C] As data: kind 1, no `init`, no `alt`; 8 records (461-468 suicideminion1..suicideminion8); reach P; `aip` set 1,2,3,4; `aidel` 15/14/13; skills —. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
-- R117l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding.
+- R117l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 #### R118. Row 118 `Succubus` (fn:sub_005E1E00_AiSuccubus@0x005E1E00)
 
@@ -1203,35 +1749,35 @@ Tier AI: [machinery § T89](machinery.md#t89-row-89-megademon-fnsub_005e0c80_aim
 <!-- body R119 -->
 
 - R119i. [C] As data: kind 1, no `init`, no `alt`; 9 records (9 records, as the index lists them); reach PU; `aip` set 1,2,3,4,5,6,7,8; `aidel` 15/14/13; skills Amplify Damage, Weaken, Defense Curse, Blood Mana, SuccubusBolt. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
-- R119l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding.
+- R119l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 #### R120. Row 120 `Overseer` (fn:sub_005E27A0_AiOverseer@0x005E27A0)
 
 <!-- body R120 -->
 
 - R120i. [C] As data: kind 1, no `init`, no `alt`; 6 records (479-483 overseer1..overseer5, 724 overseer6); reach PU; `aip` set 1,2,3,4,5,6,7; `aidel` 15/14/13; skills Cry Help, Healing Vortex, Overseer Whip, Smite. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
-- R120l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding.
+- R120l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 #### R121. Row 121 `MinionSpawner` (fn:sub_005E2BD0_AiMinionSpawner@0x005E2BD0)
 
 <!-- body R121 -->
 
 - R121i. [C] As data: kind 1, `init` 0x005F6630, no `alt`; 9 records (484-491 minionspawner1..minionspawner8, 710 demonspawner); reach ·; `aip` set 1,2,3,4,5; `aidel` 15/15/15; skills MinionSpawner. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
-- R121l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding.
+- R121l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 #### R122. Row 122 `Imp` (fn:sub_005E2FF0_AiImp@0x005E2FF0)
 
 <!-- body R122 -->
 
 - R122i. [C] As data: kind 1, `init` 0x005E2FD0, no `alt`; 8 records (492-496 imp1..imp5, 688-689 imp6..imp7, 714 imp8); reach PU; `aip` set 1,2,3,4; `aidel` 15/14/13; skills Imp Teleport, ImpBolt, Imp Fireball, Imp Fire Missile, Imp Inferno, Imp Fire Missile Ex. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
-- R122l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding.
+- R122l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 #### R123. Row 123 `Catapult` (fn:sub_005E34C0_AiCatapult@0x005E34C0)
 
 <!-- body R123 -->
 
 - R123i. [C] As data: kind 1, no `init`, no `alt`; 4 records (497-500 catapult1..catapult4); reach ·; `aip` set 1; `aidel` 15/15/15; skills —. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
-- R123l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding.
+- R123l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 #### R124. Row 124 `FrozenHorror` (fn:sub_005E3530_AiFrozenHorror@0x005E3530)
 
@@ -1264,21 +1810,21 @@ Tier AI: [machinery § T125](machinery.md#t125-row-125-bloodlord-fnsub_005e36f0_
 <!-- body R126 -->
 
 - R126i. [C] As data: kind 1, no `init`, no `alt`; 4 records (516-519 catapultspotter1..catapultspotter4); reach ·; `aip` set 1,2,3,4,5; `aidel` 15/15/15; skills Catapult Charged Ball, Catapult Spike Ball, CatapultBlizzard, CatapultPlague, CatapultMeteor. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
-- R126l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding.
+- R126l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 #### R127. Row 127 `NpcBarb` (fn:sub_005EDC50_AiNpcBarb@0x005EDC50)
 
 <!-- body R127 -->
 
 - R127i. [C] As data: kind 2, `init` 0x005EDC40, no `alt`; 2 records (522-523 act5barb1..act5barb2); reach ·; `aip` set 1,2,3; `aidel` 15/15/15; skills —. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
-- R127l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding.
+- R127l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 #### R129. Row 129 `GenericSpawner` (fn:sub_005E61B0_AiGenericSpawner@0x005E61B0)
 
 <!-- body R129 -->
 
 - R129i. [C] As data: kind 1, `init` 0x005E6190, no `alt`; 1 records (528 evilhut); reach ·; `aip` set 1,3; `aidel` 15/15/15; skills Nest. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
-- R129l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding.
+- R129l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 #### R130. Row 130 `DeathMauler` (fn:sub_005EE260_AiDeathMauler@0x005EE260)
 
@@ -1293,56 +1839,56 @@ Tier AI: [machinery § T125](machinery.md#t125-row-125-bloodlord-fnsub_005e36f0_
 <!-- body R131 -->
 
 - R131i. [C] As data: kind 2, no `init`, no `alt`; 1 records (534 act5pow); reach ·; `aip` set —; `aidel` 15/15/15; skills —. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
-- R131l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding.
+- R131l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 #### R132. Row 132 `AncientStatue` (fn:sub_005EEAA0_AiAncientStatue@0x005EEAA0)
 
 <!-- body R132 -->
 
 - R132i. [C] As data: kind 0, no `init`, no `alt`; 3 records (537-539 ancientstatue1..ancientstatue3); reach ·; `aip` set —; `aidel` 15/15/15; skills MinionSpawner. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
-- R132l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding.
+- R132l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 #### R133. Row 133 `Ancient` (fn:sub_005EF1A0_AiAncient@0x005EF1A0)
 
 <!-- body R133 -->
 
 - R133i. [C] As data: kind 2, no `init`, no `alt`; 3 records (540-542 ancientbarb1..ancientbarb3); reach PU; `aip` set 1,2,3,4,5; `aidel` 15/13/11; skills Whirlwind, Shout, Leap Attack. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
-- R133l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding.
+- R133l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 #### R134. Row 134 `BaalThrone` (fn:sub_005EF320_AiBaalThrone@0x005EF320)
 
 <!-- body R134 -->
 
 - R134i. [C] As data: kind 2, `init` 0x005EF310, no `alt`; 1 records (543 baalthrone); reach ·; `aip` set 1; `aidel` 15/15/15; skills Decrepify, Baal Corpse Explode, Defense Curse, Blood Mana. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
-- R134l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding.
+- R134l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 #### R136. Row 136 `BaalTaunt` (fn:sub_005EF710_AiBaalTaunt@0x005EF710)
 
 <!-- body R136 -->
 
 - R136i. [C] As data: kind 1, no `init`, no `alt`; 1 records (545 baaltaunt); reach P; `aip` set 1,2,3; `aidel` 15/15/15; skills Baal Taunt. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
-- R136l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding.
+- R136l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 #### R137. Row 137 `PutridDefiler` (fn:sub_005EFA90_AiPutridDefiler@0x005EFA90)
 
 <!-- body R137 -->
 
 - R137i. [C] As data: kind 1, no `init`, no `alt`; 5 records (546-550 putriddefiler1..putriddefiler5); reach P; `aip` set 1,2; `aidel` 15/15/15; skills Impregnate. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
-- R137l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding.
+- R137l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 #### R139. Row 139 `BaalTentacle` (fn:sub_005EF820_AiBaalTentacle@0x005EF820)
 
 <!-- body R139 -->
 
 - R139i. [C] As data: kind 1, no `init`, no `alt`; 5 records (562-566 baaltentacle1..baaltentacle5); reach ·; `aip` set 1,2,3; `aidel` 15/15/15; skills —. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
-- R139l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding.
+- R139l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 #### R141. Row 141 `BaalMinion` (fn:sub_005EF910_AiBaalMinion@0x005EF910)
 
 <!-- body R141 -->
 
 - R141i. [C] As data: kind 1, no `init`, no `alt`; 3 records (571-573 baalminion1..baalminion3); reach U; `aip` set 1,2,3,4; `aidel` 15/14/13; skills Smite. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
-- R141l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding.
+- R141l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 ### Batch 11: bosses-B (Diablo, Nihlathak, the Baal rows, Uber Diablo and Baal)
 
@@ -1351,49 +1897,49 @@ Tier AI: [machinery § T125](machinery.md#t125-row-125-bloodlord-fnsub_005e36f0_
 <!-- body R51 -->
 
 - R51i. [C] As data: kind 1, no `init`, `alt` 0x005E8480; 2 records (243 diablo, 333 diabloclone); reach ·; `aip` set —; `aidel` 15/13/12; skills DiabLight, DiabCold, DiabFire, DiabWall, DiabRun, PrimeFirewall, DiabPrison, Diablogeddon. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
-- R51l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding.
+- R51l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 #### R128. Row 128 `Nihlathak` (fn:sub_005EE5D0_AiNihlathak@0x005EE5D0)
 
 <!-- body R128 -->
 
 - R128i. [C] As data: kind 2, `init` 0x005EE5C0, `alt` 0x005E5280; 1 records (526 nihlathakboss); reach U; `aip` set 1,2,3,4,5; `aidel` 15/15/15; skills Imp Teleport, Overseer Whip, NihlathakCorpseExplosion, Horror Arctic Blast, MinionSpawner. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
-- R128l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding.
+- R128l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 #### R135. Row 135 `BaalCrab` (fn:sub_005FCFE0_AiBaalCrab@0x005FCFE0)
 
 <!-- body R135 -->
 
 - R135i. [C] As data: kind 0, no `init`, `alt` 0x005FCF30; 1 records (544 baalcrab); reach ·; `aip` set —; `aidel` 15/13/12; skills Baal Nova, Baal Inferno, Baal Tentacle, Baal Cold Missiles, Baal Teleport, Defense Curse, Blood Mana. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
-- R135l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding.
+- R135l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 #### R138. Row 138 `BaalToStairs` (fn:sub_005EF620_AiBaalToStairs@0x005EF620)
 
 <!-- body R138 -->
 
 - R138i. [C] As data: kind 1, no `init`, no `alt`; 1 records (559 baalcrabstairs); reach ·; `aip` set 1; `aidel` 15/15/15; skills —. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
-- R138l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding.
+- R138l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 #### R140. Row 140 `BaalCrabClone` (fn:sub_005FD210_AiBaalClone@0x005FD210)
 
 <!-- body R140 -->
 
 - R140i. [C] As data: kind 0, no `init`, `alt` 0x005FCF30; 1 records (570 baalclone); reach ·; `aip` set —; `aidel` 15/14/12; skills Baal Nova, Baal Inferno, Baal Tentacle, Baal Cold Missiles, Baal Clone Teleport, Defense Curse, Blood Mana. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
-- R140l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding.
+- R140l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 #### R145. Row 145 `UberBaal` (fn:sub_005FD200_AiUberBaal@0x005FD200)
 
 <!-- body R145 -->
 
 - R145i. [C] As data: kind 1, no `init`, `alt` 0x005FCF30; 1 records (709 uberbaal); reach ·; `aip` set —; `aidel` 15/13/12; skills Baal Nova, Baal Inferno, Baal Tentacle, Baal Cold Missiles, Baal Teleport, Defense Curse, Blood Mana, Chilling Armor. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
-- R145l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding.
+- R145l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 #### R147. Row 147 `UberDiablo` (fn:sub_005E9DF0_AiUberDiablo@0x005E9DF0)
 
 <!-- body R147 -->
 
 - R147i. [C] As data: kind 1, no `init`, `alt` 0x005E8480; 1 records (705 uberdiablo); reach ·; `aip` set —; `aidel` 15/13/12; skills DiabLight, DiabCold, DiabFire, DiabWall, DiabRun, PrimeFirewall, DiabPrison, Diablogeddon. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
-- R147l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding.
+- R147l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 ### Batch 12: towns, NPCs and the state rows
 
@@ -1402,7 +1948,7 @@ Tier AI: [machinery § T125](machinery.md#t125-row-125-bloodlord-fnsub_005e36f0_
 <!-- body R31 -->
 
 - R31i. [C] As data: kind 0, no `init`, no `alt`; 2 records (146 cain1, 527 drehyaiced); reach ·; `aip` set —; `aidel` 15/15/15; skills —. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
-- R31l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding.
+- R31l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 #### R32. Row 32 `Npc` (fn:sub_005E7130_AiNpc@0x005E7130)
 
@@ -1417,14 +1963,14 @@ Tier AI: [machinery § T125](machinery.md#t125-row-125-bloodlord-fnsub_005e36f0_
 <!-- body R41 -->
 
 - R41i. [C] As data: kind 0, no `init`, no `alt`; 6 records (195-197 act2male..act2child, 203 act2guard1, 294 act3male, 296 act3female); reach ·; `aip` set —; `aidel` 15/15/15; skills —. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
-- R41l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding.
+- R41l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 #### R42. Row 42 `Vendor` (fn:sub_005E9E00_AiVendor@0x005E9E00)
 
 <!-- body R42 -->
 
 - R42i. [C] As data: kind 0, no `init`, no `alt`; 2 records (204-205 act2vendor1..act2vendor2); reach ·; `aip` set —; `aidel` 15/15/15; skills —. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
-- R42l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding.
+- R42l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 #### R54. Row 54 `NpcStationary` (fn:sub_005E73A0_AiNpcStationary@0x005E73A0)
 
@@ -1439,42 +1985,42 @@ Tier AI: [machinery § T125](machinery.md#t125-row-125-bloodlord-fnsub_005e36f0_
 <!-- body R58 -->
 
 - R58i. [C] As data: kind 0, no `init`, no `alt`; 1 records (266 navi); reach ·; `aip` set —; `aidel` 15/15/15; skills —. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
-- R58l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding.
+- R58l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 #### R60. Row 60 `GoodNpcRanged` (fn:sub_005E7AC0_AiGoodNpcRanged@0x005E7AC0)
 
 <!-- body R60 -->
 
 - R60i. [C] As data: kind 0, no `init`, no `alt`; 1 records (270 rogue2); reach ·; `aip` set —; `aidel` 15/15/15; skills —. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
-- R60l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding.
+- R60l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 #### R62. Row 62 `TownRogue` (fn:sub_005E7D60_AiTownRogue@0x005E7D60)
 
 <!-- body R62 -->
 
 - R62i. [C] As data: kind 1, no `init`, no `alt`; 1 records (272 rogue3); reach ·; `aip` set —; `aidel` 15/15/15; skills —. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
-- R62l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding.
+- R62l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 #### R81. Row 81 `JarJar` (fn:sub_005E7590_AiJarJar@0x005E7590)
 
 <!-- body R81 -->
 
 - R81i. [C] As data: kind 0, no `init`, no `alt`; 1 records (331 act2guard2); reach ·; `aip` set —; `aidel` 15/15/15; skills —. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
-- R81l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding.
+- R81l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 #### R88. Row 88 `7TIllusion` (fn:sub_005EA080_Ai7TIllusion@0x005EA080)
 
 <!-- body R88 -->
 
 - R88i. [C] As data: kind 1, no `init`, no `alt`; 1 records (355 seventombs); reach ·; `aip` set —; `aidel` 15/15/15; skills —. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
-- R88l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding.
+- R88l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 #### R91. Row 91 `DarkWanderer` (fn:sub_005EA130_AiDarkWanderer@0x005EA130)
 
 <!-- body R91 -->
 
 - R91i. [C] As data: kind 1, no `init`, no `alt`; 1 records (368 darkwanderer); reach ·; `aip` set —; `aidel` 15/15/15; skills —. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
-- R91l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding.
+- R91l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 #### R99. Row 99 `TrappedSoul` (fn:sub_005E9F10_AiTrappedSoul@0x005E9F10)
 
@@ -1567,7 +2113,7 @@ None of its own: the rows have no recorded seed-to-decision case outside the tie
 
 ## Evidence
 
-- [ai/0002](../../../findings/ai/0002-pool-a.md): batch 1. [ai/0001](../../../findings/ai/0001-machinery.md): the rows 0 and 1 and the second table.
+- [ai/0002](../../../findings/ai/0002-pool-a.md), [ai/0003](../../../findings/ai/0003-pool-b.md), [ai/0004](../../../findings/ai/0004-pool-c.md): batches 1 to 3. [ai/0001](../../../findings/ai/0001-machinery.md): the rows 0 and 1 and the second table.
 - [ai/0015](../../../findings/ai/0015-phase2-first-run.md), [ai/0017](../../../findings/ai/0017-phase2-second-run.md), [ai/0018](../../../findings/ai/0018-phase2-third-run.md): the three logged batches.
 - [MonAI](../../../tables/MonAI.md), [MonStats](../../../tables/MonStats.md).
 
@@ -1577,3 +2123,5 @@ To check the count: every row has one heading `#### R<n>. Row <n> ` and every st
 
 - [L] **Row 15's alt, the kind-14 record's `+0x18`:** no writer found; a direct store into a list record was not scanned. A scan or a log of the alt settles it. ([ai/0002](../../../findings/ai/0002-pool-a.md), fn:sub_005F1750_AiSandMaggotAlt@0x005F1750)
 - [L] **Row 6's event 17, the `Unit+0xC4` bit `0x02` of the corpse callbacks** (rows 6, 13): what they show or mean is not read. ([ai/0002](../../../findings/ai/0002-pool-a.md))
+- [L] **Row 25's dance:** the offset tables' `(x, y)` values (written on the stack at entry, 0x005F39E1–0x005F3E07), the five-wisp origin, and what unit event 12 on the player does at the grant's end. A dump of the stack after the prologue, or a logged dance, settles them. ([ai/0003](../../../findings/ai/0003-pool-b.md), fn:sub_005F39B0_AiWillOWisp@0x005F39B0)
+- [L] **The killer of the self-kills** (rows 40, 46, 56): what `UnitKilled` does with it is not read, and a log of an egg hatching would settle whether its target is credited. ([ai/0004](../../../findings/ai/0004-pool-c.md), fn:sub_0057CCB0_UnitKilled@0x0057CCB0)
