@@ -154,6 +154,32 @@ class Exclusion(unittest.TestCase):
         self.assertTrue([m for m in mism if m[0]["kind"] == "sweep"])
 
 
+class SaveExclusion(unittest.TestCase):
+    """An item saved with its released room (SV1 logged) before the predicted free is not a sweep case; a save after the
+    predicted free does not excuse an item that was not freed."""
+
+    def log(self, sv_frame):
+        p = os.path.join(tempfile.mkdtemp(), "s.log")
+        it = {"id": 9, "c": 587, "mode": 4, "q": 2, "e": 0}
+        with open(p, "w") as f:
+            f.write('PLR {"lid":103}\n')
+            f.write("IPG " + json.dumps({"item": it, "f": 100, "room": 1, "x": 1, "y": 1}) + "\n")
+            f.write("IPX " + json.dumps({"item": dict(it, e=15100), "f": 100}) + "\n")
+            f.write("SV1 " + json.dumps({"f": sv_frame, "saved": 18000, "item": dict(it, e=15100)}) + "\n")
+            f.write("SWP " + json.dumps({"f": 16500, "items": [[9, 587, 3, 15100, 1, 1]]}) + "\n")
+        return p
+
+    def sweep_mism(self, p):
+        mism, _ = ic.check(ic.predict([p]), [p], show=False)
+        return [m for m in mism if m[0]["kind"] == "sweep"]
+
+    def test_saved_before_the_predicted_free(self):
+        self.assertEqual(self.sweep_mism(self.log(5000)), [])
+
+    def test_saved_after_the_predicted_free_is_a_mismatch(self):
+        self.assertTrue(self.sweep_mism(self.log(17000)))
+
+
 class Restore(unittest.TestCase):
     def test_restore_rule(self):
         self.assertEqual(ic.restore_expect(0, 17000), 0)

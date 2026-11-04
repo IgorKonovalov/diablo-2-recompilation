@@ -416,6 +416,25 @@ def check(preds, logs, show=True):
             if not nxt:
                 mix.setdefault("restore", {})["no later dump lists the cell (write unread)"] = 1 + mix["restore"].get(
                     "no later dump lists the cell (write unread)", 0)
+            elif p["pred"] != 0:
+                # the restored copy (a new id) is freed at the first sweep frame at or past its +0x24, when a dump
+                # at or past it exists
+                nid = next((x[0] for t, e in ev[i + 1:] if t == "SWP" for x in e["items"]
+                            if x[1] == rv["item"]["c"] and x[4] == rv["item"].get("x") and x[5] == rv["item"].get("y")
+                            and x[3] == p["pred"]), None)
+                frames = sorted({e["f"] for t, e in ev[i + 1:] if t == "SWP"})
+                want = next((f for f in frames if f >= p["pred"]), None)
+                if nid is not None:
+                    fr = [e for t, e in ev[i + 1:] if t == "SWF" and e["item"]["id"] == nid]
+                    if want is None:
+                        kk = "no sweep dump at or past the restored +0x24 (unresolved)"
+                        mix.setdefault("restored sweep", {})[kk] = 1 + mix.get("restored sweep", {}).get(kk, 0)
+                    else:
+                        k2 = "restored copy freed at the predicted sweep" if fr and fr[0]["f"] == want else "mismatch"
+                        mix.setdefault("restored sweep", {})[k2] = 1 + mix.get("restored sweep", {}).get(k2, 0)
+                        if k2 == "mismatch":
+                            mism.append((p, "restored copy %d predicted free at %s observed %s" % (
+                                nid, want, fr[0]["f"] if fr else None)))
         elif p["kind"] == "save":
             sv = ev[p["i"]][1]
             k = "save: ItemGroundExpiry at the save"
@@ -446,6 +465,15 @@ def check(preds, logs, show=True):
             if freed:
                 mism.append((p, "monster item freed by the sweep at frame %s" % freed[0]["f"]))
         elif p["kind"] == "sweep":
+            saved_at = next((e["f"] for t, e in ev[i + 1:] if t == "SV1" and e["item"]["id"] == p["id"]), None)
+            if saved_at is not None and (p["pred"] is None or saved_at < p["pred"]):
+                # revision 2: the room's release is logged directly (SV1 is InactiveItemSave's call): the item left the
+                # active room's list before the predicted sweep, so it is not an active-room sweep case; its restored copy
+                # is predicted under "restore" and "restored sweep"
+                k = "item saved with its released room (SV1) before the predicted sweep: not an active-room case"
+                mix.setdefault("sweep", {})[k] = mix.setdefault("sweep", {}).get(k, 0) + 1
+                explained.append(p)
+                continue
             fr = [e for t, e in ev[i + 1:] if t == "SWF" and e["item"]["id"] == p["id"]]
             seen = [x for t, e in ev[i + 1:] if t == "SWP" for x in e["items"] if x[0] == p["id"]]
             if not seen and not fr and not any(t == "SWP" for t, _ in ev[i + 1:]):
@@ -507,7 +535,7 @@ def check(preds, logs, show=True):
         if rest:
             print("monster drops met again under a new id at the same class and cell (restored from a record): %d: %s" % (
                 len(rest), "; ".join("id %d -> %d at sweep %d, +0x24 %d" % r for r in rest)))
-        print("mismatches: %d (excluded on the player's level record: %d; these were failed predictions at the first check)" % (len(mism), len(explained)))
+        print("mismatches: %d (excluded sweep predictions: %d, on the player's level record or the item's SV1 save line; these were failed predictions at the first check)" % (len(mism), len(explained)))
         for p, why in mism[:20]:
             print("  %s %s #%d: %s" % (p["log"], p["kind"], p["i"], why))
     return mism, flat
