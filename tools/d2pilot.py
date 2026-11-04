@@ -768,6 +768,38 @@ def waypoint_at(path, lid):
     return pos
 
 
+def waypoint_from_units(path, player=None, tail=8_000_000):
+    """A log without OBJP lines (tools/gdb/path.gdb): the waypoint object of the newest PLC lines' unit lists, `u` entries of
+    type 2 as [2, id, class, x, y, ...] with a class of WAYPOINT_CLASSES, the one nearest to `player` (x, y) when given."""
+    try:
+        with open(path, "rb") as fh:
+            fh.seek(0, 2)
+            fh.seek(max(0, fh.tell() - tail))
+            lines = fh.read().decode("latin1").splitlines()
+    except OSError:
+        return None
+    seen = 0
+    best = None
+    for line in reversed(lines):
+        if not line.startswith("PLC {"):
+            continue
+        seen += 1
+        try:
+            d = json.loads(line[4:])
+        except ValueError:
+            continue
+        for u in d.get("u", ()):
+            if len(u) > 4 and u[0] == 2 and u[2] in WAYPOINT_CLASSES:
+                dist = math.hypot(u[3] - player[0], u[4] - player[1]) if player else 0
+                if best is None or dist < best[0]:
+                    best = (dist, u[3], u[4])
+        if best or seen >= 40:
+            break
+    if best and (player is None or best[0] <= 60):
+        return (best[1], best[2])
+    return None
+
+
 def cmd_wpchain(args):
     """Plan 0026 Phase 2: a chain of waypoint hops (--chain "TAB,ROW TAB,ROW ..."), each from the waypoint the
     character stands at. Per hop: the waypoint's position from the log (OBJP), else the player's own; click it at a few
@@ -792,7 +824,7 @@ def cmd_wpchain(args):
                 time.sleep(0.3)
             st.poll()
             px, py = st.pos[0], st.pos[1]
-            w = waypoint_at(args.log, st.pos[2])
+            w = waypoint_at(args.log, st.pos[2]) or waypoint_from_units(args.log, (px, py))
             wx, wy = w if w else (px, py)
             sx, sy = p.screen(wx - px, wy - py)
             off = [(0, -12), (0, -30), (12, -20), (-12, -20), (0, 4), (0, -45)][attempt]

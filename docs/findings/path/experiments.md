@@ -224,3 +224,34 @@
 - **No session ran.** `tools/path_review.py` retired into `tools/path.py check` (the review's revision at commit `e990dea0`). The check's rerun on the kept logs of run:2026-11-04-path: `workspace/logs/p54b/check.txt` (`d8211db0`, `manifest.sha256` passes from that directory, `PATH_DEV` the 13 development logs dev2..dev5). Same `RESULT` as the kept check. `audit: n/a, no check of a new run.`
 - **Logger rev 5** (`tools/gdb/path.py`, [path/0005](0005-grid-rules.md) § Logger rev 5): read-only, tested on a fake `gdb`; first run is the next kept batch's.
 - **Review of `lane/p54b`, no session.** `tools/path.py check` at the lane's tip reproduced `check.txt` (`d8211db0`). After the review's C3 and T1 corrections, `workspace/logs/p54b/check-review.txt` (`48603989`) differs from it in 8 lines, the cell counts and exact rooms of the two code passes; same wrong plans, same `RESULT`. `tools/corpse_copy.py` over run:2026-10-14-collision's seven logs: `corpse-copy.txt` (`db62d6cb`). `tools/collision.py`, unchanged, rerun on those logs: 20 537 collision checks, 0 mismatches. Both outputs in `manifest.sha256`. `audit: n/a, no check of a new run.`
+
+## run:2026-11-04-path-2
+
+The hold-out batch, `lane/p54c` (plan 0054 Phase 2, the kept batch of the `lane/p54b` review's order (a) to (h)).
+
+- **Question:** do the rules of [path/0005](0005-grid-rules.md), fitted on run:2026-11-04-path, predict the live grid on logs taken after they were frozen; do rev 5's lines (`SPX`, `T1S`, `L1M`/`L1U`, `COR`, counted `BRK`, `HasCollision`, unit cap 400) answer their questions? Results: [path/0006](0006-holdout.md).
+- **Setup:** slot 1 (display `:8`, `workspace/wineprefix-1`), a fresh game process per case (`tools/path_sessions.py` on `tools/harness_runner.py`), logger rev 5 (`tools/gdb/path.gdb`, `path.py` `d0a5f379d3a2`, read-only: the source holds no `write_memory`), driver `tools/d2pilot.py` (`899818c6282c`), tool commit `a7511120` (`path_sessions.py` `fbea4903ed5a`, which names the cases below), characters `PathBar`, `PathPal` (recipes `path-bar.json`, `path-pal.json`), `CombatSor`, `AiNec` (built by `path_sessions.py build`). `tools/path.py` `e2844c166519` before and after both runs. Saves set aside as `p54c` and restored. Seeds 6001–6026 (6018 development). Caps per game as in run:2026-11-04-path, unit cap 400, `PATH_CHAIN` 200 on the Nova cases of `CombatSor` (`k5-sor-oasis`, `-oasis-2`, `-flayer`, `-cotd`, `-river`, `-river-2`, `-glacial`). Tool hashes: `workspace/logs/path/2026-11-04-path-2-tools.sha256`.
+- **Development launch first** (`dev-bar`, seed 6901, `dev-2026-11-04-path-2-s1-6901-dev-bar.log`): rev 5 armed, 0 `LOGERR`, `COR` at 0x004B05E3, 0x004B0A05 and 0x005A65D9, `L1M` at the three reached sites and `L1U`. Development logs (`dev/`, `dev/manifest-path-2-dev.sha256`): that log; `k5-hop-act` (6911) and `k5-hop-in` (6912, 6921), whose `wpchain` hops failed (path/0006 § Hop stages); `k5-bar-cotd-2` (6018), moved there after the batch: it reached level 107 instead of 106 and the pilot ended after 20 s with 24 plans, no stage.
+- **Cases** (25 kept; level of the last `PLR`; plans = `PLN`; `workspace/logs/path/2026-11-04-path-2-s1-<seed>-<case>.log`, `manifest-path-2.sha256` passes from that directory):
+
+  | case | seed | level | plans | case | seed | level | plans |
+  |---|---:|---|---:|---|---:|---|---:|
+  | k5-bar-cotd | 6001 | 106 (4) | 1 269 | k5-pal-river | 6013 | 107 (4) | 1 462 |
+  | k5-bar-stony | 6002 | 4 (1) | 1 105 | k5-sor-cotd | 6014 | 106 | 946 |
+  | k5-pal-stony | 6003 | 4 | 613 | k5-bar-stony-2 | 6015 | 4 | 829 |
+  | k5-sor-oasis | 6004 | 43 (2) | 964 | k5-pal-stony-2 | 6016 | 4 | 707 |
+  | k5-bar-river | 6005 | 107 | 1 312 | k5-sor-oasis-2 | 6017 | 43 | 903 |
+  | k5-pal-cotd | 6006 | 106 | 852 | k5-pal-cotd-2 | 6019 | 106 | 964 |
+  | k5-sor-river | 6007 | 107 | 1 142 | k5-sor-river-2 | 6020 | 107 | 1 114 |
+  | k5-bar-jail | 6008 | 29 (1) | 229 | k5-bar-river-2 | 6021 | 107 | 1 464 |
+  | k5-necro | 6009 | 29 | 474 | k5-pal-jail-2 | 6022 | **4** | 134 |
+  | k5-pal-jail | 6010 | 29 | 169 | k5-sor-jail | 6023 | 29 | 442 |
+  | k5-sor-flayer | 6011 | 78 (3) | 459 | k5-pal-halls | 6024 | 57 (2) | 910 |
+  | k5-bar-halls | 6012 | 57 | 962 | k5-sor-glacial | 6025 | 115 (5) | 933 |
+  | | | | | k5-town-a1 | 6026 | 1 (1, town) | 313 |
+
+  (`k5-pal-jail-2` arrived in Stony Field (4), not Jail Level 1: the waypoint row clicked reached another level, so it is a Stony Field session; `k5-sor-flayer` ended after 60 s of its 200 s Nova stage; both kept as stages of the level they reached. The stage of each case was checked from the last `PLR` level and the plan count before counting it.) 25 logs, 20 671 plans.
+- **Observed** (`2026-11-04-path-2-check.txt`, `d93dad5e`): `RESULT OK: 0 mismatches over 20 671 reproduced plans; 0 unmodelled; controls passing a separated plan: 0; controls separating nothing: 7`. Per type (plans): 2 476, 4 3 713, 5 628, 6 664, 7 4 589, 8 1 303, 9 346, 10 248, 13 4 872, 14 233, 15 3 599. Grid (`2026-11-04-path-2-grid.txt`, `56e8a1fb`): wrong plans of 15 663 under frozen own marks 472, corpse reading 472, O1+C1..C3+T1 72, with W1 62, with W1 and L1 **11**, all `0x1000`.
+- **Conclusion:** [path/0006](0006-holdout.md). **Boundary of the 0 mismatches:** the planners given the game's live grids at the call, 11 types (2, 4, 5, 6, 7, 8, 9, 10, 13, 14, 15) on server units near the first player; not the predicted grid (11 wrong plans), not type 0, 1, 3, 11, 12, 16.
+- **Short:** W1 floors (7 of 16 act changes and 3 of 9 in-act arrivals seen), `deadCol` 1 on the client and class 273, class 195 and 225 watched seeds (3 and 22 of 50), Jump, `T1S` 0 of 7, the type-1 stages, town-follow. `audit: n/a, Tier A.`
+- **Review of `lane/p54c`, no session.** `tools/path.py check` and `grid` at the lane's tip reproduced `d93dad5e` and `56e8a1fb` byte for byte. `tools/path_holdout_review.py` (no rule added): `workspace/logs/path/review-p54c/ablate.txt` (`20354891a8b4`), each of O1, T1, C1..C3 off in the `code` pass, 204, 107, 89 against 72; `eleven.txt` (`c8f36656166b`), the 11 plans' lines. `manifest.sha256` passes from that directory. `audit: n/a, no check of a new run.`

@@ -111,6 +111,55 @@ CASES.update({
     "k4-dru-stony": ("normal", "SkillsDru", [wp("1,3"), ("pilot", CAST(["F1", "F2"], 40, walk=True), 600)], "Stony Field, Druid: seed watchpoints and their control",
                      {"PATH_ITEMS": "1", "PATH_CHAIN": "60", "PATH_CHAIN_CTL": "40"}),
 })
+
+# the fourth batch (logger rev 5, run:<date>-path-2, plan 0054 Phase 2, the hold-out of path/0005): the same characters, the stages longer and
+# more of them, and the waypoint hops of the W1 floor (act changes and arrivals inside an act, the player standing still after each)
+def hops(chain, first_from_town=True, linger=3):
+    """One pilot step per waypoint hop; the first from the Act IV town start uses the town waypoint's click (AS.WP)."""
+    out = []
+    for i, h in enumerate(chain):
+        tab, row = h
+        if i == 0 and first_from_town:
+            out.append(("wp", str(tab), str(row)))
+        else:
+            out.append(("pilot", ["wpchain", "--chain", "%d,%d" % (tab, row), "--linger", str(linger)], 240))
+    return out
+
+
+BAR_LONG = CAST(BAR_KEYS, 70, walk=True)
+PAL_LONG = CAST(PAL_KEYS, 70, walk=True)
+CASES.update({
+    "k5-bar-stony": ("normal", "PathBar", [wp("1,3"), ("pilot", BAR_LONG, 700)], "Stony Field, Barbarian: Whirlwind, Leap, Leap Attack (COR, L1)"),
+    "k5-bar-stony-2": ("normal", "PathBar", [wp("1,3"), ("pilot", BAR_LONG, 700)], "Stony Field again, Barbarian, another seed"),
+    "k5-bar-jail": ("normal", "PathBar", [wp("1,7"), ("pilot", BAR_LONG, 700)], "Jail Level 1 (maze), Barbarian"),
+    "k5-bar-halls": ("normal", "PathBar", [wp("2,4"), ("pilot", BAR_LONG, 700)], "Halls of the Dead 2 (maze), Barbarian"),
+    "k5-bar-cotd": ("normal", "PathBar", [wp("4,2"), ("pilot", BAR_LONG, 700)], "City of the Damned (Act 4 outdoor), Barbarian: trapped souls (deadCol 1)"),
+    "k5-pal-stony": ("normal", "PathPal", [wp("1,3"), ("pilot", PAL_LONG, 700)], "Stony Field, Paladin: Blessed Hammer, natural (SPX)"),
+    "k5-pal-stony-2": ("normal", "PathPal", [wp("1,3"), ("pilot", PAL_LONG, 700)], "Stony Field, Paladin, another seed"),
+    "k5-pal-jail": ("normal", "PathPal", [wp("1,7"), ("pilot", PAL_LONG, 700)], "Jail Level 1, Paladin"),
+    "k5-pal-jail-2": ("normal", "PathPal", [wp("1,7"), ("pilot", PAL_LONG, 700)], "Jail Level 1, Paladin, another seed"),
+    "k5-pal-halls": ("normal", "PathPal", [wp("2,4"), ("pilot", PAL_LONG, 700)], "Halls of the Dead 2, Paladin"),
+    "k5-sor-oasis": ("normal", "CombatSor", [("pilot", AS.stage("2,5", 260)[0][0], 410)], "Far Oasis, Nova: Scarab (class 225), seed watchpoints",
+                     {"PATH_CHAIN": "200"}),
+    "k5-sor-oasis-2": ("normal", "CombatSor", [("pilot", AS.stage("2,5", 260)[0][0], 410)], "Far Oasis again, Nova, seed watchpoints", {"PATH_CHAIN": "200"}),
+    "k5-sor-flayer": ("normal", "CombatSor", [("pilot", AS.stage("3,4", 200)[0][0], 350)], "Flayer Jungle, Nova, seed watchpoints", {"PATH_CHAIN": "200"}),
+    "k5-sor-cotd": ("normal", "CombatSor", [("pilot", AS.stage("4,2", 260)[0][0], 410)], "City of the Damned, Nova: trapped souls", {"PATH_CHAIN": "200"}),
+    "k5-sor-jail": ("normal", "CombatSor", [("pilot", AS.stage("1,7", 200)[0][0], 350)], "Jail Level 1, Nova and the mercenary (type 1 sites)"),
+    "k5-necro": ("normal", "AiNec", AS.CASES["a1-necro"][1], "Jail Level 1, Necromancer with golem and skeletons (type 1)"),
+    "k5-bar-river": ("normal", "PathBar", [wp("4,3"), ("pilot", BAR_LONG, 700)], "River of Flame (Act 4, in-act arrival), Barbarian"),
+    "k5-bar-river-2": ("normal", "PathBar", [wp("4,3"), ("pilot", BAR_LONG, 700)], "River of Flame again, Barbarian"),
+    "k5-bar-cotd-2": ("normal", "PathBar", [wp("4,2"), ("pilot", BAR_LONG, 700)], "City of the Damned again, Barbarian"),
+    "k5-pal-cotd": ("normal", "PathPal", [wp("4,2"), ("pilot", PAL_LONG, 700)], "City of the Damned, Paladin: Blessed Hammer"),
+    "k5-pal-cotd-2": ("normal", "PathPal", [wp("4,2"), ("pilot", PAL_LONG, 700)], "City of the Damned again, Paladin"),
+    "k5-pal-river": ("normal", "PathPal", [wp("4,3"), ("pilot", PAL_LONG, 700)], "River of Flame, Paladin: Blessed Hammer"),
+    "k5-sor-river": ("normal", "CombatSor", [("pilot", AS.stage("4,3", 260)[0][0], 410)], "River of Flame, Nova", {"PATH_CHAIN": "200"}),
+    "k5-sor-river-2": ("normal", "CombatSor", [("pilot", AS.stage("4,3", 260)[0][0], 410)], "River of Flame again, Nova", {"PATH_CHAIN": "200"}),
+    "k5-sor-glacial": ("normal", "CombatSor", [("pilot", AS.stage("5,5", 200)[0][0], 350)], "Glacial Trail, Nova", {"PATH_CHAIN": "200"}),
+    "k5-hop-act": ("normal", "PathBar", hops([(1, 3), (4, 1)] * 6), "W1: Act IV town and Stony Field, 12 act changes, the player standing after each"),
+    "k5-hop-in": ("normal", "PathBar", hops([(4, 3), (4, 1)] * 7), "W1: Act IV town and the River of Flame, 14 arrivals inside an act"),
+    "k5-town": ("normal", "PathBar", [("clicks", 100, 1.2)], "Act IV town on foot (town monsters)"),
+    "k5-town-a1": ("normal", "PathBar", hops([(1, 1)]) + [("clicks", 100, 1.2)], "Rogue Encampment on foot after a waypoint arrival (town monsters, the town-follow geometry)"),
+})
 CAP_SECS = 40 * 60
 
 
