@@ -567,6 +567,8 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-11-04 | `lane/r60c` review | 0060 P1.3 | architect-review | 257 777 | 43 | 15 | — | accept with fixes (10) | overclaim 2, misread 2, omission 5, stale cross-reference 1 |
 | 2026-11-04 | `lane/r68` | 0057, 0054, 0058 (finding notes) | reverser-static | 70 686 | 17 | 2 | — (no Ghidra, no harness) | accept with fixes (Tier B check) | 1: omission 1 |
 | 2026-11-04 | `lane/r68` check | 0057, 0054, 0058 (finding notes) | architect-check | 77 635 | 16 | 1 | — | accept with fixes (1) | omission 1 |
+| 2026-11-04 | `lane/snd` | 0062 (sound pair) | reverser-harness | 86 483 | 34 | 9 | slot 2 | accept with fixes (Tier B check) | 5: stale cross-reference 4, overclaim 1 |
+| 2026-11-04 | `lane/snd` check | 0062 (sound pair) | architect-check | 72 209 | 14 | 2 | — | accept with fixes (5) | stale cross-reference 4, overclaim 1 |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not
