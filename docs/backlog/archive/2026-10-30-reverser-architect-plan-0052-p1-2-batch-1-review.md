@@ -5,7 +5,7 @@ date: 2026-10-30
 status: done
 context:
   - ../../findings/ai/0002-pool-a.md
-  - ../../plans/0052-monster-ai.md#implementation-log
+  - ../../plans/done/0052-monster-ai.md#implementation-log
 resolution: "Tier B check 2026-10-30: accept, 0 fixes. (1) six unemulated rows [I] accepted for batch 1 (read sets undeclarable before first draw; Phase 2 logs reproduce rows 6 and 13). (2) P1.1 reopen condition (b) not met, accepted on the static read (three unit walks, no per-unit draw). (3) row 15 alt writer stays an open question."
 ---
 

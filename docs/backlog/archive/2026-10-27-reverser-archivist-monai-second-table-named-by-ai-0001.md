@@ -5,7 +5,7 @@ date: 2026-10-27
 status: done
 context:
   - ../../findings/ai/0001-machinery.md#3-the-ai-table-and-its-dispatch
-  - ../../plans/0052-monster-ai.md
+  - ../../plans/done/0052-monster-ai.md
 resolution: "MonAI.md § The second table and its open question now cite ai/0001 § 3 with its [I] tags (callers, 18 rows, gate, setters); tools/ai_survey.py gained a states command and st_* summary keys (baseline updated) [MonAI](../../tables/MonAI.md#the-second-table-at-0x0073d358-found-at-the-lanea52-review)"
 ---
 

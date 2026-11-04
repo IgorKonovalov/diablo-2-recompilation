@@ -5,7 +5,7 @@ date: 2026-11-03
 status: done
 context:
   - ../../findings/ai/0010-batch9.md
-  - ../../plans/0052-monster-ai.md#implementation-log
+  - ../../plans/done/0052-monster-ai.md#implementation-log
 resolution: "Tier B check accept with fixes (1), 2026-11-03; nothing blocks Phase 2; merged at 3960ea23."
 ---
 

@@ -4,7 +4,7 @@
 > **Question:** for each AI table row of batch 1 (2 `Skeleton` … 16 `ClawViper`, 142 `ClawViperEx`), what does its
 > think function do on an AI event: which `aip` slots and MonStats columns it reads, which AI-control words it keeps,
 > which draws it makes on which seed and in which order, and which command, skill or path request it ends in?
-> **Date:** 2026-10-30   **Plan:** 0052 (Phase 1, batch P1.2, catalogue batch 1)   **Status:** for review (`lane/r52b`)
+> **Date:** 2026-10-30   **Plan:** 0052 (Phase 1, batch P1.2, catalogue batch 1)   **Status:** reviewed (`lane/r52b`; plan 0052 closed 2026-11-04)
 
 Static reading of the pinned `Game.exe` in Ghidra (project copy `workspace/ghidra-r52b`, decompiled with scratch
 `__fastcall` signatures for the AI helpers, `b1-sym-scratch.csv`; the signatures are a reading aid, not symbol rows)

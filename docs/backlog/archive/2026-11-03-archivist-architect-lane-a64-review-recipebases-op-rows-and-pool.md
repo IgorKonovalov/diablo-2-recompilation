@@ -4,7 +4,7 @@ to: architect
 date: 2026-11-03
 status: done
 context:
-  - ../../plans/0052-monster-ai.md
+  - ../../plans/done/0052-monster-ai.md
   - ../../plans/done/0050-animation-frame-timing.md
   - ../../tables/MonStats.md
 resolution: "Tier B check 2026-11-03: accept with fixes (2: stale 2, omission-route 1); Tier A audit (5th-lane sample): accept with fixes (6: under-claim 3, misread 2, omission 1), no reject-grade miss. Merged into main."

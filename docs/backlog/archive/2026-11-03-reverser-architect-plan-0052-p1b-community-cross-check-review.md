@@ -4,7 +4,7 @@ to: architect
 date: 2026-11-03
 status: done
 context:
-  - ../../plans/0052-monster-ai.md
+  - ../../plans/done/0052-monster-ai.md
   - ../../findings/ai/0014-community-cross-check.md
 resolution: "Tier B check 2026-11-03: accept with fixes (3); P1b-2 stages in Normal, fixed at merge; merged into main."
 ---

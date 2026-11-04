@@ -3,7 +3,7 @@
 > **Status:** accepted (owner, 2026-10-27, with the approval of plan 0052)
 > **Date:** 2026-10-27
 > **Amends:** [ADR-0014](0014-scope-game-simulation.md) (adds a sixth simulation phase after its five), [ADR-0016](0016-pipelined-simulation-phases.md) (its static gate, for this phase only)
-> **Related plan(s):** [0052-monster-ai](../plans/0052-monster-ai.md) (phase (5), the gate); [0048-seed-to-world](../plans/done/0048-seed-to-world.md) (the creation-side composition this mirrors)
+> **Related plan(s):** [0052-monster-ai](../plans/done/0052-monster-ai.md) (phase (5), the gate); [0048-seed-to-world](../plans/done/0048-seed-to-world.md) (the creation-side composition this mirrors)
 
 ## Context
 

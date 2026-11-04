@@ -6,7 +6,7 @@ status: done
 context:
   - ../../findings/ai/0007-hirelings.md
   - ../../findings/ai/0008-bosses-a.md
-  - ../../plans/0052-monster-ai.md#implementation-log
+  - ../../plans/done/0052-monster-ai.md#implementation-log
 resolution: "Tier B check accept with fixes (1), 2026-11-03; merged at 9538f791."
 ---
 

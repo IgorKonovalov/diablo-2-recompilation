@@ -4,7 +4,7 @@
 > **Question:** for each AI table row of batch 2 (17 `SandLeaper` … 30 `Fetish`), what does its think function do on
 > an AI event: which `aip` slots and MonStats columns it reads, which AI-control words it keeps, which draws it makes on
 > which seed and in which order, and which command, skill or path request it ends in?
-> **Date:** 2026-10-30   **Plan:** 0052 (Phase 1, batch P1.2, catalogue batch 2)   **Status:** for review (`lane/r52c`)
+> **Date:** 2026-10-30   **Plan:** 0052 (Phase 1, batch P1.2, catalogue batch 2)   **Status:** reviewed (`lane/r52c`; plan 0052 closed 2026-11-04)
 
 Static reading of the pinned `Game.exe` in Ghidra (project copy `workspace/ghidra-r52c`, decompiled with the scratch
 `__fastcall` signatures of batch 1 carried onto the current `re/symbols.csv`, `b2-sym-scratch.csv`; a reading aid, not
@@ -139,7 +139,7 @@ if (melee) { if (chance(2)) return SetModeAtUnit(4, t); return Idle(aip4); }
 if (chance(1)) { Ovr(0, 75, 0); return Walk13(t, 7); }                          // draw#1
 s = { unit 0, best 0x7FFFFFFF };  AiUnitSearch(G, U, &s, AiSameBaseNearCb, 1);
 if (s.unit && aip3 * aip3 < s.best) { Ovr(0, 75, 0); return Walk(s.unit, 7); }   // rejoin the pack
-if (draw < 25) return T56(t, 3, s.unit); else return Idle(aip4);                // draw#2; flag = s.unit
+if (draw < 25) return T56(t, 3, 0); else return Idle(aip4);                      // draw#2
 ```
 
 - [I] The callback takes a monster (`Unit+0x00` = 1) other than the searcher with the searcher's `MonBaseId`, not in a
@@ -149,6 +149,7 @@ if (draw < 25) return T56(t, 3, s.unit); else return Idle(aip4);                
   fn:sub_0063EA40_MonIsDeathMode@0x0063EA40)
 - [C] The map up to the search, the block's two words included. (run:2026-10-30-ai-cat-emu-2, `panther`)
 - *Corrected 2026-11-04 (`lane/s52b` review, architect, read against the instructions):* the block gave `T56(t, 3, 0)`; the flag is `push ebx` (0x005F2426) with `ebx` = `s.unit` (0x005F23B8), so with a packmate found within `aip3` the walk reaches `MonAiMove` with flags 4.
+- *Corrected again 2026-11-04 (`lane/s52c` review, architect):* the note above is wrong, and the first block's 0 stands. `ebx` holds `s.unit` from 0x005F23B8, but `xor ebx, ebx` at 0x005F2403, in the inline step's `adc`, zeroes it before the `push ebx` at 0x005F2426. The flag is 0 and `MonAiMove` gets flags 0.
 
 #### 2.3 Row 19 `Swarm` (0x005F2460)
 

@@ -24,7 +24,7 @@ runs on, hit recovery, knockback and stun lengths, the block's length? This is p
   and plan 0045's run take as a logged input, and combat's "owed to animation" lengths, have a model.
 
 **Boundary.** Which mode a unit enters and when is an input here: for a player, the request (plan 0045); for a
-monster, the AI's choice (phase (5), plan [0052](../0052-monster-ai.md)). The path a moving unit follows is phase (5)'s;
+monster, the AI's choice (phase (5), plan [0052](0052-monster-ai.md)). The path a moving unit follows is phase (5)'s;
 its speed along that path and the steps per frame are this plan's. Animation playback, which cel is drawn, and every
 client-side display of timing stay out (ADR-0005, ADR-0014 § Time): timing enters as frame counts and event frames.
 

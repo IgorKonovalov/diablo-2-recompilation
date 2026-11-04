@@ -4,8 +4,7 @@
 > **Question:** when does a monster's (a summon's, a hireling's) AI run, who calls it and in which order, how does the
 > AI table dispatch a row, what AI state does the unit carry, how is a target found, how does the AI command a mode or
 > a skill, which path request does it make, and which draws does each part make on which seed?
-> **Date:** 2026-10-27   **Plan:** 0052 (Phase 1, batch P1.1)   **Status:** open (the catalogue batches P1.2 onward
-> read the 148 table rows and the 18 state rows)
+> **Date:** 2026-10-27   **Plan:** 0052 (Phase 1, batch P1.1)   **Status:** reviewed (`lane/r52`; plan 0052 closed 2026-11-04)
 
 Static reading of the pinned `Game.exe` in Ghidra (project copy `workspace/ghidra-r52`) and objdump, plus five
 emulated maps (run:2026-10-27-ai-emu). Table dumps, AI-row usage and pool counts come from
