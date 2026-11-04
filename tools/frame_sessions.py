@@ -69,8 +69,8 @@ def scenes(wp_x=None, wp_y=None, long=False):
     ("gate",) the pilot gate after the first window."""
     wp = (["--wp-x", str(wp_x)] if wp_x is not None else []) + (["--wp-y", str(wp_y)] if wp_y is not None else [])
     town = [("settle", 20), window("town", what="pilot: the player stands, the NPCs wander"), ("gate",),
-            ("bg", ["hop", "8", "0"], 30),
-            window("town", what="the player teleports in town (hops of 8 sub-tiles)"), ("join",),
+            ("bg", ["hop", "--walk", "--hop-times", "12", "8", "0"], 40),
+            window("town", what="the player walks in town (12 clicks of 8 sub-tiles, alternating; Teleport does not cast in town)"), ("join",),
             window("town", cover=1500, what="a frame = 0 (mod 1500) in the middle: the expiry sweep")]
     if long:
         town.append(window("town", cover=8192, what="a frame = 0 (mod 8192): SaveGameClients as a boundary oracle"))
