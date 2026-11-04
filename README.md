@@ -117,7 +117,7 @@ each row.
 | [`path/search`](docs/specs/path/search.md) | every planner as pseudocode: its cell reads, its draws and the most points it can write | reviewed | 2026-11-04 |
 | [`monsters/ai`](docs/specs/monsters/ai/README.md) | the AI event, its clock, the AI table and state, the event kinds and their seeds, and how far each is evidenced | reviewed | 2026-11-04 |
 | [`monsters/ai/machinery`](docs/specs/monsters/ai/machinery.md) | target search, the command, the path request, following, the helpers' draws, and each of the 18 tier AIs as pseudocode | reviewed | 2026-11-04 |
-| [`monsters/ai/catalogue`](docs/specs/monsters/ai/catalogue.md) | every other row of the AI table and the 18 state rows: `aip` meanings, decision tree and draws, each block a code reading | reviewed | 2026-11-04 |
+| [`monsters/ai/catalogue`](docs/specs/monsters/ai/catalogue.md) | every other row of the AI table and the 18 state rows: `aip` meanings, decision tree and draws, each block a code reading, and the spec names which have been read against the instructions | reviewed | 2026-11-04 |
 
 **Game rules** ([ADR-0017](docs/adrs/0017-scope-quests-travel-economy.md))
 

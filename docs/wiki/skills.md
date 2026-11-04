@@ -457,7 +457,7 @@ emulation did not follow, the spec stops its description there and marks the res
 - **What the Iron Maiden handler draws when its damage kills the cursed unit** is unknown, and the check does not
   cover that branch.
 - **Everything past each entry's stopping point**, which the spec lists per entry, waits for a game session or for
-  monster AI.
+  a check against [monster AI](monster-ai.md).
 
 ## Missiles: creation, speed, range, seed and damage
 

@@ -827,8 +827,8 @@
   Fetish (2), 34 Andariel (5), 36 (6), 65 (12), 70 (15), 95 (6), 98 (1), 114 (9). Decision to `SKILLS_SrvStart`: 899
   skill starts run inside a decision's event (between the think call and the exit), all 899 at the decision's last
   logged seed advanced 0–12 steps (the steps per row in `SKCHAIN`), and all 899 exit with the event's exit seed.
-- **Plan and seeds.** `PathPlan`: 9 618 entry/exit pairs inside decisions, 0 with a changed unit seed (types 2, 5, 6, 7,
-  13, 15 observed, 148/217/203/1 961/5 825/1 580). Seed accounting: every logged point of every decision (entry, think
+- **Plan and seeds.** `PathPlan`: 9 934 entries inside decisions (types 2, 5, 6, 7, 13, 15 observed, 148/217/203/1 961/5 825/1 580, `PLANTYPES`),
+  9 618 of them entry/exit pairs (`pp_pairs`), 0 with a changed unit seed; the other 316 have no exit line. Seed accounting: every logged point of every decision (entry, think
   call, boundaries, `MonSetMode`, `PathPlan`, skill start, exit) follows the previous one by whole LCG steps of the same
   unit seed, 0 violations (steps 0–7).
 - **State.** `AiCtl.state` is 0 at all 32 324 events (14 645 decisions and 17 679 others); no event in states 10–13.

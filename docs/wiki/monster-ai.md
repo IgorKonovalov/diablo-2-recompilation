@@ -110,7 +110,7 @@ emulation, 554 cases. The table's words are bytes of the image, and what they do
 | 1 | 104 | the target search | only with a target | a ring walk or an idle, and the event ends |
 | 2 | 16 | the target search | either way | |
 | 4 | 1 | the target search | only with a target | a ring walk, or the next event in 20 frames |
-| 5 | 1 | the target search | either way | |
+| 5 | 1 | the target search | either way | as kind 4, and then the think runs |
 
 Any other kind stops the event, and no stock row has one. With no target at kind 1, a unit on a cell that fails a collision test, or with one unit word at 3 or 19, walks a ring of 5 if its
 mode allows it. Otherwise it idles by the nearest checked player's distance `d`: 10 under 25, `d − 10` from 25 up to 35, and 25 from 35 up.
@@ -199,8 +199,8 @@ refused skill idles 10.
 
 The approach to a unit at a given distance draws nothing either (read from the code).
 
-**Seen.** The commands logged at the AI's sites of the mode set: WL 6 133, RN 1 533, A1 712, A2 425, SQ 289, S1 375, with path type byte 101
-for every-frame modes and 100 otherwise.
+**Seen.** The commands logged at the AI's sites of the mode set are led by WL 6 133, RN 1 533, A1 712, A2 425, SQ 289 and S1 375, with path type
+byte 101 for every-frame modes and 100 otherwise. A few of S2, S4, S3, NU and mode 7 also occur.
 
 ## The path request
 
@@ -216,7 +216,7 @@ every-frame one. A think can set a **one-shot override** of the type, a step par
 - With no point after types 2, 7, 9 or 13, the plan is run again as type 15.
 - The types the AI passes are 1, 2, 5, 6, 7, 13 and 15, plus the default 13. None passes 4, 10 or 14.
 
-**Seen.** Inside decisions of the first run, all 9 618 logged plan calls leave the unit's seed unchanged, on types 2, 5, 6, 7, 13 and 15. Type
+**Seen.** Inside decisions of the first run, all 9 618 logged plan calls with an exit line leave the unit's seed unchanged, on types 2, 5, 6, 7, 13 and 15. 316 more have no exit line, which is not examined. Type
 1 was not requested in that run, so "no draw" for it comes from [the planner's own emulation](pathing.md#best-first-type-1).
 
 **The town.** Every AI path type ends in a planner that runs only after the plan's town test, and a hostile searcher never takes a player
@@ -291,18 +291,18 @@ decisions, how many distinct first calls the map predicted, and how the map was 
 | Row | Name | What the think does | Decisions | First calls | Map |
 |---:|---|---|---:|---|---|
 | 2 | Skeleton | Out of melee a chance to walk; in melee a chance to attack, then a draw for which attack; else idle | 357 | 4 | emulated |
-| 6 | Fallen | Cancels its pending event every time. A dead monster near it in mode 0 makes it step away from its target. Then, from neutral only, a leader may call its group; attacks or walks by chance | 1 393 | 1 | by hand |
+| 6 | Fallen | Unless in mode 0 or 12, cancels its pending event. A dead monster near it in mode 0 makes it step away from its target. Then, from neutral only, a leader may call its group; in melee it attacks by chance; out of melee it walks within a range, else by chance walks a ring or idles | 1 393 | 1 | by hand |
 | 9 | Wraith | Out of melee a chance to move toward the target; in melee a chance of the first attack; else idle | 70 | 3 | emulated |
 | 13 | FallenShaman | In melee a chance of attack. Then it looks for a corpse, may call its group, may raise, may use its missile skill, and approaches or idles | 363 | 2 (358 and 5) | by hand |
-| 20 | Scarab | A leader may call its group. A unit under the call uses its skill in melee and otherwise walks. Otherwise it alternates its approaches, and in melee has chances of skill or attack | 180, 15 not comparable | 5 | emulated |
+| 20 | Scarab | A leader may call its group. A unit under the call uses its skill in melee and otherwise walks. Otherwise, out of melee, a word and a draw switch it between two approaches, and in melee it has chances of skill or attack, else idles | 180, 15 not comparable | 5 | emulated |
 | 21 | Mummy | `aip1` is a range, not a chance. A failed attack draw in melee idles and then walks in the same event | 168 | 5 | emulated |
-| 22 | GreaterMummy | Chances of attacks near; a search for wounded allies and corpses; by chance a skill on a wounded ally, a raise, or a cast at a hostile; else approaches. Radament's search is wider | 71 | 3 | emulated |
+| 22 | GreaterMummy | Chances of attacks near; a search for wounded allies and corpses; by chance a skill on a wounded ally, a raise, or a cast at a hostile; else approaches or idles. Radament's search is wider | 71 | 3 | emulated |
 | 28 | Vampire | Keeps an engaged or fleeing state and a skill cooldown; flees under 33 % of its life and returns at 75 % | 279 | 1 | by hand |
 | 29 | BatDemon | Cycles through perching, attacking and stepping away | 115: 110 think, 5 alt | 1 | think by hand, alt emulated |
 | 30 | Fetish | Hit and run: after a count of rounds, with the target's life above a slot, it steps 14 away and later comes back | 130 | 1 | emulated |
 | 34 | Andariel | In melee a chance of her skill, else attack. At range chances to idle or cast, else walk | 64 | 5 | emulated |
-| 35 | CorruptArcher | Looks for its own hostile first, and then every distance and command after is about that unit. Steps away, walks or runs to a band, then skills or attack | 95 | 1 | by hand |
-| 37 | SkeletonBow | With a hostile within 19, chances of attack or a sideways approach; else moves toward its band or idles. No skill column is read | 278 | 1 | emulated |
+| 35 | CorruptArcher | Looks for its own hostile first. With none it approaches the event's target or idles. With one, every distance and command after is about that unit: steps away, walks or runs to a band, then skills or attack | 95 | 1 | by hand |
+| 37 | SkeletonBow | With a hostile within 19, chances of attack or a sideways approach; else moves toward a ring around the event's target, or idles. No skill column is read | 278 | 1 | emulated |
 | 61 | Hireable | With a player owner: far from the owner it teleports or follows by distance bands; near, out of town, it fights a hostile within 25, picking a skill by weight; else wanders near the owner. With no player owner, it changes state | 5 697 | 1 | emulated |
 | 64 | SkeletonMage | Keeps a band from its hostile: walks in, steps away, attacks, or approaches sideways by chance | 226 | 1 | emulated |
 | 67 | NecroPet | Cancels its pending event every time. Teleports far from the owner and walks back from 29; inside that it has a melee and a ranged branch, and what sets the switch for a necromancer's pet is not read | 184 | 1 | emulated |
@@ -328,8 +328,8 @@ the block a pointer argument addresses. **It stops there.** What the callee retu
 | Third, every logged row | 6 524 | 4 476: 3 538 modelled, 938 by hand maps | 0 | 2 048 in rows with no model |
 
 **The floor's real scope.** 14 645 is every logged row, not the tier. **The 18 tier AIs hold 9 823 of it**, 15 of those the Scarab decisions not compared, each
-tier AI at 50 or more and the smallest at 55 (the table above). So 12 614 holds about 2 800 decisions of logged rows beyond the tier, which the
-[catalogue](#the-catalogue) counts, each at its own first boundary.
+tier AI at 50 or more and the smallest at 55 (the table above). So the 12 614 also holds decisions of logged rows beyond the tier, which the
+[catalogue](#the-catalogue) counts row by row, each at its own first boundary.
 
 **How much a 0 tests.** A row with one first call shows that callee and its words, not a branch choice. No think past that first call, nor any branch a callee's
 result decides, is claimed by these counts.
@@ -375,7 +375,7 @@ known memory but one unit field and its pointer arguments, and the known words e
 
 Everything a tier entry states past its first call outside those logged paths stays a code reading.
 
-**Row 28's block was also run as written** against every such decision of those logs: 100 decisions, 99 compared, 0 mismatches, 1 stopped at a return site not armed. That too is logged paths only.
+**Row 28's block was also run as written** against every row 28 decision of the revision 4 and 6 logs: 100 decisions, 99 compared, 0 mismatches, 1 stopped at a return site not armed. That too is logged paths only.
 Its melee arm under one unit word, all of its fleeing state and its two skill uses are reached by no log and stay read from the code
 ([machinery § T](../specs/monsters/ai/machinery.md#t-the-tier-ais)).
 
@@ -404,23 +404,23 @@ of calls can see it. Rows 2, 9 and 125 have no call past the first, so there is 
 
 The other rows of the table and the 18 state rows are [the catalogue](../specs/monsters/ai/catalogue.md#purpose), one entry each. **Row detail belongs there, and this page does not repeat it**: `aip` meanings, decision trees and draws in order.
 
-| Batch | Rows | State rows | Tier rows, by link | First call compared | Logged, not compared | Not logged |
-|---|---:|---:|---:|---:|---:|---:|
-| [0: the machinery rows](../specs/monsters/ai/catalogue.md#batch-0-the-machinery-rows) | 2 | 2 | 0 | 0 | 1 | 1 |
-| [1: acts I and II](../specs/monsters/ai/catalogue.md#batch-1-pool-a-acts-i-and-ii) | 16 | 0 | 4 | 6 | 2 | 4 |
-| [2: acts II and III](../specs/monsters/ai/catalogue.md#batch-2-pool-b-acts-ii-and-iii) | 14 | 0 | 6 | 1 | 2 | 5 |
-| [3: ranged, maggots, the Zakarum, nests](../specs/monsters/ai/catalogue.md#batch-3-pool-c-ranged-maggots-the-zakarum-nests) | 17 | 0 | 2 | 8 | 3 | 4 |
-| [4: skeleton mages to the traps](../specs/monsters/ai/catalogue.md#batch-4-pool-d-skeletonmage-to-the-traps) | 18 | 0 | 1 | 8 | 0 | 9 |
-| [5: summons](../specs/monsters/ai/catalogue.md#batch-5-summons) | 16 | 1 | 1 | 0 | 0 | 15 |
-| [6: hirelings](../specs/monsters/ai/catalogue.md#batch-6-hirelings) | 1 | 3 | 1 | 0 | 0 | 0 |
-| [7: bosses](../specs/monsters/ai/catalogue.md#batch-7-bosses-a) | 9 | 0 | 1 | 0 | 0 | 8 |
-| [8: towers, turrets, javelins and blowguns, Venom Lords, the siege](../specs/monsters/ai/catalogue.md#batch-8-pool-e-towers-turrets-javelins-and-blowguns-venom-lords-the-siege) | 13 | 0 | 1 | 4 | 1 | 7 |
-| [9: act V minions](../specs/monsters/ai/catalogue.md#batch-9-pool-f-act-v-minions) | 10 | 2 | 1 | 1 | 1 | 7 |
-| [10: act V rest, the Ancients, Baal's minions](../specs/monsters/ai/catalogue.md#batch-10-pool-g-act-v-rest-the-ancients-baals-minions) | 12 | 0 | 0 | 0 | 1 | 11 |
-| [11: Diablo, Nihlathak, the Baal rows, Uber Diablo and Baal](../specs/monsters/ai/catalogue.md#batch-11-bosses-b-diablo-nihlathak-the-baal-rows-uber-diablo-and-baal) | 7 | 0 | 0 | 0 | 0 | 7 |
-| [12: towns, NPCs and the state rows](../specs/monsters/ai/catalogue.md#batch-12-towns-npcs-and-the-state-rows) | 13 | 10 | 0 | 0 | 4 | 9 |
+| Batch | Rows | State rows |
+|---|---:|---:|
+| [0: the machinery rows](../specs/monsters/ai/catalogue.md#batch-0-the-machinery-rows) | 2 | 2 |
+| [1: acts I and II](../specs/monsters/ai/catalogue.md#batch-1-pool-a-acts-i-and-ii) | 16 | 0 |
+| [2: acts II and III](../specs/monsters/ai/catalogue.md#batch-2-pool-b-acts-ii-and-iii) | 14 | 0 |
+| [3: ranged, maggots, the Zakarum, nests](../specs/monsters/ai/catalogue.md#batch-3-pool-c-ranged-maggots-the-zakarum-nests) | 17 | 0 |
+| [4: skeleton mages to the traps](../specs/monsters/ai/catalogue.md#batch-4-pool-d-skeletonmage-to-the-traps) | 18 | 0 |
+| [5: summons](../specs/monsters/ai/catalogue.md#batch-5-summons) | 16 | 1 |
+| [6: hirelings](../specs/monsters/ai/catalogue.md#batch-6-hirelings) | 1 | 3 |
+| [7: bosses](../specs/monsters/ai/catalogue.md#batch-7-bosses-a) | 9 | 0 |
+| [8: towers, turrets, javelins and blowguns, Venom Lords, the siege](../specs/monsters/ai/catalogue.md#batch-8-pool-e-towers-turrets-javelins-and-blowguns-venom-lords-the-siege) | 13 | 0 |
+| [9: act V minions](../specs/monsters/ai/catalogue.md#batch-9-pool-f-act-v-minions) | 10 | 2 |
+| [10: act V rest, the Ancients, Baal's minions](../specs/monsters/ai/catalogue.md#batch-10-pool-g-act-v-rest-the-ancients-baals-minions) | 12 | 0 |
+| [11: Diablo, Nihlathak, the Baal rows, Uber Diablo and Baal](../specs/monsters/ai/catalogue.md#batch-11-bosses-b-diablo-nihlathak-the-baal-rows-uber-diablo-and-baal) | 7 | 0 |
+| [12: towns, NPCs and the state rows](../specs/monsters/ai/catalogue.md#batch-12-towns-npcs-and-the-state-rows) | 13 | 10 |
 
-So, of the 130 rows outside the tier: **28 have their first call compared, 15 are logged but have no model, so their first call is not raised, and 87 have no decision logged at all.** A state row's own decisions, where
+The [catalogue states the census](../specs/monsters/ai/catalogue.md#how-to-read-an-entry). Of the 130 rows outside the tier: **28 have their first call compared, 15 are logged but have no model, so their first call is not raised, and 87 have no decision logged at all.** A state row's own decisions, where
 it has any, are counted in its entry.
 
 **Every entry's block is a code reading.** What can sit on top of it:
@@ -437,12 +437,7 @@ that paragraph before relying on a block outside its read set. Within that sampl
 
 ### Row 106's pick
 
-A Shadow Master chooses its skill by building a list and walking it, and that walk has been read against the instructions ([the entry's steps 12 to 16](../specs/monsters/ai/catalogue.md#batch-5-summons)). It is not logged, its two emulated families stop at their first callee, and no control separates them. Earlier steps of the think may command first, and the catalogue has them.
-
-The list starts with the plain attack at score 0. Each of the unit's skills gets a score, and a skill the score's `aitype` terms keep draws a random addition. The skill is added only if its score beats that of the last entry, so **the list rises, and it has no cap of five.** The
-walk then goes from the top down: each entry takes one step of the seed, and only if the low two bits are not both 0 does the unit try that skill. The first try that succeeds ends the event. After the list comes the plain attack, then an idle of 15.
-
-**The terms by `aitype`, which decide which skills are kept and so which draw, are read by no finding.** So rows 106 and 143 are short by name: a rebuild cannot pick the same skill without them. Row 143 shares this think, with an init of its own, and no MonStats row names it.
+**Short, by name** ([catalogue, Open questions](../specs/monsters/ai/catalogue.md#open-questions)). A Shadow Master scores its skills to pick one. The finding gives the score's inputs and shape, not each `aitype`'s terms and target, and a rebuild cannot pick the same skill without them. Row 143 shares this think, and no MonStats row names it.
 
 ### The Uber rows
 
@@ -456,11 +451,11 @@ read from a file or packet, or a class named by a string looked up in the table,
 
 ## The shorts, by name
 
-What the runs did not reach, each stated as it stands ([overview § Open questions](../specs/monsters/ai/README.md#open-questions)). Each is open, and no run is scheduled.
+What the runs did not reach, each stated as it stands ([overview § Open questions](../specs/monsters/ai/README.md#open-questions)). Each is open. Those that lack logs need a further session in a game, and state 13, Duriel's melee and the Uber forced cases need one played by hand.
 
 - **Chaining: Andariel and BatDemon.** The chaining of decision pairs reaches 8 drawing pairs of the 20 asked for Andariel, and 1 of 300 pairs for BatDemon. For those two it stays a reading.
 - **BloodLord.** 38 decisions past the first, under the floor of 50, none with a call there, so nothing is claimed past the first call.
-- **The catalogue sample,** one row per batch outside the tier. Batches 5, 7, 10, 11 and 12 have no row that counts: the logs hold no non-tier row of 5, 7 and 11, batch 10 only in the logs of an earlier logger revision, and of batch 12, row 54 cannot fail, row 99 has no call past the first, row 32 has a fork in all 199 decisions of the revision 4 logs, and row 100 has 4 decisions. One row's map has not landed. The rest of the table stays at its emulated map or its reading.
+- **The catalogue sample** is short for batches 5, 7, 10, 11 and 12, which have no row that counts: the logs hold no non-tier row of 5, 7 and 11, batch 10 only in the logs of an earlier logger revision, and of batch 12, row 54 cannot fail, row 99 has no call past the first, row 32 has a fork in all 199 decisions of the revision 4 logs, and row 100 has 4 decisions. Row 130's map has not landed. The rest of the table stays at its emulated map or its reading.
 - **State 13, The Countess's state.** Two launches on her route ended the descent at levels 24 and 23, so no state 13 decision is logged. A session played by hand would give it. States 2, 3, 8, 9, 14 and 17 are not called dead.
 - **Duriel in melee range.** Row 44 was not logged, and his melee has not been played under the logger. The code's side: three fresh draws in order, for Smite, then Jab, then the second attack, else the first attack. That map ran under emulation to its first callee. The frequencies are arithmetic on it, with the slots in all three difficulties: **Smite 33 %, Jab 33.5 %, first attack 33.5 %.** A community page gives **17 % first attack, 33 % Smite, 50 % Jab** for Duriel, and the same for Über Duriel, the same think and the same slots. **The two disagree and it is listed unresolved**: no logged Duriel melee decision exists to settle it, and agreement or disagreement raises nothing.
 - **A champion corpse and the Greater Mummy.** A community page lists champions as an exception to its raising. By the reading, its search tests the unique flag only, so a champion corpse in range becomes its corpse, and the skill's own target test is not read for champions. No natural champion was logged. A built state cannot count, since a logger never writes game memory, so it needs a forced mode that writes nothing.
