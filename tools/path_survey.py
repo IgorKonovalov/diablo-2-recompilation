@@ -210,7 +210,7 @@ def rule_dir_table():
 
 
 def rule_face_step():
-    """g_PathFaceStep: d = ((i + 32) & 63) - 32; sign(d) * min(8, ((|d| + 7) >> 3) ^ 2). The readers take the low byte."""
+    """g_PathFaceStep: d = ((i + 32) & 63) - 32; t = (|d| + 7) >> 3; sign(d) * min(8, t * t). The readers take the low byte."""
     out = []
     for i in range(64):
         d = ((i + 32) & 63) - 32

@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, drlg/collision, anim/movement, path/search]
 consumed_by: [path/search, anim/movement, skills/overview, skills/missiles, skills/dispatch, skills/catalogue, drlg/collision, monsters/ai]
-tags: {C: 84, I: 80, L: 14}
+tags: {C: 85, I: 79, L: 14}
 updated: 2026-11-04
 ---
 
@@ -47,7 +47,7 @@ flowchart LR
 |---|---|
 | [PathTypes](../../tables/PathTypes.md) (the image's `g_PathPlanFuncs`, `g_PathTypeFlags`, `g_PathTypeParam98`) | planner, flags word and `+0x98` per type |
 | [PathDirTables](../../tables/PathDirTables.md) (the image's `g_PathDir8`, `g_PathDirTriples`, `g_PathSignTable`, `g_PathDirTable`) | the free-target step (§ C3), the aim's direction ([anim/movement § B](../anim/movement.md#b-the-per-frame-step)) |
-| `g_PathFaceStep`, given by the rule in § H4 (no table doc holds it yet) | the facing step (§ H) |
+| `g_PathFaceStep`, given by the rule in § H4 and in [PathDirTables](../../tables/PathDirTables.md#the-rules) | the facing step (§ H) |
 | tbl:MonStats2.txt:SizeX | a monster's size, hence its pattern ([drlg/collision F2](../drlg/collision.md#f-unit-marks)) |
 | tbl:MonStats.txt:npc, tbl:MonStats.txt:inTown | the town test (§ C2) |
 | tbl:Objects.txt:IsDoor, tbl:Objects.txt:Orientation | the object target's step (§ C1) |
@@ -529,11 +529,12 @@ H2. PathFaceDir(path, dir: u8):                                     [C] (ADR-001
 - H2. [I] The names are the reverser's, not an observed use: `+0x64` the facing, `+0x65` the direction to turn to, `+0x66` the turn step per direction difference. What applies `+0x66` is not in a finding (Open questions). (struct:PathRequestFields+0x64, fn:sub_006485F0_PathFaceDir@0x006485F0, data:g_PathFaceStep@0x006EB548)
 - H3. [I] `PathSetFacing(path, dir)` writes `dir & 0x3F` to both `+0x64` and `+0x65`; a null path writes nothing (0x006488A6). ([ai/0004](../../findings/ai/0004-pool-c.md), fn:sub_006488A0_PathSetFacing@0x006488A0)
 - H4. [C] (ADR-0015) **`PathFaceDir`'s read of `g_PathFaceStep`:** index `(dir − +0x64) & 63`, 4 bytes apart, and only the low byte goes to `+0x66` (`mov al, [0x006EB548 + edx*4]`, a `u8`). The family's 173 reads of the table are that read; its model takes the same bytes from the image, so they say nothing of what the table holds. (0x00648620, 0x00648627, run:2026-11-03-path-emu-1)
-- H4. [I] **The table's values,** 64 signed dwords at `0x006EB548`, are given by this rule ([ADR-0031](../../adrs/0031-constants-of-the-code-image.md)), in exact integers, `sign(x)` being −1, 0 or 1. A reader takes the result's low byte, so −8 arrives as `0xF8`. The `lane/s70` review computed it against the pinned image's 64 elements, with no difference, by a script it did not keep: no kept tool or gate survey holds this table yet, so the rule stays at this tag until the [archivist's entry](../../backlog/archive/2026-11-04-spec-writer-archivist-path-face-step-in-pathdirtables.md) lands. It is an equality on the image's elements, not a claim about how the table was made. (0x00648620, data:g_PathFaceStep@0x006EB548)
+- H4. [C] **The table's values,** 64 signed dwords at `0x006EB548`, equal this rule on the pinned image ([ADR-0031](../../adrs/0031-constants-of-the-code-image.md), [PathDirTables § The rules](../../tables/PathDirTables.md#the-rules)), in exact integers, `sign(x)` being −1, 0 or 1. A reader takes the result's low byte, so −8 arrives as `0xF8`. `tools/path_survey.py rules` compares them element by element, 64 of 64, gate survey `path` holds the mismatch count and the checksum, and the `lane/a70` review's implementation from the rule's words alone gets the same (`workspace/logs/a70/review/indep.py`). The tag is that equality on this image's elements only, no claim about how the table was made or about another build. (0x00648620, 0x0064887B, data:g_PathFaceStep@0x006EB548)
 
 ```
 g_PathFaceStep   i 0..63:   d = ((i + 32) & 63) - 32                  ; -32..31
-                            element [i] = sign(d) * min(8, ((|d| + 7) >> 3)^2)
+                            t = (|d| + 7) >> 3
+                            element [i] = sign(d) * min(8, t * t)
 ```
 
 ## Outputs
@@ -587,5 +588,5 @@ A class 225 missile's type-10 plan, `2026-11-04-path-2-s1-6004-k5-sor-oasis.log`
 - [L] **The 18 unresolved `+0x3C` bases** and the 22 store sites' unobserved rest (G3).
 - [L] **The target offset of path `+0x68`:** `PathTargetOffsetX87` (fn:sub_00679190_PathTargetOffsetX87@0x00679190) is x87 and not read.
 - [L] **Flags `0x400` and `0x20000`:** what they do and any reader outside the planners ([PathTypes](../../tables/PathTypes.md)).
-- [L] **What applies the facing step:** no finding names a reader of `+0x66`, a stepper of `+0x64` toward `+0x65`, or the facing's readers, and PathStep's call of the aim is given with one word (`PathAimNextPoint(p, 1)`, anim/0003 § 2), not as `f` and `arg`. The image holds a second reference to `g_PathFaceStep`, at 0x0064887B, not read in any finding. `g_PathFaceStep` is in no table doc or gate survey. [Reverser's entry](../../backlog/2026-11-04-spec-writer-reverser-path-facing-step-consumer.md), [archivist's entry](../../backlog/archive/2026-11-04-spec-writer-archivist-path-face-step-in-pathdirtables.md).
+- [L] **What applies the facing step:** no finding names a reader of `+0x66`, a stepper of `+0x64` toward `+0x65`, or the facing's readers, and PathStep's call of the aim is given with one word (`PathAimNextPoint(p, 1)`, anim/0003 § 2), not as `f` and `arg`. The image holds a second reference to `g_PathFaceStep`, at 0x0064887B, not read in any finding; [PathDirTables](../../tables/PathDirTables.md) records the instruction and its width only. [Reverser's entry](../../backlog/2026-11-04-spec-writer-reverser-path-facing-step-consumer.md).
 - [L] **Town-follow:** whether a stock town's geometry admits the route (plan 0052's H5, G3).

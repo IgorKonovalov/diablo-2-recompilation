@@ -144,7 +144,7 @@ Checksum: `zlib`'s CRC-32 of the table's elements in listed order, each packed a
 
 ### The rules
 
-`[C]` **`path_survey.py rules` computes each rule's values and compares them with the pinned image element by element: 668 of 668 bit-identical, 0 mismatches**, and a mismatch fails gate survey `path` (`dirtab_rule_mismatches=0`). Each rule is `[C]` as an equality on the pinned image's elements. **It was found by matching the data and is no claim about how the table was generated**, nor about any other build. The survey holds the rules as its own code and the gate checks that code against the image; it doesn't read the block below. The block's words were checked once, at the `lane/a54b` review, by an implementation written from them alone: 604 of 604 (`workspace/logs/a54b/review/indep.py`), for the 11 tables then in the block; `g_PathFaceStep`'s line was added later and rests on the survey's own rule and test (`lane/a70`), not on a second implementation. An edit to the block needs that check again.
+`[C]` **`path_survey.py rules` computes each rule's values and compares them with the pinned image element by element: 668 of 668 bit-identical, 0 mismatches**, and a mismatch fails gate survey `path` (`dirtab_rule_mismatches=0`). Each rule is `[C]` as an equality on the pinned image's elements. **It was found by matching the data and is no claim about how the table was generated**, nor about any other build. The survey holds the rules as its own code and the gate checks that code against the image; it doesn't read the block below. The block's words were checked once, at the `lane/a54b` review, by an implementation written from them alone: 604 of 604 (`workspace/logs/a54b/review/indep.py`), for the 11 tables then in the block; `g_PathFaceStep`'s lines likewise at the `lane/a70` review: 64 of 64 (`workspace/logs/a70/review/indep.py`). An edit to the block needs that check again.
 
 Every result is stored as a signed 32-bit little-endian element. Below, arithmetic is on exact integers unless a line says otherwise, `&` is on two's complement, `sign(x)` is -1, 0 or 1, `/` between integers is exact where it is used, and `mod` gives 0 to the modulus minus one.
 
@@ -173,8 +173,8 @@ g_PathDirTable                  q 0..127, row of three:  den = q * q + 127 * 127
 
 g_PathDirZero                   element [0] = 0, element [1] = 0
 
-g_PathFaceStep                  i 0..63:  d = ((i + 32) & 63) - 32
-                                element [i] = sign(d) * min(8, ((|d| + 7) >> 3) ^ 2)      (exact integers, >> on |d| >= 0)
+g_PathFaceStep                  i 0..63:  d = ((i + 32) & 63) - 32;  t = (|d| + 7) >> 3      (exact integers, >> on |d| >= 0)
+                                element [i] = sign(d) * min(8, t * t)
 ```
 
 - **`g_PathDirTable`, widths and rounding.** Columns 0 and 1 are exact integers, every product below 2^63, so no floating point enters them; they are `trunc(4096 sin a)` and `trunc(4096 cos a)` for `a = atan(q / 127)` (`test_dirtable_relations`). Column 2 is IEEE-754 binary64: `q / 127.0` and the outer quotient round to nearest, `pi` is the double nearest to it, `atan` is the double function, and `trunc` goes toward zero. It has room: for `q` 1 to 126 the outer quotient is at least 0.0073 from any integer (`dirtab_z_margin_micro=7301`), so a double `atan` a few units in the last place out gives the same result; `q = 0` gives exactly 0; at `q = 127` the quotient is 8 within rounding and the `min` gives 7 on either side. Rows 0 and 127, as a check of a reimplementation: `0 4096 0`, `2896 2896 7`.

@@ -180,7 +180,7 @@ class Image(unittest.TestCase):
                 self.assertEqual(S.mismatches(w, rule()), 1, (name, i))
 
     def test_face_step_rule_is_the_stated_expression(self):
-        # d = ((i + 32) & 63) - 32; sign(d) * min(8, ((|d| + 7) >> 3)^2); no value is written here, the image is the oracle
+        # d = ((i + 32) & 63) - 32; t = (|d| + 7) >> 3; sign(d) * min(8, t * t); no value is written here, the image is the oracle
         v = self.v("g_PathFaceStep")
         for i in range(64):
             d = ((i + 32) & 63) - 32
@@ -236,6 +236,8 @@ class Image(unittest.TestCase):
     def test_every_recorded_reader_has_the_stated_width(self):
         rep = S.reader_report(EXE)
         self.assertEqual(len(rep), sum(len(t["readers"]) for t in S.DIRTABLES))
+        # the doc's count: 71 table and reader pairs, 67 instructions; a dropped reader changes it
+        self.assertEqual((len(rep), len({r[1] for r in rep})), (71, 67))
         bad = [r for r in rep if not r[4]]
         self.assertEqual(bad, [])
 
