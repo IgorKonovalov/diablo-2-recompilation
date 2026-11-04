@@ -263,9 +263,24 @@ def check(preds, logs, show=True):
             fr = [e for t, e in ev[i + 1:] if t == "SWF" and e["item"]["id"] == p["id"]]
             seen = [x for t, e in ev[i + 1:] if t == "SWP" for x in e["items"] if x[0] == p["id"]]
             if not seen and not fr:
-                k = "room inactive at every later sweep: not a sweep case (explained, rule added after the first check)"
-                mix.setdefault("sweep", {})[k] = mix.setdefault("sweep", {}).get(k, 0) + 1
-                explained.append(p)
+                # The class was added after the first check, which counted these as 6 failed predictions. It excludes an
+                # item only on an independent record: the player's level (PLR lid) before every later sweep differs
+                # from the level the drop was made on. Absence from the dumps alone is not accepted as inactivity.
+                dlid = next((x[1]["lid"] for x in reversed(ev[:i]) if x[0] == "PLR"), None)
+                later_lids = []
+                last = None
+                for t, e in ev[i + 1:]:
+                    if t == "PLR":
+                        last = e["lid"]
+                    elif t == "SWP":
+                        later_lids.append(last)
+                if dlid is not None and later_lids and all(l is not None and l != dlid for l in later_lids):
+                    k = ("player on another level at every later sweep, item in no dump and no free: not a sweep case "
+                         "(a failed prediction at the first check; class added after it)")
+                    mix.setdefault("sweep", {})[k] = mix.setdefault("sweep", {}).get(k, 0) + 1
+                    explained.append(p)
+                    continue
+                mism.append((p, "not listed at any later sweep and not freed; the player's level does not show the room inactive"))
                 continue
             if p["pred"] is None:
                 k = "no sweep frame logged at or past the expiry (unresolved)"
@@ -302,7 +317,7 @@ def check(preds, logs, show=True):
         if rest:
             print("monster drops met again under a new id at the same class and cell (restored from a record): %d: %s" % (
                 len(rest), "; ".join("id %d -> %d at sweep %d, +0x24 %d" % r for r in rest)))
-        print("mismatches: %d (explained: %d)" % (len(mism), len(explained)))
+        print("mismatches: %d (excluded on the player's level record: %d; these were failed predictions at the first check)" % (len(mism), len(explained)))
         for p, why in mism[:20]:
             print("  %s %s #%d: %s" % (p["log"], p["kind"], p["i"], why))
     return mism, flat
