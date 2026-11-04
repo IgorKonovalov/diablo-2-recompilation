@@ -122,5 +122,71 @@ class T(unittest.TestCase):
         self.assertEqual(inv.merge_first_set(3, 5, 8, 9, 2), (70, 8))
 
 
+    # ---- P1.3: the ground drop's cell search over a toy field, the expiry, the distance, the line ends
+
+    @staticmethod
+    def toy_field():
+        """A field with each cell pointing straight along its larger axis, then diagonally: enough for short walks."""
+        out = bytearray(65536)
+        for y in range(256):
+            for x in range(256):
+                dx, dy = 128 - x, 128 - y
+                sx, sy = (dx > 0) - (dx < 0), (dy > 0) - (dy < 0)
+                out[y * 256 + x] = next(i for i in range(9) if (inv.DIR_DX[i], inv.DIR_DY[i]) == (sx, sy))
+        return bytes(out)
+
+    def test_drop_offset_and_rings(self):
+        f = self.toy_field()
+        r = inv.Room(0, 0, 20, 20, {})
+        self.assertEqual(inv.ground_drop_cell(r, 5, 5, f)[1:], (7, 8))
+        r.cells[(7, 8)] = 0x200
+        self.assertEqual(inv.ground_drop_cell(r, 5, 5, f)[1:], (6, 8), "ring 1: lowest distance, sides by row, left first")
+        # an off-room offset cell starts at the position
+        self.assertEqual(inv.ground_drop_cell(inv.Room(0, 0, 6, 6, {}), 5, 5, f)[1:], (5, 5))
+
+    def test_line_mask_and_origin(self):
+        f = self.toy_field()
+        cells = {(6, 7): 0x800}
+        self.assertEqual(inv.line_cells(f, 5, 5, 7, 8)[0], (7, 8))
+        self.assertNotIn((5, 5), inv.line_cells(f, 5, 5, 7, 8))
+        self.assertEqual(inv.line_blocked(f, 5, 5, inv.Room(0, 0, 20, 20, cells), 7, 8, 0x801), 1)
+        self.assertEqual(inv.line_blocked(f, 5, 5, inv.Room(0, 0, 20, 20, {(6, 7): 0x200}), 7, 8, 0x801), 0)
+
+    def test_fallback_and_base_room(self):
+        f = self.toy_field()
+        full = {(x, y): 0x200 for x in range(100) for y in range(100)}
+        r = inv.Room(0, 0, 100, 100, full)
+        self.assertEqual(inv.ground_drop_cell(r, 50, 50, f, 1)[0], r)
+        self.assertEqual(inv.ground_drop_cell(r, 50, 50, f, 1)[1:], (52, 53))
+        self.assertIsNone(inv.ground_drop_cell(r, 50, 50, f, 0)[0])
+        # the base moves to a room whose near list lacks the first: the fallback's lookup returns None
+        a, b = inv.Room(0, 0, 10, 10, {(x, y): 1 for x in range(10) for y in range(10)}), inv.Room(10, 0, 10, 10, {(x, y): 1 for x in range(10, 20) for y in range(10)})
+        a.near = [b]
+        self.assertIsNone(inv.ground_drop_cell(a, 2, 2, f, 1)[0])
+
+    def test_expiry(self):
+        self.assertEqual(inv.ground_expiry(10, 1, 7, 9, None, False), 0)
+        self.assertEqual(inv.ground_expiry(10, 0, 4, 9, None, False), 30010)
+        self.assertEqual(inv.ground_expiry(10, 0, 5, 9, None, False), 45010)
+        self.assertEqual(inv.ground_expiry(10, 0, 2, 4, 10000, False), 15010)
+        self.assertEqual(inv.ground_expiry(10, 0, 2, 4, 10001, False), 45010)
+        self.assertEqual(inv.ground_expiry(10, 0, 2, 9, None, True), 30010)
+        self.assertEqual(inv.ground_expiry(10, 0, 3, 9, None, False), 15010)
+
+    def test_sweep(self):
+        self.assertIsNone(inv.sweep_first([(4, 0), (1, 5), (4, 11)], 10))
+        self.assertEqual(inv.sweep_first([(4, 0), (1, 5), (4, 10)], 10), 2)
+
+    def test_line_ends(self):
+        self.assertIsNone(inv.line_ends(0, 0, 2, 1, 1, 1))
+        self.assertEqual(inv.line_ends(0, 0, 2, 5, 1, 1), ((2, 0), (4, 1)))
+        self.assertEqual(inv.line_ends(0, 0, 2, 3, 3, 1), ((2, 2), (2, 2)))
+
+    def test_dispatch_gate(self):
+        self.assertEqual(inv.dispatch_gate(0, True, 1, 0), "bad")
+        self.assertEqual(inv.dispatch_gate(0x20, True, 0x11, 0), "gate")
+        self.assertEqual(inv.dispatch_gate(0x14, True, 0x11, 0), "handler")
+        self.assertEqual(inv.dispatch_gate(0x41, True, 0x11, 0), "handler")
+
 if __name__ == "__main__":
     unittest.main()

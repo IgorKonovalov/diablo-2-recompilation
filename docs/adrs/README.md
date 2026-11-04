@@ -1,6 +1,6 @@
 # ADR index
 
-Next free number: **0029**
+Next free number: **0030**
 
 | # | Title | Status |
 |---|---|---|
@@ -32,3 +32,4 @@ Next free number: **0029**
 | [0026](0026-scope-in-game-message-layer.md) | The in-game message layer enters scope, both directions; transport, compression, encryption, Battle.net, realm and handshake stay out (amends 0002, 0014) | accepted (owner, 2026-10-30, with plan 0061) |
 | [0027](0027-archivist-reader-lanes-tier-a.md) | Archivist reader lanes take the full review instead of the lane check (amends 0023) | accepted (owner, 2026-11-03) |
 | [0028](0028-case-and-process-in-experiment-records.md) | A case is what an experiment record cites, a process may hold several cases, and the marks and the split are provenance; sharing stays opt-in with a stated reason (amends 0003) | proposed (2026-11-03, for the owner) |
+| [0029](0029-import-slots-and-import-boundaries-in-emulation.md) | Imports in emulated reproduction: a declared stand-in in an import slot, and a stop at an import's call (amends 0015, 0021) | proposed (architect, 2026-11-04; for the owner) |
