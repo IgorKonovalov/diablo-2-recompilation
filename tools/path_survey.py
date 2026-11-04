@@ -143,6 +143,8 @@ DIRTABLES = (
          readers=(0x64FCE0, 0x64FCE7, 0x64FCF8, 0x64FD0F)),
     dict(name="g_PathDirZero", va=0x006EB7D4, kind="i32", count=2, shape="[2]", read="DWORD", via_ptr=False,
          readers=(0x64FF33, 0x64FF38, 0x6507D6, 0x6507DB)),
+    dict(name="g_PathFaceStep", va=0x006EB548, kind="i32", count=64, shape="[64]", read="BYTE", via_ptr=False,
+         readers=(0x648620, 0x64887B)),
 )
 
 
@@ -207,6 +209,15 @@ def rule_dir_table():
     return out
 
 
+def rule_face_step():
+    """g_PathFaceStep: d = ((i + 32) & 63) - 32; t = (|d| + 7) >> 3; sign(d) * min(8, t * t). The readers take the low byte."""
+    out = []
+    for i in range(64):
+        d = ((i + 32) & 63) - 32
+        out.append(sign(d) * min(8, ((abs(d) + 7) >> 3) ** 2))
+    return out
+
+
 def dirtable_z_margin():
     """The smallest distance to an integer of z's quotient over q 1..126 (q 0 is exact, q 127 is clamped)."""
     return min(abs(v - round(v)) for v in (math.atan(q / 127.0) / (math.pi / 32.0) for q in range(1, 127)))
@@ -225,6 +236,7 @@ RULES = {
     "g_PathSignTable": rule_sign_table,
     "g_PathDirTable": rule_dir_table,
     "g_PathDirZero": lambda: [0, 0],
+    "g_PathFaceStep": rule_face_step,
 }
 DIST_COPY_VA = 0x006EB180   # the table of UnitInteractDistance, docs/specs/items/inventory.md I2: 64 i32
 

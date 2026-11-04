@@ -1,8 +1,8 @@
 # PathDirTables: the direction and step tables of the path planners (`Game.exe` image)
 
-> **Source:** the pinned `Game.exe` image (no excel file)   **Tables:** 15, 882 elements: 278 listed, 604 by rule   **Records:** dwords, except one byte table
-> **Doc status:** every table's address, element width, shape and how it is indexed; four tables' values, and eleven tables' exact rules checked element by element against the image ([ADR-0031](../adrs/0031-constants-of-the-code-image.md)), all by script;
-> the width of each table taken from the instructions that read it (65 instructions, 69 table and reader pairs since the four walker reads serve two tables each, checked by script against `objdump`); each index shape from the same instructions (§ Layout);
+> **Source:** the pinned `Game.exe` image (no excel file)   **Tables:** 16, 946 elements: 278 listed, 668 by rule   **Records:** dwords, except one byte table
+> **Doc status:** every table's address, element width, shape and how it is indexed; four tables' values, and twelve tables' exact rules checked element by element against the image ([ADR-0031](../adrs/0031-constants-of-the-code-image.md)), all by script;
+> the width of each table taken from the instructions that read it (67 instructions, 71 table and reader pairs since the four walker reads serve two tables each, checked by script against `objdump`); each index shape from the same instructions (§ Layout);
 > the meanings taken from [path/0001](../findings/path/0001-pathplan-register.md), [path/0002](../findings/path/0002-search.md),
 > [path/0003](../findings/path/0003-short-planners.md) and [drlg/0008](../findings/drlg/0008-outdoor.md) with their tags and scopes
 > (plan 0054, entry `2026-11-04-spec-writer-archivist-path-direction-tables-doc`)
@@ -22,7 +22,7 @@ and its index. Generated and checked by `python3 -I tools/path_survey.py dirtabl
 "Read as" is the operand size of the instructions that read the table, `[C]` for each listed reader (`path_survey.py readers`): **a table of
 dwords is not always read as a dword**. `WORD` means the instruction loads the low 16 bits of the dword (`mov ax, WORD PTR [reg*8+table]`),
 so the table's other 16 bits are never read; every dword of those three tables is -1, 0 or 1, so the dword and its low word give the same
-signed value. "Via pointer" means the readers dereference a register that holds a pointer into the table (the pointer is built at the
+signed value. `g_PathFaceStep` is a dword table read as a `BYTE`, the low byte of the dword. "Via pointer" means the readers dereference a register that holds a pointer into the table (the pointer is built at the
 address given in § How each is read).
 
 | Table | Address | Elements | Stored as | Read as | Shape | Index | First address after |
@@ -42,10 +42,11 @@ address given in § How each is read).
 | `g_PathSignTable` | `0x006EB3F0` (symbol `0x006EB490` is index 0) | 81 | i32 | DWORD | centred, `-40..40` | `a + 9 b` | `0x006EB534` |
 | `g_PathDirTable` | `0x006EB7E0` | 384 | i32 | DWORD | `[128][3]` | `3 q + column`, `q = minor * 127 / major` | `0x006EBDE0` |
 | (unnamed) | `0x006EB7D4` | 2 | i32 | DWORD | `[2]` | a zero vector | `0x006EB7DC` |
+| `g_PathFaceStep` | `0x006EB548` | 64 | i32 | BYTE (the dword's low byte) | `[64]` | `(dir - facing) & 63`, 4 bytes apart | `0x006EB648` |
 
-- `[C]` The element widths come from the instructions: `g_PathStep8Long`, `g_T15Step` and `g_PathDir8` are read with `WORD PTR`; `g_PathDirTriples` with `movzx ... BYTE PTR [eax+eax*2+0x6f1648]`; the rest with `DWORD PTR`.
-  All 69 table and reader pairs (65 instructions: `0x0067BC87`, `0x0067BCCB`, `0x0067BD1A` and `0x0067BFFD` read through a walker's pointer and serve two tables each) are in § How each is read; `path_survey.py readers` disassembles them again and compares the size, **and nothing else**: it does not test an index.
-- `[C]` **The index form is read from the instructions before each load**, by hand at the `lane/a54` review, not by the script: `g_DirOctant` `lea eax,[eax+eax*2]`, then `*4`, the columns at `+0`, `+4`, `+8` (0x00678D00, 0x00678D03, 0x00678D48-0x00678D5C); `g_PathDirTriples` `[eax+eax*2+base]`, `+1`, `+2` (0x00678DC0-0x00678DD8); `g_PathDistNear` `lea eax,[eax+ecx*8]`, `*4` (0x006793AD, 0x006793B0); `g_PathStep8Long`, `g_T15Step` and `g_PathDir8` `*8` with `dy` at `+4` (0x00679C01, 0x00679C0D; 0x0067BC42, 0x0067BC53; 0x006481C7, 0x006481CF); `g_PathSearchTurnRows` `& 7`, `shl 5`, 4 added per try (0x0067A5D6, 0x0067A5D9, 0x0067A6A6); `g_T15DirFromStep` `3 dy + dx`, `*4`, from `0x006F1E28` (0x0067BBD6-0x0067BBE3, 0x0067BED2-0x0067BEDD); the four `g_T15` lists `[pointer + d*4]` (0x0067BC87, 0x0067BFFD); `g_PathSignTable` `lea ebx,[eax+ecx*8]`, `add ebx,ecx`, `*4` from `0x006EB490` (0x006480AF-0x006480C0); `g_PathDirTable` `lea edx,[eax+eax*2]`, `*4`, the columns at `+0`, `+4`, `+8` (0x0064FCDD-0x0064FCF8).
+- `[C]` The element widths come from the instructions: `g_PathStep8Long`, `g_T15Step` and `g_PathDir8` are read with `WORD PTR`; `g_PathDirTriples` with `movzx ... BYTE PTR [eax+eax*2+0x6f1648]`; `g_PathFaceStep` with `mov al, BYTE PTR [reg*4+0x6eb548]`, the low byte of a dword; the rest with `DWORD PTR`.
+  All 71 table and reader pairs (67 instructions: `0x0067BC87`, `0x0067BCCB`, `0x0067BD1A` and `0x0067BFFD` read through a walker's pointer and serve two tables each) are in § How each is read; `path_survey.py readers` disassembles them again and compares the size, **and nothing else**: it does not test an index.
+- `[C]` **The index form is read from the instructions before each load**, by hand at the `lane/a54` review, not by the script: `g_DirOctant` `lea eax,[eax+eax*2]`, then `*4`, the columns at `+0`, `+4`, `+8` (0x00678D00, 0x00678D03, 0x00678D48-0x00678D5C); `g_PathDirTriples` `[eax+eax*2+base]`, `+1`, `+2` (0x00678DC0-0x00678DD8); `g_PathDistNear` `lea eax,[eax+ecx*8]`, `*4` (0x006793AD, 0x006793B0); `g_PathStep8Long`, `g_T15Step` and `g_PathDir8` `*8` with `dy` at `+4` (0x00679C01, 0x00679C0D; 0x0067BC42, 0x0067BC53; 0x006481C7, 0x006481CF); `g_PathSearchTurnRows` `& 7`, `shl 5`, 4 added per try (0x0067A5D6, 0x0067A5D9, 0x0067A6A6); `g_T15DirFromStep` `3 dy + dx`, `*4`, from `0x006F1E28` (0x0067BBD6-0x0067BBE3, 0x0067BED2-0x0067BEDD); the four `g_T15` lists `[pointer + d*4]` (0x0067BC87, 0x0067BFFD); `g_PathSignTable` `lea ebx,[eax+ecx*8]`, `add ebx,ecx`, `*4` from `0x006EB490` (0x006480AF-0x006480C0); `g_PathDirTable` `lea edx,[eax+eax*2]`, `*4`, the columns at `+0`, `+4`, `+8` (0x0064FCDD-0x0064FCF8); `g_PathFaceStep` `sub` of the byte at `+0x64` from the new direction, `and 0x3f`, `*4` (0x0064861A-0x00648620; 0x00648875-0x0064887B).
 - **How many rows.** `[C]` Bound by the code: the 25 cells (each term clamped to -2..2, then `+ 12`, 0x00678C63-0x00678C94, the same at 0x00678BC3-0x00678BF4), `g_PathDistNear`'s 8 and 8 (`cmp`, 0x006793A3, 0x006793A8), `g_PathSearchTurnRows`' 8 (`& 7`), `g_PathSignTable`'s -40..40 (the tests at 0x00648089, 0x00648092). `[I]` From the range of the index, not from a test at the load: `g_PathDirTable`'s 128 (`q = minor * 127 / major` with the minor no larger than the major, 0x0064FCB1-0x0064FCD7), the 8 rows of `g_PathStep8Long` and `g_PathDir8` (a direction from `g_DirOctant` or `g_PathDirTriples`), `g_T15DirFromStep`'s -4..4 (a step of -1..1). `[I]` The 16 rows of `g_T15Step` and the 16 entries of each `g_T15` list are the span to the next symbol: on path/0003 § 7's index, at most 14, with `Turn` and `Next` values of 0 to 6, their row 15 is not reached. (0x0067BEE4, 0x0067BC87, 0x0067BFFD)
 - `[C]` The tables lie in the file-backed part of a data section; no listed table extends past the next one's start
   (`tools/test_path_survey.py`, `test_neighbours_do_not_overlap`).
@@ -111,6 +112,7 @@ Readers, by table (`WORD` and `BYTE` are the size of the memory operand, `[C]` b
 | `g_PathSignTable` | `0x00648028`, `0x00648039`, `0x006480B4`, `0x006480C0` (DWORD) |
 | `g_PathDirTable` | `0x0064FCE0`, `0x0064FCE7`, `0x0064FCF8`, `0x0064FD0F` (DWORD) |
 | the two zero dwords | `0x0064FF33`, `0x0064FF38`, `0x006507D6`, `0x006507DB` (DWORD) |
+| `g_PathFaceStep` | `0x00648620`, `0x0064887B` (BYTE) |
 
 Scope of the reader list: a scan of the `objdump -d` listing of the whole image for any operand (displacement or immediate, not a `call` or `jmp` target) inside a table's span
 found these instructions and no other. The sites that take a table's address rather than read it are `g_PathSearchTurnRows` at 0x0067A5DC, 0x0067A969 and 0x0067AC41, and the four `g_T15` lists at
@@ -118,7 +120,7 @@ found these instructions and no other. The sites that take a table's address rat
 
 ## Values
 
-`[C]` Every element of all 15 tables is given here, 882 in all: **278 listed** in 4 tables and **604 by rule** in 11 tables. For `g_PathDistNear` and `g_PathSearchTurnRows` no exact rule is known. `g_DirOctant` and `g_PathDirTriples` stay listed as the owner's ruling named them; each equals a description by cases, which the owner ruled is not a rule here ([ADR-0031](../adrs/0031-constants-of-the-code-image.md)). `g_PathDirZero` is the tool's label for the two dwords at `0x006EB7D4`, which have no symbol.
+`[C]` Every element of all 16 tables is given here, 946 in all: **278 listed** in 4 tables and **668 by rule** in 12 tables. For `g_PathDistNear` and `g_PathSearchTurnRows` no exact rule is known. `g_DirOctant` and `g_PathDirTriples` stay listed as the owner's ruling named them; each equals a description by cases, which the owner ruled is not a rule here ([ADR-0031](../adrs/0031-constants-of-the-code-image.md)). `g_PathDirZero` is the tool's label for the two dwords at `0x006EB7D4`, which have no symbol.
 Checksum: `zlib`'s CRC-32 of the table's elements in listed order, each packed as a little-endian i32 (the `u8` table too, widened), the same numbers as gate survey `path` holds, `[C]` read from the pinned image (sha256 in [inventory](../inventory.md)).
 
 | Table | Elements | Given by | crc32 |
@@ -138,10 +140,11 @@ Checksum: `zlib`'s CRC-32 of the table's elements in listed order, each packed a
 | `g_PathSignTable` | 81 | rule | 2847324179 |
 | `g_PathDirTable` | 384 | rule | 3523208887 |
 | `g_PathDirZero` | 2 | rule | 1696784233 |
+| `g_PathFaceStep` | 64 | rule | 951300365 |
 
 ### The rules
 
-`[C]` **`path_survey.py rules` computes each rule's values and compares them with the pinned image element by element: 604 of 604 bit-identical, 0 mismatches**, and a mismatch fails gate survey `path` (`dirtab_rule_mismatches=0`). Each rule is `[C]` as an equality on the pinned image's elements. **It was found by matching the data and is no claim about how the table was generated**, nor about any other build. The survey holds the rules as its own code and the gate checks that code against the image; it doesn't read the block below. The block's words were checked once, at the `lane/a54b` review, by an implementation written from them alone: 604 of 604 (`workspace/logs/a54b/review/indep.py`). An edit to the block needs that check again.
+`[C]` **`path_survey.py rules` computes each rule's values and compares them with the pinned image element by element: 668 of 668 bit-identical, 0 mismatches**, and a mismatch fails gate survey `path` (`dirtab_rule_mismatches=0`). Each rule is `[C]` as an equality on the pinned image's elements. **It was found by matching the data and is no claim about how the table was generated**, nor about any other build. The survey holds the rules as its own code and the gate checks that code against the image; it doesn't read the block below. The block's words were checked once, at the `lane/a54b` review, by an implementation written from them alone: 604 of 604 (`workspace/logs/a54b/review/indep.py`), for the 11 tables then in the block; `g_PathFaceStep`'s lines likewise at the `lane/a70` review: 64 of 64 (`workspace/logs/a70/review/indep.py`). An edit to the block needs that check again.
 
 Every result is stored as a signed 32-bit little-endian element. Below, arithmetic is on exact integers unless a line says otherwise, `&` is on two's complement, `sign(x)` is -1, 0 or 1, `/` between integers is exact where it is used, and `mod` gives 0 to the modulus minus one.
 
@@ -169,10 +172,14 @@ g_PathDirTable                  q 0..127, row of three:  den = q * q + 127 * 127
                                 element [3 q + 2] = min(7, trunc(atan(q / 127.0) / (pi / 32.0)))
 
 g_PathDirZero                   element [0] = 0, element [1] = 0
+
+g_PathFaceStep                  i 0..63:  d = ((i + 32) & 63) - 32;  t = (|d| + 7) >> 3      (exact integers, >> on |d| >= 0)
+                                element [i] = sign(d) * min(8, t * t)
 ```
 
 - **`g_PathDirTable`, widths and rounding.** Columns 0 and 1 are exact integers, every product below 2^63, so no floating point enters them; they are `trunc(4096 sin a)` and `trunc(4096 cos a)` for `a = atan(q / 127)` (`test_dirtable_relations`). Column 2 is IEEE-754 binary64: `q / 127.0` and the outer quotient round to nearest, `pi` is the double nearest to it, `atan` is the double function, and `trunc` goes toward zero. It has room: for `q` 1 to 126 the outer quotient is at least 0.0073 from any integer (`dirtab_z_margin_micro=7301`), so a double `atan` a few units in the last place out gives the same result; `q = 0` gives exactly 0; at `q = 127` the quotient is 8 within rounding and the `min` gives 7 on either side. Rows 0 and 127, as a check of a reimplementation: `0 4096 0`, `2896 2896 7`.
 - **`g_T15TurnA`, `g_T15NextB`** share one rule; so do **`g_PathStep8Long`, `g_PathDir8`**. From the two lines above, `g_T15Step` row `d` is `g_PathStep8Long` row `(d - 2) & 7`, so it starts at `(0, -1)` and repeats at `d + 8`.
+- **`g_PathFaceStep`.** `[C]` The 64 elements equal the rule on the pinned image, by `path_survey.py rules` and `test_path_survey.py` (the test sets each element in turn off by one and the rule's comparison reports exactly that one). The values are no more listed than any other rule's. `[C]` The image reads it twice, `mov al, BYTE PTR [edx*4+0x6eb548]` at 0x00648620 and `mov al, BYTE PTR [eax*4+0x6eb548]` at 0x0064887B, each after `sub ...,[ecx+0x64]` and `and ...,0x3f`; the low byte goes to `[ecx+0x66]` (0x00648627, 0x00648882), so a negative element arrives as its two's-complement byte. `[I]` the meaning, the turn step per direction difference, is path/0001's (`g_PathFaceStep`, `I` in `re/symbols.csv`); [path/overview § H](../specs/path/README.md) states the reader.
 - **`g_PathSignTable`**, worked: `a = 3`, `b = 1` is index 12, entry `1`; `a = 1`, `b = 3` is index 28, entry `0`; so a target at `(3, 1)` steps `(1, 0)`.
 
 ### The listed tables

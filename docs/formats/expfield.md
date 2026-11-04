@@ -17,8 +17,8 @@ the findings.** No external document was read for this format and nothing is reg
   [inventory.md](../inventory.md) does not list archive members (its *MPQ contents* section), so the line the request
   asked for is the merged manifest's.
 - `[C]` (data) The pinned `Game.exe` holds the string `%s\expfield.d2` at `0x006EED4C` (the one occurrence of `expfield` in the image, case-insensitive).
-- `[I]` `sub_0066A2B0_FieldLoad` (`0x0066A2B0`) takes the file's bytes in memory; it does not build the path. The function at `0x0066A700` (no symbol row yet, [route](../backlog/archive/2026-11-04-architect-reverser-a69-review-finding-notes.md)) formats the path from that string (`0x0066A71F`), reads the file through `FILE_LoadWhole` (`0x00517079`) and passes the buffer to `FieldLoad` (`0x0066A753`, its one direct call). The matching free is `sub_0066A420_FieldFree` (items/0014 § Functions, `I` in `re/symbols.csv`).
-  (fn:sub_0066A2B0_FieldLoad@0x0066A2B0, fn:sub_0066A420_FieldFree@0x0066A420, fn:FILE_LoadWhole@0x00517079)
+- `[I]` `sub_0066A2B0_FieldLoad` (`0x0066A2B0`) takes the file's bytes in memory; it does not build the path. The function at `0x0066A700` (`sub_0066A700_FieldLoadFile`, `I` in `re/symbols.csv`, items/0014 § Functions) formats the path from that string (`0x0066A71F`), reads the file through `FILE_LoadWhole` (`0x00517079`) and passes the buffer to `FieldLoad` (`0x0066A753`, its one direct call). Its one direct caller is `DATATBLS_LoadAll` at `0x00619462` `[I]` (`tools/xrefscan.py`: one hit, a `call`, and no 4-byte occurrence of the address in any section, so no table or pushed pointer; items/0014 § Functions). The matching free is `sub_0066A420_FieldFree` (items/0014 § Functions, `I` in `re/symbols.csv`).
+  (fn:sub_0066A2B0_FieldLoad@0x0066A2B0, fn:sub_0066A700_FieldLoadFile@0x0066A700, fn:DATATBLS_LoadAll@0x00619300, fn:sub_0066A420_FieldFree@0x0066A420, fn:FILE_LoadWhole@0x00517079)
 
 ## Layout
 
@@ -65,4 +65,4 @@ Output kept in `workspace/logs/a69/expfield-check.txt` (manifest `manifest.sha25
 
 - `[L]` What the two bytes at `0x00` are for. The loader reads past them (items/0014 § Data touched: "a u16 of 266 by
   this copy"); no reader of the value was named.
-- `[L]` Who calls `0x0066A700`, and whether anything else opens the file: not followed.
+- `[L]` Whether anything else opens `expfield.d2`: `tools/xrefscan.py` finds one direct caller of `0x0066A700` (`0x00619462`) and one absolute reference to the string at `0x006EED4C`, in that function's own format call (`0x0066A720`). A name built another way is not covered by either scan.
