@@ -1,7 +1,7 @@
 # Formats
 
 One file per container or binary format (`mpq.md`, `installer.md`, `excel-bin.md`, `ds1.md`, `dt1.md`,
-`palette.md`, `item-palette.md`, `dc6.md`, `dcc.md`, `cof.md`, `animdata.md`, `d2s.md`). Owned by `archivist`. Each file covers layout tables with offsets and
+`palette.md`, `item-palette.md`, `dc6.md`, `dcc.md`, `cof.md`, `animdata.md`, `d2s.md`, `expfield.md`). Owned by `archivist`. Each file covers layout tables with offsets and
 sizes, endianness, the confidence of every field, and which `tools/` parser implements it.
 
 | format | doc | parser | status |
@@ -16,6 +16,7 @@ sizes, endianness, the confidence of every field, and which `tools/` parser impl
 | COF composite descriptors | [cof.md](cof.md) | `tools/cof.py` | plan 0006 Phase 5, awaiting review |
 | animation data (`animdata.d2`) | [animdata.md](animdata.md) | `tools/animdata.py` | plan 0050 Phase 0, reviewed |
 | item colour shifts | [item-palette.md](item-palette.md) | `tools/palette.py` (`itempal`) | plan 0009 Phase 3, awaiting review |
+| expanding-field table (`expfield.d2`) | [expfield.md](expfield.md) | `tools/expfield.py` | lane/a69, awaiting review |
 | golden traces (`.jsonl` conformance cases) | [golden-trace.md](golden-trace.md) | `tools/golden.py` | plan 0059 Phases 1-2, awaiting review |
 | calc formula pools (`*code.bin`) | [calc.md](calc.md) | `tools/calc_survey.py` | plan 0035 Phase 0, awaiting review |
 
