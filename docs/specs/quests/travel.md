@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, drlg/collision, drlg/warps, objects, quests/progression, save/d2s]
 consumed_by: [quests/progression, monsters/spawn, objects]
-tags: {C: 75, I: 87, L: 5}
+tags: {C: 75, I: 89, L: 5}
 updated: 2026-11-04
 ---
 
@@ -245,13 +245,19 @@ Step notes:
   return can be null though the start cell lies in the first room, and a found cell's return can be null when the last
   room tried does not list it. No free cell with `fallback` 1 keeps the start cell, blocked or not. (0x0064E043,
   0x0064E13C, 0x0064E21F, 0x0064E23F, run:2026-11-04-ground-emu, [items/0014 § 1](../../findings/items/0014-ground-items.md#1-the-search))
-- B1. [C] (ADR-0015) **`other` is the origin of a walk, not a second footprint**: `Walk` to its return, family `line` of
-  run:2026-11-04-ground-emu. A walk step with no room, no map or no cells counts as blocked. The field is `expfield.d2`,
-  256 × 256 bytes after a 10-byte header; byte `d` steps `dx[d]`, `dy[d]` from the tables at `0x00749780` and `0x007497A4`,
-  and 8 is the centre. In a check of the whole file every cell walks to the one byte 8, each walk as long as the
-  Chebyshev distance. (fn:sub_0066A670_FieldWalkBlocked@0x0066A670, fn:sub_0066A5D0_FieldStep@0x0066A5D0,
+- B1. [I] (`drop`, pending ADR-0029) **`other` is the origin of a walk, not a second footprint**: the search hands it to
+  `Walk`, from the candidate's room. (fn:COLL_FindFreeNear@0x0064DEA0, fn:sub_0066A670_FieldWalkBlocked@0x0066A670,
+  run:2026-11-04-ground-emu, [items/0014 § 6](../../findings/items/0014-ground-items.md#6-corrections-to-earlier-readings))
+- B1. [C] (ADR-0015) **`Walk`** to its return, family `line` of run:2026-11-04-ground-emu. A walk step with no room, no
+  map or no cells counts as blocked. The field is `expfield.d2`, 256 × 256 bytes after a 10-byte header; byte `d` steps
+  `dx[d]`, `dy[d]`, with `dx` = 0, 1, 1, 1, 0, −1, −1, −1, 0 at `0x00749780` and `dy` = −1, −1, 0, 1, 1, 1, 0, −1, 0 at
+  `0x007497A4`, and 8 is the centre. In a check of the whole file every cell walks to the one byte 8, each walk as long as
+  the Chebyshev distance. (fn:sub_0066A670_FieldWalkBlocked@0x0066A670, fn:sub_0066A5D0_FieldStep@0x0066A5D0,
   data:0x00749780, data:0x007497A4, run:2026-11-04-ground-emu)
-- B1. [I] Sizes other than 1 and steps other than 1 are the reading: the portal's size 3 and step 5 were not run. There
+- B1. [I] The centre's row and column 128 are declared to that run; by the reading the loader stores half the file's 256
+  rows and columns. (0x0066A344, 0x0066A3E0)
+- B1. [I] Sizes other than 1 and steps other than 1 are the reading: neither end of a portal was run (the field end's
+  size 3 at step 1, with the walk; the town end's size 3 at step 5, with none). There
   `free` is `CollisionTest` of [drlg/collision § E](../drlg/collision.md#e-collisiontest-by-size) on `maskA`; with no `other`
   there is no walk and `maskB` is unused. Of the travel callers only the field end of G2 passes an `other`; the moving base
   applies to all of them. (fn:COLL_FindFreeNear@0x0064DEA0, 0x0056D213)
@@ -512,7 +518,7 @@ G1. ITEMUSE_TownPortal(player, item):                                [I] (fn:ITE
 G2. PortalObjectCreate(room, x, y, dest, &out, class, noSearch) → bool:   [C] for the draws and their order (fn:sub_0056D130_PortalObjectCreate@0x0056D130, run:2026-10-17-quests)
       if a player is given and RoomIsTown(room) and not (class = 60 and dest ∈ {39, 133, 134, 135, 136}): refuse
       act(dest) must equal act(room's level), else fatal
-      unless noSearch: room ← COLL_FindFreeNear(room, (x, y), other (x, y), 3, 0x3E01, 0xC01, fallback 0)
+      unless noSearch: room ← COLL_FindFreeNear(room, (x, y), other (x, y), 3, 0x3E01, 0xC01, fallback 0, radius 50, step 1)
       field ← SUnitCreate(object, class, x, y, mode 1)               ; draw 1: game seed; object seed ← Init(game seed low)
       SetMode(field, 1)                                              ; mode unchanged: no draw
       partner ← PortalPartnerCreate(field, dest, room's level)       ; G2a
@@ -542,7 +548,7 @@ Step notes:
   ([drlg/lifecycle](../drlg/lifecycle.md)): a reimplementation asserts the game seed at its exit.
   (fn:sub_0052D0F0_RoomUpdateOne@0x0052D0F0, run:2026-10-17-quests)
 - G2. [I] The field end's search tests a walk back to the point `(x, y)` with mask `0xC01` (B1: that walk, not a second
-  footprint), its size 3 not run; with no free cell and no fallback the open fails. (fn:sub_0056D130_PortalObjectCreate@0x0056D130, fn:COLL_FindFreeNear@0x0064DEA0)
+  footprint), its size 3 not run; its form of the call pushes radius 50 and step 1; with no free cell and no fallback the open fails. (fn:sub_0056D130_PortalObjectCreate@0x0056D130, fn:COLL_FindFreeNear@0x0064DEA0, 0x0056D213, 0x0064E81C, 0x0064E81E)
 - G1. [C] The refusal in a town: six uses of the tome in the Rogue Encampment and in Harrogath returned at the town test
   (0x005BE2E2 → 0x005BE3CE) with no portal created, the player's portal unchanged and no draw on the game, quest or
   player seed. (fn:ITEMUSE_TownPortal@0x005BE290 0x005BE2DB–0x005BE2E2, run:2026-10-19-quests3: x-entry, x-entry2,

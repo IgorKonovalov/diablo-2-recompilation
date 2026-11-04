@@ -146,8 +146,8 @@ first one reached; the emulation stops at `UnitGetRoom`, so the code after it st
 fn:sub_00558B90_ActExpiredItemsFree@0x00558B90, 0x00620BB0, run:2026-11-04-ground-emu)
 - [I] After that boundary the unit is unlinked, sent to every player and freed.
 (fn:sub_00558B90_ActExpiredItemsFree@0x00558B90, [items/0014 § 3](../../findings/items/0014-ground-items.md#3-lifetime-in-an-active-room))
-- [I] **A monster's or chest's drop has `+0x24` 0 until its room has deactivated.** `ItemCreate` goes through `SUnitCreate`,
-which zeroes the item data, and neither calls `ItemGroundExpiry`; so in a room that stays active such an item is never
+- [I] **A monster's or chest's drop has `+0x24` 0 until its room has deactivated.** `ItemCreate`, which makes these and
+`DropGoldPile`'s piles, goes through `SUnitCreate`, which zeroes the item data, and neither calls `ItemGroundExpiry`; so in a room that stays active such an item is never
 swept. A release's record takes `ItemGroundExpiry` afresh (`0x00541B6C`, § G), not the old `+0x24`, and the restore
 (§ H) sets the field to `max(saved, frame + 15000)`, a saved 0 staying 0, so from then on this sweep can free the item
 with the room active. `ItemPlaceOnGround` (a player's drop, an overflow, `DropGoldAmount`, NPC menus, the cube's) writes
@@ -616,8 +616,8 @@ G1. ItemGroundExpiry(item, frame) → u32:                          [C] (ADR-001
       return frame + 15000                                        ; (796)
 ```
 
-The additions wrap as `i32`: for + 45000, frame 2 147 438 648 gives a negative expiry, about 2.7 years of play at 25
-frames a second, so no game reaches it. [C] (ADR-0015, family `expiry`, 0x00558A3F, run:2026-11-04-ground-emu)
+The additions wrap at 32 bits. Read signed, as the sweep of § A reads it, + 45000 at frame 2 147 438 648 is negative;
+that frame takes about 2.7 years of unbroken play at 25 frames a second. [C] (ADR-0015, family `expiry`, 0x00558A3F, run:2026-11-04-ground-emu)
 Stat 14 is compared signed. [I] (fn:sub_00558A10_ItemGroundExpiry@0x00558A10,
 fn:sub_00628CD0_ItemBaseIsQuest@0x00628CD0, fn:ITEMS_GetQuality@0x00627E70, fn:ITEMS_GetBaseType@0x0062B400,
 fn:ITEMS_IsSocketFiller@0x0062BEB0)

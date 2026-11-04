@@ -6,7 +6,7 @@ status: done
 context:
   - ../../findings/archaeology/0001-switches.md
   - ../../plans/0062-debug-and-cut-content.md
-resolution: "Plan 0062 Phase 3 done: -nosave, the class rows with -name and -ctemp, -gametype and -arena, the /players client-mode gate, all [I], the server's reader of +0x207 an open question (lane/s69, review pending). [plan log](../../plans/0062-debug-and-cut-content.md#implementation-log)"
+resolution: "Plan 0062 Phase 3 done: -nosave, the class rows with -name and -ctemp, -gametype and -arena, the /players client-mode gate, all [I], the server's reader of +0x207 an open question (lane/s69). [plan log](../../plans/0062-debug-and-cut-content.md#implementation-log)"
 ---
 
 Plan 0062 Phase 3 input, once P1 is reviewed: [archaeology/0001](../../findings/archaeology/0001-switches.md) § 7 names each switch's section. No reviewed statement is contradicted; these are branches the specs lack:

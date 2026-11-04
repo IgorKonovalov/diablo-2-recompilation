@@ -680,8 +680,10 @@ G11. PlayerDropGold(amount):                                                    
   type 3. (0x00530CFF, fn:sub_00530BF0_GameCreate@0x00530BF0, fn:sub_00477CA0_ClientGameCreateMsg@0x00477CA0,
   data:g_ClientGameMode@0x007A0610, [items/0011 § The writer of `game+0x6A`](../../findings/items/0011-economy.md#the-writer-of-game0x6a-2026-10-17-lanerbs2))
 - G10. [I] **The switches.** `-gametype N` is a source of `g_ClientGameMode` (launcher and multiplayer code write it too).
-  `-arena N` writes the create message's word at `+0x207`, and through the overlap the low word of `+0x209`, which
-  `ClientGameCreateMsg` tests against 0 and, if 0, writes `4 | 0x100000`. (0x0044D62D, 0x00477D33, 0x00477D15, 0x00477D24,
+  `-arena N` stores into the config block at `+0x207`, a dword that overlaps the low word of the block's `+0x209`.
+  `ClientGameCreateMsg` tests the block's `+0x209` against 0 and, if 0, writes `4 | 0x100000` there; it then copies the
+  block's low word at `+0x207` to the create message's `+0x25` and the block's `+0x209` to the message's `+0x27`.
+  (0x0044D62D, 0x00477D0C, 0x00477D15, 0x00477D24, 0x00477D33, 0x00477D3E,
   fn:sub_00477CA0_ClientGameCreateMsg@0x00477CA0, [archaeology/0001 § 7](../../findings/archaeology/0001-switches.md#7-behaviour-changing-switches-and-the-section-each-changes))
 - [I] **The corpse.** When the corpse is made, the remaining carried gold (0 after a non-PvP death) is dropped as
   piles by `CorpseDropGold`; with 16 corpses the items and gold are dropped instead (`CorpseOverflowDrop`).
@@ -1024,7 +1026,7 @@ so the amount is `5 + 19 = 24`, unchanged by `mul=`. G7: the killer's stat 79 is
   version-0 items, the recharge cost, charges used, skill wear, Baal's gold, the caps, pickup and the stash move,
   PvP and non-single-player deaths, the classic throwing weapon, the stack refill, Cain's
   free path, the broken ethereal sale, the stat-252 repair branch, `item_reducedprices` on a repair.
-- [L] What the server does with the create message's `+0x207` word (`-arena`, G10): `SrvClientMsgDispatch` case 0 past
+- [L] What the server does with the create message's word at `+0x25` (`-arena`, config `+0x207`, G10): `SrvClientMsgDispatch` case 0 past
   the type byte (0x0053F100) is not read; plan 0061 Phase 1 is its natural home.
 - [L] Which network modes `g_ClientGameMode` 6 and 8 are (game types 1 and 2). A multiplayer log of `Game+0x6A`
   (plan 0044) settles it.

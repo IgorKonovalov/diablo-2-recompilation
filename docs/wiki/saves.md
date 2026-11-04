@@ -56,7 +56,7 @@ character once, just before the respawn. That is an event save, not an autosave.
 player: the periodic save routine was called all through every session and never saved. Which of its checks stopped
 it is read from the code. The periodic save, and a hosted save that is skipped when nothing changed, need a host
 program to install a hook; read from the code, nothing in this build ever installs it, so those paths never run. Also
-read from the code: the `-nosave` switch turns off both file writers.
+read from the code: the `-nosave` switch makes the file writer and the hook's path do nothing.
 
 A one-client TCP/IP host saved into the client's buffer and wrote no file, which is the client-buffer path. The
 shutdown save was entered at every game exit and saved nothing. Saves on quest and [act](../glossary.md) events in the

@@ -565,7 +565,7 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-11-04 | `lane/r63` check | 0062 (-ns draws) | architect-check | 82 460 | 12 | 2 | — | accept with fixes (5) | overclaim 1, omission 4 |
 | 2026-11-04 | `lane/r60c` | 0060 P1.3 | reverser-static | 422 994 | 84 | 72 | — (static, Ghidra `ghidra-r60c`) | accept with fixes (Tier A, ruling on ADR-0015; ADR-0029 proposed) | 10: overclaim 2, misread 2, omission 5, stale cross-reference 1 |
 | 2026-11-04 | `lane/r60c` review | 0060 P1.3 | architect-review | 257 777 | 43 | 15 | — | accept with fixes (10) | overclaim 2, misread 2, omission 5, stale cross-reference 1 |
-| 2026-11-04 | lane/s69 | backlog sweep, 0062 P3 | spec-writer | 0 | 12 | 0 | — (no Ghidra, no harness) | pending | — |
+| 2026-11-04 | lane/s69 | backlog sweep, 0062 P3 | spec-writer | 0 | 12 | 0 | — (no Ghidra, no harness) | accept with fixes (Tier A) | 10: overclaim 3, misread 2, omission 3, wrong anchor 1, under-claim 1 |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not

@@ -599,8 +599,9 @@ re-seed the missile's draws are a function of the creator's value, not of the ga
   | `0x005C9290` | 195 | `lightunique` | 98 | 77 | 38 | 176 |
   | `0x005AC040` | 408 | `catapultchargedballbolt` | 20 | 20 | 10 | 36 |
 
-- H1. The range logged before the callback is the row's `Range` in all 654, and all three classes have a blank
-  `LevRange`; a missile with a `LevRange` draws by its own level (B1). The other re-seed callbacks and do functions reach
+- H1. The logged range is the row's `Range` in all 654: before the callback for the 618 of `0x005C9290`, at
+  `MissileCreate`'s exit for the 36 of `0x005AC040`, which has no logger line and does not write the range back. All three
+  classes have a blank `LevRange`; a missile with a `LevRange` draws by its own level (B1). The other re-seed callbacks and do functions reach
   the same walk when they set type 10, and are not rerun. [I] (fn:sub_0059FA30_MissileCreate@0x0059FA30,
   fn:sub_00649760_PathPlanStraight@0x00649760)
 - H2. The callbacks are stored at the parameter block's `+0x54` and called by `MissileCreate` with the new missile
