@@ -4,7 +4,7 @@ to: architect
 date: 2026-10-30
 status: done
 context:
-  - ../../plans/0055-server-frame.md
+  - ../../plans/done/0055-server-frame.md
 resolution: "Tier B check: accept with fixes (1, omission); frame survey rerun matches baseline; points 1-4 accepted as stated"
 ---
 

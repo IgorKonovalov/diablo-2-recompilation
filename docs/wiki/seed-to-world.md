@@ -143,7 +143,7 @@ last point is inferred: the code that adds the preset unit has not been read.
 ### D. The new-rooms walk
 
 ([chain § Algorithm](../specs/chain/README.md#algorithm) D, [lifecycle § D](../specs/drlg/lifecycle.md#d-the-new-rooms-walk-populate-once-restore-once-per-activation))
-At the start of the next frame the server walks the act's new rooms in the order of the act's room list. For each:
+At the start of the next frame ([the server frame](server-frame.md#rooms-in-the-frame)) the server walks the act's new rooms in the order of the act's room list. For each:
 
 1. **The wanderer tick**: one draw on the room's seed, always
    ([lifecycle § I](../specs/drlg/lifecycle.md#i-the-wanderer-tick)).

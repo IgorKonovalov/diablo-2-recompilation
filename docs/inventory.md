@@ -51,7 +51,7 @@ tables are catalogued in [tables/README.md](tables/README.md).
 ## Kept-log corpus (plan 0055 Phase 0)
 
 The harness logs of the runs that plans 0037 to 0052 name, classified as test data for the server-frame order model
-([plan 0055](plans/0055-server-frame.md)). The logs stay under `workspace/logs/` (never in git). `tools/frame_corpus.py`
+([plan 0055](plans/done/0055-server-frame.md)). The logs stay under `workspace/logs/` (never in git). `tools/frame_corpus.py`
 classifies them (`index`), reads the frame-stamped ones as one event stream per session (`read`) and checks the reader
 (`check`); gate survey `frame` (opt-in: it reads about 5.6 GB) pins the counts. The per-log index (path, size, logger,
 slot, date, seed, line and frame-stamped counts, runs, sha256 of every attributed log) and the per-log per-kind counts

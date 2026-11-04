@@ -5,7 +5,7 @@ date: 2026-10-30
 status: done
 context:
   - ../../findings/frame/0001-tick-and-messages.md
-  - ../../plans/0055-server-frame.md#implementation-log
+  - ../../plans/done/0055-server-frame.md#implementation-log
 resolution: "Reviewed 2026-10-30 (architect, Tier A): accept with fixes (5: omission 2, overclaim 1, wrong anchor 1, miscount 1), written into frame/0001, lifecycle.h and the plan 0055 log; rulings on Q2 (pilot pass/fail tests in Phase 2b), Q1 (floors confirmed, two windows per scene), ai/0001 (routed to the reverser by backlog entry), one-game scope with g_HitClassCounter as a process-wide input; P1.2 go."
 ---
 

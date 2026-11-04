@@ -2,7 +2,7 @@
 
 > **Subsystem:** sim/frame
 > **Question:** with every LCG step logged by site (`XS`) and the chain's rule of the `lane/p55b` review applied (arithmetic, class, touch table, per-`KD` even, draw-free kinds, order), do the pack and maze windows of the stock game chain with nothing resynchronised, and how many shared-seed pairs run in the predicted order?
-> **Date:** 2026-11-04   **Plan:** 0055 (Phase 2b)   **Status:** reviewed 2026-11-04 (`lane/p55c`, Tier A, accept with fixes; rulings in [plan 0055's log](../../plans/0055-server-frame.md)). The batch stopped on two of the plan's stop rules: the pack scene over its stop rate after one window, and 2 shared-seed pairs in the counted windows
+> **Date:** 2026-11-04   **Plan:** 0055 (Phase 2b)   **Status:** reviewed 2026-11-04 (`lane/p55c`, Tier A, accept with fixes; rulings in [plan 0055's log](../../plans/done/0055-server-frame.md)). The batch stopped on two of the plan's stop rules: the pack scene over its stop rate after one window, and 2 shared-seed pairs in the counted windows
 
 ## Predictions (committed before any kept log of the batch exists)
 

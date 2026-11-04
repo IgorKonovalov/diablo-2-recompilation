@@ -4,7 +4,7 @@ to: architect
 date: 2026-11-03
 status: done
 context:
-  - ../../plans/0055-server-frame.md
+  - ../../plans/done/0055-server-frame.md
   - ../../findings/frame/0005-dispatchers.md
 resolution: "Tier B check 2026-11-03: accept with fixes (3: overclaim 2, omission 1). P2a-ii closed as the static step; Phase 2a stays met in part and closes at Phase 2b's first window that places the 65 hooks; merged into main."
 ---

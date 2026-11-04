@@ -5,7 +5,7 @@ date: 2026-11-03
 status: done
 context:
   - ../../findings/frame/experiments.md
-  - ../../plans/0055-server-frame.md
+  - ../../plans/done/0055-server-frame.md
   - ../../findings/stats/0002-states.md
 resolution: "Tier B check accept with fixes (1), 2026-11-03; r55c dev runs need no re-run (no finding cites them); merged at fd2ca68a."
 ---
