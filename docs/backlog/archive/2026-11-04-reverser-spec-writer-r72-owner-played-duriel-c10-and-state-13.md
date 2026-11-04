@@ -2,17 +2,17 @@
 from: reverser
 to: spec-writer
 date: 2026-11-04
-status: open
+status: done
 context:
-  - ../findings/ai/0020-owner-played-duriel-countess.md
-  - ../findings/ai/experiments.md
-  - ../specs/monsters/ai/README.md
-  - ../specs/monsters/ai/catalogue.md
-  - ../wiki/monster-ai.md
-resolution: ""
+  - ../../findings/ai/0020-owner-played-duriel-countess.md
+  - ../../findings/ai/experiments.md
+  - ../../specs/monsters/ai/README.md
+  - ../../specs/monsters/ai/catalogue.md
+  - ../../wiki/monster-ai.md
+resolution: "Carried into monsters/ai by lane/s72: H1's rows and H1b, the Open questions, catalogue R44, S13 and R10, the census, the wiki and the map row [monsters/ai](../../specs/monsters/ai/README.md#open-questions), [catalogue](../../specs/monsters/ai/catalogue.md#how-to-read-an-entry). C11 and the state 13 setter stay open."
 ---
 
-[2026-11-04] from reverser (`lane/r72`), rewritten at the lane's review (architect) → spec-writer: carry [ai/0020](../findings/ai/0020-owner-played-duriel-countess.md) into monsters/ai. Not blocking. The review's rulings are already applied below: nothing here waits on a further ruling, and every sentence is meant to go in as written, with "(link it from the spec)" turned into the link. Numbers are from `workspace/logs/ai/r72/` and `r72/review/`.
+[2026-11-04] from reverser (`lane/r72`), rewritten at the lane's review (architect) → spec-writer: carry [ai/0020](../../findings/ai/0020-owner-played-duriel-countess.md) into monsters/ai. Not blocking. The review's rulings are already applied below: nothing here waits on a further ruling, and every sentence is meant to go in as written, with "(link it from the spec)" turned into the link. Numbers are from `workspace/logs/ai/r72/` and `r72/review/`.
 
 ## README § H
 
@@ -87,11 +87,11 @@ In the census bullet: 28 becomes 29, 15 becomes 16, 87 becomes 85; "38 entries h
 
 ## Wiki and the map
 
-In [wiki/monster-ai](../wiki/monster-ai.md), in the sentence before the list, change "state 13, Duriel's melee and the Uber forced cases need one played by hand" to "the Uber forced cases need one played by hand"; move its `based_on` date. Replace the two bullets with:
+In [wiki/monster-ai](../../wiki/monster-ai.md), in the sentence before the list, change "state 13, Duriel's melee and the Uber forced cases need one played by hand" to "the Uber forced cases need one played by hand"; move its `based_on` date. Replace the two bullets with:
 
 > - **State 13, The Countess's state.** Played by hand: 160 of her decisions follow the catalogue's block on the branches reached, and her Firewall goes through the four points of her preset's path, in the first of its two files. What sets the state was not seen, since the logger attached after she was created. States 2, 3, 8, 9, 14 and 17 are not called dead.
 > - **Duriel in melee range.** Played by hand, Normal: 308 decisions, Smite 102, Jab 116, first attack 90, each one's choice following from three fresh draws. The frequencies stay arithmetic on that, **Smite 33 %, Jab 33.5 %, first attack 33.5 %**, and a community page's **17 % first attack, 50 % Jab** fall outside what was measured. Über Duriel, the same think and the same slots, is not played.
 
-Update the map row's counts and date in [the research map](../specs/README.md) as the gate asks.
+Update the map row's counts and date in [the research map](../../specs/README.md) as the gate asks.
 
 Symbols `AiDuriel`, `AiSt13`, `AiPathSkillStep` and `AiCorruptRogue` are `C` for their role, each on the second source ai/0020's Functions table names, not for their blocks and not by the resumed rows.
