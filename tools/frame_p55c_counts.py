@@ -150,8 +150,9 @@ def extents(image, hits, P):
 def main():
     root = sys.argv[1]
     P = sys.stdout.write
-    kept = sorted(glob.glob(os.path.join(root, "2026-11-04-frame2-s1-*.log")))
-    dev = sorted(glob.glob(os.path.join(root, "dev-2026-11-04-frame2-*.log")))
+    run_id = sys.argv[3] if len(sys.argv) > 3 else "2026-11-04-frame2"      # `lane/p55d`: the same reading of run:2026-11-04-frame3
+    kept = sorted(glob.glob(os.path.join(root, run_id + "-s1-*.log")))
+    dev = sorted(glob.glob(os.path.join(root, "dev-" + run_id + "-*.log")))
     pilot = sorted(glob.glob(os.path.join(root, "2026-11-04-frame-s1-*.log")))
 
     P("== volume (lines per frame; without the client function; in-tick XS only)\n")
