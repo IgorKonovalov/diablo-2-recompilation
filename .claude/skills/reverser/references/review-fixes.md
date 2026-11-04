@@ -152,3 +152,4 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
     has exited. Seen: `tools/h1a_sessions.py` and `h1c_sessions.py` waited for three `TBL` lines, which only the
     runner's first load writes (the first case mark of H1a's kept log sits at line 17, before any `TBL`), so every
     session ran out the 120 s timeout; now `RDY` (harness efficiency fixes, `lane/hx`).
+17. **A logger never writes game memory or registers (ADR-0003), whatever the write is for.** A result that rests on a write is `[I]`, the plans after the first write leave the stock counts, and you look first for the read-only route. Seen: P1b-2's flag on corpses (`lane/p52b` review, [0052](../../../../docs/plans/0052-monster-ai.md)); the spiral's fraction word, where a printing break after `fistp` separates the readings in every natural plan (`lane/p54` review, [0054](../../../../docs/plans/0054-path-search.md)).
