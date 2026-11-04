@@ -14,7 +14,7 @@ routine, the planners behind it, the grid they read and the few draws they make.
 [path overview](../specs/path/README.md#purpose) and the [path search](../specs/path/search.md#purpose), and for corpses
 [collision § F5](../specs/drlg/collision.md#f5-corpse-marks-by-copy-of-the-grid).
 
-Who asks for a plan and why is each caller's ([skills and missiles](skills.md); a monster's AI has no page yet). The per-frame
+Who asks for a plan and why is each caller's ([skills and missiles](skills.md), [monster AI](monster-ai.md#the-path-request)). The per-frame
 step along the points is [animation and timing](animation.md#the-step). What the grid's cells mean is
 [levels](levels.md).
 
@@ -428,7 +428,7 @@ outside it in either run. "Current" plans with the type the path already holds.
 | referenced by nothing | 2 | 16 |
 | client | 34 | out of scope |
 
-A walk, run or town walk start plans type 7. The AI's types are 1, 2, 5, 6, 7, 13 and 15, and a failed plan of 2, 7, 9 or 13 falls back to 15.
+A walk, run or town walk start plans type 7. The AI's types are 1, 2, 5, 6, 7, 13 and 15, and a failed plan of 2, 7, 9 or 13 falls back to 15; [monster AI](monster-ai.md#the-path-request) has how a think asks.
 No Missiles column chooses a type: it is a constant in the code that asks. All read from the code.
 
 ## What each count tests
@@ -512,5 +512,5 @@ From the specs' open questions ([overview](../specs/path/README.md#open-question
 - The [glossary](../glossary.md) for D2 terms.
 - Related wiki pages: [animation and timing](animation.md#movement) (the step along the points, speeds, knockback's length),
   [levels](levels.md) (rooms and the collision grid), [skills and missiles](skills.md) (the skills and missiles that ask for a plan and the
-  re-seed sites), [monsters](monsters.md) (how a monster is created), [randomness](randomness.md) (unit seeds and draws) and
+  re-seed sites), [monster AI](monster-ai.md) (what a monster asks for), [monsters](monsters.md) (how a monster is created), [randomness](randomness.md) (unit seeds and draws) and
   [how we know](how-we-know.md).

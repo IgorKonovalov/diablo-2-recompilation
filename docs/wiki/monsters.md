@@ -685,5 +685,5 @@ Each spec's *Open questions* has the full list: [pool](../specs/monsters/pool.md
   Each *Reimplementation notes* section lists the traps for someone rebuilding the system.
 - The [glossary](../glossary.md) for D2 terms.
 - Related wiki pages: [randomness](randomness.md) (seeds and draws), [levels](levels.md) (rooms, logic boxes, the
-  collision grid), [pathing](pathing.md) (how a monster's route is planned, and what its corpse does to the grid), [objects](objects.md) (what fills a room before the monsters), [items](items.md) (what a monster
+  collision grid), [monster AI](monster-ai.md) (when a monster thinks, how it finds a target and what it commands), [pathing](pathing.md) (how a monster's route is planned, and what its corpse does to the grid), [objects](objects.md) (what fills a room before the monsters), [items](items.md) (what a monster
   drops), [quests and travel](quests.md) (the quest hooks and the forced deaths) and [how we know](how-we-know.md).
