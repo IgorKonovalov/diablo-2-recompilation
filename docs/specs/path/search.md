@@ -1,10 +1,10 @@
 ---
 spec: path/search
-status: draft
+status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, drlg/collision, anim/movement, path/overview]
 consumed_by: [path/overview, anim/movement, skills/overview, skills/missiles, skills/catalogue, monsters/ai]
-tags: {C: 103, I: 34, L: 4}
+tags: {C: 102, I: 36, L: 4}
 updated: 2026-11-04
 ---
 
@@ -50,7 +50,7 @@ flowchart LR
 
 ### Tables
 
-These sit in the image's data. The values are read from the pinned image at the address, not listed here, except the short ones the findings state; [this entry](../../backlog/2026-11-04-spec-writer-archivist-path-direction-tables-doc.md) asks for their doc.
+These sit in the image's data. The values are read from the pinned image at the address, not listed here, except the short ones the findings state. A planner can't be written without them, so until [this entry](../../backlog/2026-11-04-spec-writer-archivist-path-direction-tables-doc.md) lands they are read from the pinned image at these addresses (`tools/path_scan.py tables`, `tools/path_emu3.py`); plan 0054 doesn't close before it.
 
 | Anchor | Shape | Used for |
 |---|---|---|
@@ -92,7 +92,7 @@ The context `ctx` and the record `path` are [overview § Runtime state](README.m
 | type 1 switch | `dx² + dy² ≤ 324` | 0x00679F43 | [C] (control `le325` 18 cases, run:2026-11-03-path-emu-3) |
 | type 1 pool | 200 nodes | 0x0067B1C0–0x0067B1CF | [C] (control `pool`, run:2026-11-03-path-emu-3) |
 | search store | 900 nodes, 10 000 tries a pass, 50 000 cells | 0x0067A77E, 0x0067A8EC, 0x0067AABC | [C] (controls `nodes`, `passes`, families `grid`, `over`, run:2026-11-03-path-emu-2) |
-| type 15 minimum limit under a target unit | 40 | 0x0067C312 | [C] (control `lim40`, run:2026-11-03-path-emu-3) |
+| type 15 minimum limit under a target unit | 40 | 0x0067C348–0x0067C34C | [C] (control `lim40`, run:2026-11-03-path-emu-3) |
 | random walk step | 2 subtiles | 0x0067A352 | [C] (control `step1`, run:2026-11-03-path-emu-3) |
 | spiral | `r += 0x2580`, `a += 16`, 77 points | 0x0067A180–0x0067A233 | [I] (the structure agrees under the emulator's rounding, control `swap`, run:2026-11-03-path-emu-3) |
 
@@ -264,7 +264,7 @@ PathWalkParam98(ctx) → n:                                          [C] (fn:sub
   +0x28 ← n;  return n
 ```
 
-- C. [C] No line first and no refresh test: unlike § B it starts at `ctx.start`, and the start is its first point. At most `ctx.limit` points from an empty list. (0x00679E8A, run:2026-11-03-path-emu-3, controls `param0` 164, `order` 158)
+- C. [C] No line first and no refresh test: unlike § B it starts at `ctx.start`, and the start is its first point. At most `ctx.limit` points from an empty list. (0x00679B30–0x00679C78, run:2026-11-03-path-emu-3, controls `param0` 164, `order` 158)
 - C. [I] With `+0x98` = 2 or −2 the three directions are the row's turned by 90°: the walk goes sideways to the line to the target rather than to it. (data:g_PathTypeParam98@0x006EB648)
 - C. [C] In the game these plans hold 6 points at most (run 2); the walk's other branches rest on the emulation. (`2026-11-04-path-2-check.txt`, run:2026-11-04-path-2)
 
@@ -397,7 +397,7 @@ Reduce(best) → n:                                                  ; 0x0067B69
 - G. [C] **The start is never kept; a single-segment route gives one point,** unlike the search. A raw 78 returns 0 (`t1stair`: 15 cases past 77, `maxret` 77). (0x0067B6C0–0x0067B72B, controls `max77`, `min2`)
 - G. [C] **Not read:** `ctx.limit`, `ctx.refresh`, `+0x91`. A type-1 route has no length limit but its pool. The two hash tables only place nodes in buckets: the model holds no hash and matches. (data at 0x006F1998, 0x006F1B98, run:2026-11-03-path-emu-3)
 - G. [I] A node is expanded once and has 8 neighbours, so the code's silent drop of a ninth link is not reached. (0x0067B28E)
-- G. [C] In the game the propagation stack reached 3 in the first run's 270 plans, 23 in the emulation, against 200 slots. (run:2026-11-04-path, run:2026-11-03-path-emu-3)
+- G. [I] The model's propagation stack reached 3 on the first run's 270 plans and 23 on the emulation's cases, against 200 slots; neither is the game's own depth, which nothing logs. (0x0067B28E, run:2026-11-04-path, run:2026-11-03-path-emu-3)
 
 ### H. Type 15: a line with two wall followers
 
@@ -490,9 +490,9 @@ T15Reduce(start, L, n) → count:                                    ; fn:sub_00
 
 - H. [C] The outcomes are by `OUTCOMES`: clear line, refused at 2 points or fewer, follow, follow with splice, truncation, loop. Controls `lim40` 32 and 7, `lim18` 120 and 150, `min2` 4 and 1, `reduce` 171, 230, 34, `wswap` 29, 99, 2, `noswap` 28, 66, 18. In the game `wswap` 627, `noswap` 498, `reduce` 858 on the second run. (run:2026-11-03-path-emu-3, run:2026-11-04-path-2)
 - H. [C] **Most plans end at 0:** 2 273 of the second run's 3 309, the planner's own refusal or a free line of too few cells. (`2026-11-04-path-2-check.txt`, run:2026-11-04-path-2)
-- H. [C] So a line like E, SE, E, SE loses every other corner. (control `reduce`, run:2026-11-03-path-emu-3)
+- H. [C] **`T15Reduce` drops** a point whose step equals the last, and, with nothing dropped since, a point where both coordinates of the step change, after which the next point is kept. So E, S, E, S loses every other corner, and E, SE, E, SE, a line's own steps, which share a coordinate, loses none (`review-s54/literal.txt`). (0x0067C26A–0x0067C288, control `reduce`, run:2026-11-03-path-emu-3)
 - H. [I] A follower count of 0 reads as a point: `last` is then the stop word, as a point of (1, 0) or (0, 0). No control separates it. (0x0067C0E2–0x0067C13A)
-- H. [I] `lim` above 80 is reached only with bytes no writer gives (`lim50`, 4 emulated cases). A target unit with `+0x91` below 40 is a monster with its creation's 14, so its line reaches 39 subtiles where its other plans have 14. (0x0067C045, 0x0067C312)
+- H. [I] `lim` above 80 is reached only with bytes no writer gives (`lim50`, 4 emulated cases). A target unit with `+0x91` below 40 is a monster with its creation's 14, so its line reaches 39 subtiles where its other plans have 14. (0x0067C045, 0x0067C348)
 
 ### I. The random walk: type 10
 
@@ -548,6 +548,7 @@ PathPlanSpiral(path) → 77:                                         [I] the str
 
 - J. [C] **Truncation toward zero:** [overview § G4](README.md#g4-truncation). (0x0067A1A1, 0x0067A1CA, 0x0067A1AF, 0x0067A1E0, run:2026-11-04-path-2)
 - J. [C] The point list reproduces in 27 stock plans of the first run, which at a start fraction of `0x8000` on both axes are one list relative to the start, and in 233 natural plans of the second; `swap` separates them. (run:2026-11-04-path, run:2026-11-04-path-2)
+- J. [I] `g_SineTable` and `R` go on the x87 stack as f32, so the product has at most 48 mantissa bits and is exact in a double; `X` and `Y` are the low dwords of a 64-bit `FISTP`. The game's stored integers agree with the exact product ([overview § G4](README.md#g4-truncation)'s 43 804). (0x0067A196, 0x0067A1AC)
 - J. [I] No draw, no grid, neither `+0x90` nor `+0x91`. 94 iterations at the kept start, at most 95 in the emulator's cases; `r` would wrap at iteration 223 697. (0x0067A21D)
 - J. [I] The emulator's x87 can't test this: the p-code `FISTP` ignores the rounding field. So the list's tag rests on the game's plans. (0x0067A1A1, run:2026-11-03-path-emu-3)
 - J. [I] **The hammer at a wall:** this plan reads no grid; the end at a wall is the missile's own step, [skills/missiles § D3](../skills/missiles.md#d-each-frame), with [P12's entry](../../backlog/2026-11-04-architect-reverser+spec-writer-0054-p12-missile-own-cell-bit0-vs-floor.md). (fn:sub_005AE1F0_MissileMoveCollide@0x005AE1F0)
@@ -620,7 +621,7 @@ PathPlanSearch(ctx):                                               [C] (fn:sub_0
 PathSearchRun(r, ctx) → n:                                         [C] (fn:sub_0067AAA0_PathSearchRun@0x0067AAA0, controls step, half, regrid; 0x0067AAB9–0x0067AAC3, 0x0067AAFB, 0x0067AC3E–0x0067ACD4)
  1. if (i32)(r.w × r.h) > 50000: assert line 0x171                 ; 50 000 passes
  2. the store: 900 nodes of 0x1C bytes, x0, y0, x1, y1, stride ← r.w + 6, offsets 3 − x0, 3 − y0
-    clear (r.w + 6)(r.h + 6) cells to 0                            ; once a search; every pass reuses them
+    clear (r.w + 6)(r.h + 6) i32 cells to 0                        ; once a search; every pass reuses them
     cell(x, y) ← cells[(y + 3 − y0) × stride + 3 − x0 + x]         ; 0 unseen, 1 blocked, else the least g written
  3. drawing ← (ctx.type = 16);  seed ← path.unit + 0x20 under type 16      ; 0x0067AB74–0x0067ABA4
  4. h0: u16 ← PathOctile(start, target);  first: i16 ← h0
@@ -756,7 +757,7 @@ PathPlanType12(ctx): +0x24 ← 0;  +0x98 ← −4;  n ← PathWalkParam98(ctx); 
 | Planner | Most points | Reached | Tag |
 |---|---|---|---|
 | Greedy, `+0x98` 0 | `ctx.limit + 1`, 78 at limit 77 | `gbound` 78; game 21 (type 7, run 1), 27 (run 2) | [C] (0x00679E2E, run:2026-11-03-path-emu-3) |
-| The `+0x98` walk | `ctx.limit` | `g98` 76; game 6 | [C] (0x00679E8A, run:2026-11-03-path-emu-3) |
+| The `+0x98` walk | `ctx.limit` | `g98` 76; game 6 | [C] (0x00679B30–0x00679C78, `p3-bounds.txt`, run:2026-11-03-path-emu-3) |
 | Knockback, one point, type 11 | 1 | 1 | [C] (0x0067A134, 0x00679FBE, run:2026-11-03-path-emu-3) |
 | Type 1 | 77; a raw 78 returns 0 | `t1stair` 77 | [C] (0x0067B6C0, 0x0067B70B, run:2026-11-03-path-emu-3) |
 | Type 15 | `lim − 1` = 76 | `maxret` 56; game 29 | [I] the bound (0x0067BFFD–0x0067C00F, 0x0067C3E0) |
@@ -779,7 +780,7 @@ The draws of a type-10 plan, with its entry, each point and its exit seed from a
 
 - [C] The search refuses a free straight line (L2), and type 1 accepts one (§ G). Don't merge their reductions. (0x0067AA6B, 0x0067B6C0, run:2026-11-03-path-emu-2, run:2026-11-03-path-emu-3)
 - [C] The line reads the path's fields and the walk the context's (Inputs); knockback's line starts at `ctx.start`, greedy's at the position. (0x00679726, 0x0067A00D, run:2026-11-03-path-emu-3)
-- [C] Type 15 reads the byte `+0x91`, not `ctx.limit`, and `lim` is 40 at least under a target unit. (0x0067C312, control `lim18`, run:2026-11-03-path-emu-3)
+- [C] Type 15 reads the byte `+0x91`, not `ctx.limit`, and `lim` is 40 at least under a target unit. (0x0067C348, control `lim18`, run:2026-11-03-path-emu-3)
 - [C] `PathDirCell`'s `& 1` is not a sign: it changes the cell only for an even non-zero minor term. (0x00678C4C, control `sign`, run:2026-11-03-path-emu-1)
 - [C] A greedy walk's quirks are behaviour to keep: the doubled first point, the point short at a turned last step, the reversal's end. (0x00679DDA, 0x00679E1D, 0x00679DB7, run:2026-11-03-path-emu-3)
 - [C] `cell(n)` takes `g` before the bound test, and the cells survive between passes, so a later pass can refuse a cell an earlier one wrote. (0x0067A7EB–0x0067A80D, control `regrid`, run:2026-11-03-path-emu-2)
@@ -787,13 +788,13 @@ The draws of a type-10 plan, with its entry, each point and its exit seed from a
 ## Evidence
 
 - Findings: [path/0002](../../findings/path/0002-search.md), [path/0003](../../findings/path/0003-short-planners.md), [path/0004](../../findings/path/0004-per-event-reproduction.md), [path/0006](../../findings/path/0006-holdout.md), [experiments](../../findings/path/experiments.md).
-- Tools (the models, kept): `tools/path_emu1.py`, `tools/path_emu2.py`, `tools/path_emu3.py`, `tools/path.py`.
+- Tools (the models, kept): `tools/path_emu1.py`, `tools/path_emu2.py`, `tools/path_emu3.py`, `tools/path.py`; `tools/path_spec_review.py literal` runs §§ G and H as written against the models (`workspace/logs/path/review-s54/literal.txt`).
 - Types: `re/types/path.h` (`PathPlanCtx`, `PathSearchNode`, `PathSearchStore`, `T1Node`, `T1Store`, `T15Walker`).
 - Specs: [the overview](README.md), [drlg/collision](../drlg/collision.md), [anim/movement](../anim/movement.md), [rng](../rng/README.md).
 
 ## Open questions
 
 - [L] **A warp-paired room's rectangle:** `WarpPairRoomFind` appends it with a warp id and no gap rule, so only `PathPlan`'s window bounds that pair, to a side of about 220 subtiles (passes the assert at 48 400, overruns at 51 076). Whether a stock pair lies so, and whether a request takes it as `ctx.pTargetRoom`, is not read.
-- [L] Whether type 1's propagation stack can reach its 200 slots: measured 23 in the emulation and 3 in the game; no bound is proved.
+- [L] Whether type 1's propagation stack can reach its 200 slots: the model's depth is 23 on the emulation's cases and 3 on the game's plans; no bound is proved.
 - [L] The reasons behind type 1's "more than 5" and the greedy walk's one-step-short end: only the behaviour is read.
 - [L] A planner's branches no game plan separated: type 7's 324 boundary and retry, knockback's and one-point's context room, type 15's `lim` above 80, all of § L. Each stays on its emulation until a stage reaches it; no stage is planned.

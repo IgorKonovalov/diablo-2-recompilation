@@ -312,10 +312,10 @@ E1. PathPlanKnockback (path type 8):                               [I] (fn:sub_0
 - G1. [I] None. The step, the snap, the collision walk, the speeds, the knockback planner and the run drain call no RNG
   function. A movement step is an event kind with no draw and chains on nothing. (fn:sub_00650840_PathStep@0x00650840,
   fn:sub_0057F240_RunStaminaDrain@0x0057F240)
-- G1. [C] The replan and the target revalidation reach the planner, and `PathReplan`'s plans draw nothing: 836 + 889 replans
+- G1. [C] The replan and the target revalidation reach the planner, and `PathReplan`'s plans draw nothing: 836 + 889 replans (810 of the 836 stock)
   reproduce with the unit seed unchanged, all with a target unit at `PathPlan`'s entry. [path/overview § D](../path/README.md#d-the-17-types-planner-and-draws) has the draws per type, of
   which only the random walk (type 10) and type 16 make any: `PathReplan` writes neither and plans any other type as it stands, which the logged replans
-  (types 5, 6, 13, 15 in the first run) don't separate. The target revalidation before the call is not compared there. (fn:sub_00650350_PathReplan@0x00650350, fn:sub_00649970_PathPlan@0x00649970, run:2026-11-04-path, run:2026-11-04-path-2)
+  (types 5, 6, 13, 15 in both runs) don't separate. The target revalidation before the call is not compared there. (fn:sub_00650350_PathReplan@0x00650350, fn:sub_00649970_PathPlan@0x00649970, run:2026-11-04-path, run:2026-11-04-path-2)
 
 ## Outputs
 

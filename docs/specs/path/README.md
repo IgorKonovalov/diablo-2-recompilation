@@ -1,10 +1,10 @@
 ---
 spec: path/overview
-status: draft
+status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, drlg/collision, anim/movement, path/search]
 consumed_by: [path/search, anim/movement, skills/overview, skills/missiles, skills/dispatch, skills/catalogue, drlg/collision, monsters/ai]
-tags: {C: 78, I: 73, L: 13}
+tags: {C: 79, I: 76, L: 13}
 updated: 2026-11-04
 ---
 
@@ -190,14 +190,14 @@ C. PathPlan(path, unit, force) → i32:                              [C] 3–16b
 12.  ctx.room ← path.room;  ctx.troom ← RoomAtSubtile(room, tx, ty);  if either is 0: goto fail
 13.  if not PathTargetNotTown(unit, ctx) and not force: goto fail  ; C2
 14.  ctx.type ← path.type
-15.  UNIT_CollUnmark(unit, 0)                                      ; returns at once for a unit in mode 0, 12 or 17
+15.  UNIT_CollUnmark(unit, 0)                                      ; returns at once for a player in mode 0 or 17, a monster in mode 0 or 12 (0x006496AB–0x006496C5)
 16a. tu ← 0;  if t and UNIT_GetSizeX(t) ≠ 0 and flags & 0x800: tu ← UNIT_CollUnmark(t, 0)     ; shown on units whose unmark returns at once; the grid's half is § F4's T1
 16b. go ← 1;  if flags & 0x1000 and Blocked(ctx.room, tx, ty, pattern, testMask): go ← PathTargetFree(ctx)   ; C3
 17.  path.fx, fy ← ctx.target;  +0x24 ← 0;  +0x28 ← 0              ; [C] written before the slot read (241 cases, run:2026-11-03-path-emu-1)
 18.  n ← 0;  if go: n ← g_PathPlanFuncs[ctx.type](ctx)             ; [C] the slot's argument to IsBadCodePtr, every type 0–16; [I] the call, 0x00649BAE; IsBadCodePtr ≠ 0: fatal 0x37E
 19.  +0x28 ← n                                                     ; [I] 19–26: past the import, the tail (0x00649BA1–0x00649C6E)
 20.  start changed: fatal 0x389                                    ; a planner may move the target, not the start
-21.  if tu ≠ 0: UNIT_CollMark(t)                                   ; 0x00649BD7
+21.  if tu ≠ 0: UNIT_CollMark(path.+0x58)                          ; 0x00649BD3–0x00649BD7: the field read again, not t
 22.  UNIT_CollMark(unit)                                           ; 0x00649BE0: [C] also when the free step returned 0 (13 plannoop cases)
 23.  if n = 0: flags &= ~0x20;  return 0
 24.  PathAimNextPoint(path, 1; 1);  if +0x24 ≥ +0x28: goto fail    ; every point at the position
@@ -210,7 +210,9 @@ fail: +0x24 ← 0;  +0x28 ← 0;  flags &= ~0x20;  return 0
 - C. [I] `force` is read once, at step 13: it lets a refused town target through and changes nothing else. 66 of the 68 call sites push 0, 0x005FBFB7 pushes `EDI` = 0, and only the client site 0x004804C4 can force. (0x00649AEE, 0x005FBFB7, 0x004804C4)
 - C. [I] The window tests the request's target, before the free step: a target moved by C3 may lie a few subtiles further, and the planners see the moved one. `RoomAtSubtile` uses the unit's room's near list, so a target in an inactive room refuses. (0x00649AC5)
 - C. [C] A target unit at subtile x or y 0 returns 0 before the start test and clears nothing (32 `plan`, 36 `plannoop` cases); the other refusals clear. (0x006499D3–0x006499F0, run:2026-11-03-path-emu-1)
-- C. [C] A refused request draws nothing: `EAX` 0 and the seed unchanged in all 628 + 814 refusals of the two runs. Of them, the 211 and the 281 whose reason needs the town test, the room or the free step are **observed, not predicted**: their match says only that the game returned 0. (run:2026-11-04-path, run:2026-11-04-path-2, [path/0004 § 1](../../findings/path/0004-per-event-reproduction.md#1-the-log-and-what-is-compared))
+- C. [C] A refused request draws nothing: `EAX` 0 and the seed unchanged in all 628 + 814 refusals of the two runs (624 + 814 stock, F1). Of them, the 211 and the 281 whose reason needs the town test, the room or the free step are **observed, not predicted**: their match says only that the game returned 0. (run:2026-11-04-path, run:2026-11-04-path-2, [path/0004 § 1](../../findings/path/0004-per-event-reproduction.md#1-the-log-and-what-is-compared))
+
+- C. [C] **`PathPointsOutsideRoom` (step 25):** flag bit 0 is cleared, then set when the path has no room or a point of `0 ..< +0x28` lies outside the room's rectangle, `x ≤ px < x + w` and `y ≤ py < y + h`, room words `+0x4C`, `+0x50`, `+0x54`, `+0x58`. A count of 0 leaves it clear. (fn:sub_00647FB0_PathPointsOutsideRoom@0x00647FB0, run:2026-11-03-path-emu-1: family `outside`, 300 cases, control `le` 25)
 
 `Blocked(room, x, y, pattern, mask)` is `COLL_PatternTestBool`: [search § A1](search.md#a1-a-cell-read-blocked).
 
@@ -261,7 +263,10 @@ PathTargetExtendPlayer(ctx):                                       [C] (fn:sub_0
   dx, dy ← moved target − start
   nothing when |dx| ≥ 5, |dy| ≥ 5 or both 0
   step ← (sign dx, sign dy)                                         ; g_PathSignTable[dx + 9 dy], g_PathSignTable[dy + 9 dx]
-  while the next point is free and max(|dx|, |dy|) counts up below 5: that point becomes the target
+  m ← max(|dx|, |dy|);  p ← the moved target
+  while m < 5:
+    p ← p + step;  if Blocked(p): stop                              ; u16 adds
+    m ← m + 1;  ctx.target ← p
 ```
 
 `Blocked` here is `COLL_PatternTestBool(ctx.room, x, y, ctx.pattern, ctx.testMask)`; coordinates are u16 adds. `PathDirCell` is [search § A2](search.md#a2-directions). (data:g_PathDirTriples@0x006F1648, data:g_PathDir8@0x006EB398, data:g_PathSignTable@0x006EB490)
@@ -280,17 +285,18 @@ PathReplan(unit, flag):                                            [C] to the fi
     if flag ≠ 0: p.type ← 13
     else:        p.type ← 2;  p.+0x10 ← p.+0x18                     ; the request's own target
     n ← PathPlan(p, unit, 0)                                        ; returns at 0x006503CE: the boundary, reached in the family with flag 0x10 set
-    if n = 0: p.type ← 15;  PathPlan(p, unit, 0)                    ; [I] past the boundary (0x006503D2–0x006503DD); the same call as below
+    if n = 0: p.type ← 15;  n ← PathPlan(p, unit, 0)                ; [I] past the boundary (0x006503D2–0x006503DD); the same call as below
   else:
-    PathPlan(p, unit, 0)                                            ; returns at 0x006503E2: the boundary
+    n ← PathPlan(p, unit, 0)                                        ; returns at 0x006503E2: the boundary
+  return n                                                          ; [I] past the boundary (0x006503E2)
 ```
 
 - C4. [I] `PathReplan` writes `+0x3C` without `PathSetType`, so a re-plan keeps the flags word of the type before it: a 13 re-planned as 2 keeps `0x100`, a 2 re-planned as 15 lacks 15's `0x800`. (0x006503AF–0x006503D2)
-- C4. [C] 836 + 889 replans of the two runs reproduce, each with a target unit at `PathPlan`'s entry and the seed unchanged. The target revalidation is `PathReplan`'s own code before the call and is not compared: [I]. (0x006503CE, run:2026-11-04-path, run:2026-11-04-path-2)
+- C4. [C] 836 + 889 replans of the two runs reproduce (810 of the 836 stock, `review-s54/logs.txt`), each with a target unit at `PathPlan`'s entry and the seed unchanged. The target revalidation is `PathReplan`'s own code before the call and is not compared: [I]. (0x006503CE, run:2026-11-04-path, run:2026-11-04-path-2)
 
 ### D. The 17 types: planner and draws
 
-The table is [PathTypes](../../tables/PathTypes.md)' read from the image; the shape and the point bound are [path/search](search.md). A type with flag `0x40000` has no slot: `PathPlanStraight` (`fn:sub_00649760_PathPlanStraight@0x00649760`) chooses by type, and any other type there is fatal 0x207. [C] (run:2026-11-03-path-emu-1, 0x006499AE)
+The table is [PathTypes](../../tables/PathTypes.md)' read from the image; the shape and the point bound are [path/search](search.md). A type with flag `0x40000` has no slot: `PathPlanStraight` (`fn:sub_00649760_PathPlanStraight@0x00649760`) chooses by type, and any other type there is fatal 0x207. [C] (run:2026-11-03-path-emu-1, 0x006499AE) The counts under *Draw evidence* are the logged plans of each run; F1 says which are stock.
 
 ```mermaid
 flowchart TD
@@ -343,7 +349,7 @@ sequenceDiagram
   participant S as "missile seed"
   participant P as "PathPlan"
   participant W as "PathPlanRandomWalk"
-  C->>S: Init(path x + arg, 0x29A)
+  C->>S: Init(path word +0x10 + arg)
   C->>C: PathSetType(path, 10), PathSetByte90(path, r)
   C->>P: PathPlan(path, missile, 0)
   P->>W: flag 0x40000, EDX the unit's seed
@@ -351,7 +357,7 @@ sequenceDiagram
   W-->>C: +0x28 = (+0x91 >> 1) + 1
 ```
 
-- D5. [C] Neither `PathSetType` nor `PathSetByte90` steps the seed: at `PathPlan`'s entry it is still the `Init`, in all 100 of family `h1obs`. In 654 of 654 creations of the game's logs the exit seed is the one predicted from the `Init` and the logged range: 20 for class 458, 38 for class 195, 10 for class 408. The callbacks are [skills/missiles H1 and H4](../skills/missiles.md#h-re-seed-sites). (fn:sub_005C9290_MissCbReseedPathXPlusArg@0x005C9290, fn:sub_005AC040_MissCbReseedPathX@0x005AC040, run:2026-11-03-path-emu-3, run:2026-10-25-skills, run:2026-10-27-skills, run:2026-10-30-skills-catalogue)
+- D5. [C] The callback seeds the new missile with `Init(path word +0x10 + arg, 0x29A)` (`0x005AC040`: `Init(path word +0x10)`), then neither `PathSetType` nor `PathSetByte90` steps the seed: at `PathPlan`'s entry it is still the `Init`, in all 100 of family `h1obs`. In 654 of 654 creations of the game's logs the exit seed is the one predicted from the `Init` and the logged range: 20 for class 458, 38 for class 195, 10 for class 408. The callbacks are [skills/missiles H1 and H4](../skills/missiles.md#h-re-seed-sites). (fn:sub_005C9290_MissCbReseedPathXPlusArg@0x005C9290, fn:sub_005AC040_MissCbReseedPathX@0x005AC040, run:2026-11-03-path-emu-3, run:2026-10-25-skills, run:2026-10-27-skills, run:2026-10-30-skills-catalogue)
 - D6. [C] **After a type-10 plan, class 458 draws nothing more on that seed within its life.** 68 seeds watched by a hardware watchpoint: each next write is a block write over the unit's memory, and in each the high dword still holds the plan's exit value, which a draw would have changed. The control sees draws: of 14 watchpoints on monsters, 8 lines are the LCG step, and the other 6 are the same block write. That the write is the block's release or reuse is [I]. (0x00681F4F, 0x00682A1A, 0x0057CAE6, run:2026-11-04-path)
 - D7. [I] **`PATH_CHAIN` for classes 225 and 195, short of the floor of 50 each:** class 225, 216 type-10 plans and 22 seeds watched; class 195, 32 plans and 3 watched; all 25 block writes with the high dword unchanged, 0 of 25 a draw. The earlier run adds one watched seed each. (0x00681F4F, 0x0057CAE6, run:2026-11-04-path-2, run:2026-11-04-path)
 
@@ -371,7 +377,7 @@ All 68 direct calls of `PathPlan`, each type read at its site. "Current" plans w
 | client | 34 | out of scope (owner decision 5): 14 sites with a scanned `PathSetType`, 20 current |
 | **All** | **68** | |
 
-- E1. [C] All 13 893 plans of the first run came through sites of this register, by their return addresses. (`2026-11-04-path-check.txt`, run:2026-11-04-path)
+- E1. [C] All 33 722 stock plans of the two runs came through sites of this register, by their return addresses, and the first run's other 842 did too: 0 outside them in either run. The kept checks print that line only when it isn't 0; `review-s54/logs.txt` prints the 0. (0x00649970, `2026-11-04-path-check.txt`, `2026-11-04-path-2-check.txt`, run:2026-11-04-path, run:2026-11-04-path-2)
 - E2. [I] **The player's move:** a walk, run or town walk start (`PlrModeStartMove`, modes 2, 3, 6) plans type 7 after `PathMoveReset`; mode 19 plans type 8 with `+0x90 = 5`. **Packet 0x5F:** when the server's position is 15–45 subtiles off, a type-15 plan to the client's point with `testMask` `0x409` and limit 77, accepted only when its end is that point; mask, type and `+0x91` restored. (fn:sub_0057F090_PlrModeStartMove@0x0057F090, fn:sub_0054CD50_SrvPkt5FPlayerPos@0x0054CD50, fn:sub_0054CB10_PlrReachTest@0x0054CB10)
 - E3. [I] **The AI's types** are 1, 2, 5, 6, 7, 13 and 15; 5 and 6 through `MonPathPlanType`, 13 through `PathReplan`. `MonMovePlan` falls back to 15 after a failed plan of 2, 7, 9 or 13. The choice is the AI's: [ai/0001 § 8](../../findings/ai/0001-machinery.md#8-the-path-request), research-map row `monsters/ai`. (fn:sub_005A6290_MonPathPlanType@0x005A6290)
 - E4. [I] No Missiles column chooses a type: it is a constant in the do function or callback. (fn:sub_005C9290_MissCbReseedPathXPlusArg@0x005C9290, [PathTypes § Columns](../../tables/PathTypes.md#columns-a-request-reads))
@@ -380,7 +386,8 @@ All 68 direct calls of `PathPlan`, each type read at its site. "Current" plans w
 
 #### F1. The planners take the live grid
 
-- [C] **A planner reads the live grid: the cells as they are at the planner call, with the unit's and the target's unmarks of steps 15 and 16a already run.** Given the game's own cells at the call (`PLG`), its context and its record, the models reproduce **20 671 + 13 893 plans with 0 mismatches, on 11 types** (2, 4, 5, 6, 7, 8, 9, 10, 13, 14, 15), each compared on its return, its first `EAX` point words and its exit seed. 842 of the 13 893 come after the written probe's first write in two sessions and are not stock, which leaves 13 051, so 33 722 stock plans in all. (fn:sub_00649970_PathPlan@0x00649970, 0x00649BAE, run:2026-11-04-path-2, run:2026-11-04-path, [path/0006](../../findings/path/0006-holdout.md), [path/0004](../../findings/path/0004-per-event-reproduction.md))
+- [C] **A planner reads the live grid: the cells as they are at the planner call, with the unit's and the target's unmarks of steps 15 and 16a already run.** Given the game's own cells at the call (`PLG`), its context and its record, the models reproduce **33 722 stock plans with 0 mismatches, 20 671 of the second run and 13 051 of the first, on 11 types** (2, 4, 5, 6, 7, 8, 9, 10, 13, 14, 15), each compared on its return, its first `EAX` point words and its exit seed. (fn:sub_00649970_PathPlan@0x00649970, 0x00649BAE, run:2026-11-04-path-2, run:2026-11-04-path, [path/0006](../../findings/path/0006-holdout.md), [path/0004](../../findings/path/0004-per-event-reproduction.md))
+- [I] **The first run's other 842 plans** also show 0 mismatches and back nothing here. They come after the probe's first write in two sessions (`k-pal-stony` 532, `k-pal-jail` 310): a breakpoint wrote the start's fraction word, against ADR-0003, so they are not stock. By type: 4 82, 5 47, 6 51, 7 141, 13 369, 14 27, 15 125, and none of 2, 8, 9, 10. A "run 1" count on this page or the next holds them unless it says stock. (0x00649BAE, run:2026-11-04-path, `review-s54/logs.txt`)
 - [C] **This is not the predicted grid.** The 0 mismatches take the grid from the game. The same planners on a grid predicted as the built map plus the units are F3's claim, which failed. A reimplementation is held to the planners by this count, and to the grid only by [drlg/collision § F7](../drlg/collision.md#f7-no-bit-is-reference-counted-the-grid-is-the-result-of-its-operations-in-order)'s order rule. (run:2026-11-04-path-2)
 - [I] **What the model took from the game:** the planner's address, the context and the record at the call, and the target unit's position. So `PathPlan`'s head, the refresh, the free step, the town test and the slot are inputs here, not predictions, and keep § C's tags. Each context's start equals its record's, and none of the 9 773 plans with a `PLC` in the first run has a record-only refusal reason. (0x00649BAE, run:2026-11-04-path, [path/0004 § 1](../../findings/path/0004-per-event-reproduction.md#1-the-log-and-what-is-compared))
 - [I] **The tail** (the aim and the "every point at the position" refusal) agrees in all 13 265 plans of the first run that reached a planner or a straight type, 72 of them with a non-zero count and a return of 0. The aim's writes are not compared. (run:2026-11-04-path)
@@ -404,8 +411,8 @@ Corpse cells below are [drlg/collision § F5](../drlg/collision.md#f5-corpse-mar
 
 | Rule | What the grid holds | Tag and scope |
 |---|---|---|
-| O1, objects | An object's rectangle is in the grid when `HasCollision[mode]` of its class is set; each operate handler that changes the state marks or unmarks itself; the mode change does not | [C] for the bits `0x400` and `0x800`: 0 cells differ over the 154 780 rooms of the 15 663 plans, against 64 229 and 1 572 with the rule off (0x0055494C, 0x00649611, tbl:Objects.txt:HasCollision0, run:2026-11-04-path-2). The other object bits, `0x0002` and `0x0004`, keep 626 and 3 708 cells of unnamed source |
-| T1, the plan's target | Under flag `0x800`, a target whose `UNIT_GetSizeX` is not 0 is unmarked, whatever its type, and marked again at the tail when the unmark returned non-zero | [C] a targeted object of size 1 or more: off, 274 and 20 cells and 35 wrong plans (0x00649B10, run:2026-11-04-path-2). [I] the size test's 0 branch, read, not run (0x00649B18) |
+| O1, objects | An object's rectangle is in the grid when `HasCollision[mode]` of its class is set; each operate handler that changes the state marks or unmarks itself; the mode change does not | [C] for the bits `0x400` and `0x800`: 0 cells differ over the 154 780 rooms of the 15 663 plans, against 64 229 and 1 572 with the rule off (0x0055494C, 0x00649611, tbl:Objects.txt:HasCollision0, run:2026-11-04-path-2). [I] the operate handlers' route, as [drlg/collision § F](../drlg/collision.md#f-unit-marks) (0x00649611). The other object bits, `0x0002` and `0x0004`, keep 626 and 3 708 cells of unnamed source |
+| T1, the plan's target | Under flag `0x800`, a target whose `UNIT_GetSizeX` is not 0 is unmarked, whatever its type, and marked again at the tail when the unmark returned non-zero | [C] a targeted object of size 1 or more: with the rule off, 274 `0x400` and 20 `0x800` cells differ and 35 more plans are wrong; with it on, 0 of those cells (0x00649B10, run:2026-11-04-path-2). [I] the size test's 0 branch and the other unit types as targets, read, not run (0x00649B18) |
 | C1, a dead monster, `deadCol` 0 | `UnitCorpseColl(unit, 1)`: the live mark off and a 3×3 of `0x8000`, the record's mask and pattern unchanged, from mode 0 on | [C] 1 527 `COR` lines at 0x005A65D9, all the full 3×3 (0x00649FD8, run:2026-11-04-path-2) |
 | C2, `deadCol` 1 | The call is skipped, the live mark stays | [C] classes 403 and 404, 18 distinct dead (0x005A65CD, run:2026-11-04-path-2). [I] class 273 on the server (0x005A65CD) |
 | C3, re-created dead | The 3×3, then `SUnitCreate`'s re-mark: record pattern 5, mask `0x8000` | [C] 3 distinct units, as [drlg/lifecycle § H5](../drlg/lifecycle.md#h5-the-grid-marks-of-a-re-created-monster) (0x0055546F, run:2026-11-04-path-2, run:2026-10-21-chain2). [I] that the 22 mode-12 lines came by 0x005A73A6: the line doesn't hold the caller (0x005A73A6) |
@@ -421,7 +428,7 @@ Corpse cells below are [drlg/collision § F5](../drlg/collision.md#f5-corpse-mar
 
 #### G1. Per type
 
-Plans are the logged `PathPlan` calls of the two runs, the first run's 842 after the probe's write among them (F1); "ret 0" counts the game's `EAX`, including refusals, in the second run. "The 0 is" takes [path/0004 § 3](../../findings/path/0004-per-event-reproduction.md#3-controls)'s reading of the first run's controls: weak means these logs add little, and the emulation covers the rest of the code. A planner's 0 mismatches given live grids says nothing about predicting the grid (F1).
+Plans are the logged `PathPlan` calls of the two runs, the first run's 842 after the probe's write among them (F1); "ret 0" counts a return of 0 among the plans of the second run that reached a planner or a straight type, the kept check's column (with the refusals, type 15 has 2 563 of 3 599, `review-s54/logs.txt`). "The 0 is" takes [path/0004 § 3](../../findings/path/0004-per-event-reproduction.md#3-controls)'s reading of the first run's controls: weak means these logs add little, and the emulation covers the rest of the code. A planner's 0 mismatches given live grids says nothing about predicting the grid (F1).
 
 | Type | Plans, run 1 + run 2 | Ret 0, run 2 | Largest return, run 2 | Needs the grid, run 1 | The 0 is | Tag |
 |---:|---|---:|---:|---:|---|---|
@@ -452,7 +459,7 @@ Plans are the logged `PathPlan` calls of the two runs, the first run's 842 after
 
 - [I] **Type 0:** named for a get-hit ([ai/0001 § 8](../../findings/ai/0001-machinery.md#8-the-path-request)), planned where a "current" site holds it. No plan in 46 sessions, no floor. The planner is [C] by emulation only ([search § L](search.md#l-the-search-types-0-and-16)). (fn:sub_0067AD00_PathPlanSearch@0x0067AD00, run:2026-11-03-path-emu-2)
 - [I] **Types 3, 11, 12:** no server code sets them: no store of an immediate 3, 0xB or 0xC to `[reg+0x3C]` in `.text`. The remainder is 18 server register stores of unresolved base and 4 read-modify-write stores. (0x0046525A, 0x00648D70, [path/0003 § 12](../../findings/path/0003-short-planners.md#12-the-0x3c-scan-p13b))
-- [C] **Break lines on 3, 11, 12 and the two type-16 functions: no server caller in 46 sessions.** Types 3, 12, 16: no line on either side; type 11, client callers only, 229 + 1 105 hits. The control is greedy under the same break. On the second run it is counted, 18 368 server and 18 176 client hits, so it covers its window within a factor of 2 of its last hit; on the first it is capped at 100 lines per game, so there the absence past its last line is [I]. Of the 22 `+0x3C` store sites, 7 and 6 executed, none storing 3, 0xB or 0xC. (0x00679FD0, 0x00679C80, run:2026-11-04-path, run:2026-11-04-path-2)
+- [C] **Break lines on 3, 11, 12 and the two type-16 functions: no server caller in 46 sessions.** Types 3, 12, 16: no line on either side; type 11, client callers only, 229 + 1 105 hits. The control is greedy under the same break. On the second run it is counted, 18 368 server and 18 176 client hits, so it covers its window within a factor of 2 of its last hit; on the first it is capped at 100 lines per game, so there the absence past its last line is [I]. Of the 22 `+0x3C` store sites, 7 and 6 executed, none storing 3, 0xB or 0xC. The kept check prints only a function with a hit, so the zeros are `review-s54/logs.txt`'s: one loop of the logger arms all six breaks before its `armed` line, which all 21 and 25 logs hold, and the control and type 11 fire from that loop. (0x00679FD0, 0x00679C80, run:2026-11-04-path, run:2026-11-04-path-2)
 - [I] **Type 16:** planned only from two functions nothing references. (fn:sub_00663E00_PathPlanType16A@0x00663E00, fn:sub_00663ED0_PathPlanType16B@0x00663ED0)
 - [I] **Town-follow is short:** attempted in the Rogue Encampment, 313 plans, no hostile monster in the town room. The geometry stays [drlg/lifecycle](../drlg/lifecycle.md)'s and [drlg/0009 § 11.2](../../findings/drlg/0009-room-lifecycle.md#112-the-town-follow-static-remainder-lanerbs4). (fn:sub_006483A0_PathTargetNotTown@0x006483A0, run:2026-11-04-path-2)
 - [I] **Jump is short:** no stock user. No MonStats skill column and no other excel table holds `Jump`; it occurs in `skills.txt` only, and start 47 is Jump's alone. (0x005CB902, tbl:Skills.txt:srvstfunc)
@@ -468,7 +475,7 @@ Plans are the logged `PathPlan` calls of the two runs, the first run's 842 after
 
 ## Worked example
 
-A class 225 missile's type-10 plan, `2026-11-04-path-2-s1-6004-k5-sor-oasis.log` line 1633, run:2026-11-04-path-2. `tools/path.py check` reproduces it; the steps below are the arithmetic of [search § I](search.md#i-the-random-walk-type-10).
+A class 225 missile's type-10 plan, `2026-11-04-path-2-s1-6004-k5-sor-oasis.log` line 1633, its exit at line 1634, run:2026-11-04-path-2. `tools/path.py check` compares this plan's return, points and exit seed among the 248 type-10 plans it matches, and prints no plan alone. `tools/path_spec_review.py logs` (`workspace/logs/path/review-s54/logs.txt`) prints the rows below, the arithmetic of [search § I](search.md#i-the-random-walk-type-10), and compares all 39 points and the seed with the two lines.
 
 - Entry: position subtile (4225, 5126), target (4225, 5125), `+0x91` = 77, flags `0x60020`, seed low `0x00001081`, high `0x0000029A`. So 77 >> 1 = 38 draws; the row's first direction from the start is 6, `(0, −1)`.
 
@@ -497,7 +504,7 @@ A class 225 missile's type-10 plan, `2026-11-04-path-2-s1-6004-k5-sor-oasis.log`
 - Findings: [path/0001](../../findings/path/0001-pathplan-register.md), [path/0002](../../findings/path/0002-search.md), [path/0003](../../findings/path/0003-short-planners.md), [path/0004](../../findings/path/0004-per-event-reproduction.md), [path/0005](../../findings/path/0005-grid-rules.md), [path/0006](../../findings/path/0006-holdout.md), [path/0007](../../findings/path/0007-community-cross-check.md), [experiments](../../findings/path/experiments.md).
 - Tables: [PathTypes](../../tables/PathTypes.md), [MonStats2](../../tables/MonStats2.md), [Objects](../../tables/Objects.md), [Missiles](../../tables/Missiles.md).
 - Specs: [drlg/collision](../drlg/collision.md) §§ F, F5, F6, F7; [anim/movement](../anim/movement.md); [skills/missiles](../skills/missiles.md) H1, H4, D3; [skills/catalogue](../skills/catalogue.md) K11; [rng](../rng/README.md).
-- Tools: `tools/path.py` (`check`, `grid`, the kept outputs `2026-11-04-path-check.txt`, `2026-11-04-path-2-check.txt`, `2026-11-04-path-2-grid.txt`), `tools/path_emu1.py`, `path_emu2.py`, `path_emu3.py`, `tools/path_holdout_review.py`, `tools/path_scan.py`, `tools/path_survey.py`.
+- Tools: `tools/path.py` (`check`, `grid`, the kept outputs `2026-11-04-path-check.txt`, `2026-11-04-path-2-check.txt`, `2026-11-04-path-2-grid.txt`), `tools/path_emu1.py`, `path_emu2.py`, `path_emu3.py`, `tools/path_holdout_review.py`, `tools/path_scan.py`, `tools/path_survey.py`; the review's figures, `tools/path_spec_review.py`, outputs `workspace/logs/path/review-s54/` (`logs.txt`, `literal.txt`, `manifest.sha256`).
 
 ## Open questions
 

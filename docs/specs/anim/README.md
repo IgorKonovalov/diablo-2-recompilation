@@ -5,7 +5,7 @@ target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, stats/aggregate, skills/dispatch, combat/overview, monsters/stats, objects, drlg/collision]
 consumed_by: [skills/dispatch, skills/missiles, combat/overview, combat/delivery, objects, monsters/stats]
 tags: {C: 14, I: 13, L: 2}
-updated: 2026-11-03
+updated: 2026-11-04
 ---
 
 # Animation and frame timing: the machinery
@@ -67,14 +67,14 @@ rate and mode machine.
 | State | Type | Source |
 |---|---|---|
 | the unit's frame fields `+0x30`…`+0x50` | [timing § Inputs](timing.md#runtime-state) | the mode start and the rate |
-| the path (`PathMove`) | [movement § Inputs](movement.md#runtime-state) | the planner (phase (5)) and the step |
+| the path (`PathMove`) | [movement § Inputs](movement.md#runtime-state) | the planner ([path/search](../path/search.md)) and the step |
 | the current game frame | struct:Game+0xA8 | the game loop |
 
 ### The ADR-0014 boundary
 
 | Input | Treatment | Tag |
 |---|---|---|
-| The mode request (plan 0045), the AI's command and its velocity block (plan 0052), the path plan and `0x00679720` (phase (5)), the collision test's result per crossed subtile ([drlg/collision](../drlg/collision.md)), the client | boundary oracles: logged and taken as given (ADR-0004) | [C] (run:2026-10-27-anim) |
+| The mode request (plan 0045), the AI's command and its velocity block (plan 0052), the path plan and `0x00679720` (specified since in [path/search](../path/search.md)), the collision test's result per crossed subtile ([drlg/collision](../drlg/collision.md)), the client | boundary oracles: logged and taken as given (ADR-0004) | [C] (run:2026-10-27-anim) |
 | The catalogue's own event queue after a cancel, kinds 0 with `a ≠ 0` and 1 (plan 0046) | boundary oracle from Phase 2 part 2 on (logger rev 6): logged, taken as given, the dispatches after it compared ([timing § E](timing.md#e-the-schedule)) | [C] (fn:sub_005417D0_UnitQueueEvent@0x005417D0, run:2026-10-27-anim-p2) |
 | The catalogue's reschedules, its speed writers (Charge, Leap Attack), its queued kinds 2 and 12, a do's store to `+0x4E` (plan 0046); part 1's 124 dispatches after a cancel, whose logs lack the queue | taken as given where logged; the rest an uncompared catalogue path, not an oracle | [I] (fn:sub_00553DC0_RescheduleAt@0x00553DC0) |
 | Everything else: the record, the start frame, the schedule, the advance, the rate, the speeds, the step and its snap and collision walk, the run drain, the knockback point and length, the gates, `GetHitRoll` and its draws, `PlayerModeAllowed`'s draw, the hit-class nibbles, the object operate end | modelled | [C] where run:2026-10-27-anim or run:2026-10-27-anim-p2 compares it (the timing and movement sections say which), [I] otherwise |
