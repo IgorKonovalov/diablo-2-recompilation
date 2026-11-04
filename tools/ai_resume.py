@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Plan 0052 Phase 2 (second run): a resumable model of an AI decision, past its first boundary (ADR-0015, ADR-0021).
 
-    python3 -I tools/ai_resume.py check LOG [LOG ...] [--rows 6,28] [--out FILE]   # resume every decision at each boundary
+    python3 -I tools/ai_resume.py check LOG [LOG ...] [--rows 6,28] [--controls] [--examples N] [--out FILE] [--tier FILE]
+                                                                                   # resume every decision at each boundary
 
 The think function of a decision is executed from its entry, as code, by a small x86 interpreter over the pinned
 game.exe (read through objdump, Intel syntax). What the logger recorded is known: the unit (type, class, mode, seed, +0xC4),
@@ -13,14 +14,14 @@ control words) to the logged boundary list, and a logged call matches when it eq
 the model knows. The call then *returns the logged result*: EAX, the unit seed after the call, the control words, +0xC4 and
 the blocks the arguments point at (the AIR lines of logger rev 4), and execution resumes from the surviving states. A call
 that is neither a boundary nor on the list of callees that are executed (RNG and the position getters, `EXEC`) is opaque:
-EAX, ECX, EDX and the memory it is passed a pointer to become unknown. When the logged boundaries are used up the decision
+EAX, ECX, EDX, `Unit+0xC4` and the memory it is passed a pointer to become unknown (0x00620870: the 8 bytes it writes). When the logged boundaries are used up the decision
 must be able to return without another boundary call (if the logger did not cap it at 16 calls).
 
 What this proves, and what not: every logged boundary call, with its words, is a call the game's code can make from the
 logged inputs and the earlier logged results; the model is the code, not a reading of it, so a mismatch is a wrong
 interpreter, a wrong logged input or a game that did not run this code. It does not prove which of several offered
 calls the code takes when an unknown value decides (the log shows the one it took), and it assumes opaque callees leave
-the known memory unchanged except through their pointer arguments. A decision that cannot be resumed says why (the `STOP`
+the known memory other than `Unit+0xC4` unchanged except through their pointer arguments. A decision that cannot be resumed says why (the `STOP`
 reasons: unsupported instruction, unresolved call target, state limit, no logged result, capped log).
 Stdlib and objdump only.
 """
@@ -41,12 +42,16 @@ STK_TOP = 0x7FF00000
 RET_SENTINEL = 0x7FFF0000
 PATH_U = 0x7A100000     # synthetic blocks (their addresses are not compared with the live ones)
 PATH_T = 0x7A200000
+DATA_T = 0x7A800000     # the synthetic data tables: g_pDataTables points here, +0xA80 is AID's logged `ms2`
+G_DATATABLES = 0x00744304
+POS_BLOCK = 0x00620870  # (unit, out): writes x and y at out and nothing else on the stack (0x006208BC and the store after it)
 THINK_WINDOWS = ((0x005B14E0, 0x005B1650), (0x005E0000, 0x00600000), (0x0058F0D0, 0x0058F130), (0x005DE830, 0x005DE8C0),
                  (0x005DF850, 0x005DFC00))
 NESTED = ()
-# callees that are executed rather than treated as opaque: RNG_Range, RNG_RangeB, the unit position getters, the AI
-# distance, the two helpers whose windows the logger covers (0x005DE830, 0x005DF850)
-EXEC = (0x0045C390, 0x0045C3E0, 0x0045ADF0, 0x0045AE20, 0x005DC530, 0x006488C0, 0x00648900, 0x005DE830, 0x005DF850)
+# callees that are executed rather than treated as opaque: RNG_Range, RNG_RangeB, RNG_RandLoHi (0x005FB69D draws from the
+# unit seed through it), the unit position getters, the AI distance, the two helpers whose windows the logger covers
+# (0x005DE830, 0x005DF850)
+EXEC = (0x0045C390, 0x0045C3E0, 0x004BC500, 0x0045ADF0, 0x0045AE20, 0x005DC530, 0x006488C0, 0x00648900, 0x005DE830, 0x005DF850)
 # a callee inside these windows is executed too: its own calls to boundary functions are logged (the logger's return-address
 # windows), so an opaque helper there would make its logged calls appear from nowhere
 EXEC_WINDOWS = ((0x005E0000, 0x00600000), (0x005DE830, 0x005DE8C0), (0x005DF850, 0x005DFC00))
@@ -178,11 +183,13 @@ class State:
         self.visits = {}
         self.calls = []             # the boundary calls this path has met: (fn, ra)
         self.prot = set()           # the bytes of pushed return addresses and saved EBPs: an opaque callee's blocks skip them
+        self.u = None               # the decision's unit: an opaque callee makes its +0xC4 unknown
+        self.br = {}                # the branches this path decided on a known condition: {address: 1 taken | 2 not taken}
 
     def copy(self):
         s = State()
         s.r, s.f, s.m, s.eip, s.steps = dict(self.r), dict(self.f), dict(self.m), self.eip, self.steps
-        s.visits, s.calls, s.prot = dict(self.visits), list(self.calls), set(self.prot)
+        s.visits, s.calls, s.prot, s.u, s.br = dict(self.visits), list(self.calls), set(self.prot), self.u, dict(self.br)
         return s
 
     def key(self):
@@ -228,6 +235,9 @@ def parse_op(t):
     m = re.match(r"(BYTE|WORD|DWORD) PTR (.*)", t)
     if m:
         sz, t = SIZES[m.group(1)], m.group(2)
+    m = re.match(r"ds:(0x[0-9a-f]+)$", t)       # an absolute operand: objdump's `DWORD PTR ds:0x744304`, `eax,ds:0x...`
+    if m:
+        return ("m", sz or 4, None, None, 1, int(m.group(1), 16))
     if t.startswith("["):
         inner = t[1:t.index("]")]
         rest = t[t.index("]") + 1:]
@@ -570,6 +580,7 @@ class Machine:
                 v = not v
             tgt = int(ops[0], 16)
             if v is not None:
+                st.br[st.eip] = st.br.get(st.eip, 0) | (1 if v else 2)
                 st.eip = tgt if v else nxt
                 return [st]
             a, b = st.copy(), st
@@ -619,6 +630,17 @@ class Machine:
         if n is None:
             raise Stop("opaque callee %08x: no ret found" % fn)
         sp = st.r["esp"]
+        if fn == POS_BLOCK:
+            # the position block: 8 bytes at its second argument. A wider forget lost the control pointer [ebp-4] beside the
+            # block [ebp-0xC] at 0x005FB81F, and the write of c0 at 0x005FB862 then went through an unknown pointer.
+            st.forget(st.rd(sp + 4, 4) if sp is not None else None, 8)
+            st.r["eax"] = st.r["ecx"] = st.r["edx"] = None
+            st.f.update({"ZF": None, "SF": None, "CF": None, "OF": None})
+            st.r["esp"] = None if sp is None else (sp + n) & M32
+            st.eip = ra
+            return [st]
+        if st.u is not None:
+            st.wr(st.u + 0xC4, 4, None)      # 0x005DE4E0 (0x005F32A0) and 0x00553380 (0x005E6A20) command a mode: the word changes inside
         words = [st.rd(sp + 4 * k, 4) if sp is not None else None for k in range(n // 4)]
         for v in [st.r["ecx"], st.r["edx"]] + words:
             if v is not None and (STK_TOP - 0x4000) <= v < STK_TOP + 0x10:
@@ -677,6 +699,7 @@ def init_state(aid):
     """The state at the think function's entry from an AID line: the memory the logger recorded, everything else unknown."""
     st = State()
     g, u, cx = aid["g"], aid["u"], aid["cx"]
+    st.u = u
     ctl, md, ms, hp = aid["ctlp"], aid["mdp"], aid["ms"], aid["hp"]
     cw = aid["ctx"]
     # unit
@@ -725,10 +748,14 @@ def init_state(aid):
             st.wr(tg + 0x2C, 4, PATH_T)
             st.wr(PATH_T + 2, 2, t[4])
             st.wr(PATH_T + 6, 2, t[5])
-    # the call: ECX game, EDX unit, [esp + 4] the AiCtx, return address
+    # the data tables: g_pDataTables, whose +0xA80 (the MonStats record count) AID logs
+    st.wr(G_DATATABLES, 4, DATA_T)
+    st.wr(DATA_T + 0xA80, 4, aid["ms2"] & M32)
+    # the call: ECX game, EDX unit, [esp + 4] the AiCtx, return address. Only the return address is protected: the argument
+    # slot is the think's own [ebp+8], and a think may pass it as a search's output block (lea eax,[ebp+0x8], 0x005F96DB)
     st.r.update({"ecx": g, "edx": u, "esp": STK_TOP})
     st.wr(STK_TOP, 4, RET_SENTINEL)
-    st.prot.update(range(STK_TOP, STK_TOP + 8))
+    st.prot.update(range(STK_TOP, STK_TOP + 4))
     st.wr(STK_TOP + 4, 4, cx)
     st.eip = aid["th"]
     return st
@@ -815,13 +842,18 @@ class Result:
         self.why = ""
         self.end = None           # True: the model reaches the return with no further call; False: it cannot
         self.nlog = 0
+        self.log = []             # the logged calls compared (top_level)
+        self.br = {}              # the branches decided on a known condition by the paths that reached the return
 
 
 def top_level(dec):
     """The logged boundary calls the think function itself made: a logged call that lies between another call's AIB line and
     its AIR line was made inside that callee (a boundary function whose body is in the logger's windows, MonsterOwner, a
-    search) and is not offered by the model, which does not execute boundary functions."""
+    search) and is not offered by the model, which does not execute boundary functions. So is a logged call between a
+    decision's MSM0 and MSM1 lines: it was made inside the command (0x00552F60@0x0058F0FF), which the logger's windows hold
+    with no boundary call pending; logger rev 5 no longer writes those lines."""
     spans = [(b["n"], dec["air"][b["n"]]["n"]) for b in dec["aib"] if b["n"] in dec["air"]]
+    spans += [(a["n"], z["n"]) for a, z in dec.get("msm", []) if z]
     return [b for b in dec["aib"] if not any(lo < b["n"] < hi for lo, hi in spans)]
 
 
@@ -831,6 +863,7 @@ def check_decision(m, dec):
     aid = dec["aid"]
     log = top_level(dec)
     res.nlog = len(log)
+    res.log = log
     try:
         states = [init_state(aid)]
     except (KeyError, ValueError) as e:
@@ -878,6 +911,10 @@ def check_decision(m, dec):
     if len(dec["aib"]) >= dec.get("bmax", 48):
         res.status, res.why = "stop", "capped: the logger keeps %d boundary calls per decision" % dec.get("bmax", 48)
         return res
+    # the logger's limit with nothing pending (rev 5's AIL, pend 0): the calls after it were not logged, nothing can be said of the end
+    if any(a.get("pend") == 0 for a in dec.get("ail", [])):
+        res.status, res.why = "stop", "the logger's 600-call limit turned its boundary breakpoints off (AIL)"
+        return res
     # the logged boundaries are used up and the event ended: some state must return with no further call
     reach = 0
     stops = []
@@ -885,6 +922,9 @@ def check_decision(m, dec):
         e, r, s = m.run(st)
         reach += len(r)
         stops += s
+        for x in r:
+            for a, bits in x.br.items():
+                res.br[a] = res.br.get(a, 0) | bits
     res.end = reach > 0
     if not res.end:
         res.status = "stop" if stops else "mismatch"
@@ -923,7 +963,8 @@ def run_resume(paths, rows=None, controls=False, code=None, machine_cls=Machine)
             r = check_decision(m, d)
             e = per.setdefault((d["aid"]["ai"], d["aid"]["th"]), {"n": 0, "ok": 0, "mis": 0, "stop": {}, "matched": 0,
                                                                      "past": 0, "amb": 0, "steps": 0, "end": 0,
-                                                                     "seqs": {}, "name": ""})
+                                                                     "seqs": {}, "name": "", "paths": {}, "sites": {},
+                                                                     "ends": {}, "br": {}})
             e["n"] += 1
             e["matched"] += r.matched
             e["past"] += max(0, r.matched - 1)
@@ -932,6 +973,15 @@ def run_resume(paths, rows=None, controls=False, code=None, machine_cls=Machine)
             e["end"] += 1 if r.end else 0
             if r.status == "ok":
                 e["ok"] += 1
+                calls = [(b["fn"], b["ra"]) for b in r.log]
+                path = tuple(calls[1:])                # what the comparison saw past the first boundary, resumed decisions only
+                e["paths"][path] = e["paths"].get(path, 0) + 1
+                for c in calls[1:]:
+                    e["sites"][c] = e["sites"].get(c, 0) + 1
+                last = calls[-1] if calls else None
+                e["ends"][last] = e["ends"].get(last, 0) + 1
+                for a, bits in r.br.items():
+                    e["br"][a] = e["br"].get(a, 0) | bits
             elif r.status == "mismatch" and "the decision ended" in r.why and d["aix"] is None:
                 # the log ends inside the decision (no AIX: the game exited, or the case was cut): not comparable, not a mismatch
                 e["stop"]["log ends inside the decision (no AIX)"] = e["stop"].get("log ends inside the decision (no AIX)", 0) + 1
@@ -981,13 +1031,83 @@ def report(decs, results):
 
 
 EXAMPLES = 3     # --examples N: the mismatches printed per row
+FLOOR = 50       # the plan's minimum per tier AI
+EXTRA_ROWS = {19: "Swarm(not-tier)"}     # a logged row the old tier file printed under Scarab's name; row 20 is Scarab
+
+
+def merge_rows(per):
+    """{row: the RROW counts of the row's thinks summed}."""
+    out = {}
+    for (row, th), e in per.items():
+        x = out.setdefault(row, {"n": 0, "ok": 0, "mis": 0, "stop": 0, "matched": 0, "past": 0, "amb": 0, "steps": 0,
+                                 "paths": {}, "sites": {}, "ends": {}, "br": {}, "thinks": 0})
+        x["thinks"] += 1
+        for k in ("n", "ok", "mis", "matched", "past", "amb", "steps"):
+            x[k] += e[k]
+        x["stop"] += sum(e["stop"].values())
+        for k in ("paths", "sites", "ends"):
+            for a, c in e[k].items():
+                x[k][a] = x[k].get(a, 0) + c
+        for a, bits in e["br"].items():
+            x["br"][a] = x["br"].get(a, 0) | bits
+    return out
+
+
+def tier_table(results, tier=None):
+    """The tier table from the run itself, with what each row's comparison separates: `paths` the distinct sequences of
+    logged calls past the first boundary among the resumed decisions, `top` the share of the commonest, `one` the decisions
+    with no call past the first, `sites` the distinct (function, call site) past the first, `ends` the distinct last calls,
+    `two_way`/`one_way` the branches a known value decided both ways / one way over the row's resumed decisions, `inv`/`seed`
+    the decisions the two wrong maps fail. `propose` is the review's rule: 0 mismatches and FLOOR decisions resumed, on the
+    logs given. A proposal with paths 1 or sites 0 is marked weak."""
+    if tier is None:
+        import ai
+        tier = ai.TIER
+    rows = merge_rows(results["resume"])
+    inv = merge_rows(results["invert"]) if "invert" in results else {}
+    sd = merge_rows(results["seed"]) if "seed" in results else {}
+    names = dict(EXTRA_ROWS)
+    names.update(tier)
+    L = []
+    empty = {"n": 0, "ok": 0, "mis": 0, "stop": 0, "matched": 0, "past": 0, "amb": 0, "steps": 0, "paths": {}, "sites": {},
+             "ends": {}, "br": {}, "thinks": 0}
+    for row in sorted(names):
+        e = rows.get(row, empty)
+        two = sum(1 for b in e["br"].values() if b == 3)
+        one = sum(1 for b in e["br"].values() if b != 3)
+        nocall = e["paths"].get((), 0)
+        top = max(e["paths"].values()) if e["paths"] else 0
+        share = "%d/%d" % (top, e["ok"])
+        if row not in tier:
+            prop = "no(not-tier)"
+        elif e["mis"]:
+            prop = "no(mismatches)"
+        elif e["ok"] < FLOOR:
+            prop = "no(short)"
+        elif not e["sites"]:
+            prop = "weak(no-call-past-first)"
+        elif len(e["paths"]) == 1:
+            prop = "weak(one-path)"
+        else:
+            prop = "yes"
+        L.append("TIER %d %s thinks=%d decisions=%d resumed=%d mismatches=%d stopped=%d matched=%d past_first=%d ambiguous=%d/%d "
+                 "paths=%d top=%s one_call_or_none=%d sites=%d ends=%d two_way=%d one_way=%d inv=%s seed=%s propose=%s" % (
+                     row, names[row], e["thinks"], e["n"], e["ok"], e["mis"], e["stop"], e["matched"], e["past"], e["amb"],
+                     e["steps"], len(e["paths"]), share, nocall, len(e["sites"]), len(e["ends"]), two, one,
+                     "%d/%d" % (inv[row]["mis"], inv[row]["n"]) if row in inv else "-",
+                     "%d/%d" % (sd[row]["mis"], sd[row]["n"]) if row in sd else "-", prop))
+        for c, k in sorted(e["sites"].items(), key=lambda kv: (-kv[1], kv[0]))[:6]:
+            L.append("TSITE %d %08x@%08x %d" % (row, c[0], c[1], k))
+        for c, k in sorted(e["ends"].items(), key=lambda kv: (-kv[1], kv[0] or (0, 0)))[:6]:
+            L.append("TEND %d %s %d" % (row, "%08x@%08x" % c if c else "no-call", k))
+    return "\n".join(L) + "\n"
 
 
 def main(argv):
     if not argv or argv[0] != "check":
         print(__doc__)
         return 2
-    paths, rows, out, controls = [], None, None, False
+    paths, rows, out, controls, tierout = [], None, None, False, None
     a, k = argv[1:], 0
     while k < len(a):
         if a[k] == "--rows":
@@ -995,6 +1115,9 @@ def main(argv):
             k += 2
         elif a[k] == "--out":
             out = a[k + 1]
+            k += 2
+        elif a[k] == "--tier":
+            tierout = a[k + 1]
             k += 2
         elif a[k] == "--controls":
             controls = True
@@ -1010,6 +1133,8 @@ def main(argv):
     text = report(decs, results)
     if out:
         open(out, "w").write(text)
+    if tierout:
+        open(tierout, "w").write(tier_table(results))
     print(text, end="")
     bad = sum(e["mis"] for e in results["resume"].values())
     return 1 if bad else 0

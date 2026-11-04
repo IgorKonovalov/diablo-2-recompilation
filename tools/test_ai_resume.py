@@ -191,6 +191,172 @@ class ResumeTest(unittest.TestCase):
         self.assertIn("seed", r.why)
 
 
+class ReviewFixesTest(unittest.TestCase):
+    """The six model fixes of the lane/p52b review (plan 0052 log; ai/0017 section 7), one test each."""
+
+    def dec(self, log, aids=None, msm=()):
+        return {"aid": aids or aid(), "aib": [b for b, r in log], "air": {b["n"]: r for b, r in log}, "log": "x", "bmax": 48,
+                "msm": list(msm)}
+
+    def test_P_the_thinks_argument_slot_takes_a_searchs_output(self):
+        # lea eax,[ebp+0x8]; push eax; call F1; the think then branches on the distance F1 wrote into its own argument slot
+        code = code_with(["push ebp", "mov ebp,esp", "lea eax,[ebp+0x8]", "push eax", "call 0x2000", "@r cmp DWORD PTR [ebp+0x8],0x6",
+                          "jg @far", "push 0x1", "call 0x3000", "@far pop ebp", "ret 0x4"])
+        m = R.Machine(code, BND, windows=WIN)
+        ra1, ra2 = ra_of(code, F1), ra_of(code, F2)
+        b1 = aib(11, F1, ra1, [0x7FF00004])
+        b1["b"] = {"0": [8, 0, 0, 0, 0, 0, 0, 0]}
+        r1 = air(11, 0)
+        r1["bl"] = {"0": [5, 0, 0, 0, 0, 0, 0, 0]}
+        d = self.dec([(b1, r1), (aib(12, F2, ra2, [1]), air(12, 0))])
+        r = R.check_decision(m, d)
+        self.assertEqual((r.status, r.matched), ("ok", 2), r.why)
+        # the return address stays protected: the same block one slot lower must not move the return
+        st = R.init_state(aid())
+        self.assertIn(R.STK_TOP, st.prot)
+        self.assertNotIn(R.STK_TOP + 4, st.prot)
+
+    def test_C_an_opaque_callee_makes_c4_unknown(self):
+        ins = asm(THINK, ["push ebp", "mov ebp,esp", "call 0x5000", "push 0x7", "call 0x2000", "pop ebp", "ret 0x4"])
+        ins.update(asm(0x5000, ["ret"]))
+        ins.update(asm(F1, ["ret 0x4"]))
+        code = R.Code(inject=ins)
+        m = R.Machine(code, BND, windows=WIN)
+        b1 = aib(11, F1, ra_of(code, F1), [7])
+        b1["c4"] = 0x82001
+        r = R.check_decision(m, self.dec([(b1, air(11, 0))]))
+        self.assertEqual(r.status, "ok", r.why)
+        # with no opaque call between, the same changed word is a mismatch: the compare is still live
+        code = code_with(["push ebp", "mov ebp,esp", "push 0x7", "call 0x2000", "pop ebp", "ret 0x4"])
+        b1 = aib(11, F1, ra_of(code, F1), [7])
+        b1["c4"] = 0x82001
+        r = R.check_decision(R.Machine(code, BND, windows=WIN), self.dec([(b1, air(11, 0))]))
+        self.assertEqual(r.status, "mismatch")
+        self.assertIn("c4", r.why)
+
+    def test_N_a_logged_call_inside_the_command_is_not_the_thinks(self):
+        d = self.dec([(aib(11, F1, 0x1234, [7]), air(11, 0)), (aib(13, F3, 0x58F0FF, [0]), air(13, 0)),
+                      (aib(16, F2, 0x1236, [1]), air(16, 0))], msm=[({"n": 12}, {"n": 15})])
+        self.assertEqual([b["n"] for b in R.top_level(d)], [11, 16])
+        d["msm"] = [({"n": 12}, None)]              # no MSM1: nothing proves the line is inside, it stays
+        self.assertEqual([b["n"] for b in R.top_level(d)], [11, 13, 16])
+
+    def test_B_the_position_block_forgets_its_8_bytes_only(self):
+        # the frame of 0x005FB81F: [ebp-0xC] the block, [ebp-4] the control pointer the think goes on to use
+        ins = asm(THINK, ["push ebp", "mov ebp,esp", "sub esp,0x20", "mov DWORD PTR [ebp-0x4],0x5000000", "mov DWORD PTR [ebp-0x8],0x9",
+                          "lea ecx,[ebp-0xc]", "push ecx", "push 0x1", "call 0x620870", "mov ecx,DWORD PTR [ebp-0x4]",
+                          "mov DWORD PTR [ecx+0x14],0x5", "push 0x7", "call 0x2000", "mov esp,ebp", "pop ebp", "ret 0x4"])
+        ins.update(asm(R.POS_BLOCK, ["ret 0x8"]))
+        ins.update(asm(F1, ["ret 0x4"]))
+        code = R.Code(inject=ins)
+        m = R.Machine(code, BND, windows=WIN)
+        b1 = aib(11, F1, ra_of(code, F1), [7], ecx=0x5000000)
+        b1["c"] = [5, 0, 0]                                             # the write of c0 went through the kept pointer
+        r = R.check_decision(m, self.dec([(b1, air(11, 0))]))
+        self.assertEqual(r.status, "ok", r.why)
+        # the block's own word is forgotten: a branch on it forks
+        ins2 = asm(THINK, ["push ebp", "mov ebp,esp", "sub esp,0x20", "mov DWORD PTR [ebp-0x8],0x9", "lea ecx,[ebp-0xc]", "push ecx",
+                           "push 0x1", "call 0x620870", "cmp DWORD PTR [ebp-0x8],0x9", "jne @o", "push 0x7", "call 0x2000",
+                           "@o mov esp,ebp", "pop ebp", "ret 0x4"])
+        ins2.update(asm(R.POS_BLOCK, ["ret 0x8"]))
+        ins2.update(asm(F1, ["ret 0x4"]))
+        code = R.Code(inject=ins2)
+        st = R.init_state(aid())
+        ev, rets, stops = R.Machine(code, BND, windows=WIN).run(st)
+        self.assertEqual((len(ev), len(rets)), (1, 1))
+
+    def test_E_rng_randlohi_draws_from_the_seed(self):
+        self.assertIn(0x004BC500, R.EXEC)
+        # the instruction text of 0x004BC500's non-power-of-two path, range [edx, arg)
+        ins = asm(0x004BC500, ["push ebp", "mov ebp,esp", "push ecx", "mov eax,DWORD PTR [ebp+0x8]", "push edi", "mov edi,edx",
+                               "cmp eax,edi", "jg @go", "mov eax,edi", "pop edi", "mov esp,ebp", "pop ebp", "ret 0x4",
+                               "@go sub eax,edi", "lea edx,[eax-0x1]", "push ebx", "xor ebx,ebx", "test eax,edx",
+                               "mov DWORD PTR [ebp+0x8],eax", "mov eax,DWORD PTR [ecx]", "mov DWORD PTR [ebp-0x4],edx", "push esi",
+                               "mov edx,0x6ac690c5", "mov esi,DWORD PTR [ecx+0x4]", "mul edx", "add eax,esi", "adc edx,ebx",
+                               "mov DWORD PTR [ecx+0x4],edx", "mov DWORD PTR [ecx],eax", "xor edx,edx", "div DWORD PTR [ebp+0x8]",
+                               "pop esi", "pop ebx", "mov eax,edx", "add eax,edi", "pop edi", "mov esp,ebp", "pop ebp", "ret 0x4"])
+        ins.update(asm(THINK, ["push ebp", "mov ebp,esp", "mov esi,edx", "lea ecx,[esi+0x20]", "mov edx,0x0", "push 0x7",
+                               "call 0x4bc500", "mov ecx,esi", "mov edx,esi", "push eax", "call 0x3000", "pop ebp", "ret 0x4"]))
+        ins.update(asm(F2, ["ret 0x4"]))
+        code = R.Code(inject=ins)
+        t = 1 * 0x6AC690C5 + 2
+        s1 = "%08x:%08x" % (t & 0xFFFFFFFF, t >> 32)
+        want = (t & 0xFFFFFFFF) % 7
+        b = aib(11, F2, ra_of(code, F2), [want], s=s1, ecx=0x1000000)
+        r = R.check_decision(R.Machine(code, BND, windows=WIN), self.dec([(b, air(11, 0, s=s1))]))
+        self.assertEqual(r.status, "ok", r.why)
+        b = aib(11, F2, ra_of(code, F2), [want], ecx=0x1000000)          # the seed before the draw: the model must see the step
+        r = R.check_decision(R.Machine(code, BND, windows=WIN), self.dec([(b, air(11, 0))]))
+        self.assertEqual(r.status, "mismatch")
+        self.assertIn("seed", r.why)
+
+    def test_D_the_absolute_operand_and_the_logged_record_count(self):
+        self.assertEqual(R.parse_op("DWORD PTR ds:0x744304"), ("m", 4, None, None, 1, 0x744304))
+        self.assertEqual(R.parse_op("ds:0x744304"), ("m", 4, None, None, 1, 0x744304))
+        self.assertEqual(R.parse_op("BYTE PTR ds:0x744304"), ("m", 1, None, None, 1, 0x744304))
+        # 0x005F2C1D: mov edx,ds:0x744304; cmp [edx+0xa80],0xe5; the branch is decided by AID's ms2
+        lines = ["push ebp", "mov ebp,esp", "mov edx,DWORD PTR ds:0x744304", "cmp DWORD PTR [edx+0xa80],0xe5", "jg @big", "push 0x1",
+                 "call 0x2000", "jmp @o", "@big push 0x2", "call 0x3000", "@o pop ebp", "ret 0x4"]
+        code = code_with(lines)
+        m = R.Machine(code, BND, windows=WIN)
+        big = aib(11, F2, ra_of(code, F2), [2], edx=0)
+        small = aib(11, F1, ra_of(code, F1), [1], edx=0)
+        r = R.check_decision(m, self.dec([(big, air(11, 0))], aids=aid(ms2=734)))
+        self.assertEqual((r.status, r.offers), ("ok", [1]), r.why)
+        r = R.check_decision(m, self.dec([(small, air(11, 0))], aids=aid(ms2=100)))
+        self.assertEqual((r.status, r.offers), ("ok", [1]), r.why)
+        r = R.check_decision(m, self.dec([(small, air(11, 0))], aids=aid(ms2=734)))
+        self.assertEqual(r.status, "mismatch")
+
+    def test_the_loggers_limit_marker_is_a_stop_not_a_mismatch(self):
+        code = code_with(THINK_CODE)
+        m = R.Machine(code, BND, windows=WIN)
+        b1 = aib(11, F1, ra_of(code, F1), [7])
+        d = self.dec([(b1, air(11, 0))])
+        self.assertEqual(R.check_decision(m, d).status, "mismatch")          # with no marker the missing call is a mismatch
+        d["ail"] = [{"k": 10, "pend": 0, "n": 12}]
+        r = R.check_decision(m, d)
+        self.assertEqual(r.status, "stop")
+        self.assertIn("AIL", r.why)
+        d["ail"] = [{"k": 10, "pend": 1, "n": 12}]                           # re-armed when the pending call returned: nothing lost
+        self.assertEqual(R.check_decision(m, d).status, "mismatch")
+
+    def test_logger_rev5_source(self):
+        src = open(os.path.join(HERE, "gdb", "ai.py")).read()
+        self.assertIn("REV = 5", src)
+        self.assertIn('emit("AIL"', src)
+        # the MonSetMode line itself must still be logged: its AIB breakpoint is created before the MSM0 one at the same address
+        self.assertLess(src.index("Bp(a, on_bnd(a), bnd_bps)"), src.index("Bp(0x005A7C20, on_msm0, bnd_bps)"))
+        self.assertLess(src.index('st["pend"] and not NESTED'), src.index('cur["k"] in st["msm"].values()'))
+
+    def test_a_tier_table_says_what_a_row_separates(self):
+        def row(n, ok, mis=0, paths=None, br=None):
+            sites = {}
+            for p, k in (paths or {}).items():
+                for c in p:
+                    sites[c] = sites.get(c, 0) + k
+            return {"n": n, "ok": ok, "mis": mis, "stop": {}, "matched": 0, "past": 0, "amb": 0, "steps": 0, "end": 0, "seqs": {},
+                    "name": "", "paths": paths or {}, "sites": sites, "ends": {}, "br": br or {}}
+        res = {"resume": {(2, 1): row(60, 60, paths={(): 60}),
+                          (6, 2): row(60, 60, paths={((1, 2),): 40, ((1, 3),): 20}, br={0x10: 3, 0x12: 1}),
+                          (9, 3): row(60, 60, paths={((1, 2),): 60}),
+                          (13, 4): row(60, 59, mis=1, paths={((1, 2),): 59}),
+                          (19, 5): row(82, 82, paths={(): 82}),
+                          (28, 6): row(43, 43, paths={((1, 2),): 43})}}
+        tier = {2: "Skeleton", 6: "Fallen", 9: "Wraith", 13: "FallenShaman", 20: "Scarab", 28: "Vampire"}
+        t = {ln.split()[1]: ln for ln in R.tier_table(res, tier).splitlines() if ln.startswith("TIER")}
+        self.assertIn("propose=weak(no-call-past-first)", t["2"])
+        self.assertIn("propose=yes", t["6"])
+        self.assertIn("paths=2 top=40/60", t["6"])
+        self.assertIn("two_way=1 one_way=1", t["6"])
+        self.assertIn("propose=weak(one-path)", t["9"])
+        self.assertIn("propose=no(mismatches)", t["13"])
+        self.assertIn("TIER 19 Swarm(not-tier)", t["19"])
+        self.assertIn("propose=no(not-tier)", t["19"])
+        self.assertIn("TIER 20 Scarab thinks=0 decisions=0", t["20"])
+        self.assertIn("propose=no(short)", t["28"])
+
+
 class PartsTest(unittest.TestCase):
     def test_flags_and_conditions(self):
         r, fl = R.alu("cmp", 5, 7, 4)

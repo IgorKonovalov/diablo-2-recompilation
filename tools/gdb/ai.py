@@ -33,6 +33,9 @@
 #         path type, s; exit: eax, s
 #   SST0/SST1  SKILLS_SrvStart 0x0056F640 (ECX game, EDX unit; id, lvl, noCost) and its rets, for a server monster near
 #         the player (open decision or not): u, fr, id, lvl, s; exit: eax, s
+#   AIL   rev 5: a decision reached the limit of OUT_LIMIT (600) non-think boundary calls, once per stretch: k, fn, ra, out, pend (the
+#         boundary calls still pending). The boundary breakpoints are off from here; with pend 0 nothing re-arms them in this
+#         decision, so its later calls are not logged and tools/ai_resume.py stops the decision instead of comparing its end
 #   AIX   the event's ret 0x005B1876 after a think call: k, s (the unit seed at the exit), nb (boundary lines)
 #   CAP   once per kind when its cap is reached
 # Filter (ADR-0014 § Log volume): server monsters (Unit +0 = 1) within AI_RADIUS (80) sub-tiles of the first player
@@ -45,7 +48,8 @@ import struct
 
 import gdb
 
-REV = 4   # rev 4: AIR lines (the result of each logged boundary call, from the return-site breakpoints of
+REV = 5   # rev 5: no AIB between a decision's MSM0 and MSM1 (those calls are made inside the command, 0x00552F60@0x0058F0FF), and an AIL
+#          marker at the 600-call limit; rev 4: AIR lines (the result of each logged boundary call, from the return-site breakpoints of
 #          tools/gdb/ai-retsites.txt) and 48 boundary calls per decision (rev 3: 8); rev 1: the development logs (dev-*); rev 2: the six PathPlan rets (rev 1 logged the first three); rev 3: the
 #          return-address windows of MonsterOwner, 0x005DE830 and 0x005DF850 (the models' sites 0x0058F0FF, 0x005DE864,
 #          0x005DF97B)
@@ -61,6 +65,7 @@ def _ai_main():
     RADIUS = int(os.environ.get("AI_RADIUS", "80"))
     BMAX = int(os.environ.get("AI_BMAX", "48"))
     RETSITES = os.environ.get("AI_RETSITES", "tools/gdb/ai-retsites.txt")
+    OUT_LIMIT = 600
     NESTED = os.environ.get("AI_NESTED", "0") == "1"     # 1: also log the calls made inside a pending boundary call (rev 3 did)
     BND = (
         0x00463740, 0x00463860, 0x0046ACE0, 0x00472210, 0x004E6C70, 0x004EFCB0, 0x00540E60, 0x005415A0, 0x005417D0,
@@ -297,11 +302,14 @@ def _ai_main():
             ra = u32(esp)
             if not in_think(ra):
                 cur["out"] += 1
-                if cur["out"] > 600:
+                if cur["out"] > OUT_LIMIT:
+                    emit("AIL", {"k": cur["k"], "fn": fn, "ra": ra, "out": cur["out"], "pend": len(st["pend"]), "fr": frame()})
                     arm_bnd(False)            # the boundary breakpoints only: the pending returns (a search) stay armed
                 return
             if st["pend"] and not NESTED:
                 return                    # made inside a boundary callee still pending: the model never offers it
+            if cur["k"] in st["msm"].values():
+                return                    # rev 5: made inside the decision's own MonSetMode, between MSM0 and MSM1
             if cur["nb"] >= BMAX:
                 return
             cur["nb"] += 1
@@ -359,8 +367,10 @@ def _ai_main():
                 retbp[ra].enabled = False
                 st["retarmed"].discard(ra)
             cur = top()
-            if cur and not pend and cur["out"] > 600:      # the search that hit the limit is over: log the rest of the decision
+            if cur and not pend and cur["out"] > OUT_LIMIT:      # the search that hit the limit is over: log the rest of the decision
                 cur["out"] = 0
+                for e in [e for e in st["msm"] if e < esp]:         # a MonSetMode that returned while its MSM1 breakpoint was off
+                    del st["msm"][e]
                 arm_bnd(True)
         return f
 
