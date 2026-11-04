@@ -54,7 +54,7 @@ No other family of the run writes an import slot (`summary.txt`, the `SPEC` line
 
 ## Leads used
 
-No community source was compared; every claim is from the code.
+No community source was compared; every claim is from the code. **2026-11-04 (`lane/r60d`):** the comparison was made afterwards, with these statements as they stood; every verdict is in [items/0017](0017-community-cross-check.md), and no tag moved.
 
 ## Functions
 

@@ -72,7 +72,7 @@ game's own structures, so the `[C]` is the code's map from the bytes it reads (A
 
 ## Leads used
 
-No community source was compared; every claim is from the code. The doubling draw has no lead in `docs/sources.md`.
+No community source was compared; every claim is from the code. The doubling draw has no lead in `docs/sources.md`. **2026-11-04 (`lane/r60d`):** the comparison was made afterwards, with these statements as they stood; every verdict is in [items/0017](0017-community-cross-check.md), and no tag moved.
 
 ## Functions
 
