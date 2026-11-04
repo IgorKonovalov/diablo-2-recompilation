@@ -24,7 +24,7 @@ following, and the think function of each of the 18 tier AIs. The other rows of 
 
 Boundaries of this spec: the mode's frames are [anim/timing](../../anim/timing.md)'s; the skill behind a command is
 [skills/dispatch](../../skills/dispatch.md)'s; the planners behind a path request are
-[path/search](../../path/search.md)'s, reading the live grid; the composed frame is `sim/frame`'s.
+[path/search](../../path/search.md)'s, reading the live grid; the composed frame is [sim/frame](../../sim/frame.md)'s.
 
 ```mermaid
 flowchart LR
@@ -127,7 +127,8 @@ sequenceDiagram
 - A5. [I] **The rest of H1.** The other 8 stop at an `AD0` with the monster as attacker, its seed 1 to 4 steps past the
   walking seed, and which draws those are is not examined. The 331 gaps of plan 0045 cannot be re-walked, as their logs
   hold no AI line and a replay does not reproduce them; they have the same shape, which is all their logs can say: 330
-  are of classes 58 and 59, and the first disagreement is `MAS0` in 257 and `AD0` in 70.
+  are of classes 58 and 59, and the first disagreement is `MAS0` in 257 and `AD0` in 70. The frame model's walk re-chains none of
+  the 331 ([frame/0004 § 6](../../../findings/frame/0004-order-on-kept-logs.md#6-the-resynchronised-entries), run:2026-11-03-frame-order).
   (run:2026-11-04-h1, [ai/0018 § 6](../../../findings/ai/0018-phase2-third-run.md#6-h1-the-331-gaps-both-loggers))
 - A6. [C] **A summon's owner skill damage,** for class 419 and skill 221 at level 20 in sessions with one player, is
   [skills/dispatch § M](../../skills/dispatch.md#m-monster-skill-use) (M2), not restated here. (run:2026-11-04-ai-resume, fn:sub_0056E050_MonOwnerSkillDamage@0x0056E050)
@@ -540,7 +541,7 @@ tests are the checkers `tools/ai.py check` and `tools/ai_resume.py` over the log
 ## Reimplementation notes
 
 - [I] **The AI has two entries, the queue and a mode end.** At a mode end it runs inside that mode-end event, so its draws
-  come at that event's place in the frame, not at the kind-2 record's. The per-unit order on a shared seed is `sim/frame`'s.
+  come at that event's place in the frame, not at the kind-2 record's. The per-unit order on a shared seed is [sim/frame § D and § E](../../sim/frame.md#d-the-unit-events-the-control-the-pass-the-runners)'s.
   (fn:sub_005B1740_MonAiEvent@0x005B1740, fn:sub_005A8030_MonModeEndGeneric@0x005A8030)
 - [I] **`Idle` queues; a think that queues nothing leaves no kind-2 record**, so such a unit next thinks at a mode's end.
   Row 6 cancels its pending event on every decision (T6). (fn:UNIT_CancelEvents@0x00540E60, fn:sub_005F02C0_AiFallen@0x005F02C0)

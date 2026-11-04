@@ -2,10 +2,10 @@
 spec: chain
 status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
-depends_on: [rng, rng/seeds, drlg/overview, drlg/room-tiles, drlg/lifecycle, drlg/collision, drlg/warps, objects, monsters/pool, monsters/spawn, monsters/special, monsters/stats, items/tc, items/quality, items/uniques-sets, items/affixes, items/properties, items/economy]
+depends_on: [rng, rng/seeds, sim/frame, drlg/overview, drlg/room-tiles, drlg/lifecycle, drlg/collision, drlg/warps, objects, monsters/pool, monsters/spawn, monsters/special, monsters/stats, items/tc, items/quality, items/uniques-sets, items/affixes, items/properties, items/economy]
 consumed_by: []
-tags: {C: 89, I: 7, L: 6}
-updated: 2026-10-21
+tags: {C: 89, I: 8, L: 6}
+updated: 2026-11-04
 ---
 
 # Seed to world: the core specs composed, from the game seed to a populated level and a drop
@@ -82,6 +82,11 @@ these, only the remaining oracles listed under *Inputs and oracles* enter the co
   it, but the game seed (one step per server unit), the object-region seed (carried across rooms) and each room's
   near list do. (fn:sub_00555230_SUnitCreate@0x00555230, fn:OBJRGN_Create@0x00546C60,
   fn:DUNGEON_NearRoomsBuild@0x00619800, [chain/0001 § 3.2](../../findings/chain/0001-oracles.md#32-activation-order-the-plans-open-question))
+- [I] **The activation order is answered with a limit,** [sim/frame § H](../sim/frame.md#h-rooms-list-order-the-new-room-walk-the-room-sync-the-activation-record):
+  the order is derivable from a per-frame record of (a) each client's new room at the room sync, (b) every on-demand
+  activation and `RoomUpdateOne` call and (c) the room pins. (a) is the end of the player's movement, so it stays a logged
+  input until a movement model exists. (fn:sub_0061B730_RoomActivateB@0x0061B730, fn:sub_005380D0_ClientRoomSync@0x005380D0,
+  [frame/0003 § 5](../../findings/frame/0003-timers-activation.md#5-the-activation-order-record))
 - [I] The game seed at a pass entry is a chained value only while no unit was created by simulation since the
   previous pass; a missile or a summon in between shifts it. For the same reason the game seed at each drop is an
   input. (fn:sub_00555230_SUnitCreate@0x00555230, [chain/0001 § 3.2](../../findings/chain/0001-oracles.md#32-activation-order-the-plans-open-question))
@@ -423,5 +428,5 @@ The next drop of the log (line 11928) starts from the game seed `A15D299B:15EB20
   (fn:LOGIC_BarrierGridBuild@0x0066C870)
 - [L] The monster-creating `InitFn`s other than 46 (25, 43 and 62 reached) and MonPlace rows 5, 10 and 11 stay seed
   oracles. (data:g_ObjInitFns@0x00731BC0, run:2026-10-21-chain2)
-- [L] A log-free world build from `gen` alone would need the activation order as an input record and the hand-off
-  between the objects and monsters models; plan 0048 does not build it (Phase 1 review ruling 1).
+- [L] A log-free world build from `gen` alone would also need the hand-off between the objects and monsters models;
+  plan 0048 does not build it (Phase 1 review ruling 1).
