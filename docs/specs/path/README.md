@@ -512,7 +512,7 @@ A class 225 missile's type-10 plan, `2026-11-04-path-2-s1-6004-k5-sor-oasis.log`
 
 ## Open questions
 
-- [L] **Do corpses block movement?** `0x8000` is in no mask read (C4 `[I]`, F4). That is what the findings did not find, not a finding. `unflatDead`: `src:d2mods-monstats-guide` says walking, `src:d2dfg-blizzard` says drawing, no reader read. [Entry](../../backlog/2026-11-04-architect-reverser-0054-unflatdead-reader-corpse-walk-or-draw.md).
+- [L] **Do corpses block movement?** `0x8000` is in no mask read (C4 `[I]`, F4). That is what the findings did not find, not a finding. `unflatDead`: `src:d2mods-monstats-guide` says walking, `src:d2dfg-blizzard` says drawing, no reader read. [Entry](../../backlog/archive/2026-11-04-architect-reverser-0054-unflatdead-reader-corpse-walk-or-draw.md).
 - [L] **Pets against players:** no pet-specific mask read (`src:d2mods-monstats-guide`, path/0007 P05). A pet's route has F4's two moves, then `PATH_SetMarkMask(path, 0x100)` when 0x0063EA40 returns 0, a callee unfollowed.
 - [L] **No readable community record** for type 10 (no page came back), Teleport as a pathing event (the named pages returned 403, so it is unread, not empty) or corner stalls (only D2R anecdotes). [path/0007 § Not compared](../../findings/path/0007-community-cross-check.md#not-compared).
 - [L] **Whirlwind's flight:** `0x401` and the stop at a blocked subtile are read and not compared for a flight; no run shows a flight stopping or passing a unit. (`src:fextralife-d2-whirlwind`, path/0007 P07, P08)

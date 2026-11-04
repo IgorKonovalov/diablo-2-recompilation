@@ -17,7 +17,7 @@ code before any was read (ADR-0001), and registered in `docs/sources.md` before 
   collision columns, and one floor-flag table, whose first part (values 00 to 04) is aligned and whose other parts are not.
 - **15 claims compared: 2 `held`, 7 `held with refinement`, 1 `contradicted`, 5 `not covered`.** All
   agreement is weak: the sources are column guides without a version for these columns (P01, P02, P13), a 2006 list its author calls not final (P06), a wiki page with no patch for its claim (P07, P08) or describe D2R (P09, P10, P11). Nothing is raised on them.
-- **One contradiction, outside the planner:** floor flag 01 "allow missiles pass" against skills/missiles D3's own-cell test (P12). [Backlog entry](../../backlog/2026-11-04-architect-reverser+spec-writer-0054-p12-missile-own-cell-bit0-vs-floor.md). It does not touch a statement of path/0001 to 0006 and is not a case of plan 0054. A second entry asks for `unflatDead`'s readers, on which two sources disagree (P04, P14): [entry](../../backlog/2026-11-04-architect-reverser-0054-unflatdead-reader-corpse-walk-or-draw.md).
+- **One contradiction, outside the planner:** floor flag 01 "allow missiles pass" against skills/missiles D3's own-cell test (P12). [Backlog entry](../../backlog/2026-11-04-architect-reverser+spec-writer-0054-p12-missile-own-cell-bit0-vs-floor.md). It does not touch a statement of path/0001 to 0006 and is not a case of plan 0054. A second entry asks for `unflatDead`'s readers, on which two sources disagree (P04, P14): [entry](../../backlog/archive/2026-11-04-architect-reverser-0054-unflatdead-reader-corpse-walk-or-draw.md).
 - **Phase 1b's earlier reason did not hold.** The `lane/p54c` lane's statement, that no registered source held a comparable claim, was kept by its review as "true of `docs/sources.md`" (plan log, ruling 4; [path/0006](0006-holdout.md) § Floors). Two registered sources hold such claims: `src:d2mods-monstats-guide` (article 359: `deadCol`, `SizeX`) and `src:d2dfg-blizzard` (`deadCol`, `unflatDead`, `noGfxHitTest`, and `SizeX` already compared at drlg/0005). (tbl:MonStats2.txt:deadCol)
 - **Rejected or unread:** `src:pk-missile-functions-guide` (pseudocode-style formulas of game logic: rejected,
   unread beyond the scan, nothing used); five pages that returned HTTP 402 or 403 (`src:diablowiki-leap-teleport-charge` three of them,
@@ -87,6 +87,7 @@ community documents of unknown or other patches, so **agreement is weak** and is
   - Finding: the game's column is `unflatDead` (`+0x006` bit 4, 9 stock rows, `[C]` in the table doc), and no finding or spec reads it; their corpse statements are all about `deadCol` and the
     marks it selects. This is the one corpse-as-obstacle claim of the search with a named column, and P14 contradicts it from the other side, so the spec's
     Open questions keep it and a backlog entry asks for its readers. (tbl:MonStats2.txt:unflatDead)
+    *Verdict added 2026-11-04 (`lane/r70`): **not supported** for 1.14d. The bit's one direct reader is a client draw-list test (0x004648AB, [path/0008](0008-corpse-remainders.md) item 6); no mark or move mask is read from it, and no immediate move mask holds `0x8000` (item 5). The `[L]` stays a lead.*
 - [L] **P05** src:d2mods-monstats-guide (under `SizeX - SizeY`): "while pets do not use this setting towards the players, they can still
   block each other"; necromancers that teleport along with large monsters end with
   all their minions "blocked into the same position". **not covered**
@@ -102,6 +103,7 @@ Added at the review. The lane did not open it for this question.
   - The same as P01: the direction holds at the server's grid; `deadCol` 0 still writes `0x8000`. Weak: a later build. (0x005A65CD, tbl:MonStats2.txt:deadCol)
 - [L] **P14** src:d2dfg-blizzard: `unflatDead` "If equals 1, then ignore the corpse draw order for rendering the sprite on top of others, while the monster is dead." **not covered**
   - No finding reads the bit. It is a drawing statement and P04's is a walking one, so the two sources disagree with each other, and neither is compared with code. (tbl:MonStats2.txt:unflatDead)
+    *Verdict added 2026-11-04 (`lane/r70`): **held with refinement**. The one reader (0x004648AB) selects which draw-list routine a dead monster of mode 12 is entered through; the order inside the list is not read ([path/0008](0008-corpse-remainders.md) item 6).*
 - [L] **P15** src:d2dfg-blizzard: `noGfxHitTest` "If equals 1, then enable the mouse selection bounding box functionality around the monster." **not covered**
   - No finding reads the bit. It fits the table doc's `ht*` "hit box", and takes the column away from the path code if true. (tbl:MonStats2.txt:noGfxHitTest)
 
@@ -169,7 +171,7 @@ For the spec's Open questions. P12 is the one contradiction, and it belongs to s
 
 - `[L]` **Do corpses block movement in 1.14d?** path/0005's C4 `[I]` says the server's `0x8000` 3×3 appears in "no move mask
   read so far", and `PathCellCollision`'s `0x7FFF` leaves the bit out too (skills/missiles D3 `[I]`). A reimplementer should not treat the `0x8000` corpse mark as a blocker until a mask that tests it
-  is found; this is a statement of what the findings did not find, not a finding. `unflatDead`: `src:d2mods-monstats-guide` says walking, `src:d2dfg-blizzard` says drawing, no reader read ([entry](../../backlog/2026-11-04-architect-reverser-0054-unflatdead-reader-corpse-walk-or-draw.md)).
+  is found; this is a statement of what the findings did not find, not a finding. `unflatDead`: `src:d2mods-monstats-guide` says walking, `src:d2dfg-blizzard` says drawing, no reader read ([entry](../../backlog/archive/2026-11-04-architect-reverser-0054-unflatdead-reader-corpse-walk-or-draw.md)).
 - `[L]` **Pets against players** (P05): no pet-specific mask read.
 - `[L]` **A missile over a bit-0 cell** (P12), for skills/missiles' Open questions, [entry](../../backlog/2026-11-04-architect-reverser+spec-writer-0054-p12-missile-own-cell-bit0-vs-floor.md).
 - `[L]` **Whirlwind's flight** (P07, P08): `0x401` is a reading past the emulation's boundary, and no run compares a flight stopping or passing a unit. The mask itself is not an open question, as the lane's first text had it, and neither is `SizeY`, which drlg/0005 § 5 answers (P02).

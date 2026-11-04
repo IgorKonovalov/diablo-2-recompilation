@@ -99,6 +99,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x004638A0,func,sub_004638A0_MonStats2FlagTest,,I,drlg/collision,docs/findings/drlg/0005-collision.md
 0x00463900,func,sub_00463900_MonClassCheck,,I,monsters/stats,docs/findings/monsters/0004-stats.md
 0x00463DD0,func,sub_00463DD0_ClientPlayerGet,,I,archaeology,docs/findings/archaeology/0003-sound-draws.md
+0x00464860,func,sub_00464860_UnitFlatDrawTest,,I,drlg/collision,docs/findings/path/0008-corpse-remainders.md
 0x00465420,func,sub_00465420_ClientRoomAt,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x00465FD0,func,sub_00465FD0_UnitInit,,C,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x00466200,func,sub_00466200_UnitInitB,,C,rng/seeds,docs/findings/rng/0002-seed-tree.md
@@ -3255,6 +3256,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x006502D0,func,sub_006502D0_PathVelocityStep,,C,skills/missiles,docs/findings/skills/0002-missiles.md
 0x00650350,func,sub_00650350_PathReplan,,I,anim/movement,docs/findings/anim/0003-movement-gates.md
 0x006503F0,func,sub_006503F0_PathStepTargetCheck,,I,anim/movement,docs/findings/anim/0003-movement-gates.md
+0x00650590,func,sub_00650590_PathSnapToTileCentre,,I,drlg/collision,docs/findings/path/0008-corpse-remainders.md
 0x006505C0,func,sub_006505C0_PathFlag08,,I,skills/missiles,docs/findings/skills/0003-handlers.md
 0x006505E0,func,sub_006505E0_PathFollowUnit,,I,skills/catalogue,docs/findings/skills/0018-monster-8c.md
 0x00650660,func,sub_00650660_PathStepMove,,C,anim/movement,docs/findings/anim/0003-movement-gates.md
