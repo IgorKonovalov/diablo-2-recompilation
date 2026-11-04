@@ -905,6 +905,7 @@ OwnerBlock:                                       [I] (all of this block) (fn:su
   if r > 50: PetMove(O, U, 3, …)                  ; kind 3, the teleport
   s ← Run·100 ÷ Velocity − 100;  100 when Velocity < 1 or s > 99
   if r ≥ 29: PetMove(O, U, 0, 0, s, 0)
+  the rest of each branch runs inside 29
 Melee:
   OwnerBlock
   t ← FindTarget(ctl), dropped if its +0xC4 bit 30 is set,
@@ -928,7 +929,7 @@ Ranged:
     else Idle(10)
 ```
 
-- T67a. [I] **`AiPetGuard(t, O, melee, ctx, flag, dist)`.** `dist ← dist + 0x00574F40(O) >> 1`, capped at 36; `r ← Dist(pet, O)`. With `r < 2`, the owner in mode 1 and no `melee`: `PetMove(kind 5)`. With `t` and the pet outside town: 0 (the caller acts) while `r ≤ 80`, else kind 3. Otherwise the kind is 2 (stand), set to 0
+- T67a. [I] **`AiPetGuard(t, O, melee, ctx, flag, dist)`.** `dist ← dist + (0x00574F40(O) >> 1)`, capped at 36; `r ← Dist(pet, O)`. With `r < 2`, the owner in mode 1 and no `melee`: `PetMove(kind 5)`. With `t` and the pet outside town: 0 (the caller acts) while `r ≤ 80`, else kind 3. Otherwise the kind is 2 (stand), set to 0
   when the owner walks or runs (modes 2, 3, 6) or its path has a target point off both axes, 1 when the two are in different logic regions or `r > dist`, 3 when `r > 50`; when the owner's path is within 28 of its player-data point (`+0x14C`) kind 1 with `r ≤ 29`, or kind 2, become 4; with `flag` and kind 2 the guard returns 0; else
   `PetMove(kind, 0, 0, dist)`. No draw in the guard itself. (fn:sub_005E45D0_AiPetGuard@0x005E45D0, 0x005E482A, fn:sub_0061B130_LogicRegionIdAt@0x0061B130)
 - T67b. [I] **`AiPetMove`**, returning 1 when it commanded: kind 0 walks to a point eight subtiles out in the owner's direction class (an eight-direction search of free points in the owner's region); kind 1 runs toward the owner's path target with `speed`, or `40 + Range(40)` when `speed` is 0; kind 2 wanders: `Range(100) < 10` gives
@@ -988,7 +989,7 @@ An entry ends in one of § B's commands, a helper of § C, or a return with noth
 
 - [I] **A draw in a failed `and`.** `chance(K)` short-circuits as written: row 13's second `chance(1)` is drawn only with a corpse, row 22's `aip3` only with `Skill2 ≥ 0` and a wounded unit. Keep the order of the tests. (fn:sub_005F1440_AiFallenShaman@0x005F1440, fn:sub_005F2B10_AiGreaterMummy@0x005F2B10)
 - [I] **Row 21's `Idle` does not return:** the walk runs in the same event. (0x005F29D7, 0x005F29E6)
-- [I] **Row 13's kind-9 bound compares an AI distance with a square.** Row 13 and row 22's `aip` squares are 32-bit signed. (fn:sub_005DCDA0_AiDeadMinionCb@0x005DCDA0)
+- [I] **Row 13's kind-9 bound compares an AI distance with a square.** Row 22's bounds are 32-bit signed `imul` squares of an i16. (fn:sub_005DCDA0_AiDeadMinionCb@0x005DCDA0, 0x005F2C85)
 - [I] **Row 125 uses the constant mode 5** and no sign test on `Skill1`. (0x005E3799)
 - [I] **A leader's stack block** carries four words the code does not write (E5), and row 30 reads `+0x0C/+0x10` of a kind-1 head record for its `GameFindUnit`; these inputs do not give those words. (0x005F04AA, 0x005F04D5, 0x005F53E0)
 - [I] **Row 34's override type 1 plans type 7** (D2), so `Ovr(1, …)` is no type-1 request. (fn:sub_005DE190_MonAiPathOverride@0x005DE190)

@@ -426,11 +426,11 @@ code, of a function the emulation of that think treats as a boundary (ADR-0021).
 its call site (the return address), registers, stack words, the seed, the control words and the block a pointer
 argument addresses. It stops there: what the callee returns and everything after it is the next section's.
 
-- G1. [C] **Floor, first run.** Over the 18 tier AIs, 14 645 decisions, 12 614 compared, **0 mismatches** at each
-  decision's first boundary, all 18 at 50 or more; 10 374 are compared with an emulated map and 2 240 with a map read by
-  hand. Outside the 0: 2 016 decisions in rows with no model, 15 Scarab decisions the rev 2 window could not compare and
-  the 17 679 events that end before the think call. (run:2026-11-03-ai, fn:sub_005B1740_MonAiEvent@0x005B1740)
-- G2. [C] **Later batches.** 7 539 decisions, 6 272 compared, 0 mismatches (run:2026-11-03-ai-3); 6 524 decisions, 4 476
+- G1. [C] **Floor, first run.** Over every row logged, 14 645 decisions, 12 614 compared, **0 mismatches** at each
+  decision's first boundary; 10 374 are compared with an emulated map and 2 240 with a map read by hand. The 18 tier AIs
+  hold 9 823 of the 14 645, per the table below, each at 50 or more. Outside the 0: 2 016 decisions in rows with no model,
+  15 Scarab decisions the rev 2 window could not compare and the 17 679 events that end before the think call. (run:2026-11-03-ai, fn:sub_005B1740_MonAiEvent@0x005B1740)
+- G2. [C] **Later batches, every row logged.** 7 539 decisions, 6 272 compared, 0 mismatches (run:2026-11-03-ai-3); 6 524 decisions, 4 476
   compared (3 538 modelled, 938 by hand maps), 2 048 in rows with no model, 0 mismatches (run:2026-11-04-ai-r5). Controls
   fail as required in both. (0x005B186F)
 - G3. [C] **What the 0 tests.** 3 313 of the 4 476 compared decisions of the rev 6 batch sit in the 16 thinks with one
