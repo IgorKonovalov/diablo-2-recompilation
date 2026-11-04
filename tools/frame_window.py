@@ -123,8 +123,9 @@ TOUCH = [
 
 
 # Game-seed step locations of an item's unit constructor, counted by the per-KD even rule (items/tc H7: two game-seed steps per item):
-# fn:sub_00552DF0_UnitSeedInit+0x41 and fn:sub_00552E90_ItemSeedInit+0xf. Sub-missiles and other creations in the same event step at
-# other sites and are not counted (skills/missiles C3). They are also the seed-initialising steps: a seed made from the game seed's
+# fn:sub_00552DF0_UnitSeedInit+0x41 and fn:sub_00552E90_ItemSeedInit+0xf. Corrected at the `lane/p55c` review: SUnitCreate calls the first
+# for every unit it creates (0x0055530E) and the second for type 4 only (0x0055532A), so a sub-missile created in a KD's segment steps
+# at a counted site and would fail `even`; no kept segment holds one. They are also the seed-initialising steps: a seed made from the game seed's
 # post-step low word (a unit's or an item's first draw) shares that low word with the game seed until the game seed steps again.
 KILL_GAME = frozenset({0x00552E31, 0x00552E9F})
 FRESH_INIT = KILL_GAME

@@ -51,6 +51,9 @@ def check_chain2(w, touch=None, passdraw=None):
     cls_n = collections.Counter()           # class -> steps
     site_n = collections.Counter()          # (class, trigger or "", loc) -> steps
     untracked = collections.Counter()
+    untracked_where = collections.Counter()  # (in the tick, a pair open) -> steps on no chained seed; (`lane/p55c` review)
+    client_chained = collections.Counter()   # client steps whose low word equals a chained seed's: the ones that separate "not applied"
+    altreads = []                            # (is the game seed, alternatives held) at a reading that held more than one
     uptr = {}                               # (U, type, guid) -> the unit record's address at its last UE0
     recreated = collections.Counter()       # a guid seen at another address: a new unit, its chain starts again
     client_n = collections.Counter()        # steps at CLIENT locations between ticks (not applied to any chained seed)
@@ -118,6 +121,8 @@ def check_chain2(w, touch=None, passdraw=None):
         skip = legacy and (role == "exit" or (role == "entry" and (
             bool(stack) if key == "G" else any(key == ("U", r["ty"], r["id"]) or key == ("U", 0, r["id"]) if r["tag"] in ("UE0", "MSG0")
                                                else (r["tag"] == "RU0" and key == ("R", r["room"])) for r in stack))))
+        if len(a) > 1:
+            altreads.append((key == "G", len(a)))
         if seed not in a and not skip:
             exp = sorted(a)[0]
             rel = fw.relation(fw.fmt(exp), seed_s)
@@ -131,10 +136,13 @@ def check_chain2(w, touch=None, passdraw=None):
         loc = o.get("ra") or o["site"]
         if not in_frame[0] and fw.client_loc(loc, passdraw):
             client_n[loc] += 1        # the main loop's client code: its seeds are the client's copies, no chained seed is stepped
+            if any(v[0] == low for a in alts.values() for v in a):
+                client_chained[loc] += 1
             return
         cands = [k for k, a in alts.items() if any(v[0] == low for v in a)]
         if not cands:
             untracked[(loc, bool(stack))] += 1
+            untracked_where[(in_frame[0], bool(stack))] += 1
             return
         for k in cands:
             a = alts[k]
@@ -348,7 +356,7 @@ def check_chain2(w, touch=None, passdraw=None):
                 top = next((r for r in reversed(stack) if r["tag"] == "UE0"), None)
                 if top is not None:
                     qf_by_frame[o["fr"]][(o["ut"], o["id"], o["kind"])] = top["ty"]
-    return dict(fails=fails, recreated=recreated, client=client_n, cls=cls_n, sites=site_n, untracked=untracked, ambig=ambig, entries=ent, reads=reads, firsts=firsts,
+    return dict(untracked_where=untracked_where, client_chained=client_chained, altreads=altreads, fails=fails, recreated=recreated, client=client_n, cls=cls_n, sites=site_n, untracked=untracked, ambig=ambig, entries=ent, reads=reads, firsts=firsts,
                 kds=kds, free=free_runs, order=rank_n, cross=cross, has_xs=any(t == "XS" for _n, t, _o in w["lines"]))
 
 
@@ -454,12 +462,20 @@ class Gen:
                 self.s[("U", 3, 501)] = (lo & M32, INIT_HI)
                 self.ue0(3, 501, 1, "ef", ("U", 3, 501))
                 self.ue1(3, 501, ("U", 3, 501))
+            # the every-frame order: records 10 and 11 queued in that order run newest first (11, 10), or inverted when asked
+            if f == start + 3 and (sw.get("ef_newest") or sw.get("ef_inverted")):
+                self.emit("QF", dict(fr=f, kind=0, ut=1, id=10, ra=1))
+                self.emit("QF", dict(fr=f, kind=0, ut=1, id=11, ra=1))
             # the player's kind 11 (draw-free), and its optional own step
             ue_player = (6, 7)
             self.ue0(0, 1, 11, "ef", ("U", 0, 1))
             if sw.get("free_draw"):
                 self.draw(("U", 0, 1), 1, SITE_OWN)
             self.ue1(0, 1, ("U", 0, 1))
+            if f == start + 4 and (sw.get("ef_newest") or sw.get("ef_inverted")):
+                for i in ([10, 11] if sw.get("ef_inverted") else [11, 10]):
+                    self.ue0(1, i, 0, "ef", ("U", 1, i))
+                    self.ue1(1, i, ("U", 1, i))
             # the monsters' slot events at start+3 (queue order 10, 11; inverted when asked)
             if f == start + 3:
                 order = [11, 10] if sw.get("slot_inverted") else [10, 11]
@@ -575,9 +591,10 @@ def selftest2():
     nox = [ln for ln in clean if not ln.startswith("XS ")]
     whole, x = _verdict(nox)
     out.append(("12 a log with no XS reads as rev 1 (no step logged)", not whole and x["has_xs"] is False, x["fails"][:2]))
-    # 13 a sub-missile's game-seed step inside the KD's event, at its own site, is not counted (classed by site)
+    # 13 a game-seed step at a site outside KILL_GAME is not counted. SITE_GAME is synthetic: in the binary a sub-missile's creation
+    # steps at UnitSeedInit+0x41, a site of KILL_GAME (`lane/p55c` review), so this control does not show that a real one passes.
     want_pass = lambda name, lines: out.append((name, not kinds(lines)[0] and not kinds(lines)[1], sorted(kinds(lines)[1])))
-    want_pass("13 a sub-missile's own-site game step beside the item steps passes", Gen(sub_missile=1).build())
+    want_pass("13 a game-seed step at a site outside KILL_GAME beside the item steps passes", Gen(sub_missile=1).build())
     # 14 the rule is per KD: two KDs in one event, steps 2 + 1 at the item sites, fail although the event holds 3 ... and 2 + 2 passes
     want("14 the even rule counts per KD (3 + 1 item-site steps over two KDs, even in all) fails even", Gen(two_kd=1, kill_game=3).build(), "even")
     # 15 the room trigger holds in an RU0 (the clean log has a neighbour's step in room 9000's RU0): reversed by removing the RU0
@@ -591,6 +608,8 @@ def selftest2():
     want("21 the same listed site on a unit with no death queued fails trigger", Gen(killev_noq=1).build(), "trigger")
     want_pass("22 a guid met at another unit record (a level change) starts a new chain", Gen(recreate=1).build())
     want("23 the same record with an unrelated seed fails arith", Gen(reseed_same_u=1).build(), "arith")
+    want_pass("24 every-frame records run newest QF first", Gen(ef_newest=1).build())
+    want("25 the older QF first fails ef", Gen(ef_inverted=1).build(), "ef")
     fr = Gen().build()
     out.append(("17 the clean log holds client, room and kill traffic and passes", not _verdict(fr)[0] and not _verdict(fr)[1]["fails"], ""))
     ok = True
