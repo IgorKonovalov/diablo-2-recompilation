@@ -155,3 +155,64 @@
 - **Also kept**, `workspace/logs/r54c/manifest.sha256` (`9b81743a…`, 11 lines; it passes from that directory): `p3-h1log.txt` (the 45 logs of run:2026-10-25-skills, run:2026-10-27-skills and run:2026-10-30-skills-catalogue, 654 creations, 0 mismatches), `p3-stock.txt`, `p3-bounds.txt`, `p3-scan3c.txt`, `p3-rngcg.txt`, the disassembly and the decompile.
 - **Count:** the `total` line's 4 330 includes the `spiral` family's 90, which match a model chosen to agree with the emulator; 4 240 cases test the game's code.
 - **Conclusion:** the maps of path/0003 §§ 1–8 and 10 are `[C]` to each planner's return over the declared images; `spiralobs`, `h1obs` and the assert cases to their boundaries. Not what the game stores in a context, not `PathPlan`'s tail, not x87. The spiral stays `[I]`: the emulator's `FISTP` ignores the rounding field the code sets. H1's draws are also `[C]` from the game's logs. (run:2026-11-03-path-emu-3)
+
+## run:2026-11-04-path
+
+- **Question:** (plan 0054 Phase 2, `lane/p54`) Does `PathPlan` on the server, called by the game for its own units, return what the models of
+  [path/0001](0001-pathplan-register.md) § 1, [path/0002](0002-search.md) and [path/0003](0003-short-planners.md) give from what the log holds:
+  the return, the points the request leaves in the path record, and the exit seed of the unit?
+- **Setup:** slot 1 (display `:8`, `workspace/wineprefix-1`), fresh game process per case (`tools/path_sessions.py`, harness-play.md § Fresh
+  process), the logger `tools/gdb/path.gdb` (`pilot.py` + `path.py`), driven by `tools/d2pilot.py`, checked by `tools/path.py check`.
+  Tool revisions: the 20 sessions of seeds 5401–5414 and 5501–5506 ran the logger **rev 3** (commit `a501a7fa`; the committed
+  `tools/gdb/path.py` then); the last session, seed 5601 (`k4-dru-stony`), ran **rev 4** (commit `178106ec`: items in the unit list, which logged none, and the
+  watchpoint control). `tools/path.py` is the revision of `178106ec`; its hashes are in `2026-11-04-path-tools.sha256`. Seeds 5401…, 5501…,
+  5601 are the game's `-seed`; the characters are in `tools/d2s_recipes/` (`path-bar.json` on `smpbar`: Crushflange, Whirlwind, Leap, Leap Attack;
+  `path-pal.json` on `smppal`: Blessed Hammer, Charge) and the saves of `tools/ai_sessions.py` / `tools/skills_sessions.py` (`CombatSor`, `AiNec`,
+  `SkillsDru`). Environment per case: `PATH_SPIRAL_PROBE` (the spiral's probe, path/0004 § 6) on `k-pal-stony` (6) and `k-pal-jail` (4);
+  `PATH_CHAIN` (seed watchpoints) on `k-dru-stony`, `k-dru-oasis`, `k4-dru-stony` (60 each); `PATH_CHAIN_CTL` (40) and `PATH_ITEMS` on `k4-dru-stony` only. Caps per game: 250 plans that
+  reach a planner per path type, 40 refusals per type, 3 500 plans, 120 units per plan, radius 80 subtiles from the first player.
+- **Cases** (21 kept, all `kept` by the runner: the character left its starting level where a waypoint was clicked; plans = `PLN` lines;
+  level = the level id of the unit's room, `PLN.ar`; `workspace/logs/path/2026-11-04-path-s1-<seed>-<case>.log`):
+
+  | case | seed | level (act) | plans | case | seed | level (act) | plans |
+  |---|---:|---|---:|---|---:|---|---:|
+  | k-town-bar | 5401 | 103 Pandemonium Fortress (4, town) | 251 | k-sor-oasis | 5410 | 43 Far Oasis (2) | 649 |
+  | k-bar-stony | 5402 | 4 Stony Field (1) | 904 | k-sor-flayer | 5411 | 78 Flayer Jungle (3) | 854 |
+  | k-bar-jail | 5403 | 29 Jail 1 (1, maze) | 106 | k-sor-river | 5412 | 107 River of Flame (4) | 735 |
+  | k-bar-halls | 5404 | 57 Halls of the Dead 2 (2, maze) | 584 | k-sor-glacial | 5413 | 115 Glacial Trail (5) | 624 |
+  | k-pal-stony | 5405 | 4 | 582 | k-necro | 5414 | 29 Jail 1 | 663 |
+  | k-pal-jail | 5406 | 29 | 372 | k-sor-oasis-2 | 5501 | 43 | 1 420 |
+  | k-dru-stony | 5407 | 4 | 465 | k-sor-river-2 | 5502 | 107 | 1 123 |
+  | k-dru-oasis | 5408 | 43 | 808 | k-pal-stony-2 / -jail-2 / -stony-3 | 5503–5506 | 4, 29, 4 | 482, 250, 270 |
+  | k-sor-jail | 5409 | 29 | 619 | k-sor-oasis-3 | 5505 | 43 | 1 143 |
+  | k4-dru-stony | 5601 | 4 | 989 | | | | |
+
+  (the town is Act IV's: the characters start there; a town case is `k-town-bar` and the first seconds of every case.) 21 logs, 60.0 MB,
+  13 893 plans; `k-sor-oasis-2`, `-3`, `k-sor-river-2` and `k-pal-stony-2`, `-3`, `k-pal-jail-2` are repeats of a stage with another seed (the first batch left types 2 and 14 short); `k4-dru-stony` repeats `k-dru-stony` under the rev-4 logger.
+- **Observed** (`2026-11-04-path-check.txt`, `sha256` prefix `8f6951c3`; the outcome mix and the controls in full in that file):
+  ```
+  PATH check logs=21 games=21 plans=13893 reached-a-planner=13265 matched=13893 mismatched=0 unmodelled=0
+  type  plans   refused  match  maxret  draws   callers
+     2    162         1    162       6      0   mode machine=162
+     4   2740         0   2740       1      0   missile=2740
+     5    696         0    696       5      0   mode machine=591,movement=105
+     6    655         0    655       5      0   mode machine=553,movement=102
+     7   2894       169   2894      21      0   mode machine=1462,player=1432
+     8    282         0    282       1      0   mode machine=282
+     9     54         0     54       1      0   player=54
+    10    698         0    698      39    698   missile=698
+    13   4078       227   4078      20      0   mode machine=3477,movement=601
+    14     54         0     54      77      0   skill=54
+    15   1580       231   1580      19      0   mode machine=1552,movement=28
+  RESULT OK: 0 mismatches over 13893 reproduced plans; 0 unmodelled; controls passing a separated plan: 0; controls separating nothing: 6
+  ```
+- **Conclusion:** see path/0004 §§ 1–8. **Boundary of the 0 mismatches:** a plan is compared on its return (`EAX` of `PathPlan`), the first
+  `EAX` point words of the path record after the call and the exit seed of the unit; nothing else of the record. It is a statement about the 11
+  types listed (2, 4, 5, 6, 7, 8, 9, 10, 13, 14, 15), the planners they call (greedy, greedy-near with its type-1 switch, knockback, one point, type 15, the random
+  walk, the spiral, the straight type 4), on the grids of rooms the logger dumped live at the planner call, and on server units within 80
+  subtiles of the first player. **Not covered:** type 0 and the search (no logged plan), type 1 as a request (0 plans), types 3, 11, 12, 16 (no
+  server plan), 628 refused requests (their return 0 and unchanged seed are compared; their reason only where the record gives it: 226 target = start, 191 window,
+  211 'rooms, town or free step', which need the grid before the unmark), the tail of `PathPlan` beyond the refusal test (modelled `[I]`), the unit marks and doors as a cause of a
+  refusal (the live cells already contain them).
+  **Short:** type 1 (floor 100: 0 plans); the chained draws of § 5 (floor 50 type-10 plans: 70 watched, none drawn again before release). Not
+  a floor: the first 10 plans' tie is **not exact** (path/0004 § 7). (run:2026-11-04-path)
