@@ -51,6 +51,8 @@ def check_chain2(w, touch=None, passdraw=None):
     cls_n = collections.Counter()           # class -> steps
     site_n = collections.Counter()          # (class, trigger or "", loc) -> steps
     untracked = collections.Counter()
+    uptr = {}                               # (U, type, guid) -> the unit record's address at its last UE0
+    recreated = collections.Counter()       # a guid seen at another address: a new unit, its chain starts again
     client_n = collections.Counter()        # steps at CLIENT locations between ticks (not applied to any chained seed)
     fresh = set()                           # post-step lows of seed-initialising game-seed steps (shared with the new seeds)
     ambig = []
@@ -255,6 +257,13 @@ def check_chain2(w, touch=None, passdraw=None):
         elif tag in fw.ENTRIES:
             rec = dict(tag=tag, line=no, g=0, gsites=[], seg=None, own=0, kind=o.get("kind"), ty=o.get("ty"), id=o.get("id"), room=o.get("room"), o=o)
             if tag == "UE0":
+                ukey = ("U", o["ty"], o["id"])
+                if o.get("u") is not None:
+                    if uptr.get(ukey, o["u"]) != o["u"]:      # another unit record under the same guid (a level change reuses guids)
+                        alts.pop(ukey, None)
+                        moved.discard(ukey)
+                        recreated[ukey] += 1
+                    uptr[ukey] = o["u"]
                 reading("G", o.get("gs"), "entry", no, tag, o)
                 if o.get("us"):
                     reading(("U", o["ty"], o["id"]), o["us"], "entry", no, tag, o)
@@ -339,7 +348,7 @@ def check_chain2(w, touch=None, passdraw=None):
                 top = next((r for r in reversed(stack) if r["tag"] == "UE0"), None)
                 if top is not None:
                     qf_by_frame[o["fr"]][(o["ut"], o["id"], o["kind"])] = top["ty"]
-    return dict(fails=fails, client=client_n, cls=cls_n, sites=site_n, untracked=untracked, ambig=ambig, entries=ent, reads=reads, firsts=firsts,
+    return dict(fails=fails, recreated=recreated, client=client_n, cls=cls_n, sites=site_n, untracked=untracked, ambig=ambig, entries=ent, reads=reads, firsts=firsts,
                 kds=kds, free=free_runs, order=rank_n, cross=cross, has_xs=any(t == "XS" for _n, t, _o in w["lines"]))
 
 
@@ -399,7 +408,7 @@ class Gen:
 
     def ue0(self, ty, i, kind, lst, key):
         self.emit("UE0", dict(fr=self.fr, ty=ty, id=i, lst=lst, kind=kind, rf=self.fr, a=0, b=0, cb=1, site=0x540FB2,
-                              u=0x1000 + i, us=fw.fmt(self.s[key]), gs=self.gs()))
+                              u=0x1000 + i + (0x100000 if (i == 10 and getattr(self, "uoff", False)) else 0), us=fw.fmt(self.s[key]), gs=self.gs()))
 
     def ue1(self, ty, i, key):
         self.emit("UE1", dict(fr=self.fr, id=i, site=0x540FB2, u=0x1000 + i, us=fw.fmt(self.s[key]), gs=self.gs(), gone=0))
@@ -465,6 +474,9 @@ class Gen:
                     self.ue1(1, i, ("U", 1, i))
             # a defender touch inside a monster attack event (the trigger of the DEF site)
             if f == start + 5:
+                if sw.get("recreate") or sw.get("reseed_same_u"):    # unit 10 is a new record under the same guid, or the same record re-seeded
+                    self.s[("U", 1, 10)] = (0x9999, INIT_HI)
+                    self.uoff = bool(sw.get("recreate"))
                 if sw.get("def_no_trigger"):          # the same site with a kind 6 event open: not an attack event
                     self.ue0(0, 1, 6, "ef", ("U", 0, 1))
                     self.draw(("U", 1, 10), 1, SITE_DEF)
@@ -577,6 +589,8 @@ def selftest2():
     want("19 the same draw after a game-seed step at no constructor site fails arith", Gen(fresh_noinit=1).build(), "arith")
     want_pass("20 a death handler's draw on a unit queued kind 12 in the open event passes (before its KD line)", Gen(killev=1).build())
     want("21 the same listed site on a unit with no death queued fails trigger", Gen(killev_noq=1).build(), "trigger")
+    want_pass("22 a guid met at another unit record (a level change) starts a new chain", Gen(recreate=1).build())
+    want("23 the same record with an unrelated seed fails arith", Gen(reseed_same_u=1).build(), "arith")
     fr = Gen().build()
     out.append(("17 the clean log holds client, room and kill traffic and passes", not _verdict(fr)[0] and not _verdict(fr)[1]["fails"], ""))
     ok = True

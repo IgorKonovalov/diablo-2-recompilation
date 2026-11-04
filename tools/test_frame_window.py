@@ -557,7 +557,7 @@ class TestReader2(unittest.TestCase):
         finally:
             sys.stdout = old
         self.assertEqual(rc, 0, buf.getvalue())
-        self.assertEqual(buf.getvalue().count("PASS"), 22)
+        self.assertEqual(buf.getvalue().count("PASS"), 24)
 
     def test_tables_are_sourced(self):
         rows = {}

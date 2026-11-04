@@ -95,6 +95,18 @@ TOUCH = [
     dict(trigger="room", ranges=[(0x00552610, 0x00552AC0)], fn="fn:sub_00552610_RoomObjectsPopulate@0x00552610", spec="chain/README D4; objects C-H"),
     dict(trigger="room", ranges=[(0x00550A30, 0x00550C20)], fn="fn:OBJ_PlaceByOrientation@0x00550A30", spec="objects F3; chain/README D4"),
     dict(trigger="room", ranges=[(0x00552B50, 0x00552DF0)], fn="fn:OBJPOP_Shrine@0x00552B50", spec="objects E2; chain/README D4"),
+    # added after the kept window 2026-11-04-frame2-s1-5505-maze1 #1 failed on OBJPOP_Well and OBJ_PlaceRandomRoomSeed (that window is uncounted;
+    # the object-population handlers of objects/README E1-E10 are one family, added whole for the next windows)
+    dict(trigger="room", ranges=[(0x00550380, 0x00550540)], fn="fn:OBJ_PlaceRandom@0x00550380", spec="objects E (handler draws), chain/README D4"),
+    dict(trigger="room", ranges=[(0x00550540, 0x005506D0)], fn="fn:OBJ_PlaceRandomRoomSeed@0x00550540", spec="objects E (handler draws), chain/README D4"),
+    dict(trigger="room", ranges=[(0x00550C20, 0x00551150)], fn="fn:OBJPOP_Clusters@0x00550C20", spec="objects E (handler draws), chain/README D4"),
+    dict(trigger="room", ranges=[(0x00551200, 0x00551470)], fn="fn:OBJPOP_StickCorpses@0x00551200", spec="objects E (handler draws), chain/README D4"),
+    dict(trigger="room", ranges=[(0x00551470, 0x00551580)], fn="fn:OBJPOP_Scatter@0x00551470", spec="objects E (handler draws), chain/README D4"),
+    dict(trigger="room", ranges=[(0x00551580, 0x00551690)], fn="fn:OBJPOP_Trap@0x00551580", spec="objects E (handler draws), chain/README D4"),
+    dict(trigger="room", ranges=[(0x00551690, 0x005516C0)], fn="fn:OBJPOP_Corpse@0x00551690", spec="objects E (handler draws), chain/README D4"),
+    dict(trigger="room", ranges=[(0x005516C0, 0x00551850)], fn="fn:OBJPOP_Well@0x005516C0", spec="objects E (handler draws), chain/README D4"),
+    dict(trigger="room", ranges=[(0x00551850, 0x00551C00)], fn="fn:OBJPOP_Barrels@0x00551850", spec="objects E (handler draws), chain/README D4"),
+    dict(trigger="room", ranges=[(0x00551C00, 0x00552400)], fn="fn:OBJPOP_Crates@0x00551C00", spec="objects E (handler draws), chain/README D4"),
     dict(trigger="killev", ranges=[(0x005A2D10, 0x005A30E0)], fn="fn:sub_005A2D10_UModPartyDeadDeath@0x005A2D10", spec="items/quality (the partydead mod's death handler, g_UModEventFns); monsters/special"),
     dict(trigger="owner", ranges=[(0x005A5560, 0x005A5E50)], fn="fn:sub_005A5560_MonCritDouble@0x005A5560", spec="combat/damage 10 (the attacking monster's crit draw on its own seed, inside its missile's event)"),
     dict(trigger="defender", ranges=[(0x0057DFB0, 0x0057E240)], fn="fn:COMBAT_DefenceRoll@0x0057DFB0", spec="combat/to-hit"),

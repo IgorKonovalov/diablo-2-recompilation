@@ -103,18 +103,26 @@ def scenes(wp_x=None, wp_y=None, long=False):
                 window("pack", n=500, hooks=first, what="the third pack window" + (" (FRAME_HOOKS=1: the 65 universal hooks)" if first else "")),
                 ("killbg",)]
 
-    def maze_steps(first):
+    def maze_steps(first, h1=False):
         # `explore` stops at Blood Moor (killbg at the level wait); the descend then takes the warp of LvlWarp rows 0-3 that leads to 8
-        return walkout + [("killbg",), ("settle", 4), ("bg", descend, 900), ("lvl", 8, 600), ("settle", 6), ("near", 22, 2, 240, "any"),
-                window("maze", n=500, what="pilot: the Den of Evil (the maze scene's first window)"), ("gate", "maze"),
-                ("near", 22, 2, 240, "any"), window("maze", n=500, what="the second maze window"),
-                ("near", 22, 2, 240, "any"), window("maze", n=500, what="the third maze window"), ("killbg",)]
+        return walkout + [("killbg",), ("settle", 4), ("bg", descend, 900), ("lvl", 8, 600), ("settle", 6), ("near", 30, 1, 300, "any"),
+                window("maze", n=500, hooks=h1, what="pilot: the Den of Evil (the maze scene's first window)" + (" (FRAME_HOOKS=1: the 65 universal hooks)" if h1 else "")), ("gate", "maze"),
+                ("near", 30, 1, 300, "any"),
+                window("maze", n=500, cover=8192 if first else 0,
+                       what="the second maze window" + (" (a frame = 0 mod 8192: SaveGameClients as a boundary oracle)" if first else "")),
+                ("near", 30, 1, 300, "any"),
+                window("maze", n=500, hooks=first, what="the third maze window" + (" (FRAME_HOOKS=1: the 65 universal hooks)" if first else "")),
+                ("killbg",)]
     return {
         "town": dict(diff="normal", est="town (1 player, 8 NPCs)", text="Act I town (Rogue Encampment)", steps=town),
         "pack1": dict(diff="normal", est="outdoor pack (1 player, 15 monsters)", text="Blood Moor's Fallen pack, with the mod 8192 and hooks windows",
                       steps=pack_steps(True)),
         "pack": dict(diff="normal", est="outdoor pack (1 player, 15 monsters)", text="Blood Moor's Fallen pack", steps=pack_steps(False)),
         "maze": dict(diff="normal", est="maze boss (1 player, boss + 10 minions)", text="the Den of Evil", steps=maze_steps(False)),
+        "mazeh": dict(diff="normal", est="maze boss (1 player, boss + 10 minions)", text="the Den of Evil, hooks armed in the first window",
+                      steps=maze_steps(False, True)),
+        "maze1": dict(diff="normal", est="maze boss (1 player, boss + 10 minions)", text="the Den of Evil, with the mod 8192 and hooks windows",
+                      steps=maze_steps(True)),
     }
 
 
@@ -250,6 +258,11 @@ class Session:
         self.ctl = self.stem + ".ctl"
         open(self.ctl, "w").close()
         os.environ["FRAME_CTL"] = self.ctl            # inherited by d2run.py and with it by gdb (tools/gdb/frame.py)
+        # the hook breakpoints exist (disabled) only when the process starts with FRAME_HOOKS: a scene with a hooks window sets it
+        if any(st[0] == "window" and len(st) > 5 and st[5] for st in sc["steps"]):
+            os.environ["FRAME_HOOKS"] = "1"
+        else:
+            os.environ.pop("FRAME_HOOKS", None)
         hr.install(self.slot, self.tag, out=self.out)
         self.drv = hr.launch(self.slot, seed, self.log, gdb=GDB, steps=STEPS[sc["diff"]], after=3000,
                              install=(self.tag, [save]), out=self.out, stem=self.stem)
