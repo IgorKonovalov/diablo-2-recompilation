@@ -19,6 +19,24 @@
 #   PKT   the item request handlers 0x16..0x25 and 0x61 (table g_SrvPacketTable) at entry: opcode, the packet's bytes,
 #         the frame, the player's inventory list (id, page, x, y, mode); PKR the handler's return value EAX and the list
 #   ARM   an armed request edit fired (see below)
+#   SD    PKT, PKR, IPG, IPX and DCI carry "gs" (the game seed, game +0xD0); PKT and PKR also "sd" (the server player's
+#         seed, unit +0x20, "lo:hi" hex), so a request's draws are the difference between the lines (revision 2)
+#   UP0   sub_005BE3F0_ItemUsePotion entry (EDX user, ECX game, [esp+4] item): user type, class, id, the item, the frame,
+#         the user's seed and stats 1, 3, 6, 7, 8, 9, 26, 74, 352 (the cache when the list's flag 0x80000000 is set)
+#   UD1   0x005BE525, before draw #1 (ECX the seed address, EDX n): the seed, n
+#   UD2   0x005BE53B, after draw #2 (EAX r2, EBX r1 >> 1, EDI the amount before the test): the seed after
+#   UDV   0x005BE544, the amount after the test (EDI) and EBX (the slot's stat)
+#   UAD   0x005BE5C2 the instant UnitAddStat (stack: user, stat, value, 0)
+#   UAL   0x005BE602 the timed list's allocation, four stack words
+#   UQE   0x005BE6AE the event queue call, four stack words
+#   USS   0x005BE6CF the list's SetStat (stack: list, stat, rate, 0)
+#   UP1   the entry's return (EAX), the seed and the same stats
+#   RV1   0x005419F5 in sub_00541990_InactiveItemRestoreOne: EBX the record's saved word, ECX frame + 15000, the item (EAX),
+#         the frame, ebp-0x28..ebp-0x4 raw, the item's +0x24 before the write
+#   SV1   0x00541B71 in sub_00541B10_InactiveItemSave: ItemGroundExpiry has returned: EAX saved, the item (EDI), the frame
+#   RM    room activity: 0x0061A910 (ActiveRoomFree), 0x0061A660 (RoomClientAdd) and 0x0061A700 (RoomClientRemove) at entry:
+#         three stack words, the frame, and for a word that points to memory its +0x0C and +0x78 (a room's idle count
+#         and client count)
 #
 # Armed edits (forced requests, ADR-0014 scope: the server's outcome to a request the client UI cannot make): the file
 # workspace/runtime/inv-arm-slotN (N from env INV_SLOT) holds one line "18 page=4" or "23 box=K"; at the next request
@@ -35,7 +53,7 @@ ITEM_OPS = {0x16: 0x0054AAD0, 0x17: 0x0054AB40, 0x18: 0x0054ABB0, 0x19: 0x0054AC
             0x1B: 0x0054AE30, 0x1C: 0x0054AEC0, 0x1D: 0x0054AF50, 0x1E: 0x0054B030, 0x1F: 0x0054B0F0,
             0x20: 0x0054B1E0, 0x21: 0x0054B300, 0x22: 0x0054B380, 0x23: 0x0054B3E0, 0x24: 0x0054B450,
             0x25: 0x0054B4E0, 0x26: 0x0054B560, 0x27: 0x0054B280}
-WIN = (-16, 18, -15, 19)           # x0, x1, y0, y1 around the offset start
+WIN = (-32, 34, -31, 35)         # x0, x1, y0, y1 around the offset start (widened in revision 2: the walk of a wall case ran past +-16)
 
 
 def _inventory_main():
@@ -67,6 +85,16 @@ def _inventory_main():
 
     def z(obj):
         return base64.b64encode(zlib.compress(json.dumps(obj, separators=(",", ":")).encode(), 6)).decode()
+
+    def sd(a):
+        try:
+            return "%08x:%08x" % struct.unpack("<II", mem(a, 8)) if a else None
+        except gdb.MemoryError:
+            return None
+
+    def gseed():
+        g = st["game"]
+        return sd(g + 0xD0) if g else None
 
     def frame(game=None):
         g = game or st["game"]
@@ -164,13 +192,13 @@ def _inventory_main():
         st["game"] = reg("ecx")
         it = arg(1)
         emit("IPG", {"th": th(), "flag": reg("edx"), "item": item(it), "room": arg(2), "x": s32(reg("esp") + 12),
-                     "y": s32(reg("esp") + 16), "f": frame()})
+                     "y": s32(reg("esp") + 16), "f": frame(), "gs": gseed()})
 
     def on_ipx():
-        emit("IPX", {"th": th(), "item": item(reg("esi")), "f": frame()})
+        emit("IPX", {"th": th(), "item": item(reg("esi")), "f": frame(), "gs": gseed()})
 
     def on_dci():
-        emit("DCI", {"th": th(), "item": item(reg("eax")), "f": frame()})
+        emit("DCI", {"th": th(), "item": item(reg("eax")), "f": frame(), "gs": gseed()})
 
     Bp(0x00558AA0, on_ipg)
     Bp(0x00558B2B, on_ipx)
@@ -227,7 +255,8 @@ def _inventory_main():
                 emit("ARM", {"op": op, "field": a[0], "was": before, "now": a[1]})
             ret = u32(reg("esp"))
             emit("PKT", {"th": th(), "op": op, "pkt": mem(pkt, 17).hex(), "f": frame(game), "ret": ret,
-                         "inv": inv_list(player), "plr": player})
+                         "inv": inv_list(player), "plr": player,
+                         "sd": sd(player + 0x20), "gs": gseed()})
             st["pend"][("r", th())] = (op, player)
             Bp(ret, on_ret, temp=True)
         return fn
@@ -236,10 +265,124 @@ def _inventory_main():
         op, player = st["pend"].pop(("r", th()), (None, None))
         if op is None:
             return
-        emit("PKR", {"th": th(), "op": op, "eax": reg("eax"), "f": frame(), "inv": inv_list(player) if player else None})
+        emit("PKR", {"th": th(), "op": op, "eax": reg("eax"), "f": frame(), "inv": inv_list(player) if player else None,
+                     "sd": sd(player + 0x20) if player else None, "gs": gseed()})
 
     for op, addr in ITEM_OPS.items():
         Bp(addr, mk_entry(op))
+
+
+    # --- the potion's use, the restore, the save and room activity (revision 2) -----------------------------------
+    def s16(a):
+        return struct.unpack("<h", mem(a, 2))[0]
+
+    def sg(v):
+        return v - (1 << 32) if v >= 1 << 31 else v
+
+    def entries(arr, n):
+        if not arr or n <= 0 or n > 4096:
+            return []
+        return [[k, v] for k, v in struct.iter_unpack("<Ii", mem(arr, 8 * n))]
+
+    def stat(u, sid):
+        lst = u32(u + 0x5C) if u else 0
+        if not lst:
+            return None
+        cache = bool(u32(lst + 0x10) & 0x80000000)
+        arr = entries(u32(lst + 0x48), s16(lst + 0x4C)) if cache else entries(u32(lst + 0x24), s16(lst + 0x28))
+        for k, v in arr:
+            if k == sid << 16:
+                return v
+        return 0
+
+    def stats(u):
+        return {str(i): stat(u, i) for i in (1, 3, 6, 7, 8, 9, 26, 74, 352)}
+
+    def on_up0():
+        user, game, it = reg("edx"), reg("ecx"), arg(1)
+        st["game"] = game
+        st["use"] = user
+        ret = u32(reg("esp"))
+        emit("UP0", {"th": th(), "user": user, "ut": u32(user), "ucls": s32(user + 4), "uid": u32(user + 0xC),
+                     "item": item(it), "f": frame(game), "sd": sd(user + 0x20), "gs": gseed(), "stats": stats(user)})
+        st["usepend"] = th()
+        if ret not in st.setdefault("upret", set()):    # one persistent breakpoint per return site
+            st["upret"].add(ret)
+            Bp(ret, on_up1)
+
+    def on_up1():
+        if st.get("usepend") != th():
+            return
+        st["usepend"] = None
+        user = st.get("use", 0)
+        emit("UP1", {"th": th(), "eax": reg("eax"), "f": frame(), "sd": sd(user + 0x20) if user else None,
+                     "gs": gseed(), "stats": stats(user) if user else None})
+
+    def on_ud1():
+        emit("UD1", {"sd": sd(reg("ecx")), "n": sg(reg("edx")), "f": frame()})
+
+    def on_ud2():
+        emit("UD2", {"r2": sg(reg("eax")), "h": sg(reg("ebx")), "v": sg(reg("edi")), "sd": sd(reg("esi") + 0x20)})
+
+    def on_udv():
+        emit("UDV", {"v": sg(reg("edi")), "stat": sg(reg("ebx"))})
+
+    def on_uad():
+        sp = reg("esp")
+        emit("UAD", {"user": u32(sp), "stat": s32(sp + 4), "v": s32(sp + 8), "f": frame()})
+
+    def on_ual():
+        sp = reg("esp")
+        emit("UAL", {"a": [s32(sp + 4 * k) for k in range(4)], "f": frame()})
+
+    def on_uqe():
+        sp = reg("esp")
+        emit("UQE", {"a": [s32(sp + 4 * k) for k in range(4)], "f": frame()})
+
+    def on_uss():
+        sp = reg("esp")
+        emit("USS", {"list": u32(sp), "stat": s32(sp + 4), "rate": s32(sp + 8), "f": frame()})
+
+    Bp(0x005BE3F0, on_up0)
+    Bp(0x005BE525, on_ud1)
+    Bp(0x005BE53B, on_ud2)
+    Bp(0x005BE544, on_udv)
+    Bp(0x005BE5C2, on_uad)
+    Bp(0x005BE602, on_ual)
+    Bp(0x005BE6AE, on_uqe)
+    Bp(0x005BE6CF, on_uss)
+
+    def on_rv1():
+        bp = reg("ebp")
+        game = u32(bp + 8)
+        it = reg("eax")
+        emit("RV1", {"saved": sg(reg("ebx")), "lim": sg(reg("ecx")), "game": game, "f": frame(game), "item": item(it),
+                     "loc": mem(bp - 0x28, 0x24).hex()})
+
+    def on_sv1():
+        game, itm = reg("ebx"), reg("edi")
+        emit("SV1", {"game": game, "f": frame(game), "saved": sg(reg("eax")), "item": item(itm)})
+
+    Bp(0x005419F5, on_rv1)
+    Bp(0x00541B71, on_sv1)
+
+    def mk_rm(fn):
+        def f():
+            sp = reg("esp")
+            words = [u32(sp + 4 * k) for k in range(1, 4)]
+            d = {"fn": fn, "w": words, "f": frame(), "o": {}}
+            for w in words:
+                if w > 0x10000:
+                    try:
+                        d["o"][str(w)] = [s32(w + 0x0C), s32(w + 0x78)]
+                    except gdb.MemoryError:
+                        pass
+            emit("RM", d)
+        return f
+
+    Bp(0x0061A910, mk_rm("ActiveRoomFree"))
+    Bp(0x0061A660, mk_rm("RoomClientAdd"))
+    Bp(0x0061A700, mk_rm("RoomClientRemove"))
 
     emit("INVRDY", {"slot": slot, "arm": arm_path})
 
