@@ -1,10 +1,10 @@
 ---
 spec: items/use
-status: draft
+status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, data/calc, stats/aggregate, stats/states, items/inventory, quests/travel]
 consumed_by: [items/inventory, stats/states, quests/travel, items/quest-drops, skills/catalogue]
-tags: {C: 52, I: 61, L: 7}
+tags: {C: 52, I: 64, L: 7}
 updated: 2026-11-04
 ---
 
@@ -70,8 +70,8 @@ columns are bytecode ([data/calc](../data/calc.md)); `eval` below is `ITEMS_Eval
 | Name | Value | Anchor | Tag |
 |---|---|---|---|
 | `g_ItemUseFns` | 31 `{test, use}` pairs; `use` in entries 1..11 only, `test` in entry 1 only | data:g_ItemUseFns@0x00741790, [Misc](../../tables/Misc.md#the-use-dispatch-pspell-selects-a-g_itemusefns-entry) | [C] |
-| exempt opcodes | `0x14`, `0x15`, `0x3C`, `0x43`, `0x66` | fn:sub_0054D750_SrvPacketDispatch@0x0054D750, run:2026-11-04-ground-emu | [C] |
-| exempt state, modes | state 54; modes 0 and `0x11` | fn:sub_0054D750_SrvPacketDispatch@0x0054D750, run:2026-11-04-ground-emu | [C] |
+| exempt opcodes | `0x14`, `0x15`, `0x3C`, `0x43`, `0x66` | 0x0054D7DC, run:2026-11-04-ground-emu, run:2026-11-04-lock-scan | [C] (ADR-0021, ADR-0029 (c)): they reach the import's call |
+| refused state, modes | state 54; modes 0 and `0x11` | fn:sub_0054D750_SrvPacketDispatch@0x0054D750, run:2026-11-04-ground-emu | [C] (ADR-0015) |
 | request position reach | 50 per axis, as `u16` | fn:sub_00548EF0_PktPosFar@0x00548EF0, 0x0054B222 | [I] |
 
 ## Algorithm
@@ -91,7 +91,7 @@ The evidence for one statement can be of four kinds, and each is named at the st
   on the **a-priori table** committed before the kept sessions; the **two draws, their seeds and the doubled amount** on the
   model evaluated **per case on the log's inputs**, so that check is of the code against its reading on inputs the log
   gives, not blind to them, and it says nothing of which inputs occur. [C] (run:2026-11-04-inventory-2, 0x005BE525, 0x005BE6CF)
-- **`[I]`**: a code reading no case reaches, with the addresses read.
+- **`[I]`**: a code reading no case reaches, with the addresses read. (fn:sub_0055E170_PlayerUseInvItem@0x0055E170)
 
 ### A. The drain and the gate
 
@@ -167,7 +167,7 @@ Each handler's tests, in order, before its caller function. All "returns" are di
 
 ```mermaid
 flowchart TD
-  a["user type 0 or 1,<br/>item type 4?"] -->|no| ref["refuse"]
+  a["user type 0 or 1,<br/>item type 4?"] -->|no| ref["return 0"]
   a -->|yes| b{"book or scroll<br/>with a Books row?"}
   b -->|"yes, +0x04 > 0"| k1["kind ← Books +0x04,<br/>skill ← Books +0x0C"]
   b -->|"yes, +0x04 ≤ 0"| k2["kind ← pSpell,<br/>skill ← Books +0x0C"]
@@ -183,7 +183,7 @@ flowchart TD
 
 ```
 C1. ItemUse(user, item, arg2, x: i32, y: i32) → i32:                 [C] (ADR-0021) (all of C1a–C1e; fn:sub_005BF240_ItemUse@0x005BF240, 0x005BF27C–0x005BF2D1, run:2026-11-03-use-emu)
- C1a. if user.type ∉ {0, 1} or item.type ≠ 4: refuse
+ C1a. if user is null, user.type ∉ {0, 1}, item is null or item.type ≠ 4: return 0
  C1b. skill: i32 ← −1;  kind: i32 ← none
       if ITEMS_UnitIsType(item, 18) or ITEMS_UnitIsType(item, 22):
         row ← Books[item suffix word +0x3E]
@@ -279,6 +279,8 @@ D5. MercGiveCursorItem (packet 0x61):                                [I] (fn:sub
         CursorItemConsume(item)                                      ; whatever ItemUse returned
 ```
 
+- D. [I] **What clears the marks.** `InvClearUseMarks` has 36 direct calls, 35 of them in 24 other functions: `PlayerUseInvItem` and `PlayerUseBeltItem` before `ItemUse` (D1, D3), `PlayerUseItemOnItem` only after it (D4), and the moves: `PickupToInv`, `PickupToCursor`, `CursorDrop`, `InvPlaceItem`, `InvItemToCursor`, `ItemEquip`, `BodyToCursor`, both body swaps, `EquipCursorAtSlot`, `PageSwapCursor`, `StackRequest`, `ScrollIntoTome`, `ItemToBelt`, `BeltToCursor`, `BeltSwapCursor`, `BeltOverflow`, `CubeDropEmptied`, `KeyConsume`, `PlayerSwapWeapons`, `ITEMS_InsertSocket`. So a first identify's mark stands only until the next of these, and a `0x27` after one of them finds flag 4 clear and takes the test again (C1e). The calls were listed by target, and which request reaches each was not traced past those functions. (fn:sub_0055BF50_InvClearUseMarks@0x0055BF50, 0x0055E1C1, 0x00563627, 0x00563C47, 0x00560231)
+
 ### E. The kinds
 
 | Kind | Stock rows | Effect | Draws before the first callee | Tag |
@@ -349,6 +351,8 @@ F1. ItemUsePotion(item, arg2, x, y, skill), kind 3:                  [C] (ADR-00
 F1g. After the loop, when stat 6 got an amount, on a player:         [I] (0x005BE6F0–0x005BE738)
       when |stat 352 − pct| > 4:  MsgLifePct;  stat 352 ← UnitLifePct    ; life × 128 ÷ max, 128 at full
       ; no stock potion of kind 3 names stat 6; both rejuvenations do
+F1h. Returns 1 when any slot reached F1e's add or passed F1f's allocation, len + rem ≤ 0 included; else 0   [I] (0x005BE6D4, 0x005BE6DB, 0x005BE73D)
+      ; so every amount ≤ 0 returns 0: C2's clear and message 0x7C, and D1 uses nothing up. A null record or a bad state also returns 0 (0x005BE41C)
 
 F2. A fresh list:                                                    [I] (0x005BE5E8–0x005BE673)
       STATLIST_Alloc(game+0x1C, 2, end, user type, user id);  its state;  STATE_Set(user, state, 1)
@@ -406,10 +410,13 @@ G1. ItemUseRejuv(item, arg2, x, y, skill):                           [C] (ADR-00
         skip the slot (continue) for a bad stat, a stat with no maxstat, or calc ≤ 0
         max: i32 ← STATS_GetUnitStat(user, maxstat, 0)               ; raw, not UnitGetMaxHp
         v: i32 ← max if calc = 100 else MulDiv(max, calc, 100)
+        if s ∈ {6, 74} and user is a player: v ← GolemHealShare(user, v)     ; § H5; before the cap, and no v > 0 test
         if current + v > max: v ← max − current
         UnitAddStat(user, s, v, 0)                                   ; boundary; no shift: stored stats and max are both << 8
-G2. After the loop, when stat 6 got an amount, on a player, always:  [I] (0x005BED55)
+G2. After the loop, when stat 6 got an amount, on a player, always:  [I] (0x005BED5E)
       MsgLifePct;  stat 352 ← UnitLifePct
+G3. Returns 1 when any slot passed the tests, else 0:                [I] (0x005BED42, 0x005BED90)
+      ; a stat at its maximum still adds v = 0 and returns 1, so a rejuvenation at full life is used up on this reading
 ```
 
 - G1. [C] (ADR-0021) Stock `rvs` 35 and `rvl` 100 percent of life and of mana. Controls: `pctflat` fails 252, `nocap` 207, `no100` 28. No draw before the boundary. (fn:sub_005BEAC0_ItemUseRejuv@0x005BEAC0, run:2026-11-03-use-emu)
@@ -461,7 +468,7 @@ H4. The elixir (kind 8):                                             [C] (ADR-00
         when that is a valid stat and the value is not 0
       reads neither stat1 nor calc1                                  ; elx's `experience`, 5 is not read
 
-H5. Blood Golem share, from F1d:                                     [C] (ADR-0021) (family golem, 300, and 27 + 11 cases of stat3, stat5; fn:sub_005BE3F0_ItemUsePotion@0x005BE3F0, fn:sub_005C6870_GolemHealShare@0x005C6870, run:2026-11-03-use-emu)
+H5. Blood Golem share, from F1d, G1:                                  [C] (ADR-0021) (family golem, 300, and 27 + 11 cases of stat3, stat5; fn:sub_005BE3F0_ItemUsePotion@0x005BE3F0, fn:sub_005C6870_GolemHealShare@0x005C6870, run:2026-11-03-use-emu)
       for a positive life amount on a player:
         no pet of type 3 and class 0x122: return v
         p: i32 ← Skills[MonStats[pet.class][+0x170]][+0x15C]         ; a percent
@@ -477,7 +484,7 @@ H6. Keys have no use entry: KeyConsume(player):                      [C] (ADR-00
 ```
 
 - H1. [I] A first identify through D1 has `r` = 0, so it falls to D2's codes and returns 0 with nothing used. The second request is `0x27`, which does not clear the marks, so flag 4 from the first request stands. (0x0055E263, 0x00561F60, fn:sub_00561ED0_PlayerUseItemOnItem@0x00561ED0)
-- H5. [I] `v = 0` sets the golem to full; no use entry sends it. (fn:sub_005C5F10_GolemHeal@0x005C5F10)
+- H5. [I] `v = 0` sets the golem to full. Kind 3 tests `v > 0` first; kind 5 has no such test, and reaches the call with `v = 0` only at a maximum of 0, no stock case. (fn:sub_005C5F10_GolemHeal@0x005C5F10, 0x005C68AC, 0x005BEC10, 0x005BE54E)
 - H6. [I] `key` has `useable` 0 and no `pSpell`. Its callers: `OBJOP_Chest` and the case at `0x00581DC1`. (fn:OBJOP_Chest@0x00585F60, 0x00581DC1, 0x00585FB1)
 
 ### I. What the columns gate

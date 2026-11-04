@@ -220,7 +220,7 @@ walk(r, (x, y), origin, B):
 Predicted by `tools/item_inventory.py`; logged: the item's cell, room, mode and item data `+0x24`, game frame, seed before and after, the collision cells around the drop. Cases 1 to 6 are also a second, live route for § 1.
 
 1. Drop from the cursor on open ground: the cell is `(x + 2, y + 3)`.
-2. Drop repeatedly in place with no movement: rings by `ground_drop_cell`; the order `(x + 1, y + 2)`… by the lowest distance, each ring's ties.
+2. Drop repeatedly in place with no movement: rings by `ground_drop_cell`; the order `(x + 1, y + 3)`… by the lowest distance, each ring's ties. *Corrected 2026-11-04 (`lane/s60` review): this said `(x + 1, y + 2)`, which is ring 1's sixth cell; § 1's rule and the kept `crowd` chain give `(sx − 1, sy)` first.*
 3. Drop beside a wall so a free cell's walk is blocked (the ring skips it): predicted from a logged collision snapshot, control `noline`.
 4. Drop at a room's edge where `(x + 2, y + 3)` is in a neighbour, and where it is in no room: the start.
 5. A monster's death with several drops: each cell in turn; each takes the search.

@@ -1,10 +1,10 @@
 ---
 spec: items/inventory
-status: draft
+status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, items/use, drlg/collision, drlg/lifecycle, stats/aggregate, items/economy]
 consumed_by: [items/use, player/creation, quests/travel, drlg/lifecycle, drlg/collision, items/economy, items/quest-drops, items/cube]
-tags: {C: 73, I: 103, L: 11}
+tags: {C: 74, I: 103, L: 11}
 updated: 2026-11-04
 ---
 
@@ -42,7 +42,7 @@ flowchart LR
 | Client packets `0x17`..`0x1F`, `0x21`..`0x25`, `0x63`: the moves (§ D) | data:g_SrvPacketTable@0x006E0D18 | [I] |
 | A monster or chest drops | fn:sub_0055A550_DropCreateItem@0x0055A550 ([items/tc § H](tc.md#h-item-pick-and-hand-off)) | [I] |
 | Other callers of the ground drop (§ J4) | fn:sub_00555DA0_GroundDropCell@0x00555DA0 | [I] |
-| Every 1 500 frames: the sweep of active rooms ([drlg/lifecycle § A](../drlg/lifecycle.md#a-the-frame)) | fn:sub_00558B90_ActExpiredItemsFree@0x00558B90 | [I] |
+| Every 1 500 frames: the sweep of active rooms ([drlg/lifecycle § A](../drlg/lifecycle.md#a-the-frame)) | fn:sub_00558B90_ActExpiredItemsFree@0x00558B90, K3 | [C] (ADR-0021) (fn:sub_0052D310_ExpirySweepTick@0x0052D310, run:2026-10-30-frame-emu-3) |
 
 ## Inputs
 
@@ -95,7 +95,7 @@ The cell mask's constant is J1's note: its value is `[I]` in two bits. (0x00555D
 - **`[C]` live**: run:2026-11-04-inventory (one fresh process) and run:2026-11-04-inventory-2 (a fresh process per session, no forced state), seed 6001. Their
   ground differs by claim, per the `lane/p60b` check: the **expiry deltas** rest on the a-priori table committed before the kept sessions; the **ground searches and their controls** on a model older than the logs, evaluated per case on the logged collision window; the **restore's write and the save's word** on a predictor written before the kept sessions, on those lines' inputs; the **restored copy's sweep** on a predictor written after a development log. All but the first check the code against its reading on inputs the log gives, and say nothing of which inputs occur. [C] (run:2026-11-04-inventory-2, 0x00558B2B)
 - **A forced request stays `[I]`.** Two outcomes in § E and § F rest on a packet field written at the handler's entry in run:2026-11-04-inventory. [I] (fn:sub_0054ABB0_Pkt18CursorToPage@0x0054ABB0, fn:sub_0054B3E0_Pkt23CursorToBelt@0x0054B3E0)
-- **`[I]`**: a code reading no case reaches, with the addresses read.
+- **`[I]`**: a code reading no case reaches, with the addresses read. (fn:sub_00563560_PickupToInv@0x00563560)
 
 ### A. Pages and rows
 
@@ -245,18 +245,21 @@ A handler's "refuse" is a return of 3 or 2, discarded at the drain ([items/use A
 | `0x25` | `0x0054B4E0` | a cursor item and a belt item; `BeltSwapCursor` | [I] (fn:sub_0055EB30_BeltSwapCursor@0x0055EB30) |
 | `0x63` | `0x0054D520` | an inventory-page beltable item, empty cursor: `BeltFreeSlot`, then to that box | [I] (fn:sub_0054D520_SrvPacket63Handler@0x0054D520) |
 
+- D. [I] **Lengths, tested first by each handler:** 5 bytes `0x17`, `0x19`, `0x22`, `0x24`, `0x63`; 9 bytes `0x1A`, `0x1B`, `0x1D`, `0x1E`, `0x21`, `0x23`, `0x25`; 17 bytes `0x18`, `0x1F`. Fields, as `u32`: `0x18` guid `+1`, x `+5`, y `+9`, page `+0xD`; `0x23` guid `+1`, box `+5`. (0x0054AB43, 0x0054ABB4, 0x0054ABCF, 0x0054ABD7, fn:sub_0054B3E0_Pkt23CursorToBelt@0x0054B3E0)
+
 ### E. Pages and the stash: `0x18`, `0x19`
 
 ```
-E1. Packet 0x18 for a player, in order:                              [I] (0x0054ABE5..0x0054AC7E, 0x0054AC68, 0x00535099)
+E1. Packet 0x18 for a player, in order:                              [I] (0x0054ABE5..0x0054AC7E, 0x0054AC3E, 0x0054AC68, 0x00535099)
       the cursor test
-      page ≥ 5: return 2                                             ; the PlayerIsBusy branch never returns there
+      not busy and page ≠ 0: return 2                                ; the item is on the cursor, so PlayerIsBusy is 1
       page 4: a room in town, else 3
       page 2: InteractIsPlayer(1), else 3
       page 3, 0: nothing further
+      any other page, 1 and 5 up among them: return 2                ; a player cannot place on page 1 by this request
       ItemSetPage(item, page)                                        ; BEFORE the placement
       InvPlaceItem
-    A non-player user has only the page ≥ 5 test.
+    A non-player user has only a test of page ≥ 5, unsigned.
 
 E2. Packet 0x19: InvItemToCursor(…, 1, 0, 0, 0):                     [I] (fn:sub_00560420_InvItemToCursor@0x00560420, 0x005604D2, 0x005604DC)
       the cursor empty
@@ -269,7 +272,7 @@ E2. Packet 0x19: InvItemToCursor(…, 1, 0, 0, 0):                     [I] (fn:s
 - E1. [I] **Forced, one case: `0x18` to page 4 with no stash open, in town (level 103), was accepted**: handler return 0, the item on page 4 at the cell sent. The page dword was written in the packet at the handler's entry (a breakpoint wrote game memory; the client UI cannot send it). A result resting on a write stays `[I]`, and the stock route is open. (run:2026-11-04-inventory, fn:sub_0054ABB0_Pkt18CursorToPage@0x0054ABB0)
 - E1. [I] A refused item keeps the new page byte on the cursor, since the page is set first. (0x0054AC68)
 - E2. [I] Taking an item off a non-zero page, with an empty cursor, does need an interaction. (fn:sub_00560420_InvItemToCursor@0x00560420)
-- E2. [C] **Live: `0x19` moves neither the player's nor the game's seed**, 80 of 80 request pairs, and `0x17` likewise (§ J5). Scope: those two seeds around the handler. items/0016 calls this request "a pickup"; by § D it takes an item off a page to the cursor, and no ground pickup's seed was logged. (run:2026-11-04-inventory-2, 0x0054ACD0)
+- E2. [C] **Live: `0x19` moves neither the player's nor the game's seed**, 80 of 80 request pairs, and `0x17` likewise (§ J5). Scope: those two seeds around the handler. By § D it takes an item off a page to the cursor; no ground pickup's seed was logged. (run:2026-11-04-inventory-2, 0x0054ACD0)
 
 ### F. Belts
 
@@ -359,7 +362,7 @@ G4. StackRequest (packet 0x21):                                      [I] (fn:sub
 
 ```
 H1. CursorDrop(user):                                                [I] (fn:sub_00563C00_CursorDrop@0x00563C00, 0x00563C87)
-      mode 4
+      InvClearUseMarks;  the item, mode 4
       room ← GroundDropCell(user's room, user's position, &out, 1, fallback 1)     ; § J
       room = null: nothing moves; the item stays on the cursor
       ItemPlaceOnGround(…, room, out)                                ; § K
@@ -385,7 +388,8 @@ flowchart TD
   inv --> g["gold"]
   inv --> s["auto-stack"]
   s --> e["auto-equip"]
-  e --> b["belt"]
+  e -->|"a location, BodyLocTest ≠ 1"| fl["refuse flag: nothing moved"]
+  e -->|"no location"| b["belt"]
   b --> p["inventory page 0"]
   p --> no["refusal 0x17: nothing moved"]
 ```
@@ -402,7 +406,7 @@ I1. UnitInteract, the item case:                                     [I] (fn:sub
 I2. UnitInteractDistance(a, b) → i32:                                [C] (ADR-0015) (family dist, to the return, fn:sub_00641530_UnitInteractDistance@0x00641530, data:0x006EB180, run:2026-11-04-ground-emu)
       dx, dy ← |dx|, |dy|;  sa, sb ← the units' sizes
       if dx < 8 and dy < 8 and sa < 4 and sb < 4:
-        v: i8 ← table[dx + 8 × dy]
+        v: i32 ← table[dx + 8 × dy]
         if v < 0: return 0
         if sa = 3 or sb = 3: v ← max(v − 1, 0)                       ; a size of 3 takes 1 off, floored at 0
         return v + 1 if sa < 2 or sb < 2 else v
@@ -417,12 +421,14 @@ I3. UnitsLineBlocked(a, b, mask) → i32:                              [C] (ADR-
 I4. PickupToInv, in order:                                           [I] (all of I4; fn:sub_00563560_PickupToInv@0x00563560, fn:sub_0055CC90_ItemQuestGate@0x0055CC90, fn:sub_0055C850_GoldPickup@0x0055C850, fn:sub_0055C9A0_PickupRefused@0x0055C9A0, fn:sub_0063DE60_BodyLocTest@0x0063DE60)
       a. cursor empty and not busy, else return 0
       b. the unit's mode 3, else the refuse flag
-      c. ItemQuestGate;  a refusal calls PickupRefused(0x13)
+      c. InvClearUseMarks;  ItemQuestGate;  a refusal calls PickupRefused(0x13)
       d. UnitSetEvent
       e. gold → GoldPickup
       f. PickupAutoStack (I5)
-      g. ItemAutoEquipSlot (I6) with BodyLocTest(user, loc, item, 0) = 1 → the body
-      h. beltable and BeltPlace
+      g. ItemAutoEquipSlot (I6) names a location:
+           BodyLocTest(user, loc, item, 0) = 1 → the body
+           else the refuse flag, return 0                            ; no belt, no inventory, no PickupRefused
+      h. no location: beltable and BeltPlace
       i. InvAutoPlace on page 0
       j. PickupRefused(0x17)                                         ; back to mode 3, event; nothing moved
 
@@ -457,7 +463,7 @@ I7. PickupToCursor:                                                  [I] (fn:sub
             clear flag bit 25;  QUESTS_RaiseItemPlaced;  UnitSetEvent last
 ```
 
-The distance table (row `|dy|`, column `|dx|`), `i8`, at `0x006EB180`, as family `dist`'s kept output prints it. [C] (ADR-0015) (data:0x006EB180, `static.txt` of run:2026-11-04-ground-emu)
+The distance table (row `|dy|`, column `|dx|`), 64 `i32` at `0x006EB180`, indexed `× 4` at `0x0064162B`, as family `dist`'s kept output prints it. [C] (ADR-0015) (data:0x006EB180, 0x0064162B, `static.txt` of run:2026-11-04-ground-emu)
 
 ```
  -1 -1 -1  0  2  4  6  8
@@ -532,7 +538,7 @@ J3. Walk(r, (x, y), origin, mask) → 0 or 1:                          [C] (ADR-
         if the new cell's byte is 8: return 0                        ; the origin is tested only when the walk starts on it
 ```
 
-**Each line's evidence.** The emulated column is `drop`'s 4 000 cases, 0 mismatches, 55 distinct outcomes; "fails" is the count a wrong reading fails. The live column is 118 searches over the three kept logs (37 in run:2026-11-04-inventory, 41 and 40 in run:2026-11-04-inventory-2), 0 mismatches; those stand at **four spots, one chain each** (start, parapet, crowd spot, City), so they are not 118 independent cases. The live counts are a second route where the row says so; each row's `[C]` is the emulated one until a reverser raise, which the `lane/p60b` check allows for the rows it names and which is not done. [C] (run:2026-11-04-inventory, run:2026-11-04-inventory-2, fn:sub_00555DA0_GroundDropCell@0x00555DA0)
+**Each line's evidence.** The emulated column is `drop`'s 4 000 cases, 0 mismatches, 55 distinct outcomes; "fails" is the count a wrong reading fails. The live column is 118 searches over the three kept logs (37 in run:2026-11-04-inventory, 41 and 40 in run:2026-11-04-inventory-2), 0 mismatches. **They are not 118 independent cases:** a player's drops are chains in place, each drop's mark an input of the next, at six spots (6 and 4 in the first run; 24 at the start, 12 at the parapet, 4 in the City, 40 at the crowd spot in the second), and the other 28 are `DropCreateItem` drops at 24 positions. The walk mask rests on one of those chains. The live counts are a second route where the row says so; each row's `[C]` is the emulated one until a reverser raise, which the `lane/p60b` check allows for the rows it names and which is not done. [C] (run:2026-11-04-inventory, run:2026-11-04-inventory-2, fn:sub_00555DA0_GroundDropCell@0x00555DA0)
 
 | Statement | Emulated | Live |
 |---|---|---|
@@ -606,7 +612,7 @@ K2. ItemGroundExpiry(item, frame: i32) → i32:                        [C] (ADR-
       a socket filler:                 frame + 30000
       otherwise:                       frame + 15000
 
-K3. Every frame with frame mod 1500 = 0, for acts 0..4: ActExpiredItemsFree, then the records' expiry    [C] (the sweep's period and order: family sweep of run:2026-10-30-frame-emu-3, fn:sub_0052D310_ExpirySweepTick@0x0052D310)
+K3. Every frame with frame mod 1500 = 0, for acts 0..4: ActExpiredItemsFree, then the records' expiry    [C] (ADR-0021) (the sweep's period and order: family sweep of run:2026-10-30-frame-emu-3, to the first unit reached or record freed, fn:sub_0052D310_ExpirySweepTick@0x0052D310)
     ActExpiredItemsFree(game, act):                                  [C] (ADR-0021) to UnitGetRoom, in room order and each room's list order, up to the first reached (family sweep, fn:sub_00558B90_ActExpiredItemsFree@0x00558B90, 0x00620BB0, run:2026-11-04-ground-emu)
       for each type-4 unit with +0x24 ≠ 0 and (i32) +0x24 ≤ (i32) frame:
         ends at UnitGetRoom
@@ -636,7 +642,7 @@ Step notes:
 - Row 2. [C] (ADR-0015) The placement and the expiry's write, K1. Its callers, beyond `CursorDrop`, are a reading: 12 direct calls. [I] (fn:sub_00558AA0_ItemPlaceOnGround@0x00558AA0, `static.txt` of run:2026-11-04-ground-emu)
 - Row 3. [C] **Live: the restore's write, 40 of 40**: the item's `+0x24` is `frame + 15000` in 26 (qualities 1, 2, 3: `saved` below the limit) and the saved word in 14 (the items of `+30000` or `+45000`). Scope: restores in the town (36 at frame 4 678) and the City of the Damned (4 at frame 4 131). (run:2026-11-04-inventory-2, 0x005419F5, 0x005419E2, 0x00541A04, fn:sub_00541990_InactiveItemRestoreOne@0x00541990)
 - Row 3. [I] **Not observed: a saved word of 0 ("0 stays 0") and `saved` equal to the limit.** No quest base or zero-expiry item was saved. (0x005419FC, fn:sub_00541990_InactiveItemRestoreOne@0x00541990)
-- Row 3. [C] **Live: `InactiveItemSave`'s saved word is `ItemGroundExpiry(frame, item)` computed afresh, 45 of 45**, not the old `+0x24`: monster drops with `+0x24` 0 (a City monster drop, 1 case) and player drops with `+0x24` set (44) alike. So a player's drop is lengthened too. (run:2026-11-04-inventory-2, 0x00541B71, 0x00541B6C, fn:sub_00541B10_InactiveItemSave@0x00541B10)
+- Row 3. [C] **Live: `InactiveItemSave`'s saved word is `ItemGroundExpiry(item, frame)` computed afresh, 45 of 45**, not the old `+0x24`: monster drops with `+0x24` 0 (a City monster drop, 1 case) and player drops with `+0x24` set (44) alike. So a player's drop is lengthened too. (run:2026-11-04-inventory-2, 0x00541B71, 0x00541B6C, fn:sub_00541B10_InactiveItemSave@0x00541B10)
 - Row 3. [C] **Live: a restored copy is swept at the first multiple of 1 500 at or past its restored `+0x24`, 22 of 22 resolved.** 14 more restored copies have their expiry past the session's last dump (frame 24 000) and are unresolved; 4 were saved again before their predicted sweep and are excluded on that game call's logged line, as are the 40 town drops of that session. The 40 `crowd` sweeps are unresolved. (run:2026-11-04-inventory-2, 0x00558BEC, fn:sub_00558B90_ActExpiredItemsFree@0x00558B90)
 - Row 3. [C] **Met in run:2026-11-04-inventory, not predicted:** three monster drops whose room went inactive came back at the same class and cell with `+0x24 = 17 766`. The reading `max(saved, frame + 15000)` is `[I]` for that run, which did not log its inputs; run:2026-11-04-inventory-2 logged them. (0x005419F5, run:2026-11-04-inventory)
 
@@ -659,7 +665,7 @@ An item's page, cell, mode and location byte; a belt box; a body location; the c
 
 ## Worked example
 
-**A chain of drops in place**, session `crowd` of run:2026-11-04-inventory-2: a player standing at `(5032, 5027)` drops item after item in the Act IV town, each with its logged cell, frame and search (`GDI`, `GDO`, `IPX`; the first six rows of `docs/findings/items/0016-predictions-crowd.pred` give the cells). The start is `(5034, 5030)`; each drop blocks its cell for the next by bit `0x200`, so the rule gives ring 1's distance-1 cells in try order, then its corners. [C] (run:2026-11-04-inventory-2, fn:sub_00555DA0_GroundDropCell@0x00555DA0)
+**A chain of drops in place**, session `crowd` of run:2026-11-04-inventory-2: a player standing at `(5032, 5027)` drops item after item in the Act IV town, each with its logged cell, frame and search (`GDI`, `GDO`, `IPX`; the first six `ground` rows of `docs/findings/items/0016-predictions-crowd.pred` give the cells). The start is `(5034, 5030)`; each drop blocks its cell for the next by bit `0x200`, so the rule gives ring 1's distance-1 cells in try order, then its corners. [C] (run:2026-11-04-inventory-2, fn:sub_00555DA0_GroundDropCell@0x00555DA0)
 
 | Drop | Frame | Cell | Offset from the start | Why |
 |---|---|---|---|---|

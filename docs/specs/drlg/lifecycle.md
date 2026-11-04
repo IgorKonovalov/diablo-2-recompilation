@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, drlg/overview, drlg/room-tiles, monsters/spawn, monsters/special, monsters/stats, objects, save/d2s]
 consumed_by: [drlg/room-tiles, drlg/preset, drlg/collision, monsters/spawn, monsters/special, monsters/stats, objects, chain]
-tags: {C: 102, I: 78, L: 9}
+tags: {C: 103, I: 78, L: 9}
 updated: 2026-11-04
 ---
 
@@ -138,8 +138,9 @@ records whose expiry is non-zero and below the game frame (0x00542AF0–0x00542A
 0x00543E10, not the sweep; this spec's earlier "20-frame sweep" was that call. run:2026-10-17-h7a-lifecycle agrees and
 excludes a 20-frame sweep: five records with expiries 18 720 and 18 324 were still present at frame 19 158, and the
 1 500-frame sweep has no pass between those expiries and that frame (18 000 and 19 500). No pass fell between an expiry
-and its restore, so the period stays a reading. (fn:sub_0052D870_GameTick@0x0052D870, 0x0052D310, 0x00542AC0,
+and its restore, so in a game the records' period stays a reading. (fn:sub_0052D870_GameTick@0x0052D870, 0x0052D310, 0x00542AC0,
 [drlg/0009 § 11.3 (4)](../../findings/drlg/0009-room-lifecycle.md#113-plan-0038-batch-h7a-run2026-10-17-h7a-lifecycle))
+- [C] (ADR-0021) **The tick's map**: the period 1 500, acts 0 to 4, an act's items before its records, up to the first unit reached or record freed. Family `sweep` of run:2026-10-30-frame-emu-3 (a period of 20 fails 34 of 300, acts 4..0 fails 73); the code's map, not a game. (fn:sub_0052D310_ExpirySweepTick@0x0052D310, run:2026-10-30-frame-emu-3)
 - [C] (ADR-0021) **The other call of that pass, `0x00558B90`, sweeps ground items in active rooms.** A type-4 unit with
 item data `+0x24` non-zero and `≤` the frame (signed) is reached, in room order and each room's list order, up to the
 first one reached; the emulation stops at `UnitGetRoom`, so the code after it stays `[I]`. (family `sweep`,
