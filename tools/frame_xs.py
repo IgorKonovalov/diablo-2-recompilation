@@ -12,7 +12,8 @@ and asserts, each failing the window:
           inside an open pair) or `touch` (another unit's event is open). With no pair open a step passes only at a site of
           the pass-draw table (PASSDRAW). A touch passes only at a site (or return address, for the six sites inside rng/0001's
           primitives) of the touch table (TOUCH) and only under the row's trigger (kill, defender, owner). "Located" is gone.
-  even    a game-seed step count that is odd inside an event with a KD (items/tc H7: 2 per item).
+  items   in a KD's segment, more steps at the item constructor (ItemSeedInit+0xF) than at the unit constructor (UnitSeedInit+0x41):
+          every item is also a unit, so a sub-missile or another unit passes (items/tc H7; `lane/p55d` order 1).
   first   a missile's first reading, if its high word is 0x29A (an untouched Init), must be the low of a game-seed step of the
           window (skills/missiles C3), except in the window's first frame (created before it).
   free    no `own` step in a kind 11 or kind 6 event (their draw-free reading, frame/0002 §§ 6-7).
@@ -201,18 +202,20 @@ def check_chain2(w, touch=None, passdraw=None):
             site_n[(cls, "", loc)] += 1
 
     def close_seg(r, no):
-        """The segment of the open KD of record r ends here (the next KD or the event's UE1): the per-KD even rule."""
+        """The segment of the open KD of record r ends here (the next KD or the event's UE1): the per-KD items rule."""
         kd = r.get("seg")
         if kd is None:
             return
         kd["sites"] = r["gsites"][kd["start"]:]
         kd["g"] = len(kd["sites"])
         r["seg"] = None
-        n = sum(1 for a in kd["sites"] if a in fw.KILL_GAME)
+        n = sum(1 for a in kd["sites"] if a == fw.ITEM_SEED_SITE)
+        u = sum(1 for a in kd["sites"] if a == fw.UNIT_SEED_SITE)
         kd["gk"] = n
-        if n % 2:
-            fail(no, "KD", "even", "KD of %s at line %d: %d game-seed steps at the drop sites between it and the next KD or the event's end (odd; items/tc H7)" % (
-                kd["key"], kd["line"], n), key=kd["key"])
+        kd["gu"] = u
+        if u < n:
+            fail(no, "KD", "items", "KD of %s at line %d: %d item-constructor steps but %d unit-constructor steps between it and the next KD or the event's end (every item is a unit)" % (
+                kd["key"], kd["line"], n, u), key=kd["key"])
 
     def trigger_holds(trig, key):
         if trig == "kill":
@@ -367,7 +370,8 @@ def kd_report(x):
 
 # ------------------------------------------------------------------------------------------------------ synthetic logs
 SITE_PASS, SITE_OWN, SITE_GAME, SITE_KILL, SITE_DEF, SITE_UNLISTED = 0x500010, 0x500020, 0x500030, 0x500040, 0x500050, 0x5000F0
-SITE_ROOM, SITE_CLIENT, SITE_ITEMG, SITE_KILLEV = 0x500060, 0x500070, 0x00552E31, 0x500080       # SITE_ITEMG: a location of fw.KILL_GAME (an item's constructor)
+SITE_ROOM, SITE_CLIENT, SITE_KILLEV = 0x500060, 0x500070, 0x500080
+SITE_UNITG, SITE_ITEMG = fw.UNIT_SEED_SITE, fw.ITEM_SEED_SITE       # the binary's two constructor sites (UnitSeedInit+0x41, ItemSeedInit+0xF)
 SYN_PASS = [dict(client=False, at={SITE_PASS}, fn="fn:synthetic", spec="synthetic"),
             dict(client=True, at={SITE_CLIENT}, fn="fn:synthetic", spec="synthetic")]
 SYN_TOUCH = [dict(trigger="kill", at={SITE_KILL}, fn="fn:synthetic", spec="synthetic"),
@@ -445,12 +449,16 @@ class Gen:
                     self.draw(("U", 1, 11), 1, SITE_KILLEV)
                 if not sw.get("no_kd"):
                     self.emit("KD", dict(fr=f, ty=1, id=11))
-                self.draw("G", sw.get("kill_game", 2), SITE_GAME if sw.get("fresh_noinit") else SITE_ITEMG)
+                if sw.get("fresh_noinit"):
+                    self.draw("G", 2, SITE_GAME)
+                else:                                   # one item: SUnitCreate's unit step, then the item constructor's
+                    self.draw("G", sw.get("kill_unit", 1), SITE_UNITG)
+                    self.draw("G", sw.get("kill_item", 1), SITE_ITEMG)
                 if sw.get("fresh") or sw.get("fresh_noinit"):    # the new item's first draw: its seed is {g.low, 666}, the game seed does not step
                     self.emit("XS", dict(fr=f, site=SITE_OWN, low=self.g[0]))
                 if sw.get("sub_missile"):
-                    self.draw("G", 1, SITE_GAME)         # a sub-missile created in the same event: one game-seed step at its own site
-                if sw.get("two_kd"):                    # a second KD in the same event: 1 + 1 item-constructor steps over two KDs
+                    self.draw("G", 1, SITE_UNITG)        # a sub-missile created in the same event: SUnitCreate's unit step, at a real site
+                if sw.get("two_kd"):                    # a second KD in the same event: an item step with no unit step in its segment
                     self.emit("KD", dict(fr=f, ty=1, id=10))
                     self.draw("G", 1, SITE_ITEMG)
                 tsite = SITE_UNLISTED if sw.get("touch_unlisted") else SITE_KILL
@@ -574,7 +582,7 @@ def selftest2():
     # 4 a listed site with no trigger (no KD)
     want("4 a listed site with no trigger fails trigger", Gen(no_kd=1).build(), "trigger")
     # 5 a kill's odd game-seed steps
-    want("5 a kill's odd game-seed steps fail even", Gen(kill_game=3).build(), "even")
+    want("5 an item-constructor step with no unit-constructor step in a KD's segment fails items", Gen(kill_unit=0).build(), "items")
     # 6 a missile's first reading off by one
     want("6 a missile's first reading off by one fails first", Gen(first_off=1).build(), "first")
     # 7 an inverted rank
@@ -591,12 +599,12 @@ def selftest2():
     nox = [ln for ln in clean if not ln.startswith("XS ")]
     whole, x = _verdict(nox)
     out.append(("12 a log with no XS reads as rev 1 (no step logged)", not whole and x["has_xs"] is False, x["fails"][:2]))
-    # 13 a game-seed step at a site outside KILL_GAME is not counted. SITE_GAME is synthetic: in the binary a sub-missile's creation
-    # steps at UnitSeedInit+0x41, a site of KILL_GAME (`lane/p55c` review), so this control does not show that a real one passes.
+    # 13 a sub-missile's creation in the segment steps at the binary's own UnitSeedInit+0x41 (SITE_UNITG, a real site, lane/p55d order 1):
+    # the item's two steps plus the sub-missile's one pass, as units (2) are at least the items (1)
     want_pass = lambda name, lines: out.append((name, not kinds(lines)[0] and not kinds(lines)[1], sorted(kinds(lines)[1])))
-    want_pass("13 a game-seed step at a site outside KILL_GAME beside the item steps passes", Gen(sub_missile=1).build())
+    want_pass("13 a sub-missile's unit-constructor step (UnitSeedInit+0x41) beside the item's two steps passes", Gen(sub_missile=1).build())
     # 14 the rule is per KD: two KDs in one event, steps 2 + 1 at the item sites, fail although the event holds 3 ... and 2 + 2 passes
-    want("14 the even rule counts per KD (3 + 1 item-site steps over two KDs, even in all) fails even", Gen(two_kd=1, kill_game=3).build(), "even")
+    want("14 the items rule counts per KD (2 units and 1 item in the first, 1 item and no unit in the second: 2 units and 2 items in the event) fails items", Gen(two_kd=1, sub_missile=1).build(), "items")
     # 15 the room trigger holds in an RU0 (the clean log has a neighbour's step in room 9000's RU0): reversed by removing the RU0
     want("15 a listed room site with no RU0 open (a unit's event is open) fails trigger", Gen(room_no_ru0=1).build(), "trigger")
     # 16 a client site between ticks passes and steps no chained seed; an unlisted one fails

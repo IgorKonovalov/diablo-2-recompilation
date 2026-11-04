@@ -127,8 +127,19 @@ TOUCH = [
 # for every unit it creates (0x0055530E) and the second for type 4 only (0x0055532A), so a sub-missile created in a KD's segment steps
 # at a counted site and would fail `even`; no kept segment holds one. They are also the seed-initialising steps: a seed made from the game seed's
 # post-step low word (a unit's or an item's first draw) shares that low word with the game seed until the game seed steps again.
-KILL_GAME = frozenset({0x00552E31, 0x00552E9F})
+UNIT_SEED_SITE = 0x00552E31       # fn:sub_00552DF0_UnitSeedInit+0x41, one step for every unit SUnitCreate makes
+ITEM_SEED_SITE = 0x00552E9F       # fn:sub_00552E90_ItemSeedInit+0xf, one step for a type 4 unit (an item) only
+KILL_GAME = frozenset({UNIT_SEED_SITE, ITEM_SEED_SITE})
 FRESH_INIT = KILL_GAME
+# Plan 0055 `lane/p55d` order 1: the per-KD rule counts the item constructor's steps as items and requires the unit constructor's steps to be
+# at least as many (every item is also a unit, so a sub-missile or another unit in the segment passes; an item step with no unit step fails).
+CLIENT_FN = (0x00473090, 0x00473240)      # the client function beside sub_00473910_WeatherTick (five draws per call, frame/0007)
+CLIENT_SITES = (0x00473111, 0x004731FE)   # its two inlined sites; the other three are RNG_RangeOffset with `ra` inside it
+
+
+def client_fn_line(tag, o):
+    """An XS line of client function 0x00473090 (the pack gate leaves these out: plan 0055 log, lane/p55c review)."""
+    return tag == "XS" and (o.get("site") in CLIENT_SITES or CLIENT_FN[0] <= (o.get("ra") or 0) < CLIENT_FN[1])
 
 
 def row_has(row, loc):
