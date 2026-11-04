@@ -375,6 +375,224 @@ def merge_first_set(src_q, tgt_q, mx, src_dur=None, tgt_dur=None):
     return (70, total)
 
 
+# ---- plan 0060 P1.3 (lane/r60c, items/0014): the ground drop's cell search, ground expiry, pickup's distance and line ends
+
+BLOCKED = 0x27                  # COLL_CellTest and COLL_CellTestAt's return with no room, no map or no cells
+DROP_MASK_CELL, DROP_MASK_LINE = 0x3E01, 0x801
+DIR_DX = (0, 1, 1, 1, 0, -1, -1, -1, 0)     # data:0x00749780
+DIR_DY = (-1, -1, 0, 1, 1, 1, 0, -1, 0)     # data:0x007497A4
+
+
+class Room:
+    """A room as the search reads it: subtile rectangle, near list in order, cells or None (no map or no cells)."""
+
+    def __init__(self, x, y, w, h, cells=None, near=()):
+        self.x, self.y, self.w, self.h, self.cells, self.near = x, y, w, h, cells, list(near)
+
+    def holds(self, x, y):
+        return self.x <= x < self.x + self.w and self.y <= y < self.y + self.h
+
+
+def room_at(room, x, y):
+    """0x00463740: the room itself, else the first of its near list (in list order) holding the subtile."""
+    if room is None:
+        return None
+    if room.holds(x, y):
+        return room
+    for r in room.near:
+        if r is not None and r.holds(x, y):
+            return r
+    return None
+
+
+def cell_test(room, x, y, mask):
+    """COLL_CellTest 0x0064D450 and COLL_CellTestAt 0x0064CB30: mask & cell, 0x27 without a room, map or cells."""
+    r = room_at(room, x, y)
+    if r is None or r.cells is None:
+        return BLOCKED
+    return r.cells.get((x, y), 0) & mask
+
+
+def field_dir(field, ox, oy, x, y):
+    """The direction byte for (x, y) with the origin (ox, oy): row 128 + dy, column 128 + dx of the 256 x 256 file."""
+    return field[(y - oy + 128) * 256 + (x - ox) + 128]
+
+
+def line_cells(field, ox, oy, x, y):
+    """The cells 0x0066A670 tests from (x, y) walking the field to the origin: the start, then each step whose byte is not 8,
+    so the origin itself is tested only when it is the start."""
+    out = [(x, y)]
+    while True:
+        d = field_dir(field, ox, oy, x, y)
+        x, y = x + DIR_DX[d], y + DIR_DY[d]
+        if field_dir(field, ox, oy, x, y) == 8:
+            return out
+        out.append((x, y))
+
+
+def diag_cells(ox, oy, x, y):
+    """A wrong reading, the control `linediag`: diagonal first, then straight, ignoring the file."""
+    out = [(x, y)]
+    while (x, y) != (ox, oy):
+        x += (ox > x) - (ox < x)
+        y += (oy > y) - (oy < y)
+        if (x, y) != (ox, oy):
+            out.append((x, y))
+    return out
+
+
+def line_blocked(field, ox, oy, room, x, y, mask, ctl=None):
+    """0x0066A670: 0 with no room; else 1 at the first cell of the walk whose test is non-zero, tested from the candidate's room."""
+    if room is None:
+        return 0
+    cells = diag_cells(ox, oy, x, y) if ctl == "linediag" else line_cells(field, ox, oy, x, y)
+    if ctl == "lineorigin" and (ox, oy) not in cells:
+        cells = cells + [(ox, oy)]
+    for cx, cy in cells:
+        if cell_test(room, cx, cy, mask):
+            return 1
+    return 0
+
+
+def ring_cells(x, y, r, ctl=None):
+    """Ring r in the code's order: for each row y - r..y + r the columns x - r, x + r; then for each column x - r + 1..x + r - 1
+    the rows y - r, y + r."""
+    sides = [(cx, cy) for cy in range(y - r, y + r + 1) for cx in (x - r, x + r)]
+    caps = [(cx, cy) for cx in range(x - r + 1, x + r) for cy in (y - r, y + r)]
+    return caps + sides if ctl == "capsfirst" else sides + caps
+
+
+def find_free_near(room0, x, y, origin, field, mask_a, mask_b, fallback, radius=50, ctl=None):
+    """COLL_FindFreeNear 0x0064DEA0 with size 1 and step 1. -> (room or None, x, y). The base room is a variable: each lookup is from the
+    last non-null room a lookup returned, the first lookup's result kept even when null (so a lookup's reach is that room and its near
+    list, not the first room's), and the final lookup too, so a fallback can return None though the given cell lies in the first room. The first ring holding a free cell gives
+    the lowest |dx| + |dy| of that ring, the earliest of equals."""
+    cur = [room0]
+
+    def ok(cx, cy, first=False):
+        r = room_at(room0 if ctl == "fixedbase" else cur[0], cx, cy)
+        if first:
+            cur[0] = r          # the first lookup's result is kept even when null, and from null every later lookup is null
+        if r is None:
+            return False
+        cur[0] = r
+        if cell_test(r, cx, cy, mask_a):
+            return False
+        if ctl == "noline" or origin is None:
+            return True
+        lr = room0 if ctl == "lineroom0" else r
+        return not line_blocked(field, origin[0], origin[1], lr, cx, cy, mask_b, ctl)
+
+    if ok(x, y, True):
+        return cur[0], x, y
+    top = {"r48": 48, "r50": 50}.get(ctl, radius - 1)
+    for r in range(1, top + 1):
+        best, at = -1, None
+        for cx, cy in ring_cells(x, y, r, ctl):
+            if not ok(cx, cy):
+                continue
+            d = abs(cx - x) + abs(cy - y)
+            if best == -1 or d < best or (ctl == "leq" and d == best):
+                best, at = d, (cx, cy)
+            if ctl == "first":
+                break
+        if at:
+            return room_at(room0 if ctl == "fixedbase" else cur[0], at[0], at[1]), at[0], at[1]
+    if fallback or ctl == "alwaysfallback":
+        return room_at(room0 if ctl == "fixedbase" else cur[0], x, y), x, y
+    return None, x, y
+
+
+def ground_drop_cell(room, px, py, field, fallback=1, ctl=None):
+    """0x00555DA0: start at (px + 2, py + 3) when a room holds it, else at the position; the line runs to the position.
+    -> (room or None, x, y)."""
+    dx, dy = {"offset32": (3, 2)}.get(ctl, (2, 3))
+    sx, sy = px + dx, py + dy
+    if ctl == "nooffset" or room_at(room, sx, sy) is None:
+        sx, sy = px, py
+    mask_a = 0x3C01 if ctl == "noitembit" else DROP_MASK_CELL
+    mask_b = DROP_MASK_CELL if ctl == "linecellmask" else DROP_MASK_LINE
+    return find_free_near(room, sx, sy, (px, py), field, mask_a, mask_b, fallback, 50, ctl)
+
+
+def ground_expiry(frame, quest, quality, base_type, gold, filler):
+    """sub_00558A10_ItemGroundExpiry: 0 for a quest base, else the frame plus 30000 (quality 4), 45000 (5..9), for base type 4
+    45000 above 10000 gold else 15000, for a socket filler 30000, else 15000. Wraps as i32."""
+    if quest:
+        return 0
+    if quality == 4:
+        add = 30000
+    elif 5 <= quality <= 9:
+        add = 45000
+    elif base_type == 4:
+        add = 45000 if gold > 10000 else 15000
+    elif filler:
+        add = 30000
+    else:
+        add = 15000
+    return i32(frame + add)
+
+
+def sweep_first(items, frame, ctl=None):
+    """0x00558B90 in list order: the first unit of type 4 with expiry non-zero and <= frame (signed), or None."""
+    for i, (typ, exp) in enumerate(items):
+        if typ != 4 or (exp == 0 and ctl != "zerofrees"):
+            continue
+        if exp < frame or (exp == frame and ctl != "ltframe"):
+            return i
+    return None
+
+
+def interact_distance(table, ax, ay, sa, bx, by, sb):
+    """0x00641530 with table = the 64 i32 at 0x006EB180, sa and sb UNIT_GetSizeX of the two units."""
+    dx, dy = abs(bx - ax), abs(by - ay)
+    if dx < 8 and dy < 8 and sa < 4 and sb < 4:
+        v = table[dx + dy * 8]
+        if v < 0:
+            return 0
+        if sa == 3 or sb == 3:
+            v -= 1
+        v = max(v, 0)
+        return v + 1 if sa < 2 or sb < 2 else v
+    half = abs((sb >> 1) + (sa >> 1))
+    dx, dy = max(dx - half, 0), max(dy - half, 0)
+    return dy + dx * 2 if dy < dx else dx + dy * 2
+
+
+def line_ends(ax, ay, sa, bx, by, sb):
+    """0x00622920's clamp and shortening before COLL_LineTest, a at (ax, ay) with size sa, b likewise. -> None when the units touch
+    (|dx| + |dy| < min(sa, 2) + min(sb, 2): return 0 with no test), else ((ax', ay'), (bx', by'))."""
+    sa, sb = min(sa, 2), min(sb, 2)
+    dx, dy = abs(bx - ax), abs(by - ay)
+    if dx + dy < sa + sb:
+        return None
+    if sa == 0 and sb == 0:
+        return (ax, ay), (bx, by)
+    if dy <= dx:
+        if ax < bx:
+            ax, bx = ax + sa, bx - sb
+        else:
+            ax, bx = ax - sa, bx + sb
+        if dy < dx:
+            return (ax, ay), (bx, by)
+    if ay < by:
+        ay, by = ay + sa, by - sb
+    else:
+        ay, by = ay - sa, by + sb
+    return (ax, ay), (bx, by)
+
+
+def dispatch_gate(op, table_nonzero, mode, state54):
+    """0x0054D750 as far as the handler's pointer: 'bad' (returns 3), 'gate' (returns 0), else 'handler'."""
+    if op == 0 or op > 0x66 or not table_nonzero:
+        return "bad"
+    if op in (0x14, 0x15, 0x3C, 0x43, 0x66):
+        return "handler"
+    if op == 0x41:
+        return "handler" if mode == 0x11 else "gate"
+    return "handler" if (not state54 and mode not in (0, 0x11)) else "gate"
+
+
 if __name__ == "__main__":
     if len(sys.argv) == 3 and sys.argv[1] == "stock":
         stock(sys.argv[2])
