@@ -282,4 +282,5 @@ From the spec's [open questions](../specs/items/economy.md#open-questions) and i
   [worked examples](../specs/items/economy.md#worked-example) and
   [reimplementation notes](../specs/items/economy.md#reimplementation-notes).
 - Related pages: [other item paths](items-other-paths.md) (vendor stock, gambling, the quest services),
+  [using items and the inventory](inventory.md) (potions, stacks, pickup and the ground),
   [characters and hirelings](characters.md), [combat](combat.md), and the [glossary](../glossary.md).

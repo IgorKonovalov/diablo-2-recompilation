@@ -600,5 +600,5 @@ The main flow above is confirmed in recorded games. These parts are not, or are 
   [base stats and properties](../specs/items/properties.md#purpose).
 - The [glossary](../glossary.md) for every D2 term used here.
 - Related pages: [randomness](randomness.md) for the seeds, [monsters](monsters.md) for monster kinds and levels,
-  [objects](objects.md) for chests, [other ways to make an item](items-other-paths.md), [saves](saves.md) for how an
+  [objects](objects.md) for chests, [other ways to make an item](items-other-paths.md), [using items and the inventory](inventory.md) for what happens to an item after it is made, [saves](saves.md) for how an
   item is stored, and [how we know](how-we-know.md) for what "confirmed" means here.

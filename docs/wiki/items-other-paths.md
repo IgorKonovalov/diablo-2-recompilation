@@ -682,4 +682,5 @@ Collected from the specs' open questions and unconfirmed points:
   [vendors](../specs/items/vendors.md#reimplementation-notes),
   [quests](../specs/items/quest-drops.md#reimplementation-notes).
 - The [glossary](../glossary.md) for the terms, and the wiki pages on [item drops](items.md),
-  [randomness](randomness.md) and [saves](saves.md).
+  [using items and the inventory](inventory.md) (pickup, drop, stacks and the belt), [randomness](randomness.md) and
+  [saves](saves.md).
