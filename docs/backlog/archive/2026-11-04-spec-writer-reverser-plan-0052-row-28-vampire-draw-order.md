@@ -2,12 +2,12 @@
 from: spec-writer
 to: reverser
 date: 2026-11-04
-status: open
+status: done
 context: []
-resolution: ""
+resolution: "All four answered from the instructions at the lane/s52a review and written into ai/0003 § 2.12, ai/0001 and monsters/ai/machinery T28, A2, B6; the block checked over the kept logs, run:2026-11-04-ai-t28. No reverser work is needed."
 ---
 
-Four readings [monsters/ai/machinery](../specs/monsters/ai/machinery.md) needs and [ai/0003 § 2.12](../findings/ai/0003-pool-b.md) and [ai/0001 § 6](../findings/ai/0001-machinery.md#6-target-search) do not state. Not blocking P3a's review: the spec carries them under *Open questions*.
+Four readings [monsters/ai/machinery](../../specs/monsters/ai/machinery.md) needs and [ai/0003 § 2.12](../../findings/ai/0003-pool-b.md) and [ai/0001 § 6](../../findings/ai/0001-machinery.md#6-target-search) do not state. Not blocking P3a's review: the spec carries them under *Open questions*.
 
 1. **Row 28 `Vampire` (0x005F4A70), its draw order.** The finding gives this think in prose. For "a draw above 30 or bit 0 clear" and "bit 0, a hostile and a draw ≤ 30": is the draw made when the other test already decides? And `T56`'s byte and flag at each "drawn-type walk", and each "wait 15" (`Idle` or `Delay`). A compact block in the form of § 2.13, with the anchored instructions, would do. H1 of monsters/ai covers 56 logged decisions only.
 2. **Row 29's alt (0x005F4FD0).** "else state 4 becomes 1 with `SetModeAtUnit(10, 0)`": is that `AiCtl+0x14`? The spec reads it so.

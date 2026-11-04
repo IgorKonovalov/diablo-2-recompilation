@@ -1,10 +1,10 @@
 ---
 spec: monsters/ai/overview
-status: draft
+status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, anim/timing, anim/movement, skills/dispatch, monsters/stats, path/overview, path/search, drlg/collision]
 consumed_by: [monsters/ai/machinery, skills/dispatch, monsters/stats, monsters/spawn, hirelings, drlg/lifecycle, path/overview, sim/frame]
-tags: {C: 38, I: 52, L: 10}
+tags: {C: 39, I: 55, L: 9}
 updated: 2026-11-04
 ---
 
@@ -201,8 +201,8 @@ C2. MonAiIdle(n):                                                          [I] (
 C3. MonAiDelay(n):                                                         [I] (fn:sub_005DE0F0_MonAiDelay@0x005DE0F0)
       cancel kind 2;  queue kind 2 at T + max(n, 1);  the mode is unchanged
 C4. MonAiDelayEarlier(n):                                                  [I] (fn:sub_005DE130_MonAiDelayEarlier@0x005DE130)
-      queue kind 2 at T + max(n, 1) only when nothing is pending, or the
-      pending one is due now, or it is due at or after T + n
+      only when nothing is pending, or the pending one is due now, or it is
+      due at or after T + n:  cancel kind 2;  queue kind 2 at T + max(n, 1)
 ```
 
 - C5. [I] **The other queueing sites**, of 30 in all: `MonAiTargetOrWait` (`T + 20`); `MonKnockbackEnd` (`T + 1`,
@@ -329,7 +329,7 @@ E1. MonAiInit(game, unit, ctl, state: i32):                                [I] (
   |---|---|---|
   | `+0x00` | i32 | the state |
   | `+0x04` | u32 | the think |
-  | `+0x08` | u16 | flags: `0x08` set by the search when it finds a target and the searcher is not alignment 2; `0x40` a one-shot "search without the line test", cleared by the search; `0x20` the unique-mod teleport flag; bit 0 by `MonAiMove`'s flag 1 |
+  | `+0x08` | u16 | flags: `0x08` set by the search when it finds a target and the searcher is not alignment 2; `0x40` set by `MonAiMove`'s flag 1 on a refused move, a one-shot that forces the search's line test on, cleared by the search ([machinery A2](machinery.md#a-target-search)); `0x10` `MonAiBossSightPause`'s once only; `0x20` the unique-mod teleport flag; `0x01`, `0x02` set by the owner functions (0x0058F05F, 0x0058F073, 0x0058F59E, 0x0058F5AC), not followed here |
   | `+0x0C`, `+0x10` | i32 | a unit to keep near and its type ([machinery § E](machinery.md#e-following)) |
   | `+0x14`, `+0x18`, `+0x1C` | i32 | AI variables, `v14`, `v18`, `v1C` in [machinery § T](machinery.md#t-the-tier-ais) |
   | `+0x20`, `+0x24` | ptr | the parameter records |
@@ -397,18 +397,18 @@ F2. MonAiOpenDoor:                                                         [I] (
       for a MonStats opendoors row (+0x0C bit 3) whose cell has collision bit 0x800:
         o ← search kind 8                      ; the nearest object with 0x00621A70 set in mode 0
         if o's Objects record +0x16D ≠ 0: operate it (0x00584540(2, guid)); MonAiIdle(5); stop
-F3. MonAiBossSightPause:                                                   [I] (fn:sub_005B1140_MonAiBossSightPause@0x005B1140, fn:sub_00553380_UnitSetEvent@0x00553380)
+F3. MonAiBossSightPause:                                                   [I] (fn:sub_005B1140_MonAiBossSightPause@0x005B1140, 0x005B11B8, 0x005B11CB, fn:sub_00553380_UnitSetEvent@0x00553380)
       for class 250, a champion or unique, or a boss,
-      at distance below 20 from a player target, with the AiCtl flag not yet set:
-        set the flag;  UnitSetEvent(0);  MonAiIdle(20);  stop
+      at distance below 20 (unsigned) from a player target, with AiCtl flag 0x10 clear:
+        UnitSetEvent(U, 16, 0);  set flag 0x10;  MonAiIdle(20);  stop
 F4. MonSpcWalkCheck, only with a target:                                   [I] (fn:sub_005B13E0_MonSpcWalkCheck@0x005B13E0, fn:sub_005DC640_AiApproachPointTest@0x005DC640, tbl:Levels.txt:MonSpcWalk, tbl:MonStats.txt:isMelee)
       MonAiBossSightPause
       UModTeleportTry                                             ; drlg/lifecycle
-      for an isMelee class allowed its mode, in a level with MonSpcWalk ≠ 0, the distance above it:
-        a teleport-point test toward the target (AiApproachPointTest)
-        else search kind 11
-        else MonAiWanderRing(4) and stop
-        a found point replaces the target
+      for an isMelee class allowed its mode, in a level with MonSpcWalk ≠ 0, the distance above it (unsigned):
+        if AiApproachPointTest(unit, target) passes: go on, target unchanged
+        else search kind 11:
+          a found unit replaces the target and the distance in ctx
+          none: MonAiWanderRing(4) and stop
 ```
 
 ## Outputs
@@ -568,18 +568,17 @@ tests are the checkers `tools/ai.py check` and `tools/ai_resume.py` over the log
 - [L] **The catalogue sample** is short for batches 5, 7, 10, 11, 12: the logs hold no non-tier row of 5, 7 and 11, batch
   10 only in rev 3 logs, and rows 54, 99, 32, 100 of batch 12 do not count. The rest of the table stays at its batch's
   emulated `[C]` or `[I]`, for P3b. (run:2026-11-04-ai-resume)
-- [L] **Row 23's mismatches.** The 8 of the rev 4 logs have the logger's 600-call limit as their cause read; rev 6 has
+- [I] **Row 23's mismatches.** The 8 of the rev 4 logs have the logger's 600-call limit as their cause read; rev 6 has
   row 23 at 256 decisions with 0 mismatches and 0 `AIL` lines with `pend` 0, but only 2 of those lines are row 23's, so
-  the reading is untested. (run:2026-11-04-ai-r5)
+  the reading is untested; row 23 is the catalogue's. (run:2026-11-04-ai-resume, run:2026-11-04-ai-r5, 0x005F33EC)
 - [L] **The H1 remainder:** the 8 `AD0` stops, unexamined (A5), and the 330 of 331 same shape, an inference (A5).
-- [L] **P1b-1, Duriel, and C10, C11's community disagreement.** src:arreat-summit-boss-pages gives Duriel "17 % Melee
-  Attack 1, 33 % Smite, 50 % Jab" and the same for Über Duriel; the code read (`draw < aip2` Skill3, then `draw < aip3`
-  Skill2, then `draw < aip4` A2, else A1, with 33, 50, 0) gives Smite 33 %, Jab 33.5 %, A1 33.5 %. The map is emulated and
-  the case is open for owner play. The entry is P3b's. (fn:sub_005F67B0_AiDuriel@0x005F67B0,
-  [ai/0014](../../../findings/ai/0014-community-cross-check.md), run:2026-10-30-ai-cat-emu-6)
-- [L] **P1b-2, C40.** Whether a natural champion corpse reaches the Greater Mummy's skill test. The code reading has no
-  champion test in its callback; no natural champion was logged, and the built-state run cannot count, since a logger
+- [L] **P1b-1, Duriel, and C10, C11's community disagreement, listed unresolved.** src:arreat-summit-boss-pages gives Duriel "17 % Melee
+  Attack 1, 33 % Smite, 50 % Jab" and the same for Über Duriel. Unplayed, so no logged Duriel melee decision settles it. The entry is P3b's. ([ai/0014](../../../findings/ai/0014-community-cross-check.md), [the owner entry](../../../backlog/2026-11-04-architect-human-plan-0052-p1b-1-duriel-melee-owner-play.md))
+- [C] **The code's side of C10:** `draw < aip2` Skill3, then a fresh `draw < aip3` Skill2, then a fresh `draw < aip4` A2, else A1, by emulation to the first callee. (run:2026-10-30-ai-cat-emu-6, fn:sub_005F67B0_AiDuriel@0x005F67B0)
+- [I] **Its frequencies**, arithmetic on that map with `aip2..4` 33, 50, 0, in all three difficulties: Smite 33 %, Jab 33.5 %, A1 33.5 %. C11 is the same think and the same values, row 44's record 708. (fn:sub_005F67B0_AiDuriel@0x005F67B0, [ai/0014](../../../findings/ai/0014-community-cross-check.md))
+- [L] **P1b-2, C40.** Whether a natural champion corpse reaches the Greater Mummy's skill test: no natural champion was logged, and the built-state run cannot count, since a logger
   never writes game memory (ADR-0003). It needs a `-forced` mode that writes nothing. (fn:sub_005F2A00_AiGreaterMummyCb@0x005F2A00)
+- [I] **The code's side of C40:** the callback tests the unique flag only, so a champion corpse in range becomes `corpse` ([machinery T22a](machinery.md#t22-row-22-greatermummy-fnsub_005f2b10_aigreatermummy0x005f2b10)); the skill's own target test is not read for champions. (fn:sub_005F2A00_AiGreaterMummyCb@0x005F2A00, fn:sub_005FD470_MonSkillTargetOk@0x005FD470)
 - [L] **The Uber forced cases** G1, G2, G3 and G5 of [ai/0016](../../../findings/ai/0016-uber-event.md) are named
   shortfalls, for owner play.
 - [L] **`0x00623470`'s** column at MonStats `+0x0E` bit 0, `MonsterData+0x54`'s writer, the third `MonsterInit` block and
