@@ -634,8 +634,8 @@ F5a. UnitCorpseColl(u, arg):                                      [I] the steps 
       PathSnapToTileCentre(path)                                   ; 0x00649FAA, 0x00649FDE: both branches; marks nothing, below
 ```
 
-- [I] **F5a's last call marks nothing.** `PathSnapToTileCentre(path)` sets the point to the middle of its tile, `x = (path.x & 0xFFFF0000) + 0x8000` and
-  `y` likewise, through `PathSetPoint`. That stores the point, recomputes the sub-tile fields and, when the path has its unit and flag 1, calls
+- [I] **F5a's last call marks nothing.** `PathSnapToTileCentre(path)` sets the point to the middle of its subtile (the path's whole coordinates are subtiles; the name's "tile" is loose), `x = (path.x & 0xFFFF0000) + 0x8000` and
+  `y` likewise, through `PathSetPoint`. That stores the point, recomputes the `>> 11` fields `+0x08`, `+0x0C` and, when the path has its unit and flag 1, calls
   `PathRoomUpdate`, which does nothing while the point's whole coordinates are inside the current room's rectangle and otherwise looks the room up and
   relinks the unit. None of the three calls a grid mark, unmark or clear; the "marked" of `RoomUnitAddMarked` is the frame's unit-list mark. So the call
   changes only the fraction of the corpse's position to one half and leaves the whole coordinates the cells were just written around: it moves no cell
@@ -717,14 +717,15 @@ F5a. UnitCorpseColl(u, arg):                                      [I] the steps 
 - [I] **Server's copy, the 3×3 has no paired clear.** `UNIT_CollUnmark` clears the record's pattern and mask, which are still the live ones, and
   `UnitReviveColl`, which acts only when the mask is `0x8000` (0x00649FF0), has only client callers (0x004AEEDC, 0x004AFFA8). No routine read calls a clear with
   `0x8000`: the direct callers of `COLL_RectClearWH` are `UNIT_CollUnmarkRect` (0x006238B0) and `UNIT_CollUnmark`'s object branch (0x0064969A), and the pattern
-  unmarks are reached with the unit's own mask. So the cells
+  unmarks are reached with the unit's own mask, which is `0x100` on such a corpse. So the cells
   outlast the corpse until the grid is rebuilt; this is the likely source of the 26 034 differing `0x8000` cells of the predicted grid on
   run:2026-11-04-path-2. (0x00649FD8, fn:sub_00649FF0_UnitReviveColl@0x00649FF0, fn:COLL_RectClearWH@0x0064DC00, [path/0008 item 4](../../findings/path/0008-corpse-remainders.md))
-- [I] **Server's copy, a revival.** A server corpse keeps mask `0x100`, so `UnitReviveColl` does not meet it. The server routine read is `MonReviveInPlace`
+- [I] **Server's copy, a revival.** The corpse of a server death keeps mask `0x100`, so `UnitReviveColl`, whose callers are the client's in any case, does not meet it. The server routine read is `MonReviveInPlace`
   (self-resurrect, start 61; Resurrect, do 97, 0x005CCBF5): for a monster with a room it sets mask `0x100` (`PATH_SetMarkMask`, 0x005CC9EA), runs
   `PathPatternRefresh` (0x005CC9F0: `UNIT_CollUnmark(unit, 1)`, the pattern from size, `UNIT_CollMark`) and then `COLL_PatternMark` with that pattern and `0x100`
   (0x005CCA68). `SkillReviveDo` and `SkillDo58Revive` also call `PathPatternRefresh` (0x005C0953, 0x005C5898). Nothing in these routes clears the 3×3 of
-  `0x8000`, so it stays after a revival by them. `MonSetMode` is not given as a route: it calls `UNIT_CollMark` (0x005A7CB1) only when `UnitIsDead` is 0 (0x005A7CAC),
+  `0x8000`, so it stays after a revival by them. That holds for a record at mask `0x100`. A monster re-created or relocated dead holds mask `0x8000` at pattern 5, and `PATH_SetMarkMask` unmarks
+  under the old mask first (0x00648C7D), so this routine takes that plus off and a re-created monster keeps the 3×3's four corners. `MonSetMode` is not given as a route: it calls `UNIT_CollMark` (0x005A7CB1) only when `UnitIsDead` is 0 (0x005A7CAC),
   before its handler call (0x005A7D67), and where the mode word is written was not located, so how a dead-to-alive mode set meets that test is not stated. Not
   followed: `MERC_Resurrect`, `AiFetishReviveCb`, `Pkt41Resurrect`, `SkillSt21Revive`, and the revive routines' callees `0x00573780`, `0x00547E90`, `0x00545CD0`.
   No server revival with its grid is logged. (fn:sub_005CC960_MonReviveInPlace@0x005CC960, fn:sub_00649CA0_PathPatternRefresh@0x00649CA0, fn:COLL_PatternMark@0x0064EA90,

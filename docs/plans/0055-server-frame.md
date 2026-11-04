@@ -23,7 +23,7 @@ and its timers, and so whose draws come first on a seed two events share? [ADR-0
 
 - **The decision and its gates** (ADR-0022): this plan's tables and static reading may start once plan 0052's P1.1 is
   reviewed (**met 2026-10-27**, `lane/r52`); its harness waits for **plan 0052's P3a** (machinery and tier) to be
-  reviewed; 0052's catalogue (P3b), the path search plan ([0054](0054-path-search.md)) and plan 0046 never gate it:
+  reviewed; 0052's catalogue (P3b), the path search plan ([0054](done/0054-path-search.md)) and plan 0046 never gate it:
   an AI, path or skill function they have not specified is a boundary oracle (ADR-0004, as ADR-0020). If 0052's P2 or
   P3a moves the AI tick or a unit list this plan's P1 relied on, the architect re-rules at this plan's P1 review
   (ADR-0022 § Negative).

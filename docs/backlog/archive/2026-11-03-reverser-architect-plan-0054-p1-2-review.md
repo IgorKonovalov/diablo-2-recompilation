@@ -5,7 +5,7 @@ date: 2026-11-03
 status: done
 context:
   - ../../findings/path/0002-search.md
-  - ../../plans/0054-path-search.md
+  - ../../plans/done/0054-path-search.md
 resolution: "Tier B check 2026-11-03: accept with fixes (4). P1.3a may build on EmuScratch.java after a one-case negative probe and the U-line and U_OK fixes; largest-room entry filed to the archivist; merged into main."
 ---
 

@@ -6,7 +6,7 @@ status: open
 context:
   - ../specs/path/README.md
   - ../findings/path/0001-pathplan-register.md
-  - ../plans/0054-path-search.md
+  - ../plans/done/0054-path-search.md
 resolution: ""
 ---
 

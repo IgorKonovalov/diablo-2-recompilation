@@ -70,11 +70,11 @@ Some inputs belong to other subjects and are taken as given, logged in the runs
 ([overview § The ADR-0014 boundary](../specs/skills/README.md#the-adr-0014-boundary),
 [dispatch § Inputs and oracles](../specs/skills/dispatch.md#inputs-and-oracles)):
 
-- **The frame on which the action happens.** Which frame of an animation carries the action is animation timing, the
-  next simulation subject.
+- **The frame on which the action happens.** Which frame of an animation carries the action is
+  [animation timing's](animation.md).
 - **A monster's choice** of skill, mode and target: monster AI, a later subject.
 - **The live collision grid at a plan or a step**, and the cells a missile's step crosses, the order in which an area skill
-  visits the units near it, and which pet the pet limit removes. The planner's points are no longer among these inputs:
+  visits the units near it, and which pet the pet limit removes. The planner's points are not among these inputs:
   [pathing](pathing.md) explains the planners, which reproduce given the live grid.
 - **A unit's final stats**, which [stats and states](stats-and-states.md) explains.
 

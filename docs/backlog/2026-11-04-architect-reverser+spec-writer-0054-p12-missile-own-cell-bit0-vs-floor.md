@@ -4,7 +4,7 @@ to: reverser, spec-writer
 date: 2026-11-04
 status: open
 context:
-  - ../plans/0054-path-search.md
+  - ../plans/done/0054-path-search.md
   - ../findings/path/0007-community-cross-check.md
   - ../specs/skills/missiles.md
 resolution: ""

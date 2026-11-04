@@ -91,7 +91,8 @@ further, and the planners see the moved one. The room lookup uses the near list 
 inactive room refuses (both read from the code).
 
 **The target refresh.** With a target unit, the target point becomes that unit's position. The routine returns 0 when
-that position is (0, 0), 2 for an object or item target and 1 otherwise. It also moves a door's target 2 subtiles
+that position is (0, 0), which then refuses the plan, 2 for an object or item target and 1 otherwise. That return is the **refresh distance**
+the planners below test against. It also moves a door's target 2 subtiles
 toward the start, along the axis the door's `Orientation` picks, and that step never tests the grid. A player or
 monster target with a non-zero offset field goes through an offset routine that is not read. All of this ran under
 emulation except that branch ([overview § C1](../specs/path/README.md#c1-the-target-refresh)).
@@ -134,7 +135,7 @@ plan's target as it was, and a new target equal to the start also returns 0.
 **A player's target is then pushed outward.** When the moved target lies under 5 subtiles from the start on both axes, and
 not on the start, it is extended away from the start until it is 5 away or the next cell is blocked. The step moves **one
 axis unless the two differences are equal**: x moves by the sign of the x difference when that difference is at least as
-large as the y difference, and y likewise. A target at (3, 1) from the start steps (1, 0), not (1, 1).
+large as the y difference, and y likewise; this ran under emulation too. A target at (3, 1) from the start steps (1, 0), not (1, 1).
 
 ## The 17 types
 
@@ -169,11 +170,12 @@ random functions; those are not the path's and are not followed here.
 
 ## The planners
 
-Every planner tests a cell the same way. The unit's footprint pattern at a cell is tested against the mask: pattern 0 is
+Every planner that reads the grid tests a cell the same way. The unit's footprint pattern at a cell is tested against the mask: pattern 0 is
 the cell, patterns 1, 3 and 5 a plus, patterns 2 and 4 a 3×3 rectangle, and any other is blocked. No room at the cell (for a plus, at
 its centre) is blocked. A cell in a room
 outside the near list of the planner's room counts as blocked, however large the search's rectangle (emulated:
-[search § A1](../specs/path/search.md#a1-a-cell-read-blocked)).
+[search § A1](../specs/path/search.md#a1-a-cell-read-blocked)). **The limit** that several planners use is a byte of the path record: at most 77, and 73 for a
+player and 14 for a monster at creation ([overview § Runtime state](../specs/path/README.md#runtime-state)).
 
 ### Greedy: types 2 and 13
 
@@ -318,15 +320,15 @@ of scope.
 After a plan the path aims at its next point: it works out the vector and the step per frame, and it may set the direction to
 turn to and a turn step. An emulated family of 500 cases reproduces this, which is the code's map over declared cases, not when
 the game calls it ([overview § H](../specs/path/README.md#h-the-aim-and-the-facing-step)). The names "facing" and "turn step"
-are the project's, not an observed use, and **what applies the turn step is unknown**. The turn-step table equals an exact rule
-on this image, element by element, 64 of 64, with no claim about how it was made.
+are the project's, not an observed use, and **what applies the turn step is unknown**. The turn-step table equals the exact rule
+that section's H4 gives, on this image, element by element, 64 of 64, with no claim about how it was made.
 
 ## The grid a planner reads
 
 **The planners take the live grid.** It is seen in the game: given the game's own cells at the planner call, with the unit's and
 the target's unmarks already run, the models reproduce **33 722 stock plans with 0 mismatches**, 20 671 of the second run and
-13 051 of the first, on 11 types (2, 4, 5, 6, 7, 8, 9, 10, 13, 14, 15). Each is compared on its return, its first point words and
-its exit seed. Apart from those stand the **842 of the first run after the written probe**, which show 0 mismatches and back
+13 051 of the first, on 11 types (2, 4, 5, 6, 7, 8, 9, 10, 13, 14, 15). Each is compared on its return, as many point words as that
+return says, and its exit seed. Apart from those stand the **842 of the first run after the written probe**, which show 0 mismatches and back
 nothing ([overview § F1](../specs/path/README.md#f1-the-planners-take-the-live-grid)). The model took the planner's address, the
 context and the record at the call and the target unit's position from the game, so the plan's head, the refresh, the free step,
 the town test and the slot are inputs to this count, not predictions of it.
@@ -334,9 +336,9 @@ the town test and the slot are inputs to this count, not predictions of it.
 **This is not the predicted grid.** The 0 mismatches take the grid from the game. The same planners on a grid predicted from the
 built map plus the units are another claim, and it failed.
 
-**The grid is its operations in order, never a union of holders.** Seen in the game: the grid at a planner call is the result of
-the marks and unmarks in order. An unmark takes the same footprint off and no bit is counted, so it clears a shared bit another
-holder also set. A rebuild runs the operations and never computes a union of holders
+**The grid is its operations in order, never a union of holders.** The grid at a planner call is the result of the marks and
+unmarks in order. An unmark takes the same footprint off and no bit is counted, so it clears a shared bit another holder also set:
+that is seen in a game run that logged the marks, not in the planners' counts above. A rebuild runs the operations and never computes a union of holders
 ([overview § F2](../specs/path/README.md#f2-the-grid-is-the-result-of-its-operations-in-order),
 [collision § F7](../specs/drlg/collision.md#f7-no-bit-is-reference-counted-the-grid-is-the-result-of-its-operations-in-order)).
 
@@ -390,21 +392,23 @@ server's, never the client's plus. Every statement here holds for the copy it na
 
 These are read from the code, and no game ran on them:
 
-- **The corpse call's last step marks nothing.** It snaps the corpse's position to the middle of its tile, which moves no cell and,
+- **The corpse call's last step marks nothing.** It snaps the corpse's position to the middle of its subtile, which moves no cell and,
   in practice, no room.
 - **A plan does not force the unmark.** The plan's unmark leaves a dead player's or monster's cells alone, and an object it
   unmarks needs `HasCollision` set. A corpse call, a creation and a relocation force the unmark.
-- **The server's 3×3 has no paired clear.** No routine read clears `0x8000`, so the cells outlast the corpse until the grid is
+- **The server's 3×3 has no paired clear.** No routine read clears it: an unmark takes only the unit's own mask and pattern, which on a
+  server corpse are still the live ones. So the cells outlast the corpse until the grid is
   rebuilt. This is the likely source of the 26 034 differing `0x8000` cells of the predicted grid.
-- **A revival.** The client's revive routine acts only at mask `0x8000`, which a server corpse does not hold. The server's revive-in-place routine sets the mask back to `0x100`, refreshes the pattern from the size, and marks
-  it again; two skill routines also refresh. None of these clears the 3×3, so it stays. Not followed: the mercenary's
+- **A revival.** The client's revive routine acts only at mask `0x8000`, which the corpse of an ordinary server death does not hold. The server's revive-in-place routine sets the mask to `0x100`, which that corpse
+  already holds, refreshes the pattern from the size, and marks it again; two skill routines also refresh. None of these clears the 3×3, so it stays. A monster re-created or relocated
+  dead holds mask `0x8000`, so setting the mask takes that plus off, and a re-created one is left with the 3×3's four corners. Not followed: the mercenary's
   resurrect, the fetish revive callback, the resurrect packet, skill start 21's revive and three callees of the revive routines. A
   mode set from dead to alive is not given as a route, since where the mode word is written was not located. No server revival
   is logged with its grid.
 - **`0x8000` is in no immediate move mask scanned:** 0 of 53 immediates that reach a move mask, and none of the monsters' masks.
   A mask built in a register or read from a table was not scanned. It is in no spawn mask either. So on what the specs state a corpse mark is not a blocker, but whether corpses block movement stays open.
 - **`unflatDead` is no route to it.** Its one direct reader is a client draw-list test, so it changes no grid mark and no move
-  mask, and the server never reads it ([overview § Reimplementation notes](../specs/path/README.md#reimplementation-notes)).
+  mask, and no direct call on the server reads it ([overview § Reimplementation notes](../specs/path/README.md#reimplementation-notes)).
 
 ## Who asks
 

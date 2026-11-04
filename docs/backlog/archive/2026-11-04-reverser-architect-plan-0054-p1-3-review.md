@@ -5,7 +5,7 @@ date: 2026-11-04
 status: done
 context:
   - ../../findings/path/0003-short-planners.md
-  - ../../plans/0054-path-search.md
+  - ../../plans/done/0054-path-search.md
 resolution: "Tier B check 2026-11-04: accept with fixes (6). Headline 4 330 raw, 4 240 testing the game's code; Phase 2 may start; merged into main."
 ---
 

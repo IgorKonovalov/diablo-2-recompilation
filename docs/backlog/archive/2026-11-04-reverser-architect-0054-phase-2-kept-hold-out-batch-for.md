@@ -6,7 +6,7 @@ status: done
 context:
   - ../../findings/path/0006-holdout.md
   - ../../findings/path/experiments.md
-  - ../../plans/0054-path-search.md
+  - ../../plans/done/0054-path-search.md
 resolution: "Reviewed, lane/p54c, Tier A: accept with fixes. The hold-out failed by its own terms (11 of 15 663); the 11 are classified [I] (8 drlg/collision F1, 3 at 0x005CAF8E), no rule refuted, no refit. C1, C2 (403, 404), C3, O1's object bits, T1's targeted object and the spiral rise to [C]; W1, Jump, PATH_CHAIN, type 1's sites stay [I]. Phase 3 may start with the 11 as a counted value oracle. See the plan 0054 log."
 ---
 

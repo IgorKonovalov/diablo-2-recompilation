@@ -349,9 +349,10 @@ player windows matched). The Slows Target skill changes only the attack and defa
 The rate, the schedule, the advance, the sequences, movement and the run drain draw nothing
 ([timing § N](../specs/anim/timing.md#n-draws-and-seeds-per-event-kind),
 [movement § G](../specs/anim/movement.md#g-draws)); that movement's step and drain call no random function is read from the code.
-A replan reaches the planner, and 836 + 889 logged replans (810 of the 836 stock) reproduce with the unit seed unchanged. They
-were of types 5, 6, 13 and 15, and the target check before the call is not compared. Of the planners only types 10 and 16 draw
-([pathing](pathing.md#the-17-types)).
+A replan and the target check reach the planner, and 836 + 889 logged replans (810 of the 836 stock) reproduce with the unit seed
+unchanged, all with a target unit. They were of types 5, 6, 13 and 15. Of the planners only types 10 and 16 draw
+([pathing](pathing.md#the-17-types)): a replan writes neither and plans any other type as it stands, and the logged replans do not
+separate that. The target check before the call is not compared.
 
 ## What is not known yet
 

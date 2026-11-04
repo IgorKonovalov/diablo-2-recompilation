@@ -9,7 +9,7 @@
 
 A path request names a **path type** `0..16`. `sub_00648CF0_PathSetType(path, type)` copies the type's flags word into the
 path record and `sub_00649970_PathPlan` calls the type's planner. Both tables sit in the image's data and are read here by
-script ([plan 0054](../plans/0054-path-search.md) Phase 0; readers: `path/search`, [anim/movement](../specs/anim/movement.md),
+script ([plan 0054](../plans/done/0054-path-search.md) Phase 0; readers: `path/search`, [anim/movement](../specs/anim/movement.md),
 [monsters/ai](../specs/README.md)). The table is not an excel table; it has no `.txt`. Survey:
 `python3 -I tools/path_survey.py types|md|columns|rows|summary` (gate survey `path`).
 

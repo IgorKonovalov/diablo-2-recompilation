@@ -4,7 +4,7 @@ to: reverser
 date: 2026-11-04
 status: done
 context:
-  - ../../plans/0054-path-search.md
+  - ../../plans/done/0054-path-search.md
   - ../../findings/path/0007-community-cross-check.md
   - ../../tables/MonStats2.md
 resolution: "Done in lane/r70: one direct reader of unflatDead, a client draw-list test at 0x004648AB; no grid mark or move mask is read from it, no immediate move mask holds 0x8000 (0 of 53); path/search's corpse statement does not change [../findings/path/0008-corpse-remainders.md]."
