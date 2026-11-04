@@ -360,9 +360,9 @@ From the specs' open questions ([timing](../specs/anim/timing.md#open-questions)
 [movement](../specs/anim/movement.md#open-questions), [overview](../specs/anim/README.md#open-questions)):
 
 - **What ends some monster modes.** An every-frame monster attack or skill mode ignores its frame function's return,
-  and a generic `S3` queues nothing; presumably the AI's next command ends them (the AI is a later phase).
+  and a generic `S3` queues nothing; presumably the AI's next command ends them ([monster AI](monster-ai.md#when-a-unit-thinks) has what ends a mode from the AI's side, read from the code).
 - **The monster AI.** What command a monster gets, and when, is an input
-  here.
+  here; the AI itself is [monster AI](monster-ai.md).
 - **Branches the runs left short.** Some rates (three FHR rates for the Barbarian and the Paladin, some FBR and FCR
   rates, a second set of IAS rates), the Druid's throws (29 of the 30 wanted), a player's knockback length (two starts in all),
   the moving-factor floor of 25, Charge at a low stat 67, and Slows Target. The statements stay "read from the code" and none waits on a mismatch.

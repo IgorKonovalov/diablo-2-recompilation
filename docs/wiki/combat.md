@@ -231,7 +231,7 @@ all of this is read from the code only.
 A monster's attack rating, damage and elemental damage are written when it **enters an attack mode**, not at the
 hit ([damage § E](../specs/combat/damage.md#e-a-monsters-attack-stats-monattackstats)). That step draws only one
 `Range(100)` for each elemental group of that attack mode whose chance is between 1 and 99, and one `Range(5)` for the random element
-type. The draws are confirmed (5 060 calls). Between that moment and the hit the monster's AI draws on the same seed,
+type. The draws are confirmed (5 060 calls). Between that moment and the hit the [monster's AI](monster-ai.md#draws-and-seeds) draws on the same seed,
 which the combat model does not cover. The per-level attack rating and damage come from the monster-level table,
 scaled by the attack mode's own columns (the second attack and the two skill modes have theirs): the skills runs
 checked them in 26 425 calls, in Normal and Nightmare with one player. The classic Nightmare and Hell factors, the

@@ -625,6 +625,10 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-11-04 | `lane/s52b` | 0052 P3b | spec-writer | 415 170 | 64 | 21 | — | accept with fixes (Tier A, 5) | misread 3, omission 2 |
 | 2026-11-04 | `lane/s52b` | 0052 P3b (second agent) | spec-writer | 352 192 | 62 | 20 | — | accept with fixes (Tier A, 5) | misread 3, omission 2 |
 | 2026-11-04 | `lane/s52b` review | 0052 P3b | architect-review | 341 770 | 47 | 14 | — | accept with fixes (5); catalogue reviewed with a named unread set; P3c ordered | misread 3, omission 2 |
+| 2026-11-04 | `lane/w52` | 0052 P4 | wiki | 260 466 | 33 | 12 | — | accept with fixes (Tier A, ADR-0030, 16) | overclaim 6, omission 4, misread 3, miscount 2, stale cross-reference 1 |
+| 2026-11-04 | `lane/w52` review | 0052 P4 | architect-review | 219 879 | 35 | 8 | — | accept with fixes (16) | overclaim 6, omission 4, misread 3, miscount 2, stale cross-reference 1 |
+| 2026-11-04 | `lane/r71` | 0052 rows 25, 94, 106 | reverser-static | 287 353 | 58 | 22 | — | accept with fixes (Tier A, ruling, 11) | omission 6, overclaim 2, misread 1, tool not kept 1, other 1 |
+| 2026-11-04 | `lane/r71` review | 0052 rows 25, 94, 106 | architect-review | 285 064 | 42 | 17 | — | accept with fixes (11); A and B listed under ADR-0031 | omission 6, overclaim 2, misread 1, tool not kept 1, other 1 |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not

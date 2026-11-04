@@ -16,7 +16,7 @@ what a mercenary's stats are at each level, and how a saved mercenary comes back
 specs: [player](../specs/player/README.md#purpose), [player/creation](../specs/player/creation.md#purpose),
 [player/party](../specs/player/party.md#purpose) and
 [hirelings](../specs/hirelings/README.md#purpose). Skill effects, the skill tree and mercenary combat AI are not
-covered by those specs, so they are not covered here either.
+covered by those specs, so they are not covered here either; the mercenary's AI is on [monster AI](monster-ai.md).
 
 ## The big picture
 

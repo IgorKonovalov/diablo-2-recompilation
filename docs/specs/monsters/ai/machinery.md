@@ -342,8 +342,9 @@ D4. MonPathPlanType(type):                                                 [I] (
   times (0x005E3BCC, 0x005E4300 and three in state row 13's 0x005E5C50). The mode machine also sets 0 after a get-hit start and 8
   for knockback (0x005A7821). None passes 4, 10 or 14. (fn:sub_005DE190_MonAiPathOverride@0x005DE190, fn:sub_005A6260_AiPathOverrideSet@0x005A6260,
   [ai/0001 § 8](../../../findings/ai/0001-machinery.md#8-the-path-request))
-- D6. [C] Inside decisions the logged plans are types 2 (148), 5 (217), 6 (203), 7 (1 961), 13 (5 825) and 15 (1 580), 9 618 in
-  all, none stepping the unit seed; type 1 was not requested in that run. (run:2026-11-03-ai, fn:sub_00649970_PathPlan@0x00649970)
+- D6. [C] Inside decisions the log holds 9 934 plan entries: types 2 (148), 5 (217), 6 (203), 7 (1 961), 13 (5 825) and 15 (1 580). Of
+  them 9 618 have an exit line, and none of those steps the unit seed. The other 316 have no exit line, why is not examined, and the seed
+  statement does not cover them. Type 1 was not requested in that run. (run:2026-11-03-ai, fn:sub_00649970_PathPlan@0x00649970)
 - D7. [I] **The planner call sites from AI code.** `MonPathPlanType` (0x005A62EF, 0x005A634E, through `MonSetMode` → `MonMovePlan`);
   `MonModeStartSkill` (0x005A760D, 0x005A7638, base class 110 with the current type); 0x005A77C0 (type 8, 0x005A7854); and three
   type-2 test plans that restore the path: `MonAiPreferDecoy` (0x005DD580), 0x005E8F20 (0x005E912D) and 0x005FBDD0 (0x005FBFB7).

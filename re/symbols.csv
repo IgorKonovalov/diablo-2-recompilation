@@ -4468,3 +4468,9 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0065C180,func,sub_0065C180_InvRecordRect,,I,items/use,docs/findings/items/0013-grids-belts-stacks.md
 0x0065C270,func,sub_0065C270_InvRecordSlotRect,,I,items/use,docs/findings/items/0013-grids-belts-stacks.md
 0x00660D10,func,sub_00660D10_BeltsBoxRect,,I,items/use,docs/findings/items/0013-grids-belts-stacks.md
+0x0055B7E0,func,sub_0055B7E0_UnitMonRecord,,I,monsters/ai,docs/findings/ai/0019-row-tables-and-scoring.md
+0x0063A2B0,func,sub_0063A2B0_UnitHasStateInMaskDC,,I,monsters/ai,docs/findings/ai/0019-row-tables-and-scoring.md
+0x006438F0,func,sub_006438F0_SkillNodeNext,,I,monsters/ai,docs/findings/ai/0019-row-tables-and-scoring.md
+0x00643910,func,sub_00643910_SkillListFirst,,I,monsters/ai,docs/findings/ai/0019-row-tables-and-scoring.md
+0x00643BC0,func,sub_00643BC0_UnitSetLeftSkill,,I,monsters/ai,docs/findings/ai/0019-row-tables-and-scoring.md
+0x00644360,func,sub_00644360_SkillNodeMode,,I,monsters/ai,docs/findings/ai/0019-row-tables-and-scoring.md
