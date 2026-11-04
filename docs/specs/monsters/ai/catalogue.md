@@ -4,7 +4,7 @@ status: draft
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, monsters/ai/overview, monsters/ai/machinery, skills/dispatch, path/overview]
 consumed_by: [monsters/ai/overview, monsters/ai/machinery, hirelings]
-tags: {C: 287, I: 391, L: 14}
+tags: {C: 287, I: 392, L: 14}
 updated: 2026-11-04
 ---
 
@@ -58,6 +58,7 @@ Each entry states its own. No constant is shared across entries.
 | `LifePct`, `UnitLifePct` | `AiLifePct` (0x005DD280) and `UnitLifePct` (0x00621F20), two different readers; each entry names the one its code calls |
 | `rchance(K)` | `Range(100) < aip(K)`, one draw, the same test as `chance(K)` by another helper call |
 | `O` | `MonsterOwner(U)` |
+| `Ovr(type, param, byte)` | as machinery's; each word is stored only when non-zero, so a 0 keeps what an earlier call set this event ([D2](machinery.md#d-the-path-request)) |
 | `St3or19` | `AiMonState3or19(U)`: `MonsterData+0x54` is 3 or 19 |
 | `Head`, `Pop`, `Push(blk)` | `AiParamsHead`, `AiParamsPop`, `AiParamsPush` on `U`'s parameter list ([machinery E4](machinery.md#e-following)) |
 | `UseSkillK(x)` | `MonAiUseSkill(SkKmode, SkillK, x, 0, 0)`: the record's K-th skill in its K-th mode |
@@ -188,7 +189,7 @@ Tier AI: [machinery § T2](machinery.md#t2-row-2-skeleton-fnsub_005efcf0_aiskele
 | Slot | Meaning (code reading) |
 |---|---|
 | `aip(1)` | out of melee range: chance of the swoop |
-| `aip(2)` | farther than 3: chance of the ring-4 retreat with override −50, else ring 3 with override 0 |
+| `aip(2)` | farther than 3: chance of the ring-4 retreat with override −50, else ring 3 |
 | `aip(3)` | in melee range: chance of A1 |
 | `aip(4)` | the override parameter of the step away |
 | `aip(5)` | the swoop's override parameter (100 in every record, as data) |
@@ -209,7 +210,7 @@ Tier AI: [machinery § T2](machinery.md#t2-row-2-skeleton-fnsub_005efcf0_aiskele
    if not StepAway(t, 4, 1): SetModeAtUnit(4, t)
 ```
 
-- R5a. [I] `v14` is the swoop flag: set after an approach walk with override parameter `aip(5)` and the override byte `dist` (capped at 77 by `MonAiPathOverride`); the next event in melee range attacks at once. (struct:AiCtl+0x14, fn:sub_005DE190_MonAiPathOverride@0x005DE190)
+- R5a. [I] `v14` is the swoop flag: set after an approach walk with override parameter `aip(5)` and the override byte `dist` (capped at 77 by `MonAiPathOverride`); the next event in melee range attacks at once. `Ovr(0, 0, 0)` before `Ring(3)` stores nothing ([machinery D2](machinery.md#d-the-path-request)). (struct:AiCtl+0x14, fn:sub_005DE190_MonAiPathOverride@0x005DE190)
 - R5b. [C] The map, `AiCtl+0x14` at the boundary included: family `bloodhawk`, 240 cases, 6 boundaries; the controls fail the 34 and 106 that separate them. (run:2026-10-30-ai-cat-emu-1)
 
 - R5i. [C] As data: kind 1, no `init`, no `alt`; 8 records (15-18 foulcrow1..foulcrow4, 590-593 foulcrow5..foulcrow8); reach P; `aip` set 1,2,3,4,5; `aidel` 15/14,15/13,15; skills —. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
@@ -237,7 +238,7 @@ Tier AI: [machinery § T6](machinery.md#t6-row-6-fallen-fnsub_005f02c0_aifallen0
 4. Idle(15)
 ```
 
-- R7a. [I] Out of melee range the override parameter is `100 − life%` with life clamped to 40..100: 0 at full life, 60 at 40 % and below. (fn:sub_00621F20_UnitLifePct@0x00621F20)
+- R7a. [I] Out of melee range the override parameter is `100 − life%` with life clamped to 40..100: 60 at 40 % and below, and at full life 0, which stores nothing ([machinery D2](machinery.md#d-the-path-request)). (fn:sub_00621F20_UnitLifePct@0x00621F20)
 - R7b. [C] The melee map; out of melee range up to `UnitLifePct`: family `brute`, 240 cases, 5 boundaries; the controls fail the 29 and 37 that separate them. (run:2026-10-30-ai-cat-emu-1)
 
 - R7i. [C] As data: kind 1, no `init`, no `alt`; 9 records (24-28 brute2..brute1, 446-449 snowyeti1..snowyeti4); reach PU; `aip` set 3,4; `aidel` 15/14/13; skills —. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
@@ -2969,7 +2970,7 @@ No `aip`, no draw.
 1. if t ≠ 0 and not StatListFindFlag(t, 0x20) and dist < aip(4) and chance(3):   ; draw#1   [I] (0x005E2120, 0x005E213C, 0x005E2607)
      if Skill1 > 0 and UnitLifePct(t) ≥ aip(7): UseSkill1(t); return
      if Skill2 > 0 and UnitLifePct(U) ≤ aip(8): UseSkill2(t); return
-     if Skill3 > 0 and UnitGetMaxHp(t) > UNIT_GetMaxMana(t) or t.type ≠ 0: UseSkill3(t); return    ; "Skill3 without the !t test"
+     if Skill3 > 0 and (UnitGetMaxHp(t) > UNIT_GetMaxMana(t) or t.type ≠ 0): UseSkill3(t); return    ; "Skill3 without the !t test"
      if Skill4 > 0 and t.type = 0: UseSkill4(t); return
 2. if melee:
      if chance(3) and StepAway(t, aip(4) & 0xFF, 1): return                      ; draw
@@ -3487,6 +3488,7 @@ None of its own: the rows have no recorded seed-to-decision case outside the tie
 
 ## Reimplementation notes
 
+- [I] **A refused move can queue nothing.** A helper reaching `MonAiMove` with flag 2 clear (`Walk(t, 0)`, `Walk(t, 1)`, `StepAway(…)`) returns 0 on refusal, with no idle and no draw; flag 1 sets `AiCtl` flag `0x40`, which forces the next search's line test on. Only flag 2 adds the draw and the ring or the idle. ([machinery B6](machinery.md#b-the-command), fn:sub_005DEB60_MonAiMove@0x005DEB60)
 - [I] **A slot may be read twice.** Row 7's second `aip(3)` draw is a new draw on the same slot. Each `chance` is one step. (0x005EFB80)
 - [I] **Two life readers.** Row 11 calls `UnitLifePct`, rows 4, 8 and 15 `AiLifePct`. Keep them apart. (fn:sub_00621F20_UnitLifePct@0x00621F20, fn:sub_005DD280_AiLifePct@0x005DD280)
 
