@@ -203,7 +203,8 @@ B1. PathStep(unit, k):                                            [C] (fn:sub_00
   next point, set after each plan and each move; every row's norm² lies between 16 767 217 and 4096², so a speed `v`
   moves `v / 16` subtiles per frame along an axis (`v · 2896 / 4096 / 16` on the diagonal). Walk 0.375, run 0.5625,
   knockback 1 subtile per frame on an axis. (fn:sub_0064FE40_PathAimNextPoint@0x0064FE40,
-  fn:sub_0064FC60_PathDirection@0x0064FC60, data:g_PathDirTable@0x006EB7E0)
+  fn:sub_0064FC60_PathDirection@0x0064FC60, data:g_PathDirTable@0x006EB7E0) The aim's return and its facing step are
+  [path/overview § H](../path/README.md#h-the-aim-and-the-facing-step).
 - B3. [I] **The snap** (not for path type 4): with `m = max(|stepX|, |stepY|)` and the next point at its subtile
   centre (`(word << 16) + 0x8000`), when both remaining axis distances are at most `m` the step becomes exactly the
   remaining delta and the point counts as reached. So a point `d` subtiles away on an axis takes `⌈65536 d / step⌉`

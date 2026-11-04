@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, drlg/collision, anim/movement, path/search]
 consumed_by: [path/search, anim/movement, skills/overview, skills/missiles, skills/dispatch, skills/catalogue, drlg/collision, monsters/ai]
-tags: {C: 79, I: 76, L: 13}
+tags: {C: 84, I: 80, L: 14}
 updated: 2026-11-04
 ---
 
@@ -47,6 +47,7 @@ flowchart LR
 |---|---|
 | [PathTypes](../../tables/PathTypes.md) (the image's `g_PathPlanFuncs`, `g_PathTypeFlags`, `g_PathTypeParam98`) | planner, flags word and `+0x98` per type |
 | [PathDirTables](../../tables/PathDirTables.md) (the image's `g_PathDir8`, `g_PathDirTriples`, `g_PathSignTable`, `g_PathDirTable`) | the free-target step (§ C3), the aim's direction ([anim/movement § B](../anim/movement.md#b-the-per-frame-step)) |
+| `g_PathFaceStep`, given by the rule in § H4 (no table doc holds it yet) | the facing step (§ H) |
 | tbl:MonStats2.txt:SizeX | a monster's size, hence its pattern ([drlg/collision F2](../drlg/collision.md#f-unit-marks)) |
 | tbl:MonStats.txt:npc, tbl:MonStats.txt:inTown | the town test (§ C2) |
 | tbl:Objects.txt:IsDoor, tbl:Objects.txt:Orientation | the object target's step (§ C1) |
@@ -72,6 +73,9 @@ The record's fields are `struct:PathRequestFields` in `re/types/path.h`, 0x200 b
 | `+0x44`, `+0x48` | i32 | size, pattern ([drlg/collision F2](../drlg/collision.md#f-unit-marks)) |
 | `+0x4C`, `+0x50` | u32 | `markMask`, `testMask` (§ A) |
 | `+0x58` | ptr | the target unit |
+| `+0x64`, `+0x65`, `+0x66` | u8 | the facing direction (0–63), the direction to turn to, the turn step (§ H) |
+| `+0x6A`, `+0x6E` | i32 | the vector to the next point (§ H) |
+| `+0x72`, `+0x76` | i32 | the step per frame (§ H) |
 | `+0x7C` | i32 | the speed; it gates a planner's first line ([search § A5](search.md#a5-the-first-line-pathfirstline)) |
 | `+0x90` | u8 | knockback distance and countdown |
 | `+0x91` | u8 | the limit (`ctx.limit`): at most 77, a player 73 and a monster 14 at creation |
@@ -473,9 +477,68 @@ Plans are the logged `PathPlan` calls of the two runs, the first run's 842 after
 - [C] **The spiral truncates toward zero.** The code sets the x87 rounding field to 11 around each `FISTP` (`or eax, 0xC00` at 0x0067A1A1 and 0x0067A1CA), which is toward zero for either sign, and the game's own stored integers agree: 233 natural type-14 plans, read-only, 43 804 stored products, 18 174 of which separate the readings: **18 174 truncate, 0 round.** The formula is [search § J](search.md#j-the-spiral-type-14). (0x0067A1AF, 0x0067A1E0, fn:sub_0067A140_PathPlanSpiral@0x0067A140, run:2026-11-04-path-2)
 - [I] The earlier probe's 10 of 10 rest on a fraction a breakpoint wrote, so they stay a strong [I] in themselves and are not needed. The p-code `FISTP` rounds, whatever the field says, so the emulator's own 90 spiral cases say nothing about the game. (0x0067A1A1, run:2026-11-04-path, run:2026-11-03-path-emu-3)
 
+### H. The aim and the facing step
+
+```mermaid
+flowchart TD
+  a["PathFaceDir(path, dir)<br/>dir ← dir and 63"] --> t{"the path's unit"}
+  t -->|"object or item"| f["+0x64 ← dir"]
+  t -->|"missile"| m{"flag 0x40?"}
+  m -->|no| f
+  m -->|yes| e["nothing written"]
+  t -->|"any other, or no unit"| o{"+0x65 = dir?"}
+  o -->|yes| e
+  o -->|no| w["+0x65 ← dir<br/>+0x66 ← g_PathFaceStep at (dir − +0x64) and 63"]
+```
+
+```
+H1. PathAimNextPoint(path, f; arg) → u32:                           [C] (ADR-0015) (fn:sub_0064FE40_PathAimNextPoint@0x0064FE40, fn:sub_0064FC60_PathDirection@0x0064FC60, run:2026-11-03-path-emu-1, all of H1)
+      i ← +0x24;  point ← the point at i                            ; a point's subtile centres: (w << 16) + 0x8000
+      while point = (+0x00, +0x04):
+        if i ≥ +0x28 − 1:                                           ; signed; the last point is at the position
+          +0x24 ← +0x28
+          +0x6A, +0x72 ← the image dword 0x006EB7D4 (0)
+          +0x6E, +0x76 ← the image dword 0x006EB7D8 (0)
+          +0x7C ← 0
+          return 1                                                  ; no facing step
+        i ← i + 1;  +0x24 ← i;  point ← the point at i
+      (vx, vy, dir) ← PathDirection(position, point)                ; anim/movement B2
+      +0x6A ← vx;  +0x6E ← vy
+      if flags & 0x200: dir ← (dir − 32) & 63
+      +0x72 ← (+0x7C × vx) >> 8;  +0x76 ← (+0x7C × vy) >> 8         ; signed 32-bit
+      reached: u32 ← position + step lands in the point's subtile on both axes ? 1 : 0
+      if arg ≠ 0 or (reached = 1 and f ≠ 0): PathFaceDir(path, dir)
+      return reached
+
+H2. PathFaceDir(path, dir: u8):                                     [C] (ADR-0015) (fn:sub_006485F0_PathFaceDir@0x006485F0, 0x006485F0–0x00648634, data:g_PathFaceStep@0x006EB548, run:2026-11-03-path-emu-1, all of H2)
+      dir ← dir & 63
+      unit ← +0x30
+      if unit is an object or an item (types 2, 4):  +0x64 ← dir;  return
+      if unit is a missile (type 3):
+        if not (flags & 0x40):  +0x64 ← dir
+        return
+      ; any other unit, or no unit
+      if +0x65 = dir: return
+      +0x65 ← dir
+      +0x66 ← low byte of g_PathFaceStep[(dir − +0x64) & 63]
+```
+
+- H1, H2. [C] (ADR-0015) The emulated family `aim`, 500 cases, reproduces both; the `face0` control (no facing step) fails all 308 cases it separates and `sar7` all 417. That is the code's map from the bytes it reads over the family's declared cases, not when the game calls it. (fn:sub_0064FE40_PathAimNextPoint@0x0064FE40, fn:sub_006485F0_PathFaceDir@0x006485F0, run:2026-11-03-path-emu-1)
+- H1. [C] (ADR-0015) `PathPlanToUnit` and `PathFirstLine` call `PathAimNextPoint(path, 1; 1)`, so where a point remains their aim makes the facing step. (0x006492F0–0x006493F9, run:2026-11-03-path-emu-1, fn:sub_00679A60_PathFirstLine@0x00679A60, 0x00679AC0–0x00679B1B, run:2026-11-03-path-emu-3)
+- H1. [I] `PathPlan`'s tail makes the same call (C's step 24, past the import). (0x00649BA1–0x00649C6E)
+- H2. [I] The names are the reverser's, not an observed use: `+0x64` the facing, `+0x65` the direction to turn to, `+0x66` the turn step per direction difference. What applies `+0x66` is not in a finding (Open questions). (struct:PathRequestFields+0x64, fn:sub_006485F0_PathFaceDir@0x006485F0, data:g_PathFaceStep@0x006EB548)
+- H3. [I] `PathSetFacing(path, dir)` writes `dir & 0x3F` to both `+0x64` and `+0x65`; a null path writes nothing (0x006488A6). ([ai/0004](../../findings/ai/0004-pool-c.md), fn:sub_006488A0_PathSetFacing@0x006488A0)
+- H4. [C] (ADR-0015) **`PathFaceDir`'s read of `g_PathFaceStep`:** index `(dir − +0x64) & 63`, 4 bytes apart, and only the low byte goes to `+0x66` (`mov al, [0x006EB548 + edx*4]`, a `u8`). The family's 173 reads of the table are that read; its model takes the same bytes from the image, so they say nothing of what the table holds. (0x00648620, 0x00648627, run:2026-11-03-path-emu-1)
+- H4. [I] **The table's values,** 64 signed dwords at `0x006EB548`, are given by this rule ([ADR-0031](../../adrs/0031-constants-of-the-code-image.md)), in exact integers, `sign(x)` being −1, 0 or 1. A reader takes the result's low byte, so −8 arrives as `0xF8`. The `lane/s70` review computed it against the pinned image's 64 elements, with no difference, by a script it did not keep: no kept tool or gate survey holds this table yet, so the rule stays at this tag until the [archivist's entry](../../backlog/2026-11-04-spec-writer-archivist-path-face-step-in-pathdirtables.md) lands. It is an equality on the image's elements, not a claim about how the table was made. (0x00648620, data:g_PathFaceStep@0x006EB548)
+
+```
+g_PathFaceStep   i 0..63:   d = ((i + 32) & 63) - 32                  ; -32..31
+                            element [i] = sign(d) * min(8, ((|d| + 7) >> 3)^2)
+```
+
 ## Outputs
 
-`+0x24` the first point not yet at the position, `+0x28` the count, `+0x9C` the points in walking order: the start is one only under types 5 and 6 ([search § C](search.md#c-the-0x98-walk-types-5-and-6)), and type 10's first point is the position ([search § I](search.md#i-the-random-walk-type-10)); `+0x10`/`+0x12` the target or the last point, by C's step 25; flag `0x20` set; the facing and step as `PathAimNextPoint` left them ([anim/movement § B](../anim/movement.md#b-the-per-frame-step)). Return: the count, or 0. [I] (0x00649BA1–0x00649C6E)
+`+0x24` the first point not yet at the position, `+0x28` the count, `+0x9C` the points in walking order: the start is one only under types 5 and 6 ([search § C](search.md#c-the-0x98-walk-types-5-and-6)), and type 10's first point is the position ([search § I](search.md#i-the-random-walk-type-10)); `+0x10`/`+0x12` the target or the last point, by C's step 25; flag `0x20` set; the facing and step as `PathAimNextPoint` left them (§ H). Return: the count, or 0. [I] (0x00649BA1–0x00649C6E)
 
 ## Worked example
 
@@ -524,4 +587,5 @@ A class 225 missile's type-10 plan, `2026-11-04-path-2-s1-6004-k5-sor-oasis.log`
 - [L] **The 18 unresolved `+0x3C` bases** and the 22 store sites' unobserved rest (G3).
 - [L] **The target offset of path `+0x68`:** `PathTargetOffsetX87` (fn:sub_00679190_PathTargetOffsetX87@0x00679190) is x87 and not read.
 - [L] **Flags `0x400` and `0x20000`:** what they do and any reader outside the planners ([PathTypes](../../tables/PathTypes.md)).
+- [L] **What applies the facing step:** no finding names a reader of `+0x66`, a stepper of `+0x64` toward `+0x65`, or the facing's readers, and PathStep's call of the aim is given with one word (`PathAimNextPoint(p, 1)`, anim/0003 § 2), not as `f` and `arg`. The image holds a second reference to `g_PathFaceStep`, at 0x0064887B, not read in any finding. `g_PathFaceStep` is in no table doc or gate survey. [Reverser's entry](../../backlog/2026-11-04-spec-writer-reverser-path-facing-step-consumer.md), [archivist's entry](../../backlog/2026-11-04-spec-writer-archivist-path-face-step-in-pathdirtables.md).
 - [L] **Town-follow:** whether a stock town's geometry admits the route (plan 0052's H5, G3).

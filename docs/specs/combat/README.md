@@ -5,7 +5,7 @@ target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, monsters/stats, player/creation, items/properties, data/calc]
 consumed_by: [items/tc]
 tags: {C: 43, I: 43, L: 5}
-updated: 2026-11-03
+updated: 2026-11-04
 ---
 
 # Combat formulas: the attack event, its seeds and its branches
@@ -543,7 +543,7 @@ crushing blow at `/players 8` ([delivery](delivery.md#worked-example)). [C] (run
   (plan 0041). The stats run:2026-10-16-combat logged stay value inputs: its logs hold values, not the lists the
   aggregation needs (plan 0041 P2 review).
 - [L] **Still owed:** the terms of `MonAttackStats` beyond the plain MonLvl cells (the `L` cells, the skill-damage
-  pair, the classic factors, the expansion bonus; the plain cells by mode are confirmed by run:2026-10-27-skills,
+  pair past class 419's one level, [skills/dispatch § M](../skills/dispatch.md#m-monster-skill-use), the classic factors, the expansion bonus; the plain cells by mode are confirmed by run:2026-10-27-skills,
   [monsters/stats § H](../monsters/stats.md#h-to-hit-and-damage-at-attack-time-reference-only)), and a run that checks
   combat against the aggregated stats instead of logged values.
 - ~~**Owed to phase (3), skills and missiles:** a skill's damage packet and `SrcDam`; a missile's packet values; what

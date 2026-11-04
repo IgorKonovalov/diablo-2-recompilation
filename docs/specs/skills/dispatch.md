@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, data/calc, combat/overview, combat/delivery, stats/states, monsters/spawn, monsters/stats]
 consumed_by: [skills/missiles, combat/overview, combat/delivery, stats/states, items/economy, monsters/stats]
-tags: {C: 76, I: 194, L: 8}
+tags: {C: 77, I: 195, L: 7}
 updated: 2026-11-04
 ---
 
@@ -940,14 +940,33 @@ L5. RaiseSkeletonDo(unit, id, lvl):            (srvdofunc 31)        [I] (fn:sub
 - M2. The remainder is the code reading: the list cleared before the writes, so a stat the call does not write reads 0
   afterwards (`0x005A4FB3`); `El2` and `El3` applied with `El1`'s minimum, maximum and length (the `MonLvlStats` mask
   `0x40 + e`, `0x005A51D7`–`0x005A525C`; no logged call applied one); the `L` columns (the plain ones gave the same
-  values in every call), the classic scaling, the expansion bonus, type 10's redraw, and the 2 218 calls of the Raven
-  class (419), whose owner skill-damage pair the checker does not model. [I] (0x005A4FB3, 0x005A51D7,
+  values in every call), the classic scaling, the expansion bonus, and type 10's redraw. [I] (0x005A4FB3, 0x005A51D7,
   run:2026-10-27-skills)
-- M2. **A summon's owner skill damage.** For a monster with an owner whose MonStats `SkillDamage` names a skill row,
-  `MonAttackStats` first adds `SKILLS_GetPhysMin(…) >> 8`, `SKILLS_GetPhysMax(…) >> 8` and `SKILLS_GetToHit(…)` of
-  that skill (at the owner's level of it, clamped) to the attack mode's min, max and to-hit, before the classic and
-  player-count adjustments. Which unit's level is read is register-passed and not resolved. [I]
-  (fn:sub_0056E050_MonOwnerSkillDamage@0x0056E050, tbl:MonStats.txt:SkillDamage)
+- M2. **A summon's owner skill damage.** `MonOwnerSkillDamage` returns at once unless the unit is a monster with an
+  owner `O = MonsterOwner(unit)`, a class below the MonStats count and a `SkillDamage` `s` with `0 < s ≤ Skills count`
+  (`s` equal to the count passes). `SkillDamagePair` then takes the owner for every term: `lvl =
+  SkillLevelClamped(O, s)`, then `SKILLS_GetPhysMin(O, s, lvl, 1) >> 8`, `SKILLS_GetPhysMax(O, s, lvl, 1) >> 8` (`sar`,
+  arithmetic) and `SKILLS_GetToHit(O, s, lvl)`. The summon's own level is not read. `MonAttackStats` adds the three to
+  the attack mode's min, max and to-hit, before the classic and player-count adjustments. [I]
+  (0x0056E004–0x0056E006, 0x0056E00B–0x0056E03D, 0x0056E0A4–0x0056E0AB, fn:sub_0056E050_MonOwnerSkillDamage@0x0056E050,
+  fn:sub_0056E000_SkillDamagePair@0x0056E000, fn:sub_00644AA0_SkillLevelClamped@0x00644AA0,
+  tbl:MonStats.txt:SkillDamage, [ai/0006, H3 bullet](../../findings/ai/0006-summons.md))
+- M2. **That pair measured, for class 419 at one level.** The 2 218 calls of the Raven class 419 that have a stat list
+  carry the pair of skill 221 at level 20, the logged level of the sessions' one player, who cast them: the block is
+  (21, 23, 385). Of 101 units' first calls with a list, 101 match: no stat 21 or 22 before, afterwards 21 = 21, 22 = 23,
+  and 19 raised by exactly 385 from the 1 123 the other lists hold. Level 19, level 21, the summon's level 104, level 0
+  and no pair each fail all 101. The other 2 117 calls leave the full stats unchanged and show only that the write
+  repeats. The seed does not step in any of the class's 2 320 calls. [C] (fn:sub_005A4F50_MonAttackStats@0x005A4F50, fn:sub_0056E050_MonOwnerSkillDamage@0x0056E050,
+  fn:sub_0056E000_SkillDamagePair@0x0056E000, run:2026-11-04-ai-resume,
+  [ai/0017 § 13](../../findings/ai/0017-phase2-second-run.md#13-third-part-2026-11-04-lanep52c-the-fixed-model-the-tier-table-h3-logger-rev-5))
+- M2. **What those calls do not separate** stays the reading above: that the unit read is the owner (one player in the
+  sessions), the clamp in `SkillLevelClamped`, the bands (all 1 in this row), the `sar 8` (`HitShift` 8 cancels it with
+  no remainder), the pair's place before the classic and player-count adjustments (`d` and `b` of
+  [monsters/stats § H1](../monsters/stats.md#h-to-hit-and-damage-at-attack-time-reference-only) are 0 here, and the
+  MonLvl terms 0), the modes (0, 1, 2, 4, whose columns give 0 here), the Kick, SrcDam, DmgSymPerCalc and ToHitCalc branches, and the other three `SkillDamage` classes 420,
+  421 and 428. `SKILLS_GetPhysMin`, `GetPhysMax` and `GetToHit` are checked only at this one row and level. [I]
+  (fn:sub_0056E000_SkillDamagePair@0x0056E000, fn:sub_00644AA0_SkillLevelClamped@0x00644AA0,
+  tbl:MonStats.txt:SkillDamage, [ai/0017 § 13](../../findings/ai/0017-phase2-second-run.md#13-third-part-2026-11-04-lanep52c-the-fixed-model-the-tier-table-h3-logger-rev-5))
 
 ### N. Ammunition and weapon wear
 
@@ -1109,6 +1128,7 @@ run:2026-10-25-skills) The step's use, `low mod 100` against Raise Skeleton's `P
   handlers, state 52, `SrvStart` inside do functions, tier A, summons; § 15 the run, § 16 part 2.
 - [monsters/0004 § 9](../../findings/monsters/0004-stats.md#9-to-hit-and-damage-at-attack-time-sub_005a4f50_monattackstats):
   `MonAttackStats`.
+- [ai/0006, H3 bullet](../../findings/ai/0006-summons.md) and [ai/0017 § 13](../../findings/ai/0017-phase2-second-run.md#13-third-part-2026-11-04-lanep52c-the-fixed-model-the-tier-table-h3-logger-rev-5): the owner skill-damage pair of § M2.
 - [skills/0008](../../findings/skills/0008-sorceress.md)–[0016](../../findings/skills/0016-monster-8a.md) (plan 0046):
   the boundary reproductions cited in §§ D, H, I, J, K, L and O.
 - [skills/experiments § run:2026-10-25-skills](../../findings/skills/experiments.md#run2026-10-25-skills),
@@ -1129,8 +1149,8 @@ run:2026-10-25-skills) The step's use, `low mod 100` against Raise Skeleton's `P
 - [L] The handlers no session fired (1–4, 10–12, 14, 18, 23–27, 30, 31) and the effects § K leaves to the reading.
 - ~~`MonAttackStats`' formulas and a run predicting them.~~ Stats 21, 22 and 19 and the draws, by
   run:2026-10-27-skills (§ M).
-- [L] `MonAttackStats`' `L` columns, classic and expansion terms, type 10's redraw, `El2`/`El3`, and the Raven class's
-  owner skill-damage pair (§ M).
+- [L] `MonAttackStats`' `L` columns, classic and expansion terms, type 10's redraw, `El2`/`El3`, and the owner
+  skill-damage pair past class 419 at level 20 with one player: a second player, a second level, classes 420, 421, 428 (§ M).
 - ~~The summoned unit's seed and stats.~~ Its seed, life and defence, by run:2026-10-27-skills (§ L).
 - [L] The summon's other stats, a class without `noRatio`, the golems, the class-364 draw and the level gate of do 31.
 - ~~The short tier-A rows.~~ Kick, Left Hand Throw, Left Hand Swing and the five rows under 30, by
@@ -1148,6 +1168,6 @@ run:2026-10-25-skills) The step's use, `low mod 100` against Raise Skeleton's `P
 - ~~The damage of Kick's start hit.~~ Physical 0 on the stock row, by the table and run:2026-10-27-skills's 25
   deliveries; the `Kick` branch's callers read from the code, its 15 variable-id call sites unfollowed (I4;
   [entry](../../backlog/archive/2026-10-27-spec-writer-reverser-kick-start-hit-damage.md)).
-- [L] Which unit's skill level `MonOwnerSkillDamage` reads (register-passed).
+- ~~Which unit's skill level `MonOwnerSkillDamage` reads (register-passed).~~ The owner, by the code reading; class 419 at level 20 with one player measured (§ M2).
 - [L] Pet types 1's and 7's special cases in `PetLimit`, and where do 31 and 114 fill the spawn block's pet type and
   maximum.

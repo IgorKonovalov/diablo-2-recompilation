@@ -328,8 +328,9 @@ Confirmed over 26 425 such calls: minimum damage, maximum damage and to-hit are 
 scaled by the attack mode's own columns (the second attack for mode 5, the skill columns for modes 7 and 8, the first
 attack for every other mode); a summon adds its other stat lists on top. The monster's seed moves only by the
 elemental chance rolls (one roll in 21 calls, 2 of them applying the element); a monster with no stat list yet
-writes nothing. Read from the code: a summon whose class names a skill for its damage adds the owner's skill damage
-(which unit's skill level is read is not known), the level table's `L` columns, the classic and expansion terms, and
+writes nothing. The Druid's Raven adds the damage and to-hit of the Raven skill at level 20, the level of the one player in
+the sessions measured, who cast it; those games have one player, so they don't tell the owner from any other player. Read from the code: a summon whose class names a skill for its damage adds that skill's damage and to-hit at its owner's level in it,
+never the summon's own, for the Raven and the three other such classes; the level table's `L` columns, the classic and expansion terms, and
 the second and third elemental attacks.
 
 ## Ammunition and weapon wear
@@ -633,7 +634,7 @@ From the specs' open questions ([overview](../specs/skills/README.md#open-questi
   town refusal), which a stock client never sends; it needs a two-client game or a patched client.
 - **Handlers no session fired**, and the effects of the measured ones beyond their draws.
 - **A monster's attack stats**: the level table's `L` columns, the classic and expansion terms,
-  the second and third elemental attacks, a Raven's owner skill damage, and which unit's skill level that reads.
+  the second and third elemental attacks, and the owner's skill damage past the Raven at one level with one player.
 - **Summons**: their other stats, a summon class scaled by level, the golems, Raise Skeleton's level gate and the
   mage's draw; two pet types' special cases in the pet limit and where the summon's pet type is filled in.
 - **The caster gaps left** (43 and 103 player gaps over the two runs) and the monster gaps, which wait for monster AI.

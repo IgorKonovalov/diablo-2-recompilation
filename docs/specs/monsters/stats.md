@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, monsters/pool, monsters/spawn, monsters/special, items/properties, data/excel]
 consumed_by: [items/tc, hirelings, combat/overview, combat/damage, stats/aggregate, chain]
-tags: {C: 135, I: 54, L: 5}
+tags: {C: 136, I: 55, L: 5}
 updated: 2026-11-04
 ---
 
@@ -674,11 +674,26 @@ holds over its 5 693 later calls. [C] (fn:sub_005A4F50_MonAttackStats@0x005A4F50
 run:2026-10-27-skills, run:2026-10-25-skills)
 
 H1. The rest of H1 is the code reading: the `L` columns (the plain ones gave the same values in every call), the
-classic factors and the expansion bonus (`b` = 0 in every call: normal and nightmare, one player), the skill-damage
-pair (the 2 218 calls of the Raven class 419 are not modelled), type 10's redraw; the list cleared before the writes,
+classic factors and the expansion bonus (`b` = 0 in every call: normal and nightmare, one player), type 10's redraw; the list cleared before the writes,
 so a stat the call does not write reads 0 afterwards (`0x005A4FB3`); and `El2`/`El3` taking `El1`'s bounds through
 the mask `0x40 + e` (`0x005A51D7`–`0x005A525C`; no logged call applied one). [I] (0x005A4FB3, 0x005A51D7,
 run:2026-10-27-skills, [monsters/0004 § 9](../../findings/monsters/0004-stats.md#9-to-hit-and-damage-at-attack-time-sub_005a4f50_monattackstats))
+
+H1. **The skill-damage pair, for class 419 at one level.** The 2 218 calls of the Raven class 419 that have a stat list
+carry the pair of skill 221 at level 20, the logged level of the sessions' one player, who cast them: the block is
+(21, 23, 385). Of 101 units' first calls with a list, 101 match: no stat 21 or 22 before, afterwards 21 = 21, 22 = 23,
+and 19 raised by exactly 385 from the 1 123 the other lists hold. Level 19, level 21, the summon's level 104, level 0
+and no pair each fail all 101. The other 2 117 calls leave the full stats unchanged and show only that the write
+repeats. The seed does not step in any of the class's 2 320 calls. [C] (fn:sub_005A4F50_MonAttackStats@0x005A4F50, fn:sub_0056E050_MonOwnerSkillDamage@0x0056E050,
+fn:sub_0056E000_SkillDamagePair@0x0056E000, run:2026-11-04-ai-resume,
+[ai/0017 § 13](../../findings/ai/0017-phase2-second-run.md#13-third-part-2026-11-04-lanep52c-the-fixed-model-the-tier-table-h3-logger-rev-5))
+
+H1. **What those calls do not separate** stays the code reading: that the unit read is the owner (one player in the
+sessions), the clamp in `SkillLevelClamped`, the bands (all 1 in this row), the `sar 8` (`HitShift` 8 cancels it with no
+remainder), the pair's place before the classic and player-count adjustments (`d` and `b` are 0 here, and the MonLvl
+terms 0), the modes (0, 1, 2, 4, whose columns give 0 here), the Kick, SrcDam, DmgSymPerCalc and ToHitCalc branches, and the other three `SkillDamage` classes 420, 421
+and 428. [I] (fn:sub_0056E000_SkillDamagePair@0x0056E000, fn:sub_00644AA0_SkillLevelClamped@0x00644AA0,
+tbl:MonStats.txt:SkillDamage, [ai/0006, H3 bullet](../../findings/ai/0006-summons.md)) The statement itself is [skills/dispatch § M](../skills/dispatch.md#m-monster-skill-use).
 
 H1. **The draws are confirmed.** `MonAttackStats` draws one `Range(unit.seed, 100)` per `El` group whose mode matches
 and whose percent is 1..99, one `Range(unit.seed, 5)` for an element type 10, and nothing else: 5 060 calls, 167 with
@@ -854,6 +869,7 @@ fn:sub_005A1910_UModFast@0x005A1910, run:2026-10-15-mon-stats)
 ## Evidence
 
 - [findings/ai/0016-uber-event.md](../../findings/ai/0016-uber-event.md): no creator of classes 704, 705 or 709 found in this image, for the hpregen note under *Open questions*.
+- [ai/0017 § 13](../../findings/ai/0017-phase2-second-run.md#13-third-part-2026-11-04-lanep52c-the-fixed-model-the-tier-table-h3-logger-rev-5) and [ai/0006, H3 bullet](../../findings/ai/0006-summons.md): the skill-damage pair of § H1.
 - [findings/monsters/0004-stats.md](../../findings/monsters/0004-stats.md): §§ 1–9 (the reading), § 10 (the boundary),
   § 11 (the stat callback), § 12 (the Phase 2 results), *Leads used* (the Phase 1b cross-check; four contradicted claims:
   the `L-` columns in single player, Spectral Hit + 20, the berserker level, `UniqueDamageBonus`, the last downgraded to not
@@ -920,5 +936,5 @@ fn:sub_005A1910_UModFast@0x005A1910, run:2026-10-15-mon-stats)
   champion-pack member's own MonStats minions get flag-0 calls too.
 - ~~The formulas of the stats `MonAttackStats` writes~~: the plain MonLvl cells by mode confirmed by
   run:2026-10-27-skills (§ H1).
-- [L] The rest of `MonAttackStats` (§ H1): the `L` cells, the skill-damage pair, the classic factors, the expansion
+- [L] The rest of `MonAttackStats` (§ H1): the `L` cells, the skill-damage pair past class 419's one level, the classic factors, the expansion
   player-count bonus, type 10's redraw, and an `El2`/`El3` attack ([combat § Open questions](../combat/README.md#open-questions)).

@@ -583,7 +583,8 @@ cells scaled by the `MonLvl` row of the monster's level, as at creation: the `A2
 cells for two others and the `A1` cells for every other mode (the raw cells for a `noRatio` class). Read from the code
 only: whether the `L-` columns or the plain ones are used here (they gave the same values in every call), the classic
 cut, the expansion's 6.25 % more damage per player beyond the first in nightmare and hell (every logged call was at one
-player), the extra damage a monster skill adds, and the redraw for one element type. By the code,
+player), the extra damage a monster skill adds beyond the one case measured (the Druid's Raven at level 20 in games with one
+player, [skills and missiles](skills.md)), and the redraw for one element type. By the code,
 too, a `noRatio` class (a summon or pet) ends up with no elemental damage at attack time, because its elemental values
 are written to one place and read from another. The attack itself is on the [combat](combat.md) page.
 
@@ -672,8 +673,8 @@ Each spec's *Open questions* has the full list: [pool](../specs/monsters/pool.md
   floating-point precision of the hit-point rescale, the will-o'-wisp halving, and the unreached branches (`poisonhit`,
   `always_run_ai`, monster equipment beyond the one-row case, a `MonProp` slot with a chance, `fast` and `fanatic` at
   `Velocity` 8 and 9, more than 8 players, the hit-point percentage and regeneration overflows). A Druid's Raven reading the normal
-  `druidhawk` row was not logged. Of the attack-time values, the plain cells are confirmed; the `L-` cells, the
-  monster skill's extra damage, the classic cut, the expansion player bonus, the element-type redraw and an attack of
+  `druidhawk` row was not logged. Of the attack-time values, the plain cells are confirmed, and a monster skill's extra
+  damage for the Druid's Raven at one level with one player; the `L-` cells, that extra damage otherwise, the classic cut, the expansion player bonus, the element-type redraw and an attack of
   the second or third elemental group are not.
 
 ## Where to read more
