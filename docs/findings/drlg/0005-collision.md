@@ -402,6 +402,7 @@ RectOrWH(r, x, y, w, h, m): w = h = 1: CellOr(m); else RectOr({x - w/2, y - h/2,
 | object, `IsDoor` 1 | `SizeX`×`SizeY` | `BlocksVis`: `0x806`; else `BlockMissile`: `0x804`; else `0x400` | — | C for `0x806`, I for the other two (§ 14) |
 | type 5 | size 0 (nothing written) | `0x01` | — | I |
 
+  **Correction, 2026-11-04 ([path/0005](../path/0005-grid-rules.md), plan 0054):** [I] the two `deadCol` rows and the bit-15 row hold for the client's copy, where the hooks 0x004B05DB and 0x004B09FB sit. The server's dead monster with `deadCol` 0 takes `UnitCorpseColl(unit, 1)` at 0x005A65D9: a 3×3 of `0x8000`, mask and pattern unchanged, from mode 0 on; created or relocated dead it takes the plus (0x00555492, 0x00554B78).
   (run:2026-10-14-collision for the rows tagged C: 410 creations, 396 `deadCol` 0 and 12 `deadCol` 1 deaths, 5702 missile marks;
   fn:PATH_DynamicCreate@0x00649D00, fn:PATH_MonTestMask@0x00648480, fn:UNIT_GetCollMask@0x006209D0, fn:sub_00649F70_UnitCorpseColl@0x00649F70, fn:sub_00463860_MonBaseId@0x00463860, tbl:MonStats.txt:flying, tbl:MonStats.txt:opendoors)
 - [C] **The marks of one creation in the pass** (seen on all 410 creations of the run): inside `SUnitCreate`, `UNIT_CollMark` runs
@@ -456,6 +457,7 @@ Writers and readers found in the code read. "Readers" lists the masks named in t
 | 13 | `0x2000` | non-interactive NPCs (`npc` or `inTown`, plan 0038 H5d), patterns 3 and 4 | `0x3C01`, `0x3401`, `0x3F11` | C (the writer, plan 0038 H5d) |
 | 14 | `0x4000` | none found | none | I |
 | 15 | `0x8000` | corpses (monsters with `deadCol` 0: plus; players: 3×3), portals | none of the listed masks | I |
+**Correction, 2026-11-04 ([path/0005](../path/0005-grid-rules.md), plan 0054):** [I] the two `deadCol` rows and the bit-15 row hold for the client's copy, where the hooks 0x004B05DB and 0x004B09FB sit. The server's dead monster with `deadCol` 0 takes `UnitCorpseColl(unit, 1)` at 0x005A65D9: a 3×3 of `0x8000`, mask and pattern unchanged, from mode 0 on; created or relocated dead it takes the plus (0x00555492, 0x00554B78).
 
 (fn:COLL_StampTileList@0x0064C790, fn:UNIT_GetCollMask@0x006209D0, fn:PATH_DynamicCreate@0x00649D00, fn:PATH_MonTestMask@0x00648480, fn:COLL_PatternMark@0x0064EA90, fn:sub_005B2A00_MonSpawnTry@0x005B2A00)
 

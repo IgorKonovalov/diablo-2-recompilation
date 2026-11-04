@@ -1514,6 +1514,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005A6380,func,sub_005A6380_MonModeVelocity,,I,anim/timing,docs/findings/anim/0002-rates.md
 0x005A63F0,func,sub_005A63F0_MonMovePlan,,I,drlg/collision,docs/findings/drlg/0009-room-lifecycle.md
 0x005A6490,func,sub_005A6490_MonPathCtlAlloc,,I,monsters/ai,docs/findings/ai/0001-machinery.md
+0x005A6520,func,sub_005A6520_MonDeathCorpseMark,,I,path/search,docs/findings/path/0005-grid-rules.md
 0x005A6600,func,MONSTER_DropItems,,C,items/tc,docs/findings/items/0001-tc-resolution.md
 0x005A6830,func,sub_005A6830_MonDeathDrop,,C,items/tc,docs/findings/items/0001-tc-resolution.md
 0x005A6920,func,sub_005A6920_MonRegenEvent,,C,combat/formulas,docs/findings/combat/0001-formulas.md
@@ -2727,6 +2728,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00621740,func,sub_00621740_AnimRateBonus,,I,anim/timing,docs/findings/anim/0002-rates.md
 0x006217C0,func,UNIT_AnimAtEnd,,I,anim/timing,docs/findings/anim/0001-modes-frames.md
 0x00621810,func,sub_00621810_UnitAnimFrames,,I,skills/catalogue,docs/findings/skills/0016-monster-8a.md
+0x006219C0,func,sub_006219C0_UnitCollActive,,I,path/search,docs/findings/path/0005-grid-rules.md
 0x00621B00,func,UNIT_IsShrine,,I,objects,docs/findings/objects/0001-object-population.md
 0x00621CE0,func,sub_00621CE0_UnitSetOwner,,I,skills/missiles,docs/findings/skills/0002-missiles.md
 0x00621DC0,func,sub_00621DC0_UnitDirToPoint,,I,skills/catalogue,docs/findings/skills/0016-monster-8a.md

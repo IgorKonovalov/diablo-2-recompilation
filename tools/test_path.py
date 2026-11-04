@@ -324,6 +324,26 @@ class T(unittest.TestCase):
         self.assertEqual(t["cells"], 1)
         self.assertEqual(t["bits"], 0x400)
 
+    def test_grid_rules(self):
+        """path/0005: O1 reads HasCollision[mode] (the logged byte of rev 5 first); C1..C3 pick the dead monster's mark."""
+        hc = {374: (0,) * 8, 7: (1, 1, 0, 0, 0, 0, 0, 0)}
+        obj = [2, 1, 7, 10, 10, 0xA, 0, 1, 1, 0, 0, 0, 0]
+        self.assertTrue(P.object_marked(obj, hc))
+        self.assertFalse(P.object_marked(obj[:6] + [2] + obj[7:], hc))
+        self.assertFalse(P.object_marked(obj[:2] + [374] + obj[3:], hc))
+        self.assertFalse(P.object_marked(obj + [0], hc))
+        room = P2.Room(0, (0, 0, 9, 9), [0] * 81, "t")
+        room.addr, room.near = 1, [room]
+        R = {1: room}
+        P.corpse_mark(R, 1, 4, 4, 1, 0x100, 0)
+        self.assertEqual(sum(1 for c in room.c if c == 0x8000), 9)
+        room.c = [0] * 81
+        P.corpse_mark(R, 1, 4, 4, 1, 0x100, 1)
+        self.assertEqual(sum(1 for c in room.c if c & 0x100), 5)
+        room.c = [0] * 81
+        P.corpse_mark(R, 1, 4, 4, 5, 0x8000, 0)
+        self.assertEqual(sum(1 for c in room.c if c == 0x8000), 5)
+
     def test_break_lines_and_control(self):
         build_log(self.log, seed=7, n=5)
         with open(self.log, "a") as fh:

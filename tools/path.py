@@ -5,6 +5,7 @@
                                                              outcome mix per type, the floors, the break lines and the grid tie
     python3 -I tools/path.py mix LOG [LOG ...]               the outcome mix only
     python3 -I tools/path.py tie LOG [LOG ...] [--first N]   the grid tie only
+    python3 -I tools/path.py grid LOG [LOG ...] [--out F]    path/0005: the model on the tie's grid, frozen rules against the code's, bit attribution, the rest
 
 The logs are those of tools/gdb/path.gdb (docs/findings/path/0001 § 13; tools/path_sessions.py). One PLAN is a PLN line, its PLU/PLG/PLC lines
 when the request reaches a planner, and its PLX line. The model is the planners of tools/path_emu1.py .. path_emu3.py (run:2026-11-03-path-emu-1..3,
@@ -29,6 +30,7 @@ that separates 0 plans in a log says so: it proves nothing there.
 import argparse
 import base64
 import collections
+import csv
 import json
 import os
 import re
@@ -67,6 +69,7 @@ FLOORS = {1: 100, 2: 100, 4: 100, 7: 100, 8: 100, 10: 100, 13: 100, 15: 100, 5: 
 TOTAL_FLOOR = 2000
 BREAK_FNS = {0x00679E50: "type 3", 0x00679FD0: "type 11", 0x00679E60: "type 12", 0x00663E00: "type-16 A", 0x00663ED0: "type-16 B"}
 MARKED_OFF_MODES = (0, 12, 17)
+_GRID_TABLES = None
 ITEM_GROUND_MODES = (3, 5)       # an item unit's mode on the ground (3) or dropping (5): the 0x200 mark (drlg/0005 § 6, ground items)
 
 
@@ -597,8 +600,44 @@ def check(paths, out, quiet=False):
     return games, plans, byty, res, matched
 
 
-def tie_of(plan, cells=False, corpse=False):
-    """The live cells against the built map plus the unit list's marks for each room of the plan: (rooms compared, rooms exact, differing cells, bits)."""
+def grid_tables(excel=None):
+    """The two table inputs of the grid rules (path/0005): object class -> HasCollision0..7, monster class -> deadCol. Cached; `excel` for the tests."""
+    global _GRID_TABLES
+    if excel is None and _GRID_TABLES is not None:
+        return _GRID_TABLES
+    d = excel if isinstance(excel, str) else os.environ.get("PATH_EXCEL") or os.path.join(ROOT, "workspace", "merged", "data", "global", "excel")
+
+    def tsv(name):
+        with open(os.path.join(d, name), errors="replace") as fh:
+            return list(csv.DictReader(fh, delimiter="\t"))
+    hc = {}
+    for r in tsv("objects.txt"):
+        if (r.get("Id") or "").strip():
+            hc[int(r["Id"])] = tuple(int(r["HasCollision%d" % i] or 0) for i in range(8))
+    ex = {r["Id"]: int(r.get("deadCol") or 0) for r in tsv("monstats2.txt") if r.get("Id")}
+    dc = {}
+    for r in tsv("monstats.txt"):
+        if (r.get("hcIdx") or "").strip():
+            dc[int(r["hcIdx"])] = ex.get(r.get("MonStatsEx"), 0)
+    _GRID_TABLES = (hc, dc)
+    return _GRID_TABLES
+
+
+def object_marked(u, hc):
+    """Rule O1 of path/0005: an object's rectangle is in the grid when the byte HasCollision[mode] of its class is set. Rev 5's entry carries the byte."""
+    if len(u) >= 14:
+        return bool(u[13])
+    row = hc.get(u[2])
+    mode = u[6]
+    return bool(row and 0 <= mode < 8 and row[mode])
+
+
+def tie_of(plan, cells=False, corpse=False, rules=None):
+    """The live cells against the built map plus the unit list's marks for each room of the plan: (rooms compared, rooms exact, differing cells, bits).
+
+    rules None: the frozen rules of `a501a7fa` (every object marks; a dead monster unmarked), with `corpse` the frozen hold-out reading of `178106ec`.
+    rules "code": the rules read from the code in path/0005 (object_marked; corpse_mark), `corpse` ignored.
+    """
     if not plan.plc:
         return None
     R = mk_world(plan)
@@ -618,6 +657,7 @@ def tie_of(plan, cells=False, corpse=False):
     selfu = plan.plc["self"]
     tgt = plan.plc.get("tgt")
     dropped = 0
+    tables = grid_tables() if rules == "code" else None
     for u in plan.plc["u"]:
         if u[0] == 4:
             if len(u) >= 7 and u[5] in pred and u[6] in ITEM_GROUND_MODES:
@@ -625,7 +665,11 @@ def tie_of(plan, cells=False, corpse=False):
             continue
         if u[0] == 2:
             if len(u) >= 13 and u[5] in pred:
-                _, uid, cls, x, y, room, mode, sx, sy, door, b13b, b167, b1b6 = u
+                _, uid, cls, x, y, room, mode, sx, sy, door, b13b, b167, b1b6 = u[:13]
+                if rules == "code" and not object_marked(u, tables[0]):
+                    continue
+                if rules == "code" and tgt and uid == tgt[1] and tgt[0] == 2 and plan.pln["fl"] & 0x800:
+                    continue                                     # rule T1: PathPlan's target unmark under flag 0x800 (0x00649B1A..0x00649B25)
                 if door:
                     mask = (0x804 if b1b6 else 0x400) if not b13b else 0x806
                 else:
@@ -637,7 +681,11 @@ def tie_of(plan, cells=False, corpse=False):
             continue
         if tgt and (t, uid) == tuple(tgt) and plan.pln["fl"] & 0x800:
             continue
-        if corpse and mode == 12 and mask == 0x100 and room in pred:
+        if rules == "code" and t == 1 and mode in (0, 12):
+            if room in pred:
+                corpse_mark(pred, room, x, y, pat, mask, tables[1].get(cls, 0))
+            continue
+        if corpse and rules is None and mode == 12 and mask == 0x100 and room in pred:
             size_op(pred, room, x, y, 3, 0x8000)                 # the reading fitted on the development logs: a dead monster's 3 x 3 of 0x8000
         if mode in MARKED_OFF_MODES:
             continue
@@ -666,6 +714,16 @@ def tie_of(plan, cells=False, corpse=False):
                 if x >> b & 1:
                     detail[1 << b] += 1
     return {"compared": len(pred), "exact": exact, "cells": ncell, "bits": bits, "detail": detail, "outside": dropped, "diff": cl}
+
+
+def corpse_mark(R, room, x, y, pat, mask, dead_col):
+    """Rules C1..C3 of path/0005, the server's dead monster: created dead the plus of its record (pattern 5, 0x8000); `deadCol` 1 its live mark; else the 3 x 3."""
+    if mask == 0x8000:
+        pattern_op(R, room, x, y, pat, mask)
+    elif dead_col:
+        pattern_op(R, room, x, y, pat, mask)
+    else:
+        size_op(R, room, x, y, 3, 0x8000)
 
 
 def cell_op(R, hint, x, y, v):
@@ -850,6 +908,62 @@ def tie_report(games, w, first, corpse):
     w("      differing bits (cells): " + (", ".join("0x%04x=%d" % kv for kv in sorted(bits.items())) or "none"))
 
 
+def grid_report(paths, out=sys.stdout):
+    """path/0005: the model on the tie's grid under the frozen rules and under the code's, the wrong plans by the bit alone sufficient, the residue by class."""
+    w = lambda t="": print(t, file=out)
+    games = [g for p in paths for g in parse(p)]
+    for name, rules, corpse in (("frozen, units' own marks", None, False), ("frozen, the corpse reading", None, True), ("code rules O1, C1..C3, T1", "code", False)):
+        total = collections.Counter()
+        bits = collections.Counter()
+        wrong = collections.Counter()
+        by = collections.Counter()
+        rest = []
+        for g in games:
+            for plan in g.plans:
+                if not plan.plc or plan.plx is None:
+                    continue
+                t = tie_of(plan, True, corpse, rules)
+                if not t or not t.get("compared"):
+                    continue
+                total["plans"] += 1
+                total["rooms"] += t["compared"]
+                total["rooms exact"] += t["exact"]
+                total["cells"] += t["cells"]
+                for b, n in t["detail"].items():
+                    bits[b] += n
+                if not t["diff"]:
+                    continue
+                R = mk_world(plan)
+                fl = [(a, (y - R[a].y0) * R[a].w + (x - R[a].x0), pv, lv, x, y) for a, x, y, pv, lv in t["diff"]]
+
+                def bad(fs):
+                    try:
+                        return bool(compare(plan, predict_planner(plan, None, fs)))
+                    except Unmodelled:
+                        return True
+                if not bad([(f[0], f[1], f[2]) for f in fl]):
+                    continue
+                wrong[plan.ty] += 1
+                hit = []
+                for b in (0x2, 0x4, 0x40, 0x80, 0x100, 0x200, 0x400, 0x800, 0x1000, 0x2000, 0x8000):
+                    fs = [(f[0], f[1], (f[3] & ~b) | (f[2] & b)) for f in fl if (f[2] ^ f[3]) & b]
+                    if fs and bad(fs):
+                        hit.append("0x%04x" % b)
+                by[tuple(hit) or ("only together",)] += 1
+                if rules:
+                    key = [f for f in fl if bad([(f[0], f[1], f[2])])][:1]
+                    players = [u for u in plan.plc["u"] if u[0] == 0]
+                    rest.append((os.path.basename(g.log)[24:-4], plan.k, plan.pln["fr"], plan.ty, plan.pln["u"][:4], [(f[4], f[5], "%04x" % f[2], "%04x" % f[3]) for f in key],
+                                 [(u[3], u[4], u[5], u[9]) for u in players][:1], len(plan.plc["u"]) >= 120))
+        w("[%s] %s" % (name, ", ".join("%s %d" % kv for kv in sorted(total.items()))))
+        w("  differing bits (cells): " + ", ".join("0x%04x=%d" % kv for kv in sorted(bits.items())))
+        w("  wrong plans: %d of %d, by type %s" % (sum(wrong.values()), total["plans"], sorted(wrong.items())))
+        w("  by the bit alone sufficient: %s" % sorted(by.items(), key=lambda kv: -kv[1]))
+        for r in rest:
+            w("  REST session %s k=%d fr=%d type=%d unit=%s decisive cell (x, y, model, live)=%s player (mode, x, y, mask)=%s at-unit-cap=%s" % r)
+    return 0
+
+
 def finish(w, res, byty, plans, nmatch, nmis, nunm, zero, passed):
     if res.nocaller:
         w("PLANS whose caller is not a PathPlan call site of the register: %d (first k %s)" % (len(res.nocaller), res.nocaller[:5]))
@@ -863,13 +977,15 @@ def finish(w, res, byty, plans, nmatch, nmis, nunm, zero, passed):
 
 def main(argv):
     ap = argparse.ArgumentParser()
-    ap.add_argument("cmd", choices=("check", "mix", "tie"))
+    ap.add_argument("cmd", choices=("check", "mix", "tie", "grid"))
     ap.add_argument("logs", nargs="+")
     ap.add_argument("--out")
     ap.add_argument("--first", type=int, default=10)
     a = ap.parse_args(argv)
     out = open(a.out, "w") if a.out else sys.stdout
     try:
+        if a.cmd == "grid":
+            return grid_report(a.logs, out)
         return report(a.logs, out, a.first)
     finally:
         if a.out:
