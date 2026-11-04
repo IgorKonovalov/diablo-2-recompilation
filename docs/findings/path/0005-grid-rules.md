@@ -83,7 +83,7 @@ No game ran it. `tools/test_path.py`'s `Logger` class runs the file on a fake `g
 | 0x005A65D9 | 1 | server monster death, after the `deadCol` test | server | C |
 | 0x005CAF8E | 1 | skill start 43 (MaggotEgg), class 194, the unit in mode 14 | server | C |
 
-Order at a server monster's death: `SUNIT_SetMode(0)`, then 0x005A6520, then the drop (0x005A7019 onward). (fn:sub_005A6FF0_MonDeathEvent@0x005A6FF0) The two client `C` rows are by `tools/corpse_copy.py`; the two server rows by run:2026-11-04-path-2's `COR` lines ([path/0006](0006-holdout.md)). 0x005A65D9 includes the callers 0x005A7019 and 0x005A73A6, the second met by run:2026-10-21-chain2's dead re-creations.
+Order at a server monster's death: `SUNIT_SetMode(0)`, then 0x005A6520 (called at 0x005A7019), then the drop (`MonDeathDrop`, called at 0x005A7027; corrected 2026-11-04, `lane/scol` review, which read "0x005A7019 onward"). (fn:sub_005A6FF0_MonDeathEvent@0x005A6FF0, fn:sub_005A6830_MonDeathDrop@0x005A6830) The two client `C` rows are by `tools/corpse_copy.py`; the two server rows by run:2026-11-04-path-2's `COR` lines ([path/0006](0006-holdout.md)). 0x005A65D9 includes the callers 0x005A7019 and 0x005A73A6, the second met by run:2026-10-21-chain2's dead re-creations.
 
 ## Data touched
 
