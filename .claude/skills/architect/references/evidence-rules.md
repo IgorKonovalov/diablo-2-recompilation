@@ -26,6 +26,13 @@ Independent corroboration is one of:
    boundary and which call site (return address) was reached, and compares every argument, pre-call byte and seed state
    the claim uses. Such a `[C]` covers the code up to the boundary only: not the callee, not the caller's code after
    it, not the return value. The finding names each claim's boundary and lists the code after it as not covered.
+   A case may also pass through or stop at an import (ADR-0029, amending ADR-0015 (1) and (5) and ADR-0021 (a)): a pop-only
+   stand-in in a no-result synchronisation import's slot, with a kept scan showing that nothing in the functions the
+   family's kept cases execute reads `EAX`, `ECX`, `EDX` or the flags before writing them after each call of the slot (the
+   `lane/r29` review's reading of "can reach": a read on an executed path fails the rule, and another declared state needs
+   its own scan); a one-constant stand-in in an import that only selects a fatal path, the `[C]` then reading "given the
+   import returned `v`"; or a stop at the import's `call` or at its slot's value, covering nothing after it. Each is stated
+   per family, and what the import does, and any code run only because of it, are not evidenced.
 
 Data-format claims follow the same scheme. A field layout is `[C]` once a parser reads every file
 of that type without error *and* the decoded values make sense, or once the code that reads the

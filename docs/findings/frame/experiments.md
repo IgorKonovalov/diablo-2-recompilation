@@ -183,6 +183,10 @@
   directives of 0x800, 0xFFF, 0x1000 and 0x1800 bytes: the first two re-zero, the last two do not). Manifests
   `dev/manifest-emu1.sha256` (`69237024…`, 20 lines), `-emu2` (`5043b081…`, 20), `-emu3` (`dfbea989…`, 20), `-emu4`
   (`64960a2f…`, 14), `-zerotest` (`3eeafa22…`, 9), each passing from `dev/`.
+- **Imports, ADR-0029 (d)** (added 2026-11-04, `lane/r29`, no re-run): `timers` holds slot `0x006CC34C`
+  `KERNEL32!IsBadCodePtr` at the stand-in `0x004BAD70` (`33 C0 C2 04 00`), rule (b); its `[C]` reads "given the import
+  returned 0", and that value and the fatal branch at `0x00543EEB` are `[I]`. Not evidenced: what the import does, a
+  fault, a wait. `deact`, `sweep`, `k6`, `nru` write no import slot. (0x00543E73, run:2026-11-04-lock-scan)
 - **Conclusion:** the five maps are `[C]` in frame/0003 §§ 1.2, 1.4, 2, 4 and 7 for the declared inputs, up to each
   observed boundary. Not covered: `QUESTS_TimerAdd` (allocates), every real timer callback, the release test, the
   saves, the frees, the population calls, the writes after each boundary, and the next-pointer reads before the

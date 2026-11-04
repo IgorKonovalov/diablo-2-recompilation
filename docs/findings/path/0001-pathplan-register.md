@@ -17,6 +17,11 @@ run:2026-11-03-path-emu-1). Kept outputs are under `workspace/logs/r54a/` (manif
 that directory); the emulation under `emu/` (its own manifest), the development run under `emu/dev-1/` (its own
 manifest and tool copy). The emulator scripts are the `lane/r55e` revisions (§ 12).
 
+**Imports, [ADR-0029](../../adrs/0029-import-slots-and-import-boundaries-in-emulation.md) (d)** (carried 2026-11-04, `lane/r29` review, no re-run).
+Families `plan` and `plannoop` only: slot `0x006CC34C`, `KERNEL32!IsBadCodePtr`, a stop at the slot's value in the emulator
+image, `0x00303946`, rule (c), no stand-in. **Not evidenced:** what the import returns, its fatal branch, the planner's call
+and everything after them. (0x00649B93, run:2026-11-03-path-emu-1)
+
 ## Answer (summary)
 
 - [C] **`PathPlan`'s entry, by emulation to its first boundary** (run:2026-11-03-path-emu-1, families `plan` and
@@ -254,6 +259,8 @@ return 1;
   slots 4, 10, 14 of a path without flag `0x40000` (241 cases, every type 0–16 among them, 3 to 21 each; 241 slot
   and 241 IAT reads accounted).
   (data:g_PathPlanFuncs@0x006EB6D8, 0x00649B82–0x00649B8D)
+  ADR-0029 (c), noted 2026-11-04 (`lane/r29`): a boundary at the slot's value is that rule's second form; the tag stands, and
+  what the import does and everything after it stay as below. (0x00649B93, run:2026-11-03-path-emu-1)
 - [I] After it: `IsBadCodePtr` non-zero is fatal 0x37E; the planner is called with `ECX = &ctx` (0x00649BAE), its
   `EAX` stored in `+0x28` (also 0 when `go` was 0); the start is checked (fatal 0x389); the target is re-marked when
   it was unmarked, then the unit (`UNIT_CollMark`, 0x00649BD7, 0x00649BE0); `+0x28 = 0` clears flag `0x20` and returns

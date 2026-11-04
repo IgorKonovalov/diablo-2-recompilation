@@ -596,6 +596,8 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-11-04 | `lane/scol` review | drlg/collision correction (0054) | architect-review | 190 134 | 26 | 14 | — | accept with fixes (15) | wrong anchor 4, omission 3, overclaim 2, misread 2, under-claim 1, stale cross-reference 1, tool not kept 1, other 1 |
 | 2026-11-04 | `lane/s54` | 0054 P3 | spec-writer | 373 363 | 53 | 18 | — | accept with fixes (Tier A, 25) | omission 7, overclaim 6, misread 5, wrong anchor 2, tool not kept 2, stale cross-reference 2, under-claim 1 |
 | 2026-11-04 | `lane/s54` review | 0054 P3 | architect-review | 376 200 | 65 | 18 | — | accept with fixes (25); path/overview and path/search reviewed | omission 7, overclaim 6, misread 5, wrong anchor 2, tool not kept 2, stale cross-reference 2, under-claim 1 |
+| 2026-11-04 | `lane/r29` | ADR-0029 raises (0060) | reverser-static | 235 066 | 53 | 56 | Ghidra 1 (no game) | accept with fixes (Tier A, ruling, 9) | overclaim 4, omission 2, misread 1, miscount 1, other 1 |
+| 2026-11-04 | `lane/r29` review | ADR-0029 raises (0060) | architect-review | 225 573 | 45 | 41 | — | accept with fixes (9) | audit of lane/r29: n/a, no check ran; overclaim 4, omission 2, misread 1, miscount 1, other 1 |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not

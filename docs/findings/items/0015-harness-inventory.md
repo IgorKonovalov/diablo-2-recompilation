@@ -29,7 +29,7 @@ Wine session under gdb on slot 2, one fresh process (`harness-play.md` § Fresh 
 
 ## Short
 
-- The walk mask (`noline`) and the moving base (`fixedbase`): no drop beside a wall or at a room's edge, so cases 3, 4 of items/0014 stay with the emulation (ADR-0029 pending); the `drop` statements stay `[I]` beyond ring 2 and for the fallback and null returns, and `[C]` only for what the table above lists.
+- The walk mask (`noline`) and the moving base (`fixedbase`): no drop beside a wall or at a room's edge, so cases 3, 4 of items/0014 stay with the emulation (ADR-0029 pending at the time; accepted, and those statements `[C]` by emulation since run:2026-11-04-lock-scan, 2026-11-04); the `drop` statements stay `[I]` beyond ring 2 and for the fallback and null returns, and `[C]` only for what the table above lists.
 - Draws: no seed was logged around a drop or a move; "no draw" for a drop stays the closure reading `[I]`.
 - Case 8's "removal message" and "no draw" were not logged; case 9's `max(saved, ·)`, the player's drop past half its life, and the sweep of a restored item: not run.
 - The potion doubling (the highest-value remainder after § above) and the rest of the 65 cases: the lane ran to the checkpoint with the ground and the two requests first, as ranked.
