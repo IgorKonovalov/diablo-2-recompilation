@@ -925,7 +925,7 @@
 - **Development launches:** `dev-2026-11-03-ai-3` (seeds 5701, 5702, 5703, 5711, 5721: the curse cases; `s-necro-curse` first built with 40 hops, then 80), `dev-2026-11-03-ai-3p` (6001: the P1b-2 logger, rev 1 without the unit pointer), `dev-2026-11-04-ai-3d`
   (3364 and 3365: Duriel, one attempt; the first launch stayed in the town, the second went to Canyon of the Magi and not into a tomb; stopped by hand).
 - **Not done:** P1b-1 (no decision of row 44), H1, H3, the catalogue sample, the 112 resume mismatches' cause. The Duriel route is from the plan 0032 session 3364 log's positions (ai/0017 § 11).
-- **Review recheck** (`lane/p52b` Tier A review, 2026-11-04, no game): `tools/ai_resume.py` reproduced the kept 112 line for line. `tools/ai_resume_review.py classify resume-stdout-2026-11-03-ai-3.txt <the 21 logs>` and `check P,B,C,N,E,D <the 21 logs> --controls`, from `workspace/logs/ai`, under `systemd-run --user --scope -p MemoryMax=4G`; `tools/ai.py` at the lane's head over the first run's 31 logs (`review-p52b/check-run1.txt`). Outputs in `workspace/logs/ai/review-p52b/`, `manifest.sha256` passes from that directory. Result: the classification of ai/0017 § 7; 7 444 resumed, 8 mismatches (cluster F alone), 87 stopped (row 32's `call esi` 80, a return site not armed 4, a log's end 3), 72 865 calls matched, 65 332 after the first; the controls still fail: reversed branches 7 290 of 7 539 (rows 15 and 54 not separated), a seed one step off 7 529 of 7 539. First run: 14 645 decisions, 12 614 compared, 0 mismatches.
+- **Review recheck** (`lane/p52b` Tier A review, 2026-11-04, no game): `tools/ai_resume.py` reproduced the kept 112 line for line. `tools/ai_resume_review.py` (retired at `bf720f11`; last present at `8707b4e1`) `classify resume-stdout-2026-11-03-ai-3.txt <the 21 logs>` and `check P,B,C,N,E,D <the 21 logs> --controls`, from `workspace/logs/ai`, under `systemd-run --user --scope -p MemoryMax=4G`; `tools/ai.py` at the lane's head over the first run's 31 logs (`review-p52b/check-run1.txt`). Outputs in `workspace/logs/ai/review-p52b/`, `manifest.sha256` passes from that directory. Result: the classification of ai/0017 § 7; 7 444 resumed, 8 mismatches (cluster F alone), 87 stopped (row 32's `call esi` 80, a return site not armed 4, a log's end 3), 72 865 calls matched, 65 332 after the first; the controls still fail: reversed branches 7 290 of 7 539 (rows 15 and 54 not separated), a seed one step off 7 529 of 7 539. First run: 14 645 decisions, 12 614 compared, 0 mismatches.
 - **Conclusion:** [C] the kept first-boundary comparison, the controls, the state control as a statement about the logged lines (ai/0017 § 8) and G4 for its window, as stated in ai/0017 § Answer; [I] the resume figures (112 mismatches, classified at the review: 104 model faults, 8 a logger limit). (run:2026-11-03-ai-3, 0x005B186F) Manifests as above.
 
 ## run:2026-11-04-ai-3p
@@ -935,6 +935,37 @@
 - **Result:** 17 champion-flag and 16 unique-flag corpses placed; 4 champion corpses reached `MonSkillTargetOk` (2 accepted and commanded, mode 14; 2 refused), 0 unique (`p1b2-run-2026-11-04-ai-3p.txt`, `tools/ai_p1b2.py`). A built state: the flags are written by the logger.
 - **Deviation, ADR-0003** (recorded by the `lane/p52b` review, 2026-11-04): `tools/gdb/ai-p1b2.py` writes game memory at a breakpoint, flag 4 or 8 at `Unit+0x14 -> +0x16`, where ADR-0003 says a breakpoint "never writes game memory or registers". ADR-0010 and ADR-0013 cover cells of one table through a loose `.bin`, not this. Plan 0012's review accepted one such write (`MONPOOL_FORCE_DIFF`, F1) as a stated intervention before those ADRs existed, with a natural game required beside it; it is not a rule for this run. The result is forced, not natural.
 - **Conclusion:** [I] as run (0x005F2A00, 0x005FD470); ai/0017 § 9. C40's required case stays open: a `-forced` run (ADR-0013) with natural champions, plan 0052 log.
+
+## run:2026-11-04-ai-resume
+
+Plan 0052 Phase 2, `lane/p52c`, no game. Tools at commit `bf720f11`.
+
+- **Question:** with the review's six fixes in the model, what do the 21 rev 4 logs of run:2026-11-03-ai-3 say past the first boundary, per tier AI? Do H3's 2 218 calls take the owner pair?
+- **Procedure** (from `workspace/logs/ai`, the repo's tools by absolute path):
+  ```
+  systemd-run --user --scope -p MemoryMax=4G python3 -I tools/ai_resume.py check <the 21 case logs 2026-11-03-ai-3-s2-*-fresh:*.log> --controls --examples 200 --out resume-run-2026-11-04-p52c.txt --tier resume-tier-2026-11-04-p52c.txt > resume-stdout-2026-11-04-p52c.txt
+  python3 -I tools/ai_h3.py check ../skills/2026-10-25-skills-dru-1.log ../skills/2026-10-25-skills-dru-2.log --out h3-2026-11-04-p52c.txt
+  python3 -I tools/ai.py counts <the case logs 2026-11-03-ai-s2-*-L*-*.log and 2026-11-03-ai-3-s2-*-fresh:*.log> > catalogue-rows-2026-11-04-p52c.txt
+  ```
+- **Outputs:** `manifest-run-2026-11-04-ai-resume.sha256` (passes from `workspace/logs/ai`). A first pass before rev 5's parser change is kept as `dev/dev-resume-*-p52c-before-rev5.txt`, in `dev/manifest-dev-p52c.sha256`, which passes from `dev/`.
+- **Result:** 7 444 of 7 539 resumed, 8 mismatches (all row 23), 87 stopped, 72 865 calls matched, 65 332 after the first; reversed branches fail 7 290, rows 15 and 54 not separated; a seed one step off fails 7 529. H3: 2 320 calls, 2 218 with a list, 101 first calls and 2 117 later calls match, 0 seed differences; the alternative levels and no pair fail all 101 first calls. Logger rev 5 was not run.
+- **Conclusion:** [I] the fixed model's totals, and [C], as proposed by the lane and narrowed at its review, six rows' fork-free decisions (run:2026-11-04-ai-resume-flip) and H3 at one level, as scoped in ai/0017 § 13. (run:2026-11-04-ai-resume, 0x005B186F, fn:sub_0056E050_MonOwnerSkillDamage@0x0056E050)
+- **Review recheck** (`lane/p52c` Tier A review, 2026-11-04, no game): the tools at this branch's head, unchanged from `bf720f11`, reproduce `resume-run-2026-11-04-p52c.txt`, `resume-tier-2026-11-04-p52c.txt` and `h3-2026-11-04-p52c.txt` byte for byte (`review-p52c/rerun-*.txt`); the `RROW`, `RSTOP`, `RMISMATCH`, `RTOTAL` and `RCONTROL` lines equal `review-p52b/check-fixed.txt`. The retired script's outputs stay hashed in `review-p52b/manifest.sha256`, and its last revision is `8707b4e1`.
+
+## run:2026-11-04-ai-resume-flip
+
+Plan 0052 Phase 2, `lane/p52c` review, no game. `tools/ai_resume_flip.py` at commit `40e5ed1f`, over the same 21 rev 4 logs.
+
+- **Question:** per row, how many decisions has the model decided with no unknown value, and which known branches, reversed one at a time, make a decision fail?
+- **Procedure** (from `workspace/logs/ai`, the repo's tools by absolute path; each under `systemd-run --user --scope -p MemoryMax=4G`):
+  ```
+  python3 -I tools/ai_resume_flip.py check <the 21 case logs> --rows 2,9,13,15,19,21,22,28,29,30,32,34,35,37,54,64,67,89,99,100,125 --cap 1000000 --out review-p52c/flip-rows-full.txt
+  python3 -I tools/ai_resume_flip.py check <the 21 case logs> --rows 61 --cap 200 --per-path 4 --out review-p52c/flip-row61-cap200.txt
+  python3 -I tools/ai_resume_flip.py check <the 21 case logs> --rows 6 --cap 60 --per-path 1 --out review-p52c/flip-row6-cap60.txt
+  ```
+- **Outputs:** `review-p52c/manifest.sha256` (passes from `workspace/logs/ai/review-p52c`). The sites of rows 6 and 61 are a fixed sample (the cost: a full pass of Fallen did not end in 9 minutes); their census lines count every resumed decision.
+- **Result:** no unknown-value branch in every resumed decision of rows 13 (103), 21 (205), 30 (316), 89 (77), and in 81 of 86 of row 37 and 79 of 91 of row 64; in none of rows 6 (814), 61 (2 061), 67 (53). Sites reversed alone: ai/0017 § 13's table. Row 54: 0 of 3 sites fail a decision; row 15: 15 of 16.
+- **Conclusion:** [C] the fork-free decisions' reproduction, and [I] the rest as a consistency check, ai/0017 § 13. (run:2026-11-04-ai-resume, 0x005B186F)
 
 ## run:2026-11-03-ai-uber
 

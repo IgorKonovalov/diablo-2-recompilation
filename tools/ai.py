@@ -46,7 +46,7 @@ MODS = ["ai_cat_emu", "ai_cat_emu2", "ai_cat_emu3", "ai_cat_emu4", "ai_cat_emu5"
 TIER = {2: "Skeleton", 6: "Fallen", 9: "Wraith", 13: "FallenShaman", 20: "Scarab", 21: "Mummy", 22: "GreaterMummy",
         28: "Vampire", 29: "BatDemon", 30: "Fetish", 34: "Andariel", 35: "CorruptArcher", 37: "SkeletonBow",
         61: "Hireable", 64: "SkeletonMage", 67: "NecroPet", 89: "Megademon", 125: "BloodLord"}
-TAGS = ("AGM", "AIN", "AID", "AIB", "AIR", "MSM0", "MSM1", "PP0", "PP1", "SST0", "SST1", "AIX", "CAP")
+TAGS = ("AGM", "AIN", "AID", "AIB", "AIR", "AIL", "MSM0", "MSM1", "PP0", "PP1", "SST0", "SST1", "AIX", "CAP")
 # the controls after the seed in each module's Hit tuple (before the block, where it has one): which AiCtl words
 CTRL = {"ai_cat_emu": ("c14",), "ai_cat_emu2": ("c14", "c18"), "ai_cat_emu3": ("c14", "c18", "c1c", "c4"),
         "ai_cat_emu4": ("c14", "c18", "c1c", "c4", None), "ai_cat_emu5": ("c14", "c18", "c1c"),
@@ -194,6 +194,8 @@ def parse(path):
                     if pair[1] is None:
                         pair[1] = d
                         break
+            elif tag == "AIL" and d["k"] in byk:
+                byk[d["k"]].setdefault("ail", []).append(d)
             elif tag == "AIX" and d["k"] in byk:
                 byk[d["k"]]["aix"] = d
             elif tag == "AIN":
