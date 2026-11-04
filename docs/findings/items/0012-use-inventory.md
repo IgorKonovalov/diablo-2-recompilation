@@ -37,7 +37,7 @@ game's own structures, so the `[C]` is the code's map from the bytes it reads (A
   vitality (life) or energy (mana) is above 0:** `r1 = RangeB(stat)`, `r2 = Range(100)`, and `r2 < r1 >> 1` doubles the
   amount. Then `<< ValShift`; a refill's frame rate is `(old rate · remaining + v) / (len + remaining)`, truncated, and
   the list's end moves to `now + remaining + len`. The rate is observed on a slot after the first; the stock potions'
-  slot 0 reaches the same instructions only past the event queue call, so for them it is `[I]` (§ 4). (fn:sub_005BE3F0_ItemUsePotion@0x005BE3F0,
+  slot 0 reaches the same instructions only past the event queue call, so for them it was `[I]` (§ 4); observed on a live game for `hp1` and `mp1` of a Sorceress, items/0016. (fn:sub_005BE3F0_ItemUsePotion@0x005BE3F0,
   fn:sub_0062A5D0_PotionLifeMul@0x0062A5D0, fn:sub_0062A620_PotionManaMul@0x0062A620, run:2026-11-03-use-emu)
 - [C] (ADR-0021) **Rejuvenation (kind 5): a percent of the maximum, at once, no draw.** `v = MulDiv(max, calc, 100)`, or
   `max` itself at exactly 100, capped so `current + v ≤ max`, added to the stat by `UnitAddStat`; stock `rvs` 35 and `rvl`
@@ -96,7 +96,7 @@ No community source was compared; every claim is from the code. The doubling dra
 | `0x0055E0D0` | `sub_0055E0D0_SkillQtyDec` | the skill's quantity − 1 and its message | I |
 | `0x005BE130`, `0x005BE230` | `sub_005BE130_ItemUseIdentifyTest`, `sub_005BE230_ItemUseIdentify` | kind 1 | I (map C) |
 | `0x005BE180` | `sub_005BE180_InvHoldsItem` | the target-in-inventory walk | I (map C) |
-| `0x005BE3F0` | `sub_005BE3F0_ItemUsePotion` | kind 3 | I (map C) |
+| `0x005BE3F0` | `sub_005BE3F0_ItemUsePotion` | kind 3 | C in part (items/0016: two draws, doubling on `hp1`, slot 0's rate, 17 uses); I elsewhere (map C) |
 | `0x005BE7B0` | `sub_005BE7B0_ItemUseStatPlain` | kind 4, no stock row | I (map C) |
 | `0x005BEAC0` | `sub_005BEAC0_ItemUseRejuv` | kind 5 | I (map C) |
 | `0x005BEF90` | `sub_005BEF90_ItemUseCure` | kind 6 | I |
@@ -208,7 +208,7 @@ for (k = 0; k < 3; k++) {
   `SITES`). What each case saw: the arguments, the list's end and bit 2, the seed. The rate's division is only reachable as a
   boundary for a slot after the first, because slot 0's event queue comes first; the cases reach it by a slot 0 whose
   amount is 0. So the **stock** path's rate (slot 0) is the same instructions after the queue call, not itself observed:
-  `[I]` for slot 0 until Phase 2. After, `[I]`: every effect of the callees.
+  `[I]` for slot 0 until Phase 2 (observed 2026-11-04 for `hp1`, `mp1`, a Sorceress: the note below). After, `[I]`: every effect of the callees.
 - [C] (ADR-0021) What separates (run:2026-11-03-use-emu, fn:sub_005BE3F0_ItemUsePotion@0x005BE3F0): control `draw1` (one draw) and `nodraw` fail 905 cases each; `half` (`r2 < r1`) 51;
   `floordiv` 120; `nocap` 207; `pctflat` 252; `no100` 28; `sar` 20 in `classmul`. (`check.txt`)
 - [C] **The class scales** return exactly as stated for all 7 classes, other classes and types, odd and negative
@@ -240,7 +240,7 @@ list, 1)`. Then `SetEnd`, and the rest of the loop as above with `rem = 0`, so t
 
 [I] **Repeat drinking extends and blends, it does not stack lists:** a second potion of the same state before the first
 ends uses the same list, end `now + rem + len`, and rate `(old · rem + v) / (len + rem)`, so the undelivered part of the
-first is carried and spread over the longer window. (0x005BE678–0x005BE6CF)
+first is carried and spread over the longer window. (0x005BE678–0x005BE6CF) *Narrowed 2026-11-04 (items/0016, run:2026-11-04-inventory-2): of 4 second uses 33 to 43 frames after the first, only 1 found the first list (`STATLIST_SetStat` on it); 3 allocated a new list, so "uses the same list" holds in 1 of 4 and why is unknown; the blend's arithmetic was not separated from `v / len`.*
 
 ## 6. The other kinds
 
@@ -351,7 +351,7 @@ tbl:ItemStatCost.txt:maxstat, tbl:Books.txt:pSpell, tbl:Books.txt:BookSkill, tbl
 
 ## Open questions
 
-- `[L]` Slot 0's rate on the stock path (the queue call precedes it): Phase 2 case 1 resolves it.
+- `[L]` Slot 0's rate on the stock path (the queue call precedes it): resolved for `hp1` and `mp1`, a Sorceress, items/0016 (16 fresh-list uses); other classes, rows and the blend open.
 - `[L]` Whether any draw occurs in a whole use past the boundaries (§ 8): Phase 2's seed comparison.
 - `[L]` The case of the object mode switch at `0x00581DBC`, what it is for and whether a class test precedes it: read
   the door path, or Phase 2 case 16. The Assassin's skip is read at `0x00585FB1` for the chest only.
