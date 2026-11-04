@@ -11,7 +11,7 @@
 
 The path planners ([path/search](../specs/path/search.md), [path/overview](../specs/path/README.md)) and the outdoor road search
 ([drlg/outdoor](../specs/drlg/outdoor.md)) read small constant tables from the image's data. No MPQ file holds them and they are not an excel table:
-they are constants of the code. A reimplementation needs their values, so this doc gives every one: as a rule where one is written below, as a short listed table otherwise ([ADR-0031](../adrs/0031-constants-of-the-code-image.md); [plan 0054](../plans/0054-path-search.md)), with where each sits, how wide an element is, its shape
+they are constants of the code. A reimplementation needs their values, so this doc gives every one: as a rule where one is written below, as a short listed table otherwise ([ADR-0031](../adrs/0031-constants-of-the-code-image.md); [plan 0054](../plans/done/0054-path-search.md)), with where each sits, how wide an element is, its shape
 and its index. Generated and checked by `python3 -I tools/path_survey.py dirtables|dirmd|readers|rules <game.exe>` (tests:
 `python3 -I tools/test_path_survey.py`; the totals, a checksum per table and the rules' mismatch count are in gate survey `path`). The path types themselves
 (`g_PathPlanFuncs`, the flags) are [PathTypes](PathTypes.md); the collision pattern table is [drlg/collision](../specs/drlg/collision.md).

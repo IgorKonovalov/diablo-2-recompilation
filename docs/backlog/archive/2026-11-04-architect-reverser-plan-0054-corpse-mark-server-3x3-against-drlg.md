@@ -7,7 +7,7 @@ context:
   - ../../findings/path/0004-per-event-reproduction.md
   - ../../findings/drlg/0005-collision.md
   - ../../specs/drlg/collision.md
-  - ../../plans/0054-path-search.md
+  - ../../plans/done/0054-path-search.md
 resolution: "Static part answered, [I]: the plus is the client's copy (0x004B05E3, 0x004B0A05, where run:2026-10-14-collision's dumps sit), the server's call is UnitCorpseColl(unit, 1) at 0x005A65D9, a 3x3 with mask and pattern unchanged; seven callers tabled in [path/0005](../../findings/path/0005-grid-rules.md). drlg/0005 §§ 5, 6 annotated; spec row routed: [entry](2026-11-04-reverser-spec-writer-drlg-collision-server-corpse-3x3-object-hascollisi.md). The run part (per-call lines, hold-out) moves to plan 0054 Phase 2's next kept batch, its step 4."
 ---
 

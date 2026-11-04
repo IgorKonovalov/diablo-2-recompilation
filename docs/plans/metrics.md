@@ -620,6 +620,8 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-11-04 | `lane/p55a` check | 0055 P2b tools | architect-check | 62 924 | 13 | 2 | — | accept with fixes (1) | stale cross-reference 1 |
 | 2026-11-04 | `lane/s52a` | 0052 P3a | spec-writer | 341 340 | 56 | 18 | — | accept with fixes (Tier A, 22) | omission 10, misread 6, under-claim 3, overclaim 1, miscount 1, other 1 |
 | 2026-11-04 | `lane/s52a` review | 0052 P3a | architect-review | 347 788 | 56 | 17 | — | accept with fixes (22); monsters/ai and machinery reviewed; 0055 P2b gate opens at merge | omission 10, misread 6, under-claim 3, overclaim 1, miscount 1, other 1 |
+| 2026-11-04 | `lane/w54` | 0054 P4, collision corrections | wiki | 229 145 | 33 | 12 | — | accept with fixes (Tier A, ADR-0030, 15) | omission 6, misread 4, overclaim 3, stale cross-reference 2 |
+| 2026-11-04 | `lane/w54` review | 0054 P4, close | architect-review | 256 376 | 36 | 10 | — | accept with fixes (15); plan 0054 closed | omission 6, misread 4, overclaim 3, stale cross-reference 2 |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not

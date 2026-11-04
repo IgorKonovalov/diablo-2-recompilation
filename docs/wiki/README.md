@@ -39,7 +39,8 @@ back to it. Then follow the game from the map to the loot, and on to the charact
 | 15 | [Quests and travel](quests.md) | how the quest record is kept and loaded, which events reach the quest scripts and in what order, how the game creator's finished quests are switched off, a few quests bit by bit, the quest-seed draws, and how waypoints, act changes, town portals, warps and resurrection place a player |
 | 16 | [Seed to world](seed-to-world.md) | how the pages above fit together in one game: the order in which the server builds levels, rooms, objects, monsters and drops from the game seed, which seed passes from one step to the next, and what (the player's walk, the fights) has to come from outside |
 | 17 | [Animation and timing](animation.md) | how long a unit's actions take on the server: the animation record, the scheduled and every-frame clocks, the rate from speed stats and weapon, breakpoints, the do frame, hit recovery, the block and the get-hit roll, and how far a walking, running or knocked-back unit moves each frame |
-| 18 | [Quirks](quirks.md) | the traps a faithful rebuild must keep, by class (arithmetic width and sign, rounding, wrap, edges, draw order, data-dependent branches, timing, multiplayer, deliberate oddities), the community claims that do not hold, and which entries were seen in play, which reached under emulation and which only read from the code |
+| 18 | [Pathing](pathing.md) | how a unit's route is planned: the request and its refusals, the 17 path types and their planners, the two types that draw, the live grid planners read and why it is not the predicted one, corpses on each copy of the grid, who asks for a plan, and which types no stock request reached; with what the games showed, what an emulation showed and what is only read from the code kept apart |
+| 19 | [Quirks](quirks.md) | the traps a faithful rebuild must keep, by class (arithmetic width and sign, rounding, wrap, edges, draw order, data-dependent branches, timing, multiplayer, deliberate oddities), the community claims that do not hold, and which entries were seen in play, which reached under emulation and which only read from the code |
 | — | [How we know](how-we-know.md) | how the project works: the one binary, the three levels of confidence, runs, bit-exact and emulated reproduction, combat events, two-client games, what "not reachable on stock data" means, the sweep of inferred claims, and what "reviewed" means. Read it any time; it is the only page not based on a spec |
 
 ## Why the pages are cut this way
@@ -73,7 +74,7 @@ item creation and the other item paths, the [item economy](../specs/items/econom
 [stats and states](../specs/stats/README.md), [quests and travel](../specs/quests/README.md), the composition of the core
 specs, [seed to world](../specs/chain/README.md), [skills and missiles](../specs/skills/README.md) (their machinery, a named
 tier of skills and the function catalogue of every other numbered skill and missile function), and
-[animation and frame timing](../specs/anim/README.md). The room lifecycle
+[animation and frame timing](../specs/anim/README.md), and [the path request and its planners](../specs/path/README.md). The room lifecycle
 ([drlg/lifecycle](../specs/drlg/lifecycle.md)) has no page of its own: it is the section
 [Rooms that come and go](levels.md#rooms-that-come-and-go-release-and-restore) of the Levels page. Rows that are not
 reviewed get no page.

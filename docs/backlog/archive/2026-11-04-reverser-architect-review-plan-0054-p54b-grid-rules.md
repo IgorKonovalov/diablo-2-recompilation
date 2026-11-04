@@ -5,7 +5,7 @@ date: 2026-11-04
 status: done
 context:
   - ../../findings/path/0005-grid-rules.md
-  - ../../plans/0054-path-search.md
+  - ../../plans/done/0054-path-search.md
 resolution: "Reviewed, Tier A: accept with fixes, 13 (plan 0054 log). The kept batch may start after the merge; Phase 3 does not. The reviewed [C] of drlg/collision is a scope error: the plus is [C] for the client's copy (tools/corpse_copy.py), the server's rules stay [I]."
 ---
 

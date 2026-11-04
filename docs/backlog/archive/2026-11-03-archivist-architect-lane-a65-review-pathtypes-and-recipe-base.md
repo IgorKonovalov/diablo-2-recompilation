@@ -6,7 +6,7 @@ status: done
 context:
   - ../../tables/PathTypes.md
   - ../../findings/path/0001-pathplan-register.md
-  - ../../plans/0054-path-search.md
+  - ../../plans/done/0054-path-search.md
 resolution: "Tier B check 2026-11-03: accept with fixes (3: wrong citation 1, scope 2) plus one route to the reverser (+0x13A/+0x13C record identity); merged into main."
 ---
 

@@ -4,7 +4,7 @@ to: architect
 date: 2026-11-04
 status: done
 context:
-  - ../../plans/0054-path-search.md
+  - ../../plans/done/0054-path-search.md
   - ../../findings/path/0004-per-event-reproduction.md
   - ../../findings/path/experiments.md
 resolution: "lane/p54 review, 2026-11-04: accepted with fixes (20), Phase 2 not done, Phase 3 waits; rulings and the next run's order in the plan 0054 log."

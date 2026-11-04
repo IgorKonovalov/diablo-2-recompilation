@@ -6,7 +6,7 @@ status: done
 context:
   - ../../findings/path/0001-pathplan-register.md
   - ../../findings/path/experiments.md
-  - ../../plans/0054-path-search.md#implementation-log
+  - ../../plans/done/0054-path-search.md#implementation-log
 resolution: "Reviewed 2026-11-03 (Tier A): accept with fixes (6: overclaim 2, omission 3, miscount 1), applied on lane/r54a; rulings (cut P1.2 / P1.3a / P1.3b, image, Phase 2 floors and log conditions, the 3/11/12 reading at [I], open questions) in plan 0054's implementation log and § Phase 1/2."
 ---
 

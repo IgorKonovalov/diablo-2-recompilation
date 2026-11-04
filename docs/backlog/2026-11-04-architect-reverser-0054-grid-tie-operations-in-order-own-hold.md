@@ -4,7 +4,7 @@ to: reverser
 date: 2026-11-04
 status: open
 context:
-  - ../plans/0054-path-search.md
+  - ../plans/done/0054-path-search.md
   - ../findings/path/0006-holdout.md
 resolution: ""
 ---

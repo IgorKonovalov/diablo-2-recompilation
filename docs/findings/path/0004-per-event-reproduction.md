@@ -5,7 +5,7 @@
 > path record and the unit's exit seed equal what the planners of [path/0001](0001-pathplan-register.md), [path/0002](0002-search.md) and
 > [path/0003](0003-short-planners.md) give from the live grids of the rooms around the unit; which types does the game's own play reach; and is
 > the grid the planners read the built map plus the unit marks?
-> **Date:** 2026-11-04   **Plan:** 0054 (Phase 2, first lane run)   **Status:** reviewed 2026-11-04 (`lane/p54`, Tier A): accepted with fixes, Phase 2 not done ([plan 0054 log](../../plans/0054-path-search.md#implementation-log))
+> **Date:** 2026-11-04   **Plan:** 0054 (Phase 2, first lane run)   **Status:** reviewed 2026-11-04 (`lane/p54`, Tier A): accepted with fixes, Phase 2 not done ([plan 0054 log](../../plans/done/0054-path-search.md#implementation-log))
 
 Harness work on slot 1 under gdb (no Ghidra). The logger is `tools/gdb/path.gdb` (`tools/gdb/pilot.py` + `tools/gdb/path.py`), the sessions
 `tools/path_sessions.py`, the check `tools/path.py` with its no-game tests `tools/test_path.py` (12 tests). The run record, setup and the

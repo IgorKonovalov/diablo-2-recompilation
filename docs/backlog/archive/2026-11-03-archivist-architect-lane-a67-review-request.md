@@ -7,7 +7,7 @@ context:
   - ../../tables/Levels.md
   - ../../tables/Objects.md
   - ../../tables/PathTypes.md
-  - ../../plans/0054-path-search.md
+  - ../../plans/done/0054-path-search.md
 resolution: "Tier A review: accept with fixes (11; plan 0054 log). Rulings: the 11 non-maze rows rightly not counted, [C]; the rectangle's identity rests on the shared field DungeonRoom +0x4C, [I], not only on the observed sizes; one room and a near-list pair do not overrun, [I]; a warp-paired room stays open, routed on the reverser entry."
 ---
 

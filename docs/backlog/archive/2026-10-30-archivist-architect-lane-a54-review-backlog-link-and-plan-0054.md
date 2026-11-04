@@ -6,7 +6,7 @@ status: done
 context:
   - ../../tables/PathTypes.md
   - ../../tables/MonStats.md
-  - ../../plans/0054-path-search.md
+  - ../../plans/done/0054-path-search.md
 resolution: "Tier B check, lane/a54 (0052 backlog link, 0054 P0): accept, 0 fixes. 17-slot table equals the survey and ai/0001 section 8; counts recomputed (Missiles, MonStats2, Skills, Objects 573); stock rows and Missiles row 195 verified."
 ---
 

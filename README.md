@@ -113,6 +113,8 @@ each row.
 | [`skills/catalogue`](docs/specs/skills/catalogue.md) | every numbered skill and missile function a stock row uses: what each tests, writes and creates, and the draws it makes in order, by seed | reviewed | 2026-10-30 |
 | [`anim/timing`](docs/specs/anim/timing.md) | unit modes and frame counts, event frames, attack, cast, hit-recovery and block rates and their breakpoints ([overview](docs/specs/anim/README.md)) | reviewed | 2026-10-27 |
 | [`anim/movement`](docs/specs/anim/movement.md) | walk and run speed, the slowing states, the per-frame step along a path | reviewed | 2026-10-27 |
+| [`path/overview`](docs/specs/path/README.md) | the path request: the record, the 17 path types, the dispatch, the draws per type, the grid a planner reads, the aim and the facing step | reviewed | 2026-11-04 |
+| [`path/search`](docs/specs/path/search.md) | every planner as pseudocode: its cell reads, its draws and the most points it can write | reviewed | 2026-11-04 |
 | `monsters/ai` | the AI tick, target, mode and skill choice, following, the path request and its draws (plan 0052) | not started | — |
 
 **Game rules** ([ADR-0017](docs/adrs/0017-scope-quests-travel-economy.md))
