@@ -136,6 +136,7 @@ CASES = {
     "a3-flayer-p8": ("normal", stage("3,4", 240, players=8), "Flayer Jungle at /players 8: Fetish 30 (chained pairs)"),
     "a1-andariel-p8": ("normal", catacombs(120, hold=True, players=8), "Catacombs to Andariel at /players 8: Andariel 34"),
     "a1-countess": ("normal", countess(), "Tower Cellar Level 5: The Countess (row 10; state 13)"),
+    "wp-probe": ("normal", stage("1,7", 10), "Jail Level 1, ten seconds: the waypoint click's launch-by-launch failure rate (plan 0052 lane/p52d)"),
     "nm-a2-halls": ("nightmare", stage("2,4"), "Halls of the Dead 2, Nightmare"),
     "h-a4-cotd": ("hell", stage("4,2"), "City of the Damned, Hell"),
     # the Necromancer (tools/d2s_recipes/ai-nec.json, built on samples/d2s/smpnec.d2s): a golem and skeletons fight

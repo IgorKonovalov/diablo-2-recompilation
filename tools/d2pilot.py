@@ -626,9 +626,13 @@ class Pilot:
                 dark += max(r, g, b) < 28
         return dark / n
 
+    def menu_share(self):
+        """The dark share of the waypoint list's inner panel (screenshot x 160..360, y 140..400)."""
+        return self.dark_share(160, int(140 * self.vs), 200, int(260 * self.vs))
+
     def menu_open(self):
-        """The waypoint list is up: its inner panel (screenshot x 160..360, y 140..400) is almost black."""
-        return self.dark_share(160, int(140 * self.vs), 200, int(260 * self.vs)) > 0.75
+        """The waypoint list is up: its inner panel is almost black."""
+        return self.menu_share() > 0.75
 
     def click_at(self, x, y, button=1):
         """A click at screenshot coordinates: the window shows the 800x600 frame scaled to its client height
@@ -720,18 +724,57 @@ def cmd_wp(args):
     return wp_travel(args, st, p, args.dx, args.dy)
 
 
+def wp_click_until_open(p, st, x, y, lit_wait=20.0, open_wait=8.0, tries=2, clock=time.time, sleep=time.sleep):
+    """Click the town waypoint at screenshot (x, y) and wait for its list; {"opened", "t_open", "clicks", "lit_wait",
+    "trace"}. Plan 0052 lane/p52d: the list is recognised by a dark panel, and the screen is black for the first
+    seconds of a game (the load's fade-in), so a click made then saw "the list" at 0.0 s in 4 of 12 launches and the
+    tab and row clicks that followed hit the ground (the character walked away from the waypoint). So (1) the click
+    waits until the panel is lit (`lit_wait` s at most, no click into a black screen), (2) the list counts as open
+    when two samples 0.3 s apart are dark, (3) a click whose list has not come in `open_wait` s while the player stood
+    still for the last 1.5 s is made again (a player still walking gets one more wait first) (`tries` clicks in all), in the same process."""
+    t0 = clock()
+    while p.menu_share() > 0.5:
+        if clock() - t0 > lit_wait:
+            return {"opened": False, "t_open": None, "clicks": 0, "lit_wait": clock() - t0, "trace": []}
+        sleep(0.2)
+    lit = clock() - t0
+    trace, clicks = [], 0
+    for _ in range(tries):
+        p.click_at(x, y)
+        clicks += 1
+        t1 = clock()
+        limit, extended = open_wait, False
+        while True:
+            if clock() - t1 >= limit:
+                walking = bool(trace) and clock() - t1 - trace[-1][0] < 1.5
+                if walking and not extended:        # still walking to the waypoint: wait once more, do not click
+                    limit, extended = limit + open_wait, True
+                else:
+                    break
+            share = p.menu_share()
+            st.poll()
+            if st.pos and (not trace or trace[-1][1:3] != tuple(st.pos[:2])):
+                trace.append((round(clock() - t1, 1),) + tuple(st.pos[:2]) + (round(share, 2),))
+            if share > 0.75:
+                sleep(0.3)
+                if p.menu_share() > 0.75:
+                    return {"opened": True, "t_open": clock() - t1, "clicks": clicks, "lit_wait": lit, "trace": trace}
+            sleep(0.1)
+    return {"opened": False, "t_open": None, "clicks": clicks, "lit_wait": lit, "trace": trace}
+
+
 def wp_travel(args, st, p, tab, row):
     """Waypoint travel from a town waypoint the character stands near: click the waypoint (--wp-x, --wp-y,
-    screenshot coordinates), poll the screen until the list is up, click the act tab and the row, then poll the log
-    until the level changes. No fixed waits beyond what the game needs."""
+    screenshot coordinates), poll the screen until the list is up (wp_click_until_open), click the act tab and the
+    row, then poll the log until the level changes. No fixed waits beyond what the game needs."""
     lid0 = st.pos[2] if st.pos else None
-    p.click_at(args.wp_x, args.wp_y)
     t0 = time.time()
-    while not p.menu_open():
-        if time.time() - t0 > 8:
-            print("wp: the waypoint list did not open")
-            return 1
-        time.sleep(0.1)
+    r = wp_click_until_open(p, st, args.wp_x, args.wp_y)
+    if not r["opened"]:
+        print("wp: the waypoint list did not open after %d click(s), lit after %.1f s; player track (s, x, y, dark share) %s" % (
+            r["clicks"], r["lit_wait"], r["trace"][:3] + r["trace"][-4:]))
+        return 1
+    print("wp: list open %.1f s after click %d (screen lit after %.1f s)" % (r["t_open"], r["clicks"], r["lit_wait"]))
     time.sleep(0.6)
     for _ in range(2):                  # a tab click right after the list opens is sometimes lost: click it twice
         p.click_at(args.wp_tab_x0 + (tab - 1) * args.wp_tab_w, 73)
