@@ -569,6 +569,8 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-11-04 | `lane/r68` check | 0057, 0054, 0058 (finding notes) | architect-check | 77 635 | 16 | 1 | — | accept with fixes (1) | omission 1 |
 | 2026-11-04 | `lane/snd` | 0062 (sound pair) | reverser-harness | 86 483 | 34 | 9 | slot 2 | accept with fixes (Tier B check) | 5: stale cross-reference 4, overclaim 1 |
 | 2026-11-04 | `lane/snd` check | 0062 (sound pair) | architect-check | 72 209 | 14 | 2 | — | accept with fixes (5) | stale cross-reference 4, overclaim 1 |
+| 2026-11-04 | `lane/a69` | 0060 P1.1-1.3 / 0054 P1.3 readers (4 entries) | archivist | 194 494 | 59 | 8 | — | accept with fixes (Tier A, 17) | 17: misread 5, overclaim 3, omission 4, under-claim 2, stale cross-reference 3 |
+| 2026-11-04 | `lane/a69` review | 0060, 0054 readers | architect-review | 217 264 | 40 | 10 | — | accept with fixes (17) | misread 5, overclaim 3, omission 4, under-claim 2, stale cross-reference 3 |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not

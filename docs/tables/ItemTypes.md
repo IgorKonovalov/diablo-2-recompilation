@@ -115,6 +115,21 @@ From [items/0006 § 1, § 6](../findings/items/0006-properties.md#1-base-stats-s
 - `[I]` **`Quiver`** (`+0x0E`): an item whose own type has a `Quiver` link takes the quiver branch of the base-stat
   roll (quantity from `minstack`/`maxstack`, no `spawnstack`, no durability). Four types have it: `bowq` and `mboq`
   (→ `bow`), `xboq` and `mxbq` (→ `xbow`). (fn:sub_0062E740_ItemTypeQuiver@0x0062E740, tbl:ItemTypes.txt:Quiver)
+- `[I]` **The auto-equip search reads `Quiver`, `Shoots`, `BodyLoc1` and `BodyLoc2`** (plan 0060 Phase 1.3,
+  [items/0014 § 5](../findings/items/0014-ground-items.md#5-what-p12-left)). `ItemAutoEquipSlot(user, item, &loc, skipReq)`, after
+  its first half: `Quiver` of the item's type set (`+0xE`): a hand (locations 4, 5) must hold a weapon whose `Shoots` (`+0xC`)
+  the item is, else 0. `BodyLoc1`, `BodyLoc2` (`+0xA`, `+0xB`) equal: that location if empty. Unequal: both empty gives
+  `BodyLoc1`; one empty gives it when `EquipPairCompatible(item, the other)`; else 0. The pair is compatible for bow and bow
+  quiver, crossbow and crossbow quiver (types 27, 5 and 35, 6), a one-handed weapon and a shield (45 without the two-handed
+  test, 51), two one-handed weapons when both have flag 7 (a class-4 user, or class 6 and type 67), and two of type 10.
+  `PickupToInv` then needs `BodyLocTest(user, loc, item, 0) == 1`. Types are `itemtypes` rows. The column readers the
+  finding's function table names are `sub_0062FDF0_ItemTypeBodyByte` (`0x0062FDF0`), `sub_0062EA80_ItemBodyLocs`
+  (`0x0062EA80`), `sub_0062E6F0_ItemTypeShoots` (`0x0062E6F0`) and `sub_00628480_ItemTypeQuiver` (`0x00628480`, a getter
+  distinct from the base-stat roll's `0x0062E740` above); the finding states `ItemAutoEquipSlot`'s reads of the four
+  columns and lists `Body` among the data touched, but gives no statement of which reader fetches which byte beyond the
+  names, so the pairing is by name `[I]` and `Body`'s use is not stated. (fn:sub_0055D710_ItemAutoEquipSlot@0x0055D710,
+  fn:sub_0062EA80_ItemBodyLocs@0x0062EA80, fn:sub_0062E6F0_ItemTypeShoots@0x0062E6F0, fn:sub_00628480_ItemTypeQuiver@0x00628480,
+  fn:sub_0062FDF0_ItemTypeBodyByte@0x0062FDF0, tbl:ItemTypes.txt:Quiver, tbl:ItemTypes.txt:Shoots)
 - `[I]` **`VarInvGfx`** (`+0x23`): when ≠ 0, the last base-stat draw is the picture variant
   `RangeOffset(unit seed, 0, VarInvGfx)`, so `[0, VarInvGfx − 1]`. Seven types have it: `ring` 5, `amul` 3, `char`,
   `scha`, `mcha`, `lcha` 3, `jewl` 6. (fn:sub_00628420_ItemSetInvGfxVariant@0x00628420, tbl:ItemTypes.txt:VarInvGfx)
@@ -138,8 +153,8 @@ The per-type columns the repair, price and wear code is expected to read. Offset
 | `Reload` | `+0x011` u8 | 9: `bowq`, `xboq`, `mboq`, `mxbq`, `tpot`, `tkni`, `taxe`, `jave`, `ajav` | a spent stack is refilled from the inventory `[L]` |
 | `ReEquip` | `+0x012` u8 | 5: `tpot`, `tkni`, `taxe`, `jave`, `ajav` | a spent stack is replaced by a like item `[L]` |
 | `AutoStack` | `+0x013` u8 | 8: `bowq`, `xboq`, `tpot`, `key`, `tkni`, `taxe`, `jave`, `ajav` | a picked-up item joins a stack `[L]` |
-| `Shoots` | `+0x00C` u16 type row | 3: `bow` → `bowq`, `abow` → `bowq`, `xbow` → `xboq` | the ammunition a launcher uses (quantity loss per shot) `[L]` |
-| `Quiver` | `+0x00E` u16 type row | 4: `bowq`, `mboq` → `bow`; `xboq`, `mxbq` → `xbow` | `[I]` the quiver branch of the base-stat roll (above); the launcher a quiver feeds `[L]` |
+| `Shoots` | `+0x00C` u16 type row | 3: `bow` → `bowq`, `abow` → `bowq`, `xbow` → `xboq` | the ammunition a launcher uses (quantity loss per shot) `[L]`; `[I]` the auto-equip search checks a quiver's launcher against it ([above](#fields-the-base-stat-roll-reads-plan-0024-phase-1), items/0014 § 5) |
+| `Quiver` | `+0x00E` u16 type row | 4: `bowq`, `mboq` → `bow`; `xboq`, `mxbq` → `xbow` | `[I]` the quiver branch of the base-stat roll (above); the auto-equip search (items/0014 § 5, [above](#fields-the-base-stat-roll-reads-plan-0024-phase-1)); the launcher a quiver feeds in play `[L]` |
 | `CostFormula` | `+0x020` u8 | 1 on 7: `shie`, `tors`, `boot`, `glov`, `belt`, `helm`, `circ`; 2 on `body` (body parts) | price formula selector `[L]` |
 
 - `[C]` `Throwable` and `ReEquip` go together: every `ReEquip` type is `Throwable`; `thro` and `comb` are `Throwable`
