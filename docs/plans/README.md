@@ -67,7 +67,7 @@ Lane runs (agent usage, review verdicts, fix counts by category) are logged in t
 | [0059](0059-golden-traces.md) | Golden traces: seeds and inputs with their expected world, drops and later events, observed or predicted, as conformance tests (`tools/golden.py`) | approved | **P1 to P3 accepted 2026-10-30: format and tool (`lane/a59`), v1 set of 5 073 cases (`lane/a59b`), conformance page reviewed (`lane/s59`, Tier A)**; P4 next, archivist v2 events (after 0052·P3a and 0055·P3); approved by the owner 2026-10-30 (as recommended), drafted 2026-10-30 (`lane/plans57`), rank 3; no slot, no Ghidra |
 | [0060](0060-item-use-inventory.md) | Item use and inventory: potions, scrolls and tomes, belts, grids, stacking, pickup and drop, the ground drop and lifetime, identify | approved | **approved by the owner 2026-10-30 (as recommended); scope [ADR-0025](../adrs/0025-scope-item-use-inventory.md) accepted**; drafted 2026-10-30 (`lane/plans57`), rank 4; P0 archivist (`belts`, `inventory`, the `Misc` use columns), P1 three static batches, P2 one slot, P3 spec (row `items/use`), P4 wiki |
 | [0061](0061-message-catalogue.md) | Client–server message catalogue: every in-game message both directions, its fields, its handler or send condition | approved | **approved by the owner 2026-10-30 (as recommended); scope [ADR-0026](../adrs/0026-scope-in-game-message-layer.md) accepted**; drafted 2026-10-30 (`lane/plans57`), rank 5; recommended after 0055·P3; P1 three static batches, P2 one short slot (gdb capture), P3 spec (row `net/messages`), P4 wiki |
-| [0062](0062-debug-and-cut-content.md) | Debug and cut content: developer switches and command-line options, and the table rows and code no stock path reaches | approved | **approved by the owner 2026-10-30 (as recommended); last of the batch**; drafted 2026-10-30 (`lane/plans57`), rank 6 (low priority); P1 reverser static (switches), P2 archivist (unreached rows), P3 spec-writer (behaviour-changing switches into their specs); no slot |
+| [0062](done/0062-debug-and-cut-content.md) | Debug and cut content: developer switches and command-line options, and the table rows and code no stock path reaches | done | **closed 2026-11-04**; approved by the owner 2026-10-30 (as recommended); P1 to P3 accepted; drafted 2026-10-30 (`lane/plans57`), rank 6 (low priority); P1 reverser static (switches), P2 archivist (unreached rows), P3 spec-writer (behaviour-changing switches into their specs); no slot |
 
 ## Run order (set 2026-10-25, plans 0038–0052)
 
@@ -116,7 +116,7 @@ phase (5)'s path and 0046 gates nothing (ADR-0020).
 
 **Owner decisions (2026-10-30, plans 0057–0062):** "approve all of them". Plans [0057](done/0057-quirks-catalogue.md),
 [0058](done/0058-party-and-player-count.md), [0059](0059-golden-traces.md), [0060](0060-item-use-inventory.md),
-[0061](0061-message-catalogue.md) and [0062](0062-debug-and-cut-content.md) are **approved**, every scoping question
+[0061](0061-message-catalogue.md) and [0062](done/0062-debug-and-cut-content.md) are **approved**, every scoping question
 answered as each plan recommends.
 1. **0057, quirks:** an index row `quirks` that restates and links (the owning spec wins); a quirk is behaviour a
    reimplementer would plausibly "fix", by the plan's eight classes, plus deliberate oddities; at most 30 community
@@ -158,7 +158,7 @@ answered as each plan recommends.
 3. **"Plan as many as you can, starting from low-hanging and most impactful."** Six plans drafted (`lane/plans57`),
    ranked by value over effort: [0057](done/0057-quirks-catalogue.md) quirks catalogue, [0058](done/0058-party-and-player-count.md)
    party and player count, [0059](0059-golden-traces.md) golden traces, [0060](0060-item-use-inventory.md) item use and
-   inventory, [0061](0061-message-catalogue.md) message catalogue, [0062](0062-debug-and-cut-content.md) debug and cut
+   inventory, [0061](0061-message-catalogue.md) message catalogue, [0062](done/0062-debug-and-cut-content.md) debug and cut
    content. Each is `draft` with its owner questions. Survey notes: the **experience split is already specified**
    (player/creation J4, `[C]` for n = 2), so 0058 covers only n ≥ 3, the credit edges and one composed page;
    **monster awareness is dropped as a plan**: plan 0052 already covers the target search (ai/0001 § 6), the whole AI
@@ -172,9 +172,9 @@ Phases of plans 0038, 0046, 0050, 0052, 0054, 0055 and 0056 keep their places; t
 | Lane | Now (2026-10-30) | Proposed additions, in order |
 |---|---|---|
 | **static A** | 0052 catalogue (`lane/r52d`) | unchanged; 0052·P1b after the catalogue |
-| **static B** | 0055·P1 (`lane/r55b`), then 0054·P1 | after 0054·P1: **0058·P1** (short, emulation) → 0057·P2 (done) → **0060·P1.1–P1.3** → **0061·P1** (after 0055·P3) → 0062·P1; 0058·P1 may also fill a static lane that waits on a review |
+| **static B** | 0055·P1 (`lane/r55b`), then 0054·P1 | after 0054·P1: **0058·P1** (short, emulation) → 0057·P2 (done) → **0060·P1.1–P1.3** → **0061·P1** (after 0055·P3) → 0062·P1 (done); 0058·P1 may also fill a static lane that waits on a review |
 | **harness slots 1–2** | 0050·P2 part 3 (`lane/p50g`), 0046·P2 (`lane/p46h`) | 0056·P1 smoke and P2 probe as approved → 0052·P2 (with 0056's pilot) → **0060·P2** → 0055·P2b → **0061·P2**; the companion `[I]` sweep takes no slot (**owner 2026-10-30: may be drafted, as `draft` only, never started** (no plan after the approved roster is approved or started)) |
-| **archivist** | **0059·P1 (`lane/a59`, started 2026-10-30)** | **0059·P2** → **0060·P0** → 0062·P2 → 0059·P4 (after 0052·P3a and 0055·P3) |
+| **archivist** | **0059·P1 (`lane/a59`, started 2026-10-30)** | **0059·P2** → **0060·P0** → 0062·P2 (done) → 0059·P4 (after 0052·P3a and 0055·P3) |
 | **spec-writer** | 0057·P1 (done) | 0058·P2 (after 0058·P1) → 0057·P3 (done) → 0059·P3 → the wiki phases (0057·P4 done, 0058·P3); the existing queue (0046·P3, 0052·P3a/b, 0054·P3, 0055·P3) goes first whenever one of its phases is ready |
 
 **Owner decisions (2026-10-30, plans 0054 and 0055):** plans [0054](0054-path-search.md) (path search) and

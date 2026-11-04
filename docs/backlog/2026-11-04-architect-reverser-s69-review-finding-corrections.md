@@ -6,7 +6,7 @@ status: open
 context:
   - ../findings/archaeology/0001-switches.md
   - ../findings/path/0003-short-planners.md
-  - ../plans/0062-debug-and-cut-content.md
+  - ../plans/done/0062-debug-and-cut-content.md
 resolution: ""
 ---
 
