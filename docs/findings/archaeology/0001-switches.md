@@ -230,8 +230,8 @@ for each index i of text:
 | `-arena N` | the create message's word at `+0x207`, and through the overlap the low word of `+0x209`, which `ClientGameCreateMsg` tests against 0 and, if 0, writes `4 | 0x100000` (0x00477D15, 0x00477D24) | [items/economy](../../specs/items/economy.md) § G | **not stated**: Phase 3, server reader open (open question 1) |
 | `/players N` | `g_PlayersOverride` | [items/tc](../../specs/items/tc.md) § F; [player/party](../../specs/player/party.md) § E | stated; the client-mode gate 0, 1, 6, 8 to be checked by Phase 3 |
 
-- [I] **Open, priority (open question 5): every kept run is under `-ns`, and whether `-ns` changes any tracked seed is NOT known.** With `-ns` set, `InitGame` skips the sound start (0x00405E09 → 0x00514530) and 0x004DCA30 returns early (0x004DCA38); neither was read past its first lines, and `RNG_Range`/`RNG_RangeB` have 200+ call sites in 0x004Bxxxx–0x004Fxxxx, so a draw in the sound path is not excluded. If it draws from a seed a spec tracks, every kept run differs from normal play. Routed as a priority entry to the reverser. (0x00405E09, 0x004DCA38, fn:RNG_Range@0x0045C390)
-- [I] Harness: `-w -ns -seed N` are what `tools/d2run.py` passes, `-act`, `-direct`, `-txt` on request. `-w` and `-ns` reach video and sound code only as far as read here; no spec names an outcome that depends on them, and this phase did not check that the sound path takes no draw. (0x00405CD2, 0x00405E09, 0x004DCA38)
+- [I] **Answered in [archaeology/0003](0003-sound-draws.md): `-ns` changes draws only on the client player's seed `[0x007A6A70]+0x20`, and no server seed is on the draw-site list.** Skipped under `-ns`: the sound start and `0x004DCA30`'s body; through three state words and the sound tables, also the sound ticks and every sound return. The same-input session for the game seed is that finding's § 6. (0x00405E09, 0x004DCA38, fn:sub_004E40A0_ClientPlayerRange@0x004E40A0)
+- [I] Harness: `-w -ns -seed N` are what `tools/d2run.py` passes, `-act`, `-direct`, `-txt` on request. `-w` and `-ns` reach video and sound code only as far as read here; no spec names an outcome that depends on them. The sound path's draws are listed in [archaeology/0003](0003-sound-draws.md) § 3. (0x00405CD2, 0x00405E09, 0x004DCA38)
 - [I] The rest change no specified outcome: the video rows, `-log`, `-build`, `-sndbkg`, `-nocompress`, the network addresses, `-comint`, `-skiptobnet`, `/fps`, `/framerate`, and `/nopickup` and `soundchaosdebug` (client input and client sound, which no spec covers).
 
 ## 8. Debug globals
@@ -292,4 +292,4 @@ Data: `g_ModuleTable`, `g_ModStateNames`, `g_ModuleState`, `g_ClientOptionTable`
 2. `0x0051ED00`'s `delete`/`extract`/`execute` commands: read who feeds it the text. Lead only that it belongs to a patcher; nothing read says so.
 3. `-r`, `-p`: follow `0x00451980` and `0x00451910`'s callers. Registry-only, so low value.
 4. `0x00450950`'s copy of `+0x1DC8`: name the two objects. If one is a `Game`, it is a second writer.
-5. **Priority.** Whether the sound path behind `-ns` draws from a seed a spec tracks: read 0x00514530 and 0x004DCA30's callees. All kept runs are under `-ns` unless `--sound`.
+5. Answered, see [archaeology/0003](0003-sound-draws.md); the same-input session is its § 6.
