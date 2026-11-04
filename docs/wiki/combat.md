@@ -377,7 +377,7 @@ on the [stats and states](stats-and-states.md#regeneration-life-mana-stamina-and
 
 ## Draw order and chaining
 
-The order of draws in one event is confirmed ([overview § B](../specs/combat/README.md#b-draw-order-per-event)). For
+The order of events in a frame, and so of draws across units, is [the server frame](server-frame.md#whose-draws-come-first). The order of draws in one event is confirmed ([overview § B](../specs/combat/README.md#b-draw-order-per-event)). For
 a player's normal attack on a monster:
 
 ```mermaid

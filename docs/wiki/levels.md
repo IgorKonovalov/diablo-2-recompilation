@@ -483,7 +483,7 @@ calls its tests is fixed, and a test that fails skips the later ones
 A level is built once, but its rooms are not kept active all the time. The server activates the rooms around each
 player and releases rooms nobody has been near for a while; when a released room comes back, its monsters, objects
 and ground items are re-created from what the release saved. The [room lifecycle spec](../specs/drlg/lifecycle.md)
-has the rules; this section tells them in order.
+has the rules; this section tells them in order. Where these passes fall in a frame is [the server frame](server-frame.md#rooms-in-the-frame).
 
 ```mermaid
 flowchart LR
