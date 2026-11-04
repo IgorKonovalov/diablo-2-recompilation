@@ -113,8 +113,9 @@ QRATES = {"low": dict(ef=0.05, slot=1.0, mis=0.5, oth=0.5, msg=0.5),
 FIXED_STOPS = 8 + 1 + 5 + 3
 
 
-def cmd_estimate13():
-    print("scene rate ev_per_frame FT UE QE MSG RU RC RR TM lines_per_frame lines_per_window stops_per_frame")
+def estimate13_rows():
+    """{(scene name, rate): dict(events, ft, ue, qe, msg, ru, rc, rr, tm, lines, stops)}: the numbers cmd_estimate13
+    prints, for tools/frame.py window (the reader compares a measured window with the mid rows)."""
     rows = {}
     for name, pl, mons, ef, slot, mis, oth, msg in SCENES:
         fc, per, act_rooms, rel = ROOMS13[name]
@@ -131,13 +132,23 @@ def cmd_estimate13():
             rr = rel
             tm = TIMER_LINES
             lines = ft + ue + qe + ms + ru + rc + rr + tm
-            stops = lines + FIXED_STOPS
-            rows[(name, rate)] = lines
+            rows[(name, rate)] = dict(events=events, ft=ft, ue=ue, qe=qe, msg=ms, ru=ru, rc=rc, rr=rr, tm=tm, lines=lines,
+                                      stops=lines + FIXED_STOPS)
+    return rows
+
+
+def cmd_estimate13():
+    print("scene rate ev_per_frame FT UE QE MSG RU RC RR TM lines_per_frame lines_per_window stops_per_frame")
+    rows = estimate13_rows()
+    for name, *_ in SCENES:
+        for rate in QRATES:
+            r = rows[(name, rate)]
             print("EST13 %s rate=%s events=%.1f FT=%.1f UE=%.1f QE=%.2f MSG=%.1f RU=%.2f RC=%.3f RR=%.3f TM=%.3f "
-                  "lines=%.1f window=%.0f stops=%.1f" % (name, rate, events, ft, ue, qe, ms, ru, rc, rr, tm, lines,
-                                                       250 * lines, stops))
+                  "lines=%.1f window=%.0f stops=%.1f" % (name, rate, r["events"], r["ft"], r["ue"], r["qe"], r["msg"],
+                                                       r["ru"], r["rc"], r["rr"], r["tm"], r["lines"], 250 * r["lines"],
+                                                       r["stops"]))
     for rate in QRATES:
-        v = [rows[(n[0], rate)] for n in SCENES]
+        v = [rows[(n[0], rate)]["lines"] for n in SCENES]
         print("EST13 range rate=%s lines_per_frame=%.1f..%.1f window=%.0f..%.0f ten_windows=%.0f..%.0f "
               "three_window_session=%.0f..%.0f" % (rate, min(v), max(v), 250 * min(v), 250 * max(v), 2500 * min(v),
                                                    2500 * max(v), 750 * min(v), 750 * max(v)))
