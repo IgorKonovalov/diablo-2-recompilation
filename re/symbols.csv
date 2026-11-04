@@ -853,6 +853,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005749B0,func,PETS_SetInfo,,I,hirelings,docs/findings/hirelings/0001-hirelings.md
 0x00574A20,func,sub_00574A20_PetTypeOfGuid,,I,skills/catalogue,docs/findings/skills/0015-item.md
 0x00574BD0,func,PETS_GetInfo,,I,hirelings,docs/findings/hirelings/0001-hirelings.md
+0x00574CC0,func,sub_00574CC0_PetMoveWithOwner,,I,path/search,docs/findings/path/0005-grid-rules.md
 0x00574EC0,func,PETS_GetUnitOfType,,I,hirelings,docs/findings/hirelings/0001-hirelings.md
 0x005750E0,func,sub_005750E0_PetRemove,,I,skills/catalogue,docs/findings/skills/0015-item.md
 0x005751A0,func,PETS_OnDeath,,C,hirelings,docs/findings/hirelings/0001-hirelings.md
@@ -1514,6 +1515,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005A6380,func,sub_005A6380_MonModeVelocity,,I,anim/timing,docs/findings/anim/0002-rates.md
 0x005A63F0,func,sub_005A63F0_MonMovePlan,,I,drlg/collision,docs/findings/drlg/0009-room-lifecycle.md
 0x005A6490,func,sub_005A6490_MonPathCtlAlloc,,I,monsters/ai,docs/findings/ai/0001-machinery.md
+0x005A6520,func,sub_005A6520_MonDeathCorpseMark,,I,path/search,docs/findings/path/0005-grid-rules.md
 0x005A6600,func,MONSTER_DropItems,,C,items/tc,docs/findings/items/0001-tc-resolution.md
 0x005A6830,func,sub_005A6830_MonDeathDrop,,C,items/tc,docs/findings/items/0001-tc-resolution.md
 0x005A6920,func,sub_005A6920_MonRegenEvent,,C,combat/formulas,docs/findings/combat/0001-formulas.md
@@ -2727,6 +2729,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00621740,func,sub_00621740_AnimRateBonus,,I,anim/timing,docs/findings/anim/0002-rates.md
 0x006217C0,func,UNIT_AnimAtEnd,,I,anim/timing,docs/findings/anim/0001-modes-frames.md
 0x00621810,func,sub_00621810_UnitAnimFrames,,I,skills/catalogue,docs/findings/skills/0016-monster-8a.md
+0x006219C0,func,sub_006219C0_UnitCollActive,,I,path/search,docs/findings/path/0005-grid-rules.md
 0x00621B00,func,UNIT_IsShrine,,I,objects,docs/findings/objects/0001-object-population.md
 0x00621CE0,func,sub_00621CE0_UnitSetOwner,,I,skills/missiles,docs/findings/skills/0002-missiles.md
 0x00621DC0,func,sub_00621DC0_UnitDirToPoint,,I,skills/catalogue,docs/findings/skills/0016-monster-8a.md
@@ -3235,6 +3238,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0064EC10,func,COLL_PatternUnmark,,C,drlg/collision,docs/findings/drlg/0005-collision.md
 0x0064ED20,func,COLL_SizeMove,,I,drlg/collision,docs/findings/drlg/0005-collision.md
 0x0064EDA0,func,COLL_PatternMove,,I,drlg/collision,docs/findings/drlg/0005-collision.md
+0x0064EFA0,func,sub_0064EFA0_COLL_PatternMoveAcross,,I,path/search,docs/findings/path/0005-grid-rules.md
 0x0064F020,func,COMPOSIT_WeaponClassIndex,,I,anim/timing,docs/findings/anim/0001-modes-frames.md
 0x0064F060,func,COMPOSIT_WeaponClass,,C,anim/timing,docs/findings/anim/0001-modes-frames.md
 0x0064F420,func,sub_0064F420_LayerIsArmorPart,,I,items/graphics,docs/findings/items/0003-item-graphics.md
@@ -3255,6 +3259,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00650660,func,sub_00650660_PathStepMove,,C,anim/movement,docs/findings/anim/0003-movement-gates.md
 0x006507B0,func,sub_006507B0_PathStop,,I,anim/movement,docs/findings/anim/0003-movement-gates.md
 0x00650840,func,sub_00650840_PathStep,,C,drlg/collision,docs/findings/anim/0003-movement-gates.md
+0x00650910,func,sub_00650910_PathMoveWithMark,,I,path/search,docs/findings/path/0005-grid-rules.md
 0x00650BE0,func,sub_00650BE0_PathTargetRoomXY,,I,skills/catalogue,docs/findings/skills/0005-missile-do-19-36-damage.md
 0x00650D70,func,sub_00650D70_AlignSame02,,I,monsters/ai,docs/findings/ai/0003-pool-b.md
 0x00650DE0,func,RNG_EntropySeed,uint __fastcall RNG_EntropySeed(int salt),C,rng/seeds,docs/findings/rng/0002-seed-tree.md
