@@ -44,6 +44,7 @@ EXPECT = {
     "E14": ("docs/formats/cells.md", 6),      # a row with 3 cells under a 2-cell header
     "E15": ("docs/specs/README.md", 5),       # the map says reviewed, the spec is a draft
     "E16": ("docs/plans/README.md", 7),       # status cell done, the plan says approved
+    "E17": ("docs/formats/drawing.md", 5),    # &quot; in a label: GitHub decodes it, the label breaks
     "W1": ("docs/findings/rng/0001-core.md", 5),
     "W2": ("docs/specs/rng/core.md", 13),
     "W3": ("re/symbols.csv", 4),
@@ -55,6 +56,8 @@ EXPECT = {
 
 # overlay -> (rule, file, line), for overlays that test a second case of a rule
 EXPECT_MORE = {
+    "E17-html": ("E17", "docs/formats/drawing.md", 5),     # a <word> in a label is taken for a tag
+    "E17-relabel": ("E17", "docs/formats/drawing.md", 5),  # a node id given a second label
     "E3-dup": ("E3", "docs/formats/experiments.md", 7),   # id already defined in a findings experiments.md
     "E10-anchor": ("E10", "docs/wiki/randomness.md", 14),  # an fn: anchor and an address in a code span
     "E11-path": ("E11", "docs/wiki/saves.md", 2),          # based_on names a finding, not a spec
@@ -102,8 +105,8 @@ class GateTest(unittest.TestCase):
         for overlay, rule, path, line in cases:
             with self.subTest(overlay=overlay):
                 rep = self.run_on(overlay)
-                if rule == "E9" and rep.warnings.get("E9"):
-                    self.skipTest(rep.warnings["E9"][0])
+                if rule in ("E9", "E17") and rep.warnings.get(rule):
+                    self.skipTest(rep.warnings[rule][0])
                 is_err = rule.startswith("E") and rule not in gate.DEMOTED
                 bucket = rep.errors if is_err else rep.warnings
                 msgs = bucket.get(rule, [])
@@ -129,17 +132,20 @@ class GateTest(unittest.TestCase):
     def test_e9_skips_with_one_warning(self):
         root = build("E9")
         self.addCleanup(shutil.rmtree, root)
-        old = os.environ.get("GATE_MERMAID_SRC")
-        os.environ["GATE_MERMAID_SRC"] = os.path.join(root, "no-such-bundle")
+        env = {"GATE_MERMAID_SRC": os.path.join(root, "no-such-bundle"), "GATE_BROWSER": os.path.join(root, "no-such-browser")}
+        old = {k: os.environ.get(k) for k in env}
+        os.environ.update(env)
         try:
             rep = gate.run_gate(root, cache_root=REPO)
         finally:
-            if old is None:
-                del os.environ["GATE_MERMAID_SRC"]
-            else:
-                os.environ["GATE_MERMAID_SRC"] = old
+            for k, v in old.items():
+                if v is None:
+                    del os.environ[k]
+                else:
+                    os.environ[k] = v
         self.assertEqual(rep.errors, {})
         self.assertEqual(len(rep.warnings.get("E9", [])), 1, rep.warnings)
+        self.assertEqual(len(rep.warnings.get("E17", [])), 1, rep.warnings)
 
     def test_e3_reads_formats_experiments(self):
         # base's finding cites run:2026-10-11-ds1-load, defined only in docs/formats/experiments.md

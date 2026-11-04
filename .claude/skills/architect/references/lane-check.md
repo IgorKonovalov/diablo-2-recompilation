@@ -30,7 +30,7 @@ Read only these:
    `docs/findings/` for the changed lines' subjects, then the paragraph around each hit (a range read).
 
 Nothing else: no other findings, specs, plans or the research map. Run the gate in the worktree,
-`python3 -I tools/gate.py --no-warnings | tail`. Neither tier counts or repairs what the gate checks (E1–E16, W1–W7:
+`python3 -I tools/gate.py --no-warnings | tail`. Neither tier counts or repairs what the gate checks (E1–E17, W1–W7:
 anchors, tag counts, the research map, the plans index, `Total` rows, table cells); a red gate is a lane fix, named
 as such.
 

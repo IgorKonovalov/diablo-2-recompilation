@@ -561,7 +561,7 @@ G5. **The TC index space** that results, and that every stored TC reference uses
 
 ```mermaid
 flowchart LR
-    G1["G1 Alloc(&quot;&quot;)"] --> i0["0<br/>empty TC"]
+    G1["G1 Alloc(#quot;#quot;)"] --> i0["0<br/>empty TC"]
     G2["G2 BuildAutoTCs<br/>type order, then level 3…96"] --> i1["1 … 160<br/>auto item-type TCs"]
     G3["G3 LoadTreasureClassEx<br/>record order"] --> i2["161 + r<br/>treasureclassex record r"]
     i0 --- i1 --- i2

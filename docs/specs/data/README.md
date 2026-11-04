@@ -39,7 +39,7 @@ flowchart TD
     load["DATATBLS_LoadTable<br/>u32 count + fixed-size records"]
     disk --> find
     mpq --> find
-    find -->|"DATA\GLOBAL\EXCEL\&lt;name&gt;.bin"| load
+    find -->|"DATA\GLOBAL\EXCEL\#lt;name#gt;.bin"| load
     load --> items["weapons ++ armor ++ misc<br/>combined item array + code link"]
     load --> tcs["TC array + name link<br/>0 empty, 1–160 auto, 161+ treasureclassex"]
     load --> others["record arrays used by position<br/>monstats, levels, leveldefs, itemtypes…"]

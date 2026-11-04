@@ -33,6 +33,8 @@ Implements the fast tier of `.claude/skills/architect/references/evidence-rules.
            E16 docs/plans/README.md: a row's Status differs from the plan's `Status:`, the link is under
                done/ iff the plan is done or abandoned; docs/plans/README.md and docs/adrs/README.md:
                "Next free number" not above every number in use
+           E17 a ```mermaid block under docs/ that parses but does not draw, draws nothing, or loses a
+               label on the way to the drawing (see below)
            (a rule in DEMOTED is reported as a warning until the files it flags are fixed: plan 0053)
   warnings W1 a [C]/[I] line or table row with no anchor
            W2 a table with a Tag column has a row with an empty tag cell
@@ -59,6 +61,14 @@ patched to load without a DOM into <checkout>/workspace/cache/mermaid/ (re-copie
 changes); nothing is downloaded. A failure is reported at the block's fence line plus the line the
 parser names. When node, the bundle, workspace/ or a patch point is missing, E9 is skipped with one
 warning and the gate stays usable; $GATE_NO_MERMAID=1 skips it the same way.
+
+E17 runs `node tools/mermaid_render.mjs` over the blocks E9 accepted, as GitHub would draw them: the
+Mermaid version GitHub runs (pinned in that script, fetched once by checksum into
+<checkout>/workspace/cache/mermaid-render/) in the system's Chromium-family browser ($GATE_BROWSER, else
+the first on PATH), loopback only, with HTML entities decoded first as GitHub does. Blocks that drew
+clean are remembered there, so only changed blocks are drawn (a cold run over ~430 blocks takes about
+20 s). Without node, workspace/, the bundle or a browser it is skipped with one warning, as E9 is.
+`python3 -I tools/mermaid_lint.py [PATH...]` runs the same check on its own.
 
 Reads only files under docs/ and re/, plus tracked .md files elsewhere for E8 (and the list of
 tracked paths, from `git ls-files` when
@@ -238,6 +248,9 @@ MERMAID_SRC = "/usr/share/code/resources/app/extensions/markdown-language-featur
 MERMAID_HELPER = "tools/mermaid_check.mjs"
 MERMAID_CACHE = "workspace/cache/mermaid"
 MERMAID_TIMEOUT = 120
+RENDER_HELPER = "mermaid_render.mjs"
+RENDER_CACHE = "workspace/cache/mermaid-render"
+RENDER_TIMEOUT = 300
 RE_MERMAID_OPEN = re.compile(r"^(\s*)(`{3,}|~{3,})\s*mermaid\s*$")
 
 SLOW_SECONDS = 60
@@ -1079,12 +1092,14 @@ def mermaid_blocks(text):
 
 
 def check_mermaid(blocks, cache_root, rep):
-    """blocks: [(rel, fence_lineno, body)]. One helper run; skip with one E9 warning if unavailable."""
+    """blocks: [(rel, fence_lineno, body)]. One helper run; skip with one E9 warning if unavailable.
+    Returns the blocks not refused, for E17."""
     if not blocks:
-        return
+        return []
 
     def skip(why):
         rep.warn("E9", MERMAID_HELPER, 0, f"skipped, {len(blocks)} mermaid blocks not parsed: {why}")
+        return blocks
     if os.environ.get("GATE_NO_MERMAID"):
         return skip("GATE_NO_MERMAID is set")
     node = shutil.which("node")
@@ -1106,12 +1121,51 @@ def check_mermaid(blocks, cache_root, rep):
     if "skip" in res:
         return skip(res["skip"])
     rep.count("E9", len(res.get("results", [])))
+    refused = set()
     for r in res.get("results", []):
         if r["ok"]:
             continue
+        refused.add(r["id"])
         rel, fence, _ = blocks[r["id"]]
         line = fence + r["line"] if r.get("line") else fence
         rep.err("E9", rel, line, f"mermaid parse error: {r['message']}")
+    return [b for k, b in enumerate(blocks) if k not in refused]
+
+
+# ---------------------------------------------------------------- E17 mermaid blocks drawn
+
+def render_mermaid(blocks, cache_root, redraw=False):
+    """blocks: [(rel, fence_lineno, body)]. Returns (skip_reason, [(rel, fence_lineno, message)])."""
+    if os.environ.get("GATE_NO_MERMAID"):
+        return "GATE_NO_MERMAID is set", []
+    node = shutil.which("node")
+    if not node:
+        return "node not on PATH", []
+    if not os.path.isdir(os.path.join(cache_root, "workspace")):
+        return "no workspace/ for the bundle and the cache", []
+    helper = os.path.join(os.path.dirname(os.path.abspath(__file__)), RENDER_HELPER)
+    cmd = [node, helper, "--dir", os.path.join(cache_root, RENDER_CACHE)] + (["--redraw", "1"] if redraw else [])
+    payload = json.dumps({"blocks": [{"id": k, "text": b[2]} for k, b in enumerate(blocks)]})
+    try:
+        proc = subprocess.run(cmd, input=payload, capture_output=True, text=True, timeout=RENDER_TIMEOUT)
+        res = json.loads(proc.stdout.strip().splitlines()[-1])
+    except (OSError, subprocess.TimeoutExpired, ValueError, IndexError) as e:
+        return f"helper failed ({type(e).__name__})", []
+    if "skip" in res:
+        return res["skip"], []
+    return None, [(blocks[r["id"]][0], blocks[r["id"]][1], r["message"]) for r in res["results"] if not r["ok"]]
+
+
+def check_mermaid_render(blocks, cache_root, rep):
+    if not blocks:
+        return
+    why, failures = render_mermaid(blocks, cache_root)
+    if why:
+        rep.warn("E17", "tools/" + RENDER_HELPER, 0, f"skipped, {len(blocks)} mermaid blocks not drawn: {why}")
+        return
+    rep.count("E17", len(blocks))
+    for rel, fence, message in failures:
+        rep.err("E17", rel, fence, f"mermaid drawing: {message}")
 
 
 # ---------------------------------------------------------------- E14, E15, E16, W7 (plan 0053)
@@ -1300,6 +1354,7 @@ RULES = [
     ("E7", "re/symbols.csv rows well-formed"),
     ("E8", "relative links and #fragments resolve"),
     ("E9", "mermaid blocks parse"),
+    ("E17", "mermaid blocks draw, labels intact"),
     ("E10", "no tags, anchors or addresses in the wiki"),
     ("E11", "wiki pages based_on reviewed specs"),
     ("E12", "wiki sections link a spec"),
@@ -1381,8 +1436,9 @@ def run_gate(root, cache_root=None):
         check_backlog_entry(rel, text, ctx, rep)
     if backlog.ARCHIVE in texts:
         check_backlog_archive(texts[backlog.ARCHIVE], entries, rep)
-    check_mermaid([(rel, n, body) for rel in mds if rel.startswith("docs/")
-                   for n, body in mermaid_blocks(texts[rel])], cache_root or root, rep)
+    parsed = check_mermaid([(rel, n, body) for rel in mds if rel.startswith("docs/")
+                            for n, body in mermaid_blocks(texts[rel])], cache_root or root, rep)
+    check_mermaid_render(parsed, cache_root or root, rep)
     # W3: a symbol is cited when its name appears in some spec or finding
     # (one pass over the corpus: the names are [A-Za-z0-9_]+, so a word-set lookup equals the
     # bounded regex search; a name with another character falls back to the search)

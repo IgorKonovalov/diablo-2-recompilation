@@ -74,3 +74,4 @@ a three-line step or a plain list. Keep each diagram small enough to read withou
 - Prefer `flowchart` (LR for pipelines, TD for trees). Quote any label containing `( ) [ ] { } : ;`
   or a backslash: `A["DATA\GLOBAL\EXCEL\x.bin"]`.
 - The docs gate parses every block (rule E9 of `evidence-rules.md`): a block Mermaid can't parse, such as a non-contiguous `packet-beta`, is an error at its `file:line` and denies the commit.
+- The gate also draws every block as GitHub would (rule E17): a block that fails there, or a label that does not reach the drawing, is an error. GitHub decodes HTML entities first, so write `#quot;`, `#lt;` and `#gt;` in labels, never `&quot;`, `&lt;` or `&gt;`. A `<word>` in a label is taken for an HTML tag and dropped. A node id keeps only its last label. A `;` ends a sequence message.
