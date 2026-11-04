@@ -962,6 +962,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0057F1F0,func,sub_0057F1F0_PlrModeStartMoveXY,,I,anim/timing,docs/findings/anim/0001-modes-frames.md
 0x0057F240,func,sub_0057F240_RunStaminaDrain,,C,player/creation,docs/findings/anim/0003-movement-gates.md
 0x0057F390,func,sub_0057F390_CorpseDropGold,,I,items/economy,docs/findings/items/0011-economy.md
+0x0057F410,func,sub_0057F410_CorpseMoveBodyItem,,I,items/economy,docs/findings/items/0011-economy.md
 0x0057F540,func,sub_0057F540_CorpseOverflowDrop,,I,items/economy,docs/findings/items/0011-economy.md
 0x0057F700,func,PLAYER_CorpseCreate,,C,player/creation,docs/findings/player/0001-creation.md
 0x0057FB70,func,PLAYER_CorpsePickup,,I,player/creation,docs/findings/player/0001-creation.md
@@ -3441,6 +3442,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0066A540,func,sub_0066A540_FieldStateOrigin,,I,items/use,docs/findings/items/0014-ground-items.md
 0x0066A5D0,func,sub_0066A5D0_FieldStep,,I,items/use,docs/findings/items/0014-ground-items.md
 0x0066A670,func,sub_0066A670_FieldWalkBlocked,,I,items/use,docs/findings/items/0014-ground-items.md
+0x0066A700,func,sub_0066A700_FieldLoadFile,,I,items/use,docs/findings/items/0014-ground-items.md
 0x0066A770,func,ANIMDATA_Load,,I,anim/timing,docs/findings/anim/0001-modes-frames.md
 0x0066A8F0,func,ANIMDATA_Find,,C,anim/timing,docs/findings/anim/0001-modes-frames.md
 0x0066A9B0,func,ANIMDATA_Lookup,,C,anim/timing,docs/findings/anim/0001-modes-frames.md

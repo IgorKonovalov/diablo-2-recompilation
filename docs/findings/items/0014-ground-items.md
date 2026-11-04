@@ -66,6 +66,7 @@ No community source was compared; every claim is from the code. **2026-11-04 (`l
 | `0x00558AA0` | `sub_00558AA0_ItemPlaceOnGround` | position, mark, room, mode 3, expiry | I (map C, room flag 4) |
 | `0x00558B40` | `sub_00558B40_ItemTakeFromGround` | the sweep's removal as a function; no `call` or `jmp` to it in the objdump listing | I |
 | `0x0066A2B0`, `0x0066A420` | `sub_0066A2B0_FieldLoad`, `sub_0066A420_FieldFree` | `expfield.d2` to `0x0096D654`, sizes to `0x0096D658`..`0x0096D668`; freed | I |
+| `0x0066A700` | `sub_0066A700_FieldLoadFile` | formats `DATA\GLOBAL\expfield.d2` with `sprintf(buf, "%s\\expfield.d2", "DATA\\GLOBAL")` (the format at `0x006EED4C`, the directory at `0x006D4118`, `0x0066A71F`), reads the file through `0x00517079` (source `.\DATATBLS\FieldTbls.cpp`, line `0x28`), and calls `FieldLoad` with the bytes and the size (`0x0066A753`). One direct caller: `DATATBLS_LoadAll` at `0x00619462` (`tools/xrefscan.py`: 1 hit, a `call`, and no 4-byte occurrence of the address in any section, so no table or pushed pointer; `workspace/logs/r70-xrefscan.txt`). *Added 2026-11-04 (`lane/r70`, from the `lane/a69` review).* | I |
 | `0x0066A4B0`, `0x0066A500`, `0x0066A540` | `sub_0066A4B0_FieldStateAlloc`, `sub_0066A500_FieldStateFree`, `sub_0066A540_FieldStateOrigin` | the 8-byte origin | I (map P through `drop`) |
 | `0x0066A5D0`, `0x0066A670` | `sub_0066A5D0_FieldStep`, `sub_0066A670_FieldWalkBlocked` | one step, the walk's test | I (map C) |
 | `0x00641530` | `sub_00641530_UnitInteractDistance` | the distance of `UnitInteract` | I (map C) |

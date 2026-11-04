@@ -17,7 +17,7 @@ the findings.** No external document was read for this format and nothing is reg
   [inventory.md](../inventory.md) does not list archive members (its *MPQ contents* section), so the line the request
   asked for is the merged manifest's.
 - `[C]` (data) The pinned `Game.exe` holds the string `%s\expfield.d2` at `0x006EED4C` (the one occurrence of `expfield` in the image, case-insensitive).
-- `[I]` `sub_0066A2B0_FieldLoad` (`0x0066A2B0`) takes the file's bytes in memory; it does not build the path. The function at `0x0066A700` (no symbol row yet, [route](../backlog/2026-11-04-architect-reverser-a69-review-finding-notes.md)) formats the path from that string (`0x0066A71F`), reads the file through `FILE_LoadWhole` (`0x00517079`) and passes the buffer to `FieldLoad` (`0x0066A753`, its one direct call). The matching free is `sub_0066A420_FieldFree` (items/0014 § Functions, `I` in `re/symbols.csv`).
+- `[I]` `sub_0066A2B0_FieldLoad` (`0x0066A2B0`) takes the file's bytes in memory; it does not build the path. The function at `0x0066A700` (no symbol row yet, [route](../backlog/archive/2026-11-04-architect-reverser-a69-review-finding-notes.md)) formats the path from that string (`0x0066A71F`), reads the file through `FILE_LoadWhole` (`0x00517079`) and passes the buffer to `FieldLoad` (`0x0066A753`, its one direct call). The matching free is `sub_0066A420_FieldFree` (items/0014 § Functions, `I` in `re/symbols.csv`).
   (fn:sub_0066A2B0_FieldLoad@0x0066A2B0, fn:sub_0066A420_FieldFree@0x0066A420, fn:FILE_LoadWhole@0x00517079)
 
 ## Layout

@@ -58,11 +58,15 @@ game's own structures, so the `[C]` is the code's map from the bytes it reads (A
   the removal `sub_0055E000_InvItemConsume`; no key returns 0. Its two callers are the chest (skipped for class 6) and a
   case of the object mode switch. (fn:sub_0055F140_KeyConsume@0x0055F140, fn:OBJOP_Chest@0x00585F60, 0x00581DC1,
   run:2026-11-03-use-emu)
-- [C] (data + code) **What the columns gate.** On the server `useable` (`+0x11D`) is a required test of both use
-  requests: 2 of its 5 getter calls are theirs, the other 3 in client code. `belt` (`+0x130`), `autobelt`, `durwarning`
-  and `qntwarning` gate **no use**: their readers are in § 7. A `useable` row with no `pSpell` (`hpo`, `rps`, …) passes
-  the test and does nothing. (fn:sub_00628C20_ItemIsUseable@0x00628C20, 0x0055E212, 0x00562433, `static.txt`,
-  run:2026-11-03-use-emu)
+- [I] **What the columns gate.** On the server `useable` (`+0x11D`) is a required test of both use
+  requests; `belt` (`+0x130`), `autobelt`, `durwarning` and `qntwarning` gate **no use**: their readers are in § 7. A
+  `useable` row with no `pSpell` (`hpo`, `rps`, …) passes the test and does nothing. This is the reading of the
+  handlers in § 3 and the table of § 7. (fn:sub_00628C20_ItemIsUseable@0x00628C20, 0x0055E212, 0x00562433)
+  *Corrected 2026-11-04 (`lane/r70`, from the `lane/a69` review): the bullet was tagged `[C]` (data + code). No family of
+  run:2026-11-03-use-emu enters `0x0055E170` or `0x00562390`, the two handlers, so the gate and the "does nothing" are a
+  code reading, `[I]`. Only the counts are `[C]` (data): 2 of the getter's 5 calls are the handlers' (`0x0055E212`,
+  `0x00562433`) and the other 3 are in client code (`static.txt`). The autobelt cell of § 7 may point to items/0013 § 6, whose
+  `BeltFreeSlot` second pass is `[C]` (ADR-0015).*
 - [I] **Corrections.** Healing and mana potions do **not** run the group clear: kind 3 has no call of `STATE_GroupClear`
   (its only call in the use entries is `0x005BEE15`, in `ItemUseTimedState`, so kinds 6 and 9); stats/states B3 says
   "potions" (§ 9). `calc1` is not added per tick (Misc, § 9). (0x005BE3F0, 0x005BEE15)
@@ -276,7 +280,7 @@ first is carried and spread over the longer window. (0x005BE678–0x005BE6CF) *N
 |---|---|---|
 | `useable` `+0x11D` | 10 `u8` matches: `0x00628C5B` and `0x0063C8B1` on an item record; `0x00498A5B`, `0x004AF989`, `0x004AFAD2` and the five at `0x006910EA`..`0x0069BB63` not classified; getter `0x00628C20` has 5 calls: `0x00487844`, `0x00499229`, `0x00499331`, and the server's `0x0055E212`, `0x00562433` | `[I]` Both use requests require it. Its absence sets the refuse flag, so the handler returns 3. It does not select a kind |
 | `belt` `+0x130` | 9: `0x00543390` is on a 0x134-byte row of `DataTables+0xA90` reached from MonStats `+0x18`, not this table; six at `0x004C56A7`..`0x004CDAAF` not classified; `0x00621F12` getter (3 calls: `0x0049907F`, `0x0056091B`, `0x0063C6A3`), `0x0063C8B9` | `[I]` **No use.** `0x0056091B` and `0x0063C6A3` pass it to `0x00660CB0`, the Belts record, as the worn belt's row (items/0013 § 4). `sub_0063C830_BeltBoxQuery` tests `useable` and `belt` both 1 with size 1 × 1, called only from `0x004979AD`, so a client rule on this reading |
-| `autobelt` `+0x131` | 8, the server's `0x00628BEA`, `0x0063C731` | `[I]` the belt search's second pass (`0x0063C731`, items/0013 § 6); `0x00628BEA` is `sub_00628BA0_ItemAutoBeltTest`, whose answer does not depend on it |
+| `autobelt` `+0x131` | 8, the server's `0x00628BEA`, `0x0063C731` | `[I]` the belt search's second pass (`0x0063C731`; the pass itself is `[C]` (ADR-0015) in items/0013 § 6, the reader's role here stays a reading); `0x00628BEA` is `sub_00628BA0_ItemAutoBeltTest`, whose answer does not depend on it |
 | `durwarning` `+0x135` | 5, all `0x4xxxxx` but the getter `0x006297E9`, which has 0 direct calls | `[I]` no server gate found among direct calls; indirect callers unfollowed; the column is 0 in all rows |
 | `qntwarning` `+0x136` | 3: `0x004CD8D5`, `0x00629849` (getter, 1 call `0x00497EAF`), and `0x0059FD01`, which is in `sub_0059FA30_MissileCreate` on a Missiles record, not this table | `[I]` no server gate found among direct calls; indirect callers unfollowed |
 

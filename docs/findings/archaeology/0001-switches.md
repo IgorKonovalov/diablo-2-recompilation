@@ -21,7 +21,7 @@ one file per section; `dev/` and `dev/pass2/` hold the earlier passes, each with
   items, invincibility and cheats do nothing in 1.14d. (`dead.txt`, 0x00406595, fn:sub_004064C0_GameMain@0x004064C0)
 - [I] The switches that change a specified outcome are `-seed`, `-act`, `-txt`, `-direct`, `-nosave`, `-gametype`, the class
   rows with `-name`, `-arena`, `-ctemp` and the chat command `/players` (§ 7 names each one's section). `-nosave`
-  is in no spec yet. (fn:sub_0044D580_ApplyNoSaveOption@0x0044D580, data:g_SaveEnabled@0x007310CC)
+  is in no spec yet. *Corrected 2026-11-04 (`lane/r70`, from the `lane/s69` review): [save/d2s](../../specs/save/d2s.md) § C states it since plan 0062's Phase 3; § 7's State cells for `-nosave`, the class rows, `-name`, `-ctemp`, `-arena` and `/players` are stated. The review verified the cells for `-seed`, `-act`, `-txt`, `-direct` and `-gametype`.* (fn:sub_0044D580_ApplyNoSaveOption@0x0044D580, data:g_SaveEnabled@0x007310CC)
 - [I] The in-game chat parser's own commands are `/fps`, `/framerate`, `/players`, `/nopickup` and the unslashed
   `soundchaosdebug`; no compare of a chat string against an immediate was found in the server range. (fn:sub_0047C420_ChatInputParse@0x0047C420, `compare.txt`)
 - [I] `Game+0x1DC8`, the debug fault switch `GameTick` reads, has one identified writer, in a function nothing references: the
@@ -180,7 +180,7 @@ for each index i of text:
 | `-direct` | 0 | `+0x204` | `InitGame` 0x00405C55 → `sub_00406870_InitFileIO`'s argument |
 | `-lem` | 0 | `+0x205` | None |
 | `-nocompress` | 0 | `+0x206` | `InitGame` 0x00405D13 (inverted, fourth argument of 0x004FA520); 0x0044D9A0 → 0x005FE280 |
-| `-arena` | 1 | `+0x207` | `ClientGameCreateMsg` 0x00477D33 (low word). The dword also overlaps the low word of `+0x209`, the message's next field |
+| `-arena` | 1 | `+0x207` | `ClientGameCreateMsg` 0x00477D33 (low word). The dword also overlaps the low word of `+0x209`, the message's next field *Corrected 2026-11-04 (`lane/r70`, from the `lane/s69` review): `+0x207` and `+0x209` are offsets of the config block `g_ClientConfig` (loaded at 0x00477D07), not of the message. The function copies the block's low word at `+0x207` to the message at `+0x25` (0x00477D33, 0x00477D3A) and the block's dword at `+0x209` to the message at `+0x27` (0x00477D3E, 0x00477D44); the message starts at `[ebp-0x30]` (0x00477CB0).* |
 | `-txt` | 0 | `+0x215` | 0x0044D9C2 → `DATATBLS_SetCompileTxt(+0x215 == 0)` |
 | `-log` | 0 | `+0x216` | 0x0044D840 → `sub_00624B50_LogEnableSet(1)`; `g_LogEnabled` read at 0x00624793, 0x00624950 |
 | `-msglog` | 0 | `+0x217` | None |
@@ -223,12 +223,12 @@ for each index i of text:
 | `-act N` | `g_StartAct`, grants in `PLAYER_InitBaseStats` | [player/creation](../../specs/player/creation.md) § Entry points and B5 | stated |
 | `-txt` | compile tables from `.txt` | [data/excel](../../specs/data/excel.md) § B; [data/calc](../../specs/data/calc.md) § C; [data/strings](../../specs/data/strings.md) | stated |
 | `-direct` | loose files first | [data/README](../../specs/data/README.md) § Data flow | stated |
-| `-nosave` | [I] `sub_00531EB0_SaveViaCallback` returns 0 and `PLRSAVE_WriteFile` skips its body while `g_SaveEnabled` is 0 (0x00531ED1, 0x00532257) | [save/d2s](../../specs/save/d2s.md) § C. Writing a save | **not stated**: Phase 3 |
+| `-nosave` | [I] `sub_00531EB0_SaveViaCallback` returns 0 and `PLRSAVE_WriteFile` skips its body while `g_SaveEnabled` is 0 (0x00531ED1, 0x00532257) | [save/d2s](../../specs/save/d2s.md) § C. Writing a save | stated (plan 0062 Phase 3) *Corrected 2026-11-04 (`lane/r70`, from the `lane/s69` review): the cell read "not stated: Phase 3".* |
 | `-gametype N` | `g_ClientGameMode`, the create message's type byte and the `/players` gate | [items/economy](../../specs/items/economy.md) § G (the create message); [player/party](../../specs/player/party.md) § E | stated for the value, not its source |
-| `-ama` … `-bar`, `-name` | the create message's class and name bytes (0x00477CF6, `g_ClientName`) | [player/creation](../../specs/player/creation.md) § Entry points | **not stated**: Phase 3 |
-| `-ctemp N` | replaces the class byte of the create and join messages, only when `sub_0047AA30_ClientFlagBit8` is set. Bit 8 of `g_ClientFlags` is 0 in the image (4); the two bit-0 setters leave it, and the one whole-word writer `sub_0047A9A0_ClientFlagsSet` has one call, 0x0045C8D2, in code that reads a message buffer. So the first game of a process can't see it | [player/creation](../../specs/player/creation.md) § Entry points | **not stated**: Phase 3 |
-| `-arena N` | the create message's word at `+0x207`, and through the overlap the low word of `+0x209`, which `ClientGameCreateMsg` tests against 0 and, if 0, writes `4 | 0x100000` (0x00477D15, 0x00477D24) | [items/economy](../../specs/items/economy.md) § G | **not stated**: Phase 3, server reader open (open question 1) |
-| `/players N` | `g_PlayersOverride` | [items/tc](../../specs/items/tc.md) § F; [player/party](../../specs/player/party.md) § E | stated; the client-mode gate 0, 1, 6, 8 to be checked by Phase 3 |
+| `-ama` … `-bar`, `-name` | the create message's class and name bytes (0x00477CF6, `g_ClientName`) | [player/creation](../../specs/player/creation.md) § Entry points | stated (plan 0062 Phase 3) *Corrected 2026-11-04 (`lane/r70`, from the `lane/s69` review): the cell read "not stated: Phase 3", also for `-ctemp`.* |
+| `-ctemp N` | replaces the class byte of the create and join messages, only when `sub_0047AA30_ClientFlagBit8` is set. Bit 8 of `g_ClientFlags` is 0 in the image (4); the two bit-0 setters leave it, and the one whole-word writer `sub_0047A9A0_ClientFlagsSet` has one call, 0x0045C8D2, in code that reads a message buffer. So the first game of a process can't see it | [player/creation](../../specs/player/creation.md) § Entry points | stated (plan 0062 Phase 3) *Corrected 2026-11-04 (`lane/r70`, from the `lane/s69` review): the cell read "not stated: Phase 3".* |
+| `-arena N` | the config block's word at `+0x207` (copied to the create message's `+0x25`), and through the overlap the low word of the block's `+0x209` (copied to the message's `+0x27`), which `ClientGameCreateMsg` tests against 0 and, if 0, writes `4 | 0x100000` (0x00477D15, 0x00477D24) | [items/economy](../../specs/items/economy.md) § G | stated (plan 0062 Phase 3: [items/economy](../../specs/items/economy.md) § G10); server reader open (open question 1) *Corrected 2026-11-04 (`lane/r70`, from the `lane/s69` review): the cell read "not stated: Phase 3"; it is stated since plan 0062's Phase 3.* |
+| `/players N` | `g_PlayersOverride` | [items/tc](../../specs/items/tc.md) § F; [player/party](../../specs/player/party.md) § E | stated; the client-mode gate 0, 1, 6, 8 was checked by plan 0062's Phase 3 *Corrected 2026-11-04 (`lane/r70`, from the `lane/s69` review): the cell read "to be checked".* |
 
 - [I] **Answered in [archaeology/0003](0003-sound-draws.md): `-ns` changes draws only on the client player's seed `[0x007A6A70]+0x20`, and no server seed is on the draw-site list.** Skipped under `-ns`: the sound start and `0x004DCA30`'s body; through three state words and the sound tables, also the sound ticks and every sound return. The same-input session for the game seed ran (that finding's § 7): identical for one Harrogath walk `[C]`, no wider. (0x00405E09, 0x004DCA38, fn:sub_004E40A0_ClientPlayerRange@0x004E40A0)
 - [I] Harness: `-w -ns -seed N` are what `tools/d2run.py` passes, `-act`, `-direct`, `-txt` on request. `-w` and `-ns` reach video and sound code only as far as read here; no spec names an outcome that depends on them. The sound path's draws are listed in [archaeology/0003](0003-sound-draws.md) § 3. (0x00405CD2, 0x00405E09, 0x004DCA38)
@@ -288,7 +288,7 @@ Data: `g_ModuleTable`, `g_ModStateNames`, `g_ModuleState`, `g_ClientOptionTable`
 
 ## Open questions
 
-1. What the server does with the create message's `+0x207` word: read `SrvClientMsgDispatch` case 0 past the type byte (0x0053F100); plan 0061 P1 is the natural home.
+1. What the server does with the create message's `+0x25` word (the config block's `+0x207`; *corrected 2026-11-04, `lane/r70`: the question said "`+0x207`" of the message*): read `SrvClientMsgDispatch` case 0 past the type byte (0x0053F100); plan 0061 P1 is the natural home.
 2. `0x0051ED00`'s `delete`/`extract`/`execute` commands: read who feeds it the text. Lead only that it belongs to a patcher; nothing read says so.
 3. `-r`, `-p`: follow `0x00451980` and `0x00451910`'s callers. Registry-only, so low value.
 4. `0x00450950`'s copy of `+0x1DC8`: name the two objects. If one is a `Game`, it is a second writer.
