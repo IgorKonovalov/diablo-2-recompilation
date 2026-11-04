@@ -4,7 +4,7 @@ to: reverser, spec-writer
 date: 2026-11-04
 status: open
 context:
-  - ../plans/0060-item-use-inventory.md
+  - ../plans/done/0060-item-use-inventory.md
   - ../findings/items/0017-community-cross-check.md
   - ../specs/items/use.md
   - ../specs/items/inventory.md
@@ -27,4 +27,6 @@ From the `lane/r60d` cross-check ([items/0017](../findings/items/0017-community-
 
 **Done at the review, nothing left for the spec-writer:** items/use F1f, D3's comment and § Open questions (H2, H3, P3); items/inventory F6 and § Open questions (B3, B8).
 
-The owner declined the run, and 4 has its home. What is left open here is the three live cases (1 to 3): H3 (`mp1` with the flag, a hireling alive), H2 (a pair of different tiers below the maximum) and B8 (a death with a belt above box 3). Close this entry at plan 0060's close, with the cases named in the specs' Open questions; until then it is the only place that lists the exact setups.
+The owner declined the run, and 4 has its home. What is left open here is the three live cases (1 to 3): H3 (`mp1` with the flag, a hireling alive), H2 (a pair of different tiers below the maximum) and B8 (a death with a belt above box 3).
+
+**2026-11-04, plan 0060 closed (`lane/w60` review).** This entry is no longer tied to that plan: the owner skipped the third run, so no plan schedules these cases. They stay named in the specs' Open questions, and this entry stays open as the only place that lists the exact setups, for any later harness lane that takes them.

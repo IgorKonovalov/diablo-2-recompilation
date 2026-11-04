@@ -4,7 +4,7 @@ to: reverser
 date: 2026-11-04
 status: done
 context:
-  - ../../plans/0060-item-use-inventory.md
+  - ../../plans/done/0060-item-use-inventory.md
   - ../../specs/items/use.md
   - ../../specs/items/inventory.md
 resolution: "Compared in [items/0017](../../findings/items/0017-community-cross-check.md), lane/r60d: 43 claims, 15 held, 17 held with refinement, 6 contradicted, 5 not covered; no tag moved; contradictions resolved by the record or routed in [the entry](../2026-11-04-reverser-reverser+spec-writer-plan-0060-cross-check-contradictions.md); sources registered."

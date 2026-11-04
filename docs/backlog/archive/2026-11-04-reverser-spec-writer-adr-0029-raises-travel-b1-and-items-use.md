@@ -10,7 +10,7 @@ context:
 resolution: "Imported in plan 0060 Phase 3, lane/s60: quests/travel B1 raised with its scope, the portal's own call [I]; items/inventory § J and items/use § A carry the rest; no timers statement imported. [items/inventory](../../specs/items/inventory.md)"
 ---
 
-ADR-0029 is accepted and its scan kept (run:2026-11-04-lock-scan, items/0014's head). The architect's `lane/r29` review accepts the raises below (ruling on "can reach": [plan 0060's log](../../plans/0060-item-use-inventory.md#implementation-log)); this entry is what may rise, take the tags when the lane is on `main`. Every `drop` `[C]` is the code's map on declared rooms and one declared pool page: not a live run, and not how often a game's rooms make it matter.
+ADR-0029 is accepted and its scan kept (run:2026-11-04-lock-scan, items/0014's head). The architect's `lane/r29` review accepts the raises below (ruling on "can reach": [plan 0060's log](../../plans/done/0060-item-use-inventory.md#implementation-log)); this entry is what may rise, take the tags when the lane is on `main`. Every `drop` `[C]` is the code's map on declared rooms and one declared pool page: not a live run, and not how often a game's rooms make it matter.
 
 **1. `specs/quests/travel` B1: the three bullets, as they should read.** Their anchors stay; add `run:2026-11-04-lock-scan`. Tag each `[C] (ADR-0015, ADR-0029 (a))`, dropping "(`drop`, pending ADR-0029)".
 

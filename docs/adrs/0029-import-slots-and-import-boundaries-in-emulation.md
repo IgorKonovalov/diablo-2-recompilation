@@ -3,7 +3,7 @@
 > **Status:** accepted (owner, 2026-11-04); drafted by the architect at the `lane/r60c` review
 > **Date:** 2026-11-04
 > **Amends:** [ADR-0015](0015-emulated-reproduction.md) (conditions (1) and (5)), [ADR-0021](0021-observed-boundaries-in-emulation.md) (condition (a))
-> **Related plan(s):** [0060-item-use-inventory](../plans/0060-item-use-inventory.md) (Phase 1.3)
+> **Related plan(s):** [0060-item-use-inventory](../plans/done/0060-item-use-inventory.md) (Phase 1.3)
 
 ## Context
 

@@ -44,52 +44,42 @@ back to it. Then follow the game from the map to the loot, and on to the charact
 
 ## Why the pages are cut this way
 
-The plan for the wiki ([plan 0036](../plans/done/0036-human-wiki-readme.md)) proposed one page per topic. Two changes
-were made because of how much material there is:
+The wiki is one page per topic, except where the amount of material or a spec's fit asks for another cut:
 
 - **Items are split in two.** The ordinary monster drop already draws on five specs (treasure classes, quality,
   uniques and sets, affixes, properties), so [Items](items.md) follows one drop end to end, and
   [Other item paths](items-other-paths.md) covers the four other ways an item is made or changed (sockets and
   runewords, the cube, vendors, quests). The second page links the first for the shared machinery.
-- **The item economy gets its own page.** Prices, repair, gold and wear come from one spec written after the plan
+- **The item economy gets its own page.** Prices, repair, gold and wear come from one spec
   ([item economy](../specs/items/economy.md)); [Prices, repair, gold and wear](economy.md) covers it, and
   [Other item paths](items-other-paths.md) links it from its vendor section.
 - **Using items and the inventory get their own page.** Their specs ([item use](../specs/items/use.md) and
   [inventory](../specs/items/inventory.md)) cover the requests that use, move, pick up and drop an item, which no
   other page holds. [Items](items.md) and [Other item paths](items-other-paths.md) link it for what happens to an item
   after it is made.
-- **Characters and hirelings get their own page.** Their specs (new characters and level-up, hirelings) were reviewed
-  after the plan was written and fit no other topic. [Saves](saves.md) refers to it for what a new character's save
+- **Characters and hirelings get their own page.** Their specs (new characters and level-up, hirelings) fit no other
+  topic. [Saves](saves.md) refers to it for what a new character's save
   holds and how a mercenary is stored.
 
-Everything else is one page per topic as planned. The string tables and calc formulas sit on
+Everything else is one page per topic. The string tables and calc formulas sit on
 [Game data](game-data.md) with the excel tables: all three are about reading the game's data files.
 
 ## What the wiki does not cover
 
 Only reviewed specs are covered, and every row of the [research map](../specs/README.md) that is reviewed has a page
 here: randomness and seeds, the excel data, string tables and calc formulas, the level generators, monsters, objects,
-item creation and the other item paths, the [item economy](../specs/items/economy.md) (plan 0043), [item use](../specs/items/use.md) and the [inventory](../specs/items/inventory.md) (plan 0060), new characters, hirelings, saves, and the first two simulation rows,
-[combat formulas](../specs/combat/README.md) (plan 0037, closed 2026-10-17) and
-[stats and states](../specs/stats/README.md) (plan 0041, closed 2026-10-17), and
-[quests and travel](../specs/quests/README.md) (plan 0042, closed 2026-10-20), the composition of the core specs,
-[seed to world](../specs/chain/README.md) (plan 0048), and the third simulation row,
-[skills and missiles](../specs/skills/README.md) (plan 0045, its machinery and a named tier of skills; plan 0046, the function catalogue of every other numbered skill and missile function), and the fourth,
-[animation and frame timing](../specs/anim/README.md) (plan 0050). The room lifecycle
-([drlg/lifecycle](../specs/drlg/lifecycle.md), reviewed at the close of plan 0040 on 2026-10-17) has no page of its
-own: it is the section [Rooms that come and go](levels.md#rooms-that-come-and-go-release-and-restore) of the Levels
-page. Rows that are not reviewed get no page.
+item creation and the other item paths, the [item economy](../specs/items/economy.md), [item use](../specs/items/use.md) and the
+[inventory](../specs/items/inventory.md), new characters, hirelings, saves, [combat formulas](../specs/combat/README.md),
+[stats and states](../specs/stats/README.md), [quests and travel](../specs/quests/README.md), the composition of the core
+specs, [seed to world](../specs/chain/README.md), [skills and missiles](../specs/skills/README.md) (their machinery, a named
+tier of skills and the function catalogue of every other numbered skill and missile function), and
+[animation and frame timing](../specs/anim/README.md). The room lifecycle
+([drlg/lifecycle](../specs/drlg/lifecycle.md)) has no page of its own: it is the section
+[Rooms that come and go](levels.md#rooms-that-come-and-go-release-and-restore) of the Levels page. Rows that are not
+reviewed get no page.
 
-The plans still open are listed in the [plan index](../plans/README.md):
-- **0038**, a sweep that tries to confirm inferred claims with another run, a re-check of kept logs or a second code
-  path; its batches are still running, and the specs are re-tagged cluster by cluster;
-- **0047**, the simulation shortfalls (the named remainders of the combat, stats and travel runs), **0048**, seed to
-  world (the core specs composed end to end), and **0049**, backlog sweep 5: approved 2026-10-20.
-
-Plans 0039 (backlog sweep 4), 0042 (quests and travel), 0043 (item economy) and 0044 (the multiplayer branches, whose
-two-client run re-tagged the specs it reached) are closed.
-
-When one of them changes a spec, the page over it is refreshed.
+The plans still open are listed in the [plan index](../plans/README.md). When one of them changes a spec, the page over it
+is refreshed.
 
 When a spec is updated after a page was written, the docs gate warns that the page may be stale until it is
 refreshed.

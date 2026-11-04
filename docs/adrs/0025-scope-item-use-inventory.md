@@ -3,7 +3,7 @@
 > **Status:** accepted (owner, 2026-10-30, with the approval of plan 0060 "as recommended")
 > **Date:** 2026-10-30
 > **Amends:** [ADR-0002](0002-scope-creation-paths-and-enablers.md) (scope), alongside [ADR-0017](0017-scope-quests-travel-economy.md) (whose three areas are unchanged)
-> **Related plan(s):** [0060-item-use-inventory](../plans/0060-item-use-inventory.md)
+> **Related plan(s):** [0060-item-use-inventory](../plans/done/0060-item-use-inventory.md)
 
 ## Context
 

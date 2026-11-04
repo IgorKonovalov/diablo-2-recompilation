@@ -18,11 +18,11 @@ shows, trading between players and the cube's recipes are out of scope; the cube
 Most of this area is known in one of four ways, and the page names which at each statement. The specs spell out the
 same split in their sections on [how to read the tags](../specs/items/use.md#how-to-read-the-tags) and
 [the inventory's](../specs/items/inventory.md#how-to-read-the-tags). The differences matter here,
-because the two sessions that played the game were small.
+because the two runs of the real game were small.
 
 | Kind | What it is | Where it stops |
 |---|---|---|
-| **Seen in a game** | Two play sessions on the real game (a fresh process each, no forced state), with the server's calls logged and compared with a prediction. Seeds, amounts, cells and frames were read from the log. | They cover a few cases: 17 potion uses by one Sorceress, 80 ground drops, 118 ground searches. Each count is given where it is used. |
+| **Seen in a game** | Two runs of the real game, three kept logs, with the server's calls logged and compared with a prediction. Seeds, amounts, cells and frames were read from the log. The first run was one fresh process, and two of its requests carried a field written by a debugger (named below; they stay readings). The second used a fresh process per session and forced nothing. | They cover a few cases: 17 potion uses by one Sorceress, 80 ground drops, 118 ground searches; each count is given where it is used. Only the expiry amounts and the 16 stored rates were checked against a table committed before the kept sessions. The rest compare the reading with the log case by case, on inputs the log gives: that checks the code against its reading, and says nothing of which inputs occur. |
 | **Emulated** | The game's own code run in an emulator on made-up inputs, and compared bit for bit with the project's model ([how we know](how-we-know.md)). It shows what the code does with the bytes it is given. | It is not a game. It says nothing about which inputs a game produces. Many runs stop at a named call into another function, and what is after that call is not covered. |
 | **Read from the code** | The instructions were read, and nothing ran. | It can be wrong in ways no run has checked. |
 | **Unknown** | Named under [What is not known yet](#what-is-not-known-yet). | |
@@ -53,8 +53,8 @@ Every client packet passes one gate first ([item use § A](../specs/items/use.md
   106 cases tried. **What that check returns, and the handler's call after it, are read from the code, not
   evidenced.**
 - **Read from the code:** two item requests in one batch of packets run in the order they arrived, each to the end, and
-  the second sees the first's result; no item request is reordered, batched or rate-limited. The batch drops a handler's
-  "no" answer, so whatever the handler did before refusing stays.
+  the second sees the first's result; no item request is reordered, batched or rate-limited. That was read in the drain and the gate, not through each
+  handler's callees. The batch drops a handler's "no" answer, so whatever the handler did before refusing stays.
 - **Read from the code:** the only item request that does not finish in the same step is a pickup out of reach. It
   starts a walk, and the pickup runs in a later frame ([pickup](#pickup)).
 
@@ -70,13 +70,13 @@ All **read from the code** ([§ B](../specs/items/use.md#b-the-use-requests)):
 | The mercenary button (`0x61`) | 3 bytes; an expansion game only; a cursor item that is not a quest item, the player alive and using no skill, and the pet of type 7 alive |
 
 An item's row must also be marked usable for the first two. A usable row with no use kind passes that test and does
-nothing: the item is not used up ([§ I](../specs/items/use.md#i-what-the-columns-gate)). Among the direct calls read,
+nothing: the item is not used up, unless it is one of the four quest codes below ([§ I](../specs/items/use.md#i-what-the-columns-gate)). Among the direct calls read,
 the belt flag and the two warning columns gate no use; indirect callers were not followed.
 
 ### Which effect an item has
 
-The game picks a **use kind** from the item. A tome or scroll with a row in the books table takes the kind from that
-row; otherwise the kind is the item's `pSpell` column. The choice itself, with the kinds 1 to 30 and the empty
+The game picks a **use kind** from the item. A tome or scroll whose row in the books table gives a kind above zero takes
+that kind; otherwise the kind is the item's `pSpell` column. The choice itself, with the kinds 1 to 30 and the empty
 slots, was **emulated** over 600 cases ([§ C](../specs/items/use.md#c-the-dispatch-itemuse)); what each effect then
 does is emulated only up to its first call into another function, except where noted.
 
@@ -98,20 +98,21 @@ The draws of every kind before its first call into another function are listed [
 ### Is the item used up?
 
 An effect never removes the item; **the request's handler does**, by the effect's answer. All of this is **read from
-the code**; no emulated case enters these functions, and the sessions logged outcomes only for the potions below
+the code**; no emulated case enters these functions, and the runs logged outcomes only for the potions below
 ([§ D](../specs/items/use.md#d-consumption-in-the-callers)).
 
 - A scroll or potion with a non-zero answer takes one off the matching skill's quantity, then is removed. A tome with a
   skill and charges left loses one charge and stays.
-- A zero answer uses nothing up. Four quest items (by code `ass`, `xyz`, `tr2` and `toa`) have their own branch,
-  which applies when the answer is zero and removes the item.
+- A zero answer uses nothing up. Four quest items (by code `ass`, `xyz`, `tr2` and `toa`) have their own branch
+  when the answer is zero; three of them have a further test, and each removes the item when it applies.
 - A belt use shifts the remaining items of that column down. An item used on an item from the belt does not shift its
   column, and a belt scroll used on a target that is not in a grid is removed unused.
 - The mercenary button removes the cursor item whatever the answer was.
 - Using the cube never uses it up. A first identify request uses nothing: it only opens the prompt. The second request,
-  on an unidentified item in the player's own inventory, identifies it. The second request does not clear the
-  "use mark" that the first set, so that mark stands until one of 24 other functions, the moves among them, clears it, and a second request
-  after such a move runs the first step again.
+  on an unidentified item in the player's own inventory, identifies it. Unlike the other use requests, the second does
+  not clear the "use mark" before it runs, so the mark the first set still stands; it clears the marks only afterwards.
+  One of 24 other functions, the moves among them, also clears it, and a second request after such a move runs the first
+  step again.
 
 ### Healing and mana potions
 
@@ -130,8 +131,8 @@ sequenceDiagram
   P->>P: rate = total divided by duration
 ```
 
-- **Two draws, then the doubling.** A life or mana potion with an amount draws on the user's seed twice, a range up to
-  the character's vitality and then a range of 100; a mana potion uses the energy. The total doubles when the second
+- **Two draws, then the doubling.** A life or mana potion's amount slot draws on the user's seed twice when the vitality or
+  energy is above 0: a range up to the character's vitality and then a range of 100; a mana potion uses the energy. The total doubles when the second
   number is below half the first, so the chance rises with vitality or energy (read from the code: about 2.0 % at 10, 24.5
   % at 100, 37.0 % at 150, 49.5 % at 200). The draws come before the amount test and happen for an amount of zero too.
   **Seen in a game, 17 of 17 uses:** 12 health potions and 5 mana potions of a Sorceress at vitality 165 and energy
@@ -143,7 +144,8 @@ sequenceDiagram
   agreed with the logged amount in all 12. **The mana potion showed only "not doubled", 5 of 5. Its doubled branch has
   not been seen in a game.** At an energy of 150 the chance is about 37 %, so five misses in a row happen about one time
   in ten; this batch does not say that a mana potion never doubles.
-- **The rate.** The total is stored as a rate per frame, truncated: total divided by the potion's duration. **Seen in
+- **The rate.** The total is stored as a rate per frame, truncated: total divided by the potion's duration, in stored
+  units of 256 to a point. **Seen in
   16 of 16 uses on a fresh list:** 7 680 or 15 360 over 192 frames gave 40 or 80 for `hp1`, and 10 240 over
   128 gave 80 for `mp1`. The list's end was the frame plus the duration. Scope: `hp1` and `mp1` of a Sorceress. Because
   of the truncation, a potion can deliver less than its total: `hp3`'s 100 life over 171 frames is a stored rate of
@@ -153,8 +155,9 @@ sequenceDiagram
   one and a half for the same three, 2 for Sorceress, Necromancer and Druid, and 1 for the Barbarian. This was **emulated** over 800 cases. **In a game only the Sorceress ran**
   (her health factor 1, her mana factor 2). So `hp1`'s 30 is 30, 45 or 60 life for a Sorceress, an
   Amazon or a Barbarian, on the reading.
-- **A potion at full life** was used, not refused: the list and rate were set and the answer was 1. One case, `hp1`.
-- **Seeds around the request.** The player's seed moved across each of the 12 inventory requests and the 5 of the 6 belt
+- **A potion at full life. Seen in a game, one case, `hp1`:** it was used, not refused; the list and rate were set and
+  the answer was 1.
+- **Seeds around the request. Seen in a game:** the player's seed moved across each of the 12 inventory requests and the 5 of the 6 belt
   requests that used a potion; the game seed moved across none. The sixth belt request was a rejuvenation (`rvs`, below). This bounds those two seeds only, not other units'.
 - **A second potion while the first runs** is the open case. The code is read to reuse the same list, ending at now
   plus what the first has left plus the duration, with the rate blending the first's undelivered part and the new
@@ -178,8 +181,8 @@ heal and not seen in a game (the 17 uses had no golem).
   columns the other kinds do. **Emulated** to the first call (200 cases). How an elixir reaches a player, and what writes its file index and stat, are not known.
 - **Keys** have no use entry. A key is taken by the chest (and by one case of the object mode switch), which uses the
   first key on the inventory page: one fewer in the stack, or the key removed. **Emulated** (300 cases), up to the
-  stat change or the removal. The Assassin's skip
-  is read for the chest only.
+  stat change or the removal. An
+  Assassin needs no key at a chest; that skip is read for the chest only.
 
 ## Where an item can go
 
@@ -212,8 +215,8 @@ When an item is put on a page without a cell, the server searches the grid ([§ 
 - The early stop at a perfect score changes no output, and a reimplementation may leave it out.
 - A small worked case, from the project's model of this search (**not logged in a game**): five 1 × 1 items in turn on
   an empty page 10 wide and 4 high go to the last column (index 9), bottom up (rows 3, 2, 1, 0), and then to the column before it at row 3.
-- Placing by cell and the refusals of an occupied cell or one out of bounds were emulated as the search is used, 500
-  cases. A scroll or tome placed on a page other than the stash adds its skill quantity; one placed in the stash adds
+- Putting an item on a cell, with the refusals of an occupied cell or one out of bounds, was emulated up to the removal
+  call that follows (800 cases), and the search as its caller uses it up to that put (500 cases); what comes after is read. A scroll or tome placed on a page other than the stash adds its skill quantity; one placed in the stash adds
   nothing (read from the code).
 
 ### Moving between places
@@ -230,12 +233,12 @@ The client's requests that move an item are read, not run ([§ D](../specs/items
 | swap with a page item | `0x1F` | |
 | stack | `0x21` | [stacks](#stacks) |
 | cursor to belt, belt to cursor, swap | `0x23`, `0x24`, `0x25` | [belts](#belts) |
-| inventory item to belt | `0x63` | first free box |
+| inventory item to belt | `0x63` | the [belt's search](#belts), then that box |
 
 Seen in a game: **`0x19` (item to the cursor) moved neither the player's nor the game's seed, 80 of 80 request pairs**,
 and the cursor drop `0x17` likewise (80 of 80). This bounds those two seeds around the handler only. By the reading,
 a stash page that the packet names needs no open stash for a **placed** item: the item is on the cursor, so the
-"busy" test passes. **One forced case ran** (in the first session): a placement to the stash page in town with no stash
+"busy" test passes; it needs a room in town. **One forced case ran** (in the first run): a placement to the stash page in town with no stash
 open was accepted, but only after the page field was written into the packet by a debugger, which the real client
 cannot send, so it stays a reading.
 
@@ -244,7 +247,7 @@ cannot send, so it stays a reading.
 ```mermaid
 flowchart TD
   a{"beltable and 1 x 1?"} -->|no| z["no box"]
-  a -->|yes| col["a column whose bottom box<br/>holds the same class or list:<br/>the first free box up it"]
+  a -->|yes| col["a column whose bottom box<br/>holds the same class or group:<br/>the first free box up it"]
   col -->|none free| auto{"autobelt row?"}
   auto -->|yes| low["the first free box<br/>of the bottom four"]
   auto -->|no| z
@@ -268,7 +271,7 @@ flowchart TD
 
 ### Stacks
 
-Two items stack when (read for the tests, **emulated** for the function, 660 cases with each test broken alone) they
+Two items stack when (**emulated**, 660 cases with each test broken alone) they
 have the same class, quality and file index, the row is stackable, the ethereal status matches, the quality is not 0
 and not one of 4 to 9, and a handful of stats match ([§ G](../specs/items/inventory.md#g-stacks)). The maximum is the row's
 maximum plus a stat, capped at 511. A merge over the maximum fills the target to the maximum and leaves the rest on
@@ -298,7 +301,7 @@ All of this section is **read from the code** ([§ I](../specs/items/inventory.m
   are read.
 - **The line** between the two must be clear for a pickup in place. The code that shortens and tests the line was
   **emulated** (600 cases) as far as the collision test itself, whose result belongs to the
-  [collision page of the specs](../specs/drlg/collision.md); a player's collision mask was declared, not read from a game.
+  [collision page of the specs](../specs/drlg/collision.md) and is a reading there; a player's collision mask was declared, not read from a game, so whether a player's line test ever takes the code's other branch is open.
   The two tests run again when the walk ends.
 - **The order a pickup tries.** Gold; an auto-stack into a tome, a stack or a quiver; then an auto-equip location if
   the item names one (for example an arrow quiver to a hand that holds a bow); the belt for a beltable item; the
@@ -324,7 +327,7 @@ flowchart TD
   t -->|yes| ok["drop there"]
   t -->|no| rr["rings 1 to 49 around the start"]
   rr -->|"a free cell"| b["the nearest, the earliest of equals"]
-  rr -->|none| f["the start cell anyway,<br/>or no drop for gold"]
+  rr -->|none| f["the start cell anyway,<br/>or nothing with the fallback off"]
 ```
 
 **Emulated, 4 000 cases without a mismatch (55 distinct outcomes), with the search at size 1 and step 1**, and given
@@ -332,8 +335,8 @@ that the memory the code asks for was handed over. It is the code's map on decla
 
 - The search starts at the position plus (2, 3), when the room or one of its near rooms holds that cell, and at the
   position otherwise.
-- A cell is **free** when it holds none of a set of blockers, one of which is another ground item, **and** a walk from the
-  origin to it meets no blocker. A cell holding another item is refused as a place to drop, but does not stop the walk
+- A cell is **free** when it holds none of a set of blockers, one of which is another ground item, **and** a walk from it to
+  the origin meets no blocker. A cell holding another item is refused as a place to drop, but does not stop the walk
   across it. Two bits of the first test are not told apart by any output at this caller.
 - It then looks at rings 1 up to **49** (ring 50 is never looked at). In a ring it takes the side columns first, then the
   end rows, and keeps the lowest sum of the two distances, the first one met among equals.
@@ -346,8 +349,8 @@ that the memory the code asks for was handed over. It is the code's map on decla
 - The walk follows a direction field from the data file `expfield.d2`. Over the whole file, every cell walks to its
   centre in as many steps as its larger offset (checked on all 65 536 cells).
 
-**Seen in a game:** 118 searches over three logs (37 in the first run, 41 and 40 in the second) matched the model, with no
-mismatch. **They are not 118 independent cases.** A player's drops are chains in place: each drop blocks the next, at six
+**Seen in a game:** 118 searches over three logs (37 in the first run, 41 and 40 in the second) matched a model older than
+the logs, evaluated case by case on the logged collision window, with no mismatch. **They are not 118 independent cases.** A player's drops are chains in place: each drop blocks the next, at six
 spots (6 and 4 in the first run; 24 at the start, 12 at the parapet, 4 in the City of the Damned and 40 at the crowd
 spot in the second), and the other 28 are monster or chest drops at 24 positions. The rings reached in the logs were:
 the start cell 27 times, ring 1 31 times, ring 2 32, ring 3 21, and ring 4 or beyond 7. A drop in a crowd shows the walk
@@ -361,8 +364,8 @@ The start is (5034, 5030). They land in turn on (5034, 5030), (5033, 5030), (503
 Who drops with this search is **read from the code**: 20 direct callers (monster and chest drops, the cursor drop, the
 belt overflow, the cube's contents, a corpse's overflow, NPC menus, shrines), all with size 1 and fallback on; the pair form of the search has 7 direct calls, among them four item-drop bodies, a gold amount (fallback off) and the
 town portal (size 3, fallback off).
-A drop whose room is null (the search's answer) leaves the item on the cursor or makes no item, depending on the
-caller.
+A drop whose room is null (the search's answer) leaves the item on the cursor, makes no item or places nothing, depending
+on the caller.
 
 ## How long an item lies on the ground
 
@@ -375,6 +378,7 @@ stateDiagram-v2
   timed --> record: the room goes inactive
   record --> back: the room comes back, a fresh expiry
   back --> freed: the sweep
+  back --> record: the room goes inactive again
 ```
 
 ([§ K](../specs/items/inventory.md#k-a-ground-items-life))
@@ -385,18 +389,18 @@ An item on the ground has an **expiry frame**, or none. There are three lives, w
 |---|---|---|
 | made by the item-creation function for a monster's or chest's drop (and a gold pile) | none (0) | never swept |
 | placed by the game's ground-placement function: a player's drop, an overflow, a gold amount, NPC menus, the cube's | the frame plus 15 000, 30 000 or 45 000 (below) | freed at the first multiple of 1 500 at or past it |
-| restored when a room comes back | the larger of its saved word and now plus 15 000 | as the second row |
+| restored when a room comes back | the larger of its saved word and now plus 15 000; a saved 0 stays 0 | as the second row |
 
 - **The amounts** (the rule is **emulated**, 600 cases): a quest item has no expiry; quality 4 and a socket filler (a
-  gem, rune or jewel) get 30 000 frames; qualities 5 to 9 get 45 000; gold gets 45 000 above 10 000 gold and 15 000 below; all
-  else 15 000. At 25 frames a second 15 000 is 10 minutes. **Seen in a game, 80 of 80 drops, in 21 groups of base and
+  gem, rune or jewel) get 30 000 frames; qualities 5 to 9 get 45 000; gold gets 45 000 above 10 000 gold and 15 000 otherwise;
+  all else 15 000. At 25 frames a second 15 000 is 10 minutes. **Seen in a game, 80 of 80 drops, in 21 groups of base and
   quality:** 15 000 for qualities 1, 2 and 3 (potions, rings), 30 000 for quality 4 and for the filler, 45 000 for
-  qualities 5 to 8. **Not run:** gold, a quest item, quality 9 and a socketed item. No stock path makes a quality-9
-  item.
+  qualities 5 to 8. Qualities 1, 3 and 8 and the jewel and runes were built by the run's recipe, each drop a real click. **Not run:** gold, a
+  quest item, quality 9 and a socketed item. By the reading, no stock path makes a quality-9 item.
 - **The sweep** runs every 1 500 frames over the active rooms and frees an item whose expiry is at or before the frame.
   Its period and its order were **emulated**, up to the first item reached; its test was emulated in 600 cases, where
-  "before the frame" instead of "at or before" fails 92 and "zero expires" fails 69. **Seen in a game, 4 of 4:** a player's quality-2 drop, dropped at
-  frames 3 659 to 3 863, was freed at the sweep of frame 19 500, with five monster drops beside them still there at
+  "before the frame" instead of "at or before" fails 92 and "zero expires" fails 69. **Seen in a game, 4 of 4:** a player's quality-2 drops, made at
+  frames 3 659 to 3 863, were freed at the sweep of frame 19 500, with five monster drops beside them still there at
   21 000 and 22 500. Scope: quality 2, one sweep, a room that stayed active. Six more predictions were excluded because
   the room had gone inactive and its activity was not logged. By the reading, the item falls up to 1 499 frames after
   its expiry.
@@ -412,13 +416,14 @@ An item on the ground has an **expiry frame**, or none. There are three lives, w
   4 in the City of the Damned). A saved word of 0 staying 0 and a word equal to the limit were not seen. A restored copy
   was swept at the first multiple at or past its expiry in 22 of 22 that resolved. 14 more have their expiry after the
   session's last dump and are unresolved; 4 were saved again before their predicted sweep and are excluded, as are the
-  40 town drops of that session, and the 40 crowd sweeps are unresolved. In the first session, three monster drops
+  40 town drops of that session, and the 40 crowd sweeps are unresolved. In the first run, three monster drops
   whose room went inactive came back with an expiry that was not predicted; the reading above is stated for that
-  session as read, because it did not log its inputs.
+  session as read, because that run did not log its inputs.
 
 ## Random draws
 
-Almost nothing in this area draws a random number of its own ([§ J of use](../specs/items/use.md#j-draws-per-seed),
+In the table below only the potions draw; each other count holds up to the point named, and no whole move is
+bounded ([§ J of use](../specs/items/use.md#j-draws-per-seed),
 [§ L of inventory](../specs/items/inventory.md#l-draws-per-seed)). What is established, by how:
 
 | Path | Draws | How it is known |
@@ -428,7 +433,7 @@ Almost nothing in this area draws a random number of its own ([§ J of use](../s
 | Kinds 2, 6, 9 | 0 in the entry's own body | read, direct calls |
 | The gate | 0 on this path | read |
 | The placement search, belts, stack tests, the grid rows | 0 to their returns, no traced access to a unit's seed | emulated |
-| The ground search, walk, expiry and distance | no seed is given | emulated to the return; the wider closure read |
+| The ground search, walk, expiry and distance | no seed is given | read: none of the functions below them holds a seed step, with indirect calls unfollowed |
 | Cursor drop and item to cursor | the player's and the game's seeds unchanged | seen, 80 of 80 pairs each |
 
 Beside the search there are draws: a chest-spawner missile draws twice on its unit's seed for an offset, two shrines step a
@@ -441,8 +446,8 @@ how the item itself is made is on the [items page](items.md).
 ## What is not known yet
 
 From the specs' open questions ([use](../specs/items/use.md#open-questions),
-[inventory](../specs/items/inventory.md#open-questions)). The owner decided that no third play session is run, so the
-first three stay open.
+[inventory](../specs/items/inventory.md#open-questions)). The first three need a further session in a game, and none is
+planned.
 
 - **The blend of different amounts.** What a second potion of a different strength does while the first runs, with the
   meter below its maximum both times, is a reading; the one blended use in the game had the same potion twice. The free
@@ -453,8 +458,7 @@ first three stay open.
   that text disagree, and 1.14d has not been tried.
 - **A death with a belt holding items above the fourth box.** The reading is that they go to the inventory, then to the
   ground; not run in 1.14d.
-- **The mana potion's doubled branch** in a game (5 of 5 seen undoubled); a Barbarian's, Amazon's and Paladin's factors,
-  mana for a Barbarian; the greater health potion; a rejuvenation on a maximum above 4 096.
+- **The mana potion's doubled branch** in a game (5 of 5 seen undoubled); every class's factors but the Sorceress's; the greater health potion; a rejuvenation on a maximum above 4 096.
 - **Other use cases never run:** the group clear on the antidote, thawing potion, stamina potion and herb; the Blood
   Golem split; both identify requests; a belt identify scroll and the town portal's column shift; the cube; a usable row
   with no kind; a key on a chest and a door; a potion to the mercenary; a use while trading; the elixir; the four quest codes.
@@ -463,6 +467,9 @@ first three stay open.
   and behind a wall, a stack remainder on the ground, a scroll into a tome, auto-equip, a dropped cube and the chest
   spawner's two draws. A drop at the seam between two rooms in a crowd, a full surround and a null result, and a drop at a
   room's edge are only emulated.
+- **Grid and belt cases never run in a game:** sequential pickups, a full inventory's message, the cube, the stash's size by
+  game type, the refusals of placing on a page and of taking to the cursor, belts by type, an inventory item to the belt,
+  a belt taken off, stack merges, a tome's skill quantity and the moves' seeds.
 - **Expiry cases:** gold's 10 000 boundary, a quest item, a socketed item, a sweep's removal message and seed, qualities
   above 2 on a first drop, a longer life for a monster's drop, whether a chest's drop was among the 27.
 - **Stock routes of two forced requests:** the stash placement with no stash open and a belt box beyond the belt's
