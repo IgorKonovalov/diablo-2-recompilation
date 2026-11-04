@@ -32,6 +32,7 @@ A constant of the code image that a reimplementation needs may appear in `docs/`
 ### Neutral
 - This amends [ADR-0009](0009-public-documentation-site.md) on one point: its Context says `docs/tables/` holds schema, semantics and short illustrative rows, and it now also holds these listed constants, which the export plan's publish check has to treat as data. ADR-0001, which that Context names beside `CLAUDE.md`, has no sentence on this to amend.
 - `CLAUDE.md`'s "Game data never enters git" bullet and the archivist skill's "never dump a whole table" line carry a pointer here; the wording is in [plan 0054](../plans/0054-path-search.md)'s log.
+- **Note, 2026-11-04 (`lane/a70`).** The counts above, 882 elements in 15 tables with 278 listed and 604 by rule, are of the tables `lane/a54` documented. `g_PathFaceStep` (64 elements at `0x006EB548`) is a sixteenth, given by one exact rule and checked by the survey, so [PathDirTables](../tables/PathDirTables.md) now holds 16 tables, 946 elements, 278 listed and 668 by rule. The decision is unchanged; the 278 listed gained nothing.
 - `lane/s60`'s 64-value table in [items/inventory](../specs/items/inventory.md) is the kind this allows: no exact rule is known for it.
 
 ## Alternatives considered

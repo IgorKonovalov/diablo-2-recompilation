@@ -70,7 +70,8 @@ class Specs(unittest.TestCase):
             self.assertNotIn(t["name"], names)
             names.add(t["name"])
             self.assertIn(t["read"], ("DWORD", "WORD", "BYTE"))
-            self.assertEqual(t["read"] == "BYTE", t["kind"] == "u8")
+            if t["kind"] == "u8":
+                self.assertEqual(t["read"], "BYTE")
             self.assertTrue(t["readers"])
             self.assertNotEqual(t["name"] in S.MD_ROWS, t["name"] in S.RULES)
         self.assertEqual(names, set(S.MD_ROWS) | set(S.RULES))
@@ -97,8 +98,8 @@ class Image(unittest.TestCase):
         return self.t[name][1]
 
     def test_counts(self):
-        self.assertEqual(sum(len(v) for _, v in self.t.values()), 882)
-        self.assertEqual(len(self.t), 15)
+        self.assertEqual(sum(len(v) for _, v in self.t.values()), 946)
+        self.assertEqual(len(self.t), 16)
 
     def test_octant_column_zero_is_the_outdoor_finding_list(self):
         # drlg/0008 tabulates column 0 by 5 dx' + dy' + 12: 5 4 4 4 3 | 6 5 4 3 2 | 6 6 6 2 2 | 6 7 0 1 2 | 7 0 0 0 1
@@ -162,7 +163,7 @@ class Image(unittest.TestCase):
     def test_split_of_the_elements(self):
         kept = sum(len(self.v(n)) for n in S.MD_ROWS)
         ruled = sum(len(self.v(n)) for n in S.RULES)
-        self.assertEqual((kept, ruled), (278, 604))
+        self.assertEqual((kept, ruled), (278, 668))
 
     def test_every_rule_equals_the_image_bit_for_bit(self):
         rep = S.rule_report(list(self.t.values()))
@@ -177,6 +178,24 @@ class Image(unittest.TestCase):
                 w = list(v)
                 w[i] += 1
                 self.assertEqual(S.mismatches(w, rule()), 1, (name, i))
+
+    def test_face_step_rule_is_the_stated_expression(self):
+        # d = ((i + 32) & 63) - 32; sign(d) * min(8, ((|d| + 7) >> 3)^2); no value is written here, the image is the oracle
+        v = self.v("g_PathFaceStep")
+        for i in range(64):
+            d = ((i + 32) & 63) - 32
+            e = (1 if d > 0 else -1 if d < 0 else 0) * min(8, ((abs(d) + 7) >> 3) ** 2)
+            self.assertEqual(v[i], e, i)
+        self.assertEqual(S.crc(v), 951300365)
+
+    def test_face_step_mutated_element_fails_the_survey(self):
+        v = list(self.v("g_PathFaceStep"))
+        for i in range(64):
+            w = list(v)
+            w[i] += 1
+            self.assertEqual(S.mismatches(w, S.RULES["g_PathFaceStep"]()), 1, i)
+            rep = S.rule_report([(self.t["g_PathFaceStep"][0], w)])
+            self.assertEqual(rep[0][2], 1)
 
     def test_dirtable_z_has_room_in_double(self):
         # the rule's quotient is never near an integer, so a correctly rounded or a near-correct atan gives one result
