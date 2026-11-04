@@ -200,6 +200,10 @@ def parse(path):
                 byk[d["k"]]["aix"] = d
             elif tag == "AIN":
                 ain.append(d)
+            elif tag == "SST0" and isinstance(d.get("u"), dict):
+                continue                  # tools/gdb/skills.py's skill start (plan 0052 H1, both loggers in one log)
+            elif tag == "SST1" and "r" in d and "eax" not in d:
+                continue
             elif tag == "SST0":
                 sst.append(d)
                 sstk[d["n"]] = d

@@ -606,6 +606,8 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-11-04 | `lane/a54` review | 0054 tables, 0060 table sentences | architect-review | 217 165 | 38 | 12 | — | accept with fixes (19); scale put to the owner | omission 7, stale cross-reference 3, overclaim 2, misread 2, wrong anchor 2, miscount 1, tool not kept 1, other 1 |
 | 2026-11-04 | `lane/a54b` | ADR-0031, 0054 tables | archivist | 134 381 | 17 | 9 | — | accept with fixes (Tier A, 10) | overclaim 4, omission 4, stale cross-reference 1, tool not kept 1 |
 | 2026-11-04 | `lane/a54b` review | ADR-0031, 0054 tables | architect-review | 154 390 | 41 | 8 | — | accept with fixes (10) | overclaim 4, omission 4, stale cross-reference 1, tool not kept 1 |
+| 2026-11-04 | `lane/p52d` | 0052 P2 (tools, third kept batch) | reverser-harness | 334 378 | 217 | 167 | 1 | accept with fixes (Tier A, 16) | omission 5, miscount 4, overclaim 3, misread 2, tool not kept 1, other 1 |
+| 2026-11-04 | `lane/p52d` review | 0052 P2 (third kept batch) | architect-review | 321 734 | 67 | 41 | — | accept with fixes (16); no further batch, P3a next | omission 5, miscount 4, overclaim 3, misread 2, tool not kept 1, other 1; audit: n/a, Tier A |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not

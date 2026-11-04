@@ -361,11 +361,13 @@ class ReviewFixesTest(unittest.TestCase):
 
     def test_logger_rev5_source(self):
         src = open(os.path.join(HERE, "gdb", "ai.py")).read()
-        self.assertIn("REV = 5", src)
+        self.assertIn("REV = 6", src)
         self.assertIn('emit("AIL"', src)
         # the MonSetMode line itself must still be logged: its AIB breakpoint is created before the MSM0 one at the same address
         self.assertLess(src.index("Bp(a, on_bnd(a), bnd_bps)"), src.index("Bp(0x005A7C20, on_msm0, bnd_bps)"))
         self.assertLess(src.index('st["pend"] and not NESTED'), src.index('cur["k"] in st["msm"].values()'))
+        # rev 6: the one nested call the Scarab model offers is not hidden by the pending rule
+        self.assertIn('fn == 0x00552F60 and ra == 0x0058F0FF and st["pend"][-1]["fn"] == 0x0058F0D0', src)
 
     def test_a_tier_table_says_what_a_row_separates(self):
         def row(n, ok, mis=0, paths=None, br=None):

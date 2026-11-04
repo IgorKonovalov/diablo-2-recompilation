@@ -332,5 +332,75 @@ class Model(unittest.TestCase):
         self.assertEqual((C.bad["BD.seed"], C.bad["BD.elem"]), (1, 1))
 
 
+class AiSpanInGap(unittest.TestCase):
+    """plan 0052 H1: a monster's AI decision (AID .. AIX of tools/gdb/ai.py) between two skill events carries its seed."""
+
+    def gap(self, between, s_prev, s_next_entry):
+        C = skills.Checker(None)
+        C.caster_gap("x.log", 77, 1, s_prev, s_next_entry, between, 3, 99)
+        return C
+
+    def test_decision_closes_a_gap_and_a_wrong_entry_does_not(self):
+        p = (0x1234, 0x5678)
+        e = skills.step_n(p, 3)          # the decision's exit, three steps on
+        fmt = skills.sd_fmt
+        span = [("AID", {"u": 77, "s0": fmt(p), "n": 10}), ("AIX", {"k": 10, "s": fmt(e)})]
+        C = self.gap(span, p, e)
+        self.assertEqual(C.ok["CHAIN.caster+logged"], 1)
+        self.assertEqual(sum(C.info[k] for k in C.info if k.startswith("CHAIN.caster resync left")), 0)
+        # control 1: the decision's entry seed is not the walking seed: the gap stays (an observation fails)
+        bad = [("AID", {"u": 77, "s0": fmt(skills.step(p)), "n": 10}), ("AIX", {"k": 10, "s": fmt(e)})]
+        C = self.gap(bad, p, e)
+        self.assertEqual(C.ok["CHAIN.caster+logged"], 0)
+        self.assertEqual(len(C.gaps), 1)
+        # control 2: the next event's entry is not the decision's exit: the gap stays
+        C = self.gap(span, p, skills.step(e))
+        self.assertEqual(C.ok["CHAIN.caster+logged"], 0)
+        # control 3: another unit's decision is not this unit's span
+        other = [("AID", {"u": 78, "s0": fmt(p), "n": 10}), ("AIX", {"k": 10, "s": fmt(e)})]
+        C = self.gap(other, p, e)
+        self.assertEqual(C.ok["CHAIN.caster+logged"], 0)
+
+    def test_lines_inside_a_decision_are_the_decisions(self):
+        # lane/p52d review: the decision calls MonAttackStats, so a MAS0 on a moved seed lies inside AID .. AIX; the first
+        # form of this rule compared it with the entry seed and closed 0 of 42 gaps
+        p = (0x1234, 0x5678)
+        m = skills.step_n(p, 2)
+        e = skills.step_n(p, 3)
+        fmt = skills.sd_fmt
+        mas = ("MAS0", {"u": {"u": 77, "s": fmt(m)}, "n": 11})
+        span = [("AID", {"u": 77, "s0": fmt(p), "n": 10}), mas, ("AIX", {"k": 10, "s": fmt(e)})]
+        C = self.gap(span, p, e)
+        self.assertEqual(C.ok["CHAIN.caster+logged"], 1)
+        # the same MAS0 with no decision around it stays a disagreement
+        C = self.gap([mas], p, m)
+        self.assertEqual(C.ok["CHAIN.caster+logged"], 0)
+
+    def test_event_inside_a_decision_against_its_last_boundary_line(self):
+        p = (0x1234, 0x5678)
+        m = skills.step_n(p, 2)
+        fmt = skills.sd_fmt
+        span = [("AID", {"u": 77, "s0": fmt(p), "n": 10}), ("AIB", {"k": 10, "s": fmt(m), "n": 11})]
+        C = self.gap(span, p, m)
+        self.assertEqual(C.ok["CHAIN.caster+logged"], 1)
+        C = self.gap(span, p, skills.step(m))     # the event's entry is one step past the last boundary line: the gap stays
+        self.assertEqual(C.ok["CHAIN.caster+logged"], 0)
+        C = self.gap(span[:1], p, m)              # no boundary line: nothing to compare the entry with
+        self.assertEqual(C.ok["CHAIN.caster+logged"], 0)
+
+    def test_the_two_loggers_counters_do_not_collide(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as td:
+            path = os.path.join(td, "x.log")
+            with open(path, "w") as fh:
+                fh.write('SDO1 {"n":5,"k":4}\nAID {"n":5,"u":77}\nAIB {"n":6,"k":5,"b":{}}\nAIR {"n":7,"k":5,"b":6}\n')
+            L = skills.parse(path)
+        self.assertEqual(L[0][1]["n"], 5)
+        self.assertEqual(L[1][1]["n"], 5 + skills.AI_N)
+        self.assertEqual(L[2][1]["k"], 5 + skills.AI_N)
+        self.assertEqual(L[2][1]["b"], {})
+        self.assertEqual(L[3][1]["b"], 6 + skills.AI_N)
+
+
 if __name__ == "__main__":
     unittest.main()

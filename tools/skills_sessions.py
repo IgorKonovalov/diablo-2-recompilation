@@ -4,7 +4,7 @@ tools/gdb/skills.gdb, driven by tools/d2pilot.py.
 Usage:
   python3 -I tools/skills_sessions.py list
   python3 -I tools/skills_sessions.py build --saves DIR          # every recipe below into DIR (tools/d2s.py build)
-  python3 -I tools/skills_sessions.py run --slot N --tag TAG --saves DIR --run RUN SESSION [SESSION ...]
+  python3 -I tools/skills_sessions.py run --slot N --tag TAG --saves DIR --run RUN [--gdb tools/gdb/ai-skills.gdb] SESSION [SESSION ...]
 
 Each SESSION names a row of SESSIONS: the save (built from tools/d2s_recipes/<recipe>.json), the difficulty steps
 file, the game seed, and the steps run in order: ("pilot", [args], timeout) runs one tools/d2pilot.py command;
@@ -192,7 +192,7 @@ def build(saves):
     return 0
 
 
-def run_session(name, slot, tag, saves, run):
+def run_session(name, slot, tag, saves, run, gdb="tools/gdb/skills.gdb"):
     row = SESSIONS[name]
     save, steps, seed, todo = row[:4]
     env = row[4] if len(row) > 4 else {}
@@ -210,7 +210,7 @@ def run_session(name, slot, tag, saves, run):
         if attempt and os.path.exists(os.path.join(ROOT, log)):
             os.replace(os.path.join(ROOT, log), os.path.join(ROOT, log + ".failed%d" % attempt))
         drv = subprocess.Popen(PY + ["tools/d2run.py", "--slot", str(slot), "--seed", str(seed), "--gdb",
-                                     "tools/gdb/skills.gdb", "--steps", "tools/gdb/%s.steps" % steps, "--after",
+                                     gdb, "--steps", "tools/gdb/%s.steps" % steps, "--after",
                                      "1800", "--install", tag, os.path.join(saves, save + ".d2s"), "--log", log],
                                cwd=ROOT, stdout=out, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL,
                                start_new_session=True)
@@ -296,7 +296,7 @@ def main(argv):
     a = argv[1:]
     opt, names, k = {}, [], 0
     while k < len(a):
-        if a[k] in ("--slot", "--tag", "--saves", "--run"):
+        if a[k] in ("--slot", "--tag", "--saves", "--run", "--gdb"):
             opt[a[k][2:]] = a[k + 1]
             k += 2
         else:
@@ -309,7 +309,7 @@ def main(argv):
             print("unknown session %s" % n)
             return 2
     for n in names:
-        run_session(n, int(opt["slot"]), opt["tag"], opt["saves"], opt["run"])
+        run_session(n, int(opt["slot"]), opt["tag"], opt["saves"], opt["run"], opt.get("gdb", "tools/gdb/skills.gdb"))
     sh(PY + ["tools/saves.py", "--slot", opt["slot"], "restore", opt["tag"]], 60)
     return 0
 
