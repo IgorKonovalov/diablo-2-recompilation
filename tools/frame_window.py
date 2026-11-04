@@ -498,6 +498,8 @@ def report(wins, ch_all, st_all, out, allow_stray=False):
                 m["line"], m["tag"], m["prev"], m["prev_tag"], m["rel"], (" %d" % m["k"]) if m["k"] is not None else ""))
         for x in ch["inrev"][:5]:
             P("  REVERSED-INSIDE line %d %s %s (opened line %d)\n" % tuple(x[:4]))
+        P("  unmoved: mismatches=%d located=%d reversed_inside=%d  readings=%s  events that moved a seed=%s\n" % (
+            len(ent), len(ch["located"]), len(ch["inrev"]), dict(ch["nread"]), dict(ch["drew"])))
         n = s["n"]
         e = s["est"]
         lpf = s["lines"] / n if n else 0

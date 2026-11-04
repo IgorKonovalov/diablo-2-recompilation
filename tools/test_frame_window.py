@@ -284,6 +284,63 @@ class TestLogger(unittest.TestCase):
             wins = [json.loads(ln.split(" ", 1)[1]) for ln in rig.lines() if ln.startswith("WIN ")]
             self.assertEqual([w["start"] for w in wins], [13, 18])
 
+    def test_sv1_only_after_sv0(self):
+        """Smoke session 1: the instruction after a skipped SaveGameClients call is reached with no entry; no SV1 then."""
+        with tempfile.TemporaryDirectory() as d:
+            ctl = os.path.join(d, "c.ctl")
+            open(ctl, "w").close()
+            rig = LoggerRig({"FRAME_CTL": ctl})
+            m, G = rig.mem, rig.GAME
+            seed_put(m, G + 0xD0, (1, 2))
+            m.u32(G + 0xA8, 9)
+            rig.hit(0x0052D870, ecx=G)
+            with open(ctl, "a") as fh:
+                fh.write("open 1 town\n")
+            m.u32(G + 0xA8, 10)
+            rig.hit(0x0052D974)
+            m.u32(G + 0xA8, 10)
+            rig.hit(0x0052D870, ecx=G)
+            rig.hit(0x0052D4C2)
+            self.assertNotIn("SV1", [ln.split(" ", 1)[0] for ln in rig.lines()])
+            rig.hit(0x0052CA10)
+            rig.hit(0x0052D4C2)
+            rig.hit(0x0052D4C2)
+            tags = [ln.split(" ", 1)[0] for ln in rig.lines()]
+            self.assertEqual((tags.count("SV0"), tags.count("SV1")), (1, 1))
+
+    def test_callback_path_ue1_pairs_once(self):
+        """Smoke session (pack): the callback path jumps to the dispatch call's next instruction, so both UE1 sites
+        fire for one event; the pair closes once and the outer open event stays open."""
+        with tempfile.TemporaryDirectory() as d:
+            ctl = os.path.join(d, "c.ctl")
+            open(ctl, "w").close()
+            rig = LoggerRig({"FRAME_CTL": ctl})
+            m, G = rig.mem, rig.GAME
+            seed_put(m, G + 0xD0, (1, 2))
+            m.u32(G + 0xA8, 9)
+            rig.hit(0x0052D870, ecx=G)
+            with open(ctl, "a") as fh:
+                fh.write("open 1 town\n")
+            m.u32(G + 0xA8, 10)
+            rig.hit(0x0052D974)
+            m.u32(G + 0xA8, 10)
+            rig.hit(0x0052D870, ecx=G)
+            for rec, u, ident in ((0x1000, 0x2000, 5), (0x1100, 0x2100, 6)):
+                m.put(rec, bytes(0x20))
+                m.u32(rec + 8, u)
+                m.u32(rec + 0x0C, ident)
+                seed_put(m, u + 0x20, (7, 8))
+            rig.hit(0x00540FB2, esi=0x1000)              # outer: a callback-path event
+            rig.hit(0x00541016, esi=0x1100)              # inner event opened inside it
+            rig.hit(0x00541018)                          # the inner callback returns, jumping to
+            rig.hit(0x00541030)                          # the dispatch return: one return, no line
+            rig.hit(0x00540FB4)
+            rig.hit(0x00540FC9)
+            tags = [ln.split(" ", 1)[0] for ln in rig.lines()]
+            self.assertEqual((tags.count("UE0"), tags.count("UE1"), tags.count("LOGERR")), (2, 2, 0))
+            ids = [json.loads(ln.split(" ", 1)[1])["id"] for ln in rig.lines() if ln.startswith("UE1 ")]
+            self.assertEqual(ids, [6, 5])
+
     def test_no_writes_in_source(self):
         with open(LOGGER) as fh:
             src = fh.read()
@@ -348,6 +405,27 @@ class TestRunner(unittest.TestCase):
     def run_cli(self, *a):
         return subprocess.run([sys.executable, "-I", os.path.join(HERE, "frame_sessions.py")] + list(a), capture_output=True,
                               text=True, cwd=ROOT)
+
+    def test_recipe_starts_in_act_one(self):
+        """Smoke session 1: SpecNova's difficulty bytes 131 start the game in Act IV; the frame scenes start in Act I."""
+        with open(os.path.join(ROOT, "tools", "d2s_recipes", "framenova.json")) as f:
+            rec = json.load(f)
+        self.assertEqual([d & 7 for d in rec["difficulty"]], [0, 0, 0])
+        with open(os.path.join(ROOT, "tools", "frame_sessions.py")) as f:
+            self.assertIn('p.add_argument("--recipe", default="framenova")', f.read())
+
+    def test_monsters_near(self):
+        import frame_sessions as fs
+        with tempfile.TemporaryDirectory() as d:
+            lg = os.path.join(d, "x.log")
+            mon = {"x": 100, "y": 100, "m": [{"id": 1, "mode": 1, "x": 110, "y": 100, "hp": 5},
+                                             {"id": 2, "mode": 1, "x": 200, "y": 100, "hp": 5},
+                                             {"id": 3, "mode": 12, "x": 105, "y": 100, "hp": 5},
+                                             {"id": 4, "mode": 1, "x": 101, "y": 100, "hp": None}]}
+            with open(lg, "w") as f:
+                f.write("PLR {}\nMON " + json.dumps(mon) + "\n")
+            self.assertEqual(fs.monsters_near(lg, 22), 1)
+            self.assertEqual(fs.monsters_near(os.path.join(d, "none.log"), 22), 0)
 
     def test_dry_plan_and_no_launch(self):
         for extra in (["--dry"], []):
