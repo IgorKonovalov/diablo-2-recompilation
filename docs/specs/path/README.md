@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, drlg/collision, anim/movement, path/search]
 consumed_by: [path/search, anim/movement, skills/overview, skills/missiles, skills/dispatch, skills/catalogue, drlg/collision, monsters/ai]
-tags: {C: 85, I: 79, L: 14}
+tags: {C: 85, I: 80, L: 14}
 updated: 2026-11-04
 ---
 
@@ -425,7 +425,7 @@ Corpse cells below are [drlg/collision § F5](../drlg/collision.md#f5-corpse-mar
 | C2, `deadCol` 1 | The call is skipped, the live mark stays | [C] classes 403 and 404, 18 distinct dead (0x005A65CD, run:2026-11-04-path-2). [I] class 273 on the server (0x005A65CD) |
 | C3, re-created dead | The 3×3, then `SUnitCreate`'s re-mark: record pattern 5, mask `0x8000` | [C] 3 distinct units, as [drlg/lifecycle § H5](../drlg/lifecycle.md#h5-the-grid-marks-of-a-re-created-monster) (0x0055546F, run:2026-11-04-path-2, run:2026-10-21-chain2). [I] that the 22 mode-12 lines came by 0x005A73A6: the line doesn't hold the caller (0x005A73A6) |
 | The seventh caller | Skill start 43 on class 194 in mode 14: the same call, so corpse cells cannot be predicted from a mode | [C] the call's effect, 35 lines (0x005CAF8E, run:2026-11-04-path-2). [I] that it causes the 3 plans of F3 |
-| C4, no clear | The server's 3×3 has no paired clear: the cells outlast the corpse until the grid is rebuilt. `0x8000` is in no move mask read so far | [I] (0x00649FD8, fn:sub_00649FF0_UnitReviveColl@0x00649FF0). Likely source of the 26 034 differing `0x8000` cells |
+| C4, no clear | The server's 3×3 has no paired clear: the cells outlast the corpse until the grid is rebuilt, and the revival routes read re-mark without clearing it. `0x8000` is in no immediate move mask scanned, 0 of 53; a mask built in a register or read from a table was not scanned | [I] (0x00649FD8, fn:sub_00649FF0_UnitReviveColl@0x00649FF0, fn:sub_00648CE0_PathSetCollMask@0x00648CE0, [path/0008](../../findings/path/0008-corpse-remainders.md)). Likely source of the 26 034 differing `0x8000` cells |
 | W1, the player after an act change | Unmarked: the first move unmarks and zeroes the room word, the second returns before marking, until a later move or a plan's tail. A level change inside an act keeps the mark | [I] (0x0064EFA3, fn:sub_0053ACC0_PlayerChangeAct@0x0053ACC0, fn:sub_0053AEC0_PlayerChangeLevel@0x0053AEC0): **7 of 7** act changes unmarked, control **3 of 3** marked, floors of 10 short (7 of 16 and 3 of 9 seen), run:2026-11-04-path-2 |
 | L1, a reserved landing | Four skill starts mark the landing before the flight; landing unmarks it | [C] the calls at the three reached sites, 128, 237 and 109 lines, and 474 releases (0x005D9123, 0x005D9EF8, 0x005DA5D5, run:2026-11-04-path-2). [I] the holding until release (51 plans in the tie), Jump's site (no stock user) and a monster's arm (0x005CB902) |
 | The `0x200` bit | Its source is unknown: 92 597 cells differ on the hold-out and no logged unit holds them | [I] no plan depends on them on these logs; no move mask read holds `0x200`, the spawn mask `0x3F11` does (0x00649BAE, run:2026-11-04-path-2) |
@@ -564,24 +564,25 @@ A class 225 missile's type-10 plan, `2026-11-04-path-2-s1-6004-k5-sor-oasis.log`
 - [C] Refusals differ: step 5 clears nothing, the others clear `+0x24`, `+0x28` and flag `0x20`. (0x006499D3–0x006499F0, run:2026-11-03-path-emu-1)
 - [I] `PathReplan` changes the type without the flags (C4). (0x006503AF–0x006503D2)
 - [C] Knockback clears the path's target unit whether or not it finds a point ([search § E](search.md#e-the-knockback-planner-type-8)). (0x00648AE2–0x00648AEA, run:2026-11-03-path-emu-3)
-- [I] `0x8000` is written but in no move mask read: on what this spec states, a corpse mark is not a blocker (Open questions). (0x00649FD8, fn:PATH_MonTestMask@0x00648480)
+- [I] `0x8000` is written but in no immediate move mask scanned (F4's C4): on what this spec states, a corpse mark is not a blocker (Open questions). (0x00649FD8, fn:PATH_MonTestMask@0x00648480)
+- [I] `unflatDead` changes no grid mark and no move mask: its one direct reader is a client draw-list test, and the server never reads it. (0x004648AB, 0x004DDAD6, [path/0008 item 6](../../findings/path/0008-corpse-remainders.md))
 - [I] The plan of type 14 reads no grid. The hammer's end at a wall is the missile's own step, [skills/missiles § D3](../skills/missiles.md#d-each-frame), with [P12's entry](../../backlog/2026-11-04-architect-reverser+spec-writer-0054-p12-missile-own-cell-bit0-vs-floor.md) on the bit-0 case. (fn:sub_005AE1F0_MissileMoveCollide@0x005AE1F0)
 
 ## Evidence
 
-- Findings: [path/0001](../../findings/path/0001-pathplan-register.md), [path/0002](../../findings/path/0002-search.md), [path/0003](../../findings/path/0003-short-planners.md), [path/0004](../../findings/path/0004-per-event-reproduction.md), [path/0005](../../findings/path/0005-grid-rules.md), [path/0006](../../findings/path/0006-holdout.md), [path/0007](../../findings/path/0007-community-cross-check.md), [experiments](../../findings/path/experiments.md).
+- Findings: [path/0001](../../findings/path/0001-pathplan-register.md), [path/0002](../../findings/path/0002-search.md), [path/0003](../../findings/path/0003-short-planners.md), [path/0004](../../findings/path/0004-per-event-reproduction.md), [path/0005](../../findings/path/0005-grid-rules.md), [path/0006](../../findings/path/0006-holdout.md), [path/0007](../../findings/path/0007-community-cross-check.md), [path/0008](../../findings/path/0008-corpse-remainders.md), [experiments](../../findings/path/experiments.md).
 - Tables: [PathTypes](../../tables/PathTypes.md), [MonStats2](../../tables/MonStats2.md), [Objects](../../tables/Objects.md), [Missiles](../../tables/Missiles.md).
 - Specs: [drlg/collision](../drlg/collision.md) §§ F, F5, F6, F7; [anim/movement](../anim/movement.md); [skills/missiles](../skills/missiles.md) H1, H4, D3; [skills/catalogue](../skills/catalogue.md) K11; [rng](../rng/README.md).
 - Tools: `tools/path.py` (`check`, `grid`, the kept outputs `2026-11-04-path-check.txt`, `2026-11-04-path-2-check.txt`, `2026-11-04-path-2-grid.txt`), `tools/path_emu1.py`, `path_emu2.py`, `path_emu3.py`, `tools/path_holdout_review.py`, `tools/path_scan.py`, `tools/path_survey.py`; the review's figures, `tools/path_spec_review.py`, outputs `workspace/logs/path/review-s54/` (`logs.txt`, `literal.txt`, `manifest.sha256`).
 
 ## Open questions
 
-- [L] **Do corpses block movement?** `0x8000` is in no mask read (C4 `[I]`, F4). That is what the findings did not find, not a finding. `unflatDead`: `src:d2mods-monstats-guide` says walking, `src:d2dfg-blizzard` says drawing, no reader read. [Entry](../../backlog/archive/2026-11-04-architect-reverser-0054-unflatdead-reader-corpse-walk-or-draw.md).
+- [L] **Do corpses block movement?** `0x8000` is in no immediate move mask scanned (C4 `[I]`, F4), and a mask built in a register or read from a table was not scanned; no run tests it. `unflatDead` is no route to it: `src:d2mods-monstats-guide`'s walking is not supported for 1.14d, `src:d2dfg-blizzard`'s drawing held with refinement (Reimplementation notes, path/0007 P04, P14). [Entry](../../backlog/archive/2026-11-04-architect-reverser-0054-unflatdead-reader-corpse-walk-or-draw.md).
 - [L] **Pets against players:** no pet-specific mask read (`src:d2mods-monstats-guide`, path/0007 P05). A pet's route has F4's two moves, then `PATH_SetMarkMask(path, 0x100)` when 0x0063EA40 returns 0, a callee unfollowed.
 - [L] **No readable community record** for type 10 (no page came back), Teleport as a pathing event (the named pages returned 403, so it is unread, not empty) or corner stalls (only D2R anecdotes). [path/0007 § Not compared](../../findings/path/0007-community-cross-check.md#not-compared).
 - [L] **Whirlwind's flight:** `0x401` and the stop at a blocked subtile are read and not compared for a flight; no run shows a flight stopping or passing a unit. (`src:fextralife-d2-whirlwind`, path/0007 P07, P08)
 - [L] **An ordered tie's hold-out:** whether the marks and unmarks in the game's order, with 0x005CAF8E, leave 0 wrong plans. The logger holds no line per ordinary mark. [Entry](../../backlog/2026-11-04-architect-reverser-0054-grid-tie-operations-in-order-own-hold.md), which also carries W1 beyond 7 and 3 and the shorts of G3.
-- [L] **What sets the `0x200` cells:** no logged unit does, and ground items did not appear in the hash the logger read. Also the relocated dead, `UNIT_CollUnmark`'s argument and a server revival: [entry](../../backlog/2026-11-04-architect-reverser-scol-review-corpse-remainders.md).
+- [L] **What sets the `0x200` cells:** no logged unit does, and ground items did not appear in the hash the logger read. [Entry](../../backlog/2026-11-04-architect-reverser-scol-review-corpse-remainders.md). The relocated dead, `UNIT_CollUnmark`'s argument and a server revival are read from the code, with their not-followed routes, at [drlg/collision § F5](../drlg/collision.md#f5-corpse-marks-by-copy-of-the-grid).
 - [L] **Classes 225 and 195** beyond their watched seeds (D7), and who creates class 195.
 - [L] **Type 1's stages:** the Countess's state 13, Diablo's run, a far-behind mercenary, `SwarmMove`; G2's five sites.
 - [L] **Type 0's `b1C` on the server:** `+0x92` is written in the path module only at creation (70 a player) and by `PathSetByte92`, so a monster's would be 0 and type 0 one pass at `h0`. No plan logged it.

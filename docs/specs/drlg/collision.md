@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [drlg/overview, drlg/room-tiles, drlg/preset, drlg/warps, rng]
 consumed_by: [monsters/spawn, objects, chain, path/overview, path/search]
-tags: {C: 183, I: 67, L: 12}
+tags: {C: 183, I: 70, L: 11}
 updated: 2026-11-04
 ---
 
@@ -524,7 +524,7 @@ from size 1, since both give pattern 1. (fn:UNIT_GetSizeX@0x00620510)
 | dead monster, `deadCol` 0, server's copy | 3×3 square, `RectOrWH(x, y, 3, 3)`, from mode 0 on; the record's pattern and mask stay | `0x8000` in the cells; the record's mask stays `0x100` | — | [C] (0x005A65D9, 0x00649FD8, run:2026-11-04-path-2: 1 527 `COR` lines) |
 | dead monster, `deadCol` 1, either copy | unchanged: the corpse call is skipped and the live mark stays | `0x100` | — | [C] on the client's copy (0x004B05DB, 0x004B09FB, run:2026-10-14-collision: 12 `DC` lines); [C] on the server's for classes 403 and 404 (0x005A65CD, run:2026-11-04-path-2: 18 dead); [I] class 273 on the server's (0x005A65CD) |
 | monster re-created dead, `deadCol` 0, server's copy | the 3×3, then pattern 5 (plus); the record ends at pattern 5, mask `0x8000` | `0x8000` | — | [C] ([drlg/lifecycle § H5](lifecycle.md#h5-the-grid-marks-of-a-re-created-monster), 0x00649FD8, 0x0055546F, run:2026-10-21-chain2, run:2026-11-04-path-2) |
-| monster relocated dead, server's copy | the plus alone at the new place, its old cells left | `0x8000` | — | [I] (fn:sub_00554A30_UnitRelocate@0x00554A30, 0x00554B78–0x00554B8E) |
+| monster relocated dead, server's copy, either `deadCol` | the plus alone at the new place, its old cells left | `0x8000` | — | [I] (fn:sub_00554A30_UnitRelocate@0x00554A30, 0x00554B78–0x00554B8E, [path/0008](../../findings/path/0008-corpse-remainders.md)) |
 | class 194 (`maggotegg5`) in mode 14, server's copy | 3×3 square, the same call, so this row is not keyed on a mode | `0x8000` | — | [C] (0x005CAF8E, 0x00649FD8, run:2026-11-04-path-2: 35 `COR` lines) |
 | dead player on the server's copy, or any other `UnitCorpseColl` call whose unit is not a monster | 3×3 square, `RectOrWH(x, y, 3, 3)` | `0x8000` | — | [I] (fn:sub_00649F70_UnitCorpseColl@0x00649F70, 0x00649F84, 0x0057F367) |
 | missile | `SizeMark` by size `+0x18A` | 0 at creation; `0x40` set at once by `PATH_SetMarkMask` when Missiles `Collision` ≠ 0 | 0 | [C] (fn:PATH_SetMarkMask@0x00648C30, 0x004CD11D, 0x0059FD64, run:2026-10-14-collision) |
@@ -547,7 +547,7 @@ from size 1, since both give pattern 1. (fn:UNIT_GetSizeX@0x00620510)
   fn:UNIT_GetCollMask@0x006209D0, run:2026-10-15-objects)
 - [C] **The mark follows the mode's byte,** for the bits `0x400` and `0x800`. An object's rectangle is in the grid when
   `HasCollision[mode]` of its class is set: `SUnitPathCreate` and `UnitRelocate` test the byte before marking (0x0055494C,
-  0x00554BB5), and `UNIT_CollUnmark` tests it through `UnitCollActive` (0x00649611). Computed this way, the server's predicted
+  0x00554BB5), and `UNIT_CollUnmark` tests it through `UnitCollActive` (0x00649611), with an override when its second argument is not 0 (0x0064961A, [§ F5](#f5-corpse-marks-by-copy-of-the-grid)). Computed this way, the server's predicted
   grid has 0 cells different from the live one in `0x400` and `0x800` over the 154 780 rooms of the 15 663 plans of a run taken
   after the rule was frozen; with the rule off, 64 229 and 1 572. This covers those two bits only: `0x2` and `0x4` keep 626 and
   3 708 differing cells of unnamed source. (fn:sub_006219C0_UnitCollActive@0x006219C0, fn:sub_00554850_SUnitPathCreate@0x00554850,
@@ -631,8 +631,17 @@ F5a. UnitCorpseColl(u, arg):                                      [I] the steps 
       else:
         if path ≠ 0: UNIT_CollUnmark(u, 1)                         ; 0x00649FB5, 0x00649FBC
         RectOrWH(path.room, path.x, path.y, 3, 3, 0x8000)          ; 0x00649FD8: pattern and mask stay as they were
-      call 0x00650590(path)                                        ; 0x00649FAA, 0x00649FDE: both branches, not followed here
+      PathSnapToTileCentre(path)                                   ; 0x00649FAA, 0x00649FDE: both branches; marks nothing, below
 ```
+
+- [I] **F5a's last call marks nothing.** `PathSnapToTileCentre(path)` sets the point to the middle of its tile, `x = (path.x & 0xFFFF0000) + 0x8000` and
+  `y` likewise, through `PathSetPoint`. That stores the point, recomputes the sub-tile fields and, when the path has its unit and flag 1, calls
+  `PathRoomUpdate`, which does nothing while the point's whole coordinates are inside the current room's rectangle and otherwise looks the room up and
+  relinks the unit. None of the three calls a grid mark, unmark or clear; the "marked" of `RoomUnitAddMarked` is the frame's unit-list mark. So the call
+  changes only the fraction of the corpse's position to one half and leaves the whole coordinates the cells were just written around: it moves no cell
+  and, in practice, no room, since a room change needs a point outside the rectangle the unit was in. Not followed: the three room-list callees and
+  `0x00643290`. No game ran. (fn:sub_00650590_PathSnapToTileCentre@0x00650590, fn:sub_0064FB90_PathSetPoint@0x0064FB90, fn:sub_0064FAD0_PathRoomUpdate@0x0064FAD0,
+  [path/0008 item 3](../../findings/path/0008-corpse-remainders.md))
 
 - [C] **Server's copy, a monster's death, `deadCol` 0.** `MonDeathEvent` sets mode 0 (`SUNIT_SetMode`, 0x005A700D) and calls
   `MonDeathCorpseMark` (0x005A7019), which tests `deadCol` (`edx` = 0x13, `+0x06` bit 3, at 0x005A65CD) and, when it is 0, calls
@@ -682,16 +691,49 @@ F5a. UnitCorpseColl(u, arg):                                      [I] the steps 
   branch. (0x0055546F–0x005554A3, 0x005554B3–0x005554D8, fn:sub_00555230_SUnitCreate@0x00555230, fn:sub_004638A0_MonStats2FlagTest@0x004638A0,
   fn:sub_0063EA40_MonIsDeathMode@0x0063EA40, fn:sub_00649190_UnitSetCollPattern@0x00649190, tbl:MonStats2.txt:deadCol,
   [drlg/0005 § Plan 0039 batch P1a](../../findings/drlg/0005-collision.md#q7-monsters-created-dead-the-two-marks-in-sunitcreate-and-the-post-create-refresh))
-- [I] **Server's copy, a monster relocated dead.** `UnitRelocate`, when `MonIsDeathMode` holds, unmarks, sets pattern 5 and mask `0x8000`: the
-  plus alone at the new place, its old cells left. (0x00554B68, 0x00554B78–0x00554B8E, fn:sub_00554A30_UnitRelocate@0x00554A30)
+- [I] **Server's copy, a monster relocated dead.** `UnitRelocate`'s monster arm tests the dead state only through `MonIsDeathMode` (mode 0 or 12), and when
+  that holds calls `UNIT_CollUnmark(unit, 1)`, sets pattern 5 and mask `0x8000`: the plus alone at the new place, its old cells left. The arm does not test
+  `deadCol`, unlike `SUnitCreate`'s: no `MonStats2FlagTest` call lies in it, and none of its ten direct callees holds one of the image's four direct `deadCol`
+  tests. So a monster with `deadCol` 1 relocated dead takes the same plus as one with `deadCol` 0. Its callees' own callees are not followed, and no such case
+  is logged. (0x00554B68, 0x00554B78–0x00554B8E, fn:sub_00554A30_UnitRelocate@0x00554A30, fn:sub_0063EA40_MonIsDeathMode@0x0063EA40,
+  [path/0008 item 1](../../findings/path/0008-corpse-remainders.md))
+- [I] **`UNIT_CollUnmark(unit, f)`: the second argument.** A non-zero `f` also unmarks a player or monster in its dead mode and an object whose `HasCollision` is
+  0; the code tests the mode and `HasCollision`, not the state of any mark. It returns 1 when it unmarked and 0 when it did not. Direct calls: `f` = 0 at 4 of
+  15, `PathPlan`'s two (0x00649B07, 0x00649B25) and `UnitsLineBlocked`'s two (0x00622BC1, 0x00622BD7); `f` = 1 at the other 11. So a plan that unmarks a dead player
+  or monster leaves the cells alone, a corpse call, a creation and a relocation force the unmark, and an object a plan unmarks needs `HasCollision` set. Direct
+  calls only: a call through a register or table is not seen. (fn:UNIT_CollUnmark@0x00649560, 0x00649611, 0x0064961A, tbl:Objects.txt:HasCollision0,
+  [path/0008 item 2](../../findings/path/0008-corpse-remainders.md))
+
+  | Unit type | `f` = 0 | `f` ≠ 0 |
+  |---|---|---|
+  | player (0), mode 0 or 17 | returns 0, nothing unmarked | unmarks |
+  | monster (1), mode 0 or 12 | returns 0, nothing unmarked | unmarks |
+  | player or monster, any other mode | unmarks | unmarks |
+  | object (2), `HasCollision[mode]` set | unmarks | unmarks |
+  | object (2), `HasCollision[mode]` 0 | returns 0, nothing unmarked | unmarks |
+  | types 3 and above | `f` is not read | `f` is not read |
 - [I] **Server's copy, a dead player.** Player death calls `UnitCorpseColl(unit, 1)` at 0x0057F367: F5a's second branch, the 3×3. The call did
   not fire in run:2026-11-04-path-2. (0x0057F367, fn:sub_00649F70_UnitCorpseColl@0x00649F70)
 - [I] **Server's copy, the 3×3 has no paired clear.** `UNIT_CollUnmark` clears the record's pattern and mask, which are still the live ones, and
-  `UnitReviveColl`, which acts only when the mask is `0x8000` (0x00649FF0), has only client callers (0x004AEEDC, 0x004AFFA8). So the cells
+  `UnitReviveColl`, which acts only when the mask is `0x8000` (0x00649FF0), has only client callers (0x004AEEDC, 0x004AFFA8). No routine read calls a clear with
+  `0x8000`: the direct callers of `COLL_RectClearWH` are `UNIT_CollUnmarkRect` (0x006238B0) and `UNIT_CollUnmark`'s object branch (0x0064969A), and the pattern
+  unmarks are reached with the unit's own mask. So the cells
   outlast the corpse until the grid is rebuilt; this is the likely source of the 26 034 differing `0x8000` cells of the predicted grid on
-  run:2026-11-04-path-2. (0x00649FD8, fn:sub_00649FF0_UnitReviveColl@0x00649FF0)
-- [I] **What this changes for the population pass:** nothing as far as read. `0x8000` is in no spawn mask (§ D) and in no move mask read so
-  far. (0x00649FD8, fn:sub_005B2A00_MonSpawnTry@0x005B2A00, fn:PATH_MonTestMask@0x00648480)
+  run:2026-11-04-path-2. (0x00649FD8, fn:sub_00649FF0_UnitReviveColl@0x00649FF0, fn:COLL_RectClearWH@0x0064DC00, [path/0008 item 4](../../findings/path/0008-corpse-remainders.md))
+- [I] **Server's copy, a revival.** A server corpse keeps mask `0x100`, so `UnitReviveColl` does not meet it. The server routine read is `MonReviveInPlace`
+  (self-resurrect, start 61; Resurrect, do 97, 0x005CCBF5): for a monster with a room it sets mask `0x100` (`PATH_SetMarkMask`, 0x005CC9EA), runs
+  `PathPatternRefresh` (0x005CC9F0: `UNIT_CollUnmark(unit, 1)`, the pattern from size, `UNIT_CollMark`) and then `COLL_PatternMark` with that pattern and `0x100`
+  (0x005CCA68). `SkillReviveDo` and `SkillDo58Revive` also call `PathPatternRefresh` (0x005C0953, 0x005C5898). Nothing in these routes clears the 3×3 of
+  `0x8000`, so it stays after a revival by them. `MonSetMode` is not given as a route: it calls `UNIT_CollMark` (0x005A7CB1) only when `UnitIsDead` is 0 (0x005A7CAC),
+  before its handler call (0x005A7D67), and where the mode word is written was not located, so how a dead-to-alive mode set meets that test is not stated. Not
+  followed: `MERC_Resurrect`, `AiFetishReviveCb`, `Pkt41Resurrect`, `SkillSt21Revive`, and the revive routines' callees `0x00573780`, `0x00547E90`, `0x00545CD0`.
+  No server revival with its grid is logged. (fn:sub_005CC960_MonReviveInPlace@0x005CC960, fn:sub_00649CA0_PathPatternRefresh@0x00649CA0, fn:COLL_PatternMark@0x0064EA90,
+  fn:sub_005A7C20_MonSetMode@0x005A7C20, fn:sub_005C07A0_SkillReviveDo@0x005C07A0, fn:sub_005C56C0_SkillDo58Revive@0x005C56C0,
+  [path/0008 item 4](../../findings/path/0008-corpse-remainders.md))
+- [I] **What this changes for the population pass:** nothing as far as read. `0x8000` is in no spawn mask (§ D) and in no immediate move mask scanned: among the
+  immediates that reach a path's move mask through `PathSetCollMask` (19 direct calls) or a store at `+0x50` (34, most in unrelated records), 0 of 53 hold it, nor do the
+  monsters' masks `0x1804`, `0x3401`, `0x3C01`, `0x0804`. A mask built in a register or read from a table was not scanned. (0x00649FD8, fn:sub_005B2A00_MonSpawnTry@0x005B2A00,
+  fn:PATH_MonTestMask@0x00648480, fn:sub_00648CE0_PathSetCollMask@0x00648CE0, `tools/collmask_scan.py`, [path/0008 item 5](../../findings/path/0008-corpse-remainders.md))
 
 `UnitCorpseColl`'s seven callers. The copy is by the code's module and neighbours; the `COR` line counts are of run:2026-11-04-path-2,
 where 0 of 4 981 lines came from an unlisted caller or went against this table. These are lines, not deaths.
@@ -1182,6 +1224,7 @@ is the R2 case of the plan, and the run had 67 such acceptances. The plan 0014 w
 
 ## Evidence
 
+- [findings/path/0008-corpse-remainders.md](../../findings/path/0008-corpse-remainders.md): the relocated dead, `UNIT_CollUnmark`'s second argument, F5a's last call, a server revival, the immediate move masks.
 - [findings/drlg/0005-collision.md](../../findings/drlg/0005-collision.md): the whole subsystem, §§ 1–13, with the Phase 1b
   corrections (C1 `deadCol`, C2 missiles) and the Phase 2 wraith correction; § 14, the objects window on the grid model
   (plan 0027 Phase 2: `COLL_WHTest` and the object marks predicted); § Plan 0039 batch P1a (bits 3 and 14, created-dead
@@ -1268,11 +1311,11 @@ is the R2 case of the plan, and the run had 67 such acceptances. The plan 0014 w
 - [L] **The operations in order** (§ F7). Whether a model that applies the marks and unmarks in the game's order, with 0x005CAF8E as a
   corpse call, leaves 0 wrong plans: the 11's causes have not been tested on data they did not see, and the logger holds no
   marked-state field and no line per ordinary mark. ([path/0006](../../findings/path/0006-holdout.md), [routed](../../backlog/2026-11-04-architect-reverser-0054-grid-tie-operations-in-order-own-hold.md))
-- [L] **A monster relocated dead with `deadCol` 1.** path/0005 gives the plus for a monster relocated dead and names no `deadCol` test
-  in its range (0x00554B78–0x00554B8E), and no such case is logged. `UNIT_CollUnmark`'s second argument, 1 in the corpse calls and 0
-  in `PathPlan`'s two, is not stated by these findings either, nor is what `UnitCorpseColl`'s last call, 0x00650590, does. ([routed](../../backlog/2026-11-04-architect-reverser-scol-review-corpse-remainders.md))
-- [L] **A revival on the server's copy.** `UnitReviveColl` has client callers only, and a server corpse keeps mask `0x100` with its live mark off and
-  its 3×3 uncleared, so no finding says how a monster brought back on the server is marked again. ([path/0005](../../findings/path/0005-grid-rules.md), [routed](../../backlog/2026-11-04-architect-reverser-scol-review-corpse-remainders.md))
+- ~~A monster relocated dead with `deadCol` 1; `UNIT_CollUnmark`'s second argument; `UnitCorpseColl`'s last call; how a monster brought back on the server is marked
+  again.~~ Read from the code, no game ran: [§ F5](#f5-corpse-marks-by-copy-of-the-grid), [path/0008](../../findings/path/0008-corpse-remainders.md).
+- [L] **A relocated dead monster and a server revival, in a log.** Neither is logged with its grid, so § F5's readings of them stay code readings; the `COR` lines of a
+  harness run would show both. Whether the routes not followed there re-mark otherwise (`MERC_Resurrect`, `AiFetishReviveCb`, `Pkt41Resurrect`, `SkillSt21Revive`, a
+  dead-to-alive `MonSetMode`) is not read. ([path/0008 § Open questions](../../findings/path/0008-corpse-remainders.md#open-questions))
 - [L] **What sets the `0x200` cells the units listed do not explain**: 92 597 differing cells on the hold-out, on which no plan
   depends, with no logged type-4 entry. ([path/0005](../../findings/path/0005-grid-rules.md), [path/0006](../../findings/path/0006-holdout.md), [routed](../../backlog/2026-11-04-architect-reverser-scol-review-corpse-remainders.md))
 - ~~The warp points of outdoor rooms (levels 4 and 44 in the run) still need drlg/outdoor~~: predicted since
