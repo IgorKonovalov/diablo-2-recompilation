@@ -561,6 +561,8 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-11-04 | `lane/c57` | 0057 close | architect-check | 61 835 | 15 | 1 | — | plan closed | — |
 | 2026-11-04 | `lane/r62a` | 0062 P1 | reverser-static | 294 303 | 61 | 22 | — (static, Ghidra copy ghidra-r62a) | accept with fixes (Tier B check) | 5: stale cross-reference 1, omission 2, other 2 |
 | 2026-11-04 | `lane/r62a` check | 0062 P1 | architect-check | 83 859 | 20 | 2 | — | accept with fixes (5) | stale cross-reference 1, omission 2, other 2 |
+| 2026-11-04 | `lane/r63` | 0062 (-ns draws) | reverser-static | 332 695 | 74 | 23 | — (static, Ghidra copy ghidra-r63) | accept with fixes (Tier B check) | 5: overclaim 1, omission 4 |
+| 2026-11-04 | `lane/r63` check | 0062 (-ns draws) | architect-check | 82 460 | 12 | 2 | — | accept with fixes (5) | overclaim 1, omission 4 |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not

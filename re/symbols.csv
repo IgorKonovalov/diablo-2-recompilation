@@ -98,6 +98,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00463860,func,sub_00463860_MonBaseId,,I,drlg/collision,docs/findings/drlg/0005-collision.md
 0x004638A0,func,sub_004638A0_MonStats2FlagTest,,I,drlg/collision,docs/findings/drlg/0005-collision.md
 0x00463900,func,sub_00463900_MonClassCheck,,I,monsters/stats,docs/findings/monsters/0004-stats.md
+0x00463DD0,func,sub_00463DD0_ClientPlayerGet,,I,archaeology,docs/findings/archaeology/0003-sound-draws.md
 0x00465420,func,sub_00465420_ClientRoomAt,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x00465FD0,func,sub_00465FD0_UnitInit,,C,rng/seeds,docs/findings/rng/0002-seed-tree.md
 0x00466200,func,sub_00466200_UnitInitB,,C,rng/seeds,docs/findings/rng/0002-seed-tree.md
@@ -110,6 +111,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00472210,func,RNG_RangePow2,"uint __fastcall RNG_RangePow2(uint * seed, uint n)",C,rng,docs/findings/rng/0001-rng-core.md
 0x00472240,func,RNG_RangePow2Plus,"int __fastcall RNG_RangePow2Plus(uint * seed, int base, uint n)",C,rng,docs/findings/rng/0001-rng-core.md
 0x00472280,func,RNG_RangeOffset,"uint __fastcall RNG_RangeOffset(uint * seed, int base, int n)",C,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
+0x00473910,func,sub_00473910_WeatherTick,,I,archaeology,docs/findings/archaeology/0003-sound-draws.md
 0x00473C90,func,sub_00473C90_ClientSetOutdoors,,I,drlg/preset,docs/findings/drlg/0004-preset-units.md
 0x00477CA0,func,sub_00477CA0_ClientGameCreateMsg,,I,items/economy,docs/findings/items/0011-economy.md
 0x00478A20,func,sub_00478A20_PetTypeRecord,,I,skills/catalogue,docs/findings/skills/0015-item.md
@@ -119,6 +121,10 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0047AA20,func,sub_0047AA20_CTempGet,,I,archaeology,docs/findings/archaeology/0001-switches.md
 0x0047AA30,func,sub_0047AA30_ClientFlagBit8,,I,archaeology,docs/findings/archaeology/0001-switches.md
 0x0047C420,func,sub_0047C420_ChatInputParse,,I,archaeology,docs/findings/archaeology/0001-switches.md
+0x00481950,func,sub_00481950_SoundTablesLoad,,I,archaeology,docs/findings/archaeology/0003-sound-draws.md
+0x00482260,func,sub_00482260_ClientSoundInit,,I,archaeology,docs/findings/archaeology/0003-sound-draws.md
+0x00482680,func,sub_00482680_SoundGroupPick,,I,archaeology,docs/findings/archaeology/0003-sound-draws.md
+0x00482C20,func,sub_00482C20_ClientSoundTick,,I,archaeology,docs/findings/archaeology/0003-sound-draws.md
 0x00483360,func,sub_00483360_MulDiv,,C,monsters/pool,docs/findings/monsters/0004-stats.md
 0x004833E0,func,CHARSTATS_GetRecord,,I,stats/aggregate,docs/findings/stats/0001-aggregate.md
 0x00483410,func,SETS_GetRecord,,I,save/d2s,docs/findings/save/0001-d2s-io.md
@@ -142,6 +148,8 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x004B1090,func,sub_004B1090_ClientMercInit,,C,hirelings,docs/findings/hirelings/0001-hirelings.md
 0x004B32D0,func,sub_004B32D0_ClientQuestRecord,,I,save/d2s,docs/findings/save/0002-quest-words.md
 0x004B5C60,func,sub_004B5C60_ClientHireListDraw,,C,hirelings,docs/findings/hirelings/0001-hirelings.md
+0x004B9A00,func,sub_004B9A00_SoundPlay,,I,archaeology,docs/findings/archaeology/0003-sound-draws.md
+0x004BA020,func,sub_004BA020_SoundListTick,,I,archaeology,docs/findings/archaeology/0003-sound-draws.md
 0x004BABC0,func,sub_004BABC0_SoundChaosToggle,,I,archaeology,docs/findings/archaeology/0001-switches.md
 0x004BC500,func,RNG_RandLoHi,,C,objects,docs/findings/objects/0001-object-population.md
 0x004C0D20,func,sub_004C0D20_ClientSocketAttach,,I,items/sockets-runewords,docs/findings/items/0007-sockets-runewords.md
@@ -151,7 +159,14 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x004DABC0,func,ITEMGFX_SelectCelName,,I,items/graphics,docs/findings/items/0003-item-graphics.md
 0x004DB570,func,sub_004DB570_WornLayerShift,,I,items/graphics,docs/findings/items/0003-item-graphics.md
 0x004DB7B0,func,sub_004DB7B0_GfxDescFromUnit,,I,items/graphics,docs/findings/items/0003-item-graphics.md
+0x004DCA30,func,sub_004DCA30_MusicReset,,I,archaeology,docs/findings/archaeology/0003-sound-draws.md
+0x004DCAA0,func,sub_004DCAA0_MusicTick,,I,archaeology,docs/findings/archaeology/0003-sound-draws.md
 0x004DD060,func,sub_004DD060_WallCutawayTest,,I,drlg/preset,docs/findings/drlg/0004-preset-units.md
+0x004E0590,func,sub_004E0590_SoundVariantPick,,I,archaeology,docs/findings/archaeology/0003-sound-draws.md
+0x004E40A0,func,sub_004E40A0_ClientPlayerRange,,I,archaeology,docs/findings/archaeology/0003-sound-draws.md
+0x004E4100,func,sub_004E4100_ClientPlayerRangeLoHi,,I,archaeology,docs/findings/archaeology/0003-sound-draws.md
+0x004E4120,func,sub_004E4120_ClientPlayerRangeSym,,I,archaeology,docs/findings/archaeology/0003-sound-draws.md
+0x004E42E0,func,sub_004E42E0_SoundEnvTick,,I,archaeology,docs/findings/archaeology/0003-sound-draws.md
 0x004E6720,func,sub_004E6720_ClientGemDescMode5,,I,items/sockets-runewords,docs/findings/items/0007-sockets-runewords.md
 0x004E67D0,func,sub_004E67D0_ClientGemDescMode2,,I,items/sockets-runewords,docs/findings/items/0007-sockets-runewords.md
 0x004E6C50,func,MONSTATS_ValidId,,C,drlg/preset,docs/findings/drlg/0004-preset-units.md
@@ -170,6 +185,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00503BA0,func,sub_00503BA0_CompositeDraw,,I,items/graphics,docs/findings/items/0003-item-graphics.md
 0x00505470,func,ITEMGFX_LoadShiftFileA,,I,items/graphics,docs/findings/items/0003-item-graphics.md
 0x00505550,func,ITEMGFX_LoadShiftFilesA,,I,items/graphics,docs/findings/items/0003-item-graphics.md
+0x00514530,func,sub_00514530_SoundStart,,I,archaeology,docs/findings/archaeology/0003-sound-draws.md
 0x00516E46,func,sub_00516E46_FileOpen,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
 0x00517079,func,FILE_LoadWhole,,C,data/mpq,docs/findings/data/0002-mpq-precedence.md
 0x00517299,func,sub_00517299_MpqOpenFromPaths,,I,data/mpq,docs/findings/data/0002-mpq-precedence.md
@@ -195,6 +211,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005276E0,func,UNICODE_IsWideByte,,C,data/strings,docs/findings/data/0003-string-tables.md
 0x00527790,func,UNICODE_LoadFontMap,,I,data/strings,docs/findings/data/0003-string-tables.md
 0x00527D50,func,UNICODE_CharCount,,C,data/strings,docs/findings/data/0003-string-tables.md
+0x0052AE50,func,sub_0052AE50_ClientSendMsg,,I,archaeology,docs/findings/archaeology/0003-sound-draws.md
 0x0052B2D0,func,sub_0052B2D0_NetQueuePop1,,I,sim/frame,docs/findings/frame/0001-tick-and-messages.md
 0x0052B2F0,func,sub_0052B2F0_NetQueuePop0,,I,sim/frame,docs/findings/frame/0001-tick-and-messages.md
 0x0052B310,func,sub_0052B310_NetQueuePop2,,I,sim/frame,docs/findings/frame/0001-tick-and-messages.md
@@ -3972,9 +3989,15 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x007A05C4,data,g_ClientName,,I,archaeology,docs/findings/archaeology/0001-switches.md
 0x007A05DC,data,g_ClientGameName,,I,archaeology,docs/findings/archaeology/0001-switches.md
 0x007A0610,data,g_ClientGameMode,,I,items/economy,docs/findings/items/0011-economy.md
+0x007A6A70,data,g_ClientPlayer,,I,archaeology,docs/findings/archaeology/0003-sound-draws.md
 0x007A6A90,data,g_NoPickup,,I,archaeology,docs/findings/archaeology/0001-switches.md
+0x007BC9A0,data,g_SoundsTable,,I,archaeology,docs/findings/archaeology/0003-sound-draws.md
+0x007C5458,data,g_SoundList,,I,archaeology,docs/findings/archaeology/0003-sound-draws.md
+0x007C545C,data,g_SoundListActive,,I,archaeology,docs/findings/archaeology/0003-sound-draws.md
 0x007C5468,data,g_SoundChaos,,I,archaeology,docs/findings/archaeology/0001-switches.md
+0x007C8C78,data,g_SoundMixer,,I,archaeology,docs/findings/archaeology/0003-sound-draws.md
 0x00842710,data,g_ItemShiftMapsA,,I,items/graphics,docs/findings/items/0003-item-graphics.md
+0x00881768,data,g_SoundDevice,,I,archaeology,docs/findings/archaeology/0003-sound-draws.md
 0x008829B4,data,g_pStringTbl,,I,data/strings,docs/findings/data/0003-string-tables.md
 0x008829B8,data,g_StringTblText,,I,data/strings,docs/findings/data/0003-string-tables.md
 0x008829BC,data,g_PatchStringTblText,,I,data/strings,docs/findings/data/0003-string-tables.md
