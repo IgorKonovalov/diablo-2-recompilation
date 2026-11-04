@@ -50,9 +50,11 @@ STEPS = {"normal": "tools/gdb/enter-normal.steps", "nightmare": "tools/gdb/enter
          "hell": "tools/gdb/enter-hell.steps"}
 
 
-def stage(wp, secs=130, more=()):
-    """Waypoint TAB,ROW, then Nova sweep for `secs` seconds of the kill loop."""
-    return [(["farm", "--sweep", "--wp", wp, "--time", str(secs)] + NOVA + list(more), secs + 150)]
+def stage(wp, secs=130, more=(), players=0):
+    """Waypoint TAB,ROW, then Nova sweep for `secs` seconds of the kill loop. `players` N types /players N once the
+    game takes keys (d2pilot farm --players; a process holds it across games, so run such a case fresh)."""
+    return [(["farm", "--sweep", "--wp", wp, "--time", str(secs)] + NOVA + list(more) +
+             (["--players", str(players)] if players else []), secs + 150)]
 
 
 def catacombs(secs=60, hold=False, players=0):
@@ -65,6 +67,38 @@ def catacombs(secs=60, hold=False, players=0):
     return [(first, 380, 37), (down, 360, 37), (down, 360, 37), (down, 360, 37),
             (["hunt", "--mon-cls", "156", "--time", str(secs * 4)] + NOVA0 + (["--radius", "1"] if hold else []),
              secs * 4 + 40)]
+
+
+def countess(secs=60):
+    """Black Marsh waypoint (tab 1 row 5), the Forgotten Tower (LvlWarp 10, level 20), its cellar (12, level 21), four
+    Crypt Down warps (9) to Tower Cellar Level 5 (level 25), then a hunt for the Countess (class 45) with the Nova
+    radius at 1 so that she is not killed at once and thinks for a while (the route of tools/h2a_sessions.py's
+    countess(), on the Act IV start). A descent is skipped once the player stands in its level or a deeper one."""
+    def down(rec, more=()):
+        return ["farm", "--sweep", "--descend", str(rec), "--descend-time", "240", "--time", "5"] + NOVA0 + list(more)
+    return [(["farm", "--sweep", "--wp", "1,5", "--descend", "10", "--descend-time", "240", "--time", "5"] + NOVA0,
+             400, (20, 21, 22, 23, 24, 25)),
+            (down(12), 340, (21, 22, 23, 24, 25)),
+            (down(9), 340, (22, 23, 24, 25)),
+            (down(9), 340, (23, 24, 25)),
+            (down(9), 340, (24, 25)),
+            (down(9), 340, (25,)),
+            (["hunt", "--mon-cls", "45", "--time", str(secs * 5)] + NOVA0 + ["--radius", "1"], secs * 5 + 40)]
+
+
+def skipped(level, skip):
+    """A step's third element: a level id, or a tuple of them; the step is skipped when the player stands in one."""
+    if skip is None or level is None:
+        return False
+    return level == skip if isinstance(skip, int) else level in skip
+
+
+def launch_seed(case, seed0, launches, pinned=None):
+    """The map seed of a launch. A case in PINNED keeps its seed on every launch, a rerun included (a route of fixed
+    positions holds on that seed only); any other case takes seed0 plus the launch number."""
+    pinned = PINNED if pinned is None else pinned
+    name = case[6:] if case.startswith("fresh:") else case
+    return pinned[name] if name in pinned else seed0 + launches
 
 
 # case: (difficulty, [pilot steps (args, timeout[, level])], what the stage holds [MonStats AI rows, Levels mon cols])
@@ -99,7 +133,9 @@ CASES = {
     "a1-andariel-2": ("normal", catacombs(120, hold=True), "Catacombs to Andariel with the level guards: Andariel 34"),
     # /players 8: Andariel has 4.5 times the life, so the mercenary needs longer and she thinks for longer (a process
     # holds /players across games: run it as a fresh case)
+    "a3-flayer-p8": ("normal", stage("3,4", 240, players=8), "Flayer Jungle at /players 8: Fetish 30 (chained pairs)"),
     "a1-andariel-p8": ("normal", catacombs(120, hold=True, players=8), "Catacombs to Andariel at /players 8: Andariel 34"),
+    "a1-countess": ("normal", countess(), "Tower Cellar Level 5: The Countess (row 10; state 13)"),
     "nm-a2-halls": ("nightmare", stage("2,4"), "Halls of the Dead 2, Nightmare"),
     "h-a4-cotd": ("hell", stage("4,2"), "City of the Damned, Hell"),
     # the Necromancer (tools/d2s_recipes/ai-nec.json, built on samples/d2s/smpnec.d2s): a golem and skeletons fight
@@ -156,6 +192,8 @@ def duriel(secs=420):
 CASES["a2-halls-p12"] = ("normal", stage("2,4", 420), "Halls of the Dead 2, long: GreaterMummy 22, Mummy 21 (P1b-2 with AI_P1B2=1)")
 CASES["d-duriel"] = ("normal", duriel(), "Duriel's lair at /players 1, Normal: row 44, the melee decision (map seed 3364)", "AiDur")
 CHAR = "CombatSor"
+# cases whose route holds on one map seed only: the launch seed is this one every time, a rerun included
+PINNED = {"d-duriel": 3364}
 
 
 def case_of(name):
@@ -195,7 +233,7 @@ class Proc:
         self.save = None
 
 
-def run(slot, tag, saves, run_id, names, dev=False, status=None, seed0=5201, reruns=1):
+def run(slot, tag, saves, run_id, names, dev=False, status=None, seed0=5201, reruns=1, gdb=GDB):
     os.makedirs(LOGS, exist_ok=True)
     saves = os.path.abspath(saves)
     runname = ("dev-" if dev else "") + run_id
@@ -216,12 +254,12 @@ def run(slot, tag, saves, run_id, names, dev=False, status=None, seed0=5201, rer
         pr.drv = None
 
     def launch(case, diff, save):
-        seed = seed0 + pr.launches
+        seed = launch_seed(case, seed0, pr.launches)
         pr.launches += 1
         pr.stem = hr.new_stem(LOGS, runname, slot, seed, "L%d" % pr.launches)
         pr.log = pr.stem + ".log"
         hr.install(slot, tag, out=out)
-        pr.drv = hr.launch(slot, seed, pr.log, gdb=GDB, steps=STEPS[diff], after=3000, install=(tag, [save]), out=out,
+        pr.drv = hr.launch(slot, seed, pr.log, gdb=gdb, steps=STEPS[diff], after=3000, install=(tag, [save]), out=out,
                            stem=pr.stem)
         hr.mark(pr.stem, case, "start", pr.log, "launch seed=%d %s" % (seed, diff))
         r = hr.wait_ready(pr.log, "AI logger armed", 180, proc=pr.drv, tick=lambda: hr.hide_window(slot))
@@ -272,7 +310,7 @@ def run(slot, tag, saves, run_id, names, dev=False, status=None, seed0=5201, rer
                 continue
             if step[0] == "wp":                         # ("wp", tab, row): town waypoint travel
                 step = (["wp", step[1], step[2]] + WP, 120)
-            if len(step) > 2 and level_of(pr.log) == step[2]:
+            if len(step) > 2 and skipped(level_of(pr.log), step[2]):
                 continue
             args, timeout = step[0], step[1]
             lid0, pos0 = level_of(pr.log), plr_pos(pr.log)
@@ -373,6 +411,7 @@ def main(argv):
     ap.add_argument("--status")
     ap.add_argument("--seed", type=int, default=5201)
     ap.add_argument("--reruns", type=int, default=1)
+    ap.add_argument("--gdb", default=GDB, help="the logger script (tools/gdb/ai-skills.gdb: the AI and the skills loggers)")
     ap.add_argument("--fresh", action="store_true", help="every case in its own game process (plan 0056 Phase 4: the default for kept runs)")
     ap.add_argument("cases", nargs="+")
     a = ap.parse_args(argv[1:])
@@ -382,7 +421,7 @@ def main(argv):
         if (c[6:] if c.startswith("fresh:") else c) not in CASES:
             print("unknown case %s" % c)
             return 2
-    return run(a.slot, a.tag, a.saves, a.run, a.cases, a.dev, a.status, a.seed, a.reruns)
+    return run(a.slot, a.tag, a.saves, a.run, a.cases, a.dev, a.status, a.seed, a.reruns, a.gdb)
 
 
 if __name__ == "__main__":
