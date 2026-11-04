@@ -26,7 +26,7 @@ This page names its ground at each statement, because the kinds differ and do no
 
 | Kind | What it is | Where it stops |
 |---|---|---|
-| **Seen in a game** | Logged in the game and compared with a model: the three kept batches of AI logs, a first run, a second of 21 sessions and a third of 17 logs. | It holds for what the logs hold. A decision compared "at its first call" says nothing past that call. |
+| **Seen in a game** | Logged in the game and compared with a model: the three kept batches of AI logs, a first run, a second of 21 sessions and a third of 17 logs, and five logs of Duriel and The Countess played by hand. | It holds for what the logs hold. A decision compared "at its first call" says nothing past that call. |
 | **Emulated** | The game's own code run on declared inputs, up to its first callee. | It shows that code's map up to that call: no callee, and no store or command after it. It does not show what the game passes in. |
 | **Read from the code** | A reading of the instructions or of a finding. Nothing ran. | No run has checked it. [Not every catalogue block has yet been read against the instructions](#how-far-the-blocks-have-been-read). |
 | **A consistency check** | A model walks on past the first call, taking each call's logged result, and forks where a branch reads a value the log does not hold. | A model that forks cannot fail at the fork, so it raises nothing. |
@@ -359,7 +359,7 @@ logged results of the calls, the game's code gives exactly one sequence of calls
 with no further call. **This raises no role and no symbol, and no reading of a catalogue finding.** The other side of a one-way branch is not compared. It assumes that an opaque callee changes no
 known memory but one unit field and its pointer arguments, and the known words exclude synthetic stack and path pointers.
 
-| Row | Name | Decisions | Calls past the first | Two-way sites that fail alone when flipped | Logs: logger revision 4 is the second batch, 6 the third | How narrow |
+| Row | Name | Decisions | Calls past the first | Two-way sites that fail alone when flipped | Logs: logger revision 4 is the second batch, 6 the third and the logs played by hand | How narrow |
 |---:|---|---:|---:|---|---|---|
 | 13 | FallenShaman | 103 | 361 | 10 of 10 | 4 | |
 | 21 | Mummy | 205 | 205 | 4 of 4 | 4 | one call past the first in every decision |
@@ -372,6 +372,10 @@ known memory but one unit field and its pointer arguments, and the known words e
 | 35 | CorruptArcher | 111 | 226 | 10 of 10 | 6 | |
 | 22 | GreaterMummy | 62: 27 and 35 | 98 | 9 of 9 | 4 and 6 | |
 | 34 | Andariel | 51: 9 and 42 | 2 | 5 of 5 | 4 and 6 | two calls past the first in all |
+| 44 | Duriel | 309 | 310 | 3 of 3 | 6, played by hand | Normal, Duriel himself and not Über Duriel; 1 decision out of melee range, the one case on that side |
+| 10, state 13 | The Countess's state | 160 | 988 | 7 of 7 | 6, played by hand | three given words, below; Normal, the player as target, one preset file |
+
+**State 13's row, three given words.** For that row alone the logged inputs include three words the stock model does not load: the length of her path list, from the preset's file; the base of the monster table, the logger's own read; and the number of skill records, from the skills table. They are not unknown: the model does not fork on them, and wrong ones fail, except that the skill count can only fail low, so only that bound is tested. The list's points stay unknown in this count and are compared with the file on their own. Without the words, that count has 1 of the 160 with no fork.
 
 Everything a tier entry states past its first call outside those logged paths stays a code reading.
 
@@ -420,14 +424,14 @@ The other rows of the table and the 18 state rows are [the catalogue](../specs/m
 | [11: Diablo, Nihlathak, the Baal rows, Uber Diablo and Baal](../specs/monsters/ai/catalogue.md#batch-11-bosses-b-diablo-nihlathak-the-baal-rows-uber-diablo-and-baal) | 7 | 0 |
 | [12: towns, NPCs and the state rows](../specs/monsters/ai/catalogue.md#batch-12-towns-npcs-and-the-state-rows) | 13 | 10 |
 
-The [catalogue states the census](../specs/monsters/ai/catalogue.md#how-to-read-an-entry). Of the 130 rows outside the tier: **28 have their first call compared, 15 are logged but have no model, so their first call is not raised, and 87 have no decision logged at all.** A state row's own decisions, where
+The [catalogue states the census](../specs/monsters/ai/catalogue.md#how-to-read-an-entry). Of the 130 rows outside the tier: **29 have their first call compared, 16 are logged but have no model, so their first call is not raised, and 85 have no decision logged at all.** A state row's own decisions, where
 it has any, are counted in its entry.
 
 **Every entry's block is a code reading.** What can sit on top of it:
 
 - **An emulated map:** 115 of the 130 name an emulated family for their think or their init. It covers that code up to its first callee, and no callee, store or command after it.
-- **A first-call count**, for the 28 above, which covers that one call.
-- **A resumed count,** on 38 entries, 4 of them state rows. Every one is a consistency check. **No entry outside the machinery's table is under [the claim past the first call](#past-the-first-call)**: nothing past the first call of any catalogue row is confirmed, and no row's role, symbol or reading is raised by being resumed.
+- **A first-call count**, for the 29 above, which covers that one call.
+- **A count past the first call,** on 41 entries, 5 of them state rows. All but two are a consistency check. **Only row 44 and state 13 of the catalogue's entries are under [the claim past the first call](#past-the-first-call)**, on its logged paths, state 13 with its three given words. Past the first call nothing else in the catalogue is confirmed, and no row's role, symbol or reading is raised by being resumed.
 
 ### How far the blocks have been read
 
@@ -457,13 +461,13 @@ read from a file or packet, or a class named by a string looked up in the table,
 
 ## The shorts, by name
 
-What the runs did not reach, each stated as it stands ([overview § Open questions](../specs/monsters/ai/README.md#open-questions)). Each is open. Those that lack logs need a further session in a game, and state 13, Duriel's melee and the Uber forced cases need one played by hand.
+What the runs did not reach, each stated as it stands ([overview § Open questions](../specs/monsters/ai/README.md#open-questions)). Each is open in what it leaves unreached. Those that lack logs need a further session in a game, and the Uber forced cases need one played by hand.
 
 - **Chaining: Andariel and BatDemon.** The chaining of decision pairs reaches 8 drawing pairs of the 20 asked for Andariel, and 1 of 300 pairs for BatDemon. For those two it stays a reading.
 - **BloodLord.** 38 decisions past the first, under the floor of 50, none with a call there, so nothing is claimed past the first call.
-- **The catalogue sample** is short for batches 5, 7, 10, 11 and 12, which have no row that counts: the logs hold no non-tier row of 5, 7 and 11, batch 10 only in the logs of an earlier logger revision, and of batch 12, row 54 cannot fail, row 99 has no call past the first, row 32 has a fork in all 199 decisions of the revision 4 logs, and row 100 has 4 decisions. Row 130's map has not landed. The rest of the table stays at its emulated map or its reading.
-- **State 13, The Countess's state.** Two launches on her route ended the descent at levels 24 and 23, so no state 13 decision is logged. A session played by hand would give it. States 2, 3, 8, 9, 14 and 17 are not called dead.
-- **Duriel in melee range.** Row 44 was not logged, and his melee has not been played under the logger. The code's side: three fresh draws in order, for Smite, then Jab, then the second attack, else the first attack. That map ran under emulation to its first callee. The frequencies are arithmetic on it, with the slots in all three difficulties: **Smite 33 %, Jab 33.5 %, first attack 33.5 %.** A community page gives **17 % first attack, 33 % Smite, 50 % Jab** for Duriel, and the same for Über Duriel, the same think and the same slots. **The two disagree and it is listed unresolved**: no logged Duriel melee decision exists to settle it, and agreement or disagreement raises nothing.
+- **The catalogue sample** is short in the three kept batches for batches 5, 7, 10, 11 and 12, which have no row that counts there, though the logs played by hand hold row 44 of batch 7 and state 13 of batch 12: the three batches hold no non-tier row of 5, 7 and 11, batch 10 only in the logs of an earlier logger revision, and of batch 12, row 54 cannot fail, row 99 has no call past the first, row 32 has a fork in all 199 decisions of the revision 4 logs, and row 100 has 4 decisions. Row 130's map has not landed. The rest of the table stays at its emulated map or its reading.
+- **State 13, The Countess's state.** Played by hand: 160 of her decisions follow the catalogue's block on the branches reached, and her Firewall goes through the four points of her preset's path, in the first of its two files. What sets the state was not seen, since the logger attached after she was created. States 2, 3, 8, 9, 14 and 17 are not called dead.
+- **Duriel in melee range.** Played by hand, Normal: 308 decisions, Smite 102, Jab 116, first attack 90, each one's choice following from three fresh draws on the seed logged for it. The frequencies stay arithmetic on that, **Smite 33 %, Jab 33.5 %, first attack 33.5 %**, and a community page's **17 % first attack, 50 % Jab** fall outside what was measured. Über Duriel, the same think and the same slots, is not played.
 - **A champion corpse and the Greater Mummy.** A community page lists champions as an exception to its raising. By the reading, its search tests the unique flag only, so a champion corpse in range becomes its corpse, and the skill's own target test is not read for champions. No natural champion was logged. A built state cannot count, since a logger never writes game memory, so it needs a forced mode that writes nothing.
 - **The Uber forced cases.** Four named cases, [G1, G2, G3 and G5](../findings/ai/0016-uber-event.md), forced setups for a session played by hand. Not run.
 - **Row 23's mismatches.** Past the first call, the revision 4 logs hold 8 for this row, with the logger's call limit as the cause read. The revision 6 logs have the row at 256 decisions with 0 mismatches, but only 2 of the lines that would test that cause are this row's, so the reading is untested.
@@ -481,7 +485,7 @@ From the specs' open questions ([overview](../specs/monsters/ai/README.md#open-q
 - **Path type 16's setters:** they have no reference, and a run could settle whether anything reaches them ([pathing](pathing.md#the-shorts-by-name)).
 - **The town:** whether a stock town's geometry admits a follower's route.
 - **Per row, in the catalogue's list:** among them what a self-kill credits, which minions two group calls reach, a state one row tests and nothing in it sets, who writes the hydra's variable, what one row's context holds when no search ran, and who posts another row's records.
-- **Community claims.** 67 are listed by row, as leads: 35 held by the code reading, 23 held with a refinement, 6 not covered, 3 contradicted, those being Duriel's two and the Greater Mummy's. A verdict compares a claim with a code reading, and agreement raises nothing.
+- **Community claims.** 67 are listed by row, as leads: 35 held by the code reading, 23 held with a refinement, 6 not covered, 3 contradicted, those being Duriel's two and the Greater Mummy's. A verdict compares a claim with a code reading, and agreement raises nothing; Duriel's first is also measured, [in the shorts](#the-shorts-by-name).
 
 ## Where to read more
 

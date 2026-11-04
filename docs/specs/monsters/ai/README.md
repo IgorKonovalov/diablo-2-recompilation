@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, anim/timing, anim/movement, skills/dispatch, monsters/stats, path/overview, path/search, drlg/collision]
 consumed_by: [monsters/ai/machinery, skills/dispatch, monsters/stats, monsters/spawn, hirelings, drlg/lifecycle, path/overview, sim/frame]
-tags: {C: 39, I: 55, L: 9}
+tags: {C: 41, I: 56, L: 10}
 updated: 2026-11-04
 ---
 
@@ -490,9 +490,9 @@ forks. A model that forks on unknowns cannot fail there, so the number of calls 
   raises no role, no symbol and no reading of a catalogue finding, and the other side of a one-way branch is not
   compared. It assumes that an opaque callee changes no known memory but `Unit+0xC4` and its pointer arguments, and known
   words exclude synthetic stack and path pointers. (run:2026-11-04-ai-resume, run:2026-11-04-ai-resume-flip,
-  run:2026-11-04-ai-r5, 0x005B186F)
+  run:2026-11-04-ai-r5, run:2026-11-04-r72, 0x005B186F)
 
-  | Row | Tier AI | Decisions under the sentence | Calls past the first | Two-way sites failing alone | Logs | Narrowness |
+  | Row | Think | Decisions under the sentence | Calls past the first | Two-way sites failing alone | Logs | Narrowness |
   |---:|---|---:|---:|---|---|---|
   | 13 | FallenShaman | 103 | 361 | 10 of 10 | rev 4 | |
   | 21 | Mummy | 205 | 205 | 4 of 4 | rev 4 | one call past the first in every decision |
@@ -505,7 +505,10 @@ forks. A model that forks on unknowns cannot fail there, so the number of calls 
   | 35 | CorruptArcher | 111 | 226 | 10 of 10 | rev 6 | |
   | 22 | GreaterMummy | 62 (27 and 35) | 98 | 9 of 9 | rev 4 and rev 6 | |
   | 34 | Andariel | 51 (9 and 42) | 2 | 5 of 5 | rev 4 and rev 6 | two calls past the first in all |
+  | 44 | Duriel | 309 | 310 | 3 of 3 | rev 6, owner-played | Normal, record 211; 1 decision not melee, the one case on that side of 0x005F6814 |
+  | 10, state 13 | `AiSt13` | 160 | 988 | 7 of 7 | rev 6, owner-played | H1b's three given words; Normal, the player as target, one preset file |
 
+- H1b. [C] **State 13's row, three given words.** For that row alone the "logged inputs" include three words the stock model does not load: the list's count at `AiCtl+0x38`, 4, the points of LvlPrest `Def` 159's `File1` path; DataTables `+0xA78`, the logged `ms` minus class × 0x1A8, which is the logger's own read of that word; DataTables `+0xBA0`, 357, the records of skills.bin. They are not unknown: the model does not fork on them, and wrong ones fail, a count of 3 in 6 decisions, a count of 5 in 138, a Skills count of 321 or below in 21. A Skills count above 321 cannot fail, so only that bound is tested. The list's points stay unknown in this census; [S13e](catalogue.md#s13-state-row-13-fnsub_005e5c50_aist130x005e5c50) compares them with the file. Without the words the census has 1 of 160 with no fork. (run:2026-11-04-r72, 0x005E5B93, 0x005E5BC8, 0x005E5BE0)
 - H2. [C] **What the resumed 0 tests.** On the rev 6 batch 6 438 decisions are resumed with 0 mismatches and 86 stopped
   (row 32's `call esi` 80, a return site not armed 5, a log's end 1), 46 832 boundary calls matched past the first. Of the
   resumed, 3 055 have no branch on an unknown value; the other 3 383 hold 42 304 of the 46 564 calls past the first of
@@ -556,27 +559,28 @@ tests are the checkers `tools/ai.py check` and `tools/ai_resume.py` over the log
   [ai/0018](../../../findings/ai/0018-phase2-third-run.md): the three runs; [experiments](../../../findings/ai/experiments.md).
 - [ai/0013 § 3](../../../findings/ai/0013-batch12.md): the state setters.
 - [ai/0014](../../../findings/ai/0014-community-cross-check.md): the community cross-check, for *Open questions*.
+- [ai/0020](../../../findings/ai/0020-owner-played-duriel-countess.md): the owner-played Duriel and The Countess, row 44's and state 13's lines in § H, for *Open questions*.
 - [MonAI](../../../tables/MonAI.md), [MonStats](../../../tables/MonStats.md).
 - `AiCtl` and its neighbours are in [re/types/ai.h](../../../../re/types/ai.h).
 
 ## Open questions
 
-- [L] **State 13.** Two launches on The Countess's route ended the descent at levels 24 and 23, so no state 13 decision
-  is logged and states 2, 3, 8, 9, 14 and 17 are not called dead. An owner-played `/players 1` session would give it.
-  (run:2026-11-04-ai-r5, [the owner entry](../../../backlog/archive/2026-11-04-architect-human-plan-0052-p1b-1-duriel-melee-owner-play.md))
+- [I] **States 2, 3, 8, 9, 14 and 17.** They stay E7's reading and are not called dead. The owner-played window holds states 0 and 13 only (626 AID and 769 AIN lines, Normal), and states 10, 11, 12 and 13 have not been live in one window. (run:2026-11-04-r72, [ai/0020](../../../findings/ai/0020-owner-played-duriel-countess.md))
+- [L] **State 13's setter, observed.** 0x005A4C1A at spawn is a reading: every owner log attached after she was created. A read-only break at 0x005B0E00, attached before her level is entered, would give it. (fn:sub_005B0E00_MonAiInit@0x005B0E00)
+- [L] **State 13 on her preset's `File2`:** what picks the file, and her fires under it, are not logged. (0x005E5C02, tbl:LvlPrest.txt:File2)
 - [L] **Chaining short:** Andariel 8 of 20, BatDemon 1 of 300 (A3). (run:2026-11-04-ai-r5)
 - [L] **BloodLord:** 38 decisions past the first, none with a call there (H4). (run:2026-11-04-ai-r5)
-- [L] **The catalogue sample** is short for batches 5, 7, 10, 11, 12: the logs hold no non-tier row of 5, 7 and 11, batch
-  10 only in rev 3 logs, and rows 54, 99, 32, 100 of batch 12 do not count. The rest of the table stays at its batch's
-  emulated `[C]` or `[I]`. (run:2026-11-04-ai-resume)
+- [L] **The catalogue sample** is short in the three kept batches for batches 5, 7, 10, 11, 12: those logs hold no non-tier row of 5, 7 and 11, batch
+  10 only in rev 3 logs, and rows 54, 99, 32, 100 of batch 12 do not count. Outside them, the owner-played logs hold row 44 of batch 7 and state 13 of batch 12 (§ H1). The rest of the table stays at its batch's
+  emulated `[C]` or `[I]`. (run:2026-11-04-ai-resume, run:2026-11-04-r72)
 - [I] **Row 23's mismatches.** The 8 of the rev 4 logs have the logger's 600-call limit as their cause read; rev 6 has
   row 23 at 256 decisions with 0 mismatches and 0 `AIL` lines with `pend` 0, but only 2 of those lines are row 23's, so
   the reading is untested; row 23 is the catalogue's. (run:2026-11-04-ai-resume, run:2026-11-04-ai-r5, 0x005F33EC)
 - [L] **The H1 remainder:** the 8 `AD0` stops, unexamined (A5), and the 330 of 331 same shape, an inference (A5).
-- [L] **P1b-1, Duriel, and C10, C11's community disagreement, listed unresolved.** src:arreat-summit-boss-pages gives Duriel "17 % Melee
-  Attack 1, 33 % Smite, 50 % Jab" and the same for Über Duriel. Unplayed, so no logged Duriel melee decision settles it. [The entry](catalogue.md#r44-row-44-duriel-fnsub_005f67b0_aiduriel0x005f67b0) carries it. ([ai/0014](../../../findings/ai/0014-community-cross-check.md), [the owner entry](../../../backlog/archive/2026-11-04-architect-human-plan-0052-p1b-1-duriel-melee-owner-play.md))
-- [C] **The code's side of C10:** `draw < aip2` Skill3, then a fresh `draw < aip3` Skill2, then a fresh `draw < aip4` A2, else A1, by emulation to the first callee. (run:2026-10-30-ai-cat-emu-6, fn:sub_005F67B0_AiDuriel@0x005F67B0)
-- [I] **Its frequencies**, arithmetic on that map with `aip2..4` 33, 50, 0, in all three difficulties: Smite 33 %, Jab 33.5 %, A1 33.5 %. C11 is the same think and the same values, row 44's record 708. (fn:sub_005F67B0_AiDuriel@0x005F67B0, [ai/0014](../../../findings/ai/0014-community-cross-check.md))
+- [C] **C10, settled for record 211, Normal.** Of 308 logged melee decisions, Smite 102, Jab 116, A1 90; exact 95 % intervals 27.9–38.7, 32.2–43.3, 24.2–34.6 %, excluding src:arreat-summit-boss-pages's 50 and 17. The 9 with the mercenary as target are counted, as the think only pushes its target; the player alone gives 99, 111, 89 of 299 and excludes them too. Each decision's arm and number of steps follow from its logged seed by the three draws, 308 of 308; six other readings fail 90 to 234. (run:2026-11-04-r72, fn:sub_005F67B0_AiDuriel@0x005F67B0, [ai/0020](../../../findings/ai/0020-owner-played-duriel-countess.md))
+- [C] **The code's side, emulated:** `draw < aip2` Skill3, then a fresh `draw < aip3` Skill2, then a fresh `draw < aip4` A2, else A1, to the first callee. (run:2026-10-30-ai-cat-emu-6, fn:sub_005F67B0_AiDuriel@0x005F67B0)
+- [I] **Its frequencies** are arithmetic on that map with `aip2..4` 33, 50, 0: Smite 33 %, Jab 33.5 %, A1 33.5 %; the counts agree and do not prove them. (fn:sub_005F67B0_AiDuriel@0x005F67B0)
+- [L] **C11, Über Duriel:** the page's same 17/33/50. Same think and `aip` values as data, no decision of record 708 logged; open with the Uber cases. (fn:sub_005F67B0_AiDuriel@0x005F67B0, [ai/0014](../../../findings/ai/0014-community-cross-check.md))
 - [L] **P1b-2, C40.** Whether a natural champion corpse reaches the Greater Mummy's skill test: no natural champion was logged, and the built-state run cannot count, since a logger
   never writes game memory (ADR-0003). It needs a `-forced` mode that writes nothing. (fn:sub_005F2A00_AiGreaterMummyCb@0x005F2A00)
 - [I] **The code's side of C40:** the callback tests the unique flag only, so a champion corpse in range becomes `corpse` ([machinery T22a](machinery.md#t22-row-22-greatermummy-fnsub_005f2b10_aigreatermummy0x005f2b10)); the skill's own target test is not read for champions. (fn:sub_005F2A00_AiGreaterMummyCb@0x005F2A00, fn:sub_005FD470_MonSkillTargetOk@0x005FD470)
