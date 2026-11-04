@@ -48,7 +48,7 @@ emulated maps (run:2026-10-27-ai-emu). Table dumps, AI-row usage and pool counts
 - [I] **Target search** (row kinds 1, 2, 4, 5) walks the game's ten **target lists** at `Game+0x10F8`: lists 0–7 one
   per player slot (the player first, then its hirelings and summons), list 8 alignment-2 monsters, list 9 decoys.
   For a hostile searcher a player head counts only in the searcher's act, out of town and nearer than 55; range
-  `aidist[difficulty]` (35 when 0); nearest by the AI distance, with a line test unless `AiCtl` flag `0x40` was set.
+  `aidist[difficulty]` (35 when 0); nearest by the AI distance, with a line test as § 6 states it (flag `0x40` forces it on).
   A forced target (taunt, attract, confuse; `MonsterData+0x38`) is taken first; confusion draws one
   `RNG_RangePow2(unit seed, 2)`. (fn:sub_005DD7F0_MonAiFindTarget@0x005DD7F0,
   fn:sub_005DD610_MonAiForcedTarget@0x005DD610, fn:sub_005B1990_TargetListAdd@0x005B1990, struct:Game+0x10F8,
@@ -325,8 +325,8 @@ flowchart TD
   (fn:sub_00574250_MonsterInit@0x00574250, fn:sub_0058EBC0_AiCtlAlloc@0x0058EBC0, fn:sub_005A6490_MonPathCtlAlloc@0x005A6490,
   struct:AiCtl+0x0C, struct:MonPathCtl+0x18)
 - [I] **`AiCtl` fields read by the machinery:** `+0x00` state, `+0x04` think, `+0x08` flags (u16; `0x08` set by the
-  target search when it finds a target and the searcher is not alignment 2, `0x40` a one-shot "search without the
-  line test" cleared by the search, `0x20` the unique-mod teleport flag, bit 0 by `MonAiMove`'s flag 1), `+0x0C/+0x10`
+  target search when it finds a target and the searcher is not alignment 2, `0x40` a one-shot that forces the search's
+  line test on, set by `MonAiMove`'s flag 1 on a refused move and cleared by the search [corrected, `lane/s52a` review, 2026-11-04], `0x20` the unique-mod teleport flag), `+0x0C/+0x10`
   a unit to keep near and its type (§ 5), `+0x14..+0x1C` AI variables, `+0x20/+0x24` parameter records (kind 10 holds a
   saved point), `+0x28..+0x34` the owner and the minion list. (struct:AiCtl+0x08, struct:AiCtl+0x2C,
   fn:sub_0058F030_MonSetOwner@0x0058F030, fn:sub_0058F380_MonGroupForEach@0x0058F380)
@@ -356,16 +356,14 @@ flowchart TD
   (`0x00584540(2, guid)`) and `MonAiIdle(5)`. (fn:sub_005B0F50_MonAiOpenDoor@0x005B0F50, tbl:MonStats.txt:opendoors)
 - [I] **Leader and minion following** (`MonAiKeepNear`): when `AiCtl+0x0C ≠ −1` and `MonModeAllowed`, the unit
   `(AiCtl+0x10, AiCtl+0x0C)` is looked up; gone or dead clears the guid. At AI distance below 2 with `AiCtl+0x10 = 0`
-  (a player) it steps 19 subtiles away (`MonAiStepAway(unit, 19, 1)`, then stop); at 21 or more it sets the override
-  byte 40 and wanders to a ring point of radius 19 around that unit (`MonAiWanderNearUnit(unit, 19)`, 4 unit-seed
+  (a player) it steps 19 subtiles away (`MonAiStepAway(unit, 19, 1)`, then stop; refused, `MonAiWanderNearUnit(unit, 19)` and stop, 0x005B109E); at 21 or more it calls `MonAiPathOverride(U, 7, 0, 40)` [corrected, `lane/s52a` review, 2026-11-04] and wanders to a ring point of radius 19 around that unit (`MonAiWanderNearUnit(unit, 19)`, 4 unit-seed
   steps); between, the AI goes on. `AiCtlFollowSet` writes the pair from `UniqueMinions` (minion → its boss),
   `SkillReviveDo`, `SummonFinish` and `SkillDo71Taunt`. (fn:sub_005B0FF0_MonAiKeepNear@0x005B0FF0,
   fn:sub_005DD330_AiCtlFollowSet@0x005DD330, fn:sub_005A0C00_UniqueMinions@0x005A0C00, fn:sub_005D8570_SkillDo71Taunt@0x005D8570)
 - [I] **`MonSpcWalkCheck`** (only with a target): `MonAiBossSightPause` (class 250, a champion or unique, or a
-  `boss`, at distance below 20 from a **player** target, `AiCtl` flag not yet set: set it, `UnitSetEvent(0)` and
-  `MonAiIdle(20)`); `UModTeleportTry` (drlg/lifecycle); then, for an `isMelee` class allowed its mode, in a level with
-  `MonSpcWalk` non-zero and the distance above it: a teleport-point test toward the target (`AiApproachPointTest`),
-  else search kind 11, else `MonAiWanderRing(4)` and stop; a found point replaces the target. (fn:sub_005B13E0_MonSpcWalkCheck@0x005B13E0,
+  `boss`, at distance below 20 from a **player** target, `AiCtl` flag `0x10` clear: `UnitSetEvent(U, 16, 0)`, set the flag, `MonAiIdle(20)` [corrected, `lane/s52a` review, 2026-11-04]); `UModTeleportTry` (drlg/lifecycle); then, for an `isMelee` class allowed its mode, in a level with
+  `MonSpcWalk` non-zero and the distance above it: a teleport-point test toward the target (`AiApproachPointTest`; passing, the target is unchanged),
+  else search kind 11, else `MonAiWanderRing(4)` and stop; a found **unit** replaces the target and distance [corrected, `lane/s52a` review, 2026-11-04]. (fn:sub_005B13E0_MonSpcWalkCheck@0x005B13E0,
   fn:sub_005B1140_MonAiBossSightPause@0x005B1140, fn:sub_005B11F0_UModTeleportTry@0x005B11F0,
   fn:sub_005DC640_AiApproachPointTest@0x005DC640, tbl:Levels.txt:MonSpcWalk, tbl:MonStats.txt:isMelee)
 
@@ -381,11 +379,10 @@ flowchart TD
   `pushes 0x005B1990 2`). (fn:sub_005B1880_TargetListAddPlayer@0x005B1880, fn:sub_005B1900_TargetListAttach@0x005B1900,
   fn:sub_005B1990_TargetListAdd@0x005B1990, struct:Game+0x10F8)
 - [I] **`MonAiFindTarget(ECX game, EDX unit; ctl, &dist, &melee)`** (0x005DD7F0):
-  1. no room: 0. The line test is on unless `AiCtl` flag `0x40` (cleared here), the room is outdoors, `AiCtl` flag
-     `0x08` is set, or the monster's `MonsterData+0x50` record has `+0x24` non-zero;
+  1. no room: 0. `AiCtl` flag `0x40` set: it is cleared and the line test is **on** (0x005DD829, 0x005DD836: `[ebp-0xC]` = 1, and 0x005DD965 runs `UnitLineBlocked` when it is non-zero). Otherwise the test is off in an outdoors room, off with flag `0x08`, and off with the `MonsterData+0x50` record's `+0x24` non-zero [corrected, `lane/s52a` review, 2026-11-04];
   2. `MonAiForcedTarget` first; a hit ends the search;
   3. a searcher of alignment 0 (`UnitAlignGet`): range `aidist[difficulty]` (u8 MonStats `+0x52 + Game+0x6D`), 35 when
-     0. For lists 0–7: the **head** counts only when in the searcher's act (`Unit+0x18` byte), in a room and that room
+     0, is the start of "the best so far" (`[ebp-0x8]`, 0x005DD88E, 0x005DD8BB, compared unsigned at 0x005DD960), for lists 0–8; list 9 has its own best from `0x7FFFFFFF` and no range [corrected, `lane/s52a` review, 2026-11-04]. For lists 0–7: the **head** counts only when in the searcher's act (`Unit+0x18` byte), in a room and that room
      **not a town**; its distance updates the "nearest seen"; at 55 or more the whole list is skipped; a dead head
      counts as `0x7FFFFFFF`; then the head and the list's later nodes (no act or town test) are taken when nearer than
      the best so far and the line test passes (`UnitLineBlocked(unit, cand, 4) = 0`). List 8: act test, distance, line
@@ -393,15 +390,14 @@ flowchart TD
      there is none, or the decoy is nearer than 6 and a type-2 test plan to the found target has no point (and search
      kind 7 finds nothing within 19);
   4. a searcher of another alignment: search kind 5 from its logic region (`LogicRegionIdAt`), list 9 as above;
-  5. with a target: flag `0x08` (unless alignment 2), `*melee = InMeleeRange(unit, target, 0)`, `*dist` its distance;
+  5. with a target: flag `0x08` (unless alignment 2), and, with the record read in step 1's last branch, record `+0x24` ← 1 when it read 0, else 0 (0x005DDC08) [corrected, `lane/s52a` review, 2026-11-04]; `*melee = InMeleeRange(unit, target, 0)`, `*dist` its distance;
      without: `*dist` the nearest head seen.
 
   (fn:sub_005DD7F0_MonAiFindTarget@0x005DD7F0, fn:sub_005DD510_MonAiPreferDecoy@0x005DD510, fn:sub_006259B0_UnitAlignGet@0x006259B0,
   fn:sub_00622AA0_UnitLineBlocked@0x00622AA0, fn:sub_00622C40_InMeleeRange@0x00622C40, fn:sub_0061AB00_RoomIsTown@0x0061AB00)
-- [I] **The forced target** (`MonsterData+0x38` kind, `+0x34` guid): kinds 1, 2 and 4 look up the guid; kind 3
-  (confusion) draws `RNG_RangePow2(unit seed, 2)` and with alignment 1, or a non-zero draw with alignment 0 or 2, sets
-  alignment 1, searches kind 5 (or 6) and sets alignment 1 again; the unit taken must be a living player or monster, or
-  an object. Otherwise the kind and guid are cleared. (fn:sub_005DD610_MonAiForcedTarget@0x005DD610,
+- [I] **The forced target** (`MonsterData+0x38` kind, `+0x34` guid): kinds 1, 2 and 4 look up the guid as type 0, 1 or 3 (from `MonAiFindHostile`, also `UnitLineBlocked` = 0, 0x005DD668); kind 3
+  (confusion) draws `RNG_RangePow2(unit seed, 2)` and sets the alignment for the search with `MonAlignSet`: 1 becomes 0 on a draw of 0 and 2 otherwise, on a non-zero draw 0 becomes 2 and 2 becomes 0; it searches kind 5 (or 6) and restores the first alignment (0x005DD762–0x005DD76F; the `1` the first text read as the alignment is the flag argument) [corrected, `lane/s52a` review, 2026-11-04]; the unit taken must be a living player or monster, or
+  of type 3. Otherwise the kind and guid are cleared. (fn:sub_005DD610_MonAiForcedTarget@0x005DD610,
   fn:sub_005730E0_MonForcedTargetKind@0x005730E0, fn:sub_00573120_MonForcedTargetClear@0x00573120, fn:RNG_RangePow2@0x00472210)
 - [I] **The unit search** `AiUnitSearch(ECX game, EDX unit; out, param, kind)` takes `g_AiSearchKinds[kind] = {walker,
   callback}` (the callback from `param` when the table's is 0) and walks: 0 the near rooms' unit lists (`Room+0x74`,
@@ -414,7 +410,7 @@ flowchart TD
   fn:sub_005DCE60_AiSearchNearRooms@0x005DCE60, fn:sub_005DCEE0_AiSearchNearClients@0x005DCEE0,
   fn:sub_005DCF70_AiSearchNearRoomsNoTown@0x005DCF70, fn:sub_005DD050_AiSearchOwnerGroup@0x005DD050)
 - [I] **The hostility test with a draw.** `AiHostileCandidate` (kinds 6, 7, 11) takes a living player or monster out
-  of town; when the candidate has state 146 and is a **player**, it draws `RNG_Range(candidate seed, 100)` and refuses
+  of town with `Unit+0xC4` bit `0x04` (0x005DC9BC) [corrected, `lane/s52a` review, 2026-11-04]; when the candidate has state 146 and is a **player**, it draws `RNG_Range(candidate seed, 100)` and refuses
   a candidate outside melee range on a draw below 80 (a monster with state 146 is refused inside melee range); then
   `UnitsHostile`. (fn:sub_005DC970_AiHostileCandidate@0x005DC970, fn:sub_00554200_UnitsHostile@0x00554200, fn:RNG_Range@0x0045C390)
 - [I] **`TgtPlaceCheck`** is read by `MonSkillTargetOk` (skills/0003 § 12), which 13 calls in 10 AI functions use
@@ -477,7 +473,7 @@ flowchart TD
   (fn:sub_005DDFC0_MonAiSetMode@0x005DDFC0, fn:sub_005DDF90_MonAiSetModeAtUnit@0x005DDF90)
 - [I] **`MonAiMove(ECX game, EDX unit; target, mode, x, y, stop, flags)`**: mode 15 (RN) becomes 2 (WL) under state
   60; path `+0x93 = stop − 1` (0 outside 1..19); the command at the unit or point; `MonSetMode(…, 1)`. On refusal:
-  flag 4 cancels the AI event, flag 1 sets `AiCtl` bit 0, flag 2 steps the unit seed once and on `low mod 100 < 70`
+  flag 4 cancels the AI event, flag 1 sets `AiCtl` flag `0x40`, with flag 2 clear it returns 0 with no idle (0x005DEC13) [corrected, `lane/s52a` review, 2026-11-04], flag 2 steps the unit seed once and on `low mod 100 < 70`
   runs `MonAiWanderRing(4)` (1 returned), else `MonAiIdle(10)`. The walkers around it: `WalkToUnit(target, flags)`,
   `WalkToUnitStop(target, n)`, `WalkToUnitType13` (override type 13), `RunToUnit`, `RunToUnitFlags`, and the point
   forms `WalkToPoint`, `RunToPoint` (WL under state 60), `WalkToPointOrStop` (cancels the AI event on refusal).
@@ -518,7 +514,7 @@ flowchart TD
 - [I] **The types the AI passes.** `MonAiPathOverride`'s 103 calls (`override-types.txt`): EDX 0 (type unchanged) 55, 7
   12, 1 (→ 7) 6, 2 10, 13 7, 15 3, 5 1, and 9 from registers, now resolved: 13 at 0x005E12F8, 0x005F3817, 0x005F5447
   and 0x005F549B (`lea edx,[r+0xd]` on a zeroed register), 2 at 0x005F390C (`cmp eax,2; jne`) and 0x005FADD3
-  (`lea edx,[ecx+0x2]`, ECX zeroed), 0 at 0x005F025C, 6 at 0x005ECBD7 (the third argument; both callers push 6) and
+  (`lea edx,[ecx+0x2]`, ECX zeroed), 0 at 0x005F025C, 5 or 6 at 0x005ECBD7 (the third argument; both callers push 5 or 6 by `AiCtl+0x1C`, 0x005ECE63, 0x005ECE89) [corrected, `lane/s52a` review, 2026-11-04] and
   5 or 6 at 0x005DF813 (drawn, § 7). `AiPathOverrideSet`'s 9 calls (`overrideset-types.txt`): the two inside
   `MonAiPathOverride`, 13 (`WalkToUnitType13`), 0 (0x005DF26D) and **1** five times (0x005E3BCC, 0x005E4300 and three
   in state row 13's 0x005E5C50). So the AI's path types are 1, 2, 5, 6, 7, 13 and 15, plus the default 13; the mode

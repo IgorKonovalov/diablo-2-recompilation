@@ -3,9 +3,9 @@ spec: hirelings
 status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, items/vendors, monsters/pool, monsters/stats, data/strings, data/excel, save/d2s]
-consumed_by: [items/quality, monsters/pool, save/d2s]
+consumed_by: [items/quality, monsters/pool, save/d2s, monsters/ai/machinery]
 tags: {C: 143, I: 41, L: 7}
-updated: 2026-11-03
+updated: 2026-11-04
 ---
 
 # Hirelings: the hire list, the hire, the mercenary's stats and its creation from a save
@@ -20,8 +20,7 @@ stores `{seed, name, Id}` with the player and creates the mercenary, whose level
 `Hireling.txt`, its level and its experience. A saved mercenary is recreated from the same three values plus its
 experience. This spec gives the build and its draw order, the entry roll, the hire, the stats per level, the load
 from a save, the levelling in play, the monster class and level path, and the mercenary's magic find. § K gathers
-the free mercenary, resurrection (specified in items/economy) and death; combat AI and skill use and item
-restrictions are named only there.
+the free mercenary, resurrection (specified in items/economy) and death; item restrictions are named only there, and combat AI and skill use are [monsters/ai/machinery § T61](../monsters/ai/machinery.md#t61-row-61-hireable-and-state-4-fnsub_005e52d0_aihireable0x005e52d0).
 
 Names of functions, structs and fields are ours ([hirelings/0001](../../findings/hirelings/0001-hirelings.md),
 `re/types/hireling.h`). Column names are those of [Hireling](../../tables/Hireling.md) and
@@ -766,8 +765,8 @@ Step notes:
   in play (from `sub_0057CCB0_UnitKilled`), and the node stays in the pet list: at the dead load `MERC_Resurrect` found
   the mercenary through it. (fn:PETS_OnDeath@0x005751A0, 0x005751FF, 0x00575251, fn:sub_0057CCB0_UnitKilled@0x0057CCB0,
   0x0057CD21, run:2026-10-27-sweep-hirelings)
-- [I] **Combat skill choice** (`DefaultChance`, `Chance_i`, `ChancePerLvl_i`, `Mode_i`) is `MERCAI_PickSkill`, out of
-  scope (ADR-0002). What a mercenary may equip is an inventory rule, not specified here. (fn:MERCAI_PickSkill@0x005E4D30,
+- [I] **Combat skill choice** (`DefaultChance`, `Chance_i`, `ChancePerLvl_i`, `Mode_i`) is `MERCAI_PickSkill`, in
+  [monsters/ai/machinery § T61](../monsters/ai/machinery.md#t61-row-61-hireable-and-state-4-fnsub_005e52d0_aihireable0x005e52d0). What a mercenary may equip is an inventory rule, not specified here. (fn:MERCAI_PickSkill@0x005E4D30,
   tbl:Hireling.txt:DefaultChance)
 
 ## Outputs

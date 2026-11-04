@@ -17,9 +17,10 @@ typedef struct MonAiRow {         /* 16 bytes; g_MonAiTable (0x0073CA18), 148 ro
 typedef struct AiCtl {            /* 0x40, MonsterData+0x28, sub_0058EBC0_AiCtlAlloc (.\Ai\AiGeneral.cpp) */
     uint32_t state;               /* +0x00 AI state 0..17: 0 = the MonStats row, else state row `state` */
     void    (*think)(void *ctx);  /* +0x04 the function the AI event calls */
-    uint16_t flags;               /* +0x08 0x08 a target was found; 0x40 one-shot "search without the line test";
-                                     0x20 teleport flag (sub_005DD250_AiCtlTeleportFlagSet); bit 0 set by
-                                     sub_005DEB60_MonAiMove's flag 1 (sub_005DD230_AiCtlFlagSet takes the bit in DX) */
+    uint16_t flags;               /* +0x08 0x08 a target was found; 0x40 one-shot that forces the search's line test on, set by
+                                     sub_005DEB60_MonAiMove's flag 1 (sub_005DD230_AiCtlFlagSet takes the bit in DX);
+                                     0x10 sub_005B1140_MonAiBossSightPause's once only;
+                                     0x20 teleport flag (sub_005DD250_AiCtlTeleportFlagSet) */
     uint8_t  _pad0A[0x2];
     uint32_t followGuid;          /* +0x0C unit to keep near (-1 none; sub_005DD330_AiCtlFollowSet) */
     uint32_t followType;          /* +0x10 its unit type (1 at allocation) */

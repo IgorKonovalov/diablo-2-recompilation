@@ -3,7 +3,7 @@ spec: skills/overview
 status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, data/calc, combat/overview, stats/states, monsters/spawn, monsters/stats, drlg/collision, path/overview, path/search]
-consumed_by: [combat/overview, combat/delivery, stats/states, items/economy, monsters/stats, rng/seeds]
+consumed_by: [combat/overview, combat/delivery, stats/states, items/economy, monsters/stats, rng/seeds, monsters/ai/overview]
 tags: {C: 26, I: 25, L: 1}
 updated: 2026-11-04
 ---
@@ -90,7 +90,7 @@ truncate toward zero unless stated; life, mana and damage are in 1/256 points.
 | Input | Kind | Tag |
 |---|---|---|
 | the frame on which a mode's do function runs (event code 1 or 2, `Unit+0x4E`) | a logged input until animation timing ([plan 0050](../../plans/done/0050-animation-frame-timing.md)) | [I] (fn:sub_00580460_PlrModeSkillFrame@0x00580460) |
-| a monster's choice of skill, mode and target | an input until monster AI (plan 0052) | [I] (fn:sub_005DEAD0_MonAiUseSkill@0x005DEAD0) |
+| a monster's choice of skill, mode and target | an input here: [monsters/ai/machinery § T](../monsters/ai/machinery.md#t-the-tier-ais) for the tier, the catalogue for the rest | [I] (fn:sub_005DEAD0_MonAiUseSkill@0x005DEAD0) |
 | the numbered functions outside tier A | value oracles, taking the logged exit seeds ([plan 0046](../../plans/done/0046-skills-function-catalogue.md)) | [I] (data:g_SkillDoFuncs@0x007322B0) |
 | the path planner's points | no longer an oracle: [path/search](../path/search.md), every type a stock caller reaches, the draws per type in [path/overview § D](../path/README.md#d-the-17-types-planner-and-draws) | [C] the planners on the live grid, 0 mismatches over the 11 types of [path/overview § F1](../path/README.md#f1-the-planners-take-the-live-grid) (fn:sub_00649970_PathPlan@0x00649970, run:2026-11-04-path-2) |
 | the live grid at a plan or a step, and a step's cell list | a value oracle, counted: the frozen rules' prediction of the cells, without the seventh corpse caller, is wrong in 11 of 15 663 plans, and the grid is the result of its operations in order ([path/overview §§ F2, F3](../path/README.md#f3-the-counted-oracle), [drlg/collision § F7](../drlg/collision.md#f7-no-bit-is-reference-counted-the-grid-is-the-result-of-its-operations-in-order)) | [C] the count (run:2026-11-04-path-2); [I] the step's cell list (fn:sub_00648F40_PathStepCells@0x00648F40) |
@@ -124,7 +124,7 @@ truncate toward zero unless stated; life, mana and damage are in 1/256 points.
   in 90 of run:2026-10-25-skills' 133 player gaps and 45 of run:2026-10-27-skills' 148
   ([dispatch § P](dispatch.md#p-draws-and-seeds-per-event-kind)). [C] (fn:SKILLS_SrvDo@0x0056F7F0,
   run:2026-10-25-skills, run:2026-10-27-skills) The player gaps left are listed (most with the player a hit's
-  defender); the monster gaps point at the AI (plan 0052). [I] (run:2026-10-27-skills)
+  defender); the monster gaps point at the AI ([monsters/ai A4 and A5](../monsters/ai/README.md#a-the-event-kinds-and-their-seeds)). [I] (run:2026-10-27-skills)
 - B3. **A missile's seed is private** to the missile, except where a re-seed site sets it from the creator's value
   ([missiles § H](missiles.md#h-re-seed-sites)); its draws chain across the hits of one frame (110 checks). [C]
   (fn:sub_005ADBB0_MissileDoFrame@0x005ADBB0, run:2026-10-25-skills)

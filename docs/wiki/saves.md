@@ -2,7 +2,7 @@
 based_on:
   - docs/specs/save/d2s.md 2026-11-04
   - docs/specs/player/creation.md 2026-11-04
-  - docs/specs/hirelings/README.md 2026-11-03
+  - docs/specs/hirelings/README.md 2026-11-04
 ---
 
 # Saves: what a `.d2s` file holds

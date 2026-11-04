@@ -3,9 +3,9 @@ spec: monsters/spawn
 status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, monsters/pool, data/excel, drlg/collision, objects]
-consumed_by: [monsters/special, monsters/stats, items/tc, chain]
-tags: {C: 137, I: 45, L: 5}
-updated: 2026-10-27
+consumed_by: [monsters/special, monsters/stats, items/tc, chain, monsters/ai/overview]
+tags: {C: 137, I: 46, L: 5}
+updated: 2026-11-04
 ---
 
 # Random population of a room
@@ -865,6 +865,8 @@ The diagram shows the normal branch. The special branch replaces the leader by t
 draws of G3–G5 and of [monsters/special](special.md#draw-order-on-the-unit-seed).
 
 ## Outputs
+
+- [I] **The AI of a created monster.** `MonsterInit` allocates its AI blocks and runs `MonAiInit(ctl, 0)`; `UniqueMinions` sets a minion's follow pair to its boss. What it does from then on is [monsters/ai](ai/README.md#e-the-ai-state-on-the-unit) and [machinery § E](ai/machinery.md#e-following). (fn:sub_00574250_MonsterInit@0x00574250, 0x00574307, fn:sub_005DD330_AiCtlFollowSet@0x005DD330, fn:sub_005A0C00_UniqueMinions@0x005A0C00)
 
 - Monsters created in the room through `SUnitCreate` (type 1), each with class, subtile position and unit
   seed; specials flagged `0x08` (and `0x04` for a champion, `0x01` for boss and pack members), minions of a unique

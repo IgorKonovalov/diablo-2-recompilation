@@ -218,7 +218,7 @@ if (v14 != 0) NecroPetRanged(ctx); else NecroPetMelee(ctx);
 - [I] **Melee** (0x005E4830): with no owner, `PetMove(GameFindUnit(v1C); U, 3, 0, 0, 0)` when the remembered owner
   guid `v1C` still finds a unit, else `Idle(10)`. Else `v1C = O+0x0C` (the owner's guid); `r = Dist(U, O)`; `r > 50`:
   `PetMove(O; U, 3, …)` (kind 3, the teleport); the run speed `s = Run·100/Velocity − 100` (100 when `Velocity` < 1 or
-  `s` > 99); `r ≥ 29`: `PetMove(O; U, 0, 0, s, 0)`. Inside 29: the target is `FindTarget(ctl)` (dropped if its
+  `s` > 99); `r ≥ 29`: `PetMove(O; U, 0, 0, s, 0)`. Inside 29: the target is `FindTarget(ctl)`, called with the **owner** as the searching unit, as in Ranged (0x005E4926, 0x005E4B4A; `lane/s52a` review) (dropped if its
   `+0xC4` bit 30 is set) or the owner-near hostile of 0x005DDE50 (radius 24) when the distance it returns is at most 6, else the
   found target when within 36; dropped when `AiApproachPointTest` fails; then **draw#1** `≥ 15` gives `AiPetGuard(t, O,
   melee, ctx, 0, 7)`, `< 15` gives `(…, 1, 8)`; when that commands nothing and `t` is set outside town: in melee
