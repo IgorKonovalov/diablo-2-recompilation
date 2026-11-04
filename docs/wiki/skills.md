@@ -73,8 +73,9 @@ Some inputs belong to other subjects and are taken as given, logged in the runs
 - **The frame on which the action happens.** Which frame of an animation carries the action is animation timing, the
   next simulation subject.
 - **A monster's choice** of skill, mode and target: monster AI, a later subject.
-- **The path planner's points** and the cells a missile's step crosses, the order in which an area skill visits the
-  units near it, and which pet the pet limit removes.
+- **The live collision grid at a plan or a step**, and the cells a missile's step crosses, the order in which an area skill
+  visits the units near it, and which pet the pet limit removes. The planner's points are no longer among these inputs:
+  [pathing](pathing.md) explains the planners, which reproduce given the live grid.
 - **A unit's final stats**, which [stats and states](stats-and-states.md) explains.
 
 ## Asking for a skill: the request and its checks
@@ -564,7 +565,7 @@ such sites are confirmed. **Firestorm's sub-missiles** (and those of one monster
 `w` a position word of the new missile's path and `k` the creator's argument (for Firestorm, the sub-missile's index), and the new missile's own path setup
 then steps that seed through a random walk, one step for every two of the missile's range, the range capped at 77 (20 steps for Firestorm's, 38 for the monster's). **The bolts made for
 a catapult spotter** get `Init(w)` from the same path word alone, and the same walk
-steps it 10 times. The game's own logs hold this in 654 of 654 creations, and both setups were checked under emulation. Where the walk's points go stays a logged value in the skill checks until the path search is reviewed. The other sites (the Assassin's rings and zig-zags, several missile functions)
+steps it 10 times. The game's own logs hold this in 654 of 654 creations, and both setups were checked under emulation. The walk itself is [pathing's](pathing.md#the-random-walk-type-10). The other sites (the Assassin's rings and zig-zags, several missile functions)
 are read from the code and none was reached by the runs.
 
 ## Draw order and chaining
@@ -659,5 +660,5 @@ From the specs' open questions ([overview](../specs/skills/README.md#open-questi
 - Related wiki pages: [animation and timing](animation.md) (the do frame, the skill delay and the length of a cast or
   attack), [combat](combat.md) (what a skill hit or a missile hit enters), [stats and states](stats-and-states.md)
   (the timed states, auras and the stats a skill reads), [randomness](randomness.md) (unit seeds and re-seeds),
-  [monsters](monsters.md) (a summon's creation and stats), [economy](economy.md) (ammunition and wear) and
+  [monsters](monsters.md) (a summon's creation and stats), [pathing](pathing.md) (the planners a skill or a missile asks for), [economy](economy.md) (ammunition and wear) and
   [how we know](how-we-know.md).

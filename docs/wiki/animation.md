@@ -1,8 +1,8 @@
 ---
 based_on:
-  - docs/specs/anim/README.md 2026-11-03
+  - docs/specs/anim/README.md 2026-11-04
   - docs/specs/anim/timing.md 2026-11-03
-  - docs/specs/anim/movement.md 2026-11-03
+  - docs/specs/anim/movement.md 2026-11-04
 ---
 
 # Animation and timing
@@ -19,7 +19,7 @@ are less sure. Terms are in the [glossary](../glossary.md).
 Only what the server does is covered. Which cel the client draws and the client's own animation clock are
 presentation and stay out ([how we know](how-we-know.md)). Which mode a unit is asked to enter, and when, is an input:
 for a player it is the request from the client ([skills and missiles](skills.md)), for a monster the AI's command
-(not yet specified), and the path a unit follows is the planner's. The specs were compared against recorded runs
+(not yet specified), and the path a unit follows is the planner's ([pathing](pathing.md)). The specs were compared against recorded runs
 (tens of thousands of logged mode starts, schedules and steps, no mismatch in the closing check); the
 [evidence sections](../specs/anim/timing.md#evidence) list the runs. Where a statement is read from the code but no
 run separates it, this page says so.
@@ -267,12 +267,12 @@ unchanged and none was under the state.
 ## Movement
 
 How fast a unit moves is a second use of the same rate function; the step itself is in
-[anim/movement](../specs/anim/movement.md#purpose). Positions are 16.16 subtiles.
+[anim/movement](../specs/anim/movement.md#purpose), and the points it follows are the [planners'](pathing.md). Positions are 16.16 subtiles.
 
 ```mermaid
 flowchart LR
   rate["the rate function:<br/>moving or knockback branch"] --> sp["path speed v"]
-  plan["path points<br/>(the planner)"] --> step
+  plan["path points<br/>(pathing)"] --> step
   sp --> step["one step per game frame"]
   step --> snap["snap onto the next point"]
   snap --> coll["collision walk<br/>over the subtiles crossed"]
@@ -329,7 +329,7 @@ stays inferred ([movement § Open questions](../specs/anim/movement.md#open-ques
 A player's knockback plans a path of `(5 / 2) + 1 = 3` subtiles away from the attacker, so
 it lasts 3 frames on an axis, fewer if the collision walk stops it. A monster's knockback (6 subtiles for base class 78) ends on its animation, not
 its path: in the frame its get-hit record's length is reached, however far it got (541 ends). The planner's final
-adjustment of the point is not read.
+adjustment cuts the point to the last free one on its line ([pathing](pathing.md#knockback-type-8)).
 
 ### Slowing
 
@@ -348,7 +348,10 @@ player windows matched). The Slows Target skill changes only the attack and defa
 
 The rate, the schedule, the advance, the sequences, movement and the run drain draw nothing
 ([timing § N](../specs/anim/timing.md#n-draws-and-seeds-per-event-kind),
-[movement § G](../specs/anim/movement.md#g-draws)).
+[movement § G](../specs/anim/movement.md#g-draws)); that movement's step and drain call no random function is read from the code.
+A replan reaches the planner, and 836 + 889 logged replans (810 of the 836 stock) reproduce with the unit seed unchanged. They
+were of types 5, 6, 13 and 15, and the target check before the call is not compared. Of the planners only types 10 and 16 draw
+([pathing](pathing.md#the-17-types)).
 
 ## What is not known yet
 
@@ -357,8 +360,8 @@ From the specs' open questions ([timing](../specs/anim/timing.md#open-questions)
 
 - **What ends some monster modes.** An every-frame monster attack or skill mode ignores its frame function's return,
   and a generic `S3` queues nothing; presumably the AI's next command ends them (the AI is a later phase).
-- **The monster AI and the path planner.** What command a monster gets, when, and the path it follows are inputs
-  here. The knockback point's final adjustment is not read.
+- **The monster AI.** What command a monster gets, and when, is an input
+  here.
 - **Branches the runs left short.** Some rates (three FHR rates for the Barbarian and the Paladin, some FBR and FCR
   rates, a second set of IAS rates), the Druid's throws (29 of the 30 wanted), a player's knockback length (two starts in all),
   the moving-factor floor of 25, Charge at a low stat 67, and Slows Target. The statements stay "read from the code" and none waits on a mismatch.
@@ -383,5 +386,5 @@ From the specs' open questions ([timing](../specs/anim/timing.md#open-questions)
 - Related wiki pages: [skills and missiles](skills.md) (the request, the do frame and the skill delay),
   [combat](combat.md) (the hit that starts a get-hit or block, and stun), [stats and states](stats-and-states.md) (how
   the rate stats add up and the slowing states), [monsters](monsters.md) (a monster's stats and velocity),
-  [objects](objects.md) (an object's operate), [randomness](randomness.md) (unit seeds and draws), and
+  [objects](objects.md) (an object's operate), [pathing](pathing.md) (the planners behind the path points), [randomness](randomness.md) (unit seeds and draws), and
   [how we know](how-we-know.md).
