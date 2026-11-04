@@ -61,8 +61,8 @@ WP_AT = "4884,5629"             # the Rogue Encampment's waypoint (OU0 of an obj
 VIEW = ["--view-h", "0"]        # the game frame's rows are measured: the harness display here shows all 600
 
 
-def window(scene, cover=0, what="", n=LEN):
-    return ("window", scene, n, cover, what)
+def window(scene, cover=0, what="", n=LEN, hooks=False):
+    return ("window", scene, n, cover, what, hooks)
 
 
 def scenes(wp_x=None, wp_y=None, long=False):
@@ -77,42 +77,52 @@ def scenes(wp_x=None, wp_y=None, long=False):
     if long:
         town.append(window("town", cover=8192, what="a frame = 0 (mod 8192): SaveGameClients as a boundary oracle"))
     pack_far = ["farm", "--sweep", "--time", "400"] + NOVA
-    pack = [("settle", 20), ("pilot", ["wp", "1", "2", "--wp-at", WP_AT], 150), ("settle", 4), ("bg", pack_far, 480),
-            ("near", 22, 3, 240),
-            window("pack", what="pilot: Cold Plains, the pack in range, Nova"), ("gate",),
-            ("near", 22, 2, 150), window("pack", what="Nova and teleport hops, rooms activating"),
-            ("near", 22, 1, 150), window("pack", cover=1500, what="mod 1500"),
-            ("join",)]
-    maze_go = ["farm", "--sweep", "--descend", "0,1,2,3", "--descend-to", "8", "--time", "420"] + NOVA + wp
-    maze = [("settle", 20), ("pilot", ["explore", "--hops", "60", "--nova", "2"], 300), ("level", None),
-            ("bg", maze_go, 500), ("level", None), ("settle", 6),
-            window("maze", what="pilot: Den of Evil with Corpsefire (the first window of the scene)"), ("gate",),
-            window("maze", what="the pack and Corpsefire"), window("maze", cover=1500, what="mod 1500"), ("join",)]
+    # plan 0055 Phase 2b batch (ruling 4): Blood Moor's Fallen, then the Den of Evil's maze, in one process. `explore --any-level`
+    # walks out of the Rogue Encampment (Teleport does not cast in a town) and goes on in Blood Moor; the windows open while it
+    # runs. The class filter counts the tier's Fallen (reviewed AI rows 6 and 13) for the pack, any live monster for the maze.
+    expl = ["explore", "--any-level", "--hops", "400", "--nova", "2", "--nova-key", "F2", "--radius", "9", "--drink", "0.5",
+            "--es", "0"]
+    descend = ["farm", "--sweep", "--descend", "0,1,2,3", "--descend-to", "8", "--time", "600"] + NOVA
+    # the character starts beside Warriv and the stash: the first hops east and south clear them (a click toward them opens a
+    # dialog or the stash, dev session 2026-11-04-frame2-w), then `explore` leaves the town by itself in about 30 s
+    pm = [("settle", 20), ("pilot", ["hop", "--walk", "12", "0"], 60), ("pilot", ["hop", "--walk", "12", "0"], 60),
+          ("pilot", ["hop", "--walk", "0", "12"], 60), ("pilot", ["hop", "--walk", "0", "12"], 60), ("bg", expl, 1200), ("lvl", 2, 360), ("settle", 6),
+          ("near", 22, 2, 300, "tier"),
+          window("pack", n=500, what="pilot: Blood Moor, a Fallen pack in range, Nova (the pack scene's first window)"), ("gate", "pack"),
+          ("near", 22, 2, 240, "tier"),
+          window("pack", n=500, what="the second pack window (cover=8192 when the lane asks for it)"),
+          ("killbg",), ("bg", descend, 900), ("lvl", 8, 600), ("settle", 6), ("near", 22, 2, 240, "any"),
+          window("maze", n=500, what="pilot: the Den of Evil, Corpsefire's pack (the maze scene's first window)"), ("gate", "maze"),
+          ("near", 22, 2, 240, "any"), window("maze", n=500, what="the second maze window"), ("join",)]
     return {
         "town": dict(diff="normal", est="town (1 player, 8 NPCs)", text="Act I town (Rogue Encampment)", steps=town),
-        "pack": dict(diff="normal", est="outdoor pack (1 player, 15 monsters)", text="Cold Plains with a pack",
-                     steps=pack),
-        "maze": dict(diff="normal", est="maze boss (1 player, boss + 10 minions)", text="Den of Evil with Corpsefire",
-                     steps=maze),
+        "pm": dict(diff="normal", est="outdoor pack (1 player, 15 monsters)", text="Blood Moor's Fallen pack, then the Den of Evil",
+                   steps=pm),
     }
 
 
 def describe(step):
     k = step[0]
     if k == "window":
-        return "window %s len=%d%s  # %s" % (step[1], step[2], " cover=%d" % step[3] if step[3] else "", step[4])
+        return "window %s len=%d%s%s  # %s" % (step[1], step[2], " cover=%d" % step[3] if step[3] else "",
+                                               " hooks=1" if len(step) > 5 and step[5] else "", step[4])
     if k in ("pilot", "bg"):
         return "%s d2pilot %s  (timeout %ds)" % ("run" if k == "pilot" else "start in background", " ".join(step[1]), step[2])
     if k == "settle":
         return "wait %ds" % step[1]
     if k == "near":
-        return "wait until %d live monsters are within %d sub-tiles of the player (MON line), at most %d s" % (
-            step[2], step[1], step[3])
+        return "wait until %d live %smonsters are within %d sub-tiles of the player (MON line), at most %d s" % (
+            step[2], "tier " if len(step) > 4 and step[4] == "tier" else "", step[1], step[3])
+    if k == "lvl":
+        return "wait until the player is in level %d (PLR lid), at most %d s" % (step[1], step[2])
+    if k == "killbg":
+        return "stop the background pilot command"
     if k == "level":
         return "wait for the player to leave the level it is in (PLR lid changes)"
     if k == "join":
         return "wait for the background pilot command"
-    return "pilot gate: tools/frame.py window --pilot on the log so far (stop on failure or above 3x estimate13)"
+    return "pilot gate of the %s scene's first window: stop on (a), (c) or above 3x estimate13; a mismatch is listed, not a stop" % (
+        step[1] if len(step) > 1 else "first")
 
 
 def plan_text(name, opts):
@@ -144,7 +154,37 @@ def gate(log, scene=None, out=None):
     return ok, text
 
 
-def monsters_near(log, r, tail=400000):
+def gate2(log, scene, index=0):
+    """The pilot gate of the batch: the (index)th window of the log by (a) whole, (c) completed with no LOGERR or CAP, and lines
+    per frame against three times the scene's estimate13 mid. A mismatch is listed in the text and is not a stop (the batch
+    goes on, that window is uncounted: plan 0055 log, 2026-11-04 review). -> (ok, text, mismatches)."""
+    import frame_xs
+    wins, _o = fw.parse_log(log)
+    if len(wins) <= index:
+        return False, "GATE no window %d in the log\n" % index, []
+    w = wins[index]
+    fails = fw.check_whole(w)
+    x = frame_xs.check_chain2(w)
+    s = fw.stats(w, fw.check_chain(w))
+    est = frame_volume.estimate13_rows().get((fw.SCENE_EST.get(scene or w["scene"], ""), "mid"))
+    carried = w["wend"] is not None and w["wend"].get("ok") and not any(t in ("LOGERR", "CAP") for _n, t, _o in w["lines"])
+    text = "GATE window %d (%s, %d frames): (a) whole %s, (c) carried %s, mismatches %d" % (
+        index + 1, w["scene"], w["len"], "PASS" if not fails else "FAIL " + "; ".join(fails[:2]), "PASS" if carried else "FAIL",
+        len(x["fails"]))
+    ok = not fails and bool(carried)
+    if est and s["n"]:
+        lpf = s["lines"] / s["n"]
+        text += ", %.1f lines per frame (3x estimate13 %.1f)" % (lpf, 3 * est["lines"])
+        if lpf > 3 * est["lines"]:
+            ok = False
+            text += " OVER: stop for the architect"
+    text += "\n"
+    for f in x["fails"][:8]:
+        text += "  MISMATCH line %d %s [%s] %s\n" % (f["line"], f["tag"], f["kind"], f["msg"])
+    return ok, text, x["fails"]
+
+
+def monsters_near(log, r, tail=400000, kinds="any"):
     """The monsters within r sub-tiles of the player in the last MON line of the log's tail (alive: hit points above 0,
     mode not 0 or 12): the count. The pilot's MON line is around the last PLR position (tools/gdb/pilot.py)."""
     try:
@@ -160,14 +200,18 @@ def monsters_near(log, r, tail=400000):
                 o = json.loads(ln[4:])
             except ValueError:
                 continue
+            mc = fw.monster_classes() if kinds == "tier" else {}
             return sum(1 for m in o.get("m", []) if (m.get("hp") or 0) > 0 and m.get("mode") not in (0, 12)
-                       and ((m["x"] - o["x"]) ** 2 + (m["y"] - o["y"]) ** 2) ** 0.5 <= r)
+                       and ((m["x"] - o["x"]) ** 2 + (m["y"] - o["y"]) ** 2) ** 0.5 <= r
+                       and (kinds != "tier" or mc.get(m.get("cls"), ("", ""))[1] in fw.TIER_AI))
     return 0
 
 
 class Session:
-    def __init__(self, slot, tag, saves, run_id, dev, pilot_only):
+    def __init__(self, slot, tag, saves, run_id, dev, pilot_only, seed=SEED0):
         self.slot, self.tag, self.saves, self.dev, self.pilot_only = slot, tag, os.path.abspath(saves), dev, pilot_only
+        self.seed = seed
+        self.nwin_gated = 0
         self.runname = ("dev-" if dev else "") + run_id
         os.makedirs(LOGS, exist_ok=True)
         self.out = open(os.path.join(LOGS, "%s-s%d.pilot.txt" % (self.runname, slot)), "a")
@@ -199,15 +243,16 @@ class Session:
         return bool(ok)
 
     def open_window(self, step):
-        _k, scene, n, cover, _what = step
+        scene, n, cover = step[1], step[2], step[3]
+        hooks = len(step) > 5 and step[5]
         with open(self.ctl, "a") as f:
-            f.write("open %d %s%s\n" % (n, scene, " cover=%d" % cover if cover else ""))
+            f.write("open %d %s%s%s\n" % (n, scene, " cover=%d" % cover if cover else "", " hooks=1" if hooks else ""))
         self.nwin += 1
         wait = 120 + n / FPS * 40 + (cover / FPS * 3 if cover else 0)
         return hr.wait_count(self.log, "WEND", self.nwin, wait, self.drv)
 
     def run_scene(self, name, sc):
-        seed = SEED0     # one map seed: the town waypoint (WP_AT) is where this seed puts it; another seed moves the town
+        seed = self.seed     # a new map seed per session (5501, 5503, 5505); the town windows' walk and the waypoint need 5501
         save = os.path.join(self.saves, "SpecNova.d2s")
         if not self.launch(name, sc, seed, save):
             hr.mark(self.stem, name, "fail", self.log, "no PLR")
@@ -235,19 +280,42 @@ class Session:
                 a = [*hr.PY, os.path.join(HERE, "d2pilot.py"), step[1][0], self.log, "--slot", str(self.slot)] + step[1][1:] + VIEW + [
                     "--shots", self.shots]
                 self.bg = hr.detach(a, os.path.join(LOGS, "%s-s%d.bg.txt" % (self.runname, self.slot)))
+                self.out.write("bg: %s pid %d\n" % (" ".join(step[1][:2]), self.bg))
             elif k == "near":
+                kinds = step[4] if len(step) > 4 else "any"
                 t = time.time()
-                while monsters_near(self.log, step[1]) < step[2] and time.time() - t < step[3] and self.drv.poll() is None:
+                while monsters_near(self.log, step[1], kinds=kinds) < step[2] and time.time() - t < step[3] and self.drv.poll() is None:
                     time.sleep(0.4)
-                got = monsters_near(self.log, step[1])
-                self.out.write("near: %d monsters within %d after %.1f s\n" % (got, step[1], time.time() - t))
+                got = monsters_near(self.log, step[1], kinds=kinds)
+                self.out.write("near: %d %s monsters within %d after %.1f s\n" % (got, kinds, step[1], time.time() - t))
                 if got < step[2]:
-                    return "failed", "no pack within %d sub-tiles in %d s" % (step[1], step[3])
+                    return "failed", "no %s pack within %d sub-tiles in %d s" % (kinds, step[1], step[3])
+            elif k == "lvl":
+                t = time.time()
+                while ais.level_of(self.log) != step[1] and time.time() - t < step[2] and self.drv.poll() is None:
+                    time.sleep(1)
+                if ais.level_of(self.log) != step[1]:
+                    return "failed", "the player is in level %s, not %d, after %d s" % (ais.level_of(self.log), step[1], step[2])
+                self.out.write("lvl: level %d after %.1f s\n" % (step[1], time.time() - t))
+            elif k == "killbg":
+                if self.bg:
+                    try:
+                        os.killpg(self.bg, 15)
+                    except OSError:
+                        pass
+                    self.bg = None
             elif k == "join":
                 time.sleep(2)
             elif k == "window":
                 if not self.open_window(step):
                     return "failed", "window %d did not complete" % self.nwin
+            elif k == "gate" and len(step) > 1:
+                ok, text, _mm = gate2(self.log, step[1], self.nwin_gated)
+                self.nwin_gated = self.nwin
+                self.out.write(text)
+                sys.stdout.write(text)
+                if not ok:
+                    return "failed", "the pilot gate failed (stop for the architect)"
             elif k == "gate":
                 ok, text = gate(self.log, name)
                 self.out.write(text)
@@ -278,7 +346,7 @@ def run(a):
         sys.exit("the slot is given in the lane's prompt: 1 or 2")
     results = []
     for n in a.scenes:                               # a fresh process per scene: each Session.run_scene launches
-        s = Session(a.slot, a.tag, a.saves, a.run, a.dev, a.pilot_only)
+        s = Session(a.slot, a.tag, a.saves, a.run, a.dev, a.pilot_only, a.seed)
         try:
             results.append((n,) + s.run_scene(n, sc_all[n]))
         finally:
@@ -310,6 +378,7 @@ def main(argv):
             p.add_argument("--dev", action="store_true")
             p.add_argument("--dry", action="store_true")
             p.add_argument("--launch", action="store_true", help="start the game (without it the plan is printed)")
+            p.add_argument("--seed", type=int, default=SEED0, help="the map seed of the session (a new one per kept session)")
             p.add_argument("--pilot-only", action="store_true", help="stop after the first window's gate")
             p.add_argument("scenes", nargs="+")
     p = sub.add_parser("build")

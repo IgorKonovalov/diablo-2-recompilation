@@ -65,6 +65,7 @@ def check_chain2(w, touch=None, passdraw=None):
     rank_n = collections.Counter()
     last_rank = -1
     cur_frame = None
+    in_frame = [False]                      # between an FT0 and its FT1 (the tick); outside it the main loop runs (client code)
     frame_start = w["start"]
     slots = collections.defaultdict(list)   # (type, due) -> [(id, kind)] queue order
     slot_pos = collections.Counter()
@@ -74,7 +75,9 @@ def check_chain2(w, touch=None, passdraw=None):
     qf_by_frame = collections.defaultdict(dict)   # frame -> {(ut, id, kind): queuing event type}
 
     def fail(no, tag, kind, msg, **kw):
-        fails.append(dict(line=no, tag=tag, kind=kind, msg=msg, **kw))
+        top = stack[-1] if stack else None
+        ctx = "%s%s" % ("tick" if in_frame[0] else "between ticks", (" in %s ty%s kind%s" % (top["tag"], top["ty"], top["kind"])) if top else ", no pair open")
+        fails.append(dict(line=no, tag=tag, kind=kind, msg=msg, ctx=ctx, **kw))
 
     def own_of(key):
         for r in stack:
@@ -201,10 +204,12 @@ def check_chain2(w, touch=None, passdraw=None):
         if tag in fw.BOOKKEEPING:
             continue
         if tag == "FT0":
+            in_frame[0] = True
             cur_frame = o["fr"]
             last_rank = -1
             reading("G", o.get("gs"), "point", no, tag, o)
         elif tag == "FT1":
+            in_frame[0] = False
             reading("G", o.get("gs"), "point", no, tag, o)
             ef_seen.clear()
         elif tag in ("FP", "TM", "ACL"):

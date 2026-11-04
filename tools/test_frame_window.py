@@ -456,7 +456,7 @@ class TestXS(unittest.TestCase):
         self.assertEqual((wend["hits"]["XS"], wend["hits"]["XS_other"]), (2, 1))
 
     def test_kd_and_hooks(self):
-        rig, m, G = self.window({"FRAME_HOOKS": "1"})
+        rig, m, G = self.window({"FRAME_HOOKS": "1", "FRAME_WINDOWS": "now:2:pack::H"})
         mon, ev = 0x121000, 0x130000
         m.u32(mon, 1)
         m.u32(mon + 0x0C, 77)
@@ -472,6 +472,13 @@ class TestXS(unittest.TestCase):
         wend = json.loads([ln for ln in rig.lines() if ln.startswith("WEND")][0].split(" ", 1)[1])
         self.assertEqual(wend["hk"]["%08X" % hooks[0]], {"none": 1})
         self.assertNotIn("HK", [ln.split(" ", 1)[0] for ln in rig.lines()])
+
+    def test_hooks_armed_only_with_the_flag(self):
+        rig, m, G = self.window({"FRAME_HOOKS": "1"})
+        hooks = [int(ln.split()[0], 16) for ln in open(os.path.join(HERE, "gdb", "frame-hooks.txt")) if ln.startswith("0x")]
+        self.assertFalse([a for a in hooks if a in rig.enabled() and a not in (0x0052D870, 0x0052D974)])
+        rig2, m2, G2 = self.window({"FRAME_HOOKS": "1", "FRAME_WINDOWS": "now:2:pack::H"})
+        self.assertTrue(all(a in rig2.enabled() for a in hooks))
 
     def test_no_hooks_without_env(self):
         rig, m, G = self.window()
@@ -588,11 +595,13 @@ class TestRunner(unittest.TestCase):
 
     def test_dry_plan_and_no_launch(self):
         for extra in (["--dry"], []):
-            r = self.run_cli("run", "--slot", "2", "--tag", "t", "--saves", "/nonexistent", "--run", "x", *extra, "town", "pack", "maze")
+            r = self.run_cli("run", "--slot", "2", "--tag", "t", "--saves", "/nonexistent", "--run", "x", *extra, "town", "pm")
             self.assertEqual(r.returncode, 0, r.stderr)
             self.assertIn("SCENE town", r.stdout)
-            self.assertIn("SCENE pack", r.stdout)
-            self.assertIn("SCENE maze", r.stdout)
+            self.assertIn("SCENE pm", r.stdout)
+            self.assertIn("window pack len=500", r.stdout)
+            self.assertIn("window maze len=500", r.stdout)
+            self.assertIn("tier monsters", r.stdout)
             self.assertIn("not launching", r.stdout)
             self.assertIn("window town len=250", r.stdout)
             self.assertIn("cover=1500", r.stdout)
@@ -623,6 +632,12 @@ class TestRunner(unittest.TestCase):
             ok, text = fs.gate(q, "town")
             self.assertFalse(ok)
             self.assertIn("above 3 x", text)
+            ok, text, mm = fs.gate2(q, "town", 0)
+            self.assertFalse(ok)
+            self.assertIn("OVER", text)
+            ok, text, mm = fs.gate2(p, "town", 0)
+            self.assertTrue(ok, text)
+            self.assertEqual(mm, [])
 
 
 class TestVolume(unittest.TestCase):

@@ -588,6 +588,11 @@ def report(wins, ch_all, st_all, out, allow_stray=False):
         if s["nondf"]:
             P("  NOT draw-free " + "; ".join("ty%d kind%d lines %s" % (k[0], k[1], v[:5]) for k, v in s["nondf"].items()) + "\n")
         P("  foreign tags in the window (the pilot's): %s\n" % (dict(w["foreign"]) or "none"))
+        hk = (w["wend"] or {}).get("hk")
+        if hk is not None and w["win"].get("hooks"):
+            P("  FRAME_HOOKS: %d of 65 hooks reached; open-event rank histogram: %s; not reached: %d\n" % (
+                len(hk), "; ".join("%s %s" % (a, ",".join("%s:%d" % kv for kv in sorted(h.items()))) for a, h in sorted(hk.items())),
+                65 - len(hk)))
         kinds = window_kinds(w)
         P("  monster kinds in the MON lines (class: Id, AI, tier): %s\n" % (
             "; ".join("%d: %s %s %s" % (c, v[0], v[1], "tier" if v[2] else "boundary oracle") for c, v in sorted(kinds.items())) or "none"))

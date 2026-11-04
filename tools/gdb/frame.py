@@ -53,7 +53,8 @@
 #   CAP   once, when WIN_MAX_LINES (env FRAME_MAX_LINES, default 400000) lines are written in one window
 #   LOGERR a handler raised; the game resumes (the logger never stops it)
 #
-# FRAME_HOOKS=1 (rev 2): the universal hooks of frame/0005 (tools/gdb/frame-hooks.txt) as count-only breakpoints; WEND carries
+# FRAME_HOOKS=1 (rev 2): the universal hooks of frame/0005 (tools/gdb/frame-hooks.txt) as count-only breakpoints, armed only in a
+# window opened with "hooks=1" (control file: "open LEN SCENE hooks=1"; FRAME_WINDOWS: a fifth field "H"); WEND carries
 # "hk": {address: {open-event rank | "msg" | "ru" | "none": count}} and no line is written for them.
 # Windows (env): FRAME_WINDOWS = "SPEC,SPEC" with SPEC = START:LEN:SCENE[:COVER]; START is an absolute frame, or "r"+N
 # (N frames after the first FT0 seen), or "now" (the next FT0); COVER M places the window so that the frame = 0 (mod M)
@@ -103,6 +104,7 @@ def _frame_main():
           "thr": None, "ue": [], "msg": [], "one": [], "hk": {}, "wlines": 0, "capped": False, "hits": {}, "gh0": {}, "skip_ctl": 0}
     ctl_path = os.environ.get("FRAME_CTL", "")
     wbps = []          # the window breakpoints: enabled only inside a window
+    hbps = []          # the FRAME_HOOKS breakpoints: enabled only inside a window opened with hooks=1
     allbps = {}        # name -> breakpoint, for gdb's own hit counts
 
     def mem(a, n):
@@ -192,7 +194,7 @@ def _frame_main():
         n = int(p[1]) if len(p) > 1 else 250
         scene = p[2] if len(p) > 2 else "scene"
         cover = int(p[3]) if len(p) > 3 and p[3] else 0
-        return {"start": start, "len": n, "scene": scene, "cover": cover}
+        return {"start": start, "len": n, "scene": scene, "cover": cover, "hooks": len(p) > 4 and p[4] == "H"}
 
     for spec in [s for s in os.environ.get("FRAME_WINDOWS", "").split(",") if s]:
         try:
@@ -219,6 +221,8 @@ def _frame_main():
                         d["cover"] = int(x[6:])
                     elif x.startswith("at="):
                         d["start"] = x[3:]
+                    elif x == "hooks=1":
+                        d["hooks"] = True
                 st["pend"].append(d)
 
     def resolve(p, f):
@@ -244,7 +248,10 @@ def _frame_main():
         st["gh0"] = {k: b.hit_count for k, b in allbps.items()}
         st["ue"], st["msg"], st["one"], st["hk"] = [], [], [], {}
         arm(True)
-        emit("WIN", {"id": st["wid"], "scene": p["scene"], "len": p["len"], "start": f, "fr": f, "wall": round(time.time(), 3),
+        if p.get("hooks"):
+            for b in hbps:
+                b.enabled = True
+        emit("WIN", {"id": st["wid"], "scene": p["scene"], "len": p["len"], "start": f, "fr": f, "hooks": 1 if p.get("hooks") else 0, "wall": round(time.time(), 3),
                      "mono": round(time.monotonic(), 3), "cover": p["cover"], "rev": REV})
 
     def close_window(ok, why):
@@ -252,6 +259,8 @@ def _frame_main():
         if w is None:
             return
         arm(False)
+        for b in hbps:
+            b.enabled = False
         gh = {k: b.hit_count - st["gh0"].get(k, 0) for k, b in allbps.items() if b.hit_count - st["gh0"].get(k, 0)}
         emit("WEND", {"id": w["id"], "ok": ok, "why": why, "frames": w["frames"], "lines": st["line"] - w["lines0"],
                       "hits": st["hits"], "ghits": gh, "hk": st["hk"], "wall0": round(w["wall0"], 3), "wall1": round(time.time(), 3),
@@ -521,7 +530,9 @@ def _frame_main():
         with open(gdb_file("frame-hooks.txt")) as fh:
             for ln in fh:
                 if ln.startswith("0x"):
-                    Bp(int(ln.split()[0], 16), "HK", on_hook(int(ln.split()[0], 16)))
+                    b = Bp(int(ln.split()[0], 16), "HK", on_hook(int(ln.split()[0], 16)), window=False)
+                    b.enabled = False
+                    hbps.append(b)
     Bp(0x0054D750, "MSG0", on_msg0)
     for a in MSG_RETS:
         Bp(a, "MSG1", on_msg1)
