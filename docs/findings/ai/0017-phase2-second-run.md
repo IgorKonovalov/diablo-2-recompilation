@@ -23,7 +23,7 @@ the think function at 0x005B186F (ai/0001 § 1); a boundary is a call of one of 
   byte fails 6 272 of 6 272; Fallen's mode test inverted fails 814 of 814; the melee flag flipped fails 1 187 of 6 272 and separates none of 23 rows
   (`CONTROLS site=FAILS-AS-REQUIRED fallen=FAILS-AS-REQUIRED melee=FAILS-AS-REQUIRED`). Eleven tier AIs have one predicted first boundary (rows 6, 13, 28,
   29, 30, 35, 37, 61, 64, 67, 89), six have two to five (`MIXSUM`), and Scarab (row 20) has no decision in this batch (`TIER 20`). `check-run-2026-11-03-ai-3.txt`.
-- [I] **Past the first boundary, kept: not clean.** `tools/ai_resume.py check --controls` over the same logs: 7 539 decisions, 7 135 resumed to their end,
+- [I] (run:2026-11-03-ai-3, 0x005B186F) **Past the first boundary, kept: not clean.** `tools/ai_resume.py check --controls` over the same logs: 7 539 decisions, 7 135 resumed to their end,
   **112 mismatches**, 292 stopped; 72 183 logged boundary calls matched, 64 689 of them after the first. Of the 112, 96 are in the five melee and curse
   logs (a Barbarian or a Necromancer on the stage), 66 in AI row 23, 25 in row 64 (SkeletonMage), 9 in row 95, 6 in row 79, 4 in row 37 (SkeletonBow), 1 each
   in rows 78 and 32. The lane filed them unexplained; the review classified all 112 (§ 7's dated note): 104 are model faults and 8 a logger limit, so they say nothing against the game's code. This stays `[I]`, and no tier AI's later branches are claimed until the fixed model's kept rerun (plan 0052 log, the review's order). Controls: every known branch reversed mismatches 7 273 of 7 539 (247 still ok, rows 15 and 54 not separated); a seed one step off 7 497 of 7 539.
