@@ -254,7 +254,7 @@ cell. The walk tests cells against the room's [collision grid](../glossary.md)
 - The grid changes as the pass runs. A monster just placed blocks later ones through its centre mark, so a later group
   member may have to take another cell. Read from the code, every monster the server creates is marked the same way,
   not only those of the pass, and a monster created already dead takes a corpse mark too, as its
-  class's `deadCol` column decides ([drlg/collision § F](../specs/drlg/collision.md#f-unit-marks)). For a monster
+  class's `deadCol` column decides ([drlg/collision § F5](../specs/drlg/collision.md#f5-corpse-marks-by-copy-of-the-grid)). For a monster
   re-created when its room comes back, the marks were compared in a run and agree
   ([levels](levels.md#rooms-that-come-and-go-release-and-restore)).
 - The near-warp test can activate another room in the middle of the pass and, in some levels, step that level's

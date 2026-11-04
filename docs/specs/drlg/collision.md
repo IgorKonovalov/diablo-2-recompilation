@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [drlg/overview, drlg/room-tiles, drlg/preset, drlg/warps, rng]
 consumed_by: [monsters/spawn, objects, chain]
-tags: {C: 182, I: 66, L: 11}
+tags: {C: 183, I: 66, L: 12}
 updated: 2026-11-04
 ---
 
@@ -639,8 +639,9 @@ F5a. UnitCorpseColl(u, arg):                                      [I] the steps 
   `UnitCorpseColl(unit, 1)` at 0x005A65D9: the live mark off and a 3×3 of `0x8000`, the record's mask and pattern unchanged, from
   mode 0 on, not only at mode 12. The drop follows (`MonDeathDrop`, called at 0x005A7027). All 1 527 `COR` lines at 0x005A65D9
   hold the full 3×3 in the 5×5 at the callee's return, centre included (616 exactly those 9 cells, 911 with further corpse cells of
-  neighbours), 1 505 in mode 0 and 22 in mode 12; none holds only the plus, and each has mask `0x100` at the return. These are
-  lines, not deaths; the site reached 277 at most in a game, under the cap of 300. (fn:sub_005A6FF0_MonDeathEvent@0x005A6FF0,
+  neighbours), 1 505 in mode 0 and 22 in mode 12; none holds only the plus. These are lines, not deaths; the site reached 277 at
+  most in a game, under the cap of 300. The record keeps its mask and pattern: the 22 mode-12 lines hold mask `0x100` at the return, and
+  section 13 of `tools/path.py check` finds 1 474 distinct mode-12 monsters of the unit lists with the 3×3, mask `0x100` and pattern 1, 2 or 3. (`workspace/logs/path/2026-11-04-path-2-check.txt`, fn:sub_005A6FF0_MonDeathEvent@0x005A6FF0,
   fn:SUNIT_SetMode@0x00553570, fn:sub_005A6520_MonDeathCorpseMark@0x005A6520, fn:sub_005A6830_MonDeathDrop@0x005A6830, 0x00649FD8,
   tbl:MonStats2.txt:deadCol, run:2026-11-04-path-2, [path/0006](../../findings/path/0006-holdout.md))
 - [I] **Server's copy, the second route to the same test.** The start of mode 12 calls `MonDeathCorpseMark` at 0x005A73A6 unless the
@@ -649,8 +650,11 @@ F5a. UnitCorpseColl(u, arg):                                      [I] the steps 
 - [C] **Server's copy, `deadCol` 1, classes 403 and 404.** The test at 0x005A65CD skips the call and the live mark stays: 18 distinct
   dead (`trappedsoul1` 8, `trappedsoul2` 10), each with no `0x8000` cell, the live mark kept and no line at the uncapped 0x005A65D9.
   (0x005A65CD, tbl:MonStats2.txt:deadCol, run:2026-11-04-path-2)
-  [I] Class 273 (`gargoyletrap`) was not seen dead there, so its server arm is read only, like the 10 other classes of the 13
-  with `deadCol` 1, which neither run met. (0x005A65CD, tbl:MonStats2.txt:deadCol)
+  [I] Class 273 (`gargoyletrap`) was not seen dead in that run, so its server arm is read only. Of the 13 MonStats2 rows with `deadCol` 1
+  ([MonStats2 § Footprint and collision columns](../../tables/MonStats2.md#footprint-and-collision-columns-plan-0017-phase-0)), the two
+  corpse runs met 273, 403 and 404, class 273 on the client's copy only; the other 10 are in neither, by the `DC` lines of
+  run:2026-10-14-collision and section 13 of the later run's check. [drlg/lifecycle § H5](lifecycle.md#h5-the-grid-marks-of-a-re-created-monster)'s
+  re-created `deadCol` 1 cases are not split by class there. (0x005A65CD, tbl:MonStats2.txt:deadCol)
 - [C] **Client's copy, `deadCol` 0.** The client's monster state code tests `deadCol` at 0x004B05DB and 0x004B09FB and calls
   `UnitCorpseColl(unit, 0)` (0x004B05E3, 0x004B0A05) only when it is clear: F5a's first branch, the plus of `0x8000` at pattern 5.
   First source: 396 of the 408 `DC` lines of run:2026-10-14-collision, which are lines of the two tests over 202 unit addresses, not
@@ -716,27 +720,33 @@ flowchart LR
   f --> g
 ```
 
-The first row decides what the planner reads; each of the others leaves a unit's cells different from what its position alone would give.
+The first row decides what the planner reads. The others are where a unit's cells differ from what its position alone would give, with the level change inside an act as the act change's control.
 
 | Case | Operations, in order | Tag |
 |---|---|---|
-| The plan's target, path flag `0x800` | `PathPlan` unmarks its own unit (0x00649B07). Then, when it has a target (0x00649B0C) whose `UNIT_GetSizeX` is not 0 (0x00649B10–0x00649B18) and the path has flag `0x800` (0x00649B1A), it unmarks the target, whatever its type (0x00649B25). The target's `HasCollision` state decides through `UNIT_CollUnmark`. At the tail, the target is marked again when that unmark returned non-zero (0x00649BD7), and then a plan that reached a planner marks its own unit (`UNIT_CollMark`, 0x00649BE0) | [C] a targeted object of size 1 or more: with the rule off, 274 `0x400` and 20 `0x800` cells and 35 wrong plans; on, 0 (0x00649B10, fn:sub_00649970_PathPlan@0x00649970, run:2026-11-04-path-2). [I] The size test's 0 branch, since every target of the kept logs has a size of 1 or more, and the other unit types as targets (0x00649B18, fn:UNIT_GetSizeX@0x00620510) |
-| The player after arriving in another act: unmarked | `PlayerChangeAct` moves the player twice through the wrapper `PathTargetRoomXY`, whose one call is `PathMoveWithMark`: to room 0 at (0, 0) (0x0053ADEA), then to the arrival (0x0053AE19). The first unmarks at the old place (0x006509E5) and its room word goes to 0 (flag 1 at 0x00650A18, `PathRoomUpdate`'s store at 0x0064FB6D), which needs path flag `0x40000` clear: with it set, 0x0064FB9F returns before the room is touched and the second move would mark. The second reaches `COLL_PatternMoveAcross` with that old room, whose test at 0x0064EFA3 returns before both its unmark and its `COLL_PatternMark` (0x0064EFCA). The room and position are set and the cells hold no mark, until a later move through `PathMoveWithMark`, whose old room is now set, or the tail of a plan that reached a planner (0x00649BE0). No player's plan of the kept logs has flag `0x40000` (0 of 1 486) | [I] (fn:sub_0053ACC0_PlayerChangeAct@0x0053ACC0, fn:sub_00650910_PathMoveWithMark@0x00650910, fn:sub_0064EFA0_COLL_PatternMoveAcross@0x0064EFA0): 7 of 7 act changes unmarked at the first other unit's plan that sees the unmoved player, and the control below 3 of 3, both short of the floors of 10 (run:2026-11-04-path-2). Nothing else in `PlayerChangeAct` after the second move marks the player, by a walk of direct calls to depth 3 from its nine callees (the two paths found, both under 0x005754B0, are a pet's mask and `MonSetMode` through `PetUnitRelease`); indirect calls are not followed |
+| The plan's target, path flag `0x800` | `PathPlan` unmarks its own unit (0x00649B07). Then, when it has a target (0x00649B0C) whose `UNIT_GetSizeX` is not 0 (0x00649B10–0x00649B18) and the path has flag `0x800` (0x00649B1A), it unmarks the target, whatever its type (0x00649B25). The target's `HasCollision` state decides through `UNIT_CollUnmark`. At the tail, the target is marked again when that unmark returned non-zero (0x00649BD7), and then a plan that reached a planner marks its own unit (`UNIT_CollMark`, 0x00649BE0) | [C] a targeted object of size 1 or more: with the rule off, 274 `0x400` and 20 `0x800` cells differ and 35 more plans are wrong; with it on, 0 of those cells (0x00649B10, fn:sub_00649970_PathPlan@0x00649970, run:2026-11-04-path-2). [I] The size test's 0 branch, since every target of the kept logs has a size of 1 or more, and the other unit types as targets (0x00649B18, fn:UNIT_GetSizeX@0x00620510) |
+| The player after arriving in another act: unmarked | `PlayerChangeAct` moves the player twice through the wrapper `PathTargetRoomXY`, whose one call is `PathMoveWithMark`: to room 0 at (0, 0) (0x0053ADEA), then to the arrival (0x0053AE19). The first unmarks at the old place (0x006509E5) and its room word goes to 0 (flag 1 at 0x00650A18, `PathRoomUpdate`'s store at 0x0064FB6D), which needs path flag `0x40000` clear: with it set, 0x0064FB9F returns before the room is touched and the second move would mark. The second reaches `COLL_PatternMoveAcross` with that old room, whose test at 0x0064EFA3 returns before both its unmark and its `COLL_PatternMark` (0x0064EFCA). The room and position are set and the cells hold no mark, until a later move through `PathMoveWithMark`, whose old room is now set, or the tail of a plan that reached a planner (0x00649BE0). No player's plan of run:2026-11-04-path has flag `0x40000` (0 of 1 486) | [I] (fn:sub_0053ACC0_PlayerChangeAct@0x0053ACC0, fn:sub_00650910_PathMoveWithMark@0x00650910, fn:sub_0064EFA0_COLL_PatternMoveAcross@0x0064EFA0): 7 of 7 act changes unmarked at the first other unit's plan that sees the unmoved player, and the control below 3 of 3, both short of the floors of 10 (run:2026-11-04-path-2). Nothing else in `PlayerChangeAct` after the second move marks the player, by a walk of direct calls to depth 3 from its nine callees (the two paths found, both under 0x005754B0, are a pet's mask and `MonSetMode` through `PetUnitRelease`; `tools/path_reach.py`); indirect calls are not followed |
 | A level change inside an act: the mark is kept (the control) | `PlayerChangeLevel` takes the act branch only when the acts differ (0x0053AF35). Otherwise it calls `UnitTeleport` (0x0053AF97), whose single move (0x00554F5C) has a non-zero old room: unmark there, mark here. The act change is the cause, not the waypoint | [I] (fn:sub_0053AEC0_PlayerChangeLevel@0x0053AEC0, fn:sub_00554EA0_UnitTeleport@0x00554EA0, 0x0053AF35) |
 | A pet whose act differs | The same two moves (0x00574CF2, 0x00574D05), then `PATH_SetMarkMask(path, 0x100)` at 0x00574D80, which marks, when 0x0063EA40 returns 0 | [I] (fn:sub_00574CC0_PetMoveWithOwner@0x00574CC0, fn:PATH_SetMarkMask@0x00648C30). That callee's branch is not separated by the logs |
 | A reserved landing | Four skill starts mark the landing point before the flight, with `COLL_PatternMark` and the unit's pattern, at the point in the skill record `+0x18`/`+0x1C`: Whirlwind 0x005D9123 (`0x80` for a player, else `0x100`), Leap 0x005D9EF8 (`0x80`), Leap Attack 0x005DA5D5 (`0x80`), Jump 0x005CB902 (`0x100`). Leap's flight sets the path mask to 0 (0x005D9F9C). No such call was found in the starts of Whirlwind or Jump, whose ends restore it (0x005D94F2, 0x005CBA46). Landing unmarks the reserved cells (0x005DA1F3, 0x005DA269, 0x005D94E8, 0x005CBA3B) and sets the mask back | [C] the calls for a player at the first three sites: 128, 237 and 109 lines, all on the server's side, unit type 0 and mask `0x80`, with 474 `L1U` releases (fn:COLL_PatternMark@0x0064EA90, fn:sub_005D9D50_SkillSt40Leap@0x005D9D50, fn:sub_005DA120_LeapAttackLand@0x005DA120, fn:sub_005D9460_WhirlwindEnd@0x005D9460, run:2026-11-04-path-2). [I] That the reservation holds until its release (51 plans in the tie, 0x005DA1F3); Jump's site, which has no stock user (0x005CB902, tbl:Skills.txt); a monster's arm, which did not run, including Leap's constant `0x80` for a monster whose landing unmarks `0x100` (0x005D9EF8) |
 
 #### F7. No bit is reference-counted: the grid is the result of its operations in order
 
-- [C] An unmark is the same footprint with AND-NOT and nothing is counted, so it clears a shared bit that another holder also set (the F1 note).
-  (fn:COLL_PatternUnmark@0x0064EC10, run:2026-10-14-collision)
-- [C] So the planners take the live grid: given the game's own cells at the planner call, 20 671 plans of run:2026-11-04-path-2 reproduce with 0
-  mismatches. A prediction built as the union of the present holders, with the rules of § F5, § F6 and the object bits, is a different claim: it is wrong in 11 of
-  those 15 663 plans that have a built map, `0x1000` alone sufficing in all 11. (fn:sub_00649970_PathPlan@0x00649970,
-  run:2026-11-04-path-2, [path/0006](../../findings/path/0006-holdout.md))
-- [I] **The grid at a planner call is the result of the marks and unmarks in order, not the union of the present holders.** Eight of the 11 have
-  this cause, by the code read and the logged positions, chosen after the result and not tested on data they did not see. A reimplementation
-  runs the operations. (fn:COLL_PatternUnmark@0x0064EC10, 0x00649B07, 0x00649B25, 0x00648C7D, [path/0006](../../findings/path/0006-holdout.md))
+The operations are § F's marks and unmarks as the game runs them: moves and mask changes, the corpse calls of § F5, and the plan, the act change
+and the reserved landing of § F6.
+
+- [C] **The grid at a planner call is the result of the marks and unmarks in order, not the union of the present holders.** An unmark is the same
+  footprint with AND-NOT and nothing is counted, so it clears a shared bit that another holder also set (the F1 note). A reimplementation runs the
+  operations. (fn:COLL_PatternUnmark@0x0064EC10, run:2026-10-14-collision)
+- [C] The planners take the live grid: given the game's own cells at the planner call (`PLG`), 20 671 plans of run:2026-11-04-path-2 reproduce with 0
+  mismatches, each compared on its return, its first point words and its exit seed. Types 0, 1, 3, 11, 12 and 16 have no request in that run.
+  (fn:sub_00649970_PathPlan@0x00649970, run:2026-11-04-path-2, [path/0006](../../findings/path/0006-holdout.md))
+- [C] A prediction built as the union of the present holders is a different claim. With the rules frozen before that run (the object bits, the corpse
+  calls in modes 0 and 12, the plan's target, the act change and the reserved landing; not the seventh caller, whose unit stays in mode 14), it is wrong
+  in 11 of the 15 663 plans that have a built map, `0x1000` alone sufficing in all 11. The frozen test asked for 0 and failed by its terms; no rule was
+  changed after it. (fn:sub_00649970_PathPlan@0x00649970, run:2026-11-04-path-2, [path/0006](../../findings/path/0006-holdout.md))
+- [I] Eight of the 11 are cases of the first bullet, by the code read and the logged positions, chosen after the result and not tested on data they did
+  not see. (fn:COLL_PatternUnmark@0x0064EC10, 0x00649B07, 0x00649B25, 0x00648C7D, [path/0006](../../findings/path/0006-holdout.md))
 
 | Whose unmark | Takes | Decisive cell, predicted to live | Plans | Tag |
 |---|---|---|---:|---|
@@ -750,7 +760,7 @@ The first row decides what the planner reads; each of the others leaves a unit's
 - [I] In the five plans of the first two rows, the reservation's `0x80` is still in the live cell and only the centre bit is gone, so its
   release is not late. (0x005D9EF8, [path/0006](../../findings/path/0006-holdout.md))
 - [I] The other 3 of the 11 are the seventh caller, not order: a class 194 unit in mode 14 that the prediction kept live, after
-  0x005CAF8E had run (`0x1100` to `0x8000`). (0x005CAF8E, [path/0006](../../findings/path/0006-holdout.md))
+  0x005CAF8E had run (`0x1100` to `0x8000`), chosen after the result too. (0x005CAF8E, [path/0006](../../findings/path/0006-holdout.md))
 
 ### G. Logic regions
 
@@ -1253,15 +1263,17 @@ is the R2 case of the plan, and the run had 67 such acceptances. The plan 0014 w
   every server monster creation, a monster created dead;
   [drlg/0005 § Plan 0039 batch P1a](../../findings/drlg/0005-collision.md#plan-0039-batch-p1a-2026-10-16)).
 - [L] **The player after an act change** (§ F6) beyond the hold-out's 7 and 3, short of the floors of 10; a waypoint hop needs the
-  waypoint's position from the game. ([path/0006](../../findings/path/0006-holdout.md))
+  waypoint's position from the game. ([path/0006](../../findings/path/0006-holdout.md), [routed](../../backlog/2026-11-04-architect-reverser-0054-grid-tie-operations-in-order-own-hold.md))
 - [L] **The operations in order** (§ F7). Whether a model that applies the marks and unmarks in the game's order, with 0x005CAF8E as a
   corpse call, leaves 0 wrong plans: the 11's causes have not been tested on data they did not see, and the logger holds no
-  marked-state field and no line per ordinary mark. ([path/0006](../../findings/path/0006-holdout.md))
+  marked-state field and no line per ordinary mark. ([path/0006](../../findings/path/0006-holdout.md), [routed](../../backlog/2026-11-04-architect-reverser-0054-grid-tie-operations-in-order-own-hold.md))
 - [L] **A monster relocated dead with `deadCol` 1.** path/0005 gives the plus for a monster relocated dead and names no `deadCol` test
   in its range (0x00554B78–0x00554B8E), and no such case is logged. `UNIT_CollUnmark`'s second argument, 1 in the corpse calls and 0
-  in `PathPlan`'s two, is not stated by these findings either.
+  in `PathPlan`'s two, is not stated by these findings either, nor is what `UnitCorpseColl`'s last call, 0x00650590, does. ([routed](../../backlog/2026-11-04-architect-reverser-scol-review-corpse-remainders.md))
+- [L] **A revival on the server's copy.** `UnitReviveColl` has client callers only, and a server corpse keeps mask `0x100` with its live mark off and
+  its 3×3 uncleared, so no finding says how a monster brought back on the server is marked again. ([path/0005](../../findings/path/0005-grid-rules.md), [routed](../../backlog/2026-11-04-architect-reverser-scol-review-corpse-remainders.md))
 - [L] **What sets the `0x200` cells the units listed do not explain**: 92 597 differing cells on the hold-out, on which no plan
-  depends, with no logged type-4 entry. ([path/0005](../../findings/path/0005-grid-rules.md))
+  depends, with no logged type-4 entry. ([path/0005](../../findings/path/0005-grid-rules.md), [path/0006](../../findings/path/0006-holdout.md), [routed](../../backlog/2026-11-04-architect-reverser-scol-review-corpse-remainders.md))
 - ~~The warp points of outdoor rooms (levels 4 and 44 in the run) still need drlg/outdoor~~: predicted since
   [drlg/outdoor](outdoor.md) (run:2026-10-15-drlg-outdoor). [L] The type-11 point is still taken from the log. The rest of
   the warp points is [drlg/warps](warps.md).
