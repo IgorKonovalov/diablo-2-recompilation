@@ -578,6 +578,31 @@ class TestReader2(unittest.TestCase):
                 self.assertLessEqual(hi, nxt, row["fn"])
         self.assertEqual(fw.KILL_GAME, {0x00552E31, 0x00552E9F})
 
+class TestP55d(unittest.TestCase):
+    def test_client_fn_line(self):
+        self.assertTrue(fw.client_fn_line("XS", {"site": 0x00473111}))
+        self.assertTrue(fw.client_fn_line("XS", {"site": 0x4F2959, "ra": 0x004730DD}))
+        self.assertFalse(fw.client_fn_line("XS", {"site": 0x4F2959, "ra": 0x00473240}))
+        self.assertFalse(fw.client_fn_line("UE0", {"site": 0x00473111}))
+
+    def test_near_corpse(self):
+        import tempfile, json as _j
+        import frame_sessions as fs
+        def mon(cls, mods, hp=50, x=110):
+            return dict(id=1, cls=cls, mode=1, x=x, y=100, hp=hp, mods=mods)
+        with tempfile.TemporaryDirectory() as d:
+            p = os.path.join(d, "l.log")
+            def put(ms):
+                with open(p, "w") as f:
+                    f.write("MON " + _j.dumps(dict(x=100, y=100, far=False, m=ms)) + "\n")
+                return fs.monsters_near(p, 40, kinds="corpse")
+            self.assertEqual(put([mon(5, [27])]), 1)
+            self.assertEqual(put([mon(5, [3])]), 0)           # a zombie1 without mod 27
+            self.assertEqual(put([mon(6, [27])]), 0)          # mod 27 on another class
+            self.assertEqual(put([mon(5, [27], x=200)]), 0)   # too far
+            self.assertEqual(put([mon(5, [27], hp=0)]), 0)    # dead
+
+
 class TestRunner(unittest.TestCase):
     def run_cli(self, *a):
         return subprocess.run([sys.executable, "-I", os.path.join(HERE, "frame_sessions.py")] + list(a), capture_output=True,

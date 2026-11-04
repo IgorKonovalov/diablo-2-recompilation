@@ -14,7 +14,7 @@ MUTANTS = {
     "arith": ('if seed not in a and not skip:', 'if False:'),
     "class": ('if not rows_here:', 'if False:'),
     "trigger": ('def trigger_holds(trig, key):\n', 'def trigger_holds(trig, key):\n        return True\n'),
-    "even": ('if n % 2:', 'if False:'),
+    "items": ("if u < n:", "if False:"),
     "first": ('elif o.get("fr") <= frame_start:', 'elif True:'),
     "free": ('top["kind"] in (6, 11):', 'False:'),
     "rank": ('if r < last_rank:', 'if False:'),

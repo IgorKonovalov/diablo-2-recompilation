@@ -113,7 +113,23 @@ def scenes(wp_x=None, wp_y=None, long=False):
                 ("near", 30, 1, 300, "any"),
                 window("maze", n=500, hooks=first, what="the third maze window" + (" (FRAME_HOOKS=1: the 65 universal hooks)" if first else "")),
                 ("killbg",)]
+    # plan 0055 `lane/p55d` (the owner's option A): the defender and Corpsefire windows. A pack's window 1 has the player standing
+    # still with no pilot running (the Fallen walk up and melee her), window 2 the pilot again with Nova. `near` with "tier" holds
+    # the pilot until a Fallen is in range, then the pilot is stopped for window 1.
+    def packd_steps():
+        return walkout + [("settle", 2), ("near", 22, 2, 300, "tier"), ("killbg",), ("settle", 1),
+                window("pack", n=500, what="the player stands still, no pilot running (melee on the player: the defender rows)"), ("gate", "pack"),
+                ("bg", expl, 1200), ("near", 22, 1, 120, "tier"),
+                window("pack", n=500, what="Nova again (the pilot's explore), the same pack"), ("gate", "pack"), ("killbg",)]
+
+    def den_steps():
+        return walkout + [("killbg",), ("settle", 4), ("bg", descend, 900), ("lvl", 8, 600), ("settle", 2), ("near", 40, 1, 420, "corpse"),
+                window("maze", n=500, what="the Den of Evil with Corpsefire near (zombie1, mod 27)"), ("gate", "maze"), ("killbg",)]
     return {
+        "packd": dict(diff="normal", est="outdoor pack (1 player, 15 monsters)", text="Blood Moor's Fallen: a standing player, then Nova",
+                      steps=packd_steps()),
+        "den": dict(diff="normal", est="maze boss (1 player, boss + 10 minions)", text="the Den of Evil, a window opened with Corpsefire near",
+                    steps=den_steps()),
         "town": dict(diff="normal", est="town (1 player, 8 NPCs)", text="Act I town (Rogue Encampment)", steps=town),
         "pack1": dict(diff="normal", est="outdoor pack (1 player, 15 monsters)", text="Blood Moor's Fallen pack, with the mod 8192 and hooks windows",
                       steps=pack_steps(True)),
@@ -137,7 +153,7 @@ def describe(step):
         return "wait %ds" % step[1]
     if k == "near":
         return "wait until %d live %smonsters are within %d sub-tiles of the player (MON line), at most %d s" % (
-            step[2], "tier " if len(step) > 4 and step[4] == "tier" else "", step[1], step[3])
+            step[2], {"tier": "tier ", "corpse": "Corpsefire (zombie1, mod 27) "}.get(step[4] if len(step) > 4 else "", ""), step[1], step[3])
     if k == "lvl":
         return "wait until the player is in level %d (PLR lid), at most %d s" % (step[1], step[2])
     if k == "killbg":
@@ -198,8 +214,9 @@ def gate2(log, scene, index=0):
         len(x["fails"]))
     ok = not fails and bool(carried)
     if est and s["n"]:
-        lpf = s["lines"] / s["n"]
-        text += ", %.1f lines per frame (3x estimate13 %.1f)" % (lpf, 3 * est["lines"])
+        ncli = sum(1 for _n, t, o in w["lines"] if fw.client_fn_line(t, o))      # client function 0x00473090's XS lines (plan 0055 log, lane/p55c review)
+        lpf = (s["lines"] - ncli) / s["n"]
+        text += ", %.1f lines per frame without the client function's %d (3x estimate13 %.1f)" % (lpf, ncli, 3 * est["lines"])
         if lpf > 3 * est["lines"]:
             ok = False
             text += " OVER: stop for the architect"
@@ -228,7 +245,8 @@ def monsters_near(log, r, tail=400000, kinds="any"):
             mc = fw.monster_classes() if kinds == "tier" else {}
             return sum(1 for m in o.get("m", []) if (m.get("hp") or 0) > 0 and m.get("mode") not in (0, 12)
                        and ((m["x"] - o["x"]) ** 2 + (m["y"] - o["y"]) ** 2) ** 0.5 <= r
-                       and (kinds != "tier" or mc.get(m.get("cls"), ("", ""))[1] in fw.TIER_AI))
+                       and (kinds != "tier" or mc.get(m.get("cls"), ("", ""))[1] in fw.TIER_AI)
+                       and (kinds != "corpse" or (m.get("cls") == 5 and 27 in (m.get("mods") or []))))     # Corpsefire: zombie1, Mod1 27
     return 0
 
 
