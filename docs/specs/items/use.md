@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, data/calc, stats/aggregate, stats/states, items/inventory, quests/travel]
 consumed_by: [items/inventory, stats/states, quests/travel, items/quest-drops, skills/catalogue]
-tags: {C: 52, I: 64, L: 7}
+tags: {C: 52, I: 64, L: 9}
 updated: 2026-11-04
 ---
 
@@ -252,7 +252,7 @@ D3. PlayerUseBeltItem (packet 0x26), in order:                       [I] (all of
       mode 2 and useable, else the flag
       InteractIsPlayer non-zero: return 0
       if the packet's flag, a player user and an expansion game:
-        the item must be of type 76, 81 or 80, else 0
+        the item must be of type 76, 81 or 80, else 0                ; hpot (rpot by Equiv1), wpot, apot; not mpot, 77
         the pet of type 7, when there is one, becomes the user
       r ← ItemUse
       if r ≠ 0: the skill's quantity as in D1;  BeltItemConsume;  BeltColumnShift(x & 3)
@@ -393,7 +393,7 @@ Step notes:
   10 240 ÷ 128 = 80. The rate at the `SetStat` call was in the a-priori pair in all 16. The list's end was `frame + len`, and event 12 was queued with it. Scope: `hp1` and `mp1` of a Sorceress. (run:2026-11-04-inventory-2, 0x005BE6CF, 0x005BE602, 0x005BE6AE)
 - F1f. [C] (ADR-0021) The division's truncation (`floordiv`) and `(old × rem + v) ÷ (len + rem)` are the map on a slot after the first, reached by a slot 0 whose amount is 0; the stock path's slot 0 reaches the same instructions past the queue call. (0x005BE6D4, run:2026-11-03-use-emu)
 - F1f. [I] **A second potion within the first's duration:** the reading is that it uses the same list, end `now + rem + len`, rate `(old × rem + v) ÷ (len + rem)`, so the undelivered part of the first is carried and spread over the longer window. In the game **the second use found the first list in 1 of 4 pairs**
-  (42, 43, 42 and 33 frames apart: `hp1` at 111/153 and 1272/1315, `mp1` at 2434/2476, `hp1` at 5001/5034). Only 111/153 reached `STATLIST_SetStat` on the same list, with event end 495 = 153 + 150 + 192, so `rem` = 150; the other three allocated a new list. What decides it is not known. **The blend's arithmetic is not separated:** the one blended use has `old` = `total ÷ len` of the same potion, so the blend and `v ÷ len` both give 40. (0x005BE678–0x005BE6CF, 0x005BE602, run:2026-11-04-inventory-2)
+  (42, 43, 42 and 33 frames apart: `hp1` at 111/153 and 1272/1315, `mp1` at 2434/2476, `hp1` at 5001/5034). Only 111/153 reached `STATLIST_SetStat` on the same list, with event end 495 = 153 + 150 + 192, so `rem` = 150; the other three allocated a new list. **What decides it is the meter, on the reading:** [stats/states E2, E4](../stats/states.md) free the `healthpot` list when `stat 6 + stat 74` passes the maximum and the `manapot` list when mana is at its maximum with an amount above 0. All four pairs fit: at 153 life was below its maximum and stat 74 read 48 at entry; the other three first uses came at the maximum, and at the second entry stat 74 read its base 8 or stat 26 read 0, so no potion list was contributing and two lists did not run together (after the new list, stat 74 is 88 at 1315 and 5034, not 128 or 168). The free itself was not logged. *Corrected 2026-11-04, `lane/r60d` review: this said "not known".* **The blend's arithmetic is not separated:** the one blended use has `old` = `total ÷ len` of the same potion, so the blend and `v ÷ len` both give 40. (0x005BE678–0x005BE6CF, 0x005BE602, 0x0058063E, fn:sub_00580610_LifeRegenTick@0x00580610, fn:PLAYER_ManaRegenTick@0x005806F0, run:2026-11-04-inventory-2)
 - F1. [C] **Live: a potion is used at full life**: the list is allocated and the rate set, return 1; the amount is not refused. Scope: `hp1`, 1 case, stat 6 equal to stat 7 at the call. (run:2026-11-04-inventory-2, 0x005BE602)
 - F1. [C] **Live: seeds across the request.** The 12 requests `0x20` and 5 of the 6 `0x26` that used a potion moved the player's seed; the game seed did not move across any request. The sixth `0x26` is the `rvs` of § G. Scope: the player's and the game's seeds around the handler, not other units' seeds. (run:2026-11-04-inventory-2, 0x0054B560)
 - F3, F4. [C] 800 cases: all 7 classes, other classes and types, odd and negative amounts, a null unit. In a game only the Sorceress's factors ran (`v` life, `2v` mana). (fn:sub_0062A5D0_PotionLifeMul@0x0062A5D0, fn:sub_0062A620_PotionManaMul@0x0062A620, run:2026-11-03-use-emu)
@@ -545,7 +545,9 @@ Two stock `hp1` uses of a Sorceress at vitality 165, frames 111 and 909 of run:2
 
 ## Open questions
 
-- [L] **The blend** (F1f): why a second use within the first's duration allocated a new list in 3 of 4 pairs, and the formula for different amounts: log what `STATLIST_Find` returns and the user's lists at the second use, with a second potion of another tier. ([items/0016 § Open questions](../../findings/items/0016-harness-inventory-run2.md#open-questions))
+- [L] **The blend** (F1f): the formula for different amounts, live: a pair of different tiers with the meter below its maximum for both uses, logging the list `UNIT_FindStatListByState` returns and the rates set; and the free at the maximum itself. src:pd-potions-guide, src:maxroll-life-mana: a second potion is averaged over the summed time, which is F1f's reading while the list lives ([items/0017 H2](../../findings/items/0017-community-cross-check.md#the-doubling)). ([items/0016 § Open questions](../../findings/items/0016-harness-inventory-run2.md#open-questions))
+- [L] **A mana potion to the mercenary.** src:arreat-summit-potions: Health, Mana and Rejuvenation potions in the belt go to the hireling. `mpot` (77) is not of types 76, 81 or 80, the test of D3, of D5 and of the client's two sites (0x00498B77, 0x0049356E), so on the reading it is refused. Unrun: `mp1` by `0x26`'s flag and by `0x61`, a hireling alive. ([items/0017 H3](../../findings/items/0017-community-cross-check.md#the-doubling))
+- [L] src:d2dfg-blizzard: the columns `HealthPotionPercent` and `ManaPotionPercent` scale the amount by class. 1.14d's `charstats.txt` has no such column; the scale is the code of F3 and F4, so do not look for it in the table. ([items/0017 P3](../../findings/items/0017-community-cross-check.md#potions))
 - [L] **Unrun potion cases** (items/0012 § 10 cases 2, 3, 5, 7): an Amazon's and a Barbarian's factors in a game, mana for a Barbarian, `mp1`'s doubled branch, `hp5`, `rvl` on a maximum above 4 096 (`MulDiv`'s large branch).
 - [L] **Unrun use cases** (items/0012 § 10 cases 8 to 20): the group clear on `yps`, `wms`, `vps`, `hrb`; the Blood Golem split; `isc` and `ibk` through both requests; a belt `isc` and `tsc`'s column shift; `box`; a `useable` row with no kind; a key on a chest and a door, an Assassin with none; a potion to the mercenary by `0x26`'s flag and by `0x61`; a use while trading; `elx`; the four quest codes.
 - [L] **A whole use's draws past the boundaries** (§ J), other than the 17 uses' seed chain: a seed comparison over each kind.

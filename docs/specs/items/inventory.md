@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, items/use, drlg/collision, drlg/lifecycle, stats/aggregate, items/economy]
 consumed_by: [items/use, player/creation, quests/travel, drlg/lifecycle, drlg/collision, items/economy, items/quest-drops, items/cube]
-tags: {C: 74, I: 103, L: 11}
+tags: {C: 74, I: 104, L: 13}
 updated: 2026-11-04
 ---
 
@@ -309,14 +309,15 @@ F4. ItemToBelt(guid, box, 0) (packet 0x23):                          [I] (0x0063
 F5. Packet 0x24: BeltToCursor;  the box's column shifts down (BeltColumnShift)   [I] (fn:sub_00562250_BeltToCursor@0x00562250, fn:sub_0055EDC0_BeltColumnShift@0x0055EDC0)
     Packet 0x25: BeltSwapCursor, in place, no shift                  [I] (fn:sub_0055EB30_BeltSwapCursor@0x0055EB30)
     Packet 0x63: page 0 and an empty cursor;  returns 0 with no room [I] (fn:sub_0054D520_SrvPacket63Handler@0x0054D520)
-F6. BeltOverflow(new belt or null):                                  [I] (fn:sub_005608C0_BeltOverflow@0x005608C0, 0x0056091B, 0x0056093D, 0x00560C45, 0x00563D20)
+F6. BeltOverflow(new belt or null):                                  [I] (fn:sub_005608C0_BeltOverflow@0x005608C0, 0x0056091B, 0x0056093D, 0x00560C45, 0x00560E18, 0x00561058, 0x00563EE4, 0x0057F47A)
       numboxes ← BeltsRecord(the new belt's +0x130, or row 2)        ; set 0
       for box in 0 ..< 16:
         each item at or above numboxes: removed, page 0, placed by the search
         if that fails: dropped by the ground search (§ J)
-      ; its callers are the body moves' belt-type branches
+      ; its 4 direct calls: the body moves' belt-type branches (3), and a corpse's move of a worn belt (1, null)
 ```
 
+- F6. [I] **At a corpse's making:** `PLAYER_CorpseCreate`'s loop over the slots (0x0057F90E) and `CorpseOverflowDrop` (0x0057F5D8) both move a slot's item through the function at `0x0057F410`, which calls `BeltOverflow(null)` when the item's base type is 19 (`belt`), so row 2's `numboxes` 4 applies: boxes 4 and up go to page 0 by the search, then to the ground. Unrun. (0x0057F47A, 0x0057F90E, 0x0057F5D8, fn:PLAYER_CorpseCreate@0x0057F700, fn:sub_0057F540_CorpseOverflowDrop@0x0057F540)
 - F1. [C] (ADR-0015) Each of 2 000 cases to its return; boxes reached 0..12 and 15. Control `walk1` (a column walk by 1) fails 192, `nogroup` 126, `noauto` 337, `defaultbelt` 160, `secondset` 237. (fn:sub_0063C600_BeltFreeSlot@0x0063C600, run:2026-11-04-inventory-emu)
 - F1. [I] A row with `autobelt` 0 (stock `isc`, `tsc`, `yps`, `vps`, `wms` among them) is in no list, so it joins only a column whose bottom box holds its own class. (0x0063C731, tbl:Misc.txt:autobelt)
 - F3. [I] So the pickup's belt branch always calls `BeltPlace`, and the column search in it decides. (0x00563716)
@@ -716,3 +717,5 @@ An item's page, cell, mode and location byte; a belt box; a body location; the c
 - [L] **A monster's drop in a longer life**, and whether a chest's drop was among the 27: a session that logs the source.
 - [L] The object classes `0x152`, `0x153` behind rows 10 and 11: no path was read.
 - [L] Who writes `0x007A5218`, the client's set: UI, out of scope (ADR-0025).
+- [L] **A death with a belt holding boxes above 3** (F6): src:maxroll-death, of D2R, says the extra rows empty to the inventory, then the ground, which F6's reading gives; not run in 1.14d. ([items/0017 B8](../../findings/items/0017-community-cross-check.md#belts))
+- [L] src:d2dfg-blizzard: `belts.txt`'s box rectangles are "for Server verification purposes". That is a D2R text: in 1.14d, by direct calls, no server code reads them (A2, A3), so add no server test. ([items/0017 B3](../../findings/items/0017-community-cross-check.md#belts))

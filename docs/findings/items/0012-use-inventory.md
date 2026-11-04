@@ -240,7 +240,7 @@ list, 1)`. Then `SetEnd`, and the rest of the loop as above with `rem = 0`, so t
 
 [I] **Repeat drinking extends and blends, it does not stack lists:** a second potion of the same state before the first
 ends uses the same list, end `now + rem + len`, and rate `(old · rem + v) / (len + rem)`, so the undelivered part of the
-first is carried and spread over the longer window. (0x005BE678–0x005BE6CF) *Narrowed 2026-11-04 (items/0016, run:2026-11-04-inventory-2): of 4 second uses 33 to 43 frames after the first, only 1 found the first list (`STATLIST_SetStat` on it); 3 allocated a new list, so "uses the same list" holds in 1 of 4 and why is unknown; the blend's arithmetic was not separated from `v / len`.*
+first is carried and spread over the longer window. (0x005BE678–0x005BE6CF) *Narrowed 2026-11-04 (items/0016, run:2026-11-04-inventory-2): of 4 second uses 33 to 43 frames after the first, only 1 found the first list (`STATLIST_SetStat` on it); 3 allocated a new list, so "uses the same list" holds in 1 of 4 and why is unknown; the blend's arithmetic was not separated from `v / len`.* *Corrected 2026-11-04 (`lane/r60d` review): the three new lists came after a first use at the maximum, whose list the tick frees (stats/states E2, E4; fn:sub_00580610_LifeRegenTick@0x00580610, fn:PLAYER_ManaRegenTick@0x005806F0), so "uses the same list" holds while the list lives, `[I]`.*
 
 ## 6. The other kinds
 
