@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, anim/timing, drlg/lifecycle, monsters/ai/overview, skills/dispatch, skills/missiles, combat/overview, combat/to-hit, items/tc, items/quality, items/economy, objects, quests]
 consumed_by: [drlg/lifecycle, chain]
-tags: {C: 62, I: 127, L: 5}
+tags: {C: 66, I: 127, L: 5}
 updated: 2026-11-04
 ---
 
@@ -274,10 +274,10 @@ D2. Each runner (head, mode):                                     [C] (all of D2
   another record. It is not the order in a game, which D5 and D6 give. (run:2026-10-30-frame-emu-2,
   fn:sub_00540F60_PlayerEventsRun@0x00540F60, fn:sub_00541160_ObjEventsRun@0x00541160,
   fn:sub_00541240_MissileEventsRun@0x00541240, fn:sub_00541320_ItemEventsRun@0x00541320)
-- D5. [C] **In the counted windows, rank order among ranks 4, 7, 8 and 9 only.** Over 27 372 `UE0` of the five counted
-  windows (§ K1), 1 844 adjacent walks of different ranks: 4 → 7 324, 7 → 8 1 129, 7 → 9 184, 8 → 9 207, none inverted.
-  Scope: a Blood Moor pack and the Den of Evil, one player, Nova, oracles as § K3 names them.
-  (run:2026-11-04-frame2, [frame/0007](../../findings/frame/0007-frame-batch.md#answer-summary), fn:sub_005414D0_GameRunUnitEvents@0x005414D0)
+- D5. [C] **In the counted windows, rank order among ranks 4, 7, 8 and 9 only.** Over 37 977 `UE0` of the seven counted
+  windows with `XS` (§ K1), 3 020 adjacent walks of different ranks: 4 → 7 417, 7 → 8 1 975, 7 → 9 203, 8 → 9 425, none inverted.
+  Scope: a Blood Moor pack and the Den of Evil, one player, Nova or standing, oracles as § K3 names them.
+  (run:2026-11-04-frame2, run:2026-11-04-frame3, [frame/0007](../../findings/frame/0007-frame-batch.md#answer-summary), fn:sub_005414D0_GameRunUnitEvents@0x005414D0)
 - D6. [I] **Ranks 5, 6 and 10 to 13 hold no event in any counted window,** so no window tests a missile slot walk, a
   player every-frame walk or an object or item walk. Their places are the read order D1, with D4's map under it; D7's corpus pairs put one object kind's event after two slot walks and give no object walk a rank.
   (0x005414FD, 0x0054150D, 0x0054154C–0x0054157E, run:2026-11-04-frame2)
@@ -382,16 +382,16 @@ E3. EventFree(rec):                                               [C] (all of E3
   (run:2026-10-27-anim, fn:SUNIT_ModeEveryFrame@0x00553F00, 0x0054150D)
 - E5b. [C] **Cross-type queues the kept logs hold:** 926 monster every-frame records queued in an earlier walk than the
   monsters' every-frame walk (79 in the missiles' every-frame walk, 847 in the players' slot walk); players none; no
-  every-frame queue line for objects, items or missiles in the 331 corpus logs (the windows log `QF`, E7). The five counted windows hold 0 cross-type
-  every-frame runs. (run:2026-11-03-frame-order, run:2026-11-04-frame2, fn:SUNIT_ModeEveryFrame@0x00553F00)
+  every-frame queue line for objects, items or missiles in the 331 corpus logs (the windows log `QF`, E7). The seven counted windows with `XS` hold 0 cross-type
+  every-frame runs. (run:2026-11-03-frame-order, run:2026-11-04-frame2, run:2026-11-04-frame3, fn:SUNIT_ModeEveryFrame@0x00553F00)
 - E6. [I] **Freed during a walk.** A record freed is never run after it: the free moves the walker's saved next on. A unit
   freed during a pass loses all its records at once (`UnitFreeAllEvents`, from each type's free). A unit moved between rooms
   keeps its records: no record holds a room. (fn:sub_00540EE0_UnitFreeAllEvents@0x00540EE0, 0x00540CE8–0x00540CF3)
-- E7. [C] **List order in the game's own runs, in the counted windows (§ K1):** slot events run in their `QE` order, 857
-  adjacent events over 449 frames, 0 inverted; 326 of those pairs are one unit's and **104 run against ascending guid**, so
-  the test separates queue order from guid order on those 104. Every-frame events run newest `QF` first, 21 482 adjacent
-  events over 1 025 frames, 0 inverted; **572 run against descending guid**, the same separation. A guid order would pass
-  the other pairs. (run:2026-11-04-frame2, fn:sub_005416B0_EventQueueAt@0x005416B0, fn:sub_005415E0_EventQueueEveryFrame@0x005415E0)
+- E7. [C] **List order in the game's own runs, in the counted windows (§ K1):** slot events run in their `QE` order, 1 356
+  adjacent events over 659 frames, 0 inverted; 439 of those pairs are one unit's and **126 run against ascending guid**, so
+  the test separates queue order from guid order on those 126. Every-frame events run newest `QF` first, 29 300 adjacent
+  events over 1 769 frames, 0 inverted; **1 096 run against descending guid**, the same separation. A guid order would pass
+  the other pairs. (run:2026-11-04-frame2, run:2026-11-04-frame3, fn:sub_005416B0_EventQueueAt@0x005416B0, fn:sub_005415E0_EventQueueEveryFrame@0x005415E0)
 - E8. [C] The kept corpus agrees: 4 566 `MDS` and 13 `PDS` consecutive slot pairs matched to logged queue calls, 0 inverted,
   "newest queued first" failing all 4 579; 24 652 consecutive pairs of windowed missiles newest first in 4 710 frames,
   which a guid-descending order would also predict. (run:2026-11-03-frame-order, [frame/0004 § 3](../../findings/frame/0004-order-on-kept-logs.md#3-the-order-inside-a-list))
@@ -454,9 +454,9 @@ F5. Kind 6 (PlrEvent6Expire, MonEvent6Expire, the same code):     [C] (all of F5
       else: UnitQueueEvent(game, unit, 6, record.endFrame, 0, 0)
 ```
 
-- F4. [C] **Kind 11 is draw-free in the windows' scenes:** 85 runs in the five counted windows, entry and exit seeds equal
+- F4. [C] **Kind 11 is draw-free in the windows' scenes:** 119 runs in the seven counted windows with `XS`, entry and exit seeds equal
   on every seed logged and no `own` step in any. The windows hold no dead pet, so the prune branch is not run.
-  (run:2026-11-04-frame2, fn:sub_00580BE0_PlrEvent11Every30@0x00580BE0, fn:sub_00575590_PetListPrune@0x00575590)
+  (run:2026-11-04-frame2, run:2026-11-04-frame3, fn:sub_00580BE0_PlrEvent11Every30@0x00580BE0, fn:sub_00575590_PetListPrune@0x00575590)
 - F4a. [I] By its graph kind 11 reaches no RNG function (601 functions) with `PetUnitRelease` and `UninterruptibleEnd` as
   stops, the first reachable only under a non-zero `PetRemove` argument (kind 11 passes 0 at 0x005755FB) and the second only for
   a monster's kind 2. Its first run is queued 250 frames after a player's placement by `PlrPlaceEventsInit`, with kind 3 at
@@ -688,9 +688,9 @@ I1. QUESTS_TimersRun(game):                                       [C] (all of I1
   removes units by a frame test alone, so its frames are where an item can disappear with no event. Its lifecycle is
   [drlg/lifecycle § A](../drlg/lifecycle.md#a-the-frame) and [items/inventory § K](../items/inventory.md#k-a-ground-items-life).
   (0x00558BE7, 0x00542AF0–0x00542AFF, fn:sub_00558B90_ActExpiredItemsFree@0x00558B90)
-- I5. [C] **The periods in a game:** `T20`, `D12` and `U11` are seen at every due frame, complete, in every window of the batch;
+- I5. [C] **The periods in a game:** `T20`, `D12` and `U11` are seen at every due frame, complete, in every window of the two batches;
   the town's first window 12 of 12, 21 of 21, 23 of 23. Scope: the line is at the call site, so it shows the call's frames,
-  not what the call did. (run:2026-11-04-frame2, run:2026-11-04-frame, 0x0052D920, 0x0052D938, 0x0052D95F)
+  not what the call did. (run:2026-11-04-frame2, run:2026-11-04-frame3, run:2026-11-04-frame, 0x0052D920, 0x0052D938, 0x0052D95F)
 - I6. [I] Within a frame the four calls run in the order of B1, read from the call sites. (0x0052D912–0x0052D96C, fn:sub_0052D870_GameTick@0x0052D870)
 
 ### J. Draws per pass and the shared seeds
@@ -760,22 +760,24 @@ each entry seed asserted against the chain and none resynchronised.
 | 5503 maze1 #2 | Den of Evil, cleared, frame 8192 | 7942–8441 | 517 | [C] (run:2026-11-04-frame2) |
 | 5505 maze1 #2 | Den of Evil, 7 monsters, frame 8192 | 7942–8441 | 726 | [C] (run:2026-11-04-frame2) |
 | 5507 mazeh #1 | Den of Evil | 2094–2593 | 6 775 | [C] (run:2026-11-04-frame2) |
+| 5511 packd #1 | Blood Moor, classes 5, 19, 63, the player standing, no skill and no missile | 1539–2038 | 2 147 | [C] (run:2026-11-04-frame3) |
+| 5511 packd #2 | Blood Moor, classes 5, 19, 63, Nova | 2063–2562 | 8 112 | [C] (run:2026-11-04-frame3) |
 
-- K1a. [C] **8 windows of the 10 the plan asks, one pack window of its two.** Each is whole (every `FT0`/`FT1` of its frames, 0 unparsed
-  lines), carried, with 0 mismatches under the chain's rule of K2; the five of the batch hold 25 757 chained events and 27 372 `UE0`. The
-  character is one Sorceress clvl 80 casting Nova, in single player, one fresh process per scene, five map seeds and one script: the same
+- K1a. [C] **10 windows of the 10 the plan asks, two pack windows of its two.** Each is whole (every `FT0`/`FT1` of its frames, 0 unparsed
+  lines), carried, with 0 mismatches under the chain's rule of K2; the seven with `XS` hold 36 016 chained events and 37 977 `UE0`. The
+  character is one Sorceress clvl 80 casting Nova or, in 5511 #1, standing, in single player, one fresh process per scene, six map seeds and two scripts: the same
   seed and script repeating confirms nothing. Two windows (5505 #1, on table sites missing; 5509 #1, on guid reuse across a level change) are
-  whole and carried, traced with none to the logger, and uncounted; they hold 12 837 more chained events. The town's three logs hold no `XS` line
-  and were read with no touch allowed. (run:2026-11-04-frame2, run:2026-11-04-frame,
-  [frame/0007](../../findings/frame/0007-frame-batch.md#answer-summary))
+  whole and carried, traced with none to the logger, and uncounted; they hold 12 837 more chained events. (run:2026-11-04-frame2, run:2026-11-04-frame3, run:2026-11-04-frame,
+  [frame/0007](../../findings/frame/0007-frame-batch.md#part-2--the-bounded-last-windows-lanep55d-run2026-11-04-frame3))
+- K1c. [C] **Ten by count, and five carry the traffic.** 5501 #1, 5503 #1, 5507 #1, 5511 #1 and #2 hold 34 773 of the 36 016 chained events. 5503 #2 and 5505 #2 are the Den after it was cleared or nearly so, 517 and 726 events, and test the save's position at frame 8192. The town's three logs hold no `XS` line and were read with no touch allowed, so they test the entry and exit seeds and the order, and no step's site. (run:2026-11-04-frame2, run:2026-11-04-frame3, run:2026-11-04-frame)
 - K1b. [C] **No counted window holds Corpsefire.** The plan's scene is "Den of Evil with Corpsefire"; he is `zombie1` with `Mod1` 27, the
   `MON` lines show that class and mod only in 5503, ids 102 to 107, between its first `WEND` and its second `WIN`, and no window's `UE0` holds
-  those ids. So the maze scene is the Den's Fallen, shamans, zombies and brutes and no more. (tbl:SuperUniques.txt:Mod1, run:2026-11-04-frame2)
+  those ids. Two further tries for a window with him near failed: on seed 5513 the pilot found no path to the warp, and on seed 5515 it swept level 8 for 420 s without his class and mod in any `MON` line. So the maze scene is the Den's Fallen, shamans, zombies and brutes and no more, the plan's "Den of Evil with Corpsefire" is short by name, and his row 3 thinks were not exercised as boundary oracles in a window. (tbl:SuperUniques.txt:Mod1, run:2026-11-04-frame2, run:2026-11-04-frame3)
 
 #### K2. What the reader asserts
 
 ```
-K2. For each window, reader rev 2 (tools/frame_xs.py) keeps each chained seed's value:   [I] (all of K2) (run:2026-11-04-frame2)
+K2. For each window, reader rev 2 (tools/frame_xs.py) keeps each chained seed's value:   [I] (all of K2) (run:2026-11-04-frame2, run:2026-11-04-frame3)
       a chained seed is the game seed, or a unit's or room's seed from its first reading in the window
       for each XS line (one at each of the 852 LCG sites) whose low word matches a chained seed: apply Step
       arithmetic  every logged reading equals the kept value exactly
@@ -783,77 +785,76 @@ K2. For each window, reader rev 2 (tools/frame_xs.py) keeps each chained seed's 
                   game: the game seed, inside an open pair
                   touch: another unit's event, or a room's RU0, is open: its site and trigger must be listed (K4)
                   no pair open: the site must be listed as a pass draw
-      KD          per KD, the game-seed steps at UnitSeedInit+0x41 and ItemSeedInit+0xF are even
+      KD          per KD, the steps at ItemSeedInit+0xF (items) are no more than those at UnitSeedInit+0x41 (units)
       first       a missile's first reading is Init of a game-seed low stepped in that event
       order       walks in rank order, slot events in QE order, every-frame events newest QF first
       draw-free   no own step in kind 11 or kind 6
 ```
 
 - K2a. [C] **The game seed is handed between logged events with no unlogged step on a chained seed,** in the counted windows: 0 arithmetic
-  failures over 53 481 entry readings. Scope: chained seeds only, K3's limits applying, with a unit's own draws as oracles.
-  (run:2026-11-04-frame2, fn:sub_00555230_SUnitCreate@0x00555230)
-- K2b. [C] **A missile's first reading is `Init` of a game-seed low** predicted before its reading in 1 666 missiles of the counted windows;
+  failures over 74 625 entry readings. Scope: chained seeds only, K3's limits applying, with a unit's own draws as oracles.
+  (run:2026-11-04-frame2, run:2026-11-04-frame3, fn:sub_00555230_SUnitCreate@0x00555230)
+- K2b. [C] **A missile's first reading is `Init` of a game-seed low** predicted before its reading in 2 178 missiles of the counted windows;
   64 more were created before their window, and 1 is not an `Init`. This agrees with [skills/missiles C3](../skills/missiles.md#c-the-damage-the-missile-carries).
-  (run:2026-11-04-frame2, fn:sub_00555230_SUnitCreate@0x00555230, fn:sub_00552DF0_UnitSeedInit@0x00552DF0)
+  (run:2026-11-04-frame2, run:2026-11-04-frame3, fn:sub_00555230_SUnitCreate@0x00555230, fn:sub_00552DF0_UnitSeedInit@0x00552DF0)
 
 #### K3. A large zero can test little
 
-- K3a. [I] **Most events move nothing.** Of the 27 372 `UE0`, 27 133 (99.1%) moved neither the game seed nor their own, 211 moved their own,
-  and **only 43 moved the game seed** (the player's skill do 26, a missile's event 15, a monster's every-frame event 2); 15 did both, so 239 moved either. So the 25 757 chained
+- K3a. [I] **Most events move nothing.** Of the 37 977 `UE0`, 37 489 (98.7%) moved neither the game seed nor their own, 452 moved their own,
+  and **only 53 moved the game seed** (the player's skill do 34, a missile's event 17, a monster's every-frame event 2); 17 did both, so 488 moved either. So the 36 016 chained
   events mostly say that no seed moved unlogged, and say little about any draw's value. Per window 0 to 25 entries had a seed that moved,
-  61 in all, against 53 420 that had not. (run:2026-11-04-frame2)
-- K3b. [I] **A step on no chained seed is not tested at all:** 58 156 of the 67 441 `XS` lines: 52 629 between the ticks at no client row, 5 319 in the tick with
-  no pair open (`LvlSubApplyPick` 3 844, `DRLG_PickTileByRarity` 1 436), 208 inside a pair (`MonStatsInit` 68, `OBJ_PlaceRandom` 30). The pass and
-  touch tables bind only a step on a chained seed. (run:2026-11-04-frame2, fn:DRLG_PickTileByRarity@0x0066D820)
-- K3c. [I] **99 readings accepted any of several values.** While a fresh seed shares a low word with a chained one, the reader holds every value
-  the seed may have and a reading passes on any of them: 99 readings of the counted windows held more than one, 47 of them the game seed's,
-  up to 185 at one reading. There a surplus `XS` is not seen, while a lost one still is. With the rule off, 9 readings fail. Dropping one in-tick
-  `XS` at random is seen 24 of 25 in the two full maze windows and 4 of 25 in the pack, where most in-tick lines are on no chained seed.
-  (run:2026-11-04-frame2)
-- K3d. [I] **Oracles, not predictions:** a unit's own draws (AI, skill do, missile own), the number of drop draws on a dead monster, the 20 `pass`
+  78 in all, against 74 547 that had not. (run:2026-11-04-frame2, run:2026-11-04-frame3)
+- K3b. [I] **A step on no chained seed is not tested at all:** 157 769 of the 174 756 `XS` lines: 147 314 between the ticks at no client row, 9 968 in the tick with
+  no pair open (mostly `LvlSubApplyPick` and `DRLG_PickTileByRarity`), 487 inside a pair (`OBJ_PlaceRandom`, `MonStatsInit`, `DRLG_PickTileByRarity`). The pass and
+  touch tables bind only a step on a chained seed. (run:2026-11-04-frame2, run:2026-11-04-frame3, fn:DRLG_PickTileByRarity@0x0066D820)
+- K3c. [I] **225 readings accepted any of several values.** While a fresh seed shares a low word with a chained one, the reader holds every value
+  the seed may have and a reading passes on any of them: 225 readings of the counted windows held more than one, 70 of them the game seed's,
+  up to 185 at one reading. There a surplus `XS` is not seen, while a lost one still is. With the rule off, 9 readings fail, all in the first five windows. Dropping one in-tick
+  `XS` at random is seen 24 of 25 in the two full maze windows, 4 of 25 in the first pack window, 25 of 25 in the standing window and 14 of 25 in the second Nova window, where most in-tick lines are on no chained seed.
+  (run:2026-11-04-frame2, run:2026-11-04-frame3)
+- K3d. [I] **Oracles, not predictions:** a unit's own draws (AI, skill do, missile own), the number of drop draws on a dead monster, the 27 `pass`
   steps, the client steps, `SaveGameClients`, and the equality of kind 11's seeds. What is predicted is the arithmetic of every logged reading,
-  K2b's 1 666 first readings, the class of every step, and the order. Every think in these windows is taken as given,
+  K2b's 2 178 first readings, the class of every step, and the order. Every think in these windows is taken as given,
   whether its row is in plan 0052's tier or not: the windows' monsters are classes 5 `zombie1`, 19 `fallen1`, 28 `brute1`, 58 `fallenshaman1` and 63 `quillrat1`. (tbl:MonStats.txt:Id, run:2026-11-04-frame2, [frame/0007](../../findings/frame/0007-frame-batch.md#answer-summary))
-- K3e. [I] **Per-`KD` even tests almost nothing.** Over 44 `KD` events the game-seed steps at the item constructor's two sites are 0 in 29 and 2 in 15, none
-  odd. `SUnitCreate` calls `UnitSeedInit` for every unit it creates (0x0055530E) and `ItemSeedInit` for type 4 only (0x0055532A), so the evenness follows
-  from one path: it shows that no other unit was created in those 44 segments, and no more. "2 per item" over a kill with several items and "0 on a
+- K3e. [I] **The per-`KD` rule tests almost nothing.** Over 54 `KD` events the item constructor's steps and the unit constructor's are 0 and 0 in 37 and 1 and 1 in 17, 0 failures.
+  `SUnitCreate` calls `UnitSeedInit` for every unit it creates (0x0055530E) and `ItemSeedInit` for type 4 only (0x0055532A), so an item step can't come without a unit step, and in a game the rule can fail only on a lost line. The zeros test nothing, and the pairs at 1 and 1 show one path and that no other unit was created in those segments. A sub-missile would add a unit step and pass, and none occurred in a segment. "2 per item" over a kill with several items and "0 on a
   NoDrop" are **not tested**: no segment holds two items, and neither the item count nor a NoDrop is logged. "Two per dropped item" is
   [items/tc H7](../items/tc.md#h-item-pick-and-hand-off)'s. (fn:sub_00552DF0_UnitSeedInit@0x00552DF0, fn:sub_00552E90_ItemSeedInit@0x00552E90,
-  fn:sub_005A6830_MonDeathDrop@0x005A6830, run:2026-11-04-frame2)
+  fn:sub_005A6830_MonDeathDrop@0x005A6830, run:2026-11-04-frame2, run:2026-11-04-frame3)
 - K3f. [I] **What the controls separate.** The reader has 26 `window-selftest` controls, and reversing each of its 13 tests turns one red. Control 12
-  shows only that a log with no `XS` is read as rev 1, and control 13's site is synthetic, so it does not show that a real sub-missile passes.
-  The order tests are the plan's own result and hold the separations of § D5 and § E7. (run:2026-11-04-frame2, [frame/0007](../../findings/frame/0007-frame-batch.md#answer-summary))
+  shows only that a log with no `XS` is read as rev 1, and control 13 places a sub-missile's step at the binary's own `UnitSeedInit`+0x41 in a synthetic log, so a real sub-missile is still not seen to pass.
+  The order tests are the plan's own result and hold the separations of § D5 and § E7. (run:2026-11-04-frame2, run:2026-11-04-frame3, [frame/0007](../../findings/frame/0007-frame-batch.md#answer-summary))
 
 #### K4. Touches: another unit's event or a room's walk drawing on a seed
 
-| Trigger | Sites hit in the seven windows | Counted windows | Spec | Tag |
+| Trigger | Sites hit in the seven windows with `XS` | Counted windows | Spec | Tag |
 |---|---|---:|---|---|
-| kill | `TC_ResolveDrops` at 0x0055AA09; `ITEMS_DropRollQuality` at 0x0055879F, 0x00558822, 0x005588AA, 0x0055891A, 0x0055894F, 0x00558974 | 107 | [items/tc § D](../items/tc.md#d-the-resolver--tc_resolvedrops), [items/quality](../items/quality.md) | [I] (fn:TC_ResolveDrops@0x0055A6D0, fn:ITEMS_DropRollQuality@0x00558640, run:2026-11-04-frame2) |
-| room | `RoomWandererTick`, `MonSpawnTry`, `SpawnPosPick`, `MonRegionPickClass`, `SpawnTypeRoll`, `RoomObjectsPopulate`, the object placement and `OBJPOP_` handlers | 172 | [lifecycle § I](../drlg/lifecycle.md#i-the-wanderer-tick), [monsters/spawn § H](../monsters/spawn.md#h-placement-spawnpospick-and-monspawntry), [objects § E](../objects/README.md#e-the-populatefn-handlers), [§ F](../objects/README.md#f-placement-and-the-position-tests) | [I] (fn:sub_0054F060_RoomWandererTick@0x0054F060, fn:sub_005B2A00_MonSpawnTry@0x005B2A00, run:2026-11-04-frame2) |
-| owner | `sub_005A5560_MonCritDouble` at 0x005A55BA with a missile event open, 4 hits; `COMBAT_ToHitRoll` at 0x0057DB38 stepped 9 times, each with the monster's own event open; `COMBAT_ApplyStun` none | 3 | [combat/to-hit](../combat/to-hit.md), [combat/overview](../combat/README.md) | [I] (fn:COMBAT_ToHitRoll@0x0057D9B0, fn:sub_005A5560_MonCritDouble@0x005A5560, run:2026-11-04-frame2) |
-| defender | `COMBAT_DefenceRoll`, `COMBAT_ApplyCold`, `COMBAT_DurabilityLoss`, `ITEMS_DurabilityLossRoll`, `GetHitRoll`, `HitClassPick`, `COMBAT_ApplyDamage` sites: **none hit** | 0 | [combat/to-hit § C](../combat/to-hit.md#c-the-hit-test-and-the-defence-rolls), [items/economy § H](../items/economy.md#h-wear-durability-quantity-charges-replenish) | [I] (fn:COMBAT_DefenceRoll@0x0057DFB0, fn:COMBAT_ApplyCold@0x0057AF80, fn:COMBAT_DurabilityLoss@0x0057D3D0, fn:ITEMS_DurabilityLossRoll@0x00559E30, run:2026-11-04-frame2) |
+| kill | `TC_ResolveDrops` at 0x0055AA09; `ITEMS_DropRollQuality` at 0x0055879F, 0x00558822, 0x005588AA, 0x0055891A, 0x0055894F, 0x00558974 | 122 | [items/tc § D](../items/tc.md#d-the-resolver--tc_resolvedrops), [items/quality](../items/quality.md) | [I] (fn:TC_ResolveDrops@0x0055A6D0, fn:ITEMS_DropRollQuality@0x00558640, run:2026-11-04-frame2) |
+| room | `RoomWandererTick`, `MonSpawnTry`, `SpawnPosPick`, `MonRegionPickClass`, `SpawnTypeRoll`, `RoomObjectsPopulate`, the object placement and `OBJPOP_` handlers | 847 | [lifecycle § I](../drlg/lifecycle.md#i-the-wanderer-tick), [monsters/spawn § H](../monsters/spawn.md#h-placement-spawnpospick-and-monspawntry), [objects § E](../objects/README.md#e-the-populatefn-handlers), [§ F](../objects/README.md#f-placement-and-the-position-tests) | [I] (fn:sub_0054F060_RoomWandererTick@0x0054F060, fn:sub_005B2A00_MonSpawnTry@0x005B2A00, run:2026-11-04-frame2) |
+| owner | `sub_005A5560_MonCritDouble` at 0x005A55BA with a missile event open, 4 hits, and 2 more on a monster's own seed in its own attack; `COMBAT_ToHitRoll` at 0x0057DB38 stepped 22 times, each with the monster's own event open; `COMBAT_ApplyStun` none | 3 | [combat/to-hit](../combat/to-hit.md), [combat/overview](../combat/README.md) | [I] (fn:COMBAT_ToHitRoll@0x0057D9B0, fn:sub_005A5560_MonCritDouble@0x005A5560, run:2026-11-04-frame2) |
+| defender | `COMBAT_DefenceRoll` at 0x0057E024, `COMBAT_DurabilityLoss` at 0x0057D491 and 0x0057D49C, `ITEMS_DurabilityLossRoll` at 0x00559E9B, 2 each, all in 5511 #1; `COMBAT_ApplyCold`, `GetHitRoll`, `HitClassPick`, `COMBAT_ApplyDamage`: none | 8 | [combat/to-hit § C](../combat/to-hit.md#c-the-hit-test-and-the-defence-rolls), [items/economy § H](../items/economy.md#h-wear-durability-quantity-charges-replenish) | [I] (fn:COMBAT_DefenceRoll@0x0057DFB0, fn:COMBAT_ApplyCold@0x0057AF80, fn:COMBAT_DurabilityLoss@0x0057D3D0, fn:ITEMS_DurabilityLossRoll@0x00559E30, run:2026-11-04-frame2, run:2026-11-04-frame3) |
 | `killev` | `UModPartyDeadDeath` sites: **none hit** | 0 | [items/quality](../items/quality.md) | [I] (fn:sub_005A2D10_UModPartyDeadDeath@0x005A2D10, run:2026-11-04-frame2) |
 
-- K4a. [I] **A trigger matches event type and site, not the unit, for owner and defender:** the logger does not log the unit, so they
-  separate "this site outside a combat event" from "inside one", not which unit. The kill trigger names its unit through its `KD` line; `killev`
+- K4a. [I] **A trigger matches event type and site, not the target, for owner and defender:** the logger does not log the target, so they
+  separate "this site outside a combat event" from "inside one". Which seed a step moved is another matter: K4b reads it from the step's low word. The kill trigger names its unit through its `KD` line; `killev`
   through a kind-12 `QE` line; `room` needs only an open `RU0`, not the neighbour relation, which the specs state for `MonSpawnTry` and at `[I]` for the
   rest. (run:2026-11-04-frame2, [chain § Inputs and oracles](../chain/README.md#inputs-and-oracles))
-- K4b. [I] **No window tested the defender's or `killev`'s rows.** The defender half of J2's kind 5 therefore rests on the specs and on one uncounted
-  pilot reading, monster 28's melee hit, block and wear on the player in the first pack window. Nova kills at range, so the player is rarely attacked.
-  (run:2026-11-04-frame, [frame/0006 § 6](../../findings/frame/0006-frame-windows.md#6-the-reviews-attribution-of-the-8-2026-11-04-lanep55b),
+- K4b. [C] **The defender row's 8 steps moved the player's seed, in two hits.** In 5511 #1, with the player standing, `fallen1` ids 20 and 21 at frames 1992 and 2020 each ran `COMBAT_DefenceRoll`, `COMBAT_DurabilityLoss` twice and `ITEMS_DurabilityLossRoll` inside their own attack events. Each of the 8 logged low words matches exactly one kept seed, the player's, and her next entry reading equals her seed with those 4 steps applied, 2 of 2. That agrees with [combat/to-hit C3](../combat/to-hit.md#c-the-hit-test-and-the-defence-rolls) and [items/economy § H](../items/economy.md#h-wear-durability-quantity-charges-replenish). (run:2026-11-04-frame3, fn:COMBAT_DefenceRoll@0x0057DFB0, fn:COMBAT_DurabilityLoss@0x0057D3D0, fn:ITEMS_DurabilityLossRoll@0x00559E30)
+- K4d. [I] **Two hits on one unit is the whole of that.** That the seed is the player's because she is the defender rests on the specs: no window has another defender at these sites, a monster defender's above all. The rest of J2's kind 5 rests on the specs and on one uncounted pilot reading, monster 28's melee hit, block and wear on the player in the first pack window. `killev` still has no hit. Nova kills at range, so a casting player is rarely attacked. (run:2026-11-04-frame3, run:2026-11-04-frame,
+  [frame/0006 § 6](../../findings/frame/0006-frame-windows.md#6-the-reviews-attribution-of-the-8-2026-11-04-lanep55b),
   fn:COMBAT_DefenceRoll@0x0057DFB0)
-- K4c. [I] **Step classes in the counted windows:** `own` 990, `game` 3 740, `pass` 20, `touch` 282 (kill 107, room 172, owner 3). `game` is the reader's class,
-  not the seed's steps: the game seed's readings give 3 652 steps, and the other 88 are draws at other sites on a fresh seed sharing its low word.
-  (run:2026-11-04-frame2)
+- K4c. [I] **Step classes in the counted windows:** `own` 1 808, `game` 8 768, `pass` 27, `touch` 980 (kill 122, room 847, owner 3, defender 8). `game` is the reader's class,
+  not the seed's steps: the game seed's readings give 8 627 steps, and the other 141 are draws at other sites on a fresh seed sharing its low word.
+  (run:2026-11-04-frame2, run:2026-11-04-frame3)
 
 #### K5. Shared-seed pairs
 
 - K5. [I] **2 pairs in the counted windows,** both handed and in pass order, 0 reversed: frame 1961 of 5503 #1 and frame 2095 of 5507 #1 (the worked example
-  has the first). Over every frame2, pilot and development log there are **8**: missile then player 3, missile then missile 4, player then monster 1. A
+  has the first). The two windows of 5511 add none: in the second, 10 events moved the game seed, never two units' in one frame, and in the standing window none did. Over every frame2, frame3, pilot and development log there are **8**: missile then player 3, missile then missile 4, player then monster 1. A
   pair is two top-level events of different units that each moved the game seed in one frame. **The plan's floor of 20 became the pairs measured, by the owner's decision of 2026-11-04 (option A),**
-  so this count, at this tag, is the result and not a short; `lane/p55d`'s windows update the count. No `[C]` here rests on a pair: the rule whose draw comes first follows from
-  every game-seed step being logged inside an open event and the events running in the tested order. What is thin is variety among drawing events: § K3a's 43.
-  (run:2026-11-04-frame2, [plan 0055](../../plans/0055-server-frame.md))
+  so this count, at this tag, is the result and not a short. No `[C]` here rests on a pair: the rule whose draw comes first follows from
+  every game-seed step being logged inside an open event and the events running in the tested order. What is thin is variety among drawing events: § K3a's 53.
+  (run:2026-11-04-frame2, run:2026-11-04-frame3, [plan 0055](../../plans/0055-server-frame.md))
 
 #### K6. The hooks: where a function ran
 
@@ -868,12 +869,12 @@ K2. For each window, reader rev 2 (tools/frame_xs.py) keeps each chained seed's 
 
 #### K7. Client steps are not evidence
 
-- K7. [I] **Between the ticks the main loop runs client code on client copies of the seeds, outside the frame.** The 4 253 client steps at listed rows
-  (`UnitInit`, `ClientMonCreate`, `ClientMonIsChampion`, `ClientCritters`, `UNIT_AnimInit`) are applied to no chained seed and counted apart; 78 have a low word
+- K7. [I] **Between the ticks the main loop runs client code on client copies of the seeds, outside the frame.** The 5 404 client steps at listed rows
+  (`UnitInit`, `ClientMonCreate`, `ClientMonIsChampion`, `ClientCritters`, `UNIT_AnimInit`) are applied to no chained seed and counted apart; 217 have a low word
   equal to a chained seed's at that moment, and those 78 are what "not applied" separates. **They are no evidence of the server's frame order,** and the rows' `fn:`
-  names are the neighbouring symbol's for a location past a function's end, not a read function: of the 8 extents' 48 locations 38 lie past it, 9 of those hit. Function 0x00473090 gets no claim: its
-  46 055 pack-window lines lie between the ticks on no chained seed. (0x00473111, 0x004731FE, fn:sub_00465FD0_UnitInit@0x00465FD0,
-  fn:sub_00466360_ClientMonCreate@0x00466360, run:2026-11-04-frame2)
+  names are the neighbouring symbol's for a location past a function's end, not a read function: of the 8 extents' 48 locations 38 lie past it, 9 of those hit in the first batch. Function 0x00473090 gets no claim: its
+  135 260 lines in the three pack windows lie between the ticks on no chained seed. (0x00473111, 0x004731FE, fn:sub_00465FD0_UnitInit@0x00465FD0,
+  fn:sub_00466360_ClientMonCreate@0x00466360, run:2026-11-04-frame2, run:2026-11-04-frame3)
 
 ### L. Inactive units and the room unlink
 
@@ -942,13 +943,13 @@ sequenceDiagram
 ## Evidence
 
 - Findings: [frame/0001](../../findings/frame/0001-tick-and-messages.md) (tick, drain), [frame/0002](../../findings/frame/0002-unit-events-queue.md) (events, queue), [frame/0003](../../findings/frame/0003-timers-activation.md) (timers, activation), [frame/0004](../../findings/frame/0004-order-on-kept-logs.md) (order on kept logs), [frame/0005](../../findings/frame/0005-dispatchers.md) (dispatchers), [frame/0006](../../findings/frame/0006-frame-windows.md) (pilots), [frame/0007](../../findings/frame/0007-frame-batch.md) (batch), [experiments](../../findings/frame/experiments.md).
-- Runs: run:2026-10-30-frame-emu, run:2026-10-30-frame-emu-2, run:2026-10-30-frame-emu-3 (emulated; the `timers` family reads "given the import returned 0", run:2026-11-04-lock-scan), run:2026-11-03-frame-order, run:2026-11-03-frame-order-2 (kept corpus, no game), run:2026-11-04-frame, run:2026-11-04-frame2 (windows), run:2026-10-27-anim, run:2026-10-17-lifecycle.
+- Runs: run:2026-10-30-frame-emu, run:2026-10-30-frame-emu-2, run:2026-10-30-frame-emu-3 (emulated; the `timers` family reads "given the import returned 0", run:2026-11-04-lock-scan), run:2026-11-03-frame-order, run:2026-11-03-frame-order-2 (kept corpus, no game), run:2026-11-04-frame, run:2026-11-04-frame2, run:2026-11-04-frame3 (windows), run:2026-10-27-anim, run:2026-10-17-lifecycle.
 - Decisions: [ADR-0022](../../adrs/0022-scope-server-frame.md), [ADR-0004](../../adrs/0004-boundary-oracles-in-reproduction.md), [ADR-0014](../../adrs/0014-scope-game-simulation.md), [ADR-0015](../../adrs/0015-emulated-reproduction.md), [ADR-0021](../../adrs/0021-observed-boundaries-in-emulation.md), [ADR-0028](../../adrs/0028-case-and-process-in-experiment-records.md), [ADR-0029](../../adrs/0029-import-slots-and-import-boundaries-in-emulation.md), [ADR-0031](../../adrs/0031-constants-of-the-code-image.md); [plan 0055](../../plans/0055-server-frame.md).
 - Specs the frame composes: [anim/timing § H](../anim/timing.md#h-the-event-queue-and-the-frame-order), [drlg/lifecycle](../drlg/lifecycle.md), [monsters/ai](../monsters/ai/README.md), [skills/dispatch § P](../skills/dispatch.md#p-draws-and-seeds-per-event-kind), [skills/missiles](../skills/missiles.md), [combat/overview](../combat/README.md), [items/tc](../items/tc.md), [chain](../chain/README.md).
 
 ## Open questions
 
-- [I] **The 20-pair floor is decided, and no longer open.** The owner ruled on 2026-11-04, option A of [plan 0055's log](../../plans/0055-server-frame.md): the floor becomes the pairs measured, stated as § K5 states them. `lane/p55d` is adding, in a kept run, the pack's second window, a Corpsefire window and a standing-player window for the defender; it is not merged, and when it lands § K's counts take a small update. (run:2026-11-04-frame2)
+- [I] **The 20-pair floor is decided, and no longer open.** The owner ruled on 2026-11-04, option A of [plan 0055's log](../../plans/0055-server-frame.md): the floor becomes the pairs measured, stated as § K5 states them. (run:2026-11-04-frame2, run:2026-11-04-frame3)
 - [L] **The act clock's values and its scale.** The tables' values ([backlog](../../backlog/2026-11-04-spec-writer-archivist-act-clock-tables.md)) and the server's scale `k` and flag, set at act load (`0x0061C240`, `0x0061C180`), and so how often the clock pass sends 0x53 ([backlog](../../backlog/2026-11-04-spec-writer-reverser-act-clock-scale.md)). Whether a clock change can change a usable item and so run `AuraSelect` is not read either: a window across a 0x53 packet settles it.
 - [L] **Not read, each named in its finding:** the bits `UnitFrameReset` clears, by name, and which item has item flag 1 at the reset; `ClientRoomSync`'s calls under unit `+0xC8` bit 21 and what `0x0053FC20` does under `[[game+0x1D28]+0x08]` bit 0x400; the object handlers left as addresses, which unit type each queue site is for, `A5Q3_TownReturn`'s caller and the four unreferenced `UnitRoomUnlink` sites, the eleventh `ActRoomsHead` call at 0x0053B0BF, a dead mercenary's way out of its pet list, the 16 game-code indirect calls of the room sync's graph, the registrars behind frame/0005 § 7's 54 functions, whether a logged event of a universal kind is the server's or the client's.
 - [L] **Client function 0x00473090,** active in some outdoor sessions and no Den window, fills records of the list at `0x007A8A04`+0x11C with five draws per call, beside `sub_00473910_WeatherTick`. That reads as rain particles, with no code read to say so. No spec depends on it; it is outside the server frame.

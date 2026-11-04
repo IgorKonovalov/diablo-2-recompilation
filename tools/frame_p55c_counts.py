@@ -2,7 +2,7 @@
 
     python3 -I tools/frame_p55c_counts.py workspace/logs/frame workspace/install/app/game.exe > OUT
 
-Every count the review and frame/0007 § Review cite: the outcome mix of the counted windows, what the order test separates, what the
+A third argument reads another run (`lane/p55d`: 2026-11-04-frame3); COUNTED holds its windows. Every count the review and frame/0007 § Review cite: the outcome mix of the counted windows, what the order test separates, what the
 line volume is made of, the reader's alternatives, the steps on no chained seed, the KD segments, the touch rows' extents, the
 modded monsters per window, the hooks not reached, and the shared-seed pairs of every frame2 and pilot log. The reader's mutation (one
 in-tick XS line dropped, seed 55) is seeded, so the output is the same each run. The dev logs are read for the volume and the pairs
@@ -24,7 +24,8 @@ sys.path.insert(0, HERE)
 import frame_window as fw  # noqa: E402
 import frame_xs as fx  # noqa: E402
 
-COUNTED = {("5501-pack1", 3486), ("5503-maze1", 1897), ("5503-maze1", 7942), ("5505-maze1", 7942), ("5507-mazeh", 2094)}
+COUNTED = {("5501-pack1", 3486), ("5503-maze1", 1897), ("5503-maze1", 7942), ("5505-maze1", 7942), ("5507-mazeh", 2094),
+           ("5511-packd", 1539), ("5511-packd", 2063)}      # the last two: run:2026-11-04-frame3 (`lane/p55d` review)
 CLIENT_FN = (0x00473090, 0x00473240)      # the unnamed client function beside sub_00473910_WeatherTick (five draws per call)
 CLIENT_SITES = (0x00473111, 0x004731FE)   # its two inlined sites; the other three are RNG_RangeOffset with `ra` inside it
 OPENS = ("UE0", "RU0", "MSG0", "TQ0", "SV0")
@@ -147,11 +148,47 @@ def extents(image, hits, P):
         P("%s totals %s\n" % (name, sorted(tot.items())))
 
 
+def seed_owners(w, rows, P, tag):
+    """`lane/p55d` review: whose kept seed each step at a defender row stepped. An XS line logs the low word it read; a unit's seed comes
+    from its UE0/UE1 readings and is stepped here by the LCG. A step names its seed if exactly one kept value has that low word, and the
+    naming is checked by that unit's next reading."""
+    seeds, stack, open_steps, n = {}, [], {}, collections.Counter()
+    for no, t, o in w["lines"]:
+        if t in ("UE0", "UE1"):
+            if t == "UE0":
+                stack.append(o)
+                k = (o["ty"], o["id"])
+            else:
+                top = stack.pop() if stack else None
+                k = (top["ty"], top["id"]) if top else None
+            s = fw.sd(o["us"]) if o.get("us") else None
+            if s is not None and k:
+                if k in open_steps:
+                    n["next_reading_equal" if seeds.get(k) == s else "next_reading_differs"] += 1
+                    del open_steps[k]
+                seeds[k] = s
+        elif t == "XS":
+            hit = [k for k, v in seeds.items() if v[0] == o["low"]]
+            for k in hit:
+                seeds[k] = fw.step(seeds[k])
+            loc = o.get("ra") or o["site"]
+            if any(fw.row_has(r, loc) for r in rows):
+                top = stack[-1] if stack else None
+                P("%s %d frame %d %-8s owner %s open %s\n" % (tag, w["start"], o["fr"], hex(loc), hit, (top["ty"], top["id"], top["kind"], top["lst"]) if top else None))
+                n["steps"] += 1
+                n["one_owner"] += len(hit) == 1
+                for k in hit:
+                    if top is None or k != (top["ty"], top["id"]):
+                        open_steps[k] = no
+    P("%s %d %s (a unit with no later reading in the window: %d)\n" % (tag, w["start"], sorted(n.items()), len(open_steps)))
+
+
 def main():
     root = sys.argv[1]
     P = sys.stdout.write
-    kept = sorted(glob.glob(os.path.join(root, "2026-11-04-frame2-s1-*.log")))
-    dev = sorted(glob.glob(os.path.join(root, "dev-2026-11-04-frame2-*.log")))
+    run_id = sys.argv[3] if len(sys.argv) > 3 else "2026-11-04-frame2"      # `lane/p55d`: the same reading of run:2026-11-04-frame3
+    kept = sorted(glob.glob(os.path.join(root, run_id + "-s1-*.log")))
+    dev = sorted(glob.glob(os.path.join(root, "dev-" + run_id + "-*.log")))
     pilot = sorted(glob.glob(os.path.join(root, "2026-11-04-frame-s1-*.log")))
 
     P("== volume (lines per frame; without the client function; in-tick XS only)\n")
@@ -224,7 +261,7 @@ def main():
             for (tk, op), v in x["untracked_where"].items():
                 T["untracked_%s_%s" % ("tick" if tk else "between", "open" if op else "nopair")] += v
             for k in x["kds"]:
-                kd_hist[k.get("gk")] += 1
+                kd_hist[(k.get("gk"), k.get("gu"))] += 1
                 for a in k.get("sites") or []:
                     if a in fw.KILL_GAME:
                         kd_site[hex(a)] += 1
@@ -314,7 +351,7 @@ def main():
     P("game-seed-moving UE0: %s\n" % gmov.most_common())
     P("rank transitions (adjacent top-level walks): %s\n" % sorted(rk.items()))
     P("\n== client steps with a chained low word: %s\n" % cli_chained.most_common())
-    P("\n== KD: item-site counts %s; steps at the sites %s; other steps classed game in a segment %s\n" % (
+    P("\n== KD: (item-constructor steps, unit-constructor steps) %s; steps at the sites %s; other steps classed game in a segment %s\n" % (
         sorted(kd_hist.items()), sorted(kd_site.items()), kd_other.most_common()))
     P("\n== dropped XS (seed 55): %s\n" % sorted(drop.items()))
     fresh = fw.FRESH_INIT
@@ -326,7 +363,7 @@ def main():
     fw.FRESH_INIT = fresh
     P("\n== the fresh-seed rule off: %s\n" % sorted(c.items()))
 
-    P("\n== touch and pass rows (all seven windows): function, extent, hits, locations hit\n")
+    P("\n== touch and pass rows (all the run's windows): function, extent, hits, locations hit\n")
     seen = set()
     for r in fw.TOUCH + fw.PASSDRAW:
         for lo, hi in r.get("ranges", ()):
@@ -337,7 +374,12 @@ def main():
             P("%-9s %-40s %#x %#x hits %d at %s\n" % (r.get("trigger") or ("client" if r.get("client") else "tick"), r["fn"][3:40], lo, hi, sum(h.values()),
                                                   ",".join("%#x" % a for a in sorted(h))))
     extents(sys.argv[2], allhits, P)
-    P("defender, owner and killev rows' hits by open event (all seven windows): %s\n" % defhits.most_common())
+    P("defender, owner and killev rows' hits by open event (all the run's windows): %s\n" % defhits.most_common())
+
+    P("\n== the defender rows: whose kept seed each step stepped\n")
+    defrows = [r for r in fw.TOUCH if r["trigger"] == "defender"]
+    for t, w in counted:
+        seed_owners(w, defrows, P, t)
 
     P("\n== modded monsters (MON lines of the process) and whether a window's UE0 holds them; Corpsefire is zombie1 (5), Mod1 27\n")
     for p in kept:
