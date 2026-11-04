@@ -463,7 +463,7 @@ I7. PickupToCursor:                                                  [I] (fn:sub
             clear flag bit 25;  QUESTS_RaiseItemPlaced;  UnitSetEvent last
 ```
 
-The distance table (row `|dy|`, column `|dx|`), 64 `i32` at `0x006EB180`, indexed `× 4` at `0x0064162B`, as family `dist`'s kept output prints it. [C] (ADR-0015) (data:0x006EB180, 0x0064162B, `static.txt` of run:2026-11-04-ground-emu)
+The distance table (row `|dy|`, column `|dx|`), 64 `i32` at `0x006EB180`, indexed `× 4` at `0x0064162B`, as family `dist`'s kept output prints it. Given as values under [ADR-0031](../../adrs/0031-constants-of-the-code-image.md), no exact rule being known; [PathDirTables](../../tables/PathDirTables.md) holds the same 64 as `g_PathDistNear`, in gate survey `path` as `dirtab_distnear_eq_6eb180=1`. [C] (ADR-0015) (data:0x006EB180, 0x0064162B, `static.txt` of run:2026-11-04-ground-emu)
 
 ```
  -1 -1 -1  0  2  4  6  8

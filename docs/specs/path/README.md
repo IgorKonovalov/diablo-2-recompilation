@@ -273,7 +273,7 @@ PathTargetExtendPlayer(ctx):                                       [C] (fn:sub_0
 
 `Blocked` here is `COLL_PatternTestBool(ctx.room, x, y, ctx.pattern, ctx.testMask)`; coordinates are u16 adds. `PathDirCell` is [search § A2](search.md#a2-directions). (data:g_PathDirTriples@0x006F1648, data:g_PathDir8@0x006EB398, data:g_PathSignTable@0x006EB490)
 
-*Corrected 2026-11-04 (`lane/a54` review): the step read `(sign dx, sign dy)`. It moves one axis unless `|dx| = |dy|`: a target at `(3, 1)` from the start steps `(1, 0)`, not `(1, 1)`. The table's values and index are in [PathDirTables](../../tables/PathDirTables.md); path/0001 § 5 has the correction.*
+*Corrected 2026-11-04 (`lane/a54` review): the step read `(sign dx, sign dy)`. It moves one axis unless `|dx| = |dy|`: a target at `(3, 1)` from the start steps `(1, 0)`, not `(1, 1)`. The table's rule and index are in [PathDirTables](../../tables/PathDirTables.md); path/0001 § 5 has the correction.*
 
 #### C4. The replan
 

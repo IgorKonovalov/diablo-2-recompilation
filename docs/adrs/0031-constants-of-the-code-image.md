@@ -1,4 +1,4 @@
-# ADR-0031 — Constants of the code image: a short table only where no exact rule gives it, and a survey checks every rule
+# ADR-0031 — Constants of the code image: a short table only where no exact rule gives it, and a survey checks every rule (amends 0009)
 
 > **Status:** accepted (owner, 2026-11-04)
 > **Date:** 2026-11-04
@@ -10,24 +10,27 @@ A reimplementation needs some constant tables that live in `Game.exe`'s data and
 
 `lane/a54` wrote all 882 elements of the path planners' 15 tables into `docs/tables/PathDirTables.md`. The `lane/s60` review had already allowed 64 values of one table, on the test "can't do without". The `lane/a54` review found that most of the 882 don't pass that test, because a rule the survey can check gives each of them, and put the scale to the owner: the repository is public, [ADR-0009](0009-public-documentation-site.md) records that a full dump of a table is the more exposed form, and history is never rewritten, so a merge that gets pushed can't be taken back.
 
+The owner ruled on 2026-11-04: "keep the 343 values no rule can produce, and write the other 539 as rules the survey checks against the image; nothing is lost, checksums stay in the survey, and `CLAUDE.md` gets a short exception that [the architect approves]." Writing the rules, `lane/a54b` found a one-line rule for 65 of the 343, so the tree holds 278 listed and 604 by rule. That is the ruling's own test applied to what is now known, in the less exposed direction, and not a change to it.
+
 ## Decision
 
-A constant of the code image that a reimplementation needs may appear in `docs/` **only where no exact rule gives it**, as a short table with its address and its reader. **Anything a rule gives is written as the rule**, and a survey computes the rule's values and compares them with the pinned image element by element, so that the docs gate fails on any difference. Checksums stay in the survey. A rule states its width and rounding and gives bit-identical values. A rule found by matching data is `[C]` as an equality on the pinned image's elements and is no claim about how the table was generated. A rule here is a short expression, or a derivation from a table the same doc gives, and a fit that needs a case per group of rows or a patched exception doesn't count as one, so that nobody forces a rule to shrink a table. Excel, sprite and map data stay out whole, as before.
+A constant of the code image that a reimplementation needs may appear in `docs/` **only where no exact rule gives it**, as a short table with its address and its reader. **Anything a rule gives is written as the rule**, and a survey computes the rule's values and compares them with the pinned image element by element, so that the docs gate's full tier fails on any difference. Checksums stay in the survey. A rule states its width and rounding and gives bit-identical values. A rule found by matching data is `[C]` as an equality on the pinned image's elements and is no claim about how the table was generated. Excel, sprite and map data stay out whole, as before. Whether a description by cases, or one with a stated exception, counts as a rule is not decided here: the ruling doesn't say, and it is the owner's (Consequences, Negative).
 
 ## Consequences
 
 ### Positive
-- The public tree holds as few of the image's values as a reimplementation can work with, and loses nothing: each value can be computed from the doc alone.
+- For these tables the public tree holds only the listed values and loses nothing: every other value can be computed from the doc alone.
 - A rule can't drift from the image without the gate going red, which a listed value typed by hand can't promise.
 - A later lane has a test to apply, not a size to argue about.
 
 ### Negative
 - A rule is harder to read at a glance than a list, and the reader must trust or re-run the survey that it is exact.
-- "A short expression" against "a fit" is a judgement. `g_DirOctant` has an exact four-case description and `g_PathDirTriples` an exact derivation with one exception, and both stay listed under this wording. The owner may read that line differently, and the review of each new table has to draw it again.
+- **One choice is open, and it is the owner's.** The ruling's 343 named `g_DirOctant` (75) and `g_PathDirTriples` (75) as having no rule, and they stay listed on that. Each has since been found to equal a description by cases, every element on the pinned image: the first in four cases (the centre, an axis cell, a diagonal, the rest), the second alike with one cell's two directions swapped. If the owner counts those as rules, the listed values fall to 128 and the rules rise to 754, and `lane/a54b`'s commit has to be replaced before any merge, as `lane/a54`'s was, because it holds both tables. If the owner doesn't, this ADR gets the sentence that says what a rule excludes.
 - A survey needs the pinned image to run, so the check only holds where that image is present, as for every other image survey.
 - The values already pushed elsewhere in the docs aren't removed: this ADR rules on what is written from now on, and history is never rewritten.
 
 ### Neutral
+- This amends [ADR-0009](0009-public-documentation-site.md) on one point: its Context says `docs/tables/` holds schema, semantics and short illustrative rows, and it now also holds these listed constants, which the export plan's publish check has to treat as data. ADR-0001, which that Context names beside `CLAUDE.md`, has no sentence on this to amend.
 - `CLAUDE.md`'s "Game data never enters git" bullet and the archivist skill's "never dump a whole table" line are to carry a pointer here; the wording is in [plan 0054](../plans/0054-path-search.md)'s log.
 - `lane/s60`'s 64-value table in [items/inventory](../specs/items/inventory.md) is the kind this allows: no exact rule is known for it.
 

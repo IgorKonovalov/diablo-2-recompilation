@@ -11,7 +11,7 @@
 
 The path planners ([path/search](../specs/path/search.md), [path/overview](../specs/path/README.md)) and the outdoor road search
 ([drlg/outdoor](../specs/drlg/outdoor.md)) read small constant tables from the image's data. No MPQ file holds them and they are not an excel table:
-they are constants of the code. A reimplementation needs their values, so this doc gives every one: as a rule where an exact rule gives it, as a short listed table where none does ([ADR-0031](../adrs/0031-constants-of-the-code-image.md); [plan 0054](../plans/0054-path-search.md)), with where each sits, how wide an element is, its shape
+they are constants of the code. A reimplementation needs their values, so this doc gives every one: as a rule where one is written below, as a short listed table otherwise ([ADR-0031](../adrs/0031-constants-of-the-code-image.md); [plan 0054](../plans/0054-path-search.md)), with where each sits, how wide an element is, its shape
 and its index. Generated and checked by `python3 -I tools/path_survey.py dirtables|dirmd|readers|rules <game.exe>` (tests:
 `python3 -I tools/test_path_survey.py`; the totals, a checksum per table and the rules' mismatch count are in gate survey `path`). The path types themselves
 (`g_PathPlanFuncs`, the flags) are [PathTypes](PathTypes.md); the collision pattern table is [drlg/collision](../specs/drlg/collision.md).
@@ -118,7 +118,7 @@ found these instructions and no other. The sites that take a table's address rat
 
 ## Values
 
-`[C]` Every element of all 15 tables is given here, 882 in all: **278 listed** in 4 tables, for which no exact rule is known, and **604 by rule** in 11 tables. `g_PathDirZero` is the tool's label for the two dwords at `0x006EB7D4`, which have no symbol.
+`[C]` Every element of all 15 tables is given here, 882 in all: **278 listed** in 4 tables and **604 by rule** in 11 tables. For `g_PathDistNear` and `g_PathSearchTurnRows` no exact rule is known. `g_DirOctant` and `g_PathDirTriples` stay listed as the owner's ruling named them; each equals a description by cases, and whether that counts as a rule is the owner's open choice ([ADR-0031](../adrs/0031-constants-of-the-code-image.md)). `g_PathDirZero` is the tool's label for the two dwords at `0x006EB7D4`, which have no symbol.
 Checksum: `zlib`'s CRC-32 of the table's elements in listed order, each packed as a little-endian i32 (the `u8` table too, widened), the same numbers as gate survey `path` holds, `[C]` read from the pinned image (sha256 in [inventory](../inventory.md)).
 
 | Table | Elements | Given by | crc32 |
@@ -141,7 +141,7 @@ Checksum: `zlib`'s CRC-32 of the table's elements in listed order, each packed a
 
 ### The rules
 
-`[C]` **`path_survey.py rules` computes each rule's values and compares them with the pinned image element by element: 604 of 604 bit-identical, 0 mismatches**, and a mismatch fails gate survey `path` (`dirtab_rule_mismatches=0`). Each rule is `[C]` as an equality on the pinned image's elements. **It was found by matching the data and is no claim about how the table was generated**, nor about any other build.
+`[C]` **`path_survey.py rules` computes each rule's values and compares them with the pinned image element by element: 604 of 604 bit-identical, 0 mismatches**, and a mismatch fails gate survey `path` (`dirtab_rule_mismatches=0`). Each rule is `[C]` as an equality on the pinned image's elements. **It was found by matching the data and is no claim about how the table was generated**, nor about any other build. The survey holds the rules as its own code and the gate checks that code against the image; it doesn't read the block below. The block's words were checked once, at the `lane/a54b` review, by an implementation written from them alone: 604 of 604 (`workspace/logs/a54b/review/indep.py`). An edit to the block needs that check again.
 
 Every result is stored as a signed 32-bit little-endian element. Below, arithmetic is on exact integers unless a line says otherwise, `&` is on two's complement, `sign(x)` is -1, 0 or 1, `/` between integers is exact where it is used, and `mod` gives 0 to the modulus minus one.
 

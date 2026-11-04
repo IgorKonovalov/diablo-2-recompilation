@@ -1,6 +1,6 @@
 # ADR-0009 — Public documentation: deferred; a later, heavily redacted export with no tie to the repository
 
-> **Status:** proposed (owner decided 2026-10-13: no site now)
+> **Status:** proposed (owner decided 2026-10-13: no site now); what `docs/tables/` holds amended by [ADR-0031](0031-constants-of-the-code-image.md)
 > **Date:** 2026-10-13
 > **Related plan(s):** none; a plan is written only when publication is taken up again
 
