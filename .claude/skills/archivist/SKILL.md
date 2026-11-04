@@ -33,7 +33,7 @@ scan `workspace/`.
 - Parse game files with **our** scripts: `python3 -I tools/<script>.py <paths>`. Never run Python
   from inside `workspace/`.
 - Nothing from `workspace/` goes into git. Docs may quote a few illustrative rows. Never dump a
-  whole table into `docs/`.
+  whole table into `docs/` (constants of the code image: ADR-0031).
 
 ## Workflow
 

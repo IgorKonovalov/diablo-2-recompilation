@@ -118,7 +118,7 @@ found these instructions and no other. The sites that take a table's address rat
 
 ## Values
 
-`[C]` Every element of all 15 tables is given here, 882 in all: **278 listed** in 4 tables and **604 by rule** in 11 tables. For `g_PathDistNear` and `g_PathSearchTurnRows` no exact rule is known. `g_DirOctant` and `g_PathDirTriples` stay listed as the owner's ruling named them; each equals a description by cases, and whether that counts as a rule is the owner's open choice ([ADR-0031](../adrs/0031-constants-of-the-code-image.md)). `g_PathDirZero` is the tool's label for the two dwords at `0x006EB7D4`, which have no symbol.
+`[C]` Every element of all 15 tables is given here, 882 in all: **278 listed** in 4 tables and **604 by rule** in 11 tables. For `g_PathDistNear` and `g_PathSearchTurnRows` no exact rule is known. `g_DirOctant` and `g_PathDirTriples` stay listed as the owner's ruling named them; each equals a description by cases, which the owner ruled is not a rule here ([ADR-0031](../adrs/0031-constants-of-the-code-image.md)). `g_PathDirZero` is the tool's label for the two dwords at `0x006EB7D4`, which have no symbol.
 Checksum: `zlib`'s CRC-32 of the table's elements in listed order, each packed as a little-endian i32 (the `u8` table too, widened), the same numbers as gate survey `path` holds, `[C]` read from the pinned image (sha256 in [inventory](../inventory.md)).
 
 | Table | Elements | Given by | crc32 |

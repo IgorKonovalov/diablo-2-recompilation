@@ -25,13 +25,13 @@ A constant of the code image that a reimplementation needs may appear in `docs/`
 
 ### Negative
 - A rule is harder to read at a glance than a list, and the reader must trust or re-run the survey that it is exact.
-- **One choice is open, and it is the owner's.** The ruling's 343 named `g_DirOctant` (75) and `g_PathDirTriples` (75) as having no rule, and they stay listed on that. Each has since been found to equal a description by cases, every element on the pinned image: the first in four cases (the centre, an axis cell, a diagonal, the rest), the second alike with one cell's two directions swapped. If the owner counts those as rules, the listed values fall to 128 and the rules rise to 754, and `lane/a54b`'s commit has to be replaced before any merge, as `lane/a54`'s was, because it holds both tables. If the owner doesn't, this ADR gets the sentence that says what a rule excludes.
+- **What a rule excludes (owner, 2026-11-04).** A description by cases, or one with a patched exception, does not count as a rule here: a table that needs one stays listed. `g_DirOctant` (75) and `g_PathDirTriples` (75) each equal such a description on every element of the pinned image, the first in four cases (the centre, an axis cell, a diagonal, the rest), the second alike with one cell's two directions swapped, and they stay listed, as the owner's 343 named them. The tree holds 278 listed and 604 by rule.
 - A survey needs the pinned image to run, so the check only holds where that image is present, as for every other image survey.
 - The values already pushed elsewhere in the docs aren't removed: this ADR rules on what is written from now on, and history is never rewritten.
 
 ### Neutral
 - This amends [ADR-0009](0009-public-documentation-site.md) on one point: its Context says `docs/tables/` holds schema, semantics and short illustrative rows, and it now also holds these listed constants, which the export plan's publish check has to treat as data. ADR-0001, which that Context names beside `CLAUDE.md`, has no sentence on this to amend.
-- `CLAUDE.md`'s "Game data never enters git" bullet and the archivist skill's "never dump a whole table" line are to carry a pointer here; the wording is in [plan 0054](../plans/0054-path-search.md)'s log.
+- `CLAUDE.md`'s "Game data never enters git" bullet and the archivist skill's "never dump a whole table" line carry a pointer here; the wording is in [plan 0054](../plans/0054-path-search.md)'s log.
 - `lane/s60`'s 64-value table in [items/inventory](../specs/items/inventory.md) is the kind this allows: no exact rule is known for it.
 
 ## Alternatives considered
