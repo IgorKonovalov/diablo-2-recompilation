@@ -76,7 +76,7 @@ under the lane's scratch area, and read back only what the next step needs.
 ## Non-negotiables
 
 - **Game data never enters git.** `workspace/` is ignored. Specs describe tables, they don't dump
-  them, though short illustrative rows are fine.
+  them, though short illustrative rows are fine; constants of the code image follow [ADR-0031](docs/adrs/0031-constants-of-the-code-image.md).
 - **Every behavioural claim carries an anchor and a confidence tag**: `[C]` confirmed, `[I]` inferred,
   `[L]` lead. Definitions are in ADR-0001 and `.claude/skills/architect/references/evidence-rules.md`.
   Specs may state `[C]`/`[I]`; a `[L]` may only appear under *Open questions*.

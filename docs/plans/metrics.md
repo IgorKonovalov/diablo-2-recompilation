@@ -602,6 +602,10 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-11-04 | `lane/s60` review | 0060 P3 | architect-review | 381 506 | 46 | 16 | — | accept with fixes (21); items/use and items/inventory reviewed | omission 10, misread 2, under-claim 2, wrong anchor 2, stale cross-reference 2, miscount 1, overclaim 1, other 1 |
 | 2026-11-04 | `lane/r60d` | 0060 cross-check | reverser-static | 296 221 | 63 | 17 | — (no game, no Ghidra; verdict lane) | accept with fixes (Tier A, ADR-0030, 16) | misread 5, omission 5, tool not kept 2, other 2, wrong anchor 1, under-claim 1 |
 | 2026-11-04 | `lane/r60d` review | 0060 cross-check | architect-review | 220 770 | 41 | 12 | — | accept with fixes (16) | misread 5, omission 5, tool not kept 2, other 2, wrong anchor 1, under-claim 1; audit: n/a, Tier A |
+| 2026-11-04 | `lane/a54` | 0054 tables, 0060 table sentences | archivist | 184 525 | 64 | 11 | — | accept with fixes (Tier A, ADR-0027, 19); branch not merged, replaced by lane/a54b | omission 7, stale cross-reference 3, overclaim 2, misread 2, wrong anchor 2, miscount 1, tool not kept 1, other 1 |
+| 2026-11-04 | `lane/a54` review | 0054 tables, 0060 table sentences | architect-review | 217 165 | 38 | 12 | — | accept with fixes (19); scale put to the owner | omission 7, stale cross-reference 3, overclaim 2, misread 2, wrong anchor 2, miscount 1, tool not kept 1, other 1 |
+| 2026-11-04 | `lane/a54b` | ADR-0031, 0054 tables | archivist | 134 381 | 17 | 9 | — | accept with fixes (Tier A, 10) | overclaim 4, omission 4, stale cross-reference 1, tool not kept 1 |
+| 2026-11-04 | `lane/a54b` review | ADR-0031, 0054 tables | architect-review | 154 390 | 41 | 8 | — | accept with fixes (10) | overclaim 4, omission 4, stale cross-reference 1, tool not kept 1 |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not

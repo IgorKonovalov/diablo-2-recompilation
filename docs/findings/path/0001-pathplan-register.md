@@ -112,7 +112,7 @@ refusal), [anim/0003 § 2](../anim/0003-movement-gates.md) (the step, `PathRepla
 | `0x006EB648` | `g_PathTypeParam98` | 17 dwords: `+0x98` per type | I |
 | `0x006EB690` | `g_PathTypeFlags` | 17 dwords: the flags word per type ([PathTypes](../../tables/PathTypes.md)) | I |
 | `0x006EB398` | `g_PathDir8` | 8 × (dx, dy) dwords, the free walk's steps | I |
-| `0x006EB490` | `g_PathSignTable` | 81 dwords centred here (index `dx + 9 dy`, −40..40): the sign of dx | I |
+| `0x006EB490` | `g_PathSignTable` | 81 dwords centred here (index `a + 9 b`, −40..40): `sign(a)` when `\|a\| ≥ \|b\|`, else 0 (corrected 2026-11-04, `lane/a54` review; read "the sign of dx") | I |
 | `0x006EB548` | `g_PathFaceStep` | 64 entries, 4 bytes apart: the turn step per direction difference | I |
 | `0x006F1648` | `g_PathDirTriples` | 25 × 3 bytes: main and two alternate directions (255 = none) | I |
 
@@ -248,9 +248,10 @@ return 1;
   an even non-zero minor term, whose cell differs from the sign's in its third direction; the `sign` control fails
   all 60 cases written to separate it (`free`'s last 60, kept only when the two walks differ). (0x00678C2A–0x00678CA2)
 - [C] `sub_00648050_PathTargetExtendPlayer` (ESI ctx): with `dx, dy` the moved target minus the start, nothing when
-  `|dx| ≥ 5`, `|dy| ≥ 5` or both 0; else the step `(g_PathSignTable[dx + 9 dy], g_PathSignTable[dy + 9 dx])` (the signs
-  of dx and dy, `p1-tables.txt` `T490`) is added while the new point is free and `max(|dx|, |dy|)` counts up below 5,
+  `|dx| ≥ 5`, `|dy| ≥ 5` or both 0; else the step `(g_PathSignTable[dx + 9 dy], g_PathSignTable[dy + 9 dx])`, which is
+  `(sign dx, 0)` when `|dx| > |dy|`, `(0, sign dy)` when `|dy| > |dx|` and `(sign dx, sign dy)` at `|dx| = |dy|` (`p1-tables.txt` `T490`), is added while the new point is free and `max(|dx|, |dy|)` counts up below 5,
   each free point becoming the target. The `ext4` control fails all 33 cases it separates. (0x00648050–0x0064811C)
+  *Corrected 2026-11-04 (`lane/a54` review): this read "the signs of dx and dy". The entry at `a + 9 b` is `sign(a)` when `|a| ≥ |b|`, else 0, 81 of 81 ([PathDirTables](../../tables/PathDirTables.md)); `x` takes the first value and `y` the second (0x006480AF–0x006480ED). The model reads the table, so the family's 560 matches stand and no result moves: 41 extension calls, 35 of them with `|dx| ≠ |dy|`. No control tested the gloss; the pair of signs, run on the same 560 model against model, differs in 19 (`workspace/logs/a54/review/gloss_control.py`, the review's, no tag rests on it).*
 
 ### 6. The slot call and the tail
 

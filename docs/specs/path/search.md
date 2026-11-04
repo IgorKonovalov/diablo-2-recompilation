@@ -50,17 +50,17 @@ flowchart LR
 
 ### Tables
 
-These sit in the image's data. The values are read from the pinned image at the address, not listed here, except the short ones the findings state. A planner can't be written without them, so until [this entry](../../backlog/2026-11-04-spec-writer-archivist-path-direction-tables-doc.md) lands they are read from the pinned image at these addresses (`tools/path_scan.py tables`, `tools/path_emu3.py`); plan 0054 doesn't close before it.
+These sit in the image's data. A planner can't be written without them: the values or their exact rules, widths and index forms are in [PathDirTables](../../tables/PathDirTables.md), except `g_PathSearchStep8` (the same 16 values as `g_PathStep8Long`), `g_PathSearchDrawAdd` and `g_SineTable`, which the rows below state.
 
 | Anchor | Shape | Used for |
 |---|---|---|
 | data:g_DirOctant@0x006F1518 | `i32[25][3]` by `PathDirCell` | the three directions to a target; column 0 is the octant ([drlg/outdoor](../drlg/outdoor.md)) |
-| data:g_PathStep8Long@0x006F1798 | 8 × (dx, dy) i32 | one step: `(1,0), (1,1), (0,1), (−1,1), (−1,0), (−1,−1), (0,−1), (1,−1)` |
+| data:g_PathStep8Long@0x006F1798 | 8 × (dx, dy) i32, read as words | one step: `(1,0), (1,1), (0,1), (−1,1), (−1,0), (−1,−1), (0,−1), (1,−1)` |
 | data:g_PathSearchStep8@0x006F1958 | 8 × (dx, dy) i32, read as words | the same steps |
 | data:g_PathDistNear@0x006F1698 | `i32[64]` by `dx + 8 dy` | the near distance (A3) |
 | data:g_PathSearchTurnRows@0x006F17D8 | `i32[8][8]` | the search's turns (L3) |
 | data:g_PathSearchDrawAdd@0x006F18D8 | `i32[32]`: −2..2 six times, then −1, 1 | type 16's addend (L4) |
-| data:g_T15Step@0x006F1D98 | 16 × (dx, dy) i32: (0,−1), (1,−1), … twice | a follower's step |
+| data:g_T15Step@0x006F1D98 | 16 × (dx, dy) i32, read as words: (0,−1), (1,−1), … twice | a follower's step |
 | data:g_T15DirFromStep@0x006F1E28 | centred i32, index `3 dy + dx` | a follower's first direction |
 | data:g_T15TurnA@0x006F1EC0, data:g_T15NextA@0x006F1F00, data:g_T15TurnB@0x006F1E40, data:g_T15NextB@0x006F1E80 | `i32[16]` each | the followers' turns and next directions |
 | data:g_SineTable@0x00707800 | `f32[512]`, within 1.8e-07 of `sin(2πk/512)` | the spiral |

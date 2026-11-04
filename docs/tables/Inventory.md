@@ -4,6 +4,8 @@
 > **sha256:** `.txt` `45e9e49143b9f9c4fa5c8b4eef44b7113a2cd87ddd73a02b47a9503a1ca5524c`, `.bin` `1f294b790787957ef4e293e7a8dfddc0aa8200a5d29e06aa3e1232693024f049`
 > **Doc status:** layout complete (plan 0060 Phase 0, `python3 -I tools/excel_bin.py diff`: 32 records × 72 fields = 2 304 cells, 0 mismatches; in the gate's `excel_layout` survey); which row a unit and page select, and which fields the server reads, are [items/0013](../findings/items/0013-grids-belts-stacks.md) (plan 0060 Phase 1.2), below
 
+> **Specs:** The reviewed specs that use this table: [items/inventory](../specs/items/inventory.md) (the grids, the placement search and the pickup) and [items/use](../specs/items/use.md).
+
 ## Purpose
 
 One row per inventory page: the character classes' inventory with its grid and equipment slots, the monster page,

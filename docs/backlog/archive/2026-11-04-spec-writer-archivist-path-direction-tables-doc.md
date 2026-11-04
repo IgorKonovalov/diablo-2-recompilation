@@ -2,12 +2,12 @@
 from: spec-writer
 to: archivist
 date: 2026-11-04
-status: open
+status: done
 context:
-  - ../specs/path/search.md
-  - ../findings/path/0003-short-planners.md
-  - ../tables/PathTypes.md
-resolution: ""
+  - ../../specs/path/search.md
+  - ../../findings/path/0003-short-planners.md
+  - ../../tables/PathTypes.md
+resolution: "Done (lane/a54): the 15 direction and step tables are in [PathDirTables](../../tables/PathDirTables.md) with address, element width read from the reading instructions, shape, index, and values or an exact rule the survey checks (ADR-0031, lane/a54b); tools/path_survey.py dirtables|dirmd|readers|rules, tests tools/test_path_survey.py. Links from specs/path/search.md go by a follow-up to the spec-writer, with a correction for g_PathSignTable's gloss."
 ---
 
 From lane/s54 (plan 0054 Phase 3). docs/specs/path/search.md names the planners' direction tables by address and shape but not their values: g_DirOctant 0x006F1518 (all three columns; drlg/outdoor reads column 0), g_PathDistNear 0x006F1698, g_PathStep8Long 0x006F1798, g_PathSearchTurnRows 0x006F17D8 (rows beyond those path/0002 tabulates), g_PathDirTriples 0x006F1648, g_T15DirFromStep 0x006F1E28, g_T15Step 0x006F1D98, g_T15TurnA/NextA/TurnB/NextB 0x006F1E40.., g_PathDir8 0x006EB398, g_PathSignTable 0x006EB490 (centred) and g_PathDirTable 0x006EB7E0. tools/path_scan.py tables prints some of them; tools/path_emu3.py reads the rest from the pinned image. Please add them to tools/path_survey.py and to docs/tables/PathTypes.md (or a table doc of its own), by script, so a reimplementer without the image has them. Not blocking the specs' promotion, by the lane/s54 review: their statements hold and the addresses are exact. A planner can't be written from the specs alone until the values are in a doc, so this blocks plan 0054's close.

@@ -1,6 +1,6 @@
 # ADR index
 
-Next free number: **0031**
+Next free number: **0032**
 
 | # | Title | Status |
 |---|---|---|
@@ -12,7 +12,7 @@ Next free number: **0031**
 | [0006](0006-docs-gate.md) | A mechanical docs gate: strict checks on what can be checked, review for the rest | accepted |
 | [0007](0007-fetched-leads-only.md) | A lead is a document read in-session, never a recollection (amends 0001) | accepted |
 | [0008](0008-two-client-harness.md) | Two clients in one game: a second prefix and display, a local TCP/IP game, gdb on the host only | accepted 2026-10-16 (owner's condition: port 4000 closed to non-loopback before hosting; two non-zero slots) |
-| [0009](0009-public-documentation-site.md) | Public documentation: deferred; a later, heavily redacted export with no tie to the repository | proposed (no site now) |
+| [0009](0009-public-documentation-site.md) | Public documentation: deferred; a later, heavily redacted export with no tie to the repository | proposed (no site now; what `docs/tables/` holds amended by 0031) |
 | [0010](0010-forced-path-runs.md) | Forced-path runs: an edited decision table may drive a rare stock path | superseded by 0013 |
 | [0011](0011-harness-slots.md) | Harness slots: several game copies at once, one per display and prefix | accepted |
 | [0012](0012-human-wiki.md) | A human wiki: explanatory pages over the reviewed specs, no claims of their own, not published | accepted |
@@ -34,3 +34,4 @@ Next free number: **0031**
 | [0028](0028-case-and-process-in-experiment-records.md) | A case is what an experiment record cites, a process may hold several cases, and the marks and the split are provenance; sharing stays opt-in with a stated reason (amends 0003) | accepted (owner, 2026-11-04) |
 | [0029](0029-import-slots-and-import-boundaries-in-emulation.md) | Imports in emulated reproduction: a declared stand-in in an import slot, and a stop at an import's call (amends 0015, 0021) | accepted (owner, 2026-11-04) |
 | [0030](0030-verdict-lanes-and-wiki-tier-a.md) | Verdict lanes and wiki lanes take the full review instead of the lane check (amends 0023) | accepted (owner, 2026-11-04) |
+| [0031](0031-constants-of-the-code-image.md) | Constants of the code image: a short table with its address and reader only where no exact rule gives it; every rule written as a rule and checked by a survey (amends 0009) | accepted (owner, 2026-11-04) |
