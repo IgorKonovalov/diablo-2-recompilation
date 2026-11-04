@@ -5,7 +5,7 @@ date: 2026-11-03
 status: done
 context:
   - ../../plans/done/0058-party-and-player-count.md
-  - ../../plans/0052-monster-ai.md
+  - ../../plans/done/0052-monster-ai.md
   - ../../specs/player/party.md
 resolution: "Accepted with fixes (6) at Tier A; player/party promoted to reviewed; rulings in the plan 0058 log. Phase 3 may start once the lane merges."
 ---

@@ -10,7 +10,7 @@
 **Question:** given a path request (the unit, its path type `0..16`, the type's flags, the target unit or point, the
 stop distance, the byte at path `+0x90`), what does `PathPlan` compute: which planner runs, which cells of the
 collision grid it reads and under which mask, which points it writes into the path, what it returns, which fallback
-the caller then takes, and which draws it makes on which seed? Plan [0052](../0052-monster-ai.md) stops at the AI's
+the caller then takes, and which draws it makes on which seed? Plan [0052](0052-monster-ai.md) stops at the AI's
 **request** and treats the search behind it as a boundary (owner, 2026-10-27, its question 1); this plan is that
 boundary's own plan, drafted on unpause as 0052's P1.1 review ruled. When it is done:
 - `docs/tables/PathTypes.md` lists the 17 slots of `g_PathPlanFuncs` (`0x006EB6D8`) and of the flags table

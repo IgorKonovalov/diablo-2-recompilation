@@ -4,7 +4,7 @@
 > **Question:** for each AI table row of batch 4 (64 `SkeletonMage` to the traps: 64–66, 68–80, 87, 92), what does
 > its think function do on an AI event: which `aip` slots and MonStats columns it reads, which AI-control words it
 > keeps, which draws it makes on which seed and in which order, and which command, skill or path request it ends in?
-> **Date:** 2026-10-30   **Plan:** 0052 (Phase 1, batch P1.2, catalogue batch 4)   **Status:** for review (`lane/r52e`)
+> **Date:** 2026-10-30   **Plan:** 0052 (Phase 1, batch P1.2, catalogue batch 4)   **Status:** reviewed (`lane/r52e`; plan 0052 closed 2026-11-04)
 
 Static reading of the pinned `Game.exe` in Ghidra (project copy `workspace/ghidra-r52e`, symbols replayed from
 `re/symbols.csv`, then decompiled with the scratch `__fastcall` signatures of batches 1–3 carried onto it,
@@ -489,6 +489,7 @@ curse6: UseSkill(Sk6mode, Skill6, t, 0, 0); ctl->v14 = T + aip3; return;
   (30), `Idle(10)` on a draw above 69, else `T56(t, 3, 0)`. Up to five draws. (0x005FAF00–0x005FB28F,
   fn:sub_005DD0B0_AiUnitSearch@0x005DD0B0, tbl:Skills.txt:auratargetstate, tbl:MonStats.txt:Skill4)
 - *Corrected 2026-11-04 (`lane/s52c`, spec-writer, reading the anchored instructions for monsters/ai/catalogue):* the last walk was given as `T56(t, 3, 0)`; the flag is `push edi` (0x005FB26C) with `edi` the MonStats record (0x005FAF0C, not written since), never 0, so a refused walk reaches `MonAiMove` with flags 4.
+- *Corrected again 2026-11-04 (`lane/s52c` review, architect):* the note above is wrong, and the block's 0 stands. `xor edi, edi` at 0x005FB247, in the inline step's `adc`, zeroes `EDI` before the `push edi` at 0x005FB26C, and the listing that note read had collapsed the step. The flag is 0 and `MonAiMove` gets flags 0.
 - [I] **The callback** `(ECX game, EDX unit; cand, s)`: a monster other than the unit, not in a death mode, with
   `Unit+0xC4` bit `0x02`, of base class 310 (`doomknight1`; `MonBaseId` in `[0, MonStats count)` and equal to `0x136`),
   within `UnitDistSq ≤ 2500`, on the unit's side (`AlignSame02`) and of alignment 0: the nearest strictly nearer goes

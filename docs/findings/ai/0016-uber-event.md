@@ -2,7 +2,7 @@
 
 > **Subsystem:** monsters/ai
 > **Question:** what drives Uber Diablo, Uber Baal and Uber Mephisto, whose think functions (rows 147, 145, 146) only return: the event handlers on levels 133 to 136, the spawns and minion counts, the helpers with no reference from the AI table, Baal's class-709 teleport, and the 37 class and 3 state immediates of the batch 11 scan?
-> **Date:** 2026-11-03   **Plan:** 0052 (Phase 1c)   **Status:** for review (`lane/r52n`)
+> **Date:** 2026-11-03   **Plan:** 0052 (Phase 1c)   **Status:** reviewed (`lane/r52n`; plan 0052 closed 2026-11-04)
 
 Static reading of the pinned `Game.exe` in objdump (`workspace/logs/r52n/c1-asm.txt`, the ranges read; whole-image dump
 `objdump -d -M intel`, sha256 `e0a3a565…`, not kept, regenerated from the pinned image), with the kept scans of

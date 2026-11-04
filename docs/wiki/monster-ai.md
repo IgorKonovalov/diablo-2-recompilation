@@ -439,7 +439,7 @@ that paragraph before relying on a block outside its read set. Within that sampl
 
 **Read from the code; no log holds a decision of this row** ([catalogue, row 106 in batch 5](../specs/monsters/ai/catalogue.md#batch-5-summons)). A Shadow Master scores its skills to pick one. A skill's score starts from the skill's own numbers and the target's resistance to its element, and its `aitype` adds terms from a few words the think computes once: how near and how many hostiles are, its life, its line to the target, its owner's surroundings. Most `aitype`s also take one draw on the unit's seed, and that draw comes before the test for the list, so a skill the list does not keep has still drawn. A skill joins the list only when it beats the score of the last one in, so the list rises, and the pick walks it from the top, each entry taking a seed step that can pass it over, down to the plain attack. A skill that targets the unit itself can hold the top of the list and commands nothing.
 
-The spec's reading was run against the think's instructions as a check of the transcription, with every call it makes stubbed, so it says the two agree and raises nothing. As data, no stock skill reaches three of the `aitype` cases. Row 143 shares this think, and no MonStats row names it.
+The spec's reading was run against the think's instructions as a check of the transcription, with every call it makes stubbed, so it says the two agree and raises nothing. As data, no stock skill reaches four of the `aitype` cases. Row 143 shares this think, and no MonStats row names it.
 
 ### The tables of rows 25 and 94
 

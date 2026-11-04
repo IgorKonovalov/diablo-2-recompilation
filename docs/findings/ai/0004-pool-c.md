@@ -5,7 +5,7 @@
 > water rows), what does its think function do on an AI event: which `aip` slots and MonStats columns it reads, which
 > AI-control words it keeps, which draws it makes on which seed and in which order, and which command, skill or path
 > request it ends in?
-> **Date:** 2026-10-30   **Plan:** 0052 (Phase 1, batch P1.2, catalogue batch 3)   **Status:** for review (`lane/r52d`)
+> **Date:** 2026-10-30   **Plan:** 0052 (Phase 1, batch P1.2, catalogue batch 3)   **Status:** reviewed (`lane/r52d`; plan 0052 closed 2026-11-04)
 
 Static reading of the pinned `Game.exe` in Ghidra (project copy `workspace/ghidra-r52d`, decompiled with the scratch
 `__fastcall` signatures of batches 1 and 2 carried onto the current `re/symbols.csv`, `b3-sym-scratch.csv`; a reading
@@ -408,6 +408,7 @@ Idle(20);
 ```
 
 - *Corrected 2026-11-04 (`lane/s52c`, spec-writer, reading the anchored instructions for monsters/ai/catalogue):* the block gave `T56(t, 4, 0)`; the flag is `push esi` (0x005F76CF) with `esi` the MonStats record (0x005F72DB, not written since), never 0, so a refused walk reaches `MonAiMove` with flags 4.
+- *Corrected again 2026-11-04 (`lane/s52c` review, architect):* the note above is wrong, and the block's 0 stands. `xor esi, esi` at 0x005F76AA, in the inline step's `adc`, zeroes `ESI` before the `push esi` at 0x005F76CF, and the listing that note read had collapsed the step. The flag is 0 and `MonAiMove` gets flags 0.
 
 - [I] **The teleport** goes to the far side of the target: the target's point plus the unit-to-target offset (×4 in
   melee range, ×1 otherwise), with a `4·aip5` (480) frame cooldown in `v14`; below 33 percent life only. The first

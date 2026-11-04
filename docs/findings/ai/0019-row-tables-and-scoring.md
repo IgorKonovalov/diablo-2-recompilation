@@ -2,7 +2,7 @@
 
 > **Subsystem:** monsters/ai
 > **Question:** what are row 106's per-`aitype` terms, targets, skips and draws; what are the tables rows 94 and 25 read, by ADR-0031; what does unit event 12 do to the wisp's grant?
-> **Date:** 2026-11-04   **Plan:** 0052   **Status:** reviewed 2026-11-04 (`lane/r71`, Tier A, accept with fixes; [plan 0052's log](../../plans/0052-monster-ai.md))
+> **Date:** 2026-11-04   **Plan:** 0052   **Status:** reviewed 2026-11-04 (`lane/r71`, Tier A, accept with fixes; [plan 0052's log](../../plans/done/0052-monster-ai.md))
 
 Read whole in objdump of the pinned image: 0x005EB6D0–0x005EC694 (the callback, `AiStateGroupHeld`, `Use`, the think and its data), 0x005E0980–0x005E0C75 (row 94), 0x005F39B0–0x005F3E5B and 0x005F4054–0x005F4370 (row 25's stores and dance). Scans and checks: `tools/ai_const_survey.py`, `tools/ai_sm_check.py`; outputs in `workspace/logs/r71/`, `manifest.sha256`, 7 lines; the review's in `workspace/logs/r71/review/`, its own `manifest.sha256`, 4 lines. No game, no Ghidra. Record: [run:2026-11-04-r71-sm](experiments.md#run2026-11-04-r71-sm).
 

@@ -3,7 +3,7 @@
 > **Subsystem:** monsters/ai
 > **Question:** do the first-boundary maps of the tier AIs (ai/0002–0010) hold on live decisions, and what do the AI
 > event's seeds, path plans and skill starts do around them?
-> **Date:** 2026-11-03   **Plan:** 0052 (Phase 2, first lane run `lane/p52a`)   **Status:** answered for the tier's first boundaries; open for the rest of Phase 2
+> **Date:** 2026-11-03   **Plan:** 0052 (Phase 2, first lane run `lane/p52a`)   **Status:** reviewed (`lane/p52a`; plan 0052 closed 2026-11-04)
 
 Harness run run:2026-11-03-ai (`docs/findings/ai/experiments.md`): `tools/gdb/ai.py` logs each AI event of a server
 monster near the player, `tools/ai.py check` compares it. Names are `re/symbols.csv` names. A decision is the call of the

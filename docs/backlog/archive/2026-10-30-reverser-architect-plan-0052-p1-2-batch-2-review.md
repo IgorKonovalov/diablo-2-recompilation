@@ -5,7 +5,7 @@ date: 2026-10-30
 status: done
 context:
   - ../../findings/ai/0003-pool-b.md
-  - ../../plans/0052-monster-ai.md#implementation-log
+  - ../../plans/done/0052-monster-ai.md#implementation-log
 resolution: "Tier B check: accept with fixes (1). Rulings: (1) five unemulated rows stay [I] for the batch done-when (batch 1 precedent; Phase 2 logs cover tier AIs 28-30); (2) P1.1 reopen condition (b) not met, accepted with the callback scope clause added; (3) open questions accepted as filed, routed to Phase 2 / writer-read follow-up."
 ---
 

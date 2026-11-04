@@ -6,7 +6,7 @@ status: done
 context:
   - ../../findings/ai/0001-machinery.md#3-the-ai-table-and-its-dispatch
   - ../../tables/MonAI.md#the-second-table-at-0x0073d358-found-at-the-lanea52-review
-  - ../../plans/0052-monster-ai.md
+  - ../../plans/done/0052-monster-ai.md
 resolution: "Reworded 2026-10-30 (lane/rfix) with a dated note: five state rows (1, 4, 5, 7, 15) reuse a g_MonAiTable +8 word; 10 and 17 share 0x005E8020, which no first-table row holds (xrefscan: dword hits 0x0073D400 and 0x0073D470 only; ai_survey st_fn8_in_first=5). [ai/0001 § 3](../../findings/ai/0001-machinery.md#3-the-ai-table-and-its-dispatch)"
 ---
 

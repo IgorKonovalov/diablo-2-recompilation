@@ -5,7 +5,7 @@ date: 2026-11-03
 status: done
 context:
   - ../../findings/ai/0013-batch12.md
-  - ../../plans/0052-monster-ai.md#implementation-log
+  - ../../plans/done/0052-monster-ai.md#implementation-log
 resolution: "Tier A audit 2026-11-03: accept with fixes (6), recorded in plan 0052's implementation log. The six no-setter rows stay [I]; Phase 2's Done-when requires the AiCtl.state log with a live control. Phase 1c may start."
 ---
 

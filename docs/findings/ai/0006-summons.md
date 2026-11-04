@@ -6,7 +6,7 @@
 > which `aip` slots and MonStats columns they read, which AI-control words they keep, which draws they make on which
 > seed and in which order, and which command, skill or path request they end in? And for H3 (plan 0052 § Context):
 > which unit's skill level does `MonOwnerSkillDamage` read for a summon's attack stats?
-> **Date:** 2026-10-30   **Plan:** 0052 (Phase 1, batch P1.2, catalogue batch 5)   **Status:** for review (`lane/r52f`)
+> **Date:** 2026-10-30   **Plan:** 0052 (Phase 1, batch P1.2, catalogue batch 5)   **Status:** reviewed (`lane/r52f`; plan 0052 closed 2026-11-04)
 
 Static reading of the pinned `Game.exe` in Ghidra (project copy `workspace/ghidra-r52f`, symbols replayed from
 `re/symbols.csv` with the scratch `__fastcall` signatures of batch 4 carried on, `b5-sym-scratch.csv`, built by
@@ -145,7 +145,7 @@ findings named in place are cited by their anchors.
 | `0x005EC6C0` | `sub_005EC6C0_AiVines` | row 110 `Vines` think | I (entry call `[C]`, § 4) |
 | `0x005EC8C0` | `sub_005EC8C0_AiCycleOfLife` | row 111 `CycleOfLife` think | I (entry call `[C]`, § 4) |
 | `0x005ECB70` | `sub_005ECB70_AiRavenInit` | row 107's init: `v14 = −1`, `v18 = aip3 + 1`, `v1C` = one draw's bit 0 | I (map `[C]`, § 4) |
-| `0x005ECBC0` | `sub_005ECBC0_AiRavenCircle` | `(ECX game, EDX unit; owner, byte, type)`: a mode-1 command around the owner | I |
+| `0x005ECBC0` | `sub_005ECBC0_AiRavenCircle` | `(ECX game, EDX unit; owner, byte, type)`: a mode-2 command around the owner (*corrected 2026-11-04, `lane/s52c` review:* it read mode 1, the `1` being `MonSetMode`'s argument; `push 2`, 0x005ECBE0) | I |
 | `0x005ECC10` | `sub_005ECC10_AiRaven` | row 107 `Raven` think | I (entry call `[C]`, § 4) |
 | `0x005ECEE0` | `sub_005ECEE0_AiSpiritWolf` | row 108 for class 420 `spiritwolf` | I (entry call `[C]` inside row 108, § 4) |
 | `0x005ED2A0` | `sub_005ED2A0_AiFenris` | row 108 for any other class (421 `fenris`) | I (entry call `[C]` inside row 108, § 4) |

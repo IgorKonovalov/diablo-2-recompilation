@@ -5,7 +5,7 @@ date: 2026-11-03
 status: done
 context:
   - ../../findings/ai/0016-uber-event.md
-  - ../../plans/0052-monster-ai.md
+  - ../../plans/done/0052-monster-ai.md
 resolution: "Tier B check 2026-11-03: accept with fixes (6). No Uber driver or creator found in this image, [I] with the scan's limits stated; G4 joins a later Phase 2 run, the forced cases go to the owner as optional; merged into main."
 ---
 
