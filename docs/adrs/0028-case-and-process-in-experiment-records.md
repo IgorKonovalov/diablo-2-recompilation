@@ -1,6 +1,6 @@
 # ADR-0028 — A case is what a record cites, a process may hold several cases, and the marks and the split are provenance (amends 0003)
 
-> **Status:** proposed (for the owner)
+> **Status:** accepted (owner, 2026-11-04); sharing stays opt-in with a stated reason
 > **Date:** 2026-11-03
 > **Related plan(s):** [0056-harness-runner-efficiency](../plans/done/0056-harness-runner-efficiency.md) (Phase 4; pilot `lane/p52a`, [run:2026-11-03-ai](../findings/ai/experiments.md))
 

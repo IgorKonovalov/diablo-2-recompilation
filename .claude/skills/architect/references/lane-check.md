@@ -11,8 +11,8 @@ the caller gives a worktree path and a lane branch, nothing else.
 
 | Lane kind (ledger `Kind`) | Tier |
 |---|---|
-| `reverser-static`, `reverser-harness`, `archivist` (not a reader lane), `wiki` | B, this check |
-| `spec-writer`, an archivist reader lane ([ADR-0027](../../../../docs/adrs/0027-archivist-reader-lanes-tier-a.md): the diff adds or changes a table or format statement taken from a finding), any change to `docs/adrs/` or `evidence-rules.md`, any lane this check escalates, the audit sample | A, the full review (`SKILL.md` Mode 3) |
+| `reverser-static`, `reverser-harness`, `archivist` (not a reader lane), `wiki` (a date or link move only) | B, this check |
+| `spec-writer`, a verdict lane or a wiki lane that writes statements ([ADR-0030](../../../../docs/adrs/0030-verdict-lanes-and-wiki-tier-a.md)), an archivist reader lane ([ADR-0027](../../../../docs/adrs/0027-archivist-reader-lanes-tier-a.md): the diff adds or changes a table or format statement taken from a finding), any change to `docs/adrs/` or `evidence-rules.md`, any lane this check escalates, the audit sample | A, the full review (`SKILL.md` Mode 3) |
 
 The orchestrator picks the tier; a check that finds the lane is Tier A by this table stops and escalates.
 
