@@ -3,9 +3,9 @@ spec: anim/timing
 status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, stats/aggregate, stats/states, monsters/stats, skills/dispatch, combat/overview, combat/delivery, objects]
-consumed_by: [anim/movement, skills/dispatch, skills/missiles, combat/overview, combat/delivery, objects]
-tags: {C: 64, I: 134, L: 23}
-updated: 2026-11-03
+consumed_by: [anim/movement, skills/dispatch, skills/missiles, combat/overview, combat/delivery, objects, sim/frame]
+tags: {C: 65, I: 134, L: 22}
+updated: 2026-11-04
 ---
 
 # Animation timing: modes, records, the schedule, the frame advance, rates, breakpoints and the gates
@@ -437,7 +437,9 @@ flowchart LR
   fn:sub_005A7F80_MonEventDispatch@0x005A7F80, run:2026-10-27-anim, run:2026-10-27-anim-p2)
 - H2. [I] Each game frame runs the missile, player, monster, object and item lists in that order, each its
   every-frame list (newest first) and then the current frame's slot (oldest first, only records whose frame equals
-  the current one, then freed). (fn:sub_005414D0_GameRunUnitEvents@0x005414D0, 0x005414EE–0x00541589)
+  the current one, then freed), so a unit's every-frame event runs before its slot events of that frame; the frame around it, and how far windows test this order, are
+  [sim/frame § D and § K](../sim/frame.md#d-the-unit-events-the-control-the-pass-the-runners). (fn:sub_005414D0_GameRunUnitEvents@0x005414D0, 0x005414EE–0x00541589)
+- H2. [C] **Monsters' every-frame walk before their slot walk, in the game's own runs:** 4 637 logged pairs in the kept corpus and 207 adjacent walks in the counted windows, none inverted; the other types' stay the reading above. ([sim/frame D5 and D7](../sim/frame.md#d-the-unit-events-the-control-the-pass-the-runners), run:2026-11-03-frame-order, run:2026-11-04-frame2, fn:sub_005414D0_GameRunUnitEvents@0x005414D0)
 - H2. [C] **The first run of an every-frame event**: in the frame it is queued when queued before its type's
   every-frame list is walked (the runner's phase below 3 for players, below 5 for monsters), else in the next frame
   (9 682 starts; every player start ran next-frame). So the first step of a moving mode and the first knockback
@@ -1011,8 +1013,7 @@ run:2026-10-27-anim's schedules hold `n(r)` at every logged rate (E2), but these
   function, and what ends a generic S3 (`schedule` 0, so nothing runs its frame function); the AI command (phase (5))
   is the likely path.
 - [L] Whether `PlayerModeEnd`'s knockback-to-get-hit branch is reached at all.
-- [L] The order of a unit's every-frame event against its slot events in one frame when both exist.
-- [L] `sub_0064C040` (called by `UNIT_SetMode`) and `0x0057C980` (by `SUNIT_SetMode`) are not read.
+- [L] `0x0057C980` (called by `SUNIT_SetMode`) is not read; `sub_0064C040`, called by `UNIT_SetMode`, is `UnitMarkUpdated`, [sim/frame § G](../sim/frame.md#g-the-other-per-frame-passes).
 - [L] The readers of `Unit+0xB0` on the server; what the 44 unread `FrameCnt1 >> 8` queue sites schedule.
 - [L] `SkillEntry+0x0C` bit 12, which turns a move-first skill back to the default rate branch, and item flag `0x4000`,
   which empties a hand for the dual-wield term, are not named.

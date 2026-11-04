@@ -641,6 +641,8 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-11-04 | `lane/r72` review | owner play, Duriel and Countess | architect-review | 251 789 | 31 | 15 | — | accept with fixes (14); S13 in H1 with three words named | omission 6, overclaim 4, stale cross-reference 2, tool not kept 1, other 1 |
 | 2026-11-04 | `lane/s72` | owner-play results in monsters/ai | spec-writer | 144 523 | 27 | 5 | — | accept with fixes (Tier A, 4) | stale cross-reference 2, misread 1, other 1 |
 | 2026-11-04 | `lane/s72` review | owner-play results in monsters/ai | architect-review | 135 873 | 19 | 5 | — | accept with fixes (4); batches 7 and 12 closed | stale cross-reference 2, misread 1, other 1 |
+| 2026-11-04 | `lane/s55` | 0055 P3 | spec-writer | 367 781 | 48 | 15 | — | accept with fixes (Tier A, 21) | omission 7, overclaim 4, stale cross-reference 3, other 3, under-claim 1, misread 1, wrong anchor 1, tool not kept 1 |
+| 2026-11-04 | `lane/s55` review | 0055 P3 | architect-review | 323 542 | 48 | 16 | — | accept with fixes (21); sim/frame reviewed | omission 7, overclaim 4, stale cross-reference 3, other 3, under-claim 1, misread 1, wrong anchor 1, tool not kept 1 |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not

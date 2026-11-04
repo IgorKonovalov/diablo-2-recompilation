@@ -1,7 +1,7 @@
 ---
 based_on:
   - docs/specs/anim/README.md 2026-11-04
-  - docs/specs/anim/timing.md 2026-11-03
+  - docs/specs/anim/timing.md 2026-11-04
   - docs/specs/anim/movement.md 2026-11-04
 ---
 
@@ -110,8 +110,7 @@ objects, then items; for each type first its every-frame events (newest first) a
 (oldest first). An every-frame event queued in a frame runs in that frame only when it is queued before its type's
 list is walked; otherwise it runs in the next one. So a walking unit's first step sometimes comes in the frame it
 starts and sometimes a frame later ([timing § H](../specs/anim/timing.md#h-the-event-queue-and-the-frame-order)).
-The first-run rule was confirmed in the run; the order of an every-frame event against slot events in one frame is
-unknown.
+The first-run rule was confirmed in the run; that a type's every-frame events run before its slot events of the same frame was seen for monsters in the logged runs and is read from the code for the other types.
 
 ## The rate
 
@@ -368,8 +367,8 @@ From the specs' open questions ([timing](../specs/anim/timing.md#open-questions)
   the moving-factor floor of 25, Charge at a low stat 67, and Slows Target. The statements stay "read from the code" and none waits on a mismatch.
 - **The frame of the run's turn to a walk.** Seen 81 times; 6 of them pair at offset 1 rather than the 75 at offset
   0, and the runs do not say why.
-- **Reading of the code left open.** A few functions were not read (two called when a mode is set, part of the
-  sequence mode test), the order of an every-frame event against slot events in one frame, whether a player's
+- **Reading of the code left open.** A few functions were not read (one called when a mode is set, part of the
+  sequence mode test), and whether a player's
   knockback-to-get-hit branch is ever reached, and the two flags that switch a move-first skill's rate branch and
   empty a hand for the dual-wield term.
 - **Whether a stock source reaches the step's wrap.** A speed factor of 854 for a `Velocity`-15 monster or 2 134 for a
