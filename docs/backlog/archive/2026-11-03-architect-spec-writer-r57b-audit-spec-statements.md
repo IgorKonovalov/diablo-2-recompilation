@@ -5,7 +5,7 @@ date: 2026-11-03
 status: done
 context:
   - ../../findings/quirks/0001-community-bugs.md
-  - ../../plans/0057-quirks-catalogue.md
+  - ../../plans/done/0057-quirks-catalogue.md
 resolution: "Both statements stated, [I]: [combat/damage step 5 and its note](../../specs/combat/damage.md#a-combat_builddamage-in-order) (the packet's base inside the drain roll) and [combat/to-hit's arPct row](../../specs/combat/to-hit.md#runtime-state) (0 for a monster's melee test, the missile's stat 19 for its line missile). Index Q474 and Q471. lane/s68."
 ---
 

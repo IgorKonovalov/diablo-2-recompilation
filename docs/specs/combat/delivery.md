@@ -514,7 +514,7 @@ E3. Freeze(att, def, pkt, event):                                    [C] on a me
 - E1. **Stat 36 cuts the blow.** The cut `cb − MulDiv(cb, min(stat 36, 100), 100)` is logged at stat 36 from 15 to 90 on a
   monster defender. [C] for those values (fn:STATEVENT_CrushingBlow@0x005BFFC0, run:2026-10-16-combat)
   **At 100 or more it cancels the blow, read from the code.** No kept combat log has a crushing blow at stat 36 of 100 or
-  more ([plan 0057](../../plans/0057-quirks-catalogue.md#implementation-log), the `lane/s68` review's survey), so the cap, `cb` = 0
+  more ([plan 0057](../../plans/done/0057-quirks-catalogue.md#implementation-log), the `lane/s68` review's survey), so the cap, `cb` = 0
   there, the cut's having no branch on the defender's kind and a player at that resistance, with the player's divisor 10,
   are the code reading. [I] (0x005C0031–0x005C00F6, [quirks/0001](../../findings/quirks/0001-community-bugs.md#verdicts) row 15)
 - E1. `k = 8` for MonStats `boss` (act bosses) and superuniques reproduced with 0 mismatches on an act boss (34

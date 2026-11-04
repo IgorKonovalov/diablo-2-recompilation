@@ -4,7 +4,7 @@ to: reverser
 date: 2026-11-04
 status: open
 context:
-  - ../plans/0057-quirks-catalogue.md#implementation-log
+  - ../plans/done/0057-quirks-catalogue.md#implementation-log
 resolution: ""
 ---
 
