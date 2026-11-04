@@ -131,6 +131,7 @@ run:2026-11-04-lock-scan)
   room alone. The saves at frames `≡ 0 (mod 8 192)` are not read for their seed (§ 3). (fn:sub_00555230_SUnitCreate@0x00555230,
   fn:DRLG_PresetUnitDropRolls@0x00667620, fn:sub_0054DB50_NearWarpTest@0x0054DB50, fn:OBJRGN_Create@0x00546C60,
   fn:QUESTS_GetSeed@0x005438B0, fn:sub_0054F060_RoomWandererTick@0x0054F060)
+  *Dated note (2026-11-04, `lane/p55b` review):* the list holds the seeds with no owner and leaves out a fifth kind: **a unit's own seed drawn in another unit's event** (a defender's in a hit, a dead monster's in its killer's event; frame/0006 § 6), which ADR-0022's context names and the P1 review's list missed. Phase 3 lists five; the 20-pair floor stays on the game seed.
 
 ## Leads used
 

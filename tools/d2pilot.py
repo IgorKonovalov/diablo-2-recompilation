@@ -697,13 +697,18 @@ def cmd_wp(args):
     st = LogState(args.log)
     st.poll()
     p = Pilot(args)
-    if args.wp_find:
+    if args.wp_find or args.wp_at:
         # plan 0023: find the town waypoint among the objects the log saw created (InitFn 17), hop next to it and
         # click it where it stands on screen (needs tools/gdb/objects.py's OU0/OUX lines)
-        from obj_survey import decode
-        wps = {i for i, o in enumerate(decode(args.excel, "objects")) if o["InitFn"] == 17}
         px, py = st.pos[0], st.pos[1]
-        cand = sorted((math.hypot(x - px, y - py), x, y) for u, (c, x, y, m) in st.objs.items() if c in wps)
+        if args.wp_at:      # plan 0055 Phase 2b: the waypoint's position given (Teleport does not cast in town: walk)
+            p.walk = True
+            wx, wy = (int(v) for v in args.wp_at.split(","))
+            cand = [(math.hypot(wx - px, wy - py), wx, wy)]
+        else:
+            from obj_survey import decode
+            wps = {i for i, o in enumerate(decode(args.excel, "objects")) if o["InitFn"] == 17}
+            cand = sorted((math.hypot(x - px, y - py), x, y) for u, (c, x, y, m) in st.objs.items() if c in wps)
         if not cand:
             print("wp: no waypoint object in the log")
             return 1
@@ -944,8 +949,10 @@ def cmd_hop(args):
     st = LogState(args.log)
     st.poll()
     p = Pilot(args)
+    p.walk = bool(args.walk)        # plan 0055 Phase 2b: Teleport does not cast in a town room (InTown clear), a walk does
     before = st.pos
-    p.teleport(args.dx, args.dy)
+    for i in range(max(1, int(args.hop_times))):
+        p.teleport(args.dx * (1 if i % 2 == 0 else -1), args.dy * (1 if i % 2 == 0 else -1))
     time.sleep(1.0)
     st.poll()
     print("before %s after %s (target %+d %+d)" % (before[:2] if before else None, st.pos[:2] if st.pos else None,
@@ -3377,6 +3384,7 @@ def main():
                          "last, as before)")
     ap.add_argument("--to-warp", action="store_true", help="go to a room of the current level that has a warp, then stop")
     ap.add_argument("--walk", action="store_true", help="explore: always walk (left click), never Teleport")
+    ap.add_argument("--hop-times", type=int, default=1, help="hop: repeat N times, alternating the direction (plan 0055)")
     ap.add_argument("--melee", action="store_true", help="explore: left-click the nearest live monster in --radius "
                                                          "instead of Nova (a character without Nova; plan 0034)")
     ap.add_argument("--blind-nova", action="store_true",
@@ -3396,6 +3404,7 @@ def main():
     ap.add_argument("--stall", type=float, default=20.0,
                     help="watchdog: seconds with neither the log nor the position changing before a STALL line")
     ap.add_argument("--wp-x", type=int, default=712, help="wp: the town waypoint (screenshot x)")
+    ap.add_argument("--wp-at", help="wp: the town waypoint's position X,Y (walk there, click it where it stands)")
     ap.add_argument("--wp-find", action="store_true", help="wp: find the town waypoint from the object lines (plan 0023)")
     ap.add_argument("--wp-tab-x0", type=int, default=115, help="wp: x of the first act tab (classic: 120)")
     ap.add_argument("--wp-tab-w", type=int, default=62, help="wp: act tab spacing (5 tabs: 62; classic, 4 tabs: 78)")
