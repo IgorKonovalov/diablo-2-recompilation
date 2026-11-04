@@ -4,7 +4,7 @@ to: architect
 date: 2026-11-04
 status: done
 context:
-  - ../../plans/0060-item-use-inventory.md
+  - ../../plans/done/0060-item-use-inventory.md
   - ../../findings/items/0013-grids-belts-stacks.md
 resolution: "Tier B check 2026-11-04: accept with fixes (6); P1.3 may start; merged into main."
 ---

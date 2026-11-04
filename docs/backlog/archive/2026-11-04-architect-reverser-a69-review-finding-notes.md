@@ -7,7 +7,7 @@ context:
   - ../../findings/items/0012-use-inventory.md
   - ../../findings/items/0013-grids-belts-stacks.md
   - ../../findings/items/0014-ground-items.md
-  - ../../plans/0060-item-use-inventory.md
+  - ../../plans/done/0060-item-use-inventory.md
 resolution: "Done in lane/r70: items/0012 gate bullet [I] with the counts [C] (data), items/0013 gridX/gridY two tags, 0x0066A700 named sub_0066A700_FieldLoadFile (caller DATATBLS_LoadAll) in items/0014 [../findings/items/0014-ground-items.md]; expfield.md routed to the archivist."
 ---
 

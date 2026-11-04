@@ -4,7 +4,7 @@ to: architect
 date: 2026-11-04
 status: done
 context:
-  - ../../plans/0060-item-use-inventory.md
+  - ../../plans/done/0060-item-use-inventory.md
   - ../../findings/items/0014-ground-items.md
 resolution: "Tier A review, accept with fixes (10); ADR-0029 proposed for the owner; drop's statements and dispatch's pass are [I] until it is decided; Phase 2 may start; entry in plan 0060's log."
 ---

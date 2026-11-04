@@ -4,7 +4,7 @@ to: archivist
 date: 2026-11-04
 status: done
 context:
-  - ../../plans/0060-item-use-inventory.md
+  - ../../plans/done/0060-item-use-inventory.md
   - ../../findings/items/0015-harness-inventory.md
   - ../../findings/items/0016-harness-inventory-run2.md
 resolution: "Done (lane/a54): slot 0's rate and the draws in [Misc](../../tables/Misc.md#timed-states-state-cstate1-cstate2-len-stat13-calc13), the 0x23 box past numboxes in [Belts](../../tables/Belts.md#open-questions), the spec links in Misc, Belts, Inventory and Books. Tags as items/0015 and items/0016 give them."

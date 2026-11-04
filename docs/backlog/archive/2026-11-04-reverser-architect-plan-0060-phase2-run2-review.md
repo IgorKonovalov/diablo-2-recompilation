@@ -4,7 +4,7 @@ to: architect
 date: 2026-11-04
 status: done
 context:
-  - ../../plans/0060-item-use-inventory.md
+  - ../../plans/done/0060-item-use-inventory.md
   - ../../findings/items/0016-harness-inventory-run2.md
 resolution: "Tier B check 2026-11-04: accept with fixes (7). Prediction kinds stated; doubling scoped to hp1; a third run isn't required for what the spec states [C]; merged into main."
 ---

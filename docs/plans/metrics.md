@@ -614,6 +614,8 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-11-04 | `lane/r70` check | 0054, 0060 reverser notes | architect-check | 146 262 | 35 | 4 | — | accept with fixes (4); includes a first run stopped at link-only spec lines (40 886) | stale cross-reference 2, misread 1, overclaim 1 |
 | 2026-11-04 | `lane/a70` | 0054 face step, expfield | archivist | 106 566 | 28 | 4 | — | accept with fixes (Tier A, 4) | omission 2, under-claim 1, other 1 |
 | 2026-11-04 | `lane/a70` review | 0054 face step, expfield | architect-review | 108 025 | 19 | 6 | — | accept with fixes (4) | omission 2, under-claim 1, other 1 |
+| 2026-11-04 | `lane/w60` | 0060 P4 | wiki | 159 224 | 22 | 7 | — | accept with fixes (Tier A, ADR-0030, 31) | omission 9, overclaim 7, other 7, misread 6, under-claim 1, stale cross-reference 1 |
+| 2026-11-04 | `lane/w60` review | 0060 P4, close | architect-review | 183 339 | 21 | 7 | — | accept with fixes (31); plan 0060 closed | omission 9, overclaim 7, other 7, misread 6, under-claim 1, stale cross-reference 1 |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not
