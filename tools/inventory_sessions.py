@@ -136,6 +136,8 @@ SESSIONS = {
                   ("click", 70, 410, 3.0), ("shot", "w3")] + [x for k in range(0, 6) for x in
                                                           (("click",) + icell(k) + (0.5,), ("click", 250, 420, 1.0))]
                  + [("shot", "w4")]),
+    # a crowd in a spot 15 cells north-west of the start (the dev run's spot where the walk mask separated), 40 drops in place
+    "crowd": [("keys", ["i"], 1.0), ("goto", 5033, 5028), ("shot", "spot")] + drop_cells(range(0, 40)) + [("shot", "end"), ("wait", 4)],
     "drops2": ([("keys", ["i"], 1.0), ("shot", "inv0"), ("click", 150, 330, 3.0), ("click", 110, 372, 3.0),
                 ("click", 70, 410, 3.0), ("shot", "wall")] + drop_cells(range(0, 12))
                + [("goto", 5048, 5043), ("shot", "back")]
