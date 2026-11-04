@@ -353,6 +353,8 @@ if (!AiPetGuard(h, O, m, ctx, 0, 6)) Idle(25);
 - [I] As written: one or two inline steps (0x005EDA3D, 0x005EDA96), the first only when `m` and `h` are set.
   (fn:sub_005ED9E0_AiTotem@0x005ED9E0, 0x005ED9E0–0x005EDBF5)
 
+- *Corrected 2026-11-04 (`lane/s52c`, spec-writer, reading the anchored instructions for monsters/ai/catalogue):* `MissileCreateAt`'s creating unit, left out of the block, is `p` (`EDX` = `EDI`, 0x005EA65E); the stats go on `U` (`UnitAddStat`, `push esi`, 0x005EA67B, 0x005EA6AA); the walks are `MonAiWalkToPointOrStop`.
+
 #### 2.9 Row 107 `Raven` (init 0x005ECB70, think 0x005ECC10, circle 0x005ECBC0)
 
 ```c
@@ -373,7 +375,7 @@ think: if (!O || !M) return Idle(10);
 - [C] The init: its stores and one seed step, `v1C` the step's low word bit 0, `v18` = `aip3` (s16) + 1 by difficulty.
   The think's entry call `MonsterOwner` from 0x005ECC27. (run:2026-10-30-ai-cat-emu-5, `ravinit`, `raven`)
 - [I] The think as written (0x005ECC10–0x005ECED6): `v14` is the raven's hit count, read from `Skill1` (`Raven`) at
-  **the owner's** level in it (`SkillParam5ByLevel`), and the raven dies (`UnitKilled(U, 1)`) when it reaches 0;
+  **the owner's** level in it (`SkillParam5ByLevel`), and the raven dies (`UnitKilled(U, 1)`; *corrected 2026-11-04, `lane/s52c`:* `UnitKilled(G, U, U, 1)`, `U` its own killer, `push edi`, 0x005ECCCD) when it reaches 0;
   each attack is `SetModeAtUnit(4, t)` with the cooldown `v18 = T + 10·aip3`. So every raven attack runs mode 4 through
   `MonSetMode`, whose `MonAttackStats` adds the owner pair of the Answer's H3 bullet (`SkillDamage` = `Raven`, the
   owner's level in it): **the inputs of H3's 2 218 Raven calls are the owner's skill entry for skill 221, the owner's

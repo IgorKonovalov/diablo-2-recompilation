@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, monsters/ai/overview, monsters/ai/machinery, skills/dispatch, path/overview]
 consumed_by: [monsters/ai/overview, monsters/ai/machinery, hirelings]
-tags: {C: 330, I: 499, L: 19}
+tags: {C: 330, I: 501, L: 19}
 updated: 2026-11-04
 ---
 
@@ -79,7 +79,7 @@ Each entry states its own. No constant is shared across entries.
   H1**: nothing past the first boundary of any row here is `[C]`. No row's role, symbol or reading is raised by being resumed. (run:2026-11-04-ai-resume, run:2026-11-04-ai-r5)
 - [I] **The catalogue sample is short, by name:** batches 5, 7, 10, 11, 12 have no row that counts. Row 54 cannot fail (0 of 3 sites), row 99 has no call past the first, row 32 has a fork in all 199 decisions of the rev 4 logs, row 100 has 4 decisions. Row 130's map has not landed.
   (run:2026-11-04-ai-resume-flip)
-- [I] **Which blocks were read against their instructions.** Each block restates a compact block or the prose of its finding, and those were wrong in places no earlier review caught. Read line by line against objdump of the pinned image, register and stack arguments included, at the `lane/s52b` review: rows 3, 4, 11, 16, 18, 25, 26, 48, 50, 59, 65, 70, 71, 73, 85, 91, 96, 104, 106 (steps 12 to 16 and `Use`), 108, 116, 122, 131, states 3 and 5, and the tables of rows 51 and 135. By that lane alone, with filtered listings on the longer functions: 105, 106's other steps, 110, 111, 112, 134, 137, 31, 32's chain, 54, 58, 81, 99, states 12 and 13. The tier rows' read set is machinery's. **At P3c, by `lane/s52c`, each listing whole:** rows 33, 36, 38, 39, 40, 43, 45, 46, 47, 49, 52, 56, 57, 63, 117, 118, 119, 120, 121, 123, 124, 66, 68, 69, 72, 74, 75, 76, 77, 78, 79, 80, 87, 92, states 15, 16 (36 of P3c's 75; 2 with an error that changes a command's argument, rows 49 and 74, corrected here, and none in a draw's order or count). **Not read:** rows 44, 53, 55, 90, 144, 146, 84, 86, 101, 102, 103, 107, 109, 5, 7, 8, 10, 12, 14, 15, 142, 17, 19, 23, 24, 27, 82, 83, 93, 94, 95, 97, 98, 113, 114, 115, states 7, 4, 6 (39 of the 75, in [plan 0052's P3c](../../../plans/0052-monster-ai.md#phase-3--spec-monster-ai-in-two-parts) order), and the other blocks of batches 10 to 12, whose findings wrote them from instructions. **Measured:** of 19 blocks of batches 1 to 9 read at the review, 2 (rows 18, 59) held an error that changes a branch or a command's argument, corrected here, 1 (row 104) an omitted argument, and none a draw's order or count; of 3 of batches 10 to 12, none. So until P3c closes, expect about one unread block of batches 1 to 9 in ten to hold a wrong unit or argument. Short by name: rows 106 and 143 (step 13's terms decide which skills draw) and rows 25 and 94 (their tables), Open questions. (0x005F2426, 0x005E63F8, 0x005E65E5, 0x005EAA11)
+- [I] **Which blocks were read against their instructions.** Each block restates a compact block or the prose of its finding, and those were wrong in places no earlier review caught. Read line by line against objdump of the pinned image, register and stack arguments included, at the `lane/s52b` review: rows 3, 4, 11, 16, 18, 25, 26, 48, 50, 59, 65, 70, 71, 73, 85, 91, 96, 104, 106 (steps 12 to 16 and `Use`), 108, 116, 122, 131, states 3 and 5, and the tables of rows 51 and 135. By that lane alone, with filtered listings on the longer functions: 105, 106's other steps, 110, 111, 112, 134, 137, 31, 32's chain, 54, 58, 81, 99, states 12 and 13. The tier rows' read set is machinery's. **At P3c, by `lane/s52c`, each listing whole:** rows 33, 36, 38, 39, 40, 43, 45, 46, 47, 49, 52, 56, 57, 63, 117, 118, 119, 120, 121, 123, 124, 66, 68, 69, 72, 74, 75, 76, 77, 78, 79, 80, 87, 92, 44, 53, 55, 90, 144, 146, 84, 86, 101, 102, 103, 107, 109, 5, 7, 8, 10, 12, 14, 15, 142, 17, 19, states 15, 16, 7 (60 of P3c's 75; 2, rows 49 and 74, with an error that changes a command's argument; 2 more, rows 102 and 107, with an omitted argument; none in a draw's order or count; corrected here). **Not read:** rows 23, 24, 27, 82, 83, 93, 94, 95, 97, 98, 113, 114, 115, states 4, 6 (15 of the 75, in [plan 0052's P3c](../../../plans/0052-monster-ai.md#phase-3--spec-monster-ai-in-two-parts) order), and the other blocks of batches 10 to 12, whose findings wrote them from instructions. **Measured:** of 19 blocks of batches 1 to 9 read at the review, 2 (rows 18, 59) held an error that changes a branch or a command's argument, corrected here, 1 (row 104) an omitted argument, and none a draw's order or count; of 3 of batches 10 to 12, none. So until P3c closes, expect about one unread block of batches 1 to 9 in ten to hold a wrong unit or argument. Short by name: rows 106 and 143 (step 13's terms decide which skills draw) and rows 25 and 94 (their tables), Open questions. (0x005F2426, 0x005E63F8, 0x005E65E5, 0x005EAA11)
 - [C] **Emulated maps** are named per entry. Each runs the think on a declared image up to its first observed callee (ADR-0015, ADR-0021) and covers that code's map and no callee, and no store or command after it. (run:2026-10-30-ai-cat-emu-1)
 
 ## Algorithm
@@ -1880,19 +1880,20 @@ init 0x005EA510:  v14 ← −1;  v18 ← 1;  v1C ← 0                          
 4. if T > v14: MonAiSetMode(0, 0, 0); return
 5. if v1C = 0 and 0 ≤ srvmissilea < Missiles count:
      p ← O ≠ 0 ? O : U
-     m ← MissileCreateAt(s, lvl, srvmissilea, U.x, U.y)
+     m ← MissileCreateAt(G, p, s, lvl, srvmissilea, U.x, U.y)     ; p the creating unit (EDX)
      if m ≠ 0:
        UnitSetOwner(m, U)
-       stat 19 += PlayerBaseToHit(p)
-       stat 119 += p.stat119 + the mastery bonus of p's weapon
+       UnitAddStat(U, 19, PlayerBaseToHit(p), 0)
+       UnitAddStat(U, 119, p.stat119 + the mastery bonus of p's weapon, 0)
      v1C ← 1
 6. prm ← Head;  if prm = 0: Idle(3); return
 7. Ovr(15, 0, 20)
-   walk to the point v18 ≠ 0 ? (prm+0x14, prm+0x18) : (prm+0x0C, prm+0x10)
+   MonAiWalkToPointOrStop to the point v18 ≠ 0 ? (prm+0x14, prm+0x18) : (prm+0x0C, prm+0x10)
    if refused: v18 ← not v18;  walk to the other
    if both refused and not WanderNear(O, 5): Idle(5)
 ```
 
+- R102c. [I] The missile's creating unit is `p`, the owner when there is one (`EDX` = `EDI`, 0x005EA65E), with `U` as the missile's owner set after it. (0x005EA65E, 0x005EA660, 0x005EA669, fn:sub_0056EDE0_MissileCreateAt@0x0056EDE0)
 - R102a. [I] The creeper shuttles between the two points of its parameter record until its `calc4` life passes. The stats 19 and 119 go on the missile's owner chain (the creeper), from the owner's to-hit. `Skill1` is sign-extended (`movsx`). (fn:sub_0058EE80_AiParamsHead@0x0058EE80, fn:sub_0056EDE0_MissileCreateAt@0x0056EDE0, fn:sub_005EA540_AiBladeCreeper@0x005EA540)
 - R102b. [C] The init and the Skill1 bound only: families `bladeinit` and `blade`, 240 cases each; the compare and unsigned-`Skill1` controls fail the 12 and 46 that separate `blade`. (run:2026-10-30-ai-cat-emu-5)
 
@@ -2102,7 +2103,7 @@ think:                                                                     [I] (
 2. if v14 = −1:
      v14 ← 3
      if Skill1 ≥ 0: v14 ← SkillParam5ByLevel(Skill1, SkillLevel(O, SKILLS_GetUnitSkill(O, Skill1), 1))
-   else if v14 = 0: UnitKilled(U, 1); return                      ; hits used up
+   else if v14 = 0: UnitKilled(G, U, U, 1); return                ; hits used up; U its own killer
 3. r ← Dist(U, O)
    if r > 50: PetMove(O; U, 3, 0, 0, 0); return
 4. s ← the run speed term, as row 67's
@@ -2116,6 +2117,7 @@ think:                                                                     [I] (
 8. if not WalkAround(ctl, O, mid): PetMove(O; U, 1, 0, 0, 0)              ; 0x005DE6F0
 ```
 
+- R107d. [I] The kill passes `U` as the killer too (`push edi`, 0x005ECCCD). (0x005ECCCD, fn:sub_0057CCB0_UnitKilled@0x0057CCB0)
 - R107a. [I] `v14` is the raven's hit count, read from `Skill1` (`Raven`) at **the owner's** level in it, and the raven dies when it reaches 0. Every attack is `SetModeAtUnit(4, t)` through `MonSetMode`, whose `MonAttackStats` adds the owner pair (`SkillDamage` = `Raven`, the owner's level in it). (fn:sub_005ECC10_AiRaven@0x005ECC10, fn:sub_005ECB70_AiRavenInit@0x005ECB70, fn:sub_005ECBC0_AiRavenCircle@0x005ECBC0, fn:sub_005A7C20_MonSetMode@0x005A7C20, fn:sub_0056E050_MonOwnerSkillDamage@0x0056E050)
 - R107b. [C] The 2 218 `MonAttackStats` calls of class 419 take the owner pair at level 20, for that one level and the sessions' one player, who cast them; which unit is the owner and the terms that level does not separate stay `[I]`. ([monsters/stats H1](../stats.md), run:2026-11-04-ai-resume, fn:sub_0056E050_MonOwnerSkillDamage@0x0056E050)
 - R107c. [C] The init, its stores and one seed step, with `v18` = `aip(3)` (i16) + 1 by difficulty; the think's entry call `MonsterOwner` from 0x005ECC27 only: families `ravinit` (240 cases, all drawing; the Normal-column control fails the 153 it separates) and `raven` (240 cases; no control separates it). (run:2026-10-30-ai-cat-emu-5)
