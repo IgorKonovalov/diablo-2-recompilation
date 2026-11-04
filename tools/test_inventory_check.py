@@ -114,6 +114,157 @@ class Check(unittest.TestCase):
         self.assertTrue(mism)
 
 
+class Exclusion(unittest.TestCase):
+    """The sweep exclusion class: a player's drop in no later dump and not freed is excluded only when the player's level
+    record differs from the drop's level at every later sweep; with the player still on the level it stays a mismatch."""
+
+    def log(self, later_lids):
+        p = os.path.join(tempfile.mkdtemp(), "x.log")
+        it = {"id": 9, "c": 587, "mode": 4, "q": 2, "e": 0}
+        with open(p, "w") as f:
+            f.write('PLR {"lid":103}\n')
+            f.write("IPG " + json.dumps({"item": it, "f": 100, "room": 1, "x": 1, "y": 1}) + "\n")
+            f.write("IPX " + json.dumps({"item": dict(it, e=15100), "f": 100}) + "\n")
+            for lid in later_lids:
+                f.write('PLR {"lid":%d}\n' % lid)
+                f.write("SWP " + json.dumps({"f": 16500, "items": []}) + "\n")
+        return p
+
+    def run_check(self, p):
+        preds = ic.predict([p])
+        return ic.check(preds, [p], show=False)
+
+    def test_player_still_on_level_is_a_mismatch(self):
+        mism, _ = self.run_check(self.log([103]))
+        self.assertTrue([m for m in mism if m[0]["kind"] == "sweep"])
+
+    def test_player_elsewhere_is_excluded(self):
+        mism, _ = self.run_check(self.log([102]))
+        self.assertFalse([m for m in mism if m[0]["kind"] == "sweep"])
+
+    def test_player_back_on_level_at_one_sweep_is_a_mismatch(self):
+        mism, _ = self.run_check(self.log([102, 103]))
+        self.assertTrue([m for m in mism if m[0]["kind"] == "sweep"])
+
+    def test_no_player_record_is_a_mismatch(self):
+        p = self.log([])
+        with open(p, "a") as f:
+            f.write("SWP " + json.dumps({"f": 16500, "items": []}) + "\n")
+        mism, _ = self.run_check(p)
+        self.assertTrue([m for m in mism if m[0]["kind"] == "sweep"])
+
+
+class SaveExclusion(unittest.TestCase):
+    """An item saved with its released room (SV1 logged) before the predicted free is not a sweep case; a save after the
+    predicted free does not excuse an item that was not freed."""
+
+    def log(self, sv_frame):
+        p = os.path.join(tempfile.mkdtemp(), "s.log")
+        it = {"id": 9, "c": 587, "mode": 4, "q": 2, "e": 0}
+        with open(p, "w") as f:
+            f.write('PLR {"lid":103}\n')
+            f.write("IPG " + json.dumps({"item": it, "f": 100, "room": 1, "x": 1, "y": 1}) + "\n")
+            f.write("IPX " + json.dumps({"item": dict(it, e=15100), "f": 100}) + "\n")
+            f.write("SV1 " + json.dumps({"f": sv_frame, "saved": 18000, "item": dict(it, e=15100)}) + "\n")
+            f.write("SWP " + json.dumps({"f": 16500, "items": [[9, 587, 3, 15100, 1, 1]]}) + "\n")
+        return p
+
+    def sweep_mism(self, p):
+        mism, _ = ic.check(ic.predict([p]), [p], show=False)
+        return [m for m in mism if m[0]["kind"] == "sweep"]
+
+    def test_saved_before_the_predicted_free(self):
+        self.assertEqual(self.sweep_mism(self.log(5000)), [])
+
+    def test_saved_after_the_predicted_free_is_a_mismatch(self):
+        self.assertTrue(self.sweep_mism(self.log(17000)))
+
+
+class RestoredSweep(unittest.TestCase):
+    def log(self, resave):
+        p = os.path.join(tempfile.mkdtemp(), "r.log")
+        it = {"id": 70, "c": 587, "mode": 3, "q": 2, "e": 0, "x": 5, "y": 6}
+        with open(p, "w") as f:
+            f.write("RV1 " + json.dumps({"saved": 18000, "lim": 19000, "f": 4000, "item": it}) + "\n")
+            f.write("SWP " + json.dumps({"f": 4500, "items": [[71, 587, 3, 19000, 5, 6]]}) + "\n")
+            if resave:
+                f.write("SV1 " + json.dumps({"f": 4800, "saved": 19800, "item": dict(it, id=71)}) + "\n")
+            f.write("SWP " + json.dumps({"f": 19500, "items": [] if resave else [[71, 587, 3, 19000, 5, 6]]}) + "\n")
+            if not resave:
+                f.write("SWF " + json.dumps({"item": dict(it, id=71, e=19000), "f": 19500}) + "\n")
+        return p
+
+    def test_freed_at_the_predicted_sweep(self):
+        p = self.log(False)
+        mism, _ = ic.check(ic.predict([p]), [p], show=False)
+        self.assertEqual(mism, [])
+
+    def test_resaved_before_it_is_excluded(self):
+        p = self.log(True)
+        mism, _ = ic.check(ic.predict([p]), [p], show=False)
+        self.assertEqual(mism, [])
+
+    def test_not_freed_and_not_resaved_is_a_mismatch(self):
+        p = self.log(False)
+        lines = [l for l in open(p).read().splitlines() if not l.startswith("SWF")]
+        open(p, "w").write("\n".join(lines) + "\n")
+        mism, _ = ic.check(ic.predict([p]), [p], show=False)
+        self.assertTrue(mism)
+
+
+class Restore(unittest.TestCase):
+    def test_restore_rule(self):
+        self.assertEqual(ic.restore_expect(0, 17000), 0)
+        self.assertEqual(ic.restore_expect(20000, 17000), 20000)
+        self.assertEqual(ic.restore_expect(15000, 17000), 17000)
+        self.assertEqual(ic.restore_expect(17000, 17000), 17000)
+
+
+class Potion(unittest.TestCase):
+    def fake(self, wrong_seed=False):
+        """A log of one hp1 use built from the model's own draws, with the stated stats; known outcome."""
+        if not os.path.exists(ic.EXCEL):
+            self.skipTest("no excel tables")
+        classes = ic.item_classes()
+        c = next(i for i, x in enumerate(classes) if x[0] == "hp1")
+        low, high = 0x1234, 0x5678
+        u = ii.Unit(typ=0, cls=1, low=low, high=high, stats={ii.VIT: 300, ii.ENE: 50})
+        v = ii.potion_scale(u, ii.HPREGEN, 30)
+        r2 = ii.Unit(typ=0, cls=1, low=low, high=high)
+        a = r2.range(300)
+        b = r2.range(100)
+        s0, s1 = "%08x:%08x" % (low, high), "%08x:%08x" % (u.low, u.high)
+        d = tempfile.mkdtemp()
+        p = os.path.join(d, "u.log")
+        ln = int(ic.misc_rows()["hp1"]["len"])
+        tot = v
+        with open(p, "w") as f:
+            f.write("UP0 " + json.dumps({"user": 1, "ut": 0, "ucls": 1, "uid": 5, "item": {"c": c}, "f": 1000, "sd": s0,
+                                         "stats": {"3": 300, "1": 50}}) + "\n")
+            f.write("UD1 " + json.dumps({"sd": s0, "n": 300, "f": 1000}) + "\n")
+            f.write("UD2 " + json.dumps({"r2": b, "h": a >> 1, "v": ii.life_mul(0, 1, 30 << 8), "sd": s1}) + "\n")
+            f.write("UDV " + json.dumps({"v": v, "stat": 74}) + "\n")
+            f.write("UAL " + json.dumps({"a": [0, 2, 1000 + ln, 0], "f": 1000}) + "\n")
+            f.write("USS " + json.dumps({"list": 1, "stat": 74, "rate": ii.tdiv(tot, ln) + (1 if wrong_seed else 0), "f": 1000}) + "\n")
+            f.write("UP1 " + json.dumps({"eax": 1, "f": 1000, "sd": s1, "stats": {}}) + "\n")
+        return p
+
+    def test_model_matches_its_own_log(self):
+        p = self.fake()
+        mism, _ = ic.check(ic.predict([p]), [p], show=False)
+        self.assertEqual(mism, [])
+
+    def test_a_rate_off_by_one_is_a_mismatch(self):
+        p = self.fake(wrong_seed=True)
+        mism, _ = ic.check(ic.predict([p]), [p], show=False)
+        self.assertTrue(mism)
+
+    def test_onedraw_reading_fails(self):
+        p = self.fake()
+        mism, _ = ic.check(ic.predict([p], "onedraw"), [p], show=False)
+        self.assertTrue(mism)
+
+
 class Model(unittest.TestCase):
     def test_pkt18(self):
         self.assertEqual(ii.pkt18_expect(4, True, 5, 3, 1, 1, True), (0, 4, (5, 3)))

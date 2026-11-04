@@ -33,10 +33,10 @@ import harness_runner as hr  # noqa: E402
 LOGS = os.path.join(ROOT, "workspace", "logs", "inventory")
 EXCEL = os.path.join("workspace", "merged", "data", "global", "excel")
 BASE = os.path.join("workspace", "samples", "d2s-owner", "smpsor-l50.d2s")
-SAVES = os.path.join(ROOT, "workspace", "samples", "inventory")
+SAVES = os.path.join(ROOT, "workspace", "samples", "inventory2")
 GDB = "tools/gdb/inventory.gdb"
 STEPS = "tools/gdb/enter-normal.steps"
-CHAR = "InvSor"
+CHAR = "InvSor2"
 INV0 = (418, 316)
 CELL = 29
 NOVA = ["--nova-key", "F2", "--radius", "9", "--mana-col", "4", "--drink", "0.5", "--nova-hold", "1.6",
@@ -53,35 +53,113 @@ def drop_run(n, first=0, gx=250, gy=420, gap=1.2):
     return out + [("keys", ["i"], 0.5)]
 
 
+def icell(k):
+    """Screen centre of inventory cell k (row-major, 10 wide)."""
+    return INV0[0] + CELL * (k % 10) + 14, INV0[1] + CELL * (k // 10) + 14
+
+
+NOVA_CITY = [("400" if a == "715" else "245" if a == "58" else a) for a in NOVA]     # the City's waypoint is under the character
+
+
+def last_pos(log):
+    """The last PLR line's (level, x, y) of a log, or None."""
+    pos = None
+    try:
+        for line in open(log, errors="replace").read().splitlines()[-4000:]:
+            if line.startswith("PLR "):
+                d = json.loads(line[4:])
+                pos = (d["lid"], d["x"], d["y"])
+    except (OSError, ValueError):
+        pass
+    return pos
+
+
+def first_pos_off_town(log, town=103):
+    """(x, y) of the first PLR line whose level is not the town: the waypoint the pilot arrived at."""
+    for line in open(log, errors="replace").read().splitlines():
+        if line.startswith("PLR "):
+            d = json.loads(line[4:])
+            if d["lid"] != town:
+                return d["x"], d["y"]
+    return 0, 0
+
+
+def goto(log, xd, out, tx, ty, centre=(200, 265), tries=14):
+    """Walk to (tx, ty) by clicks with the inventory open: each click goes toward the target along the isometric axes
+    (a sub-tile is 16 px across and 8 px down per axis step), at most 130 px from the character, who stays at `centre`.
+    Nothing here feeds a model."""
+    for _ in range(tries):
+        p = last_pos(log)
+        if p is None:
+            return
+        dx, dy = tx - p[1], ty - p[2]
+        if abs(dx) <= 2 and abs(dy) <= 2:
+            return
+        sx, sy = 16 * (dx - dy), 8 * (dx + dy)
+        m = max(abs(sx), abs(sy) * 2, 1)
+        f = min(1.0, 130.0 / m)
+        hr.sh(xd + ["click", str(int(centre[0] + sx * f)), str(int(centre[1] + sy * f))], 30, out)
+        time.sleep(2.0)
+
+
+def drop_cells(cells, gx=250, gy=420, gap=1.0):
+    """Each inventory cell picked up and clicked on the ground at (gx, gy) (the inventory is open)."""
+    return [x for k in cells for x in (("click",) + icell(k) + (0.5,), ("click", gx, gy, gap))]
+
+
+def use_run(cells, gap):
+    """Right-click use of inventory cells, `gap` seconds apart (the request 0x20)."""
+    out = []
+    for k in cells:
+        x, y = icell(k)
+        out.append(("rclick", x, y, gap))
+    return out
+
+
 SESSIONS = {
     # development: the town, the inventory open, screenshots
     "smoke": [("wait", 4), ("shot", "town"), ("keys", ["i"], 1.0), ("shot", "inv"), ("keys", ["i"], 0.5),
               ("wait", 2)],
-    # items/0014 cases 1, 2, 10: player drops in place (the town start), ring by ring
-    "drops1": drop_run(12),
-    # the kept session: the two forced requests in the town (0x18 to page 4 with no stash open, 0x23 to box 12 of a
-    # 12-box belt), six player drops in place, then Act IV's City of the Damned: kills (monster and chest drops), four
-    # player drops, and 760 s standing in the active room (the sweep's frames 1500 apart: cases 7 and 8)
-    "armtest": [("keys", ["i"], 1.0),
-                ("click", 418 + 29 * 7 + 14, 316 + 14, 0.6), ("arm", "18 page=4"),
-                ("click", 418 + 29 * 5 + 14, 316 + 29 * 3 + 14, 1.5), ("shot", "page4"),
-                ("keys", ["i"], 0.8),
-                ("click", 435, 577, 0.8), ("arm", "23 box=12"), ("click", 435, 512, 1.5), ("shot", "belt23"), ("wait", 2)],
-    "main": ([("keys", ["i"], 1.0),
-              ("click", 418 + 29 * 7 + 14, 316 + 14, 0.6), ("arm", "18 page=4"),
-              ("click", 418 + 29 * 5 + 14, 316 + 29 * 3 + 14, 1.5), ("shot", "page4"),
-              ("keys", ["i"], 0.8),
-              ("click", 435, 577, 0.8), ("arm", "23 box=12"), ("click", 435, 512, 1.5), ("shot", "belt23")]
-             + drop_run(6) +
-             [("pilot", (["farm", "--sweep", "--wp", "4,2", "--time", "110"] + NOVA), 300)]
-             + drop_run(4, first=10) +
-             [("wait", 400), ("shot", "mid"), ("wait", 380), ("shot", "end")]),
+    # plan 0060 Phase 2 run 2: the potion doubling and its two draws (items/0012 cases 1 to 5). The inventory is open;
+    # hp1 cells 0..7, mp1 cells 8..11 by right click (0x20), the belt's four columns by the keys 1..4 (0x26). Pairs
+    # 1.2 s apart (the second use finds the first one's list: the blend, case 4), singles 14 s apart (the list ended).
+    "pot": ([("keys", ["i"], 1.0)]
+            + use_run([0, 1], 1.2) + [("wait", 14)] + use_run([2], 14) + use_run([3], 14)
+            + use_run([4, 5], 1.2) + [("wait", 14)] + use_run([6], 14) + use_run([7], 14)
+            + use_run([8, 9], 1.2) + [("wait", 14)] + use_run([10], 14) + use_run([11], 14)
+            + [("keys", ["1"], 14), ("keys", ["2"], 14), ("keys", ["3"], 14), ("keys", ["4"], 14),
+               ("keys", ["1", "2"], 1.2), ("wait", 6), ("shot", "end")]),
+    # the drops: 28 items (every quality 1..8, gems, runes, potions) in place at the start, then the 12 potions at the wall
+    # (WALLWALK), then the City of the Damned and back (the room's release and restore), then 760 s in the town
+    # development: walk down-left to the parapet, screenshots, then six potions dropped there
+    "walltest": ([("keys", ["i"], 1.0), ("click", 150, 330, 3.0), ("shot", "w1"), ("click", 110, 372, 3.0), ("shot", "w2"),
+                  ("click", 70, 410, 3.0), ("shot", "w3")] + [x for k in range(0, 6) for x in
+                                                          (("click",) + icell(k) + (0.5,), ("click", 250, 420, 1.0))]
+                 + [("shot", "w4")]),
+    # a crowd in a spot 15 cells north-west of the start (the dev run's spot where the walk mask separated), 40 drops in place
+    "crowd": [("keys", ["i"], 1.0), ("goto", 5033, 5028), ("shot", "spot")] + drop_cells(range(0, 40)) + [("shot", "end"), ("wait", 4)],
+    "drops2": ([("keys", ["i"], 1.0), ("shot", "inv0"), ("click", 150, 330, 3.0), ("click", 110, 372, 3.0),
+                ("click", 70, 410, 3.0), ("shot", "wall")] + drop_cells(range(0, 12))
+               + [("goto", 5048, 5043), ("shot", "back")]
+               + drop_cells(range(12, 36)) + [("shot", "after24"), ("keys", ["i"], 0.8),
+                ("pilot", ["farm", "--wp", "4,2", "--time", "4"] + NOVA, 200), ("wait", 3), ("mark_pos", "city"), ("shot", "city"),
+                ("keys", ["i"], 1.0)] + drop_cells(range(36, 40)) + [("keys", ["i"], 0.8), ("wait", 3),
+                ("pilot", ["hop", "30", "0"], 60), ("pilot", ["hop", "30", "0"], 60), ("pilot", ["hop", "30", "0"], 60),
+                ("shot", "away"), ("wait", 20),
+                ("pilot", ["hop", "-30", "0"], 60), ("pilot", ["hop", "-30", "0"], 60), ("pilot", ["hop", "-30", "0"], 60),
+                ("keys", ["i"], 0.8), ("goto", "city"), ("keys", ["i"], 0.8), ("wait", 8), ("shot", "back2"),
+                ("pilot", ["farm", "--wp", "4,1", "--time", "4"] + NOVA_CITY, 200), ("wait", 8), ("shot", "town2"),
+                ("wait", 380), ("shot", "mid"), ("wait", 380), ("shot", "end")]),
 }
+
+
+# development copy of drops2 with the two long waits cut to 20 s
+SESSIONS["drops2short"] = [("wait", 20) if (st[0] == "wait" and st[1] in (380, 700)) else st for st in SESSIONS["drops2"]]
 
 
 def cmd_build():
     os.makedirs(SAVES, exist_ok=True)
-    return subprocess.run([*hr.PY, "tools/d2s.py", "build", EXCEL, "tools/d2s_recipes/inv-sor.json", BASE,
+    return subprocess.run([*hr.PY, "tools/d2s.py", "build", EXCEL, "tools/d2s_recipes/inv-sor2.json", BASE,
                            os.path.join(SAVES, CHAR + ".d2s")], cwd=ROOT).returncode
 
 
@@ -98,6 +176,7 @@ def run(slot, tag, run_id, names, dev=False, seed0=6001):
     os.environ["INV_SLOT"] = str(slot)
     os.environ["INV_RUNTIME"] = os.path.join(ROOT, "workspace", "runtime")
     launches = [0]
+    marks = {}
 
     def run_case(name):
         seed = seed0 + launches[0]
@@ -129,6 +208,11 @@ def run(slot, tag, run_id, names, dev=False, seed0=6001):
                     time.sleep(step[3])
                 elif k == "shot":
                     hr.sh(xd + ["shot", os.path.join(shots, "%s-%s.png" % (name, step[1]))], 30, out)
+                elif k == "mark_pos":
+                    marks[step[1]] = first_pos_off_town(log)
+                elif k == "goto":
+                    tx, ty = marks[step[1]] if isinstance(step[1], str) else (step[1], step[2])
+                    goto(log, xd, out, tx, ty)
                 elif k == "arm":
                     with open(arm, "w") as f:
                         f.write(step[1] + "\n")

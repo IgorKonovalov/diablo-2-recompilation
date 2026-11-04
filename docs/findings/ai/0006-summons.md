@@ -52,7 +52,7 @@ offset ([Skills](../../tables/Skills.md)): `+0x048` `srvmissilea`, `+0x064` `aur
   `AiPetMove` (0x005E3EA0, 25 call sites) and the pet guard `AiPetGuard` (0x005E45D0, 13 call sites), both called only
   from this batch's functions (`b5-helper-refs.txt`). (data:g_MonAiTable@0x0073CA18, data:g_MonAiStateRows@0x0073D358,
   fn:sub_005B1650_MonAiTargetByKind@0x005B1650)
-- [I] **H3: the owner pair reads the owner.** `MonAttackStats(ECX unit, EDX mode)` calls
+- [I] **H3: the owner pair reads the owner.** [2026-11-04, `lane/p52c` review: the logged stats now confirm the pair for class 419 and skill 221 at level 20, in sessions with one player (run:2026-11-04-ai-resume, [ai/0017 § 13](0017-phase2-second-run.md#13-third-part-2026-11-04-lanep52c-the-fixed-model-the-tier-table-h3-logger-rev-5)); this bullet's other terms stay `[I]`.] `MonAttackStats(ECX unit, EDX mode)` calls
   `MonOwnerSkillDamage(ECX unit; &blk)` with `blk` three zeroed words (0x005A4F8A–0x005A4F9A). It returns at once
   unless the unit is a monster with an owner `O = MonsterOwner(unit)`, a class below the MonStats count and a
   `SkillDamage` (MonStats `+0xA8`, s16) `s` with `0 < s ≤ Skills count` (`cmp esi,[edx+0xba0]; jg`: `s` equal to the
@@ -378,7 +378,7 @@ think: if (!O || !M) return Idle(10);
   `MonSetMode`, whose `MonAttackStats` adds the owner pair of the Answer's H3 bullet (`SkillDamage` = `Raven`, the
   owner's level in it): **the inputs of H3's 2 218 Raven calls are the owner's skill entry for skill 221, the owner's
   level in it, and the Raven rows of `SKILLS_GetPhysMin`, `GetPhysMax` and `GetToHit`** (fn:sub_005A7C20_MonSetMode@0x005A7C20,
-  fn:sub_0056E050_MonOwnerSkillDamage@0x0056E050). The 2 218 calls themselves are Phase 2's (plan 0052 § P2).
+  fn:sub_0056E050_MonOwnerSkillDamage@0x0056E050). [2026-11-04, `lane/p52c`: the 2 218 calls take the pair at level 20, `[C]` for that one level and the sessions' one player, who cast them; which unit is the owner and the terms that level does not separate stay `[I]`.] (run:2026-11-04-ai-resume, fn:sub_0056E050_MonOwnerSkillDamage@0x0056E050)
 
 #### 2.10 Row 105 `ShadowWarrior` (init 0x005EAF50, think 0x005EAFA0)
 

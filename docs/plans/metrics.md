@@ -578,12 +578,16 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-11-04 | `lane/c62` | 0062 close | architect-check | 57 326 | 10 | 1 | — | plan closed | — |
 | 2026-11-04 | `lane/p52b` | 0052 P2 (second run, kept batch) | reverser-harness | 323 802 | 254 | 163 | slot 2, no Ghidra; 23 kept sessions (21 + 2 built-state P1b-2), 46 launches in all; first-boundary 0 mismatches over 6 272 compared, resume model 112 open mismatches, states 10-12 live, G4 0 helper hits, P1b-2 built state, P1b-1 not done (route attempt failed) | accept with fixes (Tier A, 11) | overclaim 3, misread 3, miscount 1, omission 2, wrong anchor 1, tool not kept 1 |
 | 2026-11-04 | `lane/p52b` review | 0052 P2 (second run) | architect-review | 311 036 | 78 | 24 | — | accept with fixes (11) | overclaim 3, misread 3, omission 2, miscount 1, wrong anchor 1, tool not kept 1 |
+| 2026-11-04 | `lane/p52c` | 0052 P2 (third run, no game) | reverser-static | 272 423 | 52 | 21 | — | accept with fixes (Tier A, 13) | overclaim 3, omission 5, stale cross-reference 3, tool not kept 1, other 1 |
 | 2026-11-04 | `lane/p60` check | 0060 P2 (first run) | architect-check | 82 284 | 16 | 2 | — | accept with fixes (6) | overclaim 3, misread 1, omission 1, stale cross-reference 1 |
 | 2026-11-04 | `lane/p54` | 0054 P2 | reverser-harness | 493 645 | 212 | 133 | 1 | accept with fixes (Tier A; Phase 2 not done) | 20: overclaim 6, misread 3, miscount 2, omission 5, wrong anchor 1, tool not kept 1, under-claim 2 |
 | 2026-11-04 | `lane/p54` review | 0054 P2 | architect-review | 252 270 | 39 | 23 | — | accept with fixes (20); Phase 2 not done | audit of lane/p54: n/a, no check ran; overclaim 6, misread 3, miscount 2, omission 5, wrong anchor 1, tool not kept 1, under-claim 2 |
 | 2026-11-04 | `lane/p54b` | 0054 | reverser-static | 262 670 | 48 | 13 | — | accept with fixes (Tier A) | 13: overclaim 1, under-claim 1, misread 6, miscount 1, omission 3, wrong anchor 1 |
 | 2026-11-04 | `lane/p54b` | 0054 | reverser-static | 249 932 | 54 | 25 | — | accept with fixes (Tier A) | 13: overclaim 1, under-claim 1, misread 6, miscount 1, omission 3, wrong anchor 1 |
 | 2026-11-04 | `lane/p54b` review | 0054 P2 (grid rules) | architect-review | 237 311 | 61 | 16 | — | accept with fixes (13) | overclaim 1, under-claim 1, misread 6, miscount 1, omission 3, wrong anchor 1 |
+| 2026-11-04 | `lane/p52c` review | 0052 P2 (third run, no game) | architect-review | 245 222 | 57 | 71 | — | accept with fixes (13) | overclaim 3, omission 5, stale cross-reference 3, tool not kept 1, other 1 |
+| 2026-11-04 | `lane/p60b` | 0060 | reverser-harness | 313 181 | 143 | 91 | 2 | accept with fixes (Tier B check) | 7: overclaim 3, misread 1, omission 1, stale cross-reference 2 |
+| 2026-11-04 | `lane/p60b` check | 0060 P2 (second run) | architect-check | 139 809 | 39 | 6 | — | accept with fixes (7) | overclaim 3, misread 1, omission 1, stale cross-reference 2 |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not
