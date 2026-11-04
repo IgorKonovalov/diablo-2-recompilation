@@ -446,6 +446,38 @@ if (--ctl->v14 < 1) ctl->v18 = 3;
     passed to `MonAiPathOverride(unit, 0, p, 0)` (0x005F4BF8) before the step 8 away (0x005F4C09). This is the one
     such computation in 0x005F4A70–0x005F4FBB; the engaged flee's step takes no override. `Run · 100` cannot wrap
     (|s16| · 100 ≤ 3 276 800). (fn:sub_005DE190_MonAiPathOverride@0x005DE190, tbl:MonStats.txt:Velocity)
+  - *Compact block (2026-11-04, `lane/s52a` review; answers [the entry](../../backlog/archive/2026-11-04-spec-writer-reverser-plan-0052-row-28-vampire-draw-order.md)):* the prose above leaves two draw orders and `T56`'s arguments open. From the instructions:
+    ```c
+    if (v1C > 0) v1C--;  h = FindHostile(&hd, 0);  s = AiMonState3or19(U);
+    if (s) { if (!v14) v14 = 1;  if (dist < 30 && dist > v18) v18 = dist;
+      if (melee) { x = D100();                                   // 0x005F4B0D: drawn first
+        if (x <= 30 && b0) Pair(t); else SetModeAtUnit(4, t); return; } }
+    life = UnitLifePct(U);
+    if (v14 == 2) {
+      if (life >= 75) { v14 = 1; Walk(t, 7); return; }
+      if (dist < 14 || dist <= v18) { Ovr(0, p, 0); if (StepAway(t, 8, 1)) return; }
+      if (dist >= aip3 || Range(100) >= aip2) { Idle(15); return; }
+      if (Skills(t)) return;
+      if (b0 && h && hd <= 20) { Pair(h); return; }
+      T56(t, 4, 0); return; }
+    if (life < 33) { v14 = 2; if (StepAway(t, 8, 0)) return; }
+    if (melee) { v14 = 1;
+      if (D100() < aip1) {
+        if (!(b0 && h)) { SetModeAtUnit(4, t); return; }        // 0x005F4DFE, 0x005F4E08: tests, then the draw
+        if (Range(100) > 30) { SetModeAtUnit(4, t); return; }
+        if (hd <= 20) { Pair(h); return; } }
+      if (Range(100) < 33) T56(t, 4, 0); else Idle(10); return; }
+    if (dist >= aip3) { if (v14 == 1) Walk(t, 7); else Idle(15); return; }
+    v14 = 1;
+    if (Range(100) >= aip2) {
+      if (dist > 20) { Walk(t, 7); return; }
+      if (dist < 9 && Range(100) < 50) { StepAway(t, 8, 0); return; }
+      if (Range(100) < 50) T56(t, 4, 0); else Idle(10); return; }
+    if (Skills(t)) return;
+    if (!(b0 && h && hd <= 20)) { Walk(t, 7); return; }
+    if (Range(100) < 75) Pair(h); else T56(t, 4, 0);
+    ```
+    `Skills(x)`: `b1`, `v1C ≤ 0`, `Range(100) < aip4`: Skill2 at `x`, `v1C = 11`; else the same with `b2` and Skill3. Every "wait 15" is `MonAiIdle(15)` (0x005F4FBB), and every "drawn-type walk" is `T56(t, 4, 0)` (0x005F4D7E, 0x005F4E50, 0x005F4F41). Second reading: `tools/ai_t28_check.py` over 100 logged decisions, its reach and what it leaves `[I]` in run:2026-11-04-ai-t28. (0x005F4A70–0x005F4FCC)
 - [I] Not emulated: `MonAiFindHostile` is the first callee (ai/0002 § 3). (fn:sub_005DDC30_MonAiFindHostile@0x005DDC30)
 
 #### 2.13 Row 29 `BatDemon` (think 0x005F5040, alt 0x005F4FD0)
@@ -484,7 +516,7 @@ default:
   flees and perches again (state 4). The first attack after a perch is A2 (`AiCtl+0x18` > 0). (0x005F5040–0x005F53D3,
   fn:STATS_GetUnitStat@0x00625480, fn:sub_00627260_UnitSetStat@0x00627260, tbl:ItemStatCost.txt:hpregen)
 - [I] **The alt** (run by `MonAiInit` when the think is already installed, ai/0001 § 3): a unit in mode 11 (S4) sets
-  `AiCtl+0x14` = 1 and `Delay(1)`; else state 4 becomes 1 with `SetModeAtUnit(10, 0)`; else `MonAiInit(ctl, ctl->state)`
+  `AiCtl+0x14` = 1 and `Delay(1)`; else `AiCtl+0x14` = 4 becomes 1 with `SetModeAtUnit(10, 0)` (0x005F4FFC, 0x005F5006); else `MonAiInit(ctl, ctl->state)`
   and `Idle(1)`. (0x005F4FD0–0x005F5031, fn:sub_005B0E00_MonAiInit@0x005B0E00)
 - [C] The alt's map (no draw). (run:2026-10-30-ai-cat-emu-2, `batalt`)
 - [I] Not emulated: the think's first callee is `UnitLifePct`. (fn:sub_00621F20_UnitLifePct@0x00621F20)

@@ -1,10 +1,10 @@
 ---
 spec: monsters/ai/machinery
-status: draft
+status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, monsters/ai/overview, anim/timing, skills/dispatch, path/overview, path/search, drlg/collision]
 consumed_by: [monsters/ai/overview, skills/dispatch, hirelings, drlg/lifecycle, path/overview, sim/frame]
-tags: {C: 26, I: 112, L: 8}
+tags: {C: 28, I: 114, L: 4}
 updated: 2026-11-04
 ---
 
@@ -57,7 +57,7 @@ sentence past the first boundary is **H1** there, quoted once and referred to be
 | default range | 35 when `aidist` is 0 | fn:sub_005DD7F0_MonAiFindTarget@0x005DD7F0 | [I] |
 | player list skip | 55 or more | fn:sub_005DD7F0_MonAiFindTarget@0x005DD7F0 | [I] |
 | no-plan path byte | 100; 101 → type 13 | struct:MonCmd+0x15 | [I] |
-| override parameter range | −126..126, fatal outside; the byte capped at 77 | fn:sub_005DE190_MonAiPathOverride@0x005DE190 | [I] |
+| override parameter range | −126..126, fatal outside; the byte capped at 77 | fn:sub_005DE190_MonAiPathOverride@0x005DE190, fn:sub_005A6260_AiPathOverrideSet@0x005A6260 | [I] |
 
 ### Notation
 
@@ -109,40 +109,49 @@ flowchart TD
   fn:sub_005B1990_TargetListAdd@0x005B1990, struct:Game+0x10F8)
 
 ```
-A2. MonAiFindTarget(game, unit, ctl, out dist, out melee):                 [I] (all of a–f) (fn:sub_005DD7F0_MonAiFindTarget@0x005DD7F0)
+A2. MonAiFindTarget(game, unit, ctl, out dist, out melee):                 [I] (all of a–f) (fn:sub_005DD7F0_MonAiFindTarget@0x005DD7F0, 0x005DD829, 0x005DD9B6, 0x005DD963, 0x005DDBF4, 0x005DDC08)
  a. if the unit has no room: return none
-    lineTest ← true unless AiCtl flag 0x40 is set (which this clears), or the room is outdoors,
-               or AiCtl flag 0x08 is set, or MonsterData+0x50's record has +0x24 ≠ 0
+    rec ← none;  read ← 0
+    if AiCtl flag 0x40 is set: clear it;  lineTest ← true       ; one shot: it forces the test on
+    else if the room is outdoors (0x0061AA40): lineTest ← false
+    else:
+      lineTest ← AiCtl flag 0x08 is clear
+      a monster: rec ← its MonsterData+0x50 record
+      if lineTest and rec: read ← rec+0x24;  lineTest ← read = 0
  b. r ← MonAiForcedTarget;  if r: go to f
  c. if UnitAlignGet(unit) = 0:
-      range: u8 ← MonStats+0x52 + d;  35 when 0
-      nearestSeen ← none
+      best ← MonStats+0x52 + d, u8;  35 when 0                  ; the range is the start of best
+      nearestSeen ← 0x7FFFFFFF
       for each list 0..7:
         head counts only when in the searcher's act (Unit+0x18 byte), in a room, and that room not a town
-        a counted head's distance updates nearestSeen
+        a counted head's AI distance updates nearestSeen
         if that distance ≥ 55: skip the whole list
-        a dead head counts as 0x7FFFFFFF
-        the head and the list's later nodes (no act or town test on these) are taken
-          when nearer than the best so far and lineTest → UnitLineBlocked(unit, cand, 4) = 0
-      list 8: act test, distance, line test
- d. else: search kind 5 from the unit's logic region (LogicRegionIdAt)
- e. list 9 is searched apart for its nearest.  MonAiPreferDecoy chooses it over the found target
+        a dead head's distance reads as 0x7FFFFFFF
+        the head and the list's later nodes (no act, town or death test on these) are taken
+          when distance < best (unsigned) and (not lineTest or UnitLineBlocked(unit, cand, 4) = 0): best ← distance
+      list 8: act test, then the same rule against the same best
+ d. else: search kind 5 from the unit's logic region (LogicRegionIdAt), with best from 35
+ e. the decoys of list 9 (act test, the line test, their own best from 0x7FFFFFFF, no range; in d, the search's own).
+    MonAiPreferDecoy chooses the nearest over the found target
       when there is none, or
       when the decoy is nearer than 6 and a type-2 test plan to the found target has no point
       (and search kind 7 finds nothing within 19)
- f. with a target: set flag 0x08 unless alignment 2;  melee ← InMeleeRange(unit, target, 0);  dist ← its distance
-    without:       dist ← nearestSeen
+ f. with a target:
+      unless alignment 2: set flag 0x08;  if rec: rec+0x24 ← (read = 0 ? 1 : 0)
+      melee ← InMeleeRange(unit, target, 0);  dist ← its distance
+    without: melee ← 0;  dist ← nearestSeen
 ```
 
-- A2a. [I] The finding gives the range and the comparison "nearer than the best so far"; how the range enters that comparison is not stated (*Open questions*). (fn:sub_00622AA0_UnitLineBlocked@0x00622AA0, fn:sub_00622C40_InMeleeRange@0x00622C40, fn:sub_0061AB00_RoomIsTown@0x0061AB00,
-  fn:sub_006259B0_UnitAlignGet@0x006259B0, tbl:MonStats.txt:aidist)
-- A3. [I] **The forced target** (`MonsterData+0x38` kind, `+0x34` guid; taunt, attract, confuse): kinds 1, 2 and 4 look up
-  the guid. Kind 3 (confusion) draws `RNG_RangePow2(unit seed, 2)`, and with alignment 1, or a non-zero draw with alignment
-  0 or 2, sets alignment 1, searches kind 5 (or 6) and sets alignment 1 again. The unit taken must be a living player or
-  monster, or an object. Otherwise the kind and guid are cleared. (fn:sub_005DD610_MonAiForcedTarget@0x005DD610,
-  fn:sub_00573120_MonForcedTargetClear@0x00573120, fn:RNG_RangePow2@0x00472210)
-- A4. [I] **`MonAiFindHostile`** is the forced target, else search kind 6. After it, a think's distance tests read
-  what the entry says: some read `ctx`'s, some the hostile's (`0x7FFFFFFF` without one). (fn:sub_005DDC30_MonAiFindHostile@0x005DDC30)
+- A2a. [I] Distances here are `AiDistToPoint` from the unit's own point (A7). So, forced targets aside, a target is never taken at or beyond `aidist` (35 when the cell is 0), a decoy has no such bound, and once a monster has had a target flag `0x08` turns the line test off until something clears it. `MonAiMove`'s flag 1, on a refused move, sets `0x40` (B6), so the next search tests the line again. (fn:sub_00622AA0_UnitLineBlocked@0x00622AA0, fn:sub_00622C40_InMeleeRange@0x00622C40, fn:sub_0061AB00_RoomIsTown@0x0061AB00,
+  fn:sub_006259B0_UnitAlignGet@0x006259B0, tbl:MonStats.txt:aidist, 0x005DEC0A)
+- A3. [I] **The forced target** (`MonsterData+0x38` kind, `+0x34` guid; taunt, attract, confuse): kinds 1, 2 and 4 look up the
+  guid as a player, a monster or a type-3 unit. Called from `MonAiFindHostile`, such a unit must also pass `UnitLineBlocked(found, unit, 4) = 0`, or the
+  kind and guid are cleared. Kind 3 (confusion) draws `RNG_RangePow2(unit seed, 2)` and flips the alignment for the search: alignment 1 becomes 0 on a draw of 0 and 2 otherwise;
+  on a non-zero draw alignment 0 becomes 2 and 2 becomes 0. It then searches kind 5 from `MonAiFindTarget` (the caller's line test, from 35) or kind 6 from `MonAiFindHostile`, and
+  restores the first alignment. The unit taken must be a living player or monster, or of type 3. Otherwise the kind and guid are cleared. (fn:sub_005DD610_MonAiForcedTarget@0x005DD610, 0x005DD668, 0x005DD6CA, 0x005DD76F,
+  fn:sub_00573120_MonForcedTargetClear@0x00573120, fn:RNG_RangePow2@0x00472210, fn:sub_005543B0_MonAlignSet@0x005543B0)
+- A4. [I] **`MonAiFindHostile`** is the forced target, else search kind 6 and `MonAiPreferDecoy` between its nearest and the search's decoy (the same rule as A2 e). After it, a think's distance tests read
+  what the entry says: some read `ctx`'s, some the hostile's (`0x7FFFFFFF` without one). (fn:sub_005DDC30_MonAiFindHostile@0x005DDC30, 0x005DDC88)
 - A5. [I] **The unit search.** `AiUnitSearch(game, unit, out, param, kind)` takes `g_AiSearchKinds[kind] = {walker, callback}`
   (the callback from `param` when the table's is 0). Walkers: 0 the near rooms' unit lists (`Room+0x74`, next `Unit+0xE8`);
   1 the near rooms' client players (`Room+0x48`, count `+0x78`); 2 the near rooms that are not towns and hold a client; 3 the
@@ -153,9 +162,9 @@ A2. MonAiFindTarget(game, unit, ctl, out dist, out melee):                 [I] (
   fn:sub_005DCE60_AiSearchNearRooms@0x005DCE60, fn:sub_005DCEE0_AiSearchNearClients@0x005DCEE0,
   fn:sub_005DCF70_AiSearchNearRoomsNoTown@0x005DCF70, fn:sub_005DD050_AiSearchOwnerGroup@0x005DD050)
 - A6. [I] **The hostility test with a draw.** `AiHostileCandidate` (kinds 6, 7, 11) takes a living player or monster out of
-  town. When the candidate has state 146 and is a **player**, it draws `RNG_Range(candidate seed, 100)` and refuses a
+  town with `Unit+0xC4` bit `0x04` set, for a living searcher of type 0 or 1. When the candidate has state 146 and is a **player**, it draws `RNG_Range(candidate seed, 100)` and refuses a
   candidate outside melee range on a draw below 80. A **monster** with state 146 is refused inside melee range. Then
-  `UnitsHostile`. (fn:sub_005DC970_AiHostileCandidate@0x005DC970, fn:sub_00554200_UnitsHostile@0x00554200, fn:RNG_Range@0x0045C390)
+  `UnitsHostile`. (fn:sub_005DC970_AiHostileCandidate@0x005DC970, 0x005DC9BC, fn:sub_00554200_UnitsHostile@0x00554200, fn:RNG_Range@0x0045C390)
 - A7. [I] **The AI distance.** `AiDistToPoint(unit, x, y)`: `dx ← |ux − x|`, `dy ← |uy − y|`, the result
   `(2·max(dx, dy) + min(dx, dy)) / 2`, a signed division (`lea; cdq; sub; sar 1`, 0x005DC5A4–0x005DC5AB) on non-negative
   values, so a floor; the position from path `+0x02/+0x06` (u16) for unit types 0, 1, 3 and from path `+0x0C/+0x10` for
@@ -211,15 +220,17 @@ B4. MonAiUseSeqSkill(skill, target, x, y):                                 [I] (
 B5. MonAiSetMode(mode, x, y), MonAiSetModeAtUnit(mode, target):            [I] (fn:sub_005DDFC0_MonAiSetMode@0x005DDFC0, fn:sub_005DDF90_MonAiSetModeAtUnit@0x005DDF90)
       build a command at a point or a unit;  MonSetMode(…, 1)
       MonAiSetMode(0, 0, 0) is the AI's self-removal
-B6. MonAiMove(game, unit, target, mode, x, y, stop, flags):                [I] (fn:sub_005DEB60_MonAiMove@0x005DEB60, fn:sub_00649070_PathSetStopDist@0x00649070)
-      if mode = 15 and state 60: mode ← 2
+B6. MonAiMove(game, unit, target, mode, x, y, stop, flags) → 0 or 1:      [I] (fn:sub_005DEB60_MonAiMove@0x005DEB60, fn:sub_00649070_PathSetStopDist@0x00649070, 0x005DEB86, 0x005DEC0A, 0x005DEC13, 0x005DEC4C, 0x005DEC62)
+      if mode = 15 and state 60: clear the one-shot override (0x005A61F0);  mode ← 2
       path+0x93 ← stop − 1                     ; 0 outside 1..19
-      the command at the unit or point;  MonSetMode(…, 1)
-      on refusal:
-        flags & 4: cancel the AI event
-        flags & 1: set AiCtl bit 0
-        flags & 2: one step of U's seed;  if low mod 100 < 70: MonAiWanderRing(4), return 1
-        else: MonAiIdle(10)                      ; which test this else belongs to: Open questions
+      the command at the unit or point;  r ← MonSetMode(…, 1)
+      if r ≠ 0: return 1
+      flags & 4: cancel the AI event
+      flags & 1: set AiCtl flag 0x40           ; for a monster with a control block
+      if flags & 2 is clear: return 0          ; no idle, no draw: nothing is queued here
+      one step of U's seed                     ; 1 step
+      if low mod 100 < 70: MonAiWanderRing(4)  else MonAiIdle(10)
+      return 1
 ```
 
 - B7. [I] **The walkers around `MonAiMove`.** `MonAiWalkToUnit(t, flags)` (`Walk`), `MonAiWalkToUnitStop(t, n)` (`WalkStop`),
@@ -227,7 +238,7 @@ B6. MonAiMove(game, unit, target, mode, x, y, stop, flags):                [I] (
   `MonAiRunToUnitFlags`, and the point forms `MonAiWalkToPoint`, `MonAiRunToPoint` (WL under state 60),
   `MonAiWalkToPointOrStop` (cancels the AI event on refusal). `MonAiRunToUnitStop(t, stop)` (`RunStop`) is
   `MonAiMove(t, 15, 0, 0, stop or 1, 0)`, the stop byte replaced by 1 when 0. So `Walk(t, 7)` on refusal cancels the AI event, sets
-  bit 0 and takes the ring fallback with its draws. (fn:sub_005DEC80_MonAiWalkToUnit@0x005DEC80, fn:sub_005DEF80_MonAiWalkToUnitStop@0x005DEF80,
+  flag `0x40` and takes B6's draw and fallback, and `Walk(t, 0)` on refusal returns 0 with nothing queued. (fn:sub_005DEC80_MonAiWalkToUnit@0x005DEC80, fn:sub_005DEF80_MonAiWalkToUnitStop@0x005DEF80,
   fn:sub_005DED40_MonAiWalkToUnitType13@0x005DED40, fn:sub_005DECA0_MonAiWalkToUnitOrZero@0x005DECA0, fn:sub_005DED20_MonAiRunToUnit@0x005DED20,
   fn:sub_005DED00_MonAiRunToUnitFlags@0x005DED00, fn:sub_005DED90_MonAiWalkToPoint@0x005DED90, fn:sub_005DEDE0_MonAiRunToPoint@0x005DEDE0,
   fn:sub_005DEE50_MonAiWalkToPointOrStop@0x005DEE50, fn:sub_005DEFB0_MonAiRunToUnitStop@0x005DEFB0)
@@ -306,10 +317,12 @@ flowchart TD
 
 ```
 D2. MonAiPathOverride(unit, type, param, byte):                            [I] (fn:sub_005DE190_MonAiPathOverride@0x005DE190)
+      param outside −126..126 is fatal
       if type = 1: type ← 7
-      param outside −126..126 is fatal;  byte capped at 77
-      store the three into the MonPathCtl
-    AiPathOverrideSet sets the same words directly, with no such mapping   (fn:sub_005A6260_AiPathOverrideSet@0x005A6260)
+      AiPathOverrideSet(type, param, byte)
+    AiPathOverrideSet(type, param, byte):                                  [I] (fn:sub_005A6260_AiPathOverrideSet@0x005A6260, 0x005A6267, 0x005A6271, 0x005A627F)
+      each word is stored only when non-zero, so a 0 keeps what an earlier call set this event
+      byte: u8, capped at 77
 D3. MonMovePlan(type, param, byte):                                        [I] (fn:sub_005A63F0_MonMovePlan@0x005A63F0, struct:MonPathCtl+0x10)
       take each non-zero override word;  clear all three
       if type = 100: no plan
@@ -324,8 +337,8 @@ D4. MonPathPlanType(type):                                                 [I] (
 ```
 
 - D5. [I] **The types the AI passes** are 1, 2, 5, 6, 7, 13 and 15, plus the default 13. `MonAiPathOverride`'s 103 calls: type
-  unchanged (0) 55, 7 12, 1 (→ 7) 6, 2 10, 13 7, 15 3, 5 1, and 9 from registers, all resolved: 13 four times, 2 twice, 0 once,
-  6 once and 5 or 6 once (drawn, B11). `AiPathOverrideSet`'s 9 calls: the two inside `MonAiPathOverride`, 13, 0 and **1** five
+  unchanged (0) 55, 7 12, 1 (→ 7) 6, 2 10, 13 7, 15 3, 5 1, and 9 from registers, all resolved: 13 four times, 2 twice, 0 once, and
+  5 or 6 twice (drawn at 0x005DF813, B11; 0x005ECBD7's argument, 5 or 6 by `AiCtl+0x1C` at both callers, 0x005ECE63 and 0x005ECE89). `AiPathOverrideSet`'s 9 calls: the two inside `MonAiPathOverride`, 13, 0 and **1** five
   times (0x005E3BCC, 0x005E4300 and three in state row 13's 0x005E5C50). The mode machine also sets 0 after a get-hit start and 8
   for knockback (0x005A7821). None passes 4, 10 or 14. (fn:sub_005DE190_MonAiPathOverride@0x005DE190, fn:sub_005A6260_AiPathOverrideSet@0x005A6260,
   [ai/0001 § 8](../../../findings/ai/0001-machinery.md#8-the-path-request))
@@ -348,15 +361,15 @@ flowchart TD
   G -->|"yes"| L{"the unit exists and lives?"}
   L -->|"no"| CL["clear the guid"]
   L -->|"yes"| Dd{"distance"}
-  Dd -->|"below 2, a player"| SA["step 19 away, stop"]
-  Dd -->|"21 or more"| WN["byte 40, ring 19 near it"]
+  Dd -->|"below 2, a player"| SA["step 19 away, stop; refused: ring 19 near it, stop"]
+  Dd -->|"21 or more"| WN["override type 7 byte 40, ring 19 near it, stop"]
   Dd -->|"between"| ON
 ```
 
 - E1. [I] **`MonAiKeepNear`.** When `AiCtl+0x0C ≠ −1` and `MonModeAllowed`, the unit `(AiCtl+0x10, AiCtl+0x0C)` is looked up, and
   gone or dead clears the guid. At AI distance below 2 with `AiCtl+0x10 = 0` (a player) it steps 19 subtiles away
-  (`MonAiStepAway(unit, 19, 1)`, then stop). At 21 or more it sets the override byte 40 and wanders to a ring point of radius 19
-  around that unit (`MonAiWanderNearUnit(unit, 19)`, 4 unit-seed steps). Between, the AI goes on. (fn:sub_005B0FF0_MonAiKeepNear@0x005B0FF0)
+  (`MonAiStepAway(unit, 19, 1)`, then stop), and on a refused step goes straight to `MonAiWanderNearUnit(unit, 19)` and stops. At 21 or more it sets `MonAiPathOverride(U, 7, 0, 40)` and wanders to a ring point of radius 19
+  around that unit (`MonAiWanderNearUnit(unit, 19)`, 4 unit-seed steps), and stops. Between, the AI goes on. (fn:sub_005B0FF0_MonAiKeepNear@0x005B0FF0, 0x005B109E, 0x005B10C0, 0x005B10CC)
 - E2. [I] **Who sets the pair.** `AiCtlFollowSet` writes it from `UniqueMinions` (minion → its boss), `SkillReviveDo`,
   `SummonFinish` and `SkillDo71Taunt`. (fn:sub_005DD330_AiCtlFollowSet@0x005DD330, fn:sub_005A0C00_UniqueMinions@0x005A0C00,
   fn:sub_005D8570_SkillDo71Taunt@0x005D8570)
@@ -390,7 +403,7 @@ flowchart TD
 ### T. The tier AIs
 
 Each entry is the think function as pseudocode, with its draw order and its evidence. Every entry's block is the code reading of its
-catalogue finding, `[I]`, and its first boundary is `[C]` per [README § G](README.md#g-the-first-boundary). Where a row is under
+catalogue finding, `[I]`, and its first boundary is `[C]` per [README § G](README.md#g-the-first-boundary). "The map" in a `[C]` line below is the map from the think's inputs to its first callee or return, each emulated case's boundary (ADR-0021), and nothing after it. Where a row is under
 sentence H1, "H1 holds" means [the sentence](README.md#h-past-the-first-boundary) for the decisions and logs in that table, and no more.
 All 18 rows have no `init`; all have row kind 1 except 61 and 67 (kind 0), so the think runs only with a target but for those two.
 Only rows 29 and 61 have an `alt`. [I] (data:g_MonAiTable@0x0073CA18, [MonAI](../../../tables/MonAI.md))
@@ -426,7 +439,7 @@ Idle(aip(2))
            if low(step) mod 20 < 1: UnitSetEvent(U, 17, 0)     ; draw#1, only after a successful step
            return
          leave the scan                      ; the step was refused
-4. if U.mode ≠ 1: Idle(10); return           ; only from NU
+4. if the mode read at step 1 ≠ 1: Idle(10); return                          ; only from NU
 5. rec ← AiParamsHead(U)
    if no rec:
      if not melee and AiMonState3or19(U): Walk(t, 0); return
@@ -576,41 +589,58 @@ Idle(aip(2))
 
 #### T28. Row 28 `Vampire` (fn:sub_005F4A70_AiVampire@0x005F4A70)
 
-The finding states this think in prose. The block keeps its conditions in its order; the two places where the order of a draw and a test within
-one condition is not stated are under *Open questions*.
-
 ```
-bits ← aip(5)            ; bit 0: the Fireball/Missile pair at the hostile; bit 1: Skill2 (Firewall); bit 2: Skill3 (Meteor)     [I] (all of this block) (0x005F4A70, 0x005F4AD0, 0x005F4FBB)
-v1C                      ; a skill cooldown: decremented each event when positive, set to 11 after Skill2 or Skill3
-v14                      ; 1 engaged, 2 fleeing
-v18                      ; the largest distance below 30 seen under the 3-or-19 test
-each event: h ← FindHostile(&hd, 0);  s ← AiMonState3or19(U);  life ← UnitLifePct(U)
+bits ← aip(5);  b0, b1, b2 ← its bits 0, 1, 2     ; Pair, Skill2 (Firewall), Skill3 (Meteor)     [I] (all of this block) (0x005F4A70, 0x005F4ABE, 0x005F4ADA, 0x005F4B3D, 0x005F4C24, 0x005F4DFC, 0x005F4E22, 0x005F4E3F, 0x005F4F2C, 0x005F4F52, 0x005F4F72, 0x005F4FBB)
+v14: 1 engaged, 2 fleeing;  v18: the largest distance below 30 seen under s;  v1C: the skill cooldown
 
-Pair(x) := if Range(100) < 50: UseSkill(Sk1mode, Skill1, x)  else UseSkill(Sk4mode, Skill4, x)
-Skills(x) := Skill2 on bit 1, then Skill3 on bit 2, each when v1C = 0 and Range(100) < aip(4), at x
+Pair(x):    if Range(100) < 50: UseSkill(Sk1mode, Skill1, x, 0, 0)  else UseSkill(Sk4mode, Skill4, x, 0, 0)
+Skills(x):  if b1 and v1C ≤ 0 and Range(100) < aip(4): UseSkill(Sk2mode, Skill2, x, 0, 0);  v1C ← 11;  true
+            if b2 and v1C ≤ 0 and Range(100) < aip(4): UseSkill(Sk3mode, Skill3, x, 0, 0);  v1C ← 11;  true
+            false
 
-under s, in melee range:
-  a draw above 30, or bit 0 clear: attack A1;  else Pair(t)
-fleeing (v14 = 2):
-  life above 74: v14 ← 1;  Walk(t, 7)
-  nearer than 14, or than v18: Ovr(0, p, 0);  a step 8 away
-  then dist ≥ aip(3) or Range(100) ≥ aip(2): wait 15
-  then Skills(t)
-  then without bit 0, without a hostile, or with hd > 20: a drawn-type walk
-  else Pair(h)
-engaged:
-  life below 33: flee (v14 ← 2, a step 8 away, no override)
-  in melee range (v14 ← 1), on aip(1):
-    A1, unless bit 0, a hostile and a draw ≤ 30, when Pair(h) if h is within 20
-    otherwise (no aip(1), or the hostile beyond 20): 33 % a drawn-type walk, else Idle(10)
-  out of melee range:
-    at aip(3) or beyond: Walk(t, 7) only when already v14 = 1, else wait 15
-    inside aip(3) (v14 ← 1):
-      Range(100) ≥ aip(2) keeps a distance:
-        a walk beyond 20;  a 50 % step 8 away inside 9;  else a 50 % drawn-type walk or Idle(10)
-      else Skills(t)
-      else without bit 0, without a hostile, or with hd > 20: Walk(t, 7)
-      else a draw above 74: a drawn-type walk;  else Pair(h)
+1. if v1C > 0: v1C ← v1C − 1
+   h ← FindHostile(&hd, 0)
+   s ← AiMonState3or19(U)
+2. if s:
+     if v14 = 0: v14 ← 1
+     if dist < 30 and dist > v18: v18 ← dist
+     if melee:
+       x ← D100()                                 ; always drawn, before the bit test
+       if x ≤ 30 and b0: Pair(t)  else SetModeAtUnit(4, t)
+       return
+3. life ← UnitLifePct(U)
+4. if v14 = 2:                                    ; fleeing
+     if life ≥ 75: v14 ← 1;  Walk(t, 7);  return
+     if dist < 14 or dist ≤ v18:
+       Ovr(0, p, 0)                               ; T28a
+       if StepAway(t, 8, 1): return
+     if dist ≥ aip(3) or Range(100) ≥ aip(2): Idle(15);  return
+     if Skills(t): return
+     if b0 and h and hd ≤ 20: Pair(h);  return
+     T56(t, 4, 0);  return
+5. if life < 33:
+     v14 ← 2
+     if StepAway(t, 8, 0): return                 ; refused: on to step 6 or 7
+6. if melee:
+     v14 ← 1
+     if D100() < aip(1):
+       if not (b0 and h): SetModeAtUnit(4, t);  return
+       if Range(100) > 30: SetModeAtUnit(4, t);  return
+       if hd ≤ 20: Pair(h);  return
+     if Range(100) < 33: T56(t, 4, 0)  else Idle(10)
+     return
+7. if dist ≥ aip(3):
+     if v14 = 1: Walk(t, 7)  else Idle(15)
+     return
+   v14 ← 1
+   if Range(100) ≥ aip(2):                        ; keep a distance
+     if dist > 20: Walk(t, 7);  return
+     if dist < 9 and Range(100) < 50: StepAway(t, 8, 0);  return
+     if Range(100) < 50: T56(t, 4, 0)  else Idle(10)       ; inside 9 this is the second 50
+     return
+   if Skills(t): return
+   if not (b0 and h and hd ≤ 20): Walk(t, 7);  return
+   if Range(100) < 75: Pair(h)  else T56(t, 4, 0)
 ```
 
 - T28a. [I] **The flee step's override.** `p` is computed only when `Velocity > 0`, a signed 16-bit test, and is 0 otherwise. With the guard met:
@@ -619,6 +649,7 @@ engaged:
   (0x005F4BC0, 0x005F4BEC, 0x005F4BF8, 0x005F4C09, tbl:MonStats.txt:Velocity, tbl:MonStats.txt:Run)
 - T28b. [C] The logged first call in all 279 compared decisions of the first run is the hand map's: `MonAiFindHostile` at site 0x005F4AD5, one outcome. H1 holds for 56
   decisions, 168 calls past the first. (run:2026-11-03-ai, run:2026-11-04-ai-r5, 0x005F4AD5)
+- T28c. [C] **The block run as written** against every row 28 decision of the rev 4 and rev 6 logs: 100 decisions, 99 compared, 0 mismatches, 1 stopped at a return site not armed. Each boundary call's function and return address, the unit seed at it, `v14`, `v18`, `v1C`, `T56`'s three arguments and the exit seed agree, with the logged inputs and results as oracles. Logged paths only: steps 1, 3, 5 with its step accepted, 6 and 7, `Pair` both ways, and `T56` at two of its three sites. **Reached by no log, so `[I]` only:** step 2's melee arm, all of step 4, `Skills`' two uses. Controls: `T56`'s byte as 3 fails 23, the draw of step 6's `Range(100) > 30` made before its two tests fails 1, the second 50 inside 9 dropped fails 2; step 2's draw made only with `b0` fails none, as that arm is not reached. (run:2026-11-04-ai-t28, fn:sub_005F4A70_AiVampire@0x005F4A70)
 
 #### T29. Row 29 `BatDemon` (fn:sub_005F5040_AiBatDemon@0x005F5040, alt fn:sub_005F4FD0_AiBatDemonAlt@0x005F4FD0)
 
@@ -662,7 +693,7 @@ alt:
   else:               MonAiInit(ctl, ctl.state);  Idle(1)
 ```
 
-- T29a. [I] The `aip5 · r ÷ 8` is signed and truncating, `(x + (x >> 31 & 7)) >> 3`. The first attack after a perch is A2 (`v18 > 0`). The alt's second arm is the finding's "state 4 becomes 1", read as `v14` (*Open questions*). (fn:STATS_GetUnitStat@0x00625480, fn:sub_00627260_UnitSetStat@0x00627260, tbl:ItemStatCost.txt:hpregen, 0x005F4FD0, 0x005F5031)
+- T29a. [I] The `aip5 · r ÷ 8` is signed and truncating, `(x + (x >> 31 & 7)) >> 3`. The first attack after a perch is A2 (`v18 > 0`). The alt's second arm tests and writes `v14` (`AiCtl+0x14`, 0x005F4FFC, 0x005F5006). (fn:STATS_GetUnitStat@0x00625480, fn:sub_00627260_UnitSetStat@0x00627260, tbl:ItemStatCost.txt:hpregen, 0x005F4FD0, 0x005F5031)
 - T29b. [C] The alt's map (no draw) by emulation; the think's logged first call, `UnitLifePct` at site 0x005F5070, in all 110 compared think decisions of the first run, by hand map,
   one outcome. H1 holds for 215 decisions, 526 calls past the first. (run:2026-10-30-ai-cat-emu-2, run:2026-11-03-ai, run:2026-11-04-ai-r5, 0x005F5070)
 
@@ -898,7 +929,7 @@ if v14 ≠ 0: Ranged(ctx)  else Melee(ctx)
 ```
 
 ```
-OwnerBlock:                                       [I] (all of this block) (fn:sub_005E4830_AiNecroPetMelee@0x005E4830, fn:sub_005E4AC0_AiNecroPetRanged@0x005E4AC0, 0x005E4ABC, 0x005E4CE8)
+OwnerBlock:                                       [I] (all of this block) (fn:sub_005E4830_AiNecroPetMelee@0x005E4830, fn:sub_005E4AC0_AiNecroPetRanged@0x005E4AC0, 0x005E4926, 0x005E4B4A, 0x005E4ABC, 0x005E4CE8)
   with no owner: PetMove(GameFindUnit(v1C), U, 3, 0, 0, 0) when the remembered guid v1C still finds a unit, else Idle(10)
   v1C ← O+0x0C                                    ; the owner's guid
   r ← Dist(U, O)
@@ -908,7 +939,7 @@ OwnerBlock:                                       [I] (all of this block) (fn:su
   the rest of each branch runs inside 29
 Melee:
   OwnerBlock
-  t ← FindTarget(ctl), dropped if its +0xC4 bit 30 is set,
+  t ← FindTarget(ctl) searched as the owner (unit = O, this pet's ctl), dropped if its +0xC4 bit 30 is set,
       or the owner-near hostile of 0x005DDE50 (radius 24) when the distance it returns is at most 6,
       else the found target when within 36
   drop t when AiApproachPointTest fails
@@ -921,7 +952,7 @@ Melee:
 Ranged:
   OwnerBlock
   t ← the hostile of FindHostile within 15,
-      else the FindTarget one when UnitLineBlocked(U, t, 4) = 0 and within 20
+      else the FindTarget one, searched as the owner, when UnitLineBlocked(U, t, 4) = 0 and within 20
   draw#1 as Melee's, for AiPetGuard
   outside town:
     if Range(100) < 80: UseSkill(Sk1mode, Skill1, t, 0, 0)
@@ -998,16 +1029,13 @@ An entry ends in one of § B's commands, a helper of § C, or a return with noth
 
 - [ai/0001](../../../findings/ai/0001-machinery.md): §§ 5 to 9.
 - The tier's entries: [ai/0002](../../../findings/ai/0002-pool-a.md) §§ 2.1, 2.5, 2.8, 2.11, 4; [ai/0003](../../../findings/ai/0003-pool-b.md) §§ 2.4–2.6, 2.12–2.14; [ai/0004](../../../findings/ai/0004-pool-c.md) §§ 2.0, 2.2, 2.4; [ai/0005](../../../findings/ai/0005-pool-d.md) § 2.1; [ai/0006](../../../findings/ai/0006-summons.md) §§ 2.2, 2.3; [ai/0007](../../../findings/ai/0007-hirelings.md) § 2; [ai/0008](../../../findings/ai/0008-bosses-a.md) § 2.1; [ai/0009](../../../findings/ai/0009-batch8.md) § 2.5; [ai/0010](../../../findings/ai/0010-batch9.md) § 2.13.
+- Row 28's block, § A2, B6 and D2: the instructions, written into [ai/0003 § 2.12](../../../findings/ai/0003-pool-b.md#212-row-28-vampire-0x005f4a70) and [ai/0001](../../../findings/ai/0001-machinery.md) at this spec's review.
 - [ai/0015](../../../findings/ai/0015-phase2-first-run.md), [ai/0017](../../../findings/ai/0017-phase2-second-run.md) § 13, [ai/0018](../../../findings/ai/0018-phase2-third-run.md) § 4.
 - [MonStats](../../../tables/MonStats.md), [Hireling](../../../tables/Hireling.md), [MonAI](../../../tables/MonAI.md).
 - [path/overview](../../path/README.md), [path/search](../../path/search.md), [skills/dispatch § M](../../skills/dispatch.md#m-monster-skill-use).
 
 ## Open questions
 
-- [L] **Row 28's two unstated orders.** The finding's prose does not say, in "a draw above 30 or bit 0 clear" and "bit 0, a hostile and a draw ≤ 30", whether the draw is made when the other test already decides, and it does not give `T56`'s byte and flag for each "drawn-type walk". [The backlog entry](../../../backlog/2026-11-04-spec-writer-reverser-plan-0052-row-28-vampire-draw-order.md) asks the reverser. (fn:sub_005F4A70_AiVampire@0x005F4A70)
-- [L] **`MonAiMove`'s refusal.** The finding's "flag 2 steps the unit seed once and on `low mod 100 < 70` runs `MonAiWanderRing(4)`, else `MonAiIdle(10)`" does not say whether `MonAiIdle(10)` runs with flag 2 clear, which decides what `Walk(t, 0)` does on a refused move. Asked in the same entry. (fn:sub_005DEB60_MonAiMove@0x005DEB60)
-- [L] **The range in A2.** How `aidist` bounds the taken candidate is asked in the same entry. (fn:sub_005DD7F0_MonAiFindTarget@0x005DD7F0)
-- [L] **Row 29's alt.** The finding's "state 4 becomes 1" sits beside `AiCtl+0x14` = 1 in the first arm; T29's block reads it as `v14`, which the same [backlog entry](../../../backlog/2026-11-04-spec-writer-reverser-plan-0052-row-28-vampire-draw-order.md) asks to confirm. (fn:sub_005F4FD0_AiBatDemonAlt@0x005F4FD0)
 - [L] **The register stat getters** of A9, unresolved, would need a resolver before a spec could say the walkers and callbacks read no light radius. (fn:sub_0063EBD0_MonComponentLightRadius@0x0063EBD0)
 - [L] **The type-16 setters** (0x00663E00, 0x00663ED0) have no reference in the image; a wine run that breaks on them would settle whether anything reaches them. See [path/overview](../../path/README.md). (0x00663E00)
 - [L] **Town-follow.** Whether a stock town's geometry admits such a route stays [path/overview](../../path/README.md)'s and [drlg/lifecycle](../../drlg/lifecycle.md#open-questions)'s named shortfall. (fn:sub_006483A0_PathTargetNotTown@0x006483A0)

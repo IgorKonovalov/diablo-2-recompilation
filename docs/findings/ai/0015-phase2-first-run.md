@@ -13,8 +13,7 @@ the emulation of that think function treats as a boundary (ADR-0021).
 ## Answer (summary)
 
 - [C] (run:2026-11-03-ai, 0x005B186F) For 13 tier AIs (rows 2, 9, 20, 21, 22, 30, 34, 37, 61, 64, 67, 89, 125, and BatDemon's alt branch of row 29) each live decision's first boundary (function, call site, registers and stack words, unit seed, the AI
-  control words, and the block a pointer argument addresses) equals the model of the emulated map: 10 374 decisions,
-  0 mismatches. The five unemulated tier AIs (Fallen 6, FallenShaman 13, Vampire 28, BatDemon 29's think, CorruptArcher
+  control words, and the block a pointer argument addresses) equals the model of the emulated map, with the other rows that have an emulated map: 10 374 decisions in all, 7 568 of them these 13 tier AIs' [scope corrected, `lane/s52a` review, 2026-11-04: the 10 374 holds about 2 806 outside the tier], 0 mismatches. The five unemulated tier AIs (Fallen 6, FallenShaman 13, Vampire 28, BatDemon 29's think, CorruptArcher
   35) match the first-callee maps read from the findings and objdump (`HAND` in `tools/ai.py`, unchanged since the first
   tool commit, before the first kept launch): 2 240 decisions, 0 mismatches. Every tier AI has at least
   50 compared decisions. The 0 excludes 2 016 decisions in rows with no model, 15 Scarab decisions the rev 2 window
