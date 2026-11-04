@@ -570,9 +570,9 @@ tests are the checkers `tools/ai.py check` and `tools/ai_resume.py` over the log
 - [L] **State 13 on her preset's `File2`:** what picks the file, and her fires under it, are not logged. (0x005E5C02, tbl:LvlPrest.txt:File2)
 - [L] **Chaining short:** Andariel 8 of 20, BatDemon 1 of 300 (A3). (run:2026-11-04-ai-r5)
 - [L] **BloodLord:** 38 decisions past the first, none with a call there (H4). (run:2026-11-04-ai-r5)
-- [L] **The catalogue sample** is short in the three kept batches for batches 5, 7, 10, 11, 12: those logs hold no non-tier row of 5, 7 and 11, batch
-  10 only in rev 3 logs, and rows 54, 99, 32, 100 of batch 12 do not count. Outside them, the owner-played logs hold row 44 of batch 7 and state 13 of batch 12 (§ H1). The rest of the table stays at its batch's
-  emulated `[C]` or `[I]`. (run:2026-11-04-ai-resume, run:2026-11-04-r72)
+- [L] **The catalogue sample** is short for batches 5, 10, 11: the logs hold no non-tier row of 5 and 11, and of batch 10 only row 130, with no map at its
+  first boundary and no call past the first. Row 44 is batch 7's and state 13 batch 12's (§ H1), where rows 54, 99, 32, 100 do not count. The rest of the table stays at its batch's
+  emulated `[C]` or `[I]`. (run:2026-11-04-ai-resume, run:2026-11-04-ai-r5, run:2026-11-04-r72)
 - [I] **Row 23's mismatches.** The 8 of the rev 4 logs have the logger's 600-call limit as their cause read; rev 6 has
   row 23 at 256 decisions with 0 mismatches and 0 `AIL` lines with `pend` 0, but only 2 of those lines are row 23's, so
   the reading is untested; row 23 is the catalogue's. (run:2026-11-04-ai-resume, run:2026-11-04-ai-r5, 0x005F33EC)
