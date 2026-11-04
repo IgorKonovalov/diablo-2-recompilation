@@ -22,6 +22,14 @@ timer registrations and the emulation models from `tools/frame_timers.py` (`1dd7
 kept static output is under `workspace/logs/r55c/static/` (`manifest.sha256` `abfc7c4d…`, 80 lines, one path base:
 that directory; `commands.txt` gives the command of each file). Names below are `re/symbols.csv` names.
 
+**Imports, [ADR-0029](../../adrs/0029-import-slots-and-import-boundaries-in-emulation.md) (d)** (ruling carried 2026-11-04, `lane/r29`, no re-run). Family
+`timers` only: slot `0x006CC34C`, `KERNEL32!IsBadCodePtr` by the PE import table, holds the stand-in `0x004BAD70`, bytes
+`33 C0 C2 04 00` (`xor eax, eax; ret 4`), rule (b), a declared input: its `[C]` reads "given the import returned 0". The other
+four families write no import slot. **Not evidenced:** what the import does (a fault probe, what it returns for any
+pointer), the value 0 itself, the fatal branch. After the call, only `test eax, eax` (`0x00543E79`) reads one of `EAX`, `ECX`,
+`EDX` before writing it, and it selects only that fatal line, as rule (e) asks. (0x00543E73, 0x00543E79, 0x00543EEB,
+run:2026-11-04-lock-scan)
+
 ## Answer (summary)
 
 - [I] **The four periodic calls, in frame order after `ActsRoomRemovalsClear`.** `QUESTS_TimersRun` (`frame % 20 =
@@ -262,11 +270,11 @@ ctl->running = 0;
   20-frame boundary, the first run `p + 1` boundaries later and the period `20·(p + 1)` frames `[I]`/`[C]` in part;
   new here: the front push (timers run **newest registered first** within a pass), the callback's registers, the
   unsigned compare and the walk's next read before the callback. (fn:QUESTS_TimersRun@0x00543E10)
-- [C] Emulated (`timers`, run:2026-10-30-frame-emu-3): the walk order, the unsigned strict compare, the re-arm from
-  the tick, the unlink at a callback's 1 (ending at the free with the freed timer in `EDX` and the call site of the
-  head or the inner unlink), the wrap. The callbacks are game functions that return a constant `AL`, and the
-  `IsBadCodePtr` import slot is given a game function returning 0 (a stated stand-in for the OS call, the input
-  declared in the memory spec). Not covered: `QUESTS_TimerAdd` (it allocates), what any real callback does, the free.
+- [C] (ADR-0015, ADR-0021, ADR-0029 (b)) Emulated (`timers`, run:2026-10-30-frame-emu-3), **given `IsBadCodePtr` returned 0**: the walk
+  order, the unsigned strict compare, the re-arm from the tick, the unlink at a callback's 1 (ending at the free with
+  the freed timer in `EDX` and the call site of the head or the inner unlink), the wrap. The callbacks are game
+  functions that return a constant `AL`. [I] That the import returns 0 for a registered callback, and the non-zero
+  branch: `jne 0x00543EEB`, a fatal line (`push 0x3F0`). (0x00543E73, 0x00543E79, run:2026-11-04-lock-scan) Not covered: `QUESTS_TimerAdd` (it allocates), what any real callback does, the free.
   The front push stays `[I]`: it is read, not emulated. (run:2026-10-30-frame-emu-3)
 - [I] **The registrations and their reach** (`timer-adds.txt`, 26 sites; `cg-timer-summary.txt`, each callback's
   graph alone and with frame/0001's specified stops plus `UninterruptibleEnd`; fn:QUESTS_TimerAdd@0x00543F10):

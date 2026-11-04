@@ -254,6 +254,8 @@ return 1;
   slots 4, 10, 14 of a path without flag `0x40000` (241 cases, every type 0–16 among them, 3 to 21 each; 241 slot
   and 241 IAT reads accounted).
   (data:g_PathPlanFuncs@0x006EB6D8, 0x00649B82–0x00649B8D)
+  ADR-0029 (c), noted 2026-11-04 (`lane/r29`): a boundary at the slot's value is that rule's second form; the tag stands, and
+  what the import does and everything after it stay as below. (0x00649B93, run:2026-11-03-path-emu-1)
 - [I] After it: `IsBadCodePtr` non-zero is fatal 0x37E; the planner is called with `ECX = &ctx` (0x00649BAE), its
   `EAX` stored in `+0x28` (also 0 when `go` was 0); the start is checked (fatal 0x389); the target is re-marked when
   it was unmarked, then the unit (`UNIT_CollMark`, 0x00649BD7, 0x00649BE0); `+0x28 = 0` clears flag `0x20` and returns

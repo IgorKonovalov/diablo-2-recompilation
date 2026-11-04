@@ -331,7 +331,7 @@ while (xh − x0 + 1) < radius:
 if best = −1 and fallback = 0: return 0   ; else the room at pos (pos unchanged when nothing was found)
 ```
 
-- [I] (`drop`, pending ADR-0029) **Corrected 2026-11-04, items/0014 § 1:** the room each lookup starts from is not fixed: it is the last non-null room a lookup returned, and the first lookup's result is kept even when null. `other` is not a second footprint but a walk's origin along `expfield.d2`, tested with `maskB`. The pseudocode above omits both. (fn:COLL_FindFreeNear@0x0064DEA0 0x0064E043, fn:sub_0066A670_FieldWalkBlocked@0x0066A670, run:2026-11-04-ground-emu)
+- [C] (ADR-0015, ADR-0029 (a); `drop`, size 1, step 1, not a live run; the portal's own calls are the reading) **Corrected 2026-11-04, items/0014 § 1:** the room each lookup starts from is not fixed: it is the last non-null room a lookup returned, and the first lookup's result is kept even when null. `other` is not a second footprint but a walk's origin along `expfield.d2`, tested with `maskB`. The pseudocode above omits both. (fn:COLL_FindFreeNear@0x0064DEA0 0x0064E043, fn:sub_0066A670_FieldWalkBlocked@0x0066A670, run:2026-11-04-ground-emu)
 - [I] Read from the decompile of `0x0064DEA0`; the loop bounds and the strict `<` (the first cell found wins a tie)
   are as written, the Manhattan distance is `|dx| + |dy|`. (fn:COLL_FindFreeNear@0x0064DEA0 0x0064DF6B–0x0064E1F7)
 - [I] Masks and steps used by travel: player placement `0x1C09` step 1; act change a second search `0x1C89` step 5;
