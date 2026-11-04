@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, monsters/ai/overview, monsters/ai/machinery, skills/dispatch, path/overview]
 consumed_by: [monsters/ai/overview, monsters/ai/machinery, hirelings]
-tags: {C: 330, I: 497, L: 19}
+tags: {C: 330, I: 499, L: 19}
 updated: 2026-11-04
 ---
 
@@ -79,7 +79,7 @@ Each entry states its own. No constant is shared across entries.
   H1**: nothing past the first boundary of any row here is `[C]`. No row's role, symbol or reading is raised by being resumed. (run:2026-11-04-ai-resume, run:2026-11-04-ai-r5)
 - [I] **The catalogue sample is short, by name:** batches 5, 7, 10, 11, 12 have no row that counts. Row 54 cannot fail (0 of 3 sites), row 99 has no call past the first, row 32 has a fork in all 199 decisions of the rev 4 logs, row 100 has 4 decisions. Row 130's map has not landed.
   (run:2026-11-04-ai-resume-flip)
-- [I] **Which blocks were read against their instructions.** Each block restates a compact block or the prose of its finding, and those were wrong in places no earlier review caught. Read line by line against objdump of the pinned image, register and stack arguments included, at the `lane/s52b` review: rows 3, 4, 11, 16, 18, 25, 26, 48, 50, 59, 65, 70, 71, 73, 85, 91, 96, 104, 106 (steps 12 to 16 and `Use`), 108, 116, 122, 131, states 3 and 5, and the tables of rows 51 and 135. By that lane alone, with filtered listings on the longer functions: 105, 106's other steps, 110, 111, 112, 134, 137, 31, 32's chain, 54, 58, 81, 99, states 12 and 13. The tier rows' read set is machinery's. **Not read:** the other 75 blocks of batches 1 to 9, named in [plan 0052's P3c](../../../plans/0052-monster-ai.md#phase-3--spec-monster-ai-in-two-parts), and the other blocks of batches 10 to 12, whose findings wrote them from instructions. **Measured:** of 19 blocks of batches 1 to 9 read at the review, 2 (rows 18, 59) held an error that changes a branch or a command's argument, corrected here, 1 (row 104) an omitted argument, and none a draw's order or count; of 3 of batches 10 to 12, none. So until P3c closes, expect about one unread block of batches 1 to 9 in ten to hold a wrong unit or argument. Short by name: rows 106 and 143 (step 13's terms decide which skills draw) and rows 25 and 94 (their tables), Open questions. (0x005F2426, 0x005E63F8, 0x005E65E5, 0x005EAA11)
+- [I] **Which blocks were read against their instructions.** Each block restates a compact block or the prose of its finding, and those were wrong in places no earlier review caught. Read line by line against objdump of the pinned image, register and stack arguments included, at the `lane/s52b` review: rows 3, 4, 11, 16, 18, 25, 26, 48, 50, 59, 65, 70, 71, 73, 85, 91, 96, 104, 106 (steps 12 to 16 and `Use`), 108, 116, 122, 131, states 3 and 5, and the tables of rows 51 and 135. By that lane alone, with filtered listings on the longer functions: 105, 106's other steps, 110, 111, 112, 134, 137, 31, 32's chain, 54, 58, 81, 99, states 12 and 13. The tier rows' read set is machinery's. **At P3c, by `lane/s52c`, each listing whole:** rows 33, 36, 38, 39, 40, 43, 45, 46, 47, 49, 52, 56, 57, 63, 117, 118, 119, 120, 121, 123, 124, 66, 68, 69, 72, 74, 75, 76, 77, 78, 79, 80, 87, 92, states 15, 16 (36 of P3c's 75; 2 with an error that changes a command's argument, rows 49 and 74, corrected here, and none in a draw's order or count). **Not read:** rows 44, 53, 55, 90, 144, 146, 84, 86, 101, 102, 103, 107, 109, 5, 7, 8, 10, 12, 14, 15, 142, 17, 19, 23, 24, 27, 82, 83, 93, 94, 95, 97, 98, 113, 114, 115, states 7, 4, 6 (39 of the 75, in [plan 0052's P3c](../../../plans/0052-monster-ai.md#phase-3--spec-monster-ai-in-two-parts) order), and the other blocks of batches 10 to 12, whose findings wrote them from instructions. **Measured:** of 19 blocks of batches 1 to 9 read at the review, 2 (rows 18, 59) held an error that changes a branch or a command's argument, corrected here, 1 (row 104) an omitted argument, and none a draw's order or count; of 3 of batches 10 to 12, none. So until P3c closes, expect about one unread block of batches 1 to 9 in ten to hold a wrong unit or argument. Short by name: rows 106 and 143 (step 13's terms decide which skills draw) and rows 25 and 94 (their tables), Open questions. (0x005F2426, 0x005E63F8, 0x005E65E5, 0x005EAA11)
 - [C] **Emulated maps** are named per entry. Each runs the think on a declared image up to its first observed callee (ADR-0015, ADR-0021) and covers that code's map and no callee, and no store or command after it. (run:2026-10-30-ai-cat-emu-1)
 
 ## Algorithm
@@ -1166,10 +1166,11 @@ switch v14:                                                                [I] (
        UseSkill4(t);  v18 ← T + aip(5); return             ; MonBlizzard
      if Skill2 ≥ 0 and v1C < T and Range(100) < aip(3):
        UseSkill2(t);  v1C ← T + 20; return                 ; ZakarumLightning
-6. if D100() < 30: T56(t, 4, 0); return
+6. if D100() < 30: T56(t, 4, M); return    ; the flag word is the record M (push esi), never 0, so flags 4
 7. Idle(20)
 ```
 
+- R49c. [I] Step 6's third argument is `ESI`, the MonStats record loaded at 0x005F72DB and not written since, so a refused walk reaches `MonAiMove` with flags 4 and cancels the AI event ([machinery B6, B11](machinery.md#b-the-command)). (0x005F76CF, 0x005F72DB, fn:sub_005DF7D0_MonAiWalkToUnitType56@0x005DF7D0)
 - R49a. [I] **The teleport** goes to the far side of the target: the target's point plus the unit-to-target offset, ×4 in melee range, ×1 otherwise. The first `GetSubX/Y` pair is the unit's, the second the target's (`ECX` = `[ebp−4]` then `[ebp+8]`, 0x005F7350–0x005F737B). The offset is a u16 difference, so `<< 2` cannot wrap. A blocked line (`AiLineClear` 0: `UnitLineBlocked(U, t, 4)` non-zero) allows only Blizzard. Up to six draws. Not emulated: `UnitLifePct` is the first call (0x005F72F9). (fn:sub_005FD470_MonSkillTargetOk@0x005FD470, fn:sub_005DD290_AiLineClear@0x005DD290, fn:sub_005DD0B0_AiUnitSearch@0x005DD0B0, struct:AiCtl+0x1C)
 - R49b. [I] **`AiZakarumHealCb`** takes a monster other than the searcher, `AlignSame02` with it, alignment not 2, not in a death mode, whose `MonClassCheck(MonBaseId)` is 235 (`zealot1`) or 238 (`cantor1`), with `UnitDistSq ≤ bound` and `UnitLifePct ≤ 60`; each such unit adds one to `+0x04` and becomes `+0x00`, since `+0x08` stays `0x7FFFFFFF` (written only when below 1) and every life is below it. It returns 0, so the search goes on: the unit kept is the last taken. Block `{+0x00 unit, +0x04 count, +0x08 best, +0x0C bound}` at `EBP − 0x4C`. (fn:sub_005F7240_AiZakarumHealCb@0x005F7240, fn:sub_00650D70_AlignSame02@0x00650D70, fn:sub_006259B0_UnitAlignGet@0x006259B0, fn:sub_00463900_MonClassCheck@0x00463900)
 
@@ -1587,11 +1588,12 @@ eat:
        if Skill1 ≥ 0 and not (U is a monster with MonsterData+0x0E ≥ 4): UseSkill1(h); return
 5. if dist > aip(8) and chance(7): WanderNear(t, 6); return
 6. if D100() > 69: Idle(10); return
-7. T56(t, 3, 0); return
+7. T56(t, 3, M); return                                        ; the flag word is the record M (push edi), never 0, so flags 4
 curse4:  UseSkill4(t);  v14 ← T + aip(3); return               ; Decrepify
 curse6:  MonAiUseSkill(Sk6mode, Skill6, t, 0, 0);  v14 ← T + aip(3); return   ; MonCurseCast
 ```
 
+- R74d. [I] Step 7's third argument is `EDI`, the MonStats record loaded at 0x005FAF0C and not written since, so a refused walk reaches `MonAiMove` with flags 4 and cancels the AI event ([machinery B6, B11](machinery.md#b-the-command)). (0x005FB26C, 0x005FAF0C, fn:sub_005DF7D0_MonAiWalkToUnitType56@0x005DF7D0)
 - R74a. [I] Step 2's walk keeps a `doomknight1` between itself and the target: it walks to the knight when that knight is farther from the target than it is. Curse 6 is aimed at the event's target, while the other casts of step 4 go to the hostile. `Skill3` is `MonBoneSpirit`, `Skill1` `DoomKnightMissile`, gated as in row 73. Up to five draws. (fn:sub_005DD0B0_AiUnitSearch@0x005DD0B0, tbl:Skills.txt:auratargetstate, tbl:MonStats.txt:Skill4)
 - R74b. [I] **`AiOblivionKnightCb`:** a monster other than the unit, not in a death mode, with `Unit+0xC4` bit `0x02`, of base class 310 (`doomknight1`; `MonBaseId` in `[0, MonStats count)` and equal to `0x136`), within `UnitDistSq ≤ 2500`, on the unit's side (`AlignSame02`) and of alignment 0: the nearest strictly nearer goes to `s.knight`, the nearest below 40 percent life to `s.weak`; the think reads `s.knight` only. No draw. (fn:sub_005FAE40_AiOblivionKnightCb@0x005FAE40, fn:sub_00650D70_AlignSame02@0x00650D70, fn:sub_00463860_MonBaseId@0x00463860)
 - R74c. [C] The entry call to the search only, from 0x005FAF4D with its block's five words, before any test: family `oknight`, 240 cases; no control separates it. (run:2026-10-30-ai-cat-emu-4)

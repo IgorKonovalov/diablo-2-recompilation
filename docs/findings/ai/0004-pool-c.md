@@ -407,6 +407,8 @@ if (draw < 30) return T56(t, 4, 0);
 Idle(20);
 ```
 
+- *Corrected 2026-11-04 (`lane/s52c`, spec-writer, reading the anchored instructions for monsters/ai/catalogue):* the block gave `T56(t, 4, 0)`; the flag is `push esi` (0x005F76CF) with `esi` the MonStats record (0x005F72DB, not written since), never 0, so a refused walk reaches `MonAiMove` with flags 4.
+
 - [I] **The teleport** goes to the far side of the target: the target's point plus the unit-to-target offset (×4 in
   melee range, ×1 otherwise), with a `4·aip5` (480) frame cooldown in `v14`; below 33 percent life only. The first
   `GetSubX/Y` pair is the unit's, the second the target's (`ECX` = `[ebp−4]` then `[ebp+8]`, 0x005F7350–0x005F737B).

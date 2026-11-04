@@ -488,6 +488,7 @@ curse6: UseSkill(Sk6mode, Skill6, t, 0, 0); ctl->v14 = T + aip3; return;
   `DoomKnightMissile` with the appearance-byte gate of § 2.10. Last: `Near(t, 6)` beyond `aip8` (9/10/11) on `aip7`
   (30), `Idle(10)` on a draw above 69, else `T56(t, 3, 0)`. Up to five draws. (0x005FAF00–0x005FB28F,
   fn:sub_005DD0B0_AiUnitSearch@0x005DD0B0, tbl:Skills.txt:auratargetstate, tbl:MonStats.txt:Skill4)
+- *Corrected 2026-11-04 (`lane/s52c`, spec-writer, reading the anchored instructions for monsters/ai/catalogue):* the last walk was given as `T56(t, 3, 0)`; the flag is `push edi` (0x005FB26C) with `edi` the MonStats record (0x005FAF0C, not written since), never 0, so a refused walk reaches `MonAiMove` with flags 4.
 - [I] **The callback** `(ECX game, EDX unit; cand, s)`: a monster other than the unit, not in a death mode, with
   `Unit+0xC4` bit `0x02`, of base class 310 (`doomknight1`; `MonBaseId` in `[0, MonStats count)` and equal to `0x136`),
   within `UnitDistSq ≤ 2500`, on the unit's side (`AlignSame02`) and of alignment 0: the nearest strictly nearer goes
