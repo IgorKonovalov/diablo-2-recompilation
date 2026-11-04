@@ -1075,7 +1075,7 @@ N8. the shrine missiles:                                               [C] → e
 
 [skills/0016](../../findings/skills/0016-monster-8a.md#answer-summary), 30 entries, all emulated: five families,
 12 600 cases, 0 mismatches; only do 96 draws before its boundary. [C] (run:2026-10-21-cat-emu-8a) Which monster uses which skill is
-[plan 0052](../../plans/0052-monster-ai.md)'s.
+[plan 0052](../../plans/done/0052-monster-ai.md)'s.
 
 ```
 O1. st 42 (0x005CAE40, Fire Hit, row 156 only):                        [C] → st 32's boundary or COMBAT_MeleeHitTest (run:2026-10-21-cat-emu-8a)
@@ -1436,7 +1436,7 @@ Short floors carried from Phase 2 (each family is reached; these members are not
   never started and class 544 was never seen. So the value in do 140's `EBP − 0x1C` before `0x0063EFA0` stays
   unknown: 570 gives two `Range` and class 570 with mode 1, anything else three and a `baaltentacle` class with mode
   4 (Q1). A logged cast with the caster's seed before and after settles it: the monster-AI plan
-  ([0052](../../plans/0052-monster-ai.md)) or a session that starts the waves.
+  ([0052](../../plans/done/0052-monster-ai.md)) or a session that starts the waves.
 - [L] **do 113 and the charged suffixes** were not attempted (no session step uses an inventory item), so N3 and
   `SKILLS_PayCost`'s charge branch (N7) have no logged use.
 - [L] **do 151 itself** is not shown as the function that ran: the logger does not record which do entry ran, so

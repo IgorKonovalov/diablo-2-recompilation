@@ -631,6 +631,9 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-11-04 | `lane/r71` review | 0052 rows 25, 94, 106 | architect-review | 285 064 | 42 | 17 | — | accept with fixes (11); A and B listed under ADR-0031 | omission 6, overclaim 2, misread 1, tool not kept 1, other 1 |
 | 2026-11-04 | `lane/p55b` | 0055 P2b (pilots) | reverser-harness | 237 868 | 150 | 46 | 1 | accept with fixes (Tier A, ruling, 12) | omission 5, miscount 2, misread 1, overclaim 1, wrong anchor 1, stale cross-reference 1, other 1 |
 | 2026-11-04 | `lane/p55b` review | 0055 P2b (pilots) | architect-review | 278 157 | 54 | 18 | — | accept with fixes (12); not Q2, no ADR; the chain restated | omission 5, miscount 2, misread 1, overclaim 1, wrong anchor 1, stale cross-reference 1, other 1 |
+| 2026-11-04 | `lane/s52c` | 0052 P3c | spec-writer | 343 238 | 57 | 14 | — | accept with fixes (Tier A, 10) | misread 4, omission 4, miscount 1, stale cross-reference 1 |
+| 2026-11-04 | `lane/s52c` | 0052 r71 readings, wiki pass | spec-writer | 143 733 | 29 | 7 | — | accept with fixes (Tier A, 10) | misread 4, omission 4, miscount 1, stale cross-reference 1 |
+| 2026-11-04 | `lane/s52c` review | 0052 P3c, close | architect-review | 328 010 | 61 | 16 | — | accept with fixes (10); plan 0052 closed | misread 4, omission 4, miscount 1, stale cross-reference 1 |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not

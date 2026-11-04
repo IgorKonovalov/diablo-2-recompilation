@@ -5,7 +5,7 @@ date: 2026-10-30
 status: done
 context:
   - ../../findings/ai/0004-pool-c.md
-  - ../../plans/0052-monster-ai.md#implementation-log
+  - ../../plans/done/0052-monster-ai.md#implementation-log
 resolution: "Tier B check, accept with fixes (1 overclaim). (1) The five unemulated rows stay [I] for the batch's done-when. (2) P1.1 reopen condition (b) not met, agreed (callee body and direct calls only; callees not followed stays a stated limit). (3) Nest and sarcophagus: the [C] on both maps stands. The le control is vacuous there (the draw is compared with nothing) and d0 moves only the aip column, so the finding's claim that d0 separates the frame, count and distance tests overstated it; the check added two controls on the kept outputs (compare flipped: 53 and 72 cases separated; range moved by one: 30 and 24), all failing, and the draw is checked by its Idle argument value. The e >= aip1 edge has no control; stated. (4) Open questions accepted as listed. Fix written into ai/0004 section 3 and experiments.md."
 ---
 

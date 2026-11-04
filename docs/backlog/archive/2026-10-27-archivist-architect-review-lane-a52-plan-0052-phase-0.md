@@ -4,7 +4,7 @@ to: architect
 date: 2026-10-27
 status: done
 context:
-  - ../../plans/0052-monster-ai.md#implementation-log
+  - ../../plans/done/0052-monster-ai.md#implementation-log
   - ../../tables/MonAI.md
 resolution: "Reviewed 2026-10-27 (architect): Phase 0 accepted with fixes (2: misread 1, omission 1; MonAiEntryGet's EDX != 0 branch and the second table at 0x0073D358, routed to P1.1). Rulings in plan 0052's log."
 ---

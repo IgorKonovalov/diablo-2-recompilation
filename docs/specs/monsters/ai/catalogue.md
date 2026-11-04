@@ -2,9 +2,9 @@
 spec: monsters/ai/catalogue
 status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
-depends_on: [rng, monsters/ai/overview, monsters/ai/machinery, skills/dispatch, path/overview]
+depends_on: [rng, monsters/ai/overview, monsters/ai/machinery, skills/dispatch, path/overview, stats/states]
 consumed_by: [monsters/ai/overview, monsters/ai/machinery, hirelings]
-tags: {C: 330, I: 498, L: 19}
+tags: {C: 337, I: 518, L: 18}
 updated: 2026-11-04
 ---
 
@@ -14,7 +14,7 @@ updated: 2026-11-04
 
 What the think function of each AI row does on an AI event: which `aip` slots it reads and what each means, its decision
 tree, its draws in order. There are 148 rows in `g_MonAiTable` and 18 in `g_MonAiStateRows`, and each has one entry here
-(`R<row>` and `S<state>`), grouped by the batches of [plan 0052](../../../plans/0052-monster-ai.md). The event around the
+(`R<row>` and `S<state>`), grouped by the batches of [plan 0052](../../../plans/done/0052-monster-ai.md). The event around the
 think, its seeds and the row kinds are [the overview](README.md); the helpers and the 18 tier AIs are
 [machinery](machinery.md), and a tier row's entry here is one link to its § T entry.
 
@@ -80,7 +80,7 @@ Each entry states its own. No constant is shared across entries.
 - [I] **The census of the 130 rows outside the tier,** by those lines. 28 have their first boundary compared, 15 are logged in a row with no model, so theirs is not raised, and 87 have no decision logged: `grep -cE` of `^- R[0-9]+l\. \[C\] First boundary`, `^- R[0-9]+l\. \[I\] Logged, not compared` and `^- R[0-9]+l\. \[I\] Not logged` gives each. 115 of the 130 name an emulated family for their think or init; the other 15 are rows 0, 1, 8, 10, 11, 15, 23, 25, 26, 48, 49, 56, 60, 145 and 147. 38 entries have an `r` line (`^- [RS][0-9]+r\.`), 4 of them state rows (10, 11, 12, 17). (0x005B186F, run:2026-11-04-ai-resume)
 - [I] **The catalogue sample is short, by name:** batches 5, 7, 10, 11, 12 have no row that counts. Row 54 cannot fail (0 of 3 sites), row 99 has no call past the first, row 32 has a fork in all 199 decisions of the rev 4 logs, row 100 has 4 decisions. Row 130's map has not landed.
   (run:2026-11-04-ai-resume-flip)
-- [I] **Which blocks were read against their instructions.** Each block restates a compact block or the prose of its finding, and those were wrong in places no earlier review caught. Read line by line against objdump of the pinned image, register and stack arguments included, at the `lane/s52b` review: rows 3, 4, 11, 16, 18, 25, 26, 48, 50, 59, 65, 70, 71, 73, 85, 91, 96, 104, 106 (steps 12 to 16 and `Use`), 108, 116, 122, 131, states 3 and 5, and the tables of rows 51 and 135. By that lane alone, with filtered listings on the longer functions: 105, 106's other steps, 110, 111, 112, 134, 137, 31, 32's chain, 54, 58, 81, 99, states 12 and 13. The tier rows' read set is machinery's. **Not read:** the other 75 blocks of batches 1 to 9, named in [plan 0052's P3c](../../../plans/0052-monster-ai.md#phase-3--spec-monster-ai-in-two-parts), and the other blocks of batches 10 to 12, whose findings wrote them from instructions. **Measured:** of 19 blocks of batches 1 to 9 read at the review, 2 (rows 18, 59) held an error that changes a branch or a command's argument, corrected here, 1 (row 104) an omitted argument, and none a draw's order or count; of 3 of batches 10 to 12, none. So until P3c closes, expect about one unread block of batches 1 to 9 in ten to hold a wrong unit or argument. Short by name: rows 106 and 143 (step 13's terms decide which skills draw) and rows 25 and 94 (their tables), Open questions. (0x005F2426, 0x005E63F8, 0x005E65E5, 0x005EAA11)
+- [I] **Which blocks were read against their instructions.** Each block restates a compact block or the prose of its finding, and those were wrong in places no earlier review caught. Read line by line against objdump of the pinned image, register and stack arguments included, at the `lane/s52b` review: rows 3, 4, 11, 16, 18, 25, 26, 48, 50, 59, 65, 70, 71, 73, 85, 91, 96, 104, 106 (steps 12 to 16 and `Use`), 108, 116, 122, 131, states 3 and 5, and the tables of rows 51 and 135. By that lane alone, with filtered listings on the longer functions: 105, 106's other steps, 110, 111, 112, 134, 137, 31, 32's chain, 54, 58, 81, 99, states 12 and 13. The tier rows' read set is machinery's. **At P3c, by `lane/s52c`, each listing whole:** rows 33, 36, 38, 39, 40, 43, 45, 46, 47, 49, 52, 56, 57, 63, 117, 118, 119, 120, 121, 123, 124, 66, 68, 69, 72, 74, 75, 76, 77, 78, 79, 80, 87, 92, 44, 53, 55, 90, 144, 146, 84, 86, 101, 102, 103, 107, 109, 5, 7, 8, 10, 12, 14, 15, 142, 17, 19, 23, 24, 27, 82, 83, 93, 94, 95, 97, 98, 113, 114, 115, states 15, 16, 7, 4, 6 (75 of P3c's 75; printed from objdump with only the inline seed steps and position getters collapsed by script to their base register; helpers named in a block's prose, rows 23's and 113's callbacks and the host, row 55's quest call, row 146's two functions and state 15's setter, read from a filtered listing of their calls and compares; row 94's tables are `lane/r71`'s; states 4 and 7 are aliases of machinery's tier rows). **The collapsed listing's limit, and what it cost:** the inline step's `adc` takes a register zeroed by `xor r, r` inside the step, and a `push r` after it passes that 0. The collapse hid the `xor`, so P3c read rows 49 and 74's `T56` flags as the MonStats record, after the `lane/s52b` review had read row 18's as `s.unit` the same way. All three are 0, corrected at the `lane/s52c` review (R18a, R49c, R74d). That review scanned every think in this catalogue for such a push (`tools/ai_step_regs.py`, a linear scan): 11 entries have one, rows 6, 18, 22, 24, 42, 49, 73, 74, 123, 127 and state 14, and each states a 0 here now. **Not opened at P3c, read at that review:** `AiRavenCircle` (R107e, where the finding's mode was wrong), the inits of rows 101, 102, 107 and 121, and, outside P3c's list, rows 0 and 1 and row 143's init. All but the mode held. **Sampled at that review, whole, from uncollapsed listings:** rows 7, 8, 12, 17, 23, 36, 69, 95, 119 and 121 of P3c's 75: no error the pass had missed; rows 23 and 27's untaken null-target tests are in R23c and R27a. **Not read, 29 blocks of batches 10 to 12,** whose findings wrote them from instructions: rows 41, 42, 60, 62, 88, 100, 126, 127, 128, 129, 130, 132, 133, 136, 138, 139, 140, 141, 145 and 147, the thinks of rows 51 and 135 (their tables were read), and states 2, 8, 9, 10, 11, 14 and 17. **Measured:** of the 94 blocks of batches 1 to 9 read, 1 (row 59) held an error that changes a branch or a command's argument and 3 (rows 104, 102, 107) an omitted argument, none a draw's order or count; all corrected here. Of the 3 blocks of batches 10 to 12 read, none, and 3 clean reads bound nothing (at 95 %, up to about 63 %). So the 29 have no measured rate of their own; at the other batches' rate, 4 of 94 with a wrong or omitted argument, about one of them would hold one. Reading does not raise a tag. Step 13 of the think of rows 106 and 143 and the tables of rows 25 and 94 are `lane/r71`'s reading, read against the instructions at that lane's review ([ai/0019](../../../findings/ai/0019-row-tables-and-scoring.md)): `[I]`, with `[C]` only on data and on the tables' equalities with the image. (0x005EBF65, 0x005E0B3A, 0x005F39E1, 0x005F2403, 0x005F2426, 0x005E63F8, 0x005E65E5, 0x005EAA11, 0x005F76AA, 0x005F76CF, 0x005FB247, 0x005FB26C, 0x005EA65E, 0x005ECCCD)
 - [C] **Emulated maps** are named per entry. Each runs the think on a declared image up to its first observed callee (ADR-0015, ADR-0021) and covers that code's map and no callee, and no store or command after it. (run:2026-10-30-ai-cat-emu-1)
 
 ## Algorithm
@@ -590,11 +590,11 @@ else:
 3. s ← {unit 0, best 0x7FFFFFFF};  AiUnitSearch(G, U, &s, AiSameBaseNearCb, 1)
 4. if s.unit ≠ 0 and aip(3)·aip(3) < s.best:
      Ovr(0, 75, 0);  Walk(s.unit, 7); return
-5. if D100() < 25: T56(t, 3, s.unit)             ; draw#2; the flag word is s.unit, not a constant
+5. if D100() < 25: T56(t, 3, 0)                  ; draw#2
    else: Idle(aip(4))
 ```
 
-- R18a. [I] The callback takes a monster (`Unit+0x00` = 1) other than the searcher with the searcher's `MonBaseId`, not in a death mode, and keeps the nearest by `UnitDistSq`. The search block is a stack block `{+0x00 unit, +0x04 best}` at `EBP − 0x2C`. Step 5's flag is `s.unit` (`push ebx` at 0x005F2426, `ebx` set from the block at 0x005F23B8), so with a packmate found within `aip(3)` the walk goes to `MonAiMove` with flags 4, and with none found with flags 0 ([machinery B11](machinery.md#b-the-command)). (0x005F2426, fn:sub_005B0D00_AiSameBaseNearCb@0x005B0D00, fn:sub_00463860_MonBaseId@0x00463860, fn:sub_0063EA40_MonIsDeathMode@0x0063EA40)
+- R18a. [I] The callback takes a monster (`Unit+0x00` = 1) other than the searcher with the searcher's `MonBaseId`, not in a death mode, and keeps the nearest by `UnitDistSq`. The search block is a stack block `{+0x00 unit, +0x04 best}` at `EBP − 0x2C`. Step 5's flag is 0: `push ebx` at 0x005F2426, with `ebx` zeroed by `xor ebx, ebx` in the inline step's `adc` at 0x005F2403, so the walk goes to `MonAiMove` with flags 0 ([machinery B11](machinery.md#b-the-command)). (0x005F2403, 0x005F2426, fn:sub_005B0D00_AiSameBaseNearCb@0x005B0D00, fn:sub_00463860_MonBaseId@0x00463860, fn:sub_0063EA40_MonIsDeathMode@0x0063EA40)
 - R18b. [C] The map up to the search, the block's two words included: family `panther`, 240 cases, 4 boundaries; the controls fail the 26 and 99 that separate them. (run:2026-10-30-ai-cat-emu-2)
 
 - R18i. [C] As data: kind 1, no `init`, no `alt`; 6 records (83-86 pantherwoman1..pantherwoman4, 627-628 pantherwoman5..pantherwoman6); reach PU; `aip` set 1,2,3,4,5; `aidel` 15/13,14/12,13; skills —. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
@@ -684,7 +684,7 @@ Tier AI: [machinery § T22](machinery.md#t22-row-22-greatermummy-fnsub_005f2b10_
 
 - R23a. [I] `v14` is the flight counter. A vulture with no owner, more than 12 subtiles from its target (squared 144), takes off on 60 % of events for 24–31 airborne events, circles points drawn around the target (`RNG_RangeB` twice, a square of half-side `fly + 8`) at least `clamp(2(fly + 8), 12, 36)` from itself, and lands when the counter reaches 1, when the callback finds a unit, or within 6 on 15 %. `v18` and `v1C` hold the circling point. Modes 8 and 9 are the move commands' modes here. (fn:sub_005F3170_AiVulture@0x005F3170, fn:sub_005F2EB0_AiVultureTakeOff@0x005F2EB0, fn:sub_005F2FC0_AiVultureLand@0x005F2FC0, fn:RNG_RangeB@0x0045C3E0, fn:RNG_RangePow2@0x00472210, struct:AiCtl+0x18)
 - R23b. [I] **The callback** `AiWoundedNearCb`: a monster or player other than itself, not dying, `UnitDistSq` ≤ 121, stat 6 ≤ `UnitGetMaxHp ÷ 100 · aip(3)`, keeping the nearest. (fn:sub_005F30F0_AiWoundedNearCb@0x005F30F0, tbl:ItemStatCost.txt:hitpoints)
-- R23c. [I] Not emulated: the first callee is `UnitDistSq` and the next two `UnitGetRoom`, before any draw. (0x005F31C4, 0x005F31DB, 0x005F31E3)
+- R23c. [I] The think tests `t` for null at 0x005F3184, 0x005F31D3, 0x005F325D and 0x005F33C1, and the block leaves those arms out: the row is kind 1, whose think runs only with a target ([ai/0003](../../../findings/ai/0003-pool-b.md)). Not emulated: the first callee is `UnitDistSq` and the next two `UnitGetRoom`, before any draw. (0x005F31C4, 0x005F31DB, 0x005F31E3)
 - R23d. [I] The 8 mismatches below all lie in the rev 4 logs, each stopping at 0x00620BB0 called at 0x005F33EC; the logger's limit of 600 non-think calls is the cause read, and rev 6's 256 decisions have 0, but only 2 `AIL` lines are this row's, so the reading is untested. (run:2026-11-04-ai-resume, run:2026-11-04-ai-r5, 0x005F33EC)
 
 - R23i. [C] As data: kind 1, no `init`, no `alt`; 5 records (110-113 vulture1..vulture4, 608 vulture5); reach P; `aip` set 1,2,3,4,5; `aidel` 15/13,14/11,13; skills —. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
@@ -751,7 +751,7 @@ the dance, v14 = 5 (five wisps) or v14 ≥ 6 (four wisps):                   [I]
      return
 4. if G.frame mod 67 ≠ 0: Idle(67 − G.frame mod 67); return
 5. if v18 < 3:
-     if B[e] = (0, 0):                                        ; B5 for v14 = 5
+     if B[e] = (0, 0):                                        ; B5 for v14 = 5; see The tables, below
        v18 ← v18 + 1;  v14 = 5: Idle(337 − G.frame mod 337), else Idle(67)
      else:
        MonAiSetMode(7, t's subtile x + B[e].x, t's subtile y + B[e].y);  v18 ← v18 + 1
@@ -785,12 +785,55 @@ states 0, 2, 3:                                                            [I] (
    v18 ← 3
 ```
 
-- R25a. [I] The trigger's `Range(1000) ≤ d + 2` is 3, 4 or 5 in 1000. `AiWispCb`: a monster not in a death mode whose `MonBaseId` is 118, `willowisp1`'s row. The tables are 8-byte `(x, y)` entries in the frame: `A` from `EBP − 0x2F4`, `B` from `EBP − 0x214`, `A5` from `EBP − 0x38`, `B5` from `EBP − 0x64`, each indexed by `e`, written at every entry to the think (0x005F39E1–0x005F3E07). Both dances' origin is the target's subtile position (0x005F407E–0x005F40AA, 0x005F4291–0x005F42AE). (fn:sub_005F3960_AiWispCb@0x005F3960, fn:sub_0058EC00_AiCtlSetVar@0x0058EC00, fn:sub_0065A950_RoomUnitSearchInit@0x0065A950)
+- R25a. [I] The trigger's `Range(1000) ≤ d + 2` is 3, 4 or 5 in 1000. `AiWispCb`: a monster not in a death mode whose `MonBaseId` is 118, `willowisp1`'s row. Both dances' origin is the target's subtile position (0x005F407E–0x005F40AA, 0x005F4291–0x005F42AE). (fn:sub_005F3960_AiWispCb@0x005F3960, fn:sub_0058EC00_AiCtlSetVar@0x0058EC00, fn:sub_0065A950_RoomUnitSearchInit@0x0065A950)
+
+**The tables.** [I] 8-byte `(x, y)` entries in the frame, written as 132 dwords at every entry to the think (0x005F39E1–0x005F3E07):
+
+| Table | Base | Index | Rows | Readers | Given here |
+|---|---|---|---|---|---|
+| `A` | `EBP−0x2F4` | `v1C + 4·v14`, 25..52 | 28 `(x, y)` | 0x005F408F, 0x005F40AA | listed below |
+| `B` | `EBP−0x214` | as `A` | 28 `(x, y)` | 0x005F4136, 0x005F4140, 0x005F416B, 0x005F4186 | listed below |
+| `A5` | `EBP−0x38` | `v1C`, 1..5 | 5 `(x, y)` | 0x005F429C, 0x005F42AE | listed below |
+| `B5` | `EBP−0x64` | `v1C`, 1..5 | 5 `(x, y)` | 0x005F42F0, 0x005F42F6, 0x005F430F, 0x005F4321 | by rule below |
+
+`A5[1..5]` = (−5, −5), (3, −5), (6, 3), (3, 6), (−5, 3).
+
+[C] As an equality on the image, `B5[p] = A5[((p + 1) mod 5) + 1]`. [I] So each of the five wisps aims two places on around the ring of `A5`'s points. (0x005F39E1, run:2026-11-04-r71-sm)
+
+No rule is known for `A` or `B`, and the forms searched give neither, so they are listed. `place` is `v1C`, 1 to 4.
+
+```
+A[v14, place], (x, y) of places 1 to 4; index v1C + 4·v14:
+ 6: (-10, -3) (1, -5) (6, 0) (4, 10)
+ 7: (-9, -2) (-6, -11) (-2, -5) (6, 1)
+ 8: (0, 13) (-12, 0) (7, 5) (-3, -11)
+ 9: (-15, -3) (-6, -3) (-4, -5) (-6, -13)
+10: (-12, -2) (-6, 2) (-5, 5) (1, 11)
+11: (-13, -6) (-8, -11) (-7, 0) (1, 8)
+12: (-5, -8) (-8, 1) (1, -6) (6, 9)
+```
+
+```
+B[v14, place], (x, y) of places 1 to 4; index v1C + 4·v14:
+ 6: (1, -5) (6, 0) (4, 10) (-10, -3)
+ 7: (1, 8) (-9, -2) (-5, 4) (1, 8)
+ 8: (-12, 0) (7, 5) (-3, -11) (11, -2)
+ 9: (7, 9) (-15, -3) (-6, -13) (9, 7)
+10: (-5, -7) (-5, -7) (9, 0) (-12, -2)
+11: (-8, -11) (-2, -6) (-2, -6) (-13, -6)
+12: (-8, 1) (1, -6) (6, 9) (0, 0)
+```
+
+[C] `A5`, `A` and `B`, each element as written, equal the image's stores, i32, and the docs gate's survey compares these listings with the image ([ADR-0031](../../../adrs/0031-constants-of-the-code-image.md)). (0x005F39E1, run:2026-11-04-r71-sm)
+
+[I] Step 5's `B[e]` is `(0, 0)` at `v14` = 12, place 4 only: that wisp's three shots there are the `v18`-only arm. `B5` has no `(0, 0)`, so that arm with `v14` = 5 is reached by no value of the image. (0x005F4136, 0x005F42F4–0x005F42FF)
+
 - R25b. [I] Each of the four wisps grants on each of its seven advances: the end-of-dance reset is skipped over, not the grant. (fn:STATLIST_Alloc@0x006251F0, fn:STATLIST_LinkToUnit@0x00626E10, fn:sub_005417D0_UnitQueueEvent@0x005417D0, tbl:ItemStatCost.txt:item_magicbonus)
-- R25c. [I] The block was checked against its anchored instructions (the finding's prose differed; [ai/0003 § 2.9](../../../findings/ai/0003-pool-b.md) holds the dated correction). The table values and what event 12 does are Open questions. Not emulated: `UnitDistSq` comes first on most events and the room search in state 4. (0x005F3E1C, 0x005F3F14)
+- R25c. [I] The block was checked against its anchored instructions (the finding's prose differed; [ai/0003 § 2.9](../../../findings/ai/0003-pool-b.md) holds the dated correction). **Event 12:** at the end frame `EVENT_TimedListExpire` frees the list, by [stats/states C1](../../stats/states.md#c-expiry-and-removal); the grant carries no state, so C2 has no part; death may free it first (C3). Each of a dance's grants has its own list and its own event. **The tables:** the think holds them on the stack at each entry and none depends on an input, so a reimplementation may hold them as constants. Not emulated: `UnitDistSq` comes first on most events and the room search in state 4. (0x005F3E1C, 0x005F3F14, 0x005F4255, 0x005F4268, 0x005F408F, fn:EVENT_TimedListExpire@0x00580800, fn:UNIT_ExpireTimedLists@0x00627460)
 
 - R25i. [C] As data: kind 1, no `init`, no `alt`; 8 records (118-121 willowisp1..willowisp4, 639-641 willowisp5..willowisp7, 733 willowisp8); reach PU; `aip` set 1,2,3; `aidel` 15/14/13; skills Chain Lightning. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
 - R25l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
+- R25m. [C] Reach, as data, since R25l's zero is the batches' coverage and says nothing of reach: class 118 is in the spawn columns of levels 77, 86, 87 and 90 (`mon`, `nmon`, `umon`), class 120 in level 105 and as one superunique's class, classes 639 to 641 in levels 114, 119, 129 and 131 (`nmon` only); classes 119, 121 and 733 are in none. Each of those levels has `NumMon` 3, so a listed class is in a level's pool only when the pick of [monsters/pool § C](../pool.md) takes it. (tbl:Levels.txt:mon1, tbl:Levels.txt:nmon1, tbl:Levels.txt:umon1, tbl:SuperUniques.txt:Class)
 
 #### R26. Row 26 `Arach` (fn:sub_005F4510_AiArach@0x005F4510)
 
@@ -867,7 +910,7 @@ states 0, 2, 3:                                                            [I] (
 5. v14 ← v14 − 1;  if v14 < 1: v18 ← 3
 ```
 
-- R27a. [I] A frenzy bout: once started the hulk repeats the skill for `aip(6)` events, then `v18` = 3 makes the next three melee decisions plain attacks. The skill is always used in mode 5, not `Sk1mode`. `v18` keeps decreasing below 0 on further plain attacks. (fn:sub_005415A0_UnitEventFirstFrame@0x005415A0, tbl:MonStats.txt:aip6)
+- R27a. [I] The think's null test of `t` at 0x005F4878 is not in the block: the row is kind 1, whose think runs only with a target ([ai/0003](../../../findings/ai/0003-pool-b.md)). A frenzy bout: once started the hulk repeats the skill for `aip(6)` events, then `v18` = 3 makes the next three melee decisions plain attacks. The skill is always used in mode 5, not `Sk1mode`. `v18` keeps decreasing below 0 on further plain attacks. (fn:sub_005415A0_UnitEventFirstFrame@0x005415A0, tbl:MonStats.txt:aip6)
 - R27b. [C] The map up to the first callee: family `thornhulk`, 240 cases, 7 boundaries; the controls fail the 28 and 42 that separate them. The `Delay` and the stores after the skill are readings. (run:2026-10-30-ai-cat-emu-2)
 
 - R27i. [C] As data: kind 1, no `init`, no `alt`; 5 records (127-130 thornhulk1..thornhulk4, 609 thornhulk5); reach PU; `aip` set 1,2,3,4,5,6; `aidel` 15/13,14/12,13; skills MonFrenzy. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
@@ -1171,6 +1214,7 @@ switch v14:                                                                [I] (
 7. Idle(20)
 ```
 
+- R49c. [I] Step 6's third argument is `ESI`, which holds 0 there: `xor esi, esi` in the inline step's `adc` at 0x005F76AA, after the MonStats record it held from 0x005F72DB. So the walk reaches `MonAiMove` with flags 0 ([machinery B6, B11](machinery.md#b-the-command)). (0x005F76AA, 0x005F76CF, 0x005F72DB, fn:sub_005DF7D0_MonAiWalkToUnitType56@0x005DF7D0)
 - R49a. [I] **The teleport** goes to the far side of the target: the target's point plus the unit-to-target offset, ×4 in melee range, ×1 otherwise. The first `GetSubX/Y` pair is the unit's, the second the target's (`ECX` = `[ebp−4]` then `[ebp+8]`, 0x005F7350–0x005F737B). The offset is a u16 difference, so `<< 2` cannot wrap. A blocked line (`AiLineClear` 0: `UnitLineBlocked(U, t, 4)` non-zero) allows only Blizzard. Up to six draws. Not emulated: `UnitLifePct` is the first call (0x005F72F9). (fn:sub_005FD470_MonSkillTargetOk@0x005FD470, fn:sub_005DD290_AiLineClear@0x005DD290, fn:sub_005DD0B0_AiUnitSearch@0x005DD0B0, struct:AiCtl+0x1C)
 - R49b. [I] **`AiZakarumHealCb`** takes a monster other than the searcher, `AlignSame02` with it, alignment not 2, not in a death mode, whose `MonClassCheck(MonBaseId)` is 235 (`zealot1`) or 238 (`cantor1`), with `UnitDistSq ≤ bound` and `UnitLifePct ≤ 60`; each such unit adds one to `+0x04` and becomes `+0x00`, since `+0x08` stays `0x7FFFFFFF` (written only when below 1) and every life is below it. It returns 0, so the search goes on: the unit kept is the last taken. Block `{+0x00 unit, +0x04 count, +0x08 best, +0x0C bound}` at `EBP − 0x4C`. (fn:sub_005F7240_AiZakarumHealCb@0x005F7240, fn:sub_00650D70_AlignSame02@0x00650D70, fn:sub_006259B0_UnitAlignGet@0x006259B0, fn:sub_00463900_MonClassCheck@0x00463900)
 
@@ -1593,6 +1637,7 @@ curse4:  UseSkill4(t);  v14 ← T + aip(3); return               ; Decrepify
 curse6:  MonAiUseSkill(Sk6mode, Skill6, t, 0, 0);  v14 ← T + aip(3); return   ; MonCurseCast
 ```
 
+- R74d. [I] Step 7's third argument is `EDI`, which holds 0 there: `xor edi, edi` in the inline step's `adc` at 0x005FB247, after the MonStats record it held from 0x005FAF0C. So the walk reaches `MonAiMove` with flags 0 ([machinery B6, B11](machinery.md#b-the-command)). (0x005FB247, 0x005FB26C, 0x005FAF0C, fn:sub_005DF7D0_MonAiWalkToUnitType56@0x005DF7D0)
 - R74a. [I] Step 2's walk keeps a `doomknight1` between itself and the target: it walks to the knight when that knight is farther from the target than it is. Curse 6 is aimed at the event's target, while the other casts of step 4 go to the hostile. `Skill3` is `MonBoneSpirit`, `Skill1` `DoomKnightMissile`, gated as in row 73. Up to five draws. (fn:sub_005DD0B0_AiUnitSearch@0x005DD0B0, tbl:Skills.txt:auratargetstate, tbl:MonStats.txt:Skill4)
 - R74b. [I] **`AiOblivionKnightCb`:** a monster other than the unit, not in a death mode, with `Unit+0xC4` bit `0x02`, of base class 310 (`doomknight1`; `MonBaseId` in `[0, MonStats count)` and equal to `0x136`), within `UnitDistSq ≤ 2500`, on the unit's side (`AlignSame02`) and of alignment 0: the nearest strictly nearer goes to `s.knight`, the nearest below 40 percent life to `s.weak`; the think reads `s.knight` only. No draw. (fn:sub_005FAE40_AiOblivionKnightCb@0x005FAE40, fn:sub_00650D70_AlignSame02@0x00650D70, fn:sub_00463860_MonBaseId@0x00463860)
 - R74c. [C] The entry call to the search only, from 0x005FAF4D with its block's five words, before any test: family `oknight`, 240 cases; no control separates it. (run:2026-10-30-ai-cat-emu-4)
@@ -1879,19 +1924,20 @@ init 0x005EA510:  v14 ← −1;  v18 ← 1;  v1C ← 0                          
 4. if T > v14: MonAiSetMode(0, 0, 0); return
 5. if v1C = 0 and 0 ≤ srvmissilea < Missiles count:
      p ← O ≠ 0 ? O : U
-     m ← MissileCreateAt(s, lvl, srvmissilea, U.x, U.y)
+     m ← MissileCreateAt(G, p, s, lvl, srvmissilea, U.x, U.y)     ; p the creating unit (EDX)
      if m ≠ 0:
        UnitSetOwner(m, U)
-       stat 19 += PlayerBaseToHit(p)
-       stat 119 += p.stat119 + the mastery bonus of p's weapon
+       UnitAddStat(U, 19, PlayerBaseToHit(p), 0)
+       UnitAddStat(U, 119, p.stat119 + the mastery bonus of p's weapon, 0)
      v1C ← 1
 6. prm ← Head;  if prm = 0: Idle(3); return
 7. Ovr(15, 0, 20)
-   walk to the point v18 ≠ 0 ? (prm+0x14, prm+0x18) : (prm+0x0C, prm+0x10)
+   MonAiWalkToPointOrStop to the point v18 ≠ 0 ? (prm+0x14, prm+0x18) : (prm+0x0C, prm+0x10)
    if refused: v18 ← not v18;  walk to the other
    if both refused and not WanderNear(O, 5): Idle(5)
 ```
 
+- R102c. [I] The missile's creating unit is `p`, the owner when there is one (`EDX` = `EDI`, 0x005EA65E), with `U` as the missile's owner set after it. (0x005EA65E, 0x005EA660, 0x005EA669, fn:sub_0056EDE0_MissileCreateAt@0x0056EDE0)
 - R102a. [I] The creeper shuttles between the two points of its parameter record until its `calc4` life passes. The stats 19 and 119 go on the missile's owner chain (the creeper), from the owner's to-hit. `Skill1` is sign-extended (`movsx`). (fn:sub_0058EE80_AiParamsHead@0x0058EE80, fn:sub_0056EDE0_MissileCreateAt@0x0056EDE0, fn:sub_005EA540_AiBladeCreeper@0x005EA540)
 - R102b. [C] The init and the Skill1 bound only: families `bladeinit` and `blade`, 240 cases each; the compare and unsigned-`Skill1` controls fail the 12 and 46 that separate `blade`. (run:2026-10-30-ai-cat-emu-5)
 
@@ -2005,7 +2051,7 @@ return 1
 
 #### R106. Row 106 `ShadowMaster` (fn:sub_005EB970_AiShadowMaster@0x005EB970)
 
-**`aip`:** 2 three parameters by column (`aip2[h]` squared the owner's distance, `aip2[m]` a target's distance that holds it, `aip2[n]` the scoring draw's range, 20 for `shadowmaster`, as data); 3 the base of the plain-attack chance; 8 `aip8[n]` the skill read at init (279). `aip1[h]` is read by a score term (step 13).
+**`aip`:** 2 three parameters by column (`aip2[h]` squared the owner's distance, `aip2[m]` a target's distance that holds it, `aip2[n]` the scoring draw's range, 20 for `shadowmaster`, as data); 3 the base of the plain-attack chance; 8 `aip8[n]` the skill read at init (279). `aip1` is read by step 13's terms: `aip1[n]` squared in cases 4 and 12, `aip1[m]` added in cases 4, 12 and 13, `aip1[h]` in the `state` word and case 4. Each of these is the column itself, read `movsx` from 16 bits, and is not indexed by the game's difficulty (`shadowmaster` has 20, 10, 10, as data) (0x005EBECF, 0x005EC0FD, 0x005EC110, 0x005EBE13, tbl:MonStats.txt:aip1).
 
 ```
 init (0x005EB490):                                                         [C] (0x005EB4B4, run:2026-10-30-ai-cat-emu-5)
@@ -2055,18 +2101,23 @@ think:                                                                     [I] (
       else if a priority target exists and DistSq(U, it) < 1024: t ← it
       unless AiShadowPriorityTarget(U, t):
         w ← MonsterOwner(t);  if w ≠ 0, not dead and DistSq(U, w) < 1024: t ← w
-11. n ← blk's count of hostiles within 10 of U
+11. n ← blk's count of hostiles within 10 of U  ; n10; step 13's inputs are read here, once, before this test
     if n > 3 and Range(32) < 2·n:
       if O ≠ 0 and DistSq(U, O) > 36: RunToUnit(O); return
       if StepAwayXY(t, 8, 1): return
 12. L[0] ← (t, skill 0, score 0, 0, 0);  k ← 1
-13. for each of U's skills whose record exists:
-      score ← aibonus + reqlevel ÷ 4 + level − res ÷ 10
-        ; res the stat of the target for the skill's EType, 36, 39, 41, 37, 43, 45
-      by aitype (1–13): its terms and target, or next;  a kept one draws score ← score + Range(aip2[n])
-      if score > L[k − 1].score: L[k] ← (target, id, score, 0, 0);  k ← k + 1
-14. while k > 0:
+13. acc ← 0
+    for each node of U's skill list:             ; first ← list+4, next ← node+4
+      id ← SkillNodeId(node);  level ← SKILLS_GetSkillLevel(U, node, 1)
+      if id < 0, id ≥ the Skills count or the record is null: next   ; no draw
+      x ← t;  sc ← 0
+      base ← aibonus + reqlevel ÷ 4 + level      ; +0x232 and +0x174, s16; ÷ truncates
+      if EType is in its map: base ← base + STATS_GetUnitStat(t, stat, 0) ÷ −10     ; ÷ truncates; t, not x
+      run the case of aitype (+0x230, read as a byte)                ; below; none outside 1..13
+      if sc > L[k − 1].score (signed): L[k] ← (x, id, sc, 0, 0);  k ← k + 1
+14. while k > 0:                                 ; L[0] is walked last, with skill 0
       k ← k − 1;  one inline step                ; the seed's new low word
+      ; the list's two zero words go to Use's last two, and from there to MonAiUseSkill's last two
       if low word & 3 ≠ 0 and Use(L[k].id, InMeleeRange(U, L[k].target, 0), L[k].target):
         if the id's record has +0x2E = 19: v18 ← the id;  v14 ← 25
         return
@@ -2081,9 +2132,155 @@ Use(id, m, x), AiShadowUseSkill:                                           [I] (
   return MonAiUseSkill(SkillMode(s), id, x, 0, 0)
 ```
 
-- R106a. [I] The block was checked against its anchored instructions, and steps 2 to 16 corrected from them ([ai/0006 § 2.11](../../../findings/ai/0006-summons.md) holds the dated correction): `L` is a rising list with no "five best", each entry kept only over the last one's score; the plain attack's and the pick's commands go through `Use`. The function has 3 inline steps and 14 `RNG_Range` sites. Step 13's per-`aitype` terms are read by no finding: Open questions. A score list's `+8` and `+0xC` words are stored 0 at the one store (0x005EC528, 0x005EC52F). (fn:sub_005EB970_AiShadowMaster@0x005EB970, fn:sub_005EB490_AiShadowMasterInit@0x005EB490, fn:sub_005EB420_AiShadowMasterSkLvl@0x005EB420, fn:sub_005EAB20_AiShadowSkillAllowed@0x005EAB20, fn:sub_005EB6D0_AiShadowMasterCb@0x005EB6D0, fn:sub_005EB650_AiShadowPriorityTarget@0x005EB650, fn:sub_005EB7F0_AiStateGroupHeld@0x005EB7F0, fn:sub_005EB8B0_AiShadowUseSkill@0x005EB8B0)
+**Step 13's inputs.** [I] Copied once, before step 11's test, from what steps 9 and 10 left: nothing here is recomputed per skill except `acc`. `blk`'s `+8` and `+0x14` start at 0x7FFFFFFF, every other word at 0 and `+0` at `O`. "Hostile" here is the callback's whole gate, [R106b](#r106-row-106-shadowmaster-fnsub_005eb970_aishadowmaster0x005eb970): `x` is not `U`, not null, not dead, has `+0xC4` bit `0x04`, and 0x00554200 returns non-zero. An allied monster of a base the `allies` word counts returns there and enters no other word. (0x005EBD46–0x005EBD81, 0x005EBDFB–0x005EBE69, 0x005EB6DB–0x005EB76C)
+
+| Name | Word | What it holds | Set at |
+|---|---|---|---|
+| `melee` | `EBP−0x20` | the event's word at `ctx+0x18`, read at entry and never recomputed, though steps 3, 4 and 6 can change `t` (step 10 changes it only with this 0). Cases 4 and 12 read this; step 14 calls `InMeleeRange` afresh | 0x005EB9A6 |
+| `life` | `EBP−0x38` | `UnitLifePct(U)`: `100·(stat 6 >> 8) ÷ (max >> 8)`, 0 when the maximum is 0 | 0x005EBDFC, 0x00621F4B |
+| `dsq` | `EBP−0x24` | `DistSq(U, t)`, `t` after step 10 | 0x005EBE08 |
+| `state` | `EBP−0x40` | 1 when `aip1[h] > 0` and `UnitHasStateInMaskDC(U)` is non-zero; else 0, with no call when `aip1[h] ≤ 0` | 0x005EBE13–0x005EBE2B |
+| `clear` | `EBP−0x28` | 1 when `UnitLineBlocked(U, t, 4)` returned 0, else 0 | 0x005EBE36–0x005EBE4E |
+| `near` | `blk+8` | smallest `DistSq(U, x)` of a hostile `x` within 1024; 0x7FFFFFFF with none | 0x005EBE66 |
+| `n10` | `blk+0xC` | hostiles with `DistSq(U, x)` ≤ 100 | 0x005EBE41 |
+| `nearO` | `blk+0x10` | the hostile of the search nearest `O`, at any distance; 0 with no owner or none | 0x005EBE54 |
+| `nO` | `blk+0x18` | hostiles with `DistSq(O, x)` ≤ 100 | 0x005EBE69 |
+| `n32` | `blk+0x1C` | hostiles with `DistSq(U, x)` ≤ 1024 | 0x005EBE60 |
+| `allies` | `blk+0x20` | allied monsters of base 410 to 416 but 414, counted before the hostile words (0x005EB72A–0x005EB745) | 0x005EBE5A |
+| `acc` | `EBP−0x30` | starts 0 at this think, carried from record to record | 0x005EBED7 |
+
+`UnitHasStateInMaskDC` tests the states of DataTables `+0xDC`, flag bit 4 `pgsv`; the stock rows with `pgsv` are the six `progressive_*` states, 122 to 127. [I] (fn:sub_0063A2B0_UnitHasStateInMaskDC@0x0063A2B0, fn:sub_0063A130_UnitHasStateInMask@0x0063A130, 0x0063A2B9, tbl:States.txt:pgsv)
+
+**The `EType` map.** [I] `+0x1DC`, a byte (the byte table at 0x005EC650, the jump table at 0x005EC634):
+
+| Byte | 0 | 1 | 2 | 3 | 4 | 5 | 12 | 6 to 11, above 12 |
+|---|---|---|---|---|---|---|---|---|
+| Stat of `t` | 36 | 39 | 41 | 37 | 43 | 45 | 43 | none: a resistance of 0 |
+
+A blank cell is byte 0, so it reads stat 36. `stun` is byte 9 and reads nothing. The stat's arguments are `(t, stat, 0)`, the target of the think and not the case's `x`. The division is a signed division by −10 truncating toward zero: 25 gives −2 and −25 gives 2. (0x005EBFA7–0x005EBFDA, 0x005EBFE1–0x005EBFF0, tbl:Skills.txt:EType)
+
+**Step 13's cases.** `sc` starts at 0 on each record, so a `drop` leaves it at 0 and 0 is never kept: `L[0]`'s score is 0 and the test is strict. A negative `sc` is never kept either. `Draw` is `Range(aip2[n])` on `U`'s seed: one step unless `aip2[n]` ≤ 0, which returns 0 with no step. `Keep(v)` is `sc ← v`. A draw comes before the list's test, so a record that does not beat the last has still drawn. The comparisons are signed `cmp`s of the words above. [I] (0x005EBF65, 0x005EC536, 0x005EC4E3–0x005EC4FF, 0x0045C393)
+
+```
+case 1  (0x005EC00E), x ← U:                                               [I] (0x005EC00E, 0x005EC4F5)
+    s ← aurastate (+0x80, s16)
+    if s > 0 and U lacks state s: drop                     ; no draw; step 5's test is the reverse
+    if near ≤ 25: base ← base − 6
+    base ← base − 10 if AiStateGroupHeld(U, s), else base + 10
+    Keep(Draw + base)
+
+case 2  (0x005EC069), x ← t:
+    if aurastate > 0 and U has it: drop
+    if auratargetstate (+0x82) > 0 and t has it: drop
+    if near ≤ 25: base ← base − 10
+    Keep(Draw + base)
+
+case 3  (0x005EC0BD), x ← t:
+    if allies > 5: base ← base − 2·allies
+    if near ≤ 25: base ← base − 7
+    if n32 < 3: base ← base − 10
+    Keep(Draw + base + 3·n32 − 9)
+
+case 4  (0x005EC0FA), x ← t:
+    if dsq > aip1[n]²: base ← base − 10
+    base ← base + aip1[m]
+    if melee or dsq ≤ 25: base ← base + 10
+    if progressive (+4 bit 2):
+        Aura(); may drop
+        Keep(Draw + base + aip1[h])
+    else if aip1[h] > 0 and state = 0:
+        Keep(Draw + base − 10)
+    else:
+        Keep(Draw + base + 4·acc + 3)
+
+case 5  (0x005EC1A8) and case 11 (0x005EC32F), x ← t:
+    if clear = 0: drop
+    if srvmissile (+0x46) < 0 and srvmissilea (+0x48) ≥ 0 and its Missiles record exists:
+        r ← the record's Range (+0x96, s16) − 1
+        if dsq ≥ r²: drop
+    if near ≤ 25: base ← base − 5
+    if dsq ≤ 25: base ← base − 5
+    if state ≠ 0: base ← base − 5
+    case 5:  Keep(Draw + base)
+    case 11: Keep(Draw + base + 3·n32)
+
+case 6  (0x005EC209), never kept:
+    v ← Range(100)
+    if v < (20 when U has no left skill, else 6): UnitSetLeftSkill(U, id, −1)
+    drop
+
+case 7  (0x005EC260):
+    v ← Draw + base
+    if life > 66: drop
+    x ← 0
+    if O = 0: Range(40); Range(40)                       ; both results discarded
+    Keep(v + 10, or v + 20 when life < 45)
+
+case 8  (0x005EC2FA), x ← U:
+    v ← Draw + base
+    if life > 66: drop
+    Keep(2·v, or 4·v when life < 45)
+
+case 9, case 10: drop, no draw                           ; both entries 0x005EC4F5
+
+case 12 (0x005EC3A4), x ← t:
+    if t is a monster (UnitGetType = 1):
+        r ← UnitMonRecord(t);  if r = 0: drop
+        if byte r[+0xA0 + d] < 25 (unsigned): drop       ; d the game's difficulty
+    if dsq > aip1[n]²: base ← base − 10
+    base ← base + aip1[m]
+    if melee or dsq ≤ 25: base ← base + 10
+    if progressive: Aura(); may drop                     ; case 4's else has no counterpart here
+    v ← Draw + base
+    if life < 75: v ← v + 8
+    if life < 50: v ← v + 12
+    Keep(v)
+
+case 13 (0x005EC47D), x ← t:
+    base ← base + aip1[m]
+    if aip1[h] > 0 and state = 0: base ← base − 5
+    else: base ← base + acc
+    if (life < 50 or n10 > 3) and nearO ≠ 0 and nO < 4 and DistSq(U, nearO) > 25:
+        Keep(Draw + base + 20);  x ← nearO
+    else:
+        if dsq < 25: drop
+        if dsq > 324: base ← base + 10
+        Keep(Draw + base)
+
+Aura(), cases 4 and 12:
+    s ← aurastate
+    if s > 0 and U has it and UNIT_FindStatListByState(U, s) ≠ 0:
+        v ← StatListGetBaseStat(the list, aurastat1 (+0x54, s16), 0)
+        acc ← acc + v
+        if v ≥ 3: drop                                   ; acc keeps the value
+```
+
+**The draws per record, in step 13.** [I] Every draw is on `U`'s seed. `aitype`s marked stock are those the Skills table has ([R106h](#r106-row-106-shadowmaster-fnsub_005eb970_aishadowmaster0x005eb970)). (0x005EC4E3–0x005EC4FF, 0x005EC209, 0x005EC28F)
+
+| `aitype` | Draws | Fails to draw when |
+|---|---|---|
+| 1, stock | one `Draw` | `aurastate` > 0 and `U` lacks it |
+| 2, stock | one `Draw` | either state test drops it |
+| 3, stock | one `Draw` | never |
+| 4, stock | one `Draw` | `Aura` drops it |
+| 5, 11, stock | one `Draw` | `clear` = 0, or beyond the missile's `r` |
+| 6 | one `Range(100)` | never |
+| 7 | one `Draw`, then two `Range(40)` with no owner and `life` ≤ 66 | never |
+| 8 | one `Draw` | never |
+| 9, 10 (10 stock) | none | always |
+| 12, stock | one `Draw` | the monster test or `Aura` drops it |
+| 13, stock | one `Draw` | no `nearO` choice and `dsq` < 25 |
+| anything else, or no `aitype` | none | always |
+
+- R106a. [I] The block was checked against its anchored instructions, and steps 2 to 16 corrected from them ([ai/0006 § 2.11](../../../findings/ai/0006-summons.md) holds the dated correction): `L` is a rising list with no "five best", each entry kept only over the last one's score; the plain attack's and the pick's commands go through `Use`. Step 13's terms, targets, skips and draws are [ai/0019](../../../findings/ai/0019-row-tables-and-scoring.md) §§ 1.1 to 1.4, read at that lane's review. The function has 3 inline steps and 14 `RNG_Range` sites. Of a list record, `+0` is the target, `+4` the id and `+8` the score; the two zero words are `+0xC` and `+0x10` (0x005EC50B–0x005EC52F; the score's store 0x005EC521). (fn:sub_005EB970_AiShadowMaster@0x005EB970, fn:sub_005EB490_AiShadowMasterInit@0x005EB490, fn:sub_005EB420_AiShadowMasterSkLvl@0x005EB420, fn:sub_005EAB20_AiShadowSkillAllowed@0x005EAB20, fn:sub_005EB6D0_AiShadowMasterCb@0x005EB6D0, fn:sub_005EB650_AiShadowPriorityTarget@0x005EB650, fn:sub_005EB7F0_AiStateGroupHeld@0x005EB7F0, fn:sub_005EB8B0_AiShadowUseSkill@0x005EB8B0)
 - R106b. [I] `AiShadowMasterCb` on a live unit with `+0xC4` bit `0x04`, hostile to `U`: with `blk+0` set, `DistSq(O, unit)` ≤ 100 counts `blk+0x18`, and the smallest is kept at `blk+0x10` and `blk+0x14`; then within `DistSq(U, unit)` ≤ 1024: `blk+0x1C` counts, ≤ 100 counts `blk+0xC`, the smallest is kept at `blk+4` and `blk+8`, and a unit passing `AiShadowPriorityTarget` goes to `blk+0x24`. An ally (`AlignSame02`) of base 410 to 416 but 414 only counts `blk+0x20`, by the callback's byte table. (0x005EB6D0, 0x005EB7D3)
 - R106c. [C] Families `sminit` and `smaster` (the think, shared with row 143), 240 cases each; `smaster` has 2 outcomes, `Idle` 116 and `MonsterOwner` 124; no control separates them. (run:2026-10-30-ai-cat-emu-5)
+- R106d. [I] **Self-targets cannot command.** A record of case 1 or 8 is kept with `x = U`, and `Use`'s first test returns 0 for `x = U`. So in step 14 such a record costs a seed step and may hold the top of the list against lower ones, and commands nothing. `aitype` 1 skills command only in step 5. (0x005EB8C7, 0x005EB8CB, fn:sub_005EB8B0_AiShadowUseSkill@0x005EB8B0)
+- R106e. [I] **Wrap.** `aip1[n]²` and `r²` fit: the largest magnitudes are (−32 768)² = 2³⁰ and (−32 769)² = 1 073 807 361. `|res ÷ −10|` ≤ 214 748 364. All of this is 32-bit `add`, `lea` and `imul` with no check. Past a sum with `level` near 2³¹, three products can wrap: case 8's `4·v` (`2·v` doubled by `add esi, esi`), where `v` = 2²⁹ − 1 fits and 2²⁹ wraps to −2³¹, and on the low side −2²⁹ gives −2³¹ exactly and −2²⁹ − 1 wraps; case 8's `2·v` alone, from `v` = 2³⁰; and case 4's `4·acc + 3` (`lea` at 0x005EC19F), whose `acc` sums `StatListGetBaseStat` returns with no bound in this code. A wrapped sum is then compared signed at 0x005EC4FF. None is reached by stock values as read here: the `level` of a copied skill is in [1, 24] by `AiShadowMasterSkLvl`, no stock skill has case 8, and `acc` sums the progressive charges. (0x005EC19F, 0x005EC4FF, fn:sub_005EB420_AiShadowMasterSkLvl@0x005EB420)
+- R106f. [I] **The list's room.** Nothing limits `k` in the code. The frame has room for 48 records before the next local (`EBP−0x84`), and a record needs an `aitype`: 32 Skills rows have one, so with the skill ids of a list distinct a stock unit's `k` stays at or below 33 (distinctness is not read here). (0x005EC50B–0x005EC52F, tbl:Skills.txt:aitype)
+- R106g. [I] **A check of the reading, and no more.** The think's instructions, run in an interpreter, and a model of the block above give the same words over 6 000 synthetic cases, with 0 mismatches; 98 of 99 one-term controls fail, the 99th being a chance of 100 against 101, which cannot. Every callee is a stub that returns what the case declares, `RNG_Range` included, along with the search's callback, `AiStateGroupHeld` and `Use`: the check says the pseudocode and the instructions are the same map from those returns, not what the callees return in play. `use1_held`'s lower side, step 5's `Range(100) ≥ 4` against `≥ 3`, is separated by no case and rests on its instruction (0x005EBB92, 0x005EBB95). 6 of the think's 142 conditional branches went one way only: 0x005EBADC, 0x005EBF5F, 0x005EBB4B, 0x005EC550, 0x005EC5CA, 0x005EC612. It raises nothing. (run:2026-11-04-r71-sm, [ai/0019](../../../findings/ai/0019-row-tables-and-scoring.md) § 1.6)
+- R106h. [C] As data: the stock Skills table has only `aitype` 1, 2, 3, 4, 5, 10, 11, 12 and 13, 32 rows, so no stock skill reaches cases 6, 7, 8 and 9. A blank `EType` is byte 0 in 257 of 357 rows. (tbl:Skills.txt:aitype, tbl:Skills.txt:EType)
+- R106j. [I] **Widths and case 7's calls.** The `progressive` test reads `+4` bit 2 through the mask table at 0x006CE268 (0x005EC124, 0x005EC400, tbl:Skills.txt:progressive). `aitype` is read as a byte where the table doc gives `u16`; the high byte is 0 in all 357 rows, so nothing turns on it. Case 12's byte is the `Drain` cell of the difficulty ([MonStats](../../../tables/MonStats.md)). In case 13, `nearO` adds 20 and sets `x` together; if any of its four tests fails, the record falls to the `dsq` tests with `x` still `t` (0x005EC4A7–0x005EC4CF). Case 7 with an owner calls the position getters five times on `O` and `t` and `UnitGetSubY(O)` once, keeping no result and drawing nothing there; with none, a position call follows each `Range(40)`. No result reaches a store: `x` stays 0 (0x005EC28F–0x005EC2E0).
 
 - R106i. [C] As data: kind 2, `init` 0x005EB490, no `alt`; 1 records (418 shadowmaster); reach S; `aip` set 1,2,3,8; `aidel` 15/15/15; skills Fists of Fire, Blade Fury, Blades of Ice, Dragon Claw, Dragon Flight, Claws of Thunder, Attack. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
 - R106l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
@@ -2101,7 +2298,7 @@ think:                                                                     [I] (
 2. if v14 = −1:
      v14 ← 3
      if Skill1 ≥ 0: v14 ← SkillParam5ByLevel(Skill1, SkillLevel(O, SKILLS_GetUnitSkill(O, Skill1), 1))
-   else if v14 = 0: UnitKilled(U, 1); return                      ; hits used up
+   else if v14 = 0: UnitKilled(G, U, U, 1); return                ; hits used up; U its own killer
 3. r ← Dist(U, O)
    if r > 50: PetMove(O; U, 3, 0, 0, 0); return
 4. s ← the run speed term, as row 67's
@@ -2115,6 +2312,8 @@ think:                                                                     [I] (
 8. if not WalkAround(ctl, O, mid): PetMove(O; U, 1, 0, 0, 0)              ; 0x005DE6F0
 ```
 
+- R107d. [I] The kill passes `U` as the killer too (`push edi`, 0x005ECCCD). (0x005ECCCD, fn:sub_0057CCB0_UnitKilled@0x0057CCB0)
+- R107e. [I] **`AiRavenCircle(O, byte, type)`:** `Ovr(type, 0, byte)`, then `MonCmdInit(U, 2, c)`, `PathSetStopDist(U.path, 1)`, `c+0x08 ← O`, and it returns `MonSetMode(G, c, 1)`. Mode 2, no draw of its own. So step 7 is a walk around the owner by path type 5 or 6, and a non-zero return ends the think. (0x005ECBD7, 0x005ECBE0, 0x005ECBEB, 0x005ECBFD, 0x005ECC00, fn:sub_005ECBC0_AiRavenCircle@0x005ECBC0)
 - R107a. [I] `v14` is the raven's hit count, read from `Skill1` (`Raven`) at **the owner's** level in it, and the raven dies when it reaches 0. Every attack is `SetModeAtUnit(4, t)` through `MonSetMode`, whose `MonAttackStats` adds the owner pair (`SkillDamage` = `Raven`, the owner's level in it). (fn:sub_005ECC10_AiRaven@0x005ECC10, fn:sub_005ECB70_AiRavenInit@0x005ECB70, fn:sub_005ECBC0_AiRavenCircle@0x005ECBC0, fn:sub_005A7C20_MonSetMode@0x005A7C20, fn:sub_0056E050_MonOwnerSkillDamage@0x0056E050)
 - R107b. [C] The 2 218 `MonAttackStats` calls of class 419 take the owner pair at level 20, for that one level and the sessions' one player, who cast them; which unit is the owner and the terms that level does not separate stay `[I]`. ([monsters/stats H1](../stats.md), run:2026-11-04-ai-resume, fn:sub_0056E050_MonOwnerSkillDamage@0x0056E050)
 - R107c. [C] The init, its stores and one seed step, with `v18` = `aip(3)` (i16) + 1 by difficulty; the think's entry call `MonsterOwner` from 0x005ECC27 only: families `ravinit` (240 cases, all drawing; the Normal-column control fails the 153 it separates) and `raven` (240 cases; no control separates it). (run:2026-10-30-ai-cat-emu-5)
@@ -2813,7 +3012,32 @@ Tier AI: [machinery § T89](machinery.md#t89-row-89-megademon-fnsub_005e0c80_aim
 10. Idle(10)
 ```
 
-- R94a. [I] No draw. `SWEEP` is the table at 0x006E33E0, `STEP` the table at 0x006E33A0, 8 bytes a row: neither is in the finding, Open questions. The target's position comes from the inline getter shape: types 2, 4, 5 read the path's `+0x0C/+0x10`, others `PathGetX/Y`, 0 for no path (0x005E0A39–0x005E0AFB). (fn:sub_00621DC0_UnitDirToPoint@0x00621DC0, fn:sub_0063E7A0_Dir64To8@0x0063E7A0, fn:sub_005FD470_MonSkillTargetOk@0x005FD470, fn:sub_00648AD0_PathSetTargetPoint@0x00648AD0)
+- R94a. [I] No draw. `SWEEP` is listed below and `STEP` is given by a rule below; each value of `SWEEP` is 0 to 7, so `STEP`'s index stays in range from `v1C`'s first 0 (0x005E09D6). The target's position comes from the inline getter shape: types 2, 4, 5 read the path's `+0x0C/+0x10`, others `PathGetX/Y`, 0 for no path (0x005E0A39–0x005E0AFB). (fn:sub_00621DC0_UnitDirToPoint@0x00621DC0, fn:sub_0063E7A0_Dir64To8@0x0063E7A0, fn:sub_005FD470_MonSkillTargetOk@0x005FD470, fn:sub_00648AD0_PathSetTargetPoint@0x00648AD0)
+
+`SWEEP`, 0x006E33E0, 64 i32, read at 0x005E0B3A, by the current index `v` (`v1C mod 8`) and the wanted direction, written `d` in this table only (`dir`):
+
+| `d` \ `v` | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 |
+|---|---|---|---|---|---|---|---|---|
+| 0 | 0 | 0 | 1 | 2 | 5 | 6 | 7 | 0 |
+| 1 | 1 | 1 | 1 | 2 | 3 | 6 | 7 | 0 |
+| 2 | 1 | 2 | 2 | 2 | 3 | 4 | 7 | 0 |
+| 3 | 1 | 2 | 3 | 3 | 3 | 4 | 5 | 6 |
+| 4 | 1 | 2 | 3 | 4 | 4 | 4 | 5 | 6 |
+| 5 | 7 | 2 | 3 | 4 | 5 | 5 | 5 | 6 |
+| 6 | 7 | 0 | 3 | 4 | 5 | 6 | 6 | 6 |
+| 7 | 7 | 0 | 1 | 4 | 5 | 6 | 7 | 7 |
+
+[C] As an equality on the image's 64 elements, and no claim of how it was made ([ADR-0031](../../../adrs/0031-constants-of-the-code-image.md)); it is listed because a description by cases needs one patched cell, which that ADR excludes as a rule. (0x006E33E0, run:2026-11-04-r71-sm)
+
+`STEP`, 0x006E33A0, 8 rows of two i32, read at 0x005E0B50 (`x`) and 0x005E0B5F (`y`), with `j = (i + 1) mod 8`, `k = (i − 1) mod 8`, `clamp(a) = max(−1, min(1, a))`:
+
+```
+STEP[i].x = clamp(2 − min(j, 8 − j))
+STEP[i].y = clamp(2 − min(k, 8 − k))
+```
+
+[C] As an equality on its 16 elements, and no claim of how it was made ([ADR-0031](../../../adrs/0031-constants-of-the-code-image.md)). (0x006E33A0, run:2026-11-04-r71-sm)
+
 - R94b. [C] The map up to `UseSkill(…, 0, 0, 0)` (0x005E09CE), `Idle(10)` (0x005E09FE), `Idle(15)` (0x005E0A2B, with `v18`'s decrement) or `UnitDirToPoint` (0x005E0B07): family `turret`, 240 cases, no draw, 4 boundaries; the controls fail the 40, 58 and 71 that separate them. (run:2026-11-03-ai-cat-emu-8)
 
 - R94i. [C] As data: kind 1, no `init`, no `alt`; 4 records (348-350 turret1..turret3, 372 firetower); reach ·; `aip` set 1,2,3,4,5; `aidel` 15/15/15; skills DesertTurret. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
@@ -4459,6 +4683,7 @@ None of its own: the rows have no recorded seed-to-decision case outside the tie
 ## Evidence
 
 - [ai/0002](../../../findings/ai/0002-pool-a.md), [ai/0003](../../../findings/ai/0003-pool-b.md), [ai/0004](../../../findings/ai/0004-pool-c.md), [ai/0005](../../../findings/ai/0005-pool-d.md), [ai/0006](../../../findings/ai/0006-summons.md), [ai/0007](../../../findings/ai/0007-hirelings.md), [ai/0008](../../../findings/ai/0008-bosses-a.md), [ai/0009](../../../findings/ai/0009-batch8.md), [ai/0010](../../../findings/ai/0010-batch9.md): batches 1 to 9. [ai/0001](../../../findings/ai/0001-machinery.md): the rows 0 and 1 and the second table.
+- [ai/0019](../../../findings/ai/0019-row-tables-and-scoring.md): row 106's score, the tables of rows 25 and 94, event 12.
 - [ai/0015](../../../findings/ai/0015-phase2-first-run.md), [ai/0017](../../../findings/ai/0017-phase2-second-run.md), [ai/0018](../../../findings/ai/0018-phase2-third-run.md): the three logged batches.
 - [MonAI](../../../tables/MonAI.md), [MonStats](../../../tables/MonStats.md).
 
@@ -4468,13 +4693,11 @@ To check the count: every row has one heading `#### R<n>. Row <n> ` and every st
 
 - [L] **Row 15's alt, the kind-14 record's `+0x18`:** no writer found; a direct store into a list record was not scanned. A scan or a log of the alt settles it. ([ai/0002](../../../findings/ai/0002-pool-a.md), fn:sub_005F1750_AiSandMaggotAlt@0x005F1750)
 - [L] **Row 6's event 17, the `Unit+0xC4` bit `0x02` of the corpse callbacks** (rows 6, 13): what they show or mean is not read. ([ai/0002](../../../findings/ai/0002-pool-a.md))
-- [L] **Row 25's dance:** the values of the four offset tables `A`, `B`, `A5`, `B5` (written on the stack at entry, 0x005F39E1–0x005F3E07; [the entry](../../../backlog/archive/2026-11-04-spec-writer-reverser-plan-0052-row-25-offset-tables.md)), and what unit event 12 on the player does at the grant's end. ([ai/0003](../../../findings/ai/0003-pool-b.md), fn:sub_005F39B0_AiWillOWisp@0x005F39B0)
 - [L] **The killer of the self-kills** (rows 40, 46, 56): what `UnitKilled` does with it is not read, and a log of an egg hatching would settle whether its target is credited. ([ai/0004](../../../findings/ai/0004-pool-c.md), fn:sub_0057CCB0_UnitKilled@0x0057CCB0)
 - [L] **The group calls of rows 65 and 75:** whether the shaman's reaches `Fetish` minions and the mother's `QuillRat` ones. The orders match those two readers; the group's class is not read from the spawn data. A log of a `fetishshaman` breath and of a `quillbear` in the 3-or-19 state settles it. ([ai/0005](../../../findings/ai/0005-pool-d.md), fn:sub_0058F730_MonHelpBlock@0x0058F730)
 - [L] **Row 71's state 1:** tested but set by no code of the function; whether another path sets it, or the branch cannot be reached on stock data. ([ai/0005](../../../findings/ai/0005-pool-d.md), fn:sub_005FA710_AiRegurgitator@0x005FA710)
 - [L] **Rows 73 and 74's gate on `MonsterData+0x0E < 4`:** classes 311 and 312 always pass; what the `dkmag1..3` records (classes 701, 702, 713) hold there is not read. **Rows 78 and 79:** whether any code but `MonRegionsBuild` writes the region's `+0x2D4`. ([ai/0005](../../../findings/ai/0005-pool-d.md), fn:sub_005FB650_AiTrapArrowKind@0x005FB650)
 - [L] **The hydra's `v14`** (row 86): its writer, the summoning skill's do function or `SpawnOwnedMonster`, is not read. **Row 103** reads its owner with no null test: whether an owner-less inviso pet can reach an AI event is not read. **`0x005DE6F0`'s walk around the owner** (row 107), and the `0x00574F40` term of `AiPetGuard`'s distance, are named by their calls only. ([ai/0006](../../../findings/ai/0006-summons.md), fn:sub_005E9E60_AiHydra@0x005E9E60)
-- [L] **The Shadow Master's scoring loop** (row 106 step 13): the finding gives the score's inputs and the shape, not each `aitype`'s terms and target; a reimplementation cannot pick the same skill without them ([the entry](../../../backlog/archive/2026-11-04-spec-writer-reverser-plan-0052-row-106-scoring-terms.md)). ([ai/0006](../../../findings/ai/0006-summons.md), fn:sub_005EB970_AiShadowMaster@0x005EB970)
 - [L] **Row 44, Duriel: a community disagreement, open.** src:arreat-summit-boss-pages gives Duriel "17 % Melee Attack 1, 33 % Smite, 50 % Jab" and the same for Über Duriel; the code read (R44) gives Smite 33 %, Jab 33.5 %, A1 33.5 %. The map is emulated, the case is open for owner play, and agreement or disagreement promotes nothing. ([README Open questions](README.md#open-questions), fn:sub_005F67B0_AiDuriel@0x005F67B0, [ai/0014](../../../findings/ai/0014-community-cross-check.md), run:2026-10-30-ai-cat-emu-6)
 - [L] **Community claims, per row, with their verdicts from [ai/0014 § 2](../../../findings/ai/0014-community-cross-check.md).** Leads only: agreement raises nothing in this catalogue, and a verdict compares a claim with the code reading the entry states, itself a code reading unless the entry says otherwise. C10 and C11's disagreement is the row 44 bullet above; C40's is [the overview's open question](README.md#open-questions).
 - [L] **src:d2mods-monstats-guide, src:wue-d2-ai-slides:** [R20](#r20-row-20-scarab-fnsub_005f2540_aiscarab0x005f2540): C05 held: d2mods: a boss scarab orders a raid with a chance given by `aip5` of the Scarab AI; C06 held with refinement: d2mods: while raiding, scarabs always use SK1 instead of A1 and A2. [R122](#r122-row-122-imp-fnsub_005e2ff0_aiimp0x005e2ff0): C04 held: d2mods: the Imp AI "is special and uses multiple rows". the machinery: C01 held: d2mods: the `AI` column tells the game which AI to use; C02 held with refinement: d2mods: the `aip1`–`aip8` cells "pass on parameters (in percentage)"; C03 held with refinement: d2mods: most AIs "will do absolutely nothing" without aip values; C07 held with refinement: slides: the AI is strongly distance-driven (a range switches the behaviour); C08 held with refinement: slides: typical behaviour is a random choice of skill 1, 2 or 3; C09 held: slides: some AIs also use the monster's current life. ([ai/0014](../../../findings/ai/0014-community-cross-check.md))
@@ -4483,5 +4706,6 @@ To check the count: every row has one heading `#### R<n>. Row <n> ` and every st
 - [L] **src:arreat-summit-summon-skills, src:arreat-summit-hirelings:** [R61](#r61-row-61-hireable-fnsub_005e52d0_aihireable0x005e52d0): C64 held: The Hireling follows you and automatically attacks monsters nearby; C65 held with refinement: A stuck hireling is brought to your side by a waypoint, portal or level change; C66 held: You cannot choose the hireling's spells; the set depends on the type; C67 held with refinement: Hirelings "fight to the death"; no retreat described. [R67](#r67-row-67-necropet-fnsub_005e4cf0_ainecropet0x005e4cf0): C59 held: Minions "may warp in around you if you get too far away"; C60 not covered: Minions "may disappear or no longer be under your power" when far; C61 held: Revived monsters "retain much of their original thoughts and tendencies". the machinery: C62 held with refinement: Wolves and the Grizzly draw monsters' attention from the Druid; C63 not covered: A Grizzly makes monsters target the Druid more than three Dire Wolves do. ([ai/0014](../../../findings/ai/0014-community-cross-check.md))
 - [L] **Rows 145, 146, 147:** what moves and casts Uber Baal, Uber Mephisto and Uber Diablo, given thinks that command nothing. A scan for classes 704, 705, 709 and the state 184 outside the AI table is open beyond ai/0016. ([ai/0016](../../../findings/ai/0016-uber-event.md), fn:sub_005F81C0_AiUberMephisto@0x005F81C0)
 - [L] **Row 83, kind 0:** what `dist` and `t` its context holds when no search ran, so whether `dist ≤ aip(2)` can fail on stock events. **Row 85:** whether `AiUnitSearch` passes the searcher to `AiPriestHealCb`, which does not exclude it. ([ai/0009](../../../findings/ai/0009-batch8.md), fn:sub_005E0260_AiMosquitoNest@0x005E0260)
-- [L] **Row 94's two tables** at 0x006E33E0 and 0x006E33A0 are not transcribed in the finding; a reimplementation needs them ([the entry](../../../backlog/archive/2026-11-04-spec-writer-reverser-plan-0052-row-94-tables.md)). ([ai/0009](../../../findings/ai/0009-batch8.md), fn:sub_005E0980_AiDesertTurret@0x005E0980)
+- [L] **Row 94's `SWEEP`, the cell `d` = 3, `v` = 7:** it holds 6 where a step by cases gives 0. Is it a slip in the game's table? It only changes which way round the turret turns from the opposite direction, and the code reads the table as it is, so a reimplementation needs nothing more. ([ai/0019](../../../findings/ai/0019-row-tables-and-scoring.md) § 2, 0x006E33E0)
+- [L] **Row 94's `STEP[i]` against `Dir64To8`'s index:** that `STEP[i]` points the way the index `i` names is not read; the direction table at 0x00745600 is outside the finding. ([ai/0019](../../../findings/ai/0019-row-tables-and-scoring.md) § 2, fn:sub_0063E7A0_Dir64To8@0x0063E7A0)
 - [L] **Row 116:** who posts its kind-1 records, and with which expiry. **State 16:** whether any writer sets `v1C` non-zero, which would make its two discarded draws happen. **Row 122:** the far band below the near band makes the second missile test dead for the stock records; whether `R4.aip(3) > dist ≥ R3.aip(3)` was meant cannot be read from the code. ([ai/0010](../../../findings/ai/0010-batch9.md), fn:sub_005E2FF0_AiImp@0x005E2FF0)

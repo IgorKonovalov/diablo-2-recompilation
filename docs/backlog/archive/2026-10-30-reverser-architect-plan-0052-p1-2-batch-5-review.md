@@ -5,7 +5,7 @@ date: 2026-10-30
 status: done
 context:
   - ../../findings/ai/0006-summons.md
-  - ../../plans/0052-monster-ai.md#implementation-log
+  - ../../plans/done/0052-monster-ai.md#implementation-log
 resolution: "Tier B check accept (0 fixes): rows 67 and followers stay [I] past the entry call; H3 owner pair [I] (objdump), consistent with skills/0001 and skills/experiments; P1.1 reopen (b) not met"
 ---
 

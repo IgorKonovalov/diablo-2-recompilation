@@ -2,7 +2,7 @@
 
 > **Status:** accepted (owner, 2026-11-03)
 > **Date:** 2026-11-03
-> **Related plan(s):** [0052-monster-ai](../plans/0052-monster-ai.md), [0053-review-tiers-and-gate-checks](../plans/done/0053-review-tiers-and-gate-checks.md)
+> **Related plan(s):** [0052-monster-ai](../plans/done/0052-monster-ai.md), [0053-review-tiers-and-gate-checks](../plans/done/0053-review-tiers-and-gate-checks.md)
 
 ## Context
 

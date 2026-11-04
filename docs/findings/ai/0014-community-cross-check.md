@@ -4,7 +4,7 @@
 > **Question:** which claims about monster, boss and summon behaviour do the community documents make that a
 > reimplementer would act on (target choice, skill choice, chances and ranges, boss behaviour), and what verdict does
 > each get against the catalogue findings ai/0001 to ai/0012 (and ai/0013, read from the `lane/r52l` copy)?
-> **Date:** 2026-11-03   **Plan:** 0052 (Phase 1b)   **Status:** for review (`lane/r52m`)
+> **Date:** 2026-11-03   **Plan:** 0052 (Phase 1b)   **Status:** reviewed (`lane/r52m`; plan 0052 closed 2026-11-04)
 
 No Ghidra, no game and no emulation: this lane read the findings and, for one claim (C21), the kept objdump of
 `workspace/logs/r52k/b11-asm-e.txt`. The community pages were fetched in session (ADR-0007) and are registered in

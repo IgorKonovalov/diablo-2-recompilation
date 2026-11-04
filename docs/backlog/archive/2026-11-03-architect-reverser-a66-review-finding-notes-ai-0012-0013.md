@@ -6,7 +6,7 @@ status: done
 context:
   - ../../findings/ai/0012-batch11.md
   - ../../findings/ai/0013-batch12.md
-  - ../../plans/0052-monster-ai.md
+  - ../../plans/done/0052-monster-ai.md
 resolution: "Four dated notes filed. (1) ai/0012 § 4 narrowed to Skill6; the u16 control does not reach Skill7's test, which stays an [I] reading, and the tool docstring says so. (2) ai/0013 § 5 names h5b70's control: Skill1's sign test 0x005E5BCA-0x005E5BD3, [C] to the boundary. (3) ai/0013 § 2.1: the searcher's record, [C] as a map on the kept hcb run; the pointer's null-searcher path corrected, none reaches 0x005DDEB4. (4) ai/0013 § 2.5: state 11's widths, [I]. Archivist entry: [2026-11-03-reverser-archivist-ai-0013-notes-h5b70-interact-record-state-11.md](2026-11-03-reverser-archivist-ai-0013-notes-h5b70-interact-record-state-11.md)."
 ---
 

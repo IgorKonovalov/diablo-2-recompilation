@@ -4,7 +4,7 @@
 > **Question:** can the claim of [ai/0015](0015-phase2-first-run.md) (0 mismatches at each decision's first boundary) be made to separate
 > more than the first callee: what does each tier AI's comparison actually separate, does a deliberately wrong map fail on
 > the kept logs, and can a decision be compared past its first boundary?
-> **Date:** 2026-11-03 to 2026-11-04   **Plan:** 0052 (Phase 2, second lane run `lane/p52b`, two parts)   **Status:** kept batch filed
+> **Date:** 2026-11-03 to 2026-11-04   **Plan:** 0052 (Phase 2, second lane run `lane/p52b`, two parts)   **Status:** reviewed (`lane/p52b`; plan 0052 closed 2026-11-04)
 > (run:2026-11-03-ai-3, run:2026-11-04-ai-3p: 23 kept sessions). Sections 1 to 5 are the first part's checkpoint (development logs); sections 6 to 12
 > are the kept batch. **The resumable model's comparison past the first boundary has 112 mismatches on the kept logs (§ 7), so no claim
 > past the first boundary is `[C]`;** the `lane/p52b` review classified them: 104 faults of the model, 8 a logger limit, none a reading of the game's code that the logs contradict. P1b-1 (Duriel) is not done. [2026-11-04, `lane/p52c` review: § 13 now holds the one `[C]` past the first boundary, for the 861 decisions no unknown value decided.]

@@ -5,7 +5,7 @@ date: 2026-11-03
 status: done
 context:
   - ../../findings/ai/0016-uber-event.md
-  - ../../plans/0052-monster-ai.md
+  - ../../plans/done/0052-monster-ai.md
 resolution: "Done on lane/s67. (a) [monsters/special](../../specs/monsters/special.md) section J: the first call of MonPostCreateBoss for the six bases [C], each ending at its first callee, the later mods [I]. (b) [items/quest-drops](../../specs/items/quest-drops.md) D7: the death handler's class map and the drop's flags and first call [C], the std copies [I]. (c) [drlg/preset](../../specs/drlg/preset.md): the level 133-136 filters [C] up to the first PresetUnitSpawn, and the flat 'unreachable' note scoped to the portal reading and the absence of a code path found. Each names run:2026-11-03-ai-uber and states no reach. Wiki monsters and levels reconciled."
 ---
 

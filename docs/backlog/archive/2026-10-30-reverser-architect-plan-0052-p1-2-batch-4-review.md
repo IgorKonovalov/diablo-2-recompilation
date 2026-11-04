@@ -5,7 +5,7 @@ date: 2026-10-30
 status: done
 context:
   - ../../findings/ai/0005-pool-d.md
-  - ../../plans/0052-monster-ai.md#implementation-log
+  - ../../plans/done/0052-monster-ai.md#implementation-log
 resolution: "Tier B check, lane/r52e: accept with fixes (2); rulings 1-3 accepted, question 4 narrowed (word orders and +0x2D4 writer answered); see plan 0052 log"
 ---
 

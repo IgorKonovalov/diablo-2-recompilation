@@ -11,7 +11,7 @@ A list of 148 AI names (`None`, `Idle`, `Skeleton`, `Zombie`, … `UberDiablo`).
 eight comment columns. MonStats `AI` names a row; the compiled cell is the row index, and the same index selects the
 row of `g_MonAiTable` in `Game.exe` that holds the AI's functions. This doc is the **AI index** of plan 0052: every row
 of the table, with the MonStats records that use it and which stock PetType and Hireling rows reach it (owner decision,
-question 8: the catalogue covers the whole table). Readers: `monsters/ai` ([plan 0052](../plans/0052-monster-ai.md)).
+question 8: the catalogue covers the whole table). Readers: `monsters/ai` ([plan 0052](../plans/done/0052-monster-ai.md)).
 Survey: `python3 -I tools/ai_survey.py` (gate survey `ai`). Leads: the not-loaded `Aiparms.txt` and the comment columns,
 for parameter names only (§ Leads).
 

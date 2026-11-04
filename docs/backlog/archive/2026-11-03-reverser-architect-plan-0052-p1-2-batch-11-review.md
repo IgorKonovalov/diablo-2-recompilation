@@ -5,7 +5,7 @@ date: 2026-11-03
 status: done
 context:
   - ../../findings/ai/0012-batch11.md
-  - ../../plans/0052-monster-ai.md#implementation-log
+  - ../../plans/done/0052-monster-ai.md#implementation-log
 resolution: "Tier B check 2026-11-03: accept with fixes (2, omission); Uber event home routed to the architect and reverser; merged into main."
 ---
 

@@ -6,7 +6,7 @@
 > do: which `aip` slots and MonStats columns they read, which AI-control words they keep, which draws they make on
 > which seed and in which order, and which command, skill or path request they end in? And does a think function of
 > rows 50 and 146 read `aidist` (plan 0052 P1.2)?
-> **Date:** 2026-11-03   **Plan:** 0052 (Phase 1, batch P1.2, catalogue batch 7)   **Status:** for review (`lane/r52g`)
+> **Date:** 2026-11-03   **Plan:** 0052 (Phase 1, batch P1.2, catalogue batch 7)   **Status:** reviewed (`lane/r52g`; plan 0052 closed 2026-11-04)
 
 Static reading of the pinned `Game.exe` in Ghidra and objdump, as batch 6 ([ai/0007](0007-hirelings.md), its opening
 paragraph: the Ghidra copy, the scratch signatures, `b67-asm.txt`, `b67-draws.txt`, `b67-rngsites.txt`, `b67-refs.txt`,

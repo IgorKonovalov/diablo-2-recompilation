@@ -5,7 +5,7 @@
 > functions do on an AI event: which `aip` slots, MonStats and Hireling columns they read, which AI-control words they
 > keep, which draws they make on which seed and in which order, and which command, skill or path request they end in?
 > And which skill list does row 61 use (plan 0052 P1.2: `roguehire` and `act2hire` also name MonStats skills)?
-> **Date:** 2026-11-03   **Plan:** 0052 (Phase 1, batch P1.2, catalogue batch 6)   **Status:** for review (`lane/r52g`)
+> **Date:** 2026-11-03   **Plan:** 0052 (Phase 1, batch P1.2, catalogue batch 6)   **Status:** reviewed (`lane/r52g`; plan 0052 closed 2026-11-04)
 
 Static reading of the pinned `Game.exe` in Ghidra (project copy `workspace/ghidra-r52g`, symbols replayed from
 `re/symbols.csv`, then the scratch `__fastcall` signatures `b67-sym-scratch.csv` built by `b67-scratch.py`; a reading

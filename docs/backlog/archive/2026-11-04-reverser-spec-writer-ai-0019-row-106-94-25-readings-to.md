@@ -2,12 +2,12 @@
 from: reverser
 to: spec-writer
 date: 2026-11-04
-status: open
+status: done
 context: []
-resolution: ""
+resolution: "Carried into [catalogue](../../specs/monsters/ai/catalogue.md) R106, R94, R25 by `lane/s52c`; R143 by its link to R106. Tags as the entry says: `[C]` only on data and on the tables' equalities with the image, the rest `[I]`."
 ---
 
-**Asked:** carry [ai/0019](../findings/ai/0019-row-tables-and-scoring.md), as reviewed, into [catalogue](../specs/monsters/ai/catalogue.md) R106, R143, R94 and R25, in P3c's pass (the owner's decision, plan 0052's log). Blocks the plan's close, not P3c's start. Take the catalogue after `lane/r71` is merged; this lane edited nothing in it but two archive links. The tag of everything below is `[I]` unless it says `[C]`; don't raise it (the review's evidence ruling).
+**Asked:** carry [ai/0019](../../findings/ai/0019-row-tables-and-scoring.md), as reviewed, into [catalogue](../../specs/monsters/ai/catalogue.md) R106, R143, R94 and R25, in P3c's pass (the owner's decision, plan 0052's log). Blocks the plan's close, not P3c's start. Take the catalogue after `lane/r71` is merged; this lane edited nothing in it but two archive links. The tag of everything below is `[I]` unless it says `[C]`; don't raise it (the review's evidence ruling).
 
 **R106.**
 - `aip` line: replace "`aip1[h]` is read by a score term (step 13)" with § 5 point 2: `aip1[n]` squared in cases 4 and 12, `aip1[m]` added in 4, 12, 13, `aip1[h]` in the `state` word and case 4; each by column, not by difficulty (§ 1.1).
@@ -28,7 +28,7 @@ resolution: ""
 **R25.**
 - R25a: add `A5` as listed (§ 3's line, exactly), `B5[p] = A5[((p + 1) mod 5) + 1]`, and `A` and `B` as listed in § 3's two blocks. Copy them exactly, first line included (the survey compares that form too): `python3 -I tools/gate.py --full` goes red on a mistyped value. The tables' `[C]` as an equality on the image's stores goes with them, with `run:2026-11-04-r71-sm`; don't state a rule for `A` or `B`, as none is known.
 - Dance step 5: `B[e]` = `(0, 0)` at `v14` = 12, place 4 only; `B5` has none, so that arm with `v14` = 5 is reached by no value of the image.
-- R25c: replace "The table values and what event 12 does are Open questions" with § 3's event 12, `[I]`: at the end frame `EVENT_TimedListExpire` frees the list by [stats/states C1](../specs/stats/states.md); the grant has no state, so C2 has no part; death may free it first (C3). The think holds the tables on the stack at each entry, none depends on an input, and a reimplementation may hold them as constants.
+- R25c: replace "The table values and what event 12 does are Open questions" with § 3's event 12, `[I]`: at the end frame `EVENT_TimedListExpire` frees the list by [stats/states C1](../../specs/stats/states.md); the grant has no state, so C2 has no part; death may free it first (C3). The think holds the tables on the stack at each entry, none depends on an input, and a reimplementation may hold them as constants.
 - Open questions: delete "Row 25's dance". R25l stands; add § 4's reach as data under it: `[C]` the levels and the superunique, since 0 lines is coverage, not reach.
 
 **Not taken:** `tools/`, the checksums, the rule scan's detail (one clause at most: none of those forms gives `A` or `B`), and any count of listed constants.

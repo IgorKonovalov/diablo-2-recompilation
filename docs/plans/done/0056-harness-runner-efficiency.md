@@ -299,7 +299,7 @@ _(lanes append dated entries as phases land)_
      on it unchecked; § Fresh process rule 2 is the only guard. Noted for Phase 3's checkers (tools/drlg.py is the
      archivist/static lane's; no backlog entry, the rule already covers it).
 - **2026-11-03 — Phase 3 pilot ran on plan 0052·P2's first lane run (`lane/p52a`, slot 2, `tools/ai_sessions.py` on the
-  library).** Figures in [0052's log](../0052-monster-ai.md) and [ai/experiments.md run:2026-11-03-ai](../../findings/ai/experiments.md):
+  library).** Figures in [0052's log](0052-monster-ai.md) and [ai/experiments.md run:2026-11-03-ai](../../findings/ai/experiments.md):
   19 launches (10 kept-batch, 9 development; one kept-batch launch was a rerun), 31 kept sessions = 31 kept cases,
   launches per kept case 0.32 (target ≤ 0.5: met; 0.61 counting development), dev or rerun launches 10 of 19 = 53 % (63 % with the two fresh comparison launches counted as reruns)
   (target ≤ 10 %: **missed**, the logger and the waypoint staging were new; two of the comparison launches are by
