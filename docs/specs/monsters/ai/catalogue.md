@@ -4,7 +4,7 @@ status: draft
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, monsters/ai/overview, monsters/ai/machinery, skills/dispatch, path/overview]
 consumed_by: [monsters/ai/overview, monsters/ai/machinery, hirelings]
-tags: {C: 222, I: 283, L: 7}
+tags: {C: 250, I: 318, L: 9}
 updated: 2026-11-04
 ---
 
@@ -57,6 +57,7 @@ Each entry states its own. No constant is shared across entries.
 |---|---|
 | `LifePct`, `UnitLifePct` | `AiLifePct` (0x005DD280) and `UnitLifePct` (0x00621F20), two different readers; each entry names the one its code calls |
 | `rchance(K)` | `Range(100) < aip(K)`, one draw, the same test as `chance(K)` by another helper call |
+| `O` | `MonsterOwner(U)` |
 | `St3or19` | `AiMonState3or19(U)`: `MonsterData+0x54` is 3 or 19 |
 | `Head`, `Pop`, `Push(blk)` | `AiParamsHead`, `AiParamsPop`, `AiParamsPush` on `U`'s parameter list ([machinery E4](machinery.md#e-following)) |
 | `UseSkillK(x)` | `MonAiUseSkill(SkKmode, SkillK, x, 0, 0)`: the record's K-th skill in its K-th mode |
@@ -1774,112 +1775,456 @@ Tier AI: [machinery § T67](machinery.md#t67-row-67-necropet-and-state-7-fnsub_0
 
 #### R84. Row 84 `BoneWall` (fn:sub_005E0400_AiBoneWall@0x005E0400)
 
-<!-- body R84 -->
+No `aip` read. `Skill1`'s `Param2` is its only table input.
+
+```
+init:                                                                      [C] (0x005E03A0, 0x005E03F1, run:2026-10-30-ai-cat-emu-5)
+  if M ≠ 0 and (s: i16 ← Skill1) > 0:                ; movzx; test ax,ax; jle
+    rec ← s < Skills count ? Skills + 0x23C·s : 0
+    v14 ← T + (rec ≠ 0 ? rec.Param2 : 0)
+think:                                               ; compare signed      [C] (0x005E040B, 0x005E0424, run:2026-10-30-ai-cat-emu-5)
+  if v14 < T: MonAiSetMode(0, 0, 0)
+  else: Idle(15)
+```
+
+- R84a. [I] The bone wall's life is its `Skill1`'s `Param2` in frames from its AI init. A `Sk lvl` of 0 on the record feeds no level this row reads. (tbl:Skills.txt:Param2, fn:sub_005E0390_AiBoneWallInit@0x005E0390, fn:sub_005E0400_AiBoneWall@0x005E0400)
+- R84b. [C] Families `bwinit` (return, 240 cases; the compare and unsigned-`Skill1` controls fail the 51 and 94 that separate them) and `bwall` (240 cases, 2 outcomes; the compare control fails the 44 it separates). (run:2026-10-30-ai-cat-emu-5)
 
 - R84i. [C] As data: kind 0, `init` 0x005E0390, no `alt`; 1 records (344 bonewall); reach S; `aip` set —; `aidel` 15/15/15; skills Bone Wall. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
 - R84l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 #### R86. Row 86 `Hydra` (fn:sub_005E9E60_AiHydra@0x005E9E60)
 
-<!-- body R86 -->
+No `aip` read: the draw's bound is the constant 60.
+
+```
+if v14 < T: MonAiSetMode(0, 0, 0); return            ; signed              [C] (0x005E9E75, 0x005E9F01, run:2026-10-30-ai-cat-emu-5)
+if t ≠ 0 and dist < 25 and D100() < 60:              ; one step, only when t is set and dist < 25
+  UseSkill1(t); return
+Idle(10)
+```
+
+- R86a. [I] The hydra's `v14` is not set by its row, which has no init: its writer is Open questions. (fn:sub_005E9E60_AiHydra@0x005E9E60)
+- R86b. [C] Family `hydra`, 240 cases, 121 with a draw, 3 outcomes; the `≤` and compare controls fail the 21 and 58 that separate them, and `v14 < T`, `dist < 25` and the draw are each met at equality. (run:2026-10-30-ai-cat-emu-5)
 
 - R86i. [C] As data: kind 2, no `init`, no `alt`; 3 records (351-353 hydra1..hydra3); reach S; `aip` set —; `aidel` 15/15/15; skills HydraMissile. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
 - R86l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 #### R101. Row 101 `AssassinSentry` (fn:sub_005EA3D0_AiAssassinSentry@0x005EA3D0)
 
-<!-- body R101 -->
+**`aip`:** 1 chance to shoot (100 in all four records, as data, so the draw never refuses); 2 the idle after a refused draw; 3 the idle with no near hostile; 4 the hostile's distance (15, 25, 25, 13, as data).
+
+`O` below is `MonsterOwner(U)`.
+
+```
+init 0x005EA290:  v14 ← T;  v18 ← −1                                       [C] (run:2026-10-30-ai-cat-emu-5, 0x005EA290)
+
+charge(ctx, use) → 1 when the sentry was ended:                            [I] (0x005EA2B0, 0x005EA3C4)
+  if O = 0 or UnitGetRoom(O) = 0 or InTown(O): MonAiSetMode(0, 0, 0); return 1
+  if v18 < 0:
+    if Skill1 is not a Skills row: goto end
+    sk ← SKILLS_GetUnitSkill(U, Skill1)
+    if sk = 0: MonAiSetMode(0, 0, 0); return 1
+    v18 ← EvalCalc(U, calc4, Skill1, SkillLevel(U, sk, 1))
+  if v18 > 0:
+    if use: v18 ← v18 − 1
+    return 0
+  end: MonAiSetMode(0, 0, 0); return 1
+
+think:                                                                     [I] (0x005EA3D0, 0x005EA507)
+  if charge(ctx, 0): return
+  sk ← SKILLS_GetUnitSkill(U, Skill1)
+  if sk = 0: MonAiSetMode(0, 0, 0); return
+  if HasState(U, 12): State(12, 0)
+  h ← FindHostile(&d, &m)
+  if h = 0 or d ≥ aip(4): Idle(aip(3)); return
+  if Range(100) ≥ aip(1): Idle(aip(2)); return           ; draw#1
+  if charge(ctx, 1): return
+  UNIT_CancelEvents(2, 0)
+  MonAiUseSkill(SkillMode(sk), Skill1, h, 0, 0)
+```
+
+- R101a. [I] `v18` is the shot count from `calc4` at the sentry's own level. The row uses `Skill1` only. (fn:sub_005EA2B0_AiSentryCharge@0x005EA2B0, tbl:Skills.txt:calc4)
+- R101b. [C] The init's two stores and return, and the think's entry call only: `charge` reaches `MonsterOwner` from 0x005EA2C1 with `ECX` the unit, before any test. Families `sentinit`, `asentry`, 240 cases each; no control separates them. (run:2026-10-30-ai-cat-emu-5)
 
 - R101i. [C] As data: kind 0, `init` 0x005EA290, no `alt`; 4 records (410-412 wakeofdestruction..lightningsentry, 415 infernosentry); reach S; `aip` set 1,2,3,4; `aidel` 15/15/15; skills Wake Of Destruction Sentry, BoltSentry, Shock Field, sentry lightning, mon inferno sentry, Wake of Fire Sentry. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
 - R101l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 #### R102. Row 102 `BladeCreeper` (fn:sub_005EA540_AiBladeCreeper@0x005EA540)
 
-<!-- body R102 -->
+No `aip` read. The two points come from the head record of its parameter list.
+
+```
+init 0x005EA510:  v14 ← −1;  v18 ← 1;  v1C ← 0                             [C] (run:2026-10-30-ai-cat-emu-5, 0x005EA510)
+
+1. s ← Skill1                                                              [C] (0x005EA58F, 0x005EA5A1, run:2026-10-30-ai-cat-emu-5)
+   if s < 0 or s ≥ Skills count or rec(s) = 0: MonAiSetMode(0, 0, 0); return
+   sk ← SKILLS_GetUnitSkill(U, s)
+   if sk = 0: MonAiSetMode(0, 0, 0); return
+2. lvl ← SkillLevel(U, sk, 1)                                              [I] (0x005EA5A6, 0x005EA79A)
+3. if v14 < 0: v14 ← EvalCalc(U, calc4, s, lvl) + T
+4. if T > v14: MonAiSetMode(0, 0, 0); return
+5. if v1C = 0 and 0 ≤ srvmissilea < Missiles count:
+     p ← O ≠ 0 ? O : U
+     m ← MissileCreateAt(s, lvl, srvmissilea, U.x, U.y)
+     if m ≠ 0:
+       UnitSetOwner(m, U)
+       stat 19 += PlayerBaseToHit(p)
+       stat 119 += p.stat119 + the mastery bonus of p's weapon
+     v1C ← 1
+6. prm ← Head;  if prm = 0: Idle(3); return
+7. Ovr(15, 0, 20)
+   walk to the point v18 ≠ 0 ? (prm+0x14, prm+0x18) : (prm+0x0C, prm+0x10)
+   if refused: v18 ← not v18;  walk to the other
+   if both refused and not WanderNear(O, 5): Idle(5)
+```
+
+- R102a. [I] The creeper shuttles between the two points of its parameter record until its `calc4` life passes. The stats 19 and 119 go on the missile's owner chain (the creeper), from the owner's to-hit. `Skill1` is sign-extended (`movsx`). (fn:sub_0058EE80_AiParamsHead@0x0058EE80, fn:sub_0056EDE0_MissileCreateAt@0x0056EDE0, fn:sub_005EA540_AiBladeCreeper@0x005EA540)
+- R102b. [C] The init and the Skill1 bound only: families `bladeinit` and `blade`, 240 cases each; the compare and unsigned-`Skill1` controls fail the 12 and 46 that separate `blade`. (run:2026-10-30-ai-cat-emu-5)
 
 - R102i. [C] As data: kind 0, `init` 0x005EA510, no `alt`; 1 records (413 bladecreeper); reach S; `aip` set —; `aidel` 15/15/15; skills Blade Sentinel. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
 - R102l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 #### R103. Row 103 `InvisoPet` (fn:sub_005EA7A0_AiInvisoPet@0x005EA7A0)
 
-<!-- body R103 -->
+**`aip`:** 1 half the side of the square around the owner; 2 the frames between teleports.
+
+```
+1. O ← MonsterOwner(U);  r ← aip(1);  om ← O ≠ 0 ? O.mode : 0              [I] (0x005EA7A0, 0x005EA97C)
+2. if om = 3: r ← r ÷ 2                         ; owner running; signed, toward zero
+3. if T ≤ v14 and om ≠ 3 and not St3or19: Idle(aip(2)); return
+4. x ← O.x + R(2r) − r                          ; one inline step
+5. y ← O.y + R(2r) − r                          ; one inline step
+6. MonAiUseSkill(9, 292, 0, x, y);  v14 ← T + aip(2)    ; 292 Teleport 2
+```
+
+- R103a. [I] `R(n)` is one inline step, `& (n−1)` when `n` is a power of 2, else mod `n`; 0 for `n < 1`. Two steps per teleport (0x005EA884, 0x005EA8A1, 0x005EA903). `r ÷ 2` is `cdq; sub; sar` (0x005EA7F2–0x005EA7F5). With no owner the function reads `*O` (`mov eax,[ebx]`, 0x005EA836), a fault on that path: whether it is reached is Open questions. (fn:sub_005EA7A0_AiInvisoPet@0x005EA7A0)
+- R103b. [C] The entry call `MonsterOwner` from 0x005EA7C0 only, before any test: family `inviso`, 240 cases; no control separates it. (run:2026-10-30-ai-cat-emu-5)
 
 - R103i. [C] As data: kind 0, no `init`, no `alt`; 1 records (414 invisopet); reach ·; `aip` set 1,2; `aidel` 15/15/15; skills —. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
 - R103l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 #### R104. Row 104 `DeathSentry` (fn:sub_005EA980_AiDeathSentry@0x005EA980)
 
-<!-- body R104 -->
+**`aip`:** 2 the idle; 3 chance of `Skill2`; 4 the hostile's distance for it.
+
+`init` and `charge` are [row 101's](#r101-row-101-assassinsentry-fnsub_005ea3d0_aiassassinsentry0x005ea3d0).
+
+```
+1. if charge(ctx, 0): return                                               [I] (0x005EA980, 0x005EAB14)
+2. sk ← SKILLS_GetUnitSkill(U, Skill1);  lvl ← SkillLevel(U, sk, 1)
+   if sk = 0 or lvl < 1: return
+3. h ← FindHostile(&d, &m)
+   if h = 0: Idle(aip(2)); return
+4. c ← CorpsePickNear(Skill1, lvl);  r ← SkillParam3ByLevel(…) ÷ 2
+5. if c ≠ 0 and c.guid ≠ v14 and EdgeDist(h, c) < r:
+     if charge(ctx, 1): return
+     v14 ← c.guid
+     MonAiUseSkill(9, Skill1, c, 0, 0); return
+6. if d < aip(4) and Range(100) < aip(3):              ; draw#1
+     if charge(ctx, 1): return
+     MonAiUseSkill(14, Skill2, h, 0, 0); return
+7. Idle(aip(2))
+```
+
+- R104a. [I] `v14` is the last corpse it exploded, so it never explodes the same corpse twice running. Its modes 9 and 14 are passed as immediates. (fn:sub_005EA980_AiDeathSentry@0x005EA980, fn:sub_005EA2B0_AiSentryCharge@0x005EA2B0)
+- R104b. [C] The entry call only, as row 101's: family `dsentry`, 240 cases; no control separates it. (run:2026-10-30-ai-cat-emu-5)
 
 - R104i. [C] As data: kind 0, `init` 0x005EA290, no `alt`; 1 records (416 deathsentry); reach S; `aip` set 1,3,4; `aidel` 15/15/15; skills mon death sentry, death sentry ltng. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
 - R104l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 #### R105. Row 105 `ShadowWarrior` (fn:sub_005EAFA0_AiShadowWarrior@0x005EAFA0)
 
-<!-- body R105 -->
+**`aip`:** 1 the target's distance limit; 2 the owner's distance limit; 3 the base of the plain-attack chance; 4 the amount that decays `v18`; 8 three parameters by column: `aip8[n]` the skill read at init (268), `aip8[m]` the floor of the reset, `aip8[h]` the cap.
+
+```
+init (0x005EAF50):                                                         [I] (0x005EAF50, 0x005EAF72)
+  v1C ← 1
+  O ← MonsterOwner(U)
+  if O ≠ 0: v1C ← the owner's level in skill aip8[n]     ; SKILLS_GetUnitSkill(O, aip8[n]), 268
+
+think:                                                                     [I] (0x005EAFA0, 0x005EB41C)
+1. UNIT_CancelEvents(2, 0)
+2. if O = 0: Idle(100); return
+3. cap ← clamp(aip8[h], 1, 256)
+   v18 ← v18 + (−1 − aip(4))
+   if v18 < 0 or v18 > 64·cap: v18 ← 0
+4. the event target is dropped when dist > aip(1) or the owner is farther than aip(2)
+5. AiPetGuard(t, O, melee, ctx, 0, 6)
+6. if no target: Idle(25); return
+7. with a target and both owner skills set:
+     add the owner's right and left skills to the unit at AiShadowWarriorSkLvl    ; v1C ÷ 3 + level ÷ 2, at least 1 (0x00647280)
+     pick ← Range(2): one of the two
+     p ← clamp(aip(3) − 2·max(v1C, 1), 5, 100)
+     if melee and Range(100) < p: the pick becomes the unit's skill 0            ; its attack
+     AiShadowSkillRoll tries the pick, then the other
+     failing both: the skill-0 entry, added at level 1 when missing
+8. the chosen skill:
+     if RangeType ≠ 1 or melee:
+       MonAiUseSkill(SkillMode(sk), id, t, 0, 0);  v14 ← T + 18 + delay(sk, level) ÷ 3
+     else: RunToUnit(t)
+```
+
+`AiShadowSkillRoll(owner, skill, id, melee, ctx)`, three draws per tried skill, [I] (0x005EAD50, 0x005EAEFA):
+
+```
+if the id is not the owner's class's skill (0x00645040(id) ≠ O+0x04) or AiShadowSkillFits refuses: return 0
+if id = 0: return 1
+q ← 0x006459F0(id, level)
+if Range(100) > 100 − 160·q ÷ 100: return 0                ; draw
+if T < v14: return 0
+lo ← clamp(aip8[m], 1, 128)
+if v18 is outside [lo, 32·clamp(aip8[h], 1, 256)]: v18 ← lo
+a ← Range(v18);  b ← Range(100)                            ; draws
+if b < a: return 0
+v18 ← v18 + (320 − v1C)·q ÷ (v1C + 100)
+return 1
+```
+
+- R105a. [I] The finding gives the think in prose in this order; its source-file strings are `.\Ai\AiThink4.cpp` lines 0xB59 and 0xB5A at the skill adds. `AiPetGuard` and `PetMove` are [T67's](machinery.md#t67-row-67-necropet-and-state-7-fnsub_005e4cf0_ainecropet0x005e4cf0). (fn:sub_005EAFA0_AiShadowWarrior@0x005EAFA0, fn:sub_005EAD50_AiShadowSkillRoll@0x005EAD50, fn:sub_005EABF0_AiShadowSkillFits@0x005EABF0, fn:sub_005EAF00_AiShadowWarriorSkLvl@0x005EAF00, fn:sub_005E45D0_AiPetGuard@0x005E45D0)
+- R105b. [C] The init's store of `v1C` and its `MonsterOwner` call (0x005EAF64); the think's first call `UNIT_CancelEvents(2, 0)` (0x005EAFCF), and no more: families `swinit`, `swarrior`, 240 cases each; no control separates them. (run:2026-10-30-ai-cat-emu-5)
 
 - R105i. [C] As data: kind 2, `init` 0x005EAF50, no `alt`; 1 records (417 shadowwarrior); reach S; `aip` set 1,2,3,4,8; `aidel` 15/15/15; skills Fists of Fire, Blade Fury, Blades of Ice, Dragon Claw, Dragon Flight, Claws of Thunder, Attack. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
 - R105l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 #### R106. Row 106 `ShadowMaster` (fn:sub_005EB970_AiShadowMaster@0x005EB970)
 
-<!-- body R106 -->
+**`aip`:** 2 three parameters by column (`aip2[h]` squared the owner's distance, `aip2[m]` a target's distance that holds it, `aip2[n]` the scoring draw's range, 20 for `shadowmaster`, as data); 3 the base of the plain-attack chance; 8 `aip8[n]` the skill read at init (279).
+
+```
+init (0x005EB490):                                                         [C] (0x005EB4B4, run:2026-10-30-ai-cat-emu-5)
+  v14 ← 0;  v18 ← 0;  v1C ← 1;  O ← MonsterOwner(U)
+init, after that call:                                                     [I] (0x005EB490, 0x005EB5B8)
+  if O is a player (O+0x00 = 0): v1C ← the owner's level in aip8[n]
+  add the skill-0 entry at level 1 when missing;  set the left and right skills to 0
+  copy every skill of the unit's class (0x00646140 count, 0x006460F0 per index)
+    that AiShadowSkillAllowed admits, at AiShadowMasterSkLvl(O, v1C)       ; level ÷ 2 + v1C ÷ 2, in [1, 24]
+
+think, entry:                                                              [C] (0x005EB9B8, 0x005EB9C8, run:2026-10-30-ai-cat-emu-5)
+  if U+0xA8 = 0: Idle(100); return                                         ; the skill list head
+  O ← MonsterOwner(U)
+
+think:                                                                     [I] (0x005EB970, 0x005EC694)
+1. UNIT_CancelEvents(2, 0)
+2. if farther from the owner than aip2[h]² (DistSq) and AiPetGuard(0, O, melee, ctx, 0, 6) commands: return
+3. if v14 > 0:                                  ; a pending sequence
+     the unit's target unit (or the event's) gets AiShadowUseSkill(v18);  v14 ← v14 − 1
+4. unless a target within aip2[m] (or none) holds it, for each of the unit's skills:
+     aitype 1 (self state), the unit lacking its aurastate, and not holding its state group (or Range(100) < 4 when it does):
+       if D100() < 60: MonAiUseSkill(skill's mode, id, 0, 0, 0)   ; or RunToUnitFlags for a melee-range skill out of melee
+     aitype 6 with no left skill set:
+       if D100() < 20: it becomes the left skill
+5. the owner's target, then the nearest hostile of AiUnitSearch(blk, AiShadowMasterCb, 1)
+     ; within 32: counts within 10 of the unit and of the owner, the nearest, a priority target
+6. p ← clamp(aip(3) − 2·max(v1C, 1), 5, 100)
+   in melee, Range(100) < p: the plain attack
+7. a crowd test: more than 3 hostiles within 10 and Range(32) < 2·count: run to the owner or step away 8
+8. the scoring loop, per skill:
+     a score from aibonus, reqlevel ÷ 4, the level, and −res ÷ 10 for the target's resistance to the skill's EType
+       (stats 36, 39, 41, 37, 43, 45; the 0x66666667 multiply)
+     per aitype (1–8, 11–13) its terms and one Range(aip2[n]) draw
+     the five best kept in a frame table
+9. a draw & 3 picks among them;  AiShadowUseSkill runs the choice
+10. Idle(15) when nothing commands
+```
+
+- R106a. [I] The loops run over skills, not units, with at most two draws per skill in the first and one in the second; the function has 3 inline steps and 14 `RNG_Range` sites. Step 8's per-`aitype` terms are not in the finding: Open questions. (fn:sub_005EB970_AiShadowMaster@0x005EB970, fn:sub_005EB490_AiShadowMasterInit@0x005EB490, fn:sub_005EB420_AiShadowMasterSkLvl@0x005EB420, fn:sub_005EAB20_AiShadowSkillAllowed@0x005EAB20, fn:sub_005EB6D0_AiShadowMasterCb@0x005EB6D0, fn:sub_005EB650_AiShadowPriorityTarget@0x005EB650, fn:sub_005EB7F0_AiStateGroupHeld@0x005EB7F0, fn:sub_005EB8B0_AiShadowUseSkill@0x005EB8B0)
+- R106b. [C] Families `sminit` and `smaster` (the think, shared with row 143), 240 cases each; `smaster` has 2 outcomes, `Idle` 116 and `MonsterOwner` 124; no control separates them. (run:2026-10-30-ai-cat-emu-5)
 
 - R106i. [C] As data: kind 2, `init` 0x005EB490, no `alt`; 1 records (418 shadowmaster); reach S; `aip` set 1,2,3,8; `aidel` 15/15/15; skills Fists of Fire, Blade Fury, Blades of Ice, Dragon Claw, Dragon Flight, Claws of Thunder, Attack. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
 - R106l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 #### R107. Row 107 `Raven` (fn:sub_005ECC10_AiRaven@0x005ECC10)
 
-<!-- body R107 -->
+**`aip`:** 1 and 2 the far and near edge of the circling band (`mid ← (aip(2) + aip(1)) ÷ 2`); 3 the attack cooldown in tens of frames; 4 chance to act; 5 the target's distance limit.
+
+```
+init (0x005ECB70):                                                         [C] (0x005ECB70, run:2026-10-30-ai-cat-emu-5)
+  v14 ← −1;  v18 ← aip(3) + 1;  v1C ← bit 0 of one seed step's low word    ; one inline step, no mod
+
+think:                                                                     [I] (0x005ECC10, 0x005ECED6)
+1. if O = 0 or M = 0: Idle(10); return
+2. if v14 = −1:
+     v14 ← 3
+     if Skill1 ≥ 0: v14 ← SkillParam5ByLevel(Skill1, SkillLevel(O, SKILLS_GetUnitSkill(O, Skill1), 1))
+   else if v14 = 0: UnitKilled(U, 1); return                      ; hits used up
+3. r ← Dist(U, O)
+   if r > 50: PetMove(O; U, 3, 0, 0, 0); return
+4. s ← the run speed term, as row 67's
+   if r > 28: PetMove(O; U, 0, 0, s, 0); return
+5. FindTarget(ctl, &e, &m');  mid ← (aip(2) + aip(1)) ÷ 2
+6. if t ≠ 0 and v18 < T and Range(100) < aip(4) and dist < aip(5):        ; draw#1
+     if melee: SetModeAtUnit(4, t);  v14 ← v14 − 1;  v18 ← T + 10·aip(3); return
+     Walk(t, 0); return
+7. if aip(1) ≥ r and r ≥ aip(2):
+     AiRavenCircle(O, 4, v1C ≠ 0 ? 5 : 6), or flip v1C and circle again   ; each returns on a command
+8. if not WalkAround(ctl, O, mid): PetMove(O; U, 1, 0, 0, 0)              ; 0x005DE6F0
+```
+
+- R107a. [I] `v14` is the raven's hit count, read from `Skill1` (`Raven`) at **the owner's** level in it, and the raven dies when it reaches 0. Every attack is `SetModeAtUnit(4, t)` through `MonSetMode`, whose `MonAttackStats` adds the owner pair (`SkillDamage` = `Raven`, the owner's level in it). (fn:sub_005ECC10_AiRaven@0x005ECC10, fn:sub_005ECB70_AiRavenInit@0x005ECB70, fn:sub_005ECBC0_AiRavenCircle@0x005ECBC0, fn:sub_005A7C20_MonSetMode@0x005A7C20, fn:sub_0056E050_MonOwnerSkillDamage@0x0056E050)
+- R107b. [C] The 2 218 `MonAttackStats` calls of class 419 take the owner pair at level 20, for that one level and the sessions' one player, who cast them; which unit is the owner and the terms that level does not separate stay `[I]`. ([monsters/stats H1](../stats.md), run:2026-11-04-ai-resume, fn:sub_0056E050_MonOwnerSkillDamage@0x0056E050)
+- R107c. [C] The init, its stores and one seed step, with `v18` = `aip(3)` (i16) + 1 by difficulty; the think's entry call `MonsterOwner` from 0x005ECC27 only: families `ravinit` (240 cases, all drawing; the Normal-column control fails the 153 it separates) and `raven` (240 cases; no control separates it). (run:2026-10-30-ai-cat-emu-5)
 
 - R107i. [C] As data: kind 2, `init` 0x005ECB70, no `alt`; 1 records (419 druidhawk); reach S; `aip` set 1,2,3,4,5; `aidel` 15/15/15; skills Raven. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
 - R107l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 #### R108. Row 108 `DruidWolf` (fn:sub_005ED710_AiDruidWolf@0x005ED710)
 
-<!-- body R108 -->
+**`aip`:** 1 the delay after A1; 2 chance to wander, with no target; 3 Fenris: `Range(100) ≥ aip(3)` with a target and `v14` = 0 skips the corpse (14/25, as data); 4 the distance limit, and Fenris's corpse limit at half (20/24, as data).
+
+The row's think is a class dispatch: class 420 (`spiritwolf`, `cmp [edx+4],0x1a4; jne`) jumps to `AiSpiritWolf`, any other class to `AiFenris`.
+
+```
+spirit wolf (0x005ECEE0):                                                  [I] (0x005ECEE0, 0x005ED29A)
+1. if O = 0:
+     if the remembered owner is found and Skill1 is set:
+       MonAiUseSkill(Sk1mode, Skill1, 0, U.x, U.y)        ; its Teleport 2
+       an event at T + 6;  Delay(8)
+     else: Idle(10)
+     return
+2. if in town: AiPetGuard(0, O, …) or Idle(33); return
+3. the target of 0x005DDE50 within aip(4), or the FindTarget one, each kept if AiApproachPointTest passes
+4. farther than 50 from the owner, with Skill1: the teleport (event T + 4, Delay(10))
+5. the PetMove and AiPetGuard(…, 1, 6) chain, by the distance and the owner's mode
+6. with a target:
+     in melee: SetModeAtUnit(4, t);  Delay(aip(1))
+     within aip(4) of the owner: Ovr(0, s, 0);  RunToUnit(t)
+     farther than 10: WalkToward(O, 8, 6)
+     else: Idle(15)
+7. with none: if Range(100) < aip(2): Ring(10)
+              else: Idle(15)
+
+Fenris (0x005ED2A0):                                                       [I] (0x005ED2A0, 0x005ED70A)
+1. the same frame, with Skill2 as the teleport
+2. unless state 138 is set, or Range(100) ≥ aip(3) with a target and v14 = 0:
+     the corpse 0x005D2F80(O, 10) within aip(4) ÷ 2:
+       in melee: UseSkill1(c);  v14 ← 0
+       else: run to it;  v14 ← 1;  v18 ← its guid
+3. then as the wolf, with Range(100) < aip(2) for the wander
+```
+
+- R108a. [I] Fenris draws twice at most. The chain of step 5 is named in the finding by its calls and not expanded: Open questions. (fn:sub_005ED710_AiDruidWolf@0x005ED710, fn:sub_005ECEE0_AiSpiritWolf@0x005ECEE0, fn:sub_005ED2A0_AiFenris@0x005ED2A0)
+- R108b. [C] The class dispatch only, met at classes 419, 420 and 421, each path calling `MonsterOwner` first (0x005ECEFD, 0x005ED2BD): family `dwolf`, 240 cases, 91 and 149; no control moves that test. (run:2026-10-30-ai-cat-emu-5)
 
 - R108i. [C] As data: kind 0, no `init`, no `alt`; 2 records (420-421 spiritwolf..fenris); reach S; `aip` set 1,2,3,4,5; `aidel` 15/15/15; skills Teleport 2, fenris rage. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
 - R108l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 #### R109. Row 109 `Totem` (fn:sub_005ED9E0_AiTotem@0x005ED9E0)
 
-<!-- body R109 -->
+**`aip`:** 1 chance to step away from a near hostile; 2 chance to drop the target; 3 the edge distance past which it teleports; 4 the edge distance past which it follows.
+
+```
+1. if O = 0: Idle(10); return                                              [I] (0x005ED9E0, 0x005EDBF5)
+2. h ← OwnerNearHostile(ctl, &d, &m, 24)                      ; 0x005DDE50
+3. if m ≠ 0 and h ≠ 0 and D100() < aip(1) and StepAway(h, 6, 1): return   ; draw#1, only when m and h are set
+4. if D100() < aip(2): h ← 0;  m ← 0                          ; draw#1 or #2
+5. e ← EdgeDist(U, O)
+6. if e > aip(3) and UnitTeleport(room(O), O.x, O.y, 0, 0): Idle(25); return
+7. if e > aip(4):
+     owner mode 2 or 6: PetMove(kind 0)
+     mode 3: PetMove(kind 0, speed 60)                        ; each returns on a command
+8. if not AiPetGuard(h, O, m, ctx, 0, 6): Idle(25)
+```
+
+- R109a. [I] One or two inline steps (0x005EDA3D, 0x005EDA96). (fn:sub_005ED9E0_AiTotem@0x005ED9E0, fn:sub_00554EA0_UnitTeleport@0x00554EA0)
+- R109b. [C] The entry call `MonsterOwner` from 0x005ED9EF only: family `totem`, 240 cases; no control separates it. (run:2026-10-30-ai-cat-emu-5)
 
 - R109i. [C] As data: kind 0, no `init`, no `alt`; 3 records (422-424 spiritofbarbs..oaksage); reach S; `aip` set 1,2,3,4; `aidel` 15/15/15; skills —. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
 - R109l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 #### R110. Row 110 `Vines` (fn:sub_005EC6C0_AiVines@0x005EC6C0)
 
-<!-- body R110 -->
+**`aip`:** 1 the frames between hits; 2 the hostile's distance limit; 3 the idle; 4 the step away's length; 5 the edge distance from the owner past which it moves.
+
+```
+init 0x005EC6A0:  v14 ← 0                                                  [C] (run:2026-10-30-ai-cat-emu-5, 0x005EC6A0)
+
+1. O ← MonsterOwner(U);  if O = 0: Idle(25); return                        [I] (0x005EC6C0, 0x005EC8B5)
+2. if EdgeDist(U, O) > aip(5): PetMove(kind 3, dist 6)
+3. in town: AiPetGuard(0, O, 0, ctx, 0, 6) or Idle(aip(3)); return
+4. the FindHostile target is dropped when d ≥ aip(2)
+5. AiPetGuard(t, O, m, ctx, 0, 6)
+6. if the target is in state 2 or has stat 45 = 100: StepAway(t, (u8) aip(4), 0)
+   else if the target is not in melee range: Walk(t, 7)
+   else if T > aip(1) + v18: UseSkill1(t);  v18 ← T
+   else: Idle(aip(3))
+```
+
+- R110a. [I] No draw. (fn:sub_005EC6C0_AiVines@0x005EC6C0, fn:sub_005EC6A0_AiVinesInit@0x005EC6A0)
+- R110b. [C] The init's store and the think's first call `MonsterOwner` (0x005EC6DD) only: families `vinit`, `vines`, 240 cases each; no control separates them. (run:2026-10-30-ai-cat-emu-5)
 
 - R110i. [C] As data: kind 2, `init` 0x005EC6A0, no `alt`; 1 records (425 plaguepoppy); reach S; `aip` set 1,2,3,4,5; `aidel` 15/15/15; skills Vine Attack. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
 - R110l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 #### R111. Row 111 `CycleOfLife` (fn:sub_005EC8C0_AiCycleOfLife@0x005EC8C0)
 
-<!-- body R111 -->
+**`aip`:** 1 the frames between casts; 2 the corpse's edge distance limit; 3 the idle; 4 the step away's length.
+
+```
+init 0x005EC6A0:  v14 ← 0                                                  [C] (run:2026-10-30-ai-cat-emu-5, 0x005EC6A0)
+
+1. O ← MonsterOwner(U);  if O = 0: return                ; no command      [I] (0x005EC8C0, 0x005ECA9C)
+2. when Skill1 > 0: r ← calc of aurarangecalc, clamped to [5, 50]
+   c ← the corpse of 0x005D2F80(O, r), kept while its edge distance is below aip(2)
+3. the class word (426, 427) picks the owner's life (stat 6 against its maximum) or mana (stat 8): at full, no cast
+4. if c is in melee range, the owner is short of the stat and T > aip(1) + v18:
+     MonAiUseSkill(8, Skill1, c, 0, 0);  v18 ← T; return
+5. else with an event target in melee and Range(100) < 25: StepAway(t, (u8) aip(4), 0); return
+6. else without a corpse: Idle(aip(3))
+   else: Walk(c, 7)
+```
+
+- R111a. [I] Which of 426 and 427 picks which stat is not stated by the finding, so it is not stated here. (fn:sub_005EC8C0_AiCycleOfLife@0x005EC8C0, tbl:Skills.txt:aurarangecalc)
+- R111b. [C] The init's store and the think's first call `MonsterOwner` (0x005EC8DD) only: families `vinit`, `cycle`, 240 cases each; no control separates them. (run:2026-10-30-ai-cat-emu-5)
 
 - R111i. [C] As data: kind 2, `init` 0x005EC6A0, no `alt`; 2 records (426-427 cycleoflife..vinecreature); reach S; `aip` set 1,2,3,4,5; `aidel` 15/15/15; skills CorpseCycler, VineCycler. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
 - R111l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 #### R112. Row 112 `DruidBear` (fn:sub_005ED730_AiDruidBear@0x005ED730)
 
-<!-- body R112 -->
+**`aip`:** 1 the delay after A1; 2 out of melee range: chance of the override; 3 in melee range: chance of `BearSmite`.
+
+```
+1. the owner block, as row 67: kinds 3 and 0 at 50 and 28, kind 0 by the owner's mode beyond 18   [I] (0x005ED730, 0x005ED9DA)
+2. the target of 0x005DDE50 within 28, or FindTarget's within 28, kept if AiApproachPointTest passes
+3. with a target:
+     out of melee:
+       if Range(100) < aip(2): Ovr(0, s, 40)
+       WalkZ(t)
+     in melee:
+       if Range(100) < aip(3): MonAiUseSeqSkill(Skill1, t, 0, 0)          ; BearSmite
+       else: SetModeAtUnit(4, t);  Delay(aip(1))
+4. with none: within 16: Idle(15)
+              else: PetMove(kind 0)
+```
+
+- R112a. [I] `s` is the run speed term of row 67. (fn:sub_005ED730_AiDruidBear@0x005ED730, fn:sub_005DECA0_MonAiWalkToUnitOrZero@0x005DECA0)
+- R112b. [C] The entry call `MonsterOwner` from 0x005ED747 only: family `bear`, 240 cases; no control separates it. (run:2026-10-30-ai-cat-emu-5)
 
 - R112i. [C] As data: kind 0, no `init`, no `alt`; 1 records (428 druidbear); reach S; `aip` set 1,2,3; `aidel` 15/15/15; skills BearSmite. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
 - R112l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 #### R143. Row 143 `ShadowMasterNoInit` (fn:sub_005EB970_AiShadowMaster@0x005EB970)
 
-<!-- body R143 -->
+The think is [row 106's](#r106-row-106-shadowmaster-fnsub_005eb970_aishadowmaster0x005eb970), the same word (0x005EB970). No MonStats record names this row. Its own init differs:
+
+```
+init (0x005EB5C0):                                                         [C] (0x005EB5D6, run:2026-10-30-ai-cat-emu-5)
+  v1C ← 1;  O ← MonsterOwner(U)
+init, after that call:                                                     [I] (0x005EB5C0, 0x005EB644)
+  if O is a player (O+0x00 = 0): v1C ← the owner's level in aip8[n]
+  add the skill-0 entry at level 1 when missing;  set the left and right skills to 0
+```
+
+- R143a. [I] Unlike row 106's init it stores no `v14` or `v18` and does not copy the class's skills. (fn:sub_005EB5C0_AiShadowMasterNoInitInit@0x005EB5C0)
+- R143b. [C] Family `sm2init`, 240 cases; no control separates it. (run:2026-10-30-ai-cat-emu-5)
 
 - R143i. [C] As data: kind 2, `init` 0x005EB5C0, no `alt`; 0 records (—); reach none; `aip` set —; `aidel` —; skills —. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
 - R143l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 #### S7. State row 7 (fn:sub_005E4CF0_AiNecroPet@0x005E4CF0)
 
-<!-- body S7 -->
+Tier: the think is row 67's, the same word, [machinery § T67](machinery.md#t67-row-67-necropet-and-state-7-fnsub_005e4cf0_ainecropet0x005e4cf0). [I] (fn:sub_005E4CF0_AiNecroPet@0x005E4CF0)
 
 - S7i. [C] As data: kind 0, no `init`, no `alt`. (data:g_MonAiStateRows@0x0073D358, [MonAI § The second table](../../../tables/MonAI.md#the-second-table-at-0x0073d358-found-at-the-lanea52-review))
 
@@ -2455,7 +2800,7 @@ None of its own: the rows have no recorded seed-to-decision case outside the tie
 
 ## Evidence
 
-- [ai/0002](../../../findings/ai/0002-pool-a.md), [ai/0003](../../../findings/ai/0003-pool-b.md), [ai/0004](../../../findings/ai/0004-pool-c.md), [ai/0005](../../../findings/ai/0005-pool-d.md): batches 1 to 4. [ai/0001](../../../findings/ai/0001-machinery.md): the rows 0 and 1 and the second table.
+- [ai/0002](../../../findings/ai/0002-pool-a.md), [ai/0003](../../../findings/ai/0003-pool-b.md), [ai/0004](../../../findings/ai/0004-pool-c.md), [ai/0005](../../../findings/ai/0005-pool-d.md), [ai/0006](../../../findings/ai/0006-summons.md): batches 1 to 5. [ai/0001](../../../findings/ai/0001-machinery.md): the rows 0 and 1 and the second table.
 - [ai/0015](../../../findings/ai/0015-phase2-first-run.md), [ai/0017](../../../findings/ai/0017-phase2-second-run.md), [ai/0018](../../../findings/ai/0018-phase2-third-run.md): the three logged batches.
 - [MonAI](../../../tables/MonAI.md), [MonStats](../../../tables/MonStats.md).
 
@@ -2470,3 +2815,5 @@ To check the count: every row has one heading `#### R<n>. Row <n> ` and every st
 - [L] **The group calls of rows 65 and 75:** whether the shaman's reaches `Fetish` minions and the mother's `QuillRat` ones. The orders match those two readers; the group's class is not read from the spawn data. A log of a `fetishshaman` breath and of a `quillbear` in the 3-or-19 state settles it. ([ai/0005](../../../findings/ai/0005-pool-d.md), fn:sub_0058F730_MonHelpBlock@0x0058F730)
 - [L] **Row 71's state 1:** tested but set by no code of the function; whether another path sets it, or the branch cannot be reached on stock data. ([ai/0005](../../../findings/ai/0005-pool-d.md), fn:sub_005FA710_AiRegurgitator@0x005FA710)
 - [L] **Rows 73 and 74's gate on `MonsterData+0x0E < 4`:** classes 311 and 312 always pass; what the `dkmag1..3` records (classes 701, 702, 713) hold there is not read. **Rows 78 and 79:** whether any code but `MonRegionsBuild` writes the region's `+0x2D4`. ([ai/0005](../../../findings/ai/0005-pool-d.md), fn:sub_005FB650_AiTrapArrowKind@0x005FB650)
+- [L] **The hydra's `v14`** (row 86): its writer, the summoning skill's do function or `SpawnOwnedMonster`, is not read. **Row 103** reads its owner with no null test: whether an owner-less inviso pet can reach an AI event is not read. **`0x005DE6F0`'s walk around the owner** (row 107), and the `0x00574F40` term of `AiPetGuard`'s distance, are named by their calls only. ([ai/0006](../../../findings/ai/0006-summons.md), fn:sub_005E9E60_AiHydra@0x005E9E60)
+- [L] **The Shadow Master's scoring loop** (row 106 step 8): the finding gives the score's inputs and the shape, not each `aitype`'s terms; **the wolf's chain** (row 108 step 5) likewise. A reimplementation cannot pick the same skill from the prose alone. ([ai/0006](../../../findings/ai/0006-summons.md), fn:sub_005EB970_AiShadowMaster@0x005EB970)
