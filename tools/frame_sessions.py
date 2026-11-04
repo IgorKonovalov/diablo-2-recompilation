@@ -5,7 +5,7 @@ one fresh single-player game process per scene, logged by tools/gdb/frame.gdb, d
 Usage (no game is started by `list`, `plan`, `gate`, or by `run` without --launch):
   python3 -I tools/frame_sessions.py list
   python3 -I tools/frame_sessions.py plan SCENE [--long] [--wp-x X --wp-y Y]     # print the staged session (also `run --dry`)
-  python3 -I tools/frame_sessions.py build --saves DIR [--recipe specnova]       # the character (tools/d2s.py build)
+  python3 -I tools/frame_sessions.py build --saves DIR [--recipe framenova]       # the character (tools/d2s.py build)
   python3 -I tools/frame_sessions.py run --slot N --tag TAG --saves DIR --run RUN [--dry] [--launch] [--dev] SCENE ...
   python3 -I tools/frame_sessions.py gate LOG                                     # the pilot gate on a finished log
 
@@ -186,6 +186,9 @@ class Session:
             return "failed", "no PLR"
         hr.mark(self.stem, name, "ready", self.log)
         lid0 = ais.level_of(self.log)
+        if lid0 != 1:       # the Rogue Encampment: smoke session 1 found the character in Act IV (recipe difficulty byte 131)
+            hr.mark(self.stem, name, "fail", self.log, "level %s, not the Act I town" % lid0)
+            return "failed", "the session starts in level %s, not the Act I town (1)" % lid0
         for step in sc["steps"]:
             k = step[0]
             if k == "settle":
@@ -275,7 +278,7 @@ def main(argv):
             p.add_argument("scenes", nargs="+")
     p = sub.add_parser("build")
     p.add_argument("--saves", required=True)
-    p.add_argument("--recipe", default="specnova")
+    p.add_argument("--recipe", default="framenova")
     p = sub.add_parser("gate")
     p.add_argument("log")
     a = ap.parse_args(argv)

@@ -373,6 +373,14 @@ class TestRunner(unittest.TestCase):
         return subprocess.run([sys.executable, "-I", os.path.join(HERE, "frame_sessions.py")] + list(a), capture_output=True,
                               text=True, cwd=ROOT)
 
+    def test_recipe_starts_in_act_one(self):
+        """Smoke session 1: SpecNova's difficulty bytes 131 start the game in Act IV; the frame scenes start in Act I."""
+        with open(os.path.join(ROOT, "tools", "d2s_recipes", "framenova.json")) as f:
+            rec = json.load(f)
+        self.assertEqual([d & 7 for d in rec["difficulty"]], [0, 0, 0])
+        with open(os.path.join(ROOT, "tools", "frame_sessions.py")) as f:
+            self.assertIn('p.add_argument("--recipe", default="framenova")', f.read())
+
     def test_dry_plan_and_no_launch(self):
         for extra in (["--dry"], []):
             r = self.run_cli("run", "--slot", "2", "--tag", "t", "--saves", "/nonexistent", "--run", "x", *extra, "town", "pack", "maze")
