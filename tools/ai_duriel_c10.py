@@ -194,6 +194,14 @@ def main(argv):
     print("RIGHTSKILL nonzero=%d zero=%d (the aura's grant arm, reached only with zero)" % (rs.get(True, 0), rs.get(False, 0)))
     for k in sorted(modes, key=str):
         print("CMD arm=%s msm0_mode=%s skill=%s n=%d" % (k[0], k[1], k[2], modes[k]))
+    pl = {}
+    for p, d in melee:
+        last = ai_resume.top_level(d)[-1]
+        e = pl.setdefault(p, {})
+        k = ARM.get((last["fn"], last["ra"]), "?")
+        e[k] = e.get(k, 0) + 1
+    for p in sorted(pl):
+        print("TALLYLOG %s %s" % (p, dict(sorted(pl[p].items()))))
     c = [tally.get(k, 0) for k in KINDS]
     n = sum(c)
     print("TALLY n=%d Smite=%d Jab=%d A1=%d other=%d" % (n, c[0], c[1], c[2], len(melee) - n))
