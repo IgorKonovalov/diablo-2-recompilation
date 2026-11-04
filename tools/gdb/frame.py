@@ -63,6 +63,8 @@ import time
 import gdb
 
 REV = 1
+TRACE = bool(os.environ.get("FRAME_TRACE"))     # a development aid (XS lines), never in a kept window's logger
+RNG_ENTRIES = (0x0045C370, 0x0045C390, 0x0045C3E0, 0x00472210, 0x00472240, 0x00472280)
 MAX_LINES = int(os.environ.get("FRAME_MAX_LINES", "400000"))
 HC_ADDR = 0x0088CAD0
 UE_SITES = (   # callback call, dispatch call, unit type, list
@@ -85,7 +87,7 @@ SV_RETS = (0x0052D430, 0x0052D4C2, 0x00530446)
 def _frame_main():
     inf = gdb.selected_inferior()
     st = {"game": 0, "line": 0, "win": None, "pend": [], "ctl_off": 0, "first": None, "last_gs": None, "wid": 0,
-          "ue": [], "msg": [], "one": [], "wlines": 0, "capped": False, "hits": {}, "gh0": {}, "skip_ctl": 0}
+          "units": {}, "ue": [], "msg": [], "one": [], "wlines": 0, "capped": False, "hits": {}, "gh0": {}, "skip_ctl": 0}
     ctl_path = os.environ.get("FRAME_CTL", "")
     wbps = []          # the window breakpoints: enabled only inside a window
     allbps = {}        # name -> breakpoint, for gdb's own hit counts
@@ -305,17 +307,28 @@ def _frame_main():
                  "a": u32(rec + 0x14), "b": u32(rec + 0x18), "cb": cb, "site": addr, "u": u,
                  "us": sdq(u + 0x20) if u else None, "gs": gs()}
             st["ue"].append((addr, u, d["id"]))
+            if TRACE:
+                st["units"][u] = (ty, d["id"])
             emit("UE0", d)
         return h
 
-    def on_ue1(site):
+    def on_ue1(site, join=None):
+        # The callback path's instruction after the call is `jmp` to the dispatch call's next instruction, so both UE1
+        # breakpoints fire for one event (smoke session 1 of the pack: 4 "UE1 with no open UE0"; with an event open
+        # outside it, the second would have closed the wrong one). The callback's UE1 names the dispatch site it joins
+        # (`join`); that site's UE1 right after it is the same return and logs nothing.
         def h():
+            if st.get("join") == site:
+                st["join"] = None
+                return
             if not st["ue"]:
                 emit("LOGERR", {"fr": fr(), "why": "UE1 with no open UE0", "site": site})
                 return
             a, u, i = st["ue"].pop()
             us = sdq(u + 0x20) if u else None
             emit("UE1", {"fr": fr(), "id": i, "site": a, "u": u, "us": us, "gs": gs(), "gone": 0 if us else 1})
+            if join is not None:
+                st["join"] = join
         return h
 
     # --- messages --------------------------------------------------------------------------------------------------
@@ -434,8 +447,22 @@ def _frame_main():
     for cb, dp, ty, lst in UE_SITES:
         Bp(cb, "UE0", on_ue0(cb, ty, lst, 1))
         Bp(dp, "UE0", on_ue0(dp, ty, lst, 0))
-        Bp(UE_NEXT[cb], "UE1", on_ue1(cb))
+        Bp(UE_NEXT[cb], "UE1", on_ue1(cb, dp))
         Bp(UE_NEXT[dp], "UE1", on_ue1(dp))
+    def on_rng():
+        # FRAME_TRACE: a step of a known unit's seed (ECX = seed, unit +0x20) while another unit's event, or none, is open
+        u = reg("ecx") - 0x20
+        if u not in st["units"]:
+            return
+        top = st["ue"][-1] if st["ue"] else None
+        if top and top[1] == u:
+            return
+        emit("XS", {"fr": fr(), "ty": st["units"][u][0], "id": st["units"][u][1], "ra": u32(reg("esp")),
+                    "open": ("%d:%d" % (top[2], top[0])) if top else None, "us": sdq(u + 0x20)})
+
+    if TRACE:
+        for a in RNG_ENTRIES:
+            Bp(a, "XS", on_rng)
     Bp(0x0054D750, "MSG0", on_msg0)
     for a in MSG_RETS:
         Bp(a, "MSG1", on_msg1)

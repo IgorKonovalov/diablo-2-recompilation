@@ -57,6 +57,8 @@ CAP_SECS = 40 * 60
 FPS = 25.0
 NOVA = ["--nova-key", "F2", "--radius", "9", "--mana-col", "4", "--drink", "0.5", "--nova-hold", "1.6", "--max-res", "1000"]
 LEN = 250
+WP_AT = "4884,5629"             # the Rogue Encampment's waypoint (OU0 of an objects log, smoke session; the start is fixed)
+VIEW = ["--view-h", "0"]        # the game frame's rows are measured: the harness display here shows all 600
 
 
 def window(scene, cover=0, what="", n=LEN):
@@ -74,10 +76,12 @@ def scenes(wp_x=None, wp_y=None, long=False):
             window("town", cover=1500, what="a frame = 0 (mod 1500) in the middle: the expiry sweep")]
     if long:
         town.append(window("town", cover=8192, what="a frame = 0 (mod 8192): SaveGameClients as a boundary oracle"))
-    pack_far = ["farm", "--sweep", "--wp", "1,2", "--time", "400"] + NOVA + wp
-    pack = [("settle", 20), ("bg", pack_far, 480), ("level", None), ("settle", 6),
+    pack_far = ["farm", "--sweep", "--time", "400"] + NOVA
+    pack = [("settle", 20), ("pilot", ["wp", "1", "2", "--wp-at", WP_AT], 150), ("settle", 4), ("bg", pack_far, 480),
+            ("near", 22, 3, 240),
             window("pack", what="pilot: Cold Plains, the pack in range, Nova"), ("gate",),
-            window("pack", what="Nova and teleport hops, rooms activating"), window("pack", cover=1500, what="mod 1500"),
+            ("near", 22, 2, 150), window("pack", what="Nova and teleport hops, rooms activating"),
+            ("near", 22, 1, 150), window("pack", cover=1500, what="mod 1500"),
             ("join",)]
     maze_go = ["farm", "--sweep", "--descend", "0,1,2,3", "--descend-to", "8", "--time", "420"] + NOVA + wp
     maze = [("settle", 20), ("pilot", ["explore", "--hops", "60", "--nova", "2"], 300), ("level", None),
@@ -101,6 +105,9 @@ def describe(step):
         return "%s d2pilot %s  (timeout %ds)" % ("run" if k == "pilot" else "start in background", " ".join(step[1]), step[2])
     if k == "settle":
         return "wait %ds" % step[1]
+    if k == "near":
+        return "wait until %d live monsters are within %d sub-tiles of the player (MON line), at most %d s" % (
+            step[2], step[1], step[3])
     if k == "level":
         return "wait for the player to leave the level it is in (PLR lid changes)"
     if k == "join":
@@ -137,6 +144,27 @@ def gate(log, scene=None, out=None):
     return ok, text
 
 
+def monsters_near(log, r, tail=400000):
+    """The monsters within r sub-tiles of the player in the last MON line of the log's tail (alive: hit points above 0,
+    mode not 0 or 12): the count. The pilot's MON line is around the last PLR position (tools/gdb/pilot.py)."""
+    try:
+        with open(log, "rb") as f:
+            f.seek(0, 2)
+            f.seek(max(0, f.tell() - tail))
+            lines = f.read().decode("latin1").splitlines()
+    except OSError:
+        return 0
+    for ln in reversed(lines):
+        if ln.startswith("MON "):
+            try:
+                o = json.loads(ln[4:])
+            except ValueError:
+                continue
+            return sum(1 for m in o.get("m", []) if (m.get("hp") or 0) > 0 and m.get("mode") not in (0, 12)
+                       and ((m["x"] - o["x"]) ** 2 + (m["y"] - o["y"]) ** 2) ** 0.5 <= r)
+    return 0
+
+
 class Session:
     def __init__(self, slot, tag, saves, run_id, dev, pilot_only):
         self.slot, self.tag, self.saves, self.dev, self.pilot_only = slot, tag, os.path.abspath(saves), dev, pilot_only
@@ -151,7 +179,7 @@ class Session:
         self.t0 = 0.0
 
     def py(self, argv, timeout):
-        a = [*hr.PY, os.path.join(HERE, "d2pilot.py"), argv[0], self.log, "--slot", str(self.slot)] + argv[1:] + [
+        a = [*hr.PY, os.path.join(HERE, "d2pilot.py"), argv[0], self.log, "--slot", str(self.slot)] + argv[1:] + VIEW + [
             "--shots", self.shots]
         return hr.sh(a, timeout, self.out)
 
@@ -179,7 +207,7 @@ class Session:
         return hr.wait_count(self.log, "WEND", self.nwin, wait, self.drv)
 
     def run_scene(self, name, sc):
-        seed = SEED0 + {"town": 0, "pack": 1, "maze": 2}[name]
+        seed = SEED0     # one map seed: the town waypoint (WP_AT) is where this seed puts it; another seed moves the town
         save = os.path.join(self.saves, "SpecNova.d2s")
         if not self.launch(name, sc, seed, save):
             hr.mark(self.stem, name, "fail", self.log, "no PLR")
@@ -204,9 +232,17 @@ class Session:
                 if self.py(step[1], step[2]) is None:
                     return "failed", "pilot timeout"
             elif k == "bg":
-                a = [*hr.PY, os.path.join(HERE, "d2pilot.py"), step[1][0], self.log, "--slot", str(self.slot)] + step[1][1:] + [
+                a = [*hr.PY, os.path.join(HERE, "d2pilot.py"), step[1][0], self.log, "--slot", str(self.slot)] + step[1][1:] + VIEW + [
                     "--shots", self.shots]
                 self.bg = hr.detach(a, os.path.join(LOGS, "%s-s%d.bg.txt" % (self.runname, self.slot)))
+            elif k == "near":
+                t = time.time()
+                while monsters_near(self.log, step[1]) < step[2] and time.time() - t < step[3] and self.drv.poll() is None:
+                    time.sleep(0.4)
+                got = monsters_near(self.log, step[1])
+                self.out.write("near: %d monsters within %d after %.1f s\n" % (got, step[1], time.time() - t))
+                if got < step[2]:
+                    return "failed", "no pack within %d sub-tiles in %d s" % (step[1], step[3])
             elif k == "join":
                 time.sleep(2)
             elif k == "window":
