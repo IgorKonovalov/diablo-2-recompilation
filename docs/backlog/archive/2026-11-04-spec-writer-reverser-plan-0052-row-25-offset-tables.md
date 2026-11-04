@@ -4,7 +4,7 @@ to: reverser
 date: 2026-11-04
 status: done
 context: []
-resolution: "Answered in part in [ai/0019 § 3](../../findings/ai/0019-row-tables-and-scoring.md): A5 listed, B5 by rule, event 12 frees the list by stats/states C1. A and B: shape and readers only; their values wait on the architect's call in [the entry](../2026-11-04-reverser-architect-r71-wisp-tables-a-b-adr-0031-call.md)."
+resolution: "Answered in [ai/0019 § 3](../../findings/ai/0019-row-tables-and-scoring.md): A5, A and B listed (A and B by the architect's reading of ADR-0031 at the `lane/r71` review), B5 by rule, event 12 frees the list by stats/states C1."
 ---
 
 Row 25 `WillOWisp`'s dance reads four frame tables of 8-byte `(x, y)` entries that the think writes at every entry (0x005F39E1–0x005F3E07): `A` from `EBP − 0x2F4` and `B` from `EBP − 0x214`, indexed by `v1C + 4·v14` (places 1..4, states 6..12); `A5` from `EBP − 0x38` and `B5` from `EBP − 0x64`, indexed by `v1C` (1..5). [Catalogue R25](../../specs/monsters/ai/catalogue.md) cannot give a dance's points without them. **Asked:** the four tables' values, per [ADR-0031](../../adrs/0031-constants-of-the-code-image.md) (a rule if one gives them, else a short listed table with address and reader), and what unit event 12 on the player does when the grant ends. Not blocking; the row is `[I]` and the gap is under Open questions.

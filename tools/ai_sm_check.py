@@ -4,15 +4,18 @@
     python3 -I tools/ai_sm_check.py check [--exe PATH] [--cases N] [--seed S] [--out FILE]
 
 The think function runs from its entry as code, in the x86 interpreter of tools/ai_resume.py, over the pinned image.
-Every callee except RNG_Range (executed) is a stub that logs its words and returns a value the case declares: the
-callees are the boundary, as in ADR-0021, and nothing here reads what they do. `model()` below is the finding's
-pseudocode as written, and it never reads the interpreter. Compared per case, in order: every callee's words (a draw's
+Every callee is a stub that logs its words and returns a value the case declares, RNG_Range included: its stub steps the
+seed with `Seed.range`, the same Python class the model uses, so a misreading of RNG_Range itself can't show here (its own
+[C] is run:2026-10-11-rng-emu). The callees are the boundary and nothing here reads what they do; a stub isn't an ADR-0021
+boundary either, as the code goes on past it. `model()` below is the finding's pseudocode as written, and it never reads
+the interpreter. Compared per case, in order: every callee's words (a draw's
 range and the seed after it included), the outcome (the callee that ended the think, or its return), the score list's
 words in the frame, the accumulated aura value, `v14` and `v18`, the seed.
 
 The `K` table names every constant and branch of the model; a control changes one of them alone and must fail at least
-one case, so each line `CTL <name> differs=<n>` says how many cases separate that one term (`p_hi` cannot: a chance of 100 and of
-101 against Range(100) are the same, so its 0 is expected and it is the one zero allowed). Each conditional branch in
+one case, so each line `CTL <name> differs=<n>` says how many cases separate that one term (`p_hi+1` cannot: a chance of 100 and of
+101 against Range(100) are the same, so its 0 is expected and it is the one zero allowed; `--minus` adds each constant's
+`-1` control, where `p_hi-1` does fail). Each conditional branch in
 the think's range is listed if the cases took it one way only (`BR` lines). Cases come from random.Random(seed), the
 values drawn around each threshold, the skill records synthetic (ADR-0015 condition 4).
 
@@ -843,6 +846,7 @@ def main(argv):
     ap.add_argument("--cases", type=int, default=4000)
     ap.add_argument("--seed", default="r71-sm")
     ap.add_argument("--out")
+    ap.add_argument("--minus", action="store_true", help="also run every constant's -1 control (the architect's review)")
     a = ap.parse_args(argv)
     r = random.Random(a.seed)
     code = R.Code(exe=a.exe)
@@ -899,6 +903,26 @@ def main(argv):
         out.append("CTL %s+1 differs=%d" % (name, n))
         if n == 0:
             ctl_zero.append(name)
+    if a.minus:
+        minus_zero = []
+        for name, val in K.items():
+            if name == "tie":
+                continue
+            n = 0
+            for c, cr in zip(cases, code_res):
+                if cr is None:
+                    continue
+                try:
+                    res = model(c, {name: val - 1})
+                except (KeyError, ZeroDivisionError):
+                    n += 1
+                    continue
+                if not same(c, cr, res)[0]:
+                    n += 1
+            out.append("CTL %s-1 differs=%d" % (name, n))
+            if n == 0:
+                minus_zero.append(name)
+        out.append("CTL minus zero: " + (" ".join(minus_zero) if minus_zero else "none"))
     for name in BOOLS:
         n = 0
         for c, cr in zip(cases, code_res):
