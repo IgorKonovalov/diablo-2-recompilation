@@ -49,7 +49,7 @@ import struct
 import gdb
 
 REV = 6   # rev 6: the call GameFindUnit 0x00552F60 at 0x0058F0FF inside a pending MonsterOwner 0x0058F0D0 is logged again (rev 4 and 5 hid it from the Scarab
-#          model, 36 of 91 first-boundary mismatches in run:2026-11-04-ai-r5-dev); rev 5: no AIB between a decision's MSM0 and MSM1 (those calls are made inside the command, 0x00552F60@0x0058F0FF), and an AIL
+#          model, 36 of 101 Scarab decisions mismatched at the first boundary on the development logs of run:2026-11-04-ai-r5); rev 5: no AIB between a decision's MSM0 and MSM1 (those calls are made inside the command, 0x00552F60@0x0058F0FF), and an AIL
 #          marker at the 600-call limit; rev 4: AIR lines (the result of each logged boundary call, from the return-site breakpoints of
 #          tools/gdb/ai-retsites.txt) and 48 boundary calls per decision (rev 3: 8); rev 1: the development logs (dev-*); rev 2: the six PathPlan rets (rev 1 logged the first three); rev 3: the
 #          return-address windows of MonsterOwner, 0x005DE830 and 0x005DF850 (the models' sites 0x0058F0FF, 0x005DE864,

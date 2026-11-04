@@ -727,8 +727,8 @@ def cmd_wp(args):
 def wp_click_until_open(p, st, x, y, lit_wait=20.0, open_wait=8.0, tries=2, clock=time.time, sleep=time.sleep):
     """Click the town waypoint at screenshot (x, y) and wait for its list; {"opened", "t_open", "clicks", "lit_wait",
     "trace"}. Plan 0052 lane/p52d: the list is recognised by a dark panel, and the screen is black for the first
-    seconds of a game (the load's fade-in), so a click made then saw "the list" at 0.0 s in 4 of 12 launches and the
-    tab and row clicks that followed hit the ground (the character walked away from the waypoint). So (1) the click
+    seconds of a game (the load's fade-in), so a click made then saw "the list" at 0.0 s (2 of the 6 launches traced, both
+    failures; run:2026-11-04-ai-wp) and the tab and row clicks that followed hit the ground (the character walked away). So (1) the click
     waits until the panel is lit (`lit_wait` s at most, no click into a black screen), (2) the list counts as open
     when two samples 0.3 s apart are dark, (3) a click whose list has not come in `open_wait` s while the player stood
     still for the last 1.5 s is made again (a player still walking gets one more wait first) (`tries` clicks in all), in the same process."""

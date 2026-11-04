@@ -361,6 +361,46 @@ class AiSpanInGap(unittest.TestCase):
         C = self.gap(other, p, e)
         self.assertEqual(C.ok["CHAIN.caster+logged"], 0)
 
+    def test_lines_inside_a_decision_are_the_decisions(self):
+        # lane/p52d review: the decision calls MonAttackStats, so a MAS0 on a moved seed lies inside AID .. AIX; the first
+        # form of this rule compared it with the entry seed and closed 0 of 42 gaps
+        p = (0x1234, 0x5678)
+        m = skills.step_n(p, 2)
+        e = skills.step_n(p, 3)
+        fmt = skills.sd_fmt
+        mas = ("MAS0", {"u": {"u": 77, "s": fmt(m)}, "n": 11})
+        span = [("AID", {"u": 77, "s0": fmt(p), "n": 10}), mas, ("AIX", {"k": 10, "s": fmt(e)})]
+        C = self.gap(span, p, e)
+        self.assertEqual(C.ok["CHAIN.caster+logged"], 1)
+        # the same MAS0 with no decision around it stays a disagreement
+        C = self.gap([mas], p, m)
+        self.assertEqual(C.ok["CHAIN.caster+logged"], 0)
+
+    def test_event_inside_a_decision_against_its_last_boundary_line(self):
+        p = (0x1234, 0x5678)
+        m = skills.step_n(p, 2)
+        fmt = skills.sd_fmt
+        span = [("AID", {"u": 77, "s0": fmt(p), "n": 10}), ("AIB", {"k": 10, "s": fmt(m), "n": 11})]
+        C = self.gap(span, p, m)
+        self.assertEqual(C.ok["CHAIN.caster+logged"], 1)
+        C = self.gap(span, p, skills.step(m))     # the event's entry is one step past the last boundary line: the gap stays
+        self.assertEqual(C.ok["CHAIN.caster+logged"], 0)
+        C = self.gap(span[:1], p, m)              # no boundary line: nothing to compare the entry with
+        self.assertEqual(C.ok["CHAIN.caster+logged"], 0)
+
+    def test_the_two_loggers_counters_do_not_collide(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as td:
+            path = os.path.join(td, "x.log")
+            with open(path, "w") as fh:
+                fh.write('SDO1 {"n":5,"k":4}\nAID {"n":5,"u":77}\nAIB {"n":6,"k":5,"b":{}}\nAIR {"n":7,"k":5,"b":6}\n')
+            L = skills.parse(path)
+        self.assertEqual(L[0][1]["n"], 5)
+        self.assertEqual(L[1][1]["n"], 5 + skills.AI_N)
+        self.assertEqual(L[2][1]["k"], 5 + skills.AI_N)
+        self.assertEqual(L[2][1]["b"], {})
+        self.assertEqual(L[3][1]["b"], 6 + skills.AI_N)
+
 
 if __name__ == "__main__":
     unittest.main()

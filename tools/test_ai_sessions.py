@@ -37,6 +37,13 @@ class PinnedSeed(unittest.TestCase):
         self.assertEqual(seeds, [3364, 3364])
         self.assertNotEqual(3364 - 1 + 2, 3364)   # the old rule gave 3363 + 2 = 3365 on the rerun
 
+    def test_run_takes_its_seed_from_launch_seed(self):
+        # lane/p52d review: the tests above hold with run() still at seed0 + launches
+        src = open(os.path.join(HERE, "ai_sessions.py")).read()
+        body = src[src.index("    def launch(case, diff, save):"):]
+        self.assertIn("seed = launch_seed(case, seed0, pr.launches)", body[:300])
+        self.assertNotIn("seed = seed0 + pr.launches", src)
+
     def test_custom_pin_table(self):
         self.assertEqual(S.launch_seed("x", 10, 4, {"x": 99}), 99)
         self.assertEqual(S.launch_seed("y", 10, 4, {"x": 99}), 14)

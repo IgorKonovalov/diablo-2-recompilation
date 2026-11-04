@@ -174,6 +174,12 @@ class Mismatch(Exception):
     pass
 
 
+# tools/gdb/ai.py's lines in a log written with tools/gdb/ai-skills.gdb. That logger numbers its lines itself, so its `n`,
+# `k` and `b` collide with this logger's in every table keyed by `n` (`pos`, `by_n`); parse() moves them to their own range.
+AI_TAGS = ("AGM", "AIN", "AID", "AIB", "AIR", "AIL", "AIX", "MSM0", "MSM1", "PP0", "PP1")
+AI_N = 1 << 40
+
+
 def parse(path):
     out = []
     with open(path, errors="replace") as fh:
@@ -192,6 +198,10 @@ def parse(path):
                 continue            # tools/gdb/ai.py's skill start (plan 0052 H1, both loggers in one log)
             if tag == "SST1" and "eax" in d and "r" not in d:
                 continue
+            if tag in AI_TAGS:
+                for key in ("n", "k", "b"):
+                    if isinstance(d.get(key), int):
+                        d[key] += AI_N
             out.append((tag, d))
     return out
 
@@ -935,6 +945,7 @@ class Checker:
         why = None
         open_spans = {}
         bopen = {}               # boundary spans (AD, DQ, MA, MHT) naming u: their exit seed is taken (ADR-0021)
+        aiopen, ailast = None, None   # the unit's AI decision the walk stands in (AID seen, AIX not), its last AIB seed
         for tt, dd in between:
             obs = None
             if tt in ("AD1", "DQ1", "MA1", "MHT1") and (tt[:-1], dd.get("k")) in bopen:
@@ -944,6 +955,13 @@ class Checker:
                 continue
             if bopen:
                 continue         # inside a boundary: its own draws (the delivery's) are the exit's
+            if aiopen is not None:   # inside the unit's AI decision: what it calls (a MAS0, a path) is the decision's
+                if tt == "AIX" and dd.get("k") == aiopen:
+                    t = sd_parse(dd["s"]) if dd.get("s") else t
+                    aiopen = None
+                elif tt == "AIB" and dd.get("k") == aiopen and dd.get("s"):
+                    ailast = sd_parse(dd["s"])
+                continue
             if tt in ("AD0", "DQ0", "MA0", "MHT0") and u in (dd.get("a"), dd.get("b")):
                 side = "a" if dd.get("a") == u else "b"
                 o2 = dd.get("sa") if side == "a" else dd.get("sb")
@@ -989,12 +1007,11 @@ class Checker:
                 t = sd_parse(dd["so"])
             elif tt == "AID" and dd.get("u") == u and dd.get("s0"):
                 # plan 0052 H1: a monster's AI decision (tools/gdb/ai.py loaded beside this logger): the unit seed at the
-                # event's entry is an observation, and the decision's logged exit (AIX) is the seed after it
+                # event's entry is an observation, and the decision's logged exit (AIX) is the seed after it; a skill event
+                # that starts inside the decision is compared with the decision's last boundary line (lane/p52d review)
                 obs = dd["s0"]
-                open_spans[("AI", dd["n"])] = 1
+                aiopen, ailast = dd["n"], None
                 tags.append("AI")
-            elif tt == "AIX" and ("AI", dd.get("k")) in open_spans and dd.get("s"):
-                t = sd_parse(dd["s"])
             elif tt == "RSK0" and dd.get("u") == u:
                 obs = dd["s"]
                 open_spans[("RSK", dd["n"])] = 1
@@ -1015,6 +1032,9 @@ class Checker:
             if obs is not None and sd_parse(obs) != t:
                 ok, why = False, "%s n=%s" % (tt, dd.get("n"))
                 break
+        if ok and aiopen is not None:
+            tags.append("AI open")
+            t = ailast if ailast is not None else t
         if ok and t == s0:
             self.ok["CHAIN.caster+logged"] += 1
             self.info["CHAIN.caster resync attributed (%s), %s" % ("player" if utype == 0 else "monster",
