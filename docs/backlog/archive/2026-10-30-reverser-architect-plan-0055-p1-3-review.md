@@ -5,7 +5,7 @@ date: 2026-10-30
 status: done
 context:
   - ../../findings/frame/0003-timers-activation.md
-  - ../../plans/0055-server-frame.md#implementation-log
+  - ../../plans/done/0055-server-frame.md#implementation-log
 resolution: "P1 review (plan 0055 P1.3, closes Phase 1), architect Tier A, 2026-10-30: accept with fixes (8), written into frame/0003, re/types/lifecycle.h and the plan; six rulings in the plan 0055 log; Phase 2a go; Phase 2b gate unchanged (0052 P3a's review); EmuBoundary tools fix routed (backlog 2026-10-30-architect-reverser-emu-page-directive-reapply)."
 ---
 

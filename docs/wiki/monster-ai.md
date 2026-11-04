@@ -70,7 +70,7 @@ of them ([overview § A](../specs/monsters/ai/README.md#a-the-event-kinds-and-th
 
 ## When a unit thinks
 
-All of this is read from the code ([overview § B and § C](../specs/monsters/ai/README.md#c-when-the-next-ai-event-comes)).
+All of this is read from the code ([overview § B and § C](../specs/monsters/ai/README.md#c-when-the-next-ai-event-comes)). How far a game has confirmed the frame's walks is [the server frame](server-frame.md#how-far-the-order-of-the-walks-is-confirmed).
 
 **Two entries.** The event runs from the queue, or by one of nine direct calls at a mode's end, each skipped while frozen and
 alive. From the queue it runs in the frame's monster pass, after every monster's every-frame event of that frame, in the order the
@@ -491,4 +491,4 @@ From the specs' open questions ([overview](../specs/monsters/ai/README.md#open-q
 
 - The specs: [overview](../specs/monsters/ai/README.md#reimplementation-notes), [machinery](../specs/monsters/ai/machinery.md#reimplementation-notes) and [catalogue](../specs/monsters/ai/catalogue.md#reimplementation-notes), whose *Reimplementation notes* list the traps.
 - The [glossary](../glossary.md) for D2 terms and `aip`.
-- Related wiki pages: [monsters](monsters.md) (how a monster is created and what its stats are), [skills and missiles](skills.md) (what a skill command does), [pathing](pathing.md) (the planners behind a request), [animation and timing](animation.md) (a mode's frames and the step), [characters and hirelings](characters.md), [randomness](randomness.md) (unit seeds and draws) and [how we know](how-we-know.md).
+- Related wiki pages: [monsters](monsters.md) (how a monster is created and what its stats are), [skills and missiles](skills.md) (what a skill command does), [pathing](pathing.md) (the planners behind a request), [the server frame](server-frame.md) (the order of events in a frame), [animation and timing](animation.md) (a mode's frames and the step), [characters and hirelings](characters.md), [randomness](randomness.md) (unit seeds and draws) and [how we know](how-we-know.md).

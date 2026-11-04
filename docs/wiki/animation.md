@@ -44,7 +44,7 @@ fields, computes the rate, and then does one of two things ([timing § A](../spe
 
 - **Scheduled modes** fix everything at the start. One pass queues an event for each frame-event byte of the record,
   on the game frame it will fall on, and one event for the mode's end. Nothing is advanced afterwards. This is how a
-  player's attacks, casts, get-hits, blocks and deaths run, and most of a monster's attacks.
+  player's attacks, casts, get-hits, blocks and deaths run, and most of a monster's attacks. The queue and the order its events run in are [the server frame](server-frame.md#the-queue).
 - **Every-frame modes** run once per game frame. A monster's walk, run, knockback and sequence modes (and any attack
   whose MonStats2 `*mv` bit is set) step the unit and advance its animation frame by the rate each frame. A player's
   walk, run and knockback also run every frame, but they only step the path; they have no animation advance.

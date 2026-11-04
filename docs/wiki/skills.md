@@ -570,7 +570,7 @@ are read from the code and none was reached by the runs.
 
 ## Draw order and chaining
 
-The order in one missile's life ([missiles § I](../specs/skills/missiles.md#i-draws-and-seeds-per-event-kind)):
+The order of events in a frame, and so of draws across units, is [the server frame](server-frame.md#whose-draws-come-first). The order in one missile's life ([missiles § I](../specs/skills/missiles.md#i-draws-and-seeds-per-event-kind)):
 
 ```mermaid
 sequenceDiagram

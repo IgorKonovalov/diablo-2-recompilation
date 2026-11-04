@@ -118,6 +118,7 @@ each row.
 | [`monsters/ai`](docs/specs/monsters/ai/README.md) | the AI event, its clock, the AI table and state, the event kinds and their seeds, and how far each is evidenced | reviewed | 2026-11-04 |
 | [`monsters/ai/machinery`](docs/specs/monsters/ai/machinery.md) | target search, the command, the path request, following, the helpers' draws, and each of the 18 tier AIs as pseudocode | reviewed | 2026-11-04 |
 | [`monsters/ai/catalogue`](docs/specs/monsters/ai/catalogue.md) | every other row of the AI table and the 18 state rows: `aip` meanings, decision tree and draws, each block a code reading, and the spec names which have been read against the instructions | reviewed | 2026-11-04 |
+| [`sim/frame`](docs/specs/sim/frame.md) | the server frame: the tick and its passes, the message drain, the ten walks over the unit events, the queue, the periodic timers, rooms in the frame, the draws per pass and the shared seeds, and what the frame windows test: order confirmed among ranks 4, 7, 8 and 9 only, the other walks read from the code | reviewed | 2026-11-04 |
 
 **Game rules** ([ADR-0017](docs/adrs/0017-scope-quests-travel-economy.md))
 
@@ -134,7 +135,8 @@ In flight ([plans index](docs/plans/README.md)):
 - **[0038](docs/plans/0038-inferred-claims-sweep.md)**: the inferred-claims sweep, raising the reviewed specs'
   inferred points to confirmed where a run, a re-check of kept logs or a static second source allows; Phase 3
   re-tags the specs cluster by cluster.
-- **[0050](docs/plans/done/0050-animation-frame-timing.md)**: animation and frame timing.
+- **[0059](docs/plans/0059-golden-traces.md)**: golden traces, seeds and inputs with their expected world, drops and later events, as conformance tests.
+- **[0061](docs/plans/0061-message-catalogue.md)**: the client–server message catalogue, every in-game message in both directions.
 
 Closed plans are in `docs/plans/done/`, listed in the [plans index](docs/plans/README.md).
 

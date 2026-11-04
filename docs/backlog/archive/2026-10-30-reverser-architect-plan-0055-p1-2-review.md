@@ -5,7 +5,7 @@ date: 2026-10-30
 status: done
 context:
   - ../../findings/frame/0002-unit-events-queue.md
-  - ../../plans/0055-server-frame.md#implementation-log
+  - ../../plans/done/0055-server-frame.md#implementation-log
 resolution: "Reviewed 2026-10-30 (architect, Tier A): accept with fixes (9: under-claim 1, overclaim 2, omission 3, stale cross-reference 3); rulings in the plan 0055 log: cross-type case [C] for monsters from run:2026-10-27-anim, [I] elsewhere; volume re-estimated at P1.3; no open question gates P1.3 or Phase 2a, question 2 added to P1.3; cancel's control sufficient with three added readings; P1.3 go."
 ---
 

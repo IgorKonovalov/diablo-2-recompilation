@@ -54,7 +54,7 @@ boundary's own plan, drafted on unpause as 0052's P1.1 review ruled. When it is 
     mismatch **routed to this plan** (P1.1 review ruling 3). Its H5 (town-follow) leaves "whether a stock town's
     geometry admits such a route" to this plan.
   - Plan 0046's catalogue entries that plan a path (movement skills, missiles with a path type) keep the planner as a
-    boundary until this plan's spec is reviewed; ADR-0022's frame plan ([0055](../0055-server-frame.md)) does the same.
+    boundary until this plan's spec is reviewed; ADR-0022's frame plan ([0055](0055-server-frame.md)) does the same.
 - **Dependencies met:** [drlg/collision](../../specs/drlg/collision.md) reviewed (the grid, `PATH_PatternFromSize`
   `[C]`, `PATH_MonTestMask`), and `tools/collision.py` predicts room grids; 0052·P1.1 reviewed (the request kinds);
   0050·P3 reviewed (anim/movement, the consumer of the points). ADR-0016's harness gate (the previous phase's spec

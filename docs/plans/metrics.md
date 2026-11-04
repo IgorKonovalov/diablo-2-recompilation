@@ -645,6 +645,8 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-11-04 | `lane/s55` review | 0055 P3 | architect-review | 323 542 | 48 | 16 | — | accept with fixes (21); sim/frame reviewed | omission 7, overclaim 4, stale cross-reference 3, other 3, under-claim 1, misread 1, wrong anchor 1, tool not kept 1 |
 | 2026-11-04 | `lane/p55d` | 0055 P2b (last windows) | reverser-harness | 157 292 | 65 | 32 | 1 | accept with fixes (Tier A, 11) | omission 5, miscount 2, under-claim 1, misread 1, tool not kept 1, other 1 |
 | 2026-11-04 | `lane/p55d` review | 0055 P2b (last windows) | architect-review | 188 539 | 39 | 36 | — | accept with fixes (11); Done-when met as re-ruled, Corpsefire short | omission 5, miscount 2, under-claim 1, misread 1, tool not kept 1, other 1 |
+| 2026-11-04 | `lane/w55` | 0055 P4 | wiki | 179 110 | 26 | 9 | — | accept with fixes (Tier A, ADR-0030, 20) | stale cross-reference 8, omission 6, misread 2, overclaim 2, under-claim 1, other 1 |
+| 2026-11-04 | `lane/w55` review | 0055 P4, close | architect-review | 185 195 | 23 | 7 | — | accept with fixes (20); plan 0055 closed | stale cross-reference 8, omission 6, misread 2, overclaim 2, under-claim 1, other 1 |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not

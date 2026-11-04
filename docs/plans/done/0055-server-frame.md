@@ -1,6 +1,6 @@
 # 0055 — The server frame: the game tick, the unit update order, the event queue and the timers, checked in frame windows (ADR-0022, simulation phase 6)
 
-> **Status:** approved (owner, 2026-10-30: "approve as recommended", all eight scoping questions answered as recommended); drafted 2026-10-30 (architect, `lane/plans54`)
+> **Status:** done (closed 2026-11-04); was approved (owner, 2026-10-30: "approve as recommended", all eight scoping questions answered as recommended); drafted 2026-10-30 (architect, `lane/plans54`)
 > **Created:** 2026-10-30
 > **Owner skill(s):** archivist, reverser, spec-writer
 > **Related ADRs:** 0003-runtime-experiments, 0004-boundary-oracles-in-reproduction, 0011-harness-slots, 0014-scope-game-simulation, 0015-emulated-reproduction, 0016-pipelined-simulation-phases, 0021-observed-boundaries-in-emulation, 0022-scope-server-frame
@@ -8,7 +8,7 @@
 ## TL;DR
 
 **Question:** in one server frame, in what order does the game visit its passes, its rooms, its units, its event queue
-and its timers, and so whose draws come first on a seed two events share? [ADR-0022](../adrs/0022-scope-server-frame.md)
+and its timers, and so whose draws come first on a seed two events share? [ADR-0022](../../adrs/0022-scope-server-frame.md)
 (accepted 2026-10-27) opens this as a sixth simulation phase and asks for its plan; this is that plan. When it is done:
 - `docs/findings/frame/` names `GameTick` and every pass it makes, `GameRunUnitEvents` with the per-type event lists
   and their order, the event queue's insertion and run rules, the timers and their periods, the room activation order,
@@ -23,29 +23,29 @@ and its timers, and so whose draws come first on a seed two events share? [ADR-0
 
 - **The decision and its gates** (ADR-0022): this plan's tables and static reading may start once plan 0052's P1.1 is
   reviewed (**met 2026-10-27**, `lane/r52`); its harness waits for **plan 0052's P3a** (machinery and tier) to be
-  reviewed; 0052's catalogue (P3b), the path search plan ([0054](done/0054-path-search.md)) and plan 0046 never gate it:
+  reviewed; 0052's catalogue (P3b), the path search plan ([0054](0054-path-search.md)) and plan 0046 never gate it:
   an AI, path or skill function they have not specified is a boundary oracle (ADR-0004, as ADR-0020). If 0052's P2 or
   P3a moves the AI tick or a unit list this plan's P1 relied on, the architect re-rules at this plan's P1 review
   (ADR-0022 § Negative).
 - **What is known:**
-  - [ai/0001 § 1](../findings/ai/0001-machinery.md#1-the-tick-its-caller-and-the-order) (`[I]`):
+  - [ai/0001 § 1](../../findings/ai/0001-machinery.md#1-the-tick-its-caller-and-the-order) (`[I]`):
     `ServerGamesFrame` runs one frame per interval over 1 024 game slots and calls `GameTick` for each live game
     (`GameTickAlt` is its other caller); `GameTick` increments `Game+0xA8`, runs two act passes, `NewRoomsUpdate`,
     `GameRunUnitEvents`, the client room sync and the timers; `GameRunUnitEvents` runs missiles, players, monsters,
     objects, items, each type's every-frame list and then its slot list (records due this frame, oldest first, freed
     after their run); `MonEventDispatch` drops most kinds while a unit is frozen. § 11 lists the unit lists (the hash
     lists, the room lists, the event lists, the target lists, the clients).
-  - [drlg/lifecycle § A](../specs/drlg/lifecycle.md#a-the-frame): the frame at `[I]` with "two per-frame passes" and
+  - [drlg/lifecycle § A](../../specs/drlg/lifecycle.md#a-the-frame): the frame at `[I]` with "two per-frame passes" and
     "two more passes" unnamed; the release pass every 12 frames `[C]` (run:2026-10-17-lifecycle); the quest timers
     every 20 (`QUESTS_TimersRun`, `[C]`), the level-unload tick every 11, the item expiry sweep every 1 500.
-  - [anim/timing](../specs/anim/timing.md) (reviewed, plan 0050): the event queue's entry points
+  - [anim/timing](../../specs/anim/timing.md) (reviewed, plan 0050): the event queue's entry points
     (`EventQueueAt`, `EventQueueEveryFrame`, `MonEventsRun`, `SUNIT_ScheduleModeEvents` `[C]`) and the mode events
     they carry; the frame's own model is not there.
-  - [skills/dispatch § P1](../specs/skills/dispatch.md#p-draws-and-seeds-per-event-kind): the resynchronised entries
+  - [skills/dispatch § P1](../../specs/skills/dispatch.md#p-draws-and-seeds-per-event-kind): the resynchronised entries
     this phase exists to re-chain: at a skill start or do, the caster's seed equals its previous exit in 3 155 of 3 459
     consecutive pairs (plan 0045's first run); 135 of 281 player gaps walked draw by draw; 331 monster gaps left to the
     AI (plan 0052's H1).
-  - [chain](../specs/chain/README.md)'s last `[L]`: a log-free world build "would need the activation order as an input
+  - [chain](../../specs/chain/README.md)'s last `[L]`: a log-free world build "would need the activation order as an input
     record".
   - Client messages: `SrvClientMsgDispatch` and `SrvPacketDispatch` are named (items/economy, items/cube); where in the
     frame they run is not.
@@ -229,12 +229,12 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   is reviewed; reading confirmed); Q4 the message drain point and order in, arrival out; Q5 one game; **Q6 the
   companion `[I]` sweep is queued** as its own plan, drafted by the architect after this plan's Phase 2a lands; Q7 run
   order as recommended; Q8 its own wiki page. Run order
-  ([plans README](README.md#run-order-set-2026-10-25-plans-00380052)): **P0 ready to start now** (the archivist is
+  ([plans README](../README.md#run-order-set-2026-10-25-plans-00380052)): **P0 ready to start now** (the archivist is
   free); P1 in static lane B when a static lane frees (both busy on 2026-10-30: `lane/r52b`, `lane/h6gs`); P2a after
   P1's review; P2b after 0052·P3a's review. Status `approved`.
 - **2026-10-30 — Phase 0 landed (archivist, `lane/a55`; review requested).** `tools/frame_corpus.py` (`index`, `summary`,
   `read`, `check`), gate survey `frame` (opt-in, 81 s) with its baseline, and the *Kept-log corpus* block of
-  [`docs/inventory.md`](../inventory.md). Result (`[C]`, by script): of 1 657 `*.log` files under `workspace/logs/`, 1 597
+  [`docs/inventory.md`](../../inventory.md). Result (`[C]`, by script): of 1 657 `*.log` files under `workspace/logs/`, 1 597
   are harness logs; the 79 runs plans 0037-0052 name (77 with a run section) attribute **1 574** of them to 72 runs, by name,
   glob or the `.lst` and manifest files the sections name; **331 are frame-stamped** (6 805 992 lines, 9 of the 72 loggers:
   `anim`, `stats`, `skills`, `combat`, `economy`, `economy2`, `economy-hire`, `two-combat`, `h6b`), **1 243 are not** and cannot
@@ -251,7 +251,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   no run (plan 0046's 2026-10-30 catalogue logs among them), so they are indexed but not counted; (4) five runs name no
   harness log (four emulated runs and `sweep-emu2`), two named runs (`d2s-samples`, `cube-saves`) have no section.
 - **2026-10-30 — P1.1 the tick and the messages (reverser, static, `lane/r55`; review requested).**
-  [frame/0001](../findings/frame/0001-tick-and-messages.md), [frame/experiments](../findings/frame/experiments.md)
+  [frame/0001](../../findings/frame/0001-tick-and-messages.md), [frame/experiments](../../findings/frame/experiments.md)
   (run:2026-10-30-frame-emu), 48 new `re/symbols.csv` rows (39 functions, 9 data; all `I`, subsystem `sim/frame`), new
   tools `tools/frame_emu.py`, `tools/frame_globals.py`, `tools/frame_volume.py`; static outputs under
   `workspace/logs/r55/static/` (manifest `07094f49…`, 19 lines), emulation under `workspace/logs/r55/emu/` (manifest
@@ -293,7 +293,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   one room activation, 20 shared-seed pairs); the scenes are the lane's (Act I town pilot, Blood Moor or Cold Plains,
   Den of Evil with Corpsefire), held to 0052 P3a's tier. **(3) ai/0001 §§ 1 and 11:** not edited here (`lane/r52c` is
   active in `docs/findings/ai/`); routed to the reverser as
-  [backlog entry](../backlog/archive/2026-10-30-architect-reverser-ai-0001-frame-corrections.md) (also the 0x0052D8F2 call site
+  [backlog entry](../../backlog/archive/2026-10-30-architect-reverser-ai-0001-frame-corrections.md) (also the 0x0052D8F2 call site
   and `GameTickAlt` unreached); Phase 3 cites frame/0001, not ai/0001 § 1, for the passes. **(4) One game and
   `g_HitClassCounter`:** Q5's one-game scope stands; the counter is a process-wide input of the frame model, not a
   reason to widen it: the spec states it as process state (0 at load, carried across games), every window session
@@ -302,7 +302,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   callers run in a frame. ADR-0022's early gate needs no re-ruling: 0052's P2 and P3a have not landed, so nothing P1.1 used has moved.
 - **2026-10-30 — Companion sweep drafted only (owner; recorded by the architect, `lane/appr2`).** "You can draft plans but do not start them": the Q6 companion `[I]` sweep may still be drafted after this plan's Phase 2a lands, as `draft` only, and is not approved or started; this plan runs to completion as approved.
 - **2026-10-30 — P1.2 the unit events and the queue (reverser, static, `lane/r55b`; review requested).**
-  [frame/0002](../findings/frame/0002-unit-events-queue.md), [frame/experiments](../findings/frame/experiments.md)
+  [frame/0002](../../findings/frame/0002-unit-events-queue.md), [frame/experiments](../../findings/frame/experiments.md)
   (run:2026-10-30-frame-emu-2), 29 new `re/symbols.csv` rows (all functions, all `I`, subsystem `sim/frame`), new
   tools `tools/frame_queue_emu.py`, `tools/frame_events.py`, `re/ghidra_scripts/CallersUp.java` (`tools/ghidra.sh
   callersup`); `re/types/anim.h` (`UnitEvent` flags, `EventCtl`, `EventBlock`); static outputs under
@@ -364,7 +364,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   done-when. ADR-0022's early gate: plan 0052 has landed only P1.2 batch 3 since P1.1 (`49a5dec7`), which P1.2 does not
   use; no re-ruling.
 - **2026-10-30 — P1.3 the timers and the activation order (reverser, static, `lane/r55c`; review requested, closes
-  Phase 1).** [frame/0003](../findings/frame/0003-timers-activation.md), [frame/experiments](../findings/frame/experiments.md)
+  Phase 1).** [frame/0003](../../findings/frame/0003-timers-activation.md), [frame/experiments](../../findings/frame/experiments.md)
   (run:2026-10-30-frame-emu-3), 20 new `re/symbols.csv` rows (all functions, all `I`, subsystem `sim/frame`), new tool
   `tools/frame_timers.py` (`adds`, `cbscan`, the five families' cases, check and manifest), `tools/frame_volume.py
   estimate13` (its `estimate` unchanged); static outputs under `workspace/logs/r55c/static/` (manifest `abfc7c4d…`, 80
@@ -435,19 +435,19 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   six earlier kept runs (sweep-s1e `calcvar`, `eval`; sweep-s1f `calcvar2`, `varroll`; calc-emu `eval`, EmuCall;
   p51s `calcemu/eval`); no case writes into any of them, so only a store by the emulated code could carry between
   cases, and these are table readers: no kept claim is known to move. Routed as a tools fix and a byte-for-byte re-run
-  ([backlog entry](../backlog/archive/2026-10-30-architect-reverser-emu-page-directive-reapply.md)); `const` directives are
+  ([backlog entry](../../backlog/archive/2026-10-30-architect-reverser-emu-page-directive-reapply.md)); `const` directives are
   written once by design. **The frame/0002 § 8 correction** is right (two `EventQueueAt` callers, three
   `EventQueueEveryFrame` callers, the return test) and is carried by a dated note there. **Phase 2a: go** (reverser, no
   game, no slot, no Ghidra; replays under `MemoryMax=4G`; P0 accepted, P1 reviewed). **Phase 2b: gate unchanged**: P1
   is reviewed; it waits on plan 0052's P3a review (ADR-0022, ADR-0016), and its pilot uses plan 0056's runner library.
 
-- **2026-11-03 — PetType `partysend` readers (archivist, `lane/a63`).** [PetType](../tables/PetType.md) `partysend` links the
-  two readers of [frame/0003 § 6](../findings/frame/0003-timers-activation.md) (`PlrPetsStatusSend`, `PetListPrune`), `[I]`.
+- **2026-11-03 — PetType `partysend` readers (archivist, `lane/a63`).** [PetType](../../tables/PetType.md) `partysend` links the
+  two readers of [frame/0003 § 6](../../findings/frame/0003-timers-activation.md) (`PlrPetsStatusSend`, `PetListPrune`), `[I]`.
   Backlog entry closed.
 - **2026-11-03 — The emulator spec re-apply fix and the re-run (reverser, static, `lane/r55e`; review requested).**
-  Closes the [backlog entry](../backlog/archive/2026-10-30-architect-reverser-emu-page-directive-reapply.md) of the P1 review,
-  and, beside it, the [States count entry](../backlog/archive/2026-10-30-architect-reverser-states-unreached-58-vs-56.md).
-  Record: [run:2026-11-03-emu-spec-reapply](../findings/frame/experiments.md#run2026-11-03-emu-spec-reapply).
+  Closes the [backlog entry](../../backlog/archive/2026-10-30-architect-reverser-emu-page-directive-reapply.md) of the P1 review,
+  and, beside it, the [States count entry](../../backlog/archive/2026-10-30-architect-reverser-states-unreached-58-vs-56.md).
+  Record: [run:2026-11-03-emu-spec-reapply](../../findings/frame/experiments.md#run2026-11-03-emu-spec-reapply).
   **Cause**: Ghidra 12.1.2's `MemoryPageBank.setPage` keeps the caller's byte array as the page, with no copy, when a
   chunk is a whole page at buffer offset 0, so a directive that starts on a 4 KiB boundary and is 0x1000 bytes or more
   shared its first page with the spec's own array; stores there survived into the next case's re-apply. **Fix**:
@@ -487,7 +487,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   runs per receiving type that the kept logs hold (P1.2 review ruling 1); (5) findings in frame/0004 and the run in
   frame/experiments, the lane's usage row, the review request.
 - **2026-11-03 — Phase 2a the order model on the kept logs (reverser, `lane/p55a`; review requested).**
-  [frame/0004](../findings/frame/0004-order-on-kept-logs.md), [frame/experiments](../findings/frame/experiments.md)
+  [frame/0004](../../findings/frame/0004-order-on-kept-logs.md), [frame/experiments](../../findings/frame/experiments.md)
   (run:2026-11-03-frame-order; the checkpoint's name `2026-10-30-frame-order`, run on 2026-11-03 and dated so), new
   tool `tools/frame.py` (`73715f53…`: `kinds`, `reach`, `check`, `rechain`) with `tools/test_frame.py` (18 tests);
   kept outputs under `workspace/logs/p55a/` (manifest `11056497…`, 8 lines), development runs under
@@ -528,7 +528,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   Phase 2b's `UE0`/`UE1` lines, which close it by observation. Phase 2a closes when P2a-ii lands or 2b's first window
   places the open hooks, whichever first. The research map's `sim/frame` row says "P2a met in part".
 - **2026-11-03 — Phase 2a-ii the static dispatcher read (reverser, static, `lane/r55f`; review requested).**
-  [frame/0005](../findings/frame/0005-dispatchers.md), [frame/experiments](../findings/frame/experiments.md)
+  [frame/0005](../../findings/frame/0005-dispatchers.md), [frame/experiments](../../findings/frame/experiments.md)
   (run:2026-11-03-frame-order-2), `tools/frame.py` (`9d6487a6…`; the check on `a21171fc…`, commit `966613c8`) with
   `tools/test_frame.py` (23 tests); kept outputs under `workspace/logs/r55f/` (manifest `2109a8b4…`, 24 lines), development
   runs under `dev/` (`e72339cd…`, 18 lines). No symbol rows. Declared: 35 tables, 20 iterators, 5 registrars, 18 quest
@@ -619,7 +619,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 
 - **2026-11-04 — Phase 2b the pilots: review and ruling (architect, Tier A, `lane/p55b`): accept with fixes (12).** Fixes, written into the lane's files: **misread 1** (Q2's trigger: frame/0006's summary, status, § 5 and the run's conclusion read a mismatch as the trigger; Q2 is a mismatch *traced to the logger*). **overclaim 1** ("the same units step the same amounts" in a run with no trace hooks: the traced dev-h shares neither; the untraced dev-g does, on 7 of 8, one input script replayed, and that is what is stated). **wrong anchor 1** (`0x0055891A` for the trace's range, whose fifth site is `0x0055894F`; the function named). **miscount 2** (the sessions' 2 321 and 10 037 logger lines were early first checks, 6 782 and 10 038; "one `mod 1500` frame (town)" where the pack's window holds frame 1500 too). **omission 5** (what the trace covers: 8 of 34 steps on 2 of 10 units; rule 18: the 852 sites of `tools/gdb/lcg-sites.txt`, and the draws in combat/to-hit, items/tc, items/economy § H, so both `[L]` on the steps are closed; ADR-0028 item 1's case list; item 7's separation line; the pack's kinds unclassified against the `lane/s52a` ruling). **stale cross-reference 1** (frame/0003's shared seeds, a dated note: a fifth kind, the P1 review's own miss; ADR-0022's context names it). **other 1** (the manifest "passes": `…-s1.bg.txt` was appended 17 s after it, 12 of 13 lines pass, no count rests on it). Checked and held: the callback path's `UE1` pairing (objdump: all ten callback sites are `call eax; jmp` to the dispatch call's next instruction), `SV1` only after `SV0`; the recipe's one change from `specnova.json`, the act byte (128 for 131); predictions committed before each kept log (`abb7ebb6` before the town's, `241adf4a` before the pack's), their misses kept; manifests and logs by hash; `-ns` (`tools/d2run.py` line 342, no `--sound` in the runner). "Reproduce" is not read as confirmation: it is one input script.
 
-  **Ruling 1, Q2: not a logger problem. No ADR, nothing for the owner.** The logger kept up and moved nothing. The mismatches are the reader's: it keyed each seed to its own unit's events, and the game draws on a defender's and a dead monster's seed in another unit's event, as the reviewed specs state draw by draw and as ADR-0022's context says ("a defender's seed hit twice in one frame"). The window found what a window exists to find. (b) reads: every entry chains, every mismatch is traced, none to the logger. **The pack pilot's (b) is met at `[I]`** for all 8: the attribution is [frame/0006 § 6](../findings/frame/0006-frame-windows.md) (seven kills' drops on the dead monster's seed inside a missile's event, one-to-one with the seven monsters queued kind 12 and kind 1 by another unit's event, the game-seed steps 6, 6, 6, 6, 0, 2, 0 as `Act 1 Champ A` and `Act 1 H2H A` say; the player's 4 are monster 28's melee hit, block and armour wear). All counts from the kept log, all readings `[I]`; the `XS` lines below hold the sites. That window is not counted towards the floors: it has no sites and it is not a Fallen or shaman pack (`corruptrogue1`, `cr_lancer1`, with `brute1` in the level).
+  **Ruling 1, Q2: not a logger problem. No ADR, nothing for the owner.** The logger kept up and moved nothing. The mismatches are the reader's: it keyed each seed to its own unit's events, and the game draws on a defender's and a dead monster's seed in another unit's event, as the reviewed specs state draw by draw and as ADR-0022's context says ("a defender's seed hit twice in one frame"). The window found what a window exists to find. (b) reads: every entry chains, every mismatch is traced, none to the logger. **The pack pilot's (b) is met at `[I]`** for all 8: the attribution is [frame/0006 § 6](../../findings/frame/0006-frame-windows.md) (seven kills' drops on the dead monster's seed inside a missile's event, one-to-one with the seven monsters queued kind 12 and kind 1 by another unit's event, the game-seed steps 6, 6, 6, 6, 0, 2, 0 as `Act 1 Champ A` and `Act 1 H2H A` say; the player's 4 are monster 28's melee hit, block and armour wear). All counts from the kept log, all readings `[I]`; the `XS` lines below hold the sites. That window is not counted towards the floors: it has no sites and it is not a Fallen or shaman pack (`corruptrogue1`, `cr_lancer1`, with `brute1` in the level).
 
   **Ruling 2, the chain's rule (reader rev 2), so that a mismatch can still fail.** Accepting any step in another unit's event would test nothing. A chained seed is the game seed or a unit's seed from its first reading in a window. *What is logged:* `XS` for every step, at all 852 LCG sites. *What the reader asserts, each of which fails the window:*
   1. **Arithmetic.** It keeps each chained seed's value and applies the LCG at each `XS` whose low word matches it; every logged reading must equal that value exactly. A seed that moves with no `XS`, an `XS` too many or a write fails. A low word two seeds share (a new missile's `Init` of the game seed's low) is resolved by each one's next reading; neither resolving fails.
@@ -677,6 +677,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 
   **Left before the close:** `lane/p55d` merged after its check, and § K's counts with it (K1a, K5, K4's defender row, K3's numbers, by its review); Phase 4, `docs/wiki/server-frame.md`, spec-writer, Tier A; then the close's bookkeeping. The two clock entries stay open across the close. No ledger row here. Branch not merged.
 
+- **2026-11-04 — Phase 4 (spec-writer, `lane/w55`): `docs/wiki/server-frame.md` written, review requested (Tier A, ADR-0030).** Over `docs/specs/sim/frame.md` 2026-11-04; no claim of its own, every section linked; each statement labelled as the spec tags it (seen in a window, seen in the kept logs, emulated, read from the code, counted and not raised, unknown). Stated plainly as the phase's orders ask: order confirmed among ranks 4, 7, 8, 9 only, ranks 5, 6, 10 to 13 read from the code; 27 133 of 27 372 events, 58 156 of 67 441 steps, 43 on the game seed; client steps no evidence; shared-seed pairs a named count with no confirmed statement on one; hooks where they ran; a build with no log cannot yet predict rank 1. **By link, not number,** since `lane/p55d` moves them: windows, chained events, pair counts, the defender and `killev` results, Corpsefire, K2's entry and first-reading counts, kind 11's runs. The order counts (21 482 with 572, 857 with 104, 1 844) and K3a and K3b's numbers are the spec's at the page's `based_on` date, so `lane/p55d`'s update moves `based_on` (W4) and these numbers with it. **Left out on purpose, by link:** the event table's handlers, the mode test's packet exceptions, the block size, the lag scale, K3c's and K3f's counts, the seed values of the worked example, the window list. Numbers recounted by script against the spec. Links from wiki/levels, combat, skills and monster-ai; wiki index row 20 (Quirks to 21) and its coverage list; root `README.md` row `sim/frame`. No ledger row. Plan not closed. Branch not merged.
 - **2026-11-04 — Phase 2b the bounded last windows (reverser, `lane/p55d`, slot 1): stopped at the orders' end; Tier B check requested.** **The owner chose option A on 2026-11-04: the 20-pair floor becomes the pairs measured, stated at `[I]`, and this one lane adds the second pack window, a Corpsefire window and a standing-player window for the defender.** run:2026-11-04-frame3, frame/0007 part 2, tools `cad103f3` (reader: per `KD` the item constructor's steps counted as items, the unit constructor's required at least as many; controls 5, 13, 14 redone and `frame_xs_mutants.py`'s `items` row; runner: the gate leaves out client function 0x00473090's `XS` lines, a `near` filter `corpse` = class 5 with mod 27, scenes `packd`, `den`; no other table change), predictions `634af9f3` before any kept log; manifest `manifest-2026-11-04-frame3.txt` (16 lines). Three fresh processes: `packd` 5511 (two windows of 500, both whole, carried, 0 mismatches: window 1 the player standing and no pilot, window 2 Nova; 13.7 and 75.9 lines per frame without the client function, 73.0 and 195.7 with; 2 147 and 8 112 chained events; 0 order inversions), `den` 5513 (the pilot found no path to the warp; no window), `den` 5515 (level 8 reached, no Corpsefire in the scan in 420 s, the character's life read 0; no window). **Defender: 8 `defender`-class steps in the standing window** (`COMBAT_DefenceRoll`, `COMBAT_DurabilityLoss` at two sites, `ITEMS_DurabilityLossRoll`, 2 each), unit not nameable; `KD` 10 events, 0 failures under the new rule; **pairs 0 new, 2 counted, 8 in every log**. Floors: windows 10 of 10 as counted, pack scene 2 windows, chained 36 016 (7 windows with `XS`), defender met in one scene. **Short, named (no third process):** Corpsefire's window (two tries), kind 6, ranks 5/6/10-13, owner and `killev` touches (0). No `[C]` changed in a reviewed spec; Tier B check: counts in the finding to be reproduced from the kept logs with `python3 -I tools/frame_p55c_counts.py <dir> <exe> 2026-11-04-frame3`. Slot 1 stopped, saves restored, nothing of this lane running. Phase 3 may take these counts. No symbol row, no ledger row.
 
 - **2026-11-04 — Phase 2b the last windows: review (architect, `lane/p55d`, Tier A, focused): accept with fixes (11); § K updated in this commit.** Fixes: under-claim 1, misread 1, miscount 2, omission 5, tool not kept 1, other 1. Checked: predictions `634af9f3` (16:23:40) before the first kept log (16:25:52); `sha256sum -c` on the 16-line manifest passes; `window-selftest` all PASS; `frame_xs_mutants.py`'s 13 rows all red, `items` by controls 5 and 14; rule 17 holds, the logger has no diff in this lane and its grep finds no write. The counts reproduce line for line but for 6 lines the kept file lacks (the two den logs' modded monsters, the four pilot windows' pairs), none a count it was cited for.
@@ -690,3 +691,11 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   **The spec.** `docs/specs/sim/frame.md` § K's counts, K1a and a new K1c, K1b's two tries, K2's `KD` line, K3a to K3f, K4's rows, K4a to K4d, K5, K7, the open question on the floor; D5, E5b, E7, F4, I5 take the two windows' counts since they say "counted windows". Tags C 66, I 127, L 5: two table rows, K1c and K4b. The pairs stay `[I]`, 2 and 8. `sim/frame` map row. **`lane/w55` takes:** 10 windows by count and five carrying the traffic; 36 016 chained, 37 977 `UE0`, 53 moved the game seed, 488 either; 8 defender steps, two hits, on the player's seed; pairs 2 and 8; Corpsefire short by name; `KD` 54, testing almost nothing.
 
   **Left before the close:** Phase 4, `docs/wiki/server-frame.md`, `lane/w55`; then the close's bookkeeping, the two clock entries staying open. Plan not closed. No ledger row here. Branch not merged.
+
+- **2026-11-04 — Phase 4: review (architect, `lane/w55`, Tier A, ADR-0030): accept with fixes (20); plan closed in this commit.** Fixes: stale cross-reference 8, misread 2, overclaim 2, under-claim 1, omission 6, other 1. The whole page read against `sim/frame` line by line; every number on it checked by script against the spec's text, 0 left over; no function name, address or table value; all fixes in this commit.
+
+  **Stale, the page written before `lane/p55d`:** D5 (3 020 adjacent walks, 417, 1 975, 203, 425; Nova or standing); E7 (1 356 with 126, 29 300 with 1 096); K3a (37 977, 53 on the game seed, 488 either, and "the 53 above"); K3b (157 769 of 174 756); K3c's drop test; I5's "the batch's windows"; and two of the close's: the research-map row's 1 666 and 85 (2 178 and 119), and the root README's *In flight*, which listed closed 0050 and neither 0059 nor 0061. **Misread:** "a kill's even count" stated a rule the reader no longer applies, now K3e's per-death rule, 54 deaths, testing almost nothing; "faster in some acts", where the doubled step falls in any act but index 3 by the table's type. **Overclaim:** "on which frames rank 1 does anything": rank 1 steps the clocks every frame, so it now reads "does more than step the clocks" (the derivation stands otherwise: G1a needs the tables and the scale, G1b and the open question say neither is known); "seen in the kept logs" over a packet's effect, when the 87 show the stamp and the effect is C4's reading. **Under-claim:** "counted, not raised" over K4b, which is `[C]`; the 8 defender steps are now seen in a window on the player's seed in two hits, and the meaning stays unconfirmed, as K4d has it. **Omission:** ten by count and five carrying the traffic; Corpsefire short by name, with the two tries; pairs 2 and 8, in place of a link; K2's per-death and draw-free lines, with K2a's 74 625, K2b's 2 178 and F4's 119; a *not known* line for what no counted window holds; links back from wiki/animation and wiki/seed-to-world. **Other:** "would settle" softened the spec's "settles": the page now keeps the verb and says that no such window has run.
+
+  **Close, by phase.** **P0** met: the corpus classified, the reader's counts match, accepted. **P1** met: three batches reviewed. **P2a** closed by `FRAME_HOOKS`, as the `lane/p55c` ruling has it: 0 mismatches where anything is placed, the 118 340 frames that can't fail stated as the limit, 142 of 281 and 0 of 331 re-chained with their reasons, 27 hooks placed, 4 outside any event and 34 named as not reached. **P2b** met as re-ruled: 10 windows, 36 016 chained, 0 mismatches, the pairs as measured by the owner's option A (2 counted, 8 in every log, `[I]`). Short by name: **Corpsefire**, two tries and no window; **kind 6**, a count of 0, accepted by name. **P3** met: `sim/frame` reviewed, `lane/s55` and the `lane/p55d` update. **P4** met: this review.
+
+  **What the plan gives, plainly.** The frame's order is written down: the tick and its passes, the drain, the ten walks, the queue, the timers, rooms and shared seeds. A game has confirmed the order among ranks 4, 7, 8 and 9 only, in a few small scenes where most events move no seed; ranks 5, 6 and 10 to 13 are read from the code. **A build with no log still lacks the act clock's table values and its scale and flag,** so it cannot yet say on which frames rank 1 does more than step the clocks, and whether that can reach a draw is not read. The two entries for them, [the tables](../../backlog/2026-11-04-spec-writer-archivist-act-clock-tables.md) and [the scale](../../backlog/2026-11-04-spec-writer-reverser-act-clock-scale.md), stay open across the close and hold nothing here. No other open entry is answered by this plan. Status done, moved to `done/`, links rewritten both ways, plans index row, `sim/frame` map row, root README. No ledger row here. Branch not merged.

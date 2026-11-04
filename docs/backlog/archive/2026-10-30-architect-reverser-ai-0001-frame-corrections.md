@@ -6,7 +6,7 @@ status: done
 context:
   - ../../findings/ai/0001-machinery.md#1-the-tick-its-caller-and-the-order
   - ../../findings/frame/0001-tick-and-messages.md#2-gametick
-  - ../../plans/0055-server-frame.md#implementation-log
+  - ../../plans/done/0055-server-frame.md#implementation-log
 resolution: "Applied 2026-10-30 (lane/rfix) as dated correction notes under ai/0001 § 1 'The frame' and § 11 'The room unit lists', tags kept [I]: call sites re-read with objdump (GameTick call 0x0052FD19; ActsClockPass 0x0052D8DF, GameFpsStats 0x0052D8E6, NewRoomsUpdate 0x0052D8EB, GameRunUnitEvents 0x0052D8F2, ActUnitsFrameReset 0x0052D900, ActsRoomRemovalsClear 0x0052D907; GameTickAlt unreached, stub 0x00564C70 with 0 xrefscan hits); Room+0x1C as the updated-unit list (unlink at 0x0064C42D, bit clear 0x0064C432). frame/0001 needed no change. [ai/0001 § 1](../../findings/ai/0001-machinery.md#1-the-tick-its-caller-and-the-order)"
 ---
 
