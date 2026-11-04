@@ -194,7 +194,8 @@ Step notes:
   (§ D) before they apply. Healing and mana potions do not: they are kind 3, `sub_005BE3F0_ItemUsePotion`, with no call
   of it. Of `STATE_GroupClear`'s nine call sites only `0x005BEE15` lies in the use entries (`0x005BE130..0x005BF3D0`).
   (fn:sub_005BEDA0_ItemUseTimedState@0x005BEDA0, fn:sub_005BE3F0_ItemUsePotion@0x005BE3F0, fn:STATE_GroupClear@0x0056C740,
-  0x005BEE15, [items/0012 § 9](../../findings/items/0012-use-inventory.md#9-corrections))
+  0x005BEE15, [items/0012 § 9](../../findings/items/0012-use-inventory.md#9-corrections); the use kinds:
+  [items/use § E](../items/use.md#e-the-kinds), a potion's amount and rate [§ F](../items/use.md#f-kinds-3-and-4-the-amount-and-the-two-draws))
 
 ### C. Expiry and removal
 

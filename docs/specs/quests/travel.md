@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, drlg/collision, drlg/warps, objects, quests/progression, save/d2s]
 consumed_by: [quests/progression, monsters/spawn, objects]
-tags: {C: 75, I: 89, L: 5}
+tags: {C: 78, I: 86, L: 5}
 updated: 2026-11-04
 ---
 
@@ -28,7 +28,7 @@ events (quest words written, quest gates) is [quests/progression](progression.md
 | click on a waypoint, a portal or another object (packets `0x13`/`0x16`, object distance below `0x33`) | `sub_00548B00_UnitInteract` case 2 → `OBJ_OperateDispatch` → `g_ObjOperateFns[OperateFn]` | [I] (fn:sub_00548B00_UnitInteract@0x00548B00, fn:OBJ_OperateDispatch@0x00584420, data:g_ObjOperateFns@0x00732D18) |
 | the client picks a waypoint row (packet `0x49`, `{u32 object id, u16 level}`) | `sub_0054C5D0_Pkt49WaypointTravel` → `sub_00584F60_WaypointTravel` | [I] (fn:sub_0054C5D0_Pkt49WaypointTravel@0x0054C5D0, fn:sub_00584F60_WaypointTravel@0x00584F60) |
 | an NPC menu action other than 1–3 (13-byte packet) | `NPC_MenuAction` → `sub_0054B830_NpcTravelMove` | [I] (fn:NPC_MenuAction@0x00579D60, fn:sub_0054B830_NpcTravelMove@0x0054B830) |
-| the player uses an item whose `Misc.pSpell` is 2 (`tsc`, `tbk`) | `g_ItemUseFns[2].use` = `ITEMUSE_TownPortal` | [I] (fn:ITEMUSE_TownPortal@0x005BE290, data:g_ItemUseFns@0x00741790, tbl:Misc.txt:pSpell) |
+| the player uses an item whose `Misc.pSpell` is 2 (`tsc`, `tbk`) | `g_ItemUseFns[2].use` = `ITEMUSE_TownPortal`, by the dispatch of [items/use § C](../items/use.md#c-the-dispatch-itemuse) | [I] (fn:ITEMUSE_TownPortal@0x005BE290, data:g_ItemUseFns@0x00741790, tbl:Misc.txt:pSpell) |
 | click on a warp tile (unit type 5, distance below 5) | `sub_00548B00_UnitInteract` case 5 → `sub_005550B0_WarpExitPos` | [I] (fn:sub_00548B00_UnitInteract@0x00548B00, fn:sub_005550B0_WarpExitPos@0x005550B0) |
 | the dead player presses "resurrect" (packet `0x41`, mode 17 only) | `sub_0054C0E0_Pkt41Resurrect` | [I] (fn:sub_0054C0E0_Pkt41Resurrect@0x0054C0E0) |
 | a player joins the game | `sub_005394A0_PlayerPlaceInAct` (callers 0x00530237, 0x0053A3EB, 0x0053A4E6) | [I] (fn:sub_005394A0_PlayerPlaceInAct@0x005394A0) |
@@ -231,23 +231,30 @@ Step notes:
 - B1. [C] The first-cell test and the cases that moved the cell agree with this search, logged in the game: 545 searches
   inside travel events, 541 in place and 4 moved (run 1); 323 searches, 54 moved (run 2). Those runs do not separate the
   ring order, the moving base or the walk. (fn:COLL_FindFreeNear@0x0064DEA0, run:2026-10-17-quests, run:2026-10-18-quests2)
-- B1. [I] (`drop`, pending ADR-0029) **For size 1 and step 1 the search above holds to its return**, emulated through
+- B1. [C] (ADR-0015, ADR-0029 (a)) **For size 1 and step 1 the search above holds to its return**, emulated through
   `GroundDropCell`, not on a live game: the rings 1 to 49 with ring 50 never looked at (radius 50), a ring's lowest
   `|dx| + |dy|` and the earliest of equals, the side columns before the end rows, the walk's test from the candidate's
-  room. Family `drop`, 4 000 cases, 0 mismatches. It rises to confirmed (ADR-0015) with no re-run if
-  [ADR-0029](../../adrs/0029-import-slots-and-import-boundaries-in-emulation.md) is accepted. Neither the locks around the
-  8-byte block a given origin allocates, nor that allocator on any other pool state, are evidenced in either case; the
-  block only holds the origin's two words. (fn:COLL_FindFreeNear@0x0064DEA0, fn:sub_00555DA0_GroundDropCell@0x00555DA0,
-  0x0064DEE8, 0x0064E1EC, run:2026-11-04-ground-emu, [items/0014 § 1](../../findings/items/0014-ground-items.md#1-the-search))
-- B1. [I] (`drop`, pending ADR-0029) **The lookup's base room moves.** Each lookup starts from the last non-null room a
+  room. Family `drop`, 4 000 cases, 0 mismatches, with `EnterCriticalSection` and `LeaveCriticalSection` held at a `ret 4`
+  stand-in, given that the allocation returned a writable block. Not evidenced: what the locks do (mutual exclusion,
+  another thread's order, a wait, a fault), a lock guarding memory the search reads, the allocator's code on any state but
+  the declared pool page, the block's address. The block only holds the origin's two words. The ground drop's use of this
+  search is [items/inventory § J](../items/inventory.md#j-the-ground-drops-cell). (fn:COLL_FindFreeNear@0x0064DEA0,
+  fn:sub_00555DA0_GroundDropCell@0x00555DA0, 0x0064DEE8, 0x0064E1EC, run:2026-11-04-ground-emu, run:2026-11-04-lock-scan,
+  [items/0014 § 1](../../findings/items/0014-ground-items.md#1-the-search),
+  [ADR-0029](../../adrs/0029-import-slots-and-import-boundaries-in-emulation.md))
+- B1. [C] (ADR-0015, ADR-0029 (a)) **The lookup's base room moves.** Each lookup starts from the last non-null room a
   lookup returned, not from `room`, and the first lookup's result is kept even when null, so a cell is reachable only
   through that room's near list. The return's lookup uses the moved base too: with no free cell and `fallback` 1 the
   return can be null though the start cell lies in the first room, and a found cell's return can be null when the last
-  room tried does not list it. No free cell with `fallback` 1 keeps the start cell, blocked or not. (0x0064E043,
-  0x0064E13C, 0x0064E21F, 0x0064E23F, run:2026-11-04-ground-emu, [items/0014 § 1](../../findings/items/0014-ground-items.md#1-the-search))
-- B1. [I] (`drop`, pending ADR-0029) **`other` is the origin of a walk, not a second footprint**: the search hands it to
-  `Walk`, from the candidate's room. (fn:COLL_FindFreeNear@0x0064DEA0, fn:sub_0066A670_FieldWalkBlocked@0x0066A670,
-  run:2026-11-04-ground-emu, [items/0014 § 6](../../findings/items/0014-ground-items.md#6-corrections-to-earlier-readings))
+  room tried does not list it. No free cell with `fallback` 1 keeps the start cell, blocked or not. By emulation only: no
+  live search has separated it (`fixedbase` fails 95 of 4 000 cases on declared rooms, 0 of 81 live,
+  run:2026-11-04-inventory-2). (0x0064E043, 0x0064E13C, 0x0064E21F, 0x0064E23F, run:2026-11-04-ground-emu,
+  run:2026-11-04-lock-scan, [items/0014 § 1](../../findings/items/0014-ground-items.md#1-the-search))
+- B1. [C] (ADR-0015, ADR-0029 (a)) **`other` is the origin of a walk, not a second footprint**: the search hands it to
+  `Walk`, from the candidate's room. Scope: at size 1 and step 1, through `GroundDropCell`, whose origin is its position.
+  The portal's own call (`0x0056D213`, mask `0xC01`, size 3) stays under the sizes-and-steps bullet below, not above it.
+  (fn:COLL_FindFreeNear@0x0064DEA0, fn:sub_0066A670_FieldWalkBlocked@0x0066A670,
+  run:2026-11-04-ground-emu, run:2026-11-04-lock-scan, [items/0014 § 6](../../findings/items/0014-ground-items.md#6-corrections-to-earlier-readings))
 - B1. [C] (ADR-0015) **`Walk`** to its return, family `line` of run:2026-11-04-ground-emu. A walk step with no room, no
   map or no cells counts as blocked. The field is `expfield.d2`, 256 × 256 bytes after a 10-byte header; byte `d` steps
   `dx[d]`, `dy[d]`, with `dx` = 0, 1, 1, 1, 0, −1, −1, −1, 0 at `0x00749780` and `dy` = −1, −1, 0, 1, 1, 1, 0, −1, 0 at

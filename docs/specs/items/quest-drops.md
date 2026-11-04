@@ -5,7 +5,7 @@ target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, items/tc, items/quality, items/affixes, items/properties, items/sockets-runewords, items/cube, save/d2s]
 consumed_by: [items/tc, objects, monsters/pool]
 tags: {C: 162, I: 80, L: 2}
-updated: 2026-11-03
+updated: 2026-11-04
 ---
 
 # Quest drops, quest rewards and special drops
@@ -825,7 +825,7 @@ F3. Personalize(player, item):                                    [C] (fn:NPC_Me
 #### F0. The shared tail
 
 - [C] Before the result is placed, each of the three services calls `sub_005761C0_ItemRepairAll`, then
-  `sub_0055FE00_ItemIdentifyAttach`, in that order (18 of each). The repair refilled a throwable stack to its maximum
+  `sub_0055FE00_ItemIdentifyAttach`, in that order (18 of each; a scroll's identify, which also ends there, is [items/use H1](../items/use.md#h-the-other-kinds)). The repair refilled a throwable stack to its maximum
   (throwing knives 20 → 160 and 30 → 160, `maxstack` 160) and the durability (1 → 4, 2 → 4 of 4); the identify left
   every item identified. (fn:sub_005761C0_ItemRepairAll@0x005761C0, fn:sub_0055FE00_ItemIdentifyAttach@0x0055FE00,
   0x0057A0F9, 0x0057A3ED, 0x0057A581, 0x0057A103, 0x0057A3F7, 0x0057A58B, run:2026-10-27-sweep-quest-npc)

@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, drlg/overview, drlg/room-tiles, monsters/spawn, monsters/special, monsters/stats, objects, save/d2s]
 consumed_by: [drlg/room-tiles, drlg/preset, drlg/collision, monsters/spawn, monsters/special, monsters/stats, objects, chain]
-tags: {C: 99, I: 77, L: 9}
+tags: {C: 102, I: 78, L: 9}
 updated: 2026-11-04
 ---
 
@@ -146,16 +146,22 @@ first one reached; the emulation stops at `UnitGetRoom`, so the code after it st
 fn:sub_00558B90_ActExpiredItemsFree@0x00558B90, 0x00620BB0, run:2026-11-04-ground-emu)
 - [I] After that boundary the unit is unlinked, sent to every player and freed.
 (fn:sub_00558B90_ActExpiredItemsFree@0x00558B90, [items/0014 § 3](../../findings/items/0014-ground-items.md#3-lifetime-in-an-active-room))
-- [I] **A monster's or chest's drop has `+0x24` 0 until its room has deactivated.** `ItemCreate`, which makes these and
+- [C] **A drop made through `DropCreateItem` has `+0x24` 0 at creation, 27 of 27**, and the 5 items followed stayed unswept
+in an active room, 12 to 14 dumps each, 79 sightings. Scope: this path and that session; a longer life is not covered.
+(run:2026-11-04-inventory, 0x0055A6B4, fn:sub_0055A550_DropCreateItem@0x0055A550,
+[items/inventory § K](../items/inventory.md#k-a-ground-items-life))
+- [I] **Past that, a monster's or chest's drop has `+0x24` 0 until its room has deactivated.** `ItemCreate`, which makes these and
 `DropGoldPile`'s piles, goes through `SUnitCreate`, which zeroes the item data, and neither calls `ItemGroundExpiry`; so in a room that stays active such an item is never
-swept. A release's record takes `ItemGroundExpiry` afresh (`0x00541B6C`, § G), not the old `+0x24`, and the restore
-(§ H) sets the field to `max(saved, frame + 15000)`, a saved 0 staying 0, so from then on this sweep can free the item
-with the room active. `ItemPlaceOnGround` (a player's drop, an overflow, `DropGoldAmount`, NPC menus, the cube's) writes
-`ItemGroundExpiry` at once. The writer scan does not see a block copy, and `ItemCreate`'s deeper chains were not
-followed; plan 0060 Phase 2's case 7 reads the field. (fn:sub_00558D90_ItemCreate@0x00558D90,
-fn:sub_00555230_SUnitCreate@0x00555230, fn:sub_00558AA0_ItemPlaceOnGround@0x00558AA0,
-fn:sub_00541990_InactiveItemRestoreOne@0x00541990, 0x00541B6C,
+swept. The writer scan does not see a block copy, and `ItemCreate`'s deeper chains were not followed.
+(fn:sub_00558D90_ItemCreate@0x00558D90, fn:sub_00555230_SUnitCreate@0x00555230,
 [items/0014 § 3](../../findings/items/0014-ground-items.md#3-lifetime-in-an-active-room))
+- [C] **A release's record takes `ItemGroundExpiry` afresh** (§ G), not the old `+0x24`, 45 of 45, and the restore (§ H) sets the
+field to `max(saved, frame + 15000)`, both branches, 40 of 40, so from then on this sweep can free the item with the room
+active: 22 of 22 restored copies resolved. A saved 0 staying 0 is not observed (§ H). (run:2026-11-04-inventory-2, 0x00541B6C,
+0x005419F5, fn:sub_00541990_InactiveItemRestoreOne@0x00541990)
+- [C] **`ItemPlaceOnGround` writes `ItemGroundExpiry` at once**: logged for qualities 1 to 8 and the filler, 80 of 80, and swept at the
+first multiple of 1 500 at or past it for quality 2, 4 of 4. (run:2026-11-04-inventory-2, run:2026-11-04-inventory, fn:sub_00558AA0_ItemPlaceOnGround@0x00558AA0)
+- [I] Its callers beyond `CursorDrop` are a reading: an overflow, `DropGoldAmount`, NPC menus, the cube's. (fn:sub_0055A090_DropGoldAmount@0x0055A090, fn:sub_00563840_CubeDropEmptied@0x00563840)
 
 ### B. Activation: reference counts per near-list distance
 
@@ -1061,8 +1067,8 @@ restore is not specified here.
 - [L] **The wanderer spawn** was never reached: one gate pass is logged (§ I), and its roll (82) returned. The gate
   passes 1 in 32 768 draws and the roll 3 in 100. The wanderer's alignment is answered as a code reading in § H from
   drlg/0009 § 11.4 (b): `MonSpawnTry` sets 2, so a saved wanderer is dropped.
-- [L] **Whether a monster's drop's item data `+0x24` is 0 in a game** (§ A), by a writer the scan's form misses
-  (`ItemCopy`, a block copy): plan 0060 Phase 2 case 7.
+- [L] **A monster's drop over a longer life than the run's** (§ A), by a writer the scan's form misses
+  (`ItemCopy`, a block copy): the creation's 0 is answered for `DropCreateItem`.
 - [L] **Unreached in a game**: the 0 expiry (no quest item was saved) and the 45000 gold expiry, both emulated (G1);
   and, each a reading above, the 1 500-frame expiry sweep
   `0x00542AC0` freeing a record (§ A), save tests 3, 4, 6 and 7 and `restore` 0, kept monsters
