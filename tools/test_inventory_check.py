@@ -180,6 +180,38 @@ class SaveExclusion(unittest.TestCase):
         self.assertTrue(self.sweep_mism(self.log(17000)))
 
 
+class RestoredSweep(unittest.TestCase):
+    def log(self, resave):
+        p = os.path.join(tempfile.mkdtemp(), "r.log")
+        it = {"id": 70, "c": 587, "mode": 3, "q": 2, "e": 0, "x": 5, "y": 6}
+        with open(p, "w") as f:
+            f.write("RV1 " + json.dumps({"saved": 18000, "lim": 19000, "f": 4000, "item": it}) + "\n")
+            f.write("SWP " + json.dumps({"f": 4500, "items": [[71, 587, 3, 19000, 5, 6]]}) + "\n")
+            if resave:
+                f.write("SV1 " + json.dumps({"f": 4800, "saved": 19800, "item": dict(it, id=71)}) + "\n")
+            f.write("SWP " + json.dumps({"f": 19500, "items": [] if resave else [[71, 587, 3, 19000, 5, 6]]}) + "\n")
+            if not resave:
+                f.write("SWF " + json.dumps({"item": dict(it, id=71, e=19000), "f": 19500}) + "\n")
+        return p
+
+    def test_freed_at_the_predicted_sweep(self):
+        p = self.log(False)
+        mism, _ = ic.check(ic.predict([p]), [p], show=False)
+        self.assertEqual(mism, [])
+
+    def test_resaved_before_it_is_excluded(self):
+        p = self.log(True)
+        mism, _ = ic.check(ic.predict([p]), [p], show=False)
+        self.assertEqual(mism, [])
+
+    def test_not_freed_and_not_resaved_is_a_mismatch(self):
+        p = self.log(False)
+        lines = [l for l in open(p).read().splitlines() if not l.startswith("SWF")]
+        open(p, "w").write("\n".join(lines) + "\n")
+        mism, _ = ic.check(ic.predict([p]), [p], show=False)
+        self.assertTrue(mism)
+
+
 class Restore(unittest.TestCase):
     def test_restore_rule(self):
         self.assertEqual(ic.restore_expect(0, 17000), 0)

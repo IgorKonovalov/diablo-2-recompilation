@@ -243,9 +243,14 @@ def predict(logs, wrong=None):
                 p = {"log": name, "kind": "ground", "i": i, "f": e["f"]}
                 try:
                     p["pred"] = search(e, fld, wrong)
-                    p["ctl"] = {c: search(e, fld, c) for c in CONTROLS}
                 except OutOfWindow as ex:
                     p["oow"] = str(ex)
+                p["ctl"] = {}
+                for c in CONTROLS:     # a control that reads past the window is undecided for the case, not a failure
+                    try:
+                        p["ctl"][c] = search(e, fld, c)
+                    except OutOfWindow:
+                        p["ctl"][c] = None
                 preds.append(p)
             elif t == "IPG":
                 pe, code, typ, filler = predict_expiry(e["item"], e["f"], classes)
@@ -286,6 +291,7 @@ def check(preds, logs, show=True):
     for lg in logs:
         rows[os.path.basename(lg)] = parse(lg)
     mism, mix, ctlfail, nct = [], {}, {c: 0 for c in CONTROLS}, 0
+    ctlund = {c: 0 for c in CONTROLS}
     sep_cases = {c: [] for c in CONTROLS}
     oow = 0
     explained = []
@@ -315,7 +321,9 @@ def check(preds, logs, show=True):
             if tuple(p["pred"]) != obs:
                 mism.append((p, "predicted %s observed %s" % (tuple(p["pred"]), obs)))
             for c in CONTROLS:
-                if tuple(p["ctl"][c]) != obs:
+                if p["ctl"][c] is None:
+                    ctlund[c] += 1
+                elif tuple(p["ctl"][c]) != obs:
                     ctlfail[c] += 1
                     sep_cases[c].append(i)
             mix.setdefault("ground", {})
@@ -426,7 +434,12 @@ def check(preds, logs, show=True):
                 want = next((f for f in frames if f >= p["pred"]), None)
                 if nid is not None:
                     fr = [e for t, e in ev[i + 1:] if t == "SWF" and e["item"]["id"] == nid]
-                    if want is None:
+                    resaved = next((e["f"] for t, e in ev[i + 1:] if t == "SV1" and e["item"]["id"] == nid), None)
+                    if want is not None and resaved is not None and resaved < want:
+                        kk = "restored copy saved again with its released room (SV1) before the predicted sweep: not an active-room case"
+                        mix.setdefault("restored sweep", {})[kk] = 1 + mix.get("restored sweep", {}).get(kk, 0)
+                        explained.append(p)
+                    elif want is None:
                         kk = "no sweep dump at or past the restored +0x24 (unresolved)"
                         mix.setdefault("restored sweep", {})[kk] = 1 + mix.get("restored sweep", {}).get(kk, 0)
                     else:
@@ -518,7 +531,8 @@ def check(preds, logs, show=True):
         if nct:
             print("controls over %d ground cases (observed differs from the wrong reading in n cases):" % nct)
             for c in CONTROLS:
-                print("  %-12s fails %d%s" % (c, ctlfail[c], "" if ctlfail[c] else "  <-- separates nothing in this batch"))
+                print("  %-12s fails %d%s%s" % (c, ctlfail[c], "" if ctlfail[c] else "  <-- separates nothing in this batch",
+                                              ("  (undecided, read past the window: %d)" % ctlund[c]) if ctlund[c] else ""))
         # restored monster drops: a created item that reappears at the same class and cell under another id
         rest = []
         for p in preds:
