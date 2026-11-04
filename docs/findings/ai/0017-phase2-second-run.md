@@ -275,7 +275,7 @@ Built: the character `AiDur` (`tools/d2s_recipes/ai-dur.json`: `CombatSor` plus 
 ### 12. What stays short
 
 [2026-11-04, `lane/p52c`: H3 and the fixed model's rerun are done, § 13.] H1 (the 331 monster gaps with the skills logger beside this one), H3 (Raven's 2 218 `MonAttackStats` calls), the catalogue sample of batches 5, 7, 10, 11, 12, Fetish's and Andariel's chained pairs at `/players 8` (`a1-andariel-p8` kept: 9 Andariel decisions in the 21 sessions' check, 263 decisions of the session), P1b-1, P1b-2's stock case, state 13, the fixed model's kept rerun, the first run's volume (14 645 decisions) not repeated.
-Owner play for P1b-1: [2026-11-04, `lane/p52b` review: the first text would have lost the session, since the logger's default `AI_CAP_ROW` of 200 ends row 44's lines below the 300 asked.] The objective, launch and stop rule are in [the owner entry](../../backlog/2026-11-04-architect-human-plan-0052-p1b-1-duriel-melee-owner-play.md).
+Owner play for P1b-1: [2026-11-04, `lane/p52b` review: the first text would have lost the session, since the logger's default `AI_CAP_ROW` of 200 ends row 44's lines below the 300 asked.] The objective, launch and stop rule are in [the owner entry](../../backlog/archive/2026-11-04-architect-human-plan-0052-p1b-1-duriel-melee-owner-play.md).
 
 ### 13. Third part, 2026-11-04 (`lane/p52c`): the fixed model, the tier table, H3, logger rev 5
 

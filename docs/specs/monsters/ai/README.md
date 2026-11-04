@@ -563,7 +563,7 @@ tests are the checkers `tools/ai.py check` and `tools/ai_resume.py` over the log
 
 - [L] **State 13.** Two launches on The Countess's route ended the descent at levels 24 and 23, so no state 13 decision
   is logged and states 2, 3, 8, 9, 14 and 17 are not called dead. An owner-played `/players 1` session would give it.
-  (run:2026-11-04-ai-r5, [the owner entry](../../../backlog/2026-11-04-architect-human-plan-0052-p1b-1-duriel-melee-owner-play.md))
+  (run:2026-11-04-ai-r5, [the owner entry](../../../backlog/archive/2026-11-04-architect-human-plan-0052-p1b-1-duriel-melee-owner-play.md))
 - [L] **Chaining short:** Andariel 8 of 20, BatDemon 1 of 300 (A3). (run:2026-11-04-ai-r5)
 - [L] **BloodLord:** 38 decisions past the first, none with a call there (H4). (run:2026-11-04-ai-r5)
 - [L] **The catalogue sample** is short for batches 5, 7, 10, 11, 12: the logs hold no non-tier row of 5, 7 and 11, batch
@@ -574,7 +574,7 @@ tests are the checkers `tools/ai.py check` and `tools/ai_resume.py` over the log
   the reading is untested; row 23 is the catalogue's. (run:2026-11-04-ai-resume, run:2026-11-04-ai-r5, 0x005F33EC)
 - [L] **The H1 remainder:** the 8 `AD0` stops, unexamined (A5), and the 330 of 331 same shape, an inference (A5).
 - [L] **P1b-1, Duriel, and C10, C11's community disagreement, listed unresolved.** src:arreat-summit-boss-pages gives Duriel "17 % Melee
-  Attack 1, 33 % Smite, 50 % Jab" and the same for Über Duriel. Unplayed, so no logged Duriel melee decision settles it. [The entry](catalogue.md#r44-row-44-duriel-fnsub_005f67b0_aiduriel0x005f67b0) carries it. ([ai/0014](../../../findings/ai/0014-community-cross-check.md), [the owner entry](../../../backlog/2026-11-04-architect-human-plan-0052-p1b-1-duriel-melee-owner-play.md))
+  Attack 1, 33 % Smite, 50 % Jab" and the same for Über Duriel. Unplayed, so no logged Duriel melee decision settles it. [The entry](catalogue.md#r44-row-44-duriel-fnsub_005f67b0_aiduriel0x005f67b0) carries it. ([ai/0014](../../../findings/ai/0014-community-cross-check.md), [the owner entry](../../../backlog/archive/2026-11-04-architect-human-plan-0052-p1b-1-duriel-melee-owner-play.md))
 - [C] **The code's side of C10:** `draw < aip2` Skill3, then a fresh `draw < aip3` Skill2, then a fresh `draw < aip4` A2, else A1, by emulation to the first callee. (run:2026-10-30-ai-cat-emu-6, fn:sub_005F67B0_AiDuriel@0x005F67B0)
 - [I] **Its frequencies**, arithmetic on that map with `aip2..4` 33, 50, 0, in all three difficulties: Smite 33 %, Jab 33.5 %, A1 33.5 %. C11 is the same think and the same values, row 44's record 708. (fn:sub_005F67B0_AiDuriel@0x005F67B0, [ai/0014](../../../findings/ai/0014-community-cross-check.md))
 - [L] **P1b-2, C40.** Whether a natural champion corpse reaches the Greater Mummy's skill test: no natural champion was logged, and the built-state run cannot count, since a logger

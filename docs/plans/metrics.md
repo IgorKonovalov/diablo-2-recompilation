@@ -637,6 +637,8 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-11-04 | `lane/p55c` | 0055 P2b (batch, first agent) | reverser-harness | 313 206 | 138 | 43 | 1 | accept with fixes (Tier A, rulings, 17) | omission 8, miscount 3, overclaim 2, misread 2, under-claim 1, other 1 |
 | 2026-11-04 | `lane/p55c` | 0055 P2b (batch, second agent) | reverser-harness | 276 141 | 146 | 88 | 1 | accept with fixes (Tier A, rulings, 17) | omission 8, miscount 3, overclaim 2, misread 2, under-claim 1, other 1 |
 | 2026-11-04 | `lane/p55c` review | 0055 P2b (batch) | architect-review | 304 142 | 59 | 37 | — | accept with fixes (17); pack stop re-ruled; pairs floor to the owner | omission 8, miscount 3, overclaim 2, misread 2, under-claim 1, other 1 |
+| 2026-11-04 | `lane/r72` | owner play, Duriel and Countess | reverser-static | 266 061 | 48 | 19 | — | accept with fixes (Tier A, 14) | omission 6, overclaim 4, stale cross-reference 2, tool not kept 1, other 1 |
+| 2026-11-04 | `lane/r72` review | owner play, Duriel and Countess | architect-review | 251 789 | 31 | 15 | — | accept with fixes (14); S13 in H1 with three words named | omission 6, overclaim 4, stale cross-reference 2, tool not kept 1, other 1 |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not

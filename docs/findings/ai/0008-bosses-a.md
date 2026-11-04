@@ -79,7 +79,7 @@ cited by their anchors.
 | `0x005E6300` | `sub_005E6300_AiBloodRavenInit` | row 59's init: `v1C = 0` | I (map `[C]`, § 4) |
 | `0x005E6320` | `sub_005E6320_AiBloodRaven` | row 59 `BloodRaven` think | I (entry call `[C]`, § 4) |
 | `0x005F5830` | `sub_005F5830_AiAndariel` | row 34 `Andariel` think | I (map `[C]`, § 4); first boundary live `C`, ai/0015 |
-| `0x005F67B0` | `sub_005F67B0_AiDuriel` | row 44 `Duriel` think | I (map `[C]`, § 4) |
+| `0x005F67B0` | `sub_005F67B0_AiDuriel` | row 44 `Duriel` think | C ([ai/0020](0020-owner-played-duriel-countess.md), run:2026-11-04-r72); map `[C]`, § 4 |
 | `0x005F7700` | `sub_005F7700_AiMephistoPickCb` | the pick's search callback: counts, nearest, lowest life, nearest for a player searcher | I |
 | `0x005F77C0` | `sub_005F77C0_AiMephistoPickTarget` | `(ECX game, EDX unit; M, t)`: the lowest-life hostile within 32 on `aip2`, else `t` | I (entry call `[C]`, § 4) |
 | `0x005F78B0` | `sub_005F78B0_AiMephisto` | row 50 `Mephisto` think | I (entry call `[C]`, § 4) |
@@ -145,6 +145,7 @@ SetModeAtUnit(4, t);
   (fn:UNIT_GetRightSkill@0x006201D0, fn:sub_0056DEB0_UnitSkillAdd@0x0056DEB0, fn:sub_005701B0_PlayerSetSkill@0x005701B0)
 - [C] The map with `Skill4` < 0, and the `GetRightSkill` call with `Skill4` ≥ 0. (run:2026-10-30-ai-cat-emu-6,
   `duriel`)
+- [C] 2026-11-04, logged: 308 melee decisions by this map's three draws, from each decision's logged seed; the rule's 309 of 309 fork-free; the aura grant, A2 and `Charge`'s true side not reached. [ai/0020 § 1](0020-owner-played-duriel-countess.md). (run:2026-11-04-r72, 0x005F6861, 0x005F68D4, 0x005F693F)
 
 #### 2.3 Row 50 `Mephisto` (fn:sub_005F78B0_AiMephisto@0x005F78B0)
 
