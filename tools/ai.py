@@ -208,6 +208,8 @@ def parse(path):
     for d in dec:
         d["rev"] = rev
         d["bmax"] = bmax
+    if dec and dec[-1]["aix"] is None and not dec[-1]["aib"]:
+        dec[-1]["trunc"] = True       # the log ends inside the last decision (the game exited): nothing to compare
     return {"dec": dec, "ain": ain, "sst": sst, "cap": cap, "lines": n_lines, "rev": rev}
 
 
@@ -383,6 +385,8 @@ def check_decision(dec, mut=None):
         if res[1] in UNLOGGED_SITES and (dec.get("rev") or 0) <= 2:
             return "unlogged", mn + ":" + fam, [], (res[0], res[1])
         b = first_aib(dec, set(mod.OBSERVE))
+        if b is None and dec.get("trunc"):
+            return "unlogged", mn + ":" + fam, [], (res[0], res[1])
         if b is None:
             return "model", mn + ":" + fam, ["no boundary logged, %08x predicted" % res[0]], (res[0], res[1])
         return "model", mn + ":" + fam, compare(res, b, mod, aid), (res[0], res[1])
@@ -398,6 +402,8 @@ def check_decision(dec, mut=None):
             inner = fn
             fn = lambda x, inner=inner: (lambda r: None if r is None else (r[0], r[1] + 1) + tuple(r[2:]))(inner(x))
         res = fn(i)
+        if dec.get("trunc") and not dec["aib"] and fn(i):
+            return "unlogged", name, [], (fn(i)[0], fn(i)[1])
         return "hand", name, check_hand(dec, i, (name, fn)), ((res[0], res[1]) if res else ("return", None))
     return "none", "%08x" % (th or 0), [], None
 

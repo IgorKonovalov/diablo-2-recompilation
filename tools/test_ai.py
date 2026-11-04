@@ -153,6 +153,27 @@ class MixControlTest(unittest.TestCase):
         # the melee control does not separate Fallen: nothing in the decision reads the flag
         self.assertRegex(text, r"CONTROL-ROW melee 6 Fallen\s+compared=5 failed=0")
 
+    def test_a_log_cut_inside_its_last_decision_is_unlogged_not_a_mismatch(self):
+        # the game exits while the last decision is open: its AID line is the log's last AI line, with no AIB, AIR or AIX
+        p = os.path.join(self.tmp, "cut.log")
+        fallen_log(p, [1])
+        lines = open(p).readlines()
+        last = max(i for i, ln in enumerate(lines) if ln.startswith("AID "))
+        open(p, "w").writelines(lines[:last + 1])
+        text, r = ai.run_check([p])
+        self.assertEqual(r["mismatches"], 0, text[:1500])
+        self.assertIn("unlogged=1", text)
+        # the same decision in the middle of a log (more decisions after it) with its boundary missing is a mismatch
+        q = os.path.join(self.tmp, "mid.log")
+        fallen_log(q, [1, 1])
+        lines = open(q).readlines()
+        first = min(i for i, ln in enumerate(lines) if ln.startswith("AID "))
+        out = [ln for i, ln in enumerate(lines) if not (ln.startswith("AIB ") and i > first and
+                                                         min(j for j, x in enumerate(lines) if x.startswith("AIB ")) == i)]
+        open(q, "w").writelines(out)
+        text, r = ai.run_check([q])
+        self.assertGreater(r["mismatches"], 0, text[:1500])
+
     def test_a_control_that_passes_is_reported_wrongly_passed(self):
         # the inverted Fallen map predicts a return in modes other than 0 and 12; a log whose decisions in those modes
         # carry no boundary makes it match: the control then PASSES and the run says so

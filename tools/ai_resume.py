@@ -932,12 +932,14 @@ def run_resume(paths, rows=None, controls=False, code=None, machine_cls=Machine)
             e["end"] += 1 if r.end else 0
             if r.status == "ok":
                 e["ok"] += 1
+            elif r.status == "mismatch" and "the decision ended" in r.why and d["aix"] is None:
+                # the log ends inside the decision (no AIX: the game exited, or the case was cut): not comparable, not a mismatch
+                e["stop"]["log ends inside the decision (no AIX)"] = e["stop"].get("log ends inside the decision (no AIX)", 0) + 1
             elif r.status == "mismatch":
                 e["mis"] += 1
                 e.setdefault("ex", []).append((os.path.basename(d["log"]), d["aid"]["n"], r.why))
             else:
-                key = r.why.split(":")[0] if r.why.startswith("boundary") else r.why
-                key = re.sub(r"boundary \d+", "boundary k", key)
+                key = re.sub(r"boundary \d+", "boundary k", r.why)
                 key = re.sub(r"[0-9a-f]{8}", "ADDR", key)
                 e["stop"][key] = e["stop"].get(key, 0) + 1
             seq = tuple((b["fn"], b["ra"]) for b in d["aib"][:4])
@@ -962,7 +964,7 @@ def report(decs, results):
                      len(e["seqs"])))
         for why, n in sorted(e["stop"].items(), key=lambda kv: -kv[1])[:4]:
             L.append("RSTOP %s th=%08x %d x %s" % (key[0], key[1] or 0, n, why))
-        for ex in e.get("ex", [])[:3]:
+        for ex in e.get("ex", [])[:EXAMPLES]:
             L.append("RMISMATCH %s n=%d row=%s %s" % (ex[0], ex[1], key[0], ex[2]))
     L.append("RTOTAL decisions=%d resumed_ok=%d mismatches=%d boundaries_matched=%d past_first=%d" % (
         tot["n"], tot["ok"], tot["mis"], tot["matched"], tot["past"]))
@@ -976,6 +978,9 @@ def report(decs, results):
                 name, n, f, ok, ",".join(str(k[0]) for k in sorted(c, key=lambda k: k[0] or 0)
                                          if c[k]["mis"] == 0 and c[k]["matched"] > 0)))
     return "\n".join(L) + "\n"
+
+
+EXAMPLES = 3     # --examples N: the mismatches printed per row
 
 
 def main(argv):
@@ -994,6 +999,10 @@ def main(argv):
         elif a[k] == "--controls":
             controls = True
             k += 1
+        elif a[k] == "--examples":
+            global EXAMPLES
+            EXAMPLES = int(a[k + 1])
+            k += 2
         else:
             paths.append(a[k])
             k += 1
