@@ -69,7 +69,7 @@ These sit in the image's data. The values are read from the pinned image at the 
 
 The context `ctx` and the record `path` are [overview § Runtime state](README.md#runtime-state). A planner returns its count; `PathPlan` stores it in `+0x28`.
 
-**Which fields each planner reads**, all [C] by emulation, an undeclared field having no traced read. Fields not listed are not read. (run:2026-11-03-path-emu-2, run:2026-11-03-path-emu-3)
+**What decides each planner**, [C] by emulation against the whole record. An undeclared field has no traced read: `ctx +0x0C`, `+0x10`, `+0x1C`, `+0x20`, `+0x24` in the short planners, `ctx.limit`, `ctx.size` and `+0x10` in the search, `ctx.limit`, `ctx.refresh` and `+0x91` in type 1. The table doesn't list the asserts' reads. (run:2026-11-03-path-emu-2, run:2026-11-03-path-emu-3)
 
 | Planner | Cells read under | Limit | Other |
 |---|---|---|---|
