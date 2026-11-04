@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, monsters/ai/overview, monsters/ai/machinery, skills/dispatch, path/overview]
 consumed_by: [monsters/ai/overview, monsters/ai/machinery, hirelings]
-tags: {C: 330, I: 497, L: 19}
+tags: {C: 330, I: 498, L: 19}
 updated: 2026-11-04
 ---
 
@@ -77,6 +77,7 @@ Each entry states its own. No constant is shared across entries.
 - [I] **The `r` line** is the resumed comparison over the rev 4 and rev 6 logs for the row's own think (other thinks of its classes,
   the state rows, are counted under the state's entry). It is a consistency check. **No entry outside machinery's table is under sentence
   H1**: nothing past the first boundary of any row here is `[C]`. No row's role, symbol or reading is raised by being resumed. (run:2026-11-04-ai-resume, run:2026-11-04-ai-r5)
+- [I] **The census of the 130 rows outside the tier,** by those lines. 28 have their first boundary compared, 15 are logged in a row with no model, so theirs is not raised, and 87 have no decision logged: `grep -cE` of `^- R[0-9]+l\. \[C\] First boundary`, `^- R[0-9]+l\. \[I\] Logged, not compared` and `^- R[0-9]+l\. \[I\] Not logged` gives each. 115 of the 130 name an emulated family for their think or init; the other 15 are rows 0, 1, 8, 10, 11, 15, 23, 25, 26, 48, 49, 56, 60, 145 and 147. 38 entries have an `r` line (`^- [RS][0-9]+r\.`), 4 of them state rows (10, 11, 12, 17). (0x005B186F, run:2026-11-04-ai-resume)
 - [I] **The catalogue sample is short, by name:** batches 5, 7, 10, 11, 12 have no row that counts. Row 54 cannot fail (0 of 3 sites), row 99 has no call past the first, row 32 has a fork in all 199 decisions of the rev 4 logs, row 100 has 4 decisions. Row 130's map has not landed.
   (run:2026-11-04-ai-resume-flip)
 - [I] **Which blocks were read against their instructions.** Each block restates a compact block or the prose of its finding, and those were wrong in places no earlier review caught. Read line by line against objdump of the pinned image, register and stack arguments included, at the `lane/s52b` review: rows 3, 4, 11, 16, 18, 25, 26, 48, 50, 59, 65, 70, 71, 73, 85, 91, 96, 104, 106 (steps 12 to 16 and `Use`), 108, 116, 122, 131, states 3 and 5, and the tables of rows 51 and 135. By that lane alone, with filtered listings on the longer functions: 105, 106's other steps, 110, 111, 112, 134, 137, 31, 32's chain, 54, 58, 81, 99, states 12 and 13. The tier rows' read set is machinery's. **Not read:** the other 75 blocks of batches 1 to 9, named in [plan 0052's P3c](../../../plans/0052-monster-ai.md#phase-3--spec-monster-ai-in-two-parts), and the other blocks of batches 10 to 12, whose findings wrote them from instructions. **Measured:** of 19 blocks of batches 1 to 9 read at the review, 2 (rows 18, 59) held an error that changes a branch or a command's argument, corrected here, 1 (row 104) an omitted argument, and none a draw's order or count; of 3 of batches 10 to 12, none. So until P3c closes, expect about one unread block of batches 1 to 9 in ten to hold a wrong unit or argument. Short by name: rows 106 and 143 (step 13's terms decide which skills draw) and rows 25 and 94 (their tables), Open questions. (0x005F2426, 0x005E63F8, 0x005E65E5, 0x005EAA11)

@@ -23,7 +23,7 @@ the emulation of that think function treats as a boundary (ADR-0021).
   `[I]` (ADR-0021, ADR-0004). (run:2026-11-03-ai, fn:sub_005B1740_MonAiEvent@0x005B1740)
 - [C] The think call at 0x005B186F is reached by 14 645 of 32 324 logged events; 17 679 end before it (pre-checks, the
   search, `MonSpcWalk`), and `AiCtl.state` is 0 at all of them. (run:2026-11-03-ai, 0x005B186F, 0x005B1876)
-- [C] `PathPlan` leaves the unit seed unchanged on all 9 618 plan calls inside decisions (path types 2, 5, 6, 7, 13, 15
+- [C] `PathPlan` leaves the unit seed unchanged on all 9 618 plan calls with an exit line inside decisions, of 9 934 logged entries (path types 2, 5, 6, 7, 13, 15
   observed): ai/0001 § 8's reading holds for the types the AI requests. Type 1 was not requested in this run.
   (run:2026-11-03-ai, fn:sub_00649970_PathPlan@0x00649970)
 - [C] Every logged point of a decision (entry, think call, boundaries, `MonSetMode`, `PathPlan`, skill start, exit) follows

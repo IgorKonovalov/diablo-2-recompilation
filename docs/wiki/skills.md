@@ -72,7 +72,7 @@ Some inputs belong to other subjects and are taken as given, logged in the runs
 
 - **The frame on which the action happens.** Which frame of an animation carries the action is
   [animation timing's](animation.md).
-- **A monster's choice** of skill, mode and target: monster AI, a later subject.
+- **A monster's choice** of skill, mode and target: [monster AI](monster-ai.md).
 - **The live collision grid at a plan or a step**, and the cells a missile's step crosses, the order in which an area skill
   visits the units near it, and which pet the pet limit removes. The planner's points are not among these inputs:
   [pathing](pathing.md) explains the planners, which reproduce given the live grid.
@@ -154,7 +154,7 @@ rather than nothing at all is read from the code, and why the other 7 uses reach
 action frame added no draw of its own (confirmed). The
 delivering do function was run on its own under emulation up to its calls.
 
-**A monster** reaches the same start and do functions through its AI, which picks the skill, sets the
+**A monster** reaches the same start and do functions through [its AI](monster-ai.md#the-command), which picks the skill, sets the
 once-per-mode flag itself and sets the mode, so its do function runs through the paths that do not test the flag. A
 monster passes none of the request checks, pays no cost, uses no ammunition and gets no delay. Read from the code
 ([dispatch § M](../specs/skills/dispatch.md#m-monster-skill-use)).
@@ -457,7 +457,7 @@ emulation did not follow, the spec stops its description there and marks the res
 - **What the Iron Maiden handler draws when its damage kills the cursed unit** is unknown, and the check does not
   cover that branch.
 - **Everything past each entry's stopping point**, which the spec lists per entry, waits for a game session or for
-  monster AI.
+  a check against [monster AI](monster-ai.md).
 
 ## Missiles: creation, speed, range, seed and damage
 
@@ -595,7 +595,7 @@ sequenceDiagram
   304 it lay a few steps further on the same stream, so something drew on it in between. Walking the unit's own
   logged draws between two events closes 90 of the first run's 133 player gaps and 45 of the second's 148. The
   player gaps left are listed in the spec, most with the player defending against a hit in between; the monster gaps
-  point at the AI.
+  point at the AI ([monster AI](monster-ai.md#draws-and-seeds)).
 - **A missile's draws chain across its hits** in one frame (confirmed, 110 checks), and **the handlers step their own
   unit's seed** by their own draws (confirmed, above).
 - **The finisher** had no checked pairs: its order is the code reading.
@@ -638,7 +638,7 @@ From the specs' open questions ([overview](../specs/skills/README.md#open-questi
   the second and third elemental attacks, and the owner's skill damage past the Raven at one level with one player.
 - **Summons**: their other stats, a summon class scaled by level, the golems, Raise Skeleton's level gate and the
   mage's draw; two pet types' special cases in the pet limit and where the summon's pet type is filled in.
-- **The caster gaps left** (43 and 103 player gaps over the two runs) and the monster gaps, which wait for monster AI.
+- **The caster gaps left** (43 and 103 player gaps over the two runs) and the monster gaps. Their logs hold no AI line; with the AI logged, 41 of 49 new gaps of this shape close ([monster AI](monster-ai.md#draws-and-seeds)).
 - **Which frame carries the action**, and the unit field behind two frame tests: animation timing.
 - **The finisher** in a run.
 - **Missiles**: the end of a hit for rows with a hit function, the filters before the build, the "always explode"

@@ -106,12 +106,13 @@ sequenceDiagram
 |---|---|---|---|---|
 | events that end before the think | `MonAiEvent`: pre-check, search, `MonSpcWalk` | § F, [machinery § A](machinery.md#a-target-search) | acting unit; a candidate player for state 146 | [C] 14 645 of 32 324 logged events reach the think call and 17 679 end before it, with `AiCtl.state` 0 at all of them (run:2026-11-03-ai, 0x005B186F, 0x005B1876) |
 | a decision | the think call at `0x005B186F` | the entry's own, in [machinery § T](machinery.md#t-the-tier-ais) | acting unit | [C] every logged point (entry, think call, boundaries, `MonSetMode`, `PathPlan`, skill start, exit) follows the previous one by whole steps of the acting unit's own seed, 0 to 7 steps, 0 violations in 14 645 decisions; the search's state-146 candidate draw is on another seed and is not logged (run:2026-11-03-ai) |
-| the path plan | `PathPlan` under `MonSetMode` | none on the AI's types | — | [C] the unit seed is unchanged on all 9 618 plan calls inside decisions, path types 2, 5, 6, 7, 13, 15; type 1 was not requested in the run (run:2026-11-03-ai, fn:sub_00649970_PathPlan@0x00649970) |
+| the path plan | `PathPlan` under `MonSetMode` | none on the AI's types | — | [C] the unit seed is unchanged on all 9 618 plan calls with an exit line inside decisions ([machinery D6](machinery.md#d-the-path-request)), path types 2, 5, 6, 7, 13, 15; type 1 was not requested in the run (run:2026-11-03-ai, fn:sub_00649970_PathPlan@0x00649970) |
 | a skill start | `SKILLS_SrvStart` inside the decision | [skills/dispatch § P](../../skills/dispatch.md#p-draws-and-seeds-per-event-kind) | acting unit | [C] 899 skill starts of the decision's unit between the think call and the exit, each entered at the decision's last logged seed advanced 0 to 12 steps (0 steps 791 times) and each exiting with the event's exit seed (run:2026-11-03-ai, fn:SKILLS_SrvStart@0x0056F640) |
 | a mode's frames | [anim/timing § N](../../anim/timing.md#n-draws-and-seeds-per-event-kind) | none of the animation's but an object's start | — | [I] (fn:sub_005A7C20_MonSetMode@0x005A7C20) |
 
-- A1. [C] **The commands logged at the AI's sites of `MonSetMode`** are modes 2 (WL) 6 133, 15 (RN) 1 533, 4 (A1) 712,
-  5 (A2) 425, 14 (SQ) 289, 8 (S1) 375, with path type byte 101 for every-frame modes and 100 otherwise.
+- A1. [C] **The commands logged at the AI's sites of `MonSetMode`** are led by modes 2 (WL) 6 133, 15 (RN) 1 533, 4 (A1) 712,
+  5 (A2) 425, 14 (SQ) 289, 8 (S1) 375, with path type byte 101 for every-frame modes and 100 otherwise; modes 9 (S2) 58, 11 (S4) 53,
+  7 32, 10 (S3) 18 and 1 (NU) 4 also occur.
   (run:2026-11-03-ai, fn:sub_005A7C20_MonSetMode@0x005A7C20)
 - A2. [C] **Decision pairs on one seed.** A decision's exit seed equals the same unit's next decision's entry seed in
   12 368 pairs of the first run, 9 687 of them with draws. Over the three kept batches every tier AI but two has at
