@@ -85,19 +85,36 @@ def scenes(wp_x=None, wp_y=None, long=False):
     descend = ["farm", "--sweep", "--descend", "0,1,2,3", "--descend-to", "8", "--time", "600"] + NOVA
     # the character starts beside Warriv and the stash: the first hops east and south clear them (a click toward them opens a
     # dialog or the stash, dev session 2026-11-04-frame2-w), then `explore` leaves the town by itself in about 30 s
-    pm = [("settle", 20), ("pilot", ["hop", "--walk", "12", "0"], 60), ("pilot", ["hop", "--walk", "12", "0"], 60),
-          ("pilot", ["hop", "--walk", "0", "12"], 60), ("pilot", ["hop", "--walk", "0", "12"], 60), ("bg", expl, 1200), ("lvl", 2, 360), ("settle", 6),
-          ("near", 22, 2, 300, "tier"),
-          window("pack", n=500, what="pilot: Blood Moor, a Fallen pack in range, Nova (the pack scene's first window)"), ("gate", "pack"),
-          ("near", 22, 2, 240, "tier"),
-          window("pack", n=500, what="the second pack window (cover=8192 when the lane asks for it)"),
-          ("killbg",), ("bg", descend, 900), ("lvl", 8, 600), ("settle", 6), ("near", 22, 2, 240, "any"),
-          window("maze", n=500, what="pilot: the Den of Evil, Corpsefire's pack (the maze scene's first window)"), ("gate", "maze"),
-          ("near", 22, 2, 240, "any"), window("maze", n=500, what="the second maze window"), ("join",)]
+    # One scene per fresh process (the pack and the maze are two sessions of a seed): the dev sessions 2026-11-04-frame2 showed that
+    # `farm --sweep` leaves Blood Moor by itself when it has swept it, so the maze's descend cannot follow pack windows.
+    walkout = [("settle", 20), ("pilot", ["hop", "--walk", "12", "0"], 60), ("pilot", ["hop", "--walk", "12", "0"], 60),
+               ("pilot", ["hop", "--walk", "0", "12"], 60), ("pilot", ["hop", "--walk", "0", "12"], 60), ("bg", expl, 1200),
+               ("lvl", 2, 360)]
+
+    def pack_steps(first):
+        # the first pack session's second window covers a frame = 0 (mod 8192), its last window arms the 65 hooks (FRAME_HOOKS,
+        # ruling 4 (vi) of the lane/p55b review). `explore` goes on in Blood Moor while the windows run.
+        return walkout + [("settle", 4), ("near", 22, 2, 300, "tier"),
+                window("pack", n=500, what="pilot: Blood Moor, a Fallen pack in range, Nova (the pack scene's first window)"), ("gate", "pack"),
+                ("near", 22, 2, 240, "tier"),
+                window("pack", n=500, cover=8192 if first else 0,
+                       what="the second pack window" + (" (a frame = 0 mod 8192: SaveGameClients as a boundary oracle)" if first else "")),
+                ("near", 22, 2, 240, "tier"),
+                window("pack", n=500, hooks=first, what="the third pack window" + (" (FRAME_HOOKS=1: the 65 universal hooks)" if first else "")),
+                ("killbg",)]
+
+    def maze_steps(first):
+        # `explore` stops at Blood Moor (killbg at the level wait); the descend then takes the warp of LvlWarp rows 0-3 that leads to 8
+        return walkout + [("killbg",), ("settle", 4), ("bg", descend, 900), ("lvl", 8, 600), ("settle", 6), ("near", 22, 2, 240, "any"),
+                window("maze", n=500, what="pilot: the Den of Evil (the maze scene's first window)"), ("gate", "maze"),
+                ("near", 22, 2, 240, "any"), window("maze", n=500, what="the second maze window"),
+                ("near", 22, 2, 240, "any"), window("maze", n=500, what="the third maze window"), ("killbg",)]
     return {
         "town": dict(diff="normal", est="town (1 player, 8 NPCs)", text="Act I town (Rogue Encampment)", steps=town),
-        "pm": dict(diff="normal", est="outdoor pack (1 player, 15 monsters)", text="Blood Moor's Fallen pack, then the Den of Evil",
-                   steps=pm),
+        "pack1": dict(diff="normal", est="outdoor pack (1 player, 15 monsters)", text="Blood Moor's Fallen pack, with the mod 8192 and hooks windows",
+                      steps=pack_steps(True)),
+        "pack": dict(diff="normal", est="outdoor pack (1 player, 15 monsters)", text="Blood Moor's Fallen pack", steps=pack_steps(False)),
+        "maze": dict(diff="normal", est="maze boss (1 player, boss + 10 minions)", text="the Den of Evil", steps=maze_steps(False)),
     }
 
 
@@ -314,7 +331,9 @@ class Session:
                 self.nwin_gated = self.nwin
                 self.out.write(text)
                 sys.stdout.write(text)
-                if not ok:
+                if not ok and self.dev and "OVER" in text and "FAIL" not in text.split("lines per frame")[0]:
+                    sys.stdout.write("DEV session: over the stop rate, the route goes on (a kept session stops here)\n")
+                elif not ok:
                     return "failed", "the pilot gate failed (stop for the architect)"
             elif k == "gate":
                 ok, text = gate(self.log, name)

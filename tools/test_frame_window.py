@@ -557,15 +557,26 @@ class TestReader2(unittest.TestCase):
         finally:
             sys.stdout = old
         self.assertEqual(rc, 0, buf.getvalue())
-        self.assertEqual(buf.getvalue().count("PASS"), 13)
+        self.assertEqual(buf.getvalue().count("PASS"), 22)
 
     def test_tables_are_sourced(self):
-        for row in fw.TOUCH:
-            self.assertIn(row["trigger"], ("kill", "defender", "owner"))
-            self.assertTrue(row["at"] and row["fn"].startswith("fn:") and row["spec"])
-        for loc, (fn, spec) in fw.PASSDRAW.items():
-            self.assertTrue(fn.startswith("fn:") and spec, hex(loc))
-
+        rows = {}
+        for ln in open(os.path.join(ROOT, "re", "symbols.csv")):
+            p = ln.split(",")
+            if p[0].startswith("0x") and p[1] == "func":
+                rows[int(p[0], 16)] = p[2]
+        addrs = sorted(rows)
+        for row in list(fw.TOUCH) + list(fw.PASSDRAW):
+            if "trigger" in row:
+                self.assertIn(row["trigger"], ("kill", "killev", "room", "defender", "owner"))
+            self.assertTrue(row.get("ranges") and row["fn"].startswith("fn:") and row["spec"])
+            name = row["fn"][3:].split("@")[0]
+            for lo, hi in row["ranges"]:
+                # the range starts at the named function and ends at or before the next symbol
+                self.assertEqual(rows.get(lo), name, row["fn"])
+                nxt = addrs[addrs.index(lo) + 1]
+                self.assertLessEqual(hi, nxt, row["fn"])
+        self.assertEqual(fw.KILL_GAME, {0x00552E31, 0x00552E9F})
 
 class TestRunner(unittest.TestCase):
     def run_cli(self, *a):
@@ -595,10 +606,10 @@ class TestRunner(unittest.TestCase):
 
     def test_dry_plan_and_no_launch(self):
         for extra in (["--dry"], []):
-            r = self.run_cli("run", "--slot", "2", "--tag", "t", "--saves", "/nonexistent", "--run", "x", *extra, "town", "pm")
+            r = self.run_cli("run", "--slot", "2", "--tag", "t", "--saves", "/nonexistent", "--run", "x", *extra, "town", "pack", "maze")
             self.assertEqual(r.returncode, 0, r.stderr)
             self.assertIn("SCENE town", r.stdout)
-            self.assertIn("SCENE pm", r.stdout)
+            self.assertIn("SCENE pack", r.stdout)
             self.assertIn("window pack len=500", r.stdout)
             self.assertIn("window maze len=500", r.stdout)
             self.assertIn("tier monsters", r.stdout)

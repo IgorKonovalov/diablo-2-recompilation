@@ -42,10 +42,6 @@ def check_chain2(w, touch=None, passdraw=None):
     """-> dict(fails [dict(line, tag, kind, msg, key, ...)], counts ...) for one window of fw.parse_log."""
     touch = fw.TOUCH if touch is None else touch
     passdraw = fw.PASSDRAW if passdraw is None else passdraw
-    tmap = {}
-    for row in touch:
-        for a in row["at"]:
-            tmap.setdefault(a, []).append(row)
     legacy = not any(t == "XS" for _n, t, _o in w["lines"])    # a log of logger rev 1: no step is logged, so no draw inside an open pair
     fails = []                                                   # is visible: exits and nested entries are set, not compared
     alts = {}                     # key -> set of possible current (lo, hi)
@@ -55,6 +51,8 @@ def check_chain2(w, touch=None, passdraw=None):
     cls_n = collections.Counter()           # class -> steps
     site_n = collections.Counter()          # (class, trigger or "", loc) -> steps
     untracked = collections.Counter()
+    client_n = collections.Counter()        # steps at CLIENT locations between ticks (not applied to any chained seed)
+    fresh = set()                           # post-step lows of seed-initialising game-seed steps (shared with the new seeds)
     ambig = []
     ent = collections.Counter()             # entry readings by "moved" / "unmoved"
     reads = collections.Counter()
@@ -129,13 +127,16 @@ def check_chain2(w, touch=None, passdraw=None):
     def xs(no, o):
         low = o["low"]
         loc = o.get("ra") or o["site"]
+        if not in_frame[0] and fw.client_loc(loc, passdraw):
+            client_n[loc] += 1        # the main loop's client code: its seeds are the client's copies, no chained seed is stepped
+            return
         cands = [k for k, a in alts.items() if any(v[0] == low for v in a)]
         if not cands:
             untracked[(loc, bool(stack))] += 1
             return
         for k in cands:
             a = alts[k]
-            if len(cands) > 1 or len(a) > 1:
+            if len(cands) > 1 or len(a) > 1 or (k == "G" and low in fresh and loc not in fw.FRESH_INIT):
                 alts[k] = a | {_step(v) for v in a if v[0] == low}
             else:
                 alts[k] = {_step(next(iter(a)))}
@@ -146,18 +147,21 @@ def check_chain2(w, touch=None, passdraw=None):
         if key == "G":
             for v in alts["G"]:
                 gpost[v[0]] = no
+            if loc in fw.FRESH_INIT:
+                fresh.update(v[0] for v in alts["G"])
             if stack:
                 cls = "game"
                 for r in stack:
                     if r["tag"] == "UE0":
                         r["g"] += 1
+                        r["gsites"].append(loc)
             else:
                 cls = "pass"
-                if loc not in passdraw:
+                if not any(fw.row_has(r, loc) and not r.get("client") for r in passdraw):
                     fail(no, "XS", "nopair", "game-seed step at %#x with no pair open, not a pass-draw site" % loc, key=key, loc=loc)
         elif not stack:
             cls = "pass"
-            if loc not in passdraw:
+            if not any(fw.row_has(r, loc) and not r.get("client") for r in passdraw):
                 fail(no, "XS", "nopair", "%s stepped at %#x with no pair open, not a pass-draw site" % (key, loc), key=key, loc=loc)
         elif own_of(key):
             cls = "own"
@@ -169,15 +173,16 @@ def check_chain2(w, touch=None, passdraw=None):
         else:
             cls = "touch"
             ok_row = None
-            for row in tmap.get(loc, ()):
+            rows_here = [r for r in touch if fw.row_has(r, loc)]
+            for row in rows_here:
                 if trigger_holds(row["trigger"], key):
                     ok_row = row
                     break
-            if not tmap.get(loc):
+            if not rows_here:
                 fail(no, "XS", "class", "touch on %s at %#x: not a site of the touch table" % (key, loc), key=key, loc=loc)
             elif ok_row is None:
                 fail(no, "XS", "trigger", "touch on %s at %#x: the site is listed, its trigger (%s) does not hold" % (
-                    key, loc, "/".join(r["trigger"] for r in tmap[loc])), key=key, loc=loc)
+                    key, loc, "/".join(r["trigger"] for r in rows_here)), key=key, loc=loc)
             else:
                 site_n[("touch", ok_row["trigger"], loc)] += 1
                 cls_n["touch:" + ok_row["trigger"]] += 1
@@ -185,9 +190,27 @@ def check_chain2(w, touch=None, passdraw=None):
         if cls != "touch":
             site_n[(cls, "", loc)] += 1
 
+    def close_seg(r, no):
+        """The segment of the open KD of record r ends here (the next KD or the event's UE1): the per-KD even rule."""
+        kd = r.get("seg")
+        if kd is None:
+            return
+        kd["sites"] = r["gsites"][kd["start"]:]
+        kd["g"] = len(kd["sites"])
+        r["seg"] = None
+        n = sum(1 for a in kd["sites"] if a in fw.KILL_GAME)
+        kd["gk"] = n
+        if n % 2:
+            fail(no, "KD", "even", "KD of %s at line %d: %d game-seed steps at the drop sites between it and the next KD or the event's end (odd; items/tc H7)" % (
+                kd["key"], kd["line"], n), key=kd["key"])
+
     def trigger_holds(trig, key):
         if trig == "kill":
             return any(key in r.get("kills", ()) for r in stack)
+        if trig == "killev":
+            return key[0] == "U" and any(key in r.get("q12", ()) or key in r.get("kills", ()) for r in stack)
+        if trig == "room":
+            return key[0] == "R" and any(r["tag"] == "RU0" for r in stack)
         if key[0] != "U":
             return False
         for r in stack:
@@ -223,11 +246,14 @@ def check_chain2(w, touch=None, passdraw=None):
             if r is not None:
                 r.setdefault("kills", set()).add(key)
                 r["kd"] = True
-                kds.append(dict(line=no, key=key, rec=r["line"], fr=o["fr"]))
+                close_seg(r, no)
+                kd = dict(line=no, key=key, rec=r["line"], fr=o["fr"], start=len(r["gsites"]), sites=None)
+                r["seg"] = kd
+                kds.append(kd)
             else:
                 kds.append(dict(line=no, key=key, rec=None, fr=o["fr"]))
         elif tag in fw.ENTRIES:
-            rec = dict(tag=tag, line=no, g=0, own=0, kind=o.get("kind"), ty=o.get("ty"), id=o.get("id"), room=o.get("room"), o=o)
+            rec = dict(tag=tag, line=no, g=0, gsites=[], seg=None, own=0, kind=o.get("kind"), ty=o.get("ty"), id=o.get("id"), room=o.get("room"), o=o)
             if tag == "UE0":
                 reading("G", o.get("gs"), "entry", no, tag, o)
                 if o.get("us"):
@@ -289,11 +315,7 @@ def check_chain2(w, touch=None, passdraw=None):
                     if not rec["own"]:
                         free_runs[(rec["ty"], rec["kind"], "no_own")] += 1
                 if rec.get("kd"):
-                    if rec["g"] % 2:
-                        fail(no, tag, "even", "event at line %d holds a KD and %d game-seed steps (odd)" % (rec["line"], rec["g"]))
-                    for kd in kds:
-                        if kd["rec"] == rec["line"]:
-                            kd["g"] = rec["g"]
+                    close_seg(rec, no)
             elif tag == "MSG1" and o.get("ps") and rec.get("id") is not None:
                 reading(("U", 0, rec["id"]), o["ps"], "exit", no, tag, o)
             elif tag == "RU1" and o.get("rs"):
@@ -305,6 +327,10 @@ def check_chain2(w, touch=None, passdraw=None):
         elif tag == "RR":
             alts.pop(("R", o["room"]), None)
         elif tag == "QE":
+            if o.get("kind") == 12 and o.get("ut") is not None:
+                top12 = next((r for r in reversed(stack) if r["tag"] == "UE0"), None)
+                if top12 is not None:
+                    top12.setdefault("q12", set()).add(("U", o["ut"], o["id"]))
             if o.get("ut") is not None:
                 slots[(o["ut"], o["asked"])].append((o["id"], o["kind"]))
         elif tag == "QF":
@@ -313,7 +339,7 @@ def check_chain2(w, touch=None, passdraw=None):
                 top = next((r for r in reversed(stack) if r["tag"] == "UE0"), None)
                 if top is not None:
                     qf_by_frame[o["fr"]][(o["ut"], o["id"], o["kind"])] = top["ty"]
-    return dict(fails=fails, cls=cls_n, sites=site_n, untracked=untracked, ambig=ambig, entries=ent, reads=reads, firsts=firsts,
+    return dict(fails=fails, client=client_n, cls=cls_n, sites=site_n, untracked=untracked, ambig=ambig, entries=ent, reads=reads, firsts=firsts,
                 kds=kds, free=free_runs, order=rank_n, cross=cross, has_xs=any(t == "XS" for _n, t, _o in w["lines"]))
 
 
@@ -324,9 +350,13 @@ def kd_report(x):
 
 # ------------------------------------------------------------------------------------------------------ synthetic logs
 SITE_PASS, SITE_OWN, SITE_GAME, SITE_KILL, SITE_DEF, SITE_UNLISTED = 0x500010, 0x500020, 0x500030, 0x500040, 0x500050, 0x5000F0
-SYN_PASS = {SITE_PASS: ("fn:synthetic", "synthetic")}
+SITE_ROOM, SITE_CLIENT, SITE_ITEMG, SITE_KILLEV = 0x500060, 0x500070, 0x00552E31, 0x500080       # SITE_ITEMG: a location of fw.KILL_GAME (an item's constructor)
+SYN_PASS = [dict(client=False, at={SITE_PASS}, fn="fn:synthetic", spec="synthetic"),
+            dict(client=True, at={SITE_CLIENT}, fn="fn:synthetic", spec="synthetic")]
 SYN_TOUCH = [dict(trigger="kill", at={SITE_KILL}, fn="fn:synthetic", spec="synthetic"),
-             dict(trigger="defender", at={SITE_DEF}, fn="fn:synthetic", spec="synthetic")]
+             dict(trigger="defender", at={SITE_DEF}, fn="fn:synthetic", spec="synthetic"),
+             dict(trigger="room", at={SITE_ROOM}, fn="fn:synthetic", spec="synthetic"),
+             dict(trigger="killev", at={SITE_KILLEV}, fn="fn:synthetic", spec="synthetic")]
 
 
 class Gen:
@@ -339,7 +369,7 @@ class Gen:
         self.n = 0
         self.g = (0x2A, INIT_HI)
         self.s = {("U", 0, 1): (0x1111, INIT_HI), ("U", 1, 10): (0x2222, INIT_HI), ("U", 1, 11): (0x3333, INIT_HI),
-                  ("U", 3, 500): (0x4444, 0x1234)}
+                  ("U", 3, 500): (0x4444, 0x1234), ("R", 9000): (0x7000, INIT_HI), ("R", 9001): (0x7001, INIT_HI)}
         self.fr = 0
 
     def emit(self, tag, d):
@@ -347,9 +377,12 @@ class Gen:
         d["n"] = self.n
         self.L.append("%s %s" % (tag, json.dumps(d, separators=(",", ":"))))
 
-    def draw(self, key, k, site, ra=None, log=True):
+    def draw(self, key, k, site, ra=None, log=True, apply=True):
         for _ in range(k):
             t = self.g if key == "G" else self.s[key]
+            if not apply:
+                self.emit("XS", dict(fr=self.fr, site=site, low=t[0]))
+                continue
             if log:
                 d = dict(fr=self.fr, site=site, low=t[0])
                 if ra is not None:
@@ -389,9 +422,20 @@ class Gen:
             # missile 500 (slot): a kill
             if f == start + 2:
                 self.ue0(3, 500, 1, "slot", ("U", 3, 500))
+                if sw.get("killev") or sw.get("killev_noq"):     # a death handler draws on the dying unit's seed before its KD line
+                    if sw.get("killev"):
+                        self.emit("QE", dict(fr=f, kind=12, asked=f + 50, ut=1, id=11, ra=1))
+                    self.draw(("U", 1, 11), 1, SITE_KILLEV)
                 if not sw.get("no_kd"):
                     self.emit("KD", dict(fr=f, ty=1, id=11))
-                self.draw("G", sw.get("kill_game", 2), SITE_GAME)
+                self.draw("G", sw.get("kill_game", 2), SITE_GAME if sw.get("fresh_noinit") else SITE_ITEMG)
+                if sw.get("fresh") or sw.get("fresh_noinit"):    # the new item's first draw: its seed is {g.low, 666}, the game seed does not step
+                    self.emit("XS", dict(fr=f, site=SITE_OWN, low=self.g[0]))
+                if sw.get("sub_missile"):
+                    self.draw("G", 1, SITE_GAME)         # a sub-missile created in the same event: one game-seed step at its own site
+                if sw.get("two_kd"):                    # a second KD in the same event: 1 + 1 item-constructor steps over two KDs
+                    self.emit("KD", dict(fr=f, ty=1, id=10))
+                    self.draw("G", 1, SITE_ITEMG)
                 tsite = SITE_UNLISTED if sw.get("touch_unlisted") else SITE_KILL
                 self.draw(("U", 1, 11), 3, tsite)
                 self.ue1(3, 500, ("U", 3, 500))
@@ -430,6 +474,20 @@ class Gen:
                     self.draw(("U", 0, 1), 2, SITE_DEF)
                     self.draw(("U", 1, 10), 1, SITE_OWN)
                 self.ue1(1, 10, ("U", 1, 10))
+            if f == start:               # the two rooms are chained by a first reading each
+                for rm in (9000, 9001):
+                    self.emit("RU0", dict(fr=f, room=rm, rs=fw.fmt(self.s[("R", rm)]), gs=self.gs()))
+                    self.emit("RU1", dict(fr=f, room=rm, rs=fw.fmt(self.s[("R", rm)]), gs=self.gs()))
+            if f == start + 1:           # the new-rooms walk: room 9000's RU0 with a step on the neighbour 9001 and one on its own seed
+                self.emit("RU0", dict(fr=f, room=9000, rs=fw.fmt(self.s[("R", 9000)]), gs=self.gs()))
+                self.draw(("R", 9000), 1, SITE_ROOM)
+                if not sw.get("room_no_ru0"):
+                    self.draw(("R", 9001), 1, SITE_ROOM)
+                self.emit("RU1", dict(fr=f, room=9000, rs=fw.fmt(self.s[("R", 9000)]), gs=self.gs()))
+                if sw.get("room_no_ru0"):               # the same listed site on a room seed with no RU0 open (a unit's event is)
+                    self.ue0(1, 11, 0, "ef", ("U", 1, 11))
+                    self.draw(("R", 9001), 1, SITE_ROOM)
+                    self.ue1(1, 11, ("U", 1, 11))
             if f == start + 1:           # monster 11 and the player's seed are chained before the kill
                 self.ue0(1, 11, 0, "ef", ("U", 1, 11))
                 self.ue1(1, 11, ("U", 1, 11))
@@ -438,6 +496,8 @@ class Gen:
                 self.ue0(3, 500, 2, "ef", ("U", 3, 500))
                 self.ue1(3, 500, ("U", 3, 500))
             self.emit("FT1", dict(fr=f, gs=self.gs()))
+            if f == start + 2:           # the main loop between two ticks: client code on the client's copy of room 9001's seed
+                self.draw(("R", 9001), 1, SITE_UNLISTED if sw.get("client_unlisted") else SITE_CLIENT, apply=False)
         self.emit("WEND", dict(id=1, ok=1, why="", frames=frames, lines=self.n, hits={}, ghits={}, wall0=1.0, wall1=2.0, mono0=1.0,
                                mono1=2.0, fr=start + frames - 1))
         return self.L
@@ -503,6 +563,22 @@ def selftest2():
     nox = [ln for ln in clean if not ln.startswith("XS ")]
     whole, x = _verdict(nox)
     out.append(("12 a log with no XS reads as rev 1 (no step logged)", not whole and x["has_xs"] is False, x["fails"][:2]))
+    # 13 a sub-missile's game-seed step inside the KD's event, at its own site, is not counted (classed by site)
+    want_pass = lambda name, lines: out.append((name, not kinds(lines)[0] and not kinds(lines)[1], sorted(kinds(lines)[1])))
+    want_pass("13 a sub-missile's own-site game step beside the item steps passes", Gen(sub_missile=1).build())
+    # 14 the rule is per KD: two KDs in one event, steps 2 + 1 at the item sites, fail although the event holds 3 ... and 2 + 2 passes
+    want("14 the even rule counts per KD (3 + 1 item-site steps over two KDs, even in all) fails even", Gen(two_kd=1, kill_game=3).build(), "even")
+    # 15 the room trigger holds in an RU0 (the clean log has a neighbour's step in room 9000's RU0): reversed by removing the RU0
+    want("15 a listed room site with no RU0 open (a unit's event is open) fails trigger", Gen(room_no_ru0=1).build(), "trigger")
+    # 16 a client site between ticks passes and steps no chained seed; an unlisted one fails
+    want("16 a between-tick step at an unlisted location fails nopair", Gen(client_unlisted=1).build(), "nopair")
+    # 17 a seed made from the game seed's low shares it: a draw on it is no game-seed step (passes), and an XS with no step fails
+    want_pass("18 a draw on a fresh seed (the game seed's low after an item constructor's step) is no game-seed step", Gen(fresh=1).build())
+    want("19 the same draw after a game-seed step at no constructor site fails arith", Gen(fresh_noinit=1).build(), "arith")
+    want_pass("20 a death handler's draw on a unit queued kind 12 in the open event passes (before its KD line)", Gen(killev=1).build())
+    want("21 the same listed site on a unit with no death queued fails trigger", Gen(killev_noq=1).build(), "trigger")
+    fr = Gen().build()
+    out.append(("17 the clean log holds client, room and kill traffic and passes", not _verdict(fr)[0] and not _verdict(fr)[1]["fails"], ""))
     ok = True
     for name, passed, why in out:
         print("%s %s%s" % ("PASS" if passed else "FAIL", name, "" if passed else "  <- %s" % (why,)))

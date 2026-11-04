@@ -63,13 +63,69 @@ PERIOD = {"T20": 20, "D12": 12, "U11": 11, "S1500": 1500}
 MID = frame_volume.QRATES["mid"]
 Q2_SESSION_LINES = 177860     # ten times plan 0045's 17 786
 # --- reader rev 2's tables (committed before the kept logs; tools/frame_xs.py applies them) ---------------------------------
-# A game-seed or unit-seed step with no pair open passes only at a location in PASSDRAW: location = the site of
-# tools/gdb/lcg-sites.txt, or, for the six sites inside rng/0001's primitives, the caller's return address (the XS line's `ra`).
-# {location: (fn:, spec)}
-PASSDRAW = {}
-# A step on a chained unit's seed while another unit's event is open (a touch) passes only at a location of a row of TOUCH and
-# only under the row's trigger. Rows: dict(trigger "kill"|"defender"|"owner", at {locations}, fn, spec).
-TOUCH = []
+# A location is the site of tools/gdb/lcg-sites.txt, or, for the six sites inside rng/0001's primitives, the caller's return
+# address (the XS line's `ra`). A row names locations by `at` (a set) and/or `ranges` ([lo, hi) of the function: the next symbol of
+# re/symbols.csv bounds it, [I]); `fn` and `spec` anchor it.
+#
+# PASSDRAW: a game-seed or unit-seed step with no pair open passes only at a row. `client` rows are the main loop's client code
+# between the ticks (outside GameTick); their steps are on the client's copies of the seeds, are applied to no chained seed and are
+# counted apart: they are not evidence of the server's frame order (architect's ruling 2, lane/p55c).
+PASSDRAW = [
+    dict(client=True, ranges=[(0x00465FD0, 0x00466200)], fn="fn:sub_00465FD0_UnitInit@0x00465FD0", spec="rng/seeds step 5a (UnitInit draws on the client room's seed)"),
+    dict(client=True, ranges=[(0x00466360, 0x0046ACE0)], fn="fn:sub_00466360_ClientMonCreate@0x00466360", spec="rng/seeds step 5a; monsters/pool F"),
+    dict(client=True, ranges=[(0x004AE320, 0x004AFC10)], fn="fn:sub_004AE320_ClientMonIsChampion@0x004AE320", spec="monsters/pool F (the client's champion test, on the room seed)"),
+    dict(client=True, ranges=[(0x0046C1A0, 0x0046C460)], fn="fn:sub_0046C1A0_ClientCritterCreate@0x0046C1A0", spec="monsters/pool F6"),
+    dict(client=True, ranges=[(0x0046C460, 0x0046EE80)], fn="fn:sub_0046C460_ClientCritters@0x0046C460", spec="monsters/pool F"),
+    dict(client=True, ranges=[(0x00624390, 0x00624690)], fn="fn:UNIT_AnimInit@0x00624390", spec="anim/README (a client unit's mode set-up)"),
+    dict(client=False, ranges=[(0x005431F0, 0x005433F0)], fn="fn:sub_005431F0_InactiveMonsterSaveTest@0x005431F0", spec="drlg/lifecycle F2 (in the tick, no pair open)"),
+    dict(client=False, ranges=[(0x0066D820, 0x0066D960)], fn="fn:DRLG_PickTileByRarity@0x0066D820", spec="drlg/room-tiles step 3a (the tile pick, on a room seed in the tick)"),
+]
+# TOUCH: a step on a chained unit's or room's seed while another unit's event or a room's RU0 is open passes only at a row and only
+# under the row's trigger: kill (the unit has a KD line inside the open event), killev (the unit has a kind-12 QE line, or a KD line, inside the open event: a dying unit's own death handler, which draws before the KD line), room (a room's seed, any RU0 open: the new-rooms
+# walk), defender / owner (a missile event, or for the defender an attack-kind monster or player event, is open and the seed is a
+# player's or monster's; the logger does not name the unit, so these match event type and site only).
+TOUCH = [
+    dict(trigger="kill", ranges=[(0x0055A6D0, 0x0055AFA0)], fn="fn:TC_ResolveDrops@0x0055A6D0", spec="items/tc B (the drop rolls on the dead monster's seed)"),
+    dict(trigger="kill", ranges=[(0x00558640, 0x005589A0)], fn="fn:ITEMS_DropRollQuality@0x00558640", spec="items/quality (the drop quality roll on the dead monster's seed)"),
+    dict(trigger="room", ranges=[(0x0054F060, 0x0054F0D0)], fn="fn:sub_0054F060_RoomWandererTick@0x0054F060", spec="drlg/lifecycle I; chain/README D1"),
+    dict(trigger="room", ranges=[(0x005B2A00, 0x005B2F20)], fn="fn:sub_005B2A00_MonSpawnTry@0x005B2A00", spec="chain/README oracle 21 (another room's seed in a pass); monsters/spawn H"),
+    dict(trigger="room", ranges=[(0x0054DC40, 0x0054DDC0)], fn="fn:sub_0054DC40_SpawnPosPick@0x0054DC40", spec="monsters/spawn H; drlg/lifecycle"),
+    dict(trigger="room", ranges=[(0x005BDE80, 0x005BDFF0)], fn="fn:sub_005BDE80_MonRegionPickClass@0x005BDE80", spec="monsters/pool (the class pick on the room seed); monsters/spawn"),
+    dict(trigger="room", ranges=[(0x005BE020, 0x005BE130)], fn="fn:sub_005BE020_SpawnTypeRoll@0x005BE020", spec="monsters/spawn E"),
+    dict(trigger="room", ranges=[(0x00552610, 0x00552AC0)], fn="fn:sub_00552610_RoomObjectsPopulate@0x00552610", spec="chain/README D4; objects C-H"),
+    dict(trigger="room", ranges=[(0x00550A30, 0x00550C20)], fn="fn:OBJ_PlaceByOrientation@0x00550A30", spec="objects F3; chain/README D4"),
+    dict(trigger="room", ranges=[(0x00552B50, 0x00552DF0)], fn="fn:OBJPOP_Shrine@0x00552B50", spec="objects E2; chain/README D4"),
+    dict(trigger="killev", ranges=[(0x005A2D10, 0x005A30E0)], fn="fn:sub_005A2D10_UModPartyDeadDeath@0x005A2D10", spec="items/quality (the partydead mod's death handler, g_UModEventFns); monsters/special"),
+    dict(trigger="owner", ranges=[(0x005A5560, 0x005A5E50)], fn="fn:sub_005A5560_MonCritDouble@0x005A5560", spec="combat/damage 10 (the attacking monster's crit draw on its own seed, inside its missile's event)"),
+    dict(trigger="defender", ranges=[(0x0057DFB0, 0x0057E240)], fn="fn:COMBAT_DefenceRoll@0x0057DFB0", spec="combat/to-hit"),
+    dict(trigger="defender", ranges=[(0x0057AF80, 0x0057B230)], fn="fn:COMBAT_ApplyCold@0x0057AF80", spec="combat/to-hit; combat/overview"),
+    dict(trigger="defender", ranges=[(0x0057D3D0, 0x0057D4F0)], fn="fn:COMBAT_DurabilityLoss@0x0057D3D0", spec="items/economy H"),
+    dict(trigger="defender", ranges=[(0x00559E30, 0x0055A090)], fn="fn:ITEMS_DurabilityLossRoll@0x00559E30", spec="items/economy H"),
+    dict(trigger="defender", ranges=[(0x0057CB00, 0x0057CCB0)], fn="fn:sub_0057CB00_GetHitRoll@0x0057CB00", spec="combat/to-hit"),
+    dict(trigger="defender", ranges=[(0x0057CE30, 0x0057CEE0)], fn="fn:sub_0057CE30_HitClassPick@0x0057CE30", spec="combat/to-hit"),
+    dict(trigger="defender", ranges=[(0x0057C6C0, 0x0057C9F0)], fn="fn:COMBAT_ApplyDamage@0x0057C6C0", spec="combat/overview (the stat events on the defender)"),
+    dict(trigger="owner", ranges=[(0x0057D9B0, 0x0057DBF0)], fn="fn:COMBAT_ToHitRoll@0x0057D9B0", spec="combat/to-hit"),
+    dict(trigger="owner", ranges=[(0x0057AAE0, 0x0057AC50)], fn="fn:COMBAT_ApplyStun@0x0057AAE0", spec="combat/overview (stun)"),
+    dict(trigger="owner", ranges=[(0x0057C6C0, 0x0057C9F0)], fn="fn:COMBAT_ApplyDamage@0x0057C6C0", spec="combat/overview (leech and the stat events on the owner)"),
+]
+
+
+# Game-seed step locations of an item's unit constructor, counted by the per-KD even rule (items/tc H7: two game-seed steps per item):
+# fn:sub_00552DF0_UnitSeedInit+0x41 and fn:sub_00552E90_ItemSeedInit+0xf. Sub-missiles and other creations in the same event step at
+# other sites and are not counted (skills/missiles C3). They are also the seed-initialising steps: a seed made from the game seed's
+# post-step low word (a unit's or an item's first draw) shares that low word with the game seed until the game seed steps again.
+KILL_GAME = frozenset({0x00552E31, 0x00552E9F})
+FRESH_INIT = KILL_GAME
+
+
+def row_has(row, loc):
+    return loc in row.get("at", ()) or any(lo <= loc < hi for lo, hi in row.get("ranges", ()))
+
+
+def client_loc(loc, passdraw=None):
+    return any(r.get("client") and row_has(r, loc) for r in (PASSDRAW if passdraw is None else passdraw))
+
+
 ATTACK_KINDS = frozenset({0, 5})   # event kinds of a player's or monster's attack frame and of a skill do (defender trigger)
 FLOORS = dict(windows=10, frames=250, scenes=3, per_scene=2, chained=5000, shared=20)
 
