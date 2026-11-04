@@ -19,8 +19,8 @@ the acting unit's seed and gives one command: a mode, a skill, a path request, o
 
 This page is the tick, the AI's clock, the table and its dispatch, the state a unit carries, the event kinds with their
 seeds and how far each is evidenced. [machinery](machinery.md) is the target search, the command, the path request, the
-following, and the think function of each of the 18 tier AIs. The other rows of the table are the catalogue, part P3b of
-[plan 0052](../../../plans/0052-monster-ai.md), which is not written yet.
+following, and the think function of each of the 18 tier AIs. The other rows of the table and the 18 state rows are
+[the catalogue](catalogue.md), one entry each.
 
 Boundaries of this spec: the mode's frames are [anim/timing](../../anim/timing.md)'s; the skill behind a command is
 [skills/dispatch](../../skills/dispatch.md)'s; the planners behind a path request are
@@ -567,13 +567,13 @@ tests are the checkers `tools/ai.py check` and `tools/ai_resume.py` over the log
 - [L] **BloodLord:** 38 decisions past the first, none with a call there (H4). (run:2026-11-04-ai-r5)
 - [L] **The catalogue sample** is short for batches 5, 7, 10, 11, 12: the logs hold no non-tier row of 5, 7 and 11, batch
   10 only in rev 3 logs, and rows 54, 99, 32, 100 of batch 12 do not count. The rest of the table stays at its batch's
-  emulated `[C]` or `[I]`, for P3b. (run:2026-11-04-ai-resume)
+  emulated `[C]` or `[I]`. (run:2026-11-04-ai-resume)
 - [I] **Row 23's mismatches.** The 8 of the rev 4 logs have the logger's 600-call limit as their cause read; rev 6 has
   row 23 at 256 decisions with 0 mismatches and 0 `AIL` lines with `pend` 0, but only 2 of those lines are row 23's, so
   the reading is untested; row 23 is the catalogue's. (run:2026-11-04-ai-resume, run:2026-11-04-ai-r5, 0x005F33EC)
 - [L] **The H1 remainder:** the 8 `AD0` stops, unexamined (A5), and the 330 of 331 same shape, an inference (A5).
 - [L] **P1b-1, Duriel, and C10, C11's community disagreement, listed unresolved.** src:arreat-summit-boss-pages gives Duriel "17 % Melee
-  Attack 1, 33 % Smite, 50 % Jab" and the same for Über Duriel. Unplayed, so no logged Duriel melee decision settles it. The entry is P3b's. ([ai/0014](../../../findings/ai/0014-community-cross-check.md), [the owner entry](../../../backlog/2026-11-04-architect-human-plan-0052-p1b-1-duriel-melee-owner-play.md))
+  Attack 1, 33 % Smite, 50 % Jab" and the same for Über Duriel. Unplayed, so no logged Duriel melee decision settles it. [The entry](catalogue.md#r44-row-44-duriel-fnsub_005f67b0_aiduriel0x005f67b0) carries it. ([ai/0014](../../../findings/ai/0014-community-cross-check.md), [the owner entry](../../../backlog/2026-11-04-architect-human-plan-0052-p1b-1-duriel-melee-owner-play.md))
 - [C] **The code's side of C10:** `draw < aip2` Skill3, then a fresh `draw < aip3` Skill2, then a fresh `draw < aip4` A2, else A1, by emulation to the first callee. (run:2026-10-30-ai-cat-emu-6, fn:sub_005F67B0_AiDuriel@0x005F67B0)
 - [I] **Its frequencies**, arithmetic on that map with `aip2..4` 33, 50, 0, in all three difficulties: Smite 33 %, Jab 33.5 %, A1 33.5 %. C11 is the same think and the same values, row 44's record 708. (fn:sub_005F67B0_AiDuriel@0x005F67B0, [ai/0014](../../../findings/ai/0014-community-cross-check.md))
 - [L] **P1b-2, C40.** Whether a natural champion corpse reaches the Greater Mummy's skill test: no natural champion was logged, and the built-state run cannot count, since a logger

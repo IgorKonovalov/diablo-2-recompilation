@@ -797,8 +797,8 @@ fn:sub_00653E20_UNameTablesFree@0x00653E20, tbl:UniqueTitle.txt:Name, run:2026-1
   ([ai/0016 Answer](../../findings/ai/0016-uber-event.md#answer-summary), 0x005E9DCC, fn:sub_005E9DF0_AiUberDiablo@0x005E9DF0)
 - [I] **The driver, if one of the three existed,** is the generic machinery alone: `MonAiEvent` with row kind 1 (rows 145, 146 and 147). With no target
   the think does not run and `MonAiTargetOrIdle` idles or ring-walks; with a target the boss sight pause fires once, then the think only returns and that event queues no next
-  one, so the next AI event needs a mode change from outside. Those rows' entries in the monster AI catalogue (plan 0052 P3b) take this statement
-  and its limits when they are written. (fn:sub_005B1740_MonAiEvent@0x005B1740, fn:sub_005DE890_MonAiTargetOrIdle@0x005DE890, fn:sub_005B1140_MonAiBossSightPause@0x005B1140, fn:sub_005E9DF0_AiUberDiablo@0x005E9DF0, fn:sub_005FD200_AiUberBaal@0x005FD200, fn:sub_005F81C0_AiUberMephisto@0x005F81C0)
+  one, so the next AI event needs a mode change from outside. Those rows' entries in [the monster AI catalogue](ai/catalogue.md) carry this statement
+  and its limits by link. (fn:sub_005B1740_MonAiEvent@0x005B1740, fn:sub_005DE890_MonAiTargetOrIdle@0x005DE890, fn:sub_005B1140_MonAiBossSightPause@0x005B1140, fn:sub_005E9DF0_AiUberDiablo@0x005E9DF0, fn:sub_005FD200_AiUberBaal@0x005FD200, fn:sub_005F81C0_AiUberMephisto@0x005F81C0)
 
 - [C] **Nihlathak's mod 22 is `MonPostCreateBoss`'s.** Nihlathak (`BaseId` 526, superunique record 60) leaves
   `SpecialMonPlace` with `[22]` (the `SMPX` line) and holds `[22, 30]` at the `SU1` line, as logged; a model without
