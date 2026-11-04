@@ -5,7 +5,7 @@ target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [stats/overview, stats/aggregate, rng, combat/delivery, data/calc, objects]
 consumed_by: [combat/delivery, combat/overview, objects]
 tags: {C: 52, I: 54, L: 6}
-updated: 2026-10-27
+updated: 2026-11-04
 ---
 
 # States: the timed apply, expiry, the group clear, the regeneration tick, auras, shrines and wells
@@ -190,8 +190,11 @@ Step notes:
 - B2. [I] The hook's type and class tests (a monster defender outside 704–709) are not separated: every call had a
   player attacker and a monster defender outside that range. (fn:sub_0057D810_PreventHealHook@0x0057D810,
   run:2026-10-27-skills)
-- B3. [I] **Potions** (`sub_005BEDA0_ItemUseTimedState`) run the group clear (§ D) before they apply.
-  (fn:sub_005BEDA0_ItemUseTimedState@0x005BEDA0, fn:STATE_GroupClear@0x0056C740)
+- B3. [I] **Use kinds 6 and 9 only** (`sub_005BEDA0_ItemUseTimedState`: `yps`, `wms`, `vps`, `hrb`) run the group clear
+  (§ D) before they apply. Healing and mana potions do not: they are kind 3, `sub_005BE3F0_ItemUsePotion`, with no call
+  of it. Of `STATE_GroupClear`'s nine call sites only `0x005BEE15` lies in the use entries (`0x005BE130..0x005BF3D0`).
+  (fn:sub_005BEDA0_ItemUseTimedState@0x005BEDA0, fn:sub_005BE3F0_ItemUsePotion@0x005BE3F0, fn:STATE_GroupClear@0x0056C740,
+  0x005BEE15, [items/0012 § 9](../../findings/items/0012-use-inventory.md#9-corrections))
 
 ### C. Expiry and removal
 
@@ -524,8 +527,8 @@ leaves the cache. (fn:sub_00580610_LifeRegenTick@0x00580610, run:2026-10-17-stat
   has passed. [C] (fn:EVENT_TimedListExpire@0x00580800, run:2026-10-17-stats)
 - **A lower level is refused, not queued**: a weaker aura of the same state from another caster does nothing while
   the stronger one holds. [C] (fn:STATE_ApplyTimed@0x0056E970, run:2026-10-17-stats)
-- **The group test is not in the apply.** Only the callers that run `STATE_GroupClear` (potions, stat 98, five skills)
-  exclude a group. [I] (fn:STATE_GroupClear@0x0056C740, fn:STATE_ApplyTimed@0x0056E970)
+- **The group test is not in the apply.** Only the callers that run `STATE_GroupClear` (use kinds 6 and 9, not healing or
+  mana potions (B3); stat 98; five skills) exclude a group. [I] (fn:STATE_GroupClear@0x0056C740, fn:STATE_ApplyTimed@0x0056E970)
 - **Shrines share the curse slot.** Taking a shrine removes the player's curse, and the next curse removes the
   shrine's state. [I] (tbl:States.txt:curse, fn:STATE_ApplyTimed@0x0056E970)
 - **The tick's floor is 256, not 0**, for players; a monster's tick can kill ([combat/delivery § E4](../combat/delivery.md#e-the-stat-events-crushing-blow-open-wounds-freeze)).

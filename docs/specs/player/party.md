@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [player/creation, monsters/stats, items/tc, combat/delivery, combat/overview, items/economy, quests/progression, items/quest-drops, hirelings]
 consumed_by: []
-tags: {C: 46, I: 25, L: 3}
-updated: 2026-11-03
+tags: {C: 46, I: 26, L: 3}
+updated: 2026-11-04
 ---
 
 # Party and player count
@@ -174,6 +174,7 @@ flowchart LR
 
 - [C] `PlayerCount` counts live players, and the `/players` setting is a maximum, not an addition, in single player and on a TCP/IP host, where only the server's setting counts. ([items/tc F2](../items/tc.md#f-nodrop-scaling), fn:sub_00535790_PlayerCount@0x00535790, run:2026-10-11-tc-drops, run:2026-10-20-two-clients, run:2026-10-20-sweep-items-tc)
 - [I] Game type 1 also takes it, and other types do not; the set of states and modes that excludes a player is the code's reading. (fn:sub_00535790_PlayerCount@0x00535790, fn:sub_00535780_SetPlayersOverride@0x00535780)
+- [I] The client's chat parser takes `/players` only in client modes 0, 1, 6 and 8 (`g_ClientGameMode`), with `atol` clamped to 1..8. (fn:sub_0047C420_ChatInputParse@0x0047C420, data:g_ClientGameMode@0x007A0610, [archaeology/0001 § 6](../../findings/archaeology/0001-switches.md#6-chat-and-other-commands))
 
 | Reader | Input | Read when | What it changes | Tag | Owning section |
 |---|---|---|---|---|---|

@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, data/excel]
 consumed_by: [items/tc, items/quality, items/affixes, items/uniques-sets, items/properties, items/sockets-runewords, hirelings, player/creation]
-tags: {C: 244, I: 68, L: 3}
-updated: 2026-10-30
+tags: {C: 244, I: 69, L: 3}
+updated: 2026-11-04
 ---
 
 # Character save (`.d2s`): writer, reader, header and item bitstream
@@ -239,6 +239,9 @@ Step notes:
 - C1. [I] `sub_00531EB0_SaveViaCallback` compares the new buffer with the previous one with `checksum`,
   `last_played`, `unk_34` and `map_seed` masked to 0 in both, and skips the callback when nothing else changed. It
   runs only with the host callback set, which nothing in the image sets (§ Entry points). (0x00532001–0x0053210E)
+- C1, C2. [I] **`-nosave`.** The switch clears `g_SaveEnabled` (1 in the image). While it is 0 `PLRSAVE_WriteFile` skips its
+  body and `SaveViaCallback` returns 0, so neither writes. (fn:sub_0044D580_ApplyNoSaveOption@0x0044D580,
+  data:g_SaveEnabled@0x007310CC, 0x00532257, 0x00531ED1, [archaeology/0001 § 7](../../findings/archaeology/0001-switches.md#7-behaviour-changing-switches-and-the-section-each-changes))
 - C3i. [C] `jf` and `kf` are written only in an expansion game: the 112 expansion saves of the plan 0038 S1a corpus
   carry them after the corpses and the 32 classic ones end at the corpse list. (fn:D2S_WriteMercItems@0x005699A0,
   [save/0001 § Plan 0038 batch S1a](../../findings/save/0001-d2s-io.md#plan-0038-batch-s1a-2026-10-16))

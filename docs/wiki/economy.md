@@ -1,6 +1,6 @@
 ---
 based_on:
-  - docs/specs/items/economy.md 2026-10-27
+  - docs/specs/items/economy.md 2026-11-04
 ---
 
 # Prices, repair, gold and wear
@@ -270,7 +270,7 @@ From the spec's [open questions](../specs/items/economy.md#open-questions) and i
   column gives Wirt's piles their item level.
 - **The vendor record:** three bytes of it were watched and nothing read them in the windows played; a reader in
   other NPC actions or game states is not excluded.
-- **Other:** what the two other network game types are; the party gold split and trading between players (a
+- **Other:** what the two other network game types are; what the server does with the word the `-arena` switch writes; the party gold split and trading between players (a
   two-client plan); whether anything marks a melee weapon broken at 0 durability.
 - The spec also lists six places where community guides differ from 1.14d (armour slot weights, the ethereal sale,
   the ethereal throwing stack, affix divisors, the gamble cost, tome costs); in each, the 1.14d behaviour above

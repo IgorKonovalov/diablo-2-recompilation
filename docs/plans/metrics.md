@@ -571,6 +571,8 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-11-04 | `lane/snd` check | 0062 (sound pair) | architect-check | 72 209 | 14 | 2 | — | accept with fixes (5) | stale cross-reference 4, overclaim 1 |
 | 2026-11-04 | `lane/a69` | 0060 P1.1-1.3 / 0054 P1.3 readers (4 entries) | archivist | 194 494 | 59 | 8 | — | accept with fixes (Tier A, 17) | 17: misread 5, overclaim 3, omission 4, under-claim 2, stale cross-reference 3 |
 | 2026-11-04 | `lane/a69` review | 0060, 0054 readers | architect-review | 217 264 | 40 | 10 | — | accept with fixes (17) | misread 5, overclaim 3, omission 4, under-claim 2, stale cross-reference 3 |
+| 2026-11-04 | `lane/s69` | backlog sweep, 0062 P3 | spec-writer | 208 723 | 27 | 10 | — (no Ghidra, no harness) | accept with fixes (Tier A) | 10: overclaim 3, misread 2, omission 3, wrong anchor 1, under-claim 1 |
+| 2026-11-04 | `lane/s69` review | backlog sweep, 0062 P3 | architect-review | 229 650 | 35 | 11 | — | accept with fixes (10) | overclaim 3, misread 2, omission 3, wrong anchor 1, under-claim 1 |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not

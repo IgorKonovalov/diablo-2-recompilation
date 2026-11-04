@@ -187,7 +187,8 @@ Confirmed for a party of one (alone or with `/players 8`) and a party of two in 
 run also confirmed that a dead party member is not counted, that a mercenary's kill counts its owner's party, and that
 `/players` works on the host of a network game (the joiner's setting changes nothing), also for a host alone. The
 monster's player-count cap applies only to monster drops, not to chests (confirmed); in the recorded games it never
-lowered *n*. Read from the code only: three or more players and the cap at 8.
+lowered *n*. Read from the code only: three or more players, the cap at 8, and the chat parser taking `/players` only in
+four client modes.
 
 ## The quality roll and magic find
 

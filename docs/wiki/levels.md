@@ -7,7 +7,7 @@ based_on:
   - docs/specs/drlg/maze.md 2026-11-03
   - docs/specs/drlg/warps.md 2026-10-17
   - docs/specs/drlg/outdoor.md 2026-10-20
-  - docs/specs/drlg/lifecycle.md 2026-10-27
+  - docs/specs/drlg/lifecycle.md 2026-11-04
   - docs/specs/monsters/spawn.md 2026-10-27
 ---
 
@@ -525,7 +525,7 @@ Each unit of the released room is saved, kept or freed:
 | live monster | saved when the level's `SaveMonsters` flag is set or the monster came from a preset or an earlier restore, unless a later test refuses it |
 | dead monster | one draw on the room seed for every corpse; saved only when that draw's low word divides by 3, and never one that carries the special-monster or minion flag |
 | object | by the objects rule: `Restore` set, and for `RestoreVirgins` objects only an unused one |
-| ground item | always, as its saved bytes, with an expiry 15 000, 30 000 or 45 000 frames ahead by quality and kind (a quest item never expires, read from the code) |
+| ground item | always, as its saved bytes, with an expiry 15 000, 30 000 or 45 000 frames ahead by quality and kind (a quest item never expires, checked under emulation, no run saved one) |
 | missile | freed |
 
 Every logged champion carries the flag that bars a dead special from the save, so no dead champion was saved in the
@@ -547,7 +547,9 @@ code). A minion's restore re-applies its mods in the lighter form, which also sk
 the monster's own seed; its level does not show which form it gets, so that is read from the code only. States, timers and anything a hit left behind are lost. Each restored item takes two game-seed draws; an item
 saved in full keeps its seed, while a simple one (gold, potions, keys) comes back with seed 0. Its expiry becomes the
 later of the saved one and 15 000 frames from now; an item whose expiry has already passed is not re-created (5 seen
-in a run). A run reproduced 2 035 monster, 876 item and 1 799 object restores.
+in a run). In a room that stays active, read from the code: a monster's or chest's drop has no expiry until its room
+has been released, so nothing removes it till then, while a player's drop has one at once, and a pass every 1 500 frames
+frees a ground item past it (its test checked under emulation). A run reproduced 2 035 monster, 876 item and 1 799 object restores.
 
 **A restored monster marks the collision grid** like a monster of the population pass, though outside any window
 ([lifecycle § H5](../specs/drlg/lifecycle.md#h5-the-grid-marks-of-a-re-created-monster),
