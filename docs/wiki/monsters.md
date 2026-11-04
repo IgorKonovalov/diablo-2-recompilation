@@ -5,7 +5,7 @@ based_on:
   - docs/specs/monsters/spawn.md 2026-10-27
   - docs/specs/monsters/special.md 2026-11-03
   - docs/specs/monsters/stats.md 2026-11-04
-  - docs/specs/drlg/collision.md 2026-10-27
+  - docs/specs/drlg/collision.md 2026-11-04
   - docs/specs/drlg/lifecycle.md 2026-11-04
 ---
 
@@ -253,7 +253,7 @@ cell. The walk tests cells against the room's [collision grid](../glossary.md)
   random point's test is made twice: once as a probe, once to create the monster.
 - The grid changes as the pass runs. A monster just placed blocks later ones through its centre mark, so a later group
   member may have to take another cell. Read from the code, every monster the server creates is marked the same way,
-  not only those of the pass, and a monster created already dead gets the same corpse mark as one that dies, as its
+  not only those of the pass, and a monster created already dead takes a corpse mark too, as its
   class's `deadCol` column decides ([drlg/collision § F](../specs/drlg/collision.md#f-unit-marks)). For a monster
   re-created when its room comes back, the marks were compared in a run and agree
   ([levels](levels.md#rooms-that-come-and-go-release-and-restore)).
