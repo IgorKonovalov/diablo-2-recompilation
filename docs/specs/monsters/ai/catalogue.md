@@ -4,7 +4,7 @@ status: draft
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, monsters/ai/overview, monsters/ai/machinery, skills/dispatch, path/overview]
 consumed_by: [monsters/ai/overview, monsters/ai/machinery, hirelings]
-tags: {C: 262, I: 341, L: 11}
+tags: {C: 275, I: 365, L: 13}
 updated: 2026-11-04
 ---
 
@@ -2570,21 +2570,83 @@ Stub: the think is `ret 4` (0x005F81C0). A kind-1 event with a target commands n
 
 #### R82. Row 82 `InvisoSpawner` (fn:sub_005E0160_AiInvisoSpawner@0x005E0160)
 
-<!-- body R82 -->
+**`aip`:** 1 the stock (4, as data); 2 the distance (5, as data); 3 the frames between spawns (125, as data).
+
+```
+1. if v14 = 0: v18 ← aip(1)                  ; the stock, while no spawn has happened   [I] (0x005E0160, 0x005E025D)
+2. if dist ≤ aip(2):
+     if v18 ≤ 0: MonAiSetMode(0, 0, 0); return   ; stock spent: death
+     if v14 ≤ T:
+       c ← LevelClassVariant(UnitGetRoom(U), count > 96 ? 96 : −1)
+       if SpawnPosPick(G, room, 0, c, &x, &y, 0) and SpawnAtPos(G, room, x, y, c, 1, 2, 0x42):
+         v18 ← v18 − 1;  v14 ← T + aip(3)
+3. Idle(15)
+```
+
+- R82a. [I] No draw. `v18` is reloaded whenever `v14` is 0, so only until the first spawn sets the timer. The class guard is `setg; sub 1; and; add` (0x005E01DC–0x005E01EC). (fn:sub_0063EC70_LevelClassVariant@0x0063EC70, fn:sub_0054DC40_SpawnPosPick@0x0054DC40, fn:sub_005B2F20_SpawnAtPos@0x005B2F20)
+- R82b. [C] The map up to `SetMode(0, 0, 0)` (0x005E01B2), `LevelClassVariant` (0x005E01F1) or `Idle(15)` (0x005E0252), with `v18`'s reload before them: family `spawner`, 240 cases, 3 boundaries; the Normal-column and compare controls fail the 103 and 80 that separate them. (run:2026-11-03-ai-cat-emu-8)
 
 - R82i. [C] As data: kind 1, no `init`, no `alt`; 1 records (332 invisospawner); reach ·; `aip` set 1,2,3; `aidel` 15/15/15; skills —. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
 - R82l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 #### R83. Row 83 `MosquitoNest` (fn:sub_005E0260_AiMosquitoNest@0x005E0260)
 
-<!-- body R83 -->
+**`aip`:** 1 the use count (16/17/21 up to 16/20/24, as data); 2 the distance; 3 the frames between uses (200/180/175, as data).
+
+```
+1. if dist ≤ aip(2):                                                       [I] (0x005E0260, 0x005E037F)
+     if v18 > aip(1):
+       U+0xC4 ← U+0xC4 | 0x20000;  MonAiSetMode(0, 0, 0); return
+     if Skill1 ≥ 0 and T > v14 and SpawnClassCellTest(count > 334 ? 334 : −1, UnitGetRoom(U), U.x, U.y, 0):
+       v18 ← v18 + 1;  v14 ← T + aip(3)
+       UseSkill1(t); return                  ; Nest
+2. Idle(25)
+```
+
+- R83a. [I] No draw. Class 334 is `suckernest1`'s own row. The row is kind 0, so the think runs with whatever target and distance the event's context holds: Open questions. (fn:sub_005E0260_AiMosquitoNest@0x005E0260, fn:sub_005FD350_SpawnClassCellTest@0x005FD350, fn:sub_005DEAD0_MonAiUseSkill@0x005DEAD0)
+- R83b. [C] The map up to `SetMode(0, 0, 0)` (0x005E02B5) with `+0xC4`'s bit, `SpawnClassCellTest` (0x005E0322; `ECX` the class, `EDX` the room, stack `U.x, U.y, 0`) or `Idle(25)` (0x005E0374): family `nest`, 240 cases, 3 boundaries; the Normal-column, compare and unsigned-`Skill` controls fail the 59, 51 and 27 that separate them. (run:2026-11-03-ai-cat-emu-8)
 
 - R83i. [C] As data: kind 0, no `init`, no `alt`; 4 records (334-337 suckernest1..suckernest4); reach ·; `aip` set 1,2,3; `aidel` 15/15/15; skills Nest. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
 - R83l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 #### R85. Row 85 `HighPriest` (fn:sub_005E0490_AiHighPriest@0x005E0490)
 
-<!-- body R85 -->
+**`aip`:** 1 first pass, melee: chance of A1; 2 chance of the heal search; 3 the shared cooldown after a heal; 4 chance of `Skill1`; 5 chance of S1; 6 second pass: chance to break off; 7 second pass: chance of S1; 8 the distance of `Skill1` and of the first pass's choice of walk. Values per council member, as data.
+
+```
+1. if v14 = 0:                                                             [I] (0x005E0490, 0x005E096E)
+     if melee:
+       if chance(1): v14 ← 1;  SetModeAtUnit(4, t); return     ; draw#1
+       StepAway(t, 6, 1); return
+     if Skill2 ≥ 0 and T > v18 and rchance(2):                 ; draw#1
+       blk ← {0, 75, 2500};  AiUnitSearch(G, U, &blk, AiPriestHealCb, 1)
+       if blk.unit ≠ 0:
+         v18 ← T + aip(3);  UseSkill2(blk.unit); return        ; ZakarumHeal
+     if Skill1 ≥ 0 and T > v18 and dist < aip(8) and rchance(4):  ; draw#1..#2
+       k ← Pow2(4)                                             ; draw#2..#3, low & 3
+       MonAiUseSkill(Sk1mode, Skill1, t, t.x + CORNER[k].x, t.y + CORNER[k].y)   ; Hydra
+       v18 ← T + 100; return
+     if aip(5) > 0 and MissS1 > 0 and (m ← MissileRec(MissS1)) ≠ 0 and dist < m.Range − 2 and rchance(5):
+       SetModeAtUnit(8, t); return                             ; S1, highpriestlightning
+     if D100() < 80:
+       if dist ≤ aip(8): T56(t, 3, 0)
+       else: WalkStop(t, 6)
+       return
+2. v14 ← 1
+3. if melee:
+     if chance(7): SetModeAtUnit(8, t); return
+     if chance(6): StepAway(t, 6, 1);  v14 ← 0; return
+     if Range(100) < 90: SetModeAtUnit(4, t); return
+     Idle(10); return
+4. if dist < 6 and chance(7): SetModeAtUnit(8, t); return
+5. if chance(6): v14 ← 0;  Idle(10); return
+6. if D100() < 70: Walk(t, 7); return
+7. Ring(12)
+```
+
+- R85a. [I] `CORNER` is the table 0x006E337C of 8-byte rows: `(−5, −5)`, `(5, −5)`, `(5, 5)`, `(−5, 5)`. A draw of 80 or more falls into the second pass. At most seven draws in one decision. (fn:sub_0046ACE0_MissileRec@0x0046ACE0, fn:RNG_RangePow2@0x00472210, fn:sub_005DD0B0_AiUnitSearch@0x005DD0B0, tbl:MonStats.txt:MissS1, tbl:Missiles.txt:Range)
+- R85b. [I] **`AiPriestHealCb`** takes a monster, not in a death mode, `AlignSame02(U, cand)`, of alignment 0, within `UnitDistSq ≤ blk[2]` (2 500, 50 subtiles), with `UnitLifePct(cand) ≤ 75` and below `blk[1]` (75 at the start), keeping the lowest; it returns 0. No test excludes the priest itself. No draw. (fn:sub_005E0430_AiPriestHealCb@0x005E0430, fn:sub_0063EA40_MonIsDeathMode@0x0063EA40, fn:sub_00650D70_AlignSame02@0x00650D70, fn:sub_006259B0_UnitAlignGet@0x006259B0)
+- R85c. [C] The map up to its fourteen boundary sites, with the block `{0, 0x4B, 0x9C4}` and the corner read from the image (all four met): family `priest`, 240 cases, 233 with a draw; the `≤`, Normal-column, compare and unsigned-`Skill` controls fail the 18, 83, 27 and 59 that separate them. The heal past the search and the S1 past `MissileRec` are not covered; the draws at the constants 80 and 70 and `rchance(2)` were met at equality in no case. (run:2026-11-03-ai-cat-emu-8, 0x005E051C, 0x005E0963)
 
 - R85i. [C] As data: kind 1, no `init`, no `alt`; 4 records (345-347 councilmember1..councilmember3, 557 baalhighpriest); reach U; `aip` set 1,2,3,4,5,6,7,8; `aidel` 15/13,14/12,13; skills Hydra, ZakarumHeal. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
 - R85l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
@@ -2595,21 +2657,78 @@ Tier AI: [machinery § T89](machinery.md#t89-row-89-megademon-fnsub_005e0c80_aim
 
 #### R93. Row 93 `ArcaneTower` (fn:sub_005E0F60_AiArcaneTower@0x005E0F60)
 
-<!-- body R93 -->
+**`aip`:** 1 the `Skill1` uses per phase (1, as data); 2 the frames between them (150/125/75, as data); 3 the pause after (33/25/15, as data); 4 the A1 uses per phase (4, as data); 5 the pause after (150/125/75, as data); 6 the frames between A1s (50/33/25, as data).
+
+```
+1. if v18 = 0: v18 ← aip(1)                                                [I] (0x005E0F60, 0x005E106F)
+2. if T < v1C: Idle(10); return
+3. if Skill1 ≥ 0 and v14 = 0:
+     UseSkill1(t)
+     v18 ← v18 − 1
+     if v18 < 1: v14 ← 1;  v18 ← aip(4);  v1C ← T + aip(3)
+     else: v1C ← T + aip(2)
+     return
+4. SetModeAtUnit(4, t)
+5. v18 ← v18 − 1
+   if v18 < 1: v14 ← 0;  v18 ← aip(1);  v1C ← T + aip(5)
+   else: v1C ← T + aip(6)
+```
+
+- R93a. [C] The map up to `Idle(10)` (0x005E0F94), `UseSkill` (0x005E0FC5) or `SetModeAtUnit(4, t)` (0x005E101E), with `v18`'s reload before them: family `arcane`, 240 cases, no draw, 3 boundaries; the controls fail the 42, 40 and 39 that separate them. The counter updates after the two commands are not covered. (run:2026-11-03-ai-cat-emu-8)
 
 - R93i. [C] As data: kind 1, no `init`, no `alt`; 1 records (371 lightningspire); reach ·; `aip` set 1,2,3,4,5,6; `aidel` 15/15/15; skills ArcaneTower, Lightning. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
 - R93l. [C] First boundary: 24 decisions compared (24), 0 mismatches, 3 first-call outcomes. (run:2026-11-03-ai, 0x005B186F)
 
 #### R94. Row 94 `DesertTurret` (fn:sub_005E0980_AiDesertTurret@0x005E0980)
 
-<!-- body R94 -->
+**`aip`:** 1 the frames between shots (10/7/3, as data); 2 the shots per burst (5–9, as data); 3 the rest (120/100/80, as data); 4 the range (30, as data); 5 the steps from itself (5, as data).
+
+```
+1. if Skill1 ≥ 0 and v14 = 0:                                              [I] (0x005E0980, 0x005E0C75)
+     MonAiUseSkill(Sk1mode, Skill1, 0, 0, 0);  v1C ← 0;  v14 ← T; return   ; the turret's start
+2. if T < v14: Idle(10); return
+3. if dist > aip(4):
+     if v18 > 0: v18 ← v18 − 1
+     Idle(15); return
+4. dir ← Dir64To8(UnitDirToPoint(U, t.x, t.y))
+5. v1C ← SWEEP[(v1C mod 8) + 8·(dir & 7)]             ; signed mod, 0x005E0B0C–0x005E0B1E; i32 entries
+6. x ← U.x + STEP[v1C].x·aip(5);  y ← U.y + STEP[v1C].y·aip(5)
+7. UnitSetPathTargetUnit(U, t)
+8. if Skill1 ≥ 0 and MonSkillTargetOk(G, U, Skill1, t, x, y) and MonSkillTargetOk(G, U, Skill1, t, t.x, t.y):
+     MonAiUseSkill(Sk1mode, Skill1, 0, x, y);  PathSetTargetPoint(U.path, x, y)
+     v18 ← v18 + 1
+     if v18 > aip(2): v14 ← T + aip(3);  v18 ← 0
+     else: v14 ← T + aip(1)
+     return
+9. if v18 > 0: v18 ← v18 − 1
+10. Idle(10)
+```
+
+- R94a. [I] No draw. `SWEEP` is the table at 0x006E33E0, `STEP` the table at 0x006E33A0, 8 bytes a row: neither is in the finding, Open questions. The target's position comes from the inline getter shape: types 2, 4, 5 read the path's `+0x0C/+0x10`, others `PathGetX/Y`, 0 for no path (0x005E0A39–0x005E0AFB). (fn:sub_00621DC0_UnitDirToPoint@0x00621DC0, fn:sub_0063E7A0_Dir64To8@0x0063E7A0, fn:sub_005FD470_MonSkillTargetOk@0x005FD470, fn:sub_00648AD0_PathSetTargetPoint@0x00648AD0)
+- R94b. [C] The map up to `UseSkill(…, 0, 0, 0)` (0x005E09CE), `Idle(10)` (0x005E09FE), `Idle(15)` (0x005E0A2B, with `v18`'s decrement) or `UnitDirToPoint` (0x005E0B07): family `turret`, 240 cases, no draw, 4 boundaries; the controls fail the 40, 58 and 71 that separate them. (run:2026-11-03-ai-cat-emu-8)
 
 - R94i. [C] As data: kind 1, no `init`, no `alt`; 4 records (348-350 turret1..turret3, 372 firetower); reach ·; `aip` set 1,2,3,4,5; `aidel` 15/15/15; skills DesertTurret. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
 - R94l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 #### R95. Row 95 `PantherJavelin` (fn:sub_005E1080_AiPantherJavelin@0x005E1080)
 
-<!-- body R95 -->
+**`aip`:** 1 chance to close in (70 in 1–6, 90 in 7–9, as data); 2 chance of A1; 3 the squared distance past which it rejoins (9–12, as data); 4 inside 8: chance to step away; 5 the idle; 6 the throw's range (20–28, as data).
+
+```
+1. d ← dist;  h ← FindHostile(&d, 0)             ; d is the frame word EBP+8  [I] (0x005E1080, 0x005E1240)
+2. if d < 8 and chance(4): StepAway(t, 16, 1); return
+3. if d > aip(6) − 6 and chance(1): WanderNear(t, 4); return
+4. if h ≠ 0 and d < aip(6):
+     if chance(2): SetModeAtUnit(4, h)
+     else: Idle(aip(5))
+     return
+5. blk ← {0, 0x7FFFFFFF};  AiUnitSearch(G, U, &blk, AiSameBaseNearCb, 1)
+6. if blk.unit ≠ 0 and blk.d2 > aip(3): Walk(blk.unit, 7); return
+7. Idle(aip(5))
+```
+
+- R95a. [I] At most three draws. The callback is [row 18's](#r18-row-18-pantherwoman-fnsub_005f22b0_aipantherwoman0x005f22b0). (fn:sub_005DDC30_MonAiFindHostile@0x005DDC30, fn:sub_005B0D00_AiSameBaseNearCb@0x005B0D00)
+- R95b. [C] The entry call `FindHostile(G, U, EBP+8, 0)` from 0x005E10A9 with `dist` in the frame word only, before any test: family `javelin`, 240 cases; no control separates it. (run:2026-11-03-ai-cat-emu-8)
 
 - R95i. [C] As data: kind 1, no `init`, no `alt`; 9 records (373-376 slinger1..slinger4, 394-395 slinger5..slinger6, 610-612 slinger7..slinger9); reach P; `aip` set 1,2,3,4,5,6; `aidel` 15/13,14/12,13; skills —. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
 - R95l. [C] First boundary: 58 decisions compared (15 + 43), 0 mismatches, 1 first-call outcome. (run:2026-11-03-ai, run:2026-11-03-ai-3, 0x005B186F)
@@ -2617,7 +2736,44 @@ Tier AI: [machinery § T89](machinery.md#t89-row-89-megademon-fnsub_005e0c80_aim
 
 #### R96. Row 96 `FetishBlowgun` (fn:sub_005E1250_AiFetishBlowgun@0x005E1250)
 
-<!-- body R96 -->
+**`aip`:** 1 the distance past which it closes in (20, as data); 2 chance of the retreat state (30, as data).
+
+`v14`: 0 shooting, 1 walking in, 2 retreating. Row 96's records name `SkeletonRaise` as `Skill1`, which the think does not read.
+
+```
+clear ≝ v14 ← 0;  v18 ← 0                                                  [I] (0x005E1250, 0x005E152C)
+
+1. p ← Head
+   if p ≠ 0:
+     if p.kind = 1 and (u ← GameFindUnit(G, p+0x10, p+0x0C)) ≠ 0:
+       clear;  SetModeAtUnit(4, u);  Pop; return
+     if p.kind = 14 and (u ← GameFindUnit(G, p+0x10, p+0x0C)) ≠ 0:
+       clear;  Ovr(13, 50, 0);  Walk(u, 0);  Pop; return
+     Pop
+2. if not melee:
+     if dist > aip(1): Ovr(0, 50, 0);  WanderNear(t, 6); return
+     if dist ≥ 6: goto hunt
+3. if chance(2): v14 ← 2                         ; draw#1
+hunt:
+4. h ← FindHostile(&d, 0)
+5. switch v14:
+     0: v18 ← v18 + 1
+        if (step low mod 3) + 3 < v18: v14 ← 1;  v18 ← 0
+        if h ≠ 0: SetModeAtUnit(4, h)
+        else: T56(t, 4, 0)
+     1: clear;  Ovr(0, 50, 0)
+        if not T56(t, 6, 1): Idle(10)
+     2: if dist < 13:
+          Ovr(2, 50, 0)
+          if not StepAway(t, 14, 1): SetModeAtUnit(4, h);  clear
+          return
+        if Range(100) < 20 and T56(t, 4, 1): return
+        clear;  Idle(10)
+     else: Idle(10)
+```
+
+- R96a. [I] The record's type is at `+0x10` and the guid at `+0x0C`, the word order row 65 writes; which poster's records reach a blowgun is not read. State 2's `SetModeAtUnit(4, h)` does not test `h`. At most two draws. (fn:sub_0058EE80_AiParamsHead@0x0058EE80, fn:sub_0058ED10_AiParamsPop@0x0058ED10, fn:sub_00552F60_GameFindUnit@0x00552F60)
+- R96b. [C] The map up to `GameFindUnit` for kind 1 (0x005E129B) and kind 14 (0x005E12DC), `Pop` for any other kind (0x005E1322), `Ovr(0, 50, 0)` beyond `aip(1)` (0x005E1348) or `FindHostile` (0x005E13BD) with `v14` = 2 on the draw: family `blowgun`, 240 cases, 73 with a draw, 5 boundaries; the controls fail the 6, 33 and 11 that separate them. The switch after `FindHostile` is not covered. (run:2026-11-03-ai-cat-emu-8)
 
 - R96i. [C] As data: kind 1, no `init`, no `alt`; 8 records (396-400 fetishblow1..fetishblow5, 659-661 fetishblow6..fetishblow8); reach P; `aip` set 1,2; `aidel` 15/14/13; skills SkeletonRaise. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
 - R96l. [I] Logged, not compared: 179 decisions (61 + 61 + 57) in a row with no model, so the first boundary of this row is not raised. (run:2026-11-03-ai, run:2026-11-03-ai-3, run:2026-11-04-ai-r5, 0x005B186F)
@@ -2625,28 +2781,75 @@ Tier AI: [machinery § T89](machinery.md#t89-row-89-megademon-fnsub_005e0c80_aim
 
 #### R97. Row 97 `Spirit` (fn:sub_005E3840_AiSpirit@0x005E3840)
 
-<!-- body R97 -->
+No `aip`, no draw.
+
+```
+1. if v14 ≠ 0: Idle(50); return                                            [C] (0x005E3858, 0x005E3871, 0x005E387E, run:2026-11-03-ai-cat-emu-8)
+2. if melee: v14 ← 1;  SetModeAtUnit(4, t); return
+3. Idle(10)
+```
+
+- R97a. [I] One A1 at a target in melee, then `Idle(50)` on every later event: no code of the function clears `v14`. (fn:sub_005E3840_AiSpirit@0x005E3840)
+- R97b. [C] Family `spirit`, 240 cases, 3 boundaries, no draw and no compare with a control. (run:2026-11-03-ai-cat-emu-8)
 
 - R97i. [C] As data: kind 1, no `init`, no `alt`; 1 records (401 mephistospirit); reach ·; `aip` set —; `aidel` 15/15/15; skills —. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
 - R97l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 #### R98. Row 98 `Smith` (fn:sub_005E3890_AiSmith@0x005E3890)
 
-<!-- body R98 -->
+No `aip`, no draw.
+
+```
+1. if melee: SetModeAtUnit(4, t); return                                   [I] (0x005E3890, 0x005E38F2)
+2. L ← clamp(UnitLifePct(U), 0, 100)
+3. Ovr(0, (100 − L) >> 1, 0);  Walk(t, 7)       ; sar 1 of a value in 0..100
+```
+
+- R98a. [C] The map up to `SetModeAtUnit(4, t)` (0x005E38A9) or `UnitLifePct(U)` (0x005E38B6) only: family `smith`, 240 cases, 2 boundaries. (run:2026-11-03-ai-cat-emu-8)
 
 - R98i. [C] As data: kind 1, no `init`, no `alt`; 2 records (402 smith, 409 hephasto); reach U; `aip` set —; `aidel` 15/13/12; skills —. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
 - R98l. [C] First boundary: 4 decisions compared (4), 0 mismatches, 2 first-call outcomes. (run:2026-11-03-ai, 0x005B186F)
 
 #### R113. Row 113 `SiegeTower` (fn:sub_005E1860_AiSiegeTower@0x005E1860)
 
-<!-- body R113 -->
+**`aip`:** 1 the idle.
+
+```
+1. o ← UnitGetOwner(G, U)                                                  [I] (0x005E1860, 0x005E18F0)
+2. if (o = 0 or UnitIsDead(o)) and t ≠ 0:
+     blk ← {400, 0}
+     imp ← AiUnitSearch(G, U, &blk, AiImpNearCb, 1)
+     if imp ≠ 0: AiImpSetHost(imp, U);  Idle(aip(1))
+3. Idle(aip(1))
+```
+
+- R113a. [I] **The tower calls `Idle(aip(1))` twice** when the search finds one: the found branch has no return before the common idle (0x005E18D2, then 0x005E18E5). No draw. (fn:sub_00552FD0_UnitGetOwner@0x00552FD0, fn:sub_005541B0_UnitIsDead@0x005541B0)
+- R113b. [I] **`AiImpNearCb`** takes a candidate that is not the searcher, a monster not in a death mode, whose `MonBaseId` is 492 (`imp1`, guarded `count > 492 ? 492 : −1`), `AlignSame02`, of alignment 0, while **the searcher** has no owner (0x005E1794–0x005E1799), whose `0x00541860(cand)+0x14` is −1, and returns it when `UnitDistSq(searcher, cand) ≤ blk[0]`, else 0. `0x00541860` is the AI-control getter (`unit+0x14 → +0x28`). No draw. (fn:sub_005E1720_AiImpNearCb@0x005E1720, fn:sub_00463860_MonBaseId@0x00463860, fn:sub_005B0BD0_UnitDistSq@0x005B0BD0)
+- R113c. [I] **`AiImpSetHost(imp, host)`:** with `c` the imp's AI control, a host of 0 sets `c+0x14` = −1; else, when `GameFindUnit(UnitGetGame(imp), 1, c+0x14)` finds the old host and `UnitDistSq(imp, host) > UnitDistSq(imp, old)`, nothing changes, otherwise `c+0x14` = the host's guid. So the imp keeps the nearer host; [row 122](#r122-row-122-imp-fnsub_005e2ff0_aiimp0x005e2ff0) reads it. (fn:sub_005E17E0_AiImpSetHost@0x005E17E0, fn:sub_00554010_UnitGetGame@0x00554010)
+- R113d. [C] The entry call `UnitGetOwner(G, U)` from 0x005E187B only, before any test: family `stower`, 240 cases; no control separates it. (run:2026-11-03-ai-cat-emu-8)
 
 - R113i. [C] As data: kind 1, no `init`, no `alt`; 1 records (435 barricadetower); reach ·; `aip` set 1; `aidel` 15/15/15; skills —. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
 - R113l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 #### R114. Row 114 `ReanimatedHorde` (fn:sub_005E1540_AiReanimatedHorde@0x005E1540)
 
-<!-- body R114 -->
+**`aip`:** 1 melee: chance of A1; 2 the melee idle (70 in `reanimatedhorde6`, else 20/15/12, as data); 3 the charge's range (10–18, as data); 4 chance of the charge; 5 chance to walk; 6 chance to walk toward; 7 the idle. `aip(8)` is not read.
+
+```
+1. U+0xC4 ← U+0xC4 | 0xE                                                   [I] (0x005E1540, 0x005E1719)
+2. if melee:
+     if chance(1): SetModeAtUnit(4, t)
+     else: Idle(aip(2))
+     return
+3. if Skill2 ≥ 0 and AiApproachPointTest(U, t) and dist < aip(3) and dist > 5 and rchance(4):
+     UseSkill2(t); return                       ; Charge
+4. if chance(5): Walk(t, 0); return
+5. if chance(6): Toward(t, 4, 0); return
+6. Idle(aip(7))
+```
+
+- R114a. [I] Bits `0x2`, `0x4`, `0x8` of `+0xC4` are set on every event before any test. `Skill1`, `Self-resurrect`, is not read. At most three draws. (fn:sub_005DC640_AiApproachPointTest@0x005DC640, fn:sub_005DE6D0_MonAiWalkTowardUnit@0x005DE6D0, tbl:MonStats.txt:Skill1)
+- R114b. [C] The map up to `SetModeAtUnit` (0x005E15BF), `Idle(aip(2))` (0x005E15D8), `AiApproachPointTest` (0x005E15F5), `Walk` (0x005E16A2), `Toward` (0x005E16F5) or `Idle(aip(7))` (0x005E170E), with `+0xC4 |= 0xE` before each: family `horde`, 240 cases, 168 with a draw, 6 boundaries; the `≤`, Normal-column and unsigned-`Skill` controls fail the 20, 90 and 52 that separate them. (run:2026-11-03-ai-cat-emu-8)
 
 - R114i. [C] As data: kind 1, no `init`, no `alt`; 6 records (436-440 reanimatedhorde1..reanimatedhorde5, 698 reanimatedhorde6); reach PU; `aip` set 1,2,3,4,5,6,7,8; `aidel` 15/14/13; skills Self-resurrect, Charge. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
 - R114l. [C] First boundary: 43 decisions compared (12 + 31), 0 mismatches, 2 first-call outcomes. (run:2026-11-03-ai, run:2026-11-04-ai-r5, 0x005B186F)
@@ -2654,7 +2857,29 @@ Tier AI: [machinery § T89](machinery.md#t89-row-89-megademon-fnsub_005e0c80_aim
 
 #### R115. Row 115 `SiegeBeast` (fn:sub_005E1900_AiSiegeBeast@0x005E1900)
 
-<!-- body R115 -->
+**`aip`:** 1 the squared search distance's root (625 squared, as data); 2 melee: chance of A1; 3 melee: chance of the stomp; 4 the melee idle; 5 inside the skill's `Param5`: chance of the stomp; 6 chance of the override; 7 the override, clamped (100, as data).
+
+```
+1. o ← UnitGetOwner(G, U)                                                  [I] (0x005E1900, 0x005E1B55)
+2. if MonIsDeathMode(U): return                  ; no command
+3. if o = 0 and UnitAlignGet(U) = 0:
+     blk ← {aip(1)·aip(1)}
+     imp ← AiUnitSearch(G, U, &blk, AiImpNearCb, 1)
+     if imp ≠ 0: AiImpSetHost(imp, U)
+4. if melee:
+     if Skill1 ≥ 0 and chance(3): MonAiUseSkill(Sk1mode, Skill1, 0, 0, 0); return   ; the stomp, 0x005E19EC–0x005E19F6
+     if chance(2): SetModeAtUnit(4, t)
+     else: Idle(aip(4))
+     return
+5. if Skill1 ≥ 0 and dist < SkillGetParam5(Skill1) and rchance(5):
+     MonAiUseSkill(Sk1mode, Skill1, 0, 0, 0); return
+6. if AiApproachPointTest(U, t) and chance(6):
+     Ovr(0, clamp(aip(7), 0, 127), 0);  Toward(t, 12, 0); return
+7. Toward(t, 12, 0)
+```
+
+- R115a. [I] The callback and the host are [row 113's](#r113-row-113-siegetower-fnsub_005e1860_aisiegetower0x005e1860). (fn:sub_004E6C70_SkillGetParam5@0x004E6C70, tbl:Skills.txt:Param5)
+- R115b. [C] The entry call `UnitGetOwner(G, U)` from 0x005E192B only, before any test: family `sbeast`, 240 cases; no control separates it. (run:2026-11-03-ai-cat-emu-8)
 
 - R115i. [C] As data: kind 1, no `init`, no `alt`; 5 records (441-445 siegebeast1..siegebeast5); reach PU; `aip` set 1,2,3,4,5,6,7; `aidel` 15/14/13; skills Siege Beast Stomp, Charge. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
 - R115l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
@@ -3052,7 +3277,7 @@ None of its own: the rows have no recorded seed-to-decision case outside the tie
 
 ## Evidence
 
-- [ai/0002](../../../findings/ai/0002-pool-a.md), [ai/0003](../../../findings/ai/0003-pool-b.md), [ai/0004](../../../findings/ai/0004-pool-c.md), [ai/0005](../../../findings/ai/0005-pool-d.md), [ai/0006](../../../findings/ai/0006-summons.md), [ai/0007](../../../findings/ai/0007-hirelings.md), [ai/0008](../../../findings/ai/0008-bosses-a.md): batches 1 to 7. [ai/0001](../../../findings/ai/0001-machinery.md): the rows 0 and 1 and the second table.
+- [ai/0002](../../../findings/ai/0002-pool-a.md), [ai/0003](../../../findings/ai/0003-pool-b.md), [ai/0004](../../../findings/ai/0004-pool-c.md), [ai/0005](../../../findings/ai/0005-pool-d.md), [ai/0006](../../../findings/ai/0006-summons.md), [ai/0007](../../../findings/ai/0007-hirelings.md), [ai/0008](../../../findings/ai/0008-bosses-a.md), [ai/0009](../../../findings/ai/0009-batch8.md): batches 1 to 8. [ai/0001](../../../findings/ai/0001-machinery.md): the rows 0 and 1 and the second table.
 - [ai/0015](../../../findings/ai/0015-phase2-first-run.md), [ai/0017](../../../findings/ai/0017-phase2-second-run.md), [ai/0018](../../../findings/ai/0018-phase2-third-run.md): the three logged batches.
 - [MonAI](../../../tables/MonAI.md), [MonStats](../../../tables/MonStats.md).
 
@@ -3071,3 +3296,5 @@ To check the count: every row has one heading `#### R<n>. Row <n> ` and every st
 - [L] **The Shadow Master's scoring loop** (row 106 step 8): the finding gives the score's inputs and the shape, not each `aitype`'s terms; **the wolf's chain** (row 108 step 5) likewise. A reimplementation cannot pick the same skill from the prose alone. ([ai/0006](../../../findings/ai/0006-summons.md), fn:sub_005EB970_AiShadowMaster@0x005EB970)
 - [L] **Row 44, Duriel: a community disagreement, open.** src:arreat-summit-boss-pages gives Duriel "17 % Melee Attack 1, 33 % Smite, 50 % Jab" and the same for Über Duriel; the code read (R44) gives Smite 33 %, Jab 33.5 %, A1 33.5 %. The map is emulated, the case is open for owner play, and agreement or disagreement promotes nothing. ([README Open questions](README.md#open-questions), fn:sub_005F67B0_AiDuriel@0x005F67B0, [ai/0014](../../../findings/ai/0014-community-cross-check.md), run:2026-10-30-ai-cat-emu-6)
 - [L] **Row 146:** what moves and casts Uber Mephisto, given a think that commands nothing. A scan for the class 704 and the state 184 outside the AI table is open beyond ai/0016. ([ai/0016](../../../findings/ai/0016-uber-event.md), fn:sub_005F81C0_AiUberMephisto@0x005F81C0)
+- [L] **Row 83, kind 0:** what `dist` and `t` its context holds when no search ran, so whether `dist ≤ aip(2)` can fail on stock events. **Row 85:** whether `AiUnitSearch` passes the searcher to `AiPriestHealCb`, which does not exclude it. ([ai/0009](../../../findings/ai/0009-batch8.md), fn:sub_005E0260_AiMosquitoNest@0x005E0260)
+- [L] **Row 94's two tables** at 0x006E33E0 and 0x006E33A0 are not transcribed in the finding; a reimplementation needs them. ([ai/0009](../../../findings/ai/0009-batch8.md), fn:sub_005E0980_AiDesertTurret@0x005E0980)
