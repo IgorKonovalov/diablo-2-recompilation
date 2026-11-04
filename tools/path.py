@@ -2,9 +2,10 @@
 """Plan 0054 Phase 2 (`lane/p54`): per-event reproduction of `PathPlan`, the model and the check.
 
     python3 -I tools/path.py check LOG [LOG ...] [--out F]   reproduce every logged plan with the models, run the live controls, print the
-                                                             outcome mix per type, the floors, the break lines and the grid tie
-    python3 -I tools/path.py mix LOG [LOG ...]               the outcome mix only
-    python3 -I tools/path.py tie LOG [LOG ...] [--first N]   the grid tie only
+                                                             outcome mix per type, the floors, the break lines and the grid tie, then the review sections
+                                                             (the stock counts, controls per type, type 1 on the switch, the head backwards, the seed
+                                                             watchpoints, corpse shapes; env PATH_DEV, PATH_IMAGE) and the `grid` report
+    python3 -I tools/path.py mix|tie LOG [LOG ...] [--first N]  the check without the review sections
     python3 -I tools/path.py grid LOG [LOG ...] [--out F]    path/0005: the model on the tie's grid, frozen rules against the code's, bit attribution, the rest
 
 The logs are those of tools/gdb/path.gdb (docs/findings/path/0001 § 13; tools/path_sessions.py). One PLAN is a PLN line, its PLU/PLG/PLC lines
@@ -49,7 +50,7 @@ import path_emu3 as P3  # noqa: E402
 
 REGISTER = os.path.join(ROOT, "workspace", "logs", "r54a", "p1-register.txt")
 LINE = re.compile(r"^([A-Z][A-Z0-9]*) (\{.*\})\s*$")
-KEEP = ("AGM", "PLN", "PLG", "PLC", "PLX", "BRK", "S3C", "CAP", "CB", "PLR", "SEEDW")
+KEEP = ("AGM", "PLN", "PLG", "PLC", "PLX", "BRK", "S3C", "CAP", "CB", "PLR", "SEEDW", "SPX", "T1S", "L1M", "L1U", "COR")
 # the planner addresses
 PL = {0x00679C80: "greedy", 0x00679ED0: "near", 0x00679F70: "onept", 0x0067A000: "knock", 0x0067B850: "type1", 0x0067C2D0: "type15",
       0x0067AD00: "search", 0x00679E50: "type3", 0x00679FD0: "type11", 0x00679E60: "type12"}
@@ -69,7 +70,10 @@ FLOORS = {1: 100, 2: 100, 4: 100, 7: 100, 8: 100, 10: 100, 13: 100, 15: 100, 5: 
 TOTAL_FLOOR = 2000
 BREAK_FNS = {0x00679E50: "type 3", 0x00679FD0: "type 11", 0x00679E60: "type 12", 0x00663E00: "type-16 A", 0x00663ED0: "type-16 B"}
 MARKED_OFF_MODES = (0, 12, 17)
+ACT_FIRST_LEVEL = (40, 75, 103, 109)
 _GRID_TABLES = None
+# the seed watchpoint's writes that are not an LCG step: `rep stos` / `rep movs` over the unit's memory (path/0004 § 5), high dword as at the plan's exit
+BLOCK_WRITE_PCS = {0x00681F4F: "rep stos", 0x00682A1A: "rep movs", 0x0057CAE6: "rep movs"}
 ITEM_GROUND_MODES = (3, 5)       # an item unit's mode on the ground (3) or dropping (5): the 0x200 mark (drlg/0005 § 6, ground items)
 
 
@@ -87,11 +91,13 @@ def seed_str(t):
 
 
 class Plan:
-    __slots__ = ("k", "game", "log", "pln", "plc", "plx", "rooms", "cb", "n")
+    __slots__ = ("k", "game", "log", "pln", "plc", "plx", "rooms", "cb", "n", "w1", "l1")
 
     def __init__(self, k, game, log, pln):
         self.k, self.game, self.log, self.pln = k, game, log, pln
         self.plc = self.plx = None
+        self.w1 = False
+        self.l1 = ()
         self.rooms = {}
         self.cb = {}
         self.n = 0
@@ -116,6 +122,11 @@ class Game:
         self.brk = []
         self.s3c = []
         self.seedw = []
+        self.spx = []            # logger rev 5
+        self.t1s = []
+        self.l1m = []
+        self.l1u = []
+        self.cor = []
         self.caps = []
         self.rooms = {}          # (addr, hash) -> {"r", "mr", "nr", "cells"}
         self.cb = {}             # room -> (rect, cells list)
@@ -179,6 +190,16 @@ def parse(path):
                 g.s3c.append(d)
             elif tag == "SEEDW":
                 g.seedw.append(d)
+            elif tag == "SPX":
+                g.spx.append(d)
+            elif tag == "T1S":
+                g.t1s.append(d)
+            elif tag == "L1M":
+                g.l1m.append(d)
+            elif tag == "L1U":
+                g.l1u.append(d)
+            elif tag == "COR":
+                g.cor.append(d)
             elif tag == "CAP":
                 g.caps.append(d)
     return games
@@ -632,11 +653,83 @@ def object_marked(u, hc):
     return bool(row and 0 <= mode < 8 and row[mode])
 
 
+def units_cut(plan):
+    """Whether the plan's unit list was cut: rev 5's PLC line says how many; rev 4 and before cut at 120 and did not say."""
+    plc = plan.plc
+    return plc.get("ucut", 0) > 0 if "ucut" in plc else len(plc["u"]) >= 120
+
+
+def act_of(lid):
+    """The act of a level id: the towns 1, 40, 75, 103, 109 open the acts (tbl:Levels.txt:Act)."""
+    return sum(1 for t in ACT_FIRST_LEVEL if lid >= t)
+
+
+def player_arrivals(g):
+    """Rule W1 of path/0005: `PlayerChangeAct` leaves the player unmarked at the arrival, until it moves or its own plan's tail re-marks it (0x00649BE0).
+
+    Walks a game's plans in log order, keeping the level of the player's entry in each unit list. Sets `plan.w1` on every planner plan that sees the player
+    unmarked by the rule, and returns one record per level change, with the player's centre cell at the first plan of another unit that sees it unmoved."""
+    out = []
+    lid = None
+    open_ = None                    # the record of the arrival under way
+    w1 = False
+    for plan in g.plans:
+        if not plan.plc:
+            continue
+        me = next((u for u in plan.plc["u"] if u[0] == 0), None)
+        room = plan.rooms.get(me[6]) if me else None
+        now = room.get("lid") if room else None
+        if now is not None and lid is not None and now != lid:
+            open_ = {"log": g.log, "from": lid, "to": now, "act": int(act_of(now) != act_of(lid)), "k": None, "cell": None, "pos": (me[4], me[5])}
+            out.append(open_)
+            w1 = bool(open_["act"])
+        if now is not None:
+            lid = now
+        if me is None:
+            continue
+        own = tuple(plan.plc["self"]) == (0, me[1])
+        if open_ is not None and (me[4], me[5]) != open_["pos"]:
+            open_ = None
+            w1 = False
+        if open_ is None:
+            continue
+        plan.w1 = w1 and not own
+        if not own and open_["k"] is None and room is not None:
+            r = P2.room_at(mk_world(plan), me[6], me[4], me[5])
+            if r is not None:
+                open_["k"], open_["cell"] = plan.k, r.cell(me[4], me[5])
+        if own:
+            open_ = None           # its tail re-marks it (0x00649BE0)
+            w1 = False
+    return out
+
+
+def reserved_landings(g):
+    """Rule L1 of path/0005: from a logger rev 5 log, for each planner plan the reserved points held at its call: an L1M line before the plan's PLC line, with no L1U of
+    the same point, pattern and mask between. Sets `plan.l1` to (room, x, y, pattern, mask) tuples; returns how many plans hold one."""
+    events = sorted([(e["n"], 1, e) for e in g.l1m] + [(e["n"], 0, e) for e in g.l1u] + [(p.plc["n"], 2, p) for p in g.plans if p.plc and "n" in p.plc], key=lambda v: v[0])
+    held = []
+    n = 0
+    for _, kind, e in events:
+        if kind == 1:
+            held.append((e["room"], e["x"], e["y"], e["pat"], e["mask"]))
+        elif kind == 0:
+            for i, h in enumerate(held):
+                if h[1:] == (e["x"], e["y"], e["pat"], e["mask"]):
+                    del held[i]
+                    break
+        else:
+            e.l1 = tuple(held)
+            n += 1 if held else 0
+    return n
+
+
 def tie_of(plan, cells=False, corpse=False, rules=None):
     """The live cells against the built map plus the unit list's marks for each room of the plan: (rooms compared, rooms exact, differing cells, bits).
 
     rules None: the frozen rules of `a501a7fa` (every object marks; a dead monster unmarked), with `corpse` the frozen hold-out reading of `178106ec`.
-    rules "code": the rules read from the code in path/0005 (object_marked; corpse_mark), `corpse` ignored.
+    rules "code": the rules read from the code in path/0005 (object_marked; corpse_mark), `corpse` ignored. "code+w1": those and W1 (`plan.w1`, player_arrivals). "code+w1+l1": and L1, the
+    reserved landings of a rev 5 log (`plan.l1`, reserved_landings).
     """
     if not plan.plc:
         return None
@@ -657,7 +750,8 @@ def tie_of(plan, cells=False, corpse=False, rules=None):
     selfu = plan.plc["self"]
     tgt = plan.plc.get("tgt")
     dropped = 0
-    tables = grid_tables() if rules == "code" else None
+    code = rules in ("code", "code+w1", "code+w1+l1")
+    tables = grid_tables() if code else None
     for u in plan.plc["u"]:
         if u[0] == 4:
             if len(u) >= 7 and u[5] in pred and u[6] in ITEM_GROUND_MODES:
@@ -666,9 +760,9 @@ def tie_of(plan, cells=False, corpse=False, rules=None):
         if u[0] == 2:
             if len(u) >= 13 and u[5] in pred:
                 _, uid, cls, x, y, room, mode, sx, sy, door, b13b, b167, b1b6 = u[:13]
-                if rules == "code" and not object_marked(u, tables[0]):
+                if code and not object_marked(u, tables[0]):
                     continue
-                if rules == "code" and tgt and uid == tgt[1] and tgt[0] == 2 and plan.pln["fl"] & 0x800:
+                if code and tgt and uid == tgt[1] and tgt[0] == 2 and plan.pln["fl"] & 0x800:
                     continue                                     # rule T1: PathPlan's target unmark under flag 0x800 (0x00649B1A..0x00649B25)
                 if door:
                     mask = (0x804 if b1b6 else 0x400) if not b13b else 0x806
@@ -681,7 +775,9 @@ def tie_of(plan, cells=False, corpse=False, rules=None):
             continue
         if tgt and (t, uid) == tuple(tgt) and plan.pln["fl"] & 0x800:
             continue
-        if rules == "code" and t == 1 and mode in (0, 12):
+        if rules in ("code+w1", "code+w1+l1") and t == 0 and plan.w1:
+            continue                                         # rule W1: the arrival of PlayerChangeAct is unmarked
+        if code and t == 1 and mode in (0, 12):
             if room in pred:
                 corpse_mark(pred, room, x, y, pat, mask, tables[1].get(cls, 0))
             continue
@@ -696,6 +792,10 @@ def tie_of(plan, cells=False, corpse=False, rules=None):
             size_op(pred, room, x, y, size, mask)
         else:
             pattern_op(pred, room, x, y, pat, mask)
+    if rules == "code+w1+l1":
+        for room, x, y, pat, mask in plan.l1:
+            if room in pred:
+                pattern_op(pred, room, x, y, pat, mask)
     bits = 0
     ncell = 0
     exact = 0
@@ -775,7 +875,7 @@ def size_op(R, hint, x, y, s, m):
 
 
 # ---------------------------------------------------------------------------------------------------- the report
-def report(paths, out=sys.stdout, first=10):
+def report(paths, out=sys.stdout, first=10, full=False):
     games, plans, byty, res, matched = check(paths, out)
     w = lambda s="": print(s, file=out)
     sessions = len(games)
@@ -840,7 +940,7 @@ def report(paths, out=sys.stdout, first=10):
             ok = lo2 == ((lo * 0x6AC690C5 + hi) & 0xFFFFFFFF)
             pl = next((p for p in g.plans if p.k == e["k"]), None)
             if e.get("ctl"):
-                kinds["control: " + ("a draw, the LCG step" if ok else "NOT the LCG step")] += 1
+                kinds["control: " + ("a draw, the LCG step" if ok else seedw_label(e))] += 1
                 continue
             kinds["chained (the low dword is the LCG step of the exit seed)" if ok else (
                 "released without a draw (the low dword overwritten, 0 or an allocator link, the high dword as at the exit)"
@@ -853,8 +953,8 @@ def report(paths, out=sys.stdout, first=10):
     w("BREAK LINES")
     brk = collections.Counter()
     for g in games:
-        for b in g.brk:
-            brk[(b["fn"], b["side"], b["ctl"])] += 1
+        for key, n in brk_hits(g).items():
+            brk[key] += n
     for (fn, side, ctl), n in sorted(brk.items(), key=lambda kv: (kv[0][0], str(kv[0][1]), kv[0][2])):
         w("  %08x %-9s side=%s %s hits=%d" % (fn, BREAK_FNS.get(fn, "control: greedy"), side, "control" if ctl else "watch", n))
     srv = [b for g in games for b in g.brk if not b["ctl"] and b["side"] == "srv"]
@@ -873,21 +973,38 @@ def report(paths, out=sys.stdout, first=10):
         tie_report(games, w, first, corpse)
     w()
     w("UNMODELLED: " + ("; ".join("%s=%d" % kv for kv in res.unmodelled.most_common()) or "none"))
+    if full:
+        w()
+        review_sections([(session_of(g.log), g) for g in games], w)
+        w()
+        grid_report(paths, out, games)
     return finish(w, res, byty, plans, nmatch, nmis, nunm, zero, passed)
+
+
+def brk_hits(g):
+    """A game's hits per (fn, side, ctl): rev 5's lines carry the hit's count `c`, printed at the first 20 and at each power of two; before it each hit was a line."""
+    hits = collections.Counter()
+    for b in g.brk:
+        key = (b["fn"], b["side"], b["ctl"])
+        hits[key] = max(hits[key], b["c"]) if "c" in b else hits[key] + 1
+    return hits
 
 
 def tie_report(games, w, first, corpse):
     t_first = collections.Counter()
+    t_level = collections.Counter()
     t_all = collections.Counter()
     bits = collections.Counter()
     for g in games:
         k = 0
+        lev = collections.Counter()
         for plan in g.plans:
             if not plan.plc:
                 continue
             k += 1
+            lev[plan.pln["ar"]] += 1
             t = tie_of(plan, False, corpse)
-            for tc, name in ((t_first, k <= first), (t_all, True)):
+            for tc, name in ((t_first, k <= first), (t_level, lev[plan.pln["ar"]] <= first), (t_all, True)):
                 if not name:
                     continue
                 if t is None or not t["compared"]:
@@ -903,16 +1020,22 @@ def tie_report(games, w, first, corpse):
                     bits[b] += n
     w("  [%s] first plans: " % ("with the 3x3 corpse reading" if corpse else "units' own marks only") +
       ", ".join("%s %d" % kv for kv in sorted(t_first.items())))
+    w("  [%s] first plans per level: " % ("with the 3x3 corpse reading" if corpse else "units' own marks only") +
+      ", ".join("%s %d" % kv for kv in sorted(t_level.items())))
     w("  [%s] all plans:   " % ("with the 3x3 corpse reading" if corpse else "units' own marks only") +
       ", ".join("%s %d" % kv for kv in sorted(t_all.items())))
     w("      differing bits (cells): " + (", ".join("0x%04x=%d" % kv for kv in sorted(bits.items())) or "none"))
 
 
-def grid_report(paths, out=sys.stdout):
+def grid_report(paths, out=sys.stdout, games=None):
     """path/0005: the model on the tie's grid under the frozen rules and under the code's, the wrong plans by the bit alone sufficient, the residue by class."""
     w = lambda t="": print(t, file=out)
-    games = [g for p in paths for g in parse(p)]
-    for name, rules, corpse in (("frozen, units' own marks", None, False), ("frozen, the corpse reading", None, True), ("code rules O1, C1..C3, T1", "code", False)):
+    games = games if games is not None else [g for p in paths for g in parse(p)]
+    arrivals = [a for g in games for a in player_arrivals(g)]
+    passes = [("frozen, units' own marks", None, False), ("frozen, the corpse reading", None, True), ("code rules O1, C1..C3, T1", "code", False), ("code rules with W1", "code+w1", False)]
+    if sum(reserved_landings(g) for g in games):
+        passes.append(("code rules with W1 and L1", "code+w1+l1", False))
+    for name, rules, corpse in passes:
         total = collections.Counter()
         bits = collections.Counter()
         wrong = collections.Counter()
@@ -954,14 +1077,458 @@ def grid_report(paths, out=sys.stdout):
                     key = [f for f in fl if bad([(f[0], f[1], f[2])])][:1]
                     players = [u for u in plan.plc["u"] if u[0] == 0]
                     rest.append((os.path.basename(g.log)[24:-4], plan.k, plan.pln["fr"], plan.ty, plan.pln["u"][:4], [(f[4], f[5], "%04x" % f[2], "%04x" % f[3]) for f in key],
-                                 [(u[3], u[4], u[5], u[9]) for u in players][:1], len(plan.plc["u"]) >= 120))
+                                 [(u[3], u[4], u[5], u[9]) for u in players][:1], units_cut(plan)))
         w("[%s] %s" % (name, ", ".join("%s %d" % kv for kv in sorted(total.items()))))
         w("  differing bits (cells): " + ", ".join("0x%04x=%d" % kv for kv in sorted(bits.items())))
         w("  wrong plans: %d of %d, by type %s" % (sum(wrong.values()), total["plans"], sorted(wrong.items())))
         w("  by the bit alone sufficient: %s" % sorted(by.items(), key=lambda kv: -kv[1]))
         for r in rest:
             w("  REST session %s k=%d fr=%d type=%d unit=%s decisive cell (x, y, model, live)=%s player (mode, x, y, mask)=%s at-unit-cap=%s" % r)
+    w("W1 (path/0005): the player's level changes, by whether the act changed, and the 0x1000 bit of the player's centre cell at the first other unit's plan that sees the unmoved player")
+    tab = collections.Counter()
+    for a in arrivals:
+        tab[("act changed" if a["act"] else "same act", "no plan saw it" if a["cell"] is None else ("marked" if a["cell"] & 0x1000 else "unmarked"))] += 1
+    for k, n in sorted(tab.items()):
+        w("  %-11s %-14s %d" % (k[0], k[1], n))
+    for a in arrivals:
+        w("  ARRIVAL %s lid %s -> %s act-changed=%d k=%s cell=%s" % (os.path.basename(a["log"])[24:-4], a["from"], a["to"], a["act"], a["k"], "-" if a["cell"] is None else "%04x" % a["cell"]))
     return 0
+
+
+def seedw_label(e):
+    """A seed watchpoint's line that is not the LCG step, by the writer's address: the block write, or a write this table has not named."""
+    if e["pc"] in BLOCK_WRITE_PCS and seed_of(e["to"])[1] == seed_of(e["from"])[1]:
+        return "block write %s %08x" % (BLOCK_WRITE_PCS[e["pc"]], e["pc"])
+    return "other writer %08x" % e["pc"]
+
+
+def session_of(p):
+    return os.path.basename(p)[19:-4]
+
+
+def empty_grid_counts(rows):
+    """Section 5: the planner plans whose output differs when the same rooms hold no marks at all."""
+    global mk_world
+    orig = mk_world
+
+    def empty(plan):
+        R = orig(plan)
+        for r in R.values():
+            r.c = [0] * len(r.c)
+        return R
+    ng = collections.Counter()
+    nt = collections.Counter()
+    mk_world = empty
+    try:
+        for s, g, plan, pred in rows:
+            if pred is None or not plan.plc:
+                continue
+            nt[plan.ty] += 1
+            try:
+                p = predict_planner(plan)
+                if pred_key(p) != pred_key(pred):
+                    ng[plan.ty] += 1
+            except Unmodelled:
+                ng[plan.ty] += 1
+    finally:
+        mk_world = orig
+    return ng, nt
+
+
+def review_sections(games, w):
+    """What the kept logs say beyond the outcome mix (the architect's review of `lane/p54`, formerly its own tool, numbered as it was; sections 6 and 12 are `grid_report`):
+    the plans after a probe's write; the natural spiral lists; the break control's cap and last hit; controls per path type with the model faults a control's exception hid;
+    type 1's controls on greedy-near's switch; the plans whose output needs the grid; the tie's first plans; the head tested backwards; the seed watchpoints; the corpse shapes."""
+    # ---- evaluate
+    rows = []  # (session, game, plan, pred)
+    for s, g in games:
+        for plan in g.plans:
+            if plan.plx is None:
+                continue
+            try:
+                kind, pred = evaluate(plan)
+            except Unmodelled:
+                continue
+            rows.append((s, g, plan, pred if kind == "model" else None))
+    types = sorted({r[2].ty for r in rows})
+
+    w("1. PLANS AFTER A PROBE'S WRITE (ADR-0003)")
+    first = {}
+    for s, g, plan, pred in rows:
+        if plan.pln.get("probe") and s not in first:
+            first[s] = plan.k
+    for s, k in sorted(first.items()):
+        w("  %s first write at plan k=%d; plans from there on %d of %d" % (
+            s, k, sum(1 for r in rows if r[0] == s and r[2].k >= k), sum(1 for r in rows if r[0] == s)))
+    w("  type  all  stock(without the plans from the first write on)  stock-reached  without those two sessions")
+    for t in types:
+        a = [r for r in rows if r[2].ty == t]
+        st = [r for r in a if not (r[0] in first and r[2].k >= first[r[0]])]
+        no = [r for r in a if r[0] not in first]
+        w("  %4d %5d %5d %5d %5d" % (t, len(a), len(st), sum(1 for r in st if r[3] is not None), len(no)))
+    a = [r for r in rows if not (r[0] in first and r[2].k >= first[r[0]])]
+    w("  total %d, stock %d, without the two sessions %d" % (len(rows), len(a), sum(1 for r in rows if r[0] not in first)))
+    w()
+
+    w("2. NATURAL SPIRAL PLANS")
+    rel = collections.Counter()
+    fr = collections.Counter()
+    bys = collections.Counter()
+    for s, g, plan, pred in rows:
+        if plan.ty != 14 or plan.pln.get("probe"):
+            continue
+        rec = plan.pln["rec"]
+        fr[(struct.unpack_from("<H", rec, 0)[0], struct.unpack_from("<H", rec, 4)[0])] += 1
+        sx, sy = struct.unpack_from("<H", rec, 2)[0], struct.unpack_from("<H", rec, 6)[0]
+        pts = struct.unpack_from("<%dI" % plan.plx["eax"], plan.plx["rec"], 0x9C)
+        rel[tuple(((p & 0xFFFF) - sx, (p >> 16) - sy) for p in pts)] += 1
+        bys[("after a write" if s in first else "stock session", s)] += 1
+    w("  start fractions %s; distinct point lists relative to the start: %d; by session %s" % (dict(fr), len(rel), sorted(bys.items())))
+    w()
+
+    w("3. BREAK CONTROL (cap 100 per side per game) AND THE WINDOW")
+    w("  session  last server control frame, last client control frame, last greedy PLC frame, last S3C frame, last PLN frame")
+    for s, g in games:
+        srv = [b["fr"] for b in g.brk if b["ctl"] and b["side"] == "srv"]
+        cli = [b["fr"] for b in g.brk if b["ctl"] and b["side"] == "cli"]
+        gr = [p.plc.get("fr", p.pln["fr"]) for p in g.plans if p.plc and p.plc["pl"] == 0x00679C80]
+        w("  %-22s srv %3d@%5d cli %3d@%5d greedyPLC %5d s3c %5d plans-to %5d" % (
+            s, len(srv), max(srv or [0]), len(cli), max(cli or [0]), max(gr or [0]), max([x["fr"] for x in g.s3c] or [0]), max([p.pln["fr"] for p in g.plans] or [0])))
+    srv = sum(max([b["fr"] for b in g.brk if b["ctl"] and b["side"] == "srv"] or [0]) for s, g in games)
+    cli = sum(max([b["fr"] for b in g.brk if b["ctl"] and b["side"] == "cli"] or [0]) for s, g in games)
+    end = sum(max([p.pln["fr"] for p in g.plans] or [0]) for s, g in games)
+    w("  frames to the last plan, all sessions %d; to the server control's last line %d; to the client control's %d" % (end, srv, cli))
+    ra = collections.Counter()
+    for s, g in games:
+        for b in g.brk:
+            if not b["ctl"]:
+                ra[(s, "%08x" % b["fn"], b["side"], b["ty"], "%08x" % b["ra"], "%08x" % (b["pra"] or 0))] += 1
+    w("  watched hits (session, fn, side, path type, ra, pra): %s" % sorted(ra.items()))
+    w()
+
+    w("4. CONTROLS PER PATH TYPE (separating, of which the control's model raised, passed)")
+    tab = collections.defaultdict(lambda: [0, 0, 0])
+    for s, g, plan, pred in rows:
+        if pred is None:
+            continue
+        fam = control_family(plan)
+        names = list(CONTROLS.get(fam, ()))
+        for neg in names:
+            k = (plan.ty, fam, neg)
+            e = tab[k]
+            try:
+                _, p = evaluate(plan, neg)
+            except Exception:
+                e[0] += 1
+                e[1] += 1
+                continue
+            if pred_key(p) != pred_key(pred):
+                e[0] += 1
+                if not compare(plan, p):
+                    e[2] += 1
+    for k, e in sorted(tab.items()):
+        w("  type %2d %-7s %-8s %5d %5d %d" % (k[0], k[1], k[2], e[0], e[1], e[2]))
+    w("  type-1 controls on greedy-near's switch (never run by the check: its family is `near`)")
+    t1 = [r for r in rows if r[3] is not None and r[3]["label"] == "near:type1"]
+    w("  plans through the switch: %d; returns %s" % (len(t1), sorted(collections.Counter(min(r[3]["eax"], 6) for r in t1).items())))
+    for neg in CONTROLS["type1"]:
+        sep = rais = ps = 0
+        for s, g, plan, pred in t1:
+            try:
+                _, p = evaluate(plan, neg)
+            except Exception:
+                sep += 1
+                rais += 1
+                continue
+            if pred_key(p) != pred_key(pred):
+                sep += 1
+                if not compare(plan, p):
+                    ps += 1
+        w("  near:type1 %-8s %5d %5d %d" % (neg, sep, rais, ps))
+    w()
+
+    w("5. PLANS WHOSE OUTPUT NEEDS THE GRID (the model on the same rooms with every cell 0)")
+    ng, nt = empty_grid_counts(rows)
+    for t in sorted(nt):
+        w("  type %2d planner plans %5d, output differs on an empty grid %5d" % (t, nt[t], ng[t]))
+    w("  types 4, 10, 14: straight, the model reads no grid")
+    w()
+
+    w("7. THE TIE'S FIRST 10 PLANS OF EACH GAME: where, and which bits (not printed by the check)")
+    lev = collections.Counter()
+    ty = collections.Counter()
+    bits = collections.Counter()
+    sense = collections.Counter()
+    units = collections.Counter()
+    for s, g in games:
+        k = 0
+        for plan in g.plans:
+            if not plan.plc:
+                continue
+            k += 1
+            if k > 10:
+                break
+            lev[plan.pln["ar"]] += 1
+            ty[plan.ty] += 1
+            for u in plan.plc["u"]:
+                units[u[0]] += 1
+            t = tie_of(plan, True, False)
+            for a, x, y, pv, lv in (t or {}).get("diff", ()):
+                bits[pv ^ lv] += 1
+                sense["model has it, live lacks it" if pv & (pv ^ lv) else "live has it, model lacks it"] += 1
+    w("  levels %s; path types %s; unit-list entries by unit type %s" % (sorted(lev.items(), key=str), sorted(ty.items()), sorted(units.items())))
+    w("  xor values %s; %s" % (sorted(bits.items()), sorted(sense.items())))
+    w()
+
+    w("8. THE HEAD, BACKWARDS: plans that reached a planner, tested with the record-only refusal reasons of path.py")
+    rv = collections.Counter()
+    ctx = collections.Counter()
+    for s, g, plan, pred in rows:
+        if not plan.plc:
+            continue
+        rv[str(refusal_reason(plan))] += 1
+        rec = plan.pln["rec"]
+        c = plan.plc["ctx"]
+        ctx["ctx start = record start" if struct.unpack_from("<HH", c, 0) == (struct.unpack_from("<H", rec, 2)[0], struct.unpack_from("<H", rec, 6)[0]) else "ctx start differs"] += 1
+    w("  %s; %s" % (sorted(rv.items()), sorted(ctx.items())))
+    w()
+
+    w("9. SEED WATCHPOINTS")
+    cl = collections.Counter()
+    wr = collections.Counter()
+    for s, g, plan, pred in rows:
+        if plan.ty == 10:
+            cl[(plan.pln["u"][1])] += 1
+    w("  type-10 plans by missile class: %s" % sorted(cl.items()))
+    w("  type-10 plans by session: %s" % sorted(collections.Counter(r[0] for r in rows if r[2].ty == 10).items()))
+    A, = (0x6AC690C5,)
+    for s, g in games:
+        byk = {p.k: p for p in g.plans}
+        for e in g.seedw:
+            lo, hi = seed_of(e["from"])
+            l2, h2 = seed_of(e["to"])
+            full = lo * A + hi
+            pl = byk.get(e["k"])
+            step = l2 == full & 0xFFFFFFFF
+            wr[(s, "ctl" if e.get("ctl") else "ty10", "lcg" if step else seedw_label(e), "hi same" if h2 == hi else "hi moved", "lo 0" if l2 == 0 else "lo not 0")] += 1
+            if e.get("ctl"):
+                w("  ctl k=%d class=%s fr %d->%d from %s to %s pc %08x lcg=%d hi-after-step=%d st0=%08x" % (
+                    e["k"], pl.pln["u"][1] if pl else "?", pl.pln["fr"] if pl else -1, e["fr"], e["from"], e["to"], e["pc"], step, h2 == (full >> 32) & 0xFFFFFFFF, e["st"][0]))
+    for k, n in sorted(wr.items(), key=str):
+        w("  %s: %d" % (k, n))
+    pcs = collections.Counter("%08x" % e["pc"] for s, g in games for e in g.seedw if not e.get("ctl"))
+    w("  type-10 pcs: %s" % sorted(pcs.items()))
+    w()
+
+    w("10. RETURN 0 AFTER A PLANNER: the planner's own 0, or the tail's refusal")
+    z = collections.Counter()
+    for s, g, plan, pred in rows:
+        if pred is not None and pred["eax"] == 0:
+            z[(plan.ty, "planner 0" if pred.get("n") == 0 else "tail")] += 1
+    w("  %s" % sorted(z.items()))
+    w()
+    w("11. THE UNIT LIST: keys of PLC %s; lists cut at the cap (120 to rev 4, rev 5's `ucut`): %d; a field for the marked state: none named by tools/gdb/path.py" % (
+        sorted(k for k in rows[0][2].plc) if rows and rows[0][2].plc else [], sum(1 for r in rows if r[2].plc and units_cut(r[2]))))
+
+    w("13. CORPSES IN THE LIVE CELLS: each distinct mode-12 monster (id, x, y) of the unit lists, the 0x8000 cells of its 3 x 3")
+    corpses("kept logs", games, w)
+    dev = [(session_of(p), g) for p in os.environ.get("PATH_DEV", "").split() for g in parse(p)]
+    if dev:
+        corpses("development logs dev2..dev5", dev, w)
+    w()
+
+    w("14. THE TIE'S FIRST-PLAN 0x400 CELLS BY OBJECT: objects of the unit list whose rectangle holds a differing cell (class, door, +0x167, +0x1B6)")
+    ob = collections.Counter()
+    for s, g in games:
+        k = 0
+        for plan in g.plans:
+            if not plan.plc:
+                continue
+            k += 1
+            if k > 10:
+                break
+            t = tie_of(plan, True, False)
+            cells = {(x, y) for a, x, y, pv, lv in (t or {}).get("diff", ())}
+            for u in plan.plc["u"]:
+                if u[0] == 2 and len(u) >= 13:
+                    x, y, sx, sy = u[3], u[4], u[7], u[8]
+                    l, tp = x - (sx >> 1), y - (sy >> 1)
+                    if any((xx, yy) in cells for yy in range(tp, tp + sy) for xx in range(l, l + sx)):
+                        ob[(u[2], u[9], "0x%02x" % u[11], u[12])] += 1
+    w("  %s" % sorted(ob.items()))
+    w()
+
+    w("15. WHICH CLASSES THE SEED WATCHPOINTS COVERED, AND THE FRAMES TO THE WRITE")
+    wc = collections.Counter()
+    for s, g in games:
+        byk = {p.k: p for p in g.plans}
+        for e in g.seedw:
+            if not e.get("ctl"):
+                wc[byk[e["k"]].pln["u"][1] if e["k"] in byk else "?"] += 1
+    w("  watched type-10 classes: %s" % sorted(wc.items()))
+    w()
+
+    rev5_sections([g for s, g in games], w)
+    w("16. THE SPIRAL'S PRODUCTS: iterations of a natural plan whose stored FISTP integer differs under truncation and rounding (image table, r += 0x2580, angle += 16)")
+    w("  %s (env PATH_IMAGE, default the pinned image under workspace/)" % spiral_products())
+
+
+
+
+# path/0005's copy table: UnitCorpseColl's call -> (argument, the copy the code's module says)
+CORPSE_SITES = {0x00461018: (0, "cli"), 0x004B05E3: (0, "cli"), 0x004B0A05: (0, "cli"), 0x004C8963: (0, "cli"), 0x0057F367: (1, "srv"), 0x005A65D9: (1, "srv"), 0x005CAF8E: (1, "srv")}
+TYPE1_SITES = {0x005E3BCC: "AiHireFollow", 0x005E4300: "AiPetMove", 0x005E5DD9: "state 13", 0x005E5EE7: "state 13", 0x005E5F40: "state 13", 0x005CD484: "SkillDo103DiabRun", 0x005CBC44: "SkillSt48SwarmMove"}
+L1_SITES = {0x005D9123: ("Whirlwind", None), 0x005D9EF8: ("Leap", 0x80), 0x005DA5D5: ("Leap Attack", 0x80), 0x005CB902: ("Jump", 0x100)}
+
+
+def sine_table(path=None):
+    img = path or os.environ.get("PATH_IMAGE") or os.path.join(ROOT, "workspace", "install", "app", "game.exe")
+    if not os.path.exists(img):
+        return None
+    with open(img, "rb") as fh:
+        b = fh.read()
+    pe = struct.unpack_from("<I", b, 0x3C)[0]
+    nsec, opt = struct.unpack_from("<H", b, pe + 6)[0], struct.unpack_from("<H", b, pe + 20)[0]
+    va = 0x00707800 - 0x400000
+    for i in range(nsec):
+        vs, vaddr, rs, rp = struct.unpack_from("<4I", b, pe + 24 + opt + 40 * i + 8)
+        if vaddr <= va < vaddr + rs:
+            return struct.unpack_from("<512f", b, rp + va - vaddr)
+    return None
+
+
+def spiral_stored(games, tab):
+    """The stored products of SPX against both readings: every product of a line, computed from the image's table, r += 0x2580, angle += 16 (path/0003 § 9).
+    The separating ones decide: truncation must hold in all of them, and rounding in none."""
+    c = collections.Counter()
+    for g in games:
+        for e in g.spx:
+            c["plans"] += 1
+            r = ang = 0
+            for vx, vy in zip(e["x"], e["y"]):
+                r += 0x2580
+                ang += 16
+                f = float(struct.unpack("<f", struct.pack("<f", float(r)))[0])
+                for v, s in ((vx, tab[(ang + 0x80) & 0x1FF]), (vy, tab[ang & 0x1FF])):
+                    p = s * f
+                    tr, ro = int(p), int(round(p))
+                    c["products"] += 1
+                    c["equal truncation"] += v == tr
+                    c["equal rounding"] += v == ro
+                    if tr != ro:
+                        c["separating"] += 1
+                        c["separating, truncation"] += v == tr
+                        c["separating, rounding"] += v == ro
+    return c
+
+
+def corpse_shape(after):
+    """The 0x8000 cells of a COR line's 5 x 5: the 3 x 3, the plus, none, or how many."""
+    on = {(i % 5 - 2, i // 5 - 2) for i, v in enumerate(after) if v is not None and v & 0x8000}
+    if on == {(dx, dy) for dx in (-1, 0, 1) for dy in (-1, 0, 1)}:
+        return "3x3"
+    if on == {(0, 0), (1, 0), (-1, 0), (0, 1), (0, -1)}:
+        return "plus"
+    return "none" if not on else "other %d" % len(on)
+
+
+def rev5_sections(games, w, tab=None):
+    """The lines logger rev 5 adds. A log before rev 5 holds none, and each section says so."""
+    w("REV 5, THE SPIRAL'S STORED PRODUCTS (SPX, read-only): the value the game stored after each FISTP against truncation and rounding")
+    tab = tab or sine_table()
+    if not any(g.spx for g in games):
+        w("  no SPX lines")
+    elif tab is None:
+        w("  no image, PATH_IMAGE")
+    else:
+        c = spiral_stored(games, tab)
+        w("  plans %d, products %d, equal to truncation %d, equal to rounding %d; separating %d: truncation %d, rounding %d" % (
+            c["plans"], c["products"], c["equal truncation"], c["equal rounding"], c["separating"], c["separating, truncation"], c["separating, rounding"]))
+        w("  stored products, truncation: %s" % ("HOLDS" if c["separating"] and c["separating, truncation"] == c["separating"] and not c["separating, rounding"] else "does not hold"))
+    w("REV 5, TYPE-1 REQUEST SITES (T1S): hits per site, a site at 0 was not reached in this log")
+    hits = collections.Counter()
+    for g in games:
+        h = {}
+        for e in g.t1s:
+            h[(e["site"], e["side"])] = max(h.get((e["site"], e["side"]), 0), e["c"])
+        hits.update(h)
+    for a, name in sorted(TYPE1_SITES.items()):
+        w("  %08x %-20s srv %d cli %d" % (a, name, hits[(a, "srv")], hits[(a, "cli")]))
+    w("REV 5, RESERVED LANDINGS (L1M): lines per site; mask against path/0005 L1")
+    l1 = collections.Counter()
+    for g in games:
+        for e in g.l1m:
+            want = L1_SITES.get(e["site"], ("?", None))[1]
+            ok = want is None or e["mask"] == want
+            l1[("%08x" % e["site"], e["side"], "unit type %s" % (e["u"][0] if e["u"] else "?"), "mask 0x%x" % e["mask"], "as read" if ok else "AGAINST THE READING")] += 1
+    w("  %s" % (sorted(l1.items()) or "no L1M lines"))
+    w("  releases (L1U) %d" % sum(len(g.l1u) for g in games))
+    w("REV 5, UnitCorpseColl CALLS (COR): site, argument and side against path/0005's copy table, and the 0x8000 shape after the call (C1..C3)")
+    cr = collections.Counter()
+    for g in games:
+        for e in g.cor:
+            want = CORPSE_SITES.get(e["site"])
+            verdict = "UNLISTED CALLER" if want is None else ("as read" if (e["arg"], e["side"]) == want else "AGAINST THE TABLE")
+            cr[("%08x" % e["site"], "arg %d" % e["arg"], e["side"], corpse_shape(e["after"]), verdict)] += 1
+    w("  %s" % (sorted(cr.items()) or "no COR lines"))
+
+
+def corpses(name, games, w):
+    shape = collections.Counter()
+    classes = collections.Counter()
+    for s, g in games:
+        seen = set()
+        for plan in g.plans:
+            if not plan.plc:
+                continue
+            R = mk_world(plan)
+            for u in plan.plc["u"]:
+                if u[0] != 1 or u[3] != 12 or u[6] not in R:
+                    continue
+                key = (u[1], u[4], u[5])
+                if key in seen:
+                    continue
+                seen.add(key)
+                on = set()
+                for dy in (-1, 0, 1):
+                    for dx in (-1, 0, 1):
+                        r = P2.room_at(R, u[6], u[4] + dx, u[5] + dy)
+                        if r is not None and r.cell(u[4] + dx, u[5] + dy) & 0x8000:
+                            on.add((dx, dy))
+                sh = "3x3" if len(on) == 9 else ("plus" if on == {(0, 0), (1, 0), (-1, 0), (0, 1), (0, -1)} else ("none" if not on else "other %d" % len(on)))
+                shape[(sh, "mask 0x%x" % u[9], "pattern %d" % u[8])] += 1
+                classes[(sh, u[2])] += 1
+    w("  [%s] %s" % (name, sorted(shape.items(), key=lambda kv: -kv[1])))
+    w("  [%s] not 3x3, by class: %s; distinct classes 3x3: %d" % (name, [kv for kv in sorted(classes.items()) if kv[0][0] != "3x3"], sum(1 for k in classes if k[0] == "3x3")))
+
+
+def spiral_products():
+    img = os.environ.get("PATH_IMAGE") or os.path.join(ROOT, "workspace", "install", "app", "game.exe")
+    if not os.path.exists(img):
+        return "no image at %s" % img
+    with open(img, "rb") as fh:
+        b = fh.read()
+    pe = struct.unpack_from("<I", b, 0x3C)[0]
+    nsec, opt = struct.unpack_from("<H", b, pe + 6)[0], struct.unpack_from("<H", b, pe + 20)[0]
+    va = 0x00707800 - 0x400000
+    off = None
+    for i in range(nsec):
+        o = pe + 24 + opt + 40 * i
+        vs, vaddr, rs, rp = struct.unpack_from("<4I", b, o + 8)
+        if vaddr <= va < vaddr + rs:
+            off = rp + va - vaddr
+    tab = struct.unpack_from("<512f", b, off)
+    r = ang = 0
+    diff = tot = 0
+    for it in range(1, 95):
+        r += 0x2580
+        ang += 16
+        f = float(r)
+        for v in (tab[(ang + 0x80) & 0x1FF] * f, tab[ang & 0x1FF] * f):
+            tot += 1
+            if int(round(v)) != int(v):
+                diff += 1
+    return "%d of %d products in the 94 iterations" % (diff, tot)
 
 
 def finish(w, res, byty, plans, nmatch, nmis, nunm, zero, passed):
@@ -986,7 +1553,7 @@ def main(argv):
     try:
         if a.cmd == "grid":
             return grid_report(a.logs, out)
-        return report(a.logs, out, a.first)
+        return report(a.logs, out, a.first, a.cmd == "check")
     finally:
         if a.out:
             out.close()
