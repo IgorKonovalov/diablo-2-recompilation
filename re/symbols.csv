@@ -1515,7 +1515,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005A6380,func,sub_005A6380_MonModeVelocity,,I,anim/timing,docs/findings/anim/0002-rates.md
 0x005A63F0,func,sub_005A63F0_MonMovePlan,,I,drlg/collision,docs/findings/drlg/0009-room-lifecycle.md
 0x005A6490,func,sub_005A6490_MonPathCtlAlloc,,I,monsters/ai,docs/findings/ai/0001-machinery.md
-0x005A6520,func,sub_005A6520_MonDeathCorpseMark,,I,path/search,docs/findings/path/0005-grid-rules.md
+0x005A6520,func,sub_005A6520_MonDeathCorpseMark,,C,path/search,docs/findings/path/0006-holdout.md
 0x005A6600,func,MONSTER_DropItems,,C,items/tc,docs/findings/items/0001-tc-resolution.md
 0x005A6830,func,sub_005A6830_MonDeathDrop,,C,items/tc,docs/findings/items/0001-tc-resolution.md
 0x005A6920,func,sub_005A6920_MonRegenEvent,,C,combat/formulas,docs/findings/combat/0001-formulas.md
@@ -3150,7 +3150,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00649CA0,func,sub_00649CA0_PathPatternRefresh,,C,drlg/collision,docs/findings/drlg/0005-collision.md
 0x00649D00,func,PATH_DynamicCreate,,I,drlg/collision,docs/findings/drlg/0005-collision.md
 0x00649EF0,func,sub_00649EF0_PathFaceXY,,I,skills/catalogue,docs/findings/skills/0017-monster-8b.md
-0x00649F70,func,sub_00649F70_UnitCorpseColl,,I,drlg/collision,docs/findings/drlg/0005-collision.md
+0x00649F70,func,sub_00649F70_UnitCorpseColl,,C,drlg/collision,docs/findings/path/0006-holdout.md
 0x00649FF0,func,sub_00649FF0_UnitReviveColl,,I,drlg/collision,docs/findings/drlg/0005-collision.md
 0x0064A100,func,sub_0064A100_MissileDataAlloc,,I,skills/missiles,docs/findings/skills/0002-missiles.md
 0x0064A150,func,sub_0064A150_MissileDataFree,,I,skills/missiles,docs/findings/skills/0002-missiles.md
