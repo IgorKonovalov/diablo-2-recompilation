@@ -4373,7 +4373,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005BE130,func,sub_005BE130_ItemUseIdentifyTest,,I,items/use,docs/findings/items/0012-use-inventory.md
 0x005BE180,func,sub_005BE180_InvHoldsItem,,I,items/use,docs/findings/items/0012-use-inventory.md
 0x005BE230,func,sub_005BE230_ItemUseIdentify,,I,items/use,docs/findings/items/0012-use-inventory.md
-0x005BE3F0,func,sub_005BE3F0_ItemUsePotion,,I,items/use,docs/findings/items/0012-use-inventory.md
+0x005BE3F0,func,sub_005BE3F0_ItemUsePotion,,C,items/use,docs/findings/items/0016-harness-inventory-run2.md
 0x005BE7B0,func,sub_005BE7B0_ItemUseStatPlain,,I,items/use,docs/findings/items/0012-use-inventory.md
 0x005BEAC0,func,sub_005BEAC0_ItemUseRejuv,,I,items/use,docs/findings/items/0012-use-inventory.md
 0x005BEF90,func,sub_005BEF90_ItemUseCure,,I,items/use,docs/findings/items/0012-use-inventory.md

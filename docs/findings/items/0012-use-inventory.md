@@ -214,6 +214,7 @@ for (k = 0; k < 3; k++) {
 - [C] **The class scales** return exactly as stated for all 7 classes, other classes and types, odd and negative
   amounts, and a null unit (`2v` life, `v` mana); 800 cases, no boundary. The non-player rule is `2v` for life and `v` for
   mana. (family `classmul`, run:2026-11-03-use-emu, fn:sub_0062A5D0_PotionLifeMul@0x0062A5D0, fn:sub_0062A620_PotionManaMul@0x0062A620)
+- [C] **2026-11-04 (run:2026-11-04-inventory-2, items/0016):** on a live game a stock `hp1` and `mp1` use (a Sorceress, 17 of 17) made the two draws on the user's seed, doubled when `r2 < r1 >> 1` (6 of 12 `hp1`, 0 of 5 `mp1`), and stored the rate `total / len` (40 or 80 for `hp1`, 80 for `mp1`) with the end `frame + len`: slot 0's path is observed; the blend and the other classes are not (items/0016 § Short). (fn:sub_005BE3F0_ItemUsePotion@0x005BE3F0, 0x005BE525, 0x005BE6CF)
 - [I] **The draw's chance** for `n`: `Σ min(100, r >> 1) / (100 n)` over `r < n`, from `tools/item_inventory.py`
   `double_chance`: 2.0 % at 10, 5.76 % at 25, 12.0 % at 50, 24.5 % at 100, 49.5 % at 200, 79.8 % at 500. The stats read are
   `STATS_GetUnitStat(user, 3 or 1, 0)`; on a non-player user they are whatever its list holds, usually none, so no draw.

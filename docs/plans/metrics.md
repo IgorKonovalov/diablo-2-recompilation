@@ -579,6 +579,7 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-11-04 | `lane/p52b` | 0052 P2 (second run, kept batch) | reverser-harness | 323 802 | 254 | 163 | slot 2, no Ghidra; 23 kept sessions (21 + 2 built-state P1b-2), 46 launches in all; first-boundary 0 mismatches over 6 272 compared, resume model 112 open mismatches, states 10-12 live, G4 0 helper hits, P1b-2 built state, P1b-1 not done (route attempt failed) | accept with fixes (Tier A, 11) | overclaim 3, misread 3, miscount 1, omission 2, wrong anchor 1, tool not kept 1 |
 | 2026-11-04 | `lane/p52b` review | 0052 P2 (second run) | architect-review | 311 036 | 78 | 24 | — | accept with fixes (11) | overclaim 3, misread 3, omission 2, miscount 1, wrong anchor 1, tool not kept 1 |
 | 2026-11-04 | `lane/p60` check | 0060 P2 (first run) | architect-check | 82 284 | 16 | 2 | — | accept with fixes (6) | overclaim 3, misread 1, omission 1, stale cross-reference 1 |
+| 2026-11-04 | reverser | 0060 | reverser-harness | 300 000 | 170 | 90 | 2 | pending (lane/p60b) | — |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not
