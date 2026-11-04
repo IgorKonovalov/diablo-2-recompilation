@@ -198,7 +198,7 @@ code windows R1–R7; `p45b-rows.txt` `cbf9c64a…`, the stock-row values compar
 | `0x005C6CC0` | `SKILLS_ApplyAuraStats` | `aurastat1..6` with their calcs into a list | I |
 | `0x0056C8E0` | `SKILLS_AddElemToPacket` | one element's damage and length into the packet | I |
 | `0x00647BC0`, `0x00647D00` | `SKILLS_GetPhysMin`, `SKILLS_GetPhysMax` | the skill's physical min and max | I |
-| `0x0056E050`, `0x0056E000` | `sub_0056E050_MonOwnerSkillDamage`, `sub_0056E000_SkillDamagePair` | MonStats `SkillDamage` | C (run:2026-11-04-ai-resume) |
+| `0x0056E050`, `0x0056E000` | `sub_0056E050_MonOwnerSkillDamage`, `sub_0056E000_SkillDamagePair` | MonStats `SkillDamage` | C (run:2026-11-04-ai-resume: class 419, skill 221, level 20 only; the remainder in ai/0017 § 13) |
 | `0x005D3490` | `sub_005D3490_PrgChargeHitDo` | `srvdofunc` 34: hit, then a charge | I |
 | `0x005D35D0` | `sub_005D35D0_PrgChargeHitDualDo` | `srvdofunc` 35: the dual-claw form of 34 | I |
 | `0x005D3320` | `SKILLS_AddProgressiveCharge` | the charge state, its stat capped at 3 | I |
@@ -700,7 +700,7 @@ return 1;
   min, max and to-hit before the classic and player-count adjustments. Which unit (`EDI`/`ESI`) is read for the level
   is register-passed and not resolved here. 2026-11-03 note: [ai/0006](../ai/0006-summons.md) (H3 bullet) answers it
   `[I]`: `SkillDamagePair` takes the owner `O = MonsterOwner(unit)` for every term, `lvl = SkillLevelClamped(O, s)`
-  (0x00644AA0), and the summon's own level is not read. (fn:sub_0056E050_MonOwnerSkillDamage@0x0056E050) (fn:sub_005A4F50_MonAttackStats@0x005A4F50,
+  (0x00644AA0), and the summon's own level is not read. 2026-11-04 note (`lane/p52c` review): `[C]` at one level, 20, and one player, run:2026-11-04-ai-resume; the rest `[I]`. (fn:sub_0056E050_MonOwnerSkillDamage@0x0056E050) (fn:sub_005A4F50_MonAttackStats@0x005A4F50,
   fn:sub_0056E000_SkillDamagePair@0x0056E000, tbl:MonStats.txt:SkillDamage)
 
 ### 14. Ammunition and weapon wear
