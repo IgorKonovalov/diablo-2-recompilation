@@ -925,14 +925,16 @@
 - **Development launches:** `dev-2026-11-03-ai-3` (seeds 5701, 5702, 5703, 5711, 5721: the curse cases; `s-necro-curse` first built with 40 hops, then 80), `dev-2026-11-03-ai-3p` (6001: the P1b-2 logger, rev 1 without the unit pointer), `dev-2026-11-04-ai-3d`
   (3364 and 3365: Duriel, one attempt; the first launch stayed in the town, the second went to Canyon of the Magi and not into a tomb; stopped by hand).
 - **Not done:** P1b-1 (no decision of row 44), H1, H3, the catalogue sample, the 112 resume mismatches' cause. The Duriel route is from the plan 0032 session 3364 log's positions (ai/0017 § 11).
-- **Conclusion:** [C] the kept first-boundary comparison, the controls, the state control, P1b-2 (a built state) and G4 as stated in ai/0017 § Answer; [I] the resume figures (112 open mismatches). Manifests as above.
+- **Review recheck** (`lane/p52b` Tier A review, 2026-11-04, no game): `tools/ai_resume.py` reproduced the kept 112 line for line. `tools/ai_resume_review.py classify resume-stdout-2026-11-03-ai-3.txt <the 21 logs>` and `check P,B,C,N,E,D <the 21 logs> --controls`, from `workspace/logs/ai`, under `systemd-run --user --scope -p MemoryMax=4G`; `tools/ai.py` at the lane's head over the first run's 31 logs (`review-p52b/check-run1.txt`). Outputs in `workspace/logs/ai/review-p52b/`, `manifest.sha256` passes from that directory. Result: the classification of ai/0017 § 7; 7 444 resumed, 8 mismatches (cluster F alone), 87 stopped (row 32's `call esi` 80, a return site not armed 4, a log's end 3), 72 865 calls matched, 65 332 after the first; the controls still fail: reversed branches 7 290 of 7 539 (rows 15 and 54 not separated), a seed one step off 7 529 of 7 539. First run: 14 645 decisions, 12 614 compared, 0 mismatches.
+- **Conclusion:** [C] the kept first-boundary comparison, the controls, the state control as a statement about the logged lines (ai/0017 § 8) and G4 for its window, as stated in ai/0017 § Answer; [I] the resume figures (112 mismatches, classified at the review: 104 model faults, 8 a logger limit). Manifests as above.
 
 ## run:2026-11-04-ai-3p
 
 - **Question:** (plan 0052 Phase 1b, P1b-2) Does a champion corpse reach the Greater Mummy's `MonSkillTargetOk` through its search callback 0x005F2A00, and a unique corpse (control) not?
 - **Setup:** as [run:2026-11-03-ai-3](#run2026-11-03-ai-3), seeds 6101 to 6103, `AI_P1B2=1` (`tools/gdb/ai-p1b2.py` rev 2: a built state, flag 4 or 8 written at the callback's entry on dead candidates), cases `a2-halls-p12` and `a2-halls-long`; kept sessions 2 of 3 launches (manifest: `manifest-run-2026-11-03-ai-3.sha256`).
 - **Result:** 17 champion-flag and 16 unique-flag corpses placed; 4 champion corpses reached `MonSkillTargetOk` (2 accepted and commanded, mode 14; 2 refused), 0 unique (`p1b2-run-2026-11-04-ai-3p.txt`, `tools/ai_p1b2.py`). A built state: the flags are written by the logger.
-- **Conclusion:** [C] as run (0x005F2A00, 0x005FD470); ai/0017 § 9.
+- **Deviation, ADR-0003** (recorded by the `lane/p52b` review, 2026-11-04): `tools/gdb/ai-p1b2.py` writes game memory at a breakpoint, flag 4 or 8 at `Unit+0x14 -> +0x16`, where ADR-0003 says a breakpoint "never writes game memory or registers". ADR-0010 and ADR-0013 cover cells of one table through a loose `.bin`, not this. Plan 0012's review accepted one such write (`MONPOOL_FORCE_DIFF`, F1) as a stated intervention before those ADRs existed, with a natural game required beside it; it is not a rule for this run. The result is forced, not natural.
+- **Conclusion:** [I] as run (0x005F2A00, 0x005FD470); ai/0017 § 9. C40's required case stays open: a `-forced` run (ADR-0013) with natural champions, plan 0052 log.
 
 ## run:2026-11-03-ai-uber
 

@@ -6,8 +6,8 @@
 > the kept logs, and can a decision be compared past its first boundary?
 > **Date:** 2026-11-03 to 2026-11-04   **Plan:** 0052 (Phase 2, second lane run `lane/p52b`, two parts)   **Status:** kept batch filed
 > (run:2026-11-03-ai-3, run:2026-11-04-ai-3p: 23 kept sessions). Sections 1 to 5 are the first part's checkpoint (development logs); sections 6 to 12
-> are the kept batch. **The resumable model's comparison past the first boundary has 112 open mismatches on the kept logs (§ 7), so no claim
-> past the first boundary is `[C]`.** P1b-1 (Duriel) is not done.
+> are the kept batch. **The resumable model's comparison past the first boundary has 112 mismatches on the kept logs (§ 7), so no claim
+> past the first boundary is `[C]`;** the `lane/p52b` review classified them: 104 faults of the model, 8 a logger limit, none a reading of the game's code that the logs contradict. P1b-1 (Duriel) is not done.
 
 Harness run run:2026-11-03-ai-2 (`docs/findings/ai/experiments.md`). Names are `re/symbols.csv` names. A decision is the call of
 the think function at 0x005B186F (ai/0001 § 1); a boundary is a call of one of the 136 functions of `BND` in
@@ -22,20 +22,19 @@ the think function at 0x005B186F (ai/0001 § 1); a boundary is a call of one of 
   control words, never a branch inside the think function (the eleven one-outcome rows below). Controls, live on the same logs: the call site shifted by one
   byte fails 6 272 of 6 272; Fallen's mode test inverted fails 814 of 814; the melee flag flipped fails 1 187 of 6 272 and separates none of 23 rows
   (`CONTROLS site=FAILS-AS-REQUIRED fallen=FAILS-AS-REQUIRED melee=FAILS-AS-REQUIRED`). Eleven tier AIs have one predicted first boundary (rows 6, 13, 28,
-  29, 30, 35, 37, 61, 64, 67, 89), six have two to five (`MIXSUM`). `check-run-2026-11-03-ai-3.txt`.
+  29, 30, 35, 37, 61, 64, 67, 89), six have two to five (`MIXSUM`), and Scarab (row 20) has no decision in this batch (`TIER 20`). `check-run-2026-11-03-ai-3.txt`.
 - [I] **Past the first boundary, kept: not clean.** `tools/ai_resume.py check --controls` over the same logs: 7 539 decisions, 7 135 resumed to their end,
   **112 mismatches**, 292 stopped; 72 183 logged boundary calls matched, 64 689 of them after the first. Of the 112, 96 are in the five melee and curse
   logs (a Barbarian or a Necromancer on the stage), 66 in AI row 23, 25 in row 64 (SkeletonMage), 9 in row 95, 6 in row 79, 4 in row 37 (SkeletonBow), 1 each
-  in rows 78 and 32. Not one of them is explained (§ 7), so this stays `[I]`, and no tier AI's later branches are claimed except the rows with 0 mismatches in § 7's
-  table. Controls: every known branch reversed mismatches 7 273 of 7 539 (247 still ok, rows 15 and 54 not separated); a seed one step off 7 497 of 7 539.
-- [C] (run:2026-11-03-ai-3, `AiCtl+0x14`) **State control.** `AID`/`AIN` carry the AI control's state. In the 21 sessions the state is 0 in 7 347 decisions and
+  in rows 78 and 32. The lane filed them unexplained; the review classified all 112 (§ 7's dated note): 104 are model faults and 8 a logger limit, so they say nothing against the game's code. This stays `[I]`, and no tier AI's later branches are claimed until the fixed model's kept rerun (plan 0052 log, the review's order). Controls: every known branch reversed mismatches 7 273 of 7 539 (247 still ok, rows 15 and 54 not separated); a seed one step off 7 497 of 7 539.
+- [C] (run:2026-11-03-ai-3, `AiCtl+0x00`) **State control.** `AID`/`AIN` carry the AI control's state. In the logged lines of the 21 sessions (27 caps cut lines off, § 8) the state is 0 in 7 347 decisions and
   10 680 events; **state 10 is observed live** in 38 decisions (session `s-necro-curse`, AI row 12, class 57), **state 11** in 98 decisions (`s-necro-curse` 78 on row 12;
-  `s-barb-howl` 20 on rows 37 and 64) and 41 AIN events (`s-barb-howl`, row 64), and **state 12** in 56 decisions (`s-barb-howl`, rows 37 and 64). No other state value occurs (§ 8).
-- [C] (run:2026-11-04-ai-3p, 0x005F2A00, 0x005FD470, built state) **P1b-2.** With the champion flag (4) written on corpses at the Greater Mummy's search
+  `s-barb-howl` 20 on rows 37 and 64) and 41 AIN events (`s-barb-howl`, row 64), and **state 12** in 56 decisions (`s-barb-howl`, rows 37 and 64). No other state value is logged (§ 8). State 13, the plan's fourth live control, is not in the window: no session staged The Countess, so the Done-when's state item stays open.
+- [I] (run:2026-11-04-ai-3p, 0x005F2A00, 0x005FD470, built state) **P1b-2, not met.** With the champion flag (4) written on corpses at the Greater Mummy's search
   callback and the unique flag (8) on others: 4 of 17 champion-flag corpses reached `MonSkillTargetOk` (skill 327) as its second argument, 2 accepted (result 1,
-  then the command mode 14 with that corpse as target), 2 refused (result 0); 0 of 16 unique-flag corpses reached it (§ 9).
-- [C] (run:2026-11-03-ai-3, 0x005DD140, 0x005E9DD0, 0x005F7F10, 0x005FD0F0, 0x005F8010, 0x005FC130, 0x005E9750) **G4.** Entry breakpoints on the seven helpers: 0 hits in
-  the 23 kept launches; the live control 0x005B1CF0 hit in all 23 and 0x005A3250 in 2 (§ 10).
+  then the command mode 14 with that corpse as target), 2 refused (result 0); 0 of 16 unique-flag corpses reached it (§ 9). `[C]` as filed; lowered at the review: ADR-0003 says a breakpoint never writes game memory, and no ADR admits this write. It is a forced result, no natural champion was seen, and C40's required case stays open.
+- [C] (run:2026-11-03-ai-3, 0x005DD140, 0x005E9DD0, 0x005F7F10, 0x005FD0F0, 0x005F8010, 0x005FC130, 0x005E9750) **G4, for this window only.** Entry breakpoints on the seven helpers: 0 hits in
+  the 23 kept launches (21 stock, 2 of them the built-state P1b-2 launches), Normal; the control 0x005B1CF0 hit in all 23 and 0x005A3250 in 2 (§ 10). It says nothing of an Uber session.
 - P1b-1 (Duriel) not done: the route's first development attempt did not reach the tomb (§ 11).
 
 ## Answer (summary, first part: checkpoint)
@@ -176,10 +175,10 @@ line and nothing after it, because the game exited inside the decision. `tools/a
 shape as a stop ("log ends inside the decision (no AIX)": rows 5 and 61, 3 decisions). (run:2026-11-03-ai-3, `tools/ai.py`, `tools/ai_resume.py`)
 
 Per tier AI, first boundary (decisions, compared by map, distinct predicted first boundaries in the kept logs): Skeleton 126 / 126 / 4, Fallen 814 / 814 / 1, Wraith 62 / 62 / 2,
-FallenShaman 104 / 104 / 1, Scarab (row 19) 82 / 82 / 3, Mummy 205 / 205 / 5, GreaterMummy 27 / 27 / 2, Vampire 43 / 43 / 1, BatDemon 20 / 20 / 1, Fetish 316 / 316 / 1,
+FallenShaman 104 / 104 / 1, Scarab (row 20) 0 / 0 / 0, Mummy 205 / 205 / 5, GreaterMummy 27 / 27 / 2, Vampire 43 / 43 / 1, BatDemon 20 / 20 / 1, Fetish 316 / 316 / 1,
 Andariel 9 / 9 / 5, CorruptArcher 22 / 22 / 1, SkeletonBow 86 / 29 / 1 (57 in thinks with no model: 0x005E8140, 0x005E8340), Hireable 2 066 / 2 065 / 1 (1 truncated), SkeletonMage
-91 / 72 / 1 (19 in the two other thinks), NecroPet 53 / 53 / 1, Megademon 77 / 77 / 1, BloodLord 22 / 22 / 5. All 18 tier AIs have decisions, but 6 of them (Andariel, BatDemon, CorruptArcher, BloodLord, GreaterMummy, Vampire) have fewer
-than 50 here (the 21 sessions are a variety batch, not the first run's volume: the first run's kept counts stand for the floor, 14 645 decisions). The new stages
+91 / 72 / 1 (19 in the two other thinks), NecroPet 53 / 53 / 1, Megademon 77 / 77 / 1, BloodLord 22 / 22 / 5. Seventeen of the 18 tier AIs have decisions; Scarab has none, and 6 others (Andariel, BatDemon, CorruptArcher, BloodLord, GreaterMummy, Vampire) have fewer
+than 50 here. [2026-11-04, `lane/p52b` review: filed as "all 18", with Swarm's 82 decisions of row 19 (`ai_cat_emu2:swarm`, not a tier AI) under Scarab's name; `TIER 20 Scarab decisions=0`, 0x005B186F.] (The 21 sessions are a variety batch, not the first run's volume: the first run's kept counts stand for the first-boundary floor, 14 645 decisions, rechecked by the review with `tools/ai.py` at this lane's head: 12 614 compared, 0 mismatches.) The new stages
 (a melee Barbarian, a curse caster, `/players 8`) did **not** produce a second first-boundary outcome for any of the eleven one-outcome rows: the Barbarian's melee
 changes the monster's target and distance, and the first callee of those think functions does not depend on either (the `melee` control separates none of them). That is
 a statement about the first callee only (§ 7 has the later calls). (run:2026-11-03-ai-3, 0x005B186F)
@@ -187,7 +186,7 @@ a statement about the first callee only (§ 7 has the later calls). (run:2026-11
 ### 7. The resumable model on the kept logs
 
 `resume-stdout-2026-11-03-ai-3.txt`, `resume-tier-2026-11-03-ai-3.txt` (decisions, resumed, mismatches, stopped, matched calls, matched calls past the first, steps where an unknown
-value decided / all steps; all 18 tier AIs):
+value decided / all steps; 17 tier AIs and row 19, which the kept tier file labels Scarab; no tool in the record prints that file, so the next lane prints the table from `tools/ai_resume.py`):
 
 | AI row | tier AI | decisions | resumed | mismatches | stopped | matched calls | past the first | ambiguous / steps |
 |---|---|---|---|---|---|---|---|---|
@@ -195,7 +194,8 @@ value decided / all steps; all 18 tier AIs):
 | 6 | Fallen | 814 | 814 | 0 | 0 | 25 552 | 24 738 | 8 661 / 24 738 |
 | 9 | Wraith | 62 | 62 | 0 | 0 | 62 | 0 | 0 / 0 |
 | 13 | FallenShaman | 104 | 103 | 0 | 1 | 465 | 361 | 0 / 362 |
-| 19 | Scarab | 82 | 82 | 0 | 0 | 82 | 0 | 0 / 0 |
+| 19 | Swarm (not a tier AI) | 82 | 82 | 0 | 0 | 82 | 0 | 0 / 0 |
+| 20 | Scarab | 0 | 0 | 0 | 0 | 0 | 0 | 0 / 0 |
 | 21 | Mummy | 205 | 205 | 0 | 0 | 410 | 205 | 0 / 205 |
 | 22 | GreaterMummy | 27 | 1 | 0 | 26 | 1 | 0 | 0 / 0 |
 | 28 | Vampire | 43 | 43 | 0 | 0 | 172 | 129 | 0 / 129 |
@@ -214,38 +214,48 @@ value decided / all steps; all 18 tier AIs):
 with the exclusions of the stopped decisions and of the ambiguous steps; it does not say which of several offered calls the code takes when an unknown value decides.) Rows 2, 9, 19 and 125 have `past the first` 0:
 their decisions make one boundary call and return, so for them the resume adds only the return after it.
 
-**What stops a resume** (stop reasons, `RSTOP`): the read of `g_pDataTables` (0x00744304, a `.data` pointer the logger does not record, so the table values behind it are unknown) in rows 12, 22, 43, 68, 73 (205 decisions; GreaterMummy 26 of
-its 27 decisions stop there, at 0x005F2C1D); a call through `esi` the model cannot resolve (row 32, 80 decisions); a boundary call whose return site is not armed (row 13: 1, row 61: 3); the log ending inside a decision (rows 5, 61: 3).
+**What stops a resume** (stop reasons, `RSTOP`): the operand `ds:0x744304`, which the model's `parse_op` does not read, in rows 12, 22, 43, 68, 73 (205 decisions; GreaterMummy 26 of
+its 27 decisions stop there, at 0x005F2C1D). [2026-11-04, `lane/p52b` review: filed as "a `.data` pointer the logger does not record"; the stop is the operand parser's, and the word read at 0x005F2C25, `g_pDataTables + 0xA80`, is AID's logged `ms2`. With that operand read, the 205 resume with 0 mismatches and GreaterMummy 27 of 27 (`review-p52b/check-fixed.txt`), so no logger change is needed.] Then: a call through `esi` the model cannot resolve (row 32, 80 decisions); a boundary call whose return site is not armed (row 13: 1, row 61: 3); the log ending inside a decision (rows 5, 61: 3).
 There is no longer a decision stopped by the logger's cap of 48 calls. **The 112 mismatches** (`RMISMATCH`, all printed in `resume-stdout-2026-11-03-ai-3.txt`): row 23 66 (the logged call is the model's only offered call
 at the same address and differs in the unit's flag word `+0xC4` or in the callee and its arguments), row 64 25 (a logged call to 0x005DDF90 or 0x005DE080 against the model's other call, or the unit seed differing), row 95 9, row 79 6 and row 78 1 (the control word `c0`),
-row 37 4, row 32 1. 96 of the 112 are in the five melee and curse logs and 6 in `a2-oasis-3`; the model passed the same rows on the development logs (§ 4: 0 of 1 313). **Not explained**: the cause can be an input the logger does not record that a
-Barbarian's or a Necromancer's presence changes (the curse states 10 to 12 occur in those logs, § 8), a callee the model treats as opaque that changes `+0xC4` or a control word, or a model error; nothing in the run separates these. So row 64's and row 37's
-resumed decisions are claims only for the decisions that resumed, and the 25 and 4 mismatches are an open question, not a rounding. (run:2026-11-03-ai-3, tools/ai_resume.py)
+row 37 4, row 32 1. 96 of the 112 are in the five melee and curse logs and 6 in `a2-oasis-3`; the model passed the same rows on the development logs (§ 4: 0 of 1 313). The lane filed them unexplained, with three candidate causes; the review's note below settles them. (run:2026-11-03-ai-3, tools/ai_resume.py)
+
+**[2026-11-04, `lane/p52b` review] The 112, classified.** `tools/ai_resume_review.py classify` (`review-p52b/classify.txt`) gives the smallest set of named fixes that clears each kept `RMISMATCH`; each cause was read against objdump of the pinned image. The tags are `[I]`: the cause of a mismatch is a statement about the model, and the fixes are the reviewer's check until the next lane folds them in with tests and reruns.
+
+| Cluster | Rows (decisions) | Class | Cause (the fix's letter in the tool) |
+|---|---|---|---|
+| A | 64 (25), 95 (9), 37 (4) | model | `init_state` protects `STK_TOP..+8`, which holds the think's own argument slot `[ebp+8]`. These thinks pass that slot as a search's output (`lea eax,[ebp+0x8]`, 0x005F96DB, callee 0x005DDC30), so `apply_result` dropped the logged distance and the think went on with the stale `AiCtx+0x14`: logged 8 → 5 at `a1-necro` n 2148, where the `aip` compares at 0x005F9702 then pick another branch (P). |
+| B | 23 (41), 32 (1) | model | `Unit+0xC4` changes inside an opaque callee: 0x005DE4E0 at 0x005F32A0 and its sites (`s-barb-flayer` n 263: 0 → 0x82001 between the 0x00472210 return and the 0x005DE0F0 call), 0x00553380 returning to 0x005E6A20 in row 32 (C). |
+| C | 23 (17) | model and logger filter | as B, and the logged 0x00552F60@0x0058F0FF is made inside that command, between its `MSM0` and `MSM1` lines; the call site lies in a logger window, so the line is written with no pending boundary call, and `top_level` keeps it (C, N). |
+| D | 79 (5) | model | the opaque 0x00620870 at 0x005FB824 forgets up to 64 bytes from `[ebp-0xC]` up to EBP, which takes the control pointer `[ebp-4]`; the write of `c0` at 0x005FB862 then goes through an unknown pointer (B). |
+| E | 79 (1), 78 (1) | model | as D, and `RNG_RandLoHi` 0x004BC500, called at 0x005FB69D on the unit seed when the region's trap-arrow kind is first set, is opaque, so the model misses that one draw (B, E). Once per region, as ai/0005 § 2.17 reads it. |
+| F | 23 (8) | logger | the logged decision stops at 0x00620BB0@0x005F33EC, and the code after it must reach 0x005DE190 or 0x00620BB0@0x005F341F. Seven of the 8 have a next decision of the unit, whose `c0` is one less and whose point `c1`, `c2` has moved, so the code ran on through 0x005F343F (the eighth ends its log). The calls were not logged: the cause read is the limit of 600 non-think boundary calls in `on_bnd`, which disables the boundary breakpoints and re-arms them only when a pending return fires, and `sub_0064E7B0_FreeNearFallback` (not a boundary) leaves nothing pending while `COLL_FindFreeNear` 0x0064DEA0 under it calls the boundary function 0x00463740. Of the 104 row 23 decisions in these three logs that reach 0x005F33EC, 96 log on past it. No fix in the tool clears these. |
+
+Why the five logs: A, B, C and D need a target near the unit (the distance crossing an `aip` compare, row 23's near branches, the `|dy| <= 2` test of row 79 at 0x005FB840), which a melee Barbarian and a Necromancer's pets bring and the Sorceress's stages rarely do. `s-necro-curse` has 0, and all 112 decisions have state 0 at their `AID` line: **the curse states are not a cause, and these 112 need no input the logger lacks**. The three causes the lane listed: an unrecorded input is not needed for any of the 112, the opaque callee holds for B, C and E, and the model error holds for A and D. **No finding's reading of the game is contradicted.** With all fixes (P, B, C, N, E, D) over the 21 logs: 7 444 resumed, 8 mismatches (cluster F alone), 87 stopped (row 32's `call esi` 80, a return site not armed 4, a log's end 3), 72 865 calls matched, 65 332 after the first; the controls still fail: reversed branches 7 290 of 7 539 (rows 15 and 54 not separated), a seed one step off 7 529 of 7 539. (`review-p52b/check-fixed.txt`; run:2026-11-03-ai-3, 0x005F96DB, 0x005F32A0, 0x005FB824, 0x005FB69D, 0x005F33EC)
 
 Which branches stay unseen: for the one-outcome rows the first callee is the same in every decision (§ 6); past it, `distinct_logged_prefixes4` (the distinct first four boundary calls) per row is 2 (Fallen, NecroPet, Hireable), 4 (SkeletonBow's main think), 5 (Fetish, SkeletonMage's main think), 7 (BatDemon's think, Megademon), 8 (CorruptArcher) and 9 (Vampire) in the resume output, and the `ambiguous` column says where an unknown value
-(distance, target, an unread table) decided between calls the code offers: Fallen 8 661 of its 24 738 later steps, Hireable 2 095, NecroPet 21, SkeletonMage 12. Seen in the first run's logs and not in this batch (first-boundary outcomes, `MIX`): Wraith's third, Scarab's fourth and fifth, FallenShaman's second, GreaterMummy's third; this batch reproduces the five of Mummy, Andariel and BloodLord. The skills-available and target-distance branches behind a one-outcome first callee are seen only through the later calls above.
+(distance, target, an unread table) decided between calls the code offers: Fallen 8 661 of its 24 738 later steps, Hireable 2 095, NecroPet 21, SkeletonMage 12. Seen in the first run's logs and not in this batch (first-boundary outcomes, `MIX`): Wraith's third, all five of Scarab's (no decision of row 20 here), FallenShaman's second, GreaterMummy's third; this batch reproduces the five of Mummy, Andariel and BloodLord. The skills-available and target-distance branches behind a one-outcome first callee are seen only through the later calls above.
 
 ### 8. The state control
 
 `AiCtl.state` is logged at every AID and AIN line (`st`). Kept window: the 21 sessions of run:2026-11-03-ai-3 (7 539 decisions, 10 721 events). Values seen: 0 everywhere except `s-necro-curse` (Dim Vision and Terror on monsters of Jail 1: **10** in 38 decisions
 and **11** in 78 decisions, all on AI row 12, class 57) and `s-barb-howl` (**11** in 20 decisions and 41 AIN events, **12** in 56 decisions; AI rows 37 (class 172) and 64 (class 384); Jail 1, the Barbarian with Howl and Taunt). The logger is therefore shown live to read states
-10, 11 and 12 (the setters at `CurseSetAiState` 0x005C34B0 for `auratargetstate` 23, 56 and 27 of ai/0001 give 10, 11, 12, `[I]`). **In this window the states 1 to 9 and 13 to 17 do not occur: 0 of 7 539 decisions and 0 of 10 721 events**, including 2, 3, 8, 9, 14 and 17.
-Scope: Normal; Acts I to V stages listed in § 6; no skill in the window sets any state other than through the curse casters of the two sessions named; the absence is a statement about this window and this logger (the state word is read at every event), `[C]`; that no code sets 2, 3, 8, 9, 14, 17 stays `[I]` (a static reading; the window did not exercise Amplify Damage, Decrepify, Lower Resist, Attract or a
-`MonFleeFrom` by a hireling). (run:2026-11-03-ai-3, 0x005B186F, 0x005C34B0)
+10, 11 and 12 (the setters at `CurseSetAiState` 0x005C34B0 for `auratargetstate` 23, 56 and 27 of ai/0001 give 10, 11, 12, `[I]`). **In the logged lines of this window the states 1 to 9 and 13 to 17 do not occur: 0 of 7 539 decisions and 0 of 10 721 events**, including 2, 3, 8, 9, 14 and 17.
+Scope [2026-11-04, `lane/p52b` review, which struck "no skill in the window sets any state other than through the curse casters": no log here records skills, so the run cannot state it]: Normal; the stages of § 6, 34 980 frames summed over the 21 logs' first and last `fr`; 27 `CAP` lines end a row's or the events' logging within their game, so the statement covers logged lines, not every decision played; the word is read only at a decision or an event, so a state set and cleared between them is not seen. The live control is two sessions' worth (10, 11, 12); elsewhere nothing was staged that sets a state, and the same logger read the same word. The absence is `[C]` as that statement about these logs. State 13 (The Countess) has no live control here, as the plan's Done-when requires, and this window says nothing about a stage it did not hold: Amplify Damage, Decrepify, Lower Resist, Attract, a `MonFleeFrom` by a hireling, Nightmare or Hell. That no code sets 2, 3, 8, 9, 14, 17 stays `[I]` (a static reading, ai/0013 § 3), and P3b still does not call them dead. (run:2026-11-03-ai-3, 0x005B186F, 0x005C34B0)
 
 ### 9. P1b-2, the Greater Mummy and a champion corpse (built state)
 
 Run run:2026-11-04-ai-3p (slot 2, `AI_P1B2=1`, `tools/gdb/ai-p1b2.py` rev 2, Halls of the Dead 2, two sessions `a2-halls-p12` and `a2-halls-long`; a first launch stayed in the town; a development session first, `dev-2026-11-03-ai-3p`). At the entry of the Greater Mummy's search callback
 `sub_005F2A00_AiGreaterMummyCb` (0x005F2A00) every dead candidate (unit mode 12) with no champion or unique flag gets the champion flag 4 (first, third ... met) or the unique flag 8 (second, fourth ...) in the word at `Unit+0x14 -> +0x16`, the word `MonTypeFlag` (0x005A0180) tests: **a built state**, not a natural
-champion. Counts (`p1b2-run-2026-11-04-ai-3p.txt`, `tools/ai_p1b2.py`): 17 champion-flag and 16 unique-flag corpses placed; 46 Greater Mummy decisions (AI row 22); `MonSkillTargetOk` (0x005FD470, skill argument 327) was called from them with a **champion** corpse as its second argument 4 times and with a **unique** corpse 0 times. Results: 2 accepted (EAX 1), after which `UseSeqSkill` 0x00620C10 and the command (`MSM0`
+champion. Counts (`p1b2-run-2026-11-04-ai-3p.txt`, `tools/ai_p1b2.py`): 17 champion-flag and 16 unique-flag corpses placed; 46 Greater Mummy decisions (AI row 22); `MonSkillTargetOk` (0x005FD470, skill argument 327) was called from them with a **champion** corpse as its second argument 4 times and with a **unique** corpse 0 times. Results: 2 accepted (EAX 1), after which `sub_00620C10_UnitSetPathTargetUnit` 0x00620C10 and the command (`MSM0`
 `cmd` mode 14, the Greater Mummy, the corpse, skill field 101) followed; 2 refused (EAX 0, the skill's own test: the reason is not read), after which the code went to the next search. The callback's own filters before the flag test (same side, alignment, undead) are not logged per candidate, so the unique corpses'
-absence is shown only in aggregate. Reading: a champion corpse in range becomes the callback's `corpse` and is offered to the skill test, a unique one does not (flag 8, 0x005F2A96): `[C]` for the code as run, `[I]` for the page's claim (ai/0014 C40), which stays `contradicted` for champions only in the sense of the code: no natural champion was seen. (run:2026-11-04-ai-3p, fn:sub_005F2A00_AiGreaterMummyCb@0x005F2A00)
+absence is shown only in aggregate. Reading: a champion corpse in range becomes the callback's `corpse` and is offered to the skill test, a unique one does not (flag 8, 0x005F2A96): `[I]`. [2026-11-04, `lane/p52b` review: filed `[C]` "for the code as run". `tools/gdb/ai-p1b2.py` writes game memory at a breakpoint; ADR-0003 says a breakpoint "never writes game memory or registers", and ADR-0010 and ADR-0013 admit cells of one table through a loose `.bin`, not a memory write. Even read by analogy, ADR-0013 keeps `[I]` a claim whose code reads the edited value, and this callback tests the written flag. So the run stands as a stated deviation (experiments.md) and backs no `[C]`. The flag test at 0x005F2A96 also applies only while the block's `+0x18` is 0: Radament sets it (ai/0003 § 2.6, 0x005F2C6E), so "a unique one does not" holds for this class 101 and is not a statement about row 22 at large.] C40 stays `contradicted` for champions in the reading of the code only, and its required case is open: no natural champion was seen. The stock route is the `-forced` run of the plan's order, with no write. (run:2026-11-04-ai-3p, fn:sub_005F2A00_AiGreaterMummyCb@0x005F2A00)
 
 ### 10. G4, breakpoints on the seven helpers
 
 `tools/gdb/ai-g4.py` rev 1 arms entry breakpoints on 0x005E9DD0, 0x005FD0F0, 0x005F7F10, 0x005DD140, 0x005F8010, 0x005FC130 and 0x005E9750 and on nine controls (the LIVE rows of ai/0016 § 1), in the logger of every kept launch (no extra session).
-`tools/ai_g4.py` over the 23 kept launch logs (`g4-run-2026-11-03-ai-3.txt`): **helper hits 0** in 23 of 23; control 0x005B1CF0 (`sub_005B1CF0_MonPostCreateBoss`) hit in 23 of 23 launches (counts 4 to 128 per launch), 0x005A3250 (`UModQuestCompleteDeath`) in 2; the other seven controls (the Uber and Baal action entries) are not reached by Normal stages and give
-no window. The control is live over every launch for the helpers' absence. Scope: Normal difficulty stages of the listed cases; no Uber event, no edited cell; an unreferenced entry that only an Uber session would reach is not tested by this window, so the static statement (ai/0016 § 1) gains a run window and stays `[I]`.
+`tools/ai_g4.py` over the 23 kept launch logs (`g4-run-2026-11-03-ai-3.txt`): **helper hits 0** in 23 of 23; control 0x005B1CF0 (`sub_005B1CF0_MonPostCreateBoss`) hit in 23 of 23 launches (the counts 4 to 128 are floors: a control prints at its 1st, 2nd, 4th, 8th ... hit), 0x005A3250 (`UModQuestCompleteDeath`) in 2; the other seven controls (the Uber and Baal action entries) are not reached by Normal stages and give
+no window. [2026-11-04, `lane/p52b` review:] the two live controls show that an entry breakpoint of this logger fires in that process, at monster creation (its last printed line lies 15 % to 99 % of the way through the 23 launch logs; hits after the last power of two print nothing). They do not show that the window reaches anything near the helpers: their seven sibling controls are silent too. So the 0 is adequate for what it says, these seven entries are not entered in these Normal stages. Scope: Normal difficulty stages of the listed cases, 2 of the 23 launches with the P1b-2 write; no Uber event, no edited cell; an unreferenced entry that only an Uber session would reach is not tested by this window, so the static statement (ai/0016 § 1) gains a run window and stays `[I]`.
 
 ### 11. P1b-1, Duriel (not done)
 
@@ -255,8 +265,8 @@ Built: the character `AiDur` (`tools/d2s_recipes/ai-dur.json`: `CombatSor` plus 
 
 ### 12. What stays short
 
-H1 (the 331 monster gaps with the skills logger beside this one), H3 (Raven's 2 218 `MonAttackStats` calls), the catalogue sample of batches 5, 7, 10, 11, 12, Fetish's and Andariel's chained pairs at `/players 8` (`a1-andariel-p8` kept: 9 Andariel decisions in the 21 sessions' check, 263 decisions of the session), P1b-1, the 112 resume mismatches, GreaterMummy's resume (26 of 27 stopped at `g_pDataTables`), the first run's volume (14 645 decisions) not repeated.
-Owner play for P1b-1: a Normal character at clvl 85 with the Horadric Staff and the quest state of `AiDur`, `/players 1`, play to Duriel's Lair (Canyon of the Magi waypoint, the real Tal Rasha tomb of seven, the staff in the orifice, the portal), and stay in melee with Duriel for at least 300 of his decisions (a few minutes) under `tools/gdb/ai-g4.gdb`; the logger's `MSM0` lines already log the command.
+H1 (the 331 monster gaps with the skills logger beside this one), H3 (Raven's 2 218 `MonAttackStats` calls), the catalogue sample of batches 5, 7, 10, 11, 12, Fetish's and Andariel's chained pairs at `/players 8` (`a1-andariel-p8` kept: 9 Andariel decisions in the 21 sessions' check, 263 decisions of the session), P1b-1, P1b-2's stock case, state 13, the fixed model's kept rerun, the first run's volume (14 645 decisions) not repeated.
+Owner play for P1b-1: [2026-11-04, `lane/p52b` review: the first text would have lost the session, since the logger's default `AI_CAP_ROW` of 200 ends row 44's lines below the 300 asked.] The objective, launch and stop rule are in [the owner entry](../../backlog/2026-11-04-architect-human-plan-0052-p1b-1-duriel-melee-owner-play.md).
 
 ## Data touched
 
@@ -265,7 +275,6 @@ struct:AiCtx+0x00.
 
 ## Open questions
 
-- The 112 resume mismatches (§ 7): rows 23, 64, 95, 79, 37, 78, 32 on the melee and curse logs. Which input or opaque callee differs is not known.
-- GreaterMummy's resume (`g_pDataTables` read at 0x005F2C1D): the logger would have to record the table values.
+- The 8 row 23 decisions of § 7's cluster F: is the 600-call limit the cause? Logger rev 5 marks the limit, so the next batch can tell.
 - P1b-1 (Duriel), H1, H3, the catalogue sample: see § 12.
 - `[L]` Why the waypoint list does not open on the first try in 14 of 35 launches (§ 6): not investigated.

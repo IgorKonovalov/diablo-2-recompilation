@@ -530,7 +530,7 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-11-03 | `lane/s66` review | 0052 P1c spec wording | architect-review | 147 379 | 25 | 6 | — | accept with fixes (4) | overclaim 2, misread 1, omission 1 |
 | 2026-11-03 | `lane/a66` | 0052 readers of ai/0012, ai/0013 into the table docs (2 entries) | archivist | 187 967 | 46 | 9 | — | accept with fixes (Tier A, ADR-0027) | 16: overclaim 3, misread 4, omission 6, wrong anchor 2, stale cross-reference 1 |
 | 2026-11-03 | `lane/a66` review | 0052 readers of ai/0012, ai/0013 | architect-review | 207 612 | 37 | 10 | — | accept with fixes (16) | overclaim 3, misread 4, omission 6, wrong anchor 2, stale cross-reference 1 |
-| 2026-11-04 | lane/p52b | 0052 P2 (second run, kept batch) | reverser-harness | 315 000 | 235 | 205 | slot 2, no Ghidra; 23 kept sessions (21 + 2 built-state P1b-2), 46 launches in all; first-boundary 0 mismatches over 6 272 compared, resume model 112 open mismatches, states 10-12 live, G4 0 helper hits, P1b-2 built state, P1b-1 not done (route attempt failed) | — | — |
+| 2026-11-04 | lane/p52b | 0052 P2 (second run, kept batch) | reverser-harness | 315 000 | 235 | 205 | slot 2, no Ghidra; 23 kept sessions (21 + 2 built-state P1b-2), 46 launches in all; first-boundary 0 mismatches over 6 272 compared, resume model 112 open mismatches, states 10-12 live, G4 0 helper hits, P1b-2 built state, P1b-1 not done (route attempt failed) | accept with fixes (Tier A, 11) | overclaim 3, misread 3, miscount 1, omission 2, wrong anchor 1, tool not kept 1 |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not
