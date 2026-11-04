@@ -191,6 +191,44 @@ class ResumeTest(unittest.TestCase):
         self.assertIn("seed", r.why)
 
 
+class FlipTest(unittest.TestCase):
+    """tools/ai_resume_flip.py: one known branch reversed alone."""
+
+    def test_one_branch_reversed_fails_only_where_it_decides(self):
+        import ai_resume_flip as F
+        code = code_with(THINK_CODE)
+        ra1, ra2, ra3 = ra_of(code, F1), ra_of(code, F3), ra_of(code, F2)
+        log = [(aib(11, F1, ra1, [7]), air(11, 0)), (aib(12, F2, ra3, [1]), air(12, 5))]
+        dec = {"aid": aid(), "aib": [b for b, r in log], "air": {b["n"]: r for b, r in log}, "log": "x", "bmax": 48}
+        base = R.check_decision(F.FlipMachine(code, BND, None, WIN), dec)
+        self.assertEqual(base.status, "ok", base.why)
+        out = F.flip_decision(code, BND, dec, base, WIN)
+        self.assertEqual(sorted(out.values()), ["fail", "fail"], out)    # the mode test and the test of the result
+
+    def test_a_branch_on_an_unknown_is_not_a_site_and_counts_as_unknown(self):
+        import ai_resume_flip as F
+        code = code_with(["push ebp", "mov ebp,esp", "mov esi,edx", "cmp DWORD PTR [esi+0x40],0x0", "jne @b", "@b push 0x1",
+                          "call 0x3000", "pop ebp", "ret 0x4"])
+        log = [(aib(11, F2, ra_of(code, F2), [1]), air(11, 0))]
+        dec = {"aid": aid(), "aib": [b for b, r in log], "air": {b["n"]: r for b, r in log}, "log": "x", "bmax": 48}
+        m = F.FlipMachine(code, BND, None, WIN)
+        base = R.check_decision(m, dec)
+        self.assertEqual((base.status, base.br), ("ok", {}), base.why)
+        self.assertEqual(sum(m.unknown.values()), 1)
+        self.assertEqual(F.flip_decision(code, BND, dec, base, WIN), {})
+
+    def test_the_sample_takes_each_path(self):
+        import ai_resume_flip as F
+
+        class Rz:
+            def __init__(self, p):
+                self.log = [{"fn": 0, "ra": 0}, {"fn": p, "ra": p}]
+        items = [("d%d" % k, Rz(k % 3)) for k in range(30)]
+        got = F.sample(items, 1, 6)
+        self.assertEqual(len(got), 6)
+        self.assertEqual({r.log[1]["fn"] for _d, r in got}, {0, 1, 2})
+
+
 class ReviewFixesTest(unittest.TestCase):
     """The six model fixes of the lane/p52b review (plan 0052 log; ai/0017 section 7), one test each."""
 
