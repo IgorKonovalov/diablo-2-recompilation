@@ -610,6 +610,8 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-11-04 | `lane/p52d` review | 0052 P2 (third kept batch) | architect-review | 321 734 | 67 | 41 | — | accept with fixes (16); no further batch, P3a next | omission 5, miscount 4, overclaim 3, misread 2, tool not kept 1, other 1; audit: n/a, Tier A |
 | 2026-11-04 | `lane/s70` | 0052 H3 statements, 0054 facing | spec-writer | 162 454 | 33 | 8 | — | accept with fixes (Tier A, 11); squashed | omission 4, stale cross-reference 3, misread 1, overclaim 1, wrong anchor 1, other 1 |
 | 2026-11-04 | `lane/s70` review | 0052 H3 statements, 0054 facing | architect-review | 181 397 | 28 | 8 | — | accept with fixes (11) | omission 4, stale cross-reference 3, misread 1, overclaim 1, wrong anchor 1, other 1 |
+| 2026-11-04 | `lane/r70` | 0054, 0060 reverser notes | reverser-static | 230 589 | 99 | 15 | — | accept with fixes (Tier B, 4) | stale cross-reference 2, misread 1, overclaim 1 |
+| 2026-11-04 | `lane/r70` check | 0054, 0060 reverser notes | architect-check | 146 262 | 35 | 4 | — | accept with fixes (4); includes a first run stopped at link-only spec lines (40 886) | stale cross-reference 2, misread 1, overclaim 1 |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not

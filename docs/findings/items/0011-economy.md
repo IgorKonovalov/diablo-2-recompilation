@@ -162,6 +162,7 @@ Blind first: § 1–§ 7 were read from the code before the pages below were fet
 | `0x00540900` | `sub_00540900_PartyGoldShare` | party split of a pickup | I |
 | `0x00564D50` | `sub_00564D50_StashGoldMove` | deposit / withdraw | I |
 | `0x0057F390` | `sub_0057F390_CorpseDropGold` | the corpse's gold as piles | I |
+| `0x0057F410` | `sub_0057F410_CorpseMoveBodyItem` | the corpse's move of one body item (item in `ESI`, corpse unit in `EDI`, two stack arguments, `ret 8`). Its calls in order: `0x0062A360` (result kept), `0x0063D2B0`, `0x0063AD90` (`InvTakeItem`; a null return logs error `0x25D` and exits, a result other than the item `0x25E`), `0x0063BE30`, `BeltOverflow(null)` (`0x0057F47A`) when `ITEMS_GetBaseType` is 19, item flag `+0xC4` bit 1 cleared, `ITEMS_DetachFromOwner`, `ITEMS_SetFlag(item, 0x20, 1)`, `0x00628170(item, 1, 1)` and `0x00628170(item, 0x10, 1)`, `0x0063CC70`, `0x0055D930` only if the kept result is non-zero, `SETS_UpdateOnEquip(corpse, item, 1, 1)`, `0x00621000`. Two direct calls (`tools/xrefscan.py`, `workspace/logs/r70-xrefscan.txt`): `PLAYER_CorpseCreate`'s slot loop at `0x0057F90E` and `CorpseOverflowDrop` at `0x0057F5D8`. A code reading; the roles of the unnamed callees and the flags are not read. The name says what the callers use it for. *Added 2026-11-04 (`lane/r70`, from the items/0017 review).* | I |
 | `0x0057F540` | `sub_0057F540_CorpseOverflowDrop` | 16 corpses: drop items and gold | I |
 | `0x00562D30` | `ITEMEVENT_Replenish` | item event 3 | I |
 | `0x00562C40` | `sub_00562C40_ReplenishStep` | +1 and requeue | I |

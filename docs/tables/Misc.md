@@ -404,7 +404,7 @@ declared scratch memory; neither is a run of the game.
   `0x00498A5B`..`0x004AFAD2` and the five at `0x006910EA`..`0x0069BB63` stay unclassified; indirect calls
   and table pointers to the getter are not followed. The item-use finding's summary bullet tags the same reading `[C]`
   (data + code); its § 7 table and § 3's reading of the two handlers say `[I]`, and no family of its run enters either handler, so `[I]` is the tag here
-  ([route](../backlog/2026-11-04-architect-reverser-a69-review-finding-notes.md)).
+  ([route](../backlog/archive/2026-11-04-architect-reverser-a69-review-finding-notes.md)).
   ([items/0012 § 3, § 7](../findings/items/0012-use-inventory.md#7-what-the-columns-gate), fn:sub_00628C20_ItemIsUseable@0x00628C20)
 
 ### Timed states: `state`, `cstate1`, `cstate2`, `len`, `stat1..3`, `calc1..3`
