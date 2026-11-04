@@ -269,7 +269,7 @@ think101: if (charge(ctx,0)) return; sk = SKILLS_GetUnitSkill(U, Skill1); if (!s
     if (charge(ctx,1)) return; UNIT_CancelEvents(2,0); UseSkill(SkillMode(sk), Skill1, h, 0, 0);
 think104: if (charge(ctx,0)) return; sk = Skill1's unit skill; lvl = SkillLevel(U, sk, 1); if (!sk || lvl < 1) return;
     h = FindHostile(&d, &m); if (!h) return Idle(aip2);
-    c = CorpsePickNear(Skill1, lvl); r = SkillParam3ByLevel(...) / 2;
+    c = CorpsePickNear(h; Skill1, lvl); r = SkillParam3ByLevel(Skill1, lvl) / 2;      // around h: EDX = h, 0x005EAA11
     if (c && c->guid != v14 && EdgeDist(h, c) < r) { if (charge(ctx,1)) return; v14 = c->guid; return UseSkill(9, Skill1, c, 0, 0); }
     if (d < aip4 && Range(100) < aip3) { if (charge(ctx,1)) return; return UseSkill(14, Skill2, h, 0, 0); }   // draw#1
     Idle(aip2);
@@ -335,7 +335,7 @@ UseSkill(9, 292, 0, x, y); v14 = T + aip2;          // 292 Teleport 2
   in melee range, the owner short of the stat and `T > aip1 + v18`: `UseSkill(8, Skill1, c, 0, 0)`, `v18 = T`; else
   with an event target in `melee`, **`Range(100)` < 25** steps away (`StepAway(t, (u8)aip4, 0)`); else `Idle(aip3)`
   without a corpse or `Walk(c, 7)`. (fn:sub_005EC8C0_AiCycleOfLife@0x005EC8C0, 0x005EC8C0–0x005ECA9C, tbl:Skills.txt:aurarangecalc)
-
+- *Corrected 2026-11-04 (`lane/s52b`, spec-writer, reading the anchored instructions for monsters/ai/catalogue):* both follow with `PetMove(3, …, 6)` at an edge distance **≥** `aip5` (0x005EC717, 0x005EC920), which CycleOfLife's paragraph omits; CycleOfLife clears a dead event target (0x005EC93E) and calls `AiPetGuard(corpse, O, m, ctx, 0, 6)` before the stats (0x005ECA3F); its class 426 tests the owner's life, 427 mana (0x005ECA58–0x005ECA8E). Vines: `Skill1` < 0 or no target idles (0x005EC80C, 0x005EC7D5).
 #### 2.8 Row 109 `Totem` (0x005ED9E0)
 
 ```c
@@ -400,6 +400,7 @@ think: if (!O || !M) return Idle(10);
   when outside `[lo, 32·clamp(aip8[h], 1, 256)]`, **`Range(v18)`** against **`Range(100)`**: the second below the
   first refuses; else `v18 += (320 − v1C)·q / (v1C + 100)` and 1. So three draws per tried skill.
   (fn:sub_005EAD50_AiShadowSkillRoll@0x005EAD50, 0x005EAD50–0x005EAEFA)
+- *Corrected 2026-11-04 (`lane/s52b`, spec-writer, reading the anchored instructions for monsters/ai/catalogue):* a non-zero `AiPetGuard` returns (0x005EB0AB); either owner skill missing, or not found on the unit after the adds, gives `Idle(25)` (0x005EB0D1, 0x005EB17C). The other skill of a failed pick is the right one when the pick was the left, else the left, so a skill-0 pick's second try is the left skill (0x005EB230–0x005EB23A). The owner distance is `UnitEdgeDistance` (0x005EB065).
 
 #### 2.11 Rows 106 `ShadowMaster` and 143 `ShadowMasterNoInit` (think 0x005EB970; inits 0x005EB490, 0x005EB5C0)
 
@@ -428,6 +429,7 @@ think: if (!O || !M) return Idle(10);
   them, and `AiShadowUseSkill` runs the choice. `Idle(15)` when nothing commands. The loop runs over skills, not
   units, with at most two draws per skill in the first loop and one in the second (`b5-draws.txt`: 3 inline steps,
   14 `RNG_Range`). (fn:sub_005EB970_AiShadowMaster@0x005EB970, 0x005EB970–0x005EC694, fn:sub_005DD0B0_AiUnitSearch@0x005DD0B0)
+- *Corrected 2026-11-04 (`lane/s52b`, spec-writer, reading the anchored instructions for monsters/ai/catalogue):* the think above is short and in two places wrong. **"The five best kept in a frame table" is not what the code does:** a record joins the list only when its score beats the last record's (0x005EC4FF), with no cap of five in the store, so the list rises from an initial `(t, skill 0, 0)`, and the pick walks it from the top, one inline step each, using a record when `low & 3 ≠ 0` (0x005EC562–0x005EC5C0): a use whose record's `+0x2E` is 19 sets `v18` = its id and `v14` = 25, the pending sequence's source (0x005EC606–0x005EC623). The first loop runs only with no target left after `dist > aip2[m]` drops it (0x005EBA70–0x005EBA84). A pending use with no target clears `v14` and `v18` (0x005EBA3D). The owner's target is taken only alive and hostile, and `DistSq(U, O)` ≤ 144 gets a second `AiPetGuard` (0x005EBC41–0x005EBCAA); no target then gives `Idle(25)` (0x005EBCB9). The target changes after the search only out of melee, in the order owner's target, nearest to the owner, priority within 1024, then the target's living owner within 1024 (0x005EBD8F–0x005EBDF8). The crowd test's run needs `DistSq(U, O)` > 36 (0x005EBE95). Past the list, `AiShadowUseSkill` of skill 0 at `t`, then `Idle(15)` (0x005EC5C2–0x005EC5F8). Each `aitype`'s terms are not read here.
 
 #### 2.12 Rows 108 `DruidWolf` (0x005ED710; 0x005ECEE0, 0x005ED2A0) and 112 `DruidBear` (0x005ED730)
 
@@ -451,6 +453,7 @@ think: if (!O || !M) return Idle(10);
   **`Range(100)` < `aip2`** sets `Ovr(0, s, 40)`, then `WalkToUnitOrZero(t)`; in melee **`Range(100)` < `aip3`** uses
   `SeqSkill(Skill1, t, 0, 0)` (`BearSmite`), else `SetModeAtUnit(4, t)` and `Delay(aip1)`; no target: `Idle(15)`
   within 16, else `PetMove(kind 0)`. (fn:sub_005ED730_AiDruidBear@0x005ED730, 0x005ED730–0x005ED9DA)
+- *Corrected 2026-11-04 (`lane/s52b`, spec-writer, reading the anchored instructions for monsters/ai/catalogue):* the wolf's and Fenris's owner-less teleport aims at **the remembered owner's** subtile position (0x005ECF33–0x005ECF42), both set `v1C` to the owner's id (0x005ECFA2). The wolf's FindTarget target is kept when `AiApproachPointTest` returns **0** (0x005ED05F–0x005ED06B); Fenris's and the bear's when non-zero (0x005ED41C, 0x005ED8DB). Fenris's frame differs from the wolf's and is not "as the wolf": he drops a target with both edge distances above `aip4` (0x005ED43D–0x005ED44E), follows by `aip4` with no second test after each `PetMove` (0x005ED4F9–0x005ED547), queues the teleport's event at T + 2 (0x005ED4CD), and with a target out of melee always runs (0x005ED69B–0x005ED6B8), where the wolf tests the owner distance. The corpse draw needs `Skill1` ≥ 0 (0x005ED57A). A corpse out of melee with the target in melee gives the target A1 (0x005ED62E). The bear's moves at 28 and by mode 3 pass speed 100, its `s` is used only by the override (0x005ED80C, 0x005ED85B, 0x005ED97F), and with no owner it follows the remembered unit (0x005ED752–0x005ED774).
 
 ### 3. Callers and the helpers
 

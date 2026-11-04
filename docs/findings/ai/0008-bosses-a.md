@@ -287,7 +287,7 @@ think59:
     h = AiParamsFind(U, 10, 0);
     if (!h) { AiParamsPush(U, {kind 10, U's own x, y}); h = AiParamsFind(U, 10, 0); }   // the home point
     hd = 0;
-    if (h) { hd = DistToPointSized(U, home);
+    if (h) { hd = DistToPointSized(t, home);                                // the target's: ECX = t, 0x005E63F8
              if (dist > 45) return Idle(5);
              if (hd > 49 || DistToPointSized(U, home) > 50) {               // second compare unsigned
                  v1C = 1; Ovr(7, 100, 0); if (RunToPoint(h->x, h->y)) return; UNIT_CancelEvents(G, U, 2, 0); }
@@ -301,7 +301,7 @@ think59:
         a = Range(15) + 5;                                                   // draw#2
         if (Pow2(2) == 0) { dx = RangeB(a); dy = a; } else { dx = a; dy = RangeB(a); }   // draw#3, #4
         if (Pow2(2)) dx = -dx;  if (Pow2(2)) dy = -dy;                       // draw#5, #6
-        UseSkill(Sk1mode, Skill1, 0, subX(U) + dx, subY(U) + dy);  v18++;  v14 = 0;  return; }
+        UseSkill(Sk1mode, Skill1, 0, subX(t) + dx, subY(t) + dy);  v18++;  v14 = 0;  return; }
     if (dist > 5) {
         if (draw < 5 && hd < 50) { Ovr(7, 100, 0); RunNearUnit(t, 12); return; }
         if ((h2 = FindHostile(&e, &hd)) && !AiMonState3or19(U) && Range(100) < 80) {
@@ -311,6 +311,8 @@ think59:
     if (draw < 30 && dist < 12) { Ovr(7, 100, 0); if (StepAwayXY(t, 12 - dist, 0)) return; UNIT_CancelEvents(G, U, 2, 0); }
     SetModeAtUnit(4, t);
 ```
+
+- *Corrected 2026-11-04 (`lane/s52b` review, architect, read against the instructions):* `hd` was given as the unit's distance from home; the first `AiDistToPointSized` has `ECX` = `t` (0x005E63F8), so `hd` is the target's, and only the two later compares are the unit's (0x005E6429, 0x005E6484). The raise's point was given around the unit; `edi` is `t` at 0x005E65E5, so it is around the target.
 
 - [I] The home point is parameter record kind 10 (`AiParamsFind(ECX U, EDX 10; 0)`, 0x005E6356), pushed with the
   unit's own static or dynamic path point when missing; its leash compares are `jle`/`jge` signed except the second

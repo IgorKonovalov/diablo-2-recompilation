@@ -139,7 +139,7 @@ if (melee) { if (chance(2)) return SetModeAtUnit(4, t); return Idle(aip4); }
 if (chance(1)) { Ovr(0, 75, 0); return Walk13(t, 7); }                          // draw#1
 s = { unit 0, best 0x7FFFFFFF };  AiUnitSearch(G, U, &s, AiSameBaseNearCb, 1);
 if (s.unit && aip3 * aip3 < s.best) { Ovr(0, 75, 0); return Walk(s.unit, 7); }   // rejoin the pack
-if (draw < 25) return T56(t, 3, 0); else return Idle(aip4);                     // draw#2
+if (draw < 25) return T56(t, 3, s.unit); else return Idle(aip4);                // draw#2; flag = s.unit
 ```
 
 - [I] The callback takes a monster (`Unit+0x00` = 1) other than the searcher with the searcher's `MonBaseId`, not in a
@@ -148,6 +148,7 @@ if (draw < 25) return T56(t, 3, 0); else return Idle(aip4);                     
   (0x005F22B0–0x005F2455, fn:sub_005B0D00_AiSameBaseNearCb@0x005B0D00, fn:sub_00463860_MonBaseId@0x00463860,
   fn:sub_0063EA40_MonIsDeathMode@0x0063EA40)
 - [C] The map up to the search, the block's two words included. (run:2026-10-30-ai-cat-emu-2, `panther`)
+- *Corrected 2026-11-04 (`lane/s52b` review, architect, read against the instructions):* the block gave `T56(t, 3, 0)`; the flag is `push ebx` (0x005F2426) with `ebx` = `s.unit` (0x005F23B8), so with a packmate found within `aip3` the walk reaches `MonAiMove` with flags 4.
 
 #### 2.3 Row 19 `Swarm` (0x005F2460)
 
@@ -359,6 +360,7 @@ default: ctl->v14 = ctl->v18 = 0; return Idle(10);
 - [I] Not emulated: `UnitDistSq` comes first on most events and the room search in state 4. The offset tables (two of
   (x, y) pairs for the four-wisp dance, one for the five-wisp dance) are not transcribed here (§ Open questions).
   (0x005F3E1C, 0x005F3F14, fn:sub_005B0BD0_UnitDistSq@0x005B0BD0)
+- *Corrected 2026-11-04 (`lane/s52b`, spec-writer, reading the anchored instructions for monsters/ai/catalogue):* the trigger also needs `t` ≠ 0 (0x005F3C3D). In the dance, a place above 4 (states ≥ 6) or 5 (state 5) gives state 2 and `Idle(8)` (0x005F405D, 0x005F4288). The five-wisp origin **is** read: the target's subtile position too (0x005F4291–0x005F42AE), with tables at `EBP − 0x38` and `EBP − 0x64`. "Waits" is `Idle(67 − frame mod 67)`. A zero `B` entry counts `+0x18` and idles (`Idle(67)` four-wisp, 0x005F4155; `Idle(337 − frame mod 337)` five-wisp, 0x005F4302); the five-wisp end also sets the cooldown (0x005F4342). State 1: a failed `aip1` draw **falls through** to the `+0x18`−− arm, which draws again (0x005F43C9 to 0x005F43E8), so the arms are not exclusive as written above. A1 is `SetModeAtUnit(4, t)` (0x005F44A0).
 
 #### 2.10 Row 26 `Arach` (0x005F4510)
 
