@@ -299,6 +299,9 @@ def main():
     ap.add_argument("--fullscreen", action="store_true",
                     help="fullscreen Xwayland and no -w, so the game fills the screen (owner-played runs; stop a "
                          "running windowed server on the display first)")
+    ap.add_argument("--attach-file", metavar="PATH",
+                    help="with --gdb: attach only once PATH exists, so an owner plays the walk with no debugger; the "
+                         "logger then misses every line before it (GAME_InitSeeds' AGM among them): say so in the record")
     ap.add_argument("--game-dir", default=GAME_DIR,
                     help="directory to start game.exe in (default workspace/runtime/game; e.g. a copy with loose "
                          "data files for -direct)")
@@ -391,6 +394,8 @@ def main():
     os.dup2(log.fileno(), 1)
     os.dup2(log.fileno(), 2)
     if ns.gdb:
+        while ns.attach_file and not os.path.exists(ns.attach_file) and alive(game, "game.exe"):
+            time.sleep(0.5)  # owner play: no debugger, so no lag, until the file appears
         os.execvp("gdb", ["gdb", "-q", "-nx", "-batch", "-p", str(game), "-x", ns.gdb])
     while True:  # no debugger: just reap until the session is gone
         try:
