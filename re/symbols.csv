@@ -607,7 +607,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005559A0,func,sub_005559A0_RoomPresetUnits,,I,monsters/spawn,docs/findings/monsters/0002-room-population.md
 0x00555C90,func,ITEMTYPES_GetRecord,,I,items/economy,docs/findings/items/0011-economy.md
 0x00555D20,func,sub_00555D20_ItemQuestHook,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
-0x00555DA0,func,sub_00555DA0_GroundDropCell,,I,items/use,docs/findings/items/0014-ground-items.md
+0x00555DA0,func,sub_00555DA0_GroundDropCell,,C,items/use,docs/findings/items/0015-harness-inventory.md
 0x00556360,func,sub_00556360_ItemRollDefense,,I,items/properties,docs/findings/items/0006-properties.md
 0x005563D0,func,sub_005563D0_ItemSetBaseDamage,,I,items/properties,docs/findings/items/0006-properties.md
 0x005564A0,func,sub_005564A0_UniqueMadeTestV0,,I,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
@@ -639,7 +639,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00558640,func,ITEMS_DropRollQuality,,C,items/quality,docs/findings/items/0002-quality-roll.md
 0x005589A0,func,sub_005589A0_DropGoldFind,,C,items/tc,docs/findings/items/0001-tc-resolution.md
 0x00558A10,func,sub_00558A10_ItemGroundExpiry,,C,drlg/lifecycle,docs/findings/drlg/0009-room-lifecycle.md
-0x00558AA0,func,sub_00558AA0_ItemPlaceOnGround,,I,items/use,docs/findings/items/0014-ground-items.md
+0x00558AA0,func,sub_00558AA0_ItemPlaceOnGround,,C,items/use,docs/findings/items/0015-harness-inventory.md
 0x00558B40,func,sub_00558B40_ItemTakeFromGround,,I,items/use,docs/findings/items/0014-ground-items.md
 0x00558B90,func,sub_00558B90_ActExpiredItemsFree,,I,sim/frame,docs/findings/frame/0003-timers-activation.md
 0x00558C50,func,sub_00558C50_ItemRemoveRuneword,,C,items/cube,docs/findings/items/0008-cube.md

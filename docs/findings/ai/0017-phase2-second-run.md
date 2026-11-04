@@ -288,23 +288,23 @@ Run run:2026-11-04-ai-resume, no game, over the same 21 rev 4 logs of run:2026-1
 | AI row | tier AI | decisions | resumed | mismatches | stopped | past first | amb | paths | top | sites | branches | reversed fails | proposal |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|
 | 2 | Skeleton | 126 | 126 | 0 | 0 | 0 | 0/0 | 1 | 126/126 | 0 | 4/0 | 110/126 | weak: no call past the first |
-| 6 | Fallen | 814 | 814 | 0 | 0 | 24 738 | 8 661/24 738 | 88 | 102/814 | 22 | 22/21 | 814/814 | `[C]` |
+| 6 | Fallen | 814 | 814 | 0 | 0 | 24 738 | 8 661/24 738 | 88 | 102/814 | 22 | 22/21 | 814/814 | proposed |
 | 9 | Wraith | 62 | 62 | 0 | 0 | 0 | 0/0 | 1 | 62/62 | 0 | 1/1 | 56/62 | weak: no call past the first |
-| 13 | FallenShaman | 104 | 103 | 0 | 1 | 361 | 0/362 | 10 | 39/103 | 8 | 10/5 | 104/104 | `[C]` |
+| 13 | FallenShaman | 104 | 103 | 0 | 1 | 361 | 0/362 | 10 | 39/103 | 8 | 10/5 | 104/104 | proposed |
 | 19 | Swarm (not tier) | 82 | 82 | 0 | 0 | 0 | 0/0 | 1 | 82/82 | 0 | 3/0 | 81/82 | not tier |
 | 20 | Scarab | 0 | 0 | 0 | 0 | 0 | 0/0 | 0 | 0 | 0 | 0/0 | - | short |
-| 21 | Mummy | 205 | 205 | 0 | 0 | 205 | 0/205 | 5 | 76/205 | 5 | 4/2 | 205/205 | `[C]` |
+| 21 | Mummy | 205 | 205 | 0 | 0 | 205 | 0/205 | 5 | 76/205 | 5 | 4/2 | 205/205 | proposed |
 | 22 | GreaterMummy | 27 | 27 | 0 | 0 | 48 | 0/48 | 7 | 14/27 | 7 | 6/9 | 27/27 | short |
 | 28 | Vampire | 43 | 43 | 0 | 0 | 129 | 0/129 | 9 | 12/43 | 11 | 11/12 | 43/43 | short |
 | 29 | BatDemon | 20 | 20 | 0 | 0 | 49 | 0/49 | 7 | 4/20 | 12 | 6/11 | 17/20 | short |
-| 30 | Fetish | 316 | 316 | 0 | 0 | 877 | 0/877 | 5 | 243/316 | 8 | 7/8 | 316/316 | `[C]` |
+| 30 | Fetish | 316 | 316 | 0 | 0 | 877 | 0/877 | 5 | 243/316 | 8 | 7/8 | 316/316 | proposed |
 | 34 | Andariel | 9 | 9 | 0 | 0 | 1 | 0/1 | 2 | 8/9 | 1 | 4/6 | 9/9 | short |
 | 35 | CorruptArcher | 22 | 22 | 0 | 0 | 41 | 0/41 | 8 | 5/22 | 11 | 9/8 | 22/22 | short |
-| 37 | SkeletonBow | 86 | 86 | 0 | 0 | 284 | 5/284 | 10 | 47/86 | 19 | 8/13 | 86/86 | `[C]` |
-| 61 | Hireable | 2 066 | 2 061 | 0 | 5 | 31 034 | 2 095/31 037 | 14 | 699/2 061 | 31 | 12/24 | 2 065/2 066 | `[C]` |
-| 64 | SkeletonMage | 91 | 91 | 0 | 0 | 148 | 12/148 | 11 | 34/91 | 24 | 13/15 | 91/91 | `[C]` |
-| 67 | NecroPet | 53 | 53 | 0 | 0 | 449 | 21/449 | 7 | 17/53 | 16 | 11/8 | 53/53 | `[C]` |
-| 89 | Megademon | 77 | 77 | 0 | 0 | 232 | 0/232 | 7 | 43/77 | 9 | 7/12 | 77/77 | `[C]` |
+| 37 | SkeletonBow | 86 | 86 | 0 | 0 | 284 | 5/284 | 10 | 47/86 | 19 | 8/13 | 86/86 | proposed |
+| 61 | Hireable | 2 066 | 2 061 | 0 | 5 | 31 034 | 2 095/31 037 | 14 | 699/2 061 | 31 | 12/24 | 2 065/2 066 | proposed |
+| 64 | SkeletonMage | 91 | 91 | 0 | 0 | 148 | 12/148 | 11 | 34/91 | 24 | 13/15 | 91/91 | proposed |
+| 67 | NecroPet | 53 | 53 | 0 | 0 | 449 | 21/449 | 7 | 17/53 | 16 | 11/8 | 53/53 | proposed |
+| 89 | Megademon | 77 | 77 | 0 | 0 | 232 | 0/232 | 7 | 43/77 | 9 | 7/12 | 77/77 | proposed |
 | 125 | BloodLord | 22 | 22 | 0 | 0 | 0 | 0/0 | 1 | 22/22 | 0 | 4/0 | 22/22 | short |
 
 - [C] (run:2026-11-04-ai-resume, 0x005B186F) **Proposed for review: past the first boundary, rows 6, 13, 21, 30, 37, 61, 64, 67, 89, for these 21 rev 4 logs.** Each has 0 mismatches and at least 50 resumed decisions, and more than one path past the first boundary. The statement: every logged top-level boundary call of a resumed decision equals, in every word the model knows, a call the row's code can make from the logged inputs and the earlier logged results, and the decision can then return with no further call. It does not say which offered call the code takes when an unknown value decides: Fallen 8 661 of its 24 738 later steps, Hireable 2 095, NecroPet 21, SkeletonMage 12, SkeletonBow 5. The stopped decisions are outside it (FallenShaman 1, Hireable 5). It assumes that an opaque callee changes no known memory but `Unit+0xC4` and its pointer arguments.

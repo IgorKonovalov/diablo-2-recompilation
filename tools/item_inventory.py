@@ -598,3 +598,39 @@ if __name__ == "__main__":
         stock(sys.argv[2])
     else:
         sys.exit(__doc__)
+
+
+# ---- plan 0060 Phase 2 (lane/p60, items/0013 § 5 and § 6): the two crafted requests' expected outcomes --------------------
+
+TOWN_LEVELS = (1, 40, 75, 103, 109)
+STASH_EXPANSION, STASH_CLASSIC = (6, 8), (6, 4)
+
+
+def pkt18_expect(page, in_town, x, y, w, h, expansion, occupied=(), ctl=None):
+    """items/0013 § 5: `0x18` with a cursor item for a player. -> (handler return, page the item ends on, cell or None).
+    Page >= 5 returns 2; page 4 in town only (else 3); no stash-open test (`ctl` 'stashopen' is the wrong reading that
+    refuses page 4 with no stash open); a placed item takes (x, y) when it fits and no occupied cell is covered, else the
+    handler returns 3 with the page byte already set (`ItemSetPage` runs before the placement)."""
+    if page >= 5:
+        return 2, None, None
+    if page == 4 and not in_town:
+        return 3, 4, None
+    if page == 4 and ctl == "stashopen":
+        return 3, 4, None
+    gw, gh = (STASH_EXPANSION if expansion else STASH_CLASSIC) if page == 4 else (10, 4)
+    if x < 0 or y < 0 or x + w > gw or y + h > gh:
+        return 3, page, None
+    cells = {(x + i, y + j) for i in range(w) for j in range(h)}
+    if cells & set(occupied):
+        return 3, page, None
+    return 0, page, (x, y)
+
+
+def belt23_expect(box, occupied=(), numboxes=12, beltable=True, ctl=None):
+    """items/0013 § 6: `0x23` to a box: `BeltPutItem` needs a 1 x 1 beltable item and `box < 16`, and an empty box; it does
+    not read `numboxes` (`ctl` 'numboxes' is the wrong reading that does). -> True when the item stays in the box."""
+    if not beltable or box >= 16 or box in occupied:
+        return False
+    if ctl == "numboxes" and box >= numboxes:
+        return False
+    return True

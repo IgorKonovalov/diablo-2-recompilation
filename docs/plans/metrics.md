@@ -568,6 +568,7 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-11-04 | `lane/r60c` review | 0060 P1.3 | architect-review | 257 777 | 43 | 15 | — | accept with fixes (10) | overclaim 2, misread 2, omission 5, stale cross-reference 1 |
 | 2026-11-04 | `lane/r68` | 0057, 0054, 0058 (finding notes) | reverser-static | 70 686 | 17 | 2 | — (no Ghidra, no harness) | accept with fixes (Tier B check) | 1: omission 1 |
 | 2026-11-04 | `lane/r68` check | 0057, 0054, 0058 (finding notes) | architect-check | 77 635 | 16 | 1 | — | accept with fixes (1) | omission 1 |
+| 2026-11-04 | `lane/p60` | 0060 | reverser-harness | 246 147 | 90 | 30 | 2 | accept with fixes (Tier B check) | 6: overclaim 3, misread 1, omission 1, stale cross-reference 1 |
 | 2026-11-04 | `lane/snd` | 0062 (sound pair) | reverser-harness | 86 483 | 34 | 9 | slot 2 | accept with fixes (Tier B check) | 5: stale cross-reference 4, overclaim 1 |
 | 2026-11-04 | `lane/snd` check | 0062 (sound pair) | architect-check | 72 209 | 14 | 2 | — | accept with fixes (5) | stale cross-reference 4, overclaim 1 |
 | 2026-11-04 | `lane/a69` | 0060 P1.1-1.3 / 0054 P1.3 readers (4 entries) | archivist | 194 494 | 59 | 8 | — | accept with fixes (Tier A, 17) | 17: misread 5, overclaim 3, omission 4, under-claim 2, stale cross-reference 3 |
@@ -578,6 +579,7 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-11-04 | `lane/p52b` | 0052 P2 (second run, kept batch) | reverser-harness | 323 802 | 254 | 163 | slot 2, no Ghidra; 23 kept sessions (21 + 2 built-state P1b-2), 46 launches in all; first-boundary 0 mismatches over 6 272 compared, resume model 112 open mismatches, states 10-12 live, G4 0 helper hits, P1b-2 built state, P1b-1 not done (route attempt failed) | accept with fixes (Tier A, 11) | overclaim 3, misread 3, miscount 1, omission 2, wrong anchor 1, tool not kept 1 |
 | 2026-11-04 | `lane/p52b` review | 0052 P2 (second run) | architect-review | 311 036 | 78 | 24 | — | accept with fixes (11) | overclaim 3, misread 3, omission 2, miscount 1, wrong anchor 1, tool not kept 1 |
 | 2026-11-04 | lane/p52c | 0052 | reverser-static | 262 000 | 0 | 0 | — | — | — |
+| 2026-11-04 | `lane/p60` check | 0060 P2 (first run) | architect-check | 82 284 | 16 | 2 | — | accept with fixes (6) | overclaim 3, misread 1, omission 1, stale cross-reference 1 |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not
