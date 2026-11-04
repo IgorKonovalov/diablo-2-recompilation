@@ -374,6 +374,7 @@ E6. Place(item, loc):
 
 Step notes:
 
+- E6. The belt search and the spot search are [items/inventory §§ F, B](../items/inventory.md#f-belts), which also give their other callers.
 - E1–E5. **Order of draws.** Items are created in slot order, the copies of a slot in copy order; each copy takes
   exactly two game-seed steps (unit seed, then start seed), and everything else it draws is on its own unit seed and
   item seed. Each of the 269 item copies of the run reproduced through the item model from the game seed. [C]

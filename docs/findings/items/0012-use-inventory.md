@@ -265,7 +265,7 @@ first is carried and spread over the longer window. (0x005BE678–0x005BE6CF) *N
 - [C] (ADR-0021) **Blood Golem.** For a positive life amount on a player: pet type 3, class `0x122`; the row's MonStats
   `+0x170` names a Skills row, whose `+0x15C` is a percent. `share = v · p / 100` truncated goes to `GolemHeal`, up to the
   golem's maximum, and the player keeps `v − returned` (after, `[I]`). No such pet or another class returns `v`.
-  (family `golem` 300, and 27 + 11 cases of `stat3`, `stat5`, run:2026-11-03-use-emu, fn:sub_005BE3F0_ItemUsePotion@0x005BE3F0) [I] `v = 0` sets the golem to full; no use entry sends it.
+  (family `golem` 300, and 27 + 11 cases of `stat3`, `stat5`, run:2026-11-03-use-emu, fn:sub_005BE3F0_ItemUsePotion@0x005BE3F0) [I] `v = 0` sets the golem to full; no use entry sends it. *Corrected 2026-11-04 (`lane/s60` review): kind 5 calls the share before its cap with no `v > 0` test (`0x005BEC10`), so only a maximum of 0 would send it, no stock case. Kinds 3 and 5 return 1 when a slot applied, else 0 (`0x005BE73D`, `0x005BED90`), which decides C2's clear and the caller's removal.*
 
 ## 7. What the columns gate
 

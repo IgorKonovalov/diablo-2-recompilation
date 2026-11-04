@@ -5,7 +5,7 @@ target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, data/excel]
 consumed_by: [objects, items/vendors, items/cube, items/sockets-runewords, items/quest-drops, save/d2s]
 tags: {C: 2, I: 7, L: 0}
-updated: 2026-10-16
+updated: 2026-11-04
 ---
 
 # Items: how a drop becomes items
@@ -31,6 +31,8 @@ which order, which seed each stage steps, and what each stage passes on.
 | [vendors.md](vendors.md) | vendor stock and gambling: the store seed, the candidate lists, when stock is built, reset and marked stale, the stock build and the stock upgrade, the gamble window (level, base, upgrade, quality) and the gamble list order, the hand-off to item creation | draft (plan 0031) |
 | [cube.md](cube.md) | the Horadric Cube: the first-fit `CubeMain` row match, the input claims, the output ilvl, the output kinds and their creation records, the crafted builder (quality 8), the creation-side roll of quality-0 records, the copies' seeds, the cow portal and the Pandemonium stubs | draft (plan 0030) |
 | [economy.md](economy.md) | the item economy: the price core (buy, sell, repair) and the gamble price, buy, sell and repair, gold payment and caps, the gold pile amount, the death loss, hire, resurrect and identify costs, durability, quantity and charge wear, replenish | reviewed (plan 0043, 2026-10-19) |
+| [use.md](use.md) | item use: the request gate and the drain's order, the use requests, the dispatch by use kind, consumption, potions and their two draws, rejuvenation, identify, the cube, keys | reviewed (plan 0060) |
+| [inventory.md](inventory.md) | where an item goes: pages and rows, the placement search, the stash, belts, stacks, the cursor, pickup, the ground drop's cell, a ground item's expiry and sweep | reviewed (plan 0060) |
 | [quest-drops.md](quest-drops.md) | quest state in item creation: the quest TC switch (B6) and the killer, the quest seed and the scripted drops on it (Andariel's gems, the Hellforge, the Cow King, Baal), the quest items and their duplicate checks, Charsi's imbue, Larzuk's socket, Anya's personalization and the given items, the `boss` level exception | reviewed (plan 0032, 2026-10-16) |
 
 ## Data flow
@@ -105,6 +107,8 @@ flowchart TD
   drawing only the game-wide quest seed for their choices, and the NPC services build a new rare (imbue) or a copy
   (socket, personalize).
 - `objects` owns the callers of the chest drop and the forced quality they pass.
+- [inventory.md](inventory.md) and [use.md](use.md) (plan 0060) take a finished item: where a drop lands and how long it lives,
+  and what the player's requests then do with it.
 
 ## Open questions
 

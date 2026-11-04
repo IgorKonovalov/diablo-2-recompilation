@@ -5,7 +5,7 @@ target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [stats/overview, items/properties, items/uniques-sets, player/creation, monsters/stats, data/calc]
 consumed_by: [stats/states, combat/overview, player/creation, monsters/stats, data/calc]
 tags: {C: 65, I: 42, L: 4}
-updated: 2026-10-20
+updated: 2026-11-04
 ---
 
 # Stat aggregation: the list tree, the cache, the `op` terms, the maxima, items and set bonuses
@@ -421,7 +421,7 @@ Step notes:
 - H4. [I] Step (2) runs once, so an unlink that breaks another item's requirement (strength from another item) is
   caught at the next refresh, not in this one. The refresh runs after equip, place, break, repair and identify.
   (fn:sub_0055DBC0_EquipReqRefresh@0x0055DBC0, fn:sub_0055DB00_ItemUsableBy@0x0055DB00,
-  fn:ITEMS_IsActiveCharm@0x0062FF70)
+  fn:ITEMS_IsActiveCharm@0x0062FF70; the placement that attaches a charm: [items/inventory § C](../items/inventory.md#c-placing-on-a-page))
 - H4. [I] **The refresh also runs every 136 frames** with no player action: the commonest gap between two refreshes
   in every session of the run, on every character. What queues it was not read. (fn:sub_0055DBC0_EquipReqRefresh@0x0055DBC0,
   run:2026-10-17-stats)

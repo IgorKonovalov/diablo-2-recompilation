@@ -571,7 +571,7 @@ G4. PlayerGiveGold(n): add min(n, cap − gold); drop the rest as piles (DropGol
 - G3. [C] 97 adds below the caps reproduce. No add went over a cap in the run, so the zero-on-overflow write is read
   from the code only. (fn:sub_0053FF00_UnitAddGoldStat@0x0053FF00, run:2026-10-17-economy)
 - G4. [I] In a party with another member in the level, a pickup goes through `PartyGoldShare` (a split by the party
-  count). (fn:sub_00540900_PartyGoldShare@0x00540900)
+  count). Where gold stands in a pickup's order: [items/inventory § I](../items/inventory.md#i-pickup). (fn:sub_00540900_PartyGoldShare@0x00540900)
 
 **The pile amount.** A gold pile's amount is fixed when the gold item is created, then a monster drop is scaled:
 
