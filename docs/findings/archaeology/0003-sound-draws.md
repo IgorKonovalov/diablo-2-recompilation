@@ -164,6 +164,13 @@ Compare the three logs' `gs` sequences (`tools/sound_pair.py stream`, then the v
 - **Device word 0 in B:** this machine's wine gives no device under the harness, and the 20 logs need the owner's word on how they were played.
 - The client seed should differ between A and B if `SoundEnvTick` ran; if it doesn't, the first bullet needs a second look.
 
+## 7. Result of the § 6 session (2026-11-04, run:2026-11-04-sound-pair)
+
+- [C] **The game seed's stream is identical with and without sound for the walk tested**: seed 12345, `smpsor.d2s` on Normal, the Harrogath pop steps, slot 2. 147 logged `gs` values and every seed field of every logged event line equal in order across `-ns` (A1, A2) and `--sound` (B); 14 level creations and the same room activation order. Scope: one act, one scripted walk of about 60 s. (run:2026-11-04-sound-pair, `workspace/logs/snd/`)
+- [C] **The two `-ns` runs agree** on all of it. The § 6 branch "A1 and A2 differ" does not apply.
+- [C] **The device opened under `--sound`** on this harness: `0x00881768` = `0x00DC519C`, `0x007C545C` and `0x007C8C78` = 1 at the 2000th hit of `0x00482C20`; all 0 under `-ns`. So the harness's `--sound` runs are sound-on in effect (the 20 owner-played logs' own device state is still unrecorded; this shows the option works here).
+- [I] **The client seed control does not separate sound.** `[0x007A6A70]+0x20` at that frame: A1 `d20415c0:5de8b65f`, A2 `ba498698:4b4d7291`, B `34310a76:0fc85e31`. It differs A vs B as the finding predicted, but it also differs between the two `-ns` runs, so that single sample can't be tied to the sound draws. The first Answer bullet stays `[I]`.
+
 ## Data touched
 
 `tbl:` none read by this lane. `sounds.txt` and `soundenviron.txt` are read by the game through `sub_00481950_SoundTablesLoad`. `struct:` client unit `+0x20` (seed), config `+0x220`.
@@ -176,7 +183,8 @@ Compare the three logs' `gs` sequences (`tools/sound_pair.py stream`, then the v
 
 ## Open questions
 
-1. The game seed under the same inputs, with sound and with `-ns`: § 6.
-2. Whether the device opened in the 20 logs: § 6.
+1. Answered for one walk, § 7. Other acts, inputs with NPC speech or combat sounds, and longer sessions are not tested.
+2. Whether the device opened in the 20 logs: not recorded; § 7 shows `--sound` opens it on this harness.
+3. Why the client player's seed differs between two `-ns` runs at the same frame count (the initial value was not read).
 3. The 75 core indirect calls: resolving the object tables would remove them from § 4; low value, since they sit after the device load and the callees would have to name a server seed.
 4. Whether the NPC wait changes a kept run's order: only with an owner who clicks through speech; `0x004A0770` read to its first gate only.

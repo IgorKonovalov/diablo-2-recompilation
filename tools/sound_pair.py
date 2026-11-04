@@ -4,6 +4,7 @@ chain makes them independent of the player's inputs (python3 -I).
 
     sound_pair.py <sound.log> <ns.log> [<sound.log> <ns.log> ...]
     sound_pair.py stream <log> [<log> ...]         # the logged game seed values ("gs"), walked as one stream
+    sound_pair.py seeds <a.log> <b.log>            # every event line's tag and seed fields, in order; first difference
     sound_pair.py mutate <log> <out> <tag> <field> # flip one bit of the first <field> seed on a <tag> line (the control)
 
 For each pair, per (level id, client flag): the LC0 create seed, the LC0 base (levelSeedBase) and the sequence of RC room
@@ -116,7 +117,24 @@ def mutate(src, out, tag, field):
     print("mutated %s %s: %s" % (tag, field, done))
 
 
+def seeds(path):
+    h8 = re.compile(r"[0-9a-f]{8}:[0-9a-f]{8}")
+    out = []
+    with open(path, "rb") as h:
+        for raw in h:
+            if raw.startswith((b"#", b"SNDW", b"0x", b"[", b"\n", b"Program", b"The ")):
+                continue
+            s = raw.decode("latin1")
+            out.append((s.split(" ", 1)[0], tuple(h8.findall(s))))
+    return out
+
+
 def main(argv):
+    if argv[0] == "seeds":
+        a, b = seeds(argv[1]), seeds(argv[2])
+        d = next((i for i, (x, y) in enumerate(zip(a, b)) if x != y), None)
+        print("lines %d %d; first differing line: %s; equal: %s" % (len(a), len(b), d, a == b))
+        return
     if argv[0] == "stream":
         for p in argv[1:]:
             n, broken, hist = stream(p)
