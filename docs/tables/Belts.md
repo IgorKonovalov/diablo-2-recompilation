@@ -31,7 +31,7 @@ scope). Research-map row: `items/use` (plan 0060).
 - `[C]` (ADR-0015) **The armor `belt` column indexes this table: `belts`' row is the worn belt's Items `+0x130`, or 2
   with no belt worn, in the first set; the count is the record's `+0x004`.** The belt search `BeltFreeSlot` passes the
   worn item's `+0x130` to `BeltsRecord` with set 0 at `0x0063C6A3`, and no worn belt gives row 2 (`0x0063C69B`). `[I]` The
-  belt overflow `0x0056091B` (a smaller belt: each item at or above the new `numboxes` is removed and placed again) does
+  belt overflow `0x0056091B` (a smaller belt: each item at or above the new `numboxes` is removed, set to page 0 and placed by the search, and dropped by the cell search `0x00555DA0` if that fails) does
   the same, with row 2 at `0x0056093B`: that function is a reading, not one of the emulated families. The
   getter is `sub_00621ED0_ItemBeltByte`. ([items/0013 §§ Answer, 4, 6](../findings/items/0013-grids-belts-stacks.md#4-the-rows-the-tables-open-questions),
   fn:sub_0063C600_BeltFreeSlot@0x0063C600, fn:sub_00660CB0_BeltsRecord@0x00660CB0, fn:sub_00621ED0_ItemBeltByte@0x00621ED0,
@@ -76,7 +76,7 @@ Box indices 0..`numboxes`−1 are the "boxes 0..3" the belt search of
   6 direct calls) is called only from `0x4xxxxx`, client code by the project's convention; `0x00660C70` has 0 direct
   calls, and table pointers to it are unfollowed, so this is a scope note over direct calls, not a full cross-reference.
   ([items/0013 § 4](../findings/items/0013-grids-belts-stacks.md#4-the-rows-the-tables-open-questions), `static.txt`)
-- `[C]` (ADR-0015) **The belt search reads the box count only.** `BeltFreeSlot`: only a beltable 1 x 1 item; for each
+- `[C]` (ADR-0015) **The belt search takes the box count from the record (`+0x004`).** `BeltFreeSlot`: only a beltable 1 x 1 item; for each
   bottom box 0..3 that holds an item of the same class or the same list (`hp1..5`, `mp1..5`, `rvl`/`rvs`), the first free box
   up that column (`box, box + 4, ...` below `numboxes`); then, with `autobelt` ([Misc](Misc.md#belt-and-stack-columns)),
   the first free box of 0..3; else it returns 0. Controls: `walk1` (a column walk by 1) fails 192, `nogroup` 126, `noauto`

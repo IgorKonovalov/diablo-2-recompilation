@@ -60,8 +60,8 @@ table at `0x00744544` ([items/0013 § Answer](../findings/items/0013-grids-belts
 - `[I]` **Rows 13 and 29 (Hireling) are never returned**: a hireling is type 1, row 5. The literal `0x0D` at `0x00483705` is
   client code. `[I]` Types `0x152`, `0x153` for rows 10 and 11 are object classes; no path reaching them was read, and
   `inventory`'s page names are the only reason to give them those names (items/0013 § 4).
-- `[C]` (ADR-0015) **`gridX` and `gridY` are read as bytes**: with the two bytes declared `0x7F`, a wider reading fails 2 465 of
-  4 000 search cases, and the bound test too (`put`). (fn:sub_0063ADD0_InvPageGet@0x0063ADD0, fn:sub_0063AFD0_InvGridPut@0x0063AFD0)
+- `[C]` (ADR-0015) **`gridX` and `gridY` are read as bytes**: with the two bytes after them (`+0x12`, `+0x13`) declared `0x7F`, the control `wide` (a wider reading) fails 2 465 of
+  4 000 `search` cases, and 397 of 800 `put` cases at the bound test (`put` ends at `InvItemRemove`, so that half is `[C]` (ADR-0021)). (fn:sub_0063ADD0_InvPageGet@0x0063ADD0, fn:sub_0063AFD0_InvGridPut@0x0063AFD0)
 
 ## Columns
 

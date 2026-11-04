@@ -16,10 +16,9 @@ the findings.** No external document was read for this format and nothing is reg
   is that copy (`merged-manifest.tsv`, archive `d2data`); no other archive of the 12 holds a file of the name.
   [inventory.md](../inventory.md) does not list archive members (its *MPQ contents* section), so the line the request
   asked for is the merged manifest's.
-- `[C]` (data) The pinned `Game.exe` holds the string `%s\expfield.d2` at `0x006EED4C` (the one occurrence of `expfield` in the image, case-insensitive), and the loader that builds the
-  path from it is `sub_0066A2B0_FieldLoad` (`0x0066A2B0`), with the matching free `sub_0066A420_FieldFree`
-  (items/0014 § Functions, `I` in `re/symbols.csv`). Whether another function opens the file was not followed.
-  (fn:sub_0066A2B0_FieldLoad@0x0066A2B0, fn:sub_0066A420_FieldFree@0x0066A420)
+- `[C]` (data) The pinned `Game.exe` holds the string `%s\expfield.d2` at `0x006EED4C` (the one occurrence of `expfield` in the image, case-insensitive).
+- `[I]` `sub_0066A2B0_FieldLoad` (`0x0066A2B0`) takes the file's bytes in memory; it does not build the path. The function at `0x0066A700` (no symbol row yet, [route](../backlog/2026-11-04-architect-reverser-a69-review-finding-notes.md)) formats the path from that string (`0x0066A71F`), reads the file through `FILE_LoadWhole` (`0x00517079`) and passes the buffer to `FieldLoad` (`0x0066A753`, its one direct call). The matching free is `sub_0066A420_FieldFree` (items/0014 § Functions, `I` in `re/symbols.csv`).
+  (fn:sub_0066A2B0_FieldLoad@0x0066A2B0, fn:sub_0066A420_FieldFree@0x0066A420, fn:FILE_LoadWhole@0x00517079)
 
 ## Layout
 
@@ -27,14 +26,14 @@ All little-endian.
 
 | Offset | Size | Type | Name | Meaning | Tag |
 |---:|---:|---|---|---|---|
-| `0x00` | 2 | u16 | `unk` | skipped by the loader as the findings read it; **266** (`0x010A`) in the shipped file | `[I]` the skip (items/0014 § 1); `[C]` (data) the value |
+| `0x00` | 2 | u16 | `unk` | never read by `FieldLoad`, whose first read is `+0x02` (`0x0066A2BC`), so the u16 is only items/0014's way of writing the two bytes; **266** (`0x010A`) as a u16 in the shipped file | `[I]` the skip; `[C]` (data) the bytes |
 | `0x02` | 4 | u32 | `rows` | 256 | `[I]` as the loader's field, `[C]` (data) the value |
 | `0x06` | 4 | u32 | `columns` | 256 | `[I]` as the loader's field, `[C]` (data) the value |
 | `0x0A` | `rows` x `columns` | u8[] | `cells` | one direction byte per cell, row-major: cell `(x, y)` is at `0x0A + y * columns + x` | `[C]` (ADR-0015) the 256-wide row-major index (items/0014 § 1, family `line`) |
 
 - `[C]` (data, `expfield.py check`) The file is exactly 10 + 256 x 256 bytes, so `rows x columns` fills it to the byte.
-  Both counts are 256, so which of the two words is the row count cannot be told from this file (`[I]`: the order is the
-  request's reading of the loader).
+  Both counts are 256, so which of the two words is the row count cannot be told from this file. `[I]` The loader tells them apart:
+  the second word (`0x0066A2C5`) is the stride, multiplying each `dy` before `dx` is added (`0x0066A32B`), so it is the column count; items/0014 § Data touched gives the same order.
 - `[C]` (data) **Byte values.** 0 to 7 and one 8; none above 8. Counts per value (`0`..`7`, `8`): 8 128, 8 192, 8 256,
   8 256, 8 256, 8 191, 8 128, 8 128, 1. The single 8 is at cell `(128, 128)`, the centre.
 - `[C]` (ADR-0015) **Use.** Byte `d` in 0..7 steps by `(dx[d], dy[d])`; 8 is the centre, where a walk stops. The search's
@@ -66,4 +65,4 @@ Output kept in `workspace/logs/a69/expfield-check.txt` (manifest `manifest.sha25
 
 - `[L]` What the two bytes at `0x00` are for. The loader reads past them (items/0014 § Data touched: "a u16 of 266 by
   this copy"); no reader of the value was named.
-- `[L]` Which function opens the file besides `0x0066A2B0` and whether the client reads it: not followed.
+- `[L]` Who calls `0x0066A700`, and whether anything else opens the file: not followed.

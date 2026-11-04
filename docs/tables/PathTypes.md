@@ -43,7 +43,7 @@ script ([plan 0054](../plans/0054-path-search.md) Phase 0; readers: `path/search
   `sub_00649760_PathPlanStraight` before any other test (emulation, families `plan` and `plannoop`, 1 200 cases, 0 mismatches;
   0x006499AE), so no table call is made for them. `[C]` Type 4 is `PathPlanToUnit`'s one point (47 cases) and types 10 and 14 reach
   `PathPlanRandomWalk` and `PathPlanSpiral` (100 cases) ([path/0001 § Answer](../findings/path/0001-pathplan-register.md#answer-summary),
-  fn:sub_00649760_PathPlanStraight@0x00649760); the modes' own bodies are P1.3's. The earlier reading is
+  fn:sub_00649760_PathPlanStraight@0x00649760); the modes' own bodies are [path/0003 §§ 8, 9](../findings/path/0003-short-planners.md). The earlier reading is
   [ai/0001 § 8](../findings/ai/0001-machinery.md#8-the-path-request), [drlg/0009 § 11.1](../findings/drlg/0009-room-lifecycle.md).
 - `[C]` 14 slots hold a planner and they name **10 distinct addresses** (`path_planner_slots_set=14`, `path_planner_distinct=10`):
   `0x00679C80` for types 2, 5, 6 and 13 (flags 0, 0, 0, `0x100`), `0x0067AD00` for types 0 and 16 (flags `0x21900`, 0).
@@ -95,7 +95,7 @@ calls, 34 server and 34 client, 51 direct `PathSetType` calls; the client's are 
   (§ [Stock rows](#stock-rows-that-reach-a-type)). ([drlg/0009 § 11.1](../findings/drlg/0009-room-lifecycle.md))
 
 **The flags** (path/0001 § 8 *The flags' uses*: memory-immediate tests and stores on `[reg+0x34]` in the path module, 51 instructions over 18 bits;
-register-held tests are not in that scan; the planners' own tests are P1.3's):
+register-held tests are not in that scan; the planners' own tests are path/0003's, in the rows below):
 
 | Bit | What `PathPlan` / `PathSetType` do with it | Tag |
 |---|---|---|
@@ -108,8 +108,8 @@ register-held tests are not in that scan; the planners' own tests are P1.3's):
 | `0x4000`, `0x10000` | suppress the type and the speed save of `PathSetType` respectively (a test of the path's existing flags) | `[C]` |
 | `0x20`, bit 0, `0x200` | the moving flag, the points-outside-room flag, the facing turn by 32 (path/0001 § 9). Among the planners path/0003 covers, **`0x200` is the only flag read**, in `PathAimNextPoint` (through `PathFirstLine`, `0x00679A60`) | `[I]` |
 | `0x100` | no reader in that scan beyond the masks that replace them (`PATH_DynamicCreate`, `PathSetType`); **no planner of [path/0003](../findings/path/0003-short-planners.md) tests it**, so types 2 and 13 (flags `0` and `0x100`) are the same plan and the difference is `PathReplan`'s (path/0001 § 9) | `[I]` (0x006503AF, data:g_PathTypeFlags@0x006EB690) |
-| `0x400` | no reader in that scan beyond the masks that replace them; path/0003 does not name it, so a planner's test is not stated | `[L]` |
-| `0x20000` | path/0001 § 8 does not name this bit among the scan's uses; `PathSetType`'s bits 8 to 18 mask replaces it; path/0003 does not name it, so a planner's test is not stated | `[L]` |
+| `0x400` | no reader in that scan beyond the masks that replace them; path/0003 does not name the bit, but its "the only flag read is `0x200`" covers it for the planners it reads. What the bit does and any other reader: unread | `[I]` those planners; `[L]` the rest |
+| `0x20000` | path/0001 § 8 does not name this bit among the scan's uses; `PathSetType`'s bits 8 to 18 mask replaces it; path/0003's "the only flag read is `0x200`" covers it for the planners it reads, without naming it. What the bit does and any other reader: unread | `[I]` those planners; `[L]` the rest |
 
 - `[I]` Types 8, 9 and 11 (words with both `0x2000` and `0x8000`) are the temporary ones a `PathMoveReset` undoes (path/0001 § 8).
 - `[C]` (the planners run to their return, family `client`, 60 cases each, run:2026-11-03-path-emu-3) **The client-only slots** ([path/0003 § 5](../findings/path/0003-short-planners.md#5-pathplanonepoint-type-9-and-pathplantype3-type11-type12)):
@@ -125,7 +125,7 @@ register-held tests are not in that scan; the planners' own tests are P1.3's):
 - `[I]` **Type 10 (random walk) and the seed** ([path/0003 §§ 8, 10](../findings/path/0003-short-planners.md#10-missiles-h1-and-the-other-callback)):
   `PathPlanRandomWalk` draws `+0x91 >> 1` times on the seed passed and returns `(+0x91 >> 1) + 1` points (39 at 77), `[C]`
   by emulation (family `rwalk`, 300 cases) and by the game's own logs: **654 of 654 creations** of three runs match the draws
-  predicted from the Init and the logged `Range`.
+  predicted from the Init and the logged range.
 - `[I]` **The object record bytes the target refresh reads are `objects.bin` columns.** For a unit-type-2 (object) target the refresh goes through the object
   step when the record's `+0x13A` is set, and the step moves `y` (record `+0x13C` is 1) or `x` by 2 subtiles toward the start (path/0001 § 3, `[C]`).
   The record is the `objects.bin` record: the readers 0x00621A70 and 0x00621AC0 read `unit +0x14 -> +0x00 -> +0x13A / +0x13C`, and `SUnitCreate` stores
@@ -134,7 +134,7 @@ register-held tests are not in that scan; the planners' own tests are P1.3's):
 - `[C]` **Path `+0x92` and `+0x91` under the search planner** (types 0 and 16; [path/0002 § 6](../findings/path/0002-search.md), emulation to the return,
   run:2026-11-03-path-emu-2, 2 116 cases, 0 mismatches). `+0x92` is `ctx.b1C`, the search's last bound: type 0 runs the bound from `h0` up in steps of 5 while below
   `max(h0, b1C)`, type 16 from `h0 + h0 / 2` likewise, until a walk finds a node or the 900-node store fills (`b1C` at or below `h0` leaves type 0 one pass). `+0x91` is `ctx.limit` (path/0001 § 1): neither of the
-  two planners reads it (no traced read in any case; `traced=0`). Scope: these two planners only; the other planners' reads are P1.3's, and what a get-hit request's
+  two planners reads it (no traced read in any case; `traced=0`). Scope: these two planners only; the other planners' reads are [path/0003](../findings/path/0003-short-planners.md) (the random walk's `+0x91 >> 1`), and what a get-hit request's
   `b1C` is on the server stays an open question of path/0002 (`[L]`).
 
 ## Columns a request reads
@@ -185,5 +185,5 @@ The stock Skills rows whose start or do number a finding ties to one type (scrip
 
 ## Open questions
 
-- Answered by [path/0003](../findings/path/0003-short-planners.md) for its planners: the flag `0x100` is tested by none and `0x200` is the only flag read (in `PathAimNextPoint`), `[I]`; `+0x98` is read by greedy's branch and rewritten by type 12; the three slots are named. `[L]` The flags `0x400` and `0x20000`: path/0003 does not name them.
+- Answered by [path/0003](../findings/path/0003-short-planners.md) for its planners: the flag `0x100` is tested by none and `0x200` is the only flag read (in `PathAimNextPoint`), `[I]`; `+0x98` is read by greedy's branch and rewritten by type 12; the three slots are named. `[L]` The flags `0x400` and `0x20000`: what they do, and any reader outside those planners.
 - `[L]` The Missiles rows that reach the four missile callbacks (0x005C9290, 0x005CD110, 0x005D40F0, 0x005AC040): P1.1's request register.
