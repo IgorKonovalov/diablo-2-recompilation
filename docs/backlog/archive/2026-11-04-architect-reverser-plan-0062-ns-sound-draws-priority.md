@@ -5,7 +5,7 @@ date: 2026-11-04
 status: done
 context:
   - ../../findings/archaeology/0001-switches.md
-  - ../../plans/0062-debug-and-cut-content.md
+  - ../../plans/done/0062-debug-and-cut-content.md
 resolution: "Answered at [I], with [C] log checks: -ns changes draws only on the client player's seed [0x007A6A70]+0x20; no server seed on the draw-site list; no rerun ordered now, none cleared; the paired session decides. The same-input game-seed session is filed for the next harness run. [archaeology/0003](../../findings/archaeology/0003-sound-draws.md)"
 ---
 

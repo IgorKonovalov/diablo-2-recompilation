@@ -391,7 +391,7 @@ _(lanes append dated entries as phases land)_
   BloodLord's last new boundary came at decision 52 of 55, in its one log. (Scarab's count mixes logger revisions, so it is no test.) The speed therefore cost little evidence in
   itself, but **the efficiency target is blind to it**: `a1-cloister` (60 decisions, 30 s) and `a1-andariel` (518, 636 s) each count as
   one kept case, and 39 % of all decisions are one Hireable outcome. The `[C]` is correctly scoped to first boundaries and
-  stands. Lane speed should be read beside separation, not alone: ADR-0028 item 7, [the checker's line](../../backlog/2026-11-03-architect-reverser-plan-0056-p4-separation-line-in-tools-ai.md),
+  stands. Lane speed should be read beside separation, not alone: ADR-0028 item 7, [the checker's line](../../backlog/archive/2026-11-03-architect-reverser-plan-0056-p4-separation-line-in-tools-ai.md),
   and the resume note of 0052 (a resumable model, state-control windows) are the remedy.
 
   **Cap settled: 8 games or 40 minutes.** Peaks of the kept scopes: 269.8 MB (8 games, 19.9 min), 270.3 (8, 26.2 min), 277.4 (7, 12.7 min), 351.4 (5,

@@ -2,9 +2,9 @@
 from: reverser
 to: archivist
 date: 2026-11-03
-status: open
+status: done
 context: []
-resolution: ""
+resolution: "Misc § Item-use columns takes items/0012 at the finding's tags: kinds 1, 4, 5, 7, 8, the calc1 total and its draws, rvs/rvl, elx, useable, belt and the warning columns, the group clear in kinds 6 and 9 [Misc](../../tables/Misc.md#item-use-columns-plan-0060-phase-0)"
 ---
 
 Link docs/findings/items/0012-use-inventory.md from Misc § Item-use columns and move the meanings: pSpell kinds 1, 4, 7, 8 read (§§ 2, 6); calc1 of hp1..mp5 is a total, scaled by class, divided by len (§ 4), so the 'added at each tick' sentence wants correcting; rvs/rvl percent of the maximum (§ 4); elx reads neither stat1 nor calc1 (§ 6); useable required by packets 0x20 and 0x26 (§ 7); the +0x136 read at 0x0059FD01 is a Missiles record, not this table; belt and the warnings gate no server use (§ 7); and the sentence "The potions run the group clear before they apply" (Misc § Timed states, citing stats/states B3): only kinds 6 and 9 do, the healing and mana potions (kind 3) do not (§ 9).

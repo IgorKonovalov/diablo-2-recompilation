@@ -844,6 +844,12 @@
   decisions, `a2-halls` 522) check with 0 mismatches as the shared-process cases do. Waypoint clicks: 9 retries in the
   first and third batches, 3 cases without a level change.
 - **Deviation, § Fresh process rule 5** (recorded by plan 0056 Phase 4, architect; recount `tools/pilot0056_recount.py`, `workspace/logs/p56/phase4-recount.txt`). Launch 5202 ran `a5-glacial`, `a1-cloister`, `a1-catacombs` and `a3-durance` after `a4-cotd` and `a5-crystal` had stayed in the town: the first batch's runner had no stage check and reported them kept. The four stay, since the checker reads no carried state; without them, 27 logs, 13 355 decisions, 11 472 compared, 0 mismatches, every tier AI still at least 50 (Andariel 60, BloodLord 55, Wraith 68). Batch wall sums to 92.3 min, 3.0 per kept case.
+- **Launch 5202 and rule 5** (added by `lane/p52b`, 2026-11-03): harness-play.md § Fresh process rule 5 (a stage not reached is a failure; the rest of
+  the batch starts in a fresh process) was not applied in launch 5202. Its marks (`2026-11-03-ai-s2-5202-L2.marks.tsv`) list `a3-travincal`,
+  `a4-cotd`, `a5-crystal`, `a5-glacial`, `a1-cloister`, `a1-catacombs`, `a3-durance` in one process; `a4-cotd` and `a5-crystal` stayed in the town
+  (kept as `dev-stayed-in-town-*`) and the next four cases ran in the same process, one batch's opt-in notwithstanding. The checker reads no
+  carried state (rule 2: it models no process state) and the two fresh repeats (`a1-jail`, `a2-halls`) check with 0 mismatches as the shared cases
+  do, so the four cases stay in the record's counts; this is the lapse the plan 0056 Phase 4 text of rule 5 names. (run:2026-11-03-ai)
 - **Not done in this run** (named short): the 331 monster gaps of the H1 oracle replacement (the kept skills logs of
   run:2026-10-25-skills and run:2026-10-27-skills hold 0 `AID` or `AIB` lines, so none can close from them; the re-walk
   needs a session with both loggers); H3's Raven calls; the Phase 1b cases P1b-1 (Duriel, 300 melee decisions) and P1b-2
@@ -854,6 +860,82 @@
   first-callee maps) up to their first boundary, nothing after it; the rest are `[I]` as before. See
   [ai/0015](0015-phase2-first-run.md). Manifests: `workspace/logs/ai/manifest-run-2026-11-03-ai.sha256` (72 lines,
   `sha256sum -c` passes from `workspace/logs/ai`), `manifest-dev.sha256` (44 lines).
+
+
+## run:2026-11-03-ai-2
+
+- **Question:** (plan 0052 Phase 2, second lane run `lane/p52b`, **checkpoint**) The first run's 0 mismatches is a weak separator (ten tier AIs with one
+  predicted first boundary, a claim that ends at the first boundary): what does each tier AI's comparison separate, does a wrong map fail on the
+  kept logs, and can a decision be compared past its first boundary?
+- **Setup:** slot 2 (display `:9`, `workspace/wineprefix-2`), game 1.14d expansion, Normal, character `CombatSor` (as run:2026-11-03-ai), one game process
+  per case from the coordinator's message on (plan 0056 Phase 4: `tools/ai_sessions.py run --fresh`; launches r4a and r4b ran before it, r4c's cases are
+  marked `fresh:`). Tools: `tools/ai.py` (`c0fd95ec`: `MIX`, `MIXSUM`, `--controls`; later `51c4497f`), `tools/gdb/ai.py` rev 4 (`3599e2ac`: AIR lines,
+  `bmax 48`; `6f22c961`: no nested boundary lines, first used by the next launch), `tools/gdb/ai-retsites.txt` and `tools/ai_retsites.py`, `tools/ai_resume.py`
+  (`3599e2ac`, decode fixes up to `51c4497f`), `tools/test_ai.py` (18) and `tools/test_ai_resume.py` (14) no-game tests.
+- **Kept sessions: none.** The kept output of this checkpoint is the checker over the 31 kept logs of run:2026-11-03-ai: `check-mix-2026-11-03-ai.txt`
+  (`python3 -I tools/ai.py check --controls <the 31 case logs> --out check-mix-2026-11-03-ai.txt`, run from `workspace/logs/ai` with the repo's tools by absolute
+  path; manifest `manifest-run-2026-11-03-ai-2.sha256`, 1 line, passes from `workspace/logs/ai`).
+- **Development launches** (listed separately, `manifest-dev-2.sha256`, 40 lines, passes from `workspace/logs/ai`): r4a (2 launches, seed 5601: a Jail 1
+  case that stayed in the town twice, rev 4's first logger: AIR lines, no cap fix), r4b (1 launch, seed 5201, Jail 1 kept as dev: 194 decisions; the
+  logger that cleared pending returns at 600 non-think calls, 2 289 AIR lines for 2 323 AIB), r4c (4 launches, seeds 5201–5204, `--fresh`: Jail 1 first
+  try in the town, Jail 1 rerun, Halls of the Dead 2 in the town (not rerun: the batch's rerun was spent), Catacombs 2–4 with Andariel: 4 logs, 1 313 decisions).
+  Waypoint clicks left the case in the town on the first try in 4 of the 7 launches.
+- **Result, the checker** (`check-mix-2026-11-03-ai.txt`, 14 645 decisions, 0 mismatches as ai/0015 states them): `MIXSUM tier_ais_with_one_outcome=10
+  rows=6,28,29,30,35,37,61,64,67,89 tier_ais_with_more=8`; per tier AI (decisions, distinct predicted first boundaries): Skeleton 357 / 4, Fallen 1 393 / 1,
+  Wraith 70 / 3, FallenShaman 363 / 2, Scarab 180 / 5, Mummy 168 / 5, GreaterMummy 71 / 3, Vampire 279 / 1, BatDemon think 110 / 1 (alt 5 / 1), Fetish 130 / 1,
+  Andariel 64 / 5, CorruptArcher 95 / 1, SkeletonBow 278 / 1, Hireable 5 697 / 1, SkeletonMage 226 / 1, NecroPet 184 / 1, Megademon 98 / 1, BloodLord 55 / 5.
+  Negative control (live, on those logs): `CONTROL site compared=12629 failed=12629`; `CONTROL fallen compared=1393 failed=1393`; `CONTROL melee compared=12620
+  failed=2114` with 26 rows not separated (the ten one-outcome tier AIs among them); `CONTROLS site=FAILS-AS-REQUIRED fallen=FAILS-AS-REQUIRED
+  melee=FAILS-AS-REQUIRED`. (run:2026-11-03-ai-2, fn:sub_005B1740_MonAiEvent@0x005B1740)
+- **Result, the resumable model** (development logs only, `dev-resume-r4c.txt`; the claim for the run needs kept sessions): 1 313 decisions, 1 028 resumed to
+  their end, **0 mismatches**, 14 485 boundary calls matched, 13 173 after the first; stopped 285 (213 + 34 + 20 capped at 48 calls, 18 at a `call esi`).
+  Controls: every known branch reversed, 1 200 of 1 313 mismatches (113 still ok); a seed one step off, 1 312 of 1 313. Per row in finding ai/0017 § 4.
+  (run:2026-11-03-ai-2, 0x005B186F)
+- **Not done in this checkpoint** (named, with their state): the kept batch with logger rev 4; the staged variety sessions; the state control window (recipes
+  `ai-nec-curse.json` (Dim Vision 23 → state 10, Terror 56 → 11) and `ai-barb.json` (Howl, Taunt 27 → 12; Howl and Grim Ward reach `MonFleeFrom` through
+  `StatEv08Howl` 0x005BFA10 and `MissHit28WardScare`) build, no session run, so states 10, 11, 12 are **not** observed and the absence of states 2, 3, 8, 9, 14, 17
+  still counts for nothing); P1b-1 (no route to Duriel's lair yet: the staff in the orifice of the right one of the seven Tal Rasha tombs, level 73 the lair) and
+  P1b-2; H1; H3; Fetish and Andariel at `/players 8`; the catalogue sample; the review request.
+- **Conclusion:** [C] the outcome mix and the negative control on the first run's kept logs (above); [I] the resume model's figures (development logs). See
+  [ai/0017](0017-phase2-second-run.md). Manifests: `workspace/logs/ai/manifest-run-2026-11-03-ai-2.sha256`, `manifest-dev-2.sha256`.
+## run:2026-11-03-ai-3
+
+- **Question:** (plan 0052 Phase 2, second lane run `lane/p52b`, second part) The kept batch the checkpoint (run:2026-11-03-ai-2) lacked: how far do decisions compare per tier AI
+  with logger rev 4 and the resumable model, what stops a resume, which branches stay unseen; the state control (states 10, 11, 12 live); P1b-2 (a champion corpse for the Greater Mummy);
+  P1b-1 (Duriel); G4 (the seven Uber helpers, breakpoints).
+- **Setup:** slot 2 (display `:9`, `workspace/wineprefix-2`), game 1.14d expansion, Normal, one game process per case (`tools/ai_sessions.py run --fresh`), seeds 5801 + launch (batch 1, 22 launches), 5901 + launch
+  (batch 2, 13 launches), 6101 + launch (P1b-2, 3 launches), 3364 + launch (Duriel development, 2 launches). Logger `tools/gdb/ai-g4.gdb` = `tools/gdb/ai.py` rev 4 (`AI logger armed rev 4 bmax 48`) + `tools/gdb/ai-g4.py` rev 1 (G4)
+  (+ `tools/gdb/ai-p1b2.py` rev 2, only with `AI_P1B2=1`); commit `e0e45d03` for the tools of this part. Characters (built with `tools/ai_sessions.py build`): `CombatSor`, `AiNec`, `AiNecC` (`ai-nec-curse.json`), `AiBar` (`ai-barb.json`), `AiDur` (`ai-dur.json`,
+  development only). Pilot options as the cases of `tools/ai_sessions.py` hold them (the melee cases `s-*`: `explore --walk --melee`, with `--melee-button 3 --curse-keys F1,F2 --keys-cycle` for the curse cases).
+- **Kept sessions: 23.** 21 in run:2026-11-03-ai-3 (batch 1: 11 of 22 launches, batch 2: 10 of 13; the other 14 launches left the character in the Act IV town: "the waypoint list did not open", rerun) and 2 in run:2026-11-04-ai-3p
+  (`a2-halls-p12`, `a2-halls-long`; the first of 3 launches stayed in the town). The 14 + 1 failed tries are under `workspace/logs/ai/dev/`. Manifests (both pass from `workspace/logs/ai`): `manifest-run-2026-11-03-ai-3.sha256`
+  (84 lines: 23 case logs, the 23 launch logs and marks, the checks, the status files, `g4-run-2026-11-03-ai-3.txt`, `p1b2-run-2026-11-04-ai-3p.txt`, the pilot records), `manifest-dev-3.sha256` (106 lines: the development logs, the failed
+  tries, the screenshots).
+- **Procedure** (from `workspace/logs/ai`, the repo's tools by absolute path):
+  ```
+  python3 -I tools/ai.py check <the 21 case logs 2026-11-03-ai-3-s2-*-fresh:*.log> --controls --out check-run-2026-11-03-ai-3.txt > check-stdout-2026-11-03-ai-3.txt
+  systemd-run --user --scope -p MemoryMax=4G python3 -I tools/ai_resume.py check <the same logs> --controls --examples 200 --out resume-run-2026-11-03-ai-3.txt > resume-stdout-2026-11-03-ai-3.txt
+  python3 -I tools/ai_g4.py <the 23 kept launch logs> > g4-run-2026-11-03-ai-3.txt
+  AI_P1B2=1 python3 -I tools/ai_sessions.py run ... a2-halls-p12 a2-halls-long ; python3 -I tools/ai_p1b2.py <the 2 case logs> > p1b2-run-2026-11-04-ai-3p.txt
+  ```
+- **Result:** the first-boundary check over 7 539 decisions: 6 272 compared, 0 mismatches, 1 265 in rows with no model, 2 truncated at a log's end (`unlogged`); controls site 6 272 of 6 272, fallen 814 of 814, melee 1 187 of 6 272 (23 rows not separated).
+  The resume model: 7 135 resumed, **112 mismatches**, 292 stopped, 72 183 boundary calls matched, 64 689 after the first; controls: reversed branches 7 273 of 7 539, seed 7 497 of 7 539. State control: states 10 (38 decisions), 11 (98 decisions, 41 events),
+  12 (56 decisions) live in `s-necro-curse` and `s-barb-howl`; no other nonzero state in 7 539 decisions and 10 721 events. P1b-2: 17 champion-flag and 16 unique-flag corpses placed, 4 champion corpses reached `MonSkillTargetOk` (2 accepted, 2 refused), 0 unique.
+  G4: 0 helper hits in 23 launches, control 0x005B1CF0 live in 23, 0x005A3250 in 2. Per tier AI and the stop reasons: ai/0017 §§ 6 to 12.
+- **Development launches:** `dev-2026-11-03-ai-3` (seeds 5701, 5702, 5703, 5711, 5721: the curse cases; `s-necro-curse` first built with 40 hops, then 80), `dev-2026-11-03-ai-3p` (6001: the P1b-2 logger, rev 1 without the unit pointer), `dev-2026-11-04-ai-3d`
+  (3364 and 3365: Duriel, one attempt; the first launch stayed in the town, the second went to Canyon of the Magi and not into a tomb; stopped by hand).
+- **Not done:** P1b-1 (no decision of row 44), H1, H3, the catalogue sample, the 112 resume mismatches' cause. The Duriel route is from the plan 0032 session 3364 log's positions (ai/0017 § 11).
+- **Review recheck** (`lane/p52b` Tier A review, 2026-11-04, no game): `tools/ai_resume.py` reproduced the kept 112 line for line. `tools/ai_resume_review.py classify resume-stdout-2026-11-03-ai-3.txt <the 21 logs>` and `check P,B,C,N,E,D <the 21 logs> --controls`, from `workspace/logs/ai`, under `systemd-run --user --scope -p MemoryMax=4G`; `tools/ai.py` at the lane's head over the first run's 31 logs (`review-p52b/check-run1.txt`). Outputs in `workspace/logs/ai/review-p52b/`, `manifest.sha256` passes from that directory. Result: the classification of ai/0017 § 7; 7 444 resumed, 8 mismatches (cluster F alone), 87 stopped (row 32's `call esi` 80, a return site not armed 4, a log's end 3), 72 865 calls matched, 65 332 after the first; the controls still fail: reversed branches 7 290 of 7 539 (rows 15 and 54 not separated), a seed one step off 7 529 of 7 539. First run: 14 645 decisions, 12 614 compared, 0 mismatches.
+- **Conclusion:** [C] the kept first-boundary comparison, the controls, the state control as a statement about the logged lines (ai/0017 § 8) and G4 for its window, as stated in ai/0017 § Answer; [I] the resume figures (112 mismatches, classified at the review: 104 model faults, 8 a logger limit). (run:2026-11-03-ai-3, 0x005B186F) Manifests as above.
+
+## run:2026-11-04-ai-3p
+
+- **Question:** (plan 0052 Phase 1b, P1b-2) Does a champion corpse reach the Greater Mummy's `MonSkillTargetOk` through its search callback 0x005F2A00, and a unique corpse (control) not?
+- **Setup:** as [run:2026-11-03-ai-3](#run2026-11-03-ai-3), seeds 6101 to 6103, `AI_P1B2=1` (`tools/gdb/ai-p1b2.py` rev 2: a built state, flag 4 or 8 written at the callback's entry on dead candidates), cases `a2-halls-p12` and `a2-halls-long`; kept sessions 2 of 3 launches (manifest: `manifest-run-2026-11-03-ai-3.sha256`).
+- **Result:** 17 champion-flag and 16 unique-flag corpses placed; 4 champion corpses reached `MonSkillTargetOk` (2 accepted and commanded, mode 14; 2 refused), 0 unique (`p1b2-run-2026-11-04-ai-3p.txt`, `tools/ai_p1b2.py`). A built state: the flags are written by the logger.
+- **Deviation, ADR-0003** (recorded by the `lane/p52b` review, 2026-11-04): `tools/gdb/ai-p1b2.py` writes game memory at a breakpoint, flag 4 or 8 at `Unit+0x14 -> +0x16`, where ADR-0003 says a breakpoint "never writes game memory or registers". ADR-0010 and ADR-0013 cover cells of one table through a loose `.bin`, not this. Plan 0012's review accepted one such write (`MONPOOL_FORCE_DIFF`, F1) as a stated intervention before those ADRs existed, with a natural game required beside it; it is not a rule for this run. The result is forced, not natural.
+- **Conclusion:** [I] as run (0x005F2A00, 0x005FD470); ai/0017 § 9. C40's required case stays open: a `-forced` run (ADR-0013) with natural champions, plan 0052 log.
+
 ## run:2026-11-03-ai-uber
 
 - **Question:** (plan 0052 Phase 1c, the Uber event) Do the unreferenced helpers 0x005DD140, 0x005E9DD0, 0x005F7F10, 0x005FD0F0, the drop 0x005E0070, the death callee 0x005A3250, the preset walk 0x005559A0, Baal's action at `k` 14, `UModAura` and `MonPostCreateBoss` map their declared inputs to the first boundary they reach (or their return), its call site, arguments, the unit seed and the named memory, as [ai/0016](0016-uber-event.md) § 7 reads them?

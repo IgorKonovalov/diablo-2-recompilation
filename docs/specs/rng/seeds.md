@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng]
 consumed_by: [drlg/overview, drlg/room-tiles, drlg/*, monsters/spawn, objects, items/*, chain]
-tags: {C: 82, I: 14, L: 4}
-updated: 2026-10-30
+tags: {C: 83, I: 14, L: 4}
+updated: 2026-11-04
 ---
 
 # Seed tree: game → act → level → room → unit
@@ -551,17 +551,21 @@ separate objects.
   [skills/0003 § 9](../../findings/skills/0003-handlers.md#9-re-seed-sites-rng0002--the-other-initialiser-sites))
 
   The callback `0x005C9290` sets the new missile's seed to `Init(w + arg)`, `w` the u16 at its path's `+0x10` and
-  `arg` the creator's argument (low `w + arg`, high `0x29A`), and its own path calls then step that seed before it
+  `arg` the creator's argument (low `w + arg`, high `0x29A`), and its own `PathPlan` then steps that seed before it
   returns: in 450 of 450 creations the seed at the callback's return lies on that stream, 20 steps past the `Init` for
   each of 442 Firestorm sub-missiles and 38 for each of 8 class-195 missiles of a monster. [C]
   (fn:sub_005C9290_MissCbReseedPathXPlusArg@0x005C9290, run:2026-10-25-skills,
   [skills/0003 § 15](../../findings/skills/0003-handlers.md#15-plan-0045-phase-2-the-run-run2026-10-25-skills))
   The callback `0x005AC040` (catapult spotters' class-408 missiles) sets the new missile's seed to `Init(w)`, `w` the
-  same path word, and the same three path calls follow: in 36 of 36 creations the seed at `MissileCreate`'s exit lies
+  same path word, and the same path calls follow: in 36 of 36 creations the seed at `MissileCreate`'s exit lies
   on that stream, 10 steps past the `Init`. [C] (fn:sub_005AC040_MissCbReseedPathX@0x005AC040, run:2026-10-30-skills-catalogue,
   [skills/0003 § 17](../../findings/skills/0003-handlers.md#17-plan-0046-phase-2-the-catalogue-sample-run2026-10-30-skills-catalogue))
-  Which of the path calls makes the steps is not read for either callback; the other sites of the table were not
-  reached. [I] (fn:sub_00649970_PathPlan@0x00649970, [skills/missiles § H](../skills/missiles.md#h-re-seed-sites))
+  For both, `PathPlan`'s random walk makes the steps, `+0x91 >> 1` of them, half the range capped at 77: emulated, and
+  logged in the game in 654 of 654 creations over the two callbacks. [C] (fn:sub_0067A240_PathPlanRandomWalk@0x0067A240,
+  run:2026-11-03-path-emu-3, run:2026-10-25-skills, run:2026-10-27-skills, run:2026-10-30-skills-catalogue,
+  [skills/missiles § H](../skills/missiles.md#h-re-seed-sites))
+  The other sites of the table were not reached. [I] (fn:sub_00649970_PathPlan@0x00649970,
+  [skills/missiles § H](../skills/missiles.md#h-re-seed-sites))
 
 - **Armageddon's cast draw.** Skill do function 124 (`srvdofunc` 124: 249 Armageddon, 250 Hurricane, 349 Diablogeddon),
   after its record test, its `aurastate` range test, its used-skill tests and the setting of bit 6 of the caster's

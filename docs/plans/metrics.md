@@ -524,6 +524,7 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-11-03 | `lane/p52a` | 0052 P2 (first run; 0056 P3 pilot) | reverser-harness | 530 967 | 228 | 139 | slot 2, no Ghidra; pilot: 19 launches (9 dev, 1 rerun), 31 kept sessions/cases, 0.32 launches per kept case, 3.6 harness min and about 17 k tokens per kept session (measured), 14 645 decisions 0 mismatches at the first boundary | accept with fixes (Tier B check) | 8: overclaim 2, omission 1, stale cross-reference 1, miscount 3, other 1 |
 | 2026-11-03 | `lane/p52a` check | 0052 P2 (first run; 0056 P3 pilot) | architect-check | 115 028 | 29 | 4 | — | accept with fixes (8) | overclaim 2, omission 1, stale cross-reference 1, miscount 3, other 1 |
 | 2026-11-03 | `lane/c56` | 0056 P4 | architect-review | 154 913 | 20 | 10 | no slot; corrects `lane/p52a` Slot cell: 3.6 withdrawn, 4.5 min per kept case by lane wall, 3.0 and 3.5 harness | evaluated; plan closed, ADR-0028 proposed | 1: miscount 1 (the wall figure) |
+| 2026-11-03 | `lane/p52b` (to checkpoint) | 0052 P2 (second run, checkpoint) | reverser-harness | 421 545 | 176 | 43 | slot 2, no Ghidra; checkpoint at the token mark, no kept session: outcome mix and live negative control in tools/ai.py, logger rev 4 (AIR), tools/ai_resume.py (1 313 development decisions, 0 mismatches, 13 173 boundary calls past the first); tokens are the session budget counter, not a lane ledger measure | — | — |
 | 2026-11-03 | `lane/r52n` | 0052 P1c (Uber event) | reverser-static | 339 349 | 50 | 23 | — (static, Ghidra copy ghidra-r52n) | accept with fixes (Tier B check) | 6: omission 3, stale cross-reference 3 |
 | 2026-11-03 | `lane/r52n` check | 0052 P1c (Uber event) | architect-check | 101 556 | 28 | 4 | — | accept with fixes (6) | omission 3, stale cross-reference 3 |
 | 2026-11-03 | `lane/s66` | 0052 P1c spec wording | spec-writer | 138 331 | 21 | 6 | — (no Ghidra, no harness) | accept with fixes (Tier A) | 4: overclaim 2, misread 1, omission 1 |
@@ -568,6 +569,15 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-11-04 | `lane/r68` | 0057, 0054, 0058 (finding notes) | reverser-static | 70 686 | 17 | 2 | — (no Ghidra, no harness) | accept with fixes (Tier B check) | 1: omission 1 |
 | 2026-11-04 | `lane/r68` check | 0057, 0054, 0058 (finding notes) | architect-check | 77 635 | 16 | 1 | — | accept with fixes (1) | omission 1 |
 | 2026-11-04 | lane/p60 | 0060 | reverser-harness | 245 000 | 95 | 120 | 2 | — | — |
+| 2026-11-04 | `lane/snd` | 0062 (sound pair) | reverser-harness | 86 483 | 34 | 9 | slot 2 | accept with fixes (Tier B check) | 5: stale cross-reference 4, overclaim 1 |
+| 2026-11-04 | `lane/snd` check | 0062 (sound pair) | architect-check | 72 209 | 14 | 2 | — | accept with fixes (5) | stale cross-reference 4, overclaim 1 |
+| 2026-11-04 | `lane/a69` | 0060 P1.1-1.3 / 0054 P1.3 readers (4 entries) | archivist | 194 494 | 59 | 8 | — | accept with fixes (Tier A, 17) | 17: misread 5, overclaim 3, omission 4, under-claim 2, stale cross-reference 3 |
+| 2026-11-04 | `lane/a69` review | 0060, 0054 readers | architect-review | 217 264 | 40 | 10 | — | accept with fixes (17) | misread 5, overclaim 3, omission 4, under-claim 2, stale cross-reference 3 |
+| 2026-11-04 | `lane/s69` | backlog sweep, 0062 P3 | spec-writer | 208 723 | 27 | 10 | — (no Ghidra, no harness) | accept with fixes (Tier A) | 10: overclaim 3, misread 2, omission 3, wrong anchor 1, under-claim 1 |
+| 2026-11-04 | `lane/s69` review | backlog sweep, 0062 P3 | architect-review | 229 650 | 35 | 11 | — | accept with fixes (10) | overclaim 3, misread 2, omission 3, wrong anchor 1, under-claim 1 |
+| 2026-11-04 | `lane/c62` | 0062 close | architect-check | 57 326 | 10 | 1 | — | plan closed | — |
+| 2026-11-04 | `lane/p52b` | 0052 P2 (second run, kept batch) | reverser-harness | 323 802 | 254 | 163 | slot 2, no Ghidra; 23 kept sessions (21 + 2 built-state P1b-2), 46 launches in all; first-boundary 0 mismatches over 6 272 compared, resume model 112 open mismatches, states 10-12 live, G4 0 helper hits, P1b-2 built state, P1b-1 not done (route attempt failed) | accept with fixes (Tier A, 11) | overclaim 3, misread 3, miscount 1, omission 2, wrong anchor 1, tool not kept 1 |
+| 2026-11-04 | `lane/p52b` review | 0052 P2 (second run) | architect-review | 311 036 | 78 | 24 | — | accept with fixes (11) | overclaim 3, misread 3, omission 2, miscount 1, wrong anchor 1, tool not kept 1 |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not

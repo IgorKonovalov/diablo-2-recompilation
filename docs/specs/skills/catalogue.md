@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, skills/dispatch, skills/missiles, combat/delivery, stats/states, data/calc, monsters/stats]
 consumed_by: [skills/overview, skills/dispatch, skills/missiles, monsters/ai]
-tags: {C: 256, I: 109, L: 7}
+tags: {C: 257, I: 109, L: 7}
 updated: 2026-11-04
 ---
 
@@ -1341,8 +1341,9 @@ Q6. the data joins: Siege Beast Stomp (301) has srvmissilea −1, so do 134 retu
   by a catapult spotter (class 516), whose parameter block's `+0x54` is `0x005AC040`, the new missile's seed at
   `MissileCreate`'s exit lies on the stream of `Init(path word +0x10)`, 10 steps past the `Init` in all 36 (the
   checker row `MC.cbseed2`). [C] (fn:sub_005AC040_MissCbReseedPathX@0x005AC040, 0x005AC073, run:2026-10-30-skills-catalogue)
-  Which of the callback's three path calls makes the 10 steps, and that the `Init`'s low word is the value
-  `0x00648A00(path)` returns (read as path `+0x10`), are not read; the latter fits in 36 of 36. Which of the hit
+  The 10 steps are `PathPlan`'s random walk, and the `Init`'s low word is path word `+0x10`
+  ([missiles H4](missiles.md#h-re-seed-sites)). [C] (fn:sub_0067A240_PathPlanRandomWalk@0x0067A240, run:2026-11-03-path-emu-3)
+  Which of the hit
   entries that pass the callback (mhit 38 `0x005AC14B`, mhit 45 `0x005AC525`) made these creations is not logged. [I]
   (fn:sub_005AC040_MissCbReseedPathX@0x005AC040, fn:sub_00649970_PathPlan@0x00649970)
 - R3. **`ReturnDamage` (stat-event handler 4, Iron Maiden) when its returned damage kills the cursed unit.** In one

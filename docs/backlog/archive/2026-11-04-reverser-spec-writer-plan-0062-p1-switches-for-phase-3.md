@@ -2,14 +2,14 @@
 from: reverser
 to: spec-writer
 date: 2026-11-04
-status: open
+status: done
 context:
-  - ../findings/archaeology/0001-switches.md
-  - ../plans/0062-debug-and-cut-content.md
-resolution: ""
+  - ../../findings/archaeology/0001-switches.md
+  - ../../plans/done/0062-debug-and-cut-content.md
+resolution: "Plan 0062 Phase 3 done: -nosave, the class rows with -name and -ctemp, -gametype and -arena, the /players client-mode gate, all [I], the server's reader of +0x207 an open question (lane/s69). [plan log](../../plans/done/0062-debug-and-cut-content.md#implementation-log)"
 ---
 
-Plan 0062 Phase 3 input, once P1 is reviewed: [archaeology/0001](../findings/archaeology/0001-switches.md) § 7 names each switch's section. No reviewed statement is contradicted; these are branches the specs lack:
+Plan 0062 Phase 3 input, once P1 is reviewed: [archaeology/0001](../../findings/archaeology/0001-switches.md) § 7 names each switch's section. No reviewed statement is contradicted; these are branches the specs lack:
 
 1. `save/d2s` § C. Writing a save: `-nosave` clears `g_SaveEnabled`, and `PLRSAVE_WriteFile` and `SaveViaCallback` then do nothing (0x00532257, 0x00531ED1).
 2. `player/creation` § Entry points: the class rows, `-name` and `-ctemp` feed the create message's class and name bytes.

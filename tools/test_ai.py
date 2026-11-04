@@ -93,6 +93,99 @@ class SynthTest(unittest.TestCase):
             self.assertNotIn(th, reg)
 
 
+def fallen_log(path, modes):
+    """A fake log of Fallen decisions (hand map, row 6): one per mode in `modes`, each with the boundary the map
+    predicts (CancelEvents at 0x005F02FD, or none in modes 0 and 12)."""
+    seed = "00000001:00000002"
+    out = ["AI logger armed rev 3"]
+    for k, m in enumerate(modes):
+        n = 10 * (k + 1)
+        aid = {"u": 0x2000, "id": k + 1, "c": 7, "ai": 6, "st": 0, "th": 0x005F02C0, "cx": 0x7000, "g": 0x1000,
+               "mdp": 0x5000, "ctlp": 0x4000, "hp": 0, "md": 0, "m": m, "c4": 0, "x": 1, "y": 1, "s0": seed, "s": seed,
+               "fr": 100, "diff": 0, "ms": 0x6000, "ms2": 0x2E0, "ctx": [0x4000, 0, 0x3000, 0, 0, 0, 0, 0x6000, 0],
+               "ctl": "00" * 0x40, "head": None, "aip": "00" * 48, "sk": "00" * 24, "ad": [0, 0], "t": None,
+               "pl": [0, 0], "n": n}
+        out.append("AID " + json.dumps(aid))
+        if m not in (0, 12):
+            out.append("AIB " + json.dumps({"k": n, "fn": 0x00540E60, "ra": 0x005F02FD, "ecx": 0x1000, "edx": 0x2000,
+                                            "a": [2, 0, 0, 0, 0, 0], "b": {}, "s": seed, "c": [0, 0, 0], "c4": 0,
+                                            "fr": 100, "n": n + 1}))
+        out.append("AIX " + json.dumps({"k": n, "s": seed, "nb": 0 if m in (0, 12) else 1, "fr": 100, "n": n + 2}))
+    with open(path, "w") as fh:
+        fh.write("\n".join(out) + "\n")
+
+
+class MixControlTest(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.tmp = tempfile.mkdtemp()
+        cls.synth = os.path.join(cls.tmp, "synth.log")
+        ai.synth_log(cls.synth, ai.TIER_MODELS)
+        cls.fal = os.path.join(cls.tmp, "fallen.log")
+        fallen_log(cls.fal, [1, 1, 1, 4, 4])            # no decision in mode 0 or 12: one outcome
+
+    def test_mix_counts_outcomes_per_ai(self):
+        text, r = ai.run_check([self.synth])
+        self.assertIn("MIX ", text)
+        self.assertEqual(sum(sum(v.values()) for v in r["mix"].values()), r["decisions"])
+        self.assertRegex(text, r"MIXSUM tier_ais_with_one_outcome=\d+")
+
+    def test_one_outcome_ai_is_flagged(self):
+        text, r = ai.run_check([self.fal])
+        self.assertEqual(r["mismatches"], 0)
+        self.assertRegex(text, r"MIX 6 th=005f02c0 .*ONE-OUTCOME: 00540e60@005f02fd=5")
+        self.assertIn("rows=6", text.split("MIXSUM")[1].split("\n")[0])
+
+    def test_mode_0_and_12_make_a_second_outcome(self):
+        p = os.path.join(self.tmp, "fallen2.log")
+        fallen_log(p, [1, 4, 0, 12])
+        text, r = ai.run_check([p])
+        self.assertEqual(r["mismatches"], 0)
+        self.assertRegex(text, r"MIX 6 th=005f02c0 .*outcomes=2")
+        self.assertIn("return@-=2", text)
+
+    def test_controls_fail_on_the_kept_shape(self):
+        text, r = ai.run_check([self.fal], controls=True)
+        ctl = dict(r["controls"])
+        self.assertTrue(ctl["site"] and ctl["fallen"])
+        self.assertRegex(text, r"CONTROL site compared=5 failed=5")
+        self.assertRegex(text, r"CONTROL fallen compared=5 failed=5")
+        # the melee control does not separate Fallen: nothing in the decision reads the flag
+        self.assertRegex(text, r"CONTROL-ROW melee 6 Fallen\s+compared=5 failed=0")
+
+    def test_a_log_cut_inside_its_last_decision_is_unlogged_not_a_mismatch(self):
+        # the game exits while the last decision is open: its AID line is the log's last AI line, with no AIB, AIR or AIX
+        p = os.path.join(self.tmp, "cut.log")
+        fallen_log(p, [1])
+        lines = open(p).readlines()
+        last = max(i for i, ln in enumerate(lines) if ln.startswith("AID "))
+        open(p, "w").writelines(lines[:last + 1])
+        text, r = ai.run_check([p])
+        self.assertEqual(r["mismatches"], 0, text[:1500])
+        self.assertIn("unlogged=1", text)
+        # the same decision in the middle of a log (more decisions after it) with its boundary missing is a mismatch
+        q = os.path.join(self.tmp, "mid.log")
+        fallen_log(q, [1, 1])
+        lines = open(q).readlines()
+        first = min(i for i, ln in enumerate(lines) if ln.startswith("AID "))
+        out = [ln for i, ln in enumerate(lines) if not (ln.startswith("AIB ") and i > first and
+                                                         min(j for j, x in enumerate(lines) if x.startswith("AIB ")) == i)]
+        open(q, "w").writelines(out)
+        text, r = ai.run_check([q])
+        self.assertGreater(r["mismatches"], 0, text[:1500])
+
+    def test_a_control_that_passes_is_reported_wrongly_passed(self):
+        # the inverted Fallen map predicts a return in modes other than 0 and 12; a log whose decisions in those modes
+        # carry no boundary makes it match: the control then PASSES and the run says so
+        p = os.path.join(self.tmp, "fallen3.log")
+        fallen_log(p, [1, 4])
+        lines = [ln for ln in open(p) if not ln.startswith("AIB ")]
+        open(p, "w").writelines(lines)
+        text, r = ai.run_check([p], controls=True)
+        self.assertGreater(r["mismatches"], 0)           # the real map fails (it predicts CancelEvents)
+        self.assertIn("fallen=PASSED-WRONGLY", text)
+
+
 class PartsTest(unittest.TestCase):
     def test_reach(self):
         s = (123, 456)
@@ -141,6 +234,17 @@ class PartsTest(unittest.TestCase):
         self.assertEqual(skill, {2: [1, 1, 1, {2: 1}]})
         steps, bad = ai.accounting(dict(d, sst=[t]))
         self.assertEqual(bad, [])
+
+    def test_parse_reads_air_lines_and_the_bmax_of_the_logger_line(self):
+        with tempfile.NamedTemporaryFile("w", suffix=".log", delete=False) as fh:
+            fh.write('AI logger armed rev 4 bmax 48\nAID {"n":3,"ai":2}\nAIB {"k":3,"fn":1,"n":4}\n'
+                     'AIR {"k":3,"b":4,"eax":7,"n":5}\nAIR {"k":99,"b":4,"n":6}\n')
+            p = fh.name
+        r = ai.parse(p)
+        os.unlink(p)
+        self.assertEqual(r["dec"][0]["bmax"], 48)
+        self.assertEqual(r["dec"][0]["air"][4]["eax"], 7)
+        self.assertEqual(len(r["dec"][0]["air"]), 1)
 
     def test_parse_skips_foreign_lines(self):
         with tempfile.NamedTemporaryFile("w", suffix=".log", delete=False) as fh:

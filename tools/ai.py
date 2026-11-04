@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """Plan 0052 Phase 2: the monster AI decision model and checker for the logs of tools/gdb/ai.gdb.
 
-    python3 -I tools/ai.py check LOG [LOG ...] [--out FILE] [--json FILE]   # compare every decision with its model
+    python3 -I tools/ai.py check LOG [LOG ...] [--controls] [--out FILE] [--json FILE]   # compare every decision with its model;
+                                                                             # --controls: the outcome mix is always printed, this adds
+                                                                             # the negative controls (wrong maps that must fail)
     python3 -I tools/ai.py counts LOG [LOG ...]                              # decisions per AI row, nothing compared
     python3 -I tools/ai.py selftest                                          # the model against its own inputs
 
@@ -44,7 +46,7 @@ MODS = ["ai_cat_emu", "ai_cat_emu2", "ai_cat_emu3", "ai_cat_emu4", "ai_cat_emu5"
 TIER = {2: "Skeleton", 6: "Fallen", 9: "Wraith", 13: "FallenShaman", 20: "Scarab", 21: "Mummy", 22: "GreaterMummy",
         28: "Vampire", 29: "BatDemon", 30: "Fetish", 34: "Andariel", 35: "CorruptArcher", 37: "SkeletonBow",
         61: "Hireable", 64: "SkeletonMage", 67: "NecroPet", 89: "Megademon", 125: "BloodLord"}
-TAGS = ("AGM", "AIN", "AID", "AIB", "MSM0", "MSM1", "PP0", "PP1", "SST0", "SST1", "AIX", "CAP")
+TAGS = ("AGM", "AIN", "AID", "AIB", "AIR", "MSM0", "MSM1", "PP0", "PP1", "SST0", "SST1", "AIX", "CAP")
 # the controls after the seed in each module's Hit tuple (before the block, where it has one): which AiCtl words
 CTRL = {"ai_cat_emu": ("c14",), "ai_cat_emu2": ("c14", "c18"), "ai_cat_emu3": ("c14", "c18", "c1c", "c4"),
         "ai_cat_emu4": ("c14", "c18", "c1c", "c4", None), "ai_cat_emu5": ("c14", "c18", "c1c"),
@@ -159,11 +161,14 @@ def parse(path):
     dec, byk, ain, sst, sstk, cap = [], {}, [], [], {}, []
     n_lines = 0
     rev = None
+    bmax = 8
     with open(path, errors="replace") as fh:
         for ln in fh:
             n_lines += 1
             if ln.startswith("AI logger armed rev "):
-                rev = int(ln.split()[-1])
+                mr = re.match(r"AI logger armed rev (\d+)(?: bmax (\d+))?", ln)
+                rev = int(mr.group(1))
+                bmax = int(mr.group(2)) if mr.group(2) else (8 if rev <= 3 else 16)
                 continue
             sp = ln.find(" ")
             tag = ln[:sp] if sp > 0 else ln.strip()
@@ -174,11 +179,13 @@ def parse(path):
             except ValueError:
                 continue
             if tag == "AID":
-                x = {"aid": d, "aib": [], "msm": [], "pp": [], "aix": None, "log": path}
+                x = {"aid": d, "aib": [], "air": {}, "msm": [], "pp": [], "aix": None, "log": path}
                 dec.append(x)
                 byk[d["n"]] = x
             elif tag == "AIB" and d["k"] in byk:
                 byk[d["k"]]["aib"].append(d)
+            elif tag == "AIR" and d["k"] in byk:
+                byk[d["k"]]["air"][d["b"]] = d
             elif tag in ("MSM0", "PP0") and d["k"] in byk:
                 byk[d["k"]]["msm" if tag == "MSM0" else "pp"].append([d, None])
             elif tag in ("MSM1", "PP1") and d["k"] in byk:
@@ -200,6 +207,9 @@ def parse(path):
                 cap.append(d)
     for d in dec:
         d["rev"] = rev
+        d["bmax"] = bmax
+    if dec and dec[-1]["aix"] is None and not dec[-1]["aib"]:
+        dec[-1]["trunc"] = True       # the log ends inside the last decision (the game exited): nothing to compare
     return {"dec": dec, "ain": ain, "sst": sst, "cap": cap, "lines": n_lines, "rev": rev}
 
 
@@ -337,8 +347,21 @@ def check_hand(dec, i, entry):
     return diff
 
 
-def check_decision(dec):
-    """-> (kind, name, diffs): kind in model, hand, none."""
+def hand_fallen_inverted(i):
+    """The deliberately wrong Fallen map of the negative control: the mode test inverted (CancelEvents in modes 0 and
+    12, a return in every other mode)."""
+    if i["m"] not in (0, 12):
+        return None
+    return (0x00540E60, 0x005F02FD, None, None, [2, 0], i["seed"], None)
+
+
+def check_decision(dec, mut=None):
+    """-> (kind, name, diffs, outcome): kind in model, hand, none, unlogged; outcome = the (function, call site) the map
+    predicts first, ("return", None) for a hand map that returns, None for no map.
+
+    `mut` is the negative control (check --controls): "site" shifts the predicted call site by one byte (every compared
+    decision must fail), "melee" flips the melee flag of the model input (fails where the flag chooses the outcome),
+    "fallen" runs the inverted Fallen map (row 6 only)."""
     mods = load_mods()
     aid = dec["aid"]
     th = aid["th"]
@@ -351,19 +374,38 @@ def check_decision(dec):
         for k in ("TARGET",):
             if getattr(mod, k, None) is not None and aid["ctx"][2]:
                 i["target"] = getattr(mod, k)
+        if mut == "melee":
+            i["melee"] = 0 if i["melee"] else 1
         try:
             res = mod.run_model(i)
         except KeyError as e:        # an input the logger does not carry (the trap rows' level and region words)
-            return "none", mn + ":" + fam, []
+            return "none", mn + ":" + fam, [], None
+        if mut == "site":
+            res = (res[0], res[1] + 1) + tuple(res[2:])
         if res[1] in UNLOGGED_SITES and (dec.get("rev") or 0) <= 2:
-            return "unlogged", mn + ":" + fam, []
+            return "unlogged", mn + ":" + fam, [], (res[0], res[1])
         b = first_aib(dec, set(mod.OBSERVE))
+        if b is None and dec.get("trunc"):
+            return "unlogged", mn + ":" + fam, [], (res[0], res[1])
         if b is None:
-            return "model", mn + ":" + fam, ["no boundary logged, %08x predicted" % res[0]]
-        return "model", mn + ":" + fam, compare(res, b, mod, aid)
+            return "model", mn + ":" + fam, ["no boundary logged, %08x predicted" % res[0]], (res[0], res[1])
+        return "model", mn + ":" + fam, compare(res, b, mod, aid), (res[0], res[1])
     if th in HAND:
-        return "hand", HAND[th][0], check_hand(dec, i, HAND[th])
-    return "none", "%08x" % (th or 0), []
+        name, fn = HAND[th]
+        if mut == "fallen" and th != 0x005F02C0:
+            return "hand", name, [], None
+        if mut == "fallen":
+            fn = hand_fallen_inverted
+        elif mut == "melee":
+            i = dict(i, melee=0 if i["melee"] else 1)
+        if mut == "site":
+            inner = fn
+            fn = lambda x, inner=inner: (lambda r: None if r is None else (r[0], r[1] + 1) + tuple(r[2:]))(inner(x))
+        res = fn(i)
+        if dec.get("trunc") and not dec["aib"] and fn(i):
+            return "unlogged", name, [], (fn(i)[0], fn(i)[1])
+        return "hand", name, check_hand(dec, i, (name, fn)), ((res[0], res[1]) if res else ("return", None))
+    return "none", "%08x" % (th or 0), [], None
 
 
 def accounting(dec):
@@ -438,7 +480,7 @@ def chains(decs, ssts):
     return pairs, skill
 
 
-def run_check(paths, out=None):
+def run_check(paths, out=None, controls=False):
     decs, ssts, ains, caps, rows = [], [], [], [], {}
     for p in paths:
         r = parse(p)
@@ -460,10 +502,14 @@ def run_check(paths, out=None):
     mism = []
     acc_bad = []
     hist = {}
+    mix = {}
     for d in decs:
         aid = d["aid"]
         row = aid["ai"]
-        kind, name, diffs = check_decision(d)
+        kind, name, diffs, outc = check_decision(d)
+        if outc is not None:
+            mix.setdefault((row, aid["th"]), {}).setdefault(outc, 0)
+            mix[(row, aid["th"])][outc] += 1
         e = per.setdefault(row, {"n": 0, "model": 0, "hand": 0, "none": 0, "unlogged": 0, "bad": 0, "name": name, "th": aid["th"],
                                  "logs": set()})
         e["n"] += 1
@@ -525,6 +571,55 @@ def run_check(paths, out=None):
         lines.append("TIER %d %-14s decisions=%d checked=%d floor50=%s" % (
             t, TIER[t], e["n"] if e else 0, (e["model"] + e["hand"]) if e else 0,
             "met" if e and e["n"] >= 50 else "SHORT"))
+    one = []
+    main_th = {}
+    for (row, th), v in mix.items():
+        if sum(v.values()) > main_th.get(row, (0, None))[0]:
+            main_th[row] = (sum(v.values()), th)
+    for key in sorted(mix, key=lambda k: (k[0] is None, k[0] or 0, k[1] or 0)):
+        row, th = key
+        outs = sorted(mix[key].items(), key=lambda kv: (-kv[1], str(kv[0])))
+        nm = (per.get(row) or {}).get("name", "?")
+        flag = "ONE-OUTCOME" if len(outs) == 1 else "outcomes=%d" % len(outs)
+        if len(outs) == 1 and row in TIER and main_th[row][1] == th:
+            one.append(row)
+        lines.append("MIX %s th=%08x %-20s predicted=%d %s: %s" % (row, th or 0, nm, sum(mix[key].values()), flag, "; ".join(
+            "%s@%s=%d" % (("%08x" % o[0]) if isinstance(o[0], int) else o[0], ("%08x" % o[1]) if o[1] else "-", n)
+            for o, n in outs)))
+    lines.append("MIXSUM tier_ais_with_one_outcome=%d rows=%s tier_ais_with_more=%d (per tier AI's main think; an alt or "
+                 "state think of the same row is its own MIX line)" % (
+        len(one), ",".join(str(r) for r in sorted(one)), sum(1 for r in TIER if r in main_th and r not in one)))
+    ctl_fail = None
+    if controls:
+        ctl_fail = []
+        for mut, what in (("site", "predicted call site shifted by one byte: every compared decision must fail"),
+                          ("fallen", "row 6 (Fallen) mode test inverted: must fail on every decision whose mode the test separates"),
+                          ("melee", "melee flag of the model input flipped: fails where the flag decides the outcome")):
+            tot = {}
+            for d in decs:
+                kind, name, diffs, outc = check_decision(d, mut)
+                if kind in ("model", "hand") and not (mut == "fallen" and d["aid"]["ai"] != 6):
+                    t = tot.setdefault(d["aid"]["ai"], [name, 0, 0])
+                    t[1] += 1
+                    t[2] += 1 if diffs else 0
+            n = sum(v[1] for v in tot.values())
+            f = sum(v[2] for v in tot.values())
+            rows_unsep = [r for r in sorted(tot) if tot[r][2] == 0]
+            lines.append("CONTROL %s compared=%d failed=%d rows=%d rows_not_separated=%s : %s" % (
+                mut, n, f, len(tot), ",".join(str(r) for r in rows_unsep) or "-", what))
+            for r in sorted(tot):
+                if r in TIER or mut == "fallen":
+                    lines.append("CONTROL-ROW %s %s %-14s compared=%d failed=%d" % (mut, r, tot[r][0].split(":")[-1],
+                                                                                 tot[r][1], tot[r][2]))
+            if mut == "site":
+                ok = n > 0 and f == n
+            elif mut == "fallen":
+                ok = n > 0 and f > 0
+            else:
+                ok = True                       # informative: the rows it does not separate are the weak ones
+            ctl_fail.append((mut, ok))
+        lines.append("CONTROLS " + " ".join("%s=%s" % (m, "FAILS-AS-REQUIRED" if ok else "PASSED-WRONGLY")
+                                            for m, ok in ctl_fail))
     lines.append("ACCOUNT steps_histogram=%s violations=%d" % (
         json.dumps({str(k): hist[k] for k in sorted(hist)}), len(acc_bad)))
     ct = sum(v[0] for v in pairs.values())
@@ -554,7 +649,7 @@ def run_check(paths, out=None):
         with open(out, "w") as fh:
             fh.write(text)
     return text, {"decisions": len(decs), "mismatches": len(mism), "acc": len(acc_bad), "per": per, "pairs": pairs,
-                  "skill": skill, "pp_bad": pp_bad}
+                  "skill": skill, "pp_bad": pp_bad, "mix": mix, "controls": ctl_fail}
 
 
 # ---------------------------------------------------------------------------------------------------- selftest
@@ -660,11 +755,15 @@ def main(argv):
         print(text)
         return 0 if r["mismatches"] == 0 and r["decisions"] == n else 1
     out = js = None
+    controls = False
     paths = []
     a = argv[1:]
     k = 0
     while k < len(a):
-        if a[k] == "--out":
+        if a[k] == "--controls":
+            controls = True
+            k += 1
+        elif a[k] == "--out":
             out = a[k + 1]
             k += 2
         elif a[k] == "--json":
@@ -682,13 +781,14 @@ def main(argv):
             print("ROW", row, per[row])
         print("TOTAL", sum(per.values()))
         return 0
-    text, r = run_check(paths, out)
+    text, r = run_check(paths, out, controls)
     print(text, end="")
     if js:
         with open(js, "w") as fh:
             json.dump({"decisions": r["decisions"], "mismatches": r["mismatches"], "accounting_violations": r["acc"]},
                       fh)
-    return 0 if r["mismatches"] == 0 and r["acc"] == 0 and r["pp_bad"] == 0 else 1
+    bad_ctl = controls and any(not ok for m, ok in r["controls"] if m in ("site", "fallen"))
+    return 0 if r["mismatches"] == 0 and r["acc"] == 0 and r["pp_bad"] == 0 and not bad_ctl else 1
 
 
 if __name__ == "__main__":

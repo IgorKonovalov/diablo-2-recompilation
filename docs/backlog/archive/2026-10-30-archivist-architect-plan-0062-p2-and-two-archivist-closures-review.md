@@ -4,7 +4,7 @@ to: architect
 date: 2026-10-30
 status: done
 context:
-  - ../../plans/0062-debug-and-cut-content.md
+  - ../../plans/done/0062-debug-and-cut-content.md
   - ../../findings/archaeology/0002-unreached-rows.md
   - ../../tables/MonStats.md
   - ../../tables/Skills.md
