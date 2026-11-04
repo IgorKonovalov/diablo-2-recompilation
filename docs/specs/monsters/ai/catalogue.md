@@ -4,7 +4,7 @@ status: draft
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, monsters/ai/overview, monsters/ai/machinery, skills/dispatch, path/overview]
 consumed_by: [monsters/ai/overview, monsters/ai/machinery, hirelings]
-tags: {C: 308, I: 441, L: 14}
+tags: {C: 330, I: 494, L: 14}
 updated: 2026-11-04
 ---
 
@@ -3879,14 +3879,152 @@ No `aip` slot read.
 
 #### R31. Row 31 `NpcOutOfTown` (fn:sub_005E7880_AiNpcOutOfTown@0x005E7880)
 
-<!-- body R31 -->
+No `aip` slot read. `R3` is `AiCtlParamGet(3)`; `Pfx` below means the class's pair of quest calls: for class 527 the second name, for the others the first.
+
+```
+AiNpcOutOfTownInit (0x005E77A0), called first on every event:              [I] (0x005E77A0, 0x005E7880)
+  if R3's two words are 0:
+    (R3.x, R3.y) ← (X + 3, Y + 3)
+    if Pfx(0x005944B0, 0x0058A940) = 0: Pfx(0x005944F0, 0x0058A980);  UnitSetStat(U, 6, 0, 0);  SetMode(12, X, Y)
+    R3+0x14 ← 1;  R3+0x18 ← 0;  Idle(1);  returns 1
+  returns 0
+
+think:                                                                     [I] (0x005E7880, 0x005E7AAF)
+1. if the init returned 1: return
+2. class 527: 0x0058AA10
+3. if NpcInteractAny(L): Idle(40); return          ; L when U is a monster with its data
+4. if U's mode is 12: return
+5. AiNpcNearPlayer                                 ; its result is not read
+6. if no R3: the init again;  Idle(40); return
+7. if R3+0x14 ≥ 2:
+     R3+0x14 ← R3+0x14 + 1
+     p ← Pfx(0x00594450, 0x0058A8D0);  if none: Idle(20); return
+     if R3+0x14 < 8 and AiPathDistToPoint(U, p) > 0: WalkPt(p); return
+     the partner, UnitSetStat(U, 6, 0, 0), SetMode(12, X, Y); return
+8. if AiPathDistToPoint(U, R3) > 1 (signed) and R3+0x18 ≤ 5:
+     R3+0x18 ← R3+0x18 + 1
+     if class 527 and 0x0058A9F0 ≠ 0: Idle(20);  R3+0x18 ← 0; return
+     WalkPt(R3); return
+9. if R3+0x14 = 1:
+     if Pfx(0x005943B0, 0x0058A820) = 0: R3+0x14 ← 1;  R3+0x18 ← 1;  Idle(20); return
+     R3+0x14 ← 2
+10. Idle(20)
+```
+
+- R31a. [I] No draw. `UnitSetStat(U, 6, 0, 0)` is `hitpoints`. The block was checked against its anchored instructions (the finding's prose agrees). (fn:sub_005E7880_AiNpcOutOfTown@0x005E7880, fn:sub_005E77A0_AiNpcOutOfTownInit@0x005E77A0, fn:sub_00627260_UnitSetStat@0x00627260)
+- R31b. [C] The think to its first boundary, 6 reached, and the init, 4: families `oot`, `h77a0`, 240 cases each; no control separates them. (run:2026-11-03-ai-cat-emu-12)
 
 - R31i. [C] As data: kind 0, no `init`, no `alt`; 2 records (146 cain1, 527 drehyaiced); reach ·; `aip` set —; `aidel` 15/15/15; skills —. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
 - R31l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 #### R32. Row 32 `Npc` (fn:sub_005E7130_AiNpc@0x005E7130)
 
-<!-- body R32 -->
+No `aip` slot read: the town chain's words are the parameter records. `home` is `AiCtlParamGet(10)`, `R4`, `R5`, `R7` the kind-4, 5, 7 records, `L` the unit's interact list.
+
+```
+think:                                                                     [I] (0x005E7130, 0x005E733B)
+1. if AiNpcSaveHome: return
+2. by class, each going on to step 3 unless it says end:
+     201 jerhyn:  if 0x0059F570 = 0: Idle(40); end
+                  A2Q4_GuardBlock(&a, &b);  if a: Idle(20)
+                  if b = 0: end
+                  if 0x0059B6E0 ≠ 0 and home exists: home ← (X + 9, Y);  Idle(50); end
+     254 alkor:   if 0x005BAD20 ≠ 0: SetMode(8, 0, 0);  0x005BAD40; end
+     255 ormus:   if 0x005B9CA0(&p) ≠ 0:
+                    if AiPathDistToPoint(U, p) > 3: WalkPt(p); end
+                    SetMode(8, 0, 0);  0x005B9CD0; end
+     265 cain5:   if 0x00594360(&p) ≠ 0:
+                    if AiPathDistToPoint(U, p) > 2: WalkPt(p); end
+                    0x005945F0
+     512 drehya:  A5Q4_RedPortalCreateAI
+3. if AiNpcNearPlayer: return
+4. if AiNpcScriptStep: return
+5. if AiNpcPathPick: return
+6. Idle(8)
+
+AiNpcSaveHome:                                                             [I] (fn:sub_005E6800_AiNpcSaveHome@0x005E6800)
+  if home's +0x0C and +0x10 are both 0: home ← (X, Y);  Idle(20);  true
+  false
+
+AiNpcHomeLeash(n):                                                         [I] (fn:sub_005E6860_AiNpcHomeLeash@0x005E6860)
+  no home: AiNpcSaveHome
+  if the distance to home ≤ n (unsigned): false
+  R4 ← {home, 12, 10} when it exists;  Idle(10);  true
+
+AiNpcNearPlayer:                                                           [I] (0x005E6909, 0x005E6AD5)
+1. p ← AiNearestPlayer(&f);  n ← AiDistUnits(U, p)
+2. if no L: false
+3. h ← NpcInteractHas(L, p), or 1 when p is a busy player
+4. if NpcInteractAny(L) or h or v14 > 0:
+     if AiPathDistToPoint(U, (v18, v1C)) > 2 and v14 > 36: WalkPt(v18, v1C)
+     else if v14 > 0: clear the path flag;  Idle(8)
+     v14 ← 0 when v14 < 0, else v14 − 1
+     true
+5. if p = 0 or p = U: false
+6. if 3 ≤ n ≤ 23:
+     if AiNpcHomeLeash(16): true
+     Ovr(1, 0, 0);  WalkToward(p, n ≥ 5 ? 3 : n − 2, 2);  true
+7. clear the path flag
+   if v18 = 0: v18 ← 60;  a player p: UnitSetEvent(U, 18, p)
+   else if v18 < 0: v18 ← 0
+   else: v18 ← v18 − 1
+   Idle(20);  true
+
+AiNearestPlayer(&f):                                                       [I] (0x005DDF20, 0x005DDF85, 0x005DDE80, 0x005DDF19)
+  no room: returns 0
+  AiUnitSearch(U, {0, 0x7FFFFFFF}, AiNearestPlayerCb, 2);  none found: returns U
+  found: the unit;  f ← 1 when its stored distance is below 4
+  the callback keeps a candidate of type 0 with AiDistUnits ≤ 15:
+    with the searcher's interact bit set: also 0x00544590(G, cand, U) ≠ 0 and nearer than the best
+    clear, or a bad class or record: the last one kept wins
+
+AiNpcScriptStep, true on a command:                                        [I] (0x005E6AE0, 0x005E6DD5)
+1. if R4 and R4+0x14 > 0:
+     (x, y) ← R4
+     if x ≠ 0, y ≠ 0 and the distance > 3:
+       Ovr(g_NpcScriptCounter mod 4 = 0 ? 5 : 1, 0, 0);  WalkPtCmd(x, y);  counter + 1
+     else: Idle(R4+0x18)
+     R4+0x14 ← R4+0x14 − 1;  true
+2. if R5:
+     a ← R5+0x0C
+     if a > 0 and odd: Ring(byte R5+0x10);  a − 1;  true
+     if a > 0 and even:
+       if R5+0x14 > 0: Idle(R5+0x18);  a − 1;  R5+0x14 − 1;  true
+       a − 1, and on to step 3
+     else if R5+0x14 > 0: Idle(R5+0x18);  R5+0x14 − 1;  true
+3. if R7 and m ← R7+0x0C ≠ 0:
+     if m is not 8, 9, 10 or 11: m ← 0;  Idle(50);  true
+     D ← the distance to (R7+0x10, R7+0x14)
+     if D > 0 and R7+0x18 > 0:
+       Ovr(7, 0, 0);  if not WalkPtCmd: Idle(25)
+       R7+0x18 − 1;  true
+     if D > 1: m ← 0
+     the path facing 0x00648820(path, f): class 0x9A 0x38; 0x9B 0x34; 0xB2 4; 0x195 0x34 at m 8, 0x30 at m 9
+     class 0x1FF: if Range(100) > 4: m ← 0;  Idle(50);  true
+     if m ≠ 0:
+       if U's mode = m: Idle(50);  true
+       SetModeAtUnit(m, U);  m ← 0;  true
+     class 0xB2: if Range(100) < 66: m ← 8
+4. false
+
+AiNpcPathPick:                                                             [I] (0x005E7080, 0x005E7123)
+  list ← AiCtl+0x38                  ; {count, 12-byte nodes {action, x, y}}
+  if no list: false                  ; no draw
+  if D100() ≥ 66 or count = 0: false
+  k ← RNG_RangeB(U's seed, count)
+  action outside 0..6 (signed), or its table word 0 (actions 0, 6): false
+  run the action (node)
+
+the actions, a point with x = 0 or y = 0 giving false at once:             [I] (0x005E6DE0, 0x005E7075)
+  1, 3:  distance 0: false;  else Ovr(7, 0, 0);  WalkPtCmd(x, y);  R4 ← {x, y, 12, 10};  true
+  2:     as 1, then R4 ← {x, y, 20, 10}
+  4:     as 1, then R7 ← {MonModeAllowed(class, 8) ? 8 : 1, x, y, 4};  R4 ← {x, y, 12, 10}
+  5:     as 4, with mode 9
+```
+
+- R32a. [I] The blocks of `AiNpcNearPlayer`, `AiNpcScriptStep`, `AiNpcPathPick` were checked against their anchored instructions (the finding's prose agrees). `WalkPtCmd` is `MonAiWalkToPointCmd`. The `home` chain's quest words: `0x0059B6E0` reads quest 11's bytes `+0x0F` and `+0x10`, `0x005BAD20` quest 18's first byte, `0x005B9CA0` quest 17's `+0x06`, its point at `+0x10`. Stock path actions are 1–5. (fn:sub_005E7130_AiNpc@0x005E7130, fn:sub_005DEF30_MonAiWalkToPointCmd@0x005DEF30, data:g_NpcPathActions@0x00741D74, fn:sub_006660B0_PresetPathCopy@0x006660B0, tbl:MonStats.txt:interact)
+- R32b. [C] Each function's map to its first command or boundary, and no further: `npc` 7 boundaries; `h6800`, `h6860`, `h6ae0` 13 (`cmp` 75, `arg` 69), `h7080` 5 (`le` 45, `arg` 226), `act1`–`act5`, `hp`, `hcb` (`cmp` 23), 240 cases each. `AiNearestPlayerCb` tests **the searcher's** class record: a reading from the candidate's separates all 32 cases that reach 0x00544590. (0x005DDEB6, run:2026-11-03-ai-cat-emu-12)
+- R32c. [I] Row 32 has a fork in all 199 decisions of the rev 4 logs, so it does not count for the catalogue sample. (run:2026-11-04-ai-resume-flip)
 
 - R32i. [C] As data: kind 0, no `init`, no `alt`; 35 records (35 records, as the index lists them); reach ·; `aip` set —; `aidel` 15/15/15; skills —. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
 - R32l. [I] Logged, not compared: 1167 decisions (416 + 279 + 472) in a row with no model, so the first boundary of this row is not raised. (run:2026-11-03-ai, run:2026-11-03-ai-3, run:2026-11-04-ai-r5, 0x005B186F)
@@ -3894,21 +4032,49 @@ No `aip` slot read.
 
 #### R41. Row 41 `Towner` (fn:sub_005E7540_AiTowner@0x005E7540)
 
-<!-- body R41 -->
+`AiNpcSaveHome`, `AiNpcScriptStep`, `AiNpcPathPick`, each ending the event on true, then `Idle(12)`: [row 32's chain](#r32-row-32-npc-fnsub_005e7130_ainpc0x005e7130) with no `AiNpcNearPlayer`. No `aip` read. [I] (fn:sub_005E7540_AiTowner@0x005E7540)
+
+- R41a. [C] The chain to its first command: family `towner`, 240 cases, 17 boundaries, 72 with a draw; controls `le`, `cmp` fail the 15, 83 they separate. (run:2026-11-03-ai-cat-emu-12)
 
 - R41i. [C] As data: kind 0, no `init`, no `alt`; 6 records (195-197 act2male..act2child, 203 act2guard1, 294 act3male, 296 act3female); reach ·; `aip` set —; `aidel` 15/15/15; skills —. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
 - R41l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 #### R42. Row 42 `Vendor` (fn:sub_005E9E00_AiVendor@0x005E9E00)
 
-<!-- body R42 -->
+```
+if D100() < 20: SetMode(8, 0, 0)                                           [I] (fn:sub_005E9E00_AiVendor@0x005E9E00)
+else: Idle(30)
+```
+
+No `aip` read. [C] The whole map: family `vendor`, 240 cases, all drawing; control `le` fails the 62 it separates. (run:2026-11-03-ai-cat-emu-12)
 
 - R42i. [C] As data: kind 0, no `init`, no `alt`; 2 records (204-205 act2vendor1..act2vendor2); reach ·; `aip` set —; `aidel` 15/15/15; skills —. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
 - R42l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 #### R54. Row 54 `NpcStationary` (fn:sub_005E73A0_AiNpcStationary@0x005E73A0)
 
-<!-- body R54 -->
+No `aip` slot read.
+
+```
+1. p ← AiNearestPlayer(&f)                                                 [I] (0x005E73A0, 0x005E7533)
+2. if p ≠ 0 and p ≠ U:
+     n ← AiDistUnits(U, p)
+     if p is a player and PlayerIsBusy(p) = 1: Idle(10); return
+     if NpcInteractAny(L): Idle(10); return                ; L when U is a monster with its data
+     if n < 24:
+       if v18 = 0: v18 ← 60;  a player p: UnitSetEvent(U, 18, p)
+       else: v18 ← v18 − 1
+     else:
+       if v18 ≤ 0: v18 ← 60
+       v18 ← v18 − 1
+     Idle(20); return
+3. class 251: if 0x0059DF50 ≠ 0 and AiNpcMode0IfFree = 1: SetMode(0, 0, 0);  0x0059C750; return
+   class 406: if 0x005B43F0 ≠ 0 and AiNpcMode0IfFree = 1: SetMode(0, 0, 0);  0x005B4440; return
+4. Idle(20)
+```
+
+- R54a. [I] No draw. The block was checked against its anchored instructions (the finding's prose agrees). `AiNpcMode0IfFree` does its own `SetMode(0, 0, 0)`. Its first call cannot fail: 0 of 3 sites, so the row does not count for the catalogue sample. (fn:sub_005E73A0_AiNpcStationary@0x005E73A0, fn:sub_005E7350_AiNpcMode0IfFree@0x005E7350, run:2026-11-04-ai-resume-flip)
+- R54b. [C] The map to its first call, `nstat`, 4 boundaries, and `AiNpcMode0IfFree`'s, `h7350`, 240 cases each; no control separates them. (run:2026-11-03-ai-cat-emu-12)
 
 - R54i. [C] As data: kind 0, no `init`, no `alt`; 4 records (251 tyrael1, 367 tyrael2, 406 izualghost, 521 tyrael3); reach ·; `aip` set —; `aidel` 15/15/15; skills —. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
 - R54l. [I] Logged, not compared: 489 decisions (187 + 125 + 177) in a row with no model, so the first boundary of this row is not raised. (run:2026-11-03-ai, run:2026-11-03-ai-3, run:2026-11-04-ai-r5, 0x005B186F)
@@ -3916,49 +4082,140 @@ No `aip` slot read.
 
 #### R58. Row 58 `Navi` (fn:sub_005E7E20_AiNavi@0x005E7E20)
 
-<!-- body R58 -->
+No `aip` slot read.
+
+```
+1. if NpcInteractAny(L): Idle(10); return                                  [I] (0x005E7E20, 0x005E7F3F)
+2. p ← AiNearestPlayer(&f)
+3. if p ≠ 0, p is a player, not busy, Range(3) ≠ 0 and f ≠ 0:              ; draw only past the first three
+     if v18 = 0: v18 ← 60;  UnitSetEvent(U, 18, p)
+     else if v18 < 0: v18 ← 0
+     else if v18 > 0: v18 ← v18 − 1
+     Idle(20); return
+4. u ← FindHostile(&dist, &melee)
+5. if u ≠ 0 and dist < 25: SetModeAtUnit(4, u); return
+6. Idle(50)
+```
+
+- R58a. [I] The block was checked against its anchored instructions (the finding's prose agrees). (fn:sub_005E7E20_AiNavi@0x005E7E20, fn:sub_005DDC30_MonAiFindHostile@0x005DDC30)
+- R58b. [C] The map to its first boundary, 3 reached: family `navi`, 240 cases; no control separates it. (run:2026-11-03-ai-cat-emu-12)
 
 - R58i. [C] As data: kind 0, no `init`, no `alt`; 1 records (266 navi); reach ·; `aip` set —; `aidel` 15/15/15; skills —. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
 - R58l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 #### R60. Row 60 `GoodNpcRanged` (fn:sub_005E7AC0_AiGoodNpcRanged@0x005E7AC0)
 
-<!-- body R60 -->
+Alias of [state row 5](#s5-state-row-5-fnsub_005e7ac0_aigoodnpcranged0x005e7ac0): the same think word. No `aip`; `rogue2` is its one record. [I] (fn:sub_005E7AC0_AiGoodNpcRanged@0x005E7AC0)
 
 - R60i. [C] As data: kind 0, no `init`, no `alt`; 1 records (270 rogue2); reach ·; `aip` set —; `aidel` 15/15/15; skills —. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
 - R60l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 #### R62. Row 62 `TownRogue` (fn:sub_005E7D60_AiTownRogue@0x005E7D60)
 
-<!-- body R62 -->
+No `aip` slot read.
+
+```
+u ← FindHostile(&dist, &melee)             ; seeded with the context's words     [I] (fn:sub_005E7D60_AiTownRogue@0x005E7D60)
+if u ≠ 0 and dist < 25 (signed): SetModeAtUnit(4, u)
+else: Idle(50)
+```
+
+No draw. [State 8](#s8-state-row-8-fnsub_005e7dc0_aist80x005e7dc0) has the same 91 bytes but the low bytes of three call displacements. [C] The entry's first call only: family `trogue`, 240 cases. (run:2026-11-03-ai-cat-emu-12)
 
 - R62i. [C] As data: kind 1, no `init`, no `alt`; 1 records (272 rogue3); reach ·; `aip` set —; `aidel` 15/15/15; skills —. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
 - R62l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 #### R81. Row 81 `JarJar` (fn:sub_005E7590_AiJarJar@0x005E7590)
 
-<!-- body R81 -->
+No `aip` slot read.
+
+```
+1. AiNpcSaveHome                                       ; its result is not read      [I] (0x005E7590, 0x005E7798)
+2. if 0x0059B8B0 = 0:
+     p ← home;  f ← not 0x0059B8F0(&p)
+     if home+0x18 < T and T − home+0x18 < 200: Idle(20); return
+     if the distance to p > 1: WalkPt(p);  home+0x18 ← T; return
+     if not f: Idle(20); return
+     if AiNpcNearPlayer: home+0x18 ← T
+     else: Idle(20)
+     return
+3. if no home: Idle(120); return
+4. q ← AiNearestPlayer(&f);  n ← AiDistUnits(U, q)
+5. if (0x0059AEC0 ≠ 0 and the distance to home > 2) or the distance to home > 7:
+     WalkPt(home.x, home.y − 3); return
+6. if AiNpcNearPlayer or q = 0 or q = U: Idle(120); return
+7. if q is a player:
+     if n < 12:
+       if Range(1000) < 100: WanderNearUnit(q, 2)
+       Idle(200); return
+     Idle(20)
+8. if Range(1000) < 50: Ring(3)
+9. Idle(120)
+```
+
+- R81a. [I] The block was checked against its anchored instructions (the finding's prose agrees). At step 7 past `Idle(20)`, step 8 draws too, and both idles are queued. (fn:sub_005E7590_AiJarJar@0x005E7590)
+- R81b. [C] The map to its first boundary, 2 reached: family `jarjar`, 240 cases; no control separates it. (run:2026-11-03-ai-cat-emu-12)
 
 - R81i. [C] As data: kind 0, no `init`, no `alt`; 1 records (331 act2guard2); reach ·; `aip` set —; `aidel` 15/15/15; skills —. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
 - R81l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 #### R88. Row 88 `7TIllusion` (fn:sub_005EA080_Ai7TIllusion@0x005EA080)
 
-<!-- body R88 -->
+No `aip` slot read.
+
+```
+if v18 = 1: U+0xC4 ← U+0xC4 | 0x20000;  SetMode(0, 0, 0)                   [I] (fn:sub_005EA080_Ai7TIllusion@0x005EA080)
+else: SetMode(4, X − 10, Y);  v18 ← 1
+```
+
+No draw. [C] Both boundaries: family `illus`, 240 cases; no control separates it. (run:2026-11-03-ai-cat-emu-12)
 
 - R88i. [C] As data: kind 1, no `init`, no `alt`; 1 records (355 seventombs); reach ·; `aip` set —; `aidel` 15/15/15; skills —. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
 - R88l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 #### R91. Row 91 `DarkWanderer` (fn:sub_005EA130_AiDarkWanderer@0x005EA130)
 
-<!-- body R91 -->
+No `aip` slot read.
+
+```
+1. if A3Q7_WalkTarget(&p) = 0: Idle(10); return                            [I] (0x005EA130, 0x005EA260)
+2. if v14 = 0: v14 ← 1;  v18 ← 0;  v1C ← 0
+3. if t = 0: Idle(10); return
+4. if dist ≥ 20: Idle(40); return
+5. v14 = 1: WalkPt(p);  v14 ← 2; return
+6. v14 = 2:
+     if AiPathDistToPoint(U, p) < 2 (unsigned) or v18 ≥ 3:
+       U+0xC4 ← U+0xC4 | 0x20000;  SetMode(0, 0, 0);  A3Q7_TimerStart; return
+     v18 ← v18 + 1;  Ovr(1, 0, 0);  WalkPt(p); return
+7. other v14: Idle(40)
+```
+
+- R91a. [I] No draw. The block was checked against its anchored instructions (the finding's prose agrees). (fn:sub_005EA130_AiDarkWanderer@0x005EA130, fn:sub_005BD0D0_A3Q7_WalkTarget@0x005BD0D0, fn:sub_005BD4A0_A3Q7_TimerStart@0x005BD4A0)
+- R91b. [C] The first call only: family `dark`, 240 cases. (run:2026-11-03-ai-cat-emu-12)
 
 - R91i. [C] As data: kind 1, no `init`, no `alt`; 1 records (368 darkwanderer); reach ·; `aip` set —; `aidel` 15/15/15; skills —. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
 - R91l. [I] Not logged: no decision of this row in any of the three kept batches. Everything above is the code reading of its finding. (0x005B186F)
 
 #### R99. Row 99 `TrappedSoul` (fn:sub_005E9F10_AiTrappedSoul@0x005E9F10)
 
-<!-- body R99 -->
+No `aip` slot read.
+
+```
+1. U+0xC4 ← U+0xC4 | 0x20000                       ; every event             [I] (0x005E9F10, 0x005EA078)
+2. if t = 0 or dist ≥ 5:
+     if v14 ≠ 0: SetModeAtUnit(8, t)               ; t may be null
+     else: Idle(15)
+     return
+3. if v14 = 0: v14 ← 1;  v18 ← T;  SetModeAtUnit(9, t); return
+4. if not melee or T ≤ v18: SetModeAtUnit(8, t); return
+5. by position, unsigned (UnitGetPos):
+     Ux ≥ Tx and Uy ≤ Ty: SetModeAtUnit(4, t);  v18 ← T + 35
+     else Ux > Tx or Uy < Ty: SetModeAtUnit(8, t);  v18 ← T + 5
+     else: SetModeAtUnit(5, t);  v18 ← T + 35
+```
+
+- R99a. [I] No draw. The block was checked against its anchored instructions (the finding's prose agrees). (fn:sub_005E9F10_AiTrappedSoul@0x005E9F10, fn:sub_00620870_UnitGetPos@0x00620870)
+- R99b. [C] The map to its first boundary, 7 reached: family `soul`, 240 cases; control `cmp` fails the 26 it separates, `dist < 5` met at equality 20 times. No call past the first in its logs, so the row does not count for the catalogue sample. (run:2026-11-03-ai-cat-emu-12, run:2026-11-04-ai-resume-flip)
 
 - R99i. [C] As data: kind 1, no `init`, no `alt`; 2 records (403-404 trappedsoul1..trappedsoul2); reach ·; `aip` set —; `aidel` 15/15/15; skills —. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
 - R99l. [I] Logged, not compared: 468 decisions (243 + 25 + 200) in a row with no model, so the first boundary of this row is not raised. (run:2026-11-03-ai, run:2026-11-03-ai-3, run:2026-11-04-ai-r5, 0x005B186F)
@@ -3966,7 +4223,11 @@ No `aip` slot read.
 
 #### R100. Row 100 `Buffy` (fn:sub_005E7F50_AiBuffy@0x005E7F50)
 
-<!-- body R100 -->
+```
+if U has a room: Idle(200)                                                 [I] (fn:sub_005E7F50_AiBuffy@0x005E7F50)
+```
+
+Stub: no draw, no `aip`; with no room, a return. [C] Both boundaries: family `buffy`, 240 cases. 4 resumed decisions do not count for the catalogue sample. (run:2026-11-03-ai-cat-emu-12)
 
 - R100i. [C] As data: kind 0, no `init`, no `alt`; 1 records (408 malachai); reach ·; `aip` set —; `aidel` 15/15/15; skills —. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
 - R100l. [I] Logged, not compared: 16 decisions (12 + 4) in a row with no model, so the first boundary of this row is not raised. (run:2026-11-03-ai, run:2026-11-03-ai-3, 0x005B186F)
@@ -3974,61 +4235,204 @@ No `aip` slot read.
 
 #### S2. State row 2 (fn:sub_005B14E0_AiSt2WanderNearTarget@0x005B14E0)
 
-<!-- body S2 -->
+No setter passes 2: [S17's note](#s17-state-row-17-fnsub_005e8020_aist100x005e8020). Both draws are the low byte of a step, not mod 100.
+
+```
+1. if St3or19 or dist < 4: MonAiInit(ctl, 0);  Idle(10); return            [I] (fn:sub_005B14E0_AiSt2WanderNearTarget@0x005B14E0)
+2. if dist > 10 and v14 = 0: v14 ← 1;  WanderNearUnit(t, 12); return
+3. if step's low byte < 0x4D: Ring(4); return                              ; unsigned
+4. if a second step's low byte < 0x1A: v14 ← 0
+5. Idle(10)
+```
+
+- S2a. [C] The map to its 4 boundaries: family `st2`, 240 cases, 73 drawing; controls `le`, `cmp`, `lo8` fail the 13, 16, 47 they separate. (run:2026-11-03-ai-cat-emu-12)
 
 - S2i. [C] As data: kind 1, no `init`, no `alt`. (data:g_MonAiStateRows@0x0073D358, [MonAI § The second table](../../../tables/MonAI.md#the-second-table-at-0x0073d358-found-at-the-lanea52-review))
 
 #### S3. State row 3 (fn:sub_005E5870_AiSt3GroupRoam@0x005E5870)
 
-<!-- body S3 -->
+No setter passes 3: [S17's note](#s17-state-row-17-fnsub_005e8020_aist100x005e8020). Kind 8 is the head record's `+0x08`.
+
+```
+init (0x005E5730):                                                         [I] (0x005E5730, 0x005E5870)
+  o ← MonsterOwner(U);  o = 0 is fatal (line 0xE17)
+  v14 ← X − o's x;  v18 ← Y − o's y
+  if o = U: v1C ← D100()                                                   ; one step
+
+think:                                                                     [I] (0x005E5870, 0x005E5ABA)
+1. if the parameter head has kind 8: 0x0058F160;  MonAiInit(ctl, 0);  Idle(10); return
+2. MonGroupForEach(U, &f, AiGroupDeadCb)
+3. if f or St3or19: MonHelpBlock kind 8;  0x0058F160;  MonAiInit(ctl, 0);  Idle(10); return
+4. if MonsterOwner(U) ≠ U:                                                 ; not the leader
+     if no head: Idle(15); return
+     (x, y) ← (head.x + v14, head.y + v18);  Pop;  WalkPt(x, y); return
+5. if D100() < 30: Idle(10); return
+6. v ← v1C + 1, 0 at 100 or more
+   r ← Range(10)
+   if RNG_RangePow2(2) ≠ 0: r ← −r                                         ; one per branch below, same draw order
+   v < 25: (x, y) ← (X + r, Y − 5)
+   v < 50: (X + 5, Y + r)
+   v < 75: (X + r, Y + 5)
+   else:   (X − 5, Y + r)
+7. if MonAiWalkToPointOrStop(x, y): MonHelpBlock kind 2 with the point;  v1C ← v
+   else: v1C ← v + 25
+```
+
+- S3a. [I] The block was checked against its anchored instructions (the finding's prose agrees). (fn:sub_005E5730_AiSt3Init@0x005E5730, fn:sub_005E5870_AiSt3GroupRoam@0x005E5870, fn:sub_005E5710_AiGroupDeadCb@0x005E5710, fn:sub_0058F730_MonHelpBlock@0x0058F730)
+- S3b. [C] The init's map, 98 drawing, and the think's to its first boundary: families `st3i`, `st3`, `h5710`, 240 cases each; no control separates them. (run:2026-11-03-ai-cat-emu-12)
 
 - S3i. [C] As data: kind 1, `init` 0x005E5730, no `alt`. (data:g_MonAiStateRows@0x0073D358, [MonAI § The second table](../../../tables/MonAI.md#the-second-table-at-0x0073d358-found-at-the-lanea52-review))
 
 #### S8. State row 8 (fn:sub_005E7DC0_AiSt8@0x005E7DC0)
 
-<!-- body S8 -->
+[Row 62's code](#r62-row-62-townrogue-fnsub_005e7d60_aitownrogue0x005e7d60), 91 bytes equal but the low bytes of three call displacements: `FindHostile`, a unit under 25: `SetModeAtUnit(4, u)`, else `Idle(50)`. No setter passes 8: [S17's note](#s17-state-row-17-fnsub_005e8020_aist100x005e8020). [I] (fn:sub_005E7DC0_AiSt8@0x005E7DC0) [C] The first call only: family `st8`, 240 cases. (run:2026-11-03-ai-cat-emu-12)
 
 - S8i. [C] As data: kind 1, no `init`, no `alt`. (data:g_MonAiStateRows@0x0073D358, [MonAI § The second table](../../../tables/MonAI.md#the-second-table-at-0x0073d358-found-at-the-lanea52-review))
 
 #### S9. State row 9 (fn:sub_005E7F80_AiSt9@0x005E7F80)
 
-<!-- body S9 -->
+No setter passes 9: [S17's note](#s17-state-row-17-fnsub_005e8020_aist100x005e8020).
+
+```
+1. if the parameter head has kind 8: 0x0058F160;  MonAiInit(ctl, 0)        [I] (fn:sub_005E7F80_AiSt9@0x005E7F80, fn:sub_0058F730_MonHelpBlock@0x0058F730)
+2. else:
+     MonGroupForEach(U, &f, AiGroupDeadCb)
+     if St3or19 or f or dist < 20: MonHelpBlock kind 8;  0x0058F160;  MonAiInit(ctl, 0)
+3. Idle(10)
+```
+
+No draw. [C] The map to its first boundary, 2 reached: family `st9`, 240 cases. (run:2026-11-03-ai-cat-emu-12)
 
 - S9i. [C] As data: kind 1, no `init`, no `alt`. (data:g_MonAiStateRows@0x0073D358, [MonAI § The second table](../../../tables/MonAI.md#the-second-table-at-0x0073d358-found-at-the-lanea52-review))
 
 #### S10. State row 10 (fn:sub_005E8020_AiSt10@0x005E8020)
 
-<!-- body S10 -->
+The think of states 10 and 17, which differ by search kind only (1 and 2). Setters: `CloakAreaCb`, and `CurseSetAiState` for `auratargetstate` 23.
+
+```
+1. if melee and not (U's class in range with interact set) and MonModeAllowed(class, 4):   [I] (fn:sub_005E8020_AiSt10@0x005E8020, fn:sub_005D6520_CloakAreaCb@0x005D6520, fn:sub_005C34B0_CurseSetAiState@0x005C34B0)
+     SetModeAtUnit(4, t); return
+2. if D100() < 20: Ring(3)
+   else: Idle(10)
+```
+
+- S10a. [C] The map to its 3 boundaries: family `st10`, 240 cases, 152 drawing; control `le` fails the 41 it separates. (run:2026-11-03-ai-cat-emu-12)
+- S10r. [I] Own decisions at the think 0x005E8020, in the rows of classes that entered it, a consistency check only: 632 in the rev 4 and rev 6 logs, 632 resumed, 0 mismatches, 0 stopped, 632 calls matched, none past the first. The logs do not split 10 from 17; state control saw state 10 live and 17 not. Not under sentence H1. (run:2026-11-04-ai-resume, run:2026-11-04-ai-r5)
 
 - S10i. [C] As data: kind 1, no `init`, no `alt`. (data:g_MonAiStateRows@0x0073D358, [MonAI § The second table](../../../tables/MonAI.md#the-second-table-at-0x0073d358-found-at-the-lanea52-review))
 
 #### S11. State row 11 (fn:sub_005E8140_AiSt11@0x005E8140)
 
-<!-- body S11 -->
+Setters: `MonFleeFrom`, and `CurseSetAiState` for `auratargetstate` 56. No draw in the function.
+
+```
+init (0x005E80E0):                                                         [I] (0x005E80E0, 0x005E8140)
+  g ← UNIT_GetTargetUnit(U)
+  g of type 0, 1 or 3: MonForcedTargetSet(U, kind 1, 2 or 4, g's id)
+
+think:                                                                     [I] (0x005E8140, 0x005E8340)
+1. if U lacks state 56:
+     MonAiInit(ctl, 0);  CancelEvents(2, 0);  UnitQueueEvent(U, 2, T + 1, 0, 0)
+2. if dist > (v14 ≠ 0 ? v14 : 30): Idle(10); return
+3. p: i32 ← 0
+   if Velocity > 0 (i16): q ← Run·100 ÷ Velocity (i32, truncating);  if q ≥ 100: p ← min(q − 100, 120)
+4. if v1C = 0:
+     v1C ← 1;  MonForcedTargetClear;  CancelEvents(2, 0);  Ovr(2, p, 0)
+     MonModeAllowed(class, 15) ? MonAiStepAwayXY(t, 30, 0) : MonAiStepAway(t, 30, 0); return
+5. if melee and not MONSTATS_FlagTest(class, 9) and mode 4 allowed: SetModeAtUnit(4, t); return
+6. Ovr(2, p, 0)
+   the same step away with flag 1;  on 0: Ring(6)
+```
+
+- S11a. [I] `Velocity` is loaded u16 but tested as i16, and `Run·100` cannot wrap. Stock `Velocity` 0..15 and `Run` 0..20 tell no widths apart. (0x005E81DA, 0x005E81EE, fn:sub_005E8140_AiSt11@0x005E8140, fn:sub_00573090_MonForcedTargetSet@0x00573090, fn:sub_005DDD00_MonFleeFrom@0x005DDD00, tbl:MonStats.txt:Velocity, tbl:MonStats.txt:Run)
+- S11b. [C] The init's map and the think's first call (0x005E816F) only: families `st11i`, `st11`, 240 cases each. (run:2026-11-03-ai-cat-emu-12)
+- S11r. [I] Own decisions at 0x005E8140, a consistency check only: 134 in the rev 4 and rev 6 logs, 134 resumed, 0 mismatches, 0 stopped, 394 calls matched, 260 past the first, an unknown value deciding 68 of those 260. Not under sentence H1. (run:2026-11-04-ai-resume, run:2026-11-04-ai-r5)
 
 - S11i. [C] As data: kind 1, `init` 0x005E80E0, no `alt`. (data:g_MonAiStateRows@0x0073D358, [MonAI § The second table](../../../tables/MonAI.md#the-second-table-at-0x0073d358-found-at-the-lanea52-review))
 
 #### S12. State row 12 (fn:sub_005E8340_AiSt12@0x005E8340)
 
-<!-- body S12 -->
+Setter: `CurseSetAiState` for `auratargetstate` 27.
+
+```
+1. t' ← UNIT_GetTargetUnit(U)                                              [I] (0x005E8340, 0x005E8476)
+2. if t' = 0 or its room is a town:
+     MonAiInit(ctl, 0);  CancelEvents(2, 0);  UnitQueueEvent(U, 2, T + 1, 0, 0); return
+3. if v14 = 0: v14 ← 1;  MonAiWalkToUnitType13(t', 7); return
+4. if InMeleeRange(U, t', 0): SetModeAtUnit(4, t'); return
+5. u ← MonAiTargetOrIdle(ctl, &d, &m)
+   if u ≠ 0 and m: v14 ← 0;  SetModeAtUnit(4, u); return
+6. v14 ← 1;  UnitSetPathTargetUnit(U, t');  MonAiWalkToUnitType13(t', 7)
+```
+
+- S12a. [I] No draw. The block was checked against its anchored instructions (the finding's prose agrees). (fn:sub_005E8340_AiSt12@0x005E8340, fn:sub_005DE890_MonAiTargetOrIdle@0x005DE890)
+- S12b. [C] The first call only: family `st12`, 240 cases. (run:2026-11-03-ai-cat-emu-12)
+- S12r. [I] Own decisions at 0x005E8340, a consistency check only: 56 in the rev 4 and rev 6 logs, 56 resumed, 0 mismatches, 0 stopped, 286 calls matched, 230 past the first, an unknown value deciding 0 of them. Not under sentence H1. (run:2026-11-04-ai-resume, run:2026-11-04-ai-r5)
 
 - S12i. [C] As data: kind 0, no `init`, no `alt`. (data:g_MonAiStateRows@0x0073D358, [MonAI § The second table](../../../tables/MonAI.md#the-second-table-at-0x0073d358-found-at-the-lanea52-review))
 
 #### S13. State row 13 (fn:sub_005E5C50_AiSt13@0x005E5C50)
 
-<!-- body S13 -->
+The Countess's state: set by `SuperUniqueSpawn` for SuperUniques `+0x08` 6. `aip`: 1 the run's chance out of melee; 2 the idle; 3 with 10 added, the chance of A1.
+
+```
+AiPathSkillStep (0x005E5B70), `Skill1` at the next DS1 path point:         [I] (fn:sub_005E5B70_AiPathSkillStep@0x005E5B70)
+  if the list exists and v14 < count:
+    if the class is out of range, no record, or Skill1 is outside 0 .. Skills count − 1: return 0
+    MonAiUseSkill(4, Skill1, 0, x[v14], y[v14])      ; the mode pushed 4, not Sk1mode
+    v14 ← v14 + 1;  v18 ← T;  return 1
+  if |T − v18| > 700: v14 ← 0
+  return 0
+
+think:                                                                     [I] (0x005E5C50, 0x005E6012)
+RunHome: AiPathOverrideSet(pathctl, 1, 0, 0);  if MonAiRunToPoint(home): end the event;  else CancelEvents(2, 0)
+1. if M = 0 or no room: return
+2. home: absent, pushed from X, Y;  a zero word: refilled from X or Y
+3. if LogicRegionIdAt(home) ≠ LogicRegionIdAt(U): RunHome
+4. if LogicRegionIdAt(t) ≠ LogicRegionIdAt(home):
+     if U stands exactly at home:
+       if dist < 25 and AiPathSkillStep: return
+       Idle(10); return
+     RunHome
+5. if AiPathDistToPoint(U, home) > 40 (unsigned): RunHome
+6. if AiPathSkillStep: return
+7. r ← Range(100)
+8. if melee:
+     if r < aip(3) + 10: SetModeAtUnit(4, t)
+     else: Idle(aip(2))
+   else:
+     if r < aip(1): Ovr(0, 100, 0);  MonAiRunToUnit(t)
+     else: Idle(aip(2))
+```
+
+- S13a. [I] The block was checked against its anchored instructions (the finding's prose agrees). `CountessFirewall` runs along her preset's DS1 path, once per point, again after 700 frames. (fn:sub_005E5C50_AiSt13@0x005E5C50, tbl:MonStats.txt:aip1, tbl:MonStats.txt:Skill1, fn:sub_005A49B0_SuperUniqueSpawn@0x005A49B0)
+- S13b. [C] The map to its first boundary, 3 reached, and `AiPathSkillStep`'s, 2: families `st13`, `h5b70`, 240 cases each; `h5b70`'s controls `cmp`, `u16` fail the 45, 7 they separate. (run:2026-11-03-ai-cat-emu-12)
+- S13c. [I] Short by name: two Countess launches did not reach her, so the state has no logged decision; it is not called dead. (run:2026-11-04-ai-r5)
 
 - S13i. [C] As data: kind 1, no `init`, no `alt`. (data:g_MonAiStateRows@0x0073D358, [MonAI § The second table](../../../tables/MonAI.md#the-second-table-at-0x0073d358-found-at-the-lanea52-review))
 
 #### S14. State row 14 (fn:sub_005E2610_AiSt14@0x005E2610)
 
-<!-- body S14 -->
+No setter passes 14: [S17's note](#s17-state-row-17-fnsub_005e8020_aist100x005e8020).
+
+```
+if melee:                                                                  [I] (fn:sub_005E2610_AiSt14@0x005E2610)
+  if D100() < 95: step();  SetModeAtUnit(5, t); return                     ; the second step's value unused
+else:
+  if D100() < 89: MonAiWalkToUnit(t, 0); return
+Idle(10)
+```
+
+[C] The map to its 3 boundaries: family `st14`, 240 cases, all drawing; control `le` fails the 29 it separates. (run:2026-11-03-ai-cat-emu-12)
 
 - S14i. [C] As data: kind 1, no `init`, no `alt`. (data:g_MonAiStateRows@0x0073D358, [MonAI § The second table](../../../tables/MonAI.md#the-second-table-at-0x0073d358-found-at-the-lanea52-review))
 
 #### S17. State row 17 (fn:sub_005E8020_AiSt10@0x005E8020)
 
-<!-- body S17 -->
+The same think as [state 10](#s10-state-row-10-fnsub_005e8020_aist100x005e8020), on search kind 2. [I] (fn:sub_005E8020_AiSt10@0x005E8020)
+
+- S17a. [I] **No setter, states 2, 3, 8, 9, 14, 17:** no direct call of `MonAiInit` passes these values and every indirect source is resolved, a reading of the image's callers. [C] None appeared in the 21 sessions of run:2026-11-03-ai-3 over 7 539 decisions and 10 721 events, for that window only. State 10 was live in the same window, a control that the logger sees a state; the setter reading stays `[I]` and these states are not called dead. (fn:sub_005B0E00_MonAiInit@0x005B0E00, [ai/0013 § 3](../../../findings/ai/0013-batch12.md))
+- S17r. [I] Own decisions: the 632 of [S10r](#s10-state-row-10-fnsub_005e8020_aist100x005e8020), not split by state, none of which state control tied to state 17. (run:2026-11-04-ai-resume, run:2026-11-04-ai-r5)
 
 - S17i. [C] As data: kind 2, no `init`, no `alt`. (data:g_MonAiStateRows@0x0073D358, [MonAI § The second table](../../../tables/MonAI.md#the-second-table-at-0x0073d358-found-at-the-lanea52-review))
 
