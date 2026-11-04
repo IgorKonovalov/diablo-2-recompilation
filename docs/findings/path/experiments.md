@@ -214,5 +214,7 @@
   server plan), 628 refused requests (their return 0 and unchanged seed are compared; their reason only where the record gives it: 226 target = start, 191 window,
   211 'rooms, town or free step', which need the grid before the unmark), the tail of `PathPlan` beyond the refusal test (modelled `[I]`), the unit marks and doors as a cause of a
   refusal (the live cells already contain them).
-  **Short:** type 1 (floor 100: 0 plans); the chained draws of § 5 (floor 50 type-10 plans: 70 watched, none drawn again before release). Not
+  **Short:** type 1 (floor 100: 0 plans); the chained draws of § 5 (floor 50 type-10 plans: 70 watched, 68 of class 458, none drawn again before release; classes 195 and 225 one each). Not
   a floor: the first 10 plans' tie is **not exact** (path/0004 § 7). (run:2026-11-04-path)
+- **Deviation (review, 2026-11-04): ADR-0003.** `k-pal-stony` and `k-pal-jail` ran the probe, a breakpoint that writes the start's fraction word. From each first write on, the plans (532 and 310, 842) are not stock, and the truncation they show is `[I]`. **Stock counts:** 13 051 plans, 12 427 reached, 624 refused; per type 2 162, 4 2 658, 5 649, 6 604, 7 2 753, 8 282, 9 54, 10 698, 13 3 709, 14 27, 15 1 455. `PATH_SPIRAL_PROBE` is not to be set again.
+- **Review output:** `workspace/logs/path/review-p54/review.txt` (`sha256` prefix `93f9098e`, `manifest.sha256` passes from that directory), from `tools/path_review.py` (no game): the stock counts, the natural spiral lists, the control's cap and window, controls per type, type 1's controls on the switch, the model on an empty grid and on the tie's grid, the first plans' bits, the seed watchpoints in full, the corpses. The kept check was rerun at the review: same hash. (run:2026-11-04-path)

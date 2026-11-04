@@ -574,7 +574,7 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-11-04 | `lane/s69` | backlog sweep, 0062 P3 | spec-writer | 208 723 | 27 | 10 | — (no Ghidra, no harness) | accept with fixes (Tier A) | 10: overclaim 3, misread 2, omission 3, wrong anchor 1, under-claim 1 |
 | 2026-11-04 | `lane/s69` review | backlog sweep, 0062 P3 | architect-review | 229 650 | 35 | 11 | — | accept with fixes (10) | overclaim 3, misread 2, omission 3, wrong anchor 1, under-claim 1 |
 | 2026-11-04 | `lane/c62` | 0062 close | architect-check | 57 326 | 10 | 1 | — | plan closed | — |
-| 2026-11-04 | `lane/p54` | 0054 P2 | reverser-harness | 480 000 | 210 | 135 | 1 | — | — |
+| 2026-11-04 | `lane/p54` | 0054 P2 | reverser-harness | 480 000 | 210 | 135 | 1 | accept with fixes (Tier A; Phase 2 not done) | 20: overclaim 6, misread 3, miscount 2, omission 5, wrong anchor 1, tool not kept 1, under-claim 2 |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not
