@@ -4178,8 +4178,8 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0056D2C0,func,SKILLS_GetTargetXY,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
 0x0056D790,func,sub_0056D790_StateDoFunc,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
 0x0056D810,func,sub_0056D810_CallDoFunc,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
-0x0056E000,func,sub_0056E000_SkillDamagePair,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
-0x0056E050,func,sub_0056E050_MonOwnerSkillDamage,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
+0x0056E000,func,sub_0056E000_SkillDamagePair,,C,skills/dispatch,docs/findings/ai/0017-phase2-second-run.md
+0x0056E050,func,sub_0056E050_MonOwnerSkillDamage,,C,skills/dispatch,docs/findings/ai/0017-phase2-second-run.md
 0x0056E520,func,sub_0056E520_SkillAttackRateList,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
 0x0056ECB0,func,sub_0056ECB0_SkillMissileCreate,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
 0x0056EE90,func,sub_0056EE90_SkillMissileCreateLob,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md

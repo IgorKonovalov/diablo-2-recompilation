@@ -936,6 +936,21 @@
 - **Deviation, ADR-0003** (recorded by the `lane/p52b` review, 2026-11-04): `tools/gdb/ai-p1b2.py` writes game memory at a breakpoint, flag 4 or 8 at `Unit+0x14 -> +0x16`, where ADR-0003 says a breakpoint "never writes game memory or registers". ADR-0010 and ADR-0013 cover cells of one table through a loose `.bin`, not this. Plan 0012's review accepted one such write (`MONPOOL_FORCE_DIFF`, F1) as a stated intervention before those ADRs existed, with a natural game required beside it; it is not a rule for this run. The result is forced, not natural.
 - **Conclusion:** [I] as run (0x005F2A00, 0x005FD470); ai/0017 § 9. C40's required case stays open: a `-forced` run (ADR-0013) with natural champions, plan 0052 log.
 
+## run:2026-11-04-ai-resume
+
+Plan 0052 Phase 2, `lane/p52c`, no game. Tools at commit `bf720f11`.
+
+- **Question:** with the review's six fixes in the model, what do the 21 rev 4 logs of run:2026-11-03-ai-3 say past the first boundary, per tier AI? Do H3's 2 218 calls take the owner pair?
+- **Procedure** (from `workspace/logs/ai`, the repo's tools by absolute path):
+  ```
+  systemd-run --user --scope -p MemoryMax=4G python3 -I tools/ai_resume.py check <the 21 case logs 2026-11-03-ai-3-s2-*-fresh:*.log> --controls --examples 200 --out resume-run-2026-11-04-p52c.txt --tier resume-tier-2026-11-04-p52c.txt > resume-stdout-2026-11-04-p52c.txt
+  python3 -I tools/ai_h3.py check ../skills/2026-10-25-skills-dru-1.log ../skills/2026-10-25-skills-dru-2.log --out h3-2026-11-04-p52c.txt
+  python3 -I tools/ai.py counts <the case logs 2026-11-03-ai-s2-*-L*-*.log and 2026-11-03-ai-3-s2-*-fresh:*.log> > catalogue-rows-2026-11-04-p52c.txt
+  ```
+- **Outputs:** `manifest-run-2026-11-04-ai-resume.sha256` (passes from `workspace/logs/ai`). A first pass before rev 5's parser change is kept as `dev/dev-resume-*-p52c-before-rev5.txt`, in `dev/manifest-dev-p52c.sha256`, which passes from `dev/`.
+- **Result:** 7 444 of 7 539 resumed, 8 mismatches (all row 23), 87 stopped, 72 865 calls matched, 65 332 after the first; reversed branches fail 7 290, rows 15 and 54 not separated; a seed one step off fails 7 529. H3: 2 320 calls, 2 218 with a list, 101 first calls and 2 117 later calls match, 0 seed differences; the alternative levels and no pair fail all 101 first calls. Logger rev 5 was not run.
+- **Conclusion:** [I] the fixed model's totals, and [C], proposed for review, the nine rows and H3, as scoped in ai/0017 § 13. (run:2026-11-04-ai-resume, 0x005B186F, fn:sub_0056E050_MonOwnerSkillDamage@0x0056E050)
+
 ## run:2026-11-03-ai-uber
 
 - **Question:** (plan 0052 Phase 1c, the Uber event) Do the unreferenced helpers 0x005DD140, 0x005E9DD0, 0x005F7F10, 0x005FD0F0, the drop 0x005E0070, the death callee 0x005A3250, the preset walk 0x005559A0, Baal's action at `k` 14, `UModAura` and `MonPostCreateBoss` map their declared inputs to the first boundary they reach (or their return), its call site, arguments, the unit seed and the named memory, as [ai/0016](0016-uber-event.md) § 7 reads them?

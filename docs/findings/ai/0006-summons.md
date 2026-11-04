@@ -378,7 +378,7 @@ think: if (!O || !M) return Idle(10);
   `MonSetMode`, whose `MonAttackStats` adds the owner pair of the Answer's H3 bullet (`SkillDamage` = `Raven`, the
   owner's level in it): **the inputs of H3's 2 218 Raven calls are the owner's skill entry for skill 221, the owner's
   level in it, and the Raven rows of `SKILLS_GetPhysMin`, `GetPhysMax` and `GetToHit`** (fn:sub_005A7C20_MonSetMode@0x005A7C20,
-  fn:sub_0056E050_MonOwnerSkillDamage@0x0056E050). The 2 218 calls themselves are Phase 2's (plan 0052 § P2).
+  fn:sub_0056E050_MonOwnerSkillDamage@0x0056E050). [2026-11-04, `lane/p52c`: the 2 218 calls take the pair at the owner's level, `[C]` for one owner level, 20; the terms that level does not separate stay `[I]`.] (run:2026-11-04-ai-resume, fn:sub_0056E050_MonOwnerSkillDamage@0x0056E050)
 
 #### 2.10 Row 105 `ShadowWarrior` (init 0x005EAF50, think 0x005EAFA0)
 

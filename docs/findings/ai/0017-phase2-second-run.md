@@ -13,6 +13,12 @@ Harness run run:2026-11-03-ai-2 (`docs/findings/ai/experiments.md`). Names are `
 the think function at 0x005B186F (ai/0001 § 1); a boundary is a call of one of the 136 functions of `BND` in
 `tools/gdb/ai.py` from the think code (ADR-0021).
 
+## Answer (third part, 2026-11-04, `lane/p52c`, § 13)
+
+- [I] (run:2026-11-04-ai-resume, 0x005B186F) The fixed resume model: 7 444 of 7 539 resumed, 8 mismatches, all row 23, 87 stopped. This supersedes the 112 below.
+- [C] (run:2026-11-04-ai-resume, 0x005B186F) Proposed for review, past the first boundary and scoped in § 13: rows 6, 13, 21, 30, 37, 61, 64, 67, 89. Their outcome mix is uneven (§ 13's table), and Skeleton and Wraith are not proposed since they have no call past the first.
+- [C] (run:2026-11-04-ai-resume, fn:sub_0056E050_MonOwnerSkillDamage@0x0056E050) H3: 2 218 Raven calls carry the owner pair at the owner's level, separated by 101 first calls at one owner level, 20.
+
 ## Answer (kept batch, second part)
 
 - [C] (run:2026-11-03-ai-3, 0x005B186F) **First boundary, kept.** `python3 -I tools/ai.py check --controls` over the 21 case logs of run:2026-11-03-ai-3
@@ -82,6 +88,8 @@ None.
 |---|---|---|---|
 | `0x005B1740` | `sub_005B1740_MonAiEvent` | the AI event (ai/0015) | C (unchanged) |
 | `0x005DDC30` | `sub_005DDC30_MonAiFindHostile` | a boundary whose result the model takes from AIR; its output block word is the distance the later compare reads | I |
+| `0x0056E050` | `sub_0056E050_MonOwnerSkillDamage` | the owner pair added to a summon's attack stats (§ 13, H3; raised by `lane/p52c`) | C |
+| `0x0056E000` | `sub_0056E000_SkillDamagePair` | the block at the owner's level (§ 13, H3; raised by `lane/p52c`) | C |
 
 No symbol is raised by this checkpoint: the resume model is an execution of the game's code over logged inputs, which confirms
 the maps, not the roles the names state (review-fixes 14, ADR-0015 scope).
@@ -265,16 +273,66 @@ Built: the character `AiDur` (`tools/d2s_recipes/ai-dur.json`: `CombatSor` plus 
 
 ### 12. What stays short
 
-H1 (the 331 monster gaps with the skills logger beside this one), H3 (Raven's 2 218 `MonAttackStats` calls), the catalogue sample of batches 5, 7, 10, 11, 12, Fetish's and Andariel's chained pairs at `/players 8` (`a1-andariel-p8` kept: 9 Andariel decisions in the 21 sessions' check, 263 decisions of the session), P1b-1, P1b-2's stock case, state 13, the fixed model's kept rerun, the first run's volume (14 645 decisions) not repeated.
+[2026-11-04, `lane/p52c`: H3 and the fixed model's rerun are done, § 13.] H1 (the 331 monster gaps with the skills logger beside this one), H3 (Raven's 2 218 `MonAttackStats` calls), the catalogue sample of batches 5, 7, 10, 11, 12, Fetish's and Andariel's chained pairs at `/players 8` (`a1-andariel-p8` kept: 9 Andariel decisions in the 21 sessions' check, 263 decisions of the session), P1b-1, P1b-2's stock case, state 13, the fixed model's kept rerun, the first run's volume (14 645 decisions) not repeated.
 Owner play for P1b-1: [2026-11-04, `lane/p52b` review: the first text would have lost the session, since the logger's default `AI_CAP_ROW` of 200 ends row 44's lines below the 300 asked.] The objective, launch and stop rule are in [the owner entry](../../backlog/2026-11-04-architect-human-plan-0052-p1b-1-duriel-melee-owner-play.md).
+
+### 13. Third part, 2026-11-04 (`lane/p52c`): the fixed model, the tier table, H3, logger rev 5
+
+Run run:2026-11-04-ai-resume, no game, over the same 21 rev 4 logs of run:2026-11-03-ai-3. The review's six fixes are in `tools/ai_resume.py` with a no-game test each (`ReviewFixesTest`; reverting any one fix in a scratch copy fails its test), and `tools/ai_resume_review.py` is retired.
+
+- [I] (run:2026-11-04-ai-resume, 0x005F96DB, 0x005F32A0, 0x005FB824, 0x005FB69D, 0x005F2C1D) **The fixed model reproduces the review's classification.** 7 539 decisions: 7 444 resumed, **8 mismatches**, 87 stopped (row 32's `call esi` 80, a return site not armed 4, a log's end 3), 72 865 calls matched, 65 332 after the first; the `RROW` and `RSTOP` lines equal `review-p52b/check-fixed.txt`. Controls: reversed branches 7 290 of 7 539 (rows 15 and 54 not separated), a seed one step off 7 529 of 7 539.
+- [I] (run:2026-11-04-ai-resume, 0x005F33EC) **The 8 are row 23, none in the tier:** each ends after boundary 7 with the model offering another call, four in `s-barb-flayer`, three in `s-barb-oasis`, one in `a2-oasis-3`. The logger's 600-call limit stays the cause read (§ 7, cluster F); rev 5's marker lets the next batch tell. Row 23's claim stays `[I]`.
+
+`resume-tier-2026-11-04-p52c.txt`, printed by `tools/ai_resume.py --tier` (row 19 Swarm, row 20 Scarab). `paths`: distinct sequences of logged calls past the first, among resumed decisions; `top`: the commonest path's share; `sites`: distinct (function, call site) past the first; `branches`: known-value branches decided both ways / one way; `amb`: steps where an unknown value decided, of all steps.
+
+| AI row | tier AI | decisions | resumed | mismatches | stopped | past first | amb | paths | top | sites | branches | reversed fails | proposal |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 2 | Skeleton | 126 | 126 | 0 | 0 | 0 | 0/0 | 1 | 126/126 | 0 | 4/0 | 110/126 | weak: no call past the first |
+| 6 | Fallen | 814 | 814 | 0 | 0 | 24 738 | 8 661/24 738 | 88 | 102/814 | 22 | 22/21 | 814/814 | `[C]` |
+| 9 | Wraith | 62 | 62 | 0 | 0 | 0 | 0/0 | 1 | 62/62 | 0 | 1/1 | 56/62 | weak: no call past the first |
+| 13 | FallenShaman | 104 | 103 | 0 | 1 | 361 | 0/362 | 10 | 39/103 | 8 | 10/5 | 104/104 | `[C]` |
+| 19 | Swarm (not tier) | 82 | 82 | 0 | 0 | 0 | 0/0 | 1 | 82/82 | 0 | 3/0 | 81/82 | not tier |
+| 20 | Scarab | 0 | 0 | 0 | 0 | 0 | 0/0 | 0 | 0 | 0 | 0/0 | - | short |
+| 21 | Mummy | 205 | 205 | 0 | 0 | 205 | 0/205 | 5 | 76/205 | 5 | 4/2 | 205/205 | `[C]` |
+| 22 | GreaterMummy | 27 | 27 | 0 | 0 | 48 | 0/48 | 7 | 14/27 | 7 | 6/9 | 27/27 | short |
+| 28 | Vampire | 43 | 43 | 0 | 0 | 129 | 0/129 | 9 | 12/43 | 11 | 11/12 | 43/43 | short |
+| 29 | BatDemon | 20 | 20 | 0 | 0 | 49 | 0/49 | 7 | 4/20 | 12 | 6/11 | 17/20 | short |
+| 30 | Fetish | 316 | 316 | 0 | 0 | 877 | 0/877 | 5 | 243/316 | 8 | 7/8 | 316/316 | `[C]` |
+| 34 | Andariel | 9 | 9 | 0 | 0 | 1 | 0/1 | 2 | 8/9 | 1 | 4/6 | 9/9 | short |
+| 35 | CorruptArcher | 22 | 22 | 0 | 0 | 41 | 0/41 | 8 | 5/22 | 11 | 9/8 | 22/22 | short |
+| 37 | SkeletonBow | 86 | 86 | 0 | 0 | 284 | 5/284 | 10 | 47/86 | 19 | 8/13 | 86/86 | `[C]` |
+| 61 | Hireable | 2 066 | 2 061 | 0 | 5 | 31 034 | 2 095/31 037 | 14 | 699/2 061 | 31 | 12/24 | 2 065/2 066 | `[C]` |
+| 64 | SkeletonMage | 91 | 91 | 0 | 0 | 148 | 12/148 | 11 | 34/91 | 24 | 13/15 | 91/91 | `[C]` |
+| 67 | NecroPet | 53 | 53 | 0 | 0 | 449 | 21/449 | 7 | 17/53 | 16 | 11/8 | 53/53 | `[C]` |
+| 89 | Megademon | 77 | 77 | 0 | 0 | 232 | 0/232 | 7 | 43/77 | 9 | 7/12 | 77/77 | `[C]` |
+| 125 | BloodLord | 22 | 22 | 0 | 0 | 0 | 0/0 | 1 | 22/22 | 0 | 4/0 | 22/22 | short |
+
+- [C] (run:2026-11-04-ai-resume, 0x005B186F) **Proposed for review: past the first boundary, rows 6, 13, 21, 30, 37, 61, 64, 67, 89, for these 21 rev 4 logs.** Each has 0 mismatches and at least 50 resumed decisions, and more than one path past the first boundary. The statement: every logged top-level boundary call of a resumed decision equals, in every word the model knows, a call the row's code can make from the logged inputs and the earlier logged results, and the decision can then return with no further call. It does not say which offered call the code takes when an unknown value decides: Fallen 8 661 of its 24 738 later steps, Hireable 2 095, NecroPet 21, SkeletonMage 12, SkeletonBow 5. The stopped decisions are outside it (FallenShaman 1, Hireable 5). It assumes that an opaque callee changes no known memory but `Unit+0xC4` and its pointer arguments.
+- [I] (run:2026-11-04-ai-resume, 0x005B186F) **What each proposed row separates is uneven.** Fetish is the weakest: 243 of 316 decisions take one path. Mummy has one call past the first in every decision, so its 5 paths are 5 single callees. Fallen has 88 paths over 22 call sites, Hireable 14 over 31. Reversing every known branch fails all or all but one of each proposed row's decisions, but that control reverses every branch at once: it does not show that each `branches` entry alone would fail. Branches decided one way have only that way compared.
+- [I] (run:2026-11-04-ai-resume, 0x005B186F) **Not proposed.** Skeleton and Wraith pass the floor with no call past the first: they add only the return after one call, so they stay at the first boundary. Short of 50: Scarab 0, Andariel 9, BatDemon 20, CorruptArcher 22, BloodLord 22, GreaterMummy 27, Vampire 43. BloodLord also has no call past the first.
+
+**H3.** `tools/ai_h3.py`, output `h3-2026-11-04-p52c.txt`, over `2026-10-25-skills-dru-1.log` and `-dru-2.log`: 2 320 calls of class 419, 2 218 with a stat list and 102 without.
+
+- [C] (run:2026-11-04-ai-resume, fn:sub_005A4F50_MonAttackStats@0x005A4F50, fn:sub_0056E050_MonOwnerSkillDamage@0x0056E050, fn:sub_0056E000_SkillDamagePair@0x0056E000) **The 2 218 Raven calls carry the pair at the owner's level, for one owner level.** With the caster's logged Raven level 20 (`SST0`, 207 casts; the recipe's 20) and the Skills row 221 cells, the block is (21, 23, 385). The Raven's own MonLvl terms are 0 in these modes, so stats 21 and 22 are the block alone. Of 101 units' first calls with a list, 101 match: no 21 or 22 before, afterwards 21 = 21, 22 = 23, and 19 raised by exactly 385 from the 1 123 the other lists hold. The other 2 117 calls leave the full stats unchanged. The seed does not step in any of the 2 320 calls. What separates is the 101 first calls: level 19, level 21, the summon's level 104, level 0 and no pair each fail all 101. The later 2 117 show only that the write repeats, and all calls have the same owner level, so the band terms (all 1 in this row), the clamp in `SkillLevelClamped` and the Kick, SrcDam, DmgSymPerCalc and ToHitCalc branches are not separated and stay `[I]` (ai/0006 § H3). The modes (0, 1, 2, 4) do not separate: their columns give 0 here. `SKILLS_GetPhysMin`, `GetPhysMax` and `GetToHit` are checked only at this one row and level, so they stay `I`.
+
+**Catalogue sample, what the logs hold.** Batch rows in the case logs of run:2026-11-03-ai and run:2026-11-03-ai-3 (`tools/ai.py counts`, `catalogue-rows-2026-11-04-p52c.txt`): batch 5 only row 67 and batch 7 only row 34, both tier rows; batch 11 none; batch 10 only row 130, 85 decisions in the first run's rev 3 logs, which have no `AIR` lines. Batch 12: rows 32, 54, 99, 100.
+
+- [I] (run:2026-11-04-ai-resume, 0x005E7130, 0x005E73A0, 0x005E9F10, 0x005E7F50) **Batch 12 is compared by the code model only.** Row 54 125 decisions, row 99 25, row 32 199 of 279 resumed (80 stopped at `call esi`), all 0 mismatches. But rows 54 and 99 have no call past the first, and row 54 is one of the two rows the reversed-branch control does not separate, so these say little. Row 100 has 4 decisions, under the floor.
+- **No first-boundary maps were added.** `tools/ai.py`'s `MODS` lacks `ai_cat_emu10`, `11` and `12`, and adding them needs their `CTRL` and `HAS_BLOCK` entries and the inputs `inputs()` does not yet build. Row 32 has `hp` 0 in the three decisions read (`a1-jail`), and for such a decision `ai_cat_emu12`'s first boundary is `PARAMSPUSH` at 0x0058EFDD, a site the logger does not log. This rotated to the next lane. Batches 5, 7 and 11 need stages the kept logs do not have, and the catalogue sample stays short.
+
+**Logger rev 5** (`tools/gdb/ai.py`, no game, so not yet run): no `AIB` between a decision's `MSM0` and `MSM1`, and an `AIL` line at the 600-call limit (`k`, `fn`, `ra`, `out`, `pend`). `tools/ai.py` parses it and `tools/ai_resume.py` stops a decision whose `AIL` has `pend` 0, where nothing re-arms the breakpoints. The tests read the source for the order of the breakpoints and test the stop, so the first rev 5 session is the logger's real check.
+
+### 14. Resume note (2026-11-04, `lane/p52c`, rotated at about 250k tokens)
+
+Left, in order. **No game:** (a) first-boundary maps for rows 130, 54, 99, 100 and the state thinks 0x005E8020, 0x005E8140, 0x005E8340 (§ 13); (b) the waypoint entry: the seed held on a rerun with a no-game test, then the cause of the failed click; it needs a game, and its Done-when needs a kept batch; (c) the stage-check entry in `tools/harness_runner.py`. Neither backlog entry was started. **For the kept batch's lane, on rev 5:** Scarab 50 (0 now, the first run's stage), Andariel 41 more, BatDemon 30, CorruptArcher 28, BloodLord 28, GreaterMummy 23, Vampire 7; The Countess beside a curse case (`s-necro-curse`) for state 13; Fetish and Andariel at `/players 8` for the chained pairs; H1 with the skills logger beside this one. Count `AIL` lines in row 23 to settle cluster F. Steps 5 and 6 of the review's order (P1b-2 forced, P1b-1 owner play) are not this lane's.
 
 ## Data touched
 
-tbl:MonStats.txt:AI, tbl:MonStats.txt:aip1 … aip8, tbl:MonStats.txt:Skill1; struct:AiCtl+0x14, struct:AiCtl+0x18, struct:AiCtl+0x1C,
+tbl:MonStats.txt:AI, tbl:MonStats.txt:aip1 … aip8, tbl:MonStats.txt:Skill1, tbl:MonStats.txt:SkillDamage, tbl:Skills.txt:MinDam, tbl:Skills.txt:MaxDam, tbl:Skills.txt:ToHit, tbl:Skills.txt:LevToHit; struct:AiCtl+0x14, struct:AiCtl+0x18, struct:AiCtl+0x1C,
 struct:AiCtx+0x00.
 
 ## Open questions
 
 - The 8 row 23 decisions of § 7's cluster F: is the 600-call limit the cause? Logger rev 5 marks the limit, so the next batch can tell.
-- P1b-1 (Duriel), H1, H3, the catalogue sample: see § 12.
+- P1b-1 (Duriel), H1, the catalogue sample: see §§ 12 to 14.
 - `[L]` Why the waypoint list does not open on the first try in 14 of 35 launches (§ 6): not investigated.
