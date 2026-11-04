@@ -284,6 +284,30 @@ class TestLogger(unittest.TestCase):
             wins = [json.loads(ln.split(" ", 1)[1]) for ln in rig.lines() if ln.startswith("WIN ")]
             self.assertEqual([w["start"] for w in wins], [13, 18])
 
+    def test_sv1_only_after_sv0(self):
+        """Smoke session 1: the instruction after a skipped SaveGameClients call is reached with no entry; no SV1 then."""
+        with tempfile.TemporaryDirectory() as d:
+            ctl = os.path.join(d, "c.ctl")
+            open(ctl, "w").close()
+            rig = LoggerRig({"FRAME_CTL": ctl})
+            m, G = rig.mem, rig.GAME
+            seed_put(m, G + 0xD0, (1, 2))
+            m.u32(G + 0xA8, 9)
+            rig.hit(0x0052D870, ecx=G)
+            with open(ctl, "a") as fh:
+                fh.write("open 1 town\n")
+            m.u32(G + 0xA8, 10)
+            rig.hit(0x0052D974)
+            m.u32(G + 0xA8, 10)
+            rig.hit(0x0052D870, ecx=G)
+            rig.hit(0x0052D4C2)
+            self.assertNotIn("SV1", [ln.split(" ", 1)[0] for ln in rig.lines()])
+            rig.hit(0x0052CA10)
+            rig.hit(0x0052D4C2)
+            rig.hit(0x0052D4C2)
+            tags = [ln.split(" ", 1)[0] for ln in rig.lines()]
+            self.assertEqual((tags.count("SV0"), tags.count("SV1")), (1, 1))
+
     def test_no_writes_in_source(self):
         with open(LOGGER) as fh:
             src = fh.read()

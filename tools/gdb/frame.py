@@ -411,10 +411,18 @@ def _frame_main():
         ut, i = unit_head(reg("eax"))
         emit("QF", {"fr": fr(), "kind": _s(reg("ebx")), "ut": ut, "id": i, "ra": ra})
 
+    sv_open = [False]
+
     def on_sv0():
+        sv_open[0] = True
         emit("SV0", {"fr": fr(), "ra": u32(reg("esp")), "gs": gs()})
 
     def on_sv1():
+        # the three SV_RETS are the instructions after the calls; the branch that skips a call reaches them too
+        # (smoke session 1: 2 SV1 per frame, no SV0), so a return counts only after its entry
+        if not sv_open[0]:
+            return
+        sv_open[0] = False
         emit("SV1", {"fr": fr(), "gs": gs()})
 
     # --- the breakpoints ------------------------------------------------------------------------------------------
