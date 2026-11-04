@@ -599,3 +599,18 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   `mod 8192` window (`--long`, a 5.5 minute wait for the frame), and whether the pack's and Corpsefire's monster kinds are
   in plan 0052 P3a's reviewed tier. The chain's reading of "unmoved" (entry equals the previous logged exit, an `FP` or `TM`
   step located not counted) is this lane's; the architect confirms it at the pilot review.
+
+- **2026-11-04 — Phase 2b the pilots (reverser, `lane/p55b`, slot 1; stopped at Q2's trigger for the pack scene).** run:2026-11-04-frame,
+  frame/0006, tools at `8f026bf2` (frame.py `a6ecf7cd…`). **Town pilot (Act I, seed 5501, frames 501-750): passes (a), (b), (c)**: 250 consecutive
+  `FT0`/`FT1` pairs, 0 unparsed lines; 0 mismatches, 0 located draws, 413 chained events (426 `UE0`); 10.0 s wall, 25.1 frames per wall second,
+  7.17 lines per frame (0.45 of `estimate13` mid 15.9), 18.2 stops per frame (32.9), `QE`+`QF` per `UE0` 0.90 (stated mid 1.35); `WEND.hits` is the per-breakpoint count
+  (`ghits` is empty). The session's two further windows (a walk with 17 `MSG0`; the `mod 1500` frame 1500) pass (a) and (b): 573 and 557 chained events. **Pack pilot (Cold Plains,
+  frames 1280-1529): (a) and (c) pass, (b) fails**: 8 mismatches in 3 369 chained events, unit seeds stepped 1 to 8 between two logged readings (7 on monsters, 1 on the player,
+  type 0 id 1, 4 steps); 34.98 lines per frame (0.85 of 41.3), 46.0 stops per frame, 24.0 frames per wall second, 2 shared-seed pairs (2 handed, 2 in pass order), 9 room activations (1 in a
+  `NewRoomsUpdate` walk). A traced development session (`FRAME_TRACE=1`, `dev-2026-11-04-frame-h`) attributed 8 monster-seed steps to the drop-quality code (0x00558640-0x005589A0) inside an open
+  missile `UE0`: a kill's roll drawn on the dead monster's seed, outside the monster's own events; the steps of 1, 3 and 5 have no trace line (the six RNG entries only). The player's step is untraced. **Stop for
+  the architect: the injected-logger ADR for the pack (the chain keyed by an event's own unit cannot hold where a handler draws another unit's seed).** The maze and the batch were not run; floors met so far: 3 town windows (750 frames,
+  1 543 chained events), 2 shared pairs, 1 `mod 1500` frame. Tool defects found by the smoke sessions and fixed with tests: `SV1` after skipped calls, the second `UE1` at the callback path's join, the recipe starting in Act IV (new
+  `framenova.json`, the runner refuses a first level other than 1), Teleport not casting in town (the town window walks), the waypoint position (`--wp-at`, 4884,5629 for seed 5501; another seed moves the town), `--view-h 0`, a
+  monsters-near wait before the pack window. Predictions (committed before the kept logs) missed on the town's chained events and `QE`+`QF` per `UE0` (taken from an Act IV window), the pack's lines per frame and chained events, and "no
+  mismatch on a player". No symbol row, no ledger row. Slot 1 stopped, saves restored. Branch not merged.
