@@ -1939,6 +1939,7 @@ def cmd_objop(args):
     gate = NovaGate(args.radius, args.give_up)
     p.nova_hold = args.nova_hold
     t_note = [time.time(), 0]
+    lid_start = None
     while time.time() - t0 < args.time and done < args.times:
         st.poll()
         if getattr(args, "skip_operated", False):
@@ -1965,6 +1966,11 @@ def cmd_objop(args):
         if not st.pos:
             time.sleep(0.5)
             continue
+        if getattr(args, "stop_on_level", False):      # plan 0052 P1b-1: a warp reached by --goal ends the command
+            lid_start = st.pos[2] if lid_start is None else lid_start
+            if st.pos[2] != lid_start:
+                print("objop: level %s -> %s, stop" % (lid_start, st.pos[2]))
+                return 0
         px, py = st.pos[0], st.pos[1]
         if not objs and getattr(args, "goal", None) and not getattr(args, "trap_types", None) and not (
                 getattr(args, "obj_mem", False) and any(o[0] in classes for o in st.objs_seen.values())):
@@ -3405,6 +3411,7 @@ def main():
                     "target stand still and cast nothing (the mercenary or a summon kills it); never Nova on the way")
     ap.add_argument("--pdef-any", action="store_true", help="objop --to-pdef: preset rooms of any built level (plan "
                     "0038 H6d: the Chaos Sanctuary's wings from the River of Flame), not only the current one")
+    ap.add_argument("--stop-on-level", action="store_true", help="objop: end (rc 0) when the player's level id changes")
     ap.add_argument("--goal", help="hunt, objop: X,Y sub-tiles to head for while the target is not seen (its place in an "
                     "earlier game on the same map seed)")
     ap.add_argument("--summon-key", help="hunt --pet: F-key of a placed summon (Hydra), cast towards the target")

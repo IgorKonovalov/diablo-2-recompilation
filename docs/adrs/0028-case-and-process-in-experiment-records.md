@@ -65,7 +65,7 @@ Amending ADR-0003, and leaving the rest of it in force:
 ### Negative
 
 - **Records get longer**: a case list with position, and a separation line that checkers must print (`tools/ai.py` does
-  not yet; [backlog](../backlog/2026-11-03-architect-reverser-plan-0056-p4-separation-line-in-tools-ai.md)).
+  not yet; [backlog](../backlog/archive/2026-11-03-architect-reverser-plan-0056-p4-separation-line-in-tools-ai.md)).
 - **Sharing keeps a machinery with no measured wall gain on the one logger measured**: `next_case`, `split`, the marks, § Fresh
   process and its failure rule. It stays because cases need the definition anyway (31 kept case logs and the h1a and h4b
   precedents) and a tuned switch or a slower logger may change the arithmetic.

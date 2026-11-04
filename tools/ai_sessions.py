@@ -38,7 +38,8 @@ LOGS = os.path.join(ROOT, "workspace", "logs", "ai")
 EXCEL = os.path.join("workspace", "merged", "data", "global", "excel")
 BASE = os.path.join("workspace", "samples", "d2s-owner", "smpsor-l50.d2s")
 BASE_NEC = os.path.join("workspace", "samples", "d2s", "smpnec.d2s")
-GDB = "tools/gdb/ai.gdb"
+BASE_BAR = os.path.join("workspace", "samples", "d2s", "smpbar.d2s")
+GDB = "tools/gdb/ai-g4.gdb"
 CAP_GAMES, CAP_SECS = 8, 40 * 60
 
 # the character starts in the Act IV town (Pandemonium Fortress), whose waypoint is at (715, 58) on the screen
@@ -111,6 +112,49 @@ CASES = {
                             ("keys", ["F3"], 0.6), ("rclick", 440, 330, 1.0)],
                  "Jail Level 1 with Clay Golem and Raise Skeleton: NecroPet 67", "AiNec"),
 }
+
+
+def melee(wp, secs, keys=None, button=3, save="AiNecC", what=""):
+    """A melee character (tools/d2pilot.py explore --melee) in a stage: with `keys`, the curse hotkeys are pressed in
+    turn before each right-button click on a monster (--keys-cycle); without, the left-button Attack."""
+    args = ["explore", "--walk", "--hops", str(secs // 3), "--hop", "8", "--radius", "9", "--mana-col", "4",
+            "--drink", "0.5", "--give-up", "8", "--melee"] + WP
+    if keys:
+        args += ["--melee-button", str(button), "--curse-keys", keys, "--keys-cycle"]
+    return [("wp", wp[0], wp[1]), ("wait", 4), (args, secs + 120)]
+
+
+# plan 0052 Phase 2, second run (lane/p52b): the state control (a curse or a taunt cast on monsters: AiCtl.state 10, 11,
+# 12 observed live) and a melee character in the tier stages (monsters at distance 0-2 and adjacent targets)
+CASES.update({
+    "s-necro-curse": ("normal", melee("1,7".split(","), 240, "F1,F2", 3), "Jail Level 1: Dim Vision and Terror cast on monsters", "AiNecC"),
+    "s-barb-howl": ("normal", melee("1,7".split(","), 200, "F1,F2", 3), "Jail Level 1: Howl and Taunt", "AiBar"),
+    "s-barb-halls": ("normal", melee("2,4".split(","), 240), "Halls of the Dead 2, a melee Barbarian", "AiBar"),
+    "s-barb-flayer": ("normal", melee("3,4".split(","), 240), "Flayer Jungle, a melee Barbarian: Fetish 30", "AiBar"),
+    "s-barb-oasis": ("normal", melee("2,5".split(","), 240), "Far Oasis, a melee Barbarian: Scarab 20", "AiBar"),
+})
+
+
+def duriel(secs=420):
+    """Plan 0052 Phase 1b P1b-1: Duriel's lair on map seed 3364 (run with --seed 3364), where Tal Rasha's real tomb is
+    level 72 (a Canyon of the Magi waypoint arrival at (12678, 5178), the tomb's warp near (12794, 5033), the orifice at
+    (22858, 14043), the portal at (22845, 14046): positions of the plan 0032 session 3364 log). The Horadric Staff is
+    at inventory cell 0,0 of AiDur; the hunt keeps the Nova radius at 1 so that Duriel is not killed at once and thinks
+    for a while beside the player (the mercenary fights him)."""
+    hold = ["--radius", "1"]
+    return [("wp", "2", "9"), ("wait", 4),
+            (["objop", "--obj-cls", "9999", "--goal", "12794,5033", "--time", "120", "--no-nova", "--hop", "14",
+              "--stop-on-level"] + NOVA0, 150, 72),
+            (["insert", "key:i", "sleep:1.0", "click:inv:0,0", "sleep:0.6", "key:i", "sleep:1.0"], 60),
+            (["objop", "--obj-cls", "152", "--times", "1", "--no-nova", "--goal", "22858,14043", "--hop", "14",
+              "--time", "150"] + NOVA0, 180),
+            (["objop", "--obj-cls", "100", "--times", "1", "--no-nova", "--goal", "22845,14046", "--hop", "14",
+              "--time", "120"] + NOVA0, 150),
+            (["hunt", "--mon-cls", "211", "--time", str(secs)] + NOVA0 + hold, secs + 60)]
+
+
+CASES["a2-halls-p12"] = ("normal", stage("2,4", 420), "Halls of the Dead 2, long: GreaterMummy 22, Mummy 21 (P1b-2 with AI_P1B2=1)")
+CASES["d-duriel"] = ("normal", duriel(), "Duriel's lair at /players 1, Normal: row 44, the melee decision (map seed 3364)", "AiDur")
 CHAR = "CombatSor"
 
 
@@ -130,8 +174,13 @@ def cmd_build(saves):
     os.makedirs(saves, exist_ok=True)
     rc = subprocess.run([*hr.PY, "tools/d2s.py", "build", EXCEL, "tools/d2s_recipes/combatsor.json", BASE,
                          os.path.join(saves, CHAR + ".d2s")], cwd=ROOT).returncode
-    return rc or subprocess.run([*hr.PY, "tools/d2s.py", "build", EXCEL, "tools/d2s_recipes/ai-nec.json", BASE_NEC,
-                                 os.path.join(saves, "AiNec.d2s")], cwd=ROOT).returncode
+    rc = rc or subprocess.run([*hr.PY, "tools/d2s.py", "build", EXCEL, "tools/d2s_recipes/ai-dur.json", BASE,
+                               os.path.join(saves, "AiDur.d2s")], cwd=ROOT).returncode
+    for rec, base, name in (("ai-nec", BASE_NEC, "AiNec"), ("ai-nec-curse", BASE_NEC, "AiNecC"),
+                            ("ai-barb", BASE_BAR, "AiBar")):
+        rc = rc or subprocess.run([*hr.PY, "tools/d2s.py", "build", EXCEL, "tools/d2s_recipes/%s.json" % rec, base,
+                                   os.path.join(saves, name + ".d2s")], cwd=ROOT).returncode
+    return rc
 
 
 class Proc:
@@ -324,8 +373,11 @@ def main(argv):
     ap.add_argument("--status")
     ap.add_argument("--seed", type=int, default=5201)
     ap.add_argument("--reruns", type=int, default=1)
+    ap.add_argument("--fresh", action="store_true", help="every case in its own game process (plan 0056 Phase 4: the default for kept runs)")
     ap.add_argument("cases", nargs="+")
     a = ap.parse_args(argv[1:])
+    if a.fresh:
+        a.cases = [c if c.startswith("fresh:") else "fresh:" + c for c in a.cases]
     for c in a.cases:
         if (c[6:] if c.startswith("fresh:") else c) not in CASES:
             print("unknown case %s" % c)
