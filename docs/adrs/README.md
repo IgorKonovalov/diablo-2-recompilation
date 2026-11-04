@@ -1,6 +1,6 @@
 # ADR index
 
-Next free number: **0031**
+Next free number: **0032**
 
 | # | Title | Status |
 |---|---|---|
@@ -34,3 +34,4 @@ Next free number: **0031**
 | [0028](0028-case-and-process-in-experiment-records.md) | A case is what an experiment record cites, a process may hold several cases, and the marks and the split are provenance; sharing stays opt-in with a stated reason (amends 0003) | accepted (owner, 2026-11-04) |
 | [0029](0029-import-slots-and-import-boundaries-in-emulation.md) | Imports in emulated reproduction: a declared stand-in in an import slot, and a stop at an import's call (amends 0015, 0021) | accepted (owner, 2026-11-04) |
 | [0030](0030-verdict-lanes-and-wiki-tier-a.md) | Verdict lanes and wiki lanes take the full review instead of the lane check (amends 0023) | accepted (owner, 2026-11-04) |
+| [0031](0031-constants-of-the-code-image.md) | Constants of the code image: a short table with its address and reader only where no exact rule gives it; every rule written as a rule and checked by a survey | accepted (owner, 2026-11-04) |

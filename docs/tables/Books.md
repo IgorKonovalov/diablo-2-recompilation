@@ -4,6 +4,8 @@
 > **sha256:** `.txt` `60e2527c2b30487ff68fcaaad163831abc6f6ef5e4ec6d42478ff5f30c2eeec5`, `.bin` `1f50356b5340ecfd894a10b5a17ece4551a48dc5b67edc4076cc8e6f998eb83b`
 > **Doc status:** layout complete (plan 0043 Phase 0); readers and widths from [items/0011](../findings/items/0011-economy.md) (plan 0043 Phase 1): `CostPerCharge` prices a tome, `BaseCost` has no reader; the other meanings `[L]`
 
+> **Specs:** The reviewed specs that use this table: [items/use](../specs/items/use.md) (a use entry chosen by a `Books` row) and [items/inventory](../specs/items/inventory.md) (a tome's skill quantity).
+
 ## Purpose
 
 One row per tome: the scroll and book item codes of Town Portal and Identify, the skills they cast, and two price

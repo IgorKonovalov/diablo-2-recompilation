@@ -4,6 +4,8 @@
 > **sha256:** `.txt` `55d680040663a8e6930863fc7687fe041b72c04cb98f97737794cc5bc0b41fb5`, `.bin` `cf8296500985694bc0327b5249a47bbe14558b65f956bd7a36b115f1a670e473`
 > **Doc status:** layout complete (plan 0060 Phase 0, `python3 -I tools/excel_bin.py diff`: 14 records × 65 fields = 910 cells, 0 mismatches; in the gate's `excel_layout` survey); readers from player/0001 and [items/0013](../findings/items/0013-grids-belts-stacks.md) (plan 0060 Phase 1.2: the row, the second set, the rectangles)
 
+> **Specs:** The reviewed specs that use this table: [items/inventory](../specs/items/inventory.md) (the belt search and the cursor-to-belt packet) and [items/use](../specs/items/use.md) (a potion used from the belt).
+
 ## Purpose
 
 One row per belt size: how many potion boxes a belt has and where each box sits on the screen. Row 2 is the
@@ -84,12 +86,12 @@ Box indices 0..`numboxes`−1 are the "boxes 0..3" the belt search of
   after, `[I]`. `[I]` Packet `0x23` does not test `numboxes`: `BeltPutItem` needs 1 x 1, beltable and `box < 16`, and
   `InvGridPut` refuses an occupied box. (fn:sub_0063C600_BeltFreeSlot@0x0063C600, fn:sub_0063C790_BeltPlace@0x0063C790,
   fn:sub_0063C4F0_BeltPutItem@0x0063C4F0, [items/0013 § 6](../findings/items/0013-grids-belts-stacks.md#6-belts), run:2026-11-04-inventory-emu)
+- `[I]` **One forced case of a box past `numboxes`:** `0x23` with box 12 on a 12-box belt (a Heavy Belt) left the item in box 12 ([items/0015](../findings/items/0015-harness-inventory.md)). The box dword was written in the packet at the handler's entry, so it stays `[I]`, a written packet field, not a state a player reaches. (fn:sub_0054B3E0_Pkt23CursorToBelt@0x0054B3E0)
 
 ## Open questions
 
 - Answered by [items/0013 § 4](../findings/items/0013-grids-belts-stacks.md#4-the-rows-the-tables-open-questions): the row of a worn belt is
   `BeltFreeSlot`'s `0x0063C6A3` (and `0x0056091B`, `[I]`); the second set (rows 7..13) is not indexed by any server call
   read (literal set 0), `[I]` over direct calls.
-- `[L]` A box past `numboxes` by packet `0x23`: does it stay, and does a smaller belt's overflow take it? Phase 2 case 14
-  (items/0013 Open questions).
+- `[L]` A box past `numboxes` by packet `0x23` on a stock route (a real click on a box past the belt; the forced case is under Interpretation notes), and whether a smaller belt's overflow later takes the item (not run).
 - `[L]` The width of `numboxes` in the readers (u32 by stride; any integer width fits).

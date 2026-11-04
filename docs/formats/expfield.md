@@ -39,7 +39,7 @@ All little-endian.
 - `[C]` (ADR-0015) **Use.** Byte `d` in 0..7 steps by `(dx[d], dy[d])`; 8 is the centre, where a walk stops. The search's
   field cell for a candidate `(x, y)` about an origin `(ox, oy)` is row `128 + y - oy`, column `128 + x - ox`; the origin cell
   is tested only when the walk starts on it. This is items/0014 § 1's statement, whose family `line` is `[C]`; the
-  search around it is `[I]` pending ADR-0029. (fn:sub_0066A5D0_FieldStep@0x0066A5D0, fn:sub_0066A670_FieldWalkBlocked@0x0066A670, run:2026-11-04-ground-emu)
+  search around it is `[C] (ADR-0015, ADR-0029 (a))` for size 1 and step 1, family `drop`, **given that the allocation returned a writable block**: what the two locks do, the allocator's own code and its other pool states are not evidenced by it (items/0014 head, its *Not evidenced* list, and § 1, run:2026-11-04-lock-scan). (fn:sub_0066A5D0_FieldStep@0x0066A5D0, fn:sub_0066A670_FieldWalkBlocked@0x0066A670, run:2026-11-04-ground-emu)
 - `[C]` (data) **Step tables**, image data read from the pinned `Game.exe` by `expfield.py check`:
 
   | `d` | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 |

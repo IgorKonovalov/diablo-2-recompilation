@@ -4,6 +4,8 @@
 > **sha256:** `.txt` `f7fa37ae4f7cdb3f5337a28a55b3876fc27aef066822b3268933e56b636b50f0`, `.bin` `4c0b0e6c2f888847b7a71225d15caf8708c1dd33a9cc8420b6cbbf594963bc1b`
 > **Doc status:** columns listed, `.bin` layout complete (shared item record), item-use columns in [§ Item-use columns](#item-use-columns-plan-0060-phase-0) (plan 0060 Phase 0; the dispatch table `[C]`, handler bodies `[I]` or `[L]`); semantics pending except [§ Fields the base-stat roll reads](#fields-the-base-stat-roll-reads-plan-0024-phase-1) (`[I]`, plan 0024 Phase 1); vendor columns in [§ Vendor columns](#vendor-columns-plan-0031-phase-0) (plan 0031 Phase 0; `[I]` meanings from items/0009)
 
+> **Specs:** The reviewed specs that use this table: [items/use](../specs/items/use.md) (the use dispatch, the potions, scrolls and elixirs) and [items/inventory](../specs/items/inventory.md) (the grids, the belt and the stacks).
+
 ## Purpose
 
 One row per miscellaneous base item: potions, scrolls, gems, runes, jewels, charms, quest items, gold.
@@ -380,7 +382,7 @@ declared scratch memory; neither is a run of the game.
 |---|---|---|---|
 | 1 | `isc`, `ibk` (identify scroll, book) | `0x005BE230` with the only `test`, `0x005BE130`: **two requests**. The test sets item flag 4 on the scroll or tome, ends at the client message (`0x3F`, the row's spell icon, the skill) and returns 1, so `ItemUse` returns 0 and nothing is used up. The use refuses while the user interacts with a player unit that exists, for an identified target and for a target not in the user's inventory; else it ends at `sub_00562590_ItemIdentify(target)`, whose body is `[I]` ([items/0012 §§ Answer, 6](../findings/items/0012-use-inventory.md#answer-summary)) | address [C]; test and use up to their first callee [C] (ADR-0021); after, [I] |
 | 2 | `tsc`, `tbk` (town portal) | `ITEMUSE_TownPortal`, `0x005BE290` ([quests/0002](../findings/quests/0002-travel.md)) | [I] |
-| 3 | `hp1`..`hp5`, `mp1`..`mp5` (10 healing and mana potions) | `0x005BE3F0`: `len` read at `0x005BE430`, `calc1..3` at `0x005BE4D9`; the amount rule is [below](#timed-states-state-cstate1-cstate2-len-stat13-calc13) | [C] (ADR-0021) to the first callee; slot 0's frame rate [I] |
+| 3 | `hp1`..`hp5`, `mp1`..`mp5` (10 healing and mana potions) | `0x005BE3F0`: `len` read at `0x005BE430`, `calc1..3` at `0x005BE4D9`; the amount rule is [below](#timed-states-state-cstate1-cstate2-len-stat13-calc13) | [C] (ADR-0021) to the first callee; slot 0's frame rate `[C]` observed on a live game for `hp1` and `mp1` of a Sorceress, 16 fresh-list uses of 16 ([items/0016](../findings/items/0016-harness-inventory-run2.md)); other rows and classes `[I]` |
 | 4 | none (no stock row) | `0x005BE7B0`, `sub_005BE7B0_ItemUseStatPlain`: the kind-3 loop without the class scale and the draws, 0 draws (family `stat4`, 800 cases, seed compared; the controls that separate the draws are `stat3`'s, and `stat4` holds no golem case) ([items/0012 § 4, § 8](../findings/items/0012-use-inventory.md#4-kinds-3-4-5-the-amount)) | address [C]; before the first callee [C] (ADR-0021); after, [I] |
 | 5 | `rvs`, `rvl` (rejuvenation) | `0x005BEAC0`: a percent of the maximum, at once, no draw ([below](#timed-states-state-cstate1-cstate2-len-stat13-calc13)) | [C] (ADR-0021) to the first callee; after, [I] |
 | 6 | `yps` (antidote), `wms` (thawing) | `0x005BEF90`, which calls `0x005BEDA0` | [I] |
@@ -432,7 +434,13 @@ declared scratch memory; neither is a run of the game.
   `r2 < r1 >> 1` doubles the amount. Then `<< ValShift` (blank, so 0, for the stock stats 26 and 74); a refill's frame
   rate is `(old rate * remaining + v) / (len + remaining)`, truncated, and the list's end moves to
   `now + remaining + len`; the first drink's rate is `v / len`. The rate is observed on a slot after the first; for the
-  stock potions' slot 0 (the event-queue call comes first) it is `[I]`. So the earlier sentence that `hpregen` is
+  stock potions' slot 0 (the event-queue call comes first) it is `[C]` observed on a live game for `hp1` and `mp1` of a Sorceress,
+  16 fresh-list uses of 16 (`rate = total / len`, truncated: `hp1` 7 680 / 192 = 40, or 15 360 / 192 = 80 when doubled; `mp1` 10 240 / 128 = 80; the list's end `frame + len`;
+  [items/0016](../findings/items/0016-harness-inventory-run2.md), run:2026-11-04-inventory-2); other rows and other classes stay `[I]`.
+  The 17th use is the one that found a list, and its `total / len` equals the blend, so it separates nothing. `[I]` A second use within the first one's duration found the first list in 1 of 4 pairs; the other three allocated a new list, **what decides that is not known**, and the refill's rate above stays the emulated reading with no live case that separates it (items/0016; items/0012 case 4 stays open).
+  **The two draws and the doubling are `[C]` live for 17 uses** (12 `hp1` and 5 `mp1`, one Sorceress at vitality 165 and energy 150, one process: `RangeB(n)` then `Range(100)` on the user's seed, `n` the
+  vitality for `hp1` and the energy for `mp1`, seeds and amount equal to the model's replay in all 17): 6 of the 12 `hp1` uses doubled and 6 did not, none of the 5 `mp1` uses did, so
+  **`mp1`'s doubled branch is not observed** and stays the code reading above (items/0016; scope: a Sorceress, two stock rows, no golem). So the earlier sentence that `hpregen` is
   "added to life at each tick" is the tick's own reading; the potion's `calc1` is spread over `len` frames, not added at
   each tick. Stock totals: `hp1` 30 gives 7 680 stored units for a Sorceress, 11 520 for an Amazon, 15 360 for a
   Barbarian (30, 45, 60 life); `hp3` (100, `len` 171) stores 25 600 / 171 = 149 per frame, 99 life over the window and a

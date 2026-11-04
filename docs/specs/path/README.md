@@ -46,6 +46,7 @@ flowchart LR
 | Anchor | Used for |
 |---|---|
 | [PathTypes](../../tables/PathTypes.md) (the image's `g_PathPlanFuncs`, `g_PathTypeFlags`, `g_PathTypeParam98`) | planner, flags word and `+0x98` per type |
+| [PathDirTables](../../tables/PathDirTables.md) (the image's `g_PathDir8`, `g_PathDirTriples`, `g_PathSignTable`, `g_PathDirTable`) | the free-target step (§ C3), the aim's direction ([anim/movement § B](../anim/movement.md#b-the-per-frame-step)) |
 | tbl:MonStats2.txt:SizeX | a monster's size, hence its pattern ([drlg/collision F2](../drlg/collision.md#f-unit-marks)) |
 | tbl:MonStats.txt:npc, tbl:MonStats.txt:inTown | the town test (§ C2) |
 | tbl:Objects.txt:IsDoor, tbl:Objects.txt:Orientation | the object target's step (§ C1) |
@@ -262,7 +263,8 @@ PathTargetFree(ctx) → 0 or 1:                                      [C] (fn:sub
 PathTargetExtendPlayer(ctx):                                       [C] (fn:sub_00648050_PathTargetExtendPlayer@0x00648050, control ext4 fails all 33 it separates, run:2026-11-03-path-emu-1)
   dx, dy ← moved target − start
   nothing when |dx| ≥ 5, |dy| ≥ 5 or both 0
-  step ← (sign dx, sign dy)                                         ; g_PathSignTable[dx + 9 dy], g_PathSignTable[dy + 9 dx]
+  step.x ← sign dx if |dx| ≥ |dy|, else 0                           ; g_PathSignTable[dx + 9 dy]
+  step.y ← sign dy if |dy| ≥ |dx|, else 0                           ; g_PathSignTable[dy + 9 dx]
   m ← max(|dx|, |dy|);  p ← the moved target
   while m < 5:
     p ← p + step;  if Blocked(p): stop                              ; u16 adds
@@ -270,6 +272,8 @@ PathTargetExtendPlayer(ctx):                                       [C] (fn:sub_0
 ```
 
 `Blocked` here is `COLL_PatternTestBool(ctx.room, x, y, ctx.pattern, ctx.testMask)`; coordinates are u16 adds. `PathDirCell` is [search § A2](search.md#a2-directions). (data:g_PathDirTriples@0x006F1648, data:g_PathDir8@0x006EB398, data:g_PathSignTable@0x006EB490)
+
+*Corrected 2026-11-04 (`lane/a54` review): the step read `(sign dx, sign dy)`. It moves one axis unless `|dx| = |dy|`: a target at `(3, 1)` from the start steps `(1, 0)`, not `(1, 1)`. The table's values and index are in [PathDirTables](../../tables/PathDirTables.md); path/0001 § 5 has the correction.*
 
 #### C4. The replan
 
