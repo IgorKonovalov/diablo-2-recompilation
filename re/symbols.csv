@@ -1489,7 +1489,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005A2620,func,sub_005A2620_MonDeathDamage,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x005A2CC0,func,sub_005A2CC0_PartyDeadKillMember,,I,items/quality,docs/findings/items/0002-quality-roll.md
 0x005A2D10,func,sub_005A2D10_UModPartyDeadDeath,,I,items/quality,docs/findings/items/0002-quality-roll.md
-0x005A30E0,func,sub_005A30E0_MonDropCreated,,I,items/use,docs/findings/items/0014-ground-items.md
+0x005A30E0,func,sub_005A30E0_TargetBeltItemToGround,,I,items/use,docs/findings/items/0014-ground-items.md
 0x005A3250,func,sub_005A3250_UModQuestCompleteDeath,,I,monsters/ai,docs/findings/ai/0016-uber-event.md
 0x005A4270,func,sub_005A4270_UModEventRun,,I,skills/missiles,docs/findings/skills/0003-handlers.md
 0x005A4370,func,sub_005A4370_MonEvent7UMod,,I,sim/frame,docs/findings/frame/0002-unit-events-queue.md

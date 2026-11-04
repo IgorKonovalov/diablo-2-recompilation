@@ -316,7 +316,7 @@ ActLevelSpot(act, level, type, &x, &y, size) (0x0061B060)                       
 **The free-cell search.** `COLL_FindFreeNear(room, pos, other, size, maskA, maskB, fallback, radius, step)` (no draw):
 
 ```text
-if CollisionTest(room at pos, pos, size, maskA) == 0 (and the second footprint test passes): return that room
+if CollisionTest(room at pos, pos, size, maskA) == 0 (and the walk from pos to other passes, corrected below): return that room
 best = −1
 x0, y0 = pos; xl = xh = x0; yl = y0 − 1; yh = y0 + 1; w = 2
 while (xh − x0 + 1) < radius:
@@ -331,7 +331,7 @@ while (xh − x0 + 1) < radius:
 if best = −1 and fallback = 0: return 0   ; else the room at pos (pos unchanged when nothing was found)
 ```
 
-- [C] (ADR-0015) **Correction, items/0014 § 1:** the room each lookup starts from is not fixed: it is the last non-null room a lookup returned, and the first lookup's result is kept even when null. `other` is not a second footprint but a walk's origin along `expfield.d2`, tested with `maskB`. The pseudocode above omits both. (fn:COLL_FindFreeNear@0x0064DEA0 0x0064E043, fn:sub_0066A670_FieldWalkBlocked@0x0066A670, run:2026-11-04-ground-emu)
+- [I] (`drop`, pending ADR-0029) **Corrected 2026-11-04, items/0014 § 1:** the room each lookup starts from is not fixed: it is the last non-null room a lookup returned, and the first lookup's result is kept even when null. `other` is not a second footprint but a walk's origin along `expfield.d2`, tested with `maskB`. The pseudocode above omits both. (fn:COLL_FindFreeNear@0x0064DEA0 0x0064E043, fn:sub_0066A670_FieldWalkBlocked@0x0066A670, run:2026-11-04-ground-emu)
 - [I] Read from the decompile of `0x0064DEA0`; the loop bounds and the strict `<` (the first cell found wins a tie)
   are as written, the Manhattan distance is `|dx| + |dy|`. (fn:COLL_FindFreeNear@0x0064DEA0 0x0064DF6B–0x0064E1F7)
 - [I] Masks and steps used by travel: player placement `0x1C09` step 1; act change a second search `0x1C89` step 5;
