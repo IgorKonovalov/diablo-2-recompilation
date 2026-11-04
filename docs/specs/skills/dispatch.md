@@ -3,7 +3,7 @@ spec: skills/dispatch
 status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, data/calc, combat/overview, combat/delivery, stats/states, monsters/spawn, monsters/stats]
-consumed_by: [skills/missiles, combat/overview, combat/delivery, stats/states, items/economy, monsters/stats]
+consumed_by: [skills/missiles, combat/overview, combat/delivery, stats/states, items/economy, monsters/stats, monsters/ai/overview, monsters/ai/machinery]
 tags: {C: 77, I: 195, L: 7}
 updated: 2026-11-04
 ---
@@ -92,7 +92,7 @@ Column semantics are the table docs': [Skills § Dispatch](../../tables/Skills.m
 | Input | Kind | Tag |
 |---|---|---|
 | the frame of a mode that carries event code 1 or 2 (players), `Unit+0x4E` (monster sequences) | a logged input: animation timing is [plan 0050](../../plans/done/0050-animation-frame-timing.md)'s | [I] (fn:sub_00580460_PlrModeSkillFrame@0x00580460, fn:sub_005A8670_MonSeqFrame@0x005A8670) |
-| the monster's choice of skill, mode and target | an input: monster AI is plan 0052's | [I] (fn:sub_005DEAD0_MonAiUseSkill@0x005DEAD0) |
+| the monster's choice of skill, mode and target | an input here: [monsters/ai/machinery § T](../monsters/ai/machinery.md#t-the-tier-ais) for the tier, the catalogue for the rest | [I] (fn:sub_005DEAD0_MonAiUseSkill@0x005DEAD0) |
 | the numbered start and do functions outside § O | value oracles of the checker; specified in the [catalogue](catalogue.md) | [I] (data:g_SkillDoFuncs@0x007322B0) |
 | `SKILLS_ForUnitsInRange`'s and `SkillForUnitsNearTarget`'s unit order, `SkillUnitFilter` | logged as the list of units the callback ran on | [I] (fn:SKILLS_ForUnitsInRange@0x0056B7E0) |
 | the pet chosen for removal | a logged value | [I] (fn:sub_00575850_PetLimit@0x00575850) |
@@ -920,7 +920,7 @@ L5. RaiseSkeletonDo(unit, id, lvl):            (srvdofunc 31)        [I] (fn:sub
 
 - M1. The AI's command (`MonAiUseSkill`, mode < 16): the used skill becomes the unit's entry for the chosen id with
   owner −1, `Unit+0xC4 |= 0x40`, then the mode is set; the mode start runs `SKILLS_StartUsedSkill` and the action
-  frame `SKILLS_DoUsedSkill` (E2). The choice is an input. [I] (fn:sub_005DEAD0_MonAiUseSkill@0x005DEAD0,
+  frame `SKILLS_DoUsedSkill` (E2). The command is [monsters/ai/machinery § B](../monsters/ai/machinery.md#b-the-command); the choice is an input here. [I] (fn:sub_005DEAD0_MonAiUseSkill@0x005DEAD0,
   fn:sub_005A7C20_MonSetMode@0x005A7C20, fn:sub_005A75C0_MonModeStartSkill@0x005A75C0)
 - M2. `MonAttackStats` has six callers: the mode change, start function 42 (Fire Hit), do functions 150, 67 (Charge)
   and 7 (Jab), and `MonSkillAttackDo` (the monster branch of start 40, Leap: `MonAttackStats(mode 4)`,
@@ -1076,7 +1076,7 @@ The rows plan 0045 reproduces; the reading is [skills/0003 § 5](../../findings/
   rolls, logged only inside an open span then), 11 with no line naming it, 1 other; of part 2's 103, 60 as a defender,
   17 nested (an item cast of handler 20 or 21 inside a delivery), 11 off the stream within 4 096 steps, 2 with no
   line, 13 other. So between a start-built hit and its delivery, other events draw on the attacker's seed. The 171 +
-  160 monster gaps point at the AI (plan 0052). [I] (run:2026-10-25-skills, run:2026-10-27-skills,
+  160 monster gaps point at the AI, and their logs hold no AI line; with the AI logged, 41 of 49 new gaps of this shape close ([monsters/ai A4 and A5](../monsters/ai/README.md#a-the-event-kinds-and-their-seeds)). [I] (run:2026-10-25-skills, run:2026-10-27-skills,
   [skills/0001 § 18](../../findings/skills/0001-dispatch.md#18-plan-0045-phase-2-part-2-the-run-run2026-10-27-skills))
 - P2. **Armageddon re-seeds its caster.** The periodic function of Armageddon and Diablogeddon (do 146) seeds the
   caster's seed with `Init` of its skill entry's `+0x18` word and stores a fresh `RNG_Range(1 000 000)` there; the
@@ -1158,7 +1158,7 @@ run:2026-10-25-skills) The step's use, `low mod 100` against Raise Skeleton's `P
 - ~~The attribution of the 304 caster resyncs.~~ 90 of part 1's 133 player gaps and 45 of part 2's 148 walked, by
   run:2026-10-27-skills (§ P).
 - [L] **The caster gaps left**: the 43 + 103 player gaps listed in § P, and the 171 + 160 monster gaps, which point at
-  the AI (plan 0052).
+  the AI and cannot be re-walked ([monsters/ai A5](../monsters/ai/README.md#a-the-event-kinds-and-their-seeds)).
 - ~~What `Unit+0x38` holds (the sequence-anim delay gate of E4 and do 35's parity).~~ For a player, the index of the
   frame event being run ([anim/timing § G](../anim/timing.md#g-sequences), G5; plan 0050).
 - ~~Which frame of a mode carries event code 1 or 2, and `Unit+0x4E`.~~ The frame whose `animdata.d2` or sequence

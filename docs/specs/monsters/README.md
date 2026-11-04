@@ -5,7 +5,7 @@ target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, data/excel]
 consumed_by: [items/tc, objects, hirelings]
 tags: {C: 15, I: 0, L: 0}
-updated: 2026-10-16
+updated: 2026-11-04
 ---
 
 # Monsters: from a level's pool to a finished monster
@@ -26,6 +26,7 @@ map: the order of the stages, which seed each one steps, and what each passes on
 | [pool.md](pool.md) | the monster regions built at game creation (pool pick, appearance sets, copied Levels fields), the monster level rule, client critters | reviewed |
 | [spawn.md](spawn.md) | random population of a room: gate, density, class pick, normal or special, groups, champion packs, unique and MonStats minions, placement | reviewed |
 | [special.md](special.md) | champion or unique mods, mod handlers, unique minions and `xfer`, pack members, superuniques, MonPlace 2 and 3, the client name roll | reviewed |
+| [ai/README.md](ai/README.md), [ai/machinery.md](ai/machinery.md) | the AI tick, the AI table and state, target search, the command, the path request, following, the 18 tier AIs | draft |
 | [stats.md](stats.md) | hit points, defence, experience, resistances and block from `MonStats` × `MonLvl` per difficulty, the player count (at creation only), the classic nightmare/hell factors, the stat callback, MonProp, the mod handlers' stat effects | reviewed (plan 0025, 2026-10-15) |
 
 ## Data flow

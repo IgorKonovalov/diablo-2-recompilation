@@ -16,7 +16,7 @@ A unit that moves, or a missile that needs a route, holds a path record with a *
 request, builds a 0x34-byte context, takes the unit's own marks off the collision grid, calls the type's planner, puts the marks back, and aims the path at
 the first point it got. This page is the request, the 17 types, the dispatch, the draws per type and the grid a planner reads. The planners
 themselves, as pseudocode, are [path/search](search.md). Who asks for a plan and why is each caller's ([skills/catalogue](../skills/catalogue.md),
-[skills/missiles](../skills/missiles.md), [anim/movement](../anim/movement.md), the AI's in [ai/0001 § 8](../../findings/ai/0001-machinery.md#8-the-path-request)); the
+[skills/missiles](../skills/missiles.md), [anim/movement](../anim/movement.md), the AI's in [monsters/ai/machinery § D](../monsters/ai/machinery.md#d-the-path-request)); the
 per-frame step along the points is [anim/movement § B](../anim/movement.md#b-the-per-frame-step). The grid's cells and marks are [drlg/collision](../drlg/collision.md).
 
 ```mermaid
@@ -387,7 +387,7 @@ All 68 direct calls of `PathPlan`, each type read at its site. "Current" plans w
 
 - E1. [C] All 33 722 stock plans of the two runs came through sites of this register, by their return addresses, and the first run's other 842 did too: 0 outside them in either run. The kept checks print that line only when it isn't 0; `review-s54/logs.txt` prints the 0. (0x00649970, `2026-11-04-path-check.txt`, `2026-11-04-path-2-check.txt`, run:2026-11-04-path, run:2026-11-04-path-2)
 - E2. [I] **The player's move:** a walk, run or town walk start (`PlrModeStartMove`, modes 2, 3, 6) plans type 7 after `PathMoveReset`; mode 19 plans type 8 with `+0x90 = 5`. **Packet 0x5F:** when the server's position is 15–45 subtiles off, a type-15 plan to the client's point with `testMask` `0x409` and limit 77, accepted only when its end is that point; mask, type and `+0x91` restored. (fn:sub_0057F090_PlrModeStartMove@0x0057F090, fn:sub_0054CD50_SrvPkt5FPlayerPos@0x0054CD50, fn:sub_0054CB10_PlrReachTest@0x0054CB10)
-- E3. [I] **The AI's types** are 1, 2, 5, 6, 7, 13 and 15; 5 and 6 through `MonPathPlanType`, 13 through `PathReplan`. `MonMovePlan` falls back to 15 after a failed plan of 2, 7, 9 or 13. The choice is the AI's: [ai/0001 § 8](../../findings/ai/0001-machinery.md#8-the-path-request), research-map row `monsters/ai`. (fn:sub_005A6290_MonPathPlanType@0x005A6290)
+- E3. [I] **The AI's types** are 1, 2, 5, 6, 7, 13 and 15; 5 and 6 through `MonPathPlanType`, 13 through `PathReplan`. `MonMovePlan` falls back to 15 after a failed plan of 2, 7, 9 or 13. The choice is the AI's: [monsters/ai/machinery § D](../monsters/ai/machinery.md#d-the-path-request). (fn:sub_005A6290_MonPathPlanType@0x005A6290)
 - E4. [I] No Missiles column chooses a type: it is a constant in the do function or callback. (fn:sub_005C9290_MissCbReseedPathXPlusArg@0x005C9290, [PathTypes § Columns](../../tables/PathTypes.md#columns-a-request-reads))
 
 ### F. The grid a planner reads

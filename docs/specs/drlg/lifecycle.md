@@ -3,7 +3,7 @@ spec: drlg/lifecycle
 status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, drlg/overview, drlg/room-tiles, monsters/spawn, monsters/special, monsters/stats, objects, save/d2s]
-consumed_by: [drlg/room-tiles, drlg/preset, drlg/collision, monsters/spawn, monsters/special, monsters/stats, objects, chain]
+consumed_by: [drlg/room-tiles, drlg/preset, drlg/collision, monsters/spawn, monsters/special, monsters/stats, objects, chain, monsters/ai/overview, monsters/ai/machinery]
 tags: {C: 103, I: 78, L: 9}
 updated: 2026-11-04
 ---
@@ -768,7 +768,7 @@ unit without flag `0x40`, and `+0x2C8` too for monster flag `0x01` (2 035). (run
 fn:sub_00547ED0_MonRegionUnitLeave@0x00547ED0)
 - [I] The `+0xC8` bit `0x200` is set only when the record's saved `+0xC8` (record `+0x14`) has it, so the restore carries
 that bit over (0x005428F9–0x00542903, drlg/0009 § 6). The group link, the AI restore, the target lists and the mod
-re-append are code readings; AI and movement of a restored monster are boundary oracles (ADR-0014 phase 4).
+re-append are code readings; movement of a restored monster is a boundary oracle (ADR-0014 phase 4), and what the restore keeps of its AI is [monsters/ai E9](../monsters/ai/README.md#e-the-ai-state-on-the-unit).
 (fn:sub_00541E20_InactiveMonAiRestore@0x00541E20, fn:sub_005A4850_ModAppendApply@0x005A4850, fn:sub_005543B0_MonAlignSet@0x005543B0)
 - [I] **A dead special saved without `0x08` or `0x10` would come back alive**: `SpecialMonRestore` places the unit
 in mode 1 whatever record flag 4 says, with stat 6 by the 7500-frame rule. By the dead-champion reading of § F (every
@@ -1046,8 +1046,7 @@ restore is not specified here.
   saved. What the code shows, as readings (drlg/0009 § 11.1 (a), § 11.2): the server's path planner refuses a path
   whose target room is a town room for a monster that is not an NPC (0x006483A0), and that target test is the only town
   barrier on a planned walk, since the walk changes the unit's room with no town test (`PathRoomUpdate` 0x0064FAD0).
-  The straight branch (`+0x34` bit `0x40000`, path types 4, 10 and 14) reaches a monster only through 9
-  `MonAiPathOverride` calls not followed. `UnitTeleport` (0x00554EA0) and the Teleport do function (0x005CA360) test no
+  The straight branch (`+0x34` bit `0x40000`, path types 4, 10 and 14) is passed by none of the AI's path overrides ([monsters/ai/machinery D5](../monsters/ai/machinery.md#d-the-path-request), which resolves the 9 register calls). `UnitTeleport` (0x00554EA0) and the Teleport do function (0x005CA360) test no
   destination room. MonStats `inTown`, the earlier lead, has two readers, both in combat. Plan 0038 batch **H7a**
   (`lifecycle`, run:2026-10-17-h7a-lifecycle, drlg/0009 § 11.3 (1)–(2)) was its route, and it left the case open:
   the walk across a town room is a recorded shortfall, since a geometry scan of the 106 town layouts in the kept logs
@@ -1055,8 +1054,7 @@ restore is not specified here.
   layouts at one more run of 1 or 2 cells; a sample of layouts, shortest routes only); the teleport recipe was withdrawn, since both monster AIs read that pick a teleport
   point (the unique mod's `UModTeleportTry` 0x005B11F0 and the Zakarum priests' 0x005F72D0 through 0x005FD470) refuse
   a town room. Not shown: whether a stock town's geometry allows such a route, and whether any monster AI teleports
-  to a town point. Unfollowed, out of plan 0038: 152 register-skill `MonAiUseSkill` calls, the 9 `MonAiPathOverride`
-  calls and 19 `UnitTeleport` calls. The case stays a named shortfall of plan 0040 Phase 2. Owner: reverser.
+  to a town point. Unfollowed, out of plan 0038: 152 register-skill `MonAiUseSkill` calls and 19 `UnitTeleport` calls. The case stays a named shortfall of plan 0040 Phase 2. Owner: reverser.
 - ~~A champion without monster flag `0x08`~~ answered by the § F reading from drlg/0009 § 11.1 (b): every server write of
   the champion bit follows `MonMarkSpecial`, so no champion path skips it (still a code reading; a block copy of monster data is
   not followed).

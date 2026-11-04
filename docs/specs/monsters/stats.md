@@ -3,7 +3,7 @@ spec: monsters/stats
 status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, monsters/pool, monsters/spawn, monsters/special, items/properties, data/excel]
-consumed_by: [items/tc, hirelings, combat/overview, combat/damage, stats/aggregate, chain]
+consumed_by: [items/tc, hirelings, combat/overview, combat/damage, stats/aggregate, chain, monsters/ai/overview]
 tags: {C: 136, I: 55, L: 5}
 updated: 2026-11-04
 ---
@@ -145,7 +145,7 @@ only, no frequency and no champion chance. [C] (run:2026-10-15-berserk-forced, [
 | mod lists and flags | value input | which handlers run, with which flag, in which order | [monsters/special](special.md#c-mod-handlers) | [C] (fn:sub_005A2120_SpecialModsApply@0x005A2120, run:2026-10-15-mon-stats) |
 | re-created monster's stats 7, 12, 13 | specified elsewhere | the restore writes 13 and 7 from the inactive record; 12 is this spec's `MonsterInit` level plus the re-applied mods | [drlg/lifecycle § H](../drlg/lifecycle.md#h-the-restore) | [C] (run:2026-10-17-lifecycle, fn:sub_005424F0_InactiveMonstersRestore@0x005424F0) |
 
-Out of scope: to-hit, damage and elemental damage (attack time, § H), skills and AI, and what an aura does in combat.
+Out of scope: to-hit, damage and elemental damage (attack time, § H), skills, the AI ([monsters/ai](ai/README.md)) and what an aura does in combat.
 [I] (architect ruling, plan 0025 Phase 1; fn:sub_005A4F50_MonAttackStats@0x005A4F50)
 
 ## Algorithm
