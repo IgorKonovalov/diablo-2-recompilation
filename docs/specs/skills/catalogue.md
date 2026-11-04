@@ -1341,8 +1341,8 @@ Q6. the data joins: Siege Beast Stomp (301) has srvmissilea −1, so do 134 retu
   by a catapult spotter (class 516), whose parameter block's `+0x54` is `0x005AC040`, the new missile's seed at
   `MissileCreate`'s exit lies on the stream of `Init(path word +0x10)`, 10 steps past the `Init` in all 36 (the
   checker row `MC.cbseed2`). [C] (fn:sub_005AC040_MissCbReseedPathX@0x005AC040, 0x005AC073, run:2026-10-30-skills-catalogue)
-  Which of the callback's three path calls makes the 10 steps, and that the `Init`'s low word is the value
-  `0x00648A00(path)` returns (read as path `+0x10`), are not read; the latter fits in 36 of 36. Which of the hit
+  The 10 steps are `PathPlan`'s random walk, and the `Init`'s low word is path word `+0x10`
+  ([missiles H4](missiles.md#h-re-seed-sites)). Which of the hit
   entries that pass the callback (mhit 38 `0x005AC14B`, mhit 45 `0x005AC525`) made these creations is not logged. [I]
   (fn:sub_005AC040_MissCbReseedPathX@0x005AC040, fn:sub_00649970_PathPlan@0x00649970)
 - R3. **`ReturnDamage` (stat-event handler 4, Iron Maiden) when its returned damage kills the cursed unit.** In one

@@ -2,7 +2,7 @@
 based_on:
   - docs/specs/quests/README.md 2026-10-20
   - docs/specs/quests/progression.md 2026-11-03
-  - docs/specs/quests/travel.md 2026-10-21
+  - docs/specs/quests/travel.md 2026-11-04
 ---
 
 # Quests and travel: how a character moves through the acts
@@ -382,7 +382,10 @@ too, while the same kind of arrival in Harrogath, which has no point of that kin
 last fallback, a random room, never ran.
 
 The free-cell search draws nothing (confirmed). It looks in growing rings around the point and takes the closest free
-cell by the sum of the horizontal and vertical distances; the ring order beyond the first ring is read from the code.
+cell by the sum of the horizontal and vertical distances. The ring order, and a lookup that starts from the last room it
+found rather than the first, are read from the code; an emulated run over the form with one cell and step 1 agrees, and
+counts as confirmation only once a pending ruling on that run's method is made. A town portal's field end also needs the
+cells of a walk back to its point to be clear (the walk itself is confirmed under emulation); its size 3 was not run.
 
 ## Waypoints
 

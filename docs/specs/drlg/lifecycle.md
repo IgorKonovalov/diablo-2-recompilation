@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, drlg/overview, drlg/room-tiles, monsters/spawn, monsters/special, monsters/stats, objects, save/d2s]
 consumed_by: [drlg/room-tiles, drlg/preset, drlg/collision, monsters/spawn, monsters/special, monsters/stats, objects, chain]
-tags: {C: 97, I: 79, L: 8}
-updated: 2026-10-27
+tags: {C: 99, I: 77, L: 9}
+updated: 2026-11-04
 ---
 
 # Room lifecycle: activation, release, the inactive records and the restore
@@ -98,7 +98,7 @@ stateDiagram-v2
 | idle threshold | release when the count exceeds 10 (the 11th pass) | 0x0052D27B | [C] (run:2026-10-17-lifecycle) |
 | dead-monster save draw | `low mod 3 = 0`, unsigned | 0x00543260–0x00543287 | [C] (run:2026-10-17-lifecycle) |
 | life kept | 7500 frames, unsigned test | 0x00542819 | [C] (run:2026-10-17-lifecycle) |
-| item expiry | frame + 15000, 30000 or 45000; 0 never | fn:sub_00558A10_ItemGroundExpiry@0x00558A10 | [C] for the branches G1 marks, [I] for the others (run:2026-10-17-lifecycle) |
+| item expiry | frame + 15000, 30000 or 45000; 0 never | fn:sub_00558A10_ItemGroundExpiry@0x00558A10 | [C] for every branch, emulated to the return (ADR-0015, run:2026-11-04-ground-emu); logged in the game for the branches G1 counts (run:2026-10-17-lifecycle) |
 | restored item expiry floor | frame + 15000 | fn:sub_00541990_InactiveItemRestoreOne@0x00541990 | [C] (run:2026-10-17-lifecycle) |
 | wanderer gate | `low & 0x7FFF = 0` | 0x0054F089 | [C] (run:2026-10-17-lifecycle), the mask's width [I] (§ I) |
 | wanderer roll | `low mod 100 < 3`, region `+0x2C4` < 3 | 0x0054F024–0x0054F041 | [C] for the draw and the `mod 100` ≥ 3 return (run:2026-10-21-sweep-monsters-a), [I] for the region test and the pass below 3 (fn:sub_0054EFF0_WandererRoll@0x0054EFF0) |
@@ -140,6 +140,22 @@ excludes a 20-frame sweep: five records with expiries 18 720 and 18 324 were sti
 1 500-frame sweep has no pass between those expiries and that frame (18 000 and 19 500). No pass fell between an expiry
 and its restore, so the period stays a reading. (fn:sub_0052D870_GameTick@0x0052D870, 0x0052D310, 0x00542AC0,
 [drlg/0009 § 11.3 (4)](../../findings/drlg/0009-room-lifecycle.md#113-plan-0038-batch-h7a-run2026-10-17-h7a-lifecycle))
+- [C] (ADR-0021) **The other call of that pass, `0x00558B90`, sweeps ground items in active rooms.** A type-4 unit with
+item data `+0x24` non-zero and `≤` the frame (signed) is reached, in room order and each room's list order, up to the
+first one reached; the emulation stops at `UnitGetRoom`, so the code after it stays `[I]`. (family `sweep`,
+fn:sub_00558B90_ActExpiredItemsFree@0x00558B90, 0x00620BB0, run:2026-11-04-ground-emu)
+- [I] After that boundary the unit is unlinked, sent to every player and freed.
+(fn:sub_00558B90_ActExpiredItemsFree@0x00558B90, [items/0014 § 3](../../findings/items/0014-ground-items.md#3-lifetime-in-an-active-room))
+- [I] **A monster's or chest's drop has `+0x24` 0 until its room has deactivated.** `ItemCreate` goes through `SUnitCreate`,
+which zeroes the item data, and neither calls `ItemGroundExpiry`; so in a room that stays active such an item is never
+swept. A release's record takes `ItemGroundExpiry` afresh (`0x00541B6C`, § G), not the old `+0x24`, and the restore
+(§ H) sets the field to `max(saved, frame + 15000)`, a saved 0 staying 0, so from then on this sweep can free the item
+with the room active. `ItemPlaceOnGround` (a player's drop, an overflow, `DropGoldAmount`, NPC menus, the cube's) writes
+`ItemGroundExpiry` at once. The writer scan does not see a block copy, and `ItemCreate`'s deeper chains were not
+followed; plan 0060 Phase 2's case 7 reads the field. (fn:sub_00558D90_ItemCreate@0x00558D90,
+fn:sub_00555230_SUnitCreate@0x00555230, fn:sub_00558AA0_ItemPlaceOnGround@0x00558AA0,
+fn:sub_00541990_InactiveItemRestoreOne@0x00541990, 0x00541B6C,
+[items/0014 § 3](../../findings/items/0014-ground-items.md#3-lifetime-in-an-active-room))
 
 ### B. Activation: reference counts per near-list distance
 
@@ -589,18 +605,20 @@ target list (`+0xD0` ≠ 11; `+0xD0` < 8 is a fatal error), `0x800` superunique.
 **Item expiry** (`ItemGroundExpiry`, the record's `+0x04`):
 
 ```
-G1. ItemGroundExpiry(item, frame) → u32:                          [C] except the lines tagged [I] (fn:sub_00558A10_ItemGroundExpiry@0x00558A10, run:2026-10-17-lifecycle)
-      if ItemBaseIsQuest(item): return 0                          ; never expires; [I] not reached (0x00558A10)
+G1. ItemGroundExpiry(item, frame) → u32:                          [C] (ADR-0015: every line emulated to the return, run:2026-11-04-ground-emu; counts logged in the game, run:2026-10-17-lifecycle; fn:sub_00558A10_ItemGroundExpiry@0x00558A10)
+      if ItemBaseIsQuest(item): return 0                          ; never expires; not logged in a game
       q ← ITEMS_GetQuality(item)
       if q = 4: return frame + 30000                              ; magic (66)
       if 5 ≤ q ≤ 9: return frame + 45000                          ; (21)
       if ITEMS_GetBaseType(item) = 4:                             ; gold
-        return frame + 45000 if stat 14 > 10000 else frame + 15000   ; [I] the 45000 half not reached (0x00558A10); 15000 (437)
+        return frame + 45000 if stat 14 > 10000 else frame + 15000   ; the 45000 half not logged in a game; 15000 (437)
       if ITEMS_IsSocketFiller(item): return frame + 30000         ; (27)
       return frame + 15000                                        ; (796)
 ```
 
-The additions are 32-bit and wrap; stat 14 is compared signed. [I] (fn:sub_00558A10_ItemGroundExpiry@0x00558A10,
+The additions wrap as `i32`: for + 45000, frame 2 147 438 648 gives a negative expiry, about 2.7 years of play at 25
+frames a second, so no game reaches it. [C] (ADR-0015, family `expiry`, 0x00558A3F, run:2026-11-04-ground-emu)
+Stat 14 is compared signed. [I] (fn:sub_00558A10_ItemGroundExpiry@0x00558A10,
 fn:sub_00628CD0_ItemBaseIsQuest@0x00628CD0, fn:ITEMS_GetQuality@0x00627E70, fn:ITEMS_GetBaseType@0x0062B400,
 fn:ITEMS_IsSocketFiller@0x0062BEB0)
 
@@ -1043,8 +1061,11 @@ restore is not specified here.
 - [L] **The wanderer spawn** was never reached: one gate pass is logged (§ I), and its roll (82) returned. The gate
   passes 1 in 32 768 draws and the roll 3 in 100. The wanderer's alignment is answered as a code reading in § H from
   drlg/0009 § 11.4 (b): `MonSpawnTry` sets 2, so a saved wanderer is dropped.
-- [L] **Unreached branches**, each `[I]` above: the 0 expiry (no quest item was saved), the 1 500-frame expiry sweep
-  `0x00542AC0` freeing a record (§ A), the 45000 gold expiry, save tests 3, 4, 6 and 7 and `restore` 0, kept monsters
+- [L] **Whether a monster's drop's item data `+0x24` is 0 in a game** (§ A), by a writer the scan's form misses
+  (`ItemCopy`, a block copy): plan 0060 Phase 2 case 7.
+- [L] **Unreached in a game**: the 0 expiry (no quest item was saved) and the 45000 gold expiry, both emulated (G1);
+  and, each a reading above, the 1 500-frame expiry sweep
+  `0x00542AC0` freeing a record (§ A), save tests 3, 4, 6 and 7 and `restore` 0, kept monsters
   and units, the alignment-1 half of the `0x400` drop (no stock monster the H7a sessions met was saved with `+0xD0` ≥ 8
   and alignment 1), the level-108 rule, a kept player corpse, a minion restored without its boss, the level-120 half of
   the release test, the placement fallbacks after radius 5.

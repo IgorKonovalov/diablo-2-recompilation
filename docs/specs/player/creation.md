@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, data/excel, items/uniques-sets, items/properties, items/affixes, monsters/stats, save/d2s]
 consumed_by: [save/d2s, combat/to-hit, stats/aggregate, player/party]
-tags: {C: 140, I: 52, L: 1}
-updated: 2026-11-03
+tags: {C: 140, I: 53, L: 1}
+updated: 2026-11-04
 ---
 
 # New character, starting items, experience and level-up
@@ -57,6 +57,7 @@ flowchart TD
 | The same grant's 20M (Nightmare) and 40M (Hell), and its caller: `sub_0058C9A0_A5Q5_AncientDeath` and the summit and party grants (the run did not log which) | fn:sub_0058C9A0_A5Q5_AncientDeath@0x0058C9A0 → fn:sub_0058C5C0_ExpGrantCapped@0x0058C5C0 | [I] |
 | Death to a monster with no owner: the loss, then the corpse's share written at the corpse's creation | fn:sub_00535AB0_PlayerDeathExpLossGate@0x00535AB0 → fn:PLAYER_DeathExpLoss@0x005359F0; fn:PLAYER_CorpseCreate@0x0057F700, run:2026-10-27-sweep-player (the loss reproduced on five deaths over three difficulties) | [C] |
 | The gate's caller, `sub_00580EC0_PlayerDeath`; no loss when the killer is a player or a player's monster; the share returns on the owner's pickup of the corpse | fn:sub_00580EC0_PlayerDeath@0x00580EC0, fn:sub_00535AB0_PlayerDeathExpLossGate@0x00535AB0, fn:PLAYER_CorpsePickup@0x0057FB70 (one caller, `sub_00548B00_UnitInteract` 0x00548E56) | [I] |
+| The client's switches behind the create message's class and name bytes: `-ama`, `-pal`, `-sor`, `-nec`, `-bar` set `g_ClientClass` to 0, 3, 1, 2, 4 (later bytes win; classes 5 and 6 have no switch); `-name`, unless `"0"`, copies its first 16 bytes to `g_ClientName`. `-ctemp N` replaces the class byte of the create and join messages, only when `ClientFlagBit8` is set: bit 8 of `g_ClientFlags` is 0 in the image, the two bit-0 setters leave it, and the one whole-word writer `sub_0047A9A0_ClientFlagsSet` has one call, 0x0045C8D2, in code that reads a message buffer, so the first game of a process can't see it | 0x0044D6B0, 0x00477CF6, 0x0044D892, 0x0044D960, 0x00477CEC, 0x00477FBC, data:g_ClientClass@0x007A0522, data:g_ClientName@0x007A05C4, data:g_CTemp@0x00712F00, fn:sub_0047AA30_ClientFlagBit8@0x0047AA30, [archaeology/0001 § 7](../../findings/archaeology/0001-switches.md#7-behaviour-changing-switches-and-the-section-each-changes) | [I] |
 | An attribute point is spent | fn:PLAYER_SpendStatPoint@0x00570D60, run:2026-10-27-sweep-player (four spends) | [C] |
 
 ## Inputs

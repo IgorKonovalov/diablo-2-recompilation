@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, items/properties, items/tc, items/vendors, stats/aggregate, monsters/stats, hirelings, combat/delivery, data/excel]
 consumed_by: [items/vendors, hirelings, items/quest-drops, combat/delivery]
-tags: {C: 127, I: 85, L: 11}
-updated: 2026-10-27
+tags: {C: 127, I: 86, L: 12}
+updated: 2026-11-04
 ---
 
 # Item economy: prices, repair, gold, costs and wear
@@ -679,6 +679,10 @@ G11. PlayerDropGold(amount):                                                    
   other value → 0. The single-player client runs with `g_ClientGameMode` = 0, so every logged single-player game has
   type 3. (0x00530CFF, fn:sub_00530BF0_GameCreate@0x00530BF0, fn:sub_00477CA0_ClientGameCreateMsg@0x00477CA0,
   data:g_ClientGameMode@0x007A0610, [items/0011 § The writer of `game+0x6A`](../../findings/items/0011-economy.md#the-writer-of-game0x6a-2026-10-17-lanerbs2))
+- G10. [I] **The switches.** `-gametype N` is a source of `g_ClientGameMode` (launcher and multiplayer code write it too).
+  `-arena N` writes the create message's word at `+0x207`, and through the overlap the low word of `+0x209`, which
+  `ClientGameCreateMsg` tests against 0 and, if 0, writes `4 | 0x100000`. (0x0044D62D, 0x00477D33, 0x00477D15, 0x00477D24,
+  fn:sub_00477CA0_ClientGameCreateMsg@0x00477CA0, [archaeology/0001 § 7](../../findings/archaeology/0001-switches.md#7-behaviour-changing-switches-and-the-section-each-changes))
 - [I] **The corpse.** When the corpse is made, the remaining carried gold (0 after a non-PvP death) is dropped as
   piles by `CorpseDropGold`; with 16 corpses the items and gold are dropped instead (`CorpseOverflowDrop`).
   (fn:PLAYER_CorpseCreate@0x0057F700, fn:sub_0057F390_CorpseDropGold@0x0057F390,
@@ -1020,6 +1024,8 @@ so the amount is `5 + 19 = 24`, unchanged by `mul=`. G7: the killer's stat 79 is
   version-0 items, the recharge cost, charges used, skill wear, Baal's gold, the caps, pickup and the stash move,
   PvP and non-single-player deaths, the classic throwing weapon, the stack refill, Cain's
   free path, the broken ethereal sale, the stat-252 repair branch, `item_reducedprices` on a repair.
+- [L] What the server does with the create message's `+0x207` word (`-arena`, G10): `SrvClientMsgDispatch` case 0 past
+  the type byte (0x0053F100) is not read; plan 0061 Phase 1 is its natural home.
 - [L] Which network modes `g_ClientGameMode` 6 and 8 are (game types 1 and 2). A multiplayer log of `Game+0x6A`
   (plan 0044) settles it.
 - [L] The party gold split (`PartyGoldShare`) and trading gold between players: plan 0044, two clients.

@@ -2,7 +2,7 @@
 based_on:
   - docs/specs/stats/README.md 2026-10-21
   - docs/specs/stats/aggregate.md 2026-10-20
-  - docs/specs/stats/states.md 2026-10-27
+  - docs/specs/stats/states.md 2026-11-04
 ---
 
 # Stats and states
@@ -254,8 +254,8 @@ refuses every curse**, confirmed on monsters: after a Necromancer's own Attract,
 all refused and 151 on the others were all made, in the same session. On a player it is read from the code.
 
 Also read from the code: durations are in frames and are not rounded; some monsters refuse every timed state by two
-flags, one in their `MonStats` row and one in their `MonStats2` row (which columns those are is not known); and a potion clears its state's group (below)
-before it applies.
+flags, one in their `MonStats` row and one in their `MonStats2` row (which columns those are is not known); and the antidote, thawing and stamina potions and the herb clear their state's group (below)
+before they apply; healing and mana potions make no such call.
 
 ## How a state ends
 
@@ -278,7 +278,7 @@ From [states § C](../specs/stats/states.md#c-expiry-and-removal):
 
 Some states share a `group` in the `States` table, and a group clear removes the other states of that group
 ([states § D](../specs/stats/states.md#d-the-group-clear)). **The apply itself never does this**; only the callers that
-run the clear exclude a group (potions, the "state" stat that some items carry, and five skills). Confirmed in the run
+run the clear exclude a group (those potions and the herb, not healing or mana potions; the "state" stat that some items carry; and five skills). Confirmed in the run
 for the cases met: the potions of the run have no group, so their clear removed nothing; the full Trang-Oul's set
 switches its `monsterset` state on with a clear that found nothing else in the group, and when the set broke the clear
 removed that state itself. Clearing a **different** state of the same group is confirmed by a second run for two

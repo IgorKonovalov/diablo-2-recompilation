@@ -659,9 +659,11 @@ Step notes:
 - F2. `PlayerCount` counts the units in the game's 128 player hash lists (`game+0x1120`, next pointer
   `unit+0xE4`) that are neither in state 7 (`playerbody`) nor dead (modes 0/17 for players, 0/12 for
   monsters, or `unit+0xC6` bit 0). If `game.type ∈ {1, 2, 3}` and `g_PlayersOverride` is larger, the
-  override is used. `/players N` stores N only when `N ≤ 8` as an unsigned compare. [I]
+  override is used. `/players N` stores N only when `N ≤ 8` as an unsigned compare. The client's chat parser takes the
+  command only in client modes 0, 1, 6 and 8, with `atol` clamped to 1..8. [I]
   (fn:sub_00535790_PlayerCount@0x00535790, fn:sub_005541B0_UnitIsDead@0x005541B0,
-  fn:sub_00535780_SetPlayersOverride@0x00535780, data:g_PlayersOverride@0x00883D70)
+  fn:sub_00535780_SetPlayersOverride@0x00535780, data:g_PlayersOverride@0x00883D70, fn:sub_0047C420_ChatInputParse@0x0047C420,
+  [archaeology/0001 § 6](../../findings/archaeology/0001-switches.md#6-chat-and-other-commands))
 - F2. **The override applies in a TCP/IP game, and only the host's counts.** In plan 0044's two-client run (game type 2)
   the host's `/players 3` gave `PlayerCount` 3 in 95 calls, `/players 8` gave 8 in 13, and `/players 1` gave 2 (the
   two live players); the joiner's `/players 5`, typed among the 95, changed nothing, since the setting is a global of

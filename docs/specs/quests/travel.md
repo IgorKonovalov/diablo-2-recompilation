@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, drlg/collision, drlg/warps, objects, quests/progression, save/d2s]
 consumed_by: [quests/progression, monsters/spawn, objects]
-tags: {C: 74, I: 86, L: 4}
-updated: 2026-10-21
+tags: {C: 75, I: 87, L: 5}
+updated: 2026-11-04
 ---
 
 # Travel: waypoints, act changes, town portals, warps and placement
@@ -195,34 +195,68 @@ Step notes:
 
 ```
 B1. COLL_FindFreeNear(room, pos, other, size, maskA, maskB, fallback, radius: i32, step: i32) → room:   [I] (fn:COLL_FindFreeNear@0x0064DEA0 0x0064DF6B–0x0064E1F7)
-      if CollisionTest(room at pos, pos, size, maskA) = 0 and the second footprint (other, maskB) passes:
-        return that room                                             ; pos unchanged
+      base ← RoomAt(room, pos)                                       ; kept even when none
+      if base ≠ none and CollisionTest(base, pos, size, maskA) = 0 and (no other or Walk(base, pos, other, maskB) = 0):
+        return base                                                  ; pos unchanged
       best: i32 ← −1
       (x0, y0) ← pos;  xl ← x0;  xh ← x0;  yl ← y0 − 1;  yh ← y0 + 1;  w: i32 ← 2
       while (xh − x0 + 1) < radius:
         for y in yl, yl + step, … while y ≤ yh:                       ; the two side columns
-          for x in xl − 1, xl − 1 + w, … while x ≤ xh + 1:            ; left, then right
-            if free(x, y) and (best = −1 or |x − x0| + |y − y0| < best): pos ← (x, y);  best ← |x − x0| + |y − y0|
+          for x in xl − 1, xl − 1 + w, … while x ≤ xh + 1:  Try(x, y)  ; left, then right
         for x in xl, xl + step, … while x ≤ xh:                       ; the two end rows
-          for y in yl, yl + w, … while y ≤ yh:                        ; top, then bottom
-            if free(x, y) and (best = −1 or |x − x0| + |y − y0| < best): pos ← (x, y);  best ← …
+          for y in yl, yl + w, … while y ≤ yh:  Try(x, y)              ; top, then bottom
         if best ≠ −1: break
         xl ← xl − step;  xh ← xh + step;  yl ← yl − step;  yh ← yh + step;  w ← w + 2·step
       if best = −1 and fallback = 0: return none
-      return the room at pos                                         ; pos unchanged when nothing was found
+      return RoomAt(base, pos)                                       ; pos unchanged when nothing was found
+
+Try(x, y):
+      r ← RoomAt(base, x, y);  if r = none: skip
+      base ← r                                                       ; moved before the tests
+      if CollisionTest(r, (x, y), size, maskA) ≠ 0 or (other given and Walk(r, (x, y), other, maskB) ≠ 0): skip
+      if best = −1 or |x − x0| + |y − y0| < best:  pos ← (x, y);  best ← |x − x0| + |y − y0|
+
+RoomAt(base, x, y) → room:
+      no base: none;  base holds the cell: base;  else the first room of base's near list, in list order, that holds it;  else none
+
+Walk(r, (x, y), origin, mask) → 0 or 1:
+      loop:
+        if the cell (x, y) looked up from r has no room, map or cells, or its bits & mask ≠ 0: return 1
+        (x, y) ← (x, y) + the step of the field byte at row 128 + y − origin.y, column 128 + x − origin.x
+        if the byte at the new cell is 8: return 0                    ; the origin itself is tested only when the walk starts on it
 ```
 
 Step notes:
 
-- B1. [C] The first-cell test and the cases that moved the cell agree with this search: 545 searches inside travel
-  events, 541 in place and 4 moved (run 1); 323 searches, 54 moved (run 2). (fn:COLL_FindFreeNear@0x0064DEA0,
-  run:2026-10-17-quests, run:2026-10-18-quests2)
-- B1. [I] The ring order beyond the first ring and the search with a second footprint (the portal field end) were not
-  separated by either run; the strict `<` makes the first free cell found win a tie, and the distance is `|dx| + |dy|`.
-  `free(x, y)` is `CollisionTest` of [drlg/collision § E](../drlg/collision.md#e-collisiontest-by-size) with `maskA`
-  (and the second footprint with `maskB` when `other` is given). (fn:COLL_FindFreeNear@0x0064DEA0)
-- B1. [C] The search draws nothing: the game, quest and player seeds were unchanged across every placement it ran in.
-  (fn:COLL_FindFreeNear@0x0064DEA0, run:2026-10-17-quests)
+- B1. [C] The first-cell test and the cases that moved the cell agree with this search, logged in the game: 545 searches
+  inside travel events, 541 in place and 4 moved (run 1); 323 searches, 54 moved (run 2). Those runs do not separate the
+  ring order, the moving base or the walk. (fn:COLL_FindFreeNear@0x0064DEA0, run:2026-10-17-quests, run:2026-10-18-quests2)
+- B1. [I] (`drop`, pending ADR-0029) **For size 1 and step 1 the search above holds to its return**, emulated through
+  `GroundDropCell`, not on a live game: the rings 1 to 49 with ring 50 never looked at (radius 50), a ring's lowest
+  `|dx| + |dy|` and the earliest of equals, the side columns before the end rows, the walk's test from the candidate's
+  room. Family `drop`, 4 000 cases, 0 mismatches. It rises to confirmed (ADR-0015) with no re-run if
+  [ADR-0029](../../adrs/0029-import-slots-and-import-boundaries-in-emulation.md) is accepted. Neither the locks around the
+  8-byte block a given origin allocates, nor that allocator on any other pool state, are evidenced in either case; the
+  block only holds the origin's two words. (fn:COLL_FindFreeNear@0x0064DEA0, fn:sub_00555DA0_GroundDropCell@0x00555DA0,
+  0x0064DEE8, 0x0064E1EC, run:2026-11-04-ground-emu, [items/0014 § 1](../../findings/items/0014-ground-items.md#1-the-search))
+- B1. [I] (`drop`, pending ADR-0029) **The lookup's base room moves.** Each lookup starts from the last non-null room a
+  lookup returned, not from `room`, and the first lookup's result is kept even when null, so a cell is reachable only
+  through that room's near list. The return's lookup uses the moved base too: with no free cell and `fallback` 1 the
+  return can be null though the start cell lies in the first room, and a found cell's return can be null when the last
+  room tried does not list it. No free cell with `fallback` 1 keeps the start cell, blocked or not. (0x0064E043,
+  0x0064E13C, 0x0064E21F, 0x0064E23F, run:2026-11-04-ground-emu, [items/0014 § 1](../../findings/items/0014-ground-items.md#1-the-search))
+- B1. [C] (ADR-0015) **`other` is the origin of a walk, not a second footprint**: `Walk` to its return, family `line` of
+  run:2026-11-04-ground-emu. A walk step with no room, no map or no cells counts as blocked. The field is `expfield.d2`,
+  256 × 256 bytes after a 10-byte header; byte `d` steps `dx[d]`, `dy[d]` from the tables at `0x00749780` and `0x007497A4`,
+  and 8 is the centre. In a check of the whole file every cell walks to the one byte 8, each walk as long as the
+  Chebyshev distance. (fn:sub_0066A670_FieldWalkBlocked@0x0066A670, fn:sub_0066A5D0_FieldStep@0x0066A5D0,
+  data:0x00749780, data:0x007497A4, run:2026-11-04-ground-emu)
+- B1. [I] Sizes other than 1 and steps other than 1 are the reading: the portal's size 3 and step 5 were not run. There
+  `free` is `CollisionTest` of [drlg/collision § E](../drlg/collision.md#e-collisiontest-by-size) on `maskA`; with no `other`
+  there is no walk and `maskB` is unused. Of the travel callers only the field end of G2 passes an `other`; the moving base
+  applies to all of them. (fn:COLL_FindFreeNear@0x0064DEA0, 0x0056D213)
+- B1. [C] The search draws nothing, logged in the game: the game, quest and player seeds were unchanged across every
+  placement it ran in. (fn:COLL_FindFreeNear@0x0064DEA0, run:2026-10-17-quests)
 
 ### C. Waypoint activation
 
@@ -507,8 +541,8 @@ Step notes:
   population draws on the game seed between draws 1 and 3: 41 draws in 9 of the 62 opens. It is a boundary oracle
   ([drlg/lifecycle](../drlg/lifecycle.md)): a reimplementation asserts the game seed at its exit.
   (fn:sub_0052D0F0_RoomUpdateOne@0x0052D0F0, run:2026-10-17-quests)
-- G2. [I] The field end's search uses a second footprint (the partner's), whose ring order is § B's `[I]`; with no free
-  cell and no fallback the open fails. (fn:sub_0056D130_PortalObjectCreate@0x0056D130, fn:COLL_FindFreeNear@0x0064DEA0)
+- G2. [I] The field end's search tests a walk back to the point `(x, y)` with mask `0xC01` (B1: that walk, not a second
+  footprint), its size 3 not run; with no free cell and no fallback the open fails. (fn:sub_0056D130_PortalObjectCreate@0x0056D130, fn:COLL_FindFreeNear@0x0064DEA0)
 - G1. [C] The refusal in a town: six uses of the tome in the Rogue Encampment and in Harrogath returned at the town test
   (0x005BE2E2 → 0x005BE3CE) with no portal created, the player's portal unchanged and no draw on the game, quest or
   player seed. (fn:ITEMUSE_TownPortal@0x005BE290 0x005BE2DB–0x005BE2E2, run:2026-10-19-quests3: x-entry, x-entry2,
@@ -778,6 +812,8 @@ manifest, and checked by `tools/quests.py check` with 0 mismatches.
   after each travel that wrote a travel word, not the client's trigger.
   ([quests/0002 § Open questions](../../findings/quests/0002-travel.md#open-questions))
 - [L] The exact distance metrics of the operate (`0x00641530` below 51, `0x00623660`) and of the warp click (below 5).
+- [L] A full surround's blocked start in a stock game, and a moved base's null return (B1): emulated only
+  ([items/0014 § Open questions](../../findings/items/0014-ground-items.md#open-questions)).
 - [L] The `Levels.Portal` column has no server reader found; `Levels.Teleport` is the skill's.
 - [L] The un-declare path of the hostility toggle (`0x005A5E50`, hostile = 0): its code is not read. Narrowed by
   run:2026-10-20-two-clients: one withdrawal left the stamp unchanged (J3).
