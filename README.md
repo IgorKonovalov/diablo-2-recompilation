@@ -130,7 +130,7 @@ each row.
 
 ### Plans
 
-In flight ([plans index](docs/plans/README.md)):
+Approved, not running ([plans index](docs/plans/README.md)):
 
 - **[0038](docs/plans/0038-inferred-claims-sweep.md)**: the inferred-claims sweep, raising the reviewed specs'
   inferred points to confirmed where a run, a re-check of kept logs or a static second source allows; Phase 3
