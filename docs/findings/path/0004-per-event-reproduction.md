@@ -11,7 +11,7 @@ Harness work on slot 1 under gdb (no Ghidra). The logger is `tools/gdb/path.gdb`
 `tools/path_sessions.py`, the check `tools/path.py` with its no-game tests `tools/test_path.py` (12 tests). The run record, setup and the
 boundary of every "0 mismatches" below are in [experiments.md](experiments.md) § run:2026-11-04-path; kept outputs under
 `workspace/logs/path/` (manifest `manifest-2026-11-04-path.sha256`, 53 lines, passes from that directory; development logs in `dev/`
-with `manifest-dev.sha256`, 51 lines). Tool revisions: commits `a501a7fa` (logger rev 3) and `178106ec` (rev 4, checker). The review's figures are in `workspace/logs/path/review-p54/review.txt` (`tools/path_review.py`, manifest in that directory); `path.py check` rerun at the review gives the kept output byte for byte (`8f6951c3`).
+with `manifest-dev.sha256`, 51 lines). Tool revisions: commits `a501a7fa` (logger rev 3) and `178106ec` (rev 4, checker). The review's figures are in `workspace/logs/path/review-p54/review.txt` (`tools/path_review.py`, manifest in that directory); `path.py check` rerun at the review gives the kept output byte for byte (`8f6951c3`). *Note 2026-11-04 (`lane/p54b`): `tools/path_review.py` is retired, its sections folded into `tools/path.py check`; the review's revision is at commit `e990dea0`, and the later check prints the same figures with the block write labelled ([path/0005](0005-grid-rules.md) § Tools).*
 
 ## Answer (summary)
 

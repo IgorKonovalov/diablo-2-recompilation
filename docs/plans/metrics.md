@@ -582,6 +582,7 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-11-04 | `lane/p54` | 0054 P2 | reverser-harness | 493 645 | 212 | 133 | 1 | accept with fixes (Tier A; Phase 2 not done) | 20: overclaim 6, misread 3, miscount 2, omission 5, wrong anchor 1, tool not kept 1, under-claim 2 |
 | 2026-11-04 | `lane/p54` review | 0054 P2 | architect-review | 252 270 | 39 | 23 | — | accept with fixes (20); Phase 2 not done | audit of lane/p54: n/a, no check ran; overclaim 6, misread 3, miscount 2, omission 5, wrong anchor 1, tool not kept 1, under-claim 2 |
 | 2026-11-04 | lane/p54b | 0054 | reverser-static | 0 | 0 | 0 | — | — | — |
+| 2026-11-04 | lane/p54b | 0054 | reverser-static | 0 | 26 | 27 | — | — | — |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not
