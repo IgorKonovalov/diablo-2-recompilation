@@ -17,6 +17,11 @@ run:2026-11-03-path-emu-1). Kept outputs are under `workspace/logs/r54a/` (manif
 that directory); the emulation under `emu/` (its own manifest), the development run under `emu/dev-1/` (its own
 manifest and tool copy). The emulator scripts are the `lane/r55e` revisions (§ 12).
 
+**Imports, [ADR-0029](../../adrs/0029-import-slots-and-import-boundaries-in-emulation.md) (d)** (carried 2026-11-04, `lane/r29` review, no re-run).
+Families `plan` and `plannoop` only: slot `0x006CC34C`, `KERNEL32!IsBadCodePtr`, a stop at the slot's value in the emulator
+image, `0x00303946`, rule (c), no stand-in. **Not evidenced:** what the import returns, its fatal branch, the planner's call
+and everything after them. (0x00649B93, run:2026-11-03-path-emu-1)
+
 ## Answer (summary)
 
 - [C] **`PathPlan`'s entry, by emulation to its first boundary** (run:2026-11-03-path-emu-1, families `plan` and

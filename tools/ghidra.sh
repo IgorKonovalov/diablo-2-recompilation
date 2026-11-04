@@ -23,6 +23,7 @@
 #   emuboundary <cases> <mem>   emutrace plus `observe <addr>` lines in <mem>: a case ends at that call and its
 #                               registers and stack arguments are printed (EmuBoundary.java, plan 0046 batch 9a)
 #   emucover <cases> <mem>      emuboundary plus `P <addr>`: every instruction address the cases execute
+#   emuclobber <cases> <mem>    emucover plus `clobber <addr> <reg>...`: a control that overwrites registers at addr (ADR-0029 (a))
 #   emuscratch <cases> <mem>    emuboundary plus a scratch check of the declared stack: a read of a stack byte before the
 #                               case wrote it prints a U line (EmuScratch.java, plan 0054 P1.2)
 #   strings <addr|name>...      strings each function references (source paths tell the module)
@@ -154,6 +155,7 @@ case "$cmd" in
 	emutrace) query EmuTrace.java "$@" ;;
 	emuboundary) query EmuBoundary.java "$@" ;;
 	emucover) query EmuCover.java "$@" ;;
+	emuclobber) query EmuClobber.java "$@" ;;
 	emuscratch) query EmuScratch.java "$@" ;;
 	strings) query StringsIn.java "$@" ;;
 	decompile-range)

@@ -55,6 +55,7 @@
   ```
   (`...` the `accounted=` image-table read counts, listed in full in `check.txt`.)
 - **Count:** the `total` line's 4 330 includes the `spiral` family's 90, which match a model chosen to agree with the emulator; 4 240 cases test the game's code.
+- **Imports, ADR-0029 (d)** (added 2026-11-04, `lane/r29` review, no re-run). `plan`, `plannoop`: a stop at the value of slot `0x006CC34C` `IsBadCodePtr`, rule (c); no spec of this run writes an import slot. Not evidenced: what the import returns, its fatal branch, the planner's call, what follows. (0x00649B93)
 - **Conclusion:** the maps of path/0001 §§ 1, 3–5, 6 (the slot argument), 7–9 are `[C]` up to each family's boundary,
   over the declared domain (collision test points one subtile inside a room for the plus and 3 × 3 patterns); not
   `PathPlan`'s tail after the import, not `PATH_DynamicCreate`, not the planners, not what the game stores at the

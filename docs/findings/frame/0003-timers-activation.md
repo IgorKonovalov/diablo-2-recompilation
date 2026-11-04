@@ -41,7 +41,7 @@ run:2026-11-04-lock-scan)
   on that level's own seed) and the free of an expired item (`UnitFree`). (§ 1; fn:sub_0052D870_GameTick@0x0052D870,
   0x0052D920, 0x0052D938, 0x0052D95F, 0x0052D96C)
 - [C] **Five emulated maps** (1 300 cases, 0 mismatches, no traced access outside the declared image; at each observed
-  boundary the boundary, its arguments and its call site asserted): `QUESTS_TimersRun`'s walk (head first, the
+  boundary the boundary, its arguments and its call site asserted): `QUESTS_TimersRun`'s walk, given `IsBadCodePtr` returned 0 (ADR-0029 (b), the head's note) (head first, the
   unsigned `due < tick`, the unlink of a timer whose callback returns 1, the re-arm `due = tick + period`, the wrap of
   every `due` at tick `0xFFFFFFFF`), `RoomsDeactivate`'s idle count up to the first room whose count passes 10 (acts 0..4,
   each act's list from its head; the case ends at `RoomReleaseAllowed`), the 1 500-frame sweep (the period, acts 0..4, an act's expired items
