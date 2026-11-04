@@ -20,7 +20,7 @@
                                                              pair closed, 0 unparsed) and unmoved (every entry seed
                                                              against the previous reading, never resynchronised), with
                                                              the numbers the record states (tools/frame_window.py)
-    python3 -I tools/frame.py window-selftest                the synthetic window logs and the five negative controls
+    python3 -I tools/frame.py window-selftest                the synthetic window logs and the nine negative controls
     python3 -I tools/frame.py rechain <logs-root> GAPS ...   the caster resyncs a `tools/skills.py check --gaps` file
                                                              lists, walked again over every logged seed observation
                                                              of the unit between the two events, in model order
