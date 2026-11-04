@@ -188,6 +188,7 @@ def check(preds, logs, show=True):
     mism, mix, ctlfail, nct = [], {}, {c: 0 for c in CONTROLS}, 0
     sep_cases = {c: [] for c in CONTROLS}
     oow = 0
+    explained = []
     for p in preds:
         ev = rows[p["log"]]
         i = p["i"]
@@ -260,7 +261,12 @@ def check(preds, logs, show=True):
                 mism.append((p, "monster item freed by the sweep at frame %s" % freed[0]["f"]))
         elif p["kind"] == "sweep":
             fr = [e for t, e in ev[i + 1:] if t == "SWF" and e["item"]["id"] == p["id"]]
-            last = max([e["f"] for t, e in ev if t == "SWP"] or [0])
+            seen = [x for t, e in ev[i + 1:] if t == "SWP" for x in e["items"] if x[0] == p["id"]]
+            if not seen and not fr:
+                k = "room inactive at every later sweep: not a sweep case (explained, rule added after the first check)"
+                mix.setdefault("sweep", {})[k] = mix.setdefault("sweep", {}).get(k, 0) + 1
+                explained.append(p)
+                continue
             if p["pred"] is None:
                 k = "no sweep frame logged at or past the expiry (unresolved)"
                 mix.setdefault("sweep", {})[k] = mix.setdefault("sweep", {}).get(k, 0) + 1
@@ -280,7 +286,23 @@ def check(preds, logs, show=True):
             print("controls over %d ground cases (observed differs from the wrong reading in n cases):" % nct)
             for c in CONTROLS:
                 print("  %-12s fails %d%s" % (c, ctlfail[c], "" if ctlfail[c] else "  <-- separates nothing in this batch"))
-        print("mismatches: %d" % len(mism))
+        # restored monster drops: a created item that reappears at the same class and cell under another id
+        rest = []
+        for p in preds:
+            if p["kind"] != "monster":
+                continue
+            ev = rows[p["log"]]
+            dc = ev[p["i"]][1]["item"]
+            for t, e in ev[p["i"] + 1:]:
+                if t == "SWP":
+                    m = [x for x in e["items"] if x[1] == dc["c"] and x[4] == dc.get("x") and x[5] == dc.get("y") and x[0] != dc["id"]]
+                    if m:
+                        rest.append((dc["id"], m[0][0], e["f"], m[0][3]))
+                        break
+        if rest:
+            print("monster drops met again under a new id at the same class and cell (restored from a record): %d: %s" % (
+                len(rest), "; ".join("id %d -> %d at sweep %d, +0x24 %d" % r for r in rest)))
+        print("mismatches: %d (explained: %d)" % (len(mism), len(explained)))
         for p, why in mism[:20]:
             print("  %s %s #%d: %s" % (p["log"], p["kind"], p["i"], why))
     return mism, flat
