@@ -44,9 +44,18 @@
 #   QF    EventQueueEveryFrame entry 0x005415E0 (EBX kind, EAX unit) unless [esp] = 0x005416DC: kind (signed), ut, id, ra
 #   SV0   SaveGameClients entry 0x0052CA10 (a boundary oracle: frame/0003 § 3): ra, gs
 #   SV1   its three returns 0x0052D430, 0x0052D4C2, 0x00530446: gs
+#   XS    (rev 2) every execution of an LCG multiplier site (tools/gdb/lcg-sites.txt, 852 `mov ecx|edx, 0x6ac690c5`, rng/0001)
+#         inside a window, only from the thread that hit FT0 (other threads are counted in WEND.hits as XS_other, not
+#         written): site, low (the seed's low word, which the step multiplies: EAX at all but two sites, ESI at 0x004F2959
+#         and [ESI] at 0x005F7C17; tools/test_frame_xs.py recounts that with objdump), ra (the caller, only for the six
+#         sites inside rng/0001's primitives, by each one's stack offset)
+#   KD    (rev 2) sub_005A6830_MonDeathDrop entry 0x005A6830 (EDX event, [EDX+4] the dying monster): ty, id
 #   CAP   once, when WIN_MAX_LINES (env FRAME_MAX_LINES, default 400000) lines are written in one window
 #   LOGERR a handler raised; the game resumes (the logger never stops it)
 #
+# FRAME_HOOKS=1 (rev 2): the universal hooks of frame/0005 (tools/gdb/frame-hooks.txt) as count-only breakpoints, armed only in a
+# window opened with "hooks=1" (control file: "open LEN SCENE hooks=1"; FRAME_WINDOWS: a fifth field "H"); WEND carries
+# "hk": {address: {open-event rank | "msg" | "ru" | "none": count}} and no line is written for them.
 # Windows (env): FRAME_WINDOWS = "SPEC,SPEC" with SPEC = START:LEN:SCENE[:COVER]; START is an absolute frame, or "r"+N
 # (N frames after the first FT0 seen), or "now" (the next FT0); COVER M places the window so that the frame = 0 (mod M)
 # lies in its middle (START ignored). FRAME_CTL = a control file the runner appends to; each new line
@@ -62,9 +71,14 @@ import time
 
 import gdb
 
-REV = 1
-TRACE = bool(os.environ.get("FRAME_TRACE"))     # a development aid (XS lines), never in a kept window's logger
-RNG_ENTRIES = (0x0045C370, 0x0045C390, 0x0045C3E0, 0x00472210, 0x00472240, 0x00472280)
+REV = 2
+HOOKS_ON = bool(os.environ.get("FRAME_HOOKS"))
+# The six LCG sites inside rng/0001's primitives and the caller's return address relative to ESP at the site (the pushes of
+# each primitive before its multiplier load; objdump of 0x0045C370, 0x0045C390, 0x0045C3E0, 0x00472210, 0x00472240, 0x00472280)
+PRIM_RA = {0x0045C372: 0, 0x0045C39F: 12, 0x0045C3F9: 12, 0x00472217: 12, 0x0047224A: 16, 0x004722A4: 16}
+LOW_ESI, LOW_MEM_ESI = 0x004F2959, 0x005F7C17
+# pass rank of a unit-event list (tools/frame.py PASS_NAMES): type -> (every-frame walk, slot walk)
+RANK = {3: (4, 5), 0: (6, 7), 1: (8, 9), 2: (10, 11), 4: (12, 13)}
 MAX_LINES = int(os.environ.get("FRAME_MAX_LINES", "400000"))
 HC_ADDR = 0x0088CAD0
 UE_SITES = (   # callback call, dispatch call, unit type, list
@@ -87,9 +101,10 @@ SV_RETS = (0x0052D430, 0x0052D4C2, 0x00530446)
 def _frame_main():
     inf = gdb.selected_inferior()
     st = {"game": 0, "line": 0, "win": None, "pend": [], "ctl_off": 0, "first": None, "last_gs": None, "wid": 0,
-          "units": {}, "ue": [], "msg": [], "one": [], "wlines": 0, "capped": False, "hits": {}, "gh0": {}, "skip_ctl": 0}
+          "thr": None, "ue": [], "msg": [], "one": [], "hk": {}, "wlines": 0, "capped": False, "hits": {}, "gh0": {}, "skip_ctl": 0}
     ctl_path = os.environ.get("FRAME_CTL", "")
     wbps = []          # the window breakpoints: enabled only inside a window
+    hbps = []          # the FRAME_HOOKS breakpoints: enabled only inside a window opened with hooks=1
     allbps = {}        # name -> breakpoint, for gdb's own hit counts
 
     def mem(a, n):
@@ -179,7 +194,7 @@ def _frame_main():
         n = int(p[1]) if len(p) > 1 else 250
         scene = p[2] if len(p) > 2 else "scene"
         cover = int(p[3]) if len(p) > 3 and p[3] else 0
-        return {"start": start, "len": n, "scene": scene, "cover": cover}
+        return {"start": start, "len": n, "scene": scene, "cover": cover, "hooks": len(p) > 4 and p[4] == "H"}
 
     for spec in [s for s in os.environ.get("FRAME_WINDOWS", "").split(",") if s]:
         try:
@@ -206,6 +221,8 @@ def _frame_main():
                         d["cover"] = int(x[6:])
                     elif x.startswith("at="):
                         d["start"] = x[3:]
+                    elif x == "hooks=1":
+                        d["hooks"] = True
                 st["pend"].append(d)
 
     def resolve(p, f):
@@ -229,9 +246,12 @@ def _frame_main():
                      "mono0": time.monotonic(), "wall0": time.time(), "lines0": st["line"], "frames": 0}
         st["hits"] = {"FT0": 1}      # this frame's FT0 stop was counted before the reset
         st["gh0"] = {k: b.hit_count for k, b in allbps.items()}
-        st["ue"], st["msg"], st["one"] = [], [], []
+        st["ue"], st["msg"], st["one"], st["hk"] = [], [], [], {}
         arm(True)
-        emit("WIN", {"id": st["wid"], "scene": p["scene"], "len": p["len"], "start": f, "fr": f, "wall": round(time.time(), 3),
+        if p.get("hooks"):
+            for b in hbps:
+                b.enabled = True
+        emit("WIN", {"id": st["wid"], "scene": p["scene"], "len": p["len"], "start": f, "fr": f, "hooks": 1 if p.get("hooks") else 0, "wall": round(time.time(), 3),
                      "mono": round(time.monotonic(), 3), "cover": p["cover"], "rev": REV})
 
     def close_window(ok, why):
@@ -239,9 +259,11 @@ def _frame_main():
         if w is None:
             return
         arm(False)
+        for b in hbps:
+            b.enabled = False
         gh = {k: b.hit_count - st["gh0"].get(k, 0) for k, b in allbps.items() if b.hit_count - st["gh0"].get(k, 0)}
         emit("WEND", {"id": w["id"], "ok": ok, "why": why, "frames": w["frames"], "lines": st["line"] - w["lines0"],
-                      "hits": st["hits"], "ghits": gh, "wall0": round(w["wall0"], 3), "wall1": round(time.time(), 3),
+                      "hits": st["hits"], "ghits": gh, "hk": st["hk"], "wall0": round(w["wall0"], 3), "wall1": round(time.time(), 3),
                       "mono0": round(w["mono0"], 3), "mono1": round(time.monotonic(), 3), "fr": w["end"]})
         st["win"] = None
 
@@ -276,6 +298,7 @@ def _frame_main():
                 emit("HB", {"fr": f, "wall": round(time.time(), 3), "mono": round(time.monotonic(), 3)})
             return
         w["frames"] += 1
+        st["thr"] = gdb.selected_thread().num
         emit("FT0", {"fr": f, "pre": pre, "gs": gs(), "hc": u8(HC_ADDR), "game": game})
 
     def on_ft1():
@@ -306,9 +329,7 @@ def _frame_main():
             d = {"fr": fr(), "ty": ty, "id": u32(rec + 0x0C), "lst": lst, "kind": u8(rec), "rf": u32(rec + 4),
                  "a": u32(rec + 0x14), "b": u32(rec + 0x18), "cb": cb, "site": addr, "u": u,
                  "us": sdq(u + 0x20) if u else None, "gs": gs()}
-            st["ue"].append((addr, u, d["id"]))
-            if TRACE:
-                st["units"][u] = (ty, d["id"])
+            st["ue"].append((addr, u, d["id"], ty, lst))
             emit("UE0", d)
         return h
 
@@ -324,7 +345,7 @@ def _frame_main():
             if not st["ue"]:
                 emit("LOGERR", {"fr": fr(), "why": "UE1 with no open UE0", "site": site})
                 return
-            a, u, i = st["ue"].pop()
+            a, u, i, _ty, _lst = st["ue"].pop()
             us = sdq(u + 0x20) if u else None
             emit("UE1", {"fr": fr(), "id": i, "site": a, "u": u, "us": us, "gs": gs(), "gone": 0 if us else 1})
             if join is not None:
@@ -449,20 +470,69 @@ def _frame_main():
         Bp(dp, "UE0", on_ue0(dp, ty, lst, 0))
         Bp(UE_NEXT[cb], "UE1", on_ue1(cb, dp))
         Bp(UE_NEXT[dp], "UE1", on_ue1(dp))
-    def on_rng():
-        # FRAME_TRACE: a step of a known unit's seed (ECX = seed, unit +0x20) while another unit's event, or none, is open
-        u = reg("ecx") - 0x20
-        if u not in st["units"]:
-            return
-        top = st["ue"][-1] if st["ue"] else None
-        if top and top[1] == u:
-            return
-        emit("XS", {"fr": fr(), "ty": st["units"][u][0], "id": st["units"][u][1], "ra": u32(reg("esp")),
-                    "open": ("%d:%d" % (top[2], top[0])) if top else None, "us": sdq(u + 0x20)})
+    # --- rev 2: every LCG step, the kills, the hooks ---------------------------------------------------------------------
+    def on_xs(addr):
+        def h():
+            if gdb.selected_thread().num != st["thr"]:
+                hit("XS_other")
+                return
+            if addr == LOW_ESI:
+                low = reg("esi")
+            elif addr == LOW_MEM_ESI:
+                low = u32(reg("esi"))
+            else:
+                low = reg("eax")
+            d = {"fr": fr(), "site": addr, "low": low}
+            if addr in PRIM_RA:
+                d["ra"] = u32(reg("esp") + PRIM_RA[addr])
+            emit("XS", d)
+        return h
 
-    if TRACE:
-        for a in RNG_ENTRIES:
-            Bp(a, "XS", on_rng)
+    def on_kd():
+        ev = reg("edx")
+        ty, i = unit_head(u32(ev + 4))
+        emit("KD", {"fr": fr(), "ty": ty, "id": i})
+
+    def hook_ctx():
+        if st["ue"]:
+            _a, _u, _i, ty, lst = st["ue"][-1]
+            ef, slot = RANK.get(ty, (0, 0))
+            return str(slot if lst == "slot" else ef)
+        if st["msg"]:
+            return "msg"
+        if st["one"]:
+            return "ru"
+        return "none"
+
+    def on_hook(addr):
+        def h():
+            k = "%08X" % addr
+            d = st["hk"].setdefault(k, {})
+            c = hook_ctx()
+            d[c] = d.get(c, 0) + 1
+        return h
+
+    def gdb_file(name):
+        for base in ("tools/gdb", os.path.dirname(os.path.abspath(globals().get("__file__", "tools/gdb/frame.py")))):
+            if os.path.exists(os.path.join(base, name)):
+                return os.path.join(base, name)
+        return os.path.join("tools/gdb", name)
+
+    sites = []
+    with open(gdb_file("lcg-sites.txt")) as fh:
+        for ln in fh:
+            if ln.startswith("0x"):
+                sites.append(int(ln.split()[0], 16))
+    for a in sites:
+        Bp(a, "XS", on_xs(a))
+    Bp(0x005A6830, "KD", on_kd)
+    if HOOKS_ON:
+        with open(gdb_file("frame-hooks.txt")) as fh:
+            for ln in fh:
+                if ln.startswith("0x"):
+                    b = Bp(int(ln.split()[0], 16), "HK", on_hook(int(ln.split()[0], 16)), window=False)
+                    b.enabled = False
+                    hbps.append(b)
     Bp(0x0054D750, "MSG0", on_msg0)
     for a in MSG_RETS:
         Bp(a, "MSG1", on_msg1)

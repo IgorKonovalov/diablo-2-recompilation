@@ -46,7 +46,7 @@ REQ = {
     "MSG0": ("fr", "pl", "len", "gs"), "MSG1": ("fr", "gs"), "SYS": ("fr", "ty"), "RU0": ("fr", "room", "gs"),
     "RU1": ("fr", "room", "gs"), "TM": ("fr", "which", "gs"), "TQ0": ("fr", "cb", "gs"), "TQ1": ("fr", "gs"),
     "RC": ("fr", "room"), "RR": ("fr", "room"), "QE": ("fr", "kind"), "QF": ("fr", "kind"), "SV0": ("fr", "gs"),
-    "SV1": ("fr", "gs"),
+    "SV1": ("fr", "gs"), "XS": ("fr", "site", "low"), "KD": ("fr", "ty", "id"),
 }
 LOGGER_TAGS = frozenset(REQ) | {"CAP", "LOGERR", "WSKIP"}
 BOOKKEEPING = frozenset({"WIN", "WEND", "HB"})
@@ -62,6 +62,84 @@ PERIOD = {"T20": 20, "D12": 12, "U11": 11, "S1500": 1500}
 # per message (the stated inputs the measured QE+QF per UE0 is read against)
 MID = frame_volume.QRATES["mid"]
 Q2_SESSION_LINES = 177860     # ten times plan 0045's 17 786
+# --- reader rev 2's tables (committed before the kept logs; tools/frame_xs.py applies them) ---------------------------------
+# A location is the site of tools/gdb/lcg-sites.txt, or, for the six sites inside rng/0001's primitives, the caller's return
+# address (the XS line's `ra`). A row names locations by `at` (a set) and/or `ranges` ([lo, hi) of the function: the next symbol of
+# re/symbols.csv bounds it, [I]); `fn` and `spec` anchor it.
+#
+# PASSDRAW: a game-seed or unit-seed step with no pair open passes only at a row. `client` rows are the main loop's client code
+# between the ticks (outside GameTick); their steps are on the client's copies of the seeds, are applied to no chained seed and are
+# counted apart: they are not evidence of the server's frame order (architect's ruling 2, lane/p55c).
+PASSDRAW = [
+    dict(client=True, ranges=[(0x00465FD0, 0x00466200)], fn="fn:sub_00465FD0_UnitInit@0x00465FD0", spec="rng/seeds step 5a (UnitInit draws on the client room's seed)"),
+    dict(client=True, ranges=[(0x00466360, 0x0046ACE0)], fn="fn:sub_00466360_ClientMonCreate@0x00466360", spec="rng/seeds step 5a; monsters/pool F"),
+    dict(client=True, ranges=[(0x004AE320, 0x004AFC10)], fn="fn:sub_004AE320_ClientMonIsChampion@0x004AE320", spec="monsters/pool F (the client's champion test, on the room seed)"),
+    dict(client=True, ranges=[(0x0046C1A0, 0x0046C460)], fn="fn:sub_0046C1A0_ClientCritterCreate@0x0046C1A0", spec="monsters/pool F6"),
+    dict(client=True, ranges=[(0x0046C460, 0x0046EE80)], fn="fn:sub_0046C460_ClientCritters@0x0046C460", spec="monsters/pool F"),
+    dict(client=True, ranges=[(0x00624390, 0x00624690)], fn="fn:UNIT_AnimInit@0x00624390", spec="anim/README (a client unit's mode set-up)"),
+    dict(client=False, ranges=[(0x005431F0, 0x005433F0)], fn="fn:sub_005431F0_InactiveMonsterSaveTest@0x005431F0", spec="drlg/lifecycle F2 (in the tick, no pair open)"),
+    dict(client=False, ranges=[(0x0066D820, 0x0066D960)], fn="fn:DRLG_PickTileByRarity@0x0066D820", spec="drlg/room-tiles step 3a (the tile pick, on a room seed in the tick)"),
+]
+# TOUCH: a step on a chained unit's or room's seed while another unit's event or a room's RU0 is open passes only at a row and only
+# under the row's trigger: kill (the unit has a KD line inside the open event), killev (the unit has a kind-12 QE line, or a KD line, inside the open event: a dying unit's own death handler, which draws before the KD line), room (a room's seed, any RU0 open: the new-rooms
+# walk), defender / owner (a missile event, or for the defender an attack-kind monster or player event, is open and the seed is a
+# player's or monster's; the logger does not name the unit, so these match event type and site only).
+TOUCH = [
+    dict(trigger="kill", ranges=[(0x0055A6D0, 0x0055AFA0)], fn="fn:TC_ResolveDrops@0x0055A6D0", spec="items/tc B (the drop rolls on the dead monster's seed)"),
+    dict(trigger="kill", ranges=[(0x00558640, 0x005589A0)], fn="fn:ITEMS_DropRollQuality@0x00558640", spec="items/quality (the drop quality roll on the dead monster's seed)"),
+    dict(trigger="room", ranges=[(0x0054F060, 0x0054F0D0)], fn="fn:sub_0054F060_RoomWandererTick@0x0054F060", spec="drlg/lifecycle I; chain/README D1"),
+    dict(trigger="room", ranges=[(0x005B2A00, 0x005B2F20)], fn="fn:sub_005B2A00_MonSpawnTry@0x005B2A00", spec="chain/README oracle 21 (another room's seed in a pass); monsters/spawn H"),
+    dict(trigger="room", ranges=[(0x0054DC40, 0x0054DDC0)], fn="fn:sub_0054DC40_SpawnPosPick@0x0054DC40", spec="monsters/spawn H; drlg/lifecycle"),
+    dict(trigger="room", ranges=[(0x005BDE80, 0x005BDFF0)], fn="fn:sub_005BDE80_MonRegionPickClass@0x005BDE80", spec="monsters/pool (the class pick on the room seed); monsters/spawn"),
+    dict(trigger="room", ranges=[(0x005BE020, 0x005BE130)], fn="fn:sub_005BE020_SpawnTypeRoll@0x005BE020", spec="monsters/spawn E"),
+    dict(trigger="room", ranges=[(0x00552610, 0x00552AC0)], fn="fn:sub_00552610_RoomObjectsPopulate@0x00552610", spec="chain/README D4; objects C-H"),
+    dict(trigger="room", ranges=[(0x00550A30, 0x00550C20)], fn="fn:OBJ_PlaceByOrientation@0x00550A30", spec="objects F3; chain/README D4"),
+    dict(trigger="room", ranges=[(0x00552B50, 0x00552DF0)], fn="fn:OBJPOP_Shrine@0x00552B50", spec="objects E2; chain/README D4"),
+    # added after the kept window 2026-11-04-frame2-s1-5505-maze1 #1 failed on OBJPOP_Well and OBJ_PlaceRandomRoomSeed (that window is uncounted;
+    # the object-population handlers of objects/README E1-E10 are one family, added whole for the next windows)
+    dict(trigger="room", ranges=[(0x00550380, 0x00550540)], fn="fn:OBJ_PlaceRandom@0x00550380", spec="objects E (handler draws), chain/README D4"),
+    dict(trigger="room", ranges=[(0x00550540, 0x005506D0)], fn="fn:OBJ_PlaceRandomRoomSeed@0x00550540", spec="objects E (handler draws), chain/README D4"),
+    dict(trigger="room", ranges=[(0x00550C20, 0x00551150)], fn="fn:OBJPOP_Clusters@0x00550C20", spec="objects E (handler draws), chain/README D4"),
+    dict(trigger="room", ranges=[(0x00551200, 0x00551470)], fn="fn:OBJPOP_StickCorpses@0x00551200", spec="objects E (handler draws), chain/README D4"),
+    dict(trigger="room", ranges=[(0x00551470, 0x00551580)], fn="fn:OBJPOP_Scatter@0x00551470", spec="objects E (handler draws), chain/README D4"),
+    dict(trigger="room", ranges=[(0x00551580, 0x00551690)], fn="fn:OBJPOP_Trap@0x00551580", spec="objects E (handler draws), chain/README D4"),
+    dict(trigger="room", ranges=[(0x00551690, 0x005516C0)], fn="fn:OBJPOP_Corpse@0x00551690", spec="objects E (handler draws), chain/README D4"),
+    dict(trigger="room", ranges=[(0x005516C0, 0x00551850)], fn="fn:OBJPOP_Well@0x005516C0", spec="objects E (handler draws), chain/README D4"),
+    dict(trigger="room", ranges=[(0x00551850, 0x00551C00)], fn="fn:OBJPOP_Barrels@0x00551850", spec="objects E (handler draws), chain/README D4"),
+    dict(trigger="room", ranges=[(0x00551C00, 0x00552400)], fn="fn:OBJPOP_Crates@0x00551C00", spec="objects E (handler draws), chain/README D4"),
+    dict(trigger="killev", ranges=[(0x005A2D10, 0x005A30E0)], fn="fn:sub_005A2D10_UModPartyDeadDeath@0x005A2D10", spec="items/quality (the partydead mod's death handler, g_UModEventFns); monsters/special"),
+    dict(trigger="owner", ranges=[(0x005A5560, 0x005A5E50)], fn="fn:sub_005A5560_MonCritDouble@0x005A5560", spec="combat/damage 10 (the attacking monster's crit draw on its own seed, inside its missile's event)"),
+    dict(trigger="defender", ranges=[(0x0057DFB0, 0x0057E240)], fn="fn:COMBAT_DefenceRoll@0x0057DFB0", spec="combat/to-hit"),
+    dict(trigger="defender", ranges=[(0x0057AF80, 0x0057B230)], fn="fn:COMBAT_ApplyCold@0x0057AF80", spec="combat/to-hit; combat/overview"),
+    dict(trigger="defender", ranges=[(0x0057D3D0, 0x0057D4F0)], fn="fn:COMBAT_DurabilityLoss@0x0057D3D0", spec="items/economy H"),
+    dict(trigger="defender", ranges=[(0x00559E30, 0x0055A090)], fn="fn:ITEMS_DurabilityLossRoll@0x00559E30", spec="items/economy H"),
+    dict(trigger="defender", ranges=[(0x0057CB00, 0x0057CCB0)], fn="fn:sub_0057CB00_GetHitRoll@0x0057CB00", spec="combat/to-hit"),
+    dict(trigger="defender", ranges=[(0x0057CE30, 0x0057CEE0)], fn="fn:sub_0057CE30_HitClassPick@0x0057CE30", spec="combat/to-hit"),
+    dict(trigger="defender", ranges=[(0x0057C6C0, 0x0057C9F0)], fn="fn:COMBAT_ApplyDamage@0x0057C6C0", spec="combat/overview (the stat events on the defender)"),
+    dict(trigger="owner", ranges=[(0x0057D9B0, 0x0057DBF0)], fn="fn:COMBAT_ToHitRoll@0x0057D9B0", spec="combat/to-hit"),
+    dict(trigger="owner", ranges=[(0x0057AAE0, 0x0057AC50)], fn="fn:COMBAT_ApplyStun@0x0057AAE0", spec="combat/overview (stun)"),
+    dict(trigger="owner", ranges=[(0x0057C6C0, 0x0057C9F0)], fn="fn:COMBAT_ApplyDamage@0x0057C6C0", spec="combat/overview (leech and the stat events on the owner)"),
+]
+
+
+# Game-seed step locations of an item's unit constructor, counted by the per-KD even rule (items/tc H7: two game-seed steps per item):
+# fn:sub_00552DF0_UnitSeedInit+0x41 and fn:sub_00552E90_ItemSeedInit+0xf. Corrected at the `lane/p55c` review: SUnitCreate calls the first
+# for every unit it creates (0x0055530E) and the second for type 4 only (0x0055532A), so a sub-missile created in a KD's segment steps
+# at a counted site and would fail `even`; no kept segment holds one. They are also the seed-initialising steps: a seed made from the game seed's
+# post-step low word (a unit's or an item's first draw) shares that low word with the game seed until the game seed steps again.
+KILL_GAME = frozenset({0x00552E31, 0x00552E9F})
+FRESH_INIT = KILL_GAME
+
+
+def row_has(row, loc):
+    return loc in row.get("at", ()) or any(lo <= loc < hi for lo, hi in row.get("ranges", ()))
+
+
+def client_loc(loc, passdraw=None):
+    return any(r.get("client") and row_has(r, loc) for r in (PASSDRAW if passdraw is None else passdraw))
+
+
+ATTACK_KINDS = frozenset({0, 5})   # event kinds of a player's or monster's attack frame and of a skill do (defender trigger)
 FLOORS = dict(windows=10, frames=250, scenes=3, per_scene=2, chained=5000, shared=20)
 
 
@@ -108,6 +186,7 @@ def parse_log(path):
     """-> (windows, outside) where a window is a dict {wid, scene, len, start, win, wend, lines [(no, tag, obj)], bad
     [(no, why)], stray [(no, text)], foreign Counter, open (no WEND)}; outside = Counter of the tags between windows."""
     wins, outside, cur = [], collections.Counter(), None
+    last_mon = None
     with open(path, errors="replace") as fh:
         for no, raw in enumerate(fh, 1):
             text = raw.rstrip("\n")
@@ -125,11 +204,14 @@ def parse_log(path):
             if tag == "WIN" and obj is not None and cur is None:
                 cur = {"path": path, "wid": obj.get("id"), "scene": obj.get("scene"), "len": obj.get("len"),
                        "start": obj.get("start"), "win": obj, "wend": None, "lines": [(no, tag, obj)], "bad": [],
-                       "stray": [], "foreign": collections.Counter(), "open": True, "first": no}
+                       "stray": [], "foreign": collections.Counter(), "open": True, "first": no,
+                       "mon": [last_mon] if last_mon else []}
                 continue
             if cur is None:
                 if tag:
                     outside[tag] += 1
+                    if tag == "MON" and obj is not None:
+                        last_mon = obj
                 continue
             if not text.strip():
                 continue
@@ -158,6 +240,8 @@ def parse_log(path):
                     cur["stray"].append((no, text[:80]))
                 else:
                     cur["foreign"][tag] += 1
+                    if tag == "MON":
+                        cur["mon"].append(obj)
     if cur is not None:
         cur["last"] = None
         wins.append(cur)
@@ -371,6 +455,44 @@ def check_chain(w):
 
 
 # ------------------------------------------------------------------------------------------------------ the record
+TIER_AI = frozenset(("Skeleton", "Fallen", "Wraith", "FallenShaman", "Scarab", "Mummy", "GreaterMummy", "Vampire", "BatDemon",
+                     "Fetish", "Andariel", "CorruptArcher", "SkeletonBow", "Hireable", "SkeletonMage", "NecroPet", "Megademon",
+                     "BloodLord"))      # tools/ai.py TIER (plan 0052 P3a's reviewed tier)
+_MONSTATS = {}
+
+
+def monster_classes(excel=None):
+    """class (hcIdx) -> (Id, AI) from MonStats.txt, {} when the table is not in the workspace."""
+    import os
+    if not _MONSTATS:
+        p = excel or os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "workspace", "merged", "data",
+                                  "global", "excel", "monstats.txt")
+        try:
+            rows = [ln.rstrip("\n").split("\t") for ln in open(p, errors="replace")]
+        except OSError:
+            return {}
+        h = rows[0]
+        for r in rows[1:]:
+            try:
+                _MONSTATS[int(r[h.index("hcIdx")])] = (r[0], r[h.index("AI")])
+            except (ValueError, IndexError):
+                pass
+    return _MONSTATS
+
+
+def window_kinds(w):
+    """The monster classes in the window's MON lines (the last one before it and every one inside): {class: (Id, AI, tier?)}."""
+    mc = monster_classes()
+    seen = {}
+    for m in w.get("mon", ()):
+        for u in m.get("m", ()):
+            c = u.get("cls")
+            if c is not None and c not in seen:
+                i, ai = mc.get(c, ("?", "?"))
+                seen[c] = (i, ai, ai in TIER_AI)
+    return seen
+
+
 def rank_of(o):
     ef, slot = RANK.get(o["ty"], (0, 0))
     return slot if o["lst"] == "slot" else ef
@@ -488,9 +610,7 @@ def report(wins, ch_all, st_all, out, allow_stray=False):
         if len(fails) > 12:
             P("  WHOLE-FAIL ... %d more\n" % (len(fails) - 12))
         for m in ent[:20]:
-            P("  MISMATCH line %d %s %s: previous reading line %d %s, %s%s; lines between: %s\n" % (
-                m["line"], m["tag"], m["key"], m["prev"], m["prev_tag"], m["rel"],
-                (" %d" % m["k"]) if m["k"] is not None else "", m["between"] or "none"))
+            P("  MISMATCH line %d %s [%s]: %s\n" % (m["line"], m["tag"], m["rel"], m["msg"]))
         if len(ent) > 20:
             P("  MISMATCH ... %d more\n" % (len(ent) - 20))
         for m in ch["located"][:5]:
@@ -498,6 +618,17 @@ def report(wins, ch_all, st_all, out, allow_stray=False):
                 m["line"], m["tag"], m["prev"], m["prev_tag"], m["rel"], (" %d" % m["k"]) if m["k"] is not None else ""))
         for x in ch["inrev"][:5]:
             P("  REVERSED-INSIDE line %d %s %s (opened line %d)\n" % tuple(x[:4]))
+        x = ch.get("x")
+        if x is not None:
+            P("  rev2 steps by class=%s  untracked(steps on unchained seeds)=%d  ambiguous low words=%d  has_xs=%s\n" % (
+                dict(x["cls"]), sum(x["untracked"].values()), len(x["ambig"]), x["has_xs"]))
+            P("  rev2 sites (class, trigger, location: steps) %s\n" % (
+                "; ".join("%s/%s/%#x:%d" % (c, t, a, v) for (c, t, a), v in sorted(x["sites"].items(), key=lambda kv: -kv[1])[:12]) or "none"))
+            P("  rev2 entries whose seed had moved=%d, had not=%d (ADR-0028 item 7)  firsts=%s\n" % (
+                x["entries"]["moved"], x["entries"]["unmoved"], dict(x["firsts"])))
+            P("  rev2 KD events=%d game-seed steps %s\n" % (len(x["kds"]), [k.get("g") for k in x["kds"]][:30]))
+            P("  rev2 order %s cross-type every-frame runs by receiving type=%s draw-free runs=%s\n" % (
+                dict(x["order"]), dict(x["cross"]), {"ty%d_kind%d_%s" % k: v for k, v in sorted(x["free"].items())}))
         P("  unmoved: mismatches=%d located=%d reversed_inside=%d  readings=%s  events that moved a seed=%s\n" % (
             len(ent), len(ch["located"]), len(ch["inrev"]), dict(ch["nread"]), dict(ch["drew"])))
         n = s["n"]
@@ -526,6 +657,14 @@ def report(wins, ch_all, st_all, out, allow_stray=False):
         if s["nondf"]:
             P("  NOT draw-free " + "; ".join("ty%d kind%d lines %s" % (k[0], k[1], v[:5]) for k, v in s["nondf"].items()) + "\n")
         P("  foreign tags in the window (the pilot's): %s\n" % (dict(w["foreign"]) or "none"))
+        hk = (w["wend"] or {}).get("hk")
+        if hk is not None and w["win"].get("hooks"):
+            P("  FRAME_HOOKS: %d of 65 hooks reached; open-event rank histogram: %s; not reached: %d\n" % (
+                len(hk), "; ".join("%s %s" % (a, ",".join("%s:%d" % kv for kv in sorted(h.items()))) for a, h in sorted(hk.items())),
+                65 - len(hk)))
+        kinds = window_kinds(w)
+        P("  monster kinds in the MON lines (class: Id, AI, tier): %s\n" % (
+            "; ".join("%d: %s %s %s" % (c, v[0], v[1], "tier" if v[2] else "boundary oracle") for c, v in sorted(kinds.items())) or "none"))
         for k, v in s["hits"].items():
             hit_tot[k] += v
         tot["frames"] += n
@@ -555,7 +694,13 @@ def run(paths, pilot=False, allow_stray=False, out=None):
         return 1
     if pilot:
         wins = wins[:1]
+    import frame_xs
     ch = [check_chain(w) for w in wins]
+    for w, c in zip(wins, ch):          # reader rev 2 decides (b): the LCG applied at every XS (tools/frame_xs.py)
+        x = frame_xs.check_chain2(w)
+        c["x"] = x
+        c["located"] = []
+        c["mism"] = [dict(line=f["line"], tag=f["tag"], key=f.get("key"), rel=f["kind"], msg=f["msg"]) for f in x["fails"]]
     st = [stats(w, c) for w, c in zip(wins, ch)]
     ok_whole, ok_unmoved = report(wins, ch, st, out, allow_stray)
     out.write("SESSION logger/tag lines in the logs=%d (Q2's trigger: above %d) -> %s\n" % (
@@ -609,16 +754,15 @@ def synth(seed=1, frames=250, start=1000, scene="town", units=6, msg_rate=0.2, p
         for which, p in PERIOD.items():
             if f % p == 0:
                 emit("TM", dict(fr=f, which=which, gs=fmt(g), **({"act": 0} if which == "U11" else {})))
-        if rnd.random() < 0.1:                      # a pass draws outside every pair: located by the next FP
-            g = adv(g, rnd.randrange(1, 3))
+        if rnd.random() < 0.1:                      # an FP line with the game seed unchanged (a pass that did not draw)
             emit("FP", dict(fr=f, site=0x52D8EB, gs=fmt(g)))
-        order = sorted(u, key=lambda i: (u[i]["ty"] != 0, i))
+        order = sorted(u, key=lambda i: (u[i]["ty"] != 0, i % 2 == 1, i))     # walks in rank order: ef then slot
         for i in order:
             if rnd.random() < 0.5:
                 continue
             x = u[i]
             kind = 11 if x["ty"] == 0 and rnd.random() < 0.3 else (6 if rnd.random() < 0.1 else rnd.choice((1, 2, 3)))
-            lst = rnd.choice(("slot", "ef"))
+            lst = "slot" if i % 2 else "ef"
             site = 0x00540FB2 if x["ty"] == 0 else 0x005410B2
             free = kind in (6, 11)
             emit("UE0", dict(fr=f, ty=x["ty"], id=x["id"], lst=lst, kind=kind, rf=f, a=0, b=0, cb=1, site=site, u=0x1000 + i,
@@ -691,7 +835,7 @@ def selftest(frame_mult=MULT, frame_step=None):
     f, m = verdict(base[:j] + base[j + 1:])
     res.append(("unclosed pair fails (a)", bool(f) and any("open" in x or "nest" in x for x in f), f[:2]))
     # seed off by one: a UE0's game seed stepped once
-    j = next(i for i, ln in enumerate(base) if ln.startswith("UE0 ") and i > 40)
+    j = next(i for i, ln in enumerate(base) if ln.startswith("UE0 ") and i > 600)
     o = json.loads(base[j].split(" ", 1)[1])
     o["gs"] = fmt(step(sd(o["gs"])))
     bad = list(base)

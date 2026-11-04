@@ -85,6 +85,8 @@ def make_gdb(mem, regs, out):
         def read_memory(self, a, n):
             return mem.get(a, n)
 
+    g.thread = 1
+    g.selected_thread = lambda: types.SimpleNamespace(num=g.thread)
     g.selected_inferior = lambda: Inf()
     g.parse_and_eval = lambda e: regs[e[1:]]
     g.write = lambda s: out.write(s)
@@ -365,7 +367,10 @@ class TestLogger(unittest.TestCase):
             text += open(os.path.join(ROOT, "docs", "findings", "frame", fn)).read()
         text = text.upper()
         derived = []
+        lcg = {int(ln.split()[0], 16) for ln in open(os.path.join(HERE, "gdb", "lcg-sites.txt")) if ln.startswith("0x")}
         for a in addrs:
+            if a in lcg:        # rev 2's XS sites: checked by TestXS against the binary
+                continue
             if a in sym or ("0X%08X" % a) in text:
                 continue
             derived.append(a)
@@ -401,6 +406,178 @@ class TestLogger(unittest.TestCase):
             self.assertTrue(ok, "%#x does not follow a call" % a)
 
 
+class TestXS(unittest.TestCase):
+    """Logger rev 2 (XS, KD, FRAME_HOOKS) under the fake gdb, and the static facts its fields rest on, against the binary."""
+
+    SITES = [int(ln.split()[0], 16) for ln in open(os.path.join(HERE, "gdb", "lcg-sites.txt")) if ln.startswith("0x")]
+
+    def window(self, env=None):
+        rig = LoggerRig(dict({"FRAME_WINDOWS": "now:2:pack"}, **(env or {})))
+        m, G = rig.mem, rig.GAME
+        seed_put(m, G + 0xD0, (0x2A, 0x29A))
+        m.u32(G + 0xA8, 999)
+        rig.hit(0x0052D870, ecx=G)
+        m.u32(G + 0xA8, 1000)
+        return rig, m, G
+
+    def close(self, rig, m, G):
+        rig.hit(0x0052D974)
+        m.u32(G + 0xA8, 1000)
+        rig.hit(0x0052D870, ecx=G)
+        m.u32(G + 0xA8, 1001)
+        rig.hit(0x0052D974)
+
+    def test_xs_fields(self):
+        rig, m, G = self.window()
+        self.assertEqual(len(self.SITES), 852)
+        self.assertTrue(all(a in rig.gdb.registry for a in self.SITES))
+        rig.hit(0x0046C257, eax=0x1234)                      # an inlined site: EAX
+        rig.hit(0x004F2959, eax=1, esi=0x5678)                                         # ESI
+        m.u32(0x150000, 0x9ABC)
+        rig.hit(0x005F7C17, eax=1, esi=0x150000)                                       # [ESI]
+        m.u32(0x1F0000 + 12, 0x00411111)
+        rig.hit(0x0045C39F, eax=0x4242, esp=0x1F0000)                                  # RNG_Range: ra at esp+12
+        m.u32(0x1F0000, 0x00422222)
+        rig.hit(0x0045C372, eax=0x4343, esp=0x1F0000)                                  # RNG_Step: ra at esp
+        xs = [json.loads(ln.split(" ", 1)[1]) for ln in rig.lines() if ln.startswith("XS ")]
+        self.assertEqual([x["low"] for x in xs], [0x1234, 0x5678, 0x9ABC, 0x4242, 0x4343])
+        self.assertEqual([x.get("ra") for x in xs], [None, None, None, 0x00411111, 0x00422222])
+        self.assertTrue(all(x["fr"] == 1000 for x in xs))
+
+    def test_other_thread_not_written(self):
+        rig, m, G = self.window()
+        rig.gdb.thread = 2
+        rig.hit(0x0046C257, eax=7)
+        rig.gdb.thread = 1
+        rig.hit(0x0046C257, eax=8)
+        self.assertEqual([json.loads(ln.split(" ", 1)[1])["low"] for ln in rig.lines() if ln.startswith("XS ")], [8])
+        self.close(rig, m, G)
+        wend = json.loads([ln for ln in rig.lines() if ln.startswith("WEND")][0].split(" ", 1)[1])
+        self.assertEqual((wend["hits"]["XS"], wend["hits"]["XS_other"]), (2, 1))
+
+    def test_kd_and_hooks(self):
+        rig, m, G = self.window({"FRAME_HOOKS": "1", "FRAME_WINDOWS": "now:2:pack::H"})
+        mon, ev = 0x121000, 0x130000
+        m.u32(mon, 1)
+        m.u32(mon + 0x0C, 77)
+        m.u32(ev + 4, mon)
+        rig.hit(0x005A6830, edx=ev)
+        kd = [json.loads(ln.split(" ", 1)[1]) for ln in rig.lines() if ln.startswith("KD ")]
+        self.assertEqual((kd[0]["ty"], kd[0]["id"]), (1, 77))
+        hooks = [int(ln.split()[0], 16) for ln in open(os.path.join(HERE, "gdb", "frame-hooks.txt")) if ln.startswith("0x")]
+        self.assertEqual(len(hooks), 65)
+        self.assertTrue(all(a in rig.gdb.registry for a in hooks))
+        rig.hit(hooks[0])
+        self.close(rig, m, G)
+        wend = json.loads([ln for ln in rig.lines() if ln.startswith("WEND")][0].split(" ", 1)[1])
+        self.assertEqual(wend["hk"]["%08X" % hooks[0]], {"none": 1})
+        self.assertNotIn("HK", [ln.split(" ", 1)[0] for ln in rig.lines()])
+
+    def test_hooks_armed_only_with_the_flag(self):
+        rig, m, G = self.window({"FRAME_HOOKS": "1"})
+        hooks = [int(ln.split()[0], 16) for ln in open(os.path.join(HERE, "gdb", "frame-hooks.txt")) if ln.startswith("0x")]
+        self.assertFalse([a for a in hooks if a in rig.enabled() and a not in (0x0052D870, 0x0052D974)])
+        rig2, m2, G2 = self.window({"FRAME_HOOKS": "1", "FRAME_WINDOWS": "now:2:pack::H"})
+        self.assertTrue(all(a in rig2.enabled() for a in hooks))
+
+    def test_no_hooks_without_env(self):
+        rig, m, G = self.window()
+        hooks = [int(ln.split()[0], 16) for ln in open(os.path.join(HERE, "gdb", "frame-hooks.txt")) if ln.startswith("0x")]
+        own = {0x0052D870, 0x0052D974}
+        self.assertFalse([a for a in hooks if a in rig.gdb.registry and a not in own and
+                          any(b.name == "HK" for b in rig.gdb.registry[a] if hasattr(b, "name"))])
+
+    def test_xs_disabled_outside_window(self):
+        rig = LoggerRig({"FRAME_WINDOWS": "r100:2:pack"})
+        self.assertFalse(any(a in rig.enabled() for a in self.SITES))
+
+    @unittest.skipUnless(os.path.exists(EXE), "needs the pinned game.exe")
+    def test_sites_against_the_binary(self):
+        """852 sites, each `mov ecx|edx, 0x6ac690c5`; EAX is the multiplicand on every path at 850, and the two others are the
+        two exceptions the logger reads from ESI and [ESI]; the six primitive sites' return-address offsets are 4 x the pushes."""
+        out = subprocess.run(["objdump", "-d", "-M", "intel", EXE], capture_output=True, text=True).stdout
+        dis, idx = [], {}
+        for m in re.finditer(r"^\s+([0-9a-f]+):\t(?:[0-9a-f]{2} )+\s*\t?(.*)$", out, re.M):
+            idx[int(m.group(1), 16)] = len(dis)
+            dis.append((int(m.group(1), 16), m.group(2).strip()))
+        self.assertEqual(len(self.SITES), len(set(self.SITES)))
+        wr = re.compile(r"(mov|lea|xor|movzx|movsx|pop|add|sub|and|or|imul|not|neg|shl|shr|sar|inc|dec|adc|sbb|xchg|cwde)\s+(eax|ax|al|ah)\b")
+
+        def walk(i, reg, seen):
+            for _ in range(40):
+                if i in seen:
+                    return True
+                seen.add(i)
+                t = dis[i][1]
+                if re.match(r"mul\s+" + reg + r"$", t):
+                    return True
+                if t.startswith(("call", "ret", "int", "cdq", "div", "idiv", "lodsd")) or wr.match(t):
+                    return False
+                m = re.match(r"(j\w+)\s+0x([0-9a-f]+)$", t)
+                if m:
+                    tgt = int(m.group(2), 16)
+                    if tgt not in idx:
+                        return False
+                    if m.group(1) == "jmp":
+                        i = idx[tgt]
+                        continue
+                    if not walk(idx[tgt], reg, seen):
+                        return False
+                elif t.startswith("j"):
+                    return False
+                i += 1
+            return False
+        ready, notready = [], []
+        for a in self.SITES:
+            m = re.match(r"mov\s+(ecx|edx),0x6ac690c5$", dis[idx[a]][1])
+            self.assertIsNotNone(m, hex(a))
+            (ready if walk(idx[a] + 1, m.group(1), set()) else notready).append(a)
+        self.assertEqual((len(ready), sorted(notready)), (850, [0x004F2959, 0x005F7C17]))
+        self.assertTrue(re.match(r"mov\s+eax,esi$", dis[idx[0x004F2959] + 1][1]))
+        self.assertTrue(re.match(r"mov\s+eax,DWORD PTR \[esi\]$", dis[idx[0x005F7C17] + 2][1]))
+        # the primitives: pushes between the function's start and the site (ebp frames push ebp first)
+        starts = {0x0045C372: 0x0045C370, 0x0045C39F: 0x0045C390, 0x0045C3F9: 0x0045C3E0, 0x00472217: 0x00472210,
+                  0x0047224A: 0x00472240, 0x004722A4: 0x00472280}
+        src = open(LOGGER).read()
+        prim = eval(re.search(r"PRIM_RA = (\{[^}]*\})", src).group(1))
+        for site, start in starts.items():
+            pushes = sum(1 for k in range(idx[start], idx[site]) if dis[k][1].startswith("push"))
+            self.assertEqual(prim[site], 4 * pushes, hex(site))
+        self.assertEqual(sorted(prim), sorted(starts))
+
+
+class TestReader2(unittest.TestCase):
+    def test_controls(self):
+        import frame_xs
+        buf = io.StringIO()
+        old = sys.stdout
+        sys.stdout = buf
+        try:
+            rc = frame_xs.selftest2()
+        finally:
+            sys.stdout = old
+        self.assertEqual(rc, 0, buf.getvalue())
+        self.assertEqual(buf.getvalue().count("PASS"), 26)
+
+    def test_tables_are_sourced(self):
+        rows = {}
+        for ln in open(os.path.join(ROOT, "re", "symbols.csv")):
+            p = ln.split(",")
+            if p[0].startswith("0x") and p[1] == "func":
+                rows[int(p[0], 16)] = p[2]
+        addrs = sorted(rows)
+        for row in list(fw.TOUCH) + list(fw.PASSDRAW):
+            if "trigger" in row:
+                self.assertIn(row["trigger"], ("kill", "killev", "room", "defender", "owner"))
+            self.assertTrue(row.get("ranges") and row["fn"].startswith("fn:") and row["spec"])
+            name = row["fn"][3:].split("@")[0]
+            for lo, hi in row["ranges"]:
+                # the range starts at the named function and ends at or before the next symbol
+                self.assertEqual(rows.get(lo), name, row["fn"])
+                nxt = addrs[addrs.index(lo) + 1]
+                self.assertLessEqual(hi, nxt, row["fn"])
+        self.assertEqual(fw.KILL_GAME, {0x00552E31, 0x00552E9F})
+
 class TestRunner(unittest.TestCase):
     def run_cli(self, *a):
         return subprocess.run([sys.executable, "-I", os.path.join(HERE, "frame_sessions.py")] + list(a), capture_output=True,
@@ -433,7 +610,9 @@ class TestRunner(unittest.TestCase):
             self.assertEqual(r.returncode, 0, r.stderr)
             self.assertIn("SCENE town", r.stdout)
             self.assertIn("SCENE pack", r.stdout)
-            self.assertIn("SCENE maze", r.stdout)
+            self.assertIn("window pack len=500", r.stdout)
+            self.assertIn("window maze len=500", r.stdout)
+            self.assertIn("tier monsters", r.stdout)
             self.assertIn("not launching", r.stdout)
             self.assertIn("window town len=250", r.stdout)
             self.assertIn("cover=1500", r.stdout)
@@ -464,6 +643,12 @@ class TestRunner(unittest.TestCase):
             ok, text = fs.gate(q, "town")
             self.assertFalse(ok)
             self.assertIn("above 3 x", text)
+            ok, text, mm = fs.gate2(q, "town", 0)
+            self.assertFalse(ok)
+            self.assertIn("OVER", text)
+            ok, text, mm = fs.gate2(p, "town", 0)
+            self.assertTrue(ok, text)
+            self.assertEqual(mm, [])
 
 
 class TestVolume(unittest.TestCase):
