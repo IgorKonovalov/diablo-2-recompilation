@@ -1051,3 +1051,40 @@ Plan 0052 Phase 2, `lane/p52c` review, no game. `tools/ai_resume_flip.py` at com
 - Conclusion: the pseudocode and the instructions are the same map from the declared returns. Not ADR-0015's emulator and not logged returns, so the reading stays `[I]`. It says nothing of what the callees return in play or of what the offsets' columns mean. The tables' equalities are `[C]` on the image's elements only (ADR-0031; 0x006E33A0, 0x006E33E0, 0x005F39E1).
 - Review addendum, 2026-11-04 (`lane/r71`, architect): the Setup's "every callee but RNG_Range a stub" was wrong: `RNG_Range` is a stub too, stepping the seed with the `Seed` class the model shares, so its range and order are compared and its body is not (corrected in the tool's docstring and ai/0019 § 1.6; the body read at 0x0045C390, its own `[C]` run:2026-10-11-rng-emu). Revisions: `tools/ai_sm_check.py` `26ce09ad…` adds `--minus` and changes no case; `tools/ai_const_survey.py` `c78dfae1…` adds `rulescan`, `reach`, class counts in `logs`, and the doc check (`doc_missing`, `doc_mismatches`, baseline changed in the same commit). From the worktree: `python3 -I tools/ai_sm_check.py check --cases 6000 --minus --out workspace/logs/r71/review/sm-check-minus.txt`; `python3 -I tools/ai_const_survey.py rulescan workspace/install/app/game.exe`, `reach workspace/merged/data/global/excel`, `logs workspace/logs/ai`, each to its `review/` file (`rulescan.txt`, `reach.txt`, `logs-rows.txt`); `workspace/logs/r71/review/manifest.sha256`, 4 lines. Observed: trace `492df4f5669fd9b1`, 0 mismatches, as the kept run; of 84 `-1` controls only `use1_held` fails 0, `p_hi-1` fails 4; `doc_missing=0 doc_mismatches=0`; no form of the rule scan gives `A` or `B` (best 11 of 28 rows; 7 of 28 elements per column); 0 lines of the 13 classes in 160 logs, 64 AI rows present. The doc check was tested by altering one listed value in a copy: it counts 1 mismatch.
 
+
+## run:2026-11-04-r72
+
+Owner-played (ADR-0028: five processes, each one case; plan 0052 P1b-1 and the Countess). Analysis without a game: [ai/0020](0020-owner-played-duriel-countess.md).
+
+- **Question:** does Duriel's melee choice follow three fresh draws or the community page's 33 : 50 : 17; does row 44 meet the promotion rule; which unit holds state 13, when, and does S13's block give its decisions; what can a late attach not test?
+- **Cases** (`workspace/logs/ai/`; each attached late by `tools/d2run.py --attach-file`, `--fullscreen`, `--sound`, `AI_CAP_ROW=2000 AI_CAP_SESSION=8000` for the `ai-g4` logs):
+
+  | Process (stem) | Seed | `.gdb` | Save, recipe | Attached | AID, frames, rows | Note |
+  |---|---:|---|---|---|---|---|
+  | `owner-ai-duriel-L1` | 3364 | `tools/gdb/ai-g4.gdb` | `saves-owner/AiDur.d2s` | at the orifice | 29, 3772–4110, 44: 9, 61: 20 | the mercenary killed Duriel |
+  | `owner-ai-duriel-L2` | 3364 | `tools/gdb/ai-g4.gdb` | `saves-owner/nomerc/AiDur.d2s`, `tools/d2s_recipes/ai-dur-nomerc.json` | at the orifice | 300, 1054–9053, 44: 300 | |
+  | `owner-ai-countess-L1` | 5901 | `tools/gdb/ai-g4.gdb` | `saves-owner/nomerc/CombatSor.d2s`, `tools/d2s_recipes/combatsor-nomerc.json` | on arrival, Tower Cellar Level 5 | 42, 2726–2782, 6: 17, 10: 25 | the owner killed her |
+  | `owner-ai-countess-L2` | 5901 | `tools/gdb/ai-g4.gdb` | as L1 | on arrival | 71, 1482–1580, 6: 38, 35: 33 | lag stopped them reaching her |
+  | `owner-ai-countess-L3` | 5901 | `tools/gdb/ai.gdb`, `AI_RADIUS=40` | as L1 | after the owner cleared the level | 184, 2070–6350, 10: 184 | |
+
+  `dev-owner-ai-duriel-lagged.log` is development only (lag) and in the manifest; no count here rests on it.
+- **Procedure** (from `workspace/logs/ai`; tools at `a2a78e7c`; `ai_resume`, flip and census under `systemd-run --user --scope -p MemoryMax=4G`):
+  ```
+  python3 -I tools/ai_duriel_c10.py owner-ai-duriel-L1.log owner-ai-duriel-L2.log > r72/c10-run.txt
+  python3 -I tools/ai_resume.py check <the two> --rows 44 --out r72/resume-44.txt
+  python3 -I tools/ai_resume_flip.py check <the two> --rows 44 --cap 1000000 --out r72/flip-44.txt
+  python3 -I tools/ai_resume.py check owner-ai-countess-L1.log owner-ai-countess-L3.log --rows 10 --out r72/resume-10.txt
+  python3 -I tools/ai_resume_flip.py check <those two> --rows 10 --cap 1000000 --out r72/flip-10.txt
+  python3 -I tools/ai_s13_check.py <those two>, then --control for each of the 15 (r72/s13-check.txt)
+  python3 -I tools/ai_s13_check.py --r10 [two-draws] <those two> (r72/r10-check.txt)
+  python3 -I tools/ai_s13_census.py --ds1 <merged>/data/global/tiles/act1/crypt/cryptcountess1.ds1 --skills 357 <those two> > r72/s13-census.txt
+  python3 -I tools/ai_owner_fields.py <the five and the dev log>; --scan <the logger's files>; --setters game.exe (r72/fields.txt)
+  python3 -I tools/ai.py check <the two>, <the three> --out r72/check-duriel.txt, r72/check-countess.txt
+  ```
+- **Outputs:** `manifest-r72.sha256`, 22 lines, passes from `workspace/logs/ai`: the five raw logs, the dev log, the first checks `owner-dur-check/check-first.txt` and `check-countess-first.txt`, the three saves used, and 11 outputs. The reruns of `tools/ai.py check` equal the first checks.
+- **Rule 17:** no line of the logger's files writes to the game (`fields.txt` `SCAN`; the one hit is a comment).
+- **Result, Duriel:** 309 decisions, 308 melee (L1 9, L2 299), Smite 102, Jab 116, A1 90; exact intervals exclude the page's 50 and 17 and contain the code's values; power at 300, on A1, 0.999998; replay 308 of 308 by arm, seed at the call and exit; six other readings fail 90 to 234. Resume: 309, 0 mismatches, 619 calls, 310 past the first; flip: 309 of 309 fork-free, 3 of 3 two-way sites failing alone: the promotion rule is met.
+- **Result, state 13:** 160 decisions, one unit per process, no unit with two states; block check 160 of 160, 0 mismatches, 158 chained pairs; arms and controls in ai/0020 §§ 2.2, 2.3; the four fire points equal the DS1's one path at (12500, 11000); stock census 1 of 160 fork-free, with the three given words 160 of 160, 1 148 calls with one offer, 7 of 7.
+- **Result, row 10's state 0:** 49, 0 mismatches, 0 fork-free, control `two-draws` fails 28.
+- **Limits:** Normal only; player and, for 9, mercenary as target; first logged decisions not first decisions (ai/0020 § 3); no `AGM`; no chain between Duriel's decisions (1 pair).
+- **Conclusion:** [C] C10's contradiction is settled for record 211, Normal, and row 44's sentence holds for these 309; [C] S13's block on its reached arms, its path list against the file; [I] everything else in ai/0020's lists. (0x005F6861, 0x005E5C02)

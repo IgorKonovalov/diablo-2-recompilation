@@ -2352,8 +2352,8 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005E5730,func,sub_005E5730_AiSt3Init,,I,monsters/ai,docs/findings/ai/0013-batch12.md
 0x005E5870,func,sub_005E5870_AiSt3GroupRoam,,I,monsters/ai,docs/findings/ai/0013-batch12.md
 0x005E5AC0,func,sub_005E5AC0_AiGriswold,,I,monsters/ai,docs/findings/ai/0008-bosses-a.md
-0x005E5B70,func,sub_005E5B70_AiPathSkillStep,,I,monsters/ai,docs/findings/ai/0013-batch12.md
-0x005E5C50,func,sub_005E5C50_AiSt13,,I,monsters/ai,docs/findings/ai/0013-batch12.md
+0x005E5B70,func,sub_005E5B70_AiPathSkillStep,,C,monsters/ai,docs/findings/ai/0020-owner-played-duriel-countess.md
+0x005E5C50,func,sub_005E5C50_AiSt13,,C,monsters/ai,docs/findings/ai/0020-owner-played-duriel-countess.md
 0x005E6020,func,sub_005E6020_AiGenSpawnPickClass,,I,monsters/ai,docs/findings/ai/0011-batch10.md
 0x005E6190,func,sub_005E6190_AiGenericSpawnerInit,,I,monsters/ai,docs/findings/ai/0011-batch10.md
 0x005E61B0,func,sub_005E61B0_AiGenericSpawner,,I,monsters/ai,docs/findings/ai/0011-batch10.md
@@ -2468,7 +2468,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005F06B0,func,sub_005F06B0_AiNearAllyCb,,I,monsters/ai,docs/findings/ai/0002-pool-a.md
 0x005F0700,func,sub_005F0700_AiSandRaider,,I,monsters/ai,docs/findings/ai/0002-pool-a.md
 0x005F0A20,func,sub_005F0A20_AiWraith,,C,monsters/ai,docs/findings/ai/0015-phase2-first-run.md
-0x005F0B00,func,sub_005F0B00_AiCorruptRogue,,I,monsters/ai,docs/findings/ai/0002-pool-a.md
+0x005F0B00,func,sub_005F0B00_AiCorruptRogue,,C,monsters/ai,docs/findings/ai/0020-owner-played-duriel-countess.md
 0x005F0CD0,func,sub_005F0CD0_AiBaboon,,I,monsters/ai,docs/findings/ai/0002-pool-a.md
 0x005F1140,func,sub_005F1140_AiQuillRat,,I,monsters/ai,docs/findings/ai/0002-pool-a.md
 0x005F12A0,func,sub_005F12A0_AiGoatman,,I,monsters/ai,docs/findings/ai/0002-pool-a.md
@@ -2508,7 +2508,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005F6530,func,sub_005F6530_AiMaggotEgg,,I,monsters/ai,docs/findings/ai/0004-pool-c.md
 0x005F6630,func,sub_005F6630_AiNestInit,,I,monsters/ai,docs/findings/ai/0004-pool-c.md
 0x005F6650,func,sub_005F6650_AiFoulCrowNest,,I,monsters/ai,docs/findings/ai/0004-pool-c.md
-0x005F67B0,func,sub_005F67B0_AiDuriel,,I,monsters/ai,docs/findings/ai/0008-bosses-a.md
+0x005F67B0,func,sub_005F67B0_AiDuriel,,C,monsters/ai,docs/findings/ai/0020-owner-played-duriel-countess.md
 0x005F6A10,func,sub_005F6A10_AiSarcophagus,,I,monsters/ai,docs/findings/ai/0004-pool-c.md
 0x005F6B70,func,sub_005F6B70_AiElementalBeast,,I,monsters/ai,docs/findings/ai/0004-pool-c.md
 0x005F6CA0,func,sub_005F6CA0_AiFlyingScimitar,,I,monsters/ai,docs/findings/ai/0004-pool-c.md
