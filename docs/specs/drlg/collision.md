@@ -3,8 +3,8 @@ spec: drlg/collision
 status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [drlg/overview, drlg/room-tiles, drlg/preset, drlg/warps, rng]
-consumed_by: [monsters/spawn, objects, chain]
-tags: {C: 183, I: 66, L: 12}
+consumed_by: [monsters/spawn, objects, chain, path/overview, path/search]
+tags: {C: 183, I: 67, L: 12}
 updated: 2026-11-04
 ---
 
@@ -733,7 +733,7 @@ The first row decides what the planner reads. The others are where a unit's cell
 #### F7. No bit is reference-counted: the grid is the result of its operations in order
 
 The operations are § F's marks and unmarks as the game runs them: moves and mask changes, the corpse calls of § F5, and the plan, the act change
-and the reserved landing of § F6.
+and the reserved landing of § F6. [path/overview § F](../path/README.md#f-the-grid-a-planner-reads) is what a planner takes from them.
 
 - [C] **The grid at a planner call is the result of the marks and unmarks in order, not the union of the present holders.** An unmark is the same
   footprint with AND-NOT and nothing is counted, so it clears a shared bit that another holder also set (the F1 note). A reimplementation runs the
@@ -1040,7 +1040,8 @@ flowchart TD
 
 ### Readers only named
 
-- [I] Movement (`COLL_SizeMove`, `COLL_PatternMove`, `COLL_PatternTestBool`, the path code), the free-spot searches (`COLL_FindFreeNear`,
+- [I] The planners read this grid through `COLL_PatternTestBool`: [path/search § A1](../path/search.md#a1-a-cell-read-blocked), and [path/overview § F](../path/README.md#f-the-grid-a-planner-reads) for the live grid, the masks and the counted oracle. (fn:COLL_PatternTestBool@0x0064D910)
+- [I] Movement (`COLL_SizeMove`, `COLL_PatternMove`, the step), the free-spot searches (`COLL_FindFreeNear`,
   `COLL_FindFreeSpiral`, which `SpecialMonPlace` uses) and the line walk (`COLL_LineTest`) read the same grid. They wait on a
   `monsters/ai` or `player/movement` row. (fn:COLL_FindFreeNear@0x0064DEA0, fn:COLL_FindFreeSpiral@0x0064E840,
   fn:sub_005A09E0_SpecialMonPlace@0x005A09E0, fn:COLL_LineTest@0x0064E260)
