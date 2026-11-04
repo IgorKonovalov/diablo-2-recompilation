@@ -13,6 +13,10 @@ Nothing else changes: the machine, the matching and the reversal are tools/ai_re
 decisions with AID `st` 13 are taken. Reversing a branch that depends on a given word is a test of that word's use, not of the word.
 
     python3 -I tools/ai_s13_census.py --ds1 FILE --skills N LOG...
+
+Controls (`lane/r72` review), each one wrong given word; a word the check cannot fail on says so by passing:
+    --count N       the list's count N for the file's
+    --base-delta D  the MonStats base moved by D bytes
 """
 import hashlib
 import os
@@ -28,11 +32,16 @@ import ds1  # noqa: E402
 
 def main(argv):
     logs, path, skills, k = [], None, None, 0
+    force_count, base_delta = None, 0
     while k < len(argv):
         if argv[k] == "--ds1":
             path = argv[k + 1]; k += 2
         elif argv[k] == "--skills":
             skills = int(argv[k + 1]); k += 2
+        elif argv[k] == "--count":
+            force_count = int(argv[k + 1]); k += 2
+        elif argv[k] == "--base-delta":
+            base_delta = int(argv[k + 1], 0); k += 2
         else:
             logs.append(argv[k]); k += 1
     decs, fires = [], {}
@@ -60,7 +69,7 @@ def main(argv):
     print("PATH file=%s paths_in_file=%d match=%s points=%d offset=%s" % (os.path.basename(path), len(f["paths"]), bool(found), len(found[0]["points"]) if found else 0, found[1] if found else None))
     if not found or skills is None:
         return 2
-    count = len(found[0]["points"])
+    count = len(found[0]["points"]) if force_count is None else force_count
     orig = R.init_state
 
     def init(aid):
@@ -68,7 +77,7 @@ def main(argv):
         lst = int.from_bytes(bytes.fromhex(aid["ctl"])[0x38:0x3C], "little")
         if aid["st"] == 13 and lst:
             st.wr(lst, 4, count)
-            st.wr(R.DATA_T + 0xA78, 4, (aid["ms"] - aid["c"] * 0x1A8) & R.M32)
+            st.wr(R.DATA_T + 0xA78, 4, (aid["ms"] - aid["c"] * 0x1A8 + base_delta) & R.M32)
             st.wr(R.DATA_T + 0xBA0, 4, skills)
         return st
     R.init_state = init
@@ -82,7 +91,8 @@ def main(argv):
             items.append((d, r))
         else:
             bad += 1
-            print("NOTOK %s fr=%d %s" % (r.status, d["aid"]["fr"], getattr(r, "why", "")))
+            if bad <= 3:
+                print("NOTOK %s fr=%d %s" % (r.status, d["aid"]["fr"], getattr(r, "why", "")))
     print("RESUME state=13 decisions=%d resumed=%d not_resumed=%d" % (len(decs), len(items), bad))
     print("\n".join(F.row_report(code, bnd, 10, items, 4, 1000000)))
     return 0

@@ -48,7 +48,7 @@ The register of this finding is § 2. Sources, one line each (full rows in `docs
 
 | Address | Name | Role | Tag |
 |---|---|---|---|
-| 0x005F67B0 | `sub_005F67B0_AiDuriel` | row 44 think, the contradicted C10 and C11 | I |
+| 0x005F67B0 | `sub_005F67B0_AiDuriel` | row 44 think, the contradicted C10 and C11 | C ([ai/0020](0020-owner-played-duriel-countess.md), run:2026-11-04-r72) |
 | 0x005F2B10 | `sub_005F2B10_AiGreaterMummy` | row 22 think, the contradicted C40 | I |
 
 No new names: both are in `re/symbols.csv` from ai/0008 and ai/0003. No symbol is raised or added by this finding.
