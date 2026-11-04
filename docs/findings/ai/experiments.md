@@ -898,6 +898,42 @@
   P1b-2; H1; H3; Fetish and Andariel at `/players 8`; the catalogue sample; the review request.
 - **Conclusion:** [C] the outcome mix and the negative control on the first run's kept logs (above); [I] the resume model's figures (development logs). See
   [ai/0017](0017-phase2-second-run.md). Manifests: `workspace/logs/ai/manifest-run-2026-11-03-ai-2.sha256`, `manifest-dev-2.sha256`.
+## run:2026-11-03-ai-3
+
+- **Question:** (plan 0052 Phase 2, second lane run `lane/p52b`, second part) The kept batch the checkpoint (run:2026-11-03-ai-2) lacked: how far do decisions compare per tier AI
+  with logger rev 4 and the resumable model, what stops a resume, which branches stay unseen; the state control (states 10, 11, 12 live); P1b-2 (a champion corpse for the Greater Mummy);
+  P1b-1 (Duriel); G4 (the seven Uber helpers, breakpoints).
+- **Setup:** slot 2 (display `:9`, `workspace/wineprefix-2`), game 1.14d expansion, Normal, one game process per case (`tools/ai_sessions.py run --fresh`), seeds 5801 + launch (batch 1, 22 launches), 5901 + launch
+  (batch 2, 13 launches), 6101 + launch (P1b-2, 3 launches), 3364 + launch (Duriel development, 2 launches). Logger `tools/gdb/ai-g4.gdb` = `tools/gdb/ai.py` rev 4 (`AI logger armed rev 4 bmax 48`) + `tools/gdb/ai-g4.py` rev 1 (G4)
+  (+ `tools/gdb/ai-p1b2.py` rev 2, only with `AI_P1B2=1`); commit `e0e45d03` for the tools of this part. Characters (built with `tools/ai_sessions.py build`): `CombatSor`, `AiNec`, `AiNecC` (`ai-nec-curse.json`), `AiBar` (`ai-barb.json`), `AiDur` (`ai-dur.json`,
+  development only). Pilot options as the cases of `tools/ai_sessions.py` hold them (the melee cases `s-*`: `explore --walk --melee`, with `--melee-button 3 --curse-keys F1,F2 --keys-cycle` for the curse cases).
+- **Kept sessions: 23.** 21 in run:2026-11-03-ai-3 (batch 1: 11 of 22 launches, batch 2: 10 of 13; the other 14 launches left the character in the Act IV town: "the waypoint list did not open", rerun) and 2 in run:2026-11-04-ai-3p
+  (`a2-halls-p12`, `a2-halls-long`; the first of 3 launches stayed in the town). The 14 + 1 failed tries are under `workspace/logs/ai/dev/`. Manifests (both pass from `workspace/logs/ai`): `manifest-run-2026-11-03-ai-3.sha256`
+  (84 lines: 23 case logs, the 23 launch logs and marks, the checks, the status files, `g4-run-2026-11-03-ai-3.txt`, `p1b2-run-2026-11-04-ai-3p.txt`, the pilot records), `manifest-dev-3.sha256` (106 lines: the development logs, the failed
+  tries, the screenshots).
+- **Procedure** (from `workspace/logs/ai`, the repo's tools by absolute path):
+  ```
+  python3 -I tools/ai.py check <the 21 case logs 2026-11-03-ai-3-s2-*-fresh:*.log> --controls --out check-run-2026-11-03-ai-3.txt > check-stdout-2026-11-03-ai-3.txt
+  systemd-run --user --scope -p MemoryMax=4G python3 -I tools/ai_resume.py check <the same logs> --controls --examples 200 --out resume-run-2026-11-03-ai-3.txt > resume-stdout-2026-11-03-ai-3.txt
+  python3 -I tools/ai_g4.py <the 23 kept launch logs> > g4-run-2026-11-03-ai-3.txt
+  AI_P1B2=1 python3 -I tools/ai_sessions.py run ... a2-halls-p12 a2-halls-long ; python3 -I tools/ai_p1b2.py <the 2 case logs> > p1b2-run-2026-11-04-ai-3p.txt
+  ```
+- **Result:** the first-boundary check over 7 539 decisions: 6 272 compared, 0 mismatches, 1 265 in rows with no model, 2 truncated at a log's end (`unlogged`); controls site 6 272 of 6 272, fallen 814 of 814, melee 1 187 of 6 272 (23 rows not separated).
+  The resume model: 7 135 resumed, **112 mismatches**, 292 stopped, 72 183 boundary calls matched, 64 689 after the first; controls: reversed branches 7 273 of 7 539, seed 7 497 of 7 539. State control: states 10 (38 decisions), 11 (98 decisions, 41 events),
+  12 (56 decisions) live in `s-necro-curse` and `s-barb-howl`; no other nonzero state in 7 539 decisions and 10 721 events. P1b-2: 17 champion-flag and 16 unique-flag corpses placed, 4 champion corpses reached `MonSkillTargetOk` (2 accepted, 2 refused), 0 unique.
+  G4: 0 helper hits in 23 launches, control 0x005B1CF0 live in 23, 0x005A3250 in 2. Per tier AI and the stop reasons: ai/0017 §§ 6 to 12.
+- **Development launches:** `dev-2026-11-03-ai-3` (seeds 5701, 5702, 5703, 5711, 5721: the curse cases; `s-necro-curse` first built with 40 hops, then 80), `dev-2026-11-03-ai-3p` (6001: the P1b-2 logger, rev 1 without the unit pointer), `dev-2026-11-04-ai-3d`
+  (3364 and 3365: Duriel, one attempt; the first launch stayed in the town, the second went to Canyon of the Magi and not into a tomb; stopped by hand).
+- **Not done:** P1b-1 (no decision of row 44), H1, H3, the catalogue sample, the 112 resume mismatches' cause. The Duriel route is from the plan 0032 session 3364 log's positions (ai/0017 § 11).
+- **Conclusion:** [C] the kept first-boundary comparison, the controls, the state control, P1b-2 (a built state) and G4 as stated in ai/0017 § Answer; [I] the resume figures (112 open mismatches). Manifests as above.
+
+## run:2026-11-04-ai-3p
+
+- **Question:** (plan 0052 Phase 1b, P1b-2) Does a champion corpse reach the Greater Mummy's `MonSkillTargetOk` through its search callback 0x005F2A00, and a unique corpse (control) not?
+- **Setup:** as [run:2026-11-03-ai-3](#run2026-11-03-ai-3), seeds 6101 to 6103, `AI_P1B2=1` (`tools/gdb/ai-p1b2.py` rev 2: a built state, flag 4 or 8 written at the callback's entry on dead candidates), cases `a2-halls-p12` and `a2-halls-long`; kept sessions 2 of 3 launches (manifest: `manifest-run-2026-11-03-ai-3.sha256`).
+- **Result:** 17 champion-flag and 16 unique-flag corpses placed; 4 champion corpses reached `MonSkillTargetOk` (2 accepted and commanded, mode 14; 2 refused), 0 unique (`p1b2-run-2026-11-04-ai-3p.txt`, `tools/ai_p1b2.py`). A built state: the flags are written by the logger.
+- **Conclusion:** [C] as run (0x005F2A00, 0x005FD470); ai/0017 § 9.
+
 ## run:2026-11-03-ai-uber
 
 - **Question:** (plan 0052 Phase 1c, the Uber event) Do the unreferenced helpers 0x005DD140, 0x005E9DD0, 0x005F7F10, 0x005FD0F0, the drop 0x005E0070, the death callee 0x005A3250, the preset walk 0x005559A0, Baal's action at `k` 14, `UModAura` and `MonPostCreateBoss` map their declared inputs to the first boundary they reach (or their return), its call site, arguments, the unit seed and the named memory, as [ai/0016](0016-uber-event.md) § 7 reads them?
