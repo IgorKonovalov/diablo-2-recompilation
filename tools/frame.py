@@ -14,6 +14,13 @@
                                                              frame-stamped, run-attributed rows of the Phase 0 index
                                                              workspace/logs/frame-corpus/frame-corpus-logs.tsv, or the
                                                              LOGs given, relative to <logs-root>)
+    python3 -I tools/frame.py window [--pilot] [--allow-stray] LOG ...
+                                                             plan 0055 Phase 2b: the frame-window logs of
+                                                             tools/gdb/frame.gdb, whole (every frame's FT0/FT1, every
+                                                             pair closed, 0 unparsed) and unmoved (every entry seed
+                                                             against the previous reading, never resynchronised), with
+                                                             the numbers the record states (tools/frame_window.py)
+    python3 -I tools/frame.py window-selftest                the synthetic window logs and the nine negative controls
     python3 -I tools/frame.py rechain <logs-root> GAPS ...   the caster resyncs a `tools/skills.py check --gaps` file
                                                              lists, walked again over every logged seed observation
                                                              of the unit between the two events, in model order
@@ -1808,6 +1815,18 @@ def _walk_gap(lines, n, u):
     return "not re-chained", "the walk ends %s steps before the entry (%d links)" % (k, used)
 
 
+def cmd_window(a):
+    import io
+    import frame_window
+    buf = io.StringIO()
+    rc = frame_window.run(a.logs, pilot=a.pilot, allow_stray=a.allow_stray, out=buf)
+    sys.stdout.write(buf.getvalue())
+    if a.out:
+        with open(a.out, "w") as f:
+            f.write(buf.getvalue())
+    return rc
+
+
 def main(argv):
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     sub = ap.add_subparsers(dest="cmd")
@@ -1825,6 +1844,12 @@ def main(argv):
     p.add_argument("--out")
     p.add_argument("root")
     p.add_argument("logs", nargs="*")
+    p = sub.add_parser("window")
+    p.add_argument("--pilot", action="store_true", help="judge the first window of the first log: (a), (b), (c)")
+    p.add_argument("--allow-stray", action="store_true", help="text that is not `TAG {json}` does not fail (a)")
+    p.add_argument("--out", help="also write the report to this file")
+    p.add_argument("logs", nargs="+")
+    sub.add_parser("window-selftest")
     p = sub.add_parser("rechain")
     p.add_argument("--out")
     p.add_argument("root")
@@ -1836,6 +1861,11 @@ def main(argv):
         return cmd_kinds(a)
     if a.cmd == "check":
         return cmd_check(a)
+    if a.cmd == "window":
+        return cmd_window(a)
+    if a.cmd == "window-selftest":
+        import frame_window
+        return frame_window.selftest(MULT, step)
     if a.cmd == "rechain":
         return cmd_rechain(a)
     ap.print_help()

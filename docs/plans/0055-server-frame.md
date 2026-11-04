@@ -546,3 +546,56 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   are not touched (architect's files).
 - **2026-11-03 — Phase 2a-ii Tier B check (architect, `lane/r55f`): accept with fixes (3); P2a-ii closed, Phase 2a stays *met in part*.** Fixes: overclaim 2 (frame/0005's three-hook `[C]` and the run's conclusion now say the pairs show the order against the logged neighbours, not the rank within the set; the summary says the frames without a separating pair agree trivially), omission 1 (the per-hook pair counts overlap by the 43 `DR0` → `PS0` pairs, and `RunStaminaDrain`'s 90 are split by anchor kind; frame/0004's headline carries a dated pointer to the wider counts). Rulings: (1) P2a-ii is closed as the static step it was; Phase 2a's Done-when is still not met as written (118 340 frames hold fewer than two closed sets, 65 hooks open), so Phase 2a stays open as met in part and closes at Phase 2b's first window that places the 65 hooks by `UE0`/`UE1`; the second clause stays met. (2) A hook left open takes every rank: sound (only widens), `[I]`, tests nothing, and its events are not counted as placed. (3) Rank 21 outside `GameTick` is a fair `[I]` for the single-player corpus (the scope is stated); `CreateClassSelect` as a root adds a rank to its callees only and cannot close a hook falsely. (4) The stack-block match can only add false edges, which widen a set; `[I]` stands, and its 18 are in the kept `reads/edges.txt`. `PayGold`'s closure rests on 0x00578ED0 having no reference, checked by the tool at each start and recorded `[I]` in items/0011; `PayGold` has no pair and stays `[I]`. The research map's `sim/frame` row says "P2a met in part; P2a-ii landed, 9 of 74 hooks closed, 65 to Phase 2b".
 - **2026-11-04 — Owner decision.** This plan counts as current under the owner's order to finish current plans and start no new ones: Phase 2b, Phase 3 and Phase 4 run after plan 0052's Phase 3a.
+- **2026-11-04 — Phase 2b tool preparation (reverser, no game, `lane/p55a`).** ADR-0022 holds the harness runs until plan 0052's
+  Phase 3a is reviewed; nothing was launched (no game, slot or wine), no finding, no `re/symbols.csv` row, no prediction. **Built:**
+  `tools/gdb/frame.gdb` and `tools/gdb/frame.py` (the logger, rev 1), `tools/frame_window.py` with the `window` and
+  `window-selftest` subcommands of `tools/frame.py` (the reader and checker), `tools/frame_sessions.py` (the session runner),
+  `tools/frame_volume.py` (`estimate13_rows` split out of `estimate13`, whose output is byte for byte unchanged),
+  `tools/test_frame_window.py` (12 tests, no game, no gdb). **Logger:** the closed lines of frame/0003 § 9 with P1.1's
+  and P1.2's: `FT0` (frame = `Game+0xA8` + 1, the pre-increment value in `pre`, the game seed, `g_HitClassCounter` at
+  `0x0088CAD0`), `FT1`, `FP` (the seven pass calls and `0x0052D96C`, written when the game seed differs from the last
+  logged one), `ACL`, `UE0`/`UE1` (the 20 sites of frame/0002 § 8, the unit and game seeds), `MSG0`/`MSG1` (opcode, length,
+  the first 24 bytes, the player seed), `SYS`, `RU0`/`RU1` (the loop's per-room call and next-room load, and
+  `RoomUpdateOne`'s entry and rets), `TM` (four sites), `TQ0`/`TQ1`, `RC`, `RR`, `QE`, `QF` (not when the return address is
+  `0x005416DC`), `SV0`/`SV1` (`SaveGameClients` at `0x0052CA10` and its three returns), and `WIN`/`WEND`/`HB`. Outside a
+  window only `FT0` and `FT1` stop (the other breakpoints are disabled; `HB` every 250th frame); a window opens at an `FT0`
+  from `FRAME_WINDOWS` or from lines the runner appends to `FRAME_CTL`, including a `cover=M` window that puts a frame
+  `≡ 0 (mod M)` in its middle. **No write** (rule 17): the logger reads memory and registers and enables or disables its own
+  breakpoints; every `stop()` returns False; `tools/test_frame_window.py` runs the handlers over a fake read-only memory
+  (a write raises) and greps the source. Sites not in `re/symbols.csv` or a finding are 33 derived addresses, each checked
+  against the binary by the test: five pass calls inside frame/0001 § 3's range (`0x0052D8E6`, `0x0052D8F2`,
+  `0x0052D8F9`, `0x0052D900`, `0x0052D907`), the 20 instructions after the unit-event calls, the four `ret 8` of
+  `SrvPacketDispatch`, the returns of `SaveGameClients` (`0x0052D430`, `0x0052D4C2`, `0x00530446`) and the timer callback
+  (`0x00543E87`); `ACL` is cut to the act and the return (the finding's period and counter have no named site). All `[I]`.
+  **Reader:** `python3 -I tools/frame.py window [--pilot] [--allow-stray] LOG ...` tests (a) whole (an `FT0` and `FT1` for each
+  of `len` consecutive frames, no gap, repeat or reorder, every pair closed in its frame and nested, every line stamped with
+  its frame, 0 lines it cannot parse), (b) unmoved (each seed object's reading against the previous *logged* reading:
+  handed, stepped k, reversed, off; never resynchronised; a draw before an `FP` or `TM` site is listed apart as located),
+  and prints what the record states: lines per frame against `estimate13` mid (and the 3x stop), stops per frame, the hit
+  count per breakpoint, `QE`+`QF` per `UE0` against the stated mid rates, chained events, windows per scene, each timer's
+  period seen, room activations and those inside a `NewRoomsUpdate` walk, frames `mod 1500` and `mod 8192`, shared-seed
+  pairs (consecutive game-seed-drawing unit events of two units in a frame, handed and in pass order), kind-11 and kind-6
+  draw-free runs, the session's lines against Q2's 177 860, and the Done-when floors. `--pilot` judges the first window by
+  (a), (b) and (c) (WEND ok, no `LOGERR` or `CAP`). **Negative controls** (`window-selftest`, 11 checks): a gap, a repeat, an
+  unclosed pair, a game seed off by one, a unit seed off by one, a reversed pair, an unparsed line, stray text and a lost
+  `FT1` each fail the test they are for; the clean synthetic window passes. **Runner:** `tools/frame_sessions.py` on
+  `tools/harness_runner.py`: `list`, `plan SCENE`, `build`, `gate LOG` and `run --slot N ... SCENE` for `town`, `pack`
+  (Cold Plains, `farm --sweep --wp 1,2`) and `maze` (Den of Evil: `explore` out of town, then `farm --descend 0,1,2,3
+  --descend-to 8`), each one fresh single-player process (`enter-normal.steps`), Teleport hops and Nova only; it does not
+  launch without `--launch` (`--dry` prints the plan), refuses slot 0, and runs the pilot gate after each scene's first
+  window (stop on a failed (a)/(b)/(c) or lines per frame above 3x the scene's estimate). **The command a harness lane runs
+  first** (the pilot, slot N from its prompt): `python3 -I tools/frame_sessions.py build --saves SAVES` then
+  `python3 -I tools/frame_sessions.py run --slot N --tag p55 --saves SAVES --run YYYY-MM-DD-frame --pilot-only --launch town`;
+  its log is `workspace/logs/frame/<run>-s<N>-5501-town.log`, judged again by
+  `python3 -I tools/frame.py window --pilot <that log>`. A smoke session of the logger first (harness-play.md § Before the
+  batch) is that same run under a `dev-` run name. **Untested without a game:** every `gdb` behaviour (the breakpoint syntax and
+  `enabled` flips are those of `tools/gdb/ai.py`; gdb's own `hit_count` is expected to stay 0 for a `stop()` that answers
+  False, so `WEND.hits` is the hit count per breakpoint and `ghits` a cross-check the first session shows); that `ECX` is
+  the game at `FT0` and `ESI` the record at all 20 `UE0` sites (read from the disassembly and frame/0002 § 8, not run);
+  the stops per frame the game survives under gdb (the pilot's (c)); that `d2run.py` hands `FRAME_CTL` to gdb (it copies
+  `os.environ`); `pilot.py`'s own breakpoints sit beside these and add stops the hit counts do not include; the Act I
+  town's waypoint screen position (`--wp-x/--wp-y`), the route out of the town to Blood Moor, which `LvlWarp` row is the Den
+  of Evil's entrance, whether Nova and the character's level suit the pack, that `hop` is the right command in town, the
+  `mod 8192` window (`--long`, a 5.5 minute wait for the frame), and whether the pack's and Corpsefire's monster kinds are
+  in plan 0052 P3a's reviewed tier. The chain's reading of "unmoved" (entry equals the previous logged exit, an `FP` or `TM`
+  step located not counted) is this lane's; the architect confirms it at the pilot review.
