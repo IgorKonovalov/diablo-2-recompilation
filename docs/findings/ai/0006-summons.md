@@ -269,7 +269,7 @@ think101: if (charge(ctx,0)) return; sk = SKILLS_GetUnitSkill(U, Skill1); if (!s
     if (charge(ctx,1)) return; UNIT_CancelEvents(2,0); UseSkill(SkillMode(sk), Skill1, h, 0, 0);
 think104: if (charge(ctx,0)) return; sk = Skill1's unit skill; lvl = SkillLevel(U, sk, 1); if (!sk || lvl < 1) return;
     h = FindHostile(&d, &m); if (!h) return Idle(aip2);
-    c = CorpsePickNear(Skill1, lvl); r = SkillParam3ByLevel(...) / 2;
+    c = CorpsePickNear(h; Skill1, lvl); r = SkillParam3ByLevel(Skill1, lvl) / 2;      // around h: EDX = h, 0x005EAA11
     if (c && c->guid != v14 && EdgeDist(h, c) < r) { if (charge(ctx,1)) return; v14 = c->guid; return UseSkill(9, Skill1, c, 0, 0); }
     if (d < aip4 && Range(100) < aip3) { if (charge(ctx,1)) return; return UseSkill(14, Skill2, h, 0, 0); }   // draw#1
     Idle(aip2);

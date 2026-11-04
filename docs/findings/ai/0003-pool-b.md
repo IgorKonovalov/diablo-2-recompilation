@@ -139,7 +139,7 @@ if (melee) { if (chance(2)) return SetModeAtUnit(4, t); return Idle(aip4); }
 if (chance(1)) { Ovr(0, 75, 0); return Walk13(t, 7); }                          // draw#1
 s = { unit 0, best 0x7FFFFFFF };  AiUnitSearch(G, U, &s, AiSameBaseNearCb, 1);
 if (s.unit && aip3 * aip3 < s.best) { Ovr(0, 75, 0); return Walk(s.unit, 7); }   // rejoin the pack
-if (draw < 25) return T56(t, 3, 0); else return Idle(aip4);                     // draw#2
+if (draw < 25) return T56(t, 3, s.unit); else return Idle(aip4);                // draw#2; flag = s.unit
 ```
 
 - [I] The callback takes a monster (`Unit+0x00` = 1) other than the searcher with the searcher's `MonBaseId`, not in a
@@ -148,6 +148,7 @@ if (draw < 25) return T56(t, 3, 0); else return Idle(aip4);                     
   (0x005F22B0–0x005F2455, fn:sub_005B0D00_AiSameBaseNearCb@0x005B0D00, fn:sub_00463860_MonBaseId@0x00463860,
   fn:sub_0063EA40_MonIsDeathMode@0x0063EA40)
 - [C] The map up to the search, the block's two words included. (run:2026-10-30-ai-cat-emu-2, `panther`)
+- *Corrected 2026-11-04 (`lane/s52b` review, architect, read against the instructions):* the block gave `T56(t, 3, 0)`; the flag is `push ebx` (0x005F2426) with `ebx` = `s.unit` (0x005F23B8), so with a packmate found within `aip3` the walk reaches `MonAiMove` with flags 4.
 
 #### 2.3 Row 19 `Swarm` (0x005F2460)
 

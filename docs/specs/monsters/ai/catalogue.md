@@ -1,10 +1,10 @@
 ---
 spec: monsters/ai/catalogue
-status: draft
+status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, monsters/ai/overview, monsters/ai/machinery, skills/dispatch, path/overview]
 consumed_by: [monsters/ai/overview, monsters/ai/machinery, hirelings]
-tags: {C: 330, I: 496, L: 19}
+tags: {C: 330, I: 497, L: 19}
 updated: 2026-11-04
 ---
 
@@ -79,6 +79,7 @@ Each entry states its own. No constant is shared across entries.
   H1**: nothing past the first boundary of any row here is `[C]`. No row's role, symbol or reading is raised by being resumed. (run:2026-11-04-ai-resume, run:2026-11-04-ai-r5)
 - [I] **The catalogue sample is short, by name:** batches 5, 7, 10, 11, 12 have no row that counts. Row 54 cannot fail (0 of 3 sites), row 99 has no call past the first, row 32 has a fork in all 199 decisions of the rev 4 logs, row 100 has 4 decisions. Row 130's map has not landed.
   (run:2026-11-04-ai-resume-flip)
+- [I] **Which blocks were read against their instructions.** Each block restates a compact block or the prose of its finding, and those were wrong in places no earlier review caught. Read line by line against objdump of the pinned image, register and stack arguments included, at the `lane/s52b` review: rows 3, 4, 11, 16, 18, 25, 26, 48, 50, 59, 65, 70, 71, 73, 85, 91, 96, 104, 106 (steps 12 to 16 and `Use`), 108, 116, 122, 131, states 3 and 5, and the tables of rows 51 and 135. By that lane alone, with filtered listings on the longer functions: 105, 106's other steps, 110, 111, 112, 134, 137, 31, 32's chain, 54, 58, 81, 99, states 12 and 13. The tier rows' read set is machinery's. **Not read:** the other 75 blocks of batches 1 to 9, named in [plan 0052's P3c](../../../plans/0052-monster-ai.md#phase-3--spec-monster-ai-in-two-parts), and the other blocks of batches 10 to 12, whose findings wrote them from instructions. **Measured:** of 19 blocks of batches 1 to 9 read at the review, 2 (rows 18, 59) held an error that changes a branch or a command's argument, corrected here, 1 (row 104) an omitted argument, and none a draw's order or count; of 3 of batches 10 to 12, none. So until P3c closes, expect about one unread block of batches 1 to 9 in ten to hold a wrong unit or argument. Short by name: rows 106 and 143 (step 13's terms decide which skills draw) and rows 25 and 94 (their tables), Open questions. (0x005F2426, 0x005E63F8, 0x005E65E5, 0x005EAA11)
 - [C] **Emulated maps** are named per entry. Each runs the think on a declared image up to its first observed callee (ADR-0015, ADR-0021) and covers that code's map and no callee, and no store or command after it. (run:2026-10-30-ai-cat-emu-1)
 
 ## Algorithm
@@ -588,11 +589,11 @@ else:
 3. s ← {unit 0, best 0x7FFFFFFF};  AiUnitSearch(G, U, &s, AiSameBaseNearCb, 1)
 4. if s.unit ≠ 0 and aip(3)·aip(3) < s.best:
      Ovr(0, 75, 0);  Walk(s.unit, 7); return
-5. if D100() < 25: T56(t, 3, 0)                  ; draw#2
+5. if D100() < 25: T56(t, 3, s.unit)             ; draw#2; the flag word is s.unit, not a constant
    else: Idle(aip(4))
 ```
 
-- R18a. [I] The callback takes a monster (`Unit+0x00` = 1) other than the searcher with the searcher's `MonBaseId`, not in a death mode, and keeps the nearest by `UnitDistSq`. The search block is a stack block `{+0x00 unit, +0x04 best}` at `EBP − 0x2C`. (fn:sub_005B0D00_AiSameBaseNearCb@0x005B0D00, fn:sub_00463860_MonBaseId@0x00463860, fn:sub_0063EA40_MonIsDeathMode@0x0063EA40)
+- R18a. [I] The callback takes a monster (`Unit+0x00` = 1) other than the searcher with the searcher's `MonBaseId`, not in a death mode, and keeps the nearest by `UnitDistSq`. The search block is a stack block `{+0x00 unit, +0x04 best}` at `EBP − 0x2C`. Step 5's flag is `s.unit` (`push ebx` at 0x005F2426, `ebx` set from the block at 0x005F23B8), so with a packmate found within `aip(3)` the walk goes to `MonAiMove` with flags 4, and with none found with flags 0 ([machinery B11](machinery.md#b-the-command)). (0x005F2426, fn:sub_005B0D00_AiSameBaseNearCb@0x005B0D00, fn:sub_00463860_MonBaseId@0x00463860, fn:sub_0063EA40_MonIsDeathMode@0x0063EA40)
 - R18b. [C] The map up to the search, the block's two words included: family `panther`, 240 cases, 4 boundaries; the controls fail the 26 and 99 that separate them. (run:2026-10-30-ai-cat-emu-2)
 
 - R18i. [C] As data: kind 1, no `init`, no `alt`; 6 records (83-86 pantherwoman1..pantherwoman4, 627-628 pantherwoman5..pantherwoman6); reach PU; `aip` set 1,2,3,4,5; `aidel` 15/13,14/12,13; skills —. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
@@ -1927,7 +1928,7 @@ init 0x005EA510:  v14 ← −1;  v18 ← 1;  v1C ← 0                          
    if sk = 0 or lvl < 1: return
 3. h ← FindHostile(&d, &m)
    if h = 0: Idle(aip(2)); return
-4. c ← CorpsePickNear(Skill1, lvl);  r ← SkillParam3ByLevel(…) ÷ 2
+4. c ← CorpsePickNear(h; Skill1, lvl);  r ← SkillParam3ByLevel(Skill1, lvl) ÷ 2     ; around the hostile; signed, toward zero
 5. if c ≠ 0 and c.guid ≠ v14 and EdgeDist(h, c) < r:
      if charge(ctx, 1): return
      v14 ← c.guid
@@ -2570,7 +2571,7 @@ init (0x005E6300):  v1C ← 0                                                [C]
      Push({kind 10, U's own x, y});  h ← AiParamsFind(U, 10, 0)            ; the home point
 2. hd ← 0
    if h ≠ 0:
-     hd ← DistToPointSized(U, home)
+     hd ← DistToPointSized(t, home)                                        ; the target's, ECX = t (0x005E63F8)
      if dist > 45: Idle(5); return
      if hd > 49 or DistToPointSized(U, home) > 50:                         ; second compare unsigned (jbe, 0x005E6433)
        v1C ← 1;  Ovr(7, 100, 0)
@@ -2592,7 +2593,7 @@ init (0x005E6300):  v1C ← 0                                                [C]
      else: dx ← a;  dy ← RangeB(a)
      if Pow2(2) ≠ 0: dx ← −dx                                              ; draw#5
      if Pow2(2) ≠ 0: dy ← −dy                                              ; draw#6
-     MonAiUseSkill(Sk1mode, Skill1, 0, subX(U) + dx, subY(U) + dy)
+     MonAiUseSkill(Sk1mode, Skill1, 0, subX(t) + dx, subY(t) + dy)     ; around the target (0x005E65E5)
      v18 ← v18 + 1;  v14 ← 0; return
 6. if dist > 5:
      if D100() < 5 and hd < 50: Ovr(7, 100, 0);  RunNearUnit(t, 12); return
@@ -2609,7 +2610,7 @@ init (0x005E6300):  v1C ← 0                                                [C]
 8. SetModeAtUnit(4, t)
 ```
 
-- R59a. [I] The home point is parameter record kind 10, pushed with the unit's own static or dynamic path point when missing; its leash compares are signed except the two named. The raise skill is cast at most `2d + 8` times (`lea ecx,[ecx+ecx*1+0x8]`, 0x005E653E: 8/10/12 by difficulty), with a chance `v14` that grows by 3 per event and resets on a cast. The `dist` of the later tests is the local copy, halved (at least 12) after a failed run near the target. The `hd` slot is reused: `FindHostile`'s melee pointer writes it (0x005E66A0–0x005E66AC). (fn:sub_0058EEF0_AiParamsFind@0x0058EEF0, fn:sub_0058EF40_AiParamsPush@0x0058EF40, fn:sub_005DC480_AiDistToPointSized@0x005DC480, fn:sub_005DF680_MonAiRunNearUnit@0x005DF680, fn:RNG_RangeB@0x0045C3E0, fn:sub_005DF140_MonAiStepAwayXY@0x005DF140)
+- R59a. [I] The home point is parameter record kind 10, pushed with the unit's own static or dynamic path point when missing; its leash compares are signed except the two named. `hd` is **the target's** distance from home, so a target past 49 starts the run home and blocks the run near it; the two later compares are the raven's own. The raise's point is around the target too. The raise skill is cast at most `2d + 8` times (`lea ecx,[ecx+ecx*1+0x8]`, 0x005E653E: 8/10/12 by difficulty), with a chance `v14` that grows by 3 per event and resets on a cast. The `dist` of the later tests is the local copy, halved (at least 12) after a failed run near the target. The `hd` slot is reused: `FindHostile`'s melee pointer writes it (0x005E66A0–0x005E66AC). (fn:sub_0058EEF0_AiParamsFind@0x0058EEF0, fn:sub_0058EF40_AiParamsPush@0x0058EF40, fn:sub_005DC480_AiDistToPointSized@0x005DC480, fn:sub_005DF680_MonAiRunNearUnit@0x005DF680, fn:RNG_RangeB@0x0045C3E0, fn:sub_005DF140_MonAiStepAwayXY@0x005DF140)
 - R59b. [C] The init's map and the think's entry call `AiParamsFind` (0x005E6356) only: families `brinit`, `braven`, 240 cases each; no control separates them. (run:2026-10-30-ai-cat-emu-6)
 
 - R59i. [C] As data: kind 1, `init` 0x005E6300, no `alt`; 1 records (267 bloodraven); reach ·; `aip` set —; `aidel` 15/13/10; skills Nest, Quick Strike. (data:g_MonAiTable@0x0073CA18, tbl:MonStats.txt:AI, [MonAI § The index](../../../tables/MonAI.md#the-index))
