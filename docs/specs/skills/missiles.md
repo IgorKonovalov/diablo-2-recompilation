@@ -2,9 +2,9 @@
 spec: skills/missiles
 status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
-depends_on: [rng, rng/seeds, skills/dispatch, combat/overview, combat/to-hit, combat/delivery, drlg/collision, data/calc]
+depends_on: [rng, rng/seeds, skills/dispatch, combat/overview, combat/to-hit, combat/delivery, drlg/collision, data/calc, path/overview, path/search]
 consumed_by: [combat/overview, combat/delivery, drlg/collision, items/economy, rng/seeds]
-tags: {C: 51, I: 97, L: 7}
+tags: {C: 53, I: 99, L: 8}
 updated: 2026-11-04
 ---
 
@@ -80,7 +80,8 @@ Column semantics are the table docs': [Missiles](../../tables/Missiles.md),
 
 | Input | Kind | Tag |
 |---|---|---|
-| the path planner's points (`PathPlan`, path types 7 and 10) and the cells a step crosses | value oracles until `path/search` is reviewed ([plan 0054](../../plans/0054-path-search.md) Phase 3); the random walk's draws are no longer one (H1) | [I] (fn:sub_00649970_PathPlan@0x00649970, fn:sub_00648F40_PathStepCells@0x00648F40) |
+| the path planner's points (`PathPlan`, a missile's path types 4, 10 and 14) and its draws | no longer an oracle: [path/search](../path/search.md), H1 | [C] (fn:sub_00649970_PathPlan@0x00649970, run:2026-11-04-path-2) |
+| the grid a plan reads, and the cells a step crosses | a value oracle, counted: [path/overview §§ F2, F3](../path/README.md#f3-the-counted-oracle). Types 4, 10 and 14 read no cell | [I] (fn:sub_00648F40_PathStepCells@0x00648F40, fn:sub_0067A240_PathPlanRandomWalk@0x0067A240) |
 | the numbered do, hit and damage functions outside § G's table | value oracles of the checker; specified in the [catalogue](catalogue.md) §§ C–F | [I] (data:g_MissileSrvDoFuncs@0x0073C768) |
 | the result of a hit that does not miss | logged as the hit's return in run:2026-10-25-skills | [I] (fn:MISSILE_HitUnit@0x005ADF10) |
 | the room collision word | [drlg/collision](../drlg/collision.md) | [I] (fn:sub_00648EB0_PathCellCollision@0x00648EB0) |
@@ -583,8 +584,8 @@ re-seed the missile's draws are a function of the creator's value, not of the ga
 - H1. **`PathPlan` makes the steps, through the random walk, `+0x91 >> 1` of them.** `PathSetByte90` stores `min(r, 77)`
   in `+0x90` and `+0x91`. `PathSetType` and `PathSetByte90` step nothing: at `PathPlan`'s entry the seed is still the
   `Init` and the record has type 10, in all 100 cases of family `h1obs` (ADR-0021: each stops at that entry, return site
-  0x005C92EE or 0x005AC090). A path with `+0x91` of 0 or 1 draws nothing (family `rwalk`). The walk's points are
-  [path/0003 § 8](../../findings/path/0003-short-planners.md#8-pathplanrandomwalk-type-10). [C] (ADR-0015 for the walk, run:2026-11-03-path-emu-3;
+  0x005C92EE or 0x005AC090). A path with `+0x91` of 0 or 1 draws nothing (family `rwalk`). The walk, its points and its draw order are
+  [path/search § I](../path/search.md#i-the-random-walk-type-10), with a worked example at [path/overview](../path/README.md#worked-example). [C] (ADR-0015 for the walk, run:2026-11-03-path-emu-3;
   fn:sub_0067A240_PathPlanRandomWalk@0x0067A240, fn:sub_00648CF0_PathSetType@0x00648CF0,
   fn:sub_00648E70_PathSetByte90@0x00648E70, 0x00649970, run:2026-11-03-path-emu-1)
 - H1. **Why 20, 38 and 10, logged in the game.** In 654 of 654 creations of the game's own logs the seed at the exit is
@@ -604,6 +605,7 @@ re-seed the missile's draws are a function of the creator's value, not of the ga
   classes have a blank `LevRange`; a missile with a `LevRange` draws by its own level (B1). The other re-seed callbacks and do functions reach
   the same walk when they set type 10, and are not rerun. [I] (fn:sub_0059FA30_MissileCreate@0x0059FA30,
   fn:sub_00649760_PathPlanStraight@0x00649760)
+- H1. **After the plan.** A class 458 missile draws nothing more on that seed within its life: 68 watched seeds, each next write a block write with the high dword still the plan's exit value. [C] (0x00681F4F, run:2026-11-04-path, [path/overview D6](../path/README.md#d-the-17-types-planner-and-draws)) Classes 225 and 195 show the same at 22 and 3 watched seeds, short of the floor of 50, with one more each in the earlier run. [I] (0x00681F4F, run:2026-11-04-path-2)
 - H2. The callbacks are stored at the parameter block's `+0x54` and called by `MissileCreate` with the new missile
   before the damage block (B1). [I] (fn:sub_0059FA30_MissileCreate@0x0059FA30)
 - H3. The other re-seed sites of the table are not reached by run:2026-10-25-skills or run:2026-10-27-skills (no
@@ -688,6 +690,7 @@ the reading. [I] (fn:sub_005C7160_SkillDo117Firestorm@0x005C7160)
   (plan 0046): the boundary reproductions cited in §§ D, G and H.
 - [skills/experiments § run:2026-10-25-skills](../../findings/skills/experiments.md#run2026-10-25-skills),
   [§ run:2026-10-27-skills](../../findings/skills/experiments.md#run2026-10-27-skills).
+- [path/overview](../path/README.md), [path/search](../path/search.md): the planner the H1 steps run in; [path/0003 § 10](../../findings/path/0003-short-planners.md#10-missiles-h1-and-the-other-callback), [path/0004 § 5](../../findings/path/0004-per-event-reproduction.md#5-draws-on-the-missiles-seed-after-a-type-10-plan), [path/0006](../../findings/path/0006-holdout.md).
 - Tables: [Missiles](../../tables/Missiles.md), [Skills](../../tables/Skills.md).
 
 ## Open questions
@@ -701,6 +704,7 @@ the reading. [I] (fn:sub_005C7160_SkillDo117Firestorm@0x005C7160)
   beyond 1; the code reads `(VelLev · lvl) ÷ 8 + Vel` (contradicted, from the code); no run has separated them (22
   `spike2` at level 1). A `spike1` (`VelLev` 8) at level 1 would (velocity 11 against the lead's 10): carried to a
   later Blood Moor log. Also open: the slow-missiles scaling, the `SubLoop` loops and the distance refusal.
+- [L] **A missile over a bit-0 cell:** floor flag 01 "allow missiles pass" (`src:pk-walkable-flags-overview`) against D3's `c & 5`, which frees a do-function-1 missile with a `CollideType` on bit 0. One of the two is wrong for a cell with bit 0 and not bit 2; neither is shown by a run, and D3 stays `[I]`. [Entry](../../backlog/2026-11-04-architect-reverser+spec-writer-0054-p12-missile-own-cell-bit0-vs-floor.md).
 - [L] **The re-seed sites other than `0x005C9290` and `0x005AC040`** in a run (H3). ~~Which of the two callbacks' path
   calls steps the new seed~~: `PathPlan`'s random walk, H1 and H4.
 - [L] The critical chain's second and third steps in a run.

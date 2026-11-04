@@ -3,16 +3,16 @@ spec: anim/movement
 status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [anim/timing, stats/aggregate, stats/states, monsters/stats, drlg/collision]
-consumed_by: [anim/timing, combat/overview, skills/missiles]
-tags: {C: 25, I: 44, L: 9}
-updated: 2026-11-03
+consumed_by: [anim/timing, combat/overview, skills/missiles, path/overview, path/search]
+tags: {C: 26, I: 44, L: 8}
+updated: 2026-11-04
 ---
 
 # Movement: speeds, the per-frame step, the run drain and knockback
 
 ## Purpose
 
-A walking, running or knocked-back unit moves along a path whose points the planner gives (phase (5), an input
+A walking, running or knocked-back unit moves along a path whose points the planner gives ([path/search](../path/search.md), an input
 here). This page specifies how fast it moves and how far its position advances on each game frame: the path speed
 that the rate code sets from the unit's tables and stats, the step that the unit's every-frame mode event takes, the
 snap onto a path point, the collision walk across subtiles, the run's stamina drain, and knockback's distance, speed
@@ -22,7 +22,7 @@ subtiles (the high word the subtile, as in [drlg/collision](../drlg/collision.md
 ```mermaid
 flowchart LR
   rate["UNIT_AnimSetRate<br/>moving or knockback branch"] --> sp["path speed v<br/>§ A"]
-  plan["path points<br/>(planner: oracle)"] --> step
+  plan["path points<br/>(path/search)"] --> step
   sp --> step["UnitMoveStep → PathStep<br/>once per game frame § B"]
   step --> snap["snap onto the next point"]
   snap --> coll["collision walk<br/>(the test: oracle)"]
@@ -57,7 +57,7 @@ flowchart LR
 | State | Type | Source |
 |---|---|---|
 | path `+0x00`/`+0x04` (`PathMove`) | 16.16 position | the planner, then § B |
-| path `+0x24`, `+0x28`, `+0x9C` | point index, point count, the points | the planner (oracle) |
+| path `+0x24`, `+0x28`, `+0x9C` | point index, point count, the points | [path/search](../path/search.md) |
 | path `+0x6A`/`+0x6E` | i16 direction, a unit vector × 4096 | § B2 |
 | path `+0x72`/`+0x76` | the step | § B1 |
 | path `+0x7C` | i32 speed `v` | A1 |
@@ -68,7 +68,7 @@ flowchart LR
 
 | Input | How it enters | Tag |
 |---|---|---|
-| The path plan (its points, the replan and the target revalidation's planner calls, `0x00679720`) | taken as given (phase (5)) | [C] (run:2026-10-27-anim) |
+| The path plan (its points, the replan and the target revalidation's planner calls, `0x00679720`) | taken as given by the run; specified in [path/search](../path/search.md) and [path/overview § C](../path/README.md#c-pathplan) | [C] (run:2026-10-27-anim) |
 | The collision test `0x0064FF90`'s result per crossed subtile | taken as given ([drlg/collision](../drlg/collision.md)) | [C] (run:2026-10-27-anim) |
 | The AI's mode command and its velocity block; the catalogue speed writers (Charge, Leap Attack) | taken as given (plans 0052, 0046) | [I] (fn:sub_005A6380_MonModeVelocity@0x005A6380, fn:sub_005CF6B0_SkillSt31Charge@0x005CF6B0) |
 
@@ -269,7 +269,7 @@ E1. PathPlanKnockback (path type 8):                               [I] (fn:sub_0
       n: i32 ← (path.+0x90 >> 1) + 1                               ; +0x90 = 5 → n 3; 10 (base class 78) → n 6
       (dx, dy) ← the unit's subtile − the attacker's;  M ← max(|dx|, |dy|)
       point ← the unit's subtile + (n·dx ÷ M, n·dy ÷ M)            ; signed; unchanged when M = 0
-      point ← 0x00679720(point)                                    ; not read (oracle)
+      point ← PathLineFree(ctx.start, point)                       ; 0x00679720: path/search A4, its last free point when blocked
       no point when it equals the start;  else the path's one point
 ```
 
@@ -309,10 +309,13 @@ E1. PathPlanKnockback (path type 8):                               [I] (fn:sub_0
 
 ### G. Draws
 
-- G1. [I] None. The step, the snap, the collision walk, the speeds, the knockback planner's read part and the run
-  drain call no RNG function; the replan and the target revalidation reach the planner, whose draws (the random-walk
-  type among them) are phase (5)'s. A movement step is an event kind with no draw and chains on nothing.
-  (fn:sub_00650840_PathStep@0x00650840, fn:sub_00649970_PathPlan@0x00649970, fn:sub_0057F240_RunStaminaDrain@0x0057F240)
+- G1. [I] None. The step, the snap, the collision walk, the speeds, the knockback planner and the run drain call no RNG
+  function. A movement step is an event kind with no draw and chains on nothing. (fn:sub_00650840_PathStep@0x00650840,
+  fn:sub_0057F240_RunStaminaDrain@0x0057F240)
+- G1. [C] The replan and the target revalidation reach the planner, and `PathReplan`'s plans draw nothing: 836 + 889 replans
+  reproduce with the unit seed unchanged, all with a target unit at `PathPlan`'s entry. [path/overview § D](../path/README.md#d-the-17-types-planner-and-draws) has the draws per type, of
+  which only the random walk (type 10) and type 16 make any: `PathReplan` writes neither and plans any other type as it stands, which the logged replans
+  (types 5, 6, 13, 15 in the first run) don't separate. The target revalidation before the call is not compared there. (fn:sub_00650350_PathReplan@0x00650350, fn:sub_00649970_PathPlan@0x00649970, run:2026-11-04-path, run:2026-11-04-path-2)
 
 ## Outputs
 
@@ -343,6 +346,7 @@ E1. PathPlanKnockback (path type 8):                               [I] (fn:sub_0
 
 ## Evidence
 
+- Planner: [path/overview](../path/README.md), [path/search](../path/search.md).
 - Findings: [anim/0003](../../findings/anim/0003-movement-gates.md) (§§ 1–4, 8 and its run section),
   [anim/0002](../../findings/anim/0002-rates.md) (§§ 3.3–3.5 and its run section), [anim/0001](../../findings/anim/0001-modes-frames.md)
   § 9.1, [anim/leads](../../findings/anim/leads.md) (§ 10, § 12).
@@ -362,7 +366,6 @@ E1. PathPlanKnockback (path type 8):                               [I] (fn:sub_0
 
 - [L] Whether a stock source gives a moving `X` of 854 (a `Velocity`-15 monster) or 2 134 (a player) or more, where the
   step product wraps (B6).
-- [L] `0x00679720`, the knockback point's adjustment, and the planners (phase (5)).
 - [L] Whether the moving floor 25 is reached by a stock recipe (P1b-14); Charge at stat 67 ≤ 50 (P1b-15); Slows
   Target on a player (P1b-13: 13 player movement windows under a slow over the 131 logs, not a 30); a player's
   knockback length (two mode-19 starts in part 1, none in parts 2 and 3). Phase 2 parts 2 and 3 left them short or

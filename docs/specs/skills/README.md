@@ -2,10 +2,10 @@
 spec: skills/overview
 status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
-depends_on: [rng, rng/seeds, data/calc, combat/overview, stats/states, monsters/spawn, monsters/stats, drlg/collision]
+depends_on: [rng, rng/seeds, data/calc, combat/overview, stats/states, monsters/spawn, monsters/stats, drlg/collision, path/overview, path/search]
 consumed_by: [combat/overview, combat/delivery, stats/states, items/economy, monsters/stats, rng/seeds]
-tags: {C: 24, I: 25, L: 1}
-updated: 2026-11-03
+tags: {C: 25, I: 25, L: 1}
+updated: 2026-11-04
 ---
 
 # Skills and missiles: the machinery
@@ -92,7 +92,8 @@ truncate toward zero unless stated; life, mana and damage are in 1/256 points.
 | the frame on which a mode's do function runs (event code 1 or 2, `Unit+0x4E`) | a logged input until animation timing ([plan 0050](../../plans/done/0050-animation-frame-timing.md)) | [I] (fn:sub_00580460_PlrModeSkillFrame@0x00580460) |
 | a monster's choice of skill, mode and target | an input until monster AI (plan 0052) | [I] (fn:sub_005DEAD0_MonAiUseSkill@0x005DEAD0) |
 | the numbered functions outside tier A | value oracles, taking the logged exit seeds ([plan 0046](../../plans/done/0046-skills-function-catalogue.md)) | [I] (data:g_SkillDoFuncs@0x007322B0) |
-| the path planner's points and a step's cell list | value oracles until `path/search` is reviewed ([plan 0054](../../plans/0054-path-search.md) Phase 3); the random walk's draws are stated in [missiles H1](missiles.md#h-re-seed-sites) | [I] (fn:sub_00649970_PathPlan@0x00649970) |
+| the path planner's points | no longer an oracle: [path/search](../path/search.md), every type a stock caller reaches, the draws per type in [path/overview § D](../path/README.md#d-the-17-types-planner-and-draws) | [C] the planners on the live grid, 0 mismatches over the 11 types of [path/overview § F1](../path/README.md#f1-the-planners-take-the-live-grid) (fn:sub_00649970_PathPlan@0x00649970, run:2026-11-04-path-2) |
+| the live grid at a plan or a step, and a step's cell list | a value oracle, counted: a prediction of the cells is wrong in 11 of 15 663 plans, and the grid is the result of its operations in order ([path/overview §§ F2, F3](../path/README.md#f3-the-counted-oracle), [drlg/collision § F7](../drlg/collision.md#f7-no-bit-is-reference-counted-the-grid-is-the-result-of-its-operations-in-order)) | [I] (fn:sub_00648F40_PathStepCells@0x00648F40, run:2026-11-04-path-2) |
 | the unit order of the area helpers, the pet chosen for removal | logged values | [I] (fn:SKILLS_ForUnitsInRange@0x0056B7E0) |
 | a unit's final stats | [stats/aggregate](../stats/aggregate.md) | [I] (fn:SKILLS_EvalCalc@0x00646CA0) |
 
