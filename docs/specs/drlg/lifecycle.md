@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, sim/frame, drlg/overview, drlg/room-tiles, monsters/spawn, monsters/special, monsters/stats, objects, save/d2s]
 consumed_by: [drlg/room-tiles, drlg/preset, drlg/collision, monsters/spawn, monsters/special, monsters/stats, objects, chain, monsters/ai/overview, monsters/ai/machinery, sim/frame]
-tags: {C: 103, I: 77, L: 9}
+tags: {C: 103, I: 78, L: 9}
 updated: 2026-11-04
 ---
 
@@ -108,9 +108,10 @@ stateDiagram-v2
 
 ### A. The frame
 
-The whole frame, its passes named and its order evidence stated, is [sim/frame § B](../sim/frame.md#b-gametick). This section keeps the rooms' part of it:
-`NewRoomsUpdate` (rank 3, § D), the unit events, where players move (ranks 4 to 13), `ClientsRoomSync` (rank 14, § B, § C), `RoomsDeactivate` at `frame mod 12 = 0`
-(rank 18, § E), the level-unload tick at `frame mod 11 = 0` (rank 19, § E5) and the sweep tick every frame (rank 20, below).
+The whole frame, its passes named and its order evidence stated, is [sim/frame § B](../sim/frame.md#b-gametick). This section keeps the rooms' part of it.
+
+- [I] `NewRoomsUpdate` (rank 3, § D), the unit events, where players move (ranks 4 to 13), `ClientsRoomSync` (rank 14, § B, § C), `RoomsDeactivate` at `frame mod 12 = 0`
+(rank 18, § E), the level-unload tick at `frame mod 11 = 0` (rank 19, § E5) and the sweep tick every frame (rank 20, below). (fn:sub_0052D870_GameTick@0x0052D870, 0x0052D8EB, 0x0052D938)
 
 - [I] The remainders are signed `%` on the incremented frame. A room activated in frame N by the client sync is
 populated or restored by `NewRoomsUpdate` at the start of frame N+1. (fn:sub_0052D870_GameTick@0x0052D870,

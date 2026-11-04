@@ -1,10 +1,10 @@
 ---
 spec: sim/frame
-status: draft
+status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, anim/timing, drlg/lifecycle, monsters/ai/overview, skills/dispatch, skills/missiles, combat/overview, combat/to-hit, items/tc, items/quality, items/economy, objects, quests]
 consumed_by: [drlg/lifecycle, chain]
-tags: {C: 62, I: 123, L: 3}
+tags: {C: 62, I: 127, L: 5}
 updated: 2026-11-04
 ---
 
@@ -80,10 +80,10 @@ Each is a constant of the code; none is a table a rule could replace, and the on
 | frames per second | 25 in the image; the setter `SetServerFps` has no reference | data:g_ServerFps@0x00731014, fn:sub_0052DF80_SetServerFps@0x0052DF80 | [I] |
 | frame interval | `1000 ÷ 25` = 40 ms, computed by a static initializer at 0x006CAF10 | data:g_ServerFrameInterval@0x00883D60 | [I] |
 | game slots | 1 024 dwords | data:g_GameSlots@0x00882D38 | [I] |
-| event kinds | below 15, signed | 0x005416B7 | [C] (run:2026-10-30-frame-emu-2) |
-| slot ring | 64 per list; slot = `frame % 64`, signed C remainder | 0x005414EC, fn:sub_005416B0_EventQueueAt@0x005416B0 | [C] (run:2026-10-30-frame-emu-2) |
-| event lists | 5 | struct:EventCtl+0xA04 | [C] (run:2026-10-30-frame-emu-2) |
-| unit type → list | types 0..5: `0, 1, 3, 2, 4, −1`, read by `EventQueueAt` and `EventQueueEveryFrame` | data:g_UnitTypeEventList@0x006E0B9C | [I]; the five lists' use [C] (run:2026-10-30-frame-emu-2) |
+| event kinds | below 15, signed | 0x005416B7 | [C] code's map (run:2026-10-30-frame-emu-2) |
+| slot ring | 64 per list; slot = `frame % 64`, signed C remainder | 0x005414EC, fn:sub_005416B0_EventQueueAt@0x005416B0 | [C] code's map (run:2026-10-30-frame-emu-2) |
+| event lists | 5 | struct:EventCtl+0xA04 | [C] code's map (run:2026-10-30-frame-emu-2) |
+| unit type → list | types 0..5: `0, 1, 3, 2, 4, −1`, read by `EventQueueAt` and `EventQueueEveryFrame` | data:g_UnitTypeEventList@0x006E0B9C | [I]; the five lists' use [C] code's map (run:2026-10-30-frame-emu-2) |
 | record block | 600 records of 0x30 bytes, 0x7088 bytes in all | fn:sub_00540BB0_EventBlockNew@0x00540BB0 | [I] |
 | quest timers period | `frame % 20 = 0` | 0x0052D920 | [C] (run:2026-11-04-frame2) |
 | release pass period | `frame % 12 = 0` | 0x0052D938 | [C] (run:2026-11-04-frame2, run:2026-10-17-lifecycle) |
@@ -110,7 +110,7 @@ A1. HostLoopPass():                                               [I] (all of A1
 
 A2. ServerGamesFrame(cap: u32) → u32:                             [I] (all of A2) (0x0052FC38–0x0052FD35)
       now: u32 ← timeGetTime() & 0x7FFFFFFF
-      on first use: last ← now
+      if last = 0: last ← now                                     ; a word the store below keeps non-zero after first use
       if (i32)(now − last) < interval: return 0                   ; no game ticks
       debt: u32 ← now − last − interval
       if cap ≠ 0 and debt ≥ interval (unsigned): debt ← interval
@@ -119,8 +119,7 @@ A2. ServerGamesFrame(cap: u32) → u32:                             [I] (all of 
         id ← g_GameSlots[slot]
         if id ≠ 0 and id ≠ −1:
           game ← GameLockById(id)                                 ; game+0x18, per-game lock
-          GameTick(game)
-          leave game+0x18
+          if game ≠ 0: GameTick(game);  leave game+0x18           ; no such game: the next slot
       return the performance-counter ticks spent if a game ticked, else 0
 ```
 
@@ -174,7 +173,7 @@ break it. (0x0052D87B, 0x0044F136–0x0044F162, [frame/0005 § 1](../../findings
 - B4. [C] **No order mismatch over the kept corpus.** Over the 331 frame-stamped corpus logs, 383 349 frames hold two or
   more events placed by a closed set; 3 713 293 placed events fall in rank order in every frame, 0 mismatches and 0
   nesting conflicts. **What tests it is less than that:** 17 254 consecutive pairs separate the order (16 935 of the anim
-  logger, 319 of the skills logger, none of any other); the other placed frames agree trivially. Four wrong orders fail:
+  logger, 319 of the skills logger, none of any other), 9 029 of them without anim's logged phase, each a prediction of both events' passes, where the phase is the logger's observation of the runner; the other placed frames agree trivially. Four wrong orders fail:
   monsters' walks before players' 42 148 events in 19 242 frames, slot before every-frame 9 608 in 7 924, missiles after
   items 8 885 in 729, the drain before the tick 95 in 95. Scope: where a set exists. 118 340 of the 501 689 frames with
   two or more events hold fewer than two with a closed set and cannot fail. (run:2026-11-03-frame-order-2,
@@ -275,19 +274,19 @@ D2. Each runner (head, mode):                                     [C] (all of D2
   another record. It is not the order in a game, which D5 and D6 give. (run:2026-10-30-frame-emu-2,
   fn:sub_00540F60_PlayerEventsRun@0x00540F60, fn:sub_00541160_ObjEventsRun@0x00541160,
   fn:sub_00541240_MissileEventsRun@0x00541240, fn:sub_00541320_ItemEventsRun@0x00541320)
-- D5. [C] **In the game's own runs, rank order among ranks 4, 7, 8 and 9 only.** Over 27 372 `UE0` of the five counted
+- D5. [C] **In the counted windows, rank order among ranks 4, 7, 8 and 9 only.** Over 27 372 `UE0` of the five counted
   windows (§ K1), 1 844 adjacent walks of different ranks: 4 → 7 324, 7 → 8 1 129, 7 → 9 184, 8 → 9 207, none inverted.
   Scope: a Blood Moor pack and the Den of Evil, one player, Nova, oracles as § K3 names them.
   (run:2026-11-04-frame2, [frame/0007](../../findings/frame/0007-frame-batch.md#answer-summary), fn:sub_005414D0_GameRunUnitEvents@0x005414D0)
 - D6. [I] **Ranks 5, 6 and 10 to 13 hold no event in any counted window,** so no window tests a missile slot walk, a
-  player every-frame walk or an object or item walk. Their places are the read order D1, with D4's map under it.
+  player every-frame walk or an object or item walk. Their places are the read order D1, with D4's map under it; D7's corpus pairs put one object kind's event after two slot walks and give no object walk a rank.
   (0x005414FD, 0x0054150D, 0x0054154C–0x0054157E, run:2026-11-04-frame2)
 - D7. [C] **The kept corpus adds pairs by logger phase and call site** (frame/0004): players' slot walk before monsters'
   (3 007 `PDS` → `MDS`, each placed by its dispatch site 0x00540FC4, 0x005410C4); monsters' every-frame walk before their
   slot walk (4 637 logged in phase 5 then `MDS`); missiles' walks before a player or monster event and before the drain
-  (`MF0` → `SDO0` 6, `MF0` → `CU0` 81); an object event after the players' and monsters' slot walks (4 pairs). These place
-  a walk against a neighbour; they do not separate the objects' every-frame from their slot walk, the missiles' likewise,
-  or anything of the items' walks. (run:2026-11-03-frame-order, [frame/0004 § 2](../../findings/frame/0004-order-on-kept-logs.md#2-the-order-of-the-passes-and-walks))
+  (`MF0` → `SDO0` 6, `MF0` → `CU0` 81); one object event kind, `ObjEvOperateEnd` (`OEV`, placed by its reach from `g_ObjEventFns[1]`), after the players' slot walk (3 pairs) and the monsters' (1). These place
+  a walk against a neighbour. They do not separate the objects' every-frame from their slot walk, the missiles' likewise,
+  or anything of the items' walks, and they rank no object walk: D6 keeps that. (run:2026-11-03-frame-order, fn:sub_00581490_ObjEvOperateEnd@0x00581490, [frame/0004 § 2](../../findings/frame/0004-order-on-kept-logs.md#2-the-order-of-the-passes-and-walks))
 - D8. [I] For a reimplementer: a unit's events in one frame run in the order (its type's place in the five) × (every-frame
   before timed) × (the list's order, § E). Two units of one type interleave by their records' places in the shared list,
   not by unit. What a unit is or where it stands plays no part. (fn:sub_005414D0_GameRunUnitEvents@0x005414D0,
@@ -363,7 +362,7 @@ E3. EventFree(rec):                                               [C] (all of E3
   32 records). The record goes at the **head** of the unit's chain (`Unit+0xDC`, next `+0x24`, prev `+0x28`), with `unit`,
   `guid` (−1 with no unit) and `unitType` (6 with no unit). (fn:sub_00540C30_EventRecordTake@0x00540C30,
   fn:sub_00540DF0_EventRecordAlloc@0x00540DF0, 0x00540C5B–0x00540C73)
-- E3b. [C] **Cancel and free-all** (`cancel`, 150 cases): `UNIT_CancelEvents(game, unit, kind, a)` frees, in chain order
+- E3b. [C] **Cancel and free-all, the code's map** (ADR-0015; `cancel`, 150 cases): `UNIT_CancelEvents(game, unit, kind, a)` frees, in chain order
   (newest first), each record whose kind byte equals `kind` and whose `a` equals `a` when `a` ≠ 0; `UnitCancelEventsByCb`
   the same on the callback, with no zero shortcut; `UnitFreeAllEvents` frees every record, clears its `unit` field and
   sets the chain head to 0. Thin but sufficient, as the finding says: `a` compared even when 0 separates 10, a callback of
@@ -379,11 +378,11 @@ E3. EventFree(rec):                                               [C] (all of E3
   being walked or one already walked, it first runs next frame. (fn:sub_005416B0_EventQueueAt@0x005416B0, 0x005414EC–0x00541589)
 - E5a. [C] That every-frame half, for **players and monsters**: 658 monster starts queued during the missile or player
   walks ran in that frame; 2 819 monster starts queued in or after the monster walks and all 6 205 player starts ran in
-  the next (9 682 starts, 0 mismatched). Objects', items' and missiles' cases stay `[I]`: no logged start.
+  the next (9 682 starts, 0 mismatched). Objects', items' and missiles' cases stay `[I]`: that log has no start of theirs, and the windows' `QF` lines for missiles are counted for order (E7), not for this.
   (run:2026-10-27-anim, fn:SUNIT_ModeEveryFrame@0x00553F00, 0x0054150D)
 - E5b. [C] **Cross-type queues the kept logs hold:** 926 monster every-frame records queued in an earlier walk than the
   monsters' every-frame walk (79 in the missiles' every-frame walk, 847 in the players' slot walk); players none; no
-  every-frame queue line for objects, items or missiles in any kept log. The five counted windows hold 0 cross-type
+  every-frame queue line for objects, items or missiles in the 331 corpus logs (the windows log `QF`, E7). The five counted windows hold 0 cross-type
   every-frame runs. (run:2026-11-03-frame-order, run:2026-11-04-frame2, fn:SUNIT_ModeEveryFrame@0x00553F00)
 - E6. [I] **Freed during a walk.** A record freed is never run after it: the free moves the walker's saved next on. A unit
   freed during a pass loses all its records at once (`UnitFreeAllEvents`, from each type's free). A unit moved between rooms
@@ -518,9 +517,9 @@ G3. UnitMarkUpdated(unit):                                        [C] (this func
       for a in 0 ..< 5 whose act's dirty word is set:
         for each room from ActRoomsHead along +0x7C:
           for each unit of room+0x1C along +0xE0: UnitFrameReset(unit)     ; newest marked first
-          RoomUpdatedClear(room)                                  ; [C] run:2026-10-30-frame-emu, family clear
+          RoomUpdatedClear(room)                                  ; [C] code's map, family clear (run:2026-10-30-frame-emu): every listed unit loses bit 0x2000 and its +0xE0 link, the head becomes 0, the act's word untouched
         dirty word ← 0
-      0x0053FAE0()
+      0x0053FAE0(game)                                            ; clears bit 0x400 of [[game+0x1D28]+0x08] when game+0x1D28 is set
 ```
 
 - G3. [I] Within a room the reset visits units in the reverse of the order they were first marked this frame, and rooms in
@@ -528,6 +527,9 @@ G3. UnitMarkUpdated(unit):                                        [C] (this func
   changes room is visited in the new room only. Flag 4 of the room is the client copy's bit, so only server rooms list their
   units. The 78 marking sites are not each read; the order holds for whatever marks a unit. (0x0053B044, 0x0064C42D–0x0064C432,
   fn:sub_00553220_UnitFrameReset@0x00553220, fn:sub_0064C160_RoomUpdatedClear@0x0064C160, fn:sub_0064C1B0_RoomUpdatedUnlink@0x0064C1B0)
+- G3a. [I] `UnitFrameReset` is the per-frame flag clear: bits of `+0xC4` and `+0xC8` for every unit (0x0055325A, 0x00553269, 0x00553273), the inventory pass `0x00597B00`, and clears per unit type;
+  an item's bit 13 is [save/d2s](../save/d2s.md#item-flag-bit-13-0x2000), the route to `UnitFree` § J's rank 15. No spec names each bit (*Open questions*). `UnitMarkUpdated` on a null unit is a fatal line.
+  (fn:sub_00553220_UnitFrameReset@0x00553220, 0x0064C047, [frame/0001 § 3.3](../../findings/frame/0001-tick-and-messages.md#33-actunitsframereset-and-the-updated-unit-list))
 - G4. [I] **Removal notes.** `RoomUnitOp` pushes a 12-byte note `{type, guid, next}` on `room+0x18` and sets the act's `+0x58`.
   `ClientRoomSync` sends each note of the client's near rooms as packet 0x0A, missiles skipped, the client's own player
   excepted. `ActsRoomRemovalsClear` then frees every room's notes of each flagged act. So a removal noted in frame N is sent
@@ -590,7 +592,7 @@ H2. NewRoomsUpdate(game):                                         [I] (all of H2
 
 ```
 H3. ClientsRoomSync(game):                                        [I] (all of H3) (0x0052D453–0x0052D4D7)
-      autosave: bool ← (game.frame & 0x80001FFF) = 0
+      autosave: bool ← game.frame % 8192 = 0                      ; signed: the and with 0x80001FFF and its sign fix, 0x0052D45C–0x0052D470
       a fatal test (0x0053FCA0);  flag ← 0
       AutosaveTick(game, &flag)
       if autosave and flag = 0: SaveGameClients(...)              ; 0x0052D4BD
@@ -641,6 +643,7 @@ H3. ClientsRoomSync(game):                                        [I] (all of H3
 
 ```
 I1. QUESTS_TimersRun(game):                                       [C] (all of I1) code's map, given IsBadCodePtr returned 0 (ADR-0015, ADR-0021, ADR-0029 (b)) (fn:QUESTS_TimersRun@0x00543E10, run:2026-10-30-frame-emu-3, run:2026-11-04-lock-scan)
+      if game+0x10F4 = 0: return                                  ; [I] (0x00543E17–0x00543E22) no quest control
       ctl.tick: u32 ← ctl.tick + 1
       if ctl.tick = 0xFFFFFFFF: for each timer: t.due ← −1 − t.due
       ctl.running ← 1
@@ -796,7 +799,7 @@ K2. For each window, reader rev 2 (tools/frame_xs.py) keeps each chained seed's 
 #### K3. A large zero can test little
 
 - K3a. [I] **Most events move nothing.** Of the 27 372 `UE0`, 27 133 (99.1%) moved neither the game seed nor their own, 211 moved their own,
-  and **only 43 moved the game seed** (the player's skill do 26, a missile's event 15, a monster's every-frame event 2). So the 25 757 chained
+  and **only 43 moved the game seed** (the player's skill do 26, a missile's event 15, a monster's every-frame event 2); 15 did both, so 239 moved either. So the 25 757 chained
   events mostly say that no seed moved unlogged, and say little about any draw's value. Per window 0 to 25 entries had a seed that moved,
   61 in all, against 53 420 that had not. (run:2026-11-04-frame2)
 - K3b. [I] **A step on no chained seed is not tested at all:** 58 156 of the 67 441 `XS` lines: 52 629 between the ticks at no client row, 5 319 in the tick with
@@ -827,8 +830,8 @@ K2. For each window, reader rev 2 (tools/frame_xs.py) keeps each chained seed's 
 |---|---|---:|---|---|
 | kill | `TC_ResolveDrops` at 0x0055AA09; `ITEMS_DropRollQuality` at 0x0055879F, 0x00558822, 0x005588AA, 0x0055891A, 0x0055894F, 0x00558974 | 107 | [items/tc § D](../items/tc.md#d-the-resolver--tc_resolvedrops), [items/quality](../items/quality.md) | [I] (fn:TC_ResolveDrops@0x0055A6D0, fn:ITEMS_DropRollQuality@0x00558640, run:2026-11-04-frame2) |
 | room | `RoomWandererTick`, `MonSpawnTry`, `SpawnPosPick`, `MonRegionPickClass`, `SpawnTypeRoll`, `RoomObjectsPopulate`, the object placement and `OBJPOP_` handlers | 172 | [lifecycle § I](../drlg/lifecycle.md#i-the-wanderer-tick), [monsters/spawn § H](../monsters/spawn.md#h-placement-spawnpospick-and-monspawntry), [objects § E](../objects/README.md#e-the-populatefn-handlers), [§ F](../objects/README.md#f-placement-and-the-position-tests) | [I] (fn:sub_0054F060_RoomWandererTick@0x0054F060, fn:sub_005B2A00_MonSpawnTry@0x005B2A00, run:2026-11-04-frame2) |
-| owner | `sub_005A5560_MonCritDouble` at 0x005A55BA with a missile event open, 4 hits; `COMBAT_ToHitRoll` at 0x0057DB38 stepped 9 times, each with the monster's own event open | 3 | [combat/to-hit](../combat/to-hit.md), [combat/overview](../combat/README.md) | [I] (fn:COMBAT_ToHitRoll@0x0057D9B0, fn:sub_005A5560_MonCritDouble@0x005A5560, run:2026-11-04-frame2) |
-| defender | `COMBAT_DefenceRoll`, `COMBAT_ApplyCold`, `COMBAT_DurabilityLoss`, `ITEMS_DurabilityLossRoll`, `GetHitRoll` sites: **none hit** | 0 | [combat/to-hit § C](../combat/to-hit.md#c-the-hit-test-and-the-defence-rolls), [items/economy § H](../items/economy.md#h-wear-durability-quantity-charges-replenish) | [I] (fn:COMBAT_DefenceRoll@0x0057DFB0, fn:COMBAT_ApplyCold@0x0057AF80, fn:COMBAT_DurabilityLoss@0x0057D3D0, fn:ITEMS_DurabilityLossRoll@0x00559E30, run:2026-11-04-frame2) |
+| owner | `sub_005A5560_MonCritDouble` at 0x005A55BA with a missile event open, 4 hits; `COMBAT_ToHitRoll` at 0x0057DB38 stepped 9 times, each with the monster's own event open; `COMBAT_ApplyStun` none | 3 | [combat/to-hit](../combat/to-hit.md), [combat/overview](../combat/README.md) | [I] (fn:COMBAT_ToHitRoll@0x0057D9B0, fn:sub_005A5560_MonCritDouble@0x005A5560, run:2026-11-04-frame2) |
+| defender | `COMBAT_DefenceRoll`, `COMBAT_ApplyCold`, `COMBAT_DurabilityLoss`, `ITEMS_DurabilityLossRoll`, `GetHitRoll`, `HitClassPick`, `COMBAT_ApplyDamage` sites: **none hit** | 0 | [combat/to-hit § C](../combat/to-hit.md#c-the-hit-test-and-the-defence-rolls), [items/economy § H](../items/economy.md#h-wear-durability-quantity-charges-replenish) | [I] (fn:COMBAT_DefenceRoll@0x0057DFB0, fn:COMBAT_ApplyCold@0x0057AF80, fn:COMBAT_DurabilityLoss@0x0057D3D0, fn:ITEMS_DurabilityLossRoll@0x00559E30, run:2026-11-04-frame2) |
 | `killev` | `UModPartyDeadDeath` sites: **none hit** | 0 | [items/quality](../items/quality.md) | [I] (fn:sub_005A2D10_UModPartyDeadDeath@0x005A2D10, run:2026-11-04-frame2) |
 
 - K4a. [I] **A trigger matches event type and site, not the unit, for owner and defender:** the logger does not log the unit, so they
@@ -847,8 +850,8 @@ K2. For each window, reader rev 2 (tools/frame_xs.py) keeps each chained seed's 
 
 - K5. [I] **2 pairs in the counted windows,** both handed and in pass order, 0 reversed: frame 1961 of 5503 #1 and frame 2095 of 5507 #1 (the worked example
   has the first). Over every frame2, pilot and development log there are **8**: missile then player 3, missile then missile 4, player then monster 1. A
-  pair is two top-level events of different units that each moved the game seed in one frame. **The plan's floor is 20, and that floor is an owner decision
-  still open;** this spec writes the count, and a later lane may add windows. No `[C]` here rests on a pair: the rule whose draw comes first follows from
+  pair is two top-level events of different units that each moved the game seed in one frame. **The plan's floor of 20 became the pairs measured, by the owner's decision of 2026-11-04 (option A),**
+  so this count, at this tag, is the result and not a short; `lane/p55d`'s windows update the count. No `[C]` here rests on a pair: the rule whose draw comes first follows from
   every game-seed step being logged inside an open event and the events running in the tested order. What is thin is variety among drawing events: § K3a's 43.
   (run:2026-11-04-frame2, [plan 0055](../../plans/0055-server-frame.md))
 
@@ -895,7 +898,7 @@ K2. For each window, reader rev 2 (tools/frame_xs.py) keeps each chained seed's 
 ## Worked example
 
 Frame 1961 of window 5503 #1, the first counted shared-seed pair, a test vector for the queue, the game-seed hand-off and a missile's seed. Source: run:2026-11-04-frame2,
-`2026-11-04-frame2-s1-5503-maze1.log`. Seeds are `low:high`. Step is [rng](../rng/README.md)'s. Values below are as logged, and each step is the LCG of the one before.
+`2026-11-04-frame2-s1-5503-maze1.log`, printed and checked by `python3 -I tools/frame_example.py <that log>` (kept output `check-2026-11-04-frame2-example.txt`: 66 steps from `FT0` to `FT1`, 64 of 64 first readings, 0 mismatches). Seeds are `low:high`. Step is [rng](../rng/README.md)'s. Values below are as logged, and each step is the LCG of the one before.
 
 ```mermaid
 sequenceDiagram
@@ -926,9 +929,10 @@ sequenceDiagram
 ## Reimplementation notes
 
 - [I] **The stamp a packet reads is the frame before the one it acts in.** Handlers run with `Game+0xA8 = N` after tick N, and their effect is seen by tick N + 1's passes. (0x0052D87B, fn:sub_0052CFE0_SrvDrainMessages@0x0052CFE0)
-- [C] **`EventQueueAt` with frame −1 drops its callback,** and a frame at or below the current one is raised rather than refused. (0x005416D5, run:2026-10-30-frame-emu-2)
-- [C] **A freed record returns to the first block's free list, last freed first,** whichever block it came from. Allocation order, not time, then decides which record a later queue reuses; that is invisible unless a reimplementation exposes record addresses. (fn:sub_00540CD0_EventFree@0x00540CD0, run:2026-10-30-frame-emu-2)
-- [C] **A slot holds records of later multiples of 64:** a walk passes over a record whose frame is not the current one and keeps it. A record due at `F` is passed over `(F − queued frame − 1) ÷ 64` times. (fn:sub_00541060_MonEventsRun@0x00541060, run:2026-10-30-frame-emu-2)
+- [C] **The code's map (ADR-0015): `EventQueueAt` with frame −1 drops its callback,** and a frame at or below the current one is raised rather than refused. (0x005416D5, run:2026-10-30-frame-emu-2)
+- [C] **The code's map (ADR-0015): a freed record returns to the first block's free list, last freed first,** whichever block it came from. Allocation order, not time, then decides which record a later queue reuses; that is invisible unless a reimplementation exposes record addresses. (fn:sub_00540CD0_EventFree@0x00540CD0, run:2026-10-30-frame-emu-2)
+- [C] **The code's map (ADR-0015): a slot holds records of later multiples of 64:** a walk passes over a record whose frame is not the current one and keeps it. (fn:sub_00541060_MonEventsRun@0x00541060, run:2026-10-30-frame-emu-2)
+- [I] So a record due at `F`, queued in frame `q`, is passed over `(F − q − 1) ÷ 64` times in the frames after `q`, and once more in frame `q` itself when `F ≡ q (mod 64)` and that frame's walk of its list reaches it. (fn:sub_005416B0_EventQueueAt@0x005416B0, 0x005414EC–0x00541589)
 - [I] **The new-rooms flag is cleared after the walk,** so a room created during its own act's walk waits (§ H2c): do not "fix" this by re-walking. (0x0052D21D)
 - [I] **The wanderer tick runs on every room of a walked act,** not only on new ones; a frame that creates one room steps every room seed of its act once. (0x0052D1C4)
 - [I] **The AI has two entries:** at a mode end it runs inside that mode-end event, so its draws come at that event's place in the frame and not at the kind-2 record's ([monsters/ai](../monsters/ai/README.md#reimplementation-notes)). (fn:sub_005B1740_MonAiEvent@0x005B1740)
@@ -944,9 +948,9 @@ sequenceDiagram
 
 ## Open questions
 
-- **The 20-pair floor.** With the owner: plan 0055's log of 2026-11-04 gives options A to D. A later lane may add windows, the pack's second, Corpsefire and a defender case; any of those updates § K's counts without changing a statement above it.
-- **The act clock's values and its scale.** The tables' values ([backlog](../../backlog/2026-11-04-spec-writer-archivist-act-clock-tables.md)) and the server's scale `k` and flag, set at act load (`0x0061C240`, `0x0061C180`), and so how often the clock pass sends 0x53 ([backlog](../../backlog/2026-11-04-spec-writer-reverser-act-clock-scale.md)). Whether a clock change can change a usable item and so run `AuraSelect` is not read either: a window across a 0x53 packet settles it.
-- **Not read, each named in its finding:** the object handlers left as addresses, which unit type each queue site is for, `A5Q3_TownReturn`'s caller and the four unreferenced `UnitRoomUnlink` sites, the eleventh `ActRoomsHead` call at 0x0053B0BF, a dead mercenary's way out of its pet list, the 16 game-code indirect calls of the room sync's graph, the registrars behind frame/0005 § 7's 54 functions, whether a logged event of a universal kind is the server's or the client's.
+- [I] **The 20-pair floor is decided, and no longer open.** The owner ruled on 2026-11-04, option A of [plan 0055's log](../../plans/0055-server-frame.md): the floor becomes the pairs measured, stated as § K5 states them. `lane/p55d` is adding, in a kept run, the pack's second window, a Corpsefire window and a standing-player window for the defender; it is not merged, and when it lands § K's counts take a small update. (run:2026-11-04-frame2)
+- [L] **The act clock's values and its scale.** The tables' values ([backlog](../../backlog/2026-11-04-spec-writer-archivist-act-clock-tables.md)) and the server's scale `k` and flag, set at act load (`0x0061C240`, `0x0061C180`), and so how often the clock pass sends 0x53 ([backlog](../../backlog/2026-11-04-spec-writer-reverser-act-clock-scale.md)). Whether a clock change can change a usable item and so run `AuraSelect` is not read either: a window across a 0x53 packet settles it.
+- [L] **Not read, each named in its finding:** the bits `UnitFrameReset` clears, by name, and which item has item flag 1 at the reset; `ClientRoomSync`'s calls under unit `+0xC8` bit 21 and what `0x0053FC20` does under `[[game+0x1D28]+0x08]` bit 0x400; the object handlers left as addresses, which unit type each queue site is for, `A5Q3_TownReturn`'s caller and the four unreferenced `UnitRoomUnlink` sites, the eleventh `ActRoomsHead` call at 0x0053B0BF, a dead mercenary's way out of its pet list, the 16 game-code indirect calls of the room sync's graph, the registrars behind frame/0005 § 7's 54 functions, whether a logged event of a universal kind is the server's or the client's.
 - [L] **Client function 0x00473090,** active in some outdoor sessions and no Den window, fills records of the list at `0x007A8A04`+0x11C with five draws per call, beside `sub_00473910_WeatherTick`. That reads as rain particles, with no code read to say so. No spec depends on it; it is outside the server frame.
 - [L] **The act's room-create callback `+0x4C`:** the client's `DUNGEON_ActCreate` call (0x0044E13D) passes two code pointers, 0x00459150 and 0x004591A0, as its last two arguments, where the server's (0x0053ACA0) passes 0; that `+0x4C` is one of them, so 0 on the server, is a lead.
 - [L] **Sound:** every window ran with `-ns`; no figure here is known to depend on it, and none was run with sound.

@@ -110,7 +110,7 @@ objects, then items; for each type first its every-frame events (newest first) a
 (oldest first). An every-frame event queued in a frame runs in that frame only when it is queued before its type's
 list is walked; otherwise it runs in the next one. So a walking unit's first step sometimes comes in the frame it
 starts and sometimes a frame later ([timing § H](../specs/anim/timing.md#h-the-event-queue-and-the-frame-order)).
-The first-run rule was confirmed in the run; that a type's every-frame events run before its slot events of the same frame is read from the code.
+The first-run rule was confirmed in the run; that a type's every-frame events run before its slot events of the same frame was seen for monsters in the logged runs and is read from the code for the other types.
 
 ## The rate
 

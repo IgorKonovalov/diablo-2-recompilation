@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, stats/aggregate, stats/states, monsters/stats, skills/dispatch, combat/overview, combat/delivery, objects]
 consumed_by: [anim/movement, skills/dispatch, skills/missiles, combat/overview, combat/delivery, objects, sim/frame]
-tags: {C: 64, I: 134, L: 22}
+tags: {C: 65, I: 134, L: 22}
 updated: 2026-11-04
 ---
 
@@ -439,6 +439,7 @@ flowchart LR
   every-frame list (newest first) and then the current frame's slot (oldest first, only records whose frame equals
   the current one, then freed), so a unit's every-frame event runs before its slot events of that frame; the frame around it, and how far windows test this order, are
   [sim/frame § D and § K](../sim/frame.md#d-the-unit-events-the-control-the-pass-the-runners). (fn:sub_005414D0_GameRunUnitEvents@0x005414D0, 0x005414EE–0x00541589)
+- H2. [C] **Monsters' every-frame walk before their slot walk, in the game's own runs:** 4 637 logged pairs in the kept corpus and 207 adjacent walks in the counted windows, none inverted; the other types' stay the reading above. ([sim/frame D5 and D7](../sim/frame.md#d-the-unit-events-the-control-the-pass-the-runners), run:2026-11-03-frame-order, run:2026-11-04-frame2, fn:sub_005414D0_GameRunUnitEvents@0x005414D0)
 - H2. [C] **The first run of an every-frame event**: in the frame it is queued when queued before its type's
   every-frame list is walked (the runner's phase below 3 for players, below 5 for monsters), else in the next frame
   (9 682 starts; every player start ran next-frame). So the first step of a moving mode and the first knockback
