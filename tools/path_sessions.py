@@ -96,6 +96,24 @@ CASES.update({
     "k-sor-glacial": ("normal", "CombatSor", [("pilot", AS.stage("5,5", 130)[0][0], 280)], "Glacial Trail (Act 5 outdoor), Nova"),
     "k-necro": ("normal", "AiNec", AS.CASES["a1-necro"][1], "Jail Level 1, Necromancer with golem and skeletons (pets: type 1)"),
 })
+# the second kept batch: the types the first batch left short (2: Scarab and the River of Flame; 14: Blessed Hammer without the probe)
+CASES.update({
+    "k-sor-oasis-2": ("normal", "CombatSor", [("pilot", AS.stage("2,5", 260)[0][0], 410)], "Far Oasis, Nova, longer: Scarab (type 2 tests)"),
+    "k-sor-oasis-3": ("normal", "CombatSor", [("pilot", AS.stage("2,5", 260)[0][0], 410)], "Far Oasis again, Nova, longer"),
+    "k-sor-river-2": ("normal", "CombatSor", [("pilot", AS.stage("4,3", 300)[0][0], 450)], "River of Flame, Nova, longer (AI row 73)"),
+    "k-pal-stony-2": ("normal", "PathPal", [wp("1,3"), ("pilot", CAST(PAL_KEYS, 40, walk=True), 600)], "Stony Field, Paladin: Blessed Hammer, natural inputs"),
+    "k-pal-jail-2": ("normal", "PathPal", [wp("1,7"), ("pilot", CAST(PAL_KEYS, 40, walk=True), 600)], "Jail Level 1, Paladin: Blessed Hammer, natural inputs"),
+    "k-pal-stony-3": ("normal", "PathPal", [wp("1,3"), ("pilot", CAST(PAL_KEYS, 40, walk=True), 600)], "Stony Field, Paladin, natural inputs again"),
+})
+# the third batch (logger rev 4): the ground items in the unit list and the watchpoint control; the same characters and stages
+CASES.update({
+    "k4-bar-stony": ("normal", "PathBar", [wp("1,3"), ("pilot", CAST(BAR_KEYS, 40, walk=True), 600)], "Stony Field, Barbarian, items in the unit list",
+                     {"PATH_ITEMS": "1", "PATH_CHAIN_CTL": "40"}),
+    "k4-sor-oasis": ("normal", "CombatSor", [("pilot", AS.stage("2,5", 130)[0][0], 280)], "Far Oasis, Nova, items in the unit list",
+                     {"PATH_ITEMS": "1", "PATH_CHAIN_CTL": "40"}),
+    "k4-dru-stony": ("normal", "SkillsDru", [wp("1,3"), ("pilot", CAST(["F1", "F2"], 40, walk=True), 600)], "Stony Field, Druid: seed watchpoints and their control",
+                     {"PATH_ITEMS": "1", "PATH_CHAIN": "60", "PATH_CHAIN_CTL": "40"}),
+})
 CAP_SECS = 40 * 60
 
 

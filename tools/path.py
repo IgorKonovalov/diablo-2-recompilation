@@ -67,6 +67,7 @@ FLOORS = {1: 100, 2: 100, 4: 100, 7: 100, 8: 100, 10: 100, 13: 100, 15: 100, 5: 
 TOTAL_FLOOR = 2000
 BREAK_FNS = {0x00679E50: "type 3", 0x00679FD0: "type 11", 0x00679E60: "type 12", 0x00663E00: "type-16 A", 0x00663ED0: "type-16 B"}
 MARKED_OFF_MODES = (0, 12, 17)
+ITEM_GROUND_MODES = (3, 5)       # an item unit's mode on the ground (3) or dropping (5): the 0x200 mark (drlg/0005 § 6, ground items)
 
 
 def unz(s):
@@ -596,7 +597,7 @@ def check(paths, out, quiet=False):
     return games, plans, byty, res, matched
 
 
-def tie_of(plan, cells=False):
+def tie_of(plan, cells=False, corpse=False):
     """The live cells against the built map plus the unit list's marks for each room of the plan: (rooms compared, rooms exact, differing cells, bits)."""
     if not plan.plc:
         return None
@@ -618,6 +619,10 @@ def tie_of(plan, cells=False):
     tgt = plan.plc.get("tgt")
     dropped = 0
     for u in plan.plc["u"]:
+        if u[0] == 4:
+            if len(u) >= 7 and u[5] in pred and u[6] in ITEM_GROUND_MODES:
+                cell_op(pred, u[5], u[3], u[4], 0x200)
+            continue
         if u[0] == 2:
             if len(u) >= 13 and u[5] in pred:
                 _, uid, cls, x, y, room, mode, sx, sy, door, b13b, b167, b1b6 = u
@@ -632,6 +637,8 @@ def tie_of(plan, cells=False):
             continue
         if tgt and (t, uid) == tuple(tgt) and plan.pln["fl"] & 0x800:
             continue
+        if corpse and mode == 12 and mask == 0x100 and room in pred:
+            size_op(pred, room, x, y, 3, 0x8000)                 # the reading fitted on the development logs: a dead monster's 3 x 3 of 0x8000
         if mode in MARKED_OFF_MODES:
             continue
         if room not in pred:
@@ -774,9 +781,12 @@ def report(paths, out=sys.stdout, first=10):
             lo2 = seed_of(e["to"])[0]
             ok = lo2 == ((lo * 0x6AC690C5 + hi) & 0xFFFFFFFF)
             pl = next((p for p in g.plans if p.k == e["k"]), None)
+            if e.get("ctl"):
+                kinds["control: " + ("a draw, the LCG step" if ok else "NOT the LCG step")] += 1
+                continue
             kinds["chained (the low dword is the LCG step of the exit seed)" if ok else (
-                "released without a draw (the low dword zeroed, the high dword as at the exit)" if lo2 == 0 and seed_of(e["to"])[1] == hi else
-                "neither")] += 1
+                "released without a draw (the low dword overwritten, 0 or an allocator link, the high dword as at the exit)"
+                if seed_of(e["to"])[1] == hi else "neither")] += 1
             if pl is not None and pl.plx is not None and pl.plx["s"] != e["from"]:
                 kinds["exit seed differs from the plan's PLX"] += 1
     nw = sum(len(g.seedw) for g in games)
@@ -801,6 +811,14 @@ def report(paths, out=sys.stdout, first=10):
         len(sites), hits, " ".join("%08x:%d" % kv for kv in sorted(sites.items()))))
     w()
     w("TIE (live cells vs the built map plus the unit list's marks; first %d plans of each game, and all)" % first)
+    for corpse in (False, True):
+        tie_report(games, w, first, corpse)
+    w()
+    w("UNMODELLED: " + ("; ".join("%s=%d" % kv for kv in res.unmodelled.most_common()) or "none"))
+    return finish(w, res, byty, plans, nmatch, nmis, nunm, zero, passed)
+
+
+def tie_report(games, w, first, corpse):
     t_first = collections.Counter()
     t_all = collections.Counter()
     bits = collections.Counter()
@@ -810,7 +828,7 @@ def report(paths, out=sys.stdout, first=10):
             if not plan.plc:
                 continue
             k += 1
-            t = tie_of(plan)
+            t = tie_of(plan, False, corpse)
             for tc, name in ((t_first, k <= first), (t_all, True)):
                 if not name:
                     continue
@@ -825,11 +843,14 @@ def report(paths, out=sys.stdout, first=10):
             if t and t.get("compared") and tc is not None:
                 for b, n in t["detail"].items():
                     bits[b] += n
-    w("  first plans: " + ", ".join("%s %d" % kv for kv in sorted(t_first.items())))
-    w("  all plans:   " + ", ".join("%s %d" % kv for kv in sorted(t_all.items())))
-    w("  differing bits (cells): " + (", ".join("0x%04x=%d" % kv for kv in sorted(bits.items())) or "none"))
-    w()
-    w("UNMODELLED: " + ("; ".join("%s=%d" % kv for kv in res.unmodelled.most_common()) or "none"))
+    w("  [%s] first plans: " % ("with the 3x3 corpse reading" if corpse else "units' own marks only") +
+      ", ".join("%s %d" % kv for kv in sorted(t_first.items())))
+    w("  [%s] all plans:   " % ("with the 3x3 corpse reading" if corpse else "units' own marks only") +
+      ", ".join("%s %d" % kv for kv in sorted(t_all.items())))
+    w("      differing bits (cells): " + (", ".join("0x%04x=%d" % kv for kv in sorted(bits.items())) or "none"))
+
+
+def finish(w, res, byty, plans, nmatch, nmis, nunm, zero, passed):
     if res.nocaller:
         w("PLANS whose caller is not a PathPlan call site of the register: %d (first k %s)" % (len(res.nocaller), res.nocaller[:5]))
     w()

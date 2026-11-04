@@ -43,7 +43,7 @@ import zlib
 
 import gdb
 
-REV = 3   # rev 1: the development logs (dev-*); rev 2: the near list is part of a room dump key; rev 3: the seed watchpoint PC, the spiral probe
+REV = 4   # rev 1: the development logs (dev-*); rev 2: the near list is part of a room dump key; rev 3: the seed watchpoint PC, the spiral probe; rev 4: items in the unit list (PATH_ITEMS), the watchpoint control (PATH_CHAIN_CTL)
 
 
 def _path_main():
@@ -54,10 +54,12 @@ def _path_main():
     CAP_UNITS = int(os.environ.get("PATH_CAP_UNITS", "120"))
     RADIUS = int(os.environ.get("PATH_RADIUS", "80"))
     PROBE = int(os.environ.get("PATH_SPIRAL_PROBE", "0"))
+    ITEMS = int(os.environ.get("PATH_ITEMS", "0"))              # rev 4: the items of the ground in the unit list
+    CHAINCTL = int(os.environ.get("PATH_CHAIN_CTL", "0"))       # rev 4: the control of the seed watchpoints: monster units after a type-13 plan
     CHAIN = int(os.environ.get("PATH_CHAIN", "0"))              # type-10 plans per game whose unit seed is watched to its next write
     MAXROOMS = int(os.environ.get("PATH_MAXROOMS", "40"))
     st = {"game": 0, "n": 0, "line": 0, "stk": {}, "cur": None, "plr": 0, "reach": {}, "ref": {}, "tot": 0, "capped": set(),
-          "rooms": {}, "brk": {}, "s3c": {}, "probe": 0, "wps": [], "chain": 0}
+          "rooms": {}, "brk": {}, "s3c": {}, "probe": 0, "wps": [], "chain": 0, "chainctl": 0}
     # the +0x3C stores of path/0003 § 12: site -> (op, base register, source register or immediate)
     S3C = {
         0x00529481: ("mov", "eax", "edx"), 0x0052981A: ("mov", "eax", "edx"), 0x00529BD7: ("mov", "eax", "edx"),
@@ -352,6 +354,20 @@ def _path_main():
                     u = u32(u + 0xE4)
                 except gdb.MemoryError:
                     break
+        if ITEMS:
+            for u in struct.unpack("<128I", mem(g + 0x1920, 512)):
+                k = 0
+                while u and k < 512:
+                    k += 1
+                    try:
+                        p = u32(u + 0x2C)
+                        if p:
+                            x, y = u32(p + 0x0C), u32(p + 0x10)
+                            if box[0] - 4 <= x <= box[2] + 4 and box[1] - 4 <= y <= box[3] + 4:
+                                out.append([4, u32(u + 0x0C), s32(u + 4), x, y, u32(p), u32(u + 0x10)])
+                        u = u32(u + 0xE4)
+                    except gdb.MemoryError:
+                        break
         return out[:CAP_UNITS] if len(out) > CAP_UNITS else out
 
     def on_plc():
@@ -405,28 +421,30 @@ def _path_main():
                      "rec": zb(rec), "fr": frame()})
         if CHAIN and f["ty"] == 10 and f["fl"] & 0x40000:
             arm_chain(f)
+        elif CHAINCTL and f["ty"] == 13 and f["u"][0] == 1 and not f["fl"] & 0x40000:
+            arm_chain(f, 1)
 
     class SeedWatch(gdb.Breakpoint):
         """A hardware watchpoint on a unit's seed low dword after a type-10 plan: the next write is the next event on that seed."""
 
-        def __init__(self, unit, k, exit_seed):
+        def __init__(self, unit, k, exit_seed, ctl=0):
             super().__init__("*(unsigned int *) 0x%08X" % (unit + 0x20), gdb.BP_WATCHPOINT, gdb.WP_WRITE, internal=True)
             self.silent = True
-            self.unit, self.k, self.exit_seed, self.done = unit, k, exit_seed, False
+            self.unit, self.k, self.exit_seed, self.done, self.ctl = unit, k, exit_seed, False, ctl
 
         def stop(self):
             try:
                 if not self.done:
                     self.done = True
                     esp = reg("esp")
-                    emit("SEEDW", {"k": self.k, "u": self.unit, "from": self.exit_seed, "to": sd(self.unit), "pc": int(gdb.parse_and_eval("(unsigned long) $pc")) & 0xFFFFFFFF,
+                    emit("SEEDW", {"ctl": self.ctl, "k": self.k, "u": self.unit, "from": self.exit_seed, "to": sd(self.unit), "pc": int(gdb.parse_and_eval("(unsigned long) $pc")) & 0xFFFFFFFF,
                                    "st": list(struct.unpack("<6I", mem(esp, 24))), "fr": frame()})
                     self.enabled = False
             except Exception as e:
                 gdb.write("LOGERR path seedw %r\n" % (e,))
             return False
 
-    def arm_chain(f):
+    def arm_chain(f, ctl=0):
         live = [w for w in st["wps"] if not w.done]
         for w in st["wps"]:
             if w.done:
@@ -435,16 +453,16 @@ def _path_main():
                 except Exception:
                     pass
         st["wps"] = live
-        if len(live) >= 3 or st["chain"] >= CHAIN:
+        if len(live) >= 3 or st["chainctl" if ctl else "chain"] >= (CHAINCTL if ctl else CHAIN):
             return
         try:
-            w = SeedWatch(f["unit"], f["k"], sd(f["unit"]))
+            w = SeedWatch(f["unit"], f["k"], sd(f["unit"]), ctl)
         except Exception as e:
             gdb.write("LOGERR path watch %r\n" % (e,))
             st["chain"] = CHAIN
             return
         st["wps"].append(w)
-        st["chain"] += 1
+        st["chainctl" if ctl else "chain"] += 1
 
     def on_brk(addr):
         def f():
