@@ -1,10 +1,10 @@
 ---
 based_on:
   - docs/specs/player/README.md 2026-11-03
-  - docs/specs/player/creation.md 2026-11-03
+  - docs/specs/player/creation.md 2026-11-04
   - docs/specs/hirelings/README.md 2026-11-03
-  - docs/specs/player/party.md 2026-11-03
-  - docs/specs/save/d2s.md 2026-10-30
+  - docs/specs/player/party.md 2026-11-04
+  - docs/specs/save/d2s.md 2026-11-04
 ---
 
 # Characters and hirelings
@@ -97,7 +97,8 @@ The player's own seed is drawn at creation and never saved; only the items keep 
 The starting act does not come from the stub: every stub's act bytes were 0, and the act the character was built
 with was the client's, 0 or `N − 1` under the `-act N` option. That the client record takes it from the option when
 it is created is read from the code; what the option then does is confirmed (see *Other ways to gain or lose
-experience* below).
+experience* below). Also read from the code: the switches `-ama`, `-pal`, `-sor`, `-nec`, `-bar` and `-name` feed the
+class and name of the client's create message.
 
 ## Starting attributes
 
@@ -335,7 +336,8 @@ flowchart TD
 
 The game counts live players at the moment of the call. The `/players` setting is a maximum, not an addition, in single
 player and on a TCP/IP host, where only the server's setting counts (seen in play). Which states exclude a player from
-the count, and whether game type 1 takes it, are read from the code.
+the count, whether game type 1 takes it, and the chat parser taking the command only in four client modes, are read
+from the code.
 
 | What | Which count | What it changes | Seen or read |
 |---|---|---|---|

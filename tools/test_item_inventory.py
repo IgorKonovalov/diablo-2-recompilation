@@ -68,6 +68,125 @@ class T(unittest.TestCase):
         self.assertEqual(inv.potion_total(4, inv.HPREGEN, 30), 15360)
         self.assertEqual(inv.potion_total(1, inv.MANAREC, 20), 10240)
 
+    def test_score_corner_and_enclosed(self):
+        g = inv.InvGrid(10, 4)
+        self.assertEqual(g.score(0, 0, 1, 1), 2)
+        self.assertEqual(inv.InvGrid(1, 1).score(0, 0, 1, 1), 255)
+        self.assertEqual(g.score(5, 1, 1, 1), 0)
+
+    def test_search_orders(self):
+        g = inv.InvGrid(10, 4)
+        self.assertEqual(inv.spot_find(g, 1, 1, True), (9, 3))
+        self.assertEqual(inv.spot_find(g, 2, 2, True), (0, 0))
+        self.assertEqual(inv.spot_find(g, 1, 1, False), (9, 0))
+        self.assertEqual(inv.spot_find(g, 2, 2, False), (0, 0))
+        self.assertIsNone(inv.spot_find(inv.InvGrid(1, 1, [(0, 0)]), 1, 1, True))
+
+    def test_search_prefers_contact(self):
+        g = inv.InvGrid(10, 4, [(0, 2)])
+        self.assertEqual(inv.spot_find(g, 2, 2, True), (0, 0))
+        g = inv.InvGrid(3, 3, [(0, 0), (0, 1), (0, 2), (1, 0), (2, 0)])
+        self.assertEqual(inv.spot_find(g, 2, 2, True), (1, 1))
+
+    def test_inv_row(self):
+        self.assertEqual([inv.inv_row(0, c, 0, 1) for c in range(7)], [0, 1, 2, 3, 4, 14, 15])
+        self.assertEqual(inv.inv_row(0, 0, 4, 1), 12)
+        self.assertEqual(inv.inv_row(0, 0, 4, 0), 8)
+        self.assertEqual([inv.inv_row(0, 0, p, 1) for p in (1, 2, 3)], [6, 7, 9])
+        self.assertEqual(inv.inv_row(1, 271, 0, 1), 5)
+        self.assertEqual((inv.inv_row(2, 0x152, 0, 1), inv.inv_row(2, 0x153, 0, 1), inv.inv_row(2, 3, 0, 1)), (10, 11, -1))
+
+    def test_belt(self):
+        boxes = [None] * 16
+        self.assertEqual(inv.belt_slot(4, boxes, "hp1 ", set(), 1), 0)
+        self.assertIsNone(inv.belt_slot(4, boxes, "tsc ", set(), 0))
+        boxes[0] = "hp3 "
+        self.assertEqual(inv.belt_slot(8, boxes, "hp1 ", set(), 1), 4)
+        boxes[4] = "hp3 "
+        self.assertEqual(inv.belt_slot(8, boxes, "hp1 ", set(), 1), 1)
+        self.assertEqual(inv.belt_slot(8, boxes, "mp1 ", set(), 1), 1)
+        self.assertIsNone(inv.belt_slot(4, ["hp1 "] * 4 + [None] * 12, "hp1 ", set(), 1))
+
+    def test_stack(self):
+        a = dict(cls=7, d0=2, file=5, stackable=1, eth=0, stats={})
+        self.assertTrue(inv.stack_ok(a, dict(a)))
+        self.assertFalse(inv.stack_ok(a, dict(a, eth=1)))
+        self.assertFalse(inv.stack_ok(dict(a, d0=4), dict(a, d0=4)))
+        self.assertTrue(inv.stack_ok(dict(a, d0=10), dict(a, d0=10)))
+        self.assertFalse(inv.stack_ok(a, dict(a, stats={194: 1})))
+        self.assertTrue(inv.stack_ok(dict(a, stats={194: 256}), dict(a, stats={194: 256})))
+        self.assertEqual(inv.max_stack(500, 11), 511)
+        self.assertEqual(inv.max_stack(500, 10), 510)
+        self.assertEqual(inv.merge_first_set(5, 5, 8), (70, 8))
+        self.assertEqual(inv.merge_first_set(3, 5, 8, 2, 9), (72, 2))
+        self.assertEqual(inv.merge_first_set(3, 5, 8, 9, 2), (70, 8))
+
+
+    # ---- P1.3: the ground drop's cell search over a toy field, the expiry, the distance, the line ends
+
+    @staticmethod
+    def toy_field():
+        """A field with each cell pointing straight along its larger axis, then diagonally: enough for short walks."""
+        out = bytearray(65536)
+        for y in range(256):
+            for x in range(256):
+                dx, dy = 128 - x, 128 - y
+                sx, sy = (dx > 0) - (dx < 0), (dy > 0) - (dy < 0)
+                out[y * 256 + x] = next(i for i in range(9) if (inv.DIR_DX[i], inv.DIR_DY[i]) == (sx, sy))
+        return bytes(out)
+
+    def test_drop_offset_and_rings(self):
+        f = self.toy_field()
+        r = inv.Room(0, 0, 20, 20, {})
+        self.assertEqual(inv.ground_drop_cell(r, 5, 5, f)[1:], (7, 8))
+        r.cells[(7, 8)] = 0x200
+        self.assertEqual(inv.ground_drop_cell(r, 5, 5, f)[1:], (6, 8), "ring 1: lowest distance, sides by row, left first")
+        # an off-room offset cell starts at the position
+        self.assertEqual(inv.ground_drop_cell(inv.Room(0, 0, 6, 6, {}), 5, 5, f)[1:], (5, 5))
+
+    def test_line_mask_and_origin(self):
+        f = self.toy_field()
+        cells = {(6, 7): 0x800}
+        self.assertEqual(inv.line_cells(f, 5, 5, 7, 8)[0], (7, 8))
+        self.assertNotIn((5, 5), inv.line_cells(f, 5, 5, 7, 8))
+        self.assertEqual(inv.line_blocked(f, 5, 5, inv.Room(0, 0, 20, 20, cells), 7, 8, 0x801), 1)
+        self.assertEqual(inv.line_blocked(f, 5, 5, inv.Room(0, 0, 20, 20, {(6, 7): 0x200}), 7, 8, 0x801), 0)
+
+    def test_fallback_and_base_room(self):
+        f = self.toy_field()
+        full = {(x, y): 0x200 for x in range(100) for y in range(100)}
+        r = inv.Room(0, 0, 100, 100, full)
+        self.assertEqual(inv.ground_drop_cell(r, 50, 50, f, 1)[0], r)
+        self.assertEqual(inv.ground_drop_cell(r, 50, 50, f, 1)[1:], (52, 53))
+        self.assertIsNone(inv.ground_drop_cell(r, 50, 50, f, 0)[0])
+        # the base moves to a room whose near list lacks the first: the fallback's lookup returns None
+        a, b = inv.Room(0, 0, 10, 10, {(x, y): 1 for x in range(10) for y in range(10)}), inv.Room(10, 0, 10, 10, {(x, y): 1 for x in range(10, 20) for y in range(10)})
+        a.near = [b]
+        self.assertIsNone(inv.ground_drop_cell(a, 2, 2, f, 1)[0])
+
+    def test_expiry(self):
+        self.assertEqual(inv.ground_expiry(10, 1, 7, 9, None, False), 0)
+        self.assertEqual(inv.ground_expiry(10, 0, 4, 9, None, False), 30010)
+        self.assertEqual(inv.ground_expiry(10, 0, 5, 9, None, False), 45010)
+        self.assertEqual(inv.ground_expiry(10, 0, 2, 4, 10000, False), 15010)
+        self.assertEqual(inv.ground_expiry(10, 0, 2, 4, 10001, False), 45010)
+        self.assertEqual(inv.ground_expiry(10, 0, 2, 9, None, True), 30010)
+        self.assertEqual(inv.ground_expiry(10, 0, 3, 9, None, False), 15010)
+
+    def test_sweep(self):
+        self.assertIsNone(inv.sweep_first([(4, 0), (1, 5), (4, 11)], 10))
+        self.assertEqual(inv.sweep_first([(4, 0), (1, 5), (4, 10)], 10), 2)
+
+    def test_line_ends(self):
+        self.assertIsNone(inv.line_ends(0, 0, 2, 1, 1, 1))
+        self.assertEqual(inv.line_ends(0, 0, 2, 5, 1, 1), ((2, 0), (4, 1)))
+        self.assertEqual(inv.line_ends(0, 0, 2, 3, 3, 1), ((2, 2), (2, 2)))
+
+    def test_dispatch_gate(self):
+        self.assertEqual(inv.dispatch_gate(0, True, 1, 0), "bad")
+        self.assertEqual(inv.dispatch_gate(0x20, True, 0x11, 0), "gate")
+        self.assertEqual(inv.dispatch_gate(0x14, True, 0x11, 0), "handler")
+        self.assertEqual(inv.dispatch_gate(0x41, True, 0x11, 0), "handler")
 
 if __name__ == "__main__":
     unittest.main()

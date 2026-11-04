@@ -274,8 +274,8 @@ first is carried and spread over the longer window. (0x005BE678–0x005BE6CF)
 | Column | Readers | Gate |
 |---|---|---|
 | `useable` `+0x11D` | 10 `u8` matches: `0x00628C5B` and `0x0063C8B1` on an item record; `0x00498A5B`, `0x004AF989`, `0x004AFAD2` and the five at `0x006910EA`..`0x0069BB63` not classified; getter `0x00628C20` has 5 calls: `0x00487844`, `0x00499229`, `0x00499331`, and the server's `0x0055E212`, `0x00562433` | `[I]` Both use requests require it. Its absence sets the refuse flag, so the handler returns 3. It does not select a kind |
-| `belt` `+0x130` | 9: `0x00543390` is on a 0x134-byte row of `DataTables+0xA90` reached from MonStats `+0x18`, not this table; six at `0x004C56A7`..`0x004CDAAF` not classified; `0x00621F12` getter (3 calls: `0x0049907F`, `0x0056091B`, `0x0063C6A3`), `0x0063C8B9` | `[I]` **No use.** `0x0056091B` passes it to `0x00660CB0`, the Belts record path (P1.2). `sub_0063C830_BeltBoxQuery` tests `useable` and `belt` both 1 with size 1 × 1, called only from `0x004979AD`, so a client rule on this reading |
-| `autobelt` `+0x131` | 8, the server's `0x00628BEA`, `0x0063C731` | `[I]` P1.2 (placement), player/0001 |
+| `belt` `+0x130` | 9: `0x00543390` is on a 0x134-byte row of `DataTables+0xA90` reached from MonStats `+0x18`, not this table; six at `0x004C56A7`..`0x004CDAAF` not classified; `0x00621F12` getter (3 calls: `0x0049907F`, `0x0056091B`, `0x0063C6A3`), `0x0063C8B9` | `[I]` **No use.** `0x0056091B` and `0x0063C6A3` pass it to `0x00660CB0`, the Belts record, as the worn belt's row (items/0013 § 4). `sub_0063C830_BeltBoxQuery` tests `useable` and `belt` both 1 with size 1 × 1, called only from `0x004979AD`, so a client rule on this reading |
+| `autobelt` `+0x131` | 8, the server's `0x00628BEA`, `0x0063C731` | `[I]` the belt search's second pass (`0x0063C731`, items/0013 § 6); `0x00628BEA` is `sub_00628BA0_ItemAutoBeltTest`, whose answer does not depend on it |
 | `durwarning` `+0x135` | 5, all `0x4xxxxx` but the getter `0x006297E9`, which has 0 direct calls | `[I]` no server gate found among direct calls; indirect callers unfollowed; the column is 0 in all rows |
 | `qntwarning` `+0x136` | 3: `0x004CD8D5`, `0x00629849` (getter, 1 call `0x00497EAF`), and `0x0059FD01`, which is in `sub_0059FA30_MissileCreate` on a Missiles record, not this table | `[I]` no server gate found among direct calls; indirect callers unfollowed |
 
@@ -308,8 +308,7 @@ stays open; Phase 2's seed comparison settles it.
 - [I] Misc § Timed states "the amounts `calc1`… added to life at each tick": `calc1` is a total, scaled, and divided by
   `len` into the frame rate. The tick's own reading stands. Archivist entry filed. (fn:sub_005BE3F0_ItemUsePotion@0x005BE3F0, fn:sub_00580610_LifeRegenTick@0x00580610)
 - [I] Misc's `[L]` flat-or-percent is answered: kind 5 percent of the maximum, kind 8 reads neither. (fn:sub_005BEAC0_ItemUseRejuv@0x005BEAC0, fn:sub_005BF060_ItemUseElixir@0x005BF060)
-- [I] data/0005's reading of `ItemUseTimedState` stands for what it covers; the note "the potions" there came from the
-  same table row. 0x005BE430 and 0x005BE4D9 were the `len` and `calc` reads of a different function. (0x005BE3F0)
+- [I] data/0005 is right on both counts: 0x005BE430 and 0x005BE4D9 are the `len` and `calc1..3` reads of `sub_005BE3F0_ItemUsePotion`, kind 3, as its line says, and `ItemUseTimedState` has its own at 0x005BEDFF and 0x005BEF11. Only stats/states' "potions" for the group clear was wrong, above. (0x005BE430, 0x005BE4D9, 0x005BEDFF, 0x005BEF11)
 
 ## 10. Harness cases for Phase 2
 
@@ -355,5 +354,5 @@ tbl:ItemStatCost.txt:maxstat, tbl:Books.txt:pSpell, tbl:Books.txt:BookSkill, tbl
 - `[L]` Whether any draw occurs in a whole use past the boundaries (§ 8): Phase 2's seed comparison.
 - `[L]` The case of the object mode switch at `0x00581DBC`, what it is for and whether a class test precedes it: read
   the door path, or Phase 2 case 16. The Assassin's skip is read at `0x00585FB1` for the chest only.
-- `[L]` `useable`'s client readers and `belt`'s Belts path are P1.2's.
+- `[L]` `useable`'s remaining `u8` readers in `0x4xxxxx` stay unclassified: client code, out of scope (ADR-0025). `belt`'s Belts path is answered in items/0013 § 4.
 - `[L]` `elx` reaches a player how; its file index and stat 71 have no writer named here.

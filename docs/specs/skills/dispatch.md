@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, data/calc, combat/overview, combat/delivery, stats/states, monsters/spawn, monsters/stats]
 consumed_by: [skills/missiles, combat/overview, combat/delivery, stats/states, items/economy, monsters/stats]
-tags: {C: 76, I: 191, L: 8}
-updated: 2026-10-30
+tags: {C: 76, I: 194, L: 8}
+updated: 2026-11-04
 ---
 
 # Skill dispatch: the request, the checks, the start and do functions, costs, the skill packet, handlers, summons
@@ -680,6 +680,18 @@ I2. SKILLS_RollElemDamage(unit, p, id, lvl):                         [I] (fn:SKI
   skill id from a variable, are unfollowed. [I] (0x00647BF0–0x00647BF9, 0x00647D41,
   fn:sub_005D54B0_SkillKickPhysDamage@0x005D54B0, fn:SKILLS_GetPhysMin@0x00647BC0, fn:SKILLS_GetPhysMax@0x00647D00,
   tbl:Skills.txt:Kick, tbl:MonStats.txt:Skill1, [skills/0003 § 5](../../findings/skills/0003-handlers.md#5-tier-a-start-and-do-functions))
+- I4. **Stat 137 counts twice with boots**, on the kicks `SkillKickPhysDamage` builds (not Kick's start 2, which reads
+  neither): the kick's minimum and maximum take stat 137, then the boots' values plus stat 137. [I] (0x005D560F,
+  0x006462A5–0x006462AA, 0x0064639D–0x006463A1, 0x00646431–0x00646436, fn:sub_00646280_KickItemDamage@0x00646280,
+  fn:sub_005D54B0_SkillKickPhysDamage@0x005D54B0, [quirks/0001](../../findings/quirks/0001-community-bugs.md#verdicts) row 4)
+- I4. **The weapons' damage stats stay out of the kick build.** Kick's start 2 sets flag 2, so `ResolveAndQueue` skips
+  the build. Dragon Talon's hit (start 24, do 42) reaches damage only through `SkillKickPhysDamage`, on a hit bit, as do
+  Dragon Tail's start 27 and Dragon Flight's do 52: it unlinks the damage stats of a `weap` item in either hand, stats
+  48–55 among them, builds, relinks the primary weapon, and its flag 2 stops a second build. Elemental stats from other
+  items still reach that build. [I] (0x0057DC28, 0x005D592C, 0x005D54CA, 0x005D57DB–0x005D586A,
+  fn:sub_0056CAF0_SkillSt02Kick@0x0056CAF0, fn:sub_005D5880_DragonTalonHit@0x005D5880,
+  fn:sub_005D54B0_SkillKickPhysDamage@0x005D54B0, fn:sub_00627910_StatListLinkOwner@0x00627910, tbl:ItemTypes.txt:Code,
+  tbl:ItemStatCost.txt:damagerelated, [quirks/0001](../../findings/quirks/0001-community-bugs.md#verdicts) row 3)
 - I4. The mastery bonus enters a skill hit through the combat build (`SKILLS_GetMasteryBonus` from
   `COMBAT_BuildDamage` and `COMBAT_ToHitRoll`) and through the missile damage block; the synergies enter through the
   calcs (`DmgSymPerCalc`, `EDmgSymPerCalc`, the `skill('…'.blvl)` terms of calc1–calc4). [I]
@@ -858,6 +870,9 @@ L3. SpawnOwnedMonster(block) → unit:                                  [I] (fn:
   run:2026-10-27-skills) it was 84, not the owner's 86 nor a rounded-up 85. A positive `lvl` is taken as given (207
   Raven summons). [C] (fn:sub_005C49E0_SummonSetLevel@0x005C49E0, run:2026-10-25-skills, run:2026-10-27-skills) The
   12 summons share one input: the clamps, which do not bind at 84, are the reading. [I] (run:2026-10-25-skills)
+- L2. **No `noRatio` test.** The MonLvl defence and to-hit go on by `UnitAddStat` of stats 31 and 19 with the raw cells, so
+  a summon gets them whole, whatever its class's `noRatio` bit. [I] (fn:sub_005C49E0_SummonSetLevel@0x005C49E0,
+  [quirks/0001](../../findings/quirks/0001-community-bugs.md#verdicts) row 16)
 - L2. `SummonInitStats(m, id, lvl, n)`: `passivestat1..5` with `passivecalc` on the summon, `aurastat1..6` into a list
   (each stat's `itemevent` registered on the summon), `aurastate` set, maximum life `+= maxhp · calc1 / 100`
   (64-bit when large), `sumskill1..5` with `sumsk*calc`, `sumumod`, `sumoverlay`, and the equipment init. [I]

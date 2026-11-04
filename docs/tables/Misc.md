@@ -347,8 +347,11 @@ The fields, their offsets, the readers named so far and the survey command are i
 
 The columns a used, stacked or belted item reads, with the readers the findings name. `python3 -I tools/excel_bin.py
 diff` checks every offset below (0 mismatches over the 151 rows); the counts are over the 151 misc rows and were
-computed from the `.txt`. Whatever a function does beyond what is quoted is Phase 1.1 and 1.2 of
-[plan 0060](../plans/0060-item-use-inventory.md).
+computed from the `.txt`. The use entries' bodies are read in [items/0012](../findings/items/0012-use-inventory.md)
+(plan 0060 Phase 1.1), the belt and stack columns in [items/0013](../findings/items/0013-grids-belts-stacks.md) (Phase 1.2);
+tags below are those findings'. `[C] (ADR-0021)` there means a map of the code up to a named callee's entry (the
+callee and all code after it are not covered, "after, `[I]`"), `[C] (ADR-0015)` a function run to its return over
+declared scratch memory; neither is a run of the game.
 
 ### The use dispatch: `pSpell` selects a `g_ItemUseFns` entry
 
@@ -357,31 +360,50 @@ computed from the `.txt`. Whatever a function does beyond what is quoted is Phas
   `test` (`0x005BE130`); the `use` addresses are 1 `0x005BE230`, 2 `0x005BE290`, 3 `0x005BE3F0`, 4 `0x005BE7B0`,
   5 `0x005BEAC0`, 6 `0x005BEF90`, 7 `0x005BF0C0`, 8 `0x005BF060`, 9 `0x005BEDA0`, 10 `0x005BF170`, 11 `0x005BF1F0`.
   (data:g_ItemUseFns@0x00741790, tbl:Misc.txt:pSpell)
-- `[I]` `sub_005BF240_ItemUse` (`.\SKILLS\SkillItem.cpp`) runs the entry of the used item's `pSpell` (`+0x094`) as
+- `[I]` `sub_005BF240_ItemUse` (`.\SKILLS\SkillItem.cpp`) runs the entry of the used item's kind (`pSpell`, `+0x094`, unless a Books row gives one: the rule below) as
   `use(ECX game, EDX the user, stack: the item, …)`; a scroll or tome reaches it through skill do 113, whose handler
   finds the scroll or book in the inventory and calls `InvUse` (item page 1) or `BeltUse` (page 2)
   ([data/0005](../findings/data/0005-calc.md), [skills/0015 § 4](../findings/skills/0015-item.md#4-do-113-and-do-151),
   fn:sub_005BF240_ItemUse@0x005BF240, fn:sub_005BF3D0_SkillDo113UseBookScroll@0x005BF3D0).
+- `[C]` (ADR-0021) **The dispatch rule, whole.** `ItemUse` refuses a user that is not type 0 or 1 and an item that is not
+  type 4. A book or scroll (item types 18, 22) with a Books row takes `Books+0x0C` as the skill argument and, when
+  `Books+0x04 > 0`, that as the kind (a Books row wins over Misc `pSpell`); with a Books `+0x04` of 0 or less, or no row, the
+  kind is Misc `pSpell`, the skill argument keeping `+0x0C` or -1. A kind below 1, at or above 31, or with an empty slot
+  returns 0. With a `test` (kind 1 only) and item flag 4 clear it ends at `test(item, 0, x, y, skill)`; else it sets flag 4
+  and ends at `use(item, arg2, x, y, skill)`. After either, `[I]`: a test or use returning 0 clears the use marks and sends
+  message `0x7C`; `ItemUse` returns 0 after any test, the use's own return otherwise.
+  ([items/0012 §§ Answer, 2](../findings/items/0012-use-inventory.md#2-the-dispatch), fn:sub_005BF240_ItemUse@0x005BF240,
+  run:2026-11-03-use-emu)
 - The stock rows per value (`[C]` data; 22 rows have a `pSpell`, 129 are blank, and all 22 have `useable` 1):
 
 | `pSpell` | Rows | `use` (what the findings say) | Tag |
 |---|---|---|---|
-| 1 | `isc`, `ibk` (identify scroll, book) | `0x005BE230` with the only `test`, `0x005BE130`; body not read | address [C]; body `[L]` |
+| 1 | `isc`, `ibk` (identify scroll, book) | `0x005BE230` with the only `test`, `0x005BE130`: **two requests**. The test sets item flag 4 on the scroll or tome, ends at the client message (`0x3F`, the row's spell icon, the skill) and returns 1, so `ItemUse` returns 0 and nothing is used up. The use refuses while the user interacts with a player unit that exists, for an identified target and for a target not in the user's inventory; else it ends at `sub_00562590_ItemIdentify(target)`, whose body is `[I]` ([items/0012 §§ Answer, 6](../findings/items/0012-use-inventory.md#answer-summary)) | address [C]; test and use up to their first callee [C] (ADR-0021); after, [I] |
 | 2 | `tsc`, `tbk` (town portal) | `ITEMUSE_TownPortal`, `0x005BE290` ([quests/0002](../findings/quests/0002-travel.md)) | [I] |
-| 3 | `hp1`..`hp5`, `mp1`..`mp5` (10 healing and mana potions) | `0x005BE3F0`: `len` read at `0x005BE430`, `calc1..3` at `0x005BE4D9` | [I] |
-| 4 | none | `0x005BE7B0` | address [C]; body `[L]` |
-| 5 | `rvs`, `rvl` (rejuvenation) | `0x005BEAC0` | [I] |
+| 3 | `hp1`..`hp5`, `mp1`..`mp5` (10 healing and mana potions) | `0x005BE3F0`: `len` read at `0x005BE430`, `calc1..3` at `0x005BE4D9`; the amount rule is [below](#timed-states-state-cstate1-cstate2-len-stat13-calc13) | [C] (ADR-0021) to the first callee; slot 0's frame rate [I] |
+| 4 | none (no stock row) | `0x005BE7B0`, `sub_005BE7B0_ItemUseStatPlain`: the kind-3 loop without the class scale and the draws, 0 draws (family `stat4`, 800 cases, seed compared; the controls that separate the draws are `stat3`'s, and `stat4` holds no golem case) ([items/0012 § 4, § 8](../findings/items/0012-use-inventory.md#4-kinds-3-4-5-the-amount)) | address [C]; before the first callee [C] (ADR-0021); after, [I] |
+| 5 | `rvs`, `rvl` (rejuvenation) | `0x005BEAC0`: a percent of the maximum, at once, no draw ([below](#timed-states-state-cstate1-cstate2-len-stat13-calc13)) | [C] (ADR-0021) to the first callee; after, [I] |
 | 6 | `yps` (antidote), `wms` (thawing) | `0x005BEF90`, which calls `0x005BEDA0` | [I] |
-| 7 | `box` (Horadric Cube) | `0x005BF0C0`; body not read | address [C]; body `[L]` |
-| 8 | `elx` (elixir) | `0x005BF060`; body not read | address [C]; body `[L]` |
+| 7 | `box` (Horadric Cube) | `0x005BF0C0`: opens, returns 0 and is never used up. A player not busy ends at `PlayerSetInteract(user, 4, cube guid)`; busy, it goes on only when the interaction is object class `0x10B`, ending at `PlayerClearInteract`; else it returns 0. Busy means an interaction, a cursor item or player data `+0x4C` ([items/0012 §§ Answer, 6](../findings/items/0012-use-inventory.md#answer-summary)) | address [C]; before the first callee [C] (ADR-0021); after, [I] |
+| 8 | `elx` (elixir) | `0x005BF060`: **neither `stat1` nor `calc1`**. It adds the **item's** stat 71 to the stat numbered by the item's file index (ItemData `+0x28`) when that is a valid stat and the value is not 0; no draw before the boundary ([items/0012 § Answer](../findings/items/0012-use-inventory.md#answer-summary)) | address [C]; before the first callee [C] (ADR-0021); after, [I] |
 | 9 | `vps` (stamina), `hrb` (herb) | `sub_005BEDA0_ItemUseTimedState` | [C] |
 | 10, 11 | none | cast skill 47 at level 1 ([skills/0015 § 1](../findings/skills/0015-item.md#1-the-table-slots-the-stock-rows-and-the-callers)) | [I] |
 
 - `[C]` (data) Of the 35 `useable` rows, the 13 with no `pSpell` are `hpo`, `mpo`, `hpf`, `mpf` (the full and plain
   healing and mana potions of types `hpot`/`mpot`, `belt` 1), `rps`, `rpl`, `bps`, `bpl` (the small and large red and
   blue potions, `belt` 0, stackable 5..10), `xyz`, `ass`, `tr2`, `toa` (quest items of type `ques`) and `0sc` (a scroll).
-  So `useable` is not what picks a handler; the dispatch is `pSpell` alone, and what `useable` gates is read nowhere in
-  the findings (`[L]`).
+  So `useable` is not what picks a handler: the kind is a Books row's, else `pSpell` (the rule above).
+- `[I]` **What `useable` (`+0x11D`) gates on the server.** Both use requests, packets `0x20` and `0x26`, require it: 2 of the
+  getter `0x00628C20`'s 5 calls are theirs (`0x0055E212`, `0x00562433`) and the other 3 are in client code (`0x00487844`,
+  `0x00499229`, `0x00499331`). Its absence sets the refuse flag, so the handler returns 3. It does not select a kind. A
+  `useable` row with no `pSpell` (`hpo`, `rps`, ...) passes the test and does nothing (items/0012 § 3: the request
+  returns 0 with nothing used, unless the code is one of the four quest codes `ass`, `xyz`, `tr2`, `toa`, which run their
+  own branches and not through `pSpell`). Of its 10 `u8` matches `0x00628C5B` and `0x0063C8B1` (`sub_0063C830_BeltBoxQuery`) are on an item record, and the three at
+  `0x00498A5B`..`0x004AFAD2` and the five at `0x006910EA`..`0x0069BB63` stay unclassified; indirect calls
+  and table pointers to the getter are not followed. The item-use finding's summary bullet tags the same reading `[C]`
+  (data + code); its § 7 table and § 3's reading of the two handlers say `[I]`, and no family of its run enters either handler, so `[I]` is the tag here
+  ([route](../backlog/2026-11-04-architect-reverser-a69-review-finding-notes.md)).
+  ([items/0012 § 3, § 7](../findings/items/0012-use-inventory.md#7-what-the-columns-gate), fn:sub_00628C20_ItemIsUseable@0x00628C20)
 
 ### Timed states: `state`, `cstate1`, `cstate2`, `len`, `stat1..3`, `calc1..3`
 
@@ -393,15 +415,39 @@ computed from the `.txt`. Whatever a function does beyond what is quoted is Phas
 - `[I]` `sub_005BEDA0_ItemUseTimedState`: the record's `state` (`+0x098`) must be a valid state and `len` at least 1; the
   state is set, or extended, for `len` frames on a stat list of the user with a timer event 12 at its end, and each of
   `stat1..3` (`+0x09E`) gets `calc1..3` (`+0x0A4`) when non-zero (after stat 28, when stat 10 is below stat 11, stat 10
-  is set to stat 11 + 256). The potions run the group clear before they apply
-  ([data/0005](../findings/data/0005-calc.md), [stats/states](../specs/stats/states.md) B3, fn:sub_005BEDA0_ItemUseTimedState@0x005BEDA0).
+  is set to stat 11 + 256). **Only kinds 6 and 9 run the group clear** (`STATE_GroupClear`: `yps`, `wms`, `vps`, `hrb`),
+  from `sub_005BEDA0_ItemUseTimedState` (`0x005BEE15` is its only call among the use entries); the healing and mana
+  potions (kind 3) do **not**, and [stats/states](../specs/stats/states.md) B3's word "potions" is wrong for them `[I]`
+  ([items/0012 § 9](../findings/items/0012-use-inventory.md#9-corrections), [data/0005](../findings/data/0005-calc.md),
+  fn:sub_005BEDA0_ItemUseTimedState@0x005BEDA0).
   The healing potions' `stat1` is `hpregen` (stat 74) and the mana potions' `manarecovery` (stat 26), the amounts
-  `calc1`: 30, 60, 100, 180, 320 and 20, 40, 80, 150, 250. The life tick adds stat 74 every frame whatever its sign, so
-  the healing potion's `hpregen` is added to life (stat 6) at each tick while the state lasts (`[C]` the tick,
-  [stats/states](../specs/stats/states.md) E2, fn:sub_00580610_LifeRegenTick@0x00580610).
+  `calc1`: 30, 60, 100, 180, 320 and 20, 40, 80, 150, 250. The life tick adds stat 74 every frame whatever its sign
+  (`[C]` the tick, [stats/states](../specs/stats/states.md) E2, fn:sub_00580610_LifeRegenTick@0x00580610).
+- **Corrected (items/0012 § 4, § 9): `calc1` of `hp1`..`hp5` and `mp1`..`mp5` is a total, not a per-tick amount**
+  (`[C]` (ADR-0021) up to the first callee). `sub_005BE3F0_ItemUsePotion` reads it for `hpregen` and `manarecovery`,
+  shifts it `<< 8`, then scales it by class: life Amazon, Paladin, Assassin `v + (v >> 1)`, Barbarian and every
+  non-player `2v`, the others `v`; mana Amazon, Paladin, Assassin `v + (v >> 1)`, Sorceress, Necromancer, Druid `2v`, the
+  others `v` (800 cases, 7 classes, other classes and types, odd and negative amounts, a null unit). **Then two draws on
+  the user's seed when vitality (life) or energy (mana) is above 0:** `r1 = RangeB(stat)`, `r2 = Range(100)`, and
+  `r2 < r1 >> 1` doubles the amount. Then `<< ValShift` (blank, so 0, for the stock stats 26 and 74); a refill's frame
+  rate is `(old rate * remaining + v) / (len + remaining)`, truncated, and the list's end moves to
+  `now + remaining + len`; the first drink's rate is `v / len`. The rate is observed on a slot after the first; for the
+  stock potions' slot 0 (the event-queue call comes first) it is `[I]`. So the earlier sentence that `hpregen` is
+  "added to life at each tick" is the tick's own reading; the potion's `calc1` is spread over `len` frames, not added at
+  each tick. Stock totals: `hp1` 30 gives 7 680 stored units for a Sorceress, 11 520 for an Amazon, 15 360 for a
+  Barbarian (30, 45, 60 life); `hp3` (100, `len` 171) stores 25 600 / 171 = 149 per frame, 99 life over the window and a
+  remainder (`[I]`, `tools/item_inventory.py stock`).
+  (fn:sub_005BE3F0_ItemUsePotion@0x005BE3F0, fn:sub_0062A5D0_PotionLifeMul@0x0062A5D0, fn:sub_0062A620_PotionManaMul@0x0062A620,
+  run:2026-11-03-use-emu)
 - `[C]` (data) The one-shot rows have no `state` and no `len`: `rvs`/`rvl` (`pSpell` 5) carry `hitpoints` 35/100 and `mana`
-  35/100 as `stat1`/`stat2`/`calc1`/`calc2`, and `elx` (`pSpell` 8) carries `experience` 5. `[L]` how `0x005BEAC0`
-  and `0x005BF060` apply them (a flat value or a percentage of the maximum): the findings do not read them.
+  35/100 as `stat1`/`stat2`/`calc1`/`calc2`, and `elx` (`pSpell` 8) carries `experience` 5. `[C]` (ADR-0021, up to the first
+  callee) **`rvs`/`rvl` are a percent of the maximum**: `v = MulDiv(max, calc, 100)` (`sub_00483360_MulDiv`, of three branches: above `0x100000` it may be `(max / 100) * calc`), or `max` itself at exactly 100,
+  capped so `current + v <= max`, added at once by `UnitAddStat`, no draw (`rvs` 35 and `rvl` 100 percent of life and of
+  mana; the slot is skipped, not ended, for a bad stat, a stat with no `maxstat`, or `calc <= 0`). The `rvs`/`rvl` rows' `stat1`/`calc1`
+  and `stat2`/`calc2` are read; **`elx` reads neither `stat1` nor `calc1`** (its `experience` 5 is not read by the code at
+  `0x005BF060` up to its first callee, which adds the item's stat 71). The `[L]` flat-or-percent question is answered
+  ([items/0012 §§ 4, 6, 9](../findings/items/0012-use-inventory.md#4-kinds-3-4-5-the-amount), fn:sub_005BEAC0_ItemUseRejuv@0x005BEAC0,
+  fn:sub_005BF060_ItemUseElixir@0x005BF060). A timed path exists in the rejuvenation code with the same list code; no stock row has `len` there.
 
 ### Display columns of the same rows
 
@@ -409,7 +455,11 @@ computed from the `.txt`. Whatever a function does beyond what is quoted is Phas
 ten healing and mana potions (`ItemStats1q`, `spelldesccalc` = the potion's amount: 30..320, 20..250). They are
 tooltip text and numbers, the client's; the code anchors in [data/0004](../findings/data/0004-cell-converters.md) are
 the converters only. `durwarning` is 0 in all 151 rows and `qntwarning` is 1 on `aqv` and `cqv` (the arrows and bolts)
-only; `usesound` is blank on `sol`, `j34`, `g34`, `box`. `[L]` the warning columns' readers.
+only; `usesound` is blank on `sol`, `j34`, `g34`, `box`. `[I]` **The warning columns gate no server use** among direct
+calls ([items/0012 § 7](../findings/items/0012-use-inventory.md#7-what-the-columns-gate)): `durwarning` (`+0x135`) has 5 `u8`
+matches, all in `0x4xxxxx` but the getter `0x006297E9`, which has 0 direct calls; `qntwarning` (`+0x136`) has 3: `0x004CD8D5`,
+the getter `0x00629849` (1 call, `0x00497EAF`) and `0x0059FD01`, which is in `sub_0059FA30_MissileCreate` and reads a
+**Missiles** record, not this table. Indirect callers and table pointers are unfollowed. `[L]` the client's use of them.
 
 ### Belt and stack columns
 
@@ -420,12 +470,28 @@ only; `usesound` is blank on `sol`, `j34`, `g34`, `box`. `[L]` the warning colum
   `+0x131` is set" (`autobelt`, player/0001); the beltable test itself is
   `ItemTypes.Beltable` ([player/0001 § Placement](../findings/player/0001-creation.md),
   [ItemTypes](ItemTypes.md), fn:sub_0055E9B0_ItemToBelt@0x0055E9B0, fn:sub_0063C600_BeltFreeSlot@0x0063C600).
-  `[L]` what `belt` (`+0x130`) selects, and how a belt's size (`Armor.belt`, [Belts](Belts.md)) restricts the boxes.
+  `[I]` **`belt` (`+0x130`) gates no use** (items/0012 § 7, 9 `u8` matches: `0x00543390` is on a 0x134-byte row reached from
+  MonStats `+0x18`, not this table; six at `0x004C56A7`..`0x004CDAAF` unclassified; the getter `0x00621F12` has 3 calls,
+  `0x0049907F`, `0x0056091B`, `0x0063C6A3`; and `0x0063C8B9`). The two server calls `0x0056091B` and `0x0063C6A3` pass
+  the **worn belt's** `+0x130`, an Armor record's `belt` column, to the Belts record reader (the row, below), not a
+  Misc row's. `sub_0063C830_BeltBoxQuery` tests `useable` and `belt` both exactly 1 on a 1 x 1 beltable item; its one
+  caller, `0x004979AD`, is client code. In the belt search a belt's size restricts the boxes by `Belts.numboxes` of that row; packet `0x23` does not test it
+  ([Belts](Belts.md), [items/0013 §§ 4, 6](../findings/items/0013-grids-belts-stacks.md#4-the-rows-the-tables-open-questions)).
+  `[C]` (ADR-0015) **`autobelt` (`+0x131`) gates the belt search's second pass** (`0x0063C731`): for each bottom box 0..3
+  that holds an item of the same class or the same list (`hp1..5`, `mp1..5`, `rvl`/`rvs`) the first free box up that
+  column (`box, box + 4, ...` below `numboxes`); then, with `autobelt`, the first free box of 0..3 (control `noauto` fails 337 of 2 000 `belt` cases); else 0. Only a
+  beltable 1 x 1 item. `[I]` That pass is its only server gate among the reads items/0012 § 7 names: the other, `0x00628BEA` in
+  `sub_00628BA0_ItemAutoBeltTest`, does not change that test's answer, which is always 1, since any other row compares `BeltHoldsSameGroup` (0 or 1) with -1.
+  A row with `autobelt` 0 (`isc`, `tsc`, `yps`,
+  `vps`, `wms` among them) joins only a column whose bottom box holds its own class `[I]`. (fn:sub_0063C600_BeltFreeSlot@0x0063C600, fn:sub_00628A40_PotionSameGroup@0x00628A40, fn:sub_00628BA0_ItemAutoBeltTest@0x00628BA0,
+  run:2026-11-04-inventory-emu)
 - `stackable`, `minstack`, `maxstack`, `spawnstack`: 10 stackable rows (`tbk`, `ibk`, `gld`, `aqv`, `cqv`, `key`, `rps`,
   `rpl`, `bps`, `bpl`) with `minstack`/`maxstack`/`spawnstack` 1/20/5, 1/20/5, 0/5000/0, 100/350/200, 60/250/150,
   1/12/6, and 5/10/0 on the four small and large potions. The creation draw is
-  [§ base-stat roll](#fields-the-base-stat-roll-reads-plan-0024-phase-1) above; the merge and split rules (the
-  largest stack a pickup merges into, the cap by stat 254) are Phase 1.2's `[L]`.
+  [§ base-stat roll](#fields-the-base-stat-roll-reads-plan-0024-phase-1) above; the merge rule is `sub_0055E590_StackMerge`: `source + target`
+  above the maximum sets the target to the maximum, the maximum being Items `+0xE8` + stat 254 and 511 when that exceeds 510 (`[C]` (ADR-0021) up to the first
+  `UnitSetStat`; after, `[I]`); `[I]` the server has no split (packet `0x22` is a stub) ([items/0013 §§ Answer, 7](../findings/items/0013-grids-belts-stacks.md#7-stacks),
+  fn:sub_0055E590_StackMerge@0x0055E590, fn:ITEMS_GetMaxStack@0x006295B0, run:2026-11-04-inventory-emu).
 - `[C]` (data) `useable`, `belt`, `autobelt`, `stackable`: 35, 22, 14 and 10 rows with 1; `Books` (3 rows) is
   [Books](Books.md) (the scroll and tome codes, the skills, the tome price). `[L]` `usesound`'s consumer.
 

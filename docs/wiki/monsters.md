@@ -4,9 +4,9 @@ based_on:
   - docs/specs/monsters/pool.md 2026-10-27
   - docs/specs/monsters/spawn.md 2026-10-27
   - docs/specs/monsters/special.md 2026-11-03
-  - docs/specs/monsters/stats.md 2026-11-03
+  - docs/specs/monsters/stats.md 2026-11-04
   - docs/specs/drlg/collision.md 2026-10-27
-  - docs/specs/drlg/lifecycle.md 2026-10-27
+  - docs/specs/drlg/lifecycle.md 2026-11-04
 ---
 
 # Monsters
@@ -469,7 +469,8 @@ Every monster gets its stats once, when it is created
    monster level ([stats § A](../specs/monsters/stats.md#a-muldiv-and-monlvlstats)). `noRatio` classes take the
    `MonStats` value as it is.
 4. One hit-point draw between the scaled minimum and maximum. It still steps the seed when the two are equal.
-5. The player bonus added to hit points and experience, then the regeneration value.
+5. The player bonus added to hit points and experience, then the regeneration value (0 for a monster with few hit points,
+   read from the code).
 6. In classic nightmare and hell, the classic factors (below). Then skills, [MonProp](../glossary.md) and monster
    equipment.
 

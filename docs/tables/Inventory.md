@@ -2,7 +2,7 @@
 
 > **Source archive:** `.txt` patch_d2, `.bin` d2exp (a mixed-archive pair, [README](README.md#source-and-shape): the `.bin` is the live one in a stock run; the two agree in every compiled cell)   **Rows:** 32 (33 data rows − 1 `Expansion` marker)   **Record:** 240 B (`0xF0`)
 > **sha256:** `.txt` `45e9e49143b9f9c4fa5c8b4eef44b7113a2cd87ddd73a02b47a9503a1ca5524c`, `.bin` `1f294b790787957ef4e293e7a8dfddc0aa8200a5d29e06aa3e1232693024f049`
-> **Doc status:** layout complete (plan 0060 Phase 0, `python3 -I tools/excel_bin.py diff`: 32 records × 72 fields = 2 304 cells, 0 mismatches; in the gate's `excel_layout` survey); which row a unit and page select, and which fields the server reads, are plan 0060 Phase 1.2's
+> **Doc status:** layout complete (plan 0060 Phase 0, `python3 -I tools/excel_bin.py diff`: 32 records × 72 fields = 2 304 cells, 0 mismatches; in the gate's `excel_layout` survey); which row a unit and page select, and which fields the server reads, are [items/0013](../findings/items/0013-grids-belts-stacks.md) (plan 0060 Phase 1.2), below
 
 ## Purpose
 
@@ -28,8 +28,40 @@ screen pixels, which the client reads (ADR-0025: the UI is out of scope). Resear
   for the expansion classes.
 - `[C]` (data) Rows 16..31 repeat rows 0..15 on the other screen layout (e.g. `invLeft` 400 against 320). Their
   `gridX`, `gridY` equal the first set's for 15 of 16 pairs; the pair that differs is Hireling (row 13: 0 and 0;
-  row 29: 255 and 255, from the blank cells `-1` stored in a byte), and the body slots are the same size. `[L]`
-  Which set the server reads, and how it picks a row from a unit and a page: not read (Phase 1.2).
+  row 29: 255 and 255, from the blank cells `-1` stored in a byte), and the body slots are the same size. `[I]`
+  **The server reads the first set, on this reading**: the record reader
+  `sub_0065C1F0_InvRecordGrid(row, set, out)` copies 24 bytes (`gridX` to `gridBoxHeight`) from
+  `base + (16 * set + row) * 0xF0 + 0x10` (`[C]` (ADR-0015)); all 10 of its calls at `0x0063xxxx` pass a literal set of 0,
+  and the other 11, all in `0x4xxxxx`, take it from a register or a global (`0x007A5218` at `0x00483610`), the writers
+  unfollowed (a survey of direct calls). An index above the count (`0x0096D4F0`) reaches `0x00408090`; the count itself
+  (32) is accepted and reads past the table `[C]` (ADR-0015). (fn:sub_0065C1F0_InvRecordGrid@0x0065C1F0,
+  [items/0013 §§ Answer, 4](../findings/items/0013-grids-belts-stacks.md#answer-summary), run:2026-11-04-inventory-emu)
+
+### Which row a unit and a page select (`InvRowForUnit`)
+
+`[C]` (ADR-0015) `sub_00621050_InvRowForUnit(unit, page, expansion)`, run to its return (family `rowfor`) and read from the
+table at `0x00744544` ([items/0013 § Answer](../findings/items/0013-grids-belts-stacks.md#answer-summary), fn:sub_00621050_InvRowForUnit@0x00621050):
+
+| Unit | Page | Row |
+|---|---|---|
+| player | 1 | 6 (Trade Page 1) |
+| player | 2 | 7 (Trade Page 2) |
+| player | 3 | 9 (Transmogrify Box Page 1, the cube) |
+| player | 4 | 12 (Big Bank Page 1) when `expansion` is non-zero, else 8 (Bank Page 1) |
+| player | any other page | the class row (0..4, 14, 15) |
+| type 1 (a monster, a hireling too) | any | 5 (Monster) |
+| type 2, class `0x152` | any | 10 (Guild Vault Page 1) |
+| type 2, class `0x153` | any | 11 (Trophy Case Page 1) |
+| anything else | | -1 |
+
+- `[C]` (ADR-0015) **The stash is 6 x 8 in an expansion game and 6 x 4 in a classic one**, by that row (`rowfor`'s `expansion`
+  argument; control `stashsmall` fails 20 of 400). `[I]` Each server caller of the page's row that was read passes `game+0x70` as
+  `expansion` where the page can be 4 (`0x00560297`, `0x00560598`, `0x0054D658`); callers not listed were not followed.
+- `[I]` **Rows 13 and 29 (Hireling) are never returned**: a hireling is type 1, row 5. The literal `0x0D` at `0x00483705` is
+  client code. `[I]` Types `0x152`, `0x153` for rows 10 and 11 are object classes; no path reaching them was read, and
+  `inventory`'s page names are the only reason to give them those names (items/0013 § 4).
+- `[C]` (ADR-0015) **`gridX` and `gridY` are read as bytes**: with the two bytes after them (`+0x12`, `+0x13`) declared `0x7F`, the control `wide` (a wider reading) fails 2 465 of
+  4 000 `search` cases, and 397 of 800 `put` cases at the bound test (`put` ends at `InvItemRemove`, so that half is `[C]` (ADR-0021)). (fn:sub_0063ADD0_InvPageGet@0x0063ADD0, fn:sub_0063AFD0_InvGridPut@0x0063AFD0)
 
 ## Columns
 
@@ -64,18 +96,23 @@ of rows 2..3 ([player/0001](../findings/player/0001-creation.md)).
 
 ## Interpretation notes
 
-- `[I]` The server's reading of this table is `gridX` and `gridY`: the placement search tests whether an item's
-  cells fit inside the grid and are free (`sub_0063A8A0_InvGridFree`), scores spots by occupied or outside cells
-  (`sub_0063B340_InvSpotScore`) and stores the item (`sub_0063AFD0_InvGridPut`). The findings name no reader of a
-  rectangle, a body-slot size or `gridBox*` (a scope note, not a full cross-reference).
+- `[I]` The server's reading of this table, by direct calls, is `gridX` and `gridY`: the placement search tests whether an
+  item's cells fit inside the grid and are free (`sub_0063A8A0_InvGridFree`), scores spots by occupied or outside cells
+  (`sub_0063B340_InvSpotScore`) and stores the item (`sub_0063AFD0_InvGridPut`). The rectangle readers
+  `sub_0065C270_InvRecordSlotRect` (a body slot's rectangle, 20 direct calls), `sub_0065C180_InvRecordRect` (the page and grid
+  rectangles, 10) are called only from `0x4xxxxx`, client code by the project's convention; `0x0065C140` has 0 direct calls
+  and table pointers to it are unfollowed. So the findings name no server reader of a rectangle, a body-slot size or
+  `gridBox*`: a scope note over direct calls, not a full cross-reference
+  ([items/0013 § 4](../findings/items/0013-grids-belts-stacks.md#4-the-rows-the-tables-open-questions)).
   (fn:sub_0063A8A0_InvGridFree@0x0063A8A0, fn:sub_0063B340_InvSpotScore@0x0063B340,
   fn:sub_0063AFD0_InvGridPut@0x0063AFD0)
-- `[I]` The stash is not yet tied to a row: classic `Bank Page 1` is 6 × 4 and `Big Bank Page 1` is 6 × 8. Which one
-  the game uses for a stash, and how `Trade Page`, `Guild Vault` and `Trophy Case` pages are reached, is unread.
+- `[C]` (ADR-0015) The stash is tied to a row: page 4 is `Big Bank Page 1` (6 x 8) in an expansion game and `Bank Page 1`
+  (6 x 4) in a classic one (above). How the `Guild Vault` and `Trophy Case` pages are reached is unread (object classes
+  `0x152`, `0x153`, `[I]`).
 
 ## Open questions
 
-- `[L]` The function that selects a row from a unit (class, monster, vendor, hireling) and a page, and whether the
-  second set (rows 16..31) is indexed on the server. Plan 0060 Phase 1.2 (reader survey).
-- `[L]` Whether `gridX`/`gridY` are read as bytes (the layout is byte-wide because the probe pins `+0x011`; a
-  wider read of `+0x010` would see both). Phase 1.2.
+- Answered by [items/0013 § 4](../findings/items/0013-grids-belts-stacks.md#4-the-rows-the-tables-open-questions): the row function
+  is `sub_00621050_InvRowForUnit` (above, `[C]`); the second set (rows 16..31) is not indexed by any server call read, `[I]` over
+  direct calls; `gridX`/`gridY` are read as bytes (`[C]`).
+- `[L]` Who writes `0x007A5218`, the client's set: UI, out of scope (ADR-0025).

@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, data/excel]
 consumed_by: [items/quality, items/quest-drops, objects]
-tags: {C: 119, I: 60, L: 5}
-updated: 2026-10-21
+tags: {C: 120, I: 61, L: 5}
+updated: 2026-11-04
 ---
 
 # Treasure class resolution: from a drop source to item-creation calls
@@ -104,6 +104,14 @@ Offsets are byte offsets into the owner; struct names are ours ([`re/types/game.
   array; the stop at 6 reproduces the 111 calls that made 6 items, and in 4 of them picks were left, which a model
   without the stop gets wrong. (fn:TC_ResolveDrops@0x0055A6D0, run:2026-10-12-quality, run:2026-10-16-quest-drops,
   [items/0001 § Plan 0038 batch S2a](../../findings/items/0001-tc-resolution.md#plan-0038-batch-s2a-2026-10-16))
+- [C] **The stop holds against `Picks` 7.** The 30 stock rows with `Picks` 7, the table's largest, are the five act bosses'
+  (plain and quest, three difficulties; Duriel's are the `- Base` rows under a `Picks` 5 row). The 4 logged calls the stop
+  decided are all Duriel's: `Durielq (N)` in run:2026-10-12-quality, `Durielq` twice and `Duriel` in
+  run:2026-10-16-quest-drops. The history and the intent of the limit are not decidable from this image.
+  (fn:TC_ResolveDrops@0x0055A6D0, tbl:TreasureClassEx.txt:Picks, run:2026-10-12-quality, run:2026-10-16-quest-drops,
+  [quirks/0001](../../findings/quirks/0001-community-bugs.md#verdicts) row 22)
+- [I] The other four bosses' rows meet the same stop, which reads no row: no logged call of theirs is among the 4.
+  (fn:TC_ResolveDrops@0x0055A6D0, tbl:TreasureClassEx.txt:Picks)
 - [C] **`THROW_RETRIES` and `LONG_SWORD`** (forced run: a loose `treasureclassex.bin` whose `Act 1 Junk` names three
   classic throwables; ADR-0013). Over 100 classic resolver calls with a throwable pick the counter runs 0, 1, 2… from 0
   in each call; all 937 refunds are at counter 0–9 and all 141 Long Swords at 10 or 11, and in each of the 93 calls that
@@ -651,9 +659,11 @@ Step notes:
 - F2. `PlayerCount` counts the units in the game's 128 player hash lists (`game+0x1120`, next pointer
   `unit+0xE4`) that are neither in state 7 (`playerbody`) nor dead (modes 0/17 for players, 0/12 for
   monsters, or `unit+0xC6` bit 0). If `game.type ∈ {1, 2, 3}` and `g_PlayersOverride` is larger, the
-  override is used. `/players N` stores N only when `N ≤ 8` as an unsigned compare. [I]
+  override is used. `/players N` stores N only when `N ≤ 8` as an unsigned compare. The client's chat parser takes the
+  command only in client modes 0, 1, 6 and 8, with `atol` clamped to 1..8. [I]
   (fn:sub_00535790_PlayerCount@0x00535790, fn:sub_005541B0_UnitIsDead@0x005541B0,
-  fn:sub_00535780_SetPlayersOverride@0x00535780, data:g_PlayersOverride@0x00883D70)
+  fn:sub_00535780_SetPlayersOverride@0x00535780, data:g_PlayersOverride@0x00883D70, fn:sub_0047C420_ChatInputParse@0x0047C420,
+  [archaeology/0001 § 6](../../findings/archaeology/0001-switches.md#6-chat-and-other-commands))
 - F2. **The override applies in a TCP/IP game, and only the host's counts.** In plan 0044's two-client run (game type 2)
   the host's `/players 3` gave `PlayerCount` 3 in 95 calls, `/players 8` gave 8 in 13, and `/players 1` gave 2 (the
   two live players); the joiner's `/players 5`, typed among the 95, changed nothing, since the setting is a global of

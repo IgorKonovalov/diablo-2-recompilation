@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, monsters/pool, monsters/spawn, monsters/special, items/properties, data/excel]
 consumed_by: [items/tc, hirelings, combat/overview, combat/damage, stats/aggregate, chain]
-tags: {C: 135, I: 52, L: 5}
-updated: 2026-11-03
+tags: {C: 135, I: 54, L: 5}
+updated: 2026-11-04
 ---
 
 # Monster stats: hit points, defence, experience, resistances, MonProp and the mod effects
@@ -291,6 +291,9 @@ B8. The hpregen formula is evaluated on the HP before the classic adjustment; §
 rounding when max HP changes. Stat 13 has no cap. [C] (0x00573FCD–0x00573FF1, tbl:MonStats.txt:DamageRegen,
 run:2026-10-15-mon-stats)
 
+B8. A monster with few hit points has no regeneration: `((hp << 8) × r) >> 12` is 0 while `hp × r < 16`. [I]
+(0x00573FF6–0x00574058, tbl:MonStats.txt:DamageRegen, [quirks/0001](../../findings/quirks/0001-community-bugs.md#verdicts) row 14)
+
 B10. `MonsterSkillBonus` comes from the DifficultyLevels record of `game+0x6D`, and the step makes no draw for a
 monster. After the loop the unit's skill list is exactly `{(Skill[k], Sk_lvl[k] + bonus) : Skill[k] ≥ 0, Sk_lvl[k] > 0}`:
 2 678 creations, 2 102 skills, bonus 0 in normal (2 153 creations), 3 in nightmare (249) and 7 in hell (276), with the
@@ -543,7 +546,9 @@ body of `champion` without its velocity, given in the `champion` row: 71 `champi
 | 41 `always_run_ai` | fn:sub_005A1330_UModAlwaysRunAi@0x005A1330 | AI event 7 at frame `game+0xA8` + 75; no stat | the same | [I] (not met) |
 
 Every other row has no server handler ([special § D](special.md#d-per-mod-draws)). The counts are the run's handler calls
-with flag 1 / flag 0. [C] (data:g_UModHandlers@0x0073C008, run:2026-10-15-mon-stats)
+with flag 1 / flag 0. [C] (data:g_UModHandlers@0x0073C008, run:2026-10-15-mon-stats) The × 256 of `manahit` is on top of
+the build's own shift, so such a boss takes `256·v` mana: [combat/delivery B4](../combat/delivery.md#b-delivery-combat_applydamage).
+[I] (fn:sub_005A1F90_UModManaHit@0x005A1F90, [quirks/0001](../../findings/quirks/0001-community-bugs.md#verdicts) row 13)
 
 ```
 G1. MonHpAddPct(unit, pct: i32):                                 [C] (fn:sub_005A0D20_MonHpAddPct@0x005A0D20, 0x005A0D29–0x005A0DB8, run:2026-10-15-mon-stats)
