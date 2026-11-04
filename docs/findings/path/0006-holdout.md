@@ -58,7 +58,7 @@ Residuals of the code pass in cells (not plans): `0x0200` 92 597 (no plan depend
 | `T1S` per site | all 7 at 0; not reached by the necromancer's pets (`k5-necro`) or the sorceress's mercenary (`k5-sor-jail`), a retry site (§ Answer); the state-13, `SkillDo103DiabRun` and `SwarmMove` sites not staged |
 | type 1 stages: Countess state 13, Diablo's run, a far-behind mercenary | not staged |
 | town-follow | attempted (`k5-town-a1`, Rogue Encampment, 313 plans): no hostile monster in the town room in these logs; short, the geometry stays [drlg/0009 § 11.2](../drlg/0009-room-lifecycle.md#112-the-town-follow-static-remainder-lanerbs4) |
-| Phase 1b | not run. The lane's statement holds of `docs/sources.md` (the one pathing thread, `pk-pathfinding-thread`, is rejected), but the phase's work is to register sources, and no search is recorded: not a reason, routed at the review |
+| Phase 1b | not run. The phase's work is to register sources, and no search is recorded: not a reason, routed at the review. The lane's statement that no registered source held a comparable claim does not hold of `docs/sources.md` either, corrected at the `lane/r1b` review: [path/0007](0007-community-cross-check.md) (`src:d2mods-monstats-guide`, `src:d2dfg-blizzard`) |
 
 ## Hop stages, development only
 
