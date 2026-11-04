@@ -48,7 +48,7 @@ The register of this finding is § 2. Sources, one line each (full rows in `docs
 
 | Address | Name | Role | Tag |
 |---|---|---|---|
-| 0x005F67B0 | `sub_005F67B0_AiDuriel` | row 44 think, the contradicted C10 and C11 | I |
+| 0x005F67B0 | `sub_005F67B0_AiDuriel` | row 44 think, the contradicted C10 and C11 | C ([ai/0020](0020-owner-played-duriel-countess.md), run:2026-11-04-r72) |
 | 0x005F2B10 | `sub_005F2B10_AiGreaterMummy` | row 22 think, the contradicted C40 | I |
 
 No new names: both are in `re/symbols.csv` from ai/0008 and ai/0003. No symbol is raised or added by this finding.
@@ -173,6 +173,7 @@ Counted from the rows of § 2 by `grep` over the verdict column (the command and
 
 **Required cases of Phase 2** (every `contradicted` claim reachable on stock data):
 
+- *2026-11-04:* C10's case is run, owner-played: Smite 102, Jab 116, A1 90 of 308; the page's 50 and 17 are outside the exact intervals, the three draws replay 308 of 308. The record's "mode 5" was the expected form: the logged modes are 14, 14 and 4. C11 not run. [ai/0020 § 1](0020-owner-played-duriel-countess.md), run:2026-11-04-r72, 0x005F6861.
 - **P1b-1 (C10, C11): Duriel's melee decision.** Row 44 `Duriel` (MonStats 211; 708 if the Über event can be staged),
   Normal difficulty, a player in melee range, at least 300 melee decisions. Model: Smite on `draw < 33`, Jab on a
   second `draw < 50`, else A1 (A2 never, `aip4` = 0). Expected 33 : 33.5 : 33.5; the page predicts 33 : 50 : 17. The log

@@ -3,8 +3,8 @@ spec: skills/dispatch
 status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, data/calc, combat/overview, combat/delivery, stats/states, monsters/spawn, monsters/stats]
-consumed_by: [skills/missiles, combat/overview, combat/delivery, stats/states, items/economy, monsters/stats, monsters/ai/overview, monsters/ai/machinery]
-tags: {C: 77, I: 195, L: 7}
+consumed_by: [skills/missiles, combat/overview, combat/delivery, stats/states, items/economy, monsters/stats, monsters/ai/overview, monsters/ai/machinery, sim/frame]
+tags: {C: 78, I: 195, L: 7}
 updated: 2026-11-04
 ---
 
@@ -1078,6 +1078,12 @@ The rows plan 0045 reproduces; the reading is [skills/0003 § 5](../../findings/
   line, 13 other. So between a start-built hit and its delivery, other events draw on the attacker's seed. The 171 +
   160 monster gaps point at the AI, and their logs hold no AI line; with the AI logged, 41 of 49 new gaps of this shape close ([monsters/ai A4 and A5](../monsters/ai/README.md#a-the-event-kinds-and-their-seeds)). [I] (run:2026-10-25-skills, run:2026-10-27-skills,
   [skills/0001 § 18](../../findings/skills/0001-dispatch.md#18-plan-0045-phase-2-part-2-the-run-run2026-10-27-skills))
+- P1. **What the frame model adds.** Walking from the latest skill-event exit of the unit before the entry re-chains 7 more of
+  part 2's player gaps, all of the nested class, so 142 of the 281 player gaps close and 139 stay open. It re-chains
+  **none** of the 331 monster gaps, whose logs hold no AI line. Of part 1's 3 459 pairs, 3 155 chain at once, 90 by the
+  walk, 0 more by the frame model, and 214 stay open. The order and the windows are
+  [sim/frame § J5 and § K](../sim/frame.md#j-draws-per-pass-and-the-shared-seeds). [C] (run:2026-11-03-frame-order, run:2026-10-27-skills,
+  [frame/0004 § 6](../../findings/frame/0004-order-on-kept-logs.md#6-the-resynchronised-entries))
 - P2. **Armageddon re-seeds its caster.** The periodic function of Armageddon and Diablogeddon (do 146) seeds the
   caster's seed with `Init` of its skill entry's `+0x18` word and stores a fresh `RNG_Range(1 000 000)` there; the
   first period's word and its conditions are [rng/seeds](../rng/seeds.md#reimplementation-notes)' *Armageddon's cast

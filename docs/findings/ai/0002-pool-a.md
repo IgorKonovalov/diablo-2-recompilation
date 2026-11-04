@@ -84,7 +84,7 @@ anchors.
 | `0x005F0700` | `sub_005F0700_AiSandRaider` | row 8 `SandRaider` think | I |
 | `0x005F06B0` | `sub_005F06B0_AiNearAllyCb` | row 8's search callback: the nearest other alignment-0 living monster | I |
 | `0x005F0A20` | `sub_005F0A20_AiWraith` | row 9 `Wraith` think | I (map `[C]`, § 3); first boundary live `C`, ai/0015 |
-| `0x005F0B00` | `sub_005F0B00_AiCorruptRogue` | row 10 `CorruptRogue` think | I |
+| `0x005F0B00` | `sub_005F0B00_AiCorruptRogue` | row 10 `CorruptRogue` think | C ([ai/0020](0020-owner-played-duriel-countess.md), run:2026-11-04-r72); the block `[I]` |
 | `0x005F0CD0` | `sub_005F0CD0_AiBaboon` | row 11 `Baboon` think | I |
 | `0x005F12A0` | `sub_005F12A0_AiGoatman` | row 12 `Goatman` think | I (map `[C]`, § 3) |
 | `0x005F1440` | `sub_005F1440_AiFallenShaman` | row 13 `FallenShaman` think | C (first boundary only, ai/0015) |
@@ -319,6 +319,8 @@ Idle(aip2);
 - [C] The map. (run:2026-10-30-ai-cat-emu-1, `wraith`)
 
 #### 2.9 Row 10 `CorruptRogue` (0x005F0B00)
+
+> 2026-11-04: 49 logged decisions of class 45 in state 0 fit this block, 0 mismatches; no far arm, no melee idle reached; short of the rule, so `[I]`. [ai/0020](0020-owner-played-duriel-countess.md), run:2026-11-04-r72, 0x005F0B47.
 
 ```c
 MonPlayerBonus(G, &pb, UnitGetRoom(U), U);                       // pb.difficulty: min(d, 2)
