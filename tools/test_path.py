@@ -343,8 +343,8 @@ class T(unittest.TestCase):
         P.corpse_mark(R, 1, 4, 4, 1, 0x100, 1)
         self.assertEqual(sum(1 for c in room.c if c & 0x100), 5)
         room.c = [0] * 81
-        P.corpse_mark(R, 1, 4, 4, 5, 0x8000, 0)
-        self.assertEqual(sum(1 for c in room.c if c == 0x8000), 5)
+        P.corpse_mark(R, 1, 4, 4, 5, 0x8000, 0)                  # re-created dead: the corpse call's 3 x 3, the plus inside it (drlg/lifecycle H5)
+        self.assertEqual(sum(1 for c in room.c if c == 0x8000), 9)
 
     def test_check_holds_the_review_sections(self):
         """`check` is the whole report: the former review tool's sections, the grid report, the rev 5 sections; RESULT stays the last line."""
@@ -765,6 +765,20 @@ class Logger(unittest.TestCase):
             g.hit(0x005D9EF8, edi=UNIT, esp=STK)
         self.assertEqual(len(g.lines("L1M")), 3)
         self.assertEqual(len(g.lines("CAP")), 1)
+
+
+class CorpseCopy(unittest.TestCase):
+    """tools/corpse_copy.py: a DC line is placed by the DRLG room its room pointer was last built under, the SN of an earlier build counting for a rebuild."""
+
+    def test_places_the_line_on_its_copy(self):
+        import corpse_copy
+        cb = lambda room, dr: 'CB {"room":%d,"dr":%d,"lid":4,"rect":[10,10,5,5]}' % (room, dr)
+        lines = [cb(1, 100), cb(2, 200), 'SN {"room":1}', cb(3, 100), 'DC {"room":2,"u":7,"pc":4916699}', 'DC {"room":3,"u":8,"pc":4917755}', "DC junk"]
+        where, keys, units = corpse_copy.read(lines)
+        self.assertEqual(keys, collections.Counter({(2, 1): 1}))
+        self.assertEqual(where["own copy SN=0, other copies 1, one with SN=1"], 1)
+        self.assertEqual(where["own copy SN=1, other copies 1, one with SN=0"], 1)
+        self.assertEqual(units, {7: [4916699], 8: [4917755]})
 
 
 if __name__ == "__main__":

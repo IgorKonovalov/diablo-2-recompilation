@@ -762,8 +762,8 @@ def tie_of(plan, cells=False, corpse=False, rules=None):
                 _, uid, cls, x, y, room, mode, sx, sy, door, b13b, b167, b1b6 = u[:13]
                 if code and not object_marked(u, tables[0]):
                     continue
-                if code and tgt and uid == tgt[1] and tgt[0] == 2 and plan.pln["fl"] & 0x800:
-                    continue                                     # rule T1: PathPlan's target unmark under flag 0x800 (0x00649B1A..0x00649B25)
+                if code and sx and tgt and uid == tgt[1] and tgt[0] == 2 and plan.pln["fl"] & 0x800:
+                    continue                                     # rule T1: PathPlan's target unmark under flag 0x800 when UNIT_GetSizeX is not 0 (0x00649B10..0x00649B25)
                 if door:
                     mask = (0x804 if b1b6 else 0x400) if not b13b else 0x806
                 else:
@@ -773,7 +773,7 @@ def tie_of(plan, cells=False, corpse=False, rules=None):
         t, uid, cls, mode, x, y, room, size, pat, mask, fl = u
         if (t, uid) == tuple(selfu):
             continue
-        if tgt and (t, uid) == tuple(tgt) and plan.pln["fl"] & 0x800:
+        if tgt and (t, uid) == tuple(tgt) and plan.pln["fl"] & 0x800 and (size or not code):
             continue
         if rules in ("code+w1", "code+w1+l1") and t == 0 and plan.w1:
             continue                                         # rule W1: the arrival of PlayerChangeAct is unmarked
@@ -817,9 +817,10 @@ def tie_of(plan, cells=False, corpse=False, rules=None):
 
 
 def corpse_mark(R, room, x, y, pat, mask, dead_col):
-    """Rules C1..C3 of path/0005, the server's dead monster: created dead the plus of its record (pattern 5, 0x8000); `deadCol` 1 its live mark; else the 3 x 3."""
+    """Rules C1..C3 of path/0005, the server's dead monster: `deadCol` 1 its live mark; else the 3 x 3. A record already at pattern 5, 0x8000 was re-created dead: the corpse
+    call's 3 x 3, then the plus inside it (drlg/lifecycle H5). A monster relocated dead holds the same record and only the plus at the new place; the list does not separate them."""
     if mask == 0x8000:
-        pattern_op(R, room, x, y, pat, mask)
+        size_op(R, room, x, y, 3, 0x8000)
     elif dead_col:
         pattern_op(R, room, x, y, pat, mask)
     else:

@@ -402,7 +402,7 @@ RectOrWH(r, x, y, w, h, m): w = h = 1: CellOr(m); else RectOr({x - w/2, y - h/2,
 | object, `IsDoor` 1 | `SizeX`×`SizeY` | `BlocksVis`: `0x806`; else `BlockMissile`: `0x804`; else `0x400` | — | C for `0x806`, I for the other two (§ 14) |
 | type 5 | size 0 (nothing written) | `0x01` | — | I |
 
-  **Correction, 2026-11-04 ([path/0005](../path/0005-grid-rules.md), plan 0054):** [I] the two `deadCol` rows and the bit-15 row hold for the client's copy, where the hooks 0x004B05DB and 0x004B09FB sit. The server's dead monster with `deadCol` 0 takes `UnitCorpseColl(unit, 1)` at 0x005A65D9: a 3×3 of `0x8000`, mask and pattern unchanged, from mode 0 on; created or relocated dead it takes the plus (0x00555492, 0x00554B78).
+  **Correction, 2026-11-04 ([path/0005](../path/0005-grid-rules.md), plan 0054):** [C] the two `deadCol` rows and the bit-15 row hold for the client's copy, where the hooks 0x004B05DB and 0x004B09FB sit and where all 408 `DC` lines' rooms lie (`tools/corpse_copy.py`; lines of the two tests over 202 unit addresses, not 408 deaths). [I] The server's dead monster with `deadCol` 0 takes `UnitCorpseColl(unit, 1)` at 0x005A65D9: a 3×3 of `0x8000`, mask and pattern unchanged, from mode 0 on; re-created dead it takes that and then the plus ([drlg/lifecycle § H5](../../specs/drlg/lifecycle.md#h5-the-grid-marks-of-a-re-created-monster)), relocated dead the plus alone (0x00554B78).
   (run:2026-10-14-collision for the rows tagged C: 410 creations, 396 `deadCol` 0 and 12 `deadCol` 1 deaths, 5702 missile marks;
   fn:PATH_DynamicCreate@0x00649D00, fn:PATH_MonTestMask@0x00648480, fn:UNIT_GetCollMask@0x006209D0, fn:sub_00649F70_UnitCorpseColl@0x00649F70, fn:sub_00463860_MonBaseId@0x00463860, tbl:MonStats.txt:flying, tbl:MonStats.txt:opendoors)
 - [C] **The marks of one creation in the pass** (seen on all 410 creations of the run): inside `SUnitCreate`, `UNIT_CollMark` runs
@@ -457,7 +457,7 @@ Writers and readers found in the code read. "Readers" lists the masks named in t
 | 13 | `0x2000` | non-interactive NPCs (`npc` or `inTown`, plan 0038 H5d), patterns 3 and 4 | `0x3C01`, `0x3401`, `0x3F11` | C (the writer, plan 0038 H5d) |
 | 14 | `0x4000` | none found | none | I |
 | 15 | `0x8000` | corpses (monsters with `deadCol` 0: plus; players: 3×3), portals | none of the listed masks | I |
-**Correction, 2026-11-04 ([path/0005](../path/0005-grid-rules.md), plan 0054):** [I] the two `deadCol` rows and the bit-15 row hold for the client's copy, where the hooks 0x004B05DB and 0x004B09FB sit. The server's dead monster with `deadCol` 0 takes `UnitCorpseColl(unit, 1)` at 0x005A65D9: a 3×3 of `0x8000`, mask and pattern unchanged, from mode 0 on; created or relocated dead it takes the plus (0x00555492, 0x00554B78).
+**Correction, 2026-11-04 ([path/0005](../path/0005-grid-rules.md), plan 0054):** [C] the two `deadCol` rows and the bit-15 row hold for the client's copy, where the hooks 0x004B05DB and 0x004B09FB sit and where all 408 `DC` lines' rooms lie (`tools/corpse_copy.py`; lines of the two tests over 202 unit addresses, not 408 deaths). [I] The server's dead monster with `deadCol` 0 takes `UnitCorpseColl(unit, 1)` at 0x005A65D9: a 3×3 of `0x8000`, mask and pattern unchanged, from mode 0 on; re-created dead it takes that and then the plus ([drlg/lifecycle § H5](../../specs/drlg/lifecycle.md#h5-the-grid-marks-of-a-re-created-monster)), relocated dead the plus alone (0x00554B78).
 
 (fn:COLL_StampTileList@0x0064C790, fn:UNIT_GetCollMask@0x006209D0, fn:PATH_DynamicCreate@0x00649D00, fn:PATH_MonTestMask@0x00648480, fn:COLL_PatternMark@0x0064EA90, fn:sub_005B2A00_MonSpawnTry@0x005B2A00)
 
@@ -852,6 +852,7 @@ Static batch S4b of [plan 0038](../../plans/0038-inferred-claims-sweep.md) (Phas
   (0x00642369). Every one of the 5434 `CB` grid builds in the collision and objects logs is on a server act (levels
   traced through `RL` and `LC0`), so no log shows a client build, and the chain from client code to the activation was
   not traced. Stays `[I]`. (fn:DUNGEON_RoomCreate@0x00619890, fn:DRLG_RoomActivate@0x006422A0)
+  **Correction, 2026-11-04 (`lane/p54b` review, plan 0054):** [I] "on a server act" and "no log shows a client build" do not hold: in the seven collision logs 357 (level, rectangle) pairs are built under two DRLG rooms, exactly one with an `SN` line, so those `CB` lines hold both copies (`tools/corpse_copy.py`, `workspace/logs/p54b/corpse-copy.txt`). The objects logs were not recounted.
 - **Row 4** (spec L86) **reclassified d-none.** Only player, monster and missile paths reach `PATH_PatternFromSize` on the
   server (`SUnitPathCreate` switch at 0x005548B7: types 0, 1 and 3 call `PATH_DynamicCreate`; objects, items and type 5
   mark rectangles). Players are size 2, MonStats2 `SizeX` is 0–3 in all 609 rows and Missiles `+0x18A` 0–3 in all
