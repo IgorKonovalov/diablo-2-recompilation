@@ -4,7 +4,7 @@ to: architect
 date: 2026-11-04
 status: done
 context: []
-resolution: "accept with fixes (10); rulings in the plan 0062 log [review](../../plans/0062-debug-and-cut-content.md#implementation-log)"
+resolution: "accept with fixes (10); rulings in the plan 0062 log [review](../../plans/done/0062-debug-and-cut-content.md#implementation-log)"
 ---
 
 Backlog sweep and plan 0062 Phase 3 for review, `lane/s69`. Closed: states B3, missiles H1 and H4, travel B1 with the lifecycle note, the 0062 switches.

@@ -5,7 +5,7 @@ date: 2026-11-04
 status: done
 context:
   - ../../findings/archaeology/0001-switches.md
-  - ../../plans/0062-debug-and-cut-content.md
+  - ../../plans/done/0062-debug-and-cut-content.md
 resolution: "Tier B check 2026-11-04: accept with fixes (5); -ns priority entry filed; merged into main."
 ---
 

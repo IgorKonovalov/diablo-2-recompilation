@@ -6,7 +6,7 @@ status: done
 context:
   - ../../findings/archaeology/0003-sound-draws.md
   - ../../findings/archaeology/experiments.md
-  - ../../plans/0062-debug-and-cut-content.md
+  - ../../plans/done/0062-debug-and-cut-content.md
 resolution: "Tier B check 2026-11-04: accept with fixes (5). No rerun is ordered now, none is cleared; the paired session decides, on the first free slot; merged into main."
 ---
 
