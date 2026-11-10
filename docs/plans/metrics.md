@@ -688,6 +688,8 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-11-10 | `lane/n64h` check | 0064 golden DRLG conventions | architect-check | 61 552 | 12 | 1 | — | accept with fixes (1) | stale cross-reference 1 |
 | 2026-11-10 | `lane/n64r` | 0064 missing findings | reverser-static | 225 255 | 121 | 16 | Ghidra copy (r2 used) | accept with fixes (Tier A as audit, 4) | overclaim 2, misread 1, wrong anchor 1 |
 | 2026-11-10 | `lane/n64r` review | 0064 missing findings | architect-review | 130 417 | 40 | 5 | — | accept with fixes (4); OneOrTwo [C] now on a count (26 of 100) | audit of lane/n64r: overclaim 2, misread 1, wrong anchor 1 |
+| 2026-11-10 | `lane/n64x` | 0064 P4 part 2 (S3, S4) | spec-writer | 259 724 | 111 | 13 | — | accept with fixes (Tier A, 3) | under-claim 1, overclaim 1, misread 1 |
+| 2026-11-10 | `lane/n64x` review | 0064 P4 part 2 | architect-review | 129 305 | 42 | 5 | — | accept with fixes (3) | under-claim 1, overclaim 1, misread 1 |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not

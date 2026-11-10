@@ -21,3 +21,18 @@ resolution: ""
   legend; the reader guessed 0 ("no exclusion"). Give the stored values (or a legend).
 
 *Annotated 2026-11-10 (reverser, lane/n64r):* the reverser entry this waits for is closed. The statements are in [drlg/0008 § Plan 0064 statements](../findings/drlg/0008-outdoor.md#plan-0064-statements-2026-11-10): (a) `A1CliffMark` as pseudocode, `[C]`; (b) `g_A1SearchDx` `+1, 0, −1, 0`, corrected in place in § 16.3; (c) `OneOrTwo` with the `s` step in the else branch only, `[C]`; (d) `LevelBorderAdj`'s `Vis ≠ 0` test, `[C]` with a separating control (drlg/0007's table row raised too).
+
+**2026-11-10, spec-writer (`lane/n64x`, plan 0064 Phase 4): items 5 onward and the two probe rows, from the findings; items
+1–4 untouched.** Items 1–4 (H6d, H7, H1 `A1CliffMark`, C1) **wait** for the reverser lane n64r and
+[drlg-outdoor-statements](archive/2026-11-10-architect-reverser-plan-0064-drlg-outdoor-statements.md) (a)–(d); the spec still
+carries the old H6d table, H7 sentence, H1 comment and C1 wording. Done in [drlg/outdoor](../specs/drlg/outdoor.md):
+(5) and probe row 7, § C: `LevelAdjInsert`'s one-node compare and its skipped head, C2's full order as the
+reimplementation's rule with the 177/19/5 count and the side 1, 3 + 2 example, and C2's `[C]` scoped to the compare and the
+within-side order (drlg/0008 § 13, § S4a); (6) J2a: `RectGapTest(A, B, 0) = 0` ⇔ both gaps negative (drlg/0007 § 3, drlg/0006
+§ 2, maze B2); (7) in part, G4: the variant stride `(g.w + 1)·(v + 1)` and "63 means any" = `baseDef + wildcard 62`
+(drlg/0008 § 7); (12) H6/H6e: `A1Paths` calls the jitter only for a found path, so a failed search draws nothing (drlg/0008
+§ 8, § 16.3); (13) F1: level 3 falls through to the shuffle when no cell matches (drlg/0008 § 6), unreached; probe row 20,
+H0: rows 6–14 store `not1` = `not2` = 0, a legend with the stored value. **Routed, no finding holds the answer:** (7)'s
+layer, the 63 cell of a replacement, "the others" and `N < 0`; (8) L5; (9) L4, L6; (10) J5; (11) H3; (14) C5, all in
+[plan-0064-outdoor-unstated-steps](2026-11-10-spec-writer-reverser-plan-0064-outdoor-unstated-steps.md) and under
+drlg/outdoor *Open questions*. Left open: items 1–4, then the routed items once that entry lands.

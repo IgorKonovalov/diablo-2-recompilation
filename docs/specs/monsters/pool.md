@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, data/excel]
 consumed_by: [monsters/spawn, monsters/special, monsters/stats, objects, hirelings]
-tags: {C: 99, I: 19, L: 3}
-updated: 2026-10-27
+tags: {C: 102, I: 22, L: 4}
+updated: 2026-11-10
 ---
 
 # Level monster pools ("monster regions") and the monster level
@@ -68,7 +68,7 @@ A monster class is a MonStats record position (the stored distinct-Id ordinal, u
 | tbl:MonStats.txt:noRatio, tbl:MonStats.txt:boss | `+0x00C` bits 2 and 6: keep the MonStats level |
 | tbl:MonStats.txt:rangedtype | `+0x00F` bit 4: the ranged rule's test |
 | tbl:MonStats.txt:Rarity | u8 at `+0x02E`: the entry's weight |
-| tbl:MonStats.txt:MonStatsEx | i16 at `+0x018`: the class's `monstats2` record |
+| tbl:MonStats.txt:MonStatsEx | i16 (signed) at `+0x018`: the class's `monstats2` record; a blank cell would store −1, and stock data has none (0..603 in all 734 records, [MonStats](../../tables/MonStats.md#columns)) |
 | tbl:MonStats.txt:Level | i16 × 3 at `+0x0AA` (`Level`, `Level(N)`, `Level(H)`): the monster level |
 | tbl:MonStats.txt:MinGrp, tbl:MonStats.txt:MaxGrp | u8 at `+0x02F`, `+0x030`: critter count |
 | tbl:MonStats2.txt:HDv … `S8v` | u8 × 16 at `+0x015..+0x024`: the counts of the sixteen component lists; u8 at `+0x025`: Σ(count − 1), computed by the compiler, the set-cap exponent ([MonStats2](../../tables/MonStats2.md)) |
@@ -97,7 +97,7 @@ A monster class is a MonStats record position (the stored distinct-Id ordinal, u
 | difficulty | u8 at game `+0x06D`, 0 normal, 1 nightmare, 2 hell | game creation |
 | expansion | u32 at game `+0x070`, non-zero in an expansion game | game creation |
 | `regions[id]` | pointer array at game `+0xF0`, one `MonRegion` per level id, `[0]` unused | step B |
-| level count | i32 at `g_pDataTables+0xC5C` (137 stock) | data/excel |
+| `levelCount` (the level count) | u32 `g_nLevels` at `0x0096C88C` (`g_pDataTables+0xC5C`): the `levels` record count, the `u32 count` header of `levels.bin`; 137 stock (levels 0–136) | [data/excel § C](../data/excel.md#c-addressing-records), the `levels` row of the C1 table; step note B3 |
 | client room seed | `Seed` at active room `+0x6C` (client copy) | [rng/seeds](../rng/seeds.md) step 6 |
 
 ### Constants
@@ -187,6 +187,7 @@ B1. Init(R, game.seed.low)                                       [C] (fn:sub_005
 B2. if DifficultyRecord(difficulty) = none: fatal error          [I] (fn:sub_00611D30_DifficultyRec@0x00611D30) ; never exercised
 B3. d: u8 ← difficulty
     for id: i32 in 1 ..< levelCount:                             [C] (fn:sub_005479C0_MonRegionsBuild@0x005479C0, run:2026-10-12-mon-pool)
+                                                                 ; levelCount: Runtime state, g_nLevels (step note B3)
 B4.   L ← Levels[id]                                             ; LEVELS_GetRecord, record position
       reg ← new MonRegion, 0x2E4 bytes, all zero
       reg.act      ← L.Act                                       ; u8
@@ -204,6 +205,17 @@ B7.   regions[id] ← reg
 
 Step notes:
 
+- B3. [I] `levelCount` is the u32 at `0x0096C88C` (`g_pDataTables+0xC5C`, the address the build's bound reads),
+  which is `g_nLevels`, the record count `LoadTable` returns for `levels`: the `u32 count` at the head of
+  `levels.bin` ([data/excel](../data/excel.md#b-loading-one-table) B1, and the `levels` row of the C1 table). The
+  shipped file holds 137 records, so the loop visits the 136 levels 1–136. The address equality is
+  [data/0001 §5](../../findings/data/0001-excel-loader.md#5-where-the-nine-phase-1-tables-land)'s table (`g_nLevels`
+  `0x0096C88C`, `+0xC5C`); no logger reads it by address, hence the tag. (data:g_nLevels@0x0096C88C,
+  fn:sub_005479C0_MonRegionsBuild@0x005479C0, fn:DATATBLS_LoadTable@0x006122F0,
+  [monsters/0001 §2](../../findings/monsters/0001-level-pool.md#2-the-region-build-sub_005479c0_monregionsbuild))
+- B3. [C] The regions of levels 1–136 are what every run logs and reproduces: 136 regions per game
+  (run:2026-10-12-mon-pool-p2, all 136 levels; the 1360 regions of ten games in run:2026-10-12-mon-pool).
+  (fn:sub_005479C0_MonRegionsBuild@0x005479C0, run:2026-10-12-mon-pool, run:2026-10-12-mon-pool-p2)
 - B3. [C] Level 0 (*Null*) gets no region. Levels are processed in id order, and each level's pool **and**
   its appearance sets are complete before the next level's first draw, so one level's data changes every
   later level's pool. (fn:sub_005479C0_MonRegionsBuild@0x005479C0, run:2026-10-12-mon-pool)
@@ -221,7 +233,7 @@ Step notes:
 
 ```mermaid
 flowchart TD
-  c1["count = Levels +0x034 if d ≠ 0, else +0x033<br/>cand = first count slots of nmon or mon"] --> c2["bound = min(NumMon, 13, count)"]
+  c1["count = Levels +0x034 if d ≠ 0, else +0x033<br/>(set at load, 0 in the file)<br/>cand = first count slots of nmon or mon"] --> c2["bound = min(NumMon, 13, count)"]
   c2 --> loop{"p < bound?"}
   loop -->|no| done["pool complete"]
   loop -->|yes| c5["i = Range(R, count), c = cand of i"]
@@ -240,6 +252,8 @@ flowchart TD
 
 ```
 C1. count: i32 ← nightmareOrHell ? L[+0x034] : L[+0x033]         [C] (fn:sub_005475E0_MonRegionPool@0x005475E0, run:2026-10-12-mon-pool)
+                                                                 ; load-time bytes, 0 in levels.bin: a reader of the
+                                                                 ; file computes them (step notes C1)
     cand: i16[] ← first `count` slots of (nightmareOrHell ? L.nmon : L.mon)
 C2. bound: i32 ← min(L.NumMon, 13, count)
 C3. for p: i32 in 0 ..< bound:
@@ -262,6 +276,16 @@ C8.   if Valid(c) and MonStats[c].isSpawn:                       [C] (fn:sub_005
 
 Step notes:
 
+- C1. [C] **The two counts are not in the file.** `+0x033` (`mon`) and `+0x034` (`nmon`) are bytes with no `.txt`
+  column; every shipped `levels.bin` record holds 0 there, and `DRLG_LoadLevels` writes them when the table is
+  loaded; the run reproduces every pool from the counts so filled. Reading the stored bytes gives a count of 0 and
+  an empty pool for every level. (fn:DRLG_LoadLevels@0x0061C540, run:2026-10-12-mon-pool,
+  [Levels § Fields with no `.txt` column](../../tables/Levels.md#fields-with-no-txt-column),
+  [monsters/0001 §3](../../findings/monsters/0001-level-pool.md#3-the-pool-sub_005475e0_monregionpool))
+- C1. [I] A reimplementation that reads the `.bin` records therefore fills both bytes itself, once, before the
+  build: each is the number of **leading** slots of its 25 (`mon`, `nmon`) holding a value ≥ 0, up to the first
+  negative one (§ Inputs, the two bullets under the table; the note *Candidate count stops at the first blank*).
+  The rule is a code reading; on stock data it equals the number of set slots. (fn:DRLG_LoadLevels@0x0061C540)
 - C1. [C] The selector is `difficulty ≠ 0` and nothing else: normal reads `mon`, nightmare and hell read
   `nmon`. The expansion flag is not read here. In run:2026-10-12-mon-pool the nightmare and hell pools were
   built with the difficulty byte **forced**: the logger wrote it at `0x00547D63`, just before the build's only
@@ -360,6 +384,14 @@ D6. repeat n times:
       e.sets[e.nVariants] ← new;  e.nVariants ← e.nVariants + 1  ; appended even if still a duplicate
 ```
 
+- D1. [I] `m2` is none when the class's `MonStatsEx` index (read signed) is not a `monstats2` record position, that
+  is `< 0` or `≥` the `monstats2` record count, the form the same lookup takes inline in `MonSpawnTry`
+  (`i2 < 0 or i2 ≥ nMonStats2`, then a null record), [monsters/0002 §6](../../findings/monsters/0002-room-population.md#6-placement-monspawntry)
+  (0x005B2A66, 0x005B2A72, 0x005B2A8B). `MonStats2Rec`'s own test is not written in a finding.
+  (fn:sub_00451FE0_MonStats2Rec@0x00451FE0, fn:sub_005B2A00_MonSpawnTry@0x005B2A00)
+- D1. [C] No stock class reaches the "none" exit: every `MonStatsEx` holds 0..603 and `monstats2` has 609 records,
+  so on stock data the bound decides nothing and a reimplementation may use any out-of-range rule. (table survey;
+  tbl:MonStats.txt:MonStatsEx, [MonStats § Columns](../../tables/MonStats.md#columns), [MonStats2](../../tables/MonStats2.md))
 - [C] These draws sit between one level's pool picks and the next level's, on the same `R`, so a
   reimplementation must make them even if it never draws monsters, or every later pool is wrong.
   (fn:sub_005BDB20_MonVariantRoll@0x005BDB20, run:2026-10-12-mon-pool)
@@ -816,3 +848,6 @@ prints `monster level 68 (difficulty index 2)`, and `--exp 0` prints 67.
   [MonStats2](../../tables/MonStats2.md) and [data/0004](../../findings/data/0004-cell-converters.md) (plan 0015):
   the `HDv` … `S8v` counts, Σ(count − 1), and `TotalPieces`; see section D and § Consumers.
 - [L] The draws of `sub_0046C1A0_ClientCritterCreate` belong to `monsters/spawn`.
+- [L] `MonStats2Rec`'s own range test (D1's "none"): the lead is the inline form of the same lookup in `MonSpawnTry`
+  (step note D1). No stock class reaches it. Filed for the reverser:
+  [monstats2rec-bound-test](../../backlog/2026-11-10-spec-writer-reverser-monstats2rec-bound-test.md).

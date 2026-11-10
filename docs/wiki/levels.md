@@ -6,7 +6,7 @@ based_on:
   - docs/specs/drlg/collision.md 2026-11-04
   - docs/specs/drlg/maze.md 2026-11-03
   - docs/specs/drlg/warps.md 2026-10-17
-  - docs/specs/drlg/outdoor.md 2026-10-20
+  - docs/specs/drlg/outdoor.md 2026-11-10
   - docs/specs/drlg/lifecycle.md 2026-11-04
   - docs/specs/monsters/spawn.md 2026-11-04
 ---
@@ -659,6 +659,9 @@ section.
   take the opening's variant), an exhausted road search (it uses at most 45 of its 900 nodes), and the cliff-cave scan's
   swapped bounds, which only a non-square level would show (of the Act I levels 2–7 only the Blood Moor is non-square,
   and nothing between the step that skips its cliffs and the scan gives it a cliff run). A few table reads past the end are not reached by the shipped tables.
+  Some smaller steps are not yet written from the code: details of how a border stamp is matched and written, the
+  edges and scan order of Act V's gates and prisons, a few arguments of the Kurast fills, which cells beside the Act I
+  bridge must be free, the vertex merge itself, and the rule of Act I's cliff marking.
 - **Room tiles** ([room tiles § Open questions](../specs/drlg/room-tiles.md#open-questions)): the tile-merge
   branches that would re-orient a wall or shadow, or treat orientation 3 specially, are **unreachable on the shipped
   data**, outdoor rooms included: every wall and shadow cell of the 2077 map files a room can read carries the bit
