@@ -432,3 +432,9 @@ after the entries it depends on close:
 
 Left: the five new entries and the three conformance items; the three disputed-row questions; then Phase 4 for S3 and S4
 and Phase 5. Review: this entry is the Tier A review of the S3 and S4 ledgers; fix count 0.
+
+- **2026-11-10, Phase 3 disputed rows S3-5, S4-7, S4-20 (orchestrator):** one fresh Opus reader each, given only the
+  named spec sections (and, for S3-5, `tables/Levels.md` and `levels.txt`). All three needed at least one guess, so
+  all three are **spec defects**: S3-5 (B3's `levelCount` tied to the state row by name only; the address equality
+  unstated) added to `plan-0064-monsters-pool-inputs`; S4-7 (insert order past one node, and the one-node quirk's
+  placement) and S4-20 (no legend for the "—" cells of `not1`/`not2`) added to `plan-0064-drlg-outdoor`.
