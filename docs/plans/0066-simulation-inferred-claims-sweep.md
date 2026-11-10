@@ -156,3 +156,47 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 - **Question 3: (c).** A monsters/ai harness sub-plan for the bestiary tour (H1a to H1d, H1g, H1h; about 214
   statements in about 12 launches), drafted by the architect after S1b is accepted. The other 491 harness rows are
   deferred with their routes kept.
+
+### 2026-11-10 — Phase 1 batch S2a, part 1 of 2 (reverser-static, `lane/n66b`): 80 of 100 settled; resume note
+
+- **Done.** New check tool `tools/skills_s2a.py` (`f3084824…`, stdlib, read-only; it reuses `tools/skills.py`'s parser)
+  over the 45 kept logs of run:2026-10-25-skills, run:2026-10-27-skills and run:2026-10-30-skills-catalogue, unchanged:
+  `workspace/logs/skills/2026-11-10-s2a-check.txt` (`f69b8ec8…`, 680 lines, 0 breaks) under
+  `2026-11-10-s2a-manifest.sha256` (`sha256sum -c` passes from that directory). Record: the dated addendum in
+  [skills experiments, run:2026-10-27-skills](../findings/skills/experiments.md#addendum-2026-11-10-plan-0066-batch-s2a-new-checks-over-the-three-kept-skills-runs-lanen66b),
+  with pointer lines under the other two runs. The route said "new `tools/skills.py` checks"; they are a separate
+  tool, so the hashed checker behind the three runs' kept outputs is unchanged.
+- **Rows.** 80 settled in [skills-README](0066-inventory/skills-README.md) and [skills-dispatch](0066-inventory/skills-dispatch.md),
+  each with a dated note in its *Route* cell: **raised** 11 (README 1, 25; dispatch 7, 8, 9, 10, 61, 90, 173, 175, 191),
+  **raised in part** 56 (the `[C]` part and the remainder's class
+  and batch named in the row), **moved** 13 (README 5 and dispatch 12, 106, 188 to d-none; dispatch 72, 87, 99, 100,
+  101, 140, 147, 192 to b in H2a; 21 to c in S2c). Totals in § 1, the two files' *Totals by class* and the § 4 rows
+  of S2a (now 87), S2c (68) and H2a (27) follow the moves; the reviewer recomputes them against `main` at the merge
+  (n66a moves other rows of the same tables).
+- **Contradicted in part (route to Phase 3 and a reverser read):** 566 monster starts in mode 14 (skills 158, 160,
+  167, 176, 181, 327) enter `SKILLS_SrvStart` from `StartUsedSkill` with `Unit+0xC4` bit 6 **clear**, while all 1 460
+  starts in modes 4, 5, 7, 8, 9 have it set. dispatch's entry table (monster modes 4, 5, 7, 8, 9, row 4) misses mode
+  14, and skills/README § C's "a monster reaches the start and do through its AI with bit 6 set" (README row 16) holds
+  for modes 4 to 9 only. The mode-14 start path (who commands it, who clears the bit) is unread: a reverser read of
+  `sub_005A75C0_MonModeStartSkill` and the sequence mode start is the follow-up.
+- **Ready for re-tagging (Phase 3, spec-writer),** by inventory row (each row gives its spec line at `b5999f5e`;
+  dispatch.md has since moved by 2 to 89 lines (plan 0068), so match by text): whole, README rows 1, 25 and dispatch
+  rows 7, 8, 9, 10, 61, 90, 173, 175, 191; the `[C]` half each note names, README rows 12, 15, 16 and dispatch rows
+  1, 2, 4, 5, 6, 25, 26, 27, 29, 31, 43, 44, 45, 50–55, 63, 68, 70, 75, 79, 80, 82, 85, 102, 104, 105, 109, 139, 141,
+  145, 148, 159–172, 177, 179, 186, 187 (the split goes into the spec text; the remainder keeps `[I]`).
+- **Resume note (part 2, a fresh lane on `lane/n66b`).** 20 rows left, still `a-logs`/S2a with no S2a note:
+  - skills-README rows **2** (hit-function rows' `MH` ends against the catalogue's hit models), **22** (outputs: the
+    `0x40` cell marks and ammunition/durability), **23** (frame pass order, run:2026-11-03-frame-order);
+  - skills-dispatch rows **11** and **150** (the ai.gdb `MonAiUseSkill` lines, run:2026-11-03-ai and the
+    `2026-11-04-h1-*` combined logs in `workspace/logs/skills/`), **59** (item-cast MC positions against the doubled
+    point: the `MC0` 0x5C-byte block's points, `tools/skills.py mc()` for the layout), **86** (I2: the `REL` seed and
+    `min` against the packet's elemental field at the next `AD0`/`DQ0`), **103** (the 48 entry-39 creations' class
+    against Fists of Fire's `srvmissilec`), **107** (K1's newest-first order: likely b, the registration order is not
+    logged), **114, 115, 116, 118, 121, 125, 126, 132** (handler effects: `EV STA in handler` and `EV deltas` of the
+    kept output already give thorns' `sv << 8` against the attacker's life, slow's state 24 for 750 frames with stat
+    67, rest in peace's absence of an STA 172 line, knockback and stupidity with no effect line → b), **137** (`PH0`
+    between `THR` and `DRR`), **155** (the economy `UA0`/`UA1` lines of run:2026-10-17-economy), **176** (whether the
+    tick re-queues: the 89 zero-step tick pairs).
+  - Extend `tools/skills_s2a.py` as a new revision and keep its output under a new name (do not overwrite
+    `2026-11-10-s2a-check.txt`); add the rows' notes as above, update the S2a status cell and the totals.
+- **Review:** Tier B (plan 0066 Phase 1), at the end of part 2.
