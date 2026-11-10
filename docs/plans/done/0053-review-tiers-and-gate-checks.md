@@ -290,7 +290,7 @@ joined to the kind of the lane it reviewed (by lane name, with the trial's two a
 - `SKILL.md` Mode 3 and `lane-check.md` now name ADR-0023 as accepted and ADR-0024 as proposed.
 
 **Residual.** E14 is still in `DEMOTED`. It waits for the reverser's open entry
-[`2026-10-27-archivist-reverser-e14-table-rows-with-an-extra-cell-in.md`](../../backlog/2026-10-27-archivist-reverser-e14-table-rows-with-an-extra-cell-in.md),
+[`2026-10-27-archivist-reverser-e14-table-rows-with-an-extra-cell-in.md`](../../backlog/archive/2026-10-27-archivist-reverser-e14-table-rows-with-an-extra-cell-in.md),
 whose lander empties the set (see Phase 2). This plan closes with the entry homed there.
 
 **Owner question.** Accept ADR-0024? That means widening Tier B's scope with the grep-bounded touched-document and
