@@ -659,6 +659,8 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-11-10 | `lane/n63s` | 0063 P2b | reverser-static | 244 713 | 145 | 22 | Ghidra copy (r2 used) | accept with fixes (Tier B 2 + audit 2) | stale cross-reference 1, omission 2, overclaim 1 |
 | 2026-11-10 | `lane/n63s` check | 0063 P2b | architect-check | 66 889 | 11 | 1 | — | accept with fixes (2); E14 lifted | stale cross-reference 1, omission 1 |
 | 2026-11-10 | `lane/n63s` audit | 0063 P2b | architect-review | 123 720 | 44 | 4 | — | accept with fixes (2); no reject-grade miss | audit of lane/n63s: overclaim 1, omission 1 |
+| 2026-11-10 | `lane/n66i` | 0066 P0 | architect | 174 753 | 76 | 21 | — | accept with fixes (Tier A, 9); 8 helper subagents not counted (usage not reported) | misread 4, omission 3, other 2 |
+| 2026-11-10 | `lane/n66i` review | 0066 P0 | architect-review | 181 329 | 87 | 10 | — | accept with fixes (9); owner Q3 threshold open | misread 4, omission 3, other 2 |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not
