@@ -1,6 +1,6 @@
 # 0069 — Monster AI bestiary tour: the catalogue's harness rows of plan 0066
 
-> **Status:** proposed (drafted 2026-11-10, `lane/n69a`; the owner approves it)
+> **Status:** proposed (drafted 2026-11-10, `lane/n69a`; Tier A review accepted with fixes 2026-11-10; the owner approves it, questions 1 and 2)
 > **Created:** 2026-11-10
 > **Owner skill(s):** reverser (every phase; the re-tag is plan 0066 Phase 3's, spec-writer)
 > **Related ADRs:** 0003-runtime-experiments, 0004-boundary-oracles-in-reproduction, 0021-observed-boundaries-in-emulation, 0023-review-tiers-and-gate-first-fixes, 0028-case-and-process-in-experiment-records
@@ -117,12 +117,16 @@ cases of `tools/ai_sessions.py`:
 | `nm-a5-wsk` | Nightmare: Worldstone Keep 2 | 142, 74 (H1a) |
 
 That is 28 cases. With a rerun allowance of about 10 % and ADR-0028 item 2's two fresh repeats, the estimate is about
-**33 kept cases, which is 237 statements at about 7 per case**. Some entries have no case yet:
-- presets that Phase 1a has not yet placed: rows 76, 77, 80, 82, 83, 87, 92, 93, 94, 100, 136, and states 15 and 16;
-- rows with records but no pool mark: rows 121 and 129, and the siege rows 113, 123 and 126.
+**33 kept cases, which is 237 statements at about 7 per case**. Of the 89 entries, 70 are aimed at by a case above.
+The other 19 have no case yet:
+- presets that Phase 1a has not yet placed: rows 46, 75, 76, 77, 80, 82, 83, 87, 92, 93, 94, 100, 136, and states 15
+  and 16;
+- rows 1, 78, 79 and state 11 (H1h), which the kept rev 4 and rev 6 logs reached: Phase 1a names the kept case that
+  logged each one, to be rerun with rev 7.
 
-Phase 1a places each of them, or names it unreachable on stock play (it then goes to d-none or d-owner, with its
-reason).
+The H1b rows 113, 121, 123, 126 and 129 are aimed at by `t-a5-foothills`, but on a guess: 121 and 129 have records with
+no pool mark, and 113, 123 and 126 are siege rows. Phase 1a places all of these, or names an entry unreachable on stock
+play (it then goes to d-none or d-owner, with its reason).
 
 ### Cases per launch
 
@@ -130,15 +134,17 @@ ADR-0028 governs:
 - a case is what a record cites;
 - at most 8 games or 40 minutes per launch;
 - sharing is opt-in per batch, with a stated reason;
-- a switch saves about 0.4 s on the AI logger, so sharing is never chosen for speed.
+- a switch saved about 0.4 s on the rev 4 AI logger, so sharing is not chosen for speed unless the batch's own
+  launch measurably costs more than a switch.
 
 The tour's default is therefore **a fresh process per case**, which makes about 33 launches. It opts in to sharing only
 if Phase 2 measures the rev 7 launch costing more than a switch (item 4's "slower logger"). The block-model checker
 reads no carried state: its inputs are each decision's AID words and the logged returns. If the tour does share, the
 record therefore names the checker as one that "does not read carried state", repeats two cases fresh (item 2), and
 keeps `/players` out of every case. The same 33 cases then fit in 5 to 7 launches, one seed per act. Owner question
-3 (c) counted launches, and on that count the tour clears the 20-per-session threshold either way: about 7 claims per
-case, about 40 per shared launch. The token cost below is per lane and the same either way.
+3 (c) counted launches, and on that count the two ways differ: about 40 claims per shared launch clears the threshold of
+20, but about 7 per fresh launch does not. The threshold is not one of item 4's reasons to share, so the default stays
+fresh and the count is owner question 2. The token cost below is per lane and the same either way.
 
 ### The logger
 
@@ -219,8 +225,10 @@ only with an equal pair) carries over unchanged.
 ## Phases
 
 Order: the static preparation (placement, models), then the logger and the first cases, then the tour, then the
-settle. Phases 1b and 1c may run in parallel with each other. Phase 2 needs 1a. Phase 3 needs 2 and the models of its
-acts.
+settle. Phases 1b and 1c start after Phase 1a's review, because their models need its `CONV` entries, its boundary
+class for each call and its regression check; they may run in parallel with each other (a `CONV` entry 1a missed is
+added by the model phase, with its convention source). Phase 2 needs 1a and the models of the Act I entries, from
+both 1b and 1c. Phase 3 needs 2 and the models of its acts.
 
 ### Phase 1a — Placement, seeds, cases and the checker's engine gaps
 - **Owner skill:** reverser (static; no slot)
@@ -265,17 +273,21 @@ acts.
 ### Phase 2 — Logger rev 7, the pilot and Act I
 - **Owner skill:** reverser (harness; slot 2 once free, never slot 0)
 - **What:**
-  - build rev 7 from Phase 1a's list, and teach `tools/ai.py` its lines;
+  - build rev 7 from Phase 1a's list, teach `tools/ai.py` its lines, and feed its words to the H1h models of
+    `ai_model_check.py` (gap 4);
   - run a regression case and measure launch against switch;
   - run the Act I and Rogue Encampment cases with committed predictions.
 - **Outputs:**
   - `tools/gdb/ai.py` rev 7, with `tools/ai.py` and `tools/test_ai.py`;
+  - `ai_model_check.py` reading the rev 7 words, with a synthetic test per word in `tools/test_ai_model_check.py`;
   - **run:<date>-ai-tour-1** in [findings/ai/experiments.md](../findings/ai/experiments.md). It records the
     predictions, committed before the first kept log (decisions expected per entry from the chosen pools), the case
     list with process and position (ADR-0028 item 1), the separation lines, and `manifest.sha256`;
   - the checker's outputs over the new logs.
 - **Done when:**
   - every log says `AI logger armed rev 7`;
+  - each H1h model takes its rev 7 word from a rev 7 log, and the 38 kept rev 4 and rev 6 logs still give S1b's
+    `model-check.txt` byte for byte, apart from the separation lines (the fork fallback);
   - a rerun of a kept rev 6 case (`a2-oasis`, seed 5201) shows 0 first-boundary mismatches, and its rev 6 lines are
     unchanged in form;
   - launch and switch are measured, and the sharing decision is recorded with ADR-0028 item 4's reason, or "fresh";
@@ -332,30 +344,41 @@ The ledger means come from `python3 -I tools/metrics.py summary` on 2026-11-10 (
 | Phase 2, 3a, 3b (harness) and their checks | 3 + 3 | 3 × (342k + 82k) ≈ 1.27M |
 | Phase 4 (static) and its check | 1 + 1 | 353k + 82k ≈ 0.44M |
 | This plan's Tier A review | 1 | ≈ 0.16M |
-| **Total** | 7 lanes, 8 reviews | **≈ 3.2M** |
+| Audits of the 7 Tier B checks (every fifth, expected 7 / 5) | ≈ 1.4 | ≈ 1.4 × 164k ≈ 0.23M |
+| **Total** | 7 lanes, about 9.4 reviews | **≈ 3.4M** |
 
-These are estimates from the means, not measurements. On the 237 statements that is about 13k tokens each. On the
-share that S1b raised whole or in part (43 of 61, 70 %), it is about 19k per raised statement, which is about plan 0066
-Phase 2's per-claim figure (19k) and twice Phase 1's (10k).
+These are estimates from the means, not measurements. On the 237 statements that is about 14k tokens each, on the base
+plan 0066 used (statements in scope): between Phase 1's 10k and Phase 2's 19k per claim. On the share that S1b raised
+whole or in part (43 of 61, 70 %), it is about 20k per raised statement.
 
-Question 3 (c)'s figure of about 1.3M (3 lanes) assumed the checker could take the tour's logs as they are. It cannot:
-71 of the tour's 89 catalogue entries have no model (2 static lanes), and H1h needs rev 7.
+Question 3 (c)'s figure of about 1.3M (3 harness lanes and their checks, about 6k per statement) assumed the checker
+could take the tour's logs as they are. It cannot: 71 of the tour's 89 catalogue entries have no model, H1h needs rev
+7, and the seeds and placements are not yet kept. The harness part is still about 1.27M; the rest is the static
+preparation (Phases 1a to 1c, about 1.31M), the settle (about 0.44M) and the reviews and audits (about 0.39M).
 
 Slot time is about 33 cases of 4 to 9 minutes each (130 to 300 s of stage, about 150 s of start, longer for descents
 and hunts): **about 3 to 5 hours on one slot** over three lanes.
 
 ## Open questions
 
-- **Owner question 1, the size.** The tour costs about 3.2M, against question 3 (c)'s 1.3M:
+- **Owner question 1, the size.** The tour costs about 3.4M, against question 3 (c)'s 1.3M. Question 3 (c) was
+  recommended at "about Phase 1's cost per claim"; at about 14k per statement it now sits between Phase 1's 10k and
+  Phase 2's 19k (§ Cost estimate gives the split):
   - (a) run the plan as drafted;
   - (b) drop H1c (59 statements, 20 entries, most of them bosses, traps and spawners that need `hunt` routes and preset
-    placement): a Phase 1c of 18 models instead of 38 and five fewer cases, about 2.9M for 178 statements;
+    placement): a Phase 1c of 18 models instead of 38 and five fewer cases, about 3.1M for 178 statements;
   - (c) defer the whole tour with plan 0066's other harness rows.
 
   The architect recommends **(a)**. The extra cost buys the models, and they are durable: every later AI run checks its
   blocks with them, the way S1b's models served this plan. H1c also holds the bosses that no kept log reaches at all.
-- **Sharing.** Fresh processes are the default. Phase 2 measures the rev 7 logger, and the lane records its choice under
-  ADR-0028 item 4. No owner decision is needed unless the lane wants sharing for any reason other than a measured cost.
+- **Owner question 2, the threshold count.** Fresh processes are the default (ADR-0028 item 4), which gives about 33
+  launches at about 7 claims each, below question 2's 20; sharing (5 to 7 launches, about 40 each) is open only if
+  Phase 2 measures the rev 7 launch costing more than a switch. Options:
+  - (a) read question 3 (c)'s answer as approving this tour by name, so the claims-per-launch count does not gate it;
+  - (b) run only if Phase 2's measurement opens sharing, and otherwise stop after Phase 2.
+
+  The architect recommends **(a)**: the owner chose the tour, not a launch count, and sharing for the count alone would
+  need an ADR-0028 amendment. Phase 2 still measures and records its choice under item 4.
 - **Preset rows** (76, 77, 80, 82, 83, 87, 92, 93, 94, 100, 136; states 15, 16; the siege rows 113, 121, 123, 126,
   129). Inventory helper `ai1` read their act and level from the monster names, not from `Levels` or the DS1 lists.
   Phase 1a places them or moves them (row 103's `invisopet` precedent).
@@ -383,3 +406,32 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   3. Slot 2, after plans 0067 Phase 2 and 0065 Phase 2.
   4. Phase 4 writes 0066's inventory files, and Phase 1a does so only after `lane/n66d` has merged.
 - **Next:** the Tier A review of this plan, then the owner's approval. No phase has started.
+
+### 2026-11-10 — Tier A review (architect, Mode 3)
+
+- **Verdict: accept with fixes** (8 fixes: overclaim 2, misread 1, miscount 1, omission 4). Checked: the 237 statements
+  and the per-batch entry lists recounted from the inventory at `4fb8b55f` (38, 45, 59, 16, 44, 35; 10, 15, 20, 8, 24 and
+  the notes row, 13 entries); the 29 models and the 18 tour entries they cover against `MODELS` in
+  `tools/ai_model_check.py`; the 71 unmodelled entries; gaps 2 to 6 against the tool (no distinct-outcome count, no
+  regression mode, `THINK_LO` without 0x005B0CD0); the ledger means (`tools/metrics.py summary`, 680 runs); the slot
+  rule against plans 0065 and 0067; ADR-0028 items 2, 4 and 7. Every phase has a checkable Done-when and a tier. The
+  research-map edit states the current state; the index row is updated for this review.
+- **Fixes:**
+  1. (overclaim) "clears the 20-per-session threshold either way": fresh launches give about 7 claims each. Stated, and
+     the count made owner question 2 (the *Sharing* open question folded into it).
+  2. (overclaim) "sharing is never chosen for speed": ADR-0028 item 4 allows it on a measured launch cost; reworded.
+  3. (misread) the per-claim comparison set 19k per raised statement against plan 0066's 19k per statement in scope;
+     now on one base (about 14k per statement, between Phase 1's 10k and Phase 2's 19k).
+  4. (miscount) the no-case list missed rows 1, 78, 79, state 11 (H1h) and presets 46, 75, and listed the siege and
+     no-pool rows that `t-a5-foothills` aims at; 70 of 89 entries aimed at, 19 not, recounted.
+  5. (omission) the cost left out the audit rule's expected Tier A audits (about 0.23M): total about 3.4M; option (b)
+     about 3.1M.
+  6. (omission) owner question 1 did not say that question 3 (c)'s per-claim premise no longer holds, nor where the extra
+     2.1M goes; the split is in § Cost estimate and the question cites it.
+  7. (omission) the order let 1b and 1c start without 1a's `CONV`, boundary classes and regression check, and let Phase 2
+     start without the Act I models; both stated.
+  8. (omission) gap 4's checker side (the H1h models reading the rev 7 words) had no phase output; added to Phase 2's
+     outputs and Done-when, with the fork fallback held byte-identical on the 38 kept logs.
+- **Owner questions as they stand:** 1 (size: (a) as drafted, about 3.4M; (b) without H1c, about 3.1M; (c) defer;
+  recommended (a)); 2 (threshold count: (a) the tour approved by name, the count does not gate it; (b) only if sharing
+  opens; recommended (a)).
