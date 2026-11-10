@@ -29,8 +29,9 @@ offer, which does not un-accept (§ 4). multiplayer/0002 carries a dated note at
   fn:sub_00566E60_TradeRequest@0x00566E60)
 - [I] **Opening snapshots both inventories.** When the target accepts (button 3), each player gets a trade record
   whose `+0x04` buffer (0x2000 bytes) holds that player's whole item list as the save writes it, and `+0x10` the
-  carried gold. Every later cancel, close or abort throws away the live inventory of both players and rebuilds it from
-  this snapshot (`TradeReturnItems`), so the items come back as new units. (fn:sub_00566B30_TradeRecAlloc@0x00566B30,
+  carried gold. Every later cancel, close and abort that reaches `TradeReturnItems` throws away the live inventory of both players
+  and rebuilds it from this snapshot, so the items come back as new units. Two ways out do not: a `TradeAbort` whose
+  partner does not point back, and waypoint travel (§ 9). (fn:sub_00566B30_TradeRecAlloc@0x00566B30,
   fn:sub_005678F0_TradeReturnItems@0x005678F0, fn:sub_00566CC0_TradeRestoreSnapshot@0x00566CC0)
 - [I] **Pages 2 and 1.** An item a player places on page 2 is copied (`ItemCopy`) to the partner's page 1 at the same
   cell, and the pair (original id, copy id) is kept in the placer's record. Taking it off page 2 takes the copy off
@@ -57,8 +58,10 @@ offer, which does not un-accept (§ 4). multiplayer/0002 carries a dated note at
   (fn:sub_005679E0_TradeClose@0x005679E0, fn:sub_00567B00_TradeCancel@0x00567B00, fn:sub_00568640_TradeAbort@0x00568640,
   fn:sub_00584F60_WaypointTravel@0x00584F60)
 - [I] **Saved mid-trade: the snapshot.** `PLRSAVE_Save` raises a flag when the player's interaction is with another
-  player, and the item-list writer then copies the trade record's snapshot instead of the live list. A player who
-  leaves mid-trade is saved before the abort, so the save holds the inventory as it was at opening.
+  player, and the item-list writer then copies the trade record's snapshot instead of the live list. On the route
+  that `PLRSAVE_Save` takes for a game byte `+0x6A` of 1 or 2, a player saved mid-trade gets the opening inventory; the two
+  other routes (0x00531EB0, 0x00532240) are not followed (§ 10). Whether a leaver is saved depends on `ClientRemove`'s
+  argument, unfollowed at its eight callers.
   (fn:PLRSAVE_Save@0x00532400, 0x00532447–0x00532464, fn:sub_00531BB0_SaveItemListOrSnapshot@0x00531BB0,
   fn:sub_005675E0_TradeSnapshotCopy@0x005675E0, fn:sub_00539DA0_ClientRemove@0x00539DA0)
 - **Phase 2 cases:** § 11 lists 13 cases with a recipe, logger points and a prediction each, and the ones a stock
@@ -383,7 +386,7 @@ gold: A's offer, then B's; both interactions cleared; both records freed; book s
 - [I] `PLRSAVE_Save` sets a local flag to 1 when `PlayerGetInteract` returns non-zero and the kind is 0
   (0x00532447–0x00532464), and passes it to each of its three routes (0x005324C2, 0x005324DF, 0x005324F2). On the
   route at 0x00532340 (taken when the game's byte `+0x6A` is 1 or 2, 0x0053249D–0x005324AD) it becomes `D2S_WriteSave`'s fourth stack argument (0x0053236C–0x00532371),
-  and `D2S_WriteSave` passes that as `D2S_WriteItemList`'s third (0x00569BC5–0x00569BD3). The two other routes were
+  and `D2S_WriteSave` passes that as `D2S_WriteItemList`'s third (0x00569BC5–0x00569BD3). The two other routes (the calls to 0x00531EB0 at 0x005324D2 and to 0x00532240 at 0x005324EB) were
   not followed to `D2S_WriteSave`. (fn:PLRSAVE_Save@0x00532400, fn:D2S_WriteSave@0x00569AD0, `objdump-plrsave-save.txt`)
 - [I] `SaveItemListOrSnapshot(buf, room, flag, …)` (`EDX` the unit): when `flag ≠ 0`, the unit is a player and
   `TradeSnapshotCopy` returns non-zero, the list is the snapshot. `TradeSnapshotCopy` copies the record's `+0x00`
@@ -443,6 +446,10 @@ case (review-fix 10: each case names the reading it separates).
 | T11 | both hold a cube (empty); open; J picks up its cube | `TIT` returns 0 (`PlayerFindItemByCode(H, box)`), both 7 | the quest-code test |
 | T12 | open, H gives `X`, H `ok`; J gives `W` (pick-up, place on page 2) | `TIT` both 7 (H's 4 lost); `TSO` with neither at 4: no `TradeOpen`; 7 → 8 → 3 (no lock, `+0x14` = 0) | an addition un-accepts, without the lock |
 | T13 | (optional) a page-0 layout where FIRST fits J's offer into H and BEST does not, computed offline with the inventory spec's B1 | `side` untouched, `TradeMoveItems(J → H)` returns 0 (codes `0x9D1`/`0x9D2`), `TCX`, both restored | the two search orders |
+
+**Logger points per case.** T1: all points. T2: `TRB`, `TCL`, `TRS`, `ITL`, `TTK`. T3: `TRQ`. T4: `TCM`, `TCX`, `TRS`, `TTK`.
+T5: `TRB`, `TCM`, `TCL`. T6: `TRB`, `TCM`. T7: `TIT`, `THO`, `TTK`, `TRB`. T8: `TSV`, `TAB`, `TRS`. T9–T12: `TIT`, `TSO`,
+`TTK`. T13: `TCM`, `TCX`, `TRS`.
 
 Not reachable on a stock client, so out of Phase 2 unless the owner rules otherwise (ADR-0013): a death in town (no
 damage in town is a lead, not read here), monster equipment (flag `0x1000`) in a player's inventory, a waypoint packet

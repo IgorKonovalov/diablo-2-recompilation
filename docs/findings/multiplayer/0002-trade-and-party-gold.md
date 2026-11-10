@@ -180,7 +180,7 @@ clip left at the picker's cap; UnitAddGoldStat(picker, 14, give); return the exc
   steps 7 → 8. From 8 it clears bit 22 and either waits in state 11 until the record's `+0x14` time has passed, or
   goes back to 3. `0x00567400` (called from 0x0056063F) sets both records' `+0x14` to now + 10 000 ms and puts any
   side at 4 back to 3. So a change in the offer un-accepts both sides and holds the window about 10 s. Which item
-  moves call `0x00567400` is not followed. (fn:sub_00567620_TradeItemTest@0x00567620, 0x005689D0–0x00568C3E,
+  moves call `0x00567400` is not followed (*2026-11-10, `lane/n67r`: read in [multiplayer/0003](0003-trade.md) § 5*). (fn:sub_00567620_TradeItemTest@0x00567620, 0x005689D0–0x00568C3E,
   0x00567400–0x00567618)
 
 ```c

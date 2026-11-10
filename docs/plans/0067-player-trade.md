@@ -109,7 +109,7 @@ answered open questions.
 - the commit: gold tests, the room test (scratch grids filled in the FIRST order, where the real placement uses BEST),
   the quest gate, then the moves, then the gold (§§ 7–8);
 - cancel paths: buttons 2/3, an overspend, a failed offer copy, the deferred close, the commit's 8 cancels, leaving
-  (`ClientRemove`), death (`PlayerDeath`). Every one rebuilds both inventories from the opening snapshot (§ 9). A
+  (`ClientRemove`), death (`PlayerDeath`). Each one that reaches `TradeReturnItems` rebuilds both inventories from the opening snapshot; a `TradeAbort` with no back-pointer and waypoint travel do not (§ 9). A
   level change has no trade code: waypoint travel only clears the traveller's interaction (§ 9). Not followed: whether
   the discarded item units are freed, and `ClientRemove`'s argument at its eight callers;
 - the save mid-trade: the snapshot from opening, through the interaction flag of `PLRSAVE_Save` on the route at
