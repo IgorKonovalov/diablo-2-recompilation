@@ -177,6 +177,19 @@ class Check(unittest.TestCase):
         self.assertEqual(rc, 1)
         self.assertIn("chain.G1.count", out)
 
+    def test_sample_maze_first_room_seed_is_b1(self):
+        """A maze case's first_room_seed is B1's seed (drlg/maze B1: Init(window_seed.low), one Step), written before any growth
+        step; every maze case of the sample must hold it (plan 0064 S4 row 2)."""
+        m32 = 0xFFFFFFFF
+        _h, cases = golden.read_set(SAMPLE)
+        mz = [c for c in cases if c["type"] == "drlg" and c["inputs"]["generator"] == "maze"]
+        self.assertTrue(mz)
+        for c in mz:
+            lo = int(c["inputs"]["window_seed"].split(":")[0], 16)
+            v = lo * 0x6AC690C5 + 666
+            self.assertEqual(c["inputs"]["first_room_seed"], "%08x:%08x" % (v & m32, (v >> 32) & m32), c["id"])
+            self.assertNotIn("difficulty", c["inputs"])
+
     def test_version_enforced(self):
         h, c = mini()
         write(self.p("v"), dict(h, version=2), c)

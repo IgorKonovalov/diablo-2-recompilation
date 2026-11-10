@@ -36,7 +36,7 @@ positions are pinned by the data except where noted.
 | `NextInClass` | str, 442 distinct, len ≤ 16, 291 blank | `+0x004` u16 index (distinct-key ordinal) | `monstats:Id` | [C] |
 | `TransLvl` | int 0..7 (8 distinct) | `+0x04D` u8 | — | [C] |
 | `NameStr` | str, 454 distinct, len ≤ 26, 6 blank | `+0x006` u16 string index | string tables | [C] |
-| `MonStatsEx` | str, 603 distinct, len ≤ 17 | `+0x018` u16 index | `monstats2:Id` | [C] |
+| `MonStatsEx` | str, 603 distinct, len ≤ 17 | `+0x018` 16-bit index, s16 (a blank would store −1; none of the 734 rows is blank, so every stored value is 0..603, § [Interpretation notes](#interpretation-notes); [monsters/pool § Inputs](../specs/monsters/pool.md) types it i16) | `monstats2:Id` | [C] |
 | `MonProp` | str, 12 distinct, len ≤ 14, 716 blank | `+0x01A` u16 index | `monprop:Id` | [C] |
 | `MonType` | str, 55 distinct, len ≤ 13, 128 blank | `+0x01C` u16 index | `montype:type` | [C] |
 | `AI` | str, 146 distinct, len ≤ 15 | `+0x01E` u16 index | `monai:AI`: the [MonAI](MonAI.md) row, also the `g_MonAiTable` row ([§ AI columns](#ai-columns-plan-0052-phase-0)) | [C] |
@@ -799,7 +799,7 @@ The columns that name a monster's animation, its modes and its speeds (values fr
 | Column | `.bin` field | Observed | Meaning | Tag |
 |---|---|---|---|---|
 | `Code` | `+0x010` 4-byte code | 210 distinct (`SK` 49, `CR` 24, `xx` 23, …) | the animation token: the first part of the `animdata.d2` record name | [C] layout; the join below `[C]`, the game's use `[L]` |
-| `MonStatsEx` | `+0x018` u16, `monstats2` row | 0..603, set in all 734 | the [MonStats2](MonStats2.md#timing-plan-0050-phase-0) row whose `m<mode>` bits and `BaseW` complete the record name | [C] layout |
+| `MonStatsEx` | `+0x018` s16, `monstats2` row | 0..603, set in all 734 (no blank, so no −1) | the [MonStats2](MonStats2.md#timing-plan-0050-phase-0) row whose `m<mode>` bits and `BaseW` complete the record name | [C] layout |
 | `Velocity` | `+0x032` u16 | 0..15 (16 distinct), 4 blank (`gorgon1..4`); 0 in 99 | walk speed | [C] layout; `[I]` readers in [§ Readers at creation](#readers-at-creation-and-at-attack-time-plan-0025-phase-1) (the bonus, the stun test) and in AI state row 11's think, where it acts as s16 (`[I]`, [ai/0013 § 2.5](../findings/ai/0013-batch12.md); § Readers named by batch 12) |
 | `Run` | `+0x034` u16 | 0..20 (18 distinct), 4 blank; 0 in 99; below `Velocity` in 7 | run speed | [C] layout; `[C]` as a map, Charge's base ([§ Readers](#readers-at-creation-and-at-attack-time-plan-0025-phase-1)); `[I]` also read by AI state row 11's think, as s16 (`movsx`) in a signed division ([ai/0013 § 2.5](../findings/ai/0013-batch12.md); § Readers named by batch 12) |
 | — | `+0x036`, `+0x038` s16 | 0 in the file | walk and run values derived at load from the animation data and `Velocity`/`Run` | `[I]` (`sub_00650F00_MonStatsSpeeds`, [§ Fields with no `.txt` column](#fields-with-no-txt-column)) |

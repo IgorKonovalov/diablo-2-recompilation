@@ -58,6 +58,7 @@ through `smpq` 1.7 / StormLib 9.40 (ADR-0001 toolchain). No parser of our own is
 - `[C]` Name case is inconsistent across and within archives (`data/` and `Data/` both occur in
   d2data; `RarePrefix.txt` next to `rareprefix.bin`). MPQ name hashing ignores case, so the merged
   tree lowercases every path and the manifest keeps the original spelling.
+  Archive paths therefore compare case-insensitively: the specs and tables write `LvlMaze.txt` and `Act1/Outdoors/BorderMiddle.ds1`, and the merged tree and any sandbox built from it hold `lvlmaze.txt` and `act1/outdoors/bordermiddle.ds1` `[C]`; a reader that opens files by the spec's spelling must fold case (plan 0064 S4 row 22).
 
 ## Precedence and the merged tree
 

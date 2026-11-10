@@ -393,7 +393,7 @@ Backlog entries filed (5) and annotated (1):
 - reverser: [drlg-outdoor-statements](../backlog/2026-11-10-architect-reverser-plan-0064-drlg-outdoor-statements.md):
   (a) `A1CliffMark`'s rule, (b) `g_A1SearchDx` corrected, (c) `A1PlaceOneOrTwo`'s branches, (d) `LevelBorderAdj`'s `Vis ≠ 0`
   test. Static only. S4 rows 6, 13–16.
-- archivist: [drlg-cases-and-pool-conventions](../backlog/2026-11-10-architect-archivist-plan-0064-drlg-cases-and-pool-conventions.md):
+- archivist: [drlg-cases-and-pool-conventions](../backlog/archive/2026-11-10-architect-archivist-plan-0064-drlg-cases-and-pool-conventions.md):
   (a) the `first_room_seed` emission and a re-emit, (b) maze list order, (c) maze `difficulty`, (d) digest frames,
   (e) the pool order, (f) file-name case, (g) tables/MonStats `MonStatsEx` width. S3 row 3 and 4, S4 rows 1–5 and 22.
 - spec-writer, one per spec: [drlg-outdoor](../backlog/2026-11-10-architect-spec-writer-plan-0064-drlg-outdoor.md) (14
@@ -432,3 +432,9 @@ after the entries it depends on close:
 
 Left: the five new entries and the three conformance items; the three disputed-row questions; then Phase 4 for S3 and S4
 and Phase 5. Review: this entry is the Tier A review of the S3 and S4 ledgers; fix count 0.
+
+- **2026-11-10, `lane/n64h` (archivist): the golden-set and table-doc entries.** Closed `…drlg-cases-and-pool-conventions` (a)–(g) and `…itemtypes-blank-class-vs-row-identity`; annotated (not closed) the spec-writer conformance entry.
+  (a) `golden.py observed_maze` now writes `first_room_seed` before `maze_replay.run` steps it. Re-emitted the DRLG part (112 contributing logs, `systemd-run` 4 GB scope; an unchanged-code run first reproduced the old digest) and the v1 join: 45 of the 50 maze cases changed, only in that input; the five level-8 cases (no growth) did not; all 50 now equal B1 (`Init(window_seed.low)`, one `Step`) by script. Id, source and every expected value of all 5 073 cases are unchanged (compared case by case). New digests: DRLG `1467496f…ab660`, v1 `51cf5574…bf369` (the chain2, items-chain and predicted parts did not change); the committed sample's 3 maze cases follow (2 changed, digest `1d983862…93ef`); `tools/test_golden.py` gained a B1 test over the sample (17 tests OK). The local `workspace/golden-drlg.jsonl` and `golden-v1-full.jsonl` were replaced (the old ones are kept in the lane's scratch). Nothing under `workspace/cleanroom/` was touched and no `cleanroom.py` was run.
+  (b) maze order: "newest first, in list order" in golden-trace § Fields and `golden.py`. (c) decided: no `difficulty` input on a maze case; the 12 v1 maze levels (8–12, 34–36, 47–49, 65) have equal `Rooms`, `Rooms(N)`, `Rooms(H)` (by script), stated in § Fields. (d) frames: absolute tiles, the preset rect origin of the `PRC` line, the room rect origin of the `RL` line. (e) pool order: kept (`isSpawn`) entries in append order. (f) stated in formats/mpq (paths compare case-insensitively); `cleanroom.py make` unchanged. (g) MonStats `MonStatsEx` is a 16-bit signed index in the doc; no blank row among the 734, so no −1 occurs.
+  ItemTypes: byte check over the 103 records: blank `Class` 85 of 85, `StaffMods` 94 of 94 and `StorePage` 28 of 28 store `0xFF`; the six reference columns to `itemtypes` and `bodylocs` store 0. The row-identity rule now says so (the "no empty-key row in the target" reason is `[I]`).
+  Judgment calls for the reviewer: (c) chose "state, not add"; the outdoor "creation order" wording was kept. Review: Tier B (no statement taken from a finding). Left: the spec-writer's page text (conformance entry items 1–5).
