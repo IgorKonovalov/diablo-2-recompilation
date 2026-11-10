@@ -118,3 +118,29 @@ reaches 0 mismatches on the fixed fields, or the remainder is named. No code ent
 ## Implementation log
 
 _(lanes append dated entries as phases land: what was found, the confidence reached, surprises)_
+
+### 2026-11-10 — Phase 1 (lane n64a, archivist)
+
+Done: `tools/cleanroom.py` (`make`, `score`, `audit`, plus `reference` and `slices`), `tools/test_cleanroom.py` (14 no-game
+tests), `docs/plans/0064-cleanroom/brief.md`.
+
+- `make S1` builds `workspace/cleanroom/S1/` in 0.3 s: 163 files of docs/specs, tables, formats, glossary; `data/` with the
+  184 excel files (hard links); `cases.jsonl` (649 world cases, keys `id kind type inputs` only: no `expected`, `source`
+  or `quirks`); `score.sh`; `MANIFEST.json`. `docs/findings`, `re`, `tools`, `.claude`, `.git` and any `Game.exe` are absent
+  (checked at build). S2 (4 040 cases), S3 (612), S4 (384 cases, 2 539 DS1/DT1 files, 189 MB) build the same way.
+- `score S1` on the project's own model (`cleanroom.py reference S1`, which calls `golden.world_expected`, i.e.
+  `chain.py gen`): 62 035 fields compared, 0 different; S3 likewise 211 140 fields, 0 different. `audit` flags a planted
+  Read of `docs/findings/`, a Bash `cat re/...`, a Grep with no path from a project cwd and a relative `../docs/findings`.
+- Judgment calls: (1) the sandbox is a plain directory copied from the tracked files (no git worktree), so there is no
+  history or ref to read the findings from; the working tree is the source, so Phase 4 fixes show without a commit.
+  (2) `docs/formats/golden/` (the committed sample, with expected values) is left out. (3) `score` cuts the full set to
+  the slice (case types and field prefixes) before calling `golden.py check`, otherwise the other slices' cases count as
+  missing; it logs each run to `<sandbox>/score-log.jsonl`, run 1 being the first pass, and refuses a malformed
+  candidate without logging it. (4) `audit` assumed the Claude Code session shape (assistant lines with
+  `message.content[].tool_use`, top-level `cwd`; checked on a real subagent transcript, 579 calls) and also reads bare
+  `tool_use` lines and a JSON array; no tool calls found is exit 2. Relative Bash words are judged against the line's
+  `cwd`, so a lane must use absolute sandbox paths (the brief says so); wild false positives are possible on odd shell
+  words, false negatives on paths built by shell expansion or inside scripts the lane wrote and ran (the audit sees the
+  command, not the script's own reads). The audit is a check, not enforcement (ADR-0032).
+- Left: Phase 2 (clean-room runs). Before S1 and S2 start, `make` them and pass the brief plus the slice row only.
+  Review: Tier B.
