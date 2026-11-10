@@ -1947,7 +1947,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005BF720,func,sub_005BF720_StatEv10ThornsLightning,,I,skills/dispatch,docs/findings/skills/0003-handlers.md
 0x005BF7D0,func,sub_005BF7D0_StatEv11ThornsFire,,I,skills/dispatch,docs/findings/skills/0003-handlers.md
 0x005BF880,func,sub_005BF880_StatEv12ThornsCold,,I,skills/dispatch,docs/findings/skills/0003-handlers.md
-0x005BF960,func,sub_005BF960_StatEv07Knockback,,I,skills/dispatch,docs/findings/skills/0003-handlers.md
+0x005BF960,func,sub_005BF960_StatEv07Knockback,,C,skills/dispatch,docs/findings/skills/0003-handlers.md
 0x005BFA10,func,sub_005BFA10_StatEv08Howl,,I,skills/dispatch,docs/findings/skills/0003-handlers.md
 0x005BFAA0,func,sub_005BFAA0_StatEv09Stupidity,,I,skills/dispatch,docs/findings/skills/0003-handlers.md
 0x005BFBB0,func,sub_005BFBB0_StatEv13DamageToMana,,I,skills/dispatch,docs/findings/skills/0003-handlers.md
