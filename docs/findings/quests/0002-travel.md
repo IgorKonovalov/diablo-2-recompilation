@@ -30,7 +30,7 @@ and writers of the act changes are also listed per quest in [quests/0001](0001-p
   proximity or touch test of its own (the generic operate gates apply). In a town the waypoint's `InitFn` 17 puts it
   straight into mode 2, and an arrival by waypoint into a room whose waypoint is not yet created sets it to mode 1 when
   it is. Five waypoint rows (429, 494, 496, 511, 539) have `Sync` 0, so each of their mode changes draws their
-  unit seed. (fn:sub_00584E30_WaypointOperate@0x00584E30, 0x00547210, 0x00547170, fn:UNIT_AnimInit@0x00624390,
+  unit seed *(superseded 2026-11-10 for the mode 1 → 2 change by event 1, which does not draw: [§ 15](#15-object-event-1-on-a-waypoint-plan-0063-phase-2b-2026-11-10-lanen63s))*. (fn:sub_00584E30_WaypointOperate@0x00584E30, 0x00547210, 0x00547170, fn:UNIT_AnimInit@0x00624390,
   tbl:Objects.txt:Sync)
 - [I] **Waypoint travel** is packet `0x49` (`{object id, u16 level}`): refused within **10 000 ms of real time** of the
   player's tick stamp `+0x160`, refused unless the object is a waypoint in the player's act near the player and the
@@ -78,7 +78,7 @@ and writers of the act changes are also listed per quest in [quests/0001](0001-p
   with state 42 (below). Death: packet `0x41` from mode 17 restores life, mana and stamina and calls
   `PlayerChangeLevel(town of the act, type 0)`. Joining: the act's level `act+0x08` at type 0. (fn:sub_005550B0_WarpExitPos@0x005550B0,
   0x00548B00, 0x00545B80, 0x0054C0E0, 0x005394A0)
-- [I] **Draws by event kind** (§ 10): waypoint operate: none, or the waypoint's unit seed (five `Sync` 0 rows); waypoint
+- [I] **Draws by event kind** (§ 10): waypoint operate: none, or the waypoint's unit seed (five `Sync` 0 rows; *the mode 1 → 2 change draws nothing, superseded by [§ 15](#15-object-event-1-on-a-waypoint-plan-0063-phase-2b-2026-11-10-lanen63s)*); waypoint
   travel, NPC act change, death, join, the lair, Arcane and Durance portals: the destination's level seed when it has
   `Position` (plus a full level or room build when the level or room does not exist yet, DRLG oracles); town portal
   creation: three (above; corrected from five by Phase 2, § 12; a town room updated for the first time adds its
@@ -525,7 +525,7 @@ QUESTS_WarpGate(src, dest) (0x00545B80)
 
 | Event | Inputs (log) | Outputs | Draws, in order | Chaining |
 |---|---|---|---|---|
-| waypoint operate | player, object, mode, level | record bit; mode 0→1 + event 1, or menu | rows 429, 494, 496, 511, 539 only: `RangeB(object seed, FrameDelta[mode] >> 3)` per mode change | the object's own seed: chained across its mode changes |
+| waypoint operate | player, object, mode, level | record bit; mode 0→1 + event 1, or menu | rows 429, 494, 496, 511, 539 only: `RangeB(object seed, FrameDelta[mode] >> 3)` per mode change *(superseded 2026-11-10 for the mode 1 → 2 change by event 1: no draw, [§ 15](#15-object-event-1-on-a-waypoint-plan-0063-phase-2b-2026-11-10-lanen63s))* | the object's own seed: chained across its mode changes |
 | waypoint travel | packet, tick stamp, record | new level, position | target level seed (1 step) if `Position` and type ≠ 13; level/room build if absent (oracle) | per level seed, with every other user of it (drlg/0005) |
 | NPC act change | NPC class, action, words 6/14/26, expansion | position, words, waypoint bit, `+0x4C` | destination town's level seed (1 step, type 0 or 5); act creation if absent (oracle) | per level seed |
 | Durance portal | words 22, 23, 18, level | words, waypoint 103, position | 103's level seed (1 step) | per level seed |
@@ -624,7 +624,7 @@ the part 1 and 2 rules plus the town-portal refusal in a town.
 
 **Shortfalls (named, final for this plan).** No further pass is planned; these stay `[I]` in this plan. Waypoint
 activation from mode 0, its event 1 and the `Sync` 0 object-seed draw (above: the driver reaches no mode-0 waypoint by
-a hop or a short walk; the mode 1 → 2 draw is logged by no revision); NPC 367's menu travel branch (the stock client
+a hop or a short walk; the mode 1 → 2 draw is logged by no revision *(superseded 2026-11-10: event 1 writes mode 2 without a draw, [§ 15](#15-object-event-1-on-a-waypoint-plan-0063-phase-2b-2026-11-10-lanen63s))*); NPC 367's menu travel branch (the stock client
 offers no line); the 150-travel, 150-warp, 60-activation and 20-`NpcActTravel` floors; level 120's warp tiles and the
 118/128 branch, the gates into 73, 100 and 132; the Durance, Arcane and lair portals; the level-136 portal refusal; the
 resurrection's life, mana and state writes (not logged); the free-cell search's far rings. Two-client cases stay plan

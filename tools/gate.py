@@ -116,8 +116,8 @@ FIXTURES = "tools/gate/fixtures/"
 # research-map status word for each spec `status:` value (E15)
 MAP_STATUS = {"draft": "draft spec"}
 # error rules reported at warning level until the files they flag are fixed (plan 0053 Phases 1-2);
-# E14 waits for the reverser's entry 2026-10-27-archivist-reverser-e14-table-rows-with-an-extra-cell-in
-DEMOTED = {"E14"}
+# (empty since plan 0063 Phase 2b: the E14 rows were fixed)
+DEMOTED = set()
 BASELINES = "tools/gate/baselines"
 
 # ---------------------------------------------------------------- full tier: survey registry
