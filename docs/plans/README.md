@@ -1,6 +1,6 @@
 # Plans index
 
-Next free number: **0068**
+Next free number: **0069**
 
 Lane runs (agent usage, review verdicts, fix counts by category) are logged in the [lane run ledger](metrics.md).
 
@@ -73,6 +73,7 @@ Lane runs (agent usage, review verdicts, fix counts by category) are logged in t
 | [0065](0065-harness-sweep-8.md) | Harness sweep 8: the backlog's live cases in one batch per slot plan | approved | **approved by the owner 2026-11-10 (as recommended), not started**; P2 runs, paired with plan 0067's two-client phase; six entries, P1 one slot, P2 both slots |
 | [0066](0066-simulation-inferred-claims-sweep.md) | Inferred-claims sweep 2: the simulation and game-rules specs (2 626 `[I]`) | approved | **approved by the owner 2026-11-10 (as recommended), not started**; Q1 (b): plan 0038 closed; Q2: threshold 20 claims per session |
 | [0067](0067-player-trade.md) | Player trade: the trade state machine, its commit and its failures (ADR-0033) | approved | **approved by the owner 2026-11-10 (as recommended), not started**; ADR-0033 accepted; whether Phase 2 runs is asked again at Phase 1's review |
+| [0068](0068-game-files-coverage.md) | Game files coverage: the last loaded tables (`MonItemPercent` first), the COF bundles, and a ledger for every file kind | draft | drafted 2026-11-10 (architect); waits for the owner; no slot; P1 archivist, P2 reverser static, P3 archivist, P4 spec-writer |
 
 ## Run order (set 2026-11-10, plans 0063–0067)
 
