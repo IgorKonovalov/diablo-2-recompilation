@@ -212,7 +212,7 @@ Backlog entries filed (7):
 - spec-writer (one per spec): [items-tc-type-test](../backlog/archive/2026-11-10-architect-spec-writer-plan-0064-items-tc-type-test.md),
   [items-quality-type-test-link](../backlog/archive/2026-11-10-architect-spec-writer-plan-0064-items-quality-type-test-link.md),
   [data-excel-type-test-link](../backlog/archive/2026-11-10-architect-spec-writer-plan-0064-data-excel-type-test-link.md),
-  [conformance-drop-inputs](../backlog/2026-11-10-architect-spec-writer-plan-0064-conformance-drop-inputs.md)
+  [conformance-drop-inputs](../backlog/archive/2026-11-10-architect-spec-writer-plan-0064-conformance-drop-inputs.md)
   (waits for both archivist entries).
 - reverser: [parseitemcell-unique-entry-words](../backlog/2026-11-10-architect-reverser-plan-0064-parseitemcell-unique-entry-words.md)
   (S2 row 14; static only; data/excel G4 and items/tc § A follow).
@@ -305,7 +305,7 @@ Wiki: items (S1's class key, the auto-TC "of that type"), game-data (the same), 
 of items/tc, items/quality, data/excel and quirks updated for their dates and counts. Tags: items/tc C 123 / I 66 /
 L 7, items/quality C 72 / I 41 / L 1, data/excel C 146 / I 59 / L 2, quirks C 374 / I 162 / L 3.
 
-Not done here: [conformance-drop-inputs](../backlog/2026-11-10-architect-spec-writer-plan-0064-conformance-drop-inputs.md)
+Not done here: [conformance-drop-inputs](../backlog/archive/2026-11-10-architect-spec-writer-plan-0064-conformance-drop-inputs.md)
 waits for the archivist's golden-set entries (lane n64g). Review: Tier A. Next: Phase 5 re-runs the S2 type-test and
 class-key fields from the fixed specs.
 
@@ -361,7 +361,7 @@ Rulings on the rows the orchestrator named:
 
 - **S3 `mlvl.N` (row 1): spec defect, conformance.** monsters/pool is right: § B4 copies the region's `MonLvl`/`MonLvlEx`
   and § E is `MonsterLevel` per class. The conformance row points at § E; it goes into the open
-  [conformance entry](../backlog/2026-11-10-architect-spec-writer-plan-0064-conformance-drop-inputs.md) as item (3), so
+  [conformance entry](../backlog/archive/2026-11-10-architect-spec-writer-plan-0064-conformance-drop-inputs.md) as item (3), so
   one spec lane fixes the page. **S3 C1 (row 2): spec defect, monsters/pool.** § Inputs and the notes say the counts are
   computed at load; C1's pseudocode reads them as record bytes, which are 0 in the file.
 - **S4 maze room order (row 1): golden-set (format) defect, plus the same words on the conformance page.** maze § Outputs
@@ -398,9 +398,9 @@ Backlog entries filed (5) and annotated (1):
   (e) the pool order, (f) file-name case, (g) tables/MonStats `MonStatsEx` width. S3 row 3 and 4, S4 rows 1–5 and 22.
 - spec-writer, one per spec: [drlg-outdoor](../backlog/2026-11-10-architect-spec-writer-plan-0064-drlg-outdoor.md) (14
   items; 1–4 wait for the reverser entry), [drlg-warps-border-adj](../backlog/2026-11-10-architect-spec-writer-plan-0064-drlg-warps-border-adj.md)
-  (waits for (d)), [monsters-pool-inputs](../backlog/2026-11-10-architect-spec-writer-plan-0064-monsters-pool-inputs.md)
+  (waits for (d)), [monsters-pool-inputs](../backlog/archive/2026-11-10-architect-spec-writer-plan-0064-monsters-pool-inputs.md)
   (S3 rows 2, 4, 5), and items (3) to (5) added to
-  [conformance-drop-inputs](../backlog/2026-11-10-architect-spec-writer-plan-0064-conformance-drop-inputs.md).
+  [conformance-drop-inputs](../backlog/archive/2026-11-10-architect-spec-writer-plan-0064-conformance-drop-inputs.md).
 - No new entry for drlg/maze: every maze row is the set's or the format's.
 
 **Disputed rows, for a second fresh implementer** (the orchestrator runs it; this lane did not spawn one):
@@ -444,3 +444,48 @@ and Phase 5. Review: this entry is the Tier A review of the S3 and S4 ledgers; f
   (b) maze order: "newest first, in list order" in golden-trace § Fields and `golden.py`. (c) decided: no `difficulty` input on a maze case; the 12 v1 maze levels (8–12, 34–36, 47–49, 65) have equal `Rooms`, `Rooms(N)`, `Rooms(H)` (by script), stated in § Fields. (d) frames: absolute tiles, the preset rect origin of the `PRC` line, the room rect origin of the `RL` line. (e) pool order: kept (`isSpawn`) entries in append order. (f) stated in formats/mpq (paths compare case-insensitively); `cleanroom.py make` unchanged. (g) MonStats `MonStatsEx` is a 16-bit signed index in the doc; no blank row among the 734, so no −1 occurs.
   ItemTypes: byte check over the 103 records: blank `Class` 85 of 85, `StaffMods` 94 of 94 and `StorePage` 28 of 28 store `0xFF`; the six reference columns to `itemtypes` and `bodylocs` store 0. The row-identity rule now says so (the "no empty-key row in the target" reason is `[I]`).
   Judgment calls for the reviewer: (c) chose "state, not add"; the outdoor "creation order" wording was kept. Review: Tier B (no statement taken from a finding). Left: the spec-writer's page text (conformance entry items 1–5).
+
+### 2026-11-10 — Phase 4 spec fixes, slices S3 and S4, part 2 (lane n64x, spec-writer)
+
+Two spec-defect entries closed, one annotated; every fix states what the implementer could not know and cites the finding
+or doc that already held it. Where none did, the point went to a new reverser entry, not into the spec.
+
+- **monsters/pool** ([entry, closed](../backlog/archive/2026-11-10-architect-spec-writer-plan-0064-monsters-pool-inputs.md); S3
+  rows 2, 4, 5 and the row-5 probe). C1: the counts at `+0x033`/`+0x034` are load-time bytes, 0 in `levels.bin`; a file
+  reader computes them as the leading non-negative slots (pseudocode comment, diagram, a `[C]` and an `[I]` step note:
+  Levels § Fields with no `.txt` column, monsters/0001 § 3). B3: the state table names `levelCount` = `g_nLevels` at
+  `0x0096C88C` (`g_pDataTables+0xC5C`), the `levels.bin` u32 count, 137 stock, and a step note ties the loop to it
+  (`[I]`, data/0001 § 5, data/excel B1 and C1), with the 136-regions-per-game count `[C]`. D1: "none" is a `MonStatsEx`
+  outside `[0, nMonStats2)` read signed, the form of the same lookup inline in `MonSpawnTry` (`[I]`, monsters/0002 § 6);
+  unreached on stock data (`[C]`, table survey); the Inputs row now says signed, as tables/MonStats does. The getter's
+  own test is a new `[L]`, filed as [monstats2rec-bound-test](../backlog/2026-11-10-spec-writer-reverser-monstats2rec-bound-test.md).
+- **conformance** ([entry, closed](../backlog/archive/2026-11-10-architect-spec-writer-plan-0064-conformance-drop-inputs.md);
+  S1 rows 4–5, S2 rows 2–3, S3 row 1, S4 rows 1 and 24). § Drops names `killer_mf` and `owner_mf` (items/quality § C,
+  absent = 0) and links golden-trace § Drop cases; the B2 digest row and mismatch item 4 link the format's level set, order
+  and canonical form; `mlvl.N` points at pool § B, B4; the maze digest row links the format's list order (newest first);
+  `first_room_seed` follows from `window_seed` (maze B1); a new paragraph names what an outdoor case needs besides its
+  inputs (warps § A–C, rng/seeds step 3, the Levels/LvlPrest/LvlSub columns, formats/ds1).
+- **drlg/outdoor** ([entry, annotated](../backlog/2026-11-10-architect-spec-writer-plan-0064-drlg-outdoor.md)), items 5
+  onward and probe rows 7 and 20. Done: § C (5, row 7: the insert's one-node compare and skipped head `[I]`, C2's full
+  order as the reimplementation's rule with S4a's count and the side 1, 3 + 2 example `[I]`, C2's `[C]` scoped to the
+  compare and the within-side order the ring reads); J2a (6: `RectGapTest` defined, drlg/0007 § 3, drlg/0006 § 2);
+  G4 in part (7: the variant stride `(g.w + 1)·(v + 1)` `[C]`, and "63 means any" = `baseDef + wildcard` `[I]`, drlg/0008
+  § 7); H6/H6e (12: no jitter call, so no draw, for a failed search `[I]`, drlg/0008 § 8 and § 16.3); F1 (13: level 3
+  falls through to the shuffle `[I]`, drlg/0008 § 6); H0 (row 20: rows 6–14 store `not1` = `not2` = 0, a `[C]` legend).
+  Routed to the new [plan-0064-outdoor-unstated-steps](../backlog/2026-11-10-spec-writer-reverser-plan-0064-outdoor-unstated-steps.md)
+  and stated as one `[L]` under *Open questions*: the rest of (7), (8) L5, (9) L4/L6, (10) J5, (11) H3, (14) C5, and
+  where the insert puts a node that sorts before the head. **Items 1–4 (H6d, H7, H1, C1) not touched**: they wait for
+  lane n64r's [drlg-outdoor-statements](../backlog/2026-11-10-architect-reverser-plan-0064-drlg-outdoor-statements.md).
+  `…drlg-warps-border-adj` not done (it waits for n64r's (d)).
+
+Judgment calls for the reviewer: (a) H0's stored zeros are not printed in drlg/0008 (§ 16.3 shows `—`); I read them
+with `tools/drlg.py`'s `_lx_ints(0x6F1258, 90)`, the reader § 16's tables are `[C]` by (the S3/S4 triage read 0x006F2854
+the same way), wrote them `[C]`, and asked the reverser to print them (entry item (g)). (b) H6's "failed search draws
+nothing" is `[I]` from the finding's "after a found path" wording; the map-seed-45 failure matched under the model, but no
+finding says the failed road drew nothing, so I did not raise it. (c) The new pool `[L]` and its entry are low priority:
+no stock class reaches the "none" exit.
+
+Wiki: monsters (the load-time counts), levels (the outdoor steps not yet in a finding); both `based_on` dates. Research-map
+rows of monsters/pool, drlg/outdoor and conformance rewritten. Tags: monsters/pool C 102 / I 22 / L 4, drlg/outdoor C 184 /
+I 23 / L 3, conformance C 22 / I 38 / L 2. No Reimplementation note added or renumbered (quirks unchanged). Review: Tier A.
+Next: Phase 4 part 3 (outdoor items 1–4 and warps-border-adj) after n64r; then Phase 5 for S3 and S4.

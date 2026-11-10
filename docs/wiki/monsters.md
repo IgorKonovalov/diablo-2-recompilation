@@ -1,7 +1,7 @@
 ---
 based_on:
   - docs/specs/monsters/README.md 2026-11-04
-  - docs/specs/monsters/pool.md 2026-10-27
+  - docs/specs/monsters/pool.md 2026-11-10
   - docs/specs/monsters/spawn.md 2026-11-04
   - docs/specs/monsters/special.md 2026-11-03
   - docs/specs/monsters/stats.md 2026-11-04
@@ -93,7 +93,10 @@ How one level's pool is picked ([pool § C](../specs/monsters/pool.md#c-the-pool
   three such classes, so its pool is empty.
 - `Rarity` is only copied at this stage. It is used later, when a room picks from the pool.
 
-The candidate count is read from the code as the number of *leading* filled slots, stopping at the first blank.
+The game counts the candidates when it loads `Levels`, not from a column: the two count bytes are 0 in the shipped
+file, so a program that reads the file must count them itself, or every pool comes out empty
+([pool § C](../specs/monsters/pool.md#c-the-pool-pick-sub_005475e0_monregionpool)). The candidate count is read from
+the code as the number of *leading* filled slots, stopping at the first blank.
 Stock data has no gaps, so a test run cannot tell this apart from "the number of filled slots". The nightmare and
 hell pools were checked in natural games for one seed only. A classic normal game reads `mon` like an expansion game:
 a logged one matched all 136 regions, and in 23 of the 27 levels 110–136 the `nmon` slots would have given another

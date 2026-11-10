@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, drlg/overview, drlg/warps]
 consumed_by: [drlg/overview, drlg/warps, drlg/room-tiles, drlg/collision, monsters/spawn, objects]
-tags: {C: 180, I: 19, L: 2}
-updated: 2026-10-20
+tags: {C: 184, I: 23, L: 3}
+updated: 2026-11-10
 ---
 
 # Outdoor generators: the cell grid, borders, placements and the act layouts
@@ -268,9 +268,10 @@ run:2026-10-15-drlg-outdoor)
 C1. LevelBorderAdj(L) → per Vis slot k with Warp[k] = −1:            [C] (fn:sub_00677680_LevelBorderAdj@0x00677680, fn:sub_0066B790_LevelAdjAdd@0x0066B790, run:2026-10-15-drlg-outdoor)
       n ← { nbr: level Vis[k], side: RectAdjDir(L.rect, nbr.rect)   ; 0 W, 1 N, 2 E, 3 S
             isPreset: nbr's DrlgType = 2, +0xC: 0, rect: &nbr.rect }
-      LevelAdjInsert(n, O.adj)                                       ; sorted, C2
+      LevelAdjInsert(n, O.adj)                                       ; C2's compare, with a quirk (step notes)
 C2. order (LevelAdjLess): side ascending; then W by y ascending,     [C] (fn:sub_0066B6A0_LevelAdjLess@0x0066B6A0, fn:sub_0066B720_LevelAdjInsert@0x0066B720, run:2026-10-15-drlg-outdoor)
       N by x descending, E by y descending, S by x ascending
+      ; a reimplementation keeps the list in this full order (step notes)
 
 C3. VertexRingBuild(L):                                              [C] (fn:sub_0067D050_VertexRingBuild@0x0067D050, run:2026-10-15-drlg-outdoor)
       r ← L.rect with w − 1, h − 1;  each neighbour rect likewise     ; inclusive while building, restored after
@@ -290,6 +291,7 @@ C4. VertexRingSeams, per node n in list order, q ← n.rect:           [C] (fn:s
       if b·c < e·c: insert a vertex after p at b                     ; the seam ends inside the edge
 C5. OutVertsToCells(ring): every vertex ÷ 8 (signed);                [C] (fn:sub_00675080_OutVertsToCells@0x00675080, run:2026-10-15-drlg-outdoor)
       a vertex equal to its successor is merged into it (flags or-ed)
+      ; which of the two survives, and its type: Open questions (no stock case in Acts I, II, IV, V)
 ```
 
 - [C] A vertex's flag bit 0 means the segment to the next vertex borders a walkable neighbour; bit 1 means that neighbour
@@ -309,9 +311,21 @@ C5. OutVertsToCells(ring): every vertex ÷ 8 (signed);                [C] (fn:su
   (fn:sub_00675080_OutVertsToCells@0x00675080, fn:sub_006772C0_LevelLinkBuild@0x006772C0, run:2026-10-16-sweep-mazes,
   [drlg/0008 § H5e (a) layout bound](../../findings/drlg/0008-outdoor.md#h5e-reachability-a-the-layout-bound-2026-10-17-lanerbs4),
   [§ Plan 0038 batch H5e](../../findings/drlg/0008-outdoor.md#plan-0038-batch-h5e-run2026-10-16-sweep-mazes))
-- [I] `LevelAdjInsert` compares against the head only while the list holds one node. No logged window tells this from a
-  full compare: of the 177 modelled inserts, the 5 the quirk decides all meet a head on another side, and the ring reads
-  the list's order only within a side. (fn:sub_0066B720_LevelAdjInsert@0x0066B720,
+- [C] C2 states the compare `LevelAdjLess` and the order the ring reads: `VertexRingSeams` (C4) takes the nodes in
+  list order and each acts on its own side's edge, so only the order **within a side** reaches the ring, and every logged
+  ring is reproduced. (fn:sub_0066B6A0_LevelAdjLess@0x0066B6A0, fn:sub_0067CE20_VertexRingSeams@0x0067CE20,
+  run:2026-10-15-drlg-outdoor)
+- [I] **How `LevelAdjInsert` places a node.** Into an empty list, the node becomes the list. Into a list of one node it
+  compares the new node with the head: before the head when `LevelAdjLess(new, head)`, after it otherwise. Into a list of
+  two or more nodes it does not compare with the head, so a node that sorts before the head is not put before it; a node
+  that does not sort before the head goes where C2 puts it. Where a node that sorts before the head goes instead is not
+  written in a finding (Open questions). (fn:sub_0066B720_LevelAdjInsert@0x0066B720,
+  [drlg/0008 § 13](../../findings/drlg/0008-outdoor.md#13-reading-check-the-logged-windows), [§ Plan 0038 batch S4a](../../findings/drlg/0008-outdoor.md#plan-0038-batch-s4a-2026-10-16))
+- [I] **A reimplementation keeps the list in C2's full order.** Of the act link model's 177 inserts, 19 go into a list of
+  two or more nodes; in 5 the new node sorts before the head, and in all 5 the head is on another side, so the
+  within-side order is the same either way; the same run with a full compare gives 0 mismatches. Example: a list holding
+  nodes on sides 1 and 3 receives a side-2 node; it does not sort before the side-1 head, so it goes between the two, which
+  is C2's order. (fn:sub_0066B720_LevelAdjInsert@0x0066B720,
   [drlg/0008 § Plan 0038 batch S4a](../../findings/drlg/0008-outdoor.md#plan-0038-batch-s4a-2026-10-16))
 
 ### D. Placement primitives
@@ -550,6 +564,7 @@ F1. OutWaypointPlace(L):                                              [C] (fn:su
         first (x, y), rows outer, with (grid0 & f) and (cell & 0x400):
           clamp (x, y) into 1 … cw − 2 × 1 … ch − 2
           grid0 |= 0x20000; cell |= 0x800; return                    ; waypoint record 1
+                                                                     ; no such cell: on to the shuffle below
       N ← (cw − 2)·(ch − 2);  if N = 0: return
       list ← Shuffle(N, cw − 2)                                      ; 2N level draws
       first (x, y) in list with OutCellFree(x + 1, y + 1): grid0 |= 0x10000; cell |= 0x800   ; waypoint record 0
@@ -562,6 +577,10 @@ F2. OutShrinesPlace(L, count = 5):                                    [C] (fn:su
                                                                      ; g_OutShrineFlag = 0x1000, 0x2000, 0x4000, 0x8000
 ```
 
+- F1. [I] On level 3 the `return` belongs to the matching cell only: when no cell has both bits, the pass goes on to the
+  shuffle and places waypoint record 0 like the other levels (`L.id = 3` guards the seam scan alone in
+  [drlg/0008 § 6](../../findings/drlg/0008-outdoor.md#6-waypoint-and-shrines)'s reading). No logged window and no
+  offline-scan window had a level 3 without such a cell. (fn:sub_00674B70_OutWaypointPlace@0x00674B70)
 - [C] Neither pass places a preset. They mark cells, and the out room made there runs the `SubWaypoint` or `SubShrine`
   `LvlSub` pass with the marked record ([room-tiles.md](room-tiles.md) step 5). Every call site passes `count` 5.
   (fn:sub_00674B70_OutWaypointPlace@0x00674B70, fn:sub_00674E40_OutShrinesPlace@0x00674E40, run:2026-10-15-drlg-outdoor)
@@ -616,6 +635,18 @@ G3. BorderSubGroup(rec, g) → bool:                                    [C] (fn:
   `borderFlag` 1 (no rotation draw), floor cells with `F & 2` are cleared to open cells (`OutCellClear`), and the others
   are covered (`OutCellCover`). (fn:sub_0066F3B0_BorderSubFits@0x0066F3B0, fn:sub_0066F520_BorderSubStamp@0x0066F520,
   run:2026-10-15-drlg-outdoor)
+- G4. [C] **Where a variant is.** The variants of a group sit side by side in the DS1 at a stride of `g.w + 1` cells:
+  variant 0 is the group's own rectangle and variant `v + 1` starts `(g.w + 1)·(v + 1)` cells to its right (the source
+  column G3 hands `BorderSubStamp`). (fn:sub_0066F690_BorderSubGroup@0x0066F690,
+  fn:sub_0066F520_BorderSubStamp@0x0066F520, run:2026-10-15-drlg-outdoor,
+  [drlg/0008 § 7](../../findings/drlg/0008-outdoor.md#7-the-border-stamps-lvlsub-tag_type-2), [ds1 § Substitution groups](../../formats/ds1.md#substitution-groups-v--12-and-tag_type--1-2))
+- G4. [I] **"63 means any" and G2's `wildcard ← 62` are one rule.** Sub-index 63 gives `baseDef + 63 − 1 = baseDef + 62`,
+  that is `baseDef + wildcard`, the value the context's wildcard (G2) names; such a cell matches any `Def`. A
+  reimplementation tests the computed piece against `baseDef + 62`, or the sub-index against 63, not against a bare 62.
+  (fn:sub_0066F990_BorderSubRecord@0x0066F990, fn:sub_0066F3B0_BorderSubFits@0x0066F3B0,
+  [drlg/0008 § 7](../../findings/drlg/0008-outdoor.md#7-the-border-stamps-lvlsub-tag_type-2))
+- G4. Four points of the match and the stamp are not in a finding and are listed under *Open questions*: the DS1 layer
+  read, a sub-index-63 cell in a replacement variant, which cells "the others" are, and `N < 0` in G3.
 - [C] **`BordType`**: 0 = one `RangeB(groups)` picks the start group, and the record stops after its first stamp; 1 = every
   group is tried and stamped at most once; 2 = every group is stamped at every matching position. Stock: `Border - Cliffs`
   1, `- Middle` 0, `- Corner` 1, `- Border` 2, `Barricade` 2. **`GridSize`**: 1, and 2 for `Barricade`.
@@ -655,11 +686,17 @@ flag}`) with (`level` = `L.id` or `level` = 0) and `L.id` ≠ `not1` and `L.id` 
 | 0–1 | 0 (any) | 2, 3 | (1, 0), (2, 3) → `0x4` |
 | 2–3 | 0 (any) | 3, 17 | (2, 1), (3, 0) → `0x8` |
 | 4–5 | 0 (any) | 3, 17 | (1, 1), (3, 3) → `0x10` |
-| 6–9 | 2 | — | (0, 0), (2, 2), (3, 0), (3, 2) → `0x8` |
-| 10–11 | 2 | — | (0, 1), (1, 1) → `0x400` |
-| 12 | 2 | — | (2, 1) → `0x200` |
-| 13 | 2 | — | (2, 2) → `0x80` |
-| 14 | 2 | — | (3, 2) → `0x100` |
+| 6–9 | 2 | 0, 0 | (0, 0), (2, 2), (3, 0), (3, 2) → `0x8` |
+| 10–11 | 2 | 0, 0 | (0, 1), (1, 1) → `0x400` |
+| 12 | 2 | 0, 0 | (2, 1) → `0x200` |
+| 13 | 2 | 0, 0 | (2, 2) → `0x80` |
+| 14 | 2 | 0, 0 | (3, 2) → `0x100` |
+
+[C] Rows 6–14 store 0 in both `not1` and `not2`: no level has id 0, so they exclude nothing, and each of these rows
+applies to level 2 whenever its two sides match (for level 2 with `B.dir[i]` = 0 and `B.dir[i + 1]` = 0, row 6 ORs
+`0x8`). drlg/0008 § 16.3 prints these cells as "—"; the values are the table's at 0x006F1258 as the reference model reads
+it, the read every § 16 table rests on. (data:g_LinkOutdoorFlags@0x006F1258, fn:sub_00677180_LinkOutdoorFlags@0x00677180,
+run:2026-10-15-drlg-outdoor, [drlg/0008 § 16.3](../../findings/drlg/0008-outdoor.md#163-act-i))
 
 The last row's `flag` (`0x006F13BC`, 256) is also entry 0 of `g_JungleClearingDefs` (§ J2), where it is never read.
 
@@ -699,6 +736,7 @@ H3. A1RiverPlace(L, x):                                              [C] (fn:sub
     A1BridgePlace(L, x):                                             [C] (fn:sub_0067FD20_A1BridgePlace@0x0067FD20, run:2026-10-15-drlg-outdoor)
       s ← Range(L.seed, ch − 2)                                      ; level draw
       first y = (k + s) % (ch − 2) + 1 (k = 0, 1, …) with free cells beside it and index 3 in both river cells:
+                                                                     ; "beside": Open questions
         Place(x, y, 28, 1);  Place(x + 1, y, 28, 2 + ((O.flags & 4) ≠ 0))
 H4. A1RiverMidTransCave(L):                                          [C] (fn:sub_006803D0_A1RiverMidTransCave@0x006803D0, run:2026-10-15-drlg-outdoor)
       if (O.flags & 0x10) and A1RiverColumnClear(cw ÷ 2 − 1): A1RiverPlace(cw ÷ 2 − 1)
@@ -769,6 +807,7 @@ H6. A1Paths(L):                                                      [C] (fn:sub
         if found:
           cell |= 0x80 on every cell of the path inside the grid     ; GridPointsOr
           A1PathJitter(L, i, path)                                   ; H6e: 1 + 2·(cells − 2) level draws
+        ; not found: no jitter call, so no draw for this road (step note)
       cell(p) = ((p.x − L.x) ÷ 8, (p.y − L.y) ÷ 8)                   ; tile point → cell
 ```
 
@@ -900,7 +939,7 @@ H6d. A1PathSearch(s, t) → path or none:                               [C] (fn:
 ```
 H6e. A1PathJitter(L, i, path):                                        [C] (fn:sub_00681240_A1PathJitter@0x00681240, data:g_A1JitterDx@0x006F2820, data:g_A1JitterDy@0x006F2830, run:2026-10-15-drlg-outdoor)
        r: u32 ← Step(L.seed) & 3                                     ; level draw, before the path test
-       if no path: return
+       if no path: return                                            ; not taken: H6 calls only with a found path
        if D[i].dir ≠ 4: prepend a vertex (D[i].x, D[i].y)            ; a bridge hub: its raw point
        the target-cell vertex ← (C[i].x, C[i].y)
        for each vertex v after the target-cell vertex that has a successor:   ; the interior cells, target → start
@@ -917,6 +956,11 @@ H6e. A1PathJitter(L, i, path):                                        [C] (fn:su
   path `[s, t]` has no interior vertex and draws only the first `Step`. The jitter's draws were checked one by one, and its
   points through the road tiles of every logged Act I out room (§ M; the 2026-10-15 addendum to the run).
   (fn:sub_00681240_A1PathJitter@0x00681240, fn:sub_00681420_A1Paths@0x00681420, run:2026-10-15-drlg-outdoor)
+- H6. [I] **A failed search makes no draw.** `A1Paths` calls `A1PathJitter` only for a found path (drlg/0008 § 8,
+  *Roads*: "a found path marks its cells `0x80`, then the jitter draws"; § 16.3, "after a found path"). H6e's first draw
+  and its no-path return are the callee's own order: its `Step & 3` precedes its own path test, and that test is never
+  false when `A1Paths` calls it. So a road whose search fails costs no draw, and H6 and H6e agree. (fn:sub_00681420_A1Paths@0x00681420,
+  fn:sub_00681240_A1PathJitter@0x00681240, [drlg/0008 § 8](../../findings/drlg/0008-outdoor.md#8-act-i-levels-27-17-39))
 - [C] A failed road search was reached: in map seed 45's Black Marsh one road's search returns none (2 windows), and the
   remaining roads and their jitter draws match. (fn:sub_006817D0_A1PathSearch@0x006817D0, run:2026-10-16-sweep-mazes,
   [drlg/0008 § Plan 0038 batch H5e](../../findings/drlg/0008-outdoor.md#plan-0038-batch-h5e-run2026-10-16-sweep-mazes))
@@ -1121,6 +1165,7 @@ J2. JungleLayout(T):                                                  [C] (fn:su
         d: u32 ← Step(A) % 5                                         ; act draw (0x0067799A), unsigned
         R ← JungleRectRel(rec[k], W, H, d)
         if R overlaps any rec (RectGapTest(rec[m], R, 0) = 0 for some m): continue   ; new k and d
+                                                                     ; RectGapTest(A, B, 0) = 0 ⇔ gx < 0 and gy < 0 (step note)
         append R to rec[k].kids (more than 3 → fatal 0x63E);  rec[n] ← R;  n ← n + 1
         minx ← min(minx, R.x);  miny ← min(miny, R.y);  maxx ← max(maxx, R.x + R.w)  ; maxy is not updated
       if (maxx − minx) % 32 ≠ 0 or (maxy − miny) % 32 ≠ 0: fatal 0x64D / 0x64E
@@ -1198,6 +1243,14 @@ JungleRectRel(parent, w, h, d) → rect:                                [C] (fn:
       return {parent.x + dx, parent.y + dy, w, h, dir d}             ; h = 192 (the only size): q1 −64, q2 −128
 ```
 
+- J2a. [C] **The overlap test.** `RectGapTest(A, B, 0)` is `RectGap` without its outputs: with the per-axis gaps
+  `gx ← (A.x < B.x) ? B.x − A.w − A.x : A.x − B.w − B.x` and `gy` likewise on `y`, `h`, it returns 0 exactly when
+  `gx < 0` and `gy < 0`, so two jungles overlap only when both gaps are negative, and jungles that share an edge (a gap
+  of 0) do not. It is the overlap of [maze.md](maze.md#b-primitives) B2,
+  not `RectTouch`'s `t = 0` mode of [warps.md](warps.md#c-level-rectangles-and-the-links-after-the-layout) C3.
+  (fn:sub_0066B860_RectGapTest@0x0066B860, fn:sub_0066B800_RectGap@0x0066B800, fn:sub_00677880_JungleLayout@0x00677880,
+  run:2026-10-15-drlg-outdoor, [drlg/0007 § 3](../../findings/drlg/0007-warps.md#3-the-act-link-builder) *The validators*,
+  [drlg/0006 § 2](../../findings/drlg/0006-maze.md#2-placing-a-room))
 - [C] **`g_JungleSideDefs`** (`i32[16][4]`): row = the cell's path exit mask, column = the clearing side bit W `0x10`, E
   `0x20`, S `0x40`, N `0x80`. Rows 0 and 15 are all 0. (data:g_JungleSideDefs@0x006F13F0, fn:sub_00677880_JungleLayout@0x00677880,
   run:2026-10-15-drlg-outdoor)
@@ -1272,6 +1325,8 @@ J5. OutKurastLevel (79 … 82):                                        [C] (fn:s
       81: RingMetro;  Place(3, ch − 4, 646, 0);  Place(cw − 4, ch − 4, 646, 1);  PlaceRandom(647, 0);  PlaceRandom(647, 1);
           PlaceRandom(631, 0);  Fill(651 …);  Fill(649, 650);  Fill(648)
       82: Place(0, 0, 652, 0)                                        ; the bridge, explicit index: no draw
+      ; the arguments 80 and 81 leave out, OutFillRandom's shuffle width and fit test, and
+      ; PlaceRandom(631, 0)'s pad and sides are not in a finding: Open questions
     Fill = OutFillRandom(lo, hi, max):                               [C] (fn:sub_0067EED0_OutFillRandom@0x0067EED0, run:2026-10-15-drlg-outdoor)
       list ← the shuffle of all cw·ch cells                          ; 2·cw·ch level draws
       for each cell: d ← lo + Range(L.seed, hi − lo + 1)             ; drawn also when hi = lo
@@ -1448,6 +1503,7 @@ L3. BarricadeRavine(L):                                               [C] (fn:su
   run:2026-10-15-drlg-outdoor)
 - L4. [C] **Gates.** Each edge's first `0x400` cell gets one gate, file −1: 909 top, 908 bottom, 910 left, 907 right.
   (fn:sub_0067DB50_BarricadeGates@0x0067DB50, run:2026-10-15-drlg-outdoor)
+- L4. Which row or column is each edge, and the direction each is scanned in, are not in a finding (*Open questions*).
 - L4. [C] **Caves**, `g_A5CaveEntries` (`i32[3][5]` `{level, file, far, defTall, defWide}`): `(112, 0, 0, 913, 914)`,
   `(117, 0, 1, 983, 984)`, `(117, 0, 0, 985, 986)`. For each row of the level, in table order: a wide level (`L.h < L.w`)
   gets `Place(far ? cw − 2 : 0, 2, defWide, file)`, a tall one `Place(2, far ? ch − 2 : 0, defTall, file)`. No fit test, no
@@ -1456,6 +1512,8 @@ L3. BarricadeRavine(L):                                               [C] (fn:su
   match callback and `Def` map: DS1 main index 48 names the border or ravine piece expected, 49 the Barricade piece 915–930
   (987–1002 on snow) it becomes; sub 31 of main 48 is the wildcard −5. (fn:sub_0067E0E0_BarricadeLvlSub@0x0067E0E0,
   fn:sub_0067E000_BarricadeSubDefMap@0x0067E000, fn:sub_0067E080_BarricadeSubMatch@0x0067E080, run:2026-10-15-drlg-outdoor)
+- L5. Whether the Act V match callback also refuses a seam opening, as G4's match does, is not in a finding (*Open
+  questions*).
 - L5. [C] **The stamp `Def` map**, `g_A5SubDefMap` (`i32[10][5]` `{main, subLo, subHi, defDirt, defSnow}`). For a DS1
   wall cell with `main = (W >> 20) & 0x3F` and `sub = (W >> 8) & 0xFF`, main 48 or 49, the first row with that `main` and
   `subLo ≤ sub ≤ subHi` gives `(L.id = 117 ? defSnow : defDirt) − subLo + sub`. No matching row, or another `main`, is a
@@ -1477,6 +1535,7 @@ L3. BarricadeRavine(L):                                               [C] (fn:su
   `y ← 2·Range(L.seed, ch ÷ 2)`; a Barricade 1–8 piece (915–922) there becomes `Def + 16` (931–938, file −1). Then two more
   `Range` draws, always, start a full scan for the rest. Fewer than 3 is a fatal error. (fn:sub_0067E240_BarricadePrisons@0x0067E240,
   run:2026-10-15-drlg-outdoor)
+- L6. The fallback scan's order is not in a finding (*Open questions*).
 - [C] The prisons' fallback scan places prisons in Frigid Highlands for map seed 312: 2 by the scan in each of the two
   windows, every draw matched. (fn:sub_0067E240_BarricadePrisons@0x0067E240, run:2026-10-16-sweep-mazes,
   [drlg/0008 § Plan 0038 batch H5e](../../findings/drlg/0008-outdoor.md#plan-0038-batch-h5e-run2026-10-16-sweep-mazes))
@@ -1791,6 +1850,17 @@ are the `Range(6 or 2)` and seven first uses. Blood Moor is 12 × 7 cells (its l
   600-seed sample; the full waypoint pass has no static bound and stays a shortfall. Also the reads past a table
   that the stock tables never reach: a second side bit on one jungle cell (J2e), a river-column `Def` above 15 (H3),
   and `LinkOutdoorFlags`' `B.dir[i + 1]` past link entry 14 (H0), where the code reads the next slot.
+- [L] **Steps no finding states** (plan 0064 Phase 4; filed for the reverser as
+  [plan-0064-outdoor-unstated-steps](../../backlog/2026-11-10-spec-writer-reverser-plan-0064-outdoor-unstated-steps.md),
+  whose items give the clean-room implementer's guesses that scored right as leads): (a) G4: the DS1 wall and floor
+  layer the match and the stamp read, what a sub-index-63 wall cell of a replacement variant writes, which cells "the
+  others are covered" means, and whether G3's `N = 0` exit also takes `N < 0`; (b) L5: whether the Act V match callback
+  refuses a seam opening; (c) L4: each edge's row or column and scan direction, and L6: the fallback scan's order; (d)
+  J5: the `hi`/`max` that 80's and 81's `Fill` calls leave out, `OutFillRandom`'s shuffle width and fit pad and sides,
+  and `PlaceRandom(631, 0)`'s pad and sides; (e) H3: which cells are "the free cells beside" the bridge row; (f) C5:
+  which vertex survives a merge and what its `type` becomes; (h) § C: where `LevelAdjInsert` puts a node that sorts
+  before the head of a list of two or more (C2's full order is what a reimplementation uses). The entry's item (g), the
+  zeros of `g_LinkOutdoorFlags` rows 6–14, is answered in H0.
 - ~~Roads with 5 or 6 endpoints or an exhausted pool (H6)~~ answered in H6 from drlg/0008's H5e reachability reads (c)
   and (d): no stock case (at most 4 endpoints, at most 45 pool nodes against 900).
 - ~~The swapped cliff-cave scan on a non-square level (H2)~~ answered in H2 from drlg/0008's H5e reachability reads (e)

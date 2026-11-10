@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [chain, rng, rng/seeds, drlg/outdoor, drlg/maze, monsters/pool, items/tc, items/quality, quirks]
 consumed_by: []
-tags: {C: 22, I: 35, L: 2}
-updated: 2026-10-30
+tags: {C: 22, I: 38, L: 2}
+updated: 2026-11-10
 ---
 
 # Conformance: running the golden traces against a reimplementation
@@ -87,7 +87,7 @@ it only as a prediction from the reviewed model (no kept log shows the draws). C
 | `chain.A4.store_seed`, `.quest_seed`, `.game_seed_after_creation` | [chain A4](../chain/README.md#algorithm) | 0 / 612 | [I] (fmt:golden-trace#set-v1-coverage-per-spec-step) |
 | `chain.B1.level_seed_base.N` | [chain B1](../chain/README.md#algorithm); [rng/seeds step 3](../rng/seeds.md#algorithm) | 63 / 3 060 | [C] (fn:DRLG_ActCreate@0x00642DA0, run:2026-10-21-chain2) |
 | `chain.B2.level_seed.N` | [chain B2](../chain/README.md#algorithm); [rng/seeds step 4](../rng/seeds.md#algorithm) | 624 / 52 632 | [C] (fn:DRLG_LevelCreate@0x00642AE0, run:2026-10-21-chain2) |
-| `chain.B2.level_seeds_digest` | [chain B2](../chain/README.md#algorithm), over every level | 0 / 612 | [I] (fmt:golden-trace#set-v1-coverage-per-spec-step) |
+| `chain.B2.level_seeds_digest` | [chain B2](../chain/README.md#algorithm), over the level set and in the canonical form of [golden-trace § World cases](../../formats/golden-trace.md#world-cases) | 0 / 612 | [I] (fmt:golden-trace#set-v1-coverage-per-spec-step) |
 
 ### DRLG windows (type `drlg`, observed only)
 
@@ -97,16 +97,36 @@ it only as a prediction from the reviewed model (no kept log shows the draws). C
 | `drlg.outdoor.presets_digest`, `.preset_count` | [drlg/outdoor § Outputs](../drlg/outdoor.md#outputs), the embedded presets `OutdoorRoomsCreate` makes from the grids ([drlg/overview step 8](../drlg/README.md#algorithm)); the anchors are placed by [§ D](../drlg/outdoor.md#d-placement-primitives) and the act sections H to L | 334 | [C] (fmt:golden-trace#set-v1-coverage-per-spec-step, fn:sub_006750F0_OutdoorRoomsCreate@0x006750F0, run:2026-10-15-drlg-outdoor) |
 | `drlg.outdoor.rooms_digest`, `.room_count` | [drlg/outdoor § Outputs](../drlg/outdoor.md#outputs), the out rooms `OutdoorRoomsCreate` makes, rows outer ([drlg/overview step 8](../drlg/README.md#algorithm)), from the cell grid of [§ B to E](../drlg/outdoor.md#b-the-cell-grid-and-its-bits) | 334 | [C] (fmt:golden-trace#set-v1-coverage-per-spec-step, fn:sub_006750F0_OutdoorRoomsCreate@0x006750F0, run:2026-10-15-drlg-outdoor) |
 | `drlg.maze.seed_after` | [drlg/maze § A, the window](../drlg/maze.md#a-the-window) and [§ Outputs](../drlg/maze.md#outputs) | 50 | [C] (fmt:golden-trace#set-v1-coverage-per-spec-step, fn:sub_00673B30_MazeLevelBuild@0x00673B30, run:2026-10-15-drlg-maze) |
-| `drlg.maze.rooms_digest`, `.room_count` | [drlg/maze § C to I](../drlg/maze.md#c-random-growth) and [§ Outputs](../drlg/maze.md#outputs), rooms in creation order, positions relative to the bounding box's minimum (the window ends at `MZ1`, before the placement shift) | 50 | [C] (fmt:golden-trace#set-v1-coverage-per-spec-step, fn:sub_00673B30_MazeLevelBuild@0x00673B30, run:2026-10-15-drlg-maze) |
+| `drlg.maze.rooms_digest`, `.room_count` | [drlg/maze § C to I](../drlg/maze.md#c-random-growth) and [§ Outputs](../drlg/maze.md#outputs); the room list's order and entry form are the `drlg.maze.rooms_digest` row of [golden-trace § Fields](../../formats/golden-trace.md#fields) (the window ends at `MZ1`, before the placement shift) | 50 | [C] (fmt:golden-trace#set-v1-coverage-per-spec-step, fn:sub_00673B30_MazeLevelBuild@0x00673B30, run:2026-10-15-drlg-maze) |
 
 The outdoor `difficulty` input is read from the log's name, not shown by the log; 67 outdoor cases rest on the
 default of Normal. [I] (fmt:golden-trace#case, `drlg`)
+
+A maze case's `first_room_seed` input is a function of its `window_seed`, [drlg/maze](../drlg/maze.md#algorithm) B1's
+seed; [golden-trace § Case](../../formats/golden-trace.md#case), the `drlg` inputs, says how. A reimplementation may
+derive it or take it as given. [I] (fmt:golden-trace#case, `drlg`)
+
+**What an outdoor case needs besides its inputs.** An outdoor window starts from state the act built before it: the level
+rectangle and size, the level adjacency list and, in Acts I and IV, the outdoor flags (drlg/outdoor § Inputs, Runtime
+state), and, in Act III, the act seed. A case gives only `map_seed`, `level`, `window_seed` and `difficulty`, so a
+reimplementation that scores outdoor cases also implements: [I] (the Runtime state rows of
+[drlg/outdoor § Inputs](../drlg/outdoor.md#runtime-state); fmt:golden-trace#case, `drlg`)
+
+- the act's link builder, [drlg/warps § A to C](../drlg/warps.md#a-per-act-link-setup): the per-act setup, the link
+  picks that fix the level sizes and the outdoor flags, and the level rectangles and adjacency after the layout;
+- the act seed, [rng/seeds step 3](../rng/seeds.md#algorithm), from the case's `map_seed`: the link builder draws on
+  copies of it ([drlg/warps](../drlg/warps.md#b-the-act-link-builder) B1), Act III's jungle layout on the act seed itself
+  ([drlg/outdoor § J1](../drlg/outdoor.md#j-act-iii));
+- the tables those steps and the window read: `Levels` (`SizeX`, `SizeY`, `OffsetX`, `OffsetY`, `Depend`, `Vis0..7`,
+  `Warp0..7`, `LevelType`), `LvlPrest` and `LvlSub`, with the DS1 groups the border stamps read
+  ([formats/ds1](../../formats/ds1.md)); [drlg/outdoor § Inputs](../drlg/outdoor.md#tables) and
+  [drlg/warps § Inputs](../drlg/warps.md#tables) list the columns.
 
 ### Monster pools (type `world`, predicted only)
 
 | Field | Spec section it tests | Cases | Tag |
 |---|---|---|---|
-| `monsters.pool.mlvl.N` | [monsters/pool § E, the monster level](../monsters/pool.md#e-the-monster-level-sub_00573cb0_monstatsinit) | 612 worlds, 86 levels each | [I] (fmt:golden-trace#set-v1-coverage-per-spec-step) |
+| `monsters.pool.mlvl.N` | [monsters/pool § B, step B4](../monsters/pool.md#b-the-region-build-sub_005479c0_monregionsbuild), the region's own copy `reg.monLvl` (`MonLvlEx[d]` in an expansion game, `MonLvl[d]` in a classic one); not § E's monster level, which is per class | 612 worlds, 86 levels each | [I] (fmt:golden-trace#set-v1-coverage-per-spec-step) |
 | `monsters.pool.den.N`, `.uniques.N` | [monsters/pool § Inputs](../monsters/pool.md#inputs), the level's density and unique range | same | [I] (fmt:golden-trace#set-v1-coverage-per-spec-step) |
 | `monsters.pool.region.N` | [monsters/pool § B and C](../monsters/pool.md#b-the-region-build-sub_005479c0_monregionsbuild), the region pool by class id | same | [I] (fmt:golden-trace#set-v1-coverage-per-spec-step) |
 | `monsters.pool.digest` | the four values above, every level | 612 | [I] (fmt:golden-trace#set-v1-coverage-per-spec-step) |
@@ -116,9 +136,14 @@ The chain2 logs show no pool value, so a pool field tests the model, not a kept 
 
 ### Drops (type `drop`, observed only)
 
-All are the fields of one `TC_ResolveDrops` call with the quality roll modelled; the call's inputs (`tc`, `ilvl`, the
-seeds, difficulty, game type, source and killer) are given. 3 784 cases from run:2026-10-21-chain2 and 256 from
-run:2026-10-15-items-chain; all three difficulties and both game types occur.
+All are the fields of one `TC_ResolveDrops` call with the quality roll modelled. The call's inputs are given: `tc`, `ilvl`,
+the seeds, difficulty, game type, the source, the killer, the party values `players`, `party` and `cap`, and the killer's
+magic find as two values, `killer_mf` (the killer's own stat 80) and `owner_mf` (its owner's), which the quality roll adds
+([items/quality § C](../items/quality.md#c-shared-terms-and-magic-find), `DropMagicFind` M1–M4). A case leaves a magic-find
+value out when no roll of the call read it, and a reimplementation then uses 0; [golden-trace § Drop cases](../../formats/golden-trace.md#drop-cases)
+says when each input is present and lists the rest of the drop conventions. [I] (fmt:golden-trace#drop-cases)
+3 784 cases from run:2026-10-21-chain2 and 256 from run:2026-10-15-items-chain; all three difficulties and both game
+types occur.
 
 | Field | Spec section it tests | Tag |
 |---|---|---|
@@ -153,9 +178,10 @@ The report counts compared and different fields per field pattern, then prints e
    wrong `seed_after` means a step was added or dropped (a `Range` with `n < 1` takes none). [I] (fn:RNG_Step@0x0045C370,
    fn:RNG_Range@0x0045C390, [rng § Algorithm](../rng/README.md#algorithm); fmt:golden-trace#fields: each window holds
    `seed_after` and the room list)
-4. **A digest field says only that the list differs**, not where. Your list must be in the same order and form;
-   digest it with `golden.py digest --value` and compare against the `_count` field first. [I]
-   (fmt:golden-trace#checking)
+4. **A digest field says only that the list differs**, not where. Your list must be in the order and entry form of the
+   field's row in [golden-trace § Fields](../../formats/golden-trace.md#fields), with the level set and canonical form of
+   [§ Conventions](../../formats/golden-trace.md#conventions); digest it with `golden.py digest --value` and compare
+   against the `_count` field first. [I] (fmt:golden-trace#checking, fmt:golden-trace#conventions)
 5. **A `drop` mismatch**: the lists run on one seed, the dying unit's, and each item's quality roll follows its pick,
    so read `nodrop`, `pick`, `select`, `subtc` and `quality` together in call order; the first wrong entry is nearest the
    first wrong draw. `end_seed` differing with every other field equal means the call took a different number of steps
