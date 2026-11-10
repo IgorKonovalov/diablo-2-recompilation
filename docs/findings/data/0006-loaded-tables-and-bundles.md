@@ -16,10 +16,10 @@ plus an offset, the form most readers use; each reader search covers both forms 
 
 ## Answer (summary)
 
-- [C] **`MonItemPercent` is loaded in every run, and nothing references it but its loader, its free and two getters that have no caller.** `sub_00654F20_MonItemPctLoad`, called
+- [C] **`MonItemPercent` is loaded in every run** (the logs below). [I] **Nothing references it but its loader, its free and two getters that have no caller** (a static scan; no read has been watched). `sub_00654F20_MonItemPctLoad`, called
   unconditionally from `DATATBLS_LoadAll` at 0x00619470, loads the 2 records into `g_pMonItemPercent` (0x0096D484,
   `g_DataTables + 0x1854`) and the count into `g_nMonItemPercent` (0x0096D480, `+0x1850`); the six kept H3b runs that
-  reach the loader log the call (return 0x00654FAD, count 2, the archive `.bin`). The only other code that touches
+  reach the loader (`workspace/logs/h3b/h3b-s2-3101-stock`, `3102-txt`, `3103-loose`, `3104-direct`, `3105-dtxt`, `3107-clamp`, `.log`) log the call (`XTBL` return 0x00654FAD, count 2, the archive `.bin`). The only other code that touches
   either global is the free at the excel unload and a bounds-checked record getter,
   `sub_00654FE0_MonItemPctGetRecord`, which has **no caller**: no `call`, `jmp` or `jcc` rel32 and no absolute pointer
   to it anywhere in the image (`tools/xrefscan.py`), and no reference in Ghidra. The table address getter at
@@ -145,9 +145,10 @@ The table's records are reachable only through `g_pMonItemPercent` (0x0096D484),
 | 0x00654FE6 | `MonItemPctGetRecord` | bounds test against the count | READ | abs32 0x00654FE8 |
 | 0x00654FF3 | `MonItemPctGetRecord` | loads the pointer, returns `&rec[idx]` | READ | abs32 0x00654FF4 |
 
-- [C] No other instruction or data word names either global: `tools/xrefscan.py` finds 3 absolute hits for each, all
-  listed above, and Ghidra lists the same references (it has no function at 0x00654FD0). (`check-item1.txt`)
-- [C] The two getters are dead code. `tools/xrefscan.py 0x00654FD0 0x00654FE0`: 0 hits each (no `E8`/`E9`/`0F 8x`
+- [I] No other instruction or data word names either global: `tools/xrefscan.py` finds 3 absolute hits for each, all
+  listed above, and Ghidra lists the same references; an independent r2 search at the architect check (`/x` of both
+  addresses and of the `0x1850`/`0x1854` displacements) found the same hits and no displacement operand (it has no function at 0x00654FD0). (`check-item1.txt`)
+- [I] The two getters are dead code, by a static scan (a computed call target is not seen). `tools/xrefscan.py 0x00654FD0 0x00654FE0`: 0 hits each (no `E8`/`E9`/`0F 8x`
   rel32 to them in an executable section, no 4-byte pointer to them in any section, so no vtable or callback table
   holds them). Ghidra's `xrefs 0x00654FE0` lists only the getter's own callees (the error reporter at 0x00408090,
   0x00408A60, 0x00681E09). `MonItemPctLoad` and `MonItemPctFree` have one caller each, 0x00619470 and 0x006192A1.
@@ -170,7 +171,7 @@ The table's records are reachable only through `g_pMonItemPercent` (0x0096D484),
 
 ### 1.4 Kept-log check, and what is routed
 
-- [C] The kept logs hold the load (above), not a read. No kept log holds a value of this table being used: the H2a
+- [I] The kept logs hold the load (above), not a read. No kept log holds a value of this table being used: the H2a
   drop logs (run:2026-10-20-sweep-items-tc) log `MDD0` → `MDDX` → `MDI` → `TCR` per death, with the monster seed at
   `TCR`, but not at the death, so they cannot show that nothing drew in between. (`workspace/logs/h2a/`)
 - The run-time absence is routed as a harness piece:

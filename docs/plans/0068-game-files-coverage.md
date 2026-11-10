@@ -98,7 +98,7 @@ a possible gap in core area 1. When this plan is done:
 - **Outputs:** a findings file `docs/findings/data/00NN-loaded-tables-and-bundles.md` (or one per subject), `re/symbols.csv`.
 - **Done when:** each item is answered at `[I]` or better with anchors, or names the step not followed. A rule-bearing
   reader is backed by a kept-log check where a kept log already holds the value (the frame corpus, the chain logs), else
-  routed as a harness piece. The Phase 3 hand-off lists what each spec gains. Review: Tier B.
+  routed as a harness piece. The Phase 3 hand-off lists what each spec gains. Review: Tier B (checked 2026-11-10: the `MonItemPercent` no-reader claim stays `[I]`, the dead-code and no-other-reference lines retagged from `[C]`).
 
 ### Phase 3 — Formats
 - **Owner skill:** archivist (no slot)
@@ -181,8 +181,8 @@ table loader (`0x00659C16`)". Its H3b entry supersedes that, and Phase 2 should 
 
 ### 2026-11-10 — Phase 2 (reverser, `lane/n68r`)
 
-Done: [data/0006](../findings/data/0006-loaded-tables-and-bundles.md), items 1–5, 29 `re/symbols.csv` rows (6 `C`,
-23 `I`), `tools/n68r_bundles.py` (the bundle check), kept outputs in `workspace/logs/n68r/` (manifest passes
+Done: [data/0006](../findings/data/0006-loaded-tables-and-bundles.md), items 1–5, 29 `re/symbols.csv` rows (3 `C`,
+26 `I`; the lane's request said 6 and 23), `tools/n68r_bundles.py` (the bundle check), kept outputs in `workspace/logs/n68r/` (manifest passes
 `sha256sum -c` there). data/0001 § 3's superseded `sounds.bin` sentence and its H3b clause "the full `sounds` table
 loads in every run" carry dated corrections pointing to data/0006 § 2.4.
 
@@ -240,6 +240,8 @@ loads in every run" carry dated corrections pointing to data/0006 § 2.4.
 - **data/excel:** the loader list gains `MonItemPercent` (no reader), `Arena` (server scoring), `SkillDesc`, `Overlay`
   (count only), `Composit`, `MonSounds`, `AutoMap` (client), and the `-txt`-only code lists with `sounds`.
 - **anim/timing:** nothing; the bundles do not feed the server's mode lengths (data/0006 § 4).
+- **The skill-level bonus formula is a rule no spec states** (data/0006 § 3.2, stat 188's param `8·class + SkillPage − 1` among its terms): Phase 4 must carry it, not treat it as optional. Backlog: `2026-11-10-architect-spec-writer-plan-0068-p2-spec-corrections`.
+- `docs/specs/data/excel.md` B1 says "the full `sounds` table loads in every run"; data/0006 § 2.4 withdraws it, so Phase 4 corrects it (same backlog entry). The table-doc answers are in `2026-11-10-architect-archivist-plan-0068-p2-table-doc-corrections`.
 - Arena scoring (§ 3.3) has no core-area spec; it is named for plan 0061 P1's `-arena` reader, not carried.
 
 Open, for the record: the two harness pieces above; whether a missile attack reaches event 7; the runtime registrar
