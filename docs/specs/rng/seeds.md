@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng]
 consumed_by: [drlg/overview, drlg/room-tiles, drlg/*, monsters/spawn, objects, items/*, chain]
-tags: {C: 83, I: 14, L: 4}
-updated: 2026-11-04
+tags: {C: 84, I: 14, L: 4}
+updated: 2026-11-10
 ---
 
 # Seed tree: game → act → level → room → unit
@@ -403,8 +403,12 @@ Step notes:
    and re-seeding paths), each passing its own pointer plus `0xD0`, and the type-0 (player) server units
    of the runs got their seed from `game+0xD0` through them. [C] (0x0053254E, 0x005338D8, 0x00569F53,
    0x0056A95E, 0x0057F7E5; objdump pins and a raw caller scan, run:2026-10-11-seed-tree-p1, [rng/0002 § Plan 0038 batch S1b](../../findings/rng/0002-seed-tree.md#plan-0038-batch-s1b-2026-10-16))
-   Which of the five ran, and that the pointer each of the other four adds `0xD0` to is the game, are
-   not established. [I] (fn:sub_00552DF0_UnitSeedInit@0x00552DF0) At runtime the player's seed is the 5th game-seed draw from `Init(N)`, and the starting
+   The two player loads of the H1a session took their seed through `PlayerUnitInit`'s call, whose pointer
+   is the game (`lea edx, [ebx + 0xD0]` at 0x00569F4B with `EBX` the game; the call at 0x00569F53). [C]
+   (fn:sub_00569F20_PlayerUnitInit@0x00569F20, 0x00569F4B, run:2026-10-27-sweep-d2s-load, [rng/0002 § Plan 0038 batch S1b](../../findings/rng/0002-seed-tree.md#plan-0038-batch-s1b-2026-10-16), row 11)
+   The other four (0x0053254E, 0x005338D8, 0x0056A95E, 0x0057F7E5) logged no line in that session, so
+   whether they run, and that the pointer each of them adds `0xD0` to is the game, are not
+   established. [I] (fn:sub_00552DF0_UnitSeedInit@0x00552DF0) At runtime the player's seed is the 5th game-seed draw from `Init(N)`, and the starting
    items follow at draws 6, 8, 10…, two draws each. [C] (run:2026-10-11-seed-tree-p1) Other consumers
    of the game seed draw in between, so a unit's seed depends on the full call order of every
    game-seed consumer. Draw 1 from `Init(N)` is the monster-region build: `sub_00547D20_MonRegionsInit`

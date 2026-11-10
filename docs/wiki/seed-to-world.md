@@ -1,7 +1,7 @@
 ---
 based_on:
   - docs/specs/chain/README.md 2026-11-04
-  - docs/specs/rng/seeds.md 2026-11-04
+  - docs/specs/rng/seeds.md 2026-11-10
   - docs/specs/drlg/room-tiles.md 2026-10-27
   - docs/specs/drlg/lifecycle.md 2026-11-04
   - docs/specs/monsters/stats.md 2026-11-04

@@ -253,3 +253,35 @@ that directory), produced by three new read-only tools: `tools/act_clock.py`, `t
 - The act-clock frame counts come from § 3.1's `[C]` step model run on the image's tables. They are not logged.
 
 **Review:** Tier B (`reverser-static`). Gate: see the commit.
+
+### 2026-11-10 — Phase 3, spec updates (`lane/n63w`, spec-writer)
+
+Every routed item is applied; none is ruled out. Tag deltas are the front-matter recount (gate E6).
+
+| Item | Spec, where | What changed | Tags |
+|---|---|---|---|
+| S3b (d) | [player/creation](../specs/player/creation.md#d-starting-skills) D1 | Already applied by `lane/s38p` (the monster raise `[I]`, 20 for a cell ≤ 0, unreachable at creation); the note now names Skills `maxlvl` | — |
+| H1a (k) | [data/calc § F](../specs/data/calc.md), [rng/seeds](../specs/rng/seeds.md#algorithm) 7a | The hover line `[I]` → `[C]` scoped to the H1a session's potions (gate `+0xB4` = 0 at 0x0048638B), "which records carry `+0xB4` 1..4" `[I]`, *Open questions* narrowed; 7a's `PlayerUnitInit` caller (0x00569F4B) `[C]`, the other four `[I]` | calc C +1; seeds C +1 |
+| P1 | [sim/frame](../specs/sim/frame.md#g-the-other-per-frame-passes) G1b | Links `../../tables/ActClockTables.md#values` (a new `[C]` bullet: 54 values, 42 listed, 12 by two survey-checked rules) | C +1 |
+| P2a act clock | sim/frame G1c, G1d, G1e, § J rank 1, *Open questions* | G1c the server's `k`/flag writers (128 and flag 0 from `DUNGEON_ActCreate`; 4 and flag 1 in the Act II eclipse; `0x0061C240` client-only; `0x0061C180` unreferenced); G1d the send rate (26 per day, gaps 2 176 / 136 / 68); G1e the refresh's route to `AuraSelect` and the remainder. The L953 "set at act load" entry is rewritten as the narrowed remainder (frame/0001 § 3.1a). | I +3 |
+| P2a h6f | [hirelings](../specs/hirelings/README.md) F1, H12, *Open questions* | F1: the client hire line read, matching the gates for every input value; the refusals' d-none kept. H12 split: the third caller's list is the corpse list, no stock writer reaches the `MERC_Create` branch. The `[L]` of the two reads struck as answered. | I +2, L −1 |
+| P2a party | [player/party](../specs/player/party.md) § A, § B, § C, *Reimplementation notes*, *Open questions*; [player/creation](../specs/player/creation.md#j-other-level-and-experience-changes) J4; [quirks](../specs/quirks/README.md) Q449 | § B: invite and accept, leaving, at most 8 players, the unreferenced fourth caller. § A: bit 26 means no experience on death, 9 setters listed, none on a player; the player-victim line restated. "Whether a list can hold nine" removed in § C, n5, J4 and Q449 (`quirks.py check`: 15 errors before and after, all pre-existing). Neither `[C]` of player/party changes (the plan's open question). | party I +4 |
+| P2a facing | [path/overview](../specs/path/README.md#h-the-aim-and-the-facing-step) § H, *Open questions*; [anim/movement](../specs/anim/movement.md) B1, B2 | H1 `PathStep`'s call `(1; 1)`; H2 names the applier; H3 the other writers and getters; new H5 block, `PathFaceTurnStep` and its snap rule, client only. The facing `[L]` struck. anim/movement's one-word call given both words. | path I +5, L −1; movement I +2 |
+| P2b inventory | [items/inventory](../specs/items/inventory.md#j-the-ground-drops-cell) § J | The evidence table gains a *Live raise* column (per-spot counts, items/0016 § Plan 0063 Phase 2b); the two compound rows split (item bit cell/walk; walk mask/tested at all); "the emulated one until a reverser raise … not done" replaced; the section's opening `[C]` note scoped | C +1 |
+| P2b h5d (c) | [quests/travel](../specs/quests/travel.md) C3, *Draws by event kind* | "its later change to mode 2 draws again" removed: event 1 (`ObjEvOperateEnd`) writes mode 2 directly, no draw `[I]`; the one logged waypoint `[C]`; a draws-table row for event 1. objects J2 already said so; no objects change. | C +1, I +2 |
+
+- **Hirelings row 29 (not ruled here).** H12 states the reading at `[I]`: the third caller's `MERC_Create` branch needs a
+  corpse-list node with flag 0 and a non-zero word, and the list's three writers all add flag 1 and word 0, so no
+  stock writer reaches it; a node edited outside those writers would. The spec says the row's class (d-2c or d-none)
+  is this review's ruling.
+- **Wiki** (restated sentences only): characters (the client hire line, the party's 8 and the no-experience mark,
+  the struck open bullet), game-data (hover), randomness (the player-seed path), server-frame (the clock paragraph,
+  rank-1 row, open bullet), pathing (the client-only turn, the struck open bullet), inventory (the per-spot raise),
+  quests (event 1 draws nothing), quirks (the ninth member). `based_on` dates synced, research-map rows' dates and
+  counts updated with a plan 0063 P3 note, and the sim/frame row's "act clock's tables and scale" gap narrowed.
+- **Backlog closed (3):** S3b corrections (`…-plan-0038-s3b-corrections-and-additions`), H1a raises
+  (`…-h1a-save-d2s-player-creation-raises`), and the act-clock tables entry (`…-act-clock-tables`, satisfied by G1b's link).
+- **Judgment calls for the reviewer:** G1b's values bullet is `[C]` on the table doc's survey-checked equality; G1d's
+  frame counts stay `[I]` (the emulated step on the image's tables, not a log); the inventory raise rows follow
+  items/0016's audit-corrected scopes (the item bit's walk-mask half and rings 4+ emulated only).
+- **Review:** Tier A; it closes the plan.

@@ -5,7 +5,7 @@ target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [every reviewed spec listed under Coverage]
 consumed_by: [docs/wiki/quirks.md]
 tags: {C: 355, I: 128, L: 3}
-updated: 2026-11-04
+updated: 2026-11-10
 ---
 
 # Quirks: the behaviour a faithful reimplementation must keep
@@ -214,7 +214,7 @@ flowchart LR
 | Q437 | Crash path on reachable data: `MissNovaCreate` with `n ≥ 41` (mhit 38, 45), do 123's class at or past the Missiles count and st 20's item class past the item count reach the fatal path `0x00408090`. | [C] | 0x00408090, run:2026-10-20-cat-emu-9d, run:2026-10-21-cat-emu-dru, run:2026-10-20-cat-emu-nec | [skills/catalogue](../skills/catalogue.md#reimplementation-notes) n4 |
 | Q447 | The party distance's edge is inclusive and unsigned: d² = 6400 shares, 6401 does not. | [C] | 0x0057E654, 0x0057E65A, run:2026-11-03-party-emu | [player/party](../player/party.md#reimplementation-notes) n6; [player/creation § J](../player/creation.md#j-other-level-and-experience-changes) |
 | Q448 | The party member cap is a fatal path, not a clip: a ninth member that passes every test reaches `0x00408090(0xF25)`, while one failing a test first does not count (the code's map, to that call; not a game outcome). | [C] | 0x0057E662, 0x0057E665, run:2026-11-03-party-emu | [player/party](../player/party.md#reimplementation-notes) n5; [player/creation § J](../player/creation.md#j-other-level-and-experience-changes) |
-| Q449 | Past Q448's call, and whether a party list can hold nine players, is unread. | [I] | 0x0057E671, 0x0057E681, 0x005408CB | [player/party](../player/party.md#reimplementation-notes) n5; [player/creation § J](../player/creation.md#j-other-level-and-experience-changes) |
+| Q449 | Past Q448's call is unread, and a party list holds at most 8 players, so no stock game reaches the call. | [I] | 0x0057E671, 0x0057E681, 0x00539A4E, 0x00539A55 | [player/party](../player/party.md#reimplementation-notes) n5; [player/creation § J](../player/creation.md#j-other-level-and-experience-changes) |
 | Q455 | The crushing-blow cut is `cb − MulDiv(cb, min(stat 36, 100), 100)` for a positive stat 36, logged at 15 to 90 on a monster defender. | [C] | fn:STATEVENT_CrushingBlow@0x005BFFC0, run:2026-10-16-combat | [combat/delivery § E](../combat/delivery.md#e-the-stat-events-crushing-blow-open-wounds-freeze) |
 | Q456 | At stat 36 of 100 or more the cap makes `cb` 0, no run met it, and the cut has no branch on the defender's kind, so a player there takes no crushing blow: the same cut, after the player's divisor 10. | [I] | 0x005C0031, 0x005C00F6 | [combat/delivery § E](../combat/delivery.md#e-the-stat-events-crushing-blow-open-wounds-freeze) |
 | Q457 | `MAX_DROP` stops a monster's call at 6 items against `Picks` 7, the act bosses' rows, logged on Duriel's; do not raise it to the picks. | [C] | fn:TC_ResolveDrops@0x0055A6D0, tbl:TreasureClassEx.txt:Picks, run:2026-10-12-quality, run:2026-10-16-quest-drops | [items/tc](../items/tc.md#constants) |
@@ -596,7 +596,7 @@ These are faithful 1.14d behaviour that reads as a mistake, or that contradicts 
 ## Crash and hang paths
 
 Six from the specs' code readings and three reached in kept runs: Q89, a fault logged on row 83, Q437, the fatal path
-`0x00408090` reached under emulation on three paths of the catalogue, and Q448, the same call reached under emulation by a party's ninth member (Q449: past that call, and whether a list can hold nine, is unread). None was provoked for this page, and since owner decision 5
+`0x00408090` reached under emulation on three paths of the catalogue, and Q448, the same call reached under emulation by a party's ninth member (Q449: past that call is unread, and a list holds at most 8 players, so no stock game reaches it). None was provoked for this page, and since owner decision 5
 (2026-10-30) the harness provokes none; Q89's fault is older, from run:2026-10-27-sweep-cube, whose `craftlow` session expected it. The entries are in their classes above: Q44, Q45, Q50, Q65, Q74, Q89, Q93, Q437, Q448; Q50's
 hang is also the catalogue's endless-loop note.
 
