@@ -5,7 +5,8 @@
     python3 -I tools/actclock_survey.py md <game.exe>        the Markdown rows of docs/tables/ActClockTables.md (generated)
 
 g_ActClockTable0/1/2 at 0x007443F0, 0x00744438, 0x00744480: six rows of three dwords (start, type, colour word), 72 bytes
-each, contiguous. Table 2's `start` column is by the rule 60 * ((p + 5) % 6); every other value is listed in the doc, and
+each, contiguous. Table 2's `start` column is by the rule 60 * ((p + 5) % 6) and table 1's `type` column by the rule T1[p].type = T0[p].type;
+every other value is listed in the doc, and
 `doc_missing` / `doc_mismatches` compare the doc's listed rows with the image element by element.
 Ends with `SURVEY actclock key=value ...`; tools/gate.py --full compares it with its baseline. The image is read only when
 its sha256 is the pinned one. Stdlib only. Read-only.
@@ -48,6 +49,10 @@ def rule_t2_start(p):
     return 60 * ((p + 5) % 6)
 
 
+def rule_t1_type(tabs, p):
+    return tabs[0][p][1]
+
+
 def tables(data):
     return [read_rows(data, b) for b in BASES]
 
@@ -57,23 +62,24 @@ def md(tabs):
     for t, rows in enumerate(tabs):
         for p, (s, ty, c) in enumerate(rows):
             start = "by rule" if t == 2 else str(s)
-            out.append("| T%d | %d | %s | %d | 0x%06X |" % (t, p, start, ty, c))
+            typ = "by rule" if t == 1 else str(ty)
+            out.append("| T%d | %d | %s | %s | 0x%06X |" % (t, p, start, typ, c))
     return out
 
 
 def doc_check(tabs):
-    """(missing, mismatching) over the 18 listed rows of the doc: T2's start is by rule, so it is not listed."""
+    """(missing, mismatching) over the 18 rows of the doc: T2's start and T1's type are by rule, so they are not listed."""
     text = open(DOC).read() if os.path.exists(DOC) else ""
     found = {}
-    for m in re.finditer(r"^\| T([012]) \| ([0-5]) \| (\d+|by rule) \| (\d+) \| 0x([0-9A-F]{6}) \|$", text, re.M):
-        found[(int(m.group(1)), int(m.group(2)))] = (m.group(3), int(m.group(4)), int(m.group(5), 16))
+    for m in re.finditer(r"^\| T([012]) \| ([0-5]) \| (\d+|by rule) \| (\d+|by rule) \| 0x([0-9A-F]{6}) \|$", text, re.M):
+        found[(int(m.group(1)), int(m.group(2)))] = (m.group(3), m.group(4), int(m.group(5), 16))
     miss = bad = 0
     for t, rows in enumerate(tabs):
         for p, (s, ty, c) in enumerate(rows):
             f = found.get((t, p))
             if f is None:
                 miss += 1
-            elif f != ("by rule" if t == 2 else str(s), ty, c):
+            elif f != ("by rule" if t == 2 else str(s), "by rule" if t == 1 else str(ty), c):
                 bad += 1
     return miss, bad
 
@@ -88,9 +94,11 @@ def summary(exe):
     for t, rows in enumerate(tabs):
         kv["t%d_crc" % t] = crc([x for r in rows for x in r])
     kv["t2_start_rule_mismatches"] = sum(1 for p, r in enumerate(tabs[2]) if r[0] != rule_t2_start(p))
+    kv["t1_type_rule_mismatches"] = sum(1 for p, r in enumerate(tabs[1]) if r[1] != rule_t1_type(tabs, p))
     kv["doc_missing"], kv["doc_mismatches"] = doc_check(tabs)
     print("SURVEY actclock " + " ".join("%s=%s" % kv_ for kv_ in kv.items()))
-    return 0 if kv["t2_start_rule_mismatches"] == kv["doc_missing"] == kv["doc_mismatches"] == 0 else 1
+    bad = kv["t2_start_rule_mismatches"] + kv["t1_type_rule_mismatches"] + kv["doc_missing"] + kv["doc_mismatches"]
+    return 0 if bad == 0 else 1
 
 
 def main(argv):

@@ -17,7 +17,7 @@ archives d2data → d2exp → LoD patch_d2; see [mpq.md](../formats/mpq.md)). Ge
   overrides all 56 of its tables.
 - `[C]` **One table is not an excel file:** [PathTypes](PathTypes.md), the 17 path types (`g_PathPlanFuncs` and its flags table read from the pinned image), plan 0054 Phase 0.
 - `[C]` **Fifteen more image tables, also not excel:** [PathDirTables](PathDirTables.md), the direction and step tables of the path planners and the outdoor road search (address, element width read from the instructions, shape, index, and values or an exact rule the survey checks, [ADR-0031](../adrs/0031-constants-of-the-code-image.md)), plan 0054.
-- `[C]` **Three more image tables, also not excel:** [ActClockTables](ActClockTables.md), the act light clock's `g_ActClockTable0..2` (address, row layout, reader; 48 values listed and table 2's `start` column by a rule, checked by gate survey `actclock`, [ADR-0031](../adrs/0031-constants-of-the-code-image.md)), plan 0063 Phase 1.
+- `[C]` **Three more image tables, also not excel:** [ActClockTables](ActClockTables.md), the act light clock's `g_ActClockTable0..2` (address, row layout, reader; 42 values listed, and table 2's `start` and table 1's `type` columns by two rules, checked by gate survey `actclock`, [ADR-0031](../adrs/0031-constants-of-the-code-image.md)), plan 0063 Phase 1.
 - `[C]` **Every one of the 87 pairs agrees on record count.** The `.bin`'s leading u32 equals the
   `.txt` data rows (57 tables), or the data rows minus the `Expansion` marker rows (30 tables).
   `(size − 4)` is an exact multiple of that count in every case ([excel-bin.md](../formats/excel-bin.md)).
