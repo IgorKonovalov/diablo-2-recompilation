@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [every reviewed spec listed under Coverage]
 consumed_by: [docs/wiki/quirks.md]
-tags: {C: 376, I: 162, L: 3}
+tags: {C: 382, I: 165, L: 3}
 updated: 2026-11-10
 ---
 
@@ -68,9 +68,9 @@ flowchart LR
 | [5. Draw order and dead draws](#5-draw-order-and-dead-draws) | 144 | 118 | 26 |
 | [6. Data-dependent branches](#6-data-dependent-branches) | 135 | 104 | 31 |
 | [7. Timing and frame edges](#7-timing-and-frame-edges) | 28 | 14 | 14 |
-| [8. Multiplayer edges](#8-multiplayer-edges) | 16 | 12 | 4 |
-| [9. Deliberate oddities that look like bugs](#9-deliberate-oddities-that-look-like-bugs) | 70 | 30 | 40 |
-| **Total** | 529 | 371 | 158 |
+| [8. Multiplayer edges](#8-multiplayer-edges) | 23 | 17 | 6 |
+| [9. Deliberate oddities that look like bugs](#9-deliberate-oddities-that-look-like-bugs) | 72 | 31 | 41 |
+| **Total** | 538 | 377 | 161 |
 
 ### 1. Arithmetic width and sign
 
@@ -570,6 +570,13 @@ flowchart LR
 | Q452 | What Q450 and Q451 lead to in play: a far hireling's or summon's kill can pay its far owner alone or nobody, and a dead killer can be paid while the living member is not. | [I] | 0x0057E6FB, 0x0057E733, 0x0057E654, 0x0057E65A | [player/party](../player/party.md#reimplementation-notes) n3; [player/creation § J](../player/creation.md#j-other-level-and-experience-changes) |
 | Q453 | A credited player in no party has no alive or distance test; only the party branch has them. | [C] | 0x0057EA64, 0x0057EAA1, run:2026-11-03-party-emu | [player/party](../player/party.md#reimplementation-notes) n4; [player/creation § G](../player/creation.md#g-kill-experience--xp_compute) |
 | Q507 | `ActsClockPass` refreshes every client's player on any act's clock change, not only that act's clients; only the packet goes to the act's. | [I] | 0x0052D7C6, 0x0052D85B | [sim/frame](../sim/frame.md#reimplementation-notes) n10 |
+| Q532 | Any inventory move request of a trading player un-accepts both players (state 7), even one the server then refuses: a cube with contents, a belt with potions, a quest code the partner holds. | [C] | 0x00567798, run:2026-11-10-trade | [items/trade](../items/trade.md#reimplementation-notes) n3 |
+| Q533 | A trade's cancel, close or abort rebuilds the whole inventory from the snapshot taken at opening, not only the offered items: items moved on page 0 go back to their opening cells and every item comes back as a new unit with a new id. | [C] | fn:sub_005678F0_TradeReturnItems@0x005678F0, run:2026-11-10-trade | [items/trade](../items/trade.md#reimplementation-notes) n4 |
+| Q534 | A refusal at the trade's commit does not close the trade: `TradeCancel` keeps the records and interactions, empties both offers and the gold, and the window is open again at state 3. | [C] | fn:sub_00567B00_TradeCancel@0x00567B00, run:2026-11-10-trade | [items/trade](../items/trade.md#reimplementation-notes) n5 |
+| Q535 | A trade's gold offer is clipped when it is made, to the receiver's room under its cap, and the stored amount is what the commit moves. | [C] | 0x0056843C, run:2026-11-10-trade | [items/trade](../items/trade.md#reimplementation-notes) n6 |
+| Q536 | The trade's gold button (8) writes no state: a gold offer alone leaves a partner's accept standing; the stock client's button 7 before each entry is what un-accepts. | [I] | 0x005683DC, 0x00568497 | [items/trade](../items/trade.md#reimplementation-notes) n7 |
+| Q537 | A player saved mid-trade is saved with the opening snapshot of its item list, not the live list. | [C] | fn:sub_005675E0_TradeSnapshotCopy@0x005675E0, run:2026-11-10-trade | [items/trade](../items/trade.md#reimplementation-notes) n8 |
+| Q538 | Waypoint travel ends no trade: the traveller's interaction is cleared and both trade states and records stay. | [I] | fn:sub_00584F60_WaypointTravel@0x00584F60 | [items/trade](../items/trade.md#reimplementation-notes) n10 |
 
 ### 9. Deliberate oddities that look like bugs
 
@@ -647,6 +654,8 @@ These are faithful 1.14d behaviour that reads as a mistake, or that contradicts 
 | Q525 | A greedy walk's oddities are behaviour to keep: the doubled first point, the point short at a turned last step, the reversal's end. | [C] | 0x00679DDA, 0x00679E1D, 0x00679DB7, run:2026-11-03-path-emu-3 | [path/search](../path/search.md#reimplementation-notes) n5 |
 | Q526 | Do not reset `g_HitClassCounter` per game. | [I] | 0x0057CE4F | [sim/frame](../sim/frame.md#reimplementation-notes) n9 |
 | Q527 | Events 4 and 8 never fire: keep stat 195's `domissileattack` registration inert; dispatching it on a missile attack adds casts the game does not make. | [I] | fn:UNIT_DispatchEvent@0x005C0C30, 0x0057D606 | [skills/dispatch](../skills/dispatch.md#reimplementation-notes) n9 |
+| Q530 | The trade's room test fills scratch grids in the non-player FIRST order, the moves place in the player's BEST order: a test that passes can be followed by a move that fails, and the snapshots then undo the side that already moved. | [C] | fn:sub_0063E370_TradeRoomTest@0x0063E370, fn:sub_005670E0_TradeMoveItems@0x005670E0, run:2026-11-10-trade | [items/trade](../items/trade.md#reimplementation-notes) n1 |
+| Q531 | The trade's FIRST room test can refuse an offer the BEST moves would place; keep the test, do not replace it with a trial of the real placement. | [I] | fn:sub_0063E370_TradeRoomTest@0x0063E370, 0x0063E3B4 | [items/trade](../items/trade.md#reimplementation-notes) n2 |
 
 ## Crash and hang paths
 
@@ -716,8 +725,8 @@ One row per spec with a *Reimplementation notes* section: its note count, the no
 and the skipped ones by reason. "Weaker duplicate" is a note that restates, at a weaker tag, a statement another spec
 holds raised; the entry takes the raised statement and the disagreement is routed to the spec-writer's backlog
 ([entry](../../backlog/archive/2026-10-30-spec-writer-spec-writer-quirks-harvest-tag-disagreements.md); the three overviews it
-named now state the raised clause, so none is left). Skipped: 31 notes, presentation 5, table rule 12, not a trap 12,
-wall-clock 2, weaker duplicate 0.
+named now state the raised clause, so none is left). Skipped: 32 notes, presentation 5, table rule 12, not a trap 12,
+wall-clock 3, weaker duplicate 0.
 
 | Spec | Notes | Taken | Presentation | Table rule | Not a trap | Wall-clock | Weaker duplicate |
 |---|---|---|---|---|---|---|---|
@@ -751,6 +760,7 @@ wall-clock 2, weaker duplicate 0.
 | [items/quest-drops](../items/quest-drops.md#reimplementation-notes) | 10 | 9 | n10 | — | — | — | — |
 | [items/sockets-runewords](../items/sockets-runewords.md#reimplementation-notes) | 8 | 8 | — | — | — | — | — |
 | [items/tc](../items/tc.md#reimplementation-notes) | 11 | 10 | — | — | n10 | — | — |
+| [items/trade](../items/trade.md#reimplementation-notes) | 10 | 9 | — | — | — | n9 | — |
 | [items/uniques-sets](../items/uniques-sets.md#reimplementation-notes) | 12 | 12 | — | — | — | — | — |
 | [items/use](../items/use.md#reimplementation-notes) | 7 | 7 | — | — | — | — | — |
 | [items/vendors](../items/vendors.md#reimplementation-notes) | 10 | 10 | — | — | — | — | — |
@@ -778,7 +788,7 @@ wall-clock 2, weaker duplicate 0.
 | [skills/README](../skills/README.md#reimplementation-notes) | 3 | 3 | — | — | — | — | — |
 | [stats/aggregate](../stats/aggregate.md#reimplementation-notes) | 6 | 6 | — | — | — | — | — |
 | [stats/states](../stats/states.md#reimplementation-notes) | 7 | 7 | — | — | — | — | — |
-| **Total** | 512 | 481 | — | — | — | — | — |
+| **Total** | 522 | 490 | — | — | — | — | — |
 
 Step notes taken beyond the *Reimplementation notes*: player/creation § G (the /256 factors, the `0x7FFFFF` clamp,
 the ratio shift's overflow branch) and § J (the party share's f32 quotient, its wraps, edge and cap, the distance's origin and the n = 1 credit), monsters/stats § A (`MulDiv`), stats/states
