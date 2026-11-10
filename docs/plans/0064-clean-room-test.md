@@ -271,3 +271,11 @@ the format entry.
   --force`) before the Phase 5 re-run, and rebuilds S1 for the new format text. Review tier B. Note for the reviewer: the
   first `cleanroom.py score` calls of this lane, run without `--out`, each appended a line to the default sandboxes'
   `score-log.jsonl` (S1, S2: the last line; S3, S4: the file did not exist before); see the lane report.
+
+- **2026-11-10, Phase 2 slice S3 (orchestrator):** one fresh Opus implementer on a sandbox rebuilt from `main` at
+  `41ef2867`, 111 116 tokens, 22 tool uses. Score log run 1 is lane `n64g`'s reference test (09:21 UTC, kept by
+  `make --force`); the implementer's first pass is run 2: 211 140 fields, 0 different, 0 missing (all 612 cases
+  predicted); no later run. Ledger [S3](0064-cleanroom/S3.md), 6 rows, all `first`; the two that matter: the
+  conformance page sends `mlvl.N` to monsters/pool § E while the value is § B4's region copy, and step C1's candidate
+  counts are load-time bytes (0 in the shipped file). Audit: 1 path, an `ls` of the ledger folder after scoring (file
+  names only, none opened); the harness's tool-results Read is allowed by the tool. Run ruled valid.
