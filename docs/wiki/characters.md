@@ -4,7 +4,7 @@ based_on:
   - docs/specs/player/creation.md 2026-11-10
   - docs/specs/hirelings/README.md 2026-11-10
   - docs/specs/player/party.md 2026-11-10
-  - docs/specs/save/d2s.md 2026-11-04
+  - docs/specs/save/d2s.md 2026-11-10
 ---
 
 # Characters and hirelings

@@ -1,7 +1,7 @@
 ---
 based_on:
   - docs/specs/data/README.md 2026-10-27
-  - docs/specs/data/excel.md 2026-10-27
+  - docs/specs/data/excel.md 2026-11-10
   - docs/specs/data/strings.md 2026-10-27
   - docs/specs/data/calc.md 2026-11-10
 ---
@@ -80,7 +80,17 @@ A few consequences that a modder or reimplementer would trip over:
   makes no difference which one is taken (confirmed).
 - A few tables ship and are never loaded at all (confirmed for `cubemod` and `cubetype`), and some small code-list
   tables are loaded only under `-txt`, for the compiler. One of them, `hitclass`, is still read whole at every start
-  by another loader (confirmed).
+  by another loader (confirmed). Three of these code lists, the body locations, the player classes and the item and
+  skill events, are only index spaces in a normal run: the other tables store a row number (location 0 to 10, class
+  0 to 6, event 0 to 12) and the code uses it as a plain number (read from the code).
+- The `sounds` table is not loaded in a normal run. With sound off no sound file is read at all (confirmed); with
+  sound on, the client reads `sounds.txt` as text, and only `-txt` loads `sounds.bin` (read from the code)
+  ([excel § B](../specs/data/excel.md#b-loading-one-table)).
+- Some tables load at every start but carry no game rule. Read from the code: `MonItemPercent` is read by nothing, so
+  it changes no drop; `Composit`, `MonSounds` and `AutoMap` are read by the client's drawing and sound only; of
+  `Overlay` the server reads only the row count, as a bound on an overlay number; `Arena` feeds a per-player score in
+  every game that no core rule reads. Of `SkillDesc`, the server reads the skill-tree page, which decides whether a
+  "+ to a skill tab" item counts for that skill ([skills](skills.md#the-skill-level-and-its-bonuses)).
 
 ## Records are positions
 

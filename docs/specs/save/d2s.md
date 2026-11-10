@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, data/excel]
 consumed_by: [items/tc, items/quality, items/affixes, items/uniques-sets, items/properties, items/sockets-runewords, hirelings, player/creation]
-tags: {C: 244, I: 69, L: 3}
-updated: 2026-11-04
+tags: {C: 244, I: 71, L: 3}
+updated: 2026-11-10
 ---
 
 # Character save (`.d2s`): writer, reader, header and item bitstream
@@ -372,6 +372,12 @@ side with the logged client and player-data fields after `D2S_ReadHeader`; [save
   A file with class 8 gave 4 (mapped 9) after `D2S_CheckStatus` had passed. (fn:D2S_ReadHeader@0x0056A090,
   0x0056A16F–0x0056A174, 0x0056A0C4–0x0056A0CF, run:2026-10-27-sweep-d2s-load;
   [save/0001](../../findings/save/0001-d2s-io.md) header row `0x028`)
+- [I] **The class byte is a row index.** Its value 0..6 is the class id the unit carries (`unit+0x04`, 0 Amazon .. 6
+  Assassin), the row index of [PlayerClass](../../tables/PlayerClass.md) and of CharStats; the class-bearing columns
+  of the tables (ItemTypes `Class`, the affixes' `class`, Skills `charclass`, CubeMain `class`) store that index,
+  which their readers compare with the class word or with another such column, and `PlayerClass.bin` loads only under `-txt`
+  ([data/excel](../data/excel.md#b-loading-one-table) B1). (fn:ITEMS_IsClassSpecific@0x00629F70, 0x006441DD,
+  [data/0006 § 2.2](../../findings/data/0006-loaded-tables-and-bundles.md#22-playerclass-class-06))
 - [C] **Class 7 passes the class test, and no class-7 character loads.** A full save and a stub with class byte 7
   pass the header; when the player unit is made, `sub_00553180_PlayerSetClient`'s null-unit test (line 1210, `0x4BA`)
   halts the game both ways in, so no class-7 player is made (raised by H1a as player/creation's row 11; the readings
@@ -1152,6 +1158,13 @@ J2. ITEMS_ReadProperty:                                          [C] framing, sc
   those stats and written back with the same list; no item after the cap changed, where a wrong width or a missing
   override would shift every later field. (fn:ITEMS_ReadFull@0x0062CBE0, fn:ITEMS_ReadProperty@0x0062AC80,
   run:2026-10-27-sweep-d2s-legacy, [save/0001 § Plan 0038 batch H1c](../../findings/save/0001-d2s-io.md#plan-0038-batch-h1c-run2026-10-27-sweep-d2s-legacy))
+- J. [I] **The legacy skill group checks the skill's SkillDesc row.** Below version 93 the ids 107–109 and 181–187
+  are read as 14 bits (skill the low 9, level the next 5) and kept as stat 107 with the skill as param only when
+  `0 < level ≤ 2^(Save Bits of 107) − 1` and `sub_00627AF0_SkillHasDesc(skill)` passes: `0 ≤ skill <` the Skills count
+  and `0 ≤` the skill's Skills `skilldesc` (`+0x194`, s16) `<` the SkillDesc count. Otherwise the property is
+  dropped. ([d2s.md](../../formats/d2s.md) per-id table,
+  0x0062DFC4–0x0062E037, 0x0062E01D, fn:sub_00627AF0_SkillHasDesc@0x00627AF0, tbl:Skills.txt:skilldesc,
+  [data/0006 § 3.2](../../findings/data/0006-loaded-tables-and-bundles.md#32-skilldesc-on-the-server-the-skill-level-bonus))
 - J. [I] The clamp at the bounds (the only stored value at a bound is a 1-bit stat 153 = 1, which tests
   nothing) rests on the code read, and so do a version < 93 set item reading a `Sets` id (the built set item's row
   is 0 in both tables) and the bound's place at 93: version 92 is the one version below it that a run loaded, and no

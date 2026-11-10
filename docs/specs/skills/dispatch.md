@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, data/calc, combat/overview, combat/delivery, stats/states, monsters/spawn, monsters/stats]
 consumed_by: [skills/missiles, combat/overview, combat/delivery, stats/states, items/economy, monsters/stats, monsters/ai/overview, monsters/ai/machinery, sim/frame]
-tags: {C: 78, I: 195, L: 7}
-updated: 2026-11-04
+tags: {C: 79, I: 205, L: 10}
+updated: 2026-11-10
 ---
 
 # Skill dispatch: the request, the checks, the start and do functions, costs, the skill packet, handlers, summons
@@ -70,6 +70,8 @@ flowchart LR
 | tbl:Skills.txt:summon, `summode`, `pettype`, `petmax`, `Param1` | summons (§ L) |
 | tbl:PetType.txt:group | the pet group clear (§ L) |
 | tbl:ItemStatCost.txt:itemeventfunc1 | the item-stat handler registrations (§ K) |
+| tbl:ItemStatCost.txt:itemevent1, `itemevent2`; tbl:Skills.txt:auraevent1 … `auraevent3` | the event ids handlers register on, [Events](../../tables/Events.md) row indices (§ K) |
+| tbl:Skills.txt:charclass, `EType`, `skilldesc`; tbl:SkillDesc.txt:SkillPage | the skill-level bonus (§ C8) |
 | tbl:MonStats.txt:SkillDamage | a summon's owner skill damage (§ M) |
 | tbl:MonStats.txt:ResDm, `Skill1` | the logged Kick targets and the `Kick` branch's monster casters (§ I) |
 
@@ -291,6 +293,57 @@ C1. SKILLS_CanUse(unit, entry) → i32:                                [I] (fn:S
   request, stated from the code reading. [I] (0x004D9FC5, run:2026-10-27-skills)
 - C. A monster does not pass through `SKILLS_CanUse` on its way to the mode start (§ M). [I]
   (fn:sub_005DEAD0_MonAiUseSkill@0x005DEAD0)
+
+**C8. The skill-level bonus.** `SKILLS_GetSkillLevel(unit, entry, 1)`, the level C1 tests,
+is the entry's base points plus this bonus, clamped to `[0, max]` ([data/calc § F](../data/calc.md#f-function-tables));
+with `withBonus` 0 it is the base points alone. C4's `ManaOk` adds the same bonus. `stat(id, p)` is the unit's full
+stat `id` at layer `p` (`STATS_GetUnitStat`, which keeps only the low 16 bits of `p`); the stat and state names are the ItemStatCost and States rows.
+
+```
+C8. SkillLevelBonus(unit, entry) → i32:                              [I] (fn:sub_00644180_SkillLevelBonus@0x00644180, all of C8)
+      if no entry or no entry.record: return 0
+      s: i32 ← record.id (s16, Skills +0x00)
+      if s < 0 or s ≥ the Skills count: return 0
+      b: i32 ← entry.+0x2C
+      if unit has state 134 (shrine_skill): b ← b + 2                                   ; sub_00644150
+      b ← b + stat(127 item_allskills, 0)
+      if unit and unit.type = 0 (player):
+        if record.charclass (s8, +0x0C) = unit.class (+0x04):                          ; a skill of its own class
+          b ← b + stat(83 item_addclassskills, unit.class)
+          page: i32 ← SkillDesc[record.skilldesc (+0x194)].SkillPage (s8, +0x02, sign-extended)
+          if page ≠ 0: b ← b + stat(188 item_addskill_tab, 8 · unit.class + page − 1)
+          b ← b + min(stat(97 item_nonclassskill, s), 3)
+        else:
+          b ← b + stat(97, s)                                                         ; no cap
+      else:                                                                           ; no unit, or not a player
+        if entry.base (+0x28) > 0:
+          v ← stat(97, s);  if v ≠ 0: b ← b + min(v, 3)
+        else:
+          b ← b + stat(97, s)                                                         ; no cap
+      if record.EType (u8, +0x1DC) > 0: b ← b + stat(126 item_elemskill, record.EType)
+      return b + stat(107 item_singleskill, s)
+```
+
+- C8. The cap of 3 on stat 97 (`cmp eax, 3; jle`, 0x0064424C) applies to a skill of the player's own class and to a
+  non-player whose base points are above 0; a player's skill of another class takes stat 97 uncapped. `+0x2C` is a
+  per-entry word added as it is; the finding does not follow its writers. Every sum is a plain 32-bit add and the
+  cap a signed compare (`jle`), so a negative stat 97 is added as it is; `SkillPage` is loaded with `movsx` (0x00644204), and
+  the layer `8·class + page − 1` reaches `STATS_GetUnitStat` as its low 16 bits (`movzx`, 0x006254CC). No step draws. [I]
+  (fn:sub_00644180_SkillLevelBonus@0x00644180, fn:sub_00644150_ShrineSkillBonus@0x00644150, 0x0064424C,
+  fn:STATS_GetUnitStat@0x00625480, tbl:Skills.txt:charclass, tbl:Skills.txt:EType,
+  [data/0006 § 3.2](../../findings/data/0006-loaded-tables-and-bundles.md#32-skilldesc-on-the-server-the-skill-level-bonus))
+- C8. **SkillDesc's `SkillPage` is a server input.** The tab bonus (stat 188) applies to a class skill only when its
+  SkillDesc row puts it on a page 1–3; a skill whose `SkillPage` is 0 takes no tab bonus. Outside the calc variables
+  ([data/calc § G](../data/calc.md#g-variables)) this is the server's only read of a SkillDesc record column. [I]
+  (0x006441F5–0x00644217, fn:sub_004A89D0_SkillDescRec@0x004A89D0, tbl:SkillDesc.txt:SkillPage)
+- C8. Callers: `SKILLS_GetSkillLevel` (0x006442C3, and 0x00644322 in 0x00644300), `sub_00644AA0_SkillLevelClamped`
+  (0x00644AC7) and `SKILLS_ManaOk` (0x00647584). [I] (fn:SKILLS_GetSkillLevel@0x006442A0,
+  fn:SKILLS_ManaOk@0x00647540)
+- C8. **The bonus runs in play.** Inside `SKILLS_ManaOk` its return is logged 1 339 times over the 15 logs of the run,
+  182 of them non-zero (1 to 4). The logs hold no unit stats, so they do not separate the terms, which stay the
+  reading; the check is a routed harness piece
+  ([backlog](../../backlog/2026-11-10-reverser-reverser-plan-0068-skill-level-bonus-check.md)). [C]
+  (fn:SKILLS_ManaOk@0x00647540, 0x00647589, run:2026-10-27-skills)
 
 ### D. The mode start
 
@@ -769,6 +822,42 @@ K1. UNIT_DispatchEvent(unit, event, other, packet):                  [I] (fn:UNI
   attacker's `kill` handlers (28, 31) run inside `COMBAT_ApplyDamage`. [I] (0x0057C8DD–0x0057C970,
   [combat/delivery § E](../combat/delivery.md#e-the-stat-events-crushing-blow-open-wounds-freeze))
 
+**The event ids.** An event id is the row index of [Events](../../tables/Events.md) (0 `hitbymissile` .. 12
+`levelup`); ItemStatCost `itemevent1/2` and Skills `auraevent1..3` store that index, and `Events.bin` itself loads only
+under `-txt` ([data/excel](../data/excel.md#b-loading-one-table) B1). The 17 calls of `UNIT_DispatchEvent` pass these
+ids, each as a constant:
+
+| Id | Events row | Dispatched by |
+|---|---|---|
+| 0 | `hitbymissile` | `MISSILE_HitUnit` (two sites), `sub_005B01F0_MissDo31SidePair` |
+| 1, 2 | `damagedinmelee`, `damagedbymissile` | `COMBAT_ApplyDamage` (one call, the two constants joined) |
+| 3 | `attackedinmelee` | `COMBAT_BuildDamage`, `COMBAT_DeliverQueued` |
+| 4 | `doactive` | none |
+| 5, 6 | `domeleedamage`, `domissiledamage` | `COMBAT_ApplyDamage` |
+| 7 | `domeleeattack` | `COMBAT_DeliverQueued` |
+| 8 | `domissileattack` | none |
+| 9, 10 | `kill`, `killed` | `COMBAT_ApplyDamage`, `sub_005A6920_MonRegenEvent` |
+| 11 | `absorbdamage` | `COMBAT_ApplyReductions` |
+| 12 | `levelup` | `PLAYER_AddExperience`, `MERC_AddExp` |
+| 13 | no row | `sub_005A6FF0_MonDeathEvent`, at a monster's death |
+
+- K1. The table: each site loads its id as a constant (`mov edx, imm` or `xor edx, edx`) before the call, and the
+  one join (0x0057C7ED) merges 1 and 2. [I] (fn:UNIT_DispatchEvent@0x005C0C30, 0x005C0C69, 0x0057C7ED,
+  [data/0006 § 2.3](../../findings/data/0006-loaded-tables-and-bundles.md#23-events-event-id-012-and-what-is-dispatched))
+- K1. **Ids 4 and 8 are never dispatched**, so a handler registered on either never runs. On stock data that is stat
+  195 `item_skillonattack`'s `itemevent2` (8, handler 20): chance to cast on attack fires only through its
+  `itemevent1` (7, `domeleeattack`), which `COMBAT_DeliverQueued` alone dispatches. [I] (0x0057D606,
+  fn:COMBAT_DeliverQueued@0x0057D4F0, tbl:ItemStatCost.txt:itemevent2)
+- K1. **Id 13 has no Events row**: it is dispatched at a monster's death, but no table column can register a handler
+  on it. [I] (fn:sub_005A6FF0_MonDeathEvent@0x005A6FF0, 0x005A72CD)
+- K1. **Registration bounds.** `sub_0056E740_AddStatEvent` stores a handler record; its callers read the id as `s16`.
+  An item stat's `itemevent1/2` registers only when the id is `> 0`, so a blank cell (stored −1) and id 0
+  (`hitbymissile`, which no stock stat uses) register nothing; a skill's `auraevent1..3` registers when the id is
+  `≥ 0`, so Chilling Armor's `hitbymissile` (handler 1) registers. Skills `auratgtevent` and `passiveevent` and States
+  `cltevent` are read by none of the 11 registrar calls. [I] (fn:sub_0056E740_AddStatEvent@0x0056E740, 0x0055B867,
+  0x0055B8A3, 0x005C453B, 0x005C95D2, 0x005C95D8, 0x005C9D42, 0x005D9273, tbl:ItemStatCost.txt:itemevent1,
+  tbl:Skills.txt:auraevent1)
+
 | # | Registered by (stock) | Event | Effect | Draws | Tag |
 |---|---|---|---|---|---|
 | 1 | Chilling Armor | `hitbymissile` | the skill's `srvmissilea` from the unit toward a hostile missile's owner | the creation's | [I] (fn:sub_005CAB40_StatEv01MissileAtSource@0x005CAB40) |
@@ -1125,6 +1214,10 @@ run:2026-10-25-skills) The step's use, `low mod 100` against Raise Skeleton's `P
 - **`ItemEffect` replaces the do function only with the effect flag**, which only handler 20 without `ItemTgtDo`
   sets. [I] (0x005C054E)
 - **The ally test of `StartUsedSkill` is dead.** Do not add a refusal there. [I] (0x0056FBB2–0x0056FBC4)
+- **Events 4 and 8 never fire.** Keep stat 195's `domissileattack` registration inert: dispatching it on a missile
+  attack adds casts the game does not make. [I] (fn:UNIT_DispatchEvent@0x005C0C30, 0x0057D606)
+- **The tab bonus needs the SkillDesc row.** Stat 188 reaches a skill through its SkillDesc `SkillPage`, not through
+  any Skills column. [I] (0x006441F5–0x00644217, tbl:SkillDesc.txt:SkillPage)
 
 ## Evidence
 
@@ -1140,6 +1233,8 @@ run:2026-10-25-skills) The step's use, `low mod 100` against Raise Skeleton's `P
 - [skills/experiments § run:2026-10-25-skills](../../findings/skills/experiments.md#run2026-10-25-skills),
   [§ run:2026-10-27-skills](../../findings/skills/experiments.md#run2026-10-27-skills).
 - [combat/0001](../../findings/combat/0001-formulas.md): the combat build and delivery a skill hit feeds.
+- [data/0006](../../findings/data/0006-loaded-tables-and-bundles.md) § 2.3 and § 3.2 (plan 0068): the event ids, their
+  dispatch and registration bounds (§ K), and the skill-level bonus (C8).
 - Tables: [Skills](../../tables/Skills.md), [PetType](../../tables/PetType.md), [MonStats](../../tables/MonStats.md),
   [ItemStatCost](../../tables/ItemStatCost.md).
 
@@ -1153,6 +1248,12 @@ run:2026-10-25-skills) The step's use, `low mod 100` against Raise Skeleton's `P
 - ~~The stat-event handlers run.~~ The draws of the handlers § K marks, heal and mana after a kill, open wounds' roll
   and state 52, by run:2026-10-27-skills (§ K).
 - [L] The handlers no session fired (1–4, 10–12, 14, 18, 23–27, 30, 31) and the effects § K leaves to the reading.
+- [L] Whether a missile attack ever reaches `COMBAT_DeliverQueued`'s event 7, which decides whether stat 195 fires on
+  a ranged attack at all (§ K; [data/0006 § 2.3](../../findings/data/0006-loaded-tables-and-bundles.md#23-events-event-id-012-and-what-is-dispatched)).
+- [L] The id the runtime registrar 0x005C377B (`sub_005C35C0_CurseApplyCb`) stores, and whether anything registers on
+  id 13 (§ K).
+- [L] The terms of the skill-level bonus against a unit's stats in play (C8): the logged return does not separate them
+  ([backlog](../../backlog/2026-11-10-reverser-reverser-plan-0068-skill-level-bonus-check.md)).
 - ~~`MonAttackStats`' formulas and a run predicting them.~~ Stats 21, 22 and 19 and the draws, by
   run:2026-10-27-skills (§ M).
 - [L] `MonAttackStats`' `L` columns, classic and expansion terms, type 10's redraw, `El2`/`El3`, and the owner

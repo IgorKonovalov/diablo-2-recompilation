@@ -1,6 +1,6 @@
 # 0068 — Game files coverage: the last loaded tables, the COF bundles, and a ledger for every file kind
 
-> **Status:** approved (2026-11-10, by the owner; second in the 2026-11-10 run order, after 0063; not started: the owner starts it)
+> **Status:** done (closed 2026-11-10 at the Phase 4 Tier A review; approved 2026-11-10 by the owner, second in the 2026-11-10 run order, after 0063)
 > **Created:** 2026-11-10
 > **Owner skill(s):** archivist, reverser, spec-writer
 > **Related ADRs:** 0001-target-toolchain-evidence-sources, 0002-scope-creation-paths-and-enablers, 0005-presentation-formats-tools-only, 0014-scope-game-simulation, 0031-constants-of-the-code-image
@@ -22,7 +22,7 @@ a possible gap in core area 1. When this plan is done:
 
 - **Survey on 2026-11-10** (`workspace/merged/`, the 1.14b reference archives as plan 0001 built them; the
   `patch_d2.mpq` question stays parked):
-  - **Excel tables loaded by 1.14d with no table doc** ([data/0001](../findings/data/0001-excel-loader.md) gives
+  - **Excel tables loaded by 1.14d with no table doc** ([data/0001](../../findings/data/0001-excel-loader.md) gives
     each loader's record size):
 
     | Table | Record | Loader call | First read |
@@ -103,7 +103,7 @@ a possible gap in core area 1. When this plan is done:
 ### Phase 3 — Formats
 - **Owner skill:** archivist (no slot)
 - **What:** if Phase 2 finds the COF bundles loaded, document their format in `docs/formats/` (header, index, the
-  embedded COF records against [cof.md](../formats/cof.md)), with a parser in `tools/` and a survey over all eight
+  embedded COF records against [cof.md](../../formats/cof.md)), with a parser in `tools/` and a survey over all eight
   files. Do the same for `lut.dn1` if it is read for a rule. Otherwise, add each one's ledger row with Phase 2's reason.
 - **Done when:** each loaded bundle has a format doc whose survey parses every file with 0 errors, or the ledger says
   why none is needed. Review: Tier B, or Tier A if a format statement comes from a finding (ADR-0027).
@@ -124,8 +124,8 @@ a possible gap in core area 1. When this plan is done:
 
 ## Open questions
 
-- If `MonItemPercent` changes what a monster drops, the chain's golden traces (plan 0059) may need a new field, and
-  plan 0064's S2 slice would test it. That is routed at Phase 4's review, not here.
+- ~~If `MonItemPercent` changes what a monster drops, the chain's golden traces (plan 0059) may need a new field, and
+  plan 0064's S2 slice would test it.~~ It changes nothing: no code reads it ([data/0006 § 1](../../findings/data/0006-loaded-tables-and-bundles.md#1-monitempercent-plan-item-1), `[I]`; items/tc *Reimplementation notes*), so the golden traces need no field and S2 nothing new. A run-time read watch stays open as a reverser backlog entry.
 - Whether the 1.14d `patch_d2.mpq` differs in any of these files. The question stays parked, by the owner's decision.
 
 ## Implementation log
@@ -135,7 +135,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 ### 2026-11-10 — Phase 1 (archivist, `lane/n68a`)
 
 Done:
-- **22 table docs** under `docs/tables/` (the plan said 19). Loaded or with a `.bin`: [MonItemPercent](../tables/MonItemPercent.md), [BodyLocs](../tables/BodyLocs.md), [PlayerClass](../tables/PlayerClass.md), [Events](../tables/Events.md), [Arena](../tables/Arena.md), [Composit](../tables/Composit.md), [MonSounds](../tables/MonSounds.md), [Overlay](../tables/Overlay.md), [AutoMap](../tables/AutoMap.md), [SkillDesc](../tables/SkillDesc.md), [Sounds](../tables/Sounds.md). Not loaded: [Aiparms](../tables/Aiparms.md), [MonName](../tables/MonName.md), [TreasureClass](../tables/TreasureClass.md), [WeaponClass](../tables/WeaponClass.md), [SoundEnviron](../tables/SoundEnviron.md), [CubeMod](../tables/CubeMod.md), [CubeType](../tables/CubeType.md). Added beyond the plan's list, so that every excel basename has a doc: the four bytecode pools [ItemsCode](../tables/ItemsCode.md), [MissCode](../tables/MissCode.md), [SkillsCode](../tables/SkillsCode.md), [SkillDescCode](../tables/SkillDescCode.md) (short; the format is [calc.md](../formats/calc.md)). `leveldefs` stays in [Levels](../tables/Levels.md#leveldefsbin-156-b). The tables README rows now link them.
+- **22 table docs** under `docs/tables/` (the plan said 19). Loaded or with a `.bin`: [MonItemPercent](../../tables/MonItemPercent.md), [BodyLocs](../../tables/BodyLocs.md), [PlayerClass](../../tables/PlayerClass.md), [Events](../../tables/Events.md), [Arena](../../tables/Arena.md), [Composit](../../tables/Composit.md), [MonSounds](../../tables/MonSounds.md), [Overlay](../../tables/Overlay.md), [AutoMap](../../tables/AutoMap.md), [SkillDesc](../../tables/SkillDesc.md), [Sounds](../../tables/Sounds.md). Not loaded: [Aiparms](../../tables/Aiparms.md), [MonName](../../tables/MonName.md), [TreasureClass](../../tables/TreasureClass.md), [WeaponClass](../../tables/WeaponClass.md), [SoundEnviron](../../tables/SoundEnviron.md), [CubeMod](../../tables/CubeMod.md), [CubeType](../../tables/CubeType.md). Added beyond the plan's list, so that every excel basename has a doc: the four bytecode pools [ItemsCode](../../tables/ItemsCode.md), [MissCode](../../tables/MissCode.md), [SkillsCode](../../tables/SkillsCode.md), [SkillDescCode](../../tables/SkillDescCode.md) (short; the format is [calc.md](../../formats/calc.md)). `leveldefs` stays in [Levels](../../tables/Levels.md#leveldefsbin-156-b). The tables README rows now link them.
 - **Layouts for the full tier:** `tools/excel_layouts.py` gained layouts for the 10 tables above that have a `.bin` and a `.txt` (not skilldesc's formula part, which existed), for `cubemod` and `cubetype`, and the rest of `skilldesc` (113 mapped fields, was the 42 calc offsets). Each was found with `excel_bin.py probe` and checked by `diff` over every record: 0 unexplained. The `excel_layout` baseline moved from 76 to 88 tables (cells 956 215 to 1 019 249); `excel`, `excel_layout`, `calc_bytes` and `calc` are green. This is the "full-tier survey checks the new docs' record counts"; `tools/excel_survey.py` needed no change (it already lists every basename).
 - **Coverage ledger:** `docs/formats/README.md` § Coverage, one row per kind (20 kinds, 30 488 files; the sum of the row counts is checked).
 
@@ -181,7 +181,7 @@ table loader (`0x00659C16`)". Its H3b entry supersedes that, and Phase 2 should 
 
 ### 2026-11-10 — Phase 2 (reverser, `lane/n68r`)
 
-Done: [data/0006](../findings/data/0006-loaded-tables-and-bundles.md), items 1–5, 29 `re/symbols.csv` rows (3 `C`,
+Done: [data/0006](../../findings/data/0006-loaded-tables-and-bundles.md), items 1–5, 29 `re/symbols.csv` rows (3 `C`,
 26 `I`; the lane's request said 6 and 23), `tools/n68r_bundles.py` (the bundle check), kept outputs in `workspace/logs/n68r/` (manifest passes
 `sha256sum -c` there). data/0001 § 3's superseded `sounds.bin` sentence and its H3b clause "the full `sounds` table
 loads in every run" carry dated corrections pointing to data/0006 § 2.4.
@@ -192,7 +192,7 @@ loads in every run" carry dated corrections pointing to data/0006 § 2.4.
    So no row choice, no draw, no step in `TC_ResolveDrops`' order `[I]`. Field widths: `TreasureClassPercent` u8 at
    `+0x2` `[C]` (descriptor and data), the other three u8 at `+0x0`, `+0x1`, `+0x3` `[I]` (descriptor). No kept log
    holds a read, so the run-time absence is a harness piece:
-   [backlog](../backlog/2026-11-10-reverser-reverser-plan-0068-monitempercent-read-watch.md).
+   [backlog](../../backlog/2026-11-10-reverser-reverser-plan-0068-monitempercent-read-watch.md).
 2. **`BodyLocs`, `PlayerClass`, `Events`** are index spaces; every reader of a stored index is listed with its spec.
    New: the 17 `UNIT_DispatchEvent` calls never pass ids 4 (`doactive`) or 8 (`domissileattack`), so stat 195's
    `itemevent2` handler never runs; item-stat registration needs an id `> 0`, skill registration `≥ 0`; id 13 is
@@ -202,7 +202,7 @@ loads in every run" carry dated corrections pointing to data/0006 § 2.4.
 3. **`SkillDesc` is rule-bearing:** `sub_00644180_SkillLevelBonus`, the bonus in every effective skill level, adds stat
    188 by the skill's `SkillPage`; § 3.2 has the whole formula (stats 127, 83, 188, 97 with its cap of 3 on own-class
    skills, 126, 107, state 134), `[I]`, which no spec states. Its return is logged in play (`CUL`, 1 339 values) but
-   not its inputs: [harness piece](../backlog/2026-11-10-reverser-reverser-plan-0068-skill-level-bonus-check.md).
+   not its inputs: [harness piece](../../backlog/2026-11-10-reverser-reverser-plan-0068-skill-level-bonus-check.md).
    `Overlay` (the server reads only the count, as an id bound), `Composit`, `MonSounds`, `AutoMap`: client only.
    `Arena`: read by the server's kill and death scoring in every game (`sub_0053F720_ArenaScoreKill`), into a
    per-player score no core-area rule reads in this reading.
@@ -221,12 +221,12 @@ loads in every run" carry dated corrections pointing to data/0006 § 2.4.
 - `lut.dn1`: not rule-bearing (never opened); ledger reason only. Same for `a1npc.txt`..`a5npc.txt` (never opened),
   the colour `.dat` files (client colour transforms; one `GreenBlood.dat` loader has no caller), the `.key` maps
   (client input) and `gateways.txt` (client Battle.net setup).
-- Table docs: [MonItemPercent](../tables/MonItemPercent.md) layout (the split above) and "no reader"; [Sounds](../tables/Sounds.md)'s
-  open question answered (§ 2.4); [Events](../tables/Events.md) the dispatch ids, the never-dispatched 4 and 8, and the
-  registrars' `> 0` / `≥ 0` tests; [SkillDesc](../tables/SkillDesc.md) `SkillPage`'s server use; [Arena](../tables/Arena.md),
-  [Overlay](../tables/Overlay.md), [Composit](../tables/Composit.md), [MonSounds](../tables/MonSounds.md),
-  [AutoMap](../tables/AutoMap.md) their readers (§ 3's table); [BodyLocs](../tables/BodyLocs.md),
-  [PlayerClass](../tables/PlayerClass.md) the reader tables of § 2.1–2.2.
+- Table docs: [MonItemPercent](../../tables/MonItemPercent.md) layout (the split above) and "no reader"; [Sounds](../../tables/Sounds.md)'s
+  open question answered (§ 2.4); [Events](../../tables/Events.md) the dispatch ids, the never-dispatched 4 and 8, and the
+  registrars' `> 0` / `≥ 0` tests; [SkillDesc](../../tables/SkillDesc.md) `SkillPage`'s server use; [Arena](../../tables/Arena.md),
+  [Overlay](../../tables/Overlay.md), [Composit](../../tables/Composit.md), [MonSounds](../../tables/MonSounds.md),
+  [AutoMap](../../tables/AutoMap.md) their readers (§ 3's table); [BodyLocs](../../tables/BodyLocs.md),
+  [PlayerClass](../../tables/PlayerClass.md) the reader tables of § 2.1–2.2.
 
 **Phase 4 (spec-writer) gains:**
 - **items/tc:** one sentence, `[I]`: `MonItemPercent` is loaded and read by no code, so it adds nothing to the drop
@@ -250,7 +250,7 @@ Open, for the record: the two harness pieces above; whether a missile attack rea
 ### 2026-11-10 — Phase 3 (archivist, `lane/n68f`)
 
 Done:
-- **COF bundles documented:** [cofbundle.md](../formats/cofbundle.md) (24-byte record header, `size` bytes of COF, no file header or index; runtime slots `0xFFFFFFFF`/0/`0xFFFFFFFF` on disk; content against the loose files and `animdata.d2`; the 63 leftover bytes are the three `f9` COFs' 3 extra bytes in seven bundles). Parser `tools/cofbundle.py` (moved from `tools/n68r_bundles.py` with `git mv`, `survey` and `dump`), full-tier survey `cofbundle` registered in `tools/gate.py` with baseline `tools/gate/baselines/cofbundle.txt`: 8 files, 6 726 records, 0 errors, 0 COF parse errors.
+- **COF bundles documented:** [cofbundle.md](../../formats/cofbundle.md) (24-byte record header, `size` bytes of COF, no file header or index; runtime slots `0xFFFFFFFF`/0/`0xFFFFFFFF` on disk; content against the loose files and `animdata.d2`; the 63 leftover bytes are the three `f9` COFs' 3 extra bytes in seven bundles). Parser `tools/cofbundle.py` (moved from `tools/n68r_bundles.py` with `git mv`, `survey` and `dump`), full-tier survey `cofbundle` registered in `tools/gate.py` with baseline `tools/gate/baselines/cofbundle.txt`: 8 files, 6 726 records, 0 errors, 0 COF parse errors.
 - **Coverage ledger** (`docs/formats/README.md` § Coverage): rows for `.d2` bundles, `.cof`, `.dn1` (`lut.dn1` never opened), the colour `.dat` files (client colour transforms), `.key`, `gateways.txt` and the `a1..a5npc.txt` files now carry Phase 2's reasons and `[I]` tags; `data/local/use` is described by data/0002, `data/iamexpansion` stays undescribed (Phase 2 did not examine it; not rule-bearing).
 - **Table-doc answers** (the backlog entry `2026-11-10-architect-archivist-plan-0068-p2-table-doc-corrections`, closed): Sounds (open question answered), MonItemPercent (loaded, no reader `[I]`, layout from the descriptor), Events (registration tests, dispatch ids, never-dispatched 4 and 8, id 13), SkillDesc (`SkillPage`'s server use, `SkillHasDesc`), Arena (scoring), Overlay, Composit, MonSounds, AutoMap (client only), BodyLocs, PlayerClass (reader tables).
 
@@ -261,11 +261,11 @@ Left: Phase 4 (specs); `data/iamexpansion` unexamined. Spec routes are unchanged
 ### 2026-11-10 — Phase 3 review (architect, Tier A, ADR-0027)
 
 **Verdict: accept with fixes (9), applied in the review commit.** Done when: met. The one loaded bundle kind has
-[cofbundle.md](../formats/cofbundle.md), and `python3 -I tools/gate.py --full=cofbundle` is green (8 files, 6 726
+[cofbundle.md](../../formats/cofbundle.md), and `python3 -I tools/gate.py --full=cofbundle` is green (8 files, 6 726
 records, 0 errors, 0 COF errors). The survey's counts were recounted by an independent walk (file sizes and record counts,
 every name 7 characters, directions 1/8/16/4 = 4 902/1 055/761/8, sizes 39..3 196, 2 516 distinct names, 1 287 in one
 bundle) and `--list` reproduces the 11 frame and 2 event differences with `animdata.d2`. The format doc agrees with
-[cof.md](../formats/cof.md) (name pattern, the three `f9` files' 3 extra bytes, the directions field) and with data/0006
+[cof.md](../../formats/cof.md) (name pattern, the three `f9` files' 3 extra bytes, the directions field) and with data/0006
 § 4 at `[I]` for every loader statement. `lut.dn1`, the colour `.dat` files, `.key`, `gateways.txt` and the NPC text
 files carry data/0006 § 5's reasons at `[I]`. Every table-doc sentence taken from data/0006 was read against § 1–3.
 
@@ -293,3 +293,87 @@ Fixes:
 Not changed: cofbundle.md's survey line does not test the 7-character names (the loader's refusal); the data claim is
 `[C]` from this review's recount, and a regression would show as a COF parse or `dup_names` change only. Left for a later
 tools pass if a bundle ever changes. Phase 4 (specs, `lane/n68w`) is unaffected: no spec route moved.
+
+### 2026-11-10 — Phase 4 (spec-writer, `lane/n68w`)
+
+Done: the rule-bearing readings of [data/0006](../../findings/data/0006-loaded-tables-and-bundles.md) carried at the
+finding's tags; 9 specs changed, each `updated: 2026-11-10`, front-matter counts and research-map rows rewritten.
+Tags added (by the gate's count): C +4, I +24, L +4.
+
+- **items/tc** (C +1, I +1, L +1): an Inputs row for `MonItemPercent` ("none: loaded, read by no code") and a
+  *Reimplementation notes* bullet: loaded in every run `[C]`, no reader, so no row, no draw, no step in the death drop
+  `[I]` (§ 1.3); the run-time read watch is an `[L]` under Open questions with its backlog link. Put in items/tc, not
+  monsters/special: the drop path and its draw order are there. Answers this plan's first open question: no golden-trace
+  field is needed.
+- **skills/dispatch** (C +1, I +10, L +3): **C8**, the skill-level bonus of § 3.2 as pseudocode (stats 127, 83, 188 with
+  param `8·class + SkillPage − 1` for a non-zero `SkillPage`, 97 capped at 3 on own-class skills and for a non-player
+  with base points, 126 by `EType`, 107, state 134's 2, entry `+0x2C`) `[I]`, its callers `[I]`, its logged return in
+  `SKILLS_ManaOk` (1 339 values) `[C]` for "runs in play" only; § K: the event-id table (Events row indices, the 17
+  dispatch sites), ids 4 and 8 never dispatched (stat 195's `itemevent2` inert), id 13 with no row, the `> 0` / `≥ 0`
+  registration bounds, all `[I]`; two reimplementation notes; three `[L]` (missile attack and event 7, registrar
+  0x005C377B, the bonus's terms in play). C8 sits in § C because `SKILLS_GetSkillLevel` is used there first; data/calc's
+  `skill(s, v)` links it.
+- **stats/aggregate** (I +1): G3's item-event registration only for an id `> 0`. **stats/states needs nothing**: its
+  event numbers are the unit event queue's (timed lists, regeneration, auras), not the Events table's.
+- **data/excel** (C +2, I +7): B1's "the full `sounds` table loads in every run" removed; a new B1 note (no
+  `sounds.bin` outside `-txt` `[I]`, no `sounds` file in the four `-ns` stock runs `[C]`); a B1 table of the last loaded
+  tables' readers (`MonItemPercent`, `SkillDesc`, `Overlay` count only, `Arena`, `Composit`/`MonSounds`/`AutoMap`)
+  and a code-list index-space note. This is the "loader list" (the spec had none by name; the table is it).
+- **items/inventory** (I +1): I6, body locations are BodyLocs row indices. **player/creation** (I +1): the class id
+  and `itemNloc` as PlayerClass and BodyLocs row indices. **save/d2s** (I +2): the class byte as the PlayerClass row
+  index; the legacy 107/108/109/181–187 group's `sub_00627AF0_SkillHasDesc` test (the formats doc already carries the
+  per-id table; the spec had only "per-id width overrides").
+- **anim/timing** (I +1): B2, the COF bundles are client cache only, not a source of the mode lengths.
+- **Ruled out, with the reason:** `Arena` gets no core spec text (no core-area rule reads the score; it is named only
+  in data/excel's reader table); `Composit`, `MonSounds`, `AutoMap`, the `Overlay` records, `lut.dn1`, the colour `.dat`
+  files, the `.key` maps and `gateways.txt` are presentation or never opened: no spec text. monsters/stats (MonEquip
+  `loc1..3`) got no line: the plan's Phase 2 handoff calls it optional and the spec already uses the location as a number.
+- **Wiki:** [skills](../../wiki/skills.md) gains *The skill level and its bonuses*, the events paragraph and an unknowns
+  line; [game-data](../../wiki/game-data.md) the code-list index spaces, the `sounds` correction and the no-rule tables;
+  [items](../../wiki/items.md) the `MonItemPercent` paragraph. `based_on` dates bumped on those and on objects, inventory,
+  characters, saves, animation and stats-and-states (checked: no sentence there restates a changed one).
+- **Backlog closed:** `2026-11-10-architect-spec-writer-plan-0068-p2-spec-corrections` (all three items). The two
+  reverser harness pieces stay open; the specs link them.
+
+Not linked: Phase 3's `docs/formats/cofbundle.md` reached main after this branch's base, so anim/timing B2 links data/0006 § 4
+only; a link to `cofbundle.md` can be added at the merge.
+Review: Tier A (with Phase 3's review, it closes the plan). Status changes for the research map: none (every row stays
+`reviewed`).
+
+### 2026-11-10 — Phase 4 review (architect, Tier A), plan closed
+
+Verdict: **accept with fixes** (3: misread 1, omission 1, stale cross-reference 1). Merged `main` first (plans 0063 P3,
+0068 P3, clean-room S2, 0067 P1): conflicts in this log (kept both, in date order), the research map rows, the front
+matter of data/calc, items/inventory and player/creation and three wiki `based_on` blocks; counts set to the gate's.
+anim/timing B2 now also links [formats/cofbundle](../../formats/cofbundle.md#layout).
+
+Checked with r2 on the pinned image:
+- **C8 against `sub_00644180_SkillLevelBonus`**: the term order (`+0x2C`, state 134's 2 via 0x00644150, stat 127,
+  then the class branch, stat 126 when `EType` is non-zero by an unsigned test, stat 107 last), the cap at 3
+  (`cmp eax, 3; jle` at 0x0064424C, reached from the own-class branch and from a non-player with `+0x28 > 0` and a
+  non-zero stat 97), the param `lea eax, [eax + ecx*8 − 1]` at 0x00644207 = `8·class + SkillPage − 1`, the Skills
+  count bound `+0xBA0` and the three callers (0x006442C3, 0x00644322, 0x00644AC7) and `SKILLS_ManaOk` 0x00647584 all
+  match. Fixed (misread): `SkillPage` is loaded `movsx` (0x00644204), an s8, not a u8. Fixed (omission): the
+  integer semantics a reimplementer needs: the layer reaches `STATS_GetUnitStat` as its low 16 bits (`movzx` at
+  0x006254CC) and the cap is a signed compare, so a negative stat 97 is added unchanged. Stock `SkillPage` values
+  are 0–3 (70, 70, 70, 11), so neither changes a stock outcome.
+- **§ K's event table**: a scan of the `.text` for direct calls to 0x005C0C30 gives 17, and the `edx` load before
+  each gives ids 0 (×3: 0x005AE08A, 0x005AE0FE, 0x005B02CA), 1/2 (the join at 0x0057C7ED), 3 (×2), 5, 6, 7
+  (0x0057D606), 9 (×2), 10 (×2), 11, 12 (×2), 13 (0x005A72C6): no 4, no 8, as the table says; the site owners match
+  `re/symbols.csv`.
+- **save/d2s J** against 0x0062DFC4–0x0062E037 and `sub_00627AF0_SkillHasDesc`: version `≤ 0x5C`, 14 bits, the level
+  bound `(1 << Save Bits) − 1`, the s16 `skilldesc` test against `+0xB94`: match.
+- **Promotion re-check of the `[C]`s imported from data/0006** (Tier B checked today, not Tier A reviewed before):
+  items/tc's and data/excel's "`MonItemPercent` loaded in every run" (`DATATBLS_LoadAll` 0x00619470 calls
+  0x00654F20 unconditionally; the H3b logs the second source); data/excel's "no `sounds` file opened in the four
+  `-ns` runs" (the `je` at 0x00659BC1 and the call at 0x00659C16 read as stated; the H3b logs and `check-items2-5.txt`
+  the second source); dispatch C8's "the bonus runs in play" (`workspace/logs/n68r/check/check-cul.txt` recounted
+  against the 15 run:2026-10-27-skills logs: 1 339 returns, 1 157 zero, 182 of 1–4). Each has a named second source
+  and an anchor that says what the sentence says; all stand.
+- Fixed (stale cross-reference): this plan's first open question, which the lane's log answers, was left open; struck
+  with its answer.
+
+Ruled: the Phase 4 *Done when* is met (each rule-bearing reading carried at its finding's tag or ruled out with a
+reason; the presentation-only readings get no spec text). The two reverser harness entries (the skill-level bonus
+check, the `MonItemPercent` read watch) stay open; the specs link them. No golden-trace field or S2 change follows.
+`python3 -I tools/gate.py --full` green. Plan closed: status `done`, moved to `docs/plans/done/`.

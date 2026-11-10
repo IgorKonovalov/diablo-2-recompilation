@@ -1,6 +1,6 @@
 ---
 based_on:
-  - docs/specs/items/tc.md 2026-11-04
+  - docs/specs/items/tc.md 2026-11-10
   - docs/specs/items/quality.md 2026-10-20
   - docs/specs/items/uniques-sets.md 2026-10-30
   - docs/specs/items/affixes.md 2026-10-27
@@ -101,6 +101,12 @@ An earlier reading had counted 21 plain writes (one of them sets a different fla
 places and a mosquito nest's behaviour, and the twelve are the self-removing monsters above. A flag word copied in
 whole from somewhere else would not show up in this count, so the list is a lower bound
 ([TC § B, note B1](../specs/items/tc.md#b-monster-drop-which-tc--monster_dropitems)).
+
+**`MonItemPercent` plays no part.** The game loads this small table (a treasure-class percentage, and heart,
+body-part and component percentages) at every start, which is confirmed, but no code reads it: read from the code, no
+drop chooses a row from it, draws on it or skips because of it. A run that watches the table's memory during kills
+would settle the last doubt, an address built at run time
+([TC, reimplementation notes](../specs/items/tc.md#reimplementation-notes)).
 
 **Level upgrade.** In an expansion game on Nightmare or Hell, a monster's top TC can move up its group (for example
 `Act 1 (N) H2H A` to `H2H B`). The game walks forward through the group while the monster's level

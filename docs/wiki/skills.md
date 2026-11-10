@@ -1,7 +1,7 @@
 ---
 based_on:
   - docs/specs/skills/README.md 2026-11-04
-  - docs/specs/skills/dispatch.md 2026-11-04
+  - docs/specs/skills/dispatch.md 2026-11-10
   - docs/specs/skills/missiles.md 2026-11-04
   - docs/specs/skills/catalogue.md 2026-11-04
 ---
@@ -119,6 +119,25 @@ every frame for the skill buttons; in the run it sent no request for a refused s
 read). So what
 the server does with a refused request, codes 2 to 5 and 7, and the refusal of a skill not allowed in town, are the
 code reading: a test needs a client that sends what a stock client does not.
+
+## The skill level and its bonuses
+
+The level the checks test, and the level a skill's formulas use, is the unit's hard points in the skill plus a bonus,
+kept between 0 and the skill's maximum; the mana test adds the same bonus
+([dispatch C8](../specs/skills/dispatch.md#c-the-request-checks-skills_canuse)). Read from the code, the bonus adds up:
+
+- a per-skill bonus word of the unit's skill entry, 2 while the unit has the skill shrine's state, and "+ to all
+  skills";
+- for a player's skill of its own class: "+ to class skills", the "+ to a skill tab" stat for the tab the skill sits
+  on, and the `item_nonclassskill` stat for that skill, capped at 3; a skill of another class takes that stat
+  uncapped;
+- "+ to elemental skills" for a skill with an element, and "+ to a single skill" for that skill.
+
+The skill tab comes from the `SkillDesc` table, the skill tree's own table: its page number (1 to 3) picks which tab
+bonus applies, and a skill on no page gets none. That is the server's one use of a skill-tree column outside the
+formulas. The bonus makes no random draw. Confirmed: the mana test ran it 1 339 times in the skills runs, 182 times
+with a bonus of 1 to 4, but those logs hold no character stats, so the split into its terms is still the code
+reading.
 
 ## The mode start and the action frame
 
@@ -272,6 +291,14 @@ a death, a level-up. They do so through a table of 31 handlers registered on the
 draws, on the seed of the unit that owns the event (the attacker for an attack or a kill, the defender for a hit
 taken or a death), and inside delivery the attacker's melee handlers run before the defender's, the victim's "killed"
 handlers before the attacker's "kill" ones, newest first.
+
+**Which events ever fire** ([dispatch § K](../specs/skills/dispatch.md#k-stat-event-handlers)), read from the code.
+The events are numbered by the rows of the `Events` table, 0 to 12, and the game raises 0 to 3, 5 to 7 and 9 to 12
+(and a 13 at a monster's death that no table can name). Two events are never raised: 4 (`doactive`) and 8
+(`domissileattack`). So the second event of the "chance to cast on attack" stat, the missile-attack one, never fires;
+the stat casts only through the melee-attack event, and whether a ranged attack reaches that one is not settled. An
+item stat registers its event only when the number is above 0, a skill's aura event when it is 0 or more, so Chilling
+Armor's "hit by missile" event registers and an item stat's could not.
 
 **The draws, measured.** Over 1 303 handler calls of the two runs, each handler's unit seed stepped by exactly the
 count below; the 3 461 handler fires of the earlier combat and stats runs and of the *Fleshripper* log give the same, with no mismatch. Confirmed:
@@ -641,6 +668,8 @@ From the specs' open questions ([overview](../specs/skills/README.md#open-questi
 - **The caster gaps left** (43 and 103 player gaps over the two runs) and the monster gaps. Their logs hold no AI line; with the AI logged, 41 of 49 new gaps of this shape close ([monster AI](monster-ai.md#draws-and-seeds)).
 - **Which frame carries the action**, and the unit field behind two frame tests: animation timing.
 - **The finisher** in a run.
+- **The skill-level bonus term by term** against a character's item stats, and whether a ranged attack ever raises
+  the melee-attack event; which event the curse code registers at run time.
 - **Missiles**: the end of a hit for rows with a hit function, the filters before the build, the "always explode"
   rows and the end-of-life branch in a run; the speed's per-level term, the slow-missiles scaling, the extra loops and
   the distance refusal; the re-seed sites other than Firestorm's and the catapult bolts'; the critical

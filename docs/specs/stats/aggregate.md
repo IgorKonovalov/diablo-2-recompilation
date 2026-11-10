@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [stats/overview, items/properties, items/uniques-sets, player/creation, monsters/stats, data/calc]
 consumed_by: [stats/states, combat/overview, player/creation, monsters/stats, data/calc]
-tags: {C: 65, I: 42, L: 4}
-updated: 2026-11-04
+tags: {C: 65, I: 43, L: 4}
+updated: 2026-11-10
 ---
 
 # Stat aggregation: the list tree, the cache, the `op` terms, the maxima, items and set bonuses
@@ -374,6 +374,11 @@ Step notes:
   ([states § F](states.md#f-auras)); and for 98 `state` sets or clears that state with the group clear
   ([states § D](states.md#d-the-group-clear)). (fn:sub_0055B800_MonStatCallback@0x0055B800,
   tbl:ItemStatCost.txt:itemevent1)
+- G3. [I] The event registration reads `itemevent1/2` as `s16` and registers only an id `> 0`: a blank cell (−1) and
+  id 0 (`hitbymissile`) register nothing. Which ids are ever dispatched is
+  [skills/dispatch § K](../skills/dispatch.md#k-stat-event-handlers). (fn:sub_0055B800_MonStatCallback@0x0055B800,
+  0x0055B867, 0x0055B8A3, fn:sub_0056E740_AddStatEvent@0x0056E740,
+  [data/0006 § 2.3](../../findings/data/0006-loaded-tables-and-bundles.md#23-events-event-id-012-and-what-is-dispatched))
 - G4. [I] `UNIT_ClampVitals` (when `ITEMS_DetachFromOwner` is asked to clamp): stamina, mana and life, in that order,
   are lowered to their maxima when above. The run took the clamp's writes as inputs. (fn:UNIT_ClampVitals@0x006275B0)
 

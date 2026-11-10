@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: []
 consumed_by: [items/tc, items/*, monsters/*, drlg/*, objects, data/strings, data/calc]
-tags: {C: 144, I: 51, L: 2}
-updated: 2026-10-27
+tags: {C: 146, I: 58, L: 2}
+updated: 2026-11-10
 ---
 
 # Excel tables: file lookup, load, record addressing, code and name links
@@ -258,13 +258,36 @@ Step notes:
 - B1. 15 small code-list tables (`playerclass`, `bodylocs`, `monmode` 4-byte form, …) and the
   2-byte `monstats`/`skilldesc` calls are loaded only under `-txt`; they serve the `.txt` compiler.
   A stock run never loads them **through `DATATBLS_LoadTable`**. A further `-txt`-only call, the 18th, is a 2-byte
-  `sounds` load (the call at 0x00659C16, skipped by the `je` at 0x00659BC1 when `g_DataTblsCompileTxt` is 0; the full
-  `sounds` table loads in every run). [C] No `DATATBLS_LoadTable` call names one of them in the four stock-mode H3b runs,
+  `sounds` load (the call at 0x00659C16, skipped by the `je` at 0x00659BC1 when `g_DataTblsCompileTxt` is 0). [C] No `DATATBLS_LoadTable` call names one of them in the four stock-mode H3b runs,
   and under `-txt` all 18 are called, with their small record sizes; the `-txt` compile wrote all 15. (fn:DATATBLS_LoadCodeLists@0x00612750,
   0x006127DF, 0x00659BC1, 0x00659C16, run:2026-10-27-sweep-data-load, run:2026-10-15-cube-saves, [data/0001 § H3b](../../findings/data/0001-excel-loader.md#plan-0038-batch-h3b-run2026-10-27-sweep-data-load))
+- B1. **A stock run loads no `sounds.bin`.** The 2-byte call above is the only reference to the table name `sounds`;
+  the only other `sounds` read is the client's text read of `sounds.txt` and `soundenviron.txt`
+  (`sub_00481950_SoundTablesLoad`), which runs only when the sound device is up. [I] (0x006ED50C, 0x00659C11,
+  0x0048203A, 0x0048226A, fn:sub_00481950_SoundTablesLoad@0x00481950,
+  [data/0006 § 2.4](../../findings/data/0006-loaded-tables-and-bundles.md#24-sounds)) None of the four stock-mode H3b
+  runs (all `-ns`) opens a file named `sounds.bin`, `sounds.txt` or `soundenviron.txt`; under `-txt` the 0x00659C16
+  path reads `sounds.txt` and `sounds.bin`. [C] (run:2026-10-27-sweep-data-load)
 - B1. **`hitclass.bin` is read whole in every run**, `-txt` or not, by the character-graphics copy of the loader (the
   `FILE_LoadWhole` returning to 0x0050448A, with `weapons`, `armor`, `misc` and `itemtypes`), so "a stock run never
   loads them" holds for `DATATBLS_LoadTable` only. [C] (0x0050448A, fn:FILE_LoadWhole@0x00517079, run:2026-10-27-sweep-data-load, [data/0001 § H3b](../../findings/data/0001-excel-loader.md#plan-0038-batch-h3b-run2026-10-27-sweep-data-load))
+- B1. **Who reads the last loaded tables** (plan 0068). Every table below loads in a stock run through its own
+  loader; what reads its records decides whether a reimplementation needs it for a rule. The client-only and
+  count-only verdicts are a reader search over both the absolute globals and their `g_DataTables + offset` form.
+
+| Table | Read by | What a reimplementation needs | Tag |
+|---|---|---|---|
+| `MonItemPercent` | nothing: its record getter 0x00654FE0 and table getter 0x00654FD0 have no caller | nothing: no row is chosen, no draw is made, no seed steps ([items/tc](../items/tc.md#reimplementation-notes)) | [C] loaded in every run (run:2026-10-27-sweep-data-load); [I] no reader (fn:sub_00654F20_MonItemPctLoad@0x00654F20, fn:sub_00654FE0_MonItemPctGetRecord@0x00654FE0) |
+| `SkillDesc` | the client's skill tree; on the server `SkillPage`, the record count and the description missiles | `SkillPage` in the skill-level bonus ([skills/dispatch C8](../skills/dispatch.md#c-the-request-checks-skills_canuse)); the count in `sub_00627AF0_SkillHasDesc` ([save/d2s § J](../save/d2s.md#j-property-list-framing)); calc codes 43–48 ([data/calc § G](calc.md#g-variables)) | [I] (fn:sub_00644180_SkillLevelBonus@0x00644180, fn:sub_00627AF0_SkillHasDesc@0x00627AF0) |
+| `Overlay` | client drawing; the server reads the count only | the row count, as the bound on an overlay id before one is set (`id < 0` or `id ≥ count` skips it) | [I] (fn:sub_00621E40_UnitSetOverlayStat@0x00621E40, 0x00621E50, 0x005CAD17) |
+| `Arena` | the server's kill and death scoring, in every game | nothing for a core rule: the score it writes per player is read by no core-area rule in the reading, and the scoring makes no draw | [I] (fn:sub_0053F720_ArenaScoreKill@0x0053F720) |
+| `Composit`, `MonSounds`, `AutoMap` | client code only | nothing (presentation) | [I] (fn:sub_0065B5E0_CompositRecord@0x0065B5E0, fn:sub_0061FFF0_AutomapCellFind@0x0061FFF0) |
+
+- B1. `BodyLocs`, `PlayerClass` and `Events` are among the `-txt`-only code lists above: a stock run holds only the
+  row indices the compiled tables store, read as plain numbers (body location 0..10, class 0..6, event id 0..12),
+  with no lookup through the code list. Their uses are [items/inventory](../items/inventory.md) I6,
+  [player/creation](../player/creation.md#inputs) and [skills/dispatch § K](../skills/dispatch.md#k-stat-event-handlers). [I]
+  (fn:DATATBLS_LoadCodeLists@0x00612750, [data/0006 § 2](../../findings/data/0006-loaded-tables-and-bundles.md#2-bodylocs-playerclass-events-and-sounds-plan-item-2))
 - B1. The four header-less `*code.bin` files (`itemscode`, `misscode`, `skillscode`, `skilldesccode`)
   are loaded whole as raw buffers, not through B1. Their contents are [data/calc](calc.md). [C] In all 44 529
   evaluations of run:2026-10-16-calc, the pool's offset + length equals its file size, the pool's base is
@@ -1032,6 +1055,8 @@ Values from the shipped `.bin` files, decoded with `tools/excel_bin.py dump`.
   priority, file lookup, `-direct`, language byte.
 - [findings/data/0004-cell-converters.md](../../findings/data/0004-cell-converters.md): the `.txt` compiler's
   column map, cell converters and absent-column defaults, the no-column fields (§ J).
+- [findings/data/0006-loaded-tables-and-bundles.md](../../findings/data/0006-loaded-tables-and-bundles.md): the readers of
+  the last loaded tables, the `sounds` correction and the code-list index spaces (B1).
 - [findings/data/0003-string-tables.md](../../findings/data/0003-string-tables.md): string-key converter, run-time
   index → text, table loading (I2, I3); [tbl.md § Override order](../../formats/tbl.md#override-order) summarises it.
 - [findings/monsters/0001-level-pool.md § 8](../../findings/monsters/0001-level-pool.md#8-ordinal-723-and-g_monstatslink-backlog-spec-writer--reverser-a):

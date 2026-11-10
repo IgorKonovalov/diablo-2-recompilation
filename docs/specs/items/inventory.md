@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, items/use, drlg/collision, drlg/lifecycle, stats/aggregate, items/economy]
 consumed_by: [items/use, player/creation, quests/travel, drlg/lifecycle, drlg/collision, items/economy, items/quest-drops, items/cube]
-tags: {C: 75, I: 104, L: 13}
+tags: {C: 75, I: 105, L: 13}
 updated: 2026-11-10
 ---
 
@@ -482,6 +482,11 @@ The distance table (row `|dy|`, column `|dx|`), 64 `i32` at `0x006EB180`, indexe
 - I1. [I] **The one item request that leaves the drain**: `d ≥ 5`, or `d < 5` and a blocked line, with `d ≤ 50`, starts the walk. A later request in the same drain sees the item still on the ground. (fn:sub_00548A50_InteractWalkTo@0x00548A50, 0x00580E73, fn:PLAYER_ModeCmdUnit@0x00580A70)
 - I4. [I] **Ownership (who dropped it) is not among any test read in the two pickups, and `nopickup` was not found read there.** Scope: these two functions and their direct callees' first level, not the gate's whole body, which [items/quest-drops](quest-drops.md) holds. (fn:sub_00563560_PickupToInv@0x00563560, fn:sub_0055CF50_PickupToCursor@0x0055CF50)
 - I4. [I] Gold and the party share are [items/economy G](economy.md#g-gold-payment-caps-piles-and-the-death-loss). (fn:sub_0055C850_GoldPickup@0x0055C850)
+- I6. [I] **Body locations are BodyLocs row indices.** ItemTypes `BodyLoc1`/`BodyLoc2` (u8, `+0xA`, `+0xB`) hold the
+  row index of [BodyLocs](../../tables/BodyLocs.md) (0 `None` .. 10
+  `Gloves`) and go straight into the inventory's body-location calls; `BodyLocs.bin` loads only under `-txt`
+  ([data/excel](../data/excel.md#b-loading-one-table) B1), so nothing translates them through a code. (fn:sub_0062EA80_ItemBodyLocs@0x0062EA80,
+  fn:sub_0055D710_ItemAutoEquipSlot@0x0055D710, [data/0006 § 2.1](../../findings/data/0006-loaded-tables-and-bundles.md#21-bodylocs-body-location-010))
 - I5. [I] **A pickup-merge's remainder** stays the same item, its quantity reduced, and goes on down I4 (equip, belt, inventory). With no room there, `PickupRefused(0x17)` puts it back in mode 3 on the ground with its reduced count, and the merged stacks keep what they took. The fatal line after the loop (`0x606`) needs a source reaching 0 outside the return, which no branch read does. (fn:sub_0055D0D0_PickupStackMerge@0x0055D0D0, fn:sub_0055C9A0_PickupRefused@0x0055C9A0)
 
 ### J. The ground drop's cell

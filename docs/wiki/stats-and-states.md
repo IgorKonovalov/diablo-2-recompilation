@@ -1,7 +1,7 @@
 ---
 based_on:
   - docs/specs/stats/README.md 2026-10-21
-  - docs/specs/stats/aggregate.md 2026-11-04
+  - docs/specs/stats/aggregate.md 2026-11-10
   - docs/specs/stats/states.md 2026-11-04
 ---
 

@@ -673,6 +673,9 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-11-10 | `lane/n68f` | 0068 P3 | archivist | 113 938 | 37 | 4 | — | accept with fixes (Tier A, ADR-0027, 9) | overclaim 2, under-claim 2, omission 3, stale cross-reference 1, other 1 |
 | 2026-11-10 | `lane/n68f` review | 0068 P3 | architect-review | 127 674 | 34 | 4 | — | accept with fixes (9) | overclaim 2, under-claim 2, omission 3, stale cross-reference 1, other 1 |
 | 2026-11-10 | `lane/n64t` | 0064 P3 (S1, S2) | architect-review | 135 220 | 55 | 9 | — | triage of 22 rows: spec defect 1, missing finding 1, golden-set 15, implementer error 5; 7 entries | — |
+| 2026-11-10 | `lane/n68w` | 0068 P4 | spec-writer | 228 417 | 95 | 11 | — | accept with fixes (Tier A, 3) | misread 1, omission 1, stale cross-reference 1 |
+| 2026-11-10 | `lane/n68w` review | 0068 P4, close | architect-review | 146 798 | 69 | 8 | — | accept with fixes (3); plan 0068 closed | misread 1, omission 1, stale cross-reference 1 |
+| 2026-11-10 | S2-12 probe | 0064 P3 | cleanroom | 43 318 | 4 | 1 | — | needed two guesses: row 12 is a spec defect | — |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not

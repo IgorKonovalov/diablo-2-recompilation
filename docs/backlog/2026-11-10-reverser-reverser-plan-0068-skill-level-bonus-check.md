@@ -3,7 +3,7 @@ from: reverser
 to: reverser
 date: 2026-11-10
 status: open
-context: ["../findings/data/0006-loaded-tables-and-bundles.md", "../plans/0068-game-files-coverage.md"]
+context: ["../findings/data/0006-loaded-tables-and-bundles.md", "../plans/done/0068-game-files-coverage.md"]
 resolution: ""
 ---
 
