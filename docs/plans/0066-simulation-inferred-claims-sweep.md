@@ -348,3 +348,30 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   (`MonPlayerBonus` is not logged), and single-outcome rows confirm the call and its words only (README G3); (3) S13's
   path count is the given word read from the fires, as `ai_s13_check.py` took it, so its equal pairs separate nothing;
   (4) the S1d maps live in a new tool rather than `tools/ai.py`, to keep the kept first-boundary outputs reproducible.
+
+### 2026-11-10 — S1c and S1d review (architect, Tier A, the audit of the fifth Tier B lane): accept with fixes
+
+- **Re-run** (no game, under `systemd-run --user --scope -p MemoryMax=3G`, from `workspace/logs/ai`): both inputs
+  manifests pass (`manifest-sweep2-s1cd-inputs.sha256`, 74 logs: 31 + 21 + 17 + 5; `sweep2-s1cd/manifest.sha256`); S1c
+  `--rows R44,S13` and the whole S1d command reproduce `s1c-model-check.txt` and `s1d-first-check.txt` byte for byte;
+  revision 2 with S1b's 32 names reproduces `sweep2-s1b/model-check.txt` byte for byte. S13's count read from the fires is
+  4 for both units that fire, H1b's file word.
+- **Independence.** `m_r44`, `m_s13` and the six new heads follow the blocks at `b5999f5e` step for step (R10's
+  `MonPlayerBonus(G, &pb, UnitGetRoom(U), U)`, R11, R48's call-free step 1, R49, R56, R15's alt); nothing in them is
+  absent from the block. Sites spot-checked by objdump: the one call before 0x005F0B2C, 0x005F6ECB, 0x005F8FB1 and
+  0x005E7F5C in each think.
+- **Ruling 1 (one-decision arms, rows 281, 283, 509): not an overclaim.** Plan 0038's ruling on single decisive cases
+  holds: the branch is decided by logged input, the block is read, and the case reproduces words no wrong reading meets by
+  chance (`Ovr(13, 0, 0)`, `Walk(t, 7)`; `PathOvrSet(1, 0, 0)`, `RunToPoint(home)`), with the arm's test failing reversed.
+  H1's sentence is "on the logged paths only" and its table already names the one not-melee decision. What one case
+  cannot separate stays `[I]` as the rows say (the draw's `<` against `aip(5)` 0). R44n's "step 2's walk is one decision"
+  (row 284, d-owner) remains a true scope note.
+- **Ruling 2 (R10's first boundary `UnitGetRoom`): sound.** It is the argument of `MonPlayerBonus` and the think's first
+  call in code order (objdump: no call before 0x005F0B27), so the map runs no callee and uses no return: ADR-0004 and
+  ruling R2 hold. The note "`MonPlayerBonus` is not logged" is a side remark, not the reason.
+- **Fix (1 overclaim).** S13: step 2's two tests (the record found, its words non-zero) do not fail alone; their flips stop
+  at the unmodelled push and refill in 160 of 160 (`FLIP 2.home!=0`, `2.words!=0`). Row 508 and the S1c addendum said
+  every branch failed alone; both now keep those two tests `[I]`.
+- **Totals** recomputed from the 29 files: a-logs 674, a-run 358, b 389, c 389, c-emu 490, d 326, sum 2 626; H1h 39.
+- **Audit:** a Tier B check would have missed the fix (it shows only in the kept output's flip lines, not in the diff);
+  it is not reject-grade, so no miss counts against the lane kind.
