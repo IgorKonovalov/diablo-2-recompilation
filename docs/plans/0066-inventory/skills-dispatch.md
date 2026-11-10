@@ -6,198 +6,200 @@
 
 | # | Line | Section | Claim (excerpt) | Anchor | Class | Route or reason | Batch | Count |
 |---|---|---|---|---|---|---|---|---|
-| 1 | 40 | Entry points | A player's skill request at a location (packets , … | `fn:PLRMSG_SkillAtXY@0x00549AD0` | ? | ? | ? | 1 |
-| 2 | 41 | Entry points | A player's skill request at a unit (packets , … | `fn:PLRMSG_SkillAtUnit@0x00549BA0` | ? | ? | ? | 1 |
-| 3 | 42 | Entry points | The request checks — for codes 0, 1, 6 and 8 and their … | `fn:SKILLS_CanUse@0x00647960` | ? | ? | ? | 1 |
-| 4 | 43 | Entry points | A skill mode starts (player modes 7, 8, 10–16, … — for the caster's seed in the start events of … | `fn:SKILLS_StartUsedSkill@0x0056FAF0` | ? | ? | ? | 1 |
-| 5 | 44 | Entry points | The mode's action frame — for the caster's seed in the do events of … | `fn:SKILLS_DoUsedSkill@0x0056FC50` | ? | ? | ? | 1 |
-| 6 | 46 | Entry points | A periodic or aura skill runs again (unit events … | `fn:EVENT_SelectedAuraTick@0x0056FCB0` | ? | ? | ? | 1 |
-| 7 | 47 | Entry points | An item's chance-to-cast fires | `fn:ITEMSKILL_Cast@0x005FDA80` | ? | ? | ? | 1 |
-| 8 | 48 | Entry points | A player's normal attack under a charged progressive state | `fn:COMBAT_PrgFinisher@0x005D5220` | ? | ? | ? | 1 |
-| 9 | 49 | Entry points | A stat event fires on a unit | `fn:UNIT_DispatchEvent@0x005C0C30` | ? | ? | ? | 1 |
-| 10 | 50 | Entry points | A skill summons a monster | `fn:sub_0056D940_SpawnOwnedMonster@0x0056D940` | ? | ? | ? | 1 |
-| 11 | 51 | Entry points | A monster's AI uses a skill | `fn:sub_005DEAD0_MonAiUseSkill@0x005DEAD0` | ? | ? | ? | 1 |
-| 12 | 94 | Inputs and oracles | the frame of a mode that carries event code … — a logged input: animation timing is plan 0050's | `fn:sub_00580460_PlrModeSkillFrame@0x00580460` | ? | ? | ? | 1 |
-| 13 | 95 | Inputs and oracles | the monster's choice of skill, mode and target — an input here: monsters/ai/machinery § T for the tier, … | `fn:sub_005DEAD0_MonAiUseSkill@0x005DEAD0` | ? | ? | ? | 1 |
-| 14 | 96 | Inputs and oracles | the numbered start and do functions outside § O — value oracles of the checker; specified in the catalogue | `data:g_SkillDoFuncs@0x007322B0` | ? | ? | ? | 1 |
-| 15 | 97 | Inputs and oracles | SKILLS_ForUnitsInRange's and SkillForUnitsNearTarget's unit order, SkillUnitFilter — logged as the list of units the callback ran … | `fn:SKILLS_ForUnitsInRange@0x0056B7E0` | ? | ? | ? | 1 |
-| 16 | 98 | Inputs and oracles | the pet chosen for removal — a logged value | `fn:sub_00575850_PetLimit@0x00575850` | ? | ? | ? | 1 |
-| 17 | 99 | Inputs and oracles | a calc's value — data/calc | `fn:SKILLS_EvalCalc@0x00646CA0` | ? | ? | ? | 1 |
-| 18 | 105 | Constants | start table — g_SkillStartFuncs, bound | `data:g_SkillStartFuncs@0x00732140` | ? | ? | ? | 1 |
-| 19 | 106 | Constants | do table — g_SkillDoFuncs, bound (shared by srvdofunc, srvprgfunc1..3, ItemEffect) | `data:g_SkillDoFuncs@0x007322B0` | ? | ? | ? | 1 |
-| 20 | 107 | Constants | stat-event table — g_StatEventFuncs, 31 handlers (ids 1..31), bound | `data:g_StatEventFuncs@0x007325B0` | ? | ? | ? | 1 |
-| 21 | 108 | Constants | delay state — 121 skilldelay | `fn:SKILLS_SetDelayState@0x0056EF90` | ? | ? | ? | 1 |
-| 22 | 109 | Constants | blood mana state — 114 | `fn:SKILLS_PayCost@0x0056BFE0` | ? | ? | ? | 1 |
-| 23 | 110 | Constants | periodic grid floor — perdelay 5 when the calc gives less than 6 | `fn:SKILLS_QueuePeriodic@0x0056CDA0` | ? | ? | ? | 1 |
-| 24 | 111 | Constants | charge cap — 3 | `fn:SKILLS_AddProgressiveCharge@0x005D3320` | ? | ? | ? | 1 |
-| 25 | 170 | B. The request | B1. PacketSkill(player, packet): | `data:g_SrvPacketTable@0x006E0D18` | ? | ? | ? | 1 |
-| 26 | 177 | B. The request | B2. SkillAtXY(player, entry, x, y): | `fn:PLRMSG_SkillAtXY@0x00549AD0` | ? | ? | ? | 1 |
-| 27 | 187 | B. The request | B3. SkillAtUnit(player, entry, type, guid, walk): | `fn:PLRMSG_SkillAtUnit@0x00549BA0` | ? | ? | ? | 1 |
-| 28 | 196 | B. The request | the unit form needs the unit in the same act. | `fn:sub_005496F0_PktReadXY@0x005496F0` | ? | ? | ? | 1 |
-| 29 | 200 | B. The request | the checks then decide. | `0x00549D50` | ? | ? | ? | 1 |
-| 30 | 202 | B. The request | and 1 for a player in a meleeonly state. | `fn:SKILLS_GetRangeType@0x00645460` | ? | ? | ? | 1 |
-| 31 | 205 | B. The request | sets + ← 0. So Attack and Left Hand Swing alternate, request by request. | – | ? | ? | ? | 1 |
-| 32 | 237 | C. The request checks (SKILLS_CanUse) | C1. SKILLS_CanUse(unit, entry) → i32: | `fn:SKILLS_CanUse@0x00647960` | ? | ? | ? | 1 |
-| 33 | 257 | C. The request checks (SKILLS_CanUse) | record. | `fn:SKILLS_CanUse@0x00647960` | ? | ? | ? | 1 |
-| 34 | 260 | C. The request checks (SKILLS_CanUse) | … Hand Swing (5) dual wield and a weapon in the hand; any other skill passes. | – | ? | ? | ? | 1 |
-| 35 | 263 | C. The request checks (SKILLS_CanUse) | … (for skills 4 and 5 with the primary weapon taken out of its hand first). | – | ? | ? | ? | 1 |
-| 36 | 268 | C. The request checks (SKILLS_CanUse) | cost ≤ stat 8. | `fn:SKILLS_ManaOk@0x00647540` | ? | ? | ? | 1 |
-| 37 | 273 | C. The request checks (SKILLS_CanUse) | level term rests on the payments of F1, not on these. | run:2026-10-27-skills | ? | ? | ? | 1 |
-| 38 | 276 | C. The request checks (SKILLS_CanUse) | other value passes. | `fn:SKILLS_RestrictOk@0x00644060` | ? | ? | ? | 1 |
-| 39 | 279 | C. The request checks (SKILLS_CanUse) | first frame needs startmana, later ones the per-use cost only. | `fn:SKILLS_StartManaOk@0x006440F0` | ? | ? | ? | 1 |
-| 40 | 282 | C. The request checks (SKILLS_CanUse) | layer skill · 64 + (level & ); a missing item passes. | `fn:SKILLS_ItemChargesOk@0x00647840` | ? | ? | ? | 1 |
-| 41 | 291 | C. The request checks (SKILLS_CanUse) | request, stated from the code reading. | `0x004D9FC5` | ? | ? | ? | 1 |
-| 42 | 292 | C. The request checks (SKILLS_CanUse) | … monster does not pass through SKILLS_CanUse on its way to the mode start (§ M). | – | ? | ? | ? | 1 |
-| 43 | 319 | D. The mode start | D1. PlayerModeCmd(entry, mode, x, y, force): | `fn:sub_005809D0_PlayerModeCmd@0x005809D0` | ? | ? | ? | 1 |
-| 44 | 326 | D. The mode start | D2. SKILLS_StartUsedSkill(game, unit) → i32: | `fn:SKILLS_StartUsedSkill@0x0056FAF0` | ? | ? | ? | 1 |
-| 45 | 338 | D. The mode start | D3. SKILLS_SrvStart(game, unit, id, lvl, noCost) → i32: | `fn:SKILLS_SrvStart@0x0056F640` | ? | ? | ? | 1 |
-| 46 | 355 | D. The mode start |  | `0x0056FB49` | ? | ? | ? | 1 |
-| 47 | 358 | D. The mode start | passes. | `fn:SKILLS_TargetCheck@0x0056CC60` | ? | ? | ? | 1 |
-| 48 | 361 | D. The mode start | are where it matters. | `0x0056FBB2` | ? | ? | ? | 1 |
-| 49 | 364 | D. The mode start | exception and no state-114 branch (unlike C4). | `fn:SKILLS_SrvManaCheck@0x0056C160` | ? | ? | ? | 1 |
-| 50 | 366 | D. The mode start | usemanaondo rows (Plague Javelin, Blade Fury). noCost 1 comes from an item cast (§ H). | – | ? | ? | ? | 1 |
-| 51 | 370 | D. The mode start | more there. | `fn:sub_005CAF30_SkillDo83DeliverRestart@0x005CAF30` | ? | ? | ? | 1 |
-| 52 | 380 | E. The do frame and SKILLS_SrvDo | E1. PlayerSkillFrame(unit, event) → i32: | `fn:sub_00580460_PlrModeSkillFrame@0x00580460` | ? | ? | ? | 1 |
-| 53 | 387 | E. The do frame and SKILLS_SrvDo | E2. MonsterAttackFrame(unit): | `fn:sub_005A7670_MonAttackFrame@0x005A7670` | ? | ? | ? | 1 |
-| 54 | 393 | E. The do frame and SKILLS_SrvDo | E3. SKILLS_DoUsedSkill(unit): | `fn:SKILLS_DoUsedSkill@0x0056FC50` | ? | ? | ? | 1 |
-| 55 | 397 | E. The do frame and SKILLS_SrvDo | E4. SKILLS_SrvDo(game, unit, id, lvl, pay, item, effect) → i32: | `fn:SKILLS_SrvDo@0x0056F7F0` | ? | ? | ? | 1 |
-| 56 | 428 | E. The do frame and SKILLS_SrvDo | it. | `0x0057FED8` | ? | ? | ? | 1 |
-| 57 | 430 | E. The do frame and SKILLS_SrvDo | … do not test the bit: the attack-frame handler, and the mode-14 Unit+ = 4 case. | – | ? | ? | ? | 1 |
-| 58 | 435 | E. The do frame and SKILLS_SrvDo | srvmissilea..c and get no missile here. | `fn:SKILLS_SrvDo@0x0056F7F0` | ? | ? | ? | 1 |
-| 59 | 438 | E. The do frame and SKILLS_SrvDo | distance; a lob keeps the caster as its start and aims at the doubled point. | `0x0056F9D0` | ? | ? | ? | 1 |
-| 60 | 441 | E. The do frame and SKILLS_SrvDo | ITEMSKILL_Cast passes a non-zero effect flag. | `fn:SKILLS_SrvDo@0x0056F7F0` | ? | ? | ? | 1 |
-| 61 | 448 | E. The do frame and SKILLS_SrvDo | events. | run:2026-10-25-skills | ? | ? | ? | 1 |
-| 62 | 456 | F. Costs | F2. SKILLS_PayCost(unit, id, lvl) → i32: | `fn:SKILLS_PayCost@0x0056BFE0` | ? | ? | ? | 1 |
-| 63 | 474 | F. Costs | entry. | `fn:SKILLS_PayCost@0x0056BFE0` | ? | ? | ? | 1 |
-| 64 | 477 | F. Costs | the floor can bind. The run's payments never reached the floor. | tbl:Skills.txt:minmana | ? | ? | ? | 1 |
-| 65 | 480 | F. Costs | … nothing is taken and the skill still runs. No such refusal occurred in the run. | – | ? | ? | ? | 1 |
-| 66 | 484 | F. Costs | set to 256 and the payment fails. Not reached in the run. | `fn:sub_005D2B60_BloodManaPay@0x005D2B60` | ? | ? | ? | 1 |
-| 67 | 487 | F. Costs | SKILLS_PayCost after each fragment do 48 makes. | `fn:sub_005D69D0_SkillSt26BladeFury@0x005D69D0` | ? | ? | ? | 1 |
-| 68 | 492 | G. The delay state; periodic, aura and channelled skills | G1. SKILLS_SetDelayState(game, unit, d): | `fn:SKILLS_SetDelayState@0x0056EF90` | ? | ? | ? | 1 |
-| 69 | 496 | G. The delay state; periodic, aura and channelled skills | G2. SKILLS_DelayOk(unit, entry) → bool: | `fn:SKILLS_DelayOk@0x006478F0` | ? | ? | ? | 1 |
-| 70 | 499 | G. The delay state; periodic, aura and channelled skills | G3. SKILLS_QueuePeriodic(unit, id, lvl, selected): | `fn:SKILLS_QueuePeriodic@0x0056CDA0` | ? | ? | ? | 1 |
-| 71 | 512 | G. The delay state; periodic, aura and channelled skills | server's there, which is not read. | run:2026-10-27-skills | ? | ? | ? | 1 |
-| 72 | 517 | G. The delay state; periodic, aura and channelled skills | EvalCalc(delay) ≥ 1 of the row asked for. 23 stock rows have a delay. | `fn:SKILLS_DelayOk@0x006478F0` | ? | ? | ? | 1 |
-| 73 | 521 | G. The delay state; periodic, aura and channelled skills | the delay is set on the sequence's first event (anim/timing § G, G5). | – | ? | ? | ? | 1 |
-| 74 | 529 | G. The delay state; periodic, aura and channelled skills | channelled rows are the startmana rows (C6), not periodic. | `fn:SKILLS_QueuePeriodic@0x0056CDA0` | ? | ? | ? | 1 |
-| 75 | 533 | G. The delay state; periodic, aura and channelled skills | SKILLS_SrvDo(id, lvl, 1, 0, 0) at once; then SKILLS_QueuePeriodic(id, lvl, 1). | – | ? | ? | ? | 1 |
-| 76 | 535 | G. The delay state; periodic, aura and channelled skills | G5. repeat has no server reader; its three stock rows are the three startmana rows. | – | ? | ? | ? | 1 |
-| 77 | 542 | H. Item-granted skills and item-event casts | charge. Not reached in the run. | `struct:SkillEntry+0x38` | ? | ? | ? | 1 |
-| 78 | 544 | H. Item-granted skills and item-event casts | … item 1, 0); EVENT_ItemAuraTick repeats it while stat 151 at that layer is above 0. | – | ? | ? | ? | 1 |
-| 79 | 548 | H. Item-granted skills and item-event casts | H3. ITEMSKILL_Cast(caster, id, lvl, target, x, y, effect) → bool: | `fn:ITEMSKILL_Cast@0x005FDA80` | ? | ? | ? | 1 |
-| 80 | 560 | H. Item-granted skills and item-event casts | ItemEffect rows hold 1. | `fn:SKILLS_SrvDo@0x0056F7F0` | ? | ? | ? | 1 |
-| 81 | 562 | H. Item-granted skills and item-event casts | runs its ItemEffect only on attack, kill or hit. | `0x005C054E` | ? | ? | ? | 1 |
-| 82 | 565 | H. Item-granted skills and item-event casts |  | `fn:sub_005FDCA0_ItemCastAtUnit@0x005FDCA0` | ? | ? | ? | 1 |
-| 83 | 569 | H. Item-granted skills and item-event casts | , ) The later tries, from the reading. | `fn:sub_005FD850_ItemTargetRandomPoint@0x005FD850` | ? | ? | ? | 1 |
-| 84 | 571 | H. Item-granted skills and item-event casts | boundaries. | `fn:sub_005FD9C0_ItemTargetCorpse@0x005FD9C0` | ? | ? | ? | 1 |
-| 85 | 581 | I. The skill packet | I1. SkillSt32Hit(game, unit, id, lvl) → i32: | `fn:sub_005D7EA0_SkillSt32Hit@0x005D7EA0` | ? | ? | ? | 1 |
-| 86 | 597 | I. The skill packet | I2. SKILLS_RollElemDamage(unit, p, id, lvl): | `fn:SKILLS_RollElemDamage@0x0056E0C0` | ? | ? | ? | 1 |
-| 87 | 610 | I. The skill packet | … flags & 2 is clear), which adds edPct to stat 25 and reads the conversion. | – | ? | ? | ? | 1 |
-| 88 | 617 | I. The skill packet | Strike and others. | tbl:Skills.txt:EType | ? | ? | ? | 1 |
-| 89 | 620 | I. The skill packet | no flags, no calc2/calc3, and SrcDam passed as stored (0 not replaced). | – | ? | ? | ? | 1 |
-| 90 | 628 | I. The skill packet | the delivery's on the action frame. | `fn:SKILL_MeleeDeliverDo@0x0056F1F0` | ? | ? | ? | 1 |
-| 91 | 643 | I. The skill packet | that call. | `0x00644C20` | ? | ? | ? | 1 |
-| 92 | 648 | I. The skill packet | stops). | `0x00647C4D` | ? | ? | ? | 1 |
-| 93 | 653 | I. The skill packet | neither GetPhysMin nor GetPhysMax, and does not read MaxDam. | `0x0056CB42` | ? | ? | ? | 1 |
-| 94 | 672 | I. The skill packet | them. | `0x0056CB71` | ? | ? | ? | 1 |
-| 95 | 680 | I. The skill packet | skill id from a variable, are unfollowed. | `0x00647BF0` | ? | ? | ? | 1 |
-| 96 | 684 | I. The skill packet | … the kick's minimum and maximum take stat 137, then the boots' values plus stat 137. | `0x005D560F` | ? | ? | ? | 1 |
-| 97 | 691 | I. The skill packet | items still reach that build. | `0x0057DC28` | ? | ? | ? | 1 |
-| 98 | 697 | I. The skill packet | calcs (DmgSymPerCalc, EDmgSymPerCalc, the skill('…'.blvl) terms of calc1–calc4). | – | ? | ? | ? | 1 |
-| 99 | 703 | J. Progressive charges and the finisher | J1. PrgChargeHitDo(unit, id, lvl): (srvdofunc 34: Tiger Strike, Cobra Strike, Royal Strike) | `fn:sub_005D3490_PrgChargeHitDo@0x005D3490` | ? | ? | ? | 1 |
-| 100 | 710 | J. Progressive charges and the finisher | J2. AddProgressiveCharge(unit, id, lvl): | `fn:SKILLS_AddProgressiveCharge@0x005D3320` | ? | ? | ? | 1 |
-| 101 | 717 | J. Progressive charges and the finisher | the parity of Unit+ >> 8, then runs 34. | `fn:sub_005D35D0_PrgChargeHitDualDo@0x005D35D0` | ? | ? | ? | 1 |
-| 102 | 724 | J. Progressive charges and the finisher | … srvprgfunc n from the do table, and queues a client message carrying the peeked value. | – | ? | ? | ? | 1 |
-| 103 | 727 | J. Progressive charges and the finisher | (1, 2, 3); for a row without progressive it is srvmissilea. | `fn:sub_005D3CF0_SkillSrvMissileByCharge@0x005D3CF0` | ? | ? | ? | 1 |
-| 104 | 741 | J. Progressive charges and the finisher |  | `0x005D4E80` | ? | ? | ? | 1 |
-| 105 | 748 | J. Progressive charges and the finisher | the current count's entry runs. | `0x005D53E0` | ? | ? | ? | 1 |
-| 106 | 749 | J. Progressive charges and the finisher | J4. No finisher event was checked by (56 finisher calls logged as oracles). | run:2026-10-25-skills | ? | ? | ? | 1 |
-| 107 | 755 | K. Stat-event handlers | K1. UNIT_DispatchEvent(unit, event, other, packet): | `fn:UNIT_DispatchEvent@0x005C0C30` | ? | ? | ? | 1 |
-| 108 | 765 | K. Stat-event handlers | attacked…, damaged… and killed. | `data:g_StatEventFuncs@0x007325B0` | ? | ? | ? | 1 |
-| 109 | 769 | K. Stat-event handlers | attacker's kill handlers (28, 31) run inside COMBAT_ApplyDamage. | `0x0057C8DD` | ? | ? | ? | 1 |
-| 110 | 774 | K. Stat-event handlers | 1 — the skill's srvmissilea from the unit toward a hostile … | `fn:sub_005CAB40_StatEv01MissileAtSource@0x005CAB40` | ? | ? | ? | 1 |
-| 111 | 775 | K. Stat-event handlers | 2 — a packet, result , + = calc1, on the … | `fn:sub_005CAC50_StatEv02CalcHitAttacker@0x005CAC50` | ? | ? | ? | 1 |
-| 112 | 776 | K. Stat-event handlers | 3 — 1 (2 for EType 10) | `fn:sub_005CAD40_StatEv03ElemHitAttacker@0x005CAD40` | ? | ? | ? | 1 |
-| 113 | 777 | K. Stat-event handlers | 4 — none while the cursed unit survives; one step when … | `fn:sub_005C5F50_StatEv04ReturnDamage@0x005C5F50` | ? | ? | ? | 1 |
-| 114 | 778 | K. Stat-event handlers | 5 — draws ( 2 calls); effect | `fn:sub_005C61E0_StatEv05LifeTap@0x005C61E0` | ? | ? | ? | 1 |
-| 115 | 779 | K. Stat-event handlers | 6 — draws ( 7 calls); effect | `fn:sub_005BF670_StatEv06ThornsPhys@0x005BF670` | ? | ? | ? | 1 |
-| 116 | 780 | K. Stat-event handlers | 7 — draws ( 103 calls); effect | `fn:sub_005BF960_StatEv07Knockback@0x005BF960` | ? | ? | ? | 1 |
-| 117 | 781 | K. Stat-event handlers | 8 — draws ( 103 calls); effect | `fn:sub_005BFA10_StatEv08Howl@0x005BFA10` | ? | ? | ? | 1 |
-| 118 | 782 | K. Stat-event handlers | 9 — draws ( 65 calls); effect | `fn:sub_005BFAA0_StatEv09Stupidity@0x005BFAA0` | ? | ? | ? | 1 |
-| 119 | 783 | K. Stat-event handlers | 10 — lightning stat << 8 to the attacker | `fn:sub_005BF720_StatEv10ThornsLightning@0x005BF720` | ? | ? | ? | 1 |
-| 120 | 784 | K. Stat-event handlers | 11, 12 — fire, cold to the other unit | `fn:sub_005BF7D0_StatEv11ThornsFire@0x005BF7D0` | ? | ? | ? | 1 |
-| 121 | 785 | K. Stat-event handlers | 13 — draws ( 9 calls); effect | `fn:sub_005BFBB0_StatEv13DamageToMana@0x005BFBB0` | ? | ? | ? | 1 |
-| 122 | 786 | K. Stat-event handlers | 14–16 — draws for 15 and 16 ( 182, 138 calls), … | `fn:STATEVENT_OpenWounds@0x005BFE60` | ? | ? | ? | 1 |
-| 123 | 787 | K. Stat-event handlers | 17 — draws ( 172 calls) and the cap (K2); the … | `fn:sub_005C0130_StatEv17ManaAfterKill@0x005C0130` | ? | ? | ? | 1 |
-| 124 | 788 | K. Stat-event handlers | 18 — for a demon victim, life += stat · 256 | `fn:sub_005C0260_StatEv18HealAfterDemonKill@0x005C0260` | ? | ? | ? | 1 |
-| 125 | 789 | K. Stat-event handlers | 19 — draws ( 103 calls); effect | `fn:sub_005C0310_StatEv19Slow@0x005C0310` | ? | ? | ? | 1 |
-| 126 | 792 | K. Stat-event handlers | 22 — draws ( 2 calls); effect | `fn:sub_005C6370_StatEv22BoneArmorAbsorb@0x005C6370` | ? | ? | ? | 1 |
-| 127 | 793 | K. Stat-event handlers | 23 — heals the golem and its owner | `fn:sub_005C6530_StatEv23BloodGolemHit@0x005C6530` | ? | ? | ? | 1 |
-| 128 | 794 | K. Stat-event handlers | 24 — moves a share of each element to mana | `fn:sub_005CA6C0_StatEv24EnergyShield@0x005CA6C0` | ? | ? | ? | 1 |
-| 129 | 795 | K. Stat-event handlers | 25 — absorbs fire, cold, lightning from aurastat1 | `fn:sub_005C87A0_StatEv25CycloneArmor@0x005C87A0` | ? | ? | ? | 1 |
-| 130 | 796 | K. Stat-event handlers | 26 — the owner loses life with the golem, floor 256 | `fn:sub_005C6690_StatEv26BloodGolemDamaged@0x005C6690` | ? | ? | ? | 1 |
-| 131 | 797 | K. Stat-event handlers | 27 — slow by its stat 150 | `fn:sub_005C6760_StatEv27ClayGolemSlow@0x005C6760` | ? | ? | ? | 1 |
-| 132 | 799 | K. Stat-event handlers | 29 — draws ( 78 calls); effect | `fn:sub_005C0770_StatEv29RestInPeace@0x005C0770` | ? | ? | ? | 1 |
-| 133 | 801 | K. Stat-event handlers | 31 — stat 155 | `fn:STATEVENT_Reanimate@0x005C09E0` | ? | ? | ? | 1 |
-| 134 | 819 | K. Stat-event handlers | , and the handlers no session fired (1–4, 10–12, 14, | – | ? | ? | ? | 1 |
-| 135 | 820 | K. Stat-event handlers | 18, 23–27, 30, 31). | `0x005BFA38` | ? | ? | ? | 1 |
-| 136 | 826 | K. Stat-event handlers | came at full mana) and overlay 151 are the reading. | run:2026-10-27-skills | ? | ? | ? | 1 |
-| 137 | 832 | K. Stat-event handlers | (combat/to-hit). | `fn:sub_0057D810_PreventHealHook@0x0057D810` | ? | ? | ? | 1 |
-| 138 | 838 | K. Stat-event handlers | a monster defender outside 704–709, so the type and class tests are the reading. | run:2026-10-27-skills | ? | ? | ? | 1 |
-| 139 | 843 | L. Summons | L1. SkillDo114Summon(unit, id, lvl) → i32: (Raven; the pattern of the summon do functions) | `fn:sub_005C6910_SkillDo114Summon@0x005C6910` | ? | ? | ? | 1 |
-| 140 | 851 | L. Summons | L2. SummonSetLevel(owner, m, lvl, skillLvl): | `fn:sub_005C49E0_SummonSetLevel@0x005C49E0` | ? | ? | ? | 1 |
-| 141 | 858 | L. Summons | L3. SpawnOwnedMonster(block) → unit: | `fn:sub_0056D940_SpawnOwnedMonster@0x0056D940` | ? | ? | ? | 1 |
-| 142 | 872 | L. Summons | … summons share one input: the clamps, which do not bind at 84, are the reading. | run:2026-10-25-skills | ? | ? | ? | 1 |
-| 143 | 874 | L. Summons | a summon gets them whole, whatever its class's noRatio bit. | `fn:sub_005C49E0_SummonSetLevel@0x005C49E0` | ? | ? | ? | 1 |
-| 144 | 878 | L. Summons | (64-bit when large), sumskill1..5 with sumskcalc, sumumod, sumoverlay, and the equipment init. | – | ? | ? | ? | 1 |
-| 145 | 881 | L. Summons | SpawnOwnedMonster adds no draw of its own. | `fn:sub_005B2F20_SpawnAtPos@0x005B2F20` | ? | ? | ? | 1 |
-| 146 | 891 | L. Summons | noRatio (its MonLvl term), the golems and the other summons are the reading. | `fn:sub_005C4470_SummonInitStats@0x005C4470` | ? | ? | ? | 1 |
-| 147 | 896 | L. Summons | later falls (a skill shrine wearing off), PetLimitRefresh recomputes each type's limit and runs PetLimit. | – | ? | ? | ? | 1 |
-| 148 | 901 | L. Summons | L5. RaiseSkeletonDo(unit, id, lvl): (srvdofunc 31) | `fn:sub_005C4B00_SkillDo31RaiseSkeleton@0x005C4B00` | ? | ? | ? | 1 |
-| 149 | 916 | L. Summons | … (no draw at skill level 2 or less) and the class-364 path are the reading. | – | ? | ? | ? | 1 |
-| 150 | 923 | M. Monster skill use | frame SKILLS_DoUsedSkill (E2). The command is monsters/ai/machinery § B; the choice is an input here. | `fn:sub_005DEAD0_MonAiUseSkill@0x005DEAD0` | ? | ? | ? | 1 |
-| 151 | 929 | M. Monster skill use | combat/damage § E's. | – | ? | ? | ? | 1 |
-| 152 | 943 | M. Monster skill use | values in every call), the classic scaling, the expansion bonus, and type 10's redraw. | `0x005A4FB3` | ? | ? | ? | 1 |
-| 153 | 950 | M. Monster skill use | the attack mode's min, max and to-hit, before the classic and player-count adjustments. | – | ? | ? | ? | 1 |
-| 154 | 967 | M. Monster skill use | … and 428. SKILLS_GetPhysMin, GetPhysMax and GetToHit are checked only at this one row and level. | – | ? | ? | ? | 1 |
-| 155 | 977 | N. Ammunition and weapon wear | gates are items/economy § H. | – | ? | ? | ? | 1 |
-| 156 | 981 | N. Ammunition and weapon wear | N2. SkillWeaponWear(unit, chance, amount): (from start 7, Impale, after its hit: chance calc2, amount calc3) | `fn:sub_005DAA40_SkillWeaponWear@0x005DAA40` | ? | ? | ? | 1 |
-| 157 | 993 | N. Ammunition and weapon wear | the weapon has durability. | `fn:sub_005DAB40_SkillSt07ImpaleHit@0x005DAB40` | ? | ? | ? | 1 |
-| 158 | 1002 | O. Tier A: the start and do functions | 1 Kick — for 32 do events ; the build | `0x0056CAF0` | ? | ? | ? | 1 |
-| 159 | 1003 | O. Tier A: the start and do functions | 2 Throw, 4 Left Hand Throw — for Left Hand Throw's 36 do events ; otherwise | `fn:sub_0056F460_SkillThrowDo@0x0056F460` | ? | ? | ? | 1 |
-| 160 | 1004 | O. Tier A: the start and do functions | 25 Plague Javelin, 12 Multiple Shot — 8: calc1 missiles fanned perpendicular to the line to … | `fn:sub_005DB410_SkillDo08MultiShot@0x005DB410` | ? | ? | ? | 1 |
-| 161 | 1005 | O. Tier A: the start and do functions | 10 Jab — to-hit, defence, build, 1–2 | `0x005DB2D0` | ? | ? | ? | 1 |
-| 162 | 1007 | O. Tier A: the start and do functions | 259 Fists of Fire — J1, the finisher J3 | `fn:sub_005D35D0_PrgChargeHitDualDo@0x005D35D0` | ? | ? | ? | 1 |
-| 163 | 1008 | O. Tier A: the start and do functions | 117 Holy Shield, 68 Bone Armor — bit 6, STATE_GroupClear(1), STATE_ApplyTimed(aurastate, auralencalc), the aura and passive … | `fn:sub_005C9480_SkillDo18TimedSelfState@0x005C9480` | ? | ? | ? | 1 |
-| 164 | 1009 | O. Tier A: the start and do functions | 42 Static Field — ForUnitsInRange(aurarangecalc, aurafilter) with calc1, calc2, the elemental length, EType … | `fn:sub_005C9800_SorSkillStaticMin@0x005C9800` | ? | ? | ? | 1 |
-| 165 | 1010 | O. Tier A: the start and do functions | 48 Nova, 44 Frost Nova, 130 Howl — bit 6; NovaAtUnit(unit, srvmissilea, id, lvl, vel + calc1) | `fn:sub_005C9B50_SkillDo22NovaAtSelf@0x005C9B50` | ? | ? | ? | 1 |
-| 166 | 1011 | O. Tier A: the start and do functions | 54 Teleport — the target point, room checks, the move | `fn:sub_005CA360_SkillTeleportDo@0x005CA360` | ? | ? | ? | 1 |
-| 167 | 1012 | O. Tier A: the start and do functions | 56 Meteor — bit 6; srvmissilea at the target point when the … | `0x005CA3E0` | ? | ? | ? | 1 |
-| 168 | 1013 | O. Tier A: the start and do functions | 66 Amplify Damage — bit 6; auratargetstate, the stats and events on the … | `fn:sub_005C37C0_SkillDo30Curse@0x005C37C0` | ? | ? | ? | 1 |
-| 169 | 1014 | O. Tier A: the start and do functions | 98 Might — the aura run (stats/states § F) | `fn:sub_005CF010_PalAuraDo@0x005CF010` | ? | ? | ? | 1 |
-| 170 | 1015 | O. Tier A: the start and do functions | 102 Holy Fire — 1 per run | `fn:sub_005CF3A0_AuraHitDo@0x005CF3A0` | ? | ? | ? | 1 |
-| 171 | 1016 | O. Tier A: the start and do functions | 221 Raven — — | `fn:sub_005C6910_SkillDo114Summon@0x005C6910` | ? | ? | ? | 1 |
-| 172 | 1017 | O. Tier A: the start and do functions | 225 Firestorm — bit 6; with calc1 > 0 one SkillMissileCreate, then … | `fn:sub_005C7160_SkillDo117Firestorm@0x005C7160` | ? | ? | ? | 1 |
-| 173 | 1018 | O. Tier A: the start and do functions | 36 Fire Bolt, 251 Fire Trauma — the srvmissile only (E4) | `fn:SKILLS_SrvDo@0x0056F7F0` | ? | ? | ? | 1 |
-| 174 | 1033 | O. Tier A: the start and do functions | (L5). | run:2026-10-27-skills | ? | ? | ? | 1 |
-| 175 | 1050 | P. Draws and seeds per event kind | request — none (stat 328 + 1) | `fn:SKILLS_CanUse@0x00647960` | ? | ? | ? | 1 |
-| 176 | 1054 | P. Draws and seeds per event kind | periodic queue — SKILLS_QueuePeriodic | `fn:SKILLS_QueuePeriodic@0x0056CDA0` | ? | ? | ? | 1 |
-| 177 | 1055 | P. Draws and seeds per event kind | finisher — attacker; area units; local | `fn:COMBAT_PrgFinisher@0x005D5220` | ? | ? | ? | 1 |
-| 178 | 1056 | P. Draws and seeds per event kind | handler — for the handlers § K marks ( 1 303 … | `data:g_StatEventFuncs@0x007325B0` | ? | ? | ? | 1 |
-| 179 | 1058 | P. Draws and seeds per event kind | item cast — none of its own; ItemTarget 2: 2 per try | `fn:ITEMSKILL_Cast@0x005FDA80` | ? | ? | ? | 1 |
-| 180 | 1059 | P. Draws and seeds per event kind | summon — for 219 summons ; otherwise | `fn:sub_005B2F20_SpawnAtPos@0x005B2F20` | ? | ? | ? | 1 |
-| 181 | 1061 | P. Draws and seeds per event kind | weapon wear — SkillWeaponWear | `fn:sub_005DAA40_SkillWeaponWear@0x005DAA40` | ? | ? | ? | 1 |
-| 182 | 1062 | P. Draws and seeds per event kind | Armageddon period — re-seeds the caster's seed (P2) | `fn:sub_005C8520_SkillDo146Armageddon@0x005C8520` | ? | ? | ? | 1 |
-| 183 | 1079 | P. Draws and seeds per event kind | … AI logged, 41 of 49 new gaps of this shape close (monsters/ai A4 and A5). | run:2026-10-25-skills | ? | ? | ? | 1 |
-| 184 | 1090 | P. Draws and seeds per event kind | draw. | `fn:sub_005C8520_SkillDo146Armageddon@0x005C8520` | ? | ? | ? | 1 |
-| 185 | 1094 | Outputs | The unit's mode and used skill; Unit+ bit 6 after the do. | `fn:SKILLS_SrvDo@0x0056F7F0` | ? | ? | ? | 1 |
-| 186 | 1097 | Outputs | monsters/spawn and monsters/stats. | `fn:COMBAT_ResolveAndQueue@0x0057DBF0` | ? | ? | ? | 1 |
-| 187 | 1098 | Outputs | … mana (or life, or a charge), the request counter stat 328, the delay state 121. | – | ? | ? | ? | 1 |
-| 188 | 1108 | Worked example | ) The step's use, low mod 100 against Raise Skeleton's Param1 (5), was not logged. | run:2026-10-25-skills | ? | ? | ? | 1 |
-| 189 | 1114 | Reimplementation notes | changes every later pierce count of the player's missiles. | `0x00549D50` | ? | ? | ? | 1 |
-| 190 | 1116 | Reimplementation notes |  | `0x0056F7AA` | ? | ? | ? | 1 |
-| 191 | 1119 | Reimplementation notes | events by frame accordingly. | `fn:sub_005D7EA0_SkillSt32Hit@0x005D7EA0` | ? | ? | ? | 1 |
-| 192 | 1122 | Reimplementation notes | One delay state blocks all delayed skills, not only the one cast. | `fn:SKILLS_DelayOk@0x006478F0` | ? | ? | ? | 1 |
-| 193 | 1124 | Reimplementation notes | Unit+ = 4 case. | `0x005DEB08` | ? | ? | ? | 1 |
-| 194 | 1126 | Reimplementation notes | sets. | `0x005C054E` | ? | ? | ? | 1 |
-| 195 | 1127 | Reimplementation notes | The ally test of StartUsedSkill is dead. Do not add a refusal there. | `0x0056FBB2` | ? | ? | ? | 1 |
+| 1 | 40 | Entry points | A player's skill request at a location (packets , … | `fn:PLRMSG_SkillAtXY@0x00549AD0` | a-logs | the `CU0` lines at the request call sites (0x00549B0F, 0x00549B49) of run:2026-10-27-skills paired with the `SST` that follows; new pairing check in skills.py | S2a | 1 |
+| 2 | 41 | Entry points | A player's skill request at a unit (packets , … | `fn:PLRMSG_SkillAtUnit@0x00549BA0` | a-logs | as row 1, the unit-form call sites (0x00549BC6, 0x00549C11) | S2a | 1 |
+| 3 | 42 | Entry points | The request checks — for codes 0, 1, 6 and 8 and their … | `fn:SKILLS_CanUse@0x00647960` | c-emu | `SKILLS_CanUse` on synthetic units and entries for codes 2, 3, 4, 5, 7 against the `CU.code` model of skills.py | S2ae | 1 |
+| 4 | 43 | Entry points | A skill mode starts (player modes 7, 8, 10–16, … — for the caster's seed in the start events of … | `fn:SKILLS_StartUsedSkill@0x0056FAF0` | a-logs | the monster rows' `SST` lines of run:2026-10-30-skills-catalogue (caster steps reported, not checked) against the catalogue emulation models | S2a | 1 |
+| 5 | 44 | Entry points | The mode's action frame — for the caster's seed in the do events of … | `fn:SKILLS_DoUsedSkill@0x0056FC50` | a-logs | as row 4, the monster rows' `SDO` lines (reported steps per row in check.txt) made a check | S2a | 1 |
+| 6 | 46 | Entry points | A periodic or aura skill runs again (unit events … | `fn:EVENT_SelectedAuraTick@0x0056FCB0` | a-logs | the Might and Holy Fire aura runs of run:2026-10-25-skills pal-1, pal-2 (frame-stamped `SDO`): the tick frames against G3 | S2a | 1 |
+| 7 | 47 | Entry points | An item's chance-to-cast fires | `fn:ITEMSKILL_Cast@0x005FDA80` | a-logs | the 64 item casts of run:2026-10-30-skills-catalogue cat-chain-1..3 (`EVH` event 7 then `SDO` skill 53 with the item argument) | S2a | 1 |
+| 8 | 48 | Entry points | A player's normal attack under a charged progressive state | `fn:COMBAT_PrgFinisher@0x005D5220` | a-logs | the 56 `PF0`/`PFC`/`PFR`/`PF1` finisher calls of run:2026-10-25-skills ass-1, ass-2 (oracles): a finisher model in skills.py | S2a | 1 |
+| 9 | 49 | Entry points | A stat event fires on a unit | `fn:UNIT_DispatchEvent@0x005C0C30` | a-logs | the 1 303 `EVH`/`EVR` lines of run:2026-10-25-skills and run:2026-10-27-skills: the dispatch entry per event kind | S2a | 1 |
+| 10 | 50 | Entry points | A skill summons a monster | `fn:sub_0056D940_SpawnOwnedMonster@0x0056D940` | a-logs | the 219 `SP0`/`SP1` lines of run:2026-10-25-skills and run:2026-10-27-skills | S2a | 1 |
+| 11 | 51 | Entry points | A monster's AI uses a skill | `fn:sub_005DEAD0_MonAiUseSkill@0x005DEAD0` | a-logs | the `MonAiUseSkill` boundary lines of run:2026-11-03-ai (ai.gdb) followed by the monster's mode start | S2a | 1 |
+| 12 | 94 | Inputs and oracles | the frame of a mode that carries event code … — a logged input: animation timing is plan 0050's | `fn:sub_00580460_PlrModeSkillFrame@0x00580460` | a-logs | the frame-stamped `SST`/`SDO` pairs of the skills runs against the anim/timing event-frame model (tools/anim.py) | S2a | 1 |
+| 13 | 95 | Inputs and oracles | the monster's choice of skill, mode and target — an input here: monsters/ai/machinery § T for the tier, … | `fn:sub_005DEAD0_MonAiUseSkill@0x005DEAD0` | d-none | a boundary declaration: the choice is monsters/ai/machinery's claim, not this spec's | – | 1 |
+| 14 | 96 | Inputs and oracles | the numbered start and do functions outside § O — value oracles of the checker; specified in the catalogue | `data:g_SkillDoFuncs@0x007322B0` | d-none | a boundary declaration: the functions are the catalogue's (value oracles here) | – | 1 |
+| 15 | 97 | Inputs and oracles | SKILLS_ForUnitsInRange's and SkillForUnitsNearTarget's unit order, SkillUnitFilter — logged as the list of units the callback ran … | `fn:SKILLS_ForUnitsInRange@0x0056B7E0` | d-none | a boundary declaration: unit order is a logged input | – | 1 |
+| 16 | 98 | Inputs and oracles | the pet chosen for removal — a logged value | `fn:sub_00575850_PetLimit@0x00575850` | d-none | a boundary declaration: the removed pet is a logged input | – | 1 |
+| 17 | 99 | Inputs and oracles | a calc's value — data/calc | `fn:SKILLS_EvalCalc@0x00646CA0` | d-none | a boundary declaration: calcs are data/calc's | – | 1 |
+| 18 | 105 | Constants | start table — g_SkillStartFuncs, bound | `data:g_SkillStartFuncs@0x00732140` | c | the start table's bound compare at 0x0056F75D and the table extent read with r2 (second tool) | S2c | 1 |
+| 19 | 106 | Constants | do table — g_SkillDoFuncs, bound (shared by srvdofunc, srvprgfunc1..3, ItemEffect) | `data:g_SkillDoFuncs@0x007322B0` | c | as row 18, the do table's bound at 0x0056F911 | S2c | 1 |
+| 20 | 107 | Constants | stat-event table — g_StatEventFuncs, 31 handlers (ids 1..31), bound | `data:g_StatEventFuncs@0x007325B0` | c | the handler table's 31 entries and the bound read with r2; ItemStatCost and Skills event columns over every row | S2c | 1 |
+| 21 | 108 | Constants | delay state — 121 skilldelay | `fn:SKILLS_SetDelayState@0x0056EF90` | a-logs | the `STA`/`DLY` lines of run:2026-10-25-skills and run:2026-10-27-skills: state 121 at every delay set | S2a | 1 |
+| 22 | 109 | Constants | blood mana state — 114 | `fn:SKILLS_PayCost@0x0056BFE0` | c | state 114's readers and writers by an exhaustive xref scan with r2 (`BloodManaPay`, `ManaOk`) | S2c | 1 |
+| 23 | 110 | Constants | periodic grid floor — perdelay 5 when the calc gives less than 6 | `fn:SKILLS_QueuePeriodic@0x0056CDA0` | c | the floor at `SKILLS_QueuePeriodic` read with r2 plus the aura grid's second reader (stats/states) | S2c | 1 |
+| 24 | 111 | Constants | charge cap — 3 | `fn:SKILLS_AddProgressiveCharge@0x005D3320` | c | the cap 3 at `SKILLS_AddProgressiveCharge` and the finisher's charge-count reader (second code path) | S2c | 1 |
+| 25 | 170 | B. The request | B1. PacketSkill(player, packet): | `data:g_SrvPacketTable@0x006E0D18` | a-logs | run:2026-10-27-skills: stat 328 at each `MH` line against the count of `CU0` request calls before it (one rise per request) | S2a | 1 |
+| 26 | 177 | B. The request | B2. SkillAtXY(player, entry, x, y): | `fn:PLRMSG_SkillAtXY@0x00549AD0` | a-logs | the `CU0`→`SST` pairs of run:2026-10-27-skills (code 0 path of B2); the refusal branches stay the reading | S2a | 1 |
+| 27 | 187 | B. The request | B3. SkillAtUnit(player, entry, type, guid, walk): | `fn:PLRMSG_SkillAtUnit@0x00549BA0` | a-logs | as row 26, the unit-form calls | S2a | 1 |
+| 28 | 196 | B. The request | the unit form needs the unit in the same act. | `fn:sub_005496F0_PktReadXY@0x005496F0` | d-none | a guard a stock client never fails (malformed or cross-act packets) | – | 1 |
+| 29 | 200 | B. The request | the checks then decide. | `0x00549D50` | a-logs | stat 328 logged at `MH` lines of run:2026-10-27-skills against the request count; the pierce count model `MC.pierce` | S2a | 1 |
+| 30 | 202 | B. The request | and 1 for a player in a meleeonly state. | `fn:SKILLS_GetRangeType@0x00645460` | c-emu | `SKILLS_GetRangeType` over every Skills row with and without a missile weapon and `meleeonly` | S2ae | 1 |
+| 31 | 205 | B. The request | sets + ← 0. So Attack and Left Hand Swing alternate, request by request. | – | a-logs | the alternating skill ids 0 and 5 of the `SDO` lines of run:2026-10-27-skills barh-1..3 (request by request) | S2a | 1 |
+| 32 | 237 | C. The request checks (SKILLS_CanUse) | C1. SKILLS_CanUse(unit, entry) → i32: | `fn:SKILLS_CanUse@0x00647960` | c-emu | `SKILLS_CanUse` with synthetic units and entries; the `CU.code` model of skills.py | S2ae | 1 |
+| 33 | 257 | C. The request checks (SKILLS_CanUse) | record. | `fn:SKILLS_CanUse@0x00647960` | c-emu | as row 32: codes 2, 3, 4, 5, 7, `startmana`, the item-charge tests | S2ae | 1 |
+| 34 | 260 | C. The request checks (SKILLS_CanUse) | … Hand Swing (5) dual wield and a weapon in the hand; any other skill passes. | – | c-emu | `SkillAmmoOk` on synthetic hands (throwables, stat 125, dual wield), in the `SKILLS_CanUse` emulation | S2ae | 1 |
+| 35 | 263 | C. The request checks (SKILLS_CanUse) | … (for skills 4 and 5 with the primary weapon taken out of its hand first). | – | c-emu | `SKILLS_WeaponTypeOk` with synthetic hand items over the `itypea1`/`etypea1` rows | S2ae | 1 |
+| 36 | 268 | C. The request checks (SKILLS_CanUse) | cost ≤ stat 8. | `fn:SKILLS_ManaOk@0x00647540` | c-emu | `SKILLS_ManaOk`: charges, the clamp, state 114, `srvdofunc` 116, against the cost model of F1 | S2ae | 1 |
+| 37 | 273 | C. The request checks (SKILLS_CanUse) | level term rests on the payments of F1, not on these. | run:2026-10-27-skills | c-emu | as row 36: the unreached branches and the level term | S2ae | 1 |
+| 38 | 276 | C. The request checks (SKILLS_CanUse) | other value passes. | `fn:SKILLS_RestrictOk@0x00644060` | c-emu | `SKILLS_RestrictOk` over the `restrict` values with synthetic state lists (0x0063A510 a boundary) | S2ae | 1 |
+| 39 | 279 | C. The request checks (SKILLS_CanUse) | first frame needs startmana, later ones the per-use cost only. | `fn:SKILLS_StartManaOk@0x006440F0` | c-emu | `SKILLS_StartManaOk` over the three `startmana` rows with state 12 on and off | S2ae | 1 |
+| 40 | 282 | C. The request checks (SKILLS_CanUse) | layer skill · 64 + (level & ); a missing item passes. | `fn:SKILLS_ItemChargesOk@0x00647840` | c-emu | `SKILLS_ItemChargesOk` with a synthetic item stat 204 list | S2ae | 1 |
+| 41 | 291 | C. The request checks (SKILLS_CanUse) | request, stated from the code reading. | `0x004D9FC5` | c | the client's sender after 0x004D9FC5: every request packet send gated on `SKILLS_CanUse` (r2 xref scan of the send sites) | S2c | 1 |
+| 42 | 292 | C. The request checks (SKILLS_CanUse) | … monster does not pass through SKILLS_CanUse on its way to the mode start (§ M). | – | c | an exhaustive xref scan of `SKILLS_CanUse` with r2: no caller on the monster path | S2c | 1 |
+| 43 | 319 | D. The mode start | D1. PlayerModeCmd(entry, mode, x, y, force): | `fn:sub_005809D0_PlayerModeCmd@0x005809D0` | a-logs | the `CU0`→`SST` frames of run:2026-10-27-skills (the mode start follows a code-0 request) | S2a | 1 |
+| 44 | 326 | D. The mode start | D2. SKILLS_StartUsedSkill(game, unit) → i32: | `fn:SKILLS_StartUsedSkill@0x0056FAF0` | a-logs | the `SST` entry and exit lines of run:2026-10-25-skills (1 142 starts, returns and nested `PAY`) | S2a | 1 |
+| 45 | 338 | D. The mode start | D3. SKILLS_SrvStart(game, unit, id, lvl, noCost) → i32: | `fn:SKILLS_SrvStart@0x0056F640` | a-logs | as row 44: the start function then the payment order, from the nested `PAY` lines | S2a | 1 |
+| 46 | 355 | D. The mode start |  | `0x0056FB49` | c | the four refuse sites read with r2: each pushes mode 5 with force 1 for a player | S2c | 1 |
+| 47 | 358 | D. The mode start | passes. | `fn:SKILLS_TargetCheck@0x0056CC60` | c-emu | `SKILLS_TargetCheck` with synthetic targets (dead, hostile, ally, `TargetCorpse`) | S2ae | 1 |
+| 48 | 361 | D. The mode start | are where it matters. | `0x0056FBB2` | c | the call site 0x0056FBB2 and `SkillAllyTest`'s bit test read with r2 (second tool) | S2c | 1 |
+| 49 | 364 | D. The mode start | exception and no state-114 branch (unlike C4). | `fn:SKILLS_SrvManaCheck@0x0056C160` | c-emu | `SKILLS_SrvManaCheck` with a used entry differing from the id, item and 116 rows | S2ae | 1 |
+| 50 | 366 | D. The mode start | usemanaondo rows (Plague Javelin, Blade Fury). noCost 1 comes from an item cast (§ H). | – | a-logs | `PAY` nested in `SDO` and not in `SST` for Fire Bolt, Plague Javelin rows in run:2026-10-25-skills | S2a | 1 |
+| 51 | 370 | D. The mode start | more there. | `fn:sub_005CAF30_SkillDo83DeliverRestart@0x005CAF30` | a-logs | the nested `SST` inside do 109 events of BloodLordFrenzy in run:2026-10-30-skills-catalogue (980 do events) | S2a | 1 |
+| 52 | 380 | E. The do frame and SKILLS_SrvDo | E1. PlayerSkillFrame(unit, event) → i32: | `fn:sub_00580460_PlrModeSkillFrame@0x00580460` | a-logs | one `SDO` per player mode start (`SST`) over run:2026-10-25-skills and run:2026-10-27-skills | S2a | 1 |
+| 53 | 387 | E. The do frame and SKILLS_SrvDo | E2. MonsterAttackFrame(unit): | `fn:sub_005A7670_MonAttackFrame@0x005A7670` | a-logs | the monster modes' repeated `SDO` per `SST` (Submerge 58 starts, 4 971 do) of run:2026-10-30-skills-catalogue | S2a | 1 |
+| 54 | 393 | E. The do frame and SKILLS_SrvDo | E3. SKILLS_DoUsedSkill(unit): | `fn:SKILLS_DoUsedSkill@0x0056FC50` | a-logs | `SDO` then the periodic queue in the aura sessions of run:2026-10-25-skills | S2a | 1 |
+| 55 | 397 | E. The do frame and SKILLS_SrvDo | E4. SKILLS_SrvDo(game, unit, id, lvl, pay, item, effect) → i32: | `fn:SKILLS_SrvDo@0x0056F7F0` | a-logs | the nested order in `SDO`: do function lines, then `MC`, then `PAY` and `DLY`, over run:2026-10-25-skills | S2a | 1 |
+| 56 | 428 | E. The do frame and SKILLS_SrvDo | it. | `0x0057FED8` | c | an exhaustive scan of the `Unit+0xC4` bit-6 stores and clears with r2 (124 and 17 sites) | S2c | 1 |
+| 57 | 430 | E. The do frame and SKILLS_SrvDo | … do not test the bit: the attack-frame handler, and the mode-14 Unit+ = 4 case. | – | c | as row 56: the AI site 0x005DEB08 and the monster mode starts | S2c | 1 |
+| 58 | 435 | E. The do frame and SKILLS_SrvDo | srvmissilea..c and get no missile here. | `fn:SKILLS_SrvDo@0x0056F7F0` | c | Skills.txt over every row: `srvmissile` with no `srvdofunc` (48), rows 307 and 325 | S2c | 1 |
+| 59 | 438 | E. The do frame and SKILLS_SrvDo | distance; a lob keeps the caster as its start and aims at the doubled point. | `0x0056F9D0` | a-logs | the `MC` positions of the item casts of cat-chain-1..3 (run:2026-10-30-skills-catalogue) against the doubled point | S2a | 1 |
+| 60 | 441 | E. The do frame and SKILLS_SrvDo | ITEMSKILL_Cast passes a non-zero effect flag. | `fn:SKILLS_SrvDo@0x0056F7F0` | c | an exhaustive xref scan of `SKILLS_SrvDo` with r2: eight callers, the effect argument per site | S2c | 1 |
+| 61 | 448 | E. The do frame and SKILLS_SrvDo | events. | run:2026-10-25-skills | a-logs | the Plague Javelin delay states of run:2026-10-27-skills amaj-3 (45 do events with part 1) | S2a | 1 |
+| 62 | 456 | F. Costs | F2. SKILLS_PayCost(unit, id, lvl) → i32: | `fn:SKILLS_PayCost@0x0056BFE0` | b | a recipe casting from a charged item (staff with charges): `PAY` and `CU` lines on the charge path | H2a | 1 |
+| 63 | 474 | F. Costs | entry. | `fn:SKILLS_PayCost@0x0056BFE0` | a-logs | `PAY`'s level against the `SST`/`SDO` level of the same event, run:2026-10-25-skills | S2a | 1 |
+| 64 | 477 | F. Costs | the floor can bind. The run's payments never reached the floor. | tbl:Skills.txt:minmana | b | a recipe with Teleport at level 16 or more so the `minmana` floor binds; `PAY` lines | H2a | 1 |
+| 65 | 480 | F. Costs | … nothing is taken and the skill still runs. No such refusal occurred in the run. | – | b | a recipe holding Blade Fury past the mana (new Assassin recipe); `PAY` returning 0 then the do | H2a | 1 |
+| 66 | 484 | F. Costs | set to 256 and the payment fails. Not reached in the run. | `fn:sub_005D2B60_BloodManaPay@0x005D2B60` | a-run | skills.gdb in Worldstone Keep near Oblivion Knights (blood mana curse) with SkillsSor; `PAY` under state 114 | H2b | 1 |
+| 67 | 487 | F. Costs | SKILLS_PayCost after each fragment do 48 makes. | `fn:sub_005D69D0_SkillSt26BladeFury@0x005D69D0` | b | a new Assassin recipe with Blade Fury; `PAY` per fragment | H2a | 1 |
+| 68 | 492 | G. The delay state; periodic, aura and channelled skills | G1. SKILLS_SetDelayState(game, unit, d): | `fn:SKILLS_SetDelayState@0x0056EF90` | a-logs | the `STA`/`DLY` lines and the state end of run:2026-10-27-skills | S2a | 1 |
+| 69 | 496 | G. The delay state; periodic, aura and channelled skills | G2. SKILLS_DelayOk(unit, entry) → bool: | `fn:SKILLS_DelayOk@0x006478F0` | c-emu | `SKILLS_DelayOk` with state 121 on and off over the delayed rows | S2ae | 1 |
+| 70 | 499 | G. The delay state; periodic, aura and channelled skills | G3. SKILLS_QueuePeriodic(unit, id, lvl, selected): | `fn:SKILLS_QueuePeriodic@0x0056CDA0` | a-logs | the aura do frames of pal-1, pal-2 (run:2026-10-25-skills) against the queue frame formula | S2a | 1 |
+| 71 | 512 | G. The delay state; periodic, aura and channelled skills | server's there, which is not read. | run:2026-10-27-skills | b | a logger line writing every client `SKILLS_CanUse` result at 0x004D9FCA during a delay (not only changes) | H2a | 1 |
+| 72 | 517 | G. The delay state; periodic, aura and channelled skills | EvalCalc(delay) ≥ 1 of the row asked for. 23 stock rows have a delay. | `fn:SKILLS_DelayOk@0x006478F0` | a-logs | code-8 client changes in run:2026-10-27-skills for a delayed row other than the setter | S2a | 1 |
+| 73 | 521 | G. The delay state; periodic, aura and channelled skills | the delay is set on the sequence's first event (anim/timing § G, G5). | – | b | a recipe with a delayed sequence-anim row; `DLY` frame against the sequence's events | H2a | 1 |
+| 74 | 529 | G. The delay state; periodic, aura and channelled skills | channelled rows are the startmana rows (C6), not periodic. | `fn:SKILLS_QueuePeriodic@0x0056CDA0` | c | Skills.txt over every row: `periodic`, `startmana`; the cancel at the start (second reader) | S2c | 1 |
+| 75 | 533 | G. The delay state; periodic, aura and channelled skills | SKILLS_SrvDo(id, lvl, 1, 0, 0) at once; then SKILLS_QueuePeriodic(id, lvl, 1). | – | a-logs | the Paladin aura select and runs of run:2026-10-25-skills pal-1, pal-2 (stats 350, 351, `SDO`) | S2a | 1 |
+| 76 | 535 | G. The delay state; periodic, aura and channelled skills | G5. repeat has no server reader; its three stock rows are the three startmana rows. | – | c | an exhaustive xref scan of the `repeat` field offset with r2 | S2c | 1 |
+| 77 | 542 | H. Item-granted skills and item-event casts | charge. Not reached in the run. | `struct:SkillEntry+0x38` | b | as row 62: a charged-item recipe | H2a | 1 |
+| 78 | 544 | H. Item-granted skills and item-event casts | … item 1, 0); EVENT_ItemAuraTick repeats it while stat 151 at that layer is above 0. | – | b | a recipe with an item aura (stat 151); event-9 ticks and `SDO` with item 1 | H2a | 1 |
+| 79 | 548 | H. Item-granted skills and item-event casts | H3. ITEMSKILL_Cast(caster, id, lvl, target, x, y, effect) → bool: | `fn:ITEMSKILL_Cast@0x005FDA80` | a-logs | the 64 item casts of cat-chain-1..3: `SDO` with item 1, no `PAY`, no `DLY` | S2a | 1 |
+| 80 | 560 | H. Item-granted skills and item-event casts | ItemEffect rows hold 1. | `fn:SKILLS_SrvDo@0x0056F7F0` | a-logs | as row 79; Skills.txt `ItemEffect` over every row for the counts | S2a | 1 |
+| 81 | 562 | H. Item-granted skills and item-event casts | runs its ItemEffect only on attack, kill or hit. | `0x005C054E` | c | the effect-flag argument at every `ITEMSKILL_Cast` caller read with r2 (handler 20 at 0x005C054E) | S2c | 1 |
+| 82 | 565 | H. Item-granted skills and item-event casts |  | `fn:sub_005FDCA0_ItemCastAtUnit@0x005FDCA0` | a-logs | the caster's steps around the 64 cat-chain item casts (`EVH.seed1`) with the callers named | S2a | 1 |
+| 83 | 569 | H. Item-granted skills and item-event casts | , ) The later tries, from the reading. | `fn:sub_005FD850_ItemTargetRandomPoint@0x005FD850` | c-emu | extend run:2026-10-21-cat-emu-item past the first collision test (declared result) for the later tries | S2ae | 1 |
+| 84 | 571 | H. Item-granted skills and item-event casts | boundaries. | `fn:sub_005FD9C0_ItemTargetCorpse@0x005FD9C0` | c-emu | as row 83: helpers 3 and 4 to their boundaries | S2ae | 1 |
+| 85 | 581 | I. The skill packet | I1. SkillSt32Hit(game, unit, id, lvl) → i32: | `fn:sub_005D7EA0_SkillSt32Hit@0x005D7EA0` | a-logs | Bash's `AD0` packets (82 do events) in run:2026-10-25-skills bar-1, bar-2 and run:2026-10-27-skills barh: the start-32 build | S2a | 1 |
+| 86 | 597 | I. The skill packet | I2. SKILLS_RollElemDamage(unit, p, id, lvl): | `fn:SKILLS_RollElemDamage@0x0056E0C0` | a-logs | the `REL` lines (`SKILLS_RollElemDamage`) of run:2026-10-25-skills and run:2026-10-27-skills against I2 | S2a | 1 |
+| 87 | 610 | I. The skill packet | … flags & 2 is clear), which adds edPct to stat 25 and reads the conversion. | – | a-logs | Bash's packets after the reductions in the barh logs: physical with `calc2` added | S2a | 1 |
+| 88 | 617 | I. The skill packet | Strike and others. | tbl:Skills.txt:EType | c | an exhaustive scan of byte stores to packet `+0x65` with r2 (the fifteen writers) | S2c | 1 |
+| 89 | 620 | I. The skill packet | no flags, no calc2/calc3, and SrcDam passed as stored (0 not replaced). | – | c-emu | start 6 to its boundaries, as run:2026-10-21-cat-emu-bar did start 32 | S2ae | 1 |
+| 90 | 628 | I. The skill packet | the delivery's on the action frame. | `fn:SKILL_MeleeDeliverDo@0x0056F1F0` | a-logs | `THR`/`DRR` draws inside `SST` and delivery inside `SDO` for Bash in the barh logs of run:2026-10-27-skills | S2a | 1 |
+| 91 | 643 | I. The skill packet | that call. | `0x00644C20` | c-emu | `sub_00644C20_SkillKickDamage` with flag 0 and 1 (pure), continuing run:2026-10-20-cat-emu-9d | S2ae | 1 |
+| 92 | 648 | I. The skill packet | stops). | `0x00647C4D` | c-emu | `GetPhysMin` through `sub_00623990_SkillSrcDamWeapon` with a declared weapon | S2ae | 1 |
+| 93 | 653 | I. The skill packet | neither GetPhysMin nor GetPhysMax, and does not read MaxDam. | `0x0056CB42` | c-emu | start 2 (`sub_0056CAF0_SkillSt02Kick`) to `ResolveAndQueue`: the stores, no `GetPhysMin` call | S2ae | 1 |
+| 94 | 672 | I. The skill packet | them. | `0x0056CB71` | d-edit | only an edited Kick `MinDam` separates the store from none (the 7 deliveries' gates are a reading note) | – | 1 |
+| 95 | 680 | I. The skill packet | skill id from a variable, are unfollowed. | `0x00647BF0` | c | an exhaustive xref scan with r2 of the `Kick` bit readers and the `GetPhysMin/Max` call sites | S2c | 1 |
+| 96 | 684 | I. The skill packet | … the kick's minimum and maximum take stat 137, then the boots' values plus stat 137. | `0x005D560F` | c-emu | `sub_00646280_KickItemDamage` with synthetic boots and stat 137 | S2ae | 1 |
+| 97 | 691 | I. The skill packet | items still reach that build. | `0x0057DC28` | b | a new Assassin recipe with Dragon Talon and a weapon with damage stats; `AD0` packets | H2a | 1 |
+| 98 | 697 | I. The skill packet | calcs (DmgSymPerCalc, EDmgSymPerCalc, the skill('…'.blvl) terms of calc1–calc4). | – | c | an exhaustive xref scan of `SKILLS_GetMasteryBonus` with r2 | S2c | 1 |
+| 99 | 703 | J. Progressive charges and the finisher | J1. PrgChargeHitDo(unit, id, lvl): (srvdofunc 34: Tiger Strike, Cobra Strike, Royal Strike) | `fn:sub_005D3490_PrgChargeHitDo@0x005D3490` | a-logs | the Fists of Fire do events (do 35 to 34) of run:2026-10-25-skills ass-1, ass-2 and run:2026-10-27-skills ass-3 | S2a | 1 |
+| 100 | 710 | J. Progressive charges and the finisher | J2. AddProgressiveCharge(unit, id, lvl): | `fn:SKILLS_AddProgressiveCharge@0x005D3320` | a-logs | as row 99: the charge state after each hit | S2a | 1 |
+| 101 | 717 | J. Progressive charges and the finisher | the parity of Unit+ >> 8, then runs 34. | `fn:sub_005D35D0_PrgChargeHitDualDo@0x005D35D0` | a-logs | as row 99: bit 6 against the dual-claw parity | S2a | 1 |
+| 102 | 724 | J. Progressive charges and the finisher | … srvprgfunc n from the do table, and queues a client message carrying the peeked value. | – | a-logs | the finisher's `PF0`/`PF1` seeds (peek restores) over the 56 kept calls | S2a | 1 |
+| 103 | 727 | J. Progressive charges and the finisher | (1, 2, 3); for a row without progressive it is srvmissilea. | `fn:sub_005D3CF0_SkillSrvMissileByCharge@0x005D3CF0` | a-logs | as row 102: the `MC` creations per charge count | S2a | 1 |
+| 104 | 741 | J. Progressive charges and the finisher |  | `0x005D4E80` | a-logs | as row 102: the entries' draws | S2a | 1 |
+| 105 | 748 | J. Progressive charges and the finisher | the current count's entry runs. | `0x005D53E0` | a-logs | as row 102: `prgstack` entries run per count | S2a | 1 |
+| 106 | 749 | J. Progressive charges and the finisher | J4. No finisher event was checked by (56 finisher calls logged as oracles). | run:2026-10-25-skills | a-logs | as row 102 | S2a | 1 |
+| 107 | 755 | K. Stat-event handlers | K1. UNIT_DispatchEvent(unit, event, other, packet): | `fn:UNIT_DispatchEvent@0x005C0C30` | a-logs | the `EVH`/`EVR` order per event over run:2026-10-27-skills (newest first) | S2a | 1 |
+| 108 | 765 | K. Stat-event handlers | attacked…, damaged… and killed. | `data:g_StatEventFuncs@0x007325B0` | c | ItemStatCost `itemeventfunc` and Skills `auraeventfunc` over every row (rule 2) | S2c | 1 |
+| 109 | 769 | K. Stat-event handlers | attacker's kill handlers (28, 31) run inside COMBAT_ApplyDamage. | `0x0057C8DD` | a-logs | `EVH` inside `AD0` spans in run:2026-10-27-skills: attacker before defender, `killed` before `kill` | S2a | 1 |
+| 110 | 774 | K. Stat-event handlers | 1 — the skill's srvmissilea from the unit toward a hostile … | `fn:sub_005CAB40_StatEv01MissileAtSource@0x005CAB40` | c-emu | handler 1 to its boundaries, as run:2026-10-21-cat-emu-item did 20, 21, 30 | S2ae | 1 |
+| 111 | 775 | K. Stat-event handlers | 2 — a packet, result , + = calc1, on the … | `fn:sub_005CAC50_StatEv02CalcHitAttacker@0x005CAC50` | c-emu | handler 2 to its boundaries (as row 110) | S2ae | 1 |
+| 112 | 776 | K. Stat-event handlers | 3 — 1 (2 for EType 10) | `fn:sub_005CAD40_StatEv03ElemHitAttacker@0x005CAD40` | c-emu | handler 3 to its boundaries (as row 110) | S2ae | 1 |
+| 113 | 777 | K. Stat-event handlers | 4 — none while the cursed unit survives; one step when … | `fn:sub_005C5F50_StatEv04ReturnDamage@0x005C5F50` | a-run | more SkillsChain sessions (Corpsemourn's Iron Maiden) for kills under the curse; `EVH` lines | H2b | 1 |
+| 114 | 778 | K. Stat-event handlers | 5 — draws ( 2 calls); effect | `fn:sub_005C61E0_StatEv05LifeTap@0x005C61E0` | a-logs | life tap's 2 calls (run:2026-10-27-skills) and 12 fires of run:2026-10-16-combat: `EVR` life against `MulDiv` | S2a | 1 |
+| 115 | 779 | K. Stat-event handlers | 6 — draws ( 7 calls); effect | `fn:sub_005BF670_StatEv06ThornsPhys@0x005BF670` | a-logs | the 7 thorns calls of run:2026-10-27-skills: the attacker's life in `EVR` | S2a | 1 |
+| 116 | 780 | K. Stat-event handlers | 7 — draws ( 103 calls); effect | `fn:sub_005BF960_StatEv07Knockback@0x005BF960` | a-logs | the 103 knockback calls of run:2026-10-27-skills: result bit 3 in the logged packet | S2a | 1 |
+| 117 | 781 | K. Stat-event handlers | 8 — draws ( 103 calls); effect | `fn:sub_005BFA10_StatEv08Howl@0x005BFA10` | c-emu | handler 8's gate and flee call to its boundary | S2ae | 1 |
+| 118 | 782 | K. Stat-event handlers | 9 — draws ( 65 calls); effect | `fn:sub_005BFAA0_StatEv09Stupidity@0x005BFAA0` | a-logs | the 65 stupidity calls of run:2026-10-27-skills: the roll against the chance, `STA` state | S2a | 1 |
+| 119 | 783 | K. Stat-event handlers | 10 — lightning stat << 8 to the attacker | `fn:sub_005BF720_StatEv10ThornsLightning@0x005BF720` | c-emu | handler 10 to its boundaries (as row 110) | S2ae | 1 |
+| 120 | 784 | K. Stat-event handlers | 11, 12 — fire, cold to the other unit | `fn:sub_005BF7D0_StatEv11ThornsFire@0x005BF7D0` | d-edit | handlers 11 and 12 are named by no stock row | – | 1 |
+| 121 | 785 | K. Stat-event handlers | 13 — draws ( 9 calls); effect | `fn:sub_005BFBB0_StatEv13DamageToMana@0x005BFBB0` | a-logs | the 9 damage-to-mana calls of run:2026-10-27-skills: stat 8 in `EVR` | S2a | 1 |
+| 122 | 786 | K. Stat-event handlers | 14–16 — draws for 15 and 16 ( 182, 138 calls), … | `fn:STATEVENT_OpenWounds@0x005BFE60` | c-emu | handler 14 (freeze) to its boundaries | S2ae | 1 |
+| 123 | 787 | K. Stat-event handlers | 17 — draws ( 172 calls) and the cap (K2); the … | `fn:sub_005C0130_StatEv17ManaAfterKill@0x005C0130` | a-run | SkillsBarH sessions with mana spent before kills (Howl cycle); `EVR` stat 8 below the cap | H2b | 1 |
+| 124 | 788 | K. Stat-event handlers | 18 — for a demon victim, life += stat · 256 | `fn:sub_005C0260_StatEv18HealAfterDemonKill@0x005C0260` | c-emu | handler 18 to its boundaries with a demon and a non-demon victim | S2ae | 1 |
+| 125 | 789 | K. Stat-event handlers | 19 — draws ( 103 calls); effect | `fn:sub_005C0310_StatEv19Slow@0x005C0310` | a-logs | the 103 slow calls of run:2026-10-27-skills: `STA` with stats 68, 69 | S2a | 1 |
+| 126 | 792 | K. Stat-event handlers | 22 — draws ( 2 calls); effect | `fn:sub_005C6370_StatEv22BoneArmorAbsorb@0x005C6370` | a-logs | the 2 Bone Armor calls: `EVR` life and the state's stat | S2a | 1 |
+| 127 | 793 | K. Stat-event handlers | 23 — heals the golem and its owner | `fn:sub_005C6530_StatEv23BloodGolemHit@0x005C6530` | c-emu | handler 23 to its boundaries | S2ae | 1 |
+| 128 | 794 | K. Stat-event handlers | 24 — moves a share of each element to mana | `fn:sub_005CA6C0_StatEv24EnergyShield@0x005CA6C0` | c-emu | handler 24 to its boundaries | S2ae | 1 |
+| 129 | 795 | K. Stat-event handlers | 25 — absorbs fire, cold, lightning from aurastat1 | `fn:sub_005C87A0_StatEv25CycloneArmor@0x005C87A0` | c-emu | handler 25 to its boundaries | S2ae | 1 |
+| 130 | 796 | K. Stat-event handlers | 26 — the owner loses life with the golem, floor 256 | `fn:sub_005C6690_StatEv26BloodGolemDamaged@0x005C6690` | c-emu | handler 26 to its boundaries | S2ae | 1 |
+| 131 | 797 | K. Stat-event handlers | 27 — slow by its stat 150 | `fn:sub_005C6760_StatEv27ClayGolemSlow@0x005C6760` | c-emu | handler 27 to its boundaries | S2ae | 1 |
+| 132 | 799 | K. Stat-event handlers | 29 — draws ( 78 calls); effect | `fn:sub_005C0770_StatEv29RestInPeace@0x005C0770` | a-logs | the 78 rest-in-peace calls: `STA` state 172 on the victim | S2a | 1 |
+| 133 | 801 | K. Stat-event handlers | 31 — stat 155 | `fn:STATEVENT_Reanimate@0x005C09E0` | c-emu | handler 31 to its draw and boundaries | S2ae | 1 |
+| 134 | 819 | K. Stat-event handlers | , and the handlers no session fired (1–4, 10–12, 14, | – | d-none | a quoted tag in backticks inside the sentence, not a claim of its own; the statement is row 135's | – | 1 |
+| 135 | 820 | K. Stat-event handlers | 18, 23–27, 30, 31). | `0x005BFA38` | c-emu | the unfired handlers and the gates of 7, 8, 9 to their boundaries (as row 110) | S2ae | 1 |
+| 136 | 826 | K. Stat-event handlers | came at full mana) and overlay 151 are the reading. | run:2026-10-27-skills | a-run | as row 123 | H2b | 1 |
+| 137 | 832 | K. Stat-event handlers | (combat/to-hit). | `fn:sub_0057D810_PreventHealHook@0x0057D810` | a-logs | `PH0` between `THR` and `DRR` in run:2026-10-27-skills | S2a | 1 |
+| 138 | 838 | K. Stat-event handlers | a monster defender outside 704–709, so the type and class tests are the reading. | run:2026-10-27-skills | c-emu | `sub_0057D810_PreventHealHook` with a monster attacker and classes 704–709 | S2ae | 1 |
+| 139 | 843 | L. Summons | L1. SkillDo114Summon(unit, id, lvl) → i32: (Raven; the pattern of the summon do functions) | `fn:sub_005C6910_SkillDo114Summon@0x005C6910` | a-logs | the 207 Raven `SP0` blocks of run:2026-10-25-skills dru-1, dru-2 | S2a | 1 |
+| 140 | 851 | L. Summons | L2. SummonSetLevel(owner, m, lvl, skillLvl): | `fn:sub_005C49E0_SummonSetLevel@0x005C49E0` | a-logs | the 215 `SL0`/`SL1` lines (owner stat 12, summon stat 12) | S2a | 1 |
+| 141 | 858 | L. Summons | L3. SpawnOwnedMonster(block) → unit: | `fn:sub_0056D940_SpawnOwnedMonster@0x0056D940` | a-logs | the 219 `SP0`/`SP1` lines | S2a | 1 |
+| 142 | 872 | L. Summons | … summons share one input: the clamps, which do not bind at 84, are the reading. | run:2026-10-25-skills | c-emu | `SummonSetLevel` with synthetic owner and skill levels where the clamps bind | S2ae | 1 |
+| 143 | 874 | L. Summons | a summon gets them whole, whatever its class's noRatio bit. | `fn:sub_005C49E0_SummonSetLevel@0x005C49E0` | c-emu | `SummonSetLevel` with a class without `noRatio` | S2ae | 1 |
+| 144 | 878 | L. Summons | (64-bit when large), sumskill1..5 with sumskcalc, sumumod, sumoverlay, and the equipment init. | – | c-emu | `sub_005C4470_SummonInitStats` over the summon rows' columns | S2ae | 1 |
+| 145 | 881 | L. Summons | SpawnOwnedMonster adds no draw of its own. | `fn:sub_005B2F20_SpawnAtPos@0x005B2F20` | a-logs | `SP.seed`/`SP.gameseed` of run:2026-10-27-skills: no step besides the creation's | S2a | 1 |
+| 146 | 891 | L. Summons | noRatio (its MonLvl term), the golems and the other summons are the reading. | `fn:sub_005C4470_SummonInitStats@0x005C4470` | b | new recipes with golems, Valkyrie, wolves; `SP`/`SL` lines | H2a | 1 |
+| 147 | 896 | L. Summons | later falls (a skill shrine wearing off), PetLimitRefresh recomputes each type's limit and runs PetLimit. | – | a-logs | the `PA0`/`PA1` lines of the dru sessions (207 Ravens) where the count passes `petmax` (group clear and refresh stay) | S2a | 1 |
+| 148 | 901 | L. Summons | L5. RaiseSkeletonDo(unit, id, lvl): (srvdofunc 31) | `fn:sub_005C4B00_SkillDo31RaiseSkeleton@0x005C4B00` | a-logs | the 12 `RSK0`/`RSK1` casts | S2a | 1 |
+| 149 | 916 | L. Summons | … (no draw at skill level 2 or less) and the class-364 path are the reading. | – | c-emu | `sub_005C4300_SkeletonParam1Roll` at skill levels 1, 2, 3 and the class-364 path | S2ae | 1 |
+| 150 | 923 | M. Monster skill use | frame SKILLS_DoUsedSkill (E2). The command is monsters/ai/machinery § B; the choice is an input here. | `fn:sub_005DEAD0_MonAiUseSkill@0x005DEAD0` | a-logs | the monster `SST` with used skill per mode in run:2026-10-30-skills-catalogue | S2a | 1 |
+| 151 | 929 | M. Monster skill use | combat/damage § E's. | – | c | an exhaustive xref scan of `MonAttackStats` with r2: six callers | S2c | 1 |
+| 152 | 943 | M. Monster skill use | values in every call), the classic scaling, the expansion bonus, and type 10's redraw. | `0x005A4FB3` | c-emu | `MonAttackStats` with synthetic stat lists: the clear, `El2`/`El3`, the classic and expansion terms | S2ae | 1 |
+| 153 | 950 | M. Monster skill use | the attack mode's min, max and to-hit, before the classic and player-count adjustments. | – | c-emu | `sub_0056E050_MonOwnerSkillDamage` with synthetic owners and the four `SkillDamage` classes | S2ae | 1 |
+| 154 | 967 | M. Monster skill use | … and 428. SKILLS_GetPhysMin, GetPhysMax and GetToHit are checked only at this one row and level. | – | c-emu | as row 153: other levels, rows, modes and the branches | S2ae | 1 |
+| 155 | 977 | N. Ammunition and weapon wear | gates are items/economy § H. | – | a-logs | the `UA0`/`UA1` lines of run:2026-10-17-economy (economy.gdb `PLAYER_UseAmmo`) | S2a | 1 |
+| 156 | 981 | N. Ammunition and weapon wear | N2. SkillWeaponWear(unit, chance, amount): (from start 7, Impale, after its hit: chance calc2, amount calc3) | `fn:sub_005DAA40_SkillWeaponWear@0x005DAA40` | c-emu | `sub_005DAA40_SkillWeaponWear` with a declared weapon durability | S2ae | 1 |
+| 157 | 993 | N. Ammunition and weapon wear | the weapon has durability. | `fn:sub_005DAB40_SkillSt07ImpaleHit@0x005DAB40` | c | an exhaustive xref scan of `SkillWeaponWear` with r2 (one caller) | S2c | 1 |
+| 158 | 1002 | O. Tier A: the start and do functions | 1 Kick — for 32 do events ; the build | `0x0056CAF0` | d-edit | the build's physical is 0 on the stock row; only an edited `MinDam` separates it | – | 1 |
+| 159 | 1003 | O. Tier A: the start and do functions | 2 Throw, 4 Left Hand Throw — for Left Hand Throw's 36 do events ; otherwise | `fn:sub_0056F460_SkillThrowDo@0x0056F460` | a-logs | Throw's 53 do events of run:2026-10-25-skills amaj sessions | S2a | 1 |
+| 160 | 1004 | O. Tier A: the start and do functions | 25 Plague Javelin, 12 Multiple Shot — 8: calc1 missiles fanned perpendicular to the line to … | `fn:sub_005DB410_SkillDo08MultiShot@0x005DB410` | a-logs | Plague Javelin and Multiple Shot `MC` counts and directions in the kept ama, amaj logs | S2a | 1 |
+| 161 | 1005 | O. Tier A: the start and do functions | 10 Jab — to-hit, defence, build, 1–2 | `0x005DB2D0` | a-logs | Jab's 108 do events: `THR`, `AD0` packets in the amaj logs | S2a | 1 |
+| 162 | 1007 | O. Tier A: the start and do functions | 259 Fists of Fire — J1, the finisher J3 | `fn:sub_005D35D0_PrgChargeHitDualDo@0x005D35D0` | a-logs | Fists of Fire do events and finisher lines (as row 99) | S2a | 1 |
+| 163 | 1008 | O. Tier A: the start and do functions | 117 Holy Shield, 68 Bone Armor — bit 6, STATE_GroupClear(1), STATE_ApplyTimed(aurastate, auralencalc), the aura and passive … | `fn:sub_005C9480_SkillDo18TimedSelfState@0x005C9480` | a-logs | Holy Shield and Bone Armor: `STA` inside `SDO`, run:2026-10-27-skills pal-3, nec-3 | S2a | 1 |
+| 164 | 1009 | O. Tier A: the start and do functions | 42 Static Field — ForUnitsInRange(aurarangecalc, aurafilter) with calc1, calc2, the elemental length, EType … | `fn:sub_005C9800_SorSkillStaticMin@0x005C9800` | a-logs | Static Field's do events in the sor sessions (Normal) and spike-1, spike-2 (Nightmare) | S2a | 1 |
+| 165 | 1010 | O. Tier A: the start and do functions | 48 Nova, 44 Frost Nova, 130 Howl — bit 6; NovaAtUnit(unit, srvmissilea, id, lvl, vel + calc1) | `fn:sub_005C9B50_SkillDo22NovaAtSelf@0x005C9B50` | a-logs | the Nova, Frost Nova and Howl `MC` creations per do event | S2a | 1 |
+| 166 | 1011 | O. Tier A: the start and do functions | 54 Teleport — the target point, room checks, the move | `fn:sub_005CA360_SkillTeleportDo@0x005CA360` | a-logs | the 378 Teleport do events: the position after | S2a | 1 |
+| 167 | 1012 | O. Tier A: the start and do functions | 56 Meteor — bit 6; srvmissilea at the target point when the … | `0x005CA3E0` | a-logs | Meteor's `MC` at the target point | S2a | 1 |
+| 168 | 1013 | O. Tier A: the start and do functions | 66 Amplify Damage — bit 6; auratargetstate, the stats and events on the … | `fn:sub_005C37C0_SkillDo30Curse@0x005C37C0` | a-logs | Amplify Damage's `STA` on the units near the point | S2a | 1 |
+| 169 | 1014 | O. Tier A: the start and do functions | 98 Might — the aura run (stats/states § F) | `fn:sub_005CF010_PalAuraDo@0x005CF010` | a-logs | the Might aura runs of pal-1, pal-2 | S2a | 1 |
+| 170 | 1015 | O. Tier A: the start and do functions | 102 Holy Fire — 1 per run | `fn:sub_005CF3A0_AuraHitDo@0x005CF3A0` | a-logs | the Holy Fire runs: one `REL` per run, the packet per unit | S2a | 1 |
+| 171 | 1016 | O. Tier A: the start and do functions | 221 Raven — — | `fn:sub_005C6910_SkillDo114Summon@0x005C6910` | a-logs | as row 139 | S2a | 1 |
+| 172 | 1017 | O. Tier A: the start and do functions | 225 Firestorm — bit 6; with calc1 > 0 one SkillMissileCreate, then … | `fn:sub_005C7160_SkillDo117Firestorm@0x005C7160` | a-logs | Firestorm's `MC` and `MCB` lines (442 sub-missiles) | S2a | 1 |
+| 173 | 1018 | O. Tier A: the start and do functions | 36 Fire Bolt, 251 Fire Trauma — the srvmissile only (E4) | `fn:SKILLS_SrvDo@0x0056F7F0` | a-logs | Fire Bolt and Fire Trauma: one `MC` per `SDO` | S2a | 1 |
+| 174 | 1033 | O. Tier A: the start and do functions | (L5). | run:2026-10-27-skills | a-run | more SkillsNec `corpse` sessions for 30 Raise Skeleton do events | H2b | 1 |
+| 175 | 1050 | P. Draws and seeds per event kind | request — none (stat 328 + 1) | `fn:SKILLS_CanUse@0x00647960` | a-logs | as row 25 | S2a | 1 |
+| 176 | 1054 | P. Draws and seeds per event kind | periodic queue — SKILLS_QueuePeriodic | `fn:SKILLS_QueuePeriodic@0x0056CDA0` | a-logs | the caster's seed across the aura do events of pal-1, pal-2: no step by the queue | S2a | 1 |
+| 177 | 1055 | P. Draws and seeds per event kind | finisher — attacker; area units; local | `fn:COMBAT_PrgFinisher@0x005D5220` | a-logs | as row 102 | S2a | 1 |
+| 178 | 1056 | P. Draws and seeds per event kind | handler — for the handlers § K marks ( 1 303 … | `data:g_StatEventFuncs@0x007325B0` | c-emu | as row 135 | S2ae | 1 |
+| 179 | 1058 | P. Draws and seeds per event kind | item cast — none of its own; ItemTarget 2: 2 per try | `fn:ITEMSKILL_Cast@0x005FDA80` | a-logs | as row 82 | S2a | 1 |
+| 180 | 1059 | P. Draws and seeds per event kind | summon — for 219 summons ; otherwise | `fn:sub_005B2F20_SpawnAtPos@0x005B2F20` | b | as row 146: the other summons | H2a | 1 |
+| 181 | 1061 | P. Draws and seeds per event kind | weapon wear — SkillWeaponWear | `fn:sub_005DAA40_SkillWeaponWear@0x005DAA40` | c-emu | as row 156 | S2ae | 1 |
+| 182 | 1062 | P. Draws and seeds per event kind | Armageddon period — re-seeds the caster's seed (P2) | `fn:sub_005C8520_SkillDo146Armageddon@0x005C8520` | c-emu | do 146 to its `Init` and `RNG_Range` with a declared entry word | S2ae | 1 |
+| 183 | 1079 | P. Draws and seeds per event kind | … AI logged, 41 of 49 new gaps of this shape close (monsters/ai A4 and A5). | run:2026-10-25-skills | b | a skills session with the ai.gdb boundary lines and defender rolls out of span (a new logger combination) | H2a | 1 |
+| 184 | 1090 | P. Draws and seeds per event kind | draw. | `fn:sub_005C8520_SkillDo146Armageddon@0x005C8520` | c-emu | as row 182 | S2ae | 1 |
+| 185 | 1094 | Outputs | The unit's mode and used skill; Unit+ bit 6 after the do. | `fn:SKILLS_SrvDo@0x0056F7F0` | c | as row 56 | S2c | 1 |
+| 186 | 1097 | Outputs | monsters/spawn and monsters/stats. | `fn:COMBAT_ResolveAndQueue@0x0057DBF0` | a-logs | the nested lines of the kept skills logs: `AD0`, `MC`, `STA`, `SP0` inside `SDO` | S2a | 1 |
+| 187 | 1098 | Outputs | … mana (or life, or a charge), the request counter stat 328, the delay state 121. | – | a-logs | `PAY`, stat 328 and `DLY` in the kept skills logs | S2a | 1 |
+| 188 | 1108 | Worked example | ) The step's use, low mod 100 against Raise Skeleton's Param1 (5), was not logged. | run:2026-10-25-skills | a-logs | the `RSK0`/`RSK1` seeds: `low mod 100` of the step against the class (363) in the 12 casts | S2a | 1 |
+| 189 | 1114 | Reimplementation notes | changes every later pierce count of the player's missiles. | `0x00549D50` | d-none | a refused request never reaches the server from a stock client (C. of § C) | – | 1 |
+| 190 | 1116 | Reimplementation notes |  | `0x0056F7AA` | b | as row 65 | H2a | 1 |
+| 191 | 1119 | Reimplementation notes | events by frame accordingly. | `fn:sub_005D7EA0_SkillSt32Hit@0x005D7EA0` | a-logs | as row 90 | S2a | 1 |
+| 192 | 1122 | Reimplementation notes | One delay state blocks all delayed skills, not only the one cast. | `fn:SKILLS_DelayOk@0x006478F0` | a-logs | as row 72 | S2a | 1 |
+| 193 | 1124 | Reimplementation notes | Unit+ = 4 case. | `0x005DEB08` | c | as row 57 | S2c | 1 |
+| 194 | 1126 | Reimplementation notes | sets. | `0x005C054E` | c | as row 81 | S2c | 1 |
+| 195 | 1127 | Reimplementation notes | The ally test of StartUsedSkill is dead. Do not add a refusal there. | `0x0056FBB2` | c | as row 48 | S2c | 1 |
+
+**Totals by class:** a-logs 91, a-run 5, b 13, c 27, c-emu 48, d-edit 3, d-none 8 (sum 195).
