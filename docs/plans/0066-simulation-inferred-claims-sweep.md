@@ -305,3 +305,46 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   counted as logged; (2) row 23 (frame pass order) raised in part from the kept frame-order check's pair table with no
   new run; (3) row 86's one-draw claim rests on the 11 rolls with no other line before the event's exit; (4) the
   remainders routed to b rather than d-none where a logger line would reach them (rows 2, 59, 118, 126, 132).
+
+### 2026-11-10 — Phase 1, batches S1c and S1d (reverser-static, `lane/n66d`)
+
+- **Done.** Both batches over kept logs, no game, no Ghidra (r2/objdump reads of call sites only). Tools (`cd663109`):
+  `tools/ai_model_check.py` revision 2 (`de9bb5ed…`) adds R44's and S13's blocks, transcribed from the spec at
+  `b5999f5e`; revision 1's 32 entries reproduce S1b's `model-check.txt` byte for byte. New `tools/ai_first_check.py`
+  (`e4eb1802…`): first-boundary hand maps (README G5) that run the block models to their first logged call and compare
+  the call site too, the sites read from the code (the think's one call to the callee, or the emulated family's site for
+  R99 and R130). Outputs in `workspace/logs/ai/sweep2-s1cd/` (`s1c-model-check.txt` `fb54d78f…`, `s1d-first-check.txt`
+  `f41b2f45…`, `manifest.sha256` passes from there); the 74 input logs in `manifest-sweep2-s1cd-inputs.sha256`. Record:
+  the addenda *plan 0066 batch S1c* and *S1d* under run:2026-11-04-r72 in [findings/ai/experiments.md](../findings/ai/experiments.md),
+  with pointer lines under run:2026-11-03-ai, run:2026-11-03-ai-3 and run:2026-11-04-ai-r5. `tools/ai.py` is unchanged
+  (the route named it; it is the hashed checker behind those runs' kept outputs).
+- **S1c (6 rows): raised in part 6, moved 0.** R44: 309 decisions, all fork-free, 0 mismatches, 310 calls past the first,
+  every branch failing alone; the grant, `UseSkill1` and the `aip` 0 true sides stay `[I]` (rows 280, 281, 283). S13:
+  160 decisions, all fork-free, 0 mismatches, 988 calls past the first, the arms and counts of S13d by a second
+  transcription; S13f's list stays `[I]` (rows 507, 508, 509).
+- **S1d (16 rows): raised 11, raised in part 1, moved 4.** Raised (0 mismatches, all fork-free, the site control failing
+  every decision): rows 38 (R10, 209 = 49 + 160 state 13), 43 (R11, 17), 75 (R23, 1 062), 96 (R26, 119), 130 (R48, 321),
+  136 (R49, 74), 144 (R56, 16), 325 (R96, 179), 389 (R130, 119, four outcomes), 487 (R99, 468, two outcomes), 490 (R100,
+  16). In part: 54 (R15: the think's 177 of 181; the alt's 4 fork on the kind-14 record's `+0x18`). Moved a-logs → b
+  (H1h): 13 (R1: the think lies outside the logger's windows), 349 (R118: `StatListFindFlag` decides before any call),
+  460 (R32: the home record's words), 468 (R54: `AiNearestPlayer`'s search returns outside the windows). S1d holds 12
+  statements now, H1h 39.
+- **Totals** recomputed from the 29 inventory files against `main` `4fb8b55f` (S1a, S1b, S2a merged): a-logs 674, a-run
+  358, b 389, c 389, c-emu 490, d 326 (2 626); Phase 1 1 553, Phase 2 747 (inventory README § 1, § 3, § 4; the
+  catalogue file's *Totals by class*).
+- **Ready for Phase 3 (spec-writer), monsters/ai/catalogue at `b5999f5e` line numbers.** Whole, the `l` line restated as
+  "[C] First boundary: N decisions compared (…), 0 mismatches, k first-call outcomes" with the hand map named (README
+  G5): 327 (R10l, both thinks), 381 (R11l), 692 (R23l), 881 (R26l), 1185 (R48l), 1223 (R49l), 1304 (R56l), 3116 (R96l),
+  3627 (R130l), 4455 (R99l), 4467 (R100l). Split, the raised half `[C]` and the rest `[I]` as each inventory row says:
+  482 (R15l: the think; the alt stays `[I]`), 2613, 2615, 2625 (R44 steps 1, 2 and R44b's tail), 4613, 4621, 4622 (S13's
+  `AiPathSkillStep`, think and RunHome lines). As in S1b, the block lines carry one `[I]` for the think, so Phase 3 adds a
+  `[C]` bullet for R44 naming the logged paths; S13d already is that bullet for S13 and gains the second transcription
+  as an anchor. No symbol is raised (no logged return is compared with a model; the maps raise no name).
+- **Left.** Nothing in S1c or S1d. The moved rows wait in H1h as their notes say.
+- **Review:** Tier B (plan Phase 1), with the audit rule. Judgment calls to check: (1) a one-decision arm raised in part
+  (R44's walk, rows 281 and 283; S13's accepted RunHome, row 509), where the arm's call words and the exit seed are
+  compared and its test fails it when reversed, though R44n had kept "step 2's walk is one decision" `[I]`; (2) the
+  first boundary of a hand map is its first call of a logger boundary function, so R10's is `UnitGetRoom` inside step 1
+  (`MonPlayerBonus` is not logged), and single-outcome rows confirm the call and its words only (README G3); (3) S13's
+  path count is the given word read from the fires, as `ai_s13_check.py` took it, so its equal pairs separate nothing;
+  (4) the S1d maps live in a new tool rather than `tools/ai.py`, to keep the kept first-boundary outputs reproducible.
