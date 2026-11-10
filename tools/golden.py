@@ -88,12 +88,12 @@ FIELDS = collections.OrderedDict([
     ("chain.G1.count", ("G1 items made", "items/tc")),
     ("chain.G1.end_seed", ("G1 the dying unit's seed at TCEND", "items/tc")),
     ("drlg.outdoor.seed_after", ("outdoor window: the level seed after the window (OD1)", "drlg/outdoor")),
-    ("drlg.outdoor.presets_digest", ("outdoor window: digest of the preset anchors [def, x, y, file index, grid0 flags]", "drlg/outdoor")),
+    ("drlg.outdoor.presets_digest", ("outdoor window: digest of the preset anchors [def, x, y, file index, grid0 flags], x and y absolute tiles", "drlg/outdoor")),
     ("drlg.outdoor.preset_count", ("outdoor window: preset anchors made", "drlg/outdoor")),
-    ("drlg.outdoor.rooms_digest", ("outdoor window: digest of the out rooms [x, y] in creation order", "drlg/outdoor")),
+    ("drlg.outdoor.rooms_digest", ("outdoor window: digest of the out rooms [x, y] (absolute tiles: L.rect.x + 8*cx) in creation order", "drlg/outdoor")),
     ("drlg.outdoor.room_count", ("outdoor window: out rooms made", "drlg/outdoor")),
     ("drlg.maze.seed_after", ("maze window: the level seed after the window (MZ1)", "drlg/maze")),
-    ("drlg.maze.rooms_digest", ("maze window: digest of the rooms [x, y, w, h, def, index] relative to the bounding box, in order", "drlg/maze")),
+    ("drlg.maze.rooms_digest", ("maze window: digest of the rooms [x, y, w, h, def, index] relative to the bounding box, in list order (newest first, drlg/maze Outputs)", "drlg/maze")),
     ("drlg.maze.room_count", ("maze window: rooms made", "drlg/maze")),
 ])
 _PAT = [(re.compile("^" + re.escape(p).replace(r"\.N", r"\.\d+") + "$"), p) for p in FIELDS]
@@ -461,6 +461,7 @@ def observed_maze(path, excel, src, seen):
         lo, hi = _parse_seed(mz0["seed"])
         L = mz.Level(lid, mz.Seed(lo, hi))
         first = mz.first_room_seed(path, mz0)
+        first_txt = "%08x:%08x" % (first.lo, first.hi)     # B1's seed, taken before mz.run steps it (growth steps R0.seed)
         try:
             mz.run(L, first)
         except NotImplementedError:
@@ -490,7 +491,7 @@ def observed_maze(path, excel, src, seen):
         cases.append({"id": "drlg:o:maze:l%d:%s" % (lid, mz0["seed"].replace(":", "-")),
                       "kind": "observed", "type": "drlg", "source": dict(src, window="MZ0"),
                       "inputs": {"generator": "maze", "map_seed": ms, "level": lid, "window_seed": mz0["seed"],
-                                 "first_room_seed": "%08x:%08x" % (first.lo, first.hi)},
+                                 "first_room_seed": first_txt},
                       "expected": ex, "quirks": []})
     return cases, n, bad, skip
 

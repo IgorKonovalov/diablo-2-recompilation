@@ -17,8 +17,12 @@ inventory graphics. Item rows (`weapons`/`armor`/`misc` `type`, `type2`) and aff
   (`None`) and rows 14, 17, 23 (`Not Used`). The other 98 codes are distinct.
 - `[C]` References store the **record index** of the first row with that code (u16 in item, affix and
   rare-affix records; u16 for `Equiv1/2`, `Shoots`, `Quiver` here). A blank reference cell is looked
-  up like any key and finds row 0 (`None`), so it stores **0**; a column missing from a `.txt` stores
-  `0xFFFF`. Codes are cut to 4 characters before the lookup (`staff` → `staf`).
+  up like any key and finds row 0 (`None`), so it stores **0**: `Equiv1/2`, `Shoots`, `Quiver` (11, 87, 100, 99
+  blank cells, all 0) and `BodyLoc1/2` (62 each, all 0). **The three columns that point at `playerclass` and
+  `storepage` are the exception: a blank stores `0xFF`** (`Class` 85 of 85 blank cells, `StaffMods` 94 of 94,
+  `StorePage` 28 of 28; checked byte by byte over the 103 records of `itemtypes.bin`, `[C]`, 2026-11-10). Those
+  are u8 columns whose target has no empty-key row (`playerclass` and `storepage` start with a real code; `bodylocs` row 0 is `None` with an empty code), so the lookup finds nothing and stores 0xFF `[I]`; a column missing from a `.txt`
+  stores `0xFFFF`. Codes are cut to 4 characters before the lookup (`staff` → `staf`).
 - `[C]` The `Expansion` marker after data row 57 takes no record: types after it are one lower.
 
 ## Columns

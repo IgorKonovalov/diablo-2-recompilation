@@ -62,7 +62,7 @@ predicted one. (A format rule of this project, not a game fact; `emit` writes an
 - `drlg`: `generator` (`outdoor` or `maze`), `map_seed` (the `-seed` of the log), `level` (the level id), `window_seed`
   (the level seed at the window's opening line, `OD0` or `MZ0`); outdoor adds `difficulty` (0 to 2; the replayer's, read from the
   log's name, since a log does not show it; it selects the level sizes) [I]: `hell` in the name is 2, `nightmare` 1, else 0, so the 67 outdoor cases of logs whose name carries neither word rest on the default (a wrong difficulty that changed a level size would not have reproduced; one that did not is unchecked), maze adds `first_room_seed` (`low:high`, the
-  room seed the window starts the first room from, from the log's preceding `RC` line, as `tools/maze_replay.py` takes it).
+  room seed the window starts the first room from, from the log's preceding `RC` line, as `tools/maze_replay.py` takes it: [drlg/maze](../specs/drlg/maze.md) B1's seed, `Init(window_seed.low)` then one `Step`, **before** any growth step; it is a function of `window_seed`, so a reimplementation may derive it). A maze case carries no `difficulty`: the 12 maze levels of the v1 set (8–12, 34–36, 47–49, 65) have equal `LvlMaze` `Rooms`, `Rooms(N)` and `Rooms(H)`, so the case holds for all three `[C]` (by script over `lvlmaze.txt`, 2026-11-10); a set with another maze level would need the input.
   The case holds the window's output, not the level: an outdoor window is the generator from `OD0` to the end of
   `OutdoorRoomsCreate`, a maze window `MZ0` to `MZ1` (before the placement shift). A DRLG case is observed only.
 
@@ -99,10 +99,10 @@ sha256 of its canonical JSON (`golden.py digest --value`), named `*_digest`.
 | `chain.G1.count` | int | G1 items made (`TCEND`) | items/tc |
 | `chain.G1.end_seed` | `low:high` | G1 the dying unit's seed at `TCEND` | items/tc |
 | `drlg.outdoor.seed_after` | `low:high` | the level seed after the outdoor window (`OD1`) | [drlg/outdoor](../specs/drlg/outdoor.md) |
-| `drlg.outdoor.presets_digest`, `.preset_count` | sha256, int | the preset anchors `OutdoorRoomsCreate` makes, each `[def, x, y, file index, grid0 flags]`, in order | drlg/outdoor |
-| `drlg.outdoor.rooms_digest`, `.room_count` | sha256, int | the out rooms, each `[x, y]` (the rect origin the room-link line logs), in creation order | drlg/outdoor |
+| `drlg.outdoor.presets_digest`, `.preset_count` | sha256, int | the preset anchors `OutdoorRoomsCreate` makes, each `[def, x, y, file index, grid0 flags]` (`x`, `y` the preset rect origin the `PRC` line logs, in absolute tiles, as the room rects are), in order | drlg/outdoor |
+| `drlg.outdoor.rooms_digest`, `.room_count` | sha256, int | the out rooms, each `[x, y]` (absolute tiles, `L.rect.x + 8·cx`, the rect origin the room-link line logs; [drlg/overview](../specs/drlg/README.md) step 8), in creation order | drlg/outdoor |
 | `drlg.maze.seed_after` | `low:high` | the level seed after the maze window (`MZ1`) | [drlg/maze](../specs/drlg/maze.md) |
-| `drlg.maze.rooms_digest`, `.room_count` | sha256, int | the rooms `[x, y, w, h, def, forced index]` in creation order, positions relative to the bounding box's minimum | drlg/maze |
+| `drlg.maze.rooms_digest`, `.room_count` | sha256, int | the rooms `[x, y, w, h, def, forced index]` in list order (newest first, [drlg/maze](../specs/drlg/maze.md) § Outputs), `x` and `y` absolute tiles minus the bounding box's minimum | drlg/maze |
 
 Observed `world` cases hold only the fields their log shows (`GAME`, `OGC`, `LC0` lines); predicted ones
 hold every `world` field, with the level singles for the levels they name. Both mean the same by a field name.
@@ -138,7 +138,7 @@ the logger lines: `tools/gdb/tc-drops.gdb`, run:2026-10-21-chain2)
   `levels` input (a case's `levels` only picks the singles).
 - **The digested object and its canonical form.** The object is a JSON dictionary with the level id as a **decimal string key**.
   B2: `{"1": "low:high", ...}`, the value the level's seed in `low:high`, 8 lower-case hex digits each. Pools: `{"1": [mlvl, den, uniques_min, uniques_max, [class id, ...]], ...}`
-  (the region pool's class ids in the model's order, as `.region.N` lists them; `mlvl` the `.mlvl.N` value, `den` the `.den.N` value).
+  (the region pool's class ids: the kept (`isSpawn`) entries in append order, [monsters/pool](../specs/monsters/pool.md) § C8 and § Outputs, as `.region.N` lists them; `mlvl` the `.mlvl.N` value, `den` the `.den.N` value).
   Canonical JSON: keys sorted (as strings, so `"10"` before `"2"`), separators `,` and `:` with no spaces, non-ASCII escaped (none occurs), UTF-8;
   the digest is the sha256 of those bytes as 64 lower-case hex digits (`golden.py digest --value` reads the object from standard input).
 
