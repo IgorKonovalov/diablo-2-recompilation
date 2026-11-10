@@ -649,6 +649,8 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-11-04 | `lane/w55` review | 0055 P4, close | architect-review | 185 195 | 23 | 7 | — | accept with fixes (20); plan 0055 closed | stale cross-reference 8, omission 6, misread 2, overclaim 2, under-claim 1, other 1 |
 | 2026-11-10 | `lane/n63a` | 0063 P1 | archivist | 75 507 | 17 | 2 | — | accept with fixes (Tier A, ADR-0027, 4) | omission 1, misread 1, under-claim 1, other 1 |
 | 2026-11-10 | `lane/n63a` review | 0063 P1 | architect-review | 76 709 | 17 | 3 | — | accept with fixes (4) | omission 1, misread 1, under-claim 1, other 1 |
+| 2026-11-10 | `lane/n64a` | 0064 P1 | archivist | 114 937 | 22 | 6 | — | accept with fixes (Tier B, 5) | omission 3, misread 1, other 1 |
+| 2026-11-10 | `lane/n64a` check | 0064 P1 | architect-check | 77 303 | 20 | 3 | — | accept with fixes (5) | omission 3, misread 1, other 1 |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not
