@@ -2926,6 +2926,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00629A00,func,sub_00629A00_GemApplyTypeOfClass,,I,items/sockets-runewords,docs/findings/items/0007-sockets-runewords.md
 0x00629A40,func,ITEMS_GetGemApplyType,,I,items/sockets-runewords,docs/findings/items/0007-sockets-runewords.md
 0x00629A90,func,ITEMS_IsType,,I,items/tc,docs/findings/items/0001-tc-resolution.md
+0x00629B50,func,sub_00629B50_ItemTypeMatrixTest,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x00629BB0,func,ITEMS_UnitIsType,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x00629C80,func,sub_00629C80_ItemMagicStockable,,C,items/vendors,docs/findings/items/0009-vendors.md
 0x00629CC0,func,sub_00629CC0_ItemRecFlag2,,I,skills/catalogue,docs/findings/skills/0010-necromancer.md
@@ -3019,6 +3020,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00638630,func,sub_00638630_LoadProperties,,C,items/properties,docs/findings/items/0006-properties.md
 0x00638AE0,func,GAMBLE_LoadTable,,C,items/vendors,docs/findings/items/0009-vendors.md
 0x00638CC0,func,GAMBLE_GetList,,C,items/vendors,docs/findings/items/0009-vendors.md
+0x00638CD0,func,sub_00638CD0_ItemTypeIsOf,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x00638D80,func,ITEMS_LoadItemTypes,,I,data/excel,docs/findings/data/0001-excel-loader.md
 0x00639420,func,sub_00639420_ExcelFileProbe,,I,items/sockets-runewords,docs/findings/items/0007-sockets-runewords.md
 0x006394A0,func,RUNES_Load,,I,items/sockets-runewords,docs/findings/items/0007-sockets-runewords.md
@@ -4156,6 +4158,8 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0096C7F8,data,g_nCharStats,,I,player/creation,docs/findings/player/0001-creation.md
 0x0096C828,data,g_pItemTypes,,C,data/excel,docs/findings/data/0001-excel-loader.md
 0x0096C82C,data,g_nItemTypes,,I,data/excel,docs/findings/data/0001-excel-loader.md
+0x0096C830,data,g_ItemTypeEquivStride,,I,items/tc,docs/findings/items/0001-tc-resolution.md
+0x0096C834,data,g_pItemTypeEquivBits,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x0096C838,data,g_SetsLink,,I,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
 0x0096C83C,data,g_pSets,,I,items/uniques-sets,docs/findings/items/0004-uniques-sets.md
 0x0096C840,data,g_nSets,,I,items/uniques-sets,docs/findings/items/0004-uniques-sets.md

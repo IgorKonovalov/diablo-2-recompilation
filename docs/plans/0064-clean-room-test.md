@@ -290,7 +290,7 @@ answer; no new finding was needed for any of them.
   symbol table, archaeology/0002 § 5) and `ITEMS_UnitIsType` (`[C]`, items/0005 tests (c)–(d) and the `GOLD_TYPE` run),
   and a blank `Equiv` storing record 0 (`[C]`, data/0004), which no test of these specs asks for (`[I]`). I1 and H8 call
   it by name. The walk's form (depth, a cycle, record 0 in the set) is a new `[L]` under *Open questions*, filed to the
-  reverser ([entry](../backlog/2026-11-10-spec-writer-reverser-itemtypes-equiv-walk-form.md)); no stock test depends on it.
+  reverser ([entry](../backlog/archive/2026-11-10-spec-writer-reverser-itemtypes-equiv-walk-form.md)); no stock test depends on it.
 - **items/quality S2 and data/excel G2** link § K and name the function; S2 contrasts it with A2–A5 and S1.
 - **items/quality S1** (S2 row 12): the `Class` byte is the `playerclass` row index `[C]` (PlayerClass § Row identity);
   it is a u8, so a blank `0xFF` is not `< 7` (reading `[I]`, items/0002 § 2; outcome `[C]`, the 1607 logged rows of
@@ -329,7 +329,7 @@ built) sits under *Open questions* and its entry is addressed to the reverser. A
   search on open ground" restored to the note's count, "all 118 live searches".
 - **§ K, a lead for the reverser entry** (not a fix): r2 shows the test reads a precomputed bit matrix, skips a zero
   `type2` and returns 0 for an out-of-range `t`; written into
-  [itemtypes-equiv-walk-form](../backlog/2026-11-10-spec-writer-reverser-itemtypes-equiv-walk-form.md) as a lead.
+  [itemtypes-equiv-walk-form](../backlog/archive/2026-11-10-spec-writer-reverser-itemtypes-equiv-walk-form.md) as a lead.
 - **Gate:** `tools/quirks.py check` is clean after the merge (527 entries, 0 errors, about 0.2 s) and is registered as
   fast-tier rule E18 in `tools/gate.py` (each `quirks:` line one error, at its file line); `test_gate.py` passes.
 
@@ -432,3 +432,38 @@ after the entries it depends on close:
 
 Left: the five new entries and the three conformance items; the three disputed-row questions; then Phase 4 for S3 and S4
 and Phase 5. Review: this entry is the Tier A review of the S3 and S4 ledgers; fix count 0.
+
+### 2026-11-10 — Phase 3 follow-up: the three reverser entries (lane n64r, reverser, static)
+
+Static only (r2 and objdump on the pinned `Game.exe`; no slot, no Ghidra run). Three entries closed:
+
+- [drlg-outdoor-statements](../backlog/archive/2026-11-10-architect-reverser-plan-0064-drlg-outdoor-statements.md) (S4 rows
+  6, 13–16), [drlg/0008 § Plan 0064 statements](../findings/drlg/0008-outdoor.md#plan-0064-statements-2026-11-10):
+  (a) `A1CliffMark` (0x00680070) as pseudocode with an address per test, `[C]`: the second source is `tools/drlg.py`'s
+  `a1_cliff_mark` and its kept check run:2026-10-15-drlg-outdoor; new `tools/cliff_cover.py` re-scores that check with a
+  transcription of the code in place of the model's (572 211 checks, 0 mismatches) and counts the branches (80 walks,
+  70 runs, 38 marked; three exits unreached, one of them dead code, `[I]`). (b) `g_A1SearchDx` corrected in place in
+  § 16.3 (`01 00 FF 00`, `+1, 0, −1, 0`, dir 0 E). (c) `OneOrTwo`: the `s` step and `Near(49)` are in the else branch
+  only, § 8 rewritten. (d) `LevelBorderAdj` tests `Vis ≠ 0` (0x006776D6) before `Warp` −1; a control without the test
+  scores 22 600 mismatches, so the logs separate the readings; drlg/0007's table row raised I → C. Experiments addendum
+  under run:2026-10-15-drlg-outdoor; outputs and manifest in `workspace/logs/n64r/`.
+- [parseitemcell-unique-entry-words](../backlog/archive/2026-11-10-architect-reverser-plan-0064-parseitemcell-unique-entry-words.md)
+  (S2 row 14), [data/0001 § Plan 0064](../findings/data/0001-excel-loader.md#plan-0064-2026-11-10-the-entry-words-of-a-unique-or-set-cell):
+  `index` = the items record of the row's base code (0 on a miss), `aux` = the name-link hit itself (no offset). `[I]`:
+  only the edited forced run reaches it (ADR-0010).
+- [itemtypes-equiv-walk-form](../backlog/archive/2026-11-10-spec-writer-reverser-itemtypes-equiv-walk-form.md),
+  [items/0001 § Plan 0064](../findings/items/0001-tc-resolution.md#plan-0064-2026-11-10-the-item-type-test-and-its-equiv-matrix):
+  the matrix is built once by `ITEMS_LoadItemTypes` through `sub_00638CD0_ItemTypeIsOf` (depth-first, `Equiv1` ≤ 0
+  skips `Equiv2`, depth bound 124, no visited set); bit 0 is set in every row. New `tools/itypes_equiv.py`: on the
+  stock table no cycle, longest chain 4, and the matrix equals the closure plus bit 0. Four `re/symbols.csv` rows added
+  (`sub_00629B50_ItemTypeMatrixTest`, `sub_00638CD0_ItemTypeIsOf`, `g_ItemTypeEquivStride`, `g_pItemTypeEquivBits`, all I).
+
+Routed to the spec-writer: the existing [drlg-outdoor](../backlog/2026-11-10-architect-spec-writer-plan-0064-drlg-outdoor.md)
+entry, items 1–4, and [drlg-warps-border-adj](../backlog/2026-11-10-architect-spec-writer-plan-0064-drlg-warps-border-adj.md)
+(both annotated: the reverser side is done). No spec-writer entry existed for data/excel G4 and items/tc § A or for
+items/tc § K1, so one new entry carries both:
+[plan-0064-item-cell-words-and-equiv-matrix](../backlog/2026-11-10-reverser-spec-writer-plan-0064-item-cell-words-and-equiv-matrix.md).
+Archivist: [itemtypes-equiv-walk-lead-answered](../backlog/2026-11-10-reverser-archivist-itemtypes-equiv-walk-lead-answered.md)
+(tables/ItemTypes' open `[L]`). The S4 re-run of Phase 5 now waits only on the spec-writer and archivist entries.
+`backlog.py close` rewrote one link in `docs/specs/items/tc.md` to the archived entry (mechanical; no spec text changed).
+Review: Tier B.
