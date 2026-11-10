@@ -240,3 +240,11 @@ Left: Phase 4 (spec-writer, the four entries; the conformance one after the arch
 entries, the reverser's one, the row 12 question; then S3 and S4 Phase 2 runs and their own triage. Phase 5 for S2
 re-runs the `chain.G1.*` fields after the magic-find re-emit and the format entry, and for S1 the B1/B2 fields after
 the format entry.
+
+- **2026-11-10, Phase 3 disputed row S2-12 (orchestrator):** a fresh Opus reader given only items/quality § B,
+  `tables/ItemTypes.md`, `itemtypes.txt` and `playerclass.txt` answered `ama` → 0, `< 7` true; blank → 0xFF, `< 7`
+  false, but needed two guesses: `ama` = 0 from row order, and the compare's signedness (S1's "signed type,
+  bounds-checked" is ambiguous for `Class`). It also found ItemTypes.md's Row identity rule ("a blank reference cell …
+  stores 0") contradicting the layout's "blank → 0xFF". Row 12 reclassified **spec defect** (items/quality) plus a
+  table-doc defect; entries `plan-0064-items-quality-s1-class-compare` (spec-writer) and
+  `plan-0064-itemtypes-blank-class-vs-row-identity` (archivist).
