@@ -79,3 +79,37 @@ the git index exported to a temporary directory, with each `--also` path (the pa
 `git add` names) overlaid from the working tree. Another writer's unstaged edits in the same worktree
 are not seen, and a link to a doc added on the same command line resolves. The commit hook does not
 call it yet (backlog).
+
+## Coverage
+
+One row per file kind in `workspace/merged/` (the merged tree of [mpq.md](mpq.md)): 30 488 files, 20 kinds (18 extensions
+and 2 files with none; `.txt` takes two rows). The status is **described** (a format or table doc covers it), **out of scope** (an ADR or the
+research map's out-of-scope list puts it out; the reason is named) or **undescribed** (no doc yet; the plan that owns
+it is named). Counts are `[C]`: `find workspace/merged -xdev -type f` grouped by lower-cased extension and by folder
+(plan 0068 Phase 1, survey of 2026-11-10); a doc's own count, where it has one, is over the same files. "Out of scope"
+here means the content was not examined beyond its size and place; the doc rules of
+[ADR-0005](../adrs/0005-presentation-formats-tools-only.md) (presentation formats are tools-only) and the research map's
+[Out of scope](../specs/README.md#out-of-scope-adr-0002-adr-0005-adr-0014-adr-0025-adr-0026) list apply.
+
+| Kind | Files | Where | Status and doc or reason |
+|---|---:|---|---|
+| `.dcc` | 21 717 | `chars` 14 421, `monsters` 4 773, `objects` 1 748, `missiles` 391, `overlays` 384 | described: [dcc.md](dcc.md) (tooling only, ADR-0005) |
+| `.cof` | 3 512 | `objects` 1 461, `monsters` 1 295, `chars` 756 | described: [cof.md](cof.md); whether 1.14d reads them for a rule is plan 0068 Phase 2 item 4 |
+| `.ds1` | 2 276 | `tiles` | described: [ds1.md](ds1.md) |
+| `.dt1` | 263 | `tiles` | described: [dt1.md](dt1.md) (pixels tooling only, ADR-0005) |
+| `.dc6` | 1 681 | `global/items` 737, `global/ui` 495, `local/ui` 354, `monsters` 56, `local/font` 14, `objects` 13, `uncompoverlays` 11, `overlays` 1 | described: [dc6.md](dc6.md) (tooling only, ADR-0005) |
+| `.wav` | 579 | `sfx`: `monster` 450, `skill` 52, `ambient` 24, `combat` 23, `object` 14, `cursor` 6, `item` 6, `quest` 4 | out of scope: sound (research map, out-of-scope list) |
+| `.txt` (excel) | 92 | `data/global/excel/` | described: one doc per table in [tables/README.md](../tables/README.md): 97 table basenames, 92 with a `.txt`; of the 5 `.bin`-only ones the 4 `*code.bin` pools have docs and `leveldefs` is in [Levels](../tables/Levels.md#leveldefsbin-156-b) |
+| `.txt` (other) | 98 | `local/lng` 72, `local/ui` 13, `local/font` 6, `local/docs/eng` 5, `global/gateways.txt` 1, `local/color.txt` 1 | `local/lng` (language-folder text such as `english.txt`, `*input.txt`) and `local/ui` (menu, credits, level-name lists): out of scope, localisation and UI text; the strings the game shows come from the `.tbl` files ([tbl.md](tbl.md)). `local/font` (glyph-width lists and a `readme.txt`): out of scope, fonts. `local/docs/eng/a1npc.txt`..`a5npc.txt` (103 112 B for act 1): out of scope: dialogue scripts for the NPC speech sounds (plan 0068's survey names them so), not examined. `gateways.txt` (418 B, a server list) and `color.txt` (3 B): out of scope, network and presentation |
+| `.dat` | 98 | `palette` 18, `items/palette` 8, `monsters/*/cof/palshift.dat` 70 (2 048 B each), `monsters/randtransforms.dat` 1 (7 680 B), `monsters/greenblood.dat` 1 (256 B) | `palette` 18: described, [palette.md](palette.md). `items/palette` 8: described, [item-palette.md](item-palette.md). `palshift.dat`, `randtransforms.dat` and `greenblood.dat` (72 files): undescribed; monster colour data, presentation (ADR-0005); the opener and reader are plan 0068 Phase 2 item 5 |
+| `.bin` | 93 | `data/global/excel` 92, `data/global/realms.bin` 1 (97 B) | excel 92: described, [excel-bin.md](excel-bin.md) and [tables/README.md](../tables/README.md). `realms.bin`: out of scope, realm and network (research map, out-of-scope list) |
+| `.tbl` | 36 | `local/lng` 20 (`string.tbl`, `patchstring.tbl`, `expansionstring.tbl` per language), `local/font/latin` 16 | `local/lng`: described, [tbl.md](tbl.md). `local/font/latin`: out of scope, font metrics (tbl.md says it does not cover them) |
+| `.pl2` | 16 | `palette` | described: [palette.md](palette.md) (tooling only) |
+| `.d2` | 11 | `global/animdata.d2`, `global/eanimdata.d2`, `global/expfield.d2`, `global/chars_cof.d2` (1 278 822 B), `global/cmncof_a1..a7.d2` (79 910 to 190 815 B each) | `animdata.d2`, `eanimdata.d2`: described, [animdata.md](animdata.md). `expfield.d2`: described, [expfield.md](expfield.md). `chars_cof.d2` and the seven `cmncof_a*.d2`: undescribed; plan 0068 Phase 2 item 4 decides whether 1.14d opens them, Phase 3 documents them if so |
+| `.rsrc` | 4 | `local/macui/<lang>/d2resources.rsrc` (13 661 B for `eng`) | out of scope: Mac client UI resources (presentation), not examined |
+| `.pcx` | 4 | `local/macui` (logos, about 1.2 MB each) | out of scope: Mac client logos (presentation), not examined |
+| `.scc` | 2 | `local/macui`, `local/macui/eng` (`vssver.scc`, 48 B) | out of scope: a source-control sidecar with no game content, not examined |
+| `.key` | 2 | `local/cmd/eng/default.key` (1 126 B), `defaultdebug.key` (1 336 B) | out of scope: key maps (input handling); the opener is plan 0068 Phase 2 item 5, enough for this reason column |
+| `.map` | 1 | `local/font/latin/default.map` (1 168 B) | out of scope: font map |
+| `.dn1` | 1 | `global/tiles/act2/town/lut.dn1` (16 758 B) | undescribed; the opener and reader are plan 0068 Phase 2 item 5; Phase 3 documents it if a rule reads it |
+| (no extension) | 2 | `data/iamexpansion` (32 B), `data/local/use` (1 B) | undescribed: two tiny marker files (`iamexpansion` holds a sentence of text); whether the game tests them is not known, `[L]` |
