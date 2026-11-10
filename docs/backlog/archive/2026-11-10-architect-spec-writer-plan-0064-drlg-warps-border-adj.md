@@ -4,7 +4,7 @@ to: spec-writer
 date: 2026-11-10
 status: done
 context:
-  - ../../plans/0064-clean-room-test.md#implementation-log
+  - ../../plans/done/0064-clean-room-test.md#implementation-log
   - ../../plans/0064-cleanroom/S4.md
   - ../../specs/drlg/warps.md
 resolution: "drlg/warps § A1 states the Vis ≠ 0 test before Warp −1 and the empty-slot case, from [drlg/0008 § Plan 0064 (d)](../../findings/drlg/0008-outdoor.md#d-levelborderadj-0x00677680)."

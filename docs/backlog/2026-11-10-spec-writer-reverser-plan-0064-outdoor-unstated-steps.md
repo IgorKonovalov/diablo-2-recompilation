@@ -4,7 +4,7 @@ to: reverser
 date: 2026-11-10
 status: open
 context:
-  - ../plans/0064-clean-room-test.md#implementation-log
+  - ../plans/done/0064-clean-room-test.md#implementation-log
   - ../plans/0064-cleanroom/S4.md
   - ../specs/drlg/outdoor.md
   - ../findings/drlg/0008-outdoor.md
@@ -47,3 +47,28 @@ say it. The clean-room S4 implementer's guess is given as a lead where it scored
 `{2, 0, 0, dirI, dirNext, flag}`, the zeros the spec writes; only the finding's table needs them printed.
 
 *Annotated 2026-11-10 (spec-writer, `lane/n64y`):* the spec-writer entry these items came from ([drlg-outdoor](archive/2026-11-10-architect-spec-writer-plan-0064-drlg-outdoor.md)) is closed with items 1–4 done; this entry is now the only open record of its routed items (7)–(11), (14) and the insert's before-head case. When it closes, the reverser files a spec-writer entry for drlg/outdoor so they reach the spec.
+
+*Annotated 2026-11-10 (architect, plan 0064 close review, `lane/n64z`):* the Phase 5 S4 re-run
+([S4-rerun](../plans/0064-cleanroom/S4-rerun.md)) scored 47 of 1 820 different on its first pass, all from (b), and every
+other point above was guessed right (rows 4–8, 11–14, 16). Leads from that run, not evidence:
+- (b): § Worked example 5 (level 111, map seed 3101, a logged window) reproduces only with **no** opening test: 2 376
+  draws and seed out `E645993C:40AF44A9`, against 2 361 draws with the test. The logged count separates the readings,
+  so a `[C]` may stand on it once the code reading is written.
+- (a): the wildcard matches def 0 too, and the opening test still applies to a wildcard cell in Acts I, II and IV (row 7).
+- (f): the re-run guessed the **earlier** vertex survives (flags or-ed), against this entry's lead (the successor);
+  both unreached on stock data.
+
+New items from the same run (rows 2, 9, 15, 17–19), each needing a statement before the spec can say it:
+- (i) **G4, `BorderSubFits` 0x0066F3B0 / `BorderSubStamp` 0x0066F520** (row 2): which rule a variant-0 wall cell with
+  bit 0 *and* a floor `F & 2` takes. drlg/0008 § 7 has the same two clauses. Lead: the wall rule only; applying both
+  made no `Border - Border` group match (worked example draw counts 2–3 short on levels 2, 3, 41, 104).
+- (j) **L5, `BarricadeSubDefMap` 0x0067E000** (row 9): what `g_A5SubDefMap`'s main-48 rows for sub 30 (def 0) and
+  sub 31 (wildcard −5) write when they appear in a replacement variant. Lead: nothing is written.
+- (k) **H6c, `A1BridgeFind` 0x0067FB90** (row 15): the scan runs `y` in `1 … cw − 2` on a `cw × ch` grid; what a row
+  past `ch − 1` reads. Lead: such rows never match.
+- (l) **drlg/warps B2** (rows 17, 18): the `dir` that `LinkAnchor` 0x006760F0 leaves in its entry (lead: −1), read by
+  `LinkOutdoorFlags`; and whether a second Outer Steppes pick (0x00676C00) replaces or ORs `g_LinkPickOutdoorFlag`
+  (lead: replaces; unreached, no stock build backtracks).
+- (m) **J2c–J2d, the jungle exit masks and clearings** (row 19): what a neighbour outside the `gw × gh` grid reads for
+  owner, order, marks and res. Lead: 0, never written.
+When this entry closes, the spec-writer entry it files covers drlg/warps B2 as well as drlg/outdoor.

@@ -4,7 +4,7 @@ to: archivist
 date: 2026-11-10
 status: done
 context:
-  - ../../plans/0064-clean-room-test.md
+  - ../../plans/done/0064-clean-room-test.md
   - ../../plans/0064-cleanroom/S1.md
 resolution: "tools/cleanroom.py: score.sh runs the main checkout's cleanroom.py (MANIFEST records it as tool); audit skips heredoc bodies and accepts a Read of the harness tool-results file; tests added"
 ---

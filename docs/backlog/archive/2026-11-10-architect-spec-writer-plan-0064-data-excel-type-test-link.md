@@ -4,7 +4,7 @@ to: spec-writer
 date: 2026-11-10
 status: done
 context:
-  - ../../plans/0064-clean-room-test.md#implementation-log
+  - ../../plans/done/0064-clean-room-test.md#implementation-log
   - ../../plans/0064-cleanroom/S2.md
   - ../../specs/data/excel.md#g-treasure-classes
 resolution: "Done 2026-11-10 (lane n64w, plan 0064 P4): [data/excel G2](../../specs/data/excel.md#g-treasure-classes) now writes IsType(item, t) and not IsType(item, 38) with ITEMS_IsType 0x00629A90 named, and a G2 note links [items/tc § K](../../specs/items/tc.md#k-the-item-type-test--items_istype-and-items_unitistype) (type and type2 through Equiv1/Equiv2; the Rarity weight alone reads the own type) [I] (data/0001 §7, archaeology/0002 § 5). The G4 unique/set entry words still wait for the reverser entry plan-0064-parseitemcell-unique-entry-words."

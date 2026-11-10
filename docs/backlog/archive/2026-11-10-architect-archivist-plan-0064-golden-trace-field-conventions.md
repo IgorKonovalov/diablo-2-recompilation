@@ -4,7 +4,7 @@ to: archivist
 date: 2026-11-10
 status: done
 context:
-  - ../../plans/0064-clean-room-test.md#implementation-log
+  - ../../plans/done/0064-clean-room-test.md#implementation-log
   - ../../plans/0064-cleanroom/S1.md
   - ../../plans/0064-cleanroom/S2.md
   - ../../formats/golden-trace.md#fields

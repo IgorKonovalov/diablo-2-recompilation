@@ -694,6 +694,7 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-11-10 | `lane/n64y` | 0064 P4 part 3 | spec-writer | 187 227 | 79 | 10 | — | accept with fixes (Tier A, 2) | overclaim 1, omission 1 |
 | 2026-11-10 | `lane/n64y` review | 0064 P4 part 3 | architect-review | 116 862 | 39 | 5 | — | accept with fixes (2) | overclaim 1, omission 1 |
 | 2026-11-10 | S4r re-run | 0064 P5 | cleanroom | 374 697 | 74 | 20 | — | first pass 47 of 1 820 different (was 381); final 0 after a § L5 reading prompted by the diff; audit clean | — |
+| 2026-11-10 | `lane/n64z` review | 0064 P5, close | architect-review | 191 996 | 64 | 10 | — | accept (0); plan 0064 closed; 42 re-run rows triaged; 6 rules promoted | — |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not

@@ -4,7 +4,7 @@ to: archivist
 date: 2026-11-10
 status: open
 context:
-  - ../plans/0064-clean-room-test.md
+  - ../plans/done/0064-clean-room-test.md
 resolution: ""
 ---
 
