@@ -29,6 +29,8 @@ counted below, the commands in `commands.txt`; `manifest.txt` holds their sha256
   fn:sub_005541B0_UnitIsDead@0x005541B0, fn:sub_00451F70_UnitGetMode@0x00451F70)
 - [I] **A trade between players is a state machine on `PlayerData+0x50`, driven by the `0x4F` button packet.**
   Interacting with a player in town (distance test ≤ 50) sends a request: the requester gets state 1, the target 2.
+  *2026-11-10 (plan 0067 P1, `lane/n67r`):* the request is sent at a distance of 8 or less; 50 is the bound of the walk that comes first
+  ([multiplayer/0003](0003-trade.md) § 3). The whole trade is read there.
   Button 3 (the target accepts) opens both windows (state 3) and gives each a trade record whose `+0x10` holds the gold
   at opening. Button 8 offers gold. Button 4 checks "accept" (3 → 4). When both are at 4, the trade commits. Button 7
   takes both back from 4 to 3, and button 2 closes. (fn:sub_0054C7C0_Pkt4FButton@0x0054C7C0,
@@ -154,7 +156,8 @@ clip left at the picker's cap; UnitAddGoldStat(picker, 14, give); return the exc
   busy (`PlayerIsBusy`) nor the classic end lock. It rate-limits on `PlayerData+0x54` and `+0x58` (1000 and 5000 ms
   windows). It needs both in a town level (`LevelIsTown`), sets each one's interaction to the other
   (`0x00554120(unit, 0, other id)`), and sets the states, requester 1 and target 2. Outside town it clears both
-  interactions. (0x00566E60–0x00567013)
+  interactions. (0x00566E60–0x00567013) *2026-11-10 (plan 0067 P1, `lane/n67r`):* `TradeRequest` is called at `d ≤ 8`, not ≤ 50 (`9 ≤ d ≤ 50`
+  walks first, 0x00548E05–0x00548E1D); the gates in order are in [multiplayer/0003](0003-trade.md) § 3.
 - [I] **The buttons** (`PktInteractButton`, jump table 0x00568620 over button − 2; the presser is EDX, the partner
   is found by the presser's interaction id):
   - **2:** if both are in states {1, 2}, or neither is `TradeBlocked`, it closes with `TradeClose(…, 9)`.
@@ -177,7 +180,7 @@ clip left at the picker's cap; UnitAddGoldStat(picker, 14, give); return the exc
   steps 7 → 8. From 8 it clears bit 22 and either waits in state 11 until the record's `+0x14` time has passed, or
   goes back to 3. `0x00567400` (called from 0x0056063F) sets both records' `+0x14` to now + 10 000 ms and puts any
   side at 4 back to 3. So a change in the offer un-accepts both sides and holds the window about 10 s. Which item
-  moves call `0x00567400` is not followed. (fn:sub_00567620_TradeItemTest@0x00567620, 0x005689D0–0x00568C3E,
+  moves call `0x00567400` is not followed (*2026-11-10, `lane/n67r`: read in [multiplayer/0003](0003-trade.md) § 5*). (fn:sub_00567620_TradeItemTest@0x00567620, 0x005689D0–0x00568C3E,
   0x00567400–0x00567618)
 
 ```c
@@ -234,7 +237,9 @@ two-client run; a run raises a statement only where the case separates it from a
   - After the second accept: H holds `gold(H) + g`, J holds `gold(J) − g`, and J's inventory holds a copy of `X`
     (the `ItemCopy` unit; its unit id is to be logged) while H no longer has `X`. Both states 9, then 10, then 0 on the
     tick (`TradeStateTick`). A change of the offer after one accept un-accepts both (states 7 → 8 → 3, or 11 for
-    about 10 s) before the commit.
+    about 10 s) before the commit. *2026-11-10 (plan 0067 P1, `lane/n67r`):* this holds for an item moved, not for gold: button 8 writes no
+    state, so a partner at 4 stays at 4 and the commit takes the last amount ([multiplayer/0003](0003-trade.md) § 4,
+    case T6).
   - Counter cases: `g` above J's carried gold (closes); `g` above H's room (clipped at button 8); J's inventory with
     no room for `X` (cancel, state 5, nothing moved, the offers zeroed).
   - Loggers: `PktInteractButton` entry (button, parameter, presser), `TradeCommit` entry and the
@@ -262,7 +267,9 @@ two-client run; a run raises a statement only where the case separates it from a
   and what the picker gets when two or more dead members are paid (`left` below 0, then `UnitAddGoldStat` of a
   negative amount). Needs a party of three (one dead) or four (two dead), so it is out of the two-client run.
 - [L] Which item moves call `0x00567400` (the 10 s lock) and `TradeItemTest`: their two callers (0x0056063F inside
-  `InvPlaceItem`'s range, and 0x00535676/0x00535697) are not followed.
+  `InvPlaceItem`'s range, and 0x00535676/0x00535697) are not followed. *2026-11-10 (plan 0067 P1, `lane/n67r`):* answered in
+  [multiplayer/0003](0003-trade.md) § 5 (`InvItemToCursor` off page 2, and seven inventory packets).
 - [L] The room test `0x0063E370` and its "which side" output, and `0x005678A0` before the request: not read.
+  *2026-11-10 (plan 0067 P1, `lane/n67r`):* answered in [multiplayer/0003](0003-trade.md) §§ 3 and 8.
 - [L] The client messages: the codes sent through `0x0053CAB0` (`DL` = 6, 9, 10, 12, 13 at the sites above) are
   not mapped to client behaviour.

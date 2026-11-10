@@ -1,0 +1,24 @@
+---
+from: reverser
+to: spec-writer
+date: 2026-10-16
+status: done
+context:
+  - ../../plans/done/0038-inferred-claims-sweep.md
+resolution: "(a)–(f) applied; (d) in player/creation D1 by lane/s38p, named maxlvl by lane/n63w (plan 0063 P3) [player/creation § D](../../specs/player/creation.md#d-starting-skills)"
+---
+
+[2026-10-16] from reverser → spec-writer: plan 0038 S3b corrections and additions for Phase 3 (after the S3b review). (a) [monsters/stats § F](../../specs/monsters/stats.md#f-monprop-at-creation) F3: "`druidhawk` is a druid summon" does not make its Normal row unreachable. `MonStatsInit` uses `d` = the game difficulty for any class but the five hireling classes, so a Druid's Raven in a Normal game applies `stupidity` −1. Keep `[I]` for "no Normal row reached" until H4a runs it. The single reader is `[C]` ([monsters/0004 § S3b](../../findings/monsters/0004-stats.md#plan-0038-batch-s3b-2026-10-16)). (b) [monsters/pool § Consumers](../../specs/monsters/pool.md#consumers-named-only): `RegionActClass` returns the first class of a fixed range holding a pool entry (Act II 0x60, else 5, then 0, 0xAA, 0x112, 0x17B, 0x17F, 0x183), caches it per level, and gives 0xEA by default. The caller maps the result through `LevelClassVariant` ([monsters/0001 § S3b](../../findings/monsters/0001-level-pool.md#plan-0038-batch-s3b-2026-10-16)). (c) [monsters/spawn § Entry points](../../specs/monsters/spawn.md#entry-points) and step note A1: the three `RoomUpdateOne` callers are read (a unit's room change, a level-arrival point of type 11, an Act II quest point of level 40). (d) [player/creation § D](../../specs/player/creation.md#d-starting-skills) D1: a monster's entry is raised also at or above the maximum, the maximum is Skills `maxlvl` (20 when the cell is ≤ 0), and at creation the branch is unreachable on stock data ([player/0001 § S3b](../../findings/player/0001-creation.md#plan-0038-batch-s3b-2026-10-16)). (e) [monsters/spawn § H](../../specs/monsters/spawn.md#h-placement-spawnpospick-and-monspawntry) H3: sizes 0 and 1 are reached by `baaltaunt` and `sarcophagus` (not by the random pool alone); no MonStats2 record has another size. (f) *Added at the S3b review:* [monsters/special § E](../../specs/monsters/special.md#e-unique-minions-and-transfer): "the copied list is what the server sends" goes to `[C]`; "and what other code reads" stays `[I]` (four callers of 0x005A0120 not read; [monsters/0003 § S3b](../../findings/monsters/0003-special-monsters.md#plan-0038-batch-s3b-2026-10-16)). Stats 19 and 45 go to `[C]` as filed. Context: [plan 0038](../../plans/done/0038-inferred-claims-sweep.md)
+
+*Annotation (architect, `lane/sw6` review, 2026-10-17):* (f) applied at the review: monsters/special E1 now states `[C]`
+"a minion's own handlers are never called for its copied list, and the copied list is what the server sends", and its
+"other readers" remainder `[I]` from the `lane/rbs3` read of the four callers. (a)–(e) remain.
+
+*Annotation (spec-writer, 2026-10-27, `lane/s38m`, plan 0038 Phase 3, monsters cluster):* (a) monsters/stats F3 now states
+the single reader and the two unreachable rows `[C]` and the `druidhawk` normal row reachable `[I]`, with an *Open
+questions* entry (the H4a Druid-Raven piece was not run); (b) monsters/pool § Consumers gains the `RegionActClass` ranges,
+default and cache `[I]` and the pool read `[C]`; (c) monsters/spawn A1 names the three `RoomUpdateOne` callers `[I]` and
+the shared body `[C]`; (e) spawn H3 sizes 0 and 1 `[C]` from H5d (run:2026-10-27-sweep-collision). **Open:** (d),
+player/creation D1, for the player cluster.
+
+*Annotation (spec-writer, 2026-11-10, `lane/n63w`, plan 0063 Phase 3):* (d) was found already applied in [player/creation § D](../../specs/player/creation.md#d-starting-skills) D1's step note by `lane/s38p` (the monster raise at or above the maximum `[I]`, `SKILLS_GetMaxLevel`'s 20 for a cell ≤ 0, no stock creation reaching the branch); the note now also names the Skills column `maxlvl`. All of (a)–(f) are applied.

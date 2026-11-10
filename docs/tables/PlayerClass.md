@@ -24,9 +24,9 @@ The seven player classes in class order: Amazon `ama`, Sorceress `sor`, Necroman
 
 - `[C]` Layout: the 4-character code (`python3 -I tools/excel_bin.py diff workspace/merged/data/global/excel playerclass`, 7 of 7 cells). The `Expansion` row (first field `Expansion`, no code) has no record.
 - `[C]` Foreign keys: the columns named above hold only these 7 codes (set inclusion over every row of each table, in this phase); `chartemplate:Class` uses 5 of them (the classic five).
+- `[I]` Readers of a stored class (plan 0068 Phase 2, [data/0006 § 2.2](../findings/data/0006-loaded-tables-and-bundles.md#22-playerclass-class-06)): every stored class is the row index (0 Amazon .. 6 Assassin; the `Expansion` marker row takes none) compared with the unit's class word (player `unit+0x04`, also the d2s class byte). ItemTypes `Class` (`+0x21`, `ITEMS_IsClassSpecific`; 7 = none) and `StaffMods` (`+0x1F`), MagicPrefix/MagicSuffix `classspecific`/`class` (`+0x66`/`+0x67`), Skills `charclass` (`+0x0C`; staff mods and `sub_00644180_SkillLevelBonus`), CubeMain `class` (`+0x03`; 0xFF or the player's class), CharTemplate `Class` (`+0x1E`). The `playerclass` `.bin` is `-txt`-only (data/0001 H3b).
 - The record count is checked by the full-tier surveys: `excel` (`.bin` count against `.txt` data rows) and `excel_layout` (every `.bin` cell against its `.txt` cell, layout in `tools/excel_layouts.py`) (`python3 -I tools/gate.py --full`).
 
 ## Open questions
 
 - None for the data. The player-creation and save specs use the class index; their anchors are in [player/0001](../findings/player/0001-creation.md).
-

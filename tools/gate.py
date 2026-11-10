@@ -167,6 +167,9 @@ SURVEYS = [
     Survey("dcc", ["tools/dcc.py", "survey", "workspace/merged"], opt_in=True),
     # leftover_bytes=9: three objects/f9 files with 3 unexplained bytes (docs/formats/cof.md)
     Survey("cof", ["tools/cof.py", "survey", "workspace/merged"]),
+    # plan 0068 P3: the 8 COF bundles (docs/formats/cofbundle.md); leftover_bytes=63 is the 3 objects/f9 COFs' 3 extra
+    # bytes in 7 bundles
+    Survey("cofbundle", ["tools/cofbundle.py", "survey", "workspace/merged"]),
     Survey("tbl", ["tools/tbl.py", "survey", "workspace/merged"]),
     # items/palette/*.dat: 21 x 256 split, colors.txt row count, colour-family soft check
     # (family_bad=9: muted grey2/invgrey reds and purples, docs/formats/item-palette.md)

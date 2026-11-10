@@ -1,6 +1,6 @@
 # 0063 — Backlog sweep 7: the slot-free entries left after plans 0052 to 0060
 
-> **Status:** approved (2026-11-10, by the owner; not started: the owner starts it)
+> **Status:** done (2026-11-10; closed at the Phase 3 Tier A review, accept)
 > **Created:** 2026-11-10
 > **Owner skill(s):** archivist, reverser, spec-writer
 > **Related ADRs:** 0018-backlog-one-file-per-entry, 0019-backlog-closed-entries-archive, 0023-review-tiers-and-gate-first-fixes, 0024-lane-check-touched-documents-and-routing, 0027-archivist-reader-lanes-tier-a, 0031-constants-of-the-code-image
@@ -38,7 +38,7 @@ lanes with Ghidra and one archivist lane without it.
 - **Owner skill:** archivist (no slot, no Ghidra)
 - **What:** document `g_ActClockTable0..2` (`0x007443F0`, `0x00744438`, `0x00744480`; six rows of three dwords each:
   start, type, colour word) under ADR-0031. Use a rule the survey checks where one exists, else a short listed table
-  with the address and the reader (`ActClockTick`, [frame/0001 § 3.1](../findings/frame/0001-tick-and-messages.md#31-actsclockpass-the-act-light-clock)).
+  with the address and the reader (`ActClockTick`, [frame/0001 § 3.1](../../findings/frame/0001-tick-and-messages.md#31-actsclockpass-the-act-light-clock)).
 - **Entry:** `2026-11-04-spec-writer-archivist-act-clock-tables.md`.
 - **Outputs:** the table's home under `docs/formats/` or `docs/tables/` (the lane picks one and says why), with the
   survey or the listed values ADR-0031 allows.
@@ -63,9 +63,9 @@ lanes with Ghidra and one archivist lane without it.
      `+0x66` and steps `+0x64` toward `+0x65`, other writers and readers of the facing, and the two words of
      `PathStep`'s `PathAimNextPoint` call. Start from the entry's leads (0x00648640 and its callers, 0x0064887B,
      0x00648882, 0x006508E6), which are leads only.
-- **Outputs:** [hirelings/0001](../findings/hirelings/0001-hirelings.md),
-  [player/0002](../findings/player/0002-party.md), [frame/0001](../findings/frame/0001-tick-and-messages.md),
-  [path/0001](../findings/path/0001-pathplan-register.md) (or a new path finding), `re/symbols.csv`.
+- **Outputs:** [hirelings/0001](../../findings/hirelings/0001-hirelings.md),
+  [player/0002](../../findings/player/0002-party.md), [frame/0001](../../findings/frame/0001-tick-and-messages.md),
+  [path/0001](../../findings/path/0001-pathplan-register.md) (or a new path finding), `re/symbols.csv`.
 - **Done when:** each reading answers every question its entry asks, at `[I]` or better with anchors, or names the
   step it could not follow and why. Every function it relies on is named in `re/symbols.csv`. Each entry is closed, or
   annotated with its live remainder (the 0058 entry keeps its optional two-client cases). Spec changes are routed to
@@ -89,8 +89,8 @@ lanes with Ghidra and one archivist lane without it.
   4. **E14 rows** (`2026-10-27-archivist-reverser-e14-table-rows-with-an-extra-cell-in.md`): move or drop the fifth
      cell in the six findings rows (items/0002, 0003, 0004 ×2, 0006; rng/0002), so that `tools/gate.py` reports no E14
      with E14 removed from `DEMOTED` (the lane checks this locally; the raise itself is the architect's, at review).
-- **Outputs:** [objects/0001](../findings/objects/0001-object-population.md) or
-  [quests/0002](../findings/quests/0002-travel.md), `tools/objects.py`, an items finding (0016 or a new one),
+- **Outputs:** [objects/0001](../../findings/objects/0001-object-population.md) or
+  [quests/0002](../../findings/quests/0002-travel.md), `tools/objects.py`, an items finding (0016 or a new one),
   `tools/harness_runner.py` and its tests, `.claude/skills/reverser/references/tooling.md`, the six findings rows.
 - **Done when:** the h5d check is clean on the kept log, or the remaining mismatch is named with its cause. The
   inventory statements carry live counts and a named second source, at the tag those support. `batch`/`next_case`
@@ -127,7 +127,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 
 ### 2026-11-10 — Phase 1 (lane/n63a, archivist)
 
-- Done: [docs/tables/ActClockTables.md](../tables/ActClockTables.md) documents `g_ActClockTable0..2` (`0x007443F0`, `0x00744438`, `0x00744480`): contiguous, six rows of three dwords (start, type, colour word), readers, and the 18 rows. Home: `docs/tables/`, beside PathDirTables and PathTypes, the other image-constant docs; `docs/formats/` describes file formats and none is involved. Values read by a `-I` reader from the pinned image (no Ghidra, no slot). ADR-0031: table 2's `start` is the rule `60 * ((p + 5) mod 6)` (survey-checked); the other 48 values have no rule known and are listed (type and colour columns, tables 0 and 1 starts).
+- Done: [docs/tables/ActClockTables.md](../../tables/ActClockTables.md) documents `g_ActClockTable0..2` (`0x007443F0`, `0x00744438`, `0x00744480`): contiguous, six rows of three dwords (start, type, colour word), readers, and the 18 rows. Home: `docs/tables/`, beside PathDirTables and PathTypes, the other image-constant docs; `docs/formats/` describes file formats and none is involved. Values read by a `-I` reader from the pinned image (no Ghidra, no slot). ADR-0031: table 2's `start` is the rule `60 * ((p + 5) mod 6)` (survey-checked); the other 48 values have no rule known and are listed (type and colour columns, tables 0 and 1 starts).
 - Survey: `tools/actclock_survey.py`, registered in `tools/gate.py` as `actclock`, baseline `tools/gate/baselines/actclock.txt`; it checks the rule and compares the doc's 18 rows with the image. Linked from `docs/tables/README.md`.
 - Entry `2026-11-04-spec-writer-archivist-act-clock-tables` annotated, not closed. Handoff to Phase 3: sim/frame G1b links `../../tables/ActClockTables.md`; the colour word's channel order and the meaning of `type` stay `[L]` in the doc (frame/0001 does not settle them).
 - Review tier: Tier A (ADR-0027). The doc restates `[I]` statements from frame/0001 § 3.1 (reader roles, the colour blend at 0x0061BCE0, the `type == 2` test).
@@ -146,7 +146,7 @@ Tier B (`reverser-static`), item 2 read as a raise.
 1. **h5d waypoint mode.** (a) Object event 1 is `sub_00581490_ObjEvOperateEnd`: mode 1 → 2 by a direct write when
    `Mode2` is set, **not** through `UNIT_SetMode`, so no draw on the object's seed for any `Sync`; then
    `UNIT_CollUnmarkRect` when `HasCollision2` is 0. The queue sites re-read (`OBJINIT_Waypoint` frame + FrameCnt1,
-   `WaypointOperate` frame + FrameCnt1 + 1). [quests/0002 § 15](../findings/quests/0002-travel.md#15-object-event-1-on-a-waypoint-plan-0063-phase-2b-2026-11-10-lanen63s), `[I]` for the
+   `WaypointOperate` frame + FrameCnt1 + 1). [quests/0002 § 15](../../findings/quests/0002-travel.md#15-object-event-1-on-a-waypoint-plan-0063-phase-2b-2026-11-10-lanen63s), `[I]` for the
    read. (b) `tools/objects.py` (`9008ecd0`) queues event 1 at those two sites and runs it before an operate past its
    due frame (frame bounds from the `PLR` `gf` lines around a creation); `tools/collision.py check` on the kept rogue
    log: 0 mismatches (was 1). Regression over the 94 kept logs of the h5d lists with an `InitFn` 17 and an
@@ -159,7 +159,7 @@ Tier B (`reverser-static`), item 2 read as a raise.
    the second source beside the emulation: the offset start (30 spots), the item bit in the cell mask (8; its absence from the walk mask not raised, audit), the walk's mask `0x801`
    (`linecellmask`, 6), the ring order through ring 3 (`first` 10 spots, `leq`/`capsfirst` 8 each, at ring ≤ 3);
    **raised in part**: the walk tested at all (`noline`, one chain spot, 31 cases). Not raised: `fixedbase`, the start
-   `pos`, rings 4+ (one spot), the fallbacks. [items/0016 § Plan 0063 Phase 2b](../findings/items/0016-harness-inventory-run2.md#plan-0063-phase-2b-the-ground-searchs-live-raise-2026-11-10-lanen63s),
+   `pos`, rings 4+ (one spot), the fallbacks. [items/0016 § Plan 0063 Phase 2b](../../findings/items/0016-harness-inventory-run2.md#plan-0063-phase-2b-the-ground-searchs-live-raise-2026-11-10-lanen63s),
    output `workspace/logs/inventory/check-p63-spots.txt` (`manifest-inventory-p63.txt`). **Routed to Phase 3:**
    items/inventory § J's evidence table and its "each row's `[C]` is the emulated one until a reverser raise" line.
 3. **Runner stage gate.** `hr.batch(..., stage=)` is required (`NO_SHARING` or a `stage(case)` callable run after each
@@ -198,7 +198,7 @@ return was compared). Kept outputs: `workspace/logs/p63-static/` (`manifest.txt`
 that directory), produced by three new read-only tools: `tools/act_clock.py`, `tools/face_step.py` and
 `tools/p63_static_scans.py`.
 
-1. **h6f** ([hirelings/0001 § Plan 0063 Phase 2a](../findings/hirelings/0001-hirelings.md#plan-0063-phase-2a-static-lanen63r-2026-11-10)).
+1. **h6f** ([hirelings/0001 § Plan 0063 Phase 2a](../../findings/hirelings/0001-hirelings.md#plan-0063-phase-2a-static-lanen63r-2026-11-10)).
    - The client's hire line comes from `sub_004B66B0_ClientNpcMenuOpen`: its quest gate table (Kashya word 2 bit 0,
      Qual-Kehk word 36 bit 0) and Kashya's `stat 12 ≥ 8`. The menus are reset at every interaction, after the
      packet's quest record is loaded. It matches `HIRE_Hire`'s gates for every value of the inputs both sides read.
@@ -206,7 +206,7 @@ that directory), produced by three new read-only tools: `tools/act_clock.py`, `t
    - Row 29: `PlayerPlaceInAct`'s list is the inventory's corpse list. Its three writers all add flag 1 and word 0.
      The `MERC_Create` branch needs flag 0 and a non-zero word, so no stock writer reaches it.
    - These are the ruling inputs for rows 17, 18 and 21 (d-none stands) and row 29 (d-none proposed). Entry closed.
-2. **0058 party** ([player/0002 § 10](../findings/player/0002-party.md#10-plan-0063-phase-2a-the-list-writers-the-fourth-caller-and-bit-26-lanen63r-2026-11-10)).
+2. **0058 party** ([player/0002 § 10](../../findings/player/0002-party.md#10-plan-0063-phase-2a-the-list-writers-the-fourth-caller-and-bit-26-lanen63r-2026-11-10)).
    - A party is made or joined only by action 8 (accept) after action 6 (invite), through the relation states 4 and
      2. AddMember has no cap, but a game admits at most 8 clients (game `+0x8C`), so a list cannot hold nine.
    - 0x005408CB is in `sub_00540890_PartyLevelSumInLevel`, which the image never references.
@@ -214,7 +214,7 @@ that directory), produced by three new read-only tools: `tools/act_clock.py`, `t
      eggs and spawned minions, and it is never set on a player. That bears on the plan's open question: neither
      `[C]` of player/party changes.
    - Entry annotated; its live remainder is the optional two-client cases.
-3. **Act-clock scale** ([frame/0001 § 3.1a](../findings/frame/0001-tick-and-messages.md#31a-the-servers-clock-scale-flag-and-the-send-rate-plan-0063-phase-2a-lanen63r-2026-11-10)).
+3. **Act-clock scale** ([frame/0001 § 3.1a](../../findings/frame/0001-tick-and-messages.md#31a-the-servers-clock-scale-flag-and-the-send-rate-plan-0063-phase-2a-lanen63r-2026-11-10)).
    - On the server, `k = 128` with flag 0 from `DUNGEON_ActCreate`, and `k = 4` with flag 1 in Act II during the
      A2Q3 eclipse. `0x0061C240` is client code and does not set `k`: frame/0001 § 3.1 is corrected in place.
      `0x0061C180` is unreferenced.
@@ -224,7 +224,7 @@ that directory), produced by three new read-only tools: `tools/act_clock.py`, `t
      `sub_0055DA70_PlayerSkillReselect` when a wanted skill differs from the current one and is usable.
    - Remainder, in the finding's open question 1: which events leave that state, and the `ItemSkillQtyAdjust` route
      (whether a set item can carry a book skill). Entry closed.
-4. **Facing step** ([path/0001 § 9a](../findings/path/0001-pathplan-register.md#9a-the-facing-turn-plan-0063-phase-2a-lanen63r-2026-11-10)).
+4. **Facing step** ([path/0001 § 9a](../../findings/path/0001-pathplan-register.md#9a-the-facing-turn-plan-0063-phase-2a-lanen63r-2026-11-10)).
    - `sub_00648640_PathFaceTurnStep` steps `+0x64` by `+0x66` toward `+0x65` and snaps at or past the target. It
      runs only on the client (`ClientPlayerUpdate`, `ClientMonsterUpdate`), so no server code turns a walking unit's
      `+0x64`.
@@ -237,12 +237,12 @@ that directory), produced by three new read-only tools: `tools/act_clock.py`, `t
 
 | Spec, section | What changes | Tag |
 |---|---|---|
-| [hirelings](../specs/hirelings/README.md) § F (L418–L422) and *Open questions* (F1, L922) | The client test is read and matches the gates in every input state (hirelings/0001 § Plan 0063 Phase 2a). Remove "not read". Keep the refusals' d-none as ruled. | `[I]` |
+| [hirelings](../../specs/hirelings/README.md) § F (L418–L422) and *Open questions* (F1, L922) | The client test is read and matches the gates in every input state (hirelings/0001 § Plan 0063 Phase 2a). Remove "not read". Keep the refusals' d-none as ruled. | `[I]` |
 | hirelings § H (L660–L663) and *Open questions* (H12, L923) | The third caller's list is the corpse list, whose writers add flag 1 and word 0, so the `MERC_Create` branch is reached by no stock writer. Row 29's class is the architect's, at review. | `[I]` |
 | **Phase 3 Tier A ruling (open):** hirelings row 29 (`MERC_Create` with a table present), d-2c or d-none | The lane proposes d-none (no stock writer reaches the branch). Not ruled in the Phase 2a check; the Phase 3 Tier A review rules it. | ruling |
-| [player/party](../specs/player/party.md) § B (L101), § A (L92), § A (L128), *Reimplementation notes* (L226) | What makes a party (invite and accept, relation states, AddMember with no cap, leave and `UnitFree`). Nine cannot happen: 8 clients per game. Bit 26 means no experience on death and is never set on a player; list its 9 setters. 0x005408CB is unreferenced. | `[I]` |
-| [sim/frame](../specs/sim/frame.md) § G (the clock block, L470–L505) and § J rank 1 (L701), *Open questions* | Server `k` 128, or 4 in the eclipse with flag 1. Send rate: 26 per day, longest gap 2 176, 136 and 68 frames. `0x0061C240` is client code (correct any "set at act load", e.g. the *Open questions* entry at L953, which also names `0x0061C180`, now unreferenced). The refresh's route to `AuraSelect` via `PlayerSkillReselect` and its condition. The rank-1 row's "whether a clock change can reach it is not read" becomes the narrowed remainder. | `[I]` |
-| [path/overview](../specs/path/README.md) § H (H2, L529) and *Open questions* | What applies `+0x66` (the client turn step and its snap rule). There is no server stepper. Other writers: `PathSetDir`, `PathSetFacing`, `PathFaceXY`. PathStep's call is `(f 1, arg 1)`. Also [anim/movement](../specs/anim/movement.md) if it restates anim/0003 § 2's one-word call. | `[I]` |
+| [player/party](../../specs/player/party.md) § B (L101), § A (L92), § A (L128), *Reimplementation notes* (L226) | What makes a party (invite and accept, relation states, AddMember with no cap, leave and `UnitFree`). Nine cannot happen: 8 clients per game. Bit 26 means no experience on death and is never set on a player; list its 9 setters. 0x005408CB is unreferenced. | `[I]` |
+| [sim/frame](../../specs/sim/frame.md) § G (the clock block, L470–L505) and § J rank 1 (L701), *Open questions* | Server `k` 128, or 4 in the eclipse with flag 1. Send rate: 26 per day, longest gap 2 176, 136 and 68 frames. `0x0061C240` is client code (correct any "set at act load", e.g. the *Open questions* entry at L953, which also names `0x0061C180`, now unreferenced). The refresh's route to `AuraSelect` via `PlayerSkillReselect` and its condition. The rank-1 row's "whether a clock change can reach it is not read" becomes the narrowed remainder. | `[I]` |
+| [path/overview](../../specs/path/README.md) § H (H2, L529) and *Open questions* | What applies `+0x66` (the client turn step and its snap rule). There is no server stepper. Other writers: `PathSetDir`, `PathSetFacing`, `PathFaceXY`. PathStep's call is `(f 1, arg 1)`. Also [anim/movement](../../specs/anim/movement.md) if it restates anim/0003 § 2's one-word call. | `[I]` |
 
 **Judgment calls for the reviewer:**
 
@@ -253,3 +253,76 @@ that directory), produced by three new read-only tools: `tools/act_clock.py`, `t
 - The act-clock frame counts come from § 3.1's `[C]` step model run on the image's tables. They are not logged.
 
 **Review:** Tier B (`reverser-static`). Gate: see the commit.
+
+### 2026-11-10 — Phase 3, spec updates (`lane/n63w`, spec-writer)
+
+Every routed item is applied; none is ruled out. Tag deltas are the front-matter recount (gate E6).
+
+| Item | Spec, where | What changed | Tags |
+|---|---|---|---|
+| S3b (d) | [player/creation](../../specs/player/creation.md#d-starting-skills) D1 | Already applied by `lane/s38p` (the monster raise `[I]`, 20 for a cell ≤ 0, unreachable at creation); the note now names Skills `maxlvl` | — |
+| H1a (k) | [data/calc § F](../../specs/data/calc.md), [rng/seeds](../../specs/rng/seeds.md#algorithm) 7a | The hover line `[I]` → `[C]` scoped to the H1a session's potions (gate `+0xB4` = 0 at 0x0048638B), "which records carry `+0xB4` 1..4" `[I]`, *Open questions* narrowed; 7a's `PlayerUnitInit` caller (0x00569F4B) `[C]`, the other four `[I]` | calc C +1; seeds C +1 |
+| P1 | [sim/frame](../../specs/sim/frame.md#g-the-other-per-frame-passes) G1b | Links `../../tables/ActClockTables.md#values` (a new `[C]` bullet: 54 values, 42 listed, 12 by two survey-checked rules) | C +1 |
+| P2a act clock | sim/frame G1c, G1d, G1e, § J rank 1, *Open questions* | G1c the server's `k`/flag writers (128 and flag 0 from `DUNGEON_ActCreate`; 4 and flag 1 in the Act II eclipse; `0x0061C240` client-only; `0x0061C180` unreferenced); G1d the send rate (26 per day, gaps 2 176 / 136 / 68); G1e the refresh's route to `AuraSelect` and the remainder. The L953 "set at act load" entry is rewritten as the narrowed remainder (frame/0001 § 3.1a). | I +3 |
+| P2a h6f | [hirelings](../../specs/hirelings/README.md) F1, H12, *Open questions* | F1: the client hire line read, matching the gates for every input value; the refusals' d-none kept. H12 split: the third caller's list is the corpse list, no stock writer reaches the `MERC_Create` branch. The `[L]` of the two reads struck as answered. | I +2, L −1 |
+| P2a party | [player/party](../../specs/player/party.md) § A, § B, § C, *Reimplementation notes*, *Open questions*; [player/creation](../../specs/player/creation.md#j-other-level-and-experience-changes) J4; [quirks](../../specs/quirks/README.md) Q449 | § B: invite and accept, leaving, at most 8 players, the unreferenced fourth caller. § A: bit 26 means no experience on death, 9 setters listed, none on a player; the player-victim line restated. "Whether a list can hold nine" removed in § C, n5, J4 and Q449 (`quirks.py check`: 15 errors before and after, all pre-existing). Neither `[C]` of player/party changes (the plan's open question). | party I +4 |
+| P2a facing | [path/overview](../../specs/path/README.md#h-the-aim-and-the-facing-step) § H, *Open questions*; [anim/movement](../../specs/anim/movement.md) B1, B2 | H1 `PathStep`'s call `(1; 1)`; H2 names the applier; H3 the other writers and getters; new H5 block, `PathFaceTurnStep` and its snap rule, client only. The facing `[L]` struck. anim/movement's one-word call given both words. | path I +5, L −1; movement I +2 |
+| P2b inventory | [items/inventory](../../specs/items/inventory.md#j-the-ground-drops-cell) § J | The evidence table gains a *Live raise* column (per-spot counts, items/0016 § Plan 0063 Phase 2b); the two compound rows split (item bit cell/walk; walk mask/tested at all); "the emulated one until a reverser raise … not done" replaced; the section's opening `[C]` note scoped | C +1 |
+| P2b h5d (c) | [quests/travel](../../specs/quests/travel.md) C3, *Draws by event kind* | "its later change to mode 2 draws again" removed: event 1 (`ObjEvOperateEnd`) writes mode 2 directly, no draw `[I]`; the one logged waypoint `[C]`; a draws-table row for event 1. objects J2 already said so; no objects change. | C +1, I +2 |
+
+- **Hirelings row 29 (not ruled here).** H12 states the reading at `[I]`: the third caller's `MERC_Create` branch needs a
+  corpse-list node with flag 0 and a non-zero word, and the list's three writers all add flag 1 and word 0, so no
+  stock writer reaches it; a node edited outside those writers would. The spec says the row's class (d-2c or d-none)
+  is this review's ruling.
+- **Wiki** (restated sentences only): characters (the client hire line, the party's 8 and the no-experience mark,
+  the struck open bullet), game-data (hover), randomness (the player-seed path), server-frame (the clock paragraph,
+  rank-1 row, open bullet), pathing (the client-only turn, the struck open bullet), inventory (the per-spot raise),
+  quests (event 1 draws nothing), quirks (the ninth member). `based_on` dates synced, research-map rows' dates and
+  counts updated with a plan 0063 P3 note, and the sim/frame row's "act clock's tables and scale" gap narrowed.
+- **Backlog closed (3):** S3b corrections (`…-plan-0038-s3b-corrections-and-additions`), H1a raises
+  (`…-h1a-save-d2s-player-creation-raises`), and the act-clock tables entry (`…-act-clock-tables`, satisfied by G1b's link).
+- **Judgment calls for the reviewer:** G1b's values bullet is `[C]` on the table doc's survey-checked equality; G1d's
+  frame counts stay `[I]` (the emulated step on the image's tables, not a log); the inventory raise rows follow
+  items/0016's audit-corrected scopes (the item bit's walk-mask half and rings 4+ emulated only).
+- **Review:** Tier A; it closes the plan.
+
+### 2026-11-10 — Phase 3 review (architect, Tier A; closes the plan): accept
+
+**Verdict: accept, 0 fixes.** `git diff main...lane/n63w`, 33 files. Every routed item is applied as the table above
+says; the tag deltas equal the raw token recount per spec.
+
+- **Anchors, r2 on the pinned image** (sha256 `631066c1…`): hirelings (`0x0053961F` `test ax, ax` before
+  `MERC_Create` at 0x00539637; `InvCorpseAdd`'s node `[+0]` flag, `[+4]` id, `[+8]` word; its three callers push
+  `1, 0` at 0x00533939, 0x0056A9B5, 0x0057F88E; `push 0xc` at 0x004B6807); player/party (`cmp [+0x8C], 8` at
+  0x00539A4E and 0x0053F051; `PartyRemoveMember` called at 0x005A5D41 and 0x0055567D); sim/frame (the
+  `ActClockCreate`/`EclipseOn`/`EclipseOff` calls at 0x0061952F, 0x0059A394, 0x0059AC67, 0x0059AA17; `EclipseOn`
+  loads `k` from 0x007443E8 = 4; `g_ActClockScale` = 128, 4, 8); path (H5 read instruction by instruction at
+  0x00648640–0x0064867F: the snap condition is `(r > 31 and s > 63) or (r < 31 and s < 63)`, `r = 31` no snap, and a
+  31 turn at +8 snaps on the fourth call; `push 1` / `mov edx, 1` at 0x006508DD/0x006508DF); data/calc (`cmp byte
+  [edi+0xB4], 0` at 0x0048638B); rng/seeds (the five `UnitSeedInit` sites, `lea`/`add edx, 0xD0` then the call).
+  A whole-image call/pointer scan: `InvCorpseAdd` 3 calls, `PathFaceTurnStep` 2 (0x004636DE, 0x004B1563),
+  `PartyLevelSumInLevel` and 0x0061C180 none, `ActClockSet` 4, all in client code.
+- **Promotion re-check.** (1) items/0016's live raise (audited at the `lane/n63s` audit today): § J's *Live raise*
+  column restates each per-spot count and scope of items/0016 § Plan 0063 Phase 2b, including the audit's split (the
+  walk-mask half of the item bit emulated only) and `noline`'s one-spot scope. (2) frame/0001 § 3.1a is all `[I]`;
+  G1c–G1e import it at `[I]`, and no spec kept § 3.1's old "set at act load". (3) The facing-table `[C]` (path/0001
+  § 9a): its second source is the gate survey `path`, a different implementation from `tools/face_step.py`; the 64
+  dwords at 0x006EB548, dumped here, equal the rule (8 × 1, 8 × 4, 15 × 8, 16 × −8, 8 × −4, 8 × −1 after the 0).
+  path/overview H4's `[C]` is unchanged by this lane. (4) G1b's `[C]`: the 54 dwords at 0x007443F0, dumped here, equal
+  ActClockTables' 42 listed values and its two rules; with the `actclock` survey that is two readings of the image.
+  The `[C]` of data/calc (row 19, raised at the `lane/h1a` review) and rng/seeds (row 11, released by that review as
+  H1a (k)) and quests/travel C3 (quests/0002 § 15, audited today) match their finding statements and scopes.
+- **Row 29 ruling: d-none.** The third caller's `MERC_Create` branch needs a corpse-list node with flag 0 and a
+  non-zero word; nodes are made only by `InvCorpseAdd`, whose three call sites push the constants flag 1 and word 0, so
+  no stock game type reaches the branch, and a second client adds no writer: d-2c ("two clients reach it") does not
+  describe the row; only a node edited outside the writers would, which is no observable. Written into hirelings H12,
+  hirelings/0001's row-29 cell and § `PlayerPlaceInAct`'s list, and the research-map row.
+- **quirks.py check, 15 errors:** the same 15 on `main`; real drift, none from this lane. Five Q2 errors are
+  drlg/collision's notes renumbered by the ninth bullet of commit `c22a55be` (Q72, Q175, Q271 cite the old numbers);
+  ten Q3 errors are eight specs with notes and no Coverage row, and drlg/collision's row at 11 notes for 12. Filed
+  [backlog](../../backlog/2026-11-10-architect-spec-writer-quirks-check-drift.md) (to spec-writer); the research-map
+  quirks row now says so.
+- **Close.** Plan done and moved to `done/`; plans README row updated (next free number unchanged, 0069); the three
+  spec-writer entries were closed by the lane, the four Phase 2b and three Phase 2a entries by theirs; the 0058 party
+  entry stays open with its optional two-client cases. Gate `--full` green before the commit.
+

@@ -6,7 +6,7 @@ layers (components) take part, how many directions and frames it has, one byte p
 every direction and frame the order of the layers. The pixels themselves are in the layer DCCs
 ([dcc.md](dcc.md)).
 
-Parser: `tools/cof.py` (`survey`, `dump`, `compose`). **Sources: no lead; derived from data.** No
+The client also reads COFs from eight bundles ([cofbundle.md](cofbundle.md)). Parser: `tools/cof.py` (`survey`, `dump`, `compose`). **Sources: no lead; derived from data.** No
 external document was fetched or read for this format, and nothing is registered in
 [sources.md](../sources.md) (ADR-0007). The field names are ours. Layout rows are `[C]` when
 `cof.py survey` reads all 3 512 files that way with every byte accounted for (evidence rules,

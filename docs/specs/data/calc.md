@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [data/excel, rng]
 consumed_by: [combat/to-hit, stats/aggregate, stats/states]
-tags: {C: 130, I: 18, L: 3}
+tags: {C: 131, I: 18, L: 3}
 updated: 2026-11-10
 ---
 
@@ -414,9 +414,12 @@ EvalItem(unit, item, offset: u32) → i32:                                  [C] 
   (call returning to 0x005BEE04) and its `calc1` and `calc2` cells (0x005BEF16); the context's first word was the
   drinking player in all 56 evaluations. (fn:ITEMS_EvalCalc@0x00627C20, run:2026-10-16-calc,
   [data/0005 § Plan 0038 batch S1b](../../findings/data/0005-calc.md#plan-0038-batch-s1b-2026-10-16))
-- [I] Hovering a potion evaluated nothing: no `itemscode` evaluation was logged without a drink, but the logs carry
-  no mark of when the pointer rested on a potion, and the client caller 0x00486370 is not read.
-  (fn:ITEMS_EvalCalc@0x00627C20, run:2026-10-16-calc)
+- [C] Hovering the potions of the H1a session evaluated nothing. The client caller 0x00486370 ran while the pointer
+  rested on them (7 hover lines, 4 records), every one with record word `+0xB4` = 0, and returned at 0x0048638B
+  before its jump table (0x004863E4, cases 1–4), which holds its three `ITEMS_EvalCalc` sites; none of them logged
+  an evaluation, while the three drinks in the same window logged 8. (0x0048638B, 0x004863E4,
+  fn:ITEMS_EvalCalc@0x00627C20, run:2026-10-27-sweep-d2s-load, [data/0005 § Plan 0038 batch S1b](../../findings/data/0005-calc.md#plan-0038-batch-s1b-2026-10-16), row 19)
+  Which records carry `+0xB4` in 1..4, and so evaluate on a hover, is not read. [I] (0x004863E4)
 - [I] **The item context.** The callers are the item-use functions of `g_ItemUseFns` (`{test, use}` pairs indexed by
   the used item's `pSpell`, 31 entries), called from `sub_005BF240_ItemUse`; each passes **the user** as `unit` and
   **the used item** as the second argument. Since the item variable reader returns 0 and `rand`/`stat` read
@@ -713,7 +716,7 @@ lvl 5 <          0       lvl 4 − par4 ×            ?:   96 41 skill        pa
   reads it, so no run can show it.
 - [L] Not reached in any run, harness or emulated: the divide error of `INT32_MIN ÷ −1` (a fault, which emulated
   evidence leaves out; an edited formula with a variable divisor reaches it), and the § G1 codes `blvl`, `m1el m2el
-  m3el` and `edma`, which read unit state (`edma`'s one stock cell needs a skill evaluation in play), and whether
-  hovering a potion evaluates nothing (no hover mark in the logs). The other branches this entry listed (the zero
+  m3el` and `edma`, which read unit state (`edma`'s one stock cell needs a skill evaluation in play), and a hover
+  over a record whose `+0xB4` is 1..4 (the hovered potions of run:2026-10-27-sweep-d2s-load all had 0). The other branches this entry listed (the zero
   divisor, the 32-bit wrap, `0B` false, `^`, the code-only opcodes, an empty-stack pop, a full stack and 25 of the 30
   codes) ran under emulation (run:2026-10-17-sweep-emu, run:2026-10-17-sweep-emu2).

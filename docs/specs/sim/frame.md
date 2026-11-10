@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, anim/timing, drlg/lifecycle, monsters/ai/overview, skills/dispatch, skills/missiles, combat/overview, combat/to-hit, items/tc, items/quality, items/economy, objects, quests]
 consumed_by: [drlg/lifecycle, chain]
-tags: {C: 66, I: 127, L: 5}
-updated: 2026-11-04
+tags: {C: 67, I: 130, L: 5}
+updated: 2026-11-10
 ---
 
 # The server frame: the tick, its passes, the unit events, the queue, the timers and the message drain
@@ -499,11 +499,40 @@ G1a. ActClockTick(act, a): on the dwords at [act+4]               [C] (all of G1
 - G1a. [C] `env`, 420 cases, 0 mismatches. The flag-set path compares against `T1` in act index 3 but takes the new values
   from `T2`, as the code does (0x0061BF4F–0x0061BFA7). (run:2026-10-30-frame-emu, data:g_ActClockTable0@0x007443F0,
   data:g_ActClockTable1@0x00744438, data:g_ActClockTable2@0x00744480)
-- G1b. [I] `T0`, `T1`, `T2` are six rows of three dwords (start, type, a colour word), read only; their values are not written
-  here ([backlog](../../backlog/2026-11-04-spec-writer-archivist-act-clock-tables.md)). The products are `i32`: `k × 360` fits up to
+- G1b. [I] `T0`, `T1`, `T2` are six rows of three dwords (start, type, a colour word), read only. The products are `i32`: `k × 360` fits up to
   `k` = 5 965 232 and `start × k`, at the largest start, 350, up to 6 135 667; past that the compare runs on the wrapped value, and the
   cases keep `k` below 5 000. The clock reads as the act's day-and-night light, from the colour word and the packet. (0x0061BF1F, 0x0061BF66,
   0x0061BF97, 0x0061BCE0, fn:sub_0061BEE0_ClockStep@0x0061BEE0)
+- G1b. [C] The tables' 54 values are in [ActClockTables](../../tables/ActClockTables.md#values): 42 listed and 12 given by two rules
+  (table 2's `start` is `60 × ((p + 5) mod 6)`, table 1's `type` equals table 0's), which the gate survey `actclock` checks against the
+  pinned image. (data:g_ActClockTable0@0x007443F0, data:g_ActClockTable1@0x00744438, data:g_ActClockTable2@0x00744480,
+  [ActClockTables](../../tables/ActClockTables.md))
+- G1c. [I] **The server's scale and flag.** `k` (`+0x28`), its index (`+0x2C`) and `f` (`+0x30`) have three server writers.
+  `DUNGEON_ActCreate` creates every act's clock with `sub_0061BE40_ActClockCreate`: `p` = 2, index 0, `k` = 128, `c` = `k × T0[2].start`,
+  `f` = 0. In Act II, the A2Q3 eclipse (`sub_0059A350_A2Q3_EclipseOn`, and `sub_0059AC40_A2Q3_ActEnter`) calls
+  `sub_0061C450_ActClockEclipseOn`: index 1, `k` = 4, `p` = 0, `f` = 1, the row's values from `T2`; the viper chest
+  (`sub_0059A7E0_A2Q3_ViperChest`) calls `sub_0061C4D0_ActClockEclipseOff`: index 0, `k` = 128, `p` = 2, `c` = 0, `f` = 0. So on the server
+  `k` = 128 with `f` = 0 in every act, except Act II's clock during the eclipse, with `k` = 4 and `f` = 1. The scales are the three dwords
+  of `g_ActClockScale` (128, 4, 8). `sub_0061C240_ActClockSet` (which writes `f`, `p`, `c` and `v`, never `k`) has only client callers;
+  `sub_0061C3B0_ActClockCycleScale`, the stub at 0x0061BB50 that copies a scale into `k`, and 0x0061C180 have no reference in the image.
+  (fn:sub_0061BE40_ActClockCreate@0x0061BE40, 0x0061952F, fn:sub_0061C450_ActClockEclipseOn@0x0061C450, 0x0059A394, 0x0059AC67,
+  fn:sub_0061C4D0_ActClockEclipseOff@0x0061C4D0, 0x0059AA17, data:g_ActClockScale@0x007443E4, fn:sub_0061C240_ActClockSet@0x0061C240,
+  [frame/0001 § 3.1a](../../findings/frame/0001-tick-and-messages.md#31a-the-servers-clock-scale-flag-and-the-send-rate-plan-0063-phase-2a-lanen63r-2026-11-10))
+- G1d. [I] **How often the pass sends 0x53**, from G1a's step run on the image's tables (not logged). At `k` = 128 and `f` = 0, a day (the
+  clock back to its start) is 35 846 frames in act indexes 0, 1 and 4, 29 702 in act index 2 and 2 726 in act index 3. Each day `ActClockTick`
+  returns 1 on 26 frames, 21 by the bucket test and 5 by a row change; the longest gap between two sends is 2 176 frames (`17 × 128`), 136 in
+  act index 3. During the eclipse a day is 1 206 frames with 23 sends, the longest gap 68 frames. A row change can follow a bucket return on
+  the next frame. (0x0061BEE0–0x0061BFA7, 0x0061C066–0x0061C0A7, [frame/0001 § 3.1a](../../findings/frame/0001-tick-and-messages.md#31a-the-servers-clock-scale-flag-and-the-send-rate-plan-0063-phase-2a-lanen63r-2026-11-10))
+- G1e. [I] **What a send's refresh does.** `sub_0055FDE0_PlayerEquipRefresh(game, player, 1)` runs `sub_0055DBC0_EquipReqRefresh(0)`, then
+  0x00621000(player, 1). On stock data a clock change alters no item's usability: time enters a requirement only through a by-time stat
+  (ItemStatCost op 6 or 7), and the stock rows with one have `spawnable` 0. The refresh still detaches and re-attaches every equipped set
+  item, and `sub_0055DA70_PlayerSkillReselect` compares the player's wanted left and right skills with the current ones: when one differs and
+  `SKILLS_CanUse` gives neither 2 nor 7, it calls `sub_005701B0_PlayerSetSkill`, which for a right skill with Skills `+0x04` bit `0x20`
+  calls `sub_0056FF10_AuraSelect`; that draws, through `SKILLS_SrvDo`, only for a skill with `+0x05` bit `0x80`. Which events leave a wanted
+  skill different from the current one without a refresh of their own is not read, nor whether a set item can carry a book skill, which
+  decides whether the refresh's route through `sub_0055C110_ItemSkillQtyAdjust` to five RNG functions is live.
+  (fn:sub_0055FDE0_PlayerEquipRefresh@0x0055FDE0, fn:sub_0055DA70_PlayerSkillReselect@0x0055DA70, fn:sub_005701B0_PlayerSetSkill@0x005701B0,
+  fn:sub_0056FF10_AuraSelect@0x0056FF10, fn:sub_0055C110_ItemSkillQtyAdjust@0x0055C110, [frame/0001 § 3.1a](../../findings/frame/0001-tick-and-messages.md#31a-the-servers-clock-scale-flag-and-the-send-rate-plan-0063-phase-2a-lanen63r-2026-11-10))
 - G2. [I] `GameFpsStats`: on 1 000 ms or more since `Game+0xB4`, it stores frames × 1000 ÷ elapsed (unsigned) and zeroes the
   frame count. Statistics only, no game effect and no draw. (fn:sub_0052D720_GameFpsStats@0x0052D720)
 
@@ -698,7 +727,7 @@ I1. QUESTS_TimersRun(game):                                       [C] (all of I1
 | Rank | Pass | Its own code | Route to a draw | Seeds | Tag |
 |---|---|---|---|---|---|
 | 21, before the tick | drain, packet handlers | none of the queue's | 135 RNG functions reached; per handler not computed; each subsystem's spec | as each spec names | [I] (data:g_SrvPacketTable@0x006E0D18) |
-| 1 | `ActsClockPass` | none (564 functions) | `EquipReqRefresh` per client's player on a clock change, through it `PlayerSetSkill` → `AuraSelect` → `SKILLS_SrvDo`; whether a clock change can reach it is not read | [items/sockets-runewords](../items/sockets-runewords.md), [skills/dispatch](../skills/dispatch.md) | [I] (0x0055FDE8) |
+| 1 | `ActsClockPass` | none (564 functions) | `EquipReqRefresh` per client's player on a clock change, through it `PlayerSetSkill` → `AuraSelect` → `SKILLS_SrvDo`, when a wanted skill differs from the current one and is usable (G1e); which events leave that state is not read | [items/sockets-runewords](../items/sockets-runewords.md), [skills/dispatch](../skills/dispatch.md) | [I] (0x0055FDE8) |
 | 2 | `GameFpsStats` | none (5 functions) | none | — | [I] (fn:sub_0052D720_GameFpsStats@0x0052D720) |
 | 3 | `NewRoomsUpdate` | none | the wanderer tick, the population, the restore (2 draws per restored item); level-point lookups | room's own; a neighbour's room seed; game; level; object region | [I] (fn:sub_0052D160_NewRoomsUpdate@0x0052D160, [lifecycle § H](../drlg/lifecycle.md#h-the-restore)) |
 | 4 to 13 | the ten walks | none (8 functions, the 10 callback calls unfollowed) | each event's function, [anim/timing § N](../anim/timing.md#n-draws-and-seeds-per-event-kind), [monsters/ai § A](../monsters/ai/README.md#a-the-event-kinds-and-their-seeds), [skills/dispatch § P](../skills/dispatch.md#p-draws-and-seeds-per-event-kind) | the unit's; another unit's (J2 kind 5); game; local | [I] (fn:sub_005414D0_GameRunUnitEvents@0x005414D0) |
@@ -950,7 +979,7 @@ sequenceDiagram
 ## Open questions
 
 - [I] **The 20-pair floor is decided, and no longer open.** The owner ruled on 2026-11-04, option A of [plan 0055's log](../../plans/done/0055-server-frame.md): the floor becomes the pairs measured, stated as § K5 states them. (run:2026-11-04-frame2, run:2026-11-04-frame3)
-- [L] **The act clock's values and its scale.** The tables' values ([backlog](../../backlog/2026-11-04-spec-writer-archivist-act-clock-tables.md)) and the server's scale `k` and flag, set at act load (`0x0061C240`, `0x0061C180`), and so how often the clock pass sends 0x53 ([backlog](../../backlog/archive/2026-11-04-spec-writer-reverser-act-clock-scale.md)). Whether a clock change can change a usable item and so run `AuraSelect` is not read either: a window across a 0x53 packet settles it.
+- [L] **Whether a clock pass's refresh draws in play.** The tables, the server's scale and flag and the send rate are answered in G1b to G1d. Left (G1e): which events leave a player's wanted skill different from its current one and usable without their own refresh, so that the next 0x53 send runs `AuraSelect`; and whether a set item can carry a book skill, which decides whether the refresh's `ItemSkillQtyAdjust` route is live. A window across a 0x53 send with the seeds at `FP` settles it.
 - [L] **Not read, each named in its finding:** the bits `UnitFrameReset` clears, by name, and which item has item flag 1 at the reset; `ClientRoomSync`'s calls under unit `+0xC8` bit 21 and what `0x0053FC20` does under `[[game+0x1D28]+0x08]` bit 0x400; the object handlers left as addresses, which unit type each queue site is for, `A5Q3_TownReturn`'s caller and the four unreferenced `UnitRoomUnlink` sites, the eleventh `ActRoomsHead` call at 0x0053B0BF, a dead mercenary's way out of its pet list, the 16 game-code indirect calls of the room sync's graph, the registrars behind frame/0005 § 7's 54 functions, whether a logged event of a universal kind is the server's or the client's.
 - [L] **Client function 0x00473090,** active in some outdoor sessions and no Den window, fills records of the list at `0x007A8A04`+0x11C with five draws per call, beside `sub_00473910_WeatherTick`. That reads as rain particles, with no code read to say so. No spec depends on it; it is outside the server frame.
 - [L] **The act's room-create callback `+0x4C`:** the client's `DUNGEON_ActCreate` call (0x0044E13D) passes two code pointers, 0x00459150 and 0x004591A0, as its last two arguments, where the server's (0x0053ACA0) passes 0; that `+0x4C` is one of them, so 0 on the server, is a lead.

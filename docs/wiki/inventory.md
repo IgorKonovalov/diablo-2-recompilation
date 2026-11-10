@@ -357,6 +357,13 @@ the start cell 27 times, ring 1 31 times, ring 2 32, ring 3 21, and ring 4 or be
 test mattering (without it 31 of the 40 searches at the crowd spot would come out differently). The walk's path itself, a full surround and a null result
 were not reached in a game.
 
+Counted by spot (a chain, or one drop position: 30 in all), the logs separate several of the rules above from a wrong
+reading at many spots, so those rules are **seen in a game** as well as emulated: the (2, 3) start, at all 30; another
+ground item refusing a cell, at 8; the walk's own, narrower set of blockers, at 6; and, through ring 3, the lowest
+distance, the first among equals and the side columns first, at 8 or more. That the walk is tested at all is seen at the
+crowd spot only, and that a ground item does not stop the walk has no logged test of its own: both stay emulated, as do
+rings 4 and beyond, met at one spot.
+
 A worked case from the crowd session: a player standing at (5032, 5027) in the Act IV town drops six items in a row.
 The start is (5034, 5030). They land in turn on (5034, 5030), (5033, 5030), (5035, 5030), (5034, 5029), (5034, 5031) and then on
 (5033, 5029), the first corner at distance 2 in the search's order.

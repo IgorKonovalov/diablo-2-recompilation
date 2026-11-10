@@ -247,6 +247,53 @@ loads in every run" carry dated corrections pointing to data/0006 § 2.4.
 Open, for the record: the two harness pieces above; whether a missile attack reaches event 7; the runtime registrar
 0x005C377B's id; the arena score's readers. Review: Tier B.
 
+### 2026-11-10 — Phase 3 (archivist, `lane/n68f`)
+
+Done:
+- **COF bundles documented:** [cofbundle.md](../formats/cofbundle.md) (24-byte record header, `size` bytes of COF, no file header or index; runtime slots `0xFFFFFFFF`/0/`0xFFFFFFFF` on disk; content against the loose files and `animdata.d2`; the 63 leftover bytes are the three `f9` COFs' 3 extra bytes in seven bundles). Parser `tools/cofbundle.py` (moved from `tools/n68r_bundles.py` with `git mv`, `survey` and `dump`), full-tier survey `cofbundle` registered in `tools/gate.py` with baseline `tools/gate/baselines/cofbundle.txt`: 8 files, 6 726 records, 0 errors, 0 COF parse errors.
+- **Coverage ledger** (`docs/formats/README.md` § Coverage): rows for `.d2` bundles, `.cof`, `.dn1` (`lut.dn1` never opened), the colour `.dat` files (client colour transforms), `.key`, `gateways.txt` and the `a1..a5npc.txt` files now carry Phase 2's reasons and `[I]` tags; `data/local/use` is described by data/0002, `data/iamexpansion` stays undescribed (Phase 2 did not examine it; not rule-bearing).
+- **Table-doc answers** (the backlog entry `2026-11-10-architect-archivist-plan-0068-p2-table-doc-corrections`, closed): Sounds (open question answered), MonItemPercent (loaded, no reader `[I]`, layout from the descriptor), Events (registration tests, dispatch ids, never-dispatched 4 and 8, id 13), SkillDesc (`SkillPage`'s server use, `SkillHasDesc`), Arena (scoring), Overlay, Composit, MonSounds, AutoMap (client only), BodyLocs, PlayerClass (reader tables).
+
+Statements taken from a finding (Tier A, ADR-0027): the bundle open and its callers, the loader's refusals (name over 7 characters, directions over 0x40) and the 512-bucket hash, which bundles are never opened; every reader sentence in the table docs; the ledger reasons. Data statements (record walk, header values, counts, comparison with loose files and `animdata.d2`) are this lane's survey `[C]`.
+
+Left: Phase 4 (specs); `data/iamexpansion` unexamined. Spec routes are unchanged (the Phase 2 hand-off above).
+
+### 2026-11-10 — Phase 3 review (architect, Tier A, ADR-0027)
+
+**Verdict: accept with fixes (9), applied in the review commit.** Done when: met. The one loaded bundle kind has
+[cofbundle.md](../formats/cofbundle.md), and `python3 -I tools/gate.py --full=cofbundle` is green (8 files, 6 726
+records, 0 errors, 0 COF errors). The survey's counts were recounted by an independent walk (file sizes and record counts,
+every name 7 characters, directions 1/8/16/4 = 4 902/1 055/761/8, sizes 39..3 196, 2 516 distinct names, 1 287 in one
+bundle) and `--list` reproduces the 11 frame and 2 event differences with `animdata.d2`. The format doc agrees with
+[cof.md](../formats/cof.md) (name pattern, the three `f9` files' 3 extra bytes, the directions field) and with data/0006
+§ 4 at `[I]` for every loader statement. `lut.dn1`, the colour `.dat` files, `.key`, `gateways.txt` and the NPC text
+files carry data/0006 § 5's reasons at `[I]`. Every table-doc sentence taken from data/0006 was read against § 1–3.
+
+Fixes:
+1. *overclaim:* Sounds' "a stock run with sound on reads `sounds.txt` … never `sounds.bin`" sat after the bullet's `[C]`;
+   the finding gives it untagged from the `[I]` reading. Now `[I]`.
+2. *overclaim:* the ledger's `.cof` row said "the client reads the loose files too", untagged. data/0006 § 4 says the
+   client builds the loose path (`0x0046F490`, `0x005034B0`, `0x0064F9BC`). Now that, `[I]`.
+3. *omission:* Arena's scoring gave `MonsterKill` and `MonsterDeath` without their cases (a player killing a monster, a
+   monster killing a player; archivist rule 7) and dropped the dirty word.
+4. *under-claim:* Arena's seven column meanings stayed `[L]` "by name" and its doc status "readers not followed";
+   data/0006 § 3.3 gives each at `[I]`.
+5. *under-claim:* SkillDesc's tree-position row kept `SkillPage` at `[L]`; it is the server's tab-bonus page at `[I]`
+   (§ 3.2).
+6. *omission:* SkillDesc's `SkillHasDesc` "1 iff" left out the finding's first condition (the skill is a Skills row).
+7. *omission:* Overlay's "18 sites" left out `sub_00621E40_UnitSetOverlayStat`, which the finding lists beside them, and
+   added "light" to the finding's "(frames, timing)".
+8. *stale cross-reference:* Phase 2 pointers left in SkillDesc's and Overlay's doc status, MonSounds' status and delays
+   row, and Composit's "Readers …: plan 0068 Phase 2 item 3".
+9. *other:* the ledger's `data/iamexpansion` row, left open by the lane (no Game.exe found), is settled: no string
+   `iamexpansion`, nor any `iam` substring, in the pinned `game.exe` (sha256 `631066c1…`, `docs/inventory.md`) in any
+   case, ASCII or UTF-16. Reproduce: `python3 -I -c "import re,sys;d=open(sys.argv[1],'rb').read();print([hex(m.start()) for p in (b'iam','iam'.encode('utf-16-le')) for m in re.finditer(re.escape(p),d,re.I)])" workspace/install/app/game.exe`
+   prints `[]`. Row now `[I]` never opened.
+
+Not changed: cofbundle.md's survey line does not test the 7-character names (the loader's refusal); the data claim is
+`[C]` from this review's recount, and a regression would show as a COF parse or `dup_names` change only. Left for a later
+tools pass if a bundle ever changes. Phase 4 (specs, `lane/n68w`) is unaffected: no spec route moved.
+
 ### 2026-11-10 — Phase 4 (spec-writer, `lane/n68w`)
 
 Done: the rule-bearing readings of [data/0006](../findings/data/0006-loaded-tables-and-bundles.md) carried at the

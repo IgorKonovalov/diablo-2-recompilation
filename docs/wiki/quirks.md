@@ -1,6 +1,6 @@
 ---
 based_on:
-  - docs/specs/quirks/README.md 2026-11-04
+  - docs/specs/quirks/README.md 2026-11-10
 ---
 
 # Quirks: the traps a faithful rebuild must keep
@@ -118,8 +118,8 @@ experience curve is cubic, not quadratic. Keep them all. Entries:
 The index lists nine such paths, wherever the specs state them; they live in the classes above. Only one of the nine
 happened in a game: on one of the cube's crafting recipes, at a low item level, a recorded run logged the game's fault.
 Two more were reached only under emulation, the game's own code run on its own and not in a game: the game's fatal path
-on three paths of the skill catalogue, and the same path for a party's ninth member, where whether a party can hold nine
-is unread. The other six come from readings of the code. None was provoked for the index, and the harness has provoked
+on three paths of the skill catalogue, and the same path for a party's ninth member, which no stock game reaches: read from the code, a party holds
+at most eight players. The other six come from readings of the code. None was provoked for the index, and the harness has provoked
 none since that rule; the logged fault is older, from a run that expected it
 ([crash and hang paths](../specs/quirks/README.md#crash-and-hang-paths)).
 

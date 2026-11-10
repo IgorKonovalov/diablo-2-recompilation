@@ -156,3 +156,14 @@ tests), `docs/plans/0064-cleanroom/brief.md`.
   allowed, a manual read of each flagged call finds no read outside the sandbox. Run ruled valid; tool fixes filed for
   the archivist. Caveat for the triage: the implementer's session loaded the project's `CLAUDE.md` (the harness loads it
   for every subagent), which is a project map, not a finding.
+
+- **2026-11-10, Phase 2 slice S2 (orchestrator):** one fresh Opus implementer on a sandbox rebuilt from `main` at
+  `39854e16` (own git repository), 239 684 tokens, 49 tool uses. First pass 32 320 fields, 1 573 different, 0 missing
+  (nodrop 1 113, item 136, quality 136, end_seed 127, pick 22, select 18, subtc 12, count 9; all cases observed); final
+  (run 6) 0 different, but only after **fitting the killer's magic find from the printed diffs** (472 expansion, 250
+  classic): no `drop` case input and no document gives it, and the ledger records it as guessed from the diff. Ledger
+  [S2](0064-cleanroom/S2.md), 16 rows. `cleanroom.py audit --slice S2` reports 4 paths: one shell variable assignment
+  and three files the implementer wrote and read back in the shared session scratchpad (its own mismatch lists); a
+  manual read of each finds no read of project material outside the sandbox. Run ruled valid. For the triage: the
+  magic-find input (golden-set or spec defect) and the `nodrop` list shape (format doc, "per roll") carry 1 249 of the
+  1 573 first-pass differences.

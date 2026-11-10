@@ -25,9 +25,9 @@ The 13 event names that item stats and aura skills attach handlers to: `hitbymis
 
 - `[C]` Foreign keys: `itemstatcost:itemevent1` (6 named values), `itemevent2` (3) and `skills:auraevent1` (5), `auraevent2` (2) are subsets of the 13 names (set inclusion over every row, in this phase).
 - What a handler does when its event fires is in [skills/0003](../findings/skills/0003-handlers.md) and the dispatch spec, not here.
+- `[I]` Readers (plan 0068 Phase 2, from [data/0006 § 2.3](../findings/data/0006-loaded-tables-and-bundles.md#23-events-event-id-012-and-what-is-dispatched)): the event id a table stores is the Events row index. Registration, `sub_0056E740_AddStatEvent` (11 calls): ItemStatCost `itemevent1`/`itemevent2` ids are read as `s16` and registered only when `> 0` (a blank, stored -1, is skipped; id 0 `hitbymissile` would be skipped too, and no stock stat uses it); Skills `auraevent1..3` are registered when `>= 0` (so `hitbymissile` registers, for skill 60 Chilling Armor); the fourth caller, `0x005C377B`, takes its id from a runtime record. Skills `auratgtevent`, `passiveevent` and States `cltevent` are read by none of the 11 calls (the two Skills columns are blank in every stock row). Dispatch, `UNIT_DispatchEvent` (17 call sites, each with a constant id): ids 0, 1, 2, 3, 5, 6, 7, 9, 10, 11, 12 are dispatched, from missile hits, `COMBAT_ApplyDamage`, `COMBAT_BuildDamage`, `COMBAT_DeliverQueued`, `COMBAT_ApplyReductions`, the experience functions and the monster death functions. **Ids 4 (`doactive`) and 8 (`domissileattack`) are never dispatched**, so a handler registered on them never runs: on stock data that is stat 195 `item_skillonattack`'s `itemevent2` (8). Id 13 is dispatched at a monster's death and has no Events row. (the full site table is in the finding)
 - The record count is checked by the full-tier surveys: `excel` (`.bin` count against `.txt` data rows) and `excel_layout` (every `.bin` cell against its `.txt` cell, layout in `tools/excel_layouts.py`) (`python3 -I tools/gate.py --full`).
 
 ## Open questions
 
-- None for the data.
-
+- `[L]` Whether a missile attack reaches event 7's call (`COMBAT_DeliverQueued`), and the id the runtime registrar `0x005C377B` passes: not followed (data/0006, open).

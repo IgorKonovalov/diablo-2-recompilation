@@ -2,7 +2,7 @@
 based_on:
   - docs/specs/anim/README.md 2026-11-04
   - docs/specs/anim/timing.md 2026-11-10
-  - docs/specs/anim/movement.md 2026-11-04
+  - docs/specs/anim/movement.md 2026-11-10
 ---
 
 # Animation and timing

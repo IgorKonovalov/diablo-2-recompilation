@@ -178,7 +178,8 @@ B2. ANIMDATA_Find(name):                                          [I] (fn:ANIMDA
 - B2. [I] **The COF bundles are not a source.** The client loads `cmncof_a*.d2` into its own COF cache, which only its
   drawing reads; 11 bundle COFs differ from `animdata.d2` in frames per direction and 2 in event frames, and none of
   that reaches the server's mode lengths, which come from `animdata.d2` alone. (fn:sub_0046F310_CofBundleLoadAct@0x0046F310,
-  [data/0006 § 4](../../findings/data/0006-loaded-tables-and-bundles.md#4-the-cof-bundles-plan-item-4))
+  [data/0006 § 4](../../findings/data/0006-loaded-tables-and-bundles.md#4-the-cof-bundles-plan-item-4),
+  [formats/cofbundle](../../formats/cofbundle.md#layout))
 - B3. [C] **The shapeshift display.** With `Unit+0xC8` bit 3 set, the first state of the DataTables transform list
   that the unit has decides: States `gfxtype` 1 shows a player as a monster of class `gfxclass` (its mode mapped by
   `g_PlrToMonMode` and the MonStats2 fallback); the record, the start frame and the rate all take the display values

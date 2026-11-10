@@ -17,7 +17,7 @@ hirelings {C 95, I 39, L 6} → **{C 137, I 41, L 7}** (line diff +43 / −1 `[C
 2026-10-27. Research-map row rewritten whole; root README row 2026-10-27. Entries: the
 [H6f entry](2026-10-27-reverser-spec-writer-h6f-hirelings-raises.md) and the
 [H1b entry](2026-10-27-reverser-spec-writer-h1b-save-d2s-and-hirelings-raises.md) closed; the
-[H1a entry](../2026-10-27-reverser-spec-writer-h1a-save-d2s-player-creation-raises.md) annotated (hirelings 32 done; 3,
+[H1a entry](2026-10-27-reverser-spec-writer-h1a-save-d2s-player-creation-raises.md) annotated (hirelings 32 done; 3,
 30, 33 for H1c; player/creation and (k) open). No S2c or S3b entry part names hirelings. Counts entry:
 [2026-10-27-spec-writer-architect-s38h-hirelings-counts-for-the-research-map](2026-10-27-spec-writer-architect-s38h-hirelings-counts-for-the-research-map.md).
 

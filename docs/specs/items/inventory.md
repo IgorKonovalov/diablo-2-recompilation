@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, items/use, drlg/collision, drlg/lifecycle, stats/aggregate, items/economy]
 consumed_by: [items/use, player/creation, quests/travel, drlg/lifecycle, drlg/collision, items/economy, items/quest-drops, items/cube]
-tags: {C: 74, I: 105, L: 13}
+tags: {C: 75, I: 105, L: 13}
 updated: 2026-11-10
 ---
 
@@ -506,7 +506,7 @@ flowchart TD
   f -->|0| nl["null; out keeps the start"]
 ```
 
-**What this section's `[C]` is.** Every `drop` `[C]` below is `[C] (ADR-0015, ADR-0029 (a))` **given that the allocation returned a writable block**, at size 1 and step 1: the code's map on declared rooms and one declared pool page. It is not a live run, and not how often a game's rooms make a statement matter. [C] (ADR-0015, ADR-0029 (a)) (fn:sub_00555DA0_GroundDropCell@0x00555DA0, run:2026-11-04-ground-emu, run:2026-11-04-lock-scan)
+**What this section's `[C]` is.** Every `drop` `[C]` below is `[C] (ADR-0015, ADR-0029 (a))` **given that the allocation returned a writable block**, at size 1 and step 1: the code's map on declared rooms and one declared pool page. It is not a live run, and not how often a game's rooms make a statement matter; the rows the evidence table's *Live raise* column marks raised are live as well, in the scope it gives. [C] (ADR-0015, ADR-0029 (a)) (fn:sub_00555DA0_GroundDropCell@0x00555DA0, run:2026-11-04-ground-emu, run:2026-11-04-lock-scan)
 
 ```
 J1. GroundDropCell(room, pos, out, size: i32 = 1, fallback: i32) → room:    [C] (ADR-0015, ADR-0029 (a)) (family drop, 4 000 cases, to the return, given the block; all of J1–J2 but the cell mask's bits 0x1 and 0x800; fn:sub_00555DA0_GroundDropCell@0x00555DA0, fn:COLL_FindFreeNear@0x0064DEA0, run:2026-11-04-ground-emu, run:2026-11-04-lock-scan)
@@ -544,22 +544,24 @@ J3. Walk(r, (x, y), origin, mask) → 0 or 1:                          [C] (ADR-
         if the new cell's byte is 8: return 0                        ; the origin is tested only when the walk starts on it
 ```
 
-**Each line's evidence.** The emulated column is `drop`'s 4 000 cases, 0 mismatches, 55 distinct outcomes; "fails" is the count a wrong reading fails. The live column is 118 searches over the three kept logs (37 in run:2026-11-04-inventory, 41 and 40 in run:2026-11-04-inventory-2), 0 mismatches. **They are not 118 independent cases:** a player's drops are chains in place, each drop's mark an input of the next, at six spots (6 and 4 in the first run; 24 at the start, 12 at the parapet, 4 in the City, 40 at the crowd spot in the second), and the other 28 are `DropCreateItem` drops at 24 positions. The walk mask rests on one of those chains. The live counts are a second route where the row says so; each row's `[C]` is the emulated one until a reverser raise, which the `lane/p60b` check allows for the rows it names and which is not done. [C] (run:2026-11-04-inventory, run:2026-11-04-inventory-2, fn:sub_00555DA0_GroundDropCell@0x00555DA0)
+**Each line's evidence.** The emulated column is `drop`'s 4 000 cases, 0 mismatches, 55 distinct outcomes; "fails" is the count a wrong reading fails. The live column is 118 searches over the three kept logs (37 in run:2026-11-04-inventory, 41 and 40 in run:2026-11-04-inventory-2), 0 mismatches. **They are not 118 independent cases:** a player's drops are chains in place, each drop's mark an input of the next, at six spots (6 and 4 in the first run; 24 at the start, 12 at the parapet, 4 in the City, 40 at the crowd spot in the second), and the other 28 are `DropCreateItem` drops at 24 positions. The *Live raise* column is the reverser's raise with these logs as the second source beside the emulation: a spot is one chain or one drop position (30 in all), and a row counts the spots where a wrong reading fails. Where it says raised, the row's `[C]` is live as well as emulated, in the scope it gives; elsewhere the row's `[C]` is the emulated one. [C] (run:2026-11-04-inventory, run:2026-11-04-inventory-2, fn:sub_00555DA0_GroundDropCell@0x00555DA0, fn:COLL_FindFreeNear@0x0064DEA0, [items/0016 § Plan 0063 Phase 2b](../../findings/items/0016-harness-inventory-run2.md#plan-0063-phase-2b-the-ground-searchs-live-raise-2026-11-10-lanen63s))
 
-| Statement | Emulated | Live |
-|---|---|---|
-| The start `(x + 2, y + 3)` when the room or its near list holds it | `nooffset` 2 474, `offset32` 2 232 | `nooffset` 37, 38, 39; `offset32` 37, 32, 33 of 37, 41, 40 |
-| The start `pos` otherwise | 617 accepted and 24 by the fallback | not reached |
-| The item bit `0x200` in the cell mask, not the walk mask | `noitembit` 647 | `noitembit` 12, 37, 39 |
-| The walk is tested at all, with `0x801` | `noline` 567, `linecellmask` 1 041 | `noline` 0 of 37, 0 of 41, **31 of 40** (one crowd spot); `linecellmask` 4, 15, 24 |
-| A ring's lowest distance, the earliest of equals | `first` 717, `leq` 559 | `first` 13, 28, 30; `leq` 11, 24, 31 |
-| Side columns before end rows | `capsfirst` 476 | `capsfirst` 8, 12, 13 |
-| Rings reached | ring 1: 981 cases; 2..5: 376; 6..20: 58; 21..46: 1; 47..49: 18 | start 27, ring 1 31, ring 2 32, ring 3 21, ring 4 or beyond 7 |
-| Ring 49 is the last | `r48` 6, `r50` 6, on 36 far cases with one free cell at ring 47 to 51 or none | not reached |
-| The walk's path and room | `linediag` 220, `lineorigin` 296, `lineroom0` 43 | not separated |
-| The base room moves | `fixedbase` 95 | **`fixedbase` 0 of 37, 0 of 81** |
-| `fallback` 1 on the blocked start; `fallback` 0's null | 119 on the blocked start; `alwaysfallback` 47 | not reached |
-| A null return with `fallback` 1, a moved or null base | 374 | not reached |
+| Statement | Emulated | Live | Live raise |
+|---|---|---|---|
+| The start `(x + 2, y + 3)` when the room or its near list holds it | `nooffset` 2 474, `offset32` 2 232 | `nooffset` 37, 38, 39; `offset32` 37, 32, 33 of 37, 41, 40 | **raised**: both fail at all 6 chain spots and all 24 drop positions |
+| The start `pos` otherwise | 617 accepted and 24 by the fallback | not reached | emulated only |
+| The item bit `0x200` in the cell mask | `noitembit` 647 | `noitembit` 12, 37, 39 | **raised**: 6 chain spots and 2 drop positions, each failing at ring 3 or below |
+| `0x200` not in the walk mask | the walk mask's 16 bits each decided (J1) | no control of its own: `linecellmask` adds `0x3C00` with it | emulated only |
+| The walk's mask is `0x801`, not the cell mask | `linecellmask` 1 041 | `linecellmask` 4, 15, 24 (2 undecided, read past the window) | **raised**: 4 chain spots and 2 drop positions |
+| The walk is tested at all | `noline` 567 | `noline` 0 of 37, 0 of 41, **31 of 40** | **in part**: one chain spot (the crowd's 40 drops), raised for that spot only |
+| A ring's lowest distance, the earliest of equals | `first` 717, `leq` 559 | `first` 13, 28, 30; `leq` 11, 24, 31 | **raised through ring 3**: `first` at 6 chain spots and 4 drop positions, `leq` at 5 and 3; rings 4 and beyond (7 searches, one chain spot) emulated only |
+| Side columns before end rows | `capsfirst` 476 | `capsfirst` 8, 12, 13 | **raised through ring 3**: 5 chain spots and 3 drop positions; rings 4 and beyond emulated only |
+| Rings reached | ring 1: 981 cases; 2..5: 376; 6..20: 58; 21..46: 1; 47..49: 18 | start 27, ring 1 31, ring 2 32, ring 3 21, ring 4 or beyond 7 | — |
+| Ring 49 is the last | `r48` 6, `r50` 6, on 36 far cases with one free cell at ring 47 to 51 or none | not reached | emulated only |
+| The walk's path and room | `linediag` 220, `lineorigin` 296, `lineroom0` 43 | not separated | emulated only |
+| The base room moves | `fixedbase` 95 | **`fixedbase` 0 of 37, 0 of 81** | emulated only |
+| `fallback` 1 on the blocked start; `fallback` 0's null | 119 on the blocked start; `alwaysfallback` 47 | not reached | emulated only |
+| A null return with `fallback` 1, a moved or null base | 374 | not reached | emulated only |
 
 Step notes:
 

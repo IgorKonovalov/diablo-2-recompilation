@@ -1,6 +1,6 @@
 ---
 based_on:
-  - docs/specs/sim/frame.md 2026-11-04
+  - docs/specs/sim/frame.md 2026-11-10
 ---
 
 # The server frame
@@ -77,7 +77,7 @@ from the code. **"None" means by direct reach:** the call graphs do not follow i
 
 | Rank | Pass | What it does | Route to a draw |
 |---|---|---|---|
-| 1 | Act clocks | Steps each act's clock; on a change, refreshes every client's player and sends the clock packet to that act's clients | None of its own. The refresh can reach an aura's selection; whether a clock change can reach it is not read |
+| 1 | Act clocks | Steps each act's clock; on a change, refreshes every client's player and sends the clock packet to that act's clients | None of its own. The refresh can reach an aura's selection when a player's wanted skill differs from the current one; which events leave that state is not read |
 | 2 | Frame statistics | Statistics only | None |
 | 3 | New rooms | Walks each act with rooms created since its last walk ([below](#rooms-in-the-frame)) | The wanderer tick, the population, the restore, level-point lookups |
 | 4–13 | The ten walks | [Below](#the-ten-walks) | Each event's own function |
@@ -369,7 +369,7 @@ Counted, not raised ([§ K7](../specs/sim/frame.md#k7-client-steps-are-not-evide
 
 The record **cannot be derived from client messages alone**. The room a player stands in at rank 14 is the end of its movement in the walks, so that input stays logged until a movement model exists. With one, it follows from the player's position each frame, and the on-demand activations still need the warp and waypoint requests and the population's level-point lookups.
 
-**The act clock** ([§ G](../specs/sim/frame.md#g-the-other-per-frame-passes), [open questions](../specs/sim/frame.md#open-questions)). Each act's clock steps every frame, faster under conditions the spec gives, and it reads as the act's day-and-night light (read from the code). The step ran under emulation, 420 cases, 0 mismatches, as the code's map, with the scale kept below 5 000. But three things are not known: **the values of its three tables** are not in the spec, **the server's scale and flag**, set at act load, are not read, and so **how often the pass sends its packet and refreshes every client's player** is unknown. **So a build with no log cannot yet predict on which frames rank 1 does more than step the clocks.** Also not read: whether that refresh can change a usable item and so select an aura, which is rank 1's route to a draw. A window across a clock packet settles that, and none has run.
+**The act clock** ([§ G](../specs/sim/frame.md#g-the-other-per-frame-passes), [open questions](../specs/sim/frame.md#open-questions)). Each act's clock steps every frame, faster under conditions the spec gives, and it reads as the act's day-and-night light (read from the code). The step ran under emulation, 420 cases, 0 mismatches, as the code's map, with the scale kept below 5 000. Its three tables' values are in the [ActClockTables doc](../tables/ActClockTables.md), checked against the image. Read from the code: on the server every act's clock starts at scale 128 with its flag clear, and only Act II's changes, to scale 4 with the flag set, between the eclipse and the viper chest. Run on the image's tables, the step gives how often the pass sends its packet and refreshes every client's player: 26 times a game day, 23 during the eclipse (a day is 35 846 frames in Acts I, II and V, fewer in Act III and far fewer in Act IV), never more than 2 176 frames apart. These frame counts come from the emulated step, not from a log. So a build with no log can predict on which frames rank 1 refreshes the players. What is still not read is whether such a refresh can draw in play: on stock data a clock change makes no item usable or unusable, and the refresh selects an aura only when a player's wanted skill differs from the current one and is usable, a state other events would have to leave behind. A window across a clock packet settles that, and none has run.
 
 ## Traps for a rebuild
 
@@ -391,7 +391,7 @@ Read from the code:
 
 From the [spec's open questions](../specs/sim/frame.md#open-questions), and the limits above:
 
-- **The act clock:** its tables' values, the server's scale and flag, how often its pass acts, and whether it can draw ([above](#what-a-build-with-no-log-still-needs)).
+- **The act clock:** whether its refresh can draw in play ([above](#what-a-build-with-no-log-still-needs)).
 - **Ranks 5, 6 and 10 to 13 in a game:** no counted window holds an event in them.
 - **In no counted window:** Corpsefire, the overhead chat's expiry, a dead pet, and the kill event's row.
 - **The saves' seed.**

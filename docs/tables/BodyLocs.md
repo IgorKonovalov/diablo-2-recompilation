@@ -25,9 +25,9 @@ The 11 equipment locations: `None`, `Head`, `Neck`, `Torso`, `Right Arm`, `Left 
 
 - `[C]` Layout: the record is the 4-character code, space padded ([excel-bin.md](../formats/excel-bin.md#cell-encoding-rules)); `python3 -I tools/excel_bin.py diff workspace/merged/data/global/excel bodylocs` matches 11 of 11 cells.
 - `[C]` Foreign keys, checked by set inclusion over every row (this phase): `itemtypes:BodyLoc1` (8 distinct codes), `BodyLoc2` (8) and `monequip:loc1` (10), `loc2` (3), `loc3` (3) are all subsets of the 10 non-blank codes.
+- `[I]` Readers of a stored location (plan 0068 Phase 2, [data/0006 § 2.1](../findings/data/0006-loaded-tables-and-bundles.md#21-bodylocs-body-location-010)): the location is the row index (0 `None` .. 10 `Gloves`) and goes straight into the inventory's body-location calls, with no translation through a code. Stored in ItemTypes `BodyLoc1`/`BodyLoc2` (`+0xA`/`+0xB`; read by `sub_0062EA80_ItemBodyLocs`, `sub_0055D710_ItemAutoEquipSlot`), CharStats `item1loc..item10loc` (`+0x60 + 8k`; `sub_00534D60_StartItemSlot`, 0 means the inventory) and MonEquip `loc1..loc3` (`+0x14..+0x16`; `sub_005D6B60_MonEquipInit`). The `bodylocs` `.bin` itself is `-txt`-only (data/0001 H3b), so a stock run holds only the indices.
 - The record count is checked by the full-tier surveys: `excel` (`.bin` count against `.txt` data rows) and `excel_layout` (every `.bin` cell against its `.txt` cell, layout in `tools/excel_layouts.py`) (`python3 -I tools/gate.py --full`).
 
 ## Open questions
 
 - None for the data. What the equip code does with a location number is in [items/0014](../findings/items/0014-ground-items.md) and the inventory spec.
-
