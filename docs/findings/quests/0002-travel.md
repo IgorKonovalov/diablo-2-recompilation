@@ -635,6 +635,45 @@ Frigid Highlands, class 496, reached on foot from the Plateau), each mode 0 → 
 mismatches: 7 of the 20 over the two runs, named again, final; the operate stays `[I]`
 ([quests experiments](experiments.md#the-travel-sessions-of-run2026-10-21-shortfalls2); run:2026-10-21-shortfalls2).
 
+### 15. Object event 1 on a waypoint (plan 0063 Phase 2b, 2026-11-10, `lane/n63s`)
+
+From the `lane/h5d` review's backlog entry: the kept log `run-2026-10-27-h5d-s1-4106-rogue.log` (run:2026-10-27-sweep-collision)
+has the Rogue Encampment waypoint (class 119, unit 54452480) created in mode 1 by `OBJINIT_Waypoint`'s arrival match
+(`OIX`, line 3225) and in mode 2 at its one operate (`OO0`/`OOX`, lines 4769–4770, frame 914), with no logged line
+between. Read with r2 on the pinned `Game.exe`:
+
+- [I] **Event 1 is `sub_00581490_ObjEvOperateEnd`** (entry 1 of `g_ObjEventFns`, frame/0002). It returns at once for a
+  null object or one whose mode word `+0x10` is not 1; otherwise it fetches the Objects row (`OBJECTS_GetRecord`, `0x00640E90`), and when
+  the row's byte `+0x141` (`Mode2`) is non-zero it writes `+0x10 = 2` directly (0x005814B0), **not** through
+  `UNIT_SetMode`: no animation start, so **no draw on the object's seed, whatever its `Sync`**. Then, when the row's
+  `+0x122` (`HasCollision2`) is 0, it calls `UNIT_CollUnmarkRect` (`0x00623830`, 0x005814C1). No RNG call is made.
+  All 16 waypoint rows (`InitFn` 17, every one with `OperateFn` 23) have `Mode2` 1 and `HasCollision` 0 in every mode, so
+  for a waypoint the event is the mode write and an unmark of a footprint it never marked. (0x00581497–0x005814C6,
+  fn:sub_00581490_ObjEvOperateEnd@0x00581490, data:g_ObjEventFns@0x006E19B0, tbl:Objects.txt:Mode2,
+  tbl:Objects.txt:HasCollision2)
+- [I] **The two queue sites, read again.** `OBJINIT_Waypoint` calls `UNIT_SetMode(object, 1)` (0x00547295) and queues
+  event 1 at `game+0xA8 + (row+0xDC >> 8)` (0x005472AF–0x005472CA: no `+ 1`); `WaypointOperate`'s mode-0 branch queues
+  it at `game+0xA8 + (row+0xDC >> 8) + 1` (`lea edx, [edx + eax + 1]`, 0x00584E9F–0x00584EBE). `+0xDC` is `FrameCnt1`
+  stored `<< 8`, 15 or 20 frames for the waypoint rows (anim/0003 § 6.5). (fn:OBJINIT_Waypoint@0x00547210,
+  fn:sub_00584E30_WaypointOperate@0x00584E30, fn:sub_005417D0_UnitQueueEvent@0x005417D0, tbl:Objects.txt:FrameCnt1)
+- [C] **On the kept log, the model with event 1 predicts the mode 2 at the operate: 1 case, 0 mismatches.**
+  `tools/objects.py` (commit `9008ecd0`) queues event 1 at the arrival match (due between the `PLR` frames around the
+  creation, 428 + 15 and 491 + 15) and at a mode-0 `WaypointOperate`, and runs it before an operate whose frame
+  (`OO0` `f`, `game+0xA8`) is past the due frame: mode 1 → 2 when `Mode2` is set, no draw. `tools/collision.py check` on
+  the rogue log: 4 646 checks, 0 mismatches (was 4 645 and 1). The object's seed is the same at `OIX` and at the
+  operate (`c5301326:0000029a`), which a class with `Sync` 1 does not separate from a draw. **Regression:** the 94
+  kept logs of the h5d sweep's lists that hold an `InitFn` 17 and an `OperateFn` 23, checked with the tool before and
+  after the change: the same mismatch count in 93, the rogue log 1 → 0; event 1 ran before an operate in that log
+  only, and no log had a due frame the bounds could not place. Scope: one waypoint (class 119, `Sync` 1), one
+  arrival-match creation, one later operate. (fn:sub_00581490_ObjEvOperateEnd@0x00581490, run:2026-10-27-sweep-collision,
+  `workspace/logs/h5d/check-p63/`, `manifest-p63.sha256` there)
+- **Contradicted, routed to plan 0063 Phase 3 (spec-writer):** [quests/travel C3](../../specs/quests/travel.md) says a
+  `Sync` 0 waypoint's "later change to mode 2 draws again", and § 10's table above and § 14's "the mode 1 → 2 draw"
+  assume a draw per mode change. By the read above, the change to mode 2 by event 1 does not call `UNIT_SetMode` and
+  draws nothing; the `Sync` 0 draws of a field waypoint are the `SetMode 1` of the arrival match or of the operate.
+  A town waypoint's `SetMode 2` in `InitFn` 17 (0x0054726A–0x00547279) goes through `UNIT_SetMode` and is not
+  changed by this. (fn:sub_00581490_ObjEvOperateEnd@0x00581490, fn:UNIT_SetMode@0x00624690)
+
 ## Data touched
 
 - `tbl:Levels.txt:Position`, `tbl:Levels.txt:QuestFlag`, `tbl:Levels.txt:QuestFlagEx`, `tbl:Levels.txt:Waypoint`

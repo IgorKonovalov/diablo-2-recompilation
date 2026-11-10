@@ -124,3 +124,38 @@ lanes with Ghidra and one archivist lane without it.
 ## Implementation log
 
 _(lanes append dated entries as phases land: what was found, the confidence reached, surprises)_
+
+**2026-11-10, Phase 2b (`lane/n63s`, reverser static; r2 only, no Ghidra run, no slot).** All four items done; review
+Tier B (`reverser-static`), item 2 read as a raise.
+
+1. **h5d waypoint mode.** (a) Object event 1 is `sub_00581490_ObjEvOperateEnd`: mode 1 → 2 by a direct write when
+   `Mode2` is set, **not** through `UNIT_SetMode`, so no draw on the object's seed for any `Sync`; then
+   `UNIT_CollUnmarkRect` when `HasCollision2` is 0. The queue sites re-read (`OBJINIT_Waypoint` frame + FrameCnt1,
+   `WaypointOperate` frame + FrameCnt1 + 1). [quests/0002 § 15](../findings/quests/0002-travel.md#15-object-event-1-on-a-waypoint-plan-0063-phase-2b-2026-11-10-lanen63s), `[I]` for the
+   read. (b) `tools/objects.py` (`9008ecd0`) queues event 1 at those two sites and runs it before an operate past its
+   due frame (frame bounds from the `PLR` `gf` lines around a creation); `tools/collision.py check` on the kept rogue
+   log: 0 mismatches (was 1). Regression over the 94 kept logs of the h5d lists with an `InitFn` 17 and an
+   `OperateFn` 23: only the rogue log changes. Outputs `workspace/logs/h5d/check-p63/` (`manifest-p63.sha256`).
+   (c) **Routed to Phase 3:** quests/travel C3's "its later change to mode 2 draws again" (a `Sync` 0 waypoint) is
+   contradicted by the read: event 1's mode 2 draws nothing; quests/0002 § 10's table and § 14's "mode 1 → 2 draw"
+   are the finding-side wording of the same claim (left as written, superseded by § 15).
+2. **Inventory live raise.** `tools/inventory_check.py spots` (new) on the three kept logs: 118 searches, 0
+   mismatches; 90 in 6 chain spots and 28 `DropCreateItem` drops at 24 positions. Raised live `[C]` with the logs as
+   the second source beside the emulation: the offset start (30 spots), the item bit (8), the walk's mask `0x801`
+   (`linecellmask`, 6), the ring order through ring 3 (`first` 10 spots, `leq`/`capsfirst` 8 each, at ring ≤ 3);
+   **raised in part**: the walk tested at all (`noline`, one chain spot, 31 cases). Not raised: `fixedbase`, the start
+   `pos`, rings 4+ (one spot), the fallbacks. [items/0016 § Plan 0063 Phase 2b](../findings/items/0016-harness-inventory-run2.md#plan-0063-phase-2b-the-ground-searchs-live-raise-2026-11-10-lanen63s),
+   output `workspace/logs/inventory/check-p63-spots.txt` (`manifest-inventory-p63.txt`). **Routed to Phase 3:**
+   items/inventory § J's evidence table and its "each row's `[C]` is the emulated one until a reverser raise" line.
+3. **Runner stage gate.** `hr.batch(..., stage=)` is required (`NO_SHARING` or a `stage(case)` callable run after each
+   kept try); `next_case` raises `HarnessError` before any click unless the try just before was kept and passed it
+   (one switch per pass; always under `NO_SHARING`; outside a batch only with `stage_checked=True`). `ai_sessions`
+   passes its level check (`left_start`), the other batch runners `NO_SHARING`, `probe0056` `stage_checked=True`.
+   Tests `StageGate`, `RunnersGate` (60 pass). tooling.md § The runner library and harness-play.md § Fresh process
+   rule 5 updated.
+4. **E14 rows.** The six rows' fifth cell moved into the Role cell. With `DEMOTED` emptied locally the gate reports
+   E14 1 804 checked, 0 errors; the `DEMOTED` change itself is **not** committed (the architect lifts it at review).
+
+Backlog closed: the four entries (h5d waypoint mode, items 0014–0016 wording, the stage check, E14). Judgment calls
+for the reviewer: the spot definition (a chain = one log and one position; a drop = one position); event 1's due
+frame from `PLR` frame bounds (an operate inside the bounds is taken from the log as an oracle, none occurred).

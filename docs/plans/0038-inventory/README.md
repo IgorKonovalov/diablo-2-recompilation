@@ -1057,7 +1057,7 @@ H4b's kept-log raises); collision 45's 334 statement moves to **d-none**, and no
 raised in part (206, 228, 298, 528 `[C]`, 334 d-none), still counted as H4b, a Phase 3 note; collision 46 stays raised in
 part (with one match per lookup every operand picks the same point; the remainder stays `[I]`, counted as H5d); the
 rogue mismatch goes to its own reverser entry
-([2026-10-27-architect-reverser-h5d-objects-py-waypoint-mode-after-arrival](../../backlog/2026-10-27-architect-reverser-h5d-objects-py-waypoint-mode-after-arrival.md)).
+([2026-10-27-architect-reverser-h5d-objects-py-waypoint-mode-after-arrival](../../backlog/archive/2026-10-27-architect-reverser-h5d-objects-py-waypoint-mode-after-arrival.md)).
 **Ledger: raised 10, raised in part 4, shortfall 2, d-none 1.** One class move (collision 45's 334, harness −1, d-none
 +1); totals recounted against `main` `0e3f501` (no inventory change on `main` since): **static 567, harness 525, c-emu
 awaiting a batch 0, blocked 415** (d-none 289, d-edit 73, d-sim 28, d-2c 7, d-owner 10, d-0032 8), **deferred 2,

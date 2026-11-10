@@ -3410,7 +3410,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     `SpawnClassCellTest` then `MonAiUseSkill`. (e) **Spawn 42 is raised in part** (206, 228, 298, 528 `[C]`; 334 d-none),
     still counted as H4b, a Phase 3 note (as stats 21 at H4a). (f) The rogue mismatch touches no H5d row but is a model
     gap that will recur on every waypoint arrival: its own reverser entry,
-    [2026-10-27-architect-reverser-h5d-objects-py-waypoint-mode-after-arrival](../../backlog/2026-10-27-architect-reverser-h5d-objects-py-waypoint-mode-after-arrival.md).
+    [2026-10-27-architect-reverser-h5d-objects-py-waypoint-mode-after-arrival](../../backlog/archive/2026-10-27-architect-reverser-h5d-objects-py-waypoint-mode-after-arrival.md).
     The two "log ends" mismatches are session cuts, no entry. (g) The seven symbols I → C stand (rule 14: each return or
     cell effect logged and compared); `MonIsNpc` stays I, and `COLL_RectClearWH` stays I.
   - **Ledger:** raised 10, raised in part 4, shortfall 2, d-none 1. Totals against `main` `0e3f501`: static 567,

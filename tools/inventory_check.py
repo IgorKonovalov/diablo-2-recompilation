@@ -660,19 +660,23 @@ def spots(logs):
         rc = [sum(ring_class(r["ring"]) == c for r in rr) for c in ("start", "ring 1", "ring 2", "ring 3", "ring 4+")]
         print("  %s %s (%d, %d): %d; %s" % (s[0], s[1], s[2], s[3], len(rr), "/".join(map(str, rc))))
     logs_n = [os.path.basename(x) for x in logs]
-    print("\ncontrol: cases failed per log (%s) | undecided | spots failed per caller | fails by observed ring"
+    print("\ncontrol: cases failed per log (%s) | undecided | spots failed per caller (and with a failed case at ring 0..3) | "
+          "fails by observed ring"
           % ", ".join(logs_n))
     for c in CONTROLS:
         per_log = [sum(1 for r in rows if r["log"] == n and r["ctl"][c]) for n in logs_n]
         und = sum(1 for r in rows if r["ctl"][c] is None)
         sp = {k: sum(1 for s in ss if any(r["ctl"][c] for r in rows if r["spot"] == s)) for k, ss in by_kind.items()}
+        sp3 = {k: sum(1 for s in ss if any(r["ctl"][c] and r["ring"] <= 3 for r in rows if r["spot"] == s))
+               for k, ss in by_kind.items()}
         ring = {}
         for r in rows:
             if r["ctl"][c]:
                 ring[ring_class(r["ring"])] = ring.get(ring_class(r["ring"]), 0) + 1
-        print("  %-12s %s of %s | %d | %s | %s" % (
+        print("  %-12s %s of %s | %d | %s (through ring 3: %s) | %s" % (
             c, ", ".join(map(str, per_log)), ", ".join(str(sum(r["log"] == n for r in rows)) for n in logs_n), und,
             ", ".join("%s %d of %d" % (k, sp[k], len(by_kind[k])) for k in sorted(sp)),
+            ", ".join("%s %d" % (k, sp3[k]) for k in sorted(sp3)),
             ", ".join("%s %d" % kv for kv in sorted(ring.items())) or "-"))
     print("\nstatement: spots where at least one of its controls fails (chain spots, drop positions)")
     for what, cs in STATEMENTS:

@@ -37,6 +37,53 @@ Wine session under gdb on slot 2, one fresh process per session (`harness-play.m
 - The blend's arithmetic (a second potion of a different amount or class inside the first one's duration, the meter below its maximum); Amazon and Barbarian scales; `hp5`. *"Why three of four pairs allocated a new list" struck 2026-11-04 (`lane/r60d` review): see the correction above.*
 - Draws: the log gives the player's and the game's seeds around every item request; a seed trace through the drain (a monster's death) is not built.
 
+## Plan 0063 Phase 2b: the ground search's live raise (2026-11-10, `lane/n63s`)
+
+The backlog entry of plan 0060's `lane/s60` asked for the live separation counts of [items/inventory § J](../../specs/items/inventory.md#j-the-ground-drops-cell)'s
+statements, recomputed per statement and per spot, so that the rows that hold can rise from the emulated `[C]`
+alone. **The second source** is the live searches of the three kept logs (run:2026-11-04-inventory: `main`;
+run:2026-11-04-inventory-2: `drops2` and `crowd`), each predicted by `tools/item_inventory.py`'s search on the logged
+collision window and compared with the game's own result (`GDO`); the first source is the emulation of
+run:2026-11-04-ground-emu on declared rooms. The tool is `tools/inventory_check.py spots` (this lane), output
+`workspace/logs/inventory/check-p63-spots.txt` (hashed in `manifest-inventory-p63.txt`); it recomputes the main
+prediction (0 mismatches of 118) and each control's failures. **A spot** is a group of searches that are not
+independent: a player's drops in place (`CursorDrop`'s return `0x00563C9B`, one log and one position: each drop's
+mark is an input of the next) or one `DropCreateItem` position (return `0x0055A5B2`). The 118 searches are **90 in
+6 chain spots** (40, 24, 12, 6, 4, 4) and **28 drops at 24 positions** (two positions hold 3 drops each).
+
+- [C] **The start `(x + 2, y + 3)` when the room or its near list holds it: raised.** The room held the offset cell in
+  118 of 118 searches; `nooffset` fails 114 (37, 38, 39 of 37, 41, 40) and `offset32` 102 (37, 32, 33), each at **all 6
+  chain spots and all 24 drop positions** (30 independent spots). The start `pos` when the room does not hold the
+  offset cell is **not reached** (0 of 118) and keeps the emulated `[C]`. (fn:sub_00555DA0_GroundDropCell@0x00555DA0,
+  run:2026-11-04-inventory, run:2026-11-04-inventory-2, `check-p63-spots.txt`)
+- [C] **The item bit `0x200` in the cell mask, not the walk mask: raised.** `noitembit` fails 88 (12, 37, 39), at **6 of
+  6 chain spots and 2 of 24 drop positions** (8 spots), each of the 8 with a failed case at ring 3 or below.
+  (0x00555DE4, run:2026-11-04-inventory, run:2026-11-04-inventory-2, `check-p63-spots.txt`)
+- [C] **The walk's mask is `0x801`, not the cell mask: raised.** `linecellmask` (the walk tested with `0x3E01`) fails
+  43 (4, 15, 24; 2 undecided, read past the window), at **4 of 6 chain spots and 2 of 24 drop positions** (6 spots; 5
+  of them with a failed case at ring 3 or below). (0x00555DDF, fn:sub_0066A670_FieldWalkBlocked@0x0066A670,
+  run:2026-11-04-inventory, run:2026-11-04-inventory-2, `check-p63-spots.txt`)
+- [C] **Raised in part: that the walk is tested at all.** `noline` fails 31 of 118, **all at one chain spot** (the `crowd`
+  session's 40 drops at (5032, 5027); ring 2: 13, ring 3: 18), 0 at the other 5 chain spots and 0 of the 24 drop
+  positions. Live, the statement rests on one chain whose cases are not independent: this `[C]` is scoped to that
+  spot, and the general statement keeps the emulated `[C]` (`noline` 567 of 4 000).
+  (fn:sub_0066A670_FieldWalkBlocked@0x0066A670, run:2026-11-04-inventory-2, `check-p63-spots.txt`)
+- [C] **A ring's lowest distance, the earliest of equals, and side columns before end rows, through ring 3: raised.**
+  `first` fails 71 (13, 28, 30), `leq` 66 (11, 24, 31), `capsfirst` 33 (8, 12, 13). With a failed case at ring 3 or
+  below: `first` at 6 of 6 chain spots and 4 drop positions, `leq` and `capsfirst` each at 5 chain spots and 3 drop
+  positions. By the observed ring, `first` fails 23, 24, 18 in rings 1, 2, 3; `leq` 25, 24, 15; `capsfirst` 14, 10, 7.
+  **Rings 4 and beyond** were reached 7 times, all at one chain spot (the parapet, (5053, 5068)), and stay at the
+  emulated `[C]`. (fn:COLL_FindFreeNear@0x0064DEA0, run:2026-11-04-inventory, run:2026-11-04-inventory-2,
+  `check-p63-spots.txt`)
+- [C] **Rings reached** over the 118: start 27, ring 1 31, ring 2 32, ring 3 21, ring 4 or beyond 7, as § J's live
+  column says. (fn:COLL_FindFreeNear@0x0064DEA0, `check-p63-spots.txt`)
+- **Not raised:** the base room moves (`fixedbase` 0 of 118, 0 spots), the start `pos` otherwise, ring 49 as the last,
+  the walk's path and room, the fallbacks and the null returns (not reached live). They keep the emulated `[C]`.
+  (fn:COLL_FindFreeNear@0x0064DEA0, run:2026-11-04-ground-emu, `check-p63-spots.txt`)
+- **Routed to plan 0063 Phase 3** (spec-writer): items/inventory § J's evidence table may carry these per-spot counts
+  and say which rows rose (the start offset, the item bit, the walk's mask, the ring order through ring 3) and which
+  rose in part (the walk tested at all: one spot).
+
 ## Functions
 
 | Address | Name | Role here | Tag |
