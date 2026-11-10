@@ -1231,7 +1231,7 @@ potions' quality calls return without drawing (H4).
 - [L] **How the type test walks the equivalences** (§ K): items/0001 names an "equivalence bitmap" but no finding says
   where it is built, how deep the `Equiv1`/`Equiv2` walk goes, what a cycle would do, or whether record 0 (every blank
   `Equiv`) enters a type's set. No stock test depends on it (K1 note)
-  ([backlog](../../backlog/2026-11-10-spec-writer-reverser-itemtypes-equiv-walk-form.md),
+  ([backlog](../../backlog/archive/2026-11-10-spec-writer-reverser-itemtypes-equiv-walk-form.md),
   [ItemTypes § Open questions](../../tables/ItemTypes.md#open-questions)).
 
 - [L] **Parties beyond two players.** Plan 0011 logged a party of two (alive, player killer); plan 0044 added a dead

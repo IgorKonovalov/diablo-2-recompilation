@@ -214,7 +214,7 @@ Backlog entries filed (7):
   [data-excel-type-test-link](../backlog/archive/2026-11-10-architect-spec-writer-plan-0064-data-excel-type-test-link.md),
   [conformance-drop-inputs](../backlog/2026-11-10-architect-spec-writer-plan-0064-conformance-drop-inputs.md)
   (waits for both archivist entries).
-- reverser: [parseitemcell-unique-entry-words](../backlog/2026-11-10-architect-reverser-plan-0064-parseitemcell-unique-entry-words.md)
+- reverser: [parseitemcell-unique-entry-words](../backlog/archive/2026-11-10-architect-reverser-plan-0064-parseitemcell-unique-entry-words.md)
   (S2 row 14; static only; data/excel G4 and items/tc § A follow).
 
 **Disputed rows, for a second fresh implementer** (the orchestrator runs it; this lane did not spawn one):
@@ -290,7 +290,7 @@ answer; no new finding was needed for any of them.
   symbol table, archaeology/0002 § 5) and `ITEMS_UnitIsType` (`[C]`, items/0005 tests (c)–(d) and the `GOLD_TYPE` run),
   and a blank `Equiv` storing record 0 (`[C]`, data/0004), which no test of these specs asks for (`[I]`). I1 and H8 call
   it by name. The walk's form (depth, a cycle, record 0 in the set) is a new `[L]` under *Open questions*, filed to the
-  reverser ([entry](../backlog/2026-11-10-spec-writer-reverser-itemtypes-equiv-walk-form.md)); no stock test depends on it.
+  reverser ([entry](../backlog/archive/2026-11-10-spec-writer-reverser-itemtypes-equiv-walk-form.md)); no stock test depends on it.
 - **items/quality S2 and data/excel G2** link § K and name the function; S2 contrasts it with A2–A5 and S1.
 - **items/quality S1** (S2 row 12): the `Class` byte is the `playerclass` row index `[C]` (PlayerClass § Row identity);
   it is a u8, so a blank `0xFF` is not `< 7` (reading `[I]`, items/0002 § 2; outcome `[C]`, the 1607 logged rows of
@@ -329,7 +329,7 @@ built) sits under *Open questions* and its entry is addressed to the reverser. A
   search on open ground" restored to the note's count, "all 118 live searches".
 - **§ K, a lead for the reverser entry** (not a fix): r2 shows the test reads a precomputed bit matrix, skips a zero
   `type2` and returns 0 for an out-of-range `t`; written into
-  [itemtypes-equiv-walk-form](../backlog/2026-11-10-spec-writer-reverser-itemtypes-equiv-walk-form.md) as a lead.
+  [itemtypes-equiv-walk-form](../backlog/archive/2026-11-10-spec-writer-reverser-itemtypes-equiv-walk-form.md) as a lead.
 - **Gate:** `tools/quirks.py check` is clean after the merge (527 entries, 0 errors, about 0.2 s) and is registered as
   fast-tier rule E18 in `tools/gate.py` (each `quirks:` line one error, at its file line); `test_gate.py` passes.
 
@@ -390,7 +390,7 @@ Rulings on the rows the orchestrator named:
 
 Backlog entries filed (5) and annotated (1):
 
-- reverser: [drlg-outdoor-statements](../backlog/2026-11-10-architect-reverser-plan-0064-drlg-outdoor-statements.md):
+- reverser: [drlg-outdoor-statements](../backlog/archive/2026-11-10-architect-reverser-plan-0064-drlg-outdoor-statements.md):
   (a) `A1CliffMark`'s rule, (b) `g_A1SearchDx` corrected, (c) `A1PlaceOneOrTwo`'s branches, (d) `LevelBorderAdj`'s `Vis ≠ 0`
   test. Static only. S4 rows 6, 13–16.
 - archivist: [drlg-cases-and-pool-conventions](../backlog/archive/2026-11-10-architect-archivist-plan-0064-drlg-cases-and-pool-conventions.md):
@@ -444,3 +444,72 @@ and Phase 5. Review: this entry is the Tier A review of the S3 and S4 ledgers; f
   (b) maze order: "newest first, in list order" in golden-trace § Fields and `golden.py`. (c) decided: no `difficulty` input on a maze case; the 12 v1 maze levels (8–12, 34–36, 47–49, 65) have equal `Rooms`, `Rooms(N)`, `Rooms(H)` (by script), stated in § Fields. (d) frames: absolute tiles, the preset rect origin of the `PRC` line, the room rect origin of the `RL` line. (e) pool order: kept (`isSpawn`) entries in append order. (f) stated in formats/mpq (paths compare case-insensitively); `cleanroom.py make` unchanged. (g) MonStats `MonStatsEx` is a 16-bit signed index in the doc; no blank row among the 734, so no −1 occurs.
   ItemTypes: byte check over the 103 records: blank `Class` 85 of 85, `StaffMods` 94 of 94 and `StorePage` 28 of 28 store `0xFF`; the six reference columns to `itemtypes` and `bodylocs` store 0. The row-identity rule now says so (the "no empty-key row in the target" reason is `[I]`).
   Judgment calls for the reviewer: (c) chose "state, not add"; the outdoor "creation order" wording was kept. Review: Tier B (no statement taken from a finding). Left: the spec-writer's page text (conformance entry items 1–5).
+
+### 2026-11-10 — Phase 3 follow-up: the three reverser entries (lane n64r, reverser, static)
+
+Static only (r2 and objdump on the pinned `Game.exe`; no slot, no Ghidra run). Three entries closed:
+
+- [drlg-outdoor-statements](../backlog/archive/2026-11-10-architect-reverser-plan-0064-drlg-outdoor-statements.md) (S4 rows
+  6, 13–16), [drlg/0008 § Plan 0064 statements](../findings/drlg/0008-outdoor.md#plan-0064-statements-2026-11-10):
+  (a) `A1CliffMark` (0x00680070) as pseudocode with an address per test, `[C]`: the second source is `tools/drlg.py`'s
+  `a1_cliff_mark` and its kept check run:2026-10-15-drlg-outdoor; new `tools/cliff_cover.py` re-scores that check with a
+  transcription of the code in place of the model's (572 211 checks, 0 mismatches) and counts the branches (80 walks,
+  70 runs, 38 marked; three exits unreached, one of them dead code, `[I]`). (b) `g_A1SearchDx` corrected in place in
+  § 16.3 (`01 00 FF 00`, `+1, 0, −1, 0`, dir 0 E). (c) `OneOrTwo`: the `s` step and `Near(49)` are in the else branch
+  only, § 8 rewritten. (d) `LevelBorderAdj` tests `Vis ≠ 0` (0x006776D6) before `Warp` −1; a control without the test
+  scores 22 600 mismatches, so the logs separate the readings; drlg/0007's table row raised I → C. Experiments addendum
+  under run:2026-10-15-drlg-outdoor; outputs and manifest in `workspace/logs/n64r/`.
+- [parseitemcell-unique-entry-words](../backlog/archive/2026-11-10-architect-reverser-plan-0064-parseitemcell-unique-entry-words.md)
+  (S2 row 14), [data/0001 § Plan 0064](../findings/data/0001-excel-loader.md#plan-0064-2026-11-10-the-entry-words-of-a-unique-or-set-cell):
+  `index` = the items record of the row's base code (0 on a miss), `aux` = the name-link hit itself (no offset). `[I]`:
+  only the edited forced run reaches it (ADR-0010).
+- [itemtypes-equiv-walk-form](../backlog/archive/2026-11-10-spec-writer-reverser-itemtypes-equiv-walk-form.md),
+  [items/0001 § Plan 0064](../findings/items/0001-tc-resolution.md#plan-0064-2026-11-10-the-item-type-test-and-its-equiv-matrix):
+  the matrix is built once by `ITEMS_LoadItemTypes` through `sub_00638CD0_ItemTypeIsOf` (depth-first, `Equiv1` ≤ 0
+  skips `Equiv2`, depth bound 124, no visited set); bit 0 is set in every row. New `tools/itypes_equiv.py`: on the
+  stock table no cycle, longest chain 4, and the matrix equals the closure plus bit 0. Four `re/symbols.csv` rows added
+  (`sub_00629B50_ItemTypeMatrixTest`, `sub_00638CD0_ItemTypeIsOf`, `g_ItemTypeEquivStride`, `g_pItemTypeEquivBits`, all I).
+
+Routed to the spec-writer: the existing [drlg-outdoor](../backlog/2026-11-10-architect-spec-writer-plan-0064-drlg-outdoor.md)
+entry, items 1–4, and [drlg-warps-border-adj](../backlog/2026-11-10-architect-spec-writer-plan-0064-drlg-warps-border-adj.md)
+(both annotated: the reverser side is done). No spec-writer entry existed for data/excel G4 and items/tc § A or for
+items/tc § K1, so one new entry carries both:
+[plan-0064-item-cell-words-and-equiv-matrix](../backlog/2026-11-10-reverser-spec-writer-plan-0064-item-cell-words-and-equiv-matrix.md).
+Archivist: [itemtypes-equiv-walk-lead-answered](../backlog/2026-11-10-reverser-archivist-itemtypes-equiv-walk-lead-answered.md)
+(tables/ItemTypes' open `[L]`). The S4 re-run of Phase 5 now waits only on the spec-writer and archivist entries.
+`backlog.py close` rewrote one link in `docs/specs/items/tc.md` to the archived entry (mechanical; no spec text changed).
+Review: Tier B.
+
+### 2026-11-10 — Review of lane n64r (architect, Tier A; the ADR-0023 audit)
+
+Verdict: **accept with fixes (4)**; no reject-grade problem. Audit of `lane/n64r`: no Tier B check ran on it (this review
+stands in), and none of the fixes is reject-grade. Ledger cell: `audit of lane/n64r: overclaim 2, misread 1, wrong anchor 1`.
+
+Checked: `tools/cliff_cover.py` re-run under `systemd-run --user --scope -p MemoryMax=4G` on the 11 logs: 572 211 checks,
+0 mismatches, every branch counter equal to the kept `cliff-cover.txt` (only the per-log lines' order differs); the
+control output is kept (22 600 mismatches of 513 215, 948 empty-slot nodes) and the manifest passes. r2 on the pinned
+`Game.exe`: the bytes at 0x006F2854 (`01 00 FF 00`) and 0x006F2850, the `movsx` reads at 0x00681668/0x0068166F,
+`A1PlaceOneOrTwo` 0x006804E0–0x0068056E (the `je 0x0068055B` pair, the `s` test at 0x0068051B, `lea edx, [ebx + 0x31]`),
+`LevelBorderAdj`'s `test eax, eax; je` at 0x006776D6 and `cmp …, −1` at 0x006776DA, `A1CliffMark`'s run loop
+0x006800E4–0x00680150 and `or [ecx], 0x20` at 0x00680170, `ItemTypeIsOf` 0x00638CD0–0x00638D77 (t ≤ 0 → 1 first,
+`cmp ecx, 0x7C; jg` after the pop, `jle` on `Equiv1` before `Equiv2` is read, `0x200`-byte stack, no visited set), the
+matrix loop from i = t = 0 (0x0063937B–0x006393C2), and `TC_ParseItemCell`'s stores 0x006545E7/0x006545ED with the
+unique branch's `jmp 0x006545E7` at 0x00654598: all as written. Call counts recounted from an objdump listing: 5, 318,
+12, and 1 for `ItemTypeIsOf`. The `backlog.py` rewrite in items/tc is the one link to the archived entry, no text
+changed; the routing (two spec-writer entries annotated, one new spec-writer and one archivist entry, the earlier
+items-tc-type-test entry being closed) is right.
+
+**`OneOrTwo` ruling.** A probability that no call took the branch is not a count of the cases that separate the readings
+(reverser review-fixes 10), so it does not carry a `[C]` by itself. The count was cheap: `tools/cliff_cover.py`
+revision 2 adds `--count-one-or-two`; 26 of the 100 `s` = 1 calls took `(r & 3) = 0`, so `ODD` separates the readings
+at 26 calls and the `[C]` stands on that count (output `workspace/logs/n64r/one-or-two-count.txt`, manifest updated).
+
+Fixes:
+1. overclaim: drlg/0008 § Plan 0064 (c) rested its `[C]` on the 3·10⁻¹³ argument; now the kept count of 26.
+2. overclaim: drlg/0008 § Plan 0064 (a)'s `[C]` rule stated the left-going and back-at-start exits without scoping them
+   to the `[I]` bullet below it (no log takes them); scoped in the sentence.
+3. misread: items/0001 § Plan 0064 *Cycles* said any cycle through a two-parent row grows the stack to the bound; only
+   one that continues through `Equiv2` (popped first) does; one through `Equiv1` hangs like a one-parent cycle once the
+   `Equiv2` branch ends. Rewritten.
+4. wrong anchor: `tools/cliff_cover.py`'s docstring cited "drlg/0008 § 8.1", which does not exist; now § Plan 0064 (a),
+   (c), (d). The experiments addendum records revision 2's sha256 and the new output.

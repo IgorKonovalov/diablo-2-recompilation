@@ -35,8 +35,8 @@ the others keep `[I]`.
   (fn:sub_0066C220_WarpPairLink@0x0066C220, fn:sub_0066BE80_WarpPairRoomFind@0x0066BE80,
   fn:sub_0066C370_RoomNeighboursEnsure@0x0066C370, run:2026-10-15-drlg-maze)
 - [C] **`Vis` with `Warp` −1 is a walkable seam, not a warp** (the override lists of Acts I, II, IV and V reproduced;
-  `LevelBorderAdj` is checked by drlg/0008's outdoor replay, not here). Outdoor levels turn each such slot into a level-adjacency
-  node (`sub_00677680_LevelBorderAdj`), and the outdoor generators read those for their borders. The act link builder
+  `LevelBorderAdj` is checked by drlg/0008's outdoor replay, not here). Outdoor levels turn each such slot with a non-zero `Vis` into a level-adjacency
+  node (`sub_00677680_LevelBorderAdj`; an empty slot, `Vis` 0 and `Warp` −1, makes none, drlg/0008 § Plan 0064 (d)), and the outdoor generators read those for their borders. The act link builder
   forces `Warp` −1 between each entry and its anchor (Acts I–IV). It also adds seams between levels whose rectangles touch
   (Act III 75–83, Act V 109–112). Two of the four data pairs without `Warp` are maze levels joined to a neighbour by the
   maze code itself: 27↔28 (`MazeBarracksPlace`) and 107↔108 (`MazeRiverOfFlame`). (fn:sub_00677680_LevelBorderAdj@0x00677680,
@@ -106,7 +106,7 @@ No lead was used to locate code. The Phase 1b cross-check is in § Phase 1b verd
 | `0x00677180` | `sub_00677180_LinkOutdoorFlags` | Act I: ORs outdoor-data flags from table `0x006F1258` by the entry's and next entry's sides (drlg/outdoor input) | I |
 | `0x006775C0` | `sub_006775C0_LevelSeamsByTouch` | every pair in a level range whose rects touch gets a `Warp` −1 slot | C |
 | `0x0066B880` | `sub_0066B880_RectTouch` | two rects share an edge segment (`t` −1), or touch/overlap (`t` 0); § 3 | C |
-| `0x00677680` | `sub_00677680_LevelBorderAdj` | outdoor levels: a level-adjacency node per `Vis` slot with `Warp` −1 | I |
+| `0x00677680` | `sub_00677680_LevelBorderAdj` | outdoor levels: a level-adjacency node per `Vis` slot with `Vis` ≠ 0 and `Warp` −1 (drlg/0008 § Plan 0064 (d), 2026-11-10) | C |
 | `0x0066B790` | `sub_0066B790_LevelAdjAdd` | sorted level-adjacency node `{level, dir, isPreset, 0, &rect}` | I |
 | `0x00642860` | `sub_00642860_ActLevelLinksCopy` | get or create a level's `LevelLinks` node in act `+0x90` | C |
 | `0x00642920` | `sub_00642920_LevelLinkSet` | set a destination's warp, or add it in the first free slot | C |

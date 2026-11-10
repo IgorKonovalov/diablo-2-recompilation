@@ -333,6 +333,7 @@ if (g_nTreasureClasses > 0xFFFE) fatal();
      treated as a miss);
   3. else `uniqueitems` name link (`0x0096C850`), hit ≥ 1, flag `0x11`;
   4. else `setitems` name link (`0x0096C844`), hit ≥ 0, flag `0x12`;
+     (steps 3–4: `index` = the row's base item, `aux` = the hit row; § Plan 0064 below)
   5. else the cell is dropped.
   So a 4-character name that is both an item code and a TC name resolves to the **item**.
 - [C] The resulting index space (0 empty, 1–160 auto, 161+ = TCEx row order, names case-insensitive) reproduces every
@@ -733,6 +734,47 @@ statement above is tagged inferred and this section raises it, the tag and the r
   while `ITEMS_GetByCode`'s rises from 5 098 to 44 886.
   (fn:TC_GetByName@0x00654DD0, fn:EXCEL_FindName@0x006BD3C0, fn:TC_ParseItemCell@0x00654440,
   fn:TC_BuildChestTable@0x0065A2C0, fn:TC_LoadAll@0x0065A390, run:2026-10-27-sweep-data-load)
+
+## Plan 0064 (2026-11-10): the entry words of a unique or set cell
+
+`lane/n64r`, from the plan 0064 P3 triage (S2 row 14). Static: r2 disassembly of the pinned `Game.exe`. § 7 steps 3–4
+give the lookup order and the flag; this section gives the words `TC_ParseItemCell` stores (entry layout: items/0001,
+`+0x08` u16 index, `+0x0A` u16, `+0x0C` u8 flags).
+
+```c
+// fn:TC_ParseItemCell@0x00654440, after the item-code and TC lookups missed. name = the cell up to its first ','
+i = EXCEL_FindName(g_UniqueItemsLink, name, 0)            // 0x00654553–0x00654560; skipped when the link is null
+if (i >= 1):                                              // 0x00654569 jle: hit 0 counts as a miss
+  e = TC_AddEntry(tc)                                     // 0x0065456E
+  ITEMS_GetByCode(g_pUniqueItems[i].code /*+0x28, stride 0x14C*/, &idx)   // 0x00654575–0x0065458B; return ignored
+  e.flags |= 0x11                                         // 0x00654594
+  goto store
+i = EXCEL_FindName(g_SetItemsLink, name, 0)               // 0x0065459A–0x006545AB; null link → cell dropped
+if (i < 0) drop the cell                                  // 0x006545B4 jl 0x006547C4: hit 0 is accepted
+e = TC_AddEntry(tc)                                       // 0x006545BD
+ITEMS_GetByCode(g_pSetItems[i].code /*+0x28, stride 0x1B8*/, &idx)        // 0x006545C4–0x006545DA; return ignored
+e.flags |= 0x12                                           // 0x006545E3
+store:
+e.aux   /*+0x0A*/ = (u16) i                               // 0x006545E7 mov word [ebx + 0xA], di
+e.index /*+0x08*/ = (u16) idx                             // 0x006545ED mov word [ebx + 8], dx
+TC_SetEntryProb(tc, e, prob, 1)                           // 0x006545EB–0x006545FA (last argument 1)
+// then the ",mul=…" / "cu=…" modifiers (0x006545FF onward); mul=, ma= and mg= write +0x0A again
+```
+
+- [I] **`index` (`+0x08`)** is the `items` record index of the unique's or set item's base code (`+0x28` of the row),
+  through `ITEMS_GetByCode`'s out parameter. On a code that is no item code `ITEMS_GetByCode` writes 0 there
+  (0x0063365C), so `index` would be 0; the parser does not test the return.
+  (fn:TC_ParseItemCell@0x00654440, fn:ITEMS_GetByCode@0x00633640)
+- [I] **`aux` (`+0x0A`)** is the name-link hit `i` itself, the `uniqueitems` or `setitems` row index, with no offset
+  (not `i − 1`). Hits are accepted from 1 for uniques (row 0 cannot be named) and from 0 for sets. `TC_ResolveDrops`
+  hands it on as `uidx = aux + 1` (items/0001), so the creation's `uidx − 1` is this row. Both words are u16 stores
+  of 32-bit values (`di`, `dx`). A modifier `mul=`, `ma=` or `mg=` after the name writes the same `+0x0A`.
+  (fn:TC_ParseItemCell@0x00654440, fn:EXCEL_FindName@0x006BD3C0, fn:TC_AddEntry@0x00654080,
+  fn:TC_SetEntryProb@0x006540C0, fn:TC_ResolveDrops@0x0055A6D0)
+- Both stay `[I]`. `tools/tc.py` (`index = the row's base, aux = the row`, line 219) reproduced the 163 calls of
+  run:2026-10-15-uniques-tcnamed-forced, which agrees with this reading, but that run's TreasureClassEx is edited at
+  the very cells the statement is about, so it corroborates and does not promote (ADR-0010; items/0004's TC-named
+  unique bullet holds the same verdict). (fn:TC_ParseItemCell@0x00654440, run:2026-10-15-uniques-tcnamed-forced)
 
 ## Data touched
 

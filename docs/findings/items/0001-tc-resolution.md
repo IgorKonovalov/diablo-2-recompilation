@@ -222,6 +222,8 @@ data/0001). Phase 1b (2026-10-11) then compared the finished claims with two reg
 | `0x00633680` | `sub_00633680_ItemIndexByCode` | Items index of a 4-byte code (code tree 0x0096BCC4); `lsd ` → 31 logged ([§ Plan 0038 batch H2c](#plan-0038-batch-h2c-2026-10-21)) | C |
 | `0x00629A90` | `ITEMS_IsType` | item index is of type t (`type`, then `type2`, through the equivalence bitmap) | I |
 | `0x00629BB0` | `ITEMS_UnitIsType` | same test for an item unit | I |
+| `0x00629B50` | `sub_00629B50_ItemTypeMatrixTest` | type a is of type t: one bit of the `Equiv` matrix ([§ Plan 0064](#plan-0064-2026-11-10-the-item-type-test-and-its-equiv-matrix)) | I |
+| `0x00638CD0` | `sub_00638CD0_ItemTypeIsOf` | the matrix builder's walk of `Equiv1`/`Equiv2` (§ Plan 0064) | I |
 | `0x00585B90` | `sub_00585B90_ObjectChestDrop` | object/chest drop: "Act N Chest A/B/C" TC, calls `TC_ResolveDrops` | I |
 | `0x00654E80` | `TC_GetChestTC` | `g_ChestTCs[(act + 5·diff)·3 + tier]` | I |
 | `0x0065A2C0` | `TC_BuildChestTable` | fills `g_ChestTCs` from the TC names at load | I |
@@ -255,7 +257,8 @@ That is the second-code-path corroboration for the layout below. Header in [`re/
 [C] layout by writer/reader agreement (0x006547D0, 0x00654440, 0x0055A6D0).
 
 Entry (0x1C bytes): `+0x00` cumClassic, `+0x04` cumExp (the sums **before** this entry was added); `+0x08` u16
-index (item record, or TC index); `+0x0A` u16 (unique/set record index, or the `mul=`/`ma=`/`mg=` value); `+0x0C` u8
+index (item record, or TC index; for a unique or set cell the row's base item, `[I]`); `+0x0A` u16 (unique/set
+record index, the name-link hit with no offset, `[I]` data/0001 § Plan 0064, fn:TC_ParseItemCell@0x00654440; or the `mul=`/`ma=`/`mg=` value); `+0x0C` u8
 flags: `0x01` unique, `0x02` set, `0x04` TC, `0x10` expansion-only; `+0x0E..+0x18` u16 ×6 from `cm=`, `cr=`, `cs=`,
 `cu=`, `ce=`, `cg=` (same order as the TC ratio words).
 
@@ -1230,6 +1233,91 @@ that index each time (`CPRE`); a reading other than "the Items index of the code
 The `[C]` covers the code-to-index map, observed for one code.
 
 **Tally:** 4 statements: 3 raised (tc 10 ×2, 55), 1 raised in part (tc 56).
+
+## Plan 0064 (2026-11-10): the item-type test and its `Equiv` matrix
+
+`lane/n64r`, from the spec-writer's entry on the walk form (items/tc § K). Static: objdump/r2 disassembly of the pinned
+`Game.exe`, starting from the architect's r2 leads on the entry. Neither test walks `Equiv1`/`Equiv2` at call time: they
+read one bit of a matrix that the itemtypes loader builds once. Globals (the data-table block `g_pDataTables`, `0x0096BC30`):
+`g_nItemTypes` `0x0096C82C` (`+0xBFC`), the row stride in dwords `g_ItemTypeEquivStride` `0x0096C830` (`+0xC00`), the matrix
+`g_pItemTypeEquivBits` `0x0096C834` (`+0xC04`); `g_BitMask32` `0x006CE268` holds `1 << k`.
+
+```c
+// fn:ITEMS_LoadItemTypes@0x00638D80, after the table load (0x006392D9) and the code link
+n = g_nItemTypes
+W = (n + 31) / 32                                  // 0x00639336–0x00639342: signed, cdq + and 0x1F + sar 5
+M = alloc(4·W·n); memset(M, 0, 4·W·n)              // 0x00639347–0x0063936D
+for i in 0..n−1: for t in 0..n−1:                  // 0x0063937B–0x006393D6
+  if TypeIsOf(i, t): M[W·i + t/32] |= 1 << (t & 31)       // 0x006393A2 call, 0x006393C2 or
+
+// fn:sub_00638CD0_ItemTypeIsOf@0x00638CD0. ECX = i, EDX = t (EDX preserved for the caller's loop)
+if (t <= 0) return 1                               // 0x00638CD9 test edx, edx; jg: before any other test
+if (i <= 0 || i >= n) return 0                     // 0x00638CE6, 0x00638CF5
+stack[0] = i; c = 1                                // i32 stack[128] at [ebp − 0x200]
+do:
+  x = stack[--c]                                   // 0x00638D10: last in, first out
+  if (x == t) return 1                             // 0x00638D1A
+  if (x >= n) return 0                             // 0x00638D1E signed
+  if (c > 124) return 0                            // 0x00638D22 cmp ecx, 0x7C; jg: the depth bound
+  e1 = (s16) rec[x].Equiv1 /*+4*/                  // 0x00638D2D
+  if (e1 > 0):                                     // 0x00638D34 test si, si; jle: Equiv1 ≤ 0 skips Equiv2 too
+    stack[c++] = e1
+    e2 = (s16) rec[x].Equiv2 /*+6*/
+    if (e2 != 0) stack[c++] = e2                   // 0x00638D4A test ax, ax; je
+while (c != 0)                                     // 0x00638D5C
+return 0
+```
+
+```c
+// fn:ITEMS_IsType@0x00629A90 (item index, t)
+if (t < 0 || t >= n) return 0                      // 0x00629A99, 0x00629AAA
+r = ITEMS_GetRecord(item); if (!r) return 0
+ty = ITEMS_GetType(item); if (ty < 0 || ty >= n) return 0          // 0x00629AD3, 0x00629AE3
+if (M[W·ty + t/32] & bit(t)) return 1
+ty2 = (s16) r.type2 /*+0x120*/                     // 0x00629B1C
+if (ty2 == 0 || ty2 >= n) return 0                 // 0x00629B23 test; je, 0x00629B29 jge
+return M[W·ty2 + t/32] & bit(t)                    // the masked dword, not 1
+// fn:ITEMS_UnitIsType@0x00629BB0 (unit, t): unit null → 0; t outside 0..n−1 → 0; the same row test on
+//   ITEMS_GetType(unit +4) (no range test of that type), then type2 only when (s16) type2 > 0 (0x00629C3B jle) and < n.
+// fn:sub_00629B50_ItemTypeMatrixTest@0x00629B50 (a, t): both in 0..n−1, else 0; returns M[W·a + t/32] & bit(t).
+```
+
+- [I] **Where and when.** The matrix is built once, in `ITEMS_LoadItemTypes`, after the records are loaded: `n × n`
+  bits, `W` dwords per row, row `i` = the types `i` counts as. `TypeIsOf` has one caller (0x006393A2); `ITEMS_IsType`
+  (5 calls), `ITEMS_UnitIsType` (318) and `sub_00629B50` (12) only read the matrix (call counts from a full objdump
+  listing). (fn:ITEMS_LoadItemTypes@0x00638D80, fn:sub_00638CD0_ItemTypeIsOf@0x00638CD0, fn:ITEMS_IsType@0x00629A90,
+  fn:ITEMS_UnitIsType@0x00629BB0, fn:sub_00629B50_ItemTypeMatrixTest@0x00629B50)
+- [I] **The walk.** Depth-first with an explicit LIFO stack, `Equiv1` pushed before `Equiv2` (so `Equiv2`'s branch is
+  walked first), no visited set. It answers 1 as soon as a popped type equals `t`. It answers 0 when the stack empties,
+  when a popped index is ≥ `n`, or when more than 124 entries remain after a pop (the depth bound; the 128-entry stack
+  cannot overflow, since at most two are pushed per pop). A blank `Equiv1` (stored 0, tables/ItemTypes) ends that
+  branch **and skips that row's `Equiv2`**; a blank `Equiv2` adds nothing. (fn:sub_00638CD0_ItemTypeIsOf@0x00638CD0)
+- [I] **Cycles** (unless `t` is met first). A cycle through rows with one parent each never grows the stack, so the loop
+  does not end (the loader hangs). At a row with two parents, `Equiv2` is popped first: a cycle that continues through
+  `Equiv2` leaves that row's `Equiv1` on the stack each turn, so the stack grows by one per turn until the bound returns
+  0; a cycle that continues through `Equiv1` is resumed only after the `Equiv2` branch has been popped, so when that
+  branch ends the stack does not grow and the loader hangs as for a one-parent cycle. A negative
+  `Equiv2` would be pushed and then read before the records (`x ≥ n` is a signed test). These need edited data.
+  (fn:sub_00638CD0_ItemTypeIsOf@0x00638CD0)
+- [I] **Record 0.** `TypeIsOf(i, 0)` is 1 for every `i`, so bit 0 is set in **every** row, not only in the rows of types
+  with a blank parent, and `ITEMS_IsType(item, 0)` / `ITEMS_UnitIsType(unit, 0)` are true for every item with a valid
+  type. Row 0 holds bit 0 only (`i ≤ 0` returns 0 for `t ≥ 1`). A blank `Equiv` cell therefore adds nothing beyond
+  that bit. (fn:sub_00638CD0_ItemTypeIsOf@0x00638CD0, fn:ITEMS_IsType@0x00629A90)
+- [I] **`type2`.** `ITEMS_IsType` tests `type2` only when it is non-zero, and `ITEMS_UnitIsType` only when it is
+  positive; a blank `type2` (0) adds nothing. A `type2` hit returns the masked dword (non-zero), not 1.
+  (fn:ITEMS_IsType@0x00629A90, fn:ITEMS_UnitIsType@0x00629BB0)
+- [C] **The stock table.** A full-table read of `itemtypes.bin` (`233068c5ff96101c…`, 103 records, so `W` = 4) by
+  `tools/itypes_equiv.py` (sha256 `c4584589f746a0c2…`): no row has a blank `Equiv1` with a set `Equiv2`, no `Equiv` word
+  is negative, the `Equiv` graph has no cycle (every walk ends), and its longest chain is 4 edges. Output
+  `workspace/logs/n64r/itypes-equiv.txt`, manifest `workspace/logs/n64r/manifest.txt`. (tbl:ItemTypes.txt:Equiv1,
+  tbl:ItemTypes.txt:Equiv2)
+- [I] **So on stock data the matrix is the plain closure plus bit 0.** The same tool builds the matrix with the walk
+  above and compares it with a transitive closure of `Equiv1`/`Equiv2` that has a visited set: 0 differences once bit 0
+  is taken as set in every row (426 bits set; no walk reaches the depth bound, the stack never holds more than 2
+  entries). The depth bound, the skipped `Equiv2` and the cycle cases decide nothing on stock data, and the closure the
+  S2 clean-room implementer used is exact apart from bit 0. `[I]` because it rests on the code reading above; the tool
+  is a second reading of the same code, not the game's output. (fn:sub_00638CD0_ItemTypeIsOf@0x00638CD0,
+  fn:ITEMS_LoadItemTypes@0x00638D80)
 
 ## Open questions
 
