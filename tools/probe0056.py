@@ -115,7 +115,8 @@ def main():
         chars = [probeb, nova]
         for k in range(1, a.switches + 1):
             f = chars[(k - 1) % 2]
-            res = hr.next_case(a.slot, log, [f], diff="normal", out=out, stem=stem, case="g%d" % k)
+            res = hr.next_case(a.slot, log, [f], diff="normal", out=out, stem=stem, case="g%d" % k,
+                               stage_checked=True)   # a probe game is its menu load: its PLR is the stage
             hr.mark(stem, "g%d" % k, "ready" if res["ok"] else "fail", log, "switch %.1f s file %s" % (
                 res["secs"], os.path.basename(f)))
             print("g%d: %s" % (k, res), flush=True)

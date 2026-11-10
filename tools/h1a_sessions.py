@@ -264,7 +264,8 @@ def main(argv):
     slot = int(opt["slot"])
     os.makedirs(LOGS, exist_ok=True)
     status = opt.get("status") or os.path.join(LOGS, "%s-s%d.status.json" % (opt["run"], slot))
-    st = hr.batch(names, lambda n: run_session(n, slot, opt["tag"], opt["cases"], opt["run"], only), status)
+    st = hr.batch(names, lambda n: run_session(n, slot, opt["tag"], opt["cases"], opt["run"], only), status,
+                  stage=hr.NO_SHARING)
     print("BATCH %s -> %s" % (hr.summary(st), status), flush=True)
     return 0 if st["done"] and not st["failed"] else 1
 

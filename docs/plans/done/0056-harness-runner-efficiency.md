@@ -374,7 +374,7 @@ _(lanes append dated entries as phases land)_
   Against the rule's text this is outside its list; against its reason (a process whose state is not known) it is a deviation.
   The record did not state it, and now does. Ruling: **the rule stands and is widened.** (a) A stage not reached is a failure.
   (b) A batch that shares a process checks each case's stage before the switch; the check is only in `tools/ai_sessions.py`, so
-  [a backlog entry](../../backlog/2026-11-03-architect-reverser-plan-0056-p4-stage-check-in-the-library.md) moves it to the
+  [a backlog entry](../../backlog/archive/2026-11-03-architect-reverser-plan-0056-p4-stage-check-in-the-library.md) moves it to the
   library. Once it existed the rule worked: 5401's failure sent the batch to a fresh 5402. (c) A failure found only afterwards
   leaves the later cases of that process named in the record, kept only if their checker reads no carried state and the
   record gives the result without them. **The four cases stay.** Without them: 27 logs, 13 355 decisions, 11 472 compared, 0

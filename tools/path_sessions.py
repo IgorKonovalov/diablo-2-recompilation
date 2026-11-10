@@ -274,7 +274,7 @@ def run(slot, tag, saves, run_id, names, dev=False, status=None, seed0=5401, rer
 
     status = status or os.path.join(LOGS, "%s-s%d.status.json" % (runname, slot))
     try:
-        st = hr.batch(names, run_case, status, reruns=reruns)
+        st = hr.batch(names, run_case, status, reruns=reruns, stage=hr.NO_SHARING)
     finally:
         out.close()
     with open(status + ".info.json", "w") as f:

@@ -244,6 +244,7 @@ def run(slot, tag, saves, run_id, names, dev=False, status=None, seed0=5201, rer
     os.makedirs(os.path.join(ROOT, shots), exist_ok=True)
     pr = Proc()
     retries = [0]
+    starts = {}                               # case -> the level it began in (stage_reached reads it)
     info = {"launches": [], "cases": {}, "waypoint_retries": 0}
     py = [*hr.PY, os.path.join(HERE, "d2pilot.py")]
 
@@ -294,7 +295,7 @@ def run(slot, tag, saves, run_id, names, dev=False, status=None, seed0=5201, rer
         if not ok:
             return ("failed", "no PLR (%s)" % note)
         n_before = sum(1 for ln in open(pr.log, errors="replace") if ln.startswith("AID "))
-        lid_start = level_of(pr.log)
+        lid_start = starts[case] = level_of(pr.log)
         xd = [*hr.PY, os.path.join(HERE, "xdrive.py"), "--slot", str(slot), "--window", "Diablo II"]
         for step in steps:
             if step[0] == "wait":                       # ("wait", seconds)
@@ -341,14 +342,19 @@ def run(slot, tag, saves, run_id, names, dev=False, status=None, seed0=5201, rer
                                "wall": round(time.time() - t_case, 1)}
         if pr.dead:
             return ("failed", "pilot timeout")
-        if level_of(pr.log) == lid_start:        # the waypoint never took the character out of town: not a stage
-            pr.dead = True
-            return ("failed", "stayed in level %s" % lid_start)
         return ("kept", "decisions=%d wall=%.0f s" % (n_after - n_before, time.time() - t_case))
+
+    def stage_reached(case):
+        """The case gate (hr.batch stage=): a case that stayed in town is a failure, and its process takes no
+        further case."""
+        r = left_start(pr.log, starts.get(case))
+        if not r[0]:
+            pr.dead = True
+        return r
 
     status = status or os.path.join(LOGS, "%s-s%d.status.json" % (runname, slot))
     try:
-        st = hr.batch(names, run_case, status, reruns=reruns)
+        st = hr.batch(names, run_case, status, reruns=reruns, stage=stage_reached)
     finally:
         close("batch end")
         out.close()
@@ -357,6 +363,15 @@ def run(slot, tag, saves, run_id, names, dev=False, status=None, seed0=5201, rer
         json.dump(info, f, indent=1)
     print(hr.summary(st))
     return 0 if st["done"] and not st["failed"] else 1
+
+
+def left_start(log, lid_start):
+    """The stage check (plan 0056 Phase 4): (True, "") when the player's last PLR level differs from the level the
+    case began in (the waypoint took the character out of town), else (False, "stayed in level N")."""
+    lid = level_of(log)
+    if lid == lid_start:
+        return False, "stayed in level %s" % lid
+    return True, ""
 
 
 def level_of(path):
