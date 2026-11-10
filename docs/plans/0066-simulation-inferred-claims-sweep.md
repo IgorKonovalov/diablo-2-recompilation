@@ -305,3 +305,8 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   counted as logged; (2) row 23 (frame pass order) raised in part from the kept frame-order check's pair table with no
   new run; (3) row 86's one-draw claim rests on the 11 rolls with no other line before the event's exit; (4) the
   remainders routed to b rather than d-none where a logger line would reach them (rows 2, 59, 118, 126, 132).
+
+### 2026-11-10 — Sub-plan 0069 drafted (architect, `lane/n69a`)
+
+- Sub-plan [0069](0069-monster-ai-bestiary-tour.md) drafted for question 3 (c): the bestiary tour over H1a to H1d, H1g
+  and H1h (237 statements at `4fb8b55f`), `proposed`, for the owner.

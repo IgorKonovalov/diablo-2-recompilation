@@ -1,6 +1,6 @@
 # Plans index
 
-Next free number: **0069**
+Next free number: **0070**
 
 Lane runs (agent usage, review verdicts, fix counts by category) are logged in the [lane run ledger](metrics.md).
 
@@ -74,6 +74,7 @@ Lane runs (agent usage, review verdicts, fix counts by category) are logged in t
 | [0066](0066-simulation-inferred-claims-sweep.md) | Inferred-claims sweep 2: the simulation and game-rules specs (2 626 `[I]`) | approved | **P0 accepted; P1 go 2026-11-10 (owner)**; Q1 (b): plan 0038 closed; Q2: threshold 20 per session; Q3 (c): bestiary-tour sub-plan after S1b, other harness rows deferred |
 | [0067](0067-player-trade.md) | Player trade: the trade state machine, its commit and its failures (ADR-0033) | approved | **P1 done; P2 go 2026-11-10 (owner), hosting that night**; ADR-0033 accepted |
 | [0068](done/0068-game-files-coverage.md) | Game files coverage: the last loaded tables (`MonItemPercent` first), the COF bundles, and a ledger for every file kind | done | **closed 2026-11-10** (Phase 4 Tier A review, accept with fixes); approved by the owner 2026-11-10; P1 table docs and the coverage ledger (archivist), P2 the readers and the bundles (reverser static, data/0006), P3 the COF bundle format and parser (archivist), P4 the specs (spec-writer): `MonItemPercent` read by no code, the skill-level bonus (skills/dispatch C8), event ids 4 and 8 never dispatched; two reverser harness entries open |
+| [0069](0069-monster-ai-bestiary-tour.md) | Monster AI bestiary tour: the catalogue's harness rows of plan 0066 (H1a–H1d, H1g, H1h; 237 statements) | proposed | Tier A review accepted with fixes 2026-11-10; waits for the owner (questions 1, size, and 2, the threshold count); P1a–P1c reverser static (placement, seeds, 71 block models), P2 logger rev 7 and Act I, P3 the tour (one slot, slot 2 once plans 0067 P2 and 0065 P2 release it), P4 settle; about 3.4M tokens |
 
 ## Run order (set 2026-11-10, plans 0063–0068)
 

@@ -703,6 +703,8 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-11-10 | `lane/n66c` review | 0066 P1, S1b | lane-check | 83 300 | 18 | 2 | — | gave accept (Tier B) | — (floor 30 governs over H1 50; AID x,y as UnitGetPos oracle accepted as disclosed) |
 | 2026-11-10 | `lane/n66b` | 0066 P1, S2a (2 parts) | reverser-static | 660 863 | 225 | 50 | no slot | accept | 0 |
 | 2026-11-10 | `lane/n66b` review | 0066 P1, S2a | lane-check | 64 604 | 16 | 1 | — | gave accept (Tier B) | — (mode-14 contradiction routed to backlog and Phase 3) |
+| 2026-11-10 | `lane/n69a` | 0069 draft (0066 Q3 c) | architect-plan | 213 550 | 68 | 11 | no slot | accept with fixes | 8: overclaim 2, misread 1, miscount 1, omission 4 |
+| 2026-11-10 | `lane/n69a` review | 0069 draft | architect-review | 111 688 | 27 | 5 | — | gave accept with fixes (Tier A) | — (cost 1.3M → 3.4M explained; owner Q1 size, Q2 threshold count) |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not
