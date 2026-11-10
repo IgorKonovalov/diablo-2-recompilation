@@ -124,3 +124,10 @@ lanes with Ghidra and one archivist lane without it.
 ## Implementation log
 
 _(lanes append dated entries as phases land: what was found, the confidence reached, surprises)_
+
+### 2026-11-10 — Phase 1 (lane/n63a, archivist)
+
+- Done: [docs/tables/ActClockTables.md](../tables/ActClockTables.md) documents `g_ActClockTable0..2` (`0x007443F0`, `0x00744438`, `0x00744480`): contiguous, six rows of three dwords (start, type, colour word), readers, and the 18 rows. Home: `docs/tables/`, beside PathDirTables and PathTypes, the other image-constant docs; `docs/formats/` describes file formats and none is involved. Values read by a `-I` reader from the pinned image (no Ghidra, no slot). ADR-0031: table 2's `start` is the rule `60 * ((p + 5) mod 6)` (survey-checked); the other 48 values have no rule known and are listed (type and colour columns, tables 0 and 1 starts).
+- Survey: `tools/actclock_survey.py`, registered in `tools/gate.py` as `actclock`, baseline `tools/gate/baselines/actclock.txt`; it checks the rule and compares the doc's 18 rows with the image. Linked from `docs/tables/README.md`.
+- Entry `2026-11-04-spec-writer-archivist-act-clock-tables` annotated, not closed. Handoff to Phase 3: sim/frame G1b links `../../tables/ActClockTables.md`; the colour word's channel order and the meaning of `type` stay `[L]` in the doc (frame/0001 does not settle them).
+- Review tier: Tier A (ADR-0027). The doc restates `[I]` statements from frame/0001 § 3.1 (reader roles, the colour blend at 0x0061BCE0, the `type == 2` test).
