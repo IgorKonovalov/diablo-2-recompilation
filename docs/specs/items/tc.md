@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, data/excel]
 consumed_by: [items/quality, items/quest-drops, objects]
-tags: {C: 125, I: 75, L: 6}
+tags: {C: 125, I: 76, L: 6}
 updated: 2026-11-10
 ---
 
@@ -1057,10 +1057,12 @@ Step notes:
   stock data reading `type2` changes no count. (fn:ITEMS_IsType@0x00629A90, 0x00629B23, fn:TC_BuildAutoTCs@0x006541C0,
   [items/0001 § Plan 0064](../../findings/items/0001-tc-resolution.md#plan-0064-2026-11-10-the-item-type-test-and-its-equiv-matrix),
   [archaeology/0002 § 5](../../findings/archaeology/0002-unreached-rows.md#5-items-659-base-items-306-weapons-202-armor-151-misc))
-- K3. [C] **The unit test is the same matrix, on the base's `type` and `type2`.** Taken as the closure it gives the
-  logged affix candidate list of every pick of the run ([items/affixes](affixes.md) C5c–C5d), and the `gold` test of
-  H8 gave 1 for the 207 `gld` units of the H2a run and 0 for the 506 others (*Constants*, `GOLD_TYPE`). Its `type2` is
-  tested only when positive (0x00629C3B), `[I]`. (fn:ITEMS_UnitIsType@0x00629BB0, run:2026-10-14-affixes,
+- K3. [C] **The unit test answers as the closure of the base's `type` and `type2`** on every type the runs asked
+  for: taken as that closure it gives the logged affix candidate list of every pick of the run
+  ([items/affixes](affixes.md) C5c–C5d), and the `gold` test of H8 gave 1 for the 207 `gld` units of the H2a run and 0
+  for the 506 others (*Constants*, `GOLD_TYPE`). That it reads the K1 matrix, which equals that closure plus bit 0 on
+  stock data, is the code reading (K1 notes, `[I]`). Its `type2` is tested only when positive
+  (0x00629C3B), `[I]`. (fn:ITEMS_UnitIsType@0x00629BB0, run:2026-10-14-affixes,
   run:2026-10-20-sweep-items-tc,
   [items/0005 § 3](../../findings/items/0005-affixes.md#3-items_pickmagicaffixitem-needspawnable-mustroll-applyprops-isprefix-forcedid-autogroup-0x005c1560))
 - K. The tests that do **not** go through `IsType` read the item's own `type` column only: the throwable test (H6),

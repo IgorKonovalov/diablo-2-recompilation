@@ -764,8 +764,11 @@ H1a. A1CliffMark(L):                                                 [C] (fn:sub
   is set before the exit tests, so a run that starts at the head ends the walk). No draw. Over the 80 Act I walks of
   the run (levels 4–7, 20 windows each): starts `B` 56 and `A` 14; 38 runs marked, 32 with no corner; `last` at an
   up-then-right corner 24 times and at a right-then-down corner 22; runs stopped by a seam at `n` 48 times and by a
-  down segment 22; 56 walks ended by a run that started at the head and 24 back at the head. The plan 0064 clean-room
-  implementation failed 22 Act I cases with its own cliff mark and passed all 1 820 with a port of the reference model's, which is this rule, so the logged
+  down segment 22; 56 walks ended by a run that started at the head and 24 back at the head. The second source is the
+  reference model's cliff mark, which is this rule: it scores the run with 0 mismatches (`O.flags` compared whole, and
+  the cell and def grids that `type` feeds through `OutSeamMark` and `OutBorderBuild`), and a transcription of the code
+  block in its place scores the same 572 211 checks with 0 mismatches. The plan 0064 clean-room implementation failed
+  22 Act I cases with its own cliff mark and passed all 1 820 with a port of the reference model's, so the logged
   `O.flags`, cell and def grids separate it from at least that reading. (fn:sub_00680070_A1CliffMark@0x00680070,
   run:2026-10-15-drlg-outdoor, [drlg/0008 § Plan 0064 (a)](../../findings/drlg/0008-outdoor.md#a-a1cliffmark-0x00680070))
 - H1a. [I] **Exits no logged walk takes.** No run stopped on a left-going segment or back at its own start, and the

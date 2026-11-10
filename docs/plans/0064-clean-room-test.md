@@ -630,3 +630,27 @@ the S4 rows routed to the reverser stay out of the re-run until that entry lands
   Ledgers [S1-rerun](0064-cleanroom/S1-rerun.md) (6 rows), [S2-rerun](0064-cleanroom/S2-rerun.md) (11 rows),
   [S3-rerun](0064-cleanroom/S3-rerun.md) (4 rows): only guesses that came out right or paths no case reaches; S2's
   unique-entry base item and Equiv walk are the items part 3 (`lane/n64y`) is writing in. S4's re-run follows part 3.
+
+### 2026-11-10 — Phase 4 part 3 Tier A review (`lane/n64y`, architect): accept with fixes (2)
+
+Mode 3 in full, with the promotion re-check of every `[C]` imported from drlg/0008 § Plan 0064 (a)–(d), data/0001
+§ Plan 0064 and items/0001 § Plan 0064 (Tier A reviewed today as the `lane/n64r` audit). The imports are faithful:
+H6d's bytes `01 00 FF 00` and the `movsx` reads, H7a's else-only `s` step (100 calls, 26 on the `(r & 3) = 0`
+branch), C1 and warps A1's `Vis ≠ 0` before `Warp` −1 (948 nodes, 22 600 of 513 215), K1's stock-table `[C]` (103
+records, no cycle, chain 4); G4's and § A's entry words and K1's walk stay `[I]` as the findings hold them. **H1a**
+compared line by line with the finding's block: the named booleans keep every test and its order (start tests `A`/`B`
+with both seam bits; `done` before the exits; the down, left, `seam(w)`, `seam(n)` exits; the two corner tests with
+`seam(n)`; `w ← n` then the back-at-start exit; marking `v` … `last` inclusive and `0x20`; `v ← w.next`, the `done`
+return, `prev ← w`, the head return). r2 on the pinned `Game.exe` (`pd` at 0x00680070) agrees: 0x006800AA `jge`,
+0x006800B2 `jle`, the `[eax + 0xC]` / `[ecx + 0xC]` bit tests for `A`; 0x006800C4 / 0x006800CC `jle` for `B`;
+0x006800F0 `cmp eax, [ebp − 0x14]` then 0x006800F5 `mov [ebp − 0xC], ebx` before the `jl` / `jg` exits
+(0x006800FB–0x00680111); the corner pairs at 0x00680115–0x0068013F. Each change states what the implementer could not know (the flipped dx table,
+the one-branch draw, the empty slot, the entry words, the load-time matrix). Judgment calls: (a) K3's split is right in
+shape, but its `[C]` sentence named the mechanism; (b) the named booleans are accepted; (c) n13/n14 and Q528/Q529 are
+accepted (both are traps S4 hit). Fixes: (1) overclaim: K3's "the unit test is the same matrix" under `[C]`; the runs
+confirm the closure's answers, and the matrix (equal to closure plus bit 0 on stock data) is K1's `[I]` reading; now
+"answers as the closure", the matrix pointed to K1. (2) omission: H1a's `[C]` note gave the branch counts and the
+clean-room separation but not its second source; it now states the reference model's 0 mismatches on the run and the
+transcription's 572 211 checks, 0 mismatches (drlg/0008 § Plan 0064 (a)). Ledger: spec-writer row accept with fixes
+(Tier A, 2), overclaim 1, omission 1. items/tc now C 125 / I 76 / L 6 (fix 1 adds the K1 `[I]` pointer). Plan stays
+open: the S4 re-run and the close review follow.
