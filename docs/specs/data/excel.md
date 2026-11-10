@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: []
 consumed_by: [items/tc, items/*, monsters/*, drlg/*, objects, data/strings, data/calc]
-tags: {C: 146, I: 59, L: 2}
+tags: {C: 146, I: 60, L: 2}
 updated: 2026-11-10
 ---
 
@@ -573,9 +573,16 @@ G4. ParseItemCell(text, prob):                                        [C] (fn:TC
         (rec, i) ← GetItemByCode(STR_ToItemCode(name))                ; D3; first 4 chars, space-padded
         if found: entry is ITEM i;                     done
       i ← FindName(tcLink, name);       if i ≥ 1: entry is TC i;      done   ; 0 (empty TC) = miss
-      i ← FindName(uniqueitems link, name); if i ≥ 1: entry is UNIQUE i (flag 0x11); done   ; [I] these two steps (0x00654569, 0x006545B4)
-      i ← FindName(setitems link, name);    if i ≥ 0: entry is SET i (flag 0x12);   done
-      drop the cell
+      i ← FindName(uniqueitems link, name)                            ; [I] from here to the end (0x00654569, 0x006545B4, 0x006545E7, 0x006545ED)
+      if i ≥ 1:  rows ← uniqueitems;  flag ← 0x11                     ; hit 0 is a miss; a null link skips this lookup
+      else:
+        i ← FindName(setitems link, name)                             ; a null link drops the cell
+        if i < 0: drop the cell;  done                                ; hit 0 is accepted
+        rows ← setitems;  flag ← 0x12
+      e ← a new entry;  e.flags |= flag
+      e.index (+0x08, u16) ← the items record index of rows[i].code (+0x28)   ; 0 when the code is no item code
+      e.aux   (+0x0A, u16) ← i                                        ; the uniqueitems / setitems row itself, no offset
+      ; then the modifiers; mul=, ma= and mg= write e.aux again
 ```
 
 G5. **The TC index space** that results, and that every stored TC reference uses: [C]
@@ -629,6 +636,16 @@ Step notes:
   fn:TC_GrowEntries@0x00654010)
 - G4. `uniqueitems` index 0 can never be named from a TC (the test is `≥ 1`); `setitems` index 0 can. [I]
   (fn:TC_ParseItemCell@0x00654440, 0x00654569, 0x006545B4)
+- G4. **The two words of a unique or set entry.** `index` is the `items` record of the row's base code, through
+  `ITEMS_GetByCode`'s out parameter, which writes 0 for a code that is no item code; the parser does not test the
+  return. `aux` is the name-link hit `i` itself, not `i − 1`; the resolver hands it on as `uidx = aux + 1`
+  ([items/tc H4](../items/tc.md#h-item-pick-and-hand-off)), so item creation's `uidx − 1` is this row. Both are u16
+  stores of 32-bit values. [I] for both: only an edited TreasureClassEx reaches a named cell, and the one run that does
+  (`tools/tc.py`, `index` = the row's base and `aux` = the row, reproduces its 163 TC calls) edits the very cells the
+  statement is about, so it agrees and does not raise (ADR-0010). (fn:TC_ParseItemCell@0x00654440,
+  fn:ITEMS_GetByCode@0x00633640, 0x0063365C, fn:EXCEL_FindName@0x006BD3C0, fn:TC_ResolveDrops@0x0055A6D0,
+  run:2026-10-15-uniques-tcnamed-forced,
+  [data/0001 § Plan 0064](../../findings/data/0001-excel-loader.md#plan-0064-2026-11-10-the-entry-words-of-a-unique-or-set-cell))
 - G. `TC_GetByIndex` applies a `group`/`level` upgrade walk when a TC is fetched; that belongs to
   `items/tc`, not to the load. [C] (fn:TC_GetByIndex@0x00654E00, run:2026-10-11-tc-drops, run:2026-10-12-tc-champion,
   [items/tc § C](../items/tc.md#c-level-upgrade--tc_dropbyindex-and-tc_getbyindex))

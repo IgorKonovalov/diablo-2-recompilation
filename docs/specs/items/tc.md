@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, data/excel]
 consumed_by: [items/quality, items/quest-drops, objects]
-tags: {C: 123, I: 66, L: 7}
+tags: {C: 125, I: 76, L: 6}
 updated: 2026-11-10
 ---
 
@@ -172,9 +172,10 @@ fn:TC_ParseItemCell@0x00654440, fn:TC_ResolveDrops@0x0055A6D0: writer and reader
 | `+0x28` | ptr | `entries` | 0x1C bytes each |
 
 Entry (0x1C bytes): `cumClassic` i32 and `cumExp` i32 (the running sums **before** this entry was
-added), `index` u16 (item index, or TC index), `aux` u16 (unique/set record index, or the `mul=` value),
+added), `index` u16 (item index, or TC index; for a unique or set entry the item index of the row's base code),
+`aux` u16 (for a unique or set entry the `uniqueitems` or `setitems` row itself, with no offset; or the `mul=` value),
 `flags` u8 (`0x01` unique, `0x02` set, `0x04` sub-TC, `0x10` expansion-only), `mod` u16[6] from `cm=`,
-`cr=`, `cs=`, `cu=`, `ce=`, `cg=`. [C] for the layout: the loader's writers (`TC_AddEntry`, `TC_SetEntryProb`,
+`cr=`, `cs=`, `cu=`, `ce=`, `cg=`. What `index` and `aux` hold for a unique or set entry is `[I]` (A note). [C] for the layout: the loader's writers (`TC_AddEntry`, `TC_SetEntryProb`,
 `TC_ParseItemCell`) and the resolver's reads agree offset by offset with the same 0x1C stride, and the replay exercises
 `cumClassic`, `cumExp`, `index` and `flags` on every pick; what the `mod` words do is H3 and H5.
 (fn:TC_AddEntry@0x00654080, fn:TC_SetEntryProb@0x006540C0, fn:TC_ParseItemCell@0x00654440,
@@ -205,6 +206,14 @@ Step notes:
   draws of H5 never run with stock data; the replays agree (no upgrade draw, `up = 0` in all 7 115 creation calls of
   the S2a log set). [C] (fn:TC_ParseItemCell@0x00654440, tbl:TreasureClassEx.txt:Item1, run:2026-10-11-tc-drops,
   [items/0001 § Plan 0038 batch S2a](../../findings/items/0001-tc-resolution.md#plan-0038-batch-s2a-2026-10-16))
+- A. **A unique or set entry's two words** (flags `0x11` or `0x12`, from a cell that names a `uniqueitems` or
+  `setitems` row, [data/excel G4](../data/excel.md#g-treasure-classes)). `index` is the `items` record of the row's base
+  code (`+0x28` of the row), 0 when that code is no item code; `aux` is the row index the name lookup returned, not
+  minus one, so H4's `uidx = aux + 1` is the row plus one. A unique row is accepted from 1, a set row from 0. A `mul=`,
+  `ma=` or `mg=` after the name overwrites `aux`. [I] (only an edited TreasureClassEx reaches a named cell, and the run
+  that edits one agrees without raising, ADR-0010). (fn:TC_ParseItemCell@0x00654440, 0x006545E7, 0x006545ED,
+  fn:ITEMS_GetByCode@0x00633640, run:2026-10-15-uniques-tcnamed-forced,
+  [data/0001 § Plan 0064](../../findings/data/0001-excel-loader.md#plan-0064-2026-11-10-the-entry-words-of-a-unique-or-set-cell))
 - A. `ma=` and `mg=` write the same `aux` word as `mul=`; the resolver reads `aux` only for the gold
   multiply and the unique/set index, so on a non-gold item they do nothing here. [I]
   ([items/0001 § Dead ends](../../findings/items/0001-tc-resolution.md#dead-ends), fn:TC_ParseItemCell@0x00654440)
@@ -976,33 +985,86 @@ Step notes:
 [data/excel G2](../data/excel.md#g-treasure-classes)) is this test, not a compare with the item's own `type` column.
 It has two entry points: one takes an item index, the other an item unit and tests the unit's base item.
 
+Neither test walks `Equiv1`/`Equiv2` when it is called: both read one bit of an `n × n` matrix (`n` the number of
+`itemtypes` records) that the itemtypes loader builds once (K1).
+
 ```
-K1. Closure(x) = { x } ∪ Closure(ItemTypes[x].Equiv1) ∪ Closure(ItemTypes[x].Equiv2)
-                                                                   ; every type reached from x through Equiv1/Equiv2, repeatedly
-K2. IsType(i, t) = t ∈ Closure(Items[i].type) or t ∈ Closure(Items[i].type2)
-                                                                   ; item index i (fn:ITEMS_IsType@0x00629A90)
-K3. UnitIsType(unit, t) = IsType(the unit's base item index, t)    ; (fn:ITEMS_UnitIsType@0x00629BB0)
+K1. at load, once, after the itemtypes records:                     [I] (fn:ITEMS_LoadItemTypes@0x00638D80, fn:sub_00638CD0_ItemTypeIsOf@0x00638CD0)
+      for i in 0 ..< n:  for t in 0 ..< n:  M[i][t] ← TypeIsOf(i, t)   ; row i = the types i counts as
+    TypeIsOf(i, t) → 0 or 1:
+      if t ≤ 0: return 1                                             ; before any other test: bit 0 is set in every row
+      if i ≤ 0 or i ≥ n: return 0
+      stack ← [i]                                                    ; i32[128]
+      while stack is not empty:
+        x ← pop(stack)                                               ; last in, first out
+        if x = t: return 1
+        if x ≥ n: return 0                                           ; signed
+        if size(stack) > 124: return 0                               ; the depth bound
+        e1: i16 ← ItemTypes[x].Equiv1
+        if e1 > 0:                                                   ; Equiv1 ≤ 0 (blank: 0) skips Equiv2 as well
+          push(stack, e1)
+          e2: i16 ← ItemTypes[x].Equiv2;  if e2 ≠ 0: push(stack, e2)   ; so Equiv2's branch is walked first
+      return 0
+K2. IsType(i, t):                                                    [I] (fn:ITEMS_IsType@0x00629A90) ; item index i
+      if t < 0 or t ≥ n: return 0
+      if Items[i] is none: return 0
+      ty ← Items[i].type;  if ty < 0 or ty ≥ n: return 0
+      if M[ty][t]: return 1
+      ty2: i16 ← Items[i].type2;  if ty2 = 0 or ty2 ≥ n: return 0
+      return M[ty2][t]                                               ; non-zero, not necessarily 1
+K3. UnitIsType(unit, t):                                             [C] its answers (K3 note) (fn:ITEMS_UnitIsType@0x00629BB0, run:2026-10-14-affixes) ; the guards and type2's > 0 test: [I]
+      if unit is none or t < 0 or t ≥ n: return 0
+      as K2 on the unit's base item, with no range test of its type, and type2 tested only when > 0 (and < n)
 ```
 
 Step notes:
 
-- K2. [I] **The record test reads `type`, then `type2`, each through the `Equiv1`/`Equiv2` equivalences** (the code
-  holds them as an equivalence bitmap). The auto TCs of I1 are built with it; on stock data reading `type2` changes no
-  count. (fn:ITEMS_IsType@0x00629A90, fn:TC_BuildAutoTCs@0x006541C0,
-  [items/0001 § Functions](../../findings/items/0001-tc-resolution.md#functions),
-  [archaeology/0002 § 5](../../findings/archaeology/0002-unreached-rows.md#5-items-659-base-items-306-weapons-202-armor-151-misc))
-- K3. [C] **The unit test is the same closure, of the base's `type` and `type2`.** Taken as that closure it gives the
-  logged affix candidate list of every pick of the run ([items/affixes](affixes.md) C5c–C5d), and the `gold` test of
-  H8 gave 1 for the 207 `gld` units of the H2a run and 0 for the 506 others (*Constants*, `GOLD_TYPE`).
-  (fn:ITEMS_UnitIsType@0x00629BB0, run:2026-10-14-affixes, run:2026-10-20-sweep-items-tc,
-  [items/0005 § 3](../../findings/items/0005-affixes.md#3-items_pickmagicaffixitem-needspawnable-mustroll-applyprops-isprefix-forcedid-autogroup-0x005c1560))
+- K1. [I] **The matrix and its walk.** `ITEMS_LoadItemTypes` allocates `W = (n + 31) ÷ 32` dwords per row (signed
+  division) and sets bit `t` of row `i` when `TypeIsOf(i, t)`; `TypeIsOf` has this one caller, and the two tests (and a
+  third reader, `sub_00629B50`) only read the matrix. The walk is depth-first with an explicit stack, `Equiv1` pushed
+  before `Equiv2`, and no visited set. It answers 0 when the stack empties, when a popped index is ≥ `n`, or when more
+  than 124 entries remain after a pop; the 128-entry stack cannot overflow (at most two pushes per pop). A blank
+  `Equiv1` (stored 0, K1 note below) ends that branch **and skips that row's `Equiv2`**; a blank `Equiv2` adds nothing.
+  (fn:ITEMS_LoadItemTypes@0x00638D80, fn:sub_00638CD0_ItemTypeIsOf@0x00638CD0, 0x00638CD9, 0x00638D22, 0x00638D34,
+  fn:sub_00629B50_ItemTypeMatrixTest@0x00629B50,
+  [items/0001 § Plan 0064](../../findings/items/0001-tc-resolution.md#plan-0064-2026-11-10-the-item-type-test-and-its-equiv-matrix))
+- K1. [I] **Bit 0 is set in every row**, since `TypeIsOf(i, 0)` returns 1 before it tests `i`: `IsType(x, 0)` and
+  `UnitIsType(u, 0)` are true for every item with a valid type, and row 0 holds bit 0 only. No test of this spec or of
+  the specs that link here asks for type 0 (I1's `t` has `TreasureClass` ≠ 0, H8 asks for 4, items/quality S2 for 45 and
+  50), so this bit decides none of their answers. (fn:sub_00638CD0_ItemTypeIsOf@0x00638CD0, fn:ITEMS_IsType@0x00629A90,
+  tbl:ItemTypes.txt:TreasureClass)
+- K1. [I] **Cycles** need edited data. A cycle through rows with one parent each never grows the stack, so the load
+  hangs; at a row with two parents a cycle that continues through `Equiv2` grows the stack by one per turn until the
+  depth bound returns 0, and one that continues through `Equiv1` hangs once the `Equiv2` branch ends. A negative
+  `Equiv2` is pushed and read below the records (`x ≥ n` is a signed test). (fn:sub_00638CD0_ItemTypeIsOf@0x00638CD0)
+- K1. [C] **The stock table has none of these cases.** A full read of `itemtypes.bin` (103 records, `W` = 4): no row
+  has a blank `Equiv1` with a set `Equiv2`, no `Equiv` word is negative, the `Equiv` graph has no cycle, and its longest
+  chain is 4 edges. (tbl:ItemTypes.txt:Equiv1, tbl:ItemTypes.txt:Equiv2,
+  [items/0001 § Plan 0064](../../findings/items/0001-tc-resolution.md#plan-0064-2026-11-10-the-item-type-test-and-its-equiv-matrix))
+- K1. [I] **So on stock data `M[i][t]` = (`t` = 0) or `t` ∈ Closure(`i`)**, the plain transitive closure
+  Closure(`x`) = {`x`} ∪ Closure(`Equiv1`) ∪ Closure(`Equiv2`) over the non-blank parents. A second reading of the code
+  (`tools/itypes_equiv.py`) builds the matrix with the walk and compares it with a closure that has a visited set:
+  0 differences once bit 0 is taken as set in every row (426 bits; no walk reaches the depth bound, the stack never
+  holds more than 2 entries). A reimplementation may compute the closure plus bit 0 for stock data; the walk's bound,
+  its skipped `Equiv2` and its cycle cases decide nothing there. (fn:sub_00638CD0_ItemTypeIsOf@0x00638CD0,
+  fn:ITEMS_LoadItemTypes@0x00638D80,
+  [items/0001 § Plan 0064](../../findings/items/0001-tc-resolution.md#plan-0064-2026-11-10-the-item-type-test-and-its-equiv-matrix))
 - K1. [C] **A blank `Equiv1` or `Equiv2` cell stores record 0** (`None`, the first row with the blank code), not a
   "no parent" value: the loader looks a blank code up like any other. (tbl:ItemTypes.txt:Equiv1,
   [data/0004 § Answer](../../findings/data/0004-cell-converters.md#answer-summary))
-- K1. [I] So record 0 sits in the closure of every type with a blank `Equiv`. No test of this spec or of the specs
-  that link here asks for type 0 (I1's `t` has `TreasureClass` ≠ 0, H8 asks for 4, items/quality S2 for 45 and 50), so
-  treating a blank `Equiv` as no parent gives the same answers. How the code walks the equivalences (depth, a cycle)
-  is not read: see *Open questions*. (tbl:ItemTypes.txt:TreasureClass, tbl:ItemTypes.txt:Equiv1)
+- K2. [I] **The record test reads `type`, then `type2` only when it is non-zero**, each as a row of the matrix; a
+  `type2` hit returns the masked dword, so a caller tests it for non-zero. The auto TCs of I1 are built with it; on
+  stock data reading `type2` changes no count. (fn:ITEMS_IsType@0x00629A90, 0x00629B23, fn:TC_BuildAutoTCs@0x006541C0,
+  [items/0001 § Plan 0064](../../findings/items/0001-tc-resolution.md#plan-0064-2026-11-10-the-item-type-test-and-its-equiv-matrix),
+  [archaeology/0002 § 5](../../findings/archaeology/0002-unreached-rows.md#5-items-659-base-items-306-weapons-202-armor-151-misc))
+- K3. [C] **The unit test answers as the closure of the base's `type` and `type2`** on every type the runs asked
+  for: taken as that closure it gives the logged affix candidate list of every pick of the run
+  ([items/affixes](affixes.md) C5c–C5d), and the `gold` test of H8 gave 1 for the 207 `gld` units of the H2a run and 0
+  for the 506 others (*Constants*, `GOLD_TYPE`). That it reads the K1 matrix, which equals that closure plus bit 0 on
+  stock data, is the code reading (K1 notes, `[I]`). Its `type2` is tested only when positive
+  (0x00629C3B), `[I]`. (fn:ITEMS_UnitIsType@0x00629BB0, run:2026-10-14-affixes,
+  run:2026-10-20-sweep-items-tc,
+  [items/0005 § 3](../../findings/items/0005-affixes.md#3-items_pickmagicaffixitem-needspawnable-mustroll-applyprops-isprefix-forcedid-autogroup-0x005c1560))
 - K. The tests that do **not** go through `IsType` read the item's own `type` column only: the throwable test (H6),
   gold find (H9), the auto-TC weight (I1, the own type's `Rarity`), and items/quality A2–A5 and S1. [I] (0x0055AE6E,
   fn:sub_005589A0_DropGoldFind@0x005589A0, [items/quality § A](quality.md#a-early-returns-no-draw-no-row))
@@ -1228,9 +1290,9 @@ potions' quality calls return without drawing (H4).
 - [L] Whether any code reaches `MonItemPercent` through an address built at run time: the static scan cannot see one,
   and a read watch on its records over a session with kills would settle it
   ([backlog](../../backlog/2026-11-10-reverser-reverser-plan-0068-monitempercent-read-watch.md)).
-- [L] **How the type test walks the equivalences** (§ K): items/0001 names an "equivalence bitmap" but no finding says
-  where it is built, how deep the `Equiv1`/`Equiv2` walk goes, what a cycle would do, or whether record 0 (every blank
-  `Equiv`) enters a type's set. No stock test depends on it (K1 note)
+- ~~**How the type test walks the equivalences** (§ K)~~: answered by [items/0001 § Plan 0064](../../findings/items/0001-tc-resolution.md#plan-0064-2026-11-10-the-item-type-test-and-its-equiv-matrix)
+  and stated in K1: a matrix built once at load by a depth-first walk with a depth bound of 124, `Equiv1` ≤ 0 skipping
+  `Equiv2`, bit 0 set in every row
   ([backlog](../../backlog/archive/2026-11-10-spec-writer-reverser-itemtypes-equiv-walk-form.md),
   [ItemTypes § Open questions](../../tables/ItemTypes.md#open-questions)).
 

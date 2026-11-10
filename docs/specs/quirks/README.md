@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [every reviewed spec listed under Coverage]
 consumed_by: [docs/wiki/quirks.md]
-tags: {C: 374, I: 162, L: 3}
+tags: {C: 376, I: 162, L: 3}
 updated: 2026-11-10
 ---
 
@@ -65,12 +65,12 @@ flowchart LR
 | [2. Rounding and float](#2-rounding-and-float) | 21 | 15 | 6 |
 | [3. Wrap and overflow](#3-wrap-and-overflow) | 10 | 3 | 7 |
 | [4. Bounds, comparisons and table edges](#4-bounds-comparisons-and-table-edges) | 79 | 56 | 23 |
-| [5. Draw order and dead draws](#5-draw-order-and-dead-draws) | 143 | 117 | 26 |
-| [6. Data-dependent branches](#6-data-dependent-branches) | 134 | 103 | 31 |
+| [5. Draw order and dead draws](#5-draw-order-and-dead-draws) | 144 | 118 | 26 |
+| [6. Data-dependent branches](#6-data-dependent-branches) | 135 | 104 | 31 |
 | [7. Timing and frame edges](#7-timing-and-frame-edges) | 28 | 14 | 14 |
 | [8. Multiplayer edges](#8-multiplayer-edges) | 16 | 12 | 4 |
 | [9. Deliberate oddities that look like bugs](#9-deliberate-oddities-that-look-like-bugs) | 70 | 30 | 40 |
-| **Total** | 527 | 369 | 158 |
+| **Total** | 529 | 371 | 158 |
 
 ### 1. Arithmetic width and sign
 
@@ -375,6 +375,7 @@ flowchart LR
 | Q485 | An AI slot may be read twice: row 7's second `aip(3)` draw is a new draw on the same slot, and each `chance` is one step. | [I] | 0x005EFB80 | [monsters/ai/catalogue](../monsters/ai/catalogue.md#reimplementation-notes) n2 |
 | Q486 | `chance(K)` short-circuits as written: row 13's second `chance(1)` is drawn only with a corpse, row 22's `aip3` only with `Skill2 ≥ 0` and a wounded unit. Keep the order of the tests. | [I] | fn:sub_005F1440_AiFallenShaman@0x005F1440, fn:sub_005F2B10_AiGreaterMummy@0x005F2B10 | [monsters/ai/machinery](../monsters/ai/machinery.md#reimplementation-notes) n1 |
 | Q487 | The wanderer tick runs on every room of a walked act, not only on new ones: a frame that creates one room steps every room seed of its act once. | [I] | 0x0052D1C4 | [sim/frame](../sim/frame.md#reimplementation-notes) n7 |
+| Q529 | Act I's `OneOrTwo` makes its second draw on the else branch only: the `(r & 3) = 0` branch places twice and returns, so a call with `s` = 1 makes one `Step` there and two on the other branch. | [C] | fn:sub_006804E0_A1PlaceOneOrTwo@0x006804E0, run:2026-10-15-drlg-outdoor | [drlg/outdoor](../drlg/outdoor.md#reimplementation-notes) n14 |
 
 ### 6. Data-dependent branches
 
@@ -514,6 +515,7 @@ flowchart LR
 | Q495 | The line reads the path's fields and the walk the context's; knockback's line starts at `ctx.start`, greedy's at the position. | [C] | 0x00679726, 0x0067A00D, run:2026-11-03-path-emu-3 | [path/search](../path/search.md#reimplementation-notes) n2 |
 | Q496 | The two copies of the grid mark a corpse differently: a server model takes the 3×3 at the death and keeps the record's pattern and mask; the plus at pattern 5 is the client's. | [C] | 0x005A65D9, 0x004B05E3, run:2026-11-04-path-2 | [drlg/collision](../drlg/collision.md#reimplementation-notes) n9 |
 | Q497 | The skill-tab bonus (stat 188) reaches a skill through its SkillDesc `SkillPage`, not through any Skills column. | [I] | 0x006441F5, 0x00644217, tbl:SkillDesc.txt:SkillPage | [skills/dispatch](../skills/dispatch.md#reimplementation-notes) n10 |
+| Q528 | An empty link slot is not a seam: `LevelBorderAdj` makes an adjacency node only for `Vis` ≠ 0 and `Warp` −1, and an empty slot also has `Warp` −1. | [C] | fn:sub_00677680_LevelBorderAdj@0x00677680, run:2026-10-15-drlg-outdoor | [drlg/outdoor](../drlg/outdoor.md#reimplementation-notes) n13 |
 
 ### 7. Timing and frame edges
 
@@ -734,7 +736,7 @@ wall-clock 2, weaker duplicate 0.
 | [drlg/collision](../drlg/collision.md#reimplementation-notes) | 12 | 12 | — | — | — | — | — |
 | [drlg/lifecycle](../drlg/lifecycle.md#reimplementation-notes) | 8 | 7 | — | — | n8 | — | — |
 | [drlg/maze](../drlg/maze.md#reimplementation-notes) | 10 | 10 | — | — | — | — | — |
-| [drlg/outdoor](../drlg/outdoor.md#reimplementation-notes) | 12 | 12 | — | — | — | — | — |
+| [drlg/outdoor](../drlg/outdoor.md#reimplementation-notes) | 14 | 14 | — | — | — | — | — |
 | [drlg/preset](../drlg/preset.md#reimplementation-notes) | 10 | 9 | — | — | n10 | — | — |
 | [drlg/README](../drlg/README.md#reimplementation-notes) | 6 | 6 | — | — | — | — | — |
 | [drlg/room-tiles](../drlg/room-tiles.md#reimplementation-notes) | 13 | 13 | — | — | — | — | — |
@@ -776,7 +778,7 @@ wall-clock 2, weaker duplicate 0.
 | [skills/README](../skills/README.md#reimplementation-notes) | 3 | 3 | — | — | — | — | — |
 | [stats/aggregate](../stats/aggregate.md#reimplementation-notes) | 6 | 6 | — | — | — | — | — |
 | [stats/states](../stats/states.md#reimplementation-notes) | 7 | 7 | — | — | — | — | — |
-| **Total** | 510 | 479 | — | — | — | — | — |
+| **Total** | 512 | 481 | — | — | — | — | — |
 
 Step notes taken beyond the *Reimplementation notes*: player/creation § G (the /256 factors, the `0x7FFFFF` clamp,
 the ratio shift's overflow branch) and § J (the party share's f32 quotient, its wraps, edge and cap, the distance's origin and the n = 1 credit), monsters/stats § A (`MulDiv`), stats/states

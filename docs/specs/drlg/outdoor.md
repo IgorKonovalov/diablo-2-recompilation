@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, drlg/overview, drlg/warps]
 consumed_by: [drlg/overview, drlg/warps, drlg/room-tiles, drlg/collision, monsters/spawn, objects]
-tags: {C: 184, I: 22, L: 3}
+tags: {C: 191, I: 23, L: 3}
 updated: 2026-11-10
 ---
 
@@ -72,7 +72,7 @@ link builder that places the other acts' outdoor levels, and the warp points bui
 |---|---|
 | tbl:Levels.txt:SizeX, tbl:Levels.txt:SizeY | the level size the link builder starts from ([warps.md § B](warps.md#b-the-act-link-builder)); level 76's size for the three jungles, 79–83's for the Kurast stack (§ J) |
 | tbl:Levels.txt:OffsetX, tbl:Levels.txt:OffsetY | level 75's position (Act III's anchor, § J1); level 117's position |
-| tbl:Levels.txt:Vis0, tbl:Levels.txt:Warp0 | `Vis0..7`/`Warp0..7`: a slot with `Warp` −1 is a walkable seam (§ C); slot *k* gives the warp-slot flag `0x10 << k` (§ E1) |
+| tbl:Levels.txt:Vis0, tbl:Levels.txt:Warp0 | `Vis0..7`/`Warp0..7`: a slot with `Vis` ≠ 0 and `Warp` −1 is a walkable seam, an empty slot (`Vis` 0, `Warp` −1) none (§ C1); slot *k* gives the warp-slot flag `0x10 << k` (§ E1) |
 | tbl:Levels.txt:LevelType | the border style (§ E2) |
 | tbl:LvlPrest.txt:Files | the operand of the file rotation (§ D2) |
 | tbl:LvlPrest.txt:SizeX, tbl:LvlPrest.txt:SizeY | a preset's footprint in cells, `SizeX ÷ 8` × `SizeY ÷ 8` (§ D1) |
@@ -260,12 +260,13 @@ A1. OutdoorLevelBuild(L):                                            [C] (fn:sub
 ### C. The level outline
 
 [C] The **adjacency list** (`O+0x264`) is built at act creation by `LevelBorderAdj` ([warps.md § A](warps.md#a-per-act-link-setup)):
-one node per `Vis` slot whose `Warp` is −1. The **vertex ring** is the level rectangle's outline with an extra vertex
+one node per `Vis` slot that names a level (`Vis` ≠ 0) and has no warp (`Warp` −1). The **vertex ring** is the level rectangle's outline with an extra vertex
 wherever a seam starts or ends. (fn:sub_00677680_LevelBorderAdj@0x00677680, fn:sub_0067D050_VertexRingBuild@0x0067D050,
 run:2026-10-15-drlg-outdoor)
 
 ```
-C1. LevelBorderAdj(L) → per Vis slot k with Warp[k] = −1:            [C] (fn:sub_00677680_LevelBorderAdj@0x00677680, fn:sub_0066B790_LevelAdjAdd@0x0066B790, run:2026-10-15-drlg-outdoor)
+C1. LevelBorderAdj(L) → per Vis slot k in 0 … 7                     [C] (fn:sub_00677680_LevelBorderAdj@0x00677680, fn:sub_0066B790_LevelAdjAdd@0x0066B790, run:2026-10-15-drlg-outdoor)
+      with Vis[k] ≠ 0 and Warp[k] = −1:                              ; Vis tested first: an empty slot (Vis 0, Warp −1) makes no node
       n ← { nbr: level Vis[k], side: RectAdjDir(L.rect, nbr.rect)   ; 0 W, 1 N, 2 E, 3 S
             isPreset: nbr's DrlgType = 2, +0xC: 0, rect: &nbr.rect }
       LevelAdjInsert(n, O.adj)                                       ; C2's compare, with a quirk (step notes)
@@ -294,8 +295,16 @@ C5. OutVertsToCells(ring): every vertex ÷ 8 (signed);                [C] (fn:su
       ; which of the two survives, and its type: Open questions (no stock case in Acts I, II, IV, V)
 ```
 
+- C1. [C] **An empty slot makes no node.** `LevelBorderAdj` skips a slot whose `Vis` is 0 (`test eax, eax; je` at
+  0x006776D6) before it tests `Warp` = −1 (0x006776DA). An empty slot (`Vis` 0, `Warp` −1) is the state `LevelLinkSet`
+  looks for when it adds a link, so a test of `Warp` alone also matches every empty slot. The logs separate the two
+  readings: the model with the `Vis` test scores the run with 0 mismatches, and the same model
+  without it makes 948 extra nodes and scores 22 600 mismatches of 513 215 checks.
+  (fn:sub_00677680_LevelBorderAdj@0x00677680, fn:sub_0066C040_LevelVisIds@0x0066C040,
+  fn:sub_0066AEC0_LevelWarpIds@0x0066AEC0, fn:sub_00642920_LevelLinkSet@0x00642920, run:2026-10-15-drlg-outdoor,
+  [drlg/0008 § Plan 0064 (d)](../../findings/drlg/0008-outdoor.md#d-levelborderadj-0x00677680))
 - [C] A vertex's flag bit 0 means the segment to the next vertex borders a walkable neighbour; bit 1 means that neighbour
-  is a preset level (a town). The vertex `type` (byte `+8`) is 0 from this builder; Act I's cliff mark sets 1 (§ H1).
+  is a preset level (a town). The vertex `type` (byte `+8`) is 0 from this builder; Act I's cliff mark sets 1 (§ H1a).
   (fn:sub_0067CE20_VertexRingSeams@0x0067CE20, fn:sub_00680070_A1CliffMark@0x00680070, run:2026-10-15-drlg-outdoor)
 - [C] `VertexMarkSeam(v, isPreset)` (`EAX` the vertex, one stack argument) is the only writer of these two bits here:
   `v.flags |= 1`, then `v.flags |= 2` when `isPreset` is non-zero; its caller is `VertexRingSeams`.
@@ -702,7 +711,7 @@ The last row's `flag` (`0x006F13BC`, 256) is also entry 0 of `g_JungleClearingDe
 
 ```
 H1. OutdoorAct1(L):                                                  [C] (fn:sub_006807F0_OutdoorAct1@0x006807F0, run:2026-10-15-drlg-outdoor)
-      if L.id ∉ {2, 3, 17}: A1CliffMark(L)                           ; no draw: vertex type 1 on non-seam up/right runs; O.flags |= 0x20
+      if L.id ∉ {2, 3, 17}: A1CliffMark(L)                           ; H1a; no draw
       OutSeamMark(L);  OutBorderBuild(L)                             ; § E
       if 2 ≤ L.id ≤ 7:
         OutBorderSubApply(L, 0, 4);  A1RiverEastAndCave(L)           ; § G, H2
@@ -713,6 +722,62 @@ H1. OutdoorAct1(L):                                                  [C] (fn:sub
       if 2 ≤ L.id ≤ 7: OutShrinesPlace(L, 5)                         ; § F2
       A1Areas(L)                                                     ; H7
 ```
+
+```
+H1a. A1CliffMark(L):                                                 [C] (fn:sub_00680070_A1CliffMark@0x00680070, run:2026-10-15-drlg-outdoor)
+      ; the vertex ring of § C (head O.ring = v0); seam(v) ⇔ (v.flags & 1) ≠ 0, the segment v → v.next
+      ; up = y decreasing, down = y increasing; every compare signed i32
+      head ← O.ring;  prev ← the vertex whose next is head;  v ← head;  done ← false
+      loop:
+        n0 ← v.next
+        start ← not seam(prev) and not seam(v) and
+                ((prev.y > v.y and v.x < n0.x)                       ; A: came in going up, goes out right
+                 or (prev.x > v.x and v.y > n0.y))                   ; B: came in going left, goes out up
+        w ← v
+        if start:
+          last ← none
+          loop:
+            if w = head: done ← true                                 ; set before the exit tests
+            n ← w.next
+            if n.y > w.y or n.x < w.x or seam(w) or seam(n): leave   ; a down or left segment, or a seam at either end
+            nn ← n.next
+            if not seam(n) and ((w.x < n.x and n.y < nn.y)           ; n turns right-then-down
+                                or (n.y < w.y and n.x < nn.x)):      ; n turns up-then-right
+              last ← w
+            w ← n
+            if w = v: leave                                          ; back at the run's start
+          if last ≠ none:
+            for q from v along next up to last, last included: q.type ← 1
+            O.flags |= 0x20
+        v ← w.next                                                   ; the vertex where the run stopped is not tested
+        if done: return
+        prev ← w
+        if v = head: return
+```
+
+- H1a. [C] **The cliff-marking rule.** A run starts at a vertex where the ring turns from going up to going right (`A`)
+  or from going left to going up (`B`), with neither the segment into it nor the one out of it a seam. It follows the
+  ring while each segment goes neither down nor left and neither end starts a seam, and it marks from its start to
+  `last`, the latest run vertex whose successor is a non-seam right-then-down or up-then-right corner; a run with no such
+  corner marks nothing. Every marked run sets `O.flags` bit `0x20`, which H2's cliff cave reads. The walk resumes after
+  the vertex where a run stopped, and it ends back at the head or after any run that passed through the head (`done`
+  is set before the exit tests, so a run that starts at the head ends the walk). No draw. Over the 80 Act I walks of
+  the run (levels 4–7, 20 windows each): starts `B` 56 and `A` 14; 38 runs marked, 32 with no corner; `last` at an
+  up-then-right corner 24 times and at a right-then-down corner 22; runs stopped by a seam at `n` 48 times and by a
+  down segment 22; 56 walks ended by a run that started at the head and 24 back at the head. The second source is the
+  reference model's cliff mark, which is this rule: it scores the run with 0 mismatches (`O.flags` compared whole, and
+  the cell and def grids that `type` feeds through `OutSeamMark` and `OutBorderBuild`), and a transcription of the code
+  block in its place scores the same 572 211 checks with 0 mismatches. The plan 0064 clean-room implementation failed
+  22 Act I cases with its own cliff mark and passed all 1 820 with a port of the reference model's, so the logged
+  `O.flags`, cell and def grids separate it from at least that reading. (fn:sub_00680070_A1CliffMark@0x00680070,
+  run:2026-10-15-drlg-outdoor, [drlg/0008 § Plan 0064 (a)](../../findings/drlg/0008-outdoor.md#a-a1cliffmark-0x00680070))
+- H1a. [I] **Exits no logged walk takes.** No run stopped on a left-going segment or back at its own start, and the
+  `seam(w)` test cannot fire (`w` is `v`, excluded by the start test, or the previous `n`, which passed the `seam(n)`
+  test). On § C's ring (W side up, N side right, E side down, S side left, seam vertices only on the sides) the only
+  starts are `v0` (`B`) and `v1` (`A`), and a run meets the E side's down segment before any left-going one, so those
+  exits need a ring this builder does not make. (fn:sub_00680070_A1CliffMark@0x00680070,
+  fn:sub_0067D050_VertexRingBuild@0x0067D050,
+  [drlg/0008 § Plan 0064 (a)](../../findings/drlg/0008-outdoor.md#a-a1cliffmark-0x00680070))
 
 ```
 H2. A1RiverEastAndCave(L):                                           [C] (fn:sub_00680200_A1RiverEastAndCave@0x00680200, fn:sub_006801A0_A1CliffCaveTry@0x006801A0, run:2026-10-15-drlg-outdoor)
@@ -912,12 +977,16 @@ H6d. A1PathSearch(s, t) → path or none:                               [C] (fn:
        return (g_DirOctant[5·dx + dy + 12][0] ÷ 2) & 3
 ```
 
-- [C] **The search tables.** Moves are 4-neighbour by `dir`: `g_A1SearchDx` (`i8[4]`) `−1, 0, +1, 0` and `g_A1SearchDy`
-  `0, +1, 0, −1`, so dir 0 W, 1 S, 2 E, 3 N. `g_A1SearchTurns` (`u8[4][4]`, increments added to `dir`): row 0 `0 1 2 3`,
+- [C] **The search tables.** Moves are 4-neighbour by `dir`: `g_A1SearchDx` (`i8[4]`, bytes `01 00 FF 00`) `+1, 0, −1, 0`
+  and `g_A1SearchDy` (bytes `00 01 00 FF`) `0, +1, 0, −1`, both read sign-extended, so dir 0 E, 1 S, 2 W, 3 N, the order
+  `g_DirOctant` gives (`(+1, 0)` → 0); the model reads the four bytes from the exe and every road cell of every Act I
+  window matches ([drlg/0008 § Plan 0064 (b)](../../findings/drlg/0008-outdoor.md#b-g_a1searchdx-0x006f2854), which
+  corrects § 16.3's `−1, 0, +1, 0`). `g_A1SearchTurns` (`u8[4][4]`, increments added to `dir`): row 0 `0 1 2 3`,
   row 1 `0 1 1 1`, row 2 `3 2 1 2`, row 3 `0 3 2 1`. So the root (tried −1) tries `d, d+1, d+3, d+2`, and a child of row
   `r` tries three directions: row 0 `td, td+1, td+3`; row 1 `td, td+1, td+2`; row 2 `td+3, td+1, td+2`; row 3 `td,
   td+3, td+1` (mod 4). The root's `ptr` reaches 4 only after its last try. (data:g_A1SearchDx@0x006F2854,
-  data:g_A1SearchDy@0x006F2850, data:g_A1SearchTurns@0x006F2840, fn:sub_00681560_A1PathBacktrack@0x00681560,
+  data:g_A1SearchDy@0x006F2850, data:g_A1SearchTurns@0x006F2840, fn:sub_00681630_A1PathSearchStep@0x00681630,
+  0x00681668, 0x0068166F, fn:sub_00681560_A1PathBacktrack@0x00681560,
   run:2026-10-15-drlg-outdoor)
 - [C] **`g_DirOctant`** (`i32[25][3]`; only column 0 is read here), by `5·dx + dy + 12` after `DirFromDelta`'s clamp. The
   clamp step is skipped when the second rule sets `dx` to −1, which is in range anyway.
@@ -989,9 +1058,25 @@ H6e. A1PathJitter(L, i, path):                                        [C] (fn:su
 #### H7. Areas
 
 H7. [C] **Areas** (`A1Areas`, after the waypoint and shrines). `Near(d)` = `PlaceNear(d, −1)`; `Rand(d)` =
-`PlaceRandom(d, −1, 0, 0xF)`; `OneOrTwo(d, s)` = `r ← Step(L.seed)`; if `(r & 3) = 0`: `Near(d)` twice, else `Near(d)` once;
-then, if `s`: `Step(L.seed) & 1` ≠ 0 → `Near(49)`. Failures are silent. (fn:sub_00680580_A1Areas@0x00680580,
+`PlaceRandom(d, −1, 0, 0xF)`. Failures are silent. (fn:sub_00680580_A1Areas@0x00680580,
 fn:sub_006804E0_A1PlaceOneOrTwo@0x006804E0, run:2026-10-15-drlg-outdoor; level 39 in run:2026-10-15-cow-arcane)
+
+```
+H7a. OneOrTwo(d, s):                                                 [C] (fn:sub_006804E0_A1PlaceOneOrTwo@0x006804E0, fn:sub_00674920_OutPresetPlaceNear@0x00674920, run:2026-10-15-drlg-outdoor)
+       r ← Step(L.seed)                                              ; level draw
+       if (r & 3) = 0:  Near(d);  Near(d);  return                   ; no further draw, whatever s is
+       Near(d)
+       if s = 0: return
+       if (Step(L.seed) & 1) ≠ 0: Near(49 Cottages 3)                ; level draw, else branch only
+```
+
+- H7a. [C] **The `s` step belongs to the else branch only.** The `(r & 3) = 0` branch places `d` twice and returns, so an
+  `OneOrTwo(d, 1)` call makes one `Step` on that branch and two on the other. A reading with the `s` step after both
+  branches adds a `Step` to every `(r & 3) = 0` call with `s` = 1. The run's level-seed steps separate the readings:
+  levels 3–7 make 100 calls with `s` = 1 (20 windows each), 26 of them took the `(r & 3) = 0` branch, and every step
+  matches with the else-only reading (74 took the else branch, 34 of those placing `Near(49)`).
+  (fn:sub_006804E0_A1PlaceOneOrTwo@0x006804E0, 0x00680500, 0x0068051B, run:2026-10-15-drlg-outdoor,
+  [drlg/0008 § Plan 0064 (c)](../../findings/drlg/0008-outdoor.md#c-a1placeoneortwo-0x006804e0))
 
 | Level | Sequence |
 |---|---|
@@ -1017,7 +1102,8 @@ fn:sub_006804E0_A1PlaceOneOrTwo@0x006804E0, run:2026-10-15-drlg-outdoor; level 3
 7. Levels 3–6: the waypoint shuffle, `2N` (none on level 3, which uses the seam rule).
 8. Levels 2–7: the shrines' `Step & 3`, then `2N`.
 9. The areas of H7, in table order: each `Near` is `2N`, plus `2N` more when it falls back to `PlaceRandom`; each `Rand`
-   `2N`; each `OneOrTwo` one `Step`, plus one more when `s` is 1; each placed new `Def` one first-use draw.
+   `2N`; each `OneOrTwo` one `Step`, plus one more when `s` is 1 and the first gave `(r & 3)` ≠ 0 (H7a); each placed
+   new `Def` one first-use draw.
 
 All of 1–9 [C] (fn:sub_006807F0_OutdoorAct1@0x006807F0, run:2026-10-15-drlg-outdoor: every step checked one by one).
 
@@ -1804,6 +1890,10 @@ are the `Range(6 or 2)` and seven first uses. Blood Moor is 12 × 7 cells (its l
   never take. [C] (fn:sub_00681630_A1PathSearchStep@0x00681630, run:2026-10-15-drlg-outdoor)
 - **Signed arithmetic.** `cw`, `ch`, the footprints and the mid cell use signed `÷`; the rotation uses signed `%`. [C]
   (fn:sub_00675360_OutdoorLevelBuild@0x00675360, fn:sub_00674320_OutPresetFileRotate@0x00674320, run:2026-10-15-drlg-outdoor)
+- **An empty link slot is not a seam.** `LevelBorderAdj` makes an adjacency node only for `Vis` ≠ 0 and `Warp` −1; an
+  empty slot also has `Warp` −1. [C] (fn:sub_00677680_LevelBorderAdj@0x00677680, run:2026-10-15-drlg-outdoor)
+- **`OneOrTwo`'s second draw is on one branch only.** The `(r & 3) = 0` branch places twice and returns; only the other
+  branch draws for `Near(49)` when `s` is 1. [C] (fn:sub_006804E0_A1PlaceOneOrTwo@0x006804E0, run:2026-10-15-drlg-outdoor)
 
 ## Evidence
 

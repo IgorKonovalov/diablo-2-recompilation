@@ -12,7 +12,7 @@ resolution: ""
 ---
 
 **Steps of drlg/outdoor that no finding states (plan 0064 Phase 4, items 7–11 and 14 of
-[plan-0064-drlg-outdoor](2026-11-10-architect-spec-writer-plan-0064-drlg-outdoor.md); S4 rows 9–12, 17, 21). Static only, no
+[plan-0064-drlg-outdoor](archive/2026-11-10-architect-spec-writer-plan-0064-drlg-outdoor.md); S4 rows 9–12, 17, 21). Static only, no
 slot.** The spec-writer wrote what [drlg/0008](../findings/drlg/0008-outdoor.md) holds and listed the rest under
 drlg/outdoor *Open questions*; each point below needs a statement in drlg/0008 (address, reading, tag) before the spec can
 say it. The clean-room S4 implementer's guess is given as a lead where it scored right (S4 ledger); it is not evidence.
@@ -45,3 +45,5 @@ say it. The clean-room S4 implementer's guess is given as a lead where it scored
 
 *Architect note (`lane/n64x` review, 2026-11-10):* for (g), r2 `pxw` at 0x006F1258 gives rows 6–14 as
 `{2, 0, 0, dirI, dirNext, flag}`, the zeros the spec writes; only the finding's table needs them printed.
+
+*Annotated 2026-11-10 (spec-writer, `lane/n64y`):* the spec-writer entry these items came from ([drlg-outdoor](archive/2026-11-10-architect-spec-writer-plan-0064-drlg-outdoor.md)) is closed with items 1–4 done; this entry is now the only open record of its routed items (7)–(11), (14) and the insert's before-head case. When it closes, the reverser files a spec-writer entry for drlg/outdoor so they reach the spec.
