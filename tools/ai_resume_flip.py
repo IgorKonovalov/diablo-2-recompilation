@@ -2,6 +2,7 @@
 """Plan 0052 Phase 2, `lane/p52c` review: which single branches can the resume model's comparison fail on?
 
     python3 -I tools/ai_resume_flip.py check LOG [LOG ...] [--rows 6,13] [--cap 60] [--per-path 4] [--out FILE]
+                                        [--key row|think|rowthink] [--thinks 5e8140,5e8340]
 
 `tools/ai_resume.py --controls` reverses every known branch at once, which says nothing about any one branch. Here each
 known-value branch site that a decision's return-reaching states carry (`Result.br`, the tier table's `branches` column)
@@ -12,6 +13,11 @@ else `nosep`. `FREE`: the same over the decisions with no unknown-value branch s
 then evenly spaced decisions up to --cap, in log order. Also printed per row: known-value and unknown-value branch steps
 and the calls with one offered (function, call site), over every resumed decision, and the words the model knew at the matched
 calls (`slots` counts the six argument places of every call, used or not).
+`--key` (plan 0066 S1a, `lane/n66a`): `row` (the default, the output as before), `think` (decisions grouped by the think
+address `th`, whatever their row: a state row's own decisions), `rowthink` (by row and think: a row's own think only).
+`--thinks` keeps only decisions whose think is listed (hex). With a key other than `row` each group is labelled
+`<row>@<think>` or `@<think>` in place of the row number, and a `FREEPAST` line adds, over the fork-free decisions, the
+calls past the first, the decisions with at least one, and the rows they came from.
 Stdlib, tools/ai.py and tools/ai_resume.py.
 """
 import os
@@ -98,7 +104,7 @@ class Words:
         R.match = self.orig
 
 
-def row_report(code, bnd, row, items, per_path, cap):
+def row_report(code, bnd, row, items, per_path, cap, extra=False):
     L = []
     pick = sample(items, per_path, cap)
     sites = {}
@@ -142,27 +148,41 @@ def row_report(code, bnd, row, items, per_path, cap):
     sep = [a for a, e in sites.items() if e["fail"]]
     nosep = [a for a, e in sites.items() if not e["fail"]]
     two = [a for a in sites if allbits.get(a) == 3]
-    L.append("FLIP %d decisions_resumed=%d sampled=%d paths_sampled=%d sites_in_row=%d sites_sampled=%d sep=%d nosep=%d two_way=%d two_way_sep=%d "
+    L.append("FLIP %s decisions_resumed=%d sampled=%d paths_sampled=%d sites_in_row=%d sites_sampled=%d sep=%d nosep=%d two_way=%d two_way_sep=%d "
              "known_steps=%d unknown_steps=%d decisions_no_unknown_branch=%d calls=%d calls_one_offer=%d words_known=%d/%d sampled_with_a_failing_flip=%d" % (
                  row, len(items), len(pick), len({path_of(r) for _d, r in pick}), len(allbits), len(sites), len(sep), len(nosep), len(two),
                  sum(1 for a in two if sites[a]["fail"]), kn, un, nofork, calls, single, wd.known, wd.slots, sum(1 for nf, _n in per_dec if nf)))
     fs = [a for a, e in sites.items() if e["free_n"]]
-    L.append("FREE %d decisions=%d sampled=%d sites=%d sep=%d nosep=%d two_way=%d two_way_sep=%d" % (
+    L.append("FREE %s decisions=%d sampled=%d sites=%d sep=%d nosep=%d two_way=%d two_way_sep=%d" % (
         row, len(free), sum(1 for d, _r in pick if id(d) in free), len(fs), sum(1 for a in fs if sites[a]["free_fail"]),
         sum(1 for a in fs if not sites[a]["free_fail"]), sum(1 for a in fs if allbits.get(a) == 3),
         sum(1 for a in fs if allbits.get(a) == 3 and sites[a]["free_fail"])))
+    if extra:
+        fr = [(d, r) for d, r in items if id(d) in free]
+        L.append("FREEPAST %s decisions=%d past_first=%d decisions_with_past=%d rows=%s" % (
+            row, len(fr), sum(max(0, r.matched - 1) for _d, r in fr), sum(1 for _d, r in fr if r.matched > 1),
+            ",".join(sorted({str(d["aid"]["ai"]) for d, _r in fr}, key=int))))
     for a in sorted(sites):
         e = sites[a]
-        L.append("FSITE %d %08x %s %s fail=%d same=%d stop=%d" % (
+        L.append("FSITE %s %08x %s %s fail=%d same=%d stop=%d" % (
             row, a, "two-way" if allbits.get(a) == 3 else "one-way", "sep" if e["fail"] else "nosep", e["fail"], e["same"], e["stop"]))
     for a, c in sorted(unk.items(), key=lambda kv: -kv[1])[:12]:
-        L.append("FUNK %d %08x unknown_steps=%d" % (row, a, c))
+        L.append("FUNK %s %08x unknown_steps=%d" % (row, a, c))
     for (f, ra), c in sorted(amb.items(), key=lambda kv: -kv[1])[:12]:
-        L.append("FAMB %d %08x@%08x calls_with_several_offers=%d" % (row, f, ra, c))
+        L.append("FAMB %s %08x@%08x calls_with_several_offers=%d" % (row, f, ra, c))
     return L
 
 
-def run(paths, rows, per_path, cap, code=None):
+def group_key(d, key):
+    a = d["aid"]
+    if key == "think":
+        return "@%x" % (a["th"] or 0)
+    if key == "rowthink":
+        return "%d@%x" % (a["ai"], a["th"] or 0)
+    return a["ai"]
+
+
+def run(paths, rows, per_path, cap, code=None, key="row", thinks=None):
     import ai
     code = code or R.Code()
     bnd = R.bnd_set()
@@ -171,14 +191,23 @@ def run(paths, rows, per_path, cap, code=None):
     for p in paths:
         for d in ai.parse(p)["dec"]:
             row = d["aid"]["ai"]
-            if row in rows:
+            if thinks is not None and (d["aid"]["th"] or 0) not in thinks:
+                continue
+            if rows is None or row in rows:
                 r = R.check_decision(base_m, d)
                 if r.status == "ok":
-                    by.setdefault(row, []).append((d, r))
-    L = ["FLIPRUN rows=%s per_path=%d cap=%d logs=%d" % (",".join(map(str, sorted(rows))), per_path, cap, len(paths))]
-    for row in sorted(rows):
-        if row in by:
-            L += row_report(code, bnd, row, by[row], per_path, cap)
+                    by.setdefault(group_key(d, key), []).append((d, r))
+    if key == "row":
+        L = ["FLIPRUN rows=%s per_path=%d cap=%d logs=%d" % (",".join(map(str, sorted(rows))), per_path, cap, len(paths))]
+        for row in sorted(rows):
+            if row in by:
+                L += row_report(code, bnd, row, by[row], per_path, cap)
+    else:
+        L = ["FLIPRUN rows=%s thinks=%s key=%s per_path=%d cap=%d logs=%d" % (
+            ",".join(map(str, sorted(rows))) if rows is not None else "all",
+            ",".join("%x" % t for t in sorted(thinks)) if thinks is not None else "all", key, per_path, cap, len(paths))]
+        for g in sorted(by, key=str):
+            L += row_report(code, bnd, g, by[g], per_path, cap, extra=True)
     return "\n".join(L) + "\n"
 
 
@@ -186,7 +215,7 @@ def main(argv):
     if not argv or argv[0] != "check":
         print(__doc__)
         return 2
-    paths, out, rows, cap, per_path = [], None, set(PROPOSED + WEAK), 60, 4
+    paths, out, rows, cap, per_path, key, thinks = [], None, set(PROPOSED + WEAK), 60, 4, "row", None
     a, k = argv[1:], 0
     while k < len(a):
         if a[k] == "--out":
@@ -195,11 +224,18 @@ def main(argv):
             rows = {int(x) for x in a[k + 1].split(",")}; k += 2
         elif a[k] == "--cap":
             cap = int(a[k + 1]); k += 2
+        elif a[k] == "--key":
+            key = a[k + 1]; k += 2
+            assert key in ("row", "think", "rowthink"), key
+        elif a[k] == "--thinks":
+            thinks = {int(x, 16) for x in a[k + 1].split(",")}; k += 2
         elif a[k] == "--per-path":
             per_path = int(a[k + 1]); k += 2
         else:
             paths.append(a[k]); k += 1
-    text = run(paths, rows, per_path, cap)
+    if key == "think" and "--rows" not in a:
+        rows = None
+    text = run(paths, rows, per_path, cap, key=key, thinks=thinks)
     if out:
         open(out, "w").write(text)
     else:
