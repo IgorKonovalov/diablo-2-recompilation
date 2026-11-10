@@ -1,6 +1,6 @@
 # 0066 — Inferred-claims sweep 2: the simulation and game-rules specs
 
-> **Status:** approved (2026-11-10, by the owner, as recommended: question 1 (b), plan 0038 closed; question 2, 20 claims per session; not started: the owner starts it)
+> **Status:** approved (2026-11-10, by the owner, as recommended: question 1 (b), plan 0038 closed; question 2, 20 claims per session; Phase 1 go and question 3 (c) given by the owner 2026-11-10 evening)
 > **Created:** 2026-11-10
 > **Owner skill(s):** architect, reverser, spec-writer
 > **Related ADRs:** 0004-boundary-oracles-in-reproduction, 0013-forced-path-runs-cell-level, 0014-scope-game-simulation, 0015-emulated-reproduction, 0021-observed-boundaries-in-emulation, 0022-scope-server-frame, 0023-review-tiers-and-gate-first-fixes, 0028-case-and-process-in-experiment-records
@@ -103,6 +103,8 @@ classes are raised, and the specs are re-tagged.
   (d) run all of Phase 2 (about 13M tokens).
   The architect recommends (c): it takes the one cluster where many statements share a recipe, at about Phase 1's cost
   per claim, and it waits for the S1b checker the tour needs; the other 491 rows stay deferred with their routes kept.
+  **Answered 2026-11-10 (owner): (c).** The bestiary tour becomes a monsters/ai harness sub-plan, drafted once S1b's
+  checker is accepted; the other 491 harness rows are recorded as (a-run, deferred) at Phase 1's close.
 
 ## Implementation log
 
@@ -146,3 +148,11 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 - **Owner question 3** (the threshold) is open above, with the architect's recommendation (c).
 - **Next:** Phase 1 can start on the owner's go, S batches in any order (S1a to S1o before a bestiary sub-plan, if the
   owner takes (c)). Fixes: misread 4, omission 3, other 2.
+
+### 2026-11-10 — Owner decisions (evening)
+
+- **Phase 1: go.** The 36 static batches run as reverser-static lanes, two at a time, Tier B per batch (audit every
+  fifth). S1a and S1b first, since the bestiary tour needs S1b's checker.
+- **Question 3: (c).** A monsters/ai harness sub-plan for the bestiary tour (H1a to H1d, H1g, H1h; about 214
+  statements in about 12 launches), drafted by the architect after S1b is accepted. The other 491 harness rows are
+  deferred with their routes kept.

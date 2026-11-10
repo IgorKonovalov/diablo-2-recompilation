@@ -1,6 +1,6 @@
 # 0067 — Player trade: the trade state machine, its commit and its failures (ADR-0033)
 
-> **Status:** approved (2026-11-10, by the owner, as recommended: ADR-0033 accepted; Phase 2 asked again at Phase 1's review; not started: the owner starts it)
+> **Status:** approved (2026-11-10, by the owner, as recommended: ADR-0033 accepted; Phase 2 asked again at Phase 1's review; Phase 1 done; Phase 2 go given by the owner 2026-11-10, to run that night)
 > **Created:** 2026-11-10
 > **Owner skill(s):** human, reverser, spec-writer
 > **Related ADRs:** 0008-two-client-harness, 0014-scope-game-simulation, 0025-scope-item-use-inventory, 0026-scope-in-game-message-layer, 0033-scope-player-trade
@@ -138,3 +138,10 @@ control, shakes the logger down) and three kept hosting sessions, about 45–75 
 slots on one day, blocking every other harness lane meanwhile, plus a port-4000 re-read per session (`ufwcheck.sh`).
 If plan 0065 Phase 2 runs two clients, sharing its set-up saves the development session. Skipping Phase 2 leaves
 `items/trade` all `[I]`.
+
+### 2026-11-10 — Owner decision (evening)
+
+- **Phase 2: go**, the hosting sessions to run the night of 2026-11-10. First the static preparation (logger,
+  `tools/trade_check.py`, the T13 layout search), then the development session and the three kept sessions on slots 1
+  and 2. The port-4000 record (multiplayer/0001 § 5, step 1) is the owner's `sudo ufw status verbose` before the first
+  hosting session. Plan 0065's Phase 2 does not share this set-up; it keeps its own.
