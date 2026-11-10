@@ -663,12 +663,12 @@ and T5's second part.
 - [C] **The close control.** `key:Escape` with the trade open, and the trade window's own circle button at (371,461),
   both send button 2 (dev: f 4384 and f 5762) and `TradeClose` code 9 (`TCL` `code` 9); T2's "2 → 9" branch is the one
   taken, the "3 → 12" branch is not reached (button 3 is the accept). With no panel open, Escape opens the game menu,
-  not a close: a second Escape closes it.
+  not a close: a second Escape closes it. [run:2026-11-10-trade]
 - [C] **The belt and the cells.** The paper-doll belt at (562,252) is where the trade screen draws it (T9, b: `TIT` item
   code 460, `TBL`); the cube at (679,345), the grid cells at (432 + 29c, 330 + 29r) and the trade grids' (97, 100 + ...) hit
-  as drawn (T1, T7, T10-T13).
+  as drawn (T1, T7, T10-T13). [run:2026-11-10-trade]
 - [C] **The logger smoke.** Every tag `trade_check.py` reads appeared in the dev or kept logs except `TQN` (T3 (c), not
-  reached). `TAB` and `CRM` came from the killed joiner (the end of b, and c), `TEV` from T3, `THO` from T7, `TBL` from T9.
+  reached). `TAB` and `CRM` came from the killed joiner (the end of b, and c), `TEV` from T3, `THO` from T7, `TBL` from T9. [run:2026-11-10-trade]
 - [C] **`ClientRemove`'s arguments** in the two disconnects (b, f 4389; c, f 3193): `edx` 3, `a1` 1, the `a2` a
   pointer (`CRM`, site 0x0052CB86).
 
@@ -677,16 +677,16 @@ and T5's second part.
   (before the entry), and a 7 at state 4 sets the partner to 3 (a, f 4434: H 4 → 3; § 4's button 7). T6's separation, "H
   stays at 4 through a `TRB` 8", needs a 8 with the partner at 4: not reached, because the entry box closes when the
   partner presses `ok` (a, rerun: H `ok` at f 6463, then J's Return gave a `TRB` 7 and a gold of 0). So § 4's claim that
-  a button 8 (the gold) does not un-accept stays `[I]`: only the 7 that precedes it is observed.
+  a button 8 (the gold) does not un-accept stays `[I]`: only the 7 that precedes it is observed. [run:2026-11-10-trade]
 - [I] **T13's tick delays.** In c the cancel's ticks 5 → 6 → 3 ran in one logged frame (f 2371, log lines 1198-1205) where
   the rule (§ 2: +1 frame each) and T4's cancel (f 1447, 1447, 1448, 1448) give two. The checker reports the two
   `R-tick/delay` mismatches (lines 1202, 1204) and nothing else. Not resolved: the frame word read at the logger points
   (`Game+0xA8`) may be the outer loop's, with catch-up steps inside it after the five placements of that commit; the
   states and the order (5, 6, 3, bits 22/23 cleared) match. The delay rule stays `[I]` and the spec states it with this
-  exception.
+  exception. [run:2026-11-10-trade]
 - [I] **T8's save claim.** J's `TrJoinB.d2s` was not rewritten during the session (its mtime is the install's), so the
   after-copy (`c/c-TrJoinB-after.d2s`) carries no evidence; the claim rests on the host's `TSV` (flag 1) and `TSC` lines.
-  The leaver was a killed client, so `TAB` was logged (leaver J), not the *Save and Exit* route.
+  The leaver was a killed client, so `TAB` was logged (leaver J), not the *Save and Exit* route. [run:2026-11-10-trade]
 
 **Recipe changes** (for § 12.4 as run): X is spent in T1, so later cases of session a offer `gcv` (5,0) and move the
 cube; after a commit both clients keep the inventory panel open (it shifts the view, so a `request` click misses),

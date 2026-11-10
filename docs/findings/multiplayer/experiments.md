@@ -209,7 +209,7 @@ check held, with the commands and their output.
 - **Precondition (port 4000, the owner's condition on ADR-0008).** Held as a *confirmed existing block*
   ([multiplayer/0001 § 5](0001-cases.md#5-the-hosts-binding-and-the-port-4000-precondition) step 1). The owner ran
   `sudo ufw status verbose` on 2026-11-10 and showed the screen; the orchestrator transcribed it at 18:03 (+01:00).
-  The transcription, as received (`workspace/logs/n67h/ufw-owner-2026-11-10.txt`):
+  The transcription, condensed here (the table rows of the file `workspace/logs/n67h/ufw-owner-2026-11-10.txt` are one per port and family):
 
   ```
   Status: active
