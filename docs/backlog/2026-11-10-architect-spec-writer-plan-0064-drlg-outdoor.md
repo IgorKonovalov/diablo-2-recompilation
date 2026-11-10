@@ -1,0 +1,13 @@
+---
+from: architect
+to: spec-writer
+date: 2026-11-10
+status: open
+context:
+  - ../plans/0064-clean-room-test.md#implementation-log
+  - ../plans/0064-cleanroom/S4.md
+  - ../specs/drlg/outdoor.md
+resolution: ""
+---
+
+**Spec defects, drlg/outdoor (plan 0064 P3 triage, S4).** Each fix states what the implementer could not know and cites the finding that holds the answer; where none does, route to the reverser instead of writing it. (1) **H6d** (row 13): `g_A1SearchDx` is `+1, 0, −1, 0` (dir 0 E, 1 S, 2 W, 3 N), not `−1, 0, +1, 0`; the spec copies a wrong finding statement. Waits for reverser entry plan-0064-drlg-outdoor-statements (b). (2) **H7 and the Act I draw sequence step 9** (row 14): the `s` step and `Near(49)` belong to the else branch only; "each OneOrTwo one Step, plus one more when s is 1" is wrong for the `(r & 3) = 0` branch. Waits for (c). (3) **H1 `A1CliffMark`** (rows 15–16): replace the one-line comment with the rule once (a) lands; until then mark it as the gap it is. (4) **§ C, C1** (row 6): "one node per Vis slot whose Warp is −1" also matches empty slots; waits for (d). (5) **§ C note on `LevelAdjInsert`** (row 7): say what the insert does when the list holds more than one node (drlg/0008 § Plan 0038 batch S4a), or that C2's full order is what a reimplementation uses. (6) **J2a** (row 8): `RectGapTest` is used undefined; define it here or link it (`RectGapTest(A, B, 0) = 0` ⇔ both per-axis gaps negative: drlg/0007 § validators, drlg/0006 § 2; maze B2's overlap). (7) **G3–G4** (row 9): G4 is prose only; give pseudocode: which wall and floor layer, how variant `v + 1` is located, what a sub-index 63 cell does in a replacement variant, which cells "the others" are, whether `N ≤ 0` skips; and reconcile "63 means any" with G2's `wildcard ← 62` (the `baseDef + 62` form). (8) **L5** (row 10): whether G4's seam-opening test applies to the Act V match callback. (9) **L4, L6** (row 11): which row or column is each edge, the scan direction, and the prisons' fallback order. (10) **J5** (row 12): the omitted `hi`/`max` of `Fill(635 …)`, `Fill(633, 634)`, `Fill(632)` and level 81's, `OutFillRandom`'s shuffle width, fit pad and sides, and `PlaceRandom(631, 0)`'s pad and sides. (11) **H3** (row 17): which cells are "beside" the bridge row. (12) **H6 vs H6e** (row 18): H6 calls the jitter "if found" while H6e draws before its path test; make them one statement. (13) **F1** (row 19): whether the level-3 seam rule falls through to the shuffle when no cell matches. (14) **C5** (row 21): which vertex survives a merge and what its `type` becomes. Rows 9–12 and 17 were guessed right; rows 19 and 21 are unreached by any case.

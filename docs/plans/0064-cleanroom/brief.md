@@ -87,7 +87,7 @@ should have asked (for example a table column whose meaning you only found by tr
 | S1 seeds | `workspace/cleanroom/S1/` | `chain.A*`, `chain.B*` | rng, rng/seeds, chain § A-B, data/excel (Levels) |
 | S2 drops | `workspace/cleanroom/S2/` | `chain.G1.*` | items/tc, items/quality, data/excel, rng |
 | S3 pools | `workspace/cleanroom/S3/` | `monsters.pool.*` | monsters/pool, data/excel, rng/seeds |
-| S4 DRLG | `workspace/cleanroom/S4/` | `drlg.maze.*`, `drlg.outdoor.*` | drlg/overview, drlg/maze, drlg/outdoor, drlg/preset, drlg/room-tiles, formats ds1 and dt1 |
+| S4 DRLG | `workspace/cleanroom/S4/` | `drlg.maze.*`, `drlg.outdoor.*` | drlg/overview, drlg/maze, drlg/outdoor, drlg/warps § A-C, rng, rng/seeds step 3, drlg/preset, drlg/room-tiles, formats ds1 and dt1, tables Levels, LvlMaze, LvlSub, LvlPrest |
 
 "Specs you should need" is the plan's expectation, not a boundary: you may read anything in the sandbox. If you needed
 a spec that is not in your row, that is a ledger row too.

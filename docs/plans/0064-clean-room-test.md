@@ -27,7 +27,7 @@ reaches 0 mismatches on the fixed fields, or the remainder is named. No code ent
   | S1 seeds | `chain.A`, `chain.B` | rng, rng/seeds, chain § A–B, data/excel (Levels) |
   | S2 drops | `chain.G1` | items/tc, items/quality, data/excel, rng |
   | S3 pools | `monsters.pool` | monsters/pool, data/excel, rng/seeds |
-  | S4 DRLG | `drlg.maze`, `drlg.outdoor` | drlg/overview, drlg/maze, drlg/outdoor, drlg/preset, drlg/room-tiles, formats ds1 and dt1 |
+  | S4 DRLG | `drlg.maze`, `drlg.outdoor` | drlg/overview, drlg/maze, drlg/outdoor, drlg/warps § A–C (the act's links), rng, rng/seeds step 3 (the act seed), drlg/preset, drlg/room-tiles, formats ds1 and dt1, tables Levels, LvlMaze, LvlSub, LvlPrest (row widened at the S4 triage, row 24) |
 
 - **Observed and predicted.** Only observed fields test the specs against the game. Predicted fields (S3, and parts of
   S1) test the specs against the project's own model, so a mismatch there may be the set's fault. The ledger records
@@ -344,3 +344,91 @@ on `main`. Not merged; plan 0064 stays open for Phase 5.
   road search, § H7 `OneOrTwo`, § H1 `A1CliffMark`). Ledger [S4](0064-cleanroom/S4.md), 24 rows; notable: maze room
   order ("creation order" in golden-trace vs "newest first" in maze § Outputs), the `first_room_seed` input disagreeing
   with B1 in 45 of 50 cases, and the slice needing warps § A–C and rng/seeds step 3 outside its row. Audit clean.
+
+### 2026-11-10 — Phase 3 triage, slices S3 and S4 (lane n64u, architect; Tier A review of the Phase 2 ledgers)
+
+**Verdict on the S3 and S4 ledgers: accept, 0 fixes.** Every first-pass difference is a row: S3 had none; S4's 50
+maze digests are row 1, and its 84 failing outdoor cases (Act I, levels 2–7) rows 13, 14 and 15. The triage is the new
+last column of [S3](0064-cleanroom/S3.md) and [S4](0064-cleanroom/S4.md); "implementer error" keeps the plan's meaning,
+*the spec was clear*.
+
+| Slice | Spec defect | Missing finding | Golden-set defect | Implementer error (no defect) | Rows |
+|---|---|---|---|---|---|
+| S3 | 4 (1 conformance, 3 monsters/pool) | 0 | 1 (format) | 1 | 6 |
+| S4 | 13 (12 outdoor, 1 conformance and plan) | 3 | 6 (2 set, 3 format, 1 sandbox) | 2 | 24 |
+
+Rulings on the rows the orchestrator named:
+
+- **S3 `mlvl.N` (row 1): spec defect, conformance.** monsters/pool is right: § B4 copies the region's `MonLvl`/`MonLvlEx`
+  and § E is `MonsterLevel` per class. The conformance row points at § E; it goes into the open
+  [conformance entry](../backlog/2026-11-10-architect-spec-writer-plan-0064-conformance-drop-inputs.md) as item (3), so
+  one spec lane fixes the page. **S3 C1 (row 2): spec defect, monsters/pool.** § Inputs and the notes say the counts are
+  computed at load; C1's pseudocode reads them as record bytes, which are 0 in the file.
+- **S4 maze room order (row 1): golden-set (format) defect, plus the same words on the conformance page.** maze § Outputs
+  ("newest first") is right and the digest is over the logged list; golden-trace § Fields, `golden.py`'s field text and
+  conformance row `drlg.maze.rooms_digest` all say "creation order".
+- **S4 `first_room_seed` (row 2): golden-set defect, a tool bug.** `tools/golden.py` `observed_maze` hands the `Seed` object
+  to `maze_replay.run`, which makes it R0's seed and steps it during growth, then writes it into the case. Recomputed over
+  the 50 cases: each input is B1's seed (`Init(window_seed.low)`, one `Step`) stepped k more times, k = 0 in the five
+  level-8 cases (no growth) and 1 to 5 in the other 45. The implementer's derivation from B1 is the right one.
+- **S4 H6d (row 13): spec defect, carried from a wrong finding statement.** The bytes at 0x006F2854 (read from the pinned
+  `Game.exe` through `tools/drlg.py`'s reader) are `01 00 FF 00`: `g_A1SearchDx` is `+1, 0, −1, 0`, dir 0 E, which agrees
+  with `g_DirOctant` (verified: the spec's table of it is right). drlg/0008 and the spec both print `−1, 0, +1, 0`. The
+  implementer's reading A is the code; it was chosen from the diff but is now anchored.
+- **S4 H7 (row 14): spec defect, carried from an ambiguous finding statement.** The `s` step belongs to the else branch
+  (the project model `tools/drlg.py` `one_or_two`, and every level-3 case); the spec's draw-sequence step 9 ("plus one
+  more when `s` is 1") is wrong for the `(r & 3) = 0` branch.
+- **S4 H1 and the 22 cases still failing (rows 15–16): missing finding.** No finding states `A1CliffMark`'s rule
+  (0x00680070); drlg/0008 has only the one-line summary the spec copies. Probe (scratch, not in git): the implementer's
+  final code with only its `a1_cliff_mark` replaced by a port of `tools/drlg.py`'s scores **0 different of 1 820** (its own
+  code unchanged scores 106, as the ledger says). So the cliff mark alone carries the 22 cases. The implementer's H2 scan
+  does not swap the bounds as the spec states (an implementer error with no effect on the square levels 4–7), and E2 is
+  not involved. The rule is the reverser's to state; the spec follows.
+- **S4 slice row (row 24): plan and conformance defect.** The plan's S4 row and the brief's copy are widened here (drlg/warps
+  § A–C, rng, rng/seeds step 3, tables Levels, LvlMaze, LvlSub, LvlPrest); the conformance page's DRLG section is item
+  (5) of the conformance entry.
+
+Backlog entries filed (5) and annotated (1):
+
+- reverser: [drlg-outdoor-statements](../backlog/2026-11-10-architect-reverser-plan-0064-drlg-outdoor-statements.md):
+  (a) `A1CliffMark`'s rule, (b) `g_A1SearchDx` corrected, (c) `A1PlaceOneOrTwo`'s branches, (d) `LevelBorderAdj`'s `Vis ≠ 0`
+  test. Static only. S4 rows 6, 13–16.
+- archivist: [drlg-cases-and-pool-conventions](../backlog/2026-11-10-architect-archivist-plan-0064-drlg-cases-and-pool-conventions.md):
+  (a) the `first_room_seed` emission and a re-emit, (b) maze list order, (c) maze `difficulty`, (d) digest frames,
+  (e) the pool order, (f) file-name case, (g) tables/MonStats `MonStatsEx` width. S3 row 3 and 4, S4 rows 1–5 and 22.
+- spec-writer, one per spec: [drlg-outdoor](../backlog/2026-11-10-architect-spec-writer-plan-0064-drlg-outdoor.md) (14
+  items; 1–4 wait for the reverser entry), [drlg-warps-border-adj](../backlog/2026-11-10-architect-spec-writer-plan-0064-drlg-warps-border-adj.md)
+  (waits for (d)), [monsters-pool-inputs](../backlog/2026-11-10-architect-spec-writer-plan-0064-monsters-pool-inputs.md)
+  (S3 rows 2, 4, 5), and items (3) to (5) added to
+  [conformance-drop-inputs](../backlog/2026-11-10-architect-spec-writer-plan-0064-conformance-drop-inputs.md).
+- No new entry for drlg/maze: every maze row is the set's or the format's.
+
+**Disputed rows, for a second fresh implementer** (the orchestrator runs it; this lane did not spawn one):
+
+- S3 row 5, provisional spec defect. Give monsters/pool § B and § Inputs, data/excel and `tables/Levels.md` only, with
+  `levels.bin`. Question: "How many levels does the pool loop of § B3 visit, and where would a reimplementation read that
+  number from the data files? Quote the sentence you used." If a quoted sentence answers it, the row is an implementer
+  error and item (3) of the monsters/pool entry is dropped.
+- S4 row 7, provisional spec defect. Give drlg/outdoor § C only. Question: "A level's adjacency list already holds two
+  nodes, on sides 1 and 3. `LevelAdjInsert` adds a node on side 2. Where does it go, and does C2's order hold for every
+  insert? Quote the sentence." If the note and C2 answer it without a guess, the row is an implementer error and item (5)
+  of the outdoor entry is dropped.
+- S4 row 20, provisional implementer error. Give drlg/outdoor § H0 only. Question: "For level 2 with `B.dir[i]` = 0 and
+  `B.dir[i + 1]` = 0, is row 6's flag ORed in? What do the `—` cells of `not1` and `not2` hold? Quote the sentence." If the
+  answer needs a guess, the row becomes a spec defect (one more item for the outdoor entry: write `none` or the stored value).
+
+**Phase 5 scope, once Phase 4 lands.** A new fresh implementer per slice, the sandbox rebuilt (`cleanroom.py make --force`)
+after the entries it depends on close:
+
+- **S1:** `chain.B1.*`, `chain.B2.*` (the digest's conventions; already due from the S1/S2 triage).
+- **S2:** `chain.G1.*` (the magic-find inputs and the type test; already due).
+- **S3:** `monsters.pool.mlvl.*`, `monsters.pool.region.*`, `monsters.pool.digest`, after the conformance item (3), the
+  monsters/pool entry and the archivist's (e). S3's first pass was already 0 different, so its measure is the ledger: the
+  run passes when no row needs the worked example's tool output or a guess on C1.
+- **S4:** the whole slice, `drlg.maze.*` and `drlg.outdoor.*`, after the reverser entry, then the outdoor and warps entries
+  and the archivist's (a)–(d) and re-emit, under the widened slice row. Act I (levels 2–7: H1, H6d, H7) is the test of the
+  fixes; Acts III to V re-test the rows guessed right (G4, J5, L4–L6). The maze half re-tests only the format and the
+  input. Expect 0 different on the first pass; any residue is a new ledger row.
+
+Left: the five new entries and the three conformance items; the three disputed-row questions; then Phase 4 for S3 and S4
+and Phase 5. Review: this entry is the Tier A review of the S3 and S4 ledgers; fix count 0.
