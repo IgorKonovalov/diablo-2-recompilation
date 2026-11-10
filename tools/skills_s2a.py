@@ -2,7 +2,10 @@
 run:2026-10-30-skills-catalogue) for the (a-logs) statements of docs/specs/skills/dispatch.md and README.md.
 
 Usage:
-  python3 -I tools/skills_s2a.py check <log> [...] [--excel DIR]
+  python3 -I tools/skills_s2a.py check <log> [...] [--excel DIR]          (part 1)
+  python3 -I tools/skills_s2a.py check2 <log> [...] [--excel DIR]         (part 2: the skills.gdb logs)
+  python3 -I tools/skills_s2a.py ai <ai.gdb log> [...]                    (part 2: run:2026-11-03-ai)
+  python3 -I tools/skills_s2a.py ua <economy.gdb log> [...]               (part 2: run:2026-10-17-economy)
 
 <log> is written by tools/d2run.py with tools/gdb/skills.gdb (tools/gdb/skills.py rev 3..5); tools/skills.py's parser
 reads it. Each check prints its counts and lists every case that breaks it (a "break"); exit 0 only with no break.
@@ -40,8 +43,35 @@ The checks, by section of skills/dispatch:
         steps inside handlers 20 and 21, the Skills ItemEffect values and the immediate bit of 98 and 102.
   TIER  per tier-A row (dispatch § O): the lines inside each start and do event (MC, MCB, REL, THR, MHT, DQ, AD, SP,
         STA state/length) and the caster's steps less the nested logged draws.
+Part 2 (revision 2; `check` and its output are unchanged):
+  check2, over the same skills.gdb logs:
+  KB    handler 7 (0x005BF960, knockback): one step of the handler unit's seed; the return against
+        (low & 0x7F) < c with c = 32 for a MonStats2 `large` class (+0x005 bit 3), 128 for `small` (bit 2), else 64;
+        the readings c = 64 alone and mask 0xFF counted where they differ; packet +0x04 bit 3 at the entry and at the
+        next handler call on the same packet (same unit, other, event and packet bytes from +0x08).
+  THORN handler 6 (0x005BF670): the other unit's life before and after against stat << 8 (EVH.sv).
+  SLOW  handler 19 (0x005C0310): the STA lines inside: state, length, the block's stat and its value against -sv.
+  LT/DM/BA/RIP/STU  handlers 5, 13, 22, 29, 9: what the logs hold (life and mana against the maxima; lines inside).
+  EVID  per handler function: the events it ran on and its record word p0C (stat << 16 | layer, or the skill).
+  PH    PreventHealHook (PH0): the line before it (THR of the same attacker, seed unchanged), the next draw line;
+        per THR, roll < chance against an immediately following PH0 of that attacker.
+  REL   SKILLS_RollElemDamage's RangeB (REL): n >= 1, and the unit's seed steps from the REL to the event's exit
+        where no other line of the unit lies between.
+  PRG   COMBAT_PrgFinisher entries (PFC .. PFR): the classes of the missiles created against Skills srvmissilea/b/c.
+  ICAST the item casts (SrvDo from ITEMSKILL_Cast): the skill, its srvmissile (+0x46) and the MC lines inside.
+  MH    MISSILE_HitUnit (MH0 .. MH1) of a row with a hit function (0 < pSrvHitFunc < 71) that reached the build:
+        count, and the lines between MH0 and MH1.
+  ai, over tools/gdb/ai.gdb logs (its own SST0 line; parsed here, not by tools/skills.py):
+  AIU   each MonAiUseSkill call (AIB fn 0x005DEAD0; edx the unit, a[0] the mode, a[1] the skill) to its AIR (or the
+        decision's AIX/AID, or the unit's next AIN): the unit's SrvStart lines (SST0) inside, their skill, mode and
+        frame against the call's; bit 6 of Unit+0xC4 at the call and at AIR.
+  ua, over tools/gdb/economy.gdb logs:
+  UA    PLAYER_UseAmmo (UA0 .. UA1): the caller (return address), the unit (a mercenary when an MC0 line names it
+        as `merc`), the return, the ItemConsumeOne (IC0/IC1) lines inside and the item's quantity (stat 70) before
+        and after, the player's and the game's seeds.
 Stdlib only. Read-only.
 """
+import json
 import os
 import struct
 import sys
@@ -706,6 +736,8 @@ class S2A:
 
 
 def main(argv):
+    if argv and argv[0] in ("check2", "ai", "ua"):
+        return main2(argv)
     if not argv or argv[0] != "check":
         print(__doc__)
         return 2
@@ -719,6 +751,350 @@ def main(argv):
     for p in args:
         C.run(p)
     return 1 if C.report() else 0
+
+
+# ====================================================================== part 2 (revision 2)
+LARGE, SMALL = 8, 4
+
+
+class S2A2(S2A):
+    """the part-2 checks over the skills.gdb logs."""
+
+    def __init__(self, T):
+        S2A.__init__(self, T)
+        self.ms2 = SK.read_bin(SK.find_file(T_EXCEL[0], "monstats2", ".bin"))[0]
+
+    def kb_c(self, ot):
+        if not ot or ot.get("t") != 1:
+            return 64
+        ix = struct.unpack_from("<h", self.T.ms[ot["c"]], 0x18)[0]
+        b = self.ms2[ix][5]
+        return 32 if b & LARGE else (128 if b & SMALL else 64)
+
+    def run(self, log):
+        L = SK.parse(log)
+        exits = {}
+        for t, d in L:
+            if t.endswith("1") and "k" in d:
+                exits[(t[:-1], d["k"])] = d
+        pos = {d["n"]: i for i, (t, d) in enumerate(L) if "n" in d}
+        self.c["logs"][os.path.basename(log)[:22]] += 1
+        self.handlers(log, L)
+        self.ph(log, L)
+        self.rel(log, L)
+        self.prg(log, L)
+        self.icast(log, L)
+        self.mh(log, L, exits, pos)
+
+    @staticmethod
+    def res(pk):
+        return struct.unpack_from("<H", bytes.fromhex(pk), 4)[0]
+
+    def handlers(self, log, L):
+        for i, (t, d) in enumerate(L):
+            if t != "EVH":
+                continue
+            j = next((k for k in range(i + 1, min(len(L), i + 3000)) if L[k][0] == "EVR" and L[k][1].get("k") == d["n"]),
+                     None)
+            if j is None:
+                self.ok("EVID", "handler call with no EVR")
+                continue
+            r = L[j][1]
+            fn, ev, par = d["fn"], d["e"], d.get("par", 0)
+            word = "stat %d layer %d" % (par >> 16, par & 0xFFFF) if par >> 16 else "word %d" % par
+            self.ok("EVID", "0x%08X event %d, p0C %s" % (fn, ev, word))
+            inner = L[i + 1:j]
+            ot = d.get("ot") or {}
+            ost, ust = ot.get("st") or {}, d["u"].get("st") or {}
+            rst, rost = r.get("st") or {}, r.get("ost") or {}
+            if fn == 0x005BF960:                                    # 7 knockback
+                s0 = SK.sd_parse(d["u"]["s"])
+                st = SK.step(s0)
+                if SK.sd_parse(r["su"]) != st:
+                    self.bad("KB", log, d["n"], "not one step")
+                    continue
+                c = self.kb_c(ot)
+                low = st[0]
+                want = (low & 0x7F) < c
+                if (r["r"] == 1) == want:
+                    self.ok("KB", "return = ((low & 0x7F) < c), c %d, %s" % (c, "set" if want else "not set"))
+                else:
+                    self.bad("KB", log, d["n"], "c %d low %x ret %s" % (c, low, r["r"]))
+                if ((low & 0x7F) < 64) != want:
+                    self.ok("KB", "separates c = 64 for every class (c %d)" % c)
+                if ((low & 0xFF) < c) != want:
+                    self.ok("KB", "separates mask 0xFF (c %d)" % c)
+                nxt = next((x for tt, x in L[j + 1:j + 200] if tt == "EVH"), None)
+                same = (nxt is not None and nxt["e"] == ev and nxt["o"] == d["o"] and nxt["u"]["u"] == d["u"]["u"]
+                        and nxt.get("pk") and d.get("pk") and nxt["pk"][16:] == d["pk"][16:])
+                b0 = bool(self.res(d["pk"]) & 8)
+                if not same:
+                    self.ok("KB", "packet bit 3 at the entry %s, no later handler call on the same packet" % b0)
+                elif b0:
+                    self.ok("KB", "packet bit 3 already set at the entry (does not separate)")
+                elif bool(self.res(nxt["pk"]) & 8) == want:
+                    self.ok("KB", "packet bit 3 clear at the entry, at the next handler call %s = the roll's" %
+                            ("set" if want else "clear"))
+                else:
+                    self.bad("KB", log, d["n"], "bit 3 after differs from the roll")
+            elif fn == 0x005BF670:                                  # 6 thorns
+                lb, la = ost.get("6"), rost.get("6")
+                sv = d.get("sv")
+                if lb is None or sv is None:
+                    self.ok("THORN", "life or stat not logged")
+                elif la is None:
+                    self.ok("THORN", "attacker gone at EVR (sv %d, life before %d %s stat << 8)" %
+                            (sv, lb, "<=" if lb <= sv << 8 else ">"))
+                elif lb - la == sv << 8:
+                    self.ok("THORN", "attacker alive: life falls by stat << 8 (sv %d, %d)" % (sv, sv << 8))
+                else:
+                    self.bad("THORN", log, d["n"], "sv %d life %d -> %d" % (sv, lb, la))
+            elif fn == 0x005C0310:                                  # 19 slow
+                sta = [x for tt, x in inner if tt == "STA"]
+                for x in sta:
+                    tag = "state %d len %d stat %d on %s, value = -sv %s (sv %s)" % (
+                        x["state"], x["len"], x["stat"], "other" if x["d"] == d["o"] else "?",
+                        x["val"] == -(d.get("sv") or 0), d.get("sv"))
+                    self.ok("SLOW", tag)
+                if not sta:
+                    self.ok("SLOW", "no STA")
+            elif fn == 0x005C61E0:                                  # 5 life tap
+                self.ok("LT", "event %d: attacker life %s of %s before, %s after, packet +0x08 %d" % (
+                    ev, ost.get("6"), ost.get("7"), rost.get("6"),
+                    struct.unpack_from("<i", bytes.fromhex(d["pk"]), 8)[0] if d.get("pk") else -1))
+            elif fn == 0x005BFBB0:                                  # 13 damage to mana
+                full = ust.get("8") is not None and ust.get("8") == ust.get("9")
+                self.ok("DM", "unit type %d: mana %s maximum, mana change %+d" % (
+                    d["u"]["t"], "at its" if full else "below its", SK.stat(rst, 8) - SK.stat(ust, 8)))
+            elif fn == 0x005C6370:                                  # 22 bone armor
+                self.ok("BA", "event %d: lines inside %s, sv %s" % (ev, [tt for tt, _ in inner] or "none", d.get("sv")))
+            elif fn == 0x005C0770:                                  # 29 rest in peace
+                self.ok("RIP", "event %d: lines inside %s" % (ev, sorted(set(tt for tt, _ in inner)) or "none"))
+            elif fn == 0x005BFAA0:                                  # 9 stupidity
+                self.ok("STU", "event %d: sv %s, unit level logged %s, lines inside %s" % (
+                    ev, d.get("sv"), "12" in ust, sorted(set(tt for tt, _ in inner)) or "none"))
+
+    def ph(self, log, L):
+        for i, (t, d) in enumerate(L):
+            if t == "THR":
+                nx = L[i + 1] if i + 1 < len(L) else ("", {})
+                ph = nx[0] == "PH0" and nx[1].get("a") == d["a"]
+                self.ok("PH", "THR roll %s chance: next line PH0 of that attacker %s" % (
+                    "<" if d["r"] < d["c"] else ">=", ph))
+            if t != "PH0":
+                continue
+            prv = next((L[k] for k in range(i - 1, max(-1, i - 50), -1) if L[k][0] in DRAWLINES), None)
+            if prv is None or prv[0] != "THR" or prv[1].get("a") != d["a"]:
+                self.ok("PH", "PH0 with no THR of its attacker before it (%s)" % (prv[0] if prv else "none"))
+                continue
+            if prv[1]["sa"] != d["sa"]:
+                self.bad("PH", log, d["n"], "seed moved between THR and PH0")
+                continue
+            j = next((k for k in range(i + 1, min(len(L), i + 50)) if L[k][0] == "PH1" and L[k][1].get("k") == d["n"]),
+                     None)
+            e = L[j][1] if j is not None else None
+            if e and (e["sa"] != d["sa"] or e["sd"] != d["sd"]):
+                self.bad("PH", log, d["n"], "a seed moved inside the hook")
+            nxt = next((L[k] for k in range((j or i) + 1, min(len(L), (j or i) + 50)) if L[k][0] in DRAWLINES), None)
+            if nxt and nxt[0] == "DRR" and nxt[1].get("u") == d["d"]:
+                where = "the defender's DRR next"
+            else:
+                where = "next draw line %s" % (nxt[0] if nxt else "none")
+            self.ok("PH", "PH0 after its attacker's THR (seed unchanged), seeds unchanged in the hook, %s" % where)
+
+    def rel(self, log, L):
+        for i, (t, d) in enumerate(L):
+            if t != "REL":
+                continue
+            u = d["u"]
+            self.ok("REL", "REL n >= 1: %s" % (d["n"] >= 1))
+            for tt, dd in L[i + 1:i + 400]:
+                if tt in ("SST1", "SDO1"):
+                    k = SK.steps_between(SK.sd_parse(d["s"]), SK.sd_parse(dd["s"]), 64)
+                    self.ok("REL", "no line of the unit before the event's exit: steps REL -> exit %s" % k)
+                    break
+                if tt in ("THR", "DRR", "REL") and u in (dd.get("a"), dd.get("u")):
+                    self.ok("REL", "another draw line of the unit first (%s)" % tt)
+                    break
+                if tt in ("SST0", "SDO0", "EVH", "MC0", "MHT0", "DQ0", "AD0", "MAS0", "PF0"):
+                    self.ok("REL", "a nested span first (%s)" % tt)
+                    break
+
+    def prg(self, log, L):
+        for i, (t, d) in enumerate(L):
+            if t != "PFC":
+                continue
+            j = next((k for k in range(i + 1, len(L)) if L[k][0] == "PFR"), None)
+            if j is None:
+                continue
+            sdo = next((x for tt, x in reversed(L[:i]) if tt == "SDO0"), None)
+            cls = Counter(struct.unpack_from("<i", bytes.fromhex(x["p"]), 0x10)[0] for tt, x in L[i + 1:j] if tt == "MC0")
+            self.ok("PRG", "entry 0x%08X: missile classes %s" % (d["fn"], dict(sorted(cls.items())) or "none"))
+        for sid in (259, 280):
+            r = self.T.sk[sid]
+            self.c["PRG table"]["skill %d progressive %d srvmissilea/b/c %s prgcalc1..3 %s" % (
+                sid, bool(r[4] & 4), struct.unpack_from("<hhh", r, 0x48), struct.unpack_from("<iii", r, 0x38))] = 1
+
+    def icast(self, log, L):
+        for i, (t, d) in enumerate(L):
+            if t != "SDO0" or d.get("ret") != 0x005FDC34:
+                continue
+            sid = d["a"][0]
+            r = self.T.sk[sid]
+            j = next((k for k in range(i + 1, len(L)) if L[k][0] == "SDO1" and L[k][1].get("k") == d["n"]), len(L))
+            n = sum(1 for tt, _ in L[i + 1:j] if tt == "MC0")
+            self.ok("ICAST", "skill %d srvmissile %d srvdofunc %d: casts with MC lines %d" % (
+                sid, struct.unpack_from("<h", r, 0x46)[0], struct.unpack_from("<H", r, 0x2E)[0], n))
+            self.ok("ICAST", "skill %d: casts" % sid)
+
+    def mh(self, log, L, exits, pos):
+        for i, (t, d) in enumerate(L):
+            if t != "MH0":
+                continue
+            e = exits.get(("MH", d["n"]))
+            if not e:
+                continue
+            j = pos[e["n"]]
+            m = d.get("m") or {}
+            if "c" not in m:
+                continue
+            R = self.T.mrec(m["c"])
+            if not 0 < R["hitfn"] < 71:
+                continue
+            inner = [tt for tt, _ in L[i + 1:j]]
+            built = "BD0" in inner
+            self.ok("MH", "row with a hit function, %s the build: return %s, lines %s" % (
+                "reached" if built else "not reached", e.get("r"), "with BD" if built else
+                (",".join(sorted(set(inner))) or "none")))
+
+
+DRAWLINES = ("THR", "DRR", "PH0", "MHT0", "MHT1", "AD0", "DQ0")
+T_EXCEL = [SK.DEFAULT_EXCEL]
+
+
+def jparse(path):
+    out = []
+    with open(path, errors="replace") as fh:
+        for ln in fh:
+            sp = ln.find(" {")
+            if sp < 1 or sp > 8:
+                continue
+            tag = ln[:sp]
+            if not tag.isalnum() or not tag.isupper():
+                continue
+            try:
+                out.append((tag, json.loads(ln[sp + 1:])))
+            except ValueError:
+                continue
+    return out
+
+
+def ai_check(paths):
+    C = defaultdict(Counter)
+    bad = 0
+    for p in paths:
+        L = jparse(p)
+        C["logs"]["ai.gdb logs"] += 1
+        for i, (t, d) in enumerate(L):
+            if t != "AIB" or d.get("fn") != 0x005DEAD0:
+                continue
+            u, mode, sid = d["edx"], d["a"][0], d["a"][1]
+            j = next((k for k in range(i + 1, len(L))
+                      if (L[k][0] == "AIR" and L[k][1].get("b") == d["n"])
+                      or (L[k][0] in ("AIX", "AID") and L[k][1].get("k") == d["k"])
+                      or (L[k][0] == "AIN" and L[k][1].get("u") == u)), None)
+            if j is None:
+                C["AIU"]["no end line"] += 1
+                continue
+            e = L[j]
+            ss = [x for tt, x in L[i + 1:j] if tt == "SST0" and x.get("u") == u]
+            ok = len(ss) == 1 and ss[0]["a"][0] == sid and ss[0]["m"] == mode and ss[0]["fr"] == d["fr"]
+            if not ok:
+                C["AIU"]["BREAK"] += 1
+                bad += 1
+                continue
+            C["AIU"]["one SrvStart of the unit inside, the call's skill, mode and frame (mode %d)" % mode] += 1
+            C["AIU by skill"]["mode %d skill %d" % (mode, sid)] += 1
+            b0 = bool(d["c4"] & 0x40)
+            if e[0] == "AIR":
+                C["AIU bit 6"]["mode %d: bit 6 at the call %d, at the return %d (return %s)" % (
+                    mode, b0, bool(e[1]["c4"] & 0x40), e[1].get("eax"))] += 1
+            else:
+                C["AIU bit 6"]["mode %d: bit 6 at the call %d, return not logged (%s)" % (mode, b0, e[0])] += 1
+    report2(C)
+    print("SURVEY s2a-ai breaks=%d" % bad)
+    return 1 if bad else 0
+
+
+def ua_check(paths):
+    C = defaultdict(Counter)
+    bad = 0
+    for p in paths:
+        L = jparse(p)
+        C["logs"]["economy.gdb logs"] += 1
+        mercs = {d["merc"]["u"] for t, d in L if t == "MC0" and isinstance(d.get("merc"), dict)}
+        for i, (t, d) in enumerate(L):
+            if t != "UA0":
+                continue
+            j = next((k for k in range(i + 1, len(L)) if L[k][0] == "UA1"), None)
+            if j is None:
+                continue
+            e = L[j][1]
+            u = d["r"][1]
+            ic0 = [x for tt, x in L[i + 1:j] if tt == "IC0"]
+            ic1 = [x for tt, x in L[i + 1:j] if tt == "IC1"]
+            seeds = d["sn"]["ps"] == e["sn"]["ps"] and d["sn"]["gs"] == e["sn"]["gs"]
+            who = "a mercenary" if u in mercs else "the player"
+            if ic0 and ic1:
+                n0, n1 = (ic0[0]["it"] or {}).get("n"), (ic1[0]["it"] or {}).get("n")
+                one = n0 is not None and n1 == n0 - 1
+                key = "caller 0x%08X, %s: return %s, ItemConsumeOne on item class %s, quantity falls by one %s" % (
+                    d["ra"], who, "= quantity before" if e["v"] == n0 else e["v"], (ic0[0]["it"] or {}).get("c"), one)
+                if not one:
+                    bad += 1
+                    C["UA"]["BREAK"] += 1
+            else:
+                key = "caller 0x%08X, %s: return %s, no ItemConsumeOne" % (d["ra"], who, e["v"])
+            C["UA"][key] += 1
+            C["UA"]["player and game seeds unchanged across the call: %s" % seeds] += 1
+            if not ic0 and ic1 or (ic0 and len(ic0) != 1):
+                C["UA"]["ItemConsumeOne lines: %d entry, %d exit" % (len(ic0), len(ic1))] += 1
+    report2(C)
+    print("SURVEY s2a-ua breaks=%d" % bad)
+    return 1 if bad else 0
+
+
+def report2(C):
+    for chk in sorted(C):
+        print("== %s" % chk)
+        for k, v in sorted(C[chk].items(), key=lambda kv: str(kv[0])):
+            if v:
+                print("  %7d  %s" % (v, k))
+
+
+def main2(argv):
+    cmd, args = argv[0], argv[1:]
+    if cmd == "ai":
+        return ai_check(args)
+    if cmd == "ua":
+        return ua_check(args)
+    if "--excel" in args:
+        i = args.index("--excel")
+        T_EXCEL[0] = args[i + 1]
+        del args[i:i + 2]
+    C = S2A2(SK.Tables(T_EXCEL[0]))
+    for p in args:
+        C.run(p)
+    bad = 0
+    for chk in sorted(C.c):
+        print("== %s" % chk)
+        for k, v in sorted(C.c[chk].items(), key=lambda kv: str(kv[0])):
+            print("  %7d  %s" % (v, k))
+        for b in C.brk.get(chk, ()):
+            print("  break: %s" % b)
+        bad += C.c[chk].get("BREAK", 0)
+    print("SURVEY s2a-check2 breaks=%d" % bad)
+    return 1 if bad else 0
 
 
 if __name__ == "__main__":

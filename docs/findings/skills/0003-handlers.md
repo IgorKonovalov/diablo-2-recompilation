@@ -904,6 +904,12 @@ remainder:
   `0x005BFA38`–`0x005BFA46`; a development session met it twice, the run's 103 howls all on plain monsters), knockback's
   `0x7F` mask and its result bit, stupidity's chance formula, and the handlers no session fired (1–4, 10–12, 14, 18,
   23–27, 30, 31). (0x005BFA38, run:2026-10-27-skills)
+  *2026-11-10 (plan 0066 S2a part 2):* knockback's mask and result bit are met: in 246 calls the handler returns 1
+  exactly when `low & 0x7F < c`, `c` 32 for a MonStats2 `large` class, 128 for `small`, else 64 (`c` = 64 alone fails 63
+  calls, the mask `0xFF` 98), and packet `+0x04` bit 3 follows the roll in the 66 calls that show it; the symbol is
+  raised. Slow's `STATE_ApplyTimed` block carries stat 67 = −v (246 of 246), beside § 3's stats 68 and 69 (added after
+  the call, not logged). (fn:sub_005BF960_StatEv07Knockback@0x005BF960, fn:sub_005C0310_StatEv19Slow@0x005C0310,
+  run:2026-10-27-skills, [experiments, part-2 addendum](experiments.md#addendum-2026-11-10-plan-0066-batch-s2a-part-2-handler-effects-the-ai-command-ammunition-lanen66b))
 - [C] **Mana and life after a kill, raised in part** (§ 3, 17 and 28): mana `+= sv << 8` and life `+= sv << 8`, each
   capped at stat 9 / stat 7, in 78 and 78 kills (`EVH.mana`, `EVH.life`). The cap binds in 154 of them (the unit at its
   maximum); the 2 heals with the life more than `sv << 8` below the maximum separate the addition.

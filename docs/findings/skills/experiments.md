@@ -366,6 +366,49 @@ over the kept logs of this run, run:2026-10-25-skills and run:2026-10-30-skills-
   (fn:SKILLS_StartUsedSkill@0x0056FAF0, run:2026-10-27-skills, run:2026-10-30-skills-catalogue). Routed to Phase 3
   (the mode list and the bit-6 sentence) and to a reverser read of the mode-14 start path (plan 0066 log).
 
+### Addendum 2026-11-10: plan 0066 batch S2a part 2, handler effects, the AI command, ammunition (`lane/n66b`)
+
+The last 20 rows of batch S2a: new checks over the same 45 kept logs, the 86 ai.gdb logs of run:2026-11-03-ai (with
+its `-2` and `-3` launches) and the 35 economy.gdb logs of run:2026-10-17-economy, all unchanged. No session.
+
+- **Procedure** (under a 4 GB scope; tool `tools/skills_s2a.py` revision 2, `a7395fa3…`, which adds the commands
+  `check2`, `ai` and `ua` and leaves `check` as it was: rerun, it gives `2026-11-10-s2a-check.txt` `f69b8ec8…` again):
+  from `workspace/logs/skills`, `skills_s2a.py check2 2026-10-25-skills-*.log 2026-10-27-skills-*.log
+  2026-10-30-skills-catalogue-cat-*.log > 2026-11-10-s2a-check2.txt`; from `workspace/logs/ai`, `skills_s2a.py ai`
+  over the `.log` lines of `manifest-run-2026-11-03-ai.sha256`, `-ai-2` and `-ai-3` (86 logs) `>
+  ../skills/2026-11-10-s2a-ai.txt`; from `workspace/logs`, `skills_s2a.py ua economy-s1-*.log >
+  skills/2026-11-10-s2a-ua.txt` (35 logs, each listed in `economy-run-manifest.txt`). Exit 0 each, breaks 0. Outputs
+  `2026-11-10-s2a-check2.txt` `29ad2680…` (142 lines), `2026-11-10-s2a-ai.txt` `8816d536…` (56 lines),
+  `2026-11-10-s2a-ua.txt` `3c3c8c6c…` (7 lines), under `2026-11-10-s2a-part2-manifest.sha256`; `sha256sum -c` from
+  `workspace/logs/skills` passes. The handler reads behind the checks (0x005BF960, 0x005BF670, 0x005C0310,
+  0x005C0770, 0x005BFAA0, 0x0056CDA0, 0x0056FCB0) were Ghidra decompiles, not kept.
+
+| check | count | result |
+|---|---:|---|
+| `MonAiUseSkill` (AIB `0x005DEAD0`) to its return or the decision's end | 1 088 calls (mode 14 486, 8 444, 4 68, 7 62, 9 16, 5 12) | one `SrvStart` of the unit inside each, with the call's skill, mode and frame |
+| bit 6 of `Unit+0xC4` at a logged return (AIR) | 350 | set in all 174 of modes 4, 5, 7, 8, 9; **clear in all 176 of mode 14** (set at the call in 70 of them) |
+| handler 7, knockback | 246 calls | one step; returns 1 exactly when `low & 0x7F < c`, `c` 32 for a MonStats2 `large` class (22 calls), 128 for `small` (136), else 64 (88); `c` = 64 for every class fails 63, mask `0xFF` 98; packet `+0x04` bit 3 clear at the entry with a later handler on the same packet: 66, set after in the 50 passing rolls, clear in the 16 others |
+| handler 6, thorns | 23 calls | the attacker loses `stat << 8`: 14 at stat 3 (768) and alive after; 8 attackers killed held at most `stat << 8`; 1 without the life |
+| handler 19, slow | 246 calls | `STATE_ApplyTimed` on the other unit: state 24, 750 frames, the block's stat 67 = −v (v 10 ×187, 30 ×59) |
+| handlers 5, 13, 22, 29, 9 | 2, 25, 2, 78, 65 calls | Life Tap: attacker at its maximum life both times; damage to mana: mana at its maximum in all 25, no change; Bone Armor, rest in peace: no line inside; stupidity: rev 3 logs, no handler stat or unit level |
+| handler calls by function | 2 167 | each handler only on its K1 table events; `p0C` = `stat << 16 \| layer` of its ItemStatCost stat for the item handlers, the skill (68, 76, 82) for the auraevent ones |
+| `PreventHealHook` | 2 583 `PH0` | 2 372 right after their attacker's `THR` with the seed unchanged (the other 211 in rev 3 logs with no `THR` outside spans); every `THR` with roll < chance (2 372) is followed at once by `PH0`, none of the 2 221 failed ones; no seed moves inside; the defender's `DRR` is the next draw line in 257 |
+| `REL` | 866 | `n` ≥ 1 in all; 11 with no other line of the unit before the event's exit, the exit seed one step on (60 two, 13 four: other draws follow) |
+| finisher entry 39 | 4 calls | 48 creations, all class 557 (Fists of Fire's `srvmissilec`; its `a`, `b` blank) |
+| item casts | 86 | skills 53, 66, 76, 82: none has a `srvmissile` |
+| `MISSILE_HitUnit` of rows with a hit function | 6 822 | 547 reached the build; no line holds the hit function's return |
+| `PLAYER_UseAmmo` (economy) | 142 | 12 for the mercenary from `SrvDo` (`0x0056FA93`): return 0, no `ItemConsumeOne`; 130 for the player from the skill missile creation (`0x0056EDB5`): one `ItemConsumeOne` of the thrown weapon (class 44), quantity 130 → 0 by one, the return the quantity before; the player's and game seeds unchanged in 142 |
+
+- **Separations and limits.** Knockback's `c` per class and its mask are separated by the 63 and 98 calls named;
+  the hook's place by 2 372 against 2 221; the AI command's start by its 1 088 calls. Not separated: the effects of
+  Life Tap, damage to mana, Bone Armor, rest in peace (`0x00639DB0` is not `STATE_ApplyTimed`, the only state call
+  STA logs) and stupidity; slow's stats 68 and 69 (added after the call) and its caps; thorns' damage type; the
+  elemental value and packet field; charges 1 and 2 of the finisher entries; the item-cast creation (E4); the bow path
+  of `PLAYER_UseAmmo`.
+- **For Phase 3.** Slow's logged block carries stat 67 = −v, which dispatch § K's row 19 does not name. Mode 14:
+  bit 6 is clear at the AI command's return as at the start's entry (part 1), against dispatch § E2, § M1 and the
+  entry table; backlog `2026-11-10-reverser-reverser-skills-mode-14-start-bit-6.md` asks for the read.
+
 ## run:2026-10-25-skills
 
 - **Question:** (plan 0045 Phase 2) Does `tools/skills.py`, the model of [skills/0001](0001-dispatch.md),

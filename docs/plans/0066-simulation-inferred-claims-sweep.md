@@ -227,3 +227,41 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - Extend `tools/skills_s2a.py` as a new revision and keep its output under a new name (do not overwrite
     `2026-11-10-s2a-check.txt`); add the rows' notes as above, update the S2a status cell and the totals.
 - **Review:** Tier B (plan 0066 Phase 1), at the end of part 2.
+
+### 2026-11-10 — Phase 1 batch S2a, part 2 of 2 (reverser-static, `lane/n66b`): done, 100 of 100 settled
+
+- **Done.** The last 20 rows. `tools/skills_s2a.py` revision 2 (`a7395fa3…`) adds `check2` (the 45 skills logs), `ai`
+  (the 86 ai.gdb logs of run:2026-11-03-ai, `-2`, `-3`) and `ua` (the 35 economy.gdb logs of run:2026-10-17-economy);
+  `check` is unchanged and reproduces part 1's `2026-11-10-s2a-check.txt` (`f69b8ec8…`). Kept outputs
+  `workspace/logs/skills/2026-11-10-s2a-check2.txt` (`29ad2680…`), `2026-11-10-s2a-ai.txt` (`8816d536…`),
+  `2026-11-10-s2a-ua.txt` (`3c3c8c6c…`) under `2026-11-10-s2a-part2-manifest.sha256` (passes from that directory), 0
+  breaks. Record: the part-2 addendum in [skills experiments](../findings/skills/experiments.md#addendum-2026-11-10-plan-0066-batch-s2a-part-2-handler-effects-the-ai-command-ammunition-lanen66b);
+  a dated note in [skills/0003 § 16](../findings/skills/0003-handlers.md#16-plan-0045-phase-2-part-2-the-run-run2026-10-27-skills);
+  `sub_005BF960_StatEv07Knockback` raised to `C` in `re/symbols.csv` (its return compared with the model in 246 calls,
+  review-fixes rule 14).
+- **Rows (part 2).** Raised 3 (dispatch 11, 116, 176); raised in part 10 (README 22, 23; dispatch 86, 103, 107, 115,
+  125, 137, 150, 155), the `[C]` part and the remainder's class and batch in each row; moved 7: README 2, dispatch 59,
+  118, 126, 132 a-logs → b (H2a), dispatch 114, 121 a-logs → a-run (H2b). **Whole batch:** raised 14, raised in part
+  66, moved 20 (4 → d-none, 13 → b in H2a, 2 → a-run in H2b, 1 → c in S2c); S2a holds 80 statements.
+- **Totals** recomputed from the 29 inventory files after `main` `e1878e23` (S1a merged, at `00a05e0a`): a-logs 696,
+  a-run 350, b 375, c 389, c-emu 490, d 326 (sum 2 626); Phase 1 1 575, Phase 2 725 (inventory README § 1, § 3; the two
+  files' *Totals by class*; § 4 rows S2a 80, H2a 32 at ~3.2 claims per session, H2b 14 at ~1.0).
+- **Contradicted in part, for Phase 3 and the reverser.** (1) Mode 14: besides part 1's 566 starts entering `SrvStart`
+  with bit 6 clear, the AI command (`MonAiUseSkill`) returns with bit 6 clear in 176 of 176 mode-14 calls (set at the
+  call in 70), while modes 4, 5, 7, 8, 9 return with it set (174). dispatch's entry table (row 4), § E2, § M1 (row 150)
+  and skills/README § C (row 16) need rewording for mode 14. Backlog
+  [2026-11-10-reverser-reverser-skills-mode-14-start-bit-6](../backlog/2026-11-10-reverser-reverser-skills-mode-14-start-bit-6.md)
+  asks for the read. (2) Slow (dispatch § K row 19, inventory row 125): the logged `STATE_ApplyTimed` block carries
+  stat 67 = −v, which the row does not name.
+- **Ready for re-tagging (Phase 3, spec-writer), parts 1 and 2 together,** by inventory row (spec lines at `b5999f5e`;
+  dispatch.md has moved since, so match by text). **Whole** to `[C]`: skills/README rows 1, 25; skills/dispatch rows 7,
+  8, 9, 10, 11, 61, 90, 116, 173, 175, 176, 191 (14). **Split** (the `[C]` half each row's note names goes into the spec
+  text, the remainder keeps `[I]`): README rows 12, 15, 16, 22, 23; dispatch rows 1, 2, 4, 5, 6, 25, 26, 27, 29, 31,
+  43, 44, 45, 50–55, 63, 68, 70, 75, 79, 80, 82, 85, 86, 102, 103, 104, 105, 107, 109, 115, 125, 137, 139, 141, 145,
+  148, 150, 155, 159–172, 177, 179, 186, 187 (66). The rewordings of (1) and (2) above go with them.
+- **Left.** Nothing in S2a. The moved rows wait in H2a, H2b, S2c and d-none as their notes say.
+- **Review:** Tier B (plan 0066 Phase 1), for the whole batch (parts 1 and 2). Judgment calls to check: (1) the
+  ai.gdb run's 86 logs include relaunched sessions ("fresh:" logs beside the launch logs, both in the run's manifests),
+  counted as logged; (2) row 23 (frame pass order) raised in part from the kept frame-order check's pair table with no
+  new run; (3) row 86's one-draw claim rests on the 11 rolls with no other line before the event's exit; (4) the
+  remainders routed to b rather than d-none where a logger line would reach them (rows 2, 59, 118, 126, 132).
