@@ -32,5 +32,5 @@ The sound catalogue: 4 699 rows (index 0..4698), each a named sound with a file 
 
 ## Open questions
 
-- Answered (plan 0068 Phase 2, from the finding): `[I]` the only call that loads `sounds.bin` is the `-txt`-only one at `0x00659C16` (the `sounds` string at `0x006ED50C` has the one reference `0x00659C11`); `[C]` in the four stock-mode H3b runs no file named `sounds.bin`, `sounds.txt` or `soundenviron.txt` is opened (`-ns` by default), under `-txt` `sounds.txt` and `sounds.bin` are. A stock run with sound on reads `sounds.txt` as text by `sub_00481950_SoundTablesLoad` and never `sounds.bin`. Sound playback itself is out of scope. ([data/0006 § 2.4](../findings/data/0006-loaded-tables-and-bundles.md#24-sounds))
+- Answered (plan 0068 Phase 2, from the finding): `[I]` the only call that loads `sounds.bin` is the `-txt`-only one at `0x00659C16` (the `sounds` string at `0x006ED50C` has the one reference `0x00659C11`); `[C]` in the four stock-mode H3b runs no file named `sounds.bin`, `sounds.txt` or `soundenviron.txt` is opened (`-ns` by default), under `-txt` `sounds.txt` and `sounds.bin` are. `[I]` A stock run with sound on reads `sounds.txt` as text by `sub_00481950_SoundTablesLoad` and never `sounds.bin`. Sound playback itself is out of scope. ([data/0006 § 2.4](../findings/data/0006-loaded-tables-and-bundles.md#24-sounds))
 

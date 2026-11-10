@@ -2,7 +2,7 @@
 
 > **Source archive:** `.txt` patch_d2, `.bin` patch_d2   **Rows:** 141 `.bin` records (= `.txt` data rows)   **Record:** 148 B
 > **sha256:** `.txt` `d0da7ef1c3b34d575c27f4a56a3755fd2a4038afce632257220625644e858880`, `.bin` `86b603e84427a180b6d0894e2fc6e1c0b29a3cff3d0f211c8deed00c06c49b56`
-> **Doc status:** columns and `.bin` layout complete (plan 0068 Phase 1); sound is out of scope unless a column changes a rule, readers are Phase 2
+> **Doc status:** columns and `.bin` layout complete (plan 0068 Phase 1); sound is out of scope unless a column changes a rule, read by the client only (data/0006 § 3)
 
 ## Purpose
 
@@ -19,7 +19,7 @@ One row per monster sound set: attack, weapon, hit and death sounds with their d
 |---|---|---|---|---|---|
 | `Id` | str, 140 distinct, len <= 15, 1 blank | +0x000 u32 row index into `monsounds:Id` | row key | read by MonStats `MonSound`, `UMonSound`; SuperUniques `MonSound` | [C] |
 | sound columns | str, 443 distinct, len <= 28, 1471 blank | +0x004 .. +0x078, 16 fields (u32 row index into `sounds:Sound`) | a sound played on the named occasion `[L]`; a blank cell stores 0 (the `sounds` row 0, `none.wav`); the `.bin` slot is 4 bytes, the high half is 0 | `sounds:Sound` | [C] layout and reference, [L] meaning |
-| delays | int, 0..12, 12 distinct, 339 blank | +0x008, +0x014, +0x020, +0x02C, +0x038, +0x040 (s32) | delay before the matching sound `[L]` (units not known from data; frames or ticks is a Phase 2 question) | — | [C] layout, [L] meaning |
+| delays | int, 0..12, 12 distinct, 339 blank | +0x008, +0x014, +0x020, +0x02C, +0x038, +0x040 (s32) | delay before the matching sound `[L]` (units not known from data; client only, so not followed) | — | [C] layout, [L] meaning |
 | probabilities and volumes | int, 60..255, 14 distinct, 285 blank | +0x00C, +0x018, +0x024, +0x030 (s32) | probability / volume of the attack and weapon sounds `[L]` | — | [C] layout, [L] meaning |
 | footstep counters | int, 0..100, 9 distinct, 153 blank | +0x05C, +0x060, +0x064 (s32) | footstep count, offset and probability `[L]` | — | [C] layout, [L] meaning |
 | `NeuTime` | int, 90..1800, 6 distinct, 79 blank | +0x06C s32 | by name the period of the neutral sound `[L]` | — | [C] layout, [L] meaning |
