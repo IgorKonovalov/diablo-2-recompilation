@@ -215,7 +215,8 @@ Step notes:
   [data/0006 § 2.2](../../findings/data/0006-loaded-tables-and-bundles.md#22-playerclass-class-06))
 - S1. **`Class` is an unsigned byte (u8), so a blank `Class` (stored `0xFF`) is not `< 7`** and gives `cls` 0; only the
   seven class values 0–6 give 1. "Signed, bounds-checked, else 0" is the test of `rec.type` (as in A2: a `type` < 0 or
-  ≥ the number of itemtypes records gives 0), not of `Class`. [I] for the reading (fn:ITEMS_IsClassSpecific@0x00629F70,
+  ≥ the number of itemtypes records gives 0), not of `Class`; the compare is `cmp byte [rec + 0x21], 7` then `sbb`/`neg`,
+  a carry (unsigned below) test. [I] for the reading (fn:ITEMS_IsClassSpecific@0x00629F70, 0x00629FCE, 0x00629F9F,
   tbl:ItemTypes.txt:Class, [items/0002 § 2](../../findings/items/0002-quality-roll.md#2-row-selection--itemratio_select-0x00637910));
   [C] for the outcome: the model with this test reproduces the logged row of all 1607 rolls of the S2a set, records 2,
   3, 4 and 5 each in the three difficulties, where a blank `Class` read as a value below 7 would send every

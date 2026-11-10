@@ -300,3 +300,30 @@ L 7, items/quality C 72 / I 41 / L 1, data/excel C 146 / I 59 / L 2, quirks C 37
 Not done here: [conformance-drop-inputs](../backlog/2026-11-10-architect-spec-writer-plan-0064-conformance-drop-inputs.md)
 waits for the archivist's golden-set entries (lane n64g). Review: Tier A. Next: Phase 5 re-runs the S2 type-test and
 class-key fields from the fixed specs.
+
+### 2026-11-10 — Phase 4 review (architect, Tier A): accept with fixes (2)
+
+Reviewed `lane/n64w` after merging `main` (n64g and plan 0068's close; the two conflicts, this log and S2.md rows 1–11,
+kept both sides: main's archived golden-set links, the lane's archived type-test links). Mode 3 in full, with the
+promotion re-check of the new `[C]`s: items/tc K1 (data/0004, 2026-10-12), K3 (items/0005 tests (c)–(d), 2026-10-14;
+items/0001 tc 11, H2a), items/quality S1's row index (PlayerClass § Row identity) and outcome (items/0002 quality 13,
+S2a): each rests on an earlier reviewed statement that says what the sentence says. The new `[L]` (how the walk is
+built) sits under *Open questions* and its entry is addressed to the reverser. Anchors spot-checked with r2 on the pinned
+`Game.exe`: `ITEMS_IsType` 0x00629A90, `ITEMS_UnitIsType` 0x00629BB0, `ITEMS_IsClassSpecific` 0x00629F70, all as named.
+
+- **S1 signedness, the lane's judgment call: upheld.** 0x00629FCE is `cmp byte [eax + 0x21], 7`, then `sbb eax, eax;
+  neg eax`: a carry test, unsigned below, so a blank `0xFF` gives 0; the signed, bounds-checked test is `rec.type`'s
+  (`movsx word [rec + 0x11E]`, `jl`, `jge` against the count, 0x00629F9F–0x00629FB6). No reverser entry is needed. Fix
+  (omission): the S1 note now names the compare and its address. What the implementer could not know: whether `0xFF`
+  is −1 (`< 7`) or 255; items/0002 § 2 holds the reading.
+- **Quirks sample**, 17 of the 53 new entries (Q475, Q476, Q477, Q478, Q481, Q488, Q489, Q493, Q497, Q498, Q499, Q503,
+  Q508, Q510, Q521, Q525, Q527) against their notes: every tag matches. Fix (overclaim): Q488's "agrees with every live
+  search on open ground" restored to the note's count, "all 118 live searches".
+- **§ K, a lead for the reverser entry** (not a fix): r2 shows the test reads a precomputed bit matrix, skips a zero
+  `type2` and returns 0 for an out-of-range `t`; written into
+  [itemtypes-equiv-walk-form](../backlog/2026-11-10-spec-writer-reverser-itemtypes-equiv-walk-form.md) as a lead.
+- **Gate:** `tools/quirks.py check` is clean after the merge (527 entries, 0 errors, about 0.2 s) and is registered as
+  fast-tier rule E18 in `tools/gate.py` (each `quirks:` line one error, at its file line); `test_gate.py` passes.
+
+Fix count: overclaim 1, omission 1. The conformance-drop-inputs entry the lane left waiting is unblocked now that n64g is
+on `main`. Not merged; plan 0064 stays open for Phase 5.
