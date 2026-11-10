@@ -1292,8 +1292,11 @@ return M[W·ty2 + t/32] & bit(t)                    // the masked dword, not 1
   when a popped index is ≥ `n`, or when more than 124 entries remain after a pop (the depth bound; the 128-entry stack
   cannot overflow, since at most two are pushed per pop). A blank `Equiv1` (stored 0, tables/ItemTypes) ends that
   branch **and skips that row's `Equiv2`**; a blank `Equiv2` adds nothing. (fn:sub_00638CD0_ItemTypeIsOf@0x00638CD0)
-- [I] **Cycles.** A cycle through rows with one parent each never grows the stack, so the loop does not end (the loader
-  hangs); a cycle through a row with two parents grows the stack by one per turn until the bound returns 0. A negative
+- [I] **Cycles** (unless `t` is met first). A cycle through rows with one parent each never grows the stack, so the loop
+  does not end (the loader hangs). At a row with two parents, `Equiv2` is popped first: a cycle that continues through
+  `Equiv2` leaves that row's `Equiv1` on the stack each turn, so the stack grows by one per turn until the bound returns
+  0; a cycle that continues through `Equiv1` is resumed only after the `Equiv2` branch has been popped, so when that
+  branch ends the stack does not grow and the loader hangs as for a one-parent cycle. A negative
   `Equiv2` would be pushed and then read before the records (`x ≥ n` is a signed test). These need edited data.
   (fn:sub_00638CD0_ItemTypeIsOf@0x00638CD0)
 - [I] **Record 0.** `TypeIsOf(i, 0)` is 1 for every `i`, so bit 0 is set in **every** row, not only in the rows of types

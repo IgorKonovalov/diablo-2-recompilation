@@ -1778,7 +1778,8 @@ loop:                                                               // 0x006800A
 - [C] **The rule.** A run starts at a vertex `v` where the ring turns from going up into going right (`A`) or from going
   left into going up (`B`), with neither the segment into `v` nor the segment out of it a seam. It follows the ring while
   each segment goes neither down nor left and neither of its ends starts a seam segment, and stops back at `v` at the
-  latest. `last` is the latest run vertex `w` whose next vertex `n` is a non-seam corner turning right-then-down or
+  latest (the left-going and back-at-start exits are the code's; no log takes them, `[I]`, *Exits no log takes* below).
+  `last` is the latest run vertex `w` whose next vertex `n` is a non-seam corner turning right-then-down or
   up-then-right. When there is one, every vertex from `v` to `last` inclusive gets `type` 1 and `O.flags` gets `0x20`;
   a run with no such corner marks nothing. The walk then resumes at the vertex after the one where the run stopped,
   so that vertex is never tested as a start. It ends when it is back at the head, or after any run that passed through
@@ -1829,9 +1830,10 @@ else:
   and returns with no further draw. § 8's one-line definition read as if the `s` step followed both branches; it is
   rewritten in place. The model's `one_or_two` has this structure and the window's level-seed steps match one by one
   (`ODD`, every window of levels 2–7). A reading with the `s` step in both branches adds one step to every
-  `(r & 3) = 0` call with `s` = 1; levels 3–7 make 100 such `s` = 1 calls in the run (20 windows each), so `ODD`
-  separates the two readings unless no call drew `r & 3 = 0` (about 3·10⁻¹³ at ¼ each; the branch count itself is not
-  logged). (fn:sub_006804E0_A1PlaceOneOrTwo@0x006804E0, fn:sub_00674920_OutPresetPlaceNear@0x00674920,
+  `(r & 3) = 0` call with `s` = 1. Levels 3–7 make 100 such `s` = 1 calls in the run (20 windows each), and **26** of
+  them took the `(r & 3) = 0` branch (74 the else branch, 34 of those placing `Near(49)`; counted by
+  `tools/cliff_cover.py --count-one-or-two`, output `one-or-two-count.txt` of the addendum), so `ODD` separates the two
+  readings at 26 calls. (fn:sub_006804E0_A1PlaceOneOrTwo@0x006804E0, fn:sub_00674920_OutPresetPlaceNear@0x00674920,
   run:2026-10-15-drlg-outdoor)
 
 ### (d) `LevelBorderAdj` (0x00677680)

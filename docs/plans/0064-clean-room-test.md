@@ -467,3 +467,37 @@ Archivist: [itemtypes-equiv-walk-lead-answered](../backlog/2026-11-10-reverser-a
 (tables/ItemTypes' open `[L]`). The S4 re-run of Phase 5 now waits only on the spec-writer and archivist entries.
 `backlog.py close` rewrote one link in `docs/specs/items/tc.md` to the archived entry (mechanical; no spec text changed).
 Review: Tier B.
+
+### 2026-11-10 — Review of lane n64r (architect, Tier A; the ADR-0023 audit)
+
+Verdict: **accept with fixes (4)**; no reject-grade problem. Audit of `lane/n64r`: no Tier B check ran on it (this review
+stands in), and none of the fixes is reject-grade. Ledger cell: `audit of lane/n64r: overclaim 2, misread 1, wrong anchor 1`.
+
+Checked: `tools/cliff_cover.py` re-run under `systemd-run --user --scope -p MemoryMax=4G` on the 11 logs: 572 211 checks,
+0 mismatches, every branch counter equal to the kept `cliff-cover.txt` (only the per-log lines' order differs); the
+control output is kept (22 600 mismatches of 513 215, 948 empty-slot nodes) and the manifest passes. r2 on the pinned
+`Game.exe`: the bytes at 0x006F2854 (`01 00 FF 00`) and 0x006F2850, the `movsx` reads at 0x00681668/0x0068166F,
+`A1PlaceOneOrTwo` 0x006804E0–0x0068056E (the `je 0x0068055B` pair, the `s` test at 0x0068051B, `lea edx, [ebx + 0x31]`),
+`LevelBorderAdj`'s `test eax, eax; je` at 0x006776D6 and `cmp …, −1` at 0x006776DA, `A1CliffMark`'s run loop
+0x006800E4–0x00680150 and `or [ecx], 0x20` at 0x00680170, `ItemTypeIsOf` 0x00638CD0–0x00638D77 (t ≤ 0 → 1 first,
+`cmp ecx, 0x7C; jg` after the pop, `jle` on `Equiv1` before `Equiv2` is read, `0x200`-byte stack, no visited set), the
+matrix loop from i = t = 0 (0x0063937B–0x006393C2), and `TC_ParseItemCell`'s stores 0x006545E7/0x006545ED with the
+unique branch's `jmp 0x006545E7` at 0x00654598: all as written. Call counts recounted from an objdump listing: 5, 318,
+12, and 1 for `ItemTypeIsOf`. The `backlog.py` rewrite in items/tc is the one link to the archived entry, no text
+changed; the routing (two spec-writer entries annotated, one new spec-writer and one archivist entry, the earlier
+items-tc-type-test entry being closed) is right.
+
+**`OneOrTwo` ruling.** A probability that no call took the branch is not a count of the cases that separate the readings
+(reverser review-fixes 10), so it does not carry a `[C]` by itself. The count was cheap: `tools/cliff_cover.py`
+revision 2 adds `--count-one-or-two`; 26 of the 100 `s` = 1 calls took `(r & 3) = 0`, so `ODD` separates the readings
+at 26 calls and the `[C]` stands on that count (output `workspace/logs/n64r/one-or-two-count.txt`, manifest updated).
+
+Fixes:
+1. overclaim: drlg/0008 § Plan 0064 (c) rested its `[C]` on the 3·10⁻¹³ argument; now the kept count of 26.
+2. overclaim: drlg/0008 § Plan 0064 (a)'s `[C]` rule stated the left-going and back-at-start exits without scoping them
+   to the `[I]` bullet below it (no log takes them); scoped in the sentence.
+3. misread: items/0001 § Plan 0064 *Cycles* said any cycle through a two-parent row grows the stack to the bound; only
+   one that continues through `Equiv2` (popped first) does; one through `Equiv1` hangs like a one-parent cycle once the
+   `Equiv2` branch ends. Rewritten.
+4. wrong anchor: `tools/cliff_cover.py`'s docstring cited "drlg/0008 § 8.1", which does not exist; now § Plan 0064 (a),
+   (c), (d). The experiments addendum records revision 2's sha256 and the new output.

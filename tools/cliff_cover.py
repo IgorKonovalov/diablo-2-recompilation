@@ -5,11 +5,15 @@ Replaces tools/drlg.py's Outdoor.a1_cliff_mark with a transcription written from
 instruction addresses), runs `drlg.py gen` over the given logs (the ODG check compares O.flags exactly, and the def and
 cell grids that the vertex types feed), and prints which branches the logs took.
 
+With --count-one-or-two it also counts the branches of A1PlaceOneOrTwo (0x006804E0) for its `s` = 1 calls (levels 3-7):
+from the defs the model's act1 hands Outdoor.place_near, a call whose def is placed twice in a row took the `r & 3 == 0`
+branch, else the else branch (and `Near(49)` after it when the `s` step's bit 0 is 1). The model is not changed.
+
 With --control-no-vis-test it also swaps drlg.border_adj for a copy without LevelBorderAdj's `Vis != 0` test
 (backlog item (d)), as a control: the kept run with it must score mismatches for the logs to separate the readings.
 
-Usage: python3 -I tools/cliff_cover.py [--control-no-vis-test] <log>...
-Evidence: docs/findings/drlg/0008-outdoor.md § 8.1.
+Usage: python3 -I tools/cliff_cover.py [--control-no-vis-test] [--count-one-or-two] <log>...
+Evidence: docs/findings/drlg/0008-outdoor.md § Plan 0064 statements (a), (c) and (d).
 """
 import collections, os, sys
 
@@ -98,7 +102,41 @@ def border_adj_no_vis_test(A, lo, hi):
                                           rect=list(A.rect.get(nb, [0, 0, 0, 0]))))
 
 
+ONE_OR_TWO_S1 = {3: 48, 4: 47, 5: 48, 6: 47, 7: 48}   # the def of each level's one_or_two(d, 1) call (drlg/0008 § 8)
+
+
+def count_one_or_two():
+    act1, place_near = drlg.Outdoor.act1, drlg.Outdoor.place_near
+
+    def place_near_rec(O, d, idx=-1):
+        seq = getattr(O, "_n64r_near", None)
+        if seq is not None:
+            seq.append(d)
+        return place_near(O, d, idx)
+
+    def act1_rec(O):
+        O._n64r_near = [] if O.lid in ONE_OR_TWO_S1 else None
+        rc = act1(O)
+        seq, O._n64r_near = O._n64r_near, None
+        if seq is not None:
+            d = ONE_OR_TWO_S1[O.lid]
+            i = seq.index(d)
+            CNT["one_or_two s=1: calls"] += 1
+            if seq[i + 1:i + 2] == [d]:
+                CNT["one_or_two s=1: r & 3 == 0 (Near(d) twice)"] += 1
+            else:
+                CNT["one_or_two s=1: else branch (Near(d) once)"] += 1
+                if seq[i + 1:i + 2] == [49]:
+                    CNT["one_or_two s=1: else branch, Near(49)"] += 1
+        return rc
+
+    drlg.Outdoor.place_near, drlg.Outdoor.act1 = place_near_rec, act1_rec
+
+
 def main(argv):
+    if "--count-one-or-two" in argv:
+        argv = [a for a in argv if a != "--count-one-or-two"]
+        count_one_or_two()
     if "--control-no-vis-test" in argv:
         argv = [a for a in argv if a != "--control-no-vis-test"]
         drlg.border_adj = border_adj_no_vis_test

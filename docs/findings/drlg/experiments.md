@@ -956,7 +956,17 @@
     walk ends: done 56, back at the head 24
   cliff-cover-control-no-vis-test.txt    gen: 513215 checks, 22600 mismatches; nodes made 1359, 948 for an empty slot
   ```
-  Conclusion: [drlg/0008 § Plan 0064 statements](0008-outdoor.md#plan-0064-statements-2026-11-10) (a) and (d).
+  Review addition (2026-11-10, the `lane/n64r` review): `tools/cliff_cover.py` revision 2 (sha256 `55d92554ee7b6a53…`)
+  adds `--count-one-or-two`, which counts `A1PlaceOneOrTwo`'s branches for its `s` = 1 calls from the defs the model
+  hands `place_near` (the model is not changed); without the flag its output is the kept `cliff-cover.txt` line for
+  line (re-run at the review: 572 211 checks, 0 mismatches, every counter equal). Command:
+  `python3 -I tools/cliff_cover.py --count-one-or-two <the 11 logs>` → `workspace/logs/n64r/one-or-two-count.txt`
+  (added to the manifest). Observed:
+  ```
+  one-or-two-count.txt                   gen: 572211 checks, 0 mismatches
+    one_or_two s=1: calls 100; r & 3 == 0 (Near(d) twice) 26; else branch 74, of which Near(49) 34
+  ```
+  Conclusion: [drlg/0008 § Plan 0064 statements](0008-outdoor.md#plan-0064-statements-2026-11-10) (a), (c) and (d).
 
 ## run:2026-10-15-acts-3-5
 
