@@ -489,3 +489,24 @@ Wiki: monsters (the load-time counts), levels (the outdoor steps not yet in a fi
 rows of monsters/pool, drlg/outdoor and conformance rewritten. Tags: monsters/pool C 102 / I 22 / L 4, drlg/outdoor C 184 /
 I 23 / L 3, conformance C 22 / I 38 / L 2. No Reimplementation note added or renumbered (quirks unchanged). Review: Tier A.
 Next: Phase 4 part 3 (outdoor items 1–4 and warps-border-adj) after n64r; then Phase 5 for S3 and S4.
+
+**2026-11-10, Phase 4 part 2 review (`lane/n64x`, Tier A, architect): accept with fixes (3).** Main had not moved
+since the branch point (no merge). Promotion re-check of the new `[C]`s: H0's zeros (r2 `pxw` at 0x006F1258 reads
+rows 6–14 as `{2, 0, 0, …}`, and every logged `O.flags` window matched with those values: **ruling (a), `[C]` stands**);
+G4's stride (drlg/0008 § 7, `srcX = (g.w + 1)(v + 1)`, every logged stamp reproduced); J2a (`RectGap` read at
+0x0066B800–0x0066B840, drlg/0006 § 2 and drlg/0007 § 3); C's within-side order; pool B3's 136 regions, C1's
+load-time counts (tables/Levels no-column row, monsters/0001 § 3) and D1's table survey (MonStats `MonStatsEx` 0..603
+in 734 rows, `monstats2` 609). Anchors spot-checked with r2: `g_nLevels` = 0x0096BC30 + 0xC5C = 0x0096C88C and the build's
+bound at 0x00547A19; `MonSpawnTry`'s inline lookup at 0x005B2A66/0x005B2A72/0x005B2A8B (ruling (c): D1 cites it rightly,
+and `MonStats2Rec` itself tests the same two bounds plus the class; the r2 reading is added to the entry as a lead);
+`A1Paths`' `je 0x681477` at 0x0068145B skips `A1PathJitter` (0x00681472) on a failed search. Each fix names what the
+clean-room implementer could not know and cites its finding. Fixes: (1) under-claim, **ruling (b) overruled**: H6's
+"a failed search makes no draw" raised to `[C]`; the map-seed-45 Black Marsh failure (drlg/0008 § H5e) was followed by
+the remaining roads' jitter and level 6's waypoint and shrine draws, all matched (0 mismatches over the batch) by a
+model that makes no draw for the failed road, so one extra `Step` would have shown; the two bullets merged, drlg/outdoor
+C 184 / I 22 / L 3. (2) overclaim: F1's new "no such cell: on to the shuffle" comment sat under F1's `[C]` header with
+no case behind it; now marked as read from the code, pointing at its `[I]` step note. (3) misread: H0's "no level has
+id 0" (level 0 is *Null*) now says `L` is an Act I `DrlgType` 3 level, never level 0. Noted, no fix: wiki/levels lists
+Act I's cliff-marking rule among the steps not yet written, which drlg/outdoor H1 does not yet say; part 3 (items 1–4,
+after `lane/n64r`) settles it. Ledger: spec-writer row accept with fixes (Tier A, 3), under-claim 1, overclaim 1,
+misread 1. Plan stays open.

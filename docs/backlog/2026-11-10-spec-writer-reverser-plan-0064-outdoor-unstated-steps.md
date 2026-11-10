@@ -42,3 +42,6 @@ say it. The clean-room S4 implementer's guess is given as a lead where it scored
 - (h) **`LevelAdjInsert` 0x0066B720** (probe row 7): with two or more nodes, where a node that sorts before the head goes
   (drlg/0008 § Plan 0038 batch S4a says only that the quirk skips the head). Lead: `tools/drlg.py` `adj_insert` walks from
   the second node, inserts before the first node the new one sorts before, else appends.
+
+*Architect note (`lane/n64x` review, 2026-11-10):* for (g), r2 `pxw` at 0x006F1258 gives rows 6–14 as
+`{2, 0, 0, dirI, dirNext, flag}`, the zeros the spec writes; only the finding's table needs them printed.

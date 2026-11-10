@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, drlg/overview, drlg/warps]
 consumed_by: [drlg/overview, drlg/warps, drlg/room-tiles, drlg/collision, monsters/spawn, objects]
-tags: {C: 184, I: 23, L: 3}
+tags: {C: 184, I: 22, L: 3}
 updated: 2026-11-10
 ---
 
@@ -564,7 +564,7 @@ F1. OutWaypointPlace(L):                                              [C] (fn:su
         first (x, y), rows outer, with (grid0 & f) and (cell & 0x400):
           clamp (x, y) into 1 … cw − 2 × 1 … ch − 2
           grid0 |= 0x20000; cell |= 0x800; return                    ; waypoint record 1
-                                                                     ; no such cell: on to the shuffle below
+                                                                     ; no such cell: on to the shuffle below (read from the code, step note F1)
       N ← (cw − 2)·(ch − 2);  if N = 0: return
       list ← Shuffle(N, cw − 2)                                      ; 2N level draws
       first (x, y) in list with OutCellFree(x + 1, y + 1): grid0 |= 0x10000; cell |= 0x800   ; waypoint record 0
@@ -692,8 +692,8 @@ flag}`) with (`level` = `L.id` or `level` = 0) and `L.id` ≠ `not1` and `L.id` 
 | 13 | 2 | 0, 0 | (2, 2) → `0x80` |
 | 14 | 2 | 0, 0 | (3, 2) → `0x100` |
 
-[C] Rows 6–14 store 0 in both `not1` and `not2`: no level has id 0, so they exclude nothing, and each of these rows
-applies to level 2 whenever its two sides match (for level 2 with `B.dir[i]` = 0 and `B.dir[i + 1]` = 0, row 6 ORs
+[C] Rows 6–14 store 0 in both `not1` and `not2`: `L` is an Act I level of `DrlgType` 3, never level 0 (*Null*), so they
+exclude nothing, and each of these rows applies to level 2 whenever its two sides match (for level 2 with `B.dir[i]` = 0 and `B.dir[i + 1]` = 0, row 6 ORs
 `0x8`). drlg/0008 § 16.3 prints these cells as "—"; the values are the table's at 0x006F1258 as the reference model reads
 it, the read every § 16 table rests on. (data:g_LinkOutdoorFlags@0x006F1258, fn:sub_00677180_LinkOutdoorFlags@0x00677180,
 run:2026-10-15-drlg-outdoor, [drlg/0008 § 16.3](../../findings/drlg/0008-outdoor.md#163-act-i))
@@ -956,14 +956,16 @@ H6e. A1PathJitter(L, i, path):                                        [C] (fn:su
   path `[s, t]` has no interior vertex and draws only the first `Step`. The jitter's draws were checked one by one, and its
   points through the road tiles of every logged Act I out room (§ M; the 2026-10-15 addendum to the run).
   (fn:sub_00681240_A1PathJitter@0x00681240, fn:sub_00681420_A1Paths@0x00681420, run:2026-10-15-drlg-outdoor)
-- H6. [I] **A failed search makes no draw.** `A1Paths` calls `A1PathJitter` only for a found path (drlg/0008 § 8,
+- H6. [C] **A failed search makes no draw.** `A1Paths` calls `A1PathJitter` only for a found path (drlg/0008 § 8,
   *Roads*: "a found path marks its cells `0x80`, then the jitter draws"; § 16.3, "after a found path"). H6e's first draw
   and its no-path return are the callee's own order: its `Step & 3` precedes its own path test, and that test is never
-  false when `A1Paths` calls it. So a road whose search fails costs no draw, and H6 and H6e agree. (fn:sub_00681420_A1Paths@0x00681420,
-  fn:sub_00681240_A1PathJitter@0x00681240, [drlg/0008 § 8](../../findings/drlg/0008-outdoor.md#8-act-i-levels-27-17-39))
-- [C] A failed road search was reached: in map seed 45's Black Marsh one road's search returns none (2 windows), and the
-  remaining roads and their jitter draws match. (fn:sub_006817D0_A1PathSearch@0x006817D0, run:2026-10-16-sweep-mazes,
-  [drlg/0008 § Plan 0038 batch H5e](../../findings/drlg/0008-outdoor.md#plan-0038-batch-h5e-run2026-10-16-sweep-mazes))
+  false when `A1Paths` calls it. So a road whose search fails costs no draw, and H6 and H6e agree. The case was reached:
+  in map seed 45's Black Marsh one road's search returns none (2 windows), and the model, which makes no draw for that
+  road, matched every later level draw of both windows (the remaining roads' jitter, then the waypoint and shrine passes
+  of level 6): one extra `Step` would have shifted them all. (fn:sub_00681420_A1Paths@0x00681420,
+  fn:sub_00681240_A1PathJitter@0x00681240, fn:sub_006817D0_A1PathSearch@0x006817D0, run:2026-10-16-sweep-mazes,
+  [drlg/0008 § 8](../../findings/drlg/0008-outdoor.md#8-act-i-levels-27-17-39),
+  [§ Plan 0038 batch H5e](../../findings/drlg/0008-outdoor.md#plan-0038-batch-h5e-run2026-10-16-sweep-mazes))
 - [I] Roads with 5 or 6 endpoints have **no stock case**: an Act I road set has at most 4. `A1PathEndpoints` counts one
   endpoint per adjacency node to level 1 or 26, one per seam opening, cave cell and east-river bridge cell. Node endpoints
   and openings together are at most the nodes: a node to level 1 or 26 (a preset) gets no opening, `OutBorderBuild`
