@@ -111,7 +111,7 @@ The conformance cases of [plan 0059](plans/0059-golden-traces.md) in [golden-tra
 kept logs and the reviewed models by `tools/golden.py emit` and kept **local** (`workspace/golden-*.jsonl`, never in git; the
 28-case sample is `docs/formats/golden/sample-v1.jsonl`). Only counts and digests are recorded (`[C]`, by script, 2026-10-30;
 the digest is `golden.py digest`: the header's identity and every case line ordered by id, so the same logs and table set give
-the same digest). Re-emitted 2026-11-10 (plan 0064 P3 triage): every `drop` case gained the killer's magic find as the inputs `killer_mf` and `owner_mf` where the log has them (the case count, the ids and every expected value are unchanged; the digests of the drop parts and of the whole changed, the DRLG and predicted parts did not; before: chain2 `21052352…5c85`, items-chain `746f6408…d3a6`, v1 `d73f29f6…9e08`). Header: `game_exe_sha256` the pinned one; `tables_digest`
+the same digest). Re-emitted 2026-11-10 (plan 0064 P3 triage): the `drop` cases whose log shows the killer's magic find (486 of the 4 040, all `killer_mf`; none `owner_mf`) gained it as the inputs `killer_mf` and `owner_mf` (the case count, the ids and every expected value are unchanged; the digests of the drop parts and of the whole changed, the DRLG and predicted parts did not; before: chain2 `21052352…5c85`, items-chain `746f6408…d3a6`, v1 `d73f29f6…9e08`). Header: `game_exe_sha256` the pinned one; `tables_digest`
 `89c1925940142db03d9e64bd84e4324c6bfbbf652f4ad8ce749104157dec9cc1`.
 
 | Part | Cases | Digest |

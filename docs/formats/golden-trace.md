@@ -159,7 +159,7 @@ Every list is built by `drop_case` from the call's logger lines, `TCR` to `TCEND
 - **`chain.G1.subtc`**: one TC index per `SUB` line, in the order the sub-TCs are entered (pushed); the TC the call starts with (`tc`) is not listed.
 - **`chain.G1.quality`**: one code per `QOUT` line, i.e. per `DropRollQuality` exit, in call order. A pick of a classic throwable that the game
   refunds has rolled first and is listed; a unique or set entry makes no quality roll and is not (its quality is in `chain.G1.item`). A forced quality
-  (`fq` not 0) also logs a `QOUT`, so it would be listed (`tools/tc.py` reads it so; none of the v1 set's 4 040 calls has `fq` not 0).
+  (`fq` not 0) also logs a `QOUT` (the logger's exit point is the join of both paths; `tools/tc.py` expects it), so it would be listed [I]; none of the v1 set's 4 040 calls has `fq` not 0, so no run exercised it.
 - **`chain.G1.item`**: one `[base, quality, unique/set index]` per `CPRE` line (an item hand-off); `count` is the `TCEND` count and `end_seed` its seed.
 - **Input `tc`** is the TC index the resolver is entered with (`TCR`'s `tc`), i.e. the resolver's `t0` of [items/tc § D1](../specs/items/tc.md)
   **after** the caller's level upgrade: there is no upgrade to apply before the draws. (`ilvl` is likewise the resolver's.)
@@ -173,7 +173,7 @@ Every list is built by `drop_case` from the call's logger lines, `TCR` to `TCEND
   owner's is `owner_mf`, never folded into `killer_mf`). Both are inputs of every quality roll of the call, which has one killer, so `emit` requires every logged value of a call to agree
   and every logged `QMF` (the sum the roll uses) to equal `QKMF + QOMF`, and writes **no case** for a call that breaks either (it counts as failed). An input is **absent** when no
   roll read the stat: the call made no quality roll, or the killer is none or of a type above 1 (M1: the magic find is then 0 and the game does not read the stat), or, for `owner_mf`, the killer has no owner.
-  A reimplementation uses 0 for an absent value. In the v1 set 486 of the 4 040 drop cases hold `killer_mf` (472 in 309 expansion cases, 250 in 174 and 215 in 3 classic cases; every killer a player, `killer_type` 0) and none holds `owner_mf` (no call of the set has a roll with an owned killer) (`[C]`, by script).
+  A reimplementation uses 0 for an absent value. In the v1 set 486 of the 4 040 drop cases hold `killer_mf` (the value 472 in 309 expansion cases, 250 in 174 and 215 in 3 classic cases; every killer a player, `killer_type` 0) and none holds `owner_mf` (no call of the set has a roll with an owned killer) (`[C]`, by script).
 - **Context only.** `game_seed`, `killer_type`, `killer_class`, `source_class`, `monster_flags`, `super_unique` and `source_type` identify the call; no step of D–H reads them once
   `tc`, `players`, `party`, `cap`, `killer_mf` and `owner_mf` are given [I]. The inputs the draws use are `tc`, `ilvl`, `unit_seed`, `difficulty`, `expansion`
   (which TC total and entry flags apply), `nonodrop`, `max`, `fq` and the five derived values above. `unit_seed` and `game_seed` are written `low:high`.
