@@ -18,14 +18,15 @@ Two rows, `Composited` and `NonComposited`, each with four percentages named for
 | Column | Observed type / range | `.bin` field | Meaning | References | Tag |
 |---|---|---|---|---|---|
 | `Name` | str, 2 distinct, len <= 13, 0 blank (`Composited`, `NonComposited`) | not compiled | row name; editor text, not in the record | — | [C] shape |
-| `HeartPercent` | int, 0..0, 1 distinct, 0 blank | +0x000 u8 | by name a chance (percent) of a heart drop `[L]`; 0 in both rows | — | [C] layout, [L] meaning |
-| `BodyPartPercent` | int, 0..0, 1 distinct, 0 blank | +0x001 u8 | by name a chance of a body-part drop `[L]`; 0 in both rows | — | [C] layout, [L] meaning |
-| `TreasureClassPercent` | int, 20..20, 1 distinct, 0 blank | +0x002 u8 | by name a chance of a treasure-class drop `[L]`; 20 in both rows | — | [C] layout, [L] meaning |
-| `ComponentPercent` | int, 0..0, 1 distinct, 0 blank | +0x003 u8 | by name a chance of a component drop `[L]`; 0 in both rows | — | [C] layout, [L] meaning |
+| `HeartPercent` | int, 0..0, 1 distinct, 0 blank | +0x000 u8 | by name a chance (percent) of a heart drop `[L]`; 0 in both rows | — | [I] layout, [L] meaning |
+| `BodyPartPercent` | int, 0..0, 1 distinct, 0 blank | +0x001 u8 | by name a chance of a body-part drop `[L]`; 0 in both rows | — | [I] layout, [L] meaning |
+| `TreasureClassPercent` | int, 20..20, 1 distinct, 0 blank | +0x002 u8 | by name a chance of a treasure-class drop `[L]`; 20 in both rows | — | [I] layout, [L] meaning |
+| `ComponentPercent` | int, 0..0, 1 distinct, 0 blank | +0x003 u8 | by name a chance of a component drop `[L]`; 0 in both rows | — | [I] layout, [L] meaning |
 
 ## Interpretation notes
 
-- `[C]` Layout: four `u8` in column order, +0x0..+0x3 (`python3 -I tools/excel_bin.py diff workspace/merged/data/global/excel monitempercent`, 8 of 8 cells match). Only `TreasureClassPercent` is non-zero (20), so its offset (+0x2) is forced by the data; the offsets of the three zero columns are the first fit of `excel_bin.py probe`, an order and width the data cannot separate (a `u16` at +0x0 fits as well). `[I]` column order, because every other table's record follows its `.txt` column order.
+- `[C]` Data: in both records byte +0x2 is 20 and the other three bytes are 0; the four-`u8` layout matches 8 of 8 cells (`python3 -I tools/excel_bin.py diff workspace/merged/data/global/excel monitempercent`).
+- `[I]` Layout: four `u8` in column order, +0x0..+0x3. Only `TreasureClassPercent` is non-zero, so only its start (+0x2) is tied to the data; its width and the offsets and widths of the three zero columns are the first fit of `excel_bin.py probe` (a `u16` at +0x0, or at +0x2, fits as well). Column order is assumed because the other tables' records mostly follow their `.txt` order. The reader settles it (plan 0068 Phase 2 item 1).
 - Both rows are identical except for the name, so a reader that picks a row cannot be told from the data alone.
 - The record count is checked by the full-tier surveys: `excel` (`.bin` count against `.txt` data rows) and `excel_layout` (every `.bin` cell against its `.txt` cell, layout in `tools/excel_layouts.py`) (`python3 -I tools/gate.py --full`).
 

@@ -11,7 +11,7 @@ The seven player classes in class order: Amazon `ama`, Sorceress `sor`, Necroman
 ## Row identity
 
 - `[C]` Rows are addressed by **row index**: 0 Amazon .. 6 Assassin, in the order above. The `Expansion` marker row takes no index: the `.bin` has 7 records for 8 `.txt` rows ([excel-bin.md](../formats/excel-bin.md)), so Druid is index 5 and Assassin 6, as in the d2s class byte (`tools/d2s.py` class list).
-- `[I]` The `.bin` is read only under `-txt`: call site `0x00612833` is in `DATATBLS_LoadCodeLists` ([data/0001 § 3](../findings/data/0001-excel-loader.md#3-what-is-registered-datatbls_loadall-0x00619300), [data/0001 § 4](../findings/data/0001-excel-loader.md#4-record-size-corroboration-all-88-bin-tables)).
+- `[C]` The `.bin` is read only under `-txt`: call site `0x00612833` is in `DATATBLS_LoadCodeLists`, skipped unless `-txt` ([data/0001 § 3](../findings/data/0001-excel-loader.md#3-what-is-registered-datatbls_loadall-0x00619300), [data/0001 § 4](../findings/data/0001-excel-loader.md#4-record-size-corroboration-all-88-bin-tables)); no `DATATBLS_LoadTable` call names it in the four stock-mode runs of [data/0001 § Plan 0038 batch H3b](../findings/data/0001-excel-loader.md#plan-0038-batch-h3b-run2026-10-27-sweep-data-load) (run:2026-10-27-sweep-data-load).
 
 ## Columns
 

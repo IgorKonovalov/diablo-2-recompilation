@@ -25,7 +25,7 @@
 
 ## Interpretation notes
 
-- The record count is checked by the full-tier surveys: the `excel` survey (the `.txt` data row count; there is no `.bin`)`excel_layout` (every `.bin` cell against its `.txt` cell, layout in `tools/excel_layouts.py`) (`python3 -I tools/gate.py --full`).
+- The record count is checked by the full-tier `excel` survey (the `.txt` data row count; there is no `.bin`, so no layout) (`python3 -I tools/gate.py --full`).
 
 ## Open questions
 

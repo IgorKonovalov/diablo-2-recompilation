@@ -27,7 +27,7 @@ The classic-era treasure-class table: 707 rows with `Treasure Class`, `Picks`, `
 ## Interpretation notes
 
 - The game reads [TreasureClassEx](TreasureClassEx.md); nothing in this table feeds a rule. The meaning of the columns is stated in that doc and the item specs, not re-derived here.
-- The record count is checked by the full-tier surveys: the `excel` survey (the `.txt` data row count; there is no `.bin`)`excel_layout` (every `.bin` cell against its `.txt` cell, layout in `tools/excel_layouts.py`) (`python3 -I tools/gate.py --full`).
+- The record count is checked by the full-tier `excel` survey (the `.txt` data row count; there is no `.bin`, so no layout) (`python3 -I tools/gate.py --full`).
 
 ## Open questions
 

@@ -1339,16 +1339,17 @@ LAYOUTS["missiles"] = dict(size=420, fields=[
 ], txt_only={"Missile": "key; the record holds Id (= row index) instead",
              "EOL": "end-of-line marker column; not compiled"})
 
-# ------------------------------------------------------------------ skilldesc: formula columns only
-# Plan 0035 Phase 0 (docs/formats/calc.md). Partial layout: only the s32 offsets into skilldesccode.bin. The record
-# offsets are those of the loader's descriptor read in data/0005 section 1 (plan 0035 Phase 1); excel_bin.py diff and
-# tools/calc_survey.py check them against every record.
+# ------------------------------------------------------------------ skilldesc (288 B)
+# Plan 0035 Phase 0 (docs/formats/calc.md) laid out the s32 offsets into skilldesccode.bin; their record offsets are
+# those of the loader's descriptor read in data/0005 section 1 (plan 0035 Phase 1). Plan 0068 Phase 1 added every other
+# column (docs/tables/SkillDesc.md), found with `excel_bin.py probe`; excel_bin.py diff and tools/calc_survey.py check
+# them against every record. Every .txt column is mapped except `eol`.
 _SDC = "skilldesccode"
 _SD_TXT_A = ([("desctexta%d" % (k + 1)) for k in range(6)] + [("dsc2texta%d" % (k + 1)) for k in range(4)]
              + [("dsc3texta%d" % (k + 1)) for k in range(7)])
 _SD_TXT_B = ([("desctextb%d" % (k + 1)) for k in range(6)] + [("dsc2textb%d" % (k + 1)) for k in range(4)]
              + [("dsc3textb%d" % (k + 1)) for k in range(7)])
-LAYOUTS["skilldesc"] = dict(size=288, partial=True, fields=[
+LAYOUTS["skilldesc"] = dict(size=288, fields=[
     R("skilldesc", 0x000, "skilldesc:skilldesc", "u16"),
     I("SkillPage", 0x002, "u8"), I("SkillRow", 0x003, "u8"), I("SkillColumn", 0x004, "u8"), I("ListRow", 0x005, "u8"),
     I("ListPool", 0x006, "u8"), I("IconCel", 0x007, "u8"),
@@ -1373,7 +1374,8 @@ LAYOUTS["skilldesc"] = dict(size=288, partial=True, fields=[
   + [K("dsc2calcb%d" % (k + 1), 0x0F4 + 4 * k, _SDC) for k in range(4)]
   + [K("dsc3calcb%d" % (k + 1), 0x104 + 4 * k, _SDC) for k in range(7)],
     explain={("desccalcb2", 95): "the cell is one space: no token, so no bytes and the field is -1 "
-                                 "(docs/formats/calc.md, the one non-blank cell with no string)"})
+                                 "(docs/formats/calc.md, the one non-blank cell with no string)"},
+    txt_only={"eol": "end-of-line marker column; not compiled"})
 
 # ------------------------------------------------------------------ skillcalc, misscalc (4 B)
 # Plan 0035 Phase 0 (docs/tables/SkillCalc.md, MissCalc.md). Code lists: the formulas' variable names.

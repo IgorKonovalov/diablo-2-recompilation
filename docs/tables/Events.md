@@ -12,7 +12,7 @@ The 13 event names that item stats and aura skills attach handlers to: `hitbymis
 
 - `[C]` Key column `event`, 13 distinct, none blank; rows are addressed by **row index** 0..12 in file order. No `Expansion` row.
 - `[C]` The `.bin` record is the row index itself (`u16`): record `i` holds `i` (`python3 -I tools/excel_bin.py diff workspace/merged/data/global/excel events`, 13 of 13).
-- `[I]` The `.bin` is read only under `-txt`: call site `0x00612E8E` is in `DATATBLS_LoadCodeLists` ([data/0001 § 3](../findings/data/0001-excel-loader.md#3-what-is-registered-datatbls_loadall-0x00619300), [data/0001 § 4](../findings/data/0001-excel-loader.md#4-record-size-corroboration-all-88-bin-tables)).
+- `[C]` The `.bin` is read only under `-txt`: call site `0x00612E8E` is in `DATATBLS_LoadCodeLists`, skipped unless `-txt` ([data/0001 § 3](../findings/data/0001-excel-loader.md#3-what-is-registered-datatbls_loadall-0x00619300), [data/0001 § 4](../findings/data/0001-excel-loader.md#4-record-size-corroboration-all-88-bin-tables)); no `DATATBLS_LoadTable` call names it in the four stock-mode runs of [data/0001 § Plan 0038 batch H3b](../findings/data/0001-excel-loader.md#plan-0038-batch-h3b-run2026-10-27-sweep-data-load) (run:2026-10-27-sweep-data-load).
 
 ## Columns
 

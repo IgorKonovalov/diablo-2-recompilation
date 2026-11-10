@@ -80,9 +80,13 @@ a possible gap in core area 1. When this plan is done:
 - **What:**
   1. **`MonItemPercent`:** every reader of the loaded table. What decides which row a monster uses (the row names are
      `Composited` and `NonComposited`)? What do the four percentages select at a monster's death or drop, and in what
-     order against `TC_ResolveDrops`? Does any draw happen?
+     order against `TC_ResolveDrops`? Does any draw happen? The reader also settles the record's field widths: the
+     data ties only byte +0x2 (20 in both rows) and the doc's four `u8` are the probe's first fit (P1 review).
   2. **`BodyLocs`, `PlayerClass`, `Events`:** the readers of each column, against the specs that already use them
-     (items/inventory, player/creation, save/d2s, skills/dispatch).
+     (items/inventory, player/creation, save/d2s, skills/dispatch). These three `.bin` files are `-txt`-only in a stock
+     run (data/0001 H3b `[C]`), so the readers to find are of the compiled tables' stored row indices. And `Sounds`: data/0001 § 4
+     lists only the `-txt`-only 2-byte call `0x00659C16`, while its H3b entry says the full table loads in every run;
+     name the call that loads it, or show that only `sub_00481950_SoundTablesLoad`'s text read does (P1 review).
   3. **`Composit`, `Overlay`, `SkillDesc`, `Arena`:** the readers, and whether any column reaches a server-side rule
      (an overlay's timing, a `SkillDesc` calc the server runs, the arena's score). Columns read only by the client are
      named and marked presentation.
@@ -142,3 +146,35 @@ Judgment calls and facts the review should look at:
 4. Layout surprises worth Phase 2's attention: `Sounds.bin` holds only the row index (every other column is text-only); `Events.bin` is just the row index; `MonSounds` convert triples are two `u8` + 2 pad + `s32` skill; `AutoMap`'s four `Type` columns are not in the record; `SkillDesc`'s text-key slots run all `a` parts then all `b` parts.
 
 Left for later phases: every reader (Phase 2 items 1-5), the format docs of the COF bundles, `lut.dn1` and the colour `.dat` files (Phase 3, if Phase 2 finds them read for a rule), and the spec carry-over (Phase 4). The ledger rows for `chars_cof.d2`, `cmncof_a*.d2`, `lut.dn1`, the 72 colour `.dat` files, the two marker files and `a1npc.txt`..`a5npc.txt` say "undescribed" or "not examined" and are Phase 2/3's to close. Review tier: Tier A (code meanings taken from findings, point 3).
+
+### 2026-11-10 — Phase 1 review (architect, Tier A, ADR-0027)
+
+**Verdict: accept with fixes (10), applied in the review commit.** Done when: met. The tables README has a doc for all
+97 basenames (the 4 `*code` docs are the right call, since the Done-when names every basename; `leveldefs` stays in Levels). The ledger's 20 rows and
+every count were recounted over `workspace/merged/` (30 488 files; the `.txt` split 92 + 98, the `.dat` and `.d2` sizes).
+`excel_bin.py diff` re-run on `monsounds`, `overlay`, `automap`, `skilldesc` and `monitempercent`: 0 unexplained;
+`gate --full excel,excel_layout,calc_bytes,calc` green, the baseline unchanged. No doc dumps data (Arena's one row and
+Events' 13 names are the whole of tiny tables, given as identity).
+
+Fixes:
+1. *under-claim:* BodyLocs, PlayerClass and Events said `[I]` "read only under `-txt`". The data/0001 H3b entry raised that to `[C]`
+   (run:2026-10-27-sweep-data-load). They now say `[C]` and cite it.
+2. *overclaim:* Sounds said `[I]` "the `.bin` is not the run-time source". The H3b entry that the doc cites also says "the full `sounds` table loads
+   in every run", and § 4 lists no such call. The 2-byte call is now `[C]`, and the question went to Open questions and Phase 2 item 2.
+   Judgment call 1 is therefore right for BodyLocs, PlayerClass and Events, and open for Sounds.
+3. *overclaim:* MonItemPercent's four-`u8` layout was tagged `[C]`. Only byte +0x2 is tied to the data, and a `u16` at +0x2 fits too. The layout is now `[I]`,
+   and the false "every other table follows its `.txt` order" is corrected (MonSounds does not). Judgment call 3, the widths, is accepted as
+   written up. The widths were added to Phase 2 item 1.
+4. *misread:* Composit said "`COMPOSIT_BuildCofName` … no finding yet". anim/0001 § 2 documents it at `[C]`/`[I]`. That finding names no composit row read.
+5. *wrong anchor:* Composit's `Token` `[I]` had no anchor. It now cites items/0003 (`sub_0065B5E0_CompositRecord`).
+6. *stale cross-reference:* the `skilldesc` layout in `tools/excel_layouts.py` was still `partial=True` under a "formula columns only"
+   comment. It is now a full layout with `eol` as `txt_only`.
+7. *bookkeeping splice:* SoundEnviron, TreasureClass and WeaponClass had two survey sentences run together. The template's `excel_layout` clause
+   also did not apply to a table with no `.bin`.
+8. *omission:* the Phase 2 inputs were in this log only, not in Phase 2's items (archivist rule 9). They are now in items 1 and 2.
+9. *other:* the ledger's "20 kinds (18 extensions and 2 files with none)" now reads as 20 rows.
+10. *other:* the `a1npc.txt` reason rested on the plan's name for the files. The first lines were read at review: UTF-16 text pairing NPC
+    speech `.wav` paths with the spoken lines.
+
+Input for Phase 2: items 1 and 2 as amended. data/0001 § 3 still says "`sounds.bin` is also loaded through the
+table loader (`0x00659C16`)". Its H3b entry supersedes that, and Phase 2 should settle the sentence in the finding.

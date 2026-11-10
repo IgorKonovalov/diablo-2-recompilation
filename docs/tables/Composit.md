@@ -17,12 +17,12 @@ The 16 composite layers of a character or monster that is drawn from separate pa
 | Column | Observed type / range | `.bin` field | Meaning | References | Tag |
 |---|---|---|---|---|---|
 | `Name` | str, 16 distinct, len <= 9, 0 blank | +0x000 char[32] | layer name | — | [C] |
-| `Token` | str, 16 distinct, len <= 2, 0 blank | +0x020 4-char code | two-letter animation token of the layer | — | [C] layout, [I] use as a file-name part |
+| `Token` | str, 16 distinct, len <= 2, 0 blank | +0x020 4-char code | two-letter animation token of the layer | — | [C] layout, [I] the client's layer token ([items/0003](../findings/items/0003-item-graphics.md): `sub_0065B5E0_CompositRecord` reads the rows into the 16 layer tokens) |
 
 ## Interpretation notes
 
 - `[C]` Layout: the ObjMode/MonMode shape: `Name` as a 32-byte string, `Token` as a 4-character code at +0x20, then 16 bytes that are 0 in every record (`unk_024`) (`python3 -I tools/excel_bin.py diff workspace/merged/data/global/excel composit`, 32 of 32 cells; `excel_bin.py unknown` lists only `unk_024`).
-- Readers and what the unit-side animation takes from the table: plan 0068 Phase 2 item 3 (`COMPOSIT_BuildCofName` is named in the plan; no finding yet).
+- Readers and what the unit-side animation takes from the table: plan 0068 Phase 2 item 3. `COMPOSIT_BuildCofName` (`0x0064F5B0`, [anim/0001 § 2](../findings/anim/0001-modes-frames.md#2-records-the-token-the-lookup-and-the-fallback)) builds a record name from the unit's type token, its mode token and the weapon class; that finding names no read of a composit row.
 - The record count is checked by the full-tier surveys: `excel` (`.bin` count against `.txt` data rows) and `excel_layout` (every `.bin` cell against its `.txt` cell, layout in `tools/excel_layouts.py`) (`python3 -I tools/gate.py --full`).
 
 ## Open questions
