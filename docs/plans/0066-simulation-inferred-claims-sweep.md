@@ -156,3 +156,30 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 - **Question 3: (c).** A monsters/ai harness sub-plan for the bestiary tour (H1a to H1d, H1g, H1h; about 214
   statements in about 12 launches), drafted by the architect after S1b is accepted. The other 491 harness rows are
   deferred with their routes kept.
+
+### 2026-11-10 — Phase 1, batch S1a (reverser-static, `lane/n66a`)
+
+- **Done.** The 17 statements of S1a checked over the kept rev 4 (21) and rev 6 (17) AI logs, no game. Record: the dated
+  addendum *plan 0066 batch S1a* under run:2026-11-04-ai-r5 in [findings/ai/experiments.md](../findings/ai/experiments.md);
+  outputs in `workspace/logs/ai/sweep2-s1a/` (`manifest.sha256`), inputs in `workspace/logs/ai/manifest-sweep2-s1a-inputs.sha256`.
+  Tools (`2172cedd`): `tools/ai_resume_flip.py` gains `--key row|think|rowthink`, `--thinks` and a `FREEPAST` line (the
+  default output reproduces `review-p52c/flip-rows-full.txt` for rows 13 and 21 byte for byte); new `tools/ai_move_refusal.py`
+  for row 516. Every resumed decision flipped (`--cap 1000000`), not a sample.
+- **Result (inventory rows):** raised 10 (19, 22, 25, 55, 141, 149, 157, 164, 326, 506: sentence H1's rule met on their own
+  think's decisions); raised in part 2 (503: S11's 66 fork-free of 134; 516: refusals with flags 0, 4 and 7, while `Walk(t, 1)`,
+  "no idle", flag 1's `0x40` and which bit brings the draw stay `[I]`); moved 5: 76 (row 23: 8 mismatches and one two-way
+  site, 0x005F356C, that separates none of its 21 decisions) a-logs → a-run (H1g); 169, 350 (rows 70 and 118: no fork-free
+  decision) and 197, 200 (rows 78 and 79: the fork-free decisions have no call past the first) a-logs → b (H1h). S1a holds 12
+  statements now; totals a-logs 716, a-run 348, b 362 (inventory README § 1, § 3).
+- **Surprise.** The catalogue `r` lines' "an unknown value deciding N of M later steps" counts calls with several offers, not
+  branch steps on an unknown, so it does not pick the fork-free rows: rows 70 and 118 say 0 and fork in every decision. The
+  inventory helper's S1a selection rested on that figure; S1m to S1z (machinery tier cases) may hold the same.
+- **Ready for Phase 3 (spec-writer), monsters/ai/catalogue at `b5999f5e` line numbers:** 152 (R3r), 187 (R4r), 220 (R5r),
+  483 (R15r, think 0x005F1800 only), 1272 (R52r), 1352 (R63r), 1404 (R65r), 1456 (R68r), 3117 (R96r), 4604 (S12r) to `[C]`
+  under sentence H1, each a row of README H1's table (decisions, calls past the first, two-way sites as in the addendum);
+  4583 (S11r) and 4687 (the refused-move note) split, the raised half `[C]`, the rest `[I]` as the inventory rows say. No
+  symbol is raised (H1 raises none; `MonAiMove` is not a boundary).
+- **Review:** Tier B (plan Phase 1), with the audit rule. Judgment calls to check: (1) S11 and S12 counted by think across
+  rows (`--key think`), not by row; (2) row 23 moved rather than raised on the rev 6 logs alone, since 0x005F356C fails the
+  rule over all 500 fork-free decisions; (3) 516's raised half names the helper's logged word, with the helper-to-flags map
+  kept `[I]` (three code reads).
