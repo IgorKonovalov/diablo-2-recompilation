@@ -1,6 +1,6 @@
 # Plans index
 
-Next free number: **0064**
+Next free number: **0068**
 
 Lane runs (agent usage, review verdicts, fix counts by category) are logged in the [lane run ledger](metrics.md).
 
@@ -69,6 +69,10 @@ Lane runs (agent usage, review verdicts, fix counts by category) are logged in t
 | [0061](0061-message-catalogue.md) | Client–server message catalogue: every in-game message both directions, its fields, its handler or send condition | approved | **approved by the owner 2026-10-30 (as recommended); scope [ADR-0026](../adrs/0026-scope-in-game-message-layer.md) accepted**; drafted 2026-10-30 (`lane/plans57`), rank 5; recommended after 0055·P3; P1 three static batches, P2 one short slot (gdb capture), P3 spec (row `net/messages`), P4 wiki |
 | [0062](done/0062-debug-and-cut-content.md) | Debug and cut content: developer switches and command-line options, and the table rows and code no stock path reaches | done | **closed 2026-11-04**; approved by the owner 2026-10-30 (as recommended); P1 to P3 accepted; drafted 2026-10-30 (`lane/plans57`), rank 6 (low priority); P1 reverser static (switches), P2 archivist (unreached rows), P3 spec-writer (behaviour-changing switches into their specs); no slot |
 | [0063](0063-backlog-sweep-7.md) | Backlog sweep 7: the slot-free entries left after plans 0052 to 0060 | approved | **approved by the owner 2026-11-10, not started**; drafted 2026-11-10 from the architect's backlog triage; ten entries, no slot; P1 archivist, P2a and P2b reverser static, P3 spec-writer |
+| [0064](0064-clean-room-test.md) | Clean-room test: implement the chain from the specs alone and score it on the golden traces (ADR-0032) | draft | drafted 2026-11-10 (architect); waits for the owner and ADR-0032; no slot; slices S1 seeds, S2 drops, S3 pools, S4 DRLG |
+| [0065](0065-harness-sweep-8.md) | Harness sweep 8: the backlog's live cases in one batch per slot plan | draft | drafted 2026-11-10 (architect); waits for the owner; six entries, P1 one slot, P2 both slots (two clients) |
+| [0066](0066-simulation-inferred-claims-sweep.md) | Inferred-claims sweep 2: the simulation and game-rules specs (2 626 `[I]`) | draft | drafted 2026-11-10 (architect); waits for the owner (order with 0038, harness threshold) |
+| [0067](0067-player-trade.md) | Player trade: the trade state machine, its commit and its failures (ADR-0033) | draft | drafted 2026-11-10 (architect); waits for the owner and ADR-0033; ranked last of the four |
 
 ## Run order (set 2026-10-25, plans 0038–0052)
 

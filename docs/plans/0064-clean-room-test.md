@@ -1,0 +1,120 @@
+# 0064 — Clean-room test: implement the chain from the specs alone and score it on the golden traces
+
+> **Status:** draft (2026-11-10, architect; waits for the owner's approval and for ADR-0032)
+> **Created:** 2026-11-10
+> **Owner skill(s):** human, archivist, none (clean-room implementer, ADR-0032), architect, spec-writer
+> **Related ADRs:** 0001-target-toolchain-evidence-sources, 0023-review-tiers-and-gate-first-fixes, 0032-clean-room-implementation-test
+
+## TL;DR
+
+**Question:** can someone who has only `docs/specs/`, `docs/tables/`, `docs/formats/` and the game's own tables
+reproduce what the golden traces expect? Where they cannot, which spec sentence failed them? Fresh agents with no
+project knowledge implement four slices of the core chain in a sandbox (ADR-0032), and `tools/golden.py check` scores
+each one against plan 0059's v1 set. When this plan is done, each slice has a first-pass score (before the
+implementer saw any check output) and a final score, and `docs/plans/0064-cleanroom/` holds the gap ledger. Every
+ledger row is triaged, and the spec defects among them are fixed in the specs. A second fresh implementer then
+reaches 0 mismatches on the fixed fields, or the remainder is named. No code enters git.
+
+## Context
+
+- **Why now.** Every research-map row the slices touch is `reviewed`. Plan 0059 Phases 1 to 3 are accepted: the format
+  ([fmt:golden-trace](../formats/golden-trace.md)), `tools/golden.py` (`emit`, `check`, `digest`), the v1 set of 5 073
+  cases and the [conformance page](../specs/conformance/README.md), which maps every field to the spec section it tests.
+- **The slices**, smallest first, each a set of golden field prefixes and the specs that should suffice:
+
+  | Slice | Fields (`--fields`) | Specs the implementer should need |
+  |---|---|---|
+  | S1 seeds | `chain.A`, `chain.B` | rng, rng/seeds, chain § A–B, data/excel (Levels) |
+  | S2 drops | `chain.G1` | items/tc, items/quality, data/excel, rng |
+  | S3 pools | `monsters.pool` | monsters/pool, data/excel, rng/seeds |
+  | S4 DRLG | `drlg.maze`, `drlg.outdoor` | drlg/overview, drlg/maze, drlg/outdoor, drlg/preset, drlg/room-tiles, formats ds1 and dt1 |
+
+- **Observed and predicted.** Only observed fields test the specs against the game. Predicted fields (S3, and parts of
+  S1) test the specs against the project's own model, so a mismatch there may be the set's fault. The ledger records
+  the case kind of each row.
+- **Measure.** The first-pass score is the main result: the implementer writes the slice from the specs and runs the
+  check once. Afterwards it may iterate, but every change after the first check must cite the spec sentence it now
+  reads differently. A change it cannot tie to a sentence is a ledger row ("guessed from the diff"), not a fix.
+
+## Phases
+
+### Phase 0 — Accept ADR-0032
+- **Owner skill:** human
+- **What:** the owner accepts, amends or rejects ADR-0032 (a clean-room lane outside the four skills; code in
+  `workspace/cleanroom/`, gap ledger in git).
+- **Done when:** ADR-0032's status is `accepted` (or the plan is abandoned).
+
+### Phase 1 — The sandbox
+- **Owner skill:** archivist (no Ghidra, no slot)
+- **What:** `tools/cleanroom.py` with these commands:
+  - `make SLICE` builds a sparse worktree holding only `docs/specs/`, `docs/tables/`, `docs/formats/` and
+    `docs/glossary.md`. It adds `workspace/cleanroom/<slice>/data/` with the extracted excel tables (and, for S4,
+    the DS1 and DT1 files the slice needs), and `workspace/cleanroom/<slice>/cases.jsonl` with the slice's cases, inputs
+    only (expected fields stripped).
+  - `score SLICE CANDIDATE` runs `golden.py check --fields` for the slice's prefixes against the full set.
+  - `audit TRANSCRIPT` lists every path the lane read outside its allow-list.
+  - Also write the clean-room lane's standing brief (`docs/plans/0064-cleanroom/brief.md`): the rules of ADR-0032,
+    the measure above, and the ledger's columns (slice, case kind, field or spec section, what was missing or
+    ambiguous, what the implementer guessed, first-pass or later).
+- **Outputs:** `tools/cleanroom.py`, its no-game tests, `docs/plans/0064-cleanroom/brief.md`.
+- **Done when:**
+  - `make S1` builds a tree in which `docs/findings`, `re`, `tools`, `.claude` and `Game.exe` are absent.
+  - `cases.jsonl` has no expected field.
+  - `score` on the project's own `chain.py gen` output gives 0 mismatches for S1.
+  - `audit` flags a planted read of `docs/findings/`.
+  - Review: Tier B.
+
+### Phase 2 — Clean-room runs
+- **Owner skill:** none (clean-room implementer, ADR-0032); one fresh agent per slice, Opus, briefed by the brief and
+  the slice's row only
+- **What:** each lane implements its slice in any language inside `workspace/cleanroom/<slice>/`, writes the candidate
+  output in the golden format ([fmt:golden-trace](../formats/golden-trace.md)), runs `score` once (first pass), may
+  iterate under the measure's rule, and writes its ledger file `docs/plans/0064-cleanroom/<slice>.md`. Slices S1 and
+  S2 run first, in parallel. S3 and S4 follow, so that S1's and S2's triage can fix shared specs (rng, data/excel)
+  before them.
+- **Outputs:** the four ledger files (in git), the code and candidate outputs (in `workspace/`, never in git).
+- **Done when:** each slice has a ledger with its first-pass and final scores per field prefix, and every mismatch and
+  guess is a row. `cleanroom.py audit` on the lane's transcript is clean. A lane that fails the audit is void and
+  re-run.
+
+### Phase 3 — Triage
+- **Owner skill:** architect
+- **What:** classify every ledger row into one of four classes:
+  - spec defect (missing, ambiguous or wrong sentence);
+  - missing finding (the spec states the gap honestly, but nothing fills it);
+  - golden-set defect (a wrong or underspecified expected value, or a predicted field the model gets wrong);
+  - implementer error (the spec was clear).
+
+  Where a row is disputed between spec defect and implementer error, a second fresh implementer re-reads only that
+  spec section and answers the one question. Spec defects go to the spec-writer as one backlog entry per spec, missing
+  findings to the reverser, golden-set defects to the archivist.
+- **Outputs:** a triage column in each ledger file; the backlog entries.
+- **Done when:** every row has a class and, unless it is an implementer error, a backlog entry. The triage is
+  delivered as a Tier A review of the Phase 2 ledgers.
+
+### Phase 4 — Spec fixes
+- **Owner skill:** spec-writer
+- **What:** apply the spec-defect entries. Each fix states what the implementer could not know and cites the existing
+  finding that already holds the answer. A fix that would need a new finding waits for the reverser's entry instead.
+- **Outputs:** the specs named in the entries, their wiki pages where a restated sentence changed.
+- **Done when:** every spec-defect entry is closed or routed. Review: Tier A.
+
+### Phase 5 — Re-run
+- **Owner skill:** none (clean-room implementer, ADR-0032)
+- **What:** for each slice with fixed specs, a **new** fresh agent (not the Phase 2 one) implements only the fields
+  whose rows were spec defects, from the fixed specs, under the same sandbox and measure.
+- **Done when:** the fixed fields reach 0 mismatches on the first pass, or every remaining one is a new ledger row
+  that Phase 3's rules triage. The plan's review records the per-slice first-pass scores before and after, and the
+  plan closes.
+
+## Open questions
+
+- Whether S4 (DRLG) is in this plan or a follow-up. It needs the DS1 and DT1 readers to be built from `docs/formats`,
+  which is a large job on its own. Recommended: in, but last, and cut first if S1 and S2 cost more than estimated.
+- Whether the simulation events (plan 0059 Phase 4, v2) get a clean-room slice. Not until v2 exists.
+- Model for the implementer: Opus by default. A Sonnet re-run of one slice would show whether a weaker reader needs
+  more from the specs, but it is not required.
+
+## Implementation log
+
+_(lanes append dated entries as phases land: what was found, the confidence reached, surprises)_

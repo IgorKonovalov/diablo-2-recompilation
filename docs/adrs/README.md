@@ -1,6 +1,6 @@
 # ADR index
 
-Next free number: **0032**
+Next free number: **0034**
 
 | # | Title | Status |
 |---|---|---|
@@ -35,3 +35,5 @@ Next free number: **0032**
 | [0029](0029-import-slots-and-import-boundaries-in-emulation.md) | Imports in emulated reproduction: a declared stand-in in an import slot, and a stop at an import's call (amends 0015, 0021) | accepted (owner, 2026-11-04) |
 | [0030](0030-verdict-lanes-and-wiki-tier-a.md) | Verdict lanes and wiki lanes take the full review instead of the lane check (amends 0023) | accepted (owner, 2026-11-04) |
 | [0031](0031-constants-of-the-code-image.md) | Constants of the code image: a short table with its address and reader only where no exact rule gives it; every rule written as a rule and checked by a survey (amends 0009) | accepted (owner, 2026-11-04) |
+| [0032](0032-clean-room-implementation-test.md) | A clean-room implementation test of the specs: a lane outside the four skills implements a slice from the specs alone, its code stays in `workspace/`, its gap ledger enters git | proposed (plan 0064) |
+| [0033](0033-scope-player-trade.md) | Scope: the player-to-player trade, row `items/trade` (amends 0025) | proposed (plan 0067) |
