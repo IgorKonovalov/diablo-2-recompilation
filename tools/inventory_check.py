@@ -3,6 +3,7 @@
   python3 -I tools/inventory_check.py prior OUT.prior                    # a-priori potion table, before any session
   python3 -I tools/inventory_check.py predict OUT.pred LOG [LOG ...]    # inputs only: GDI windows, IPG items, SWP frames
   python3 -I tools/inventory_check.py check OUT.pred LOG [LOG ...] [--wrong CTL]
+  python3 -I tools/inventory_check.py spots LOG [LOG ...]                # the ground searches' live separation per spot
   python3 -I tools/inventory_check.py selftest                          # no-game tests (also tools/test_inventory_check.py)
 
 `predict` reads only the lines a case's INPUTS are (GDI, IPG, DCI's item before its first sweep, the SWP frame list) and
@@ -601,10 +602,94 @@ def prior_expiry():
     return out
 
 
+CALLERS = {0x00563C9B: "chain", 0x0055A5B2: "drop"}      # GDI ret: CursorDrop (a player's drops in place), DropCreateItem
+STATEMENTS = (("start (x + 2, y + 3) when the room or its near list holds it", ("nooffset", "offset32")),
+              ("the item bit 0x200 in the cell mask, not the walk mask", ("noitembit",)),
+              ("the walk is tested, with 0x801", ("noline", "linecellmask")),
+              ("a ring's lowest distance, the earliest of equals; side columns before end rows", ("first", "leq", "capsfirst")),
+              ("the base room moves", ("fixedbase",)))
+
+
+def ring_class(r):
+    return "start" if r == 0 else ("ring %d" % r if r <= 3 else "ring 4+")
+
+
+def spots(logs):
+    """Plan 0063 Phase 2b (backlog items 0014-0016 wording): the live separation of each ground-search statement, per
+    case and per spot. A spot is a group of searches that are not independent: a player's drops in place (CursorDrop,
+    the same log and position: each drop's mark is an input of the next) or one DropCreateItem position. For each
+    control (a wrong reading) it counts the cases it fails and the spots where it fails at least one case, by caller
+    kind and by the ring the observed cell is in. Recomputes the main prediction too (0 mismatches expected)."""
+    fld = field()
+    rows, mism, offset_held = [], 0, 0
+    for lg in logs:
+        ev = parse(lg)
+        name = os.path.basename(lg)
+        for i, (t, e) in enumerate(ev):
+            if t != "GDI":
+                continue
+            go = next((d for tt, d in ev[i + 1:] if tt == "GDO"), None)
+            obs = (go["room"], go["x"], go["y"])
+            pred = search(e, fld)
+            mism += tuple(pred) != obs
+            rooms = build_rooms(e["z"])
+            held = ii.room_at(rooms[e["room"]], e["x"] + 2, e["y"] + 3) is not None
+            offset_held += held
+            kind = CALLERS.get(e["ret"], "other %08x" % e["ret"])
+            ctl = {}
+            for c in CONTROLS:
+                try:
+                    ctl[c] = tuple(search(e, fld, c)) != obs
+                except OutOfWindow:
+                    ctl[c] = None
+            rows.append({"log": name, "kind": kind, "spot": (name, kind, e["x"], e["y"]), "ring": ring_of(e, obs),
+                         "held": held, "ctl": ctl})
+    spot_ids = sorted({r["spot"] for r in rows})
+    by_kind = {}
+    for s in spot_ids:
+        by_kind.setdefault(s[1], []).append(s)
+    print("ground searches: %d over %d log(s); main prediction mismatches: %d; offset start's room held in %d of %d" % (
+        len(rows), len(logs), mism, offset_held, len(rows)))
+    for k, ss in sorted(by_kind.items()):
+        print("  %s: %d searches at %d spots" % (k, sum(r["kind"] == k for r in rows), len(ss)))
+    print("  rings reached: %s" % ", ".join("%s %d" % (c, sum(ring_class(r["ring"]) == c for r in rows))
+                                          for c in ("start", "ring 1", "ring 2", "ring 3", "ring 4+")))
+    print("\nspots (log, caller, x, y): searches; rings start/1/2/3/4+")
+    for s in spot_ids:
+        rr = [r for r in rows if r["spot"] == s]
+        rc = [sum(ring_class(r["ring"]) == c for r in rr) for c in ("start", "ring 1", "ring 2", "ring 3", "ring 4+")]
+        print("  %s %s (%d, %d): %d; %s" % (s[0], s[1], s[2], s[3], len(rr), "/".join(map(str, rc))))
+    logs_n = [os.path.basename(x) for x in logs]
+    print("\ncontrol: cases failed per log (%s) | undecided | spots failed per caller | fails by observed ring"
+          % ", ".join(logs_n))
+    for c in CONTROLS:
+        per_log = [sum(1 for r in rows if r["log"] == n and r["ctl"][c]) for n in logs_n]
+        und = sum(1 for r in rows if r["ctl"][c] is None)
+        sp = {k: sum(1 for s in ss if any(r["ctl"][c] for r in rows if r["spot"] == s)) for k, ss in by_kind.items()}
+        ring = {}
+        for r in rows:
+            if r["ctl"][c]:
+                ring[ring_class(r["ring"])] = ring.get(ring_class(r["ring"]), 0) + 1
+        print("  %-12s %s of %s | %d | %s | %s" % (
+            c, ", ".join(map(str, per_log)), ", ".join(str(sum(r["log"] == n for r in rows)) for n in logs_n), und,
+            ", ".join("%s %d of %d" % (k, sp[k], len(by_kind[k])) for k in sorted(sp)),
+            ", ".join("%s %d" % kv for kv in sorted(ring.items())) or "-"))
+    print("\nstatement: spots where at least one of its controls fails (chain spots, drop positions)")
+    for what, cs in STATEMENTS:
+        sp = {k: sum(1 for s in ss if any(any(r["ctl"][c] for c in cs) for r in rows if r["spot"] == s))
+              for k, ss in by_kind.items()}
+        print("  %s [%s]: %s" % (what, ", ".join(cs), ", ".join("%s %d of %d" % (k, sp[k], len(by_kind[k]))
+                                                                for k in sorted(sp))))
+    return rows, mism
+
+
 def main(argv):
     if not argv:
         print(__doc__)
         return 2
+    if argv[0] == "spots":
+        _rows, mism = spots(argv[1:])
+        return 1 if mism else 0
     if argv[0] == "prior":
         with open(argv[1], "w") as f:
             for r in prior():
