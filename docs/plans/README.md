@@ -1,6 +1,6 @@
 # Plans index
 
-Next free number: **0063**
+Next free number: **0064**
 
 Lane runs (agent usage, review verdicts, fix counts by category) are logged in the [lane run ledger](metrics.md).
 
