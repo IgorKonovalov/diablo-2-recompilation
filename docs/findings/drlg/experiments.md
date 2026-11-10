@@ -939,6 +939,24 @@
   ```
   Conclusion: [drlg/0008 § Plan 0038 batch S4a](0008-outdoor.md#plan-0038-batch-s4a-2026-10-16) and
   [drlg/0003 § Plan 0038 batch S4a](0003-generator-dispatch.md#plan-0038-batch-s4a-2026-10-16).
+- **Addendum 2026-11-10: plan 0064, `A1CliffMark` from the code and `LevelBorderAdj`'s `Vis ≠ 0` control (static, no new
+  session; `lane/n64r`).** `tools/cliff_cover.py` (sha256 `0c067005a581c76d…`) replaces `tools/drlg.py`'s
+  `Outdoor.a1_cliff_mark` (`drlg.py` sha256 `5733a4767b93cab2…`, unchanged) with a transcription written from the
+  disassembly of 0x00680070 (each test labelled with its instruction address) and counts each branch; with
+  `--control-no-vis-test` it also drops `border_adj`'s `Vis ≠ 0` test. Logs: the 11 of this record. Commands:
+  `python3 -I tools/cliff_cover.py <the 11 logs>` → `workspace/logs/n64r/cliff-cover.txt`; the same with
+  `--control-no-vis-test` → `workspace/logs/n64r/cliff-cover-control-no-vis-test.txt`; manifest
+  `workspace/logs/n64r/manifest.txt` (`sha256sum -c` passes from that directory). Observed:
+  ```
+  cliff-cover.txt                        gen: 572211 checks, 0 mismatches
+    walks 80 (levels 4-7, 20 windows each); start tests 176; run starts: left then up (B) 56, up then right (A) 14;
+    run starts at the ring head 56; run reaches the ring head (done) 56; runs marked 38, with no corner 32;
+    last set: up then right (D) 24, right then down (C) 22; vertices typed 1 46;
+    run ends: n seam 48, segment goes down 22 (segment goes left, w seam, back at its start: 0);
+    walk ends: done 56, back at the head 24
+  cliff-cover-control-no-vis-test.txt    gen: 513215 checks, 22600 mismatches; nodes made 1359, 948 for an empty slot
+  ```
+  Conclusion: [drlg/0008 § Plan 0064 statements](0008-outdoor.md#plan-0064-statements-2026-11-10) (a) and (d).
 
 ## run:2026-10-15-acts-3-5
 

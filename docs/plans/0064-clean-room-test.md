@@ -390,7 +390,7 @@ Rulings on the rows the orchestrator named:
 
 Backlog entries filed (5) and annotated (1):
 
-- reverser: [drlg-outdoor-statements](../backlog/2026-11-10-architect-reverser-plan-0064-drlg-outdoor-statements.md):
+- reverser: [drlg-outdoor-statements](../backlog/archive/2026-11-10-architect-reverser-plan-0064-drlg-outdoor-statements.md):
   (a) `A1CliffMark`'s rule, (b) `g_A1SearchDx` corrected, (c) `A1PlaceOneOrTwo`'s branches, (d) `LevelBorderAdj`'s `Vis ≠ 0`
   test. Static only. S4 rows 6, 13–16.
 - archivist: [drlg-cases-and-pool-conventions](../backlog/2026-11-10-architect-archivist-plan-0064-drlg-cases-and-pool-conventions.md):
