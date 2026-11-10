@@ -271,3 +271,21 @@ questions*; the diagrams add no claim; the items/inventory note is dated.
 - **Gates.** `tools/quirks.py check`: 538 entries, 0 errors. `tools/gate.py --full`: green.
 - **Ledger** (for the orchestrator's row): accept with fixes; overclaim 2, misread 1, tool not kept 1, omission 1,
   stale cross-reference 1. Next: Phase 4, the wiki section (spec-writer).
+
+### 2026-11-10 — Phase 4 (the wiki section), `lane/n67w`
+
+**Done** (no Ghidra, no slot, no game). [wiki/inventory](../wiki/inventory.md) gains `## Trading between players`
+from [items/trade](../specs/items/trade.md) (reviewed, `updated: 2026-11-10`, added to `based_on`): how a trade opens,
+offers and what locks, gold, both accepts (state diagram), the commit (flow diagram; the first-fit room test against the
+best-spot moves, both directions, T13 as the worked table), the snapshot undo, every way out (table), the save
+mid-trade. Each statement says whether a case of run:2026-11-10-trade reached it ("seen", with the run's scope stated
+at the top of the section) or it is read from the code; the T13 tick mismatch is named as an open question.
+Stale text closed: the page's intro ("trading … out of scope"), the "Trading is not specified" line of *What is not
+known yet* (now three trade bullets from the spec's open questions), the pages paragraph, *Random draws* (a row: the
+trade's copies' draws unknown), *Where to read more*; wiki/README's row 9 and its coverage paragraphs.
+
+**Judgment calls for the reviewer.** (1) "Seen" in the trade section means the trade run, defined there; the page's
+*How sure* table, which describes the two item runs, gets a one-line pointer instead of a third row. (2) Message codes,
+button numbers and state numbers are left out; states are named in words (open, accepted, changed, locked, ended).
+
+**Handoff.** Review: **Tier A** (ADR-0030, wiki lane); the review closes the plan.

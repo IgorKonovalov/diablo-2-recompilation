@@ -2,15 +2,17 @@
 based_on:
   - docs/specs/items/use.md 2026-11-04
   - docs/specs/items/inventory.md 2026-11-10
+  - docs/specs/items/trade.md 2026-11-10
 ---
 
 # Using items, and the inventory
 
 This page explains what the server does when a player uses an item (drinks a potion, reads a scroll, opens the cube),
 where an item can go (the inventory, the stash, the belt, the cursor, the ground), how pickup and drop work, and how
-long an item then lies on the ground. It restates two reviewed specs: [item use](../specs/items/use.md#purpose) and
-[inventory](../specs/items/inventory.md#purpose). They describe the server's outcomes in game frames. What the screen
-shows, trading between players and the cube's recipes are out of scope; the cube's transmute is on the
+long an item then lies on the ground, and how two players trade. It restates three reviewed specs:
+[item use](../specs/items/use.md#purpose), [inventory](../specs/items/inventory.md#purpose) and
+[trade](../specs/items/trade.md#purpose). They describe the server's outcomes in game frames. What the screen shows and
+the cube's recipes are out of scope; the cube's transmute is on the
 [other item paths](items-other-paths.md#the-horadric-cube) page.
 
 ## How sure each statement is
@@ -26,6 +28,9 @@ because the two runs of the real game were small.
 | **Emulated** | The game's own code run in an emulator on made-up inputs, and compared bit for bit with the project's model ([how we know](how-we-know.md)). It shows what the code does with the bytes it is given. | It is not a game. It says nothing about which inputs a game produces. Many runs stop at a named call into another function, and what is after that call is not covered. |
 | **Read from the code** | The instructions were read, and nothing ran. | It can be wrong in ways no run has checked. |
 | **Unknown** | Named under [What is not known yet](#what-is-not-known-yet). | |
+
+The trade between players has its own run, of two clients in one game; [its section](#trading-between-players) says what it
+covered.
 
 Two further limits keep coming back. The gate in front of every request stops, in the emulator, at a call into the
 operating system; nothing after it is evidenced. And the whole stretch from a handler to the end of its callees was
@@ -190,7 +195,7 @@ heal and not seen in a game (the 17 uses had no golem).
 
 An item sits in a unit's **inventory** in one of five modes ([§ A](../specs/items/inventory.md#a-pages-and-rows),
 read from the code): on a page, on the body, in the belt, on the ground or on the cursor. A player has pages for the
-inventory, the cube, the stash and two for trading.
+inventory, the cube, the stash and two for [trading](#trading-between-players).
 
 - **The stash is 6 wide and 8 high in an expansion game, and 6 by 4 in a classic one. Emulated:** 400 cases.
 - A page is created on its first use from the size given then. A later request with another size returns nothing, so
@@ -427,6 +432,229 @@ An item on the ground has an **expiry frame**, or none. There are three lives, w
   whose room went inactive came back with an expiry that was not predicted; the reading above is stated for that
   session as read, because that run did not log its inputs.
 
+## Trading between players
+
+Two players in town can trade: each puts items on an offer page and may offer gold, both accept, and the server
+swaps the offers. Everything here restates the [trade spec](../specs/items/trade.md#purpose). It covers what the server
+does, in game frames and in a few real-time windows; the trade window on the screen is out of scope.
+
+**What "seen" means in this section.** The trade has its own run: two unmodified clients on one machine in one hosted
+expansion game on Normal, driven by an agent, the host's server calls logged and replayed against the spec's rules by a
+checker ([how to read the tags](../specs/items/trade.md#how-to-read-the-tags)). Three kept sessions met 13 planned
+cases; the checker found no mismatch except two timing lines named below. "Seen" means that a case of this run reached
+the branch; it checks the branch on the inputs the run gave, and nothing else. The rest is **read from the code**: the
+instructions were read and no case reached them.
+
+```mermaid
+flowchart LR
+  ask["one player asks,<br/>both in town"] --> open["the other accepts:<br/>the window opens,<br/>each inventory is snapshotted"]
+  open --> offer["items on the offer page,<br/>gold offers"]
+  offer --> acc["both accept"]
+  acc --> commit["the commit:<br/>gold, room, quest items,<br/>then the moves and the gold"]
+  commit -->|"every test passes"| done["exchange: the window closes"]
+  commit -->|"a test fails"| cancel["both inventories put back,<br/>the window stays open, empty"]
+  offer -->|"close, leave, die"| out["both inventories put back,<br/>the window closes"]
+```
+
+### How a trade opens
+
+A trade starts when one player interacts with another ([§ B](../specs/items/trade.md#b-the-request)).
+
+- **Read from the code:** within a distance of 8 (in the game's own units) the request is made at once; from 9 to 50 the player walks
+  to the other first; farther than 50 nothing happens.
+- **Read from the code:** nothing happens if the asking player is busy (talking to someone, holding an item on the
+  cursor) or either player is already in a trade.
+- **Seen:** if the other player is busy, the asker gets a message naming them and nothing moves; in the run the other
+  player was in Deckard Cain's menu. The messages to one asker are spaced at least one second apart (that spacing is
+  read from the code).
+- **Seen:** within five seconds after the other player's last trade ended, the asker gets a message naming them, and
+  nothing opens; in the run the request came 80 frames after a close. The asker's own five-second window gives the same
+  message without a name (read from the code).
+- **Both players must be in town.** Every request that opened in the run was in town; the refusal outside town was
+  not reached (the run had no route out of town), so it is read from the code. There is no hostility test of the
+  request's own (read from the code).
+
+When the request passes, the asker is waiting and the other player is asked. When the asked player accepts, both are in
+an open trade, and the server makes a trade record for each: a **snapshot** of the whole inventory (in the save file's
+item format, by the reading), and the gold carried at that moment, with no gold offered yet. Seen at every opening of the run
+([§ C](../specs/items/trade.md#c-the-buttons), [§ G](../specs/items/trade.md#g-the-record-and-the-snapshot)).
+
+### Offers and what locks
+
+A player has two trade pages besides the inventory: an **offer page** where it puts what it gives, and a **view page**
+that shows what the other player offers ([§ D](../specs/items/trade.md#d-the-offer-pages-and-the-change-lock)).
+
+- **Seen:** an item put on a player's offer page makes a copy, with a new id, on the partner's view page at the same
+  cell.
+- **Any move of an item by a trading player un-accepts both players, even a move the server then refuses.** Seen at
+  each of the 19 logged item tests: picking up an offered item, a click on the belt, and three refused cube moves. The
+  test runs for seven kinds of move request (taking from a page, the equip swaps, the belt ones), a pick-up from the
+  ordinary inventory included (read from the code). Both players pass through a short "changed" state and are back in
+  the open trade a frame or two later; the steps are seen, the frame delays are read from the code (see the timing
+  question below).
+- **Refused moves, seen:** a Horadric Cube with items in it (the mover gets a message); a quest item when the partner
+  already holds one of the same kind, which in the run was a cube while the partner held a cube (no message); a belt
+  taken off while it holds potions.
+- **Read from the code:** an item marked as monster equipment is refused too; a stock player cannot hold one. While
+  trading, 14 other requests are refused, among them dropping an item or gold to the ground, using an item from the
+  inventory or the belt, giving an item to the mercenary, identifying, and interacting with anything else.
+- **Taking an item back off the offer page locks both players for ten seconds.** Seen: the copy left the partner's view
+  page, both records got the same lock time, an accept pressed during the lock was refused, and once the lock had
+  passed both were open again and the accept went through. The value of ten seconds, and the re-test every 25 frames,
+  are read from the code. The lock is real time, not game frames, as are the one-second and five-second windows above
+  (read from the code).
+
+### Gold
+
+A player offers gold with the window's gold button ([§ E](../specs/items/trade.md#e-the-gold-offer)).
+
+- **The offer is clipped when it is made**, to what the receiver can still carry under its gold cap (the character
+  level times 10 000). Seen: a 9 000 offer above the receiver's room was stored as that room, and the receiver ended at
+  exactly its cap of 800 000 with nothing dropped. The commit moves the amount as stored (seen).
+- **Read from the code:** offering more gold than the player carries closes the trade, unless a move is pending.
+  No case reached it: in the run no amount above the offering player's gold reached the server (an entry typed as
+  150 000 arrived as 95 000, that player's gold).
+- **A gold offer on its own changes no state.** Seen: none of the 113 logged gold messages moved a state. That a partner's
+  accept survives a gold offer is read from the code and was not reached: in the run every amount came right after an
+  un-accept from the same player, which the client sends when the gold button is clicked, so in the run offering gold
+  took both accepts away.
+
+### Both accepts
+
+```mermaid
+stateDiagram-v2
+  open --> accepted: accept
+  accepted --> open: un-accept
+  open --> changed: a move request
+  accepted --> changed: a move request
+  changed --> open: next frames
+  changed --> locked: an item was taken back
+  locked --> open: ten seconds passed
+  accepted --> commit: the partner accepts too
+```
+
+Each player presses accept once ([§ C](../specs/items/trade.md#c-the-buttons), [§ A](../specs/items/trade.md#a-the-states-and-the-tick)).
+
+- **Seen:** an accept moves that player to "accepted". When the partner is already there, the second accept starts the
+  commit at once, with the second player to accept taken first.
+- **Seen:** an accept pressed during the ten-second lock was refused, with a message, and the state stayed. By the
+  reading the accept is refused in the same way while a move is pending, outside the open state, or with an item on
+  the cursor; those refusals were not logged.
+- **What takes an accept away.** Seen: the un-accept button, any item move request (above), and a refusal at the commit.
+  Read from the code: putting an item on, or taking one off, the offer page while either player has accepted; in
+  practice a placement follows a pick-up, which has already un-accepted both, so this is hard to reach. A gold offer
+  alone does not (above).
+
+### The commit
+
+```mermaid
+flowchart TD
+  g["gold: each offer against the giver's gold<br/>and the receiver's cap"] -->|"fails"| c["cancel"]
+  g --> rt["room test on copies of both grids,<br/>first spot that fits"]
+  rt -->|"an offer does not fit"| c
+  rt --> q["quest items allowed?"]
+  q -->|"no"| c
+  q --> m1["move the second accepter's items<br/>to the partner, best spot"]
+  m1 -->|"one does not fit"| c
+  m1 --> m2["move the partner's items<br/>to the second accepter, best spot"]
+  m2 -->|"one does not fit:<br/>the first half already moved"| c
+  m2 --> gold["move the gold, end the trade"]
+  c --> back["both inventories rebuilt<br/>from the snapshots"]
+```
+
+When both have accepted, the server runs its checks in a fixed order, then makes the swap
+([§ F](../specs/items/trade.md#f-the-commit)).
+
+1. **Gold.** Each offer is tested against the giver's carried gold and the receiver's cap (read from the code; never
+   reached, since the offer is already clipped when it is made).
+2. **Room.** The server copies both players' inventory grids into two scratch grids and fits each side's offer into the
+   other's copy. If one does not fit, both gold offers are set to zero, both players get a "no room" message (which one
+   names the receiver and which the giver depends on the side), and the commit is cancelled. Seen once, for the second
+   accepter's side: a 2 × 4 axe
+   offered to a player with no two free columns side by side; nothing moved.
+3. **Quest items.** Each offered item passes the quest gate (read from the code; no refusal reached).
+4. **The moves.** Both players are marked as ending, then the second player to accept has its offer placed into the
+   partner's inventory, then the partner's offer into the second player's. Each placed item is a new copy on the
+   receiver's inventory page. After a half is placed, its giver's offer and view pages are emptied (read from the code;
+   the emptied pages are seen at the end of each exchange).
+5. **The gold** moves, the second accepter's offer first by the reading, the records are freed and the trade ends.
+   Seen as an exchange three times; the order of the two gold moves is read from the code.
+
+**The room test and the real moves search the grid differently.** The test uses the
+[first spot that fits](#the-placement-search), the order the search uses for any owner that is not a player, because
+the scratch grids have no owner. The moves place into the player's own inventory with the player's
+[best-scored spot](#the-placement-search). Seen: every scratch cell of the five logged commits sat where the first-fit
+order puts it, and every real placement where the best-spot order puts it. So the two can disagree:
+
+- **The test passes and a move fails. Seen** (the worked example below): the test passed, the first half moved, the
+  second half ran out of room at its fourth item, and the cancel took the moved item back from its receiver.
+- **The test refuses an offer the moves would have placed.** Found on the inventory model, not run: a page holding a
+  2 × 1, a 1 × 4 and two 1 × 3 items, with three 2 × 2 items offered; first-fit fails the third, the best-spot order
+  places all three. The spec keeps the first-fit test as the game's behaviour.
+
+A worked example from the run ([worked example](../specs/items/trade.md#worked-example)). Page 0 is 10 wide and 4 high.
+The joiner's page holds a 2 × 2, a 2 × 4 and two 2 × 3 items and it offers one 1 × 1 gem; the host offers four
+1 × 2 wands and holds one 2 × 4. The joiner accepts last, so its gem moves first.
+
+| Step | Search | Cells (column, row) | Result |
+|---|---|---|---|
+| room test: the gem into the host's copy | first fit | (7, 0) | fits |
+| room test: the four wands into the joiner's copy | first fit | (2, 0), (2, 2), (9, 0), (9, 2) | fits: the test passes |
+| move the gem to the host | best spot | (7, 3) | placed |
+| move the wands to the joiner | best spot | (9, 0), (9, 2), (2, 1), then none | fails: the free cells (2, 0) and (2, 3) are not next to each other |
+| cancel | | both inventories from the snapshots | the gem back with the joiner |
+
+Every cell in the table is a logged value that the two search orders predicted.
+
+### The undo: the snapshot
+
+Every way out except the exchange, and except the cases the next table says leave the trade alone, puts both inventories back
+from the snapshots taken when the window opened ([§ G](../specs/items/trade.md#g-the-record-and-the-snapshot)).
+
+- **Seen: the whole inventory is rebuilt, not just the offer.** After each logged restore (a close, the two cancels at
+  the commit, the partner in the two aborts) the item list had its opening layout, and no item id from before the
+  restore survived: items moved on the inventory page during the trade go back to their opening cells, and every item
+  comes back as a new unit with a new id.
+- **Read from the code:** the carried gold is set back to the gold at opening, except for a player with no gold or a
+  dead one, who keeps its gold. The trade moves no gold before the commit, so in the run the restored gold always
+  equalled the opening gold.
+- **Unknown:** whether the item units the restore throws away, and the hidden copy of an item taken back, are freed.
+
+### Every way a trade ends
+
+([§ H](../specs/items/trade.md#h-the-ways-out), [§ A](../specs/items/trade.md#a-the-states-and-the-tick))
+
+| Way out | What happens | How it is known |
+|---|---|---|
+| The exchange | items and gold swapped, the window closes | seen (three exchanges) |
+| Closing the window (Escape or its close button) | both rebuilt from the snapshots, both end, both five-second windows restart | seen |
+| A refusal at the commit | both rebuilt, offers and gold set to zero, the window **stays open**, empty | seen (two cancels) |
+| A player's client leaves the game | the server saves first, then both are rebuilt and both end | seen for a client that was killed (twice); the leaver's own rebuild is read from the code |
+| A player dies | both rebuilt, both end, as for a leaver but with no save first | read from the code |
+| Offering more gold than carried; an offer copy that cannot be placed | the window closes as on a close | read from the code |
+| Accepting the request again inside an open trade | the window closes; while a move is pending, after a short wait that ends once neither player has one | read from the code |
+| The Act IV end move | it presses a button that does nothing: the trade stays | read from the code |
+| Waypoint travel | no trade code runs: only the traveller's link to the partner is cleared, both trades stay recorded | read from the code; whether a client can send it while trading is unknown |
+
+Read from the code: if a leaver's partner no longer names the leaver (after waypoint travel, say), the leaver's link is
+cleared and nothing else happens: no state change, no rebuild, and the records stay.
+
+After a close, an abort or the exchange both players step through two "ended" states back to idle (seen; one frame
+apart by the reading). A cancel at the commit steps back to open the same way. **Timing question:** in one cancel of the run its two steps ran
+inside one logged frame, where the rule (and the other cancel) gives one frame each. The states and their order agree;
+the frame delays stay read from the code, and the mismatch is an open question.
+
+### Saving during a trade
+
+By the reading, a player saved while its trade record is open is saved with **its items as they were when the window
+opened**, and its carried gold as it is ([§ I](../specs/items/trade.md#i-the-save-mid-trade)).
+
+- **Seen:** at the two dropped clients the server saved both players before ending the trade, and each of the eight
+  copies the save code took was that player's opening snapshot, for the leaver and for the host alike.
+- **Read from the code:** before the window opens (only a request) the live item list is saved.
+- **Not observed:** which of the save routes those saves took, and the file written: the leaver's save file on disk was
+  not rewritten during that session.
+
 ## Random draws
 
 In the table below only the potions draw; each other count holds up to the point named, and no whole move is
@@ -442,6 +670,7 @@ bounded ([§ J of use](../specs/items/use.md#j-draws-per-seed),
 | The placement search, belts, stack tests, the grid rows | 0 to their returns, no traced access to a unit's seed | emulated |
 | The ground search, walk, expiry and distance | no seed is given | read: none of the functions below them holds a seed step, with indirect calls unfollowed |
 | Cursor drop and item to cursor | the player's and the game's seeds unchanged | seen, 80 of 80 pairs each |
+| A trade's item copies | unknown | whether copying an offered item draws from any seed was not read ([trade, open questions](../specs/items/trade.md#open-questions)) |
 
 Beside the search there are draws: a chest-spawner missile draws twice on its unit's seed for an offset, two shrines step a
 unit's seed, and a target player's belt item taken to the ground draws once and may then stop (read from the code; an
@@ -453,7 +682,7 @@ how the item itself is made is on the [items page](items.md).
 ## What is not known yet
 
 From the specs' open questions ([use](../specs/items/use.md#open-questions),
-[inventory](../specs/items/inventory.md#open-questions)). The first three need a further session in a game, and none is
+[inventory](../specs/items/inventory.md#open-questions), [trade](../specs/items/trade.md#open-questions)). The first three need a further session in a game, and none is
 planned.
 
 - **The blend of different amounts.** What a second potion of a different strength does while the first runs, with the
@@ -482,7 +711,17 @@ planned.
 - **Stock routes of two forced requests:** the stash placement with no stash open and a belt box beyond the belt's
   count each ran only with a written packet field.
 - **What an elixir's value comes from** and which object classes the two last grid rows belong to are not known.
-- Trading is not specified in either spec.
+- **Trade cases never reached** ([trade, open questions](../specs/items/trade.md#open-questions)): the refusal outside
+  town; an overspend and a gold offer while the partner has accepted (an unmodified client sends neither); the
+  re-accept states and their wait; the room test failing on the giver's side; the gold and quest refusals at the
+  commit; the first half of the moves failing; an offer copy that cannot be placed; a death during a trade.
+- **The trade's timing mismatch:** in one cancel two steps ran inside one logged frame, where the rule gives one frame
+  each. One lead is that the logged frame number belongs to the outer loop; a run logging the frame at the event pass
+  would settle it.
+- **Trade questions of the code:** which save route a dropped client takes and the file it writes; whether a trading
+  player's client can send waypoint travel; whether the units a restore throws away are freed; when three other
+  placement paths (a belt's overflow, an emptied cube's drop, a page swap) show an offer to the partner; whether a
+  trade's item copies draw from any seed.
 
 Two community texts differ from 1.14d, and the specs keep the code's reading. One says the belt table's box rectangles
 are "for server verification": by direct calls no 1.14d server code reads them. The other says potions are scaled by
@@ -490,10 +729,11 @@ class columns of a table: 1.14d's table has no such column, and the scale is in 
 
 ## Where to read more
 
-- The specs: [item use](../specs/items/use.md) and [inventory](../specs/items/inventory.md), each with its worked example
-  ([a pair of potions](../specs/items/use.md#worked-example), [a chain of drops](../specs/items/inventory.md#worked-example)) and
+- The specs: [item use](../specs/items/use.md), [inventory](../specs/items/inventory.md) and [trade](../specs/items/trade.md), each with its worked example
+  ([a pair of potions](../specs/items/use.md#worked-example), [a chain of drops](../specs/items/inventory.md#worked-example),
+  [a commit undone](../specs/items/trade.md#worked-example)) and
   reimplementation notes ([use](../specs/items/use.md#reimplementation-notes),
-  [inventory](../specs/items/inventory.md#reimplementation-notes)).
+  [inventory](../specs/items/inventory.md#reimplementation-notes), [trade](../specs/items/trade.md#reimplementation-notes)).
 - Related pages: [items](items.md) (how an item is made, which a monster's drop starts with), [other item
   paths](items-other-paths.md) (socketing, the cube, vendors, quests), [prices, repair, gold and wear](economy.md)
   (quantity, wear and gold), [stats and states](stats-and-states.md) (how a potion's rate reaches life and mana),
