@@ -177,7 +177,7 @@
 | 169 | 933 | Act II | b14 — the same: others with b0, b3, b4 clear | `fn:sub_0059CB20_A2Q6_NpcMessage@0x0059CB20` | d-2c | other players | – | 1 |
 | 170 | 936 | Act II | — — the same message with w10 b0 set removes hst … | `fn:sub_0059CB20_A2Q6_NpcMessage@0x0059CB20` | b | as row 168 on a save with word 10 b0: the three items removed | H3b | 1 |
 | 171 | 937 | Act II | b6–b11 — e11 messages , , , , , ("talked to … | `fn:sub_0059CB20_A2Q6_NpcMessage@0x0059CB20` | a-run | the six Act II NPC talks on QuestTalkTwo (TALK_STEPS word 14 rows exist, not fired yet) | H3a | 1 |
-| 172 | 938 | Act II | G b13 — e11 NPC 210 with b13 | `fn:sub_0059CB20_A2Q6_NpcMessage@0x0059CB20` | a-logs | x-talk2's Meshif 0x1C2 talk: QS on the game record at 0x0059CDCD | S3a | 1 |
+| 172 | 938 | Act II | G b13 — e11 NPC 210 with b13 | `fn:sub_0059CB20_A2Q6_NpcMessage@0x0059CB20` | a-run | x-talk2 with the Meshif 0x1C2 talk while NPC 210 holds b13: no kept quest log has the game-record QS of word 14 bit 13 (wrapper ret 0x0054475C; moved from S3a at the Phase 0 review) | H3a | 1 |
 | 173 | 940 | Act II | Tyrael's portal is class 59 to level 40, opened at the player (PortalObjectCreate(room, x, y, … | – | b | as row 168: the pocreate line (class 59, level 40) | H3b | 1 |
 | 174 | 943 | Act II | Placing the staff registers timer with period (Missiles[338]+ − 75) ÷ 20 (period 1 from … | `0x0059D870` | b | the staff placed in the orifice under quest-state.gdb rev E (TMA of `0x0059D870`); a staff case | H3f | 1 |
 | 175 | 947 | Act II | Word 14's code reads act + as the true tomb (e3, the tomb message to … | – | c | every reader of act `+0x094` agrees on the true tomb (e3, the client message, the join): second code paths | S3c | 1 |
@@ -329,4 +329,4 @@
 | 321 | 1592 | Creation-path readers | drlg/collision — no quest bit gates level 74 or portal 298 | `fn:sub_0059BA40_A2Q4_ArcanePortalInit@0x0059BA40` | c | as row 159 | S3c | 1 |
 | 322 | 1603 | Outputs |  | `fn:QUESTS_GetSeed@0x005438B0` | a-logs | QGS lines of the kill and talk logs: the quest seed read at each draw | S3a | 1 |
 
-**Totals by class:** a-logs 90, a-run 27, b 113, c 41, d-2c 35, d-owner 5, d-edit 6, d-none 5 (sum 322).
+**Totals by class:** a-logs 89, a-run 28, b 113, c 41, d-2c 35, d-owner 5, d-edit 6, d-none 5 (sum 322).
