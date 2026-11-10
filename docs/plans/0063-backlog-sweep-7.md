@@ -124,3 +124,18 @@ lanes with Ghidra and one archivist lane without it.
 ## Implementation log
 
 _(lanes append dated entries as phases land: what was found, the confidence reached, surprises)_
+
+### 2026-11-10 — Phase 1 (lane/n63a, archivist)
+
+- Done: [docs/tables/ActClockTables.md](../tables/ActClockTables.md) documents `g_ActClockTable0..2` (`0x007443F0`, `0x00744438`, `0x00744480`): contiguous, six rows of three dwords (start, type, colour word), readers, and the 18 rows. Home: `docs/tables/`, beside PathDirTables and PathTypes, the other image-constant docs; `docs/formats/` describes file formats and none is involved. Values read by a `-I` reader from the pinned image (no Ghidra, no slot). ADR-0031: table 2's `start` is the rule `60 * ((p + 5) mod 6)` (survey-checked); the other 48 values have no rule known and are listed (type and colour columns, tables 0 and 1 starts).
+- Survey: `tools/actclock_survey.py`, registered in `tools/gate.py` as `actclock`, baseline `tools/gate/baselines/actclock.txt`; it checks the rule and compares the doc's 18 rows with the image. Linked from `docs/tables/README.md`.
+- Entry `2026-11-04-spec-writer-archivist-act-clock-tables` annotated, not closed. Handoff to Phase 3: sim/frame G1b links `../../tables/ActClockTables.md`; the colour word's channel order and the meaning of `type` stay `[L]` in the doc (frame/0001 does not settle them).
+- Review tier: Tier A (ADR-0027). The doc restates `[I]` statements from frame/0001 § 3.1 (reader roles, the colour blend at 0x0061BCE0, the `type == 2` test).
+
+### 2026-11-10 — Phase 1 review (architect, Tier A, ADR-0027): accept with fixes
+
+- Rules tried (ADR-0031): table 1's `type` column equals table 0's in all six rows, so it is now the rule `T1[p].type = T0[p].type`, survey key `t1_type_rule_mismatches`, baseline updated; 42 values listed, 12 by two rules (doc header, README, entry annotation). Table 2's colour words (`0xF31E00`, rows 1 and 4 `0xF41E00`) are a description by cases and stay listed.
+- The readers bullet now states the step's table choice whole: with `f` = 0 both the compare and the new values read table 0; with `f` set the compare reads table 1 in act index 3, table 2 otherwise, and the new values come from table 2 (frame/0001 § 3.1's `[C]` block).
+- The colour word's top byte 0 and `type` 0 to 3 are data the survey checks: `[C]`, with "three-byte colour" `[I]` from the 0x0061BCE0 blend.
+- The two `[L]` (channel order, `type`'s meaning to the client) moved to a new `## Open questions`: a table doc may carry `[L]` in its body (gate E5 binds specs only), but these are unknowns, not leads.
+- Survey and gate registration checked: `actclock` runs in `--full`'s default set (not opt-in), reads the image only at the pinned sha256, and fails on any rule or doc mismatch.

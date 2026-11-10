@@ -1,0 +1,1 @@
+SURVEY actclock tables=3 rows=18 t0_crc=3414041021 t1_crc=2574079455 t2_crc=1297031433 t2_start_rule_mismatches=0 t1_type_rule_mismatches=0 doc_missing=0 doc_mismatches=0

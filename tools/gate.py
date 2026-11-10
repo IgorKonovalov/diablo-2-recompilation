@@ -240,6 +240,8 @@ SURVEYS = [
                     "workspace/install/app/game.exe"]),
     # plan 0052, lane/r71: AI rows 25 and 94's constants of the code image, rules and checksums (ADR-0031, ai/0019)
     Survey("ai_const", ["tools/ai_const_survey.py", "summary", "workspace/install/app/game.exe"]),
+    # plan 0063 P1: the act light clock's three tables of the code image, one rule and the listed rows checked (ADR-0031)
+    Survey("actclock", ["tools/actclock_survey.py", "summary", "workspace/install/app/game.exe"]),
     # plan 0055 P0: the kept harness logs of the runs plans 0037-0052 name (classified by frame stamp, unit id and seeds;
     # docs/inventory.md, Kept-log corpus). Reads ~5.6 GB of logs, so opt-in; with workspace/logs absent the tier skips.
     Survey("frame", ["tools/frame_corpus.py", "summary", "workspace/logs"], opt_in=True),
