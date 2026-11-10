@@ -238,3 +238,36 @@ server branches a stock client reaches; the window itself stays out (ADR-0033).
 
 **Handoff.** Review: **Tier A** (the Phase 3 done-when); on acceptance the row turns `reviewed`. Phase 4 (the wiki
 section in wiki/inventory) follows the review.
+
+### 2026-11-10 — Phase 3 Tier A review (`lane/n67s`): accept with fixes
+
+**Verdict: accept with fixes (6).** [items/trade](../specs/items/trade.md) is promoted to `reviewed` (C 53 / I 75 / L 9);
+the research-map row and the plans index say so. Checked: `trade_check.py check` re-run on a, b and c gives the kept
+totals (547/318/0, 362/203/0, 400/218/2); every manifest passes `sha256sum -c`. 28 `[C]` statements sampled over §§ A–I
+and the entry points, 23 against the host log lines of their case and 5 (A1's steps, B2.6, C3, F2, F1.7) through the re-run checker alone (the T3 a/b events and
+frames, the T4 and T13 `TMS` order and `TCX` sites, the T7 lock and ticks, T12's states, T5's clip, the five closes,
+the two cancels and aborts, the drops' `TSV`/`TSC`). The partly reached cases (T3 (c), T5's overspend, T6's 8 at 4,
+T8's route, the tick delays) are `[I]`; T13's contradiction is the first open question and every `[L]` is under *Open
+questions*; the diagrams add no claim; the items/inventory note is dated.
+- **overclaim (2).** (a) T7's refused accept "at 7, 8 and 11" (A1, C4 twice, the research-map row): the log holds one
+  refused button 4, at 11 (b f 1769); 7 and 8 lasted a frame each. Now `[C]` at 11, `[I]` for the rest. The same words
+  in multiplayer/0003 § 13's T7 row, passed at the `lane/n67h` check, are corrected there. (b) E1's client bullet ("one
+  8 per entry, always after a 7", "the client clamps"): restated as what the server received, with the counts (7 of
+  113 button 8s carry an amount, each after a 7 of the presser; 106 carry 0; no amount above the presser's gold).
+- **misread (1).** G2 and D1: T2's cube was not picked up; its item test returned 0 (quest code, J holding a cube),
+  so it is a third refused cube move, not an item the restore brought back. § 13's T2 row is corrected with it.
+- **tool not kept (1).** The 19 item tests, the 113 button 8s and the drops' saves (two calls per player, 8 snapshot
+  copies) were read from the host logs and stood in no finding (judgment call 2). Ruling: the numbers go into the
+  finding first. A dated addendum to multiplayer/0003 § 13 now holds them, from the kept
+  `workspace/logs/n67h/review-n67s/recount.py` (output and manifest beside it), and the spec cites it.
+- **omission (1).** "The caller above `SaveItemListOrSnapshot` was not logged": the `TSV` site 0x005697D2 lies inside
+  `D2S_WriteItemList`; the entry points and I2 now say so, and the `PLRSAVE_Save` route stays `[I]`.
+- **stale cross-reference (1).** The plans index still said "P2 go … hosting that night".
+- **Judgment calls.** (1) Accepted: the quirks entries cite a spec that this review promotes, so Q530–Q538 restate a
+  reviewed statement from this commit on; the quirks row's "a draft until its Tier A review" is dropped. (3) Accepted
+  as reworded: ADR-0033 leaves out the client's window and display, not the messages the server receives; the packets
+  a stock client sent decide which server branches the run reached, and they are logged at the server's handler. The
+  client's own clamp is not a spec rule.
+- **Gates.** `tools/quirks.py check`: 538 entries, 0 errors. `tools/gate.py --full`: green.
+- **Ledger** (for the orchestrator's row): accept with fixes; overclaim 2, misread 1, tool not kept 1, omission 1,
+  stale cross-reference 1. Next: Phase 4, the wiki section (spec-writer).

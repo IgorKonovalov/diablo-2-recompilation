@@ -1,10 +1,10 @@
 ---
 spec: items/trade
-status: draft
+status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [items/inventory, items/economy, sim/frame, save/d2s]
 consumed_by: [items/inventory]
-tags: {C: 53, I: 74, L: 9}
+tags: {C: 53, I: 75, L: 9}
 updated: 2026-11-10
 ---
 
@@ -46,7 +46,7 @@ flowchart LR
 | A player is saved | fn:PLRSAVE_Save@0x00532400 → fn:sub_00531BB0_SaveItemListOrSnapshot@0x00531BB0 | [I] |
 
 Every one of these entries was reached in run:2026-11-10-trade except the death; for the save, `SaveItemListOrSnapshot` was
-logged and the caller above it was not. The sections below say which branches the run covers. [C] (run:2026-11-10-trade, fn:sub_00568060_PktInteractButton@0x00568060)
+logged from 0x005697D2 inside `D2S_WriteItemList`, and `PLRSAVE_Save` above it was not. The sections below say which branches the run covers. [C] (run:2026-11-10-trade, fn:sub_00568060_PktInteractButton@0x00568060)
 
 ## Inputs
 
@@ -179,8 +179,8 @@ A2. Blocked(p) = bit 22 or bit 23 of Unit+0xC8, or an item id on the       [I] (
 - A1. [C] The tick's steps for states 5, 6, 7, 8 (with and without a lock), 9, 10 and 11, and its leaving 0–4 alone:
   every logged tick of sessions a, b and c (rule `R-tick`), the lock in T7, the cancels in T4 and T13. The bits each
   step clears read clear after it. (fn:sub_005689D0_TradeStateTick@0x005689D0, run:2026-11-10-trade)
-- A1. [C] At 11, the state stays 11 while the lock time is ahead and goes to 3 once it has passed (T7: J's accepts at 7, 8
-  and 11 refused, then accepted after the lock). (0x005689D0, run:2026-11-10-trade)
+- A1. [C] At 11, the state stays 11 while the lock time is ahead and goes to 3 once it has passed (T7: J's accept at
+  11 refused, then accepted after the lock). (0x005689D0, run:2026-11-10-trade)
 - A1. [I] The frame delays (+1, +4, +5, +25, +125) are read from the queue calls. The logs agree with them at every
   tick but two: in T13 the cancel's 5 → 6 → 3 ran inside one logged frame, where the rule and T4's cancel give one
   frame per step. The states and their order agree there too; the contradiction is named under Open questions.
@@ -231,7 +231,7 @@ C3. b = 3: if P or Q is Blocked:                                           [I] (
              TradeOpen: both states 3, 0x77 code 6 to both
              TradeRecAlloc(P), TradeRecAlloc(Q)    ; a second failure frees the first record
              0x78 to each: the partner's name and unit id
-C4. b = 4: if P or Q Blocked, or P state ≠ 3, or an item on P's cursor:    [C] for P at 7, 8 or 11 (0x00568499–0x00568573, run:2026-11-10-trade)
+C4. b = 4: if P or Q Blocked, or P state ≠ 3, or an item on P's cursor:    [C] for P at 11, [I] for the rest (0x00568499–0x00568573, run:2026-11-10-trade)
              0x77 code 6 to P;  no state moves
            else if the end lock: TradeClose(P, Q, 9)                       [I] (0x00568499–0x00568573)
            else:                                                           [C] (0x00568499–0x00568573, run:2026-11-10-trade)
@@ -245,8 +245,9 @@ C8. b = 8: the gold offer, § E
   close control alike (dev session, T2). No close in the run sent button 3. (0x00568175, run:2026-11-10-trade)
 - C3. [C] Opening: both 3, a record each with `+0x10` the carried gold, `+0x0C` and `+0x14` 0 and `+0x00` above 0
   (every opening of the run). The `0x78` sends are `[I]`. (fn:sub_00566B30_TradeRecAlloc@0x00566B30, fn:sub_0053CAD0_SendTrade78@0x0053CAD0, run:2026-11-10-trade)
-- C4. [C] A refused accept: T7, where J pressed `ok` at 7, 8 and 11, got code 6 and kept its state. A refusal for a
-  blocked presser at 3 or a cursor item alone was not logged. (run:2026-11-10-trade)
+- C4. [C] A refused accept: T7, where J pressed `ok` at 11, got code 6 and kept its state (the run's one refused accept,
+  [multiplayer/0003 § 13](../../findings/multiplayer/0003-trade.md#13-phase-2-run-run2026-11-10-trade-lanen67h) addendum). A refusal at 7 or 8 (each lasted one frame in the run), for a blocked presser at 3 or for a cursor
+  item alone was not logged. (run:2026-11-10-trade)
 - C4. [C] The second accept commits with `A` the presser and `B` the partner (T1, T4, T5, T6, T13). (fn:sub_00567C70_TradeCommit@0x00567C70, run:2026-11-10-trade)
 - C7. [C] A button 7 at 4 sets that player to 3 (a, f 4434: H 4 → 3). (0x0056857F, run:2026-11-10-trade)
 
@@ -297,11 +298,11 @@ D4. TradeBeltLock, packets 0x1C and 0x1D on body slot 8, after D1:          [I] 
       in a player interaction with any item at location 2 (the belt): refuse
 ```
 
-- D1. [C] Each of the 19 logged item tests (rule `R-itemtest`) set bit 22 on the mover and both states to 7, whatever it returned:
-  the pick-ups of the offered items, the belt of T9, and the refused cube moves of T10 and T11. A refused move
-  still un-accepts both. (fn:sub_00567620_TradeItemTest@0x00567620, 0x00567798–0x00567826, run:2026-11-10-trade)
+- D1. [C] Each of the 19 logged item tests (rule `R-itemtest`; the count is [multiplayer/0003 § 13](../../findings/multiplayer/0003-trade.md#13-phase-2-run-run2026-11-10-trade-lanen67h) addendum) set bit 22 on the
+  mover and both states to 7, whatever it returned: the pick-ups of the offered items, the belt of T9, and the three
+  refused cube moves (T2's, T10, T11). A refused move still un-accepts both. (fn:sub_00567620_TradeItemTest@0x00567620, 0x00567798–0x00567826, run:2026-11-10-trade)
 - D1. [C] T10: J's cube holding an item, return 0 and event `0x0A`. T11: H's empty cube while J holds a cube, return 0
-  and no event. T12: J's move while H was at 4 returned 1 and took H's 4 away. (0x005676E4–0x00567793, run:2026-11-10-trade)
+  and no event; T2: H's cube while J holds a cube, the same. T12: J's move while H was at 4 returned 1 and took H's 4 away. (0x005676E4–0x00567793, run:2026-11-10-trade)
 - D1. [I] The early refusal (no partner record, end lock, bit 23), the mover at 4 and the monster-equipment flag were not
   logged; monster equipment cannot reach a stock player's inventory. (0x0056767D–0x005676BA, 0x00567793)
 - D1. [I] A test runs on any of the seven packets, a pick-up from page 0 among them, not only on pages 1 and 2; `0x18`
@@ -330,17 +331,19 @@ E1. b = 8 (param: u32 the amount), presser P, partner Q:                    [I] 
 ```
 
 - E1. [C] The clip: T5, J's entry of 9 000, above H's room under its cap, was stored as that room, and H ended at
-  exactly its cap of 800 000 with nothing dropped. Each of the 113 logged button 8s (all with a record) stored the clip
-  model's value. (0x0056843C–0x00568448, fn:PLAYER_GoldCap@0x00622E70, run:2026-11-10-trade)
+  exactly its cap of 800 000 with nothing dropped. Each of the 113 logged button 8s (all with a record; the count is
+  [multiplayer/0003 § 13](../../findings/multiplayer/0003-trade.md#13-phase-2-run-run2026-11-10-trade-lanen67h) addendum) stored the clip model's value. (0x0056843C–0x00568448, fn:PLAYER_GoldCap@0x00622E70, run:2026-11-10-trade)
 - E1. [C] The commit takes the offer as stored (T1, T5, T6). (fn:sub_00567C70_TradeCommit@0x00567C70, run:2026-11-10-trade)
 - E1. [C] The 113 logged button 8s left both states as they were; each came with both players at 3, 6, 8 or 11.
   (0x005683DC, run:2026-11-10-trade)
 - E1. [I] **A gold offer does not un-accept.** A partner at 4 stays at 4 through a button 8. No logged 8 reached a
   partner at 4: the stock client sends button 7 when the coin is clicked, and its entry box closes when the partner
   accepts (T6). (0x005683DC–0x00568497)
-- E1. [C] The stock client's gold entry: one button 8 per entry (`param` the amount), always after a button 7 sent when
-  the coin is clicked; and the client clamps the entry to its own gold before sending it (an entry of 150 000 sent as
-  95 000). So the gold un-accepts the partner through the 7, and no overspend reached the server. (fn:sub_00568060_PktInteractButton@0x00568060, run:2026-11-10-trade)
+- E1. [C] What the server received from the stock clients (the input, not the client's window, which ADR-0033 leaves
+  out): of the 113 button 8s, 7 carried an amount, one per gold entry, each after a button 7 of the same player sent when
+  the coin is clicked; the other 106 carried 0. No amount exceeded the presser's gold: an entry typed as 150 000 arrived
+  as 95 000, J's carried gold. So in the run the gold un-accepted the partner through the 7, and no overspend reached
+  the server. (fn:sub_00568060_PktInteractButton@0x00568060, run:2026-11-10-trade, [multiplayer/0003 § 13](../../findings/multiplayer/0003-trade.md#13-phase-2-run-run2026-11-10-trade-lanen67h) addendum)
 - E1. [I] The overspend close (T5's second part) and a button 8 before the window opens (no record: nothing stored, the
   overspend still closes) were not reached. (0x005683E6)
 
@@ -439,7 +442,7 @@ G3. TradeRestoreSnapshot(p):                                          [I] (fn:su
 
 - G2. [C] **A restore replaces the whole inventory.** After each logged restore (the close of T2, the cancels of T4 and
   T13, the partner in the two aborts) the player's item list had the opening layout, and no item id from before the restore
-  survived. In T2 the offered item and the cube picked up in place of `Y` came back with the rest. (fn:sub_005678F0_TradeReturnItems@0x005678F0, fn:sub_00566CC0_TradeRestoreSnapshot@0x00566CC0, run:2026-11-10-trade)
+  survived. In T2 the offered `gcv` came back with the rest; the cube's pick-up had been refused (§ D1), so it never moved. (fn:sub_005678F0_TradeReturnItems@0x005678F0, fn:sub_00566CC0_TradeRestoreSnapshot@0x00566CC0, run:2026-11-10-trade)
 - G3. [I] A player with 0 gold, or dead (mode 0 or 17), keeps the current gold. The trade moves no gold before the
   commit, so in the run the restored gold always equalled the opening gold. (0x00566CC0–0x00566D89)
 - G. [I] Whether the units discarded by a restore, and the hidden copy of `TradeHideOffer`, are freed is not read. (0x0063CBB0, 0x0055DF10)
@@ -502,9 +505,10 @@ I2. SaveItemListOrSnapshot(buf, room, flag, …), unit u:              [I] (fn:s
 ```
 
 - I2. [C] The saves logged mid-trade: at each of the two dropped clients (T8, the end of session b), `ClientRemove` saved
-  both players before `TradeAbort`, each through two `SaveItemListOrSnapshot` calls with flag 1, and each of the 8
-  `TradeSnapshotCopy` calls returned that player's record byte count with the record's sha256: the bytes written were
-  the opening snapshot, for the leaver and for the host. (fn:sub_005675E0_TradeSnapshotCopy@0x005675E0, run:2026-11-10-trade)
+  both players before `TradeAbort`, each through two `SaveItemListOrSnapshot` calls with flag 1 from 0x005697D2 (inside
+  `D2S_WriteItemList`), and each of the 8 `TradeSnapshotCopy` calls returned that player's record byte count with the
+  record's hash: the bytes written were the opening snapshot, for the leaver and for the host
+  ([multiplayer/0003 § 13](../../findings/multiplayer/0003-trade.md#13-phase-2-run-run2026-11-10-trade-lanen67h) addendum). (fn:sub_005675E0_TradeSnapshotCopy@0x005675E0, run:2026-11-10-trade)
 - I. [I] So a player saved with an open record (from the target's accept to the end) is saved with the items as they
   were at opening and the carried gold as it is; in the request phase (no record) the live list is saved. Which
   `PLRSAVE_Save` route the saves at the drops took, and the file written, were not observed: J's save file on disk was
