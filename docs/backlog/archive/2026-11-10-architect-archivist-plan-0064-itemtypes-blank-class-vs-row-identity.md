@@ -4,7 +4,7 @@ to: archivist
 date: 2026-11-10
 status: done
 context:
-  - ../../plans/0064-clean-room-test.md
+  - ../../plans/done/0064-clean-room-test.md
   - ../../tables/ItemTypes.md
 resolution: "Checked itemtypes.bin byte by byte: a blank Class cell stores 0xFF (85 of 85), as do blank StaffMods (94) and StorePage (28); blank Equiv1/2, Shoots, Quiver, BodyLoc1/2 store 0. [ItemTypes](../../tables/ItemTypes.md) Row identity now states the exception."
 ---

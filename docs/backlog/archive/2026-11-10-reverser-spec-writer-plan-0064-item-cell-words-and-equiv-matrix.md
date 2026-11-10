@@ -4,7 +4,7 @@ to: spec-writer
 date: 2026-11-10
 status: done
 context:
-  - ../../plans/0064-clean-room-test.md#implementation-log
+  - ../../plans/done/0064-clean-room-test.md#implementation-log
   - ../../findings/data/0001-excel-loader.md
   - ../../findings/items/0001-tc-resolution.md
   - ../../specs/data/excel.md

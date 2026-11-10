@@ -1,6 +1,6 @@
 # 0064 — Clean-room test: implement the chain from the specs alone and score it on the golden traces
 
-> **Status:** approved (2026-11-10, by the owner, as recommended: ADR-0032 accepted, S4 in and last; not started: the owner starts it)
+> **Status:** done (closed 2026-11-10 at the Phase 5 review; approved 2026-11-10 by the owner, as recommended: ADR-0032 accepted, S4 in and last)
 > **Created:** 2026-11-10
 > **Owner skill(s):** human, archivist, none (clean-room implementer, ADR-0032), architect, spec-writer
 > **Related ADRs:** 0001-target-toolchain-evidence-sources, 0023-review-tiers-and-gate-first-fixes, 0032-clean-room-implementation-test
@@ -18,8 +18,8 @@ reaches 0 mismatches on the fixed fields, or the remainder is named. No code ent
 ## Context
 
 - **Why now.** Every research-map row the slices touch is `reviewed`. Plan 0059 Phases 1 to 3 are accepted: the format
-  ([fmt:golden-trace](../formats/golden-trace.md)), `tools/golden.py` (`emit`, `check`, `digest`), the v1 set of 5 073
-  cases and the [conformance page](../specs/conformance/README.md), which maps every field to the spec section it tests.
+  ([fmt:golden-trace](../../formats/golden-trace.md)), `tools/golden.py` (`emit`, `check`, `digest`), the v1 set of 5 073
+  cases and the [conformance page](../../specs/conformance/README.md), which maps every field to the spec section it tests.
 - **The slices**, smallest first, each a set of golden field prefixes and the specs that should suffice:
 
   | Slice | Fields (`--fields`) | Specs the implementer should need |
@@ -68,7 +68,7 @@ reaches 0 mismatches on the fixed fields, or the remainder is named. No code ent
 - **Owner skill:** none (clean-room implementer, ADR-0032); one fresh agent per slice, Opus, briefed by the brief and
   the slice's row only
 - **What:** each lane implements its slice in any language inside `workspace/cleanroom/<slice>/`, writes the candidate
-  output in the golden format ([fmt:golden-trace](../formats/golden-trace.md)), runs `score` once (first pass), may
+  output in the golden format ([fmt:golden-trace](../../formats/golden-trace.md)), runs `score` once (first pass), may
   iterate under the measure's rule, and writes its ledger file `docs/plans/0064-cleanroom/<slice>.md`. Slices S1 and
   S2 run first, in parallel. S3 and S4 follow, so that S1's and S2's triage can fix shared specs (rng, data/excel)
   before them.
@@ -148,7 +148,7 @@ tests), `docs/plans/0064-cleanroom/brief.md`.
   Review: Tier B.
 
 - **2026-11-10, Phase 2 slice S1 (orchestrator):** one fresh Opus implementer, 124 365 tokens, 19 tool uses. First pass
-  62 035 fields, 0 different, 0 missing; final the same; ledger [S1](0064-cleanroom/S1.md), 6 rows, all `first` (4
+  62 035 fields, 0 different, 0 missing; final the same; ledger [S1](../0064-cleanroom/S1.md), 6 rows, all `first` (4
   unstated conventions of the golden format guessed right, the broken `score.sh`, dead links). The first `score.sh`
   call failed (path of the removed `lane/n64a` worktree); the orchestrator repointed it, and no check output had been
   seen. `cleanroom.py audit --slice S1` reports VOID with 6 paths, all false: words inside two heredoc bodies (the
@@ -162,7 +162,7 @@ tests), `docs/plans/0064-cleanroom/brief.md`.
   (nodrop 1 113, item 136, quality 136, end_seed 127, pick 22, select 18, subtc 12, count 9; all cases observed); final
   (run 6) 0 different, but only after **fitting the killer's magic find from the printed diffs** (472 expansion, 250
   classic): no `drop` case input and no document gives it, and the ledger records it as guessed from the diff. Ledger
-  [S2](0064-cleanroom/S2.md), 16 rows. `cleanroom.py audit --slice S2` reports 4 paths: one shell variable assignment
+  [S2](../0064-cleanroom/S2.md), 16 rows. `cleanroom.py audit --slice S2` reports 4 paths: one shell variable assignment
   and three files the implementer wrote and read back in the shared session scratchpad (its own mismatch lists); a
   manual read of each finds no read of project material outside the sandbox. Run ruled valid. For the triage: the
   magic-find input (golden-set or spec defect) and the `nodrop` list shape (format doc, "per roll") carry 1 249 of the
@@ -173,7 +173,7 @@ tests), `docs/plans/0064-cleanroom/brief.md`.
 **Verdict on the S1 and S2 ledgers: accept, 0 fixes.** Every first-pass difference of S2 is a row (rows 1 and 2 carry
 `nodrop` 1 113 and quality 136; `item`, `end_seed`, `count`, `pick`, `select` and `subtc` run on after a wrong quality
 roll on the same seed, and all reached 0 with rows 1 to 3 applied); S1 had none. The triage is the new last column of
-[S1](0064-cleanroom/S1.md) and [S2](0064-cleanroom/S2.md). "Implementer error" is used as the plan defines it, *the
+[S1](../0064-cleanroom/S1.md) and [S2](../0064-cleanroom/S2.md). "Implementer error" is used as the plan defines it, *the
 spec was clear*: in all five such rows the guess was right, and no row is a mistake by the implementer.
 
 | Slice | Spec defect | Missing finding | Golden-set defect | Implementer error (no defect) | Rows |
@@ -205,16 +205,16 @@ and S2 rows 4 to 10 are conventions the format leaves to `golden.py`; all were g
 
 Backlog entries filed (7):
 
-- archivist: [drop-cases-magic-find](../backlog/archive/2026-11-10-architect-archivist-plan-0064-drop-cases-magic-find.md)
-  (S2 rows 2–3: add the inputs, re-emit the set); [golden-trace-field-conventions](../backlog/archive/2026-11-10-architect-archivist-plan-0064-golden-trace-field-conventions.md)
+- archivist: [drop-cases-magic-find](../../backlog/archive/2026-11-10-architect-archivist-plan-0064-drop-cases-magic-find.md)
+  (S2 rows 2–3: add the inputs, re-emit the set); [golden-trace-field-conventions](../../backlog/archive/2026-11-10-architect-archivist-plan-0064-golden-trace-field-conventions.md)
   (S1 rows 2–5, S2 rows 1 and 4–10, items (a) to (k)). S1 row 1 was already fixed and closed:
-  [cleanroom-score-path-and-audit-heredocs](../backlog/archive/2026-11-10-architect-archivist-cleanroom-score-path-and-audit-heredocs.md).
-- spec-writer (one per spec): [items-tc-type-test](../backlog/archive/2026-11-10-architect-spec-writer-plan-0064-items-tc-type-test.md),
-  [items-quality-type-test-link](../backlog/archive/2026-11-10-architect-spec-writer-plan-0064-items-quality-type-test-link.md),
-  [data-excel-type-test-link](../backlog/archive/2026-11-10-architect-spec-writer-plan-0064-data-excel-type-test-link.md),
-  [conformance-drop-inputs](../backlog/archive/2026-11-10-architect-spec-writer-plan-0064-conformance-drop-inputs.md)
+  [cleanroom-score-path-and-audit-heredocs](../../backlog/archive/2026-11-10-architect-archivist-cleanroom-score-path-and-audit-heredocs.md).
+- spec-writer (one per spec): [items-tc-type-test](../../backlog/archive/2026-11-10-architect-spec-writer-plan-0064-items-tc-type-test.md),
+  [items-quality-type-test-link](../../backlog/archive/2026-11-10-architect-spec-writer-plan-0064-items-quality-type-test-link.md),
+  [data-excel-type-test-link](../../backlog/archive/2026-11-10-architect-spec-writer-plan-0064-data-excel-type-test-link.md),
+  [conformance-drop-inputs](../../backlog/archive/2026-11-10-architect-spec-writer-plan-0064-conformance-drop-inputs.md)
   (waits for both archivist entries).
-- reverser: [parseitemcell-unique-entry-words](../backlog/archive/2026-11-10-architect-reverser-plan-0064-parseitemcell-unique-entry-words.md)
+- reverser: [parseitemcell-unique-entry-words](../../backlog/archive/2026-11-10-architect-reverser-plan-0064-parseitemcell-unique-entry-words.md)
   (S2 row 14; static only; data/excel G4 and items/tc § A follow).
 
 **Disputed rows, for a second fresh implementer** (the orchestrator runs it; this lane did not spawn one):
@@ -275,7 +275,7 @@ the format entry.
 - **2026-11-10, Phase 2 slice S3 (orchestrator):** one fresh Opus implementer on a sandbox rebuilt from `main` at
   `41ef2867`, 111 116 tokens, 22 tool uses. Score log run 1 is lane `n64g`'s reference test (09:21 UTC, kept by
   `make --force`); the implementer's first pass is run 2: 211 140 fields, 0 different, 0 missing (all 612 cases
-  predicted); no later run. Ledger [S3](0064-cleanroom/S3.md), 6 rows, all `first`; the two that matter: the
+  predicted); no later run. Ledger [S3](../0064-cleanroom/S3.md), 6 rows, all `first`; the two that matter: the
   conformance page sends `mlvl.N` to monsters/pool § E while the value is § B4's region copy, and step C1's candidate
   counts are load-time bytes (0 in the shipped file). Audit: 1 path, an `ls` of the ledger folder after scoring (file
   names only, none opened); the harness's tool-results Read is allowed by the tool. Run ruled valid.
@@ -290,7 +290,7 @@ answer; no new finding was needed for any of them.
   symbol table, archaeology/0002 § 5) and `ITEMS_UnitIsType` (`[C]`, items/0005 tests (c)–(d) and the `GOLD_TYPE` run),
   and a blank `Equiv` storing record 0 (`[C]`, data/0004), which no test of these specs asks for (`[I]`). I1 and H8 call
   it by name. The walk's form (depth, a cycle, record 0 in the set) is a new `[L]` under *Open questions*, filed to the
-  reverser ([entry](../backlog/archive/2026-11-10-spec-writer-reverser-itemtypes-equiv-walk-form.md)); no stock test depends on it.
+  reverser ([entry](../../backlog/archive/2026-11-10-spec-writer-reverser-itemtypes-equiv-walk-form.md)); no stock test depends on it.
 - **items/quality S2 and data/excel G2** link § K and name the function; S2 contrasts it with A2–A5 and S1.
 - **items/quality S1** (S2 row 12): the `Class` byte is the `playerclass` row index `[C]` (PlayerClass § Row identity);
   it is a u8, so a blank `0xFF` is not `< 7` (reading `[I]`, items/0002 § 2; outcome `[C]`, the 1607 logged rows of
@@ -305,7 +305,7 @@ Wiki: items (S1's class key, the auto-TC "of that type"), game-data (the same), 
 of items/tc, items/quality, data/excel and quirks updated for their dates and counts. Tags: items/tc C 123 / I 66 /
 L 7, items/quality C 72 / I 41 / L 1, data/excel C 146 / I 59 / L 2, quirks C 374 / I 162 / L 3.
 
-Not done here: [conformance-drop-inputs](../backlog/archive/2026-11-10-architect-spec-writer-plan-0064-conformance-drop-inputs.md)
+Not done here: [conformance-drop-inputs](../../backlog/archive/2026-11-10-architect-spec-writer-plan-0064-conformance-drop-inputs.md)
 waits for the archivist's golden-set entries (lane n64g). Review: Tier A. Next: Phase 5 re-runs the S2 type-test and
 class-key fields from the fixed specs.
 
@@ -329,7 +329,7 @@ built) sits under *Open questions* and its entry is addressed to the reverser. A
   search on open ground" restored to the note's count, "all 118 live searches".
 - **§ K, a lead for the reverser entry** (not a fix): r2 shows the test reads a precomputed bit matrix, skips a zero
   `type2` and returns 0 for an out-of-range `t`; written into
-  [itemtypes-equiv-walk-form](../backlog/archive/2026-11-10-spec-writer-reverser-itemtypes-equiv-walk-form.md) as a lead.
+  [itemtypes-equiv-walk-form](../../backlog/archive/2026-11-10-spec-writer-reverser-itemtypes-equiv-walk-form.md) as a lead.
 - **Gate:** `tools/quirks.py check` is clean after the merge (527 entries, 0 errors, about 0.2 s) and is registered as
   fast-tier rule E18 in `tools/gate.py` (each `quirks:` line one error, at its file line); `test_gate.py` passes.
 
@@ -341,7 +341,7 @@ on `main`. Not merged; plan 0064 stays open for Phase 5.
   1 820 fields, 381 different, 0 missing (maze rooms_digest 50/50; outdoor preset_count 46, presets_digest 84,
   room_count 47, rooms_digest 84, seed_after 70; all 384 cases observed). Final run 12: 106 different, maze all right,
   22 outdoor cases (Act I levels 4–7) still differ. 12 runs, several fixes guessed or partly guessed from the diff (§ H6d
-  road search, § H7 `OneOrTwo`, § H1 `A1CliffMark`). Ledger [S4](0064-cleanroom/S4.md), 24 rows; notable: maze room
+  road search, § H7 `OneOrTwo`, § H1 `A1CliffMark`). Ledger [S4](../0064-cleanroom/S4.md), 24 rows; notable: maze room
   order ("creation order" in golden-trace vs "newest first" in maze § Outputs), the `first_room_seed` input disagreeing
   with B1 in 45 of 50 cases, and the slice needing warps § A–C and rng/seeds step 3 outside its row. Audit clean.
 
@@ -349,7 +349,7 @@ on `main`. Not merged; plan 0064 stays open for Phase 5.
 
 **Verdict on the S3 and S4 ledgers: accept, 0 fixes.** Every first-pass difference is a row: S3 had none; S4's 50
 maze digests are row 1, and its 84 failing outdoor cases (Act I, levels 2–7) rows 13, 14 and 15. The triage is the new
-last column of [S3](0064-cleanroom/S3.md) and [S4](0064-cleanroom/S4.md); "implementer error" keeps the plan's meaning,
+last column of [S3](../0064-cleanroom/S3.md) and [S4](../0064-cleanroom/S4.md); "implementer error" keeps the plan's meaning,
 *the spec was clear*.
 
 | Slice | Spec defect | Missing finding | Golden-set defect | Implementer error (no defect) | Rows |
@@ -361,7 +361,7 @@ Rulings on the rows the orchestrator named:
 
 - **S3 `mlvl.N` (row 1): spec defect, conformance.** monsters/pool is right: § B4 copies the region's `MonLvl`/`MonLvlEx`
   and § E is `MonsterLevel` per class. The conformance row points at § E; it goes into the open
-  [conformance entry](../backlog/archive/2026-11-10-architect-spec-writer-plan-0064-conformance-drop-inputs.md) as item (3), so
+  [conformance entry](../../backlog/archive/2026-11-10-architect-spec-writer-plan-0064-conformance-drop-inputs.md) as item (3), so
   one spec lane fixes the page. **S3 C1 (row 2): spec defect, monsters/pool.** § Inputs and the notes say the counts are
   computed at load; C1's pseudocode reads them as record bytes, which are 0 in the file.
 - **S4 maze room order (row 1): golden-set (format) defect, plus the same words on the conformance page.** maze § Outputs
@@ -390,17 +390,17 @@ Rulings on the rows the orchestrator named:
 
 Backlog entries filed (5) and annotated (1):
 
-- reverser: [drlg-outdoor-statements](../backlog/archive/2026-11-10-architect-reverser-plan-0064-drlg-outdoor-statements.md):
+- reverser: [drlg-outdoor-statements](../../backlog/archive/2026-11-10-architect-reverser-plan-0064-drlg-outdoor-statements.md):
   (a) `A1CliffMark`'s rule, (b) `g_A1SearchDx` corrected, (c) `A1PlaceOneOrTwo`'s branches, (d) `LevelBorderAdj`'s `Vis ≠ 0`
   test. Static only. S4 rows 6, 13–16.
-- archivist: [drlg-cases-and-pool-conventions](../backlog/archive/2026-11-10-architect-archivist-plan-0064-drlg-cases-and-pool-conventions.md):
+- archivist: [drlg-cases-and-pool-conventions](../../backlog/archive/2026-11-10-architect-archivist-plan-0064-drlg-cases-and-pool-conventions.md):
   (a) the `first_room_seed` emission and a re-emit, (b) maze list order, (c) maze `difficulty`, (d) digest frames,
   (e) the pool order, (f) file-name case, (g) tables/MonStats `MonStatsEx` width. S3 row 3 and 4, S4 rows 1–5 and 22.
-- spec-writer, one per spec: [drlg-outdoor](../backlog/archive/2026-11-10-architect-spec-writer-plan-0064-drlg-outdoor.md) (14
-  items; 1–4 wait for the reverser entry), [drlg-warps-border-adj](../backlog/archive/2026-11-10-architect-spec-writer-plan-0064-drlg-warps-border-adj.md)
-  (waits for (d)), [monsters-pool-inputs](../backlog/archive/2026-11-10-architect-spec-writer-plan-0064-monsters-pool-inputs.md)
+- spec-writer, one per spec: [drlg-outdoor](../../backlog/archive/2026-11-10-architect-spec-writer-plan-0064-drlg-outdoor.md) (14
+  items; 1–4 wait for the reverser entry), [drlg-warps-border-adj](../../backlog/archive/2026-11-10-architect-spec-writer-plan-0064-drlg-warps-border-adj.md)
+  (waits for (d)), [monsters-pool-inputs](../../backlog/archive/2026-11-10-architect-spec-writer-plan-0064-monsters-pool-inputs.md)
   (S3 rows 2, 4, 5), and items (3) to (5) added to
-  [conformance-drop-inputs](../backlog/archive/2026-11-10-architect-spec-writer-plan-0064-conformance-drop-inputs.md).
+  [conformance-drop-inputs](../../backlog/archive/2026-11-10-architect-spec-writer-plan-0064-conformance-drop-inputs.md).
 - No new entry for drlg/maze: every maze row is the set's or the format's.
 
 **Disputed rows, for a second fresh implementer** (the orchestrator runs it; this lane did not spawn one):
@@ -449,8 +449,8 @@ and Phase 5. Review: this entry is the Tier A review of the S3 and S4 ledgers; f
 
 Static only (r2 and objdump on the pinned `Game.exe`; no slot, no Ghidra run). Three entries closed:
 
-- [drlg-outdoor-statements](../backlog/archive/2026-11-10-architect-reverser-plan-0064-drlg-outdoor-statements.md) (S4 rows
-  6, 13–16), [drlg/0008 § Plan 0064 statements](../findings/drlg/0008-outdoor.md#plan-0064-statements-2026-11-10):
+- [drlg-outdoor-statements](../../backlog/archive/2026-11-10-architect-reverser-plan-0064-drlg-outdoor-statements.md) (S4 rows
+  6, 13–16), [drlg/0008 § Plan 0064 statements](../../findings/drlg/0008-outdoor.md#plan-0064-statements-2026-11-10):
   (a) `A1CliffMark` (0x00680070) as pseudocode with an address per test, `[C]`: the second source is `tools/drlg.py`'s
   `a1_cliff_mark` and its kept check run:2026-10-15-drlg-outdoor; new `tools/cliff_cover.py` re-scores that check with a
   transcription of the code in place of the model's (572 211 checks, 0 mismatches) and counts the branches (80 walks,
@@ -459,23 +459,23 @@ Static only (r2 and objdump on the pinned `Game.exe`; no slot, no Ghidra run). T
   only, § 8 rewritten. (d) `LevelBorderAdj` tests `Vis ≠ 0` (0x006776D6) before `Warp` −1; a control without the test
   scores 22 600 mismatches, so the logs separate the readings; drlg/0007's table row raised I → C. Experiments addendum
   under run:2026-10-15-drlg-outdoor; outputs and manifest in `workspace/logs/n64r/`.
-- [parseitemcell-unique-entry-words](../backlog/archive/2026-11-10-architect-reverser-plan-0064-parseitemcell-unique-entry-words.md)
-  (S2 row 14), [data/0001 § Plan 0064](../findings/data/0001-excel-loader.md#plan-0064-2026-11-10-the-entry-words-of-a-unique-or-set-cell):
+- [parseitemcell-unique-entry-words](../../backlog/archive/2026-11-10-architect-reverser-plan-0064-parseitemcell-unique-entry-words.md)
+  (S2 row 14), [data/0001 § Plan 0064](../../findings/data/0001-excel-loader.md#plan-0064-2026-11-10-the-entry-words-of-a-unique-or-set-cell):
   `index` = the items record of the row's base code (0 on a miss), `aux` = the name-link hit itself (no offset). `[I]`:
   only the edited forced run reaches it (ADR-0010).
-- [itemtypes-equiv-walk-form](../backlog/archive/2026-11-10-spec-writer-reverser-itemtypes-equiv-walk-form.md),
-  [items/0001 § Plan 0064](../findings/items/0001-tc-resolution.md#plan-0064-2026-11-10-the-item-type-test-and-its-equiv-matrix):
+- [itemtypes-equiv-walk-form](../../backlog/archive/2026-11-10-spec-writer-reverser-itemtypes-equiv-walk-form.md),
+  [items/0001 § Plan 0064](../../findings/items/0001-tc-resolution.md#plan-0064-2026-11-10-the-item-type-test-and-its-equiv-matrix):
   the matrix is built once by `ITEMS_LoadItemTypes` through `sub_00638CD0_ItemTypeIsOf` (depth-first, `Equiv1` ≤ 0
   skips `Equiv2`, depth bound 124, no visited set); bit 0 is set in every row. New `tools/itypes_equiv.py`: on the
   stock table no cycle, longest chain 4, and the matrix equals the closure plus bit 0. Four `re/symbols.csv` rows added
   (`sub_00629B50_ItemTypeMatrixTest`, `sub_00638CD0_ItemTypeIsOf`, `g_ItemTypeEquivStride`, `g_pItemTypeEquivBits`, all I).
 
-Routed to the spec-writer: the existing [drlg-outdoor](../backlog/archive/2026-11-10-architect-spec-writer-plan-0064-drlg-outdoor.md)
-entry, items 1–4, and [drlg-warps-border-adj](../backlog/archive/2026-11-10-architect-spec-writer-plan-0064-drlg-warps-border-adj.md)
+Routed to the spec-writer: the existing [drlg-outdoor](../../backlog/archive/2026-11-10-architect-spec-writer-plan-0064-drlg-outdoor.md)
+entry, items 1–4, and [drlg-warps-border-adj](../../backlog/archive/2026-11-10-architect-spec-writer-plan-0064-drlg-warps-border-adj.md)
 (both annotated: the reverser side is done). No spec-writer entry existed for data/excel G4 and items/tc § A or for
 items/tc § K1, so one new entry carries both:
-[plan-0064-item-cell-words-and-equiv-matrix](../backlog/archive/2026-11-10-reverser-spec-writer-plan-0064-item-cell-words-and-equiv-matrix.md).
-Archivist: [itemtypes-equiv-walk-lead-answered](../backlog/2026-11-10-reverser-archivist-itemtypes-equiv-walk-lead-answered.md)
+[plan-0064-item-cell-words-and-equiv-matrix](../../backlog/archive/2026-11-10-reverser-spec-writer-plan-0064-item-cell-words-and-equiv-matrix.md).
+Archivist: [itemtypes-equiv-walk-lead-answered](../../backlog/2026-11-10-reverser-archivist-itemtypes-equiv-walk-lead-answered.md)
 (tables/ItemTypes' open `[L]`). The S4 re-run of Phase 5 now waits only on the spec-writer and archivist entries.
 `backlog.py close` rewrote one link in `docs/specs/items/tc.md` to the archived entry (mechanical; no spec text changed).
 Review: Tier B.
@@ -519,7 +519,7 @@ Fixes:
 Two spec-defect entries closed, one annotated; every fix states what the implementer could not know and cites the finding
 or doc that already held it. Where none did, the point went to a new reverser entry, not into the spec.
 
-- **monsters/pool** ([entry, closed](../backlog/archive/2026-11-10-architect-spec-writer-plan-0064-monsters-pool-inputs.md); S3
+- **monsters/pool** ([entry, closed](../../backlog/archive/2026-11-10-architect-spec-writer-plan-0064-monsters-pool-inputs.md); S3
   rows 2, 4, 5 and the row-5 probe). C1: the counts at `+0x033`/`+0x034` are load-time bytes, 0 in `levels.bin`; a file
   reader computes them as the leading non-negative slots (pseudocode comment, diagram, a `[C]` and an `[I]` step note:
   Levels § Fields with no `.txt` column, monsters/0001 § 3). B3: the state table names `levelCount` = `g_nLevels` at
@@ -527,24 +527,24 @@ or doc that already held it. Where none did, the point went to a new reverser en
   (`[I]`, data/0001 § 5, data/excel B1 and C1), with the 136-regions-per-game count `[C]`. D1: "none" is a `MonStatsEx`
   outside `[0, nMonStats2)` read signed, the form of the same lookup inline in `MonSpawnTry` (`[I]`, monsters/0002 § 6);
   unreached on stock data (`[C]`, table survey); the Inputs row now says signed, as tables/MonStats does. The getter's
-  own test is a new `[L]`, filed as [monstats2rec-bound-test](../backlog/2026-11-10-spec-writer-reverser-monstats2rec-bound-test.md).
-- **conformance** ([entry, closed](../backlog/archive/2026-11-10-architect-spec-writer-plan-0064-conformance-drop-inputs.md);
+  own test is a new `[L]`, filed as [monstats2rec-bound-test](../../backlog/2026-11-10-spec-writer-reverser-monstats2rec-bound-test.md).
+- **conformance** ([entry, closed](../../backlog/archive/2026-11-10-architect-spec-writer-plan-0064-conformance-drop-inputs.md);
   S1 rows 4–5, S2 rows 2–3, S3 row 1, S4 rows 1 and 24). § Drops names `killer_mf` and `owner_mf` (items/quality § C,
   absent = 0) and links golden-trace § Drop cases; the B2 digest row and mismatch item 4 link the format's level set, order
   and canonical form; `mlvl.N` points at pool § B, B4; the maze digest row links the format's list order (newest first);
   `first_room_seed` follows from `window_seed` (maze B1); a new paragraph names what an outdoor case needs besides its
   inputs (warps § A–C, rng/seeds step 3, the Levels/LvlPrest/LvlSub columns, formats/ds1).
-- **drlg/outdoor** ([entry, annotated](../backlog/archive/2026-11-10-architect-spec-writer-plan-0064-drlg-outdoor.md)), items 5
+- **drlg/outdoor** ([entry, annotated](../../backlog/archive/2026-11-10-architect-spec-writer-plan-0064-drlg-outdoor.md)), items 5
   onward and probe rows 7 and 20. Done: § C (5, row 7: the insert's one-node compare and skipped head `[I]`, C2's full
   order as the reimplementation's rule with S4a's count and the side 1, 3 + 2 example `[I]`, C2's `[C]` scoped to the
   compare and the within-side order the ring reads); J2a (6: `RectGapTest` defined, drlg/0007 § 3, drlg/0006 § 2);
   G4 in part (7: the variant stride `(g.w + 1)·(v + 1)` `[C]`, and "63 means any" = `baseDef + wildcard` `[I]`, drlg/0008
   § 7); H6/H6e (12: no jitter call, so no draw, for a failed search `[I]`, drlg/0008 § 8 and § 16.3); F1 (13: level 3
   falls through to the shuffle `[I]`, drlg/0008 § 6); H0 (row 20: rows 6–14 store `not1` = `not2` = 0, a `[C]` legend).
-  Routed to the new [plan-0064-outdoor-unstated-steps](../backlog/2026-11-10-spec-writer-reverser-plan-0064-outdoor-unstated-steps.md)
+  Routed to the new [plan-0064-outdoor-unstated-steps](../../backlog/2026-11-10-spec-writer-reverser-plan-0064-outdoor-unstated-steps.md)
   and stated as one `[L]` under *Open questions*: the rest of (7), (8) L5, (9) L4/L6, (10) J5, (11) H3, (14) C5, and
   where the insert puts a node that sorts before the head. **Items 1–4 (H6d, H7, H1, C1) not touched**: they wait for
-  lane n64r's [drlg-outdoor-statements](../backlog/archive/2026-11-10-architect-reverser-plan-0064-drlg-outdoor-statements.md).
+  lane n64r's [drlg-outdoor-statements](../../backlog/archive/2026-11-10-architect-reverser-plan-0064-drlg-outdoor-statements.md).
   `…drlg-warps-border-adj` not done (it waits for n64r's (d)).
 
 Judgment calls for the reviewer: (a) H0's stored zeros are not printed in drlg/0008 (§ 16.3 shows `—`); I read them
@@ -585,8 +585,8 @@ misread 1. Plan stays open.
 Three spec-defect entries closed from the reverser's findings now on `main` (lane n64r); every fix names what the
 clean-room implementer could not know and cites the finding. No new finding was needed and no new `[L]` was written.
 
-- **drlg/outdoor items 1–4** ([entry, closed](../backlog/archive/2026-11-10-architect-spec-writer-plan-0064-drlg-outdoor.md);
-  S4 rows 6, 13–16), from [drlg/0008 § Plan 0064 statements](../findings/drlg/0008-outdoor.md#plan-0064-statements-2026-11-10).
+- **drlg/outdoor items 1–4** ([entry, closed](../../backlog/archive/2026-11-10-architect-spec-writer-plan-0064-drlg-outdoor.md);
+  S4 rows 6, 13–16), from [drlg/0008 § Plan 0064 statements](../../findings/drlg/0008-outdoor.md#plan-0064-statements-2026-11-10).
   (1) H6d: `g_A1SearchDx` `+1, 0, −1, 0` (bytes `01 00 FF 00`), dir 0 E, 1 S, 2 W, 3 N, with the `movsx` reads; the spec had
   copied § 16.3's flipped table. (2) H7a: `OneOrTwo` as pseudocode, the `s` step and `Near(49)` on the else branch only,
   `[C]` on the 26 separating calls; draw-sequence step 9 rewritten. (3) H1a: `A1CliffMark` as pseudocode in my own
@@ -596,17 +596,17 @@ clean-room implementer could not know and cites the finding. No new finding was 
   node, with the control's 948 nodes and 22 600 mismatches `[C]`. Two Reimplementation notes added (n13 the empty slot,
   n14 `OneOrTwo`'s one-branch draw) and taken as quirks Q528 (class 6) and Q529 (class 5).
   Routed items (7)–(11), (14) and the before-head insert stay in
-  [plan-0064-outdoor-unstated-steps](../backlog/2026-11-10-spec-writer-reverser-plan-0064-outdoor-unstated-steps.md)
+  [plan-0064-outdoor-unstated-steps](../../backlog/2026-11-10-spec-writer-reverser-plan-0064-outdoor-unstated-steps.md)
   (annotated: the reverser files a spec-writer entry when it closes).
-- **drlg/warps § A1** ([entry, closed](../backlog/archive/2026-11-10-architect-spec-writer-plan-0064-drlg-warps-border-adj.md)):
+- **drlg/warps § A1** ([entry, closed](../../backlog/archive/2026-11-10-architect-spec-writer-plan-0064-drlg-warps-border-adj.md)):
   the same `Vis ≠ 0` test and empty-slot case, (d)'s anchors and control.
-- **data/excel G4, items/tc § A and § K** ([entry, closed](../backlog/archive/2026-11-10-reverser-spec-writer-plan-0064-item-cell-words-and-equiv-matrix.md)):
+- **data/excel G4, items/tc § A and § K** ([entry, closed](../../backlog/archive/2026-11-10-reverser-spec-writer-plan-0064-item-cell-words-and-equiv-matrix.md)):
   G4's unique and set steps write `index` (the base code's items record, 0 on a miss) and `aux` (the row, no offset),
-  `[I]` by ADR-0010 ([data/0001 § Plan 0064](../findings/data/0001-excel-loader.md#plan-0064-2026-11-10-the-entry-words-of-a-unique-or-set-cell));
+  `[I]` by ADR-0010 ([data/0001 § Plan 0064](../../findings/data/0001-excel-loader.md#plan-0064-2026-11-10-the-entry-words-of-a-unique-or-set-cell));
   § A's layout glosses and a step note tie `aux + 1` to H4. § K: K1 is the load-time matrix and `TypeIsOf`'s walk
   (`[I]`), with notes on bit 0 in every row, cycles, the stock table's shape (`[C]`) and the closure-plus-bit-0
   equivalence on stock data (`[I]`); K2/K3 give the guards and `type2` tests; the *Open questions* `[L]` struck
-  ([items/0001 § Plan 0064](../findings/items/0001-tc-resolution.md#plan-0064-2026-11-10-the-item-type-test-and-its-equiv-matrix)).
+  ([items/0001 § Plan 0064](../../findings/items/0001-tc-resolution.md#plan-0064-2026-11-10-the-item-type-test-and-its-equiv-matrix)).
 
 Wiki: levels (the cliff-marking rule no longer listed as unwritten; an Act I cliff-marking sentence; the seam
 definition with the empty slot; `based_on` warps 2026-11-10), game-data (a named entry's two words, read from the code),
@@ -627,8 +627,8 @@ the S4 rows routed to the reverser stay out of the re-run until that entry lands
   `cleanroom-rerun-sandboxes` to the archivist). Each implemented its whole slice. **First pass = final, 0 different,
   one run each:** S1 62 035 fields (94 103 tokens), S2 32 320 fields (185 344 tokens; before: 1 573 different, and the
   final 0 needed a fitted magic find), S3 211 140 fields with no guess on a scored field (118 810 tokens). Audits clean.
-  Ledgers [S1-rerun](0064-cleanroom/S1-rerun.md) (6 rows), [S2-rerun](0064-cleanroom/S2-rerun.md) (11 rows),
-  [S3-rerun](0064-cleanroom/S3-rerun.md) (4 rows): only guesses that came out right or paths no case reaches; S2's
+  Ledgers [S1-rerun](../0064-cleanroom/S1-rerun.md) (6 rows), [S2-rerun](../0064-cleanroom/S2-rerun.md) (11 rows),
+  [S3-rerun](../0064-cleanroom/S3-rerun.md) (4 rows): only guesses that came out right or paths no case reaches; S2's
   unique-entry base item and Equiv walk are the items part 3 (`lane/n64y`) is writing in. S4's re-run follows part 3.
 
 ### 2026-11-10 — Phase 4 part 3 Tier A review (`lane/n64y`, architect): accept with fixes (2)
@@ -661,6 +661,100 @@ open: the S4 re-run and the close review follow.
   cases (levels 111–112: one Act V stamp too few). Final, run 2: 0 different, after reading § G's Act V `Type` 12 rule
   as replacing the generic opening test, confirmed by § Worked example 5 but prompted by the diff (ledger row 1, partly
   guessed from the diff). The Act I cases that failed in Phase 2 (the cliff mark, the search table, `OneOrTwo`) all
-  passed on the first pass. Ledger [S4-rerun](0064-cleanroom/S4-rerun.md), 21 rows: row 1 is the § L5 open question
+  passed on the first pass. Ledger [S4-rerun](../0064-cleanroom/S4-rerun.md), 21 rows: row 1 is the § L5 open question
   (already routed in `plan-0064-outdoor-unstated-steps`); rows 4–20 are right guesses on the routed items (G4 stamp
   details, L4, L6, J5, H3). Audit clean.
+
+### 2026-11-10 — Phase 5 close review (lane n64z, architect, Tier A): accept; plan closed
+
+**Verdict on the Phase 5 re-run ledgers: accept, 0 fixes.** Every first-pass difference is a row: S1, S2 and S3 had
+none; S4's 47 are all row 1. The triage is the new last column, *Triage (P5 close)*, of
+[S1-rerun](../0064-cleanroom/S1-rerun.md), [S2-rerun](../0064-cleanroom/S2-rerun.md), [S3-rerun](../0064-cleanroom/S3-rerun.md)
+and [S4-rerun](../0064-cleanroom/S4-rerun.md), under Phase 3's four classes ("implementer error" keeps the plan's
+meaning, *the spec was clear*; every such guess came out right).
+
+| Slice | Spec defect | Missing finding | Golden-set defect | Implementer error (no defect) | Rows |
+|---|---|---|---|---|---|
+| S1 | 0 | 0 | 0 | 6 | 6 |
+| S2 | 0 | 2 | 0 | 9 | 11 |
+| S3 | 0 | 1 | 0 | 3 | 4 |
+| S4 | 1 | 17 | 0 | 3 | 21 |
+| **Total** | **1** | **20** | **0** | **21** | **42** |
+
+- **S2's two missing findings, rows 1 and 6,** are the unique-entry words and the `Equiv` walk: the S2r sandbox was built before part 3
+  (`lane/n64y`) wrote them into data/excel G4 and items/tc K1, and both guesses agree with what it wrote.
+- **S4 row 1**, the only scored residue, is drlg/outdoor § L5's open question, routed as item (b) of
+  [plan-0064-outdoor-unstated-steps](../../backlog/2026-11-10-spec-writer-reverser-plan-0064-outdoor-unstated-steps.md).
+  § Worked example 5 is a logged window that separates the two readings (2 376 draws with no opening test, 2 361 with
+  it), so the reverser has a ready second source; written into the entry as a lead.
+- **S3 row 2** is the unreached D1 rule, already routed ([monstats2rec-bound-test](../../backlog/2026-11-10-spec-writer-reverser-monstats2rec-bound-test.md)). **S4's 17 missing findings:** row 1 above; rows 4–8, 11–14 and 16 are right guesses on that entry's items (a), (c), (d), (e) and (f). Rows 2, 9, 15, 17, 18
+  and 19 are steps no finding states that the entry did not yet name: they are added to it as items (i) to (m)
+  (G4's wall-and-floor precedence, L5's sub 30/31 in a replacement, H6c's scan past `ch`, warps B2's `LinkAnchor`
+  `dir` and a second Outer Steppes pick, J2c–J2d's neighbours outside the grid). Item (f)'s lead and the re-run's
+  guess differ (successor or earlier vertex); both unreached, noted in the entry.
+- **S4 row 20** is the one new spec defect: drlg/maze § F's "9: + Coldcrow; 10: + Next" does not say what "+" adds
+  to. Filed: [plan-0064-maze-cave-specials](../../backlog/2026-11-10-architect-spec-writer-plan-0064-maze-cave-specials.md)
+  (the entry also asks the spec-writer to square the row's `[C]` with drlg/0006's `I` for levels 10–12).
+
+**First-pass scores, Phase 2 against Phase 5** (fields different / fields compared; the first `score` run of a fresh
+implementer, before it saw any check output):
+
+| Slice | Phase 2, wrong / compared | Phase 5, wrong / compared |
+|---|---|---|
+| S1 seeds | 0 / 62 035 | 0 / 62 035 |
+| S2 drops | 1 573 / 32 320 | 0 / 32 320 |
+| S3 pools | 0 / 211 140 | 0 / 211 140 |
+| S4 DRLG | 381 / 1 820 | 47 / 1 820 (all drlg/outdoor § L5, already routed) |
+
+Phase 2 finals: S1 0, S2 0 (with a fitted magic find), S3 0, S4 106. Phase 5 finals: 0 in all four; S4's second run
+read § L5 as the worked example gives it, prompted by the diff (row 1 says so).
+
+**Measurement caveats.**
+- The subagent harness loads the project's `CLAUDE.md` into every implementer, Phase 2 and Phase 5 alike. It is a
+  project map, not a finding, and no ledger row cites it, but the implementers were not blind to the project's shape.
+- S2's Phase 2 final of 0 was reached by fitting the killer's magic find from the printed diffs (472 and 250), not
+  from a document; the first pass, 1 573, is the honest score. The set has carried `killer_mf` since `lane/n64g`.
+- S3's and S4's Phase 2 first pass is `score-log.jsonl` run 2, not run 1: run 1 is `lane/n64g`'s reference test,
+  appended to the default sandboxes before the implementers started. The Phase 5 sandboxes (`S1r` to `S4r`, built with
+  `--out`) have the first pass as run 1.
+- The clean-room tool issues are filed: `score.sh` and the audit's heredoc words (closed,
+  [cleanroom-score-path-and-audit-heredocs](../../backlog/archive/2026-11-10-architect-archivist-cleanroom-score-path-and-audit-heredocs.md)),
+  and `make --force` keeping the old code plus `--out` missing from `score.sh` (open,
+  [cleanroom-rerun-sandboxes](../../backlog/2026-11-10-architect-archivist-cleanroom-rerun-sandboxes.md)). Every audit
+  was ruled clean by hand after its false flags were read.
+
+**Phase 5's *Done when* is met**: the fixed fields reach 0 mismatches on the first pass in S1, S2 and S3, and S4's 47
+are one ledger row that Phase 3's rules triage (missing finding, routed). The plan closes.
+
+**Entries.** The plan's lanes closed 17 entries (all in `docs/backlog/archive/`: the archivist's magic-find, format
+conventions, DRLG and pool conventions, ItemTypes blank cells, and score-path entries; the reverser's
+drlg-outdoor-statements, parseitemcell and Equiv-walk entries; the spec-writer's items/tc type test, its two links,
+items/quality S1, monsters/pool inputs, conformance, drlg/outdoor, drlg/warps border adjacency and item-cell-words
+entries). This review filed 1 and annotated 1. Left open, each with its reason:
+- [plan-0064-outdoor-unstated-steps](../../backlog/2026-11-10-spec-writer-reverser-plan-0064-outdoor-unstated-steps.md)
+  (reverser, static): items (a)–(f), (h) and the new (i)–(m) need code readings; only (b) costs a score, and it has a
+  logged separation ready. When it closes, the reverser files the spec-writer entry for drlg/outdoor and drlg/warps.
+- [monstats2rec-bound-test](../../backlog/2026-11-10-spec-writer-reverser-monstats2rec-bound-test.md) (reverser): no
+  stock class reaches the "none" exit; low priority.
+- [plan-0064-maze-cave-specials](../../backlog/2026-11-10-architect-spec-writer-plan-0064-maze-cave-specials.md)
+  (spec-writer): wording, filed here.
+- [cleanroom-rerun-sandboxes](../../backlog/2026-11-10-architect-archivist-cleanroom-rerun-sandboxes.md) (archivist):
+  needed before any further clean-room run, not before this close.
+- [itemtypes-equiv-walk-lead-answered](../../backlog/2026-11-10-reverser-archivist-itemtypes-equiv-walk-lead-answered.md)
+  (archivist): tables/ItemTypes still carries the answered `[L]`.
+
+**Bookkeeping.** Status `done`; the plan moved to `docs/plans/done/` and its links rewritten. **`docs/plans/0064-cleanroom/`
+stays where it is**, as `docs/plans/0038-inventory/` does for plan 0038: the open entries point at the
+ledgers there, the brief lives in it, and a later clean-room run (v2) would add to it; the plan's links into it now read `../0064-cleanroom/`.
+Inbound links rewritten (ADR-0032 names the plan by slug only; the backlog entries, open and archived; the repo
+README). Plans README row closed with the scores; research-map `conformance` row gives the result; the repo README's
+plan bullet removed (closed plans are listed in the plans index).
+
+**Ledger promotion pass** (every fifth Tier A review; `tools/metrics.py summary --by lane` and today's rows): promoted
+reverser 19 (a `[C]` on a kept separating count) and 20 (grep the copies of a corrected statement), spec-writer 10 (a
+`[C]` carries the finding's count), archivist 10 (a `[C]` covers what a count ties) and 11 (grep what restates a
+change), architect 17 (a merged research-map row takes the spec's front-matter counts). No rule dropped.
+
+Ledger cells for the orchestrator: `lane/n64z` review, 0064 P5 close, architect-review, verdict "accept (0); plan 0064
+closed; re-run triage of 42 rows: spec defect 1, missing finding 20, golden-set 0, implementer error 21; 1 entry filed,
+1 annotated", fixes `—`.

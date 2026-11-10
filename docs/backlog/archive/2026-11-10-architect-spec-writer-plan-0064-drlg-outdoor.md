@@ -4,7 +4,7 @@ to: spec-writer
 date: 2026-11-10
 status: done
 context:
-  - ../../plans/0064-clean-room-test.md#implementation-log
+  - ../../plans/done/0064-clean-room-test.md#implementation-log
   - ../../plans/0064-cleanroom/S4.md
   - ../../specs/drlg/outdoor.md
 resolution: "Items 1–4 done in drlg/outdoor (H6d table, H7a OneOrTwo, H1a A1CliffMark, C1 Vis ≠ 0) from drlg/0008 § Plan 0064; items 5 onward done by lane/n64x; the routed items (7)–(11), (14) and the before-head insert stay in [plan-0064-outdoor-unstated-steps](../2026-11-10-spec-writer-reverser-plan-0064-outdoor-unstated-steps.md)."

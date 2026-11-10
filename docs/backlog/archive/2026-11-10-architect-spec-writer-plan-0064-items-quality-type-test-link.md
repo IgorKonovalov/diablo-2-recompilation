@@ -4,7 +4,7 @@ to: spec-writer
 date: 2026-11-10
 status: done
 context:
-  - ../../plans/0064-clean-room-test.md#implementation-log
+  - ../../plans/done/0064-clean-room-test.md#implementation-log
   - ../../plans/0064-cleanroom/S2.md
   - ../../specs/items/quality.md
 resolution: "Done 2026-11-10 (lane n64w, plan 0064 P4): [items/quality](../../specs/items/quality.md#b-the-itemratio-row--itemratio_select) S2's note links [items/tc § K](../../specs/items/tc.md#k-the-item-type-test--items_istype-and-items_unitistype) and says IsType walks the Equiv1/Equiv2 closure of both type and type2, unlike A2-A5 (own type) and S1 (own type's Class). [I] as before (fn:ITEMS_IsType@0x00629A90, items/0001 § Functions)."
