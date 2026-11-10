@@ -5,7 +5,7 @@ based_on:
   - docs/specs/drlg/preset.md 2026-11-03
   - docs/specs/drlg/collision.md 2026-11-04
   - docs/specs/drlg/maze.md 2026-11-03
-  - docs/specs/drlg/warps.md 2026-10-17
+  - docs/specs/drlg/warps.md 2026-11-10
   - docs/specs/drlg/outdoor.md 2026-11-10
   - docs/specs/drlg/lifecycle.md 2026-11-04
   - docs/specs/monsters/spawn.md 2026-11-04
@@ -120,7 +120,9 @@ the formula give 1. For the same reason the Black Marsh never ends on side 2. Bo
 with every possible draw value enumerated, not something a run can show.
 
 Each level carries eight link slots, `Vis0..7` (the destination level) and `Warp0..7` (which warp record). A slot
-whose `Warp` is −1 is a [seam](../glossary.md): a walkable border between two touching levels, not stairs. The link
+that names a level and whose `Warp` is −1 is a [seam](../glossary.md): a walkable border between two touching levels,
+not stairs. An empty slot (`Vis` 0) also has `Warp` −1 and is no seam: the outdoor generators make no border for it
+([outdoor § C](../specs/drlg/outdoor.md#c-the-level-outline)). The link
 builder writes a seam both ways between each placed level and its anchor; the seams of Act V, and of Act III's
 jungle levels, come from a "do these rectangles touch" test instead
 ([warps § C](../specs/drlg/warps.md#c-level-rectangles-and-the-links-after-the-layout)). Some levels also get a size from the builder that differs from the `Levels` table:
@@ -258,7 +260,10 @@ The main building blocks, all on the level seed:
   the Blood Moor seam opening, pulled inside the border, with no draw.
 - **[Border stamps](../glossary.md)** ([outdoor § G](../specs/drlg/outdoor.md#g-border-stamps)): five `LvlSub`
   records act as rewrite rules on the cell grid (cliff and border shapes), matched and stamped at shuffled positions.
-- **Act I extras** ([outdoor § H](../specs/drlg/outdoor.md#h-act-i)): a river column and bridge, a cave entrance in
+- **Act I extras** ([outdoor § H](../specs/drlg/outdoor.md#h-act-i)): first, on every Act I outdoor level except the
+  Blood Moor, the Cold Plains and the Burial Grounds, the cliff marking walks the outline and marks as cliff each
+  stretch that goes up and right with no seam and ends at a corner, with no draw
+  ([outdoor § H1a](../specs/drlg/outdoor.md#h-act-i)); then a river column and bridge, a cave entrance in
   a cliff or a corner, or else at a random spot (in the Blood Moor, the Den of Evil entrance, placed as far as
   possible from the Rogue Encampment), and the roads, whose tiles are laid when each road room is prepared
   ([outdoor § M](../specs/drlg/outdoor.md#m-the-out-room-grids-at-the-room-prepare-and-the-act-i-road-tiles)).
@@ -661,7 +666,7 @@ section.
   and nothing between the step that skips its cliffs and the scan gives it a cliff run). A few table reads past the end are not reached by the shipped tables.
   Some smaller steps are not yet written from the code: details of how a border stamp is matched and written, the
   edges and scan order of Act V's gates and prisons, a few arguments of the Kurast fills, which cells beside the Act I
-  bridge must be free, the vertex merge itself, and the rule of Act I's cliff marking.
+  bridge must be free, and the vertex merge itself.
 - **Room tiles** ([room tiles § Open questions](../specs/drlg/room-tiles.md#open-questions)): the tile-merge
   branches that would re-orient a wall or shadow, or treat orientation 3 specially, are **unreachable on the shipped
   data**, outdoor rooms included: every wall and shadow cell of the 2077 map files a room can read carries the bit

@@ -147,7 +147,9 @@ flowchart LR
 
 While loading TreasureClassEx, the game also resolves each `ItemN` cell. A name of up to four characters is tried
 as an item code first; failing that, it is looked up as a TC name, then as a unique item name, then as a set item
-name; a name that matches nothing is dropped. So a short TC name that equals an item code means the item. The loader
+name; a name that matches nothing is dropped. So a short TC name that equals an item code means the item. A unique or
+set entry keeps two numbers: the base item of the named row and the row itself, which item creation later uses to make
+that exact unique or set item (read from the code, [excel G4](../specs/data/excel.md#g-treasure-classes)). The loader
 stops reading a row's items at the first empty `ItemN`, so an item after a blank cell is ignored; a
 [Picks](../glossary.md) of 0 becomes 1; and a cell with a probability below 1 is skipped. A replay of the logged
 drops confirms the numbering, the item-code-first rule and the resolution of every logged cell; the three rules just

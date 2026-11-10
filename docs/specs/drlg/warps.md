@@ -5,7 +5,7 @@ target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, drlg/overview, drlg/maze, drlg/preset, drlg/room-tiles]
 consumed_by: [drlg/overview, drlg/maze, drlg/collision, monsters/spawn, objects]
 tags: {C: 104, I: 16, L: 1}
-updated: 2026-10-17
+updated: 2026-11-10
 ---
 
 # Level links, warp slots and warp points
@@ -139,11 +139,16 @@ A1. ActLinkInit(act):                                                [C] (fn:sub
   taken from the log there, and the 18 of run:2026-10-15-drlg-outdoor match the model. (fn:sub_006789B0_ActLinkAct3@0x006789B0,
   fn:sub_00677880_JungleLayout@0x00677880, run:2026-10-15-drlg-maze, run:2026-10-15-drlg-outdoor)
 - A1. [C] `LevelBorderAdj` gives each outdoor level (`DrlgType` 3) in the range one sorted level-adjacency node per
-  `Vis` slot whose `Warp` is −1. The outdoor generators read those nodes for their borders
-  ([outdoor.md § C](outdoor.md#c-the-level-outline)). `LinkOutdoorFlags` ORs outdoor-data flags into the Act I outdoor
+  `Vis` slot that names a level and has no warp: `Vis` ≠ 0 (tested first, 0x006776D6) and `Warp` −1 (0x006776DA). An
+  empty slot (`Vis` 0, `Warp` −1, the state `LevelLinkSet` looks for when it adds a link) makes no node, so a test of
+  `Warp` alone is not the same rule; without the `Vis` test the reference model makes 948 extra nodes and scores 22 600
+  mismatches of 513 215 checks on run:2026-10-15-drlg-outdoor
+  ([drlg/0008 § Plan 0064 (d)](../../findings/drlg/0008-outdoor.md#d-levelborderadj-0x00677680)). The outdoor generators
+  read those nodes for their borders ([outdoor.md § C](outdoor.md#c-the-level-outline)). `LinkOutdoorFlags` ORs outdoor-data flags into the Act I outdoor
   levels by the sides chosen (table `0x006F1258`); it makes no draw and is an input of [outdoor.md § H](outdoor.md#h-act-i).
   The adjacency lists and the outdoor flags of every window of run:2026-10-15-drlg-outdoor match the model.
-  (fn:sub_00677680_LevelBorderAdj@0x00677680, fn:sub_0066B790_LevelAdjAdd@0x0066B790, fn:sub_00677180_LinkOutdoorFlags@0x00677180,
+  (fn:sub_00677680_LevelBorderAdj@0x00677680, fn:sub_0066C040_LevelVisIds@0x0066C040, fn:sub_0066AEC0_LevelWarpIds@0x0066AEC0,
+  fn:sub_0066B790_LevelAdjAdd@0x0066B790, fn:sub_00642920_LevelLinkSet@0x00642920, fn:sub_00677180_LinkOutdoorFlags@0x00677180,
   run:2026-10-15-drlg-outdoor)
 
 ### B. The act link builder

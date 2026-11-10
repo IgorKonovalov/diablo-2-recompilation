@@ -143,8 +143,9 @@ for each item type that has one, a TC for every N = 3, 6, … 96, holding every 
 whose base `level` lies above N − 3 and at most N, each weighted by the `Rarity` of the base's own type. Confirmed by
 the recorded drops that land in them ([TC § I](../specs/items/tc.md#i-auto-item-type-tcs-weapn-armon-bown-melen-abown)).
 "Of that type" is the game's item-type test: a base counts when its own type or its second type is the TC's type or
-descends from it through the types' parent columns, so every sword and axe is a `weap`. That the TC build uses this test
-is read from the code; the same test, applied to item units, reproduces every recorded affix choice
+descends from it through the types' parent columns, so every sword and axe is a `weap`. By the code, the game works this out once,
+at load, as a table of every type against every other, and reads the table at each test. That the TC build uses this
+test is read from the code; the same test, applied to item units, reproduces every recorded affix choice
 ([TC § K](../specs/items/tc.md#k-the-item-type-test--items_istype-and-items_unitistype)).
 
 When a pick lands on an item, the game asks for a quality (next section) unless the TC entry itself names a unique or

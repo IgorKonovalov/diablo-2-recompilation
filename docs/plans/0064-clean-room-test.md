@@ -396,8 +396,8 @@ Backlog entries filed (5) and annotated (1):
 - archivist: [drlg-cases-and-pool-conventions](../backlog/archive/2026-11-10-architect-archivist-plan-0064-drlg-cases-and-pool-conventions.md):
   (a) the `first_room_seed` emission and a re-emit, (b) maze list order, (c) maze `difficulty`, (d) digest frames,
   (e) the pool order, (f) file-name case, (g) tables/MonStats `MonStatsEx` width. S3 row 3 and 4, S4 rows 1–5 and 22.
-- spec-writer, one per spec: [drlg-outdoor](../backlog/2026-11-10-architect-spec-writer-plan-0064-drlg-outdoor.md) (14
-  items; 1–4 wait for the reverser entry), [drlg-warps-border-adj](../backlog/2026-11-10-architect-spec-writer-plan-0064-drlg-warps-border-adj.md)
+- spec-writer, one per spec: [drlg-outdoor](../backlog/archive/2026-11-10-architect-spec-writer-plan-0064-drlg-outdoor.md) (14
+  items; 1–4 wait for the reverser entry), [drlg-warps-border-adj](../backlog/archive/2026-11-10-architect-spec-writer-plan-0064-drlg-warps-border-adj.md)
   (waits for (d)), [monsters-pool-inputs](../backlog/archive/2026-11-10-architect-spec-writer-plan-0064-monsters-pool-inputs.md)
   (S3 rows 2, 4, 5), and items (3) to (5) added to
   [conformance-drop-inputs](../backlog/archive/2026-11-10-architect-spec-writer-plan-0064-conformance-drop-inputs.md).
@@ -470,11 +470,11 @@ Static only (r2 and objdump on the pinned `Game.exe`; no slot, no Ghidra run). T
   stock table no cycle, longest chain 4, and the matrix equals the closure plus bit 0. Four `re/symbols.csv` rows added
   (`sub_00629B50_ItemTypeMatrixTest`, `sub_00638CD0_ItemTypeIsOf`, `g_ItemTypeEquivStride`, `g_pItemTypeEquivBits`, all I).
 
-Routed to the spec-writer: the existing [drlg-outdoor](../backlog/2026-11-10-architect-spec-writer-plan-0064-drlg-outdoor.md)
-entry, items 1–4, and [drlg-warps-border-adj](../backlog/2026-11-10-architect-spec-writer-plan-0064-drlg-warps-border-adj.md)
+Routed to the spec-writer: the existing [drlg-outdoor](../backlog/archive/2026-11-10-architect-spec-writer-plan-0064-drlg-outdoor.md)
+entry, items 1–4, and [drlg-warps-border-adj](../backlog/archive/2026-11-10-architect-spec-writer-plan-0064-drlg-warps-border-adj.md)
 (both annotated: the reverser side is done). No spec-writer entry existed for data/excel G4 and items/tc § A or for
 items/tc § K1, so one new entry carries both:
-[plan-0064-item-cell-words-and-equiv-matrix](../backlog/2026-11-10-reverser-spec-writer-plan-0064-item-cell-words-and-equiv-matrix.md).
+[plan-0064-item-cell-words-and-equiv-matrix](../backlog/archive/2026-11-10-reverser-spec-writer-plan-0064-item-cell-words-and-equiv-matrix.md).
 Archivist: [itemtypes-equiv-walk-lead-answered](../backlog/2026-11-10-reverser-archivist-itemtypes-equiv-walk-lead-answered.md)
 (tables/ItemTypes' open `[L]`). The S4 re-run of Phase 5 now waits only on the spec-writer and archivist entries.
 `backlog.py close` rewrote one link in `docs/specs/items/tc.md` to the archived entry (mechanical; no spec text changed).
@@ -534,7 +534,7 @@ or doc that already held it. Where none did, the point went to a new reverser en
   and canonical form; `mlvl.N` points at pool § B, B4; the maze digest row links the format's list order (newest first);
   `first_room_seed` follows from `window_seed` (maze B1); a new paragraph names what an outdoor case needs besides its
   inputs (warps § A–C, rng/seeds step 3, the Levels/LvlPrest/LvlSub columns, formats/ds1).
-- **drlg/outdoor** ([entry, annotated](../backlog/2026-11-10-architect-spec-writer-plan-0064-drlg-outdoor.md)), items 5
+- **drlg/outdoor** ([entry, annotated](../backlog/archive/2026-11-10-architect-spec-writer-plan-0064-drlg-outdoor.md)), items 5
   onward and probe rows 7 and 20. Done: § C (5, row 7: the insert's one-node compare and skipped head `[I]`, C2's full
   order as the reimplementation's rule with S4a's count and the side 1, 3 + 2 example `[I]`, C2's `[C]` scoped to the
   compare and the within-side order the ring reads); J2a (6: `RectGapTest` defined, drlg/0007 § 3, drlg/0006 § 2);
@@ -579,3 +579,44 @@ id 0" (level 0 is *Null*) now says `L` is an Act I `DrlgType` 3 level, never lev
 Act I's cliff-marking rule among the steps not yet written, which drlg/outdoor H1 does not yet say; part 3 (items 1–4,
 after `lane/n64r`) settles it. Ledger: spec-writer row accept with fixes (Tier A, 3), under-claim 1, overclaim 1,
 misread 1. Plan stays open.
+
+### 2026-11-10 — Phase 4 spec fixes, part 3 (lane n64y, spec-writer)
+
+Three spec-defect entries closed from the reverser's findings now on `main` (lane n64r); every fix names what the
+clean-room implementer could not know and cites the finding. No new finding was needed and no new `[L]` was written.
+
+- **drlg/outdoor items 1–4** ([entry, closed](../backlog/archive/2026-11-10-architect-spec-writer-plan-0064-drlg-outdoor.md);
+  S4 rows 6, 13–16), from [drlg/0008 § Plan 0064 statements](../findings/drlg/0008-outdoor.md#plan-0064-statements-2026-11-10).
+  (1) H6d: `g_A1SearchDx` `+1, 0, −1, 0` (bytes `01 00 FF 00`), dir 0 E, 1 S, 2 W, 3 N, with the `movsx` reads; the spec had
+  copied § 16.3's flipped table. (2) H7a: `OneOrTwo` as pseudocode, the `s` step and `Near(49)` on the else branch only,
+  `[C]` on the 26 separating calls; draw-sequence step 9 rewritten. (3) H1a: `A1CliffMark` as pseudocode in my own
+  structure (start tests, run exits, `last`, marking, the `done` flag before the exits, signed compares), `[C]` with the
+  branch counts and the clean-room separation; the left-going and back-at-start exits `[I]`. H1's line points to it.
+  (4) C1, the § C sentence and the Inputs `Vis`/`Warp` row: `Vis ≠ 0` tested before `Warp` −1, an empty slot makes no
+  node, with the control's 948 nodes and 22 600 mismatches `[C]`. Two Reimplementation notes added (n13 the empty slot,
+  n14 `OneOrTwo`'s one-branch draw) and taken as quirks Q528 (class 6) and Q529 (class 5).
+  Routed items (7)–(11), (14) and the before-head insert stay in
+  [plan-0064-outdoor-unstated-steps](../backlog/2026-11-10-spec-writer-reverser-plan-0064-outdoor-unstated-steps.md)
+  (annotated: the reverser files a spec-writer entry when it closes).
+- **drlg/warps § A1** ([entry, closed](../backlog/archive/2026-11-10-architect-spec-writer-plan-0064-drlg-warps-border-adj.md)):
+  the same `Vis ≠ 0` test and empty-slot case, (d)'s anchors and control.
+- **data/excel G4, items/tc § A and § K** ([entry, closed](../backlog/archive/2026-11-10-reverser-spec-writer-plan-0064-item-cell-words-and-equiv-matrix.md)):
+  G4's unique and set steps write `index` (the base code's items record, 0 on a miss) and `aux` (the row, no offset),
+  `[I]` by ADR-0010 ([data/0001 § Plan 0064](../findings/data/0001-excel-loader.md#plan-0064-2026-11-10-the-entry-words-of-a-unique-or-set-cell));
+  § A's layout glosses and a step note tie `aux + 1` to H4. § K: K1 is the load-time matrix and `TypeIsOf`'s walk
+  (`[I]`), with notes on bit 0 in every row, cycles, the stock table's shape (`[C]`) and the closure-plus-bit-0
+  equivalence on stock data (`[I]`); K2/K3 give the guards and `type2` tests; the *Open questions* `[L]` struck
+  ([items/0001 § Plan 0064](../findings/items/0001-tc-resolution.md#plan-0064-2026-11-10-the-item-type-test-and-its-equiv-matrix)).
+
+Wiki: levels (the cliff-marking rule no longer listed as unwritten; an Act I cliff-marking sentence; the seam
+definition with the empty slot; `based_on` warps 2026-11-10), game-data (a named entry's two words, read from the code),
+items (the type test's load-time table, by the code), quirks (529 entries, class 5 144/118, class 6 135/104). Glossary
+*Seam* updated. Research-map rows of items/tc, drlg/outdoor, drlg/warps, data/excel and quirks rewritten. Tags:
+drlg/outdoor C 191 / I 23 / L 3, drlg/warps C 104 / I 16 / L 1 (unchanged), data/excel C 146 / I 60 / L 2, items/tc
+C 125 / I 75 / L 6, quirks C 376 / I 162 / L 3. `quirks.py check`: 529 entries, 0 errors.
+
+Judgment calls for the reviewer: (a) K3's header carries `[C]` for its answers only, the guards and the `type2 > 0`
+test inline `[I]`; (b) the H1a pseudocode re-expresses the finding's loop with named booleans (`start`, `seam`), the
+same tests and order; (c) the two new notes and quirks were optional; I added them because both are traps the S4
+implementer hit. Review: Tier A. Next: Phase 5 re-runs S2's entry-word and type-test fields and S4 from the fixed specs;
+the S4 rows routed to the reverser stay out of the re-run until that entry lands.
