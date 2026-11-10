@@ -31,7 +31,7 @@
           {
             "type": "command",
             "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/gate-on-commit.js\"",
-            "timeout": 30
+            "timeout": 120
           }
         ]
       }

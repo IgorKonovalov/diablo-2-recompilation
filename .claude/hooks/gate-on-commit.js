@@ -34,7 +34,7 @@ const { readFileSync, existsSync } = require("fs");
 const { spawnSync } = require("child_process");
 const path = require("path");
 
-const GATE_TIMEOUT_MS = 20000;
+const GATE_TIMEOUT_MS = 100000;
 
 function pass() {
   process.stdout.write("{}");
