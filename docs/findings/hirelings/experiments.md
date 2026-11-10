@@ -257,7 +257,7 @@ shared by players); no written save (`D2S_WriteMercHeader`). The client's list w
   ```
 - **Limits:** no classic Greiz hire (four launches, the pilot failed to reach him); no hire or list at Kashya below
   level 8 with word 2 open and none at Qual-Kehk with word 36 open: the client's menu offered no hire line, so the
-  server's two quest refusals were not sent (which client code drops the line is unfollowed; filed at the `lane/h6f` review, [entry](../../backlog/2026-10-27-architect-reverser-h6f-review-client-hire-line-and-merc-create.md)); no Act III quest gift;
+  server's two quest refusals were not sent (which client code drops the line is unfollowed; filed at the `lane/h6f` review, [entry](../../backlog/archive/2026-10-27-architect-reverser-h6f-review-client-hire-line-and-merc-create.md)); no Act III quest gift;
   no classic free mercenary; no `MERC_Create` with a hire table present (the only calls were at the load, and the act
   changes of `mact` made none); a `MERC_AddExp` at L ≥ 98 with a gain > 0 (`n99`'s gains were 0); resurrection at
   Greiz, Asheara or Tyrael. Dev logs: the four Greiz attempts.

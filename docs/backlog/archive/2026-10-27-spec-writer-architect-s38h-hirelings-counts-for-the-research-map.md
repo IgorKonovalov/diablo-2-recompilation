@@ -31,7 +31,7 @@ research-map row and the wiki's `based_on` dates (gate W4). Not blocking.
 - **Not reflected, with the reason:** rows 3, 30 and 33 (H1a shortfalls, routed to H1c); row 11 (d-2c) and rows 12,
   13 and 22 (d-edit, d-none) stay `[I]` as readings; row 38 (d-sim, `MERCAI_PickSkill`). The conditional d-none parts
   of rows 17, 18 and 21 and the row-29 shortfall stay `[I]` until the reverser entry
-  [2026-10-27-architect-reverser-h6f-review-client-hire-line-and-merc-create](../2026-10-27-architect-reverser-h6f-review-client-hire-line-and-merc-create.md)
+  [2026-10-27-architect-reverser-h6f-review-client-hire-line-and-merc-create](2026-10-27-architect-reverser-h6f-review-client-hire-line-and-merc-create.md)
   is answered; an Open-questions `[L]` names it. Outside hirelings (rule 8 companion, not edited here):
   [items/economy](../../specs/items/economy.md) G13 rests on run:2026-10-17-economy (Qual-Kehk), and its *NPC classes*
   bullet keeps resurrection at 150, 198, 252, 367 and 515 `[I]`; H6f's Kashya resurrection (150) and the Qual-Kehk ones

@@ -116,6 +116,14 @@ Static reading of the pinned `Game.exe` in Ghidra (project copy `workspace/ghidr
 | `0x0061BEE0` | `sub_0061BEE0_ClockStep` | one step of an act's light clock | I |
 | `0x0061C040` | `sub_0061C040_ActClockTick` | step and report a change | I |
 | `0x0061C330` | `sub_0061C330_ActClockGet` | `+0x00`, `+0x08` and `+0x30` of a clock | I |
+| `0x0061BE40` | `sub_0061BE40_ActClockCreate` | a new clock: `p` 2, index 0, `k` = scale[0], flag 0 (plan 0063 P2a, § 3.1a) | I |
+| `0x0061BDF0` | `sub_0061BDF0_ActClockRowReset` | `v` and `c` from the row `p` of `T0` or `T2` by the flag | I |
+| `0x0061C240` | `sub_0061C240_ActClockSet` | client: sets `p`, `c`, `v` and the flag, never `k` | I |
+| `0x0061C180` | `sub_0061C180_ActClockNextRow` | the next row, `c` at its start (no reference in the image) | I |
+| `0x0061C3B0` | `sub_0061C3B0_ActClockCycleScale` | the scale index cycled 0 → 1 → 2 (no reference in the image) | I |
+| `0x0061C450` | `sub_0061C450_ActClockEclipseOn` | index 1, `k` = scale[1], `p` 0, flag 1 (A2Q3) | I |
+| `0x0061C4D0` | `sub_0061C4D0_ActClockEclipseOff` | index 0, `k` = scale[0], `p` 2, flag 0 (A2Q3) | I |
+| `0x0055DA70` | `sub_0055DA70_PlayerSkillReselect` | the wanted left and right skills set again when they differ and are usable | I |
 | `0x0064C040` | `sub_0064C040_UnitMarkUpdated` | mark a unit updated this frame (78 call sites) | I |
 | `0x0064C160` | `sub_0064C160_RoomUpdatedClear` | clear a room's updated list | I |
 | `0x0064C1B0` | `sub_0064C1B0_RoomUpdatedUnlink` | unlink one unit from the list | I |
@@ -127,7 +135,8 @@ Static reading of the pinned `Game.exe` in Ghidra (project copy `workspace/ghidr
 
 Data: `g_ServerFrameInterval` `0x00883D60` (40), `g_ServerFrameLast` `0x00883D58`, `g_ServerFps` `0x00731014` (25),
 `g_ServerLagFixed` `0x0073100C` (1, never written), `g_GameSlots` `0x00882D38` (1 024 dwords), `g_NetCtx`
-`0x00882D08`, `g_ActClockTable0`, `g_ActClockTable1`, `g_ActClockTable2` (`0x007443F0`, `0x00744438`, `0x00744480`) (six rows of three dwords each: start, type, a colour word).
+`0x00882D08`, `g_ActClockTable0`, `g_ActClockTable1`, `g_ActClockTable2` (`0x007443F0`, `0x00744438`, `0x00744480`) (six rows of three dwords each: start, type, a colour word),
+`g_ActClockScale` `0x007443E4` (three dwords, 128, 4, 8; § 3.1a).
 
 ## Walkthrough
 
@@ -241,9 +250,85 @@ if (frame % 11 == 0) for act 0..4: if (game->act[a]) 0x0061AA20(act);   // ActLe
   `k` = 6 135 667 (2 147 483 450). Past the bound the compare runs on the wrapped value; the cases keep `k` below
   5 000, so the wrapped range is not emulated. (0x0061BF1F, 0x0061BF66, 0x0061BF97)
 - [I] What the clock is: its tables hold a colour word per row (0x0061BCE0 blends two rows' bytes into `+0x18..+0x1A`),
-  the 0x53 packet carries the period and the counter to the client, and the scale and
-  flag are set where an act is loaded (`0x0061C240`, called from `ClientActLoad` and three others), so it is the act's
-  day-and-night light. Where the scale `k` comes from on the server is not read (open question 2).
+  and the 0x53 packet carries the period and the counter to the client, so it is the act's day-and-night light.
+  *Corrected 2026-11-10 (plan 0063 P2a, § 3.1a):* `0x0061C240` (`sub_0061C240_ActClockSet`) sets the period, the
+  counter and the flag, not the scale. All 4 of its callers are client code (`ClientActLoad` and three others). On the
+  server, `k` and the flag are set by the clock's creation and the Act II eclipse only (§ 3.1a).
+  (fn:sub_0061C240_ActClockSet@0x0061C240)
+
+#### 3.1a The server's clock: scale, flag and the send rate (plan 0063 Phase 2a, `lane/n63r`, 2026-11-10)
+
+This answers open questions 1 and 2 ([backlog entry](../../backlog/archive/2026-11-04-spec-writer-reverser-act-clock-scale.md)).
+Every claim is a new static reading, so inferred. The send counts come from `tools/act_clock.py` (`act-clock.txt`), which
+runs § 3.1's emulated step on the image's tables. The kept outputs are in `workspace/logs/p63-static/`
+(`manifest.txt`).
+
+- [I] **The writers of `k` (`+0x28`), its index (`+0x2C`) and the flag (`+0x30`).** There are five (data:g_ActClockScale@0x007443E4):
+  - `sub_0061BE40_ActClockCreate`: a 0x38-byte clock zeroed, `p = 2`, index 0, `k = g_ActClockScale[0]`,
+    `c = k × T0[2].start`, flag 0. Its one caller is `DUNGEON_ActCreate` (0x0061952F), so every act a game creates
+    starts this way.
+  - `sub_0061C450_ActClockEclipseOn`: index 1, `k = g_ActClockScale[1]`, `p = 0`, flag 1, the row's values from
+    `T2`. Its callers are `sub_0059A350_A2Q3_EclipseOn` (0x0059A394) and `sub_0059AC40_A2Q3_ActEnter` (0x0059AC67).
+  - `sub_0061C4D0_ActClockEclipseOff`: index 0, `k = g_ActClockScale[0]`, `p = 2`, `c = 0`, flag 0. Its caller is
+    `sub_0059A7E0_A2Q3_ViperChest` (0x0059AA17).
+  - `sub_0061C3B0_ActClockCycleScale` cycles the index 0 → 1 → 2 → 0, and a stub at 0x0061BB50 copies
+    `g_ActClockScale[index]` into `k`. The image holds no reference to either (`findptr`: no call, pointer, branch
+    or fall-through).
+  - `sub_0061C240_ActClockSet` writes the flag (and `p`, `c`, `v`, never `k`). Its 4 callers are client code
+    (0x0044E16C `ClientActLoad`, 0x0045E334, 0x0049F335, 0x0044C83B).
+
+  `g_ActClockScale` (0x007443E4) holds three dwords: 128, 4 and 8. **So on the server, `k = 128` and the flag is 0 in
+  every act, except during Act II's eclipse (between the A2Q3 eclipse and the viper chest), when that act's clock has
+  `k = 4` and flag 1.** (fn:sub_0061BE40_ActClockCreate@0x0061BE40, fn:sub_0061C450_ActClockEclipseOn@0x0061C450,
+  fn:sub_0061C4D0_ActClockEclipseOff@0x0061C4D0, data:g_ActClockScale@0x007443E4)
+- [I] **How often 0x53 is sent.** `ActClockTick` returns 1, which makes `ActsClockPass` refresh every player and send
+  0x53, in two cases: when `c / k` has moved more than 16 from the last bucket (a bucket return), or when the row
+  `(p, v)` changes (a row return). At `k = 128` and flag 0, `c` gains 1 per frame. It gains 2 in a row of type 2 (T0
+  row 5), and 10 there in act index 2. In act index 3 it gains 16 in every row (0x0061BEE0–0x0061BF1A). One day (the
+  clock back to its start) lasts:
+
+  | Act index | Frames per day | Seconds at 25 frames per second |
+  |---|---|---|
+  | 0, 1 and 4 | 35 846 | about 1 434 |
+  | 2 | 29 702 | about 1 188 |
+  | 3 | 2 726 | about 109 |
+
+  Each day returns 1 on 26 frames: 21 bucket returns and 5 row returns. The longest gap between two sends is 2 176
+  frames (`17 × 128`), or 136 in act index 3. During the eclipse (act index 1, `k = 4`, flag 1, `+1` per frame), a day
+  is 1 206 frames with 23 sends, and the longest gap is 68 frames. Two sends can fall on consecutive frames, when a
+  row change follows a bucket return. (`act-clock.txt`, run over 3 days per case; 0x0061BEE0–0x0061BFA7,
+  0x0061C066–0x0061C0A7)
+- [I] **What the refresh does** (`sub_0055FDE0_PlayerEquipRefresh(game, player, 1)`): it runs
+  `sub_0055DBC0_EquipReqRefresh(0)`, then `0x00621000(player, 1)`. The requirement pass (stats/0001 § 6) changes an
+  item's link only when the item's requirement result differs from the last pass's. The time of day enters a
+  requirement only through a by-time stat (ItemStatCost op 6 or 7, `STAT_ByTimeValue`). Stock data has none
+  spawnable: stats/0001 shows that the only stock rows with a `…/time` property, *of Dawn* and *of Sunlight*, have
+  `spawnable` 0. Even so, the refresh does work on every send:
+  - step 4 detaches and re-attaches every equipped set item;
+  - `sub_0055DA70_PlayerSkillReselect` (0x0055DBC0 → 0x0055DA70) compares the player's wanted left and right skills
+    (player data `+0x10`/`+0x18`, `+0x0C`/`+0x14`) with the current ones. When one differs and `SKILLS_CanUse` gives
+    neither 2 nor 7, it calls `sub_005701B0_PlayerSetSkill`. For a right skill with Skills flag `+0x04` bit `0x20`,
+    that calls `sub_0056FF10_AuraSelect`. AuraSelect draws through `SKILLS_SrvDo` only for a skill with `+0x05` bit
+    `0x80`. Otherwise it sets the state and the stat list, then calls `SKILLS_QueuePeriodic`.
+
+  (fn:sub_0055FDE0_PlayerEquipRefresh@0x0055FDE0, fn:sub_0055DA70_PlayerSkillReselect@0x0055DA70,
+  fn:sub_005701B0_PlayerSetSkill@0x005701B0, fn:sub_0056FF10_AuraSelect@0x0056FF10)
+- [I] **So the answer to open question 1** is in two parts. On stock data, a clock change alters no item's usability
+  by itself. Even so, the refresh reaches `AuraSelect` when the wanted skill differs from the current one and is now
+  usable. That is a state another event left without a refresh of its own (for example, an item skill lost and not
+  yet restored). Which events leave that state is not read. With `PlayerSetSkill` stopped, the refresh's call graph
+  (`cg-0x0055FDE0-stop-setskill.txt`) has 1 055 functions and 5 RNG functions:
+  - `MonAttackStats`, `UNIT_AnimInit`, `GetHitRoll`, `PlayerModeAllowed` and `PathPlanRandomWalk`, each at depth 11
+    to 15;
+  - the four direct `PlayerSetSkill` calls are stops: two in `PlayerSkillReselect` and two in
+    `sub_0055C110_ItemSkillQtyAdjust`, which sets skill 0 when a book's last charge goes;
+  - 77 indirect calls are not followed.
+
+  All five RNG functions are reached only through `ITEMS_DetachFromOwner` → 0x0055C6E0 →
+  `sub_0055C110_ItemSkillQtyAdjust` → `PLAYER_SpendSkillPoint` → the pet limit → `PetUnitRelease`. That route needs a
+  detached item with a book skill (`sub_0055BFF0_ItemBookSkill` ≠ −1). The refresh detaches set items in step 4, so
+  whether a set item can carry a book skill decides whether this route is live. That is not read here.
+  (`cg-0x0055FDE0-stop-setskill.txt`, fn:sub_0055C110_ItemSkillQtyAdjust@0x0055C110)
 
 #### 3.2 `GameFpsStats`
 
@@ -469,8 +554,15 @@ sequenceDiagram
 1. **Can a clock change draw?** `ActsClockPass` refreshes every player's equipment on any act's clock change; whether
    that refresh can change a skill (an item stat that depends on the time of day, ItemStatCost op 6 and 7?) and so run
    `AuraSelect` is not read. A window across a clock change (the packet 0x53) with the seeds at `FP` settles it.
-2. **The clock scale on the server.** `ActClockTick`'s `k` (`+0x28`) and the flag `+0x30` are set at act load
-   (`0x0061C240`, `0x0061C180`); the server's values, and so how often the clock pass sends 0x53, are not read.
+   *2026-11-10 (plan 0063 P2a):* read in [§ 3.1a](#31a-the-servers-clock-scale-flag-and-the-send-rate-plan-0063-phase-2a-lanen63r-2026-11-10).
+   On stock data no time-of-day stat changes an item's usability. The refresh reaches `AuraSelect` through
+   `sub_0055DA70_PlayerSkillReselect` only when a wanted skill differs from the current one and is usable. Still open:
+   which events leave that state without their own refresh, and whether a set item can carry a book skill (the
+   `ItemSkillQtyAdjust` route). A window across a 0x53 send would still settle it in play.
+2. ~~**The clock scale on the server.**~~ *Answered 2026-11-10 (plan 0063 P2a, § 3.1a):* `k` = 128 and flag 0 from
+   the act's creation, and `k` = 4 with flag 1 in Act II during the eclipse. `0x0061C240` is client code, and
+   `0x0061C180` has no reference. The pass returns 1 on 26 frames per day; the longest gap is 2 176 frames (136 in act
+   index 3, 68 during the eclipse).
 3. **The inventory free in `UnitFrameReset`.** Which item has item flag 1 at the reset (and so reaches `UnitFree`) is
    not read; P1.2 or a window logs it.
 4. **The 78 marking sites** are not each read; the order claim (newest first) holds for whatever marks a unit.

@@ -918,7 +918,7 @@ on the in-game screen.
   shared table, the act dependence of a version-71 mercenary's row (H13), and the old-save experience conversion's
   cutoff at version 89 and its arithmetic (no file of version 88 to 91 is built). None changes the draw order of § D.
 - [L] **Two reads behind the refusals and `MERC_Create`** (reverser entry
-  [2026-10-27-architect-reverser-h6f-review-client-hire-line-and-merc-create](../../backlog/2026-10-27-architect-reverser-h6f-review-client-hire-line-and-merc-create.md)):
+  [2026-10-27-architect-reverser-h6f-review-client-hire-line-and-merc-create](../../backlog/archive/2026-10-27-architect-reverser-h6f-review-client-hire-line-and-merc-create.md)):
   whether the client test that drops the hire line matches `HIRE_Hire`'s quest gates in every state (F1), and what
   fills the list `sub_005394A0_PlayerPlaceInAct` walks, so whether `MERC_Create` meets a built hire table (H12).
 - ~~The build through `NPC_OpenStore`, the free mercenary, Greiz and classic hires, the gold refusal, levelling in play

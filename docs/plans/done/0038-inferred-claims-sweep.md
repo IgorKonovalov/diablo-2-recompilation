@@ -5597,7 +5597,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
       filters its own menu the same way, so two clients add nothing, and a hand-made packet is outside the stock
       boundary. But the d-none rests on the client's test matching the server's gates in every state, which is
       unread: three states were observed (Kashya at 3 and 7, Qual-Kehk). That is an untraced gap, filed
-      ([entry](../../backlog/2026-10-27-architect-reverser-h6f-review-client-hire-line-and-merc-create.md) (1)); if a state
+      ([entry](../../backlog/archive/2026-10-27-architect-reverser-h6f-review-client-hire-line-and-merc-create.md) (1)); if a state
       shows the line that the server refuses, the refusals become a harness piece. Phase 3 states them as `[I]`
       server checks the stock client did not send.
     - (3) **Row 29 stays a shortfall; the d-2c proposal is not accepted.** The third caller,

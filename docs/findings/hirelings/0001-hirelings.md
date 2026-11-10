@@ -235,6 +235,24 @@ Its verdicts therefore often mean "1.14d differs", and the spec must say so.
 | `0x0058F030` | `sub_0058F030_MonSetOwner` | sets a monster's owner unit | I |
 | `0x004B1090` | `sub_004B1090_ClientMercInit` | client: mercenary skills and name | C |
 | `0x004B5C60` | `sub_004B5C60_ClientHireListDraw` | client: the hire list window | C |
+| `0x004B6DD0` | `sub_004B6DD0_ClientNpcInteractRecv` | client: an NPC interaction from the server; loads the quest record, resets the menus, opens the menu or the speech (plan 0063 P2a) | I |
+| `0x004B6A30` | `sub_004B6A30_ClientNpcSpeechEnd` | client: the speech-end callback; opens the menu with argument 1 | I |
+| `0x004B2250` | `sub_004B2250_ClientNpcMenuReset` | client: the menu records' line counts back to their defaults | I |
+| `0x004B66B0` | `sub_004B66B0_ClientNpcMenuOpen` | client: the quest gates, Kashya's level test, the resurrect line, then the build | I |
+| `0x004B19A0` | `sub_004B19A0_ClientNpcMenuQuestGates` | client: the gate table walk (class, quest word, bit, sense, callback) | I |
+| `0x004B6410` | `sub_004B6410_ClientMenuHireLineKashya` | client: Kashya's menu gets the hire line | I |
+| `0x004B6650` | `sub_004B6650_ClientMenuHireLineQualKehk` | client: Qual-Kehk's menu gets the hire line | I |
+| `0x004B6440` | `sub_004B6440_ClientMenuResurrectLine` | client: inserts or removes the resurrect line (0x1507) | I |
+| `0x004B4830` | `sub_004B4830_ClientNpcMenuBuild` | client: draws the menu record's lines, then the cancel line | I |
+| `0x007253E0` | `g_ClientNpcMenuQuestGates` | 9 rows of 20 bytes; count at 0x007253DC | I |
+| `0x00726C48` | `g_ClientNpcMenus` | NPC menu records, 0x27 bytes each; count at 0x00725A74 | I |
+| `0x0063D470` | `sub_0063D470_InvCorpseAdd` | appends a node `{flag, unit id, word, next}` to the inventory's corpse list | I |
+| `0x0063D4E0` | `sub_0063D4E0_InvCorpseRemove` | removes the node with a given id and flag | I |
+| `0x0063D570` | `sub_0063D570_InvCorpseFirst` | the list head, inventory `+0x34` | I |
+| `0x0063D610` | `sub_0063D610_InvCorpseNext` | node `+0x0C` | I |
+| `0x0063D630` | `sub_0063D630_InvCorpseUnitId` | node `+0x04` | I |
+| `0x0063D650` | `sub_0063D650_InvCorpseWord` | node `+0x08` | I |
+| `0x0063D670` | `sub_0063D670_InvCorpseFlag` | node `+0x00` | I |
 
 Data: `data:g_pHirelingTxt@0x0096BDD0` (records), `data:g_nHirelingTxt@0x0096BDD4` (count),
 `data:g_HirelingFirstById@0x0096BDD8` (2 × 256 i32: first row index per Id, classic half then expansion half; −1 =
@@ -922,6 +940,9 @@ addresses below are those reads. Built (test) states are named per row; each bac
   stock client filters its own menu the same way; a hand-made packet is outside the stock boundary), on the condition
   that the client test is read and shown to match the server's gates (0x00577115–0x0057717C) in every state; a state
   where the client offers the line and the server refuses would make the refusal reachable. Filed for the reverser. (fn:HIRE_Hire@0x005770E0, run:2026-10-27-sweep-hirelings)
+  *2026-11-10 (plan 0063 P2a):* the client test is read in [§ Plan 0063 Phase 2a](#plan-0063-phase-2a-static-lanen63r-2026-11-10):
+  `sub_004B66B0_ClientNpcMenuOpen` and its gate table offer the line exactly when the server's gates pass, for every
+  value of the inputs both sides read. [I] (fn:sub_004B66B0_ClientNpcMenuOpen@0x004B66B0)
 - [C] **The stash pays the rest; a short total refuses** (`qk`, gold 100 and stash 2 410 as `tools/h6f_sessions.py
   plan` predicted from the seed): the first Asheara hire, price 2 500, took the 100 and 2 400 of the stash (stash 10
   after); the second, price 2 650, had `PayGold` return 0 (`HPR`), went to the refusal tail with line 0x6AE, code 12,
@@ -982,6 +1003,10 @@ addresses below are those reads. Built (test) states are named per row; each bac
   single player reaches it after a table is built, is unread. (fn:MERC_Create@0x005774F0, 0x005775E2–0x00577605)
   **Ruling (`lane/h6f` review):** the d-2c proposal is not accepted on this reading; the row stays a shortfall
   (`[I]`) until the list's writer is read (reverser entry filed by the review).
+  *2026-11-10 (plan 0063 P2a):* the writers are read in [§ Plan 0063 Phase 2a](#plan-0063-phase-2a-static-lanen63r-2026-11-10).
+  `+0x60` is the unit's inventory, and the list is its corpse list. Each of its three writers adds a node with flag 1
+  and word 0. The `MERC_Create` branch needs flag 0 and a non-zero word, so no stock writer reaches it, in single
+  player or with two clients. [I] (0x005395E4–0x00539637, fn:sub_0063D470_InvCorpseAdd@0x0063D470)
 
 ### Death and resurrection (rows 36, 37)
 
@@ -1049,12 +1074,92 @@ logged by return address; no output compared) and `sub_0057CCB0_UnitKilled` (C a
 | 27 | name past `+0x116` reset | raised (built state) |
 | 28 (2) | dead flag; dead mercenary marked | raised |
 | 31 | the note (name, dead mercenary not loaded) | raised |
-| 29 | `MERC_Create` with a table present | shortfall (d-2c not accepted at review: the third caller's trigger is unread) |
+| 29 | `MERC_Create` with a table present | shortfall (d-2c not accepted at review: the third caller's trigger is unread; *2026-11-10:* read, the ruling's inputs are in § Plan 0063 Phase 2a) |
 | 36 | resurrection and its price | raised in part (Kashya here, Qual-Kehk by the economy run; Greiz, Asheara, Tyrael) |
 | 37 | death sets the dead bit | raised |
 | 25 | `MERC_AddExp` and the cap | raised in part (the `L ≥ 98` return) |
 
 **Raised 12, raised in part 8, shortfall 1, reclassified 2: 23.**
+
+## Plan 0063 Phase 2a (static, `lane/n63r`, 2026-11-10)
+
+Two static reads asked by the `lane/h6f` review ([backlog entry](../../backlog/archive/2026-10-27-architect-reverser-h6f-review-client-hire-line-and-merc-create.md)).
+They were made with Ghidra decompiles and objdump on the pinned image, with no harness. Every claim here is a new code
+reading, so inferred.
+
+### The client's hire line (rows 17, 18, 21)
+
+- [I] **Where the menu is built.** For each interaction the server starts, the client handler
+  `sub_004B6DD0_ClientNpcInteractRecv` (one call, 0x0045D37F) does four things in order. It loads the packet's quest
+  bytes into the client's quest record (`QUESTRECORD_LoadBytes(0x007C0D43, …, 0x60)`). It resets the menus with
+  `sub_004B2250_ClientNpcMenuReset` (0x004B6E7F). It then opens the menu, either directly with
+  `sub_004B66B0_ClientNpcMenuOpen(0)` (0x004B70AA) or after the NPC's speech through the callback
+  `sub_004B6A30_ClientNpcSpeechEnd`, which calls `ClientNpcMenuOpen(1)` (0x004B6BF4). These are the only two callers
+  (`findptr`), so every menu is opened after a reset and after the quest record of that interaction is loaded.
+  (fn:sub_004B6DD0_ClientNpcInteractRecv@0x004B6DD0, fn:sub_004B6A30_ClientNpcSpeechEnd@0x004B6A30)
+- [I] **The reset** sets Kashya's menu record (class 150, record 11 of `g_ClientNpcMenus`, 0x00726DF5) to 2 lines at
+  0x004B2266. It sets Qual-Kehk's (class 515, record 43, 0x007272D5) to 2 lines at 0x004B22AA, or to 3 at 0x004B22BD
+  when its second line's callback is `0x004B1DD0` (the resurrect line). The image's own values of both records are
+  also 2 lines: line 0 is string 0xD35 with callback 0x004B6C70, then the cancel line (0x102E), which
+  `sub_004B4830_ClientNpcMenuBuild` always appends. So the default menu is talk and cancel, which is the two-line menu
+  the `floor`, `lvlup` and `qk` sessions saw. (fn:sub_004B2250_ClientNpcMenuReset@0x004B2250,
+  fn:sub_004B4830_ClientNpcMenuBuild@0x004B4830, data:g_ClientNpcMenus@0x00726C48)
+- [I] **The quest gate table** `g_ClientNpcMenuQuestGates` (0x007253E0, 9 rows of `{class, word, bit, sense,
+  callback}`, count 9 at 0x007253DC) is walked by `sub_004B19A0_ClientNpcMenuQuestGates` (call 0x004B67AE). For the
+  NPC's class it reads `QUESTRECORD_GetState(client record, word, bit)` and calls the callback when the state is
+  non-zero (sense 1) or zero (sense 0). Two rows add the hire line:
+  - `{150, 2, 0, 1, 0x004B6410}`: `sub_004B6410_ClientMenuHireLineKashya` sets record 11 to 3 lines, with line 1 =
+    string 0xD45 and callback `sub_004B5C60_ClientHireListDraw`.
+  - `{515, 36, 0, 1, 0x004B6650}`: `sub_004B6650_ClientMenuHireLineQualKehk` does the same for record 43.
+
+  (fn:sub_004B19A0_ClientNpcMenuQuestGates@0x004B19A0, data:g_ClientNpcMenuQuestGates@0x007253E0)
+- [I] **Kashya's level test.** After the gates, `ClientNpcMenuOpen` reads the client player's stat 12 for class 150
+  (0x004B6806–0x004B6817: `cmp eax, 8; jl`) and calls `ClientMenuHireLineKashya` again when the level is 8 or more. It
+  makes no level test for Qual-Kehk. The resurrect-line step that follows (`sub_004B6440_ClientMenuResurrectLine`)
+  only inserts or removes line 0x1507 and does not remove the hire line. (0x004B6806–0x004B6819,
+  fn:sub_004B6440_ClientMenuResurrectLine@0x004B6440)
+- [I] **The match with `HIRE_Hire`'s gates** (0x00577115–0x0057717C):
+
+  | NPC | Client offers the line when | Server refuses when |
+  |---|---|---|
+  | Kashya (150) | word 2 bit 0 ≠ 0, or stat 12 ≥ 8 | `VENDOR_StockLevel(stat 12) < 8` and word 2 bit 0 = 0 |
+  | Qual-Kehk (515) | word 36 bit 0 ≠ 0 | word 36 bit 0 = 0 |
+
+  `VENDOR_StockLevel` is `min(level, cap[act])` in Normal and the level itself otherwise. Every cap is at least 12
+  (0x005768AE–0x005768DD), so `StockLevel(L) < 8` holds exactly when `L < 8`, in every difficulty. Both sides read
+  the same stat (12) and the same quest word and bit. The client reads its copy of the server's record, loaded at the
+  start of the same interaction. So for every value of those inputs, the client offers the line exactly when the
+  server's gates pass.
+- [I] **Within one interaction**, the client's copy can only fall behind the server, never run ahead of it. Stat 12
+  only rises, and a quest bit 0 that is set is not cleared by any write read here. A line offered on older inputs
+  therefore meets gates that still pass. **This gives the ruling its inputs:** no stock state was found in which the
+  client offers the line and the server refuses. This finding cannot rule out a quest-bit clear that it did not
+  read. (fn:HIRE_Hire@0x005770E0, fn:VENDOR_StockLevel@0x00576890)
+
+### `PlayerPlaceInAct`'s list (row 29)
+
+- [I] **The list is the player's corpse list.** In `sub_005394A0_PlayerPlaceInAct`, `EDX` is the player unit and
+  `+0x60` is its inventory. The walk uses `sub_0063D570_InvCorpseFirst` (inventory `+0x34`), `…Next` (node `+0x0C`),
+  `…UnitId` (`+0x04`), `…Flag` (`+0x00`) and `…Word` (`+0x08`). Nodes are allocated only in
+  `sub_0063D470_InvCorpseAdd` (`Inventory.cpp` line 0xFEA, 16 bytes), which also keeps a count of flagged nodes at
+  `+0x3C`. (0x005395C3–0x00539637, fn:sub_0063D470_InvCorpseAdd@0x0063D470)
+- [I] **Its writers.** `InvCorpseAdd` has 3 direct callers and no other reference (`findptr`: ref 3, ptr 0;
+  fn:sub_0063D470_InvCorpseAdd@0x0063D470). Each
+  call pushes `(inventory, corpse unit id, 0, 1)`, which stores flag 1 and word 0:
+  - `sub_00533850_ReadCorpseLegacy` (0x00533945), at a load;
+  - `D2S_ReadCorpses` (0x0056A9BB), at a load;
+  - `PLAYER_CorpseCreate` (0x0057F894), at a death.
+
+  The other five walkers of the list (0x0052C493, 0x00531C26, 0x00534975, 0x0057F6AE, `D2S_WriteCorpses`) read the
+  node's id only (decompiles). (0x00533939–0x00533945, 0x0056A9AF–0x0056A9BB, 0x0057F888–0x0057F894)
+- [I] **What the walk does with a node.** A node with a non-zero flag (0x005395E9 `jne`) is a corpse. Its unit is
+  found and moved to a spot in the new act's town (0x0053963E onward). The `MERC_Create(word, id, 0xFFFF, 0, 0)` branch
+  is taken only for a node with flag 0 whose word is non-zero (0x0053961F `test ax, ax`). Every node the stock writers
+  add has flag 1 and word 0, so that branch is reached in no stock game type, single player or multiplayer. **This
+  gives the row-29 ruling its inputs:** the third caller cannot create a mercenary, so `MERC_Create` with a table
+  present needs a caller that does not exist. The architect rules on the row (d-none is proposed). This finding
+  cannot rule out a node edited outside the three writers.
+  (fn:sub_005394A0_PlayerPlaceInAct@0x005394A0, fn:MERC_Create@0x005774F0)
 
 ## Open questions
 

@@ -102,6 +102,14 @@ refusal), [anim/0003 § 2](../anim/0003-movement-gates.md) (the step, `PathRepla
 | `0x00648E30`, `0x00648E60`, `0x00648EA0`, `0x006490A0`, `0x00649120` | `sub_00648E30_PathGetType`, `sub_00648E60_PathGetKnockDist`, `sub_00648EA0_PathGetByte91`, `sub_006490A0_PathGetStopDist`, `sub_00649120_PathGetByte94` | getters (`+0x3C`, `+0x90`, `+0x91`, `+0x93` + 1, `+0x94`) | I |
 | `0x0064FE40` | `sub_0064FE40_PathAimNextPoint` | direction and step to the next point; the facing step | I |
 | `0x006485F0` | `sub_006485F0_PathFaceDir` | (ECX path, DL dir) `+0x64` or `+0x65/+0x66` by unit type | I |
+| `0x00648820` | `sub_00648820_PathSetDir` | (path, dir < 64, else fatal) the same body as `PathFaceDir`, from 16 client and AI sites (plan 0063 P2a, § 9a) | I |
+| `0x00648640` | `sub_00648640_PathFaceTurnStep` | client: one turn step of `+0x64` toward `+0x65` by `+0x66` | I |
+| `0x006487F0` | `sub_006487F0_PathGetFacing` | `+0x64` (0 for no path) | I |
+| `0x00648810` | `sub_00648810_PathGetFacingTarget` | `+0x65` | I |
+| `0x00620100` | `sub_00620100_UnitGetDirection` | types 2 and 4: the static path's `+0x1C`; others `PathGetFacing` | I |
+| `0x00463390` | `sub_00463390_ClientPlayerUpdate` | client: a player's per-update pass; calls the turn step at 0x004636DE | I |
+| `0x004B13A0` | `sub_004B13A0_ClientMonsterUpdate` | client: a monster's per-update pass; calls the turn step at 0x004B1563 | I |
+| `0x00480810` | `sub_00480810_ClientUnitUpdate` | client: calls both passes (0x004808CC, 0x004808D5) | I |
 | `0x00650350` | `sub_00650350_PathReplan` | (unit, flag) a blocked path's re-plan | I |
 | `0x00649D00` | `PATH_DynamicCreate` | the 0x200-byte record: size, pattern, masks, type, `+0x91/+0x92` | I |
 | `0x00554850` | `sub_00554850_SUnitPathCreate` | per unit type: act, act pointer, the path or static path | I |
@@ -344,6 +352,78 @@ return 1;
   control fails all 63 it separates. (fn:sub_00650350_PathReplan@0x00650350)
 - [I] Since `PathReplan` writes `+0x3C` without `PathSetType`, a re-plan keeps the flags word of the type before it:
   a 13 re-planned as 2 keeps `0x100`, a 2 re-planned as 15 lacks 15's `0x800`. (0x006503AF–0x006503D2)
+
+### 9a. The facing turn (plan 0063 Phase 2a, `lane/n63r`, 2026-11-10)
+
+This answers the [backlog entry](../../backlog/archive/2026-11-04-spec-writer-reverser-path-facing-step-consumer.md).
+The entry's leads were used only to locate code. Every claim here is a new static reading, so inferred, except the
+step table's rule, which is a full-table equality (confirmed). The kept outputs are in `workspace/logs/p63-static/`
+(`manifest.txt`): `facing.txt` (`tools/p63_static_scans.py facing`) and `face-step.txt` (`tools/face_step.py`).
+
+- [I] **The three bytes.** `+0x64` is the facing, `+0x65` the facing aimed at, and `+0x66` the turn step. Four
+  functions write them, plus the turn step itself (0x00648617–0x00648631, 0x00648872–0x0064888F):
+  - `PathFaceDir` (ECX path, DL dir) and `sub_00648820_PathSetDir` (path, dir on the stack). They have the same body,
+    except that `PathSetDir` takes the fatal path for a dir ≥ 64 (0x00648826–0x0064883A). For an object or an item,
+    and for a missile without flag `0x40`, they set `+0x64` directly. A missile with the flag is left alone. Any other
+    unit, or a path with no unit, gets `+0x65 = dir` and `+0x66 = g_PathFaceStep[(dir − +0x64) & 63]` (its low byte),
+    unless `+0x65` already equals dir.
+  - `sub_006488A0_PathSetFacing` sets `+0x64` and `+0x65` to the same value, so no turn is pending.
+  - `sub_00649EF0_PathFaceXY(path, x, y, now)` takes the direction to a subtile centre (0x0064FE10). With `now` ≠ 0
+    it writes both bytes as `PathSetFacing` does (0x00649F28, 0x00649F2B). Otherwise it calls `PathFaceDir`
+    (0x00649F37).
+
+  (fn:sub_006485F0_PathFaceDir@0x006485F0, fn:sub_00648820_PathSetDir@0x00648820,
+  fn:sub_006488A0_PathSetFacing@0x006488A0, fn:sub_00649EF0_PathFaceXY@0x00649EF0)
+- [C] **The step table** `g_PathFaceStep` (64 dwords, index `d = (aimed − facing) & 63`) equals this rule on all 64
+  entries: `d` = 0 → 0; 1–8 → +1; 9–16 → +4; 17–31 → +8; 32–47 → −8; 48–55 → −4; 56–63 → −1. The two readers
+  (0x00648620, 0x0064887B) take the low byte, so the step is stored as 0, 1, 4, 8, 248, 252 or 255. That is a turn
+  the short way round, faster when the turn is wider. It is the rule that [PathDirTables](../../tables/PathDirTables.md#the-rules)
+  and path/overview § H4 already give, checked again here by an independent script. (`face-step.txt`: 64 entries, 0 differ;
+  data:g_PathFaceStep@0x006EB548)
+- [I] **The turn step**, `sub_00648640_PathFaceTurnStep(path)` (fn:sub_00648640_PathFaceTurnStep@0x00648640), does nothing when `+0x64 = +0x65` or when flag
+  `0x40` of `+0x34` is set. Otherwise:
+
+  ```
+  f ← (f + s) & 63                                   ; f = +0x64, s = +0x66 (u8)
+  r ← (f − a) & 63                                   ; a = +0x65
+  if (r > 31 and s > 63) or (r < 31 and s < 63): f ← a
+  ```
+
+  A positive step (`s` 1, 4 or 8) has passed or reached the aimed facing when `r < 31`. A negative step (248, 252 or
+  255) has done so when `r > 31`. In either case the facing snaps to the aimed one, and the turn ends. `r = 31` makes
+  no snap. The step is fixed when the turn is aimed and is not recomputed as the facing moves: a turn of 31 at +8
+  takes 4 calls (31 → 23 → 15 → 7 → past the aim, snap). (0x00648640–0x0064867F)
+- [I] **The turn runs on the client only.** `PathFaceTurnStep` has 2 references and no pointer (`findptr`). One is
+  in `sub_00463390_ClientPlayerUpdate`, near its end with the unit's path (0x004636DE). The other is in
+  `sub_004B13A0_ClientMonsterUpdate` (0x004B1563, when the unit has a path), past that function's early returns: not a
+  type-1 unit, mode above 15. Both are called by `sub_00480810_ClientUnitUpdate` (0x004808CC, 0x004808D5), and both
+  call `ClientPlayerGet`. How often that pass runs, and which early returns skip the turn, are not read. No server function steps `+0x64` toward `+0x65`. On the server, a player's or a monster's `+0x64`
+  changes only through `PathSetFacing`, `PathFaceXY` with `now` ≠ 0, or `PathSetDir` / `PathFaceDir` for objects,
+  items and missiles. `PathFaceDir` called while walking moves only `+0x65` and `+0x66`.
+  (fn:sub_00648640_PathFaceTurnStep@0x00648640, fn:sub_00463390_ClientPlayerUpdate@0x00463390,
+  fn:sub_004B13A0_ClientMonsterUpdate@0x004B13A0)
+- [I] **The other writers and readers**, from the byte scan of the whole image (`facing.txt`; 0x00648655):
+  - Stores at `+0x66`: 4 in all. Two are `PathFaceDir` (0x00648627) and `PathSetDir` (0x00648882). The other two lie
+    in an A1Q4 quest function (0x005933F7) and in `StatEvaluate`'s range (0x006266B3), on other structures.
+  - Byte reads at `+0x66`: 3. Only the turn step's (0x00648655) is on a path; the others are 0x005933CF (the same quest
+    function) and 0x00446F50 (a string buffer).
+  - Stores at `+0x64` and `+0x65` in the path functions are the ones listed above, plus the turn step's two
+    (0x00648661, 0x0064867A).
+  - The getters are `sub_006487F0_PathGetFacing` (`+0x64`, 21 call sites) and `sub_00648810_PathGetFacingTarget`
+    (`+0x65`, 5 sites). Callers of `PathGetFacing` include `sub_00620100_UnitGetDirection` (types 2 and 4 read the
+    static path's `+0x1C` instead), `sub_0057CCB0_UnitKilled` (0x0057CDB2), `sub_00679190_PathTargetOffsetX87`
+    (0x006791CF), 0x006792F8 and 0x00597FE7/0x00597FFB; the other 15 are not read here. `+0x65` is read through 0x006238C0, which gives `+0x65` when
+    the unit stands on its path's point, else the direction to it, and through 0x005DF37A and 0x005CE544.
+
+  The scan's other byte stores and reads at these offsets are not followed here: they are outside the path functions,
+  and the scan names them. (`facing.txt`)
+- [I] **`PathStep`'s call** at 0x006508E6 is `PathAimNextPoint(path, f = 1; arg = 1)`: `EDX` = 1 (0x006508DF) and
+  `push 1` (0x006508DD). It is skipped for type 4 and once `+0x24 ≥ +0x28` (0x006508CF–0x006508DB). With `arg` ≠ 0,
+  every aim from `PathStep` that does not run past the last point calls `PathFaceDir` (0x0064FF67 `cmp [ebp+8], 0;
+  jne` to 0x0064FF77). So after every move step with a point ahead, the facing is aimed at the next point. On the
+  server that moves only `+0x65`/`+0x66`; the client then turns `+0x64` by the step. anim/0003 § 2's
+  `PathAimNextPoint(p, 1)` is this call, and its second word is also 1.
+  (fn:sub_00650840_PathStep@0x00650840, fn:sub_0064FE40_PathAimNextPoint@0x0064FE40)
 
 ### 10. Draws per seed
 

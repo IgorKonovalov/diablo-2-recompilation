@@ -75,6 +75,27 @@ The rest:
 | `0x00540710` | `sub_00540710_PartyIdOfUnit` | guid search over every party's list | I |
 | `0x00540290` | `sub_00540290_PartyFind` | first record of an id | I |
 | `0x005541B0` | `sub_005541B0_UnitIsDead` | the alive test | I |
+| `0x0053FF90` | `sub_0053FF90_PartyRootInit` | game `+0x1D2C` root: id counter 3, no record (game creation) | I |
+| `0x00540000` | `sub_00540000_PartyRootFree` | frees every record and node | I |
+| `0x005400B0` | `sub_005400B0_PartyNextId` | the next id ≥ 3 that no record holds | I |
+| `0x00540100` | `sub_00540100_PartyNew` | a new record at the head of the root's list | I |
+| `0x00540180` | `sub_00540180_PartyRecordFree` | frees a record's nodes, each with the members' notifications | I |
+| `0x00540220` | `sub_00540220_PartyDelete` | unlinks a record by id and frees it | I |
+| `0x005402D0` | `sub_005402D0_PartyHasGuid` | a guid already in a record's list | I |
+| `0x00540320` | `sub_00540320_PartyAddMember` | prepends a player's guid to a record, unless it is there | I |
+| `0x00540460` | `sub_00540460_PartyMemberCount` | the length of a record's list, −1 for no record | I |
+| `0x005407A0` | `sub_005407A0_PartyRemoveMember` | removes a player's node; deletes the record below 2 members | I |
+| `0x00540890` | `sub_00540890_PartyLevelSumInLevel` | alive members' stat 12 summed (no reference in the image) | I |
+| `0x0055B140` | `sub_0055B140_PlrRelEnsure` | a relation entry in player data `+0x38` for another player | I |
+| `0x0055B3A0` | `sub_0055B3A0_PlrRelSetState` | sets `ECX`'s entry for `EDX` | I |
+| `0x0055B3F0` | `sub_0055B3F0_PlrRelGetState` | `ECX`'s entry state for `EDX` (1 for itself, 0 for none) | I |
+| `0x005A6000` | `sub_005A6000_PartyActionDispatch` | party action `n` → `g_PartyActionHandlers[n]` | I |
+| `0x005A5BE0` | `sub_005A5BE0_PartyActInvite` | action 6 | I |
+| `0x005A5B30` | `sub_005A5B30_PartyActCancel` | action 7 | I |
+| `0x005A5A30` | `sub_005A5A30_PartyActAccept` | action 8: makes or joins the party | I |
+| `0x005A5D20` | `sub_005A5D20_PartyActLeave` | action 9 | I |
+| `0x006E2218` | `g_PartyActionHandlers` | 10 handler pointers | I |
+| `0x0056D840` | `sub_0056D840_SummonReplaceKill` | kills the caster's previous summon with bit 26 set | I |
 
 `XP_PartyShare` and the collector are raised on the logged side (their `XP_Compute` calls on the game's own data), not on
 the emulation (`lane/p46m12` ruling 7); `sub_0057E7B0_XpCreditPlayer` stays I because the logs meet only its player and
@@ -149,6 +170,11 @@ Collect(u, block):
   `sub_005405A0_PartyForEachInLevel` has 4 references (`static.txt`): the share's 0x0057E6F3,
   `sub_005408E0_PartyCountInLevel` 0x005408F4, `sub_00540900_PartyGoldShare` 0x0054091E, and 0x005408CB in an unnamed
   function before them, not read. (0x005408CB, 0x005408F4, 0x0054091E)
+  *2026-11-10 (plan 0063 P2a):* read in [§ 10](#10-plan-0063-phase-2a-the-list-writers-the-fourth-caller-and-bit-26-lanen63r-2026-11-10).
+  Two players become one party when one accepts the other's invite (party action 8). A list holds at most the players
+  in the game, and a game admits at most 8 clients, so a list cannot hold nine. 0x005408CB lies in
+  `sub_00540890_PartyLevelSumInLevel`, which the image never references. [I] (fn:sub_005A5A30_PartyActAccept@0x005A5A30,
+  fn:sub_00540320_PartyAddMember@0x00540320)
 - [C] Alive: `sub_005541B0_UnitIsDead` is true for flag bit 0 of `+0xC6` or a player in mode 0 or 0x11, tags `n1-dead`,
   `n0-dead`, `nine-dead` and the share family. (fn:sub_005541B0_UnitIsDead@0x005541B0, run:2026-11-03-party-emu)
 - [I] For a monster it is mode 0 or 0xC, and any other type is always dead; no member is one. (0x005541CB–0x005541E6)
@@ -192,6 +218,10 @@ credit(killer, game, victim):
   (0x0057CD28–0x0057CD51, fn:sub_005A4EF0_KillExpGate@0x005A4EF0, run:2026-11-03-party-emu)
 - [I] The gate's flag bit 26 has 9 writers (`static.txt`), for example 0x0056D8A4 right before a `sub_0057CCB0_UnitKilled` call; what each means was not read.
   (0x005A4EFE–0x005A4F0A, 0x0056D8A4)
+  *2026-11-10 (plan 0063 P2a):* read in [§ 10](#10-plan-0063-phase-2a-the-list-writers-the-fourth-caller-and-bit-26-lanen63r-2026-11-10).
+  Each writer sets the bit on a monster whose death should give no experience: a released or replaced pet, an egg or
+  a spawned minion. No writer sets it on a player, so a player victim reaches the award. [I]
+  (`bit26.txt`: 9 sets, 0 clears, 2 reads)
 
 ## 5. G6, the mercenary's credit
 
@@ -241,6 +271,107 @@ credit(killer, game, victim):
 - **Not reached:** a member of another type (the static branch of `sub_0045ADF0_UnitGetSubX`); a member with y = 0 (`mem-y` is y = 30 000; read: only x is tested, 0x0057E63B–0x0057E640); a party id with no record (it was found in one); the `0x00540734` and `0x0054029A` fatals; pets row bound `DataTables+0xBF0` ≤ 7; `MERC_CapExpGain` with no pet info or no hire row (hirelings G4 `[I]`).
 - **Tool limits (ADR-0015 (5)):** Ghidra 12.1; x87 values as stated in the Answer.
 
+## 10. Plan 0063 Phase 2a: the list writers, the fourth caller and bit 26 (`lane/n63r`, 2026-11-10)
+
+This section answers the static part of the [backlog entry](../../backlog/2026-11-03-architect-reverser-plan-0058-p1-party-list-writers-gate-flag.md).
+The reads are Ghidra decompiles and objdump on the pinned image. Every claim is a new code reading, so inferred. The kept
+scan outputs are in `workspace/logs/p63-static/` (`manifest.txt`; tool `tools/p63_static_scans.py`).
+
+### What makes two players one party
+
+- [I] **The records.** Game creation installs the root at game `+0x1D2C` (`sub_0053FF90_PartyRootInit`, from
+  `GameCreateA` 0x00530B5E and `GameCreate` 0x00530DC3), with its id counter at 3 and no record. A record is made only
+  by `sub_00540100_PartyNew`, at the head of the root's list. Its id comes from `sub_005400B0_PartyNextId`: the first
+  id ≥ 3 that no record holds. A node is made only by `sub_00540320_PartyAddMember`
+  (`Party.cpp` line 0x108). It is prepended to the record's list with the unit's guid, `+0x0C`. AddMember takes the
+  fatal path when the record is missing or the unit is not a player (`+0x00` ≠ 0), and it returns without adding when
+  the guid is already in the list (`sub_005402D0_PartyHasGuid`). It makes no count test. (fn:sub_00540100_PartyNew@0x00540100,
+  fn:sub_00540320_PartyAddMember@0x00540320, 0x00540380–0x005403A6)
+- [I] **Their only caller is the accept action.** `PartyNew` has 1 call and AddMember has 3, all in
+  `sub_005A5A30_PartyActAccept` (`findptr`). That handler is entry 8 of `g_PartyActionHandlers` (0x006E2218), which
+  `sub_005A6000_PartyActionDispatch` indexes by the party action number. The other entries:
+  - 4: `sub_005A5E50_PlayerHostileToggle`;
+  - 6: `sub_005A5BE0_PartyActInvite`;
+  - 7: `sub_005A5B30_PartyActCancel`;
+  - 9: `sub_005A5D20_PartyActLeave`;
+  - 1 to 3: three handlers at 0x005A57B0, 0x005A5840 and 0x005A58A0, not read here;
+  - 0 and 5: null.
+
+  (0x005A6031–0x005A605C, data:g_PartyActionHandlers@0x006E2218)
+- [I] **Invite, then accept** (fn:sub_0055B140_PlrRelEnsure@0x0055B140). Each player keeps a relation list in its player data `+0x38`: one entry per other
+  player, holding a guid and a state. `sub_0055B140_PlrRelEnsure` makes a missing entry with state 1 when the other
+  player is in a party, else 0. Then:
+  1. **Invite** (action 6, player A names B). It needs A's entry for B to be 0. It sets A's entry for B to 4 and B's
+     entry for A to 2, and sends B a party message with code 5. (0x005A5C01–0x005A5C3C)
+  2. **Accept** (action 8, B names A). It needs B's entry for A to be 2 (0x005A5A65–0x005A5A6E). If A is in no party,
+     a new record gets A, then B (0x005A5A97–0x005A5AB0). Otherwise B joins A's record (0x005A5AC1).
+     `sub_0055B650` then resets to the party test every entry of B that holds 2 (and of A too, when the party is new),
+     and every player is notified (0x005A5AB5–0x005A5ACA).
+  3. **Cancel** (action 7) needs state 4 and puts both entries back to the party test.
+
+  So two players are one party only through an accepted invite. There is no other writer.
+  (fn:sub_005A5BE0_PartyActInvite@0x005A5BE0, fn:sub_005A5A30_PartyActAccept@0x005A5A30,
+  fn:sub_005A5B30_PartyActCancel@0x005A5B30, fn:sub_0055B3F0_PlrRelGetState@0x0055B3F0,
+  fn:sub_0055B3A0_PlrRelSetState@0x0055B3A0)
+- [I] **Leaving** (fn:sub_005407A0_PartyRemoveMember@0x005407A0). `sub_005407A0_PartyRemoveMember` unlinks the player's node, then deletes the record
+  (`sub_00540220_PartyDelete`) when fewer than 2 members remain. It has 4 callers:
+  - `PartyActLeave` (0x005A5D41);
+  - `sub_00555600_UnitFree` (0x0055567D), so a player unit that is freed leaves its party;
+  - 0x0053A06D in 0x00539DA0 and 0x005349DF in 0x005349D0, not read here.
+
+  (fn:sub_005407A0_PartyRemoveMember@0x005407A0)
+
+### Whether a list can hold nine
+
+- [I] AddMember has no cap, so the bound comes from the members. Each member is a distinct player guid (the duplicate
+  test), and a freed player unit is removed (`UnitFree`). A game admits at most 8 clients: game `+0x8C` counts them,
+  `+1` at 0x00539BC0 and `−1` at 0x0053A25D. The add path refuses at `cmp [edi+0x8C], 8; jge` (0x00539A4E, in the
+  function at 0x00539A30). The join request answers code 0xF at `cmp [ebx+0x8C], 8; jl` (0x0053F051). So a party
+  holds at most 8 players, and `PartyXpCollect`'s ninth-member fatal path (§ 3, 0x0057E66C) is reached by no stock
+  game. That rests on one player unit per client, which was not read here. By the same reading, the emulation's
+  `dup-guid` case (a guid twice in a list) cannot come from AddMember. `nine-missing` (a node whose unit is gone)
+  would need a player freed without passing `UnitFree`'s removal, and no such path was looked for.
+  (0x00539A4E–0x00539A55, 0x0053F051–0x0053F058, 0x00539BC0, 0x0053A25D)
+
+### The caller at 0x005408CB
+
+- [I] It is the `PartyForEachInLevel` call of `sub_00540890_PartyLevelSumInLevel` (0x00540890–0x005408DF). That
+  function returns the credited unit's stat 12 when it has no party. Otherwise it returns the sum of stat 12 over the
+  alive members in its level, using the callback 0x005404C0 (`UnitIsDead`, then `STATS_GetUnitStat(u, 12)`). The image
+  holds no reference to 0x00540890: `findptr` finds no call, pointer, relative branch or fall-through. So no game
+  path runs it. (fn:sub_00540890_PartyLevelSumInLevel@0x00540890)
+
+### Bit 26 of unit `+0xC4` (the kill gate's flag)
+
+- [I] **The scan.** `bit26.txt` finds 9 sets (`or [r+0xC4], 0x4000000`), 0 clears (`and [r+0xC4], 0xFBFFFFFF`) and 2
+  reads (`shr r, 0x1A` within three instructions of a load of `+0xC4`). The reads are the gate (0x005A4F04) and
+  `sub_00541FE0_InactiveMonAiSave` (0x00542017). Set by set:
+
+  | Writer | Function | What the unit is |
+  |---|---|---|
+  | 0x00541FB1 | `sub_00541E20_InactiveMonAiRestore` | a monster brought back from an inactive room: the save stored the bit in its record (`+0x4C` = `[0x007314C0]`, `+0x50` bit `[0x007314C4]`), and the restore sets it again, so the bit survives deactivation |
+  | 0x0056D8A4 | `sub_0056D840_SummonReplaceKill` | the caster's previous summon. When a new one is spawned with the block's flag 2 (`0x0056D8D0`), the old one is found by the id the caster keeps (`0x00554070`): freed when its `+0xC8` bit 8 is set, else marked and killed (`UnitKilled(…, 1)`), and the new one's id is stored (`0x00554040`) |
+  | 0x0057449B | `sub_00574450_PetUnitRelease` | a pet released by its owner's pet list (six callers, the pet limit among them). It is marked, then killed when its MonStats `killable` bit is set (`+0x0D` bit 7), else given a mode command |
+  | 0x005CB042, 0x005CB089 | `sub_005CAFA0_SkillDo84MaggotEgg` | units from `SpawnNearUnitNoBox` |
+  | 0x005CB4B8 | `sub_005CB3C0_SkillDo87MaggotLay` | the unit from `SpawnAtPos` |
+  | 0x005F9DE6 | `sub_005F9CF0_AiSandMaggotQueen` | the unit from `SpawnAtPos` |
+  | 0x005F7FF0 | `sub_005F7F10_UberMinionSpawn` | the unit from `SpawnNearUnitNoBox`, then a call with state 184 |
+  | 0x005FD1DF | `sub_005FD0F0_UberBaalMinionSpawn` | the unit from `SpawnAtPos`, then a call with state 184 |
+
+  (fn:sub_005A4EF0_KillExpGate@0x005A4EF0, fn:sub_0056D840_SummonReplaceKill@0x0056D840,
+  fn:sub_00574450_PetUnitRelease@0x00574450, tbl:MonStats.txt:killable)
+- [I] **What the bit means.** Its only other reader saves it across deactivation, so the kill gate is its only
+  consumer: a unit with the bit set gives no experience when killed. Every set is on a monster made by a skill or an
+  AI, or on a pet its owner loses. None is on a player, so a player victim has the bit clear and reaches
+  `XP_OnMonsterKill` (§ 4), where whether it pays is the code map's. The name "no experience on death" is this
+  reading, not a logged outcome. (0x005A4F04, 0x00542017)
+
+### Remainder
+
+The [backlog entry](../../backlog/2026-11-03-architect-reverser-plan-0058-p1-party-list-writers-gate-flag.md)'s
+optional two-client cases are still open: a far credited player with a near member, a dead killer, and a player
+killing a player. So are the three action handlers 1–3 and the two other `PartyRemoveMember` callers.
+
 ## Data touched
 
 tbl:States.txt:exp; tbl:Experience.txt (`perClass`, `ExpRatio`) by offset, synthetic here; tbl:Hireling.txt:Exp/Lvl by offset, synthetic here.
@@ -253,6 +384,6 @@ struct:Unit: `+0x00` type, `+0x04` class, `+0x0C` guid, `+0x10` mode, `+0x14` da
 
 ## Open questions
 
-- [L] Does a player killing a player get an award in play? The code path exists (§ 4); no log holds one, and the gate's flag was not traced on such a victim. For a later two-client case, not blocking.
+- [L] Does a player killing a player get an award in play? The code path exists (§ 4); no log holds one. For a later two-client case, not blocking. *2026-11-10 (plan 0063 P2a):* the gate's flag is now traced (§ 10): none of its 9 writers sets it on a player, so the static half is answered and only the live case stays open.
 - [L] Does a kill with an `exp` state credit the way § 4's code map says? (2026-11-04, `lane/a68` review.) The credit for a kill with an `exp` state (tags state-killer, state-victim, state-both, and the player case's state on the victim) is the code's map only: no logged kill carries such a state, and the `XK0` logger (`tools/gdb/player.py`) reads no state, so the six kill logs cannot say whether one had a state. [items/0010](../items/0010-quest-drops.md)'s "the caster" stays `[I]` for the same reason. A session would log the killer's and the victim's `exp`-mask states and the `0x800` list's owner at `XK0` with a converted monster's kill (Conversion) and a kill of a converted monster. Optional, not blocking: [States](../../tables/States.md) and player/party already state the scope.
 - [L] A live case of the corrected reading: a partied killer's far mercenary or summon with one member near the victim. The logs have none. It would need a session and a monster position line, which `KILL` already gives. Optional, for the owner's three-client or a two-client run.
