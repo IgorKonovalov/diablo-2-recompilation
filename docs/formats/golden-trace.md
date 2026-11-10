@@ -100,7 +100,7 @@ sha256 of its canonical JSON (`golden.py digest --value`), named `*_digest`.
 | `chain.G1.end_seed` | `low:high` | G1 the dying unit's seed at `TCEND` | items/tc |
 | `drlg.outdoor.seed_after` | `low:high` | the level seed after the outdoor window (`OD1`) | [drlg/outdoor](../specs/drlg/outdoor.md) |
 | `drlg.outdoor.presets_digest`, `.preset_count` | sha256, int | the preset anchors `OutdoorRoomsCreate` makes, each `[def, x, y, file index, grid0 flags]` (`x`, `y` the preset rect origin the `PRC` line logs, in absolute tiles, as the room rects are), in order | drlg/outdoor |
-| `drlg.outdoor.rooms_digest`, `.room_count` | sha256, int | the out rooms, each `[x, y]` (absolute tiles, `L.rect.x + 8·cx`, the rect origin the room-link line logs; [drlg/overview](../specs/drlg/README.md) step 8), in creation order, `x` and `y` absolute tiles | drlg/outdoor |
+| `drlg.outdoor.rooms_digest`, `.room_count` | sha256, int | the out rooms, each `[x, y]` (absolute tiles, `L.rect.x + 8·cx`, the rect origin the room-link line logs; [drlg/overview](../specs/drlg/README.md) step 8), in creation order | drlg/outdoor |
 | `drlg.maze.seed_after` | `low:high` | the level seed after the maze window (`MZ1`) | [drlg/maze](../specs/drlg/maze.md) |
 | `drlg.maze.rooms_digest`, `.room_count` | sha256, int | the rooms `[x, y, w, h, def, forced index]` in list order (newest first, [drlg/maze](../specs/drlg/maze.md) § Outputs), `x` and `y` absolute tiles minus the bounding box's minimum | drlg/maze |
 
