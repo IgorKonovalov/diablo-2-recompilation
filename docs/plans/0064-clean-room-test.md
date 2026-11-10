@@ -146,3 +146,13 @@ tests), `docs/plans/0064-cleanroom/brief.md`.
   command, not the script's own reads). The audit is a check, not enforcement (ADR-0032).
 - Left: Phase 2 (clean-room runs). Before S1 and S2 start, `make` them and pass the brief plus the slice row only.
   Review: Tier B.
+
+- **2026-11-10, Phase 2 slice S1 (orchestrator):** one fresh Opus implementer, 124 365 tokens, 19 tool uses. First pass
+  62 035 fields, 0 different, 0 missing; final the same; ledger [S1](0064-cleanroom/S1.md), 6 rows, all `first` (4
+  unstated conventions of the golden format guessed right, the broken `score.sh`, dead links). The first `score.sh`
+  call failed (path of the removed `lane/n64a` worktree); the orchestrator repointed it, and no check output had been
+  seen. `cleanroom.py audit --slice S1` reports VOID with 6 paths, all false: words inside two heredoc bodies (the
+  implementer's Python source and its ledger text); with the ledger folder and the harness's tool-results folder
+  allowed, a manual read of each flagged call finds no read outside the sandbox. Run ruled valid; tool fixes filed for
+  the archivist. Caveat for the triage: the implementer's session loaded the project's `CLAUDE.md` (the harness loads it
+  for every subagent), which is a project map, not a finding.
