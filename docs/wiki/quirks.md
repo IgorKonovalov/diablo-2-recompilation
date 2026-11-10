@@ -9,7 +9,7 @@ This page is a reader's tour of the project's list of quirks. A quirk here is be
 careful programmer would "fix" by accident: a divide made signed, a random draw skipped because its result is thrown
 away, a "less than or equal" turned into "less than", a table edge read the sensible way. The reviewed specs each
 state their own traps in their notes. The [quirks index](../specs/quirks/README.md#purpose) gathers them in one place,
-474 entries in nine classes, so that a rebuild can be checked against the whole list. This page makes no claim of its
+527 entries in nine classes, so that a rebuild can be checked against the whole list. This page makes no claim of its
 own. It tells you what kinds of trap the game holds, shows a few of the most striking, and points into the index. The
 one-line entries of the index leave out conditions, so read the owning spec section an entry links before you rely on
 it; where the index and a spec differ, the spec is right
@@ -25,16 +25,16 @@ independent.
 
 | Class | Entries | Confirmed |
 |---|---|---|
-| [1. Arithmetic width and sign](#1-arithmetic-width-and-sign) | 23 | 17 |
-| [2. Rounding and float](#2-rounding-and-float) | 20 | 14 |
+| [1. Arithmetic width and sign](#1-arithmetic-width-and-sign) | 26 | 19 |
+| [2. Rounding and float](#2-rounding-and-float) | 21 | 15 |
 | [3. Wrap and overflow](#3-wrap-and-overflow) | 10 | 3 |
-| [4. Bounds, comparisons and table edges](#4-bounds-comparisons-and-table-edges) | 75 | 54 |
-| [5. Draw order and dead draws](#5-draw-order-and-dead-draws) | 138 | 116 |
-| [6. Data-dependent branches](#6-data-dependent-branches) | 124 | 97 |
-| [7. Timing and frame edges](#7-timing-and-frame-edges) | 19 | 10 |
-| [8. Multiplayer edges](#8-multiplayer-edges) | 15 | 12 |
-| [9. Deliberate oddities that look like bugs](#9-deliberate-oddities-that-look-like-bugs) | 50 | 27 |
-| **Total** | 474 | 350 |
+| [4. Bounds, comparisons and table edges](#4-bounds-comparisons-and-table-edges) | 79 | 56 |
+| [5. Draw order and dead draws](#5-draw-order-and-dead-draws) | 143 | 117 |
+| [6. Data-dependent branches](#6-data-dependent-branches) | 134 | 103 |
+| [7. Timing and frame edges](#7-timing-and-frame-edges) | 28 | 14 |
+| [8. Multiplayer edges](#8-multiplayer-edges) | 16 | 12 |
+| [9. Deliberate oddities that look like bugs](#9-deliberate-oddities-that-look-like-bugs) | 70 | 30 |
+| **Total** | 527 | 369 |
 
 ### 1. Arithmetic width and sign
 
@@ -165,7 +165,7 @@ page should keep two things apart.
   code does, not something a player saw. The party-share distance rule is one such: the code's map reproduced under
   emulation, with no logged kill separating it. Emulation shows what a function does with its inputs, not who calls it
   or how often in a real game ([what emulation can confirm](how-we-know.md#emulated-reproduction-one-function-run-on-its-own)).
-- **Read from the code is the weaker statement.** About a quarter of the entries (124 of 474) are only read from the
+- **Read from the code is the weaker statement.** About three in ten of the entries (158 of 527) are only read from the
   code and not yet checked against anything independent. A trap in this group is probably real and has not been
   tested.
 

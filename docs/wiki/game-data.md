@@ -156,7 +156,9 @@ inner quote have no stock case and are read from the code.
 
 The automatic TC of an item type for level L (named after the type code and L, such as `bow3`) takes the non-quest,
 spawnable items of that type whose level is above L − 3 and at most L, each weighted by the rarity of the item's own
-type, with one pick and no upgrade (confirmed in the logged drops). After the load the game looks up 45 chest TC names
+type, with one pick and no upgrade (confirmed in the logged drops). "Of that type" counts an item whose own or second
+type is that type or descends from it through the item types' parent columns; that the build uses this test is read
+from the code ([TC § K](../specs/items/tc.md#k-the-item-type-test--items_istype-and-items_unitistype)). After the load the game looks up 45 chest TC names
 (`Act 1 Chest A` and so on) for the objects' chests; the lookups are confirmed in the start-up runs, and where it
 keeps the result is read from the code.
 

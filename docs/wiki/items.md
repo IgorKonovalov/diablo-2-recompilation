@@ -1,7 +1,7 @@
 ---
 based_on:
   - docs/specs/items/tc.md 2026-11-10
-  - docs/specs/items/quality.md 2026-10-20
+  - docs/specs/items/quality.md 2026-11-10
   - docs/specs/items/uniques-sets.md 2026-10-30
   - docs/specs/items/affixes.md 2026-10-27
   - docs/specs/items/properties.md 2026-10-27
@@ -142,6 +142,10 @@ The item-type TCs (`weapN`, `armoN`, `bowN`, `meleN`, `abowN`; for example `bow3
 for each item type that has one, a TC for every N = 3, 6, … 96, holding every spawnable, non-quest base of that type
 whose base `level` lies above N − 3 and at most N, each weighted by the `Rarity` of the base's own type. Confirmed by
 the recorded drops that land in them ([TC § I](../specs/items/tc.md#i-auto-item-type-tcs-weapn-armon-bown-melen-abown)).
+"Of that type" is the game's item-type test: a base counts when its own type or its second type is the TC's type or
+descends from it through the types' parent columns, so every sword and axe is a `weap`. That the TC build uses this test
+is read from the code; the same test, applied to item units, reproduces every recorded affix choice
+([TC § K](../specs/items/tc.md#k-the-item-type-test--items_istype-and-items_unitistype)).
 
 When a pick lands on an item, the game asks for a quality (next section) unless the TC entry itself names a unique or
 set row, in which case the quality is fixed to unique or set with no roll. In stock data the only such entries are
@@ -223,8 +227,9 @@ flowchart TD
   no -->|"lose"| l1(("low"))
 ```
 
-**Which row.** The chances come from one `ItemRatio` row, chosen by two keys: whether the base is class-specific and
-whether it is an exceptional or elite ("uber") base. Both expansion and classic drops use the version-1 rows. The
+**Which row.** The chances come from one `ItemRatio` row, chosen by two keys: whether the base is class-specific (its own
+item type names a character class; a type with no class does not count) and whether it is an exceptional or elite
+("uber") base. Both expansion and classic drops use the version-1 rows. The
 project's notes record that the community description of 1.10 says classic games use the version-0 rows; in a recorded
 classic game the version-1 rows reproduce every roll and the version-0 rows do not. Difficulty does not pick the row;
 that is read from the code ([quality § B](../specs/items/quality.md#b-the-itemratio-row--itemratio_select)).

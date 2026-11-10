@@ -209,9 +209,9 @@ Backlog entries filed (7):
   (S2 rows 2–3: add the inputs, re-emit the set); [golden-trace-field-conventions](../backlog/2026-11-10-architect-archivist-plan-0064-golden-trace-field-conventions.md)
   (S1 rows 2–5, S2 rows 1 and 4–10, items (a) to (k)). S1 row 1 was already fixed and closed:
   [cleanroom-score-path-and-audit-heredocs](../backlog/archive/2026-11-10-architect-archivist-cleanroom-score-path-and-audit-heredocs.md).
-- spec-writer (one per spec): [items-tc-type-test](../backlog/2026-11-10-architect-spec-writer-plan-0064-items-tc-type-test.md),
-  [items-quality-type-test-link](../backlog/2026-11-10-architect-spec-writer-plan-0064-items-quality-type-test-link.md),
-  [data-excel-type-test-link](../backlog/2026-11-10-architect-spec-writer-plan-0064-data-excel-type-test-link.md),
+- spec-writer (one per spec): [items-tc-type-test](../backlog/archive/2026-11-10-architect-spec-writer-plan-0064-items-tc-type-test.md),
+  [items-quality-type-test-link](../backlog/archive/2026-11-10-architect-spec-writer-plan-0064-items-quality-type-test-link.md),
+  [data-excel-type-test-link](../backlog/archive/2026-11-10-architect-spec-writer-plan-0064-data-excel-type-test-link.md),
   [conformance-drop-inputs](../backlog/2026-11-10-architect-spec-writer-plan-0064-conformance-drop-inputs.md)
   (waits for both archivist entries).
 - reverser: [parseitemcell-unique-entry-words](../backlog/2026-11-10-architect-reverser-plan-0064-parseitemcell-unique-entry-words.md)
@@ -248,3 +248,32 @@ the format entry.
   stores 0") contradicting the layout's "blank → 0xFF". Row 12 reclassified **spec defect** (items/quality) plus a
   table-doc defect; entries `plan-0064-items-quality-s1-class-compare` (spec-writer) and
   `plan-0064-itemtypes-blank-class-vs-row-identity` (archivist).
+
+### 2026-11-10 — Phase 4 spec fixes, slices S1 and S2 (lane n64w, spec-writer)
+
+Four spec-defect entries closed, each with what the implementer could not know and the finding that already held the
+answer; no new finding was needed for any of them.
+
+- **items/tc § K, the item-type test** (S2 row 11). The definition sat only in items/affixes C5c–C5d, outside the
+  slice. § K now defines the closure, `ITEMS_IsType` (`type` then `type2` through `Equiv1`/`Equiv2`, `[I]`, items/0001
+  symbol table, archaeology/0002 § 5) and `ITEMS_UnitIsType` (`[C]`, items/0005 tests (c)–(d) and the `GOLD_TYPE` run),
+  and a blank `Equiv` storing record 0 (`[C]`, data/0004), which no test of these specs asks for (`[I]`). I1 and H8 call
+  it by name. The walk's form (depth, a cycle, record 0 in the set) is a new `[L]` under *Open questions*, filed to the
+  reverser ([entry](../backlog/2026-11-10-spec-writer-reverser-itemtypes-equiv-walk-form.md)); no stock test depends on it.
+- **items/quality S2 and data/excel G2** link § K and name the function; S2 contrasts it with A2–A5 and S1.
+- **items/quality S1** (S2 row 12): the `Class` byte is the `playerclass` row index `[C]` (PlayerClass § Row identity);
+  it is a u8, so a blank `0xFF` is not `< 7` (reading `[I]`, items/0002 § 2; outcome `[C]`, the 1607 logged rows of
+  quality 13), and "signed, bounds-checked" is the test of `rec.type`. The stored values are only 0–6 and `0xFF`, so
+  the width and the logged rows decide the compare for every value the game can hold; no reverser entry was routed.
+- **Quirks drift** (not a plan 0064 entry, done in the same lane): `quirks.py check` went from 46 errors (the 15 named,
+  plus plan 0068 P4's new items/tc n1 and skills/dispatch n9–n10) to 0. Q72, Q175, Q271 and twelve items/tc citations
+  re-pointed; Q475–Q527 (53 entries, C 19 / I 34) taken from the eight uncovered specs and the added notes; two notes
+  skipped as not a trap. Registering the check in `tools/gate.py` is ready for the architect.
+
+Wiki: items (S1's class key, the auto-TC "of that type"), game-data (the same), quirks (the counts). Research-map rows
+of items/tc, items/quality, data/excel and quirks updated for their dates and counts. Tags: items/tc C 123 / I 66 /
+L 7, items/quality C 72 / I 41 / L 1, data/excel C 146 / I 59 / L 2, quirks C 374 / I 162 / L 3.
+
+Not done here: [conformance-drop-inputs](../backlog/2026-11-10-architect-spec-writer-plan-0064-conformance-drop-inputs.md)
+waits for the archivist's golden-set entries (lane n64g). Review: Tier A. Next: Phase 5 re-runs the S2 type-test and
+class-key fields from the fixed specs.

@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, items/tc, data/excel]
 consumed_by: [items/tc, items/uniques-sets, items/affixes, items/vendors]
-tags: {C: 70, I: 39, L: 1}
-updated: 2026-10-20
+tags: {C: 72, I: 41, L: 1}
+updated: 2026-11-10
 ---
 
 # The drop quality roll: from a picked item to a quality code
@@ -51,7 +51,7 @@ flowchart LR
 | Anchor | Used for |
 |---|---|
 | tbl:ItemTypes.txt:Normal (`+0x16`), tbl:ItemTypes.txt:Magic (`+0x14`), tbl:ItemTypes.txt:Rare (`+0x15`) of the item's own `type` | the early return to normal, the always-magic return, the rare-test gate ([ItemTypes](../../tables/ItemTypes.md#fields-the-quality-roll-reads-plan-0010-phase-0)) |
-| tbl:ItemTypes.txt:Class (`+0x21`, blank stored as `0xFF`) | the class-specific row key |
+| tbl:ItemTypes.txt:Class (`+0x21`, u8, the `playerclass` row index 0–6, blank stored as `0xFF`) | the class-specific row key (S1) |
 | tbl:Weapons.txt:level (`+0xFD`, u8) | the item's `qlvl` |
 | tbl:Weapons.txt:unique (`+0x129`), tbl:Misc.txt:quest (`+0x12A`) | the two early returns to unique |
 | tbl:Weapons.txt:type (`+0x11E`, signed), tbl:Weapons.txt:code (`+0x80`), tbl:Weapons.txt:ubercode (`+0x88`), tbl:Armor.txt:ultracode (`+0x8C`) | the item's type and the uber row key (same offsets in [Weapons](../../tables/Weapons.md), [Armor](../../tables/Armor.md), [Misc](../../tables/Misc.md)) |
@@ -186,7 +186,7 @@ B1. row ← ITEMRATIO_Select(item, game.difficulty, 100)                      [C
 B2. if row = none: fatal error 0xE8D                                        [I] (0x005586E6)
 
 ITEMRATIO_Select(item, diff, version: u16):                                 [I] (fn:ITEMRATIO_Select@0x00637910, all of S1–S4)
-S1. cls: u8 ← 1 if ItemTypes[rec.type].Class < 7 else 0                     ; signed type, bounds-checked, else 0 (fn:ITEMS_IsClassSpecific@0x00629F70)
+S1. cls: u8 ← 1 if ItemTypes[rec.type].Class < 7 else 0                     ; Class: u8 playerclass row index, blank 0xFF; rec.type: signed, bounds-checked, else 0 (fn:ITEMS_IsClassSpecific@0x00629F70)
 S2. uber: u8 ← 1 if (IsType(item, weap) or IsType(item, armo))
                    and (rec.ubercode = rec.code or rec.ultracode = rec.code)  ; 4-byte words
                    and rec.type ≠ tpot and rec.quest = 0
@@ -208,9 +208,25 @@ Step notes:
   rolls that reach a test. [C] (0x005586D7, fn:ITEMRATIO_Select@0x00637910, run:2026-10-13-quality)
 - B1. **Both keys decide rows.** Over 1113 rolls, forcing the uber key to 0 breaks 7 and to 1 breaks 13, and
   forcing the class key to 0 breaks 10. [C] (fn:ITEMRATIO_Select@0x00637910, run:2026-10-12-quality)
-- S2. `IsType` is the type-equivalence test of [items/tc](tc.md) (`weap` is itemtypes record 45, `armo` 50,
-  `tpot` 38), so "uber" means an exceptional or elite base. [I] (fn:sub_0062B4D0_ItemRatioUber@0x0062B4D0,
-  fn:ITEMS_IsType@0x00629A90, tbl:Weapons.txt:ubercode, tbl:Armor.txt:ultracode)
+- S1. **The `Class` byte is the `playerclass` row index**: 0 `ama`, 1 `sor`, 2 `nec`, 3 `pal`, 4 `bar`, 5 `dru`,
+  6 `ass`; the `Expansion` marker row of `PlayerClass.txt` takes no index. [C] (tbl:ItemTypes.txt:Class,
+  tbl:PlayerClass.txt:Code, [PlayerClass § Row identity](../../tables/PlayerClass.md#row-identity)) It is the numbering
+  of a player unit's class word, which the class-specific readers compare it with. [I] (fn:ITEMS_IsClassSpecific@0x00629F70,
+  [data/0006 § 2.2](../../findings/data/0006-loaded-tables-and-bundles.md#22-playerclass-class-06))
+- S1. **`Class` is an unsigned byte (u8), so a blank `Class` (stored `0xFF`) is not `< 7`** and gives `cls` 0; only the
+  seven class values 0–6 give 1. "Signed, bounds-checked, else 0" is the test of `rec.type` (as in A2: a `type` < 0 or
+  ≥ the number of itemtypes records gives 0), not of `Class`. [I] for the reading (fn:ITEMS_IsClassSpecific@0x00629F70,
+  tbl:ItemTypes.txt:Class, [items/0002 § 2](../../findings/items/0002-quality-roll.md#2-row-selection--itemratio_select-0x00637910));
+  [C] for the outcome: the model with this test reproduces the logged row of all 1607 rolls of the S2a set, records 2,
+  3, 4 and 5 each in the three difficulties, where a blank `Class` read as a value below 7 would send every
+  classless base to record 4 or 5. (run:2026-10-14-uniques,
+  run:2026-10-16-quest-drops, [items/0002 § Plan 0038 batch S2a](../../findings/items/0002-quality-roll.md#plan-0038-batch-s2a-2026-10-16) quality 13)
+- S2. `IsType` is the item-type test of [items/tc § K](tc.md#k-the-item-type-test--items_istype-and-items_unitistype)
+  (`weap` is itemtypes record 45, `armo` 50, `tpot` 38): it walks the `Equiv1`/`Equiv2` closure of both the item's
+  `type` and its `type2`, unlike A2–A5, which read the own `type` only, and S1, which reads the own type's `Class`. So
+  "uber" means an exceptional or elite base. [I] (fn:sub_0062B4D0_ItemRatioUber@0x0062B4D0,
+  fn:ITEMS_IsType@0x00629A90, tbl:Weapons.txt:ubercode, tbl:Armor.txt:ultracode,
+  [items/0001 § Functions](../../findings/items/0001-tc-resolution.md#functions))
 - S3. `≥` on the version makes the later row win a tie; stock data has one row per key and version, so no
   tie occurs. No match cannot happen with stock data: every (uber, class) pair has a `Version` 1 row. [I]
   (0x0063798F–0x00637995, 0x005586E6)
