@@ -4144,7 +4144,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **S1b piece:** the CalcSor session ran as staged (`rng.py seedtree` 1 884/1 884; `calc.py hover` 7 `CH` lines, 0 hover evaluations, 8 drink evaluations; `calc.py check` 52/52). data-calc 19's hover half and rng-seeds 11's caller 0x00569F53 are met (notes in data/0005 and rng/0002); the rows stay S1b for the review. The 2026-10-16 entry is closed (archive).
   - **Symbols** (rule 14): eleven readers I → C (filed as "ten"; corrected at the review); four functions added (I).
   - **Backlog:** archivist [2026-10-27-reverser-archivist-h1a-d2s-legacy-layouts-and-parser-gaps](../../backlog/archive/2026-10-27-reverser-archivist-h1a-d2s-legacy-layouts-and-parser-gaps.md);
-    spec-writer [2026-10-27-reverser-spec-writer-h1a-save-d2s-player-creation-raises](../../backlog/2026-10-27-reverser-spec-writer-h1a-save-d2s-player-creation-raises.md)
+    spec-writer [2026-10-27-reverser-spec-writer-h1a-save-d2s-player-creation-raises](../../backlog/archive/2026-10-27-reverser-spec-writer-h1a-save-d2s-player-creation-raises.md)
     (held for the review); review request [2026-10-27-reverser-architect-review-lane-h1a-plan-0038-batch-h1a](../../backlog/archive/2026-10-27-reverser-architect-review-lane-h1a-plan-0038-batch-h1a.md).
   - **Next:** the `lane/h1a` review.
 - **2026-10-27 — `lane/h1a` review (architect): accept with fixes (5).** H1a (`d2s-load`, 46 statements), reviewed at
@@ -4215,7 +4215,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     Not ready: hirelings (H6f, 22 rows open) and player/creation (H6g, 15 rows open). Research-map rows of the two
     ready specs updated.
   - **Backlog:** review request closed; the spec-writer entry
-    [2026-10-27-reverser-spec-writer-h1a-save-d2s-player-creation-raises](../../backlog/2026-10-27-reverser-spec-writer-h1a-save-d2s-player-creation-raises.md)
+    [2026-10-27-reverser-spec-writer-h1a-save-d2s-player-creation-raises](../../backlog/archive/2026-10-27-reverser-spec-writer-h1a-save-d2s-player-creation-raises.md)
     **released** with (i) widened and (j), (k) added (the rulings and the S1b re-tags); the archivist entry stays open.
     Review-fixes Seen lines: reverser 2, 4 and 14; architect 8.
   - **Ledger rows:** the lane row filled (verdict, fixes 5: under-claim 1, miscount 1, omission 3; usage from the
@@ -5724,7 +5724,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Map and README:** the research-map row rewritten whole; the root README's hirelings row 2026-10-27.
   - **Backlog:** closed the [H6f entry](../../backlog/archive/2026-10-27-reverser-spec-writer-h6f-hirelings-raises.md) and
     the [H1b entry](../../backlog/archive/2026-10-27-reverser-spec-writer-h1b-save-d2s-and-hirelings-raises.md); annotated
-    the [H1a entry](../../backlog/2026-10-27-reverser-spec-writer-h1a-save-d2s-player-creation-raises.md) (hirelings 32
+    the [H1a entry](../../backlog/archive/2026-10-27-reverser-spec-writer-h1a-save-d2s-player-creation-raises.md) (hirelings 32
     done; 3, 30, 33 for H1c); filed the
     [counts entry](../../backlog/archive/2026-10-27-spec-writer-architect-s38h-hirelings-counts-for-the-research-map.md) and the
     [review request](../../backlog/archive/2026-10-27-spec-writer-architect-s38h-review-hirelings-phase-3.md). Ledger row added,
@@ -5760,7 +5760,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     past the end of its range is read from the code only" now follows hirelings H3 (the built-save reset, the widths
     read from the code) and the load's cap 99; the open-question item marked as since run (spec-writer rule 1, `lane/s38s`
     scope). save/d2s § D keeps its stale "not run-checked" bullet; routed to the H1c re-tag by an annotation on the
-    [H1a entry](../../backlog/2026-10-27-reverser-spec-writer-h1a-save-d2s-player-creation-raises.md). (b) items/economy's
+    [H1a entry](../../backlog/archive/2026-10-27-reverser-spec-writer-h1a-save-d2s-player-creation-raises.md). (b) items/economy's
     *NPC classes* bullet split (rule 8): resurrection at 150 and 515 `[C]` (run:2026-10-17-economy, Qual-Kehk;
     run:2026-10-27-sweep-hirelings, Kashya; objdump confirms the five classes at 0x00579C31–0x00579C55), 198, 252 and
     367 `[I]`. Only that bullet was touched; after `main` (`71fa2265`, with `lane/s38v`'s F4 raise) was merged a
@@ -5981,7 +5981,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     `based_on` 2026-10-30.
   - **Map and README:** the four research-map rows rewritten whole; the root README rows dated 2026-10-30.
   - **Backlog:** closed the [J2 wording entry](../../backlog/archive/2026-10-30-architect-spec-writer-player-creation-j2-grant-cut-wording.md);
-    annotated the [H1a entry](../../backlog/2026-10-27-reverser-spec-writer-h1a-save-d2s-player-creation-raises.md)
+    annotated the [H1a entry](../../backlog/archive/2026-10-27-reverser-spec-writer-h1a-save-d2s-player-creation-raises.md)
     (only (k), the S1b leftovers in data/calc and rng/seeds, stays open); review request filed. Ledger row added.
   - **Review-fixes pass:** rules 1 (the wiki follows the spec's split halves), 2 (every `[C]` scoped to the cases met:
     the death skip, the share above `0x100000`, the mana clamp, the act pick split out), 5 (counts from the gate's
@@ -6107,4 +6107,4 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   `63ea2a2e...` equal to the installed-save hash in the `run:2026-10-30-h6ga-anc` log header (the manifest lists logs, not the save; the
   header does), so the reverser half of the entry was not needed; `tools/test_d2s.py` 61 tests pass. Entry closed.
 
-- **2026-11-10 — closed by the owner (architect).** At plan 0066's approval the owner chose option (b) of its question 1: close this plan where it stands. Every batch of [§ 5](../0038-inventory/README.md#5-batch-list) is done except the H1c and H6g shortfall rows, which the `lane/s38p` and `lane/s63` re-tags applied as far as their runs reached. Every inventory row not raised by now stays `[I]`, recorded as deferred; nothing is reopened. The H1 ruling of 2026-11-04 stands (dropped items stay dropped). The two open backlog remainders this plan released go to [plan 0063](../0063-backlog-sweep-7.md) Phase 3 (S3b (d), H1a (k)). The inventory stays at `docs/plans/0038-inventory/` for its links.
+- **2026-11-10 — closed by the owner (architect).** At plan 0066's approval the owner chose option (b) of its question 1: close this plan where it stands. Every batch of [§ 5](../0038-inventory/README.md#5-batch-list) is done except the H1c and H6g shortfall rows, which the `lane/s38p` and `lane/s63` re-tags applied as far as their runs reached. Every inventory row not raised by now stays `[I]`, recorded as deferred; nothing is reopened. The H1 ruling of 2026-11-04 stands (dropped items stay dropped). The two open backlog remainders this plan released go to [plan 0063](0063-backlog-sweep-7.md) Phase 3 (S3b (d), H1a (k)). The inventory stays at `docs/plans/0038-inventory/` for its links.

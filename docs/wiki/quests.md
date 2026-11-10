@@ -2,7 +2,7 @@
 based_on:
   - docs/specs/quests/README.md 2026-10-20
   - docs/specs/quests/progression.md 2026-11-03
-  - docs/specs/quests/travel.md 2026-11-04
+  - docs/specs/quests/travel.md 2026-11-10
 ---
 
 # Quests and travel: how a character moves through the acts
@@ -396,8 +396,9 @@ already in their final mode (the one a town waypoint is built in). A waypoint th
 next operate opens the menu. The quest runs operated no unlit waypoint; two later runs operated seven, each of which
 behaved as the code says (one draw on its seed, as its object row allows), but seven cases are short of the twenty
 asked, and the plan stops there, so this is still read from the code. Five waypoint
-object rows take a draw on the object's own seed when their animation changes; the other eleven never do (read from
-the code).
+object rows take a draw on the object's own seed when their animation starts; the other eleven never do (read from
+the code). The later change from the animation to the lit mode draws on no seed for any row: the game sets that mode
+directly, without starting an animation (read from the code, and one logged waypoint's change predicted).
 
 ```mermaid
 stateDiagram-v2

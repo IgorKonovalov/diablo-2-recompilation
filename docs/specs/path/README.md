@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, drlg/collision, anim/movement, path/search]
 consumed_by: [path/search, anim/movement, skills/overview, skills/missiles, skills/dispatch, skills/catalogue, drlg/collision, monsters/ai]
-tags: {C: 85, I: 80, L: 14}
-updated: 2026-11-04
+tags: {C: 85, I: 85, L: 13}
+updated: 2026-11-10
 ---
 
 # The path request: the record, the types, the dispatch, the draws, the grid a planner reads
@@ -526,8 +526,10 @@ H2. PathFaceDir(path, dir: u8):                                     [C] (ADR-001
 - H1, H2. [C] (ADR-0015) The emulated family `aim`, 500 cases, reproduces both; the `face0` control (no facing step) fails all 308 cases it separates and `sar7` all 417. That is the code's map from the bytes it reads over the family's declared cases, not when the game calls it. (fn:sub_0064FE40_PathAimNextPoint@0x0064FE40, fn:sub_006485F0_PathFaceDir@0x006485F0, run:2026-11-03-path-emu-1)
 - H1. [C] (ADR-0015) `PathPlanToUnit` and `PathFirstLine` call `PathAimNextPoint(path, 1; 1)`, so where a point remains their aim makes the facing step. (0x006492F0–0x006493F9, run:2026-11-03-path-emu-1, fn:sub_00679A60_PathFirstLine@0x00679A60, 0x00679AC0–0x00679B1B, run:2026-11-03-path-emu-3)
 - H1. [I] `PathPlan`'s tail makes the same call (C's step 24, past the import). (0x00649BA1–0x00649C6E)
-- H2. [I] The names are the reverser's, not an observed use: `+0x64` the facing, `+0x65` the direction to turn to, `+0x66` the turn step per direction difference. What applies `+0x66` is not in a finding (Open questions). (struct:PathRequestFields+0x64, fn:sub_006485F0_PathFaceDir@0x006485F0, data:g_PathFaceStep@0x006EB548)
+- H1. [I] **`PathStep`'s call is `PathAimNextPoint(path, 1; 1)`** (`EDX` = 1 at 0x006508DF, `push 1` at 0x006508DD), skipped for type 4 and once `+0x24 ≥ +0x28`. With `arg` ≠ 0, every aim after a move step with a point ahead calls `PathFaceDir`, so the facing is aimed at the next point after every such step. (0x006508CF–0x006508E6, 0x0064FF67, fn:sub_00650840_PathStep@0x00650840, [path/0001 § 9a](../../findings/path/0001-pathplan-register.md#9a-the-facing-turn-plan-0063-phase-2a-lanen63r-2026-11-10))
+- H2. [I] The names are the reverser's, not an observed use: `+0x64` the facing, `+0x65` the direction to turn to, `+0x66` the turn step per direction difference. `+0x66` is applied by the client's turn step (H5). (struct:PathRequestFields+0x64, fn:sub_006485F0_PathFaceDir@0x006485F0, data:g_PathFaceStep@0x006EB548, [path/0001 § 9a](../../findings/path/0001-pathplan-register.md#9a-the-facing-turn-plan-0063-phase-2a-lanen63r-2026-11-10))
 - H3. [I] `PathSetFacing(path, dir)` writes `dir & 0x3F` to both `+0x64` and `+0x65`; a null path writes nothing (0x006488A6). ([ai/0004](../../findings/ai/0004-pool-c.md), fn:sub_006488A0_PathSetFacing@0x006488A0)
+- H3. [I] **The other writers of the three bytes.** `sub_00648820_PathSetDir(path, dir)` has `PathFaceDir`'s body (H2), the dir on the stack, and takes the fatal path for a dir ≥ 64. `sub_00649EF0_PathFaceXY(path, x, y, now)` takes the direction to a subtile centre; with `now` ≠ 0 it writes `+0x64` and `+0x65` as `PathSetFacing` does, else it calls `PathFaceDir`. With those, `PathFaceDir` and the turn step (H5), the image's stores at `+0x66` on a path are `PathFaceDir`'s and `PathSetDir`'s only. The getters are `sub_006487F0_PathGetFacing` (`+0x64`, 21 call sites) and `sub_00648810_PathGetFacingTarget` (`+0x65`, 5). (0x00648826–0x0064883A, 0x00649F28, 0x00649F2B, 0x00649F37, 0x00648627, 0x00648882, fn:sub_00648820_PathSetDir@0x00648820, fn:sub_00649EF0_PathFaceXY@0x00649EF0, [path/0001 § 9a](../../findings/path/0001-pathplan-register.md#9a-the-facing-turn-plan-0063-phase-2a-lanen63r-2026-11-10))
 - H4. [C] (ADR-0015) **`PathFaceDir`'s read of `g_PathFaceStep`:** index `(dir − +0x64) & 63`, 4 bytes apart, and only the low byte goes to `+0x66` (`mov al, [0x006EB548 + edx*4]`, a `u8`). The family's 173 reads of the table are that read; its model takes the same bytes from the image, so they say nothing of what the table holds. (0x00648620, 0x00648627, run:2026-11-03-path-emu-1)
 - H4. [C] **The table's values,** 64 signed dwords at `0x006EB548`, equal this rule on the pinned image ([ADR-0031](../../adrs/0031-constants-of-the-code-image.md), [PathDirTables § The rules](../../tables/PathDirTables.md#the-rules)), in exact integers, `sign(x)` being −1, 0 or 1. A reader takes the result's low byte, so −8 arrives as `0xF8`. `tools/path_survey.py rules` compares them element by element, 64 of 64, gate survey `path` holds the mismatch count and the checksum, and the `lane/a70` review's implementation from the rule's words alone gets the same (`workspace/logs/a70/review/indep.py`). The tag is that equality on this image's elements only, no claim about how the table was made or about another build. (0x00648620, 0x0064887B, data:g_PathFaceStep@0x006EB548)
 
@@ -536,6 +538,19 @@ g_PathFaceStep   i 0..63:   d = ((i + 32) & 63) - 32                  ; -32..31
                             t = (|d| + 7) >> 3
                             element [i] = sign(d) * min(8, t * t)
 ```
+
+```
+H5. PathFaceTurnStep(path):                                         [I] (fn:sub_00648640_PathFaceTurnStep@0x00648640, 0x00648640–0x0064867F, all of H5)
+      if +0x64 = +0x65 or +0x34 & 0x40: return
+      s: u8 ← +0x66;  a ← +0x65
+      f ← (+0x64 + s) & 63
+      r ← (f − a) & 63
+      if (r > 31 and s > 63) or (r < 31 and s < 63): f ← a        ; past or at the aim: snap
+      +0x64 ← f
+```
+
+- H5. [I] A positive step (1, 4 or 8) has reached or passed the aim when `r < 31`, a negative one (248, 252 or 255) when `r > 31`; either way the facing snaps to the aim and the turn ends, and `r = 31` makes no snap. The step is set when the turn is aimed (H2) and not recomputed as the facing moves: a turn of 31 at +8 takes 4 calls. (0x00648640–0x0064867F, [path/0001 § 9a](../../findings/path/0001-pathplan-register.md#9a-the-facing-turn-plan-0063-phase-2a-lanen63r-2026-11-10))
+- H5. [I] **The turn runs on the client only.** Its two references are in `sub_00463390_ClientPlayerUpdate` (0x004636DE) and `sub_004B13A0_ClientMonsterUpdate` (0x004B1563), both called by `sub_00480810_ClientUnitUpdate` and both calling `ClientPlayerGet`. So no server function steps `+0x64` toward `+0x65`: on the server a player's or a monster's facing changes only through `PathSetFacing`, `PathFaceXY` with `now` ≠ 0, or, for objects, items and missiles, `PathFaceDir` and `PathSetDir`, and a `PathFaceDir` while walking moves only `+0x65` and `+0x66`. This rests on the two references being the only ones and on their callers being client passes (they call `ClientPlayerGet`; their thread was not traced). How often the client pass runs is not read. (fn:sub_00463390_ClientPlayerUpdate@0x00463390, fn:sub_004B13A0_ClientMonsterUpdate@0x004B13A0, fn:sub_00480810_ClientUnitUpdate@0x00480810, [path/0001 § 9a](../../findings/path/0001-pathplan-register.md#9a-the-facing-turn-plan-0063-phase-2a-lanen63r-2026-11-10))
 
 ## Outputs
 
@@ -589,5 +604,5 @@ A class 225 missile's type-10 plan, `2026-11-04-path-2-s1-6004-k5-sor-oasis.log`
 - [L] **The 18 unresolved `+0x3C` bases** and the 22 store sites' unobserved rest (G3).
 - [L] **The target offset of path `+0x68`:** `PathTargetOffsetX87` (fn:sub_00679190_PathTargetOffsetX87@0x00679190) is x87 and not read.
 - [L] **Flags `0x400` and `0x20000`:** what they do and any reader outside the planners ([PathTypes](../../tables/PathTypes.md)).
-- [L] **What applies the facing step:** no finding names a reader of `+0x66`, a stepper of `+0x64` toward `+0x65`, or the facing's readers, and PathStep's call of the aim is given with one word (`PathAimNextPoint(p, 1)`, anim/0003 § 2), not as `f` and `arg`. The image holds a second reference to `g_PathFaceStep`, at 0x0064887B, not read in any finding; [PathDirTables](../../tables/PathDirTables.md) records the instruction and its width only. [Reverser's entry](../../backlog/archive/2026-11-04-spec-writer-reverser-path-facing-step-consumer.md).
+- ~~**What applies the facing step**~~ answered in § H by plan 0063 Phase 2a: the client's turn step (H5), the other writers (H3), and `PathStep`'s call `(1; 1)` (H1).
 - [L] **Town-follow:** whether a stock town's geometry admits the route (plan 0052's H5, G3).

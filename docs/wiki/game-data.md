@@ -3,7 +3,7 @@ based_on:
   - docs/specs/data/README.md 2026-10-27
   - docs/specs/data/excel.md 2026-10-27
   - docs/specs/data/strings.md 2026-10-27
-  - docs/specs/data/calc.md 2026-10-17
+  - docs/specs/data/calc.md 2026-11-10
 ---
 
 # Game data: tables, strings and formulas
@@ -388,8 +388,8 @@ From the open questions of [excel](../specs/data/excel.md#open-questions),
   maps are not read; the substitution of `%0`, `%1` in the rare and magic name lines is not read.
 - `max` and `rand` were checked under an emulator but not in a live monster cast; the missile variables that read
   damage, and five skill variables that read the unit's state, were not checked; the item context's second
-  argument (the used item) is read from the code and no stock formula reads it; that hovering over a potion evaluates
-  nothing is not shown: no formula ran without a drink, but the logs cannot tell when the pointer rested on one; the crash on the smallest integer
+  argument (the used item) is read from the code and no stock formula reads it; hovering over the potions of one run
+  evaluated nothing, but which items would evaluate a formula on a hover is not read; the crash on the smallest integer
   divided by −1 cannot be shown under an emulator.
 
 ## Where to read more

@@ -1,6 +1,6 @@
 ---
 based_on:
-  - docs/specs/path/README.md 2026-11-04
+  - docs/specs/path/README.md 2026-11-10
   - docs/specs/path/search.md 2026-11-04
   - docs/specs/drlg/collision.md 2026-11-04
 ---
@@ -320,8 +320,14 @@ of scope.
 After a plan the path aims at its next point: it works out the vector and the step per frame, and it may set the direction to
 turn to and a turn step. An emulated family of 500 cases reproduces this, which is the code's map over declared cases, not when
 the game calls it ([overview § H](../specs/path/README.md#h-the-aim-and-the-facing-step)). The names "facing" and "turn step"
-are the project's, not an observed use, and **what applies the turn step is unknown**. The turn-step table equals the exact rule
+are the project's, not an observed use. The turn-step table equals the exact rule
 that section's H4 gives, on this image, element by element, 64 of 64, with no claim about how it was made.
+
+**Only the client turns.** Read from the code: the step that turns the facing toward its aim, by the turn step each time,
+snapping to the aim once it is reached or passed, is called only from the client's per-unit updates. The server's walk aims
+the facing at the next point after every move step, which sets only the direction to turn to and the step; a player's or
+monster's facing itself changes on the server only when code sets it outright. That rests on the client update passes
+being the turn's only callers ([overview § H](../specs/path/README.md#h-the-aim-and-the-facing-step), H5).
 
 ## The grid a planner reads
 
@@ -496,7 +502,6 @@ From the specs' open questions ([overview](../specs/path/README.md#open-question
 - **The 18 unresolved type stores** and the unobserved rest of the store sites.
 - **The target offset** for a player or monster target: that routine is not read.
 - **Two flags of the path:** what they do, and any reader outside the planners.
-- **What applies the facing step**, and who reads the facing.
 - **Town-follow:** whether a stock town's geometry admits the route.
 - **A warp-paired room's rectangle:** whether a stock pair lies far enough to overrun the search's store, and whether a request takes it.
 - **Type 1's propagation stack:** whether it can reach its 200 slots; the model's depth is 23 on the emulation's cases and 3 on the first

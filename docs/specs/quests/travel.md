@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, drlg/collision, drlg/warps, objects, quests/progression, save/d2s]
 consumed_by: [quests/progression, monsters/spawn, objects]
-tags: {C: 78, I: 86, L: 5}
-updated: 2026-11-04
+tags: {C: 79, I: 88, L: 5}
+updated: 2026-11-10
 ---
 
 # Travel: waypoints, act changes, town portals, warps and placement
@@ -332,8 +332,20 @@ Step notes:
 - C3. [I] **The draw.** `SetMode` → `UNIT_AnimInit` draws `RangeB(object seed, FrameDelta[mode] >> 3)` when the row's
   `Sync` is 0 ([objects § G](../objects/README.md#g-creation-sunitcreate-for-an-object) step G2). Five waypoint rows have
   `Sync` 0: 429, 494, 496, 511, 539 (`FrameDelta` 200 for mode 1, 100 for mode 2); the other eleven have `Sync` 1 and
-  never draw. So operating one of the five in mode 0 draws once on its seed, and its later change to mode 2 draws again.
-  (fn:UNIT_SetMode@0x00624690, fn:UNIT_AnimInit@0x00624390, tbl:Objects.txt:Sync, tbl:Objects.txt:FrameDelta)
+  never draw. So operating one of the five in mode 0 draws once on its seed, at its `SetMode(object, 1)`; so does C2's
+  arrival match. (fn:UNIT_SetMode@0x00624690, fn:UNIT_AnimInit@0x00624390, tbl:Objects.txt:Sync, tbl:Objects.txt:FrameDelta)
+- C3. [I] **The change to mode 2 draws nothing.** Object event 1, which C1 and C2 queue, is `sub_00581490_ObjEvOperateEnd`:
+  for an object in mode 1 whose Objects row has `Mode2` set it writes mode 2 directly, not through `UNIT_SetMode`, so it
+  starts no animation and draws on no seed whatever the row's `Sync`; then, when the row's `HasCollision2` is 0, it unmarks
+  the object's footprint. All 16 waypoint rows have `Mode2` 1 and `HasCollision` 0 in every mode, so for a waypoint the
+  event is the mode write and an unmark of a footprint it never marked. C2's town `SetMode(object, 2)` goes through
+  `UNIT_SetMode` and is not this event. (0x00581497–0x005814C6, fn:sub_00581490_ObjEvOperateEnd@0x00581490,
+  data:g_ObjEventFns@0x006E19B0, tbl:Objects.txt:Mode2, tbl:Objects.txt:HasCollision2, [quests/0002 § 15](../../findings/quests/0002-travel.md#15-object-event-1-on-a-waypoint-plan-0063-phase-2b-2026-11-10-lanen63s))
+- C3. [C] On the kept log of the Rogue Encampment waypoint (class 119, `Sync` 1), created in mode 1 by C2's arrival match
+  and found in mode 2 at its one later operate, a model that runs event 1 before an operate past its due frame predicts
+  that mode 2: 1 case, 0 mismatches, and the 93 other kept logs with a waypoint check the same as before. Scope: that one
+  waypoint, whose `Sync` 1 does not separate a draw. (fn:sub_00581490_ObjEvOperateEnd@0x00581490,
+  run:2026-10-27-sweep-collision, [quests/0002 § 15](../../findings/quests/0002-travel.md#15-object-event-1-on-a-waypoint-plan-0063-phase-2b-2026-11-10-lanen63s))
 - C4. [I] Other writers of the waypoint record: `NPC_MenuAction` after an NPC act change (levels 40, 75, 109; § E),
   `DurancePortalOperate` (103; § F) and the Harrogath portal (109; § F). (fn:WAYPOINT_Set@0x00660EC0,
   fn:NPC_MenuAction@0x00579D60, fn:sub_00584750_DurancePortalOperate@0x00584750, fn:sub_005B4FF0_A4Q2_HarrogathWaypointSet@0x005B4FF0)
@@ -736,6 +748,7 @@ I2. PlayerPlaceInAct(player, given = 0):                              [C] (fn:su
 |---|---|---|---|
 | waypoint operate, mode 2 | none | — | [C] (run:2026-10-17-quests, run:2026-10-18-quests2) |
 | waypoint operate, mode 0 | rows 429, 494, 496, 511, 539: `RangeB(object seed, FrameDelta[1] >> 3)`; others none | the object's own seed | [I] (fn:UNIT_AnimInit@0x00624390) |
+| waypoint object event 1, mode 1 → 2 | none, for every row | — | [I] (fn:sub_00581490_ObjEvOperateEnd@0x00581490) |
 | waypoint travel | the destination level seed, one step if `Position` and type ≠ 13; a level or room build when absent (oracle) | per level seed, with the population pass's lookups | [C] (run:2026-10-17-quests) |
 | NPC act change | the destination town's level seed, one step (type 0; type 5 only with a group-1 point) | per level seed | [C] for type 0 and Meshif's stepping type 5 (run:2026-10-17-quests, run:2026-10-19-quests3) |
 | Harrogath portal | none: type 5 on 109 takes its one type-0 point with no draw (A3) | — | [C] (run:2026-10-19-quests3: x-tyrael3) |

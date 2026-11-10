@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, items/vendors, monsters/pool, monsters/stats, data/strings, data/excel, save/d2s]
 consumed_by: [items/quality, monsters/pool, save/d2s, monsters/ai/machinery]
-tags: {C: 143, I: 41, L: 7}
-updated: 2026-11-04
+tags: {C: 143, I: 43, L: 6}
+updated: 2026-11-10
 ---
 
 # Hirelings: the hire list, the hire, the mercenary's stats and its creation from a save
@@ -418,10 +418,20 @@ Step notes:
   client, so the two refusal tails (lines 0x654 and 0x65F) ran in no session. (fn:HIRE_Hire@0x005770E0,
   run:2026-10-27-sweep-hirelings)
 - F1. [I] **The two quest refusals are server checks the stock client did not send in the states observed.** They are what `HIRE_Hire` does
-  with such a request (read from the code). The client test that drops the hire line is not read, so whether it
-  matches the server's gates in every state (three states were observed: Kashya at 3 and 7, Qual-Kehk) is open; a
-  state where the client offers the line and the server refuses would make the refusal reachable.
-  (fn:HIRE_Hire@0x005770E0, 0x00577115–0x0057717C)
+  with such a request (read from the code). (fn:HIRE_Hire@0x005770E0, 0x00577115–0x0057717C)
+- F1. [I] **The client's hire line matches the server's gates for every value of the inputs both read.** At each
+  interaction the client loads the packet's quest bytes into its quest record, resets the menus (Kashya's and
+  Qual-Kehk's to talk and cancel), then opens the menu with `sub_004B66B0_ClientNpcMenuOpen`, from its two callers
+  only. The open walks the quest gate table `g_ClientNpcMenuQuestGates`: Kashya (class 150) gets the hire line when
+  word 2 bit 0 is set, Qual-Kehk (515) when word 36 bit 0 is set; then Kashya gets it also when the client player's
+  stat 12 is 8 or more, and Qual-Kehk has no level test. `VENDOR_StockLevel`'s caps are all at least 12, so
+  `StockLevel(L) < 8` exactly when `L < 8` in every difficulty, and both sides read the same stat, word and bit.
+  Within one interaction the client's copy can only lag the server's: stat 12 only rises, and no write read clears a
+  set bit 0. So no stock state was found in which the client offers the line and the server refuses; a quest-bit
+  clear outside the writes read would be one. (fn:sub_004B6DD0_ClientNpcInteractRecv@0x004B6DD0,
+  fn:sub_004B66B0_ClientNpcMenuOpen@0x004B66B0, fn:sub_004B19A0_ClientNpcMenuQuestGates@0x004B19A0,
+  data:g_ClientNpcMenuQuestGates@0x007253E0, 0x004B6806–0x004B6819, fn:VENDOR_StockLevel@0x00576890,
+  0x005768AE–0x005768DD, [hirelings/0001 § Plan 0063 Phase 2a](../../findings/hirelings/0001-hirelings.md#plan-0063-phase-2a-static-lanen63r-2026-11-10))
 - F2. [C] The hire reads `t[nameIdx − first]`: in all 49 hires of run:2026-10-16-hirelings that slot held the hired
   name with `hired` 0, and its seed is the one `MERC_Init` received; no other listed entry had that seed.
   (fn:HIRE_Hire@0x005770E0, 0x005771E8–0x00577258, fn:MERC_Init@0x00573270, run:2026-10-16-hirelings)
@@ -656,11 +666,18 @@ Step notes:
 - H12. [I] **`MERC_Create` with a hire table present was not reached.** All six `MERC_Create` calls of
   run:2026-10-27-sweep-hirelings came from `D2S_ReadMercHeader` (0x0056AAE8) at the load, before any NPC interaction,
   and act changes with a loaded mercenary and Kashya's table built made none. At a load the table cannot exist yet (a
-  new game builds its NPC records afresh). The legacy reader calls it at a load too (0x00533CB1, 0x00533DA5). The
-  third caller, `sub_005394A0_PlayerPlaceInAct`, walks a list at `+0x60` of its `EDX` argument and calls `MERC_Create`
-  with id `0xFFFF` for an entry with a non-zero name (0x00539637); what fills that list, and so when this caller runs
-  after a table was built, is not read. (fn:MERC_Create@0x005774F0, 0x005775E2–0x00577605,
-  fn:sub_005394A0_PlayerPlaceInAct@0x005394A0, 0x005395BF–0x00539637)
+  new game builds its NPC records afresh). The legacy reader calls it at a load too (0x00533CB1, 0x00533DA5).
+  (fn:MERC_Create@0x005774F0, 0x005775E2–0x00577605)
+- H12. [I] **The third caller is reached by no stock writer.** `sub_005394A0_PlayerPlaceInAct` walks the player's
+  corpse list (inventory `+0x34`): a node with its flag set is a corpse, moved to the new act's town; the
+  `MERC_Create(word, id, 0xFFFF, 0, 0)` branch needs flag 0 and a non-zero word (0x0053961F). The list's nodes are
+  made only by `sub_0063D470_InvCorpseAdd`, whose three callers (two corpse readers at a load, `PLAYER_CorpseCreate`
+  at a death) all add flag 1 and word 0, so no stock game type reaches the branch; a node edited outside those three
+  writers would. Row 29 (`MERC_Create` with a table present) is **d-none** (plan 0063 Phase 3 review): a second
+  client adds no writer, since each of the three calls pushes the constants flag 1 and word 0 (0x00533939, 0x0056A9B5,
+  0x0057F88E), so the branch has no observable in any stock game type, not one that two clients would reach. (fn:sub_005394A0_PlayerPlaceInAct@0x005394A0, 0x005395C3–0x00539637,
+  fn:sub_0063D470_InvCorpseAdd@0x0063D470, 0x00533945, 0x0056A9BB, 0x0057F894,
+  [hirelings/0001 § Plan 0063 Phase 2a](../../findings/hirelings/0001-hirelings.md#plan-0063-phase-2a-static-lanen63r-2026-11-10))
 - [C] The mercenary's items are read after the header, into the unit `MERC_Create` returned: loading a save whose
   mercenary holds three items, the mercenary list's reader was called with the cursor at the file's `jf` (the end of
   the corpse list) and read the file's items in order, and the write held the same mercenary list
@@ -917,10 +934,9 @@ on the in-game screen.
   mercenary at `M` (98) gaining experience and a level-up of more than one level, a hire by a second player from the
   shared table, the act dependence of a version-71 mercenary's row (H13), and the old-save experience conversion's
   cutoff at version 89 and its arithmetic (no file of version 88 to 91 is built). None changes the draw order of § D.
-- [L] **Two reads behind the refusals and `MERC_Create`** (reverser entry
-  [2026-10-27-architect-reverser-h6f-review-client-hire-line-and-merc-create](../../backlog/archive/2026-10-27-architect-reverser-h6f-review-client-hire-line-and-merc-create.md)):
-  whether the client test that drops the hire line matches `HIRE_Hire`'s quest gates in every state (F1), and what
-  fills the list `sub_005394A0_PlayerPlaceInAct` walks, so whether `MERC_Create` meets a built hire table (H12).
+- ~~**Two reads behind the refusals and `MERC_Create`**~~ answered in F1 and H12 by plan 0063 Phase 2a: the client's
+  hire line matches `HIRE_Hire`'s quest gates for every value of the inputs both read, and the list
+  `sub_005394A0_PlayerPlaceInAct` walks is the corpse list, whose stock writers never reach its `MERC_Create` branch.
 - ~~The build through `NPC_OpenStore`, the free mercenary, Greiz and classic hires, the gold refusal, levelling in play
   and the owner's share, a dead or empty header, a name past the range, the written header and the list window's name
   1057~~ answered in § C, § K, § F, § G, § H and § E by plan 0038 (S3a, H1b, H6f); the `NPC_OpenStore` build has no

@@ -667,6 +667,8 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-11-10 | `lane/n68r` check | 0068 P2 | architect-check | 98 040 | 28 | 3 | — | accept with fixes (7) | overclaim 3, miscount 1, omission 3 |
 | 2026-11-10 | `lane/n67r` | 0067 P1 | reverser-static | 320 117 | 115 | 23 | Ghidra copy | accept with fixes (Tier B, 5) | overclaim 2, omission 2, stale cross-reference 1 |
 | 2026-11-10 | `lane/n67r` check | 0067 P1 | architect-check | 84 978 | 24 | 2 | — | accept with fixes (5); Phase 2 cost for the owner | overclaim 2, omission 2, stale cross-reference 1 |
+| 2026-11-10 | `lane/n63w` | 0063 P3 | spec-writer | 226 273 | 111 | 13 | — | accept (Tier A, 0) | — |
+| 2026-11-10 | `lane/n63w` review | 0063 P3, close | architect-review | 176 862 | 88 | 10 | — | accept (0); plan 0063 closed; row 29 d-none | — |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not

@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [anim/timing, stats/aggregate, stats/states, monsters/stats, drlg/collision]
 consumed_by: [anim/timing, combat/overview, skills/missiles, path/overview, path/search]
-tags: {C: 26, I: 44, L: 8}
-updated: 2026-11-04
+tags: {C: 26, I: 46, L: 8}
+updated: 2026-11-10
 ---
 
 # Movement: speeds, the per-frame step, the run drain and knockback
@@ -185,7 +185,7 @@ B1. PathStep(unit, k):                                            [C] (fn:sub_00
         if p.stepX ≠ 0 or p.stepY ≠ 0:
           (x, y) ← PathStepMove(p)                                 ; B3, B4
           PathSetPoint(p, x, y)
-          if p.type ≠ 4 and p.iPoint < p.nPoints: PathAimNextPoint(p)
+          if p.type ≠ 4 and p.iPoint < p.nPoints: PathAimNextPoint(p, 1; 1)   ; [I] the two words, path/overview H1
           if p.iPoint < p.nPoints: return 1
       PathStop(p);  return 0                                       ; UnitMoveStep returns 2 − (ret ≠ 0)
 ```
@@ -204,7 +204,9 @@ B1. PathStep(unit, k):                                            [C] (fn:sub_00
   moves `v / 16` subtiles per frame along an axis (`v · 2896 / 4096 / 16` on the diagonal). Walk 0.375, run 0.5625,
   knockback 1 subtile per frame on an axis. (fn:sub_0064FE40_PathAimNextPoint@0x0064FE40,
   fn:sub_0064FC60_PathDirection@0x0064FC60, data:g_PathDirTable@0x006EB7E0) The aim's return and its facing step are
-  [path/overview § H](../path/README.md#h-the-aim-and-the-facing-step).
+  [path/overview § H](../path/README.md#h-the-aim-and-the-facing-step): `PathStep` calls it with `f` = 1 and `arg` = 1, so
+  each move step with a point ahead aims the facing at that point, and only the client turns `+0x64` toward it (H5). [I]
+  (0x006508DD, 0x006508DF, [path/0001 § 9a](../../findings/path/0001-pathplan-register.md#9a-the-facing-turn-plan-0063-phase-2a-lanen63r-2026-11-10))
 - B3. [I] **The snap** (not for path type 4): with `m = max(|stepX|, |stepY|)` and the next point at its subtile
   centre (`(word << 16) + 0x8000`), when both remaining axis distances are at most `m` the step becomes exactly the
   remaining delta and the point counts as reached. So a point `d` subtiles away on an axis takes `⌈65536 d / step⌉`

@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [player/creation, monsters/stats, items/tc, combat/delivery, combat/overview, items/economy, quests/progression, items/quest-drops, hirelings]
 consumed_by: []
-tags: {C: 46, I: 26, L: 3}
-updated: 2026-11-04
+tags: {C: 46, I: 30, L: 3}
+updated: 2026-11-10
 ---
 
 # Party and player count
@@ -89,16 +89,20 @@ Full form: [player/creation G0](creation.md#g-kill-experience--xp_compute).
   victim, replaces it with the owner of a stat list with flag `0x800`; the victim's test wins even when it finds no list. The result counts only if it is a player.
   (fn:sub_0058F0D0_MonsterOwner@0x0058F0D0, fn:sub_0063A690_UnitHasExpState@0x0063A690, fn:sub_00625760_StatListFindFlag@0x00625760, tbl:States.txt:exp, run:2026-11-03-party-emu)
 - [C] In the game's own logs, 40 mercenary kills credit the owner. (fn:XP_OnMonsterKill@0x0057E990, run:2026-10-20-two-clients)
-- [I] What holds the `0x800` list in play, and what the gate's flag bit 26 of `+0xC4` means, are not settled by this code. (0x005A4EFE–0x005A4F0A, [player/0002 § 4](../../findings/player/0002-party.md#4-g0-the-credit-sub_0057e7b0_xpcreditplayer))
+- [I] What holds the `0x800` list in play is not settled by this code. (0x005A4EFE–0x005A4F0A, [player/0002 § 4](../../findings/player/0002-party.md#4-g0-the-credit-sub_0057e7b0_xpcreditplayer))
+- [I] **The gate's flag, bit 26 of unit `+0xC4`, means "no experience on this death".** The image sets it at 9 sites, clears it at none and reads it at two: the kill gate, and `sub_00541FE0_InactiveMonAiSave`, which only keeps it across a room's deactivation, so the gate is its one consumer and a unit with the bit set gives no experience when killed. The setters, all on monsters: a monster restored from an inactive room (`sub_00541E20_InactiveMonAiRestore`, the saved bit set again), a caster's previous summon replaced by a new one (`sub_0056D840_SummonReplaceKill`), a pet its owner's list releases (`sub_00574450_PetUnitRelease`), the units of the maggot egg and lay skills (`sub_005CAFA0_SkillDo84MaggotEgg` twice, `sub_005CB3C0_SkillDo87MaggotLay`), the sand maggot queen's spawn (`sub_005F9CF0_AiSandMaggotQueen`) and the two Uber minion spawns (`sub_005F7F10_UberMinionSpawn`, `sub_005FD0F0_UberBaalMinionSpawn`). None is on a player. The meaning is the reading's, not a logged outcome. (0x005A4F04, 0x00542017, 0x00541FB1, 0x0056D8A4, 0x0057449B, 0x005CB042, 0x005CB089, 0x005CB4B8, 0x005F9DE6, 0x005F7FF0, 0x005FD1DF, fn:sub_005A4EF0_KillExpGate@0x005A4EF0, [player/0002 § 10](../../findings/player/0002-party.md#10-plan-0063-phase-2a-the-list-writers-the-fourth-caller-and-bit-26-lanen63r-2026-11-10))
 - [C] The code's map: a player victim passes this code, its base stat 13 as the experience and its base stat 12 as the monster's level. (fn:XP_OnMonsterKill@0x0057E990, run:2026-11-03-party-emu)
-  Whether play reaches that is not read. [I] (0x0057CD28–0x0057CD51, fn:sub_005A4EF0_KillExpGate@0x005A4EF0)
+  The gate's flag is never set on a player, so a player victim passes the gate to this code; no log holds one, so whether it pays in play is not shown. [I] (0x0057CD28–0x0057CD51, fn:sub_005A4EF0_KillExpGate@0x005A4EF0, [player/0002 § 10](../../findings/player/0002-party.md#10-plan-0063-phase-2a-the-list-writers-the-fourth-caller-and-bit-26-lanen63r-2026-11-10))
 
 ### B. What a party is
 
 - [C] The code's map: the party id is found by a guid search over every party's list: the guid is the unit's `+0x0C`, or inventory `+0x24` when the unit has an inventory whose `+0x00` is
   `0x01020304`; the first list holding it gives the record's word `+0x00`. A unit that is not a player or has no game word is 0xFFFF. The list walked is then the **first record of that id**, which may not
   be the one the guid was found in. (fn:sub_00554630_UnitPartyId@0x00554630, fn:sub_00540710_PartyIdOfUnit@0x00540710, fn:sub_00540290_PartyFind@0x00540290, fn:INV_GetOwnerId@0x0063D450, run:2026-11-03-party-emu)
-- [I] The writers of the list, what makes two players one party, and whether a list can hold nine players were not read. (0x005408CB, 0x005408F4, 0x0054091E, [player/0002 § 2](../../findings/player/0002-party.md#2-the-party-definition))
+- [I] **Two players are one party only through an accepted invite.** Game creation installs the root at game `+0x1D2C` with no record. A record is made only by `sub_00540100_PartyNew` (its id the first ≥ 3 that no record holds) and a member only by `sub_00540320_PartyAddMember`, which prepends the player's guid (`+0x0C`), skips a guid already in the list, takes the fatal path for a missing record or a unit that is not a player, and makes no count test. Both are called only by the accept action (party action 8). Each player keeps a relation state per other player: the invite (action 6, A names B) needs A's state for B to be 0 and sets it to 4, and B's for A to 2; the accept (action 8, B names A) needs B's state for A to be 2, then puts A, then B, in a new record when A has no party, else adds B to A's record; the cancel (action 7) needs state 4. (fn:sub_00540100_PartyNew@0x00540100, fn:sub_00540320_PartyAddMember@0x00540320, fn:sub_005A5BE0_PartyActInvite@0x005A5BE0, fn:sub_005A5A30_PartyActAccept@0x005A5A30, fn:sub_005A5B30_PartyActCancel@0x005A5B30, data:g_PartyActionHandlers@0x006E2218, [player/0002 § 10](../../findings/player/0002-party.md#10-plan-0063-phase-2a-the-list-writers-the-fourth-caller-and-bit-26-lanen63r-2026-11-10))
+- [I] **Leaving.** `sub_005407A0_PartyRemoveMember` unlinks the player's node and deletes the record when fewer than 2 members remain; the leave action and `sub_00555600_UnitFree` call it, so a freed player unit leaves its party (two other callers, 0x0053A06D and 0x005349DF, are not read). (fn:sub_005407A0_PartyRemoveMember@0x005407A0, 0x005A5D41, 0x0055567D)
+- [I] **A list holds at most 8 players.** Its members are distinct player guids, and a game admits at most 8 clients: game `+0x8C` counts them, and both the add path and the join request refuse at 8. This rests on one player unit per client, which was not read. (0x00539A4E–0x00539A55, 0x0053F051–0x0053F058, 0x00539BC0, 0x0053A25D, [player/0002 § 10](../../findings/player/0002-party.md#10-plan-0063-phase-2a-the-list-writers-the-fourth-caller-and-bit-26-lanen63r-2026-11-10))
+- [I] The fourth caller of `sub_005405A0_PartyForEachInLevel`, at 0x005408CB, lies in `sub_00540890_PartyLevelSumInLevel`, which the image never references, so no game path runs it. (fn:sub_00540890_PartyLevelSumInLevel@0x00540890, 0x005408F4, 0x0054091E, [player/0002 § 10](../../findings/player/0002-party.md#10-plan-0063-phase-2a-the-list-writers-the-fourth-caller-and-bit-26-lanen63r-2026-11-10))
 
 ### C. Who shares
 
@@ -125,7 +129,7 @@ flowchart TD
 - [C] The code's map: the edge is inclusive and unsigned (d² = 6400 in, 6401 out), and d² is 32-bit, so it wraps. (0x0057E654, 0x0057E65A, 0x0057E64C, run:2026-11-03-party-emu)
 - [C] The code's map: the party and the level are the credited player's; the victim's level is not read. (fn:sub_005405A0_PartyForEachInLevel@0x005405A0, 0x005405C7–0x00540636, run:2026-11-03-party-emu)
 - [C] The code's map: a ninth member that passes every test reaches `0x00408090(0xF25)` at 0x0057E66C; a member failing a test first does not count. (0x0057E662, 0x0057E665, run:2026-11-03-party-emu)
-- [I] What follows that call is the fatal path, not run, and whether a list can hold nine was not read, so this is the code's path and not a game outcome. (0x0057E671–0x0057E681, 0x005408CB)
+- [I] What follows that call is the fatal path, not run. A list holds at most 8 players (§ B), so no stock game reaches the call: this is the code's path and not a game outcome. (0x0057E671–0x0057E681, 0x00539A4E–0x00539A55)
 - [C] For two players, the member sets of plan 0044's session are predicted, in order, for 689 of 690 kills (the other cut off by the session's end). (fn:sub_0057E5A0_PartyXpCollect@0x0057E5A0, run:2026-10-20-two-clients, run:2026-11-03-party-emu)
 
 ### D. How much
@@ -223,7 +227,7 @@ Experience on the credited player or the members, a mercenary's award, and the v
 - **With one member collected, pay the credited player**, not that member, at the credited player's level, even when the credited player failed the tests. [C] the code's map (0x0057E70D–0x0057E733, run:2026-11-03-party-emu)
 - What that gives in play is odd and is to be kept: a far hireling's kill can pay its far owner alone, and a dead killer can be paid while the living member is not. [I] (0x0057E6FB–0x0057E733, 0x0057E654–0x0057E65A)
 - **A player in no party has no alive or distance test**; only the party branch has them. [C] the code's map (0x0057EA64–0x0057EAA1, run:2026-11-03-party-emu)
-- **Eight is not a clip.** A ninth that passes every test reaches the fatal call; do not stop at eight quietly. [C] the code's map, to the call (0x0057E662, 0x0057E665, run:2026-11-03-party-emu) Past the call, and whether a list can hold nine, is unread. [I] (0x0057E671–0x0057E681, 0x005408CB)
+- **Eight is not a clip.** A ninth that passes every test reaches the fatal call; do not stop at eight quietly. [C] the code's map, to the call (0x0057E662, 0x0057E665, run:2026-11-03-party-emu) Past the call is unread, and a list holds at most 8 players (§ B), so no stock game reaches it. [I] (0x0057E671–0x0057E681, 0x00539A4E–0x00539A55)
 - **The edge and the wraps:** `d² ≤ 6400` unsigned and inclusive, d² and the total's product wrap at 32 bits. [C] the code's map (0x0057E654, 0x0057E65A, 0x0057E739–0x0057E74B, run:2026-11-03-party-emu)
 
 ## Evidence
@@ -235,6 +239,6 @@ Experience on the credited player or the members, a mercenary's award, and the v
 
 ## Open questions
 
-- [L] Does a player killing a player get an award in play? The code path exists (§ A); no log holds one, and the gate's flag was not traced on such a victim. A later two-client case, not blocking.
+- [L] Does a player killing a player get an award in play? The code path exists (§ A); no log holds one. The gate's flag is never set on a player (§ A), so only the live case is open. A later two-client case, not blocking.
 - [L] A live case of the corrected reading: a partied killer's far mercenary or summon with one member near the victim. The logs have none; `KILL` already gives the monster's position. Routed by the plan 0058 review.
 - [L] The party gold split in a game: [items/economy's question](../items/economy.md#open-questions).

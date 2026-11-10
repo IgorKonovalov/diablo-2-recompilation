@@ -1,9 +1,9 @@
 ---
 based_on:
   - docs/specs/player/README.md 2026-11-03
-  - docs/specs/player/creation.md 2026-11-04
-  - docs/specs/hirelings/README.md 2026-11-04
-  - docs/specs/player/party.md 2026-11-04
+  - docs/specs/player/creation.md 2026-11-10
+  - docs/specs/hirelings/README.md 2026-11-10
+  - docs/specs/player/party.md 2026-11-10
   - docs/specs/save/d2s.md 2026-11-04
 ---
 
@@ -298,7 +298,9 @@ flowchart TD
 - **Who is credited.** A player who kills is credited itself. For a monster killer, its owner is credited, except that
   three states on the killer or the victim (conversion, attract, confuse) can replace the owner. The 40 mercenary kills
   in the two-client logs credited the owner (seen in play); the three states and the player-kills-player case are read
-  from the code only, and no log holds a player's award from a player.
+  from the code only, and no log holds a player's award from a player. Read from the code too: a few monsters are marked
+  to give no experience when killed (a summon replaced by a new one, a released pet, the spawn of some skills and AIs),
+  and no player ever carries that mark.
 - **A player in no party** takes the whole award at its own level, with no distance or alive test. This is read from the
   code.
 - **A player in a party.** The game walks the credited player's party list and collects the members who are in the same
@@ -319,7 +321,8 @@ flowchart TD
     game's 41). For three to eight the integer steps were checked under emulation and the float steps are the same
     instructions, which agreed in every emulated case; emulation does not count as evidence for those steps, and they have not been seen in a game.
   - Eight is the most the code collects. A ninth member that passes every test reaches the fatal-error call, not a clip.
-    Whether a party list can hold nine was not read.
+    Read from the code, a party list cannot hold nine: a game admits at most eight players, and a player joins a party
+    only by accepting another's invitation.
 - **What a far or dead killer means** (read from the code only; none of it has been seen in a game). Because one
   collected member pays the credited player, a partied player whose hireling or summon kills far from it takes the whole
   award alone when one other member is near the monster, and nobody is paid when no member is near; an unpartied player
@@ -427,7 +430,9 @@ one, at 2 650, was refused with no mercenary made.
 Two sellers check a quest first. Qual-Kehk reads an Act V quest bit, and Kashya, for a player below level 8, an Act I
 quest bit; Greiz and Asheara read none. Runs showed the reads and the hires that passed them. In the three states tried
 with the quest still open, the game offered no hire line at all, so the server's refusal was never asked for; the refusal itself is read
-from the code, and so is hiring a name that is in the table but not listed. Hires at Greiz and classic-game hires at
+from the code, and so is hiring a name that is in the table but not listed. Read from the code too: the client offers
+the hire line on the same quest bit and level as the server's checks, so no state was found in which the client offers
+a hire the server refuses. Hires at Greiz and classic-game hires at
 Kashya and Asheara behave like the others; a classic hire at Greiz was not made.
 
 ## The mercenary's stats per level
@@ -577,8 +582,6 @@ From [hirelings § Open questions](../specs/hirelings/README.md#open-questions):
   mercenary at the level-98 bound, a second player hiring from the shared table, and two details of mercenaries in
   saves older than version 92 (whether a version-71 mercenary's Id follows the act, and the version cutoff of the
   experience conversion);
-- not yet read: whether the client's hire-line test matches the server's quest checks in every state, and what fills
-  the list of a third caller (`PlayerPlaceInAct`) that can also create a mercenary;
 - whether the client ever shows its own rolled values instead of the server's.
 
 ## Where to read more

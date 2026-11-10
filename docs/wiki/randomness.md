@@ -1,7 +1,7 @@
 ---
 based_on:
   - docs/specs/rng/README.md 2026-10-17
-  - docs/specs/rng/seeds.md 2026-11-04
+  - docs/specs/rng/seeds.md 2026-11-10
   - docs/specs/drlg/room-tiles.md 2026-10-27
 ---
 
@@ -195,8 +195,9 @@ Because the game seed is shared, a unit's seed depends on everything that drew f
 | 6, 8, 10… | the [starting items](../glossary.md), two draws each | confirmed in runs |
 
 Players are seeded through their own creation paths. In the runs, the players' seeds came from the game seed
-through these paths; which of the five paths ran, and that each of the others also passes the game seed, is not
-established. A monster made by the population pass carries a unit seed already two steps along by the time the pass draws
+through these paths. A run that logged the caller saw both player loads take the path of the player's unit set-up,
+which passes the game seed; the other four paths logged nothing there, and that each of them also passes the game
+seed is not established. A monster made by the population pass carries a unit seed already two steps along by the time the pass draws
 on it (in 914 of 916 logged creations; the other two were 6 and 15 steps along). If a unit is ever created with no
 parent seed, the code falls back to an unrepeatable clock-based seed; no run reached that path.
 

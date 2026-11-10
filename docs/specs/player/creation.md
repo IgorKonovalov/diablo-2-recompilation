@@ -5,7 +5,7 @@ target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, data/excel, items/uniques-sets, items/properties, items/affixes, monsters/stats, save/d2s]
 consumed_by: [save/d2s, combat/to-hit, stats/aggregate, player/party]
 tags: {C: 140, I: 53, L: 1}
-updated: 2026-11-04
+updated: 2026-11-10
 ---
 
 # New character, starting items, experience and level-up
@@ -305,8 +305,8 @@ Step notes:
   skill-point spend reaches it (`PLAYER_SpendSkillPoint`: `newskills` ≥ the cost, minus the cost, then the add): Ice
   Bolt appended at level 1, then raised 1 → 2, and Frozen Armor raised 19 → 20, the Skills maximum; the other callers
   only appended (467 calls). [C] (fn:SKILLS_AddSkill@0x00647110, fn:PLAYER_SpendSkillPoint@0x00570080,
-  run:2026-10-27-sweep-player) The test against the maximum (`SKILLS_GetMaxLevel`: Skills `+0x12C`, 20 when that cell
-  is ≤ 0) is read from the code: a full entry never reached the add, because the client sent no request for a skill
+  run:2026-10-27-sweep-player) The test against the maximum (`SKILLS_GetMaxLevel`: Skills `maxlvl`, `+0x12C`, 20 when
+  that cell is ≤ 0) is read from the code: a full entry never reached the add, because the client sent no request for a skill
   at its maximum. For a monster unit (type 1) the entry is raised at or above the maximum too. [I]
   (fn:SKILLS_GetMaxLevel@0x004AA8B0, 0x0064724F–0x0064725E, 0x00647256)
 - D1. Stock lists: every class gets Attack (0), Throw (2), Kick (1), the scrolls and books of Identify and Town Portal
@@ -695,8 +695,8 @@ Step notes:
   [player/0002 § 1](../../findings/player/0002-party.md#1-the-chain))
 - J4. **The edge is inclusive and the cap is not a clip.** `cmp edx,0x1900` then `ja` (0x0057E654, 0x0057E65A): d² = 6400 stays in, 6401 is out.
   `cmp eax,8` then `jl` (0x0057E662, 0x0057E665): a ninth member that passes every test reaches `0x00408090(0xF25)` at 0x0057E66C; members that fail a test first do not count, so
-  eight in a longer list is fine. [C] the code's map, as far as that call (run:2026-11-03-party-emu) What follows that call is the fatal path of the other findings, not run, and whether a party list can hold
-  nine players was not read, so this is the code's path and not a game outcome. [I] (0x0057E671–0x0057E681, 0x005408CB)
+  eight in a longer list is fine. [C] the code's map, as far as that call (run:2026-11-03-party-emu) What follows that call is the fatal path of the other findings, not run. A party list holds at most 8 players
+  ([party § B](party.md#b-what-a-party-is)), so no stock game reaches the call: this is the code's path and not a game outcome. [I] (0x0057E671–0x0057E681, 0x00539A4E–0x00539A55)
 - J4. **Wraps.** `d²` is 32-bit: |dx| = |dy| = 46 341 gives 9 266, and dx = 65 534, dy = 512 gives 4, which passes. The total's product is i32: it first wraps at `exp` = 24 129 030 for n = 2 and 3 447 005 for n = 8, where it truncates toward zero and
   the total may go negative (−4 941 601 at that n = 8 value). [C] the code's map (0x0057E64C–0x0057E65A, 0x0057E739–0x0057E74B, run:2026-11-03-party-emu,
   [player/0002 § 6](../../findings/player/0002-party.md#6-wrap-bounds-kept-checktxt-the-last-block)) Each member's input is then ≤ 0 through the float steps, which ADR-0015 (5) keeps out of emulation's evidence, and G1 returns 1 for it. [I] (0x0057E754–0x0057E77B) No level the finding knows spans those distances, and neither that nor whether a monster's frozen stat 13 reaches those values was checked.
