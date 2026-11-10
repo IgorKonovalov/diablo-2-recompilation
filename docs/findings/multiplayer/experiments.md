@@ -201,3 +201,47 @@ check held, with the commands and their output.
 - **Logs** (`workspace/logs/`, sha256 of 163 files in `workspace/logs/p44h-run/manifest.sha256`, `b6eefb02…`;
   `sha256sum -c` from `workspace/logs`; `count-run.txt` `935a00a0…`): every `p44h-*-host.log` and `-join*.log` of the table, the screenshots, `p44h-ufw*.txt|log`, and
   `p44h-run/` (drivers, check-run.txt). The aborted launches of kills-3 and kills-5 (the slot still busy) left no log.
+
+## run:2026-11-10-trade
+
+- **Question:** plan 0067 Phase 2. Do the trade rules of [multiplayer/0003](0003-trade.md) §§ 2–10 hold on the stock
+  client in a two-player TCP/IP game (cases T1–T13 of § 11, recipe § 12.4)?
+- **Precondition (port 4000, the owner's condition on ADR-0008).** Held as a *confirmed existing block*
+  ([multiplayer/0001 § 5](0001-cases.md#5-the-hosts-binding-and-the-port-4000-precondition) step 1). The owner ran
+  `sudo ufw status verbose` on 2026-11-10 and showed the screen; the orchestrator transcribed it at 18:03 (+01:00).
+  The transcription, as received (`workspace/logs/n67h/ufw-owner-2026-11-10.txt`):
+
+  ```
+  Status: active
+  Logging: on (low)
+  Default: deny (incoming), allow (outgoing), disabled (routed)
+  New profiles: skip
+  To                         Action      From
+  53317/udp, 53317/tcp       ALLOW IN    Anywhere   (and the (v6) pair)
+  172.17.0.1 53/udp          ALLOW IN    172.16.0.0/12 and 192.168.0.0/16   # allow-docker-dns
+  ```
+
+  Active, default deny (incoming), no ALLOW IN rule covering 4000/tcp. The no-root hash baseline taken at that time
+  (eight files: `/etc/default/ufw`, `ufw.conf`, the four `*.rules` and `after*.rules`/`before*.rules`; the hashes
+  are the same as run:2026-10-20-two-clients') is `workspace/logs/n67h/ufw-baseline.sha256`. Every hosting driver
+  runs `tools/ufwcheck.sh <session> workspace/logs/n67h/ufw-baseline.sha256 <log> || exit 1` first; the verdicts are
+  in `workspace/logs/n67h/<session>/ufw.log`.
+- **Setup.** Slots 1 (host: `:8`, gdb, `tools/gdb/two-trade.gdb`) and 2 (joiner: `:9`, no debugger), the only slots
+  used. Saves directories empty, set aside with `saves.py --slot N aside n67h` per launch and restored after each
+  session (`restore n67h`: 0 files, sha256 match). Characters `tools/mp_saves.py build workspace/merged/data/global/excel
+  workspace/runtime/mp-saves-n67`: `TrHost`/`TrJoin` (dev, a, b), `TrHostB`/`TrJoinB` (c). Every session Normal,
+  expansion, a TCP/IP game over `127.0.0.1` (`two-host-normal.steps`, `two-join.steps`), agent-driven. Drivers (bash,
+  kept with a manifest): `workspace/logs/n67h/drivers/two.sh` (ufwcheck, saves, launch both) and `lib.sh` (the trade
+  token helpers: `open`, `gold`, `mark`). Trade actions are `d2pilot.py join <log> trade TOKEN… --slot N`.
+- **Sessions.** `dev/d1` (dev: gold entry, close control, belt and cells, logger smoke; check: 180 events, 112 checks,
+  0 mismatches), `a` (T1, T3, T2, T6, T5), `b` (T7, T12, T9, T10, T11), `c` (T4, T13, T8). Each started after
+  `tools/ufwcheck.sh <session> workspace/logs/n67h/ufw-baseline.sha256 <log>` printed `UFW-OK` (`<session>/ufw.log`;
+  dev/d1 has two lines, the first launch having stopped on a wrong save path before any game started).
+- **Results.** Finding [multiplayer/0003 § 13](0003-trade.md#13-phase-2-run-run2026-11-10-trade-lanen67h): a 547 events /
+  318 checks / 0 mismatches; b 362 / 203 / 0; c 400 / 218 / 2 (T13's two tick-delay lines). Unreached: T3 (c) (no
+  waypoint route on this logger), T5's second part (the client clamps the entry), T6's 8-alone (the 7 before it and the
+  entry box closing when the partner accepts). Marks: `<session>/host.marks.tsv`; one stray `T3` mark of session a is
+  marked `fail` (the click missed with the panel open); `T3c fail` records the unreached sub-case.
+- **Hygiene.** `slots.py stop 2` then `stop 1` after each session; one `d2run.py` (slot 2, pid 514007) outlived the
+  stop of the dev session and was ended by pid after checking its command line (slot 2, mine). No game, gdb or driver
+  was left running at the end (`pgrep`).
