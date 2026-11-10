@@ -182,3 +182,23 @@ holding a `gcv`, so T10's refusal is told by event `0x0A` and T11's by its absen
 
 **Handoff.** Phase 2's harness lane (slots 1 and 2): the dev session, then sessions (a), (b), (c) of § 12.4, each
 checked with `trade_check.py check … --excel workspace/merged/data/global/excel`. Review of this preparation: Tier B.
+
+### 2026-11-10 — Phase 2 runs (harness), `lane/n67h`
+
+Slots 1 and 2, no owner play. The port-4000 precondition is the owner's `sudo ufw status verbose` of 2026-11-10
+(transcribed by the orchestrator; active, deny incoming, no 4000 rule) with the no-root baseline; every session passed
+`tools/ufwcheck.sh` (`UFW-OK`). Record: [experiments § run:2026-11-10-trade](../findings/multiplayer/experiments.md#run2026-11-10-trade);
+results: [multiplayer/0003 § 13](../findings/multiplayer/0003-trade.md#13-phase-2-run-run2026-11-10-trade-lanen67h).
+
+- **Dev session:** the gold entry (coin at (494,461), digits, Return; one `TRB` 8 per entry, after a 7), the close
+  (Escape or the circle at (371,461): button 2, code 9), the belt and cells, and the logger smoke (every tag the checker
+  reads, except `TQN`) are measured.
+- **Kept sessions:** a (T1, T2, T3 a/b, T5, T6), b (T7, T9–T12), c (T4, T8, T13). `trade_check.py`: 0 mismatches in a and
+  b; 2 in c (T13's cancel ticks ran in one logged frame, f 2371, where the rule gives +1 each; named, not resolved).
+- **Not reached, named:** T3 (c) (no waypoint route on this logger), T5's `g' > gold(J)` (the client clamps the entry),
+  T6's 8-alone (a 7 precedes every entry; the box closes when the partner accepts), T8's *Save and Exit* route (Escape
+  closes the trade; J left by a killed client, so `TAB` and the host's `TSV`/`TSC` carry the claim, J's save was not
+  rewritten). Not forced: no ADR-0013 case run.
+- **Handoff to Phase 3:** the spec states the checked rules at `[C]` where a case is met (T1, T2, T4, T7, T9–T13, T3 a/b,
+  T5 first part, T8 `TSV`), the gold button 8 as `[I]` (observed only after a 7), the tick-delay rule with the T13
+  exception, and the client-side clamp of the gold entry. The finding's § 12.4 recipe changes are in § 13. **Review: Tier B.**

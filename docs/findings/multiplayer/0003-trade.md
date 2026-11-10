@@ -3,7 +3,7 @@
 > **Subsystem:** items/trade (ADR-0033; the row is written in plan 0067 Phase 3)
 > **Question:** what does the server do when two players trade, from the request to the commit or the cancel, and
 > what would each two-client case of plan 0067 Phase 2 log?
-> **Date:** 2026-11-10   **Plan:** 0067 (Phase 1; Phase 2 preparation § 12)   **Status:** answered (static reading; Phase 2 prepared, not run)
+> **Date:** 2026-11-10   **Plan:** 0067 (Phase 1; Phase 2 preparation § 12)   **Status:** answered (static reading; Phase 2 run § 13)
 
 This finding completes [multiplayer/0002](0002-trade-and-party-gold.md) § 2. It covers the whole trade module
 (`.\PLAYER\PlrTrade.cpp`, 0x00566B30–0x00568D5B) and every caller of it from outside. Every behavioural claim is a static reading of the pinned
@@ -621,6 +621,79 @@ become `xy:`/`key:` tokens once the dev session has measured them. Between cases
 screenshots, `<s>-check.txt`, (c) the joiner's save copy; one `manifest.sha256` per directory (review-fix 6). Dev
 logs under `$R/dev/` with their own manifest.
 
+### 13. Phase 2 run (run:2026-11-10-trade, `lane/n67h`)
+
+Slots 1 (host, gdb, `tools/gdb/two-trade.gdb`) and 2 (joiner), Normal, expansion, agent-driven; the record is
+[experiments § run:2026-11-10-trade](experiments.md#run2026-11-10-trade). Logs `workspace/logs/n67h/{dev/d1,a,b,c}/`
+(each with its `manifest.sha256`; `sha256sum -c` passes from the directory), checks `a-check.txt`, `b-check.txt`,
+`c-check.txt` (`trade_check.py check`, `--excel workspace/merged/data/global/excel`). Claims below rest on those checked
+logs; every case's anchors are the log's `TRB`/`TIT`/`TTK`/`TCM` lines and the § 2–9 addresses.
+
+**Results by case** (a checked log each; "met" = the checker's `E-` expectations):
+
+| Case | Log | Result |
+|---|---|---|
+| T1 | a | 0 mismatches, 4/4 met: the copy `X'` on J's page 1, the new unit at J's received cell, gold moved, 9 → 10 → 0. |
+| T2 | a | 0 mismatches, 2/2 met: the close (below) gives `TradeClose(…, 9)`, both inventories rebuilt (`TRS`), new ids. Variant: X was spent in T1, so H offered `gcv`; the cube was picked up (a `TIT`, item code 549). |
+| T3 (a) | a | event 8 to H, no state (`TEV` 8 at f 13549); J had Deckard Cain's menu open. |
+| T3 (b) | a | event 9 named, `+0x54` = `t` (f 3614, 80 frames after T2's close); 1 of 3 expectations for that segment. |
+| T3 (c) | - | not reached: the logger sources no `pilot.py` object lines, so `d2pilot wp` cannot find the town waypoint, and no exit coordinates are known; `TQN` never appeared. |
+| T4 | c | 0 mismatches, 2/2 met: side 1, `0x77` 9 then `0x0A`, `TCX`, both restored, 5 → 6 → 3. |
+| T5 | a | 0 mismatches, 2/3 met. First part: J's entry of 9 000 was clipped, H ended at exactly 800 000, nothing dropped. Second part (`g'` above J's gold) not reached: the client clamps the entry to J's own gold before it sends button 8 (`TRB` 8 with `param` 95 000 for an entry of 150 000, J holding 99 500 minus the 4 500 already given), so no overspend reaches the server. |
+| T6 | a | 0 mismatches; `E-offer-at-4` unmet, see below; `E-exchange` met in the rerun. |
+| T7 | b | 0 mismatches, 4/4 met: 7 → 8 → 11, J's `ok` at 7/8/11 answered code 6, state kept, 11 → 3 after the lock, then accepted. |
+| T8 | c | 0 mismatches, 2/2 met: `TSV` flag 1 and `TSC` before `TAB`, both restored. J left by a killed client (`slots.py stop 2`), see below. |
+| T9 | b | 0 mismatches, 2/2 met: `TIT` 1 → both 7, `TBL` 0, the belt stays worn. |
+| T10 | b | 0 mismatches, 1/1 met: `TIT` returns 0, event `0x0A`. |
+| T11 | b | 0 mismatches, 1/1 met: `TIT` returns 0, no event. |
+| T12 | b | 0 mismatches, 3/3 met: H's 4 lost, no `TradeOpen` for the second offer, 7 → 8 → 3 with no lock. |
+| T13 | c | 3/3 met; 2 mismatches, below. `TMV` 1 then 0, `0x77` `0x0A`/9, `TCX`, both restored. |
+
+Session totals from the kept check output: a 547 events, 318 checks, 0 mismatches, 12 unmet lines (the segments
+below); b 362 events, 203 checks, 0 mismatches, 0 unmet; c 400 events, 218 checks, 2 mismatches, 0 unmet. Session a's
+`unmet` lines come from case segments, not from rules: a `T3` mark whose request never reached the server (marked
+`fail`), one `T3` segment per sub-case (each only meets its own sub-case's expectation), T6's first segment (below)
+and T5's second part.
+
+**Open items measured (dev session `dev/d1` and the kept sessions).**
+- [C] **The gold entry.** The coin button of the inventory (window point (494,461)) opens a box "How much gold would you
+  like to offer?"; the digits are typed with `key:N` and `key:Return` sends it. One `TRB` 8 comes per entry (`param` =
+  the amount), not per keystroke (dev, f 2432: `TRB` 8 `param` 500; a, f 4528, 4680). The click on the coin sends `TRB` 7
+  first (a, f 4434, 4586, 6356). (a: `TRB`/`TRBR` lines; `0x00568060` is the button handler.)
+- [C] **The close control.** `key:Escape` with the trade open, and the trade window's own circle button at (371,461),
+  both send button 2 (dev: f 4384 and f 5762) and `TradeClose` code 9 (`TCL` `code` 9); T2's "2 → 9" branch is the one
+  taken, the "3 → 12" branch is not reached (button 3 is the accept). With no panel open, Escape opens the game menu,
+  not a close: a second Escape closes it. [run:2026-11-10-trade]
+- [C] **The belt and the cells.** The paper-doll belt at (562,252) is where the trade screen draws it (T9, b: `TIT` item
+  code 460, `TBL`); the cube at (679,345), the grid cells at (432 + 29c, 330 + 29r) and the trade grids' (97, 100 + ...) hit
+  as drawn (T1, T7, T10-T13). [run:2026-11-10-trade]
+- [C] **The logger smoke.** Every tag `trade_check.py` reads appeared in the dev or kept logs except `TQN` (T3 (c), not
+  reached). `TAB` and `CRM` came from the killed joiner (the end of b, and c), `TEV` from T3, `THO` from T7, `TBL` from T9. [run:2026-11-10-trade]
+- [C] **`ClientRemove`'s arguments** in the two disconnects (b, f 4389; c, f 3193): `edx` 3, `a1` 1, the `a2` a
+  pointer (`CRM`, site 0x0052CB86).
+
+**Contradictions and refinements, named.**
+- [C] **A gold entry un-accepts the partner by its button 7.** The stock client sends `TRB` 7 when the coin is clicked
+  (before the entry), and a 7 at state 4 sets the partner to 3 (a, f 4434: H 4 → 3; § 4's button 7). T6's separation, "H
+  stays at 4 through a `TRB` 8", needs a 8 with the partner at 4: not reached, because the entry box closes when the
+  partner presses `ok` (a, rerun: H `ok` at f 6463, then J's Return gave a `TRB` 7 and a gold of 0). So § 4's claim that
+  a button 8 (the gold) does not un-accept stays `[I]`: only the 7 that precedes it is observed. [run:2026-11-10-trade]
+- [I] **T13's tick delays.** In c the cancel's ticks 5 → 6 → 3 ran in one logged frame (f 2371, log lines 1198-1205) where
+  the rule (§ 2: +1 frame each) and T4's cancel (f 1447, 1447, 1448, 1448) give two. The checker reports the two
+  `R-tick/delay` mismatches (lines 1202, 1204) and nothing else. Not resolved: the frame word read at the logger points
+  (`Game+0xA8`) may be the outer loop's, with catch-up steps inside it after the five placements of that commit; the
+  states and the order (5, 6, 3, bits 22/23 cleared) match. The delay rule stays `[I]` and the spec states it with this
+  exception. [run:2026-11-10-trade]
+- [I] **T8's save claim.** J's `TrJoinB.d2s` was not rewritten during the session (its mtime is the install's), so the
+  after-copy (`c/c-TrJoinB-after.d2s`) carries no evidence; the claim rests on the host's `TSV` (flag 1) and `TSC` lines.
+  The leaver was a killed client, so `TAB` was logged (leaver J), not the *Save and Exit* route. [run:2026-11-10-trade]
+
+**Recipe changes** (for § 12.4 as run): X is spent in T1, so later cases of session a offer `gcv` (5,0) and move the
+cube; after a commit both clients keep the inventory panel open (it shifts the view, so a `request` click misses),
+close it with `key:Escape` only when it is open, and check that the `TRQ` count rose; `d2pilot npc` did not find the
+town NPCs on this logger (no `pilot.py` object lines), so J clicked an NPC by `xy:` (Deckard Cain at 385,395 from
+the start position); T6's second part and T5's second part are unreachable on the stock client.
+
 ## Data touched
 
 - `PlayerData` (`Unit+0x14`) `+0x4C` (busy), `+0x50` (state 0–16), `+0x54` (request rate tick), `+0x58` (trade end
@@ -647,8 +720,8 @@ logs under `$R/dev/` with their own manifest.
 
 ## Open questions
 
-- [L] Which button and packet the stock client sends to close the trade window, and whether it sends button 8 on each
-  keystroke of the gold entry. T2 and T6 log them.
+- Answered in § 13: the close is button 2 (code 9), the gold entry sends one button 8 per entry, after a 7. What stays
+  open: a button 8 with the partner at 4 (the entry box closes when the partner accepts).
 - [L] Whether the stock client lets a trading player send `0x49` (waypoint travel), or reach `0x0054C380`; if a case
   needs a forced message it is an ADR-0013 run, which the owner rules on at Phase 1's review.
 - [L] Whether the old item units are freed after `TradeReturnItems` (`InvQueueItemUpdate`, ItemData `+0x14` bit 0, and

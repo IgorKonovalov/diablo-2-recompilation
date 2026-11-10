@@ -707,6 +707,8 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-11-10 | `lane/n69a` review | 0069 draft | architect-review | 111 688 | 27 | 5 | — | gave accept with fixes (Tier A) | — (cost 1.3M → 3.4M explained; owner Q1 size, Q2 threshold count) |
 | 2026-11-10 | `lane/n66d` | 0066 P1, S1c+S1d | reverser-static | 297 847 | 101 | 21 | no slot | accept with fixes | 1: overclaim 1 |
 | 2026-11-10 | `lane/n66d` review | 0066 P1, S1c+S1d | architect-review | 137 925 | 49 | 7 | — | gave accept with fixes (Tier A, audit of 5th Tier B lane) | — (audit: Tier B would have missed the S13 step-2 flip overclaim, not reject-grade) |
+| 2026-11-10 | `lane/n67h` | 0067 P2, run:2026-11-10-trade | reverser-harness | 196 590 | 131 | 31 | 1+2 | accept with fixes | 2: stale/mechanical 1, misstatement 1 |
+| 2026-11-10 | `lane/n67h` review | 0067 P2 | lane-check | 68 546 | 17 | 3 | — | gave accept with fixes (Tier B) | — (T13 cancel-tick mismatch kept as named [I]) |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not
