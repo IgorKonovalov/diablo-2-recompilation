@@ -620,3 +620,13 @@ test inline `[I]`; (b) the H1a pseudocode re-expresses the finding's loop with n
 same tests and order; (c) the two new notes and quirks were optional; I added them because both are traps the S4
 implementer hit. Review: Tier A. Next: Phase 5 re-runs S2's entry-word and type-test fields and S4 from the fixed specs;
 the S4 rows routed to the reverser stay out of the re-run until that entry lands.
+
+- **2026-11-10, Phase 5 re-runs S1, S2, S3 (orchestrator):** three new fresh Opus implementers (not the Phase 2 ones),
+  each in a sandbox built from `main` after the Phase 4 parts 1–2 and the golden fixes (`workspace/cleanroom/S1r`,
+  `S2r`, `S3r`, built with `--out` because `make --force` keeps the old code; `score.sh` patched to log there; entry
+  `cleanroom-rerun-sandboxes` to the archivist). Each implemented its whole slice. **First pass = final, 0 different,
+  one run each:** S1 62 035 fields (94 103 tokens), S2 32 320 fields (185 344 tokens; before: 1 573 different, and the
+  final 0 needed a fitted magic find), S3 211 140 fields with no guess on a scored field (118 810 tokens). Audits clean.
+  Ledgers [S1-rerun](0064-cleanroom/S1-rerun.md) (6 rows), [S2-rerun](0064-cleanroom/S2-rerun.md) (11 rows),
+  [S3-rerun](0064-cleanroom/S3-rerun.md) (4 rows): only guesses that came out right or paths no case reaches; S2's
+  unique-entry base item and Equiv walk are the items part 3 (`lane/n64y`) is writing in. S4's re-run follows part 3.
