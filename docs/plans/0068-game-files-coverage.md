@@ -178,3 +178,69 @@ Fixes:
 
 Input for Phase 2: items 1 and 2 as amended. data/0001 § 3 still says "`sounds.bin` is also loaded through the
 table loader (`0x00659C16`)". Its H3b entry supersedes that, and Phase 2 should settle the sentence in the finding.
+
+### 2026-11-10 — Phase 2 (reverser, `lane/n68r`)
+
+Done: [data/0006](../findings/data/0006-loaded-tables-and-bundles.md), items 1–5, 29 `re/symbols.csv` rows (6 `C`,
+23 `I`), `tools/n68r_bundles.py` (the bundle check), kept outputs in `workspace/logs/n68r/` (manifest passes
+`sha256sum -c` there). data/0001 § 3's superseded `sounds.bin` sentence and its H3b clause "the full `sounds` table
+loads in every run" carry dated corrections pointing to data/0006 § 2.4.
+
+1. **`MonItemPercent` is no gap in the drop chain.** Loaded in every run `[C]` (the six H3b runs that reach it log
+   the call), read by nothing: its record getter 0x00654FE0 and table getter 0x00654FD0 have no caller in either tool,
+   and no instruction names its globals or their `g_DataTables + 0x1850/0x1854` form outside the loader and the free.
+   So no row choice, no draw, no step in `TC_ResolveDrops`' order `[I]`. Field widths: `TreasureClassPercent` u8 at
+   `+0x2` `[C]` (descriptor and data), the other three u8 at `+0x0`, `+0x1`, `+0x3` `[I]` (descriptor). No kept log
+   holds a read, so the run-time absence is a harness piece:
+   [backlog](../backlog/2026-11-10-reverser-reverser-plan-0068-monitempercent-read-watch.md).
+2. **`BodyLocs`, `PlayerClass`, `Events`** are index spaces; every reader of a stored index is listed with its spec.
+   New: the 17 `UNIT_DispatchEvent` calls never pass ids 4 (`doactive`) or 8 (`domissileattack`), so stat 195's
+   `itemevent2` handler never runs; item-stat registration needs an id `> 0`, skill registration `≥ 0`; id 13 is
+   dispatched at a monster's death with no Events row. **`Sounds`:** no call loads `sounds.bin` in a stock run; only
+   the client's text read at 0x00481950 happens, and only with sound on (the H3b stock runs, `-ns`, read no `sounds`
+   file `[C]`).
+3. **`SkillDesc` is rule-bearing:** `sub_00644180_SkillLevelBonus`, the bonus in every effective skill level, adds stat
+   188 by the skill's `SkillPage`; § 3.2 has the whole formula (stats 127, 83, 188, 97 with its cap of 3 on own-class
+   skills, 126, 107, state 134), `[I]`, which no spec states. Its return is logged in play (`CUL`, 1 339 values) but
+   not its inputs: [harness piece](../backlog/2026-11-10-reverser-reverser-plan-0068-skill-level-bonus-check.md).
+   `Overlay` (the server reads only the count, as an id bound), `Composit`, `MonSounds`, `AutoMap`: client only.
+   `Arena`: read by the server's kill and death scoring in every game (`sub_0053F720_ArenaScoreKill`), into a
+   per-player score no core-area rule reads in this reading.
+4. **The COF bundles feed only the client's COF cache.** The client opens `cmncof_a1..a4.d2` and `cmncof_a6.d2` at
+   an act load; `chars_cof.d2`, `cmncof_a5.d2` and `cmncof_a7.d2` are named nowhere. The loader's record layout parses
+   all eight to the byte (6 726 COFs, 0 errors) `[C]`; 11 COFs differ from `animdata.d2` in frames and 2 in event
+   frames, client drawing only.
+5. **`lut.dn1` and `a1npc.txt`..`a5npc.txt` are never opened**; the colour `.dat` files, the `.key` maps and
+   `gateways.txt` are client-only.
+
+**Phase 3 (archivist) must document:**
+- the COF bundles: by ADR-0005 they are presentation, read by the client only, so a format doc is optional. The
+  ledger row needs the reason (client COF cache, data/0006 § 4) and the never-opened files (`chars_cof.d2`,
+  `cmncof_a5.d2`, `cmncof_a7.d2`). If a doc is written, data/0006 § 4 gives the layout and `tools/n68r_bundles.py`
+  already parses all eight with 0 errors; the parser belongs in the archivist's tools.
+- `lut.dn1`: not rule-bearing (never opened); ledger reason only. Same for `a1npc.txt`..`a5npc.txt` (never opened),
+  the colour `.dat` files (client colour transforms; one `GreenBlood.dat` loader has no caller), the `.key` maps
+  (client input) and `gateways.txt` (client Battle.net setup).
+- Table docs: [MonItemPercent](../tables/MonItemPercent.md) layout (the split above) and "no reader"; [Sounds](../tables/Sounds.md)'s
+  open question answered (§ 2.4); [Events](../tables/Events.md) the dispatch ids, the never-dispatched 4 and 8, and the
+  registrars' `> 0` / `≥ 0` tests; [SkillDesc](../tables/SkillDesc.md) `SkillPage`'s server use; [Arena](../tables/Arena.md),
+  [Overlay](../tables/Overlay.md), [Composit](../tables/Composit.md), [MonSounds](../tables/MonSounds.md),
+  [AutoMap](../tables/AutoMap.md) their readers (§ 3's table); [BodyLocs](../tables/BodyLocs.md),
+  [PlayerClass](../tables/PlayerClass.md) the reader tables of § 2.1–2.2.
+
+**Phase 4 (spec-writer) gains:**
+- **items/tc:** one sentence, `[I]`: `MonItemPercent` is loaded and read by no code, so it adds nothing to the drop
+  order (data/0006 § 1.3). No golden-trace field is needed (the plan's open question).
+- **skills/dispatch** (§ K) **or data/calc** (where `SKILLS_GetSkillLevel`'s `withBonus` is): the skill-level bonus
+  formula of data/0006 § 3.2, `[I]`; § K: the event ids are Events row indices, the dispatch table of § 2.3, ids 4 and
+  8 never dispatched (stat 195's second registration inert), the `> 0` / `≥ 0` registration tests, id 13.
+- **items/inventory, player/creation, monsters/stats:** nothing new; the location and class indices they use are the
+  row indices (§ 2.1–2.2), which they already state. A one-line index-space note is optional.
+- **save/d2s:** `0x00627AF0` gets its name and meaning (`SkillHasDesc`) where the legacy stat 107 row cites it.
+- **data/excel:** the loader list gains `MonItemPercent` (no reader), `Arena` (server scoring), `SkillDesc`, `Overlay`
+  (count only), `Composit`, `MonSounds`, `AutoMap` (client), and the `-txt`-only code lists with `sounds`.
+- **anim/timing:** nothing; the bundles do not feed the server's mode lengths (data/0006 § 4).
+- Arena scoring (§ 3.3) has no core-area spec; it is named for plan 0061 P1's `-arena` reader, not carried.
+
+Open, for the record: the two harness pieces above; whether a missile attack reaches event 7; the runtime registrar
+0x005C377B's id; the arena score's readers. Review: Tier B.
