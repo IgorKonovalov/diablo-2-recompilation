@@ -134,7 +134,6 @@ Approved, not running ([plans index](docs/plans/README.md)):
 
 - **[0059](docs/plans/0059-golden-traces.md)**: golden traces, seeds and inputs with their expected world, drops and later events, as conformance tests.
 - **[0061](docs/plans/0061-message-catalogue.md)**: the client–server message catalogue, every in-game message in both directions.
-- **[0063](docs/plans/0063-backlog-sweep-7.md)**: backlog sweep 7, the ten open entries that need no game: static readings, the act-clock tables, tooling, and the spec updates they carry.
 - **[0064](docs/plans/0064-clean-room-test.md)**: a clean-room test, fresh agents implementing the chain from the specs alone, scored on the golden traces.
 - **[0065](docs/plans/0065-harness-sweep-8.md)**: harness sweep 8, the backlog's live cases on one and two clients.
 - **[0066](docs/plans/0066-simulation-inferred-claims-sweep.md)**: the inferred-claims sweep over the simulation and game-rules specs.

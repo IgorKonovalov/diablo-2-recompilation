@@ -1074,7 +1074,7 @@ logged by return address; no output compared) and `sub_0057CCB0_UnitKilled` (C a
 | 27 | name past `+0x116` reset | raised (built state) |
 | 28 (2) | dead flag; dead mercenary marked | raised |
 | 31 | the note (name, dead mercenary not loaded) | raised |
-| 29 | `MERC_Create` with a table present | shortfall (d-2c not accepted at review: the third caller's trigger is unread; *2026-11-10:* read, the ruling's inputs are in § Plan 0063 Phase 2a) |
+| 29 | `MERC_Create` with a table present | **d-none** (plan 0063 Phase 3 review, 2026-11-10: the third caller's list is the corpse list, whose three stock writers all add flag 1 and word 0, so no game type, one client or two, reaches the `MERC_Create` branch; § Plan 0063 Phase 2a). Before: shortfall, d-2c not accepted at the `lane/h6f` review |
 | 36 | resurrection and its price | raised in part (Kashya here, Qual-Kehk by the economy run; Greiz, Asheara, Tyrael) |
 | 37 | death sets the dead bit | raised |
 | 25 | `MERC_AddExp` and the cap | raised in part (the `L ≥ 98` return) |
@@ -1157,7 +1157,7 @@ reading, so inferred.
   is taken only for a node with flag 0 whose word is non-zero (0x0053961F `test ax, ax`). Every node the stock writers
   add has flag 1 and word 0, so that branch is reached in no stock game type, single player or multiplayer. **This
   gives the row-29 ruling its inputs:** the third caller cannot create a mercenary, so `MERC_Create` with a table
-  present needs a caller that does not exist. The architect rules on the row (d-none is proposed). This finding
+  present needs a caller that does not exist. **Ruling (plan 0063 Phase 3 review, 2026-11-10): d-none**, not d-2c: the three call sites push the constants (r2 on the pinned image, 0x00533939, 0x0056A9B5, 0x0057F88E), so a second client changes no node. This finding
   cannot rule out a node edited outside the three writers.
   (fn:sub_005394A0_PlayerPlaceInAct@0x005394A0, fn:MERC_Create@0x005774F0)
 

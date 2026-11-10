@@ -673,8 +673,9 @@ Step notes:
   `MERC_Create(word, id, 0xFFFF, 0, 0)` branch needs flag 0 and a non-zero word (0x0053961F). The list's nodes are
   made only by `sub_0063D470_InvCorpseAdd`, whose three callers (two corpse readers at a load, `PLAYER_CorpseCreate`
   at a death) all add flag 1 and word 0, so no stock game type reaches the branch; a node edited outside those three
-  writers would. Whether this makes row 29 (`MERC_Create` with a table present) d-none or d-2c is the plan 0063
-  Phase 3 review's ruling. (fn:sub_005394A0_PlayerPlaceInAct@0x005394A0, 0x005395C3–0x00539637,
+  writers would. Row 29 (`MERC_Create` with a table present) is **d-none** (plan 0063 Phase 3 review): a second
+  client adds no writer, since each of the three calls pushes the constants flag 1 and word 0 (0x00533939, 0x0056A9B5,
+  0x0057F88E), so the branch has no observable in any stock game type, not one that two clients would reach. (fn:sub_005394A0_PlayerPlaceInAct@0x005394A0, 0x005395C3–0x00539637,
   fn:sub_0063D470_InvCorpseAdd@0x0063D470, 0x00533945, 0x0056A9BB, 0x0057F894,
   [hirelings/0001 § Plan 0063 Phase 2a](../../findings/hirelings/0001-hirelings.md#plan-0063-phase-2a-static-lanen63r-2026-11-10))
 - [C] The mercenary's items are read after the header, into the unit `MERC_Create` returned: loading a save whose
