@@ -304,6 +304,26 @@ def drop_case(call, k, src):
         for hh, kv in events:
             if hh == h:
                 inp[n] = _i(kv[n])
+    # The killer's magic find (items/quality M1-M4): the loggers print QKMF (the killer's stat 80, read unless the killer is
+    # none or of type > 1), QOMF (its owner's, read when MonsterOwner is non-zero) and QMF (the sum the roll uses) between a
+    # QIN and its QOUT. Every roll of a call has the same killer, so the values must agree across rolls and QMF must equal
+    # QKMF + QOMF; a call that breaks either is refused (ValueError). An input is absent when no roll read it.
+    mf = {}
+    for h, kv in events[1:]:
+        for head, key, name in (("QKMF", "kmf", "killer_mf"), ("QOMF", "omf", "owner_mf")):
+            if h == head:
+                if mf.setdefault(name, _i(kv[key])) != _i(kv[key]):
+                    raise ValueError("%s differs between the rolls of one call" % name)
+    group = {}
+    for h, kv in events[1:] + [("QIN", {})]:
+        if h in ("QIN", "QOUT"):
+            if "QMF" in group and "QKMF" in group:
+                if _i(group["QKMF"]["kmf"]) + (_i(group["QOMF"]["omf"]) if "QOMF" in group else 0) != _i(group["QMF"]["mf"]):
+                    raise ValueError("QMF != QKMF + QOMF")
+            group = {}
+        elif h in ("QKMF", "QOMF", "QMF"):
+            group[h] = kv
+    inp.update(mf)
     ex = collections.OrderedDict()
     nodrop, pick, sel, sub, qual, items = [], [], [], [], [], []
     end = None
@@ -352,7 +372,11 @@ def observed_drops(path, src, T, q, verify, limit):
                 continue
         n += 1
         if limit is None or len(cases) < limit:
-            cases.append(drop_case(call0, k, src))
+            try:
+                cases.append(drop_case(call0, k, src))
+            except ValueError:
+                n -= 1
+                bad += 1
     return cases, n, bad
 
 
