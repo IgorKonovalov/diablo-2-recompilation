@@ -22,10 +22,10 @@ The 16 composite layers of a character or monster that is drawn from separate pa
 ## Interpretation notes
 
 - `[C]` Layout: the ObjMode/MonMode shape: `Name` as a 32-byte string, `Token` as a 4-character code at +0x20, then 16 bytes that are 0 in every record (`unk_024`) (`python3 -I tools/excel_bin.py diff workspace/merged/data/global/excel composit`, 32 of 32 cells; `excel_bin.py unknown` lists only `unk_024`).
-- Readers and what the unit-side animation takes from the table: plan 0068 Phase 2 item 3. `COMPOSIT_BuildCofName` (`0x0064F5B0`, [anim/0001 § 2](../findings/anim/0001-modes-frames.md#2-records-the-token-the-lookup-and-the-fallback)) builds a record name from the unit's type token, its mode token and the weapon class; that finding names no read of a composit row.
+- `COMPOSIT_BuildCofName` (`0x0064F5B0`, [anim/0001 § 2](../findings/anim/0001-modes-frames.md#2-records-the-token-the-lookup-and-the-fallback)) builds a record name from the unit's type token, its mode token and the weapon class; that finding names no read of a composit row.
+- `[I]` Readers (plan 0068 Phase 2, [data/0006 § 3](../findings/data/0006-loaded-tables-and-bundles.md#3-composit-overlay-skilldesc-arena-plan-item-3-with-monsounds-and-automap)): `g_pComposit` (`0x0096D4EC`) is reached only through `sub_0065B5E0_CompositRecord`, whose one caller is the client at `0x004DA7A5`. The server reads no composit row: presentation.
 - The record count is checked by the full-tier surveys: `excel` (`.bin` count against `.txt` data rows) and `excel_layout` (every `.bin` cell against its `.txt` cell, layout in `tools/excel_layouts.py`) (`python3 -I tools/gate.py --full`).
 
 ## Open questions
 
-- `[L]` Whether any server-side rule reads a composit row: plan 0068 Phase 2 item 3.
-
+- None for the rules (client only).

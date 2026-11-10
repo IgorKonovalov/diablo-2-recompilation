@@ -1,0 +1,1 @@
+SURVEY cofbundle files=8 records=6726 errors=0 cof_errors=0 leftover_bytes=63 dup_names=0 rt_other=0 name_pad_nonzero=0 upper_names=0
