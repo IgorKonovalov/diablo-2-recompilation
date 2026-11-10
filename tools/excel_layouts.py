@@ -1344,7 +1344,25 @@ LAYOUTS["missiles"] = dict(size=420, fields=[
 # offsets are those of the loader's descriptor read in data/0005 section 1 (plan 0035 Phase 1); excel_bin.py diff and
 # tools/calc_survey.py check them against every record.
 _SDC = "skilldesccode"
+_SD_TXT_A = ([("desctexta%d" % (k + 1)) for k in range(6)] + [("dsc2texta%d" % (k + 1)) for k in range(4)]
+             + [("dsc3texta%d" % (k + 1)) for k in range(7)])
+_SD_TXT_B = ([("desctextb%d" % (k + 1)) for k in range(6)] + [("dsc2textb%d" % (k + 1)) for k in range(4)]
+             + [("dsc3textb%d" % (k + 1)) for k in range(7)])
 LAYOUTS["skilldesc"] = dict(size=288, partial=True, fields=[
+    R("skilldesc", 0x000, "skilldesc:skilldesc", "u16"),
+    I("SkillPage", 0x002, "u8"), I("SkillRow", 0x003, "u8"), I("SkillColumn", 0x004, "u8"), I("ListRow", 0x005, "u8"),
+    I("ListPool", 0x006, "u8"), I("IconCel", 0x007, "u8"),
+    T("str name", 0x008), T("str short", 0x00A), T("str long", 0x00C), T("str alt", 0x00E), T("str mana", 0x010),
+    I("descdam", 0x012, "u8"), I("descatt", 0x014, "u8"),
+    R("p1dmelem", 0x020, "elemtypes:Code", "u8", blank=0), R("p2dmelem", 0x021, "elemtypes:Code", "u8", blank=0),
+    R("p3dmelem", 0x022, "elemtypes:Code", "u8", blank=0),
+    R("descmissile1", 0x03C, "missiles:Missile", "s16", blank=-1), R("descmissile2", 0x03E, "missiles:Missile", "s16", blank=-1),
+    R("descmissile3", 0x040, "missiles:Missile", "s16", blank=-1),
+] + [I("descline%d" % (k + 1), 0x042 + k, "u8") for k in range(6)]
+  + [I("dsc2line%d" % (k + 1), 0x048 + k, "u8") for k in range(4)]
+  + [I("dsc3line%d" % (k + 1), 0x04C + k, "u8") for k in range(7)]
+  + [T(c, 0x054 + 2 * k) for k, c in enumerate(_SD_TXT_A + _SD_TXT_B)]
+  + [
     K("ddam calc1", 0x018, _SDC), K("ddam calc2", 0x01C, _SDC),
 ] + [K("p%ddmmin" % (k + 1), 0x024 + 4 * k, _SDC) for k in range(3)]
   + [K("p%ddmmax" % (k + 1), 0x030 + 4 * k, _SDC) for k in range(3)]
@@ -1578,3 +1596,86 @@ LAYOUTS["inventory"] = dict(size=0xF0, fields=[
     I("gridLeft", 0x014, "u32"), I("gridRight", 0x018, "u32"), I("gridTop", 0x01C, "u32"), I("gridBottom", 0x020, "u32"),
     I("gridBoxWidth", 0x024, "u8"), I("gridBoxHeight", 0x025, "u8"),
 ] + _inv_slots(), txt_only={"class": "key; the record holds no name (the row index is the page, see the doc)"})
+
+# ------------------------------------------------------------------ plan 0068 Phase 1: the loaded tables with no doc
+# (docs/tables/MonItemPercent.md, BodyLocs.md, PlayerClass.md, Events.md, Arena.md, Composit.md, MonSounds.md,
+# Overlay.md, AutoMap.md, SkillDesc.md, Sounds.md). Layouts found with `excel_bin.py probe`, checked by `diff`.
+# monitempercent (4 B): four u8 in column order. Both stock rows hold 0, 0, 20, 0 (one distinct value per column), so
+# the widths and the order of the three zero columns are the probe's first fit, not forced by the data.
+LAYOUTS["monitempercent"] = dict(size=4, fields=[
+    I("HeartPercent", 0x0, "u8"), I("BodyPartPercent", 0x1, "u8"), I("TreasureClassPercent", 0x2, "u8"),
+    I("ComponentPercent", 0x3, "u8")],
+    txt_only={"Name": "row name (`Composited`, `NonComposited`); not in the record"})
+# bodylocs, playerclass (4 B): the 4-character code; row 0 of bodylocs (`None`) has a blank code and stores four spaces.
+LAYOUTS["bodylocs"] = dict(size=4, fields=[C("Code", 0x0)],
+                           txt_only={"Body Location": "editor name of the slot; not in the record"})
+LAYOUTS["playerclass"] = dict(size=4, fields=[C("Code", 0x0)],
+                              txt_only={"Player Class": "editor name of the class; not in the record"})
+# events (2 B): the record is the row's own index (u16), 0..12.
+LAYOUTS["events"] = dict(size=2, fields=[R("event", 0x0, "events:event", "u16")],
+                         txt_only={"*desc": "editor comment; not in the record"})
+# arena (28 B): seven s32 in column order.
+LAYOUTS["arena"] = dict(size=28, fields=[
+    I("Suicide", 0x00, "s32"), I("PlayerKill", 0x04, "s32"), I("PlayerKillPercent", 0x08, "s32"),
+    I("MonsterKill", 0x0C, "s32"), I("PlayerDeath", 0x10, "s32"), I("PlayerDeathPercent", 0x14, "s32"),
+    I("MonsterDeath", 0x18, "s32")],
+    txt_only={"Arena": "row name (`Deathmatch`); not in the record"})
+# composit (52 B): the ObjMode/MonMode shape, the layer name, its two-letter token, 16 bytes that are 0 in every record.
+LAYOUTS["composit"] = dict(size=52, fields=[S("Name", 0x00, 32), C("Token", 0x20), U("unk_024", 0x24, "str", len=16)])
+# sounds (2 B): the record is the sound's Index (u16), equal to the row index in all 4 699 rows. No other column is
+# compiled (the file names and the flags live in the .txt only).
+LAYOUTS["sounds"] = dict(size=2, fields=[I("Index", 0x0, "u16")],
+                         txt_only={c: "not in the 2-byte record" for c in (
+                             "Sound", "FileName", "Volume", "Group Size", "Loop", "Fade In", "Fade Out", "Defer Inst",
+                             "Stop Inst", "Duration", "Compound", "Reverb", "Falloff", "Cache", "Async Only",
+                             "Priority", "Stream", "Stereo", "Tracking", "Solo", "Music Vol", "Block 1", "Block 2",
+                             "Block 3")})
+# automap (44 B): the level name (16 B), the tile name (8 B), three u8, one pad byte, four u32 cel numbers. The four
+# `Type` name columns are not in the record.
+LAYOUTS["automap"] = dict(size=44, fields=[
+    S("LevelName", 0x00, 16), S("TileName", 0x10, 8), I("Style", 0x18, "u8"), I("StartSequence", 0x19, "u8"),
+    I("EndSequence", 0x1A, "u8"), U("pad_01B", 0x1B, "u8"),
+    I("Cel1", 0x1C, "u32"), I("Cel2", 0x20, "u32"), I("Cel3", 0x24, "u32"), I("Cel4", 0x28, "u32")],
+    txt_only={c: "cel type name; not in the record" for c in ("Type1", "Type2", "Type2#2", "Type4")})
+# monsounds (148 B): every sound reference is a 4-byte slot (a row of sounds.txt, 0 when blank), delays, probabilities
+# and counts are s32; the three conversion triples at +0x7C, +0x84, +0x8C hold two monmode u8 and a pad and a skills
+# index in 4 bytes (-1 blank).
+_MS = "sounds:Sound"
+LAYOUTS["monsounds"] = dict(size=148, fields=[
+    R("Id", 0x00, "monsounds:Id", "u32"),
+    R("Attack1", 0x04, _MS, "u32", blank=0), I("Att1Del", 0x08, "s32"), I("Att1Prb", 0x0C, "s32"),
+    R("Weapon1", 0x10, _MS, "u32", blank=0), I("Wea1Del", 0x14, "s32"), I("Wea1Vol", 0x18, "s32"),
+    R("Attack2", 0x1C, _MS, "u32", blank=0), I("Att2Del", 0x20, "s32"), I("Att2Prb", 0x24, "s32"),
+    R("Weapon2", 0x28, _MS, "u32", blank=0), I("Wea2Del", 0x2C, "s32"), I("Wea2Vol", 0x30, "s32"),
+    R("HitSound", 0x34, _MS, "u32", blank=0), I("HitDelay", 0x38, "s32"),
+    R("DeathSound", 0x3C, _MS, "u32", blank=0), I("DeaDelay", 0x40, "s32"),
+    R("Skill1", 0x44, _MS, "u32", blank=0), R("Skill2", 0x48, _MS, "u32", blank=0),
+    R("Skill3", 0x4C, _MS, "u32", blank=0), R("Skill4", 0x50, _MS, "u32", blank=0),
+    R("Footstep", 0x54, _MS, "u32", blank=0), R("FootstepLayer", 0x58, _MS, "u32", blank=0),
+    I("FsCnt", 0x5C, "s32"), I("FsOff", 0x60, "s32"), I("FsPrb", 0x64, "s32"),
+    R("Neutral", 0x68, _MS, "u32", blank=0), I("NeuTime", 0x6C, "s32"),
+    R("Init", 0x70, _MS, "u32", blank=0), R("Taunt", 0x74, _MS, "u32", blank=0), R("Flee", 0x78, _MS, "u32", blank=0),
+    R("CvtMo1", 0x7C, "monmode:code", "u8", blank=-1), R("CvtTgt1", 0x7D, "monmode:code", "u8", blank=-1),
+    U("pad_07E", 0x7E, "u16"), R("CvtSk1", 0x80, "skills:skill", "s32", blank=-1),
+    R("CvtMo2", 0x84, "monmode:code", "u8", blank=-1), R("CvtTgt2", 0x85, "monmode:code", "u8", blank=-1),
+    U("pad_086", 0x86, "u16"), R("CvtSk2", 0x88, "skills:skill", "s32", blank=-1),
+    R("CvtMo3", 0x8C, "monmode:code", "u8", blank=-1), R("CvtTgt3", 0x8D, "monmode:code", "u8", blank=-1),
+    U("pad_08E", 0x8E, "u16"), R("CvtSk3", 0x90, "skills:skill", "s32", blank=-1)],
+    txt_only={"EOL": "end-of-line marker column; not compiled"})
+# overlay (132 B): see docs/tables/Overlay.md. The Character column is not in the record.
+LAYOUTS["overlay"] = dict(size=132, fields=[
+    R("overlay", 0x00, "overlay:overlay", "u16"), S("Filename", 0x02, 64), I("version", 0x42, "u16"),
+    I("Frames", 0x44, "u32"), I("PreDraw", 0x48, "u32"), I("1ofN", 0x4C, "u32"), I("Dir", 0x50, "u8"),
+    I("Open", 0x51, "u8"), I("Beta", 0x52, "u8"),
+    I("Xoffset", 0x54, "s32"), I("Yoffset", 0x58, "s32"),
+    I("Height1", 0x5C, "s32"), I("Height2", 0x60, "s32"), I("Height3", 0x64, "s32"), I("Height4", 0x68, "s32"),
+    I("AnimRate", 0x6C, "s32"), I("InitRadius", 0x70, "s32"), I("Radius", 0x74, "s32"),
+    I("LoopWaitTime", 0x78, "s32"), I("Trans", 0x7C, "u8"), I("Red", 0x7D, "u8"), I("Green", 0x7E, "u8"),
+    I("Blue", 0x7F, "u8"), I("NumDirections", 0x80, "u8"), I("LocalBlood", 0x81, "u8")],
+    txt_only={"Character": "which unit class the overlay applies to (text); not in the record"})
+# cubemod, cubetype (4 B): shipped, never loaded by the game (data/0001); the record is the 4-character code, row 0
+# (`None`) has a blank code. Layouts only so that the full-tier survey checks the shipped .bin against its .txt.
+LAYOUTS["cubemod"] = dict(size=4, fields=[C("Code", 0x0)],
+                          txt_only={"cube modifier type": "editor name; not in the record"})
+LAYOUTS["cubetype"] = dict(size=4, fields=[C("Code", 0x0)],
+                           txt_only={"cube item class": "editor name; not in the record"})
