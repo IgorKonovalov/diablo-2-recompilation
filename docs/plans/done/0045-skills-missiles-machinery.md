@@ -630,7 +630,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     `COMBAT_PrgFinisher` has six direct callers, not one: the five others are finishing moves (start 25; do 42, 50,
     52), noted in skills/0001 § 12. (c) What removes pets when `petmax` falls: open question in skills/0003.
   - **Phase 2 required cases** from the contradicted claims, all reachable on stock data
-    ([backlog](../../backlog/2026-10-20-reverser-reverser-plan-0045-p1b-contradicted-cases.md)):
+    ([backlog](../../backlog/archive/2026-10-20-reverser-reverser-plan-0045-p1b-contradicted-cases.md)):
     - **C1** Raise Skeleton's summon level is `min(max(L · 3/4 + skill level, 1), L)`, against "generated at the
       caster's level" (src:arreat-summit-skill-trees). Case: a Necromancer with character level L above 4 × the skill
       level; log the summon's stat 12.
@@ -690,7 +690,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   4. **Verdict vocabulary:** the four evidence-rules words stand. *version-different* may be added to a
      `contradicted` detail only after the Phase 2 case confirms the 1.14d reading and the source names another
      version; it never replaces the verdict word. None is used now.
-  The cases entry ([reverser](../../backlog/2026-10-20-reverser-reverser-plan-0045-p1b-contradicted-cases.md)) stays open
+  The cases entry ([reverser](../../backlog/archive/2026-10-20-reverser-reverser-plan-0045-p1b-contradicted-cases.md)) stays open
   for Phase 2, with rulings 1 and 2 appended. **Phase 1 is closed** (P1.1, P1.2, P1.3 and P1b reviewed): Phase 2 waits
   only for both harness slots (plan 0044·P2 holds them). Review request
   [closed](../../backlog/archive/2026-10-20-reverser-architect-lane-p45b-review-plan-0045-p1b-cross-check.md).

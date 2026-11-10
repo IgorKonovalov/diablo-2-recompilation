@@ -103,18 +103,18 @@ code windows R1–R7; `p45b-rows.txt` `cbf9c64a…`, the stock-row values compar
 - [L] src:d2dfg-blizzard: velocity is `Vel` plus `VelLev` per caster level beyond 1. **contradicted**
   Detail: `((VelLev · lvl) / 8 + Vel) << 8`, `lvl` the request's level (R1: `imul [esi+0x30]`, `cdq; and edx,7;
   sar 3`); four stock rows (`spike1`–`spike4`). Phase 2 case C2,
-  [backlog](../../backlog/2026-10-20-reverser-reverser-plan-0045-p1b-contradicted-cases.md). *2026-10-25:* not reached by run:2026-10-25-skills (no `VelLev` row created; § 11). *2026-10-27:* 22 `spike2` creations at level 1 only, not separating (§ 12).
+  [backlog](../../backlog/archive/2026-10-20-reverser-reverser-plan-0045-p1b-contradicted-cases.md). *2026-10-25:* not reached by run:2026-10-25-skills (no `VelLev` row created; § 11). *2026-10-27:* 22 `spike2` creations at level 1 only, not separating (§ 12).
 - [L] src:d2dfg-blizzard: `MaxVel` caps the velocity. **held**
 - [L] src:d2dfg-blizzard: `Accel` changes the velocity per frame. **contradicted**
   Detail: `Accel` is added on every **fifth** path step (R3: the counter `+0x8C` reaches 5), the result capped at
   `MaxVel << 8` (acceleration then stops) and floored at 0 (§ 4); 21 stock rows, Nova, Frost Nova and Howl in tier A.
-  Phase 2 case C3, [backlog](../../backlog/2026-10-20-reverser-reverser-plan-0045-p1b-contradicted-cases.md). *2026-10-25:* run:2026-10-25-skills: 278 fifth steps and 60 caps over 1 657
+  Phase 2 case C3, [backlog](../../backlog/archive/2026-10-20-reverser-reverser-plan-0045-p1b-contradicted-cases.md). *2026-10-25:* run:2026-10-25-skills: 278 fifth steps and 60 caps over 1 657
   accelerating steps, every step's velocity as read (§ 11).
 - [L] src:d2dfg-blizzard: `Range` is the lifetime in frames. **held**
 - [L] src:d2dfg-blizzard: `LevRange` adds to `Range` per caster level beyond 1. **contradicted**
   Detail: `LevRange · lvl + Range`, `lvl` the request's level, with no `− 1` (R2: `movsx [edx+0x98]; imul [esi+0x30]`);
   32 stock rows, none in tier A. Phase 2 case C4,
-  [backlog](../../backlog/2026-10-20-reverser-reverser-plan-0045-p1b-contradicted-cases.md). *2026-10-25:* not reached by run:2026-10-25-skills (Blaze cast 29 times, no `LevRange` row created; § 11). *2026-10-27:* met by run:2026-10-27-skills, 271 `blaze` creations at level 2 (§ 12).
+  [backlog](../../backlog/archive/2026-10-20-reverser-reverser-plan-0045-p1b-contradicted-cases.md). *2026-10-25:* not reached by run:2026-10-25-skills (Blaze cast 29 times, no `LevRange` row created; § 11). *2026-10-27:* met by run:2026-10-27-skills, 271 `blaze` creations at level 2 (§ 12).
 - [L] src:d2dfg-blizzard: `Activate` is the frame count before the missile collides. **held**
 - [L] src:d2dfg-blizzard: `CollideType` codes 0–8, 7 being missile collision. **held with refinement**
   Detail: 7's mask is `0x40` with a `CanDestroy` filter, and no stock row uses it (§ 2).
@@ -149,7 +149,7 @@ code windows R1–R7; `p45b-rows.txt` `cbf9c64a…`, the stock-row values compar
 - [L] src:purediablo-piercing: a missile that misses but pierces "keeps traveling but doesn't deal any damage".
   **contradicted**
   Detail: a `ToHit` missile whose roll fails returns 2 and is freed at that unit, pierce or not (§ 5). Phase 2 case
-  C5, [backlog](../../backlog/2026-10-20-reverser-reverser-plan-0045-p1b-contradicted-cases.md). *2026-10-25:* run:2026-10-25-skills: 105 missed rolls, each result 2, 7 of them with a pierce left
+  C5, [backlog](../../backlog/archive/2026-10-20-reverser-reverser-plan-0045-p1b-contradicted-cases.md). *2026-10-25:* run:2026-10-25-skills: 105 missed rolls, each result 2, 7 of them with a pierce left
   and one pierce spent (§ 11).
 - [L] src:purediablo-piercing: a blocked hit still pierces. **held**
   Detail: the pierce result is fixed before `MISSILE_ApplyDamage`'s defence roll (§ 5).

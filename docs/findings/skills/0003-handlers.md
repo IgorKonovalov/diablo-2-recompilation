@@ -119,7 +119,7 @@ code windows R1–R7; `p45b-rows.txt` `cbf9c64a…`, the stock-row values compar
   Detail: do 31 calls `SummonSetLevel(m, 0, lvl)`, which gives `min(max(L · 3/4 + skill level, 1), L)` with `L` the
   owner's stat 12 (R4: `lea eax,[ecx+ecx*2]`, `sar 2`, the clamps); so the caster's level only when the skill level is
   at least `L/4`. Golems and mages are not read (plan 0046). Phase 2 case C1,
-  [backlog](../../backlog/2026-10-20-reverser-reverser-plan-0045-p1b-contradicted-cases.md). *2026-10-25:* run:2026-10-25-skills gives 84 in 8 of 8 summons at L 86 and skill level 20 (§ 15).
+  [backlog](../../backlog/archive/2026-10-20-reverser-reverser-plan-0045-p1b-contradicted-cases.md). *2026-10-25:* run:2026-10-25-skills gives 84 in 8 of 8 summons at L 86 and skill level 20 (§ 15).
 - [L] src:arreat-summit-skill-trees: a Druid has one spirit and one vine at a time, and spirit wolves, dire wolves and
   a grizzly exclude each other. **held**
   Detail: the totem and vine rows have `petmax` 1; `group` 1 on `spiritwolf`, `fenris` and `grizzly` makes
