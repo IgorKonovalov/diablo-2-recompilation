@@ -214,7 +214,7 @@ Backlog entries filed (7):
   [data-excel-type-test-link](../backlog/archive/2026-11-10-architect-spec-writer-plan-0064-data-excel-type-test-link.md),
   [conformance-drop-inputs](../backlog/2026-11-10-architect-spec-writer-plan-0064-conformance-drop-inputs.md)
   (waits for both archivist entries).
-- reverser: [parseitemcell-unique-entry-words](../backlog/2026-11-10-architect-reverser-plan-0064-parseitemcell-unique-entry-words.md)
+- reverser: [parseitemcell-unique-entry-words](../backlog/archive/2026-11-10-architect-reverser-plan-0064-parseitemcell-unique-entry-words.md)
   (S2 row 14; static only; data/excel G4 and items/tc § A follow).
 
 **Disputed rows, for a second fresh implementer** (the orchestrator runs it; this lane did not spawn one):

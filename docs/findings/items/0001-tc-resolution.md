@@ -255,7 +255,8 @@ That is the second-code-path corroboration for the layout below. Header in [`re/
 [C] layout by writer/reader agreement (0x006547D0, 0x00654440, 0x0055A6D0).
 
 Entry (0x1C bytes): `+0x00` cumClassic, `+0x04` cumExp (the sums **before** this entry was added); `+0x08` u16
-index (item record, or TC index); `+0x0A` u16 (unique/set record index, or the `mul=`/`ma=`/`mg=` value); `+0x0C` u8
+index (item record, or TC index; for a unique or set cell the row's base item, `[I]`); `+0x0A` u16 (unique/set
+record index, the name-link hit with no offset, `[I]` data/0001 § Plan 0064; or the `mul=`/`ma=`/`mg=` value); `+0x0C` u8
 flags: `0x01` unique, `0x02` set, `0x04` TC, `0x10` expansion-only; `+0x0E..+0x18` u16 ×6 from `cm=`, `cr=`, `cs=`,
 `cu=`, `ce=`, `cg=` (same order as the TC ratio words).
 
