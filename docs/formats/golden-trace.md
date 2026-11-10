@@ -55,8 +55,9 @@ predicted one. (A format rule of this project, not a game fact; `emit` writes an
   `expansion` (0 classic, 1 expansion, null likewise), `levels` (the level ids given singly in `expected`).
 - `drop`: `tc` (the treasure class resolved), `ilvl`, `unit_seed` and `game_seed` (`low:high`, hex), `difficulty`,
   `expansion`, `source_type` (1 monster, 2 object), `source_class`, `monster_flags` (hex byte), `nonodrop`, `max`,
-  `fq`, `super_unique`, `killer_type`, `killer_class`, `g6a`, `players`, `party`, `cap` (the last three when the log
-  shows them). All are the `TCR` line's and its context lines' ([tc § D](../specs/items/tc.md#d-the-resolver--tc_resolvedrops)).
+  `fq`, `super_unique`, `killer_type`, `killer_class`, `g6a`, `players`, `party`, `cap`, `killer_mf`, `owner_mf` (the last five when the log
+  shows them; § Conventions says what each means and what an absent one means). All are the `TCR` line's and its context
+  lines' ([tc § D](../specs/items/tc.md#d-the-resolver--tc_resolvedrops)); the two magic-find values are the `QKMF` and `QOMF` lines'.
 
 - `drlg`: `generator` (`outdoor` or `maze`), `map_seed` (the `-seed` of the log), `level` (the level id), `window_seed`
   (the level seed at the window's opening line, `OD0` or `MZ0`); outdoor adds `difficulty` (0 to 2; the replayer's, read from the
@@ -84,13 +85,13 @@ sha256 of its canonical JSON (`golden.py digest --value`), named `*_digest`.
 | `chain.A3.game_seed_after` | `low:high` | A3 the game seed after draw 2 | chain |
 | `chain.A4.store_seed`, `chain.A4.quest_seed` | `low:high` | A4 game draws 3 and 4 | chain |
 | `chain.A4.game_seed_after_creation` | `low:high` | A4 the game seed after draw 4 | chain |
-| `chain.B1.level_seed_base.N` | int | B1 `levelSeedBase` of act N | chain, [rng/seeds](../specs/rng/seeds.md) |
+| `chain.B1.level_seed_base.N` | int | B1 `levelSeedBase` of act N (1 to 5) | chain, [rng/seeds](../specs/rng/seeds.md) |
 | `chain.B2.level_seed.N` | `low:high` | B2 create seed of level N, `base + id` | chain, rng/seeds |
-| `chain.B2.level_seeds_digest` | sha256 | B2 over `{level id: seed}` for every level with a seed | chain |
+| `chain.B2.level_seeds_digest` | sha256 | B2 over `{level id: seed}` for every level with a seed (levels 1 to 136; § Conventions) | chain |
 | `monsters.pool.mlvl.N`, `.den.N`, `.uniques.N`, `.region.N` | int, int, `[min, max]`, class ids | monster level, density, unique range, region pool of level N for the case's difficulty and game type | [monsters/pool](../specs/monsters/pool.md) |
-| `monsters.pool.digest` | sha256 | the four values above, every level | monsters/pool |
-| `chain.G1.nodrop` | `[[NoDrop, total], ...]` | G1 NoDrop scaling per roll | [items/tc § F](../specs/items/tc.md) |
-| `chain.G1.pick` | `[[range, roll], ...]` | G1 the pick draw per selection | [items/tc § E](../specs/items/tc.md) |
+| `monsters.pool.digest` | sha256 | the four values above, every level (1 to 136; § Conventions) | monsters/pool |
+| `chain.G1.nodrop` | `[[NoDrop, total], ...]` | G1 NoDrop (after F's scaling) and total, one entry per positive pick (§ Conventions) | [items/tc § D4, F](../specs/items/tc.md) |
+| `chain.G1.pick` | `[[range, roll], ...]` | G1 the pick draw per positive pick, `roll` before `− nd` | [items/tc § E](../specs/items/tc.md) |
 | `chain.G1.select` | `[index, ...]` | G1 the entry each pick selects | items/tc § E |
 | `chain.G1.subtc` | `[tc, ...]` | G1 sub-classes entered, in order | items/tc § G |
 | `chain.G1.quality` | `[q, ...]` | G1 quality rolled per item | [items/quality](../specs/items/quality.md) |
@@ -108,6 +109,76 @@ hold every `world` field, with the level singles for the levels they name. Both 
 The field meanings carry the confidence of the spec rows they test (reviewed `[C]` in chain and items/tc);
 a reimplementation that matches an observed case has matched the real game for that field. [C]
 (run:2026-10-21-chain2, `golden.py emit`)
+
+## Conventions
+
+What `tools/golden.py` does where the field table is silent. A reimplementation that reads the table alone has to guess
+these; each is the tool's behaviour (`world_expected`, `observed_world`, `drop_case`, `cmd_check`, `value_digest`), read
+from the code and, where a drop input or list comes from a logger line, from `tools/gdb/tc-drops.gdb`. [C] (`tools/golden.py`;
+the logger lines: `tools/gdb/tc-drops.gdb`, run:2026-10-21-chain2)
+
+### World cases
+
+- **The act index.** The `N` of `chain.B1.level_seed_base.N` is the **act number, 1 to 5**, not the 0-based act index of
+  [rng/seeds](../specs/rng/seeds.md) (`world_expected` writes `a["act"]`, which `tools/chain.py gen` sets to the index plus 1). A level's act
+  for an observed case is by id: levels below 40 are act 1, 40 to 74 act 2, 75 to 102 act 3, 103 to 108 act 4, 109 and above act 5
+  (`chain.act_of`). The `N` of every other `.N` field is a level id.
+- **Which acts and levels a case holds.** A predicted `world` case holds the `levelSeedBase` of **all five acts**, classic games
+  too (`gen` loops `range(5)` whatever `expansion` is), and, for each id in its `levels` input that the pool builder has, the level
+  singles (`level_seed.N`, `pool.mlvl.N`, `.den.N`, `.uniques.N`, `.region.N`); `level_seed.N` only when the level has a seed (all 136 do). An observed
+  `world` case holds only what its log shows: `A1` game seed and map seed; `A3` when the log has an `OGC` line; the `levelSeedBase`
+  of the acts of the levels its `LC0` lines name, each equal to the one `base` the log prints (a log that shows no `base` has none);
+  `level_seed.N` for every level its `LC0` lines name. It holds no pool, digest, `A2` or `A4` field.
+- **Extra fields are not compared.** `check` walks the case's `expected` fields only: a candidate output field the case does not
+  hold is ignored, and a candidate case the set does not hold is a note, not a difference (§ Checking). So an implementation
+  may emit every field it has for every case; only a field the case holds, missing or different, counts.
+- **The digests' level set.** `chain.B2.level_seeds_digest` covers every level of `tools/chain.py gen` that has a seed, and
+  `monsters.pool.digest` every level `gen` lists: both are **levels 1 to 136, 136 levels**, the same ids for both game types and all
+  three difficulties (checked for seed 4802, both game types, Normal and Hell, by script). The digest does not depend on the case's
+  `levels` input (a case's `levels` only picks the singles).
+- **The digested object and its canonical form.** The object is a JSON dictionary with the level id as a **decimal string key**.
+  B2: `{"1": "low:high", ...}`, the value the level's seed in `low:high`, 8 lower-case hex digits each. Pools: `{"1": [mlvl, den, uniques_min, uniques_max, [class id, ...]], ...}`
+  (the region pool's class ids in the model's order, as `.region.N` lists them; `mlvl` the `.mlvl.N` value, `den` the `.den.N` value).
+  Canonical JSON: keys sorted (as strings, so `"10"` before `"2"`), separators `,` and `:` with no spaces, non-ASCII escaped (none occurs), UTF-8;
+  the digest is the sha256 of those bytes as 64 lower-case hex digits (`golden.py digest --value` reads the object from standard input).
+
+### Drop cases
+
+Every list is built by `drop_case` from the call's logger lines, `TCR` to `TCEND`, in the order they were logged.
+
+- **`chain.G1.nodrop`**: one entry **per positive pick**, `[NoDrop, total]`, from the `NDP` line (logged at `0x0055A9D9`, where every
+  positive-picks path joins, with `noNoDrop` set too). `total` is the TC's `Prob` total for the game type
+  (`T`); `NoDrop` is the value of [items/tc § D4](../specs/items/tc.md) as the range uses it: the TC's NoDrop after F's scaling
+  (unscaled when the party count `n` is 1 or less) and **0 when the TC's NoDrop is 0** (the entry is then `[0, total]`; F is not
+  called, and the pick still has its entry). It is not one entry per `ScaleNoDrop` call: a TC with NoDrop 0 contributes entries, and a pick that
+  F scales and a pick it does not both contribute exactly one. Negative picks (no draw) contribute none.
+- **`chain.G1.pick`**: one `[range, roll]` per positive pick (the `PICK` line): `range` the argument of the pick's `Range` draw (`T + nd`, or `T` with
+  `noNoDrop`), `roll` its **raw result, before `− nd`**. A negative pick has no entry. A pick whose roll is below `nd` (a NoDrop) is listed.
+- **`chain.G1.select`**: one index per `SEL` line, the entry index the pick's roll selects in the TC: NoDrop picks are not listed (they never reach the
+  selection), negative picks are, and an index at or past the entry count (a miss: the pick is consumed, nothing is made) is recorded as it was.
+- **`chain.G1.subtc`**: one TC index per `SUB` line, in the order the sub-TCs are entered (pushed); the TC the call starts with (`tc`) is not listed.
+- **`chain.G1.quality`**: one code per `QOUT` line, i.e. per `DropRollQuality` exit, in call order. A pick of a classic throwable that the game
+  refunds has rolled first and is listed; a unique or set entry makes no quality roll and is not (its quality is in `chain.G1.item`). A forced quality
+  (`fq` not 0) also logs a `QOUT` (the logger's exit point is the join of both paths; `tools/tc.py` expects it), so it would be listed [I]; none of the v1 set's 4 040 calls has `fq` not 0, so no run exercised it.
+- **`chain.G1.item`**: one `[base, quality, unique/set index]` per `CPRE` line (an item hand-off); `count` is the `TCEND` count and `end_seed` its seed.
+- **Input `tc`** is the TC index the resolver is entered with (`TCR`'s `tc`), i.e. the resolver's `t0` of [items/tc § D1](../specs/items/tc.md)
+  **after** the caller's level upgrade: there is no upgrade to apply before the draws. (`ilvl` is likewise the resolver's.)
+- **`players`, `party`, `cap`.** `PLAYERS` (the alive player count, or the `/players` override when it is larger, F2), `PARTY` (the party count after the clamp, F1) and, only for a
+  monster source (`source_type` 1), `CAP` (the cap F2 applies) are logged **at each positive pick whose TC has NoDrop not 0**, just before
+  the scaling; the case keeps the last value of each in the call. An input is absent when no pick of the call had NoDrop
+  not 0 (or, for `cap`, the source is an object): nothing in the call then reads it. A reimplementation derives it from the
+  game state as F1–F2 say; a case that holds it gives the value the game used, so a harness can take it as given.
+- **`killer_mf`, `owner_mf`.** The killer's own stat 80 (`QKMF`) and, when `MonsterOwner` returns a unit, **its owner's** stat 80 (`QOMF`):
+  the two terms [items/quality M1–M4](../specs/items/quality.md) add (`DropMagicFind` = killer + owner; for a mercenary or a summon both are logged and the
+  owner's is `owner_mf`, never folded into `killer_mf`). Both are inputs of every quality roll of the call, which has one killer, so `emit` requires every logged value of a call to agree
+  and every logged `QMF` (the sum the roll uses) to equal `QKMF + QOMF`, and writes **no case** for a call that breaks either (it counts as failed). An input is **absent** when no
+  roll read the stat: the call made no quality roll, or the killer is none or of a type above 1 (M1: the magic find is then 0 and the game does not read the stat), or, for `owner_mf`, the killer has no owner.
+  A reimplementation uses 0 for an absent value. In the v1 set 486 of the 4 040 drop cases hold `killer_mf` (the value 472 in 309 expansion cases, 250 in 174 and 215 in 3 classic cases; every killer a player, `killer_type` 0) and none holds `owner_mf` (no call of the set has a roll with an owned killer) (`[C]`, by script).
+- **Context only.** `game_seed`, `killer_type`, `killer_class`, `source_class`, `monster_flags`, `super_unique` and `source_type` identify the call; no step of D–H reads them once
+  `tc`, `players`, `party`, `cap`, `killer_mf` and `owner_mf` are given [I]. The inputs the draws use are `tc`, `ilvl`, `unit_seed`, `difficulty`, `expansion`
+  (which TC total and entry flags apply), `nonodrop`, `max`, `fq` and the five derived values above. `unit_seed` and `game_seed` are written `low:high`.
+- **`g6a`** is the game's type byte, `Game+0x6A` (`game.type` in [items/tc § Runtime state](../specs/items/tc.md#runtime-state): 3 single-player, 2 a TCP/IP host). It gates the `/players`
+  override in `players`; with `players` given, a reimplementation does not need it.
 
 ## Checking
 
@@ -152,7 +223,7 @@ chain worked example) and digests. This is by construction of the field list, wh
 
 ## Evidence
 
-- `python3 -I tools/test_golden.py`: 15 tests, no game file.
+- `python3 -I tools/test_golden.py`: 16 tests, no game file.
 - run:2026-10-21-chain2, 37 kept logs (`p2-s1-*.log` without the `raven-xn` one, `p2r2-s1-*.log`): `golden.py emit
   --chain-check` wrote 37 observed `world` cases and 3 784 observed `drop` cases (0 calls failed or cut off) and
   `tools/chain.py check` exited 0 with 37 logs, 0 sub-checks failed; `golden.py check` of that set against itself
