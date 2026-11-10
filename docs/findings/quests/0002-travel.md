@@ -30,7 +30,7 @@ and writers of the act changes are also listed per quest in [quests/0001](0001-p
   proximity or touch test of its own (the generic operate gates apply). In a town the waypoint's `InitFn` 17 puts it
   straight into mode 2, and an arrival by waypoint into a room whose waypoint is not yet created sets it to mode 1 when
   it is. Five waypoint rows (429, 494, 496, 511, 539) have `Sync` 0, so each of their mode changes draws their
-  unit seed. (fn:sub_00584E30_WaypointOperate@0x00584E30, 0x00547210, 0x00547170, fn:UNIT_AnimInit@0x00624390,
+  unit seed *(superseded 2026-11-10 for the mode 1 → 2 change by event 1, which does not draw: [§ 15](#15-object-event-1-on-a-waypoint-plan-0063-phase-2b-2026-11-10-lanen63s))*. (fn:sub_00584E30_WaypointOperate@0x00584E30, 0x00547210, 0x00547170, fn:UNIT_AnimInit@0x00624390,
   tbl:Objects.txt:Sync)
 - [I] **Waypoint travel** is packet `0x49` (`{object id, u16 level}`): refused within **10 000 ms of real time** of the
   player's tick stamp `+0x160`, refused unless the object is a waypoint in the player's act near the player and the
@@ -78,7 +78,7 @@ and writers of the act changes are also listed per quest in [quests/0001](0001-p
   with state 42 (below). Death: packet `0x41` from mode 17 restores life, mana and stamina and calls
   `PlayerChangeLevel(town of the act, type 0)`. Joining: the act's level `act+0x08` at type 0. (fn:sub_005550B0_WarpExitPos@0x005550B0,
   0x00548B00, 0x00545B80, 0x0054C0E0, 0x005394A0)
-- [I] **Draws by event kind** (§ 10): waypoint operate: none, or the waypoint's unit seed (five `Sync` 0 rows); waypoint
+- [I] **Draws by event kind** (§ 10): waypoint operate: none, or the waypoint's unit seed (five `Sync` 0 rows; *the mode 1 → 2 change draws nothing, superseded by [§ 15](#15-object-event-1-on-a-waypoint-plan-0063-phase-2b-2026-11-10-lanen63s)*); waypoint
   travel, NPC act change, death, join, the lair, Arcane and Durance portals: the destination's level seed when it has
   `Position` (plus a full level or room build when the level or room does not exist yet, DRLG oracles); town portal
   creation: three (above; corrected from five by Phase 2, § 12; a town room updated for the first time adds its
@@ -525,7 +525,7 @@ QUESTS_WarpGate(src, dest) (0x00545B80)
 
 | Event | Inputs (log) | Outputs | Draws, in order | Chaining |
 |---|---|---|---|---|
-| waypoint operate | player, object, mode, level | record bit; mode 0→1 + event 1, or menu | rows 429, 494, 496, 511, 539 only: `RangeB(object seed, FrameDelta[mode] >> 3)` per mode change | the object's own seed: chained across its mode changes |
+| waypoint operate | player, object, mode, level | record bit; mode 0→1 + event 1, or menu | rows 429, 494, 496, 511, 539 only: `RangeB(object seed, FrameDelta[mode] >> 3)` per mode change *(superseded 2026-11-10 for the mode 1 → 2 change by event 1: no draw, [§ 15](#15-object-event-1-on-a-waypoint-plan-0063-phase-2b-2026-11-10-lanen63s))* | the object's own seed: chained across its mode changes |
 | waypoint travel | packet, tick stamp, record | new level, position | target level seed (1 step) if `Position` and type ≠ 13; level/room build if absent (oracle) | per level seed, with every other user of it (drlg/0005) |
 | NPC act change | NPC class, action, words 6/14/26, expansion | position, words, waypoint bit, `+0x4C` | destination town's level seed (1 step, type 0 or 5); act creation if absent (oracle) | per level seed |
 | Durance portal | words 22, 23, 18, level | words, waypoint 103, position | 103's level seed (1 step) | per level seed |
@@ -624,7 +624,7 @@ the part 1 and 2 rules plus the town-portal refusal in a town.
 
 **Shortfalls (named, final for this plan).** No further pass is planned; these stay `[I]` in this plan. Waypoint
 activation from mode 0, its event 1 and the `Sync` 0 object-seed draw (above: the driver reaches no mode-0 waypoint by
-a hop or a short walk; the mode 1 → 2 draw is logged by no revision); NPC 367's menu travel branch (the stock client
+a hop or a short walk; the mode 1 → 2 draw is logged by no revision *(superseded 2026-11-10: event 1 writes mode 2 without a draw, [§ 15](#15-object-event-1-on-a-waypoint-plan-0063-phase-2b-2026-11-10-lanen63s))*); NPC 367's menu travel branch (the stock client
 offers no line); the 150-travel, 150-warp, 60-activation and 20-`NpcActTravel` floors; level 120's warp tiles and the
 118/128 branch, the gates into 73, 100 and 132; the Durance, Arcane and lair portals; the level-136 portal refusal; the
 resurrection's life, mana and state writes (not logged); the free-cell search's far rings. Two-client cases stay plan
@@ -634,6 +634,45 @@ mode 0 → 1 with one object-seed step, its class's `Sync` 0, 0 mismatches; one 
 Frigid Highlands, class 496, reached on foot from the Plateau), each mode 0 → 1 with one object-seed step and 0
 mismatches: 7 of the 20 over the two runs, named again, final; the operate stays `[I]`
 ([quests experiments](experiments.md#the-travel-sessions-of-run2026-10-21-shortfalls2); run:2026-10-21-shortfalls2).
+
+### 15. Object event 1 on a waypoint (plan 0063 Phase 2b, 2026-11-10, `lane/n63s`)
+
+From the `lane/h5d` review's backlog entry: the kept log `run-2026-10-27-h5d-s1-4106-rogue.log` (run:2026-10-27-sweep-collision)
+has the Rogue Encampment waypoint (class 119, unit 54452480) created in mode 1 by `OBJINIT_Waypoint`'s arrival match
+(`OIX`, line 3225) and in mode 2 at its one operate (`OO0`/`OOX`, lines 4769–4770, frame 914), with no logged line
+between. Read with r2 on the pinned `Game.exe`:
+
+- [I] **Event 1 is `sub_00581490_ObjEvOperateEnd`** (entry 1 of `g_ObjEventFns`, frame/0002). It returns at once for a
+  null object or one whose mode word `+0x10` is not 1; otherwise it fetches the Objects row (`OBJECTS_GetRecord`, `0x00640E90`), and when
+  the row's byte `+0x141` (`Mode2`) is non-zero it writes `+0x10 = 2` directly (0x005814B0), **not** through
+  `UNIT_SetMode`: no animation start, so **no draw on the object's seed, whatever its `Sync`**. Then, when the row's
+  `+0x122` (`HasCollision2`) is 0, it calls `UNIT_CollUnmarkRect` (`0x00623830`, 0x005814C1). No RNG call is made.
+  All 16 waypoint rows (`InitFn` 17, every one with `OperateFn` 23) have `Mode2` 1 and `HasCollision` 0 in every mode, so
+  for a waypoint the event is the mode write and an unmark of a footprint it never marked. (0x00581497–0x005814C6,
+  fn:sub_00581490_ObjEvOperateEnd@0x00581490, data:g_ObjEventFns@0x006E19B0, tbl:Objects.txt:Mode2,
+  tbl:Objects.txt:HasCollision2)
+- [I] **The two queue sites, read again.** `OBJINIT_Waypoint` calls `UNIT_SetMode(object, 1)` (0x00547295) and queues
+  event 1 at `game+0xA8 + (row+0xDC >> 8)` (0x005472AF–0x005472CA: no `+ 1`); `WaypointOperate`'s mode-0 branch queues
+  it at `game+0xA8 + (row+0xDC >> 8) + 1` (`lea edx, [edx + eax + 1]`, 0x00584E9F–0x00584EBE). `+0xDC` is `FrameCnt1`
+  stored `<< 8`, 15 or 20 frames for the waypoint rows (anim/0003 § 6.5). (fn:OBJINIT_Waypoint@0x00547210,
+  fn:sub_00584E30_WaypointOperate@0x00584E30, fn:sub_005417D0_UnitQueueEvent@0x005417D0, tbl:Objects.txt:FrameCnt1)
+- [C] **On the kept log, the model with event 1 predicts the mode 2 at the operate: 1 case, 0 mismatches.**
+  `tools/objects.py` (commit `9008ecd0`) queues event 1 at the arrival match (due between the `PLR` frames around the
+  creation, 428 + 15 and 491 + 15) and at a mode-0 `WaypointOperate`, and runs it before an operate whose frame
+  (`OO0` `f`, `game+0xA8`) is past the due frame: mode 1 → 2 when `Mode2` is set, no draw. `tools/collision.py check` on
+  the rogue log: 4 646 checks, 0 mismatches (was 4 645 and 1). The object's seed is the same at `OIX` and at the
+  operate (`c5301326:0000029a`), which a class with `Sync` 1 does not separate from a draw. **Regression:** the 94
+  kept logs of the h5d sweep's lists that hold an `InitFn` 17 and an `OperateFn` 23, checked with the tool before and
+  after the change: the same mismatch count in 93, the rogue log 1 → 0; event 1 ran before an operate in that log
+  only, and no log had a due frame the bounds could not place. Scope: one waypoint (class 119, `Sync` 1), one
+  arrival-match creation, one later operate. (fn:sub_00581490_ObjEvOperateEnd@0x00581490, run:2026-10-27-sweep-collision,
+  `workspace/logs/h5d/check-p63/`, `manifest-p63.sha256` there)
+- **Contradicted, routed to plan 0063 Phase 3 (spec-writer):** [quests/travel C3](../../specs/quests/travel.md) says a
+  `Sync` 0 waypoint's "later change to mode 2 draws again", and § 10's table above and § 14's "the mode 1 → 2 draw"
+  assume a draw per mode change. By the read above, the change to mode 2 by event 1 does not call `UNIT_SetMode` and
+  draws nothing; the `Sync` 0 draws of a field waypoint are the `SetMode 1` of the arrival match or of the operate.
+  A town waypoint's `SetMode 2` in `InitFn` 17 (0x0054726A–0x00547279) goes through `UNIT_SetMode` and is not
+  changed by this. (fn:sub_00581490_ObjEvOperateEnd@0x00581490, fn:UNIT_SetMode@0x00624690)
 
 ## Data touched
 

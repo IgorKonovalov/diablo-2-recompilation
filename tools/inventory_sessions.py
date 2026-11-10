@@ -226,7 +226,7 @@ def run(slot, tag, run_id, names, dev=False, seed0=6001):
                 os.remove(arm)
 
     try:
-        st = hr.batch(names, run_case, status, reruns=0)
+        st = hr.batch(names, run_case, status, reruns=0, stage=hr.NO_SHARING)
     finally:
         out.close()
     print(hr.summary(st))

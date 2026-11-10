@@ -77,6 +77,32 @@ class Check(unittest.TestCase):
         mism, _ = self.run_check([p], wrong="nooffset")
         self.assertTrue(mism)
 
+    def test_spots_group_chains_and_drops(self):
+        """`spots`: two chain searches at one position are one spot; a DropCreateItem search is its own spot; a
+        blocked start (ring 1) fails `nooffset` at that spot only."""
+        import io
+        from contextlib import redirect_stdout
+        a, _ = self.case((), "s1.log")
+        b, _ = self.case({(52, 53)}, "s2.log")
+        lines = open(a).read() + open(b).read()
+        chain = lines.replace('"ret": 0', '"ret": %d' % 0x00563C9B)
+        p = os.path.join(self.d, "chain.log")
+        with open(p, "w") as f:
+            f.write(chain)
+        q = os.path.join(self.d, "drop.log")
+        with open(q, "w") as f:
+            f.write(open(b).read().replace('"ret": 0', '"ret": %d' % 0x0055A5B2))
+        with redirect_stdout(io.StringIO()) as buf:
+            rows, mism = ic.spots([p, q])
+        self.assertEqual(mism, 0)
+        self.assertEqual([r["kind"] for r in rows], ["chain", "chain", "drop"])
+        self.assertEqual(len({r["spot"] for r in rows}), 2)
+        self.assertEqual([r["ring"] for r in rows], [0, 1, 1])
+        out = buf.getvalue()
+        self.assertIn("chain: 2 searches at 1 spots", out)
+        self.assertIn("drop: 1 searches at 1 spots", out)
+        self.assertIn("rings reached: start 1, ring 1 2", out)
+
     def test_a_flat_control_is_reported(self):
         p, _ = self.case((), "d.log")
         _, flat = self.run_check([p])

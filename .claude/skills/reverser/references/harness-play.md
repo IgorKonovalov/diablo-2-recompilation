@@ -241,7 +241,7 @@ baseline's 60 s is refuted there, and the 60 s itself is unexplained.
 5. **The previous case in the process failed or timed out** (a death, a halt, a load that did not reach `PLR`, a
    stall, or a stage not reached, such as a waypoint that never left the town): its state is unknown. Rerun the failed case in a fresh process, and start the rest of the batch in one too.
    **A batch that shares a process checks each case's stage before the switch**; a runner that cannot tell has no opt-in
-   (`tools/ai_sessions.py` holds the check today). A failure found only afterwards, at the split or the check, leaves the
+   (the library enforces it: `hr.batch` needs `stage=check(case)` before `next_case` may switch, or `stage=NO_SHARING`; tooling.md § The runner library). A failure found only afterwards, at the split or the check, leaves the
    later cases of that process named in the record, kept only if their checker reads no carried state (2) and the record
    gives the result without them; otherwise they are run again fresh (plan 0056 Phase 4, launch 5202).
 

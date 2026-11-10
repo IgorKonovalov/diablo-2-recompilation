@@ -10,7 +10,8 @@ skeleton comes from here:
     r = wait_ready(log, "RDY", 120, proc=proc, tick=lambda: hide_window(slot))   # READY | TIMEOUT | GONE
     mark(stem, case, "start", log) ... mark(stem, case, "end", log)              # <stem>.marks.tsv
     stop(slot, proc)                                    # slots.py stop N, then wait until slots.busy(N) is empty
-    batch(names, run_one, status_path)                  # one status file at the end: kept / failed / rerun, wall
+    batch(names, run_one, status_path, stage=NO_SHARING)  # one status file at the end: kept / failed / rerun, wall
+                                                        # (stage=check(case) instead when cases share a process)
 
 and, offline, split(log, marks) cuts a several-case log into one log per case.
 
@@ -347,17 +348,43 @@ def split(log, marks=None, out_dir=None, at=None, head=True):
 
 # ---- the batch -------------------------------------------------------------------------------------------------
 
-def batch(cases, run_case, status_path, reruns=0, pidfile=None, clock=time.time, label=str):
+NO_SHARING = "no-sharing"   # batch(stage=NO_SHARING): every case starts its own game process; next_case refuses
+
+# The case gate (plan 0056 Phase 4, harness-play.md § Fresh process rule 5): a game process may take the next case
+# (next_case) only when the case it ran last was kept AND passed the batch's stage check. batch() sets this after
+# each try; next_case() reads it and consumes it.
+_GATE = {"mode": None, "switch": False, "case": None}
+
+
+def _gate_result(r):
+    ok, note = (r if isinstance(r, tuple) else (r, ""))
+    return bool(ok), note or ""
+
+
+def batch(cases, run_case, status_path, reruns=0, pidfile=None, clock=time.time, label=str, stage=None):
     """Run `cases` in order through run_case(case) and write one status file at the end (also when the batch is
     interrupted or a case raises). run_case returns True or KEPT for a kept case, False, FAILED or None for a failed
     one, or (outcome, note). A failed case is run again up to `reruns` times in all (each try counted: `tries`; a
     case kept on a later try is `rerun`). Writes this process's pid to `pidfile` first (harness-play.md § Cleanup).
     The status file is JSON: {"kept", "failed", "rerun", "wall", "done", "cases": [{case, outcome, tries, wall,
-    note}]}; `done` is false when the batch stopped early. One line per case is printed as it ends."""
+    note}]}; `done` is false when the batch stopped early. One line per case is printed as it ends.
+
+    `stage` is the case gate, and it is required (plan 0056 Phase 4): NO_SHARING when every case starts its own game
+    process (next_case then refuses), or a callable stage(case) -> bool or (bool, note) when cases may share one. The
+    callable runs after each kept try, while the game is still up: False (or an exception) turns the try into a
+    failed one, "stage not reached: <note>". next_case is allowed only right after a try that was kept and passed
+    it; after a failed try the runner must start a new process. A missing gate raises HarnessError before any case
+    runs (no status file is written)."""
+    if stage is None or not (stage == NO_SHARING or callable(stage)):
+        raise HarnessError("batch: no case gate; pass stage=NO_SHARING (one process per case) or "
+                           "stage=check(case) (cases share a process: the stage of each is checked before a switch)")
+    if _GATE["mode"] is not None:
+        raise HarnessError("batch: a batch is already running in this process")
     if pidfile:
         with open(pidfile, "w") as f:
             f.write("%d\n" % os.getpid())
     rows, t0, left, done = [], clock(), reruns, False
+    _GATE.update(mode=stage, switch=False, case=None)
     try:
         for case in cases:
             tries, c0 = 0, clock()
@@ -369,6 +396,14 @@ def batch(cases, run_case, status_path, reruns=0, pidfile=None, clock=time.time,
                     r = (FAILED, "%s: %s" % (type(e).__name__, e))
                 outcome, note = (r if isinstance(r, tuple) else (r, ""))
                 outcome = KEPT if outcome is True or outcome == KEPT else FAILED
+                if outcome == KEPT and stage != NO_SHARING:
+                    try:
+                        ok, gnote = _gate_result(stage(case))
+                    except Exception as e:  # noqa: BLE001  (a check that raises has not passed)
+                        ok, gnote = False, "%s: %s" % (type(e).__name__, e)
+                    if not ok:
+                        outcome, note = FAILED, "stage not reached" + (": " + gnote if gnote else "")
+                _GATE.update(switch=outcome == KEPT and stage != NO_SHARING, case=label(case))
                 if outcome == KEPT or left <= 0:
                     break
                 left -= 1
@@ -380,6 +415,7 @@ def batch(cases, run_case, status_path, reruns=0, pidfile=None, clock=time.time,
                   flush=True)
         done = True
     finally:
+        _GATE.update(mode=None, switch=False, case=None)
         st = {"kept": sum(r["outcome"] == KEPT for r in rows), "failed": sum(r["outcome"] == FAILED for r in rows),
               "rerun": sum(r["outcome"] == "rerun" for r in rows), "wall": round(clock() - t0, 1), "done": done,
               "cases": rows}
@@ -423,7 +459,8 @@ def xd(slot, args, out=None, run=None):
 
 
 def next_case(slot, log, saves=(), diff=None, tag="PLR", leave=True, menu_wait=8.0, load_timeout=90, out=None,
-              run=None, copy=None, clock=time.time, sleep=time.sleep, ws=None, stem=None, case=None):
+              run=None, copy=None, clock=time.time, sleep=time.sleep, ws=None, stem=None, case=None,
+              stage_checked=False):
     """The menu return: Save and Exit the running game (Escape, the menu's Save and Exit line), install the next
     case's `saves` (.d2s paths, copied over the same names in the slot's saves directory: the game is up, so
     saves.py refuses; the slot's aside, taken at the batch start, stays), SINGLE PLAYER, OK (and `diff` = normal |
@@ -433,7 +470,22 @@ def next_case(slot, log, saves=(), diff=None, tag="PLR", leave=True, menu_wait=8
     Escape)}: a caller decides what a failure costs (harness-play.md Fresh process). With `stem` and `case`, the
     case's `start` mark is written just before the OK click, when the previous game's lines are all in the log and
     the new game's are not yet: `split(log)` then cuts the games exactly where the games begin; the caller writes the
-    `end` mark (and a `fail` mark when ok is False)."""
+    `end` mark (and a `fail` mark when ok is False).
+
+    The case gate (plan 0056 Phase 4): inside a batch, the switch is refused (HarnessError, before any click) unless
+    the batch has a stage callable and the try it ran last was kept and passed it; each pass allows one switch.
+    Under stage=NO_SHARING it is always refused. Outside a batch it is refused unless the caller passes
+    stage_checked=True, saying it checked the previous game's stage itself (a probe whose games are the menu loads)."""
+    if _GATE["mode"] is None:
+        if not stage_checked:
+            raise HarnessError("next_case outside a batch: pass stage_checked=True once the previous game's stage "
+                               "is checked, or run the cases through batch(stage=...)")
+    elif _GATE["mode"] == NO_SHARING:
+        raise HarnessError("next_case: this batch declared stage=NO_SHARING (one process per case)")
+    elif not _GATE["switch"]:
+        raise HarnessError("next_case: case %s was not kept with its stage checked; start a new process" % (
+            _GATE["case"] or "(none yet)"))
+    _GATE["switch"] = False
     run = run or sh
     copy = copy or shutil.copy2
     n0, l0, t0 = len(lines(log, tag)), line_count(log), clock()

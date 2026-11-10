@@ -312,7 +312,7 @@ class Batch(Base):
             return True, "2 of 2 loads"
         c = Clock()
         with redirect_stdout(io.StringIO()):
-            st = hr.batch(["ok", "flaky", "bad", "boom"], run, st_path, reruns=1, clock=c)
+            st = hr.batch(["ok", "flaky", "bad", "boom"], run, st_path, reruns=1, clock=c, stage=hr.NO_SHARING)
         self.assertEqual((st["kept"], st["rerun"], st["failed"], st["done"]), (1, 1, 2, True))
         self.assertEqual([(r["case"], r["outcome"], r["tries"]) for r in st["cases"]],
                          [("ok", "kept", 1), ("flaky", "rerun", 2), ("bad", "failed", 1), ("boom", "failed", 1)])
@@ -323,7 +323,8 @@ class Batch(Base):
 
     def test_rerun_budget_is_per_batch(self):
         with redirect_stdout(io.StringIO()):
-            st = hr.batch(["a", "b"], lambda c: False, os.path.join(self.dir, "s.json"), reruns=1)
+            st = hr.batch(["a", "b"], lambda c: False, os.path.join(self.dir, "s.json"), reruns=1,
+                          stage=hr.NO_SHARING)
         self.assertEqual([r["tries"] for r in st["cases"]], [2, 1])
 
     def test_status_written_when_interrupted(self):
@@ -335,7 +336,7 @@ class Batch(Base):
                 raise KeyboardInterrupt
             return hr.KEPT
         with redirect_stdout(io.StringIO()), self.assertRaises(KeyboardInterrupt):
-            hr.batch(["a", "stop", "never"], run, st_path, pidfile=pid_path)
+            hr.batch(["a", "stop", "never"], run, st_path, pidfile=pid_path, stage=hr.NO_SHARING)
         with open(st_path) as f:
             st = json.load(f)
         self.assertEqual((st["kept"], st["done"], len(st["cases"])), (1, False, 1))
@@ -346,7 +347,7 @@ class Batch(Base):
     def test_status_cli(self):
         st_path = os.path.join(self.dir, "b.status.json")
         with redirect_stdout(io.StringIO()):
-            hr.batch(["a", "b"], lambda c: c == "a", st_path)
+            hr.batch(["a", "b"], lambda c: c == "a", st_path, stage=hr.NO_SHARING)
         buf = io.StringIO()
         with redirect_stdout(buf):
             self.assertEqual(hr.main(["status", st_path]), 1)
@@ -555,7 +556,7 @@ class NextCase(Base):
 
         r = hr.next_case(2, self.log, ["/x/A.d2s"], diff=diff, leave=leave, run=fake_run, clock=c, sleep=c.sleep,
                          copy=lambda a, b: copies.append((a, os.path.basename(b))), load_timeout=30,
-                         stem=self.log[:-4], case="g1")
+                         stem=self.log[:-4], case="g1", stage_checked=True)
         return r, calls, copies
 
     def test_sequence(self):
@@ -577,6 +578,143 @@ class NextCase(Base):
         r, _, _ = self.run_it(new_plr=False)
         self.assertFalse(r["ok"])
         self.assertGreaterEqual(r["secs"], 30)
+
+
+class StageGate(Base):
+    """The case gate (plan 0056 Phase 4): batch needs stage=NO_SHARING or a stage check, and next_case switches only
+    right after a try that was kept and passed the check. No game, no slot: next_case's clicks go to a fake."""
+
+    def setUp(self):
+        super().setUp()
+        self.write(HEAD + ['PLR {"x":1}\n'])
+        self.clicks = []
+        self.st_path = os.path.join(self.dir, "g.status.json")
+
+    def switch(self, case):
+        """A runner's menu return on fakes: the OK click logs the next game's PLR."""
+        def fake_run(argv, timeout=None, out=None):
+            self.clicks.append(case)
+            if argv[argv.index("Diablo II") + 1:] == ["click", "690", "556"]:
+                self.write(['PLR {"x":2}\n'], mode="a")
+            return 0
+        c = Clock()
+        return hr.next_case(2, self.log, [], leave=True, run=fake_run, clock=c, sleep=c.sleep, load_timeout=5)
+
+    def run_batch(self, cases, run_case, stage, reruns=0):
+        with redirect_stdout(io.StringIO()):
+            return hr.batch(cases, run_case, self.st_path, reruns=reruns, stage=stage)
+
+    def test_batch_refuses_without_a_gate(self):
+        for bad in (None, "share", 3):
+            with self.assertRaises(hr.HarnessError):
+                self.run_batch(["a"], lambda c: True, bad)
+        self.assertFalse(os.path.exists(self.st_path))
+        self.assertIsNone(hr._GATE["mode"])
+
+    def test_stage_check_fails_a_kept_try(self):
+        checked = []
+
+        def stage(case):
+            checked.append(case)
+            return (case != "town", "stayed in level 1") if case != "boom" else 1 / 0
+        st = self.run_batch(["ok", "town", "boom"], lambda c: True, stage)
+        self.assertEqual(checked, ["ok", "town", "boom"])
+        self.assertEqual([(r["case"], r["outcome"]) for r in st["cases"]],
+                         [("ok", "kept"), ("town", "failed"), ("boom", "failed")])
+        self.assertEqual(st["cases"][1]["note"], "stage not reached: stayed in level 1")
+        self.assertTrue(st["cases"][2]["note"].startswith("stage not reached: ZeroDivisionError"))
+
+    def test_stage_not_checked_after_a_failed_try(self):
+        checked = []
+        st = self.run_batch(["a"], lambda c: False, lambda c: checked.append(c) or True)
+        self.assertEqual((checked, st["failed"]), ([], 1))
+
+    def test_a_failed_stage_is_rerun(self):
+        n = []
+        st = self.run_batch(["a"], lambda c: True, lambda c: n.append(c) or len(n) > 1, reruns=1)
+        self.assertEqual([(r["outcome"], r["tries"]) for r in st["cases"]], [("rerun", 2)])
+
+    def test_switch_after_a_checked_case(self):
+        def run_case(case):
+            if case != "first":
+                r = self.switch(case)
+                return r["ok"]
+            return True
+        st = self.run_batch(["first", "second", "third"], run_case, lambda c: True)
+        self.assertEqual(st["kept"], 3)
+        self.assertEqual(set(self.clicks), {"second", "third"})
+
+    def test_no_switch_after_a_stage_failure(self):
+        def run_case(case):
+            if case != "first":
+                return self.switch(case)["ok"]
+            return True
+        st = self.run_batch(["first", "second"], run_case, lambda c: (False, "stayed") if c == "first" else True)
+        self.assertEqual([r["outcome"] for r in st["cases"]], ["failed", "failed"])
+        self.assertIn("HarnessError", st["cases"][1]["note"])
+        self.assertIn("first was not kept", st["cases"][1]["note"])
+        self.assertEqual(self.clicks, [])          # refused before any click
+
+    def test_no_switch_after_a_failed_case(self):
+        def run_case(case):
+            return self.switch(case)["ok"] if case == "second" else False
+        st = self.run_batch(["first", "second"], run_case, lambda c: True)
+        self.assertEqual(st["failed"], 2)
+        self.assertEqual(self.clicks, [])
+
+    def test_one_switch_per_check(self):
+        def run_case(case):
+            if case == "second":
+                self.switch(case)
+                self.switch(case)              # a second switch in one case: the pass is used up
+            return True
+        st = self.run_batch(["first", "second"], run_case, lambda c: True)
+        self.assertEqual(st["cases"][1]["outcome"], "failed")
+        self.assertIn("HarnessError", st["cases"][1]["note"])
+
+    def test_no_sharing_refuses_every_switch(self):
+        def run_case(case):
+            return True if case == "first" else self.switch(case)["ok"]
+        st = self.run_batch(["first", "second"], run_case, hr.NO_SHARING)
+        self.assertEqual([r["outcome"] for r in st["cases"]], ["kept", "failed"])
+        self.assertIn("NO_SHARING", st["cases"][1]["note"])
+        self.assertEqual(self.clicks, [])
+
+    def test_outside_a_batch(self):
+        with self.assertRaises(hr.HarnessError):
+            self.switch("x")
+        self.assertEqual(self.clicks, [])
+
+    def test_gate_reset_after_the_batch(self):
+        self.run_batch(["a"], lambda c: True, lambda c: True)
+        self.assertEqual(hr._GATE, {"mode": None, "switch": False, "case": None})
+        with self.assertRaises(hr.HarnessError):
+            self.switch("after")
+
+
+class RunnersGate(Base):
+    """Every runner on hr.batch passes a gate: ai_sessions (cases share a process) its stage check, the
+    one-process-per-case runners NO_SHARING."""
+
+    def test_sources(self):
+        import re
+        for name, want in (("ai_sessions", "stage=stage_reached"), ("inventory_sessions", "stage=hr.NO_SHARING"),
+                           ("path_sessions", "stage=hr.NO_SHARING"), ("h1a_sessions", "stage=hr.NO_SHARING")):
+            with open(os.path.join(HERE, name + ".py")) as f:
+                src = f.read()
+            calls = re.findall(r"hr\.batch\((.*?)\)\n", src, re.S)
+            self.assertEqual(len(calls), 1, name)
+            self.assertIn(want, calls[0], name)
+
+    def test_ai_stage_check(self):
+        """ai_sessions' check: the last PLR level against the case's start level (launch 5202 ran on past two town
+        cases without it)."""
+        import ai_sessions as A
+        self.write(HEAD + ['PLR {"lid":1,"x":5}\n'])
+        self.assertEqual(A.left_start(self.log, 1), (False, "stayed in level 1"))
+        self.write(['PLR {"lid":8,"x":5}\n'], mode="a")
+        self.assertEqual(A.left_start(self.log, 1), (True, ""))
+        self.assertEqual(A.left_start(os.path.join(self.dir, "none.log"), None), (False, "stayed in level None"))
 
 
 if __name__ == "__main__":

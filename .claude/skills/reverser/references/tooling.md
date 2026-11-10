@@ -275,15 +275,22 @@ command kinds. Which runners use it, and when one moves, is harness-play.md § R
 | `mark(stem, case, event, log, note)` | one row of `<stem>.marks.tsv`: `case event time line note`; event ∈ launch, ready, start, end, fail; `line` = the log's line count then (the next line's 0-based index) | the row |
 | `split(log, marks=None, out_dir=None, at=None, head=True)` | one log per `start` mark, `<stem>-<case>.log` (a repeated case `-2` …); `at=TAG` moves each cut to the first `TAG` line before the next mark; `head` repeats the lines before the first cut, then a `# split … lines=a-b at=…` line | `[{case, path, first, end, snapped}]` |
 | `stop(slot, proc=None, timeout=30, out=None)` | `slots.py stop N`, reaps `proc`, then polls `slots.busy(N)` (the pids `slots.py status` shows) for up to 30 s; slot 0 refused | True when the slot is idle |
-| `batch(cases, run_case, status_path, reruns=0, pidfile=None)` | runs the cases in order; `run_case` returns True/False or `(outcome, note)`, an exception is a failed case; `reruns` is the batch's budget of reruns; writes one JSON status file at the end, also when interrupted (`done: false`) | `{kept, failed, rerun, wall, done, cases: [{case, outcome, tries, wall, note}]}` |
-| `next_case(slot, log, saves, diff, tag="PLR", leave=True, menu_wait=8, load_timeout=90, out, stem, case)` | the menu return (plan 0056 Phase 2): Escape and the Save and Exit click, the next case's `saves` copied over at the menu (the game is up, so `saves.py` is not used), SINGLE PLAYER, OK (a `start` mark when `stem` and `case` are given), the difficulty click when `diff` is set, then the next `tag` line | `{ok, secs, n0, line}`; fresh-process rules: harness-play.md § Fresh process |
+| `batch(cases, run_case, status_path, reruns=0, pidfile=None, stage=…)` | runs the cases in order; `run_case` returns True/False or `(outcome, note)`, an exception is a failed case; `reruns` is the batch's budget of reruns; writes one JSON status file at the end, also when interrupted (`done: false`). **`stage` is the case gate and is required** (plan 0056 Phase 4): `NO_SHARING` when every case starts its own process, or a callable `stage(case)` → bool or `(bool, note)` run after each kept try while the game is up; False or an exception fails the try (`stage not reached: <note>`). Without one it raises `HarnessError` before any case runs | `{kept, failed, rerun, wall, done, cases: [{case, outcome, tries, wall, note}]}` |
+| `next_case(slot, log, saves, diff, tag="PLR", leave=True, menu_wait=8, load_timeout=90, out, stem, case)` | the menu return (plan 0056 Phase 2): Escape and the Save and Exit click, the next case's `saves` copied over at the menu (the game is up, so `saves.py` is not used), SINGLE PLAYER, OK (a `start` mark when `stem` and `case` are given), the difficulty click when `diff` is set, then the next `tag` line | `{ok, secs, n0, line}`; fresh-process rules: harness-play.md § Fresh process. **Refuses** (`HarnessError`, before any click) unless the batch's try just before was kept and passed its `stage` check (one switch per pass); always under `NO_SHARING`; outside a batch unless `stage_checked=True` (the caller checked the previous game's stage itself: `tools/probe0056.py`) |
 | `sh`, `hide_window`, `lines`, `line_count`, `tag_of`, `Tail` | the helpers every runner had its own copy of; `lines(log, tag)` matches the line's first word (`tag_of`), so a bare `TAG` line with no space counts, which the old `startswith(tag + " ")` did not | |
+
+**The case gate (plan 0056 Phase 4).** A batch whose cases share a process (`next_case`) passes its stage check
+to `batch`: `tools/ai_sessions.py` passes `stage_reached`, which fails a case whose last `PLR` level is the level it
+began in (`left_start`: the waypoint never left the town, launch 5202) and marks the process dead, so the next case
+launches fresh. The one-process-per-case runners (`h1a_sessions`, `inventory_sessions`, `path_sessions`) pass
+`stage=hr.NO_SHARING`. `tools/frame_sessions.py` and `tools/h6ga_sessions.py` use `launch` but neither `batch` nor
+`next_case` (one scene per process); a runner that moves onto `batch` passes a gate like the others.
 
 Offline: `python3 -I tools/harness_runner.py split LOG [--at TAG] [--out DIR] [--no-head]`, `marks LOG`, `status
 STATUS.json` (the summary line and the failed cases; exit 1 on a failure or an early stop), and `bg OUT -- CMD …`
 (starts the batch detached, prints its pid; wait once with `tail --pid=PID -f /dev/null`). No-game tests:
-`python3 -I tools/test_harness_runner.py` (fake logs, fake and short real child processes, fake clocks, and the
-worked example's session on fakes).
+`python3 -I tools/test_harness_runner.py` (fake logs, fake and short real child processes, fake clocks, the
+worked example's session on fakes, and the case gate's refusals on fake clicks: `StageGate`, `RunnersGate`).
 
 **Worked example: `tools/h1a_sessions.py`.** On the library since plan 0056 Phase 1; its session table, clicks and
 sleeps are unchanged (the kept H1a logs were made by the pre-library revision at `main` `efac8f91`). It still writes

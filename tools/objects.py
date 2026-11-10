@@ -56,6 +56,7 @@ objgroup, objects, shrines), decoded with tools/excel_layouts.py, from --excel.
 
 The last lines are counters, oracles and the coverage the plan asks for. Exit 0 only if every check holds. Stdlib only.
 """
+import bisect
 import json
 import os
 import struct
@@ -417,9 +418,18 @@ class Checker:
     # --- the line stream ----------------------------------------------------------------------------------------
     def load(self, path):
         lines = []
+        self.gf_lns, self.gf_vals = [], []     # PLR lines' game frames (frame_bounds: object event 1)
         for ln, line in enumerate(open(path, errors="replace"), 1):
             tag, _, rest = line.partition(" ")
-            if tag == "LOGERR":
+            if tag == "PLR" and '"gf":' in rest:
+                try:
+                    gf = json.loads(rest).get("gf")
+                except ValueError:
+                    gf = None
+                if isinstance(gf, int):
+                    self.gf_lns.append(ln)
+                    self.gf_vals.append(gf)
+            elif tag == "LOGERR":
                 lines.append(("LOGERR", {"text": rest.strip()}, ln))
             elif line.startswith("# d2run seed="):
                 lines.append(("HDR", {"text": line.strip()}, ln))
@@ -1004,6 +1014,10 @@ class Checker:
                     if self.peek_tag() == "OIX":
                         ox = self.L[self.peek_j][1]["o"]
                         if ox["mode"] != u["mode"]:
+                            if fn == 17 and u["mode"] == 0 and ox["mode"] == 1:
+                                # OBJINIT_Waypoint (arrival-list match, 0x0054728C): SetMode 1 (0x00547295), then
+                                # object event 1 at frame + (FrameCnt1 << 8 >> 8) (0x005472AF-0x005472CA, no + 1)
+                                self.queue_ev1(u, o, self.frame_bounds(self.ln), 0)
                             self.set_mode(u, ox["mode"])
                             self.oracle("object mode set by a state InitFn (%d)" % fn)
                         if ox["it"] != u["it"]:
@@ -1051,6 +1065,44 @@ class Checker:
             fd = o["FrameDelta%d" % mode] & 0xFFFF
             fd = fd - 0x10000 if fd & 0x8000 else fd
             u["us"].rng(fd >> 3)
+
+    # --- object event 1 (plan 0063 Phase 2b, backlog h5d waypoint mode) -----------------------------------------
+    def frame_bounds(self, ln):
+        """The game frame (game +0xA8) at log line `ln`, as (lo, hi): the last PLR `gf` at or before the line and the
+        next one after it (None when the log has none on that side). Creation lines carry no frame; PLR lines do."""
+        k = bisect.bisect_right(self.gf_lns, ln)
+        lo = self.gf_vals[k - 1] if k else None
+        hi = self.gf_vals[k] if k < len(self.gf_vals) else None
+        return lo, hi
+
+    def queue_ev1(self, u, o, at, plus):
+        """An object event 1 queued at frame `at` + FrameCnt1 + `plus` (`at` = (lo, hi) bounds or an exact frame)."""
+        lo, hi = at if isinstance(at, tuple) else (at, at)
+        fc = o["FrameCnt1"] & 0xFFFFFF
+        u["ev1"] = (None if lo is None else lo + fc + plus, None if hi is None else hi + fc + plus)
+
+    def run_ev1(self, u, f, logged):
+        """sub_00581490_ObjEvOperateEnd (object event 1) before an operate at frame f: when the object is still in
+        mode 1 and its Objects row has Mode2 (+0x141), Unit+0x10 = 2 without UNIT_SetMode (no animation start, so no
+        Sync draw on the unit seed); when HasCollision2 (+0x122) is 0 it calls UNIT_CollUnmarkRect, which the grid
+        model does not take (no waypoint row has HasCollision in any mode). 0x00581497-0x005814C1. The event runs at
+        its due frame; an operate in the same frame or a bound the log cannot place is left to the log (oracle)."""
+        ev = u.get("ev1")
+        if ev is None or u["mode"] != 1:
+            return
+        lo, hi = ev
+        if hi is not None and hi < f:
+            u.pop("ev1")
+            if self.t.objs[u["cls"]]["Mode2"]:
+                u["mode"] = 2
+                self.hit("object event 1 before an operate: mode 1 -> 2, no draw (class %d)" % u["cls"])
+        elif lo is not None and lo > f:
+            self.hit("object event 1 not yet due at an operate (class %d)" % u["cls"])
+        else:
+            u.pop("ev1")
+            if logged in (1, 2):
+                u["mode"] = logged
+            self.oracle("object event 1 due frame not placed against the operate (mode taken from the log)")
 
     # --- InitFns ------------------------------------------------------------------------------------------------
     def init_1(self, u, o):
@@ -1841,6 +1893,8 @@ class Checker:
             return
         self.ok(parse_seed(d["us"]) == u["us"].s, "line %d: unit seed at operate %s, model %s (class %d)"
                 % (self.ln, d["us"], fmt(u["us"].s), u["cls"]))
+        if d.get("f") is not None:
+            self.run_ev1(u, d["f"], d["mode"])
         if u.get("restored") and (d["mode"], d["it"], d["sp"]) != (u["mode"], u["it"], u["sp"]):
             u["mode"], u["it"], u["sp"] = d["mode"], d["it"], d["sp"]
             self.oracle("object state restored on a revisit (saved interact, mode, sparkle)")
@@ -1867,6 +1921,9 @@ class Checker:
         else:
             dx = self.no_draw_operate(fn)
             self.ok(parse_seed(dx["os"]) == self.O.s, "line %d: OperateFn %d moved the object-region seed" % (self.ln, fn))
+            if fn == 23 and u["mode"] == 0 and dx["mode"] == 1 and d.get("f") is not None:
+                # WaypointOperate (0x00584E30): mode 0 -> SetMode 1, event 1 at frame + FrameCnt1 + 1 (0x00584E9F-0x00584EBE)
+                self.queue_ev1(u, self.t.objs[u["cls"]], d["f"], 1)
             u["mode"] = dx["mode"]
             u["us"].s = parse_seed(dx["us"])
             return

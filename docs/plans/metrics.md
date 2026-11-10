@@ -656,6 +656,9 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-11-10 | `lane/n64b` check | 0064 tool fixes | architect-check | 55 585 | 11 | 1 | — | accept with fixes (4) | misread 4 |
 | 2026-11-10 | `lane/n68a` | 0068 P1 | archivist | 219 684 | 74 | 12 | — | accept with fixes (Tier A, ADR-0027, 10) | overclaim 2, under-claim 1, misread 1, wrong anchor 1, stale cross-reference 1, bookkeeping splice 1, omission 1, other 2 |
 | 2026-11-10 | `lane/n68a` review | 0068 P1 | architect-review | 134 689 | 39 | 4 | — | accept with fixes (10) | overclaim 2, under-claim 1, misread 1, wrong anchor 1, stale cross-reference 1, bookkeeping splice 1, omission 1, other 2 |
+| 2026-11-10 | `lane/n63s` | 0063 P2b | reverser-static | 244 713 | 145 | 22 | Ghidra copy (r2 used) | accept with fixes (Tier B 2 + audit 2) | stale cross-reference 1, omission 2, overclaim 1 |
+| 2026-11-10 | `lane/n63s` check | 0063 P2b | architect-check | 66 889 | 11 | 1 | — | accept with fixes (2); E14 lifted | stale cross-reference 1, omission 1 |
+| 2026-11-10 | `lane/n63s` audit | 0063 P2b | architect-review | 123 720 | 44 | 4 | — | accept with fixes (2); no reject-grade miss | audit of lane/n63s: overclaim 1, omission 1 |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not

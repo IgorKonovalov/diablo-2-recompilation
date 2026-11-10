@@ -1706,6 +1706,10 @@
   the arrival by waypoint, `OBJINIT_Waypoint`'s arrival-list match) and is in mode 2 at its one operate (`OO0` at line
   4769, `wpchain`); no logged line moves it in between, so the change is presumably the queued object event 1, which the
   model does not apply (reverser entry of the review). None is on a row of this batch.
+  *2026-11-10 (plan 0063 Phase 2b, `lane/n63s`):* resolved. `tools/objects.py` (commit `9008ecd0`) now applies object event 1
+  (`sub_00581490_ObjEvOperateEnd`, mode 1 → 2 without a draw) before the operate; the rogue log checks with 0 mismatches
+  (`check-p63/`, [quests/0002 § 15](../quests/0002-travel.md#15-object-event-1-on-a-waypoint-plan-0063-phase-2b-2026-11-10-lanen63s);
+  fn:sub_00581490_ObjEvOperateEnd@0x00581490).
   - `check/flag80-check.txt` (the two kept logs with Harrogath's activation dumps, `h4a-s1-4908-foothills` and
     `h5b … 3906-harro`): `collision: 3320 checks, 0 mismatches`; `entry flag 0x80: entries 88, dumps 16, cells only its
     0x04 OR explains (model exact there) 1044`, all in level 109.
