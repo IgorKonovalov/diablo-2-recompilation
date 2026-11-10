@@ -167,3 +167,76 @@ tests), `docs/plans/0064-cleanroom/brief.md`.
   manual read of each finds no read of project material outside the sandbox. Run ruled valid. For the triage: the
   magic-find input (golden-set or spec defect) and the `nodrop` list shape (format doc, "per roll") carry 1 249 of the
   1 573 first-pass differences.
+
+### 2026-11-10 — Phase 3 triage, slices S1 and S2 (lane n64t, architect; Tier A review of the Phase 2 ledgers)
+
+**Verdict on the S1 and S2 ledgers: accept, 0 fixes.** Every first-pass difference of S2 is a row (rows 1 and 2 carry
+`nodrop` 1 113 and quality 136; `item`, `end_seed`, `count`, `pick`, `select` and `subtc` run on after a wrong quality
+roll on the same seed, and all reached 0 with rows 1 to 3 applied); S1 had none. The triage is the new last column of
+[S1](0064-cleanroom/S1.md) and [S2](0064-cleanroom/S2.md). "Implementer error" is used as the plan defines it, *the
+spec was clear*: in all five such rows the guess was right, and no row is a mistake by the implementer.
+
+| Slice | Spec defect | Missing finding | Golden-set defect | Implementer error (no defect) | Rows |
+|---|---|---|---|---|---|
+| S1 | 0 | 0 | 5 (1 sandbox tool, already fixed; 4 format) | 1 | 6 |
+| S2 | 1 | 1 | 10 (3 set, 7 format) | 4 | 16 |
+
+Rulings on the two large S2 rows:
+
+- **Magic find (rows 2 and 3): golden-set defect, to the archivist.** The specs are right: chain § Algorithm row G
+  lists the killer's magic find as an input, and items/quality M1–M3 says how it is composed (stat 80, plus the
+  owner's for a hireling). The kept logs hold it: `QKMF kmf=472` in every expansion chain2 log checked and
+  `kmf=250` in the classic ones (`p2r2-s1-4861-r2-xn1`, `-4891-r2-cn1`, `-4901-r2-cm1`), with `QMF` agreeing, and
+  `tools/quality.py` reads those lines, which is why the project's own replay never missed them. `tools/golden.py`
+  `drop_case` reads only `TCR`, `PLAYERS`, `PARTY` and `CAP`, so the case drops the input. The implementer's fitted
+  472 and 250 are the logged values. The conformance page's "the call's inputs (… source and killer) are given" is a
+  wrong sentence until the set carries them (spec-writer entry, dependent on the archivist's).
+- **`nodrop` shape (row 1): format defect (golden-set class), to the archivist.** items/tc D4 states correctly that
+  `ScaleNoDrop` runs only when `NoDrop ≠ 0`; the field is not that call but the logger's `NDP` line at 0x0055A9D9,
+  which every positive pick reaches, so a `NoDrop` 0 pick logs `[0, total]`. The format's "NoDrop scaling per roll",
+  linked to items/tc § F, describes the scaling and not the list. Not disputed: the field is the format's to define.
+
+Other rulings: S2 row 11 (the type test) is the one spec defect: items/quality S2 sends the reader to items/tc for
+`IsType`, items/tc uses the test in I1 and H8 without defining it, and data/excel G2 likewise; the answer is in the
+findings (items/0001 symbol table, archaeology/0002) and in items/affixes' C5c–C5d note. S2 row 14 is a missing
+finding, not a spec defect: no finding states which words `TC_ParseItemCell` writes for a unique or set cell
+(`tools/tc.py` models "index = the row's base, aux = the row", but a tool comment is not a statement). S1 rows 2 to 5
+and S2 rows 4 to 10 are conventions the format leaves to `golden.py`; all were guessed right.
+
+Backlog entries filed (7):
+
+- archivist: [drop-cases-magic-find](../backlog/2026-11-10-architect-archivist-plan-0064-drop-cases-magic-find.md)
+  (S2 rows 2–3: add the inputs, re-emit the set); [golden-trace-field-conventions](../backlog/2026-11-10-architect-archivist-plan-0064-golden-trace-field-conventions.md)
+  (S1 rows 2–5, S2 rows 1 and 4–10, items (a) to (k)). S1 row 1 was already fixed and closed:
+  [cleanroom-score-path-and-audit-heredocs](../backlog/archive/2026-11-10-architect-archivist-cleanroom-score-path-and-audit-heredocs.md).
+- spec-writer (one per spec): [items-tc-type-test](../backlog/2026-11-10-architect-spec-writer-plan-0064-items-tc-type-test.md),
+  [items-quality-type-test-link](../backlog/2026-11-10-architect-spec-writer-plan-0064-items-quality-type-test-link.md),
+  [data-excel-type-test-link](../backlog/2026-11-10-architect-spec-writer-plan-0064-data-excel-type-test-link.md),
+  [conformance-drop-inputs](../backlog/2026-11-10-architect-spec-writer-plan-0064-conformance-drop-inputs.md)
+  (waits for both archivist entries).
+- reverser: [parseitemcell-unique-entry-words](../backlog/2026-11-10-architect-reverser-plan-0064-parseitemcell-unique-entry-words.md)
+  (S2 row 14; static only; data/excel G4 and items/tc § A follow).
+
+**Disputed rows, for a second fresh implementer** (the orchestrator runs it; this lane did not spawn one):
+
+- S2 row 12, provisional class implementer error. Give the implementer items/quality § S1 (`cls`) and
+  `docs/tables/ItemTypes.md` only, with the sandbox's `ItemTypes.txt` and `PlayerClass.txt`. Question: "For an
+  ItemTypes row whose `Class` cell is `ama`, and for one whose `Class` cell is blank, what value does the record's
+  `Class` byte hold, and is `Class < 7` true for each? Quote the sentence you used." If the answer needs a guess,
+  the row becomes a spec defect for items/quality (name the `playerclass` index space beside S1).
+
+No other row is disputed: rows where the format (an archivist document) is unclear are golden-set defects by the
+plan's own class, not spec-versus-implementer questions.
+
+**What S3 and S4 wait for.** None of the spec-writer entries touches a spec S3 or S4 reads: the data/excel change is
+in § G (treasure classes), which neither slice uses, and rng and rng/seeds have no defect. So **no spec fix gates
+S3 or S4.** They should wait for the archivist's format entry, items **(b)** (which fields a case holds; extra
+candidate fields are not compared) and **(c)** (the digest's level set and canonical form): S3's `monsters.pool.*.N`
+and `monsters.pool.digest` and S4's `*_digest` fields rest on exactly the conventions S1 had to guess. Rebuild the S3
+and S4 sandboxes (`cleanroom.py make`) after that entry lands, and after the magic-find re-emit if it lands first, so
+the sandbox's format doc and the full set match what `score` reads.
+
+Left: Phase 4 (spec-writer, the four entries; the conformance one after the archivist's two), the archivist's two
+entries, the reverser's one, the row 12 question; then S3 and S4 Phase 2 runs and their own triage. Phase 5 for S2
+re-runs the `chain.G1.*` fields after the magic-find re-emit and the format entry, and for S1 the B1/B2 fields after
+the format entry.
