@@ -1308,10 +1308,10 @@ is the R2 case of the plan, and the run had 67 such acceptances. The plan 0014 w
   every server monster creation, a monster created dead;
   [drlg/0005 § Plan 0039 batch P1a](../../findings/drlg/0005-collision.md#plan-0039-batch-p1a-2026-10-16)).
 - [L] **The player after an act change** (§ F6) beyond the hold-out's 7 and 3, short of the floors of 10; a waypoint hop needs the
-  waypoint's position from the game. ([path/0006](../../findings/path/0006-holdout.md), [routed](../../backlog/2026-11-04-architect-reverser-0054-grid-tie-operations-in-order-own-hold.md))
+  waypoint's position from the game. ([path/0006](../../findings/path/0006-holdout.md), [routed](../../backlog/archive/2026-11-04-architect-reverser-0054-grid-tie-operations-in-order-own-hold.md))
 - [L] **The operations in order** (§ F7). Whether a model that applies the marks and unmarks in the game's order, with 0x005CAF8E as a
   corpse call, leaves 0 wrong plans: the 11's causes have not been tested on data they did not see, and the logger holds no
-  marked-state field and no line per ordinary mark. ([path/0006](../../findings/path/0006-holdout.md), [routed](../../backlog/2026-11-04-architect-reverser-0054-grid-tie-operations-in-order-own-hold.md))
+  marked-state field and no line per ordinary mark. ([path/0006](../../findings/path/0006-holdout.md), [routed](../../backlog/archive/2026-11-04-architect-reverser-0054-grid-tie-operations-in-order-own-hold.md))
 - ~~A monster relocated dead with `deadCol` 1; `UNIT_CollUnmark`'s second argument; `UnitCorpseColl`'s last call; how a monster brought back on the server is marked
   again.~~ Read from the code, no game ran: [§ F5](#f5-corpse-marks-by-copy-of-the-grid), [path/0008](../../findings/path/0008-corpse-remainders.md).
 - [L] **A relocated dead monster and a server revival, in a log.** Neither is logged with its grid, so § F5's readings of them stay code readings; the `COR` lines of a

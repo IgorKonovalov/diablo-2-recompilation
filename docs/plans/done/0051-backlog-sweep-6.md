@@ -505,7 +505,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Phase 2.** The three owner entries are annotated with the owner's 2026-10-25 decision ("stay open", this log's
     approval entry and the [run order](../README.md#run-order-set-2026-10-25-plans-00380052)'s owner decisions):
     [patch_d2](../../backlog/2026-10-11-archivist-architect+human-is-1-14d-s-patchd2-mpq.md) (parked),
-    [the Diablo pair](../../backlog/2026-10-17-architect-human-plan-0038-h6d-diablo-owner-pair.md) (optional, closed as not
+    [the Diablo pair](../../backlog/archive/2026-10-17-architect-human-plan-0038-h6d-diablo-owner-pair.md) (optional, closed as not
     played at plan 0038 Phase 3's items/quest-drops round if still unplayed) and
     [the plan 0044 owner play](../../backlog/2026-10-20-architect-human-plan-0044-owner-play-cases-mp12-mp14-mp17.md)
     (optional). The fourth was closed at approval. Phase 2's *Done when* is met.
