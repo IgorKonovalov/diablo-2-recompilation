@@ -173,8 +173,9 @@ destination).
   feed them are parsed, so formula columns (`itemstatcost`, `skills`, `skilldesc`, `missiles`) are compiled to
   offsets into these buffers at `.txt`-compile time. The bytecode itself is `data/calc`, not followed.
 - [I] Other excel-directory readers, outside `DATATBLS_LoadTable` (0x00481950, 0x00504430, 0x00669130, 0x00639420):
-  - `sounds.txt` and `soundenviron.txt` are read as text by `0x00481950` (client sound). `sounds.bin` is also loaded
-    through the table loader (`0x00659C16`).
+  - `sounds.txt` and `soundenviron.txt` are read as text by `0x00481950` (client sound). *(Superseded 2026-11-10,
+    plan 0068 P2: `sounds.bin` is loaded only by the `-txt`-only call at 0x00659C16; a stock run reads no `sounds`
+    file but the text, and only with sound on, [data/0006 § 2.4](0006-loaded-tables-and-bundles.md#24-sounds).)*
   - `D2Comp.cpp` (`0x00504430`) is a second copy of the loader, used for `weapons`/`armor`/`misc`/`itemtypes` by the
     character-graphics code (`0x00506000`). Its own bin/txt switch `0x0072EF2C` is also initialised to 1 and never
     written, so it reads `.bin` too.
@@ -697,7 +698,10 @@ statement above is tagged inferred and this section raises it, the tag and the r
   **Correction:** `hitclass.bin` is read whole in every run, `-txt` or not, by the character-graphics copy of the
   loader (`FILE_LoadWhole` returning to 0x0050448A, with `weapons`, `armor`, `misc`, `itemtypes`; § 3's D2Comp.cpp
   reader at 0x00504430), so "a stock run never loads them" holds for `DATATBLS_LoadTable` only. **Refinement:** a
-  2-byte `sounds` call is a further `-txt`-only call (the 18th; the full `sounds` table loads in every run). It is
+  2-byte `sounds` call is a further `-txt`-only call (the 18th). *(2026-11-10, plan 0068 P2: the clause "the full
+  `sounds` table loads in every run" that stood here is withdrawn. No `sounds` file is read in the four stock-mode
+  runs; the text read of 0x00481950 is gated on sound being up, and these runs pass `-ns`;
+  [data/0006 § 2.4](0006-loaded-tables-and-bundles.md#24-sounds).)* It is
   the `DATATBLS_LoadTable` call at 0x00659C16 (logged return 0x00659C1B), which the function starting at 0x00659BB0
   skips when `g_DataTblsCompileTxt` (0x0096C8B4) is 0 (the test at 0x00659BB8, `je` at 0x00659BC1).
   (fn:DATATBLS_LoadCodeLists@0x00612750, 0x006127DF, 0x0050448A, 0x00659BC1, 0x00659C16, run:2026-10-27-sweep-data-load)

@@ -663,6 +663,8 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-11-10 | `lane/n66i` review | 0066 P0 | architect-review | 181 329 | 87 | 10 | — | accept with fixes (9); owner Q3 threshold open | misread 4, omission 3, other 2 |
 | 2026-11-10 | `lane/n63r` | 0063 P2a | reverser-static | 390 301 | 193 | 32 | Ghidra copy | accept with fixes (Tier B, 5) | overclaim 2, omission 2, wrong anchor 1 |
 | 2026-11-10 | `lane/n63r` check | 0063 P2a | architect-check | 81 651 | 28 | 3 | — | accept with fixes (5) | overclaim 2, omission 2, wrong anchor 1 |
+| 2026-11-10 | `lane/n68r` | 0068 P2 | reverser-static | 341 147 | 209 | 28 | Ghidra copy | accept with fixes (Tier B, 7) | overclaim 3, miscount 1, omission 3 |
+| 2026-11-10 | `lane/n68r` check | 0068 P2 | architect-check | 98 040 | 28 | 3 | — | accept with fixes (7) | overclaim 3, miscount 1, omission 3 |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not
