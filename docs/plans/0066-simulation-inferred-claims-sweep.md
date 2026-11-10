@@ -94,3 +94,23 @@ classes are raised, and the specs are re-tagged.
 ## Implementation log
 
 _(lanes append dated entries as phases land: what was found, the confidence reached, surprises)_
+
+### 2026-11-10 — Phase 0, inventory (architect, `lane/n66i`)
+
+- **Done.** [`0066-inventory/`](0066-inventory/README.md) has one file per in-scope spec (29) and a README. Every one of
+  the 2 626 `[I]` has a row (2 618 spec lines; rows carry the line number and a count), and each file's *Count* sums to
+  its spec's front matter at `b5999f5e`. None of the 29 specs changed since `95a9ea30`. The row skeletons came from a
+  script; the classes, routes and batches came from the architect (player/party, the assembly) and eight helper copies,
+  one per cluster.
+- **Result:** Phase 1 static 1 605 statements (a-logs 722, c 388, c-emu 495) in 36 batches; Phase 2 harness 699 (a-run
+  346, b 353) in 31 batches; blocked 322 (d-2c 59, d-owner 67, d-edit 23, d-none 173).
+- **Surprise: the threshold empties Phase 2.** No harness batch reaches 20 claims per session (0.2 to 11, about 2.7 on
+  average over about 256 estimated sessions). The inventory README § 2 gives the review three options: keep it (Phase 2
+  does not run), count runner launches instead of sessions (a monsters/ai "bestiary tour" estimated at about 214
+  statements in 12 launches), or a monsters/ai harness sub-plan (this plan's open question).
+- **Judgment calls recorded in the inventory README § Conventions and § 5:** this plan's Phase 1 bullet reads "(b): a
+  static second source", but 0038's (b) is a session with a new piece and (c) is the static source; the inventory keeps
+  0038's meanings (Phase 1 = a-logs, c, c-emu; Phase 2 = a-run, b), and the review is asked to correct the bullet. No
+  value tier (batches ordered by claims per session). Guards and unreached branches routed to c-emu where the read set
+  looks declarable; OS-clock frame functions as c-emu pending a ruling.
+- **Next:** the Tier A review of Phase 0, with the owner's go for Phases 1 and 2. Phase 1 and Phase 2 have not started.
