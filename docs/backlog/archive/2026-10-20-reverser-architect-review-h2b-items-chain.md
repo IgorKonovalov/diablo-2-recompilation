@@ -4,7 +4,7 @@ to: architect
 date: 2026-10-20
 status: done
 context:
-  - ../../plans/0038-inferred-claims-sweep.md#implementation-log
+  - ../../plans/done/0038-inferred-claims-sweep.md#implementation-log
   - ../../findings/items/experiments.md#run2026-10-20-sweep-items-chain
   - ../../findings/items/0004-uniques-sets.md#plan-0038-batch-h2b-2026-10-20
   - ../../findings/items/0005-affixes.md#plan-0038-batch-h2b-2026-10-20

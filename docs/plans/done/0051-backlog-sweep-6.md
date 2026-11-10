@@ -87,7 +87,7 @@ take them as soon as the plan is approved.
   recipes their sessions need, so the batch that carries them spends no slot time on preparation.
 - **Items (4):**
   1. `2026-10-16-architect-reverser-plan-0038-s2c-review-harness-pieces.md`: prune the H2b piece (sock 44, met in part
-     at the H2b run, [plan 0038 log](../0038-inferred-claims-sweep.md#implementation-log), H2b filed and reviewed) and
+     at the H2b run, [plan 0038 log](0038-inferred-claims-sweep.md#implementation-log), H2b filed and reviewed) and
      annotate the four that remain with their batches (H6a, H6b, H6c, H6e1); the entry stays open for those;
   2. `2026-10-16-architect-reverser-plan-0038-phase-2-leftover-pieces.md`: write and test off-slot the two lines it asks
      for (a hover marker in `tools/gdb/calc.gdb` at the client caller `0x00486370`; a caller `ra` on `SUNITPRE` in

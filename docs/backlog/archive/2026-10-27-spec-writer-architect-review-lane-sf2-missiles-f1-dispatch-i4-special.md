@@ -4,7 +4,7 @@ to: architect
 date: 2026-10-27
 status: done
 context:
-  - ../../plans/0038-inferred-claims-sweep.md#implementation-log
+  - ../../plans/done/0038-inferred-claims-sweep.md#implementation-log
   - ../../specs/skills/missiles.md#f-the-packet-at-the-hit-missile_builddamage
   - ../../specs/skills/dispatch.md#i-the-skill-packet
   - ../../specs/monsters/special.md#j-other-entry-paths-and-pre-existing-mods

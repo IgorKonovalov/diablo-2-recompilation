@@ -798,7 +798,7 @@ seeds), the superunique build and the client name roll are all predicted.
 
 ## Plan 0038 batch S3a (2026-10-16)
 
-Static batch S3a of [plan 0038](../../plans/0038-inferred-claims-sweep.md) took 14 inferred statements of
+Static batch S3a of [plan 0038](../../plans/done/0038-inferred-claims-sweep.md) took 14 inferred statements of
 [monsters/special](../../specs/monsters/special.md), rows of [the inventory](../../plans/0038-inventory/monsters-special.md)
 (spec lines `Lnnn` at `main` `b349849`). No game ran. The check is `python3 -I tools/mon_sweep.py special` (with `tables`): it
 runs `tools/monspawn.py`'s checker with `tools/monspecial.py` on the 23 kept logs that carry the plan 0018 tags
@@ -875,7 +875,7 @@ post-create mods by BaseId: 24 (brute2) 13 on 5 units, 91 (scarab1) 20 on 1, 436
 
 ## Plan 0038 batch H4b (run:2026-10-16-sweep-monsters-b)
 
-Harness batch H4b of [plan 0038](../../plans/0038-inferred-claims-sweep.md) took 18 rows (20 statements) of
+Harness batch H4b of [plan 0038](../../plans/done/0038-inferred-claims-sweep.md) took 18 rows (20 statements) of
 [monsters/special](../../specs/monsters/special.md) ([inventory](../../plans/0038-inventory/monsters-special.md); spec
 lines `Lnnn` at `main` `e556014`). Record: [experiments.md § run:2026-10-16-sweep-monsters-b](experiments.md#run2026-10-16-sweep-monsters-b).
 Checks: `tools/sweep_h4b.py` (`aura`, `names`, `restore`, `monplace`, `watch`) and `tools/monstats.py check` (chaining
@@ -956,7 +956,7 @@ UniqueTitle watch: load 5, free 3, no other access
 
 ## Plan 0038 batch S3b (2026-10-16)
 
-Static batch S3b of [plan 0038](../../plans/0038-inferred-claims-sweep.md) took 1 inferred statement of
+Static batch S3b of [plan 0038](../../plans/done/0038-inferred-claims-sweep.md) took 1 inferred statement of
 [monsters/special](../../specs/monsters/special.md), a row of [the inventory](../../plans/0038-inventory/monsters-special.md) (spec
 line `Lnnn` at `main` `7df5039`). No game ran. The check is `python3 -I tools/sweep_s3b.py special`: objdump pins (the
 second tool) and the `XF`, `MU` and `HD0` lines of the 23 kept logs of run:2026-10-14-mon-special and run:2026-10-15-mon-stats
@@ -1087,7 +1087,7 @@ What it adds to § 7 here:
 
 ## Plan 0038 batch H4a (run:2026-10-21-sweep-monsters-a)
 
-Harness batch H4a of [plan 0038](../../plans/0038-inferred-claims-sweep.md) took 21 rows (22 statements) of
+Harness batch H4a of [plan 0038](../../plans/done/0038-inferred-claims-sweep.md) took 21 rows (22 statements) of
 [monsters/special](../../specs/monsters/special.md) ([inventory](../../plans/0038-inventory/monsters-special.md); spec
 lines `Lnnn` at `main` `1d0262a`). Record: [experiments.md § run:2026-10-21-sweep-monsters-a](experiments.md#run2026-10-21-sweep-monsters-a).
 Logger `tools/gdb/mon-h4a.gdb` (mon-stats.gdb unchanged, plus `tools/gdb/mon-h4a.py`: `SUC`/`SUCR` at every call of the

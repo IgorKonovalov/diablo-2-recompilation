@@ -491,7 +491,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 
 - **2026-10-17 — post-close: the P2 review follow-ups, reviewed with `lane/rbs3` (architect).** The static answers are in
   [drlg/0009 § 11.1](../../findings/drlg/0009-room-lifecycle.md#111-static-follow-ups-of-the-phase-2-review-lanerbs3);
-  the full review is in the [plan 0038 log](../0038-inferred-claims-sweep.md#implementation-log) (`lane/rbs3` review).
+  the full review is in the [plan 0038 log](0038-inferred-claims-sweep.md#implementation-log) (`lane/rbs3` review).
   The plan stays closed; nothing here reopens a phase.
   - (1) **Town-follow case: stays a named Phase 2 shortfall.** The path planner refuses a town target room for a
     non-NPC monster (`sub_006483A0`, read at the review), but three routes stay open. No P2 addendum and no owner-play
@@ -513,7 +513,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 
 - **2026-10-17 — post-close: the town-follow static remainder and the close follow-ups, reviewed with `lane/rbs4`
   (architect).** The reading is [drlg/0009 § 11.2](../../findings/drlg/0009-room-lifecycle.md#112-the-town-follow-static-remainder-lanerbs4);
-  the full review is in the [plan 0038 log](../0038-inferred-claims-sweep.md#implementation-log) (`lane/rbs4` review).
+  the full review is in the [plan 0038 log](0038-inferred-claims-sweep.md#implementation-log) (`lane/rbs4` review).
   The plan stays closed.
   - (1) **Town-follow: now a plan 0038 harness batch, H7a (`lifecycle`).** § 11.2 shows two routes in by code reading,
     all `[I]`: the walk's room update `PathRoomUpdate` (0x0064FAD0) has no town test, so the planner's target test is the

@@ -4,7 +4,7 @@ to: reverser
 date: 2026-10-17
 status: done
 context:
-  - ../../plans/0038-inferred-claims-sweep.md#implementation-log
+  - ../../plans/done/0038-inferred-claims-sweep.md#implementation-log
   - 2026-10-17-reverser-architect-review-lane-rbs-static-sweep.md
 resolution: "2026-10-20 (lane/p49r, plan 0049 P1): the list is pruned and emptied. Done earlier, or moved: the 0042 Phase 0/1 readers and additions, the 0043 Phase 1 inputs and Q23 (their plans). Moved: the 0037 resume-lane follow-ups and the state-52 / event-9 reading, to plans 0045 and 0047 (their own entries). Done in this pass, each entry closed: S1a tool (a) and (c), S1b (a) and (b), H4b (a) and (b), the S2c static leftovers, P1c residues (a)–(e), 0040 P1 (a)–(c), the H5c Release wording, the S1a creation question, the 0039 P1c review follow-ups, and 0042 P1 (d). For (d), sub_0056EDE0_MissileCreateAt creates missiles 288, 332 and 625 ([quests/0001 § 7](../../findings/quests/0001-progression.md)). S2a tc 64 has no reverser part left; its entry stays open for the spec-writer. Out of plan 0049, optional, left open in their own entries: plan 0041 op 6/7 emulation and S1e (b)."
 ---

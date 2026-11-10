@@ -4,7 +4,7 @@ to: reverser
 date: 2026-10-17
 status: done
 context:
-  - ../../plans/0038-inferred-claims-sweep.md#implementation-log
+  - ../../plans/done/0038-inferred-claims-sweep.md#implementation-log
 resolution: "Fixed on lane/arc5 (2026-10-17): RECIPE_BASES gains combatow, combatsorh and six other legacy recipes plus the 0042/0044 sets; test_d2s.py 45 tests OK. If lane/rbs2 adds the same entries, keep one copy at merge."
 ---
 

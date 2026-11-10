@@ -6,7 +6,7 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
 
 1. **A new code reading is `[I]`.** `[C]` needs a named second source (a reproduction of logged calls, a
    writer/reader pair, a full-table check, an independent tool). Don't name a meaning the code does not
-   give. Seen: S1e rows 51/64 ([0038](../../../../docs/plans/0038-inferred-claims-sweep.md), 2026-10-17); `0x400` "good/evil"
+   give. Seen: S1e rows 51/64 ([0038](../../../../docs/plans/done/0038-inferred-claims-sweep.md), 2026-10-17); `0x400` "good/evil"
    ([0040](../../../../docs/plans/done/0040-drlg-room-lifecycle.md) P1 review); a meaning word ("the missile count", "the
    charge speed", "moves the unit's path to its owner's point") inside a `[C]` of the batch's column-reader entry (`lane/p46m6`, `lane/p46m8` and `lane/p46m15` reviews,
    [0046](../../../../docs/plans/done/0046-skills-function-catalogue.md)); "the unit's full stat" for the `s` of anim/0002's ADR-0015 bonus map, where the map
@@ -34,7 +34,7 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
    [0050](../../../../docs/plans/done/0050-animation-frame-timing.md)); `PlrModeSkillFrame` writing the event index "at every
    player frame event" where a unit with no used skill returns 2 first (`lane/p50a` review, 0050); "the periodic save
    does not save without a host callback" with a logger at the entry only, where `0x00730FFC` and the time tests come
-   before the callback test (`lane/h1b` review, [0038](../../../../docs/plans/0038-inferred-claims-sweep.md)); "no code reads a class-7
+   before the callback test (`lane/h1b` review, [0038](../../../../docs/plans/done/0038-inferred-claims-sweep.md)); "no code reads a class-7
    player's column" as the d-none reason for `EXP_GetThreshold`'s clamp, without its other out-of-range input (the −1 of
    the callers' inlined null-unit test; `lane/h1a` review, 0038); the brain chest's absence filed "Answered" from its room never activating in the matching copy, where no log has that room active, so the listing once it activates stays `[I]` until `brain4c` (`lane/rdp` review, 0038); then `brain4c`'s "listed once its room is active" `[C]` from a log with the room active in both copies, where `brain4` had it active in one copy and no listing (scoped to "in both copies", `lane/h6e2f` review, 0038). The legacy header's version refusal called "a case `D2S_ReadSave` never sends", where its unsigned `cmp ebx, 0x5B; jbe` sends 0..70 too and only the half above `0x60` is unreachable (`lane/rlg` review, 0038). Vend 14's "the trade-first order is never taken" from six runs, without the read of the flag's writes that carries it past them (store `+0x21` cleared only at 0x005770C5 and rebuilt at once; `lane/h6c` review, 0038).
 5. **An existing reviewed symbol name wins.** Merge `main` and grep `re/symbols.csv` for every address
@@ -63,7 +63,7 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
    Seen: special 65 (H4b), sock 14 (S2c), special 43 (S3b), all 0038; five `[C]` bullets of drlg/0009 § 11 with an
    unreached branch inside (the wanderer gate's `+0x78`, the item drop on expiry; [0040](../../../../docs/plans/done/0040-drlg-room-lifecycle.md) P2 review);
    sell's seed with five refusal tests unreached (0043 P2b review); spawn 41 filed raised with its "other sizes" half
-   d-none (`lane/h5d` review, [0038](../../../../docs/plans/0038-inferred-claims-sweep.md)); the language clamp filed
+   d-none (`lane/h5d` review, [0038](../../../../docs/plans/done/0038-inferred-claims-sweep.md)); the language clamp filed
    raised on a made-up `use` byte of 0x0E, where only edited data reaches it (ADR-0010: that half stays `[I]`,
    d-edit; `lane/h3b` review, 0038). A `min` met on one side only (`min(255, max stack)` at a max stack of 160), a
    "every entry" refill on a one-entry wand, an evaluated-or-base stat 73 equal on both swords, and "a forced row
@@ -75,7 +75,7 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
    "the only RNG call" of a call graph with 3 indirect calls unfollowed, and the mode graph's 118, left out of the
    text (`lane/p50a` review, [0050](../../../../docs/plans/done/0050-animation-frame-timing.md)); a logged load chain written
    without the two frames between `PlayerLoad` and the logged returns (`PlayerLoadFromFile`, `PlayerLoadFromClient`;
-   `lane/h1b` review, [0038](../../../../docs/plans/0038-inferred-claims-sweep.md)); an undisassembled reader of the
+   `lane/h1b` review, [0038](../../../../docs/plans/done/0038-inferred-claims-sweep.md)); an undisassembled reader of the
    host callback, 0x0052BFC0, left "callers unfollowed" when one raw scan settles it, and the nearest indexed store
    (0x0052C134) left unbounded beside a "no block write" claim (`lane/r1h` review, 0038); a logged `EXCEL_FindName`
    return (0x0065A33B) credited to `TC_LoadAll` where it lies in `TC_BuildChestTable`, which `TC_LoadAll` calls
@@ -120,12 +120,12 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
     summary. Seen: the radius of hits 24, 44 and 14 in a callee-saved register (`lane/p46m3` review); hit 52's row 0
     (`arrow`) and hits 51/52's later creations under `[C]` (`lane/p46m4` review, both
     [0046](../../../../docs/plans/done/0046-skills-function-catalogue.md)); the Inifuss tree's `bks` filed "created … quality 2" from
-    the `QDI` argument, where the next `ICQ` line shows the creation at 7 (`lane/h6e2` review, [0038](../../../../docs/plans/0038-inferred-claims-sweep.md)). P1b-1's "`N` is the interval between two held actions" filed `[C]` as a server rule, where every restart is in its request's frame, the request being an oracle (the client's cadence), and 23 casts restarted before `T + N`; also an uncompared path (a catalogue queue the logger does not read) called "a boundary oracle": an oracle is a logged output taken as given, ADR-0004 (`lane/p50e` review, 0050).
+    the `QDI` argument, where the next `ICQ` line shows the creation at 7 (`lane/h6e2` review, [0038](../../../../docs/plans/done/0038-inferred-claims-sweep.md)). P1b-1's "`N` is the interval between two held actions" filed `[C]` as a server rule, where every restart is in its request's frame, the request being an oracle (the client's cadence), and 23 casts restarted before `T + N`; also an uncompared path (a catalogue queue the logger does not read) called "a boundary oracle": an oracle is a logged output taken as given, ADR-0004 (`lane/p50e` review, 0050).
 14. **Raise the symbols your run checks.** A function whose logged return the run compares with a model or a table row
     (and whose consumer agrees) is `[C]` in `re/symbols.csv` and the finding's Functions table, evidence column moved
     to the finding that holds the claim; don't leave it to the review. Seen: five H2b symbols (`lane/h2b` review fix 4);
     `sub_00633680_ItemIndexByCode`, `lsd ` → 31 logged 141 times (`lane/h2c` review, both
-    [0038](../../../../docs/plans/0038-inferred-claims-sweep.md)). Scope: the return logged by the game on its own data. An
+    [0038](../../../../docs/plans/done/0038-inferred-claims-sweep.md)). Scope: the return logged by the game on its own data. An
     ADR-0015/0021 emulation over a declared scratch image confirms the map, not the role the name states, and raises no
     symbol row (`lane/p46m12` review ruling 7, [0046](../../../../docs/plans/done/0046-skills-function-catalogue.md)).
     Seen also: `D2S_WriteMercItems` left I beside a raised `D2S_ReadMercItems` and `D2S_WriteCorpses` on the same evidence (`lane/h1b`
@@ -146,7 +146,7 @@ categories are those of the [lane run ledger](../../../../docs/plans/metrics.md)
     the step product's wrap from `v` 32 768 stated without its sign case (a component of +4096 wraps, −4096 reaches
     −2³¹ exactly), and the collision walk's "at most 10 crossings" without what the 10th does (the full step taken
     unchecked, flag `0x8`) or the halved increment it walks by (`lane/p50d` review,
-    [0050](../../../../docs/plans/done/0050-animation-frame-timing.md)); the saved name's `first + name` u16 add left without its bound (for the Rogue, 62 124 fits, 62 125 wraps to 0 and is kept; `lane/h6f` review, [0038](../../../../docs/plans/0038-inferred-claims-sweep.md)).
+    [0050](../../../../docs/plans/done/0050-animation-frame-timing.md)); the saved name's `first + name` u16 add left without its bound (for the Rogue, 62 124 fits, 62 125 wraps to 0 and is kept; `lane/h6f` review, [0038](../../../../docs/plans/done/0038-inferred-claims-sweep.md)).
 16. **A runner's readiness wait keys on a line that appears before the first case** (the logger's ready or armed
     line, or `PLR` when the steps enter the game), never on one only a case produces, and it returns when the driver
     has exited. Seen: `tools/h1a_sessions.py` and `h1c_sessions.py` waited for three `TBL` lines, which only the

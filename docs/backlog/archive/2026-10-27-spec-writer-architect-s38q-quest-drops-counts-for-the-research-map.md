@@ -4,7 +4,7 @@ to: architect
 date: 2026-10-27
 status: done
 context:
-  - ../../plans/0038-inferred-claims-sweep.md#implementation-log
+  - ../../plans/done/0038-inferred-claims-sweep.md#implementation-log
   - ../../specs/items/quest-drops.md
 resolution: "Research map updated at the lane/s38q review: items/quest-drops row rewritten (C 159 / I 80 / L 2 after the review's four inline [I], updated 2026-10-27, Phase 3 done); objects row's Khalim clause rewritten for all three chests and bbb (counts unchanged); items/economy counts unchanged."
 ---

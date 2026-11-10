@@ -5,7 +5,7 @@ date: 2026-10-27
 status: open
 context:
   - ../findings/hirelings/0001-hirelings.md#plan-0038-batch-h6f-run2026-10-27-sweep-hirelings
-  - ../plans/0038-inferred-claims-sweep.md#implementation-log
+  - ../plans/done/0038-inferred-claims-sweep.md#implementation-log
 resolution: ""
 ---
 

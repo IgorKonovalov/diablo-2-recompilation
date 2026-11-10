@@ -4,7 +4,7 @@ to: architect
 date: 2026-10-27
 status: done
 context:
-  - ../../plans/0038-inferred-claims-sweep.md#implementation-log
+  - ../../plans/done/0038-inferred-claims-sweep.md#implementation-log
   - ../../specs/objects/README.md
 resolution: "Research-map objects row rewritten at the lane/s38o review: C 189 / I 62 / L 4 (the lane's 188 / 56 / 4 plus the review's fixes), updated 2026-10-27; wiki/objects and wiki/seed-to-world based_on 2026-10-27."
 ---

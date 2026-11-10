@@ -324,7 +324,7 @@ flowchart TD
 
 ## Plan 0038 batch S4a (2026-10-16)
 
-Static batch S4a of [plan 0038](../../plans/0038-inferred-claims-sweep.md) (Phase 1), rows of
+Static batch S4a of [plan 0038](../../plans/done/0038-inferred-claims-sweep.md) (Phase 1), rows of
 [inventory drlg-README](../../plans/0038-inventory/drlg-README.md) (the drlg/README statements on this finding).
 No new session. `tools/drlg.py gen` (unchanged) was re-run with counters added by `python3 -I tools/sweep_s4a.py
 <check>` over the gen-family logs: run:2026-10-12-drlg-gen (6), run:2026-10-15-drlg-maze (15),
@@ -371,7 +371,7 @@ Reclassified:
 
 ## Plan 0038 batch S4b (2026-10-16)
 
-Static batch S4b of [plan 0038](../../plans/0038-inferred-claims-sweep.md) (Phase 1), rows of [inventory drlg-README](../../plans/0038-inventory/drlg-README.md). No session was played. The second tool next to Ghidra is GNU objdump 2.47, walked by `tools/sweep_s4b.py` (recursive descent; see its docstring). The checks are rerunnable with `python3 -I tools/sweep_s4b.py <check>`. Where a statement above is tagged inferred and this section raises it, the tag and the second source given here are the current ones, and the wording above is unchanged.
+Static batch S4b of [plan 0038](../../plans/done/0038-inferred-claims-sweep.md) (Phase 1), rows of [inventory drlg-README](../../plans/0038-inventory/drlg-README.md). No session was played. The second tool next to Ghidra is GNU objdump 2.47, walked by `tools/sweep_s4b.py` (recursive descent; see its docstring). The checks are rerunnable with `python3 -I tools/sweep_s4b.py <check>`. Where a statement above is tagged inferred and this section raises it, the tag and the second source given here are the current ones, and the wording above is unchanged.
 
 - **Row 11** (spec L339) **raised.** [C] `PresetInstanceCreate` has three call sites (0x00668129 `PresetLevelBuild`,
   0x00673A7E `MazeLevelRooms`, 0x006751C9 `OutdoorRoomsCreate`), and `PresetSetFile` one (0x006751DB): Ghidra and the

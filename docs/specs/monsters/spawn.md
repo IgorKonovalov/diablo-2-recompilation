@@ -1001,7 +1001,7 @@ draw (leader seed → `219966E1:68C8AB12`).
   three owner-played games (`-seed` 12345 and 1, normal and hell, Acts I–V), 516 room activations, 169 populated rooms,
   916 creations, 4 champion packs, 20 unique groups, 110 302 checks, 0 mismatches; the oracles; the 11 end-to-end
   rooms; the unit-seed outliers.
-- Plan 0038 sweep ([plan 0038](../../plans/0038-inferred-claims-sweep.md)): the batch sections of
+- Plan 0038 sweep ([plan 0038](../../plans/done/0038-inferred-claims-sweep.md)): the batch sections of
   [monsters/0002](../../findings/monsters/0002-room-population.md): [S3a](../../findings/monsters/0002-room-population.md#plan-0038-batch-s3a-2026-10-16) (kept logs: the box rectangle, the special count,
   the `0x80` bypass, `/players`, classic passes, the guard counts), [H4b](../../findings/monsters/0002-room-population.md#plan-0038-batch-h4b-run2026-10-16-sweep-monsters-b)
   (run:2026-10-16-sweep-monsters-b: the tick on every room, `tentaclehead` minions, `PartyMin` = `PartyMax`, the

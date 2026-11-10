@@ -370,7 +370,7 @@ if (g_nTreasureClasses > 0xFFFE) fatal();
 
 ## Plan 0038 batch S1b (2026-10-16)
 
-Static batch S1b of [plan 0038](../../plans/0038-inferred-claims-sweep.md) (Phase 1), the data/excel rows of
+Static batch S1b of [plan 0038](../../plans/done/0038-inferred-claims-sweep.md) (Phase 1), the data/excel rows of
 [inventory data-excel](../../plans/0038-inventory/data-excel.md) whose finding is this one (the archive rows are in
 [data/0002](0002-mpq-precedence.md#plan-0038-batch-s1b-2026-10-16), the string-key and compiler rows in
 [data/0003](0003-string-tables.md#plan-0038-batch-s1b-2026-10-16) and [data/0004](0004-cell-converters.md#plan-0038-batch-s1b-2026-10-16)).
@@ -602,7 +602,7 @@ Type `0x1A` is a bit flag: `len` is the bit number, `offset` the flag field.
 
 ## Plan 0038 batch S1e (2026-10-17)
 
-Static batch S1e of [plan 0038](../../plans/0038-inferred-claims-sweep.md), rows 16, 36, 37, 40, 43 and 44 of
+Static batch S1e of [plan 0038](../../plans/done/0038-inferred-claims-sweep.md), rows 16, 36, 37, 40, 43 and 44 of
 [inventory data-excel](../../plans/0038-inventory/data-excel.md). No session was played. Method: the functions under
 Ghidra's p-code emulator against models ([ADR-0015](../../adrs/0015-emulated-reproduction.md)),
 [run:2026-10-17-sweep-emu](experiments.md#run2026-10-17-sweep-emu) family `excel` (5 500 calls) and, for the 31-byte
@@ -672,7 +672,7 @@ example by matching the `Id` ordinal at `+0x000`.
 
 ## Plan 0038 batch H3b (run:2026-10-27-sweep-data-load)
 
-Harness batch H3b of [plan 0038](../../plans/0038-inferred-claims-sweep.md), the loader and lookup rows of
+Harness batch H3b of [plan 0038](../../plans/done/0038-inferred-claims-sweep.md), the loader and lookup rows of
 [inventory data-excel](../../plans/0038-inventory/data-excel.md) and [data-README](../../plans/0038-inventory/data-README.md),
 and data-excel row 30's remainder (S1b review). Seven program runs on slot 2 with gdb on the game before its startup
 code (`tools/d2run.py --early`); sessions, loose files and commands as in

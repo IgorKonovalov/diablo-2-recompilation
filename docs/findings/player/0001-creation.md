@@ -628,7 +628,7 @@ wand) end in `ITEMS_RollStaffMods`, the item model's boundary oracle, and are co
 
 ## Plan 0038 batch S3a (2026-10-16)
 
-Static batch S3a of [plan 0038](../../plans/0038-inferred-claims-sweep.md) took 5 inferred statements of
+Static batch S3a of [plan 0038](../../plans/done/0038-inferred-claims-sweep.md) took 5 inferred statements of
 [player/creation](../../specs/player/creation.md), rows of [the inventory](../../plans/0038-inventory/player-creation.md) (spec
 lines `Lnnn` at `main` `b349849`). No game ran. The check is `python3 -I tools/mon_sweep.py player` over the 23 session logs of
 run:2026-10-16-player (sha256 against `player-run-manifest.txt`, itself `ee2ce6bf…`; the 48 load logs carry none of these lines);
@@ -663,7 +663,7 @@ kills 32: stat 85 0, XP_Compute's return = the value after XP_ApplyExpRatio in 3
 
 ## Plan 0038 batch S3b (2026-10-16)
 
-Static batch S3b of [plan 0038](../../plans/0038-inferred-claims-sweep.md) took 3 inferred statements of
+Static batch S3b of [plan 0038](../../plans/done/0038-inferred-claims-sweep.md) took 3 inferred statements of
 [player/creation](../../specs/player/creation.md), rows of [the inventory](../../plans/0038-inventory/player-creation.md) (spec
 lines `Lnnn` at `main` `7df5039`). No game ran. The check is `python3 -I tools/sweep_s3b.py player`: objdump pins of the
 pinned image (the second tool) and the stock `experience` and `charstats` tables, `.txt` and `.bin`.
@@ -873,7 +873,7 @@ tables`; the string indices are resolved with `tools/tbl.py index workspace/merg
 
 ## Plan 0038 batch H1a (run:2026-10-27-sweep-d2s-load)
 
-Harness batch H1a of [plan 0038](../../plans/0038-inferred-claims-sweep.md) took six rows of
+Harness batch H1a of [plan 0038](../../plans/done/0038-inferred-claims-sweep.md) took six rows of
 [player/creation](../../specs/player/creation.md) ([inventory](../../plans/0038-inventory/player-creation.md), rows 1, 8,
 9, 11, 20, 34); the save rows are in
 [save/0001](../save/0001-d2s-io.md#plan-0038-batch-h1a-run2026-10-27-sweep-d2s-load), with the method (tool-built
@@ -905,7 +905,7 @@ saves swapped in after the character screen read its list) and the counts of `wo
 
 ## Plan 0038 batch H1c (run:2026-10-27-sweep-d2s-legacy)
 
-Harness batch H1c of [plan 0038](../../plans/0038-inferred-claims-sweep.md), row 1 of
+Harness batch H1c of [plan 0038](../../plans/done/0038-inferred-claims-sweep.md), row 1 of
 [inventory player-creation](../../plans/0038-inventory/player-creation.md) (H1a's shortfall). Run record: [save/experiments](../save/experiments.md#run2026-10-27-sweep-d2s-legacy);
 counts from its `check/sweep-h1c-check.txt` (272 comparisons over 7 cases, 0 failing). The load is of a tool-built save
 (`leg87new`: version 87, header status bit 0 set, the rest of the file a full character; ADR-0013 § Neutral).
@@ -925,7 +925,7 @@ counts from its `check/sweep-h1c-check.txt` (272 comparisons over 7 cases, 0 fai
 
 ## Plan 0038 batch H3b (run:2026-10-27-sweep-data-load)
 
-Harness batch H3b of [plan 0038](../../plans/0038-inferred-claims-sweep.md), data-excel row 74 of
+Harness batch H3b of [plan 0038](../../plans/done/0038-inferred-claims-sweep.md), data-excel row 74 of
 [inventory data-excel](../../plans/0038-inventory/data-excel.md); method as in
 [data/0004 § Plan 0038 batch H3b](../data/0004-cell-converters.md#plan-0038-batch-h3b-run2026-10-27-sweep-data-load)
 (charstats dumped at `DATATBLS_LoadAll`'s return and at the excel unload in six runs,
@@ -940,7 +940,7 @@ Harness batch H3b of [plan 0038](../../plans/0038-inferred-claims-sweep.md), dat
 
 ## Plan 0038 batch H6g (run:2026-10-27-sweep-player)
 
-Harness batch H6g (`player`) of [plan 0038](../../plans/0038-inferred-claims-sweep.md) takes 17 statements of
+Harness batch H6g (`player`) of [plan 0038](../../plans/done/0038-inferred-claims-sweep.md) takes 17 statements of
 [player/creation](../../specs/player/creation.md): rows 2-4, 12, 16, 18, 22, 23, 25, 27, 28 (2), 29, 30, 32, 33 and 35 of
 [the inventory](../../plans/0038-inventory/player-creation.md). Run record
 [run:2026-10-27-sweep-player](experiments.md#run2026-10-27-sweep-player): 9 kept logs on slot 2 (stock data, tool-built

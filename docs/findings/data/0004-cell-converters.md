@@ -226,7 +226,7 @@ for (g = 0; g < nGems; g++) {
 
 ## Plan 0038 batch S1b (2026-10-16)
 
-Static batch S1b of [plan 0038](../../plans/0038-inferred-claims-sweep.md), the compiler rows of
+Static batch S1b of [plan 0038](../../plans/done/0038-inferred-claims-sweep.md), the compiler rows of
 [inventory data-excel](../../plans/0038-inventory/data-excel.md). No session was played; method and log manifest as in
 [data/0001 § Plan 0038 batch S1b](0001-excel-loader.md#plan-0038-batch-s1b-2026-10-16). The checks are
 `python3 -I tools/sweep_s1b.py compile` and `survey`. Where a statement above is tagged inferred and this section
@@ -273,7 +273,7 @@ else compiled.
 
 ## Plan 0038 batch S1e (2026-10-17)
 
-Static batch S1e of [plan 0038](../../plans/0038-inferred-claims-sweep.md), rows 56, 60, 64 and 66 of
+Static batch S1e of [plan 0038](../../plans/done/0038-inferred-claims-sweep.md), rows 56, 60, 64 and 66 of
 [inventory data-excel](../../plans/0038-inventory/data-excel.md). No session was played. Method: the converters under
 Ghidra's p-code emulator against `tools/sweep_s1e.py`'s models ([ADR-0015](../../adrs/0015-emulated-reproduction.md)),
 [run:2026-10-17-sweep-emu](experiments.md#run2026-10-17-sweep-emu). `EXCEL_ParseTxt` (family `parsetxt`, 400 calls)
@@ -313,7 +313,7 @@ inferred and this section raises it, the tag and the second source given here ar
 
 ## Plan 0038 batch S1f (2026-10-17)
 
-Static batch S1f of [plan 0038](../../plans/0038-inferred-claims-sweep.md), the c-emu rows of the
+Static batch S1f of [plan 0038](../../plans/done/0038-inferred-claims-sweep.md), the c-emu rows of the
 [inventory § 2.6 S1f table](../../plans/0038-inventory/README.md#26-moves-made-by-the-batch-reviews). No session was
 played. Method: the function runs under Ghidra's p-code emulator against `tools/sweep_s1f.py`'s models, under
 [ADR-0015](../../adrs/0015-emulated-reproduction.md): [run:2026-10-17-sweep-emu2](experiments.md#run2026-10-17-sweep-emu2).
@@ -371,7 +371,7 @@ never reached. Spec writes on image addresses: the security cookie (no output de
 
 ## Plan 0038 batch H3b (run:2026-10-27-sweep-data-load)
 
-Harness batch H3b of [plan 0038](../../plans/0038-inferred-claims-sweep.md), data-excel row 71 of
+Harness batch H3b of [plan 0038](../../plans/done/0038-inferred-claims-sweep.md), data-excel row 71 of
 [inventory data-excel](../../plans/0038-inventory/data-excel.md). The logger dumps the whole record arrays of items
 (`g_pItems`, the combined 659 records), monstats (734), levels (137), charstats (7) and gems (68) at
 `DATATBLS_LoadAll`'s return and again at the excel unload when the game is left (the call at 0x0044B971), in six runs

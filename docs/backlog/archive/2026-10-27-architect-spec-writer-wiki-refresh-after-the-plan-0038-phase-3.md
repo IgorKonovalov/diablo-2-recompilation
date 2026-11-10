@@ -4,7 +4,7 @@ to: spec-writer
 date: 2026-10-27
 status: done
 context:
-  - ../../plans/0038-inferred-claims-sweep.md#phase-3--re-tag-the-specs
+  - ../../plans/done/0038-inferred-claims-sweep.md#phase-3--re-tag-the-specs
   - ../../wiki/monsters.md
   - ../../wiki/seed-to-world.md
   - ../../wiki/levels.md

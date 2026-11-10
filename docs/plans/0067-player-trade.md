@@ -1,6 +1,6 @@
 # 0067 — Player trade: the trade state machine, its commit and its failures (ADR-0033)
 
-> **Status:** draft (2026-11-10, architect; waits for the owner's approval and for ADR-0033)
+> **Status:** approved (2026-11-10, by the owner, as recommended: ADR-0033 accepted; Phase 2 asked again at Phase 1's review; not started: the owner starts it)
 > **Created:** 2026-11-10
 > **Owner skill(s):** human, reverser, spec-writer
 > **Related ADRs:** 0008-two-client-harness, 0014-scope-game-simulation, 0025-scope-item-use-inventory, 0026-scope-in-game-message-layer, 0033-scope-player-trade

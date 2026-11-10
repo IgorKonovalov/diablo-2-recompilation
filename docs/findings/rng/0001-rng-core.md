@@ -107,7 +107,7 @@ init_one(s):      s.low = 1; s.high = 666
 
 ## Plan 0038 batch S1b (2026-10-16)
 
-Static batch S1b of [plan 0038](../../plans/0038-inferred-claims-sweep.md), rows 2, 4 and 7 of
+Static batch S1b of [plan 0038](../../plans/done/0038-inferred-claims-sweep.md), rows 2, 4 and 7 of
 [inventory rng-README](../../plans/0038-inventory/rng-README.md). No session was played. The check is
 `python3 -I tools/sweep_s1b.py rng`: GNU objdump's linear decoding of `.text` (through `tools/sweep_s4b.py`), the raw
 byte scan, and the kept emulator outputs of run:2026-10-11-rng-emu. Where a statement above is tagged inferred and this
@@ -137,7 +137,7 @@ section raises it, the tag and the second source given here are the current ones
 
 ## Plan 0038 batch S1e (2026-10-17)
 
-Static batch S1e of [plan 0038](../../plans/0038-inferred-claims-sweep.md), rows 3 and 5 of
+Static batch S1e of [plan 0038](../../plans/done/0038-inferred-claims-sweep.md), rows 3 and 5 of
 [inventory rng-README](../../plans/0038-inventory/rng-README.md). Method: the binary's function under Ghidra's p-code
 emulator against a `tools/` model, under [ADR-0015](../../adrs/0015-emulated-reproduction.md); record in the addendum
 to [run:2026-10-11-rng-emu](experiments.md#run2026-10-11-rng-emu). Read set: the seed (ECX), the stack; the trace

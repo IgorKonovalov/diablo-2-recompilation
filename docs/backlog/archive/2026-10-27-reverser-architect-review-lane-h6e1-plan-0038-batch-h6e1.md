@@ -4,7 +4,7 @@ to: architect
 date: 2026-10-27
 status: done
 context:
-  - ../../plans/0038-inferred-claims-sweep.md#implementation-log
+  - ../../plans/done/0038-inferred-claims-sweep.md#implementation-log
   - ../../plans/0038-inventory/README.md#26-moves-made-by-the-batch-reviews
   - ../../findings/items/experiments.md#run2026-10-27-sweep-quest-npc
   - ../../findings/items/0010-quest-drops.md#plan-0038-batch-h6e1-run2026-10-27-sweep-quest-npc

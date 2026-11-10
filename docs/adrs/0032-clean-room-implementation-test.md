@@ -1,6 +1,6 @@
 # ADR-0032 — A clean-room implementation test of the specs: code outside git, its gaps inside
 
-> **Status:** proposed
+> **Status:** accepted (owner, 2026-11-10)
 > **Date:** 2026-11-10
 > **Related plan(s):** 0064-clean-room-test
 

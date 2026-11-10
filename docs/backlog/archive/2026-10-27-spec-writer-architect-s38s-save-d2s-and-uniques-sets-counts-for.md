@@ -4,7 +4,7 @@ to: architect
 date: 2026-10-27
 status: done
 context:
-  - ../../plans/0038-inferred-claims-sweep.md#implementation-log
+  - ../../plans/done/0038-inferred-claims-sweep.md#implementation-log
   - ../../specs/save/d2s.md
   - ../../specs/items/uniques-sets.md
 resolution: "Applied at the lane/s38s review (2026-10-27): research-map rows rewritten with save/d2s {C 240, I 68, L 3} and items/uniques-sets {C 100, I 38, L 4}; wiki saves, characters and items based_on dates kept at 2026-10-27; the cross-spec wiki choice ruled (the page follows the spec carrying the accepted raise); characters' stub-order and saved-merc paragraphs now follow save/d2s."

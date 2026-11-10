@@ -6,8 +6,8 @@ status: done
 context:
   - ../../specs/monsters/spawn.md#d-the-class-pick
   - ../../specs/monsters/pool.md
-  - ../../plans/0038-inferred-claims-sweep.md#implementation-log
-resolution: "Done on lane/sfx: spawn § D's bullet split, the walk's stop rule [C], the Rarity 0 outcome [I] with pool's no-stock-region note; spawn tags C 136 / I 44 / L 5; wiki based_on dates bumped ([plan 0038 log](../../plans/0038-inferred-claims-sweep.md#implementation-log))"
+  - ../../plans/done/0038-inferred-claims-sweep.md#implementation-log
+resolution: "Done on lane/sfx: spawn § D's bullet split, the walk's stop rule [C], the Rarity 0 outcome [I] with pool's no-stock-region note; spawn tags C 136 / I 44 / L 5; wiki based_on dates bumped ([plan 0038 log](../../plans/done/0038-inferred-claims-sweep.md#implementation-log))"
 ---
 
 From the `lane/swk` review (plan 0038 log, the `Rarity` 0 ruling). Not blocking.

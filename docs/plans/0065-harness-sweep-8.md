@@ -1,6 +1,6 @@
 # 0065 — Harness sweep 8: the backlog's live cases in one batch per slot plan
 
-> **Status:** draft (2026-11-10, architect; waits for the owner's approval)
+> **Status:** approved (2026-11-10, by the owner, as recommended: Phase 2 runs, paired with plan 0067 Phase 2; not started: the owner starts it)
 > **Created:** 2026-11-10
 > **Owner skill(s):** reverser, spec-writer
 > **Related ADRs:** 0003-runtime-experiments, 0008-two-client-harness, 0010-forced-path-runs, 0013-forced-path-runs-cell-level, 0014-scope-game-simulation, 0023-review-tiers-and-gate-first-fixes, 0028-case-and-process-in-experiment-records, 0030-verdict-lanes-and-wiki-tier-a

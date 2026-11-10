@@ -5,7 +5,7 @@ date: 2026-10-30
 status: done
 context:
   - ../../findings/player/0001-creation.md#plan-0038-h6g-rows-2-and-29-the-ancients-grant-session-run2026-10-30-h6ga-anc
-  - ../../plans/0038-inferred-claims-sweep.md#implementation-log
+  - ../../plans/done/0038-inferred-claims-sweep.md#implementation-log
 resolution: "Done 2026-11-03 (lane/s63): player/creation J2 header [C] in Normal (the 1 400 000 amount, the cut, both loop branches, the level re-read; run:2026-10-30-h6ga-anc), step 0, the Nightmare/Hell immediates, the L >= max return, the signedness and the G = need edge [I]; the two J2 step notes split, the Entry points row split, the Open-questions bullet struck to its remainder; quests/progression's Experience bullet and wiki/characters' Ancients bullet split the same way ([player/creation § J](../../specs/player/creation.md#j-other-level-and-experience-changes))."
 ---
 

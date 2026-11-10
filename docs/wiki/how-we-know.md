@@ -18,7 +18,7 @@ runs), [ADR-0011](../adrs/0011-harness-slots.md) (harness slots), [ADR-0012](../
 [ADR-0015](../adrs/0015-emulated-reproduction.md) (emulated reproduction),
 [ADR-0018](../adrs/0018-backlog-one-file-per-entry.md) (the backlog), the
 [evidence rules](../../.claude/skills/architect/references/evidence-rules.md), and the records of
-[plan 0038](../plans/0038-inferred-claims-sweep.md) (the inferred-claims sweep) and
+[plan 0038](../plans/done/0038-inferred-claims-sweep.md) (the inferred-claims sweep) and
 [plan 0041](../plans/done/0041-stats-and-states.md) (stats and states). Where this page and those texts disagree, they
 win.
 
@@ -129,13 +129,13 @@ Two safeguards were added while the inferred-claims sweep used the method, on 20
   ([ADR-0015 § Decision](../adrs/0015-emulated-reproduction.md#decision);
   batch S1e, [run:2026-10-17-sweep-emu](../findings/data/experiments.md#run2026-10-17-sweep-emu): 28 643 emulated
   calls in ten families, all bit-exact, each negative control failing as it should, by the
-  [plan 0038 log](../plans/0038-inferred-claims-sweep.md#implementation-log)).
+  [plan 0038 log](../plans/done/0038-inferred-claims-sweep.md#implementation-log)).
 - **Guard stops.** The script stops any case that reaches the entry of the game's fatal-error path or of its memory
   allocator, and the checker counts such a stop as a failure, so no confirmed claim rests on a case that left the
   function's declared world
   (batch S1f, [run:2026-10-17-sweep-emu2](../findings/data/experiments.md#run2026-10-17-sweep-emu2): 18 800 emulated
   calls in eight families, none stopped; at the review, a case rewritten to hit a guard did fail, by the
-  [plan 0038 log](../plans/0038-inferred-claims-sweep.md#implementation-log)).
+  [plan 0038 log](../plans/done/0038-inferred-claims-sweep.md#implementation-log)).
 
 What emulation **can** confirm: what a function does with its arguments, the bytes it reads and its seeds, that is,
 its return value, the bytes it writes, the seeds' exit states, and so how many random draws it makes. What it
@@ -149,7 +149,7 @@ its return value, the bytes it writes, the seeds' exit states, and so how many r
 - a mistake in the emulator's own model of an instruction, which the decompiler, built from the same model, would
   share. Where a claim turns on an unusual instruction, the record also cites a second disassembler. One such limit
   is already known: the emulator returns 0 for one overflowing division that the real processor traps on
-  ([plan 0038 log, batch S1e](../plans/0038-inferred-claims-sweep.md#implementation-log)).
+  ([plan 0038 log, batch S1e](../plans/done/0038-inferred-claims-sweep.md#implementation-log)).
 
 ## Simulation: one event at a time, counted in frames
 
@@ -215,7 +215,7 @@ reach (three or more players, the forge and the Ancients with two players) stays
 Some inferred claims may never be confirmed by a run, because nothing in the shipped data makes the game take that
 branch: dead code, or a safety check stock data never fails. The sweep of inferred claims classes these as *no
 observable* (`d-none` in its inventory) and records the reason, so that a spec's remaining inferred statements are
-explained ([plan 0038 § Classes](../plans/0038-inferred-claims-sweep.md#classes)). Such a statement stays inferred:
+explained ([plan 0038 § Classes](../plans/done/0038-inferred-claims-sweep.md#classes)). Such a statement stays inferred:
 the class says why no run will reach it; it does not confirm the code reading.
 
 Ruling a branch out takes more than not having seen it. It takes a **bound**: a static argument about what can reach
@@ -239,7 +239,7 @@ the outdoor inventory) shows the difference
 
 Not every run reaches everything its plan hoped for. When a case is not reached, the record says so: a **shortfall**
 is named with its count and its reason, the claim stays inferred, and the plan is not blocked by it
-([plan 0038 § Phase 2](../plans/0038-inferred-claims-sweep.md#phase-2--harness-batches)). For example, the stats and
+([plan 0038 § Phase 2](../plans/done/0038-inferred-claims-sweep.md#phase-2--harness-batches)). For example, the stats and
 states run met 7 shrines and 5 wells, below the plan's target of 50 operates and below the floor of 20 events per
 kind for the "no draw" check, and its review accepted them as a named shortfall ([plan 0041 log, Phase 2 review](../plans/done/0041-stats-and-states.md)).
 
@@ -262,7 +262,7 @@ under *What is not known yet*.
 
 Each plan confirmed what its own run reached and left the rest inferred. On 2026-10-16 the reviewed specs held
 1 526 inferred statements against 2 531 confirmed ones, never looked at side by side
-([plan 0038 § TL;DR](../plans/0038-inferred-claims-sweep.md#tldr)). Plan 0038 lists every one of them, classes it by
+([plan 0038 § TL;DR](../plans/done/0038-inferred-claims-sweep.md#tldr)). Plan 0038 lists every one of them, classes it by
 its route to confirmation (a new check over logs already kept, one more session with an existing recipe, a new
 recipe, a static second source, an emulated run) or by the reason it is blocked (two clients, owner play, a later
 simulation phase, edited data only, an owner addendum of an earlier plan, no observable), and works through the routes in batches.
@@ -271,7 +271,7 @@ simulation phase, edited data only, an owner addendum of an earlier plan, no obs
 ([evidence rules § Promotion](../../.claude/skills/architect/references/evidence-rules.md#promotion)). A batch's
 claims are raised in the findings first; once the architect accepts the batch, the spec-writer re-tags the spec
 statements that rest on them, demotes any the batch contradicted, and updates the counts
-([plan 0038 § Phase 3](../plans/0038-inferred-claims-sweep.md#phase-3--re-tag-the-specs)). The wiki pages are then
+([plan 0038 § Phase 3](../plans/done/0038-inferred-claims-sweep.md#phase-3--re-tag-the-specs)). The wiki pages are then
 refreshed from the re-tagged specs, so a sentence that said "not yet confirmed by a run" may lose that hedge.
 
 ## What "reviewed" means
@@ -285,9 +285,9 @@ Nothing a lane produces counts until the architect has reviewed it with fresh ey
 confirmed statement names its independent check, that no lead sits in the body, and that the text does not read like
 someone else's decompiled code ([ADR-0001](../adrs/0001-target-toolchain-evidence-sources.md#decision)). The review of
 a harness batch re-runs its checker on the batch's logs
-([plan 0038 § Phase 2](../plans/0038-inferred-claims-sweep.md#phase-2--harness-batches)), and the reviews of the
+([plan 0038 § Phase 2](../plans/done/0038-inferred-claims-sweep.md#phase-2--harness-batches)), and the reviews of the
 emulated batches re-ran kept cases and got byte-identical outputs
-([plan 0038 log](../plans/0038-inferred-claims-sweep.md#implementation-log)). Most work is accepted *with fixes*: an
+([plan 0038 log](../plans/done/0038-inferred-claims-sweep.md#implementation-log)). Most work is accepted *with fixes*: an
 overclaim narrowed, a count corrected, a stale cross-reference updated. The fixes are counted by kind in a
 [ledger](../plans/metrics.md), and the kinds that keep recurring become rules each lane checks before it asks for
 review. Only after review does the [research map](../specs/README.md) mark a spec `reviewed`.

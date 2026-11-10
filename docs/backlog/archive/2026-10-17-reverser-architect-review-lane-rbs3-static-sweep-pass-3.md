@@ -4,7 +4,7 @@ to: architect
 date: 2026-10-17
 status: done
 context:
-  - ../../plans/0038-inferred-claims-sweep.md
+  - ../../plans/done/0038-inferred-claims-sweep.md
 resolution: "Reviewed 2026-10-17 (architect): accept with fixes (plan 0038 log, lane/rbs3 review; 0040 items in the plan 0040 log, post-close entry). Town-follow stays a shortfall, static remainder first (new entry); dead champion not saved stays [I]; SpecialMonRestore's flag-1 call raised to [C], lifecycle rewording to the spec-writer; MonPlace scope stands with the callers counted; outdoor 7 stays an a-run shortfall, totals unchanged (1 526). Fixes 4: under-claim 1, overclaim 1, stale cross-reference 1, omission 1."
 ---
 

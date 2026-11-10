@@ -4,7 +4,7 @@ to: architect
 date: 2026-10-27
 status: done
 context:
-  - ../../plans/0038-inferred-claims-sweep.md#implementation-log
+  - ../../plans/done/0038-inferred-claims-sweep.md#implementation-log
   - ../../findings/data/experiments.md
 resolution: "Accepted (architect, 2026-10-27): tools diff is the h3brare RECIPE_BASES row only; scratch rebuild gives ce57d8f7…6317, as the H3b record in data/experiments; test_d2s.py 47 tests OK."
 ---

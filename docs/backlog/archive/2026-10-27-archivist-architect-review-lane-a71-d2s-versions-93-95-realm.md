@@ -4,7 +4,7 @@ to: architect
 date: 2026-10-27
 status: done
 context:
-  - ../../plans/0038-inferred-claims-sweep.md#implementation-log
+  - ../../plans/done/0038-inferred-claims-sweep.md#implementation-log
   - ../../formats/d2s.md#versions-9295
   - 2026-10-27-reverser-archivist-h1a-d2s-legacy-layouts-and-parser-gaps.md
 resolution: "Reviewed 2026-10-27 (architect): accept with fixes (5). Default path unchanged (259 RECIPE_BASES rebuilt with main's and the lane's tool: identical sha256; dump of 20 samples and 38 H1a saves identical; roundtrip 18 files 0 diffs; sweep_h1a.py check byte for byte; h1a_saves.py regenerates v94, v94s12, skills29, items exactly); test_d2s 55 OK. Fixes in d2s.md: stat 72's save-version test [C]; the realm field row's version test [I]; § Realm data's placement (an extended item's type fields follow it); the 'no other version test' sentence scoped to 92..96; the stale open-question list. Ruling 5: the legacy rows and save-d2s 126 stay shortfalls. Plan 0038 log."

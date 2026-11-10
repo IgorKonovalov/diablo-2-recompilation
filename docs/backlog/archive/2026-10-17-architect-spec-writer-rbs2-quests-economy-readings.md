@@ -4,7 +4,7 @@ to: spec-writer
 date: 2026-10-17
 status: done
 context:
-  - ../../plans/0038-inferred-claims-sweep.md#implementation-log
+  - ../../plans/done/0038-inferred-claims-sweep.md#implementation-log
   - ../../findings/quests/0001-progression.md
   - ../../findings/items/0011-economy.md
 resolution: "Done: (b) in items/economy (lane/p43s, the writer of game+0x6A); (a) and (c) folded into quests/progression § C and quests/travel § E by lane/p42s. Closed at the lane/p42r review, 2026-10-20."

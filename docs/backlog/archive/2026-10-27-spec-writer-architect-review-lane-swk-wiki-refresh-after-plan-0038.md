@@ -4,7 +4,7 @@ to: architect
 date: 2026-10-27
 status: done
 context:
-  - ../../plans/0038-inferred-claims-sweep.md#phase-3--re-tag-the-specs
+  - ../../plans/done/0038-inferred-claims-sweep.md#phase-3--re-tag-the-specs
   - 2026-10-27-architect-spec-writer-wiki-refresh-after-the-plan-0038-phase-3.md
   - ../../wiki/monsters.md
   - ../../wiki/levels.md

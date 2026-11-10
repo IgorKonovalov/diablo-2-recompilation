@@ -312,7 +312,7 @@ SetStat(unit, 12 /*level*/, level);
 
 ## Plan 0038 batch S3a (2026-10-16)
 
-Static batch S3a of [plan 0038](../../plans/0038-inferred-claims-sweep.md) took 13 inferred statements of
+Static batch S3a of [plan 0038](../../plans/done/0038-inferred-claims-sweep.md) took 13 inferred statements of
 [monsters/pool](../../specs/monsters/pool.md), rows of [the inventory](../../plans/0038-inventory/monsters-pool.md) (spec
 lines `Lnnn` at `main` `b349849`). No game ran. The checks are `python3 -I tools/mon_sweep.py pool` and `tables`
 ([tools/mon_sweep.py](../../../tools/mon_sweep.py)) over the kept stock logs of run:2026-10-12-mon-pool, run:2026-10-12-mon-pool-p2,
@@ -403,7 +403,7 @@ and the 3 creations with no `MonSpawnTry` line.
 
 ## Plan 0038 batch H4b (run:2026-10-16-sweep-monsters-b)
 
-Harness batch H4b of [plan 0038](../../plans/0038-inferred-claims-sweep.md) took four rows of
+Harness batch H4b of [plan 0038](../../plans/done/0038-inferred-claims-sweep.md) took four rows of
 [monsters/pool](../../specs/monsters/pool.md) ([inventory](../../plans/0038-inventory/monsters-pool.md); spec lines `Lnnn`
 at `main` `e556014`). Record: [experiments.md § run:2026-10-16-sweep-monsters-b](experiments.md#run2026-10-16-sweep-monsters-b).
 
@@ -422,7 +422,7 @@ at `main` `e556014`). Record: [experiments.md § run:2026-10-16-sweep-monsters-b
 
 ## Plan 0038 batch S3b (2026-10-16)
 
-Static batch S3b of [plan 0038](../../plans/0038-inferred-claims-sweep.md) took 2 inferred statements of
+Static batch S3b of [plan 0038](../../plans/done/0038-inferred-claims-sweep.md) took 2 inferred statements of
 [monsters/pool](../../specs/monsters/pool.md), rows of [the inventory](../../plans/0038-inventory/monsters-pool.md) (spec lines
 `Lnnn` at `main` `7df5039`). No game ran. The check is `python3 -I tools/sweep_s3b.py pool`: the stock `monstats2` table,
 the `.bin` the pinned game compiled from the `.txt` in run:2026-10-15-cube-saves, objdump pins of the pinned image (the
@@ -473,7 +473,7 @@ S3B pool cf_all_counts=13 cf_no_pool_read_ok=0 game_compile_identical=1 pins=18 
 
 ## Plan 0038 batch S1f (2026-10-17)
 
-Static batch S1f of [plan 0038](../../plans/0038-inferred-claims-sweep.md), the c-emu rows of the
+Static batch S1f of [plan 0038](../../plans/done/0038-inferred-claims-sweep.md), the c-emu rows of the
 [inventory § 2.6 S1f table](../../plans/0038-inventory/README.md#26-moves-made-by-the-batch-reviews). No session was
 played. Method: the function runs under Ghidra's p-code emulator against `tools/sweep_s1f.py`'s models, under
 [ADR-0015](../../adrs/0015-emulated-reproduction.md): [run:2026-10-17-sweep-emu2](../data/experiments.md#run2026-10-17-sweep-emu2).
@@ -511,7 +511,7 @@ at exit, so no output depends on it: S1e ruling 3 (a)); no access was traced. Th
 
 ## Plan 0038 batch H4a (run:2026-10-21-sweep-monsters-a)
 
-Harness batch H4a of [plan 0038](../../plans/0038-inferred-claims-sweep.md) took one row of
+Harness batch H4a of [plan 0038](../../plans/done/0038-inferred-claims-sweep.md) took one row of
 [monsters/pool](../../specs/monsters/pool.md) ([inventory](../../plans/0038-inventory/monsters-pool.md); spec lines
 `Lnnn` at `main` `1d0262a`). Record: [experiments.md § run:2026-10-21-sweep-monsters-a](experiments.md#run2026-10-21-sweep-monsters-a).
 Check: `tools/sweep_h4a.py boss` (`SI0`/`SI2` of every `boss`-flag creation) and `tools/monstats.py check`, 0 monstats mismatches (the chained models: run record).

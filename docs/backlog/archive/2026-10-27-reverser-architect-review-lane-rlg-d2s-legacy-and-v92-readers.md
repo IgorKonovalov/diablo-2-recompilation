@@ -5,7 +5,7 @@ date: 2026-10-27
 status: done
 context:
   - ../../findings/save/0001-d2s-io.md#plan-0038-lanerlg-the-legacy-and-version-92-readers-static-2026-10-27
-  - ../../plans/0038-inferred-claims-sweep.md
+  - ../../plans/done/0038-inferred-claims-sweep.md
   - 2026-10-27-archivist-reverser-d2s-legacy-and-v92-readers-static-reading.md
 resolution: "Reviewed 2026-10-27 (architect): accept with fixes (4): D2S_ReadSave sends 0..91, so 0..70 fail the header's version test with 1; the header's left/right skills are applied by the caller after the skills section when non-zero; the per-version base-adjustment constants added; the ItemStatCost table doc linked. Ruling 3 kept: the legacy rows stay shortfalls. Plan 0038 log."
 ---

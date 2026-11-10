@@ -535,7 +535,7 @@ passed the early returns, and `QMF = QKMF + QOMF` held on each.
 
 ## Plan 0038 batch S2a (2026-10-16)
 
-Static batch S2a of [plan 0038](../../plans/0038-inferred-claims-sweep.md) took 18 inferred statements of
+Static batch S2a of [plan 0038](../../plans/done/0038-inferred-claims-sweep.md) took 18 inferred statements of
 [items/quality](../../specs/items/quality.md), rows of [the inventory](../../plans/0038-inventory/items-quality.md). The
 checks, the log set (166 kept stock logs of 11 item runs, sha256 checked) and the counterfactuals are those of
 [items/0001 § Plan 0038 batch S2a](0001-tc-resolution.md#plan-0038-batch-s2a-2026-10-16); the addenda are under each run
@@ -609,7 +609,7 @@ run:2026-10-16-quest-drops reproduces 5616 creations, 0 failed.
 
 ## Plan 0038 batch S2c (2026-10-16)
 
-Static batch S2c of [plan 0038](../../plans/0038-inferred-claims-sweep.md) took one inferred statement of
+Static batch S2c of [plan 0038](../../plans/done/0038-inferred-claims-sweep.md) took one inferred statement of
 [items/quality](../../specs/items/quality.md), row 16 of [the inventory](../../plans/0038-inventory/items-quality.md).
 The checks are `tools/sweep_s2c.py static callers` and `cube` (reports `workspace/logs/sweep-s2c-*.txt`). The batch's
 other ledgers are in [items/0008 § Plan 0038 batch S2c](0008-cube.md#plan-0038-batch-s2c-2026-10-16) and the sections
@@ -816,7 +816,7 @@ Phase 1, `lane/p49r`. No game run. The image tables and the stock rows are print
 
 ## Plan 0038 batch H2a (2026-10-20)
 
-Harness batch H2a of [plan 0038](../../plans/0038-inferred-claims-sweep.md)
+Harness batch H2a of [plan 0038](../../plans/done/0038-inferred-claims-sweep.md)
 ([run:2026-10-20-sweep-items-tc](experiments.md#run2026-10-20-sweep-items-tc)) took four inferred statements of
 [items/quality](../../specs/items/quality.md), rows 20, 22 (2) and 23 of [the inventory](../../plans/0038-inventory/items-quality.md);
 spec lines are those of the inventory's commit `f9f28e9`. The tc rows of the batch are in

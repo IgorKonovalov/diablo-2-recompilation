@@ -6,8 +6,8 @@ status: done
 context:
   - ../../specs/drlg/lifecycle.md#i-the-wanderer-tick
   - ../../specs/monsters/spawn.md#k-wanderers-the-tick
-  - ../../plans/0038-inferred-claims-sweep.md#implementation-log
-resolution: "Done on lane/sfx: lifecycle I1's roll draw and mod-100 return [C] on run:2026-10-21-sweep-monsters-a, the +0x2C4 test, mask width, +0x78, MonWndr and the spawn [I]; Constants rows and the open question rewritten; spawn K1 adds the MonWndr test to its [I] header and bullet; lifecycle tags C 96 / I 80 / L 8; based_on bumped on wiki/levels, monsters, seed-to-world and objects ([plan 0038 log](../../plans/0038-inferred-claims-sweep.md#implementation-log))"
+  - ../../plans/done/0038-inferred-claims-sweep.md#implementation-log
+resolution: "Done on lane/sfx: lifecycle I1's roll draw and mod-100 return [C] on run:2026-10-21-sweep-monsters-a, the +0x2C4 test, mask width, +0x78, MonWndr and the spawn [I]; Constants rows and the open question rewritten; spawn K1 adds the MonWndr test to its [I] header and bullet; lifecycle tags C 96 / I 80 / L 8; based_on bumped on wiki/levels, monsters, seed-to-world and objects ([plan 0038 log](../../plans/done/0038-inferred-claims-sweep.md#implementation-log))"
 ---
 
 From the `lane/swk` review (plan 0038 log). Not blocking. Bring the two wanderer-tick sections into line, each at the weaker tag where the evidence is one case:

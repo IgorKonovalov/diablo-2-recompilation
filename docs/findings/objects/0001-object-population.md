@@ -1023,7 +1023,7 @@ OBJINIT_GoldPiles (InitFn 28): (px, py) = (x, y); per pile dx, dy = draw & 3, dr
 
 ## Plan 0038 batch S4a (2026-10-16)
 
-Static batch S4a of [plan 0038](../../plans/0038-inferred-claims-sweep.md) (Phase 1), rows of
+Static batch S4a of [plan 0038](../../plans/done/0038-inferred-claims-sweep.md) (Phase 1), rows of
 [inventory objects-README](../../plans/0038-inventory/objects-README.md). No new session. `python3 -I
 tools/sweep_s4a.py objects` reads the 29 logs of run:2026-10-15-objects. It runs `tools/objects.py check` as recorded,
 with counters added (0 mismatches, 1265 windows RW1 → RW4 predicted), and reads the lines themselves. The addendum is the
@@ -1088,7 +1088,7 @@ are the current ones; the wording above is unchanged.
 
 ## Plan 0038 batch S4b (2026-10-16)
 
-Static batch S4b of [plan 0038](../../plans/0038-inferred-claims-sweep.md) (Phase 1), rows of [inventory objects-README](../../plans/0038-inventory/objects-README.md). No session was played. The second tool next to Ghidra is GNU objdump 2.47, walked by `tools/sweep_s4b.py` (recursive descent; see its docstring). The checks are rerunnable with `python3 -I tools/sweep_s4b.py <check>`. Where a statement above is tagged inferred and this section raises it, the tag and the second source given here are the current ones, and the wording above is unchanged.
+Static batch S4b of [plan 0038](../../plans/done/0038-inferred-claims-sweep.md) (Phase 1), rows of [inventory objects-README](../../plans/0038-inventory/objects-README.md). No session was played. The second tool next to Ghidra is GNU objdump 2.47, walked by `tools/sweep_s4b.py` (recursive descent; see its docstring). The checks are rerunnable with `python3 -I tools/sweep_s4b.py <check>`. Where a statement above is tagged inferred and this section raises it, the tag and the second source given here are the current ones, and the wording above is unchanged.
 
 - **Row 1** (spec L76) **raised.** [C] The offsets come from `excel_bin.py probe`: Objects `SpawnMax` `+0xC3`,
   `TrapProb` `+0xCC` and `Act` `+0x170`; Shrines `rarity` `+0x11`; ObjGroup `SHRINES` `+0x30` and `WELLS` `+0x31`. In the
@@ -1136,7 +1136,7 @@ Static: objdump scans of the whole image. No game run.
 
 ## Plan 0038 batch H5b (run:2026-10-19-h5b-objects)
 
-Harness batch H5b of [plan 0038](../../plans/0038-inferred-claims-sweep.md), rows of
+Harness batch H5b of [plan 0038](../../plans/done/0038-inferred-claims-sweep.md), rows of
 [inventory objects-README](../../plans/0038-inventory/objects-README.md) and drlg-collision 27, 37 and 39. Record:
 [experiments § run:2026-10-19-h5b-objects](experiments.md#run2026-10-19-h5b-objects). The checker is
 `tools/objects.py check` (the revision the record names), on the run's logs and, for the counters added here, on the

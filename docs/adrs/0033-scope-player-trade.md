@@ -1,6 +1,6 @@
 # ADR-0033 — Scope: the player-to-player trade
 
-> **Status:** proposed
+> **Status:** accepted (owner, 2026-11-10)
 > **Date:** 2026-11-10
 > **Related plan(s):** 0067-player-trade
 

@@ -6,7 +6,7 @@ status: done
 context:
   - ../../findings/items/0009-vendors.md#plan-0038-batch-h6c-run2026-10-27-sweep-vendors
   - ../../plans/0038-inventory/README.md#26-moves-made-by-the-batch-reviews
-  - ../../plans/0038-inferred-claims-sweep.md#implementation-log
+  - ../../plans/done/0038-inferred-claims-sweep.md#implementation-log
   - 2026-10-16-reverser-spec-writer-plan-0038-s2c-corrections-for-phase.md
 resolution: "done: lane/s38v, items/vendors re-tagged from S2c and H6c (C 77 -> 112, I 37 -> 37, L 2 -> 2); (a) C0 and the C0-C1 notes, (b) Entry points and § H, (c) D3-D4 note and Constants, (d) G1 and § H with the second-interactor note, (e) § C's level-up bullet; S2c (d) applied ([items/vendors](../../specs/items/vendors.md))"
 ---

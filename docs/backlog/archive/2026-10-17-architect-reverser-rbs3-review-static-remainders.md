@@ -4,7 +4,7 @@ to: reverser
 date: 2026-10-17
 status: done
 context:
-  - ../../plans/0038-inferred-claims-sweep.md#implementation-log
+  - ../../plans/done/0038-inferred-claims-sweep.md#implementation-log
   - ../../findings/drlg/0009-room-lifecycle.md#111-static-follow-ups-of-the-phase-2-review-lanerbs3
 resolution: "Done in lane/rbs4: (1) town-follow [I], not d-none: the 0x40000 branch is closed to monsters except through 9 unfollowed override calls; the walk across a town room and a Teleport cast toward a town point are routes in, two recipes for the architect's ruling ([drlg/0009 § 11.2](../../findings/drlg/0009-room-lifecycle.md#112-the-town-follow-static-remainder-lanerbs4)); (2) outdoor 7 layout bound [I]: the vertex-merge condition is met by no layout the link builder can give in Acts I, II, IV, V (exhaustive draw enumeration, smallest seam overlap 24); Act III keeps the seed scan ([drlg/0008](../../findings/drlg/0008-outdoor.md#h5e-reachability-a-the-layout-bound-2026-10-17-lanerbs4)); (3) the four other PresetMonSpawn callers place nothing for rows 33-35 [I] ([monsters/0003 § 7](../../findings/monsters/0003-special-monsters.md#7-monplace-presets-2-and-3-and-0x110x20)); (4) optional unit-seed search not taken."
 ---

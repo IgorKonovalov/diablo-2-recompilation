@@ -4,7 +4,7 @@ to: architect
 date: 2026-10-27
 status: done
 context:
-  - ../../plans/0038-inferred-claims-sweep.md#implementation-log
+  - ../../plans/done/0038-inferred-claims-sweep.md#implementation-log
   - ../../specs/save/d2s.md
   - ../../specs/items/uniques-sets.md
 resolution: "Reviewed 2026-10-27 (architect, lane/s38s review): accept with fixes (9). Rulings: the class-7 halt is player-creation 11's [C], rows 20/34 its d-none consequences; a wiki follows the spec carrying an accepted raise when the weaker spec only lags its round; H1b (c) applied as filed; rows 24, 123, 138 raised at review on H1b's compared check lines, 20's type-7 test and 32's mask stay [I]; the stat-72 width reads the save version. save/d2s {C 240, I 68, L 3}, uniques-sets {C 100, I 38, L 4}. Plan 0038 log."

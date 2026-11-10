@@ -4,7 +4,7 @@ to: architect
 date: 2026-10-27
 status: done
 context:
-  - ../../plans/0038-inferred-claims-sweep.md#implementation-log
+  - ../../plans/done/0038-inferred-claims-sweep.md#implementation-log
   - ../../specs/hirelings/README.md
   - ../../wiki/characters.md
 resolution: "Reviewed 2026-10-27: accept with fixes (6), plan 0038 log (lane/s38h review)."

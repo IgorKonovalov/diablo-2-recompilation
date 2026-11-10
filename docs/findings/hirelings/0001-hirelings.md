@@ -651,7 +651,7 @@ contradictions (a) and (b) are settled for 1.14d as read (§ Open questions).
 
 ## Plan 0038 batch S3a (2026-10-16)
 
-Static batch S3a of [plan 0038](../../plans/0038-inferred-claims-sweep.md) took 3 inferred statements of
+Static batch S3a of [plan 0038](../../plans/done/0038-inferred-claims-sweep.md) took 3 inferred statements of
 [hirelings](../../specs/hirelings/README.md), rows of [the inventory](../../plans/0038-inventory/hirelings-README.md) (spec lines
 `Lnnn` at `main` `b349849`). No game ran. The check is `python3 -I tools/mon_sweep.py hire` over the 48 kept logs of
 run:2026-10-16-hirelings (sha256 against `hire-run-manifest.txt`, itself `4559f158…`); `tools/hirelings.py check` still reports
@@ -684,7 +684,7 @@ merc headers 48: all zero 15, MERC_Create entered 0; name 0 with seed and experi
 
 ## Plan 0038 batch H4b (run:2026-10-16-sweep-monsters-b)
 
-Harness batch H4b of [plan 0038](../../plans/0038-inferred-claims-sweep.md) took one row of
+Harness batch H4b of [plan 0038](../../plans/done/0038-inferred-claims-sweep.md) took one row of
 [hirelings](../../specs/hirelings/README.md) ([inventory](../../plans/0038-inventory/hirelings-README.md), row 34).
 
 - **hirelings 34** (L522) **raised.** [C] A hireling gets no player-count bonus: in session 5 of
@@ -697,7 +697,7 @@ Harness batch H4b of [plan 0038](../../plans/0038-inferred-claims-sweep.md) took
 
 ## Plan 0038 batch S3b (2026-10-16)
 
-Static batch S3b of [plan 0038](../../plans/0038-inferred-claims-sweep.md) took 2 inferred statements of
+Static batch S3b of [plan 0038](../../plans/done/0038-inferred-claims-sweep.md) took 2 inferred statements of
 [hirelings](../../specs/hirelings/README.md), rows of [the inventory](../../plans/0038-inventory/hirelings-README.md) (spec lines
 `Lnnn` at `main` `7df5039`). No game ran. The check is `python3 -I tools/sweep_s3b.py hire`: the Hireling table read with
 `tools/hirelings.py`'s loader, objdump pins of the pinned image (the second tool, as ruled at the S4b review), and
@@ -795,7 +795,7 @@ game run.
 
 ## Plan 0038 batch H1b (run:2026-10-27-sweep-d2s-play)
 
-Harness batch H1b of [plan 0038](../../plans/0038-inferred-claims-sweep.md) took one row of
+Harness batch H1b of [plan 0038](../../plans/done/0038-inferred-claims-sweep.md) took one row of
 [hirelings](../../specs/hirelings/README.md) ([inventory](../../plans/0038-inventory/hirelings-README.md), row 24); the
 save rows are in [save/0001](../save/0001-d2s-io.md#plan-0038-batch-h1b-run2026-10-27-sweep-d2s-play). § F and the
 summary above had the saved header as inferred ("no save written in the run"); both now point here.
@@ -811,7 +811,7 @@ summary above had the saved header as inferred ("no save written in the run"); b
 
 ## Plan 0038 batch H1a (run:2026-10-27-sweep-d2s-load)
 
-Harness batch H1a of [plan 0038](../../plans/0038-inferred-claims-sweep.md) took four rows of
+Harness batch H1a of [plan 0038](../../plans/done/0038-inferred-claims-sweep.md) took four rows of
 [hirelings](../../specs/hirelings/README.md) ([inventory](../../plans/0038-inventory/hirelings-README.md), rows 3, 30,
 32, 33); the save rows are in [save/0001](../save/0001-d2s-io.md#plan-0038-batch-h1a-run2026-10-27-sweep-d2s-load),
 with the counts of `workspace/logs/h1a/check/sweep-h1a-check.txt`.
@@ -831,7 +831,7 @@ with the counts of `workspace/logs/h1a/check/sweep-h1a-check.txt`.
 
 ## Plan 0038 batch H1c (run:2026-10-27-sweep-d2s-legacy)
 
-Harness batch H1c of [plan 0038](../../plans/0038-inferred-claims-sweep.md) took the three hirelings rows that H1a left as
+Harness batch H1c of [plan 0038](../../plans/done/0038-inferred-claims-sweep.md) took the three hirelings rows that H1a left as
 shortfalls ([inventory](../../plans/0038-inventory/hirelings-README.md), rows 3, 30, 33). Run record:
 [save/experiments](../save/experiments.md#run2026-10-27-sweep-d2s-legacy); every count below is from its
 `check/sweep-h1c-check.txt` (`tools/sweep_h1c.py check`, 272 comparisons over 7 cases, 0 failing). The loads are of
@@ -869,7 +869,7 @@ for the version-87 conversion and the version-71 absence, `[I]` for the cutoff.
 
 ## Plan 0038 batch H6f (run:2026-10-27-sweep-hirelings)
 
-Harness batch H6f of [plan 0038](../../plans/0038-inferred-claims-sweep.md) took 23 statements of
+Harness batch H6f of [plan 0038](../../plans/done/0038-inferred-claims-sweep.md) took 23 statements of
 [hirelings](../../specs/hirelings/README.md) ([inventory](../../plans/0038-inventory/hirelings-README.md), rows 1–2, 5–6,
 9–10, 14–18, 20–21, 23, 25, 27–29, 31, 35–37; row 28 counts 2). Run record:
 [experiments](experiments.md#run2026-10-27-sweep-hirelings); every count below is from its `check/check-final.txt`

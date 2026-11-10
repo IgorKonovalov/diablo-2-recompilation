@@ -596,7 +596,7 @@ non-zero entries. Details and numbers are in [experiments § run:2026-10-15-mon-
 
 ## Plan 0038 batch S3a (2026-10-16)
 
-Static batch S3a of [plan 0038](../../plans/0038-inferred-claims-sweep.md) took 10 inferred statements of
+Static batch S3a of [plan 0038](../../plans/done/0038-inferred-claims-sweep.md) took 10 inferred statements of
 [monsters/stats](../../specs/monsters/stats.md), rows of [the inventory](../../plans/0038-inventory/monsters-stats.md) (spec
 lines `Lnnn` at `main` `b349849`). No game ran. The check is `python3 -I tools/mon_sweep.py stats` (with `tables`): it runs
 `tools/monstats.py`'s checker on the 11 logs of run:2026-10-15-mon-stats (62 991 checks, 0 mismatches) with counting wrappers on
@@ -661,7 +661,7 @@ stat-7 callback calls writing stat 6: stock 825, forced 260; every product an in
 
 ## Plan 0038 batch H4b (run:2026-10-16-sweep-monsters-b)
 
-Harness batch H4b of [plan 0038](../../plans/0038-inferred-claims-sweep.md) took eight rows of
+Harness batch H4b of [plan 0038](../../plans/done/0038-inferred-claims-sweep.md) took eight rows of
 [monsters/stats](../../specs/monsters/stats.md) ([inventory](../../plans/0038-inventory/monsters-stats.md); spec lines
 `Lnnn` at `main` `e556014`). Record: [experiments.md § run:2026-10-16-sweep-monsters-b](experiments.md#run2026-10-16-sweep-monsters-b).
 Checks: `tools/sweep_h4b.py` (`sik`, `players`) and `tools/monstats.py check`.
@@ -693,7 +693,7 @@ Checks: `tools/sweep_h4b.py` (`sik`, `players`) and `tools/monstats.py check`.
 
 ## Plan 0038 batch S3b (2026-10-16)
 
-Static batch S3b of [plan 0038](../../plans/0038-inferred-claims-sweep.md) took 3 inferred statements of
+Static batch S3b of [plan 0038](../../plans/done/0038-inferred-claims-sweep.md) took 3 inferred statements of
 [monsters/stats](../../specs/monsters/stats.md), rows of [the inventory](../../plans/0038-inventory/monsters-stats.md) (spec lines
 `Lnnn` at `main` `7df5039`). No game ran. The check is `python3 -I tools/sweep_s3b.py stats`: the stock MonStats, MonLvl,
 MonProp and Skills tables, every DS1 file `lvlprest` names (`tools/ds1.py`'s unit mapping), and objdump pins (the second
@@ -747,7 +747,7 @@ S3B stats contra=1 ds1_placed_401=1 ds1_placed_484=0 monprop_normal_rows=3 monpr
 
 ## Plan 0038 batch S1f (2026-10-17)
 
-Static batch S1f of [plan 0038](../../plans/0038-inferred-claims-sweep.md), the c-emu rows of the
+Static batch S1f of [plan 0038](../../plans/done/0038-inferred-claims-sweep.md), the c-emu rows of the
 [inventory § 2.6 S1f table](../../plans/0038-inventory/README.md#26-moves-made-by-the-batch-reviews). No session was
 played. Method: the function runs under Ghidra's p-code emulator against `tools/sweep_s1f.py`'s models, under
 [ADR-0015](../../adrs/0015-emulated-reproduction.md): [run:2026-10-17-sweep-emu2](../data/experiments.md#run2026-10-17-sweep-emu2).
@@ -801,7 +801,7 @@ Oracle 13 of [chain/0001](../chain/0001-oracles.md). Record: [chain/0002 § 11](
 
 ## Plan 0038 batch H4a (run:2026-10-21-sweep-monsters-a)
 
-Harness batch H4a of [plan 0038](../../plans/0038-inferred-claims-sweep.md) took three rows of
+Harness batch H4a of [plan 0038](../../plans/done/0038-inferred-claims-sweep.md) took three rows of
 [monsters/stats](../../specs/monsters/stats.md) ([inventory](../../plans/0038-inventory/monsters-stats.md); spec lines
 `Lnnn` at `main` `1d0262a`). Record: [experiments.md § run:2026-10-21-sweep-monsters-a](experiments.md#run2026-10-21-sweep-monsters-a).
 The rows were routed to a Blood Raven or `flyingscimitar` creation; plan 0048 Phase 2 met both before this batch ran,

@@ -4,7 +4,7 @@ to: architect
 date: 2026-11-03
 status: done
 context:
-  - ../../plans/0038-inferred-claims-sweep.md#implementation-log
+  - ../../plans/done/0038-inferred-claims-sweep.md#implementation-log
   - ../../plans/done/0057-quirks-catalogue.md#implementation-log
   - ../../specs/player/creation.md#j-other-level-and-experience-changes
 resolution: "Tier A review 2026-11-03: accept with fixes (2, overclaim): J2 step 2's entry reads tagged [I], the no-second-path sentence moved out of the cut note's [C]; player/creation C 126 / I 46 / L 1. Q3 routed (2026-11-03-architect-spec-writer-quirks-catalogue-coverage-row). Review in plan 0038's log."

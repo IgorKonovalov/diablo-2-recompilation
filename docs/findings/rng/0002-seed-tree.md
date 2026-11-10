@@ -346,7 +346,7 @@ Batch H5c, record [drlg/experiments.md § run:2026-10-16-sweep-roomk](../drlg/ex
 
 ## Plan 0038 batch S1b (2026-10-16)
 
-Static batch S1b of [plan 0038](../../plans/0038-inferred-claims-sweep.md), rows 1, 3, 11, 15 and 16 of
+Static batch S1b of [plan 0038](../../plans/done/0038-inferred-claims-sweep.md), rows 1, 3, 11, 15 and 16 of
 [inventory rng-seeds](../../plans/0038-inventory/rng-seeds.md). No session was played. The checks are
 `python3 -I tools/sweep_s1b.py static` (objdump pins, raw scans, call-graph closures through `tools/sweep_s4b.py`) and
 `seeds` (the 12 logs of run:2026-10-11-seed-tree and -p1; the records give no per-file hash, so the hashes are in

@@ -447,7 +447,7 @@ Compared after the blind reading above (2026-10-14); see `docs/sources.md` `d2df
 
 ## Plan 0038 batch S4a (2026-10-16)
 
-Static batch S4a of [plan 0038](../../plans/0038-inferred-claims-sweep.md) (Phase 1), rows of
+Static batch S4a of [plan 0038](../../plans/done/0038-inferred-claims-sweep.md) (Phase 1), rows of
 [inventory drlg-warps](../../plans/0038-inventory/drlg-warps.md). No new session. Checks: `python3 -I
 tools/sweep_s4a.py <check>` over the kept logs. The addendum is the 2026-10-16 entry under run:2026-10-15-drlg-maze in
 [experiments](experiments.md#run2026-10-15-drlg-maze).
@@ -503,7 +503,7 @@ Not raised:
 
 ## Plan 0038 batch S4b (2026-10-16)
 
-Static batch S4b of [plan 0038](../../plans/0038-inferred-claims-sweep.md) (Phase 1), rows of [inventory drlg-warps](../../plans/0038-inventory/drlg-warps.md). No session was played. The second tool next to Ghidra is GNU objdump 2.47, walked by `tools/sweep_s4b.py` (recursive descent; see its docstring). The checks are rerunnable with `python3 -I tools/sweep_s4b.py <check>`. Where a statement above is tagged inferred and this section raises it, the tag and the second source given here are the current ones, and the wording above is unchanged.
+Static batch S4b of [plan 0038](../../plans/done/0038-inferred-claims-sweep.md) (Phase 1), rows of [inventory drlg-warps](../../plans/0038-inventory/drlg-warps.md). No session was played. The second tool next to Ghidra is GNU objdump 2.47, walked by `tools/sweep_s4b.py` (recursive descent; see its docstring). The checks are rerunnable with `python3 -I tools/sweep_s4b.py <check>`. Where a statement above is tagged inferred and this section raises it, the tag and the second source given here are the current ones, and the wording above is unchanged.
 
 - **Row 7** (spec L252) **raised.** [C] The table at 0x006F0750 is in `.rdata`, 16 bytes per slot `{fn, level, anchor,
   dir}`. The loop compares slot `+8` (the anchor) with the checked slot's anchor (0x00676E44). For Burial Grounds

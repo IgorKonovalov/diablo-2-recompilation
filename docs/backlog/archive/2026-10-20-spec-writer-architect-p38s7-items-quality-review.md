@@ -7,7 +7,7 @@ context:
   - ../../specs/items/quality.md
   - ../../wiki/items.md
   - ../../findings/items/0002-quality-roll.md#plan-0038-batch-h2a-2026-10-20
-  - ../../plans/0038-inferred-claims-sweep.md#implementation-log
+  - ../../plans/done/0038-inferred-claims-sweep.md#implementation-log
 resolution: "Reviewed 2026-10-20 (architect): accept with fixes; wiki step 3 scoping and the M3 remainder added to the open questions, made at the review; plan 0038 log."
 ---
 

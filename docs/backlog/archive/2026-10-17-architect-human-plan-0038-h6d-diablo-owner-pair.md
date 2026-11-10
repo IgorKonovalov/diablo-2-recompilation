@@ -4,7 +4,7 @@ to: human
 date: 2026-10-17
 status: dropped
 context:
-  - ../../plans/0038-inferred-claims-sweep.md#implementation-log
+  - ../../plans/done/0038-inferred-claims-sweep.md#implementation-log
   - ../../findings/items/experiments.md#run2026-10-17-sweep-quest-b6
 resolution: "Not played: the plan 0038 Phase 3 quest-drops round ran without it, as ruled at plan 0051's approval; Diablo stays [I] in [items/quest-drops](../../specs/items/quest-drops.md); triage 2026-11-10."
 ---

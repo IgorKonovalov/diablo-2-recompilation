@@ -6,7 +6,7 @@ status: done
 context:
   - ../../findings/player/0001-creation.md#plan-0038-batch-h6g-run2026-10-27-sweep-player
   - ../../findings/player/0001-creation.md#plan-0038-batch-s3b-2026-10-16
-  - ../../plans/0038-inferred-claims-sweep.md#implementation-log
+  - ../../plans/done/0038-inferred-claims-sweep.md#implementation-log
 resolution: "Applied 2026-10-30 (lane/rfix) as dated notes in player/0001, no ledger or class change: (1) H6g rows 3/30 read five deaths, four cases (the Nightmare clamp case twice), DG0 5; (2) S3b row 21's [C] narrowed to the cell for classes 0..6, the column-0 clamp [I] (never reached, H1a rows 11/20/34); (3) Open questions annotated: the death loss and cap ran in H6g rows 3/30 and 28, class 7 in H1a row 11, client +0x3D4 bit 0 in H6g row 12 (raised in part); XP_PartyShare still not run. [player/0001 § S3b](../../findings/player/0001-creation.md#plan-0038-batch-s3b-2026-10-16)"
 ---
 

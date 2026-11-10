@@ -1,6 +1,6 @@
 # 0064 — Clean-room test: implement the chain from the specs alone and score it on the golden traces
 
-> **Status:** draft (2026-11-10, architect; waits for the owner's approval and for ADR-0032)
+> **Status:** approved (2026-11-10, by the owner, as recommended: ADR-0032 accepted, S4 in and last; not started: the owner starts it)
 > **Created:** 2026-11-10
 > **Owner skill(s):** human, archivist, none (clean-room implementer, ADR-0032), architect, spec-writer
 > **Related ADRs:** 0001-target-toolchain-evidence-sources, 0023-review-tiers-and-gate-first-fixes, 0032-clean-room-implementation-test

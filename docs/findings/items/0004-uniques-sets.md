@@ -713,7 +713,7 @@ Normal 14 / 9, classic Nightmare 37 / 14. Frequencies are not read from the forc
 
 ## Plan 0038 batch S2b (2026-10-16)
 
-Static batch S2b of [plan 0038](../../plans/0038-inferred-claims-sweep.md) took 26 inferred statements of
+Static batch S2b of [plan 0038](../../plans/done/0038-inferred-claims-sweep.md) took 26 inferred statements of
 [items/uniques-sets](../../specs/items/uniques-sets.md), rows of [the inventory](../../plans/0038-inventory/items-uniques-sets.md).
 The log sets, the manifest, the tool and the two call-graph closures are those of
 [items/0005 § Plan 0038 batch S2b](0005-affixes.md#plan-0038-batch-s2b-2026-10-16) and
@@ -901,7 +901,7 @@ Why this boundary:
 
 ## Plan 0038 batch S2c (2026-10-16)
 
-Static batch S2c of [plan 0038](../../plans/0038-inferred-claims-sweep.md) took one inferred statement of
+Static batch S2c of [plan 0038](../../plans/done/0038-inferred-claims-sweep.md) took one inferred statement of
 [items/uniques-sets](../../specs/items/uniques-sets.md), row 1 of [the inventory](../../plans/0038-inventory/items-uniques-sets.md).
 The batch's other ledgers are in [items/0008 § Plan 0038 batch S2c](0008-cube.md#plan-0038-batch-s2c-2026-10-16),
 [items/0009](0009-vendors.md#plan-0038-batch-s2c-2026-10-16) and [items/0010](0010-quest-drops.md#plan-0038-batch-s2c-2026-10-16).
@@ -941,7 +941,7 @@ survey of `ITEMS_SetFlag(…, 0x10, …)` with objdump) and a table check. No ga
 
 ## Plan 0038 batch S1f (2026-10-17)
 
-Static batch S1f of [plan 0038](../../plans/0038-inferred-claims-sweep.md), the c-emu rows of the
+Static batch S1f of [plan 0038](../../plans/done/0038-inferred-claims-sweep.md), the c-emu rows of the
 [inventory § 2.6 S1f table](../../plans/0038-inventory/README.md#26-moves-made-by-the-batch-reviews). No session was
 played. Method: the function runs under Ghidra's p-code emulator against `tools/sweep_s1f.py`'s models, under
 [ADR-0015](../../adrs/0015-emulated-reproduction.md): [run:2026-10-17-sweep-emu2](../data/experiments.md#run2026-10-17-sweep-emu2).
@@ -978,7 +978,7 @@ row is kept. No table has more than 200 rows, under the 256 pairs of the stack l
   Stock data has 127 rows in all. (tbl:SetItems.txt:item)
 ## Plan 0038 batch H6d (2026-10-17)
 
-Harness batch H6d of [plan 0038](../../plans/0038-inferred-claims-sweep.md) (run:2026-10-17-sweep-quest-b6,
+Harness batch H6d of [plan 0038](../../plans/done/0038-inferred-claims-sweep.md) (run:2026-10-17-sweep-quest-b6,
 [experiments](experiments.md#run2026-10-17-sweep-quest-b6)) took one inferred statement of
 [items/uniques-sets](../../specs/items/uniques-sets.md), row 21 of [the inventory](../../plans/0038-inventory/items-uniques-sets.md).
 The batch's other ledgers are in [items/0010 § Plan 0038 batch H6d](0010-quest-drops.md#plan-0038-batch-h6d-2026-10-17)
@@ -1006,7 +1006,7 @@ and [items/0001](0001-tc-resolution.md#plan-0038-batch-h6d-2026-10-17).
 
 ## Plan 0038 batch H2b (2026-10-20)
 
-Harness batch H2b of [plan 0038](../../plans/0038-inferred-claims-sweep.md)
+Harness batch H2b of [plan 0038](../../plans/done/0038-inferred-claims-sweep.md)
 ([run:2026-10-20-sweep-items-chain](experiments.md#run2026-10-20-sweep-items-chain), 13 kept sessions on harness slot
 2, stock data) took five inferred statements of [items/uniques-sets](../../specs/items/uniques-sets.md), rows 7, 9, 10,
 35 and 39 of [the inventory](../../plans/0038-inventory/items-uniques-sets.md) (9 and 39 by
@@ -1106,7 +1106,7 @@ run:2026-10-20-sweep-items-chain)
 
 ## Plan 0038 batch H1c (run:2026-10-27-sweep-d2s-legacy)
 
-Harness batch H1c of [plan 0038](../../plans/0038-inferred-claims-sweep.md), row 21 of
+Harness batch H1c of [plan 0038](../../plans/done/0038-inferred-claims-sweep.md), row 21 of
 [the inventory](../../plans/0038-inventory/items-uniques-sets.md) (reclassified to H1a at the H6d batch; a shortfall
 there). Run record: [save/experiments](../save/experiments.md#run2026-10-27-sweep-d2s-legacy); counts from its `check/sweep-h1c-check.txt` (272 comparisons over 7 cases, 0 failing).
 The load is of `leg71uniq`, a tool-built version-71 save (ADR-0013 § Neutral) with six items: The Gnasher (unique row 0),

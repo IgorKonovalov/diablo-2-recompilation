@@ -1146,7 +1146,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     review-fixes Seen lines (spec-writer 1, 3, 9). Ledger: the lane row filled (verdict, fixes 9: overclaim 5, misread
     2, omission 2; usage from the orchestrator), the review row added with its usage "—".
 - **2026-10-27 — after the close: the P3 review's reverser entry, folded by `lane/rbd` and reviewed (architect,
-  accept with fixes; the review is in the [plan 0038 log](../0038-inferred-claims-sweep.md#implementation-log)).**
+  accept with fixes; the review is in the [plan 0038 log](0038-inferred-claims-sweep.md#implementation-log)).**
   The [entry](../../backlog/archive/2026-10-27-architect-reverser-skills-0002-builddamage-pair-swap-and-unit.md)'s
   two points are in skills/0002 § 6: every bound and the mastery are read on the missile, and each bound is tested
   `> 0` before an inverted pair is swapped and the mastery applied, all `[I]` (objdump confirms `0x005A8914`–`0x005A8993`
@@ -1158,7 +1158,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   which moves no spec tag. The spec-writer entry for F1 is released with what to write
   ([entry](../../backlog/archive/2026-10-27-architect-spec-writer-skills-missiles-f1-mastery-and-dispatch-i4-kick.md)).
 - **2026-10-27 — after the close: the F1 and I4 entry written by `lane/sf2` (spec-writer; logged in the
-  [plan 0038 log](../0038-inferred-claims-sweep.md#implementation-log)).** Missiles F1's mastery left the `[C]`
+  [plan 0038 log](0038-inferred-claims-sweep.md#implementation-log)).** Missiles F1's mastery left the `[C]`
   bullet, which now cites both runs' 4 118 builds; the mastery's carrier is an `[L]`. Dispatch I4 is restated per
   bound (the `Kick` minimum `÷ 4` `[C]`, the maximum `÷ 3` `[I]`); which damage Kick's start hit carries is an `[L]`,
   routed to the reverser ([entry](../../backlog/archive/2026-10-27-spec-writer-reverser-kick-start-hit-damage.md)).

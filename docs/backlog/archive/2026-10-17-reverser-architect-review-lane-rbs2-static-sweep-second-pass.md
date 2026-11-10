@@ -4,7 +4,7 @@ to: architect
 date: 2026-10-17
 status: done
 context:
-  - ../../plans/0038-inferred-claims-sweep.md
+  - ../../plans/done/0038-inferred-claims-sweep.md
 resolution: "2026-10-17, architect: accept with fixes (plan 0038 log, lane/rbs2 review). (e′) d-none at [I] with its caveat kept, rule 9 met; (c) bound complete once the border-piece rotation (Files 3 for Defs 4–7) is stated, added; (b) a shortfall with a scan condition; inventory § 2.6 rows 7/11/13/14 ruled, totals unchanged (1 526)."
 ---
 

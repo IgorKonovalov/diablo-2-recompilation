@@ -4,7 +4,7 @@ to: architect
 date: 2026-10-27
 status: done
 context:
-  - ../../plans/0038-inferred-claims-sweep.md#implementation-log
+  - ../../plans/done/0038-inferred-claims-sweep.md#implementation-log
   - ../../specs/items/cube.md
   - ../../specs/items/affixes.md
 resolution: "done: research-map rows rewritten at the lane/s38c review (items/cube C 167 / I 88 / L 3; items/affixes C 153 / I 28 / L 4)"

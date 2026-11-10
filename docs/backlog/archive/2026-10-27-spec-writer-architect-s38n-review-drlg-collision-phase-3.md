@@ -4,7 +4,7 @@ to: architect
 date: 2026-10-27
 status: done
 context:
-  - ../../plans/0038-inferred-claims-sweep.md#implementation-log
+  - ../../plans/done/0038-inferred-claims-sweep.md#implementation-log
   - ../../specs/drlg/collision.md
 resolution: "Reviewed 2026-10-27 (architect): accept with fixes (3: omission, overclaim, misread); readiness confirmed (no collision row in H6e2); rulings in the plan 0038 log."
 ---

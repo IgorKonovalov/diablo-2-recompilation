@@ -7,7 +7,7 @@ context:
   - ../../specs/drlg/lifecycle.md
   - ../../specs/drlg/outdoor.md
   - ../../findings/drlg/0009-room-lifecycle.md#113-plan-0038-batch-h7a-run2026-10-17-h7a-lifecycle
-  - ../../plans/0038-inferred-claims-sweep.md#implementation-log
+  - ../../plans/done/0038-inferred-claims-sweep.md#implementation-log
 resolution: "Reviewed (architect, 2026-10-20): accept with fixes. Raises checked against drlg/0009 § 11.3 (3)-(5) and the lane/h7a rulings (a), (b); outdoor C5 against drlg/0008 H5e (a). Fixes: (1) overclaim: the town-follow 'one gate' wording scoped to the finding's second 1-2 cell run on 21 camp layouts (spec and wiki levels); (2) other: outdoor Open-questions bullet rewrapped. Research-map rows for drlg/lifecycle and drlg/outdoor rewritten; ledger rows added; plan 0038 log entry."
 ---
 

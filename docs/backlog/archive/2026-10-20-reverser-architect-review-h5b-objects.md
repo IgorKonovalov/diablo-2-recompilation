@@ -4,7 +4,7 @@ to: architect
 date: 2026-10-20
 status: done
 context:
-  - ../../plans/0038-inferred-claims-sweep.md#implementation-log
+  - ../../plans/done/0038-inferred-claims-sweep.md#implementation-log
   - ../../findings/objects/0001-object-population.md#plan-0038-batch-h5b-run2026-10-19-h5b-objects
   - ../../findings/drlg/0005-collision.md#plan-0038-batch-h5b-run2026-10-19-h5b-objects
   - ../../findings/objects/experiments.md#run2026-10-19-h5b-objects

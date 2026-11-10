@@ -1,6 +1,6 @@
 # 0066 — Inferred-claims sweep 2: the simulation and game-rules specs
 
-> **Status:** draft (2026-11-10, architect; waits for the owner's approval)
+> **Status:** approved (2026-11-10, by the owner, as recommended: question 1 (b), plan 0038 closed; question 2, 20 claims per session; not started: the owner starts it)
 > **Created:** 2026-11-10
 > **Owner skill(s):** architect, reverser, spec-writer
 > **Related ADRs:** 0004-boundary-oracles-in-reproduction, 0013-forced-path-runs-cell-level, 0014-scope-game-simulation, 0015-emulated-reproduction, 0021-observed-boundaries-in-emulation, 0022-scope-server-frame, 0023-review-tiers-and-gate-first-fixes, 0028-case-and-process-in-experiment-records
@@ -9,7 +9,7 @@
 
 **Question:** which `[I]` claims in the simulation and game-rules specs can now be raised to `[C]` by one more harness
 run, a new check over kept logs, a static second source or an emulated reproduction? Which stay `[I]`, and why?
-[Plan 0038](0038-inferred-claims-sweep.md) asked this for the creation specs. ADR-0022 named this sweep as its
+[Plan 0038](done/0038-inferred-claims-sweep.md) asked this for the creation specs. ADR-0022 named this sweep as its
 "recommended companion plan" and deferred it until the server frame was composed, because most simulation `[I]`s are
 draw-order claims that the frame order decides. `sim/frame` is now reviewed (plan 0055), so the deferral no longer
 holds. When this plan is done, `docs/plans/0066-inventory/` classifies every `[I]` of the specs in scope, the cheap

@@ -802,7 +802,7 @@ runs; Gamble.txt's own order is not kept). `countUpTo[L]` is the number of rows 
 
 ## Plan 0038 batch S2c (2026-10-16)
 
-Static batch S2c of [plan 0038](../../plans/0038-inferred-claims-sweep.md) took 15 inferred statements of
+Static batch S2c of [plan 0038](../../plans/done/0038-inferred-claims-sweep.md) took 15 inferred statements of
 [items/vendors](../../specs/items/vendors.md), rows of [the inventory](../../plans/0038-inventory/items-vendors.md). No
 game, wine or slot was used. The checks are `tools/sweep_s2c.py vendors`, `static` and `tables` (reports
 `workspace/logs/sweep-s2c-*.txt`, manifest `sweep-s2c-manifest.txt`, sha256 `5820525c…9280ba`). The logs are the 7 of
@@ -915,7 +915,7 @@ Row Q23 of [plan 0039](../../plans/done/0039-backlog-sweep-4.md). Static (objdum
 
 ## Plan 0038 batch H6c (run:2026-10-27-sweep-vendors)
 
-Harness batch H6c (`vendors`) of [plan 0038](../../plans/0038-inferred-claims-sweep.md) takes 13 inferred statements
+Harness batch H6c (`vendors`) of [plan 0038](../../plans/done/0038-inferred-claims-sweep.md) takes 13 inferred statements
 of [items/vendors](../../specs/items/vendors.md): rows 2, 5 (2), 12, 14, 15, 18, 29, 30, 32, 33, 34 and 36 of
 [the inventory](../../plans/0038-inventory/items-vendors.md), and the S2c pieces of rows 22 and 26. Spec lines are
 those of the inventory's commit `ac0f5c2`. Run record [run:2026-10-27-sweep-vendors](experiments.md#run2026-10-27-sweep-vendors):

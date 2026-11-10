@@ -754,7 +754,7 @@ then
 
 ## Plan 0038 batch S4a (2026-10-16)
 
-Static batch S4a of [plan 0038](../../plans/0038-inferred-claims-sweep.md) (Phase 1), rows of
+Static batch S4a of [plan 0038](../../plans/done/0038-inferred-claims-sweep.md) (Phase 1), rows of
 [inventory drlg-room-tiles](../../plans/0038-inventory/drlg-room-tiles.md) (the spec statements on this finding).
 No new session. The room-tiles model (`tools/drlg.py`, `Model`/`run_log`, unchanged) was re-run with counters added by
 `python3 -I tools/sweep_s4a.py <check>` over every log with roomk lines: the 6 of run:2026-10-11-drlg-roomk, the 7 of
@@ -830,7 +830,7 @@ occurred in the run", which holds only for run:2026-10-11-drlg-roomk.
 
 ## Plan 0038 batch S4b (2026-10-16)
 
-Static batch S4b of [plan 0038](../../plans/0038-inferred-claims-sweep.md) (Phase 1), rows of [inventory drlg-room-tiles](../../plans/0038-inventory/drlg-room-tiles.md). No session was played. The second tool next to Ghidra is GNU objdump 2.47, walked by `tools/sweep_s4b.py` (recursive descent; see its docstring). The checks are rerunnable with `python3 -I tools/sweep_s4b.py <check>`. Where a statement above is tagged inferred and this section raises it, the tag and the second source given here are the current ones, and the wording above is unchanged.
+Static batch S4b of [plan 0038](../../plans/done/0038-inferred-claims-sweep.md) (Phase 1), rows of [inventory drlg-room-tiles](../../plans/0038-inventory/drlg-room-tiles.md). No session was played. The second tool next to Ghidra is GNU objdump 2.47, walked by `tools/sweep_s4b.py` (recursive descent; see its docstring). The checks are rerunnable with `python3 -I tools/sweep_s4b.py <check>`. Where a statement above is tagged inferred and this section raises it, the tag and the second source given here are the current ones, and the wording above is unchanged.
 
 - **Rows 3 and 35** (spec L74, L861) **reclassified d-none.** Per level type, take the DT1 list of the OR of every mask
   that can meet it (the Dt1Mask of LvlPrest records in its levels, of every `LevelId`-0 record and of every LvlSub
@@ -883,7 +883,7 @@ Static batch S4b of [plan 0038](../../plans/0038-inferred-claims-sweep.md) (Phas
 
 ## Plan 0038 batch H5c (run:2026-10-16-sweep-roomk)
 
-Batch H5c of [plan 0038](../../plans/0038-inferred-claims-sweep.md) Phase 2: rows of
+Batch H5c of [plan 0038](../../plans/done/0038-inferred-claims-sweep.md) Phase 2: rows of
 [inventory drlg-room-tiles](../../plans/0038-inventory/drlg-room-tiles.md) and drlg-README; record [experiments.md § run:2026-10-16-sweep-roomk](experiments.md#run2026-10-16-sweep-roomk)
 (eleven sessions). Check: `tools/drlg.py roomk` (`h5c_event`, `h5c_ract`), 2071 activations, 87 223 checks, 0 mismatches.
 

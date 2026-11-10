@@ -4,7 +4,7 @@ to: architect
 date: 2026-10-27
 status: done
 context:
-  - ../../plans/0038-inferred-claims-sweep.md#implementation-log
+  - ../../plans/done/0038-inferred-claims-sweep.md#implementation-log
   - ../../plans/0038-inventory/README.md#26-moves-made-by-the-batch-reviews
   - ../../findings/drlg/experiments.md#run2026-10-27-sweep-collision
   - ../../findings/drlg/0005-collision.md#plan-0038-batch-h5d-run2026-10-27-sweep-collision

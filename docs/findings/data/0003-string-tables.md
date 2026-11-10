@@ -233,7 +233,7 @@ its stack (`"-\x02"` … `"\x82\x02"`); none is found and the 0 goes to gems `+0
 
 ## Plan 0038 batch S1b (2026-10-16)
 
-Static batch S1b of [plan 0038](../../plans/0038-inferred-claims-sweep.md), the rows of
+Static batch S1b of [plan 0038](../../plans/done/0038-inferred-claims-sweep.md), the rows of
 [inventory data-strings](../../plans/0038-inventory/data-strings.md) and the string-key rows of
 [data-excel](../../plans/0038-inventory/data-excel.md). No session was played; method and log manifest as in
 [data/0001 § Plan 0038 batch S1b](0001-excel-loader.md#plan-0038-batch-s1b-2026-10-16). The check is
@@ -311,7 +311,7 @@ names. Static (objdump, Ghidra on the lane's copy).
 
 ## Plan 0038 batch S1e (2026-10-17)
 
-Static batch S1e of [plan 0038](../../plans/0038-inferred-claims-sweep.md): rows 4, 5, 10, 12, 14, 16, 17, 20, 24, 25,
+Static batch S1e of [plan 0038](../../plans/done/0038-inferred-claims-sweep.md): rows 4, 5, 10, 12, 14, 16, 17, 20, 24, 25,
 32 and 35 of [inventory data-strings](../../plans/0038-inventory/data-strings.md) and rows 52 and 53 of
 [inventory data-excel](../../plans/0038-inventory/data-excel.md) (14 statements). No session was played. Method:
 `STRTABLE_GetByIndex`, `STRTABLE_GetByKey`, `STRTABLE_KeyToIndex` and `UNICODE_CharCount` under Ghidra's p-code
@@ -353,7 +353,7 @@ stays as § Walkthrough and the spec state it.
 
 ## Plan 0038 batch H3b (run:2026-10-27-sweep-data-load)
 
-Harness batch H3b of [plan 0038](../../plans/0038-inferred-claims-sweep.md), the rows of
+Harness batch H3b of [plan 0038](../../plans/done/0038-inferred-claims-sweep.md), the rows of
 [inventory data-strings](../../plans/0038-inventory/data-strings.md) and data-excel row 50 whose finding is this one.
 Seven program runs on slot 2 with gdb on the game before its startup code (`tools/d2run.py --early`); sessions,
 loose files and commands as in [data/0002 § Plan 0038 batch H3b](0002-mpq-precedence.md#plan-0038-batch-h3b-run2026-10-27-sweep-data-load)

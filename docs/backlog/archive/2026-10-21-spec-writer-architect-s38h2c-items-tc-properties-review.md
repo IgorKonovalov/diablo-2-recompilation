@@ -4,7 +4,7 @@ to: architect
 date: 2026-10-21
 status: done
 context:
-  - ../../plans/0038-inferred-claims-sweep.md#implementation-log
+  - ../../plans/done/0038-inferred-claims-sweep.md#implementation-log
   - ../../specs/items/tc.md
   - ../../specs/items/properties.md
   - ../../findings/items/0001-tc-resolution.md#plan-0038-batch-h2c-2026-10-21

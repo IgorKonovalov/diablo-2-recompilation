@@ -4,7 +4,7 @@ to: architect
 date: 2026-10-27
 status: done
 context:
-  - ../../plans/0038-inferred-claims-sweep.md#implementation-log
+  - ../../plans/done/0038-inferred-claims-sweep.md#implementation-log
   - ../../findings/save/0001-d2s-io.md#plan-0038-r1h-the-host-callback-setter-and-the-d2sio-model-2026-10-27
 resolution: "Reviewed 2026-10-27 (architect): accept with fixes (3). Rows 3/19 → d-none and the callback halves of rows 2/18 accepted; the 0x0052BFCF read does not change ruling (d); d-none with an [I] absence fits the class; totals static 567, harness 521, blocked 419 (d-none 293), 1 526. Plan 0038 log."
 ---

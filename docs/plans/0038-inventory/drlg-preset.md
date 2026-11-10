@@ -2,7 +2,7 @@
 
 - **Spec:** [drlg/preset](../../specs/drlg/preset.md), status `reviewed`, front matter `I` 44.
 - **Read at:** `main` e1c807a (worktree `lane/i38d`); the spec file's last change is 38bd9fc.
-- **Cluster:** 0d (drlg and objects), plan [0038](../0038-inferred-claims-sweep.md) Phase 0.
+- **Cluster:** 0d (drlg and objects), plan [0038](../done/0038-inferred-claims-sweep.md) Phase 0.
 - **Lines:** the spec line of the first statement of each row; *count* covers that statement and the ones after it in the same section that share class, route and batch. A line holding two tags counts two.
 
 | # | Spec section | Claim | Finding | Class | Route | Tier | Batch | Count |

@@ -168,7 +168,7 @@ return g_lng;
 
 ## Plan 0038 batch S1b (2026-10-16)
 
-Static batch S1b of [plan 0038](../../plans/0038-inferred-claims-sweep.md), the archive rows of
+Static batch S1b of [plan 0038](../../plans/done/0038-inferred-claims-sweep.md), the archive rows of
 [inventory data-excel](../../plans/0038-inventory/data-excel.md) and [data-README](../../plans/0038-inventory/data-README.md).
 No session was played; method and log manifest as in [data/0001 § Plan 0038 batch S1b](0001-excel-loader.md#plan-0038-batch-s1b-2026-10-16).
 The checks are `python3 -I tools/sweep_s1b.py arch` and `compile`. Where a statement above is tagged inferred and this
@@ -216,7 +216,7 @@ log reads each kind with 0 mismatches on the merged tree (`workspace/merged/`, d
 
 ## Plan 0038 batch S1e (2026-10-17)
 
-Static batch S1e of [plan 0038](../../plans/0038-inferred-claims-sweep.md), row 51 of
+Static batch S1e of [plan 0038](../../plans/done/0038-inferred-claims-sweep.md), row 51 of
 [inventory data-excel](../../plans/0038-inventory/data-excel.md). Method: `LNG_GetLanguageCode` under Ghidra's p-code
 emulator against a model read from the image ([ADR-0015](../../adrs/0015-emulated-reproduction.md)),
 [run:2026-10-17-sweep-emu](experiments.md#run2026-10-17-sweep-emu) family `lang`: 182 calls, ids −2…19, 100, 255,
@@ -252,7 +252,7 @@ found nothing else outside the table, the 0x18 bytes after it and the three NULL
 
 ## Plan 0038 batch H3b (run:2026-10-27-sweep-data-load)
 
-Harness batch H3b of [plan 0038](../../plans/0038-inferred-claims-sweep.md), the archive, file-lookup and language rows
+Harness batch H3b of [plan 0038](../../plans/done/0038-inferred-claims-sweep.md), the archive, file-lookup and language rows
 of [inventory data-excel](../../plans/0038-inventory/data-excel.md) and [data-README](../../plans/0038-inventory/data-README.md).
 Seven program runs on slot 2, gdb on the game **before its startup code** (`tools/d2run.py --early`: the process is
 stopped once `game.exe` is mapped, 0.50–0.57 s after launch, and the logger's `XATT` line finds every archive handle,

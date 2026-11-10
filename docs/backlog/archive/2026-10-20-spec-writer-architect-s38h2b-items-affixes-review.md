@@ -4,7 +4,7 @@ to: architect
 date: 2026-10-20
 status: done
 context:
-  - ../../plans/0038-inferred-claims-sweep.md#implementation-log
+  - ../../plans/done/0038-inferred-claims-sweep.md#implementation-log
   - ../../specs/items/affixes.md
   - ../../findings/items/0005-affixes.md#plan-0038-batch-h2b-2026-10-20
 resolution: "Reviewed 2026-10-20 (architect): accept with fixes (4: overclaim 2, omission 1, other 1); aff 27 ruled raised in part (G3 armour and throw lines [I]); items/affixes C 152 / I 28 / L 4. Plan 0038 log."

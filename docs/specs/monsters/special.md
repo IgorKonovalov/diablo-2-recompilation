@@ -1041,7 +1041,7 @@ The name is format 1722 with prefix, suffix and appellation, from the keys `Fire
   superuniques, 4 + 4 MonPlace presets, 94 client name rolls; `monspawn: 390144 checks, 0 mismatches`.
 - [findings/monsters/0002-room-population.md § 9](../../findings/monsters/0002-room-population.md#9-boundary-decision-and-the-phase-2-logging-plan):
   the oracles plan 0018 replaced.
-- Plan 0038 sweep ([plan 0038](../../plans/0038-inferred-claims-sweep.md)): the batch sections of
+- Plan 0038 sweep ([plan 0038](../../plans/done/0038-inferred-claims-sweep.md)): the batch sections of
   [monsters/0003](../../findings/monsters/0003-special-monsters.md): [S3a](../../findings/monsters/0003-special-monsters.md#plan-0038-batch-s3a-2026-10-16) (kept logs: the always-run mods, the null rows met,
   the aura row count, the group walk, the post-create mods, the quest test),
   [H4b](../../findings/monsters/0003-special-monsters.md#plan-0038-batch-h4b-run2026-10-16-sweep-monsters-b) (run:2026-10-16-sweep-monsters-b: the aura table and

@@ -903,7 +903,7 @@ return of `ItemCreateByQuality`. Records: [items/experiments](experiments.md#run
 
 ## Plan 0038 batch S2b (2026-10-16)
 
-Static batch S2b of [plan 0038](../../plans/0038-inferred-claims-sweep.md) took 13 inferred statements of
+Static batch S2b of [plan 0038](../../plans/done/0038-inferred-claims-sweep.md) took 13 inferred statements of
 [items/properties](../../specs/items/properties.md), rows of [the inventory](../../plans/0038-inventory/items-properties.md).
 The log sets (STOCK, 148 stock logs; IR, 122 logs of the ItemRatio-only forced runs that ADR-0013 admits for code that
 reads no ItemRatio cell), the manifest and the tool are those of
@@ -1061,7 +1061,7 @@ Required Phase 2 cases from Phase 1:
 
 ## Plan 0038 batch S2c (2026-10-16)
 
-Static batch S2c of [plan 0038](../../plans/0038-inferred-claims-sweep.md) took three inferred statements of
+Static batch S2c of [plan 0038](../../plans/done/0038-inferred-claims-sweep.md) took three inferred statements of
 [items/properties](../../specs/items/properties.md), row 19 of [the inventory](../../plans/0038-inventory/items-properties.md).
 The checks are `tools/sweep_s2c.py cube` and `props` (reports `workspace/logs/sweep-s2c-*.txt`). `props` reads the
 stock drop logs of `tools/tc_sweep.py` (166, of which run:2026-10-14-props and run:2026-10-15-items-chain carry the
@@ -1084,7 +1084,7 @@ stock drop logs of `tools/tc_sweep.py` (166, of which run:2026-10-14-props and r
 
 ## Plan 0038 batch H2b (2026-10-20)
 
-Harness batch H2b of [plan 0038](../../plans/0038-inferred-claims-sweep.md)
+Harness batch H2b of [plan 0038](../../plans/done/0038-inferred-claims-sweep.md)
 ([run:2026-10-20-sweep-items-chain](experiments.md#run2026-10-20-sweep-items-chain), stock data) took six inferred
 statements of [items/properties](../../specs/items/properties.md), rows 7 (3), 20 (2) and 24 of
 [the inventory](../../plans/0038-inventory/items-properties.md) (24 by
@@ -1121,7 +1121,7 @@ gets a dated note pointing here.
 
 ## Plan 0038 batch H2c (2026-10-21)
 
-Forced harness batch H2c of [plan 0038](../../plans/0038-inferred-claims-sweep.md)
+Forced harness batch H2c of [plan 0038](../../plans/done/0038-inferred-claims-sweep.md)
 ([run:2026-10-21-tcnamed-props-forced](experiments.md#run2026-10-21-tcnamed-props-forced), seven kept sessions on
 harness slot 2, a loose `treasureclassex.bin` under `-direct` whose Eldritch and Hephasto TCs name *Ormus' Robes*,
 *Ethereal Edge*, *Tomb Reaver*, *Shadowkiller* and *Ghostflame*; inventory § 6 ruling 2) took three inferred statements

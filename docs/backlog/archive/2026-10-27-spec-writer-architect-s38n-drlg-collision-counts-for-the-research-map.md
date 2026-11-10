@@ -4,7 +4,7 @@ to: architect
 date: 2026-10-27
 status: done
 context:
-  - ../../plans/0038-inferred-claims-sweep.md#implementation-log
+  - ../../plans/done/0038-inferred-claims-sweep.md#implementation-log
   - ../../specs/drlg/collision.md
 resolution: "Research-map row rewritten (C 157 / I 35 / L 7, updated 2026-10-27); wiki/levels and wiki/monsters folded into the open wiki refresh entry."
 ---

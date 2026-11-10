@@ -5,7 +5,7 @@ date: 2026-10-27
 status: done
 context:
   - ../../findings/objects/0001-object-population.md#h5b2-population-clusters-caps-themes-and-orientation-rows-3-13-1517-19-20-50-51
-  - ../../plans/0038-inferred-claims-sweep.md#implementation-log
+  - ../../plans/done/0038-inferred-claims-sweep.md#implementation-log
 resolution: "objects/0001 § H5b.2's shrine-cap bullet reworded to \"before any placement draw (after the handler's `P100(S)` draw)\", with a dated correction anchored at 0x00552B9A–0x00552BBA (seed step), 0x00552BC5 (HealthShrineDue) and 0x00552BF7 (cap call), objdump-checked; no other finding repeats it; no tag changes [objects/0001](../../findings/objects/0001-object-population.md#h5b2-population-clusters-caps-themes-and-orientation-rows-3-13-1517-19-20-50-51)"
 ---
 

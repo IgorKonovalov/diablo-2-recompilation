@@ -4,7 +4,7 @@ to: architect
 date: 2026-10-27
 status: done
 context:
-  - ../../plans/0038-inferred-claims-sweep.md#phase-3--re-tag-the-specs
+  - ../../plans/done/0038-inferred-claims-sweep.md#phase-3--re-tag-the-specs
   - ../../plans/0038-inventory/README.md#26-moves-made-by-the-batch-reviews
 resolution: "Reviewed 2026-10-27 (architect): accept with fixes (6), applied on lane/s38m: pool's MonRegionFindAdd nPool clause to [I], pool's store wording, stats B12's one item per creation, special § H's level-6 list, spawn's spawnCol mask runs, spawn K1's header. Counts unchanged: pool {99, 19, 3}, spawn {136, 43, 5}, special {149, 70, 4}, stats {130, 47, 5}. Research-map rows rewritten; the wiki refresh is a new spec-writer entry. Rulings in the plan 0038 log."
 ---

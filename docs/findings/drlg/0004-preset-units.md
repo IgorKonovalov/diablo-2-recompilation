@@ -498,7 +498,7 @@ if (L.id == 6) {
 
 ## Plan 0038 batch S4a (2026-10-16)
 
-Static batch S4a of [plan 0038](../../plans/0038-inferred-claims-sweep.md) (Phase 1), rows of
+Static batch S4a of [plan 0038](../../plans/done/0038-inferred-claims-sweep.md) (Phase 1), rows of
 [inventory drlg-preset](../../plans/0038-inventory/drlg-preset.md). No new session. Checks: `python3 -I
 tools/sweep_s4a.py <check>`, which re-runs `tools/drlg.py gen` and `roomk` (unchanged) with counters added, over:
 - the 27 logs of run:2026-10-13-drlg-preset and the 6 of run:2026-10-15-acts-3-5: 139 032 and 155 215 gen checks;
@@ -580,7 +580,7 @@ Reclassified:
 
 ## Plan 0038 batch S4b (2026-10-16)
 
-Static batch S4b of [plan 0038](../../plans/0038-inferred-claims-sweep.md) (Phase 1), rows of [inventory drlg-preset](../../plans/0038-inventory/drlg-preset.md). No session was played. The second tool next to Ghidra is GNU objdump 2.47, walked by `tools/sweep_s4b.py` (recursive descent; see its docstring). The checks are rerunnable with `python3 -I tools/sweep_s4b.py <check>`. Where a statement above is tagged inferred and this section raises it, the tag and the second source given here are the current ones, and the wording above is unchanged.
+Static batch S4b of [plan 0038](../../plans/done/0038-inferred-claims-sweep.md) (Phase 1), rows of [inventory drlg-preset](../../plans/0038-inventory/drlg-preset.md). No session was played. The second tool next to Ghidra is GNU objdump 2.47, walked by `tools/sweep_s4b.py` (recursive descent; see its docstring). The checks are rerunnable with `python3 -I tools/sweep_s4b.py <check>`. Where a statement above is tagged inferred and this section raises it, the tag and the second source given here are the current ones, and the wording above is unchanged.
 
 - **Row 3** (spec L87) **raised.** [C] `LevelIsTown` is a byte table (0x006426C8, ids 1–109) selecting one of two
   jump targets. Decoded over every input, it returns 1 exactly for 1, 40, 75, 103 and 109 (`sweep_s4b.py data`), and its
@@ -734,7 +734,7 @@ Batch H5a, record [experiments.md § run:2026-10-17-sweep-links](experiments.md#
 
 ## Plan 0038 batch S1f (2026-10-17)
 
-Static batch S1f of [plan 0038](../../plans/0038-inferred-claims-sweep.md), the c-emu rows of the
+Static batch S1f of [plan 0038](../../plans/done/0038-inferred-claims-sweep.md), the c-emu rows of the
 [inventory § 2.6 S1f table](../../plans/0038-inventory/README.md#26-moves-made-by-the-batch-reviews). No session was
 played. Method: the function runs under Ghidra's p-code emulator against `tools/sweep_s1f.py`'s models, under
 [ADR-0015](../../adrs/0015-emulated-reproduction.md): [run:2026-10-17-sweep-emu2](../data/experiments.md#run2026-10-17-sweep-emu2).

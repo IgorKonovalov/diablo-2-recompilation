@@ -4,7 +4,7 @@ to: architect
 date: 2026-10-17
 status: done
 context:
-  - ../../plans/0038-inferred-claims-sweep.md
+  - ../../plans/done/0038-inferred-claims-sweep.md
   - ../../wiki/README.md
   - ../../wiki/how-we-know.md
 resolution: "Reviewed 2026-10-17 (architect): accept with fixes (6: overclaim 2, omission 2, stale cross-reference 2), applied on lane/wiki6; plan 0038 log."

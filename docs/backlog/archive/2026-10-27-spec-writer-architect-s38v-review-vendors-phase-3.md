@@ -4,7 +4,7 @@ to: architect
 date: 2026-10-27
 status: done
 context:
-  - ../../plans/0038-inferred-claims-sweep.md#implementation-log
+  - ../../plans/done/0038-inferred-claims-sweep.md#implementation-log
   - ../../specs/items/vendors.md
   - ../../wiki/items-other-paths.md
   - ../../findings/items/0009-vendors.md#plan-0038-batch-h6c-run2026-10-27-sweep-vendors

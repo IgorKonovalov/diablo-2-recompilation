@@ -4,7 +4,7 @@ to: archivist, reverser
 date: 2026-11-03
 status: done
 context:
-  - ../../plans/0038-inferred-claims-sweep.md
+  - ../../plans/done/0038-inferred-claims-sweep.md
 resolution: "RECIPE_BASES row added with the built-save hash 63ea2a2e..., which equals the installed-save sha256 in the run:2026-10-30-h6ga-anc log header (no reverser half needed); 61 tests pass [test_d2s.py](../../../tools/test_d2s.py)"
 ---
 

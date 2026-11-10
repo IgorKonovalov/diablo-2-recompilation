@@ -897,7 +897,7 @@ spec's Example 2 table gives its picks.
 
 ## Plan 0038 batch S2c (2026-10-16)
 
-Static batch S2c of [plan 0038](../../plans/0038-inferred-claims-sweep.md) took 16 inferred statements of
+Static batch S2c of [plan 0038](../../plans/done/0038-inferred-claims-sweep.md) took 16 inferred statements of
 [items/quest-drops](../../specs/items/quest-drops.md), rows of [the inventory](../../plans/0038-inventory/items-quest-drops.md)
 (row 1 left the batch for H6e2 before it started, inventory § 2.2). No game, wine or slot was used. The checks are
 `tools/sweep_s2c.py quests`, `static` and `tables` (reports `workspace/logs/sweep-s2c-*.txt`, manifest
@@ -1004,7 +1004,7 @@ raised at the `lane/h6e1` review on H6e1's cursor line): 13 raised, 2 raised in 
 
 ## Plan 0038 batch H4a (run:2026-10-21-sweep-monsters-a)
 
-Harness batch H4a of [plan 0038](../../plans/0038-inferred-claims-sweep.md) took S2c's reclassified qd 48 (spec line
+Harness batch H4a of [plan 0038](../../plans/done/0038-inferred-claims-sweep.md) took S2c's reclassified qd 48 (spec line
 L712 at `main` `1d0262a`). Record: [monsters/experiments.md § run:2026-10-21-sweep-monsters-a](../monsters/experiments.md#run2026-10-21-sweep-monsters-a).
 
 - **qd 48** (L712, "the other 24 `boss` classes keep `Level(N)`/`(H)`") **raised.** [C] In expansion nightmare games
@@ -1164,7 +1164,7 @@ table survey. No game run.
   (0x0055CA40–0x0055CC80, fn:sub_0055CA00_QuestCodePairTest@0x0055CA00, tbl:UniqueItems.txt:carry1, tbl:Misc.txt:quest)
 ## Plan 0038 batch H6d (2026-10-17)
 
-Harness batch H6d of [plan 0038](../../plans/0038-inferred-claims-sweep.md) took 14 inferred statements of
+Harness batch H6d of [plan 0038](../../plans/done/0038-inferred-claims-sweep.md) took 14 inferred statements of
 [items/quest-drops](../../specs/items/quest-drops.md) (rows 11, 13, 16, 18, 22, 25, 27 of
 [the inventory](../../plans/0038-inventory/items-quest-drops.md)); its tc rows are in
 [items/0001](0001-tc-resolution.md#plan-0038-batch-h6d-2026-10-17) and its uniques-sets row in
@@ -1281,7 +1281,7 @@ fn:sub_00624F60_StatListGetValue@0x00624F60, tbl:Misc.txt:quest, tbl:Misc.txt:qu
 
 ## Plan 0038 batch H6e2 (run:2026-10-27-sweep-quest-items)
 
-Harness batch H6e2 (`quest-items`) of [plan 0038](../../plans/0038-inferred-claims-sweep.md) takes 24 inferred
+Harness batch H6e2 (`quest-items`) of [plan 0038](../../plans/done/0038-inferred-claims-sweep.md) takes 24 inferred
 statements: [items/quest-drops](../../specs/items/quest-drops.md) rows 1, 30, 33, 34 and 35 of
 [the inventory](../../plans/0038-inventory/items-quest-drops.md) and [objects](../../specs/objects/README.md) row 48
 ([inventory](../../plans/0038-inventory/objects-README.md)). The first checkpoint (rotation, plan 0038 log 2026-10-27)
@@ -1621,7 +1621,7 @@ part (b). No session: the kept `brain4` log and the development `brain4b` log of
 
 ## Plan 0038 batch H6e1 (run:2026-10-27-sweep-quest-npc)
 
-Harness batch H6e1 (`quest-npc`) of [plan 0038](../../plans/0038-inferred-claims-sweep.md) takes 22 inferred
+Harness batch H6e1 (`quest-npc`) of [plan 0038](../../plans/done/0038-inferred-claims-sweep.md) takes 22 inferred
 statements of [items/quest-drops](../../specs/items/quest-drops.md): rows 2, 4, 5, 32, 39, 40, 42–46, 50 and 51 of
 [the inventory](../../plans/0038-inventory/items-quest-drops.md), and the S2c piece of row 38 (a cursor-item line at
 `sub_0055EEA0_CursorItemConsume` in each service branch). Run record

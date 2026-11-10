@@ -3,7 +3,7 @@
 - **Spec:** [hirelings/README.md](../../specs/hirelings/README.md), read at `main` `e1c807a` (last change to the spec: `02aa5b0`).
 - **Front matter `I`:** 39; the *count* column sums to 39.
 - **Finding:** [hirelings/0001](../../findings/hirelings/0001-hirelings.md) (sections given as `§n`; other subsystems' findings named in full).
-- **Cluster:** 0c (monsters, hirelings, player). Classes, tiers and batches as in [plan 0038](../0038-inferred-claims-sweep.md#classes).
+- **Cluster:** 0c (monsters, hirelings, player). Classes, tiers and batches as in [plan 0038](../done/0038-inferred-claims-sweep.md#classes).
 - Guard rows marked (a-logs) with "0 → d-none" are re-read first: a guard the later logs never took is reclassified d-none by the batch, not raised.
 
 | # | Spec section | Claim | Finding anchor | Class | Route | Tier | Batch | Count |

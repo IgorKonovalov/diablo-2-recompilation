@@ -5,7 +5,7 @@ date: 2026-10-30
 status: done
 context:
   - ../../findings/player/0001-creation.md
-  - ../../plans/0038-inferred-claims-sweep.md
+  - ../../plans/done/0038-inferred-claims-sweep.md
 resolution: "Tier B check 2026-10-30: accept with fixes (2); rulings in plan 0038 log."
 ---
 

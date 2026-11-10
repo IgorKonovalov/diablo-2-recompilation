@@ -1,6 +1,6 @@
 # Plan 0038 inventory: totals, batch list and priority order
 
-Phase 0 of [plan 0038](../0038-inferred-claims-sweep.md), written by the architect on `lane/c38` from the four cluster
+Phase 0 of [plan 0038](../done/0038-inferred-claims-sweep.md), written by the architect on `lane/c38` from the four cluster
 inventories: (0a) items, (0b) save, data and rng, (0c) monsters, hirelings and player, (0d) drlg and objects. The
 cluster files read the specs at `main` `e1c807a`. Up to `551bee9` the only spec change is the name-only rename
 `QUESTS_ObjectOperate` → `QUESTS_ObjectEvent` in items/quest-drops and objects, so every front-matter count still
@@ -70,7 +70,7 @@ Two changes landed on `main` after the clusters' read (`lane/rbl`, merged at `55
 
 [ADR-0015](../../adrs/0015-emulated-reproduction.md) (accepted) admits a run of the pinned image's own code under
 Ghidra's p-code emulator as evidence rule 4. It requires unmodified code and a declared read set, and it admits
-synthetic records. This adds a route to the plan's [classes](../0038-inferred-claims-sweep.md#classes):
+synthetic records. This adds a route to the plan's [classes](../done/0038-inferred-claims-sweep.md#classes):
 
 | Class | Meaning | Who raises it |
 |---|---|---|
@@ -1898,7 +1898,7 @@ Static and harness batches use different resources (Ghidra copies against slots)
 
 **Order from 2026-10-20 (owner).** The harness ranks above are superseded for the batches left: H5b (in flight) →
 H2a → H2b → H2c → H4a → H5d → H1b → H1a → H3b, then H6e2 → H6e1 → H6b → H6a → H6c → H6f → H6g. The family rules
-below and in the notes still hold ([plan 0038 log](../0038-inferred-claims-sweep.md#implementation-log)).
+below and in the notes still hold ([plan 0038 log](../done/0038-inferred-claims-sweep.md#implementation-log)).
 
 **Ruling 3 (order).** H5c stays ahead of H5e and H5a. It has the most T1 statements and the fewest sessions of the
 three (about 10, against 16–17 for H5e), and it unblocks H5d. Its logger edits are static work: the lane makes them,

@@ -1,6 +1,6 @@
 # Plan 0038 inventory: items/cube
 
-Phase 0 of [plan 0038](../0038-inferred-claims-sweep.md), cluster (0a) items.
+Phase 0 of [plan 0038](../done/0038-inferred-claims-sweep.md), cluster (0a) items.
 
 - **Spec:** [items/cube](../../specs/items/cube.md), status `reviewed`, read at commit `4543b18` (on `main` at `e1c807a`).
   Front matter `I` = **82**; the *count* column below sums to 82.
@@ -8,7 +8,7 @@ Phase 0 of [plan 0038](../0038-inferred-claims-sweep.md), cluster (0a) items.
   [findings/items/experiments.md](../../findings/items/experiments.md).
 - **Columns.** *Section* links the spec section and lists the spec lines of the statements at that commit. *Anchor* is the
   finding number and the first code address of the statement. *Class*, *tier* and *batch* follow the plan's
-  [Classes](../0038-inferred-claims-sweep.md#classes). A forced-run row is class `b` with a route that starts `forced:`.
+  [Classes](../done/0038-inferred-claims-sweep.md#classes). A forced-run row is class `b` with a route that starts `forced:`.
   A `—` batch means the row is class (d) and no batch takes it.
 - **Totals by class:** a-logs 13, b 26, c 7, d-none 36.
 

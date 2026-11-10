@@ -11,14 +11,14 @@ Scope is set by [ADR-0001](../adrs/0001-target-toolchain-evidence-sources.md) an
 ADR-0017 and [ADR-0025](../adrs/0025-scope-item-use-inventory.md) (game rules: quests, travel, the economy, item use and
 inventory), ADR-0022 (the server frame) and [ADR-0026](../adrs/0026-scope-in-game-message-layer.md) (the in-game message
 layer; transport, compression, encryption, Battle.net, realm and handshake stay out). By the owner's 2026-10-30 ruling
-plans beyond the approved roster (0038, 0046, 0050, 0052, 0054, 0055, 0056, 0057–0062) may be drafted but not started;
+plans beyond the approved roster (0038, 0046, 0050, 0052, 0054, 0055, 0056, 0057–0062; from 2026-11-10 also 0063–0067, approved and not started) may be drafted but not started;
 when the roster finishes, the project stops and reports to the owner.
 The table has four bands. **Core** is the original goal. **Enablers** are systems the core can't be reproduced
 without. **Creation paths** are other callers into the core item and monster code. **Simulation** is the game run
 over time, checked per event (ADR-0014). Core rows come first, so "the original three areas are done" stays visible.
 
-[Plan 0038](../plans/0038-inferred-claims-sweep.md) (approved 2026-10-16) sweeps the `[I]` claims of the reviewed specs
-toward `[C]`. It changes no row's status. The counts in the rows below change only when its Phase 3 re-tags a spec.
+[Plan 0038](../plans/done/0038-inferred-claims-sweep.md) (approved 2026-10-16, closed 2026-11-10 where it stood; [plan 0066](../plans/0066-simulation-inferred-claims-sweep.md) continues the method over the simulation and game-rules specs) swept the `[I]` claims of the reviewed specs
+toward `[C]`. It changed no row's status; the counts in the rows below include its Phase 3 re-tags.
 
 ### Core
 
@@ -113,6 +113,8 @@ and `quests/travel` ([plan 0042](../plans/done/0042-quests-travel.md)), `items/e
 `items/use` ([plan 0060](../plans/done/0060-item-use-inventory.md)): the server's outcomes only, the stash and the ground
 item's lifetime in, the client UI and trading out.
 Until then, quest state, prices, repair and gold amounts stay inputs or named-only edges of the specs above.
+[ADR-0033](../adrs/0033-scope-player-trade.md) (accepted 2026-11-10) brings the player-to-player trade into scope; its
+row `items/trade` is added when [plan 0067](../plans/0067-player-trade.md) starts.
 
 | Subsystem | Depends on | Key tables | Status |
 |---|---|---|---|

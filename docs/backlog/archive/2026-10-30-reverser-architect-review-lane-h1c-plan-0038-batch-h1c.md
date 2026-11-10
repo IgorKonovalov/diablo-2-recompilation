@@ -4,7 +4,7 @@ to: architect
 date: 2026-10-30
 status: done
 context:
-  - ../../plans/0038-inferred-claims-sweep.md
+  - ../../plans/done/0038-inferred-claims-sweep.md
   - ../../findings/save/experiments.md
 resolution: "Tier B check accept with fixes (1 overclaim). Rulings: (1) hirelings 30/33 and player-creation 1 stay in part as filed; (2) us 21 raised, version-0 half stays d-none; (3) spec re-tag left to the spec-writer; (4) the 2-socket observation stays a no-claim note. tools/test_d2s.py test_every_recipe_has_a_base failure is pre-existing on main (anim-* recipes, lane/a7b)."
 ---

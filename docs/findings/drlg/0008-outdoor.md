@@ -1449,7 +1449,7 @@ which ADR-0001 rules out, and it was not opened.
 
 ## Plan 0038 batch S4a (2026-10-16)
 
-Static batch S4a of [plan 0038](../../plans/0038-inferred-claims-sweep.md) (Phase 1), rows of
+Static batch S4a of [plan 0038](../../plans/done/0038-inferred-claims-sweep.md) (Phase 1), rows of
 [inventory drlg-outdoor](../../plans/0038-inventory/drlg-outdoor.md). No new session. `tools/drlg.py gen` was re-run,
 with counters added by `python3 -I tools/sweep_s4a.py <check>` (no checker changed), over the 11 logs of
 run:2026-10-15-drlg-outdoor (522 outdoor windows, 0 mismatches), together with the gen-family logs of
@@ -1485,7 +1485,7 @@ Not raised:
 
 ## Plan 0038 batch S4b (2026-10-16)
 
-Static batch S4b of [plan 0038](../../plans/0038-inferred-claims-sweep.md) (Phase 1), rows of [inventory drlg-outdoor](../../plans/0038-inventory/drlg-outdoor.md). No session was played. The second tool next to Ghidra is GNU objdump 2.47, walked by `tools/sweep_s4b.py` (recursive descent; see its docstring). The checks are rerunnable with `python3 -I tools/sweep_s4b.py <check>`. Where a statement above is tagged inferred and this section raises it, the tag and the second source given here are the current ones, and the wording above is unchanged.
+Static batch S4b of [plan 0038](../../plans/done/0038-inferred-claims-sweep.md) (Phase 1), rows of [inventory drlg-outdoor](../../plans/0038-inventory/drlg-outdoor.md). No session was played. The second tool next to Ghidra is GNU objdump 2.47, walked by `tools/sweep_s4b.py` (recursive descent; see its docstring). The checks are rerunnable with `python3 -I tools/sweep_s4b.py <check>`. Where a statement above is tagged inferred and this section raises it, the tag and the second source given here are the current ones, and the wording above is unchanged.
 
 - **Row 3** (spec L53) **raised.** [C] All 12 call sites of `PortalObjectCreate` (Ghidra and the raw scan agree) were
   traced to the level they pass (the 4th stack argument, tested at 0x0056D181). Seven pass constants: 1, 1, 38, 39, 46,

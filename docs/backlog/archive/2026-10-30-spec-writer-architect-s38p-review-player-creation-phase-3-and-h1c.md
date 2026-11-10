@@ -4,7 +4,7 @@ to: architect
 date: 2026-10-30
 status: done
 context:
-  - ../../plans/0038-inferred-claims-sweep.md#implementation-log
+  - ../../plans/done/0038-inferred-claims-sweep.md#implementation-log
   - ../../specs/player/creation.md
   - ../../specs/hirelings/README.md#h-the-mercenary-from-a-save-d2s_readmercheader-merc_create
 resolution: "Tier A review accept with fixes (10: overclaim 4, under-claim 1, miscount 1, omission 1, stale cross-reference 2, other 1). Rulings: rows 3/30 split stands; F2 column-0 clamp stays [I] (S3b finding narrowing routed to the reverser); row 1 as two Entry points rows; save/d2s D3b's legacy-reader [C] accepted; wiki rewrites accepted with the wiki/saves corpse-share fix. player/creation C 121 / I 41 / L 1. Plan 0038 log, 2026-10-30."

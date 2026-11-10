@@ -4,7 +4,7 @@ to: architect
 date: 2026-10-18
 status: done
 context:
-  - ../../plans/0038-inferred-claims-sweep.md#implementation-log
+  - ../../plans/done/0038-inferred-claims-sweep.md#implementation-log
   - ../../findings/drlg/0009-room-lifecycle.md#113-plan-0038-batch-h7a-run2026-10-17-h7a-lifecycle
   - ../../findings/drlg/experiments.md#run2026-10-17-h7a-lifecycle
 resolution: "Accepted with fixes (plan 0038 log, 2026-10-18 H7a review): (a) the 4 +0xC4 bit-0x2000 mismatches accepted as explained, writer an open question; (b) the frame % 1500 sweep correction stands as [I]; (c) recipe (b) shortfall accepted on the 106-layout sample. 4 fixes made by the architect; spec-writer entry released."

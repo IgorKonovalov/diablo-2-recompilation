@@ -816,7 +816,7 @@ compared in full.
 
 ## Plan 0038 batch S2c (2026-10-16)
 
-Static batch S2c of [plan 0038](../../plans/0038-inferred-claims-sweep.md) took 27 inferred statements of
+Static batch S2c of [plan 0038](../../plans/done/0038-inferred-claims-sweep.md) took 27 inferred statements of
 [items/sockets-runewords](../../specs/items/sockets-runewords.md), rows of [the inventory](../../plans/0038-inventory/items-sockets-runewords.md).
 No game, wine or slot was used. The checks are `tools/sweep_s2c.py sockets`, `tables` and `static` (reports
 `workspace/logs/sweep-s2c-*.txt`, manifest `sweep-s2c-manifest.txt`, sha256 `5820525c…9280ba`). The logs are the 23 of
@@ -996,7 +996,7 @@ Call-site survey of `ITEMS_CheckFlags` (0x006280A0) and `ITEMS_SetFlag` (0x00628
 
 ## Plan 0038 batch H2b (2026-10-20)
 
-Harness batch H2b of [plan 0038](../../plans/0038-inferred-claims-sweep.md)
+Harness batch H2b of [plan 0038](../../plans/done/0038-inferred-claims-sweep.md)
 ([run:2026-10-20-sweep-items-chain](experiments.md#run2026-10-20-sweep-items-chain), stock data) took one inferred
 statement of [items/sockets-runewords](../../specs/items/sockets-runewords.md), row 42 of
 [the inventory](../../plans/0038-inventory/items-sockets-runewords.md) (by
@@ -1057,7 +1057,7 @@ request exceeded the cap, so the clamp of the write is not; review scope); the q
 
 ## Plan 0038 batch H6b (run:2026-10-27-sweep-sockets)
 
-Harness batch H6b (`sockets`) of [plan 0038](../../plans/0038-inferred-claims-sweep.md) takes 25 inferred statements
+Harness batch H6b (`sockets`) of [plan 0038](../../plans/done/0038-inferred-claims-sweep.md) takes 25 inferred statements
 of [items/sockets-runewords](../../specs/items/sockets-runewords.md): rows 1, 9, 10, 12, 13, 16–18, 21, 29, 35 (from
 S2c) and 38 of [the inventory](../../plans/0038-inventory/items-sockets-runewords.md), and the S2c pieces of rows 14
 and 46. Spec lines are those of the inventory's commit `c3167c6`. Run record
@@ -1263,7 +1263,7 @@ timers and the name bullet get dated notes pointing here.
 
 ## Plan 0038 batch H1c (run:2026-10-27-sweep-d2s-legacy)
 
-Harness batch H1c of [plan 0038](../../plans/0038-inferred-claims-sweep.md), the piece of sock 1
+Harness batch H1c of [plan 0038](../../plans/done/0038-inferred-claims-sweep.md), the piece of sock 1
 ([inventory](../../plans/0038-inventory/items-sockets-runewords.md); the row stays counted in H6b) that the `lane/h6b`
 review routed here: the version-71 list reader's inserts. Run record: [save/experiments](../save/experiments.md#run2026-10-27-sweep-d2s-legacy). The load is of `leg71sock`, a
 tool-built version-71 save (ADR-0013 § Neutral): two caps, each flagged socketed with one `gsv` child record after it.

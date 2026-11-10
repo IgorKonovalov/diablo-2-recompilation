@@ -777,7 +777,7 @@ from a logged seed.
 
 ## Plan 0038 batch S2b (2026-10-16)
 
-Static batch S2b of [plan 0038](../../plans/0038-inferred-claims-sweep.md) took 19 inferred statements of
+Static batch S2b of [plan 0038](../../plans/done/0038-inferred-claims-sweep.md) took 19 inferred statements of
 [items/affixes](../../specs/items/affixes.md), rows of [the inventory](../../plans/0038-inventory/items-affixes.md)
 (the § 5 list of [the inventory README](../../plans/0038-inventory/README.md#5-batch-list)). No game, wine or slot
 was used. The checks are in `tools/items_sweep.py`; its reports and the log manifest are kept in `workspace/logs/`
@@ -964,7 +964,7 @@ Symbols: `ITEMS_RollStaffMods` and `sub_005C0F90_StaffModsRoll` I → C.
 
 ## Plan 0038 batch S2c (2026-10-16)
 
-Static batch S2c of [plan 0038](../../plans/0038-inferred-claims-sweep.md) took three inferred statements of
+Static batch S2c of [plan 0038](../../plans/done/0038-inferred-claims-sweep.md) took three inferred statements of
 [items/affixes](../../specs/items/affixes.md), rows 2, 11 and 14 of [the inventory](../../plans/0038-inventory/items-affixes.md).
 The checks are `tools/sweep_s2c.py cube` (it runs `tools/cube.py`'s model per transmute and records every forced pick
 with its row's level window) and `props` (reports `workspace/logs/sweep-s2c-*.txt`). The batch's other ledgers are in
@@ -1000,7 +1000,7 @@ with its row's level window) and `props` (reports `workspace/logs/sweep-s2c-*.tx
 
 ## Plan 0038 batch S1f (2026-10-17)
 
-Static batch S1f of [plan 0038](../../plans/0038-inferred-claims-sweep.md), the c-emu rows of the
+Static batch S1f of [plan 0038](../../plans/done/0038-inferred-claims-sweep.md), the c-emu rows of the
 [inventory § 2.6 S1f table](../../plans/0038-inventory/README.md#26-moves-made-by-the-batch-reviews). No session was
 played. Method: the function runs under Ghidra's p-code emulator against `tools/sweep_s1f.py`'s models, under
 [ADR-0015](../../adrs/0015-emulated-reproduction.md): [run:2026-10-17-sweep-emu2](../data/experiments.md#run2026-10-17-sweep-emu2).
@@ -1062,7 +1062,7 @@ default, and `--staff oracle` restores the plan 0021 switch (ADR-0004). No readi
 
 ## Plan 0038 batch H2b (2026-10-20)
 
-Harness batch H2b of [plan 0038](../../plans/0038-inferred-claims-sweep.md)
+Harness batch H2b of [plan 0038](../../plans/done/0038-inferred-claims-sweep.md)
 ([run:2026-10-20-sweep-items-chain](experiments.md#run2026-10-20-sweep-items-chain), harness slot 2, stock data) took
 11 inferred statements of [items/affixes](../../specs/items/affixes.md), rows 5, 13, 17, 19, 20, 21 and 24 of
 [the inventory](../../plans/0038-inventory/items-affixes.md); spec lines are those of the inventory's commit `3b1433f`.

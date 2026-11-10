@@ -4,7 +4,7 @@ to: architect
 date: 2026-10-27
 status: done
 context:
-  - ../../plans/0038-inferred-claims-sweep.md#implementation-log
+  - ../../plans/done/0038-inferred-claims-sweep.md#implementation-log
   - ../../plans/0038-inventory/README.md#26-moves-made-by-the-batch-reviews
   - ../../findings/save/experiments.md#run2026-10-27-sweep-d2s-load
 resolution: "lane/h1a review 2026-10-27: accept with fixes (5). Ledger as filed (raised 32, in part 4, shortfall 8, d-none 2: 46); player-creation 20/34 d-none with a null-unit reach condition; the swap ruled a stock-path observation of the server's reader with a single-player reach note; the 139 gf and 50 ladder halves d-none; legacy rows shortfalls; data-calc 19 raised (S1b). Totals static 567, harness 519, blocked 421 (d-none 295), 1 526. Spec-writer entry released; save/d2s and items/uniques-sets ready for Phase 3. See the plan 0038 log."

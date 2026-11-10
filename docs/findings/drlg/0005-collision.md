@@ -732,7 +732,7 @@ OBJINIT_Portal (InitFn 12, 0x0054FE70): a portal in mode 0 is set to mode 1 and 
 
 ## Plan 0038 batch S4a (2026-10-16)
 
-Static batch S4a of [plan 0038](../../plans/0038-inferred-claims-sweep.md) (Phase 1), rows of
+Static batch S4a of [plan 0038](../../plans/done/0038-inferred-claims-sweep.md) (Phase 1), rows of
 [inventory drlg-collision](../../plans/0038-inventory/drlg-collision.md). No new session: every check below re-reads
 the kept logs of run:2026-10-14-collision (7 logs) and run:2026-10-15-objects (29 logs, whose `tools/gdb/objects.gdb`
 carries the collision tags), with `python3 -I tools/sweep_s4a.py <check>`. The commands and the counts are the
@@ -846,7 +846,7 @@ entries and orientations 4, 13, 15 (row 6).
 
 ## Plan 0038 batch S4b (2026-10-16)
 
-Static batch S4b of [plan 0038](../../plans/0038-inferred-claims-sweep.md) (Phase 1), rows of [inventory drlg-collision](../../plans/0038-inventory/drlg-collision.md). No session was played. The second tool next to Ghidra is GNU objdump 2.47, walked by `tools/sweep_s4b.py` (recursive descent; see its docstring). The checks are rerunnable with `python3 -I tools/sweep_s4b.py <check>`. Where a statement above is tagged inferred and this section raises it, the tag and the second source given here are the current ones, and the wording above is unchanged.
+Static batch S4b of [plan 0038](../../plans/done/0038-inferred-claims-sweep.md) (Phase 1), rows of [inventory drlg-collision](../../plans/0038-inventory/drlg-collision.md). No session was played. The second tool next to Ghidra is GNU objdump 2.47, walked by `tools/sweep_s4b.py` (recursive descent; see its docstring). The checks are rerunnable with `python3 -I tools/sweep_s4b.py <check>`. Where a statement above is tagged inferred and this section raises it, the tag and the second source given here are the current ones, and the wording above is unchanged.
 
 - **Row 2** (spec L42) **shortfall.** `DUNGEON_RoomCreate` has one caller in both tools, `DRLG_RoomActivate`
   (0x00642369). Every one of the 5434 `CB` grid builds in the collision and objects logs is on a server act (levels
@@ -925,7 +925,7 @@ struck there.
 
 ## Plan 0038 batch H5b (run:2026-10-19-h5b-objects)
 
-Harness batch H5b of [plan 0038](../../plans/0038-inferred-claims-sweep.md), rows drlg-collision 27, 37 and 39 of
+Harness batch H5b of [plan 0038](../../plans/done/0038-inferred-claims-sweep.md), rows drlg-collision 27, 37 and 39 of
 [inventory drlg-collision](../../plans/0038-inventory/drlg-collision.md). Record:
 [objects experiments § run:2026-10-19-h5b-objects](../objects/experiments.md#run2026-10-19-h5b-objects); the objects
 side is [objects/0001 § Plan 0038 batch H5b](../objects/0001-object-population.md#plan-0038-batch-h5b-run2026-10-19-h5b-objects).
@@ -963,7 +963,7 @@ Each statement below corrects the "not reached" of § 14 for its case.
 
 ## Plan 0038 batch H5d (run:2026-10-27-sweep-collision)
 
-Harness batch H5d of [plan 0038](../../plans/0038-inferred-claims-sweep.md), rows drlg-collision 1, 5, 8, 9, 11, 19, 21,
+Harness batch H5d of [plan 0038](../../plans/done/0038-inferred-claims-sweep.md), rows drlg-collision 1, 5, 8, 9, 11, 19, 21,
 24, 30, 36, 45 and 46 of [inventory drlg-collision](../../plans/0038-inventory/drlg-collision.md) (16 statements; spawn 41
 is in [monsters/0002](../monsters/0002-room-population.md#plan-0038-batch-h5d-run2026-10-27-sweep-collision)). Record:
 [experiments § run:2026-10-27-sweep-collision](experiments.md#run2026-10-27-sweep-collision). Every count below is copied

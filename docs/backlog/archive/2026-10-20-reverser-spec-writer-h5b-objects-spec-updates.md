@@ -30,7 +30,7 @@ Spec updates from plan 0038 batch H5b (run:2026-10-19-h5b-objects), once the arc
   door `[C]`; `0x804` d-none at the review.
 
 **Released (architect, 2026-10-20, `lane/h5b` review: accept with fixes).** Rulings in the
-[plan 0038 log](../../plans/0038-inferred-claims-sweep.md#implementation-log): objects 20, the `0x804` halves of
+[plan 0038 log](../../plans/done/0038-inferred-claims-sweep.md#implementation-log): objects 20, the `0x804` halves of
 collision 37 and objects 23 and objects 38's PreOperate half are d-none (inventory § 2.6); collision 27 stands
 without the near-list fix; the grid model's near-list replacement is a checker model, not a spec claim (the game's
 unlink stays an open question of drlg/0005). Also objects/README I: the 582 quest object (row 35) stays `[I]`, a

@@ -166,7 +166,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 - **2026-11-03 — `lane/s63` Tier A review (architect): accept with fixes (2)**, both in the player/creation half; this
   entry's three overview notes and the index edits pass unchanged. The review and the Q3 route
   ([2026-11-03-architect-spec-writer-quirks-catalogue-coverage-row](../../backlog/archive/2026-11-03-architect-spec-writer-quirks-catalogue-coverage-row.md))
-  are in [plan 0038's log](../0038-inferred-claims-sweep.md#implementation-log).
+  are in [plan 0038's log](0038-inferred-claims-sweep.md#implementation-log).
 - **2026-11-03 — Q3 coverage row: skills/catalogue harvested (spec-writer, `lane/s64`, from `main` `7fddf41d`).**
   Backlog [2026-11-03-architect-spec-writer-quirks-catalogue-coverage-row](../../backlog/archive/2026-11-03-architect-spec-writer-quirks-catalogue-coverage-row.md)
   closed. The 8 [skills/catalogue](../../specs/skills/catalogue.md#reimplementation-notes) notes, harvested by Phase 1's

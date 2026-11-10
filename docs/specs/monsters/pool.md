@@ -785,7 +785,7 @@ prints `monster level 68 (difficulty index 2)`, and `--exp 0` prints 67.
 - [findings/hirelings/experiments.md § run:2026-10-16-hirelings](../../findings/hirelings/experiments.md#run2026-10-16-hirelings):
   the mercenary creations of the four hireling classes with a `Hireling` row, every difficulty, expansion and classic
   (10 788/10 788 creations by `tools/monpool.py check`); [hirelings/0001 § 8](../../findings/hirelings/0001-hirelings.md#8-monstats-class-and-the-e2-level-path).
-- Plan 0038 sweep ([plan 0038](../../plans/0038-inferred-claims-sweep.md)): the batch sections of
+- Plan 0038 sweep ([plan 0038](../../plans/done/0038-inferred-claims-sweep.md)): the batch sections of
   [monsters/0001](../../findings/monsters/0001-level-pool.md): [S3a](../../findings/monsters/0001-level-pool.md#plan-0038-batch-s3a-2026-10-16)
   (kept logs: the appearance caps, the classic levels, the bonuses, the gate, the picks, `MonRegionFindAdd` modelled),
   [H4b](../../findings/monsters/0001-level-pool.md#plan-0038-batch-h4b-run2026-10-16-sweep-monsters-b) (run:2026-10-16-sweep-monsters-b:

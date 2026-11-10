@@ -706,5 +706,5 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   class 0; 25 and 28 nothing", which the rbs3 bullet supersedes, and row 24 outside Normal needs a ruling.
 - **2026-10-20 — Closed (owner decision, via the orchestrator; architect, `lane/plans45`).** Every phase but the
   data/excel fold is accepted. That fold (P1b (a), P1c (a) and the 11 data/excel W1 warnings, backlog
-  `2026-10-17-reverser-spec-writer-gate-w1-a-c-i-statement.md`) is an item of [plan 0038](../0038-inferred-claims-sweep.md)
+  `2026-10-17-reverser-spec-writer-gate-w1-a-c-i-statement.md`) is an item of [plan 0038](0038-inferred-claims-sweep.md)
   Phase 3's data/excel cluster, after batch H3b. Moved to `done/`; links repointed.

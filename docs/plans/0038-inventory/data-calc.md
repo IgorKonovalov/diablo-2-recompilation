@@ -1,7 +1,7 @@
 # Plan 0038 inventory: data/calc
 
 - **Spec:** [data/calc.md](../../specs/data/calc.md), status `reviewed`, read at `main` `e1c807a`; front-matter `I` = **67**, the *Count* column sums to 67.
-- **Cluster:** 0b (save, data and rng), architect lane, [plan 0038](../0038-inferred-claims-sweep.md) Phase 0.
+- **Cluster:** 0b (save, data and rng), architect lane, [plan 0038](../done/0038-inferred-claims-sweep.md) Phase 0.
 - **Classes, tiers and batches:** as defined in the plan. *Route* names the recipe and logger, the new piece, the second source, or the `d-` reason. Batch `—` = not batched (class d).
 
 Every `[I]` statement of the spec in file order; consecutive statements of one section with the same route share a

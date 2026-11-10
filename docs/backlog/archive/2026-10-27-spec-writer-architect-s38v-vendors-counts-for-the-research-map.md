@@ -4,7 +4,7 @@ to: architect
 date: 2026-10-27
 status: done
 context:
-  - ../../plans/0038-inferred-claims-sweep.md#implementation-log
+  - ../../plans/done/0038-inferred-claims-sweep.md#implementation-log
   - ../../specs/items/vendors.md
   - ../../wiki/items-other-paths.md
 resolution: "Applied at the lane/s38v review: items/vendors C 113 / I 36 / L 2 after fix 1, economy C 126 / I 85 / L 11; research-map and README rows rewritten."

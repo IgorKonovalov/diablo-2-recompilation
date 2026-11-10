@@ -1,6 +1,6 @@
 # 0038 — Inferred-claims sweep: raising `[I]` to `[C]` in the reviewed specs
 
-> **Status:** approved (2026-10-16, by the owner, to run unattended); unpaused 2026-10-30 (owner): H1c running (`lane/h1c`, slot 1), the H6g shortfalls' static read running (`lane/h6gs`)
+> **Status:** done 2026-11-10 (closed by the owner where it stands, as the architect recommended at plan 0066's approval; every row not raised by then stays `[I]`, deferred; the method continues in [plan 0066](../0066-simulation-inferred-claims-sweep.md)); approved 2026-10-16, by the owner, to run unattended
 > **Created:** 2026-10-16
 > **Owner skill(s):** architect (Phase 0), reverser, spec-writer
 > **Related ADRs:** 0001-target-toolchain-evidence-sources, 0003-runtime-experiments, 0004-boundary-oracles-in-reproduction, 0008-two-client-harness, 0010-forced-path-runs, 0011-harness-slots, 0013-forced-path-runs-cell-level, 0014-scope-game-simulation
@@ -30,7 +30,7 @@ simulation plan does not apply to it.
 ## Context
 
 - **Research map:** every Core, Enabler and Creation-path row is `reviewed`. The Simulation band has one row,
-  `combat/formulas`, owned by [plan 0037](done/0037-combat-formulas.md), which starts after [plan 0036](done/0036-human-wiki-readme.md)
+  `combat/formulas`, owned by [plan 0037](0037-combat-formulas.md), which starts after [plan 0036](0036-human-wiki-readme.md)
   closes.
 - **`[I]` counts of the reviewed specs on 2026-10-16** (front matter, `main` at `32a1a6e`):
 
@@ -57,18 +57,18 @@ simulation plan does not apply to it.
     (plan 0023 Phase 3 review, 2026-10-15). This plan is that optional work, prioritised.
 - **Excluded:** the plan 0032 owner-played addendum (backlog entry 2026-10-16, "plan 0032 Phase 2 owner-played
   addendum"): Mephisto with his quest done, the Countess in four states, the Cow King and the Hell Hellforge, in
-  [run:2026-10-16-quest-drops](../findings/items/experiments.md#run2026-10-16-quest-drops). Those rows are listed
+  [run:2026-10-16-quest-drops](../../findings/items/experiments.md#run2026-10-16-quest-drops). Those rows are listed
   in the inventory as class (d), with a link to that entry, and no batch takes them.
 - **Owned by plan 0037:** claims that plan 0037 already targets are class (d) with the plan named. These are
   monsters/stats § H, the attack rating term of player/creation, and the `ToHitCalc` open question of data/calc.
 - **Harness limits:**
   - At most **two harness lanes at once** across all plans. On 2026-10-15, systemd-oomd killed every lane when RAM
-    and swap passed 90 % ([tooling § Runtime harness](../../.claude/skills/reverser/references/tooling.md)).
+    and swap passed 90 % ([tooling § Runtime harness](../../../.claude/skills/reverser/references/tooling.md)).
   - Slot 0 is the owner's.
-  - Slots follow [ADR-0011](../adrs/0011-harness-slots.md): the prompt gives each lane its slots, and the lane never
+  - Slots follow [ADR-0011](../../adrs/0011-harness-slots.md): the prompt gives each lane its slots, and the lane never
     touches another slot.
   - 0037·P2 takes at most two slots and goes first.
-- Play rules: [harness-play](../../.claude/skills/reverser/references/harness-play.md). Recipes live in
+- Play rules: [harness-play](../../../.claude/skills/reverser/references/harness-play.md). Recipes live in
   `tools/d2s_recipes/`, loggers and steps files in `tools/gdb/`.
 
 ## Classes
@@ -100,7 +100,7 @@ A batch's priority is its count of T1 rows first, then its count of T2 rows.
     claim of its own, so it is planning work in `docs/plans/`.
   - *Why not the spec-writer:* it owns neither `docs/plans/` nor `docs/findings/`, and it does not investigate.
   - Classifying a row means reading the spec, its finding, the run records and
-    [tooling](../../.claude/skills/reverser/references/tooling.md). The architect reads them and analyses no binary.
+    [tooling](../../../.claude/skills/reverser/references/tooling.md). The architect reads them and analyses no binary.
   - Up to four architect copies may run in parallel, one per cluster, each writing only its own files: (0a) items,
     (0b) save, data and rng, (0c) monsters, hirelings and player, (0d) drlg and objects.
 - **What:** list every `[I]` statement of every reviewed spec, classify it, give it a value tier, and assign every
@@ -279,7 +279,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   than two harness lanes run at once.
 - **2026-10-16 — Phase 0 inventory complete (architect, `lane/c38`).** The four cluster lanes (`lane/i38a`–`i38d`) wrote
   31 per-spec files at `main` `e1c807a`, and each file's counts sum to its spec's `I` (1 526 in all).
-  [0038-inventory/README.md](0038-inventory/README.md) adds the totals, the reconciled batch list, the priority order
+  [0038-inventory/README.md](../0038-inventory/README.md) adds the totals, the reconciled batch list, the priority order
   and the caps.
   - **Batches:** 10 static (S1a, S1b, S1e, S2a–S2c, S3a, S3b, S4a, S4b; 634 statements) and 21 harness (H1a … H6g;
     522 statements, including the forced H2c).
@@ -308,7 +308,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     (data-calc 31, data-excel 16, data-strings 4) read table records or scratch images that the memory spec sets, so
     they meet ADR-0015 conditions 1, 2 and 4 in principle. The a-run and b rows sampled (drlg-maze 6, monsters-special
     10, hirelings 9, items-tc 2) name an existing or new recipe that fits their class.
-  - **Fixes (8 statements moved, [inventory § 2.5](0038-inventory/README.md#25-moves-made-by-the-phase-0-review)).**
+  - **Fixes (8 statements moved, [inventory § 2.5](../0038-inventory/README.md#25-moves-made-by-the-phase-0-review)).**
     monsters-stats 42 and 46 → d-sim, because plan 0037 Phase 1 reads the hireable-boss damage percent. objects 5 →
     deferred, because it needs two subsystems' restore models. properties 12 (L403, L416) and 21 → d-edit (ruling 2).
   - **Rulings.**
@@ -319,7 +319,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
       first piece; failure is a shortfall, not d-none.
     - (4) Batch list accepted. A one-client TCP/IP host is one client. The 27 emulation candidates are left for an S1f
       proposal at the S1e review.
-    - Conditions and the full reasoning are in [inventory § 6–7](0038-inventory/README.md#6-forced-run-candidates-ruled-at-the-review).
+    - Conditions and the full reasoning are in [inventory § 6–7](../0038-inventory/README.md#6-forced-run-candidates-ruled-at-the-review).
   - **Totals now:** 634 statements in 10 static batches, 516 in 21 harness batches (H2c 7), 2 deferred, 10 raised and
     364 blocked (d-none 239, d-edit 69, d-sim 26, d-2c 14, d-owner 8, d-0032 8).
   - **First batches.** Static: S4a ∥ S2a, then S2b (after S2a) ∥ S3a. Harness, with two lanes free until 0037·P2
@@ -329,8 +329,8 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   166 kept stock logs of 11 item runs (9390 calls, 9390 reproduced; 9184 with the quality roll modelled), counterfactual
   models that must fail where a rule decides, full-table checks, a raw-byte xref scan next to Ghidra's, and the
   tc-champion input save for the Andariel sighting. Ledgers in
-  [items/0001](../findings/items/0001-tc-resolution.md#plan-0038-batch-s2a-2026-10-16) and
-  [items/0002](../findings/items/0002-quality-roll.md#plan-0038-batch-s2a-2026-10-16); addenda under the 11 runs; tools
+  [items/0001](../../findings/items/0001-tc-resolution.md#plan-0038-batch-s2a-2026-10-16) and
+  [items/0002](../../findings/items/0002-quality-roll.md#plan-0038-batch-s2a-2026-10-16); addenda under the 11 runs; tools
   `tc_sweep.py`, `xrefscan.py`. Surprises: the classic skip and scan-off-the-end are unobservable for any loaded table;
   the chest drop passes its tier as `ilvl`; the `Countess` TCs are the only stock case of the negative-`Picks` stop
   (classic). The tc 64 addendum waits for the objects run record (S4 cluster). Review requested (backlog).
@@ -365,7 +365,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     - tc 69 now says that the 53-bit precision rests on the logged control word, because the 24- and 64-bit models
       also match.
     - The 8 reclassified rows are recorded in
-      [inventory § 2.6](0038-inventory/README.md#26-moves-made-by-the-batch-reviews): d-none tc 13, 15, 41, 74; (b)
+      [inventory § 2.6](../0038-inventory/README.md#26-moves-made-by-the-batch-reviews): d-none tc 13, 15, 41, 74; (b)
       tc 34 ×2 → H2a and tc 58, 68 → H2b. § 5 and § 7 are updated to match.
   - **Symbols.** The six I → C moves are justified. The resolver, `TC_DropByIndex` and `MONSTER_DropItems` are
     reproduced over 9390 calls in three difficulties, classic and expansion. `MONSTATS_GetRecord` is the base-TC lookup
@@ -456,7 +456,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
       - objects 28: the InitFns not reached;
       - objects 47: the chests and Wirt's body (H6e2).
     - The pick ledger now states its 4224 uncompared entries (no model choice, or no single TL line).
-    - The 12 reclassified statements are in [inventory § 2.6](0038-inventory/README.md#26-moves-made-by-the-batch-reviews).
+    - The 12 reclassified statements are in [inventory § 2.6](../0038-inventory/README.md#26-moves-made-by-the-batch-reviews).
       § 5 and § 7 now give H5c 41 statements (T1 33) and the `RoomNeighboursEnsure` line.
   - **Symbols.** The 24 I → C moves follow the raises. `COLL_SizeMark`, `g_LogicFloodRules`, `g_LogicFloodOrientRow`
     and `UNIT_GetSizeX` are confirmed on their core with the remainders above. `RoomTilesRelease` and `LevelPointFind`
@@ -467,13 +467,13 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     before its next session (backlog).
 - **2026-10-16 — Phase 2 batch H5c in progress (reverser, `lane/h5c`, slot 4).** Logger edits made and
   regression-checked off-slot first (roomk, gen, collision and seed-tree checkers on their kept logs: same checks,
-  0 mismatches). Sessions 1–5 of run:2026-10-16-sweep-roomk ([drlg/experiments.md](../findings/drlg/experiments.md#run2026-10-16-sweep-roomk)):
+  0 mismatches). Sessions 1–5 of run:2026-10-16-sweep-roomk ([drlg/experiments.md](../../findings/drlg/experiments.md#run2026-10-16-sweep-roomk)):
   roomk 60 898, gen 74 961, monspawn 83 374, collision 7 505 checks and seedtree 90 962/90 962, 0 mismatches. Draft
   "Plan 0038 batch H5c" sections in drlg/0002, 0003, 0004, 0007 and rng/0002. The slot was yielded to an owner session;
   sessions 6 on (tomb levels, a warp, level 74, Act IV outdoors, `-seed -2147483648`) wait for the resume.
 - **2026-10-16 — Batch H5c done (reverser, `lane/h5c`, slot 4).** run:2026-10-16-sweep-roomk, 11 sessions (s1–s11;
   one yield to an owner session between s5 and s6), recorded in
-  [drlg/experiments.md](../findings/drlg/experiments.md#run2026-10-16-sweep-roomk) with the logger revision per
+  [drlg/experiments.md](../../findings/drlg/experiments.md#run2026-10-16-sweep-roomk) with the logger revision per
   session. Checkers: `drlg.py roomk` 87 223 checks on all eleven logs; `gen` 99 339, monspawn 150 095, collision 14 456
   and `seedtree` 117 395/117 395 on the nine with an applied `-seed`; 0 mismatches. Kept-log regressions before the first
   session and after the S4a merge: same counts, 0 mismatches. Sections "Plan 0038 batch H5c" in drlg/0002, 0003, 0004,
@@ -578,7 +578,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 
 - **2026-10-16 — Batch S2b done (reverser, `lane/s2b`, static).** 58 statements (items/affixes 19, items/properties 13,
   items/uniques-sets 26): **32 raised, 16 raised in part, 1 shortfall, 9 reclassified** (d-none 6, b 2 → H2b,
-  a-run 1 → H2b; [inventory § 2.6](0038-inventory/README.md#26-moves-made-by-the-batch-reviews), § 5 and § 7 updated).
+  a-run 1 → H2b; [inventory § 2.6](../0038-inventory/README.md#26-moves-made-by-the-batch-reviews), § 5 and § 7 updated).
   - **New check:** `ITEMS_RollStaffMods` is modelled (`affixes.staff_mods`, re-read in r2), which removes the last
     ADR-0004 oracle of the affix chain. It predicts:
     - 105 stock exit seeds;
@@ -598,9 +598,9 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     - the `op` columns are read by the stat evaluation on the creation path (properties 2);
     - the candidate maximum is 188 type-eligible rows, not 165 (affixes 15);
     - "+1 fallback not reached" is out of date: it is reached 7 times in IR.
-  - **Ledgers:** [items/0004](../findings/items/0004-uniques-sets.md#plan-0038-batch-s2b-2026-10-16),
-    [items/0005](../findings/items/0005-affixes.md#plan-0038-batch-s2b-2026-10-16) and
-    [items/0006](../findings/items/0006-properties.md#plan-0038-batch-s2b-2026-10-16); addenda under 8 runs.
+  - **Ledgers:** [items/0004](../../findings/items/0004-uniques-sets.md#plan-0038-batch-s2b-2026-10-16),
+    [items/0005](../../findings/items/0005-affixes.md#plan-0038-batch-s2b-2026-10-16) and
+    [items/0006](../../findings/items/0006-properties.md#plan-0038-batch-s2b-2026-10-16); addenda under 8 runs.
   - **Tools:** `tools/items_sweep.py`, `tools/test_items_sweep.py`; `--staff model` in `affixes.py` and
     `items_chain.py`; `props.FLOOR_CF` and `affixes.PICK_CF`, off by default.
   - **Symbols:** `ITEMS_RollStaffMods` and `sub_005C0F90_StaffModsRoll` I → C. Review requested (backlog).
@@ -683,17 +683,17 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 - **2026-10-16 — Batch S3a done (reverser, `lane/s3a`, static).** 69 statements (monsters/pool 13, spawn 23, special 14,
   stats 10, README 1; hirelings 3; player/creation 5): **21 raised, 18 raised in part, 0 shortfall, 30 reclassified**
   (d-none 18, a-run 4 → H4a 2 and H4b 2, b 2 → H4b, c-emu 3 for the S1f proposal, d-owner 1, d-sim 2; recorded in
-  [inventory § 2.6](0038-inventory/README.md#26-moves-made-by-the-batch-reviews), § 5 and § 7 updated for the review). Second
+  [inventory § 2.6](../0038-inventory/README.md#26-moves-made-by-the-batch-reviews), § 5 and § 7 updated for the review). Second
   sources: re-analysis of the 168 kept logs of seven runs (sha256 against the records) with the existing checkers at 0
   mismatches, a new model of `MonRegionFindAdd` that reproduces 4568 creations and 1145 region snapshots, counts from the
   raw lines (guards, the `0x80` bypass, the special count, group walks, stub checksums), writer/reader pairs read in r2
   (the stub checksum, the hire table) and full-table checks. Ledgers in the "Plan 0038 batch S3a" sections of
-  [monsters/0001](../findings/monsters/0001-level-pool.md#plan-0038-batch-s3a-2026-10-16),
-  [0002](../findings/monsters/0002-room-population.md#plan-0038-batch-s3a-2026-10-16),
-  [0003](../findings/monsters/0003-special-monsters.md#plan-0038-batch-s3a-2026-10-16),
-  [0004](../findings/monsters/0004-stats.md#plan-0038-batch-s3a-2026-10-16),
-  [hirelings/0001](../findings/hirelings/0001-hirelings.md#plan-0038-batch-s3a-2026-10-16) and
-  [player/0001](../findings/player/0001-creation.md#plan-0038-batch-s3a-2026-10-16); addenda under the seven runs; tools
+  [monsters/0001](../../findings/monsters/0001-level-pool.md#plan-0038-batch-s3a-2026-10-16),
+  [0002](../../findings/monsters/0002-room-population.md#plan-0038-batch-s3a-2026-10-16),
+  [0003](../../findings/monsters/0003-special-monsters.md#plan-0038-batch-s3a-2026-10-16),
+  [0004](../../findings/monsters/0004-stats.md#plan-0038-batch-s3a-2026-10-16),
+  [hirelings/0001](../../findings/hirelings/0001-hirelings.md#plan-0038-batch-s3a-2026-10-16) and
+  [player/0001](../../findings/player/0001-creation.md#plan-0038-batch-s3a-2026-10-16); addenda under the seven runs; tools
   `mon_sweep.py`, `test_mon_sweep.py`. Surprises: two `[C]`/`[I]` statements are wrong and corrected in monsters/0004 (a
   `SetBoss` champion-pack member walks its MonStats minions with flag 0; the velocity bonus is 100 for `Velocity` ≤ 8, not
   ≤ 9); every creation-time stat-7 rescale is at full life, so the x87 rows have no observable before combat. Review
@@ -838,7 +838,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 
 - **2026-10-16 — Batch S1b done (reverser, `lane/s1b`, static; no slot, no game).** 76 statements (data/README 1,
   data/calc 6, data/excel 54, data/strings 6, rng 4, rng/seeds 5): **47 raised, 28 raised in part, 0 shortfall, 1
-  reclassified** (data-excel 28 → d-none; proposed in [inventory § 2.6](0038-inventory/README.md#26-moves-made-by-the-batch-reviews),
+  reclassified** (data-excel 28 → d-none; proposed in [inventory § 2.6](../0038-inventory/README.md#26-moves-made-by-the-batch-reviews),
   pending review). By spec (raised / in part / shortfall / reclassified): data/README 0/1/0/0, data/calc 3/3/0/0,
   data/excel 34/19/0/1, data/strings 5/1/0/0, rng 2/2/0/0, rng/seeds 3/2/0/0.
   - **Tool:** `tools/sweep_s1b.py` (checks `logs`, `arch`, `compile`, `survey`, `tc`, `items`, `strings`, `calc`,
@@ -961,7 +961,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     still open.
 - **2026-10-16 — Batch H4b done (reverser, `lane/h4b`, slot 1).** `main` (`e556014`, S3a) merged into the lane first;
   S3a's four rows taken, so the batch is 47 statements. run:2026-10-16-sweep-monsters-b: nine sessions (s1–s9; s5 split
-  into two games, s5a/s5b) on slot 1, record in [monsters/experiments.md](../findings/monsters/experiments.md#run2026-10-16-sweep-monsters-b).
+  into two games, s5a/s5b) on slot 1, record in [monsters/experiments.md](../../findings/monsters/experiments.md#run2026-10-16-sweep-monsters-b).
   - **Tools:** `tools/gdb/mon-extra.py` wired into `tools/gdb/mon-stats.gdb` (MinionRestore tags renamed `MNR*`, new
     `PMA0`/`PMAV`/`PMAX` for every MonPlace case and `RTK0`/`RTK1` for the tick on every room, an `OBJP` waypoint helper
     for the pilot); new checker `tools/sweep_h4b.py`; `tools/monspawn.py` models the tentaclehead branch and predicts
@@ -1026,7 +1026,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   cube 20, properties 3, quality 1, quest-drops 16, sockets-runewords 27, uniques-sets 1, vendors 15): **49 raised, 26
   raised in part, 1 contradicted, 10 reclassified** (a-run 5: cube 17, 51, 58 → H6a, quest-drops 48 → H4a, sockets 42 →
   H2b; b 2: sockets 35 → H6b; d-none 3: cube 20, 24, sockets 36 L442; proposed in
-  [inventory § 2.6](0038-inventory/README.md#26-moves-made-by-the-batch-reviews), § 5 and § 7 updated, pending review).
+  [inventory § 2.6](../0038-inventory/README.md#26-moves-made-by-the-batch-reviews), § 5 and § 7 updated, pending review).
   - **Tools:** `tools/sweep_s2c.py` (`logs`, `static`, `tables`, `cube`, `sockets`, `vendors`, `quests`, `props`,
     `all`) and `tools/test_sweep_s2c.py` (5 tests). The second tool is GNU objdump through S4b's walker, plus a small
     evaluator (`emu`) that runs a compare-and-jump-table dispatch for one register value through the objdump
@@ -1184,7 +1184,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     "every call makes first" wording to the release order above.
   - **Next:** merge `lane/p38s` (owner). The next Phase 3 clusters wait for the batches listed above.
 - **2026-10-16 — Phase 3 wiki refresh (spec-writer, `lane/wiki1`, from `main` `191e5ad`).** The review's W4 follow-up
-  (ADR-0012). [wiki/levels](../wiki/levels.md) and [wiki/randomness](../wiki/randomness.md) restated to the re-tagged
+  (ADR-0012). [wiki/levels](../../wiki/levels.md) and [wiki/randomness](../../wiki/randomness.md) restated to the re-tagged
   drlg/README, drlg/room-tiles and rng/seeds: hedges for statements now `[C]` dropped and replaced by the run that
   confirms them, statements still `[I]` kept as "read from the code" (one −1 `SubType`/`SubTheme`, mask values of
   types 22/27/28/30, the 40 cap, the `(10, 0, 0)` fallback, a room with no tiles, three on-demand creators, which
@@ -1193,7 +1193,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   not started, now links the reviewed combat spec and says no page exists (plan 0037 asked for none). Gate W4 on
   wiki pages: 3 warnings before, 0 after. Review requested (backlog).
 - **2026-10-16 — Phase 3 wiki refresh review (architect, `lane/wiki1`).** Verdict: **accept with fixes**, applied on
-  the lane. Every changed statement of [wiki/levels](../wiki/levels.md) and [wiki/randomness](../wiki/randomness.md) was
+  the lane. Every changed statement of [wiki/levels](../../wiki/levels.md) and [wiki/randomness](../../wiki/randomness.md) was
   checked against the re-tagged drlg/README (step notes 2 and 8, § Inputs), drlg/room-tiles (step notes 3 and 12,
   § Constants, § Release and re-activation, *Open questions*) and rng/seeds (step notes 3d, 4, 6, 7a, 7b, *Open
   questions*): the counts (188/59, 145 rooms of levels 111/112/117, 1 852 097 and 781 380, 1516/235/183/52, 50 586,
@@ -1204,7 +1204,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   noted, not counted as confirmation. (2) randomness: the `InitOne` sentence had become a continuation of the new
   "Not run at all" bullet; moved back into the read-from-code bullet. (3) levels: "which callers set it" → "ask for
   it" (the callers pass `EDX`; the release sets the bit), and the room-tiles bullet now names both unread points.
-  (4) Spec, found by the review: [drlg/README *Open questions*](../specs/drlg/README.md#open-questions) still listed
+  (4) Spec, found by the review: [drlg/README *Open questions*](../../specs/drlg/README.md#open-questions) still listed
   the `LvlSubRoll` −1 branch and the outdoor cell position as code-read only, against step note 8 (`[C]` since this
   phase); struck as settled, the one-−1 case left `[I]` in the step note. No tag changes, counts as filed. Also
   reflowed levels L67. Gate W4 on the wiki: 0. **Ruling, combat page:** the combat spec gets a wiki page. ADR-0012
@@ -1216,7 +1216,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 
 - **2026-10-16 — Batch S3b done (reverser, `lane/s3b`, static; no slot, no game).** 17 statements (hirelings 2, player/creation
   3, monsters/pool 2, spawn 6, special 1, stats 3): **12 raised, 3 raised in part, 0 shortfall, 2 reclassified** (a-run 2:
-  player/creation 16 → H6g, spawn 41 → H5d; proposed in [inventory § 2.6](0038-inventory/README.md#26-moves-made-by-the-batch-reviews),
+  player/creation 16 → H6g, spawn 41 → H5d; proposed in [inventory § 2.6](../0038-inventory/README.md#26-moves-made-by-the-batch-reviews),
   § 5 and § 7 updated, pending review). By spec: hirelings 1/1/0/0, player/creation 2/0/0/1, pool 1/1/0/0, spawn 5/0/0/1,
   special 1/0/0/0, stats 2/1/0/0.
   - **Tools:** `tools/sweep_s3b.py` (`logs`, `hire`, `player`, `pool`, `spawn`, `special`, `stats`, `all`; exits 0) and
@@ -1299,7 +1299,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 
 - **2026-10-16 — Batch S1a done (reverser, `lane/s1a`, static; no slot, no game, no Ghidra).** 56 statements, all
   save/d2s: **39 raised, 15 raised in part, 0 shortfall, 2 reclassified** (117 and 124, c → b, H1b; proposed in
-  [inventory § 2.6](0038-inventory/README.md#26-moves-made-by-the-batch-reviews), § 5 and § 7 updated, pending review).
+  [inventory § 2.6](../0038-inventory/README.md#26-moves-made-by-the-batch-reviews), § 5 and § 7 updated, pending review).
   - **Tool:** `tools/sweep_s1a.py` (`logs`, `corpus`, `survey`, `writes`, `reads`, `pairs`, `calc`, `props`, `static`,
     `all`; exits 0 in 9 s; sha256 `c07086a3…`) and `tools/test_sweep_s1a.py` (5 tests). Report
     `workspace/logs/sweep-s1a-all.txt`, log manifest `workspace/logs/sweep-s1a-manifest.txt` (91 logs, `18318973…1676`).
@@ -1314,7 +1314,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     the base" (base 747, the `MagicSuffix` record count, where d2s.md says 748); the serialiser's non-save arguments
     (bit 25 set, bit 22 cleared); the `gf` clamp observed at its top bound (stat 8, Hell level-up saves; the player
     record's "stat 6" corrected by an addendum).
-  - **Ledger:** "Plan 0038 batch S1a" in [save/0001](../findings/save/0001-d2s-io.md#plan-0038-batch-s1a-2026-10-16);
+  - **Ledger:** "Plan 0038 batch S1a" in [save/0001](../../findings/save/0001-d2s-io.md#plan-0038-batch-s1a-2026-10-16);
     addenda under run:2026-10-12-d2s-io, -10-14-props-forced, -10-16-calc and -10-16-player. **Symbols:** 11 I → C.
     Gate green. Review requested (backlog). Nothing merged.
 
@@ -1366,7 +1366,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 
 - **2026-10-16 — Batch H5e done (reverser, `lane/h5e`, slot 1).** run:2026-10-16-sweep-mazes, 6 sessions (s1–s6,
   Normal, expansion, map seeds 45, 9, 1557, 312, 5005, 6006; seeds 45, 9 and 312 chosen offline with the outdoor
-  model), recorded in [drlg/experiments.md](../findings/drlg/experiments.md#run2026-10-16-sweep-mazes). Logger
+  model), recorded in [drlg/experiments.md](../../findings/drlg/experiments.md#run2026-10-16-sweep-mazes). Logger
   `tools/gdb/sweep-mazes.gdb` (no new breakpoint); checker `tools/sweep_h5e.py logs`: gen 153 567 checks, 0 mismatches;
   `sweep_h5e.py scan` for the seeds. Two bookkeeping fixes in `tools/drlg.py gen` (reused room address; rebuilt level
   object's rect); regression on the kept maze (206 937), acts-3-5 (155 215) and outdoor (572 211) logs, 0 mismatches.
@@ -1488,7 +1488,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     reachability entry. The warps re-tag waits for H5a.
   - **Next:** the owner merges `lane/p38s2`.
 - **2026-10-17 — Phase 3 second round wiki follow-up (spec-writer, `lane/wiki3`, from `main` `fc84933`).** The
-  round-2 review's W4 follow-up. [levels](../wiki/levels.md): `based_on:` bumped for drlg/outdoor, drlg/room-tiles and
+  round-2 review's W4 follow-up. [levels](../../wiki/levels.md): `based_on:` bumped for drlg/outdoor, drlg/room-tiles and
   drlg/warps (2026-10-17); § Pairing gains a paragraph on the near-list append (code-read: the stairs room's near list
   rebuilt within 6 tiles, the paired room appended and the list re-sorted; a seam slot appends every destination room
   within 6 tiles and makes no link; nothing marked on the destination; no pairing call for a room of level 133).
@@ -1498,7 +1498,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   133–136. *Room tiles*: the merge branches are unreachable on stock data (2077 DS1s, logs merge by merge) and kept as
   the edited-data reading; the `"0"` DT1 name outcome is not determinable statically. *Warps*: `Offset`/`ExitWalk`
   subtiles and `Select` screen pixels (code-read); more than nine points not seen in 1452 builds (max 8, level 46)
-  and not given by slot counts, one slot's cells in two rooms not excluded. [randomness](../wiki/randomness.md):
+  and not given by slot counts, one slot's cells in two rooms not excluded. [randomness](../../wiki/randomness.md):
   re-read against drlg/room-tiles; the round's changes (merge branches, `0x40000`, `"0"` names, DS1 views) touch
   nothing it says, so only `based_on:` is bumped. Gate W4: 4 warnings before (levels 3, randomness 1), 0 after.
   - **Next:** architect review (backlog).
@@ -1526,7 +1526,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 
 - **2026-10-17 — Batch H5a done (reverser, `lane/h5a`, slot 1).** run:2026-10-17-sweep-links, 9 sessions (s1–s9,
   Normal, expansion, map seeds 82, 52, 58, 90, 4, 17, 5, 68, 2, chosen offline with `tools/sweep_h5a.py scan`),
-  recorded in [drlg/experiments.md](../findings/drlg/experiments.md#run2026-10-17-sweep-links). Waypoint hops only
+  recorded in [drlg/experiments.md](../../findings/drlg/experiments.md#run2026-10-17-sweep-links). Waypoint hops only
   (`d2pilot.py wpchain`): each act's town builds the act, the Outer Cloister builds levels 27 and 28. Logger
   `tools/gdb/sweep-links.gdb`: `drlg-maze.gdb` plus the new `tools/gdb/drlg-links.py` (LNKP/LNKC after every pick and
   check of `LevelLinkBuild`, LNKW the Act1B widened test, LNKT/LNKU `LevelSeamsByTouch`'s `RectTouch`). Checker
@@ -1684,7 +1684,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     follow-up for levels is already filed (spec-writer).
   - **Next:** the owner merges `lane/p38s3`.
 - **2026-10-17 — Phase 3 third round wiki follow-up (spec-writer, `lane/wiki4`, from `main` `04bc872`).** The
-  round-3 W4 follow-up. [levels](../wiki/levels.md): `based_on:` bumped for drlg/README, drlg/maze and drlg/preset
+  round-3 W4 follow-up. [levels](../../wiki/levels.md): `based_on:` bumped for drlg/README, drlg/maze and drlg/preset
   (2026-10-17); re-read against drlg/warps too. § Laying out the act: rejects are overlaps, the Rogue side table (15
   logged) and the Burial Grounds side test (3 logged), no back-up in runs or the offline scan; every pick choice
   reached (nine chosen map seeds), Rogue `(0, 1)`/`(2, 0)` placed and never kept; the Act1B widening never decides a
@@ -1723,9 +1723,9 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 - **2026-10-17 — Batch S1e done (reverser, `lane/s1e`, static; no slot, no game; Ghidra copy `workspace/ghidra-s1e`).**
   74 statements (data/calc 43, data/excel 13, data/strings 12, rng 2, save/d2s 4), all class (c-emu): **69 raised, 1
   raised in part, 4 not raised** (data-calc 13's L305 and 14 → d-edit, data-excel 43 and 44 → d-none; proposed in
-  [inventory § 2.6](0038-inventory/README.md#26-moves-made-by-the-batch-reviews), pending review). By spec (raised /
+  [inventory § 2.6](../0038-inventory/README.md#26-moves-made-by-the-batch-reviews), pending review). By spec (raised /
   in part / not raised): data/calc 41/0/2, data/excel 10/1/2, data/strings 12/0/0, rng 2/0/0, save/d2s 4/0/0.
-  - **Method:** ADR-0015 emulated reproduction, [run:2026-10-17-sweep-emu](../findings/data/experiments.md#run2026-10-17-sweep-emu)
+  - **Method:** ADR-0015 emulated reproduction, [run:2026-10-17-sweep-emu](../../findings/data/experiments.md#run2026-10-17-sweep-emu)
     (and an addendum to run:2026-10-11-rng-emu): 28 643 emulated calls in ten families plus the two SSE2-flag reruns,
     all bit-exact against `tools/` models, each family with a negative control that fails (`neg` > 0).
   - **Tools:** `re/ghidra_scripts/EmuTrace.java` (`tools/ghidra.sh emutrace`): per-case memory and registers, dumps, a
@@ -1835,7 +1835,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   review). By spec: drlg/preset 1 (row 6, second statement), monsters/stats 2 (rows 9, 11), monsters/pool 1 (row 27,
   conditional, kept), items/affixes 2 (rows 6, 12), items/uniques-sets 1 (row 44, conditional, kept), data/calc 2
   (rows 8, 33), data/excel 6 (row 65's five statements, row 69).
-  - **Method:** ADR-0015 emulated reproduction, [run:2026-10-17-sweep-emu2](../findings/data/experiments.md#run2026-10-17-sweep-emu2):
+  - **Method:** ADR-0015 emulated reproduction, [run:2026-10-17-sweep-emu2](../../findings/data/experiments.md#run2026-10-17-sweep-emu2):
     eight families of `tools/sweep_s1f.py` (`validid`, `muldiv`, `candadd`, `pickaffix`, `calcvar2`, `parsetxt2` with
     both SSE2 flag values, `varroll`, `setpick`), 18 800 emulated calls plus 300 SSE reruns, all bit-exact against the
     models, each family with a negative control that fails (`neg` 65 to 1 948) and no undeclared traced access; a
@@ -1856,7 +1856,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     (`[I]`).
   - **Tools:** `tools/sweep_s1f.py` (`cases`, `check`, `static`, `manifest`, `all`; `all` exits 0, report
     `workspace/logs/sweep-s1f-all.txt` `e108a769…`, manifest `a1e058cc…`, 38 files), `tools/test_sweep_s1f.py` (7
-    tests), `EmuTrace.java` `guard`. The S1e review follow-up (a) is done: [tooling.md § emutrace](../../.claude/skills/reverser/references/tooling.md)
+    tests), `EmuTrace.java` `guard`. The S1e review follow-up (a) is done: [tooling.md § emutrace](../../../.claude/skills/reverser/references/tooling.md)
     (syntax, untraced ranges and ruling 3, persistence, import stops, seeded writers, SLEIGH limits, frozen `Emu*`
     scripts); (b) and (c) of that entry remain.
   - **Symbols:** 6 I → C (`MONSTATS_ValidId`, `sub_00451FE0_MonStats2Rec`, `EXCEL_MapColumns`,
@@ -1945,9 +1945,9 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     (the entry-points row and paragraph): 846 sites inside functions `[C]` by the objdump walk, 6 on Ghidra's reading
     `[I]`. Kept `[I]` (d-none): rows 1, 6, `RangePow2Plus` has no caller; step note 4 gains the S1b observation (14
     sites in 9 bodies with no static reference) at the same tag (S1b entry (b)). Evidence lists the S1b/S1e sections.
-  - **Research map:** the data/calc row and the rng row rewritten whole. **Wiki:** [game-data](../wiki/game-data.md)
+  - **Research map:** the data/calc row and the rng row rewritten whole. **Wiki:** [game-data](../../wiki/game-data.md)
     § Calc formulas and *What is not known yet* restated, `based_on` data/calc 2026-10-17 (W4 1 → 0);
-    [randomness](../wiki/randomness.md) § The generator and *What is not known yet* restated (same `updated:` date, so
+    [randomness](../../wiki/randomness.md) § The generator and *What is not known yet* restated (same `updated:` date, so
     no W4 flag; changed under review fix 7).
   - **Backlog:** annotated as partly done the S1b entry ((b), (d) for data/calc and rng), the S1e entry ((a) for
     data/calc and rng, (c), (d), (e)), the S1e review additions ((b)) and the S1f entry ((a) for data/calc, (f)). New:
@@ -1986,11 +1986,11 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     (the spec keeps it `[I]`); randomness: the 852 multiplier copies "each the same instruction" → "each loaded into a
     register by one `mov`" (registers differ).
   - **Backlog:** review request closed; the S1f Phase 3 entry annotated with the rulings; new: reverser, the
-    NULL-callback finding line. Ledger row added in [metrics](metrics.md) (2: overclaim 2).
+    NULL-callback finding line. Ledger row added in [metrics](../metrics.md) (2: overclaim 2).
   - **Next:** merge `lane/p38s4`. Phase 3 continues per cluster as H4a, H2b, H6d and H3b are accepted.
 - **2026-10-17 — Batch H6d done (reverser, `lane/h6d` from `main` `4d31287`, slot 2).** run:2026-10-17-sweep-quest-b6,
   19 sessions (5 failed starts or routes among them, all logged and listed), recorded in
-  [items/experiments.md](../findings/items/experiments.md#run2026-10-17-sweep-quest-b6). Logger `tools/gdb/quests.gdb`
+  [items/experiments.md](../../findings/items/experiments.md#run2026-10-17-sweep-quest-b6). Logger `tools/gdb/quests.gdb`
   with new `quests.py` lines `QME`, `MMR`, `BG0`, `BGR`, `GLD` and `OOP` (tags only). New checker `tools/sweep_h6d.py`
   (`logs`, `static`, `copies`) with `tools/test_sweep_h6d.py` (8 tests). New session runner `tools/h6d_sessions.py`.
   Pilot additions (`hunt --pet`, `--summon-key`, `--goal`, `objop --pdef-any`, Warriv). Six recipes.
@@ -2006,7 +2006,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     - Shortfall: qd 25 ×2 (the Nightmare forge was not reached in three sessions; the boundary is already `[C]` from
       the owner's Hell session).
     - Reclassified: us 21 → b, H1a (the services' copies make no creation record; the restore flag comes only from the
-      version-`0x47` item-list reader). Proposed in [inventory § 2.6](0038-inventory/README.md#26-moves-made-by-the-batch-reviews).
+      version-`0x47` item-list reader). Proposed in [inventory § 2.6](../0038-inventory/README.md#26-moves-made-by-the-batch-reviews).
   - Fewer than half of the rows are raised outright, because two targets need routes the scripted pilot lacks: the
     Chaos Sanctuary's seals and the River of Flame crossing on map seed 3811. An owner-played addendum (Diablo fresh and
     done, the Nightmare forge) is proposed in the run record.
@@ -2054,9 +2054,9 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     pointer; the draft put the calls in the reader itself, fix, wrong anchor). H1a first shows a version-71 load
     reaches `0x00533350`; if the loader refuses that version first, the row goes to d-none with the refusal as the
     reason, recorded at H1a's review.
-  - **Ruling 5 (the LvlWarp numbering note).** Known and documented: [LvlWarp](../tables/LvlWarp.md) header and
+  - **Ruling 5 (the LvlWarp numbering note).** Known and documented: [LvlWarp](../../tables/LvlWarp.md) header and
     § Row identity (88 records, the `Expansion` marker not loaded; `Id` equals the record index only up to 71) and
-    [excel-bin](../formats/excel-bin.md) (the 30 marker rows). Nothing goes to the archivist; the run record's
+    [excel-bin](../../formats/excel-bin.md) (the 30 marker rows). Nothing goes to the archivist; the run record's
     session 16 row now cites both.
   - **Ruling 6 (the owner-played addendum).** The Diablo remainders of qd 13 and qd 16 are recorded as **d-owner
     candidates** (inventory § 2.6; the rows stay counted as H6d, no totals change): the pilot reached the Chaos
@@ -2086,7 +2086,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     `QC`/`QS`, `BG0`, `GLD`); `sub_0058F090_MonsterOwnerRef` (C) is new and its address is not named on `main`.
   - **Backlog:** review request closed; the spec-writer entry annotated with rulings 2 and 3 and the (g) pointer; the
     H1a piece annotated with the reach condition. New: the human (owner) entry for the Diablo pair, d-owner candidates.
-    Ledger rows added in [metrics](metrics.md).
+    Ledger rows added in [metrics](../metrics.md).
 
 - **2026-10-17 — `lane/rbs` review (architect, static backlog sweep): accept with fixes.** `main` (`fc3e89b`) merged
   first, clean; `tools/backlog.py migrate` changed nothing; `re/symbols.csv` untouched by the lane, no duplicates.
@@ -2121,7 +2121,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     0x00633727, not at the next function's 0x00633730.
   - **Backlog.** The review request is closed. The H5e reachability and S2c tool entries are annotated. New entries:
     reverser, *static sweep, remaining* (the checkpoint list plus (e′)); reverser, the `test_d2s.py` recipe bases.
-    The spec-writer's room-tiles re-tag entry (filed by the lane) stands. Ledger rows are in [metrics](metrics.md).
+    The spec-writer's room-tiles re-tag entry (filed by the lane) stands. Ledger rows are in [metrics](../metrics.md).
   - **Next:** merge `lane/rbs`.
 
 - **2026-10-17 — Phase 3, room-tiles after the `lane/rbs` re-rule (spec-writer, `lane/sw5`, from `main` `3e169e4`).**
@@ -2135,21 +2135,21 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     act's `+0x50`, the nested inner `EDX` 0 and `0x200000` as "released by the server" with no reader (drlg/0009 § 4).
     *Open questions*: the fallback entry struck, the `0x200000`/`EDX` entry narrowed to whether the 626 are exactly
     the server releases. No inventory row changes class.
-  - **Wiki:** [levels](../wiki/levels.md) restated (the fallback confirmed, its fatal branch and the release flag
-    read from the code); [randomness](../wiki/randomness.md) states neither and is unchanged. W4 0.
+  - **Wiki:** [levels](../../wiki/levels.md) restated (the fallback confirmed, its fatal branch and the release flag
+    read from the code); [randomness](../../wiki/randomness.md) states neither and is unchanged. W4 0.
   - **Backlog:** closed the room-tiles re-rule entry and the plan 0040 Phase 1 amendment; annotated the reverser's
     plan 0040 entry ((a) done; (b), (c) remain). New entry to the architect with the old and new counts.
   - **Commits:** `e476530` (spec and research map), `5b59759` (wiki), then backlog and this log. Gate green.
   - **Next:** architect review of `lane/sw5` (backlog).
 
 - **2026-10-17 — Review of `lane/sw5` (architect): accept with fixes.** Main `3e169e4` merged (already up to date).
-  - **Checked.** The raise and split against [drlg/0002 § S4b](../findings/drlg/0002-room-build-draws.md#plan-0038-batch-s4b-2026-10-16)
+  - **Checked.** The raise and split against [drlg/0002 § S4b](../../findings/drlg/0002-room-build-draws.md#plan-0038-batch-s4b-2026-10-16)
     (rows 9 and 20 re-ruled) and the `lane/rbs` review ruling (3): row 20 `[C]` in step note 3, row 9 split in step 3b
     (fallback `[C]`, `else fatal` `[I]`), step note 3 carrying the same split; the release `[I]` bullet against
-    [drlg/0009 § 4](../findings/drlg/0009-room-lifecycle.md#4-release) and the plan 0040 Phase 1 amendment (worded
+    [drlg/0009 § 4](../../findings/drlg/0009-room-lifecycle.md#4-release) and the plan 0040 Phase 1 amendment (worded
     `[I]`, as the amendment allows). Front matter recounted by script: {C 120, I 32, L 0}, against {C 118, I 31, L 0}
     at `3e169e4` (+1 `[C]` step 3b, +1 `[C]` step note 3, +1 `[I]` release bullet); no `[L]` above *Open questions*.
-    Research-map row rewritten whole, counts match. The three changed [levels](../wiki/levels.md) passages read
+    Research-map row rewritten whole, counts match. The three changed [levels](../../wiki/levels.md) passages read
     against the spec. Anchors read in objdump on the pinned `Game.exe`: 0x0066B4C0–0x0066B4EB (the built test at
     0x0066B4C9, `test edx, edx` 0x0066B4DE, `sete al` 0x0066B4E0, call `RoomTilesRelease`), 0x0061A9D0 (`mov edx,
     [esi+0x50]`) and the call at 0x0061A9D7, 0x0066F232 (`or [esi+0x28], 0x200000`), 0x0066D868–0x0066D8A3 (the
@@ -2161,7 +2161,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     code that reads that flag was found" (the spec says no reader was found).
   - **Backlog.** The review request is closed. New entries: spec-writer, the 626 question once `lane/p40h` (plan 0040
     Phase 2, which logged `0x200000` set on 2 440 server releases and clear on 8 277 client ones) is accepted and
-    merged; reverser, drlg/0009 § 4's `sete` anchor. Ledger rows are in [metrics](metrics.md) (usage unknown).
+    merged; reverser, drlg/0009 § 4's `sete` anchor. Ledger rows are in [metrics](../metrics.md) (usage unknown).
   - **Next:** merge `lane/sw5`.
 
 - **2026-10-17 — `lane/rbs2` review (architect, static backlog sweep, second pass): accept with fixes.** `main`
@@ -2220,7 +2220,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Backlog.** The review request is closed. The *static sweep, remaining* entry is annotated: H5e done, and a new
     item to print the H5e (a) vertex-merge condition in the scan (row 7 waits on it). New spec-writer entries:
     drlg/outdoor L693 and L866 wording; the quests and economy readings for plans 0042 and 0043 Phase 3. Ledger rows
-    are in [metrics](metrics.md) (usage "—").
+    are in [metrics](../metrics.md) (usage "—").
   - **Next:** merge `lane/rbs2`.
 
 - **2026-10-17 — `lane/rbs3` review (architect, static backlog sweep, third pass): accept with fixes.** `main`
@@ -2245,7 +2245,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     0x0054E76F–0x0054E782 and 0x0054EAFE (returns `ESI`, 0 since 0x0054E62A), 0x0054EAB1, the navi spawn at 0x0054E919
     (class `0x10A`), the tentacle step 0x0054E789–0x0054E7BB; the `sete` pair 0x0066B4DE/0x0066B4E0.
   - **Rulings.**
-    - (1) **Town-follow: a shortfall still**, ruled in the [plan 0040 log](done/0040-drlg-room-lifecycle.md#implementation-log)
+    - (1) **Town-follow: a shortfall still**, ruled in the [plan 0040 log](0040-drlg-room-lifecycle.md#implementation-log)
       (post-close entry). No harness addendum or owner-play candidate until the static remainder is read; a harness
       case, if one follows, is a plan 0038 harness batch.
     - (2) **Dead champion "not saved on stock data": `[I]`** (plan 0040 log). The run cannot separate it.
@@ -2272,9 +2272,9 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     - *Omission 1:* monsters/0003 § 7 names `PresetUnitDispatch`'s two callers and `PresetMonSpawn`'s four other callers
       (`sweep_rbs3.py callers 0x0054E600 0x005557D0`).
   - **Backlog.** The review request is closed. The *static sweep, remaining* entry is annotated. New reverser entry:
-    [rbs3 review static remainders](../backlog/archive/2026-10-17-architect-reverser-rbs3-review-static-remainders.md)
+    [rbs3 review static remainders](../../backlog/archive/2026-10-17-architect-reverser-rbs3-review-static-remainders.md)
     (town-follow remainder, outdoor 7 layout bound, MonPlace readers, the optional unit-seed search). The lane's
-    spec-writer entry is annotated with the lifecycle rewording. Ledger rows are in [metrics](metrics.md) (usage "—").
+    spec-writer entry is annotated with the lifecycle rewording. Ledger rows are in [metrics](../metrics.md) (usage "—").
   - **Next:** merge `lane/rbs3`.
 
 - **2026-10-17 — Phase 3, the `lane/rbs3` readings and the outdoor H5e reasons (spec-writer, `lane/sw6`, from `main`
@@ -2294,9 +2294,9 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **drlg/outdoor** {C 180, I 19, L 3} → **{C 180, I 19, L 2}**: H2's swapped cliff-cave scan and H6's 5/6 endpoints
     and exhausted pool say why there is no stock case (drlg/0008 (c) with the border-piece rotation, (d), (e), (e′));
     rows stay `[I]`; two answered open questions struck. Rows 7 and 11 unchanged. No inventory row changes class.
-  - **Wiki:** [levels](../wiki/levels.md) and [monsters](../wiki/monsters.md) restated; W4 0.
+  - **Wiki:** [levels](../../wiki/levels.md) and [monsters](../../wiki/monsters.md) restated; W4 0.
   - **Backlog:** both entries closed. Review request:
-    [sw6 review](../backlog/archive/2026-10-17-spec-writer-architect-sw6-rbs3-readings-and-outdoor-h5e-review.md). The
+    [sw6 review](../../backlog/archive/2026-10-17-spec-writer-architect-sw6-rbs3-readings-and-outdoor-h5e-review.md). The
     rbs2 quests/economy readings entry is left for the 0042 and 0043 Phase 3 passes.
   - **Commits:** `c210e90` (specs and research map), `e99c773` (wiki), then backlog and this log. Gate green.
   - **Next:** architect review of `lane/sw6` (backlog).
@@ -2304,7 +2304,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   restated statement checked against its source at the same strength: drlg/0009 § 11.1 (a)–(c) and the `lane/rbs3`
   ruling annotation (lifecycle H2b, H2c, § F, § H, open questions), monsters/0003 § 7's switch bullet (special § H,
   preset § 6), monsters/0003 § S3b (special E1), drlg/0008 (c), (d), (e), (e′) with the rbs2 review (outdoor H2, H6).
-  special § H follows the newer switch bullet for 19–21 and 27; it agrees with [MonPlace](../tables/MonPlace.md) row
+  special § H follows the newer switch bullet for 19–21 and 27; it agrees with [MonPlace](../../tables/MonPlace.md) row
   for row (both kept row 24's "class 0"; fix 2). Anchors spot-checked with objdump: 0x005A454E `push $0x0`, 0x005A4558 `call 0x5a2120`, 0x005A2123
   `cmpl $0x0,0x10(%ebp)`, 0x005A214D `push $0x1`, 0x005A4811 and 0x005A4830 `push $0x0`, 0x005A0CE7 the flag test,
   0x0054E76F–0x0054E775 (`index − 2`, bound `0x1E`), the byte table `0x0054EB30` (rows 6, 7, 9, 12–16, 19–21 → 8),
@@ -2329,7 +2329,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     monsters/0003 § 7 reconcile entry (reverser) annotated with the rows 24/26 objdump lead. Ledger rows added.
 - **2026-10-17 — `lane/rbs4` review (architect, static backlog sweep, fourth pass): accept with fixes.** `main`
   (`af90ea8`) merged into the lane first (clean; `backlog.py migrate` moved nothing). Request:
-  [rbs4 review](../backlog/archive/2026-10-17-reverser-architect-review-lane-rbs4-static-sweep-pass-4.md).
+  [rbs4 review](../../backlog/archive/2026-10-17-reverser-architect-review-lane-rbs4-static-sweep-pass-4.md).
   - **Re-runs.** Every `sweep-rbs4-*` output re-run against `workspace/logs/sweep-rbs4-manifest.txt`: `layouts` (under
     `MemoryMax=4G`, 5 min) byte-identical, and `dwords`, both `tree`, both `stackfield`, both `regarg` and the
     `xrefscan` loop identical; `sweep_rbs3.py pushes 0x00648CF0 2` identical but for two caller names `lane/rbs4` added
@@ -2353,7 +2353,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     0x0058A6F6 (`push 2`); the bound check 0x0054E76F. Three cited addresses were mid-instruction (fixes).
   - **Rulings.**
     - (1) **Town-follow: a plan 0038 harness batch, H7a (`lifecycle`)**, recorded in the
-      [plan 0040 log](done/0040-drlg-room-lifecycle.md#implementation-log) (post-close entry) and inventory § 5 and § 7.
+      [plan 0040 log](0040-drlg-room-lifecycle.md#implementation-log) (post-close entry) and inventory § 5 and § 7.
       The `lane/rbs3` ruling made a found route the trigger, and § 11.2 found two. Recipe (b) first, after an offline
       geometry check (seed and points, or a recorded "no stock layout allows it"); recipe (c) only after a static read
       shows an AI teleport target in a town room. Not owner play: both are scripted `rooms.gdb` sessions. The `0x400`
@@ -2384,20 +2384,20 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
       test reads the caster's level (0x005CA37C–0x005CA395), never the target's.
   - **Backlog.** The review request is closed; plan 0040 close follow-ups closed ((1) done, (2) to H7a); the *static
     sweep, remaining* entry annotated. New: spec-writer
-    [rbs4 town-follow and outdoor 7](../backlog/archive/2026-10-17-architect-spec-writer-rbs4-town-follow-and-outdoor-7.md);
-    reverser [rbs4 review static remainders](../backlog/archive/2026-10-17-architect-reverser-rbs4-review-static-remainders.md)
-    (H7a geometry prep, the teleport-target read, optional unfollowed calls). Ledger rows in [metrics](metrics.md)
+    [rbs4 town-follow and outdoor 7](../../backlog/archive/2026-10-17-architect-spec-writer-rbs4-town-follow-and-outdoor-7.md);
+    reverser [rbs4 review static remainders](../../backlog/archive/2026-10-17-architect-reverser-rbs4-review-static-remainders.md)
+    (H7a geometry prep, the teleport-target read, optional unfollowed calls). Ledger rows in [metrics](../metrics.md)
     (usage "—").
   - **Next:** merge `lane/rbs4`.
 
 - **2026-10-17 — Wiki refresh of the index and *How we know* (spec-writer, `lane/wiki6`, from `main` `407758a`).**
-  The two pages W4 cannot see as stale (ADR-0012). [wiki/README](../wiki/README.md): plans 0037 and 0040 closed, room
+  The two pages W4 cannot see as stale (ADR-0012). [wiki/README](../../wiki/README.md): plans 0037 and 0040 closed, room
   lifecycle on the Levels page, the open-plan list from the plan index, the Levels and How-we-know table rows.
-  [wiki/how-we-know](../wiki/how-we-know.md) (`based_on: [process]`): emulated reproduction (ADR-0015, batches S1e
+  [wiki/how-we-know](../../wiki/how-we-know.md) (`based_on: [process]`): emulated reproduction (ADR-0015, batches S1e
   and S1f), simulation per event and the plan 0041 seed-invariance rule (ADR-0014), two clients (ADR-0008), d-none
   bounds and the outdoor 7 split, shortfalls and open questions, this sweep, the review loop; ADR list gains 0008,
   0011, 0014, 0015, 0018. No spec changed. Commit `2b8a67f`; gate green. Review request:
-  [wiki6 review](../backlog/archive/2026-10-17-spec-writer-architect-wiki6-index-and-how-we-know-review.md).
+  [wiki6 review](../../backlog/archive/2026-10-17-spec-writer-architect-wiki6-index-and-how-we-know-review.md).
   - **Next:** architect review of `lane/wiki6`.
 - **2026-10-17 — `lane/wiki6` reviewed (architect, on the lane at `b2aa52d`; `main` `407758a` already merged): accept
   with fixes.** Every number checked against its source at the same strength: 28 643 calls in ten families (S1e
@@ -2409,7 +2409,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   0015 restated without overreach; the open-plan wording matches the plan index but for 0044. Gate green.
   **Fixes (6), applied on the lane:**
   (1) *stale cross-reference:* wiki/README's 0044 bullet said the two-client run waits until the port is shown
-  closed; the owner's `ufw` check was recorded on 2026-10-17 ([plan 0044 log](done/0044-multiplayer-branches.md#implementation-log),
+  closed; the owner's `ufw` check was recorded on 2026-10-17 ([plan 0044 log](0044-multiplayer-branches.md#implementation-log),
   `78b96a9`), so it now waits only for two free slots. The plan index row of 0044 updated likewise (architect's file).
   (2) *stale cross-reference:* how-we-know's two-client section gains the met condition and the per-session re-read.
   (3) *overclaim:* "a bound: a static argument plus an exhaustive scan" made every d-none ruling need a scan; most rest
@@ -2418,7 +2418,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   ADR-0015 (4) sets as a requirement; reworded as a requirement.
   (5) *omission:* ADR-0015 (5)'s self-modifying code added to what emulation cannot confirm.
   (6) *omission:* the sweep's blocked reasons gain the plan 0032 owner addendum (`d-0032`, § Classes).
-  Request closed; ledger rows in [metrics](metrics.md) (usage "—").
+  Request closed; ledger rows in [metrics](../metrics.md) (usage "—").
   - **Next:** merge `lane/wiki6`.
 
 - **2026-10-17 — H7a (`lifecycle`) started; stopped early for a machine shutdown (reverser, `lane/h7a`, harness slot 2).**
@@ -2455,8 +2455,8 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   act); the Frigid Highlands arrival is (3764, 5094) on every seed tried.
 - **2026-10-18 — H7a (`lifecycle`) done; review requested (reverser, `lane/h7a`, harness slot 2).** Resumed from the
   entry above; `main` (`c0c99f6`) merged first. Run **run:2026-10-17-h7a-lifecycle**
-  ([drlg/0009 § 11.3](../findings/drlg/0009-room-lifecycle.md#113-plan-0038-batch-h7a-run2026-10-17-h7a-lifecycle),
-  [experiments](../findings/drlg/experiments.md#run2026-10-17-h7a-lifecycle)); manifest
+  ([drlg/0009 § 11.3](../../findings/drlg/0009-room-lifecycle.md#113-plan-0038-batch-h7a-run2026-10-17-h7a-lifecycle),
+  [experiments](../../findings/drlg/experiments.md#run2026-10-17-h7a-lifecycle)); manifest
   `workspace/logs/h7a-lifecycle-manifest.sha256` (logs, check outputs, geometry and scan outputs). No new session
   today: the three sessions of 2026-10-17 are the record.
   - **Checks:** `rooms.py check` on h-barb, h-barb2, h-barb3: **4 mismatches / 675 849 checks** (h-barb 0 / 96 414,
@@ -2473,16 +2473,16 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Tools:** `townfollow_geom.py summary` (new mode, per-town table of a scan output); `sweep_h7a.py`,
     `rooms_sessions.py` `rec400` unchanged since the checkpoint.
   - **Backlog:** review request
-    [2026-10-18-reverser-architect-review-h7a-lifecycle](../backlog/archive/2026-10-18-reverser-architect-review-h7a-lifecycle.md);
+    [2026-10-18-reverser-architect-review-h7a-lifecycle](../../backlog/archive/2026-10-18-reverser-architect-review-h7a-lifecycle.md);
     spec-writer entry
-    [2026-10-18-reverser-spec-writer-h7a-lifecycle-spec-updates](../backlog/archive/2026-10-18-reverser-spec-writer-h7a-lifecycle-spec-updates.md);
+    [2026-10-18-reverser-spec-writer-h7a-lifecycle-spec-updates](../../backlog/archive/2026-10-18-reverser-spec-writer-h7a-lifecycle-spec-updates.md);
     the `lane/rbs4` static-remainders entry closed ((1), (2) answered; (3) deferred).
   - **Inventory:** § 2.6 entry (pending review), no row moves, totals unchanged at 1 526.
   - **Left:** the alignment-1 `0x400` record, the `+0xC4` bit-`0x2000` writer (a breakpoint at 0x0064C08B), the
     unfollowed 152 register-skill calls and the § 11.2 optional counts (the closed `lane/rbs4` entry's (3)).
 - **2026-10-18 — H7a (`lifecycle`) review (architect, `lane/h7a` at `36e34dd`, `main` `c0c99f6` merged): accept with
-  fixes.** Read: [drlg/0009 § 11.3](../findings/drlg/0009-room-lifecycle.md#113-plan-0038-batch-h7a-run2026-10-17-h7a-lifecycle)
-  and its open questions, the [experiments record](../findings/drlg/experiments.md#run2026-10-17-h7a-lifecycle), the
+  fixes.** Read: [drlg/0009 § 11.3](../../findings/drlg/0009-room-lifecycle.md#113-plan-0038-batch-h7a-run2026-10-17-h7a-lifecycle)
+  and its open questions, the [experiments record](../../findings/drlg/experiments.md#run2026-10-17-h7a-lifecycle), the
   manifest, inventory § 2.6, the seven new symbols, the spec-writer entry and the closed `lane/rbs4` entry. Anchors checked
   in the pinned `Game.exe` with r2: 0x0052D310 (`mov ecx, 0x5DC; idiv; test edx` then 0x00558B90 and 0x00542AC0 for
   `esi` 0..4), 0x0052D96C (the call), 0x00542AF0–0x00542AFF (expiry non-zero and `frame > expiry`), 0x00542498 (the
@@ -2522,7 +2522,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Ledger:** 4 fixes: tool not kept 1, omission 1, other 2. Rule 11 of the reverser's review-fixes recurred
     (fix 4) and rule 6 gains the manifest check (fix 1); both cite this review.
   - **Backlog:** review request closed; the spec-writer entry
-    [2026-10-18-reverser-spec-writer-h7a-lifecycle-spec-updates](../backlog/archive/2026-10-18-reverser-spec-writer-h7a-lifecycle-spec-updates.md)
+    [2026-10-18-reverser-spec-writer-h7a-lifecycle-spec-updates](../../backlog/archive/2026-10-18-reverser-spec-writer-h7a-lifecycle-spec-updates.md)
     released.
   - **Next:** merge `lane/h7a`; the spec-writer updates drlg/lifecycle from the released entry.
 - **2026-10-19 — H5b (`objects`) started; stopped early at the usage limit (reverser, `lane/h5b`, harness slot 1).**
@@ -2571,9 +2571,9 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - Slot 1 stopped, saves restored, no background process left.
 - **2026-10-20 — H5b (`objects`) done; review requested (reverser, `lane/h5b`, harness slot 1).** Resumed from the
   entry above. Run **run:2026-10-19-h5b-objects**
-  ([objects/0001 § Plan 0038 batch H5b](../findings/objects/0001-object-population.md#plan-0038-batch-h5b-run2026-10-19-h5b-objects),
-  [drlg/0005 § Plan 0038 batch H5b](../findings/drlg/0005-collision.md#plan-0038-batch-h5b-run2026-10-19-h5b-objects),
-  [experiments](../findings/objects/experiments.md#run2026-10-19-h5b-objects)); manifest
+  ([objects/0001 § Plan 0038 batch H5b](../../findings/objects/0001-object-population.md#plan-0038-batch-h5b-run2026-10-19-h5b-objects),
+  [drlg/0005 § Plan 0038 batch H5b](../../findings/drlg/0005-collision.md#plan-0038-batch-h5b-run2026-10-19-h5b-objects),
+  [experiments](../../findings/objects/experiments.md#run2026-10-19-h5b-objects)); manifest
   `workspace/logs/h5b-manifest.sha256` (85 lines: logs, check and sweep outputs, the 29 + 7 older logs re-checked).
   - **Sessions:** 20 today (cata2, jail2, cave, cotd, jail3, cave2, cotd2, flayer, tower, harro, arcane, traps1, cave3,
     flayer2, flayer3, ice, traps2, cave4, traps3, traps4) plus the 2 of 2026-10-19: 22 logs.
@@ -2590,9 +2590,9 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     (near lists after a DRLG room's re-activation), `d2pilot.py objop` (`--obj-mem`, `--trap-types`, `--goal`, status
     lines), `h5b_sessions.py` (sessions, watchdog race). Symbols: 5 trap functions added, 6 raised to `C`.
   - **Backlog:** review request
-    [2026-10-20-reverser-architect-review-h5b-objects](../backlog/archive/2026-10-20-reverser-architect-review-h5b-objects.md);
+    [2026-10-20-reverser-architect-review-h5b-objects](../../backlog/archive/2026-10-20-reverser-architect-review-h5b-objects.md);
     spec-writer entry
-    [2026-10-20-reverser-spec-writer-h5b-objects-spec-updates](../backlog/archive/2026-10-20-reverser-spec-writer-h5b-objects-spec-updates.md).
+    [2026-10-20-reverser-spec-writer-h5b-objects-spec-updates](../../backlog/archive/2026-10-20-reverser-spec-writer-h5b-objects-spec-updates.md).
   - **Left:** trap types 8 and 9, the well cap and the shrine cap's `= 10` half, the class-397 operate (the pilot
     never reached the chest), a window inside a portal-like operate, quest 13's 582 object, `InitFn` 54/55/62/68/69/79.
   - Slot 1 stopped, saves restored (aside removed, harness idle), no background process left.
@@ -2636,22 +2636,22 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Totals** (inventory § 2.6, § 5, after merging `main`): **static 567, harness 531, c-emu 0, blocked 416** (d-none
     283), **deferred 2, raised 10: 1 526**. H5b: 32 statements (33 filed; 1 to d-none).
   - **Phase 3:** frees no cluster. drlg/collision still waits for H5d, objects for H6e2.
-  - **Ledger:** 3 fixes: misread 1, omission 2 ([metrics](metrics.md)).
+  - **Ledger:** 3 fixes: misread 1, omission 2 ([metrics](../metrics.md)).
   - **Backlog:** review request
-    [2026-10-20-reverser-architect-review-h5b-objects](../backlog/archive/2026-10-20-reverser-architect-review-h5b-objects.md)
+    [2026-10-20-reverser-architect-review-h5b-objects](../../backlog/archive/2026-10-20-reverser-architect-review-h5b-objects.md)
     closed; the spec-writer entry
-    [2026-10-20-reverser-spec-writer-h5b-objects-spec-updates](../backlog/archive/2026-10-20-reverser-spec-writer-h5b-objects-spec-updates.md)
+    [2026-10-20-reverser-spec-writer-h5b-objects-spec-updates](../../backlog/archive/2026-10-20-reverser-spec-writer-h5b-objects-spec-updates.md)
     released (it is applied with the objects and drlg/collision Phase 3 rounds, when H6e2 and H5d are accepted).
 - **2026-10-20 — Batch order and the 0039 fold (owner decisions, via the orchestrator; architect, `lane/plans45`).**
   (1) The remaining harness batches run **core and enabler first**: H5b (in flight) → H2a → H2b → H2c → H4a → H5d →
   H1b → H1a → H3b, then H6e2 → H6e1 → H6b → H6a → H6c → H6f → H6g; the family rules of
-  [inventory § 7](0038-inventory/README.md#7-priority-order) hold. (2) Plan 0039 is closed; its data/excel fold is a
+  [inventory § 7](../0038-inventory/README.md#7-priority-order) hold. (2) Plan 0039 is closed; its data/excel fold is a
   Phase 3 item of the data/excel cluster (Phase 3 *Order*). The lane H2 queue is in the
-  [plans index](README.md#run-order-unattended-queue-set-2026-10-20-plans-00380049).
+  [plans index](../README.md#run-order-unattended-queue-set-2026-10-20-plans-00380049).
 - **2026-10-20 — Phase 3, the drlg/lifecycle cluster (spec-writer, `lane/p38s5`, from `main` `c4b4539`).** First
   spec-writer item of the 2026-10-20 queue. Two entries: the released H7a spec updates and the `lane/rbs4` town-follow
   and outdoor 7 entry. Each restated statement checked against
-  [drlg/0009 § 11.2, § 11.3](../findings/drlg/0009-room-lifecycle.md#113-plan-0038-batch-h7a-run2026-10-17-h7a-lifecycle)
+  [drlg/0009 § 11.2, § 11.3](../../findings/drlg/0009-room-lifecycle.md#113-plan-0038-batch-h7a-run2026-10-17-h7a-lifecycle)
   and the `lane/h7a` review rulings, and drlg/0008's H5e (a) layout bound.
   - **drlg/lifecycle** {C 80, I 73, L 7} → **{C 85, I 75, L 8}**. Raised `[C]` (run:2026-10-17-h7a-lifecycle): the
     `0x400` drop's alignment-2 half (H2 line and a § H bullet), the expired-item drop (H4 line, `[I]` → `[C]`, and a
@@ -2662,16 +2662,16 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     rewritten (the 20-frame sweep struck).
   - **drlg/outdoor** {C 180, I 19, L 2} unchanged: row 7's C5 bullet and its shortfall bullet split by act (no stock
     case in Acts I, II, IV, V by the layout bound, `[I]`; Act III on the 600-seed sample). No inventory row moves.
-  - **Wiki:** [levels](../wiki/levels.md) restated (town-follow, expired item, vertex merge); levels, monsters and
+  - **Wiki:** [levels](../../wiki/levels.md) restated (town-follow, expired item, vertex merge); levels, monsters and
     objects `based_on` dates set to 2026-10-20.
   - **Backlog:** both entries closed; review request
-    [p38s5 review](../backlog/archive/2026-10-20-spec-writer-architect-p38s5-drlg-lifecycle-review.md).
+    [p38s5 review](../../backlog/archive/2026-10-20-spec-writer-architect-p38s5-drlg-lifecycle-review.md).
   - **Next:** architect review of `lane/p38s5`.
 - **2026-10-20 — Review of `lane/p38s5`, the drlg/lifecycle cluster (architect): accept with fixes.** `main` merged
   first (clean; `backlog.py archive` moved nothing). Read: the full spec, wiki and plan diff against
-  [drlg/0009 § 11.3](../findings/drlg/0009-room-lifecycle.md#113-plan-0038-batch-h7a-run2026-10-17-h7a-lifecycle),
+  [drlg/0009 § 11.3](../../findings/drlg/0009-room-lifecycle.md#113-plan-0038-batch-h7a-run2026-10-17-h7a-lifecycle),
   the `lane/h7a` rulings above and drlg/0008's
-  [H5e (a) layout bound](../findings/drlg/0008-outdoor.md#h5e-reachability-a-the-layout-bound-2026-10-17-lanerbs4).
+  [H5e (a) layout bound](../../findings/drlg/0008-outdoor.md#h5e-reachability-a-the-layout-bound-2026-10-17-lanerbs4).
   Tag counts recomputed by script: drlg/lifecycle {C 85, I 75, L 8} (5 raised, 3 new `[I]`, 1 removed, 1 new `[L]`),
   drlg/outdoor unchanged {C 180, I 19, L 2}. Anchors resolve in `re/symbols.csv` (0x005424F0, 0x00541AC0, 0x0052D870,
   0x005421A0, 0x005B11F0, 0x005F72D0, 0x00554EA0, 0x005CA360, 0x0064FAD0, 0x006772C0).
@@ -2684,9 +2684,9 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     its neighbour "at one gate"; § 11.3 (1) has one more run of 1 or 2 cells on 21 camp layouts; both scoped.
     (2) *other:* outdoor's *Branches no log reached* bullet rewrapped (two over-long lines). Research-map rows for
     drlg/lifecycle and drlg/outdoor rewritten whole (counts, date, the H7a raises, the Act split).
-  - **Ledger:** 2 fixes: overclaim 1, other 1 ([metrics](metrics.md)).
+  - **Ledger:** 2 fixes: overclaim 1, other 1 ([metrics](../metrics.md)).
   - **Backlog:** review request
-    [p38s5 review](../backlog/archive/2026-10-20-spec-writer-architect-p38s5-drlg-lifecycle-review.md) closed.
+    [p38s5 review](../../backlog/archive/2026-10-20-spec-writer-architect-p38s5-drlg-lifecycle-review.md) closed.
 - **2026-10-20 — Phase 3, qualification check (spec-writer, `lane/p38s6`, from `main` `0adbb2e`).** No cluster
   qualifies; nothing is re-tagged. Accepted batches: S1a, S1b, S1e, S1f, S2a, S2b, S2c, S3a, S3b, S4a, S4b, H4b, H5a,
   H5c, H5e, H6d, H7a. Every spec whose batches are all among them is already re-tagged: rng/seeds, monsters/README,
@@ -2707,7 +2707,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   was yielded to plan 0044 Phase 2 at the orchestrator's request. Slot 2 is stopped, its saves directory restored to
   empty (`aside: none`), no driver or gdb left.
   - **Done:** run:2026-10-20-sweep-items-tc, 12 sessions on slot 2, recorded in
-    [findings/items/experiments.md](../findings/items/experiments.md#run2026-10-20-sweep-items-tc) with the logger
+    [findings/items/experiments.md](../../findings/items/experiments.md#run2026-10-20-sweep-items-tc) with the logger
     (`tools/gdb/tc-h2a.gdb`), driver (`tools/h2a_sessions.py`), pilot `corpse` command, recipe `h2afind.json`, checker
     `tools/sweep_h2a.py` (+ 9 tests), the `tools/quality.py` clamp counterfactual keys and `tools/tc.py`'s skip of the
     H2a tags. Logs, manifest and every check output are in `workspace/logs/h2a/` (`check/`). All checkers 0
@@ -2729,8 +2729,8 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 - **2026-10-20 — Batch H2a filed (reverser, `lane/h2a`, write-up resumed from the note above; `main` `5a7feb3`
   merged).** Static only: no slot, no Ghidra. Every count re-taken from the kept logs and check outputs in
   `workspace/logs/h2a/` (manifest passes), not from the note.
-  - **Ledger** ([items/0001 § Plan 0038 batch H2a](../findings/items/0001-tc-resolution.md#plan-0038-batch-h2a-2026-10-20),
-    [items/0002 § Plan 0038 batch H2a](../findings/items/0002-quality-roll.md#plan-0038-batch-h2a-2026-10-20)):
+  - **Ledger** ([items/0001 § Plan 0038 batch H2a](../../findings/items/0001-tc-resolution.md#plan-0038-batch-h2a-2026-10-20),
+    [items/0002 § Plan 0038 batch H2a](../../findings/items/0002-quality-roll.md#plan-0038-batch-h2a-2026-10-20)):
     15 rows, 17 statements: **12 raised** (tc 1, 2, 11, 34 L361, 37, 45, 47, 59, 71; quality 22 ×2, 23), **5 raised in
     part** (tc 22, 34 L388, 60, 70; quality 20), 0 shortfall. The note's "13 raised, 4 in part of 17 rows (18
     statements)" miscounted: tc 34's L388 carries the `Picks = 0` half (d-none, row 13), so it is in part (rule 8).
@@ -2743,12 +2743,12 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     stop), Functions table, § 3 (bit 17), § 8 (gold), S2a tc 34 and tc 51, and the TCP/IP `/players` open question
     (answered).
   - **Symbols:** `MonDeathEvent`, `MonDeathDrop`, `MonDropNoNoDrop`, `CorpseFindItem`, `DropGoldFind` I → C.
-  - **Inventory:** [§ 2.6 H2a](0038-inventory/README.md#26-moves-made-by-the-batch-reviews), no class moves; totals
+  - **Inventory:** [§ 2.6 H2a](../0038-inventory/README.md#26-moves-made-by-the-batch-reviews), no class moves; totals
     as after the H5b review (static 567, harness 531, blocked 416, deferred 2, raised 10: 1 526).
   - **Backlog:** review request
-    [2026-10-20-reverser-architect-review-h2a-items-tc-quality](../backlog/archive/2026-10-20-reverser-architect-review-h2a-items-tc-quality.md);
+    [2026-10-20-reverser-architect-review-h2a-items-tc-quality](../../backlog/archive/2026-10-20-reverser-architect-review-h2a-items-tc-quality.md);
     spec-writer entry
-    [2026-10-20-reverser-spec-writer-h2a-items-tc-quality-spec-updates](../backlog/archive/2026-10-20-reverser-spec-writer-h2a-items-tc-quality-spec-updates.md)
+    [2026-10-20-reverser-spec-writer-h2a-items-tc-quality-spec-updates](../../backlog/archive/2026-10-20-reverser-spec-writer-h2a-items-tc-quality-spec-updates.md)
     (to be released with the review).
   - **Next:** architect review of `lane/h2a`; then H2b.
 - **2026-10-20 — Review of `lane/h2a`, batch H2a (items: tc and quality; architect): accept with fixes.** `main` merged
@@ -2794,25 +2794,25 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     (L177–L179, L220, L542, L548), each contradicted by the corrections. Entry released.
   - **Totals** (once, after the rulings, against `main` `5a7feb3`): unchanged, **static 567, harness 531, c-emu 0,
     blocked 416** (d-none 283, d-edit 73, d-sim 28, d-2c 14, d-owner 10, d-0032 8), **deferred 2, raised 10: 1 526**
-    ([§ 2.6](0038-inventory/README.md#26-moves-made-by-the-batch-reviews)); H2a marked done in § 5.
+    ([§ 2.6](../0038-inventory/README.md#26-moves-made-by-the-batch-reviews)); H2a marked done in § 5.
   - **Phase 3 clusters freed:** items/quality (waited on H2a only) is ready for its re-tag round; items/tc still waits
     on H2b and H2c.
-  - **Ledger:** 1 fix: omission 1 ([metrics](metrics.md)).
+  - **Ledger:** 1 fix: omission 1 ([metrics](../metrics.md)).
   - **Backlog:** review request
-    [h2a review](../backlog/archive/2026-10-20-reverser-architect-review-h2a-items-tc-quality.md) closed; spec-writer entry
-    [h2a spec updates](../backlog/archive/2026-10-20-reverser-spec-writer-h2a-items-tc-quality-spec-updates.md) released.
+    [h2a review](../../backlog/archive/2026-10-20-reverser-architect-review-h2a-items-tc-quality.md) closed; spec-writer entry
+    [h2a spec updates](../../backlog/archive/2026-10-20-reverser-spec-writer-h2a-items-tc-quality-spec-updates.md) released.
 - **2026-10-20 — Phase 3, the items/quality cluster (spec-writer, `lane/p38s7`, from `main` `f32742c`).** The cluster
   waited on H2a only (accepted above). Inputs: the items/quality parts of the released H2a spec-updates entry ((j)–(m)
   and the quality lines of (o)) and the items/quality note of the S2a tc 64 entry ((b), unblocked by S4b's raise in
   items/0001 § 2). Each raise checked against
-  [items/0002 § Plan 0038 batch H2a](../findings/items/0002-quality-roll.md#plan-0038-batch-h2a-2026-10-20) and the
+  [items/0002 § Plan 0038 batch H2a](../../findings/items/0002-quality-roll.md#plan-0038-batch-h2a-2026-10-20) and the
   review's rulings (d) and (f). The plan 0049 M3 notes folded by `lane/p49s` are kept as they were.
   - **items/quality** {C 64, I 42, L 2} → **{C 69, I 39, L 1}**. Raised `[C]`: the D6 line and its step note
     (quality 22, "the clamp acts": 667 rolls, decides 138, no unique case), the D4–D7 order note (quality 23). Split:
     M3, a monster killer owned by a player `[C]` (quality 20 in part, 130 rolls), the missing-owner, plain or minion
     killer and type ≥ 2 cases staying `[I]`; C1, the chest tier as `ilvl` `[C]` (S2a (b), run:2026-10-15-objects), its
     consequence for the odds `[I]`. Open questions: the `*Min` clamp `[L]` struck.
-  - **Wiki:** [items](../wiki/items.md) step 3 of *One test*, the MF paragraph and the *Quality* line of the untested
+  - **Wiki:** [items](../../wiki/items.md) step 3 of *One test*, the MF paragraph and the *Quality* line of the untested
     list restated; `based_on` for quality already 2026-10-20.
   - **Waiting** (missing batches): items/tc H2b, H2c; items/affixes H2b; items/uniques-sets H2b, H1a (us 21);
     items/properties H2b, H2c; items/sockets-runewords H2b, H6b; items/cube H6a; items/vendors H6c; items/quest-drops
@@ -2821,13 +2821,13 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     player/creation H1a, H6g; drlg/collision H5d; objects H6e2.
   - **Backlog:** the H2a spec-updates entry and the S2a tc 64 entry annotated (done in part; their items/tc and objects
     parts wait); review request
-    [p38s7 review](../backlog/archive/2026-10-20-spec-writer-architect-p38s7-items-quality-review.md).
+    [p38s7 review](../../backlog/archive/2026-10-20-spec-writer-architect-p38s7-items-quality-review.md).
   - **Next:** architect review of `lane/p38s7`; items/tc after H2b and H2c.
 - **2026-10-20 — Review of `lane/p38s7`, Phase 3 items/quality cluster (spec-writer; architect): accept with fixes.**
   `main` merged first (already up to date at `f32742c`; `backlog.py archive` moved nothing). Read: the spec, wiki,
   backlog and plan diffs against
-  [items/0002 § Plan 0038 batch H2a](../findings/items/0002-quality-roll.md#plan-0038-batch-h2a-2026-10-20), the
-  `lane/h2a` rulings (d) and (f) and [items/0001 § 2](../findings/items/0001-tc-resolution.md#2-entry-points).
+  [items/0002 § Plan 0038 batch H2a](../../findings/items/0002-quality-roll.md#plan-0038-batch-h2a-2026-10-20), the
+  `lane/h2a` rulings (d) and (f) and [items/0001 § 2](../../findings/items/0001-tc-resolution.md#2-entry-points).
   - **Raises.** D6 line and step note: 667 = 39 + 628, by test rare 622 (37 + 585), set 646 (38 + 608), magic 13
     (2 + 11), decides 138 (9 + 129), 7 199 = 720 + 6 479; the unique minimum reached by none; the plan 0010 runs'
     "no chance near a minimum" kept as scoped (ruling (d)). D4–D7: after D7 206 (7 + 199), before D5 138 (9 + 129).
@@ -2845,9 +2845,9 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     list it: the M3 remainder (no player owner; an object or missile killer) added to the `[L]` *Not exercised* bullet
     (no count change) and the object or missile killer to the wiki line.
   - **Research map:** the items/quality row rewritten whole (C 69 / I 39 / L 1, the H2a raises).
-  - **Ledger:** 2 fixes: overclaim 1, omission 1 ([metrics](metrics.md)).
+  - **Ledger:** 2 fixes: overclaim 1, omission 1 ([metrics](../metrics.md)).
   - **Backlog:** review request
-    [p38s7 review](../backlog/archive/2026-10-20-spec-writer-architect-p38s7-items-quality-review.md) closed; the H2a
+    [p38s7 review](../../backlog/archive/2026-10-20-spec-writer-architect-p38s7-items-quality-review.md) closed; the H2a
     spec-updates and S2a tc 64 entries stay open for items/tc and objects.
 - **2026-10-20 — Batch H2b resumed (reverser, `lane/h2b`, head `db28349`).** The lane's first agent stopped after
   three tools-only checkpoints (`bd65fae`, `67d28a5`, `db28349`: logger `tools/gdb/h2b.py` and `items-h2b.gdb`,
@@ -2892,11 +2892,11 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   slot 2 stopped and its saves directory restored (empty, no aside). `grep -l "internal-error:"` over the kept and dev
   logs: only `dev/dev4` (the aborted classic-d). 17 launches of the 20 allowed, 13 kept logs. Every count re-taken from
   the full check set in `workspace/logs/h2b/check/` (manifest passes), not from the note or the drafts.
-  - **Ledger** ([items/0001](../findings/items/0001-tc-resolution.md#plan-0038-batch-h2b-2026-10-20),
-    [0004](../findings/items/0004-uniques-sets.md#plan-0038-batch-h2b-2026-10-20),
-    [0005](../findings/items/0005-affixes.md#plan-0038-batch-h2b-2026-10-20),
-    [0006](../findings/items/0006-properties.md#plan-0038-batch-h2b-2026-10-20),
-    [0007](../findings/items/0007-sockets-runewords.md#plan-0038-batch-h2b-2026-10-20)): 18 rows, 25 statements:
+  - **Ledger** ([items/0001](../../findings/items/0001-tc-resolution.md#plan-0038-batch-h2b-2026-10-20),
+    [0004](../../findings/items/0004-uniques-sets.md#plan-0038-batch-h2b-2026-10-20),
+    [0005](../../findings/items/0005-affixes.md#plan-0038-batch-h2b-2026-10-20),
+    [0006](../../findings/items/0006-properties.md#plan-0038-batch-h2b-2026-10-20),
+    [0007](../../findings/items/0007-sockets-runewords.md#plan-0038-batch-h2b-2026-10-20)): 18 rows, 25 statements:
     **14 raised** (tc 68; us 9, 39; aff 5, 13 ×2, 17, 19 ×2, 21 ×3; prop 20 ×2), **5 raised in part** (tc 58, us 7,
     us 35, aff 24, sock 42), **1 shortfall** (prop 24), **5 reclassified d-none** (us 10, prop 7 ×3, aff 20). S2c's
     sock 44 piece met in part; the H2c companion found no func 12, 23 or 24 slot.
@@ -2906,14 +2906,14 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Corrections carried (rule 12):** items/0005 § 3 tests (a) and the Phase 2 not-reached list; items/0004 Answer and
     not-reached list; items/0007 Answer and § 7's clamp bullets; items/0006 § 6 tors; items/0001 § 8 item seed.
   - **Symbols:** `sub_00558D90_ItemCreate`, `sub_0055A550_DropCreateItem` I → C.
-  - **Inventory:** [§ 2.6 H2b](0038-inventory/README.md#26-moves-made-by-the-batch-reviews), three rows (5 statements)
+  - **Inventory:** [§ 2.6 H2b](../0038-inventory/README.md#26-moves-made-by-the-batch-reviews), three rows (5 statements)
     proposed a-run → d-none; totals against `main` `9ef5f84`: static 567, harness 526, blocked 414 (d-none 288),
     deferred 2, raised 17: 1 526. `main` is not merged into the lane (the merge was refused by the session's permission
     layer); the review merges it.
   - **Backlog:** review request
-    [2026-10-20-reverser-architect-review-h2b-items-chain](../backlog/archive/2026-10-20-reverser-architect-review-h2b-items-chain.md);
+    [2026-10-20-reverser-architect-review-h2b-items-chain](../../backlog/archive/2026-10-20-reverser-architect-review-h2b-items-chain.md);
     spec-writer entry
-    [2026-10-20-reverser-spec-writer-h2b-items-chain-spec-updates](../backlog/archive/2026-10-20-reverser-spec-writer-h2b-items-chain-spec-updates.md)
+    [2026-10-20-reverser-spec-writer-h2b-items-chain-spec-updates](../../backlog/archive/2026-10-20-reverser-spec-writer-h2b-items-chain-spec-updates.md)
     (to be released with the review).
   - **Next:** architect review of `lane/h2b`; then H2c.
 - **2026-10-20 — Review of `lane/h2b`, batch H2b (items: affixes, tc, uniques-sets, properties, sockets-runewords;
@@ -2951,21 +2951,21 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     414** (d-none 288, d-edit 73, d-sim 28, d-2c 7, d-owner 10, d-0032 8), **deferred 2, raised 17: 1 526.** § 5 marks
     H2b done.
   - **Backlog:** review request
-    [2026-10-20-reverser-architect-review-h2b-items-chain](../backlog/archive/2026-10-20-reverser-architect-review-h2b-items-chain.md)
+    [2026-10-20-reverser-architect-review-h2b-items-chain](../../backlog/archive/2026-10-20-reverser-architect-review-h2b-items-chain.md)
     closed; the spec-writer entry
-    [2026-10-20-reverser-spec-writer-h2b-items-chain-spec-updates](../backlog/archive/2026-10-20-reverser-spec-writer-h2b-items-chain-spec-updates.md)
+    [2026-10-20-reverser-spec-writer-h2b-items-chain-spec-updates](../../backlog/archive/2026-10-20-reverser-spec-writer-h2b-items-chain-spec-updates.md)
     released (open, for the Phase 3 re-tag of items/tc, uniques-sets, affixes, properties and sockets-runewords).
   - **Next:** H2c (forced), after the H2b merge.
 - **2026-10-20 — Phase 3, the items/affixes cluster (spec-writer, `lane/s38h2b`, from `main` `33484f8`).** The cluster
   waited on H2b only (accepted above; S2b, S2c and S1f were accepted earlier; aff 14's level-window remainder is an H6a
   piece, its row counted as S2c). Inputs: the affixes parts of the H2b spec-updates entry ((h)–(n)), the S2b
   corrections entry ((c), (f)), the S2c corrections entry ((h)) and the S1f entry ((a)), each raise checked against
-  the "Plan 0038 batch S2b, S2c, S1f, H2b" sections of [items/0005](../findings/items/0005-affixes.md) and the reviews.
+  the "Plan 0038 batch S2b, S2c, S1f, H2b" sections of [items/0005](../../findings/items/0005-affixes.md) and the reviews.
   - **items/affixes** {C 112, I 46, L 4} → **{C 152, I 27, L 4}**. Raised: aff 2, 3, 5, 8–11, 12 and 6 (S1f), 13 ×2,
     15 (188/135 correction), 17, 19 ×2, 21 ×3, 22, 30 L600, 35, 37. Split along their remainders: aff 1, 4, 14, 24, 27,
     28 ×2, 30 I1 and I2–I6, 34. Restated `[I]`: aff 7/16 (C5b split from C5a), 20 (E5). aff 27: G3's armour and throw
     lines kept `[I]` pending a ruling (review request). Stale oracle wording of § I closed.
-  - **Wiki:** [items](../wiki/items.md) affix paragraphs and the untested *Affixes* line; `based_on` 2026-10-20.
+  - **Wiki:** [items](../../wiki/items.md) affix paragraphs and the untested *Affixes* line; `based_on` 2026-10-20.
   - **Waiting** (missing batches): items/tc H2c; items/uniques-sets H1a (us 21); items/properties H2c;
     items/sockets-runewords H6b; items/cube H6a; items/vendors H6c; items/quest-drops H4a, H6e1, H6e2; save/d2s H1a,
     H1b; data/excel H3b (and the plan 0039 fold); data/strings and data/README H3b; monsters/pool, monsters/special and
@@ -2973,11 +2973,11 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     H5d; objects H6e2.
   - **Backlog:** the H2b spec-updates, S2b corrections, S2c corrections and S1f entries annotated (done in part);
     review request
-    [s38h2b review](../backlog/archive/2026-10-20-spec-writer-architect-s38h2b-items-affixes-review.md).
+    [s38h2b review](../../backlog/archive/2026-10-20-spec-writer-architect-s38h2b-items-affixes-review.md).
   - **Next:** architect review of `lane/s38h2b`; the remaining items clusters after H2c, H1a and H6b.
 - **2026-10-20 — Review of `lane/s38h2b`, Phase 3 items/affixes cluster (architect): accept with fixes (4).** `main`
   had not moved past the lane's base (`33484f8`), so no merge. Read: the spec diff against the S2b, S2c, S1f, Plan 0048
-  Phase 1 and H2b sections of [items/0005](../findings/items/0005-affixes.md), the H2b review above, the inventory row
+  Phase 1 and H2b sections of [items/0005](../../findings/items/0005-affixes.md), the H2b review above, the inventory row
   27 and § 2.6, the wiki diff and the four annotated backlog entries. Anchors spot-checked in `re/symbols.csv`
   (`ITEMS_GetBaseType`, `ITEMS_RareNameTypeOk`, `sub_00557380_ItemFallbackMagic`, `sub_005C0D00_AffixCandAdd`,
   `RNG_RangeB`, the stackable and throwable accessors): all resolve.
@@ -3000,17 +3000,17 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     (C 152 / I 28 / L 4).
   - **Counts** (gate E6, script over the body): items/affixes **{C 152, I 28, L 4}**.
   - **Backlog:** review request
-    [s38h2b review](../backlog/archive/2026-10-20-spec-writer-architect-s38h2b-items-affixes-review.md) closed; the H2b
+    [s38h2b review](../../backlog/archive/2026-10-20-spec-writer-architect-s38h2b-items-affixes-review.md) closed; the H2b
     spec-updates, S2b, S2c and S1f entries stay open (done in part, their other clusters pending).
   - **Next:** merge `lane/s38h2b`; the remaining items clusters after H2c, H1a and H6b.
 - **2026-10-21 — H2c paused at the owner's request (reverser, `lane/h2c`, from `main` `baff91c`).** Slot 2 is stopped
   and its saves directory restored (empty, no aside). No game, driver, pilot or gdb of the lane is left running.
   Nothing below is claimed yet: no statement is raised, no § 2.6 entry, no review request.
   - **Read lists first (ADR-0013), committed before any session** (`fc6c7a6`):
-    - [items/0001 § 8](../findings/items/0001-tc-resolution.md#8-item-pick-and-hand-off-0x0055ac5f0x0055af59), the
+    - [items/0001 § 8](../../findings/items/0001-tc-resolution.md#8-item-pick-and-hand-off-0x0055ac5f0x0055af59), the
       throwable re-pick;
-    - [items/0006 § 4](../findings/items/0006-properties.md#4-the-handlers-per-func), funcs 12, 23 and 24;
-    - [items/0004 § 6](../findings/items/0004-uniques-sets.md#6-a-tc-cell-that-names-a-unique-or-a-set-item), the
+    - [items/0006 § 4](../../findings/items/0006-properties.md#4-the-handlers-per-func), funcs 12, 23 and 24;
+    - [items/0004 § 6](../../findings/items/0004-uniques-sets.md#6-a-tc-cell-that-names-a-unique-or-a-set-item), the
       TC-named boundary.
     - `tools/sweep_h2c.py reads` gives 0 TC reads in every claim closure (`workspace/logs/h2c/check/check-reads.txt`;
       re-take it with the final tool revision).
@@ -3084,8 +3084,8 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   the River of Flame. Slot 2 then stopped and its saves directory restored (empty, no aside). 12 launches, 10 kept
   logs, 2 dev logs; no log has `internal-error:`. Every count re-taken from the full check set in
   `workspace/logs/h2c/check/` (`run-checks.sh`, under `MemoryMax=4G` scopes, re-run once with the same hashes).
-  - **Ledger** ([items/0001](../findings/items/0001-tc-resolution.md#plan-0038-batch-h2c-2026-10-21),
-    [items/0006](../findings/items/0006-properties.md#plan-0038-batch-h2c-2026-10-21)): 6 rows, 7 statements:
+  - **Ledger** ([items/0001](../../findings/items/0001-tc-resolution.md#plan-0038-batch-h2c-2026-10-21),
+    [items/0006](../../findings/items/0006-properties.md#plan-0038-batch-h2c-2026-10-21)): 6 rows, 7 statements:
     **4 raised** (tc 10 ×2, tc 55, prop 12 L390), **2 raised in part** (tc 56: the `version ≥ 100` half d-none;
     prop 14: func 23's two skips not reached), **1 shortfall** (prop 15: no Hephasto, so no func-24 slot).
     The pause note's "props 14 raised" is filed in part (rule 8).
@@ -3097,12 +3097,12 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Corrections carried (rule 12):** items/0001 § 8 throwable bullet and the Functions table; items/0006 § 4 table
     rows of funcs 12 and 23 and the funcs-12-and-36 bullet.
   - **Symbols:** `ITEMTYPES_IsThrowable`, `PROP_Func12_SkillRand`, `PROP_Func23_Ethereal` I → C.
-  - **Inventory:** [§ 2.6 H2c](0038-inventory/README.md#26-moves-made-by-the-batch-reviews), no class move; totals
+  - **Inventory:** [§ 2.6 H2c](../0038-inventory/README.md#26-moves-made-by-the-batch-reviews), no class move; totals
     against `main` `3d1cc99`: static 567, harness 526, blocked 414 (d-none 288), deferred 2, raised 17: 1 526.
   - **Backlog:** review request
-    [2026-10-21-reverser-architect-review-lane-h2c-plan-0038-batch-h2c-forced](../backlog/archive/2026-10-21-reverser-architect-review-lane-h2c-plan-0038-batch-h2c-forced.md);
+    [2026-10-21-reverser-architect-review-lane-h2c-plan-0038-batch-h2c-forced](../../backlog/archive/2026-10-21-reverser-architect-review-lane-h2c-plan-0038-batch-h2c-forced.md);
     spec-writer entry
-    [2026-10-21-reverser-spec-writer-h2c-forced-throwables-and-tc-named-props-spec](../backlog/archive/2026-10-21-reverser-spec-writer-h2c-forced-throwables-and-tc-named-props-spec.md)
+    [2026-10-21-reverser-spec-writer-h2c-forced-throwables-and-tc-named-props-spec](../../backlog/archive/2026-10-21-reverser-spec-writer-h2c-forced-throwables-and-tc-named-props-spec.md)
     (to be released with the review).
   - **Next:** architect review of `lane/h2c`; then items/tc and items/properties clusters (Phase 3).
 - **2026-10-21 — Review of `lane/h2c`, batch H2c forced (items/tc, items/properties; architect): accept with fixes
@@ -3144,17 +3144,17 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     items/0001 tc 55 and the spec-writer entry (b). Promoted: reverser review-fixes rule 14 (symbols the run checks,
     seen at H2b and H2c).
   - **Backlog:** review request
-    [2026-10-21-reverser-architect-review-lane-h2c-plan-0038-batch-h2c-forced](../backlog/archive/2026-10-21-reverser-architect-review-lane-h2c-plan-0038-batch-h2c-forced.md)
+    [2026-10-21-reverser-architect-review-lane-h2c-plan-0038-batch-h2c-forced](../../backlog/archive/2026-10-21-reverser-architect-review-lane-h2c-plan-0038-batch-h2c-forced.md)
     closed; the spec-writer entry
-    [2026-10-21-reverser-spec-writer-h2c-forced-throwables-and-tc-named-props-spec](../backlog/archive/2026-10-21-reverser-spec-writer-h2c-forced-throwables-and-tc-named-props-spec.md)
+    [2026-10-21-reverser-spec-writer-h2c-forced-throwables-and-tc-named-props-spec](../../backlog/archive/2026-10-21-reverser-spec-writer-h2c-forced-throwables-and-tc-named-props-spec.md)
     released (open, for the Phase 3 re-tag of items/tc and items/properties).
   - **Next:** merge `lane/h2c` (with `main` and `backlog.py archive`); the items/tc and items/properties clusters
     (Phase 3), which waited on H2c.
 - **2026-10-21 — Phase 3, the items/tc and items/properties clusters (spec-writer, `lane/s38h2c`, from `main`
   `f805cdf`).** Both clusters waited on H2c only (accepted above); this round folds every accepted batch of the two:
   items/tc S2a, S4b (tc 64), H6d, H2a, H2b and H2c; items/properties S2b, S2c (prop 19), H2b and H2c. Each raise was
-  checked against the "Plan 0038 batch …" sections of [items/0001](../findings/items/0001-tc-resolution.md) and
-  [items/0006](../findings/items/0006-properties.md) and the reviews.
+  checked against the "Plan 0038 batch …" sections of [items/0001](../../findings/items/0001-tc-resolution.md) and
+  [items/0006](../../findings/items/0006-properties.md) and the reviews.
   - **items/tc** {C 49, I 81, L 6} → **{C 119, I 60, L 5}**. Raised: S2a tc 3–5, 7, 12, 16, 18, 21, 24, 25, 28, 32,
     35, 36, 39, 50, 52, 61, 62, 66; tc 64 (§ J with the tier arithmetic and the `ilvl` hand-off); H2a tc 1, 2, 11, 34
     L361, 37, 45, 47, 59, 71; H2b tc 68; H6d tc 26; H2c tc 10 ×2, 55. Split along their remainders: tc 14, 19, 22, 23,
@@ -3166,10 +3166,10 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     vendors sentence, 18 L454, 19 L573, 14 (func 23: make branch `[C]` with "no `PROP_WriteStat` call", skips `[I]`),
     the funcs-12-and-36 bullet (func 36 `[I]`). Kept `[I]`: prop 7 ×3 (no stock case), 23, 24 (shortfall), 21. prop 15
     (func 24) is an `[L]` of its own under *Open questions*, with the Hellforge route.
-  - **Wiki:** [items](../wiki/items.md) and [objects](../wiki/objects.md) restated; `based_on` 2026-10-21.
+  - **Wiki:** [items](../../wiki/items.md) and [objects](../../wiki/objects.md) restated; `based_on` 2026-10-21.
   - **Backlog:** the H2c, H2a and S2b-corrections entries closed; the H2b, H6d, S4b and S2a tc 64 entries annotated
     (done in part). Review request
-    [s38h2c review](../backlog/archive/2026-10-21-spec-writer-architect-s38h2c-items-tc-properties-review.md) (one ruling asked:
+    [s38h2c review](../../backlog/archive/2026-10-21-spec-writer-architect-s38h2c-items-tc-properties-review.md) (one ruling asked:
     prop 9 stated `[C]` whole; one mismatch noted: objects § J3 still `[I]` on the chest `ilvl` hand-off).
   - **Waiting** (missing batches): items/uniques-sets H1a (us 21); items/sockets-runewords H6b; items/cube H6a;
     items/vendors H6c; items/quest-drops H4a, H6e1, H6e2; and the non-items clusters as listed above.
@@ -3177,8 +3177,8 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 - **2026-10-21 — Review of `lane/s38h2c`, Phase 3 items/tc and items/properties clusters (architect): accept with
   fixes (4).** `main` had not moved past the lane's base (`f805cdf`), so no merge. Read: the spec diffs of items/tc and
   items/properties against the "Plan 0038 batch S2a, H6d, H2a, H2b, H2c" sections of
-  [items/0001](../findings/items/0001-tc-resolution.md) (with tc 64's S4b line and § 2's chest arithmetic) and the
-  "S2b, S2c, H2b, H2c" sections of [items/0006](../findings/items/0006-properties.md), the reviews above, inventory
+  [items/0001](../../findings/items/0001-tc-resolution.md) (with tc 64's S4b line and § 2's chest arithmetic) and the
+  "S2b, S2c, H2b, H2c" sections of [items/0006](../../findings/items/0006-properties.md), the reviews above, inventory
   § 2.6, both wiki diffs, objects § J3 and the seven touched backlog entries. Every `fn:`/`data:` anchor of both specs
   resolves in `re/symbols.csv` (script); spot-checked `TC_GetByIndex`, `ITEMTYPES_IsThrowable`,
   `sub_00633680_ItemIndexByCode`, `ITEMS_UnitIsType`, `PROP_ApplyBlockByVersion`, `RUNEWORD_Apply`, `ITEMS_IsEthereal`,
@@ -3214,7 +3214,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     whole; the items/affixes row corrected to I 28 (the `lane/s38h2b` review's count had not reached the row).
   - **Promoted:** spec-writer rule 1 extended to two specs that disagree; architect rule 3 cites the affixes row.
   - **Backlog:** review request
-    [s38h2c review](../backlog/archive/2026-10-21-spec-writer-architect-s38h2c-items-tc-properties-review.md) closed.
+    [s38h2c review](../../backlog/archive/2026-10-21-spec-writer-architect-s38h2c-items-tc-properties-review.md) closed.
   - **Next:** merge `lane/s38h2c`; the remaining items clusters after H1a, H6a, H6b, H6c, H4a, H6e1 and H6e2.
 - **2026-10-21 — H4a (`monsters-a`) paused at the owner's request (reverser, `lane/h4a`, harness slot 1, from `main`
   `1d0262a`).** Slot 1 is stopped and its saves directory restored (empty, no aside). No game, driver, pilot, gdb or
@@ -3306,9 +3306,9 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     monsters/0001–0004 and items/0010; inventory § 2.6 H4a block; totals unchanged (1 526).
   - **Symbols:** `sub_005B24E0_EscortSpawn` I → C.
   - **Backlog:** review request
-    [2026-10-25-reverser-architect-review-lane-h4a-plan-0038-batch-h4a](../backlog/archive/2026-10-25-reverser-architect-review-lane-h4a-plan-0038-batch-h4a.md);
+    [2026-10-25-reverser-architect-review-lane-h4a-plan-0038-batch-h4a](../../backlog/archive/2026-10-25-reverser-architect-review-lane-h4a-plan-0038-batch-h4a.md);
     spec-writer entry
-    [2026-10-25-reverser-spec-writer-h4a-monsters-a-raises-and-the-spawn-48](../backlog/archive/2026-10-25-reverser-spec-writer-h4a-monsters-a-raises-and-the-spawn-48.md)
+    [2026-10-25-reverser-spec-writer-h4a-monsters-a-raises-and-the-spawn-48](../../backlog/archive/2026-10-25-reverser-spec-writer-h4a-monsters-a-raises-and-the-spawn-48.md)
     (to be released with the review).
   - **Next:** architect review of `lane/h4a`.
   - **Usage:** this resume about 1 h 50 min, about 110 tool calls; with the earlier parts about 300 min. (Measured by
@@ -3332,7 +3332,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     rows 36, 42 and 60 have no fixed 30 (`Mod1`–`Mod3` 6/27, 5, none) and get one `AUR`; row 28 (`Mod1` 30) gets two; with
     the two kept-log cases the fixed side has three. (d) The chained-model mismatches (council DRLG room tiles 3, nihl2
     `monspawn` 1 for class 526's mod 22, chaos7 collision `0x1000` 2 + 10) touch no H4a row and get one reverser entry,
-    [2026-10-25-architect-reverser-h4a-chained-model-mismatches-council-nihl2](../backlog/archive/2026-10-25-architect-reverser-h4a-chained-model-mismatches-council-nihl2.md).
+    [2026-10-25-architect-reverser-h4a-chained-model-mismatches-council-nihl2](../../backlog/archive/2026-10-25-architect-reverser-h4a-chained-model-mismatches-council-nihl2.md).
     (e) Class 312's piece raises stats 14 and 13's remainder: both rows raised whole, still counted as H4b (a Phase 3
     note, no class move). (f) stats 7, 18 and 21 may rest on run:2026-10-20-chain's reviewed check (kept, hashed, cited
     by its own output and re-run here). (g) `sub_005B24E0_EscortSpawn` C stands (rule 14: return 1 and the 20 units
@@ -3340,7 +3340,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Ledger:** raised 15, raised in part 9, shortfall 8. Totals unchanged and recounted against `main` `9e221ed`:
     static 567, harness 526, c-emu 0, blocked 414, deferred 2, raised 17: 1 526.
   - **Backlog:** review request closed (archive); spec-writer entry
-    [2026-10-25-reverser-spec-writer-h4a-monsters-a-raises-and-the-spawn-48](../backlog/archive/2026-10-25-reverser-spec-writer-h4a-monsters-a-raises-and-the-spawn-48.md)
+    [2026-10-25-reverser-spec-writer-h4a-monsters-a-raises-and-the-spawn-48](../../backlog/archive/2026-10-25-reverser-spec-writer-h4a-monsters-a-raises-and-the-spawn-48.md)
     released with the review's changes.
   - **Next:** the Phase 3 re-tag of the H4a rows (spec-writer); the next harness batch per the run order.
 - **2026-10-25, reverser, `lane/h5d` (batch H5d, `collision`, 17 statements): paused at the owner's request (usage
@@ -3366,9 +3366,9 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 - **2026-10-27 — H5d (`collision`) filed (reverser, `lane/h5d`, harness slot 1, after merging `main` `0e3f501`).**
   run:2026-10-27-sweep-collision: nine kept sessions (tomb, tomb-r2, tomb2, frigid, steppes, jail, throne, arcane,
   rogue; expansion Normal, `UniqNova`), record in
-  [drlg experiments](../findings/drlg/experiments.md#run2026-10-27-sweep-collision), evidence in the "Plan 0038 batch
-  H5d" sections of [drlg/0005](../findings/drlg/0005-collision.md#plan-0038-batch-h5d-run2026-10-27-sweep-collision) and
-  [monsters/0002](../findings/monsters/0002-room-population.md#plan-0038-batch-h5d-run2026-10-27-sweep-collision).
+  [drlg experiments](../../findings/drlg/experiments.md#run2026-10-27-sweep-collision), evidence in the "Plan 0038 batch
+  H5d" sections of [drlg/0005](../../findings/drlg/0005-collision.md#plan-0038-batch-h5d-run2026-10-27-sweep-collision) and
+  [monsters/0002](../../findings/monsters/0002-room-population.md#plan-0038-batch-h5d-run2026-10-27-sweep-collision).
   - **Merge of `main`:** first at the resume (`cf25f22`, H4a's merge: no H5d row or tool touched; the plan log's
     conflict kept both sides), then `3fa5209` and `0e3f501` before filing; backlog `archive` run after each.
   - **Ledger (17):** raised 11 (collision 5, 8, 19, 24, 30 ×2, 36, 45's 228, 298-flag-0 and 528; spawn 41), raised in
@@ -3380,8 +3380,8 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     Encampment cows, pattern 4) was added; no Act III session (334 proposed d-none instead). Rows 5 and 8 rest on kept
     logs.
   - **Backlog:** review request
-    [h5d review](../backlog/archive/2026-10-27-reverser-architect-review-lane-h5d-plan-0038-batch-h5d.md); spec-writer entry
-    [h5d raises](../backlog/archive/2026-10-27-reverser-spec-writer-h5d-collision-raises-and-the-monisnpc-correction.md) (released
+    [h5d review](../../backlog/archive/2026-10-27-reverser-architect-review-lane-h5d-plan-0038-batch-h5d.md); spec-writer entry
+    [h5d raises](../../backlog/archive/2026-10-27-reverser-spec-writer-h5d-collision-raises-and-the-monisnpc-correction.md) (released
     with the review); the H4b follow-ups entry annotated with the H5d piece.
   - **Next:** the H5d review. Slot 1 stopped, saves restored (empty, no aside).
 - **2026-10-27 — `lane/h5d` review (architect): accept with fixes.** H5d (`collision`, 17 statements), reviewed at
@@ -3410,15 +3410,15 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     `SpawnClassCellTest` then `MonAiUseSkill`. (e) **Spawn 42 is raised in part** (206, 228, 298, 528 `[C]`; 334 d-none),
     still counted as H4b, a Phase 3 note (as stats 21 at H4a). (f) The rogue mismatch touches no H5d row but is a model
     gap that will recur on every waypoint arrival: its own reverser entry,
-    [2026-10-27-architect-reverser-h5d-objects-py-waypoint-mode-after-arrival](../backlog/2026-10-27-architect-reverser-h5d-objects-py-waypoint-mode-after-arrival.md).
+    [2026-10-27-architect-reverser-h5d-objects-py-waypoint-mode-after-arrival](../../backlog/2026-10-27-architect-reverser-h5d-objects-py-waypoint-mode-after-arrival.md).
     The two "log ends" mismatches are session cuts, no entry. (g) The seven symbols I → C stand (rule 14: each return or
     cell effect logged and compared); `MonIsNpc` stays I, and `COLL_RectClearWH` stays I.
   - **Ledger:** raised 10, raised in part 4, shortfall 2, d-none 1. Totals against `main` `0e3f501`: static 567,
     harness 525, c-emu 0, blocked 415 (d-none 289), deferred 2, raised 17: 1 526.
   - **Backlog:** review request closed (archive); spec-writer entry
-    [2026-10-27-reverser-spec-writer-h5d-collision-raises-and-the-monisnpc-correction](../backlog/archive/2026-10-27-reverser-spec-writer-h5d-collision-raises-and-the-monisnpc-correction.md)
+    [2026-10-27-reverser-spec-writer-h5d-collision-raises-and-the-monisnpc-correction](../../backlog/archive/2026-10-27-reverser-spec-writer-h5d-collision-raises-and-the-monisnpc-correction.md)
     released with the review's changes; the H4b follow-ups entry
-    [2026-10-16-architect-reverser-plan-0038-h4b-review-follow-ups](../backlog/archive/2026-10-16-architect-reverser-plan-0038-h4b-review-follow-ups.md)
+    [2026-10-16-architect-reverser-plan-0038-h4b-review-follow-ups](../../backlog/archive/2026-10-16-architect-reverser-plan-0038-h4b-review-follow-ups.md)
     closed (its last piece, H5d's, is settled); the new reverser entry above.
   - **Next:** the Phase 3 re-tag of the H5d rows (spec-writer); the next harness batch per the run order.
 - **2026-10-27 — Phase 3, the monsters cluster (spec-writer, `lane/s38m`, from `main` `0e3f501`, `main` `0848879` merged
@@ -3444,15 +3444,15 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     Sanctuary gate's closed state stays `[I]` with an *Open questions* entry. The d-none header mentions are reworded.
   - **Backlog:** closed the S3a two-statements entry and the H4b corrections entry; annotated the H4a, S3b, S1f and H5d
     entries; review request with the four specs' old and new counts, the corrections and what is left to other clusters
-    ([2026-10-27-spec-writer-architect-review-lane-s38m-plan-0038-phase-3-monsters](../backlog/archive/2026-10-27-spec-writer-architect-review-lane-s38m-plan-0038-phase-3-monsters.md)).
+    ([2026-10-27-spec-writer-architect-review-lane-s38m-plan-0038-phase-3-monsters](../../backlog/archive/2026-10-27-spec-writer-architect-review-lane-s38m-plan-0038-phase-3-monsters.md)).
   - **Commits:** the four specs in one commit, then backlog, this log and the ledger. Gate green; W4 warns for the
     monsters and seed-to-world wiki pages.
   - **Next:** architect review of `lane/s38m`.
 - **2026-10-27 — Review of `lane/s38m`, Phase 3 monsters cluster (architect): accept with fixes (6).** `main` had not
   moved past `0848879`, already merged into the lane, so the merge was a no-op; `backlog.py archive` moved nothing. Read:
   the four spec diffs (`0848879..cc329ea`) against the S3a, H4b, S3b, S1f, H4a and H5d sections of
-  [monsters/0001](../findings/monsters/0001-level-pool.md), [0002](../findings/monsters/0002-room-population.md),
-  [0003](../findings/monsters/0003-special-monsters.md) and [0004](../findings/monsters/0004-stats.md), the per-spec
+  [monsters/0001](../../findings/monsters/0001-level-pool.md), [0002](../../findings/monsters/0002-room-population.md),
+  [0003](../../findings/monsters/0003-special-monsters.md) and [0004](../../findings/monsters/0004-stats.md), the per-spec
   inventory rows, inventory § 2.2 (pool 5 and 24 by rng/0002) and § 2.6 (the S3a, H4b, S3b, S1f, H4a and H5d moves and
   their review fixes), the touched backlog entries and the lane's log entry.
   - **Done when, item by item.** Every raised, in-part and contradicted row of the six batches for these four specs is
@@ -3497,9 +3497,9 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     `[C]`, while its bullet keeps the mask width and the room `+0x78` test `[I]`; the header now says so.
   - **Research map:** the monsters/pool, spawn, special and stats rows rewritten whole with the new counts and dates.
   - **Backlog:** review request
-    [s38m review](../backlog/archive/2026-10-27-spec-writer-architect-review-lane-s38m-plan-0038-phase-3-monsters.md)
+    [s38m review](../../backlog/archive/2026-10-27-spec-writer-architect-review-lane-s38m-plan-0038-phase-3-monsters.md)
     closed; new spec-writer entry
-    [wiki refresh after the monsters cluster](../backlog/archive/2026-10-27-architect-spec-writer-wiki-refresh-after-the-plan-0038-phase-3.md).
+    [wiki refresh after the monsters cluster](../../backlog/archive/2026-10-27-architect-spec-writer-wiki-refresh-after-the-plan-0038-phase-3.md).
   - **Ledger:** the lane row's usage filled from the orchestrator (412 899 tokens, 109 tools, 26 min), verdict and fixes:
     overclaim 2, misread 2, stale cross-reference 1, omission 1; the review row's usage left "—".
   - **Next:** merge `lane/s38m`; the wiki refresh; the remaining Phase 3 clusters as their batches are accepted.
@@ -3519,14 +3519,14 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     `npc` half and `+0xC4`), the `Position` levels narrowed to the operand.
   - **Backlog:** closed the S4a corrections entry and the H5d entry (its monsters parts on `lane/s38m`); annotated the S4b
     corrections ((a) waits for objects) and H5b entries (objects waits for H6e2). New: the counts entry to the architect
-    [s38n counts](../backlog/archive/2026-10-27-spec-writer-architect-s38n-drlg-collision-counts-for-the-research-map.md) (research
+    [s38n counts](../../backlog/archive/2026-10-27-spec-writer-architect-s38n-drlg-collision-counts-for-the-research-map.md) (research
     map; W4 on wiki/levels and wiki/monsters, proposed for the open wiki refresh entry) and the review request
-    [s38n review](../backlog/archive/2026-10-27-spec-writer-architect-s38n-review-drlg-collision-phase-3.md).
+    [s38n review](../../backlog/archive/2026-10-27-spec-writer-architect-s38n-review-drlg-collision-phase-3.md).
   - **Next:** architect review of `lane/s38n`; objects after H6e2.
 - **2026-10-27 — `lane/s38n` review (architect): accept with fixes.** Phase 3, the drlg/collision cluster, reviewed at
   `58fdde0` (`9e5c05a` the spec, `17c7346` the merge of `main`); `main` `8b8f4ec` was already in the lane (merge a no-op;
   backlog `archive` clean). The spec diff was read against the S4a, S4b, H5b and H5d sections of
-  [drlg/0005](../findings/drlg/0005-collision.md), the inventory rows and the H5d review's rulings. objdump of the pinned
+  [drlg/0005](../../findings/drlg/0005-collision.md), the inventory rows and the H5d review's rulings. objdump of the pinned
   `Game.exe`, no Ghidra: `MonIsNpc` 0x0063E89A–0x0063E8C5 (`+0x0D` tested against `.rdata` 0x006CE268 = 1, then
   0x006CE270 = 4, then `+0xC4` bit 31); `MonSpawnTry`'s ring branch 0x005B2B7E–0x005B2BA6 (`spawnCol` = 1, then 258–263
   and 153); the three `TileCollisionUpdate` calls 0x0066E822, 0x0066E8B6, 0x0066E916 (return 0x0066E91B); the item
@@ -3542,7 +3542,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     the `0x01C0`/`0` masks (C2's open question), the door `0x400` and grid `0x04` (open questions): the earlier runs' logs
     held them, the later run counted them; reworded.
   - **Rulings.** (a) **Readiness: drlg/collision did not wait on H6e2.** The inventory's
-    [drlg-collision](0038-inventory/drlg-collision.md) *Batch* column holds S4a (20 rows), S4b (5), H5b (2), H5d (12) and —
+    [drlg-collision](../0038-inventory/drlg-collision.md) *Batch* column holds S4a (20 rows), S4b (5), H5b (2), H5d (12) and —
     (10), no H6 batch; H6e2's row in inventory § 5 lists quest-drops 1, 30, 33–35 and objects 48 only. The orchestrator's
     prompt and `lane/s38m`'s annotation were wrong; the objects cluster is the one that waits on H6e2. (b) **Every raise
     names its `run:`** and stays within the batch reviews: collision 21 is `[C]` for the `inTown` half only, with the `npc`
@@ -3564,16 +3564,16 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Next:** merge `lane/s38n`; the wiki refresh (now with wiki/levels); objects after H6e2.
 
 - **2026-10-27 — The wiki refresh after the monsters and drlg/collision clusters (spec-writer, `lane/swk`, from
-  `main` `e88e8e2`).** [wiki/monsters](../wiki/monsters.md) and [wiki/levels](../wiki/levels.md) are refreshed over the
+  `main` `e88e8e2`).** [wiki/monsters](../../wiki/monsters.md) and [wiki/levels](../../wiki/levels.md) are refreshed over the
   re-tagged monsters/pool, spawn, special and stats and drlg/collision, and
-  [wiki/seed-to-world](../wiki/seed-to-world.md)'s stats date is bumped. The six corrections are carried at the specs'
+  [wiki/seed-to-world](../../wiki/seed-to-world.md)'s stats date is bumped. The six corrections are carried at the specs'
   tags, the raised statements are said as confirmed, and the kept `[I]` parts are said in words. wiki/levels'
   § *The collision grid and logic regions* and its *Collision* bullet are rewritten whole. W4 is clear (0 of 60); the
   gate is green. The specs `lane/s45p3` holds and the economy and randomness pages are untouched.
   - **Backlog:** the refresh entry is closed
-    ([archive](../backlog/archive/2026-10-27-architect-spec-writer-wiki-refresh-after-the-plan-0038-phase-3.md)), and
+    ([archive](../../backlog/archive/2026-10-27-architect-spec-writer-wiki-refresh-after-the-plan-0038-phase-3.md)), and
     the review request is filed
-    ([swk review](../backlog/archive/2026-10-27-spec-writer-architect-review-lane-swk-wiki-refresh-after-plan-0038.md)). It also
+    ([swk review](../../backlog/archive/2026-10-27-spec-writer-architect-review-lane-swk-wiki-refresh-after-plan-0038.md)). It also
     notes that drlg/lifecycle § I lags spawn § K on the wanderer roll.
   - **Next:** architect review of `lane/swk`.
 - **2026-10-27 — `lane/swk` review (architect): accept with fixes (4).** `main` merged into the lane first (already up to
@@ -3589,11 +3589,11 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Rulings.** (a) **`Rarity` 0:** the page's weaker wording is right. spawn D's `[C]` covers a case no run met (no stock
     region holds a `Rarity` 0 entry; the run confirms the walk, not that outcome), so spawn D is reconciled down to pool's
     `[I]`, not pool up:
-    [entry](../backlog/archive/2026-10-27-architect-spec-writer-spawn-d-rarity-0-tag-to-pool.md). (b) **drlg/lifecycle § I** is
+    [entry](../../backlog/archive/2026-10-27-architect-spec-writer-spawn-d-rarity-0-tag-to-pool.md). (b) **drlg/lifecycle § I** is
     stale against spawn § K (the roll's draw and no-spawn branch are `[C]` on run:2026-10-21-sweep-monsters-a); it was not
     filed, so it is filed now together with spawn K1's header, which leaves the `MonWndr` ≠ 0 test under `[C]` although
     the one pass cannot separate it (the `lane/s38m` review missed this):
-    [entry](../backlog/archive/2026-10-27-architect-spec-writer-lifecycle-i-and-spawn-k-wanderer-gate-reconcile.md). (c) The
+    [entry](../../backlog/archive/2026-10-27-architect-spec-writer-lifecycle-i-and-spawn-k-wanderer-gate-reconcile.md). (c) The
     edits beyond the entry (wiki/levels' *Wanderers* paragraph and the room-lifecycle bullet citing spawn § K) are within
     rule 7 and stand, with fix (1). (d) "By the formula" (`fast`/`fanatic` at `Velocity` 8 and 9, stats G3 `[I]`) and "by
     the code" (`druidhawk`, stats F3 `[I]`; `Rarity` 0) match the specs' tags. (e) The `based_on` dates equal each spec's
@@ -3745,11 +3745,11 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     417** (d-none 291), **deferred 2, raised 17: 1 526**; symbols I → C (rule 14): `D2S_WriteMercHeader`,
     `D2S_ReadMercHeader`, `D2S_LoadFinish`, `D2S_WriteCorpses`, `D2S_ReadCorpses`, `D2S_ReadMercItems`.
   - **Backlog:** archivist entry
-    [2026-10-27-reverser-archivist-h1b-d2s-build-test-state-keys-for-a](../backlog/archive/2026-10-27-reverser-archivist-h1b-d2s-build-test-state-keys-for-a.md)
+    [2026-10-27-reverser-archivist-h1b-d2s-build-test-state-keys-for-a](../../backlog/archive/2026-10-27-reverser-archivist-h1b-d2s-build-test-state-keys-for-a.md)
     (lone follower, merc name past range); spec-writer entry
-    [2026-10-27-reverser-spec-writer-h1b-save-d2s-and-hirelings-raises](../backlog/archive/2026-10-27-reverser-spec-writer-h1b-save-d2s-and-hirelings-raises.md)
+    [2026-10-27-reverser-spec-writer-h1b-save-d2s-and-hirelings-raises](../../backlog/archive/2026-10-27-reverser-spec-writer-h1b-save-d2s-and-hirelings-raises.md)
     (held for the review); review request
-    [2026-10-27-reverser-architect-review-lane-h1b-plan-0038-batch-h1b](../backlog/archive/2026-10-27-reverser-architect-review-lane-h1b-plan-0038-batch-h1b.md).
+    [2026-10-27-reverser-architect-review-lane-h1b-plan-0038-batch-h1b](../../backlog/archive/2026-10-27-reverser-architect-review-lane-h1b-plan-0038-batch-h1b.md).
   - **Next:** the `lane/h1b` review.
 - **2026-10-27 — `lane/h1b` review (architect): accept with fixes (6).** `main` `3c90008` was merged into the lane
   first (`1fdab87`; the plan log and the ledger conflicted, both sides were kept; `backlog.py archive` was a no-op).
@@ -3783,7 +3783,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     what reaches the code. For rows 3 and 19, the only writer of the host callback `0x00883D50`, 0x0052C0E0, has no
     call, jump or absolute or RVA pointer in the image (objdump). If Ghidra xrefs agree, rows 3 and 19 and the callback
     halves of rows 2 and 18 become d-none
-    ([2026-10-27-architect-reverser-h1b-review-host-callback-setter-and-d2sio-model](../backlog/archive/2026-10-27-architect-reverser-h1b-review-host-callback-setter-and-d2sio-model.md)).
+    ([2026-10-27-architect-reverser-h1b-review-host-callback-setter-and-d2sio-model](../../backlog/archive/2026-10-27-architect-reverser-h1b-review-host-callback-setter-and-d2sio-model.md)).
     (e) Row 110's shortfall is right. The watchpoint armed on drop 27's flags missed a clear that `B13C` logged, so it
     was not live, and no absence is claimed under it. Rows 111–113 rest on breakpoints, not on the watch. (f) Row 39's
     tightened read half stands. The tool-built dead mercenary has no source of deadness but header bit 16, and each
@@ -3800,13 +3800,13 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Ledger:** the resume row's usage was filled from the orchestrator (212 206 tokens, 100 tools, 22 min), with the
     verdict and 6 fixes: overclaim 2, omission 2, under-claim 1, other 1. The review row was added with usage "—".
   - **Backlog:** the review request was closed (archive). The spec-writer entry
-    [2026-10-27-reverser-spec-writer-h1b-save-d2s-and-hirelings-raises](../backlog/archive/2026-10-27-reverser-spec-writer-h1b-save-d2s-and-hirelings-raises.md)
+    [2026-10-27-reverser-spec-writer-h1b-save-d2s-and-hirelings-raises](../../backlog/archive/2026-10-27-reverser-spec-writer-h1b-save-d2s-and-hirelings-raises.md)
     was **released**, with four points added. The reverser entry above was filed. The archivist entry is unchanged.
   - **Next:** merge `lane/h1b`; then H1a (`d2s-load`).
 - **2026-10-27 — H6e2 (`quest-items`) started; rotated at the first checkpoint (reverser, `lane/h6e2`, harness slot 1,
   from `main` `3c90008`; `main` `2637b08` merged at the checkpoint).** Run id run:2026-10-27-sweep-quest-items, record in
-  [items experiments](../findings/items/experiments.md#run2026-10-27-sweep-quest-items), evidence so far in
-  [items/0010 § Plan 0038 batch H6e2](../findings/items/0010-quest-drops.md#plan-0038-batch-h6e2-run2026-10-27-sweep-quest-items).
+  [items experiments](../../findings/items/experiments.md#run2026-10-27-sweep-quest-items), evidence so far in
+  [items/0010 § Plan 0038 batch H6e2](../../findings/items/0010-quest-drops.md#plan-0038-batch-h6e2-run2026-10-27-sweep-quest-items).
   - **Built:** logger `tools/gdb/quest-items.gdb` + `tools/gdb/quest-items.py` (object operates with record words,
     object event 7 and its targets, `GiveItem`, the chest gold, `ObjectChestDrop`, `PlayerFindItemByCode` with its
     stat-356 reads, `ItemQuestGate` with its result and tail, the orifice); session driver `tools/h6e2_sessions.py`
@@ -3842,7 +3842,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     The setter's two stores are the only writes of `0x00883D50` (Ghidra 38 READ + 2 WRITE; objdump 41 instructions,
     the extra one a read in undisassembled code at 0x0052BFC0). The callback lies in zero-filled `.data`. Both
     symbols were added (I). The absence is `[I]`: a target computed at run time is not excluded.
-    [save/0001 § Plan 0038 r1h](../findings/save/0001-d2s-io.md#plan-0038-r1h-the-host-callback-setter-and-the-d2sio-model-2026-10-27).
+    [save/0001 § Plan 0038 r1h](../../findings/save/0001-d2s-io.md#plan-0038-r1h-the-host-callback-setter-and-the-d2sio-model-2026-10-27).
   - **Proposed class moves** (inventory § 2.6 H1b block): rows 3 and 19 go shortfall → **d-none**. The callback
     halves of rows 2 and 18 are d-none as halves, and those rows stay raised in part. H1b becomes raised 25, in part
     14, shortfall 5, d-none 4: 48. Totals against `main` `2b087d2c`: **static 567, harness 521, c-emu 0, blocked 419**
@@ -3854,7 +3854,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     (`workspace/logs/r1h/sweep-h1b-check-r1h.txt` `c39fd4bd…`; manifest `r1h-manifest.sha256` `94f2b304…`). The
     run:2026-10-12-d2s-io logs are unchanged apart from the added `later=` field. `tools/h1b_sessions.py` now keys
     its copies on the log stem (entry item 3).
-  - **Backlog:** the reverser entry was closed (archive). Review request: [2026-10-27-reverser-architect-review-lane-r1h-host-callback-setter-and-d2sio](../backlog/archive/2026-10-27-reverser-architect-review-lane-r1h-host-callback-setter-and-d2sio.md).
+  - **Backlog:** the reverser entry was closed (archive). Review request: [2026-10-27-reverser-architect-review-lane-r1h-host-callback-setter-and-d2sio](../../backlog/archive/2026-10-27-reverser-architect-review-lane-r1h-host-callback-setter-and-d2sio.md).
   - **Next:** the `lane/r1h` review.
 - **2026-10-27 — `lane/r1h` review (architect): accept with fixes (3).** Merged `main` `2637b081` into the lane first
   (ledger conflict kept both sides).
@@ -3896,12 +3896,12 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 - **2026-10-27 — H3b (`data-load`) filed (reverser, `lane/h3b`, harness slot 2, after merging `main` `2637b08`).**
   run:2026-10-27-sweep-data-load: seven program runs (stock, `-txt`, loose files, `-direct`, `-direct -txt`, and `-direct`
   with a loose `use` byte of 0x0B and of 0x0E; expansion Normal, `H3bRare`), record in
-  [data experiments](../findings/data/experiments.md#run2026-10-27-sweep-data-load), evidence in the "Plan 0038 batch
-  H3b" sections of [data/0001](../findings/data/0001-excel-loader.md#plan-0038-batch-h3b-run2026-10-27-sweep-data-load),
-  [data/0002](../findings/data/0002-mpq-precedence.md#plan-0038-batch-h3b-run2026-10-27-sweep-data-load),
-  [data/0003](../findings/data/0003-string-tables.md#plan-0038-batch-h3b-run2026-10-27-sweep-data-load),
-  [data/0004](../findings/data/0004-cell-converters.md#plan-0038-batch-h3b-run2026-10-27-sweep-data-load) and
-  [player/0001](../findings/player/0001-creation.md#plan-0038-batch-h3b-run2026-10-27-sweep-data-load).
+  [data experiments](../../findings/data/experiments.md#run2026-10-27-sweep-data-load), evidence in the "Plan 0038 batch
+  H3b" sections of [data/0001](../../findings/data/0001-excel-loader.md#plan-0038-batch-h3b-run2026-10-27-sweep-data-load),
+  [data/0002](../../findings/data/0002-mpq-precedence.md#plan-0038-batch-h3b-run2026-10-27-sweep-data-load),
+  [data/0003](../../findings/data/0003-string-tables.md#plan-0038-batch-h3b-run2026-10-27-sweep-data-load),
+  [data/0004](../../findings/data/0004-cell-converters.md#plan-0038-batch-h3b-run2026-10-27-sweep-data-load) and
+  [player/0001](../../findings/player/0001-creation.md#plan-0038-batch-h3b-run2026-10-27-sweep-data-load).
   - **Ruling 3's start mode works:** `tools/d2run.py --early` stops the game once `game.exe` is mapped (0.50–0.57 s
     after launch in the kept runs) and attaches then; built and tested off-slot on a stopped dummy process, then with
     probe runs on slot 2 (kept in `dev/`). Loggers used with it need `set displaced-stepping off`. The 9 startup rows
@@ -3916,8 +3916,8 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     slot's prefix (`h3b_sessions.py stage` / `unstage`), and the checker re-creates them by `stage` (`--written` for the
     files the dtxt run wrote).
   - **Backlog:** review request
-    [h3b review](../backlog/archive/2026-10-27-reverser-architect-review-lane-h3b-plan-0038-batch-h3b.md); spec-writer entry
-    [h3b raises](../backlog/archive/2026-10-27-reverser-spec-writer-h3b-data-load-raises-and-corrections.md) (held for the
+    [h3b review](../../backlog/archive/2026-10-27-reverser-architect-review-lane-h3b-plan-0038-batch-h3b.md); spec-writer entry
+    [h3b raises](../../backlog/archive/2026-10-27-reverser-spec-writer-h3b-data-load-raises-and-corrections.md) (held for the
     review).
   - **Next:** the H3b review. Slot 2 stopped, saves restored (empty, no aside), staged directories removed.
 - **2026-10-27 — H3b review (architect, `lane/h3b`): accept with fixes (9).** Merged `main` `550d2dcc` into the lane
@@ -3977,20 +3977,20 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     their re-tag round. Their batches are S1b, S1e and H3b, all accepted. The data/excel round also folds plan 0039's
     remainder (P1b (a), P1c (a), the 11 data/excel W1).
   - **Backlog:** the review request was closed. The spec-writer entry
-    [h3b raises](../backlog/archive/2026-10-27-reverser-spec-writer-h3b-data-load-raises-and-corrections.md) was **released**,
+    [h3b raises](../../backlog/archive/2026-10-27-reverser-spec-writer-h3b-data-load-raises-and-corrections.md) was **released**,
     with the TC caller list, the clamp half, the addresses and the G1 post-pass note added.
   - **Next:** merge `lane/h3b`; then H6e2 (plan order), and the data clusters' Phase 3 round.
 - **2026-10-27 — `lane/rbd` (reverser, static, objdump only, no slot, no Ghidra): the H4a chained-model mismatches and
   skills/0002 § 6.** Filed from head `daac96a5` (the lane added no entry of its own here; this one records it). The
-  three H4a groups of the [backlog entry](../backlog/archive/2026-10-25-architect-reverser-h4a-chained-model-mismatches-council-nihl2.md)
+  three H4a groups of the [backlog entry](../../backlog/archive/2026-10-25-architect-reverser-h4a-chained-model-mismatches-council-nihl2.md)
   were resolved without a session: council is entry bit `0x400`, the client wall fade's mark, on a near room's walls
-  ([drlg/0002 § Lane rbd](../findings/drlg/0002-room-build-draws.md#lane-rbd-entry-bit-0x400-on-a-neighbours-walls-2026-10-27));
+  ([drlg/0002 § Lane rbd](../../findings/drlg/0002-room-build-draws.md#lane-rbd-entry-bit-0x400-on-a-neighbours-walls-2026-10-27));
   nihl2 is `MonPostCreateBoss`'s mod 22 for `BaseId` 526, and behind it superunique tail 60's escorts
-  ([monsters/0003 § Lane rbd](../findings/monsters/0003-special-monsters.md#lane-rbd-monpostcreateboss-and-the-h4a-chained-models-2026-10-27));
+  ([monsters/0003 § Lane rbd](../../findings/monsters/0003-special-monsters.md#lane-rbd-monpostcreateboss-and-the-h4a-chained-models-2026-10-27));
   chaos7 is the logger's `CM` window, closed at the two seal superuniques' placements
-  ([experiments addendum](../findings/monsters/experiments.md#addendum-2026-10-27-lanerbd-the-chained-models-re-checked)).
+  ([experiments addendum](../../findings/monsters/experiments.md#addendum-2026-10-27-lanerbd-the-chained-models-re-checked)).
   The twelve H4a logs go rc 0 and the 63 kept logs are unchanged. The skills/0002 § 6 entry (from the plan 0045 P3
-  review) is logged in [plan 0045](done/0045-skills-missiles-machinery.md#implementation-log).
+  review) is logged in [plan 0045](0045-skills-missiles-machinery.md#implementation-log).
 - **2026-10-27 — `lane/rbd` review (architect): accept with fixes (6).** Merged `main` `7cd4f991` into the lane first
   (`349463a4`). The ledger conflict kept both sides. `backlog.py archive` had nothing to move.
   - **Checks:** `sha256sum -c` passes for `check-rbd/rbd-manifest.sha256` (`f34f23c5…`, 9 files) and
@@ -4042,10 +4042,10 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     the three groups sat on an H4a row (the H4a review's ruling d stands); row 60 (H4a) was already raised, and the
     526 piece belongs to special § J's `[I]` bullet, a remainder of S3a's row 73 that the spec-writer splits in Phase 3
     with no class move. Totals stand at the H3b review's 1 526 (`main` `7cd4f991` adds no inventory change).
-  - **Spec-writer:** the entry [skills/missiles F1 and dispatch I4](../backlog/archive/2026-10-27-architect-spec-writer-skills-missiles-f1-mastery-and-dispatch-i4-kick.md)
+  - **Spec-writer:** the entry [skills/missiles F1 and dispatch I4](../../backlog/archive/2026-10-27-architect-spec-writer-skills-missiles-f1-mastery-and-dispatch-i4-kick.md)
     is **released** with what to write (the mastery out of F1's `[C]`, the `k` lines `[I]` inline, the `[L]` open
     question, the swap's order, both runs' 4 118 builds). The lane's entry
-    [MonPostCreateBoss and 0x400](../backlog/archive/2026-10-27-reverser-spec-writer-postcreateboss-table-and-entry-bit-0x400.md)
+    [MonPostCreateBoss and 0x400](../../backlog/archive/2026-10-27-reverser-spec-writer-postcreateboss-table-and-entry-bit-0x400.md)
     is **released** with the § J split and the scope of the `0x400` `[C]`.
   - **Backlog:** the review request was closed. Review-fixes Seen lines: reverser 6 and 14.
   - **Ledger:** the lane row filled (verdict, fixes 6: under-claim 1, tool not kept 1, omission 4; usage from the
@@ -4054,19 +4054,19 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 - **2026-10-27 — Phase 3, the data/excel, data/strings and data/README clusters (spec-writer, `lane/s38d`, from `main`
   `41500789`).** Their batches are S1b, S1e, S1f (data/excel 65, 69) and H3b, all accepted; the data/excel round also folds
   plan 0039 P1b (a), P1c (a) and the 11 data/excel W1 warnings.
-  - **Counts:** [data/README](../specs/data/README.md) {C 3, I 5, L 0} → **{C 9, I 2, L 0}**;
-    [data/excel](../specs/data/excel.md) {C 42, I 100, L 8} → **{C 144, I 45, L 2}**;
-    [data/strings](../specs/data/strings.md) {C 60, I 42, L 3} → **{C 88, I 29, L 3}**; `updated:` 2026-10-27.
+  - **Counts:** [data/README](../../specs/data/README.md) {C 3, I 5, L 0} → **{C 9, I 2, L 0}**;
+    [data/excel](../../specs/data/excel.md) {C 42, I 100, L 8} → **{C 144, I 45, L 2}**;
+    [data/strings](../../specs/data/strings.md) {C 60, I 42, L 3} → **{C 88, I 29, L 3}**; `updated:` 2026-10-27.
   - **Applied:** the H3b entry (the TC entry rows name `EXCEL_FindName`'s callers, `TC_GetByName` an `[I]` dead-code note;
     the language clamp `[I]`; levels `+0x033..+0x035` in J4; the `CYR` exit; the `hitclass.bin` read and the `sounds` call;
     the G1 post-pass lookups `[C]`, the store `[I]`), the S1b, S1e and S1f lines of these specs (the id-13 correction
     among them, as the S1e review's addition (a) words it), plan 0039 P1b (a) and P1c (a). W1 for data/excel is 0.
-  - **Wiki:** [wiki/game-data](../wiki/game-data.md) `based_on` dates for the three specs set to 2026-10-27 and its stale
+  - **Wiki:** [wiki/game-data](../../wiki/game-data.md) `based_on` dates for the three specs set to 2026-10-27 and its stale
     paragraphs restated (W4 clear).
   - **Backlog:** closed the H3b, W1, P1b, P1c and S1b entries; the S1e corrections, S1e review additions and S1f entries
     annotated (save/d2s and items/uniques-sets parts open). Counts entry
-    [s38d counts](../backlog/archive/2026-10-27-spec-writer-architect-s38d-data-clusters-counts-for-the-research-map.md), review
-    request [s38d review](../backlog/archive/2026-10-27-spec-writer-architect-s38d-review-data-clusters-phase-3.md). Ledger row
+    [s38d counts](../../backlog/archive/2026-10-27-spec-writer-architect-s38d-data-clusters-counts-for-the-research-map.md), review
+    request [s38d review](../../backlog/archive/2026-10-27-spec-writer-architect-s38d-review-data-clusters-phase-3.md). Ledger row
     added, usage "—".
   - **Next:** the `lane/s38d` review.
 - **2026-10-27 — `lane/s38d` review (architect): accept with fixes (10).** Merged `main` `65893010` into the lane first
@@ -4143,9 +4143,9 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     `0x29` bounds the old stat form; class 7 halts.
   - **S1b piece:** the CalcSor session ran as staged (`rng.py seedtree` 1 884/1 884; `calc.py hover` 7 `CH` lines, 0 hover evaluations, 8 drink evaluations; `calc.py check` 52/52). data-calc 19's hover half and rng-seeds 11's caller 0x00569F53 are met (notes in data/0005 and rng/0002); the rows stay S1b for the review. The 2026-10-16 entry is closed (archive).
   - **Symbols** (rule 14): eleven readers I → C (filed as "ten"; corrected at the review); four functions added (I).
-  - **Backlog:** archivist [2026-10-27-reverser-archivist-h1a-d2s-legacy-layouts-and-parser-gaps](../backlog/archive/2026-10-27-reverser-archivist-h1a-d2s-legacy-layouts-and-parser-gaps.md);
-    spec-writer [2026-10-27-reverser-spec-writer-h1a-save-d2s-player-creation-raises](../backlog/2026-10-27-reverser-spec-writer-h1a-save-d2s-player-creation-raises.md)
-    (held for the review); review request [2026-10-27-reverser-architect-review-lane-h1a-plan-0038-batch-h1a](../backlog/archive/2026-10-27-reverser-architect-review-lane-h1a-plan-0038-batch-h1a.md).
+  - **Backlog:** archivist [2026-10-27-reverser-archivist-h1a-d2s-legacy-layouts-and-parser-gaps](../../backlog/archive/2026-10-27-reverser-archivist-h1a-d2s-legacy-layouts-and-parser-gaps.md);
+    spec-writer [2026-10-27-reverser-spec-writer-h1a-save-d2s-player-creation-raises](../../backlog/2026-10-27-reverser-spec-writer-h1a-save-d2s-player-creation-raises.md)
+    (held for the review); review request [2026-10-27-reverser-architect-review-lane-h1a-plan-0038-batch-h1a](../../backlog/archive/2026-10-27-reverser-architect-review-lane-h1a-plan-0038-batch-h1a.md).
   - **Next:** the `lane/h1a` review.
 - **2026-10-27 — `lane/h1a` review (architect): accept with fixes (5).** H1a (`d2s-load`, 46 statements), reviewed at
   `8cba78ac` after merging `main` `6ad383c4` into the lane (`87b7f916`; conflicts in this log and player/0001, both
@@ -4215,32 +4215,32 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     Not ready: hirelings (H6f, 22 rows open) and player/creation (H6g, 15 rows open). Research-map rows of the two
     ready specs updated.
   - **Backlog:** review request closed; the spec-writer entry
-    [2026-10-27-reverser-spec-writer-h1a-save-d2s-player-creation-raises](../backlog/2026-10-27-reverser-spec-writer-h1a-save-d2s-player-creation-raises.md)
+    [2026-10-27-reverser-spec-writer-h1a-save-d2s-player-creation-raises](../../backlog/2026-10-27-reverser-spec-writer-h1a-save-d2s-player-creation-raises.md)
     **released** with (i) widened and (j), (k) added (the rulings and the S1b re-tags); the archivist entry stays open.
     Review-fixes Seen lines: reverser 2, 4 and 14; architect 8.
   - **Ledger rows:** the lane row filled (verdict, fixes 5: under-claim 1, miscount 1, omission 3; usage from the
     orchestrator: 533 080 tokens, 290 tools, 52 min); the review row added, usage "—".
   - **Next:** merge `lane/h1a`; the save/d2s and items/uniques-sets Phase 3 re-tags may start.
 - **2026-10-27 — `lane/sf2` (spec-writer, no slot, no Ghidra, no harness): the two entries released at the
-  `lane/rbd` review.** (1) [skills/missiles § F1](../specs/skills/missiles.md#f-the-packet-at-the-hit-missile_builddamage):
+  `lane/rbd` review.** (1) [skills/missiles § F1](../../specs/skills/missiles.md#f-the-packet-at-the-hit-missile_builddamage):
   the mastery taken out of the `[C]` bullet, which now cites both runs (4 118 builds over 33 logs, 0 mismatches; the
   778-build breakdown kept as run:2026-10-25-skills's); the `k ←` and `if k ≠ 0` lines `[I]` inline at `0x005A895F`;
   a new `[I]` bullet on the mastery (0 of 54 655 `MH0` lists hold one); the `[I]` bullet gives the order *test both
   bounds > 0, swap, mastery, draw* and no inverted pair in either run; the `[L]` on a missile carrying its owner's
-  masteries. [Dispatch § I4](../specs/skills/dispatch.md#i-the-skill-packet) restated per bound: the `Kick`-clear,
+  masteries. [Dispatch § I4](../../specs/skills/dispatch.md#i-the-skill-packet) restated per bound: the `Kick`-clear,
   `SrcDam` 0 formula and the `Kick` minimum `÷ 4` `[C]` (emulated inside hit 43, skills/0007 § 3), the `Kick` maximum
   `÷ 3` `[I]`, the weapon share `[I]`; skills/0003 § 5 does not say whether start 2 reads `MinDam` itself or calls
   `GetPhysMin/Max`, nor the table doc the `Kick` row's `MinDam`, so which damage Kick's start hit carries is an `[L]`
-  open question and a [reverser entry](../backlog/archive/2026-10-27-spec-writer-reverser-kick-start-hit-damage.md).
-  (2) [monsters/special § J](../specs/monsters/special.md#j-other-entry-paths-and-pre-existing-mods): the post-create
+  open question and a [reverser entry](../../backlog/archive/2026-10-27-spec-writer-reverser-kick-start-hit-damage.md).
+  (2) [monsters/special § J](../../specs/monsters/special.md#j-other-entry-paths-and-pre-existing-mods): the post-create
   helpers and the flag-2 gate `[I]`, `MonPostCreateBoss`'s case table by `BaseId` (one tag per row, 13 `[I]`; the 526
   row `[C]` for mod 22, `[I]` for its hook) and a `[C]` bullet for Nihlathak's 22, scoped to `BaseId` 526; § G row 60
-  keeps its tag and cites the chained placement. [drlg/room-tiles](../specs/drlg/room-tiles.md) 9d's note: `0x400`,
+  keeps its tag and cites the chained placement. [drlg/room-tiles](../../specs/drlg/room-tiles.md) 9d's note: `0x400`,
   the client wall fade's mark, its writer `[I]`, on a near room's walls only `[C]` for the council log alone.
   Tags: missiles C 46, I 92 → 95, L 6 → 7; dispatch C 72 → 73, I 187 → 189, L 10 → 11; special C 149 → 151, I 70 → 86,
   L 4; room-tiles C 121 → 122, I 34 → 35, L 0 (`updated:` 2026-10-27). Wiki: skills (F1, I4, two open items);
   `based_on` of levels, randomness and seed-to-world bumped for room-tiles. Both entries closed;
-  [review request](../backlog/archive/2026-10-27-spec-writer-architect-review-lane-sf2-missiles-f1-dispatch-i4-special.md)
+  [review request](../../backlog/archive/2026-10-27-spec-writer-architect-review-lane-sf2-missiles-f1-dispatch-i4-special.md)
   filed; ledger row added, usage "—".
 - **2026-10-27 — `lane/sf2` review (architect): accept with fixes (3).** Merged `main` `94738360` into the lane first
   (`a74f768d`; the plan log and ledger conflicts kept both sides, `backlog.py archive` had nothing to move).
@@ -4260,7 +4260,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     `MinDam` itself or calls `GetPhysMin/Max`; skills/0003 § 5's reading gives the former and objdump shows it
     (`0x0056CB54`–`0x0056CB71`, no call). The I4 `[I]` bullet now says the start hit carries the row's `MinDam`; the
     `[L]` is narrowed to the `Kick` row's values, the logged hits and the `Kick` branch's callers; wiki/skills and the
-    [reverser entry](../backlog/archive/2026-10-27-spec-writer-reverser-kick-start-hit-damage.md) annotated (counts unchanged).
+    [reverser entry](../../backlog/archive/2026-10-27-spec-writer-reverser-kick-start-hit-damage.md) annotated (counts unchanged).
     (3) *wrong anchor:* the `SrcDam` share cited `0x00647CA6`–`0x00647CF1` (bands, synergy, shift); now
     `0x00647C4D`–`0x00647CA3` and the add at `0x00647CBA`.
   - **Rulings:** (a) **The I4 `[C]` raise is within the ADR-0015 map.** skills/0007 § 2 lists `SKILLS_GetPhysMin/Max`
@@ -4283,8 +4283,8 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Next:** merge `lane/sf2`; the reverser entry on Kick's row values may start.
 - **2026-10-27 — H6e2 (`quest-items`) filed (reverser, `lane/h6e2`, harness slot 1; resumed from checkpoint 1,
   `main` `147e5ca3` merged).** Run id run:2026-10-27-sweep-quest-items, record in
-  [items experiments](../findings/items/experiments.md#run2026-10-27-sweep-quest-items), evidence in
-  [items/0010 § Plan 0038 batch H6e2](../findings/items/0010-quest-drops.md#plan-0038-batch-h6e2-run2026-10-27-sweep-quest-items).
+  [items experiments](../../findings/items/experiments.md#run2026-10-27-sweep-quest-items), evidence in
+  [items/0010 § Plan 0038 batch H6e2](../../findings/items/0010-quest-drops.md#plan-0038-batch-h6e2-run2026-10-27-sweep-quest-items).
   - **Resume, per the note:** the Act II and III sessions start in the Act IV town (three `-a4` recipes, header act
     bytes 131; H4a's fixed waypoint click), each on its own map seed (radament on 4904); `wpchain` limit 45 s; the orb
     read checked once after the first waypoint (0.75 / 0.79). On 4904 the Sewers stairs took two tries, as in H4a.
@@ -4306,14 +4306,14 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     `sub_00599DF0_A2Q2_CubeChest`, `sub_005B8860_A3Q2_HeartChest`, `sub_00585970_DropItemCodeAt`,
     `sub_00558110_PlayerFindItemByCode`, `sub_0055CC90_ItemQuestGate`.
   - **Backlog:** review request
-    [2026-10-27-reverser-architect-review-lane-h6e2-plan-0038-batch-h6e2](../backlog/archive/2026-10-27-reverser-architect-review-lane-h6e2-plan-0038-batch-h6e2.md)
+    [2026-10-27-reverser-architect-review-lane-h6e2-plan-0038-batch-h6e2](../../backlog/archive/2026-10-27-reverser-architect-review-lane-h6e2-plan-0038-batch-h6e2.md)
     filed; spec-writer entry
-    [2026-10-27-reverser-spec-writer-h6e2-quest-items-raises-and-the-khalim-chest](../backlog/archive/2026-10-27-reverser-spec-writer-h6e2-quest-items-raises-and-the-khalim-chest.md)
+    [2026-10-27-reverser-spec-writer-h6e2-quest-items-raises-and-the-khalim-chest](../../backlog/archive/2026-10-27-reverser-spec-writer-h6e2-quest-items-raises-and-the-khalim-chest.md)
     filed, held until the review. Slot 1 stopped, saves restored (empty, no aside).
   - **Next:** the `lane/h6e2` review; then H6e1.
 - **2026-10-27 — `lane/rk` (reverser, static: objdump, `tools/xrefscan.py`, the kept skills logs rescanned under
-  `MemoryMax=4G`; no Ghidra, no harness): the [Kick start-hit entry](../backlog/archive/2026-10-27-spec-writer-reverser-kick-start-hit-damage.md)
-  answered** in [skills/0003 § 5](../findings/skills/0003-handlers.md#5-tier-a-start-and-do-functions)'s 2026-10-27
+  `MemoryMax=4G`; no Ghidra, no harness): the [Kick start-hit entry](../../backlog/archive/2026-10-27-spec-writer-reverser-kick-start-hit-damage.md)
+  answered** in [skills/0003 § 5](../../findings/skills/0003-handlers.md#5-tier-a-start-and-do-functions)'s 2026-10-27
   note and two Answer bullets. (2) `[C]` the stock `Kick` row has `MinDam` 0, `MaxDam` 0, the bands 0 and `HitShift`
   8, so start 2's physical is 0. (3) `[C]` run:2026-10-27-skills: Kick's 32 start and 32 do events (all `barh`), 25 do
   spans reaching `COMBAT_ApplyDamage` with result 9, physical 0, hit class 1 (`tools/kick_hits.py`, new; `bad=0`),
@@ -4322,8 +4322,8 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   are not read. (4) `[I]` the `Kick` branch (`+0x05 & 0x02`; rows 1, 255, 270, 275) is reached through the new
   `sub_005D54B0_SkillKickPhysDamage` by Dragon Talon (start 24, do 42), Dragon Tail (start 27) and Dragon Flight
   (do 52), through no direct call of Kick's start 2 or do 2 (review fix 2); `GetPhysMax`'s branch is `sub_00644C20`'s only call; 15 variable-id call sites unfollowed.
-  Kept: `workspace/logs/rk/rk-manifest.sha256` (9 files). Entries: [spec-writer](../backlog/archive/2026-10-27-reverser-spec-writer-dispatch-i4-kick-start-hit-answered.md)
-  (dispatch I4's `[L]`), [architect review](../backlog/archive/2026-10-27-reverser-architect-review-lane-rk-kick-start-hit-damage.md).
+  Kept: `workspace/logs/rk/rk-manifest.sha256` (9 files). Entries: [spec-writer](../../backlog/archive/2026-10-27-reverser-spec-writer-dispatch-i4-kick-start-hit-answered.md)
+  (dispatch I4's `[L]`), [architect review](../../backlog/archive/2026-10-27-reverser-architect-review-lane-rk-kick-start-hit-damage.md).
   Ledger row added, usage "—".
   - **Review (architect, 2026-10-27): accept with fixes (2).** Checked: `sha256sum -c` of `rk-manifest.sha256` (9 OK);
     `tools/kick_hits.py` rerun under `systemd-run --user --scope -p MemoryMax=4G`, byte-identical (`774d0573…`, exit 0),
@@ -4356,7 +4356,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     (c) Part 2 `[I]` stands: the branch callers are a static `call`-operand scan with 15 variable-id sites named and
     unfollowed (reverser rule 9 satisfied). (d) The spec-writer entry is released with fix 2 applied.
   - **Bookkeeping:** review-fixes Seen lines: reverser 9 and 10. The review request closed; the
-    [spec-writer entry](../backlog/archive/2026-10-27-reverser-spec-writer-dispatch-i4-kick-start-hit-answered.md) released.
+    [spec-writer entry](../../backlog/archive/2026-10-27-reverser-spec-writer-dispatch-i4-kick-start-hit-answered.md) released.
     Ledger: the lane row filled (accept with fixes, 2: omission 1, overclaim 1; usage from the orchestrator: 171 207
     tokens, 79 tools, 12 min); the review row added, usage "—".
   - **Next:** merge `lane/rk`; the spec-writer entry on dispatch I4 may start.
@@ -4394,12 +4394,12 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     character reaches Act IV. (e) **The failed routes** are recorded honestly (the brain chest as an open question, the
     two warps in the run record). The warps are a pilot limitation, not a model bug: `descend` takes the first warp of a
     LvlWarp row, and rows 51 and 61 serve two levels each; routed with the brain-chest question to a reverser entry,
-    [2026-10-27-architect-reverser-d2pilot-descend-by-destination-and-the-brain-chest](../backlog/archive/2026-10-27-architect-reverser-d2pilot-descend-by-destination-and-the-brain-chest.md).
+    [2026-10-27-architect-reverser-d2pilot-descend-by-destination-and-the-brain-chest](../../backlog/archive/2026-10-27-architect-reverser-d2pilot-descend-by-destination-and-the-brain-chest.md).
     (f) **The 11 symbols I → C** stand (rule 14: each one's logged call compared with the checker's model); the
     call-site-only frames stay I. (g) **The quality 7 answer** stands as `[I]` After (items/0004 us 13), now with `bks`.
     (h) **`test_d2s.py`** fails `test_every_recipe_has_a_base` after the merge, on `lane/h3b`'s `h3brare` alone (merged
     into `main` before `lane/a2t`, whose branch lacked it); H6e2's seven recipes have rows. Not H6e2's: routed,
-    [2026-10-27-architect-archivist-test-d2s-h3brare-recipe-base](../backlog/archive/2026-10-27-architect-archivist-test-d2s-h3brare-recipe-base.md),
+    [2026-10-27-architect-archivist-test-d2s-h3brare-recipe-base](../../backlog/archive/2026-10-27-architect-archivist-test-d2s-h3brare-recipe-base.md),
     with the base and the save hash the review rebuilt (`ce57d8f7…`, as the H3b record).
   - **Totals** recounted against `main` `507a6f5c` after merging it (`lane/rk` moved no inventory row): unchanged,
     static 567, harness 519, c-emu 0, blocked 421, deferred 2, raised 17: 1 526. H6e2's ledger: raised 3, raised in part
@@ -4408,13 +4408,13 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     updated). items/quest-drops still waits on H6e1.
   - **Bookkeeping:** inventory § 2.6 H6e2 block marked accepted with the ruling, § 5 "(done)"; review-fixes Seen lines:
     reverser 6 and 13. The review request closed; the
-    [spec-writer entry](../backlog/archive/2026-10-27-reverser-spec-writer-h6e2-quest-items-raises-and-the-khalim-chest.md)
+    [spec-writer entry](../../backlog/archive/2026-10-27-reverser-spec-writer-h6e2-quest-items-raises-and-the-khalim-chest.md)
     released (with the `bks` and Wirt points). Ledger: both lane rows filled (usage from the orchestrator: 331 873 tokens,
     178 tools, 39 min to checkpoint 1; 307 855 tokens, 200 tools, 107 min for the resume; accept with fixes, 3: misread 1,
     tool not kept 1, other 1, on the resume row); the review row added, usage "—".
   - **Next:** merge `lane/h6e2`; then H6e1.
 - **2026-10-27 — `lane/sk` (spec-writer, no slot, no Ghidra, no harness): the entry released at the `lane/rk`
-  review.** [Dispatch § I4](../specs/skills/dispatch.md#i-the-skill-packet): Kick's start hit restated from
+  review.** [Dispatch § I4](../../specs/skills/dispatch.md#i-the-skill-packet): Kick's start hit restated from
   skills/0003 § 5's anchored instructions (`[I]`: `MinDam << HitShift`, hit class 1, no `GetPhysMin/Max` call); the
   stock row's `HitShift` 8 and `MinDam` 0, so physical 0 `[C]` (tbl:Skills.txt); the 25 logged deliveries with
   physical 0 `[C]`, scoped to the packet after `ResolveAndQueue`'s reductions, Normal and the 9 target classes with
@@ -4422,7 +4422,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   `Kick` branch's callers `[I]` (Dragon Talon, Tail and Flight; the Assassin's `str + dex − 20`, the shadow warrior's
   and shadow master's `3 · level`; no direct call of Kick's start 2 or do 2). The `[L]` struck. Tags: dispatch C 73 →
   75, I 189 → 191, L 11 → 10. Wiki: skills (two paragraphs, one open item removed). Entry closed;
-  [review request](../backlog/archive/2026-10-27-spec-writer-architect-review-lane-sk-dispatch-i4-kick.md) filed; ledger row
+  [review request](../../backlog/archive/2026-10-27-spec-writer-architect-review-lane-sk-dispatch-i4-kick.md) filed; ledger row
   added, usage "—".
   - **Review (architect, 2026-10-27): accept with fixes (2).** Checked each I4 bullet against skills/0003 § 5's
     2026-10-27 note and the `lane/rk` rulings: the start-2 store `[I]` (instructions `0x0056CB42`–`0x0056CB80`), the
@@ -4440,12 +4440,12 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     row filled (accept with fixes, 2: wrong anchor 1, omission 1; usage from the orchestrator: 87 940 tokens, 26 tools,
     12 min); the review row added, usage "—".
   - **Next:** merge `lane/sk`.
-- **2026-10-27 — `lane/a3r` review (architect): accept.** The `tools/` diff is the one `h3brare` `RECIPE_BASES` row; a scratch rebuild of `h3brare.json` (`52aa64e8…`) on `smpsor-l50.d2s` gives `ce57d8f7…6317`, the H3b record's save hash (data/experiments); `test_d2s.py` 47 tests OK; the [review request](../backlog/archive/2026-10-27-archivist-architect-review-lane-a3r-test-d2s-h3brare-row.md) closed; ledger lane row filled (usage from the orchestrator), review row usage "—".
+- **2026-10-27 — `lane/a3r` review (architect): accept.** The `tools/` diff is the one `h3brare` `RECIPE_BASES` row; a scratch rebuild of `h3brare.json` (`52aa64e8…`) on `smpsor-l50.d2s` gives `ce57d8f7…6317`, the H3b record's save hash (data/experiments); `test_d2s.py` 47 tests OK; the [review request](../../backlog/archive/2026-10-27-archivist-architect-review-lane-a3r-test-d2s-h3brare-row.md) closed; ledger lane row filled (usage from the orchestrator), review row usage "—".
 - **2026-10-27 — Phase 3, the save/d2s and items/uniques-sets clusters (spec-writer, `lane/s38s`, from `main`
   `cb3a7014`).** Their batches are save/d2s S1a, S1e, H1b (with the r1h moves) and H1a, and items/uniques-sets S2b,
   S2c, S1f, H2b, H6d and H1a, all accepted.
-  - **Counts:** [save/d2s](../specs/save/d2s.md) {C 91, I 149, L 3} → **{C 239, I 67, L 3}**;
-    [items/uniques-sets](../specs/items/uniques-sets.md) {C 71, I 55, L 4} → **{C 100, I 38, L 4}**; `updated:` 2026-10-27.
+  - **Counts:** [save/d2s](../../specs/save/d2s.md) {C 91, I 149, L 3} → **{C 239, I 67, L 3}**;
+    [items/uniques-sets](../../specs/items/uniques-sets.md) {C 71, I 55, L 4} → **{C 100, I 38, L 4}**; `updated:` 2026-10-27.
   - **Applied:** every raised row with its `run:` or second source, raised-in-part rows split along their remainders;
     the H1a new readings (`D2S_ReadSave`'s unmapped 9, the length test first and the test order, the waypoint marker
     reset and `WAYPOINT_Save`'s restore, a bad set id dropping the item, a bad unique id read −1 and written `0xFFF`,
@@ -4455,12 +4455,12 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     shortfalls `[I]`; H1b ruling (c) (the death save `[C]`, "Nothing was written during play" scoped to
     run:2026-10-12-d2s-io) and (g) (stat 30's wording); the S1a entry's (b)–(g), the S1e (a)/(f) and review (d) lines,
     S1f (a)/(c), H2b (c)–(g) and H6d (i).
-  - **Wiki:** [saves](../wiki/saves.md), [characters](../wiki/characters.md) and [items](../wiki/items.md) `based_on`
+  - **Wiki:** [saves](../../wiki/saves.md), [characters](../../wiki/characters.md) and [items](../../wiki/items.md) `based_on`
     dates set to 2026-10-27 (W4 clear); saves and items restated, characters waits on player/creation and hirelings.
   - **Backlog:** closed the S1a corrections, S1e corrections, S1e review additions and S1f entries; annotated H1b
     (hirelings, H6f), H1a (player/creation H6g, hirelings H6f, (k)), H6d (quest-drops) and H2b (sockets-runewords).
-    Counts entry [s38s counts](../backlog/archive/2026-10-27-spec-writer-architect-s38s-save-d2s-and-uniques-sets-counts-for.md),
-    review request [s38s review](../backlog/archive/2026-10-27-spec-writer-architect-s38s-review-save-d2s-and-uniques-sets-phase.md).
+    Counts entry [s38s counts](../../backlog/archive/2026-10-27-spec-writer-architect-s38s-save-d2s-and-uniques-sets-counts-for.md),
+    review request [s38s review](../../backlog/archive/2026-10-27-spec-writer-architect-s38s-review-save-d2s-and-uniques-sets-phase.md).
     Ledger row added, usage "—".
   - **Not touched (waiting):** hirelings (H6f) and player/creation (H6g): the H1b and H1a rows hirelings 3, 24, 30,
     32, 33 and player-creation 1, 8, 9, 11, 20, 34, and the H1a entry's (k) (data/calc L417, rng/seeds L362).
@@ -4513,9 +4513,9 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     paragraphs. (8) under-claim: rows 24 and group 52 (ruling 4) in the header table, J1, J, the reimplementation note
     and wiki/saves. (9) other: the class-7 bullet's row citation (ruling 1). Also wiki/saves: the stat-72 wording and
     "the size and version tests were not told apart".
-  - **Counts:** [save/d2s](../specs/save/d2s.md) **{C 240, I 68, L 3}** (from the lane's {239, 67, 3}: C +1 group 52;
+  - **Counts:** [save/d2s](../../specs/save/d2s.md) **{C 240, I 68, L 3}** (from the lane's {239, 67, 3}: C +1 group 52;
     I −3 for rows 24, the J1 line and the reimplementation note, +4 for the 95 boundaries, the 0x0101 case and
-    Outputs); [items/uniques-sets](../specs/items/uniques-sets.md) **{C 100, I 38, L 4}** as filed. Research-map rows
+    Outputs); [items/uniques-sets](../../specs/items/uniques-sets.md) **{C 100, I 38, L 4}** as filed. Research-map rows
     rewritten whole; both clusters' Phase 3 is done.
   - **Wiki:** saves, characters and items checked against the specs; saves and characters fixed (fixes 6–8), items
     stands.
@@ -4575,8 +4575,8 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Next:** merge `lane/rdp`; file the H6e2 follow-up (eye4c, tome4c, brain4c) when a harness slot is free.
 - **2026-10-27 — Phase 3, the objects cluster (spec-writer, `lane/s38o`, from `main` `1e61473c`).** Batches S4a, S4b,
   H5b and H6e2, all accepted; each restated statement checked against its section of
-  [objects/0001](../findings/objects/0001-object-population.md) (§ Plan 0038 batch S4a, S4b, H5b) or
-  [items/0010 § Plan 0038 batch H6e2](../findings/items/0010-quest-drops.md#plan-0038-batch-h6e2-run2026-10-27-sweep-quest-items)
+  [objects/0001](../../findings/objects/0001-object-population.md) (§ Plan 0038 batch S4a, S4b, H5b) or
+  [items/0010 § Plan 0038 batch H6e2](../../findings/items/0010-quest-drops.md#plan-0038-batch-h6e2-run2026-10-27-sweep-quest-items)
   and the four reviews' rulings.
   - **objects** {C 139, I 72, L 5} → **{C 188, I 56, L 4}** (recounted with the gate's tag reader). Raised: rows 1, 2,
     8, 9, 11, 13/51, 14, 16, 17, 22, 37, 40, 45, 50, the 52 timing (its types 8/9 draw kept `[I]`), 47 for the
@@ -4590,14 +4590,14 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     `InitFn`s (S4b (a)), the H5b shortfalls (6, 19, 35, 39, 46, 49) in *Open questions*. Beyond the inventory: § K's
     event-7 route for classes 268 and 367 (qd 1, rule 8) and § J3's tier and `ilvl` (S2a tc 64 (b)), striking the
     tier-cut `[L]`. K2 is rewritten from H5b.1 (the remap, the function table, class **160** second).
-  - **Wiki:** [objects](../wiki/objects.md) refreshed and its `based_on` set to 2026-10-27; [seed-to-world](../wiki/seed-to-world.md)
+  - **Wiki:** [objects](../../wiki/objects.md) refreshed and its `based_on` set to 2026-10-27; [seed-to-world](../../wiki/seed-to-world.md)
     date only.
-  - **Backlog:** closed the [H5b spec updates](../backlog/archive/2026-10-20-reverser-spec-writer-h5b-objects-spec-updates.md),
-    the [S4b corrections](../backlog/archive/2026-10-16-reverser-spec-writer-plan-0038-s4b-corrections-for-phase.md) and the
-    [S2a tc 64](../backlog/archive/2026-10-16-architect-reverser+spec-writer-plan-0038-s2a-tc-64-and.md) entries; annotated the
-    [H6e2 entry](../backlog/archive/2026-10-27-reverser-spec-writer-h6e2-quest-items-raises-and-the-khalim-chest.md) (objects done,
-    quest-drops waits for H6e1); filed the [counts entry](../backlog/archive/2026-10-27-spec-writer-architect-s38o-objects-counts-for-the-research-map.md)
-    and the [review request](../backlog/archive/2026-10-27-spec-writer-architect-s38o-review-objects-phase-3.md). Ledger row
+  - **Backlog:** closed the [H5b spec updates](../../backlog/archive/2026-10-20-reverser-spec-writer-h5b-objects-spec-updates.md),
+    the [S4b corrections](../../backlog/archive/2026-10-16-reverser-spec-writer-plan-0038-s4b-corrections-for-phase.md) and the
+    [S2a tc 64](../../backlog/archive/2026-10-16-architect-reverser+spec-writer-plan-0038-s2a-tc-64-and.md) entries; annotated the
+    [H6e2 entry](../../backlog/archive/2026-10-27-reverser-spec-writer-h6e2-quest-items-raises-and-the-khalim-chest.md) (objects done,
+    quest-drops waits for H6e1); filed the [counts entry](../../backlog/archive/2026-10-27-spec-writer-architect-s38o-objects-counts-for-the-research-map.md)
+    and the [review request](../../backlog/archive/2026-10-27-spec-writer-architect-s38o-review-objects-phase-3.md). Ledger row
     added, usage "—".
   - **Next:** architect review of `lane/s38o`.
 - **2026-10-27 — `lane/s38o` review (architect): accept with fixes (8).** Phase 3 of the objects cluster, reviewed at
@@ -4622,7 +4622,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
        the cap, so the seeds that matched after the two cap returns confirm the draw. E2's order and § E's count stand;
        the finding means "before any placement draw". The spec's *Constants* row, which copied the finding's words, is
        fixed; the finding's wording goes to the reverser
-       ([entry](../backlog/archive/2026-10-27-architect-reverser-h5b-shrine-cap-wording.md)). No code question.
+       ([entry](../../backlog/archive/2026-10-27-architect-reverser-h5b-shrine-cap-wording.md)). No code question.
     2. **7 against 4 super chests.** The 29 logs hold 7 `OPU0` lines with id 580 at 7 distinct positions (sessions 3:
        three in level 79; 13: level 44; 29: two in level 62; 30: level 4), each run through the checker's 580 model, so
        S4a's 7 counts creations, not re-creations or windows twice. The run record's "super chests (DS1 580) 4, all
@@ -4651,7 +4651,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     added, usage "—".
   - **Next:** merge `lane/s38o`; objects is done for plan 0038 Phase 3.
 - **2026-10-27 — `lane/a71` (archivist, no slot, no Ghidra, no harness, from `main` `44cfbcb5`): the H1a parser gaps.**
-  Work of the [H1a archivist entry](../backlog/archive/2026-10-27-reverser-archivist-h1a-d2s-legacy-layouts-and-parser-gaps.md).
+  Work of the [H1a archivist entry](../../backlog/archive/2026-10-27-reverser-archivist-h1a-d2s-legacy-layouts-and-parser-gaps.md).
   - **Built** (`tools/d2s.py`, every change off by default): an extended reader and writer (`parse(…, extended=True)`,
     `encode_item(…, ver)`) and the build keys `save_version` 93..96, `stat_slots`, `skill_count` and the item key
     `realm`: the old stat form for ≤ 94, stat 72 in 8 bits for ≤ 95, header `0x2A` skill bytes, realm data (two
@@ -4663,15 +4663,15 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Against the run:** `build` with the new keys reproduces the H1a inputs `v94`, `v94s12` and `skills29` byte for
     byte, and the extended reader reads `items` and all 16 game-written H1a saves to their last byte, re-encoding
     every item unchanged (the written realm words `[0x11223344, 0x55667788, 0]`).
-  - **Documented** ([d2s.md](../formats/d2s.md)): § Realm data, § Versions 92..95 (the version tests the findings
+  - **Documented** ([d2s.md](../../formats/d2s.md)): § Realm data, § Versions 92..95 (the version tests the findings
     name, the old stat form `[C]`), § Legacy versions (71..91) (what the findings give, and the list of what they do
     not), the character-screen list rule, and the H1a `[C]`s for `0x029`, `0x02A`, ears, personalized names.
   - **Not done:** the version 71/87 layouts and a legacy builder, version 92's property overrides, the completeness of
     the version-test list, the old-form mask width outside `0x029` = 12, 16, and the reader side of the ear's realm
-    bit: reverser entry [2026-10-27-archivist-reverser-d2s-legacy-and-v92-readers-static-reading](../backlog/archive/2026-10-27-archivist-reverser-d2s-legacy-and-v92-readers-static-reading.md).
+    bit: reverser entry [2026-10-27-archivist-reverser-d2s-legacy-and-v92-readers-static-reading](../../backlog/archive/2026-10-27-archivist-reverser-d2s-legacy-and-v92-readers-static-reading.md).
     So the legacy rows (hirelings 3, 30, 33; player-creation 1; items-uniques-sets 21) and save-d2s 126 stay
     shortfalls under ruling 5. The H1a entry is annotated and stays open for the legacy builder.
-  - **Backlog:** review request [2026-10-27-archivist-architect-review-lane-a71-d2s-versions-93-95-realm](../backlog/archive/2026-10-27-archivist-architect-review-lane-a71-d2s-versions-93-95-realm.md). Ledger row added, usage "—".
+  - **Backlog:** review request [2026-10-27-archivist-architect-review-lane-a71-d2s-versions-93-95-realm](../../backlog/archive/2026-10-27-archivist-architect-review-lane-a71-d2s-versions-93-95-realm.md). Ledger row added, usage "—".
   - **Next:** the `lane/a71` review.
 - **2026-10-27 — `lane/a71` review (architect): accept with fixes (5).** From the lane's head `5558db55` with `main`
   `af36891d` merged in (`fe4285dc`; the log and ledger conflicts kept both sides). Static, scratchpad builds only, no
@@ -4688,7 +4688,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     The refusals hold: 92 (reader and builder), < 92 and > 96 (builder), `stat_slots` outside 9..16 (both readings of
     the mask width give 2 bytes there), a stat at or above `0x029`, a cut-off skill byte, version-96 trailer items in
     another version, and realm-word counts that do not fit the version. No game data in the diff.
-  - **Fixes** ([d2s.md](../formats/d2s.md)): (1) under-claim: "the version tested for stat 72 is the save's" `[I]` →
+  - **Fixes** ([d2s.md](../../formats/d2s.md)): (1) under-claim: "the version tested for stat 72 is the save's" `[I]` →
     `[C]` with the `[ebp+0x1C]` test, as save/0001 row 68's `lane/s38s` review note and the spec give it (the `v94`
     items' version 101 separates it); 95 itself `[I]`. (2) overclaim: the `realm` field row's version test (third word
     above 93) was under the row's `[C]`; now `[C]` for 96, the test `[I]`. (3) misread: § Realm data said the field
@@ -4708,21 +4708,21 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
        a 92 file (`0x0043C8A0`), and `D2S_ReadSave` sends < 92 to the legacy reader (`v91`, `[C]`), so the code is
        reachable by a file the stock game shows; what is missing is a layout to build, which the findings do not give.
        They move only on the reverser entry
-       [2026-10-27-archivist-reverser-d2s-legacy-and-v92-readers-static-reading](../backlog/archive/2026-10-27-archivist-reverser-d2s-legacy-and-v92-readers-static-reading.md):
+       [2026-10-27-archivist-reverser-d2s-legacy-and-v92-readers-static-reading](../../backlog/archive/2026-10-27-archivist-reverser-d2s-legacy-and-v92-readers-static-reading.md):
        (a) for the legacy rows (d-none only if every legacy layout is refused), (b) for 126.
     4. The H1a archivist entry stays open for the legacy builder, as the lane left it.
   - **Bookkeeping:** review request closed
-    ([archive](../backlog/archive/2026-10-27-archivist-architect-review-lane-a71-d2s-versions-93-95-realm.md));
+    ([archive](../../backlog/archive/2026-10-27-archivist-architect-review-lane-a71-d2s-versions-93-95-realm.md));
     ledger: the lane row's usage filled from the orchestrator (230 283 tokens, 72 tools, 20 min), verdict and fixes
     filled, the review row added with usage "—"; archivist review-fixes rules 1 and 4 gain `lane/a71` Seen lines.
   - **Next:** merge `lane/a71`; the reverser takes the legacy and version-92 readers entry.
 - **2026-10-27 — `lane/rlg` (reverser, static, no slot, no harness, no emulation, from `main` `1f8c0858`): the d2s
   legacy and version-92 readers.** Work of the archivist entry
-  [2026-10-27-archivist-reverser-d2s-legacy-and-v92-readers-static-reading](../backlog/archive/2026-10-27-archivist-reverser-d2s-legacy-and-v92-readers-static-reading.md)
+  [2026-10-27-archivist-reverser-d2s-legacy-and-v92-readers-static-reading](../../backlog/archive/2026-10-27-archivist-reverser-d2s-legacy-and-v92-readers-static-reading.md)
   (`lane/a71` review rulings 2–3). Ghidra on the lane copy `workspace/ghidra-rlg` (decompile only, `-Xmx3G`), objdump,
   and `tools/rlg_static.py` (kept output `workspace/logs/rlg/static.txt`, manifest `rlg-manifest.sha256`,
   `RLG_STATIC hits=73 functions=42`).
-  - **Written** ([save/0001 § Plan 0038 lane/rlg](../findings/save/0001-d2s-io.md#plan-0038-lanerlg-the-legacy-and-version-92-readers-static-2026-10-27),
+  - **Written** ([save/0001 § Plan 0038 lane/rlg](../../findings/save/0001-d2s-io.md#plan-0038-lanerlg-the-legacy-and-version-92-readers-static-2026-10-27),
     all `[I]`): (a) the version 71..91 layout: the `0x82`-byte header and its tests and codes, the ten sections in
     order with their tags and lengths, the 3-byte stat mask, the version-71 item record's four forms, the mercenary's
     two forms, the hotkey tail; no checksum or size test; failures after the skills do not fail the load. (b) version
@@ -4735,8 +4735,8 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Ruling 3:** no legacy version is refused, so hirelings 3, 30, 33, player-creation 1 and items-uniques-sets 21
     stay shortfalls; none is proposed to move. Save-d2s 126 likewise (the layout is now given).
   - **Backlog:** the entry closed; archivist entry
-    [2026-10-27-reverser-archivist-d2s-legacy-layouts-for-a-builder](../backlog/archive/2026-10-27-reverser-archivist-d2s-legacy-layouts-for-a-builder.md);
-    review request [2026-10-27-reverser-architect-review-lane-rlg-d2s-legacy-and-v92-readers](../backlog/archive/2026-10-27-reverser-architect-review-lane-rlg-d2s-legacy-and-v92-readers.md).
+    [2026-10-27-reverser-archivist-d2s-legacy-layouts-for-a-builder](../../backlog/archive/2026-10-27-reverser-archivist-d2s-legacy-layouts-for-a-builder.md);
+    review request [2026-10-27-reverser-architect-review-lane-rlg-d2s-legacy-and-v92-readers](../../backlog/archive/2026-10-27-reverser-architect-review-lane-rlg-d2s-legacy-and-v92-readers.md).
     Ledger row added, usage "—".
   - **Next:** the `lane/rlg` review; then the archivist's legacy builder.
 - **2026-10-27 — H5b.2 shrine-cap wording (reverser, `lane/rsw`).** The `lane/s38o` review's ruling 1 is carried into
@@ -4744,9 +4744,9 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   a dated correction naming the room-seed step at 0x00552B9A–0x00552BBA, `OBJRGN_HealthShrineDue` at 0x00552BC5 and
   the cap call at 0x00552BF7 (objdump of 0x00552B50–0x00552C10). No other finding repeats the wording; no tag, symbol
   or spec change. The entry is closed
-  ([archive](../backlog/archive/2026-10-27-architect-reverser-h5b-shrine-cap-wording.md)); review requested
-  ([entry](../backlog/archive/2026-10-27-reverser-architect-rsw-review.md)).
-- **2026-10-27 — `lane/rsw` review (architect): accept with fixes (1).** objdump of 0x00552B50–0x00552C10 on the pinned `Game.exe` matches the correction (seed step 0x00552B9A–0x00552BBA, `HealthShrineDue` 0x00552BC5, cap call 0x00552BF7), the wording matches objects/README *Constants* and E2, and the grep finds no other copy; fix (omission): the note now also cites the `% 100` test at 0x00552BDB–0x00552BF0 (skipped when the health shrine is due); request closed ([entry](../backlog/archive/2026-10-27-reverser-architect-rsw-review.md)).
+  ([archive](../../backlog/archive/2026-10-27-architect-reverser-h5b-shrine-cap-wording.md)); review requested
+  ([entry](../../backlog/archive/2026-10-27-reverser-architect-rsw-review.md)).
+- **2026-10-27 — `lane/rsw` review (architect): accept with fixes (1).** objdump of 0x00552B50–0x00552C10 on the pinned `Game.exe` matches the correction (seed step 0x00552B9A–0x00552BBA, `HealthShrineDue` 0x00552BC5, cap call 0x00552BF7), the wording matches objects/README *Constants* and E2, and the grep finds no other copy; fix (omission): the note now also cites the `% 100` test at 0x00552BDB–0x00552BF0 (skipped when the health shrine is due); request closed ([entry](../../backlog/archive/2026-10-27-reverser-architect-rsw-review.md)).
 - **2026-10-27 — `lane/rlg` review (architect): accept with fixes (4).** `sha256sum -c` passes on
   `rlg-manifest.sha256`, and a rerun of `python3 -I tools/rlg_static.py` gives a byte-identical `static.txt`
   (`RLG_STATIC hits=73 functions=42`). objdump of the pinned `Game.exe` matches the version dispatch (0x00534330–0x00534390),
@@ -4779,8 +4779,8 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     with usage "—".
 - **2026-10-27 — H6e1 (`quest-npc`) filed (reverser, `lane/h6e1`, harness slot 1, from `main` `147e5ca3`; `main`
   `44cfbcb5` merged).** Run id run:2026-10-27-sweep-quest-npc, record in
-  [items experiments](../findings/items/experiments.md#run2026-10-27-sweep-quest-npc), evidence in
-  [items/0010 § Plan 0038 batch H6e1](../findings/items/0010-quest-drops.md#plan-0038-batch-h6e1-run2026-10-27-sweep-quest-npc).
+  [items experiments](../../findings/items/experiments.md#run2026-10-27-sweep-quest-npc), evidence in
+  [items/0010 § Plan 0038 batch H6e1](../../findings/items/0010-quest-drops.md#plan-0038-batch-h6e1-run2026-10-27-sweep-quest-npc).
   - **Built:** logger `tools/gdb/quest-npc.gdb` + `tools/gdb/quest-npc.py` (`QUESTS_GiveItem`, the three service tests
     step by step, the consumed cursor item, the shared tail), session driver `tools/h6e1_sessions.py` (H6e2's loop, a
     `qs` command for `quest_sessions.py act`), `d2pilot.py npc --try` (the refusal cases tried in the service box) and
@@ -4806,9 +4806,9 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     `ITEMS_GetQuality`; new `sub_0062A270_ItemHoldsItem`, `sub_0062A2B0_ItemCompactSave` (C) and
     `sub_00578610_PlayerCursorItemIs` (I).
   - **Backlog:** review request
-    [2026-10-27-reverser-architect-review-lane-h6e1-plan-0038-batch-h6e1](../backlog/archive/2026-10-27-reverser-architect-review-lane-h6e1-plan-0038-batch-h6e1.md)
+    [2026-10-27-reverser-architect-review-lane-h6e1-plan-0038-batch-h6e1](../../backlog/archive/2026-10-27-reverser-architect-review-lane-h6e1-plan-0038-batch-h6e1.md)
     filed; spec-writer entry
-    [2026-10-27-reverser-spec-writer-h6e1-quest-npc-raises-and-the-given-item](../backlog/archive/2026-10-27-reverser-spec-writer-h6e1-quest-npc-raises-and-the-given-item.md)
+    [2026-10-27-reverser-spec-writer-h6e1-quest-npc-raises-and-the-given-item](../../backlog/archive/2026-10-27-reverser-spec-writer-h6e1-quest-npc-raises-and-the-given-item.md)
     filed, held until the review. Slot 1 stopped, saves restored (empty, no aside).
   - **Next:** the `lane/h6e1` review; items/quest-drops is then ready for its Phase 3 re-tag.
 - **2026-10-27 — `lane/h6e1` review (architect): H6e1 (`quest-npc`) accept with fixes (7).** `main` merged into the
@@ -4870,11 +4870,11 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     part 11, shortfall 0: 22. S2c's quest-drops tally: raised 13, raised in part 2, reclassified 1.
   - **Readiness.** **items/quest-drops is ready for its Phase 3 re-tag**: S2c, H6d, H6e2 and H6e1 are all accepted, and
     no other batch holds one of its rows. Research-map row updated. Spec-writer entry
-    [2026-10-27-reverser-spec-writer-h6e1-quest-npc-raises-and-the-given-item](../backlog/archive/2026-10-27-reverser-spec-writer-h6e1-quest-npc-raises-and-the-given-item.md)
+    [2026-10-27-reverser-spec-writer-h6e1-quest-npc-raises-and-the-given-item](../../backlog/archive/2026-10-27-reverser-spec-writer-h6e1-quest-npc-raises-and-the-given-item.md)
     released, and the review request closed. The inventory § 5 marks H6e1 done.
 - **2026-10-27 — `lane/a72` (archivist, no slot, no Ghidra, no harness, from `main` `92b811df`): the d2s legacy
-  builder.** Work of the reverser's [builder entry](../backlog/archive/2026-10-27-reverser-archivist-d2s-legacy-layouts-for-a-builder.md),
-  from [save/0001 § Plan 0038 lane/rlg](../findings/save/0001-d2s-io.md#plan-0038-lanerlg-the-legacy-and-version-92-readers-static-2026-10-27)
+  builder.** Work of the reverser's [builder entry](../../backlog/archive/2026-10-27-reverser-archivist-d2s-legacy-layouts-for-a-builder.md),
+  from [save/0001 § Plan 0038 lane/rlg](../../findings/save/0001-d2s-io.md#plan-0038-lanerlg-the-legacy-and-version-92-readers-static-2026-10-27)
   with the review's three additions (0..70 refused with 1, the header skills applied after the skills section, the
   72..88 base adjustment with 74..79 unadjusted).
   - **Built** (`tools/d2s.py`, opt-in only): `save_version` 92 (the version-96 file with items in the 1.09 widths and
@@ -4888,7 +4888,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Proof of byte identity:** the 259 `RECIPE_BASES` recipes rebuilt into the scratchpad before and after give the
     same sha256 (the five new `leg*` recipes added on top). `tools/test_d2s.py`: 60 tests OK (`LegacyTest` 5 new;
     `ExtendedTest`'s refusals of 92 and 87 moved to 91 and 70; `RecipeTest` reads legacy builds with `parse_legacy`).
-  - **Documented** ([d2s.md](../formats/d2s.md)): § Legacy versions (71..91) from the finding, § Versions 92..95 (the
+  - **Documented** ([d2s.md](../../formats/d2s.md)): § Legacy versions (71..91) from the finding, § Versions 92..95 (the
     complete version-test list, the ≤ 92 rows, the version-92 property encodings, the ⌈`0x029`/8⌉ mask), the version
     row, the ear's realm bit on reading, § Legacy builder (with the builder's own choices listed as such) and Open
     questions. All layout statements `[I]`; one data `[C]` (the 1.09 columns: 57 of the 247 saved records differ).
@@ -4896,7 +4896,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     (hirelings 30, 33), `leg71uniq` (items-uniques-sets 21), `leg92props` (save-d2s 126); `RECIPE_BASES` base
     `smpsor-l50.d2s`, no pinned hash. The rows stay shortfalls until a harness load.
   - **Backlog:** builder entry closed; the H1a archivist entry annotated (all five parts done); review request
-    [2026-10-27-archivist-architect-review-lane-a72-d2s-legacy-builder](../backlog/archive/2026-10-27-archivist-architect-review-lane-a72-d2s-legacy-builder.md).
+    [2026-10-27-archivist-architect-review-lane-a72-d2s-legacy-builder](../../backlog/archive/2026-10-27-archivist-architect-review-lane-a72-d2s-legacy-builder.md).
     Ledger row added, usage "—".
   - **Next:** the `lane/a72` review; then a harness lane for the `leg*` recipes.
 - **2026-10-27 — `lane/a72` review (architect): accept with fixes (6).** `main` (`dcf6c210`, H6e1) merged into the
@@ -4946,10 +4946,10 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     done ((1), (2), (3), (5) at `lane/a71`, (4) and version 92 here): closed. The six rows stay H1a shortfalls (b), no
     class move, totals unchanged. (5) **Route:** a new harness batch **H1c** (`d2s-legacy`, reverser-harness, run id
     `sweep-d2s-legacy`, H1a's `d2s-io.gdb` logger) loads the five recipes under ruling 3. It has its own row in
-    [inventory § 5](0038-inventory/README.md#harness-batches) and is in the H1 family (H1a and H1b are done), so it may
+    [inventory § 5](../0038-inventory/README.md#harness-batches) and is in the H1 family (H1a and H1b are done), so it may
     pair with a batch of any other family.
   - **Backlog:** review request closed; the H1a archivist entry
-    [2026-10-27-reverser-archivist-h1a-d2s-legacy-layouts-and-parser-gaps](../backlog/archive/2026-10-27-reverser-archivist-h1a-d2s-legacy-layouts-and-parser-gaps.md)
+    [2026-10-27-reverser-archivist-h1a-d2s-legacy-layouts-and-parser-gaps](../../backlog/archive/2026-10-27-reverser-archivist-h1a-d2s-legacy-layouts-and-parser-gaps.md)
     closed. Ledger: the lane row was filled with the orchestrator's usage (255 234 tokens, 82 tools, 22 min) and the
     fixes. The review row was added with usage "—".
 - **2026-10-27 — `lane/h6e2f` (reverser, harness slot 1, no Ghidra): the H6e2 follow-up** (the `lane/rdp` review's
@@ -4960,14 +4960,14 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     first); `tome4c` reached the Ruined Temple (94) and the tome made `bbb`; `brain4c`'s `explore --all-copies`
     activated both level-91 copies, the brain chest was listed at (10014, 11879) and opened (`qbr`, gold 7 first).
     Check over the 14 kept logs: chest 8, object 3, event7 19, dup 8, gate 8, gold 57, death 6; 0 mismatches.
-  - **Ledger** ([items/0010 § H6e2](../findings/items/0010-quest-drops.md#plan-0038-batch-h6e2-run2026-10-27-sweep-quest-items)):
+  - **Ledger** ([items/0010 § H6e2](../../findings/items/0010-quest-drops.md#plan-0038-batch-h6e2-run2026-10-27-sweep-quest-items)):
     the Khalim order `[C]` for all three chests (qd 33 and objects 48 chests: only `vip` and the held-part refusal
     stay); `qey`, `qbr` met; `bbb` shortfall → raised in part; three more `j34` kills; H6e2 now raised 3, in part 15,
     shortfall 6. Brain chest: listed and opened once its room is active `[C]`; which copy the listing follows `[I]`
     (`brain4c` names the copies by `0x40000` but had the room active in both). Three symbols I → C. `bkd`, `hdm` not
     routed (shortfall). Inventory § 2.6 follow-up paragraph; totals unchanged (1 526) against `main` `1573a48f`.
   - **Backlog:** the spec-writer H6e2 entry annotated; review requested
-    ([entry](../backlog/archive/2026-10-27-reverser-architect-h6e2f-review.md)). Ledger row added, usage "—".
+    ([entry](../../backlog/archive/2026-10-27-reverser-architect-h6e2f-review.md)). Ledger row added, usage "—".
 - **2026-10-27 — `lane/h6e2f` review (architect): accept with fixes (2).** `main` (`dcf6c210`) merged into the lane
   first (plan log, metrics and items experiments conflicts kept both sides; `backlog.py archive` moved nothing). All
   seven `workspace/logs/h6e2/` manifests pass `sha256sum -c` there (`manifest-followup.sha256`: 18 lines, the three
@@ -5011,11 +5011,11 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     **objects needs a small follow-up re-tag** of § L: the Khalim chests' row (`[C]` for all three chests, the held-part
     refusal `[I]`) and the item-objects row (`bbb` joins `leg` and `bks` as `[C]`, its quality 7 `[I]`; `hdm` stays
     `[I]`). The brain chest's listing is not stated in the objects spec. The spec-writer H6e2 entry is annotated.
-    Request closed ([archive](../backlog/archive/2026-10-27-reverser-architect-h6e2f-review.md)); ledger rows filled.
+    Request closed ([archive](../../backlog/archive/2026-10-27-reverser-architect-h6e2f-review.md)); ledger rows filled.
 - **2026-10-27 — Phase 3, the items/quest-drops cluster and the objects § L follow-up (spec-writer, `lane/s38q`,
   from `main` `fd841611`).** Batches S2c, H6d, H6e2 (with `lane/h6e2f`) and H6e1, and H4a's qd 48, all accepted; each
   restated statement checked against its section of
-  [items/0010](../findings/items/0010-quest-drops.md) (§ Plan 0038 batch S2c, H4a, H6d, H6e2, H6e1) and the reviews'
+  [items/0010](../../findings/items/0010-quest-drops.md) (§ Plan 0038 batch S2c, H4a, H6d, H6e2, H6e1) and the reviews'
   rulings.
   - **items/quest-drops** {C 86, I 86, L 2} → **{C 159, I 76, L 2}** (recounted with the gate's tag reader).
     Raised: S2c qd 7, 9, 14, 19, 20, 28, 31, 37, 38, 41, 47, 49 and qd 8's map and its correction (objects 28 and 30
@@ -5033,16 +5033,16 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     override, the word-17 refusal and `hdm` `[I]`. Counts unchanged {C 189, I 62, L 4}.
   - **items/economy F7:** the imbue's repair qualified (the identified leg repaired, the unidentified `cap` not), as
     the H6e1 entry asked; counts unchanged.
-  - **Wiki:** [items-other-paths](../wiki/items-other-paths.md) quest section refreshed, `based_on` quest-drops
-    2026-10-27; [objects](../wiki/objects.md) and [economy](../wiki/economy.md) text refreshed (dates unchanged).
-  - **Backlog:** closed the [H6d](../backlog/archive/2026-10-17-reverser-spec-writer-plan-0038-h6d-for-the-phase.md),
-    [H4a](../backlog/archive/2026-10-25-reverser-spec-writer-h4a-monsters-a-raises-and-the-spawn-48.md),
-    [H6e1](../backlog/archive/2026-10-27-reverser-spec-writer-h6e1-quest-npc-raises-and-the-given-item.md) and
-    [H6e2](../backlog/archive/2026-10-27-reverser-spec-writer-h6e2-quest-items-raises-and-the-khalim-chest.md) entries;
-    annotated the [S2c entry](../backlog/archive/2026-10-16-reverser-spec-writer-plan-0038-s2c-corrections-for-phase.md) ((b),
+  - **Wiki:** [items-other-paths](../../wiki/items-other-paths.md) quest section refreshed, `based_on` quest-drops
+    2026-10-27; [objects](../../wiki/objects.md) and [economy](../../wiki/economy.md) text refreshed (dates unchanged).
+  - **Backlog:** closed the [H6d](../../backlog/archive/2026-10-17-reverser-spec-writer-plan-0038-h6d-for-the-phase.md),
+    [H4a](../../backlog/archive/2026-10-25-reverser-spec-writer-h4a-monsters-a-raises-and-the-spawn-48.md),
+    [H6e1](../../backlog/archive/2026-10-27-reverser-spec-writer-h6e1-quest-npc-raises-and-the-given-item.md) and
+    [H6e2](../../backlog/archive/2026-10-27-reverser-spec-writer-h6e2-quest-items-raises-and-the-khalim-chest.md) entries;
+    annotated the [S2c entry](../../backlog/archive/2026-10-16-reverser-spec-writer-plan-0038-s2c-corrections-for-phase.md) ((b),
     (c) done; (a), (d)–(g) wait for cube, vendors, sockets-runewords); filed the
-    [counts entry](../backlog/archive/2026-10-27-spec-writer-architect-s38q-quest-drops-counts-for-the-research-map.md) and the
-    [review request](../backlog/archive/2026-10-27-spec-writer-architect-s38q-review-quest-drops-phase-3.md). Ledger row
+    [counts entry](../../backlog/archive/2026-10-27-spec-writer-architect-s38q-quest-drops-counts-for-the-research-map.md) and the
+    [review request](../../backlog/archive/2026-10-27-spec-writer-architect-s38q-review-quest-drops-phase-3.md). Ledger row
     added, usage "—".
   - **Next:** architect review of `lane/s38q`.
 - **2026-10-27 — `lane/s38q` review (architect): Phase 3 of items/quest-drops and the objects § L follow-up, accept
@@ -5092,8 +5092,8 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     with fixes, 7: overclaim 6, stale cross-reference 1); the review row added, usage "—".
 - **2026-10-27 — H6b (`sockets`) filed (reverser, `lane/h6b`, harness slot 1, from `main` `dcf6c210`; `main`
   `fd841611` merged).** Run id run:2026-10-27-sweep-sockets, record in
-  [items experiments](../findings/items/experiments.md#run2026-10-27-sweep-sockets), evidence in
-  [items/0007 § Plan 0038 batch H6b](../findings/items/0007-sockets-runewords.md#plan-0038-batch-h6b-run2026-10-27-sweep-sockets).
+  [items experiments](../../findings/items/experiments.md#run2026-10-27-sweep-sockets), evidence in
+  [items/0007 § Plan 0038 batch H6b](../../findings/items/0007-sockets-runewords.md#plan-0038-batch-h6b-run2026-10-27-sweep-sockets).
   - **Built:** logger `tools/gdb/h6b.gdb` + `tools/gdb/h6b.py` (the child's x/y, the cursor at the `p5` test, the
     stat-list link branch, both replenish timers, the reader's runeword store, `ItemCopy`, the client test step by
     step), session driver `tools/h6b_sessions.py` (H6e1's loop; `write` lays out the recipes and plans with
@@ -5184,12 +5184,12 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - § 5 marks H6b done, and the research-map row says the spec is ready.
   - **Phase 3 ready: items/sockets-runewords** (S2c, H2b and H6b, all accepted).
   - No H6b spec-writer entry existed, so the review filed one:
-    [2026-10-27-architect-spec-writer-h6b-sockets-raises-for-the-phase-3-re](../backlog/archive/2026-10-27-architect-spec-writer-h6b-sockets-raises-for-the-phase-3-re.md).
+    [2026-10-27-architect-spec-writer-h6b-sockets-raises-for-the-phase-3-re](../../backlog/archive/2026-10-27-architect-spec-writer-h6b-sockets-raises-for-the-phase-3-re.md).
   - The S2c harness-pieces entry stays open for H6a and H6c.
   - Review request closed; the lane's ledger row is filled.
 - **2026-10-27 — Phase 3, the items/sockets-runewords cluster (spec-writer, `lane/s38k`, from `main` `ad8b8cd0`).**
   Batches S2c, H2b and H6b, all accepted; each restated statement checked against its section of
-  [items/0007](../findings/items/0007-sockets-runewords.md) (§ Plan 0038 batch S2c, H2b, H6b) and the reviews'
+  [items/0007](../../findings/items/0007-sockets-runewords.md) (§ Plan 0038 batch S2c, H2b, H6b) and the reviews'
   rulings.
   - **items/sockets-runewords** {C 80, I 83, L 7} → **{C 128, I 84, L 7}** (recounted with the gate's tag reader).
     Raised: S2c sock 2 (the drop roll, cube and Larzuk callers), 3, 4 (`itype1..3`), 5, 6 (the shared index), 8, 19,
@@ -5204,14 +5204,14 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     D3, E1, E4, F1, F2). Open questions: the child-level question struck; the `p5` question added.
   - **items/properties F6** (rule 8): the no-clamp half for qualities 2 and 3 `[C]` (H2b sock 44); {C 152, I 22,
     L 3} → {C 153, I 22, L 3}.
-  - **Wiki:** [items-other-paths](../wiki/items-other-paths.md) socketing section refreshed, `based_on`
-    sockets-runewords 2026-10-27; [items](../wiki/items.md) `based_on` properties 2026-10-27 (no text change).
-  - **Backlog:** closed the [H6b entry](../backlog/archive/2026-10-27-architect-spec-writer-h6b-sockets-raises-for-the-phase-3-re.md)
-    and the [H2b entry](../backlog/archive/2026-10-20-reverser-spec-writer-h2b-items-chain-spec-updates.md) ((r)–(s),
-    its last open items); annotated the [S2c entry](../backlog/archive/2026-10-16-reverser-spec-writer-plan-0038-s2c-corrections-for-phase.md)
+  - **Wiki:** [items-other-paths](../../wiki/items-other-paths.md) socketing section refreshed, `based_on`
+    sockets-runewords 2026-10-27; [items](../../wiki/items.md) `based_on` properties 2026-10-27 (no text change).
+  - **Backlog:** closed the [H6b entry](../../backlog/archive/2026-10-27-architect-spec-writer-h6b-sockets-raises-for-the-phase-3-re.md)
+    and the [H2b entry](../../backlog/archive/2026-10-20-reverser-spec-writer-h2b-items-chain-spec-updates.md) ((r)–(s),
+    its last open items); annotated the [S2c entry](../../backlog/archive/2026-10-16-reverser-spec-writer-plan-0038-s2c-corrections-for-phase.md)
     ((e), (g) done; (a), (d), (f) wait for cube and vendors); filed the
-    [counts entry](../backlog/archive/2026-10-27-spec-writer-architect-s38k-sockets-runewords-counts-for-the-research-map.md) and the
-    [review request](../backlog/archive/2026-10-27-spec-writer-architect-s38k-review-sockets-runewords-phase-3.md). Ledger row
+    [counts entry](../../backlog/archive/2026-10-27-spec-writer-architect-s38k-sockets-runewords-counts-for-the-research-map.md) and the
+    [review request](../../backlog/archive/2026-10-27-spec-writer-architect-s38k-review-sockets-runewords-phase-3.md). Ledger row
     added, usage "—".
   - **Next:** architect review of `lane/s38k`.
 - **2026-10-27 — `lane/s38k` review (architect): Phase 3 of items/sockets-runewords and items/properties F6, accept
@@ -5268,8 +5268,8 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     entry closed. Ledger: the lane row filled (usage from the orchestrator: 244 114 tokens, 83 tools, 20 min; accept
     with fixes, 8: overclaim 4, misread 1, under-claim 1, omission 1, miscount 1); the review row added, usage "—".
 - **2026-10-27 — H6a (`cube`) filed (reverser, `lane/h6a`, harness slot 1, from `main` `fd841611`).** Run id
-  run:2026-10-27-sweep-cube, record in [items experiments](../findings/items/experiments.md#run2026-10-27-sweep-cube),
-  evidence in [items/0008 § Plan 0038 batch H6a](../findings/items/0008-cube.md#plan-0038-batch-h6a-run2026-10-27-sweep-cube).
+  run:2026-10-27-sweep-cube, record in [items experiments](../../findings/items/experiments.md#run2026-10-27-sweep-cube),
+  evidence in [items/0008 § Plan 0038 batch H6a](../../findings/items/0008-cube.md#plan-0038-batch-h6a-run2026-10-27-sweep-cube).
   - **Built:** logger revision r4 of `tools/gdb/cube.py` (the packet-to-transmute chain, `UnitSetEvent`, the runeword
     strip, the two quest hooks, the crafted builder's null-record read, the children's list owners), session driver
     `tools/h6a_sessions.py` (`cube_sessions.py`'s layouts, a step's rune inserts, the Act IV act byte, the crash
@@ -5292,9 +5292,9 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     `PlayerGetInteract`, `CubeButton`, `ItemRemoveRuneword`, `ItemRepairBroken`, `QuestStaffMade`,
     `QuestKhalimWillMade`; new `sub_0055F590_ItemInvNonEmpty` (I).
   - **Backlog:** review request
-    [2026-10-27-reverser-architect-review-lane-h6a-plan-0038-batch-h6a](../backlog/archive/2026-10-27-reverser-architect-review-lane-h6a-plan-0038-batch-h6a.md)
+    [2026-10-27-reverser-architect-review-lane-h6a-plan-0038-batch-h6a](../../backlog/archive/2026-10-27-reverser-architect-review-lane-h6a-plan-0038-batch-h6a.md)
     filed; spec-writer entry
-    [2026-10-27-reverser-spec-writer-h6a-cube-raises-for-the-phase-3-re](../backlog/archive/2026-10-27-reverser-spec-writer-h6a-cube-raises-for-the-phase-3-re.md)
+    [2026-10-27-reverser-spec-writer-h6a-cube-raises-for-the-phase-3-re](../../backlog/archive/2026-10-27-reverser-spec-writer-h6a-cube-raises-for-the-phase-3-re.md)
     held until the review; the S2c-pieces entry annotated (H6a parts done). Slot 1 stopped, saves restored (empty, no
     aside).
 - **2026-10-27 — `lane/h6a` review (architect): accept with fixes (7).** Static review after merging `main`
@@ -5361,12 +5361,12 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - § 5 marks H6a done; the research-map row says the spec is ready.
   - **Phase 3 ready: items/cube** (S2c and H6a, both accepted).
   - The spec-writer entry is released, corrected:
-    [2026-10-27-reverser-spec-writer-h6a-cube-raises-for-the-phase-3-re](../backlog/archive/2026-10-27-reverser-spec-writer-h6a-cube-raises-for-the-phase-3-re.md).
+    [2026-10-27-reverser-spec-writer-h6a-cube-raises-for-the-phase-3-re](../../backlog/archive/2026-10-27-reverser-spec-writer-h6a-cube-raises-for-the-phase-3-re.md).
   - The S2c harness-pieces entry stays open for H6c.
   - Review request closed; the lane's ledger row is filled.
 - **2026-10-27 — Phase 3, the items/cube cluster (spec-writer, `lane/s38c`, from `main` `7995eefc`).** Batches S2c
   and H6a, both accepted; each restated statement checked against its section of
-  [items/0008](../findings/items/0008-cube.md) (§ Plan 0038 batch S2c, H6a) and the `lane/h6a` review's rulings and
+  [items/0008](../../findings/items/0008-cube.md) (§ Plan 0038 batch S2c, H6a) and the `lane/h6a` review's rulings and
   fixes.
   - **items/cube** {C 119, I 82, L 4} → **{C 167, I 87, L 3}** (recounted with the gate's tag reader; diff +59 / −11
     `[C]`, +50 / −45 `[I]`, +2 / −3 `[L]`). Raised from S2c: cube 6, 8, 10, 12, 13, 21, 22, 29, 47 (case 8; the
@@ -5383,13 +5383,13 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     narrowed to the portal object's draws; the not-reached list rewritten.
   - **items/affixes C4i** (rule 8): the forced row's level-window skip `[C]` (H6a cube 58, S2c aff 14's piece),
     "only" `[I]`; the open question narrowed; {C 152, I 28, L 4} → {C 153, I 28, L 4}.
-  - **Wiki:** [items-other-paths](../wiki/items-other-paths.md) cube section refreshed, `based_on` cube 2026-10-27;
-    [items](../wiki/items.md) `based_on` affixes 2026-10-27 (one open-question line).
-  - **Backlog:** closed the [H6a entry](../backlog/archive/2026-10-27-reverser-spec-writer-h6a-cube-raises-for-the-phase-3-re.md);
-    annotated the [S2c entry](../backlog/archive/2026-10-16-reverser-spec-writer-plan-0038-s2c-corrections-for-phase.md)
+  - **Wiki:** [items-other-paths](../../wiki/items-other-paths.md) cube section refreshed, `based_on` cube 2026-10-27;
+    [items](../../wiki/items.md) `based_on` affixes 2026-10-27 (one open-question line).
+  - **Backlog:** closed the [H6a entry](../../backlog/archive/2026-10-27-reverser-spec-writer-h6a-cube-raises-for-the-phase-3-re.md);
+    annotated the [S2c entry](../../backlog/archive/2026-10-16-reverser-spec-writer-plan-0038-s2c-corrections-for-phase.md)
     ((a), (f) done; (d) waits for vendors, H6c); filed the
-    [counts entry](../backlog/archive/2026-10-27-spec-writer-architect-s38c-cube-counts-for-the-research-map.md) and the
-    [review request](../backlog/archive/2026-10-27-spec-writer-architect-s38c-review-cube-phase-3.md). Ledger row added, usage "—".
+    [counts entry](../../backlog/archive/2026-10-27-spec-writer-architect-s38c-cube-counts-for-the-research-map.md) and the
+    [review request](../../backlog/archive/2026-10-27-spec-writer-architect-s38c-review-cube-phase-3.md). Ledger row added, usage "—".
   - **Next:** architect review of `lane/s38c`.
 - **2026-10-27 — `lane/s38c` review (architect): Phase 3 of items/cube and items/affixes C4i, accept with fixes (4).**
   `main` (`7995eefc`) was already the lane's base: the merge was empty and `backlog.py archive` moved nothing. Static
@@ -5443,8 +5443,8 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     tokens, 78 tools, 23 min; accept with fixes, 4: overclaim 2, wrong anchor 2); the review row added, usage "—".
 - **2026-10-27 — H6c (`vendors`) filed (reverser, `lane/h6c`, harness slot 1, from `main` `ad8b8cd0`; `main`
   `a105ae13` merged at `e21e840a`; the entry named `ffa5b957`, corrected at the review).** Run id run:2026-10-27-sweep-vendors, record in
-  [items experiments](../findings/items/experiments.md#run2026-10-27-sweep-vendors), evidence in
-  [items/0009 § Plan 0038 batch H6c](../findings/items/0009-vendors.md#plan-0038-batch-h6c-run2026-10-27-sweep-vendors).
+  [items experiments](../../findings/items/experiments.md#run2026-10-27-sweep-vendors), evidence in
+  [items/0009 § Plan 0038 batch H6c](../../findings/items/0009-vendors.md#plan-0038-batch-h6c-run2026-10-27-sweep-vendors).
   - **Built:** logger `tools/gdb/h6c.gdb` (`vendors.gdb`'s files) + `tools/gdb/h6c.py` (the town-leave call site, the
     level-up note, the interaction set and clear, the hireling build's caller, each stock item's tab, placement and
     cell, the inventories at builds, opens and windows, the creation record at IC0, purchases and sales), session driver
@@ -5472,7 +5472,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Symbols (rule 14), I → C:** `VENDOR_IsPermanent`, `sub_00576F50_StoreItemSold`, `sub_0062E880_ItemStorePage`;
     new `sub_00554120_PlayerSetInteract`, `sub_00554190_PlayerClearInteract` (I).
   - **Backlog:** review request
-    [2026-10-27-reverser-architect-review-lane-h6c-plan-0038-batch-h6c](../backlog/archive/2026-10-27-reverser-architect-review-lane-h6c-plan-0038-batch-h6c.md)
+    [2026-10-27-reverser-architect-review-lane-h6c-plan-0038-batch-h6c](../../backlog/archive/2026-10-27-reverser-architect-review-lane-h6c-plan-0038-batch-h6c.md)
     filed. Slot 1 stopped, saves restored (empty, no aside).
   - **Next:** the `lane/h6c` review; items/vendors is then ready for its Phase 3 re-tag (S2c and H6c).
 - **2026-10-27 — `lane/h6c` review (architect): accept with fixes (6).** `main` `a105ae13` was already merged into
@@ -5528,7 +5528,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     `a105ae13`: **static 567, harness 511, c-emu awaiting a batch 0, blocked 429** (d-none 300, d-edit 73, d-sim 28,
     d-2c 10, d-owner 10, d-0032 8), **deferred 2, raised 17: 1 526** (inventory § 2.6 H6c block, § 3, § 5).
   - **Phase 3 ready:** items/vendors (S2c and H6c, both accepted). The spec-writer entry
-    [2026-10-27-architect-spec-writer-h6c-items-vendors-phase-3-retag](../backlog/archive/2026-10-27-architect-spec-writer-h6c-items-vendors-phase-3-retag.md)
+    [2026-10-27-architect-spec-writer-h6c-items-vendors-phase-3-retag](../../backlog/archive/2026-10-27-architect-spec-writer-h6c-items-vendors-phase-3-retag.md)
     filed (no H6c entry existed); the research map's items/vendors row says so.
   - **Bookkeeping.** Review-fixes Seen lines: reverser 3, 4 and 9. The review request and the S2c
     harness-pieces entry closed (every piece has run). Ledger: the lane row filled (usage from the orchestrator:
@@ -5536,8 +5536,8 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     the review row added, usage "—".
 - **2026-10-27 — H6f (`hirelings`) filed (reverser, `lane/h6f`, harness slot 2, from `main` `ffa5b957`; `main`
   `a105ae13` merged before filing).** Run id run:2026-10-27-sweep-hirelings, record in
-  [hirelings experiments](../findings/hirelings/experiments.md#run2026-10-27-sweep-hirelings), evidence in
-  [hirelings/0001 § Plan 0038 batch H6f](../findings/hirelings/0001-hirelings.md#plan-0038-batch-h6f-run2026-10-27-sweep-hirelings).
+  [hirelings experiments](../../findings/hirelings/experiments.md#run2026-10-27-sweep-hirelings), evidence in
+  [hirelings/0001 § Plan 0038 batch H6f](../../findings/hirelings/0001-hirelings.md#plan-0038-batch-h6f-run2026-10-27-sweep-hirelings).
   - **Built:** logger `tools/gdb/h6f.gdb` (`hirelings.gdb`'s four loggers unchanged plus `tools/gdb/h6f.py`: the hire
     gates, refusal tail and `PayGold`, the free mercenary, `MERC_Create`'s table write, the saved mercenary's name clamp
     and dead branch, `PETS_OnDeath`, `MERC_Resurrect`, the kill award, `MERC_CapExpGain`, `MERC_AddExp`, the client's
@@ -5567,9 +5567,9 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     `MERC_Resurrect`, `MERC_ResurrectCost`, `sub_00576D90_PayGold`, `sub_004B5C60_ClientHireListDraw`,
     `sub_004B1090_ClientMercInit` (9).
   - **Backlog:** review request
-    [2026-10-27-reverser-architect-review-lane-h6f-plan-0038-batch-h6f](../backlog/archive/2026-10-27-reverser-architect-review-lane-h6f-plan-0038-batch-h6f.md);
+    [2026-10-27-reverser-architect-review-lane-h6f-plan-0038-batch-h6f](../../backlog/archive/2026-10-27-reverser-architect-review-lane-h6f-plan-0038-batch-h6f.md);
     spec-writer entry
-    [2026-10-27-reverser-spec-writer-h6f-hirelings-raises](../backlog/archive/2026-10-27-reverser-spec-writer-h6f-hirelings-raises.md),
+    [2026-10-27-reverser-spec-writer-h6f-hirelings-raises](../../backlog/archive/2026-10-27-reverser-spec-writer-h6f-hirelings-raises.md),
     held until the review. Ledger row added with usage "—".
   - **Next:** the `lane/h6f` review; hirelings is then ready for its Phase 3 re-tag.
 - **2026-10-27 — `lane/h6f` review (architect): H6f (`hirelings`) accept with fixes (6); ledger as filed.** `main`
@@ -5597,7 +5597,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
       filters its own menu the same way, so two clients add nothing, and a hand-made packet is outside the stock
       boundary. But the d-none rests on the client's test matching the server's gates in every state, which is
       unread: three states were observed (Kashya at 3 and 7, Qual-Kehk). That is an untraced gap, filed
-      ([entry](../backlog/2026-10-27-architect-reverser-h6f-review-client-hire-line-and-merc-create.md) (1)); if a state
+      ([entry](../../backlog/2026-10-27-architect-reverser-h6f-review-client-hire-line-and-merc-create.md) (1)); if a state
       shows the line that the server refuses, the refusals become a harness piece. Phase 3 states them as `[I]`
       server checks the stock client did not send.
     - (3) **Row 29 stays a shortfall; the d-2c proposal is not accepted.** The third caller,
@@ -5627,7 +5627,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     rests on; (6) *omission:* the client-test gap behind ruling 2 left unfiled (filed, with row 29's).
   - **Bookkeeping.** Inventory § 2.6 review paragraph and § 5 marks H6f done. Review-fixes Seen lines: reverser 9,
     10, 12 and 15. The review request closed; the spec-writer entry
-    [2026-10-27-reverser-spec-writer-h6f-hirelings-raises](../backlog/archive/2026-10-27-reverser-spec-writer-h6f-hirelings-raises.md)
+    [2026-10-27-reverser-spec-writer-h6f-hirelings-raises](../../backlog/archive/2026-10-27-reverser-spec-writer-h6f-hirelings-raises.md)
     released with the rulings. Ledger: the lane row filled (usage from the orchestrator: 492 169 tokens, 210 tools,
     73 min; accept with fixes, 6: overclaim 3, misread 1, omission 2); the review row added, usage "—".
   - **Readiness.** **hirelings is ready for Phase 3** on every row but 3, 30 and 33, which wait on H1c and stay `[I]`
@@ -5635,7 +5635,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     acceptance. The conditional d-none parts and row 29 are `[I]` in the spec until the reverser entry is answered.
 - **2026-10-27 — Phase 3, the items/vendors cluster (spec-writer, `lane/s38v`, from `main` `fcce5b4d`).** Batches S2c
   and H6c, both accepted; each restated statement checked against its section of
-  [items/0009](../findings/items/0009-vendors.md) (§ Plan 0038 batch S2c, H6c, the S2c pieces) and the `lane/h6c`
+  [items/0009](../../findings/items/0009-vendors.md) (§ Plan 0038 batch S2c, H6c, the S2c pieces) and the `lane/h6c`
   review's rulings and fixes.
   - **items/vendors** {C 77, I 37, L 2} → **{C 112, I 37, L 2}** (recounted with the gate's tag reader; diff +37 / −2
     `[C]`, +28 / −28 `[I]`). Raised from S2c: vend 3, 4 (the call sites and the direct walk; the indirect calls `[I]`;
@@ -5650,14 +5650,14 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     0x00572FAF, no single-player case). The gold piles: `DropGoldAmount`'s call (return 0x0055A18D), no cause (fix 2).
     Pseudocode lines no run reached got inline `[I]` (A2, C1, D3–D4, E2, E3, G2). Open questions: the multiplayer
     `[L]` gains the second-interactor gamble window.
-  - **Wiki:** [items-other-paths](../wiki/items-other-paths.md) vendor sections refreshed, `based_on` vendors
+  - **Wiki:** [items-other-paths](../../wiki/items-other-paths.md) vendor sections refreshed, `based_on` vendors
     2026-10-27; wiki/economy restates no vendors statement, unchanged. Research-map row rewritten (review pending);
     the root README row dated 2026-10-27.
-  - **Backlog:** closed the [H6c entry](../backlog/archive/2026-10-27-architect-spec-writer-h6c-items-vendors-phase-3-retag.md)
-    and the [S2c entry](../backlog/archive/2026-10-16-reverser-spec-writer-plan-0038-s2c-corrections-for-phase.md)
+  - **Backlog:** closed the [H6c entry](../../backlog/archive/2026-10-27-architect-spec-writer-h6c-items-vendors-phase-3-retag.md)
+    and the [S2c entry](../../backlog/archive/2026-10-16-reverser-spec-writer-plan-0038-s2c-corrections-for-phase.md)
     ((d), its last open part); filed the
-    [counts entry](../backlog/archive/2026-10-27-spec-writer-architect-s38v-vendors-counts-for-the-research-map.md) and the
-    [review request](../backlog/archive/2026-10-27-spec-writer-architect-s38v-review-vendors-phase-3.md). Ledger row added,
+    [counts entry](../../backlog/archive/2026-10-27-spec-writer-architect-s38v-vendors-counts-for-the-research-map.md) and the
+    [review request](../../backlog/archive/2026-10-27-spec-writer-architect-s38v-review-vendors-phase-3.md). Ledger row added,
     usage "—".
   - **Next:** architect review of `lane/s38v`.
 - **2026-10-27 — `lane/s38v` review (architect): accept with fixes (5).** `main` `e0270b75` merged into the lane first
@@ -5665,7 +5665,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   "reviewed", 2026-10-27; the ledger kept both sides). Static review: objdump on the pinned `game.exe` (`631066c1…`),
   no Ghidra, no harness.
   - **Checked.** Every raise of items/vendors against its S2c or H6c ledger line in
-    [items/0009](../findings/items/0009-vendors.md) and the `lane/h6c` rulings: vend 3, 4, 7, 8, 9, 11, 19, 20, 21, 22,
+    [items/0009](../../findings/items/0009-vendors.md) and the `lane/h6c` rulings: vend 3, 4, 7, 8, 9, 11, 19, 20, 21, 22,
     24, 25, 26, 27, 28 (S2c) and 2, 12, 14, 15, 18, 30, 33, 34, 36 (H6c), with the remainders kept `[I]` (vend 4's
     indirect calls, 11's `npc` column, 18's quest event and the note's consumer, 21's retries, 22's cell search, 24's
     `storepage.bin` and −1, 28's in-place fields and `qsort`, 34's four unreached refusals and `hp4`, `mp4`, `mp5`).
@@ -5705,7 +5705,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   - **Phase 3 done for items/vendors.**
 - **2026-10-27 — Phase 3, the hirelings cluster (spec-writer, `lane/s38h`, from `main` `fcce5b4d`).** Batches S3a,
   S3b, H4b, H1b, H1a and H6f, all accepted; each restated statement checked against its section of
-  [hirelings/0001](../findings/hirelings/0001-hirelings.md) and the `lane/h6f` review's rulings and fixes. A partial
+  [hirelings/0001](../../findings/hirelings/0001-hirelings.md) and the `lane/h6f` review's rulings and fixes. A partial
   pass on the sockets precedent: rows 3, 30 and 33 stay `[I]` for H1c.
   - **hirelings** {C 95, I 39, L 6} → **{C 137, I 41, L 7}** (recounted with the gate's tag reader; line diff +43 / −1
     `[C]`, +32 / −30 `[I]`, +2 / −1 `[L]`). Raised: S3a rows 4 (the layout; the 0x450 bound `[I]`), 19 (the slot; the
@@ -5719,15 +5719,15 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     reach `[I]`, ruling 1); row 29 an `[I]` shortfall with the unread `+0x60` list (H12, ruling 3, fix 4). New:
     `HIRE_Hire` returns no value. Inline `[I]` on lines no case reached (A1, A2, D1, D5, E2, F1, F2, G4, G5, G7, H12,
     H13). Open questions: the not-reached list struck and rewritten; one `[L]` added for the reverser entry's two reads.
-  - **Wiki:** the hireling sections of [characters](../wiki/characters.md) refreshed, `based_on` hirelings 2026-10-27.
+  - **Wiki:** the hireling sections of [characters](../../wiki/characters.md) refreshed, `based_on` hirelings 2026-10-27.
     wiki/saves still lists hirelings 2026-10-20 (W4 warning; `lane/wiki`'s page, left).
   - **Map and README:** the research-map row rewritten whole; the root README's hirelings row 2026-10-27.
-  - **Backlog:** closed the [H6f entry](../backlog/archive/2026-10-27-reverser-spec-writer-h6f-hirelings-raises.md) and
-    the [H1b entry](../backlog/archive/2026-10-27-reverser-spec-writer-h1b-save-d2s-and-hirelings-raises.md); annotated
-    the [H1a entry](../backlog/2026-10-27-reverser-spec-writer-h1a-save-d2s-player-creation-raises.md) (hirelings 32
+  - **Backlog:** closed the [H6f entry](../../backlog/archive/2026-10-27-reverser-spec-writer-h6f-hirelings-raises.md) and
+    the [H1b entry](../../backlog/archive/2026-10-27-reverser-spec-writer-h1b-save-d2s-and-hirelings-raises.md); annotated
+    the [H1a entry](../../backlog/2026-10-27-reverser-spec-writer-h1a-save-d2s-player-creation-raises.md) (hirelings 32
     done; 3, 30, 33 for H1c); filed the
-    [counts entry](../backlog/archive/2026-10-27-spec-writer-architect-s38h-hirelings-counts-for-the-research-map.md) and the
-    [review request](../backlog/archive/2026-10-27-spec-writer-architect-s38h-review-hirelings-phase-3.md). Ledger row added,
+    [counts entry](../../backlog/archive/2026-10-27-spec-writer-architect-s38h-hirelings-counts-for-the-research-map.md) and the
+    [review request](../../backlog/archive/2026-10-27-spec-writer-architect-s38h-review-hirelings-phase-3.md). Ledger row added,
     usage "—".
   - **Next:** architect review of `lane/s38h`; the H1c re-tag of rows 3, 30 and 33 after H1c.
 - **2026-10-27 — `lane/s38h` review (architect): Phase 3 of hirelings, accept with fixes (6).** `main` (`e0270b75`)
@@ -5760,7 +5760,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     past the end of its range is read from the code only" now follows hirelings H3 (the built-save reset, the widths
     read from the code) and the load's cap 99; the open-question item marked as since run (spec-writer rule 1, `lane/s38s`
     scope). save/d2s § D keeps its stale "not run-checked" bullet; routed to the H1c re-tag by an annotation on the
-    [H1a entry](../backlog/2026-10-27-reverser-spec-writer-h1a-save-d2s-player-creation-raises.md). (b) items/economy's
+    [H1a entry](../../backlog/2026-10-27-reverser-spec-writer-h1a-save-d2s-player-creation-raises.md). (b) items/economy's
     *NPC classes* bullet split (rule 8): resurrection at 150 and 515 `[C]` (run:2026-10-17-economy, Qual-Kehk;
     run:2026-10-27-sweep-hirelings, Kashya; objdump confirms the five classes at 0x00579C31–0x00579C55), 198, 252 and
     367 `[I]`. Only that bullet was touched; after `main` (`71fa2265`, with `lane/s38v`'s F4 raise) was merged a
@@ -5815,7 +5815,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     3 and 30 (in part until the pickup), 12 (in part), 23, 27, 33, 35 (in part); 2 and 29 open.
 - **2026-10-27 — H6g (`player`) filed, review requested (reverser, `lane/h6g`, harness slot 2; `main` merged at
   `5c7f1c5e`, the one conflict this log, kept both sides).** Run id run:2026-10-27-sweep-player
-  ([player/experiments](../findings/player/experiments.md#run2026-10-27-sweep-player)); slot 2 stopped, its saves
+  ([player/experiments](../../findings/player/experiments.md#run2026-10-27-sweep-player)); slot 2 stopped, its saves
   directory restored (no aside left); no game, driver or gdb of the lane remains. The old `test_d2s` anim failure cleared
   with the merge.
   - **Resume work:** `deathnm` rerun four times (r2 to r5; `do_corpse` now clears monsters within 18 before each step and
@@ -5825,7 +5825,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     in `dev/`, not retried. The seed of the `anc` row in `tools/h6g_sessions.py` is now 4314.
   - **Ledger (17): raised 7 (rows 4, 18, 22, 25, 28 x2, 32), raised in part 8 (3, 12, 16, 23, 27, 30, 33, 35), open 2
     (2 and 29).** Details and remainders in
-    [player/0001 § Plan 0038 batch H6g](../findings/player/0001-creation.md#plan-0038-batch-h6g-run2026-10-27-sweep-player).
+    [player/0001 § Plan 0038 batch H6g](../../findings/player/0001-creation.md#plan-0038-batch-h6g-run2026-10-27-sweep-player).
     Checks over the 9 kept logs: `tools/sweep_h6g.py check` 0 mismatches (`check-final.txt`, `bec4893d…`), `static` 31 pins;
     manifests `workspace/logs/h6g/manifest-final.sha256` (75 lines, `9dbee516…`) and `dev/manifest-dev-final.sha256` (54
     lines, `606f3c68…`).
@@ -5852,10 +5852,10 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   harness 509, blocked 431, deferred 2, raised 17 = 1 526 stand. Fix: the run id added to seven [C] bullets of
   player/0001's H6g ledger (rows 3/30, 12, 16, 18, 22, 25, 28).
 - **2026-10-30 — Owner decisions: unpause, H6g's shortfalls to a static read (architect, `lane/unp`).** The project is
-  unpaused (owner, 2026-10-30; [plans README](README.md) § Owner decisions (2026-10-30)). **Running from today:** H1c
+  unpaused (owner, 2026-10-30; [plans README](../README.md) § Owner decisions (2026-10-30)). **Running from today:** H1c
   (`d2s-legacy`, `lane/h1c`, harness slot 1) and the H6g static read (`lane/h6gs`, static). **H6g's shortfalls** (rows 2
   and 29, the Ancients' reward; rows 3 and 30 remainder, the corpse pickup): owner play is postponed, so the backlog
-  entry [`2026-10-27-reverser-architect-plan-0038-h6g-shortfalls-ancients-altar-and-corpse.md`](../backlog/archive/2026-10-27-reverser-architect-plan-0038-h6g-shortfalls-ancients-altar-and-corpse.md)
+  entry [`2026-10-27-reverser-architect-plan-0038-h6g-shortfalls-ancients-altar-and-corpse.md`](../../backlog/archive/2026-10-27-reverser-architect-plan-0038-h6g-shortfalls-ancients-altar-and-corpse.md)
   is re-addressed `to: reverser` and routed to a **reverser static read now** (the Ancients' spawn, the altar or
   object that starts the encounter and the reward's grant; the corpse pickup handler, its share and a Teleport route to
   the corpse), with a routed next step per row (raised statically, a corrected harness session in the next free slot,
@@ -5864,7 +5864,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   review.
 - **2026-10-30 — H6g shortfalls, static read filed, review requested (reverser, `lane/h6gs`, static; Ghidra on a
   project copy, objdump, `tools/ds1.py`; no harness slot; `main` merged at `8dddf4c5`).** Read in
-  [player/0001 § Plan 0038 H6g shortfalls, static read](../findings/player/0001-creation.md#plan-0038-h6g-shortfalls-static-read-2026-10-30);
+  [player/0001 § Plan 0038 H6g shortfalls, static read](../../findings/player/0001-creation.md#plan-0038-h6g-shortfalls-static-read-2026-10-30);
   kept outputs `workspace/logs/h6gs/manifest-h6gs.sha256` (6 lines).
   - **Rows 2 and 29 stay open** (b, H6g). There is no static second source for J2: the three amounts are immediates
     of `0x0058C5C0` only, which has three direct callers. Class 546 is the altar (OperateFn 65), so `objop:546` was
@@ -5913,8 +5913,8 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
       step 0.
     - Omission 1 (rule 11): the routing entry was closed "routed to a corrected `anc` session" and ruling (2) sent the
       J2 wording to the spec-writer, with no entry for either; filed
-      [`2026-10-30-architect-reverser-plan-0038-h6g-corrected-anc-session.md`](../backlog/archive/2026-10-30-architect-reverser-plan-0038-h6g-corrected-anc-session.md)
-      and [`2026-10-30-architect-spec-writer-player-creation-j2-grant-cut-wording.md`](../backlog/archive/2026-10-30-architect-spec-writer-player-creation-j2-grant-cut-wording.md)
+      [`2026-10-30-architect-reverser-plan-0038-h6g-corrected-anc-session.md`](../../backlog/archive/2026-10-30-architect-reverser-plan-0038-h6g-corrected-anc-session.md)
+      and [`2026-10-30-architect-spec-writer-player-creation-j2-grant-cut-wording.md`](../../backlog/archive/2026-10-30-architect-spec-writer-player-creation-j2-grant-cut-wording.md)
       (the spec's § J2 and `wiki/characters.md` still say "one level span").
     - **What the Tier B check missed** (for the trial): the altar misread (it read the decompile summary, not the
       branch at 0x0058D36D, outside its scope limit), the stale quests/0001 sentence (another finding, outside its
@@ -5922,7 +5922,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
       its own). None is reject-grade: no `[C]` rests on them and rows 2/29 stay open. Totals unchanged (1 526).
 - **2026-10-30 — H1c (`d2s-legacy`) filed, review requested (reverser, `lane/h1c`, harness slot 1, from `main`
   `c0ee3e05`).** Run id run:2026-10-27-sweep-d2s-legacy
-  ([save/experiments](../findings/save/experiments.md#run2026-10-27-sweep-d2s-legacy)); slot 1 stopped, its saves directory
+  ([save/experiments](../../findings/save/experiments.md#run2026-10-27-sweep-d2s-legacy)); slot 1 stopped, its saves directory
   restored (no aside left); no game, driver or gdb of the lane remains. Seven sessions (seeds 27301–27307), each a
   `leg*` build loaded, *Save and Exit*, the version-96 write-back kept and compared with the build by
   `tools/sweep_h1c.py check` (272 comparisons, 0 failing), under the `lane/a72` review's ruling 3 (a)–(e).
@@ -5930,7 +5930,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     player-creation 1), open 0.** Remainders: the act dependence of the Id `0xFFFF` row, the `<= 89` experience cutoff
     (no 88..91 build), the `PlayerLoad` path to `NewCharLegacy`. Sock 1's piece: the version-71 insert at 0x005311B5
     ran twice, 0x005313F0 (corpse list) did not (no corpse in the builder; archivist entry
-    [h1c-v71-corpse-list-builder-key](../backlog/archive/2026-10-30-reverser-archivist-h1c-v71-corpse-list-builder-key.md)).
+    [h1c-v71-corpse-list-builder-key](../../backlog/archive/2026-10-30-reverser-archivist-h1c-v71-corpse-list-builder-key.md)).
   - **Added:** recipes `leg71sock` and `leg71act2` (`RECIPE_BASES` entries), `tools/gdb/d2s-h1c.gdb`/`.py`,
     `tools/h1c_sessions.py`, `tools/sweep_h1c.py`. The first logger revision's duplicate return lines (stale one-shot
     breakpoints) are kept as development logs in `dev1/`.
@@ -5948,8 +5948,8 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 - **2026-10-30 — Phase 3, player/creation, and the H1c re-tags (spec-writer, `lane/s38p`, from `main` `4bf3391d`).**
   Batches S3a, S3b, H1a, H1c and H6g, all accepted, with the H6g shortfalls' static read (`lane/h6gs`, its Tier B
   check and Tier A audit); each restated statement checked against its section of
-  [player/0001](../findings/player/0001-creation.md), [hirelings/0001](../findings/hirelings/0001-hirelings.md),
-  [save/0001](../findings/save/0001-d2s-io.md) and [items/0004](../findings/items/0004-uniques-sets.md). Counts with
+  [player/0001](../../findings/player/0001-creation.md), [hirelings/0001](../../findings/hirelings/0001-hirelings.md),
+  [save/0001](../../findings/save/0001-d2s-io.md) and [items/0004](../../findings/items/0004-uniques-sets.md). Counts with
   the gate's tag reader.
   - **player/creation** {C 85, I 49, L 1} → **{C 121, I 39, L 1}** (line diff +37 / −1 `[C]`, +23 / −33 `[I]`). Raised:
     S3a 7, 13, 26, and in part 10 (the screen's OR `[I]`) and 14 (`g_StartAct` `[I]`); S3b 21 (F2; the column-0 clamp
@@ -5975,13 +5975,13 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     `[I]`; the `version` row's met values 71, 87, 92 added; the *Not exercised* list updated.
   - **items/uniques-sets** {C 100, I 38, L 4} → **{C 101, I 38, L 4}**: row 21 `[C]` (C2: the restore branch takes
     `rec+0x40` as the row, rows 0 and 1 on a version-71 save); the version-0 builder stays `[I]` (d-none half).
-  - **Wiki:** [characters](../wiki/characters.md) (stub, act, class 7, skills, belt, kill experience, the cap, the
-    Ancients' cut, death, spending, older mercenaries, *What is not known yet*), [saves](../wiki/saves.md) (versions,
-    the older reader, the 1.09 widths, older mercenaries) and [items](../wiki/items.md) (`based_on` only); all
+  - **Wiki:** [characters](../../wiki/characters.md) (stub, act, class 7, skills, belt, kill experience, the cap, the
+    Ancients' cut, death, spending, older mercenaries, *What is not known yet*), [saves](../../wiki/saves.md) (versions,
+    the older reader, the 1.09 widths, older mercenaries) and [items](../../wiki/items.md) (`based_on` only); all
     `based_on` 2026-10-30.
   - **Map and README:** the four research-map rows rewritten whole; the root README rows dated 2026-10-30.
-  - **Backlog:** closed the [J2 wording entry](../backlog/archive/2026-10-30-architect-spec-writer-player-creation-j2-grant-cut-wording.md);
-    annotated the [H1a entry](../backlog/2026-10-27-reverser-spec-writer-h1a-save-d2s-player-creation-raises.md)
+  - **Backlog:** closed the [J2 wording entry](../../backlog/archive/2026-10-30-architect-spec-writer-player-creation-j2-grant-cut-wording.md);
+    annotated the [H1a entry](../../backlog/2026-10-27-reverser-spec-writer-h1a-save-d2s-player-creation-raises.md)
     (only (k), the S1b leftovers in data/calc and rng/seeds, stays open); review request filed. Ledger row added.
   - **Review-fixes pass:** rules 1 (the wiki follows the spec's split halves), 2 (every `[C]` scoped to the cases met:
     the death skip, the share above `0x100000`, the mana clamp, the act pick split out), 5 (counts from the gate's
@@ -6018,7 +6018,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
       Nightmare clamp case twice), and the spec itself said "all five deaths" two notes later.
     - Omission 1: the disagreements with player/0001 were left unrouted (the H6g bullet's "four deaths", S3b row 21's
       clamp inside a `[C]`, and the stale *Open questions* on the death loss, the cap, class 7 and `+0x3D4`). Filed
-      [`2026-10-30-architect-reverser-s38p-review-player-0001-counts-and-s3b-clamp.md`](../backlog/archive/2026-10-30-architect-reverser-s38p-review-player-0001-counts-and-s3b-clamp.md).
+      [`2026-10-30-architect-reverser-s38p-review-player-0001-counts-and-s3b-clamp.md`](../../backlog/archive/2026-10-30-architect-reverser-s38p-review-player-0001-counts-and-s3b-clamp.md).
     - Stale cross-reference 2: wiki/saves still called the corpse's 75 % "read from the code", although J3 raises the
       share at creation. quests/progression's word-39 bullets still said the grant is capped "between the current and the next level" and that the altar
       "instead" closes the portals. Both bullets now give `T(L + 1) − T(L)` and the audit's close-then-send with the step-4
@@ -6033,7 +6033,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     remainder of rows 3/30 waits for a death-and-pickup session. The (k) S1b leftovers of the H1a entry stay open.
 - **2026-10-30 — H6g rows 2 and 29, the corrected Ancients session (reverser, `lane/h6ga`, harness slot 2; from `main`
   `f3005398`).** Run id run:2026-10-30-h6ga-anc
-  ([player/experiments](../findings/player/experiments.md#run2026-10-30-h6ga-anc)); slot 2 stopped, saves restored (no
+  ([player/experiments](../../findings/player/experiments.md#run2026-10-30-h6ga-anc)); slot 2 stopped, saves restored (no
   aside), no game, driver or gdb of the lane remains. Backlog entry
   `2026-10-30-architect-reverser-plan-0038-h6g-corrected-anc-session.md` closed.
   - **Result:** the route of player/0001 § Plan 0038 H6g shortfalls reached the altar and the three Ancients on the first
@@ -6058,7 +6058,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   the pickup (rows 3/30) is unstaged. (4) Totals unchanged (1 526), correct for a part-raise. (5) The spec's J2 does need a
   re-tag (Normal amount, cut, steps 3/4, the "has not run" sentences, the Entry points row, quests/progression, wiki/characters):
   routed to the spec-writer,
-  [`2026-10-30-architect-spec-writer-player-creation-j2-normal-grant-raised.md`](../backlog/archive/2026-10-30-architect-spec-writer-player-creation-j2-normal-grant-raised.md).
+  [`2026-10-30-architect-spec-writer-player-creation-j2-normal-grant-raised.md`](../../backlog/archive/2026-10-30-architect-spec-writer-player-creation-j2-normal-grant-raised.md).
   The only change under `docs/specs/` in the diff is a link rewrite by `backlog.py archive` (no claim), so no escalation.
   Fixes (5): overclaim 1 (the `[C]` edges above), other 2 (the dev manifest said to pass from `h6g/` listed
   `../` paths and failed; the 8 kept screenshots and the dev marks/shots were outside both manifests, now 15 and 7 lines, both
@@ -6066,9 +6066,9 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   trigger bullets, quests/0001's reward bullet, the recipe comment's cut at level 25 where the run's character was 26 at the
   grant). Omission 0 beyond the spec-writer entry above.
 - **2026-11-03 — H6g rows 2/29 re-tag of player/creation J2 (spec-writer, `lane/s63`, from `main` `00c53f7f`).** Backlog
-  [2026-10-30-architect-spec-writer-player-creation-j2-normal-grant-raised](../backlog/archive/2026-10-30-architect-spec-writer-player-creation-j2-normal-grant-raised.md)
-  closed, within the scope of [player/0001 § Plan 0038 H6g rows 2 and 29](../findings/player/0001-creation.md#plan-0038-h6g-rows-2-and-29-the-ancients-grant-session-run2026-10-30-h6ga-anc).
-  [player/creation](../specs/player/creation.md#j-other-level-and-experience-changes) J2: the header `[I]` → `[C]` in Normal
+  [2026-10-30-architect-spec-writer-player-creation-j2-normal-grant-raised](../../backlog/archive/2026-10-30-architect-spec-writer-player-creation-j2-normal-grant-raised.md)
+  closed, within the scope of [player/0001 § Plan 0038 H6g rows 2 and 29](../../findings/player/0001-creation.md#plan-0038-h6g-rows-2-and-29-the-ancients-grant-session-run2026-10-30-h6ga-anc).
+  [player/creation](../../specs/player/creation.md#j-other-level-and-experience-changes) J2: the header `[I]` → `[C]` in Normal
   (run:2026-10-30-h6ga-anc), for the 1 400 000 amount, the cut, both loop branches and the level re-read; `[I]` lines
   kept inside the block for step 0 (`QUESTS_SendPlayerRecord`), the 20 000 000 / 40 000 000 immediates, the `L ≥ max`
   return, the cut's signedness, and `G` = `need`, a value ≥ 2^31 and the `L < max` exit. Step notes: the "J2 has not
@@ -6076,13 +6076,13 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   `[I]`; "the cut is the width of level L + 1" split, the cut and the Normal amount on the run's reproduction `[C]`,
   the at-most-one-level-up argument and the binding ranges `[I]`. Entry points row split (Normal `[C]`; 20M/40M and
   the caller `[I]`); the Open-questions bullet struck to its remainder; Evidence lists the run. Tags C 121 / I 41 / L 1
-  → C 126 / I 45 / L 1. [quests/progression](../specs/quests/progression.md) *Experience* bullet split (Normal `[C]`,
-  Nightmare/Hell `[I]`): C 117 → 118. [wiki/characters](../wiki/characters.md) Ancients bullet and its "read from the
+  → C 126 / I 45 / L 1. [quests/progression](../../specs/quests/progression.md) *Experience* bullet split (Normal `[C]`,
+  Nightmare/Hell `[I]`): C 117 → 118. [wiki/characters](../../wiki/characters.md) Ancients bullet and its "read from the
   code only" list rewritten; `based_on` dates of wiki/characters, wiki/saves and wiki/quests moved to 2026-11-03.
   Research-map rows of both specs updated (counts, the clause, the plan status). Open questions: none added.
 - **2026-11-03 — `lane/s63` Tier A review (architect), both entries (this plan's H6g J2 re-tag and
-  [plan 0057](done/0057-quirks-catalogue.md#implementation-log)'s routing entry): accept with fixes (2).** Rulings: (1) the J2
-  re-tag matches [player/0001 § Plan 0038 H6g rows 2 and 29](../findings/player/0001-creation.md#plan-0038-h6g-rows-2-and-29-the-ancients-grant-session-run2026-10-30-h6ga-anc)
+  [plan 0057](0057-quirks-catalogue.md#implementation-log)'s routing entry): accept with fixes (2).** Rulings: (1) the J2
+  re-tag matches [player/0001 § Plan 0038 H6g rows 2 and 29](../../findings/player/0001-creation.md#plan-0038-h6g-rows-2-and-29-the-ancients-grant-session-run2026-10-30-h6ga-anc)
   and the `lane/h6ga` check's rulings: the Normal amount, the cut, both loop branches and the level re-read `[C]` with
   run:2026-10-30-h6ga-anc named in each statement; step 0, the 20M/40M immediates, the `L ≥ max` return, the cut's
   signedness, `G` = `need`, values ≥ 2^31, the loop exit and the caller `[I]`. Two overclaims fixed in the worktree: J2's
@@ -6100,9 +6100,11 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   animation's "Counting the end") or do not state them. (4) Q3 (`skills/catalogue.md` has 8 notes, no coverage row)
   predates the lane: the catalogue's notes landed in `2b68bf75` after the Phase 1 harvest `4063e701`, and `main`
   `fd2ca68a` gives the same error; routed to the spec-writer,
-  [2026-11-03-architect-spec-writer-quirks-catalogue-coverage-row](../backlog/archive/2026-11-03-architect-spec-writer-quirks-catalogue-coverage-row.md).
+  [2026-11-03-architect-spec-writer-quirks-catalogue-coverage-row](../../backlog/archive/2026-11-03-architect-spec-writer-quirks-catalogue-coverage-row.md).
   Gate green. Fixes (2): overclaim 2.
 
 - 2026-11-03 (`lane/a65`, archivist): `RECIPE_BASES` row for `player-h6g-anc25` (H6g, `lane/h6ga`) added, base `BASE_X`, built-save sha256
   `63ea2a2e...` equal to the installed-save hash in the `run:2026-10-30-h6ga-anc` log header (the manifest lists logs, not the save; the
   header does), so the reverser half of the entry was not needed; `tools/test_d2s.py` 61 tests pass. Entry closed.
+
+- **2026-11-10 — closed by the owner (architect).** At plan 0066's approval the owner chose option (b) of its question 1: close this plan where it stands. Every batch of [§ 5](../0038-inventory/README.md#5-batch-list) is done except the H1c and H6g shortfall rows, which the `lane/s38p` and `lane/s63` re-tags applied as far as their runs reached. Every inventory row not raised by now stays `[I]`, recorded as deferred; nothing is reopened. The H1 ruling of 2026-11-04 stands (dropped items stay dropped). The two open backlog remainders this plan released go to [plan 0063](../0063-backlog-sweep-7.md) Phase 3 (S3b (d), H1a (k)). The inventory stays at `docs/plans/0038-inventory/` for its links.

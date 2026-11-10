@@ -4,7 +4,7 @@ to: architect
 date: 2026-10-27
 status: done
 context:
-  - ../../plans/0038-inferred-claims-sweep.md#implementation-log
+  - ../../plans/done/0038-inferred-claims-sweep.md#implementation-log
   - ../../specs/hirelings/README.md
   - ../../wiki/characters.md
 resolution: "Applied at the lane/s38h review: hirelings row {C 137, I 43, L 7}; wiki/saves based_on hirelings 2026-10-27; items/economy's resurrection classes 150 and 515 raised (C 126)."

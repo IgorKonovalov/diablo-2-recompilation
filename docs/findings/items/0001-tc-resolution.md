@@ -679,7 +679,7 @@ with no oracle; the resolver's side of the call is the hand-off in the summary a
 
 ## Plan 0038 batch S2a (2026-10-16)
 
-Static batch S2a of [plan 0038](../../plans/0038-inferred-claims-sweep.md) took 47 inferred statements of
+Static batch S2a of [plan 0038](../../plans/done/0038-inferred-claims-sweep.md) took 47 inferred statements of
 [items/tc](../../specs/items/tc.md), rows of [the inventory](../../plans/0038-inventory/items-tc.md) as listed in
 [§ 5 of its README](../../plans/0038-inventory/README.md#5-batch-list). No session was played. Each raised claim rests
 on a second code path, a full-table check, or a new check over the kept logs of the item runs, recorded as a dated
@@ -1028,7 +1028,7 @@ scan of the objdump listing (scratch script, not kept), Ghidra on the lane's cop
   ([items/0002 § Plan 0049 Phase 1](0002-quality-roll.md#plan-0049-phase-1-2026-10-20-static), fn:STATEVENT_Reanimate@0x005C09E0).
 ## Plan 0038 batch H6d (2026-10-17)
 
-Harness batch H6d of [plan 0038](../../plans/0038-inferred-claims-sweep.md) (run:2026-10-17-sweep-quest-b6,
+Harness batch H6d of [plan 0038](../../plans/done/0038-inferred-claims-sweep.md) (run:2026-10-17-sweep-quest-b6,
 [experiments](experiments.md#run2026-10-17-sweep-quest-b6)) took two inferred statements of
 [items/tc](../../specs/items/tc.md), rows 26 and 27 of [the inventory](../../plans/0038-inventory/items-tc.md). The
 evidence is the B6 groups of the run, ledger in [items/0010 § Plan 0038 batch H6d](0010-quest-drops.md#plan-0038-batch-h6d-2026-10-17)
@@ -1049,7 +1049,7 @@ evidence is the B6 groups of the run, ledger in [items/0010 § Plan 0038 batch H
 
 ## Plan 0038 batch H2a (2026-10-20)
 
-Harness batch H2a of [plan 0038](../../plans/0038-inferred-claims-sweep.md)
+Harness batch H2a of [plan 0038](../../plans/done/0038-inferred-claims-sweep.md)
 ([run:2026-10-20-sweep-items-tc](experiments.md#run2026-10-20-sweep-items-tc), 12 sessions on harness slot 2, stock data)
 took 13 inferred statements of [items/tc](../../specs/items/tc.md), rows of [the inventory](../../plans/0038-inventory/items-tc.md)
 (tc 34 by [§ 2.6](../../plans/0038-inventory/README.md#26-moves-made-by-the-batch-reviews)); the quality rows are in
@@ -1150,7 +1150,7 @@ sources, the logged entries and return addresses of the run and the static call-
 
 ## Plan 0038 batch H2b (2026-10-20)
 
-Harness batch H2b of [plan 0038](../../plans/0038-inferred-claims-sweep.md)
+Harness batch H2b of [plan 0038](../../plans/done/0038-inferred-claims-sweep.md)
 ([run:2026-10-20-sweep-items-chain](experiments.md#run2026-10-20-sweep-items-chain), 13 kept sessions on harness slot
 2, stock data) took two inferred statements of [items/tc](../../specs/items/tc.md), rows 58 and 68 of
 [the inventory](../../plans/0038-inventory/items-tc.md) (both by
@@ -1185,7 +1185,7 @@ logged on 988 drops, the Functions table updated).
 
 ## Plan 0038 batch H2c (2026-10-21)
 
-Forced harness batch H2c of [plan 0038](../../plans/0038-inferred-claims-sweep.md)
+Forced harness batch H2c of [plan 0038](../../plans/done/0038-inferred-claims-sweep.md)
 ([run:2026-10-21-throw-forced](experiments.md#run2026-10-21-throw-forced), three kept sessions on harness slot 2, a
 loose `treasureclassex.bin` under `-direct` whose `Act 1 Junk` names three classic throwables; inventory § 6 ruling 1)
 took four inferred statements of [items/tc](../../specs/items/tc.md), rows 10 (2), 55 and 56 of

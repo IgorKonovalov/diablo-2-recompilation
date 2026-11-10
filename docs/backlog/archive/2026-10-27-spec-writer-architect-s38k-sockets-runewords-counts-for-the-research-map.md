@@ -4,7 +4,7 @@ to: architect
 date: 2026-10-27
 status: done
 context:
-  - ../../plans/0038-inferred-claims-sweep.md#implementation-log
+  - ../../plans/done/0038-inferred-claims-sweep.md#implementation-log
   - ../../specs/items/sockets-runewords.md
   - ../../specs/items/properties.md
 resolution: "Applied at the lane/s38k review (2026-10-27): research-map rows rewritten with items/sockets-runewords C 129 / I 85 / L 7 (after the review's fixes) and items/properties C 153 / I 22 / L 3; wiki based_on dates as filed."

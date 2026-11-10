@@ -902,7 +902,7 @@
   writes (311 → `+0x0E`; 312 → `+0x0E` and `+0x0F`, 0x00573D5C–0x00573DAC), the `MonMakeSpecial` jump at `0x005830CC`
   and the shrine-table entry 20 (`0x006E1940` → `0x00583050`), the tentacle call and its `o` (0x005B2903–0x005B290A), and
   the `HWT` write (`0x0066E37E`); `g_UModAuraTable`, `g_ChampionNameStr` and `g_ClientUModHandlers` read from the file
-  match the ledger. Verdict and rulings in the [plan 0038 log](../../plans/0038-inferred-claims-sweep.md#implementation-log).
+  match the ledger. Verdict and rulings in the [plan 0038 log](../../plans/done/0038-inferred-claims-sweep.md#implementation-log).
 - **Tool addendum (2026-10-20, plan 0049 Phase 1, `lane/p49r`; the H4b review's tool follow-ups).** No session. Two
   changes:
   - (a) `tools/monstats.py` compares a hireling's `LIVE` line on stat 100 only. Its stats 7, 12 and 13 come from the

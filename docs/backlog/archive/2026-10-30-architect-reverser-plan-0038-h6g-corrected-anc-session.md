@@ -5,7 +5,7 @@ date: 2026-10-30
 status: done
 context:
   - ../../findings/player/0001-creation.md#plan-0038-h6g-shortfalls-static-read-2026-10-30
-  - ../../plans/0038-inferred-claims-sweep.md#implementation-log
+  - ../../plans/done/0038-inferred-claims-sweep.md#implementation-log
 resolution: "Ran on slot 2 (run:2026-10-30-h6ga-anc); rows 2/29 raised in part, Nightmare/Hell immediates remain [player/0001](../../findings/player/0001-creation.md#plan-0038-h6g-rows-2-and-29-the-ancients-grant-session-run2026-10-30-h6ga-anc)"
 ---
 

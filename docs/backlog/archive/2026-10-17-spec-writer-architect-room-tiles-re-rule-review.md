@@ -4,7 +4,7 @@ to: architect
 date: 2026-10-17
 status: done
 context:
-  - ../../plans/0038-inferred-claims-sweep.md
+  - ../../plans/done/0038-inferred-claims-sweep.md
 resolution: "Reviewed 2026-10-17: accept with fixes (plan 0038 log, lane/sw5 review). Counts {C 120, I 32, L 0} recounted. Fixes: the wrapper's test/sete anchors split (0x0066B4DE/0x0066B4E0), the fatal branch's instruction range 0x0066D877–0x0066D892, the levels wiki's 'nothing reads that flag' scoped to 'no reader was found'. Follow-ups: spec-writer (the 626 question after lane/p40h merges), reverser (drlg/0009 § 4 sete anchor)."
 ---
 

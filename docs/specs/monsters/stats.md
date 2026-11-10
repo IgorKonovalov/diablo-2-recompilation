@@ -887,7 +887,7 @@ fn:sub_005A1910_UModFast@0x005A1910, run:2026-10-15-mon-stats)
   the level and `L`.
 - [findings/monsters/0003-special-monsters.md § 4](../../findings/monsters/0003-special-monsters.md#4-specialmodsapply-and-the-per-handler-draw-table):
   the handler order and their (absent) draws.
-- Plan 0038 sweep ([plan 0038](../../plans/0038-inferred-claims-sweep.md)): the batch sections of
+- Plan 0038 sweep ([plan 0038](../../plans/done/0038-inferred-claims-sweep.md)): the batch sections of
   [monsters/0004](../../findings/monsters/0004-stats.md): [S3a](../../findings/monsters/0004-stats.md#plan-0038-batch-s3a-2026-10-16) (kept logs: `SetStat`/`AddStat`, the champion
   part, `MonTypeFlag`, the velocity bonus, the `Align` 1 skip; two corrections),
   [H4b](../../findings/monsters/0004-stats.md#plan-0038-batch-h4b-run2026-10-16-sweep-monsters-b) (run:2026-10-16-sweep-monsters-b: the skill list,

@@ -739,7 +739,7 @@ the preset monsters (`PresetUnitDispatch` of type 1) and the monster-spawning ob
 
 ## Plan 0038 batch S3a (2026-10-16)
 
-Static batch S3a of [plan 0038](../../plans/0038-inferred-claims-sweep.md) took 23 inferred statements of
+Static batch S3a of [plan 0038](../../plans/done/0038-inferred-claims-sweep.md) took 23 inferred statements of
 [monsters/spawn](../../specs/monsters/spawn.md) and 1 of [monsters/README](../../specs/monsters/README.md), rows of
 [the inventory](../../plans/0038-inventory/monsters-spawn.md) (spec lines `Lnnn` at `main` `b349849`). No game ran. The checks are
 `python3 -I tools/mon_sweep.py spawn`, `pool` and `tables`, which run `tools/monspawn.py`'s checker (with `tools/monspecial.py`,
@@ -807,7 +807,7 @@ passes per /players: 1: 2005, 3: 342, 8: 542; classic passes 399
 
 ## Plan 0038 batch H4b (run:2026-10-16-sweep-monsters-b)
 
-Harness batch H4b of [plan 0038](../../plans/0038-inferred-claims-sweep.md) took eight rows of
+Harness batch H4b of [plan 0038](../../plans/done/0038-inferred-claims-sweep.md) took eight rows of
 [monsters/spawn](../../specs/monsters/spawn.md) ([inventory](../../plans/0038-inventory/monsters-spawn.md); spec lines
 `Lnnn` at `main` `e556014`). Record: [experiments.md § run:2026-10-16-sweep-monsters-b](experiments.md#run2026-10-16-sweep-monsters-b).
 Checks: `tools/sweep_h4b.py` (`tick`, `tentacle`, `masks`, `hwt`) and `tools/monstats.py check` (chaining
@@ -854,7 +854,7 @@ Checks: `tools/sweep_h4b.py` (`tick`, `tentacle`, `masks`, `hwt`) and `tools/mon
 
 ## Plan 0038 batch S3b (2026-10-16)
 
-Static batch S3b of [plan 0038](../../plans/0038-inferred-claims-sweep.md) took 6 inferred statements of
+Static batch S3b of [plan 0038](../../plans/done/0038-inferred-claims-sweep.md) took 6 inferred statements of
 [monsters/spawn](../../specs/monsters/spawn.md), rows of [the inventory](../../plans/0038-inventory/monsters-spawn.md) (spec lines
 `Lnnn` at `main` `7df5039`). No game ran. The check is `python3 -I tools/sweep_s3b.py spawn`: objdump (the second tool,
 walked by `tools/sweep_s4b.py`'s decoder and a path enumerator), the stock tables and DS1 files, and the `P0` lines of the
@@ -994,7 +994,7 @@ line and only reported how many steps it lay past `Init(step(game).low)`. It now
 
 ## Plan 0038 batch H4a (run:2026-10-21-sweep-monsters-a)
 
-Harness batch H4a of [plan 0038](../../plans/0038-inferred-claims-sweep.md) took five rows of
+Harness batch H4a of [plan 0038](../../plans/done/0038-inferred-claims-sweep.md) took five rows of
 [monsters/spawn](../../specs/monsters/spawn.md) ([inventory](../../plans/0038-inventory/monsters-spawn.md); spec lines
 `Lnnn` at `main` `1d0262a`). Record: [experiments.md § run:2026-10-21-sweep-monsters-a](experiments.md#run2026-10-21-sweep-monsters-a).
 Checks: `tools/sweep_h4a.py` (`gate`, `wander`) on the batch's twelve session logs and the 63 kept logs; the static
@@ -1032,7 +1032,7 @@ reads in `workspace/logs/h4a/check/static-wanderer.txt`, `static-wanderer-tick.t
 
 ## Plan 0038 batch H5d (run:2026-10-27-sweep-collision)
 
-Harness batch H5d of [plan 0038](../../plans/0038-inferred-claims-sweep.md): monsters/spawn 41 (from S3b, inventory
+Harness batch H5d of [plan 0038](../../plans/done/0038-inferred-claims-sweep.md): monsters/spawn 41 (from S3b, inventory
 § 2.6) and the H4b piece of spawn 42 (the row stays counted as H4b). Record:
 [drlg experiments § run:2026-10-27-sweep-collision](../drlg/experiments.md#run2026-10-27-sweep-collision); the drlg side
 is [drlg/0005 § Plan 0038 batch H5d](../drlg/0005-collision.md#plan-0038-batch-h5d-run2026-10-27-sweep-collision).

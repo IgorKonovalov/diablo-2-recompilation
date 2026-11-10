@@ -27,7 +27,7 @@ place is `[C]`); keep only the unique test's minimum, which no roll reached, if 
 multiplayer or TCP/IP game) and L548 (the minimum clamp among the untested), restated from the re-tagged specs.
 
 **Released (architect, 2026-10-20, `lane/h2a` review: accept with fixes).** Rulings in the
-[plan 0038 log](../../plans/0038-inferred-claims-sweep.md#implementation-log): the 15 rows, 17 statements stand as filed
+[plan 0038 log](../../plans/done/0038-inferred-claims-sweep.md#implementation-log): the 15 rows, 17 statements stand as filed
 (12 raised, 5 in part); tc 34's L388 stop half is `[C]` and its `Picks = 0` half stays `[I]` (d-none as tc 13); quality 20
 counts the 5 hireling rolls of the aborted H6d log. Apply (a)–(o) with the items/quality Phase 3 round now; items/tc's
 part waits for H2b and H2c.
