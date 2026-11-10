@@ -73,12 +73,12 @@ Lane runs (agent usage, review verdicts, fix counts by category) are logged in t
 | [0065](0065-harness-sweep-8.md) | Harness sweep 8: the backlog's live cases in one batch per slot plan | approved | **approved by the owner 2026-11-10 (as recommended), not started**; P2 runs, paired with plan 0067's two-client phase; six entries, P1 one slot, P2 both slots |
 | [0066](0066-simulation-inferred-claims-sweep.md) | Inferred-claims sweep 2: the simulation and game-rules specs (2 626 `[I]`) | approved | **approved by the owner 2026-11-10 (as recommended), not started**; Q1 (b): plan 0038 closed; Q2: threshold 20 claims per session |
 | [0067](0067-player-trade.md) | Player trade: the trade state machine, its commit and its failures (ADR-0033) | approved | **approved by the owner 2026-11-10 (as recommended), not started**; ADR-0033 accepted; whether Phase 2 runs is asked again at Phase 1's review |
-| [0068](0068-game-files-coverage.md) | Game files coverage: the last loaded tables (`MonItemPercent` first), the COF bundles, and a ledger for every file kind | draft | drafted 2026-11-10 (architect); waits for the owner; no slot; P1 archivist, P2 reverser static, P3 archivist, P4 spec-writer |
+| [0068](0068-game-files-coverage.md) | Game files coverage: the last loaded tables (`MonItemPercent` first), the COF bundles, and a ledger for every file kind | approved | **approved by the owner 2026-11-10, not started**; after 0063 in the run order; no slot; P1 archivist, P2 reverser static, P3 archivist, P4 spec-writer |
 
-## Run order (set 2026-11-10, plans 0063–0067)
+## Run order (set 2026-11-10, plans 0063–0068)
 
 Approved by the owner on 2026-11-10 (as recommended). **No lane starts until the owner says so.** When started:
-0063 (no slot) → 0064 (no slot; S1 and S2 in parallel, then S3, then S4) → 0066 (Phase 0 inventory, then static
+0063 (no slot) → 0068 (no slot; `MonItemPercent` may touch the drop chain 0064's S2 tests) → 0064 (no slot; S1 and S2 in parallel, then S3, then S4) → 0066 (Phase 0 inventory, then static
 batches; harness batches only at 20 claims per session or more) → 0065 and 0067 together (0065 Phase 1 on one slot;
 then 0065 Phase 2 and 0067 Phase 2 back to back on both slots, one port-4000 set-up). Static phases of a later plan may
 run in idle static lanes, within the memory budget (two Ghidra, two static lanes).

@@ -1,6 +1,6 @@
 # 0068 — Game files coverage: the last loaded tables, the COF bundles, and a ledger for every file kind
 
-> **Status:** draft (2026-11-10, architect; waits for the owner's approval)
+> **Status:** approved (2026-11-10, by the owner; second in the 2026-11-10 run order, after 0063; not started: the owner starts it)
 > **Created:** 2026-11-10
 > **Owner skill(s):** archivist, reverser, spec-writer
 > **Related ADRs:** 0001-target-toolchain-evidence-sources, 0002-scope-creation-paths-and-enablers, 0005-presentation-formats-tools-only, 0014-scope-game-simulation, 0031-constants-of-the-code-image

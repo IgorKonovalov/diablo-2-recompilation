@@ -11,7 +11,7 @@ Scope is set by [ADR-0001](../adrs/0001-target-toolchain-evidence-sources.md) an
 ADR-0017 and [ADR-0025](../adrs/0025-scope-item-use-inventory.md) (game rules: quests, travel, the economy, item use and
 inventory), ADR-0022 (the server frame) and [ADR-0026](../adrs/0026-scope-in-game-message-layer.md) (the in-game message
 layer; transport, compression, encryption, Battle.net, realm and handshake stay out). By the owner's 2026-10-30 ruling
-plans beyond the approved roster (0038, 0046, 0050, 0052, 0054, 0055, 0056, 0057–0062; from 2026-11-10 also 0063–0067, approved and not started) may be drafted but not started;
+plans beyond the approved roster (0038, 0046, 0050, 0052, 0054, 0055, 0056, 0057–0062; from 2026-11-10 also 0063–0068, approved and not started) may be drafted but not started;
 when the roster finishes, the project stops and reports to the owner.
 The table has four bands. **Core** is the original goal. **Enablers** are systems the core can't be reproduced
 without. **Creation paths** are other callers into the core item and monster code. **Simulation** is the game run
