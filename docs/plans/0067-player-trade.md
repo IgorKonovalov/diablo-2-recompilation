@@ -145,3 +145,40 @@ If plan 0065 Phase 2 runs two clients, sharing its set-up saves the development 
   `tools/trade_check.py`, the T13 layout search), then the development session and the three kept sessions on slots 1
   and 2. The port-4000 record (multiplayer/0001 § 5, step 1) is the owner's `sudo ufw status verbose` before the first
   hosting session. Plan 0065's Phase 2 does not share this set-up; it keeps its own.
+
+### 2026-11-10 — Phase 2 preparation (static), `lane/n67p`
+
+**Done** (no Ghidra, no wine, no game launched). [multiplayer/0003](../findings/multiplayer/0003-trade.md) § 12 holds
+it; kept outputs `workspace/logs/n67p/static/` (`commands.txt`, `manifest.txt`).
+- **Logger** `tools/gdb/two-trade.gdb` + `tools/gdb/two-trade.py`: § 11's points, read-only (ADR-0003), loading in one
+  gdb session with `pilot.py` and `two-players.py` (`gdb-load.txt`); ready line `TRDY`. Added to § 11's list: each
+  scratch cell of the room test (`SCP`, 0x0063E228), each real placement (`TMP`), the `0x77`/`0x79`/`0x5A` sends with
+  their site, the belt lock, the snapshot copy's sha256 and `ClientRemove`'s arguments. All 39 addresses decode as
+  instruction starts (`bpcheck.txt`).
+- **Checker** `tools/trade_check.py` (`check`, `mark`, `layout`, `cases`): one rule per event kind from §§ 2–10 and
+  32 expectations over the 13 cases; `tools/test_trade_check.py` 16 tests OK.
+- **T13**: the search finds both disagreements under B1 (40 000 layouts, seed 67: 248 where the test passes and the
+  move fails, 8 of them for every order of the offer; 1 064 the other way, 5 for every order). The T13 layout and T4
+  share one character pair. § 11's T4, T7 and T13 rows and § 8's sketch are updated.
+- **Correction** (§ 12.1, carried into §§ 4, 8, 11 and multiplayer/0002): the 4-digit "codes" were `PlrTrade.cpp`
+  line numbers of the client lookup; the `0x77` codes are now given. § 11's `TSO` and `TCM` addresses moved to the
+  points that hold the values.
+- **Characters**: four recipes (`mp-trade-host`, `-join`, `-host13`, `-join13`) in `tools/mp_saves.py` (two pairs,
+  `check`: recipes 34, pairs 23, 0 bad) and pinned in `tools/test_d2s.py` (built twice, byte-identical).
+- **Run recipe** for the harness lane: § 12.4 (per session the commands, the tokens, the marks, the logs kept).
+
+**What the dev session must still measure** (§ 12.4): (1) the gold button, how its entry box takes the amount, and
+whether the client sends one button 8 per keystroke or per entry; (2) the trade window's close control (Escape or
+the window's button) and the button code it sends, which also decides T8's way out; (3) that the paper-doll belt
+point (562,252) and the inventory cells sit where the trade screen draws them; (4) the logger smoke with every tag the
+checker reads.
+
+**Judgment calls for the reviewer.** (1) T13 uses J accepting last, so the first move (J's `gcv` into H) succeeds and
+the second fails: one case shows both the BEST failure and the snapshot undoing a half commit (§ 8). (2) T4 and T13
+share a pair and one trade window, T8 closing it; T10 and T11 share `TrHost`/`TrJoin` with H's cube empty and J's
+holding a `gcv`, so T10's refusal is told by event `0x0A` and T11's by its absence. (3) `tools/test_d2s.py`'s
+`test_every_recipe_has_a_base` already failed on `main` for 11 other recipes (`ai-*`, `combatsor-nomerc`,
+`framenova`, `inv-sor`, `inv-sor2`, `path-*`); this lane adds its four and leaves those, which are not this plan's.
+
+**Handoff.** Phase 2's harness lane (slots 1 and 2): the dev session, then sessions (a), (b), (c) of § 12.4, each
+checked with `trade_check.py check … --excel workspace/merged/data/global/excel`. Review of this preparation: Tier B.

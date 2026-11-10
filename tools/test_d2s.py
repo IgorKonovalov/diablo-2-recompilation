@@ -334,6 +334,12 @@ RECIPE_BASES = {
     "mp-sock-join": (BASE_X, "7526561af0c9ee6e46e10918514e7a8b5f06701088ea70132e52812c414570e0"),
     "mp-wound-join": (BASE_X, "a10d0efa7056a774fa9af29e00a3f5cdf51554927dd9ab7f44c8a12008bba611"),
     "mp-pal-conv": (BASE_PAL, "4f6906111cecf8dbc377e194a7754d768a3847b09035cffaa73b9eb904517d14"),
+    # plan 0067 Phase 2's trade pairs (tools/mp_saves.py, multiplayer/0003 § 11): not loaded yet; hashes pinned at the
+    # build (lane/n67p, built twice byte-identical)
+    "mp-trade-host": (BASE_X, "3391800ef1402e07ef3081da4ae1b0fd988483e436270f7aa82dd0fea070f3fc"),
+    "mp-trade-join": (BASE_X, "3dc1c7736f3cd2d1407f87fb9a745ec3914dafc085408d9272184d8fdf84cdfc"),
+    "mp-trade-host13": (BASE_X, "4a8b15df8e465256421cd610cd0889fbeabaaab5e63fc2509f066459a4802b2e"),
+    "mp-trade-join13": (BASE_X, "88a1751963708d4f00096037cbff7fde0bab15e25659f952544a326e356d041c"),
     # plan 0045 Phase 2 (tools/skills_sessions.py SAVES, bases p0005/smp<cls>.d2s): hashes equal the kept saves of
     # run:2026-10-27-skills (2026-10-27-skills-manifest.sha256)
     "skills-sor": (os.path.join(P0005, "smpsor.d2s"), "d033b674bb0e6f03b3006f4d433fd23ad5b17e515dde6a0a8ca51caba64f5239"),  # run:2026-10-27-skills
@@ -1090,7 +1096,7 @@ class QuestBitsTest(Scratch):
         buf = io.StringIO()
         with contextlib.redirect_stdout(buf):
             self.assertEqual(mp_saves.main(["check", EXCEL]), 0, buf.getvalue())
-        self.assertIn("SURVEY mp_saves recipes=30 bad=0 pairs=21 pairs_bad=0", buf.getvalue())
+        self.assertIn("SURVEY mp_saves recipes=34 bad=0 pairs=23 pairs_bad=0", buf.getvalue())
         with contextlib.redirect_stdout(io.StringIO()):
             self.assertEqual(mp_saves.main(["build", EXCEL, self.path("mp")]), 0)
         self.assertEqual(len(os.listdir(self.path("mp"))), len(mp_saves.SET))

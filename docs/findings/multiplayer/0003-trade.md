@@ -3,7 +3,7 @@
 > **Subsystem:** items/trade (ADR-0033; the row is written in plan 0067 Phase 3)
 > **Question:** what does the server do when two players trade, from the request to the commit or the cancel, and
 > what would each two-client case of plan 0067 Phase 2 log?
-> **Date:** 2026-11-10   **Plan:** 0067 (Phase 1)   **Status:** answered (static reading; Phase 2 not run)
+> **Date:** 2026-11-10   **Plan:** 0067 (Phase 1; Phase 2 preparation § 12)   **Status:** answered (static reading; Phase 2 prepared, not run)
 
 This finding completes [multiplayer/0002](0002-trade-and-party-gold.md) § 2. It covers the whole trade module
 (`.\PLAYER\PlrTrade.cpp`, 0x00566B30–0x00568D5B) and every caller of it from outside. Every behavioural claim is a static reading of the pinned
@@ -65,7 +65,11 @@ offer, which does not un-accept (§ 4). multiplayer/0002 carries a dated note at
   (fn:PLRSAVE_Save@0x00532400, 0x00532447–0x00532464, fn:sub_00531BB0_SaveItemListOrSnapshot@0x00531BB0,
   fn:sub_005675E0_TradeSnapshotCopy@0x005675E0, fn:sub_00539DA0_ClientRemove@0x00539DA0)
 - **Phase 2 cases:** § 11 lists 13 cases with a recipe, logger points and a prediction each, and the ones a stock
-  client cannot reach.
+  client cannot reach. § 12 holds the logger, the checker, the T13 layout and the run recipe.
+- [I] **FIRST and BEST disagree in both directions** under the inventory spec's B1 model: a layout where the room test
+  passes and the move fails (T13: four 1 × 2 items into a page with a 2 × 2, a 2 × 4 and two 2 × 3), and layouts where
+  the room test refuses a trade that would fit (§ 12.3). (fn:sub_0063E370_TradeRoomTest@0x0063E370,
+  fn:sub_005670E0_TradeMoveItems@0x005670E0, `t13-layout.txt`)
 
 ## Leads used
 
@@ -225,9 +229,13 @@ unit is gone, a blocked presser gets nothing, else code `0x0C` (0x005685C7–0x0
   lock closes with 9, and a presser not in 2 or a partner not in 1 closes with 12. Else `TradeOpen` (both 3), then
   `TradeRecAlloc` twice (a second failure frees the first record), then `0x78` with each one's partner name and id.
   So pressing 3 inside an open trade (state 3) closes it with 12. (0x005681FC–0x005683D7)
-- [I] **4:** either blocked: code `0xBEE`; end lock: close 9; presser not at 3: `0xBD2`; an item on the presser's
-  cursor: `0xBD7`. Else code `0x05` (`0xBDC`), the presser to 4, and if the partner is at 4,
+- [I] **4:** either blocked: `0x77` code 6 to the presser; end lock: close 9; presser not at 3: code 6; an item on the
+  presser's cursor: code 6. Else code `0x05`, the presser to 4, and if the partner is at 4,
   `TradeCommit(presser = A, partner = B)` and both `+0x58` = `t`. (0x00568499–0x00568573)
+  *Corrected at Phase 2's preparation (`lane/n67p`): the pushed `0xBEE`, `0xBD2`, `0xBD7` and `0xBDC` that the first
+  text gave as codes are `PlrTrade.cpp` line arguments of the client lookup 0x005531C0 (`EDX` = 0x006E11D8, the file
+  name); the `0x77` code is `DL` at the send. The first three reach the one send at 0x005684F8 with `DL` 6 (the jumps
+  from 0x00568529 and 0x0056857A to 0x005684E8). The same holds for every 4-digit "code" of the commit (§ 8).*
 - [I] **7:** each side at 4 goes to 3, codes to both. (0x0056857F–0x005685C2)
 - [I] **8** (`param` the amount, u32): when `stat14(presser) < param` (unsigned, 0x005683E6), and neither is blocked,
   `TradeClose(…, 9)`. Otherwise `param` is clipped to `GoldCap(partner) − stat14(partner)` when the sum passes the cap
@@ -308,7 +316,7 @@ Unchanged from multiplayer/0002 § 2: each side's offer is tested (`stat14(giver
 gold tests (§ 7)                                              // a failure: TradeCancel
 side = 0; if (!TradeRoomTest(game->+0x1C, A, B, &side)) {     // 0x00567DD0
     pdA.rec->offer = pdB.rec->offer = 0;
-    codes 0xA56/0xA57 when side == 0 (A's offer does not fit B), 0xA51/0xA52 when side == 1; TradeCancel; return; }
+    0x77 to A then B: 0x0A, 9 when side == 0 (A's offer does not fit B), 9, 0x0A when side == 1; TradeCancel; return; }
 if (!TradeItemsAllowed(…) || !TradeItemsAllowed(…)) { TradeCancel; return; }   // 0x00567E94, 0x00567EA9
 A, B: +0xC8 |= 0x800000; both states 9; event 13 for both at frame + 1
 if (!TradeMoveItems(A → B)) { TradeCancel; return; }           // 0x00567F17
@@ -327,7 +335,7 @@ gold: A's offer, then B's; both interactions cleared; both records freed; book s
   the inventory spec's B1. The real placement in `TradeMoveItems` goes into the player's own inventory through
   `InvPlaceAnywhere`, whose search takes the player orders (BEST). The two can disagree on a crowded page. A test that
   passes with a placement that fails ends in `TradeMoveItems` returning 0 and a cancel (below). A test that fails where
-  the placement would fit refuses a trade that fits. Neither case was looked for. (0x0063E3B4, 0x0063E3F1,
+  the placement would fit refuses a trade that fits. Both exist under the B1 model (§ 12.3, the T13 search). (0x0063E3B4, 0x0063E3F1,
   fn:sub_0063B850_InvSpotFindBySize@0x0063B850, fn:sub_0063B950_InvPlaceAnywhere@0x0063B950, items/inventory § B1)
 - [I] **`TradeMoveItems(X → Y)`.** First pass over X's item list: for each item on page 2, `ItemCopy`; a copy of 0
   skips the item (the `while` at 0x00567137–0x00567150), and the second pass still removes the original. Otherwise
@@ -418,8 +426,8 @@ its `+0x00`, `+0x0C`, `+0x10`, `+0x14`, and the `Game+0xA8` frame.
 | `TRB` | `PktInteractButton` entry 0x00568060 | button, param, presser |
 | `TRO` | `TradeOpen` 0x00567020; `TradeRecAlloc` returns 0x00566BDC / 0x00566BE2 | record, `+0x00` |
 | `TIT` | `TradeItemTest` entry 0x00567620 and its four `ret` 0x0056765D, 0x0056768E, 0x00567826, 0x0056783B | item id, code, page; `EAX` |
-| `TSO` / `THO` | `TradeShowOffer` 0x00568770, `TradeHideOffer` 0x00567400 | item id, page, cell; the copy id at `InvPlaceItem`'s return 0x005688E3 |
-| `TCM` | `TradeCommit` 0x00567C70; `TradeRoomTest` `ret` 0x0063E47F; `TradeMoveItems` `ret` 0x00567265, 0x005672A0 | `EAX`, `side`; both item lists (id, code, page, cell, mode) |
+| `TSO` / `THO` | `TradeShowOffer` 0x00568770, `TradeHideOffer` 0x00567400 | item id, page, cell; the copy id after `InvPlaceItem`, 0x005688AF (0x005688E3, first given here, is the failure path's `ret`; § 12.1) |
+| `TCM` | `TradeCommit` 0x00567C70; after its `TradeRoomTest` call 0x00567DDD and its two `TradeMoveItems` calls 0x00567F1C, 0x00567F42 (the callee `ret`s first given here are moved to the caller, § 12.1) | `EAX`, `side`; both item lists (id, code, page, cell, mode) |
 | `TCX` / `TCL` / `TAB` | `TradeCancel` 0x00567B00, `TradeClose` 0x005679E0, `TradeAbort` 0x00568640 | the close code |
 | `TRS` | `TradeRestoreSnapshot` 0x00566CC0 entry and `ret` 0x00566D89 | both item lists after |
 | `TTK` | `TradeStateTick` entry 0x005689D0 | the state before |
@@ -436,16 +444,16 @@ case (review-fix 10: each case names the reading it separates).
 | T1 (MP31) | H requests J; J accepts; H gives item `X` (page 0 → page 2); J offers `g ≤ gold(J)`; H `ok`, then J `ok` | `TRQ` states 1/2; J's button 3 → both 3, two records with `+0x10` = each gold; `TIT` at H's pick-up: both 7 → 8 → 3 within 2–3 frames; `TSO`: a copy `X'` on J's page 1 at `X`'s cell; J's `+0x0C = min(g, cap(H) − gold(H))`; J's `ok` makes `A = J`: `side` untouched, both 9; J holds a new unit (id ≠ `X`, ≠ `X'`) at the B1 cell of J's page 0; H's `X` and J's `X'` gone; gold H `+g`, J `−g`; 9 → 10 → 0, bits 22/23 clear at 0 | the copy (a new unit) against a moved unit; the received cell (BEST) |
 | T2 | open as T1, H gives `X`, moves another item `Y` on page 0 to another cell; J closes the window (stock control) | the logged button is 2 or 3: 2 → `TradeClose(…, 9)`, 3 → `(…, 12)`; both inventories rebuilt: `X` and `Y` back at their opening cells, every item id of both players new, J's `X'` gone, gold = opening gold; presser 12 → 13 → 0 (or 9 → 10 → 0), partner 9 → 10 → 0; `+0x58` = the close tick | the snapshot restore against a "return the offered items" reading (`Y`'s cell and the new ids) |
 | T3 | (a) J with an NPC menu open, H requests; (b) H requests J again within 5 s of T2's close; (c) both in the Blood Moor, H requests | (a) event 8 to H, no state; (b) event 9, no state, `+0x54` = `t`; (c) both interactions cleared, states 0 | each gate alone |
-| T4 | J's page 0 filled so that `X` cannot fit; T1's steps, J `ok` last | `side = 1` (B = H's offer into A = J's grid fails), codes `0xA51`/`0xA52`, offers 0, `TCX`, both restored (new ids), states 5 → 6 → 3, records kept; nothing moved | the room test before any move |
+| T4 | J's page 0 as § 12.3's layout plus its `gcv`; H gives its `gax` (2 × 4: no two adjacent free columns), H `ok`, J `ok` last | `side = 1` (B = H's offer into A = J's grid fails), `0x77` codes 9 to J, `0x0A` to H, offers 0, `TCX`, both restored (new ids), states 5 → 6 → 3, records kept; nothing moved | the room test before any move |
 | T5 | H near the cap (`cap(H) − gold(H) = c`); J offers `g > c`, then (second part) `g' > gold(J)` | `+0x0C = c`; commit H at exactly `cap(H)`, nothing dropped; `g'` → `TradeClose(…, 9)` at once, both restored | the clip at button 8 against a clip at the commit |
 | T6 | open, H gives `X`, H `ok` (4); J offers `g1`, then `g2` | H stays 4 through both `TRB 8`; J `ok` commits with `g2` | gold does not un-accept |
-| T7 | open, H gives `X`, J `ok` (4); H takes `X` back off page 2; J presses `ok` within 10 s and again after | `TIT`: both 7; `THO`: `X'` off J's page 1, both `+0x14` = `t + 10 000`; ticks 7 → 8 → 11 → … → 3 after `t + 10 000`; J's `ok` during 7/8/11 answered `0xBD2`, state kept; after, accepted | the 10 s lock on a removal |
+| T7 | open, H gives `X`, J `ok` (4); H takes `X` back off page 2; J presses `ok` within 10 s and again after | `TIT`: both 7; `THO`: `X'` off J's page 1, both `+0x14` = `t + 10 000`; ticks 7 → 8 → 11 → … → 3 after `t + 10 000`; J's `ok` during 7/8/11 answered with `0x77` code 6, state kept; after, accepted | the 10 s lock on a removal |
 | T8 | open, J gives `Z`, J offers `g`; J exits (*Save and Exit*) | `TSV` with flag 1 and a copy of `+0x00` bytes before `TAB`; `TAB` leaver J: both 9, H restored; J's save (read back with `tools/d2s.py`) holds `Z` at its opening cell and J's opening gold | the saved snapshot against the live list |
 | T9 | open; J (a belt holding a potion) tries to take the belt off | `TIT` → both 7; then the move refused, the belt worn | the belt lock, and a refused move still un-accepting |
 | T10 | open; J picks up its cube holding an item | `TIT` returns 0, event `0x0A` to J, both 7 | the cube test |
 | T11 | both hold a cube (empty); open; J picks up its cube | `TIT` returns 0 (`PlayerFindItemByCode(H, box)`), both 7 | the quest-code test |
 | T12 | open, H gives `X`, H `ok`; J gives `W` (pick-up, place on page 2) | `TIT` both 7 (H's 4 lost); `TSO` with neither at 4: no `TradeOpen`; 7 → 8 → 3 (no lock, `+0x14` = 0) | an addition un-accepts, without the lock |
-| T13 | (optional) a page-0 layout where FIRST fits J's offer into H and BEST does not, computed offline with the inventory spec's B1 | `side` untouched, `TradeMoveItems(J → H)` returns 0 (codes `0x9D1`/`0x9D2`), `TCX`, both restored | the two search orders |
+| T13 | H's four `wnd` (1 × 2) into J's page 0 laid out as § 12.3 finds (FIRST fits all four, BEST the first three); J gives its `gcv`, H `ok`, J `ok` (A = J) | `TRT` 1; `TMV` A → B (J's `gcv` into H) 1, then B → A 0 at the fourth wand (`0x77` codes `0x0A` to the giver, 9 to the receiver), `TCX` at 0x00568050, both restored: the half commit undone | the two search orders |
 
 **Logger points per case.** T1: all points. T2: `TRB`, `TCL`, `TRS`, `ITL`, `TTK`. T3: `TRQ`. T4: `TCM`, `TCX`, `TRS`, `TTK`.
 T5: `TRB`, `TCM`, `TCL`. T6: `TRB`, `TCM`. T7: `TIT`, `THO`, `TTK`, `TRB`. T8: `TSV`, `TAB`, `TRS`. T9–T12: `TIT`, `TSO`,
@@ -454,6 +462,164 @@ T5: `TRB`, `TCM`, `TCL`. T6: `TRB`, `TCM`. T7: `TIT`, `THO`, `TTK`, `TRB`. T8: `
 Not reachable on a stock client, so out of Phase 2 unless the owner rules otherwise (ADR-0013): a death in town (no
 damage in town is a lead, not read here), monster equipment (flag `0x1000`) in a player's inventory, a waypoint packet
 from a trading player (§ 9), an `ItemCopy` failure, and the request from a dead target.
+
+### 12. Phase 2 preparation
+
+Static work of plan 0067 Phase 2 before any hosting session (`lane/n67p`, 2026-11-10): no Ghidra, no wine, no game
+launched. Kept outputs: `workspace/logs/n67p/static/` (`commands.txt` holds every command; `manifest.txt` hashes the
+other files and passes `sha256sum -c` from that directory).
+
+#### 12.1 Corrections to §§ 4, 8 and 11
+
+- [I] **The 4-digit "codes" are source lines.** Every `0x77` send of the module is preceded by
+  `push <n>; mov edx, 0x6E11D8; call 0x005531C0` (the client lookup with `PlrTrade.cpp`'s name and a line number),
+  then `mov dl, <code>`. The first text read `0xBEE`, `0xBD2`, `0xBD7`, `0xBDC` (button 4), `0xA51`/`0xA52`,
+  `0xA56`/`0xA57` (the room test) and `0x9D1`/`0x9D2` (a failed move) as codes; they are the line numbers. § 4's
+  button 4, § 8's sketch and § 11's T4, T7 and T13 rows now give the `DL` codes. (0x005684E3–0x0056853B,
+  0x00567E05–0x00567E72, 0x00567268–0x00567294)
+- [I] **What each refusal of the commit sends**, `0x77` to A, then to B: `B`'s cap passed by A's offer: `0x0A`, 9
+  (0x00567CF1, 0x00567D0B); A's cap passed by B's offer: 9, `0x0A` (0x00567D97, 0x00567DB2); the room test with
+  side 0: `0x0A`, 9 (0x00567E54, 0x00567E6E); with side 1: 9, `0x0A` (0x00567E0F, 0x00567E29). A failed move sends
+  `0x0A` to the giver and 9 to the receiver (0x00567275, 0x00567290). So in each of these the player without room gets
+  9 and the other `0x0A`. The exchange sends `0x0D` to both (0x00568012, 0x0056802C).
+- [I] **Logger addresses.** § 11's `TSO` point 0x005688E3 is `TradeShowOffer`'s failure `ret`; the copy is read after
+  `InvPlaceItem` at 0x005688AF (`EAX` the result, the copy at `[ebp+8]`, the original in `EDI`). The room test's and
+  the two moves' results are read in the commit, after each call (0x00567DDD: `EAX` and `side` at `[ebp−4]`;
+  0x00567F1C and 0x00567F42: `AL`), not at the callees' `ret`s. (fn:sub_00568770_TradeShowOffer@0x00568770,
+  fn:sub_00567C70_TradeCommit@0x00567C70)
+- [I] **The scratch placement is visible.** `InvScratchPlace` holds `InvSpotFindBySize`'s result at 0x0063E228:
+  `EAX`, the item in `EBX`, the cell at `[ebp−8]` and `[ebp+0xC]`, the scratch in `EDI` (its owner word at `+8`,
+  written 0 at 0x0063E3B4 and 0x0063E3F1). The logger prints each scratch cell, so every commit with an offer on a
+  page that is not empty separates FIRST from BEST, not only T13. (`objdump-scratch.txt`, 0x0063E1C0–0x0063E2D6)
+
+#### 12.2 The logger and the checker
+
+- **`tools/gdb/two-trade.gdb`** sources `pilot.py`, `two-players.py` and the new **`tools/gdb/two-trade.py`**, so it
+  loads in one gdb session with the host driver's two-client files (`gdb-load.txt`: the three `armed` lines and
+  `TRDY`, no error). It only reads memory and registers (`readonly-grep.txt`: no `write_memory`, no register
+  assignment; ADR-0003). Each entry line and its after line (taken at the call's return address, matched by the stack
+  pointer) carry every player's state, record and item list. The points are § 11's, with the § 12.1 moves, plus
+  `SCP` (scratch cells), `TMP` (each real placement, 0x0056718D), `TMS`/`TG9`/`TEV` (the `0x77`, `0x79` and `0x5A`
+  sends with their return site), `TBL` (the belt lock), `TSC` (the snapshot copy's count and sha256, 0x00531BDB) and
+  `CRM` (`ClientRemove`'s arguments, the open question of § 10). `bpcheck.txt`: all 39 addresses decode as
+  instruction starts from their function's start. The ready line is `TRDY` (review-fix 16).
+- **`tools/trade_check.py check`** replays each event against its rule (`R-request`, `R-button2/3/4/7/8`,
+  `R-itemtest`, `R-show`, `R-hide`, `R-commit` with the FIRST scratch cells and the BEST placements from
+  `tools/item_inventory.py`'s B1 model, `R-cancel`, `R-close`, `R-abort`, `R-tick` with its frame delays, `R-save`)
+  and each case against its expectations (`trade_check.py cases`: 13 cases, 32 expectations). The cases are cut at the
+  `start` marks that `trade_check.py mark` writes. `tools/test_trade_check.py` (16 tests, `test-trade-check.txt`):
+  the models, the search's determinism, a synthetic T1 log that checks clean and six mutations of it, a tick log and
+  a cancel log with one mutation each (every mutation is named by its rule), and an unmet expectation.
+
+#### 12.3 T13: FIRST and BEST disagree, in both directions
+
+- [I] **Layouts exist where the room test passes and the move fails, and where the room test refuses a trade that
+  would fit.** `trade_check.py layout` (seed 67, 40 000 random page-0 layouts built from the eight item sizes of
+  weapons, armor and misc, offers of 2 to 4 items, every order of each offer tried) under the inventory spec's B1–B4
+  model and § 8's reading (scratch owner 0, FIRST; the player's page, BEST): 248 layouts with FIRST fitting and BEST
+  not (8 of them for every order of the offer), 1 064 with BEST fitting and FIRST not (5 for every order).
+  (`t13-layout.txt`, fn:sub_0063E370_TradeRoomTest@0x0063E370, fn:sub_0063B850_InvSpotFindBySize@0x0063B850,
+  fn:sub_005670E0_TradeMoveItems@0x005670E0)
+- [I] **The T13 layout** (every order alike, the offer being four items of one size): page 0 holds a 2 × 2 at (3, 1),
+  a 2 × 4 at (7, 0), a 2 × 3 at (0, 1) and a 2 × 3 at (5, 0); the offer is four 1 × 2. FIRST places them at (2, 0),
+  (2, 2), (9, 0), (9, 2). BEST places the first three at (9, 0), (9, 2) and (2, 1), which leaves (2, 0) and (2, 3)
+  apart, and the fourth fails. (`t13-layout.txt`, `t13-recipe-check.txt`, fn:sub_0063B850_InvSpotFindBySize@0x0063B850,
+  0x0063E228)
+- [I] **The reverse case** (not a Phase 2 case): page 0 with a 2 × 1 at (5, 0), 1 × 4 at (1, 0), 1 × 3 at (3, 1),
+  1 × 3 at (9, 0); three 2 × 2 offered. FIRST fails the third, BEST places all three. (`t13-layout.txt`,
+  fn:sub_0063B850_InvSpotFindBySize@0x0063B850)
+- [I] **The recipes.** `TrJoinB` (`tools/d2s_recipes/mp-trade-join13.json`) holds that layout as `cap`, `gax`, `axe`,
+  `axe`, plus a `gcv` at (4, 3); `TrHostB` holds four `wnd` at (0..3, 0) and a `gax` at (8, 0). With J accepting last
+  (A = J), J's `gcv` fits H (FIRST (7, 0), BEST (7, 3)), the room test passes, `TradeMoveItems(J → H)` succeeds and
+  `(H → J)` fails at the fourth wand: a half commit, cancelled at 0x00568050 and undone by the snapshots (§ 8). With H
+  last (A = H) the first move fails (0x00567F32). The same pair gives T4: H's `gax` fits no two adjacent free columns of
+  J's page 0, so side 1. (`t13-recipe-check.txt`; `mp-saves-check.txt`: each recipe's page 0 exactly as listed)
+
+#### 12.4 Run recipe for the harness lane (plan text)
+
+What follows is the plan for the hosting sessions. Each expected outcome is § 11's prediction, inferred until the run.
+
+**Characters** (`tools/mp_saves.py build workspace/merged/data/global/excel workspace/runtime/mp-saves-n67`; pairs in
+`mp_saves.py pairs`; `mp-saves-build.txt` hashes, pinned in `tools/test_d2s.py`). All are level 80 expansion
+Sorceresses (cap 800 000):
+
+| Save | Recipe | Page 0 (col, row) | Other |
+|---|---|---|---|
+| `TrHost` (H) | `mp-trade-host` | `wnd` (0,0) = X, `gcv` (5,0) = Y, `box` (8,0), empty | gold 795 000 |
+| `TrJoin` (J) | `mp-trade-join` | `wnd` (0,0) = W, `gcv` (2,0), `box` (8,0) | a `gcv` in the cube; a belt of `rvl`; gold 100 000 |
+| `TrHostB` (H) | `mp-trade-host13` | four `wnd` (0..3,0), `gax` (8,0) | gold 10 000 |
+| `TrJoinB` (J) | `mp-trade-join13` | § 12.3's layout, `gcv` (4,3) = Z | gold 100 000 |
+
+**Every session** (ADR-0008; harness-play § Slots, § Before the batch). `R=workspace/logs/<run>`, `L=$R/<s>-host.log`:
+
+```bash
+tools/ufwcheck.sh <s> workspace/logs/p44h-run/ufw-baseline.sha256 $R/ufw.log || exit 1
+python3 -I tools/saves.py --slot 1 aside <tag>; python3 -I tools/saves.py --slot 2 aside <tag>
+setsid python3 -I tools/d2run.py --slot 1 --seed 1 --gdb tools/gdb/two-trade.gdb --steps tools/gdb/two-host-normal.steps \
+    --after 4000 --install <tag> <H.d2s> --log $L > $R/<s>-host.out 2>&1 < /dev/null &   # wait for TRDY, then PLR
+setsid python3 -I tools/d2run.py --slot 2 --seed 1 --steps tools/gdb/two-join.steps --after 4000 \
+    --install <tag> <J.d2s> --log $R/<s>-join.log > $R/<s>-join.out 2>&1 < /dev/null &  # wait for the joiner in PLRS
+python3 -I tools/d2pilot.py join $L where --slot 2
+python3 -I tools/d2pilot.py join $L follow --slot 2 --me join --lead host --near-lead 4 --time 30   # within 8
+# per case: python3 -I tools/trade_check.py mark $L Tn   (just before the case's first action)
+# end: copy what the case needs (T8: the joiner's save), then
+python3 -I tools/slots.py stop 2; python3 -I tools/slots.py stop 1
+python3 -I tools/saves.py --slot 1 restore <tag>; python3 -I tools/saves.py --slot 2 restore <tag>
+python3 -I tools/trade_check.py check $L --excel workspace/merged/data/global/excel > $R/<s>-check.txt
+```
+
+Trade actions are `d2pilot.py join $L trade TOKEN… --slot N --me host|join --lead join|host` (tooling § Two clients):
+`request` (a click on the other player, its screen point from PLRS), `accept` (320,103), `ok` (318,461),
+`'give:inv:c,r,w,h>tr:c,r,w,h'` (quoted), `xy:X,Y`, `key:K`, `sleep:S`, `shot:P`. A cell (c, r) of the own inventory
+is at (432 + 29c, 330 + 29r) for 1 × 1 (tools/joiner.py `INV`); the paper-doll belt at (562,252) (tools/d2pilot.py
+`EQUIP`). No new `.steps` file is needed: the request click is computed from PLRS, and the controls not measured yet
+become `xy:`/`key:` tokens once the dev session has measured them. Between cases wait 6 s (the 5 000 ms end windows,
+§ 3).
+
+**Dev session** (`dev-` logs; pair `TrHost`/`TrJoin`). It measures, from screenshots (`shot:`) and the `TRB` lines:
+1. **the gold button** of the own offer and its entry box: the click point, how the amount is typed (digits, then
+   `key:Return` or an OK point), and whether one `TRB` 8 comes per keystroke or one per entry (Open questions);
+2. **the trade window's close control**: `key:Escape` first, else the window's close button; which button the
+   client sends (2 or 3);
+3. that the paper-doll belt point (562,252) and the inventory cells are where the trade screen draws them;
+4. the smoke (harness-play § Before the batch): `TRDY`, then at least one `TRQ`, `TRB`, `TRA`, `TIT`, `TSO`, `TSP`,
+   `TTK`, `TCM`, `SCP`, `TRT`, `TMP`, `TMV`, `TMS` in a one-scroll trade, and `trade_check.py check` runs on it.
+
+**Session (a)**, `TrHost`/`TrJoin`: T1, T3 (b), T2, T6, T5, T3 (a), T3 (c).
+- T1: H `request`; J `accept`; H `'give:inv:0,0,1,2>tr:0,0,1,2'`; J gold 500 (gold tokens); H `ok`; J `ok`.
+- T3 (b), at once after T1's commit (both `+0x58` = t): H `request` → event 9 named.
+- T2 (after 6 s): open; H gives X; H moves Y `xy:577,330 xy:577,417` (page 0 (5,0) → (5,3)); J closes (the measured
+  control).
+- T6: open; H gives X; H `ok`; J gold 300, then 400 (H stays at 4); J `ok`.
+- T5: open; J gold 9 000 (clipped to H's room), H `ok`, J `ok`: H ends at 800 000. Then open again; J gold 150 000
+  (above J's gold): close 9.
+- T3 (a): J `d2pilot.py npc $L akara trade --slot 2 --me join --stay`; H `request` → event 8; J `key:Escape`.
+- T3 (c): both to the Cold Plains by waypoint (as `workspace/logs/p44h-run/drivers/meet.sh`), J follows H within 8;
+  H `request` → both interactions cleared (`TQN`).
+
+**Session (b)**, `TrHost`/`TrJoin`: T7, T12, T9, T10, T11.
+- T7: open; H gives X; J `ok`; H takes X back (`xy:111,345 xy:432,345`); J `ok` at once (refused, code 6), and
+  again after 11 s (accepted); close.
+- T12: open; H gives X; H `ok`; J `'give:inv:0,0,1,2>tr:0,0,1,2'` (W); then close.
+- T9: open; J `xy:562,252` (the belt, which holds potions); then put back with a second click if it moved; close.
+- T10: open; J `xy:679,345` (its cube, holding a `gcv`): refused, event `0x0A`; close.
+- T11: open; H `xy:679,345` (its empty cube, J holding a cube): refused, no event; close.
+
+**Session (c)**, `TrHostB`/`TrJoinB`: T4, T13, T8 (in one window: a cancel leaves it open at 3, § 9).
+- T4: H `request`; J `accept`; H `'give:inv:8,0,2,4>tr:0,0,2,4'`; H `ok`; J `ok` → side 1, cancel, 5 → 6 → 3.
+- T13: in the same window H gives the four `wnd` (`'give:inv:0,0,1,2>tr:0,0,1,2'`, then (1,0), (2,0), (3,0) to
+  tr (1,0), (2,0), (3,0)); J `'give:inv:4,3>tr:9,3'` (Z); H `ok`; J `ok` (A = J) → `TMV` 1 then 0, cancel at
+  0x00568050.
+- T8: in the same window J gives Z again and offers 2 000 gold; J leaves: `d2pilot.py join $L leave --slot 2` (SAVE
+  AND EXIT). If the dev session finds that Escape closes the trade window (item 2), `leave` would close the trade first
+  and log `TCL`, not `TAB`: then J leaves by a dropped connection (`slots.py stop 2`, as MP11 did), and T8's save claim
+  rests on the host's `TSV`/`TSC` lines alone. Then copy `workspace/wineprefix-2/drive_c/users/$USER/Saved Games/Diablo II/TrJoinB.d2s` to
+  `$R/c-TrJoinB-after.d2s` before `slots.py stop 2`, and read it with `tools/d2s.py dump`: Z at (4,3) and gold
+  100 000 (the opening list and carried gold, § 10).
+
+**Logs kept per session**: `$R/<s>-host.log`, `<s>-host.marks.tsv`, `<s>-join.log`, both `.out`, `ufw.log`, the
+screenshots, `<s>-check.txt`, (c) the joiner's save copy; one `manifest.sha256` per directory (review-fix 6). Dev
+logs under `$R/dev/` with their own manifest.
 
 ## Data touched
 
@@ -485,8 +651,6 @@ from a trading player (§ 9), an `ItemCopy` failure, and the request from a dead
   keystroke of the gold entry. T2 and T6 log them.
 - [L] Whether the stock client lets a trading player send `0x49` (waypoint travel), or reach `0x0054C380`; if a case
   needs a forced message it is an ADR-0013 run, which the owner rules on at Phase 1's review.
-- [L] Whether FIRST and BEST ever disagree on a reachable page 0 (T13); an offline search over the B1 model answers
-  whether such a layout exists before any session.
 - [L] Whether the old item units are freed after `TradeReturnItems` (`InvQueueItemUpdate`, ItemData `+0x14` bit 0, and
   the update list's consumer), and whether the hidden copy of `TradeHideOffer` is freed. The callers of
   `0x0063CBB0` and the free path of `0x0055DF10` would settle it.
