@@ -183,3 +183,43 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   rows (`--key think`), not by row; (2) row 23 moved rather than raised on the rev 6 logs alone, since 0x005F356C fails the
   rule over all 500 fork-free decisions; (3) 516's raised half names the helper's logged word, with the helper-to-flags map
   kept `[I]` (three code reads).
+
+### 2026-11-10 — Phase 1, batch S1b (reverser-static, `lane/n66c`)
+
+- **Done.** The 61 statements of S1b checked with a new block-model checker over the 38 kept AI logs (21 rev 4, 17 rev 6),
+  no game. Tool: `tools/ai_model_check.py` with `tools/test_ai_model_check.py` (`ceeac566`, `f2373e64`): one model per
+  catalogue entry, transcribed from the spec block at `b5999f5e` (not from `ai_resume.py` or a decompile), fed the logged
+  boundary returns as ADR-0004 oracles and compared call by call (callee, the block's argument words, seed, control words,
+  `+0xC4`, pointed-to blocks, the exit seed); unknown values fork and forked decisions support nothing; controls: each
+  branch and store reversed alone (a store also against the unit's next decision), `<=` for `<` in draws and compares,
+  axis swaps for rows 78/79, a signed remainder for row 43. It takes `--logs LIST` and `--rows`, so the bestiary-tour
+  logs (question 3 (c)) plug in. Record: the dated addendum *plan 0066 batch S1b* under run:2026-11-04-ai-r5 in
+  [findings/ai/experiments.md](../findings/ai/experiments.md); outputs in `workspace/logs/ai/sweep2-s1b/`
+  (`manifest.sha256`), inputs as S1a's (`manifest-sweep2-s1a-inputs.sha256`).
+- **Result (inventory rows):** 0 mismatches in 28 of the 29 modelled thinks (row 23: 8, the rev 4 logger limit). Raised 43:
+  row 44 (R12's block) whole; 42 in part, each on its taken, separated arms with the rest `[I]` as the row says (17, 18, 20,
+  23, 24, 45, 49, 51, 68, 93, 94, 114, 115, 138, 140, 147, 148, 150, 152, 153, 156, 161, 162, 165, 167, 193, 198, 199, 320,
+  321, 323, 324, 335, 369, 370, 388, 485, 486, 498, 501, 504, 505). Moved 18: 21, 50, 70, 71, 139, 151, 336, 489 a-logs →
+  a-run (H1g); 12, 113, 163, 168, 195, 347, 348, 466, 467, 500 a-logs → b (H1h) (reasons in the rows: no logged call, no
+  fork-free case, no decision, under the floor, or row 23's mismatches). S1b holds 43 statements now; totals a-logs 698,
+  a-run 356, b 372 (inventory README § 1, § 3), taken against `main` at `d3d79c89`, which has not changed the inventory
+  since this lane's base `e1878e23`.
+- **Surprises.** (1) The blocks, read against instructions at the plan 0052 reviews, held on every compared call; the
+  checker's teeth are its flips (every raised branch fails alone) and the exit seed. (2) R23's loop sentence "step x and y
+  one away from U's position; if at it, both + 1" has two readings; one decision separates them ("an equal axis is not
+  stepped" matches), recorded as a lead since row 23 moved. (3) Most rows that fork for `ai_resume.py` do not fork for the
+  block model, because the block does not branch on the words the interpreter needs (row 70's `p`, S11's speeds): rows 70
+  and 118's `r` lines stay where S1a put them, but row 70's block is raised in part.
+- **Ready for Phase 3 (spec-writer), monsters/ai/catalogue at `b5999f5e` line numbers:** 392 (R12's block) to `[C]`
+  whole; split, the raised half `[C]` and the rest `[I]` as each inventory row says: 140, 147 (R3), 164 (R4), 200, 215
+  (R5), 399 (R12a), 450, 477 (R15), 613 (R19), 850, 877 (R26), 1053, 1065 (R43), 1233, 1267 (R52), 1337, 1347 (R63), 1365,
+  1395, 1396, 1399 (R65), 1435, 1450 (R68), 1463 (R69), 1482 (R70), 1726 (R78), 1759, 1769 (R79), 3055, 3067 (R95), 3081,
+  3112 (R96), 3176 (R114), 3450, 3465 (R124), 3615 (R130), 4438, 4451 (R99), 4547 (S10), 4567 (S11's think), 4592, 4602
+  (S12). The block lines carry one `[I]` for the whole think, so Phase 3 adds a `[C]` bullet per block naming the logged
+  paths (the addendum's list) rather than re-tagging the block. No symbol is raised (the blocks raise no role or name).
+- **Review:** Tier B (plan Phase 1), with the audit rule. Judgment calls to check: (1) the floor of 30 fork-free decisions
+  from the batch row (H1's 50 is for `r` lines), so rows 43 (32), 114 (31) and 130 (33) count, row 100 (4) does not;
+  (2) positions for rows 43, 63, 78 and 79 are the AID line's `x`, `y` and the target's, the logger's words for
+  `UnitGetPos`, held by the axis controls; (3) a branch with no equal pair keeps its `<` against `≤` inferred, which makes
+  rows 19 and 69 "in part"; (4) the calling conventions in `CONV` come from the emulation families and machinery § B, and
+  any wrong one would have failed its calls.
