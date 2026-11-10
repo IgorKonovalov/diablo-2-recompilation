@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [every reviewed spec listed under Coverage]
 consumed_by: [docs/wiki/quirks.md]
-tags: {C: 355, I: 128, L: 3}
+tags: {C: 374, I: 162, L: 3}
 updated: 2026-11-10
 ---
 
@@ -61,16 +61,16 @@ flowchart LR
 
 | Class | Entries | C | I |
 |---|---|---|---|
-| [1. Arithmetic width and sign](#1-arithmetic-width-and-sign) | 23 | 17 | 6 |
-| [2. Rounding and float](#2-rounding-and-float) | 20 | 14 | 6 |
+| [1. Arithmetic width and sign](#1-arithmetic-width-and-sign) | 26 | 19 | 7 |
+| [2. Rounding and float](#2-rounding-and-float) | 21 | 15 | 6 |
 | [3. Wrap and overflow](#3-wrap-and-overflow) | 10 | 3 | 7 |
-| [4. Bounds, comparisons and table edges](#4-bounds-comparisons-and-table-edges) | 75 | 54 | 21 |
-| [5. Draw order and dead draws](#5-draw-order-and-dead-draws) | 138 | 116 | 22 |
-| [6. Data-dependent branches](#6-data-dependent-branches) | 124 | 97 | 27 |
-| [7. Timing and frame edges](#7-timing-and-frame-edges) | 19 | 10 | 9 |
-| [8. Multiplayer edges](#8-multiplayer-edges) | 15 | 12 | 3 |
-| [9. Deliberate oddities that look like bugs](#9-deliberate-oddities-that-look-like-bugs) | 50 | 27 | 23 |
-| **Total** | 474 | 350 | 124 |
+| [4. Bounds, comparisons and table edges](#4-bounds-comparisons-and-table-edges) | 79 | 56 | 23 |
+| [5. Draw order and dead draws](#5-draw-order-and-dead-draws) | 143 | 117 | 26 |
+| [6. Data-dependent branches](#6-data-dependent-branches) | 134 | 103 | 31 |
+| [7. Timing and frame edges](#7-timing-and-frame-edges) | 28 | 14 | 14 |
+| [8. Multiplayer edges](#8-multiplayer-edges) | 16 | 12 | 4 |
+| [9. Deliberate oddities that look like bugs](#9-deliberate-oddities-that-look-like-bugs) | 70 | 30 | 40 |
+| **Total** | 527 | 369 | 158 |
 
 ### 1. Arithmetic width and sign
 
@@ -99,6 +99,9 @@ flowchart LR
 | Q21 | Missile function numbers are tested as s16, `> 0` first, so row 568's hit function does not run. | [I] | 0x005ADA0D, 0x005ADA1F | [skills/missiles](../skills/missiles.md#reimplementation-notes) n1 |
 | Q22 | The regeneration tick adds stat 74 whatever its sign: positive heals up to the maximum, negative (poison) bleeds the player. | [C] | fn:sub_00580610_LifeRegenTick@0x00580610, run:2026-10-17-stats | [stats/states § E](../stats/states.md#e-the-regeneration-tick) |
 | Q436 | Signed and unsigned tests: a blank `SubMissile1` (−1) passes the `≠ 0` test of mdo 21, 22, 23, 25 and 26; class 0 passes do 68's test while do 73 and 80 refuse it; do 31 tests `pettype` signed, do 49 unsigned, and do 44 and 45 turn a bad one into 0. | [C] | run:2026-10-20-cat-emu-9b, run:2026-10-21-cat-emu-bar, run:2026-10-20-cat-emu-pal, run:2026-10-20-cat-emu-nec, run:2026-10-21-cat-emu-ass | [skills/catalogue](../skills/catalogue.md#reimplementation-notes) n7 |
+| Q475 | Store the Inventory `gridX` and `gridY` as bytes: the Hireling second-set rows hold 255 from blank cells. | [C] | 0x0065C1F0 | [items/inventory](../items/inventory.md#reimplementation-notes) n7 |
+| Q476 | Row 13's kind-9 bound compares an AI distance with a square, and row 22's bounds are 32-bit signed `imul` squares of an i16. | [I] | fn:sub_005DCDA0_AiDeadMinionCb@0x005DCDA0, 0x005F2C85 | [monsters/ai/machinery](../monsters/ai/machinery.md#reimplementation-notes) n3 |
+| Q477 | `PathDirCell`'s `& 1` is not a sign: it changes the cell only for an even non-zero minor term. | [C] | 0x00678C4C, run:2026-11-03-path-emu-1 | [path/search](../path/search.md#reimplementation-notes) n4 |
 
 ### 2. Rounding and float
 
@@ -114,8 +117,8 @@ flowchart LR
 | Q30 | Trade prices carry three running values `P`, `S`, `R` through every step, including those the mode discards; the order of terms matters through the later truncations. | [C] | fn:ITEMS_TradePriceCore@0x0062EFB0, run:2026-10-17-economy | [items/economy](../items/economy.md#reimplementation-notes) n1 |
 | Q31 | The skill-based price terms divide `S` by 4096 and `P`, `R` by 1024; all other terms divide all three by 1024. The tables' `Divide` columns are not read. | [C] | 0x00628F35, run:2026-10-17-economy | [items/economy](../items/economy.md#reimplementation-notes) n3 |
 | Q32 | Quality-roll divisions truncate toward zero (`−3 ÷ 2 = −1`), not floor. | [I] | 0x0055872F, 0x00558733 | [items/quality](../items/quality.md#reimplementation-notes) n8 |
-| Q33 | `NoDrop` is recomputed per pick in floating point; IEEE binary64 with round-to-nearest-even matches all 2 909 logged evaluations. | [C] | 0x0055A8A1, 0x0055A9D7, run:2026-10-11-tc-drops | [items/tc](../items/tc.md#reimplementation-notes) n3 |
-| Q34 | The game computes `1 − q`, not the algebraically equal `p·T/(1 − p)`; on stock data the two never differ. | [I] | 0x0055A8A1, 0x0055A9D7 | [items/tc](../items/tc.md#reimplementation-notes) n3 |
+| Q33 | `NoDrop` is recomputed per pick in floating point; IEEE binary64 with round-to-nearest-even matches all 2 909 logged evaluations. | [C] | 0x0055A8A1, 0x0055A9D7, run:2026-10-11-tc-drops | [items/tc](../items/tc.md#reimplementation-notes) n4 |
+| Q34 | The game computes `1 − q`, not the algebraically equal `p·T/(1 − p)`; on stock data the two never differ. | [I] | 0x0055A8A1, 0x0055A9D7 | [items/tc](../items/tc.md#reimplementation-notes) n4 |
 | Q35 | Superior ethereal `dur%`: func 13 runs in the builder, then the ethereal roll halves the base stat 73 to `⌊max/2⌋ + 1` and stat 72 takes the re-evaluated 73. | [C] | fn:sub_00556CA0_ItemRollEthereal@0x00556CA0, 0x00556D41, 0x00556D6E, run:2026-10-15-items-chain-forced | [items/properties](../items/properties.md#reimplementation-notes) n13 |
 | Q36 | So the `+1` comes before the percentage: `h + ⌊h · dur%/100⌋`, which differs by one from the other order for some values. | [I] | 0x00556D41, 0x00556D6E, fn:sub_00626200_StatEvaluate@0x00626200 | [items/properties](../items/properties.md#reimplementation-notes) n14 |
 | Q37 | `MonHpAddPct` truncates before it multiplies once max HP × 256 exceeds `0x100000` (HP > 4 096). | [C] | fn:sub_005A0D20_MonHpAddPct@0x005A0D20, run:2026-10-15-mon-stats | [monsters/stats](../monsters/stats.md#reimplementation-notes) n4 |
@@ -124,6 +127,7 @@ flowchart LR
 | Q40 | A path step that would pass its point lands on the subtile centre, so frames per point are a ceiling and the next step starts from the centre. | [I] | fn:sub_00650090_PathStepSnap@0x00650090 | [anim/movement](../anim/movement.md#reimplementation-notes) n3 |
 | Q41 | The missile step direction is a lookup in `g_PathDirTable`, not a trigonometric function. | [I] | data:g_PathDirTable@0x006EB7E0 | [skills/missiles](../skills/missiles.md#reimplementation-notes) n10 |
 | Q454 | A monster with few hit points has no regeneration: stat 74 is `((hp << 8) × r) >> 12`, so 0 while `hp × r < 16`. | [I] | 0x00573FF6, 0x00574058, tbl:MonStats.txt:DamageRegen | [monsters/stats § B](../monsters/stats.md#b-monstatsinit-in-order) |
+| Q478 | `calc1` of a healing or mana potion is a total, not a per-frame amount: it is scaled, maybe doubled and divided by `len`, and the division truncates, so a potion can deliver less than its total. | [C] | 0x005BE6D4, run:2026-11-03-use-emu | [items/use](../items/use.md#reimplementation-notes) n1 |
 
 ### 3. Wrap and overflow
 
@@ -165,7 +169,7 @@ flowchart LR
 | Q69 | But a plus whose centre is in no room returns the mask itself; a mask of 0 then accepts. | [C] | fn:COLL_PlusTest@0x0064D100, run:2026-10-14-collision | [drlg/collision](../drlg/collision.md#reimplementation-notes) n2 |
 | Q70 | "Reachable" means the hint room or its near list: a cell of an active room outside the hint's near list is "no room". | [C] | fn:sub_00463740_RoomAtSubtile@0x00463740, run:2026-10-14-collision | [drlg/collision](../drlg/collision.md#reimplementation-notes) n3 |
 | Q71 | DT1 sub-tile rows are reversed: byte row 4 is the top row of the 5 × 5 block. | [C] | fn:COLL_StampTile@0x0064C4C0, run:2026-10-14-collision | [drlg/collision](../drlg/collision.md#reimplementation-notes) n5 |
-| Q72 | `SpawnPosOnTile` never tests entry `i − 1`, turns `i = 0` into 1, and returns the tile centre, not the offset cell it tested. | [C] | fn:sub_005B2700_SpawnPosOnTile@0x005B2700, run:2026-10-14-collision | [drlg/collision](../drlg/collision.md#reimplementation-notes) n10 |
+| Q72 | `SpawnPosOnTile` never tests entry `i − 1`, turns `i = 0` into 1, and returns the tile centre, not the offset cell it tested. | [C] | fn:sub_005B2700_SpawnPosOnTile@0x005B2700, run:2026-10-14-collision | [drlg/collision](../drlg/collision.md#reimplementation-notes) n11 |
 | Q73 | A tile pick sums at most 40 candidates, in DT1-list slot order (no stock key has more than 28). | [I] | fn:DRLG_PickTileByRarity@0x0066D820 | [drlg/room-tiles](../drlg/room-tiles.md#reimplementation-notes) n2 |
 | Q74 | Read past an end: `Act1/Outdoors/Trees.ds1` is 12 bytes short, and `DS1_Parse` reads its last group's y, w, h past the exact-size buffer (uninitialised heap). | [I] | fn:DS1_Parse@0x00665950, fn:FILE_LoadWhole@0x00517079 | [drlg/room-tiles](../drlg/room-tiles.md#reimplementation-notes) n4 |
 | Q75 | Read the missing `Trees.ds1` bytes as zeros: 26 of 27 logged loads held zeros there, and that group's draws (group, x, y) are reproduced with w = h = 0. | [C] | fn:sub_00670170_LvlSubApplyPick@0x00670170, run:2026-10-11-drlg-roomk | [drlg/room-tiles](../drlg/room-tiles.md#reimplementation-notes) n4 |
@@ -189,7 +193,7 @@ flowchart LR
 | Q93 | Crash path: every quality `*Divisor` is a signed `idiv` with no zero test; reject a zero divisor at load or treat it as fatal, never substitute a value. | [I] | 0x0055872F, 0x00558733, tbl:ItemRatio.txt:NormalDivisor | [items/quality](../items/quality.md#reimplementation-notes) n9 |
 | Q94 | `TCQuestId` is the quest word itself, not word + 1 (Andariel is word 6); the Misc/Weapons `quest` column is quest object id + 1. | [C] | tbl:MonStats.txt:TCQuestId, tbl:Misc.txt:quest, run:2026-10-16-quest-drops | [items/quest-drops](../items/quest-drops.md#reimplementation-notes) n3 |
 | Q95 | A runeword row with one rune more than the sockets reads an unwritten `kids[n]` slot. | [I] | 0x0062BFA3, 0x0062BFCE | [items/sockets-runewords](../items/sockets-runewords.md#reimplementation-notes) n5 |
-| Q96 | The TC item count `max` is global to the call (6 for monster drops): the 6th item ends the whole recursion and skips gold find. | [C] | 0x0055AEF2, 0x0055AF59, run:2026-10-20-sweep-items-tc | [items/tc](../items/tc.md#reimplementation-notes) n8 |
+| Q96 | The TC item count `max` is global to the call (6 for monster drops): the 6th item ends the whole recursion and skips gold find. | [C] | 0x0055AEF2, 0x0055AF59, run:2026-10-20-sweep-items-tc | [items/tc](../items/tc.md#reimplementation-notes) n9 |
 | Q97 | Unique durability is ×3 or ×2 of the current values, each capped at 255, only for a base with durability (`GetUnitStat` for 72, `GetUnitBaseStat` for 73). | [C] | 0x005576F7, 0x00557765, run:2026-10-14-uniques-forced | [items/uniques-sets](../items/uniques-sets.md#reimplementation-notes) n10 |
 | Q98 | Set weight 0 counts as 1 and a negative weight is kept; a zero total returns before any draw, a negative total reaches `RangeB` (no draw, 0) and the walk may run off the end. | [C] | fn:ITEMS_BuildSetPick@0x005C25C0, 0x005C26B6, 0x005C2706, run:2026-10-17-sweep-emu2 | [items/uniques-sets](../items/uniques-sets.md#reimplementation-notes) n11 |
 | Q99 | Vendor stock level is not clamped to 99 in Nightmare and Hell (`clvl` 99 gives 104), while the gamble `lvl` is clamped to 5..99. | [C] | fn:VENDOR_StockLevel@0x00576890, fn:GAMBLE_BuildInv@0x00578790, run:2026-10-27-sweep-vendors | [items/vendors](../items/vendors.md#reimplementation-notes) n7 |
@@ -219,6 +223,10 @@ flowchart LR
 | Q456 | At stat 36 of 100 or more the cap makes `cb` 0, no run met it, and the cut has no branch on the defender's kind, so a player there takes no crushing blow: the same cut, after the player's divisor 10. | [I] | 0x005C0031, 0x005C00F6 | [combat/delivery § E](../combat/delivery.md#e-the-stat-events-crushing-blow-open-wounds-freeze) |
 | Q457 | `MAX_DROP` stops a monster's call at 6 items against `Picks` 7, the act bosses' rows, logged on Duriel's; do not raise it to the picks. | [C] | fn:TC_ResolveDrops@0x0055A6D0, tbl:TreasureClassEx.txt:Picks, run:2026-10-12-quality, run:2026-10-16-quest-drops | [items/tc](../items/tc.md#constants) |
 | Q458 | The TC level walk reads `TC[idx+1]` with no bound check; stock data never reaches the table's end, by a full-table check. | [C] | fn:TC_GetByIndex@0x00654E00, tbl:TreasureClassEx.txt:group | [items/tc § C](../items/tc.md#c-level-upgrade--tc_dropbyindex-and-tc_getbyindex) |
+| Q479 | `MonAiEntryGet` is not bounded on the state branch; the bound is `MonAiInit`'s, and it is signed. | [I] | fn:sub_005B15D0_MonAiEntryGet@0x005B15D0, 0x005B0E4D | [monsters/ai/README](../monsters/ai/README.md#reimplementation-notes) n3 |
+| Q480 | AI row 125 uses the constant mode 5 and no sign test on `Skill1`. | [I] | 0x005E3799 | [monsters/ai/machinery](../monsters/ai/machinery.md#reimplementation-notes) n4 |
+| Q481 | Path type 15 reads the byte `+0x91`, not `ctx.limit`, and `lim` is 40 at least under a target unit. | [C] | 0x0067C348, run:2026-11-03-path-emu-3 | [path/search](../path/search.md#reimplementation-notes) n3 |
+| Q482 | The search's `cell(n)` takes `g` before the bound test, and the cells survive between passes, so a later pass can refuse a cell an earlier one wrote. | [C] | 0x0067A7EB, 0x0067A80D, run:2026-11-03-path-emu-2 | [path/search](../path/search.md#reimplementation-notes) n6 |
 
 ### 5. Draw order and dead draws
 
@@ -281,7 +289,7 @@ flowchart LR
 | Q172 | Activation order is an input: server and client copies, or two players' walks, give different k for the same room; gameplay uses the server copy. | [C] | fn:sub_0066E580_NeighbourTileScan@0x0066E580, run:2026-10-11-drlg-roomk | [drlg/room-tiles](../drlg/room-tiles.md#reimplementation-notes) n6 |
 | Q173 | Each `LevelLinkBuild` steps a fresh copy of the act seed; only level 27's draw touches the act seed itself. | [C] | fn:sub_006772C0_LevelLinkBuild@0x006772C0, run:2026-10-15-drlg-maze | [drlg/warps](../drlg/warps.md#reimplementation-notes) n1 |
 | Q174 | A link pick draws only on its first try; a backtrack resets the entry, which draws again. Three picks draw on every call. | [C] | fn:sub_00676150_LinkPick@0x00676150, fn:sub_00676C00_LinkPick@0x00676C00, run:2026-10-15-drlg-maze | [drlg/warps](../drlg/warps.md#reimplementation-notes) n2 |
-| Q175 | `NearWarpTest` can activate a room (its seed draws and grid) and step the level seed; call it exactly where the game does. | [C] | fn:sub_0066B2B0_LevelPointFind@0x0066B2B0, run:2026-10-14-collision | [drlg/collision](../drlg/collision.md#reimplementation-notes) n9 |
+| Q175 | `NearWarpTest` can activate a room (its seed draws and grid) and step the level seed; call it exactly where the game does. | [C] | fn:sub_0066B2B0_LevelPointFind@0x0066B2B0, run:2026-10-14-collision | [drlg/collision](../drlg/collision.md#reimplementation-notes) n10 |
 | Q176 | Release: one room-seed draw per mode-12 (dead) monster of a released room, taken before any other test; nothing else on the save path draws. | [C] | 0x00543260, run:2026-10-17-lifecycle | [drlg/lifecycle § F](../drlg/lifecycle.md#f-the-save-rule); [drlg/lifecycle § Draw order](../drlg/lifecycle.md#draw-order-across-the-seeds); [drlg/lifecycle](../drlg/lifecycle.md#reimplementation-notes) n3 |
 | Q177 | A restored item record takes two game-seed draws even though its start seed is then overwritten. | [C] | run:2026-10-17-lifecycle, fn:sub_00542B40_RoomInactiveUnitsRestore@0x00542B40 | [drlg/lifecycle § Draw order](../drlg/lifecycle.md#draw-order-across-the-seeds); [drlg/lifecycle](../drlg/lifecycle.md#reimplementation-notes) n6 |
 | Q178 | A re-created monster is a new unit for the seeds: a new game-seed step, a new unit seed and a new `MonsterInit`, with only its id, class, cell, stats 13, 7 and 6 and its mods from the record. | [C] | fn:sub_005424F0_InactiveMonstersRestore@0x005424F0, run:2026-10-17-lifecycle | [chain](../chain/README.md#reimplementation-notes) n4; [drlg/lifecycle](../drlg/lifecycle.md#reimplementation-notes) n5 |
@@ -309,11 +317,11 @@ flowchart LR
 | Q200 | A property block with `min = max` draws nothing. | [C] | fn:PROP_RollValue@0x0065E9E0, run:2026-10-14-props-forced | [items/properties](../items/properties.md#reimplementation-notes) n2 |
 | Q201 | Charges always draw, even when `c ÷ 8` leaves a width of 1. | [C] | fn:PROP_Func19_Charged@0x0065F6A0, run:2026-10-14-props-forced | [items/properties](../items/properties.md#reimplementation-notes) n3 |
 | Q202 | `sock` draws even when it then writes nothing (cap < 1), but not when the inventory size is 0. | [I] | fn:PROP_Func14_Sockets@0x0065F590 | [items/properties](../items/properties.md#reimplementation-notes) n5 |
-| Q203 | The quality roll draws on the source unit's seed, interleaved with the TC picks; a TC walk cannot be reproduced without the quality model. | [C] | fn:ITEMS_DropRollQuality@0x00558640, run:2026-10-11-tc-drops | [items/quality](../items/quality.md#reimplementation-notes) n1; [items/tc](../items/tc.md#reimplementation-notes) n2 |
+| Q203 | The quality roll draws on the source unit's seed, interleaved with the TC picks; a TC walk cannot be reproduced without the quality model. | [C] | fn:ITEMS_DropRollQuality@0x00558640, run:2026-10-11-tc-drops | [items/quality](../items/quality.md#reimplementation-notes) n1; [items/tc](../items/tc.md#reimplementation-notes) n3 |
 | Q204 | A quality chance below 1 wins without a draw; a chance of 1 to 128 wins with one. | [C] | 0x00558770, 0x0055878C, run:2026-10-12-quality, run:2026-10-13-quality | [items/quality](../items/quality.md#reimplementation-notes) n2 |
 | Q205 | Always-magic types still run the unique, set and rare tests, with their draws, before returning 4. | [C] | 0x005588B1, 0x005588C5, run:2026-10-12-quality | [items/quality](../items/quality.md#reimplementation-notes) n7 |
-| Q206 | TC picks and quality rolls step the source unit's seed; created items get their seeds from the game seed. | [C] | run:2026-10-11-tc-drops, fn:sub_0055A550_DropCreateItem@0x0055A550 | [items/tc](../items/tc.md#reimplementation-notes) n1 |
-| Q207 | A sub-TC of total 1 with no NoDrop still steps the seed once per pick (`Range(1)`). | [C] | 0x0055AA03, run:2026-10-11-tc-drops | [items/tc](../items/tc.md#reimplementation-notes) n7 |
+| Q206 | TC picks and quality rolls step the source unit's seed; created items get their seeds from the game seed. | [C] | run:2026-10-11-tc-drops, fn:sub_0055A550_DropCreateItem@0x0055A550 | [items/tc](../items/tc.md#reimplementation-notes) n2 |
+| Q207 | A sub-TC of total 1 with no NoDrop still steps the seed once per pick (`Range(1)`). | [C] | 0x0055AA03, run:2026-10-11-tc-drops | [items/tc](../items/tc.md#reimplementation-notes) n8 |
 | Q208 | The unique pick is one draw on the item seed (created by a game-seed draw), not the source unit's seed. | [C] | fn:ITEMS_BuildUnique@0x005566B0, fn:ITEMS_GetSeed@0x00627D90, run:2026-10-14-uniques | [items/uniques-sets](../items/uniques-sets.md#reimplementation-notes) n1 |
 | Q209 | A single unique candidate still draws (`Range(1)` returns 0 and steps), and the properties start from the stepped seed. | [C] | fn:RNG_RangeOffset@0x00472280, run:2026-10-14-uniques | [items/uniques-sets](../items/uniques-sets.md#reimplementation-notes) n2 |
 | Q210 | The "made" test comes after the pick: made rows stay in the candidate list, and the build fails when one comes up. | [C] | fn:ITEMS_UniqueMarkMade@0x00556530, run:2026-10-14-uniques-forced | [items/uniques-sets](../items/uniques-sets.md#reimplementation-notes) n3 |
@@ -362,6 +370,11 @@ flowchart LR
 | Q439 | Not the caster's seed: mdo 30 draws on the target unit's seed, the shrine entries on the shrine object's, st 55 on a local seed no unit keeps. | [C] | run:2026-10-20-cat-emu-9b, run:2026-10-21-cat-emu-8b, run:2026-10-21-cat-emu-item | [skills/catalogue](../skills/catalogue.md#reimplementation-notes) n2 |
 | Q440 | do 55 and do 58 (after their boundaries) draw on the target's seed, and do 81's per-unit roll on each unit's. | [I] | 0x005C4DF0, 0x005C56C0, 0x005D0920 | [skills/catalogue](../skills/catalogue.md#reimplementation-notes) n2 |
 | Q459 | A player's Smite runs its hit test and its draws, then forces the hit bit (`or ax, 1`): the result is ignored, the draws are not, and the defence bits stay in the word. | [I] | 0x005CEBA8, 0x005CEBB0, fn:sub_005CE9F0_SkillDo150Smite@0x005CE9F0 | [skills/catalogue § J](../skills/catalogue.md#j-paladin-st-29-31-3537-do-6467-73-7982-150) |
+| Q483 | A potion's draws come before the amount test and run for a zero amount too; they depend on the user's vitality or energy being above 0. | [C] | 0x005BE514, run:2026-11-03-use-emu | [items/use](../items/use.md#reimplementation-notes) n2 |
+| Q484 | A refused AI move can queue nothing: a helper reaching `MonAiMove` with flag 2 clear returns 0 on refusal with no idle and no draw; only flag 2 adds the draw and the ring or the idle. | [I] | fn:sub_005DEB60_MonAiMove@0x005DEB60 | [monsters/ai/catalogue](../monsters/ai/catalogue.md#reimplementation-notes) n1 |
+| Q485 | An AI slot may be read twice: row 7's second `aip(3)` draw is a new draw on the same slot, and each `chance` is one step. | [I] | 0x005EFB80 | [monsters/ai/catalogue](../monsters/ai/catalogue.md#reimplementation-notes) n2 |
+| Q486 | `chance(K)` short-circuits as written: row 13's second `chance(1)` is drawn only with a corpse, row 22's `aip3` only with `Skill2 ≥ 0` and a wounded unit. Keep the order of the tests. | [I] | fn:sub_005F1440_AiFallenShaman@0x005F1440, fn:sub_005F2B10_AiGreaterMummy@0x005F2B10 | [monsters/ai/machinery](../monsters/ai/machinery.md#reimplementation-notes) n1 |
+| Q487 | The wanderer tick runs on every room of a walked act, not only on new ones: a frame that creates one room steps every room seed of its act once. | [I] | 0x0052D1C4 | [sim/frame](../sim/frame.md#reimplementation-notes) n7 |
 
 ### 6. Data-dependent branches
 
@@ -386,7 +399,7 @@ flowchart LR
 | Q268 | The monster bit does not block a default spawn; only the `0x1000` centre bits do. | [C] | fn:COLL_PatternMark@0x0064EA90, run:2026-10-14-collision | [drlg/collision](../drlg/collision.md#reimplementation-notes) n6 |
 | Q269 | A wraith's creation pattern 5 lasts only until the refresh: mark it, then run the refresh before the next test. | [C] | fn:sub_00649CA0_PathPatternRefresh@0x00649CA0, run:2026-10-14-collision | [drlg/collision](../drlg/collision.md#reimplementation-notes) n7 |
 | Q270 | Unmarks are not reference-counted: clearing one footprint clears the shared bits of an overlapping unit. | [C] | fn:COLL_PatternUnmark@0x0064EC10, run:2026-10-14-collision | [drlg/collision](../drlg/collision.md#reimplementation-notes) n8 |
-| Q271 | `LogicBoxSingle` resets the level's region counter: flood ids after a single-box room restart from 1. | [C] | fn:sub_0066CCB0_LogicBoxSingle@0x0066CCB0, run:2026-10-14-collision, run:2026-10-15-objects | [drlg/collision](../drlg/collision.md#reimplementation-notes) n11 |
+| Q271 | `LogicBoxSingle` resets the level's region counter: flood ids after a single-box room restart from 1. | [C] | fn:sub_0066CCB0_LogicBoxSingle@0x0066CCB0, run:2026-10-14-collision, run:2026-10-15-objects | [drlg/collision](../drlg/collision.md#reimplementation-notes) n12 |
 | Q272 | The collision grid changes as a spawn pass runs: each placed monster marks cells later members test. | [C] | fn:sub_0064D9B0_CollisionTest@0x0064D9B0, run:2026-10-13-mon-spawn | [monsters/spawn](../monsters/spawn.md#reimplementation-notes) n10 |
 | Q273 | A re-created monster marks the grid like a pass creation, outside any window; leaving its marks out fails later position tests. | [C] | fn:COLL_WHTest@0x0064D800, run:2026-10-21-chain2 | [chain](../chain/README.md#reimplementation-notes) n5 |
 | Q274 | A restored room is not populated again: the new-rooms walk populates once and restores once per activation. | [C] | fn:sub_0052D160_NewRoomsUpdate@0x0052D160, run:2026-10-17-lifecycle | [drlg/lifecycle § D](../drlg/lifecycle.md#d-the-new-rooms-walk-populate-once-restore-once-per-activation); [drlg/lifecycle](../drlg/lifecycle.md#reimplementation-notes) n4 |
@@ -436,9 +449,9 @@ flowchart LR
 | Q318 | No runeword can form in a classic game: no stock row is classic-legal. | [I] | tbl:Runes.txt:Rune1, [Runes § Survey](../../tables/Runes.md#survey-of-the-stock-rows) | [items/sockets-runewords § D](../items/sockets-runewords.md#d-the-runeword-match); [items/sockets-runewords](../items/sockets-runewords.md#reimplementation-notes) n7 |
 | Q319 | A loaded socket count is kept above the creation clamps (`SetSocketsOnLoad`). | [C] | fn:ITEMS_SetSocketsOnLoad@0x0062BE00, run:2026-10-15-sockets | [items/sockets-runewords](../items/sockets-runewords.md#reimplementation-notes) n8 |
 | Q320 | The quality socket clamps belong to creation only (`SetSockets`); no run executed them. | [I] | fn:ITEMS_SetSockets@0x0062BCB0 | [items/sockets-runewords](../items/sockets-runewords.md#reimplementation-notes) n8 |
-| Q321 | The TC level walk is forward-only from the base TC, which is kept even when its level is above mlvl. | [C] | fn:TC_GetByIndex@0x00654E00, run:2026-10-11-tc-drops | [items/tc](../items/tc.md#reimplementation-notes) n6 |
-| Q322 | Classic games differ in the draw total, the entry selection, the throwable re-pick and the Long Sword; the classic sessions reproduce the total, its two clauses, the scan, the refund, and (forced) the bound of 10 and `lsd`. | [C] | fn:TC_ResolveDrops@0x0055A6D0, run:2026-10-13-quality, run:2026-10-14-affixes, run:2026-10-21-throw-forced | [items/tc](../items/tc.md#reimplementation-notes) n10 |
-| Q323 | Classic item rejection and the ratio raises differ too; the expansion-only skip, the scan off the end and the `version` reject have no stock case. | [I] | 0x0055AAED, 0x0055AB33, 0x0055AC5F, 0x0055AF59 | [items/tc](../items/tc.md#reimplementation-notes) n10 |
+| Q321 | The TC level walk is forward-only from the base TC, which is kept even when its level is above mlvl. | [C] | fn:TC_GetByIndex@0x00654E00, run:2026-10-11-tc-drops | [items/tc](../items/tc.md#reimplementation-notes) n7 |
+| Q322 | Classic games differ in the draw total, the entry selection, the throwable re-pick and the Long Sword; the classic sessions reproduce the total, its two clauses, the scan, the refund, and (forced) the bound of 10 and `lsd`. | [C] | fn:TC_ResolveDrops@0x0055A6D0, run:2026-10-13-quality, run:2026-10-14-affixes, run:2026-10-21-throw-forced | [items/tc](../items/tc.md#reimplementation-notes) n11 |
+| Q323 | Classic item rejection and the ratio raises differ too; the expansion-only skip, the scan off the end and the `version` reject have no stock case. | [I] | 0x0055AAED, 0x0055AB33, 0x0055AC5F, 0x0055AF59 | [items/tc](../items/tc.md#reimplementation-notes) n11 |
 | Q324 | Set items take their version from their set and have no `enabled`, ladder or once-per-game test. | [C] | 0x005C2630, 0x005C26A2, tbl:Sets.txt:version, run:2026-10-14-props-forced | [items/uniques-sets](../items/uniques-sets.md#reimplementation-notes) n8 |
 | Q325 | Item version 0 builds by other rules (first match, no draw, ×5 durability for uniques; a set membership walk for sets); drops never reach them. | [I] | 0x005566DE, 0x00556849, fn:sub_005C2740_ItemBuildSetV0@0x005C2740 | [items/uniques-sets](../items/uniques-sets.md#reimplementation-notes) n12 |
 | Q326 | Equal-level gamble order is data: use the game's table, not a stable sort of Gamble.txt. | [C] | data:g_GambleList@0x0096CAB0, run:2026-10-15-vendors | [items/vendors](../items/vendors.md#reimplementation-notes) n4 |
@@ -491,6 +504,16 @@ flowchart LR
 | Q373 | A shapeshifted player takes the form's record, start frame and rate, with the mode mapped through `g_PlrToMonMode` and the MonStats2 fallback. | [I] | fn:UNIT_AnimTransform@0x00645270 | [anim/timing](../anim/timing.md#reimplementation-notes) n4 |
 | Q460 | Champions and uniques pick from `umon` in Normal only; in Nightmare and Hell they come from the region pool. | [C] | fn:sub_005BDE80_MonRegionPickClass@0x005BDE80, tbl:Levels.txt:umon1, run:2026-10-14-mon-special | [monsters/pool](../monsters/pool.md#consumers-named-only) |
 | Q461 | Prevent Monster Heal's hook tests for a player attacker, so stat 117 on a mercenary's items applies no state. | [I] | fn:sub_0057D810_PreventHealHook@0x0057D810 | [combat/to-hit § A](../combat/to-hit.md#a-the-chance-to-hit-combat_tohitroll) |
+| Q488 | The drop's base room moves between lookups: a fixed-room search agrees with all 118 live searches, on open ground, and still fails on declared rooms. | [C] | 0x0064E043, run:2026-11-04-ground-emu | [items/inventory](../items/inventory.md#reimplementation-notes) n1 |
+| Q489 | A player's inventory search and any other owner's differ, in score against first fit and in the one-cell-high order. | [C] | fn:sub_0063B850_InvSpotFindBySize@0x0063B850, run:2026-11-04-inventory-emu | [items/inventory](../items/inventory.md#reimplementation-notes) n4 |
+| Q490 | `DropGoldAmount` passes `fallback` 0; every other direct drop passes 1. | [I] | 0x0055A15C | [items/inventory](../items/inventory.md#reimplementation-notes) n6 |
+| Q491 | The AI row kind follows the stored state, not the class: a unit in state 12 (kind 0) skips the search, when the gate allows it, even when its class's row has kind 1. | [I] | fn:sub_005B1650_MonAiTargetByKind@0x005B1650, 0x005B1663 | [monsters/ai/README](../monsters/ai/README.md#reimplementation-notes) n4 |
+| Q492 | A planner's grid is the live one after `PathPlan`'s unmarks: a unit does not block itself, nor a target under flag `0x800`. An unmark there can take a neighbour's `0x1000`, and the tail's re-mark gives back only the marked unit's footprint. | [I] | 0x00649B07, 0x00649B25, 0x00649BE0 | [path/README](../path/README.md#reimplementation-notes) n1 |
+| Q493 | `PathPlan`'s refusals differ: step 5 clears nothing, the others clear `+0x24`, `+0x28` and flag `0x20`. | [C] | 0x006499D3, 0x006499F0, run:2026-11-03-path-emu-1 | [path/README](../path/README.md#reimplementation-notes) n3 |
+| Q494 | The search refuses a free straight line and path type 1 accepts one; do not merge their reductions. | [C] | 0x0067AA6B, 0x0067B6C0, run:2026-11-03-path-emu-2, run:2026-11-03-path-emu-3 | [path/search](../path/search.md#reimplementation-notes) n1 |
+| Q495 | The line reads the path's fields and the walk the context's; knockback's line starts at `ctx.start`, greedy's at the position. | [C] | 0x00679726, 0x0067A00D, run:2026-11-03-path-emu-3 | [path/search](../path/search.md#reimplementation-notes) n2 |
+| Q496 | The two copies of the grid mark a corpse differently: a server model takes the 3×3 at the death and keeps the record's pattern and mask; the plus at pattern 5 is the client's. | [C] | 0x005A65D9, 0x004B05E3, run:2026-11-04-path-2 | [drlg/collision](../drlg/collision.md#reimplementation-notes) n9 |
+| Q497 | The skill-tab bonus (stat 188) reaches a skill through its SkillDesc `SkillPage`, not through any Skills column. | [I] | 0x006441F5, 0x00644217, tbl:SkillDesc.txt:SkillPage | [skills/dispatch](../skills/dispatch.md#reimplementation-notes) n10 |
 
 ### 7. Timing and frame edges
 
@@ -515,6 +538,15 @@ flowchart LR
 | Q390 | While `+0x4C` = 1 the player can operate nothing and open no waypoint menu until packet 0x48. | [I] | fn:OBJ_OperateDispatch@0x00584420, fn:sub_00535060_PlayerIsBusy@0x00535060 | [quests/travel § E](../quests/travel.md#e-act-change-through-an-npc); [quests/travel](../quests/travel.md#reimplementation-notes) n5 |
 | Q391 | Equipment requirements are checked once per refresh, and the refresh also runs every 136 frames on its own. | [I] | fn:sub_0055DBC0_EquipReqRefresh@0x0055DBC0 | [stats/aggregate](../stats/aggregate.md#reimplementation-notes) n6 |
 | Q392 | Queue one end event per state apply and per refresh, and let a stale one fire: it frees only lists whose end frame has passed. | [C] | fn:EVENT_TimedListExpire@0x00580800, run:2026-10-17-stats | [stats/states](../stats/states.md#reimplementation-notes) n2 |
+| Q498 | A monster's drop has `+0x24` 0 and a player's does not, so "items last 10 minutes" holds for one of them only, on the path run. | [C] | run:2026-11-04-inventory, 0x0055A6B4 | [items/inventory](../items/inventory.md#reimplementation-notes) n2 |
+| Q499 | The save recomputes a ground item's expiry, so leaving a room can lengthen any item's life, a player's drop too. | [C] | run:2026-11-04-inventory-2, 0x00541B6C | [items/inventory](../items/inventory.md#reimplementation-notes) n3 |
+| Q500 | The AI has two entries, the queue and a mode end; at a mode end it runs inside that mode-end event, so its draws come at that event's place in the frame, not at the kind-2 record's. | [I] | fn:sub_005B1740_MonAiEvent@0x005B1740, fn:sub_005A8030_MonModeEndGeneric@0x005A8030 | [monsters/ai/README](../monsters/ai/README.md#reimplementation-notes) n1; [sim/frame](../sim/frame.md#reimplementation-notes) n8 |
+| Q501 | `Idle` queues; a think that queues nothing leaves no kind-2 record, so such a unit next thinks at a mode's end. AI row 6 cancels its pending event on every decision. | [I] | fn:UNIT_CancelEvents@0x00540E60, fn:sub_005F02C0_AiFallen@0x005F02C0 | [monsters/ai/README](../monsters/ai/README.md#reimplementation-notes) n2 |
+| Q502 | The frame stamp a packet reads is the frame before the one it acts in: handlers run with `Game+0xA8 = N` after tick N, and their effect is seen by tick N + 1's passes. | [I] | 0x0052D87B, fn:sub_0052CFE0_SrvDrainMessages@0x0052CFE0 | [sim/frame](../sim/frame.md#reimplementation-notes) n1 |
+| Q503 | `EventQueueAt` with frame −1 drops its callback, and a frame at or below the current one is raised rather than refused. | [C] | 0x005416D5, run:2026-10-30-frame-emu-2 | [sim/frame](../sim/frame.md#reimplementation-notes) n2 |
+| Q504 | An event slot holds records of later multiples of 64: a walk passes over a record whose frame is not the current one and keeps it. | [C] | fn:sub_00541060_MonEventsRun@0x00541060, run:2026-10-30-frame-emu-2 | [sim/frame](../sim/frame.md#reimplementation-notes) n4 |
+| Q505 | So a record due at `F`, queued in frame `q`, is passed over `(F − q − 1) ÷ 64` times in the frames after `q`, and once more in frame `q` itself when `F ≡ q (mod 64)` and that frame's walk reaches it. | [I] | fn:sub_005416B0_EventQueueAt@0x005416B0, 0x005414EC, 0x00541589 | [sim/frame](../sim/frame.md#reimplementation-notes) n5 |
+| Q506 | The new-rooms flag is cleared after the walk, so a room created during its own act's walk waits; do not re-walk. | [I] | 0x0052D21D | [sim/frame](../sim/frame.md#reimplementation-notes) n6 |
 
 ### 8. Multiplayer edges
 
@@ -523,9 +555,9 @@ flowchart LR
 | Q393 | The player count raises the crushing-blow divisor through the monster's stat 100 (its creation count). | [C] | fn:sub_005738F0_PlayerHpPct@0x005738F0, run:2026-10-16-combat | [combat/delivery](../combat/delivery.md#reimplementation-notes) n2; [combat/README](../combat/README.md#reimplementation-notes) n7 |
 | Q394 | The player count is frozen at a monster's creation: `/players` changes nothing on live monsters, and stat 100 keeps the creation count. | [C] | run:2026-10-15-mon-stats | [monsters/stats](../monsters/stats.md#reimplementation-notes) n3 |
 | Q395 | Single player reads the `L-` MonLvl columns (3 954 creations). | [C] | run:2026-10-15-mon-stats | [monsters/stats](../monsters/stats.md#reimplementation-notes) n2 |
-| Q396 | The TC party rule is "same level", not "two screens". | [C] | fn:sub_005405A0_PartyForEachInLevel@0x005405A0, run:2026-10-12-tc-party | [items/tc](../items/tc.md#reimplementation-notes) n4 |
-| Q397 | `/players` is a floor on the player count, not an addition, in single player (type 3) and on a TCP/IP host (type 2), where only the server's setting counts. | [C] | fn:sub_00535790_PlayerCount@0x00535790, run:2026-10-11-tc-drops, run:2026-10-20-two-clients | [items/tc](../items/tc.md#reimplementation-notes) n5 |
-| Q398 | Game type 1 also takes `/players`; other types do not. | [I] | fn:sub_00535790_PlayerCount@0x00535790 | [items/tc](../items/tc.md#reimplementation-notes) n5 |
+| Q396 | The TC party rule is "same level", not "two screens". | [C] | fn:sub_005405A0_PartyForEachInLevel@0x005405A0, run:2026-10-12-tc-party | [items/tc](../items/tc.md#reimplementation-notes) n5 |
+| Q397 | `/players` is a floor on the player count, not an addition, in single player (type 3) and on a TCP/IP host (type 2), where only the server's setting counts. | [C] | fn:sub_00535790_PlayerCount@0x00535790, run:2026-10-11-tc-drops, run:2026-10-20-two-clients | [items/tc](../items/tc.md#reimplementation-notes) n6 |
+| Q398 | Game type 1 also takes `/players`; other types do not. | [I] | fn:sub_00535790_PlayerCount@0x00535790 | [items/tc](../items/tc.md#reimplementation-notes) n6 |
 | Q399 | Ladder uniques drop in single player and TCP/IP: the one `ladder` bit is ignored whenever `Game+0x6A` ≠ 0. | [C] | 0x005568C3, 0x005568D8, run:2026-10-14-uniques-forced | [items/uniques-sets](../items/uniques-sets.md#reimplementation-notes) n5 |
 | Q400 | The forge makes `n` gems per wave, per credited player. | [I] | fn:sub_005B5C10_A4Q3_ForgeOperate@0x005B5C10 | [items/quest-drops](../items/quest-drops.md#reimplementation-notes) n9 |
 | Q401 | Server units do not use the room seed: the room-seed rule is the client's, and a server-side reimplementation seeds monsters, objects, NPCs and items from the game seed. | [C] | fn:sub_00555230_SUnitCreate@0x00555230, run:2026-10-11-seed-tree-p1 | [rng/seeds](../rng/seeds.md#reimplementation-notes) n7 |
@@ -535,6 +567,7 @@ flowchart LR
 | Q451 | With one member collected, the award goes to the credited player at its own level, whoever that member was; with none, nobody gets anything (the code's map; no logged kill separates it). | [C] | 0x0057E70D, 0x0057E733, run:2026-11-03-party-emu | [player/party](../player/party.md#reimplementation-notes) n2; [player/creation § J](../player/creation.md#j-other-level-and-experience-changes) |
 | Q452 | What Q450 and Q451 lead to in play: a far hireling's or summon's kill can pay its far owner alone or nobody, and a dead killer can be paid while the living member is not. | [I] | 0x0057E6FB, 0x0057E733, 0x0057E654, 0x0057E65A | [player/party](../player/party.md#reimplementation-notes) n3; [player/creation § J](../player/creation.md#j-other-level-and-experience-changes) |
 | Q453 | A credited player in no party has no alive or distance test; only the party branch has them. | [C] | 0x0057EA64, 0x0057EAA1, run:2026-11-03-party-emu | [player/party](../player/party.md#reimplementation-notes) n4; [player/creation § G](../player/creation.md#g-kill-experience--xp_compute) |
+| Q507 | `ActsClockPass` refreshes every client's player on any act's clock change, not only that act's clients; only the packet goes to the act's. | [I] | 0x0052D7C6, 0x0052D85B | [sim/frame](../sim/frame.md#reimplementation-notes) n10 |
 
 ### 9. Deliberate oddities that look like bugs
 
@@ -592,6 +625,26 @@ These are faithful 1.14d behaviour that reads as a mistake, or that contradicts 
 | Q472 | Neither skill creator adds a skill's to-hit bonus to a player's missile; do 74 (Double Throw) is the one exception read, and other creators are unfollowed. | [I] | fn:sub_0056ECB0_SkillMissileCreate@0x0056ECB0, fn:sub_0056EE90_SkillMissileCreateLob@0x0056EE90, 0x005D8943, 0x005D896E, fn:SKILLS_GetToHit@0x006449F0 | [skills/missiles § B](../skills/missiles.md#b-creation); [skills/catalogue § K](../skills/catalogue.md#k-barbarian-st-3234-3841-do-2-9-6872-7478) |
 | Q473 | Blessed Aim and Penetrate both name `penetrate` in `passivestate`, so a running Blessed Aim removes Penetrate's list from its caster. | [I] | 0x005CEFD5, 0x005CEFFD, fn:AURA_ApplyToTarget@0x005CEDC0, tbl:Skills.txt:passivestate | [skills/catalogue § J](../skills/catalogue.md#j-paladin-st-29-31-3537-do-6467-73-7982-150) |
 | Q474 | A monster's drain roll takes the packet's field as its base, and the result is added to that field: `field + max(field + roll, 0) × srcdam ÷ 128`, so a drain already in the packet counts again. | [I] | 0x0057BA71, 0x0057BAF3, fn:COMBAT_RollElemStat@0x0057A8E0 | [combat/damage § A](../combat/damage.md#a-combat_builddamage-in-order) |
+| Q508 | `MonItemPercent` loads but no code reads it: a monster's death drop chooses no row, makes no draw and steps no seed for it. Do not gate a drop on `TreasureClassPercent`. | [I] | fn:sub_00654F20_MonItemPctLoad@0x00654F20, fn:sub_00654FE0_MonItemPctGetRecord@0x00654FE0, fn:TC_ResolveDrops@0x0055A6D0 | [items/tc](../items/tc.md#reimplementation-notes) n1 |
+| Q509 | The inventory packet `0x18` sets the page before the placement, so a refused item carries the new page byte. | [I] | 0x0054AC68 | [items/inventory](../items/inventory.md#reimplementation-notes) n5 |
+| Q510 | `elx` does not read its row's `stat1` and `calc1`. | [C] | fn:sub_005BF060_ItemUseElixir@0x005BF060, run:2026-11-03-use-emu | [items/use](../items/use.md#reimplementation-notes) n3 |
+| Q511 | A first identify request consumes nothing; the second, on an unidentified item in the user's inventory, does. `0x27` does not clear the marks first. | [I] | 0x00561F60, fn:sub_005BE130_ItemUseIdentifyTest@0x005BE130 | [items/use](../items/use.md#reimplementation-notes) n4 |
+| Q512 | A belt scroll used on an item does not shift its column, every other belt use does, and a used belt scroll on a target not in a grid is removed unused. | [I] | 0x00561F60, 0x005621F4 | [items/use](../items/use.md#reimplementation-notes) n5 |
+| Q513 | Packet `0x61` consumes the cursor item whatever `ItemUse` returned. | [I] | 0x0054D3FD, 0x0054D406 | [items/use](../items/use.md#reimplementation-notes) n6 |
+| Q514 | Do not refuse on a use handler's "3" at the drain: the return is discarded. | [I] | 0x0053F459 | [items/use](../items/use.md#reimplementation-notes) n7 |
+| Q515 | Two life readers: AI row 11 calls `UnitLifePct`, rows 4, 8 and 15 `AiLifePct`; keep them apart. | [I] | fn:sub_00621F20_UnitLifePct@0x00621F20, fn:sub_005DD280_AiLifePct@0x005DD280 | [monsters/ai/catalogue](../monsters/ai/catalogue.md#reimplementation-notes) n3 |
+| Q516 | AI row 21's `Idle` does not return: the walk runs in the same event. | [I] | 0x005F29D7, 0x005F29E6 | [monsters/ai/machinery](../monsters/ai/machinery.md#reimplementation-notes) n2 |
+| Q517 | A leader's stack block carries four words the code does not write, and row 30 reads `+0x0C/+0x10` of a kind-1 head record for its `GameFindUnit`. | [I] | 0x005F04AA, 0x005F04D5, 0x005F53E0 | [monsters/ai/machinery](../monsters/ai/machinery.md#reimplementation-notes) n5 |
+| Q518 | AI row 34's override type 1 plans type 7, so `Ovr(1, …)` is no type-1 request. | [I] | fn:sub_005DE190_MonAiPathOverride@0x005DE190 | [monsters/ai/machinery](../monsters/ai/machinery.md#reimplementation-notes) n6 |
+| Q519 | `PathPlan`'s tail re-marks the unit even when the free step returned 0; a plan's tail is one of the two things that end the unmarked state. | [I] | 0x00649BE0 | [path/README](../path/README.md#reimplementation-notes) n2 |
+| Q520 | `PathReplan` changes the path type without the flags. | [I] | 0x006503AF, 0x006503D2 | [path/README](../path/README.md#reimplementation-notes) n4 |
+| Q521 | Knockback clears the path's target unit whether or not it finds a point. | [C] | 0x00648AE2, 0x00648AEA, run:2026-11-03-path-emu-3 | [path/README](../path/README.md#reimplementation-notes) n5 |
+| Q522 | `0x8000` is written but in no immediate move mask scanned: on what the path spec states, a corpse mark is not a blocker. | [I] | 0x00649FD8, fn:PATH_MonTestMask@0x00648480 | [path/README](../path/README.md#reimplementation-notes) n6 |
+| Q523 | `unflatDead` changes no grid mark and no move mask: its one direct reader is a client draw-list test. | [I] | 0x004648AB, 0x004DDAD6 | [path/README](../path/README.md#reimplementation-notes) n7 |
+| Q524 | The plan of path type 14 reads no grid; the hammer's end at a wall is the missile's own step. | [I] | fn:sub_005AE1F0_MissileMoveCollide@0x005AE1F0 | [path/README](../path/README.md#reimplementation-notes) n8 |
+| Q525 | A greedy walk's oddities are behaviour to keep: the doubled first point, the point short at a turned last step, the reversal's end. | [C] | 0x00679DDA, 0x00679E1D, 0x00679DB7, run:2026-11-03-path-emu-3 | [path/search](../path/search.md#reimplementation-notes) n5 |
+| Q526 | Do not reset `g_HitClassCounter` per game. | [I] | 0x0057CE4F | [sim/frame](../sim/frame.md#reimplementation-notes) n9 |
+| Q527 | Events 4 and 8 never fire: keep stat 195's `domissileattack` registration inert; dispatching it on a missile attack adds casts the game does not make. | [I] | fn:UNIT_DispatchEvent@0x005C0C30, 0x0057D606 | [skills/dispatch](../skills/dispatch.md#reimplementation-notes) n9 |
 
 ## Crash and hang paths
 
@@ -661,47 +714,54 @@ One row per spec with a *Reimplementation notes* section: its note count, the no
 and the skipped ones by reason. "Weaker duplicate" is a note that restates, at a weaker tag, a statement another spec
 holds raised; the entry takes the raised statement and the disagreement is routed to the spec-writer's backlog
 ([entry](../../backlog/archive/2026-10-30-spec-writer-spec-writer-quirks-harvest-tag-disagreements.md); the three overviews it
-named now state the raised clause, so none is left). Skipped: 29 notes, presentation 5, table rule 12, not a trap 10,
+named now state the raised clause, so none is left). Skipped: 31 notes, presentation 5, table rule 12, not a trap 12,
 wall-clock 2, weaker duplicate 0.
 
 | Spec | Notes | Taken | Presentation | Table rule | Not a trap | Wall-clock | Weaker duplicate |
 |---|---|---|---|---|---|---|---|
-| [anim/README](../anim/README.md#reimplementation-notes) | 2 | 2 | — | — | — | — | — |
 | [anim/movement](../anim/movement.md#reimplementation-notes) | 4 | 4 | — | — | — | — | — |
+| [anim/README](../anim/README.md#reimplementation-notes) | 2 | 2 | — | — | — | — | — |
 | [anim/timing](../anim/timing.md#reimplementation-notes) | 7 | 7 | — | — | — | — | — |
 | [chain/README](../chain/README.md#reimplementation-notes) | 6 | 6 | — | — | — | — | — |
-| [combat/README](../combat/README.md#reimplementation-notes) | 7 | 7 | — | — | — | — | — |
 | [combat/damage](../combat/damage.md#reimplementation-notes) | 6 | 6 | — | — | — | — | — |
 | [combat/delivery](../combat/delivery.md#reimplementation-notes) | 15 | 15 | — | — | — | — | — |
+| [combat/README](../combat/README.md#reimplementation-notes) | 7 | 7 | — | — | — | — | — |
 | [combat/reductions](../combat/reductions.md#reimplementation-notes) | 7 | 7 | — | — | — | — | — |
 | [combat/to-hit](../combat/to-hit.md#reimplementation-notes) | 6 | 6 | — | — | — | — | — |
 | [data/calc](../data/calc.md#reimplementation-notes) | 9 | 7 | — | n4, n5 | — | — | — |
 | [data/excel](../data/excel.md#reimplementation-notes) | 11 | 3 | — | n1, n2, n3, n4, n6, n8, n9, n11 | — | — | — |
 | [data/strings](../data/strings.md#reimplementation-notes) | 8 | 4 | n5, n6 | — | n1, n2 | — | — |
-| [drlg/README](../drlg/README.md#reimplementation-notes) | 6 | 6 | — | — | — | — | — |
-| [drlg/collision](../drlg/collision.md#reimplementation-notes) | 11 | 11 | — | — | — | — | — |
+| [drlg/collision](../drlg/collision.md#reimplementation-notes) | 12 | 12 | — | — | — | — | — |
 | [drlg/lifecycle](../drlg/lifecycle.md#reimplementation-notes) | 8 | 7 | — | — | n8 | — | — |
 | [drlg/maze](../drlg/maze.md#reimplementation-notes) | 10 | 10 | — | — | — | — | — |
 | [drlg/outdoor](../drlg/outdoor.md#reimplementation-notes) | 12 | 12 | — | — | — | — | — |
 | [drlg/preset](../drlg/preset.md#reimplementation-notes) | 10 | 9 | — | — | n10 | — | — |
+| [drlg/README](../drlg/README.md#reimplementation-notes) | 6 | 6 | — | — | — | — | — |
 | [drlg/room-tiles](../drlg/room-tiles.md#reimplementation-notes) | 13 | 13 | — | — | — | — | — |
 | [drlg/warps](../drlg/warps.md#reimplementation-notes) | 6 | 6 | — | — | — | — | — |
 | [hirelings/README](../hirelings/README.md#reimplementation-notes) | 14 | 12 | — | n9 | n14 | — | — |
 | [items/affixes](../items/affixes.md#reimplementation-notes) | 13 | 13 | — | — | — | — | — |
 | [items/cube](../items/cube.md#reimplementation-notes) | 14 | 14 | — | — | — | — | — |
 | [items/economy](../items/economy.md#reimplementation-notes) | 10 | 9 | — | — | n10 | — | — |
+| [items/inventory](../items/inventory.md#reimplementation-notes) | 8 | 7 | — | — | n8 | — | — |
 | [items/properties](../items/properties.md#reimplementation-notes) | 14 | 13 | — | n12 | — | — | — |
 | [items/quality](../items/quality.md#reimplementation-notes) | 10 | 10 | — | — | — | — | — |
 | [items/quest-drops](../items/quest-drops.md#reimplementation-notes) | 10 | 9 | n10 | — | — | — | — |
 | [items/sockets-runewords](../items/sockets-runewords.md#reimplementation-notes) | 8 | 8 | — | — | — | — | — |
-| [items/tc](../items/tc.md#reimplementation-notes) | 10 | 9 | — | — | n9 | — | — |
+| [items/tc](../items/tc.md#reimplementation-notes) | 11 | 10 | — | — | n10 | — | — |
 | [items/uniques-sets](../items/uniques-sets.md#reimplementation-notes) | 12 | 12 | — | — | — | — | — |
+| [items/use](../items/use.md#reimplementation-notes) | 7 | 7 | — | — | — | — | — |
 | [items/vendors](../items/vendors.md#reimplementation-notes) | 10 | 10 | — | — | — | — | — |
+| [monsters/ai/catalogue](../monsters/ai/catalogue.md#reimplementation-notes) | 3 | 3 | — | — | — | — | — |
+| [monsters/ai/machinery](../monsters/ai/machinery.md#reimplementation-notes) | 6 | 6 | — | — | — | — | — |
+| [monsters/ai/README](../monsters/ai/README.md#reimplementation-notes) | 4 | 4 | — | — | — | — | — |
 | [monsters/pool](../monsters/pool.md#reimplementation-notes) | 11 | 11 | — | — | — | — | — |
 | [monsters/spawn](../monsters/spawn.md#reimplementation-notes) | 13 | 13 | — | — | — | — | — |
 | [monsters/special](../monsters/special.md#reimplementation-notes) | 12 | 11 | n1 | — | — | — | — |
 | [monsters/stats](../monsters/stats.md#reimplementation-notes) | 11 | 11 | — | — | — | — | — |
 | [objects/README](../objects/README.md#reimplementation-notes) | 16 | 16 | — | — | — | — | — |
+| [path/README](../path/README.md#reimplementation-notes) | 8 | 8 | — | — | — | — | — |
+| [path/search](../path/search.md#reimplementation-notes) | 6 | 6 | — | — | — | — | — |
 | [player/creation](../player/creation.md#reimplementation-notes) | 9 | 9 | — | — | — | — | — |
 | [player/party](../player/party.md#reimplementation-notes) | 6 | 6 | — | — | — | — | — |
 | [quests/progression](../quests/progression.md#reimplementation-notes) | 8 | 5 | n8 | — | n5 | n7 | — |
@@ -709,13 +769,14 @@ wall-clock 2, weaker duplicate 0.
 | [rng/README](../rng/README.md#reimplementation-notes) | 5 | 5 | — | — | — | — | — |
 | [rng/seeds](../rng/seeds.md#reimplementation-notes) | 12 | 11 | — | — | n9 | — | — |
 | [save/d2s](../save/d2s.md#reimplementation-notes) | 14 | 14 | — | — | — | — | — |
-| [skills/README](../skills/README.md#reimplementation-notes) | 3 | 3 | — | — | — | — | — |
+| [sim/frame](../sim/frame.md#reimplementation-notes) | 10 | 9 | — | — | n3 | — | — |
 | [skills/catalogue](../skills/catalogue.md#reimplementation-notes) | 8 | 7 | — | — | n5 | — | — |
-| [skills/dispatch](../skills/dispatch.md#reimplementation-notes) | 8 | 8 | — | — | — | — | — |
+| [skills/dispatch](../skills/dispatch.md#reimplementation-notes) | 10 | 10 | — | — | — | — | — |
 | [skills/missiles](../skills/missiles.md#reimplementation-notes) | 10 | 10 | — | — | — | — | — |
+| [skills/README](../skills/README.md#reimplementation-notes) | 3 | 3 | — | — | — | — | — |
 | [stats/aggregate](../stats/aggregate.md#reimplementation-notes) | 6 | 6 | — | — | — | — | — |
 | [stats/states](../stats/states.md#reimplementation-notes) | 7 | 7 | — | — | — | — | — |
-| **Total** | 454 | 425 | — | — | — | — | — |
+| **Total** | 510 | 479 | — | — | — | — | — |
 
 Step notes taken beyond the *Reimplementation notes*: player/creation § G (the /256 factors, the `0x7FFFFF` clamp,
 the ratio shift's overflow branch) and § J (the party share's f32 quotient, its wraps, edge and cap, the distance's origin and the n = 1 credit), monsters/stats § A (`MulDiv`), stats/states

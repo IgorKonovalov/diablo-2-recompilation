@@ -35,6 +35,9 @@ Implements the fast tier of `.claude/skills/architect/references/evidence-rules.
                "Next free number" not above every number in use
            E17 a ```mermaid block under docs/ that parses but does not draw, draws nothing, or loses a
                label on the way to the drawing (see below)
+           E18 docs/specs/quirks/README.md disagrees with the specs it indexes: `python3 -I tools/quirks.py
+               check` (rules Q1-Q4 there; plan 0057, registered at the plan 0064 Phase 4 review), skipped
+               when the index is absent
            (a rule in DEMOTED is reported as a warning until the files it flags are fixed: plan 0053)
   warnings W1 a [C]/[I] line or table row with no anchor
            W2 a table with a Tag column has a row with an empty tag cell
@@ -1362,6 +1365,7 @@ RULES = [
     ("E8", "relative links and #fragments resolve"),
     ("E9", "mermaid blocks parse"),
     ("E17", "mermaid blocks draw, labels intact"),
+    ("E18", "quirks index matches the specs (tools/quirks.py check)"),
     ("E10", "no tags, anchors or addresses in the wiki"),
     ("E11", "wiki pages based_on reviewed specs"),
     ("E12", "wiki sections link a spec"),
@@ -1446,6 +1450,7 @@ def run_gate(root, cache_root=None):
     parsed = check_mermaid([(rel, n, body) for rel in mds if rel.startswith("docs/")
                             for n, body in mermaid_blocks(texts[rel])], cache_root or root, rep)
     check_mermaid_render(parsed, cache_root or root, rep)
+    check_quirks(root, rep)
     # W3: a symbol is cited when its name appears in some spec or finding
     # (one pass over the corpus: the names are [A-Za-z0-9_]+, so a word-set lookup equals the
     # bounded regex search; a name with another character falls back to the search)
@@ -1460,6 +1465,31 @@ def run_gate(root, cache_root=None):
         if not found:
             rep.warn("W3", "re/symbols.csv", line, f"{name} is cited by no doc")
     return rep
+
+
+QUIRKS_INDEX = "docs/specs/quirks/README.md"
+
+
+def check_quirks(root, rep):
+    """E18: run `tools/quirks.py check` on root (about 0.2 s); each `quirks:` line is one error."""
+    if not os.path.isfile(os.path.join(root, QUIRKS_INDEX)):
+        return
+    text = read_text(root, QUIRKS_INDEX)
+    end = text.find("\n---\n", 4) if text.startswith("---\n") else -1
+    off = text[:end + 5].count("\n") if end > 0 else 0   # quirks.py numbers lines after the front matter
+    tool = os.path.join(os.path.dirname(os.path.abspath(__file__)), "quirks.py")
+    out = subprocess.run([sys.executable, "-I", tool, "--root", root, "check"],
+                         capture_output=True, text=True)
+    m = re.search(r"^SUMMARY entries=(\d+)", out.stdout, re.M)
+    rep.count("E18", int(m.group(1)) if m else 1)
+    for line in out.stdout.splitlines():
+        if line.startswith("quirks: "):
+            rest = line[len("quirks: "):]
+            lm = re.match(r"(\d+): (.*)", rest)
+            rep.err("E18", QUIRKS_INDEX, int(lm.group(1)) + off if lm else 1, lm.group(2) if lm else rest)
+    if not m or (out.returncode and not rep.errors.get("E18")):
+        rep.err("E18", QUIRKS_INDEX, 1, f"tools/quirks.py check failed (exit {out.returncode}): "
+                f"{(out.stderr or out.stdout).strip()[-200:]}")
 
 
 def staged_snapshot(root, also, dest):

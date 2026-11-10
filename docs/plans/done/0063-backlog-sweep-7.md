@@ -320,7 +320,7 @@ says; the tag deltas equal the raw token recount per spec.
 - **quirks.py check, 15 errors:** the same 15 on `main`; real drift, none from this lane. Five Q2 errors are
   drlg/collision's notes renumbered by the ninth bullet of commit `c22a55be` (Q72, Q175, Q271 cite the old numbers);
   ten Q3 errors are eight specs with notes and no Coverage row, and drlg/collision's row at 11 notes for 12. Filed
-  [backlog](../../backlog/2026-11-10-architect-spec-writer-quirks-check-drift.md) (to spec-writer); the research-map
+  [backlog](../../backlog/archive/2026-11-10-architect-spec-writer-quirks-check-drift.md) (to spec-writer); the research-map
   quirks row now says so.
 - **Close.** Plan done and moved to `done/`; plans README row updated (next free number unchanged, 0069); the three
   spec-writer entries were closed by the lane, the four Phase 2b and three Phase 2a entries by theirs; the 0058 party

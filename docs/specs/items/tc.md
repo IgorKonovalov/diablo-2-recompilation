@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, data/excel]
 consumed_by: [items/quality, items/quest-drops, objects]
-tags: {C: 121, I: 62, L: 6}
+tags: {C: 123, I: 66, L: 7}
 updated: 2026-11-10
 ---
 
@@ -779,7 +779,7 @@ H6.   item ← e.index
         item ← ItemByCode("lsd")                                          ; Long Sword, fn:sub_00633680_ItemIndexByCode@0x00633680
 H7.   unit ← DropCreateItem(game, item, src, quality, uidx, up)          ; does not touch src.seed
       if unit = none: return
-H8.   if unit is of item type 4 (gold) and e.aux ≠ 0:                    ; the equivalence test: [I] (fn:ITEMS_UnitIsType@0x00629BB0, H8–H9 note)
+H8.   if UnitIsType(unit, 4 gold) and e.aux ≠ 0:                        ; the type test of § K: [I] (fn:ITEMS_UnitIsType@0x00629BB0, H8–H9 note)
         unit.stat[14 gold] ← (i32)(unit.stat[14] × e.aux) >> 8           ; mul=; arithmetic shift, signedness [I] (0x0055AF21, H8–H9 note)
       if out ≠ none: out[count] ← unit
       count ← count + 1
@@ -878,7 +878,7 @@ Step notes:
   for the 489 items whose own type is not 4 and for the 14 items of sources with no killer. [C]
   (0x0055AF21–0x0055AF2F, fn:sub_005589A0_DropGoldFind@0x005589A0, run:2026-10-20-sweep-items-tc,
   [items/0001 § Plan 0038 batch H2a](../../findings/items/0001-tc-resolution.md#plan-0038-batch-h2a-2026-10-20))
-- H8–H9. `mul=` tests type `gold` through the type-equivalence test and gold find tests the own `type` exactly 4; on
+- H8–H9. `mul=` tests type `gold` through the type test of [§ K](#k-the-item-type-test--items_istype-and-items_unitistype) and gold find tests the own `type` exactly 4; on
   stock data only `gld` is of type 4 by any route, so the two tests agree there. Both products are signed 32-bit and
   `÷ 100` is an exact signed division; every logged product was positive. [I] (fn:sub_005589A0_DropGoldFind@0x005589A0,
   fn:ITEMS_UnitIsType@0x00629BB0)
@@ -902,8 +902,8 @@ I1. for each itemtypes record t with TreasureClass ≠ 0, in record order:   [C]
         new TC: picks 1, group 0, level L − 3, noDrop 0, ratio all 0
         for each item i in item-index order (weapons, armor, misc):
           if Items[i].quest = 0 and Items[i].spawnable ≠ 0
-             and i is of type t
-             and (t = 38 or i is not of type 38)                          ; 38 = tpot
+             and IsType(i, t)                                             ; § K: type and type2, through Equiv1/Equiv2
+             and (t = 38 or not IsType(i, 38))                            ; 38 = tpot
              and L − 3 < Items[i].level ≤ L:
             add entry i with Prob = max(1, ItemTypes[Items[i].type].Rarity)
             flag it expansion-only if Items[i].version ≥ 100
@@ -917,6 +917,11 @@ Step notes:
   the TC type's `Rarity` instead gets 1 235 calls wrong. [C] (0x0065428B–0x00654361, tbl:ItemTypes.txt:Rarity,
   tbl:Weapons.txt:spawnable, tbl:Weapons.txt:level, run:2026-10-11-tc-drops, `tools/tc_sweep.py cf`,
   [items/0001 § Plan 0038 batch S2a](../../findings/items/0001-tc-resolution.md#plan-0038-batch-s2a-2026-10-16))
+- I1. **"Of type `t`" and "not of type 38" are the record test `IsType` of [§ K](#k-the-item-type-test--items_istype-and-items_unitistype)**:
+  the item's `type` and `type2`, each through `Equiv1`/`Equiv2`, so a `t` such as `weap`, `mele` or `armo` takes every
+  item whose type descends from it. The weight is the exception: it reads the own `type`. [I] (fn:ITEMS_IsType@0x00629A90,
+  fn:TC_BuildAutoTCs@0x006541C0, [data/0001 §7](../../findings/data/0001-excel-loader.md#7-treasure-classes-at-load-time),
+  [archaeology/0002 § 5](../../findings/archaeology/0002-unreached-rows.md#5-items-659-base-items-306-weapons-202-armor-151-misc))
 - I1. If the code rebuild fails for a type, no TC is allocated for that level and the numbering shifts;
   this does not happen with stock data (160 TCs). [I] (fn:TC_BuildAutoTCs@0x006541C0)
 
@@ -964,6 +969,43 @@ Step notes:
   [items/0001 § Plan 0039 batch P1b](../../findings/items/0001-tc-resolution.md#plan-0039-batch-p1b-2026-10-17))
 - [C] The 11 object calls in the run (`Act 1 Chest A`, `max = 6`, 8 of them with forced quality 4)
   reproduce with D–H unchanged. (fn:sub_00585B90_ObjectChestDrop@0x00585B90, run:2026-10-11-tc-drops)
+
+### K. The item-type test — `ITEMS_IsType` and `ITEMS_UnitIsType`
+
+"Item `i` is of type `t`" (I1, H8, and the specs that link here: [items/quality](quality.md) S2,
+[data/excel G2](../data/excel.md#g-treasure-classes)) is this test, not a compare with the item's own `type` column.
+It has two entry points: one takes an item index, the other an item unit and tests the unit's base item.
+
+```
+K1. Closure(x) = { x } ∪ Closure(ItemTypes[x].Equiv1) ∪ Closure(ItemTypes[x].Equiv2)
+                                                                   ; every type reached from x through Equiv1/Equiv2, repeatedly
+K2. IsType(i, t) = t ∈ Closure(Items[i].type) or t ∈ Closure(Items[i].type2)
+                                                                   ; item index i (fn:ITEMS_IsType@0x00629A90)
+K3. UnitIsType(unit, t) = IsType(the unit's base item index, t)    ; (fn:ITEMS_UnitIsType@0x00629BB0)
+```
+
+Step notes:
+
+- K2. [I] **The record test reads `type`, then `type2`, each through the `Equiv1`/`Equiv2` equivalences** (the code
+  holds them as an equivalence bitmap). The auto TCs of I1 are built with it; on stock data reading `type2` changes no
+  count. (fn:ITEMS_IsType@0x00629A90, fn:TC_BuildAutoTCs@0x006541C0,
+  [items/0001 § Functions](../../findings/items/0001-tc-resolution.md#functions),
+  [archaeology/0002 § 5](../../findings/archaeology/0002-unreached-rows.md#5-items-659-base-items-306-weapons-202-armor-151-misc))
+- K3. [C] **The unit test is the same closure, of the base's `type` and `type2`.** Taken as that closure it gives the
+  logged affix candidate list of every pick of the run ([items/affixes](affixes.md) C5c–C5d), and the `gold` test of
+  H8 gave 1 for the 207 `gld` units of the H2a run and 0 for the 506 others (*Constants*, `GOLD_TYPE`).
+  (fn:ITEMS_UnitIsType@0x00629BB0, run:2026-10-14-affixes, run:2026-10-20-sweep-items-tc,
+  [items/0005 § 3](../../findings/items/0005-affixes.md#3-items_pickmagicaffixitem-needspawnable-mustroll-applyprops-isprefix-forcedid-autogroup-0x005c1560))
+- K1. [C] **A blank `Equiv1` or `Equiv2` cell stores record 0** (`None`, the first row with the blank code), not a
+  "no parent" value: the loader looks a blank code up like any other. (tbl:ItemTypes.txt:Equiv1,
+  [data/0004 § Answer](../../findings/data/0004-cell-converters.md#answer-summary))
+- K1. [I] So record 0 sits in the closure of every type with a blank `Equiv`. No test of this spec or of the specs
+  that link here asks for type 0 (I1's `t` has `TreasureClass` ≠ 0, H8 asks for 4, items/quality S2 for 45 and 50), so
+  treating a blank `Equiv` as no parent gives the same answers. How the code walks the equivalences (depth, a cycle)
+  is not read: see *Open questions*. (tbl:ItemTypes.txt:TreasureClass, tbl:ItemTypes.txt:Equiv1)
+- K. The tests that do **not** go through `IsType` read the item's own `type` column only: the throwable test (H6),
+  gold find (H9), the auto-TC weight (I1, the own type's `Rarity`), and items/quality A2–A5 and S1. [I] (0x0055AE6E,
+  fn:sub_005589A0_DropGoldFind@0x005589A0, [items/quality § A](quality.md#a-early-returns-no-draw-no-row))
 
 ## Draw order on `src.seed`
 
@@ -1186,6 +1228,11 @@ potions' quality calls return without drawing (H4).
 - [L] Whether any code reaches `MonItemPercent` through an address built at run time: the static scan cannot see one,
   and a read watch on its records over a session with kills would settle it
   ([backlog](../../backlog/2026-11-10-reverser-reverser-plan-0068-monitempercent-read-watch.md)).
+- [L] **How the type test walks the equivalences** (§ K): items/0001 names an "equivalence bitmap" but no finding says
+  where it is built, how deep the `Equiv1`/`Equiv2` walk goes, what a cycle would do, or whether record 0 (every blank
+  `Equiv`) enters a type's set. No stock test depends on it (K1 note)
+  ([backlog](../../backlog/2026-11-10-spec-writer-reverser-itemtypes-equiv-walk-form.md),
+  [ItemTypes § Open questions](../../tables/ItemTypes.md#open-questions)).
 
 - [L] **Parties beyond two players.** Plan 0011 logged a party of two (alive, player killer); plan 0044 added a dead
   member and a hireling killer's owner (F1, F3; run:2026-10-20-two-clients). Not logged: three or more players, the

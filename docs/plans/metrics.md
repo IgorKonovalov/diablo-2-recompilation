@@ -679,6 +679,8 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-11-10 | `lane/n64g` | 0064 golden-set fixes | archivist | 145 444 | 62 | 9 | — | accept with fixes (Tier B, 3) | overclaim 1, other 2 |
 | 2026-11-10 | `lane/n64g` check | 0064 golden-set fixes | architect-check | 75 713 | 19 | 2 | — | accept with fixes (3) | overclaim 1, other 2 |
 | 2026-11-10 | `lane/n64s3` | 0064 P2 S3 | cleanroom | 111 116 | 22 | 2 | — | first pass 0 of 211 140 different; audit ruled clean by hand (1 ls of the ledger folder) | — (triage in Phase 3) |
+| 2026-11-10 | `lane/n64w` | 0064 P4 (S1, S2) + quirks drift | spec-writer | 192 188 | 88 | 11 | — | accept with fixes (Tier A, 2) | overclaim 1, omission 1 |
+| 2026-11-10 | `lane/n64w` review | 0064 P4 | architect-review | 129 682 | 49 | 5 | — | accept with fixes (2); quirks check registered as gate E18 | overclaim 1, omission 1 |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not

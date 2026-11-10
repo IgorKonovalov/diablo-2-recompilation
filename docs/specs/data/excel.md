@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: []
 consumed_by: [items/tc, items/*, monsters/*, drlg/*, objects, data/strings, data/calc]
-tags: {C: 146, I: 58, L: 2}
+tags: {C: 146, I: 59, L: 2}
 updated: 2026-11-10
 ---
 
@@ -543,8 +543,8 @@ G2. BuildAutoTCs():                                                   [C] (fn:TC
             tc ← Alloc(name); picks 1, group 0, level L − 3, noDrop 0, all ratios 0
             for item in the combined item array, in item-index order:
               if item.quest (+0x12A) = 0 and item.spawnable (+0x133) ≠ 0
-                 and item is of type t
-                 and (item is not of itemtypes record 38, tpot, or t = 38)
+                 and IsType(item, t)                                 ; ITEMS_IsType 0x00629A90: items/tc § K
+                 and (not IsType(item, 38 tpot) or t = 38)
                  and L − 3 < item.level (+0x0FD) ≤ L:
                 add entry ITEM item, prob max(1, itemtypes[item.type].Rarity (+0x1E))
                   with flag 0x10 when item.version (+0x0F6) ≥ 100     ; expansion only
@@ -608,6 +608,12 @@ Step notes:
 - G1a. `TC_BuildChestTable`'s 45 lookups (return 0x0065A33B; it is called from `TC_LoadAll` at 0x0065A3B5) are logged in
   every H3b run that loads the tables and return the TC index of each name; the store into `g_ChestTCs` was not logged.
   [C] for the lookups (fn:TC_BuildChestTable@0x0065A2C0, 0x0065A3B5, run:2026-10-27-sweep-data-load, [data/0001 § H3b](../../findings/data/0001-excel-loader.md#plan-0038-batch-h3b-run2026-10-27-sweep-data-load), [data/0001 § P1b](../../findings/data/0001-excel-loader.md#plan-0039-batch-p1b-2026-10-17))
+- G2. **"Of type `t`" is the item-type test `ITEMS_IsType`** (0x00629A90), defined in
+  [items/tc § K](../items/tc.md#k-the-item-type-test--items_istype-and-items_unitistype): the item's `type` and `type2`,
+  each through the `Equiv1`/`Equiv2` closure, not a compare with the own `type` column; the `tpot` exclusion uses the same
+  test. The `Rarity` weight alone reads the own `type`. [I] (fn:TC_BuildAutoTCs@0x006541C0, fn:ITEMS_IsType@0x00629A90,
+  [data/0001 §7](../../findings/data/0001-excel-loader.md#7-treasure-classes-at-load-time),
+  [archaeology/0002 § 5](../../findings/archaeology/0002-unreached-rows.md#5-items-659-base-items-306-weapons-202-armor-151-misc))
 - G2. The order inside 1…160 follows the loop: item type in `itemtypes` record order, then level
   ascending, so the auto TC for the `j`-th qualifying type (0-based) at level `L` is index
   `1 + 32 × j + (L ÷ 3 − 1)`. [C] The formula puts the 852 treasureclassex TCs at `161 + r`, and 369 of them were
