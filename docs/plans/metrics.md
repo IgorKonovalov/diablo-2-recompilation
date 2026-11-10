@@ -654,6 +654,8 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-11-10 | `lane/n64s1` | 0064 P2 S1 | cleanroom | 124 365 | 19 | 5 | — | first pass 0 of 62 035 different; audit ruled clean by hand (6 heredoc false flags) | — (triage in Phase 3) |
 | 2026-11-10 | `lane/n64b` | 0064 tool fixes | archivist | 59 519 | 14 | 1 | — | accept with fixes (Tier B, 4) | misread 4 |
 | 2026-11-10 | `lane/n64b` check | 0064 tool fixes | architect-check | 55 585 | 11 | 1 | — | accept with fixes (4) | misread 4 |
+| 2026-11-10 | `lane/n68a` | 0068 P1 | archivist | 219 684 | 74 | 12 | — | accept with fixes (Tier A, ADR-0027, 10) | overclaim 2, under-claim 1, misread 1, wrong anchor 1, stale cross-reference 1, bookkeeping splice 1, omission 1, other 2 |
+| 2026-11-10 | `lane/n68a` review | 0068 P1 | architect-review | 134 689 | 39 | 4 | — | accept with fixes (10) | overclaim 2, under-claim 1, misread 1, wrong anchor 1, stale cross-reference 1, bookkeeping splice 1, omission 1, other 2 |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not
