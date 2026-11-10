@@ -189,3 +189,67 @@ bit from the cell mask; that half is raised in part (`linecellmask` adds `0x3C00
 `tools/ai_sessions.py` relaunched only on `pr.dead`, which a raise inside `run_case` leaves unset, so after one the
 gate would refuse `next_case` for every later case; the runner now also relaunches after any case not kept with its
 stage checked (`Proc.switch_ok`).
+
+### 2026-11-10 — Phase 2a, static readings (`lane/n63r`, reverser static, Ghidra lane A)
+
+All four readings are done, at `[I]` throughout (new code readings), except one full-table equality. Each is written
+into the finding its entry names, with **56 new symbols** in `re/symbols.csv` (all `I`; none raised: no logged
+return was compared). Kept outputs: `workspace/logs/p63-static/` (`manifest.txt`, 5 files, `sha256sum -c` passes from
+that directory), produced by three new read-only tools: `tools/act_clock.py`, `tools/face_step.py` and
+`tools/p63_static_scans.py`.
+
+1. **h6f** ([hirelings/0001 § Plan 0063 Phase 2a](../findings/hirelings/0001-hirelings.md#plan-0063-phase-2a-static-lanen63r-2026-11-10)).
+   - The client's hire line comes from `sub_004B66B0_ClientNpcMenuOpen`: its quest gate table (Kashya word 2 bit 0,
+     Qual-Kehk word 36 bit 0) and Kashya's `stat 12 ≥ 8`. The menus are reset at every interaction, after the
+     packet's quest record is loaded. It matches `HIRE_Hire`'s gates for every value of the inputs both sides read.
+     `StockLevel < 8` holds exactly when `level < 8`, because every cap is at least 12.
+   - Row 29: `PlayerPlaceInAct`'s list is the inventory's corpse list. Its three writers all add flag 1 and word 0.
+     The `MERC_Create` branch needs flag 0 and a non-zero word, so no stock writer reaches it.
+   - These are the ruling inputs for rows 17, 18 and 21 (d-none stands) and row 29 (d-none proposed). Entry closed.
+2. **0058 party** ([player/0002 § 10](../findings/player/0002-party.md#10-plan-0063-phase-2a-the-list-writers-the-fourth-caller-and-bit-26-lanen63r-2026-11-10)).
+   - A party is made or joined only by action 8 (accept) after action 6 (invite), through the relation states 4 and
+     2. AddMember has no cap, but a game admits at most 8 clients (game `+0x8C`), so a list cannot hold nine.
+   - 0x005408CB is in `sub_00540890_PartyLevelSumInLevel`, which the image never references.
+   - Bit 26 has 9 sets, 0 clears and 2 reads. It means "no experience on death" for released and replaced pets,
+     eggs and spawned minions, and it is never set on a player. That bears on the plan's open question: neither
+     `[C]` of player/party changes.
+   - Entry annotated; its live remainder is the optional two-client cases.
+3. **Act-clock scale** ([frame/0001 § 3.1a](../findings/frame/0001-tick-and-messages.md#31a-the-servers-clock-scale-flag-and-the-send-rate-plan-0063-phase-2a-lanen63r-2026-11-10)).
+   - On the server, `k = 128` with flag 0 from `DUNGEON_ActCreate`, and `k = 4` with flag 1 in Act II during the
+     A2Q3 eclipse. `0x0061C240` is client code and does not set `k`: frame/0001 § 3.1 is corrected in place.
+     `0x0061C180` is unreferenced.
+   - The pass sends 0x53 on 26 frames per day (35 846 frames per day in act indexes 0, 1 and 4). The longest gap is
+     2 176 frames, 136 in act index 3 and 68 in the eclipse.
+   - A clock change alters no item's usability on stock data. The refresh reaches `AuraSelect` through
+     `sub_0055DA70_PlayerSkillReselect` when a wanted skill differs from the current one and is usable.
+   - Remainder, in the finding's open question 1: which events leave that state, and the `ItemSkillQtyAdjust` route
+     (whether a set item can carry a book skill). Entry closed.
+4. **Facing step** ([path/0001 § 9a](../findings/path/0001-pathplan-register.md#9a-the-facing-turn-plan-0063-phase-2a-lanen63r-2026-11-10)).
+   - `sub_00648640_PathFaceTurnStep` steps `+0x64` by `+0x66` toward `+0x65` and snaps at or past the target. It
+     runs only on the client (`ClientPlayerUpdate`, `ClientMonsterUpdate`), so no server code turns a walking unit's
+     `+0x64`.
+   - `+0x66` is written only by `PathFaceDir` and `sub_00648820_PathSetDir`.
+   - `PathStep` calls `PathAimNextPoint(path, f = 1; arg = 1)`, so every aim made while points remain calls
+     `PathFaceDir`.
+   - The step table re-checked against the H4 rule: 0 of 64 differ. Entry closed.
+
+**Routed to Phase 3 (spec-writer); no spec was edited here.** The backlog tool's link rewrites touched three specs.
+
+| Spec, section | What changes | Tag |
+|---|---|---|
+| [hirelings](../specs/hirelings/README.md) § F (L418–L422) and *Open questions* (F1, L922) | The client test is read and matches the gates in every input state (hirelings/0001 § Plan 0063 Phase 2a). Remove "not read". Keep the refusals' d-none as ruled. | `[I]` |
+| hirelings § H (L660–L663) and *Open questions* (H12, L923) | The third caller's list is the corpse list, whose writers add flag 1 and word 0, so the `MERC_Create` branch is reached by no stock writer. Row 29's class is the architect's, at review. | `[I]` |
+| **Phase 3 Tier A ruling (open):** hirelings row 29 (`MERC_Create` with a table present), d-2c or d-none | The lane proposes d-none (no stock writer reaches the branch). Not ruled in the Phase 2a check; the Phase 3 Tier A review rules it. | ruling |
+| [player/party](../specs/player/party.md) § B (L101), § A (L92), § A (L128), *Reimplementation notes* (L226) | What makes a party (invite and accept, relation states, AddMember with no cap, leave and `UnitFree`). Nine cannot happen: 8 clients per game. Bit 26 means no experience on death and is never set on a player; list its 9 setters. 0x005408CB is unreferenced. | `[I]` |
+| [sim/frame](../specs/sim/frame.md) § G (the clock block, L470–L505) and § J rank 1 (L701), *Open questions* | Server `k` 128, or 4 in the eclipse with flag 1. Send rate: 26 per day, longest gap 2 176, 136 and 68 frames. `0x0061C240` is client code (correct any "set at act load", e.g. the *Open questions* entry at L953, which also names `0x0061C180`, now unreferenced). The refresh's route to `AuraSelect` via `PlayerSkillReselect` and its condition. The rank-1 row's "whether a clock change can reach it is not read" becomes the narrowed remainder. | `[I]` |
+| [path/overview](../specs/path/README.md) § H (H2, L529) and *Open questions* | What applies `+0x66` (the client turn step and its snap rule). There is no server stepper. Other writers: `PathSetDir`, `PathSetFacing`, `PathFaceXY`. PathStep's call is `(f 1, arg 1)`. Also [anim/movement](../specs/anim/movement.md) if it restates anim/0003 § 2's one-word call. | `[I]` |
+
+**Judgment calls for the reviewer:**
+
+- The "8 clients per game" bound rests on two compares of game `+0x8C` and on one player unit per client, which was
+  not read.
+- The client and server split of the turn step rests on its two callers being client update passes, which call
+  `ClientPlayerGet`.
+- The act-clock frame counts come from § 3.1's `[C]` step model run on the image's tables. They are not logged.
+
+**Review:** Tier B (`reverser-static`). Gate: see the commit.
