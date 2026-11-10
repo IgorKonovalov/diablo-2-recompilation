@@ -309,8 +309,20 @@ class Audit(unittest.TestCase):
         self.assertEqual(self.flagged([tu("Bash", command="cat re/x <<EOF\nbody\nEOF\n")]), ["re/x"])
         self.assertEqual(self.flagged([tu("Bash", command="cat <<EOF\nbody\nEOF\ncat docs/findings/y.md")]),
                          ["docs/findings/y.md"])
-        # an unterminated heredoc swallows the rest, like the shell
-        self.assertEqual(self.flagged([tu("Bash", command="cat <<EOF\ncat re/x")]), [])
+        # an unterminated heredoc is not stripped (fail closed)
+        self.assertEqual(self.flagged([tu("Bash", command="cat <<EOF\ncat re/x")]), ["re/x"])
+        # a here-string is not a heredoc
+        self.assertEqual(self.flagged([tu("Bash", command="cat <<<foo\ncat docs/findings/y.md")]), ["docs/findings/y.md"])
+        # a body that something executes is code: bash, sh, python, or a pipe into one
+        for opener in ("bash <<EOF", "sh <<'EOF'", "cat <<EOF | bash", "bash -s <<-EOF > /dev/null"):
+            self.assertEqual(self.flagged([tu("Bash", command=opener + "\ncat docs/findings/y.md\nEOF\n")]),
+                             ["docs/findings/y.md"], opener)
+        self.assertEqual(self.flagged([tu("Bash", command="python3 - <<EOF\nprint(open('docs/findings/y.md').read())\nEOF\n")]),
+                         ["docs/findings/y.md"])
+        self.assertEqual(self.flagged([tu("Bash", command="python3 -I - <<'PY'\nopen('/etc/os-release')\nopen('/home/q/secret.txt')\nPY\n")]),
+                         ["/home/q/secret.txt"])
+        # a data heredoc redirected to a file stays hidden, and the real read on its line is still judged
+        self.assertEqual(self.flagged([tu("Bash", command="cat <<EOF > x; cat re/z\ncat docs/findings/y.md\nEOF\n")]), ["re/z"])
         # a quoted literal is not a path
         self.assertEqual(self.flagged([tu("Bash", command="echo 'see docs/findings/x.md and re/y'")]), [])
 

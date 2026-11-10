@@ -352,24 +352,48 @@ class Auditor:
                 return
         self.hits.append((line, tool, p if os.path.isabs(p) else "%s (= %s)" % (p, r), "outside the sandbox"))
 
-    @staticmethod
-    def strip_heredocs(cmd):
-        """Drop heredoc bodies (their text is data, not a command): keep the line with `<<WORD`, skip to the delimiter."""
-        out = []
-        pending = []                    # (delimiter, tabs stripped) in order of appearance on the opening line
-        for ln in cmd.split("\n"):
-            if pending:
-                d, dash = pending[0]
-                if (ln.strip("\t") if dash else ln) == d:
-                    pending.pop(0)
-                continue
+    HEREDOC = re.compile(r"(?<!<)<<(?!<)(-?)\s*(?:'([^']+)'|\"([^\"]+)\"|\\?([^\s;|&<>()'\"]+))")
+    INTERP = re.compile(r"(?:^|[\s;|&(`])(?:\S*/)?(?:bash|sh|zsh|dash|ksh|python[0-9.]*|perl|ruby|node|source|eval|xargs|env|ssh|awk|sed|\.)(?=[\s;|&)`]|$)")
+
+    SHELL = re.compile(r"(?:^|[\s;|&(`])(?:\S*/)?(?:bash|sh|zsh|dash|ksh|source|eval|xargs|env|ssh|\.)(?=[\s;|&)`]|$)")
+
+    @classmethod
+    def split_heredocs(cls, cmd):
+        """(command text without data heredoc bodies, bodies of heredocs that something executes). A body is data
+        only when nothing on its opening line can run it: a body fed to an interpreter (bash, sh, python, ... also
+        through a pipe) is code and is kept for scanning. A heredoc with no terminator is not stripped (fail closed),
+        and `<<<` here-strings are not heredocs."""
+        lines = cmd.split("\n")
+        out, code = [], []
+        i = 0
+        while i < len(lines):
+            ln = lines[i]
             out.append(ln)
-            pending = [(m.group(2), m.group(1) == "-")
-                       for m in re.finditer(r"<<(-?)\s*['\"\\]?([A-Za-z_][A-Za-z0-9_]*)['\"]?", ln)]
-        return "\n".join(out)
+            i += 1
+            specs = [(m.group(2) or m.group(3) or m.group(4), m.group(1) == "-") for m in cls.HEREDOC.finditer(ln)]
+            for d, dash in specs:
+                j = i
+                while j < len(lines) and (lines[j].strip("\t") if dash else lines[j]) != d:
+                    j += 1
+                if j >= len(lines):
+                    break                       # unterminated: leave the rest in the command text
+                if cls.INTERP.search(ln):
+                    code.append((bool(cls.SHELL.search(ln)), "\n".join(lines[i:j])))
+                i = j + 1
+        return "\n".join(out), code
+
+    def scan_code(self, line, text, cwd, is_shell):
+        """Interpreter input: a shell body is judged as commands; any body's quoted strings as possible paths."""
+        if is_shell:
+            self.bash(line, text, cwd)
+        for m in re.finditer(r"""(['"])([^'"\n]+)\1""", text):
+            if "/" in m.group(2) and not re.search(r"[\s{}$`]", m.group(2)):
+                self.check_path(line, "Bash", m.group(2), cwd, strict=False)
 
     def bash(self, line, cmd, cwd):
-        cmd = self.strip_heredocs(cmd)
+        cmd, bodies = self.split_heredocs(cmd)
+        for is_shell, body in bodies:
+            self.scan_code(line, body, cwd, is_shell)
         try:
             lex = shlex.shlex(cmd, posix=True, punctuation_chars=True)
             lex.whitespace_split = True
