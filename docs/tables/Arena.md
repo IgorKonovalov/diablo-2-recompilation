@@ -28,9 +28,9 @@ One row, `Deathmatch`: seven signed integers named for arena scoring: `Suicide`,
 ## Interpretation notes
 
 - `[C]` Layout: seven `s32` in column order (`python3 -I tools/excel_bin.py diff workspace/merged/data/global/excel arena`, 7 of 7 cells). The stock values are -6, 2, 10, 1, -2, -10, -1.
+- `[I]` Reader (plan 0068 Phase 2, [data/0006 § 3.3](../findings/data/0006-loaded-tables-and-bundles.md#33-arena-on-the-server)): `g_pArena` (`0x0096D608`) is read through `sub_00664AB0_ArenaGetRecord` by one function, `sub_0053F720_ArenaScoreKill`, which every game runs at a unit kill and at a player death. Row 0 only (a type `>= 1` is fatal). It adds to the 8-byte per-player score `{s32 score, s32 dirty}`: `Suicide` (+0x00) when a player kills itself; for player-on-player, killer `+= PlayerKill` (+0x04) then `+= PlayerKillPercent (+0x08) * victim score / 100`, victim `+= PlayerDeath` (+0x10) then `+= PlayerDeathPercent (+0x14) * killer score / 100` (the killer's already-updated score; signed `/ 100` truncating toward zero); killer `+= MonsterKill` (+0x0C); victim `+= MonsterDeath` (+0x18). So the two percentage columns are percentages of the other player's score. No core-area rule reads the score in this reading, and the scoring has no draw.
 - The record count is checked by the full-tier surveys: `excel` (`.bin` count against `.txt` data rows) and `excel_layout` (every `.bin` cell against its `.txt` cell, layout in `tools/excel_layouts.py`) (`python3 -I tools/gate.py --full`).
 
 ## Open questions
 
-- `[L]` Every reader and the meaning of the two percentage columns: plan 0068 Phase 2 item 3 (the arena is out of the research core).
-
+- `[L]` The score's readers (the dirty word's consumer, the client message): not followed (data/0006 § 3.3); plan 0061 P1 owns the `-arena` reader.

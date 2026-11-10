@@ -36,9 +36,9 @@
 ## Interpretation notes
 
 - `[C]` Layout: `overlay` as the row's own index (`u16`), `Filename` as a char array at +0x02, then `version` (`u16`), `Frames`, `PreDraw`, `1ofN` as `u32`, small flag bytes, offsets, heights, rate, radii and wait as `s32`, `Trans`/`Red`/`Green`/`Blue`/`NumDirections`/`LocalBlood` as `u8` (`python3 -I tools/excel_bin.py diff workspace/merged/data/global/excel overlay`, 7 325 of 7 325 cells). Two ranges are in no column: +0x053 (1 byte) and +0x082..+0x083 (2 bytes), 0 in every record (`excel_bin.py unknown`). The `Filename` array is wider than its longest value (31 characters); the 64-byte width is where `version` begins (+0x42), `[I]`.
+- `[I]` Readers (plan 0068 Phase 2, [data/0006 § 3.1](../findings/data/0006-loaded-tables-and-bundles.md#31-overlays-count-on-the-server)): record columns are read by client drawing code only. The server reads the record count (`+0xBC0`) at 18 sites (the three examined bound an overlay id, `id < 0` or `id >= count` skips, before setting it on a unit or sending it), so no Overlay column (frames, timing, light) reaches a server rule; a reimplementation needs only the row count as that bound.
 - The record count is checked by the full-tier surveys: `excel` (`.bin` count against `.txt` data rows) and `excel_layout` (every `.bin` cell against its `.txt` cell, layout in `tools/excel_layouts.py`) (`python3 -I tools/gate.py --full`).
 
 ## Open questions
 
-- `[L]` Readers, and whether any column (the frame count, the rate) reaches a server-side rule: plan 0068 Phase 2 item 3.
-
+- None for the rule-bearing columns; the rest is presentation (client only).

@@ -27,9 +27,9 @@
 ## Interpretation notes
 
 - `[C]` Layout: 16-byte level name, 8-byte tile name, three `u8`, one pad byte (0), four `u32` cel numbers (`python3 -I tools/excel_bin.py diff workspace/merged/data/global/excel automap`, 29 574 of 29 574 cells). The four type columns are text only.
+- `[I]` Reader (plan 0068 Phase 2, [data/0006 § 3](../findings/data/0006-loaded-tables-and-bundles.md#3-composit-overlay-skilldesc-arena-plan-item-3-with-monsounds-and-automap)): `sub_0061FCF0_AutomapTxtLoad` copies the rows into the client's automap cells and `sub_0061FFF0_AutomapCellFind` picks a cell (a client automap tile pick); the server reads none: presentation.
 - The record count is checked by the full-tier surveys: `excel` (`.bin` count against `.txt` data rows) and `excel_layout` (every `.bin` cell against its `.txt` cell, layout in `tools/excel_layouts.py`) (`python3 -I tools/gate.py --full`).
 
 ## Open questions
 
-- None for the data; out of scope.
-
+- None for the data; presentation (client only).

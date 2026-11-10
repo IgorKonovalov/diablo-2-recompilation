@@ -246,3 +246,14 @@ loads in every run" carry dated corrections pointing to data/0006 § 2.4.
 
 Open, for the record: the two harness pieces above; whether a missile attack reaches event 7; the runtime registrar
 0x005C377B's id; the arena score's readers. Review: Tier B.
+
+### 2026-11-10 — Phase 3 (archivist, `lane/n68f`)
+
+Done:
+- **COF bundles documented:** [cofbundle.md](../formats/cofbundle.md) (24-byte record header, `size` bytes of COF, no file header or index; runtime slots `0xFFFFFFFF`/0/`0xFFFFFFFF` on disk; content against the loose files and `animdata.d2`; the 63 leftover bytes are the three `f9` COFs' 3 extra bytes in seven bundles). Parser `tools/cofbundle.py` (moved from `tools/n68r_bundles.py` with `git mv`, `survey` and `dump`), full-tier survey `cofbundle` registered in `tools/gate.py` with baseline `tools/gate/baselines/cofbundle.txt`: 8 files, 6 726 records, 0 errors, 0 COF parse errors.
+- **Coverage ledger** (`docs/formats/README.md` § Coverage): rows for `.d2` bundles, `.cof`, `.dn1` (`lut.dn1` never opened), the colour `.dat` files (client colour transforms), `.key`, `gateways.txt` and the `a1..a5npc.txt` files now carry Phase 2's reasons and `[I]` tags; `data/local/use` is described by data/0002, `data/iamexpansion` stays undescribed (Phase 2 did not examine it; not rule-bearing).
+- **Table-doc answers** (the backlog entry `2026-11-10-architect-archivist-plan-0068-p2-table-doc-corrections`, closed): Sounds (open question answered), MonItemPercent (loaded, no reader `[I]`, layout from the descriptor), Events (registration tests, dispatch ids, never-dispatched 4 and 8, id 13), SkillDesc (`SkillPage`'s server use, `SkillHasDesc`), Arena (scoring), Overlay, Composit, MonSounds, AutoMap (client only), BodyLocs, PlayerClass (reader tables).
+
+Statements taken from a finding (Tier A, ADR-0027): the bundle open and its callers, the loader's refusals (name over 7 characters, directions over 0x40) and the 512-bucket hash, which bundles are never opened; every reader sentence in the table docs; the ledger reasons. Data statements (record walk, header values, counts, comparison with loose files and `animdata.d2`) are this lane's survey `[C]`.
+
+Left: Phase 4 (specs); `data/iamexpansion` unexamined. Spec routes are unchanged (the Phase 2 hand-off above).

@@ -31,9 +31,9 @@ One row per monster sound set: attack, weapon, hit and death sounds with their d
 
 - `[C]` Layout: the record is 37 four-byte slots; the `.txt` order is not the record order (each `Attack` slot is followed by its delay and probability, each `Weapon` slot by its delay and volume), and each convert triple is two `u8` (`CvtMo`, `CvtTgt`), two pad bytes (0 in every record) and an `s32` skill index (`python3 -I tools/excel_bin.py diff workspace/merged/data/global/excel monsounds`, 5 640 of 5 640 cells; the three pads are the only bytes with no column).
 - `[C]` Every sound reference resolves to a `sounds.txt` row (a cell that did not resolve would store −1 and fail the diff); `Sounds` is therefore read by this table, see [Sounds](Sounds.md).
+- `[I]` Readers (plan 0068 Phase 2, [data/0006 § 3](../findings/data/0006-loaded-tables-and-bundles.md#3-composit-overlay-skilldesc-arena-plan-item-3-with-monsounds-and-automap)): the table is read through two getters (`0x00656F90`, `0x00656FC0`) called only from the client (`0x004CA410`, `0x004F4F40`); the server reads none: presentation.
 - The record count is checked by the full-tier surveys: `excel` (`.bin` count against `.txt` data rows) and `excel_layout` (every `.bin` cell against its `.txt` cell, layout in `tools/excel_layouts.py`) (`python3 -I tools/gate.py --full`).
 
 ## Open questions
 
-- `[L]` The units of the delays and probabilities, what a convert triple selects, and every reader: plan 0068 Phase 2 item 3 (only if a column reaches a rule).
-
+- `[L]` The units of the delays and probabilities and what a convert triple selects: sound, out of scope; no server-side reader (above).

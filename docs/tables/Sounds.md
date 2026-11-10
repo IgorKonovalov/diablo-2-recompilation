@@ -13,7 +13,7 @@ The sound catalogue: 4 699 rows (index 0..4698), each a named sound with a file 
 - `[C]` Key column `Sound`: 4 699 rows, 4 699 distinct names, row 0 blank. The `Index` column equals the row index in every row (0..4698) (`python3 -I tools/excel_bin.py diff` over `sounds`, 4 699 of 4 699 cells).
 - `[C]` No `Expansion` row; 4 699 `.txt` rows, 4 699 `.bin` records of 2 bytes.
 - `[C]` The 2-byte `.bin` call at `0x00659C16` is `-txt`-only: the function at `0x00659BB0` skips it when `g_DataTblsCompileTxt` is 0 (`je` at `0x00659BC1`), and it is called only in the `-txt` runs ([data/0001 § Plan 0038 batch H3b](../findings/data/0001-excel-loader.md#plan-0038-batch-h3b-run2026-10-27-sweep-data-load), run:2026-10-27-sweep-data-load).
-- `[I]` `sounds.txt` and `soundenviron.txt` are read as text by `sub_00481950_SoundTablesLoad`, which fills the client's sound records ([data/0001 § 3](../findings/data/0001-excel-loader.md#3-what-is-registered-datatbls_loadall-0x00619300), [archaeology/0003](../findings/archaeology/0003-sound-draws.md)). The same H3b entry adds that "the full `sounds` table loads in every run" without naming the call; whether a stock run loads `sounds.bin` at all is open (below).
+- `[I]` `sounds.txt` and `soundenviron.txt` are read as text by `sub_00481950_SoundTablesLoad`, which fills the client's sound records ([data/0001 § 3](../findings/data/0001-excel-loader.md#3-what-is-registered-datatbls_loadall-0x00619300), [archaeology/0003](../findings/archaeology/0003-sound-draws.md)). The same H3b entry's "the full `sounds` table loads in every run" is withdrawn: [data/0006 § 2.4](../findings/data/0006-loaded-tables-and-bundles.md#24-sounds) finds no call that loads `sounds.bin` in a stock run `[I]` (below).
 
 ## Columns
 
@@ -32,5 +32,5 @@ The sound catalogue: 4 699 rows (index 0..4698), each a named sound with a file 
 
 ## Open questions
 
-- `[L]` Which call, if any, loads `sounds.bin` in a stock run: data/0001 § 4 lists only the `-txt`-only call at `0x00659C16`, while its H3b entry says the full table loads in every run. Plan 0068 Phase 2 item 2 (the code lists' readers). Sound playback itself is out of scope.
+- Answered (plan 0068 Phase 2, from the finding): `[I]` the only call that loads `sounds.bin` is the `-txt`-only one at `0x00659C16` (the `sounds` string at `0x006ED50C` has the one reference `0x00659C11`); `[C]` in the four stock-mode H3b runs no file named `sounds.bin`, `sounds.txt` or `soundenviron.txt` is opened (`-ns` by default), under `-txt` `sounds.txt` and `sounds.bin` are. A stock run with sound on reads `sounds.txt` as text by `sub_00481950_SoundTablesLoad` and never `sounds.bin`. Sound playback itself is out of scope. ([data/0006 § 2.4](../findings/data/0006-loaded-tables-and-bundles.md#24-sounds))
 
