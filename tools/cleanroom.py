@@ -69,6 +69,23 @@ SYSTEM_OK = ("/usr/", "/lib/", "/lib64/", "/bin/", "/sbin/", "/dev/null", "/dev/
              "/etc/localtime", "/etc/os-release", "/proc/cpuinfo", "/proc/meminfo")
 
 
+def stable_tool_path():
+    """Path of cleanroom.py that score.sh runs. A lane worktree is removed after its merge, so prefer the main
+    checkout (the parent of git's common dir) when it holds a cleanroom.py with a score command; else this file."""
+    here = os.path.join(HERE, "cleanroom.py")
+    try:
+        out = subprocess.run(["git", "-C", HERE, "rev-parse", "--path-format=absolute", "--git-common-dir"],
+                             capture_output=True, text=True, check=True).stdout.strip()
+        cand = os.path.join(os.path.dirname(out), "tools", "cleanroom.py")
+        if out.endswith(".git") and os.path.isfile(cand):
+            with open(cand, errors="replace") as fh:
+                if "def cmd_score" in fh.read():
+                    return cand
+    except (OSError, subprocess.CalledProcessError):
+        pass
+    return here
+
+
 def die(msg):
     sys.stderr.write("cleanroom: %s\n" % msg)
     raise SystemExit(2)
@@ -196,14 +213,15 @@ def cmd_make(ns):
     with open(os.path.join(sb, "cases.jsonl"), "w") as fh:
         for c, _e in cut:
             fh.write(json.dumps({k: c[k] for k in INPUT_KEYS if k in c}, sort_keys=True, separators=(",", ":")) + "\n")
+    tool = stable_tool_path()
     score_sh = os.path.join(sb, "score.sh")
     with open(score_sh, "w") as fh:
         fh.write("#!/bin/sh\n# Score a candidate (JSON Lines, docs/formats/golden-trace.md § Checking) for slice %s.\n"
-                 "exec python3 -I %s score %s \"$@\"\n" % (s, shlex.quote(os.path.join(HERE, "cleanroom.py")), s))
+                 "exec python3 -I %s score %s \"$@\"\n" % (s, shlex.quote(tool), s))
     os.chmod(score_sh, 0o755)
     man = {"slice": s, "what": SLICES[s][3], "case_types": list(SLICES[s][0]), "field_prefixes": list(SLICES[s][1]),
            "cases": len(cut), "excel_files": n_excel, "tile_files": n_tiles, "doc_files": len(files),
-           "set_tables_digest": header.get("tables_digest")}
+           "set_tables_digest": header.get("tables_digest"), "tool": tool}
     with open(os.path.join(sb, "MANIFEST.json"), "w") as fh:
         json.dump(man, fh, indent=1, sort_keys=True)
         fh.write("\n")
@@ -334,7 +352,48 @@ class Auditor:
                 return
         self.hits.append((line, tool, p if os.path.isabs(p) else "%s (= %s)" % (p, r), "outside the sandbox"))
 
+    HEREDOC = re.compile(r"(?<!<)<<(?!<)(-?)\s*(?:'([^']+)'|\"([^\"]+)\"|\\?([^\s;|&<>()'\"]+))")
+    INTERP = re.compile(r"(?:^|[\s;|&(`])(?:\S*/)?(?:bash|sh|zsh|dash|ksh|python[0-9.]*|perl|ruby|node|source|eval|xargs|env|ssh|awk|sed|\.)(?=[\s;|&)`]|$)")
+
+    SHELL = re.compile(r"(?:^|[\s;|&(`])(?:\S*/)?(?:bash|sh|zsh|dash|ksh|source|eval|xargs|env|ssh|\.)(?=[\s;|&)`]|$)")
+
+    @classmethod
+    def split_heredocs(cls, cmd):
+        """(command text without data heredoc bodies, bodies of heredocs that something executes). A body is data
+        only when nothing on its opening line can run it: a body fed to an interpreter (bash, sh, python, ... also
+        through a pipe) is code and is kept for scanning. A heredoc with no terminator is not stripped (fail closed),
+        and `<<<` here-strings are not heredocs."""
+        lines = cmd.split("\n")
+        out, code = [], []
+        i = 0
+        while i < len(lines):
+            ln = lines[i]
+            out.append(ln)
+            i += 1
+            specs = [(m.group(2) or m.group(3) or m.group(4), m.group(1) == "-") for m in cls.HEREDOC.finditer(ln)]
+            for d, dash in specs:
+                j = i
+                while j < len(lines) and (lines[j].strip("\t") if dash else lines[j]) != d:
+                    j += 1
+                if j >= len(lines):
+                    break                       # unterminated: leave the rest in the command text
+                if cls.INTERP.search(ln):
+                    code.append((bool(cls.SHELL.search(ln)), "\n".join(lines[i:j])))
+                i = j + 1
+        return "\n".join(out), code
+
+    def scan_code(self, line, text, cwd, is_shell):
+        """Interpreter input: a shell body is judged as commands; any body's quoted strings as possible paths."""
+        if is_shell:
+            self.bash(line, text, cwd)
+        for m in re.finditer(r"""(['"])([^'"\n]+)\1""", text):
+            if "/" in m.group(2) and not re.search(r"[\s{}$`]", m.group(2)):
+                self.check_path(line, "Bash", m.group(2), cwd, strict=False)
+
     def bash(self, line, cmd, cwd):
+        cmd, bodies = self.split_heredocs(cmd)
+        for is_shell, body in bodies:
+            self.scan_code(line, body, cwd, is_shell)
         try:
             lex = shlex.shlex(cmd, posix=True, punctuation_chars=True)
             lex.whitespace_split = True
@@ -408,6 +467,14 @@ class Auditor:
             return -1
         return -1
 
+    @staticmethod
+    def harness_result(p):
+        """The harness's own persisted tool output: ~/.claude/projects/<proj>/<session>/tool-results/<file>."""
+        r = os.path.realpath(os.path.expanduser(p))
+        base = os.path.join(os.path.realpath(os.path.expanduser("~")), ".claude", "projects") + os.sep
+        parts = r[len(base):].split(os.sep) if r.startswith(base) else []
+        return len(parts) == 4 and parts[2] == "tool-results" and parts[3].endswith((".txt", ".json"))
+
     def call(self, line, cwd, name, inp):
         self.n_calls += 1
         if not isinstance(inp, dict):
@@ -416,6 +483,8 @@ class Auditor:
             return self.bash(line, str(inp.get("command", "")), cwd) or cwd
         for k in ("file_path", "notebook_path"):
             if k in inp:
+                if name == "Read" and self.harness_result(self.resolve(str(inp[k]), cwd)):
+                    continue
                 self.check_path(line, name, str(inp[k]), cwd, True)
         if name in ("Grep", "Glob", "LS", "Search") or ("path" in inp and name not in ("Read", "Write", "Edit")):
             self.check_path(line, name, str(inp["path"]) if inp.get("path") else cwd, cwd, True)

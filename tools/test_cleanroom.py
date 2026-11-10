@@ -209,6 +209,27 @@ def tu(name, **inp):
         {"type": "text", "text": "hi"}, {"type": "tool_use", "id": "x", "name": name, "input": inp}]}}
 
 
+class ScoreSh(unittest.TestCase):
+    def test_tool_path_is_main_checkout(self):
+        with tempfile.TemporaryDirectory() as t:
+            main = os.path.realpath(os.path.join(t, "main"))
+            os.makedirs(main + "/tools")
+            open(main + "/tools/cleanroom.py", "w").write("def cmd_score(): pass\n")
+            sh("git", "init", "-q", main)
+            sh("git", "-c", "user.name=t", "-c", "user.email=t@t", "-C", main, "add", "tools/cleanroom.py")
+            sh("git", "-c", "user.name=t", "-c", "user.email=t@t", "-C", main, "commit", "-qm", "x")
+            wt = os.path.join(t, "wt")
+            sh("git", "-C", main, "worktree", "add", "-q", "-b", "lane/x", wt)
+            old = cleanroom.HERE
+            try:
+                cleanroom.HERE = wt + "/tools"
+                self.assertEqual(cleanroom.stable_tool_path(), main + "/tools/cleanroom.py")
+                open(main + "/tools/cleanroom.py", "w").write("nothing\n")      # main lacks the score command: fall back
+                self.assertEqual(cleanroom.stable_tool_path(), wt + "/tools/cleanroom.py")
+            finally:
+                cleanroom.HERE = old
+
+
 class Audit(unittest.TestCase):
     SB = "/w/workspace/cleanroom/S1"
 
@@ -279,6 +300,41 @@ class Audit(unittest.TestCase):
     def test_bare_tool_use_shape(self):
         self.assertEqual(self.flagged([tu("Read", file_path="/w/docs/findings/x.md")], bare=True), ["/w/docs/findings/x.md"])
         self.assertEqual(self.flagged([tu("Read", file_path=self.SB + "/a")], bare=True), [])
+
+    def test_heredoc_bodies_not_scanned(self):
+        cmd = ("cd %s && python3 -I - <<'PY'\nimport os\nprint('/home/x/docs/findings and re/ tools/ .claude')\nPY\n"
+               "cat >> ledger.md <<EOF\nsee docs/findings/x.md, /etc/passwd and re/symbols.csv\nEOF\nls docs/specs" % self.SB)
+        self.assertEqual(self.flagged([tu("Bash", command=cmd)]), [])
+        # the command part around a heredoc is still judged, before and after the body
+        self.assertEqual(self.flagged([tu("Bash", command="cat re/x <<EOF\nbody\nEOF\n")]), ["re/x"])
+        self.assertEqual(self.flagged([tu("Bash", command="cat <<EOF\nbody\nEOF\ncat docs/findings/y.md")]),
+                         ["docs/findings/y.md"])
+        # an unterminated heredoc is not stripped (fail closed)
+        self.assertEqual(self.flagged([tu("Bash", command="cat <<EOF\ncat re/x")]), ["re/x"])
+        # a here-string is not a heredoc
+        self.assertEqual(self.flagged([tu("Bash", command="cat <<<foo\ncat docs/findings/y.md")]), ["docs/findings/y.md"])
+        # a body that something executes is code: bash, sh, python, or a pipe into one
+        for opener in ("bash <<EOF", "sh <<'EOF'", "cat <<EOF | bash", "bash -s <<-EOF > /dev/null"):
+            self.assertEqual(self.flagged([tu("Bash", command=opener + "\ncat docs/findings/y.md\nEOF\n")]),
+                             ["docs/findings/y.md"], opener)
+        self.assertEqual(self.flagged([tu("Bash", command="python3 - <<EOF\nprint(open('docs/findings/y.md').read())\nEOF\n")]),
+                         ["docs/findings/y.md"])
+        self.assertEqual(self.flagged([tu("Bash", command="python3 -I - <<'PY'\nopen('/etc/os-release')\nopen('/home/q/secret.txt')\nPY\n")]),
+                         ["/home/q/secret.txt"])
+        # a data heredoc redirected to a file stays hidden, and the real read on its line is still judged
+        self.assertEqual(self.flagged([tu("Bash", command="cat <<EOF > x; cat re/z\ncat docs/findings/y.md\nEOF\n")]), ["re/z"])
+        # a quoted literal is not a path
+        self.assertEqual(self.flagged([tu("Bash", command="echo 'see docs/findings/x.md and re/y'")]), [])
+
+    def test_harness_tool_results_read(self):
+        home = os.path.expanduser("~")
+        ok = home + "/.claude/projects/-p/abc-123/tool-results/b9k.txt"
+        self.assertEqual(self.flagged([tu("Read", file_path=ok)]), [])
+        self.assertEqual(self.flagged([tu("Read", file_path=home + "/.claude/projects/-p/abc-123/other/b9k.txt")]),
+                         [home + "/.claude/projects/-p/abc-123/other/b9k.txt"])
+        self.assertEqual(self.flagged([tu("Read", file_path=home + "/.claude/projects/-p/abc-123/tool-results/../x/f.txt")]),
+                         [home + "/.claude/projects/-p/abc-123/tool-results/../x/f.txt"])
+        self.assertEqual(self.flagged([tu("Read", file_path=home + "/.claude/settings.json")]), [home + "/.claude/settings.json"])
 
     def test_cli(self):
         with tempfile.TemporaryDirectory() as td:
