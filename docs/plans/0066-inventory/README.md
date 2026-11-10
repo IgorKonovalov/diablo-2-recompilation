@@ -78,7 +78,7 @@ Every file's *Count* column sums to its spec's front-matter `I` at `b5999f5e` (c
 | [items/inventory](items-inventory.md) | is | 104 | 7 | 2 | 14 | 22 | 39 | · | · | · | 6 | 14 |
 | [items/use](items-use.md) | is | 64 | 6 | 3 | 21 | 13 | 10 | · | · | · | 3 | 8 |
 | [monsters/ai/README](monsters-ai-README.md) | ai | 56 | 15 | 2 | 9 | 13 | 13 | · | · | · | · | 4 |
-| [monsters/ai/catalogue](monsters-ai-catalogue.md) | ai | 520 | 95 | 194 | 80 | 25 | 22 | · | 61 | · | · | 43 |
+| [monsters/ai/catalogue](monsters-ai-catalogue.md) | ai | 520 | 77 | 202 | 90 | 25 | 22 | · | 61 | · | · | 43 |
 | [monsters/ai/machinery](monsters-ai-machinery.md) | ai | 114 | 25 | 21 | 20 | 15 | 31 | · | · | · | · | 2 |
 | [path/README](path-README.md) | fp | 80 | 11 | 5 | 11 | 26 | 16 | · | · | · | · | 11 |
 | [path/search](path-search.md) | fp | 36 | 7 | · | 1 | 9 | 10 | · | · | · | · | 9 |
@@ -94,14 +94,14 @@ Every file's *Count* column sums to its spec's front-matter `I` at `b5999f5e` (c
 | [stats/README](stats-README.md) | is | 3 | 1 | 1 | 1 | · | · | · | · | · | · | · |
 | [stats/aggregate](stats-aggregate.md) | is | 42 | 25 | 6 | 1 | 4 | 6 | · | · | · | · | · |
 | [stats/states](stats-states.md) | is | 54 | 6 | 17 | 12 | 8 | · | 2 | 1 | · | 2 | 6 |
-| **All** | | **2626** | **716** | **348** | **362** | **388** | **490** | **59** | **67** | **0** | **23** | **173** |
+| **All** | | **2626** | **698** | **356** | **372** | **388** | **490** | **59** | **67** | **0** | **23** | **173** |
 
 By phase:
 
 | Route | Classes | Statements | Batches |
 |---|---|---|---|
-| Phase 1, static | a-logs 716, c 388, c-emu 490 | 1594 | 36 |
-| Phase 2, harness | a-run 348, b 362 | 710 | 31 (about 256 sessions estimated) |
+| Phase 1, static | a-logs 698, c 388, c-emu 490 | 1576 | 36 |
+| Phase 2, harness | a-run 356, b 372 | 728 | 31 (about 256 sessions estimated) |
 | Blocked | d-2c 59, d-owner 67, d-edit 23, d-none 173 | 322 | – |
 | **Total** | | **2626** | |
 
@@ -136,6 +136,10 @@ deferred)**. The review is asked to rule on one of:
 - **S1a (`lane/n66a`, 2026-11-10):** monsters/ai/catalogue 76 a-logs → a-run (H1g); 169, 197, 200 and 350 a-logs → b
   (H1h). Each fails sentence H1's rule on the full flip census (reasons in the rows). Totals after: a-logs 716, a-run 348,
   b 362; Phase 1 1 594, Phase 2 710.
+- **S1b (`lane/n66c`, 2026-11-10):** monsters/ai/catalogue 21, 50, 70, 71, 139, 151, 336 and 489 a-logs → a-run (H1g);
+  12, 113, 163, 168, 195, 347, 348, 466, 467 and 500 a-logs → b (H1h). The block model (`tools/ai_model_check.py`) has no
+  fork-free case, no decision, or 8 mismatches there (reasons in the rows). Totals after: a-logs 698, a-run 356, b 372;
+  Phase 1 1 576, Phase 2 728.
 
 ## 4. Batch list
 
@@ -149,7 +153,7 @@ Phase 0 review. Static batches play no game session (their *Sessions* cell is 0)
 | Batch | Kind | Stmts | Rows | Method | Record | Sessions | Claims per session | Status |
 |---|---|---|---|---|---|---|---|---|
 | **S1a** | S | 12 | catalogue 19, 22, 25, 55, 141, 149, 157, 164, 326, 503, 506, 516 (filed with 76, 169, 197, 200, 350 too; moved at S1a) | `tools/ai_resume_flip.py check --rows <r>` (and its fork census) over the kept rev 4 and rev 6 logs: the README H1 sentence for each row's fork-free decisions (each two-way site failing alone, floor 50), as the tier rows got it. Rows 23, 78, 79, S11: the fork-free subset only (as rows 37, 64). 516: `MonAiMove` refusals in the same logs, no idle or draw after them | findings/ai/experiments.md, run:2026-11-04-ai-resume, run:2026-11-04-ai-r5 (addendum) | 0 | – | done 2026-11-10 (`lane/n66a`): 12 raised (rows 19, 22, 25, 55, 141, 149, 157, 164, 326, 506; 503 and 516 in part), 5 moved (76 → H1g; 169, 197, 200, 350 → H1h); Tier B review pending |
-| **S1b** | S | 61 | catalogue 12, 17–18, 20–21, 23–24, 44–45, 49–51, 68, 70–71, 93–94, 113–115, 138–140, 147–148, 150–153, 156, 161–163, 165, 167–168, 193, 195, 198–199, 320–321, 323–324, 335–336, 347–348, 369–370, 388, 466–467, 485–486, 489, 498, 500–501, 504–505 | new checker: a model written from each row's block (never the interpreter), fed the logged boundary returns as ADR-0004 oracles, compared call by call with the logged sequence; taken paths only, untaken arms stay `[I]`. Rows with ≥ 30 own decisions in the rev 4 and rev 6 logs | findings/ai/experiments.md, run:2026-11-04-ai-resume, run:2026-11-04-ai-r5 (addendum) | 0 | – | scheduled |
+| **S1b** | S | 43 | catalogue 17–18, 20, 23–24, 44–45, 49, 51, 68, 93–94, 114–115, 138, 140, 147–148, 150, 152–153, 156, 161–162, 165, 167, 193, 198–199, 320–321, 323–324, 335, 369–370, 388, 485–486, 498, 501, 504–505 (filed with 12, 21, 50, 70–71, 113, 139, 151, 163, 168, 195, 336, 347–348, 466–467, 489, 500 too; moved at S1b) | new checker: a model written from each row's block (never the interpreter), fed the logged boundary returns as ADR-0004 oracles, compared call by call with the logged sequence; taken paths only, untaken arms stay `[I]`. Rows with ≥ 30 own decisions in the rev 4 and rev 6 logs | findings/ai/experiments.md, run:2026-11-04-ai-resume, run:2026-11-04-ai-r5 (addendum) | 0 | – | done 2026-11-10 (`lane/n66c`): 43 raised (row 44 whole, 42 in part), 18 moved (21, 50, 70, 71, 139, 151, 336, 489 → H1g; 12, 113, 163, 168, 195, 347, 348, 466, 467, 500 → H1h); Tier B review pending |
 | **S1c** | S | 6 | catalogue 280–281, 283, 507–509 | the S1b checker over the owner-played rev 6 logs of row 44 and state 13 (`ai_s13_check.py`, `ai_duriel_c10.py` the patterns) | findings/ai/experiments.md, run:2026-11-04-r72 (addendum) | 0 | – | scheduled |
 | **S1d** | S | 16 | catalogue 13, 38, 43, 54, 75, 96, 130, 136, 144, 325, 349, 389, 460, 468, 487, 490 | the 16 "Logged, not compared" rows: a first-boundary map per row (an emulated family where the think's head allows, else a hand map, README G5), `tools/ai.py check` over the kept logs each `l` line cites | findings/ai/experiments.md, run:2026-11-03-ai, run:2026-11-03-ai-3, run:2026-11-04-ai-r5, run:2026-11-04-r72 (addenda) | 0 | – | scheduled |
 | **S1e** | S | 22 | catalogue 3, 15, 31, 66, 72, 135, 154, 172, 182, 194, 196, 229, 242, 288, 314, 332, 356, 360, 385, 420–421, 518 | emulation (`EmuBoundary.java`), new families: the search callbacks (`AiNearAllyCb`, `AiWoundedNearCb`, `AiZakarumHealCb`, `AiFetishReviveCb`, `AiRegurgitatorCb`, `AiOblivionKnightCb`, `AiPriestHealCb`, `AiShadowMasterCb`, `AiImpNearCb`, `AiOverseerMinionCb`, `AiMinionCountCb`, Mephisto's pick), the helpers `AiLifePct`, `UnitLifePct`, `AiMonState3or19`, `MonAiEntryGet`, `AiTrapArrowKind`/`RNG_RandLoHi`, `AiGenSpawnPickClass`, `AiShadowSkillRoll`, Diablo's `pick(w, n)` and the threat scores; declared unit blocks, `tools/` models | findings/ai/experiments.md, new run:<date>-sweep2-S1e | 0 | – | scheduled |
@@ -194,8 +198,8 @@ Phase 0 review. Static batches play no game session (their *Sessions* cell is 0)
 | **H1c** | H | 59 | catalogue 105–107, 117–125, 158–160, 184–192, 201–208, 285–287, 289–299, 306–309, 311–312, 315, 317–319, 424–426 | `stage` or `hunt` cases to presets, spawners and superuniques of Acts I to V by waypoint (as `a1-andariel`, `a1-countess`): rows 38, 45–47, 66, 75–77, 80, 82, 83, 85, 87, 92, 94, 50, 53, 55, 59, 128 | findings/ai/experiments.md, run:<date>-sweep2-H1c | 12 | 4.9 | deferred |
 | **H1d** | H | 16 | catalogue 276–279, 462–465, 470, 472, 474–479 | town cases (the stay-in-town start that logged rows 32 and 54) in Acts I to III: rows 41, 42, 58, 60, 62, 81, states 5 and 6 (unhired mercenaries) | findings/ai/experiments.md, run:<date>-sweep2-H1d | 3 | 5.3 | deferred |
 | **H1e** | H | 55 | catalogue 209–210, 212–228, 230–235, 237–241, 243, 246, 248–270 | **(b)** new `tools/d2s_recipes` builds with the summoning skills (Necromancer Bone Wall, Sorceress Hydra, Assassin traps and shadows, Druid summons) and a cast step; logger rev 6, `tools/ai.py`, the S1b checker. Row 107 first needs the cause of no row-107 decision beside H3's 2 218 Raven calls | findings/ai/experiments.md, run:<date>-sweep2-H1e | 5 | 11 | deferred |
-| **H1g** | H | 36 | catalogue 26–28, 40–41, 47–48, 74, 97, 101–104, 108–111, 116, 132–134, 137, 142–143, 145–146, 170, 173, 316, 322, 329, 337, 371, 491, 517; 76 (S1a) | reruns with logger rev 6 of the cases that logged rows only in rev 2 or 3 (11, 14, 33, 36, 39, 56, 57, 93, 98) or thinly (7, 40, 49, 71; `r` lines of 26, 43, 95, 100, 114, 124 below the floor of 50); row 23's logger-limit reading | findings/ai/experiments.md, run:<date>-sweep2-H1g | 10 | 3.6 | deferred |
-| **H1h** | H | 25 | catalogue 35–36, 39, 126–129, 131, 176–178, 450–458, 461; 169, 197, 200, 350 (S1a) | **(b)** logger rev 7: the words the resume model forks on (`MonPlayerBonus`'s block for row 10, row 32's script and home words, row 48's owner record, row 73's unknown reads), then `ai_resume.py` and flips; one case per row | findings/ai/experiments.md, run:<date>-sweep2-H1h | 4 | 6.3 | deferred |
+| **H1g** | H | 44 | catalogue 26–28, 40–41, 47–48, 74, 97, 101–104, 108–111, 116, 132–134, 137, 142–143, 145–146, 170, 173, 316, 322, 329, 337, 371, 491, 517; 76 (S1a); 21, 50, 70, 71, 139, 151, 336, 489 (S1b) | reruns with logger rev 6 of the cases that logged rows only in rev 2 or 3 (11, 14, 33, 36, 39, 56, 57, 93, 98) or thinly (7, 40, 49, 71; `r` lines of 26, 43, 95, 100, 114, 124 below the floor of 50); row 23's logger-limit reading | findings/ai/experiments.md, run:<date>-sweep2-H1g | 10 | 3.6 | deferred |
+| **H1h** | H | 35 | catalogue 35–36, 39, 126–129, 131, 176–178, 450–458, 461; 169, 197, 200, 350 (S1a); 12, 113, 163, 168, 195, 347, 348, 466, 467, 500 (S1b) | **(b)** logger rev 7: the words the resume model forks on (`MonPlayerBonus`'s block for row 10, row 32's script and home words, row 48's owner record, row 73's unknown reads), then `ai_resume.py` and flips; one case per row | findings/ai/experiments.md, run:<date>-sweep2-H1h | 4 | 6.3 | deferred |
 | **H1m** | H | 23 | machinery 64, 66, 70, 72, 74, 76–81, 83, 85–87, 96–97, 104–106, 109; README 8, 54 | (a-run) `ai.gdb` rev 6 through `ai_sessions.py` on existing cases (nm/h variants, `a1-andariel`, `a4-cotd-long`, `a5-pain`, `s-barb-*`), checked with `ai_resume.py`/`ai_resume_flip.py`: unlogged arms of rows 13, 21, 22, 28, 29, 30, 34, 35, 37, 64, 89, 125; drawing pairs; row 23 | findings/ai/experiments.md, run:<date>-sweep2-h1m | ~8 | ~2.9 | deferred |
 | **H1n** | H | 26 | machinery 22, 35, 38–39, 43, 60–62, 75, 89–93, 95, 98–101, 103; README 28, 40–41, 44, 48–49 | (b) `tools/gdb/ai.py` rev 7: path `+0x90/+0x93/+0x94` and `MonPathCtl` words at MSM/PP lines; the H3 unknowns (Fallen's found unit, Hireable's `EDI` word, NecroPet's `+0x32/+0x34`); `MonAiKeepNear`, `MonAiOpenDoor`, `BossSightPause`, mode-end call sites, AIN positions; existing cases | findings/ai/experiments.md, run:<date>-sweep2-h1n | ~6 | ~4.3 | deferred |
 | **H1o** | H | 3 | README 12, 15, 37 | (b) new pilot cases: a cold-damage (Frost Nova) case with a `MonEventDispatch` drop and freeze-requeue line; a leave-and-return case with `InactiveMonAiSave`/`Restore` lines | findings/ai/experiments.md, run:<date>-sweep2-h1o | ~3 | 1 | deferred |

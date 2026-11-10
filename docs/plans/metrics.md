@@ -699,6 +699,8 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-11-10 | `lane/n66a` review | 0066 P1, S1a | lane-check | 75 864 | 12 | 1 | — | gave accept (Tier B) | — (catalogue "unknown value deciding N" figure counts multi-offer calls; S1m–S1z selection may share it) |
 | 2026-11-10 | `lane/n67p` | 0067 P2 prep | reverser-static | 378 424 | 135 | 32 | no slot | accept | 0 |
 | 2026-11-10 | `lane/n67p` review | 0067 P2 prep | lane-check | 59 731 | 9 | 3 | — | gave accept (Tier B) | — (focused check: logger read-only, tests, § 12.1 correction, recipe guard; anchor spot-check and passes 7/8 not run) |
+| 2026-11-10 | `lane/n66c` | 0066 P1, S1b | reverser-static | 422 938 | 104 | 28 | no slot | accept | 0 |
+| 2026-11-10 | `lane/n66c` review | 0066 P1, S1b | lane-check | 83 300 | 18 | 2 | — | gave accept (Tier B) | — (floor 30 governs over H1 50; AID x,y as UnitGetPos oracle accepted as disclosed) |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not
