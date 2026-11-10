@@ -141,7 +141,7 @@ Tier B (`reverser-static`), item 2 read as a raise.
    are the finding-side wording of the same claim (left as written, superseded by § 15).
 2. **Inventory live raise.** `tools/inventory_check.py spots` (new) on the three kept logs: 118 searches, 0
    mismatches; 90 in 6 chain spots and 28 `DropCreateItem` drops at 24 positions. Raised live `[C]` with the logs as
-   the second source beside the emulation: the offset start (30 spots), the item bit (8), the walk's mask `0x801`
+   the second source beside the emulation: the offset start (30 spots), the item bit in the cell mask (8; its absence from the walk mask not raised, audit), the walk's mask `0x801`
    (`linecellmask`, 6), the ring order through ring 3 (`first` 10 spots, `leq`/`capsfirst` 8 each, at ring ≤ 3);
    **raised in part**: the walk tested at all (`noline`, one chain spot, 31 cases). Not raised: `fixedbase`, the start
    `pos`, rings 4+ (one spot), the fallbacks. [items/0016 § Plan 0063 Phase 2b](../findings/items/0016-harness-inventory-run2.md#plan-0063-phase-2b-the-ground-searchs-live-raise-2026-11-10-lanen63s),
@@ -159,3 +159,18 @@ Tier B (`reverser-static`), item 2 read as a raise.
 Backlog closed: the four entries (h5d waypoint mode, items 0014–0016 wording, the stage check, E14). Judgment calls
 for the reviewer: the spot definition (a chain = one log and one position; a drop = one position); event 1's due
 frame from `PLR` frame bounds (an operate inside the bounds is taken from the log as an oracle, none occurred).
+
+**2026-11-10, `lane/n63s` audit (architect, Tier A, ADR-0023 audit sample): accept with fixes (2: overclaim 1, omission 1).**
+audit of lane/n63s: no reject-grade miss. **Checked:** r2 on the pinned image (sha256 `631066c1…`): event 1 at
+`g_ObjEventFns`+4 = 0x00581490, its word compare with 1, `+0x141` test, direct `+0x10 = 2` at 0x005814B0, `+0x122`
+test and `UNIT_CollUnmarkRect` at 0x005814C1, no other call; `OBJINIT_Waypoint`'s `SetMode 1` (0x00547295) and queue
+with no `+ 1` (0x005472AF–0x005472CA), `WaypointOperate`'s `lea edx, [edx + eax + 1]` (0x00584EB4), the town
+`SetMode 2` (0x00547279). The 16 `InitFn` 17 rows: `Mode2` 1, `HasCollision` 0 in all modes, `FrameCnt1` 15 or 20,
+`Sync` 0 for exactly 429, 494, 496, 511, 539. `regress.txt`: 94 logs, only the rogue log changes (4 645/1 → 4 646/0).
+`inventory_check.py spots` re-run on the three kept logs under `MemoryMax=4G`: identical to `check-p63-spots.txt`
+(the kept file adds the rc line); every count in items/0016's section recomputed from it. 60 runner tests pass.
+**Fixes:** (1) overclaim: items/0016's item-bit bullet raised "not the walk mask" on `noitembit`, which only drops the
+bit from the cell mask; that half is raised in part (`linecellmask` adds `0x3C00` with it). (2) omission:
+`tools/ai_sessions.py` relaunched only on `pr.dead`, which a raise inside `run_case` leaves unset, so after one the
+gate would refuse `next_case` for every later case; the runner now also relaunches after any case not kept with its
+stage checked (`Proc.switch_ok`).

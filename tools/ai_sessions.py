@@ -232,6 +232,7 @@ class Proc:
         self.dead = False
         self.launches = 0
         self.save = None
+        self.switch_ok = False    # the last case was kept and passed stage_reached: next_case may switch
 
 
 def run(slot, tag, saves, run_id, names, dev=False, status=None, seed0=5201, reruns=1, gdb=GDB):
@@ -276,8 +277,11 @@ def run(slot, tag, saves, run_id, names, dev=False, status=None, seed0=5201, rer
         save = os.path.join(saves, savename + ".d2s")
         t_case = time.time()
         fresh = case.startswith("fresh:")
-        # a case with another character than the process holds starts a new process (one character per saves directory)
-        need_new = (pr.drv is None or pr.dead or fresh or pr.games >= CAP_GAMES or time.time() - pr.t0 >= CAP_SECS
+        # a case with another character than the process holds starts a new process (one character per saves directory);
+        # so does any case after one that was not kept with its stage checked (a raise inside run_case leaves pr.dead
+        # unset, and hr.next_case would refuse every later case of the batch)
+        prev_ok, pr.switch_ok = pr.switch_ok, False
+        need_new = (pr.drv is None or pr.dead or not prev_ok or fresh or pr.games >= CAP_GAMES or time.time() - pr.t0 >= CAP_SECS
                     or pr.save != savename)
         if need_new:
             close("new launch for %s" % case)
@@ -350,6 +354,7 @@ def run(slot, tag, saves, run_id, names, dev=False, status=None, seed0=5201, rer
         r = left_start(pr.log, starts.get(case))
         if not r[0]:
             pr.dead = True
+        pr.switch_ok = r[0]
         return r
 
     status = status or os.path.join(LOGS, "%s-s%d.status.json" % (runname, slot))

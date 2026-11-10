@@ -56,8 +56,11 @@ mark is an input of the next) or one `DropCreateItem` position (return `0x0055A5
   chain spots and all 24 drop positions** (30 independent spots). The start `pos` when the room does not hold the
   offset cell is **not reached** (0 of 118) and keeps the emulated `[C]`. (fn:sub_00555DA0_GroundDropCell@0x00555DA0,
   run:2026-11-04-inventory, run:2026-11-04-inventory-2, `check-p63-spots.txt`)
-- [C] **The item bit `0x200` in the cell mask, not the walk mask: raised.** `noitembit` fails 88 (12, 37, 39), at **6 of
-  6 chain spots and 2 of 24 drop positions** (8 spots), each of the 8 with a failed case at ring 3 or below.
+- [C] **The item bit `0x200` in the cell mask: raised.** `noitembit` (the cell mask without `0x200`) fails 88 (12, 37,
+  39), at **6 of 6 chain spots and 2 of 24 drop positions** (8 spots), each of the 8 with a failed case at ring 3 or
+  below. *Raised in part (2026-11-10, `lane/n63s` audit):* that `0x200` is **not in the walk mask** has no live control
+  of its own; `linecellmask` (next bullet) adds `0x3C00` with it, so its failures do not name the bit, and that half
+  keeps the emulated `[C]`.
   (0x00555DE4, run:2026-11-04-inventory, run:2026-11-04-inventory-2, `check-p63-spots.txt`)
 - [C] **The walk's mask is `0x801`, not the cell mask: raised.** `linecellmask` (the walk tested with `0x3E01`) fails
   43 (4, 15, 24; 2 undecided, read past the window), at **4 of 6 chain spots and 2 of 24 drop positions** (6 spots; 5
