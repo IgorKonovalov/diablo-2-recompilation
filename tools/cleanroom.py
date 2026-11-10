@@ -10,9 +10,10 @@
 Slices (plan 0064): S1 seeds (chain.A, chain.B), S2 drops (chain.G1), S3 pools (monsters.pool), S4 DRLG (drlg.maze,
 drlg.outdoor). Built sandboxes live under workspace/cleanroom/<slice>/ (gitignored) and are never committed.
 
-make: a plain directory (no .git, so no history to read) holding the tracked files of docs/specs, docs/tables,
+make: a plain directory (with an empty git repository of its own: without one git finds the project's history above the
+  sandbox) holding the tracked files of docs/specs, docs/tables,
   docs/formats (without docs/formats/golden/, which holds expected values) and docs/glossary.md, as of the working
-  tree; data/ with the extracted excel tables (S4 adds the DS1 and DT1 files; hard links, else copies);
+  tree; data/ with the extracted excel tables (S4 adds the DS1 and DT1 files, hard links else copies; excel files are copied);
   cases.jsonl, the slice's cases with inputs only; score.sh; MANIFEST.json. It checks that docs/findings, re, tools,
   .claude and any Game.exe are absent. An existing tree is rebuilt only with --force (code and candidates stay).
 score: the full set is cut to the slice (its case types, its field prefixes, nothing else), then `tools/golden.py
@@ -43,6 +44,7 @@ import shlex
 import shutil
 import subprocess
 import sys
+import tempfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
@@ -128,16 +130,25 @@ def slice_cases(cases, s):
 def check_clean(sb):
     """Raise on a forbidden name anywhere in the sandbox's docs/data trees (code and candidates are the lane's own)."""
     bad = []
+    real_sb = os.path.realpath(sb)
     for top in ("docs", "data"):
         base = os.path.join(sb, top)
         for dp, dn, fn in os.walk(base):
             for n in dn + fn:
-                rel = os.path.relpath(os.path.join(dp, n), sb).replace(os.sep, "/")
+                full = os.path.join(dp, n)
+                rel = os.path.relpath(full, sb).replace(os.sep, "/")
                 if n.lower() == "game.exe" or rel in ("docs/findings",) or n == ".claude":
                     bad.append(rel)
-    for top in ("re", "tools", ".claude", "Game.exe", "game.exe", ".git"):
+                elif os.path.islink(full):          # a link can point at findings, re or the golden set
+                    bad.append(rel + " (symlink)")
+    for top in ("re", "tools", ".claude", "Game.exe", "game.exe"):
         if os.path.lexists(os.path.join(sb, top)):
             bad.append(top)
+    # git walks up to the project's own repository (and its whole history) when the sandbox has none: the sandbox
+    # carries an empty repository of its own, and its top level must be the sandbox itself
+    r = subprocess.run(["git", "-C", sb, "rev-parse", "--show-toplevel"], capture_output=True, text=True)
+    if r.returncode != 0 or os.path.realpath(r.stdout.strip()) != real_sb:
+        bad.append(".git (git from the sandbox reaches %s)" % (r.stdout.strip() or "no repository"))
     if bad:
         raise SystemExit("cleanroom: forbidden paths in the sandbox: %s" % ", ".join(bad))
 
@@ -166,7 +177,9 @@ def cmd_make(ns):
     for n in sorted(os.listdir(excel)):
         p = os.path.join(excel, n)
         if os.path.isfile(p):
-            link_or_copy(p, os.path.join(sb, "data", "global", "excel", n))
+            dst = os.path.join(sb, "data", "global", "excel", n)      # copies: a write in the sandbox must not change the master
+            os.makedirs(os.path.dirname(dst), exist_ok=True)
+            shutil.copy2(p, dst)
             n_excel += 1
     n_tiles = 0
     if SLICES[s][2]:
@@ -194,6 +207,8 @@ def cmd_make(ns):
     with open(os.path.join(sb, "MANIFEST.json"), "w") as fh:
         json.dump(man, fh, indent=1, sort_keys=True)
         fh.write("\n")
+    if not os.path.isdir(os.path.join(sb, ".git")):
+        subprocess.run(["git", "init", "-q", "--template=", sb], check=True, capture_output=True)
     check_clean(sb)
     print("built %s: %d doc files, %d excel files, %d tile files, %d cases (inputs only)" % (
         sb, len(files), n_excel, n_tiles, len(cut)))
@@ -220,8 +235,8 @@ def cmd_score(ns):
     cut = slice_cases(cases, s)
     if not cut:
         die("the set has no %s cases (fields %s)" % (s, ", ".join(SLICES[s][1])))
-    tmp = os.path.join(sb if os.path.isdir(sb) else os.path.dirname(os.path.abspath(ns.candidate)),
-                       ".score-set-%d.jsonl" % os.getpid())
+    tdir = tempfile.mkdtemp(prefix="cleanroom-score-")      # the cut set holds expected values: never inside the sandbox
+    tmp = os.path.join(tdir, "set.jsonl")
     try:
         with open(tmp, "w") as fh:
             fh.write(json.dumps(header, sort_keys=True, separators=(",", ":")) + "\n")
@@ -232,8 +247,7 @@ def cmd_score(ns):
         r = subprocess.run([sys.executable, "-I", os.path.join(HERE, "golden.py"), "check", tmp, ns.candidate,
                             "--limit", str(ns.limit)], capture_output=True, text=True)
     finally:
-        if os.path.exists(tmp):
-            os.remove(tmp)
+        shutil.rmtree(tdir, ignore_errors=True)
     sys.stdout.write(r.stdout)
     sys.stderr.write(r.stderr)
     compared = sum(int(m.group(1)) for m in re.finditer(r"^\s+\S+\s+(\d+) compared\s+\d+ different", r.stdout, re.M))
@@ -298,8 +312,8 @@ class Auditor:
 
     def inside(self, p):
         a = os.path.normpath(p)
-        b = os.path.realpath(p)
-        return any(under(a, r) or under(b, r) for r in self.roots) or any(a.startswith(x) for x in SYSTEM_OK)
+        b = os.path.realpath(p)          # the real target decides: a symlink inside the sandbox may point out of it
+        return any(under(b, r) for r in self.roots) or any(a.startswith(x) for x in SYSTEM_OK)
 
     def resolve(self, p, cwd):
         p = os.path.expanduser(p)
@@ -348,6 +362,11 @@ class Auditor:
                     self.check_path(line, "Bash", seg[1], cwd, strict=True)
                     cwd = self.resolve(seg[1], cwd)
                 continue
+            if os.path.basename(seg[0]) == "git":       # `git show REV:docs/findings/x`: a path inside a revision
+                for w in seg[1:]:
+                    m = re.match(r"^[^/\s:]*:(?:\./)?(.+)$", w)
+                    if m and m.group(1).split("/")[0].lower() in PROJECT_DIRS:
+                        self.hits.append((line, "Bash", w, "a path inside a git revision"))
             exempt = self.exempt_script(seg)
             code = False
             for i, w in enumerate(seg):

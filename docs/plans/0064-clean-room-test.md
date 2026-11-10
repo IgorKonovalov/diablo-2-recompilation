@@ -125,14 +125,16 @@ Done: `tools/cleanroom.py` (`make`, `score`, `audit`, plus `reference` and `slic
 tests), `docs/plans/0064-cleanroom/brief.md`.
 
 - `make S1` builds `workspace/cleanroom/S1/` in 0.3 s: 163 files of docs/specs, tables, formats, glossary; `data/` with the
-  184 excel files (hard links); `cases.jsonl` (649 world cases, keys `id kind type inputs` only: no `expected`, `source`
+  184 excel files (copies; the S4 tiles are hard links); `cases.jsonl` (649 world cases, keys `id kind type inputs` only: no `expected`, `source`
   or `quirks`); `score.sh`; `MANIFEST.json`. `docs/findings`, `re`, `tools`, `.claude`, `.git` and any `Game.exe` are absent
   (checked at build). S2 (4 040 cases), S3 (612), S4 (384 cases, 2 539 DS1/DT1 files, 189 MB) build the same way.
 - `score S1` on the project's own model (`cleanroom.py reference S1`, which calls `golden.world_expected`, i.e.
   `chain.py gen`): 62 035 fields compared, 0 different; S3 likewise 211 140 fields, 0 different. `audit` flags a planted
   Read of `docs/findings/`, a Bash `cat re/...`, a Grep with no path from a project cwd and a relative `../docs/findings`.
-- Judgment calls: (1) the sandbox is a plain directory copied from the tracked files (no git worktree), so there is no
-  history or ref to read the findings from; the working tree is the source, so Phase 4 fixes show without a commit.
+- Judgment calls: (1) the sandbox is a plain directory copied from the tracked files (no git worktree) with an empty git
+  repository of its own (without it, `git show HEAD:docs/findings/...` run in the sandbox finds the project's history in
+  the checkout above it; the check review found this, and `check_clean` now requires the sandbox to be its own top level),
+  so there is no history or ref to read the findings from; the working tree is the source, so Phase 4 fixes show without a commit.
   (2) `docs/formats/golden/` (the committed sample, with expected values) is left out. (3) `score` cuts the full set to
   the slice (case types and field prefixes) before calling `golden.py check`, otherwise the other slices' cases count as
   missing; it logs each run to `<sandbox>/score-log.jsonl`, run 1 being the first pass, and refuses a malformed

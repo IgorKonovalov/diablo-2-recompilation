@@ -25,6 +25,9 @@ web. Use absolute paths inside the sandbox in every tool call (a relative path i
 shell started in, which is outside it). If a spec sentence links to a path outside the sandbox, the link is dead for
 you; that is a ledger row, not a reason to follow it.
 
+The sandbox holds an empty git repository of its own; `git` against any other path, or a revision path such as
+`HEAD:docs/...`, is a read outside the sandbox.
+
 Your transcript is audited (`python3 -I tools/cleanroom.py audit`). One read outside the sandbox voids the run: your
 ledger is discarded and a fresh agent redoes the slice. When unsure whether a path is allowed, do not read it.
 

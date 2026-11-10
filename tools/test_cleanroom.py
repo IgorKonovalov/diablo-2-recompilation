@@ -92,7 +92,7 @@ class Make(Base):
         self.make("S1")
         top = set(os.listdir(self.sb))
         self.assertTrue({"docs", "data", "cases.jsonl", "score.sh", "MANIFEST.json"} <= top)
-        self.assertFalse({"re", "tools", ".claude", ".git"} & top)
+        self.assertFalse({"re", "tools", ".claude"} & top)
         self.assertEqual(sorted(os.listdir(os.path.join(self.sb, "docs"))), ["formats", "glossary.md", "specs", "tables"])
         self.assertFalse(os.path.exists(os.path.join(self.sb, "docs", "formats", "golden")))
         self.assertTrue(os.path.exists(os.path.join(self.sb, "docs", "specs", "chain", "README.md")))
@@ -128,6 +128,25 @@ class Make(Base):
         open(os.path.join(self.sb, "mine.py"), "w").write("1\n")
         self.make("S1", force=True)
         self.assertTrue(os.path.exists(os.path.join(self.sb, "mine.py")))
+
+    def test_own_empty_git_repo(self):
+        # without a repository of its own, git run in the sandbox finds the project's (and its history) above it
+        self.make("S1")
+        top = subprocess.run(["git", "-C", self.sb, "rev-parse", "--show-toplevel"], capture_output=True, text=True)
+        self.assertEqual(os.path.realpath(top.stdout.strip()), os.path.realpath(self.sb))
+        r = subprocess.run(["git", "-C", self.sb, "log", "--oneline"], capture_output=True, text=True)
+        self.assertEqual(r.stdout.strip(), "")
+        self.make("S1", force=True)           # a rebuild keeps it
+        import shutil
+        shutil.rmtree(os.path.join(self.sb, ".git"))
+        with self.assertRaises(SystemExit):   # a sandbox under another repository is refused
+            cleanroom.check_clean(self.sb)
+
+    def test_symlink_refused(self):
+        self.make("S1")
+        os.symlink("/etc", os.path.join(self.sb, "docs", "specs", "link"))
+        with self.assertRaises(SystemExit):
+            cleanroom.check_clean(self.sb)
 
     def test_forbidden_detected(self):
         self.make("S1")
@@ -237,6 +256,20 @@ class Audit(unittest.TestCase):
         self.assertEqual(self.flagged([tu("Bash", command="cat ../../../docs/findings/a.md")]), [
             "../../../docs/findings/a.md"])
         self.assertEqual(self.flagged([tu("Bash", command="ls Game.exe")], cwd="/w"), ["Game.exe"])
+
+    def test_symlink_and_git_escapes(self):
+        with tempfile.TemporaryDirectory() as td:
+            sb = os.path.join(td, "sb")
+            os.makedirs(sb)
+            link = os.path.join(sb, "lnk")
+            os.symlink("/w", link)
+            tr = os.path.join(td, "t.jsonl")
+            jl(tr, [tu("Read", file_path=link + "/docs/findings/x.md"), tu("Read", file_path=sb + "/ok.py")])
+            a, _bad = cleanroom.audit_file(tr, [sb], [], sb)
+            self.assertEqual([h[2] for h in a.hits], [link + "/docs/findings/x.md"])
+        for cmd in ("git show HEAD:docs/findings/x.md", "git log -p HEAD~3:re/symbols.csv", "git cat-file -p main:tools/golden.py"):
+            self.assertTrue(any(h[3] == "a path inside a git revision" for h in self.run_audit([tu("Bash", command=cmd)]).hits), cmd)
+        self.assertEqual(self.run_audit([tu("Bash", command="git -C %s status" % self.SB)]).hits, [])
 
     def test_allow_and_sibling(self):
         self.assertEqual(self.flagged([tu("Read", file_path="/tmp/tr/out.txt")], allow=["/tmp/tr"]), [])
