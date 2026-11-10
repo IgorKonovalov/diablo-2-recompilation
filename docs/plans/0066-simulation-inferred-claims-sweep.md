@@ -310,3 +310,73 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 
 - Sub-plan [0069](0069-monster-ai-bestiary-tour.md) drafted for question 3 (c): the bestiary tour over H1a to H1d, H1g
   and H1h (237 statements at `4fb8b55f`), `proposed`, for the owner.
+
+### 2026-11-10 — Phase 1, batches S1c and S1d (reverser-static, `lane/n66d`)
+
+- **Done.** Both batches over kept logs, no game, no Ghidra (r2/objdump reads of call sites only). Tools (`cd663109`):
+  `tools/ai_model_check.py` revision 2 (`de9bb5ed…`) adds R44's and S13's blocks, transcribed from the spec at
+  `b5999f5e`; revision 1's 32 entries reproduce S1b's `model-check.txt` byte for byte. New `tools/ai_first_check.py`
+  (`e4eb1802…`): first-boundary hand maps (README G5) that run the block models to their first logged call and compare
+  the call site too, the sites read from the code (the think's one call to the callee, or the emulated family's site for
+  R99 and R130). Outputs in `workspace/logs/ai/sweep2-s1cd/` (`s1c-model-check.txt` `fb54d78f…`, `s1d-first-check.txt`
+  `f41b2f45…`, `manifest.sha256` passes from there); the 74 input logs in `manifest-sweep2-s1cd-inputs.sha256`. Record:
+  the addenda *plan 0066 batch S1c* and *S1d* under run:2026-11-04-r72 in [findings/ai/experiments.md](../findings/ai/experiments.md),
+  with pointer lines under run:2026-11-03-ai, run:2026-11-03-ai-3 and run:2026-11-04-ai-r5. `tools/ai.py` is unchanged
+  (the route named it; it is the hashed checker behind those runs' kept outputs).
+- **S1c (6 rows): raised in part 6, moved 0.** R44: 309 decisions, all fork-free, 0 mismatches, 310 calls past the first,
+  every branch failing alone; the grant, `UseSkill1` and the `aip` 0 true sides stay `[I]` (rows 280, 281, 283). S13:
+  160 decisions, all fork-free, 0 mismatches, 988 calls past the first, the arms and counts of S13d by a second
+  transcription; S13f's list stays `[I]` (rows 507, 508, 509).
+- **S1d (16 rows): raised 11, raised in part 1, moved 4.** Raised (0 mismatches, all fork-free, the site control failing
+  every decision): rows 38 (R10, 209 = 49 + 160 state 13), 43 (R11, 17), 75 (R23, 1 062), 96 (R26, 119), 130 (R48, 321),
+  136 (R49, 74), 144 (R56, 16), 325 (R96, 179), 389 (R130, 119, four outcomes), 487 (R99, 468, two outcomes), 490 (R100,
+  16). In part: 54 (R15: the think's 177 of 181; the alt's 4 fork on the kind-14 record's `+0x18`). Moved a-logs → b
+  (H1h): 13 (R1: the think lies outside the logger's windows), 349 (R118: `StatListFindFlag` decides before any call),
+  460 (R32: the home record's words), 468 (R54: `AiNearestPlayer`'s search returns outside the windows). S1d holds 12
+  statements now, H1h 39.
+- **Totals** recomputed from the 29 inventory files against `main` `4fb8b55f` (S1a, S1b, S2a merged): a-logs 674, a-run
+  358, b 389, c 389, c-emu 490, d 326 (2 626); Phase 1 1 553, Phase 2 747 (inventory README § 1, § 3, § 4; the
+  catalogue file's *Totals by class*).
+- **Ready for Phase 3 (spec-writer), monsters/ai/catalogue at `b5999f5e` line numbers.** Whole, the `l` line restated as
+  "[C] First boundary: N decisions compared (…), 0 mismatches, k first-call outcomes" with the hand map named (README
+  G5): 327 (R10l, both thinks), 381 (R11l), 692 (R23l), 881 (R26l), 1185 (R48l), 1223 (R49l), 1304 (R56l), 3116 (R96l),
+  3627 (R130l), 4455 (R99l), 4467 (R100l). Split, the raised half `[C]` and the rest `[I]` as each inventory row says:
+  482 (R15l: the think; the alt stays `[I]`), 2613, 2615, 2625 (R44 steps 1, 2 and R44b's tail), 4613, 4621, 4622 (S13's
+  `AiPathSkillStep`, think and RunHome lines). As in S1b, the block lines carry one `[I]` for the think, so Phase 3 adds a
+  `[C]` bullet for R44 naming the logged paths; S13d already is that bullet for S13 and gains the second transcription
+  as an anchor. No symbol is raised (no logged return is compared with a model; the maps raise no name).
+- **Left.** Nothing in S1c or S1d. The moved rows wait in H1h as their notes say.
+- **Review:** Tier B (plan Phase 1), with the audit rule. Judgment calls to check: (1) a one-decision arm raised in part
+  (R44's walk, rows 281 and 283; S13's accepted RunHome, row 509), where the arm's call words and the exit seed are
+  compared and its test fails it when reversed, though R44n had kept "step 2's walk is one decision" `[I]`; (2) the
+  first boundary of a hand map is its first call of a logger boundary function, so R10's is `UnitGetRoom` inside step 1
+  (`MonPlayerBonus` is not logged), and single-outcome rows confirm the call and its words only (README G3); (3) S13's
+  path count is the given word read from the fires, as `ai_s13_check.py` took it, so its equal pairs separate nothing;
+  (4) the S1d maps live in a new tool rather than `tools/ai.py`, to keep the kept first-boundary outputs reproducible.
+
+### 2026-11-10 — S1c and S1d review (architect, Tier A, the audit of the fifth Tier B lane): accept with fixes
+
+- **Re-run** (no game, under `systemd-run --user --scope -p MemoryMax=3G`, from `workspace/logs/ai`): both inputs
+  manifests pass (`manifest-sweep2-s1cd-inputs.sha256`, 74 logs: 31 + 21 + 17 + 5; `sweep2-s1cd/manifest.sha256`); S1c
+  `--rows R44,S13` and the whole S1d command reproduce `s1c-model-check.txt` and `s1d-first-check.txt` byte for byte;
+  revision 2 with S1b's 32 names reproduces `sweep2-s1b/model-check.txt` byte for byte. S13's count read from the fires is
+  4 for both units that fire, H1b's file word.
+- **Independence.** `m_r44`, `m_s13` and the six new heads follow the blocks at `b5999f5e` step for step (R10's
+  `MonPlayerBonus(G, &pb, UnitGetRoom(U), U)`, R11, R48's call-free step 1, R49, R56, R15's alt); nothing in them is
+  absent from the block. Sites spot-checked by objdump: the one call before 0x005F0B2C, 0x005F6ECB, 0x005F8FB1 and
+  0x005E7F5C in each think.
+- **Ruling 1 (one-decision arms, rows 281, 283, 509): not an overclaim.** Plan 0038's ruling on single decisive cases
+  holds: the branch is decided by logged input, the block is read, and the case reproduces words no wrong reading meets by
+  chance (`Ovr(13, 0, 0)`, `Walk(t, 7)`; `PathOvrSet(1, 0, 0)`, `RunToPoint(home)`), with the arm's test failing reversed.
+  H1's sentence is "on the logged paths only" and its table already names the one not-melee decision. What one case
+  cannot separate stays `[I]` as the rows say (the draw's `<` against `aip(5)` 0). R44n's "step 2's walk is one decision"
+  (row 284, d-owner) remains a true scope note.
+- **Ruling 2 (R10's first boundary `UnitGetRoom`): sound.** It is the argument of `MonPlayerBonus` and the think's first
+  call in code order (objdump: no call before 0x005F0B27), so the map runs no callee and uses no return: ADR-0004 and
+  ruling R2 hold. The note "`MonPlayerBonus` is not logged" is a side remark, not the reason.
+- **Fix (1 overclaim).** S13: step 2's two tests (the record found, its words non-zero) do not fail alone; their flips stop
+  at the unmodelled push and refill in 160 of 160 (`FLIP 2.home!=0`, `2.words!=0`). Row 508 and the S1c addendum said
+  every branch failed alone; both now keep those two tests `[I]`.
+- **Totals** recomputed from the 29 files: a-logs 674, a-run 358, b 389, c 389, c-emu 490, d 326, sum 2 626; H1h 39.
+- **Audit:** a Tier B check would have missed the fix (it shows only in the kept output's flip lines, not in the diff);
+  it is not reject-grade, so no miss counts against the lane kind.

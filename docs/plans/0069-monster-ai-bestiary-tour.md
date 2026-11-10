@@ -435,3 +435,10 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 - **Owner questions as they stand:** 1 (size: (a) as drafted, about 3.4M; (b) without H1c, about 3.1M; (c) defer;
   recommended (a)); 2 (threshold count: (a) the tour approved by name, the count does not gate it; (b) only if sharing
   opens; recommended (a)).
+
+### 2026-11-10 — Scope note (orchestrator, at the merge of 0066 S1c and S1d)
+
+- Plan 0066's batch S1d (`lane/n66d`) moved catalogue rows 13, 349, 460 and 468 (a-logs → b) into H1h, which now holds
+  39 statements. The tour's scope is therefore **241** statements, not the 237 counted above at `4fb8b55f`. The
+  figures above stay as drafted; Phase 1a recounts the scope from the inventory at its start, and the cost scales by
+  about 2 %.

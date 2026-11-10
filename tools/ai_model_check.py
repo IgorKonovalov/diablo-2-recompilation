@@ -37,6 +37,11 @@ the unit's next decision (same think), with how often the model had moved a word
 Plug-in. `--logs` takes a file of log paths (one per line, relative to the current directory), so a later run's logs
 (the bestiary tour, plan 0066 question 3 (c)) are checked with the same models; `--rows` picks entries by name.
 Stdlib, tools/ai.py (the parser) and tools/ai_resume.py (`top_level`, the think's own calls).
+
+Revision 2 (plan 0066 S1c, `lane/n66d`): R44 (Duriel) and S13 (state row 13) added, with their calls in `CONV`; S13's path
+count is a given word per unit read from its logged fires (`S13_COUNT`, as tools/ai_s13_check.py takes it). The entries of
+revision 1 are unchanged: `--rows` with S1b's 32 names reproduces `sweep2-s1b/model-check.txt` byte for byte.
+tools/ai_first_check.py (S1d) runs these models to their first call only.
 """
 import os
 import sys
@@ -152,6 +157,14 @@ CONV = {
     "RangePow2": (0x00472210, "seedp", "n", ()),
     "PathDist": (0x005DC5C0, "u", "x", ("y",)),
     "MoveToPoint": (0x005DE440, "G", "U", ("x", "y", "n")),
+    # plan 0066 S1c (`lane/n66d`): R44's and S13's calls; the words tools/ai_s13_check.py compares for S13's (r72 record)
+    "GetRightSkill": (0x006201D0, None, None, ("u",)),
+    "UnitSkillAdd": (0x0056DEB0, None, None, ()),
+    "PlayerSetSkill": (0x005701B0, None, None, ()),
+    "ParamsFind": (0x0058EEF0, "U", "kind", ("z",)),
+    "LogicRegionId": (0x0061B130, None, None, ("room", "x", "y")),
+    "PathOvrSet": (0x005A6260, None, "a", ("b", "c")),
+    "RunToPoint": (0x005DEDE0, "G", "U", ("x", "y")),
 }
 
 
@@ -1292,6 +1305,125 @@ def m_r23x(r):
     m_r23(r, loop="axis")
 
 
+# ---- plan 0066 batch S1c (`lane/n66d`): R44 and S13, transcribed from the spec blocks at b5999f5e like the rest.
+
+def m_r44(r):
+    """R44 Duriel. Step 1's grant is modelled as its two logged boundary calls (`UnitSkillAdd`, `PlayerSetSkill`, both in
+    the logger's BND), their words not compared: no log reaches them."""
+    if r.br("1.Skill4>=0", r.skill[3] >= 0, val=r.skill[3]):
+        rs = r.call("1.rightskill", "GetRightSkill", u=r.U).eax
+        if r.br("1.rightskill=0", rs == 0):
+            r.call("1.skilladd", "UnitSkillAdd")
+            r.call("1.setskill", "PlayerSetSkill")
+    if not r.br("2.melee", r.melee):
+        if r.br("2.Skill1>=0", r.skill[0] >= 0) and r.chance("2.chance(5)", 5):
+            use_skill(r, "2.useskill1", 1, r.t)
+            return
+        r.call("2.ovr", "Ovr", type=13, param=0, byte=0)
+        r.call("2.walk", "Walk", t=r.t, flags=7)
+        return
+    if r.br("3.Skill3>=0", r.skill[2] >= 0) and r.chance("3.chance(2)", 2):
+        use_skill(r, "3.useskill3", 3, r.t)
+        return
+    if r.br("4.Skill2>=0", r.skill[1] >= 0) and r.chance("4.chance(3)", 3):
+        use_skill(r, "4.useskill2", 2, r.t)
+        return
+    if r.chance("5.chance(4)", 4):
+        r.call("5.setmode5", "SetModeAtUnit", mode=5, t=r.t)
+        return
+    r.call("6.setmode4", "SetModeAtUnit", mode=4, t=r.t)
+
+
+# S13's path list (AiCtl +0x38) is not logged. Its count is a given word per (log, unit): the highest index fired + 1, read
+# from the logged fires (the `v14` word of each `MonAiUseSkill` call the think makes), as tools/ai_s13_check.py takes it
+# (README H1b's given words). `v14 < count` can then fail only below that index. Filled by run_check before S13 runs.
+S13_COUNT = {}
+
+
+def s13_counts(decs):
+    for d in decs:
+        for b in R.top_level(d):
+            if b["fn"] == CONV["UseSkill"][0]:
+                key = (d["log"], d["aid"]["u"])
+                S13_COUNT[key] = max(S13_COUNT.get(key, 0), s32(b["c"][0]) + 1)
+
+
+def s13_step(r, lb):
+    """AiPathSkillStep: True when it fired. The point's x, y are not compared (the list is not logged)."""
+    cnt = S13_COUNT.get((r.dec["log"], r.U))
+    if cnt is None:
+        lt = r.unknown(lb + ".v14<count")
+    else:
+        lt = r.less(lb + ".v14<count", r.v[0x14], cnt)
+    if lt:
+        if not r.br(lb + ".skill1-ok", r.skill[0] >= 0, val=r.skill[0]):
+            return False
+        r.call(lb + ".fire", "UseSkill", mode=4, skill=r.skill[0], t=0)
+        r.store(lb + ".set v14+=1", 0x14, r.v[0x14] + 1)
+        r.store(lb + ".set v18=T", 0x18, r.T)
+        return True
+    if r.br(lb + ".|T-v18|>700", abs(s32(r.T - r.v[0x18])) > 700, val=abs(s32(r.T - r.v[0x18]))):
+        r.store(lb + ".set v14=0", 0x14, 0)
+    return False
+
+
+def s13_runhome(r, lb, hx, hy):
+    """RunHome: True when the run was accepted (the event ends)."""
+    r.call(lb + ".pathset", "PathOvrSet", a=1, b=0, c=0)
+    ok = r.call(lb + ".runpt", "RunToPoint", x=hx, y=hy).eax
+    if r.br(lb + ".run-ok", ok != 0):
+        return True
+    r.call(lb + ".cancel", "CancelEvents", kind=2, z=0)
+    return False
+
+
+def m_s13(r):
+    """S13, state row 13 (the Countess). M is the AiCtx's MonStats word (ctx[7]); home is the record the find returns,
+    whose words are the AID line's `head` when the returned pointer is the logged `hp`."""
+    if not r.br("1.M!=0", r.aid["ctx"][7] != 0):
+        return
+    room = r.call("1.room", "UnitGetRoom", u=r.U).eax
+    if not r.br("1.room!=0", room != 0):
+        return
+    hp = r.call("2.home", "ParamsFind", kind=10, z=0).eax
+    if not r.br("2.home!=0", hp != 0):
+        raise Stop("2: the push is not reached")
+    if hp != r.aid["hp"] or r.head is None:
+        raise Stop("2: the home record is not the logged head")
+    hx, hy = r.head[3], r.head[4]
+    if not r.br("2.words!=0", hx != 0 and hy != 0):
+        raise Stop("2: the refill is not reached")
+    rh = r.call("3.region-home", "LogicRegionId", room=room, x=hx, y=hy).eax
+    ru = r.call("3.region-u", "LogicRegionId", room=room, x=r.x, y=r.y).eax
+    if r.br("3.differ", rh != ru) and s13_runhome(r, "3", hx, hy):
+        return
+    rt = r.call("4.region-t", "LogicRegionId", room=room, x=r.tx, y=r.ty).eax
+    if r.br("4.differ", rt != rh):
+        if r.br("4.at-home", r.x == hx and r.y == hy):
+            if r.less("4.dist<25", r.dist, 25) and s13_step(r, "4.step"):
+                return
+            r.call("4.idle10", "Idle", n=10)
+            return
+        if s13_runhome(r, "4", hx, hy):
+            return
+    hd = r.call("5.homedist", "PathDist", u=r.U, x=hx, y=hy).eax
+    if r.br("5.homedist>40", u32(hd) > 40, val=u32(hd)) and s13_runhome(r, "5", hx, hy):
+        return
+    if s13_step(r, "6.step"):
+        return
+    v = r.rng(100)
+    if r.br("8.melee", r.melee):
+        if r.less("8.r<aip(3)+10", v, r.aip(3) + 10, draw=True):
+            r.call("8.setmode4", "SetModeAtUnit", mode=4, t=r.t)
+        else:
+            r.call("8.idle", "Idle", n=r.aip(2))
+    elif r.less("8.r<aip(1)", v, r.aip(1), draw=True):
+        r.call("8.ovr", "Ovr", type=0, param=100, byte=0)
+        r.call("8.run", "RunToUnit", t=r.t)
+    else:
+        r.call("8.idle#2", "Idle", n=r.aip(2))
+
+
 MODELS = {
     "R3": (0x005EFE20, m_r3, "catalogue 17, 18"),
     "R4": (0x005EFF50, m_r4, "catalogue 20, 21"),
@@ -1325,6 +1457,8 @@ MODELS = {
     "S10": (0x005E8020, m_s10, "catalogue 498"),
     "S11": (0x005E8140, m_s11, "catalogue 500, 501"),
     "S12": (0x005E8340, m_s12, "catalogue 504, 505"),
+    "R44": (0x005F67B0, m_r44, "catalogue 280, 281, 283 (S1c)"),
+    "S13": (0x005E5C50, m_s13, "catalogue 507, 508, 509 (S1c)"),
 }
 
 
@@ -1346,6 +1480,8 @@ def run_check(paths, names, out):
                 continue
             for n in ths.get(d["aid"]["th"], ()):
                 decs[n].append(d)
+    if "S13" in names:
+        s13_counts(decs["S13"])
     lines = []
     for n in names:
         th, model, rows = MODELS[n]
