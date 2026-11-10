@@ -29,7 +29,7 @@ Controls, over each entry's fork-free matched decisions: every named branch, and
 `v18`, `v1C` or `Unit+0xC4` (`set ...`), reversed or skipped alone (`FLIP`: the decisions that then fail, in the decision
 or, for a store, at the same unit's next logged decision of the same think, whose AID control words must equal the
 model's at return; n the decisions that ran it); `le` (each draw test `<=` for `<`); `lecmp` (each other `<` compare
-`<=`); `d0` (every `aip` from the Normal column). A branch or store that fails none cannot be told from its reverse by
+`<=`); `d0` (every `aip` from the Normal column); for R43 only, `sdiv` (the idle's `low mod 10` as a signed remainder). A branch or store that fails none cannot be told from its reverse by
 these logs. `ARM`: each branch's outcomes over the fork-free decisions. `EDGE`: the fork-free decisions in which a
 compare met an equal pair, the only kind that tells `<` from `<=`. `NEXT`: the model's control words at return against
 the unit's next decision (same think), with how often the model had moved a word. `VALS`: values a branch compared.
@@ -519,7 +519,10 @@ def m_r15(r):
     if r.br("5.melee", r.melee) and r.chance("5.chance(4)", 4):
         r.call("5.setmode4", "SetModeAtUnit", mode=4, t=r.t)
         return
+    if h == 0:
+        r.vals.append(("hd when h=0", hd))
     if r.br("6.h", h != 0) and r.less("6.hd<15", hd, 15) and r.rchance("6.Range<aip(2)", 100, r.aip(2)):
+        r.vals.append(("6.A2 target h=t", h == r.t))
         r.call("6.setmode5", "SetModeAtUnit", mode=5, t=h)
         return
     if r.less("7.D100<20", r.d100(), 20, draw=True):
@@ -614,8 +617,13 @@ def m_r43(r):
             r.store("set v18+=1", 0x18, r.v[0x18] + 1)
             use_skill(r, "4.useskill1", 1, r.t)
             return
-    n = 20 + r.step() % 10
-    r.call("5.idle", "Idle", n=n)
+    low = r.step()
+    r.vals.append(("5.low>=2^31", low >= 0x80000000))
+    if r.ctl == "sdiv":                                  # control: the remainder of a signed division
+        q = abs(s32(low)) % 10
+        r.call("5.idle", "Idle", n=20 + (-q if s32(low) < 0 else q))
+        return
+    r.call("5.idle", "Idle", n=20 + low % 10)
 
 
 def m_r52(r):
@@ -695,6 +703,7 @@ def m_r63(r):
     else:
         px, py = r.tx, r.y
     d = r.call("4.dir", "UnitDirToPoint", u=r.U, x=px, y=py).eax & 0xFF
+    r.vals.append(("4.dir", d))
     f = None
     for lo, hi, v in FACING4:
         if lo <= d <= hi:
@@ -715,6 +724,7 @@ def m_r65(r):
         s = r.call("1.skillfind", "SkillFindByOwner", u=r.U, skill=r.skill[0], n=-1).eax
         if r.br("1.s!=0", s != 0):
             lv = s32(r.call("1.level", "GetSkillLevel", u=r.U, s=s, b=1).eax)
+            r.vals.append(("1.lv", lv))
             if r.less("1.0<lv", 0, lv):
                 n = lv
     if (r.br("2.Skill1>=0", r.skill[0] >= 0) and r.less("2.dist<n", r.dist, n)
@@ -731,6 +741,7 @@ def m_r65(r):
     if (r.br("5.dead", dead != 0) and r.chance("5.chance(1)", 1)
             and r.br("5.targetok", r.call("5.targetok", "SkillTargetOk", skill=r.skill[2], u=dead, a=0, b=0).eax)):
         r.call("5.helpblock", "HelpBlock", blk={0: {2: 14, 4: 1}})
+        r.vals.append(("5.deadD2:aip(3)", "%d:%d" % (deadd2, r.aip(3))))
         if r.less("5.aip(3)<deadD2", r.aip(3), deadd2):
             r.call("5.wandernear", "WanderNear", u=dead, r=10)
             return
@@ -876,6 +887,16 @@ def m_r79(r):
     trap_arrow(r, "y")
 
 
+def m_r78y(r):
+    """Control: row 78's block with y for x. It must fail where the axes disagree."""
+    trap_arrow(r, "y")
+
+
+def m_r79x(r):
+    """Control: row 79's block with x for y."""
+    trap_arrow(r, "x")
+
+
 def m_r95(r):
     """R95 PantherJavelin."""
     ret = r.call("1.findhostile", "FindHostile", pm=0, blk={0: {0: r.dist}})
@@ -1015,6 +1036,7 @@ def m_r124(r):
         s = r.call("1.getskill", "GetUnitSkill", u=r.U, skill=r.skill[0]).eax
         if r.br("1.s!=0", s != 0):
             lv = s32(r.call("1.level", "GetSkillLevel", u=r.U, s=s, b=1).eax)
+            r.vals.append(("1.lv", lv))
     if (r.br("2.Skill1>=0", r.skill[0] >= 0) and r.less("2.dist<max(lv,0)", r.dist, max(lv, 0))
             and r.chance("2.chance(3)", 3)
             and not r.br("2.state12", r.call("2.hasstate", "HasState", u=r.U, state=12).eax)):
@@ -1113,6 +1135,7 @@ def m_s11(r):
         r.call("1.cancel", "CancelEvents", kind=2, z=0)
         r.call("1.queue", "QueueEvent", kind=2, frame=r.T + 1, a=0, b=0)
     lim = r.v[0x14] if r.v[0x14] != 0 else 30
+    r.vals.append(("2.v14", r.v[0x14]))
     if r.less("2.lim<dist", lim, r.dist):
         r.call("2.idle", "Idle", n=10)
         return
@@ -1289,6 +1312,8 @@ MODELS = {
     "R70": (0x005FA380, m_r70, "catalogue 167, 168"),
     "R78": (0x005FB6C0, m_r78, "catalogue 193, 195"),
     "R79": (0x005FB7E0, m_r79, "catalogue 198, 199"),
+    "R78y": (0x005FB6C0, m_r78y, "control for 193, 195: y for x"),
+    "R79x": (0x005FB7E0, m_r79x, "control for 198, 199: x for y"),
     "R95": (0x005E1080, m_r95, "catalogue 320, 321"),
     "R96": (0x005E1250, m_r96, "catalogue 323, 324"),
     "R99": (0x005E9F10, m_r99, "catalogue 485, 486"),
@@ -1397,7 +1422,7 @@ def run_check(paths, names, out):
                     st["next"] += 1
             lines.append("  FLIP %s fail %d of %d (in the decision %d, at the next decision %d; stop %d)" % (
                 b, st["mismatch"] + st["next"], len(sub), st["mismatch"], st["next"], st["stop"]))
-        for c in ("le", "lecmp", "d0"):
+        for c in ("le", "lecmp", "d0") + (("sdiv",) if n == "R43" else ()):
             st = Counter(check(model, d, ctl=c).status for d, _ in free)
             lines.append("  CONTROL %s fail %d of %d (stop %d)" % (c, st["mismatch"], len(free), st["stop"]))
     txt = "\n".join(lines) + "\n"
