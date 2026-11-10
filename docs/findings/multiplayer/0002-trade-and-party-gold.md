@@ -170,7 +170,9 @@ clip left at the picker's cap; UnitAddGoldStat(picker, 14, give); return the exc
   - **4** (accept): when either is `TradeBlocked` it sends message 0xBEE and stops; the end lock closes with 9. A
     presser not in state 3 gets message 0xBD2, and one with an item on the cursor gets 0xBD7. Otherwise the presser
     goes to 4, and if the partner is at 4 the trade commits (`TradeCommit(EAX presser; game, partner, pd presser,
-    pd partner)`) and both `+0x58` get the tick. (0x00568499–0x00568573)
+    pd partner)`) and both `+0x58` get the tick. (0x00568499–0x00568573) *2026-11-10 (plan 0067 P2 preparation, `lane/n67p`): the 4-digit "messages" here and in the commit sketch and
+    `TradeMoveItems` below are `PlrTrade.cpp` line numbers passed to the client lookup 0x005531C0; the `0x77` codes are
+    the `DL` values, given in [multiplayer/0003](0003-trade.md) § 12.1 (0x005684E3–0x0056853B).*
   - **7:** each side at 4 goes back to 3. (0x0056857F–0x005685C2)
   - **8** (gold, parameter = the amount): the Answer's gold-offer bullet. The unsigned `cmp [ebp+0xC], eax; jbe` at 0x005683E6, the
     cap clip at 0x0056843C–0x00568448, the store at 0x00568467.
@@ -203,7 +205,7 @@ free both interactions and records; send 0x0D to both
   copy (`TradeItemRename`: an ear, base type 7, gets a personal name, an ear level and flag `0x8000`; an item with
   flag `0x1000000` gets the name only; the unit the name comes from, in `EDI`, is not followed). It then sets mode 4
   and page 0. It then places the copy in Y's inventory
-  (`InvPlaceItem(game, Y, id, 0, 0, 1, 1, 0)`). A failed placement returns 0 with messages 0x9D1/0x9D2. A second pass
+  (`InvPlaceItem(game, Y, id, 0, 0, 1, 1, 0)`). A failed placement returns 0 with messages 0x9D1/0x9D2 (*source lines, `lane/n67p`: `0x77` codes `0x0A` to the giver, 9 to the receiver, 0x00567275, 0x00567290*). A second pass
   removes X's items on page 1 (the view of Y's offer) and page 2. So Y receives the `ItemCopy` unit, not X's item;
   whether its unit id differs is not read here (`ItemCopy` not followed). (0x005670E0–0x0056729D, 0x00567070–0x005670D6)
 - [I] **Gold at the commit.** The give does not depend on the take: `PlayerGiveGold` is called whether or not the

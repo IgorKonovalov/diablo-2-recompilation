@@ -54,6 +54,7 @@ SET = {n: "x" for n in (
     "mp-den-host", "mp-den-join", "mp-dur-host", "mp-dur-closed", "mp-dur-open", "quest-w39summit",
     "mp-anc-join", "mp-anc-low", "mp-scroll-join", "mp-quest-host", "mp-quest-join", "mp-cow-host",
     "mp-pvp-host", "mp-pvp-join", "mp-sock-join", "mp-wound-join")}
+SET.update({n: "x" for n in ("mp-trade-host", "mp-trade-join", "mp-trade-host13", "mp-trade-join13")})  # plan 0067 P2
 SET["mp-pal-join"] = "pal"
 SET["mp-pal-conv"] = "pal"   # plan 0051 Phase 1a: MP25's offensive auras
 
@@ -81,7 +82,25 @@ PAIRS = [
     ("MP18", "mp-nova-host", "mp-sock-join", "joiner with a rune and an item with empty sockets, for an insert tried in an open trade"),
     ("MP25 offensive", "mp-nova-host", "mp-pal-conv", "Paladin joiner with Conviction on the right button and Holy Fire, Holy Shock, Holy Freeze on hot keys (filter 0x8000)"),
     ("open wounds", "mp-pvp-host", "mp-wound-join", "hostile joiner wearing Ripsaw (open wounds 80) hits the host; the host's life ticks under state 62"),
+    # plan 0067 Phase 2 (player trade, multiplayer/0003 § 11): known items at known page-0 cells
+    ("T1-T3 T5-T7 T9-T12", "mp-trade-host", "mp-trade-join", "trade: host wnd (0,0), gcv (5,0), empty cube (8,0), gold 795000 (cap 800000); joiner wnd (0,0), gcv (2,0), cube (8,0) holding a gcv, a belt of rvl, gold 100000"),
+    ("T4 T8 T13", "mp-trade-host13", "mp-trade-join13", "trade: host four wnd (0..3,0) and a gax (8,0); joiner page 0 the T13 layout (cap (3,1), gax (7,0), axe (0,1), axe (5,0)) plus a gcv (4,3)"),
 ]
+# plan 0067 Phase 2: the page-0 (store 1) items each trade recipe must hold, exactly: (code, x, y)
+TRADE_PAGE0 = {
+    "mp-trade-host": {("wnd", 0, 0), ("gcv", 5, 0), ("box", 8, 0)},
+    "mp-trade-join": {("wnd", 0, 0), ("gcv", 2, 0), ("box", 8, 0)},
+    "mp-trade-host13": {("wnd", 0, 0), ("wnd", 1, 0), ("wnd", 2, 0), ("wnd", 3, 0), ("gax", 8, 0)},
+    "mp-trade-join13": {("cap", 3, 1), ("gax", 7, 0), ("axe", 0, 1), ("axe", 5, 0), ("gcv", 4, 3)},
+}
+
+
+def page0(f):
+    return sorted((i["code"].strip(), i["x"], i["y"]) for i in f["items"]["items"] if i.get("location") == 0 and i.get("store") == 1)
+
+
+def gold(f):
+    return stat(f, 14)
 
 # pairs whose case declares hostility (multiplayer/0001 § 4: both players at character level 9 or more)
 HOSTILE = {"MP01 MP23 MP24", "MP23", "MP25", "MP24 cow", "MP25 offensive", "open wounds"}
@@ -188,6 +207,17 @@ def checks(excel):
                           ("Ripsaw's requirements met (flb: strength 70, dexterity 49; level 26)", lambda f, q, w: stat(f, 0) >= 70 and stat(f, 2) >= 49 and lvl(f) >= 26)],
         "mp-pal-conv": [("Paladin", lambda f, q, w: f["header"]["cls"] == 3), ("right skill an aura", lambda f, q, w: f["header"]["mouse"][1] in aura),
                         ("level >= 30 (Conviction's reqlevel)", lambda f, q, w: lvl(f) >= 30)],
+        "mp-trade-host": [("page 0 exactly wnd, gcv, box", lambda f, q, w: page0(f) == sorted(TRADE_PAGE0["mp-trade-host"])),
+                          ("gold 795000, level 80 (cap 800000)", lambda f, q, w: gold(f) == 795000 and lvl(f) == 80),
+                          ("cube empty", lambda f, q, w: not any(i.get("store") == 4 for i in f["items"]["items"]))],
+        "mp-trade-join": [("page 0 exactly wnd, gcv, box", lambda f, q, w: page0(f) == sorted(TRADE_PAGE0["mp-trade-join"])),
+                          ("gold 100000, level 80", lambda f, q, w: gold(f) == 100000 and lvl(f) == 80),
+                          ("a gcv in the cube", lambda f, q, w: any(i.get("store") == 4 and i["code"].strip() == "gcv" for i in f["items"]["items"])),
+                          ("potions in the belt", lambda f, q, w: any(i.get("location") == 2 for i in f["items"]["items"]))],
+        "mp-trade-host13": [("page 0 exactly four wnd and a gax", lambda f, q, w: page0(f) == sorted(TRADE_PAGE0["mp-trade-host13"])),
+                            ("gold 10000", lambda f, q, w: gold(f) == 10000)],
+        "mp-trade-join13": [("page 0 exactly the T13 layout and a gcv", lambda f, q, w: page0(f) == sorted(TRADE_PAGE0["mp-trade-join13"])),
+                            ("gold 100000", lambda f, q, w: gold(f) == 100000)],
         "mp-cow-host": [("word 4 bit 10 clear", lambda f, q, w: every(lambda d: not bit(q, d, 4, 10))), ("leg, tbk held", lambda f, q, w: held(f, "leg") and held(f, "tbk")),
                         ("box held", lambda f, q, w: held(f, "box"))],
     }
