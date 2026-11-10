@@ -205,8 +205,8 @@ and S2 rows 4 to 10 are conventions the format leaves to `golden.py`; all were g
 
 Backlog entries filed (7):
 
-- archivist: [drop-cases-magic-find](../backlog/2026-11-10-architect-archivist-plan-0064-drop-cases-magic-find.md)
-  (S2 rows 2–3: add the inputs, re-emit the set); [golden-trace-field-conventions](../backlog/2026-11-10-architect-archivist-plan-0064-golden-trace-field-conventions.md)
+- archivist: [drop-cases-magic-find](../backlog/archive/2026-11-10-architect-archivist-plan-0064-drop-cases-magic-find.md)
+  (S2 rows 2–3: add the inputs, re-emit the set); [golden-trace-field-conventions](../backlog/archive/2026-11-10-architect-archivist-plan-0064-golden-trace-field-conventions.md)
   (S1 rows 2–5, S2 rows 1 and 4–10, items (a) to (k)). S1 row 1 was already fixed and closed:
   [cleanroom-score-path-and-audit-heredocs](../backlog/archive/2026-11-10-architect-archivist-cleanroom-score-path-and-audit-heredocs.md).
 - spec-writer (one per spec): [items-tc-type-test](../backlog/2026-11-10-architect-spec-writer-plan-0064-items-tc-type-test.md),
@@ -248,3 +248,26 @@ the format entry.
   stores 0") contradicting the layout's "blank → 0xFF". Row 12 reclassified **spec defect** (items/quality) plus a
   table-doc defect; entries `plan-0064-items-quality-s1-class-compare` (spec-writer) and
   `plan-0064-itemtypes-blank-class-vs-row-identity` (archivist).
+
+- **2026-11-10 — Phase 3 follow-up: the two archivist entries (archivist, `lane/n64g`).** (1) *Magic find.*
+  `tools/golden.py` `drop_case` now reads the `QKMF`, `QOMF` and `QMF` lines between each `QIN` and `QOUT` and writes
+  `killer_mf` (the killer's stat 80) and `owner_mf` (its owner's, M3; a mercenary's or summon's own and owner's stay two
+  inputs) into the case's inputs; the values must agree across the rolls of a call and `QMF` must equal `QKMF + QOMF`, or
+  `emit` writes no case and counts the call failed. Re-emit: chain2 3 784 and items-chain 256 drop calls, 0 failed,
+  `chain.py check` exit 0; every case id and expected value is as before (0 differ), 486 cases gain `killer_mf` (472 x 309
+  expansion, 250 x 174 and 215 x 3 classic) and none has `owner_mf`. The v1 set joins to 5 073 cases, digest
+  `878ea350…c1c0` (was `d73f29f6…9e08`; chain2 `c53820f3…8e03`, items-chain `98e27ab9…4213`, DRLG and predicted parts
+  unchanged; the old parts merged still give the old digest, so the change is the inputs alone). The committed sample's
+  one affected drop case gained its input. The reference scores 0 different: `cleanroom.py reference` S1 (62 035 fields)
+  and S3 (211 140 fields) from `golden.world_expected`; the tool offers a reference for world slices only, so S2 and S4
+  were scored with the new set as candidate (0 different, 32 320 and 1 820 fields). `test_golden.py` 16 tests OK
+  (`test_drop_case_magic_find`). (2) *Conventions.* `docs/formats/golden-trace.md` § Conventions states items a–k from
+  the code: the act number base 1, the acts and levels of observed and predicted worlds, that `check` ignores extra
+  candidate fields, the digests' level set (levels 1 to 136) and canonical form, and the drop lists (`nodrop` one entry per
+  positive pick, `[0, total]` for NoDrop 0: in all 4 040 calls `len(nodrop) = len(pick)`, 1 113 hold a NoDrop-0 entry; `pick`, `select`, `subtc`, `quality`),
+  inputs `tc`, `players`/`party`/`cap`, `killer_mf`/`owner_mf`, context-only inputs and `g6a`. One difference from the
+  entry's wording: the `quality` list holds a forced quality (`QOUT` is logged for it, `tools/tc.py`), though no v1 case has one. Both entries closed; the conformance entry
+  is annotated, not closed. **Handoff:** the orchestrator rebuilds the S2 sandbox's `cases.jsonl` (`cleanroom.py make S2
+  --force`) before the Phase 5 re-run, and rebuilds S1 for the new format text. Review tier B. Note for the reviewer: the
+  first `cleanroom.py score` calls of this lane, run without `--out`, each appended a line to the default sandboxes'
+  `score-log.jsonl` (S1, S2: the last line; S3, S4: the file did not exist before); see the lane report.

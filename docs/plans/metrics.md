@@ -676,6 +676,8 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-11-10 | `lane/n68w` | 0068 P4 | spec-writer | 228 417 | 95 | 11 | — | accept with fixes (Tier A, 3) | misread 1, omission 1, stale cross-reference 1 |
 | 2026-11-10 | `lane/n68w` review | 0068 P4, close | architect-review | 146 798 | 69 | 8 | — | accept with fixes (3); plan 0068 closed | misread 1, omission 1, stale cross-reference 1 |
 | 2026-11-10 | S2-12 probe | 0064 P3 | cleanroom | 43 318 | 4 | 1 | — | needed two guesses: row 12 is a spec defect | — |
+| 2026-11-10 | `lane/n64g` | 0064 golden-set fixes | archivist | 145 444 | 62 | 9 | — | accept with fixes (Tier B, 3) | overclaim 1, other 2 |
+| 2026-11-10 | `lane/n64g` check | 0064 golden-set fixes | architect-check | 75 713 | 19 | 2 | — | accept with fixes (3) | overclaim 1, other 2 |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not

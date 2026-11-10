@@ -101,6 +101,26 @@ class DropCase(unittest.TestCase):
         for f in e:
             self.assertIsNotNone(golden.pattern(f))
 
+    def test_drop_case_magic_find(self):
+        tcr = {"stype": "1", "sclass": "374", "seed": "00000001:0000029a", "tc": "517", "fq": "0", "ilvl": "15",
+               "diff": "0", "exp": "1"}
+        end = ("TCEND", {"count": "0", "seed": "00000009:0000000a"})
+        def call(*mid):
+            return [("TCR", tcr), ("_DROP", None), ("_CTX", [])] + list(mid) + [end]
+        grp = [("QIN", {}), ("QKMF", {"kmf": "0", "ktype": "1", "kclass": "271"}), ("QOWN", {}), ("QOMF", {"omf": "40"}),
+               ("QMF", {"mf": "40"}), ("QOUT", {"q": "2"})]
+        c = golden.drop_case(call(*grp, *grp), 0, {"log": "x.log"})
+        self.assertEqual((c["inputs"]["killer_mf"], c["inputs"]["owner_mf"]), (0, 40))
+        c = golden.drop_case(call(("QIN", {}), ("QMF", {"mf": "0"}), ("QOUT", {"q": "2"})), 0, {"log": "x.log"})
+        self.assertNotIn("killer_mf", c["inputs"])
+        self.assertNotIn("owner_mf", c["inputs"])
+        bad = [g if g[0] != "QMF" else ("QMF", {"mf": "41"}) for g in grp]
+        with self.assertRaises(ValueError):
+            golden.drop_case(call(*bad), 0, {"log": "x.log"})
+        other = [g if g[0] != "QKMF" else ("QKMF", {"kmf": "1"}) for g in grp]
+        with self.assertRaises(ValueError):
+            golden.drop_case(call(*grp, *other), 0, {"log": "x.log"})
+
 
 class Check(unittest.TestCase):
     def setUp(self):
