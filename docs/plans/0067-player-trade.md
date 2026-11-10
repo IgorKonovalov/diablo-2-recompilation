@@ -87,3 +87,54 @@ choose; the architect ranks it last of the four drafted on 2026-11-10 (ADR-0033 
 ## Implementation log
 
 _(lanes append dated entries as phases land: what was found, the confidence reached, surprises)_
+
+### 2026-11-10 — Phase 1 (static reading), `lane/n67r`
+
+**Done.** [multiplayer/0003](../findings/multiplayer/0003-trade.md) reads the whole trade module (0x00566B30–0x00568D5B)
+and every caller from outside it (`call-sites-trade.txt`: 84 direct calls into the module's 28 entries; the tick's only reference is the
+event slot 0x006E1844). Everything is `[I]`; nothing was run. Kept outputs: `workspace/logs/n67r/static/` (31 files;
+`manifest.txt` hashes the other 30 and passes `sha256sum -c` from that directory; `commands.txt` holds every command). `re/symbols.csv`: 38 new
+`I` rows (subsystem `multiplayer/trade`), and 13 rows from multiplayer/0002 moved to the new finding as evidence.
+multiplayer/0002 carries dated notes where 0003 corrects it (the request distance, the gold offer) and on its two
+answered open questions.
+
+**The Phase 1 branches**, each read at `[I]` with anchors, or named with the step not followed:
+- trade button codes and handlers: 2, 3, 4, 7, 8; 5, 6 and above 8 do nothing (switch table 0x00568620) (0003 § 4);
+- request gates: distance (`d ≤ 8`; 9–50 walks first, which corrects 0002), busy, end lock, both states 0, the 5 s end
+  windows and the 1 s message rate, town. No hostility or mode test exists in `TradeRequest` (§ 3);
+- grid moves: page 2 → a copy on the partner's page 1, the id map, the hide path with its 10 s lock, the change lock on
+  seven inventory packets and its five refusals, the belt lock, the 14 `InteractIsPlayer` refusals (§ 5). Not
+  followed: when `BeltOverflow`, `CubeDropEmptied` and `PageSwapCursor` reach `TradeShowOffer`;
+- accept flags and what resets them: the state table 0–16 and the tick (§ 2). Gold offers change no state (§ 4);
+- the commit: gold tests, the room test (scratch grids filled in the FIRST order, where the real placement uses BEST),
+  the quest gate, then the moves, then the gold (§§ 7–8);
+- cancel paths: buttons 2/3, an overspend, a failed offer copy, the deferred close, the commit's 8 cancels, leaving
+  (`ClientRemove`), death (`PlayerDeath`). Every one rebuilds both inventories from the opening snapshot (§ 9). A
+  level change has no trade code: waypoint travel only clears the traveller's interaction (§ 9). Not followed: whether
+  the discarded item units are freed, and `ClientRemove`'s argument at its eight callers;
+- the save mid-trade: the snapshot from opening, through the interaction flag of `PLRSAVE_Save` on the route at
+  0x00532340 (two other routes not followed to `D2S_WriteSave`) (§ 10).
+
+**Case list:** 0003 § 11, 13 cases (T1 = MP31 … T13 optional), each with its recipe, the logger points (a new
+`tools/gdb/two-trade.gdb`, read-only) and a prediction, with the reading it separates; the cases a stock client
+cannot reach are named there (a death in town, monster equipment, a waypoint packet while trading, an `ItemCopy`
+failure, a dead target).
+
+**Judgment calls for the reviewer.** (1) The finding is `multiplayer/0003`, not `items/00NN`, beside 0002 § 2 which it
+completes. (2) The snapshot reading ("a cancel rebuilds the whole inventory as new units") rests on `InvUnlinkAll` and
+`ItemListReadByVersion` read statically; T2 separates it from "the offered items are returned" (an item moved on
+page 0 goes back to its opening cell, every id changes). (3) The FIRST/BEST disagreement of the room test is a reading of
+the scratch's owner word (0) against the inventory spec's B1; no layout was searched (T13 optional). (4) No forced
+case is proposed, so the open question on ADR-0013 needs no ruling unless the owner wants the waypoint case.
+
+**Handoff.** Phase 2 (if the owner says go): build the logger and `tools/trade_check.py` from § 11, measure the gold
+button and the close control in the first session, then run T1–T12. Phase 3 (spec-writer): `items/trade` from 0003
+§§ 2–10, at `[I]` throughout if Phase 2 does not run. Review: Tier B.
+
+**Phase 2 cost, for the owner's decision.** No owner play; agent-driven. One static lane-session (no slot) to write
+the logger, the checker and the T13 layout search. Then one development session (measures the gold entry and the close
+control, shakes the logger down) and three kept hosting sessions, about 45–75 min each with **both slots held**:
+(a) T1–T3, T5, T6; (b) T4, T7, T9–T12; (c) T8 (the joiner leaves) and T13 if a layout exists. About 4–5 hours of both
+slots on one day, blocking every other harness lane meanwhile, plus a port-4000 re-read per session (`ufwcheck.sh`).
+If plan 0065 Phase 2 runs two clients, sharing its set-up saves the development session. Skipping Phase 2 leaves
+`items/trade` all `[I]`.

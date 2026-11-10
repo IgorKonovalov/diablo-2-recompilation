@@ -11,7 +11,7 @@ This finding completes [multiplayer/0002](0002-trade-and-party-gold.md) § 2. It
 are in `workspace/logs/n67r/static/`: the module's disassembly (`objdump-trade-module.txt`) and decompile
 (`decompile-trade-module.c`), the callers' disassembly, every direct call into the module (`call-sites-trade.txt`,
 84 lines), the `0x77` message sites (`pkt77-sites.txt`, 39 lines), the commands (`commands.txt`) and `manifest.txt`
-(sha256 of the other 29 files; `sha256sum -c manifest.txt` passes from that directory).
+(sha256 of the other 30 files; `sha256sum -c manifest.txt` passes from that directory).
 
 Where § 2 of multiplayer/0002 and this finding differ, this finding holds: the request distance (§ 3), and the gold
 offer, which does not un-accept (§ 4). multiplayer/0002 carries a dated note at each place.
