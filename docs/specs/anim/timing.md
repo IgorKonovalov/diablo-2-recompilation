@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, stats/aggregate, stats/states, monsters/stats, skills/dispatch, combat/overview, combat/delivery, objects]
 consumed_by: [anim/movement, skills/dispatch, skills/missiles, combat/overview, combat/delivery, objects, sim/frame]
-tags: {C: 65, I: 134, L: 22}
-updated: 2026-11-04
+tags: {C: 65, I: 135, L: 22}
+updated: 2026-11-10
 ---
 
 # Animation timing: modes, records, the schedule, the frame advance, rates, breakpoints and the gates
@@ -175,6 +175,10 @@ B2. ANIMDATA_Find(name):                                          [I] (fn:ANIMDA
   one earlier in its block wins. Only `%s\AnimData.d2` under `DATA\GLOBAL` is loaded (d2exp's copy by the archive
   precedence); `eanimdata.d2` is not read by this loader. (fn:ANIMDATA_Find@0x0066A8F0, fn:ANIMDATA_Load@0x0066A770,
   [formats/animdata](../../formats/animdata.md#layout))
+- B2. [I] **The COF bundles are not a source.** The client loads `cmncof_a*.d2` into its own COF cache, which only its
+  drawing reads; 11 bundle COFs differ from `animdata.d2` in frames per direction and 2 in event frames, and none of
+  that reaches the server's mode lengths, which come from `animdata.d2` alone. (fn:sub_0046F310_CofBundleLoadAct@0x0046F310,
+  [data/0006 § 4](../../findings/data/0006-loaded-tables-and-bundles.md#4-the-cof-bundles-plan-item-4))
 - B3. [C] **The shapeshift display.** With `Unit+0xC8` bit 3 set, the first state of the DataTables transform list
   that the unit has decides: States `gfxtype` 1 shows a player as a monster of class `gfxclass` (its mode mapped by
   `g_PlrToMonMode` and the MonStats2 fallback); the record, the start frame and the rate all take the display values

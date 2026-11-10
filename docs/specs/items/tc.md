@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, data/excel]
 consumed_by: [items/quality, items/quest-drops, objects]
-tags: {C: 120, I: 61, L: 5}
-updated: 2026-11-04
+tags: {C: 121, I: 62, L: 6}
+updated: 2026-11-10
 ---
 
 # Treasure class resolution: from a drop source to item-creation calls
@@ -64,6 +64,7 @@ in [data/excel § G](../data/excel.md#g-treasure-classes).
 | tbl:ItemTypes.txt:Throwable | the classic-game re-pick (section H) |
 | tbl:Weapons.txt:version, `level`, `quest`, `spawnable`, `type`, `type2` (same offsets in [Armor](../../tables/Armor.md) and [Misc](../../tables/Misc.md)) | expansion-only flag, auto-TC filter, classic rejection ([Weapons](../../tables/Weapons.md)) |
 | tbl:ItemRatio.txt:Version | only inside the quality roll (`items/quality`) ([ItemRatio](../../tables/ItemRatio.md)) |
+| tbl:MonItemPercent.txt:TreasureClassPercent, `HeartPercent`, `BodyPartPercent`, `ComponentPercent` | none: loaded, read by no code (*Reimplementation notes*) ([MonItemPercent](../../tables/MonItemPercent.md)) |
 
 ### Runtime state
 
@@ -1095,6 +1096,15 @@ potions' quality calls return without drawing (H4).
 
 ## Reimplementation notes
 
+- **`MonItemPercent` adds nothing to a drop.** The table loads in every run, but no code reads it: its record getter
+  and its table getter have no caller, and no instruction names its globals outside the loader and the free. So a
+  monster's death drop (`sub_005A6830_MonDeathDrop` → `MONSTER_DropItems` → `TC_DropByIndex` → `TC_ResolveDrops`)
+  chooses no `MonItemPercent` row, makes no draw on it and steps no seed for it; the [draw order](#draw-order-on-srcseed) is complete
+  without it. Do not gate a drop on `TreasureClassPercent`. [I] (fn:sub_00654F20_MonItemPctLoad@0x00654F20,
+  fn:sub_00654FE0_MonItemPctGetRecord@0x00654FE0, 0x00654FD0, fn:sub_005A6830_MonDeathDrop@0x005A6830,
+  fn:MONSTER_DropItems@0x005A6600, fn:TC_ResolveDrops@0x0055A6D0,
+  [data/0006 § 1.3](../../findings/data/0006-loaded-tables-and-bundles.md#13-what-that-means-for-the-drop-chain)) The
+  load itself is logged in every H3b run that reaches it. [C] (0x00654FAD, run:2026-10-27-sweep-data-load)
 - **Two seeds.** TC picks and quality rolls step the source unit's seed (`unit+0x20`); the created
   items get their seeds from the game seed. Mixing them up shifts every later drop. [C]
   (run:2026-10-11-tc-drops, fn:sub_0055A550_DropCreateItem@0x0055A550)
@@ -1138,6 +1148,8 @@ potions' quality calls return without drawing (H4).
 
 - [findings/items/0001-tc-resolution.md](../../findings/items/0001-tc-resolution.md): the whole drop path
   (Phase 1 read, Phase 1b cross-check, Phase 2 promotions).
+- [findings/data/0006 § 1](../../findings/data/0006-loaded-tables-and-bundles.md#1-monitempercent-plan-item-1):
+  `MonItemPercent` loaded and read by no code (plan 0068).
 - [findings/items/experiments.md § run:2026-10-11-tc-drops](../../findings/items/experiments.md#run2026-10-11-tc-drops):
   328 resolver calls in eleven logs, reproduced by `tools/tc.py replay` (quality roll as boundary oracle),
   including the base-TC and upgrade-level check of all 317 monster calls.
@@ -1170,6 +1182,10 @@ potions' quality calls return without drawing (H4).
 - `tools/tc.py`: the reference model (`replay`, `show`, `nodrop`).
 
 ## Open questions
+
+- [L] Whether any code reaches `MonItemPercent` through an address built at run time: the static scan cannot see one,
+  and a read watch on its records over a session with kills would settle it
+  ([backlog](../../backlog/2026-11-10-reverser-reverser-plan-0068-monitempercent-read-watch.md)).
 
 - [L] **Parties beyond two players.** Plan 0011 logged a party of two (alive, player killer); plan 0044 added a dead
   member and a hireling killer's owner (F1, F3; run:2026-10-20-two-clients). Not logged: three or more players, the

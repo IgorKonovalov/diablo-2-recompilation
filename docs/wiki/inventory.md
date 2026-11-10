@@ -1,7 +1,7 @@
 ---
 based_on:
   - docs/specs/items/use.md 2026-11-04
-  - docs/specs/items/inventory.md 2026-11-04
+  - docs/specs/items/inventory.md 2026-11-10
 ---
 
 # Using items, and the inventory

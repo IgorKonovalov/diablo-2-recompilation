@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, data/excel, items/uniques-sets, items/properties, items/affixes, monsters/stats, save/d2s]
 consumed_by: [save/d2s, combat/to-hit, stats/aggregate, player/party]
-tags: {C: 140, I: 53, L: 1}
-updated: 2026-11-04
+tags: {C: 140, I: 54, L: 1}
+updated: 2026-11-10
 ---
 
 # New character, starting items, experience and level-up
@@ -81,6 +81,13 @@ flowchart TD
 The record index of CharStats is the class id 0..6 (`Expansion` marker row not compiled); Experience record 0 is the
 `MaxLvl` row and record *L* + 1 the row labelled *L* ([CharStats](../../tables/CharStats.md),
 [Experience](../../tables/Experience.md)).
+
+- [I] **Two index spaces with no table behind them in a stock run.** The class id 0..6 is the row index of
+  [PlayerClass](../../tables/PlayerClass.md), and CharStats `item1loc..item10loc` (u8, `+0x60 + 8k`) hold the row index
+  of [BodyLocs](../../tables/BodyLocs.md) (0 `None` .. 10 `Gloves`), which § E passes straight to the body-location
+  calls, 0 meaning the inventory. Both code lists load only under `-txt` ([data/excel](../data/excel.md#b-loading-one-table)
+  B1); nothing translates the stored numbers through them. (fn:sub_00534D60_StartItemSlot@0x00534D60,
+  [data/0006 § 2.1–2.2](../../findings/data/0006-loaded-tables-and-bundles.md#21-bodylocs-body-location-010))
 
 ### Runtime state
 

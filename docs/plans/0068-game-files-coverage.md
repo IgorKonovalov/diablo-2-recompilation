@@ -246,3 +246,49 @@ loads in every run" carry dated corrections pointing to data/0006 § 2.4.
 
 Open, for the record: the two harness pieces above; whether a missile attack reaches event 7; the runtime registrar
 0x005C377B's id; the arena score's readers. Review: Tier B.
+
+### 2026-11-10 — Phase 4 (spec-writer, `lane/n68w`)
+
+Done: the rule-bearing readings of [data/0006](../findings/data/0006-loaded-tables-and-bundles.md) carried at the
+finding's tags; 9 specs changed, each `updated: 2026-11-10`, front-matter counts and research-map rows rewritten.
+Tags added (by the gate's count): C +4, I +24, L +4.
+
+- **items/tc** (C +1, I +1, L +1): an Inputs row for `MonItemPercent` ("none: loaded, read by no code") and a
+  *Reimplementation notes* bullet: loaded in every run `[C]`, no reader, so no row, no draw, no step in the death drop
+  `[I]` (§ 1.3); the run-time read watch is an `[L]` under Open questions with its backlog link. Put in items/tc, not
+  monsters/special: the drop path and its draw order are there. Answers this plan's first open question: no golden-trace
+  field is needed.
+- **skills/dispatch** (C +1, I +10, L +3): **C8**, the skill-level bonus of § 3.2 as pseudocode (stats 127, 83, 188 with
+  param `8·class + SkillPage − 1` for a non-zero `SkillPage`, 97 capped at 3 on own-class skills and for a non-player
+  with base points, 126 by `EType`, 107, state 134's 2, entry `+0x2C`) `[I]`, its callers `[I]`, its logged return in
+  `SKILLS_ManaOk` (1 339 values) `[C]` for "runs in play" only; § K: the event-id table (Events row indices, the 17
+  dispatch sites), ids 4 and 8 never dispatched (stat 195's `itemevent2` inert), id 13 with no row, the `> 0` / `≥ 0`
+  registration bounds, all `[I]`; two reimplementation notes; three `[L]` (missile attack and event 7, registrar
+  0x005C377B, the bonus's terms in play). C8 sits in § C because `SKILLS_GetSkillLevel` is used there first; data/calc's
+  `skill(s, v)` links it.
+- **stats/aggregate** (I +1): G3's item-event registration only for an id `> 0`. **stats/states needs nothing**: its
+  event numbers are the unit event queue's (timed lists, regeneration, auras), not the Events table's.
+- **data/excel** (C +2, I +7): B1's "the full `sounds` table loads in every run" removed; a new B1 note (no
+  `sounds.bin` outside `-txt` `[I]`, no `sounds` file in the four `-ns` stock runs `[C]`); a B1 table of the last loaded
+  tables' readers (`MonItemPercent`, `SkillDesc`, `Overlay` count only, `Arena`, `Composit`/`MonSounds`/`AutoMap`)
+  and a code-list index-space note. This is the "loader list" (the spec had none by name; the table is it).
+- **items/inventory** (I +1): I6, body locations are BodyLocs row indices. **player/creation** (I +1): the class id
+  and `itemNloc` as PlayerClass and BodyLocs row indices. **save/d2s** (I +2): the class byte as the PlayerClass row
+  index; the legacy 107/108/109/181–187 group's `sub_00627AF0_SkillHasDesc` test (the formats doc already carries the
+  per-id table; the spec had only "per-id width overrides").
+- **anim/timing** (I +1): B2, the COF bundles are client cache only, not a source of the mode lengths.
+- **Ruled out, with the reason:** `Arena` gets no core spec text (no core-area rule reads the score; it is named only
+  in data/excel's reader table); `Composit`, `MonSounds`, `AutoMap`, the `Overlay` records, `lut.dn1`, the colour `.dat`
+  files, the `.key` maps and `gateways.txt` are presentation or never opened: no spec text. monsters/stats (MonEquip
+  `loc1..3`) got no line: the plan's Phase 2 handoff calls it optional and the spec already uses the location as a number.
+- **Wiki:** [skills](../wiki/skills.md) gains *The skill level and its bonuses*, the events paragraph and an unknowns
+  line; [game-data](../wiki/game-data.md) the code-list index spaces, the `sounds` correction and the no-rule tables;
+  [items](../wiki/items.md) the `MonItemPercent` paragraph. `based_on` dates bumped on those and on objects, inventory,
+  characters, saves, animation and stats-and-states (checked: no sentence there restates a changed one).
+- **Backlog closed:** `2026-11-10-architect-spec-writer-plan-0068-p2-spec-corrections` (all three items). The two
+  reverser harness pieces stay open; the specs link them.
+
+Not linked: Phase 3's `docs/formats/cofbundle.md` reached main after this branch's base, so anim/timing B2 links data/0006 § 4
+only; a link to `cofbundle.md` can be added at the merge.
+Review: Tier A (with Phase 3's review, it closes the plan). Status changes for the research map: none (every row stays
+`reviewed`).

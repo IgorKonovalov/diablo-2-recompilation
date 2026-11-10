@@ -5,7 +5,7 @@ target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [data/excel, rng]
 consumed_by: [combat/to-hit, stats/aggregate, stats/states]
 tags: {C: 130, I: 18, L: 3}
-updated: 2026-10-17
+updated: 2026-11-10
 ---
 
 # Calc formulas: the bytecode, the evaluator and the function table
@@ -474,7 +474,7 @@ stat(id, k)  → input: the unit's stat id; k = 1 base, k = 2 the second accesso
   fn:sub_00627B70_ItemCalcRand@0x00627B70, fn:sub_0064B700_MissCalcMin@0x0064B700, fn:sub_0064B710_MissCalcMax@0x0064B710,
   fn:sub_0064B720_MissCalcRand@0x0064B720, run:2026-10-16-calc-emu)
 - [I] `skill(s, v)` takes the level through `SKILLS_FindUnitSkill` and `SKILLS_GetSkillLevel(unit, entry, 1)` (base
-  plus bonus levels, clamped to `[0, max]`), 0 when the unit lacks the skill, then `SkillVar(v, unit, s, level)`. The
+  plus bonus levels, clamped to `[0, max]`; the bonus is [skills/dispatch C8](../skills/dispatch.md#c-the-request-checks-skills_canuse)), 0 when the unit lacks the skill, then `SkillVar(v, unit, s, level)`. The
   missile copy reads the context's `owner`. (fn:SKILLS_FindUnitSkill@0x00643810, fn:SKILLS_GetSkillLevel@0x006442A0, fn:sub_0064B760_MissCalcSkill@0x0064B760)
 - [I] `stat(id, k)`: no unit, `id < 0` or `id ≥` the itemstatcost count → 0; `id = 19` → the player's attack rating
   (fatal for a non-player); `k = 1` → `STATS_GetUnitBaseStat`, `k = 2` → `sub_00625500_UnitGetStat`, else
