@@ -1,6 +1,6 @@
 # 0063 — Backlog sweep 7: the slot-free entries left after plans 0052 to 0060
 
-> **Status:** draft (2026-11-10, from the architect's backlog triage; waits for the owner's approval)
+> **Status:** approved (2026-11-10, by the owner; not started: the owner starts it)
 > **Created:** 2026-11-10
 > **Owner skill(s):** archivist, reverser, spec-writer
 > **Related ADRs:** 0018-backlog-one-file-per-entry, 0019-backlog-closed-entries-archive, 0023-review-tiers-and-gate-first-fixes, 0024-lane-check-touched-documents-and-routing, 0027-archivist-reader-lanes-tier-a, 0031-constants-of-the-code-image

@@ -137,6 +137,7 @@ Approved, not running ([plans index](docs/plans/README.md)):
   re-tags the specs cluster by cluster.
 - **[0059](docs/plans/0059-golden-traces.md)**: golden traces, seeds and inputs with their expected world, drops and later events, as conformance tests.
 - **[0061](docs/plans/0061-message-catalogue.md)**: the client–server message catalogue, every in-game message in both directions.
+- **[0063](docs/plans/0063-backlog-sweep-7.md)**: backlog sweep 7, the ten open entries that need no game: static readings, the act-clock tables, tooling, and the spec updates they carry.
 
 Closed plans are in `docs/plans/done/`, listed in the [plans index](docs/plans/README.md).
 
