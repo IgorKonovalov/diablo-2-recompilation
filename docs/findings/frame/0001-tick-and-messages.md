@@ -275,7 +275,7 @@ runs § 3.1's emulated step on the image's tables. The kept outputs are in `work
     `g_ActClockScale[index]` into `k`. The image holds no reference to either (`findptr`: no call, pointer, branch
     or fall-through).
   - `sub_0061C240_ActClockSet` writes the flag (and `p`, `c`, `v`, never `k`). Its 4 callers are client code
-    (0x0044E16C `ClientActLoad`, 0x0045E334, 0x0049F335, 0x0044C83B).
+    (0x0044E16C `ClientActLoad`; 0x0045E334 in `sub_0045C8E0_PktLoadAct`, the load-act packet's handler; 0x0049F335 in `sub_0049D160_WpMenuClick`, a menu click; 0x0044C83B in an unnamed function at 0x0044C820 that tests the client's act global `0x007A0634`).
 
   `g_ActClockScale` (0x007443E4) holds three dwords: 128, 4 and 8. **So on the server, `k = 128` and the flag is 0 in
   every act, except during Act II's eclipse (between the A2Q3 eclipse and the viper chest), when that act's clock has

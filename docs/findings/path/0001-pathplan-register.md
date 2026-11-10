@@ -378,7 +378,7 @@ step table's rule, which is a full-table equality (confirmed). The kept outputs 
   entries: `d` = 0 → 0; 1–8 → +1; 9–16 → +4; 17–31 → +8; 32–47 → −8; 48–55 → −4; 56–63 → −1. The two readers
   (0x00648620, 0x0064887B) take the low byte, so the step is stored as 0, 1, 4, 8, 248, 252 or 255. That is a turn
   the short way round, faster when the turn is wider. It is the rule that [PathDirTables](../../tables/PathDirTables.md#the-rules)
-  and path/overview § H4 already give, checked again here by an independent script. (`face-step.txt`: 64 entries, 0 differ;
+  and path/overview § H4 already give, checked again here by an independent script. Second source: `path_survey.py rules`, the gate's survey `path`, whose rule for this table (`dirtab_rule_mismatches=0`) is a different implementation from `tools/face_step.py`. (`face-step.txt`: 64 entries, 0 differ;
   data:g_PathFaceStep@0x006EB548)
 - [I] **The turn step**, `sub_00648640_PathFaceTurnStep(path)` (fn:sub_00648640_PathFaceTurnStep@0x00648640), does nothing when `+0x64 = +0x65` or when flag
   `0x40` of `+0x34` is set. Otherwise:
@@ -397,7 +397,7 @@ step table's rule, which is a full-table equality (confirmed). The kept outputs 
   in `sub_00463390_ClientPlayerUpdate`, near its end with the unit's path (0x004636DE). The other is in
   `sub_004B13A0_ClientMonsterUpdate` (0x004B1563, when the unit has a path), past that function's early returns: not a
   type-1 unit, mode above 15. Both are called by `sub_00480810_ClientUnitUpdate` (0x004808CC, 0x004808D5), and both
-  call `ClientPlayerGet`. How often that pass runs, and which early returns skip the turn, are not read. No server function steps `+0x64` toward `+0x65`. On the server, a player's or a monster's `+0x64`
+  call `ClientPlayerGet`. How often that pass runs, and which early returns skip the turn, are not read. This rests on the two references being the only ones and on those two callers being client passes (they call `ClientPlayerGet`; their callers' thread was not traced). No server function steps `+0x64` toward `+0x65`. On the server, a player's or a monster's `+0x64`
   changes only through `PathSetFacing`, `PathFaceXY` with `now` ≠ 0, or `PathSetDir` / `PathFaceDir` for objects,
   items and missiles. `PathFaceDir` called while walking moves only `+0x65` and `+0x66`.
   (fn:sub_00648640_PathFaceTurnStep@0x00648640, fn:sub_00463390_ClientPlayerUpdate@0x00463390,

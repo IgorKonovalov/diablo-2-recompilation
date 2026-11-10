@@ -172,7 +172,7 @@ Collect(u, block):
   function before them, not read. (0x005408CB, 0x005408F4, 0x0054091E)
   *2026-11-10 (plan 0063 P2a):* read in [§ 10](#10-plan-0063-phase-2a-the-list-writers-the-fourth-caller-and-bit-26-lanen63r-2026-11-10).
   Two players become one party when one accepts the other's invite (party action 8). A list holds at most the players
-  in the game, and a game admits at most 8 clients, so a list cannot hold nine. 0x005408CB lies in
+  in the game, and a game admits at most 8 clients, so a list cannot hold nine, assuming one player unit per client (not read, § 10). 0x005408CB lies in
   `sub_00540890_PartyLevelSumInLevel`, which the image never references. [I] (fn:sub_005A5A30_PartyActAccept@0x005A5A30,
   fn:sub_00540320_PartyAddMember@0x00540320)
 - [C] Alive: `sub_005541B0_UnitIsDead` is true for flag bit 0 of `+0xC6` or a player in mode 0 or 0x11, tags `n1-dead`,
