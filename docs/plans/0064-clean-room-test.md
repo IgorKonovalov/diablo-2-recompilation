@@ -654,3 +654,13 @@ clean-room separation but not its second source; it now states the reference mod
 transcription's 572 211 checks, 0 mismatches (drlg/0008 § Plan 0064 (a)). Ledger: spec-writer row accept with fixes
 (Tier A, 2), overclaim 1, omission 1. items/tc now C 125 / I 76 / L 6 (fix 1 adds the K1 `[I]` pointer). Plan stays
 open: the S4 re-run and the close review follow.
+
+- **2026-11-10, Phase 5 re-run S4 (orchestrator):** a new fresh Opus implementer in `workspace/cleanroom/S4r` (built
+  from `main` at `6d363681`, after Phase 4 part 3; `score.sh` patched to `--out`), 374 697 tokens, 74 tool uses. **First
+  pass 47 of 1 820 different** (before: 381), maze 0 of 150 (before: 50), outdoor 47, all in 10 of the 30 Barricade
+  cases (levels 111–112: one Act V stamp too few). Final, run 2: 0 different, after reading § G's Act V `Type` 12 rule
+  as replacing the generic opening test, confirmed by § Worked example 5 but prompted by the diff (ledger row 1, partly
+  guessed from the diff). The Act I cases that failed in Phase 2 (the cliff mark, the search table, `OneOrTwo`) all
+  passed on the first pass. Ledger [S4-rerun](0064-cleanroom/S4-rerun.md), 21 rows: row 1 is the § L5 open question
+  (already routed in `plan-0064-outdoor-unstated-steps`); rows 4–20 are right guesses on the routed items (G4 stamp
+  details, L4, L6, J5, H3). Audit clean.
