@@ -271,3 +271,12 @@ the format entry.
   --force`) before the Phase 5 re-run, and rebuilds S1 for the new format text. Review tier B. Note for the reviewer: the
   first `cleanroom.py score` calls of this lane, run without `--out`, each appended a line to the default sandboxes'
   `score-log.jsonl` (S1, S2: the last line; S3, S4: the file did not exist before); see the lane report.
+
+- **2026-11-10, Phase 2 slice S4 (orchestrator):** one fresh Opus implementer on a sandbox rebuilt from `main` at
+  `41ef2867`, 402 305 tokens, 101 tool uses. Score log run 1 is lane `n64g`'s reference test; the first pass is run 2:
+  1 820 fields, 381 different, 0 missing (maze rooms_digest 50/50; outdoor preset_count 46, presets_digest 84,
+  room_count 47, rooms_digest 84, seed_after 70; all 384 cases observed). Final run 12: 106 different, maze all right,
+  22 outdoor cases (Act I levels 4–7) still differ. 12 runs, several fixes guessed or partly guessed from the diff (§ H6d
+  road search, § H7 `OneOrTwo`, § H1 `A1CliffMark`). Ledger [S4](0064-cleanroom/S4.md), 24 rows; notable: maze room
+  order ("creation order" in golden-trace vs "newest first" in maze § Outputs), the `first_room_seed` input disagreeing
+  with B1 in 45 of 50 cases, and the slice needing warps § A–C and rng/seeds step 3 outside its row. Audit clean.
