@@ -5,7 +5,7 @@ date: 2026-11-10
 status: done
 context:
   - ../../findings/data/0006-loaded-tables-and-bundles.md
-  - ../../plans/0068-game-files-coverage.md
+  - ../../plans/done/0068-game-files-coverage.md
 resolution: "Plan 0068 Phase 4 (lane/n68w): (1) data/excel B1's 'the full sounds table loads in every run' withdrawn, with a new B1 note (no sounds.bin outside -txt [I], no sounds file in the -ns stock runs [C]) [../../specs/data/excel.md#b-loading-one-table]; (2) the skill-level bonus is skills/dispatch C8 at [I], its return in play [C] [../../specs/skills/dispatch.md#c-the-request-checks-skills_canuse]; (3) MonItemPercent in items/tc's reimplementation notes and Inputs [../../specs/items/tc.md#reimplementation-notes], the event ids, 4 and 8 never dispatched, id 13 and the registration bounds in skills/dispatch § K and stats/aggregate G3, the loader readers table in data/excel B1."
 ---
 

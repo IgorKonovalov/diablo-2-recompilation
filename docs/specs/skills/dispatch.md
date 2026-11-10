@@ -297,7 +297,7 @@ C1. SKILLS_CanUse(unit, entry) → i32:                                [I] (fn:S
 **C8. The skill-level bonus.** `SKILLS_GetSkillLevel(unit, entry, 1)`, the level C1 tests,
 is the entry's base points plus this bonus, clamped to `[0, max]` ([data/calc § F](../data/calc.md#f-function-tables));
 with `withBonus` 0 it is the base points alone. C4's `ManaOk` adds the same bonus. `stat(id, p)` is the unit's full
-stat `id` at layer `p` (`STATS_GetUnitStat`); the stat and state names are the ItemStatCost and States rows.
+stat `id` at layer `p` (`STATS_GetUnitStat`, which keeps only the low 16 bits of `p`); the stat and state names are the ItemStatCost and States rows.
 
 ```
 C8. SkillLevelBonus(unit, entry) → i32:                              [I] (fn:sub_00644180_SkillLevelBonus@0x00644180, all of C8)
@@ -310,7 +310,7 @@ C8. SkillLevelBonus(unit, entry) → i32:                              [I] (fn:s
       if unit and unit.type = 0 (player):
         if record.charclass (s8, +0x0C) = unit.class (+0x04):                          ; a skill of its own class
           b ← b + stat(83 item_addclassskills, unit.class)
-          page: u8 ← SkillDesc[record.skilldesc (+0x194)].SkillPage (+0x02)
+          page: i32 ← SkillDesc[record.skilldesc (+0x194)].SkillPage (s8, +0x02, sign-extended)
           if page ≠ 0: b ← b + stat(188 item_addskill_tab, 8 · unit.class + page − 1)
           b ← b + min(stat(97 item_nonclassskill, s), 3)
         else:
@@ -326,7 +326,9 @@ C8. SkillLevelBonus(unit, entry) → i32:                              [I] (fn:s
 
 - C8. The cap of 3 on stat 97 (`cmp eax, 3; jle`, 0x0064424C) applies to a skill of the player's own class and to a
   non-player whose base points are above 0; a player's skill of another class takes stat 97 uncapped. `+0x2C` is a
-  per-entry word added as it is; the finding does not follow its writers. No step draws. [I]
+  per-entry word added as it is; the finding does not follow its writers. Every sum is a plain 32-bit add and the
+  cap a signed compare (`jle`), so a negative stat 97 is added as it is; `SkillPage` is loaded with `movsx` (0x00644204), and
+  the layer `8·class + page − 1` reaches `STATS_GetUnitStat` as its low 16 bits (`movzx`, 0x006254CC). No step draws. [I]
   (fn:sub_00644180_SkillLevelBonus@0x00644180, fn:sub_00644150_ShrineSkillBonus@0x00644150, 0x0064424C,
   fn:STATS_GetUnitStat@0x00625480, tbl:Skills.txt:charclass, tbl:Skills.txt:EType,
   [data/0006 § 3.2](../../findings/data/0006-loaded-tables-and-bundles.md#32-skilldesc-on-the-server-the-skill-level-bonus))

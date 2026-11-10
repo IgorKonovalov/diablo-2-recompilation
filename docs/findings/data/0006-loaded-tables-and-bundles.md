@@ -2,7 +2,7 @@
 
 > **Subsystem:** data/excel
 > **Question:** Who reads `MonItemPercent`, `BodyLocs`, `PlayerClass`, `Events`, `Sounds`, `Composit`, `Overlay`, `SkillDesc` and `Arena`, does 1.14d open the COF bundles, `lut.dn1`, the colour `.dat` and the `.key` files, and does any of them feed a game rule?
-> **Date:** 2026-11-10   **Plan:** [0068](../../plans/0068-game-files-coverage.md) Phase 2   **Status:** answered (items 1–5; the run-time absences and the skill-level bonus routed as harness pieces)
+> **Date:** 2026-11-10   **Plan:** [0068](../../plans/done/0068-game-files-coverage.md) Phase 2   **Status:** answered (items 1–5; the run-time absences and the skill-level bonus routed as harness pieces)
 
 Static reading of the pinned `Game.exe` (objdump/r2 listing, `tools/xrefscan.py` raw scan, `tools/ghidra.sh xrefs` and
 `decompile` on the lane's project copy), with the kept loader logs of [data/0001 § Plan 0038 batch H3b](0001-excel-loader.md#plan-0038-batch-h3b-run2026-10-27-sweep-data-load)
