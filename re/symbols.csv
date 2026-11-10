@@ -3290,6 +3290,10 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00654DD0,func,TC_GetByName,,I,data/excel,docs/findings/data/0001-excel-loader.md
 0x00654E00,func,TC_GetByIndex,,I,data/excel,docs/findings/data/0001-excel-loader.md
 0x00654E80,func,TC_GetChestTC,,C,items/tc,docs/findings/items/0001-tc-resolution.md
+0x00654F20,func,sub_00654F20_MonItemPctLoad,,C,data/excel,docs/findings/data/0006-loaded-tables-and-bundles.md
+0x00654FC0,func,sub_00654FC0_MonItemPctFree,,I,data/excel,docs/findings/data/0006-loaded-tables-and-bundles.md
+0x00654FD0,func,sub_00654FD0_MonItemPctTable,,I,data/excel,docs/findings/data/0006-loaded-tables-and-bundles.md
+0x00654FE0,func,sub_00654FE0_MonItemPctGetRecord,,I,data/excel,docs/findings/data/0006-loaded-tables-and-bundles.md
 0x006556E0,func,sub_006556E0_SuperUniqueGet,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x00655710,func,SUPERUNIQUES_GetCount,,I,drlg/files,docs/findings/drlg/0001-ds1-dt1-readers.md
 0x00655720,func,HIRELING_LoadTable,,C,hirelings,docs/findings/hirelings/0001-hirelings.md
@@ -4141,6 +4145,8 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0096CC50,data,g_QualityItemsInfo,,C,items/affixes,docs/findings/items/0005-affixes.md
 0x0096CC58,data,g_LowQualityItemsInfo,,C,items/affixes,docs/findings/items/0005-affixes.md
 0x0096CC68,data,g_CompTokenTable,,I,items/graphics,docs/findings/items/0003-item-graphics.md
+0x0096D480,data,g_nMonItemPercent,,C,data/excel,docs/findings/data/0006-loaded-tables-and-bundles.md
+0x0096D484,data,g_pMonItemPercent,,C,data/excel,docs/findings/data/0006-loaded-tables-and-bundles.md
 0x0096D488,data,g_pUniqueNameTables,,I,monsters/special,docs/findings/monsters/0003-special-monsters.md
 0x0096D4E8,data,g_pArmType,,I,items/graphics,docs/findings/items/0003-item-graphics.md
 0x0096D4EC,data,g_pComposit,,I,items/graphics,docs/findings/items/0003-item-graphics.md
