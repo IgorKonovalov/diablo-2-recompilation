@@ -17,7 +17,7 @@
 | 9 | 148 | D. How much | For n ≥ 3 those float steps are the same instructions and agree in every … | `0x0057E754` | d-2c | n ≥ 3 partied members | – | 1 |
 | 10 | 176 | E. Every player-count reader, with its input | Game type 1 also takes it, and other types do not; the set of states … | `fn:sub_00535790_PlayerCount@0x00535790` | a-run | a one-client TCP/IP host (the H1b recipe) with `/players` set, `g_PlayersOverride` read at `PlayerCount` | H7a | 1 |
 | 11 | 177 | E. Every player-count reader, with its input | The client's chat parser takes /players only in client modes 0, 1, 6 and 8 … | `fn:sub_0047C420_ChatInputParse@0x0047C420` | b | pilot types `/players 0` and `/players 9` in a single-player game; read `g_PlayersOverride` (new pilot step) | H7a | 1 |
-| 12 | 185 | E. Every player-count reader, with its input | MonAttackStats damage — expansion, Nightmare and Hell: + value × b ÷ … | `fn:sub_005A4F50_MonAttackStats@0x005A4F50` | a-run | `combat.gdb` on a Hell expansion session at `/players 8`: monster damage against the rule | H7a | 1 |
+| 12 | 185 | E. Every player-count reader, with its input | MonAttackStats damage — expansion, Nightmare and Hell: + value × b ÷ … | `fn:sub_005A4F50_MonAttackStats@0x005A4F50` | a-logs | the kept `/players` sessions of the combat logs: monster damage against the rule (with combat/README row 38) | S5a | 1 |
 | 13 | 187 | E. Every player-count reader, with its input | NoDrop's cap — for the cap's effect | `0x0055A926` | d-2c | the cap acts only when the party count exceeds the frozen count: a second player joins later | – | 1 |
 | 14 | 188 | E. Every player-count reader, with its input | four think functions — nothing by the count; a changed /players has no … | `0x005E8D6B` | c | a scan of the four thinks' reads of the bonus block with a second tool: only word `+0x0C` | S7a | 1 |
 | 15 | 190 | E. Every player-count reader, with its input | NoDrop's party count — the party above | `0x0055A8E4` | d-none | a clamp at 8 that a party of at most 8 never reaches | – | 1 |
@@ -33,4 +33,4 @@
 | 25 | 224 | Reimplementation notes | … owner alone, and a dead killer can be paid while the living member is not. | `0x0057E6FB` | d-2c | a partied far owner and a member near the victim | – | 1 |
 | 26 | 226 | Reimplementation notes | … to the call Past the call, and whether a list can hold nine, is unread. | `0x0057E671` | d-none | a ninth member never exists in a stock game | – | 1 |
 
-**Totals by class:** a-run 3, b 2, c 4, d-2c 11, d-none 6 (sum 26).
+**Totals by class:** a-logs 1, a-run 2, b 2, c 4, d-2c 11, d-none 6 (sum 26).

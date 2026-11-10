@@ -6,70 +6,72 @@
 
 | # | Line | Section | Claim (excerpt) | Anchor | Class | Route or reason | Batch | Count |
 |---|---|---|---|---|---|---|---|---|
-| 1 | 51 | Entry points | The kill — → | `fn:COMBAT_GetHit@0x0057CEE0` | ? | ? | ? | 1 |
-| 2 | 86 | Constants | shatter chance — 20 | `0x0057B0FA` | ? | ? | ? | 1 |
-| 3 | 87 | Constants | stun caps — hireling 13, others 250 frames | `0x0057AB17` | ? | ? | ? | 1 |
-| 4 | 103 | A. Queue and delivery | A2. DeliverQueued(att, def): | `fn:COMBAT_DeliverQueued@0x0057D4F0` | ? | ? | ? | 1 |
-| 5 | 122 | A. Queue and delivery | in the run, resynchronised); the attacker's AI may draw in between. | `fn:COMBAT_DeliverQueued@0x0057D4F0` | ? | ? | ? | 1 |
-| 6 | 125 | A. Queue and delivery | state (wolf, bear) skips it. The run met no charged state. | `fn:COMBAT_PrgFinisher@0x005D5220` | ? | ? | ? | 1 |
-| 7 | 142 | A. Queue and delivery | or one whose result lacks bit , so a null argument runs nothing. | `0x005D79D1` | ? | ? | ? | 1 |
-| 8 | 149 | A. Queue and delivery | physical damage for a living caster. | `0x005D6386` | ? | ? | ? | 1 |
-| 9 | 155 | A. Queue and delivery | A3. PrgFinisher(att, hit): | `fn:COMBAT_PrgFinisher@0x005D5220` | ? | ? | ? | 1 |
-| 10 | 177 | A. Queue and delivery | ; | `0x005D4657` | ? | ? | ? | 1 |
-| 11 | 188 | A. Queue and delivery | SkillRollPhys(att, pkt, skill, lvl) ; | `0x005D3ED5` | ? | ? | ? | 1 |
-| 12 | 206 | A. Queue and delivery | after the first: the remaining tries | `0x005D40D6` | ? | ? | ? | 1 |
-| 13 | 220 | A. Queue and delivery | ; | `0x005D51DA` | ? | ? | ? | 1 |
-| 14 | 237 | A. Queue and delivery | message . | `fn:sub_00650E70_Copy64Out@0x00650E70` | ? | ? | ? | 1 |
-| 15 | 250 | A. Queue and delivery | (combat/overview § B4). | `fn:sub_0056E170_SkillRollPhys@0x0056E170` | ? | ? | ? | 1 |
-| 16 | 256 | A. Queue and delivery |  | `0x005D3E80` | ? | ? | ? | 1 |
-| 17 | 259 | A. Queue and delivery | … 0 the index does not move and the loop never ends, a creation per pass. | – | ? | ? | ? | 1 |
-| 18 | 263 | A. Queue and delivery | −2³¹ to a value ≥ , after about 2³¹ / /4n/ passes. Not run. | `0x005D4657` | ? | ? | ? | 1 |
-| 19 | 268 | A. Queue and delivery | 143 only for a non-null missile of class 568 (royalstrikechainlightning). | `0x005D465E` | ? | ? | ? | 1 |
-| 20 | 273 | A. Queue and delivery | stat without ItemTgtDo (E5); any other item cast of those rows runs their srvdofunc. | tbl:Skills.txt:ItemEffect | ? | ? | ? | 1 |
-| 21 | 279 | A. Queue and delivery | times (38), and steps it once more (39). | `0x005D53E0` | ? | ? | ? | 1 |
-| 22 | 297 | B. Delivery (COMBAT_ApplyDamage) | if not hostile(att, def) and not (pkt.flags & ): pkt.result &= ~; return ; | `0x0057C6D5` | ? | ? | ? | 1 |
-| 23 | 302 | B. Delivery (COMBAT_ApplyDamage) | B3. if (pkt.result & ) and not (pkt.result & ): ; | `0x0057C7A5` | ? | ? | ? | 1 |
-| 24 | 316 | B. Delivery (COMBAT_ApplyDamage) | stat(def, 8) ← stat(def, 8) − pkt.manaSteal, 0 when below 256 ; | `0x0057C879` | ? | ? | ? | 1 |
-| 25 | 322 | B. Delivery (COMBAT_ApplyDamage) | DispatchEvent(10 killed, unit: def); DispatchEvent(9 kill, unit: att) ; | `0x0057C8DD` | ? | ? | ? | 1 |
-| 26 | 329 | B. Delivery (COMBAT_ApplyDamage) | registration order. | `fn:UNIT_AddEvent@0x005C0AD0` | ? | ? | ? | 1 |
-| 27 | 345 | B. Delivery (COMBAT_ApplyDamage) | … 6 and the divisor), so a monster defender with mana loses manaSteal·64/divisor in 1/256 units. | – | ? | ? | ? | 1 |
-| 28 | 354 | B. Delivery (COMBAT_ApplyDamage) | code, and was not run. | `fn:sub_005A1F90_UModManaHit@0x005A1F90` | ? | ? | ? | 1 |
-| 29 | 358 | B. Delivery (COMBAT_ApplyDamage) | (items/tc). | `fn:COMBAT_GetHit@0x0057CEE0` | ? | ? | ? | 1 |
-| 30 | 392 | C. Leech (COMBAT_Leech) | C1. A hireling attacker uses the player formula without the divisors. | `fn:sub_0063EE90_HirelingType@0x0063EE90` | ? | ? | ? | 1 |
-| 31 | 404 | C. Leech (COMBAT_Leech) | have no leech after it, or do not separate them. | `fn:COMBAT_ApplyDamage@0x0057C6C0` | ? | ? | ? | 1 |
-| 32 | 410 | D. Stun, cold, freeze, poison, burn | D1. ApplyStun(att, def, len = pkt.stunLen): | `fn:COMBAT_ApplyStun@0x0057AAE0` | ? | ? | ? | 1 |
-| 33 | 429 | D. Stun, cold, freeze, poison, burn | D3. ApplyFreeze(att, def, len = pkt.freezeLen): | `fn:COMBAT_ApplyFreeze@0x0057B230` | ? | ? | ? | 1 |
-| 34 | 435 | D. Stun, cold, freeze, poison, burn | D4. ApplyPoison(att, def, dmg = pkt.poison, len = pkt.poisonLen): | `fn:COMBAT_ApplyPoison@0x0057AC50` | ? | ? | ? | 1 |
-| 35 | 444 | D. Stun, cold, freeze, poison, burn | The chill strength and the shatter flag were not asserted. | `fn:COMBAT_ApplyCold@0x0057AF80` | ? | ? | ? | 1 |
-| 36 | 446 | D. Stun, cold, freeze, poison, burn | MonsterColdDivisor (1, 2, 4) shortens a monster's chill only. | `fn:sub_0057AF30_MonColdEffect@0x0057AF30` | ? | ? | ? | 1 |
-| 37 | 452 | D. Stun, cold, freeze, poison, burn | state, the divisor, the mode change) was not asserted. | `0x0057B2F1` | ? | ? | ? | 1 |
-| 38 | 458 | E. The stat events: crushing blow, open wounds, freeze | … handler gets the attacker, the defender, the packet and stat id << 16 / layer. | – | ? | ? | ? | 1 |
-| 39 | 467 | E. The stat events: crushing blow, open wounds, freeze | if def is a player or a hireling: k: i32 ← 10 ; | `0x005C0031` | ? | ? | ? | 1 |
-| 40 | 472 | E. The stat events: crushing blow, open wounds, freeze | if event = 6: k ← k × 2 ; missile, | `0x005C0031` | ? | ? | ? | 1 |
-| 41 | 474 | E. The stat events: crushing blow, open wounds, freeze | … 0: cb ← cb − MulDiv(cb, min(stat(def, 36), 100), 100) ; the cap at 100 | `0x005C00C5` | ? | ? | ? | 1 |
-| 42 | 485 | E. The stat events: crushing blow, open wounds, freeze | … dmg ← dmg ÷ 4; if event = 6: dmg ← dmg ÷ 2 ; | `0x005BFEEC` | ? | ? | ? | 1 |
-| 43 | 486 | E. The stat events: crushing blow, open wounds, freeze | for the champion bit alone | run:2026-10-16-combat | ? | ? | ? | 1 |
-| 44 | 492 | E. The stat events: crushing blow, open wounds, freeze | … pkt, event): on a melee hit (, , all of E3 but the missile terms); | `fn:STATEVENT_Freeze@0x005BFC60` | ? | ? | ? | 1 |
-| 45 | 513 | E. The stat events: crushing blow, open wounds, freeze | E1. There is no difficulty and no classic branch in crushing blow. | `fn:STATEVENT_CrushingBlow@0x005BFFC0` | ? | ? | ? | 1 |
-| 46 | 519 | E. The stat events: crushing blow, open wounds, freeze | are the code reading. | `0x005C0031` | ? | ? | ? | 1 |
-| 47 | 533 | E. The stat events: crushing blow, open wounds, freeze | defender. | `0x005BFEEC` | ? | ? | ? | 1 |
-| 48 | 562 | E. The stat events: crushing blow, open wounds, freeze | open wounds never hit the player. | `fn:sub_00580610_LifeRegenTick@0x00580610` | ? | ? | ? | 1 |
-| 49 | 582 | E. The stat events: crushing blow, open wounds, freeze | E5. As above. | `data:g_StatEventFuncs@0x007325B0` | ? | ? | ? | 1 |
-| 50 | 586 | E. The stat events: crushing blow, open wounds, freeze | attacker's life, capped at its maximum, with no draw. | `fn:sub_005C01D0_StatEv28HealAfterKill@0x005C01D0` | ? | ? | ? | 1 |
-| 51 | 625 | E. The stat events: crushing blow, open wounds, freeze | calls not followed). | `fn:sub_0056E390_CorpsePickNear@0x0056E390` | ? | ? | ? | 1 |
-| 52 | 639 | E. The stat events: crushing blow, open wounds, freeze | path's dwords. | `0x005FD979` | ? | ? | ? | 1 |
-| 53 | 645 | E. The stat events: crushing blow, open wounds, freeze | join composes the handler family's casts with the cast family's runs, so it stays inferred. | `0x005C0529` | ? | ? | ? | 1 |
-| 54 | 653 | E. The stat events: crushing blow, open wounds, freeze | those rows runs their srvdofunc. | `0x005C054E` | ? | ? | ? | 1 |
-| 55 | 663 | E. The stat events: crushing blow, open wounds, freeze | Chain Lightning starts at the target unit. | `0x005CA330` | ? | ? | ? | 1 |
-| 56 | 666 | E. The stat events: crushing blow, open wounds, freeze | and 20 for stat 196), all inside COMBAT_ApplyDamage (B5). | `0x0057C8DD` | ? | ? | ? | 1 |
-| 57 | 674 | F. The boundary at delivery | their exit seeds taken. | `fn:COMBAT_DurabilityLoss@0x0057D3D0` | ? | ? | ? | 1 |
-| 58 | 684 | Outputs | life, leech, the open-wounds state ; | `fn:COMBAT_ApplyDamage@0x0057C6C0` | ? | ? | ? | 1 |
-| 59 | 726 | Reimplementation notes | ; | `fn:COMBAT_Absorb@0x0057BF10` | ? | ? | ? | 1 |
-| 60 | 728 | Reimplementation notes | so advancing the seed there shifts every later attacker draw (A3). | `fn:COMBAT_PrgFinisher@0x005D5220` | ? | ? | ? | 1 |
-| 61 | 732 | Reimplementation notes | draws two or three times on it after delivering the queued hit. | `0x0056E1C4` | ? | ? | ? | 1 |
-| 62 | 735 | Reimplementation notes | … of do 42, 46 (on its bad-id path) and 50 up to them (ADR-0021, ); | run:2026-10-21-cat-emu-ass | ? | ? | ? | 1 |
-| 63 | 740 | Reimplementation notes | them happen. | `0x005D4657` | ? | ? | ? | 1 |
-| 64 | 742 | Reimplementation notes | … unit's, knockback, howl, stupidity, skill on attack or hit, and reanimate on the attacker's (E5). | – | ? | ? | ? | 1 |
-| 65 | 747 | Reimplementation notes | skills. for the 0 (ADR-0021, cost_item, ); | run:2026-10-21-cat-emu-item | ? | ? | ? | 1 |
-| 66 | 751 | Reimplementation notes | item-use entries it runs the row's srvdofunc (E5). | `0x005C054E` | ? | ? | ? | 1 |
-| 67 | 752 | Reimplementation notes | … applies from a plain attack: the builder leaves burn = 2 with burnLen = 0. | – | ? | ? | ? | 1 |
+| 1 | 51 | Entry points | The kill — → | `fn:COMBAT_GetHit@0x0057CEE0` | c | the call from `COMBAT_GetHit` to `sub_0057CCB0_UnitKilled` and that function's callers read with a second tool (r2 `axt`) | S5b | 1 |
+| 2 | 86 | Constants | shatter chance — 20 | `0x0057B0FA` | a-logs | the `STA` lines of state 107 after each cold draw in c37p2 and p47h: on when r below 20 and the MonStats2 flag clear, a check case | S5a | 1 |
+| 3 | 87 | Constants | stun caps — hireling 13, others 250 frames | `0x0057AB17` | a-logs | the state-21 `STA` lengths after stun packets in every kept combat log against the caps 250 and 13, a check case | S5a | 1 |
+| 4 | 103 | A. Queue and delivery | A2. DeliverQueued(att, def): | `fn:COMBAT_DeliverQueued@0x0057D4F0` | a-logs | the delivery line order (`AD0`, `DU0`, event-7 and event-3 `EVH`, `KB0`, `GH0`, `EVX`) per event in every kept combat log, a counter | S5a | 1 |
+| 5 | 122 | A. Queue and delivery | in the run, resynchronised); the attacker's AI may draw in between. | `fn:COMBAT_DeliverQueued@0x0057D4F0` | a-logs | the 362 late deliveries of c37p2: the queuing do-function from the `EV0` return and the frames between, a counter | S5a | 1 |
+| 6 | 125 | A. Queue and delivery | state (wolf, bear) skips it. The run met no charged state. | `fn:COMBAT_PrgFinisher@0x005D5220` | b | a `CombatAss` charge-up session (Fists of Fire charges, then a normal attack) under `combat.gdb`, with the `PRG` events modelled, not dropped | H5b | 1 |
+| 7 | 142 | A. Queue and delivery | or one whose result lacks bit , so a null argument runs nothing. | `0x005D79D1` | c-emu | extend run:2026-10-21-cat-emu-ass `hit_ass`: do 52 with a null `QueuedHitFind`, and the finisher's null and result tests | S5f | 1 |
+| 8 | 149 | A. Queue and delivery | physical damage for a living caster. | `0x005D6386` | c-emu | extend run:2026-10-21-cat-emu-ass `hit_ass` past the `PrgFinisher` boundary (observed): the deliveries, do 42's last-kick draw, do 50's area hit | S5f | 1 |
+| 9 | 155 | A. Queue and delivery | A3. PrgFinisher(att, hit): | `fn:COMBAT_PrgFinisher@0x005D5220` | c-emu | extend run:2026-10-21-cat-emu-ass `prg_ass` to the whole finisher, the entries as observed boundaries | S5f | 1 |
+| 10 | 177 | A. Queue and delivery | ; | `0x005D4657` | c-emu | extend `prg_ass` past the first `MissileCreate` (observed) through the ring loop for n from 1 to 8 | S5f | 1 |
+| 11 | 188 | A. Queue and delivery | SkillRollPhys(att, pkt, skill, lvl) ; | `0x005D3ED5` | c-emu | extend `prg_ass` entry 38 past `SkillRollPhys`: its draws and the area units' defence rolls, `ForUnitsInRange` observed | S5f | 1 |
+| 12 | 206 | A. Queue and delivery | after the first: the remaining tries | `0x005D40D6` | c-emu | extend `prg_ass` entry 39 through its remaining tries, `MissileCreate` observed | S5f | 1 |
+| 13 | 220 | A. Queue and delivery | ; | `0x005D51DA` | c-emu | extend `prg_ass` entry 41 past the first creation: the seed and offset writes | S5f | 1 |
+| 14 | 237 | A. Queue and delivery | message . | `fn:sub_00650E70_Copy64Out@0x00650E70` | c-emu | extend `prg_ass`: the finisher's copy, step and restore at `0x005D5368`–`0x005D538C`, the attacker's seed unchanged | S5f | 1 |
+| 15 | 250 | A. Queue and delivery | (combat/overview § B4). | `fn:sub_0056E170_SkillRollPhys@0x0056E170` | c-emu | as row 11 | S5f | 1 |
+| 16 | 256 | A. Queue and delivery |  | `0x005D3E80` | b | as row 6: the later `DeliverQueued` finds no entry after entry 38 delivered | H5b | 1 |
+| 17 | 259 | A. Queue and delivery | … 0 the index does not move and the loop never ends, a creation per pass. | – | c-emu | as row 10, with the creation count per n | S5f | 1 |
+| 18 | 263 | A. Queue and delivery | −2³¹ to a value ≥ , after about 2³¹ / /4n/ passes. Not run. | `0x005D4657` | d-edit | a negative ring count needs data no stock row is known to give, and about 2³¹ passes are beyond an emulated run | – | 1 |
+| 19 | 268 | A. Queue and delivery | 143 only for a non-null missile of class 568 (royalstrikechainlightning). | `0x005D465E` | c-emu | as row 10: the `MissileData+0x28` write observed for both rings | S5f | 1 |
+| 20 | 273 | A. Queue and delivery | stat without ItemTgtDo (E5); any other item cast of those rows runs their srvdofunc. | tbl:Skills.txt:ItemEffect | c | Skills.txt `ItemEffect` over every row, joined with the handler 20 flag reading of E5 | S5b | 1 |
+| 21 | 279 | A. Queue and delivery | times (38), and steps it once more (39). | `0x005D53E0` | c | Skills.txt `srvprgfunc1`–`3` and `prgstack` over every row (a full-table check) | S5b | 1 |
+| 22 | 297 | B. Delivery (COMBAT_ApplyDamage) | if not hostile(att, def) and not (pkt.flags & ): pkt.result &= ~; return ; | `0x0057C6D5` | c-emu | the `COMBAT_ApplyDamage` prologue (`0x0057C6D5`–`0x0057C78E`) emulated: not hostile, a town defender, not killable, dead | S5e | 1 |
+| 23 | 302 | B. Delivery (COMBAT_ApplyDamage) | B3. if (pkt.result & ) and not (pkt.result & ): ; | `0x0057C7A5` | a-logs | the event numbers and order of `EVH` lines inside `AD0`..`AD1` (5 then 1 melee, 6 then 2 missile) in every kept combat log | S5a | 1 |
+| 24 | 316 | B. Delivery (COMBAT_ApplyDamage) | stat(def, 8) ← stat(def, 8) − pkt.manaSteal, 0 when below 256 ; | `0x0057C879` | a-logs | the defender's stats 8 and 10 at `AD0` and `AD1` after hits with steal fields, a check case over c37p2 and p47h | S5a | 1 |
+| 25 | 322 | B. Delivery (COMBAT_ApplyDamage) | DispatchEvent(10 killed, unit: def); DispatchEvent(9 kill, unit: att) ; | `0x0057C8DD` | a-logs | event-10 then event-9 `EVH` lines on kills in the kept combat logs (`owf-n-andariel-p8` included), a counter | S5a | 1 |
+| 26 | 329 | B. Delivery (COMBAT_ApplyDamage) | registration order. | `fn:UNIT_AddEvent@0x005C0AD0` | c | `UNIT_AddEvent`'s head insert and `UNIT_DispatchEvent`'s walk read with a second tool (r2) | S5b | 1 |
+| 27 | 345 | B. Delivery (COMBAT_ApplyDamage) | … 6 and the divisor), so a monster defender with mana loses manaSteal·64/divisor in 1/256 units. | – | a-logs | as row 24 | S5a | 1 |
+| 28 | 354 | B. Delivery (COMBAT_ApplyDamage) | code, and was not run. | `fn:sub_005A1F90_UModManaHit@0x005A1F90` | a-logs | a search of the kept combat logs for monster attackers with stat 62 or 63 of 256 or more (a `manahit` mod) and the player's mana loss | S5a | 1 |
+| 29 | 358 | B. Delivery (COMBAT_ApplyDamage) | (items/tc). | `fn:COMBAT_GetHit@0x0057CEE0` | c | as row 1 | S5b | 1 |
+| 30 | 392 | C. Leech (COMBAT_Leech) | C1. A hireling attacker uses the player formula without the divisors. | `fn:sub_0063EE90_HirelingType@0x0063EE90` | a-logs | the mercenary's leech events (`ha`) in Nightmare and Hell in c37p2 and c37r: no divisor, a counter | S5a | 1 |
+| 31 | 404 | C. Leech (COMBAT_Leech) | have no leech after it, or do not separate them. | `fn:COMBAT_ApplyDamage@0x0057C6C0` | a-run | `combat_sessions.py` `CombatAbs` sessions (thorns) against draining monsters, `abs-nm-marsh` recipe, counting separating events | H5a | 1 |
+| 32 | 410 | D. Stun, cold, freeze, poison, burn | D1. ApplyStun(att, def, len = pkt.stunLen): | `fn:COMBAT_ApplyStun@0x0057AAE0` | a-logs | as row 3, with the boss and velocity skips | S5a | 1 |
+| 33 | 429 | D. Stun, cold, freeze, poison, burn | D3. ApplyFreeze(att, def, len = pkt.freezeLen): | `fn:COMBAT_ApplyFreeze@0x0057B230` | a-logs | the 81 p47h freeze packets: the state-1 or state-11 `STA` line inside the nested delivery, length by `MonsterFreezeDivisor` | S5a | 1 |
+| 34 | 435 | D. Stun, cold, freeze, poison, burn | D4. ApplyPoison(att, def, dmg = pkt.poison, len = pkt.poisonLen): | `fn:COMBAT_ApplyPoison@0x0057AC50` | a-logs | the state-2 `STA` lines (stat 74, length) in every kept combat log, and replacement by a stronger poison, a check case | S5a | 1 |
+| 35 | 444 | D. Stun, cold, freeze, poison, burn | The chill strength and the shatter flag were not asserted. | `fn:COMBAT_ApplyCold@0x0057AF80` | a-logs | state-11 `STA` lines (stats 67–69 value) and state-107 lines in c37p2 and p47h, a check case | S5a | 1 |
+| 36 | 446 | D. Stun, cold, freeze, poison, burn | MonsterColdDivisor (1, 2, 4) shortens a monster's chill only. | `fn:sub_0057AF30_MonColdEffect@0x0057AF30` | a-logs | cold packets on monsters with `coldeffect` 0 (no draw) and the chill lengths by `MonsterColdDivisor`, from the `STA` lines | S5a | 1 |
+| 37 | 452 | D. Stun, cold, freeze, poison, burn | state, the divisor, the mode change) was not asserted. | `0x0057B2F1` | a-logs | as row 33 | S5a | 1 |
+| 38 | 458 | E. The stat events: crushing blow, open wounds, freeze | … handler gets the attacker, the defender, the packet and stat id << 16 / layer. | – | c | ItemStatCost `itemeventfunc1` over every row, and `sub_0056E740_AddStatEvent`'s event pair read with a second tool | S5b | 1 |
+| 39 | 467 | E. The stat events: crushing blow, open wounds, freeze | if def is a player or a hireling: k: i32 ← 10 ; | `0x005C0031` | c-emu | `STATEVENT_CrushingBlow` emulated: player and hireling defenders, event 6, stat 36 at 100 and above; `IsBoss` and `PlayerHpPct` observed | S5e | 1 |
+| 40 | 472 | E. The stat events: crushing blow, open wounds, freeze | if event = 6: k ← k × 2 ; missile, | `0x005C0031` | c-emu | as row 39 | S5e | 1 |
+| 41 | 474 | E. The stat events: crushing blow, open wounds, freeze | … 0: cb ← cb − MulDiv(cb, min(stat(def, 36), 100), 100) ; the cap at 100 | `0x005C00C5` | c-emu | as row 39 | S5e | 1 |
+| 42 | 485 | E. The stat events: crushing blow, open wounds, freeze | … dmg ← dmg ÷ 4; if event = 6: dmg ← dmg ÷ 2 ; | `0x005BFEEC` | c-emu | `STATEVENT_OpenWounds` emulated: a player defender, event 6, type flags `0x04` alone, an act boss without `0x08` | S5e | 1 |
+| 43 | 486 | E. The stat events: crushing blow, open wounds, freeze | for the champion bit alone | run:2026-10-16-combat | c-emu | as row 42 | S5e | 1 |
+| 44 | 492 | E. The stat events: crushing blow, open wounds, freeze | … pkt, event): on a melee hit (, , all of E3 but the missile terms); | `fn:STATEVENT_Freeze@0x005BFC60` | c-emu | `STATEVENT_Freeze` emulated with event 6 (the missile terms) | S5e | 1 |
+| 45 | 513 | E. The stat events: crushing blow, open wounds, freeze | E1. There is no difficulty and no classic branch in crushing blow. | `fn:STATEVENT_CrushingBlow@0x005BFFC0` | a-logs | crushing blows by difficulty and game type in c37p2 and p47h under the model with no difficulty term, a per-difficulty count | S5a | 1 |
+| 46 | 519 | E. The stat events: crushing blow, open wounds, freeze | are the code reading. | `0x005C0031` | c-emu | as row 39 | S5e | 1 |
+| 47 | 533 | E. The stat events: crushing blow, open wounds, freeze | defender. | `0x005BFEEC` | c-emu | as row 42 | S5e | 1 |
+| 48 | 562 | E. The stat events: crushing blow, open wounds, freeze | open wounds never hit the player. | `fn:sub_00580610_LifeRegenTick@0x00580610` | c-emu | `sub_00580610_LifeRegenTick` emulated with stat 74 driving life below 256 | S5e | 1 |
+| 49 | 582 | E. The stat events: crushing blow, open wounds, freeze | E5. As above. | `data:g_StatEventFuncs@0x007325B0` | a-logs | the handler fires of run:2026-10-27-skills and run:2026-10-25-skills by handler and owner: the seed each stepped (3, 30, 31 included) | S5a | 1 |
+| 50 | 586 | E. The stat events: crushing blow, open wounds, freeze | attacker's life, capped at its maximum, with no draw. | `fn:sub_005C01D0_StatEv28HealAfterKill@0x005C01D0` | c | an RNG-call and LCG scan with a second tool over every registered handler's closure (as cat-emu-item's `cg.txt`) | S5b | 1 |
+| 51 | 625 | E. The stat events: crushing blow, open wounds, freeze | calls not followed). | `fn:sub_0056E390_CorpsePickNear@0x0056E390` | c | the indirect calls of helpers 3, 4 and `0x0056E390` resolved and scanned with a second tool | S5b | 1 |
+| 52 | 639 | E. The stat events: crushing blow, open wounds, freeze | path's dwords. | `0x005FD979` | c-emu | extend run:2026-10-21-cat-emu-item `cast_item` past the first `COLL_PatternTest` (observed returns): up to 10 tries | S5f | 1 |
+| 53 | 645 | E. The stat events: crushing blow, open wounds, freeze | join composes the handler family's casts with the cast family's runs, so it stays inferred. | `0x005C0529` | c-emu | one emulated case from handler 20 with `ItemTgtDo` through `ITEMSKILL_Cast` to helper 2 (cat-emu-item families joined) | S5f | 1 |
+| 54 | 653 | E. The stat events: crushing blow, open wounds, freeze | those rows runs their srvdofunc. | `0x005C054E` | c | an exhaustive xref and data-pointer scan with a second tool of the effect argument's writers | S5b | 1 |
+| 55 | 663 | E. The stat events: crushing blow, open wounds, freeze | Chain Lightning starts at the target unit. | `0x005CA330` | c-emu | extend cat-emu-item `use_item` past `SkillMissileCreate` (observed): the `+0x28` write and the return | S5f | 1 |
+| 56 | 666 | E. The stat events: crushing blow, open wounds, freeze | and 20 for stat 196), all inside COMBAT_ApplyDamage (B5). | `0x0057C8DD` | a-logs | as row 25 | S5a | 1 |
+| 57 | 674 | F. The boundary at delivery | their exit seeds taken. | `fn:COMBAT_DurabilityLoss@0x0057D3D0` | a-logs | a model of the `COMBAT_DurabilityLoss` and `sub_0057CB00_GetHitRoll` draws checked against the kept `DU0`/`DU1`, `GH0`/`GH1` seeds | S5a | 1 |
+| 58 | 684 | Outputs | life, leech, the open-wounds state ; | `fn:COMBAT_ApplyDamage@0x0057C6C0` | a-logs | the `STA` lines of states 21, 11, 107, 1, 2, 115 in every kept combat log against the model, a check case | S5a | 1 |
+| 59 | 726 | Reimplementation notes | ; | `fn:COMBAT_Absorb@0x0057BF10` | a-logs | as reductions row 20: the flat-absorb heal in p47h and p47b | S5a | 1 |
+| 60 | 728 | Reimplementation notes | so advancing the seed there shifts every later attacker draw (A3). | `fn:COMBAT_PrgFinisher@0x005D5220` | c-emu | as row 14 | S5f | 1 |
+| 61 | 732 | Reimplementation notes | draws two or three times on it after delivering the queued hit. | `0x0056E1C4` | c-emu | as row 11 | S5f | 1 |
+| 62 | 735 | Reimplementation notes | … of do 42, 46 (on its bad-id path) and 50 up to them (ADR-0021, ); | run:2026-10-21-cat-emu-ass | c-emu | extend `hit_ass` with a valid skill id for do 46 past its hit test, and its deliveries | S5f | 1 |
+| 63 | 740 | Reimplementation notes | them happen. | `0x005D4657` | d-edit | as row 18: a zero or negative ring count needs edited data; a few passes of the ring-0 loop could be emulated, which adds nothing | – | 1 |
+| 64 | 742 | Reimplementation notes | … unit's, knockback, howl, stupidity, skill on attack or hit, and reanimate on the attacker's (E5). | – | a-logs | as row 49 | S5a | 1 |
+| 65 | 747 | Reimplementation notes | skills. for the 0 (ADR-0021, cost_item, ); | run:2026-10-21-cat-emu-item | c | the three `SKILLS_PayCost` call sites read with a second tool: no test of the return | S5b | 1 |
+| 66 | 751 | Reimplementation notes | item-use entries it runs the row's srvdofunc (E5). | `0x005C054E` | c | as row 54 | S5b | 1 |
+| 67 | 752 | Reimplementation notes | … applies from a plain attack: the builder leaves burn = 2 with burnLen = 0. | – | a-logs | `BD1` `burnLen` 0 and no state-115 `STA` line after a plain attack in every kept combat log, a counter | S5a | 1 |
+
+**Totals by class:** a-logs 24, a-run 1, b 2, c 11, c-emu 27, d-edit 2 (sum 67).
