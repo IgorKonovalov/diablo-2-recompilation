@@ -672,6 +672,7 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-11-10 | `lane/n64s2` | 0064 P2 S2 | cleanroom | 239 684 | 49 | 7 | — | first pass 1 573 of 32 320 different; final 0 after a magic-find fit from the diff; audit ruled clean by hand | — (triage in Phase 3) |
 | 2026-11-10 | `lane/n68f` | 0068 P3 | archivist | 113 938 | 37 | 4 | — | accept with fixes (Tier A, ADR-0027, 9) | overclaim 2, under-claim 2, omission 3, stale cross-reference 1, other 1 |
 | 2026-11-10 | `lane/n68f` review | 0068 P3 | architect-review | 127 674 | 34 | 4 | — | accept with fixes (9) | overclaim 2, under-claim 2, omission 3, stale cross-reference 1, other 1 |
+| 2026-11-10 | `lane/n64t` | 0064 P3 (S1, S2) | architect-review | 135 220 | 55 | 9 | — | triage of 22 rows: spec defect 1, missing finding 1, golden-set 15, implementer error 5; 7 entries | — |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not
