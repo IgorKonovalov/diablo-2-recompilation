@@ -612,6 +612,11 @@ fn:sub_0056E740_AddStatEvent@0x0056E740, tbl:ItemStatCost.txt:itemeventfunc1)
   (fn:COMBAT_ToHitRoll@0x0057D9B0, fn:COMBAT_DefenceRoll@0x0057DFB0, fn:STATEVENT_OpenWounds@0x005BFE60)
 - [I] Players (`/players`): crushing blow's divisor (§ 10) and `MonAttackStats`' damage bonus; nothing else on these
   paths. (fn:STATEVENT_CrushingBlow@0x005BFFC0, fn:sub_005A4F20_PlayerDmgBonus@0x005A4F20)
+- [C] *2026-11-15 (plan 0066 S5a part 2):* `MonAttackStats`' classic factors (562 of 600 classic Nightmare and Hell
+  calls separating) and the expansion player-count bonus (`b` 16 at `/players 3`, 56 at `/players 8`, 0 in Normal)
+  reproduce in all 19 750 compared calls; the `Align` = 1 exception, `n` ≥ 9 and the alignment test stay [I]
+  ([experiments, S5a part 2](experiments.md#addendum-2026-11-15-plan-0066-batch-s5a-part-2-the-monattackstats-output-model-and-the-deliverys-boundary-draws-lanen66j)).
+  (fn:sub_005A4F50_MonAttackStats@0x005A4F50, fn:sub_005A4F20_PlayerDmgBonus@0x005A4F20, run:2026-10-16-combat)
 - [I] Player against player: P = 17 % on every scaled field (§ 7); stat events and leech run as for monsters with `D =
   100`. ADR-0008 is proposed, so this branch stays named only.
   (fn:COMBAT_DamagePercent@0x0057C060)

@@ -1096,3 +1096,49 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   `STATLIST_Alloc` calls untraced), as the claim is the flag's meaning; (13) no symbol raised: the run compares fields,
   flags and call chains, and `SKILLS_RefreshPassive`'s logged return (row 39) is compared with the list's own 351, not a
   model; (14) agg 41's contradiction rests on the walker's closure with r2's LCG sites agreeing, no case, as states 46.
+
+### 2026-11-15 — Phase 1 batch S5a, part 2 of 2 (reverser-static, `lane/n66j`): done, S5a 81 of 81 settled; S5b not started, resume note
+
+- **Done.** No game, no Ghidra. New tool `tools/sweep2_s5a2.py` (`946081ff…`), which reruns part 1's `sweep2_s5a.py`
+  (`104ce037…`, unchanged: Checker 0 mismatches, its nine checks 0 bad) and adds a `MonAttackStats` output model, the
+  durability and get-hit draw models, result-bit and build checks and the `manahit` drain; run under a 4 GB scope on
+  the same three run lists: `workspace/logs/n66j/check-combat-p2.txt` (`d5a594af…`, 214 lines, `S5a2 total bad=0
+  checker=0 part1-bad=0`), the r2 reads in `p2/`, `manifest-p2.sha256` (`77a83aae…`) passing from `workspace/logs/n66j`;
+  six development outputs in `p2/dev/` with their own manifest (one later unkept revision's output, with a counter
+  bug, was overwritten by the kept run and is not cited). Record:
+  [combat/experiments § S5a part 2](../findings/combat/experiments.md#addendum-2026-11-15-plan-0066-batch-s5a-part-2-the-monattackstats-output-model-and-the-deliverys-boundary-draws-lanen66j);
+  dated pointer bullets in combat/0001 § 12 and monsters/0004 § 9. Every row's *Route* cell carries its part-2 note.
+- **Raised 4:** README 38 and player/party 12 (the expansion player-count bonus: `b` 16 at `/players 3`, 600 of 600
+  separating; 56 at `/players 8`, 1 679 of 1 798; 0 in Normal at `n` ≥ 2, 5 216 of 6 444; the table read with r2);
+  damage 1 and 29 (`MonAttackStats`' stats 19/21/22 in 19 750 of 19 750 calls, 1 030 `El` writes).
+- **Raised in part 7**, remainder and home in each Route cell: README 5 (flag `0x2`, results `0x1`, `0x2`, `0x4`,
+  `0x2000`; the other bits → H5b), README 15 and delivery 57 (the `DU` step counts 9 680 and the player defender's
+  get-hit 25 669; roll values, the one `0x005CAED8` case, the monster defender's state tests → H5b), README 35 (the
+  classic factors, 562 separating; `Align` = 1 → S5e), damage 30 (the `El` mode match; "the new mode" → H5b), damage 33
+  (types 1, 2, 4, 5; the others never applied → H5b), delivery 28 (the `256·v` drain, 226 of 226, 138 separating;
+  `El` type 7 → H5b, the `v << 22` wrap d-none on stock data). None of these remainders was added to H5b's or S5e's rows.
+- **Also found:** `El2` applies with `El1`'s bounds (the mask `0x40 + e`) in 57 compared applications whose own cells
+  differ (monsters/stats H1's code reading; `El3` not met); `b` scales the `El` length too (154 of 154 separating). For
+  Phase 3 with the S5a rows.
+- **S5a whole:** 81 rows, raised 30, raised in part 34, moved 17 (14 to b H5b, 3 to c-emu S5e). README § 4's S5a row
+  updated.
+- **Totals** after merging `main` `712c49e6` (merge `5cadc51d`), from the 29 files' *Totals by class*: a-logs 628,
+  a-run 340, b 446, c 390, c-emu 494, d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626, unchanged by part 2 (no row
+  moved class); Phase 1 1 512, Phase 2 786, blocked 328.
+- **Symbols:** none raised. `MonAttackStats` and `GetHitRoll` are already `C`; `sub_005A4F20_PlayerDmgBonus` and
+  `g_PlayerDmgBonus` stay `I` (their return is not logged, only its effect at `n` 3 and 8; the `n` ≥ 9 branch is
+  unmet); `COMBAT_DurabilityLoss` and `COMBAT_GetHit` stay `I` (step counts only; the roll values and the monster
+  branch are not compared).
+- **Judgment calls for the review:** (1) README 38 and player/party 12 raised whole on two logged player counts plus
+  r2's read of the table for the others, the `8n − 16` branch being outside the row's `n` < 9; (2) a hireling's
+  `MonAttackStats` checked against an offset learned at its first call (its MonStats cells give 0), so the alignment
+  test that withholds `b` is not separated and stays `[I]`; (3) the `El` stats compared only for units whose first
+  logged call held none (295 writes on enchanted minions excluded); (4) the get-hit model on a monster defender kept
+  one-way (never more steps, 9 509), since states 1, 21, 54 are not in these logs; (5) the mode-change half of damage 30
+  kept a counter (10 842 of 10 979 next-`EV0` modes equal), not a check.
+- **Resume note (S5b).** S5b (24 rows, README § 4) is not started. A fresh lane on `lane/n66j` (after merging `main`):
+  its rows are static second-tool reads, r2 `axt` and call or store scans (stat-id immediates, callers, writers of
+  packet fields, `UNIT_AddEvent`) and full-table checks of Skills `ItemEffect`, `srvprgfunc`/`prgstack`, States
+  `meleeonly` and ItemStatCost `itemeventfunc1`, recorded as a findings/combat/0001 addendum with run id
+  `2026-xx-xx-sweep2-s5b`. README 4's zeroing remainder (part 1) uses the same method. Part 1 already read
+  `srvprgfunc1`–`3` over Skills.txt (combat/experiments S5a part 1, last bullet), which S5b's `srvprgfunc` row can cite.
