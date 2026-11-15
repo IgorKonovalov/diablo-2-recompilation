@@ -14,7 +14,13 @@ Sections (the inventory row each check serves is in its docstring):
             STATE_ApplyTimed (raw bytes), g_ShrineEffects (r2), PlayerSwapWeapons (objdump and r2), the closures of
             the group clear, remove callback, death purge and mode drop (objdump walker and r2's LCG sites)
   tables    full-table checks over the excel .txt tables (Skills aurastat, Sets params; Misc autobelt is in invstatic)
-  (S4d's a-logs rows over the s1017 and p47h stats logs are not in this tool revision: plan 0066 S4d part 2.)
+  ststatic2 S4d part 2's static rows (objdump next to r2 or the raw bytes): list flag 0x4's reader and STATLIST_Alloc's
+            flag arguments, the readers of the Skills aura mask byte, the refresh / set-bonus / passive closures,
+            UNIT_HasState's types and UNIT_SetStateBit's +0xC8, STATE_ApplyTimed's monster gate, STATE_DefaultRemoveCB
+  stlogs    S4d part 2's log rows: one pass per log of workspace/logs/stats/s1017-run.lst and p47h-run.lst through
+            tools/stats.py's checker with observers and two model controls (op 11 on the running total, op 8/9 on
+            the full source); heavy: run it alone under `systemd-run --user --scope -p MemoryMax=4G`
+  (`all` runs the part-1 sections only; part 2's are named explicitly.)
 
 Each section prints `S4 <section> <check> key=value ...` lines and detail lines; `bad=` counts an observation that
 contradicts the statement the check tests. A statement with no stock case shows as a zero count, never as a failure.
@@ -1063,12 +1069,1011 @@ def chk_tables():
     return bad
 
 
+# ========================================================================================== S4d part 2: static reads
+def ins_range(A, lo, hi):
+    return [(v,) + tuple(A.ins[v]) for v in sorted(x for x in A.ins if lo <= x < hi)]
+
+
+def has_ins(listing, mn, pat):
+    """True when an instruction of `listing` [(va, mn, ops)] has mnemonic `mn` and operands matching regex `pat`."""
+    return any(m == mn and re.search(pat, o) for _, m, o in listing)
+
+
+def chk_ststatic2():
+    """S4d part 2's static rows: aggregate 5 (flag 0x4's reader and setters), 40 (readers of the Skills aura bit),
+    41 (the refresh, set-bonus and passive closures); states 5 (UNIT_HasState's types, UNIT_SetStateBit's +0xC8),
+    13 (the monster gate of STATE_ApplyTimed), 17 and 46 (STATE_DefaultRemoveCB's calls)."""
+    bad = 0
+    A = S.asm()
+    # aggregate 5: StatListsDropOnMode reads list flag 4; its callers; STATLIST_Alloc's flag argument at every call
+    r = Rep("ststatic2", "agg5_flag4")
+    ob = ins_range(A, 0x006272E0, 0x0062733D)
+    rb = r2_range(0x006272E0, 0x0062733D)
+    for tool, L in (("objdump", ob), ("r2", rb)):
+        tests = {
+            "unit_list_flag2_test": (r"test", r"(BYTE PTR |byte )\[edi ?\+ ?0x10\], ?0?x?2$"),
+            "child_flag4_test": (r"test", r"(BYTE PTR |byte )\[esi ?\+ ?0x10\], ?(0x)?4$"),
+            "state_clear_call": (r"call", r"0x639db0$"),
+            "free_plain_call": (r"call", r"0x626c00$"),
+            "unit_list_flag2_clear": (r"and", r"\[edi ?\+ ?0x10\], ?0xfffffffd$"),
+        }
+        for k, (mn, pat) in tests.items():
+            ok = has_ins(L, mn, pat)
+            r.add("%s_%s" % (tool, k), int(ok))
+            if not ok:
+                r.add("bad")
+    rel, calls, ab = raw(0x006272E0)
+    r.note("StatListsDropOnMode callers (raw): %s; abs32 %d" % (["0x%08X %s" % (c, owner(c)[1]) for c in calls], len(ab)))
+    rel, calls, ab = raw(0x006251F0)
+    f4, regs, other = [], [], 0
+    for c in calls:
+        p = pushes_before(c, want=2)
+        fl = imm(p[1]) if p and len(p) > 1 else None
+        if fl is None:
+            regs.append("0x%08X %s (%s)" % (c, owner(c)[1], p[1] if p and len(p) > 1 else "?"))
+        elif fl & 4:
+            # objdump's own decoding of the push carrying the flags (the second push before the call)
+            f4.append("0x%08X %s 0x%x" % (c, owner(c)[1], fl))
+        else:
+            other += 1
+    r.add("alloc_calls", len(calls))
+    r.add("alloc_flag4_immediate", len(f4))
+    r.add("alloc_flag_register", len(regs))
+    r.add("alloc_flag_other_immediate", other)
+    r.note("STATLIST_Alloc calls with flag bit 2 (r2 pushes): %s" % f4)
+    r.note("STATLIST_Alloc calls with a register flag argument (not traced): %s" % regs)
+    lk = ins_range(A, 0x00626E10, 0x00626E8A)
+    r.add("link_sets_unit_flag2_on_flag4", int(has_ins(lk, "test", r"\[e[a-z]{2}\+0x10\],0x4$")))
+    bad += r.done()
+
+    # aggregate 40: the readers of the mask byte 0x006CE27C (bit 5 = 0x20) that test a record's +0x04 byte
+    r = Rep("ststatic2", "agg40_aura_bit_readers")
+    mb = r2_bytes(0x006CE27C, 4)
+    r.add("mask_dword", struct.unpack("<I", mb)[0])
+    rel, calls, ab = raw(0x006CE27C)
+    r.add("abs32_refs", len(ab))
+    rd4 = []
+    for a in ab:
+        v = max((x for x in A.ins if a - 7 <= x <= a), default=None)
+        if v is None:
+            r.add("bad")
+            continue
+        nx = [x for x in sorted(A.ins) if v <= x < v + 16][:2]
+        txt = " | ".join("%s %s" % A.ins[x] for x in nx)
+        m = re.search(r"test (BYTE|DWORD) PTR \[e[a-z]{2}\+0x4\],", txt)
+        if m:
+            rd4.append("0x%08X %s" % (v, owner(v)[1]))
+    r.add("byte_tests_of_plus4", len(rd4))
+    r.note("+0x04 tests with the mask byte (objdump at the raw scan's sites): %s" % rd4)
+    imm4 = sorted(v for v, (mn, ops) in A.ins.items() if mn == "test" and re.search(r"BYTE PTR \[e[a-z]{2}\+0x4\],0x20$", ops))
+    r.add("immediate_0x20_tests_of_plus4_any_struct", len(imm4))
+    bad += r.done()
+
+    # aggregate 41: the closures of EquipReqRefresh, SetBonusApply, SKILLS_RefreshPassive (objdump walker, r2 LCG)
+    r = Rep("ststatic2", "agg41_closures")
+    hits, sites = r2_lcg_sites()
+    for root in (0x0055DBC0, 0x00660120, 0x00646D60):
+        G = S.graph([root])
+        R = S.rng_functions(G)
+        vv = set()
+        for e, v in G.items():
+            vv |= v[2]
+        r2in = [x for x in sites if x in vv]
+        r.note("root 0x%08X %s: functions=%d draw_functions=%d r2_lcg=%d %s" % (
+            root, owner(root)[1], len(G), len(R), len(r2in), sorted(hex(e) for e in R)[:12]))
+        r.add("roots")
+        r.add("draw_functions", len(R))
+        r.add("r2_lcg_sites", len(r2in))
+        if R:
+            par, q, hit = {root: None}, collections.deque([root]), None
+            while q:
+                f = q.popleft()
+                if f in R:
+                    hit = f
+                    break
+                if f not in G:
+                    continue
+                for _, t in S.body(A, f)[1]:
+                    if t not in par:
+                        par[t] = f
+                        q.append(t)
+            path, x = [], hit
+            while x:
+                path.append("0x%08X %s" % (x, owner(x)[1]))
+                x = par[x]
+            r.note("  shortest path to a draw: %s" % " <- ".join(path))
+            for _, t in S.body(A, root)[1]:
+                Gt = S.graph([t])
+                n = len(S.rng_functions(Gt))
+                if n:
+                    r.note("  direct callee 0x%08X %s: closure %d, draw functions %d" % (t, owner(t)[1], len(Gt), n))
+    bad += r.done()
+
+    # states 5: UNIT_HasState's unit-type test, UNIT_TestStateBit's absence of one, UNIT_SetStateBit's +0xC8 bit 3
+    r = Rep("ststatic2", "states5_types_and_c8")
+    for tool, L in (("objdump", ins_range(A, 0x00639DF0, 0x00639E30)), ("r2", r2_range(0x00639DF0, 0x00639E30))):
+        ok = (has_ins(L, "cmp", r"eax, ?(0x)?1$") and has_ins(L, "cmp", r"eax, ?(0x)?3$")
+              and has_ins(L, "call", r"0x625b70$"))
+        r.add("%s_hasstate_types_0_1_3" % tool, int(ok))
+        if not ok:
+            r.add("bad")
+    for tool, L in (("objdump", ins_range(A, 0x00625B70, 0x00625BAC)), ("r2", r2_range(0x00625B70, 0x00625BAC))):
+        # no read of the unit's type word ([reg]) in the test: the unit list +0x5C, its 0x80000000 flag, the +0x58 set
+        ok = (not has_ins(L, "cmp", r"^(DWORD PTR |dword )\[e[a-z]{2}\]") and has_ins(L, "mov", r"\[eax ?\+ ?0x5c\]$")
+              and has_ins(L, "mov", r"\[eax ?\+ ?0x58\]$"))
+        r.add("%s_teststatebit_no_type_test" % tool, int(ok))
+        if not ok:
+            r.add("bad")
+    for tool, L in (("objdump", ins_range(A, 0x00625B08, 0x00625B62)), ("r2", r2_range(0x00625B08, 0x00625B62))):
+        ok = (has_ins(L, "or", r"\[eax ?\+ ?0xc8\], ?(0x)?8$") and has_ins(L, "and", r"\[esi ?\+ ?0xc8\], ?0xfffffff7$")
+              and has_ins(L, "test", r"\[eax ?\+ ?0x12\]") and has_ins(L, "push", r"^(0x)?10$")
+              and has_ins(L, "call", r"0x63a7b0$"))
+        r.add("%s_setstatebit_c8_bit3" % tool, int(ok))
+        if not ok:
+            r.add("bad")
+    r.add("mask_byte_6ce268", r2_bytes(0x006CE268, 1)[0])
+    bad += r.done()
+
+    # states 13: the monster gate of STATE_ApplyTimed (objdump; the raw bytes as the second reading)
+    r = Rep("ststatic2", "states13_monster_gate")
+    L = ins_range(A, 0x0056E9C3, 0x0056EA0A)
+    seq = [("cmp", r"DWORD PTR \[edi\],0x1$"), ("imul", r"eax,eax,0x1a8$"), ("add", r"\[edx\+0xa78\]$"),
+           ("mov", r"ds:0x6ce268$"), ("test", r"\[eax\+0xd\],dl$"), ("call", r"0x451fe0$"), ("mov", r"ds:0x6ce26c$"),
+           ("test", r"\[eax\+0x5\],cl$")]
+    for mn, pat in seq:
+        ok = has_ins(L, mn, pat)
+        r.add("objdump_" + re.sub(r"\W+", "_", pat).strip("_"), int(ok))
+        if not ok:
+            r.add("bad")
+    want = {0x0056E9C7: "833f01", 0x0056E9EB: "8a1568e26c00", 0x0056E9F1: "84500d", 0x0056E9F6: "e8",
+            0x0056E9FF: "8a0d6ce26c00", 0x0056EA05: "844805"}
+    for va, hx in want.items():
+        got = r2_bytes(va, len(hx) // 2).hex()
+        r.add("raw_bytes_ok", int(got == hx))
+        if got != hx:
+            r.add("bad")
+            r.note("0x%08X raw %s, want %s" % (va, got, hx))
+    r.add("mask_byte_6ce26c", r2_bytes(0x006CE26C, 1)[0])
+    bad += r.done()
+
+    # aggregate 39: SKILLS_RefreshPassive's rebuild test (351 against SKILLS_GetSkillLevel) and its free paths
+    r = Rep("ststatic2", "agg39_refreshpassive")
+    for tool, L in (("objdump", ins_range(A, 0x00646D60, 0x00646E70)), ("r2", r2_range(0x00646D60, 0x00646E70))):
+        checks = {
+            "no_skill_frees": ("call", r"0x643810$"),
+            "aurastate_hasstate": ("call", r"0x639df0$"),
+            "unlink_then_free": ("call", r"0x626cd0$"),
+            "level_with_bonus": ("call", r"0x6442a0$"),
+            "reads_351": ("push", r"^(0x)?15f$"),
+            "base_stat_351": ("call", r"0x625d00$"),
+            "cmp_level": ("cmp", r"eax, ?(DWORD PTR |dword )\[ebp ?- ?(0x)?4\]$"),
+            "skip_when_equal": ("je", r"0x646f0a$"),
+        }
+        for k, (mn, pat) in checks.items():
+            ok = has_ins(L, mn, pat)
+            r.add("%s_%s" % (tool, k), int(ok))
+            if not ok:
+                r.add("bad")
+    bad += r.done()
+
+    # states 17 / 46: STATE_DefaultRemoveCB's calls, in order, by both tools
+    r = Rep("ststatic2", "states17_46_removecb")
+    want = ["0x554010", "0x5c0b50", "0x5541b0", "0x63a4a0", "0x639db0", "0x623f50", "0x646f20", "0x554010", "0x575900"]
+    for tool, L in (("objdump", ins_range(A, 0x0056E900, 0x0056E96A)), ("r2", r2_range(0x0056E900, 0x0056E96A))):
+        got = [o.split()[-1] for _, m, o in L if m == "call"]
+        ok = got == want
+        r.add("%s_call_order" % tool, int(ok))
+        if not ok:
+            r.add("bad")
+        r.note("%s calls: %s" % (tool, ["%s %s" % (c, owner(int(c, 16))[1]) for c in got]))
+        ok = has_ins(L, "cmp", r"^(DWORD PTR |dword )\[esi\], ?(0x)?0$")
+        r.add("%s_petlimitrefresh_only_type0" % tool, int(ok))
+        if not ok:
+            r.add("bad")
+    bad += r.done()
+    return bad
+
+
+# ============================================================================================ S4d part 2: the logs
+ATTACH, DETACH, LINKOWNER, SWAP, EQREF = 0x0055C2C0, 0x0055C730, 0x00627910, 0x005616A0, 0x0055DBC0
+EXT_F, OFF_F, OPSRC_F = 0x80000000, 0x2000, 0x20000000
+ELEM_STATES = {1: "freeze", 2: "poison", 11: "cold", 115: "burning"}
+VITAL_PAIRS = ((10, 11), (8, 9), (6, 7))          # stamina, mana, life (current, max): the clamp's order
+
+
+def next_periodic(frame, p):
+    """SKILLS_NextPeriodicFrame (stats/states F1): p below 6 is 5."""
+    if p < 6:
+        p = 5
+    return ((frame - 1 + p) // p) * p + 1
+
+
+def stamina_tick(mode, s, b, mx):
+    """stats/states E3 as the spec writes it: the new stamina, or None when no shift applies (no write)."""
+    if mode in (1, 5):
+        sh = 8
+    elif mode == 6:
+        sh = 9
+    elif mode == 2:
+        sh = 9 if s >= 256 else None
+    else:
+        sh = 8 if b >= 1000 else None
+    if sh is None or s >= mx:
+        return None
+    d = mx >> sh
+    if b:
+        q = abs(d * b) // 100
+        d += q if d * b >= 0 else -q
+    return min(s + d, mx)
+
+
+def chain_entries(d):
+    return [owner(a)[0] for a in [d.get("ra")] + list(d.get("ra2") or []) if a]
+
+
+def tree_walk(node, parent=None, depth=0):
+    """(node, parent, depth) over a logged TREE, pre-order; children of both chains."""
+    yield node, parent, depth
+    for c in node.get("ch", []):
+        yield from tree_walk(c, node, depth + 1)
+    for c in node.get("off", []):
+        yield from tree_walk(c, node, depth + 1)
+
+
+def tip_want(setitems, fi, m, func):
+    """The toggle sequence SETS_ToggleItemAProps predicts for add func `func` (tools/stats.py's TIP model)."""
+    r = setitems[fi]
+    want = []
+    if func == 2:
+        c = (bin(m).count("1") if m < 64 else 0) - 1
+        for k in range(max(c, 0)):
+            want.append((165 + k, 0))
+        for k in range(max(c, 0), 5):
+            want.append((165 + k, 1))
+    elif func == 1:
+        members = [i for i, s in enumerate(setitems) if s["set"] == r["set"]]
+        own = members.index(fi)
+        for k in range(6):
+            if k == own:
+                continue
+            slot = k if k < own else k - 1
+            want.append((165 + slot, 0 if m >> k & 1 else 1))
+    return want
+
+
+def stlogs_lists():
+    out = []
+    for name in ("s1017-run.lst", "p47h-run.lst"):
+        for ln in open(os.path.join(STATS, name)):
+            ln = ln.strip()
+            if ln:
+                out.append((name.split("-")[0], ln if os.path.isabs(ln) else os.path.join(ROOT, ln)))
+    return out
+
+
+def make_obs():
+    import stats as ST
+
+    Base = getattr(ST, "_BASE_MODEL", None) or ST.Model
+    ST._BASE_MODEL = Base
+
+    class CtlModel(Base):
+        """The stock model, with the two controls of aggregate rows 16 and 17 evaluated beside each predicted write:
+        `op11_running` (op 11 a percentage of the running total `acc`, not of `b0`) and `op89_full` (op 8/9 add the
+        source's full value, not full - own). `ev(..., None)` is the stock evaluation, asserted equal to it."""
+        ctl = None
+        sep = None
+
+        def ev(self, x, key, ctl, depth=0):
+            I = self.isc
+            t = key >> 16
+            if not I.ok(t):
+                return 0
+            v = self.sum_own_children(x, key)
+            if not I.b52[t]:
+                return v
+            b0 = acc = v
+            ow = x.ow
+            for ob, src, op, opp in I.opin[t]:
+                sk = src << 16
+                if op == 1:
+                    if not ow:
+                        continue
+                    if ow["t"] == 4:
+                        b0 = self.base_stat(ow["u"], t)
+                    if b0:
+                        p = self.ev(x, sk, ctl, depth + 1)
+                        if p:
+                            acc = ST.s32(acc + ST.muldiv(b0, p, 100))
+                elif op in (2, 3):
+                    if x.ct not in (0, 1) or ob == 0xFFFF or not I.ok(ob):
+                        continue
+                    b = ST.sar(x.active().get(ob << 16, 0), I.vs[ob])
+                    if b <= 0:
+                        continue
+                    p = self.ev(x, sk, ctl, depth + 1)
+                    if not p:
+                        continue
+                    term = ST.sar(ST.s32(p * b), opp)
+                    acc = ST.s32(acc + (term if op == 2 else ST.muldiv(b0, term, 100)))
+                elif op in (4, 5):
+                    pu = x.u
+                    if not pu or self.utype(pu) not in (0, 1) or ob == 0xFFFF or not I.ok(ob):
+                        continue
+                    b = ST.sar(self.unit_stat(pu, ob), I.vs[ob])
+                    if b <= 0:
+                        continue
+                    p = self.ev(x, sk, ctl, depth + 1)
+                    if not p:
+                        continue
+                    term = ST.sar(ST.s32(p * b), opp)
+                    acc = ST.s32(acc + (term if op == 4 else ST.muldiv(b0, term, 100)))
+                elif op in (6, 7):
+                    if ow and self.ev(x, sk, ctl, depth + 1):
+                        raise ST.Mismatch("op %d reached" % op)
+                elif op in (8, 9):
+                    if not ow or ow["t"] != 0:
+                        continue
+                    cs = self.cstats(ow["c"])
+                    full = self.ev(x, sk, ctl, depth + 1)
+                    d = full if ctl == "op89_full" else ST.s32(full - x.own.get(sk, 0))
+                    if not d:
+                        continue
+                    f = int(cs["ManaPerMagic"] if op == 8 else cs["StaminaPerVitality"] if t == 11 else cs["LifePerVitality"])
+                    acc = ST.s32(acc + ST.s32(ST.s32(f * d) << 6))
+                elif op == 11:
+                    if not b0 or not ow or ow["t"] not in (0, 1):
+                        continue
+                    p = self.ev(x, sk, ctl, depth + 1)
+                    if p:
+                        acc = ST.s32(acc + ST.muldiv(acc if ctl == "op11_running" else b0, p, 100))
+                elif op == 13:
+                    if not ow or ow["t"] != 4:
+                        continue
+                    b0 = self.base_stat(ow["u"], t)
+                    if not b0:
+                        continue
+                    p = self.ev(x, sk, ctl, depth + 1)
+                    if p:
+                        acc = ST.s32(acc + ST.muldiv(b0, p, 100))
+            return acc
+
+        def recompute(self, x, key):
+            t = key >> 16
+            I = self.isc
+            alts = {}
+            ops = set(op for _, _, op, _ in I.opin[t]) if I.ok(t) else set()
+            if ops & {8, 9, 11}:
+                try:
+                    stock = Base.evaluate(self, x, key)
+                    if self.ev(x, key, None) != stock:
+                        self.sep["self_check"]["ev_differs_from_stock"] += 1
+                    for c in ("op11_running", "op89_full"):
+                        alts[c] = (stock, self.ev(x, key, c))
+                except ST.Mismatch:
+                    alts = {}
+            gen = Base.recompute(self, x, key)
+            try:
+                y = next(gen)
+                while True:
+                    if alts and y[0] == "CW" and y[1] == x.p and y[2] == key:
+                        for c, (stock, a) in alts.items():
+                            if y[3] == stock:
+                                self.sep[c]["writes_checked"] += 1
+                                if a != stock:
+                                    self.sep[c]["writes_separating"] += 1
+                                    self.sep[c]["stat_%d" % t] += 1
+                        alts = {}
+                    got = yield y
+                    y = gen.send(got)
+            except StopIteration as e:
+                return e.value
+
+    class Obs(ST.Checker):
+        def __init__(self, T):
+            super().__init__(T)
+            self.T = T
+            self.o = collections.defaultdict(collections.Counter)
+            self.ex = collections.defaultdict(list)
+            self.sep = collections.defaultdict(collections.Counter)
+            CtlModel.sep = self.sep
+            self.st_aura = {i: r.get("aura") == "1" for i, r in enumerate(T.states_rows)}
+            self.st_exp = {i: r.get("exp") == "1" for i, r in enumerate(T.states_rows)}
+            self.st_curse = {i: r.get("curse") == "1" for i, r in enumerate(T.states_rows)}
+
+        def exm(self, k, s, n=6):
+            if len(self.ex[k]) < n:
+                self.ex[k].append("%s:%d %s" % (self.cur_log, self.cur_line, s))
+
+        # ---- per log
+        def run_log(self, path):
+            self.w_lg = os.path.basename(path)
+            self.w_sta = []
+            self.w_uoe = None
+            self.w_last_uoe = None
+            self.w_lnk = None
+            self.w_in_eqr = False
+            self.w_eqr_seeds = None
+            self.w_eqr_frames = []
+            self.w_action_since = False
+            self.w_pas = None
+            self.w_exp = None
+            self.w_sb_watch = {}
+            self.w_pending_ct = {}
+            self.w_pending_rm0 = set()
+            self.w_rm_of = {}
+            self.w_scb_watch = None
+            self.w_au_start = []
+            self.w_au_ticks = collections.Counter()
+            self.w_swap = {}
+            self.w_clamp = None
+            self.w_tip = None
+            self.w_plr = None
+            self.w_seen = set()
+            self.w_pending_136 = set()
+            self.w_detached = {}
+            self.w_f2x0 = set()
+            super().run_log(path)
+            self.o["agg4_flag2"]["f2_end0_list_never_seen_with_end"] += len(self.w_f2x0)
+            fr = self.w_eqr_frames
+            if fr:
+                res = collections.Counter(f % 136 for f, _ in fr)
+                top, n = res.most_common(1)[0]
+                on = sorted(f for f, _ in fr if f % 136 == top)
+                slots = (on[-1] - on[0]) // 136 + 1
+                g = self.o["agg29_eqr_grid"]
+                g["logs"] += 1
+                g["refreshes"] += len(fr)
+                g["on_top_residue"] += n
+                g["grid_slots"] += slots
+                g["logs_grid_complete" if n == slots else "logs_grid_with_holes"] += 1
+                g["off_grid_refreshes"] += len(fr) - n
+                g["off_grid_after_action"] += sum(1 for f, ia in fr if f % 136 != top and ia)
+            gaps = collections.Counter(b - a for (a, _), (b, _) in zip(fr, fr[1:]))
+            if gaps:
+                self.o["agg29_eqr_grid"]["log_commonest_gap_%d" % gaps.most_common(1)[0][0]] += 1
+            for (a, ia), (b, ib) in zip(fr, fr[1:]):
+                self.o["agg29_eqr_gaps"]["all_%d" % (b - a)] += 1
+                if not ib:
+                    self.o["agg29_eqr_gaps"]["idle_%d" % (b - a)] += 1
+            for fr0, sk, lvl in self.w_au_start:
+                self.au_check(fr0, sk, lvl)
+            for k, n in self.w_au_ticks.items():
+                if n > 1:
+                    self.o["states32_item_aura"]["frames_with_two_item_ticks"] += 1
+            for fr_, s in self.w_swap.items():
+                self.o["agg34_swaps"]["swaps"] += 1
+                self.o["agg34_swaps"]["detach_%d_attach_%d" % (len(s["ulk"]), len(s["lnk"]))] += 1
+                self.o["agg34_swaps"]["detached_bl_%s_attached_bl_%s" % (
+                    "-".join(map(str, sorted(s["ulk"]))), "-".join(map(str, sorted(s["lnk"]))))] += 1
+
+        def check_isc(self, I):
+            super().check_isc(I)
+            if self.o["agg19_opin"]["dumps"]:
+                self.o["agg19_opin"]["dumps"] += 1
+                return
+            self.o["agg19_opin"]["dumps"] += 1
+            name = {int(r["ID"]): r["Stat"] for r in self.T.isc}
+            for t in range(len(I.opin)):
+                for ob, src, op, opp in I.opin[t]:
+                    self.o["agg19_opin"]["edges"] += 1
+                    row = self.T.isc[src]
+                    cells = [row.get("op stat%d" % k, "") for k in (1, 2, 3)]
+                    if name.get(t) not in cells:
+                        self.o["agg19_opin"]["bad"] += 1
+            for src, tgt in ((273, "maxdamage"), (273, "secondary_mindamage"), (273, "item_throw_mindamage"),
+                             (237, "item_absorbmagic"), (291, "item_absorbmagic")):
+                t = self.T.stat_id[tgt]
+                hit = any(s_ == src for _, s_, _, _ in I.opin[t])
+                self.o["agg19_opin"]["named_edges_present" if hit else "bad"] += 1
+                self.exm("agg19", "%d %s -> %d %s: %s" % (src, name[src], t, tgt, hit), 6)
+
+        # ---- the tree
+        def tree(self, z, plr):
+            o = self.o
+            self.w_plr = plr
+            root = z["t"]
+            seen = {}
+            for n, par, dep in tree_walk(root):
+                seen[n["p"]] = n
+                ext = bool(n["f"] & EXT_F)
+                # each distinct (list, flags, end, state, parent, unit, creator type) is counted once per log
+                nk = (n["p"], n["f"], n["x"], n["s"], par["p"] if par else 0, n["u"], n["ct"])
+                new = nk not in self.w_seen
+                self.w_seen.add(nk)
+                # A3: own (and cache) arrays ascending; no zero own entry
+                for arr in ("own", "cache"):
+                    ks = [k for k, _ in n.get(arr, [])]
+                    if len(ks) >= 2 and new:
+                        o["agg11_order"]["arrays_ge2_%s" % arr] += 1
+                        if any(a >= b for a, b in zip(ks, ks[1:])):
+                            o["agg11_order"]["bad"] += 1
+                o["agg11_order"]["own_zero_entries"] += sum(1 for _, v in n.get("own", []) if v == 0)
+                if par is not None and new:
+                    pu = par["ow"]["u"] if par.get("ow") else plr
+                    o["agg3_parent_unit"]["tree_child_u_ok" if n["u"] == pu else "bad"] += 1
+                    if n["u"] != pu:
+                        self.exm("agg3", "child 0x%x u 0x%x, parent unit 0x%x" % (n["p"], n["u"], pu))
+                    pk = "root" if par is root else ("item" if par.get("ow", {}).get("t") == 4 else "other")
+                    o["agg8_flag40"]["%s_parent_%s_ext_%d" % ("f40" if n["f"] & 0x40 else "no40", pk, ext)] += 1
+                    if n["f"] & 0x40 and pk != "item":
+                        o["agg8_flag40"]["bad"] += 1
+                        self.exm("agg8", "list 0x%x f 0x%x under %s" % (n["p"], n["f"], pk))
+                if n["p"] in self.w_pending_ct:
+                    srct = self.w_pending_ct.pop(n["p"])
+                    o["agg10_fields"]["ct_eq_srct" if n["ct"] == srct else "bad"] += 1
+                if not new:
+                    continue
+                # 0x2 against the end frame
+                o["agg4_flag2"]["tree_f2_%d_end_%d" % (bool(n["f"] & 2), n["x"] > 0)] += 1
+                if bool(n["f"] & 2) != (n["x"] > 0):
+                    o["agg4_flag2"]["tree_disagree_state%d_f%x_x%d" % (n["s"], n["f"], n["x"])] += 1
+                    if not ext and n["f"] & 2:
+                        self.w_f2x0.add(n["p"])
+                elif n["p"] in self.w_f2x0 and n["x"] > 0:
+                    self.w_f2x0.discard(n["p"])
+                    o["agg4_flag2"]["f2_end0_list_later_with_end"] += 1
+                if n["s"] in ELEM_STATES:
+                    o["states14_elem_shape"]["%s_f%x_end%d_ext%d_ct%d" % (ELEM_STATES[n["s"]], n["f"], n["x"] > 0, ext,
+                                                                        n["ct"])] += 1
+            for l in list(self.w_pending_136):
+                n = seen.get(l)
+                if n is not None:
+                    self.w_pending_136.discard(l)
+                    own = dict(n["own"])
+                    g = o["states37_stamina_shrine"]
+                    g["list_stat28_%s" % own.get(28 << 16)] += 1
+                    g["list_stats_%s" % "-".join(str(k >> 16) for k in sorted(own))] += 1
+                    if own.get(28 << 16) != 1000:
+                        g["bad"] += 1
+            # H6: socket fillers (item lists under item lists) and items at depth 1
+            d1 = {n["ow"]["u"] for n, par, dep in tree_walk(root) if dep == 1 and n.get("ow", {}).get("t") == 4}
+            for n, par, dep in tree_walk(root):
+                if dep >= 2 and n.get("ow", {}).get("t") == 4 and par.get("ow", {}).get("t") == 4:
+                    o["agg31_h6"]["filler_lists_under_item"] += 1
+                    if n["ow"]["u"] in d1:
+                        o["agg31_h6"]["bad"] += 1
+                if dep == 1 and n.get("ow", {}).get("t") == 4 and n["ow"].get("fl", 0) & 0x400000:
+                    o["agg31_h6"]["ethereal_item_lists"] += 1
+            # J3: the wearer's stat 71
+            k71 = 71 << 16
+            contrib = []
+            for c in root.get("ch", []):
+                if c["f"] & EXT_F:
+                    a = dict(c.get("cache", []))
+                else:
+                    a = dict(c.get("own", []))
+                if a.get(k71):
+                    contrib.append(a[k71])
+            tot = sum(contrib) + dict(root.get("own", [])).get(k71, 0)
+            have = dict(root.get("cache", [])).get(k71, 0)
+            if contrib:
+                o["agg37_stat71"]["trees_with_71"] += 1
+                if len(contrib) >= 2:
+                    o["agg37_stat71"]["trees_two_or_more_sets"] += 1
+                if tot != have:
+                    o["agg37_stat71"]["bad"] += 1
+                    self.exm("agg37", "71 cache %d, sum %d of %r" % (have, tot, contrib))
+            # A3 removals at 0: the next tree no longer holds the key
+            for l, k in self.w_pending_rm0:
+                n = seen.get(l)
+                if n is not None:
+                    o["agg11_order"]["removed_at_0_absent" if k not in dict(n["own"]) else "bad"] += 1
+            self.w_pending_rm0 = set()
+
+        # ---- events
+        def step(self, M, tag, d, stack):
+            self.M = M
+            try:
+                self.obs(M, tag, d, stack)
+            except Exception as e:                       # an observer's error is counted, never hidden
+                self.o["obs_errors"]["%s %s" % (tag, type(e).__name__)] += 1
+                self.exm("obs_errors", "%s %r" % (tag, e))
+            r = super().step(M, tag, d, stack)
+            try:
+                self.post(M, tag, d)
+            except Exception as e:
+                self.o["obs_errors"]["post %s %s" % (tag, type(e).__name__)] += 1
+                self.exm("obs_errors", "post %s %r" % (tag, e))
+            return r
+
+        def au_check(self, fr0, sk, lvl):
+            r = self.T.skill_by_id.get(sk, {})
+            p = int(r.get("perdelay") or 0)
+            want = next_periodic(fr0, p)
+            got = getattr(self, "w_au_first", {}).get((self.w_lg, fr0))
+            o = self.o["states32_item_aura"]
+            o["starts"] += 1
+            if got is None:
+                o["no_tick_after"] += 1
+            elif got == want:
+                o["first_tick_at_F1"] += 1
+                if got != fr0 + p:
+                    o["first_tick_separates_from_frame_plus_p"] += 1
+            else:
+                o["bad"] += 1
+                self.exm("states32", "start fr %d skill %d: first item tick %d, F1 %d" % (fr0, sk, got, want))
+
+        def obs(self, M, tag, d, stack):
+            o = self.o
+            fr = d.get("fr")
+            if self.w_scb_watch and tag in ("PAS", "GRP", "AU0", "TGL", "LNK", "ULK", "SCB"):
+                w, self.w_scb_watch = self.w_scb_watch, None
+                o["agg23_scb"]["after_%d_%s_%s%s" % (w["st"], tag, "same_frame" if fr == w["fr"] else "later",
+                                                    "_zero_cross" if w["z"] else "")] += 1
+            if tag == "TREE":
+                self.tree(unz(d["z"]), d.get("plr"))
+                return
+            if tag in ("UOE",):
+                self.w_last_uoe = (d["it"]["u"], d["mode"], fr)
+                self.w_uoe = d["it"]
+                if not self.w_in_eqr:
+                    self.w_action_since = True
+                return
+            if tag == "TIP" and self.w_uoe:
+                fi = self.w_uoe.get("fi")
+                if fi is not None and 0 <= fi < len(self.T.setitems):
+                    func = int(self.T.setitems[fi].get("add func") or 0)
+                    if func in (1, 2):
+                        a = tip_want(self.T.setitems, fi, d["m"], func)
+                        b = tip_want(self.T.setitems, fi, d["m"], 3 - func)
+                        o["agg36_tip"]["func%d" % func] += 1
+                        if a != b:
+                            o["agg36_tip"]["swap_differs"] += 1
+                return
+            if tag == "EQR":
+                self.w_in_eqr = True
+                self.w_eqr_frames.append((fr, self.w_action_since))
+                self.w_action_since = False
+                self.w_eqr_seeds = []
+                return
+            if tag == "EQX":
+                self.w_in_eqr = False
+                s = self.w_eqr_seeds or []
+                if len(s) >= 2:
+                    o["agg41_eqr_seeds"]["windows_ge2_seed_lines"] += 1
+                    o["agg41_eqr_seeds"]["seed_lines"] += len(s)
+                    if len(set(s)) > 1:
+                        o["agg41_eqr_seeds"]["windows_seed_moved"] += 1
+                self.w_eqr_seeds = None
+                return
+            if self.w_eqr_seeds is not None and "gs" in d and "us" in d:
+                self.w_eqr_seeds.append((d["gs"], d["us"]))
+            if tag == "LNK":
+                sub = unz(d["sub"]) if d.get("sub") else {}
+                ow = sub.get("ow") or {}
+                item = ow.get("t") == 4
+                ents = chain_entries(d)
+                if d.get("top"):
+                    self.w_lnk = {"l": d["l"], "item": item, "opsrc": bool(sub.get("f", 0) & OPSRC_F), "eqr": self.w_in_eqr}
+                if item:
+                    if not self.w_in_eqr and d.get("top"):
+                        self.w_action_since = True
+                    via = "attach" if ATTACH in ents else "linkowner" if LINKOWNER in ents else "other"
+                    o["agg2_attach_detach"]["item_lnk_via_%s" % via] += 1
+                    if via == "other":
+                        self.exm("agg2", "LNK chain %s" % [owner(a)[1] for a in [d["ra"]] + d.get("ra2", [])])
+                    if ATTACH in ents:
+                        o["agg25_h1"]["attach_links"] += 1
+                        o["agg25_h1"]["dmg%d_bl%s" % (d.get("dmg", 1), ow.get("bl"))] += 1
+                        if ow.get("q") == 5:
+                            lu = self.w_last_uoe
+                            ok = lu and lu[0] == ow.get("u") and lu[1] == 0 and lu[2] == fr
+                            o["agg25_h1"]["set_item_uoe0_before_link" if ok else "bad"] += 1
+                    if LINKOWNER in ents:
+                        o["agg13_linkowner"]["lnk_bl_%s" % ow.get("bl")] += 1
+                        if ow.get("bl") in (11, 12):
+                            o["agg13_linkowner"]["bad"] += 1
+                    if ATTACH in ents and SWAP in ents:
+                        i = ents.index(ATTACH)
+                        if i + 1 < len(ents) and ents[i + 1] == SWAP:
+                            self.w_swap.setdefault(fr, {"lnk": [], "ulk": []})["lnk"].append(ow.get("bl"))
+                        else:
+                            o["agg34_swaps"]["attach_inside_swap_not_direct"] += 1
+                if sub.get("f", 0) & EXT_F:
+                    same = dict(sub.get("cache", [])) == dict(sub.get("own", []))
+                    o["agg12_active"]["ext_link_cache_%s_own" % ("eq" if same else "ne")] += 1
+                else:
+                    o["agg12_active"]["plain_links"] += 1
+                if self.w_pas is not None:
+                    self.w_pas["lu"] += 1
+                return
+            if tag == "LNX" and d.get("top"):
+                self.w_lnk = None
+                return
+            if tag == "CW" and self.w_lnk and self.w_lnk["item"] and self.w_lnk["opsrc"] and d["l"] == self.w_lnk["l"]:
+                if d.get("o") != d.get("v"):
+                    o["agg32_catchup"]["changed_writes_%s" % ("refresh" if self.w_lnk["eqr"] else "other")] += 1
+                else:
+                    o["agg32_catchup"]["unchanged_writes"] += 1
+                return
+            if tag == "ULK":
+                x = M.L.get(d["l"])
+                if x is not None:
+                    o["agg3_parent_unit"]["ulk_pa_ok" if x.parent == d["pa"] else "bad"] += 1
+                    item = bool(x.ow and x.ow.get("t") == 4)
+                    if x.f & EXT_F:
+                        o["agg12_active"]["ext_unlink_cache_%s_own" % ("eq" if x.cache == x.own else "ne")] += 1
+                else:
+                    item = False
+                    o["agg3_parent_unit"]["ulk_not_mirrored"] += 1
+                ents = chain_entries(d)
+                if item:
+                    if not self.w_in_eqr and d.get("top"):
+                        self.w_action_since = True
+                    via = "detach" if DETACH in ents else "linkowner" if LINKOWNER in ents else "other"
+                    o["agg2_attach_detach"]["item_ulk_via_%s" % via] += 1
+                    if via == "detach":
+                        self.w_detached[(x.ow.get("u"), fr)] = True
+                    elif via == "other":
+                        o["agg2_attach_detach"]["other_ulk_%s_%s" % (owner(ents[1])[1] if len(ents) > 1 else "?",
+                            "after_detach_same_frame" if (x.ow.get("u"), fr) in self.w_detached else "no_detach")] += 1
+                    if via == "other":
+                        self.exm("agg2u", "ULK chain %s" % [owner(a)[1] for a in [d["ra"]] + d.get("ra2", [])])
+                    if DETACH in ents:
+                        o["agg26_h2"]["detach_unlinks"] += 1
+                        if x.ow.get("q") == 5:
+                            lu = self.w_last_uoe
+                            ok = lu and lu[0] == x.ow.get("u") and lu[1] == 1 and lu[2] == fr
+                            o["agg26_h2"]["set_item_uoe1_before_unlink" if ok else "bad"] += 1
+                        if d.get("top"):
+                            self.w_clamp = {"fr": fr, "seq": [], "armed": False}
+                    if DETACH in ents and SWAP in ents:
+                        i = ents.index(DETACH)
+                        if i + 1 < len(ents) and ents[i + 1] == SWAP:
+                            self.w_swap.setdefault(fr, {"lnk": [], "ulk": []})["ulk"].append(x.ow.get("bl"))
+                        else:
+                            o["agg34_swaps"]["detach_inside_swap_not_direct"] += 1
+                    if LINKOWNER in ents:
+                        o["agg13_linkowner"]["ulk_bl_%s" % x.ow.get("bl")] += 1
+                if self.w_pas is not None:
+                    self.w_pas["lu"] += 1
+                return
+            if tag == "ULX" and d.get("top") and self.w_clamp and self.w_clamp["fr"] == fr:
+                self.w_clamp["armed"] = True
+                return
+            if tag == "PRP" and self.w_pas is not None and d["l"] == self.w_pas["list"]:
+                self.w_pas["writes"] += 1
+            if tag == "PRP":
+                if d.get("ra") in ST.WRITERS and d.get("own") in (None, 0) and d.get("d"):
+                    o["agg11_order"]["writer_removal_%x" % d["ra"]] += 1
+                    self.w_pending_rm0.add((d["l"], d["k"]))
+                elif d.get("ra") in ST.WRITERS:
+                    self.w_pending_rm0.discard((d["l"], d["k"]))
+                if (self.w_clamp and self.w_clamp["armed"] and self.w_clamp["fr"] == fr and d.get("top")
+                        and d.get("ra") in ST.WRITERS and d["l"] == M.plist and (d["k"] >> 16) in (6, 8, 10)):
+                    x = M.L.get(M.plist)
+                    cur = d["k"] >> 16
+                    mx = dict(VITAL_PAIRS)[cur]
+                    old = x.own.get(d["k"], 0) if x else None
+                    self.w_clamp["seq"].append((cur, old, d.get("own"), x.cache.get(mx << 16, 0) if x else None))
+                return
+            if tag in ("TK0", "STA0", "GRP") and "sb" in d:
+                for st_, n in list(self.w_sb_watch.items()):
+                    o["states17_expiry"]["bit_cleared_at_next_sb" if st_ not in d["sb"] else "bit_still_on"] += 1
+                    del self.w_sb_watch[st_]
+            if tag == "TK0":
+                v = d["v"]
+                self.w_tk = (d["m"], v[4], v[8] or 0, v[5])
+                return
+            if tag == "TK1" and getattr(self, "w_tk", None):
+                m, s_, b, mx = self.w_tk
+                self.w_tk = None
+                if s_ is None or mx is None:
+                    return
+                pred = stamina_tick(m, s_, b, mx)
+                got = d["v"][4]
+                k = "mode%d_b%s" % (m, "ge1000" if b >= 1000 else "lt1000" if b else "0")
+                o["states23_stamina"][k] += 1
+                if (pred if pred is not None else s_) == got:
+                    o["states23_stamina"]["ok"] += 1
+                    if b >= 1000 and m in (3, 4) and s_ < mx and pred != s_:
+                        o["states23_stamina"]["separating_mode34_b_ge1000"] += 1
+                else:
+                    o["states23_stamina"]["bad"] += 1
+                    self.exm("states23", "mode %d s %d b %d max %d: tick %r logged %d" % (m, s_, b, mx, pred, got))
+                return
+            if tag == "STA0":
+                d = dict(d)
+                d["pre"] = (any(x.s == d["state"] and x.parent == M.plist for x in M.L.values())
+                            if d.get("w") == "p" else None)
+                self.w_sta.append(d)
+                return
+            if tag == "STA1":
+                q = self.w_sta.pop() if self.w_sta else None
+                if q is None or not d.get("r"):
+                    o["agg10_fields"]["sta1_without_list"] += 1
+                    return
+                f, s_ = d["f"], d["s"]
+                o["agg10_fields"]["pairs"] += 1
+                for k, a, b in (("state", s_, q["state"]), ("skill", d["sk"], q["sk"]), ("level", d["sl"], q["sl"])):
+                    o["agg10_fields"]["%s_eq" % k if a == b else "bad"] += 1
+                if q["len"] > 0:
+                    o["states13_duration"]["timed"] += 1
+                    if d["x"] == q["fr"] + q["len"]:
+                        o["states13_duration"]["end_eq_frame_plus_len"] += 1
+                        o["agg10_fields"]["end_eq"] += 1
+                        if q["len"] % 25:
+                            o["states13_duration"]["len_not_multiple_of_25"] += 1
+                    else:
+                        o["states13_duration"]["bad"] += 1
+                        self.exm("states13", "len %d fr %d end %d" % (q["len"], q["fr"], d["x"]))
+                if q["pre"] is not False:
+                    # a refresh returns the list it found (0x0056EACC), made by whichever code made it: only a list
+                    # this apply made (no list of the state on the player at STA0) carries the apply's flags
+                    o["agg10_fields"]["flags_not_counted_%s" % ("refresh_or_existing" if q["pre"] else "not_player")] += 1
+                    self.w_rm_of[d["r"]] = q["rm"]
+                    return
+                o["agg4_flag2"]["sta_len%d_f2_%d" % (q["len"] > 0, bool(f & 2))] += 1
+                if (q["len"] > 0) != bool(f & 2):
+                    o["agg4_flag2"]["bad"] += 1
+                if q.get("w") == "p":
+                    o["agg3_parent_unit"]["sta1_pa_ok" if d.get("pa") == M.plist else "bad"] += 1
+                    self.w_pending_ct[d["r"]] = q["srct"]
+                for k, tab, bit in (("agg6_flag8", self.st_aura, 8), ("agg9_flag800", self.st_exp, 0x800)):
+                    want = tab.get(s_, False)
+                    o[k]["state%d_col%d_f%d" % (s_, want, bool(f & bit))] += 1
+                    if want != bool(f & bit):
+                        o[k]["bad"] += 1
+                if 128 <= s_ <= 137:
+                    o["states41_shrine_curse"]["state%d_curse%d_f%x" % (s_, self.st_curse.get(s_, False), f & 0x22)] += 1
+                    if not self.st_curse.get(s_) or f & 0x22 != 0x22:
+                        o["states41_shrine_curse"]["bad"] += 1
+                if s_ == 136:
+                    o["states37_stamina_shrine"]["applies"] += 1
+                    o["states37_stamina_shrine"]["rm_0x%x" % q["rm"]] += 1
+                    if q["rm"] != 0x00583A40:
+                        o["states37_stamina_shrine"]["bad"] += 1
+                    self.w_pending_136.add(d["r"])
+                self.w_rm_of[d["r"]] = q["rm"]
+                return
+            if tag == "EXP0":
+                freed = [(c, fl, st_) for c, fl, st_, x in d["x"] if fl & 2 and not fl & EXT_F and 0 < x <= fr]
+                self.w_exp = {"freed": freed, "gs": d.get("gs"), "us": d.get("us"), "pas": 0}
+                return
+            if tag == "EXP1" and self.w_exp:
+                e, self.w_exp = self.w_exp, None
+                if e["freed"]:
+                    o["states17_expiry"]["freeing_runs"] += 1
+                    same = e["gs"] == d.get("gs") and e["us"] == d.get("us")
+                    o["states46_expiry_seeds"]["freeing_runs_seeds_%s" % ("equal" if same else "moved")] += 1
+                    o["states17_expiry"]["pas_in_window_%d" % e["pas"]] += 1
+                    for c, fl, st_ in e["freed"]:
+                        o["states17_expiry"]["freed_rm_0x%x" % self.w_rm_of.get(c, 0)] += 1
+                        o["states46_expiry_seeds"]["freed_state_%d" % st_] += 1
+                        self.w_sb_watch[st_] = fr
+                return
+            if tag == "PAS":
+                x = self.passive_list(M, d["sk"])
+                self.w_pas = {"sk": d["sk"], "before": x.own.get(351 << 16) if x else None, "lu": 0,
+                              "list": x.p if x else None, "writes": 0}
+                if self.w_exp is not None:
+                    self.w_exp["pas"] += 1
+                return
+            if tag == "SCB":
+                st_ = d["k"] >> 16
+                if st_ == 151 and d["o"] == 0 and d["n"] > 0:
+                    self.w_au_start.append((fr, d["k"] & 0xFFFF, d["n"]))
+                if st_ in (83, 97, 107, 126, 127, 188, 204, 98, 151):
+                    self.w_scb_watch = {"st": st_, "fr": fr, "z": (d["o"] == 0) != (d["n"] == 0)}
+                    o["agg23_scb"]["scb_%d" % st_] += 1
+                return
+            if tag == "AU0" and d.get("k") == "item" and d.get("w") == "p":
+                self.w_au_ticks[fr] += 1
+                f1 = getattr(self, "w_au_first", None)
+                if f1 is None:
+                    f1 = self.w_au_first = {}
+                for fr0, sk, lvl in self.w_au_start:
+                    if fr0 < fr and (self.w_lg, fr0) not in f1:
+                        f1[(self.w_lg, fr0)] = fr
+
+        def passive_list(self, M, sk):
+            r = self.T.skill_by_id.get(sk)
+            if r is None or not r.get("passivestate"):
+                return None
+            st_ = self.T.states.index(r["passivestate"])
+            ls = [x for x in M.L.values() if x.s == st_ and x.parent == M.plist]
+            return ls[0] if len(ls) == 1 else None
+
+        def post(self, M, tag, d):
+            o = self.o
+            if tag == "PAX" and self.w_pas is not None:
+                p, self.w_pas = self.w_pas, None
+                r = d.get("r")
+                before = p["before"]
+                if before is None:
+                    o["agg39_passive"]["no_list_before"] += 1
+                    return
+                x = self.passive_list(M, p["sk"])
+                after = x.own.get(351 << 16) if x else None
+                changed = p["lu"] > 0 or p["writes"] > 0 or (x is None) or (x.p != p["list"])
+                k = "ret_eq_351" if r == before else "ret_ne_351"
+                o["agg39_passive"]["%s_changed%d" % (k, changed)] += 1
+                if r == before and changed:
+                    o["agg39_passive"]["bad"] += 1
+                    self.exm("agg39", "skill %d 351 %r ret %r changed (lu %d writes %d) after %r" % (
+                        p["sk"], before, r, p["lu"], p["writes"], after))
+                if changed:
+                    o["agg39_passive"]["changed_351_%s" % ("differs" if after != before else "same")] += 1
+            if tag in ("LNK", "ULK", "UOE", "EQR", "TK0") and self.w_clamp and self.w_clamp["armed"]:
+                c, self.w_clamp = self.w_clamp, None
+                seq = c["seq"]
+                order = [s for s, _, _, _ in seq]
+                o["agg24_clamp"]["detach_windows"] += 1
+                if seq:
+                    o["agg24_clamp"]["windows_with_vital_writes"] += 1
+                    o["agg24_clamp"]["order_%s" % "-".join(map(str, order))] += 1
+                    want = [s for s in (10, 8, 6) if s in order]
+                    if order != want:
+                        o["agg24_clamp"]["bad"] += 1
+                    for cur, old, new, mx in seq:
+                        if new == mx and old is not None and old > mx:
+                            o["agg24_clamp"]["lowered_to_max"] += 1
+                        elif new != mx:
+                            o["agg24_clamp"]["bad"] += 1
+                            self.exm("agg24", "stat %d old %r new %r max %r" % (cur, old, new, mx))
+
+    # TREE0 reaches the observer through the model's reset
+    def _reset(self, tree, plr):
+        Base.reset(self, tree, plr)
+        if OBS[0] is not None:
+            OBS[0].tree({"t": tree}, plr)
+
+    CtlModel.reset = _reset
+    return ST, Obs, CtlModel
+
+
+OBS = [None]
+
+
+def chk_stlogs():
+    """S4d part 2's log rows over run:2026-10-17-stats (s1017-run.lst) and run:2026-10-20-shortfalls (p47h-run.lst),
+    one pass per log: tools/stats.py's checker (its own mismatches are this run's `checker_bad`), with observers for
+    aggregate 2-4, 6, 8-13, 16-17, 19, 23-26, 29, 31-32, 34, 36-37, 39, 41-42, stats/README 1, states 13, 14, 17,
+    23, 32, 37, 41, 46."""
+    ST, Obs, CtlModel = make_obs()
+    ST.Model = CtlModel
+    T = ST.Tables(ST.DEFAULT_EXCEL)
+    bad = 0
+    for run in ("s1017", "p47h"):
+        C = Obs(T)
+        OBS[0] = C
+        paths = [p for r, p in stlogs_lists() if r == run]
+        for p in paths:
+            C.run_log(p)
+        rep = Rep("stlogs", "%s_checker" % run)
+        rep.add("logs", len(paths))
+        rep.add("checker_bad", sum(C.bad.values()))
+        rep.add("bad", sum(C.bad.values()))
+        for k in sorted(C.bad):
+            rep.note("checker mismatch %s: %d %s" % (k, C.bad[k], C.examples.get(k, [])[:2]))
+        for k in ("LNK", "ULK", "TREE", "EQR", "PAS", "TGL", "TIP_checked", "expire_runs", "tick"):
+            rep.add("n_" + k, C.n[k])
+        bad += rep.done()
+        for k in sorted(C.o):
+            r = Rep("stlogs", "%s_%s" % (run, k))
+            for kk, n in sorted(C.o[k].items()):
+                r.add(kk, n)
+            for s in C.ex.get(k, [])[:6] + [x for kk in sorted(C.ex) if kk != k and kk.startswith(k.split("_")[0])
+                                             and not any(kk == q for q in C.o) for x in C.ex[kk][:6]]:
+                r.note(s)
+            bad += r.done()
+        for c in sorted(C.sep):
+            r = Rep("stlogs", "%s_control_%s" % (run, c))
+            for kk, n in sorted(C.sep[c].items()):
+                r.add(kk, n)
+            bad += r.done()
+    OBS[0] = None
+    return bad
+
+
 # ============================================================================================================== main
-SECTIONS = {"invlogs": chk_invlogs, "invstatic": chk_invstatic, "ststatic": chk_ststatic, "tables": chk_tables}
+SECTIONS = {"invlogs": chk_invlogs, "invstatic": chk_invstatic, "ststatic": chk_ststatic, "tables": chk_tables,
+            "ststatic2": chk_ststatic2, "stlogs": chk_stlogs}
 
 
 def main(argv):
-    names = list(SECTIONS) if argv[1:] == ["all"] else argv[1:]
+    names = ["invlogs", "invstatic", "ststatic", "tables"] if argv[1:] == ["all"] else argv[1:]
     if not names or any(n not in SECTIONS for n in names):
         print(__doc__)
         return 2

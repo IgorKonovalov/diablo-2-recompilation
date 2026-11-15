@@ -53,6 +53,32 @@ class Pure(unittest.TestCase):
         finally:
             os.unlink(p)
 
+    def test_next_periodic(self):
+        # stats/states F1: the grid ((f - 1 + p) / p) p + 1; the item aura's restart at frame 682, p 50 -> 701
+        self.assertEqual(T.next_periodic(682, 50), 701)
+        self.assertNotEqual(T.next_periodic(682, 50), 682 + 50)
+        self.assertEqual(T.next_periodic(701, 50), 751)          # strictly the next grid frame after f - 1 + p
+        self.assertEqual(T.next_periodic(7, 3), 11)               # p below 6 is 5
+
+    def test_stamina_tick(self):
+        # E3: mode 3 with b >= 1000 takes shift 8 with the bonus; with b < 1000, no write
+        self.assertEqual(T.stamina_tick(3, 1000, 1000, 25600), 1000 + 100 + 1000)
+        self.assertIsNone(T.stamina_tick(3, 1000, 999, 25600))
+        self.assertEqual(T.stamina_tick(2, 255, 0, 25600), None)  # mode 2 below 256: none
+        self.assertEqual(T.stamina_tick(1, 25500, 0, 25600), 25600)   # capped
+
+    def test_tip_want_swap(self):
+        rows = [{"set": "A", "add func": "2"}, {"set": "A", "add func": "1"}, {"set": "A", "add func": "1"}]
+        a = T.tip_want(rows, 0, 0b011, 2)
+        self.assertEqual(a, [(165, 0), (166, 1), (167, 1), (168, 1), (169, 1)])
+        self.assertEqual(T.tip_want(rows, 0, 0b011, 1), a)       # this mask cannot tell the funcs apart
+        self.assertNotEqual(T.tip_want(rows, 0, 0b101, 1), T.tip_want(rows, 0, 0b101, 2))
+
+    def test_tree_walk(self):
+        t = {"p": 1, "ch": [{"p": 2, "ch": [{"p": 3}]}], "off": [{"p": 4}]}
+        self.assertEqual([(n["p"], par["p"] if par else 0, d) for n, par, d in T.tree_walk(t)],
+                         [(1, 0, 0), (2, 1, 1), (3, 2, 2), (4, 1, 1)])
+
 
 @unittest.skipUnless(HAVE_EXE, "needs workspace/ (the pinned image), r2 and objdump")
 class Image(unittest.TestCase):
@@ -75,6 +101,11 @@ class Image(unittest.TestCase):
     def test_r2_bytes_page_sizes(self):
         self.assertEqual(tuple(T.r2_bytes(0x0074479C, 2)), (13, 1))
         self.assertNotEqual(tuple(T.r2_bytes(0x007447B4, 2)), (13, 1))
+
+    def test_chain_entries(self):
+        # the LNK caller chain of an attach maps to ITEMS_AttachToOwner's entry; a bad address is not it
+        self.assertIn(T.ATTACH, T.chain_entries({"ra": 0x0055C2C5, "ra2": []}))
+        self.assertNotIn(T.ATTACH, T.chain_entries({"ra": 0x0055C735, "ra2": []}))
 
 
 if __name__ == "__main__":

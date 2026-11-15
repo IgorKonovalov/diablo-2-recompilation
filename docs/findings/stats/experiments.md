@@ -213,6 +213,103 @@ event open at a log's end (the session killed inside it).
   summon limit) is not read; the run's 2 749 expiries left the seeds unchanged (§ Results). A static reading of one tool
   (the walker) with r2's sites agreeing, no case. Backlog as for S4c.
 
+### Addendum 2026-11-15: plan 0066 batch S4d, part 2 of 2: new checks over the kept stats logs and static second sources (`lane/n66i`)
+
+- **Question.** Which of the other 34 S4d rows (aggregate 2–4, 6, 8–13, 16–17, 19, 23–26, 29, 31–32, 36–37, 39, 41–42,
+  and 5, 40; stats/README 1; states 13, 17, 23, 32, 37, 41) and the part-1 remainders (aggregate 34, states 5, 14, 46)
+  do a new check over the kept logs, or a second tool on the code, raise? Inventory rows:
+  [stats-aggregate](../../plans/0066-inventory/stats-aggregate.md), [stats-README](../../plans/0066-inventory/stats-README.md),
+  [stats-states](../../plans/0066-inventory/stats-states.md). (fn:STATLIST_LinkToUnit@0x00626E10, fn:STATE_ApplyTimed@0x0056E970)
+- **Setup and procedure.** No game, no Ghidra. `tools/sweep2_s4cd.py` (`59d67950…`), new sections `ststatic2` and
+  `stlogs`, `tools/test_sweep2_s4cd.py` (13 tests). One kept run, `python3 -I tools/sweep2_s4cd.py ststatic2 stlogs`
+  under `systemd-run --user --scope -p MemoryMax=4G` (57 s): `workspace/logs/n66i/check-part2.txt` (`a2cbf09c…`,
+  105 lines, `S4 total bad=0`), `manifest-part2.sha256` passing from `workspace/logs/n66i`; development outputs in `dev/`
+  under `manifest-dev-part2.sha256`. `all` still reproduces part 1's `check.txt` byte for byte. `stlogs` reads each log
+  of `workspace/logs/stats/s1017-run.lst` (run:2026-10-17-stats, 18 logs) and `p47h-run.lst` (run:2026-10-20-shortfalls,
+  10 logs) once, through `tools/stats.py`'s checker (`85e14b94…`; 0 mismatches in both runs, as kept) with observers on
+  its lines and two model controls computed beside each predicted write (`op11_running`: op 11 a percentage of the
+  running total; `op89_full`: op 8/9 add the source's full value). `ststatic2` reads the code with objdump next to r2
+  or the raw bytes, the closures with the objdump walker next to r2's own LCG-multiplier sites.
+- **Observed** (`check-part2.txt`; s1017 / p47h counts):
+  - Fields and flags. Every unlinked list's logged `+0x34` equals its parent in the mirrored tree (13 039 / 524 ULK),
+    every child's `+0x04` equals the unit of the extended list it hangs under (2 745 / 663 distinct tree nodes), and
+    every new player state list's `+0x34` is the unit list (20 / 90). 4 228 / 826 `STATE_ApplyTimed` returns give state,
+    skill, level and end frame `= frame + duration` as requested (4 203 / 623 durations not a multiple of 25), and 20 / 85
+    new lists show `+0x08` = the source's type. List flags, on lists the apply made (a refresh returns the list it
+    found, 0x0056EACC, whatever made it; 2 610 / 383 such returns are not counted): `0x2` with a duration 20 / 90,
+    `0x8` exactly on the States `aura` rows (states 28, 47, 33, 37, 157: 58 lists; 52 lists of other states, none with
+    it), `0x800` on none (no logged state has `exp`), `0x22` on the six shrine lists of states 128, 130, 131, 136 (all
+    `curse` = 1). In the trees, `0x40` is on every non-extended child of an item list (329 / 89) and on nothing else.
+    `0x2` without an end frame: the player's unit list (state 0, extended; 9 / 10 nodes, the drop-on-mode marker
+    `STATLIST_LinkToUnit` sets, below), and the potion lists of states 178–180 dumped between their link and their end
+    write (84 seen with the end later; 2 never dumped again).
+  - Entries. 1 582 / 316 own and 201 / 113 cache arrays of two or more entries, all strictly ascending; no own entry of
+    value 0; 162 / 36 entries a writer emptied (`SetStatEx` 56 / 44, the clear at 0x006273D3 524 / 53; `AddStat` none)
+    absent from the next tree. 6 007 / 37 extended lists linked or unlinked with cache ≠ own: the checker's predicted
+    propagations of the cache matched each.
+  - Controls. `op11_running` predicts another value for 74 / 12 of the 5 827 / 125 checked writes (stats 7 and 9);
+    `op89_full` for all of them. The stock model matched every one.
+  - ISC. In all 28 dumps the 97 `opIn` edges are the table's `op stat` cells as written, including 273
+    (`item_maxdamage_percent_bytime`) → 22, 23, 159 and 237, 291 → 147 (`item_absorbmagic`).
+  - Callers. Item-list links: 5 973 through `ITEMS_AttachToOwner`, 70 / 39 through `sub_00627910_StatListLinkOwner`
+    alone. Item-list unlinks: 5 695 through `ITEMS_DetachFromOwner`; **278 through `sub_0063AAF0_InvItemRemove` →
+    `UNIT_UnlinkItemStatList` (the body-to-cursor pickup, `Pkt1CBodyToCursor`), 260 of them with no detach of that item
+    in the frame**; 60 / 39 under `sub_0055F140_KeyConsume`; 10 unattributed. Set items: a `SETS_UpdateOnEquip` mode 0
+    before each attach (5 749), mode 1 before each detach's unlink (5 593). Without damage: 32 links, all of `bl` 5.
+    Through `StatListLinkOwner`, no item of `bl` 11 or 12 linked or unlinked; no `DMG` line in either run.
+  - The weapon switch (76): its direct detaches and attaches touch `bl` 4 and 5 only: 4+5 → 4+5 (24), 4+5 → 4 (26),
+    4 → 4+5 (26); the rest under it (336 each) belong to the refresh it runs.
+  - Catch-up. Inside the link of an item list holding an op-4/5 source, 2 361 changed writes during a refresh, 337
+    outside one, 2 594 unchanged.
+  - Sets. Swapping add func 1 and 2 predicts other toggles in 2 039 of the 3 905 `TIP` calls with func 1 or 2. 2 850 trees
+    with two or more set lists: the unit list's stat 71 equals the sum of its children's stat 71 in all 4 996 trees with one.
+  - Passives. 7 848 / 52 `SKILLS_RefreshPassive` calls returned the list's 351 (the equal branch) and changed nothing;
+    984 / 4 returned another value and rebuilt, each with a new 351. objdump and r2 read the test: `push 0x15F`;
+    `call 0x625D00`; `cmp eax, [ebp−4]` (`SKILLS_GetSkillLevel`'s value); `je 0x646F0A`; and the two free paths (no
+    unit skill, `aurastate` on the unit).
+  - The stat callback: a zero-crossing write of 98 is followed in its frame by a group clear (360); of 83, 97, 127, 188 by
+    `SKILLS_RefreshPassive` (180, 1 920, 48, 2 006 / 2+2); 151's ten by unlinks; a non-crossing write of 204 by a link
+    and an unlink (4 / 4). Keys
+    107 and 126 were not written; the item-event registration is not logged.
+  - The refresh's frames: the commonest gap is 136 in 12 of the 18 s1017 logs and all 10 p47h logs (1 in the other six:
+    refresh bursts after actions); all gaps: 136 651 / 157, 1 569 / 13; the top 136-residue class is unbroken in 10 / 10
+    logs and has holes in 8.
+  - Seeds: 972 refresh windows with two or more seed-carrying lines (115 634), no seed moved; 119 / 30 expiry runs that
+    freed a list, seeds equal at entry and exit.
+  - States. Stamina ticks: all 54 719 / 27 192 equal E3; with `staminarecoverybonus` ≥ 1000, mode 3 gained in 4 326 ticks
+    where a no-bonus reading writes nothing; mode 4 with the bonus was not reached. Item aura restarts (5): the first item
+    tick fell on `NextPeriodicFrame(restart)`, not `restart + p`, and no frame had two item ticks. The stamina shrine's
+    two applies: remove callback 0x00583A40, the list holding stat 28 = 1 000 alone at its first dump. Expiries: the freed
+    state's bit was off at the next states line 147 times, on once (s1017). Elemental lists: poison only (17), plain, `0x2`,
+    an end frame, `+0x08` 1.
+  - Static. `StatListsDropOnMode` (callers `UNIT_SetMode` 0x006246BE and the client's 0x004B0D5A) acts only when the unit
+    list has `0x2`, frees every `+0x3C` child with `0x4` (clearing its state, freeing a plain one) and clears the `0x2`;
+    `STATLIST_LinkToUnit` sets the unit list's `0x2` on a flag-4 link. `STATLIST_Alloc`'s 71 calls: flag bit 2 as an
+    immediate at 7 (`SkillAttackRateList`, `SKILL_MeleeDeliverDo`, `MonModeVelocity` 0x4004, `SkillSt32Hit`,
+    `RunVelocityStat`, two client ones), a register at 7. `UNIT_HasState` (0x00639DF0) answers only for unit types 0, 1
+    and 3 and 0 otherwise; `UNIT_TestStateBit` has no type test; `UNIT_SetStateBit` sets `+0xC8` bit 3 when the States
+    record's `+0x12` bit 0 (`disguise`, loader bit 16) is set and clears it only when `UNIT_HasStateFlag(unit, 16)` finds
+    none left. The monster gate is at 0x0056E9C7–0x0056EA08: type 1, MonStats (`0x1A8` rows) `+0x0D` & 1 refuses,
+    MonStats2 `+0x05` & 2 clear refuses (objdump; the raw bytes agree at 6 sites). `STATE_DefaultRemoveCB` calls, in order,
+    0x005C0B50 (nearest symbol `UNIT_AddEvent`), `UnitIsDead`, `STATES_StaysOnDeath`, `STATE_Set(…, 0)`,
+    `UNIT_AnimSetRate`, `SKILLS_RefreshPassivesInState`, and for a type-0 unit `PetLimitRefresh`. The mask byte
+    0x006CE27C (`0x20`) is referenced 39 times; 9 sites test a record's `+0x04` with it (`EVENT_SelectedAuraTick`,
+    `AuraSelect`, `PlayerSetSkill` ×2, `MissileCreate`, `ITEMAURA_Start`, `ITEMAURA_Stop`, `SummonInitStats`,
+    `MERCAI_PickSkill`). Closures: `SetBonusApply` 433 functions and `SKILLS_RefreshPassive` 480, no draw;
+    `EquipReqRefresh` 1 993 functions, 122 drawing, the shortest path through `PlayerSkillReselect` → `PlayerSetSkill` →
+    `AuraSelect` → `SKILLS_SrvDo` → `PlayerModeCmd` → `PlayerModeAllowed`, and through its attach and detach calls.
+- **Outcome by row (34):** raised 12, raised in part 13, raised in part and contradicted in part 4 (aggregate 2, 4, 41;
+  stats/README 1), contradicted in part 2 (aggregate 29, 42), not raised 3 (aggregate 9, 13, 24). Part-1 remainders:
+  aggregate 34 now raised whole; states 5 contradicted in part (its other half raised); states 14 and 46 keep a
+  remainder. Per row in the inventory notes.
+- **Contradicted in part.** (1) aggregate 2, stats/README 1 (and H2's scope): an item taken from the body to the cursor
+  is unlinked by `InvItemRemove` → `UNIT_UnlinkItemStatList`, not `ITEMS_DetachFromOwner` (260 cases with no detach).
+  (2) aggregate 41: the requirement refresh's code reaches drawing functions (the skill reselect path); 972 logged
+  refreshes drew nothing. (3) states 5: `UNIT_HasState` answers for players, monsters and missiles (type 3), not objects
+  (type 2 answers 0). (4) aggregate 4: `0x2` on the unit list is the drop-on-mode marker, not "timed". (5) aggregate
+  29, 42: 136 is the commonest gap in 22 of the 28 logs, not in every session (six s1017 logs: 1). Backlog
+  [`2026-11-15-reverser-spec-writer-plan-0066-s4c-s4d-corrections`](../../backlog/2026-11-15-reverser-spec-writer-plan-0066-s4c-s4d-corrections.md).
+
 ## The stats sessions of run:2026-10-20-shortfalls
 
 The run is one run under two checkers; its combat half and its definition are in
