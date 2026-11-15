@@ -298,6 +298,9 @@ ctl->v14 = 0; Delay(12);
   (fn:sub_005F3170_AiVulture@0x005F3170, fn:sub_005F2EB0_AiVultureTakeOff@0x005F2EB0,
   fn:sub_005F2FC0_AiVultureLand@0x005F2FC0, fn:sub_005F30F0_AiWoundedNearCb@0x005F30F0, fn:RNG_RangeB@0x0045C3E0,
   fn:RNG_RangePow2@0x00472210, struct:AiCtl+0x18)
+  - *Refined 2026-11-15 (`lane/n66e`, plan 0066 S1e):* [C] in `AiWoundedNearCb`, "not dying" is `MonIsDeathMode`, 0 for
+    every player, and the distance compare is `≤`, so of two equal candidates the later replaces the earlier. The
+    callback's map is [C] on the declared image; its block words (121, `aip3`) are the think's. (run:2026-11-15-sweep2-s1e, family `wounded`)
 - [I] Not emulated: the first callee is `UnitDistSq` and the next two `UnitGetRoom`, before any draw.
   (0x005F31C4, 0x005F31DB, 0x005F31E3, fn:sub_005B0BD0_UnitDistSq@0x005B0BD0)
 

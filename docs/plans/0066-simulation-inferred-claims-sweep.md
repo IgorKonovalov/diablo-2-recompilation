@@ -380,3 +380,132 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 - **Totals** recomputed from the 29 files: a-logs 674, a-run 358, b 389, c 389, c-emu 490, d 326, sum 2 626; H1h 39.
 - **Audit:** a Tier B check would have missed the fix (it shows only in the kept output's flip lines, not in the diff);
   it is not reject-grade, so no miss counts against the lane kind.
+
+### 2026-11-10 — Phase 1, batch S1e, paused (reverser-static, `lane/n66e`): resume note
+
+- **Paused at the owner's request** before the kept run. No inventory row, total or finding is changed yet; the batch
+  Status in the inventory README § 4 still reads `scheduled`.
+- **Done.** New tool `tools/ai_s1e_emu.py` (this commit): 24 emulation families, one shared memory spec and one cases file,
+  so one `tools/ghidra.sh emuboundary` launch (about 30 s) runs all 5 760 cases. **No callee is an observed boundary.** Every
+  callee runs whole on the declared image: `UnitDistSq`, the stat getters with `0x00624F60`'s search, `UnitAlignGet`,
+  `AlignSame02`, `UnitsHostile` with the player relation list, `MonsterOwner`/`GameFindUnit`, the state tests,
+  `AiShadowSkillFits` on its declared paths, and `AiUnitSearch` kind 1 with `AiSearchNearRooms` for Mephisto's pick.
+  This follows ruling R2. Each model names its tests. Every test is reversed alone, and every ordered compare has its
+  strictness switched alone; the check prints the cases each control separates and lists any it leaves unseparated.
+  Development runs in session scratch only (not kept), with the last tool revision but its tags: 5 760 of 5 760 match,
+  0 stopped, 0 unaccounted traced reads (only `g_BitMask32`, `g_UnitHashOffsets`, `g_AiSearchKinds` and the two
+  `.text` jump and byte tables at 0x005EB7D8 and 0x005EAD34). Unseparated: three controls, each inherent: `trkind`
+  `hi<=lo~` (the call is always `RandLoHi(0, 3)`; `randlohi` separates it); `shroll` `v18<lo~` (an equal value written
+  back); `genspawn` `count>453` and `count>453~` (the first `*out` store is overwritten on every path).
+- **Findings to carry into the rows (from the development runs; re-check on the kept run):** (1) the weighted pick
+  0x005FC130 with sum ≤ 0 takes `r = 0` with no draw and still scans: 27 of 240 cases return a `k` (a positive
+  prefix), against catalogue line 3917's "if sum ≤ 0: the fallback". (2) `AiGenSpawnPickClass` with n = 0 draws
+  nothing, still tests entry 0 (2 cases take its class), and otherwise ends at 496/−1 (36), not 453; its first store
+  is dead (line 3593 block). (3) `AiLifePct` 0x005DD280 is `push ecx; call UnitLifePct; ret`. The two return the same
+  value on 240 of 240 images, so lines 53 and 4689's "two different readers" is one map behind two calling
+  conventions. (4) Mephisto's pick draws only when the search found a candidate (`blk[3]` ≠ 0; 166 cases with no
+  draw); line 2697 implies a draw always. (5) `AiWoundedNearCb`'s "not dying" is `MonIsDeathMode`, which is 0 for
+  every player; ties replace (`≤`). (6) `AiShadowSkillRoll` draws 0, 1 or 3 times, not "three per tried skill", and
+  never reads its fourth argument (melee comes from `ctx+0x18` in Fits).
+- **Row plan (catalogue rows, per the analysis):** raised whole: 15, 172, 194, 242, 332, 360. Raised in part, with the
+  remainder named: 3 (the remainder follows machinery's `Ovr`, `Head`/`Pop`/`Push`, `UseSkillK`, `DelayE`, `State` and
+  rchance≡chance); 31 (the think's `aip(1)`, the 7 tries and the wrap's stock reach); 66, 72, 135, 154, 182, 314 (the
+  think's frame or initial block words); 196 (the caller set and `MonRegionsBuild`'s −1 store go to c, S1f); 229 (the
+  bonus-level branch 0x00644180 and Fits' undeclared paths); 288 (the "one caller" claim goes to c, S1f); 356 (row
+  128's push and the name of state 141 go to c); 385 and 420 (with the corrections above); 518 (which rows call which:
+  c). Moved: 421 c-emu → d-owner. Its reason: `AiPlayerThreatScore` and `AiBaalThreatScore` call `InMeleeRange` first
+  and `AiLineClear` later, both reaching `COLL_LineTest` 0x0064E260's room walk. R2 leaves no c-emu route, and both
+  callers are Diablo's and Baal's.
+- **Next (a fresh lane on `lane/n66e`):**
+  1. `python3 -I tools/ai_s1e_emu.py cases --dir workspace/logs/ai/sweep2-s1e`, then the Ghidra run under
+     `systemd-run --user --scope -p MemoryMax=4G` with `GHIDRA_PROJ_DIR=…/workspace/ghidra-n66e GHIDRA_HEADLESS_MAXMEM=3G`
+     into `s1e.out`, then `check > check.txt` and `manifest --write`.
+  2. Write the run record `run:2026-11-10-sweep2-s1e` in `docs/findings/ai/experiments.md` (setup, procedure, the
+     check's lines, the unseparated three, the corrections).
+  3. Update the 22 rows in `docs/plans/0066-inventory/monsters-ai-catalogue.md`: rows 3, 15, 31, 66, 72, 135, 154,
+     172, 182, 194, 196, 229, 242, 288, 314, 332, 356, 360, 385, 420, 421, 518. Their spec lines at `b5999f5e`: 53,
+     115, 289, 598, 687, 1220, 1397, 1560, 1643, 1736, 1747, 2031, 2277, 2697, 2960, 3164, 3359, 3380, 3593, 3916,
+     3921, 4689.
+  4. Update that file's *Totals by class* (421 → d-owner), the S1e row of the README § 4, § 1, § 3 and the
+     totals, against the merged `main`. Lane n66f edits the same totals rows.
+  5. Write the log entry (Tier B review) and the list of statements ready for re-tagging.
+
+### 2026-11-15 — Phase 1, batch S1e (reverser-static, `lane/n66e`): done, 22 of 22 settled
+
+- **Done.** The kept run [run:2026-11-15-sweep2-s1e](../findings/ai/experiments.md#run2026-11-15-sweep2-s1e): `tools/ai_s1e_emu.py`
+  as committed at `9d00a53b` (`6d0287cd…`, unchanged), one `tools/ghidra.sh emuboundary` launch on
+  `workspace/ghidra-n66e` (`-Xmx3G`, `MemoryMax=4G` scope), 24 families, 5 760 cases, 5 760 matching, 0 stopped, 0
+  unaccounted traced reads; 244 controls, 240 failing every case they separate, 4 with no observable (`trkind`
+  `hi<=lo~`, `shroll` `v18<lo~`, `genspawn` `count>453` and `count>453~`). Outputs in `workspace/logs/ai/sweep2-s1e/`
+  (`check.txt` `86d920a6…`, `manifest.sha256` `77befdea…`, 12 lines, passes from there); `cases` regenerates the case
+  file byte for byte, `check` reproduces `check.txt`. The development runs of 2026-11-10 were not kept and nothing rests on
+  them. The six findings of the resume note held on the kept run, each read again by objdump.
+- **Rows (22): raised 5, raised in part 16, moved 1** (332 moved from whole to in part at the Tier B check). Raised: 15
+  (`MonAiEntryGet`), 172 (`AiRegurgitatorCb`), 194 (the
+  R78 block), 242 (`AiShadowMasterCb`), 360 (`AiMinionCountCb`). In part, the remainder named in each
+  row: 332 (`AiImpNearCb`, its `count > 492 ? 492 : −1` guard), 3 (machinery's helpers), 31, 66, 72, 135, 154, 182, 314 (the think's frame, block words or later reads), 196 (the
+  caller set and `MonRegionsBuild`'s −1 store → c, S1f), 229 (`AiShadowSkillFits` past its declared paths and the
+  bonus-level branch 0x00644180), 288 (the one caller → c, S1f), 356 (row 128's push and state 141's name → c, S1f), 385
+  (the dead first store, no observable), 420 (the inline copies → c, S1f), 518 (which rows call which → c, S1f). Moved: 421
+  c-emu → d-owner, as the resume note gave: the threat scores reach `COLL_LineTest` 0x0064E260's room walk through
+  `InMeleeRange` and `AiLineClear`, R2 leaves no emulation route, and only Diablo and Baal call them. **Owner decision:**
+  none is needed now; 421 waits for owner play of Diablo or Baal, like the other d-owner rows.
+- **Corrections (six; the spec's text is Phase 3's).** (1) 0x005FC130 with sum ≤ 0 still scans with `r = 0` (27 of 240
+  return a `k`; line 3917). (2) `AiGenSpawnPickClass` with n = 0 tests entry 0 with no draw; its first store is dead (line
+  3593 block). (3) `AiLifePct` is `UnitLifePct` behind `ECX` (lines 58, 4689 and quirks Q515). (4) Mephisto's pick takes its first
+  draw only after a find (line 2697). (5) `AiWoundedNearCb`'s ties replace and "not dying" is 0 for players (line 687). (6)
+  `AiShadowSkillRoll` draws 0, 1 or 3 times and never reads `melee` (line 2031). Dated notes in ai/0002, 0003, 0006,
+  0008, 0011 and 0012 (rule 20); the spec copies routed by [backlog](../backlog/2026-11-15-reverser-spec-writer-plan-0066-s1e-corrections-for-phase-3.md).
+- **Symbols:** none raised. The run is an ADR-0015/0021 emulation over a declared image, which confirms maps, not names
+  (review-fixes rule 14).
+- **Totals** recomputed from the 29 inventory files against `main` `389cb19d` (merged at `0f30ab21`): a-logs 674, a-run
+  358, b 389, c 389, c-emu 489, d 327 (d-owner 68), sum 2 626; Phase 1 1 552, Phase 2 747 (inventory README § 1, § 3,
+  § 4; the catalogue file's *Totals by class*: c-emu 21, d-owner 62). S1f's row names the five remainders routed to it.
+- **Ready for Phase 3 (spec-writer), monsters/ai/catalogue at `b5999f5e` line numbers.** Whole, `[C]` with the run as
+  anchor: 115 (S0), 1560 (R71b), 1736 (the R78 block), 2277 (R106b), 3380 (R121a). Split, the raised half
+  `[C]` and the rest `[I]` as each row says: 53 (Notation: `LifePct`, `UnitLifePct`, `O`, `St3or19`), 289 (R8b), 3164 (R113b, its `count > 492` guard `[I]`), 598
+  (R18a), 687 (R23b, with correction 5), 1220 (R49b), 1397 (R65c), 1643 (R74b), 1747 (R78b), 2031 (the R105 block, with
+  correction 6), 2697 (R50c, with correction 4), 2960 (R85b), 3359 (R120b), 3593 (the R129 block, with correction 2),
+  3916 (the pick, with correction 1), 4689 (with correction 3). 3921 stays `[I]` (d-owner).
+- **Left.** Nothing in S1e. The c remainders wait in S1f.
+- **Review:** Tier B (plan Phase 1), with the audit rule. Judgment calls to check: (1) the callbacks' rows raised in part
+  where the block words come from the think (the callback's map is the whole claim tested; the initial words and frame
+  offsets are the think's and stay `[I]`); (2) row 31's "search kind 1 walks the near rooms' unit lists" counted as met
+  through family `mephpick`, the same `AiUnitSearch` code run whole for another callback; (3) the four controls with no
+  observable taken as inherent rather than as gaps (each named in the run record); (4) correction 1's Diablo inline read
+  statically and left `[I]`, routed to S1f rather than run; (5) row 385's dead store kept `[I]` inside a raised-in-part row
+  rather than moved to d-none.
+
+### 2026-11-15 — Phase 1, batch S1e, Tier B check (architect, `lane/n66e`): accept with fixes (3)
+
+- **Verdict: accept with fixes.** Fixes (3): overclaim 2, stale cross-reference 1. All three written on the branch.
+  (1) overclaim: row 332 (`AiImpNearCb`, line 3164) was raised whole, but its statement holds the guard `count > 492 ? 492 :
+  −1`, and the check lists no control for it (`base492` reverses the compare of the base, not the count test; the
+  model's `want` is computed with `ms_count` and no `e.c`). The row is raised in part, the guard stays `[I]`: the batch
+  is 5 raised, 16 in part, 1 moved (catalogue row, README § 4, this log's Rows and Ready lists, the run record's `imp`
+  bullet). (2) overclaim: correction 4 read "Mephisto's pick draws only when the search found a candidate" (run
+  record, this log, the backlog entry, ai/0008's note, row 288's "166 cases with no draw"). The kept tags give 166 cases
+  with no first draw and 190 with `blk[5]` 0; the second draw is gated on `blk[5]`, which a player searcher sets (4 and
+  43 cases), so "no draw at all" holds only with `blk[5]` 0, which for Mephisto rests on the `[I]` one-caller claim.
+  Reworded in all five places. (3) stale cross-reference: ai/0006's Functions row for `AiShadowSkillRoll` still read
+  "three `Range` draws" under correction 6; it now says 0, 1 or 3 and points to the note.
+- **Checked clean.** `sha256sum -c manifest.sha256` passes (12 lines); the hashes the record names match (`check.txt`
+  `86d920a6`, manifest `77befdea`, `s1e.out` `c0c12a75`, `s1e.cases` `01e0f560`, tool `6d0287cd`). The check's 24 family
+  lines each read 240 of 240, `bad=0 stopped=0`, every control `passed` 0; 244 controls, 4 unseparated (`trkind` `hi<=lo~`,
+  `shroll` `v18<lo~`, `genspawn` `count>453` and `~`), as the record says, and each of the four is named in the row that
+  touches it. The record's per-family counts (taken, drawn, 166, 88, 27, 125, 63, 36, 2, 76, 115, 49, 64, 22) agree with
+  the TAGS lines. Every raised row carries the run anchor and every raised-in-part row has a "Stays `[I]`" clause (row 3,
+  31, 66, 72, 135, 154, 182, 196, 229, 288, 314, 332, 356, 385, 420, 518). Totals recounted: the catalogue's c-emu 21 and
+  d-owner 62; the sum of the 29 files' *Totals by class* is a-logs 674, a-run 358, b 389, c 389, c-emu 489, d-2c 59,
+  d-owner 68, d-edit 23, d-none 177 = 2 626; Phase 1 1 552, Phase 2 747, blocked 327. Against `main` the lane moved c-emu 490
+  → 489, d-owner 67 → 68 (the one row 421). Six corrections in the findings and the backlog entry match the batch entry
+  (backlog entry front matter and routes read; Q515 and L58/L4689 routed). No `[L]` added. Gate green.
+- **The five judgment calls.** (1) accepted, with fix 1: the callback map is the claim tested, the think's initial block
+  words stay `[I]`. (2) accepted: `AiUnitSearch` runs whole with kind 1 in `mephpick`, and row 8's search passes the same kind;
+  the room-list walk is one code path. (3) accepted: each of the four is named, and none carries a claim the row states
+  `[C]` (`hi<=lo~` is separated in `randlohi`, 12). (4) accepted: the Diablo inline pick is read-only `[I]` and the remainder
+  is in S1f's row. (5) accepted: the dead store is `[I]` in a raised-in-part row; moving it to d-none would be a ruling for
+  the owner only if the count test mattered to a reimplementer, and it does not (every exit stores again).
+- **For Tier A or the owner.** Nothing needs the owner. Tier A: this is the Tier B lane counted for the audit rule; the
+  audit sample is the architect's to draw. For the Phase 3 spec-writer, the six corrections reach the spec through the
+  backlog entry; 3164 is now a split row.
