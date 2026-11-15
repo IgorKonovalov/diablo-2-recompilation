@@ -103,7 +103,7 @@ code windows R1–R7; `p45b-rows.txt` `cbf9c64a…`, the stock-row values compar
 - [L] src:d2dfg-blizzard: velocity is `Vel` plus `VelLev` per caster level beyond 1. **contradicted**
   Detail: `((VelLev · lvl) / 8 + Vel) << 8`, `lvl` the request's level (R1: `imul [esi+0x30]`, `cdq; and edx,7;
   sar 3`); four stock rows (`spike1`–`spike4`). Phase 2 case C2,
-  [backlog](../../backlog/archive/2026-10-20-reverser-reverser-plan-0045-p1b-contradicted-cases.md). *2026-10-25:* not reached by run:2026-10-25-skills (no `VelLev` row created; § 11). *2026-10-27:* 22 `spike2` creations at level 1 only, not separating (§ 12).
+  [backlog](../../backlog/archive/2026-10-20-reverser-reverser-plan-0045-p1b-contradicted-cases.md). *2026-10-25:* not reached by run:2026-10-25-skills (no `VelLev` row created; § 11). *2026-10-27:* 22 `spike2` creations at level 1 only, not separating (§ 12). *2026-11-15:* 3 `spike1` creations at level 1 separate it, 3 of 3 against the lead (§ 14).
 - [L] src:d2dfg-blizzard: `MaxVel` caps the velocity. **held**
 - [L] src:d2dfg-blizzard: `Accel` changes the velocity per frame. **contradicted**
   Detail: `Accel` is added on every **fifth** path step (R3: the counter `+0x8C` reaches 5), the result capped at
@@ -660,7 +660,7 @@ Answer's bullets, each split where the run leaves a remainder (raised in part):
   caller's, then `· 75/100`), the path's `Accel` and `MaxVel << 8` as read, the range `Range` less the frames already
   run (30 941; 450 taken after a creation callback), the frames left equal to it (30 922; 19 lob counts taken), the
   activate mark, skill and level. (fn:sub_0059FA30_MissileCreate@0x0059FA30, run:2026-10-25-skills)
-- [I] The remainder: the `VelLev` term (C2: no `spike1`–`spike4` created) and the `LevRange` term (C4: no `LevRange`
+- [I] The remainder: the `VelLev` term (C2: no `spike1`–`spike4` created; *2026-11-15:* met at level 1, § 14) and the `LevRange` term (C4: no `LevRange`
   row created; *2026-10-27:* C4 met by part 2, § 12), the slow-missiles scaling (no `CanSlow` row's owner slowed), the `SubLoop` loops, the 99-sub-tile
   refusal. (run:2026-10-25-skills)
 - [C] **The missile's seed** (§ 2): `SUnitCreate` steps the game seed once and the missile's seed is
@@ -713,7 +713,8 @@ again over 19 667 creations, 5 660 moving frames of 414 followed missiles (238 f
 - [I] The `VelLev` term (C2) is still not separated: 22 `spike2` creations (Normal Dark Wood's quill rats), all at
   level 1, where `(VelLev · 1) / 8` is 0 for `VelLev` 7; the two Nightmare sessions met no quill rat. *Review
   2026-10-27:* a `spike1` (`VelLev` 8) separates at level 1 already (velocity 11 against the lead's 10); carried to a
-  later Blood Moor log, [backlog](../../backlog/2026-10-27-architect-reverser-plan-0045-c2-vellev-by-a-blood-moor.md).
+  later Blood Moor log, [backlog](../../backlog/archive/2026-10-27-architect-reverser-plan-0045-c2-vellev-by-a-blood-moor.md).
+  *2026-11-15:* done, § 14.
   (run:2026-10-27-skills)
 - [C] **The end of a damaging hit, raised in part** (§ 5): for a row with no hit function, on the 3 876 hit calls that
   reached `MISSILE_BuildDamage` (3 166 in part 2's logs, 710 in part 1's), the result and the missile's stat 328 are
@@ -758,8 +759,9 @@ What it adds to §§ 4 and 5:
 - [C] One session (seed 3, Normal, a Sorceress walking the Blood Moor without casting) logged 3 creations of `spike1`
   (Missiles row 7, `Vel` 10, `VelLev` 8) at level 1, by `quillrat1`. `tools/skills.py check` on the log: 0 mismatches
   (`MC.vel`, `MC.range`, `MC.left`, `MC.owner`, `MC.seed` 3 each); `sweep8_check.py c2`: 3 of 3 separating, 0
-  mismatches. The velocity is the one § 2 reads, `tdiv((((8 * lvl) / 8) + 10) << 8 * 75, 100)` = 2112 at level 1; the
-  lead's `VelLev * (lvl - 1) + Vel` gives 1920. This turns § 12's `VelLev` remainder from [I] to [C] for level 1; levels
+  mismatches. The velocity is the one § 2 reads, `tdiv(((((8 * lvl) / 8) + 10) << 8) * 75, 100)` = 2112 at level 1; the
+  lead's `VelLev * (lvl - 1) + Vel` gives 1920. At level 1 the term `(8 · lvl) / 8` is 1 under any order of the
+  product and the division, so the run fixes the value of the term, not how it grows with `lvl` or how it rounds. This turns § 12's `VelLev` remainder from [I] to [C] for level 1; levels
   above 1 of `spike1` stay unobserved. (fn:sub_0059FA30_MissileCreate@0x0059FA30, tbl:Missiles.txt:VelLev, run:2026-11-15-sweep8-single)
 
 ## Data touched

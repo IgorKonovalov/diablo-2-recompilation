@@ -2,16 +2,16 @@
 from: reverser
 to: reverser, spec-writer
 date: 2026-11-04
-status: open
+status: done
 context:
-  - ../plans/done/0060-item-use-inventory.md
-  - ../findings/items/0017-community-cross-check.md
-  - ../specs/items/use.md
-  - ../specs/items/inventory.md
-resolution: ""
+  - ../../plans/done/0060-item-use-inventory.md
+  - ../../findings/items/0017-community-cross-check.md
+  - ../../specs/items/use.md
+  - ../../specs/items/inventory.md
+resolution: "2026-11-15, lane/n65h review (plan 0065 Phase 1): the three live cases ran, 0 mismatches: H2 (4 blends, 4 separating) and H3 (mp1 refused, the contradiction settled for 0x26) in items/0015, B8 (12 of 12 with and without room) in items/0013 § 11; items/0017 annotated. The specs' retag (items/use, items/inventory) is plan 0065 Phase 3."
 ---
 
-From the `lane/r60d` cross-check ([items/0017](../findings/items/0017-community-cross-check.md)), rewritten at its review, 2026-11-04. Verdict ids are the finding's. No tag moved on any of this. **Nothing here blocks plan 0060's close:** every `contradicted` verdict is resolved or under its spec's Open questions.
+From the `lane/r60d` cross-check ([items/0017](../../findings/items/0017-community-cross-check.md)), rewritten at its review, 2026-11-04. Verdict ids are the finding's. No tag moved on any of this. **Nothing here blocks plan 0060's close:** every `contradicted` verdict is resolved or under its spec's Open questions.
 
 **Contradictions, each with its state:** H1, B7 and T2 resolved by the record, no action; B3 resolved for 1.14d, noted in items/inventory § Open questions; H3 open, below. H2 and B8 are no longer contradictions or gaps (`held with refinement`).
 
@@ -23,7 +23,7 @@ From the `lane/r60d` cross-check ([items/0017](../findings/items/0017-community-
 
 **To reverser, next static lane (done 2026-11-04, `lane/r70`):**
 
-4. ~~Name the function at `0x0057F410`~~ Done: `sub_0057F410_CorpseMoveBodyItem` in `re/symbols.csv`, `I`, evidence [items/0011](../findings/items/0011-economy.md) (Functions table: its calls in order and its two callers, 0x0057F5D8 and 0x0057F90E).
+4. ~~Name the function at `0x0057F410`~~ Done: `sub_0057F410_CorpseMoveBodyItem` in `re/symbols.csv`, `I`, evidence [items/0011](../../findings/items/0011-economy.md) (Functions table: its calls in order and its two callers, 0x0057F5D8 and 0x0057F90E).
 
 **Done at the review, nothing left for the spec-writer:** items/use F1f, D3's comment and § Open questions (H2, H3, P3); items/inventory F6 and § Open questions (B3, B8).
 
@@ -31,4 +31,4 @@ The owner declined the run, and 4 has its home. What is left open here is the th
 
 **2026-11-04, plan 0060 closed (`lane/w60` review).** This entry is no longer tied to that plan: the owner skipped the third run, so no plan schedules these cases. They stay named in the specs' Open questions, and this entry stays open as the only place that lists the exact setups, for any later harness lane that takes them.
 
-2026-11-15 reverser (`lane/n65h`, plan 0065 Phase 1): the live cases ran, 0 mismatches: H2 (4 blends, 4 separating; [items/0015](../findings/items/0015-harness-inventory.md)), H3 (mp1 refused, the other four flagged rows to the hireling; the Arreat Summit reading is contradicted for 1.14d), B8 (boxes 4..15 to page 0 with room, to the ground without; [items/0013 § 11](../findings/items/0013-grids-belts-stacks.md)). The specs' tags (items/use, items/inventory) are the spec-writer's to move.
+2026-11-15 reverser (`lane/n65h`, plan 0065 Phase 1): the live cases ran, 0 mismatches: H2 (4 blends, 4 separating; [items/0015](../../findings/items/0015-harness-inventory.md)), H3 (mp1 refused, the other four flagged rows to the hireling; the Arreat Summit reading is contradicted for 1.14d), B8 (boxes 4..15 to page 0 with room, to the ground without; [items/0013 § 11](../../findings/items/0013-grids-belts-stacks.md)). The specs' tags (items/use, items/inventory) are the spec-writer's to move.

@@ -54,7 +54,8 @@ No community source was compared; every claim is from the code. **2026-11-04 (`l
 | `0x00563C00` | `sub_00563C00_CursorDrop` | the cursor to the ground | I |
 | `0x0055E7C0`, `0x0055E590` | `sub_0055E7C0_StackRequest`, `sub_0055E590_StackMerge` | packet `0x21`'s body, the merge | I (map C to the first set) |
 | `0x0055E9A0` | `sub_0055E9A0_UnstackStub` | returns 0 | I |
-| `0x0055EB30`, `0x00562250`, `0x005608C0` | `sub_0055EB30_BeltSwapCursor`, `sub_00562250_BeltToCursor`, `sub_005608C0_BeltOverflow` | the belt's moves | I |
+| `0x0055EB30`, `0x00562250` | `sub_0055EB30_BeltSwapCursor`, `sub_00562250_BeltToCursor` | the belt's moves | I |
+| `0x005608C0` | `sub_005608C0_BeltOverflow` | the belt's overflow: the corpse call logged at entry and return, 24 of 24 moves as predicted (§ 11) | C (raised 2026-11-15 at the `lane/n65h` review; the body moves' calls unobserved) |
 | `0x00621050` | `sub_00621050_InvRowForUnit` | row for a unit and page | I (map C) |
 | `0x0065C1F0`, `0x00660CB0` | `sub_0065C1F0_InvRecordGrid`, `sub_00660CB0_BeltsRecord` | the table readers | I (map C) |
 | `0x0065C180`, `0x0065C270`, `0x00660D10` | `sub_0065C180_InvRecordRect`, `sub_0065C270_InvRecordSlotRect`, `sub_00660D10_BeltsBoxRect` | the rectangle readers, client callers | I |
@@ -159,7 +160,7 @@ score: n = 0
 - [I] **`ItemAutoBeltTest` is always 1** on an item: an `autobelt` row returns 1, any other compares `BeltHoldsSameGroup` (0 or 1) with −1. So the pickup's belt branch always calls `BeltPlace`, and the column search in it decides. (0x00628BFD, 0x00563716, `static.txt`)
 - [I] **`0x23` does not test `numboxes`:** `ItemToBelt(guid, box, 0)` → `BeltPutItem` needs 1 × 1, beltable, `box < 16`; `InvGridPut` refuses an occupied box. Whether a box past the belt's count stays is Phase 2's. (0x0063C4C0, fn:sub_0063C4F0_BeltPutItem@0x0063C4F0, fn:sub_0055E9B0_ItemToBelt@0x0055E9B0)
 - [I] `0x24` → the box's column shifts down (`BeltColumnShift`, items/0012 § 3 at `0x0055EDC0`). `0x25` swaps in place with no shift. `0x63` needs page 0 and an empty cursor, and returns 0 with no room. (fn:sub_00562250_BeltToCursor@0x00562250, fn:sub_0055EDC0_BeltColumnShift@0x0055EDC0, fn:sub_0055EB30_BeltSwapCursor@0x0055EB30, fn:sub_0054D520_SrvPacket63Handler@0x0054D520)
-- [I] **A smaller belt:** `BeltOverflow(new belt or null)` walks boxes 0..15; each item at or above the new `numboxes` is removed, set to page 0 and placed by the search, and if that fails dropped by the cell search (`0x00555DA0`, P1.3). Its callers are the body moves' belt-type branches. *Corrected 2026-11-04 (`lane/r60d` review): 4 direct calls: 0x00560E18, 0x00561058, 0x00563EE4, and 0x0057F47A on a corpse's making, with a null belt; 0x00560C45 is its own call of the ground search (`tools/call_arg_sites.py`, items/0017 B8).* (fn:sub_005608C0_BeltOverflow@0x005608C0, 0x00560C45, 0x00563D20, 0x0057F47A)
+- [I] **A smaller belt:** `BeltOverflow(new belt or null)` walks boxes 0..15; each item at or above the new `numboxes` is removed, set to page 0 and placed by the search, and if that fails dropped by the cell search (`0x00555DA0`, P1.3). Its callers are the body moves' belt-type branches. *Corrected 2026-11-04 (`lane/r60d` review): 4 direct calls: 0x00560E18, 0x00561058, 0x00563EE4, and 0x0057F47A on a corpse's making, with a null belt; 0x00560C45 is its own call of the ground search (`tools/call_arg_sites.py`, items/0017 B8).* *2026-11-15: the corpse call observed, § 11.* (fn:sub_005608C0_BeltOverflow@0x005608C0, 0x00560C45, 0x00563D20, 0x0057F47A)
 
 ## 7. Stacks
 
@@ -226,7 +227,7 @@ without a potion until the first hit killed it): `b8room` with page 0 empty, `b8
 `sweep8_check.py b8` on each kept log: 12 boxes moved, 0 mismatches.
 
 - [C] The corpse's `BeltOverflow` call (one per session, the corpse path's slot loop) leaves boxes 0..3 in the belt
-  (4 each) and moves boxes 4..15 out in box order: with room, to page 0 (12 of 12, as predicted, from (9,3) upward);
+  (their 4 items in each session) and moves boxes 4..15 out in box order: with room, to page 0 (12 of 12, as predicted, from (9,3) upward);
   with no room, to the ground (12 of 12). The statement `BeltOverflow` empties the upper rows into the inventory or
   onto the ground (`src:maxroll-death`, D2R) is held for 1.14d on this path. (fn:sub_005608C0_BeltOverflow@0x005608C0,
   fn:PLAYER_CorpseCreate@0x0057F700, run:2026-11-15-sweep8-single)

@@ -3732,11 +3732,20 @@ b8full) passed their checks before the batch.
 
 `inventory_check.py` over h2, h3, b8room, b8full: 73 predictions, 0 mismatches. Every session kept at the first try
 (731 s of batch wall time); nothing died. Short: the converted-monster-kills branch of the exp-state case was not
-reached; the P12 session is not in this run (its own record, open on an owner question: plan 0065 log). Backs
+reached; the P12 session is not in this run (its own record below; not separated, the owner's ruling of 2026-11-15). Backs
 [skills/0002 § 14](../skills/0002-missiles.md), [items/0013 § 11](0013-grids-belts-stacks.md),
 [items/0015](0015-harness-inventory.md), [player/0002 § 11](../player/0002-party.md).
 
 ## run:2026-11-15-sweep8-p12
 
-Plan 0065 Phase 1, the P12 session (slot 1, seed 3, `p12.gdb`): 11 546 `MMC`, verdict not separated
-(owner ruling 2026-11-15); kept in `workspace/logs/sweep8/` with `workspace/logs/n65h/manifest-p12.sha256`.
+Plan 0065 Phase 1 (`lane/n65h`), the P12 session: slot 1, seed 3, Normal, single player, one fresh process, the save
+`SweepNova` (`tools/d2s_recipes/sw8-nova.json`), logger `tools/gdb/p12.gdb` (`P12_CLS` 90, `nova`), steps by
+`tools/sweep8_sessions.py` `p12` (`LEAVE_TOWN`, `p12go` 12 hops to the stand cell picked from the session's own `CB`
+grid, 6 Nova bursts, 25 hops of Nova), run by `sweep8_sessions.py run` (slot 1, tag `n65h`, run id `2026-11-15-sweep8-p12`)
+(the runner's output `p12.out`), tools at `5c55b73d` (`tools-revisions.txt`). Kept at the first try, 110 s. Check
+`tools/sweep8_check.py p12`: 11 546 `MMC`, all with path `+0x7C` non-zero (cached), none with `c & 5 ≠ 0`; 10 522 step on
+(the control); 156 at a grid bit-0-only point, cached, step on (counted, decides nothing); 0 separating, 0 against the
+grid reading, 0 mismatches; verdict "not separated (no fresh bit-0-only word)", accepted under the owner's ruling of
+2026-11-15 (option (a)). Kept in `workspace/logs/sweep8/` (`2026-11-15-sweep8-p12-s1-3-p12.log`, `.marks.tsv`) and
+`workspace/logs/n65h/` (`checks/p12.txt`, `p12.out`; `manifest-p12.sha256`, 4 lines, passes from the repository root).
+Backs [path/0007](../path/0007-community-cross-check.md#plan-0065-phase-1-the-p12-session-run2026-11-15-sweep8-p12).

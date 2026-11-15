@@ -961,7 +961,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
     `spike2`–`spike4` (`VelLev` 7, 6, 4) but not `spike1` (`VelLev` 8: `(8 · 1) / 8 = 1`, velocity 11 against the
     lead's 10); `quillrat1` (its `MissA2` is `spike1`, a table reading) is in the Blood Moor's pool in every difficulty.
     Carried as an opportunistic check, no session of its own:
-    [backlog](../../backlog/2026-10-27-architect-reverser-plan-0045-c2-vellev-by-a-blood-moor.md).
+    [backlog](../../backlog/archive/2026-10-27-architect-reverser-plan-0045-c2-vellev-by-a-blood-moor.md).
   - **Ruling (c): Raise Skeleton at 12 accepted.** The summon family's floor is met by the 207 Ravens (seed, life,
     defence with a 20–32 range that separates), as Phase 1's tier-A substitution rule allows; do 31's class draw and
     level formula keep their `[C]` at 12 of 12 with the scoping already in skills/0003 § 15 (one input, the clamps not

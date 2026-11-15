@@ -704,7 +704,7 @@ the reading. [I] (fn:sub_005C7160_SkillDo117Firestorm@0x005C7160)
   beyond 1; the code reads `(VelLev · lvl) ÷ 8 + Vel` (contradicted, from the code); no run has separated them (22
   `spike2` at level 1). A `spike1` (`VelLev` 8) at level 1 would (velocity 11 against the lead's 10): carried to a
   later Blood Moor log. Also open: the slow-missiles scaling, the `SubLoop` loops and the distance refusal.
-- [L] **A missile over a bit-0 cell:** floor flag 01 "allow missiles pass" (`src:pk-walkable-flags-overview`) against D3's `c & 5`, which frees a do-function-1 missile with a `CollideType` on bit 0. One of the two is wrong for a cell with bit 0 and not bit 2; neither is shown by a run, and D3 stays `[I]`. [Entry](../../backlog/2026-11-04-architect-reverser+spec-writer-0054-p12-missile-own-cell-bit0-vs-floor.md).
+- [L] **A missile over a bit-0 cell:** floor flag 01 "allow missiles pass" (`src:pk-walkable-flags-overview`) against D3's `c & 5`, which frees a do-function-1 missile with a `CollideType` on bit 0. One of the two is wrong for a cell with bit 0 and not bit 2; neither is shown by a run, and D3 stays `[I]`. [Entry](../../backlog/archive/2026-11-04-architect-reverser+spec-writer-0054-p12-missile-own-cell-bit0-vs-floor.md).
 - [L] **The re-seed sites other than `0x005C9290` and `0x005AC040`** in a run (H3). ~~Which of the two callbacks' path
   calls steps the new seed~~: `PathPlan`'s random walk, H1 and H4.
 - [L] The critical chain's second and third steps in a run.

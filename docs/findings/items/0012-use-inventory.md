@@ -90,7 +90,7 @@ No community source was compared; every claim is from the code. The doubling dra
 | `0x00549150`, `0x005492F0`, `0x00549220` | `sub_00549150_PktInvItemBad`, `sub_005492F0_PktBeltItemBad`, `sub_00549220_PktOwnedItemBad` | the handlers' item tests | I |
 | `0x00548EF0` | `sub_00548EF0_PktPosFar` | the handlers' distance test | I |
 | `0x0055E170` | `sub_0055E170_PlayerUseInvItem` | the inventory use and its consumption | I |
-| `0x00562390` | `sub_00562390_PlayerUseBeltItem` | the belt use and its consumption | I |
+| `0x00562390` | `sub_00562390_PlayerUseBeltItem` | the belt use and its consumption | C (raised 2026-11-15, items/0015 H3: the flagged branch) |
 | `0x00561ED0` | `sub_00561ED0_PlayerUseItemOnItem` | the item-on-item use and its consumption | I |
 | `0x0055BF50` | `sub_0055BF50_InvClearUseMarks` | clears flag 4 on all inventory items | I |
 | `0x0055E000` | `sub_0055E000_InvItemConsume` | message, then the removal | I |
@@ -158,6 +158,8 @@ otherwise. Only kind 1 has a test, and it returns 1. (0x005BF320–0x005BF34C, 0
   the pet of type 7, when there is one, becomes the user. Non-zero from `ItemUse`: the skill's quantity as above, then
   `BeltItemConsume` and `BeltColumnShift(x & 3)`, which moves each remaining item of that column down. The column's
   items stay at rows in their order. (0x00562390, 0x0056245B–0x0056249D, 0x0055EDC0)
+  *2026-11-15: the flagged branch observed (plan 0065 H3: mp1 refused twice, hp1, rvs, yps, wms to the hireling with the
+  tests in order), [items/0015](0015-harness-inventory.md#plan-0065-phase-1-h2-and-h3-run2026-11-15-sweep8-single-lanen65h).*
 - [I] **`0x27`** does not clear the marks before `ItemUse` (so flag 4 from the first request stands), and clears them after
   its consumption and on its refusals. A used item in the belt must be of type 22, else flag. A target of mode other than
   0 or 1 does not reach `ItemUse`: a used item in the belt is **removed anyway**, a book in the inventory loses a charge (floored at 0), and nothing is
@@ -166,6 +168,7 @@ otherwise. Only kind 1 has a test, and it returns 1. (0x005BF320–0x005BF34C, 0
   not shift the column here. (0x00561F60–0x005621F4)
 - [I] **`0x61`** with a cursor item identified, without flag `0x100` and of type 76, 81 or 80: `ItemUse(item, item, 0, 0)`,
   then the cursor is consumed **whatever it returned**. The user is the mercenary (`EDX` from the function's `ECX`). (0x0054D3FD–0x0054D406, fn:sub_0055EEA0_CursorItemConsume@0x0055EEA0)
+  *2026-11-15: the three tests logged on four passing potions (plan 0065 H3, items/0015); an mp1 click sent no `0x61`.*
 
 ## 4. Kinds 3, 4, 5: the amount
 
@@ -218,7 +221,7 @@ for (k = 0; k < 3; k++) {
 - [C] **The class scales** return exactly as stated for all 7 classes, other classes and types, odd and negative
   amounts, and a null unit (`2v` life, `v` mana); 800 cases, no boundary. The non-player rule is `2v` for life and `v` for
   mana. (family `classmul`, run:2026-11-03-use-emu, fn:sub_0062A5D0_PotionLifeMul@0x0062A5D0, fn:sub_0062A620_PotionManaMul@0x0062A620)
-- [C] **2026-11-04 (run:2026-11-04-inventory-2, items/0016):** on a live game a stock `hp1` and `mp1` use (a Sorceress, 17 of 17) made the two draws on the user's seed, doubled when `r2 < r1 >> 1` (6 of 12 `hp1`, 0 of 5 `mp1`), and stored the rate `total / len` (40 or 80 for `hp1`, 80 for `mp1`) with the end `frame + len`: slot 0's path is observed; the blend and the other classes are not (items/0016 § Short). (fn:sub_005BE3F0_ItemUsePotion@0x005BE3F0, 0x005BE525, 0x005BE6CF)
+- [C] **2026-11-04 (run:2026-11-04-inventory-2, items/0016):** on a live game a stock `hp1` and `mp1` use (a Sorceress, 17 of 17) made the two draws on the user's seed, doubled when `r2 < r1 >> 1` (6 of 12 `hp1`, 0 of 5 `mp1`), and stored the rate `total / len` (40 or 80 for `hp1`, 80 for `mp1`) with the end `frame + len`: slot 0's path is observed; the blend and the other classes are not (items/0016 § Short). *2026-11-15: the blend observed, 4 of 4 separating, items/0015 (plan 0065 H2).* (fn:sub_005BE3F0_ItemUsePotion@0x005BE3F0, 0x005BE525, 0x005BE6CF)
 - [I] **The draw's chance** for `n`: `Σ min(100, r >> 1) / (100 n)` over `r < n`, from `tools/item_inventory.py`
   `double_chance`: 2.0 % at 10, 5.76 % at 25, 12.0 % at 50, 24.5 % at 100, 49.5 % at 200, 79.8 % at 500. The stats read are
   `STATS_GetUnitStat(user, 3 or 1, 0)`; on a non-player user they are whatever its list holds, usually none, so no draw.
@@ -355,7 +358,7 @@ tbl:ItemStatCost.txt:maxstat, tbl:Books.txt:pSpell, tbl:Books.txt:BookSkill, tbl
 
 ## Open questions
 
-- `[L]` Slot 0's rate on the stock path (the queue call precedes it): resolved for `hp1` and `mp1`, a Sorceress, items/0016 (16 fresh-list uses); other classes, rows and the blend open.
+- `[L]` Slot 0's rate on the stock path (the queue call precedes it): resolved for `hp1` and `mp1`, a Sorceress, items/0016 (16 fresh-list uses), and the blend, items/0015 (plan 0065 H2, 2026-11-15); other classes and rows open.
 - `[L]` Whether any draw occurs in a whole use past the boundaries (§ 8): Phase 2's seed comparison.
 - `[L]` The case of the object mode switch at `0x00581DBC`, what it is for and whether a class test precedes it: read
   the door path, or Phase 2 case 16. The Assassin's skip is read at `0x00585FB1` for the chest only.
