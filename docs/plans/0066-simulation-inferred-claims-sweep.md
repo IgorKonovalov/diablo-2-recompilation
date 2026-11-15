@@ -826,3 +826,26 @@ Targeted ruling on the three points the Tier B check left, not a full re-review.
 - **S3e: for Tier A / architect ruling.** The plan's Phase 1 rules do not let a lane add a batch (the plan names batches
   for the owner, e.g. H1h `proposed`); S3e's § 4 row is well formed (2 statements, travel 19 and 60, c-emu, method
   ADR-0015/0021/0029, status `proposed`, matching `quests-travel.md`'s 2 c-emu rows) and stays `proposed`.
+
+### 2026-11-15 — Phase 1, batches S4c and S4d, paused (reverser-static, `lane/n66i`): resume note
+
+- **Paused** at the owner's reboot, early: no row is settled and no inventory row, finding, symbol or total is changed.
+  No game, no Ghidra was started (no process to stop).
+- **Tool state.** New `tools/sweep2_s4cd.py` (development, not yet run, no kept output): sections `invlogs` (rows 3, 8,
+  29/61, 31, 85/88 over the four kept logs of run:2026-11-04-inventory and -inventory-2) and `invstatic` (rows 2, 4,
+  5/6, 16, 18, 21, 35/60, 76/93–95, 78, 79/80/90/100, 82, 97: r2 and the raw-byte scan of `tools/xrefscan.py` beside the
+  objdump `static.txt` of run:2026-11-04-inventory-emu and -ground-emu; the objdump walker of `tools/sweep_s4b.py` and
+  r2's LCG search beside Ghidra's `rcg-summary.txt`). Not yet written: `stlogs`, `ststatic`, `tables` (S4d, and S4c
+  rows 54, 71).
+- **Leads found while reading (provisional, not checked by a kept output):** the packet table rows of 0x17..0x25 and
+  0x63 by r2 equal the spec's § D handlers; the page sizes at 0x0074479C and 0x007447B4 read 13 × 1 and 16 × 1; the
+  objdump walker finds no draw in the direct closures of 0x00555DA0, 0x0066A670, 0x00558A10, 0x00641530, 0x0063C600,
+  0x0063B950, and one `RNG_RangeB` call (0x00624563) under 0x00558AA0, as Ghidra; at A1's three sites the third push
+  is loaded from `[reg + 0x70]` (whether each base is the game is not yet traced: likely a remainder); the cursor item
+  is not on Inventory `+0x0C`'s list, so mode 4 is seen only at `IPG` of a 0x17 drop. Remainder homes planned: H4d for
+  the inventory rows, H4e for the stats rows.
+- **Resume (a fresh lane on `lane/n66i`):** finish the tool (S4d sections over `s1017-run.lst` and `p47h-run.lst`,
+  under `systemd-run --user --scope -p MemoryMax=4G`; Misc `autobelt`, Sets params, Skills `aurastat`, States bits;
+  `g_ShrineEffects` by r2; xrefs of `STATE_ApplyTimed`, `STATE_GroupClear`; `PlayerSwapWeapons` by r2), run it once into
+  `workspace/logs/n66i/` with a manifest, add `tools/test_sweep2_s4cd.py`, then the rows, the addenda (items and stats
+  experiments), the symbol raises, `main` merged before the totals, and the log entry with the Tier B request.
