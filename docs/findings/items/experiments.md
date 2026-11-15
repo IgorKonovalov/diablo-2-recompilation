@@ -2474,6 +2474,116 @@ named under *Limits*.
   - no charge use (`UseCharge`), no skill wear; no gamble at clvl 3 (EconDL3 not run);
   - Cain one case (paid; the free path not run).
 
+### Addendum 2026-11-15: plan 0066 batches S4a and S4b, new checks over the kept economy and inventory logs and static second sources (`lane/n66h`)
+
+- **Question.** Which `[I]` of [items/economy](../../specs/items/economy.md) (S4a, 22 rows) and [items/use](../../specs/items/use.md)
+  (S4b, 19 rows) do a new check over this run's logs, economy2's, inventory-2's and the H2a tc logs, a full-table check, or a
+  second tool on the code raise? Inventory rows: [items-economy](../../plans/0066-inventory/items-economy.md),
+  [items-use](../../plans/0066-inventory/items-use.md). (run:2026-10-17-economy, run:2026-11-04-inventory-2)
+- **Setup.** No game, no Ghidra. `tools/sweep2_s4ab.py` (sha256 `a82294bc…`; sections `static`, `tables`, `econ`, `price`,
+  `use`). The second tools: **r2** (`pD`, its own decoder) and **the raw-byte scan** `tools/xrefscan.py` (rel32 call, jmp and jcc,
+  and every abs32 occurrence) where the first reading was `tools/economy_scan.py` (objdump) or Ghidra; **objdump** through
+  `tools/sweep_s4b.py`'s walker where the first reading was Ghidra only (0038 S4b ruling 1, S3b ruling 4). Tables: the `.bin`
+  records (`tools/economy.py`'s `Tables`) and the `.txt` where a column is not decoded. Logs: the 38 claim logs of
+  `economy/claim-logs.txt` and `economy2/claim-logs.txt` (hashed in `economy-run-manifest.txt`, `economy2-run-manifest.txt`),
+  the three kept inventory-2 logs (`manifest-inventory-2.txt`), the 12 H2a logs (`items-tc-manifest.sha256`). The price
+  controls exec a copy of `tools/economy.py` (`99d0d455…`, unchanged by this lane) with one quality branch changed.
+- **Procedure.** `systemd-run --user --scope -q -p MemoryMax=4G python3 -I tools/sweep2_s4ab.py all >
+  workspace/logs/n66h/check.txt` (293 lines, `11b81eef…`, `S4 total bad=0`); `manifest.sha256` (`78f02ccc…`) passes
+  `sha256sum -c` from `workspace/logs/n66h`. Development outputs under `dev/` (`manifest-dev.sha256` passes from `dev/`;
+  `dev-7-check.txt` is the same run before the r2 edge check was added, every other line equal); nothing rests on them.
+- **Observed, S4a** (`check.txt` section by section):
+  - `npc-classes` (r2): `NpcRepair` 0x005780AE–0x005780D2 compares 257, 154, 178, 511, 253 (MonStats `halbu`, `charsi`,
+    `fara`, `larzuk`, `hratli`); `MERC_Resurrect` 0x00579C31–0x00579C55 252, then `−150` = 0 and `−48` more = 0 (150, 198),
+    367, 515 (`kashya`, `greiz`, `asheara`, `tyrael2`, `qual-kehk`); `NPC_CainIdentify` 0x00578495–0x005784C1 265, 244..246,
+    520 (`cain2`..`cain6`). Equal to the spec's sets.
+  - `client-sites` (raw): the price wrapper 0x0062FDC0 has 12 rel32 sites, 6 below 0x00500000 (0x0049024C, 0x004B2C7C,
+    0x004B2CAD, 0x004B2D0B, 0x004B3A37, 0x004B3AB6); `RepairCost` 4, 2 client (0x004887F0, 0x004B38FA); 0 abs32 each.
+  - `goldcap` (r2): `PLAYER_GoldCap` is `push 0; push 0xc; push eax; call 0x625480; imul eax, eax, 0x2710`. `PlayerGiveGold`'s
+    three branches: `cmp esi, ebx; jne` (gold = cap, 0x0055B089: drop all), `cmp ecx, ebx; jbe` on `gold + n` (0x0055B0B9:
+    add `cap − gold`, drop the rest), else add `n` (0x0055B0EE).
+  - `giveold` (the GG lines, both runs): 57 calls; **at cap 3** (all at L 30, gold 300 000: `DropGoldAmount` given the whole
+    `n` from 0x0055B0A4, gold unchanged), **under cap 54** (L 30 10, L 75 44: gold + n added), **over cap 0**; the highest
+    gold after a GG is 300 000 at L 30 and 600 000 at L 75. `giveold-seeds`: the 3 at-cap calls move the game seed +2, each
+    the nested `DropGoldAmount`'s own +2 with 0 steps before and after it; the 54 others +0.
+  - `price` (33 901 price calls): stock model 0 mismatches; control `set-terms` (stat terms for quality 5) 196 mismatch lines,
+    all quality 5; `unique-terms` (for a quality 7 with a record) 375, all quality 7; `superior-no-terms` (none for quality 3)
+    1 135, all quality 3. No quality 9 item in either run.
+  - `skills-cost-mult` (`.bin` +0x234, 357 rows, `.txt` agrees on all): max 896, min 0, 210 non-zero.
+  - `repair-own-vs-equiv` (659 bases): own `Repair` 1 and an `Equiv` ancestor's 1 in 472, both 0 in 187, 0 differ. 13 bases
+    of a `Repair` type have `nodurability` 1: **12 of type `xbow` and `7cr` Phase Blade (type `swor`)**; types `bow` and
+    `tpot` have `Repair` 0.
+  - `repairall` (IR and NR lines): 4 009 `ItemRepairAll` calls, each dumping one item: 3 536 from `VENDOR_CreateStockItem`,
+    448 `GAMBLE_BuildInv`, 21 returning to 0x0062FF47 inside `RepairCost` (the repair-all's callback), 1 `NpcRepair`
+    0x005783D0, 3 `NPC_MenuAction` (socket, personalize, imbue). The 4 repair-alls (`NpcRepair` flags bit 31): the items
+    changed are exactly the items of their IR calls, one call per item (7, 7, 7; the fourth, at gold 0, none). The 4 single
+    repairs change only the requested item: one through one IR, two partial repairs with no IR, one refused.
+  - `repairbroken-reach`: the walk under `ItemRepairBroken` (1 994 functions, 122 with a draw) first draws at depth 6:
+    `ItemRepairBroken → 0x0055C5C0 ITEMS_AttachToOwner → PlayerSetSkill → AuraSelect → SKILLS_SrvDo → PlayerModeCmd →
+    PlayerModeAllowed` (`RNG_Range` at 0x0057EF7C); each of the six edges and the draw read again in r2.
+  - `repair-sites` (raw): 22 sites of the six repair functions (21 rel32 and the thunk's `push` at 0x00578182), the sets of
+    `economy-qrepair.out`; of 651 quest functions (the same filter over today's `re/symbols.csv`, 642 then) one site,
+    0x0054BB87 in `Pkt31NpcMessage`.
+  - `gold-drops` (raw): `DropGoldAmount` 5 callers (`PlayerDropGold` 0x0053559B, `DropGold` 0x0055B047, `PlayerGiveGold`
+    0x0055B09F and 0x0055B0E0, `CorpseDropGold` 0x0057F3B7); `DropGold` 2 (`GoldPickup` 0x0055C97D, `A5Q6_BaalDeath`
+    0x0058E068); 0 abs32.
+  - `gametype`: byte stores at `+0x6A` in .text: 0x00530CFF (`GameCreate`, `mov [edi+0x6a], al`) and 0x004509CA
+    (`ClientMainFrame`, `mov [ebx+0x6a], dl` after a `rep movs` copying a record into `ebx`); the create message's map in r2:
+    `g_ClientGameMode` 0 → 3, 6 → 1, 8 → 2, other → 0; `DG0` gives game type 3 in all 20 logged deaths.
+  - `pets-ondeath`: `MERC_ResurrectCost`'s 3 callers (raw), one `PETS_OnDeath` 0x00575255 (objdump: its only call there),
+    whose `eax` is pushed to 0x005531C0 next.
+  - `healdead` (raw): `NpcHealDead` 0 rel32, 0 abs32; `HealCost`'s 2 callers are `NpcHealDead` and the client's
+    `ClientNpcMenuBuild`; `PayGold`'s 10 callers are hire, buy (3), `NpcRepair` (3), Cain, `NpcHealDead`, resurrect.
+  - `durabilityloss` (raw): one site, 0x0057D5F6 in `COMBAT_DeliverQueued`; all 1 415 logged `CD` calls return to 0x0057D5FB.
+  - `useammo` (r2, the 8th push walked back from each call, a join reached only by a branch continued at the branch, a nested
+    call's own pushes skipped by its `ret N`): 33 sites, `useAmmo` 1 at 14 (`SKILL_AttackDo` 0x0056F0D7, its other call
+    0x0056F103 0; the Throw and Left Hand Throw do functions' four; `0x005CBF90`; both of `0x005D88B0`; six in monster code:
+    0x005A26AD, 0x005A28BB, 0x005A2CAC, 0x005A4160, 0x005A6DB9, 0x005A7181), 0 at 19, `SKILLS_SrvDo`'s two included; no `?`
+    (the first tool left eight to a hand read).
+  - `weaponwear` (raw): `SkillWeaponWear` one site, 0x005DAC99 in `SkillSt07ImpaleHit`.
+  - `replenish-timers` (raw): durability timer 7 sites (`ItemCreateFromSave`, `ItemCreate`, `ITEMS_DurabilityLossRoll` ×2,
+    `ITEMS_InsertSocket`, `ItemEventDispatch` ×2), quantity timer 6 (the same less the loss roll, plus `ItemConsumeOne`).
+    `replenish-arm`: the first `RP` tick of each store item after its creation's IR line comes at `2500 ÷ r + 1` frames, in 78
+    of 78 (r 3: 834, 48; r 5: 501, 28; r 10: 251, 2); 14 first ticks have no IR before them (items loaded with the save: frames
+    502 and 835 = 1 + 501 and 1 + 834; two later).
+  - `outputs`: item dumps at 4 009 IR exits, 1 064 `DL1`, 130 `IC1`, 299 `RP1`; the model's checks of those dumps are the run's
+    `check-run.txt` (0 mismatches); no charge use.
+  - `mul` (h2a logs): one `GMUL`, the Countess's `gold 45 mul 1280 → 225`; `(g·m) >> 8` and `g·(m >> 8)` agree on it.
+- **Observed, S4b.**
+  - `use-entries` (objdump): `Pkt20UseInvItem` calls `PlayerUseInvItem` once, `Pkt26UseBeltItem` calls `PlayerUseBeltItem`
+    once; `do113-inv`, `do113-belt`: `SkillDo113UseBookScroll` calls both directly.
+  - `packets` (the three logs): 178 `PKT` lines (0x17 80, 0x19 80, 0x20 12, 0x26 6), each entered at the logger's handler for its
+    opcode with packet byte 0 = the opcode and the return address 0x0054D81A (after `call eax` at 0x0054D818); the 18 handler
+    addresses equal `g_SrvPacketTable` (`0x006E0D18 + 8·op`) row by row (`packet-table`). Every 0x20 and five of six 0x26 run
+    one `UP0` before their `PKR`.
+  - `drain` (objdump and raw): queue 1 is popped at 0x0052D02C until −1 (0x0052D031), each message to `SrvProcessClientMessage`
+    at 0x0052D03E, and 0x0052D043 jumps back to the pop with no read of `EAX`; `SrvProcessClientMessage` is called only there,
+    `SrvPacketDispatch` only at 0x0053F459, whose next instructions `mov ecx, esi; call 0x0052DA90` do not read `EAX`; no
+    abs32 reference to either. The gate's call pushes 0, 0, 1; `PlayerModeAllowed` tests arg 2 at 0x0057EEFB and jumps to
+    0x0057EFF2, from which no draw is reachable (6 instructions). `gate-seeds`: the player's seed is the same at every `PKR`
+    and the next `PKT` (175 of 175).
+  - `clearmarks` (raw): `InvClearUseMarks` 36 rel32 sites, 1 in itself, 35 in 24 other functions, the spec's 24 by name; 0 abs32.
+  - `use-kinds` (objdump): the bodies of `ITEMUSE_TownPortal`, `ItemUseCure`, `ItemUseTimedState` hold no RNG call and no LCG
+    operand; the raw scan finds no LCG constant in 0x005BE290..0x005BF240.
+  - `f2` (objdump) and `fresh-lists` (pot log): 16 fresh lists, each allocated with words `2`, `end`, user type 0 (a player)
+    at 0x005BE602; then `STATE_Set(user, state, 1)` (0x005BE622–0x005BE626), the non-player test at 0x005BE634 skipped,
+    `push 0x56E900; call 0x625CE0` and `LinkToUnit(user, list, 1)`. No non-player user in the log.
+  - `kind3-groupclear`: no call of `STATE_GroupClear` in kind 3's body, nor anywhere under it (2 003 functions walked, 0
+    indirect calls in its body); the raw scan lists `GroupClear`'s 9 callers, none in kind 3.
+  - `misc-key` (`.txt` and `.bin` +0x11D): `key` `useable` 0, `pSpell` empty; `keyconsume` (raw): 0x00585FB9 (`OBJOP_Chest`,
+    after its class-6 test at 0x00585FB1) and 0x00581DC1.
+  - `column-getters` (raw): `ItemBeltByte` 3 sites (client `ClientItemNameBuild`, `BeltOverflow`, `BeltFreeSlot`),
+    `ItemDurWarning` 0, `ItemQntWarning` 1 (client), `BeltBoxQuery` 1 (0x004979AD, client); 0 abs32 for all four.
+- **What the run does not separate.** The over-cap branch of `PlayerGiveGold` (no case); `mul=` 1536 and 2048 (no case) and the
+  product's order (every stock `mul=` is a multiple of 256); a quality 9 price; the replenish arm's "none queued" test and its
+  signed division (every `r` positive); a charge refill; the potion's non-player list. The function each monster `useAmmo` site
+  belongs to: the six sites lie in padded blocks from 0x005A2620, 0x005A2840, 0x005A2C20, 0x005A3F97, 0x005A6D50, 0x005A6FF0,
+  not the five entries skills/0002 names. fn:sub_0055B060_PlayerGiveGold@0x0055B060, fn:sub_0054D750_SrvPacketDispatch@0x0054D750
+- **Symbols.** `PLAYER_GoldCap`, `sub_0055B060_PlayerGiveGold`, `sub_0054B1E0_Pkt20UseInvItem` and
+  `sub_0054B560_Pkt26UseBeltItem` raised to `C` (review-fixes 14: the cap's value enters the logged at-cap compare and both
+  tools read it; `PlayerGiveGold`'s 57 calls compared branch by branch with the nested `DropGoldAmount` agreeing; the two
+  handlers entered with their opcode's packets at the table's rows).
+
 ## run:2026-10-19-economy2
 
 **Status: done** (plan 0043 Phase 2b, harness lane `lane/p43b`, slot 1, 2026-10-19). 0 mismatches over the five claim
@@ -2543,6 +2653,8 @@ logs; shortfalls under *Limits*.
   logged); crafted items tool-built (no recipe mods); one Wirt game (count 18; `MonLvl1` = `MonLvl1Ex` = 6 in Normal);
   question 9 covers only the windows listed in items/0011 § Phase 2b; the `Cracked` and `0x0055F590` copy refusals not
   reached.
+
+*2026-11-15:* plan 0066 batches S4a and S4b re-checked its claim logs with `tools/sweep2_s4ab.py` (0 breaks); the counts are in [run:2026-10-17-economy § Addendum 2026-11-15](#addendum-2026-11-15-plan-0066-batches-s4a-and-s4b-new-checks-over-the-kept-economy-and-inventory-logs-and-static-second-sources-lanen66h).
 
 ## run:2026-10-20-sweep-items-tc
 
@@ -3683,6 +3795,8 @@ Plan 0060 Phase 2, second lane run (`lane/p60b`, reverser, harness, slot 2, seed
 - **First checks and what changed.** (1) `9579c5bd` on the partial 6002 pair: 22 sweep mismatches and 14 unresolved, all drops saved with their room before the predicted sweep (the harness's prediction not conditioned on the room staying active; first run's error again). (2) `86b8a1eb` on the kept pair: 6 mismatches: 4 restored City copies saved again (`SV1` at 4 800) before the predicted sweep, 2 grounds where a control read past the window. (3) `1f868c6d`: 0 mismatches. The check outputs of (1) and (2) are kept.
 - **Boundary of the 0 mismatches:** a Sorceress, two potion rows, two draws and the stock rate for the uses logged (no golem, no Amazon or Barbarian, no blend with a different amount); the sweep predictions for 44 items excluded on the `SV1` line and 14 restored and 40 `crowd` sweeps unresolved (no later dump); ground searches with the walk mask decided in one crowd spot and `fixedbase` not; expiry over qualities 1 to 8 and the filler, not gold or a quest item.
 - Not run: see finding § Short. Slot 2 stopped and the saves restored (`saves.py --slot 2 status`: no aside, harness idle).
+
+*2026-11-15:* plan 0066 batches S4a and S4b re-checked this run's three kept logs with `tools/sweep2_s4ab.py` (0 breaks); the counts are in [run:2026-10-17-economy § Addendum 2026-11-15](#addendum-2026-11-15-plan-0066-batches-s4a-and-s4b-new-checks-over-the-kept-economy-and-inventory-logs-and-static-second-sources-lanen66h).
 
 ## run:2026-11-04-lock-scan
 

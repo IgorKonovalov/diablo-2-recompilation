@@ -328,6 +328,10 @@ return m;
   2026-10-20, lane/msw: the sites push 1 in objdump; first written "four"*), at `0x005CBF90` and at both calls of `0x005D88B0`; 0
   everywhere else, `SKILLS_SrvDo` included. The ammunition use only acts for a player owner. (`missiles-scan.txt` `AMMO`,
   fn:SKILL_AttackDo@0x0056F070, fn:sub_0056F460_SkillThrowDo@0x0056F460, fn:PLAYER_UseAmmo@0x0056C3F0)
+  *2026-11-15 (plan 0066 S4a, `lane/n66h`):* r2 reads all 33 values with no `?` and agrees (14 ones, 19 zeros; [items/experiments § Addendum 2026-11-15](../items/experiments.md#addendum-2026-11-15-plan-0066-batches-s4a-and-s4b-new-checks-over-the-kept-economy-and-inventory-logs-and-static-second-sources-lanen66h) `useammo`).
+  The six monster sites are 0x005A26AD, 0x005A28BB, 0x005A2CAC, 0x005A4160, 0x005A6DB9 and 0x005A7181, in padded blocks from
+  0x005A2620, 0x005A2840, 0x005A2C20, 0x005A3F97, 0x005A6D50 and 0x005A6FF0; the five entries named above do not hold them
+  (0x005A35D0 is not an entry), so which monster functions they are stays `[I]`.
 - [I] **`SKILLS_SrvDo`'s missile** (P1.1 § 6): `(rec->lob ? Lob : Line)(unit, id, lvl, dx, dy, tx, ty, 0)` with
   `EDX = srvmissile` (`+0x46`). With an item cast's effect flag, `dx = tx − x`, `dy = ty − y` and the target becomes
   `(tx + dx, ty + dy)`: the line missile starts at the target point and flies on in the same direction to twice the
