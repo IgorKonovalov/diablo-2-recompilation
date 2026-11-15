@@ -731,6 +731,8 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-11-15 | `lane/n66r` | 0066 rulings | architect | 86 122 | 24 | 3 | — | rulings (S3e into S7e; out of scope: client presentation) | — |
 | 2026-11-15 | `lane/n69c` | 0069 P1c | reverser-static | 457 154 | 136 | 25 | Ghidra ghidra-n69c | accept with fixes | 3: plan wording 1, status/route 1, omission/backlog 1 (two parts: 307 601/58/16 + 149 553/78/9) |
 | 2026-11-15 | `lane/n69c` review | 0069 P1c | lane-check | 67 151 | 11 | 1 | — | gave accept with fixes (Tier B) | — (4th Tier B after the n65p audit; UnitSetEvent 0x400 store routed to reverser+spec-writer) |
+| 2026-11-15 | `lane/n65h` | 0065 P1 | reverser-harness | 301 797 | 142 | 55 | slot 1 | accept with fixes | 13: overclaim 1, misread 1, omission 3, wrong anchor 2, stale cross-reference 5, other 1 (two parts: 189 552/90/30 + 112 245/52/25) |
+| 2026-11-15 | `lane/n65h` review | 0065 P1 | architect-review | 186 342 | 64 | 10 | — | gave accept with fixes (Tier A) | audit of lane/n65h: overclaim 1, misread 1, omission 3, wrong anchor 2, stale cross-reference 5, other 1; no reject-grade miss (5th Tier B after the n65p audit; count restarts) |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not
