@@ -50,6 +50,15 @@ item 7); `regress` reruns S1b's check over its 38 logs and compares it, without 
 `sweep2-s1b/model-check.txt` (exit 1 on any difference):
 
     python3 -I tools/ai_model_check.py regress [--base workspace/logs/ai/sweep2-s1b] [--logs-dir workspace/logs/ai] [--out F]
+
+Revision 4 (plan 0069 Phase 1b, `lane/n69b`): the 29 models of batches H1a (R8, R16, R142, R17, R18, R24, R25, R27, R72,
+R74), H1b (R115, R116, R117, S15, R119, R120, R122, R123, S16, R126, R129, R136, R137) and H1d (S5, S6, R41, R42, R58,
+R60), grouped per entry above `MODELS`. Engine additions, used only by them: a call's ECX or EDX given by the model when
+the block calls on another unit (`_ecx`, `_edx`); `Run.opaque` for a command that is neither a boundary nor executed and
+may draw (the next call takes the logged seed); `SELECT`, which splits a shared think between its table row and its state
+row by the AID line's state; `check --no-select`. Row 122's and state 16's fixed records 492..495 are read from the game's
+monstats.bin (`imp_rec`), row 25's tables from the catalogue's text (`wisp_tables`). The entries of revisions 1 to 3 are
+unchanged (`regress`).
 """
 import os
 import sys
@@ -307,8 +316,18 @@ class Run:
 
     # ---- draws on the unit seed
     def step(self):
+        if self.seed is None:
+            raise Stop("a draw after an opaque call (the seed is unknown)")
         self.seed = ai.step(self.seed)
         return self.seed[0]
+
+    def opaque(self, name):
+        """Revision 4: a call the block makes of a function that is neither a boundary nor executed, and that may move the
+        unit's seed (a command such as `MonAiWalkToPointCmd`). The seed is unknown from here: the next compared call does not
+        compare it and takes the logged one (its AIR line), and a block that returns before any call skips the exit seed. A
+        draw before that resync stops the decision. Used only by the revision 4 models."""
+        self.vals.append(("opaque", name))
+        self.seed = None
 
     def d100(self):
         return self.step() % 100
@@ -338,16 +357,18 @@ class Run:
         if b["fn"] != fn:
             raise Mismatch("%s: the model calls %s %08x, the log %08x@%08x" % (label, name, fn, b["fn"], b["ra"]))
 
-        def want(spec):
+        def want(spec, reg=None):
             if spec is None:
                 return SKIP
+            if spec in ("G", "U") and "_" + reg in kw:      # revision 4: a call on another unit or game word
+                return kw["_" + reg]
             if spec == "G":
                 return self.G
             if spec == "U":
                 return self.U
             return kw.get(spec, SKIP)
         for reg, spec in (("ecx", ecx), ("edx", edx)):
-            v = want(spec)
+            v = want(spec, reg)
             if v is not SKIP and v is not None and u32(v) != b[reg]:
                 diffs.append("%s %x/%x" % (reg, u32(v), b[reg]))
         for k, nm in enumerate(names):
@@ -364,7 +385,7 @@ class Run:
                     diffs.append("blk%d[%d] %x/%x" % (i, k, u32(v), got[k]))
         if self.c4 is not None and self.c4 != b["c4"]:
             diffs.append("c4 %x/%x" % (self.c4, b["c4"]))
-        if "%08x:%08x" % self.seed != b["s"]:
+        if self.seed is not None and "%08x:%08x" % self.seed != b["s"]:
             diffs.append("seed %08x:%08x/%s" % (self.seed + (b["s"],)))
         for k, off in enumerate((0x14, 0x18, 0x1C)):
             if self.v[off] is not None and u32(self.v[off]) != b["c"][k]:
@@ -393,7 +414,7 @@ class Run:
             raise Stop("AIL")
         if d["aix"] is None:
             raise Stop("no AIX line")
-        if "%08x:%08x" % self.seed != d["aix"]["s"]:
+        if self.seed is not None and "%08x:%08x" % self.seed != d["aix"]["s"]:
             raise Mismatch("end: exit seed %08x:%08x/%s" % (self.seed + (d["aix"]["s"],)))
 
 
@@ -1476,6 +1497,1096 @@ def m_s13(r):
         r.call("8.idle#2", "Idle", n=r.aip(2))
 
 
+# ---- plan 0069 Phase 1b (`lane/n69b`), revision 4: the models of batches H1a, H1b and H1d, transcribed from the catalogue
+# blocks at b5999f5e (the catalogue is unchanged from there to 7b7f20e9) and, where a block names a table or a callback by
+# address only, from its finding (named per model). Grouped per entry; Phase 1c adds its own after these.
+
+def s8(v):
+    v &= 0xFF
+    return v - 0x100 if v & 0x80 else v
+
+
+def tmode(r):
+    """The target's mode, the AID line's `t[3]` (None without a target)."""
+    return (r.aid.get("t") or [None] * 7)[3]
+
+
+def diff(r):
+    """`d` (Game+0x6D), the Normal column under the `d0` control as `aip`."""
+    return 0 if r.ctl == "d0" else r.aid["diff"]
+
+
+# ---- H1a R8 SandRaider (catalogue 263; AiNearAllyCb 0x005F06B0, ai/0002)
+def m_r8(r):
+    """R8 SandRaider. `aidel[d]` is logged for Normal only (AID `ad[0]`, MonStats+0x4F): step 3's wait is compared in
+    Normal and not compared in the other two."""
+    one = r.aip(6) == 1
+    if r.br("1.v14=0", r.v[0x14] == 0, val=r.v[0x14]):
+        r.call("1.state90", "StateSet", u=r.U, state=90, v=0)
+        r.call("1.state91", "StateSet", u=r.U, state=91, v=0)
+        r.store("set v18=0", 0x18, 0)
+    r.store("set v14+=1", 0x14, r.v[0x14] + 1)
+    n = r.v[0x14]
+    if r.br("3.n=aip(5)", n == r.aip(5)):
+        r.call("3.overlay", "UnitSetOverlayStat", s1=r.U, s2=150 if r.br("3.aip(6)=1", one) else 46, s3=0)
+        wait = r.aid["ad"][0] + 1 if r.aid["diff"] == 0 and r.aid.get("ad") else None
+        r.call("3.idle", "Idle", n=wait)
+        return
+    if r.less("4.aip(5)<n", r.aip(5), n):
+        r.call("4.state", "StateSet", u=r.U, state=90 if r.br("4.aip(6)=1", one) else 91, v=1)
+        r.store("set v18=1", 0x18, 1)
+    if r.less("5.v1C<7", r.v[0x1C], 7):
+        life = s32(r.call("5.lifepct", "LifePct", U=r.U).eax)
+        if r.less("5.life<aip(1)", life, r.aip(1)):
+            ret = r.call("5.search", "UnitSearch", cb=0x005F06B0, kind=1, blk={0: {0: 0, 1: 0x7FFFFFFF}})
+            best = ret.out(0, 0)
+            if r.br("5.best", best != 0):
+                r.call("5.walk", "Walk", t=best, flags=0)
+                return
+            r.store("set v1c+=1", 0x1C, r.v[0x1C] + 1)
+    if r.less("6.4<dist", 4, r.dist) and r.br("6.v18=0", r.v[0x18] == 0) and r.chance("6.chance(2)", 2):
+        r.call("6.t56", "T56", t=r.t, byte=0, flag=0)
+        return
+    if not r.br("7.melee", r.melee):
+        if r.br("7.v18!=0", r.v[0x18] != 0) or r.chance("7.chance(4)", 4):
+            r.call("7.walk", "Walk", t=r.t, flags=0)
+            return
+    else:
+        if r.br("8.v18=1", r.v[0x18] == 1) and r.br("8.Skill1>=0", r.skill[0] >= 0):
+            use_skill(r, "8.useskill1", 1, r.t)
+            r.store("set v14=0", 0x14, 0); r.store("set v18=0#2", 0x18, 0)
+            return
+        if r.chance("9.chance(3)", 3):
+            a1 = not r.less("9.Range<aip(7)", r.rng(100), r.aip(7), draw=True)
+            r.call("9.setmode", "SetModeAtUnit", mode=4 if a1 else 5, t=r.t)
+            return
+    k = 6 if r.less("10.24-aip(5)<6", 24 - r.aip(5), 6) else 24 - r.aip(5)
+    if r.less("10.aip(5)+k<v14", r.aip(5) + k, r.v[0x14]):
+        r.store("set v14=0#2", 0x14, 0); r.store("set v18=0#3", 0x18, 0)
+    r.call("11.idle", "Idle", n=15)
+
+
+# ---- H1a R16 ClawViper and R142 ClawViperEx (catalogue 497, 526)
+def viper_state(r, lb, v):
+    """`if aip(6) ≠ 0: State(aip(6) = 2 ? 91 : 90, v)`."""
+    if r.br(lb + ".aip(6)!=0", r.aip(6) != 0):
+        r.call(lb + ".state", "StateSet", u=r.U, state=91 if r.br(lb + ".aip(6)=2", r.aip(6) == 2) else 90, v=v)
+
+
+def viper_charge(r, lb):
+    """Row 16's step 3 (row 142's step 4): the charge."""
+    if (r.br(lb + ".Skill1>=0", r.skill[0] >= 0) and r.less(lb + ".dist<aip(2)", r.dist, r.aip(2))
+            and r.chance(lb + ".chance(1)", 1)
+            and r.br(lb + ".targetok", r.call(lb + ".targetok", "SkillTargetOk", skill=r.skill[0], u=r.t, a=r.tx, b=r.ty).eax)):
+        use_skill(r, lb + ".useskill1", 1, r.t)
+        viper_state(r, lb, 1)
+        r.store("set v14=1", 0x14, 1)
+        return True
+    return False
+
+
+def viper_walk(r, lb):
+    if r.less(lb + ".D100<50", r.d100(), 50, draw=True):
+        r.call(lb + ".walk", "Walk", t=r.t, flags=7)
+    else:
+        r.call(lb + ".idle", "Idle", n=r.aip(5))
+
+
+def m_r16(r):
+    """R16 ClawViper."""
+    if r.br("1.v14!=0", r.v[0x14] != 0, val=r.v[0x14]):
+        viper_state(r, "1", 0)
+    if r.br("2.melee", r.melee):
+        if not r.chance("2.chance(3)", 3):
+            r.call("2.idle", "Idle", n=r.aip(5))
+            return
+        r.call("2.setmode", "SetModeAtUnit", mode=4 if r.chance("2.chance(4)", 4) else 5, t=r.t)
+        return
+    if viper_charge(r, "3"):
+        return
+    viper_walk(r, "4")
+
+
+def m_r142(r):
+    """R142 ClawViperEx."""
+    if r.br("1.v14!=0", r.v[0x14] != 0, val=r.v[0x14]):
+        viper_state(r, "1", 0)
+    if r.br("2.melee", r.melee):
+        if r.chance("2.chance(3)", 3):
+            r.call("2.setmode5", "SetModeAtUnit", mode=5, t=r.t)
+            return
+        r.call("2.idle", "Idle", n=r.aip(5))
+        return
+    if r.less("3.dist<aip(7)", r.dist, r.aip(7)) and r.chance("3.chance(4)", 4):
+        if r.less("3.v18<T", r.v[0x18], r.T):
+            r.call("3.setmode4", "SetModeAtUnit", mode=4, t=r.t)
+            r.store("set v18=T + aip(8)", 0x18, r.T + r.aip(8))
+            return
+        r.call("3.idle", "Idle", n=r.aip(5))
+        return
+    if viper_charge(r, "4"):
+        return
+    viper_walk(r, "5")
+
+
+# ---- H1a R17 SandLeaper (catalogue 560)
+def m_r17(r):
+    """R17 SandLeaper."""
+    if (r.br("1.Skill1>=0", r.skill[0] >= 0) and r.less("1.dist<5", r.dist, 5) and r.chance("1.chance(1)", 1)
+            and r.br("1.targetok", r.call("1.targetok", "SkillTargetOk", skill=r.skill[0], u=r.t, a=0, b=0).eax)):
+        use_skill(r, "1.useskill1", 1, r.t)
+        return
+    if not r.br("2.melee", r.melee):
+        if r.less("2.10<dist", 10, r.dist):
+            r.call("2.ovr", "Ovr", type=0, param=75, byte=0)
+            r.call("2.wandernear", "WanderNear", u=r.t, r=5)
+            return
+        if r.chance("2.chance(3)", 3):
+            r.call("2.walk", "Walk", t=r.t, flags=7)
+            return
+        if r.chance("2.chance(4)", 4):
+            r.call("2.t56", "T56", t=r.t, byte=4, flag=0)
+            return
+    elif r.chance("2.chance(2)", 2):
+        r.call("2.setmode5", "SetModeAtUnit", mode=5, t=r.t)
+        return
+    r.call("3.idle", "Idle", n=10)
+
+
+# ---- H1a R18 PantherWoman (catalogue 586; AiSameBaseNearCb 0x005B0D00)
+def m_r18(r):
+    """R18 PantherWoman."""
+    if r.br("1.melee", r.melee):
+        if r.chance("1.chance(2)", 2):
+            r.call("1.setmode4", "SetModeAtUnit", mode=4, t=r.t)
+            return
+        r.call("1.idle", "Idle", n=r.aip(4))
+        return
+    if r.chance("2.chance(1)", 1):
+        r.call("2.ovr", "Ovr", type=0, param=75, byte=0)
+        r.call("2.walk13", "Walk13", t=r.t, flags=7)
+        return
+    ret = r.call("3.search", "UnitSearch", cb=0x005B0D00, kind=1, blk={0: {0: 0, 1: 0x7FFFFFFF}})
+    unit, best = ret.out(0, 0), s32(ret.out(0, 1))
+    if r.br("4.unit", unit != 0) and r.less("4.aip(3)^2<best", r.aip(3) * r.aip(3), best):
+        r.call("4.ovr", "Ovr", type=0, param=75, byte=0)
+        r.call("4.walk", "Walk", t=unit, flags=7)
+        return
+    if r.less("5.D100<25", r.d100(), 25, draw=True):
+        r.call("5.t56", "T56", t=r.t, byte=3, flag=0)
+    else:
+        r.call("5.idle", "Idle", n=r.aip(4))
+
+
+# ---- H1a R24 Mosquito (catalogue 704)
+def m_r24(r):
+    """R24 Mosquito."""
+    if r.br("1.melee", r.melee):
+        if r.chance("1.chance(3)", 3) or r.br("1.v18=0", r.v[0x18] == 0, val=r.v[0x18]):
+            r.store("set v18+=1", 0x18, r.v[0x18] + 1)
+            if r.br("1.Skill1>=0", r.skill[0] >= 0) and r.chance("1.chance(4)", 4):
+                use_skill(r, "1.useskill1", 1, r.t)
+                return
+            r.call("1.setmode4", "SetModeAtUnit", mode=4, t=r.t)
+            return
+        if r.less("1.20<D100", 20, r.d100(), draw=True):
+            r.call("1.idle", "Idle", n=15)
+            return
+        r.store("set v14=2", 0x14, 2); r.store("set v18=0", 0x18, 0)
+    v = r.v[0x14]
+    r.vals.append(("2.switch v14", v))
+    if r.br("2.v14=0", v == 0):
+        r.call("2.0.ovr", "Ovr", type=13, param=100, byte=0)
+        r.call("2.0.walk", "Walk", t=r.t, flags=0)
+    elif r.br("2.v14=1", v == 1):
+        r.call("2.1.ovr", "Ovr", type=0, param=50, byte=0)
+        r.call("2.1.ring", "Ring", r=4)
+        r.store("set v18+=1#2", 0x18, r.v[0x18] + 1)
+        if r.less("2.1.aip(5)<v18", r.aip(5), r.v[0x18]):
+            r.store("set v14=0", 0x14, 0); r.store("set v18=0#2", 0x18, 0)
+    elif r.br("2.v14=2", v == 2):
+        r.call("2.2.ovr", "Ovr", type=2, param=100, byte=0)
+        r.call("2.2.stepaway", "StepAway", t=r.t, d=10, flag=1)
+        r.store("set v14=1", 0x14, 1); r.store("set v18=0#3", 0x18, 0)
+    else:
+        r.store("set v14=0#2", 0x14, 0); r.store("set v18=0#4", 0x18, 0)
+        r.call("2.idle", "Idle", n=10)
+
+
+# ---- H1a R25 WillOWisp (catalogue 735-836; AiWispCb 0x005F3960, ai/0003)
+WISP = None
+
+
+def wisp_tables():
+    """`A`, `B` and `A5` as the catalogue lists them (R25, *The tables*), read from the spec text so that the model is the
+    block; `B5[p] = A5[((p + 1) mod 5) + 1]` by its rule. {(v14, place): (x, y)} for `A` and `B`, {place: (x, y)} for the
+    five-wisp tables."""
+    global WISP
+    if WISP is not None:
+        return WISP
+    import re
+    path = os.path.join(os.path.dirname(HERE), "docs", "specs", "monsters", "ai", "catalogue.md")
+    with open(path, encoding="utf-8") as fh:
+        text = fh.read().replace("−", "-")
+    pair = re.compile(r"\((-?\d+),\s*(-?\d+)\)")
+    tabs = {}
+    for name in ("A", "B"):
+        m = re.search(r"^%s\[v14, place\].*?\n(.*?)```" % name, text, re.S | re.M)
+        rows = {}
+        for ln in m.group(1).splitlines():
+            mm = re.match(r"\s*(\d+):(.*)$", ln)
+            if mm:
+                for k, (x, y) in enumerate(pair.findall(mm.group(2))):
+                    rows[(int(mm.group(1)), k + 1)] = (int(x), int(y))
+        tabs[name] = rows
+    m = re.search(r"`A5\[1\.\.5\]` = (.*?)\.\n", text)
+    a5 = {k + 1: (int(x), int(y)) for k, (x, y) in enumerate(pair.findall(m.group(1)))}
+    b5 = {p: a5[((p + 1) % 5) + 1] for p in range(1, 6)}
+    WISP = {"A": tabs["A"], "B": tabs["B"], "A5": a5, "B5": b5}
+    return WISP
+
+
+def wisp_grant(r):
+    """R25's grant. `STATLIST_Alloc`'s result is not logged: it forks."""
+    if r.br("g.t", r.t != 0) and r.br("g.player", r.ttype == 0, val=r.ttype):
+        if not r.br("g.dead", r.call("g.dead", "UnitIsDead", c=r.t).eax):
+            if r.unknown("g.alloc"):
+                end = u32(r.T + 1728000)
+                r.call("g.queue", "QueueEvent", _edx=r.t, kind=12, frame=end, a=0, b=0)
+
+
+def m_r25(r):
+    """R25 WillOWisp. State 4's room search (RoomUnitSearchInit and the walk of its result) is not a boundary: its count
+    forks, and a gather of four or five wisps (each wisp's `AiCtlSetVar` and `Idle`) stops the decision. The block's
+    "a room unit search around U" is taken to begin with `UnitGetRoom(U)` (0x005F3E62, the audit's first call of the
+    arm). `MoveToPointNoStop` (0x005DE490) is not a boundary: it is opaque (`Run.opaque`)."""
+    T, d = r.T, diff(r)
+    if r.br("0.t", r.t != 0) and r.less("0.v1C<T", r.v[0x1C], T):
+        dsq = s32(r.call("0.distsq", "UnitDistSq", u=r.U, t=r.t).eax)
+        if (r.less("0.dsq<1024", dsq, 1024) and r.less("0.v14<4", r.v[0x14], 4)
+                and not r.less("0.d+2<Range(1000)", d + 2, r.rng(1000), draw=True)):
+            r.store("set v14=4", 0x14, 4)
+    v14 = r.v[0x14]
+    r.vals.append(("v14", v14))
+    if r.br("4.v14=4", v14 == 4):
+        r.call("4.room", "UnitGetRoom", u=r.U)
+        if r.unknown("4.found 4 or 5"):
+            raise Stop("4: a gather of four or five wisps is not modelled")
+        r.store("set v14=2#4", 0x14, 2)
+        r.call("4.idle8", "Idle", n=8)
+        return
+    if r.br("d.v14=5", v14 == 5) or r.less("d.5<v14", 5, v14):
+        five = v14 == 5
+        p = r.v[0x1C]
+        if r.less("1.lim<v1C", 5 if five else 4, p):
+            r.store("set v14=2#1", 0x14, 2)
+            r.call("1.idle8", "Idle", n=8)
+            return
+        if r.t == 0:
+            raise Stop("2: the dance reads the target's position, and there is none")
+        W = wisp_tables()
+        key = p if five else (v14, p)
+        a = (W["A5"] if five else W["A"]).get(key)
+        b = (W["B5"] if five else W["B"]).get(key)
+        if a is None:
+            raise Stop("2: index outside the tables (v14 %d, v1C %d)" % (v14, p))
+        px, py = u32(r.tx + a[0]), u32(r.ty + a[1])
+        if r.br("3.pd>3", u32(r.call("3.pathdist", "PathDist", u=r.U, x=px, y=py).eax) > 3):
+            if r.rchance("3.Range<34", 100, 34):
+                r.call("3.ring4", "Ring", r=4)
+            else:
+                r.opaque("3.MoveToPointNoStop")
+            return
+        if r.br("4.T%67!=0", T % 67 != 0):
+            r.call("4.idle67", "Idle", n=67 - T % 67)
+            return
+        if r.less("5.v18<3", r.v[0x18], 3):
+            if r.br("5.B=(0,0)", b == (0, 0)):
+                r.store("set v18+=1", 0x18, r.v[0x18] + 1)
+                r.call("5.idle", "Idle", n=(337 - T % 337) if five else 67)
+            else:
+                r.call("5.setmode7", "SetMode", mode=7, x=u32(r.tx + b[0]), y=u32(r.ty + b[1]))
+                r.store("set v18+=1#2", 0x18, r.v[0x18] + 1)
+            return
+        if five:
+            r.store("set v14=2#6", 0x14, 2); r.store("set v1c=T+1800", 0x1C, T + 1800)
+            r.call("6.idle", "Idle", n=337 - T % 337)
+            return
+        r.store("set v14+=1", 0x14, r.v[0x14] + 1); r.store("set v18=0#7", 0x18, 0)
+        if r.less("7.12<v14", 12, r.v[0x14]):
+            r.store("set v14=2#7", 0x14, 2); r.store("set v1c=T+1800#7", 0x1C, T + 1800)
+        r.call("7.idle", "Idle", n=337 - T % 337)
+        wisp_grant(r)
+        return
+    if r.br("s1.v14=1", v14 == 1):
+        if not r.less("s1.1.0<v18", 0, r.v[0x18]):
+            if r.br("s1.1.melee", r.melee):
+                r.call("s1.1.setmode8", "SetModeAtUnit", mode=8, t=0)
+                r.store("set v14=3", 0x14, 3)
+                return
+            if r.chance("s1.1.chance(1)", 1):
+                r.call("s1.1.setmode8b", "SetModeAtUnit", mode=8, t=0)
+                r.store("set v14=2#s1", 0x14, 2)
+                return
+        r.store("set v18-=1", 0x18, r.v[0x18] - 1); r.store("set v14=1#s1", 0x14, 1)
+        if r.rchance("s1.2.Range<aip(3)", 100, r.aip(3)):
+            r.call("s1.2.walk", "Walk", t=r.t, flags=0)
+        else:
+            r.call("s1.2.ring6", "Ring", r=6)
+        return
+    if not r.br("p.1.melee", r.melee) and (r.br("p.1.v14=2", v14 == 2) or r.chance("p.1.chance(1)", 1)):
+        r.call("p.1.setmode7", "SetModeAtUnit", mode=7, t=r.t)
+        r.store("set v14=0#p1", 0x14, 0)
+        return
+    if r.br("p.2.melee", r.melee) and (r.br("p.2.v14=3", v14 == 3) or r.chance("p.2.chance(2)", 2)):
+        r.call("p.2.setmode4", "SetModeAtUnit", mode=4, t=r.t)
+        r.store("set v14=0#p2", 0x14, 0)
+        return
+    r.store("set v14=1#p", 0x14, 1)
+    if r.rchance("p.3.Range<aip(3)", 100, r.aip(3)):
+        r.call("p.3.walk", "Walk", t=r.t, flags=0)
+    else:
+        r.call("p.3.ring4", "Ring", r=4)
+    r.store("set v18=3", 0x18, 3)
+
+
+# ---- H1a R27 ThornHulk (catalogue 896)
+def hulk_frenzy(r, lb):
+    """`MonAiUseSkill(5, Skill1, t, 0, 0)`, then the delay to the mode's first event."""
+    r.call(lb + ".useskill", "UseSkill", mode=5, skill=r.skill[0], t=r.t, x=0, y=0)
+    f = s32(r.call(lb + ".firstframe", "UnitEventFirstFrame", c=r.G, d=r.U, s1=1).eax)
+    if r.less(lb + ".T<f", s32(r.T), f):
+        r.call(lb + ".delay", "Delay", n=r.aip(5) - s32(r.T) + f)
+
+
+def m_r27(r):
+    """R27 ThornHulk."""
+    if not r.br("1.melee", r.melee):
+        r.store("set v14=0", 0x14, 0)
+        r.call("1.walk13", "Walk13", t=r.t, flags=7)
+        return
+    if r.less("2.v14<1", r.v[0x14], 1):
+        if not r.chance("2.chance(1)", 1):
+            if r.rchance("2.Range<aip(3)", 100, r.aip(3)):
+                r.call("2.t56", "T56", t=r.t, byte=4, flag=0)
+                return
+            r.call("2.idle", "Idle", n=15)
+            return
+        if r.less("2.v18<1", r.v[0x18], 1) and r.rchance("2.Range<aip(4)", 100, r.aip(4)):
+            hulk_frenzy(r, "2")
+            r.store("set v14=aip(6)", 0x14, r.aip(6))
+            return
+        r.store("set v18-=1", 0x18, r.v[0x18] - 1)
+        a2 = r.rchance("2.Range<aip(2)", 100, r.aip(2))
+        r.call("2.setmode", "SetModeAtUnit", mode=5 if a2 else 4, t=r.t)
+        return
+    hulk_frenzy(r, "3")
+    r.store("set v14-=1", 0x14, r.v[0x14] - 1)
+    if r.less("5.v14<1", r.v[0x14], 1):
+        r.store("set v18=3", 0x18, 3)
+
+
+# ---- H1a R72 DoomKnight (catalogue 1572)
+def m_r72(r):
+    """R72 DoomKnight."""
+    if not r.br("1.melee", r.melee):
+        if r.chance("1.chance(3)", 3):
+            r.call("1.walk13", "Walk13", t=r.t, flags=7)
+            return
+        r.call("1.idle", "Idle", n=r.aip(4))
+        return
+    if r.chance("2.chance(1)", 1):
+        r.call("2.setmode4", "SetModeAtUnit", mode=4, t=r.t)
+        return
+    r.call("3.idle", "Idle", n=r.aip(2))
+
+
+# ---- H1a R74 OblivionKnight (catalogue 1619; AiOblivionKnightCb 0x005FAE40, ai/0005)
+def m_r74(r):
+    """R74 OblivionKnight. Skills' row count and `auratargetstate` are not logged (step 2 forks on them, and `HasState`'s
+    state is not compared); `MonsterData+0x0E` is not logged (step 4's `Skill1` arm forks)."""
+    ret = r.call("1.search", "UnitSearch", cb=0x005FAE40, kind=1,
+                 blk={0: {0: 0, 1: 0, 2: 2500, 3: 0x7FFFFFFF, 4: 0x7FFFFFFF}})
+    knight = ret.out(0, 0)
+    curse = None
+    if r.less("2.dist<aip(1)", r.dist, r.aip(1)):
+        if (r.br("2.Skill4>0", r.skill[3] > 0) and r.unknown("2.Skill4<count and st>0")
+                and not r.br("2.hasstate", r.call("2.hasstate", "HasState", u=r.t).eax)):
+            curse = 4
+        else:
+            if r.br("2.knight", knight != 0):
+                dsq = s32(r.call("2.distsq", "UnitDistSq", u=knight, t=r.t).eax)
+                if (r.less("2.dist^2<dsq", s32(r.dist * r.dist), dsq)
+                        and r.br("2.walked", r.call("2.walk", "Walk", t=knight, flags=4).eax)):
+                    return
+            r.call("2.ovr", "Ovr", type=2, param=50, byte=0)
+            if r.br("2.stepped", r.call("2.stepaway", "StepAway", t=r.t, d=10, flag=1).eax):
+                return
+            if r.br("2.Skill3>=0", r.skill[2] >= 0):
+                use_skill(r, "2.useskill3", 3, r.t)
+                return
+    if curse is None:
+        ret = r.call("3.findhostile", "FindHostile", pm=0)
+        h = ret.eax
+        if r.br("4.h", h != 0) and r.less("4.d2<aip(2)", s32(ret.out(0)), r.aip(2)):
+            if (r.br("4.Skill6>0", r.skill[5] > 0) and r.less("4.v14<T", r.v[0x14], r.T)
+                    and r.rchance("4.Range<aip(4)", 100, r.aip(4))):
+                curse = 6
+            elif r.chance("4.chance(5)", 5):
+                if r.br("4.Skill3>=0", r.skill[2] >= 0) and r.rchance("4.Range<aip(6)", 100, r.aip(6)):
+                    use_skill(r, "4.useskill3", 3, h)
+                    return
+                if r.br("4.Skill1>=0", r.skill[0] >= 0) and not r.unknown("4.MonsterData+0x0E>=4"):
+                    use_skill(r, "4.useskill1", 1, h)
+                    return
+    if curse == 4:
+        use_skill(r, "c4.useskill4", 4, r.t)
+        r.store("set v14=T + aip(3)", 0x14, r.T + r.aip(3))
+        return
+    if curse == 6:
+        use_skill(r, "c6.useskill6", 6, r.t)
+        r.store("set v14=T + aip(3)#6", 0x14, r.T + r.aip(3))
+        return
+    if r.less("5.aip(8)<dist", r.aip(8), r.dist) and r.chance("5.chance(7)", 7):
+        r.call("5.wandernear", "WanderNear", u=r.t, r=6)
+        return
+    if r.less("6.69<D100", 69, r.d100(), draw=True):
+        r.call("6.idle", "Idle", n=10)
+        return
+    r.call("7.t56", "T56", t=r.t, byte=3, flag=0)
+
+
+# ---- H1b R115 SiegeBeast (catalogue 3200; AiImpNearCb 0x005E1720, ai/0009)
+def m_r115(r):
+    """R115 SiegeBeast."""
+    o = r.call("1.owner", "UnitGetOwner", c=r.G, d=r.U).eax
+    if r.br("2.death", r.call("2.deathmode", "MonIsDeathMode", s1=r.U).eax):
+        return
+    if r.br("3.o=0", o == 0) and r.br("3.align=0", r.call("3.align", "UnitAlignGet", u=r.U).eax == 0):
+        imp = r.call("3.search", "UnitSearch", cb=0x005E1720, kind=1, blk={0: {0: r.aip(1) * r.aip(1)}}).eax
+        if r.br("3.imp", imp != 0):
+            r.call("3.sethost", "AiImpSetHost", c=imp, d=r.U)
+    if r.br("4.melee", r.melee):
+        if r.br("4.Skill1>=0", r.skill[0] >= 0) and r.chance("4.chance(3)", 3):
+            r.call("4.stomp", "UseSkill", mode=r.skmode[0], skill=r.skill[0], t=0, x=0, y=0)
+            return
+        if r.chance("4.chance(2)", 2):
+            r.call("4.setmode4", "SetModeAtUnit", mode=4, t=r.t)
+        else:
+            r.call("4.idle", "Idle", n=r.aip(4))
+        return
+    if (r.br("5.Skill1>=0", r.skill[0] >= 0)
+            and r.less("5.dist<p5", r.dist, s32(r.call("5.param5", "SkillGetParam5", c=r.skill[0]).eax))
+            and r.rchance("5.Range<aip(5)", 100, r.aip(5))):
+        r.call("5.useskill", "UseSkill", mode=r.skmode[0], skill=r.skill[0], t=0, x=0, y=0)
+        return
+    if (r.br("6.approach", r.call("6.approach", "ApproachPointTest", u=r.U, t=r.t).eax)
+            and r.chance("6.chance(6)", 6)):
+        r.call("6.ovr", "Ovr", type=0, param=min(max(r.aip(7), 0), 127), byte=0)
+        r.call("6.toward", "Toward", t=r.t, max=12, ring=0)
+        return
+    r.call("7.toward", "Toward", t=r.t, max=12, ring=0)
+
+
+# ---- H1b R116 Minion (catalogue 3231)
+def m_r116(r):
+    """R116 Minion. The head record is the AID line's `head` (AiCtl+0x20's record at the think call): kind `+0x08`, type
+    `+0x0C`, guid `+0x10`, expiry `+0x14` (machinery E4; R116a's order)."""
+    f, t, melee = 0, r.t, r.melee
+    p = r.call("2.head", "ParamsHead", U=r.U).eax
+    if r.br("2.p", p != 0):
+        if r.head is None:
+            raise Stop("no head record logged")
+        kind, typ, guid, exp = r.head[2], r.head[3], r.head[4], s32(r.head[5])
+        found = False
+        if r.br("2.kind=1", kind == 1, val=kind) and r.less("2.T<exp", s32(r.T), exp):
+            u = r.call("2.find", "GameFindUnit", type=typ, guid=guid).eax
+            if r.br("2.found", u != 0) and not r.br("2.dead", r.call("2.dead", "UnitIsDead", c=u).eax):
+                found, f = True, 1
+                if r.br("2.u!=t", u != t):
+                    t = u
+                    r.call("2.edge", "UnitEdgeDistance", s1=r.U, s2=u)
+                    melee = r.call("2.inmelee", "InMeleeRange", u=r.U, t=u, z=0).eax
+        if not found:
+            r.call("2.pop", "ParamsPop")
+    if r.br("3.melee", melee):
+        if r.br("3.f=0", f == 0) and not r.chance("3.chance(1)", 1):
+            r.call("3.idle", "Idle", n=r.aip(2))
+            return
+        r.call("3.setmode", "SetModeAtUnit", mode=5 if r.chance("3.chance(2)", 2) else 4, t=t)
+        return
+    if r.br("4.f=0", f == 0) and not r.chance("4.chance(3)", 3):
+        r.call("4.idle", "Idle", n=r.aip(4))
+        return
+    r.call("5.walk", "Walk", t=t, flags=0)
+
+
+# ---- H1b R117 SuicideMinion, and S15 (its alias; catalogue 3259, 3480)
+def m_r117(r):
+    """R117 SuicideMinion (and state 15, the same think)."""
+    if r.br("1.v14!=0", r.v[0x14] != 0, val=r.v[0x14]):
+        if r.less("1.v14<T", r.v[0x14], s32(r.T)):
+            r.call("1.setmode0", "SetModeAtUnit", mode=0, t=r.t)
+        else:
+            r.call("1.idle", "Idle", n=r.aip(2))
+        return
+    if r.br("2.melee", r.melee):
+        r.store("set v14=T + aip(5)", 0x14, r.T + r.aip(5))
+        r.call("2.idle", "Idle", n=r.aip(2))
+        return
+    if r.chance("3.chance(3)", 3):
+        r.call("3.walk", "Walk", t=r.t, flags=0)
+    else:
+        r.call("3.idle", "Idle", n=r.aip(2))
+
+
+# ---- H1b R119 SuccubusWitch (catalogue 3306)
+def m_r119(r):
+    """R119 SuccubusWitch. `StatListFindFlag(t, 0x20)` is not a boundary here (0x005E2157): it forks."""
+    dist = r.dist
+    if (r.br("1.t", r.t != 0) and not r.unknown("1.flag0x20") and r.less("1.dist<aip(4)", dist, r.aip(4))
+            and r.chance("1.chance(3)", 3)):
+        if (r.br("1.Skill1>0", r.skill[0] > 0)
+                and not r.less("1.lifeT<aip(7)", s32(r.call("1.lifet", "UnitLifePct", u=r.t).eax), r.aip(7))):
+            use_skill(r, "1.useskill1", 1, r.t)
+            return
+        if (r.br("1.Skill2>0", r.skill[1] > 0)
+                and not r.less("1.aip(8)<lifeU", r.aip(8), s32(r.call("1.lifeu", "UnitLifePct", u=r.U).eax))):
+            use_skill(r, "1.useskill2", 2, r.t)
+            return
+        if r.br("1.Skill3>0", r.skill[2] > 0):
+            hp = s32(r.call("1.maxhp", "UnitGetMaxHp", s1=r.t).eax)
+            mana = s32(r.call("1.maxmana", "UnitGetMaxMana", s1=r.t).eax)
+            if r.less("1.mana<hp", mana, hp) or r.br("1.ttype!=0", r.ttype != 0):
+                use_skill(r, "1.useskill3", 3, r.t)
+                return
+        if r.br("1.Skill4>0", r.skill[3] > 0) and r.br("1.ttype=0", r.ttype == 0):
+            use_skill(r, "1.useskill4", 4, r.t)
+            return
+    step = r.aip(4) & 0xFF
+    if r.br("2.melee", r.melee):
+        if r.chance("2.chance(3)", 3) and r.br("2.stepped", r.call("2.stepaway", "StepAway", t=r.t, d=step, flag=1).eax):
+            return
+        if r.chance("2.chance(1)", 1):
+            r.call("2.setmode4", "SetModeAtUnit", mode=4, t=r.t)
+        else:
+            r.call("2.idle", "Idle", n=r.aip(6))
+        return
+    if r.br("3.Skill5>=0", r.skill[4] >= 0) and r.less("3.0<aip(8)", 0, r.aip(8)) and r.chance("3.chance(5)", 5):
+        ret = r.call("3.findhostile", "FindHostile", pm=0, blk={0: {0: dist}})
+        dist = s32(ret.out(0))
+        if r.br("3.h", ret.eax != 0) and r.rchance("3.Range<aip(8)", 100, r.aip(8)):
+            use_skill(r, "3.useskill5", 5, ret.eax)
+            return
+    if (r.less("4.dist<aip(4)", dist, r.aip(4)) and r.chance("4.chance(3)", 3)
+            and r.br("4.stepped", r.call("4.stepaway", "StepAway", t=r.t, d=step, flag=1).eax)):
+        return
+    if r.br("5.Skill5<0", r.skill[4] < 0):
+        ret = r.call("5.findhostile", "FindHostile", pm=0, blk={0: {0: dist}})
+        if r.br("5.h", ret.eax != 0) and r.chance("5.chance(5)", 5):
+            r.call("5.setmode9", "SetModeAtUnit", mode=9, t=ret.eax)
+            return
+    if r.chance("6.chance(2)", 2):
+        r.call("6.walk", "Walk", t=r.t, flags=0)
+        return
+    if r.less("7.D100<50", r.d100(), 50, draw=True) and r.br("7.t56", r.call("7.t56", "T56", t=r.t, byte=6, flag=1).eax):
+        return
+    r.call("8.idle", "Idle", n=r.aip(6))
+
+
+# ---- H1b R120 Overseer (catalogue 3336; AiOverseerMinionCb 0x005E26D0, ai/0010)
+def overseer_stored(r):
+    """`AiStoredHostile` (R120a), run: `U+0xC8` and the stored unit are not logged, so whether there is one, and its
+    kind and mode, fork; a monster's `UnitsHostile` is compared with its unit word unnamed. -> (non-zero, unit or None)."""
+    if not r.unknown("2.c8&0x20000 and stored"):
+        return False, None
+    if r.unknown("2.player live"):
+        return True, None
+    if not r.unknown("2.monster live"):
+        return False, None
+    return r.br("2.hostile", r.call("2.hostile", "UnitsHostile", c=r.G, d=r.U).eax != 0), None
+
+
+def m_r120(r):
+    """R120 Overseer. The quest hook 0x00587900 is not a boundary and nothing in the block reads its result: not
+    modelled (a draw of it would show at the next compared seed). `MonHasSkill` (0x005DD2D0) is not a boundary: it forks."""
+    wnz, w = overseer_stored(r)
+    if (r.br("3.Skill1>=0", r.skill[0] >= 0) and r.br("3.St3or19", r.call("3.st3or19", "St3or19", U=r.U).eax)
+            and r.less("3.v14<T", r.v[0x14], s32(r.T)) and r.br("3.w", wnz) and r.unknown("3.hasskill1")):
+        use_skill(r, "3.useskill1", 1, w)
+        r.store("set v14=T + aip(1)", 0x14, r.T + r.aip(1))
+        return
+    if r.br("4.melee", r.melee) and r.chance("4.chance(6)", 6):
+        r.call("4.setmode", "SetModeAtUnit", mode=5 if r.chance("4.chance(7)", 7) else 4, t=r.t)
+        return
+    ret = r.call("5.search", "UnitSearch", cb=0x005E26D0, kind=1, blk={0: {0: 576, 1: 400, 2: 50, 3: 0, 4: 0, 5: 0}})
+    weak, whip, count = ret.out(0, 3), ret.out(0, 4), ret.out(0, 5)
+    if (r.br("6.Skill2>=0", r.skill[1] >= 0) and r.br("6.weak", weak != 0) and r.chance("6.chance(2)", 2)
+            and r.unknown("6.hasskill2")):
+        use_skill(r, "6.useskill2", 2, weak)
+        return
+    if (r.br("7.Skill3!=0", r.skill[2] != 0) and r.br("7.whip", whip != 0) and r.chance("7.chance(3)", 3)
+            and r.br("7.align!=2", r.call("7.align", "UnitAlignGet", u=r.U).eax != 2) and r.unknown("7.hasskill3")):
+        use_skill(r, "7.useskill3", 3, whip)
+        return
+    if r.br("8.count", count != 0):
+        if r.less("8.dist<aip(4)-aip(5)", r.dist, r.aip(4) - r.aip(5)):
+            r.call("8.stepaway", "StepAway", t=r.t, d=(r.aip(4) - r.dist) & 0xFF, flag=0)
+            return
+        if r.less("8.aip(4)+aip(5)<dist", r.aip(4) + r.aip(5), r.dist):
+            r.call("8.walk", "Walk", t=r.t, flags=0)
+            return
+        if r.rchance("8.Range<50", 100, 50):
+            r.call("8.t56", "T56", t=r.t, byte=5, flag=0)
+        else:
+            r.call("8.idle", "Idle", n=10)
+        return
+    if r.less("9.D100<60", r.d100(), 60, draw=True):
+        r.call("9.walk", "Walk", t=r.t, flags=0)
+    else:
+        r.call("9.idle", "Idle", n=10)
+
+
+# ---- H1b R122 Imp and S16 (catalogue 3393, 3415, 3498): the fixed records 492..495 and AiUseSkillNearSelf
+IMP_RECS = None          # {k: (aip[24], skills[8], modes[8])} for R1..R4 (classes 492..495); tests set it
+
+
+def imp_rec(k):
+    """R`k` of row 122 (MonStats record 491 + k), read from the game's monstats.bin (as tools/monstats.py reads it)."""
+    global IMP_RECS
+    if IMP_RECS is None:
+        from excel_bin import find_file, read_bin
+        excel = os.path.join(os.path.dirname(HERE), "workspace", "merged", "data", "global", "excel")
+        recs, sz = read_bin(find_file(excel, "monstats", ".bin"))
+        assert sz == 0x1A8, sz
+        IMP_RECS = {}
+        for j in range(1, 5):
+            b = recs[491 + j]
+            aip = [ai.s16(int.from_bytes(b[0x56 + 2 * i:0x58 + 2 * i], "little")) for i in range(24)]
+            sk = [ai.s16(int.from_bytes(b[0x170 + 2 * i:0x172 + 2 * i], "little")) for i in range(8)]
+            IMP_RECS[j] = (aip, sk, list(b[0x180:0x188]))
+    return IMP_RECS[k]
+
+
+def raip(r, k, slot):
+    """`Rk.aip(slot)` at the game's difficulty (Normal under `d0`)."""
+    return imp_rec(k)[0][3 * (slot - 1) + diff(r)]
+
+
+def near_self(r, lb, rad, skill, mode):
+    """`AiUseSkillNearSelf(U, rad, skill, mode)` (0x005DF850), run: its `UnitGetGame` and `MonAiUseSkill` are logged
+    (the helper's window)."""
+    n = s32(2 * rad)
+
+    def jitter():
+        if n > 0:
+            low = r.step()
+            return low & (n - 1) if n & (n - 1) == 0 else low % n
+        return 0
+    ox = jitter()
+    oy = jitter()
+    game = r.call(lb + ".game", "UnitGetGame", c=r.U).eax
+    r.call(lb + ".useskill", "UseSkill", _ecx=game, mode=mode, skill=skill, t=0,
+           x=u32(r.x + ox - rad), y=u32(r.y + oy - rad))
+
+
+def m_r122(r):
+    """R122 Imp. `R1..R4` are MonStats records 492..495 (`imp_rec`); `Skill1`, `Skill4` and `Sk1mode` the imp's own."""
+    if r.br("1.v14!=-1", r.v[0x14] != -1, val=r.v[0x14]) and r.br("1.align=0", r.call("1.align", "UnitAlignGet", u=r.U).eax == 0):
+        h = r.call("1.find", "GameFindUnit", type=1, guid=r.v[0x14]).eax
+        if (r.br("1.h", h != 0) and not r.br("1.dead", r.call("1.dead", "UnitIsDead", c=h).eax)
+                and r.br("1.owner=0", r.call("1.owner", "UnitGetOwner", c=r.G, d=h).eax == 0)
+                and r.br("1.halign=0", r.call("1.halign", "UnitAlignGet", u=h).eax == 0)):
+            dsq = s32(r.call("1.distsq", "UnitDistSq", u=r.U, t=h).eax)
+            if r.less("1.R2a1^2<dsq", raip(r, 2, 1) * raip(r, 2, 1), dsq):
+                r.call("1.walk", "Walk", t=h, flags=0)
+                return
+            if r.br("1.Skill1>=0", r.skill[0] >= 0):
+                use_skill(r, "1.useskill1", 1, h)
+                return
+        else:
+            r.store("set v14=-1", 0x14, -1)
+    if r.br("2.melee", r.melee):
+        if (r.br("2.Skill1>=0", r.skill[0] >= 0)
+                and r.less("2.life<R1a1", s32(r.call("2.lifepct", "LifePct", U=r.U).eax), raip(r, 1, 1))):
+            near_self(r, "2.near", raip(r, 1, 2), r.skill[0], s8(r.skmode[0]))
+            return
+        if (r.less("2.D100<R3a2", r.d100(), raip(r, 3, 2), draw=True)
+                and r.br("2.stepped", r.call("2.stepaway", "StepAway", t=r.t, d=5, flag=1).eax)):
+            return
+    if r.br("3.Skill1>=0", r.skill[0] >= 0) and r.less("3.D100<R1a3", r.d100(), raip(r, 1, 3), draw=True):
+        near_self(r, "3.near", raip(r, 1, 2), r.skill[0], s8(r.skmode[0]))
+        return
+    if r.less("4.dist<R3a1", r.dist, raip(r, 3, 1)) and r.less("4.D100<R3a2", r.d100(), raip(r, 3, 2), draw=True):
+        r.call("4.stepaway", "StepAway", t=r.t, d=5, flag=0)
+        return
+    if r.br("5.Skill4>=0", r.skill[3] >= 0):
+        ret = r.call("5.findhostile", "FindHostile", pm=0, blk={0: {0: r.dist}})
+        h = ret.eax
+        if r.br("5.h", h != 0):
+            dist = s32(ret.out(0))
+            if r.less("5.dist<R3a3", dist, raip(r, 3, 3)):
+                if r.rchance("5.Range<R3a4", 100, raip(r, 3, 4)):
+                    use_skill(r, "5.useskill4", 4, h)
+                    return
+            elif r.less("5.dist<R4a3", dist, raip(r, 4, 3)) and r.rchance("5.Range<R4a4", 100, raip(r, 4, 4)):
+                use_skill(r, "5.useskill4b", 4, h)
+                return
+    if r.less("6.D100<33", r.d100(), 33, draw=True):
+        r.call("6.walkstop", "WalkStop", t=r.t, n=4)
+        return
+    if r.less("7.D100<20", r.d100(), 20, draw=True):
+        r.call("7.ring8", "Ring", r=8)
+        return
+    r.call("8.idle", "Idle", n=10)
+
+
+def m_s16(r):
+    """S16, the think (the init is not a think call). Slots of `R1` and `R2` (records 492, 493); the skill and its mode
+    are `R1`'s at slot `v18`."""
+    o = r.call("1.owner", "UnitGetOwner", c=r.G, d=r.U).eax
+    st = r.call("2.hasstate", "HasState", u=r.U, state=143).eax
+    if not r.br("2.state143", st) or r.br("2.o=0", o == 0):
+        r.call("2.init", "MonAiInit", ctl=r.ctlp, state=0)
+        r.call("2.idle", "Idle", n=1)
+        return
+    if (r.less("3.24<dist", 24, r.dist) or r.br("3.odead", r.call("3.odead", "UnitIsDead", c=o).eax)
+            or r.br("3.oalign!=0", r.call("3.oalign", "UnitAlignGet", u=o).eax != 0)
+            or r.br("3.v18=0", r.v[0x18] == 0, val=r.v[0x18])):
+        r1 = imp_rec(1)
+        near_self(r, "3.near", raip(r, 1, 2), r1[1][0], s8(r1[2][0]))
+        r.store("set v14=-1", 0x14, -1)
+        return
+    if r.less("4.dist<R2a2", r.dist, raip(r, 2, 2)) and r.rchance("4.Range<R2a3", 100, raip(r, 2, 3)):
+        if r.br("4.v1C!=0", r.v[0x1C] != 0):
+            r.rng(2 * raip(r, 2, 4))
+            r.rng(2 * raip(r, 2, 4))
+        k = r.v[0x18]
+        if not 0 <= k < 8:
+            raise Stop("4: slot v18 %d outside the record's eight skills" % k)
+        r1 = imp_rec(1)
+        s = r1[1][k]
+        if r.br("4.s>=0", s >= 0):
+            r.call("4.useskill", "UseSkill", mode=r1[2][k], skill=s, t=r.t, x=0, y=0)
+        else:
+            r.call("4.idle", "Idle", n=20)
+        return
+    if r.rchance("5.Range<50", 100, 50):
+        r.call("5.setmode8", "SetModeAtUnit", mode=8, t=r.t)
+    else:
+        r.call("5.idle", "Idle", n=20)
+
+
+# ---- H1b R123 Catapult (catalogue 3435)
+def m_r123(r):
+    """R123 Catapult."""
+    if r.chance("1.chance(1)", 1):
+        r.call("1.setmode4", "SetModeAtUnit", mode=4, t=0)
+    else:
+        r.call("1.idle", "Idle", n=15)
+
+
+# ---- H1b R126 CatapultSpotter (catalogue 3529; g_AiSpotterSkills 0x006E3514, ai/0011: 287, 288, 303, 304, 305)
+SPOTTER_SKILLS = (287, 288, 303, 304, 305)
+
+
+def m_r126(r):
+    """R126 CatapultSpotter. `SpotterCatapultDead` (0x005EDF70) is run: its `UnitGetRoom(U)` is logged, its result forks.
+    `FreeNearStep` is not a boundary: whether it finds a point forks, and the point it writes is not logged, so the
+    strike's x and y are not compared (its draws are, by the seed at the call)."""
+    if r.br("1.v1C=0", r.v[0x1C] == 0, val=r.v[0x1C]) or r.less("1.D100<3", r.d100(), 3, draw=True):
+        r.call("1.room", "UnitGetRoom", u=r.U)
+        if r.unknown("1.dead"):
+            r.call("1.setmode0", "SetModeAtUnit", mode=0, t=r.t)
+            return
+    if r.br("2.v1C=0", r.v[0x1C] == 0):
+        r.store("set v1c=1", 0x1C, 1)
+    if r.less("3.0<aip(2)-T+v1C", 0, s32(r.aip(2) - r.T + r.v[0x1C])):
+        r.call("3.idle", "Idle", n=r.aip(2))
+        return
+    if not r.br("4.t", r.t != 0) or not r.chance("4.chance(1)", 1):
+        r.call("4.idle", "Idle", n=r.aip(2))
+        return
+    if r.less("5.0<v18", 0, r.v[0x18]):
+        k = r.v[0x14]
+        r.store("set v18-=1", 0x18, r.v[0x18] - 1)
+    else:
+        k = r.rng(5)
+        r.store("set v14=k", 0x14, k); r.store("set v18=aip(5)", 0x18, r.aip(5))
+    a4 = r.aip(4)
+    r.rng(2 * a4)
+    r.rng(2 * a4)
+    r.call("7.room", "UnitGetRoom", u=r.U)
+    if not r.unknown("7.freenear"):
+        r.call("7.idle", "Idle", n=15)
+        return
+    r.vals.append(("8.k", k))
+    skill = SPOTTER_SKILLS[k] if 0 <= k < 5 else None
+    r.call("8.useskill", "UseSkill", mode=4, skill=skill, t=0)
+    r.store("set v1c=T", 0x1C, r.T)
+
+
+# ---- H1b R129 GenericSpawner (catalogue 3582)
+def m_r129(r):
+    """R129 GenericSpawner. `v3C` is the AID line's `ctl` word +0x3C. The pick's region (`MonRegionGet`, 0x00573520) is not
+    a boundary: whether its count is above 0, and so whether it draws, forks. The pick returns 1 on every path, so step 2's
+    death arm is never taken."""
+    if not r.br("1.t", r.t != 0):
+        r.call("1.idle", "Idle", n=20)
+        return
+    if r.br("2.v3C=-1", r.ctlw(0x3C) == -1):
+        if r.unknown("2.n>0"):
+            r.step()
+        if not r.br("2.picked", True):
+            r.store("set c4|=0x20000", "c4", r.c4 | 0x20000)
+            r.call("2.die", "SetMode", mode=0)
+            return
+    if r.less("3.20<dist", 20, r.dist):
+        r.call("3.idle", "Idle", n=20)
+        return
+    if not r.less("4.v18<aip(3)", r.v[0x18], r.aip(3)):
+        r.store("set c4|=0x20000#4", "c4", r.c4 | 0x20000)
+        r.call("4.die", "SetMode", mode=0, x=0, y=0)
+        return
+    e = s32(r.T - r.v[0x14])
+    if e < 0:
+        e = s32(-e)
+    if r.less("5.e<aip(1)", e, r.aip(1)):
+        r.call("5.idle", "Idle", n=20)
+        return
+    r.store("set v14=T", 0x14, r.T)
+    cls = 528 if r.ms2 > 528 else -1
+    room = r.call("7.room", "UnitGetRoom", u=r.U).eax
+    if r.br("7.cell", r.call("7.celltest", "SpawnClassCellTest", cls=cls, room=room, x=r.x, y=r.y, z=0).eax):
+        r.store("set v18+=1", 0x18, r.v[0x18] + 1)
+        r.call("7.nest", "UseSeqSkill", skill=167, t=r.t, x=0, y=0)
+        return
+    r.call("8.idle", "Idle", n=20)
+
+
+# ---- H1b R136 BaalTaunt (catalogue 3775)
+def m_r136(r):
+    """R136 BaalTaunt. `UnitTeleport`'s words (the room, X(t), Y(t), 0, 0) are not compared: revision 3's caller read
+    names three positional words and the block five, with no source that maps them."""
+    if not r.br("1.t", r.t != 0):
+        r.call("1.idle", "Idle", n=25)
+        return
+    still = r.br("2.still", r.ttype in (0, 1) and tmode(r) == 1, val=tmode(r))
+    fire = False
+    if still:
+        r.store("set v14+=1", 0x14, r.v[0x14] + 1)
+        fire = r.less("2.aip(2)<v14", r.aip(2), r.v[0x14])
+    if fire or not still:
+        r.store("set v14=0", 0x14, 0)
+    if fire:
+        r.call("3.taunt", "UseSkill", mode=4, skill=284, t=r.t, x=0, y=0)
+        return
+    if r.less("4.aip(3)<dist", r.aip(3), r.dist):
+        r.call("4.room", "UnitGetRoom", u=r.t)
+        if r.br("4.teleported", r.call("4.teleport", "UnitTeleport").eax):
+            r.call("4.idle", "Idle", n=25)
+            return
+    if r.less("5.aip(1)<dist", r.aip(1), r.dist):
+        r.call("5.walkz", "WalkZ", t=r.t)
+        return
+    r.call("6.idle", "Idle", n=25)
+
+
+# ---- H1b R137 PutridDefiler (catalogue 3797; AiDefilerTargetCb 0x005EFA50, ai/0011)
+def m_r137(r):
+    """R137 PutridDefiler."""
+    if r.br("1.t", r.t != 0) and r.br("1.melee", r.melee):
+        r.call("1.setmode4", "SetModeAtUnit", mode=4, t=r.t)
+        return
+    u = r.call("2.search", "UnitSearch", cb=0x005EFA50, kind=1, blk={0: {0: 0, 1: 25}}).eax
+    if r.br("3.u", u != 0):
+        if r.br("3.inmelee", r.call("3.inmelee", "InMeleeRange", u=r.U, t=u, z=0).eax):
+            r.call("3.impregnate", "UseSkill", mode=8, skill=300, t=u, x=0, y=0)
+        else:
+            r.call("3.walkz", "WalkZ", t=u)
+        return
+    if r.less("4.dist<aip(1)", r.dist, r.aip(1)):
+        r.call("4.stepaway", "StepAway", t=r.t, d=r.aip(2) & 0xFF, flag=0)
+    else:
+        r.call("4.idle", "Idle", n=25)
+
+
+# ---- H1d S5 (and R60, its alias; catalogue 2557, 4345)
+def m_s5(r):
+    """S5, the think of state 5 and row 60. U.mode is the AID line's `m` (Unit+0x10); `U = 0` cannot reach a think call."""
+    if r.br("1.mode!=1", r.aid["m"] != 1, val=r.aid["m"]):
+        r.call("1.idle5", "Idle", n=5)
+        return
+    room = r.call("2.room", "UnitGetRoom", u=r.U).eax
+    if not r.br("2.town", r.call("2.town", "RoomIsTown", room=room).eax):
+        ret = r.call("2.findhostile", "FindHostile")
+        h = ret.eax
+        if r.br("2.h", h != 0) and r.less("2.e<20", s32(ret.out(0)), 20):
+            if r.rchance("2.Range<30", 100, 30):
+                if r.br("2.class=271", r.cls == 271, val=r.cls):
+                    use_skill(r, "2.useskill1", 1, h)
+                else:
+                    r.call("2.setmode4", "SetModeAtUnit", mode=4, t=h)
+                return
+            if r.rchance("2.Range<30#2", 100, 30):
+                r.call("2.t56", "T56", t=h, byte=4, flag=0)
+                return
+            r.call("2.idle10", "Idle", n=10)
+            return
+    if r.less("3.D100<20", r.d100(), 20, draw=True):
+        r.call("3.ring5", "Ring", r=5)
+        return
+    r.call("4.idle", "Idle", n=10)
+
+
+# ---- H1d S6 (catalogue 2581)
+def m_s6(r):
+    """S6, the think of state 6."""
+    if r.br("1.mode!=1", r.aid["m"] != 1, val=r.aid["m"]):
+        r.call("1.idle5", "Idle", n=5)
+        return
+    room = r.call("2.room", "UnitGetRoom", u=r.U).eax
+    if not r.br("2.town", r.call("2.town", "RoomIsTown", room=room).eax):
+        ret = r.call("2.findtarget", "FindTarget", ctl=r.ctlp)
+        h = ret.eax
+        if r.br("2.h", h != 0):
+            v = r.rng(100)
+            if r.br("2.m=0", ret.out(2) == 0):
+                if r.less("2.r<30", v, 30, draw=True):
+                    r.call("2.walk", "Walk", t=h, flags=7)
+                else:
+                    r.call("2.idle10", "Idle", n=10)
+            else:
+                if r.less("2.r<80", v, 80, draw=True):
+                    r.call("2.setmode4", "SetModeAtUnit", mode=4, t=h)
+                else:
+                    r.call("2.idle10b", "Idle", n=10)
+            return
+    if r.less("3.D100<20", r.d100(), 20, draw=True):
+        r.call("3.ring5", "Ring", r=5)
+        return
+    r.call("4.idle", "Idle", n=10)
+
+
+# ---- H1d R41 Towner (catalogue 4269): row 32's chain without AiNpcNearPlayer (catalogue 4154). The chain's words (home,
+# the kind-4, 5, 7 records, the path list's nodes) are not logged: they fork. Phase 1c's R32 reuses these three helpers.
+def npc_save_home(r):
+    """`AiNpcSaveHome` (0x005E6800): `AiCtlParamGet(10)` is not a boundary, so whether home is unset forks."""
+    if r.unknown("h.home unset"):
+        r.call("h.idle20", "Idle", n=20)
+        return True
+    return False
+
+
+def npc_script_step(r):
+    """`AiNpcScriptStep` (0x005E6AE0). The records' words fork; `MonAiWalkToPointCmd` is not a boundary (opaque, and
+    whether it succeeds forks); the point a distance is taken to is not compared; `PathSetDir` changes no word compared."""
+    R4 = r.call("s.find4", "ParamsFind", U=r.U, kind=4).eax
+    if r.br("s.R4", R4 != 0) and r.unknown("s.R4+0x14>0"):
+        if r.unknown("s.R4 x,y!=0") and r.br("s.R4 far", u32(r.call("s.pathdist4", "PathDist", u=r.U).eax) > 3):
+            r.call("s.ovr4", "Ovr", param=0, byte=0)
+            r.opaque("s.WalkPtCmd")
+        else:
+            r.call("s.idle4", "Idle")
+        return True
+    R5 = r.call("s.find5", "ParamsFind", U=r.U, kind=5).eax
+    if r.br("s.R5", R5 != 0):
+        if r.unknown("s.a>0"):
+            if r.unknown("s.a odd"):
+                r.call("s.ring5", "Ring")
+                return True
+            if r.unknown("s.R5+0x14>0"):
+                r.call("s.idle5", "Idle")
+                return True
+        elif r.unknown("s.R5+0x14>0#2"):
+            r.call("s.idle5b", "Idle")
+            return True
+    R7 = r.call("s.find7", "ParamsFind", U=r.U, kind=7).eax
+    if r.br("s.R7", R7 != 0) and r.unknown("s.m!=0"):
+        if r.unknown("s.m not 8..11"):
+            r.call("s.idle50", "Idle", n=50)
+            return True
+        D = s32(r.call("s.pathdist7", "PathDist", u=r.U).eax)
+        if r.less("s.0<D", 0, D) and r.unknown("s.R7+0x18>0"):
+            r.call("s.ovr7", "Ovr", type=7, param=0, byte=0)
+            if not r.unknown("s.walkptcmd"):
+                r.opaque("s.WalkPtCmd7")
+                r.call("s.idle25", "Idle", n=25)
+            else:
+                r.opaque("s.WalkPtCmd7")
+            return True
+        m_zero = r.less("s.1<D", 1, D)
+        if r.br("s.class=0x1FF", r.cls == 0x1FF):
+            if r.less("s.4<Range", 4, r.rng(100), draw=True):
+                r.call("s.idle50b", "Idle", n=50)
+                return True
+        if not m_zero:
+            if r.unknown("s.mode=m"):
+                r.call("s.idle50c", "Idle", n=50)
+                return True
+            r.call("s.setmode", "SetModeAtUnit", t=r.U)
+            return True
+        if r.br("s.class=0xB2", r.cls == 0xB2):
+            r.rng(100)
+    return False
+
+
+def npc_path_pick(r):
+    """`AiNpcPathPick` (0x005E7080). The list pointer is the AID line's `ctl` word +0x38; its count and nodes are not
+    logged (fork). Running an action (an indirect call, 0x005E6DE0..) stops the decision: the action's own calls are not in
+    the block."""
+    if not r.br("p.list", r.ctlw(0x38) != 0):
+        return False
+    if not r.less("p.D100<66", r.d100(), 66, draw=True) or not r.unknown("p.count!=0"):
+        return False
+    r.step()                                   # k ← RNG_RangeB(U's seed, count): one step, count unknown
+    if not r.unknown("p.action runs"):
+        return False
+    raise Stop("p: a path action is not modelled")
+
+
+def m_r41(r):
+    """R41 Towner."""
+    if npc_save_home(r) or npc_script_step(r) or npc_path_pick(r):
+        return
+    r.call("i.idle12", "Idle", n=12)
+
+
+# ---- H1d R42 Vendor (catalogue 4279)
+def m_r42(r):
+    """R42 Vendor."""
+    if r.less("1.D100<20", r.d100(), 20, draw=True):
+        r.call("1.setmode8", "SetMode", mode=8, x=0, y=0)
+    else:
+        r.call("1.idle", "Idle", n=30)
+
+
+# ---- H1d R58 Navi (catalogue 4322)
+def m_r58(r):
+    """R58 Navi. `NpcInteractAny`, `AiNearestPlayer`, `PlayerIsBusy` and `UnitSetEvent` are not boundaries: their
+    results fork, and `UnitSetEvent` is taken to draw nothing."""
+    if r.unknown("1.interact"):
+        r.call("1.idle10", "Idle", n=10)
+        return
+    if r.unknown("3.p player not busy"):
+        if r.br("3.Range(3)!=0", r.rng(3) != 0) and r.unknown("3.f"):
+            v = r.v[0x18]
+            if r.br("3.v18=0", v == 0, val=v):
+                r.store("set v18=60", 0x18, 60)
+            elif r.less("3.v18<0", v, 0):
+                r.store("set v18=0", 0x18, 0)
+            else:
+                r.store("set v18-=1", 0x18, v - 1)
+            r.call("3.idle20", "Idle", n=20)
+            return
+    ret = r.call("4.findhostile", "FindHostile")
+    u = ret.eax
+    if r.br("5.u", u != 0) and r.less("5.dist<25", s32(ret.out(0)), 25):
+        r.call("5.setmode4", "SetModeAtUnit", mode=4, t=u)
+        return
+    r.call("6.idle50", "Idle", n=50)
+
+
 MODELS = {
     "R3": (0x005EFE20, m_r3, "catalogue 17, 18"),
     "R4": (0x005EFF50, m_r4, "catalogue 20, 21"),
@@ -1511,6 +2622,45 @@ MODELS = {
     "S12": (0x005E8340, m_s12, "catalogue 504, 505"),
     "R44": (0x005F67B0, m_r44, "catalogue 280, 281, 283 (S1c)"),
     "S13": (0x005E5C50, m_s13, "catalogue 507, 508, 509 (S1c)"),
+    # plan 0069 Phase 1b (`lane/n69b`), revision 4: H1a
+    "R8": (0x005F0700, m_r8, "catalogue 29, 30, 32, 34 (H1a)"),
+    "R16": (0x005F1B60, m_r16, "catalogue 56, 57, 58 (H1a)"),
+    "R142": (0x005F1DE0, m_r142, "catalogue 59, 60, 61 (H1a)"),
+    "R17": (0x005F20A0, m_r17, "catalogue 62, 63, 64 (H1a)"),
+    "R18": (0x005F22B0, m_r18, "catalogue 65, 67 (H1a)"),
+    "R24": (0x005F3730, m_r24, "catalogue 77, 78, 79 (H1a)"),
+    "R25": (0x005F39B0, m_r25, "catalogue 80-86, 88, 90-92 (H1a)"),
+    "R27": (0x005F4850, m_r27, "catalogue 98, 99, 100 (H1a)"),
+    "R72": (0x005FAA90, m_r72, "catalogue 174, 175 (H1a)"),
+    "R74": (0x005FAF00, m_r74, "catalogue 179, 180, 181, 183 (H1a)"),
+    # H1b
+    "R115": (0x005E1900, m_r115, "catalogue 338, 339, 340 (H1b)"),
+    "R116": (0x005E1B60, m_r116, "catalogue 341, 342, 343 (H1b)"),
+    "R117": (0x005E1D30, m_r117, "catalogue 344, 345, 346 (H1b)"),
+    "S15": (0x005E1D30, m_r117, "catalogue 373 (H1b)"),
+    "R119": (0x005E2120, m_r119, "catalogue 351, 352, 353 (H1b)"),
+    "R120": (0x005E27A0, m_r120, "catalogue 354, 355, 357 (H1b)"),
+    "R122": (0x005E2FF0, m_r122, "catalogue 362, 363, 364, 365 (H1b)"),
+    "R123": (0x005E34C0, m_r123, "catalogue 366, 367, 368 (H1b)"),
+    "S16": (0x005E2D80, m_s16, "catalogue 374, 375, 376 (H1b)"),
+    "R126": (0x005EE040, m_r126, "catalogue 377, 378, 379 (H1b)"),
+    "R129": (0x005E61B0, m_r129, "catalogue 384, 386, 387 (H1b)"),
+    "R136": (0x005EF710, m_r136, "catalogue 406, 407, 408 (H1b)"),
+    "R137": (0x005EFA90, m_r137, "catalogue 409, 410, 411 (H1b)"),
+    # H1d
+    "S5": (0x005E7AC0, m_s5, "catalogue 276, 277 (H1d)"),
+    "S6": (0x005E7C10, m_s6, "catalogue 278, 279 (H1d)"),
+    "R41": (0x005E7540, m_r41, "catalogue 462, 463 (H1d)"),
+    "R42": (0x005E9E00, m_r42, "catalogue 464, 465 (H1d)"),
+    "R58": (0x005E7E20, m_r58, "catalogue 470, 472 (H1d)"),
+    "R60": (0x005E7AC0, m_s5, "catalogue 474 (H1d)"),
+}
+
+# Revision 4: of two entries that share a think, each takes only the decisions of its AI state (the AID line's `st`,
+# AiCtl+0x00, README E4/E5): the state row its own state, the table row state 0. No entry before this revision has one.
+SELECT = {
+    "R117": lambda a: a["st"] == 0, "S15": lambda a: a["st"] == 15,
+    "R60": lambda a: a["st"] == 0, "S5": lambda a: a["st"] == 5,
 }
 
 
@@ -1561,7 +2711,7 @@ def regress(base_dir, logs_dir, out):
     return 0 if same else 1
 
 
-def run_check(paths, names, out):
+def run_check(paths, names, out, select=True):
     decs = defaultdict(list)
     ths = defaultdict(list)
     for n in names:
@@ -1577,6 +2727,8 @@ def run_check(paths, names, out):
             if d.get("trunc"):
                 continue
             for n in ths.get(d["aid"]["th"], ()):
+                if select and n in SELECT and not SELECT[n](d["aid"]):
+                    continue
                 decs[n].append(d)
     if "S13" in names:
         s13_counts(decs["S13"])
@@ -1676,6 +2828,7 @@ def main(argv):
     c.add_argument("--logs", dest="loglist")
     c.add_argument("--rows")
     c.add_argument("--out")
+    c.add_argument("--no-select", action="store_true", help="revision 4: every decision of an entry's think, whatever its state")
     sub.add_parser("list")
     r = sub.add_parser("regress")
     r.add_argument("--base", default=os.path.join("workspace", "logs", "ai", "sweep2-s1b"))
@@ -1693,7 +2846,7 @@ def main(argv):
         with open(a.loglist) as fh:
             paths += [x.strip() for x in fh if x.strip()]
     names = a.rows.split(",") if a.rows else list(MODELS)
-    run_check(paths, names, a.out)
+    run_check(paths, names, a.out, select=not a.no_select)
     return 0
 
 
