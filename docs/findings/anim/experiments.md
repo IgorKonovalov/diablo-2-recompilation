@@ -492,7 +492,7 @@ data, single player, the same saves (`saves-2026-10-30-anim-p3/`, unchanged), `/
   - *Closed forms* (`k-forms`, 45 913 non-sequence schedules): `+0x48 = frames << 8` at every one; K1's kind-0 list and
     end equal the logged queue at every one (no schedule drops an event past `N`, none has no step); K2's band
     `X_n ≤ X < X_{n−1}` holds at all 39 550 plain-rate schedules (28 922 exactly at `X_n`); K3's stat band at all 3 161
-    cast, 5 132 get-hit and 1 626 block schedules (305 at the least stat). `[C]` within those domains.
+    cast, 5 132 get-hit and 1 626 block schedules (305 at the least stat). `[C]` within those domains (run:2026-10-30-anim-p3b).
   - *Worked records* (`worked`): `SOSC1HS`/`SOSCSTF` at FCR 0, 20, 40, 50: rate 256, 299, 332, 345, length 14, 12, 11, 11,
     the do at `T + 7, 6, 6, 6` (112 casts at FCR 20); `PAGH1HS` at FHR 0, 24, 48: rate 128, 179, 215, length 10, 8, 6;
     `AMA11HS` at factor 80, 130, 147, 160: length 18, 11, 10, 9, the do at `T + 11, 7, 6, 6`. No `SOSCHTH`, `PAGHHTH`,
