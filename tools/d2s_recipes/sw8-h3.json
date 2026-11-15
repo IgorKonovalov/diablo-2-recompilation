@@ -1,0 +1,121 @@
+{
+ "game": "expansion",
+ "class": "Sorceress",
+ "seed": 650650003,
+ "name": "SweepMerc",
+ "progression": 15,
+ "difficulty": [
+  131,
+  131,
+  131
+ ],
+ "waypoints": {
+  "normal": "all",
+  "nightmare": "all",
+  "hell": "all"
+ },
+ "quests": "all",
+ "stats": {
+  "strength": 100,
+  "energy": 150,
+  "dexterity": 100,
+  "vitality": 300,
+  "hitpoints": 3000,
+  "maxhp": 3000,
+  "mana": 1000,
+  "maxmana": 1000,
+  "stamina": 800,
+  "maxstamina": 800,
+  "level": 85,
+  "experience": 1145236814
+ },
+ "skills": {
+  "Teleport": 1,
+  "Nova": 1,
+  "Telekinesis": 1
+ },
+ "mouse": {
+  "left": "Teleport",
+  "right": "Nova"
+ },
+ "hotkeys": [
+  "Nova"
+ ],
+ "items": [
+  {
+   "code": "mbl",
+   "equip": "belt"
+  },
+  {
+   "code": "mp1",
+   "belt_slot": 0
+  },
+  {
+   "code": "hp1",
+   "belt_slot": 1
+  },
+  {
+   "code": "rvs",
+   "belt_slot": 2
+  },
+  {
+   "code": "yps",
+   "belt_slot": 3
+  },
+  {
+   "code": "wms",
+   "belt_slot": 5
+  },
+  {
+   "code": "mp1",
+   "store": "inventory",
+   "x": 0,
+   "y": 0
+  },
+  {
+   "code": "hp1",
+   "store": "inventory",
+   "x": 1,
+   "y": 0
+  },
+  {
+   "code": "rvs",
+   "store": "inventory",
+   "x": 2,
+   "y": 0
+  },
+  {
+   "code": "yps",
+   "store": "inventory",
+   "x": 3,
+   "y": 0
+  },
+  {
+   "code": "wms",
+   "store": "inventory",
+   "x": 4,
+   "y": 0
+  }
+ ],
+ "merc": {
+  "id": 24,
+  "seed": 370701,
+  "name": 3,
+  "exp": 62208000,
+  "dead": false,
+  "items": [
+   {
+    "code": "crs",
+    "equip": "rarm"
+   },
+   {
+    "code": "brs",
+    "equip": "tors"
+   },
+   {
+    "code": "hlm",
+    "equip": "head"
+   }
+  ]
+ }
+}

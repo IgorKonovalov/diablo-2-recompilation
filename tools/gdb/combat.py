@@ -16,6 +16,10 @@
 #   THV   0x0057DADB AR = edi, DEF = esi, pct = [ebp-4], alvl = [ebp-0x14], dlvl = [ebp-0x18]
 #   THR   0x005347B0 (the to-hit debug stub, called at 0x0057DB72): c, r, attacker seed after the draw
 #   DRB   0x0057DFE0 UnitBlockChance = eax;  DRM 0x0057E007 UnitIsMoving = eax
+#         plan 0065 Phase 0: DRB carries "sh", the shield test of a player defender inside sub_00622720_UnitBlockChance:
+#         sub_0063C8F0_InvItemQuery(inventory, 0)'s result at 0x0062279C (EAX; 0 = no shield in the hands, the block
+#         chance then 0), kept per (thread, unit) and taken by the DRB of that unit; null for a monster defender (the
+#         player branch 0x00622791 not entered). Read-only; tools/combat.py check reads it in place of --no-shield.
 #   DRR   0x005347C0 (the defence debug stub): unit, chance, roll, label (block, wblock, dodge, avoid, evade), seed after
 #   WBC   0x0057DD98 / 0x0057DED3 WeaponBlockChance = eax;  WBS 0x0057DDB0 / 0x0057DEEF the skill check value
 #   BD0   0x0057B7D0 COMBAT_BuildDamage entry: packet (0x70 bytes hex), crit flag, srcdam, attacker seed
@@ -271,10 +275,18 @@ def _combat_main():
         esp = reg("esp")
         emit("THR", {"c": s32(esp + 8), "r": s32(esp + 12), "sa": sd(a)})
 
+    def thread():
+        t = gdb.selected_thread()
+        return t.num if t else 0
+
+    def on_shd():       # 0x0062279C: InvItemQuery(inventory, 0) of a player defender in UnitBlockChance (ESI the unit)
+        st.setdefault("shd", {})[(thread(), reg("esi"))] = reg("eax")
+
     def on_drb():
+        sh = st.setdefault("shd", {}).pop((thread(), reg("esi")), None)
         if not cur() and not st["ms"].get("cur"):
             return
-        emit("DRB", {"u": reg("esi"), "b": sreg("eax")})
+        emit("DRB", {"u": reg("esi"), "b": sreg("eax"), "sh": sh})
 
     def on_drm():
         if not cur() and not st["ms"].get("cur"):
@@ -556,6 +568,7 @@ def _combat_main():
     Bp(0x0057DADB, on_thv)
     Bp(0x005347B0, on_thr)
     Bp(0x0057DFE0, on_drb)
+    Bp(0x0062279C, on_shd)
     Bp(0x0057E007, on_drm)
     Bp(0x005347C0, on_drr)
     Bp(0x0057DD98, on_wbc)
@@ -602,7 +615,7 @@ def _combat_main():
     rgn.condition = "$esi == $combat_win"
     rgm = Bp(0x005A6920, lambda: on_rgn("edx"))                   # a monster's regeneration event (EDX unit, r7)
     rgm.condition = "$edx == $combat_win"
-    emit("COMBATLOG", {"rev": 9})
+    emit("COMBATLOG", {"rev": 10})   # rev 10 (plan 0065 Phase 0): DRB "sh"
     gdb.write("COMBAT logger armed\n")
 
 

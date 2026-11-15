@@ -1,0 +1,53 @@
+{
+ "game": "expansion",
+ "class": "Sorceress",
+ "seed": 650650004,
+ "name": "SweepBeltRoom",
+ "progression": 15,
+ "difficulty": [
+  128,
+  128,
+  128
+ ],
+ "waypoints": {
+  "normal": "all",
+  "nightmare": "all",
+  "hell": "all"
+ },
+ "stats": {
+  "strength": 100,
+  "energy": 100,
+  "dexterity": 25,
+  "vitality": 10,
+  "hitpoints": 5,
+  "maxhp": 60,
+  "mana": 300,
+  "maxmana": 300,
+  "stamina": 74,
+  "maxstamina": 74,
+  "level": 9,
+  "experience": 44396
+ },
+ "skills": {
+  "Teleport": 1,
+  "Charged Bolt": 1,
+  "Telekinesis": 1,
+  "Static Field": 1
+ },
+ "mouse": {
+  "left": "Teleport",
+  "right": "Attack"
+ },
+ "items": [
+  {
+   "code": "hbl",
+   "equip": "belt"
+  }
+ ],
+ "belt_fill": [
+  "hp1",
+  "mp1",
+  "yps",
+  "wms"
+ ]
+}
