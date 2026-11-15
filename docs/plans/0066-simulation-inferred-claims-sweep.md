@@ -1378,3 +1378,55 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
 - **Ledger (for the orchestrator):** `audit of lane/n66m: misread 2, omission 1; no reject-grade miss (5th Tier B after
   the n65h audit; count restarts)`. Review request resolution: "Tier A audit 2026-11-16: accept with fixes (3: misread
   2, omission 1)".
+
+### 2026-11-16 — Phase 1, batch S7a part 1 of 2 (reverser-static, `lane/n66n`): 45 of 63 settled; resume note
+
+- **Done.** No game, no Ghidra. New tool `tools/sweep2_s7a.py` (`49f0d2dc…`; sections `graphs`, `xrefs`, `xrefs2`,
+  `reads`): the objdump walker of `tools/sweep_s4b.py` with two changes (a `jmp` to another function's entry is a
+  tail-call edge, a call of the CRT exit 0x00681E09 ends its block; without them the walker ran through
+  `UnitFree`'s tail jump and reported 60 false draws for rank 15), draws counted by objdump and by r2's own byte search
+  (852 LCG sites each, the same); the raw-byte call/jump/abs32 scan of `tools/xrefscan.py` with every site decoded by
+  r2 and the pushes read from r2's linear listing. Run under a 4 GB scope: `workspace/logs/n66n/s7a/check-s7a.txt`
+  (`43476f6e…`, 152 lines, `S7a total bad=0`) and `totals-s7a.txt`, `manifest-s7a.sha256` (`a1140b00…`) passing from
+  `workspace/logs/n66n/s7a`; development outputs in `dev/` with their own manifest. Records:
+  [frame/0001 § 8](../findings/frame/0001-tick-and-messages.md#8-plan-0066-batch-s7a-part-1-second-tool-graphs-and-scans-2026-11-16-lanen66n),
+  [path/0001 § 15](../findings/path/0001-pathplan-register.md#15-plan-0066-batch-s7a-part-1-second-tool-scans-and-graphs-2026-11-16-lanen66n),
+  [drlg/0009 § 12](../findings/drlg/0009-room-lifecycle.md#12-plan-0066-batch-s7a-part-1-caller-and-pin-scans-with-a-second-tool-2026-11-16-lanen66n),
+  [player/0002 § 12](../findings/player/0002-party.md#12-plan-0066-batch-s7a-part-1-second-tool-scans-2026-11-16-lanen66n).
+  Every settled row's *Route* cell carries its dated S7a note; README § 4's S7a row updated.
+- **Raised 30:** party 2, 14, 20, 22; frame 6, 7, 24, 38, 45, 50, 79, 80, 83, 85, 86, 88, 90, 125; path-README 3 (with a
+  correction: `UnitRelocate` is a second server creator), 24, 32–36, 60, 65; path-search 28; lifecycle 7, 27.
+- **Raised in part 14**, the remainder and its home in each Route cell (none added to a batch's rows): frame 18 (the stall
+  consequence, b by R3), 20 (a second read of `+0x1DBC`, 0x00450C6F → c), 53 (the colour word → d-none, client
+  presentation), 63 (a later `+0x4C` writer among 106 unresolved stores → c), 78 (Ghidra's count 135 → d-none), 81, 82,
+  84, 87, 89 (the *Seeds* cells → c), 93 (the rest of J3 → c); path-README 1 ("58 functions", attribution → d-none), 37
+  (the count 118 → d-none); lifecycle 20 (other clears of bit 1 → c).
+- **Contradicted in part 1: lifecycle 2.** `RoomActivateB`'s tenth call (0x0061B7CA) lies in a separate function,
+  0x0061B7B0 (the room at coordinates, then the activation), reached from 0x0061A140 ← 0x00553790, the unit spawn at
+  coordinates of lifecycle row 7: a fifth on-demand family beside the four the spec names. Backlog
+  [`2026-11-16-reverser-spec-writer-roomactivateb-fifth-caller`](../backlog/2026-11-16-reverser-spec-writer-roomactivateb-fifth-caller.md).
+- **Symbols:** two added, both I, in `re/symbols.csv` and drlg/0009's Functions table:
+  `sub_0061A140_ActRoomAtCoordsActivate`, `sub_0061B7B0_RoomAtCoordsActivate`. None raised (no logged return compared).
+- **Totals** after merging `main` `997fb18d` (`totals-s7a.txt`, from the 29 files' *Totals by class*): a-logs 628, a-run
+  340, b 446, c 390, c-emu 494, d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626, unchanged (no row moved class);
+  Phase 1 1 512, Phase 2 786, blocked 328.
+- **Judgment calls for the review:** (1) function counts are the first tool's; where the walker's differ (all but 8, 52,
+  58 and 46, which match), the "no drawing function" claim is raised and a stated count that the walker does not
+  reproduce (frame 78's 135, path D3's 118) is the row's remainder, not a contradiction; (2) the *Seeds* cells of § J
+  are held [I] (no seed argument traced), so five § J rows are "in part"; (3) path-README 3 filed raised with a
+  correction rather than contradicted (the row names the creator under `SUnitPathCreate`; `UnitRelocate` adds one);
+  (4) lifecycle 7's caller descriptions taken from the three owners' reviewed names; (5) frame 7's "excel accessor" is
+  the 44 `*_GetRecord`, `DATATBLS_*` and `EXCEL_*` functions of `re/symbols.csv` and the data-tables block
+  0x0096BC30–0x0096D000.
+- **Resume note (part 2, 18 rows):** path-README 6 (stores to the context `+0x10` in `PathPlan`), 17 (`UNIT_GetSizeY`'s ten
+  calls: which unit-type branch each lies in; `UNIT_CollMark`'s is the type-2 branch, 0x00649420), 38 and path-search 5
+  (`PathSetType` copies `g_PathTypeFlags` into path `+0x34` under mask `0x0007FF00`, 0x00648D62–0x00648D6D: scan the
+  `+0x34`/`+0x35` tests of `0x100`/`0x200`), 41 (the type at each of the 68 sites: `PathSetType` before the call, else
+  "current"), 56, 76, 79 (move masks with `0x8000`, in registers and tables), 63 (the 22 unresolved `+0x3C` store bases),
+  77 (`unflatDead`'s readers); path-search 14, 34 (writers of `+0x90`, `+0x91`); lifecycle 11, 12, 29, 36, 48 (the item
+  `+0x24` writers, the drop callers beyond `CursorDrop`, `0x200000` readers at room `+0x28`, the champion bit writers,
+  `0x2000` at unit `+0xC4`); frame 117 (the client send-queue writers). Add sections `stores` and `masks` to
+  `tools/sweep2_s7a.py`, rerun `all` into a new `check-s7a-p2.txt` (keep part 1's file), extend the review request.
+- **Next:** Tier B review of part 1 requested
+  ([`2026-11-16-reverser-architect-review-plan-0066-s7a-part1`](../backlog/2026-11-16-reverser-architect-review-plan-0066-s7a-part1.md));
+  part 2 by a fresh lane on `lane/n66n`.
