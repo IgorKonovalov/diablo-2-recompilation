@@ -1287,3 +1287,53 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
 - **Next:** S5b closes the combat static batches but S5e and S5fe (emulation). Tier B request
   [`2026-11-15-reverser-architect-review-plan-0066-s5a-part1`](../backlog/archive/2026-11-15-reverser-architect-review-plan-0066-s5a-part1.md)
   extended to S5a + S5b.
+
+### 2026-11-15 — Phase 1, batches S7c and S7d (reverser-static, `lane/n66m`): done, S7c 18 of 18 and S7d 14 of 14 settled
+
+- **Done.** No game, no Ghidra. `main` is `7a3ef52e`, the lane's base (nothing to merge). Two new tools, each run once
+  kept under `systemd-run --user --scope -p MemoryMax=4G`, one pass per log:
+  - `tools/sweep2_s7c.py` (`0a01fcf6…`) over the 46 path.gdb logs of run:2026-11-04-path (stock plans only) and
+    run:2026-11-04-path-2, with `tools/path.py`'s `parse` and `evaluate` unchanged as the control (33 722 stock plans,
+    33 722 matched): `workspace/logs/n66m/s7c/check-s7c.txt` (`911948c8…`, 261 lines, `S7c total bad=0
+    control_bad=0`). Record: [path/experiments § Addendum S7c](../findings/path/experiments.md#addendum-2026-11-15-plan-0066-batch-s7c-new-checks-over-the-46-kept-logs-lanen66m),
+    results in [path/0004 § 10](../findings/path/0004-per-event-reproduction.md#10-plan-0066-batch-s7c-new-checks-over-the-kept-logs-2026-11-15-lanen66m).
+  - `tools/sweep2_s7d.py` (`59732e90…`) over the 16 rooms.gdb logs of run:2026-10-17-lifecycle and
+    run:2026-10-17-h7a-lifecycle, `tools/rooms.py`'s `Checker` unchanged as the control (`SUMMARY mismatches=4
+    checks=2891656`, the kept checks' sum and their 4 known records): `workspace/logs/n66m/s7d/check-s7d.txt`
+    (`6e30d778…`, 101 lines, `S7d total bad=0`). Record: [drlg/experiments § Addendum S7d](../findings/drlg/experiments.md#addendum-2026-11-15-plan-0066-batch-s7d-new-checks-over-the-16-kept-lifecycle-logs-lanen66m),
+    results in [drlg/0009 § 11.5](../findings/drlg/0009-room-lifecycle.md#115-plan-0066-batch-s7d-new-checks-over-the-kept-logs-2026-11-15-lanen66m).
+  - `workspace/logs/n66m/manifest.sha256` (`54ad0bc5…`) passes from `workspace/logs/n66m`; eight development outputs
+    in `dev/` with `manifest-dev.sha256`, not cited. Every settled row's *Route* cell carries its dated note.
+- **S7c (18): raised 8, raised in part 8, not raised 2, moved 0.** Raised: path-README 9, 10 (the masks at 4 770 player
+  and 21 375 monster plans; the 558 and 249 others are skill and `AiVultureTakeOff` writes), 47 (the aim's writes,
+  19 284 + 154), 72 (the tail's output words); path-search 2, 17 (the spiral's structure, 4 variants fail all 260), 15
+  (the walk's turn map, the 12/32 variant fails 851), 19. In part: path-README 22 (the slot call, 24 707; the fatal
+  half d-none), 42 (types 7 and 8 at `PlrModeStartMove`; the new mode and packet 0x5F unlogged), 43 (the request types
+  and the fallback to 15, 2 469; types 1, 9, 15 unlogged), 73 (own and target bits absent, 8 334 and 1 286; the order
+  sentence left), 78 and path-search 21 (no grid read; the hammer's wall end is the missile's), path-search 7 (the switch
+  on 461 short plans; the 324/325 edge unseparated), 36 (types 0, 16 and knockback's point left). Not raised:
+  path-README 2 (`BRK` is a planner break, no blocked-step line; `PathReplan` has 4 callers, 2 kinds left unseparated)
+  and 31 (only the type write is in the record).
+- **S7d (14): raised 4, raised in part 9, not raised 1, moved 0.** Raised: lifecycle 13 (references count paths:
+  253 936 deltas, the per-room variant fails 71 894), 19 (`+0x78` ≥ 1 at 3 111 first walks after a client move), 21
+  (no record and seeds unchanged in 1 459 first activations), 37 (no player save test in 12 476, no freed room the
+  client's, 1 291 freed monsters never met again). In part: 14 (near-list rooms active, 9 944), 16 (`RoomActivateB`),
+  25 (`ActiveRoomFree`'s unlink and `+0x30`), 32 (the order where `restore` 2 separates it, 3), 49 (mode 1 on restore,
+  32 separating), 52 (restore order the reverse of the save, 829), 56 and 58 (special and minion placements), 78
+  (`PresetUnitSpawn` in populate walks only, 286 separating). Not raised: 59 (the logged order is the breakpoints').
+- **No contradiction.** Phase 3 notes (PathReplan's callers, Leap's and vultures' test mask 0, E2's old mode, E3's
+  wording, "oldest first" as list order) in
+  [`2026-11-15-reverser-spec-writer-plan-0066-s7c-s7d-phase-3-notes`](../backlog/2026-11-15-reverser-spec-writer-plan-0066-s7c-s7d-phase-3-notes.md).
+- **Symbols:** `g_PathPlanFuncs` (data, the planner at 24 707 logged slot calls) and `PATH_MonTestMask` (the test mask
+  of 21 126 monster plans) raised to C in `re/symbols.csv`, evidence path/0004, and in path/0004's Functions table
+  (and drlg/0005's row for `PATH_MonTestMask`).
+- **Totals** from the 29 files' *Totals by class* at `7a3ef52e` (no row moved class; remainders in the *Route* cells):
+  a-logs 628, a-run 340, b 446, c 390, c-emu 494, d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626, unchanged.
+  README § 4's S7c and S7d rows record the outcome.
+- **Ready for Phase 3 (spec-writer), lines at `b5999f5e`, match by text.** path/README whole: 118, 119, 401, 542;
+  split: 202, 389, 390, 562, 569. path/search whole: 97, 528, 535, 552; split: 287, 554, 773. drlg/lifecycle whole:
+  242, 284, 311, 519; split: 245, 254, 361, 467, 599, 652, 675, 682, 918.
+- **Review:** Tier B with a Tier A audit announced, requested by
+  [`2026-11-15-reverser-architect-review-plan-0066-s7c-s7d`](../backlog/2026-11-15-reverser-architect-review-plan-0066-s7c-s7d.md).
+  Judgment calls listed there: the mask rows raised over later writers, the two symbol raises, rows 2 and 31 kept,
+  the cap-line explanations of unlogged follow-ups, row 59 kept, row 14's reading, row 25's `RR` lines unused.

@@ -60,6 +60,8 @@ request which types; the sources of 2 and 1).
 | `0x0067C2D0` | `sub_0067C2D0_PathPlanType15` | type 15 (1 349 that reached it) | C |
 | `0x0067B850` | `sub_0067B850_PathPlanType1` | only through greedy-near's switch (270 plans; its own controls separate up to 178, § 3); no type-1 request | C (through the switch) |
 | `0x0067A140` | `sub_0067A140_PathPlanSpiral` | type 14: the list, 27 stock plans, one list relative to the start `0x8000`; `swap` separates it. The rounding is `[C]` by [path/0006](0006-holdout.md) | C |
+| `0x006EB6D8` | `g_PathPlanFuncs` (data) | the planner at the slot call equals its entry for the context's type, 24 707 calls, types 2, 5–9, 13, 15 (§ 10) | C |
+| `0x00648480` | `PATH_MonTestMask` | its rule by class equals the test mask of 21 126 monster plans; the 249 others carry `AiVultureTakeOff`'s 0 (§ 10) | C |
 | `0x0067A240` | `sub_0067A240_PathPlanRandomWalk` | type 10 (698), already C (path/0003 § 10) | C |
 | `0x0067AD00` | `sub_0067AD00_PathPlanSearch` | none (types 0 and 16 had no server plan) | I |
 | `0x00679E50`, `0x00679FD0`, `0x00679E60` | `PathPlanType3`, `Type11`, `Type12` | break lines: no server caller | I |
@@ -192,6 +194,65 @@ and the second plan of `SwarmMove`; the 21 sessions had a mercenary (CombatSor),
 ### 9. Carried inputs of the P1.3 check
 
 - Type 12's overflow past 78 points (path/0003 § 11): client-only, 0 plans: stays `[I]`. Type 1's stack depth: 3 in 270 plans (§ 2). The 78-slot bound: the largest return 77 (spiral, always), 39 (walk), 21 (type 7). (run:2026-11-04-path)
+
+### 10. Plan 0066 batch S7c: new checks over the kept logs (2026-11-15, `lane/n66m`)
+
+*Added 2026-11-15.* `tools/sweep2_s7c.py check` (`0a01fcf6…`), one pass per log over the 46 kept logs of
+run:2026-11-04-path (stock plans only: the 842 from each probe session's first write on are dropped, as `path.py`'s
+review section 1) and run:2026-11-04-path-2, `tools/path.py`'s `parse` and `evaluate` unchanged as the control:
+33 722 stock plans, 33 722 matched, 0 unmodelled, the kept checks' stock counts. Kept output
+`workspace/logs/n66m/s7c/check-s7c.txt` (`911948c8…`, `S7c total bad=0 control_bad=0`), `manifest.sha256` passing from
+`workspace/logs/n66m`. Record: [experiments § Addendum S7c](experiments.md#addendum-2026-11-15-plan-0066-batch-s7c-new-checks-over-the-46-kept-logs-lanen66m).
+
+- [C] **The masks at a plan** (`+0x50` test, `+0x4C` mark at `PathPlan`'s entry). Players: `0x1C09` / `0x80` in 4 212 of
+  4 770 plans, every plan from `PlrModeStartMove` (3 999) and Charge (213); the 558 others are Whirlwind's `0xC01`
+  (158, 0x005D906C) and Leap Attack's `0` / `0` (400, 0x005DA00C). Monsters: mark `0x100` in 21 375 of 21 375; test as
+  `PATH_MonTestMask`'s rule by the class's MonStats row (by `hcIdx`): flying `0x1804`, `opendoors` `0x3401`, else
+  `0x3C01`, a `BaseId` 38 class `0x804`, in 21 126 of 21 375. The 249 others are vultures (classes 111, 113) at `0`, the
+  value `sub_005F2EB0_AiVultureTakeOff` pushes to `PathSetCollMask` (`push 0` at 0x005F2F9F, call 0x005F2FA2, r2); the
+  same classes plan with `0x3C01` 104 times. (fn:PATH_MonTestMask@0x00648480, fn:PATH_DynamicCreate@0x00649D00, 0x005F2FA2, run:2026-11-04-path, run:2026-11-04-path-2)
+- [C] **The slot call.** At 0x00649BAE the planner address (`EAX`) equals `g_PathPlanFuncs[ctx type]` read from the
+  pinned image in 24 707 of 24 707 calls, types 2, 5–9, 13, 15. (0x00649BAE, data:g_PathPlanFuncs@0x006EB6D8)
+- [C] **`PlrModeStartMove`'s plans** (return 0x0057F11C): 3 997 of type 7 and 2 of type 8 with `+0x90 = 5`, none else.
+  The unit's mode at `PathPlan`'s entry is the mode before the start (the new one is `EDI`, set at 0x0057F148 after the
+  plan), so which new mode gave each is not in the log: `[I]`. (fn:sub_0057F090_PlrModeStartMove@0x0057F090, 0x0057F103)
+- [C] **`MonPathPlanType`'s requests** (0x005A62F4) logged types 2 (638), 5 (1 092), 6 (1 048), 7 (2 863) and 13 (7 363).
+  Every request of type 2, 7 or 13 that left `+0x28` = 0 is followed by the unit's type-15 plan from 0x005A6353 in the
+  same frame (2 469); 84 such requests have no logged follow-up, each in a game whose log has a type-15 cap line; no follow-up
+  after the 190 empty requests of types 5 and 6 or the 9 261 non-empty ones. Each of the 2 469 + 2 480 fallback plans is
+  type 15; 2 480 of them follow an unlogged request, each after a 2/7/9/13 cap line. The test is the byte table
+  0x005A6368 (types 2..13, entry 0 for 2, 7, 9, 13) on `path +0x28` (`sub_00648780`, r2). Type 9, 1 and 15 requests
+  were not logged. (fn:sub_005A6290_MonPathPlanType@0x005A6290, 0x005A6327, 0x005A634E)
+- [I] **`PathReplan`'s callers** (r2 and the raw call scan, 4 sites): 0x00650757 in `PathStepMove` (the blocked step,
+  flag = target unit ≠ 0), 0x0065043C and 0x006504D7 in `PathStepTargetCheck` (flag 0, a path ended short of `+0x18`
+  with no target unit; flag 1, a target moved more than 5), 0x00649289. All 1 202 logged first calls (0x006503CE) are
+  type 13 with a target unit and points left at entry (`+0x24 < +0x28`), so they come from 0x00650757 or 0x006504D7,
+  which the log does not separate. (fn:sub_00650350_PathReplan@0x00650350, 0x00650757, 0x006504D7)
+- [C] **The tail's output words** (C's steps 19–26) on 19 284 planner plans with a return: `+0x28` = the return, flag
+  `0x20` set, `+0x38` = 0, `+0x24 < +0x28`; with no flag `0x10` and no target unit after the planner, `+0x10` = the last
+  point (9 742) and `+0x14` = `+0x10` as at the planner call (8 433; knockback's 1 309 write their own); otherwise
+  `+0x14 = +0x10` (9 542). A return of 0 after a planner leaves `+0x24 = +0x28 = 0` and flag `0x20` clear (5 423).
+  (0x00649BA1–0x00649C6E, 0x00649C1B)
+- [C] **The aim's writes** (`+0x24`, `+0x64`–`+0x66`, `+0x6A`–`+0x7F`): the model's `PathAimNextPoint(path, 1; 1)` after
+  the planner equals the game's record in 19 284 of 19 284 plans with a return, and in the 154 with a count and a return
+  of 0 (every point at the position) apart from `+0x24`, which the fail path zeroes. 17 406 plans changed those bytes
+  between the planner call and the return, so a reading without the aim fails them. (0x00649BEF–0x00649BF8, run:2026-11-04-path-2)
+- [C] **The live grid after the unmarks.** At its start cell a unit with no other unit within 3 subtiles holds none of
+  its own blocking bits (`testMask & (0x1000 | markMask)`) in 8 334 of 8 334 plans, and a target under flag `0x800` none
+  of its own in 1 286 of 1 286. Control: another live player or monster alone within 3 holds them at its cell in 83 839
+  of 94 349 cases. (0x00649B07, 0x00649B25)
+- [C] **Type 14** (260 stock plans): no `PLC` line (no planner call), the unit seed and `+0x90`/`+0x91` unchanged,
+  77 points, start fraction `(0x8000, 0x8000)` in all; 94 `SPX` iterations in each of the 233 rev-5 plans. The structure
+  `r += 0x2580`, `a += 16` is reproduced; the variants step `0x2500`, `0x2600` and angle 15, 17 each separate all 260
+  and fail all 260. 123 plans hold points on a cell with the missile mask's wall bit `0x04` in every dump of its room,
+  and the game's points pass through them. `r` as a signed 32-bit sum fits to iteration 223 696 (2 147 481 600); 223 697
+  gives 2 147 491 200 > 2³¹ − 1 (the kept bound line). (fn:sub_0067A140_PathPlanSpiral@0x0067A140, 0x0067A21D)
+- [C] **Type 10's turn map** (946 plans): the walk's `(lo & 31)` map reproduces every point and exit seed; the variant
+  with 30 and 31 straight (12/32) separates 851 and fails all 851. The game's 33 500 steps: 10 616 straight, 22 884 to a
+  side (31.7 %). (0x0067A258–0x0067A2F3)
+- [C] **Greedy-near's switch on players' type-7 plans:** greedy reached the target in 3 853; it stopped short in 462,
+  461 at `d²` ≤ 324 (all ≤ 317) switching to type 1, 1 at `d²` > 360 not switching. No short plan has `d²` 318–360, so
+  the 324/325 edge itself is not separated: `[I]`. (fn:sub_00679ED0_PathPlanGreedyNear@0x00679ED0)
 
 ## Data touched
 
