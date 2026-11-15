@@ -340,6 +340,17 @@ RECIPE_BASES = {
     "mp-trade-join": (BASE_X, "3dc1c7736f3cd2d1407f87fb9a745ec3914dafc085408d9272184d8fdf84cdfc"),
     "mp-trade-host13": (BASE_X, "4a8b15df8e465256421cd610cd0889fbeabaaab5e63fc2509f066459a4802b2e"),
     "mp-trade-join13": (BASE_X, "88a1751963708d4f00096037cbff7fde0bab15e25659f952544a326e356d041c"),
+    # plan 0065 Phase 0 (harness sweep 8; tools/sweep8_sessions.py and tools/mp_saves.py): not loaded yet; hashes pinned at
+    # the build (lane/n65p, built twice byte-identical)
+    "sw8-nova": (BASE_X, "8b6417012a8dfa96bfb9902c745699de2b629bba4dca56c00cee791997662035"),
+    "sw8-h2": (BASE_X, "b2a1fa608ee2dc252fa6b551c4b0c518b7fadab741195df0cc4a9638f6d1cb2a"),
+    "sw8-h3": (BASE_X, "d385cbe0b9b038213dc557a2a498d1aaaa2c372e8957797d9d899518a439504e"),
+    "sw8-b8room": (BASE_X, "5588e8665de374100c52822fee69b952c02d99a32ddf6250d0d9f2f3b1961205"),
+    "sw8-b8full": (BASE_X, "817fcd1042c1766cff30949ffcbca0b92cd2ed9bfe7b1ab63cf6825d8bd6326b"),
+    "sw8-xs": (BASE_PAL, "5d8a6a6f670c92d853e3002a78a5deb63758141ac8a2c7fe0bfb28674452f8b5"),
+    "mp-gold-join": (BASE_X, "159f58a0586a887554fc4fd641ba57b7824ffe8f5201f1a4498f31e12c1bafc1"),
+    "mp-gold-full": (BASE_X, "3cdf01012b25e8cbd40472e5a01f2ab85d9681a2bbfd4894d80deda2d3c5cec6"),
+    "mp-merc-weak": (BASE_X, "e21042483618fa74ed8ed12096adb17bdb19201503eb956349fc982c5696b11c"),
     # plan 0045 Phase 2 (tools/skills_sessions.py SAVES, bases p0005/smp<cls>.d2s): hashes equal the kept saves of
     # run:2026-10-27-skills (2026-10-27-skills-manifest.sha256)
     "skills-sor": (os.path.join(P0005, "smpsor.d2s"), "d033b674bb0e6f03b3006f4d433fd23ad5b17e515dde6a0a8ca51caba64f5239"),  # run:2026-10-27-skills
@@ -1096,7 +1107,7 @@ class QuestBitsTest(Scratch):
         buf = io.StringIO()
         with contextlib.redirect_stdout(buf):
             self.assertEqual(mp_saves.main(["check", EXCEL]), 0, buf.getvalue())
-        self.assertIn("SURVEY mp_saves recipes=34 bad=0 pairs=23 pairs_bad=0", buf.getvalue())
+        self.assertIn("SURVEY mp_saves recipes=37 bad=0 pairs=29 pairs_bad=0", buf.getvalue())
         with contextlib.redirect_stdout(io.StringIO()):
             self.assertEqual(mp_saves.main(["build", EXCEL, self.path("mp")]), 0)
         self.assertEqual(len(os.listdir(self.path("mp"))), len(mp_saves.SET))

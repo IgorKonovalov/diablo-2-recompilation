@@ -136,7 +136,7 @@ The core functions are below. The per-quest functions (about 530) are named in `
 | `0x0054BA90` | `sub_0054BA90_Pkt31NpcMessage` | packet `0x31` (9 bytes) | I |
 | `0x0054C9C0` | `sub_0054C9C0_Pkt58QuestSeen` | packet `0x58`: bit 12 of a word < 42 | I |
 | `0x00545780` | `QUESTS_RedispatchNpcTalk` | e0 again, then the game record is sent | I |
-| `0x00543E10` / `0x00543F10` | `QUESTS_TimersRun` / `QUESTS_TimerAdd` | quest timers (§ 5) | I |
+| `0x00543E10` / `0x00543F10` | `QUESTS_TimersRun` / `QUESTS_TimerAdd` | quest timers (§ 5) | C (§ 17; the cadence and caller [§ 18](#18-plan-0066-batch-s3a-the-kept-quest-logs-re-checked-2026-11-15-lanen66g)) |
 | `0x00543F90` | `QUESTS_DefaultLogState` | default `+0xE8` | I |
 | `0x005435C0` | `QUESTS_UnitHookAdd` | adds a quest to a unit's `+0x74` list | I |
 | `0x00545CD0` | `QUESTS_LevelHookMonster` | hooks a room's monsters to the level's Levels `+0x30` quest | I |
@@ -2322,6 +2322,63 @@ altar's states; the timer re-arm after a 0 and the tick wrap (only one-shot time
 table not reached; every step triggered by a kill, a
 boss or a far operate; Nightmare beyond Anya's reward; classic Acts II and III; the owner-play steps (the owner entry
 stays open). Party credit and every two-client case stay plan 0044's. (run:2026-10-19-quests3)
+
+### 18. Plan 0066 batch S3a: the kept quest logs re-checked (2026-11-15, `lane/n66g`)
+
+A new check over the 54 kept quest-state logs, no game ([experiments, S3a addendum](experiments.md#addendum-2026-11-15-plan-0066-batch-s3a-the-kept-quest-logs-re-checked-lanen66g);
+`tools/quests_s3a.py`, outputs `s3a-check.txt` and `s3a-check-r2.txt`). Row by row in
+`docs/plans/0066-inventory/quests-progression.md`; the statements below are the ones Phase 3 takes into the spec.
+
+- [C] **Timer cadence.** `QUESTS_TimersRun` adds 1 to the control tick at each pass (0x00543E2D) and has one caller, the
+  `E8` at 0x0052D920 in `sub_0052D870_GameTick` (the tool's raw scan and objdump agree; no absolute reference). The
+  14 timer lines log tick = frame // 20 at frames 567 to 7 500, and the 7 runs are on frames with frame mod 20 = 0, so
+  the pass runs once per 20 frames. All 7 runs returned 1. (fn:QUESTS_TimersRun@0x00543E10, run:2026-10-19-quests3)
+- [C] **Record words.** `QUESTRECORD_SetState` and `ClearState` set or clear one bit of the record word: the next
+  write's old word is the model's in 430 QS and 38 QC pairs. `ClearSteps` ran at the rewards of words 1, 20, 25 and 35
+  and not at those of words 2, 4, 6, 9, 27 and 37, each of which set b0 and cleared b1; it kept the bits outside 2–11
+  in its 9 calls (none met a step bit set). (fn:QUESTRECORD_SetState@0x0065C360, fn:QUESTRECORD_ClearState@0x0065C3A0,
+  fn:QUESTRECORD_ClearSteps@0x0065C3E0, run:2026-10-18-quests2)
+- [C] **The object list.** In each of the 54 games the join's first list holds 41 objects, 40, 39, 38, 37, then the
+  main rows from the last to row 0; main objects enter with `+0x09` = `+0x0A` = 1, the second table's with `+0x09` = 0,
+  `+0x0A` = 1; `+0xE0` is 29 for rows 7 and 29 and 16 for row 24, the only rows whose `+0xE0` is not the descriptor
+  word. (fn:QUESTS_InitGame@0x00545D80, run:2026-10-17-quests)
+- [C] **Dispatch sites.** e10 comes from 0x00543CA2 with force 1 and act filter 0 (32), after the leave's e9s; the
+  re-dispatched e0 (return 0x005457D9) pushes force 1 (28); e4 pushes force 0 (7, return 0x00543DA4); a talk is e0,
+  its e11s, e2 (222 talks, 187 e11s). (fn:QUESTS_DispatchEvent@0x005438E0 0x00543C96, run:2026-10-18-quests2)
+- [C] **Seeds per dispatch.** In the 1 111 logged e0, e2, e3, e10 and e11 dispatches the quest seed moves only at the
+  drawing sites of § 11 (QGS returns 0x0059B21C in NPC 331's e0, 0x0058992E in Anya's e11, 0x0059EDD8 in the eclipse
+  e3) and the player seed only in NPC 266's e0 (two steps, 23); the quest seed's 24 589 consecutive observations are
+  equal except 56 one step after a QGS and 3 inside the cairn bracket. (fn:QUESTS_GetSeed@0x005438B0,
+  run:2026-10-19-quests3)
+- [C] **Game-record b13 at the first join** iff the joiner has b0, for words 4 (44 of 44, 0 of 10), 9, 11, 12 and 17
+  (words 21 and 22 wrote it in every join with b0 and in 3 without, under their own conditions), and the four clears of word 9 iff b0 and b5 and no `ass ` (3 joins). w40 b10 is set at the join iff w40
+  b0 (40 of 40, 0 of 14; 0x0058E4CB). (fn:sub_00597030_A1Q4_FirstJoin@0x00597030 0x00597081, fn:sub_00599230_A2Q1_FirstJoin@0x00599230,
+  run:2026-10-19-quests3)
+- [C] **C4 is per quest (contradiction).** Quest 13 (word 14) restores b3 as `+0x0B` = 5 (x-talk2) and quest 19
+  (word 21) does not restore on b4 (x-talk3, x-talk3b, h-talk3: `+0x0B` = 0), against C4's one map (1 and 2). [I] The
+  rest of the two maps as read: quest 13's b2 → (`+0x0B`, `+0x0C`) = (1, 2), b3 → (5, 5), b4 → (6, 5); the other
+  quests' maps are unread.
+  (0x0059D557–0x0059D5A3, 0x005BB4BC–0x005BB4C9, run:2026-10-18-quests2)
+- [C] **Word 37's entry levels (not a contradiction).** Entering 113 with quest 33 active at state ≤ 2 starts log state 3
+  (b3 at 0x00588F71; logged in x-entry, x-entry2 and h-entry, e3 112 → 113) and entering 123 below state 5 sets b14 for
+  the game (0x00589AE6; logged in h-entry and x-entry2, e3 113 → 123): both are the spec's own `[C]` rows, so nothing is
+  raised for rows 270 and 272, which move to H3a. [I] The code tests 113 or 114 for b3 (0x00589DAB–0x00589DB3) and 121 to
+  124 for b14 (0x00589EBB–0x00589EC4, `level − 121 ≤ 3` unsigned); the spec's other rows ("entering 114", "entering 121,
+  122 or 124") name the levels the logs did not meet and agree with those tests. (fn:sub_00589D80_A5Q3_LevelChange@0x00589D80
+  run:2026-10-19-quests3)
+- [C] **The orb's party pass needs a party.** The completing operate sets w18 b0 and b13 (0x005BB9F7, 0x005BBA14),
+  removes the operator's `qf2 ` itself (0x005BBA1E–0x005BBA23), and calls `PartyForEach(sub_005BB850)` only when
+  `UnitPartyId` is not 0xFFFF (0x005BBB30–0x005BBB49; the one reference to 0x005BB850). x-orb's written save kept `qey
+  qhr qbr`: had the pass run for the operator, his w18 b0 would have taken its first branch and removed all five. The
+  per-member removal and the `0x005678A0(1)` test stay `[I]` (two clients). (fn:sub_005BB980_A3Q5_CompellingOrbOperate@0x005BB980,
+  run:2026-10-18-quests2)
+- [C] **Rewards to stat 5:** Akara's +1 (c-talk1; x-talk1 and h-talk1 beside a level-up) and Tyrael's +2 (x-talk4,
+  h-talk4, c-talk4). (0x0058FF5A, 0x005B3B1F, run:2026-10-18-quests2)
+- [I] **Not separated by the logs** (routes in the inventory rows): `ChainNext`, the NPC gate, the timer re-arm, word 4's
+  e3 and Warriv Cain-lost paths (every word 4 = 0 joiner wrote b14 at 0x00592B46 on the waypoint act change, after
+  the `TownLevelLeave` store line), Kaelan's 0xBA, word 12's b2–b5, word 19's 0x251-with-b7 and 0x24D-with-b8-clear
+  variants, word 21's b0 with b4, the progression raise (every save already at its maximum).
+  (fn:sub_00592B10_A1Q4_FailPlayer@0x00592B10, run:2026-10-19-quests3)
 
 ## Data touched
 

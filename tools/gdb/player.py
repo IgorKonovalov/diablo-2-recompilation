@@ -26,6 +26,17 @@
 # Experience and level-up (any time):
 #   XK0   0x0057E990 XP_OnMonsterKill entry (ECX game, EDX killer, [esp+4] monster): gs, killer type/id/class, the
 #         monster's type, class, id, base stat entries (12 level, 13 experience among them)
+#         Plan 0065 Phase 0 (revision 2): "kxs" and "vxs", the killer's and the monster's states that are in the exp
+#         mask, read as sub_0063A690_UnitHasExpState reads them (0x0063A130): the unit's stat list (+0x5C) with flag
+#         0x80000000 at +0x10, its state bit array at +0x58, ANDed word by word with the mask array at data tables
+#         (0x00744304) +0x144 over (+0xC4 states + 31) / 32 words; a list of state numbers, [] for none, null without
+#         such a list.
+#   XS*   plan 0065 Phase 0 (revision 2): sub_0057E7B0_XpCreditPlayer's steps for a monster killer (EAX the killer,
+#         [ebp+0xC] the victim): XSO 0x0057E7DF MonsterOwner's result (EAX); XSK 0x0057E7E9 / XSV 0x0057E807
+#         UnitHasExpState of the killer / the victim (EAX); XSKL 0x0057E7F8 / XSVL 0x0057E816 StatListFindFlag(…, 0x800)
+#         (EAX, the list); XSL 0x0057E822 the list's owner type (EAX, sub_00625250_StatListOwnerType) and XSG
+#         0x0057E82A its guid (EAX, sub_006252B0_StatListOwnerGuid); XSF 0x0057E835 the unit GameFindUnit returned
+#         (EAX); XSR the returns 0x0057E846 (EAX, a player) and 0x0057E84B (none, r null). Each line: the unit's type, class, id.
 #   XC0   0x0057E480 XP_Compute entry (EAX exp, EDI player level, EBX unit, [esp+4] game, [esp+8] monster level)
 #   XCP   0x0057E4CE after XP_LevelDiffPenalty (EAX); XCR 0x0057E4D4 after XP_ApplyExpRatio (EAX);
 #   XC85  0x0057E4E0 after GetUnitStat(unit, 85) (EAX); XCX the returns 0x0057E4FF (EAX), 0x0057E4AA (1),
@@ -284,14 +295,45 @@ def _player_main():
             emit("ISL", {"slot": s32(bp + 0x0C), "copy": s32(bp - 8), "it": unit(reg("esi")), "gs": gs()})
 
     # ---- experience and level-up
+    def exp_states(u):
+        """The unit's states inside the exp mask, as 0x0063A130 tests them (read-only); None without a state list."""
+        lst = u32(u + 0x5C)
+        if not lst or not u32(lst + 0x10) & 0x80000000:
+            return None
+        arr = u32(lst + 0x58)
+        dt = u32(DT_PTR)
+        mask, n = u32(dt + 0x144), s32(dt + 0xC4)
+        if not arr or not mask or n <= 0 or n > 4096:
+            return None
+        words = (n + 31) // 32
+        a = struct.unpack("<%dI" % words, mem(arr, 4 * words))
+        m = struct.unpack("<%dI" % words, mem(mask, 4 * words))
+        return [32 * w + b for w in range(words) for b in range(32) if (a[w] & m[w]) >> b & 1]
+
     def on_xk0():
         game, killer, mon = reg("ecx"), reg("edx"), u32(reg("esp") + 4)
         d = {"game": game, "gs": sd(game + 0xD0), "killer": killer}
         if killer:
-            d.update({"ktype": u32(killer), "kcls": s32(killer + 4), "kid": u32(killer + 0x0C)})
+            d.update({"ktype": u32(killer), "kcls": s32(killer + 4), "kid": u32(killer + 0x0C),
+                      "kxs": exp_states(killer)})
         if mon:
-            d.update({"mtype": u32(mon), "mcls": s32(mon + 4), "mid": u32(mon + 0x0C), "mb": lists(mon)["b"]})
+            d.update({"mtype": u32(mon), "mcls": s32(mon + 4), "mid": u32(mon + 0x0C), "mb": lists(mon)["b"],
+                      "vxs": exp_states(mon)})
         emit("XK0", d)
+
+    def tci(u):
+        """[type, class, id] of a unit pointer, or None."""
+        return [u32(u), s32(u + 4), u32(u + 0x0C)] if u else None
+
+    def xs_unit(tag):
+        def f():
+            emit(tag, {"r": tci(reg("eax"))})
+        return f
+
+    def xs_val(tag):
+        def f():
+            emit(tag, {"r": reg("eax")})
+        return f
 
     def on_xc0():
         sp = reg("esp")
@@ -389,6 +431,12 @@ def _player_main():
     Bp(0x0057097B, lu_max("mana"))
     Bp(0x005709AD, lu_max("stamina"))
     Bp(0x0057EB10, on_gl0)
+    # plan 0065 Phase 0: XpCreditPlayer's steps (revision 2)
+    for a, f in ((0x0057E7DF, xs_unit("XSO")), (0x0057E7E9, xs_val("XSK")), (0x0057E7F8, xs_val("XSKL")),
+                 (0x0057E807, xs_val("XSV")), (0x0057E816, xs_val("XSVL")), (0x0057E822, xs_val("XSL")),
+                 (0x0057E82A, xs_val("XSG")), (0x0057E835, xs_unit("XSF")), (0x0057E846, xs_unit("XSR")),
+                 (0x0057E84B, lambda: emit("XSR", {"r": None}))):
+        Bp(a, f)
     for a in RNG_FNS:
         rng_bps.append(Bp(a, on_rng(a), enabled=False))
 

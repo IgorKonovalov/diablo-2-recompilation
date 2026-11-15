@@ -1,0 +1,61 @@
+{
+ "game": "expansion",
+ "class": "Sorceress",
+ "seed": 650650001,
+ "name": "SweepNova",
+ "progression": 15,
+ "difficulty": [
+  128,
+  128,
+  128
+ ],
+ "waypoints": {
+  "normal": "all",
+  "nightmare": "all",
+  "hell": "all"
+ },
+ "stats": {
+  "strength": 60,
+  "energy": 300,
+  "dexterity": 60,
+  "vitality": 400,
+  "hitpoints": 3000,
+  "maxhp": 3000,
+  "mana": 2000,
+  "maxmana": 2000,
+  "stamina": 400,
+  "maxstamina": 400,
+  "level": 30,
+  "experience": 4663553
+ },
+ "skills": {
+  "Teleport": 1,
+  "Nova": 1,
+  "Warmth": 10,
+  "Static Field": 1,
+  "Telekinesis": 1,
+  "Charged Bolt": 1,
+  "Frozen Armor": 1
+ },
+ "mouse": {
+  "left": "Teleport",
+  "right": "Nova",
+  "swap_left": "Teleport",
+  "swap_right": "Nova"
+ },
+ "hotkeys": [
+  "Nova"
+ ],
+ "items": [
+  {
+   "code": "mbl",
+   "equip": "belt"
+  }
+ ],
+ "belt_fill": [
+  "hp5",
+  "hp5",
+  "rvl",
+  "mp5"
+ ]
+}

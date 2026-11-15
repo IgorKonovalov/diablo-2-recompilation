@@ -6,6 +6,9 @@
     python3 -I tools/mp_check.py aura <log> [<log> ...]
     python3 -I tools/mp_check.py quests <log> [--word W --join-bits B,B|none --host-bits B,B]
     python3 -I tools/mp_check.py leave <log> [<log> ...]
+    python3 -I tools/mp_check.py gold <log> [<log> ...]
+    python3 -I tools/mp_check.py rooms <log> [<log> ...]
+    python3 -I tools/mp_check.py portalquest <log> [...] --expect refuse|pass [--flag F]
 
 xpshare: the party share of kill experience (docs/findings/player/0001-creation.md, the Party bullet; spec
 docs/specs/player/creation.md J4; case MP16 of docs/findings/multiplayer/0001-cases.md), from a host log of
@@ -50,6 +53,24 @@ leave: case MP30 (multiplayer/0001 § 2; quests/0001 § 2, the e9 and e10 rows),
   one QE10 for that player, then QL1, in that order; the e9 callback 0x00592C80's count (Q4B before its code test,
   Q4C after) must drop by exactly 1 when the code is `bks ` or `bkd ` and stay otherwise. The list removals (QLR, by
   return address), the resets (Q4R) and the quest-bit writes inside a leave (QS/QC) are counted, not predicted.
+gold: case MP32 (multiplayer/0001 § 2; multiplayer/0002 §§ 1, 3, all [I] before the run), from a host log of
+  tools/gdb/two-gold.gdb (plan 0065 Phase 0). Each pickup (GP0: picker, its cap and gold, the pile's amount A, every
+  player's gold, level and mode) is predicted: a pile with a player owner (GPO type 0) or a picker in no party: the
+  picker alone, give = min(A, cap - gold); a partied picker (GS0): n = the picker plus each member of its party (PLRS
+  "pty") in its level id and alive (GP0 mode not 0 or 17), checked against GSN when n > 1; n <= 1 the picker alone;
+  n = 2: share = A / 2 truncated, the member's give min(share, 10000 x its level - its gold) (GC's cap and gold must be
+  those), its overflow back to the picker, left = A - share + over (GSF), the picker's give min(left, cap - gold), the
+  share's return left - give (GPR). Every player's gold change (GPE against GP0) must be its give. Separating cases
+  counted: an odd A at n = 2 (the remainder to the picker) and an overflow at n = 2 (the clip's return).
+rooms: cases MP21 and MP20 (multiplayer/0001 § 2), from a host log of tools/gdb/two-rooms.gdb (plan 0040's rooms.py
+  lines with two clients). A room's +0x78 is the count of clients inside its near list: each CE / CL line's +0x78
+  before must be the count of clients that entered and did not leave it, each RP room's +0x78 the same count, and a
+  FREE only of a room with none. MP21's separating case: a room two clients held, kept while one of them stays and
+  freed only after both left. MP20: each activation (ACTA) is attributed to the client of the latest CRC before it
+  (clients numbered by first appearance: the host first); the population itself is tools/monspawn.py check's.
+portalquest: case MP27 (multiplayer/0001 § 2; quests/0002 § 2), from the PQF/PQR lines of tools/gdb/two-players.py r6:
+  each quest-gate call reads --flag (default 21, Levels QuestFlagEx of levels 101 and 102), and its result is 0 under
+  --expect refuse (the joiner's word 21 bit 0 clear, MP27 a) and non-zero under --expect pass (bit 0 set, MP27 b).
 Prints one SURVEY line per check; exit 1 on any mismatch. Stdlib only; reads only the logs named.
 """
 import collections
@@ -566,7 +587,229 @@ def check_leave(paths):
     return 1 if bad else 0
 
 
+def tagged(path, tags):
+    with open(path, errors="replace") as f:
+        for n, line in enumerate(f, 1):
+            tag, _, rest = line.rstrip("\n").partition(" ")
+            if tag in tags:
+                try:
+                    yield n, tag, json.loads(rest)
+                except ValueError:
+                    continue
+
+
+def tdiv(a, b):
+    q = abs(a) // abs(b)
+    return q if (a >= 0) == (b > 0) else -q
+
+
+GOLD_PER_LEVEL = 10000      # PLAYER_GoldCap 0x00622E70 (items/economy G2)
+
+
+def check_gold(paths):
+    S = collections.Counter()
+    bad = []
+    for path in paths:
+        plrs = None
+        ev = list(tagged(path, ("PLRS", "GP0", "GPO", "GS0", "GSN", "GC", "GSF", "GA", "GPR", "GPE")))
+        for k, (n, t, d) in enumerate(ev):
+            if t == "PLRS":
+                plrs = d
+                continue
+            if t != "GP0":
+                continue
+            where = "%s:%d" % (path, n)
+            body = []
+            for e in ev[k + 1:]:
+                if e[1] == "GP0":
+                    break
+                if e[1] == "PLRS":
+                    continue
+                body.append(e)
+                if e[1] == "GPE":
+                    break
+            got = {}
+            for _n, tt, dd in body:
+                got.setdefault(tt, dd)
+            if "GPE" not in got:
+                S["pickup not closed (no GPE)"] += 1
+                continue
+            pid, A, cap, gold = d["pid"], d["amt"], d["cap"], d["gold"]
+            pl0 = {x[0]: x for x in d["pl"]}
+            pl1 = {x[0]: x for x in got["GPE"]["pl"] or []}
+            owner = (got.get("GPO") or {}).get("owner")
+            gives = {}
+            if owner and owner[0] == 0:
+                gives[pid] = min(A, cap - gold)
+                kind = "a player's pile: the picker alone"
+                if "GS0" in got:
+                    bad.append("%s a player's pile entered the share" % where)
+            elif "GS0" not in got:
+                gives[pid] = min(A, cap - gold)
+                kind = "no party: the picker alone"
+            else:
+                me = next((x for x in (plrs or {}).get("p", []) if x["id"] == pid), None)
+                party = next((p["m"] for p in (plrs or {}).get("pty", []) if pid in p["m"]), [pid])
+                members = [m for m in party if m != pid]
+                lid = me.get("lid") if me else None
+                alive = [m for m in members if any(x["id"] == m and x.get("lid") == lid for x in (plrs or {}).get("p", []))
+                         and m in pl0 and pl0[m][3] not in (0, 17)]
+                npred = 1 + len(alive)
+                if "GSN" in got and got["GSN"]["n"] != npred:
+                    bad.append("%s n %d, predicted %d" % (where, got["GSN"]["n"], npred))
+                    continue
+                if npred <= 1:
+                    if "GSN" in got:
+                        bad.append("%s n <= 1 predicted, GSN logged" % where)
+                        continue
+                    gives[pid] = min(A, cap - gold)
+                    kind = "partied, n = 1: the picker alone"
+                else:
+                    share = tdiv(A, npred)
+                    left = A
+                    for m in alive:
+                        gm, lm = pl0[m][1], pl0[m][2]
+                        capm = GOLD_PER_LEVEL * lm
+                        gc = got.get("GC") or {}
+                        if gc.get("mid") != m or gc.get("cap") != capm or gc.get("gold") != gm or gc.get("share") != share:
+                            bad.append("%s GC %s, predicted member %d share %d cap %d gold %d" % (where, gc, m, share, capm, gm))
+                        give_m = min(share, capm - gm)
+                        gives[m] = give_m
+                        left += (share - give_m) - share
+                        if share - give_m > 0:
+                            S["SEPARATING: the member's overflow returned to the picker"] += 1
+                    gsf = got.get("GSF") or {}
+                    if gsf.get("left") != left:
+                        bad.append("%s GSF left %s, predicted %d" % (where, gsf.get("left"), left))
+                    gives[pid] = min(left, cap - gold)
+                    if got.get("GPR", {}).get("rest") != left - gives[pid]:
+                        bad.append("%s GPR %s, predicted %d" % (where, got.get("GPR"), left - gives[pid]))
+                    kind = "partied, n = %d: the split" % npred
+                    if A % npred:
+                        S["SEPARATING: odd A at n = 2 (the remainder to the picker)"] += 1
+            for x in pl0:
+                dg = (pl1.get(x, [x, None])[1] or 0) - (pl0[x][1] or 0)
+                if dg != gives.get(x, 0):
+                    bad.append("%s player %d gold %+d, predicted %+d (%s)" % (where, x, dg, gives.get(x, 0), kind))
+                    break
+            else:
+                S["pickup predicted: %s" % kind] += 1
+    for b in bad:
+        print("MISMATCH " + b)
+    sep = sum(v for k, v in S.items() if k.startswith("SEPARATING"))
+    print("SURVEY mp_check gold logs=%d pickups=%d separating=%d mismatches=%d" %
+          (len(paths), sum(v for k, v in S.items() if k.startswith("pickup predicted")), sep, len(bad)))
+    for k, v in sorted(S.items()):
+        print("  %-90s %d" % (k, v))
+    return 1 if bad else 0
+
+
+def check_rooms(paths):
+    S = collections.Counter()
+    bad = []
+    for path in paths:
+        inside = collections.defaultdict(set)    # room -> clients
+        most = collections.Counter()             # room -> the most clients it held
+        order = []                               # clients by first appearance
+        last_crc = {}                            # thread -> client of the latest CRC
+        for n, t, d in tagged(path, ("CE", "CL", "RP", "FREE", "CRC", "ACTA")):
+            where = "%s:%d" % (path, n)
+            if t in ("CE", "CL"):
+                r, c = d["r"], d["c"]
+                if c not in order:
+                    order.append(c)
+                if d["n78"] != len(inside[r]):
+                    bad.append("%s %s room %x: +0x78 %d, predicted %d" % (where, t, r, d["n78"], len(inside[r])))
+                if t == "CE":
+                    inside[r].add(c)
+                    most[r] = max(most[r], len(inside[r]))
+                else:
+                    if c not in inside[r]:
+                        bad.append("%s CL of a client not inside room %x" % (where, r))
+                    inside[r].discard(c)
+                    if most[r] == 2 and len(inside[r]) == 1:
+                        S["shared room left by one client (kept while the other stays)"] += 1
+                S["%s lines" % t] += 1
+            elif t == "RP":
+                for act in d["acts"]:
+                    for row in act["rooms"]:
+                        r, n78 = row[0], row[3]
+                        if n78 != len(inside[r]):
+                            bad.append("%s RP room %x: +0x78 %d, predicted %d" % (where, r, n78, len(inside[r])))
+                        else:
+                            S["RP room +0x78 predicted (%d clients)" % n78] += 1
+            elif t == "FREE":
+                r = d["r"]
+                if inside[r]:
+                    bad.append("%s FREE of room %x with %d clients" % (where, r, len(inside[r])))
+                else:
+                    S["FREE of a room no client holds"] += 1
+                    if most[r] >= 2:
+                        S["SEPARATING: a room two clients held, freed after both left"] += 1
+                inside.pop(r, None)
+                most.pop(r, None)
+            elif t == "CRC":
+                if d["c"] not in order:
+                    order.append(d["c"])
+                last_crc[d.get("th")] = d["c"]
+            elif t == "ACTA":
+                c = last_crc.get(d.get("th"))
+                S["MP20 activation after a CRC of client %s" % (order.index(c) if c in order else "none")] += 1
+    for b in bad:
+        print("MISMATCH " + b)
+    print("SURVEY mp_check rooms logs=%d rp=%d frees=%d separating=%d mismatches=%d" %
+          (len(paths), sum(v for k, v in S.items() if k.startswith("RP room")), S["FREE of a room no client holds"],
+           S["SEPARATING: a room two clients held, freed after both left"], len(bad)))
+    for k, v in sorted(S.items()):
+        print("  %-90s %d" % (k, v))
+    return 1 if bad else 0
+
+
+def check_portalquest(paths, expect, flag):
+    S = collections.Counter()
+    bad = []
+    for path in paths:
+        pend = None
+        for n, t, d in tagged(path, ("PQF", "PQR")):
+            if t == "PQF":
+                pend = (n, d)
+                if d["flag"] != flag:
+                    bad.append("%s:%d quest gate flag %d, predicted %d" % (path, n, d["flag"], flag))
+                continue
+            if pend is None:
+                continue
+            ok = (d["r"] == 0) == (expect == "refuse")
+            if not ok:
+                bad.append("%s:%d quest gate result %d, predicted %s" % (path, n, d["r"], expect))
+            else:
+                S["quest gate %s as predicted (operator %s)" % (expect, pend[1].get("id"))] += 1
+            pend = None
+    for b in bad:
+        print("MISMATCH " + b)
+    print("SURVEY mp_check portalquest logs=%d calls=%d mismatches=%d" %
+          (len(paths), sum(S.values()), len(bad)))
+    for k, v in sorted(S.items()):
+        print("  %-90s %d" % (k, v))
+    return 1 if bad else 0
+
+
 def main(argv):
+    if len(argv) >= 3 and argv[1] == "gold":
+        return check_gold(argv[2:])
+    if len(argv) >= 3 and argv[1] == "rooms":
+        return check_rooms(argv[2:])
+    if len(argv) >= 3 and argv[1] == "portalquest":
+        rest, expect, flag = argv[2:], None, 21
+        if "--expect" in rest:
+            k = rest.index("--expect")
+            expect, rest = rest[k + 1], rest[:k] + rest[k + 2:]
+        if "--flag" in rest:
+            k = rest.index("--flag")
+            flag, rest = int(rest[k + 1]), rest[:k] + rest[k + 2:]
+        if expect not in ("refuse", "pass") or not rest:
+            print(__doc__)
+            return 2
+        return check_portalquest(rest, expect, flag)
     if len(argv) >= 3 and argv[1] == "leave":
         return check_leave(argv[2:])
     if len(argv) >= 3 and argv[1] == "aura":

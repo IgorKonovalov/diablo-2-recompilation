@@ -55,6 +55,7 @@ SET = {n: "x" for n in (
     "mp-anc-join", "mp-anc-low", "mp-scroll-join", "mp-quest-host", "mp-quest-join", "mp-cow-host",
     "mp-pvp-host", "mp-pvp-join", "mp-sock-join", "mp-wound-join")}
 SET.update({n: "x" for n in ("mp-trade-host", "mp-trade-join", "mp-trade-host13", "mp-trade-join13")})  # plan 0067 P2
+SET.update({n: "x" for n in ("mp-gold-join", "mp-gold-full", "mp-merc-weak")})  # plan 0065 Phase 0
 SET["mp-pal-join"] = "pal"
 SET["mp-pal-conv"] = "pal"   # plan 0051 Phase 1a: MP25's offensive auras
 
@@ -85,6 +86,14 @@ PAIRS = [
     # plan 0067 Phase 2 (player trade, multiplayer/0003 § 11): known items at known page-0 cells
     ("T1-T3 T5-T7 T9-T12", "mp-trade-host", "mp-trade-join", "trade: host wnd (0,0), gcv (5,0), empty cube (8,0), gold 795000 (cap 800000); joiner wnd (0,0), gcv (2,0), cube (8,0) holding a gcv, a belt of rvl, gold 100000"),
     ("T4 T8 T13", "mp-trade-host13", "mp-trade-join13", "trade: host four wnd (0..3,0) and a gax (8,0); joiner page 0 the T13 layout (cap (3,1), gax (7,0), axe (0,1), axe (5,0)) plus a gcv (4,3)"),
+    # plan 0065 Phase 0 (harness sweep 8): MP32 (multiplayer/0002 § 3), the 0058 live cases (player/0002 § 1, § 4) with
+    # MP16's kills near the bound, MP20/MP21 (rooms with two clients)
+    ("MP32", "mp-nova-host", "mp-gold-join", "party gold: joiner level 9, gold 0 (room 90000); host picks up monster gold, partied, joiner alive in the level"),
+    ("MP32 full", "mp-nova-host", "mp-gold-full", "party gold: joiner gold 89995 of 90000 (room 5), so half of any pile of 12 or more overflows back to the host"),
+    ("0058a MP16", "mp-merc-host", "mp-tank-join", "far credited player: the host's Rogue kills while the host stands more than 80 sub-tiles away and the partied joiner near the victim; MP16: kills with the joiner parked near d2 6400"),
+    ("0058b", "mp-merc-weak", "mp-tank-join", "dead killer: the host (life 40) dies, its Rogue kills beside the living partied joiner"),
+    ("0058c", "mp-nova-host", "mp-nova-weak", "player kills player: the hostile host Novas the weak joiner (life 60) to death"),
+    ("MP20 MP21", "mp-nova-host", "mp-tank-join", "rooms: the joiner explores rooms the host never reaches; both in one room, then one leaves, then the other"),
 ]
 # plan 0067 Phase 2: the page-0 (store 1) items each trade recipe must hold, exactly: (code, x, y)
 TRADE_PAGE0 = {
@@ -103,7 +112,7 @@ def gold(f):
     return stat(f, 14)
 
 # pairs whose case declares hostility (multiplayer/0001 § 4: both players at character level 9 or more)
-HOSTILE = {"MP01 MP23 MP24", "MP23", "MP25", "MP24 cow", "MP25 offensive", "open wounds"}
+HOSTILE = {"MP01 MP23 MP24", "MP23", "MP25", "MP24 cow", "MP25 offensive", "open wounds", "0058c"}
 # MP23 bulk (multiplayer/0001 § 2: at least 200 events, P = 17 % on every scaled field)
 MP23_EVENTS, MP23_PCT = 200, 17
 
@@ -218,6 +227,10 @@ def checks(excel):
                             ("gold 10000", lambda f, q, w: gold(f) == 10000)],
         "mp-trade-join13": [("page 0 exactly the T13 layout and a gcv", lambda f, q, w: page0(f) == sorted(TRADE_PAGE0["mp-trade-join13"])),
                             ("gold 100000", lambda f, q, w: gold(f) == 100000)],
+        "mp-gold-join": [("level 9, gold 0", lambda f, q, w: lvl(f) == 9 and gold(f) == 0)],
+        "mp-gold-full": [("gold 5 below the cap (10000 x level)", lambda f, q, w: gold(f) == 10000 * lvl(f) - 5)],
+        "mp-merc-weak": [("mercenary", lambda f, q, w: f["header"]["merc_seed"] != 0), ("max life <= 60", lambda f, q, w: stat(f, 7) >> 8 <= 60),
+                         ("level >= 9", lambda f, q, w: lvl(f) >= 9), ("Act I", lambda f, q, w: list(f["header"]["difficulty"]) == [128] * 3)],
         "mp-cow-host": [("word 4 bit 10 clear", lambda f, q, w: every(lambda d: not bit(q, d, 4, 10))), ("leg, tbk held", lambda f, q, w: held(f, "leg") and held(f, "tbk")),
                         ("box held", lambda f, q, w: held(f, "box"))],
     }
