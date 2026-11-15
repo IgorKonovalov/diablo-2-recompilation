@@ -380,3 +380,66 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 - **Totals** recomputed from the 29 files: a-logs 674, a-run 358, b 389, c 389, c-emu 490, d 326, sum 2 626; H1h 39.
 - **Audit:** a Tier B check would have missed the fix (it shows only in the kept output's flip lines, not in the diff);
   it is not reject-grade, so no miss counts against the lane kind.
+
+### 2026-11-15 — Phase 1 batch S3a, part 1 of 2 (reverser-static, `lane/n66g`): checker built and run; resume note
+
+- **Done.** New check tool `tools/quests_s3a.py` (`6531b66c…`, stdlib, read-only; imports `tools/quests.py`'s model,
+  which stays unchanged at `b6dfb1a3…`, the hashed checker behind the three runs' kept outputs) over the 54 kept logs:
+  the 45 of run:2026-10-17-quests, run:2026-10-18-quests2 and run:2026-10-19-quests3, `p47h-x-wpact5r-0` and the 8 of
+  `p47b-run.lst`, with their installed and written saves. Kept output `workspace/logs/quests/sweep2-s3a/s3a-check.txt`
+  (`9134a7c7…`, `SUMMARY mismatches=4 checks=4070 logs=54`, the 4 being the C4 contradiction below) and
+  `s3a-static.txt` (`dd50e017…`: one `E8` call to `QUESTS_TimersRun`, at 0x0052D920; `g_ItemUseFns` rows 0–2) under
+  `sweep2-s3a/manifest.sha256` (passes from that directory); inputs in
+  `workspace/logs/quests/manifest-sweep2-s3a-inputs.sha256` (`510c8807…`, 128 lines: 54 logs, 74 saves; passes from
+  `workspace/logs/quests/`); development outputs in `sweep2-s3a/dev/` (`manifest-dev.sha256`). No game, no Ghidra.
+- **Not done yet (part 2):** the inventory rows' notes, the totals, the findings addenda (quests experiments under the
+  three runs; quests/0001 and 0002), `re/symbols.csv` raises, `tools/test_quests_s3a.py`, the Tier B request.
+- **Contradicted (for Phase 3 and the review), from the kept check:**
+  1. progression C4 (row 49): the first-join restore map is per quest, not the one map C4 gives. Quest 13 (word 14)
+     maps b2 → (+0x0B, +0x0C) = (1, 2), b3 → (5, 5), b4 → (6, 5) (0x0059D557–0x0059D5A3; x-talk2 logged +0x0B = 5 for
+     b3); quest 19 (word 21) does not restore on b4 (0x005BB4BC–0x005BB4C9; x-talk3, x-talk3b, h-talk3 logged
+     +0x0B = 0). The 4 mismatches.
+  2. travel Outputs (row 86, "quest event 3 for every level change"): every same-act level change is followed by one e3
+     (0x00543BB7) naming the old and new level (341: 101 waypoint, 115 warp, 122 portal, 3 resurrection; a portal used
+     in a town raises one more inside the use), but none of the 87 act changes (40 by NPC, 47 by waypoint) raises an e3.
+     Progression word 4's "the e3 level-40 branch then finds state 7" (an act change into 40) needs a re-read.
+  3. progression row 196 (the five Khalim items removed at completion): x-orb's written save lost `qf2 ` but kept
+     `qey qhr qbr` (no `qf1 ` held). Read `0x005BB850` before filing it: the pass may remove only some codes, or the
+     `0x005678A0(1)` test may hold.
+- **Row decisions reached (part 2 writes them into the rows; spec lines at `b5999f5e`):**
+  - *Raised whole:* progression 8, 18, 98, 130, 231, 262 (site 0x00588491: the spec's 0x00588496 is the return),
+    304 (call 0x0058E4CB); travel 2, 8, 9, 10, 11, 12.
+  - *Raised in part* (the `[C]` part first; the remainder's route after "/"): progression 4 (cadence; the caller by the
+    raw scan, objdump to confirm / c), 7 (ids, tables / the "NPC-introduction" role), 13 (Set/Clear: 430 QS and 38 QC
+    next-old pairs / GetState → c S3c), 16 (ClearSteps at the rewards of words 1, 20, 25, 35, not 2, 4, 6, 9, 27; the
+    other bits kept / the 2–11 clear: no QK met a step bit → a-run H3a), 34 (order, inits, rows 7/29 and 24's +0xE0 /
+    callbacks and private data), 39 (e10: 0x00543CA2, force 1, act filter 0, 32 / "after the item loop", "+0x0C" →
+    H3f), 42 (e10 32, re-dispatched e0 at 0x005457D4 28, e4 force 0 in 7 `due` / e5 → H3f), 56 (the reward halves /
+    the completing half → H3b), 58 (222 talks: e0, e11s with 28 re-dispatched e0, e2 / the store order, the client's
+    pick), 63 (e0, e2, e3, e10, e11 by the logged NPCs / kills, operates, item events → H3b, H3f), 65 (24 589 equal
+    pairs, 56 after a QGS, 3 in brackets, 0 elsewhere / the player-seed half), 75 (c-talk1 +1, x/h-talk1 +1 beside a
+    level-up's +1 / the timer → H3b), 125 and 184 (the talk half: 0xFD, 0x1D2 / first join and 0x1D1 → a-run H3a), 132,
+    141 (the clear / "no setter" → c S3c), 182, 190 (first join 48/6 / the reporter half → b H3c), 210 (2 / the arm
+    without b13 → c S3c), 237 (+2 in x/h/c-talk4), 260 (one class-511 unit per game in 6 logs / the InitFn and no
+    draw), 305 (object 40's callbacks / quest 31's state move: the one 0x4E46 met the quest switched off → a-run H3a),
+    307 (orb broken → pass / whole orb, level 101 → a-run H3a), 312 (155 and 210 pass sides / refusals, 367 → H3e), 313
+    (the operator's path, joiner w18 b0 clear / first-joiner path → a-run H3a, game-wide → d-2c), 322 (QGS sites inside
+    their events / created units); travel 3, 4 (g_ItemUseFns[2].use = 0x005BE290; check Misc pSpell 2 for tsc, tbk),
+    5, 6, 7, 17, 20 (size 3 step 1 with the walk 62 moved; size 2 step 1 62 moved / step 5 and the walk: all in place,
+    the walk-free control agrees in 62), 22, 34 (code 0: 148, and 7 level-0 packets with no level change / codes 1–3
+    → H3e), 35 (type 0, 106 field arrivals / 133–136), 37, 38, 58, 63 (e3 iff in town, 122), 69 (114 UnitInteract warps
+    within 4.5 / refusals; one warp from 0x00582027 at 8.1), 70 (gate iff destination in the set, 115), 71 (100's pass),
+    83, 84 (check word 10 in x-meshif), 85; README 1, 2.
+  - *Moved:* progression 54, 67 (Warriv message 1 never reported), 151 (no 0xBA), 152, 200, 201 (check the fired
+    variants in the kept `quests2-check.txt`: 0x251 with b7 set and 0x24D with b8 clear seem never met), 217 (the orb
+    wrote w18 b0, b13; w21 had b0 and no b4), 270, 271, 272, 301 (progression already ≥ 5d + 5 in every save) → a-run
+    H3a; 55 → b H3c (no line at `QUESTS_NpcHasQuest`); 57 (7 TMX, all return 1) → b H3b; 276 → b H3f (the bonus list is
+    not saved); 225, 308 → b H3e; 243 → d-none (the classic client has no message 0x4E20); 96: check x-act's word 4 and
+    the e3 into 40, likely a-run H3a; travel 48 (ActStale fires on 145 of 206 town departures and 16 times not after
+    one: needs a `TownLevelLeave` line), 67, 68 → b H3e; travel 19, 60 (no separating case) → c-emu (a step-5 and walk
+    emulation of `COLL_FindFreeNear`; a batch for the architect to name). Contradicted: progression 49, travel 86 (above).
+- **Resume (part 2, a fresh lane on `lane/n66g`):** re-run `tools/quests_s3a.py check $(cat
+  workspace/logs/quests/sweep2-s3a/s3a-logs.lst)` (byte-identical to `s3a-check.txt`), confirm the open items above
+  (row 96, 196's read, 200/201's variants, Misc pSpell, T84's word 10, row 4's objdump count), add a test file, write
+  the rows, the totals (merge `main` first), the addenda, the symbol raises (review-fixes rule 14), and the log entry
+  with the Tier B request.
