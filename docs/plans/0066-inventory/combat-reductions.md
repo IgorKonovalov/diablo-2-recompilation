@@ -6,7 +6,7 @@
 
 | # | Line | Section | Claim (excerpt) | Anchor | Class | Route or reason | Batch | Count |
 |---|---|---|---|---|---|---|---|---|
-| 1 | 59 | Runtime state | (, combat/0001 § 12b (e)) | tbl:ItemStatCost.txt:Stat | c | an xref scan with a second tool (r2) of the stat-id immediates in the four reduction functions and the table rows at `0x00732980` | S5b | 1 |
+| 1 | 59 | Runtime state | (, combat/0001 § 12b (e)) | tbl:ItemStatCost.txt:Stat | c | an xref scan with a second tool (r2) of the stat-id immediates in the four reduction functions and the table rows at `0x00732980` **S5b 2026-11-15: raised.** Pushed ids (34, 35, 118, 153, 327) and the twelve table rows (r2) give exactly the spec's 29; [combat/0001 § 18](../../findings/combat/0001-formulas.md#18-plan-0066-batch-s5b-static-second-sources-run2026-11-15-sweep2-s5b). | S5b | 1 |
 | 2 | 66 | Constants | resistance floor — −100 (below −99) | `fn:COMBAT_ResistFor@0x0057BE00` | c-emu | `COMBAT_ResistFor` emulated with resistance inputs below −99 (stat getters as observed boundaries), against `tools/combat.py` | S5e | 1 |
 | 3 | 69 | Constants | PvP percent; hireling against hireling — for 17 between two players, physical and lightning ; … | `0x0057C0B6` | c-emu | `COMBAT_DamagePercent` emulated: a hireling and a bit-31 attacker on a player, two hirelings; the 17 and 25 branches | S5e | 1 |
 | 4 | 70 | Constants | prime evil against a bit-31 unit — for 200 , for 400 | `0x0057C129` | c-emu | `COMBAT_DamagePercent` emulated: prime-evil attacker, bit-31 non-hireling defender; the 400 branch | S5e | 1 |

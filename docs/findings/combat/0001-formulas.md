@@ -960,6 +960,183 @@ Three `CombatAbs` sessions on slot 2 (the record: [experiments § run:2026-10-21
   fn:COMBAT_Leech@0x0057C420, fn:sub_005BF720_StatEv10ThornsLightning@0x005BF720, run:2026-10-21-shortfalls2,
   run:2026-10-20-shortfalls)
 
+### 18. Plan 0066 batch S5b: static second sources (run:2026-11-15-sweep2-s5b)
+
+Plan [0066](../../plans/0066-simulation-inferred-claims-sweep.md) Phase 1, batch S5b (`lane/n66j`, 2026-11-15). Each
+claim below was read with a second tool (the raw-byte scan of `tools/xrefscan.py`, radare2 and the objdump listing)
+or checked over a whole excel table; the checker is `tools/sweep2_s5b.py`, its kept output `check-s5b.txt`, the check
+names in brackets. The inventory row each settles is named first.
+
+**Callers and branches** (`callers`).
+
+- [C] *README 3.* `COMBAT_MeleeHitTest` has 32 call sites in 30 functions and no pointer: `SKILL_AttackDo`,
+  `sub_005A5470_MonHitTest`, `MON_MeleeHit`, the helper `sub_0056E680_SkillHitOrResultFlags` (2 sites) and 26 skill
+  functions, start functions among them (6, 7, 10, 16, 27, 29, 32, 35, 39, 42, 47, 56, 57) beside do functions (7,
+  13, 52, 67, 75, 76, 109, 150 (2 sites)) and the helpers `0x005C8980`, `0x005D3490`, `0x005D5880`, `0x005D6200`,
+  `0x005DA660`; `0x005C7690` (start 56) is one. So the spec's "do-functions" are start and do functions both. Every
+  site decodes in r2 as `call 0x57ec10`. (fn:COMBAT_MeleeHitTest@0x0057EC10, 0x005C7712,
+  run:2026-11-15-sweep2-s5b `readme3_meleehittest_callers`)
+- [C] *README 8.* `SKILL_AttackDo` pushes 38 and the attacker and calls `UNIT_HasStateFlag` (0x0056F19A–0x0056F19D);
+  non-zero → `sub_0056C2D0_AttackDeliverMeleeOnly` (its one call, 0x0056F1AE) and `ret 8`, so `COMBAT_PrgFinisher`
+  (0x0056F1CE) and `COMBAT_DeliverQueued` (0x0056F1DA) are skipped. `UNIT_HasStateFlag(u, f)` refuses `f > 39` and
+  tests the state set at `DataTables + 0xCC + 4f` (0x0063A7BD–0x0063A7D0); `STATES_Load` builds set `i` at
+  `0x0096BCFC + 4i` from flag bit `i` of each record (`StatesMaskBuild(set, i)` in its 40-pass loop,
+  0x00618C12–0x00618C2A, 0x00611D82), and States.md's data check ties bit 38 to `meleeonly`. Over all 185 States rows
+  `meleeonly` is 1 on 139 `wolf` and 140 `bear` only (`tables` `readme8_tohit19_states`). (fn:SKILL_AttackDo@0x0056F070,
+  fn:UNIT_HasStateFlag@0x0063A7B0, tbl:States.txt:meleeonly, run:2026-11-15-sweep2-s5b `readme8_meleeonly_branch`)
+- [C] *to-hit 2.* `COMBAT_ToHitRoll` has three calls: `COMBAT_MeleeHitTest` 0x0057ECCD, `MISSILE_HitUnit` 0x005AE06F and
+  0x005A88FB; `COMBAT_DefenceRoll` three: `COMBAT_MeleeHitTest` 0x0057ECE8, `MISSILE_ApplyDamage` 0x005AD806 and
+  `sub_0056B9C0_AreaHitUnit` 0x0056BA0D (delivery § A's area hits); `COMBAT_AvoidRoll` only from `COMBAT_DefenceRoll`
+  (3). 0x005A88FB lies in an unnamed function at 0x005A88E0 (`ToHitRoll(ECX, EDX; stat(ECX, 19), 1)`) that has no
+  caller, no jump and no pointer in the image: unreferenced. So the missile's to-hit and defence calls are the two
+  the spec names. (fn:MISSILE_HitUnit@0x005ADF10, fn:MISSILE_ApplyDamage@0x005AD730, 0x005A88E0,
+  run:2026-11-15-sweep2-s5b `tohit2_missile_tohit_defence`)
+- [C] *to-hit 13, the caller half.* `sub_00583740_AttackRatingCalc` has one call, 0x00583893 in `SHRINE_StatValue`
+  (whose callers are `SHRINE_Combat`, `SHRINE_Stamina` and `SHRINE_TimedStat`), and no pointer: the "stat-by-id
+  percent helper" is the timed shrines' stat value. `sub_004E9040_ClientAttackRating` has no call or jump; its one
+  reference is a pointer at 0x0072D80C in a `.rdata` run of five client functions (0x004E9000–0x004E95C0) indexed
+  from 0x0072D7F8 at four client sites (0x004ED6C5, 0x004ED7A3, 0x004EDAEC, 0x004EDB17). Neither is on an attack
+  path. [I] stays: the two formulas (`ToHitFactor` added twice; plain `÷ 100`). (fn:sub_00583740_AttackRatingCalc@0x00583740,
+  fn:SHRINE_StatValue@0x00583840, fn:sub_004E9040_ClientAttackRating@0x004E9040, run:2026-11-15-sweep2-s5b `tohit13_other_ar`)
+- [C] *to-hit 19.* The range test is `call 0x622c40` (`sub_00622C40_InMeleeRange`, 0x0057ECA6) after
+  `sub_00622870_UnitMeleeReach` (0x0057EC97); the get-hit bit is `push 0x36; push edi; call UNIT_HasState; jne; or
+  ebx, 4` (0x0057ED2C–0x0057ED38), and States row 54 is `uninterruptable`. (fn:COMBAT_MeleeHitTest@0x0057EC10,
+  tbl:States.txt:state, run:2026-11-15-sweep2-s5b `tohit19_range_and_state54`)
+- [C] *delivery 1, 29 (the call).* `COMBAT_GetHit` calls `sub_0057CCB0_UnitKilled(…, 1)` when the result word has bit
+  `0x2` (0x0057D001–0x0057D00F). `UnitKilled` has 16 calls and no pointer (also `UninterruptibleEnd`,
+  `SummonReplaceKill`, `PetUnitRelease`, `MonRegenEvent`, `MonModeEveryFrame`, `MonDeathEvent`, the maggot egg, the
+  imp, and six AI functions at seven sites). `MONSTER_DropItems` has two calls: `sub_005A6830_MonDeathDrop`, called only from
+  `sub_005A6FF0_MonDeathEvent`, and `sub_005A8000_MonDropNoNoDrop` (from `CorpseFindItem`); `MonDeathEvent` has no
+  call and one pointer, at 0x006E2260. [I] stays: the step from `UnitKilled` to `MonDeathEvent` (an event through the
+  table at 0x006E2260, its dispatcher not read here). (fn:COMBAT_GetHit@0x0057CEE0, fn:sub_0057CCB0_UnitKilled@0x0057CCB0,
+  fn:MONSTER_DropItems@0x005A6600, run:2026-11-15-sweep2-s5b `delivery1_29_unitkilled`)
+- [C] *delivery 26.* `UNIT_AddEvent` links the new record in front: `new+0x1C ← unit+0x90`, `old head+0x18 ← new`,
+  `unit+0x90 ← new` (0x005C0B1E–0x005C0B40); `UNIT_DispatchEvent` starts at `unit+0x90` and steps by `+0x1C`
+  (0x005C0C4B, 0x005C0C6E, 0x005C0C96), so the newest record runs first. `UNIT_AddEvent` has two calls
+  (`AddStatEvent`, `STATEVENT_Reanimate`) and no pointer. (fn:UNIT_AddEvent@0x005C0AD0, fn:UNIT_DispatchEvent@0x005C0C30,
+  run:2026-11-15-sweep2-s5b `delivery26_event_list`)
+- [C] *delivery 38.* The item-stat registrar `sub_0055B800_MonStatCallback` passes `stat << 16 | layer` (its argument,
+  `EDI`; `stat = EDI >> 16` indexes the ItemStatCost record) to `AddStatEvent` with the record's `itemevent1`
+  (`+0x48`) and `itemeventfunc1` (`+0x4C`), then `itemevent2`/`func2` (`+0x4A`/`+0x4E`); `AddStatEvent` takes
+  `g_StatEventFuncs[func]` and calls `UNIT_AddEvent`, which stores the event byte at `+0x00`, that word at `+0x0C` and
+  the function at `+0x14`; `UNIT_DispatchEvent` calls it with (unit, other, packet, `+0x0C`, `+0x10`). Events 5 and 6
+  are dispatched by `COMBAT_ApplyDamage` with unit = the attacker, other = the defender (0x0057C7C6–0x0057C7E3, its
+  `EDX` and argument 0). Over ItemStatCost, 134, 135 and 136 name `itemeventfunc` 14, 15, 16 on `domeleedamage` and
+  `domissiledamage` (`tables` `damage19_delivery38_events`). (fn:sub_0055B800_MonStatCallback@0x0055B800,
+  fn:sub_0056E740_AddStatEvent@0x0056E740, data:g_StatEventFuncs@0x007325B0, tbl:ItemStatCost.txt:itemeventfunc1,
+  run:2026-11-15-sweep2-s5b `delivery38_handler_args`)
+- [C] *delivery 20, 54, 66.* `SKILLS_SrvDo` (`ret 0x14`) has eight calls and no jump or pointer; seven pass 0 as the
+  fifth word (0x0056FD34's is `EAX` after `test eax, eax; jne`), the eighth is `ITEMSKILL_Cast`'s (0x005FDC2F, its
+  own argument). `ITEMSKILL_Cast` is called only by `ItemCastAtUnit` and `ItemCastAtXY`, which have five calls each
+  and no pointer; the effect word pushed for those ten calls is 1 only at 0x005C054E (handler 20 without
+  `ItemTgtDo`, before its fork to the unit or the point), and 0 at 0x005C0530 (handler 20 with `ItemTgtDo`),
+  0x005C0626 (21), 0x005C0718 (30), 0x005BF1A1 and 0x005BF21C (the item-use entries). Over all 357 Skills rows
+  `ItemEffect` is other than blank or 1 only on 44 Frost Nova and 48 Nova (36) and 53 Chain Lightning (151); only 54
+  Teleport has `ItemTgtDo` (`tables` `delivery20_itemeffect`). (fn:SKILLS_SrvDo@0x0056F7F0, fn:ITEMSKILL_Cast@0x005FDA80,
+  0x005C054E, tbl:Skills.txt:ItemEffect, run:2026-11-15-sweep2-s5b `delivery20_54_66_effect_flag`)
+- [C] *delivery 65.* `SKILLS_PayCost` has three calls, no pointer. After each, every path ends with `EAX` written
+  whole or at a call before it is read: 0x0056F7AA to `mov eax, ebx` or `UNIT_CancelEvents`; 0x0056FA7A to
+  `PLAYER_UseAmmo` or `SKILLS_EvalCalc` (the `test [ebx+4], al` between reads `AL` after `mov al, [0x6ce268]`);
+  0x005D6B48 to `mov eax, ebx`. None of the three callees reads `EAX` before writing it. (fn:SKILLS_PayCost@0x0056BFE0,
+  run:2026-11-15-sweep2-s5b `delivery65_paycost_return`)
+
+**Stat ids** (`stats`). Per call of a stat reader in the named bodies, the stat is the second-to-last push on each
+straight path from the previous call (both arms of a `push 0x20 / push 0x21` fork), and `COMBAT_RollElemStat`'s are
+its last two pushes and `EAX`.
+
+- [C] *to-hit 4.* In `COMBAT_ToHitRoll`, `ToHitTargetMods`, `PlayerBaseToHit`, `DefenceRoll`, `AvoidRoll`,
+  `WeaponBlockChance`, `UnitBlockChance`, `UNIT_GetDefense`, `MeleeHitTest` and `UnitIsMoving` the ids read are 2, 12,
+  16, 19, 20, 31, 32, 33, 115, 116, 119, 123, 124, 171, 179, 182, 338, 339, 340, 348, every site resolved; 325 is
+  read by the caller (`SKILL_AttackDo` 0x0056F146) and passed as `arPct`; 0 is not read. Two more than the spec's
+  list: 350 and 351, read from the state-101 stat list in `UNIT_GetDefense` (0x0062245B, 0x0062246E: the Holy Shield
+  term B1 names without its ids). (run:2026-11-15-sweep2-s5b `tohit4`, `tohit4_325_in_attackdo`)
+- [C] *damage 2.* In `COMBAT_BuildDamage`, `RollPhysical`, `RollElemStat`, `RollRange`, `UndeadDmgBonus` and
+  `DmgVsMonType` the ids are the spec's 46 and one more: 31, read (and written) on the defender in stat 120's step
+  (0x0057B840, then written back by the call at 0x0057B852). 61 is `EAX = ECX + 0x3C` with `ECX` 1 (0x0057BA58–0x0057BA7B).
+  The three sites left unresolved are `RollElemStat`'s own reads of its register arguments. (run:2026-11-15-sweep2-s5b
+  `damage2`, `damage2_eax61`)
+- [C] *reductions 1.* `ApplyReductions` reads 34 and 35, `LengthImmunities` 118 and 153, `MISSILE_ApplyDamage` 327
+  (0x005AD8AE); the resist, maximum, pierce and absorb ids are the twelve rows of `g_DamageResistTable` (read with
+  r2: 36–46, 110, 142–149, 333–336), and the five reads left unresolved in `ResistFor` and `Absorb` take their id
+  from the row. Together exactly the spec's 29 ids. (data:g_DamageResistTable@0x00732980,
+  run:2026-11-15-sweep2-s5b `reductions1`)
+
+**Packet stores** (`stores`). The packet functions are the 36 that call `COMBAT_BuildDamage` or
+`COMBAT_ResolveAndQueue` and `sub_005D7CE0_BladeShieldArea` (whose block `sub_005D7C40_BladeShieldAreaCb` copies, `rep
+movsd` of 0x1C dwords at 0x005D7C5A); a frame store is one to `[ebp − (X − off)]` for a frame base `X` the function
+takes with `lea`.
+
+- [C] *README 4 (S5a's remainder).* 33 of them zero the packet with `memset(&packet, 0, 0x70)` and do 67 with
+  `memset(&packet, EAX, 0x70)`, `EAX` 0 after `test eax, eax; jne` (0x005CFBE5–0x005CFBF7); the other three take it
+  from those: `ResolveAndQueue`'s own build from its callers, `SkillKickPhysDamage` from its three callers
+  (`DragonTalonHit`, start 27, do 52), `BladeShieldAreaCb` by copy from `BladeShieldArea`'s zeroed block.
+  (run:2026-11-15-sweep2-s5b `readme4_zeroing`)
+- [C] *damage 17.* No store to `+0x38`, `+0x3C` or `+0x40` reaches a build: in the 37 functions the only ones are the
+  `calc2`/`calc3` adds of do 122 (0x005C803A, 0x005C8043, after its `BuildDamage` at 0x005C7FDB) and of start 60
+  (0x005D1670, 0x005D1676), whose packet already has `+0x00 |= 2` (0x005D15F2), so `ResolveAndQueue` skips the build
+  (`test byte [ebx], 2; jne`, 0x0057DC28–0x0057DC2B); their 97 direct callees store none (the one `[eax+0x38]` hit is
+  `UnitSetSeqPos` on a unit). So every stock build enters with the three drain fields 0, and note 5's "a drain
+  already in the packet counts again" has no stock path. [I] stays: the formula for a field that enters non-zero.
+  (0x0057BA71, fn:COMBAT_ResolveAndQueue@0x0057DBF0, run:2026-11-15-sweep2-s5b `damage17_drain_fields`)
+- [C] *damage 27.* The image holds 42 byte loads of Skills `+0x1DC` (`EType`); 15 are stored to a frame byte, each at
+  its function's packet `+0x65`: starts 6, 7, 10, 16, 29, 32, 39, 56, dos 7, 13, 67, 150 and the helpers
+  `0x005D6200`, `0x005D8B10`, `0x005DA660`. In the 37 packet functions the frame stores to `+0x65` and `+0x68` are
+  exactly those 15 and their 15 `calc4` dwords at `+0x68`, all before the call; `SKILL_AttackDo` has none, and the 97
+  callees store neither offset. (fn:sub_005D7EA0_SkillSt32Hit@0x005D7EA0, 0x005D7FA8,
+  run:2026-11-15-sweep2-s5b `damage27_conv_fields`, `damage27_etype_loads`)
+- [C] *damage 32.* `MonLvlStats`' El request (argument flag `0x40`) writes a `noRatio` class's (MonStats `+0x00C`,
+  bit 2) raw `El MinD`/`MaxD` to output `+0x24`/`+0x28` and jumps over the `+0x2C`/`+0x30` writes (0x00653BC8–0x00653BE3);
+  `MonAttackStats` zeroes its 0x38-byte output (0x005A524D), calls it (0x005A527A) and reads `+0x2C`, `+0x30`,
+  `+0x34` (`[ebp−0x48]`, `[ebp−0x44]`, `[ebp−0x40]`, 0x005A5286–0x005A528C), and nothing reads `+0x24`/`+0x28` after
+  that call. Over MonStats, of the 31 `noRatio` rows only 292 `firegolem` has an El column (El1, `A1`, fire), so it
+  is the one stock class whose El attack gets min = max = 0. (0x00653BC2, 0x005A5160, tbl:MonStats.txt:noRatio,
+  run:2026-11-15-sweep2-s5b `damage32_monlvlstats_el`, `damage32_noratio_el`)
+- [C] *to-hit 21, the writers.* `sub_0062A4E0_ItemNotDisabled` tests item flags `0x100` and `0x4000` at `+0x14 →
+  +0x18`. `ITEMS_SetFlag` has 150 calls and no pointer; with a constant mask, `0x100` is set only by
+  `sub_0055F850_ItemBreak` (0x0055F86C), copied from a source item's flag by `ItemCreate` (0x00558FA6) and cleared by
+  `ItemRepairBroken` and a client site; `0x4000` is set only by `EquipReqRefresh` (0x0055DCFA) and a client site
+  (0x004C1493) and cleared at 26 sites; the only other immediate store of either bit at `+0x18` is
+  `InactiveMonsterSave`'s `or [edi+0x18], 0x100` (0x00542372, a unit). So a "usable" shield is one not broken and not
+  failed by the requirement refresh. Of the nine calls with a register mask, 0x00560665 sets flag `0x1` (`EBX` 1),
+  0x00597A00 clears the masks of the table at 0x00738C4C (neither bit among them) and three lie in the client's
+  `ClientSocketAttach`. [I] stays: the other four, which set the caller's mask (0x0053CF72, 0x0053CFCB in
+  `ClientSendPartyUnit`, 0x0053EB63, 0x0053EBC0 in `MonUnitPacketBuild`), and the save loaders' whole-dword writes. (fn:sub_0063C8F0_InvItemQuery@0x0063C8F0, 0x0062A4E0,
+  fn:ITEMS_SetFlag@0x006280D0, run:2026-11-15-sweep2-s5b `tohit21_item_flags`)
+
+**Tables** (`tables`).
+
+- [C] *damage 19, corrected.* Over every event column (ItemStatCost `itemevent1`/`2`; Skills `auraevent1`–`3`,
+  `auratgtevent`, `passiveevent`: 45 registrations) the only one on event 3 `attackedinmelee` is Skills 50 Shiver
+  Armor's `auraevent1`, handler 3 (`sub_005CAD40_StatEv03ElemHitAttacker`), whose closure draws
+  (`SKILLS_RollElemDamage`, `SKILLS_AddElemToPacket`; skills/0003 § 3: 1 draw, 2 for `EType` 10). So the stock
+  event-3 handler is a skill aura's, not an item stat's, and it draws on the defender's seed; "none was logged with a
+  draw" holds only because no logged defender wore Shiver Armor. Handlers 11 and 12 are named by no row.
+  (fn:UNIT_DispatchEvent@0x005C0C30, fn:sub_005CAD40_StatEv03ElemHitAttacker@0x005CAD40, tbl:Skills.txt:auraevent1,
+  run:2026-11-15-sweep2-s5b `damage19_delivery38_events`)
+- [C] *delivery 21, the stock rows.* `srvprgfunc1`–`3` are set on four Skills rows only: 259 Fists of Fire
+  143/38/39, 269 Claws of Thunder −/36/37, 274 Blades of Ice −/38/39 (all three `prgstack` 1) and 280 Royal Strike
+  40/143/41 (no `prgstack`). [I] stays: the draws each entry makes (S5fe). (tbl:Skills.txt:prgstack,
+  run:2026-11-15-sweep2-s5b `delivery21_prg`)
+
+**Closures** (`closures`). The objdump walker's direct-call graph with an edge to every `.text` address an instruction
+takes as an immediate (a pushed callback); draws are inline LCG sites (objdump and r2's byte search agree on all 852)
+and calls of the seven RNG functions. Indirect calls are counted as imports, library code (below 0x00450000: Storm
+and Fog; from 0x00681C00: the C runtime) and game code.
+
+- [C] *delivery 50, in part.* Handler 28 (`sub_005C01D0_StatEv28HealAfterKill`): no draw in its body or in its 541
+  closure functions. Of the 17 handlers the spec lists as drawing nothing, 15 (2, 4, 5, 6, 10, 13, 17, 18, 22–26,
+  28 and 29) have no draw function up to `COMBAT_ApplyDamage`/`COMBAT_GetHit` (whose draws are the nested delivery's).
+  [I] stays: the 3 to 6 game-code indirect calls of each of those closures (the stat-list callbacks at 0x0062513E,
+  0x006251E4, 0x00626BE7; `RoomUnitSearchInit`'s and `A1PathSearch`'s callback calls), and 19 (slow) and 27 (clay
+  golem), whose closures reach draws statically through `STATE_ApplyTimed → UnitQueueEvent → EventQueueAt →
+  UninterruptibleEnd → UnitKilled → MonSetMode → MonAttackStats`. (data:g_StatEventFuncs@0x007325B0,
+  fn:sub_005C01D0_StatEv28HealAfterKill@0x005C01D0, run:2026-11-15-sweep2-s5b `delivery50_handlers`)
+- [C] *delivery 51, in part.* With callbacks as edges, the closures of helper 3 (`0x005FD9C0`, 541 functions),
+  helper 4 (`0x005FDA10`, 504) and `CorpsePickNear` (533, its search callback `0x0056E370` included) hold no draw.
+  [I] stays: their game-code indirect calls not resolved (5, 3, 5: `RoomUnitSearchInit`'s two callback calls, whose
+  callback for the corpse pick is the `0x0056E370` edge, and `A1PathSearch`'s three), and 205 library ones each.
+  (fn:sub_0056E390_CorpsePickNear@0x0056E390, run:2026-11-15-sweep2-s5b `delivery51_helpers`)
+
 ## Boundary recommendation for Phase 2
 
 - **Event entry points** (breakpoints): `SKILL_AttackDo` entry and return (player attack event), `MON_MeleeHit` entry

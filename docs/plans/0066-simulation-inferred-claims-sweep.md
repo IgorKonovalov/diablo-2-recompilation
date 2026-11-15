@@ -1142,3 +1142,49 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   `meleeonly` and ItemStatCost `itemeventfunc1`, recorded as a findings/combat/0001 addendum with run id
   `2026-xx-xx-sweep2-s5b`. README 4's zeroing remainder (part 1) uses the same method. Part 1 already read
   `srvprgfunc1`–`3` over Skills.txt (combat/experiments S5a part 1, last bullet), which S5b's `srvprgfunc` row can cite.
+
+### 2026-11-15 — Phase 1, batch S5b (reverser-static, `lane/n66j`): done, 24 of 24 settled
+
+- **Done.** No game, no Ghidra. Merged `main` `c48797e7` first (merge `c6c26e16`, no conflict). New tool
+  `tools/sweep2_s5b.py` (`4ad860dd…`; sections `callers`, `stats`, `stores`, `tables`, `closures`): the raw-byte
+  call/pointer scan of `tools/xrefscan.py`, r2 for every asserted instruction, the reduction and handler tables and
+  the LCG byte search, the objdump listing for bodies, closures and store scans, and full-table checks of States,
+  Skills, ItemStatCost, Events and MonStats. Run under a 4 GB scope: `workspace/logs/n66j/s5b/check-s5b.txt`
+  (`3b8c2822…`, 2 517 lines, 29 checks, `S5b total bad=0`) and `totals-s5b.txt`, `manifest-s5b.sha256`
+  (`30f6ea65…`) passing from `workspace/logs/n66j/s5b`; fourteen development outputs in `dev/` with their own
+  manifest. Record: [combat/0001 § 18](../findings/combat/0001-formulas.md#18-plan-0066-batch-s5b-static-second-sources-run2026-11-15-sweep2-s5b)
+  under [run:2026-11-15-sweep2-s5b](../findings/combat/experiments.md#run2026-11-15-sweep2-s5b). Every row's *Route*
+  cell carries its dated S5b note; README § 4's S5b row updated.
+- **Raised 17:** README 3, 8; to-hit 2, 4, 19; damage 2, 19 (with a correction), 27, 32; reductions 1; delivery 1,
+  20, 26, 38, 54, 65, 66.
+- **Raised in part 7**, the remainder and its home in each Route cell (none added to a batch's rows): to-hit 13 (the
+  two formulas: the shrine half b, the client half d-none, out of scope: client presentation), to-hit 21 (four
+  register-mask sets → c), damage 17 (the non-zero entry formula, d-none), delivery 21 (the entries' draws → S5fe),
+  delivery 29 (`UnitKilled` → `MonDeathEvent` through the pointer at 0x006E2260 → c), delivery 50 (game-code indirect
+  calls; handlers 19 and 27 reach draws through `STATE_ApplyTimed`'s queue path → S5fe), delivery 51 (`A1PathSearch`'s
+  callback calls → c).
+- **Also:** README 4's S5a remainder (the callers' zeroing) raised: 33 `memset(&packet, 0, 0x70)`, do 67 with `EAX` 0,
+  three pointer packets traced to them; README 4 is raised whole and S5a reads raised 31, in part 33, moved 17.
+- **Found, for Phase 3:** to-hit's stat list lacks 350/351 (Holy Shield's state-101 list in `UNIT_GetDefense`);
+  damage's lacks 31 (stat 120's defence step); `MeleeHitTest`'s callers are start and do functions (32 sites, 30
+  functions); the only stock event-3 handler is Shiver Armor's (Skills 50 `auraevent1`, handler 3), which draws, so
+  damage step 8's "thorns-like … none logged with a draw" needs that; 292 `firegolem` is the one stock `noRatio`
+  class with an El attack (damage E's min = max = 0); a fourth `ToHitRoll` caller sits in an unreferenced function at
+  0x005A88E0.
+- **Totals** after merging `main` `c48797e7` (`totals-s5b.txt`, from the 29 files' *Totals by class*): a-logs 628,
+  a-run 340, b 446, c 390, c-emu 494, d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626, unchanged (no row moved
+  class); Phase 1 1 512, Phase 2 786, blocked 328.
+- **Symbols:** none added or raised (no logged return compared; the unnamed 0x005A88E0 and the helper entry
+  `0x005D8B10` left unnamed).
+- **Judgment calls for the review:** (1) a second tool's re-read of the same sites (r2 next to the Ghidra reading,
+  with the raw-byte scan for exhaustiveness) taken as the second source for README 8, to-hit 19, delivery 26 and 38,
+  as the rows' routes say; (2) damage 19 filed raised with a correction rather than contradicted: the spec's list is
+  right about the defender's stat events, its "thorns-like … no draw" is the logs' scope, and skills/0003 § 3 already
+  gives handler 3's draw (review-fixes rule 18); (3) the "no writer" raises (damage 17, 27) rest on frame-base store
+  scans (a store to `[ebp − (X − off)]` for a `lea` base `X`) plus pointer stores in 97 direct callees, not on a data
+  flow of the packet pointer; (4) delivery 50 and 51 keep `[I]` over unresolved game-code indirect calls (review-fixes
+  rule 19) though the closures, with callbacks as edges, hold no draw; (5) delivery 65's "no test of the return"
+  walks every path after each call to a full `EAX` write or a call whose callee writes `EAX` first.
+- **Next:** S5b closes the combat static batches but S5e and S5fe (emulation). Tier B request
+  [`2026-11-15-reverser-architect-review-plan-0066-s5a-part1`](../backlog/2026-11-15-reverser-architect-review-plan-0066-s5a-part1.md)
+  extended to S5a + S5b.

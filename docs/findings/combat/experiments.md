@@ -666,3 +666,32 @@ lightning flat absorb that `abs-nm-marsh` was to reach.
 - **Result:** lightning flat absorb **51** (met); cold flat absorb **1** (named again, final: Travincal's cold rows
   gave 13 melee attacks, all misses; *review 2026-10-21:* final under the Done-when's own condition, `abs-nm-marsh`
   run, not as a stock-data limit, since Nightmare and Hell cold rows were not tried). (run:2026-10-21-shortfalls2)
+
+## run:2026-11-15-sweep2-s5b
+
+Plan [0066](../../plans/0066-simulation-inferred-claims-sweep.md) Phase 1, batch S5b (`lane/n66j`): static second
+sources for the 24 class-c rows of the combat specs. No game, no wine, no Ghidra. The claims are in
+[combat/0001 § 18](0001-formulas.md#18-plan-0066-batch-s5b-static-second-sources-run2026-11-15-sweep2-s5b).
+
+- **Question:** do a second tool's call, pointer, push and store scans of the pinned `Game.exe`, and full-table
+  checks of the excel `.txt` tables, give the callers, stat ids, packet writers, event registrations and draw-free
+  closures the combat specs state (at `b5999f5e`) as inferred?
+- **Setup:** `tools/sweep2_s5b.py` (sha256 `4ad860dd…`), stdlib only. Its tools: the raw-byte scan of
+  `tools/xrefscan.py` (every rel32 call/jmp and abs32 reference to a target), radare2 (`r2 -q`, linear `pd`/`pD`,
+  `pxw`, its own `/x` byte search for the LCG multiplier) for every decoded instruction the checks assert, and the
+  objdump listing of `.text` (`tools/sweep_s4b.py`) for function bodies, the call graph and the store scans; plus
+  `re/symbols.csv` for names only. Sections `callers`, `stats`, `stores`, `tables`, `closures` (the docstring says
+  which row each serves).
+- **Procedure** (from the worktree root; `L=workspace/logs/n66j/s5b`):
+  ```
+  systemd-run --user --scope -p MemoryMax=4G python3 -I tools/sweep2_s5b.py all > $L/check-s5b.txt
+  (cd $L && sha256sum -c manifest-s5b.sha256)
+  ```
+- **Outputs:** `check-s5b.txt` (`3b8c2822…`, 2 517 lines, last line `S5b total bad=0`) and `totals-s5b.txt` (the
+  inventory's class totals after merging `main` `c48797e7`), listed in `manifest-s5b.sha256` (`30f6ea65…`), which
+  passes from `workspace/logs/n66j/s5b`. Fourteen development outputs of
+  earlier tool revisions (a stat-id window that kept the layer push, a misaligned read of the reduction table, a
+  missing entry for the helper `0x005D8B10`, a looser `rep movsd` decoding) are kept in `dev/` with their own
+  `dev/manifest-dev.sha256`, passing from `dev/`; none is cited.
+- **Result:** 29 checks, 0 bad. Row outcomes and their counts are in combat/0001 § 18 and in each inventory row's
+  *Route* cell.

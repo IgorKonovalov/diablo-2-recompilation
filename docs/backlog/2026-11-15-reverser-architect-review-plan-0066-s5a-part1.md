@@ -18,3 +18,15 @@ behind README 35, README 38 and player/party 12 (classic 562 of 600; `b` 600 and
 6 444); (3) the five judgment calls in the entry (the table-read raise of README 38, the hireling offset, the `El`
 exclusion, the one-way get-hit model on monsters, damage 30's counter); (4) the `El2`-takes-`El1`'s-bounds and
 `b`-on-length results flagged for Phase 3.
+
+*2026-11-15 (reverser, `lane/n66j`, S5b):* the request now covers **S5a and S5b**. S5b: 24 of 24 settled (raised 17,
+raised in part 7, moved 0), plus README 4's S5a remainder raised (so S5a reads raised 31, in part 33). Static only, no
+Ghidra. Worth checking: (1) `tools/sweep2_s5b.py all` rerun under a 4 GB scope gives `check-s5b.txt`
+byte-identical (`3b8c2822…`, `S5b total bad=0`), and `manifest-s5b.sha256` passes from `workspace/logs/n66j/s5b`;
+(2) the method behind the "no writer" and "no draw" raises (the frame-base store scan over 37 packet functions and
+97 callees for damage 17 and 27; the closures with code-pointer edges for delivery 50 and 51, and the indirect calls
+left `[I]`); (3) the judgment calls in the plan's S5b entry, chiefly damage 19 filed raised with a correction (the
+only stock event-3 handler is Shiver Armor's, which draws) and the second-tool re-reads of the same sites counted as
+the second source for README 8, to-hit 19, delivery 26 and 38; (4) the refinements for Phase 3: stat ids 350/351
+(to-hit) and 31 (damage), start functions among `MeleeHitTest`'s callers, `firegolem` as the one stock `noRatio` El
+class.
