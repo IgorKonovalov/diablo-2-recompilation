@@ -329,12 +329,18 @@ NEW = ("R8", "R16", "R142", "R17", "R18", "R24", "R25", "R27", "R72", "R74", "R1
 NEW5 = ("R38", "R45", "R66", "R77", "R80", "R92", "R50", "R53", "R55", "R59", "R85", "R94", "R128",
         "R7", "NOTES", "R11", "R14", "R33", "R36", "R39", "R40", "R49", "R56", "R57", "R71", "R93", "R98",
         "R10", "R32", "R48", "R73")
+def nearest_word(p, f):
+    """`AiNearestPlayer`'s word (p, f, type of p): the player 0x7200000 has type 0, the unit U type 1, no unit None."""
+    return {"AiNearestPlayer": (p, f, None if p == 0 else (0 if p == 0x7200000 else 1))}
+
+
 # the rev 7 words the recorder gives (half of its decisions) to the entries that read them, as Phase 2's logs will
 R7WORDS = {
     "R10": lambda rnd: {"MonPlayerBonus": rnd.choice((0, 1, 2))},
     "R48": lambda rnd: {"MonsterOwnerRef": (rnd.choice((0x55, 0x99)), rnd.choice((0, 1, 3)))},
-    "R32": lambda rnd: {"AiNearestPlayer": (rnd.choice((0, U, 0x7200000)), rnd.choice((0, 1)))},
+    "R32": lambda rnd: nearest_word(rnd.choice((0, U, 0x7200000)), rnd.choice((0, 1))),
     "R73": lambda rnd: {"R73.aurastate": rnd.choice((-1, 5, 40)), "R73.md0e": rnd.choice((0, 3, 4, 5))},
+    "R119": lambda rnd: {"R119.flag0x20": rnd.choice((0, 0, 1))},      # revision 6
     "R56": lambda rnd: {"owner.mode": rnd.choice((1, 12, 14))},
     "R71": lambda rnd: {"found.mode": rnd.choice((1, 12))},
 }
@@ -891,7 +897,7 @@ class Paths(unittest.TestCase):
         # record (R4, R5, R7 0); no path list: Idle(8)
         d = path("R32", [("AiDistUnits", U, U, [], 0, 0), ("ParamsFind", U, 4, [], 0, 0), ("ParamsFind", U, 5, [], 0, 0),
                          ("ParamsFind", U, 7, [], 0, 0), ("Idle", G, U, [8], 0, 0)])
-        d["r7"] = {"AiNearestPlayer": (U, 0)}
+        d["r7"] = {"AiNearestPlayer": (U, 0, 0)}
         self.ok("R32", d, forks=2)
         d["aib"][0]["edx"] = 0x7200000
         self.bad("R32", d)
@@ -900,11 +906,17 @@ class Paths(unittest.TestCase):
         # home set, class other; p = 0x7200000 a player (fork) at distance 1: list, not busy, no interact, v14 0 (forks);
         # step 7: v18 0 -> 60, UnitSetEvent sets Unit+0xC4 bit 0x400 before Idle(20)
         d = path("R32", [("AiDistUnits", U, 0x7200000, [], 1, 0), ("Idle", G, U, [20], 0, 0, None, (0, 60, 0))])
-        d["r7"] = {"AiNearestPlayer": (0x7200000, 1)}
+        d["r7"] = {"AiNearestPlayer": (0x7200000, 1, 0)}           # revision 6: the type 0 (a player) makes the arm
         d["aib"][1]["c4"] = 0x400
-        self.ok("R32", d, forks=5)
+        self.ok("R32", d, forks=4)
         d["aib"][1]["c4"] = 0x800
-        self.bad("R32", d)                                      # neither fork gives 0x800
+        self.bad("R32", d)
+        d["aib"][1]["c4"] = 0
+        self.bad("R32", d)                                      # a player: the bit is set, no fork left to skip it
+        d["r7"] = {"AiNearestPlayer": (0x7200000, 1, 1)}           # not a player: no UnitSetEvent
+        self.ok("R32", d, forks=4)
+        d["aib"][1]["c4"] = 0x400
+        self.bad("R32", d)
 
     def test_r1_window(self):
         d = path("R1", [("UnitGetRoom", 0, 0, [U], 0x7300000, 0), ("Idle", G, U, [200], 0, 0)])
@@ -983,6 +995,108 @@ class Revision5(unittest.TestCase):
         self.assertEqual(len(sw), 64)
         self.assertTrue(all(0 <= v < 8 for v in sw))
         self.assertEqual(sw[8 * 7:], [7, 0, 1, 4, 5, 6, 7, 7])
+
+
+class Revision6(unittest.TestCase):
+    """Plan 0069 Phase 2: the rev 7 words as inputs of R54, R58, R70, R48, R78, R79, R118, R119, and UnitSetEvent's store in
+    R54 and R58 (the Phase 1c review item)."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.saved = M.IMP_RECS
+        M.IMP_RECS = IMP
+
+    @classmethod
+    def tearDownClass(cls):
+        M.IMP_RECS = cls.saved
+
+    def chk(self, name, d, flip=None):
+        return M.check(M.MODELS[name][1], d, flip=flip)
+
+    def test_r54_set_event_store(self):
+        d = path("R54", [("Idle", G, U, [20], 0, 0)])
+        d["r7"] = {"AiNearestPlayer": (0x7200000, 0, 0)}
+        d["aib"][0]["c4"] = 0x400
+        self.assertEqual(self.chk("R54", d).status, "ok")
+        d["aib"][0]["c4"] = 0x800
+        self.assertEqual(self.chk("R54", d).status, "mismatch")
+        d["aib"][0]["c4"] = 0x400
+        d["r7"] = {"AiNearestPlayer": (0x7200000, 0, 1)}          # p is not a player: no UnitSetEvent, the bit cannot be set
+        self.assertEqual(self.chk("R54", d).status, "mismatch")
+        d["aib"][0]["c4"] = 0
+        self.assertEqual(self.chk("R54", d).status, "ok")
+
+    def test_r54_p_word(self):
+        d = path("R54", [("Idle", G, U, [20], 0, 0)])
+        d["r7"] = {"AiNearestPlayer": (0, 0, None)}               # p = 0: step 2 is skipped, the class tests fork to Idle(20)
+        self.assertEqual(self.chk("R54", d).status, "ok")
+        d["r7"] = {"AiNearestPlayer": (U, 0, 0)}                  # p = U: the same
+        self.assertEqual(self.chk("R54", d).status, "ok")
+
+    def test_r54_without_the_word_forks(self):
+        d = path("R54", [("Idle", G, U, [20], 0, 0)])
+        self.assertGreater(self.chk("R54", d).forks, 0)
+
+    def test_r58_set_event_store(self):
+        d = path("R58", [("Idle", G, U, [20], 0, 1, None, (0, 60, 0))])
+        d["aib"][0]["c4"] = 0x400
+        self.assertEqual(self.chk("R58", d).status, "ok")
+        self.assertEqual(self.chk("R58", d, flip="set c4|=0x400 (3.UnitSetEvent)").status, "mismatch")
+        d["aib"][0]["c4"] = 0
+        self.assertEqual(self.chk("R58", d).status, "mismatch")  # the v18 = 0 arm always sets the bit
+
+    def test_run_bonus(self):
+        for w, p in (((100, 150), 50), ((100, 300), 120), ((100, 220), 120), ((0, 150), 0), ((100, 90), 0), ((100, 100), 0),
+                     ((3, 5), 66), ((7, 20), 120), ((-1, 100), 0)):
+            self.assertEqual(M.run_bonus(w), p, w)
+        self.assertIsNone(M.run_bonus(None))
+
+    def r70(self, p, word):
+        c = (1, 1, 0)
+        d = path("R70", [("UnitLifePct", 0, 0, [U], 40, 0), ("St3or19", U, 0, [], 0, 0, None, (1, 0, 0)),
+                         ("Ovr", U, 0, [p, 0], 0, 1, None, c), ("StepAway", G, U, [T, 14, 0], 1, 0, None, c)],
+                 ctl14=1, aip={3: 50, 6: 10}, dist=10)
+        if word:
+            d["r7"] = {"speed": word}
+        return d
+
+    def test_r70_speed_word(self):
+        self.assertGreaterEqual(low(1) % 100, 25)                  # the D100 draw does not end the flight
+        self.assertEqual(self.chk("R70", self.r70(50, (100, 150))).status, "ok")
+        self.assertEqual(self.chk("R70", self.r70(60, (100, 150))).status, "mismatch")   # a wrong param
+        self.assertEqual(self.chk("R70", self.r70(60, None)).status, "ok")                # no word: not compared
+
+    def test_arrow_region_word(self):
+        # R78: |x - tx| <= 2, v14 < T, region word 1: kind 1, Skill1 >= 0: UseSkill1; region 0: SetModeAtUnit(4)
+        calls = [("UnitGetRoom", 0, 0, [U], 0x7300000, 0), ("RoomGetLevelId", 0, 0, [0x7300000], 10, 0),
+                 ("SetModeAtUnit", G, U, [4, T], 1, 0, None, (0, 0, 0))]
+        kw = dict(dist=10, aip={1: 0, 2: 100, 3: 0, 4: 0})
+        d = path("R78", calls, **kw)
+        d["aid"]["x"], d["aid"]["t"] = 10, [0, 1, 4, 1, 11, 22]
+        d["r7"] = {"arrow.region": 0}
+        o = self.chk("R78", d)
+        self.assertNotEqual(o.status, "stop", o.why)
+        self.assertEqual(o.forks, 0 if o.status == "ok" else o.forks)
+        d["r7"] = {"arrow.region": 1}
+        self.assertNotEqual(self.chk("R78", d).status, "ok")      # kind 1 does not take SetModeAtUnit(4)
+
+    def test_r118_flag_word(self):
+        d = path("R118", [("Idle", G, U, [7], 0, 1)], melee=1, dist=100, aip={1: 0, 3: 100, 4: 5, 5: 7})
+        self.assertEqual(self.chk("R118", d).forks, 1)             # no word: the flag forks
+        d["r7"] = {"R118.flag0x20": 5}
+        o = self.chk("R118", d)
+        self.assertEqual((o.status, o.forks), ("ok", 0))
+        d["r7"] = {"R118.flag0x20": 0}
+        o = self.chk("R118", d)
+        self.assertEqual((o.status, o.forks), ("ok", 0))           # dist 100 is not below aip(4): the same call
+
+    def test_r119_flag_word_changes_the_path(self):
+        d = path("R119", [("StepAway", G, U, [T, 5, 1], 1, 1)], melee=1, dist=10, aip={3: 100, 4: 5})
+        self.assertEqual(self.chk("R119", d).forks, 1)
+        d["r7"] = {"R119.flag0x20": 0}
+        o = self.chk("R119", d)
+        self.assertEqual((o.status, o.forks), ("ok", 0))           # the word replaces the fork
+        self.assertEqual(self.chk("R119", d, flip="1.flag0x20").status in ("ok", "mismatch"), True)
 
 
 def report():

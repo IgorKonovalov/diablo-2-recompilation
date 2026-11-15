@@ -37,6 +37,12 @@
 #         boundary calls still pending). The boundary breakpoints are off from here; with pend 0 nothing re-arms them in this
 #         decision, so its later calls are not logged and tools/ai_resume.py stops the decision instead of comparing its end
 #   AIX   the event's ret 0x005B1876 after a think call: k, s (the unit seed at the exit), nb (boundary lines)
+#   R7W   rev 7: one word of the plan 0069 list, read-only, while a decision is open: k, key, v, ra (the breakpoint), fr. The keys
+#         and their readers are R7WORDS below (the think-time words of R70, R73 and the return-site words of R10, R32, R48, R54,
+#         R78, R79, R118 and R119 are what tools/ai.py puts in a decision's "r7" map for tools/ai_model_check.py)
+#   AII/AIQ rev 7: MonAiInit 0x005B0E00's call of a row's init function (0x005B0F18) for the inits in INIT_FNS (AI_INITS, default
+#         row 43's 0x005F6630 and state 11's 0x005E80E0), and its return (0x005B0F1B): u, id, c, fn, ctl, st (the state argument),
+#         cw (the AiCtl 0x40 bytes hex, before and after), blk (the nine words of the init's block), s, c4, fr. Not tied to a decision.
 #   CAP   once per kind when its cap is reached
 # Filter (ADR-0014 § Log volume): server monsters (Unit +0 = 1) within AI_RADIUS (80) sub-tiles of the first player
 # on each axis; per-row cap AI_CAP_ROW (200) and per-session cap AI_CAP_SESSION (3000) of decisions, AI_CAP_AIN (600)
@@ -48,7 +54,7 @@ import struct
 
 import gdb
 
-REV = 6   # rev 6: the call GameFindUnit 0x00552F60 at 0x0058F0FF inside a pending MonsterOwner 0x0058F0D0 is logged again (rev 4 and 5 hid it from the Scarab
+REV = 7   # rev 7: the R7W word lines, the AII/AIQ init lines, the think 0x005B0CD0 window (R1) and the calls inside AiVileMotherSpawn 0x005F9E30 (plan 0069 Phase 2; every rev 6 line is kept in form); rev 6: the call GameFindUnit 0x00552F60 at 0x0058F0FF inside a pending MonsterOwner 0x0058F0D0 is logged again (rev 4 and 5 hid it from the Scarab
 #          model, 36 of 101 Scarab decisions mismatched at the first boundary on the development logs of run:2026-11-04-ai-r5); rev 5: no AIB between a decision's MSM0 and MSM1 (those calls are made inside the command, 0x00552F60@0x0058F0FF), and an AIL
 #          marker at the 600-call limit; rev 4: AIR lines (the result of each logged boundary call, from the return-site breakpoints of
 #          tools/gdb/ai-retsites.txt) and 48 boundary calls per decision (rev 3: 8); rev 1: the development logs (dev-*); rev 2: the six PathPlan rets (rev 1 logged the first three); rev 3: the
@@ -90,7 +96,10 @@ def _ai_main():
     # three callees the emulations run on the image (rev 3): MonsterOwner (0x0058F0D0, its GameFindUnit call at
     # 0x0058F0FF), the overseer's stored-unit helper (0x005DE830) and the skill helper 0x005DF850
     THINK_LO = ((0x005B14E0, 0x005B1650), (0x005E0000, 0x00600000), (0x0058F0D0, 0x0058F130),
-                (0x005DE830, 0x005DE8C0), (0x005DF850, 0x005DFC00))
+                (0x005DE830, 0x005DE8C0), (0x005DF850, 0x005DFC00),
+                (0x005B0CD0, 0x005B0D00))             # rev 7: row 1's think AiIdle (plan 0069 rev 7 item 1)
+    NESTED_FNS = (0x005F9E30,)     # rev 7: the calls made inside AiVileMotherSpawn are logged although it is pending (item 3)
+    INIT_FNS = tuple(int(x, 16) for x in os.environ.get("AI_INITS", "0x005F6630,0x005E80E0").split(",") if x)
     st = {"game": 0, "n": {}, "capped": set(), "line": 0, "stk": [], "plr": 0, "row": {}, "tot": 0, "sst": {},
           "msm": {}, "pp": {}, "pend": [], "retarmed": set()}
 
@@ -270,6 +279,11 @@ def _ai_main():
              "aip": mem(ms + 0x56, 48).hex(), "sk": mem(ms + 0x170, 24).hex(),
              "ad": [u8(ms + 0x4F), u8(ms + 0x52)], "t": t, "pl": list(pos(pl)) if pl else None}
         f["k"] = emit("AID", d)
+        if ai in (70, 48, 73):
+            try:
+                think_words({"n_k": f["k"], "ai": ai}, u, md, ms)
+            except gdb.MemoryError as e:
+                gdb.write("LOGERR ai think_words %r\n" % (e,))
         f["open"] = True
         f["nb"] = 0
         f["out"] = 0
@@ -307,7 +321,8 @@ def _ai_main():
                     emit("AIL", {"k": cur["k"], "fn": fn, "ra": ra, "out": cur["out"], "pend": len(st["pend"]), "fr": frame()})
                     arm_bnd(False)            # the boundary breakpoints only: the pending returns (a search) stay armed
                 return
-            if st["pend"] and not NESTED and not (fn == 0x00552F60 and ra == 0x0058F0FF and st["pend"][-1]["fn"] == 0x0058F0D0):
+            if (st["pend"] and not NESTED and st["pend"][-1]["fn"] not in NESTED_FNS
+                    and not (fn == 0x00552F60 and ra == 0x0058F0FF and st["pend"][-1]["fn"] == 0x0058F0D0)):
                 return                    # made inside a boundary callee still pending: the model never offers it (rev 6:
                                           # except GameFindUnit at 0x0058F0FF inside the pending MonsterOwner 0x0058F0D0,
                                           # which the Scarab model offers; rev 3 logged it, rev 4 and 5 lost it)
@@ -430,6 +445,85 @@ def _ai_main():
         if v:
             emit("SST1", {"k": v[0], "eax": reg("eax"), "s": sd(v[1])})
 
+    # --- rev 7 words (plan 0069 Phase 2): read-only; each is read from the registers and memory at a breakpoint of the
+    # think code while a decision is open, and logged as R7W {k, key, v, ra, fr}. tools/ai.py puts them in the decision's "r7".
+    def w_ebp(off):
+        return lambda: s32(reg("ebp") + off)
+
+    def w_pair(a, b):
+        return lambda: [u32(reg("ebp") + a), u32(reg("ebp") + b)]
+
+    def w_nearest(off):
+        """AiNearestPlayer's return (EAX the player p, the out word f at [ebp+off]) and p's unit type (None for p = 0)."""
+        def f():
+            p = reg("eax")
+            return [p, u32(reg("ebp") + off), u32(p) if p else None]
+        return f
+
+    def w_eax():
+        return s32(reg("eax"))
+
+    def w_region():
+        return s32(reg("esi") + 0x2D4)      # AiTrapArrowKind's region word, before its test (0x005FB674)
+
+    # key -> (breakpoint address, reader). A return site is the instruction after the call (the call site + 5).
+    R7WORDS = (
+        ("MonPlayerBonus", 0x005F0B37, w_ebp(-0x18)),            # R10: pb.difficulty, [ebp-0x18] after MonPlayerBonus 0x00573930
+        ("MonsterOwnerRef", 0x005F6EED, w_pair(-0x1C, -0x18)),   # R48: (guid, type) after MonsterOwnerRef 0x0058F090
+        ("AiNearestPlayer", 0x005E73BD, w_nearest(-0x8)),        # R54: (p, f, type of p) after AiNearestPlayer 0x005DDF20
+        ("AiNearestPlayer", 0x005E690E, w_nearest(-0x10)),       # R32: the same call inside AiNpcNearPlayer 0x005E68F0
+        ("R118.flag0x20", 0x005E1E34, w_eax),                    # R118: StatListFindFlag(t, 0x20) 0x00625760
+        ("R119.flag0x20", 0x005E215C, w_eax),                    # R119: the same call at 0x005E2157
+        ("arrow.region", 0x005FB674, w_region),                  # R78, R79: AiTrapArrowKind's +0x2D4 word
+    )
+
+    def on_word(key, rd, ra):
+        def f():
+            cur = top()
+            if not cur:
+                return
+            emit("R7W", {"k": cur["k"], "key": key, "v": rd(), "ra": ra, "fr": frame()})
+        return f
+
+    def think_words(d, u, md, ms):
+        """The words read at the think call (the rows' data reads): R70's Velocity and Run (MonStats +0x32, +0x34, s16),
+        R73's Skills aurastate of Skill2 (s16 at +0x80 of the 0x23C-byte record, -1 outside the table) and MonsterData+0x0E."""
+        k = d["n_k"]
+        ai = d["ai"]
+        if ai in (70, 48):
+            emit("R7W", {"k": k, "key": "speed", "v": [s16(ms + 0x32), s16(ms + 0x34)], "ra": 0x005B186F, "fr": frame()})
+        if ai == 73:
+            dt = u32(DT_PTR)
+            sk2 = s16(ms + 0x172)
+            cnt = s32(dt + 0xBA0)
+            au = s16(u32(dt + 0xB98) + sk2 * 0x23C + 0x80) if 0 <= sk2 < cnt else -1
+            emit("R7W", {"k": k, "key": "R73.aurastate", "v": au, "ra": 0x005B186F, "fr": frame()})
+            emit("R7W", {"k": k, "key": "R73.md0e", "v": u8(md + 0x0E), "ra": 0x005B186F, "fr": frame()})
+
+    # MonAiInit 0x005B0E00: the init call (0x005B0F18, `call [ebx+4]`: ECX game, EDX unit, ESI the AiCtl, [ebp+0xC] the state)
+    # and its return (0x005B0F1B), for the init functions of INIT_FNS.
+    def on_init0():
+        fn = u32(reg("ebx") + 4)
+        if fn not in INIT_FNS:
+            return
+        u = reg("edx")
+        if not u or u32(u) != 1 or not take("init", CAP_AIN):
+            return
+        ebp = reg("ebp")
+        ctl = reg("esi")
+        st["init"] = (ebp, u, ctl)
+        emit("AII", {"u": u, "id": u32(u + 0x0C), "c": s32(u + 4), "fn": fn, "ctl": ctl, "st": s32(ebp + 0xC),
+                     "cw": mem(ctl, 0x40).hex(), "blk": list(struct.unpack("<9I", mem(ebp - 0x28, 36))),
+                     "s": sd(u), "c4": u32(u + 0xC4), "fr": frame()})
+
+    def on_init1():
+        v = st.pop("init", None)
+        if not v or reg("ebp") != v[0]:
+            return
+        u = v[1]
+        emit("AIQ", {"u": u, "ctl": v[2], "cw": mem(v[2], 0x40).hex(), "blk": list(struct.unpack("<9I", mem(v[0] - 0x28, 36))),
+                     "s": sd(u), "c4": u32(u + 0xC4), "fr": frame()})
+
     Bp(0x0052C312, on_game)
     Bp(0x005B1740, on_entry)
     Bp(0x005B186F, on_think)
@@ -452,6 +546,10 @@ def _ai_main():
     Bp(0x00649970, on_pp0, bnd_bps)
     for a in (0x00649984, 0x006499C2, 0x006499F0, 0x00649C5F, 0x00649C6E, 0x00649C8F):
         Bp(a, on_pp1, bnd_bps)
+    for key, a, rd in R7WORDS:
+        Bp(a, on_word(key, rd, a), bnd_bps)
+    Bp(0x005B0F18, on_init0)
+    Bp(0x005B0F1B, on_init1)
     Bp(0x0056F640, on_sst0)
     for a in (0x0056F6E8, 0x0056F7D0, 0x0056F7D9):
         Bp(a, on_sst1)
