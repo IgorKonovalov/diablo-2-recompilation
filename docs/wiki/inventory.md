@@ -460,16 +460,19 @@ flowchart LR
 
 A trade starts when one player interacts with another ([§ B](../specs/items/trade.md#b-the-request)).
 
-- **Read from the code:** within a distance of 8 (in the game's own units) the request is made at once; from 9 to 50 the player walks
-  to the other first; farther than 50 nothing happens.
-- **Read from the code:** nothing happens if the asking player is busy (talking to someone, holding an item on the
-  cursor) or either player is already in a trade.
+- **Read from the code:** within a distance of 8 (in the game's own units) the request is made at once, unless the
+  other player is dead, when the interaction picks up the corpse instead; from 9 to 50 the player walks to the other
+  first; farther than 50 nothing happens.
+- **Read from the code:** nothing happens if the asking player is busy (in an interaction, a trade included, or holding
+  an item on the cursor).
 - **Seen:** if the other player is busy, the asker gets a message naming them and nothing moves; in the run the other
   player was in Deckard Cain's menu. The messages to one asker are spaced at least one second apart (that spacing is
   read from the code).
 - **Seen:** within five seconds after the other player's last trade ended, the asker gets a message naming them, and
   nothing opens; in the run the request came 80 frames after a close. The asker's own five-second window gives the same
   message without a name (read from the code).
+- **Read from the code:** a request that gets past the busy test and the other player's five-second window still does
+  nothing, with no message, while either player's trade state is not back to idle.
 - **Both players must be in town.** Every request that opened in the run was in town; the refusal outside town was
   not reached (the run had no route out of town), so it is read from the code. There is no hostility test of the
   request's own (read from the code).
@@ -487,7 +490,9 @@ that shows what the other player offers ([§ D](../specs/items/trade.md#d-the-of
 - **Seen:** an item put on a player's offer page makes a copy, with a new id, on the partner's view page at the same
   cell.
 - **Any move of an item by a trading player un-accepts both players, even a move the server then refuses.** Seen at
-  each of the 19 logged item tests: picking up an offered item, a click on the belt, and three refused cube moves. The
+  each of the 19 logged item tests: picking up an offered item, a click on the belt, and three refused cube moves.
+  The exception is read from the code and was not logged: an early test refuses the move and does nothing else, for
+  instance while the partner has no trade record or a rebuild or an exchange is pending. The
   test runs for seven kinds of move request (taking from a page, the equip swaps, the belt ones), a pick-up from the
   ordinary inventory included (read from the code). Both players pass through a short "changed" state and are back in
   the open trade a frame or two later; the steps are seen, the frame delays are read from the code (see the timing
@@ -511,8 +516,8 @@ A player offers gold with the window's gold button ([§ E](../specs/items/trade.
 - **The offer is clipped when it is made**, to what the receiver can still carry under its gold cap (the character
   level times 10 000). Seen: a 9 000 offer above the receiver's room was stored as that room, and the receiver ended at
   exactly its cap of 800 000 with nothing dropped. The commit moves the amount as stored (seen).
-- **Read from the code:** offering more gold than the player carries closes the trade, unless a move is pending.
-  No case reached it: in the run no amount above the offering player's gold reached the server (an entry typed as
+- **Read from the code:** offering more gold than the player carries closes the trade, unless either player has a move or a
+  rebuild pending; then the offer is clipped and stored as above. No case reached it: in the run no amount above the offering player's gold reached the server (an entry typed as
   150 000 arrived as 95 000, that player's gold).
 - **A gold offer on its own changes no state.** Seen: none of the 113 logged gold messages moved a state. That a partner's
   accept survives a gold offer is read from the code and was not reached: in the run every amount came right after an
@@ -569,13 +574,13 @@ When both have accepted, the server runs its checks in a fixed order, then makes
    reached, since the offer is already clipped when it is made).
 2. **Room.** The server copies both players' inventory grids into two scratch grids and fits each side's offer into the
    other's copy. If one does not fit, both gold offers are set to zero, both players get a "no room" message (which one
-   names the receiver and which the giver depends on the side), and the commit is cancelled. Seen once, for the second
-   accepter's side: a 2 × 4 axe
-   offered to a player with no two free columns side by side; nothing moved.
+   names the receiver and which the giver depends on the side), and the commit is cancelled. Seen once, for the offer
+   of the player who accepted first: a 2 × 4 axe offered to a player with no two free columns side by side; nothing
+   moved. A failure of the second accepter's offer was not reached.
 3. **Quest items.** Each offered item passes the quest gate (read from the code; no refusal reached).
 4. **The moves.** Both players are marked as ending, then the second player to accept has its offer placed into the
-   partner's inventory, then the partner's offer into the second player's. Each placed item is a new copy on the
-   receiver's inventory page. After a half is placed, its giver's offer and view pages are emptied (read from the code;
+   partner's inventory, then the partner's offer into the second player's (seen in that order in the worked example
+   below). Each placed item is a new copy on the receiver's inventory page (seen at each exchange). After a half is placed, its giver's offer and view pages are emptied (read from the code;
    the emptied pages are seen at the end of each exchange).
 5. **The gold** moves, the second accepter's offer first by the reading, the records are freed and the trade ends.
    Seen as an exchange three times; the order of the two gold moves is read from the code.
@@ -629,7 +634,7 @@ from the snapshots taken when the window opened ([§ G](../specs/items/trade.md#
 | The exchange | items and gold swapped, the window closes | seen (three exchanges) |
 | Closing the window (Escape or its close button) | both rebuilt from the snapshots, both end, both five-second windows restart | seen |
 | A refusal at the commit | both rebuilt, offers and gold set to zero, the window **stays open**, empty | seen (two cancels) |
-| A player's client leaves the game | the server saves first, then both are rebuilt and both end | seen for a client that was killed (twice); the leaver's own rebuild is read from the code |
+| A player's client leaves the game | for a dropped client the server saves first, then both are rebuilt and both end | seen for a client that was killed (twice); the leaver's own rebuild is read from the code, and whether the other ways of leaving save first is not read |
 | A player dies | both rebuilt, both end, as for a leaver but with no save first | read from the code |
 | Offering more gold than carried; an offer copy that cannot be placed | the window closes as on a close | read from the code |
 | Accepting the request again inside an open trade | the window closes; while a move is pending, after a short wait that ends once neither player has one | read from the code |
@@ -713,7 +718,7 @@ planned.
 - **What an elixir's value comes from** and which object classes the two last grid rows belong to are not known.
 - **Trade cases never reached** ([trade, open questions](../specs/items/trade.md#open-questions)): the refusal outside
   town; an overspend and a gold offer while the partner has accepted (an unmodified client sends neither); the
-  re-accept states and their wait; the room test failing on the giver's side; the gold and quest refusals at the
+  re-accept states and their wait; the room test failing on the offer of the player who accepted last; the gold and quest refusals at the
   commit; the first half of the moves failing; an offer copy that cannot be placed; a death during a trade.
 - **The trade's timing mismatch:** in one cancel two steps ran inside one logged frame, where the rule gives one frame
   each. One lead is that the logged frame number belongs to the outer loop; a run logging the frame at the event pass
