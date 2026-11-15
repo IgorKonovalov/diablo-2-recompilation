@@ -23,7 +23,11 @@ p12   skills/missiles D3 against src:pk-walkable-flags-overview's floor flag 01 
       c & 5 == 0 predicts it goes on (the control). A bit-0-only word (c & 5 == 1) is the separating case: the lead
       ("allow missiles pass") predicts a later MMC of the same missile. Counts the cases whose word came from a fresh
       CollisionTest (path +0x7C 0) apart from the cached ones, and whether the session's own CB grid has bit 0 at
-      the tested point. Prints the verdict; exit 1 when any case goes against D3.
+      the tested point. The logged word has been through CollisionTest over the missile's size (or is the path's cached
+      word of another point), so it is not the grid's own cell word: the lead's observable is counted apart, a missile
+      at a point the CB grid marks bit-0-only (c & 5 == 1) whose word is 0 and that steps again (fresh = verdict
+      "against the grid reading", cached = counted only). SEPARATING needs a fresh freed word and the grid's own cell
+      bit-0-only. Prints the verdict; exit 1 when any case goes against D3 or the grid reading.
 c2    skills/0002 § 12 C2 (backlog plan-0045-c2), from tools/gdb/skills.py's MC0/MC1 lines: every spike1 (Missiles
       row 7, Vel 10, VelLev 8) created without the caller's velocity (flags bit 2 clear) is predicted at
       tdiv(((VelLev · lvl) / 8 + Vel) << 8 · 75, 100) and checked; each one separates the read from the lead's
@@ -178,6 +182,17 @@ def check_p12(paths):
             fresh = "fresh" if not d.get("cached") else "cached"
             S["MMC %s (%s)" % (kind, fresh)] += 1
             where = "%s:%d" % (path, n)
+            g = cells.get((d["x"], d["y"]))
+            if g is not None and g & 5 == 1 and c & 5 == 0:
+                # The lead's observable: the missile is at a point whose grid word is bit-0-only. The logged c has been
+                # through CollisionTest over size sz (the cell word & 0x7FFF, or the plus / square of it: always
+                # including the own cell) or came from the path's cache (another point's word), so it is not the grid's
+                # own word (review of plan 0065 P0, fix 1). A fresh 0 contradicts the grid (or the grid is stale there);
+                # a cached 0 never tested this cell and separates nothing.
+                S["LEAD-OUTCOME at a grid bit-0-only point, word c&5=0 (%s), %s" %
+                  (fresh, "the missile steps again" if again else "no later step")] += 1
+                if fresh == "fresh" and again:
+                    S["LEAD-OUTCOME fresh: carried on over a grid bit-0-only cell"] += 1
             if kind == "free":
                 if nxt and nxt[1] == "MMR" and nxt[2]["r"] == 2:
                     S["free word, then MMR 2 by another exit (no room/path, no filter or a wall hit)"] += 1
@@ -191,20 +206,23 @@ def check_p12(paths):
                 continue
             S["%s word: freed at its own cell (D3)" % kind] += 1
             if kind == "bit0only":
-                g = cells.get((d["x"], d["y"]))
                 S["bit0only freed, the session's CB grid at (x, y): %s" %
                   ("absent" if g is None else "bit 0 set" if g & 1 else "bit 0 clear")] += 1
-                if fresh == "fresh":
+                # separating only when the grid's own cell is bit-0-only too: with size 2 or 3 the word also holds
+                # the neighbours' bits, so a clear own cell leaves the bit to a neighbour
+                if fresh == "fresh" and g is not None and g & 5 == 1:
                     S["SEPARATING: bit0only fresh word freed"] += 1
     sep = S["SEPARATING: bit0only fresh word freed"]
+    lead = S["LEAD-OUTCOME fresh: carried on over a grid bit-0-only cell"]
     for b in bad:
         print("MISMATCH " + b)
-    verdict = ("against D3" if bad else "D3 holds" if sep else "not separated (no fresh bit-0-only word)")
-    print("SURVEY sweep8 p12 logs=%d mmc=%d separating=%d mismatches=%d verdict=%s" %
-          (len(paths), sum(v for k, v in S.items() if k.startswith("MMC ")), sep, len(bad), verdict))
+    verdict = ("against D3" if bad else "against the grid reading (lead outcome seen)" if lead else
+               "D3 holds" if sep else "not separated (no fresh bit-0-only word)")
+    print("SURVEY sweep8 p12 logs=%d mmc=%d separating=%d lead=%d mismatches=%d verdict=%s" %
+          (len(paths), sum(v for k, v in S.items() if k.startswith("MMC ")), sep, lead, len(bad), verdict))
     for k, v in sorted(S.items()):
         print("  %-90s %d" % (k, v))
-    return 1 if bad else 0
+    return 1 if bad or lead else 0
 
 
 # ------------------------------------------------------------------------------------------------------------ C2
