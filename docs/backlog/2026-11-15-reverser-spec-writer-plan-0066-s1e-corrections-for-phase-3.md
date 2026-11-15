@@ -21,7 +21,7 @@ to the spec text at the Phase 3 re-tag of [monsters/ai/catalogue](../specs/monst
 3. L58 (Notation table) and L4689 (Reimplementation notes, "Two life readers … Keep them apart"): `AiLifePct` is
    `push ecx; call UnitLifePct; ret` (0x005DD280), one map with two calling conventions. The same sentence is
    [quirks Q515](../specs/quirks/README.md) and [ai/0002 § 2.10's note](../findings/ai/0002-pool-a.md) (corrected there).
-4. L2697 (R50c): the first draw only when `blk[3]` ≠ 0 (0x005F780B); with no find, no draw and `t`.
+4. L2697 (R50c): the first draw only when `blk[3]` ≠ 0 (0x005F780B); with no find and `blk[5]` 0 (a monster searcher; the one-caller claim is `[I]`), no draw and `t`.
 5. L687 (R23b): "not dying" is `MonIsDeathMode`, 0 for every player; ties replace (`≤`).
 6. L2031 (R105 block head): 0, 1 or 3 draws, not three per tried skill; the fourth argument `melee` is never read.
 

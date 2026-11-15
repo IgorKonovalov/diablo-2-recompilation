@@ -1234,7 +1234,7 @@ Owner-played (ADR-0028: five processes, each one case; plan 0052 P1b-1 and the C
   - [C] `priest` `AiPriestHealCb` 0x005E0430 (R85b, line 2960): the line's tests, lowest `UnitLifePct ≤ 75` below
     `blk[1]` kept; the priest itself taken once (no test excludes it); 11 controls separated. (fn:sub_005E0430_AiPriestHealCb@0x005E0430)
   - [C] `imp` `AiImpNearCb` 0x005E1720 (R113b, line 3164): the line's tests, the searcher's owner by `UnitGetOwner`, the
-    candidate's AI control by 0x00541860; returns the candidate (34) or 0; 11 controls separated. (fn:sub_005E1720_AiImpNearCb@0x005E1720)
+    candidate's AI control by 0x00541860; returns the candidate (34) or 0; 11 controls separated. [I] The guard `count > 492 ? 492 : −1` has no control of its own (`base492` is the only one on the base). (fn:sub_005E1720_AiImpNearCb@0x005E1720)
   - [C] `overseer` `AiOverseerMinionCb` 0x005E26D0 (R120b, line 3359): counted 63, `blk[3]` 15, `blk[4]` 33, each only while
     0; 18 controls separated. (fn:sub_005E26D0_AiOverseerMinionCb@0x005E26D0)
   - [C] `mincount` `AiMinionCountCb` 0x005E2B70 (R121a, line 3380): base 453 (62) or 461 (45), alignment 0, no distance
@@ -1267,10 +1267,11 @@ Owner-played (ADR-0028: five processes, each one case; plan 0052 P1b-1 and the C
   3. [C] **`AiLifePct` is `UnitLifePct`.** 0x005DD280 is `push ecx; call 0x00621F20; ret`: the same map behind a register
      argument, equal on 240 of 240 images. Lines 58 and 4689's "two different readers … keep them apart" describe one
      map with two calling conventions (`ECX` against the stack).
-  4. [C] **Mephisto's pick draws only when the search found a candidate.** `cmp [ebp−0x1C], 0; je 0x005F7857` at
+  4. [C] **Mephisto's pick takes its first draw only when the search found a candidate.** `cmp [ebp−0x1C], 0; je 0x005F7857` at
      0x005F780B skips the first draw when `blk[3]` is 0, and the second draw is tested on `blk[5]` (0x005F7857): 166
      cases with no first draw. Line 2697's "returns `blk[3]` on `D100() < aip(2)`" holds only after a find; with none, no
-     draw and `t` (when `blk[5]` is 0).
+     first draw. With `blk[5]` also 0 (a monster searcher; the pick's one caller, Mephisto, is `[I]`) it returns `t` with no
+     draw at all; `blk[5]` is set for a player searcher (4 and 43 cases), whose second draw is then taken.
   5. [C] **`AiWoundedNearCb`'s "not dying" is `MonIsDeathMode`**, which is 0 for every player (type 0), and its distance
      compare is `≤`: the later of two equal candidates replaces the earlier (refines line 687's "keeping the nearest").
   6. [C] **`AiShadowSkillRoll` draws 0, 1 or 3 times**, not "three per tried skill": none on a class or `Fits` refusal or

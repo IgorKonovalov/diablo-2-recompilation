@@ -129,7 +129,7 @@ findings named in place are cited by their anchors.
 | `0x005EA980` | `sub_005EA980_AiDeathSentry` | row 104 `DeathSentry` think | I (entry call `[C]`, § 4) |
 | `0x005EAB20` | `sub_005EAB20_AiShadowSkillAllowed` | `(unit, skill)`: a skill whose `summon` is not the unit's class and whose `pettype` the unit's pets do not hold | I |
 | `0x005EABF0` | `sub_005EABF0_AiShadowSkillFits` | `(unit, skill, ctx)`: the skill's `aitype` against the target and melee state, and its states | I |
-| `0x005EAD50` | `sub_005EAD50_AiShadowSkillRoll` | row 105's skill try: three `Range` draws and the `v18` counter | I |
+| `0x005EAD50` | `sub_005EAD50_AiShadowSkillRoll` | row 105's skill try: 0, 1 or 3 `Range` draws (see the note under `AiShadowSkillRoll` in § 2) and the `v18` counter | I |
 | `0x005EAF00` | `sub_005EAF00_AiShadowWarriorSkLvl` | `v1C / 3 + level / 2`, at least 1 | I |
 | `0x005EAF50` | `sub_005EAF50_AiShadowWarriorInit` | row 105's init: `v1C` = the owner's level in `aip8[n]` | I (entry call `[C]`, § 4) |
 | `0x005EAFA0` | `sub_005EAFA0_AiShadowWarrior` | row 105 `ShadowWarrior` think | I (entry call `[C]`, § 4) |
