@@ -78,7 +78,7 @@ Every file's *Count* column sums to its spec's front-matter `I` at `b5999f5e` (c
 | [items/inventory](items-inventory.md) | is | 104 | 7 | 2 | 14 | 22 | 39 | · | · | · | 6 | 14 |
 | [items/use](items-use.md) | is | 64 | 6 | 3 | 21 | 13 | 10 | · | · | · | 3 | 8 |
 | [monsters/ai/README](monsters-ai-README.md) | ai | 56 | 15 | 2 | 9 | 13 | 13 | · | · | · | · | 4 |
-| [monsters/ai/catalogue](monsters-ai-catalogue.md) | ai | 520 | 73 | 202 | 94 | 25 | 21 | · | 62 | · | · | 43 |
+| [monsters/ai/catalogue](monsters-ai-catalogue.md) | ai | 520 | 73 | 172 | 124 | 25 | 21 | · | 62 | · | · | 43 |
 | [monsters/ai/machinery](monsters-ai-machinery.md) | ai | 114 | 25 | 21 | 20 | 15 | 31 | · | · | · | · | 2 |
 | [path/README](path-README.md) | fp | 80 | 11 | 5 | 11 | 26 | 16 | · | · | · | · | 11 |
 | [path/search](path-search.md) | fp | 36 | 7 | · | 1 | 9 | 10 | · | · | · | · | 9 |
@@ -94,18 +94,18 @@ Every file's *Count* column sums to its spec's front-matter `I` at `b5999f5e` (c
 | [stats/README](stats-README.md) | is | 3 | 1 | 1 | 1 | · | · | · | · | · | · | · |
 | [stats/aggregate](stats-aggregate.md) | is | 42 | 25 | 6 | 1 | 4 | 6 | · | · | · | · | · |
 | [stats/states](stats-states.md) | is | 54 | 6 | 17 | 12 | 8 | · | 2 | 1 | · | 2 | 6 |
-| **All** | | **2626** | **668** | **358** | **394** | **390** | **489** | **59** | **68** | **0** | **23** | **177** |
+| **All** | | **2626** | **668** | **328** | **424** | **390** | **489** | **59** | **68** | **0** | **23** | **177** |
 
 By phase:
 
 | Route | Classes | Statements | Batches |
 |---|---|---|---|
 | Phase 1, static | a-logs 668, c 390, c-emu 489 | 1547 | 36 |
-| Phase 2, harness | a-run 358, b 394 | 752 | 31 (about 256 sessions estimated) |
+| Phase 2, harness | a-run 328, b 424 | 752 | 32 (about 256 sessions estimated; H1p none yet) |
 | Blocked | d-2c 59, d-owner 68, d-edit 23, d-none 177 | 327 | – |
 | **Total** | | **2626** | |
 
-No row is `d-sim`: no claim was found to wait on plan 0061 or another open plan. *(The totals above include the moves of Phase 1 batches S1a (5 statements), S1b (18), S2a (20: 13 in part 1, 7 in part 2) and S1d (4) out of a-logs, 2026-11-10, S1e's (1) out of c-emu and S2b's (6) out of a-logs, 2026-11-15.)*
+No row is `d-sim`: no claim was found to wait on plan 0061 or another open plan. *(The totals above include the moves of Phase 1 batches S1a (5 statements), S1b (18), S2a (20: 13 in part 1, 7 in part 2) and S1d (4) out of a-logs, 2026-11-10, S1e's (1) out of c-emu and S2b's (6) out of a-logs, 2026-11-15, and plan 0069 Phase 1a's (30) from a-run to b, 2026-11-15.)*
 
 ## 2. The threshold and the harness batches
 
@@ -160,6 +160,7 @@ deferred)**. The review is asked to rule on one of:
   files against `main` `f9b82bd4`): a-logs 668, a-run 358, b 394, c 390, c-emu 490, d 326; Phase 1 1 548, Phase 2 752.
   After merging `main` with S1e (Tier A, 2026-11-15, recomputed from the 29 files' *Totals by class*): a-logs 668, a-run
   358, b 394, c 390, c-emu 489, d 327 (d-owner 68); Phase 1 1 547, Phase 2 752.
+- **Plan 0069 Phase 1a (`lane/n69a`, 2026-11-15):** monsters/ai/catalogue 121–125, 184–189, 204–205, 306–309, 311, 330–331, 333–334, 358–359, 361 and 475–479 a-run → b (new batch H1p, out of plan 0069): the tour's placement tool (`tools/ai_tour.py place`) finds no stock creator of the classes of rows 46, 47, 62, 75, 76, 81, 82, 83, 87, 113 and 121 (H1c 18, H1b 7, H1d 5); a code creator is not ruled out, so (b), not d-none. Reasons in the rows. Totals after (the catalogue file recounted against `main` `f56ab708`, merged into the lane): a-run 328, b 424; Phase 2 752 unchanged.
 
 ## 4. Batch list
 
@@ -214,12 +215,13 @@ Phase 0 review. Static batches play no game session (their *Sessions* cell is 0)
 | Batch | Kind | Stmts | Rows | Method | Record | Sessions | Claims per session | Status |
 |---|---|---|---|---|---|---|---|---|
 | **H1a** | H | 38 | catalogue 29–30, 32, 34, 56–65, 67, 77–86, 88, 90–92, 98–100, 174–175, 179–181, 183 | `tools/ai_sessions.py` `stage` cases (waypoint, Nova sweep) in levels whose pools hold rows 8, 16, 142, 17, 18, 24, 25, 27, 72, 74 (Acts II to IV; 142 in Nightmare or Hell); logger rev 6, `tools/ai.py`, then the S1b checker | findings/ai/experiments.md, run:<date>-sweep2-H1a | 8 | 4.8 | deferred |
-| **H1b** | H | 45 | catalogue 330–331, 333–334, 338–346, 351–355, 357–359, 361–368, 373–379, 384, 386–387, 406–411 | Act V `stage` cases (Bloody Foothills to Worldstone Keep): rows 113, 115–117, 119–123, 126, 129, 136, 137, states 15 and 16; same logger and checkers | findings/ai/experiments.md, run:<date>-sweep2-H1b | 5 | 9 | deferred |
-| **H1c** | H | 59 | catalogue 105–107, 117–125, 158–160, 184–192, 201–208, 285–287, 289–299, 306–309, 311–312, 315, 317–319, 424–426 | `stage` or `hunt` cases to presets, spawners and superuniques of Acts I to V by waypoint (as `a1-andariel`, `a1-countess`): rows 38, 45–47, 66, 75–77, 80, 82, 83, 85, 87, 92, 94, 50, 53, 55, 59, 128 | findings/ai/experiments.md, run:<date>-sweep2-H1c | 12 | 4.9 | deferred |
-| **H1d** | H | 16 | catalogue 276–279, 462–465, 470, 472, 474–479 | town cases (the stay-in-town start that logged rows 32 and 54) in Acts I to III: rows 41, 42, 58, 60, 62, 81, states 5 and 6 (unhired mercenaries) | findings/ai/experiments.md, run:<date>-sweep2-H1d | 3 | 5.3 | deferred |
+| **H1b** | H | 38 | catalogue 338–346, 351–355, 357, 362–368, 373–379, 384, 386–387, 406–411 (7 moved to H1p by plan 0069 Phase 1a: 330–331, 333–334, 358–359, 361) | Act V `stage` cases (Bloody Foothills to Worldstone Keep): rows 113, 115–117, 119–123, 126, 129, 136, 137, states 15 and 16; same logger and checkers | findings/ai/experiments.md, run:<date>-sweep2-H1b | 5 | 9 | deferred |
+| **H1c** | H | 41 | catalogue 105–107, 117–120, 158–160, 190–192, 201–203, 206–208, 285–287, 289–299, 312, 315, 317–319, 424–426 (18 moved to H1p by plan 0069 Phase 1a: 121–125, 184–189, 204–205, 306–309, 311) | `stage` or `hunt` cases to presets, spawners and superuniques of Acts I to V by waypoint (as `a1-andariel`, `a1-countess`): rows 38, 45–47, 66, 75–77, 80, 82, 83, 85, 87, 92, 94, 50, 53, 55, 59, 128 | findings/ai/experiments.md, run:<date>-sweep2-H1c | 12 | 4.9 | deferred |
+| **H1d** | H | 11 | catalogue 276–279, 462–465, 470, 472, 474 (5 moved to H1p by plan 0069 Phase 1a: 475–479) | town cases (the stay-in-town start that logged rows 32 and 54) in Acts I to III: rows 41, 42, 58, 60, 62, 81, states 5 and 6 (unhired mercenaries) | findings/ai/experiments.md, run:<date>-sweep2-H1d | 3 | 5.3 | deferred |
 | **H1e** | H | 55 | catalogue 209–210, 212–228, 230–235, 237–241, 243, 246, 248–270 | **(b)** new `tools/d2s_recipes` builds with the summoning skills (Necromancer Bone Wall, Sorceress Hydra, Assassin traps and shadows, Druid summons) and a cast step; logger rev 6, `tools/ai.py`, the S1b checker. Row 107 first needs the cause of no row-107 decision beside H3's 2 218 Raven calls | findings/ai/experiments.md, run:<date>-sweep2-H1e | 5 | 11 | deferred |
 | **H1g** | H | 44 | catalogue 26–28, 40–41, 47–48, 74, 97, 101–104, 108–111, 116, 132–134, 137, 142–143, 145–146, 170, 173, 316, 322, 329, 337, 371, 491, 517; 76 (S1a); 21, 50, 70, 71, 139, 151, 336, 489 (S1b) | reruns with logger rev 6 of the cases that logged rows only in rev 2 or 3 (11, 14, 33, 36, 39, 56, 57, 93, 98) or thinly (7, 40, 49, 71; `r` lines of 26, 43, 95, 100, 114, 124 below the floor of 50); row 23's logger-limit reading | findings/ai/experiments.md, run:<date>-sweep2-H1g | 10 | 3.6 | deferred |
 | **H1h** | H | 39 | catalogue 35–36, 39, 126–129, 131, 176–178, 450–458, 461; 169, 197, 200, 350 (S1a); 12, 113, 163, 168, 195, 347, 348, 466, 467, 500 (S1b); 13, 349, 460, 468 (S1d) | **(b)** logger rev 7: the words the resume model forks on (`MonPlayerBonus`'s block for row 10, row 32's script and home words, row 48's owner record, row 73's unknown reads; from S1b and S1d also row 54's `AiNearestPlayer` return, row 118's `StatListFindFlag` return and a window over row 1's think 0x005B0CD0), then `ai_resume.py`, `ai_model_check.py` or `ai_first_check.py` and flips; one case per row | findings/ai/experiments.md, run:<date>-sweep2-H1h | 4 | 9.8 | deferred |
+| **H1p** | H | 30 | catalogue 121–125, 184–189, 204–205, 306–309, 311, 330–331, 333–334, 358–359, 361, 475–479 | **(b)** the plan 0069 Phase 1a placement found no stock creator for rows 46, 47, 62, 75, 76, 81, 82, 83, 87, 113 and 121 (`tools/ai_tour.py place`): a static creator scan for their class ids first, then a recipe that reaches the creator; logger rev 6, `tools/ai.py`, the plan 0069 checker | findings/ai/experiments.md | – | – | deferred (out of plan 0069) |
 | **H1m** | H | 23 | machinery 64, 66, 70, 72, 74, 76–81, 83, 85–87, 96–97, 104–106, 109; README 8, 54 | (a-run) `ai.gdb` rev 6 through `ai_sessions.py` on existing cases (nm/h variants, `a1-andariel`, `a4-cotd-long`, `a5-pain`, `s-barb-*`), checked with `ai_resume.py`/`ai_resume_flip.py`: unlogged arms of rows 13, 21, 22, 28, 29, 30, 34, 35, 37, 64, 89, 125; drawing pairs; row 23 | findings/ai/experiments.md, run:<date>-sweep2-h1m | ~8 | ~2.9 | deferred |
 | **H1n** | H | 26 | machinery 22, 35, 38–39, 43, 60–62, 75, 89–93, 95, 98–101, 103; README 28, 40–41, 44, 48–49 | (b) `tools/gdb/ai.py` rev 7: path `+0x90/+0x93/+0x94` and `MonPathCtl` words at MSM/PP lines; the H3 unknowns (Fallen's found unit, Hireable's `EDI` word, NecroPet's `+0x32/+0x34`); `MonAiKeepNear`, `MonAiOpenDoor`, `BossSightPause`, mode-end call sites, AIN positions; existing cases | findings/ai/experiments.md, run:<date>-sweep2-h1n | ~6 | ~4.3 | deferred |
 | **H1o** | H | 3 | README 12, 15, 37 | (b) new pilot cases: a cold-damage (Frost Nova) case with a `MonEventDispatch` drop and freeze-requeue line; a leave-and-return case with `InactiveMonAiSave`/`Restore` lines | findings/ai/experiments.md, run:<date>-sweep2-h1o | ~3 | 1 | deferred |
