@@ -726,6 +726,8 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-11-15 | `lane/n66g` review | 0066 P1, S3a | lane-check | 138 298 | 49 | 5 | — | gave accept with fixes (Tier B) | — (1st Tier B after the n65p audit; S3e left proposed for the architect) |
 | 2026-11-15 | `lane/n69b` | 0069 P1b | reverser-static | 314 349 | 85 | 20 | no slot | accept | 0 |
 | 2026-11-15 | `lane/n69b` review | 0069 P1b | lane-check | 101 558 | 41 | 3 | — | gave accept (Tier B) | — (2nd Tier B after the n65p audit; 9 models read against blocks) |
+| 2026-11-15 | `lane/n66h` | 0066 P1, S4a+S4b | reverser-static | 350 674 | 134 | 24 | no slot | accept with fixes | 3: overstated tag 2, misrouted remainder 1 |
+| 2026-11-15 | `lane/n66h` review | 0066 P1, S4a+S4b | lane-check | 117 117 | 35 | 4 | — | gave accept with fixes (Tier B) | — (3rd Tier B after the n65p audit; d-none for client presentation sent to architect) |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not
