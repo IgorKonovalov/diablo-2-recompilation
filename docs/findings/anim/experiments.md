@@ -556,7 +556,7 @@ data, single player, the same saves (`saves-2026-10-30-anim-p3/`, unchanged), `/
     `MON` lines name): no mods 75 (6 578 units, 338 more with `Velocity` 0); `champion` 95 (50), `possessed` 95 (7),
     `fast` `75 + clamp(2048 ÷ Velocity − 128, 10, 100)` (161), `fanatic` 175 at `Velocity` 4 (2: the clamp only, no
     + 20). 74 units show none of these values (58 without mods, 7 champion, 9 fast; `bad`), unexplained. `[C]` for the
-    start at 75; the mods' values `[I]` (the 74). (run:2026-10-30-anim-p3b)
+    start at 75 in 6 578 of the 6 636 no-mod units (the 58 others differ, unexplained); the mods' values `[I]` (the 74). (run:2026-10-30-anim-p3b)
   - *`Velocity`-0 classic classes in S1–S4* (`v0-s1`): no rate call logged.
   - *The snap* (`snap`): every step that reaches its point lands on the point's subtile centre (3 277 reaches: player
     walk 198, run 1 269, sequence 10; monster path types 2, 5, 6, 7, 13, 15). `[C]` (run:2026-10-30-anim-p3b).
