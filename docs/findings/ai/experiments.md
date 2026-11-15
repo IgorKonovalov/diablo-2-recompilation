@@ -1141,3 +1141,148 @@ Owner-played (ADR-0028: five processes, each one case; plan 0052 P1b-1 and the C
     - R99 468 (243 + 25 + 200), two outcomes: `Idle(15)` 0x005EA070 (450), and `SetModeAtUnit(9, t)` 0x005E9F83 after `v14 ← 1`, `v18 ← T` (18); `+0xC4 |= 0x20000` before either (its skip fails 36); reversed alone, `dist < 5` fails 468, `v14 ≠ 0` 450, `v14 = 0` and both stores 18 each, `t = 0` 18.
     - R130 119 (85 + 34), four outcomes: A1 0x005EE2CE (12), `Idle(15)` 0x005EE3AD (4 in melee range, 27 at step 4), `UseSkill1(t)` 0x005EE34A (22), `Walk(t, 0)` 0x005EE39D (54); reversed alone, the melee test fails 104 of 119, `chance(1)` 16 of 16, `dist < aip(3)` 103 of 103, `chance(4)` 29 of 29, `chance(2)` 81 of 81, `Skill1 ≥ 0` 29 of 103; one draw at an equal pair (`le` 1).
   - [I] **Not compared:** R15's alt (0x005F1750), 4 decisions: every one forks on the kind-14 record's `+0x18`, which the log does not hold (`ARM` none; status ok, forked 4). R1 (0x005B0CD0), 104 decisions: the think lies outside the logger's windows (`THINK_LO`, tools/gdb/ai.py), so no call is logged. R32 (0x005E7130), 1 167 decisions: its first step, `AiNpcSaveHome`, branches on the kind-10 home record's `+0x0C`/`+0x10`, which the log does not hold (the AID `head` is the `+0x20` record; tools/ai_cat_emu12.py `f6800` finds kind 10 from the ring's second node), so every decision forks before its first call. R54 (0x005E73A0), 489: `AiNearestPlayer`'s search returns at 0x005DDF5B, outside the windows, so `p` is unknown before the first call (`ai_model_check.m_r54`; S1b's 302 of 302 forked). R118 (0x005E1E00), 108: `StatListFindFlag` (0x00625760) is not a boundary and decides the first call (`m_r118`; S1b's 50 of 50 forked, 6 stopped). (0x005B0CD0, 0x005E6800, 0x005DDF5B, 0x00625760)
+
+## run:2026-11-15-sweep2-s1e
+
+- **Question:** (plan 0066 Phase 1, batch S1e) Do the catalogue's search callbacks and helpers map their declared
+  image to their return value, the words they write and the unit seed as the monsters/ai catalogue states them (at
+  `b5999f5e`), with **every callee run whole** (no observed boundary, no declared return: inventory ruling R2)?
+- **Setup:** Ghidra p-code emulator via `re/ghidra_scripts/EmuBoundary.java` (`d516ae47…`, unchanged since `1bedef6c`),
+  lane project copy `workspace/ghidra-n66e`, heap 3 GB (`GHIDRA_HEADLESS_MAXMEM=3G`), one headless run inside
+  `systemd-run --user --scope -p MemoryMax=4G`. No wine, no slot. Models, case writer and checker `tools/ai_s1e_emu.py`
+  (committed at `9d00a53b`, sha256 `6d0287cd…`, unchanged by this run), every draw from `random.Random("n66e-<family>")`.
+  24 families of 240 cases each (5 760), one memory spec (`s1e.mem`) and one case file. The declared image (the
+  tool's docstring): the DataTables pointer and the MonStats, MonStats2, Skills and ItemStatCost arrays (zero but for
+  each MonStats record's `+0x02`), the game (difficulty, frame, region array, unit hash slots), units, monster and
+  player data, AI controls, paths, stat lists with their node chains, the player relation list, rooms with their near
+  lists and unit lists, regions, the search and weight blocks, the seeds. Image constants read unwritten:
+  `g_BitMask32` 0x006CE268, `g_UnitHashOffsets` 0x006E10E0, `g_AiSearchKinds` 0x006E3300, the jump and byte tables at
+  0x005EB7D8..0x005EB7E7 (`AiShadowMasterCb`) and 0x005EAD34..0x005EAD47 (`AiShadowSkillFits`). Guards: the fatal
+  path (0x00408090, 0x00408A60, 0x00681E09). Callees run whole: `UnitDistSq`, the stat getters with 0x00624F60's
+  search, `UnitMaxHp`, `UnitLifePct`, `UnitAlignGet`, `AlignSame02`, `UnitsHostile` with the player relation list,
+  `MonsterOwner` and `GameFindUnit`, `UnitGetOwner`, `UNIT_HasState`, the state-set-33 test, `MonTypeFlag`,
+  `MonStats2FlagTest`, `MonBaseId`, `MonClassCheck`, `MonIsDeathMode`, `UnitIsDead`, `UnitGetRoom`,
+  `RoomGetLevelId`, `MonRegionGet`, `RNG_RandLoHi`, `RNG_Range`, `AiShadowSkillFits` on its declared paths, and for
+  Mephisto's pick `AiUnitSearch` kind 1 with `AiSearchNearRooms`.
+- **Procedure** (from the worktree root; `D=workspace/logs/ai/sweep2-s1e`):
+  ```
+  python3 -I tools/ai_s1e_emu.py cases --dir $D
+  GHIDRA_PROJ_DIR=workspace/ghidra-n66e GHIDRA_HEADLESS_MAXMEM=3G systemd-run --user --scope -p MemoryMax=4G \
+    tools/ghidra.sh emuboundary $D/s1e.cases $D/s1e.mem > $D/s1e.out 2> $D/s1e-ghidra.err
+  python3 -I tools/ai_s1e_emu.py check --dir $D > $D/check.txt
+  python3 -I tools/ai_s1e_emu.py manifest --dir $D --write
+  ```
+  Controls: every named test of a model is reversed alone, and every ordered compare has its strictness switched alone
+  (`name~`); a control's `sep` counts the cases whose predicted outputs it changes, `passed` those the emulator output
+  still matches (must be 0). The site control of ADR-0021 does not apply (no case ends at a boundary).
+- **Outputs:** `$D/manifest.sha256` (`77befdea…`, 12 lines: `check.txt` `86d920a6…`, `s1e.out` `c0c12a75…`,
+  `s1e.cases` `01e0f560…`, `s1e.mem`, `s1e-ghidra.err`, the seven table and arena images); `sha256sum -c manifest.sha256`
+  passes from `$D`. Rerun into a scratch directory: `cases` regenerates `s1e.cases` and the images byte for byte and
+  `s1e.mem` but for its absolute image paths; `check` on the kept `s1e.out` reproduces `check.txt` byte for byte. The
+  development runs of 2026-11-10 were in session scratch and are not kept (resume note in plan 0066); no count here rests
+  on them.
+- **Observed** (`check.txt`, one line per family, then its controls `name:sep/passed`):
+  ```
+  S1E <24 families> cases=240 match=240 bad=0 stopped=0   (each)
+  drew: trkind 49, shroll 145, mephpick 74, genspawn 202, wpick 125; 0 in the other 19
+  UNSEPARATED: trkind hi<=lo~; shroll v18<lo~; genspawn count>453 count>453~; none in the other 21
+  S1E life pairs: AiLifePct = UnitLifePct on 240 of 240 images (93 non-zero)
+  S1E traced reads accounted: AiShadowMasterCb jump and byte tables 122, AiShadowSkillFits jump and byte tables 8,
+      g_AiSearchKinds 480, g_BitMask32 4772, g_UnitHashOffsets 312
+  S1E traced unaccounted: 0
+  S1E total cases=5760 match=5760
+  S1E result=ok
+  ```
+  Every separated control has `passed` 0 (244 controls, 240 separated, 4 not; per family in `check.txt`).
+- **Results by family** (function, catalogue line at `b5999f5e`; counts from `check.txt`; each `[C]` for the function's
+  map on the declared image, run whole):
+  - [C] `nearally` `AiNearAllyCb` 0x005F06B0 (R8b, line 289): candidate ≠ searcher, type 1, `UnitAlignGet` 0,
+    `MonIsDeathMode` 0, `UnitDistSq` strictly below the best; 7 controls, all separated (`d<best~` 39); 103 taken; 5
+    cases whose `dx² + dy²` reaches 2³¹ match the 32-bit signed wrap. No draw. (fn:sub_005F06B0_AiNearAllyCb@0x005F06B0)
+  - [C] `samebase` `AiSameBaseNearCb` 0x005B0D00 (R18a, line 598): type 1, ≠ searcher, the searcher's `MonBaseId`, not in a
+    death mode, strictly nearer; 7 controls separated (`d<best~` 24); 37 taken. (fn:sub_005B0D00_AiSameBaseNearCb@0x005B0D00)
+  - [C] `wounded` `AiWoundedNearCb` 0x005F30F0 (R23b, line 687): type 0 or 1, ≠ itself, `MonIsDeathMode` 0 (0 for every
+    player: 16 players taken), `UnitDistSq ≤ blk+4`, stat 6 ≤ `UnitMaxHp ÷ 100 · blk+8` (truncating); the kept unit's
+    distance goes to `blk+4`, so ties replace (`d<=best~` separates 8). 8 controls separated. (fn:sub_005F30F0_AiWoundedNearCb@0x005F30F0)
+  - [C] `zakheal` `AiZakarumHealCb` 0x005F7240 (R49b, line 1220): the line's tests in its order; `+0x08` rewritten to
+    `0x7FFFFFFF` only when ≤ 0 (8), never set from a life; each unit at `UnitLifePct ≤ 60` counts in `+0x04` and is taken
+    when its life is below `+0x08` (49 taken, 7 counted and not taken, with a case-written `+0x08` ≤ 60); 15 controls
+    separated (`life<=60~` 1). (fn:sub_005F7240_AiZakarumHealCb@0x005F7240)
+  - [C] `fetrev` `AiFetishReviveCb` 0x005F99A0 (R65c, line 1397): the line's tests and filter cases; mode 12 strictly nearer
+    to `s.dead` (18), any other counted (42) and strictly nearer to `s.live`; 21 controls separated. (fn:sub_005F99A0_AiFetishReviveCb@0x005F99A0)
+  - [C] `regurg` `AiRegurgitatorCb` 0x005FA690 (R71b, line 1560): bit `0x200` clear, bit `0x02` set, in a death mode, not in
+    state set 33, alignment 0, `MonStats2FlagTest` of flag 12, `UnitDistSq ≤ best`; ties replace (17 taken at an equal
+    distance; `d<=best~` separates 17); 11 controls separated. (fn:sub_005FA690_AiRegurgitatorCb@0x005FA690)
+  - [C] `oblkn` `AiOblivionKnightCb` 0x005FAE40 (R74b, line 1643): the line's tests; `MonBaseId` in `[0, count)` and 310;
+    `UnitDistSq ≤ blk+8`; strictly nearer to `s.knight`, strictly nearer and `UnitLifePct < 40` to `s.weak` (25); 18
+    controls separated. (fn:sub_005FAE40_AiOblivionKnightCb@0x005FAE40)
+  - [C] `trkind` `AiTrapArrowKind` 0x005FB650 (R78, line 1736, the block): a region word ≥ 0 kept (115); below 0, set to 0
+    below level 40 (76) or to `RNG_RandLoHi(U's seed, 0, 3)` (49 drawn); 6 of 7 controls separated. (fn:sub_005FB650_AiTrapArrowKind@0x005FB650)
+  - [C] `randlohi` `RNG_RandLoHi` 0x004BC500 (R78b, line 1747): `lo` with no step for `hi ≤ lo` (signed; 81), else one step
+    and `lo + low mod (hi − lo)`, a power-of-two span by the mask (71); 3 controls separated (`hi<=lo~` 12).
+    (fn:RNG_RandLoHi@0x004BC500)
+  - [C] `shroll` `AiShadowSkillRoll` 0x005EAD50 (R105, line 2031, the block): 0 when the class or `AiShadowSkillFits`
+    refuses; 1 for id 0 with no draw (4); else `Range(100) > 100 − 160·q ÷ 100` refuses, `T < v14` refuses, `v18` reset to
+    `lo` outside `[lo, 32·hi]` (62), `Range(v18)` then `Range(100)`, the second below the first refuses (22), else the
+    `v18` add and 1 (64 with three draws); 12 of 13 controls separated. (fn:sub_005EAD50_AiShadowSkillRoll@0x005EAD50)
+  - [C] `shmcb` `AiShadowMasterCb` 0x005EB6D0 (R106b, line 2277): the hostile part's two distance blocks and counters,
+    `AiShadowPriorityTarget` to `blk+0x24` (5); an ally of base 410 to 416 counted in `blk+0x20` but 414, which goes on to
+    the hostile part (12), by the byte table; 21 controls separated. (fn:sub_005EB6D0_AiShadowMasterCb@0x005EB6D0)
+  - [C] `mephcb` 0x005F7700 and `mephpick` 0x005F77C0 (R50c, line 2697): the callback's tests and its four blocks
+    (`blk[5..6]` only for a player searcher, 4 and 43); the pick with `AiUnitSearch` kind 1 walking the near rooms' unit
+    lists run whole; 16 and 22 controls separated. (fn:sub_005F7700_AiMephistoPickCb@0x005F7700, fn:sub_005F77C0_AiMephistoPickTarget@0x005F77C0)
+  - [C] `priest` `AiPriestHealCb` 0x005E0430 (R85b, line 2960): the line's tests, lowest `UnitLifePct ≤ 75` below
+    `blk[1]` kept; the priest itself taken once (no test excludes it); 11 controls separated. (fn:sub_005E0430_AiPriestHealCb@0x005E0430)
+  - [C] `imp` `AiImpNearCb` 0x005E1720 (R113b, line 3164): the line's tests, the searcher's owner by `UnitGetOwner`, the
+    candidate's AI control by 0x00541860; returns the candidate (34) or 0; 11 controls separated. (fn:sub_005E1720_AiImpNearCb@0x005E1720)
+  - [C] `overseer` `AiOverseerMinionCb` 0x005E26D0 (R120b, line 3359): counted 63, `blk[3]` 15, `blk[4]` 33, each only while
+    0; 18 controls separated. (fn:sub_005E26D0_AiOverseerMinionCb@0x005E26D0)
+  - [C] `mincount` `AiMinionCountCb` 0x005E2B70 (R121a, line 3380): base 453 (62) or 461 (45), alignment 0, no distance
+    test; 6 controls separated. (fn:sub_005E2B70_AiMinionCountCb@0x005E2B70)
+  - [C] `genspawn` `AiGenSpawnPickClass` 0x005E6020 (R129, line 3593, the block, as corrected below): drawn entry taken 26,
+    first flagged entry 63, n = 0 with entry 0's class 2 and the 496 fallback 36; 6 of 8 controls separated. (fn:sub_005E6020_AiGenSpawnPickClass@0x005E6020)
+  - [C] `wpick` 0x005FC130 (R51, line 3916, as corrected below): sum > 0, `k` returned 125; sum ≤ 0, no draw, `k`
+    returned 27; fallback 1 88; 5 controls separated (`sum>0~` 82, `r<run~` 22). (fn:sub_005FC130_WeightedPickUnref@0x005FC130)
+  - [C] `alife` 0x005DD280 and `ulife` 0x00621F20 on the same 240 images: `(stat 6 >> 8) · 100 ÷ (UnitMaxHp >> 8)`,
+    truncating, 0 for a zero maximum; 3 controls each separated (`sar8` 79, `max=0` 188, `trunc` 9); equal on 240 of 240.
+    (fn:sub_005DD280_AiLifePct@0x005DD280, fn:sub_00621F20_UnitLifePct@0x00621F20)
+  - [C] `st319` `AiMonState3or19` 0x005DD2B0: 1 for `MonsterData+0x54` 3 (9) or 19 (9), else 0 (222). (fn:sub_005DD2B0_AiMonState3or19@0x005DD2B0)
+  - [C] `owner` `MonsterOwner` 0x0058F0D0: the AI control's owner words `+0x30` type and `+0x2C` guid looked up by
+    `GameFindUnit` in the game's hash slot (type 5 at `+0x1B20`); 0 for a null, non-monster or controlless unit; 7
+    controls separated. (fn:sub_0058F0D0_MonsterOwner@0x0058F0D0)
+  - [C] `entry` `MonAiEntryGet` 0x005B15D0 (S0, line 115): a state word ≠ 0 gives state row `0x0073D358 + 16·state`
+    (179); 0 gives the class's row `0x0073CA18 + 16·MonStats+0x1E` (25), row 0 when that word is outside `[0, 0x94)`
+    (36); 2 controls separated. (fn:sub_005B15D0_MonAiEntryGet@0x005B15D0)
+- **Corrections to the catalogue** (each from the kept run and read again in the code by objdump):
+  1. [C] **The weighted pick with sum ≤ 0 still scans.** 0x005FC130 sets `r = 0` with no step (`xor edx, edx; jmp`,
+     0x005FC153) and runs the same scan, so a positive prefix (weights summing ≤ 0 overall) returns its `k`: 27 of 240
+     cases; the fallback 1 only when no running sum exceeds 0. Line 3917's "if sum ≤ 0: the fallback" is wrong for this
+     function. [I] Diablo's inline pick has the same shape (`cmp ecx, ebx; jle 0x005E8E80` at 0x005E8E2A with `edx` 0 from
+     the summing loop's count, `ebx` 0), read only, not run. (0x005FC14F–0x005FC155, 0x005E8E2A)
+  2. [C] **`AiGenSpawnPickClass` with n = 0 draws nothing and still tests entry 0** (`xor edx, edx; jmp 0x005E60BC`,
+     0x005E6075): entry 0's class is taken when flagged (2 cases), else the scan is empty and the 496/−1 store ends it
+     (36). The first store `*out ← 453 or −1` (0x005E6054) is dead: each of the three exits stores `*out` again
+     (0x005E60F7, 0x005E616D, 0x005E617C), so no case separates its test (`count>453`, `count>453~` sep 0). Its count
+     test stays a reading with no observable.
+  3. [C] **`AiLifePct` is `UnitLifePct`.** 0x005DD280 is `push ecx; call 0x00621F20; ret`: the same map behind a register
+     argument, equal on 240 of 240 images. Lines 58 and 4689's "two different readers … keep them apart" describe one
+     map with two calling conventions (`ECX` against the stack).
+  4. [C] **Mephisto's pick draws only when the search found a candidate.** `cmp [ebp−0x1C], 0; je 0x005F7857` at
+     0x005F780B skips the first draw when `blk[3]` is 0, and the second draw is tested on `blk[5]` (0x005F7857): 166
+     cases with no first draw. Line 2697's "returns `blk[3]` on `D100() < aip(2)`" holds only after a find; with none, no
+     draw and `t` (when `blk[5]` is 0).
+  5. [C] **`AiWoundedNearCb`'s "not dying" is `MonIsDeathMode`**, which is 0 for every player (type 0), and its distance
+     compare is `≤`: the later of two equal candidates replaces the earlier (refines line 687's "keeping the nearest").
+  6. [C] **`AiShadowSkillRoll` draws 0, 1 or 3 times**, not "three per tried skill": none on a class or `Fits` refusal or
+     id 0, one when the first draw or `T < v14` refuses, three otherwise. It never reads its fourth stack argument
+     (`ret 0x14`; no `[ebp+0x14]` in 0x005EAD50–0x005EAEFC): melee reaches `AiShadowSkillFits` from `ctx+0x18`.
+- [I] **Unseparated controls**, each with no observable: `trkind` `hi<=lo~` (the call is always `RNG_RandLoHi(…, 0, 3)`;
+  the `randlohi` family separates it, 12); `shroll` `v18<lo~` (at `v18 = lo` the reset writes the value already there);
+  `genspawn` `count>453`, `count>453~` (the dead store, correction 2).
+- [I] **Not run:** `AiShadowSkillFits` past its declared paths (the case writer keeps Skills `+0xBC` at 0, so 0x005EAB20
+  returns 1 at once, and asserts off the `+0x04 & 4` path through 0x006256B0 and 0x00625D00), and the bonus-level
+  branch of `SKILLS_GetSkillLevel` (the call to 0x00644180 at 0x006442C3: not modelled, and no case needs it to match); the callers' block words (initial values, the frame offsets, what each
+  think reads after the search) and the caller sets; the AI-search kinds other than 1.
+- **Conclusion:** the 24 maps are `[C]` on their declared image, every callee run whole, with corrections 1 to 6. No
+  symbol raise: an ADR-0015/0021 emulation over a declared scratch image confirms the map, not the role a name states
+  (review-fixes rule 14). (run:2026-11-15-sweep2-s1e)

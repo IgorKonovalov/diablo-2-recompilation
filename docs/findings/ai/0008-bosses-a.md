@@ -218,6 +218,10 @@ case 4: st = 0; Ovr(0, 50, 0);
   (0x005F7BDE), a monster, so `blk[5]` stays 0 and the second draw never happens there. (0x005F7700–0x005F78A3,
   fn:sub_005DD0B0_AiUnitSearch@0x005DD0B0, fn:sub_005541B0_UnitIsDead@0x005541B0, fn:sub_00554200_UnitsHostile@0x00554200,
   fn:sub_005B0BD0_UnitDistSq@0x005B0BD0)
+  - *Corrected 2026-11-15 (`lane/n66e`, plan 0066 S1e):* [C] the first draw is taken only when `blk[3]` is non-zero
+    (`cmp [ebp−0x1C], 0; je 0x005F7857` at 0x005F780B): with no candidate found the pick draws nothing and, `blk[5]`
+    being 0, returns `t` (166 of 240 emulated cases). The pick and its callback, with `AiUnitSearch` kind 1, are [C] on
+    the declared image. The one-caller claim stays [I]. (run:2026-11-15-sweep2-s1e, families `mephcb`, `mephpick`)
 - [C] The entry call `UnitLifePct(U)` (0x005F78E6) and the pick's search call with its block. (run:2026-10-30-ai-cat-emu-6,
   `mephisto`, `mpick`)
 

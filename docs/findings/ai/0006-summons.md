@@ -402,6 +402,10 @@ think: if (!O || !M) return Idle(10);
   when outside `[lo, 32·clamp(aip8[h], 1, 256)]`, **`Range(v18)`** against **`Range(100)`**: the second below the
   first refuses; else `v18 += (320 − v1C)·q / (v1C + 100)` and 1. So three draws per tried skill.
   (fn:sub_005EAD50_AiShadowSkillRoll@0x005EAD50, 0x005EAD50–0x005EAEFA)
+  - *Corrected 2026-11-15 (`lane/n66e`, plan 0066 S1e):* [C] 0, 1 or 3 draws, not three per tried skill: none on a class
+    or `Fits` refusal or for id 0, one when the first draw or `T < v14` refuses, three otherwise. The fourth argument
+    (`melee`) is never read (`ret 0x14`, no `[ebp+0x14]` in 0x005EAD50–0x005EAEFC); melee reaches `AiShadowSkillFits`
+    from `ctx+0x18`. (run:2026-11-15-sweep2-s1e, family `shroll`)
 - *Corrected 2026-11-04 (`lane/s52b`, spec-writer, reading the anchored instructions for monsters/ai/catalogue):* a non-zero `AiPetGuard` returns (0x005EB0AB); either owner skill missing, or not found on the unit after the adds, gives `Idle(25)` (0x005EB0D1, 0x005EB17C). The other skill of a failed pick is the right one when the pick was the left, else the left, so a skill-0 pick's second try is the left skill (0x005EB230–0x005EB23A). The owner distance is `UnitEdgeDistance` (0x005EB065).
 
 #### 2.11 Rows 106 `ShadowMaster` and 143 `ShadowMasterNoInit` (think 0x005EB970; inits 0x005EB490, 0x005EB5C0)

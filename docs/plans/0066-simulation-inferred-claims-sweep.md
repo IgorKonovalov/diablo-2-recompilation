@@ -429,3 +429,48 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   4. Update that file's *Totals by class* (421 → d-owner), the S1e row of the README § 4, § 1, § 3 and the
      totals, against the merged `main`. Lane n66f edits the same totals rows.
   5. Write the log entry (Tier B review) and the list of statements ready for re-tagging.
+
+### 2026-11-15 — Phase 1, batch S1e (reverser-static, `lane/n66e`): done, 22 of 22 settled
+
+- **Done.** The kept run [run:2026-11-15-sweep2-s1e](../findings/ai/experiments.md#run2026-11-15-sweep2-s1e): `tools/ai_s1e_emu.py`
+  as committed at `9d00a53b` (`6d0287cd…`, unchanged), one `tools/ghidra.sh emuboundary` launch on
+  `workspace/ghidra-n66e` (`-Xmx3G`, `MemoryMax=4G` scope), 24 families, 5 760 cases, 5 760 matching, 0 stopped, 0
+  unaccounted traced reads; 244 controls, 240 failing every case they separate, 4 with no observable (`trkind`
+  `hi<=lo~`, `shroll` `v18<lo~`, `genspawn` `count>453` and `count>453~`). Outputs in `workspace/logs/ai/sweep2-s1e/`
+  (`check.txt` `86d920a6…`, `manifest.sha256` `77befdea…`, 12 lines, passes from there); `cases` regenerates the case
+  file byte for byte, `check` reproduces `check.txt`. The development runs of 2026-11-10 were not kept and nothing rests on
+  them. The six findings of the resume note held on the kept run, each read again by objdump.
+- **Rows (22): raised 6, raised in part 15, moved 1.** Raised: 15 (`MonAiEntryGet`), 172 (`AiRegurgitatorCb`), 194 (the
+  R78 block), 242 (`AiShadowMasterCb`), 332 (`AiImpNearCb`), 360 (`AiMinionCountCb`). In part, the remainder named in each
+  row: 3 (machinery's helpers), 31, 66, 72, 135, 154, 182, 314 (the think's frame, block words or later reads), 196 (the
+  caller set and `MonRegionsBuild`'s −1 store → c, S1f), 229 (`AiShadowSkillFits` past its declared paths and the
+  bonus-level branch 0x00644180), 288 (the one caller → c, S1f), 356 (row 128's push and state 141's name → c, S1f), 385
+  (the dead first store, no observable), 420 (the inline copies → c, S1f), 518 (which rows call which → c, S1f). Moved: 421
+  c-emu → d-owner, as the resume note gave: the threat scores reach `COLL_LineTest` 0x0064E260's room walk through
+  `InMeleeRange` and `AiLineClear`, R2 leaves no emulation route, and only Diablo and Baal call them. **Owner decision:**
+  none is needed now; 421 waits for owner play of Diablo or Baal, like the other d-owner rows.
+- **Corrections (six; the spec's text is Phase 3's).** (1) 0x005FC130 with sum ≤ 0 still scans with `r = 0` (27 of 240
+  return a `k`; line 3917). (2) `AiGenSpawnPickClass` with n = 0 tests entry 0 with no draw; its first store is dead (line
+  3593 block). (3) `AiLifePct` is `UnitLifePct` behind `ECX` (lines 58, 4689 and quirks Q515). (4) Mephisto's pick draws
+  only after a find (line 2697). (5) `AiWoundedNearCb`'s ties replace and "not dying" is 0 for players (line 687). (6)
+  `AiShadowSkillRoll` draws 0, 1 or 3 times and never reads `melee` (line 2031). Dated notes in ai/0002, 0003, 0006,
+  0008, 0011 and 0012 (rule 20); the spec copies routed by [backlog](../backlog/2026-11-15-reverser-spec-writer-plan-0066-s1e-corrections-for-phase-3.md).
+- **Symbols:** none raised. The run is an ADR-0015/0021 emulation over a declared image, which confirms maps, not names
+  (review-fixes rule 14).
+- **Totals** recomputed from the 29 inventory files against `main` `389cb19d` (merged at `0f30ab21`): a-logs 674, a-run
+  358, b 389, c 389, c-emu 489, d 327 (d-owner 68), sum 2 626; Phase 1 1 552, Phase 2 747 (inventory README § 1, § 3,
+  § 4; the catalogue file's *Totals by class*: c-emu 21, d-owner 62). S1f's row names the five remainders routed to it.
+- **Ready for Phase 3 (spec-writer), monsters/ai/catalogue at `b5999f5e` line numbers.** Whole, `[C]` with the run as
+  anchor: 115 (S0), 1560 (R71b), 1736 (the R78 block), 2277 (R106b), 3164 (R113b), 3380 (R121a). Split, the raised half
+  `[C]` and the rest `[I]` as each row says: 53 (Notation: `LifePct`, `UnitLifePct`, `O`, `St3or19`), 289 (R8b), 598
+  (R18a), 687 (R23b, with correction 5), 1220 (R49b), 1397 (R65c), 1643 (R74b), 1747 (R78b), 2031 (the R105 block, with
+  correction 6), 2697 (R50c, with correction 4), 2960 (R85b), 3359 (R120b), 3593 (the R129 block, with correction 2),
+  3916 (the pick, with correction 1), 4689 (with correction 3). 3921 stays `[I]` (d-owner).
+- **Left.** Nothing in S1e. The c remainders wait in S1f.
+- **Review:** Tier B (plan Phase 1), with the audit rule. Judgment calls to check: (1) the callbacks' rows raised in part
+  where the block words come from the think (the callback's map is the whole claim tested; the initial words and frame
+  offsets are the think's and stay `[I]`); (2) row 31's "search kind 1 walks the near rooms' unit lists" counted as met
+  through family `mephpick`, the same `AiUnitSearch` code run whole for another callback; (3) the four controls with no
+  observable taken as inherent rather than as gaps (each named in the run record); (4) correction 1's Diablo inline read
+  statically and left `[I]`, routed to S1f rather than run; (5) row 385's dead store kept `[I]` inside a raised-in-part row
+  rather than moved to d-none.
