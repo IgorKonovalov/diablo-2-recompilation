@@ -6,6 +6,9 @@ Usage:
   python3 -I tools/sweep2_s6ab.py logs [--list <lst>]     # one pass per log: tools/anim.py's Checker (the control)
                                                            # and the S6 observers; heavy: run it alone under
                                                            # `systemd-run --user --scope -p MemoryMax=4G`
+  python3 -I tools/sweep2_s6ab.py logs2 [--list <lst>]    # part 2 (S6b, timing 105): the control again and the
+                                                           # Obs2 observers; written to check-part2.txt
+  python3 -I tools/sweep2_s6ab.py ai78                     # timing row 78 over the plan 0052 ai logs
   python3 -I tools/sweep2_s6ab.py static                   # objdump / r2 / raw-byte facts the log checks lean on
 
 Each check prints `S6 <check> key=value ...` and detail lines; `bad=` counts an observation that contradicts the
@@ -1113,6 +1116,570 @@ def sec_logs(lst):
     print("S6 total bad=%d control_bad=%d" % (nbad, sum(chk.bad.values())))
 
 
+# ================================================================================================== part 2 (S6b)
+PMOVE_END = {0: (2, 3, 6), 1: (2, 15)}     # the modes that end on arrival (movement C2): player WL RN TW, monster WL RN
+VEL_RA = 0x005A63E3                        # MonModeVelocity's UNIT_AnimSetRate return (part 1's sr-midmode)
+ST_SLOWED, ST_COLD = 24, 11                # States rows: slowed (Slows Target), cold
+
+
+def centre(w):
+    return (w << 16) + 0x8000
+
+
+class Obs2:
+    """Part 2 observers: anim/movement rows 1-3, 7, 9-11, 15, 21, 23, 26, 27, 29-32, 34-36, 38-42, 44 and timing row
+    105 (the rv-req restarts of the modes P1b-1 did not tally). Each runs after tools/anim.py's Checker on the same
+    parsed lines, so an SR line carries the Checker's branch (`_br`) and factor (`_x`)."""
+
+    def __init__(self, d):
+        self.d = d
+
+    def run(self, path, lines, rev):
+        self.lines, self.rev, self.path = lines, rev, os.path.basename(path)
+        ev = collections.defaultdict(list)
+        for i, (tag, x) in enumerate(lines):
+            u = uid(tag, x)
+            if u is not None:
+                ev[u].append(i)
+        self.ev = ev
+        self.lid = []
+        lid = None
+        for tag, x in lines:
+            if tag == "PLR":
+                lid = x.get("lid")
+            self.lid.append(lid)
+        for fn in (self.o_run67, self.o_vbase, self.o_mon67, self.o_v0s1, self.o_steps, self.o_arrive,
+                   self.o_town_drain, self.o_turn, self.o_turn_ef, self.o_kb_gh, self.o_kb_plan, self.o_kb_len, self.o_slow,
+                   self.o_velcmd, self.o_rvreq):
+            fn()
+
+    # --- movement rows 1, 7, 10, 40: RunVelocityStat's +50 at a run start, dropped at the next mode
+    def o_run67(self):
+        r = rep("run-stat67")
+        last = {}
+        for tag, x in self.lines:
+            if tag != "SR" or x["u"]["t"] != 0:
+                continue
+            u, m = x["u"]["u"], x["u"]["m"]
+            s67, ss = x["st"].get("67"), tuple(sorted(x["ss"]))
+            form = [FS for FS in ss if FS in A.FORM_STATES] if x.get("c8", 0) & 8 else []
+            p = last.get(u)
+            last[u] = (m, s67, ss)
+            if p is None or s67 is None or p[1] is None:
+                continue
+            pm, p67, pss = p
+            run, prun = m in (3, 19), pm in (3, 19)
+            if run == prun:
+                continue
+            cs = self.d.cs[x["u"]["c"]]
+            want = (cs["RunVelocity"] * 100) // cs["WalkVelocity"] - 100 if cs["WalkVelocity"] else 0
+            dl = (s67 - p67) if run else (p67 - s67)
+            key = "%s-m%d-%s%s" % ("start" if run else "end", m if run else pm,
+                                   "form%s-" % form[0] if form else "", "same-states" if ss == pss else "states-changed")
+            if ss == pss:
+                r.add("%s-delta=%d" % (key, dl))
+                if dl != want:
+                    r.bad(("delta", self.path, x["n"], key, dl, want))
+            else:
+                r.add("%s-delta=%d" % (key, dl))
+        for c in range(len(self.d.cs)):
+            cs = self.d.cs[c]
+            if cs.get("WalkVelocity"):
+                r.c["charstats-c%d-ratio=%d" % (c, (cs["RunVelocity"] * 100) // cs["WalkVelocity"] - 100)] = 1
+
+    # --- movement rows 9, 41, 39: the animation base and the shared factor on the Checker's matched moving calls
+    def o_vbase(self):
+        r = rep("move-bases")
+        for tag, x in self.lines:
+            if tag != "SR" or x.get("_br") != "move" or x.get("pv") is None:
+                continue
+            t, c, m = x["u"]["t"], x["u"]["c"], x["u"]["m"]
+            if x.get("c8", 0) & 8:
+                r.add("transformed")
+                continue
+            xx = max(x.get("_x", 100), 25)
+            if t == 0:
+                r.add("p-m%d-vbase=%s" % (m, "0x65" if m == 3 else "0xD5"))
+                if xx == 100:
+                    r.add("p-m%d-x100-pv=%d-r=%d" % (m, x["pv"], x["r"]))
+            else:
+                w, rn = self.d.speeds(c)
+                r.add("m-m%d-%s" % (m, ("rn-ne-walk" if rn != w else "rn-eq-walk") if m == 15 else "walk-base"))
+            r.add("%s-x%s100" % ("p" if t == 0 else "m", "eq" if xx == 100 else "ne"))
+
+    # --- movement row 11: a monster's stat 67 at neutral against 75 and the mods (monsters/stats § G)
+    def o_mon67(self):
+        r = rep("mon-stat67")
+        mods = {}
+        for tag, x in self.lines:
+            if tag == "MON":
+                for m in x.get("m") or ():
+                    mods[(m["id"], m.get("cls"))] = tuple(sorted(m.get("mods") or ()))
+        first, vals = {}, collections.defaultdict(set)
+        for tag, x in self.lines:      # the unit's neutral SRs with no state, after the frame of its first SR (the
+            if tag != "SR" or x["u"]["t"] != 1:          # creation's SRs come before the mods are applied)
+                continue
+            u = x["u"]["u"]
+            if u not in first:
+                first[u] = x
+                continue
+            if x["fr"] > first[u]["fr"] and x["u"]["m"] == 1 and not x["ss"] and "67" in x["st"] and \
+                    x.get("ra") != VEL_RA:      # after the creation frame
+                vals[u].add(x["st"]["67"])
+        for u, vs in vals.items():
+            x = first[u]
+            c, i = x["u"]["c"], x["u"]["id"]
+            md = mods.get((i, c))
+            if md is None:
+                r.add("mods-unknown")
+                continue
+            v = self.d.mon[c]["Velocity"] or 0
+            sp = [k for k in md if k in (6, 16, 37, 38)]
+            ch = any(k in (16, 38) for k in md)      # champion, possessed: + 20 (fanatic: dev run 3 met 175 =
+            #                                          75 + clamp only, not 195; the + 20 here is not fanatic's)
+            fa = any(k in (6, 37) for k in md)
+            want = 75
+            if v > 0:
+                want += (20 if ch else 0) + (max(10, min(100, 2048 // v - 128)) if fa else 0)
+            want_b = want + (20 if 38 in md and v > 0 else 0)      # possessed adding a second 20
+            got = sorted(vs)
+            key = "mods=%s-v%s" % ("+".join(map(str, sp)) or "none", "0" if v == 0 else "+")
+            if len(vs) > 1:
+                r.add("%s-values-%d" % (key, len(vs)))
+            if want in vs:
+                r.add("%s-match" % key)
+            elif want_b in vs:
+                r.add("%s-match-possessed-40" % key)
+            else:
+                r.add("%s-mismatch" % key)
+                r.bad(("s67", self.path, x["n"], c, md, v, got, want))
+
+    # --- movement row 15: a Velocity-0 classic class in S1
+    def o_v0s1(self):
+        r = rep("v0-s1")
+        for tag, x in self.lines:
+            if tag != "SR" or x["u"]["t"] != 1 or not 8 <= x["u"]["m"] <= 11:
+                continue
+            c = x["u"]["c"]
+            if c >= 410 or (self.d.mon[c]["Velocity"] or 0) != 0:
+                continue
+            r.add("m%d-br=%s-pv=%s-r=%d-x=%s" % (x["u"]["m"], x.get("_br"), x.get("pv"), x["r"], x.get("_x")))
+
+    # --- movement rows 21, 42, 39: the snap lands on the centre; frames per point against ceil(65536 d / step)
+    def o_steps(self):
+        r = rep("snap")
+        rf = rep("frames-per-point")
+        prev = {}
+        seg = {}
+        for tag, q in self.lines:
+            if tag != "PS0":
+                continue
+            u = q["u"]
+            p = prev.get(u)
+            prev[u] = q
+            if p is None or q["fr"] != p["fr"] + 1 or q["m"] != p["m"] or q["pts"][:1] != p["pts"][:1] and \
+                    q["i"] <= p["i"]:
+                seg.pop(u, None)
+                p = None
+            if p is not None and q["i"] == p["i"] + 1 and q["pts"] == p["pts"]:
+                cx, cy = centre(p["pt"][0]), centre(p["pt"][1])
+                ok = (q["x"], q["y"]) == (cx, cy)
+                k = "%s-m%d-ty%d" % ("p" if q["t"] == 0 else "m", q["m"], q["ty"])
+                r.add("%s-reach-%s" % (k, "centre" if ok else "off"))
+                if not ok:
+                    r.bad(("off", self.path, q["n"], k))
+                s = seg.pop(u, None)
+                if s is not None and s["ok"]:
+                    nf = q["fr"] - s["fr"]
+                    want = ceil_div(s["rem"], s["m"])
+                    rf.add("%s-%s" % (k, "match" if nf == want else "mismatch"))
+                    if nf != want:
+                        rf.bad(("frames", self.path, q["n"], k, nf, want, s["rem"], s["m"]))
+                    ax = s["axis"]
+                    if ax and s["rem"] % 65536 == 0:
+                        rf.add("%s-axis-v%d-d%d-frames=%d" % (k, s["v"], s["rem"] >> 16, nf))
+            elif p is not None and q["i"] == p["i"]:
+                s = seg.get(u)
+                if s is not None and (q["v"] != s["v"] or q["d"] != s["d"] or (q["x"], q["y"]) == (p["x"], p["y"])):
+                    s["ok"] = False             # a speed or direction change, or a step that did not move
+            # a segment starts at a centre with a point ahead
+            if q["i"] < q["np"] and (q["x"] & 0xFFFF, q["y"] & 0xFFFF) == (0x8000, 0x8000) and u not in seg:
+                sx, sy = A.path_step(q["v"], q["d"])
+                m = max(abs(sx), abs(sy))
+                if m:
+                    rx, ry = abs(centre(q["pt"][0]) - q["x"]), abs(centre(q["pt"][1]) - q["y"])
+                    seg[u] = {"fr": q["fr"], "rem": max(rx, ry), "m": m, "v": q["v"], "d": q["d"], "ok": True,
+                              "axis": rx == 0 or ry == 0}
+
+    # --- movement rows 26, 38, 23: the mode end on arrival
+    def o_arrive(self):
+        r = rep("arrive-end")
+        L = self.lines
+        for i, (tag, p) in enumerate(L):
+            if tag != "PS0" or p["m"] not in PMOVE_END[p["t"]]:
+                continue
+            if p["i"] != p["np"] - 1:
+                continue
+            sx, sy = A.path_step(p["v"], p["d"])
+            m = max(abs(sx), abs(sy))
+            rx, ry = abs(centre(p["pt"][0]) - p["x"]), abs(centre(p["pt"][1]) - p["y"])
+            if not m or rx > m or ry > m:
+                continue
+            # this step reaches the last point: the unit's next line in this frame
+            nxt = None
+            for j, tg, y in Obs.unit_lines(self, p["u"], i, stop_tags=(), same_frame=True):
+                if tg in ("MSET", "PS0"):
+                    nxt = (tg, y)
+                    break
+            who = "p" if p["t"] == 0 else "m"
+            if nxt and nxt[0] == "MSET":
+                r.add("%s-m%d-last-step-then-mset-to=%d" % (who, p["m"], nxt[1]["to"]))
+                if nxt[1]["to"] != 1:
+                    r.note(("to", self.path, p["n"], nxt[1]["to"]))
+            else:
+                r.add("%s-m%d-last-step-then-%s" % (who, p["m"], nxt[0] if nxt else "nothing-this-frame"))
+        # every set out of a moving mode to neutral: was it preceded in its frame by a last-point step?
+        for i, (tag, x) in enumerate(L):
+            if tag != "MSET" or x["to"] != 1 or x["u"]["m"] not in PMOVE_END.get(x["u"]["t"], ()):
+                continue
+            u = x["u"]["u"]
+            lst = self.ev.get(u, [])
+            k = bisect.bisect_left(lst, i) - 1
+            ps = None
+            while k >= 0:
+                tg, y = L[lst[k]]
+                if y.get("fr") != x["fr"]:
+                    break
+                if tg == "PS0":
+                    ps = y
+                    break
+                k -= 1
+            who = "p" if x["u"]["t"] == 0 else "m"
+            win = any(L[j][0] == "PS0" and L[j][1]["fr"] == x["fr"] - 1 for j in lst[max(0, k - 12):k + 1])
+            r.add("%s-set-m%d-to-1-after-%s" % (who, x["u"]["m"], "step-same-frame" if ps else
+                                                ("no-step-windowed" if win else "no-step-unwindowed")))
+            if win and not ps:
+                r.note((self.path, x["n"], x["fr"]))
+
+    # --- movement rows 27, 29: the drain's town return (stamina above 0, so the field rule would subtract)
+    def o_town_drain(self):
+        r = rep("town-drain")
+        open_ = {}
+        for i, (tag, x) in enumerate(self.lines):
+            if tag == "DR0":
+                open_[x["n"]] = (x, self.lid[i])
+            elif tag == "DR1":
+                v = open_.pop(x["k"], None)
+                if not v:
+                    continue
+                x0, lv = v
+                s0, s1 = x0["st"].get("10", 0), x["st"].get("10", 0)
+                where = "town" if lv in TOWNS else "field"
+                r.add("%s-r=%d-%s%s" % (where, x["r"], "unchanged" if s0 == s1 else "drained",
+                                        "-s10>0" if s0 > 0 else "-s10=0"))
+                if where == "town" and (x["r"] != 1 or s0 != s1):
+                    r.bad(("town", self.path, x0["n"]))
+
+    # --- movement rows 30, 44: the run's turn to a walk
+    def o_turn(self):
+        r = rep("run-turn")
+        L = self.lines
+        for i, (tag, x) in enumerate(L):
+            if tag != "MSET" or x["u"]["t"] != 0 or x["u"]["m"] != 3 or x["to"] != 2:
+                continue
+            u = x["u"]["u"]
+            lst = self.ev.get(u, [])
+            k = bisect.bisect_left(lst, i)
+            # the frame's lines of the unit before the set
+            before = [L[j][0] for j in lst[:k] if L[j][1].get("fr") == x["fr"]]
+            dr = [j for j in range(max(0, i - 40), i) if L[j][0] == "DR1" and L[j][1].get("r") == 0]
+            ef = ps = None
+            for j in lst[k + 1:]:
+                tg, y = L[j]
+                if tg == "EF" and ef is None and y["m"] == 2:
+                    ef = (j, y)
+                elif tg == "PS0" and y["m"] == 2:
+                    ps = (j, y)
+                    break
+            if not ef or not ps:
+                r.add("no-ef-or-ps")
+                continue
+            off = ps[1]["fr"] - ef[1]["fr"]
+            drain0 = bool(dr) and any(L[j][1]["k"] in [L[jj][1]["n"] for jj in range(max(0, i - 40), i)
+                                                     if L[jj][0] == "DR0" and L[jj][1]["u"] == u] for j in dr)
+            r.add("off=%d-drain0-before=%s-ef-ph=%s-before=%s" % (off, drain0, ef[1].get("ph"),
+                                                                  ">".join(t for t in before[-3:])))
+            if off != 0:
+                r.note((self.path, x["n"], x["fr"], ef[1]["n"], ef[1].get("ph"), ps[1]["n"], ps[1]["fr"],
+                        [L[j][0] + "@" + str(L[j][1].get("fr")) for j in lst[max(0, k - 4):k + 4]]))
+
+    def o_turn_ef(self):
+        """The control's ef-first-run-turn cases: a player EF of mode 2 in a frame with the unit's DR0 before it; the
+        unit's set just before the EF (from, to), the drain's result in the frame, the offset of the next walk step."""
+        r = rep("run-turn-ef")
+        L = self.lines
+        drfr = {}
+        for i, (tag, x) in enumerate(L):
+            if tag == "DR0":
+                drfr[x["u"]] = (x["fr"], x["n"])
+            elif tag == "DR1":
+                for u, v in list(drfr.items()):
+                    if v[1] == x["k"]:
+                        drfr[u] = (v[0], v[1], x["r"])
+            elif tag == "EF" and x["m"] == 2 and drfr.get(x["u"], (None,))[0] == x["fr"]:
+                u = x["u"]
+                lst = self.ev.get(u, [])
+                k = bisect.bisect_left(lst, i) - 1
+                ms = None
+                while k >= 0:
+                    if L[lst[k]][0] == "MSET":
+                        ms = L[lst[k]][1]
+                        break
+                    k -= 1
+                ps = None
+                for j in lst[bisect.bisect_right(lst, i):]:
+                    if L[j][0] == "PS0":
+                        ps = L[j][1]
+                        break
+                    if L[j][0] == "EF":
+                        break
+                v = drfr[u]
+                r.add("set=%s-drain-r=%s-ef-ph=%s-off=%s" % (
+                    "%d>%d" % (ms["u"]["m"], ms["to"]) if ms and ms["fr"] == x["fr"] else "none-this-frame",
+                    v[2] if len(v) > 2 else None, x.get("ph"), ps["fr"] - x["fr"] if ps and ps["m"] == 2 else None))
+
+    # --- movement row 32: a monster's knockback bit against the next mode, by MonStats2 mKB
+    def o_kb_gh(self):
+        r = rep("gh-kb-bit")
+        L = self.lines
+        for i, (tag, x) in enumerate(L):
+            if tag != "GH" or x["d"]["t"] != 1:
+                continue
+            c = x["d"]["c"]
+            mon = self.d.mon[c]
+            m2 = self.d.mon2[mon["MonStatsEx"]] if isinstance(mon["MonStatsEx"], int) else None
+            kb = m2.get("mKB") if m2 else None
+            b78 = mon["BaseId"] == 78
+            if b78:
+                r.add("base78-res8=%d" % (1 if x["res"] & 8 else 0))
+            if not x["res"] & 8:
+                continue
+            ms = [y for j, tg, y in Obs.unit_lines(self, x["d"]["u"], i, stop_tags=(), same_frame=True) if tg == "MSET"]
+            r.add("res8-mKB=%s%s-next=%s" % (kb, "-base78" if b78 else "", ms[0]["to"] if ms else None))
+
+    # --- movement rows 2, 31: the knockback plan's one point against E1
+    def o_kb_plan(self):
+        r = rep("kb-plan")
+        L = self.lines
+        last_gh = {}
+        plr = None
+        for i, (tag, x) in enumerate(L):
+            if tag == "PLR":
+                plr = (x["x"], x["y"])
+            elif tag == "GH" and x["res"] & 8:
+                last_gh[x["d"]["u"]] = (x, plr)
+            elif tag == "MSET" and x["to"] in (13, 19) and (x["u"]["t"], x["to"]) in ((1, 13), (0, 19)):
+                u = x["u"]["u"]
+                ps = None
+                for j, tg, y in Obs.unit_lines(self, u, i, stop_tags=("MSET",), same_frame=False):
+                    if tg == "PS0":
+                        ps = y
+                        break
+                who = "p" if x["u"]["t"] == 0 else "m"
+                if ps is None:
+                    r.add("%s-no-step" % who)
+                    continue
+                n = (ps["b90"] >> 1) + 1
+                st = (ps["x"] >> 16, ps["y"] >> 16)
+                D = (ps["pt"][0] - st[0], ps["pt"][1] - st[1])
+                M = max(abs(D[0]), abs(D[1]))
+                r.add("%s-ty=%d-np=%d-b90=%d-%s" % (who, ps["ty"], ps["np"], ps["b90"], "full" if M == n else
+                                                    ("short" if M < n else "long")))
+                if M > n:
+                    r.bad(("long", self.path, ps["n"], n, D))
+                g = last_gh.get(u)
+                if g and g[0]["a"]["t"] == 0 and g[1] is not None and g[0]["fr"] == x["fr"]:
+                    ax, ay = g[1]
+                    dx, dy = st[0] - ax, st[1] - ay
+                    mm = max(abs(dx), abs(dy))
+                    if mm == 0:
+                        r.add("%s-attacker-on-unit" % who)
+                        continue
+                    want = (st[0] + int(n * dx / mm), st[1] + int(n * dy / mm))
+                    sep = (int(n * dx / mm), int(n * dy / mm)) not in ((n * (dx > 0) - n * (dx < 0), 0),
+                                                                        (0, n * (dy > 0) - n * (dy < 0)))
+                    res = "match" if tuple(ps["pt"]) == want else ("short" if M < n else "mismatch")
+                    r.add("%s-attacker-player-%s%s" % (who, res, "-offaxis" if sep else ""))
+                    if res == "mismatch":
+                        r.note((self.path, ps["n"], st, (ax, ay), n, tuple(ps["pt"]), want))
+
+    # --- movement row 34: a monster knockback's advances from +0x44 = 0 to its end
+    def o_kb_len(self):
+        r = rep("kb-advances")
+        L = self.lines
+        self.kbe = collections.defaultdict(list)
+        for k, (tg, y) in enumerate(L):
+            if tg == "KBE":
+                self.kbe[y["edx"]].append(k)
+                if y["ecx"] != y["edx"]:
+                    self.kbe[y["ecx"]].append(k)
+        for i, (tag, x) in enumerate(L):
+            if tag != "MSET" or x["u"]["t"] != 1 or x["to"] != 13:
+                continue
+            u = x["u"]["u"]
+            ads = []
+            end = None
+            for j in self.ev.get(u, [])[bisect.bisect_right(self.ev.get(u, []), i):]:
+                tg, y = L[j]
+                if tg == "MSET":
+                    end = ("mset", y["fr"])
+                    break
+                if tg == "AD0" and y["m"] == 13:
+                    ads.append(y)
+            kl = self.kbe.get(u, [])
+            kbe = [k for k in kl[bisect.bisect_right(kl, i):] if end is None or L[k][1]["fr"] <= end[1]][:1]
+            if not ads:
+                r.add("no-advance-lines")
+                continue
+            a0 = ads[0]
+            if a0["a44"] != 0:
+                r.add("first-a44-ne-0")
+                continue
+            want = max(1, ceil_div(a0["L"], a0["r"]) - 1)
+            if not kbe:
+                r.add("no-kbe-%s" % (end[0] if end else "log-end"))
+                continue
+            kfr = L[kbe[0]][1]["fr"]
+            n = sum(1 for y in ads if y["fr"] <= kfr)
+            # separating: max(1, ceil(L / r) - 1) against ceil(L / r), the count without the end-frame step
+            r.add("%s-%s" % ("match" if n == want else "mismatch",
+                             "sep" if ceil_div(a0["L"], a0["r"]) >= 2 else "nosep"))
+            if n != want:
+                r.bad(("adv", self.path, a0["n"], n, want, a0["L"], a0["r"]))
+
+    # --- movement rows 35, 36: a mid-window speed change; Slows Target's stats
+    def o_slow(self):
+        r = rep("slow")
+        L = self.lines
+        lastv = {}
+        pend = {}
+        for tag, x in L:
+            if tag == "PS0":
+                u = x["u"]
+                if u in pend:
+                    nv, src = pend.pop(u)
+                    r.add("midwindow-change-%s-%s" % (src, "taken-next-step" if x["v"] == nv else "not-taken"))
+                    if x["v"] != nv:
+                        r.bad(("v", self.path, x["n"], x["v"], nv))
+                lastv[u] = (x["v"], x["fr"], x["m"])
+            elif tag == "SR" and x.get("_br") == "move" and x.get("pv") is not None and sr_kind(x["ra"]) == "o":
+                u = x["u"]["u"]
+                lv = lastv.get(u)
+                if lv and x["fr"] - lv[1] <= 1 and lv[2] == x["u"]["m"]:
+                    if lv[0] != x["pv"]:
+                        src = "cold" if ST_COLD in x["ss"] else ("slowed" if ST_SLOWED in x["ss"] else "other")
+                        pend[u] = (x["pv"], src)
+                    else:
+                        pend.pop(u, None)
+            elif tag == "MSET":
+                pend.pop(x["u"]["u"], None)       # a mode set before the next step: a new window, not this one
+            if tag == "SR" and x["u"]["t"] == 1 and ST_COLD not in x["ss"] and \
+                    (x["st"].get("68", 100) < 100 or x["st"].get("69", 100) < 100):
+                # a monster's lowered attack or default rate with no cold state (the logger's "ss" lists states 11,
+                # 139, 140 only, so Slows Target's state 24 is not visible): 67, 68, 69 together
+                r.add("m-lowered-68-69-not-cold-s67=%s-s68=%s-s69=%s" % (x["st"].get("67"), x["st"].get("68"),
+                                                                          x["st"].get("69")))
+
+    # --- movement row 3: MonModeVelocity's stat 67 and rate re-run
+    def o_velcmd(self):
+        r = rep("vel-cmd")
+        for tag, x in self.lines:
+            if tag == "SR" and x["u"]["t"] == 1 and x.get("ra") == VEL_RA:
+                r.add("m%d-br=%s-s67=%s" % (x["u"]["m"], x.get("_br"), x["st"].get("67")))
+
+    # --- timing row 105: the first request after T and the next start, for the modes P1b-1 left out
+    def o_rvreq(self):
+        r = rep("rv-req-other")
+        L = self.lines
+        acts = []
+        cur = {}
+        for tag, x in L:
+            if tag == "SCH" and x["u"]["t"] == 0:
+                e1 = [q[1] for q in x["q"] if q[0] == 1]
+                a = {"T": x["T"], "m": x["u"]["m"], "e1": e1[0] if e1 else None, "u": x["u"]["u"], "req": None,
+                     "seq": x["seq"]}
+                acts.append(a)
+                cur[a["u"]] = a
+            elif tag == "PL0" and x["u"]["u"] in cur:
+                a = cur[x["u"]["u"]]
+                if a["req"] is None and x["fr"] >= a["T"]:
+                    a["req"] = (x["fr"], x["req"])
+        for a, b in zip(acts, acts[1:] + [None]):
+            if a["m"] not in (4, 8, 9, 13, 14, 15, 16) or a["e1"] is None:
+                continue
+            if not a["req"]:
+                r.add("m%d-no-request" % a["m"])
+                continue
+            rq = a["req"][0] - a["e1"]
+            nb = b["T"] - a["req"][0] if (b is not None and b["u"] == a["u"]) else None
+            r.add("m%d-req-minus-e1=%s-next-start-minus-req=%s" % (a["m"], max(-5, min(3, rq)),
+                                                                    nb if nb is None or abs(nb) <= 5 else ">5"))
+
+
+def sec_ai78():
+    """Timing row 78 (MonModeStartNeutral's re-queue at T + aidel): the plan 0052 ai logs have no mode-set line, so the
+    one neutral start a log dates is an AI command to mode 1 (MSM0 cmd[0] = 1, inside a decision); the unit's next
+    AID or AIN frame against the decision's frame + aidel (AID "ad"[0])."""
+    import glob
+    r = rep("ai78-neutral-cmd")
+    for p in sorted(glob.glob(os.path.join(ROOT, "workspace", "logs", "ai", "*.log"))):
+        aid, pend = {}, {}
+        with open(p, errors="replace") as f:
+            for raw in f:
+                tag, _, rest = raw.partition(" ")
+                if tag not in ("AID", "AIN", "MSM0"):
+                    continue
+                try:
+                    x = json.loads(rest)
+                except ValueError:
+                    continue
+                if tag == "AID":
+                    aid[x["n"]] = x
+                if tag in ("AID", "AIN") and x["u"] in pend:
+                    F, ad, m0 = pend.pop(x["u"])
+                    r.add("next-%s-delta-%s" % (tag, "eq-aidel" if x["fr"] - F == ad else "ne-aidel"))
+                    r.note((os.path.basename(p), F, x["fr"] - F, ad, m0))
+                if tag == "MSM0" and x["cmd"][0] == 1 and x["k"] in aid:
+                    a = aid[x["k"]]
+                    pend[a["u"]] = (x["fr"], a["ad"][0], a["m"])
+                    r.add("neutral-cmd-from-m%s" % a["m"])
+    return r.done()
+
+
+def sec_logs2(lst):
+    d = A.Data(DATA, EXE)
+    chk = A.Checker(d, review=True)
+    obs = Obs2(d)
+    paths = [ln.strip() for ln in open(lst) if ln.strip()]
+    revs = collections.Counter()
+    for p in paths:
+        path = p if os.path.isabs(p) else os.path.join(ROOT, p)
+        lines, rev = parse(path)
+        revs[rev] += 1
+        run_checker(chk, path, lines, rev)
+        obs.run(path, lines, rev)
+        del lines
+    print("S6b logs n=%d revs=%s" % (len(paths), dict(sorted(revs.items()))))
+    nbad = 0
+    for k in R:
+        nbad += R[k].done()
+    for k in sorted(chk.tally):
+        if k.startswith(("ps-p-m18-v", "ef-first-run-turn", "plr-kb", "win-", "sr-m-fastmod", "drain-")):
+            print("CTALLY %s %d" % (k, chk.tally[k]))
+    print("CHECK anim %s" % " ".join("%s=%d/%d" % (k, chk.n[k], chk.bad[k]) for k in sorted(chk.n)))
+    print("S6b total bad=%d control_bad=%d" % (nbad, sum(chk.bad.values())))
+
+
 # ================================================================================================== static
 def sec_static():
     import sweep2_s4cd as S4
@@ -1165,6 +1732,13 @@ def main():
         if "--list" in sys.argv:
             lst = sys.argv[sys.argv.index("--list") + 1]
         sec_logs(lst)
+    elif sys.argv[1] == "logs2":
+        lst = LST
+        if "--list" in sys.argv:
+            lst = sys.argv[sys.argv.index("--list") + 1]
+        sec_logs2(lst)
+    elif sys.argv[1] == "ai78":
+        sec_ai78()
     elif sys.argv[1] == "static":
         sec_static()
     else:

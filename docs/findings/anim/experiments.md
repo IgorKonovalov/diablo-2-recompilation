@@ -522,3 +522,79 @@ data, single player, the same saves (`saves-2026-10-30-anim-p3/`, unchanged), `/
   code 1; which test separates them (`MonEventDispatch`'s kind-0 path or `MON_MeleeHit`) is not read (→ c, S6c). The
   spec's "15 restarts" counts the logs of part 2 by another rule; 9 is this tally's (a same-mode set, then an advance
   of that unit). (run:2026-10-30-anim-p3b)
+
+### Addendum 2026-11-15: plan 0066 batch S6a part 2 and batch S6b, new tallies over the same 131 logs (`lane/n66k`)
+
+- **Question:** (plan 0066 Phase 1, S6a rows 78, 103, 105 and batch S6b) which inferred statements of anim/movement and
+  anim/README, and the three timing rows part 1 left, do the kept logs hold once a tally reads them?
+- **Setup:** no game, no Ghidra. `tools/sweep2_s6ab.py` (`0ab4596e…`) gains a section `logs2` (the same one pass per log
+  of `2026-10-30-anim-p3b-all4.lst`, `tools/anim.py`'s `Checker` unchanged as the control, then the part 2 observers,
+  which read the Checker's branch and factor on each SR line) and `ai78` (the plan 0052 ai logs under
+  `workspace/logs/ai`). Its section `logs` is unchanged: a rerun gives part 1's `check.txt` byte for byte
+  (`dev/check-part1-rerun.txt`). Kept runs under `systemd-run --user --scope -p MemoryMax=4G`:
+  `workspace/logs/n66k/check-part2.txt` (`8a0baffc…`, 130 lines, `S6b total bad=94 control_bad=0`) and `ai78.txt`
+  (`9c066151…`); `manifest-part2.sha256` (`9d65825c…`, 2 lines) passes from `workspace/logs/n66k`. Development outputs
+  under `dev/manifest-dev2.sha256` (6 lines, passes from `dev/`; `full2-dev1`–`3` are earlier observer revisions).
+- **Procedure:**
+  ```
+  D=workspace/logs/n66k
+  systemd-run --user --scope -p MemoryMax=4G python3 -I tools/sweep2_s6ab.py logs2 > $D/check-part2.txt
+  systemd-run --user --scope -p MemoryMax=4G python3 -I tools/sweep2_s6ab.py ai78 > $D/ai78.txt
+  ```
+- **Control:** the `CHECK anim …` line equals part 1's and `2026-10-30-anim-p3b-check.txt`'s (`rate=541068/0
+  pathspeed=216788/0 pathspeed-step=240149/0 drain=88103/0 kb-end=5027/0` and the rest).
+- **Observed** (`check-part2.txt`, `ai78.txt`):
+  - *The run's stat 67* (`run-stat67`): between two rate calls of a player with the same states, entering mode 3 raises
+    stat 67 by 50 (5 121 starts; the wolf 26 and the bear 28 with their form state) and leaving it lowers it by 50
+    (5 119, 26, 28); mode 19 likewise (2 and 2); no other delta. Every class's `RunVelocity · 100 ÷ WalkVelocity − 100`
+    is 50, so the class read (real or display) is not separated. `[C]` (run:2026-10-30-anim-p3b).
+  - *Bases and the shared factor* (`move-bases`, on the moving rate calls the control reproduces): monster RN calls
+    whose `+0x38` differs from `+0x36` 33 390; player run calls on `0x65` 5 395, walk on `0xD5` 938; 208 555 monster
+    and 5 889 player moving calls at a factor other than 100, each reproducing both the rate and the path speed with
+    one `X`. A player walk at `X` 100 has path speed 1 536 and rate 213 (440). `[C]` (run:2026-10-30-anim-p3b).
+  - *A monster's stat 67* (`mon-stat67`, neutral rate calls with no logged state after the creation frame, units the
+    `MON` lines name): no mods 75 (6 578 units, 338 more with `Velocity` 0); `champion` 95 (50), `possessed` 95 (7),
+    `fast` `75 + clamp(2048 ÷ Velocity − 128, 10, 100)` (161), `fanatic` 175 at `Velocity` 4 (2: the clamp only, no
+    + 20). 74 units show none of these values (58 without mods, 7 champion, 9 fast; `bad`), unexplained. `[C]` for the
+    start at 75; the mods' values `[I]` (the 74). (run:2026-10-30-anim-p3b)
+  - *`Velocity`-0 classic classes in S1–S4* (`v0-s1`): no rate call logged.
+  - *The snap* (`snap`): every step that reaches its point lands on the point's subtile centre (3 277 reaches: player
+    walk 198, run 1 269, sequence 10; monster path types 2, 5, 6, 7, 13, 15). `[C]` (run:2026-10-30-anim-p3b).
+  - *Frames per point* (`frames-per-point`): a segment started at a subtile centre with one speed and direction takes
+    `⌈rem ÷ max(|stepX|, |stepY|)⌉` frames to its point in 2 387 of 2 407 segments; the 20 others take longer
+    (14 monster, 6 player run segments; whether the collision walk cut them is not compared here). Player walk
+    3 subtiles on an axis: 8 frames (3); run: 6 (16). `[C]` for the 2 387 (run:2026-10-30-anim-p3b).
+  - *Arrival* (`arrive-end`): a step that reaches the path's last point is followed in its frame by the unit's mode
+    set: player walk to 1 (655) or 12 (2), run to 1 (3 805) or 12 (11), monster WL and RN to 1 (2 578, 249). Of the
+    windowed units' sets from a moving mode to 1, 7 973 follow such a step in the frame and 653 do not (other causes,
+    not read). `[C]` for the end on arrival (run:2026-10-30-anim-p3b).
+  - *The town drain* (`town-drain`): 4 685 drains in a town return 1 with stamina above 0 unchanged (the field rule
+    takes at least 1); 83 340 field drains return 1 and 78 return 0. `[C]` (run:2026-10-30-anim-p3b).
+  - *The run's turn to a walk* (`run-turn`, `run-turn-ef`): 75 sets 3 → 2 follow the unit's drain returning 0 in its
+    frame, queue the walk's `EF` in phase 3 and take the first walk step in that frame. The control's 6 offset-1 cases
+    have their `EF` in phase 11 after another set: 2 sets 3 → 2 with the frame's drain returning 1, each after a
+    request (`PA0`, `PL0`), and 4 same-mode sets 2 → 2 after the drain's 0: not the drain's turn inside the step. `[C]` (run:2026-10-30-anim-p3b).
+  - *The knockback bit* (`gh-kb-bit`): a hit with bit `0x8` on a monster whose MonStats2 `mKB` is 1 sets mode 13 (919)
+    or 0 (104, a kill) in its frame, 1 sets none; on `mKB` 0, 2 hits set nothing in their frame. No base class 78 hit is
+    logged. `[C]` for the `mKB` 1 start. (run:2026-10-30-anim-p3b)
+  - *The knockback plan* (`kb-plan`): every first knockback step (monsters 644, players 2) has path type 8, one point
+    and `+0x90` 5; the point lies `n = 3` subtiles away on the major axis (577) or nearer (67). Against the player
+    attacker's last pilot position, the point equals `start + (n·dx ÷ M, n·dy ÷ M)` (signed, toward zero) in 575 of
+    576 full-length plans, 378 of them off an axis; 1 differs (a stale pilot position cannot be ruled out). `[C]` for
+    the unblocked plan; the line test's shortening (67) not compared. (run:2026-10-30-anim-p3b)
+  - *Knockback length* (`kb-advances`): from `+0x44 = 0`, the advances up to `MonKnockbackEnd` number
+    `max(1, ⌈L ÷ r⌉ − 1)` in 717 of 717 knockbacks, all with `⌈L ÷ r⌉ ≥ 2` (so `⌈L ÷ r⌉` alone fails each); 190 end
+    in another mode set first. `[C]` (run:2026-10-30-anim-p3b).
+  - *Mid-window speed changes* (`slow`): 32 moving rate calls inside a window that change the path speed (cold 10, other
+    22) are taken by the unit's next step. `[C]` (run:2026-10-30-anim-p3b). Slows Target's state 24 is not in the logger's `ss` list (11, 139,
+    140), so its rate calls are not identified.
+  - *MonModeVelocity* (`vel-cmd`): 33 067 monster rate calls return to 0x005A63E3, each reproduced by the control with
+    the stat 67 it then carries (values 7 to 275); the command block's `+0x10` is not logged.
+  - *Other players' restarts* (`rv-req-other`): the first request after `T` and the next start, for get-hit (756),
+    block (1 442), S2 (536), S3 (11), S4 (21); no A2 or S1 action is logged.
+  - *Timing row 78* (`ai78`): the ai logs date a neutral start only at an AI command to mode 1 (18 decisions); none
+    of the 12 next decisions it pairs comes at the decision's frame + `aidel` (e.g. 10 and 12 frames for `aidel` 15):
+    the think's own delay decides there, so the re-queue is not separated.
+- **Conclusion:** the rows are settled in plan 0066's inventory (`anim-movement.md`, `anim-README.md`, `anim-timing.md`
+  rows 78, 103, 105). No contradiction of an anim statement. `fanatic`'s 175 is a lead against monsters/stats § G's
+  "champion part" wording (backlog `2026-11-15-reverser-spec-writer-plan-0066-s6a-corrections`).

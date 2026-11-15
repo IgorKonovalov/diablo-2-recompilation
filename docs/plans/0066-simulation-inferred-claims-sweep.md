@@ -1108,3 +1108,45 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   and K3 only for cast, get-hit and block; (6) the town of a player set is the last pilot `PLR` level, 262 sets between
   two levels left out; (7) row 6's player `kill` branch (33 hits with no mode-0 set) and row 92's two 75/95/100
   monsters are left in the remainder, not filed as contradictions.
+
+### 2026-11-15 — Phase 1, batch S6a part 2 and batch S6b (reverser-static, `lane/n66k`): done, S6a 76 of 76 and S6b 31 of 31 settled
+
+- **Done.** No game, no Ghidra. Merged `main` `c48797e7` first (clean, `d0e5df0c`). `tools/sweep2_s6ab.py`
+  (`0ab4596e…`) gains sections `logs2` (one pass per log of the 131 logs of `2026-10-30-anim-p3b-all4.lst`: the
+  `Checker` control unchanged, then 15 part 2 observers on the same lines) and `ai78` (the plan 0052 ai logs); its
+  `logs` section reproduces part 1's `check.txt` byte for byte. One kept run each under `systemd-run --user --scope -p
+  MemoryMax=4G` (logs2 46 s): `workspace/logs/n66k/check-part2.txt` (`8a0baffc…`, 130 lines, `S6b total bad=94
+  control_bad=0`: the 74 unexplained stat-67 units and 20 longer point segments, both in remainders) and `ai78.txt`
+  (`9c066151…`); `manifest-part2.sha256` (`9d65825c…`) passes from `workspace/logs/n66k`; development outputs under
+  `dev/manifest-dev2.sha256`. Record:
+  [anim/experiments § Addendum S6a part 2 and S6b](../findings/anim/experiments.md#addendum-2026-11-15-plan-0066-batch-s6a-part-2-and-batch-s6b-new-tallies-over-the-same-131-logs-lanen66k).
+  Every settled row's *Route* cell carries its note.
+- **S6a part 2 (3 rows):** 78 not raised (the ai logs date a neutral start only at an AI command, where the think's
+  delay decides: 12 of 12 next decisions off `aidel`), 103 not raised (no kept tally separates codes 3/4 or the bit-6
+  re-run → c, S6c), 105 raised in part (the request-to-start tallies for get-hit, block, S2–S4; the client's rule →
+  d-none). **S6a whole (76): raised 16, raised in part 45, contradicted in part 1, not raised 14, moved 0.**
+- **S6b (31): raised 11, raised in part 18, not raised 2, moved 0.** Raised: movement 1, 9, 27, 30, 34, 39, 41, 42, 44;
+  README 2, 9. In part (remainder's home in each cell): movement 2, 3, 7, 10, 11, 21, 23, 26, 29, 31, 32, 35, 38, 40;
+  README 1, 3, 10, 12. Not raised: movement 15 (no `Velocity`-0 classic S1–S4 call logged → c-emu, S6e) and 36 (the
+  logger's `ss` lacks Slows Target's state 24 → a-run, deferred). No contradiction.
+- **Backlog:** two items added to
+  [`2026-11-15-reverser-spec-writer-plan-0066-s6a-corrections`](../backlog/2026-11-15-reverser-spec-writer-plan-0066-s6a-corrections.md):
+  (5) a lead on monsters/stats § G's `fanatic` (stat 67 175, not 195, at `Velocity` 4, 2 units), (6) movement D2's open
+  question answered (the 6 offset-1 turns are later phase-11 sets).
+- **Symbols:** none raised. The run compares stat values and rate-call outputs, not a function's logged return
+  (review-fixes 14's scope); `RunVelocityStat`, `PathPlanKnockback` and `MonModeVelocity` stay as they are.
+- **Totals** from the 29 files' *Totals by class* after merging `c48797e7`: a-logs 645, a-run 340, b 432, c 390,
+  c-emu 491, d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626, unchanged (remainders in the *Route* cells).
+  README § 4's S6a and S6b rows record the outcome.
+- **Ready for Phase 3 (spec-writer), anim/movement and anim/README lines at `b5999f5e`, match by text.** Movement
+  whole: 38, 115, 246, 260, 293, 330, 341, 343, 374; split: 41, 73, 99, 118, 122, 208, 221, 237, 259, 269, 277, 298,
+  325, 338. README whole: 51, 113; split: 49, 79, 117, 134. Timing split: 794.
+- **Review:** Tier B, the existing request
+  [`2026-11-15-reverser-architect-review-plan-0066-s6a-part1`](../backlog/2026-11-15-reverser-architect-review-plan-0066-s6a-part1.md),
+  annotated to cover S6a whole and S6b. Judgment calls to check: (1) the knockback point's attacker position is the
+  last pilot `PLR` line before the hit (575 of 576 match; the 1 left as a possibly stale position, not a
+  contradiction); (2) the 74 monsters whose neutral stat 67 fits no mod model are left in row 11's remainder, not
+  filed against monsters/stats; (3) "after the creation frame" defines a monster's post-mod rate calls; (4) row 26's
+  converse (653 windowed sets to neutral with no step in the frame) is tallied, not explained, and the claim raised
+  is the end on arrival only; (5) row 30 raised on the 75 drain turns with the 6 others explained by line order and
+  phase, not by a code read of `PlrModeMoveFrame`; (6) rows 78 and 103 kept not raised instead of routed to a session.
