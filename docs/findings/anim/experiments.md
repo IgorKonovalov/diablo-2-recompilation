@@ -488,7 +488,7 @@ data, single player, the same saves (`saves-2026-10-30-anim-p3/`, unchanged), `/
     is its own. `[C]` (run:2026-10-30-anim-p3b).
   - *`GetHitRoll`* (`ghr-divisor`): divisor 32 at 38 calls, 4 of which a divisor of 16 would answer differently, all as
     32; 64 at 4 calls, none separating; 222 calls on monsters without a GH mode, 28 of which would return 0 without the
-    test, all 1. `[C]` for 32 and the mode test (run:2026-10-30-anim-p3b); 64 stays `[I]` (fn:sub_0057CB00_GetHitRoll@0x0057CB00).
+    test, all 1. `[C]` for 32 and the mode test, 64 not separated (run:2026-10-30-anim-p3b).
   - *Closed forms* (`k-forms`, 45 913 non-sequence schedules): `+0x48 = frames << 8` at every one; K1's kind-0 list and
     end equal the logged queue at every one (no schedule drops an event past `N`, none has no step); K2's band
     `X_n ≤ X < X_{n−1}` holds at all 39 550 plain-rate schedules (28 922 exactly at `X_n`); K3's stat band at all 3 161
