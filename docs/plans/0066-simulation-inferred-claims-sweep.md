@@ -440,3 +440,44 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   `skills-missiles.md` (rows listed in inventory README § 4, S2b), update the S2b status cell and the totals, and file
   the R4 contradiction for Phase 3.
 - **Review:** Tier B at the batch's end.
+
+### 2026-11-15 — Phase 1 batch S2b (reverser-static, `lane/n66f`): done, 38 of 38 settled
+
+- **Done.** Resumed from the note above, after merging `main` `f9b82bd4`. `tools/skills_s2b.py` (`114b0f7d…`, the
+  revision committed at the pause, unchanged) over the 45 kept skills logs, under a 4 GB scope: kept output
+  `workspace/logs/skills/2026-11-15-s2b-check.txt` (`180157a2…`, 218 lines, 0 breaks) and the `STA` state census
+  `2026-11-15-s2b-sta-states.txt` (`d11872d5…`), both under `2026-11-15-s2b-manifest.sha256` (passes from that
+  directory). Record: the addendum in [skills experiments, run:2026-10-27-skills](../findings/skills/experiments.md#addendum-2026-11-15-plan-0066-batch-s2b-the-missile-lines-of-the-three-kept-skills-runs-lanen66f),
+  with pointer lines under run:2026-10-25-skills and run:2026-10-30-skills-catalogue; a dated
+  [skills/0002 § 13](../findings/skills/0002-missiles.md#13-plan-0066-batch-s2b-the-missile-lines-re-checked-2026-11-15-lanen66f);
+  `sub_005AE1F0_MissileMoveCollide` raised to `C` in `re/symbols.csv` and skills/0002's Functions table (its frame return
+  compared with the nested end call in 888 frames, review-fixes rule 14). No Ghidra, no session.
+- **Rows** (each with a dated S2b note in its *Route* cell): **raised** 3 (catalogue 44; missiles 3, 30); **raised in
+  part** 29 (catalogue 1, 2, 48, 54, 59, 100, 103; missiles 1, 4, 20, 22, 24, 31, 33, 34, 50, 52, 53, 57, 59, 64, 84,
+  86, 88, 89, 90, 91, 92, 96), the `[C]` part and the remainder's class and batch in each row; **moved** 6: missiles 2
+  a-logs → c (S2c: `MC0` has no return address, so no line names `MissileCreateAt`), missiles 37, 97 → b (H2a: no
+  own-cell free logged), 54, 55 → b (H2a: `THR` carries the chance, not its terms), 56 → b (H2a: no state 86 line).
+  S2b holds 32 statements.
+- **Totals** recomputed from the 29 inventory files against `main` `f9b82bd4`: a-logs 668, a-run 358, b 394, c 390,
+  c-emu 490, d 326 (2 626); Phase 1 1 548, Phase 2 752 (inventory README § 1, § 3, § 4: S2b 32, S2c 69, H2a 37 at
+  ~3.7 claims per session; the missiles file's *Totals by class*).
+- **Contradicted in part (catalogue row 103, § R4), for Phase 3.** R4's "the other logged monster rows none" fails:
+  the `srvmissile` rows 339, 340, 342 and 345 (do 0) step the caster once in 92 of 92 do events, inside their
+  creation, and row 167 (do 91) nine times in 1 of 11 with no logged line inside. The run's own kept
+  `2026-10-30-skills-catalogue-check.txt` (`2bd2b4fb…`, lines 215, 234–237) already printed both, so this is a
+  transcription miss in the spec, not a new behaviour: Phase 3 rewords R4 (add the five rows; the one step of the
+  `srvmissile` rows is inside the creation, where § P's chain places the critical roll) and no owner decision is
+  needed. The sources of the unlogged steps (row 167's nine, do 129's one, do 109's two) stay `[I]` (b, H2a).
+- **Ready for re-tagging (Phase 3, spec-writer)**, spec lines at `b5999f5e`, match by text: whole, skills/catalogue
+  row 44 (line 585) and skills/missiles rows 3 (46), 30 (317); split, the `[C]` half each row's note names, catalogue
+  rows 1, 2, 48, 54, 59, 100, 103 and missiles rows 1, 4, 20, 22, 24, 31, 33, 34, 50, 52, 53, 57, 59, 64, 84, 86, 88,
+  89, 90, 91, 92, 96. Missiles F1's "separated only by the 19 two-draw builds" (row 64) becomes 143.
+- **Left.** Nothing in S2b. The moved rows wait in S2c and H2a as their notes say.
+- **Review:** Tier B (plan 0066 Phase 1). Judgment calls to check: (1) missiles row 3 raised whole: the do entry is
+  shown by `MF0`'s row number and the frame's return against D3's end branches, not by a logged call target; (2)
+  catalogue row 44 raised whole on one `(n, calc3)` = (21, 2) for the group sizes, the stepping shown over eight
+  vectors; (3) missiles row 30 raised with no new tool, from two kept outputs (C4's `MC.pierce` and S2a's stat-328
+  rise); (4) missiles rows 54, 55, 56 moved to b rather than kept a-logs, as no logged line holds the terms; (5) row
+  89's remainder routed d-none (the hit functions' draws are the catalogue's), rows 4, 50, 52, 53 to b (H2a); (6) the
+  58 `DMG` packets of rows without a damage function whose words change between the build and `COMBAT_ApplyDamage`
+  (monster owners, `2026-11-15-s2b-check.txt` DMG) are left unexplained and no row rests on them.

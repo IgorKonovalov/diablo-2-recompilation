@@ -1675,7 +1675,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005ADCD0,func,sub_005ADCD0_MissileApplyAndAc,,I,skills/missiles,docs/findings/skills/0002-missiles.md
 0x005ADD20,func,sub_005ADD20_MissHit22Chain,,I,skills/missiles,docs/findings/skills/0003-handlers.md
 0x005ADF10,func,MISSILE_HitUnit,,C,combat/formulas,docs/findings/skills/0002-missiles.md
-0x005AE1F0,func,sub_005AE1F0_MissileMoveCollide,,I,skills/missiles,docs/findings/skills/0002-missiles.md
+0x005AE1F0,func,sub_005AE1F0_MissileMoveCollide,,C,skills/missiles,docs/findings/skills/0002-missiles.md
 0x005AE400,func,sub_005AE400_MissDo02SubMissile,,I,skills/missiles,docs/findings/skills/0002-missiles.md
 0x005AE480,func,sub_005AE480_MissDo03CloudMark,,I,skills/missiles,docs/findings/skills/0002-missiles.md
 0x005AE520,func,sub_005AE520_MissDo05Loop,,I,skills/missiles,docs/findings/skills/0003-handlers.md

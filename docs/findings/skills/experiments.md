@@ -153,6 +153,8 @@ nested missile creation's or the delivery's, listed with the lines between in `g
 
 *2026-11-10:* plan 0066 batch S2a re-checked this run's logs with `tools/skills_s2a.py` (0 breaks); the counts are in [run:2026-10-27-skills § Addendum 2026-11-10](#addendum-2026-11-10-plan-0066-batch-s2a-new-checks-over-the-three-kept-skills-runs-lanen66b).
 
+*2026-11-15:* plan 0066 batch S2b checked the missile lines of this run's logs with `tools/skills_s2b.py` (0 breaks); the counts are in [run:2026-10-27-skills § Addendum 2026-11-15](#addendum-2026-11-15-plan-0066-batch-s2b-the-missile-lines-of-the-three-kept-skills-runs-lanen66f).
+
 ## run:2026-10-27-skills
 
 Plan 0045 Phase 2 **part 2** (ruled at the part 1 review, 2026-10-27): the models and sessions part 1 lacked. Part 1's
@@ -409,6 +411,72 @@ its `-2` and `-3` launches) and the 35 economy.gdb logs of run:2026-10-17-econom
   bit 6 is clear at the AI command's return as at the start's entry (part 1), against dispatch § E2, § M1 and the
   entry table; backlog `2026-11-10-reverser-reverser-skills-mode-14-start-bit-6.md` asks for the read.
 
+### Addendum 2026-11-15: plan 0066 batch S2b, the missile lines of the three kept skills runs (`lane/n66f`)
+
+Plan 0066 Phase 1 batch S2b (a-logs; [inventory § 4](../../plans/0066-inventory/README.md#4-batch-list)): new checks
+over the missile lines of the same 45 kept logs (this run, run:2026-10-25-skills and run:2026-10-30-skills-catalogue),
+unchanged. No session, no Ghidra.
+
+- **Procedure** (from `workspace/logs/skills`, under a 4 GB scope): `python3 -I <worktree>/tools/skills_s2b.py check
+  2026-10-25-skills-*.log 2026-10-27-skills-*.log 2026-10-30-skills-catalogue-cat-*.log > 2026-11-15-s2b-check.txt`
+  (exit 0, `SURVEY s2b breaks=0`). Tool `tools/skills_s2b.py` `114b0f7d…` (it reads the logs with `tools/skills.py`'s
+  parser, unchanged; its docstring names the sections FRAME, MH, DMG, MA, BDO, MC, SKL, OWN). Output
+  `2026-11-15-s2b-check.txt` `180157a2…` (218 lines). The state census `cat <the 45 logs> | grep '^STA ' | grep -o
+  '"state":[0-9]*' | sort | uniq -c | sort -k2 > 2026-11-15-s2b-sta-states.txt` (`d11872d5…`, 1 406 lines in 13
+  states). Both under `2026-11-15-s2b-manifest.sha256`; `sha256sum -c` from that directory passes. One development pass
+  (`workspace/logs/n66f/s2b-dev1.txt`, the same tool revision) is byte-identical to the kept output; earlier passes of
+  the paused lane (before the FRAME end-call split) were not kept.
+- **What the logs hold** (every count from `2026-11-15-s2b-check.txt`, section in the first column):
+
+| check | count | result |
+|---|---:|---|
+| FRAME: `MF0`'s row number (0x005ADC97, before the indexed do call) against Missiles `pSrvDoFunc` | 33 041 windowed frames (do 1 20 860, 3 4 605, 5 7 096, 23 480) | equal in all |
+| FRAME: a frame returning 1, the missile's next frame | 31 804 | at frame + 1 in all |
+| FRAME: do-1 end calls (no unit, `end` 1) nested in a frame | 888 | 823 at frames left 0 after the decrement (range spent), 65 before it (the step's end); the frame returns the end call's 2 in all 888 |
+| FRAME: do-1 missiles ending at range spent | 823 | frames run = frames left at creation in all; 257 others ended earlier |
+| FRAME: unit hits in do-1 frames | 230 | all at frames left < the activate mark (none at =) |
+| FRAME: do-1 frames returning 2 with no hit call | 0 | — |
+| MH: end calls of rows without a hit function | 80 600 | no build, the missile's seed unchanged, result 2 |
+| MH: end calls of rows with a hit function | 5 610 | result 2; the seed moved in 419; 386 builds inside, none naming a unit |
+| MH: unit calls of rows without a hit function, `THR`/`BD0`/`MA0` directly in order | 18 170 | `BD0 MA0` 16 858, `THR BD0 MA0` 594, `THR` (missed) 718; none returned before them |
+| MH: a pierce used by a `CollideKill` row | 130 | result 1 (kept) in all |
+| MH: hit-function unit calls with the to-hit passed, the table-only result (no hit function) against a logged build | 1 209 | the table predicts a build in all; a build logged in 161, none in 1 048 |
+| MH: `AlwaysExplode` rows | 709 calls | end calls 2 (662); unit calls 1 (31) or 2 (13) after a passed or absent roll, 2 after a missed roll (3) |
+| MH: the missile's stat 19 at the hit | 105 592 | player-owned 0 of 101 777; monster-owned 1 601 of 3 815 |
+| DMG: the missile's seed from `BD1` to `MA0` by `pSrvDmgFunc` | 17 613 | function 3: one step in 13 486 of 13 486; none: 0 in 4 118; function 1: 0 in 9 |
+| MA: the missile's seed across `MISSILE_ApplyDamage` by `KnockBack` | 17 613 | 0 → no step (17 608); 33 → one step (5) |
+| MA: the knockback roll against packet `+0x04` bit 3 at the `AD0` inside | 5 | bit set exactly when roll < 33 (rolls 4, 25 set; 33, 48, 86 clear) |
+| MA: `DRR` lines inside | 85 | all the defender's |
+| BDO: builds with two draws | 143 (run25 19, run27 43, catalogue 81) | pairs (phys, fire) 108, (phys, poison) 34, (fire, cold) 1; every one separates its pair's order, and each is in F1's order |
+| MC: `srvmissile` creations of rows with no `srvdofunc` | 579 | line player `0x21` 362, line monster with stat 19 `0x1021` 113 (block `+0x48` and the missile's stat 19 = the owner's stat 19), lob monster `0x420` 43, lob player `0x420` 61; flags, class, skill and level as B2/B3 in all |
+| MC: flag `0x1000` by owner type, every creation | 95 833 | player 0 of 92 094; monster 1 622 of 3 739 |
+| MC: callback lines (`MCB0`) | 618 | `+0x54` = `0x005C9290`, `EDX` = `+0x58`, `ECX` = the missile `MC1` returns, in all; after `SU0 SU1` (602) or `SU0 SU1 MON` (16) |
+| MC: Firestorm do events | 221 | one plain creation of class 458, then class 458 with callback `0x005C9290` and arguments 0, 1, in all |
+| MC: Meteor do events | 347 | flags 1, no target unit, target words 0 (no return address on `MC0`) |
+| MC: Multiple Shot do events | 36 | 21 creations; groups 9 (`0x10820`), 2 (`0x820`), 10 (`0x10820`); targets stepped by one `(sx, sy)`, `sx² + sy² ≤ 3`, eight vectors |
+| MC: class-408 creations, the innermost enclosing span | 36 | inside an `end` 1 call of class 407 with hit function 38: 24; after `cat-a5-1`'s `MH` cap: 12 |
+| MC: creations inside a missile's hit call | 7 975 | 961 name the hitting missile as source |
+| SKL: Amplify Damage do events | 61 | `STA` lines 0 (37) or 1 to 6 (24), each state 9 = `auratargetstate`, one per unit, one length, the caster as applier |
+| SKL: Holy Fire do events | 35 | one `REL` on the caster, no caster step before it; 17 with 2 to 15 units, one fire value across their packets |
+| SKL: Bash starts (st 32) | 86 | one `REL` on the caster in 73, none in 13 |
+| SKL: monster do events, caster steps (R4) | 7 899 | do 131 (row 295) 1 in 61 of 61; do 132 (row 299) 1 in 198 of 198, inside its `MC0`; do 129 (row 330) 1 in 62 of 347, no logged line; do 109 (rows 215, 328) 1 in 361, inside `MHT0`, and 4 in 634 (`MHT0` 1, `REL` 1, unlogged 2); **rows 339, 340, 342, 345 (do 0) 1 in 92 of 92, inside their `MC0`; row 167 (do 91) 9 in 1 of 11, no logged line**; the 14 other rows 0 |
+| OWN: a missile's creation (`MC1`) to its hit's to-hit roll (`THR`), the owner's logged seeds | 1 356 | the attacker is the owner in all; the seeds chain forward in all (1 079 with no owner line between, 277 with); with none between, the roll is the next draw in 1 023, 56 show unlogged owner draws |
+| state census (`2026-11-15-s2b-sta-states.txt`) | 1 406 `STA` lines | 13 states (9, 13, 14, 24, 33, 35, 52, 55, 56, 58, 62, 101, 141); no state 86 |
+
+- **Separations and limits.** Separating: the frame's end-call split (823 against 65), the 230 hits all below the
+  mark, the knockback rolls 33 and 48 against `≤`, the 143 two-draw builds (one per pair order), the 113 monster
+  creations with stat 19 against the 43 without, the Firestorm arguments' order, the 1 048 hit-function calls with no
+  build against an OR of the table result. Not separated: the own-cell and crossed-cell branches of D3 (no frame
+  returned 2 without a hit), the town frees of D2, the boundary frames left = the activate mark, the filters of E1
+  (no refusal logged), a hit function's result as a replacement or an AND, state 54 and stat 120 in E3, the to-hit
+  chance's terms (`THR` logs the chance), state 86, the order of the magic, lightning and burn pairs, stat 180, the
+  callback's place before the damage block, the 12 class-408 creations after the cap, and Meteor's creator.
+- **Contradicted in part (catalogue § R4).** "the other logged monster rows none" fails: the `srvmissile` rows 339,
+  340, 342, 345 step their caster once in 92 of 92 do events, inside the creation, and row 167 nine times in 1 of 11
+  with no logged line inside (fn:SKILLS_SrvDo@0x0056F7F0, run:2026-10-30-skills-catalogue). The run's own
+  `2026-10-30-skills-catalogue-check.txt` (`2bd2b4fb…`) prints these counts (lines 215 and 234–237); R4 left them out.
+  Routed to Phase 3 (the rewording); the steps' sources stay `[I]` (b, H2a).
+
 ## run:2026-10-25-skills
 
 - **Question:** (plan 0045 Phase 2) Does `tools/skills.py`, the model of [skills/0001](0001-dispatch.md),
@@ -547,6 +615,8 @@ and [skills/0003 § 15](0003-handlers.md#15-plan-0045-phase-2-the-run-run2026-10
 
 
 *2026-11-10:* plan 0066 batch S2a re-checked this run's logs with `tools/skills_s2a.py` (0 breaks); the counts are in [run:2026-10-27-skills § Addendum 2026-11-10](#addendum-2026-11-10-plan-0066-batch-s2a-new-checks-over-the-three-kept-skills-runs-lanen66b).
+
+*2026-11-15:* plan 0066 batch S2b checked the missile lines of this run's logs with `tools/skills_s2b.py` (0 breaks); the counts are in [run:2026-10-27-skills § Addendum 2026-11-15](#addendum-2026-11-15-plan-0066-batch-s2b-the-missile-lines-of-the-three-kept-skills-runs-lanen66f).
 
 ## run:2026-10-20-cat-emu-9a
 

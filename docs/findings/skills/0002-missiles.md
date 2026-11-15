@@ -183,7 +183,7 @@ code windows R1–R7; `p45b-rows.txt` `cbf9c64a…`, the stock-row values compar
 | `0x00552FD0`, `0x00621CE0` | `sub_00552FD0_UnitGetOwner`, `sub_00621CE0_UnitSetOwner` | owner by guid, `Unit+0xC8` bit 10 | I |
 | `0x005ADCC0` | `sub_005ADCC0_MissileFrameEvent` | the missile list's default event callback | I |
 | `0x005ADBB0` | `sub_005ADBB0_MissileDoFrame` | town tests, do function, free on 2 (13 335 logged frames, § 11) | C |
-| `0x005AE1F0` | `sub_005AE1F0_MissileMoveCollide` | do function 1: step, range, cells against the collide mask | I |
+| `0x005AE1F0` | `sub_005AE1F0_MissileMoveCollide` | do function 1: step, range, cells against the collide mask (its return against the end calls in 20 860 frames, § 13) | C |
 | `0x005AE400` | `sub_005AE400_MissDo02SubMissile` | do function 2: `SubMissile1` per new cell, then do 1 | I |
 | `0x005AE480` | `sub_005AE480_MissDo03CloudMark` | do function 3: the `0x40` cell mark while still, then do 1 | I |
 | `0x005AEF70` | `sub_005AEF70_MissDo14PeriodicDo` | do function 14: a skill do function every `Param1` frames | I |
@@ -726,6 +726,32 @@ again over 19 667 creations, 5 660 moving frames of 414 followed missiles (238 f
   1 203 calls that returned before the build (the last-hit, type and hostility filters, not separated from each
   other), the `end` call's own branch, `AlwaysExplode`, and an owner whose pierce stats changed after the creation.
   (run:2026-10-27-skills, run:2026-10-25-skills)
+
+### 13. Plan 0066 batch S2b: the missile lines re-checked (2026-11-15, `lane/n66f`)
+
+No session: `tools/skills_s2b.py` (`114b0f7d…`) over the 45 kept logs of run:2026-10-25-skills, run:2026-10-27-skills
+and run:2026-10-30-skills-catalogue, 0 breaks (`workspace/logs/skills/2026-11-15-s2b-check.txt` `180157a2…`; the record
+and the full table: [experiments § run:2026-10-27-skills, addendum 2026-11-15](experiments.md#addendum-2026-11-15-plan-0066-batch-s2b-the-missile-lines-of-the-three-kept-skills-runs-lanen66f)).
+What it adds to §§ 4 and 5:
+
+- [C] **Do function 1's return** (§ 4): in 20 860 windowed do-1 frames the frame returns its nested end call's 2 when
+  the range is spent (823, frames left 0 after the decrement) or the step fails (65, before it), and 1 otherwise, the
+  missile's next frame then at frame + 1; a missile ending at range spent ran exactly the frames left at its creation
+  (823 of 823); its 230 unit hits came at frames left below the activate mark. No do-1 frame returned 2 without a hit
+  call, so the own-cell and crossed-cell branches stay `[I]`. `sub_005AE1F0_MissileMoveCollide` raised to `C`.
+  (fn:sub_005AE1F0_MissileMoveCollide@0x005AE1F0, fn:sub_005ADBB0_MissileDoFrame@0x005ADBB0, run:2026-10-27-skills)
+- [C] **The `end` call's own branch** (§ 5): a row with no hit function builds nothing, keeps the missile's seed and
+  returns 2 in 80 600 of 80 600 end calls; hit-function rows return 2 in 5 610. Unit calls of rows with no hit function
+  run the to-hit roll, the build and `MissileApplyAndAc` in that order (18 170). (fn:MISSILE_HitUnit@0x005ADF10,
+  run:2026-10-27-skills)
+- [C] **The knockback roll** (§ 5): `KnockBack` 0 leaves the missile's seed across `MISSILE_ApplyDamage` (17 608);
+  `KnockBack` 33 steps it once and sets packet `+0x04` bit 3 exactly when the roll is below 33 (5 of 5, the rolls 33
+  and 48 clear). (fn:MISSILE_ApplyDamage@0x005AD730, run:2026-10-27-skills)
+- [C] **The pair order of `MISSILE_BuildDamage`** (§ 6), for (phys, fire), (phys, poison) and (fire, cold): 143
+  two-draw builds, each separating its pair, all in the code order. The other pairs never drew together. (fn:MISSILE_BuildDamage@0x005A89A0, run:2026-10-27-skills)
+- [I] Left open: the hit function's result as a replacement (1 048 of 1 209 table-predicted builds not made separate it
+  from an OR, not from an AND); the type and hostility filters (no refusal of a row with no hit function logged); state
+  54 and stat 120. (fn:MISSILE_HitUnit@0x005ADF10)
 
 ## Data touched
 
