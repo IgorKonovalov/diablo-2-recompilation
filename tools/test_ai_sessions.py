@@ -86,6 +86,71 @@ class Cases(unittest.TestCase):
         self.assertFalse(S.skipped(24, None))
 
 
+class Tour(unittest.TestCase):
+    """plan 0069 Phase 1a: the t-* and nm-* cases of tools/ai_tour.py's TOUR."""
+
+    def setUp(self):
+        import ai_tour
+        self.T = ai_tour
+
+    def test_every_tour_case_is_a_case_and_pinned(self):
+        for name, t in self.T.TOUR.items():
+            self.assertIn(name, S.CASES)
+            seed = self.T.seed_of(t["group"])
+            self.assertIsInstance(seed, int)
+            self.assertEqual(S.launch_seed(name, 5201, 3), seed)
+            self.assertEqual(S.launch_seed("fresh:" + name, 5201, 0), seed)
+            self.assertEqual(S.case_of(name)[0], t.get("diff", "normal"))
+
+    def test_nightmare_cases(self):
+        self.assertEqual(S.case_of("nm-a5-wsk")[0], "nightmare")
+        self.assertEqual(S.case_of("t-a5-wsk")[0], "normal")
+        self.assertTrue(all(n.startswith("nm-") == (S.case_of(n)[0] == "nightmare") for n in self.T.TOUR))
+
+    def test_descent_skip_sets(self):
+        steps = S.case_of("t-a2-oasis")[1]
+        d = [s for s in steps if s[0][0] == "farm" and "--descend" in s[0]]
+        self.assertEqual([s[0][s[0].index("--descend-to") + 1] for s in d], ["62", "63", "64"])
+        self.assertEqual([s[2] for s in d], [(62, 63, 64), (63, 64), (64,)])
+        self.assertEqual([s[0][s[0].index("--descend") + 1] for s in d], ["47", "49", "49"])
+
+    def test_hunt_holds_the_target(self):
+        last = S.case_of("t-a3-durance")[1][-1][0]
+        self.assertEqual(last[:3], ["hunt", "--mon-cls", "242"])
+        self.assertEqual(last[len(last) - 1 - last[::-1].index("--radius") + 1], "1")
+
+    def test_border_and_town_steps(self):
+        steps = S.case_of("t-a1-town")[1]
+        self.assertEqual(steps[0], ("wp", "1", "1"))
+        self.assertIn("--any-level", steps[1][0])
+        self.assertNotIn("--nova-key", S.case_of("t-a2-town")[1][1][0])     # no Nova in a town walk
+        self.assertIn("--walk", S.case_of("t-a2-town")[1][1][0])
+
+    def test_stay_case_gate(self):
+        self.assertEqual(S.STAY, {"t-a4-town"})
+        import tempfile
+        with tempfile.NamedTemporaryFile("w", suffix=".log", delete=False) as fh:
+            fh.write('PLR {"lid":103,"x":1,"y":2}\n')
+        try:
+            self.assertEqual(S.stayed(fh.name, 103), (True, ""))
+            self.assertFalse(S.stayed(fh.name, 1)[0])
+            self.assertFalse(S.left_start(fh.name, 103)[0])          # the ordinary gate would refuse it
+        finally:
+            os.unlink(fh.name)
+
+    def test_reruns_keep_the_kept_case_steps_seed_and_save(self):
+        for name, kept, seed in (("t-h1h-a1-stony", "a1-stony", 5803), ("t-h1h-a3-flayer-p8", "a3-flayer-p8", 5602),
+                                 ("t-h1h-s-barb-flayer", "s-barb-flayer", 5401),
+                                 ("t-h1h-s-necro-curse", "s-necro-curse", 5802)):
+            self.assertEqual(S.case_of(name)[1], S.case_of(kept)[1])
+            self.assertEqual(S.case_of(name)[3], S.case_of(kept)[3])
+            self.assertEqual(S.PINNED[name], seed)
+
+    def test_loot_step(self):
+        steps = S.case_of("t-a5-crystal")[1]
+        self.assertTrue(any("--loot" in s[0] for s in steps if isinstance(s[0], list)))
+
+
 class GdbScript(unittest.TestCase):
     def test_ai_skills_gdb(self):
         with open(os.path.join(HERE, "gdb", "ai-skills.gdb")) as fh:

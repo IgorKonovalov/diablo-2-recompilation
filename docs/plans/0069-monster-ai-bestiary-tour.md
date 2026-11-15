@@ -1,6 +1,6 @@
 # 0069 — Monster AI bestiary tour: the catalogue's harness rows of plan 0066
 
-> **Status:** approved (2026-11-10, by the owner, as recommended: question 1 (a), question 2 (a); not started: the owner starts it)
+> **Status:** approved (2026-11-10, by the owner, as recommended: question 1 (a), question 2 (a)); Phase 1a running (`lane/n69a`, started by the owner 2026-11-15; filed for its Tier B review)
 > **Created:** 2026-11-10
 > **Owner skill(s):** reverser (every phase; the re-tag is plan 0066 Phase 3's, spec-writer)
 > **Related ADRs:** 0003-runtime-experiments, 0004-boundary-oracles-in-reproduction, 0021-observed-boundaries-in-emulation, 0023-review-tiers-and-gate-first-fixes, 0028-case-and-process-in-experiment-records
@@ -448,3 +448,262 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 - **Approved as recommended:** question 1 (a), the tour as drafted (about 3.4M tokens; scope 241 after 0066 S1d);
   question 2 (a), the answer to plan 0066's question 3 (c) approves the tour by name, so the per-launch count does not
   gate it. Not started: work across the project is paused by the owner; Phase 1a starts when the owner resumes.
+
+### 2026-11-15 — Phase 1a: placement, seeds, cases, the boundary audit and the checker gaps (reverser, `lane/n69a`)
+
+Static; no slot, no game. `main` `f56ab708` merged (plan 0066 S1e and S2b in). Kept outputs in `workspace/logs/n69a/`
+(`manifest.sha256`, 12 lines, passes `sha256sum -c` from that directory): `entries.txt`, `place.txt`, `seeds.txt`,
+`pools.txt`, `rows.txt`, `routes.txt`, `cases.txt`, `audit.txt`, `conv.txt`, `regress.txt`,
+`regress-model-check.txt`, `test-output.txt`. Tools: `tools/ai_tour.py` (new), `tools/test_ai_tour.py` (new),
+`tools/ai_sessions.py` and `tools/test_ai_sessions.py` (the tour cases), `tools/ai_model_check.py` revision 3 and
+`tools/test_ai_model_check.py`.
+
+- **Scope, recounted** (`ai_tour.py entries`, the inventory at `f56ab708`): **241 statements, 241 rows, 90 entries**
+  (89 catalogue entries and the *Reimplementation notes* row 517): H1a 38, H1b 45, H1c 59, H1d 16, H1g 44, H1h 39, as
+  the scope note of 2026-11-10 said.
+- **Placement** (`ai_tour.py place`). Per entry: its records (`ai_survey.py`'s tables); the Levels `mon` (Normal) and
+  `nmon` levels of its records, with the waypoint (tab, row) of each; every DS1 preset unit of a record from the
+  LvlPrest-named DS1s, through MonPreset to MonStats, a superunique (kind 2) or a MonPlace row the preset spawn turns into a
+  class (4 `navi`, 5 `bloodraven`, 8 `maggotqueen1`, 10/11 `tentaclehead1`, from MonPlace § Interpretation notes), with
+  the levels of its LvlPrest record (LevelId, or the levels of the level types whose files cover the DS1s, `tools/ds1.py`'s
+  scoring); the MonStats `spawn`/`minion1`/`minion2` chains (maggot egg and larva, the tentacles); and a short table
+  `CODE` of creators the findings name, each with its anchor (`navi` at the Blood Moor centre preset, drlg/0004; `rogue2` the
+  Act I wanderer, monsters/spawn § K; the object trap monsters 326, 329, 330, 369, objects/0001; `evilhut`, monsters/0002
+  spawn 42; Nihlathak, `A5Q3_NihlathakBossSpawn`; the hireling states 5 and 6, S5a/S6a; states 15 and 16, S15a/S16a; the
+  kept cases that logged rows 1, 78, 79 and state 11).
+  - **79 entries are placed** and aimed at by at least one case. **11 are not:** rows 46, 47, 62, 75, 76, 81, 82, 83, 87,
+    113 and 121. For their classes `place.txt` shows no reach mark (`ai_survey.py`: no Levels `mon`/`nmon`/`umon` slot, no
+    superunique, no Skills `summon` or PetType class, no hireling), no DS1 unit (every `.ds1` file under the tiles, the ones
+    LvlPrest does not name listed with Def −1), no MonPlace row and no MonStats `spawn`/`minion` cell, and no finding names a
+    creator. A code creator is not ruled out (the class-id
+    immediates were not read), so the 30 rows go to **(b), batch H1p, out of this plan**, not to d-none (below).
+- **Seeds** (`ai_tour.py seeds --group G --first 6901 --count 3000`, `seeds.txt`). One map seed per seed group (an act in
+  Normal; Act V in Nightmare); the score is the number of the group's pool-aimed entries that some (case, level) of the group
+  holds on the seed (`tools/monpool.py`'s model: the game seed's first draw, expansion), then the number of (case, level,
+  entry) pairs held, then the lowest seed. Chosen: **Act I 7159** (7 of 7 entries, 13 pairs), **Act II 8723** (11 of 11, 17),
+  **Act III 7842** (11 of 11, 19), **Act IV 7055** (8 of 8, 9), **Act V 6908** (10 of 10, 19), **Nightmare Act V 6927** (3 of
+  3, 4). The four H1h reruns keep their kept cases' seeds: 5803 (`a1-stony`), 5602 (`a3-flayer-p8`), 5401
+  (`s-barb-flayer`), 5802 (`s-necro-curse`).
+- **The pools on those seeds** (`ai_tour.py pools`, `pools.txt`): every staged level's predicted pool, with the aimed
+  entries it holds; **0 entries missed** in any group. A case's level may not hold every entry it lists (a pool keeps
+  `NumMon` classes, so Cold Plains cannot hold five); the entry is then held by another case of its group, and the case table
+  keeps the aim so a reader sees where else to look. This is the kept prediction the Done-when names; the comparison with the
+  game's own pools is Phase 2's (the AID lines' classes of each case, or a `mon-pool.gdb` line beside the AI logger).
+- **The cases: 45** (`ai_tour.py cases`, `TOUR` in the tool; `ai_sessions.py` builds them, each pinned to its group's seed,
+  fresh by default). 41 tour cases (39 Normal, 2 Nightmare) and 4 H1h reruns. Route steps: a waypoint and Nova sweep, LvlWarp
+  descents with `--descend-to` (checked against Levels `Vis`/`Warp`, `routes.txt`, 0 bad), a border walk (`explore
+  --any-level`) where the next level is an open edge (Burial Grounds, Barracks, Valley of Snakes, the Outer Steppes,
+  Chaos Sanctuary, the Bloody Foothills, the Blood Moor), a `hunt` with the Nova radius at 1 for a boss, a town walk (no
+  Nova), a stay case (`t-a4-town`, whose stage gate passes only while the player stays in the start level, `STAY`), and a
+  loot walk (`explore --loot`) for the object traps. Tests: `tools/test_ai_sessions.py` (21, 8 new), `tools/test_ai_tour.py`
+  (9).
+
+| Case | Diff | Seed | Route | Pool aims (level: entries) | All aims |
+|---|---|---:|---|---|---|
+| `t-a1-town` | N | 7159 | wp 1,1; border walk (40 hops) | – | R32, S5, S6, R58 |
+| `t-a1-cold` | N | 7159 | wp 1,2, sweep 180 s; border walk (40 hops); hunt 267 | 3: R7, R36, R10 | R7, R36, R10, R59, R60, NOTES |
+| `t-a1-stony` | N | 7159 | wp 1,3, sweep 200 s | 4: R43 | R43, R60 |
+| `t-a1-darkwood` | N | 7159 | wp 1,4, sweep 200 s | 5: R14, R36, R10 | R14, R36, R10, R60 |
+| `t-a1-marsh` | N | 7159 | wp 1,5, sweep 200 s | 6: R7, R43 | R7, R43, NOTES |
+| `t-a1-barracks` | N | 7159 | wp 1,6, sweep 150 s; border walk (40 hops); hunt 402 | 27: R14, R10 | R14, R10, R98, R7 |
+| `t-a1-catacombs` | N | 7159 | wp 1,9, sweep 200 s | 35: R4, R26 | R4, R26 |
+| `t-h1h-a1-stony` | N | 5803 | rerun of `a1-stony` | – | R1 |
+| `t-h1h-a3-flayer-p8` | N | 5602 | rerun of `a3-flayer-p8` | – | R78 |
+| `t-h1h-s-barb-flayer` | N | 5401 | rerun of `s-barb-flayer` | – | R79 |
+| `t-h1h-s-necro-curse` | N | 5802 | rerun of `s-necro-curse` | – | S11 |
+| `t-a2-town` | N | 8723 | wp 2,1, walk | – | R32, R41, R42, S5, S6 |
+| `t-a2-dryhills` | N | 8723 | wp 2,3, sweep 200 s | 42: R17, R18, R23, R95 | R17, R18, R23, R95 |
+| `t-a2-oasis` | N | 8723 | wp 2,5, sweep 150 s; warp 47 to 62; warp 49 to 63; warp 49 to 64; hunt 284 | 43: R15, R23, R43 | R15, R23, R43, R38, R40, R66 |
+| `t-a2-lostcity` | N | 8723 | wp 2,6, sweep 150 s; border walk (40 hops) | 44: R8, R17, R18, R95; 45: R16 | R8, R17, R18, R95, R16 |
+| `t-a2-canyon` | N | 8723 | wp 2,9, sweep 150 s; warp 38 to 66 | 46: R7, R15, R18, R95 | R7, R15, R18, R95, R45, R94 |
+| `t-a2-palace` | N | 8723 | wp 2,7, sweep 200 s | 52: R8, R11, R39 | R8, R11, R39 |
+| `t-a2-arcane` | N | 8723 | wp 2,8, sweep 150 s; hunt 250 | – | R93, R53 |
+| `t-a2-halls` | N | 8723 | wp 2,4, sweep 120 s; loot (60 hops) | 57: R95 | R95, R77, R92 |
+| `t-a3-town` | N | 7842 | wp 3,1, walk | – | R32, R41, S5, S6 |
+| `t-a3-spider` | N | 7842 | wp 3,2, sweep 200 s | 76: R24, R27, R11 | R24, R27, R11, R56, R57 |
+| `t-a3-marsh` | N | 7842 | wp 3,3, sweep 200 s | 77: R25, R27, R52, R65 | R25, R27, R52, R65, R56, R57 |
+| `t-a3-flayer` | N | 7842 | wp 3,4, sweep 200 s | 78: R23, R52, R65 | R23, R52, R65, R56, R57 |
+| `t-a3-lower` | N | 7842 | wp 3,5, sweep 150 s; loot (60 hops) | 79: R11, R17, R23, R48 | R11, R17, R23, R48, R77, R80, R92 |
+| `t-a3-bazaar` | N | 7842 | wp 3,6, sweep 200 s | 80: R27, R48, R49 | R27, R48, R49 |
+| `t-a3-upper` | N | 7842 | wp 3,7, sweep 200 s | 81: R23, R27, R48, R49 | R23, R27, R48, R49 |
+| `t-a3-travincal` | N | 7842 | wp 3,8, sweep 150 s; hunt 345 | 83: R49 | R49, R85 |
+| `t-a3-durance` | N | 7842 | wp 3,9, sweep 100 s; warp 67,68 to 102; hunt 242 | 101: R39 | R39, R50, R85 |
+| `t-a4-town` | N | 7055 | stay in town, walk | – | R32, R54 |
+| `t-a4-steppes` | N | 7055 | border walk (60 hops); hunt 256 | 104: R72 | R72, R55 |
+| `t-a4-cotd` | N | 7055 | wp 4,2, sweep 240 s | 106: R4, R68, R70, R71, R73 | R4, R68, R70, R71, R73 |
+| `t-a4-river` | N | 7055 | wp 4,3, sweep 200 s; hunt 409 | 107: R39, R68, R70, R71, R73 | R39, R68, R70, R71, R73, R33, R98, R100 |
+| `t-a4-chaos` | N | 7055 | wp 4,3, sweep 30 s; border walk (60 hops) | 108: R74, R70 | R74, R70 |
+| `t-a5-town` | N | 6908 | wp 5,1, walk | – | R32, S5, S6 |
+| `t-a5-foothills` | N | 6908 | wp 5,1; border walk (80 hops) | 110: R116, R120, R122 | R116, R120, R122, R123, R126, R129, S15, S16 |
+| `t-a5-highlands` | N | 6908 | wp 5,2, sweep 200 s | 111: R115, R122 | R115, R122, S16, R129, R123, R126 |
+| `t-a5-plateau` | N | 6908 | wp 5,3, sweep 200 s | 112: R116, R120 | R116, R120, S15, R123, R126 |
+| `t-a5-crystal` | N | 6908 | wp 5,4, sweep 150 s; loot (60 hops) | 113: R124, R118 | R124, R118, R80 |
+| `t-a5-glacial` | N | 6908 | wp 5,5, sweep 200 s | 115: R114, R124 | R114, R124 |
+| `t-a5-tundra` | N | 6908 | wp 5,7, sweep 200 s | 117: R115, R122 | R115, R122, S16, R123, R126 |
+| `t-a5-halls` | N | 6908 | wp 5,6, sweep 150 s; warp 77 to 124; hunt 526 | 123: R137, R114 | R137, R114, R128 |
+| `t-a5-wsk1` | N | 6908 | wp 5,9, sweep 100 s; warp 81 to 128 | 128: R119, R137 | R119, R137, R136, S15 |
+| `t-a5-wsk` | N | 6908 | wp 5,9, sweep 150 s; warp 82 to 130 | 129: R116, R117; 130: R137 | R116, R117, R137, S15, R136 |
+| `nm-a5-crystal` | NM | 6927 | wp 5,4, sweep 200 s | 113: R142 | R142 |
+| `nm-a5-wsk` | NM | 6927 | wp 5,9, sweep 150 s; warp 82 to 130 | 129: R142, R25; 130: R74 | R142, R25, R74 |
+- **Every row has a case or a move** (`ai_tour.py rows`, `rows.txt`): **211 statements cased, 30 moved, 0 unplaced.**
+- **The boundary audit** (`ai_tour.py audit`, `audit.txt`). For each entry's think, init and alt (the words of
+  `g_MonAiTable` and the state rows in the pinned image), every call instruction (objdump, from the function's start to the
+  next known function start in `re/symbols.csv` or the AI tables; a helper inside the logger's windows is followed and its
+  calls listed under it) is classed: **compared** (a boundary of `tools/gdb/ai.py` `BND`, called from inside `THINK_LO`, with
+  its return site in `ai-retsites.txt`: rev 6 logs it with its result), **rev 7** (a word or window the plan's rev 7 list
+  names, or a boundary the windows miss), **run** (not a boundary, executed by the model: `ai_resume.EXEC` and the window
+  helpers) or **fork** (not a boundary and not executed: the model forks on it). Totals over the 89 entries: **980 compared,
+  9 rev 7, 215 run, 166 fork**. One entry has no compared call: **R1** (its think 0x005B0CD0 is outside the windows), which
+  is H1h's rev 7 window. No other entry needs to go back to (b) or d-none for want of a compared call.
+
+| Entry | Think | Model | Compared | Rev 7 | Run | Fork | Rev 7 calls; fork callees (first six) |
+|---|---|---|---:|---:|---:|---:|---|
+| R1 | `0x005B0CD0` | yes | 0 | 2 | 0 | 0 | rev 7: UnitGetRoom, MonAiIdle |
+| R4 | `0x005EFF50` | yes | 12 | 0 | 3 | 0 | – |
+| R7 | `0x005EFB80` | no | 7 | 0 | 0 | 0 | – |
+| R8 | `0x005F0700` | no | 14 | 0 | 1 | 0 | – |
+| R10 | `0x005F0B00` | no | 9 | 1 | 0 | 0 | rev 7: MonPlayerBonus |
+| R11 | `0x005F0CD0` | no | 22 | 0 | 6 | 2 | fork: UnitSetStat |
+| R14 | `0x005F1140` | no | 11 | 0 | 0 | 0 | – |
+| R15 | `0x005F1800` | yes | 13 | 0 | 3 | 8 | fork: MonAiDelayEarlier, AiCtlParamGet |
+| R16 | `0x005F1B60` | no | 9 | 0 | 2 | 0 | – |
+| R142 | `0x005F1DE0` | no | 10 | 0 | 2 | 0 | – |
+| R17 | `0x005F20A0` | no | 8 | 0 | 0 | 0 | – |
+| R18 | `0x005F22B0` | no | 9 | 0 | 0 | 0 | – |
+| R23 | `0x005F3170` | yes | 33 | 0 | 10 | 7 | fork: MonAiMoveToUnitDist, UNIT_GetSizeX, FreeNearFallback |
+| R24 | `0x005F3730` | no | 10 | 0 | 0 | 0 | – |
+| R25 | `0x005F39B0` | no | 23 | 0 | 17 | 16 | fork: 00681ef0, RoomUnitSearchInit, 0065ac70, AiCtlSetVar, 0065aa00, MonAiMoveToPointNoStop … |
+| R26 | `0x005F4510` | yes | 17 | 0 | 4 | 0 | – |
+| R27 | `0x005F4850` | no | 11 | 0 | 3 | 0 | – |
+| R33 | `0x005F56D0` | no | 2 | 0 | 4 | 0 | – |
+| R36 | `0x005F5D50` | no | 13 | 0 | 2 | 0 | – |
+| R38 | `0x005F6220` | no | 4 | 0 | 0 | 0 | – |
+| R39 | `0x005F6340` | no | 6 | 0 | 0 | 0 | – |
+| R40 | `0x005F6530` | no | 5 | 0 | 0 | 0 | – |
+| R43 | `0x005F6650` | yes | 6 | 0 | 2 | 0 | – |
+| R45 | `0x005F6A10` | no | 6 | 0 | 2 | 0 | – |
+| R46 | `0x005F6B70` | no | 8 | 0 | 1 | 0 | – |
+| R47 | `0x005F6CA0` | no | 5 | 0 | 0 | 0 | – |
+| R48 | `0x005F6E60` | no | 22 | 1 | 3 | 2 | rev 7: MonsterOwnerRef; fork: DRLG_ActFromLevelId, QUESTRECORD_GetState |
+| R49 | `0x005F72D0` | no | 12 | 0 | 7 | 0 | – |
+| R52 | `0x005F8260` | yes | 24 | 0 | 8 | 0 | – |
+| R56 | `0x005F8F80` | no | 12 | 0 | 4 | 0 | – |
+| R57 | `0x005F9270` | no | 8 | 0 | 1 | 0 | – |
+| R65 | `0x005F9A80` | yes | 18 | 0 | 0 | 0 | – |
+| R66 | `0x005F9CF0` | no | 8 | 0 | 2 | 0 | – |
+| R68 | `0x005FA010` | yes | 10 | 0 | 0 | 0 | – |
+| R70 | `0x005FA380` | yes | 14 | 0 | 2 | 0 | – |
+| R71 | `0x005FA710` | no | 22 | 0 | 5 | 0 | – |
+| R72 | `0x005FAA90` | no | 4 | 0 | 0 | 0 | – |
+| R73 | `0x005FAB80` | no | 10 | 0 | 1 | 0 | – |
+| R74 | `0x005FAF00` | no | 14 | 0 | 2 | 0 | – |
+| R75 | `0x005FB2A0` | no | 8 | 0 | 0 | 0 | – |
+| R76 | `0x005FB410` | no | 11 | 0 | 0 | 0 | – |
+| R77 | `0x005FB5B0` | no | 3 | 0 | 0 | 0 | – |
+| R78 | `0x005FB6C0` | yes | 4 | 1 | 0 | 2 | rev 7: AiTrapArrowKind; fork: UnitGetPos |
+| R79 | `0x005FB7E0` | yes | 4 | 1 | 0 | 2 | rev 7: AiTrapArrowKind; fork: UnitGetPos |
+| R80 | `0x005FB900` | no | 3 | 0 | 0 | 0 | – |
+| R87 | `0x005FBA60` | no | 3 | 0 | 0 | 0 | – |
+| R92 | `0x005FB9B0` | no | 3 | 0 | 0 | 0 | – |
+| S5 | `0x005E7AC0` | no | 9 | 0 | 2 | 0 | – |
+| S6 | `0x005E7C10` | no | 9 | 0 | 1 | 0 | – |
+| R50 | `0x005F78B0` | no | 24 | 0 | 2 | 0 | – |
+| R53 | `0x005F85C0` | no | 12 | 0 | 2 | 0 | – |
+| R55 | `0x005F89B0` | no | 8 | 0 | 4 | 0 | – |
+| R59 | `0x005E6320` | no | 32 | 0 | 10 | 0 | – |
+| R82 | `0x005E0160` | no | 6 | 0 | 0 | 0 | – |
+| R83 | `0x005E0260` | no | 5 | 0 | 2 | 0 | – |
+| R85 | `0x005E0490` | no | 16 | 0 | 6 | 0 | – |
+| R93 | `0x005E0F60` | no | 3 | 0 | 0 | 0 | – |
+| R94 | `0x005E0980` | no | 11 | 0 | 6 | 0 | – |
+| R95 | `0x005E1080` | yes | 7 | 0 | 0 | 0 | – |
+| R98 | `0x005E3890` | no | 4 | 0 | 0 | 0 | – |
+| R113 | `0x005E1860` | no | 6 | 0 | 0 | 0 | – |
+| R114 | `0x005E1540` | yes | 7 | 0 | 1 | 0 | – |
+| R115 | `0x005E1900` | no | 13 | 0 | 1 | 0 | – |
+| R116 | `0x005E1B60` | no | 11 | 0 | 0 | 0 | – |
+| R117 | `0x005E1D30` | no | 3 | 0 | 0 | 0 | – |
+| R118 | `0x005E1E00` | yes | 14 | 1 | 1 | 0 | rev 7: StatListFindFlag |
+| R119 | `0x005E2120` | no | 19 | 0 | 1 | 1 | fork: StatListFindFlag |
+| R120 | `0x005E27A0` | no | 13 | 0 | 2 | 5 | fork: 00587900, MonHasSkill, UnitStoredUnit9C |
+| R121 | `0x005E2BD0` | no | 5 | 0 | 0 | 0 | – |
+| R122 | `0x005E2FF0` | no | 28 | 0 | 9 | 12 | fork: 00408090, 00408a60, 00681e09, OBJECTS_GetRecord, UnitsLineBlocked, 00681ef0 … |
+| R123 | `0x005E34C0` | no | 2 | 0 | 0 | 0 | – |
+| R124 | `0x005E3530` | yes | 9 | 0 | 0 | 0 | – |
+| S15 | `0x005E1D30` | no | 3 | 0 | 0 | 0 | – |
+| S16 | `0x005E2D80` | no | 21 | 0 | 12 | 12 | fork: 00408090, 00408a60, 00681e09, OBJECTS_GetRecord, UnitsLineBlocked, 00681ef0 … |
+| R126 | `0x005EE040` | no | 6 | 0 | 6 | 7 | fork: FreeNearStep, 00408090, 00408a60, 00681e09, RoomRectGet, 0063ee10 … |
+| R129 | `0x005E61B0` | no | 6 | 0 | 4 | 2 | fork: 00573520, MonRegionGet |
+| R136 | `0x005EF710` | no | 5 | 0 | 2 | 0 | – |
+| R137 | `0x005EFA90` | no | 7 | 0 | 0 | 0 | – |
+| R128 | `0x005EE5D0` | no | 37 | 0 | 9 | 19 | fork: A5Q4_NihlathakSeen, SkillNodeMode, SkillNodeId, CorpsePickNear, MonHasSkill, 00408090 … |
+| R32 | `0x005E7130` | no | 39 | 1 | 13 | 27 | rev 7: AiNearestPlayer; fork: 005bad20, 005bad40, 0059f570, A2Q4_GuardBlock, 0059b6e0, AiCtlParamGet … |
+| R41 | `0x005E7540` | no | 18 | 0 | 8 | 9 | fork: AiCtlParamGet, MonAiWalkToPointCmd, PathSetDir, indirect |
+| R42 | `0x005E9E00` | no | 2 | 0 | 0 | 0 | – |
+| R54 | `0x005E73A0` | yes | 8 | 1 | 2 | 8 | rev 7: AiNearestPlayer; fork: PlayerIsBusy, NpcInteractAny, UnitSetEvent, 0059df50, 0059c750, 005b43f0 … |
+| R58 | `0x005E7E20` | no | 6 | 0 | 1 | 4 | fork: NpcInteractAny, AiNearestPlayer, PlayerIsBusy, UnitSetEvent |
+| R60 | `0x005E7AC0` | no | 9 | 0 | 2 | 0 | – |
+| R62 | `0x005E7D60` | no | 3 | 0 | 0 | 0 | – |
+| R81 | `0x005E7590` | no | 27 | 0 | 9 | 13 | fork: 0059b8b0, 0059b8f0, AiNearestPlayer, 0059aec0, AiCtlParamGet, NpcInteractHas … |
+| R100 | `0x005E7F50` | yes | 2 | 0 | 0 | 0 | – |
+| S11 | `0x005E8140` | yes | 15 | 0 | 0 | 8 | fork: MonForcedTargetClear, MonModeAllowed, MONSTATS_FlagTest, MonForcedTargetSet |
+- **The rev 7 list, as the audit fixes it** (Phase 2 builds these, all read-only):
+  1. a return-address window over R1's think 0x005B0CD0 (its 2 calls, `UnitGetRoom` and `Idle`);
+  2. a line at `MonAiInit`'s init call: R43's init 0x005F6630 and state 11's 0x005E80E0 are called by `MonAiInit`, not by the
+     think, so no call of theirs is in the audit;
+  3. the calls inside `AiVileMotherSpawn` 0x005F9E30 (R68; it is a compared boundary, its own calls need `AI_NESTED` for it);
+  4. the MonStats run and walk speed words (R70: no call, a data read);
+  5. the return of `AiTrapArrowKind` 0x005FB650 and the region word `+0x2D4` it reads (R78 0x005FB749, R79 0x005FB869);
+  6. the return of `StatListFindFlag` 0x00625760 (R118, 0x005E1E2F);
+  7. the return of `AiNearestPlayer` 0x005DDF20 (R54 0x005E73B8; R32 through its helper 0x005E68F0, 0x005E6909);
+  8. `MonPlayerBonus`'s block, 0x00573930 (R10, 0x005F0B32);
+  9. R32's script and home words (data reads; R32 also forks on 27 calls of quest and NPC helpers, `audit.txt`);
+  10. R48's owner record: the return of `MonsterOwnerRef` 0x0058F090 (0x005F6EE8), with `DRLG_ActFromLevelId` and
+      `QUESTRECORD_GetState` after it (forks);
+  11. R73's words: the audit finds no forking call (10 compared, 1 run), so its rev 7 words are data reads only, to be named
+      from the block by Phase 1c's model.
+- **Checker gaps.**
+  - **Gap 2, `CONV`: closed for the audit's list.** The audit found 35 boundaries the tour's blocks call that `CONV` lacked
+    (`CONV-MISSING`); revision 3 adds all 35 (`CONV_REV3`). Source: `ai_tour.py conv`, a caller read (ECX or EDX written,
+    and the pushes, between the previous call and each call site in the windows; a register set at most sites is an argument).
+    Checked against the 68 S1b entries, whose words matched the logged calls: **64 agree, 4 disagree** (`GetTargetUnit`,
+    `WalkZ`, `SpawnClassCellTest`, `LogicRegionId`: arguments set before an earlier call, or fewer pushes than names;
+    `conv.txt`). The names are positional (`c`, `d`, `s1`..`s6`), and a push count is an upper bound; a model that
+    mismatches on a word corrects its entry with its own source.
+  - **Gap 3, the boundary audit: closed** (above): every call of every new block has a class.
+  - **Gap 5, the separation line: closed.** Each entry's report ends with `SEP <entry> outcomes N over M fork-free
+    decisions`, an outcome being the sequence of the block's compared calls; the eight most common are listed. On S1b's logs:
+    R4 6 outcomes over 353, R100 1 over 4, S11 1 over 66 (`regress-model-check.txt`).
+  - **Gap 6, the regression guard: closed.** `ai_model_check.py regress` reruns S1b's check over its 38 logs with its 32
+    entries and compares it, without the SEP lines, with `sweep2-s1b/model-check.txt`: **byte-identical** (`regress.txt`).
+    Tests: `tools/test_ai_model_check.py` (13, 4 new).
+- **Moves** (plan 0066 inventory; **merged `main` `f56ab708` first**, so n66e and n66f are in): catalogue 121–125,
+  184–189, 204–205, 306–309, 311, 330–331, 333–334, 358–359, 361 and 475–479 **a-run → b, new batch H1p, out of this plan**
+  (H1c 18, H1b 7, H1d 5): rows 46, 47, 62, 75, 76, 81, 82, 83, 87, 113, 121, reasons in the rows. README: § 1's catalogue line
+  (a-run 172, b 124) and *All* line (a-run 328, b 424), the Phase 2 line, a § 3 bullet, § 4's H1b (38), H1c (41), H1d (11)
+  and the new H1p row; gate W7 green. **The tour's scope is now 211 statements** (H1a 38, H1b 38, H1c 41, H1d 11, H1g 44, H1h
+  39).
+- **Judgment calls for the review:**
+  1. The 11 unplaced entries go to **(b)**, not d-none: no source places them, but no code scan rules a creator out (rule 4
+     of review-fixes). A d-none needs the class-id scan; H1p is that route. `rogue3` (R62) and `trap-melee` (R87) are named
+     by MonPreset lists that no DS1 uses.
+  2. **Placements that are likely, not certain**, kept as aims: the sarcophagus (R45) and the fire tower (R94) need a themed
+     tomb room (`t-a2-canyon` takes the first tomb's warp, level 66); the claw vipers (R16), Doom Knights (R72), Oblivion
+     Knights (R74), Blood Raven (R59), the Smith (R98), `navi` (R58) and the Bloody Foothills entries need a border walk,
+     which may cross the wrong edge; the trap monsters (R77, R80, R92) need a trapped container and **a logger with
+     `tools/gdb/objects.py`'s lines beside `ai.py`** (`--loot` reads them), which Phase 2 adds to the tour's gdb script;
+     hireling states 5 and 6 need an unhired hireling to think near the player; `evilhut` (R129) is placed by DS1s LvlPrest
+     does not name (`monsterspawner*.ds1`), known from the kept Act V logs.
+  3. One seed per act, as the plan says, although each case is a fresh process and could take its own seed: one seed keeps
+     an act's pools one prediction. The score counts entries, not (case, level, entry) pairs, because a pool keeps `NumMon` of
+     its candidates and no seed can put five classes in one level.
+  4. The audit's function ends are the next known start (`re/symbols.csv` and the AI table words), capped at the logger's
+     window for the two callee windows; an unnamed function in between would be read as part of the one before it.
+  5. The `CONV` additions are positional and come from a caller read that agrees with 64 of 68 S1b entries; Phases 1b and
+     1c name the arguments as their blocks do and correct an entry on a mismatch.
+  6. The NOTES row (517, row 7's second `aip(3)` draw) rides with R7's cases (`t-a1-cold`, `t-a1-marsh`).
+- **Review request: Tier B** (plan § Phase 1a). Check against the kept outputs: the scope (241), the 30 moved rows and their
+  reason, the seeds' scores and the pools (`pools.txt`, miss 0), the 45 cases' routes (`routes.txt`), the audit's classes
+  on a sample of entries against the catalogue blocks, the 64-of-68 convention check, the SEP lines and the byte-identical
+  regression, the README totals.
+- **Next:** Phases 1b and 1c (the models) after this review; Phase 2 adds `objects.py` to the tour's gdb script with rev 7.
