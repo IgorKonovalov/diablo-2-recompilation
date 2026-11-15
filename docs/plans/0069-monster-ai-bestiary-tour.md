@@ -1,6 +1,6 @@
 # 0069 — Monster AI bestiary tour: the catalogue's harness rows of plan 0066
 
-> **Status:** approved (2026-11-10, by the owner, as recommended: question 1 (a), question 2 (a)); Phase 1a running (`lane/n69a`, started by the owner 2026-11-15; Tier B check: accept with fixes, 3)
+> **Status:** approved (2026-11-10, by the owner, as recommended: question 1 (a), question 2 (a)); Phase 1a done (`lane/n69a`, Tier B check: accept with fixes, 3; merged); Phase 1b running (`lane/n69b`, 2026-11-15; 29 of 29 entries modelled; Tier B check: accept, 0 fixes)
 > **Created:** 2026-11-10
 > **Owner skill(s):** reverser (every phase; the re-tag is plan 0066 Phase 3's, spec-writer)
 > **Related ADRs:** 0003-runtime-experiments, 0004-boundary-oracles-in-reproduction, 0021-observed-boundaries-in-emulation, 0023-review-tiers-and-gate-first-fixes, 0028-case-and-process-in-experiment-records
@@ -745,3 +745,120 @@ Static; no slot, no game. `main` `f56ab708` merged (plan 0066 S1e and S2b in). K
 - **Checked:** [C] added or raised 0; anchors `0x005FB650` (AiTrapArrowKind, R78/R79 rev 7), `0x00625760` (StatListFindFlag, R118), `0x005F6630`
   (AiNestInit, R43/R121 init) against `re/symbols.csv` and the audit; review-fixes rules 2, 3, 6 and 4 applied; request items all answered; disagreements
   routed 0; passes 7/8 skipped (no finding, table or format file in the diff).
+
+### 2026-11-15 — Phase 1b: models for H1a, H1b and H1d (reverser, `lane/n69b`)
+
+Static; no slot, no game, no Ghidra. Branched from `main` `7b7f20e9` (Phase 1a merged). Kept outputs in
+`workspace/logs/n69b/` (`manifest.sha256`, 7 lines, passes `sha256sum -c` from that directory): `regress.txt`,
+`regress-model-check.txt`, `new-entries-38.txt`, `shared-thinks-38.txt`, `branches.txt`, `audit.txt`, `test-output.txt`.
+Tools: `tools/ai_model_check.py` revision 4 and `tools/test_ai_model_check.py`.
+
+- **Scope:** the 29 entries of `entries.txt` (Phase 1a) in H1a (R8, R16, R142, R17, R18, R24, R25, R27, R72, R74), H1b (R115,
+  R116, R117, S15, R119, R120, R122, R123, S16, R126, R129, R136, R137) and H1d (S5, S6, R41, R42, R58, R60). **All 29 are
+  modelled; none is returned to its row.** Each model is the catalogue block at `b5999f5e` (the catalogue file is unchanged
+  from there to `7b7f20e9`, `git diff --stat`), grouped per entry above `MODELS`, with its `MODELS` row (its think and inventory
+  rows) after S1c's. Where a block names a table or callback by address only, the value is its finding's: the callbacks
+  `AiNearAllyCb` 0x005F06B0 (R8), `AiSameBaseNearCb` 0x005B0D00 (R18), `AiOblivionKnightCb` 0x005FAE40 (R74), `AiImpNearCb`
+  0x005E1720 (R115), `AiOverseerMinionCb` 0x005E26D0 (R120), `AiDefilerTargetCb` 0x005EFA50 (R137), from `re/symbols.csv`;
+  `g_AiSpotterSkills` 0x006E3514 = 287, 288, 303, 304, 305 (R126, ai/0011). R25's tables `A`, `B`, `A5` are read from the
+  catalogue's own listing at run time (`wisp_tables`; `B5` by its rule); rows 122 and state 16's fixed records 492..495 from
+  the game's `monstats.bin` (`imp_rec`), so no table value is copied into `tools/`. S15 and R60 are their aliases' models (R117,
+  S5).
+- **Engine additions (revision 4), used only by the new models:** `_ecx`/`_edx` (a call on another unit: R25's
+  `UnitQueueEvent(t, …)`, the near-self helper's game word); `Run.opaque` (a command that is neither a boundary nor executed and
+  may move the seed: R25's `MoveToPointNoStop`, R41's `MonAiWalkToPointCmd`; the next call takes the logged seed, a draw before
+  it stops the decision); `SELECT` (R117/S15 and R60/S5 share a think: each takes the decisions of its AI state, AID `st`, 0 for
+  the table row; `check --no-select` lifts it).
+- **Controls.** `run_check`'s per-entry controls apply to the new entries unchanged (FLIP of every named branch and store,
+  `le`, `lecmp`, `d0`, ARM, EDGE, NEXT, VALS, SEP). The synthetic tests (`test_ai_model_check.py`, **47 tests, 34 new, OK**):
+  - **a hand-built path per entry** (`Paths`, 29 tests; S15 rides on R117's model and R60 on S5's test): the callee, the
+    words and the draw count before each call written from the block, with a wrong-word or wrong-branch case where the path
+    has one;
+  - **the branch controls** (`Branches`): a recorder runs each model on 1 500 seeded random inputs and writes the calls it
+    makes as a logged decision with random oracle returns. Every recorded decision must match its model, and every named
+    branch the decisions run must make at least one of them fail when that branch alone is reversed, the forked words held at
+    the recorder's answers (as a rev 7 word would give them). **All 29 entries pass:** 317 named branches run, 314 separated by
+    the recorder, the other 3 named in `EXEMPT`, each with its reason: R24 `2.1.aip(5)<v18` and R27 `5.v14<1` guard stores after
+    the block's last call, which `run_check`'s FLIP sees at the next decision only; R25 `g.dead` (the grant is rarely reached by
+    random inputs) is reversed by its hand path `test_r25_grant` (`branches.txt`, `test-output.txt`);
+  - `Revision4` (3): the register override, the opaque seed's resync and stop, the state selection.
+- **Regression:** `ai_model_check.py regress` under `systemd-run --user --scope -p MemoryMax=4G`: **byte-identical** to
+  `sweep2-s1b/model-check.txt` without the SEP lines, 32 entries, 38 logs, 32 SEP lines (`regress.txt`), and its full output
+  equals Phase 1a's `regress-model-check.txt` byte for byte (`cmp`).
+- **The 38 kept logs give 0 decisions for every new entry** (`check --logs sweep2-s1b/logs.txt --rows` the 29,
+  `new-entries-38.txt`), and 0 for the two shared thinks without the state split too (`--no-select`, `shared-thinks-38.txt`).
+  `ai_tour.py audit` rerun: 48 entries `model yes` (19 + 29), the CALL lines unchanged from Phase 1a's `audit.txt`.
+- **What the rev 6 logs can separate, per entry** (the forks are the Phase 1a audit's; `branches.txt` gives the recorder's
+  fork-free share):
+  - **Fork-free on most paths:** R8, R16, R142, R17, R18, R24, R27, R72, R115, R116, R117/S15, R122, R123, S16, R136, R137, S5/R60,
+    S6, R42; R25 outside state 4's count and the grant's `STATLIST_Alloc`; R74 outside step 2's aura test and step 4's
+    `MonsterData+0x0E`; R126 before its dead test and `FreeNearStep`; R129 outside the pick's region count.
+  - **Every live decision forks, so none can count until its word is logged:** R119 (step 1's `StatListFindFlag(t, 0x20)` at
+    0x005E2157 runs whenever `t ≠ 0`, which a kind-1 row always has), R120 (`AiStoredHostile`'s `U+0xC8` and stored unit at
+    entry, `MonHasSkill` 0x005DD2D0), R58 (`NpcInteractAny` 0x00572DC0 at entry, `AiNearestPlayer`, `PlayerIsBusy`), R41 (the
+    home word of `AiCtlParamGet(10)` at entry; then the kind-4, 5, 7 records' words and the path list). **For Phase 2's rev 7
+    list:** the return of `StatListFindFlag` at R119's site 0x005E2157 (item 6 names R118's only); the return of
+    `AiStoredHostile` 0x005DE830 at 0x005E27DA and of `MonHasSkill` at 0x005E2816, 0x005E29AF, 0x005E2A50 (R120); the return
+    of `NpcInteractAny` at 0x005E7E45 and of `AiNearestPlayer` at 0x005E7E66 (R58; item 7 names R54's and R32's); R41's home and
+    record words ride on item 9 (R32's script and home words; the same chain).
+- **Judgment calls for the review:**
+  1. **The recorder's branch test.** A per-branch hand test for 317 branches would be the model written twice; the recorder
+     shows instead that each named branch is observable (reversing it changes the logged calls, words or seed) on inputs the
+     model itself makes. It does not show the transcription right: that is the hand path per entry, and the review's read of
+     the models against the blocks.
+  2. **Calls the blocks imply but do not name**, modelled from the Phase 1a audit's call list: R25 state 4 begins with
+     `UnitGetRoom(U)` (0x005F3E62, the room search's room); R126's `SpotterCatapultDead` makes one logged `UnitGetRoom(U)`
+     (0x005EDF7F) before its forked result; S16's and R122's `AiUseSkillNearSelf` logs `UnitGetGame(U)` before its skill call
+     (0x005DF96D, the block's "game of unit").
+  3. **Words not compared, with the reason in each model's docstring:** R136's `UnitTeleport` (revision 3's caller read
+     names three positional words, the block five, and no source maps them; the callee and the seed are compared); R74's
+     `HasState` state (Skills' `auratargetstate`, not logged); R120's stored unit (not logged); R126's strike point (written by
+     `FreeNearStep`, not a boundary); R8's wait outside Normal (`aidel` is logged for Normal only, AID `ad[0]`); R41's record
+     words. R74's `FindHostile` out-slot is read, not compared before the call (the block: "not set before the call").
+  4. **Non-boundary callees taken to draw nothing**, so the seed is compared through them: R120's quest hook 0x00587900,
+     R58's `UnitSetEvent`, R25's room search and the grant's stat-list calls, R126's `SpotterCatapultDead` internals, R129's
+     `MonRegionGet`. A draw in one would show as a seed mismatch at the next compared call, and the model is then corrected.
+     The commands that may draw (`MoveToPointNoStop`, `MonAiWalkToPointCmd`) are opaque instead.
+  5. **Arms that stop rather than guess:** R25's gather of four or five wisps (each found wisp's `AiCtlSetVar` and `Idle`,
+     on other units), R25's dance with no target or an index outside the tables, S16's slot outside 0..7, R41's path action
+     (an indirect call whose own calls the block does not give).
+  6. R129's step 2 death arm is transcribed though the block says the pick returns 1 on every path, so it can never be taken
+     (its branch `2.picked` is constant true; the recorder separates it only by its reverse).
+- **Review request: Tier B** (plan § Phase 1b). Check against the kept outputs: each model against its block (the 29
+  docstrings name what is not compared and why), the 47 tests, the 3 exemptions, the byte-identical regression, the 0
+  decisions on the 38 logs, and the four always-forking entries with their rev 7 words proposed for Phase 2.
+- **Next:** Phase 1c (H1c, H1g, H1h) on a branch cut after this one merges; its R32 reuses `npc_save_home`,
+  `npc_script_step` and `npc_path_pick`.
+
+### 2026-11-15 — Phase 1b Tier B lane check (architect-check, `lane/n69b`)
+
+Tier B check of `lane/n69b` (head `6af73f90`, then `main` merged in; the catalogue file is unchanged from `b5999f5e`).
+
+**Verdict: accept (0 fixes).** Gate GREEN, 0 errors.
+
+- **Done when, one by one.** (1) All 29 entries modelled, none returned: `MODELS` holds all 29, and `Branches.test_every_entry_is_listed` names them.
+  (2) `test_ai_model_check.py`: 47 tests OK, before and after the merge. The `report` shows 317 named branches, 314 separated by the
+  recorder, the other 3 in `EXEMPT` (summed from `branches.txt`). (3) `regress` under `systemd-run --user --scope -p MemoryMax=4G`:
+  byte-identical to `sweep2-s1b/model-check.txt` without the SEP lines, 32 entries, 38 logs; its stdout equals the kept
+  `regress-model-check.txt` (`cmp`). The 29-entry check over the 38 logs reproduces `new-entries-38.txt` (`cmp`) with 0 decisions
+  for all 29, and `check --no-select` on R117, S15, S5 and R60 reproduces `shared-thinks-38.txt` (`cmp`), 0 decisions.
+  `sha256sum -c manifest.sha256` from `workspace/logs/n69b/`: 7 of 7 OK.
+- **Transcription.** Read against the catalogue blocks: R16, R142, R17, R18 (H1a); R115, R116, R123 (H1b); S6, R42 (H1d). Steps, draw
+  order, tests and constants match; the "dist > 10" and "p ≠ 0" forms are the same tests. S6's `U = 0` arm is left out, which its
+  docstring says (S5's does the same).
+- **Exemptions.** R24 `2.1.aip(5)<v18` and R27 `5.v14<1` guard stores after the block's last call (Ring; the second
+  `Delay`/skill), so no later call in the decision can show them; both hold. R25 `g.dead` is reversed by `test_r25_grant`, which
+  asserts the mismatch. Note for Phase 2: the first two are untested by anything until a log has a following decision.
+- **Existing entries.** The engine diff holds three edits to old code (`want(spec, reg)` reads `_ecx`/`_edx` only when a model
+  sets them; the seed compare is skipped only when `seed is None`, which only `opaque` sets). No old model uses either, and
+  `regress` proves it.
+- **Tables.** No table value copied into `tools/`: `wisp_tables` reads the catalogue text (`test_r25_tables_from_the_spec`), `imp_rec`
+  reads `monstats.bin`, the tests use a synthetic `IMP`. The only literals are the five `g_AiSpotterSkills` ids and the six callback
+  addresses (code-image constants, ADR-0031; the symbols are in `re/symbols.csv`).
+- **Plan text.** The rev 7 words (R119, R120, R58, R41) appear only in this log as proposals; Phase 2's text is not edited.
+- **Judgment calls 1 to 6: all accepted.** 1: the recorder shows each branch observable, not the transcription right; the hand
+  path per entry and this read are the second leg. 2: the three implied calls (`UnitGetRoom` 0x005F3E62 and 0x005EDF7F,
+  `UnitGetGame` 0x005DF96D) are in `audit.txt` as compared CALL lines. 3 and 4: stated per model; a draw in a "draws nothing" callee
+  would show as a seed mismatch in the first log that reaches it. 5: stops rather than guesses. 6: constant branch, documented.
+- **Routed.** Nothing disagrees with a document the lane does not own. Passes 7 and 8: the diff changes no finding, table or format doc.
+- **For Tier A or the owner:** none.
