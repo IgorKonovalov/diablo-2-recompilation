@@ -900,3 +900,28 @@ Targeted ruling on the three points the Tier B check left, not a full re-review.
   and 57 d-none accepted as presentation or no stock source (precedent stats-states 18, items/0010 qd 42 "no stock quality 9
   item", items/0008's disabled tempered rows); row 3 and 57 are client presentation, reachable but out of the spec's scope: for
   Tier A to confirm that reading of d-none. (4)–(7) accepted.
+
+### 2026-11-15 — S3e and d-none for client presentation: architect rulings (`lane/n66r`)
+
+Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
+
+- **Ruling 1, S3e is folded into S7e.** A Phase 1 lane does not add batches, and a two-statement batch is not worth a lane
+  of its own. Travel 19 and 60 are the same method family as S7e: `COLL_FindFreeNear` (0x0064DEA0) is already emulated by
+  the ground-emu cases (run:2026-11-04-ground-emu, size 1, step 1, mask 0x801) that S7e names. The fold adds step 5 and
+  the mask 0xC01 walk back, on cases built so that the ring and the walk each change the found cell, compared with
+  `tools/quests_s3a.py`'s `free_near_walk`. § 4: the S3e row is removed and S7e goes from 61 to 63 statements. Phase 1
+  now has 36 batches, not 37. `quests-travel.md` rows 19 and 60 now carry batch S7e, and the remainders of rows 20 and 22
+  point to S7e. Classes are unchanged, so the totals stay at 2 626. findings/quests/0002-travel.md line 694 still says
+  "S3e, proposed". The S7e lane updates it with its addendum, since the file belongs to the reverser.
+- **Ruling 2, client presentation stays in d-none with its own label.** d-none's "no observable on stock" does not fit a
+  client-only presentation claim: stock play reaches it and a client logger could observe it. d-edit fits worse, because
+  stock data reaches the claim. The plan still runs no batch for it, because the specs cover the simulation and not the
+  client. So the claim stays in the d-none column, with no new column and no change to the totals, but its *Route* cell
+  begins `out of scope: client presentation`. The label covers the client half only. A server clause in the same line
+  keeps its own route. In Phase 3 the line stays `[I]` or becomes a scope note. The rule is written in the inventory
+  README's class table and in a note under § Conventions. It was applied to stats-states 18 (the precedent, a d-none
+  row) and to economy 3's remainder. In row 3, "the server's call decides" is a server claim and does not take the label.
+  Economy 57 is raised whole and has no d-none remainder, so the S4a check named it by mistake. Economy 21 (quality 9)
+  and 53 (`mul=` multiples of 256) are true no-stock-source cases and stay plain d-none. quests/progression 11 and
+  stats-states 26 are reading notes and also stay plain d-none. Totals unchanged: a-logs 645, a-run 340, b 432, c 390,
+  c-emu 491, d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626.
