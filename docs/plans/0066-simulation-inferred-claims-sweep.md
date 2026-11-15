@@ -481,3 +481,20 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   89's remainder routed d-none (the hit functions' draws are the catalogue's), rows 4, 50, 52, 53 to b (H2a); (6) the
   58 `DMG` packets of rows without a damage function whose words change between the build and `COMBAT_ApplyDamage`
   (monster owners, `2026-11-15-s2b-check.txt` DMG) are left unexplained and no row rests on them.
+
+### 2026-11-15 — S2b lane check (architect, Tier B, `lane/n66f`): accept with fixes (4)
+
+- **Verdict:** accept with fixes, 4 (overclaim 2, omission 1, stale cross-reference 1). Manifest passes `sha256sum -c`;
+  the R4 counts (92 = 42 + 12 + 8 + 30; row 167 one of 11; do 109 361 and 634; do 129 62 of 347; the 14 other rows 0)
+  match the kept `2026-11-15-s2b-check.txt` and `2026-10-30-skills-catalogue-check.txt` lines 215, 234–237
+  (`2bd2b4fb…`); the 38 rows (3 + 29 + 6), the inventory totals (2 626; Phase 1 1 548, Phase 2 752) and the § 4 S2b, S2c
+  and H2a cells agree against this branch's base; no `[L]` is added; every in-part row names its remainder's class and
+  batch.
+- **Fixes:** (1) overclaim: row 3 and the `MissileMoveCollide` raise: the log holds the do row number only, and the link
+  from table entry 1 to `0x005AE1F0` is the thunk `0x005B0BC0`, still `[I]` in skills/0004; the scope is now stated in
+  the row and in skills/0002 § 13; (2) overclaim: row 44 is one `(n, calc3)` = (21, 2), so its raise is the stepping, not
+  the group-size formula at other pairs, stated in the row; (3) omission: the R4 contradiction had no backlog entry,
+  filed to the spec-writer (`2026-11-15-architect-spec-writer-plan-0066-s2b-r4-caster-steps-reword`); (4) the symbol
+  raise's text in skills/0002's Functions table and § 13 now agrees with the scope in (1).
+- **For Tier A:** row 3 and the symbol raise to `C` on frame behaviour with the thunk still `[I]`; row 30's raise from two
+  kept outputs with no new tool.
