@@ -1049,6 +1049,58 @@ Unnamed functions are given by address. Their callers, as far as Ghidra's xrefs 
 them, are in the first column; their purpose is not read. The quest sites set the pin when an event starts and clear
 it when it ends. That is a reading of the call order, not a traced lifetime.
 
+### 11.5 Plan 0066 batch S7d: new checks over the kept logs (2026-11-15, `lane/n66m`)
+
+*Added 2026-11-15.* `tools/sweep2_s7d.py check` (`59732e90…`) runs `tools/rooms.py`'s `Checker` (`1971372c…`)
+unchanged as the control over the 13 logs of run:2026-10-17-lifecycle and the 3 of run:2026-10-17-h7a-lifecycle
+(`SUMMARY mismatches=4 checks=2891656`: the kept checks' 2 215 807 and 675 849, the 4 the known `+0xC4` bit `0x2000`
+records of h7a-h-barb3), then new observers on the same lines. Kept output `workspace/logs/n66m/s7d/check-s7d.txt`
+(`6e30d778…`, `S7d total bad=0`), `manifest.sha256` passing from `workspace/logs/n66m`. Record:
+[experiments § Addendum S7d](experiments.md#addendum-2026-11-15-plan-0066-batch-s7d-new-checks-over-the-16-kept-lifecycle-logs-lanen66m).
+
+- [C] **References count paths.** Over every move, the change of each snapshot room's four counts from `RM0` to `RMX`
+  equals `DrlgRefAdd(new)`'s and `DrlgRefRemoveNear(old)`'s walks counted once per path: 253 936 of 253 936 (room,
+  distance) deltas. Counted once per room and distance instead, 71 894 of them differ, and the log differs from that
+  variant in all 71 894. `refs[3]` reaches 52. (fn:sub_0061B390_DrlgRefAddNear@0x0061B390, fn:sub_0061B5B0_DrlgRefRemoveNear@0x0061B5B0, run:2026-10-17-lifecycle, run:2026-10-17-h7a-lifecycle)
+- [C] **One client activates its room's near list.** After each move, every DRLG room of the new room's near list has an
+  active room (`+0x30` ≠ 0) and status ≤ 1: 9 944 of 9 944 room-moves. Rooms two steps away and outside that list
+  stay at status 2 (15 382), 4 217 of them still active from earlier. Whether the distance 2 and 3 rooms' files are
+  loaded (`+0x28`) is not checked. (fn:sub_0061B490_DrlgRefAdd@0x0061B490, struct:DrlgRoomLife+0x0C)
+- [C] **`RoomActivateB`:** a `DRLG_RoomActivate` follows the call exactly when `+0x30` = 0 at its entry (7 690 calls,
+  244 of them on an unbuilt room); a room it built at status 4 that no later move references is listed at the next
+  release pass active with status 4 (158 of 158; 45 others got a reference first). (fn:sub_0061B730_RoomActivateB@0x0061B730)
+- [C] **`+0x78` at the first walk:** a room activated by a client's move (`ACTA` inside `RM0`..`RMX`) has `+0x78` ≥ 1 at
+  its first new-rooms walk in 3 111 of 3 111; after `RoomActivateB` 118 of 153 have 0, so the walk does not imply it.
+  (fn:sub_00537B50_ClientRoomChange@0x00537B50, struct:DungeonRoomLife+0x78)
+- [C] **A first activation's restore** (the populate branch): no monster, item or unit record and the game and room
+  seeds unchanged from `RS0` to `RSX` in 1 459 first activations and in the 2 re-activations of rooms never walked
+  before their release. (fn:sub_00542B40_RoomInactiveUnitsRestore@0x00542B40)
+- [C] **`ActiveRoomFree`, what the log shows:** each of 3 212 freed rooms is absent from the next release pass's list
+  (23 pointers reused by another DRLG room meanwhile, each listed again with that room); a freed DRLG room's move
+  snapshots show `+0x30` = 0 until its next activation (54 691). The near-list removal, the unit bits and the free order
+  are not logged. (fn:sub_0061A910_ActiveRoomFree@0x0061A910)
+- [C] **The save order where it separates:** 3 monsters (classes 435, 498) whose mode-12 draw cleared `save` and whose
+  MonStats2 `restore` is 2 were saved: the `restore` test decides after the draw. Tests 3, 4, 6 and 7 were not reached
+  (§ 11). (fn:sub_005431F0_InactiveMonsterSaveTest@0x005431F0)
+- [C] **No live player in a released room:** 0 of 12 476 save-test lines are a player's; none of the 3 212 freed rooms
+  is the client's current room (the last `ClientRoomChange`); every client's new room is in its own near list
+  (1 144 changes; 16 with no new room). The 1 291 monsters freed with their room (not saved, not kept) are never met
+  again in a `MON` or `MR0` line to the end of their log. (fn:sub_005433F0_InactiveUnitSaveTest@0x005433F0, 0x0052D2BB)
+- [C] **A restored alive monster comes back in mode 1** whatever its mode at the save: 2 726 of 2 726, 32 of them saved
+  in mode 2, 4 or 5; the 368 flag-4 records came back in mode 12. States and timers are not in the log.
+  (fn:sub_005424F0_InactiveMonstersRestore@0x005424F0)
+- [C] **Record order:** in 829 restores the `MR0` record ids come in the reverse of their room's save order (the
+  `MREC` lines after `US`), 563 of them with two records or more. Unit ids rise along 372 of those 563, so the order is
+  the list's, not the units' age. (fn:sub_005421A0_InactiveMonsterSave@0x005421A0, fn:sub_005424F0_InactiveMonstersRestore@0x005424F0)
+- [C] **`SpecialMonRestore` and `MinionRestore` placements:** 107 special records in mode 1, 106 at the record's x, y
+  with 3 room draws, 1 placed elsewhere with 7; 323 minion records in mode 1, 317 at the record's x, y with 3 room draws,
+  6 elsewhere with 7 (a fallback; the draws do not tell radius 4 from 5). No logged special record carried flag 4.
+  (fn:sub_005A4440_SpecialMonRestore@0x005A4440, fn:sub_005A46E0_MinionRestore@0x005A46E0)
+- [I] **H3's write order** is not separated: the log samples the unit after creation (`MRC`), after the stat writes
+  (`MRS`, 0x0054284F) and before `MonRegionUnitLeave` (`MRE`), in that order for all 3 094 created units, which is the
+  breakpoints' order, not the writes'. (0x005427FB–0x00542916)
+- [C] **`PresetUnitSpawn` only in a populate walk:** 408 of 408 `PSU0` lines fall in the walk block of a room with flags
+  bit 0 clear; 286 later restore-only walks of rooms that had one hold none. (fn:sub_005559A0_RoomPresetUnits@0x005559A0, fn:sub_0052D160_NewRoomsUpdate@0x0052D160)
 ### 12. Plan 0066 batch S7a, part 1: caller and pin scans with a second tool (2026-11-16, `lane/n66n`)
 
 Static, no game. `tools/sweep2_s7a.py` (`49f0d2dc…`, section `xrefs2`): the raw-byte call/jump/abs32 scan of
