@@ -150,7 +150,7 @@ fetched and compared afterwards.
 | `0x00584870` | `OBJOP_Portal` | `OperateFn` 15: portal use | I |
 | `0x00584D00` | `OBJOP_LevelPortal` | `OperateFn` 43: class 100 → 73, class 377 → its object byte, type 0 | I |
 | `0x005846B0` | `OBJOP_ArcanePortal` | `OperateFn` 34: 74 ↔ 54 (type 0 into 54, type 11 into 74) | I |
-| `0x005BE290` | `ITEMUSE_TownPortal` | `g_ItemUseFns[2].use`: the town portal of a scroll or book | I |
+| `0x005BE290` | `ITEMUSE_TownPortal` | `g_ItemUseFns[2].use`: the town portal of a scroll or book | C ([§ 16](#16-plan-0066-batch-s3a-the-travel-lines-re-checked-2026-11-15-lanen66g)) |
 | `0x0056CF40` | `sub_0056CF40_PortalPartnerCreate` | town end at point 11, free search step 5, links the pair | I |
 | `0x00535430` | `sub_00535430_PlayerPortalClose` | frees the player's pair (class 59 only), unpins their rooms | I |
 | `0x005353B0` | `sub_005353B0_PlayerPortalSet` | player data `+0x48` = portal id | I |
@@ -159,7 +159,7 @@ fetched and compared afterwards.
 | `0x00535060` | `sub_00535060_PlayerIsBusy` | interacting, cursor item, or player data `+0x4C` | I |
 | `0x0055B6C0` | `sub_0055B6C0_PlayerTickGet` | player data `+0x160`, or the per-player entry of list `+0x38` | I |
 | `0x0055B720` | `sub_0055B720_PlayerTickSet` | writes both (only caller `0x005A5E50`) | I |
-| `0x0054B830` | `sub_0054B830_NpcTravelMove` | level 0 → act town; same act → class-59 portal; else `PlayerChangeLevel` | I |
+| `0x0054B830` | `sub_0054B830_NpcTravelMove` | level 0 → act town; same act → class-59 portal; else `PlayerChangeLevel` | C for the other-act branch ([§ 16](#16-plan-0066-batch-s3a-the-travel-lines-re-checked-2026-11-15-lanen66g)) |
 | `0x00548B00` | `sub_00548B00_UnitInteract` | packets 0x13/0x16: player, NPC, object (distance < 51), item, warp (distance < 5) | I |
 | `0x0054C0E0` | `sub_0054C0E0_Pkt41Resurrect` | packet 0x41: dead player back to the act's town | I |
 | `0x005394A0` | `sub_005394A0_PlayerPlaceInAct` | join: act level `+0x08`, type 0; hirelings to the town point | I |
@@ -673,6 +673,44 @@ between. Read with r2 on the pinned `Game.exe`:
   draws nothing; the `Sync` 0 draws of a field waypoint are the `SetMode 1` of the arrival match or of the operate.
   A town waypoint's `SetMode 2` in `InitFn` 17 (0x0054726A–0x00547279) goes through `UNIT_SetMode` and is not
   changed by this. (fn:sub_00581490_ObjEvOperateEnd@0x00581490, fn:UNIT_SetMode@0x00624690)
+
+### 16. Plan 0066 batch S3a: the travel lines re-checked (2026-11-15, `lane/n66g`)
+
+The travel half of the S3a check over the 54 kept quest logs ([experiments, S3a addendum](experiments.md#addendum-2026-11-15-plan-0066-batch-s3a-the-kept-quest-logs-re-checked-lanen66g);
+`tools/quests_s3a.py`, outputs `s3a-check.txt`, `s3a-check-r2.txt`, `s3a-static-r2.txt`). Row by row in
+`docs/plans/0066-inventory/quests-travel.md`.
+
+- [C] **Quest event 3 is raised for level changes within one act only (contradiction to the spec's Outputs).** Every
+  same-act level change is followed by one e3 (0x00543BB7) naming the old and new level, 341 of 341 (101 waypoint,
+  115 warp, 122 portal, 3 resurrection; a portal used in a town raises one more inside the use), and none of the 87 act
+  changes (40 by NPC, 47 by waypoint) raises one before the next change. The site's guard that skips the act change is
+  not read here, so the reason stays `[I]` (Phase 3 rewords the Outputs line; quests/progression word 4's "the e3
+  level-40 branch then finds state 7" is re-read with it). (fn:QUESTS_DispatchEvent@0x005438E0, run:2026-10-18-quests2)
+- [C] **The free-cell search.** `COLL_FindFreeNear`'s arguments by caller: spot size 2 or 3, masks 0x1C09, radius 50,
+  step 1; act change size 2, masks 0x1C89, step 5; the portal's field end size 3, masks 0x3E01 / 0x0C01 with the point,
+  step 1, fallback 0; its town end size 3, masks 0xBE11, step 5; warps size 2, masks 0x1C09, fallback 0 and 1. The
+  model with § B1's walk reproduces all 1 102 logged results (126 moved). Step 5 never moved a search (149, all in
+  place: the act change landed on the spot's own cell 87 times) and the walk-free model finds the same cell as the walk
+  in all 62 field ends, so the step-5 ring and the walk stay `[I]` (plan 0066 S3e, proposed).
+  (fn:COLL_FindFreeNear@0x0064DEA0, run:2026-10-19-quests3)
+- [C] **Entry points.** 155 `wptr` brackets, each inside a p49 called from 0x0054C67F; 35 `npcmove` from
+  `NPC_MenuAction`, each with one `chlevel`, and 5 from the Harrogath portal (0x005B5994); 68 tp brackets from one
+  caller (0x005BF38A), `g_ItemUseFns[2].use` = `ITEMUSE_TownPortal`, Misc's `pSpell` 2 rows `tbk` and `tsc`; 114 of 115
+  warps from `UnitInteract` (0x00548C37) within 4.5 of the warp, one from 0x0058202C at 8.1; p41 and p48 from the
+  packet dispatch (0x0054D81A), returning 0; 54 joins placed from 0x0053023C. (fn:sub_00548B00_UnitInteract@0x00548B00,
+  fn:ITEMUSE_TownPortal@0x005BE290, run:2026-10-18-quests2)
+- [C] **Travel results.** Waypoint code 0 in the 148 p49s with a level; type 13 for the towns and levels 46 and 74,
+  type 0 for 106 field arrivals; `NpcTravelMove` into another act calls `PlayerChangeLevel(level, type)` (40); the level
+  entered is the asked one in 191 `chlevel`s; a field tp creates one class-59 pair and moves `+0x48` to the new field
+  end (62), a town tp none (6); a portal use raises an e3 iff from a town (122); the warp gate is called iff the
+  destination is 73, 100, 118, 128 or 132 (115; the one call, 83 → 100, passed). (fn:sub_0054B830_NpcTravelMove@0x0054B830,
+  fn:OBJOP_Portal@0x00584870, fn:QUESTS_WarpGate@0x00545B80, run:2026-10-19-quests3)
+- [C] **Act-travel words.** Warriv writes word 7 and Meshif words 15 and 10 (the first crossing), b0 then b13 each
+  (0x00546997, 0x005469A1; 0x0054692B, 0x00546935; 0x005468FB, 0x00546905); word 28 came from the Harrogath portal
+  (0x005B590F) in x-tyrael3. Word 23 and the waypoint-bit writes are not logged. (fn:sub_005467E0_NpcActTravel@0x005467E0,
+  run:2026-10-18-quests2)
+- [I] **Not separated** (routes in the rows): `ActStale`'s caller per leave (145 of 206 town departures and 16 not
+  after one), the class-59 pair's free, class-60 portals. (run:2026-10-19-quests3)
 
 ## Data touched
 

@@ -154,6 +154,7 @@ Runtime records for [quests/0001](0001-progression.md) and [quests/0002](0002-tr
 - **Not reached / out of scope:** see the plan log entry and the two findings' Phase 2 sections (shortfalls named per question); the two-player cases (the portal party and `QuestFlag` gates, party credit, a non-zero gate stamp) are plan 0044's and out of scope here.
 - **Conclusion:** raises and corrections in [quests/0001 § 15](0001-progression.md#15-phase-2-run2026-10-17-quests)
   and [quests/0002 § 12](0002-travel.md#12-phase-2-run2026-10-17-quests).
+- **Addendum 2026-11-15 (plan 0066 S3a):** this run's logs are re-checked in the [S3a addendum](#addendum-2026-11-15-plan-0066-batch-s3a-the-kept-quest-logs-re-checked-lanen66g) under run:2026-10-19-quests3.
 
 ## run:2026-10-18-quests2
 
@@ -311,6 +312,7 @@ Runtime records for [quests/0001](0001-progression.md) and [quests/0002](0002-tr
   0044's.
 - **Conclusion:** raises and corrections in [quests/0001 § 16](0001-progression.md#16-phase-2-part-2-run2026-10-18-quests2)
   and [quests/0002 § 13](0002-travel.md#13-phase-2-part-2-run2026-10-18-quests2).
+- **Addendum 2026-11-15 (plan 0066 S3a):** this run's logs are re-checked in the [S3a addendum](#addendum-2026-11-15-plan-0066-batch-s3a-the-kept-quest-logs-re-checked-lanen66g) under run:2026-10-19-quests3.
 
 ## run:2026-10-19-quests3
 
@@ -476,6 +478,57 @@ Runtime records for [quests/0001](0001-progression.md) and [quests/0002](0002-tr
   [quests/0001 § 17](0001-progression.md#17-phase-2-part-3-run2026-10-19-quests3) and
   [quests/0002 § 14](0002-travel.md#14-phase-2-part-3-run2026-10-19-quests3).
 
+### Addendum 2026-11-15: plan 0066 batch S3a, the kept quest logs re-checked (`lane/n66g`)
+
+No game, no Ghidra: a new check over the kept logs of the three runs above and of the plan 0047 travel sessions below.
+
+- **Question:** (plan 0066 batch S3a, 87 inventory rows of quests/progression, quests/travel and quests/README) which
+  `[I]` statements do the 54 kept quest-state logs already decide, read with checks the run's checker did not have?
+- **Inputs:** the 45 logs of run:2026-10-17-quests, run:2026-10-18-quests2 and run:2026-10-19-quests3,
+  `p47h-x-wpact5r-0` and the 8 of `p47b-run.lst`, with their installed and written saves (list
+  `workspace/logs/quests/sweep2-s3a/s3a-logs.lst`; hashes in `workspace/logs/quests/manifest-sweep2-s3a-inputs.sha256`,
+  `510c8807…`, 128 lines, passes from `workspace/logs/quests/`).
+- **Tool:** `tools/quests_s3a.py` (stdlib, read-only; imports `tools/quests.py`'s model, which stays at `b6dfb1a3…`).
+  Revision 1 (`6531b66c…`, part 1) wrote `s3a-check.txt`; revision 2 (`cd33719e…`, part 2) adds notes only (the reward
+  writes, word 4's b14 sites, word 19's and the act-travel words' writes, the `due` dispatches, the timer results,
+  every player-record write) and its `static` reads (absolute references, the orb's party test, Misc `pSpell`), so its
+  check output repeats revision 1's lines unchanged (0 removed lines in `diff`). Test: `tools/test_quests_s3a.py`
+  (5 tests, written logs only).
+- **Commands:** `systemd-run --user --scope -p MemoryMax=4G python3 -I tools/quests_s3a.py check $(cat
+  workspace/logs/quests/sweep2-s3a/s3a-logs.lst)`; `python3 -I tools/quests_s3a.py static`; `objdump -d -M intel`
+  on the pinned image, grepped for calls to 0x543e10 and the orb lines.
+- **Outputs** (`workspace/logs/quests/sweep2-s3a/`): `s3a-check.txt` (`9134a7c7…`, revision 1; re-run in part 2
+  byte-identical) and `s3a-static.txt` (`dd50e017…`) under `manifest.sha256`; `s3a-check-r2.txt` (`f3116c95…`, 720
+  lines), `s3a-static-r2.txt` (`f1996df1…`) and `s3a-objdump.txt` (`2670cffb…`) under `manifest-r2.sha256`
+  (`d4862ce0…`); both pass `sha256sum -c` from that directory. Development outputs in `dev/` and `dev2/`, each with its
+  manifest.
+- **Result:** **`SUMMARY mismatches=4 checks=4070 logs=54`** in both revisions. The 4 are one finding, progression C4
+  (below). Among the checks: quest timers (14 lines) at tick = frame // 20, runs on frame mod 20 = 0; 41 quest objects
+  in each of 54 games in the order 40..37, then the main rows from the last; 430 QS and 38 QC next-old pairs; 32 e10
+  dispatches from 0x00543CA2 with force 1; 222 talks e0 → e11 → e2 with 28 re-dispatched e0; 24 589 equal quest-seed
+  observations, 56 one step after a QGS draw, 3 inside a drawing bracket, 0 elsewhere; 1 102 `COLL_FindFreeNear`
+  searches reproduced (126 moved, 976 in place); 341 same-act level changes each followed by one e3; 122 portal uses
+  with an e3 iff from a town; 115 warps with the gate called iff the destination is 73, 100, 118, 128 or 132.
+- **Contradictions** (for plan 0066 Phase 3; backlog
+  `2026-11-15-reverser-spec-writer-plan-0066-s3a-contradictions` for 1 and 3,
+  `2026-11-15-reverser-spec-writer-plan-0066-s3a-travel-e3` for 2):
+  1. **Progression C4** (row 49): the first-join restore map differs per quest. Quest 13 (word 14) maps b2 → (`+0x0B`,
+     `+0x0C`) = (1, 2), b3 → (5, 5), b4 → (6, 5) (0x0059D557–0x0059D5A3; x-talk2 logged `+0x0B` = 5 for b3), and
+     quest 19 (word 21) does not restore on b4 (0x005BB4BC–0x005BB4C9; x-talk3, x-talk3b, h-talk3 logged `+0x0B` = 0):
+     the 4 `MISMATCH` lines.
+  2. **Travel Outputs** (row 86): every same-act level change is followed by one e3 (0x00543BB7) naming the old and new
+     level (341: 101 waypoint, 115 warp, 122 portal, 3 resurrection; a portal used in a town raises one more inside the
+     use), but none of the 87 act changes (40 by NPC, 47 by waypoint) raises an e3.
+  3. **Word 37's entry levels** (rows 270, 272, in part): b3 was set on entering 113 (three logs) where the spec says
+     114, and b14 on entering 123 (two logs) where the spec says 121, 122 or 124; the code tests 113 or 114
+     (0x00589DAB–0x00589DB3) and 121 to 124 (0x00589EBB–0x00589EC4), so the spec drops one level each.
+- **Not a contradiction:** x-orb's written save kept `qey qhr qbr` and lost `qf2 `: the operate removes the flail
+  itself (0x005BBA1E–0x005BBA23) and calls the party pass `0x005BB850` only when `UnitPartyId` is not 0xFFFF
+  (0x005BBB30–0x005BBB49), which a one-client game never meets.
+- **Conclusion:** row by row in `docs/plans/0066-inventory/quests-*.md` (S3a notes);
+  [quests/0001 § 18](0001-progression.md#18-plan-0066-batch-s3a-the-kept-quest-logs-re-checked-2026-11-15-lanen66g)
+  and [quests/0002 § 16](0002-travel.md#16-plan-0066-batch-s3a-the-travel-lines-re-checked-2026-11-15-lanen66g).
+
 ## The travel sessions of run:2026-10-20-shortfalls
 
 The run is defined in [combat/experiments § run:2026-10-20-shortfalls](../combat/experiments.md#run2026-10-20-shortfalls);
@@ -557,3 +610,6 @@ Not part of the run: `dev-p47b-x-wpact5b-2` (stopped by the lane at its start, t
   minutes (seed 4822) or found no way in 10 (4824); the Passage's maze stops the four-waypoint route after its first
   waypoint. At about one activation per 5 to 15 minutes, the 13 missing are beyond this lane's slot time.
   (run:2026-10-21-shortfalls2)
+- **Addendum 2026-11-15 (plan 0066 S3a):** `p47h-x-wpact5r-0` and the 8 logs of `p47b-run.lst` are re-checked in the
+  [S3a addendum](#addendum-2026-11-15-plan-0066-batch-s3a-the-kept-quest-logs-re-checked-lanen66g) under
+  run:2026-10-19-quests3.

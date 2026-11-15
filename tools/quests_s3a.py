@@ -39,6 +39,18 @@ Each rule names its inventory rows (docs/plans/0066-inventory/quests-*.md: P = p
   brackets T2 T3 T4 T6 T7 T8 T37 T38 T34 T35 T58 T63 T67 T83 T85 T86  bracket nesting and arguments
   ff      T9 T10 T11 T12 T19 T20 T22 T60  COLL_FindFreeNear arguments by caller; the walk-extended search
   stale   T48     NPCSTORE_ActStale calls from TownLevelLeave (0x00537402) against the act changes
+  (revision 2, part 2 of the batch: notes only, no new check, so the revision 1 lines are unchanged)
+  rewards P16 P56 the player-record writes of b0 (QS), b1 (QC) and ClearSteps (QK) by word and site, the loader's
+                  0x0054633E and the join clears left out
+  w4fail  P96     word 4 b14 writes: site, the brackets around the write, a TownLevelLeave store line (0x00537402)
+                  before it in the same bracket, the joiner's word 4
+  tmx     P57     the timer runs' results (TMX AL: 1 removes the timer, 0 re-arms it)
+  due     P42     the item-event dispatches (the `due` bracket): return address, event, force
+  writes  P152 P217 P270-P272  every player-record write by word, bit and site; word 37's with the e3 before it
+  w19     P200 P201 every word 19 write on the player record: site, bit, old word
+  acttravel T84   writes of words 7, 10, 15, 23, 28 on the player record (the loader and join clears left out)
+  static (revision 2): absolute references to 0x00543E10; the orb's operate around 0x005BBA1E and 0x005BBB30-0x005BBB49
+                  (the qf2 removal, the party test, the pass 0x005BB850 and its references); Misc rows by pSpell 2
 Stdlib only; read-only.
 """
 import collections
@@ -213,6 +225,45 @@ class Run:
         self.ff(L, brs)
         self.stale(L, brs)
         self.chain(L, brs)
+        self.rev2(L, brs)
+
+    # ---- revision 2: P16 P56 P96 P200 P201 T84
+    def rev2(self, L, brs):
+        skip = ("0054633e", "00588496", "0058846e", "0059d512", "0059d4ee", "0059e93a", "0059e94a", "0059e95a")
+        jrec = next((d.get("rec") for ln, t, d in L if t == "EV" and "rejoin" in d and d.get("rec")), None)
+        for i, (ln, tag, d) in enumerate(L):
+            if tag == "TMX":
+                self.note("P57 timer run results (fn, AL)", "%s %s" % (d.get("fn"), d.get("r")))
+            if tag == "EV" and d.get("k") == "due" and d.get("ph") == 0:
+                self.note("P42 item-event dispatches, the due bracket (ret, event, force)", "%s e%s f%s" % (
+                    d.get("ret"), d.get("ev"), d.get("force")))
+            if tag not in ("QS", "QC", "QK") or d.get("ret") in skip or d.get("ret") == "0054475c":
+                continue
+            w, b = d.get("w"), d.get("b")
+            self.note("P152 P217 P270-P272 every player-record write (word, tag, bit, site)", "w%02d %s %s %s" % (
+                w, tag, "-" if b is None else "b%d" % b, d["ret"]))
+            if w == 37:
+                e3 = [dd for j, t, dd in self.L[:i] if t == "EV" and dd.get("ev") == 3]
+                self.note("P270-P272 word 37 writes after the last e3 (site, bit, e3 +0x14, +0x18)", "%s b%s %s" % (
+                    d["ret"], b, (e3[-1].get("p14"), e3[-1].get("p18")) if e3 else None))
+            if (tag == "QS" and b == 0) or (tag == "QC" and b == 1) or tag == "QK":
+                self.note("P16/P56 player-record b0 sets, b1 clears, ClearSteps (tag, word, bit, site)",
+                          "%s w%02d %s %s" % (tag, w, "-" if b is None else "b%d" % b, d["ret"]))
+            if w == 4 and b == 14 and tag == "QS":
+                enc = sorted((x for x in brs if x.i0 < i < x.i1), key=lambda x: x.i0)
+                inner = enc[-1] if enc else None
+                tll = inner is not None and any(t == "STALE" and dd.get("ret") == 0x00537402
+                                                for j, t, dd in inside(inner, L) if j < i)
+                self.note("P96 w4 b14 writes (site, enclosing brackets outer to inner, a TownLevelLeave store line "
+                          "before it inside, joiner's word 4)", "%s %s tll=%s w4=%s" % (
+                              d["ret"], [x.k + ("e%d" % x.e["ev"] if x.k == "de" else "") for x in enc], tll,
+                              None if jrec is None else jrec[4]))
+            if w == 19:
+                self.note("P200/P201 word 19 writes (log, tag, bit, site, old)", "%s %s b%s %s %04x" % (
+                    self.name[-14:-4], tag, b, d["ret"], d["old"]))
+            if w in (7, 10, 15, 23, 28) and tag == "QS":
+                self.note("T84 act-travel word writes (log, word, bit, site)", "%s w%d b%d %s" % (
+                    self.name[-14:-4], w, b, d["ret"]))
 
     # ---- P4 P8
     def timers(self, L):
@@ -803,6 +854,33 @@ def cmd_static():
     print("E8 calls to QUESTS_TimersRun 0x00543E10: %s" % ", ".join("0x%08X" % c for c in calls))
     b = exe_read(EXE, 0x00741790, 3 * 8)
     print("g_ItemUseFns rows 0..2 (u32 pairs): %s" % ", ".join("0x%08X" % v for v in struct.unpack("<6I", b)))
+    # revision 2
+    for tgt in (0x00543E10, 0x005BB850):
+        pat = struct.pack("<I", tgt)
+        offs, j = [], data.find(pat)
+        while j != -1:
+            offs.append(j)
+            j = data.find(pat, j + 1)
+        print("absolute u32 references to 0x%08X in the file: %d" % (tgt, len(offs)))
+
+    def rel(va):
+        return (va + 5 + struct.unpack("<i", exe_read(EXE, va + 1, 4))[0]) & 0xFFFFFFFF
+    c = exe_read(EXE, 0x005BBA1E, 10)
+    print("0x005BBA1E: push %r (%s), 0x005BBA23: E8 -> 0x%08X" % (c[1:5], "%02X" % c[0], rel(0x005BBA23)))
+    c = exe_read(EXE, 0x005BBB30, 0x1E)
+    print("0x005BBB30: E8 -> 0x%08X; 0x005BBB35: %s (movzx edx, ax); 0x005BBB38: %s (cmp dx, imm16 0x%04X); "
+          "0x005BBB3E: %s (je rel8 -> 0x%08X)" % (
+              rel(0x005BBB30), c[5:8].hex(), c[8:13].hex(), struct.unpack_from("<H", c, 11)[0], c[14:16].hex(),
+              0x005BBB40 + struct.unpack_from("<b", c, 15)[0]))
+    print("0x005BBB44: %s (push 0x%08X); 0x005BBB49: E8 -> 0x%08X" % (
+        c[0x14:0x19].hex(), struct.unpack_from("<I", c, 0x15)[0], rel(0x005BBB49)))
+    import csv
+    with open(os.path.join(EXCEL, "misc.txt"), errors="replace") as f:
+        rows = list(csv.reader(f, delimiter="\t"))
+    h = rows[0]
+    ci, pi = h.index("code"), h.index("pSpell")
+    print("misc.txt rows with pSpell 2: %s (of %d rows)" % (
+        ", ".join(r[ci] for r in rows[1:] if len(r) > pi and r[pi].strip() == "2"), len(rows) - 1))
     return 0
 
 

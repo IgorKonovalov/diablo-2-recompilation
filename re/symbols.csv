@@ -511,7 +511,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00549570,func,sub_00549570_WaypointTravelCheck,,I,quests/travel,docs/findings/quests/0002-travel.md
 0x0054A290,func,sub_0054A290_SrvPkt14OverheadChat,,I,sim/frame,docs/findings/frame/0003-timers-activation.md
 0x0054B650,func,SOCK_PacketInsert,,C,items/sockets-runewords,docs/findings/items/0007-sockets-runewords.md
-0x0054B830,func,sub_0054B830_NpcTravelMove,,I,quests/travel,docs/findings/quests/0002-travel.md
+0x0054B830,func,sub_0054B830_NpcTravelMove,,C,quests/travel,docs/findings/quests/0002-travel.md
 0x0054BA90,func,sub_0054BA90_Pkt31NpcMessage,,I,quests/progression,docs/findings/quests/0001-progression.md
 0x0054C0E0,func,sub_0054C0E0_Pkt41Resurrect,,I,quests/travel,docs/findings/quests/0002-travel.md
 0x0054C590,func,sub_0054C590_Pkt48ActChangeClear,,I,quests/travel,docs/findings/quests/0002-travel.md
@@ -1935,7 +1935,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005BDFF0,func,sub_005BDFF0_ARoomSeedStep,,I,rng,docs/findings/rng/0001-rng-core.md
 0x005BE020,func,sub_005BE020_SpawnTypeRoll,,C,monsters/spawn,docs/findings/monsters/0002-room-population.md
 0x005BE1C0,func,sub_005BE1C0_InvClearUseMark,,I,items/sockets-runewords,docs/findings/items/0007-sockets-runewords.md
-0x005BE290,func,ITEMUSE_TownPortal,,I,quests/travel,docs/findings/quests/0002-travel.md
+0x005BE290,func,ITEMUSE_TownPortal,,C,quests/travel,docs/findings/quests/0002-travel.md
 0x005BEDA0,func,sub_005BEDA0_ItemUseTimedState,,C,data/calc,docs/findings/data/0005-calc.md
 0x005BF170,func,sub_005BF170_ItemUseCastFireBall,,I,skills/catalogue,docs/findings/skills/0015-item.md
 0x005BF1F0,func,sub_005BF1F0_ItemUseCastFireBallXY,,I,skills/catalogue,docs/findings/skills/0015-item.md
@@ -3279,7 +3279,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0064DDB0,func,COLL_CellOr,,I,drlg/collision,docs/findings/drlg/0005-collision.md
 0x0064DDF0,func,COLL_Square3Or,,I,drlg/collision,docs/findings/drlg/0005-collision.md
 0x0064DE30,func,COLL_RectOrWH,,C,drlg/collision,docs/findings/drlg/0005-collision.md
-0x0064DEA0,func,COLL_FindFreeNear,,I,drlg/collision,docs/findings/drlg/0005-collision.md
+0x0064DEA0,func,COLL_FindFreeNear,,C,drlg/collision,docs/findings/quests/0002-travel.md
 0x0064E260,func,COLL_LineTest,,I,drlg/collision,docs/findings/drlg/0005-collision.md
 0x0064E7B0,func,sub_0064E7B0_FreeNearFallback,,I,quests/travel,docs/findings/quests/0002-travel.md
 0x0064E7E0,func,sub_0064E7E0_FreeNearStep,,I,quests/travel,docs/findings/quests/0002-travel.md
@@ -3373,8 +3373,8 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0065B5E0,func,sub_0065B5E0_CompositRecord,,I,items/graphics,docs/findings/items/0003-item-graphics.md
 0x0065B620,func,sub_0065B620_ArmTypeRecord,,I,items/graphics,docs/findings/items/0003-item-graphics.md
 0x0065C310,func,QUESTRECORD_GetState,,I,save/d2s,docs/findings/save/0002-quest-words.md
-0x0065C360,func,QUESTRECORD_SetState,,I,save/d2s,docs/findings/save/0002-quest-words.md
-0x0065C3A0,func,QUESTRECORD_ClearState,,I,save/d2s,docs/findings/save/0002-quest-words.md
+0x0065C360,func,QUESTRECORD_SetState,,C,save/d2s,docs/findings/quests/0001-progression.md
+0x0065C3A0,func,QUESTRECORD_ClearState,,C,save/d2s,docs/findings/quests/0001-progression.md
 0x0065C3E0,func,QUESTRECORD_ClearSteps,,I,quests/progression,docs/findings/quests/0001-progression.md
 0x0065C430,func,QUESTRECORD_Alloc,,I,save/d2s,docs/findings/save/0002-quest-words.md
 0x0065C4D0,func,QUESTRECORD_LoadBytes,,C,save/d2s,docs/findings/save/0001-d2s-io.md
