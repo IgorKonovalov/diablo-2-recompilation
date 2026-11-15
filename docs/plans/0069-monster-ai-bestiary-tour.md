@@ -1,6 +1,6 @@
 # 0069 — Monster AI bestiary tour: the catalogue's harness rows of plan 0066
 
-> **Status:** approved (2026-11-10, by the owner, as recommended: question 1 (a), question 2 (a)); Phase 1a done (`lane/n69a`, Tier B check: accept with fixes, 3; merged); Phase 1b running (`lane/n69b`, 2026-11-15; 29 of 29 entries modelled, Tier B review requested)
+> **Status:** approved (2026-11-10, by the owner, as recommended: question 1 (a), question 2 (a)); Phase 1a done (`lane/n69a`, Tier B check: accept with fixes, 3; merged); Phase 1b running (`lane/n69b`, 2026-11-15; 29 of 29 entries modelled; Tier B check: accept, 0 fixes)
 > **Created:** 2026-11-10
 > **Owner skill(s):** reverser (every phase; the re-tag is plan 0066 Phase 3's, spec-writer)
 > **Related ADRs:** 0003-runtime-experiments, 0004-boundary-oracles-in-reproduction, 0021-observed-boundaries-in-emulation, 0023-review-tiers-and-gate-first-fixes, 0028-case-and-process-in-experiment-records
@@ -829,3 +829,36 @@ Tools: `tools/ai_model_check.py` revision 4 and `tools/test_ai_model_check.py`.
   decisions on the 38 logs, and the four always-forking entries with their rev 7 words proposed for Phase 2.
 - **Next:** Phase 1c (H1c, H1g, H1h) on a branch cut after this one merges; its R32 reuses `npc_save_home`,
   `npc_script_step` and `npc_path_pick`.
+
+### 2026-11-15 — Phase 1b Tier B lane check (architect-check, `lane/n69b`)
+
+Tier B check of `lane/n69b` (head `6af73f90`, then `main` merged in; the catalogue file is unchanged from `b5999f5e`).
+
+**Verdict: accept (0 fixes).** Gate GREEN, 0 errors.
+
+- **Done when, one by one.** (1) All 29 entries modelled, none returned: `MODELS` holds all 29, and `Branches.test_every_entry_is_listed` names them.
+  (2) `test_ai_model_check.py`: 47 tests OK, before and after the merge. The `report` shows 317 named branches, 314 separated by the
+  recorder, the other 3 in `EXEMPT` (summed from `branches.txt`). (3) `regress` under `systemd-run --user --scope -p MemoryMax=4G`:
+  byte-identical to `sweep2-s1b/model-check.txt` without the SEP lines, 32 entries, 38 logs; its stdout equals the kept
+  `regress-model-check.txt` (`cmp`). The 29-entry check over the 38 logs reproduces `new-entries-38.txt` (`cmp`) with 0 decisions
+  for all 29, and `check --no-select` on R117, S15, S5 and R60 reproduces `shared-thinks-38.txt` (`cmp`), 0 decisions.
+  `sha256sum -c manifest.sha256` from `workspace/logs/n69b/`: 7 of 7 OK.
+- **Transcription.** Read against the catalogue blocks: R16, R142, R17, R18 (H1a); R115, R116, R123 (H1b); S6, R42 (H1d). Steps, draw
+  order, tests and constants match; the "dist > 10" and "p ≠ 0" forms are the same tests. S6's `U = 0` arm is left out, which its
+  docstring says (S5's does the same).
+- **Exemptions.** R24 `2.1.aip(5)<v18` and R27 `5.v14<1` guard stores after the block's last call (Ring; the second
+  `Delay`/skill), so no later call in the decision can show them; both hold. R25 `g.dead` is reversed by `test_r25_grant`, which
+  asserts the mismatch. Note for Phase 2: the first two are untested by anything until a log has a following decision.
+- **Existing entries.** The engine diff holds three edits to old code (`want(spec, reg)` reads `_ecx`/`_edx` only when a model
+  sets them; the seed compare is skipped only when `seed is None`, which only `opaque` sets). No old model uses either, and
+  `regress` proves it.
+- **Tables.** No table value copied into `tools/`: `wisp_tables` reads the catalogue text (`test_r25_tables_from_the_spec`), `imp_rec`
+  reads `monstats.bin`, the tests use a synthetic `IMP`. The only literals are the five `g_AiSpotterSkills` ids and the six callback
+  addresses (code-image constants, ADR-0031; the symbols are in `re/symbols.csv`).
+- **Plan text.** The rev 7 words (R119, R120, R58, R41) appear only in this log as proposals; Phase 2's text is not edited.
+- **Judgment calls 1 to 6: all accepted.** 1: the recorder shows each branch observable, not the transcription right; the hand
+  path per entry and this read are the second leg. 2: the three implied calls (`UnitGetRoom` 0x005F3E62 and 0x005EDF7F,
+  `UnitGetGame` 0x005DF96D) are in `audit.txt` as compared CALL lines. 3 and 4: stated per model; a draw in a "draws nothing" callee
+  would show as a seed mismatch in the first log that reaches it. 5: stops rather than guesses. 6: constant branch, documented.
+- **Routed.** Nothing disagrees with a document the lane does not own. Passes 7 and 8: the diff changes no finding, table or format doc.
+- **For Tier A or the owner:** none.
