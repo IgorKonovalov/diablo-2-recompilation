@@ -753,6 +753,15 @@ What it adds to §§ 4 and 5:
   from an OR, not from an AND); the type and hostility filters (no refusal of a row with no hit function logged); state
   54 and stat 120. (fn:MISSILE_HitUnit@0x005ADF10)
 
+### 14. Plan 0065 Phase 1: the `VelLev` term separated (case C2, run:2026-11-15-sweep8-single, `lane/n65h`)
+
+- [C] One session (seed 3, Normal, a Sorceress walking the Blood Moor without casting) logged 3 creations of `spike1`
+  (Missiles row 7, `Vel` 10, `VelLev` 8) at level 1, by `quillrat1`. `tools/skills.py check` on the log: 0 mismatches
+  (`MC.vel`, `MC.range`, `MC.left`, `MC.owner`, `MC.seed` 3 each); `sweep8_check.py c2`: 3 of 3 separating, 0
+  mismatches. The velocity is the one § 2 reads, `tdiv((((8 * lvl) / 8) + 10) << 8 * 75, 100)` = 2112 at level 1; the
+  lead's `VelLev * (lvl - 1) + Vel` gives 1920. This turns § 12's `VelLev` remainder from [I] to [C] for level 1; levels
+  above 1 of `spike1` stay unobserved. (fn:sub_0059FA30_MissileCreate@0x0059FA30, tbl:Missiles.txt:VelLev, run:2026-11-15-sweep8-single)
+
 ## Data touched
 
 `tbl:Missiles.txt:Id`, `pSrvDoFunc`, `pSrvHitFunc`, `pSrvDmgFunc`, `Vel`, `VelLev`, `MaxVel`, `Accel`, `Range`,

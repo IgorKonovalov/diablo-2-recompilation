@@ -165,6 +165,14 @@ Two masks are in play and the lane's first text read one for the other: `testMas
 - **Charge's path:** nothing beyond "closes the distance", stun/weapon-swap bug reports and the "not already in melee range" use limit, none
   with a collision statement.
 
+## Plan 0065 Phase 1: the P12 session (run:2026-11-15-sweep8-p12)
+
+The kept session `p12` (11 546 `MMC` of the Nova, class 90): every word is the path's cached one (path `+0x7C` non-zero), so
+`PathCellCollision` never runs `CollisionTest` at the missile's own point; 156 of the steps lie at a grid bit-0-only point and
+decide nothing. Verdict: **not separated**, the owner's ruling of 2026-11-15 (option (a), no zero-velocity session). Neither
+the lead nor the code reading is confirmed for a fresh bit-0-only word; the lead stays as this document holds it.
+(fn:sub_00648EB0_PathCellCollision@0x00648EB0, run:2026-11-15-sweep8-p12)
+
 ## Open questions
 
 For the spec's Open questions. P12 is the one contradiction, and it belongs to skills/missiles, not to a case of this plan.

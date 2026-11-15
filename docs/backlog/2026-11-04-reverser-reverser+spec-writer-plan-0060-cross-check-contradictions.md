@@ -30,3 +30,5 @@ From the `lane/r60d` cross-check ([items/0017](../findings/items/0017-community-
 The owner declined the run, and 4 has its home. What is left open here is the three live cases (1 to 3): H3 (`mp1` with the flag, a hireling alive), H2 (a pair of different tiers below the maximum) and B8 (a death with a belt above box 3).
 
 **2026-11-04, plan 0060 closed (`lane/w60` review).** This entry is no longer tied to that plan: the owner skipped the third run, so no plan schedules these cases. They stay named in the specs' Open questions, and this entry stays open as the only place that lists the exact setups, for any later harness lane that takes them.
+
+2026-11-15 reverser (`lane/n65h`, plan 0065 Phase 1): the live cases ran, 0 mismatches: H2 (4 blends, 4 separating; [items/0015](../findings/items/0015-harness-inventory.md)), H3 (mp1 refused, the other four flagged rows to the hireling; the Arreat Summit reading is contradicted for 1.14d), B8 (boxes 4..15 to page 0 with room, to the ground without; [items/0013 § 11](../findings/items/0013-grids-belts-stacks.md)). The specs' tags (items/use, items/inventory) are the spec-writer's to move.

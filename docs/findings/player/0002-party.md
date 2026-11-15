@@ -372,6 +372,17 @@ The [backlog entry](../../backlog/2026-11-03-architect-reverser-plan-0058-p1-par
 optional two-client cases are still open: a far credited player with a near member, a dead killer, and a player
 killing a player. So are the three action handlers 1–3 and the two other `PartyRemoveMember` callers.
 
+## 11. Plan 0065 Phase 1: the exp-mask states at a kill (run:2026-11-15-sweep8-single, `lane/n65h`)
+
+Session `xs` (SweepConv: a Paladin casting Conversion at the nearest monster for 40 walking hops from the Cold Plains).
+`XK0` logged 6 kills; `player.py check` 6 kills credited, `XP_AddExperience` reproduced 6 of 6, 0 mismatches;
+`sweep8_check.py xs` 3 state kills, 3 separating, 0 mismatches.
+
+- [C] **A monster that kills a converted one** (3 kills: victim state 53 in the mask, killer a monster of class 19, 63,
+  63): the experience is credited through the victim's `0x800` list, where `MonsterOwner` gave no player; the
+  killer-side mask `kxs` is empty on all 6. (fn:sub_0063A130_UnitHasStateInMask@0x0063A130, run:2026-11-15-sweep8-single)
+- [I] **A converted monster that kills**: not reached (`kxs` empty on every `XK0`); § 4's reading for it stays as it was.
+
 ## Data touched
 
 tbl:States.txt:exp; tbl:Experience.txt (`perClass`, `ExpRatio`) by offset, synthetic here; tbl:Hireling.txt:Exp/Lvl by offset, synthetic here.

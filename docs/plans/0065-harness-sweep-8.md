@@ -280,3 +280,38 @@ be 0 and so take the fresh branch; that is `[I]` until a run, and needs another 
    player/0002, path/0007), the four backlog entries.
 3. `p12` as its own kept record `<date>-sweep8-p12`; verdict "not separated" unless a fresh bit-0-only word appears; Tier A request.
 4. Phase 1 log entry with Tier B (batch) and Tier A (P12) review requests.
+
+### 2026-11-15 — Phase 1 (single-client batch), `lane/n65h` (reverser, slot 1), batch landed, P12 not separated
+
+Resumed from the checkpoint above. Dev reruns (kept as `dev-2026-11-15-sweep8-smoke8` b8room and xs, `smoke9` b8full):
+b8room 12 boxes to page 0, b8full 12 to the ground, xs 5 separating, all 0 mismatches. Kept batch
+`run:2026-11-15-sweep8-single` (`c2 h2 h3 b8room b8full xs`, one fresh process each, 731 s, 6 kept at the first try, no
+death), record in [items/experiments](../findings/items/experiments.md#run2026-11-15-sweep8-single); kept logs
+`workspace/logs/sweep8/2026-11-15-sweep8-single-s1-*`, checks and `manifest.sha256` (24 lines, passes) in
+`workspace/logs/n65h/`.
+
+| Case | Result | Where |
+|---|---|---|
+| C2 | 3 `spike1` creations at level 1, 3 separating (velocity as read, not the lead's), `skills.py check` 0 mismatches | skills/0002 § 14 |
+| H2 | 4 blends, all separating; 6 fresh rates; 2 frees; 0 mismatches | items/0015 |
+| H3 | hp1, rvs, yps, wms to the hireling; mp1 refused twice (the Arreat Summit reading contradicted); 0 mismatches | items/0015 |
+| B8 | boxes 4..15: page 0 with room, ground without; 0 mismatches | items/0013 § 11 |
+| Exp-state | 3 monster-kills-converted cases credit the `0x800` list's owner, separating; a converted killer not reached | player/0002 § 11 |
+
+`inventory_check.py` 73 predictions, 0 mismatches; `player.py check` 6 kills, 0 mismatches. Gate green. The slot is
+clean (`saves.py --slot 1 status`: no aside, harness idle).
+
+**P12: not separated (owner ruling 2026-11-15, option (a)).** The Nova session cannot give a fresh bit-0-only word: its
+path's cached word at `+0x7C` makes `PathCellCollision` (0x00648EB0) return the cache, so `CollisionTest` never runs at the
+missile's own point (all `MMC` of class 90 carry a non-zero `+0x7C`). The owner ruled to accept "not separated" for the bit-0
+word and not to run a zero-velocity missile session with another character; the lane ran the staged session once to keep
+the record. `run:2026-11-15-sweep8-p12` (slot 1, seed 3, `p12.gdb`, kept log `2026-11-15-sweep8-p12-s1-3-p12.log`,
+`manifest-p12.sha256`): `sweep8_check.py p12`: 11 546 `MMC`, all cached words, 156 at a grid bit-0-only point whose cached word
+steps on (counted, decides nothing), 0 separating, 0 against the grid reading, 0 mismatches; verdict "not separated (no fresh
+bit-0-only word)". Neither reading is confirmed: the statement stays as the specs hold it, with the cause named. Whether the
+blank-`Vel` rows (firestorm, `fireexplosion`, `[I]`) take the fresh branch stays untested, by the owner's ruling. P12 backlog
+entry: annotated for the architect to close. **Review request:** Tier A for P12 (backlog entry filed with this entry).
+
+**Short:** the converted-monster-kills branch of the exp-state case; `spike1` above level 1.
+
+**Review request:** Tier B for the batch; Tier A for P12 (backlog entries filed with this entry).

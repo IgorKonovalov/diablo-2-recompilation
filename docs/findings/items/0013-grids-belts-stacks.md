@@ -219,6 +219,18 @@ Predicted by `tools/item_inventory.py`; logged: the item's page, cell and mode a
 24. Two throwing stacks with durability: the merge's stat 72 rule.
 25. The seed compared over each move above.
 
+## 11. Plan 0065 Phase 1: B8, the belt on a death (run:2026-11-15-sweep8-single, `lane/n65h`)
+
+Two sessions (seed 3, Normal, a character at life 5 of 60 with a `hbl` belt and 16 boxes filled, walked out of town
+without a potion until the first hit killed it): `b8room` with page 0 empty, `b8full` with page 0 full (40 `isc`).
+`sweep8_check.py b8` on each kept log: 12 boxes moved, 0 mismatches.
+
+- [C] The corpse's `BeltOverflow` call (one per session, the corpse path's slot loop) leaves boxes 0..3 in the belt
+  (4 each) and moves boxes 4..15 out in box order: with room, to page 0 (12 of 12, as predicted, from (9,3) upward);
+  with no room, to the ground (12 of 12). The statement `BeltOverflow` empties the upper rows into the inventory or
+  onto the ground (`src:maxroll-death`, D2R) is held for 1.14d on this path. (fn:sub_005608C0_BeltOverflow@0x005608C0,
+  fn:PLAYER_CorpseCreate@0x0057F700, run:2026-11-15-sweep8-single)
+
 ## Data touched
 
 tbl:Inventory.txt:gridX, tbl:Inventory.txt:gridY, tbl:Belts.txt:numboxes, tbl:Armor.txt:belt, tbl:Misc.txt:autobelt, tbl:Misc.txt:stackable, tbl:Misc.txt:invwidth, tbl:Misc.txt:invheight, tbl:ItemStatCost.txt:Stat, tbl:ItemTypes.txt:Beltable, tbl:ItemTypes.txt:AutoStack.
