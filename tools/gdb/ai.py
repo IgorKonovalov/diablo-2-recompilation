@@ -99,7 +99,8 @@ def _ai_main():
                 (0x005DE830, 0x005DE8C0), (0x005DF850, 0x005DFC00),
                 (0x005B0CD0, 0x005B0D00))             # rev 7: row 1's think AiIdle (plan 0069 rev 7 item 1)
     NESTED_FNS = (0x005F9E30,)     # rev 7: the calls made inside AiVileMotherSpawn are logged although it is pending (item 3)
-    INIT_FNS = tuple(int(x, 16) for x in os.environ.get("AI_INITS", "0x005F6630,0x005E80E0").split(",") if x)
+    INIT_ENV = os.environ.get("AI_INITS", "0x005F6630,0x005E80E0")      # "any": every init function (a development smoke only)
+    INIT_FNS = () if INIT_ENV == "any" else tuple(int(x, 16) for x in INIT_ENV.split(",") if x)
     st = {"game": 0, "n": {}, "capped": set(), "line": 0, "stk": [], "plr": 0, "row": {}, "tot": 0, "sst": {},
           "msm": {}, "pp": {}, "pend": [], "retarmed": set()}
 
@@ -504,7 +505,7 @@ def _ai_main():
     # and its return (0x005B0F1B), for the init functions of INIT_FNS.
     def on_init0():
         fn = u32(reg("ebx") + 4)
-        if fn not in INIT_FNS:
+        if INIT_ENV != "any" and fn not in INIT_FNS:
             return
         u = reg("edx")
         if not u or u32(u) != 1 or not take("init", CAP_AIN):
