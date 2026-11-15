@@ -711,6 +711,8 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-11-10 | `lane/n67h` review | 0067 P2 | lane-check | 68 546 | 17 | 3 | — | gave accept with fixes (Tier B) | — (T13 cancel-tick mismatch kept as named [I]) |
 | 2026-11-10 | `lane/n67s` | 0067 P3, items/trade | spec-writer | 229 174 | 61 | 14 | no slot | accept with fixes | 6: overclaim 2, misread 1, tool not kept 1, omission 1, stale cross-reference 1 |
 | 2026-11-10 | `lane/n67s` review | 0067 P3 | architect-review | 166 948 | 58 | 9 | — | gave accept with fixes (Tier A); items/trade reviewed | — (T7 overclaim also in finding § 13, missed by the lane/n67h Tier B check) |
+| 2026-11-10 | `lane/n67w` | 0067 P4, wiki inventory | wiki | 112 076 | 21 | 5 | no slot | accept with fixes | 8: overclaim 2, misread 3, omission 2, stale cross-reference 1 |
+| 2026-11-15 | `lane/n67w` review | 0067 P4 | architect-review | 129 599 | 37 | 6 | — | gave accept with fixes (Tier A); plan 0067 closed | — |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not

@@ -5,7 +5,7 @@ target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, items/properties, items/tc, items/vendors, stats/aggregate, monsters/stats, hirelings, combat/delivery, data/excel]
 consumed_by: [items/vendors, hirelings, items/quest-drops, combat/delivery]
 tags: {C: 127, I: 86, L: 12}
-updated: 2026-11-04
+updated: 2026-11-15
 ---
 
 # Item economy: prices, repair, gold, costs and wear
@@ -1030,7 +1030,7 @@ so the amount is `5 + 19 = 24`, unchanged by `mul=`. G7: the killer's stat 79 is
   the type byte (0x0053F100) is not read; plan 0061 Phase 1 is its natural home.
 - [L] Which network modes `g_ClientGameMode` 6 and 8 are (game types 1 and 2). A multiplayer log of `Game+0x6A`
   (plan 0044) settles it.
-- [L] The party gold split (`PartyGoldShare`) and trading gold between players: plan 0044, two clients.
+- [L] The party gold split (`PartyGoldShare`): plan 0044, two clients. Trading gold between players is [items/trade § E](trade.md#e-the-gold-offer).
 - [L] Which code sets the broken flag of a melee weapon at durability 0, if any (H2), and what the client shows.
 - ~~The missile gates of `PLAYER_UseAmmo` (H3).~~ Answered from the code (H3, [skills/0002 § 2](../../findings/skills/0002-missiles.md#2-creation));
   the unit's ranged missile behind `SKILL_AttackDo`'s gate (`0x00645F00`) is plan 0045 P1.3's.

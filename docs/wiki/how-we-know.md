@@ -208,7 +208,8 @@ each hosting session the lane re-reads the firewall state and asks the owner aga
 ([plan 0044 log](../plans/done/0044-multiplayer-branches.md#implementation-log)). Plan 0044's two-client run (19 sessions,
 2026-10-20) confirmed the multiplayer branches it reached, and the specs now say so case by case; a branch it did not
 reach (three or more players, the forge and the Ancients with two players) stays "read from the code"
-([ADR-0003 § Negative](../adrs/0003-runtime-experiments.md#negative)), and trading between players is not read yet.
+([ADR-0003 § Negative](../adrs/0003-runtime-experiments.md#negative)). The trade between players has its own two-client
+run, whose scope [its section](inventory.md#trading-between-players) states.
 
 ## "Not reachable on stock data"
 

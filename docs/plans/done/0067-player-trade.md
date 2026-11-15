@@ -1,6 +1,6 @@
 # 0067 — Player trade: the trade state machine, its commit and its failures (ADR-0033)
 
-> **Status:** approved (2026-11-10, by the owner, as recommended: ADR-0033 accepted; Phase 2 asked again at Phase 1's review; Phase 1 done; Phase 2 go given by the owner 2026-11-10, to run that night)
+> **Status:** done (closed 2026-11-15 at the Phase 4 review; approved 2026-11-10 by the owner, as recommended: ADR-0033 accepted, Phase 2 run on the owner's go)
 > **Created:** 2026-11-10
 > **Owner skill(s):** human, reverser, spec-writer
 > **Related ADRs:** 0008-two-client-harness, 0014-scope-game-simulation, 0025-scope-item-use-inventory, 0026-scope-in-game-message-layer, 0033-scope-player-trade
@@ -16,11 +16,11 @@ choose; the architect ranks it last of the four drafted on 2026-11-10 (ADR-0033 
 ## Context
 
 - **What exists:**
-  - [multiplayer/0002](../findings/multiplayer/0002-trade-and-party-gold.md) § 2 reads the trade state machine
+  - [multiplayer/0002](../../findings/multiplayer/0002-trade-and-party-gold.md) § 2 reads the trade state machine
     statically (all `[I]`), and § 3 predicts MP31.
-  - [items/inventory](../specs/items/inventory.md) names pages 1 and 2 and the trade test at 0x00535610 and leaves
+  - [items/inventory](../../specs/items/inventory.md) names pages 1 and 2 and the trade test at 0x00535610 and leaves
     them unspecified (ADR-0025).
-  - [economy](../specs/items/economy.md) gives the trade price (`ItemTradePrice`).
+  - [economy](../../specs/items/economy.md) gives the trade price (`ItemTradePrice`).
   - Plan 0061 will catalogue the trade messages.
 - **Dependencies:** items/inventory, items/use and items/economy are reviewed. Plan 0061's catalogue is helpful, not
   required: Phase 1 reads the trade handlers itself and cites 0061's entries if they exist.
@@ -73,7 +73,7 @@ choose; the architect ranks it last of the four drafted on 2026-11-10 (ADR-0033 
 
 ### Phase 4 — Wiki
 - **Owner skill:** spec-writer (wiki lane, Opus)
-- **What:** a trade section in [wiki/inventory](../wiki/inventory.md) (ADR-0012).
+- **What:** a trade section in [wiki/inventory](../../wiki/inventory.md) (ADR-0012).
 - **Done when:** reviewed (Tier A, ADR-0030); the review closes the plan.
 
 ## Open questions
@@ -90,7 +90,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 
 ### 2026-11-10 — Phase 1 (static reading), `lane/n67r`
 
-**Done.** [multiplayer/0003](../findings/multiplayer/0003-trade.md) reads the whole trade module (0x00566B30–0x00568D5B)
+**Done.** [multiplayer/0003](../../findings/multiplayer/0003-trade.md) reads the whole trade module (0x00566B30–0x00568D5B)
 and every caller from outside it (`call-sites-trade.txt`: 84 direct calls into the module's 28 entries; the tick's only reference is the
 event slot 0x006E1844). Everything is `[I]`; nothing was run. Kept outputs: `workspace/logs/n67r/static/` (31 files;
 `manifest.txt` hashes the other 30 and passes `sha256sum -c` from that directory; `commands.txt` holds every command). `re/symbols.csv`: 38 new
@@ -148,7 +148,7 @@ If plan 0065 Phase 2 runs two clients, sharing its set-up saves the development 
 
 ### 2026-11-10 — Phase 2 preparation (static), `lane/n67p`
 
-**Done** (no Ghidra, no wine, no game launched). [multiplayer/0003](../findings/multiplayer/0003-trade.md) § 12 holds
+**Done** (no Ghidra, no wine, no game launched). [multiplayer/0003](../../findings/multiplayer/0003-trade.md) § 12 holds
 it; kept outputs `workspace/logs/n67p/static/` (`commands.txt`, `manifest.txt`).
 - **Logger** `tools/gdb/two-trade.gdb` + `tools/gdb/two-trade.py`: § 11's points, read-only (ADR-0003), loading in one
   gdb session with `pilot.py` and `two-players.py` (`gdb-load.txt`); ready line `TRDY`. Added to § 11's list: each
@@ -187,8 +187,8 @@ checked with `trade_check.py check … --excel workspace/merged/data/global/exce
 
 Slots 1 and 2, no owner play. The port-4000 precondition is the owner's `sudo ufw status verbose` of 2026-11-10
 (transcribed by the orchestrator; active, deny incoming, no 4000 rule) with the no-root baseline; every session passed
-`tools/ufwcheck.sh` (`UFW-OK`). Record: [experiments § run:2026-11-10-trade](../findings/multiplayer/experiments.md#run2026-11-10-trade);
-results: [multiplayer/0003 § 13](../findings/multiplayer/0003-trade.md#13-phase-2-run-run2026-11-10-trade-lanen67h).
+`tools/ufwcheck.sh` (`UFW-OK`). Record: [experiments § run:2026-11-10-trade](../../findings/multiplayer/experiments.md#run2026-11-10-trade);
+results: [multiplayer/0003 § 13](../../findings/multiplayer/0003-trade.md#13-phase-2-run-run2026-11-10-trade-lanen67h).
 
 - **Dev session:** the gold entry (coin at (494,461), digits, Return; one `TRB` 8 per entry, after a 7), the close
   (Escape or the circle at (371,461): button 2, code 9), the belt and cells, and the logger smoke (every tag the checker
@@ -205,7 +205,7 @@ results: [multiplayer/0003 § 13](../findings/multiplayer/0003-trade.md#13-phase
 
 ### 2026-11-10 — Phase 3 (the spec), `lane/n67s`
 
-**Done** (no Ghidra, no slot, no game). [items/trade](../specs/items/trade.md) is written as a draft: C 53 / I 74 / L 9.
+**Done** (no Ghidra, no slot, no game). [items/trade](../../specs/items/trade.md) is written as a draft: C 53 / I 74 / L 9.
 Sections: A the states and the tick (state diagram), B the request, C the buttons, D the offer pages and the change lock,
 E the gold offer, F the commit (diagram of its order; the FIRST room test against the BEST moves; the half commit
 undone by the snapshots), G the record and the snapshot, H the ways out, I the save mid-trade; a worked example from
@@ -241,7 +241,7 @@ section in wiki/inventory) follows the review.
 
 ### 2026-11-10 — Phase 3 Tier A review (`lane/n67s`): accept with fixes
 
-**Verdict: accept with fixes (6).** [items/trade](../specs/items/trade.md) is promoted to `reviewed` (C 53 / I 75 / L 9);
+**Verdict: accept with fixes (6).** [items/trade](../../specs/items/trade.md) is promoted to `reviewed` (C 53 / I 75 / L 9);
 the research-map row and the plans index say so. Checked: `trade_check.py check` re-run on a, b and c gives the kept
 totals (547/318/0, 362/203/0, 400/218/2); every manifest passes `sha256sum -c`. 28 `[C]` statements sampled over §§ A–I
 and the entry points, 23 against the host log lines of their case and 5 (A1's steps, B2.6, C3, F2, F1.7) through the re-run checker alone (the T3 a/b events and
@@ -271,3 +271,63 @@ questions*; the diagrams add no claim; the items/inventory note is dated.
 - **Gates.** `tools/quirks.py check`: 538 entries, 0 errors. `tools/gate.py --full`: green.
 - **Ledger** (for the orchestrator's row): accept with fixes; overclaim 2, misread 1, tool not kept 1, omission 1,
   stale cross-reference 1. Next: Phase 4, the wiki section (spec-writer).
+
+### 2026-11-10 — Phase 4 (the wiki section), `lane/n67w`
+
+**Done** (no Ghidra, no slot, no game). [wiki/inventory](../../wiki/inventory.md) gains `## Trading between players`
+from [items/trade](../../specs/items/trade.md) (reviewed, `updated: 2026-11-10`, added to `based_on`): how a trade opens,
+offers and what locks, gold, both accepts (state diagram), the commit (flow diagram; the first-fit room test against the
+best-spot moves, both directions, T13 as the worked table), the snapshot undo, every way out (table), the save
+mid-trade. Each statement says whether a case of run:2026-11-10-trade reached it ("seen", with the run's scope stated
+at the top of the section) or it is read from the code; the T13 tick mismatch is named as an open question.
+Stale text closed: the page's intro ("trading … out of scope"), the "Trading is not specified" line of *What is not
+known yet* (now three trade bullets from the spec's open questions), the pages paragraph, *Random draws* (a row: the
+trade's copies' draws unknown), *Where to read more*; wiki/README's row 9 and its coverage paragraphs.
+
+**Judgment calls for the reviewer.** (1) "Seen" in the trade section means the trade run, defined there; the page's
+*How sure* table, which describes the two item runs, gets a one-line pointer instead of a third row. (2) Message codes,
+button numbers and state numbers are left out; states are named in words (open, accepted, changed, locked, ended).
+
+**Handoff.** Review: **Tier A** (ADR-0030, wiki lane); the review closes the plan.
+
+### 2026-11-15 — Phase 4 Tier A review (`lane/n67w`): accept with fixes; plan closed
+
+**Verdict: accept with fixes (8)**, applied on the branch. The section restates [items/trade](../../specs/items/trade.md)
+section by section; every "seen" was read against the spec's `[C]` notes and every "read from the code" against its
+`[I]` pseudocode. No `[L]` is stated as fact (the T13 lead is named as a lead under *What is not known yet*), the
+section carries no history or dates, and the three diagrams illustrate statements the text makes. Judgment calls: (1)
+the one-line pointer from *How sure* to the section's own definition of "seen" stands; (2) leaving out the codes and
+state numbers stands.
+
+Fixes, all in [wiki/inventory](../../wiki/inventory.md) unless named:
+
+1. *How a trade opens*: the corpse case of B1 (a dead target within 8 is picked up, no request) added. (omission)
+2. *How a trade opens*: "nothing happens if … either player is already in a trade" contradicted B2: a target in a trade
+   is busy and the asker gets the step-2 message; the silent return is step 4, either state not back to idle, after the
+   end-window tests. Split into two bullets in the code's order. (misread)
+3. *Offers*: "any move … un-accepts both" scoped: D1's early refusal (no partner record, the end lock, bit 23) refuses
+   with no state change. (overclaim)
+4. *The commit*, step 2, and *What is not known yet*: T4's `side` 1 is the offer of B, the player who accepted first;
+   the page said "the second accepter's side" and listed the unreached side 0 as "the giver's side". Both renamed by
+   whose offer failed. (misread)
+5. *The gold*: the overspend's exception is "either player Blocked" (bit 22, bit 23 or the update list), and a blocked
+   overspend falls through to the clip and the store; the page said "unless a move is pending". (misread)
+6. *Every way a trade ends*: "the server saves first" for any leave; `ClientRemove` saves when its argument is 1, seen
+   for the dropped client, unread at its other callers. Scoped. (overclaim)
+7. *The commit*, step 4: the move order and the new copies carried no tag; marked seen (T13, the exchanges). (omission)
+8. Stale text the section made stale: [wiki/how-we-know](../../wiki/how-we-know.md)'s "trading between players is not read
+   yet", [wiki/economy](../../wiki/economy.md)'s "trading between players (a two-client plan)" and the matching `[L]` of
+   [items/economy](../../specs/items/economy.md#open-questions), now pointing at items/trade § E (economy `updated`
+   2026-11-15, its wiki `based_on` and research-map row with it; the `[L]` count unchanged). (stale cross-reference)
+
+**Plan open questions.** Both settled by the phases: Phase 2 ran (the owner's go, 2026-11-10), and no case needed a
+forced client message; the unreached branches a written packet would reach are items/trade's open questions.
+
+**Close.** Status done, moved to `docs/plans/done/`, the plans index, the research map (`items/trade` row and the
+ADR-0033 paragraph) and the root README updated. No backlog entry was answered by this phase.
+
+**Gates.** `tools/gate.py`: green.
+
+**Ledger** (for the orchestrator's row): accept with fixes; overclaim 2, misread 3, omission 2, stale cross-reference 1.
+Promoted: none new; fixes 2, 4 and 5 recur under spec-writer rule 3 and fix 8 under rule 7, whose *Seen* lists gain
+this review.

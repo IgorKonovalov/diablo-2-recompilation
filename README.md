@@ -136,7 +136,6 @@ Approved, not running ([plans index](docs/plans/README.md)):
 - **[0061](docs/plans/0061-message-catalogue.md)**: the client–server message catalogue, every in-game message in both directions.
 - **[0065](docs/plans/0065-harness-sweep-8.md)**: harness sweep 8, the backlog's live cases on one and two clients.
 - **[0066](docs/plans/0066-simulation-inferred-claims-sweep.md)**: the inferred-claims sweep over the simulation and game-rules specs.
-- **[0067](docs/plans/0067-player-trade.md)**: the player-to-player trade, a new row `items/trade`.
 
 Closed plans are in `docs/plans/done/`, listed in the [plans index](docs/plans/README.md).
 
