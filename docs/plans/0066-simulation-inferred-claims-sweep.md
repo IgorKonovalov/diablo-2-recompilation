@@ -826,3 +826,102 @@ Targeted ruling on the three points the Tier B check left, not a full re-review.
 - **S3e: for Tier A / architect ruling.** The plan's Phase 1 rules do not let a lane add a batch (the plan names batches
   for the owner, e.g. H1h `proposed`); S3e's § 4 row is well formed (2 statements, travel 19 and 60, c-emu, method
   ADR-0015/0021/0029, status `proposed`, matching `quests-travel.md`'s 2 c-emu rows) and stays `proposed`.
+
+### 2026-11-15 — Phase 1, batches S4a and S4b (reverser-static, `lane/n66h`): done, 41 of 41 settled
+
+- **Done.** Both batches in one lane, no game, no Ghidra. New tool `tools/sweep2_s4ab.py` (`a82294bc…`; sections `static`,
+  `tables`, `econ`, `price`, `use`), run once under a 4 GB scope: `workspace/logs/n66h/check.txt` (`11b81eef…`, 293 lines,
+  `S4 total bad=0`), `manifest.sha256` (`78f02ccc…`) passing from `workspace/logs/n66h`; development outputs in `dev/` with
+  their own manifest. Second tools: r2 and the raw-byte scan (`tools/xrefscan.py`) where `tools/economy_scan.py` (objdump)
+  or Ghidra read first; objdump (`tools/sweep_s4b.py`'s walker) where Ghidra read first. Inputs: the 38 economy and economy2
+  claim logs, the three kept inventory-2 logs, the 12 H2a logs, each under its run's manifest. Record:
+  [items/experiments § Addendum 2026-11-15](../findings/items/experiments.md#addendum-2026-11-15-plan-0066-batches-s4a-and-s4b-new-checks-over-the-kept-economy-and-inventory-logs-and-static-second-sources-lanen66h)
+  under run:2026-10-17-economy, with pointer lines under run:2026-10-19-economy2 and run:2026-11-04-inventory-2; dated notes in
+  items/0011 § 5 and skills/0002 § 2. Every row's *Route* cell carries its dated S4a or S4b note.
+- **S4a (22): raised 10, raised in part 12, moved 0.** Raised: 2 (the NPC class tests, r2), 6 (`PLAYER_GoldCap`, r2 and the
+  at-cap branch at L 30), 24 (`cost mult` ≤ 896 over 357 rows), 39 and 86 (one item per `ItemRepairAll`; repair-all's 21
+  calls return inside `RepairCost`), 44 (depth 6 through 0x0055C5C0, each edge in r2), 45 (the 22 repair sites, 1 in 651
+  quest functions), 57 (the gold-drop callers, Baal's included), 67 (`NpcHealDead` unreferenced), 81 (the +2 is the nested
+  drop's). In part, the remainder and its home in each row: 3 (client inputs → d-none), 21 (quality 9 → d-none), 40 (the
+  charge branch → a-run H4a), 49 (the over-cap branch → a-run H4b), 53 (`mul=` 1536, 2048 → a-run H4a; the order → d-none),
+  60 ("written once" → b H4b), 65 (the cost sent → b H4b), 68 (melee-only, combat/delivery's own rows), 75 (the
+  `magicarrow` test, `UseAmmo`'s gate, the monster sites' functions → a-run H4a), 77 (`calc2`/`calc3` → b H4b), 78 (the
+  none-queued test → a-run H4a; the signed division, non-positive `r` only → d-none; Tier B fix), 84 (charges after a use → a-run H4a).
+- **S4b (19): raised 15, raised in part 4, moved 0.** Raised: 1, 2 (the handlers, logged and read), 5 (do 113's two calls),
+  11 (178 `PKT` lines at the table's rows, return address 0x0054D81A), 13 and 64 (the return read by neither frame), 17 and
+  59 (the gate's pushes 0, 0, 1, no draw past 0x0057EFF2, the seed unchanged 175 of 175), 29, 30, 31, 58 (no draw in the
+  three bodies), 41 (no `GroupClear` under kind 3), 53 (`key`'s row and `KeyConsume`'s two callers), 56 (the three getters,
+  no abs32 pointer). In part: 9 (FIFO, clients, the lock → c, S7f, sim/frame row 27), 28 (which side of `ItemUse` → b H4c),
+  35 (the non-player branch → b H4c), 57 (the client rule → d-none).
+- **Contradicted in part: economy row 40** (F1, line 485): the "13 `nodurability` crossbows of a `Repair` type" are 12
+  crossbows and the Phase Blade `7cr` (`swor`). A label, not a behaviour: Phase 3 rewords it, and the archivist corrects
+  ItemTypes.md line 181 (backlog [`2026-11-15-reverser-spec-writer+archivist-plan-0066-s4a-s4b-corrections`](../backlog/2026-11-15-reverser-spec-writer+archivist-plan-0066-s4a-s4b-corrections.md),
+  which also carries skills/0002's monster `useAmmo` sites). No owner decision is needed.
+- **Symbols:** `PLAYER_GoldCap`, `sub_0055B060_PlayerGiveGold`, `sub_0054B1E0_Pkt20UseInvItem`, `sub_0054B560_Pkt26UseBeltItem`
+  raised to `C` in `re/symbols.csv` and in items/0011's and items/0012's Functions tables (review-fixes 14).
+- **Totals** recomputed from the 29 inventory files' *Totals by class* after merging `main` `684332ee`: a-logs 645, a-run 340,
+  b 432, c 390, c-emu 491, d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626; Phase 1 1 526, Phase 2 772, blocked 328. No
+  row moved, so README § 1 and § 3 are unchanged; § 4's S4a and S4b rows record the outcome.
+- **Ready for Phase 3 (spec-writer), spec lines at `b5999f5e`, match by text.** items/economy whole: 63, 134, 326, 473,
+  523, 535, 632, 718, 851, 985; split (the `[C]` half each row's note names): 71, 276, 483 (with the correction), 564, 587,
+  677, 715, 767, 806, 819, 825, 875. items/use whole: 36, 37, 40, 129, 137, 152, 289, 293, 296, 402, 488, 494 (its
+  "indirect callers and table pointers are unfollowed" becomes "no abs32 pointer to any of them"), 503, 504, 534; split: 115,
+  282, 357, 495. Economy 535's "642 quest functions" is 651 by today's symbols, one site either way.
+- **Review:** Tier B (plan 0066 Phase 1). Judgment calls to check: (1) row 6 raised whole on two tools' reading of
+  `imul eax, eax, 0x2710` plus the at-cap equality at one level (L 30), the other levels only bounded; (2) row 17's raise
+  rests on the operands and the reach from 0x0057EFF2, not on the unchanged seed, which a draw gated on state 42 would give
+  as well (review-fixes 10); (3) rows 3, 21, 57 and 78 route a remainder to d-none (client display, quality 9 with no stock
+  source, client rule, a positive `r` only) rather than to a harness batch; (4) row 75's six monster sites: the values
+  raised, the functions left `[I]` because skills/0002's five entries do not hold them; (5) row 45 raised with today's 651
+  quest functions where the spec says 642 (the filter is the same; `re/symbols.csv` grew); (6) row 60's "written once" kept
+  `[I]` although the only other `+0x6A` byte store is a client record copy, since a displacement search cannot see a store
+  through another base (0038 S3b ruling 4's limit); (7) four symbol raises, two of them handlers whose identity (entry =
+  table row, opcode's packet) rather than return the run checks.
+
+### 2026-11-15 — Phase 1, batches S4a and S4b: Tier B lane check (`lane/n66h`): accept with fixes (3)
+
+- **Verdict:** accept with fixes, 3 (overstated tag 2, misrouted remainder 1). Gate green. `main` `684332ee` already merged,
+  nothing moved; totals recomputed from the 29 files' *Totals by class*: 2 626 (a-logs 645, a-run 340, b 432, c 390, c-emu 491,
+  d-2c 59, d-owner 68, d-edit 23, d-none 178), unchanged.
+- **Mechanical.** `manifest.sha256` and `dev/manifest-dev.sha256` pass `sha256sum -c`; `tools/sweep2_s4ab.py` (`a82294bc…`) rerun
+  under a 4 GB scope is byte-identical to `check.txt`; the three price controls fail as stated (196, 375 and 1 135 mismatch
+  lines, all in their one quality; stock 0). The contradiction: the parsed Weapons, Armor and Misc tables give 13 `nodurability`
+  bases of a `Repair` type, 12 of type `xbow` and 1 of type `swor`. The backlog entry is well formed. The four symbol rows agree
+  between `re/symbols.csv` and the Functions tables.
+- **Fixes.** (1) items/0011's `PlayerGiveGold` row said "drop the overflow" under `C`, where the over-cap split is row 49's
+  `[I]` remainder: scoped. (2) items/0012's two handler rows carried the length and fields ("13 bytes: guid, x, y") under `C`
+  where the run checks the entry, opcode and return only (use.md § B keeps them `[I]`): scoped. (3) Row 78's remainder was
+  routed whole to d-none: the none-queued test is reachable on stock (a second loss inside one interval), so it goes to a-run
+  H4a; only the signed division for a non-positive `r` is d-none (stock `rep-dur` values in the affix, unique and rune tables
+  are all positive).
+- **Judgment calls.** (1) row 6 accepted: the cap's form is code (two tools) and the equality at L 30 runs it; the other levels
+  are bounded only, as the row says. (2) row 17 accepted: the second source is objdump's read of the pushes and of the test at
+  0x0057EEFB (`cmp [ebp+0xc], 0; je 0x0057EFF2`, no draw before it or from it), the unchanged seed only agrees. (3) rows 3, 21
+  and 57 d-none accepted as presentation or no stock source (precedent stats-states 18, items/0010 qd 42 "no stock quality 9
+  item", items/0008's disabled tempered rows); row 3 and 57 are client presentation, reachable but out of the spec's scope: for
+  Tier A to confirm that reading of d-none. (4)–(7) accepted.
+
+### 2026-11-15 — S3e and d-none for client presentation: architect rulings (`lane/n66r`)
+
+Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
+
+- **Ruling 1, S3e is folded into S7e.** A Phase 1 lane does not add batches, and a two-statement batch is not worth a lane
+  of its own. Travel 19 and 60 are the same method family as S7e: `COLL_FindFreeNear` (0x0064DEA0) is already emulated by
+  the ground-emu cases (run:2026-11-04-ground-emu, size 1, step 1, mask 0x801) that S7e names. The fold adds step 5 and
+  the mask 0xC01 walk back, on cases built so that the ring and the walk each change the found cell, compared with
+  `tools/quests_s3a.py`'s `free_near_walk`. § 4: the S3e row is removed and S7e goes from 61 to 63 statements. Phase 1
+  now has 36 batches, not 37. `quests-travel.md` rows 19 and 60 now carry batch S7e, and the remainders of rows 20 and 22
+  point to S7e. Classes are unchanged, so the totals stay at 2 626. findings/quests/0002-travel.md line 694 still says
+  "S3e, proposed". The S7e lane updates it with its addendum, since the file belongs to the reverser.
+- **Ruling 2, client presentation stays in d-none with its own label.** d-none's "no observable on stock" does not fit a
+  client-only presentation claim: stock play reaches it and a client logger could observe it. d-edit fits worse, because
+  stock data reaches the claim. The plan still runs no batch for it, because the specs cover the simulation and not the
+  client. So the claim stays in the d-none column, with no new column and no change to the totals, but its *Route* cell
+  begins `out of scope: client presentation`. The label covers the client half only. A server clause in the same line
+  keeps its own route. In Phase 3 the line stays `[I]` or becomes a scope note. The rule is written in the inventory
+  README's class table and in a note under § Conventions. It was applied to stats-states 18 (the precedent, a d-none
+  row) and to economy 3's remainder. In row 3, "the server's call decides" is a server claim and does not take the label.
+  Economy 57 is raised whole and has no d-none remainder, so the S4a check named it by mistake. Economy 21 (quality 9)
+  and 53 (`mul=` multiples of 256) are true no-stock-source cases and stay plain d-none. quests/progression 11 and
+  stats-states 26 are reading notes and also stay plain d-none. Totals unchanged: a-logs 645, a-run 340, b 432, c 390,
+  c-emu 491, d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626.

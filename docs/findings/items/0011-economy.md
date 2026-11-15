@@ -152,10 +152,10 @@ Blind first: § 1–§ 7 were read from the code before the pages below were fet
 | `0x00578ED0` | `sub_00578ED0_NpcHealDead` | heal for gold; no caller | I |
 | `0x00622DE0` | `sub_00622DE0_HealCost` | `L·(missing HP + mana)/256/4` | I |
 | `0x0062A530` | `sub_0062A530_CountUnidentified` | unidentified items in inventory | I |
-| `0x00622E70` | `PLAYER_GoldCap` | `level × 10 000` | I |
+| `0x00622E70` | `PLAYER_GoldCap` | `level × 10 000` (C since plan 0066 S4a/S4b, [experiments § Addendum 2026-11-15](experiments.md#addendum-2026-11-15-plan-0066-batches-s4a-and-s4b-new-checks-over-the-kept-economy-and-inventory-logs-and-static-second-sources-lanen66h)) | C |
 | `0x00623460` | `PLAYER_StashGoldCap` | 2 500 000 | I |
 | `0x0053FF00` | `sub_0053FF00_UnitAddGoldStat` | add to stat 14/15, zero on overflow | I |
-| `0x0055B060` | `sub_0055B060_PlayerGiveGold` | add to carried gold, drop the overflow | I |
+| `0x0055B060` | `sub_0055B060_PlayerGiveGold` | add to carried gold, drop the overflow (C for the identity, the at-cap drop and the plain add; the over-cap split `[I]`, no case; C since plan 0066 S4a/S4b, [experiments § Addendum 2026-11-15](experiments.md#addendum-2026-11-15-plan-0066-batches-s4a-and-s4b-new-checks-over-the-kept-economy-and-inventory-logs-and-static-second-sources-lanen66h)) | C |
 | `0x005357D0` | `PLAYER_DeathGoldLoss` | the death loss | I |
 | `0x00535510` | `sub_00535510_PlayerDropGold` | drop an amount as piles at the player | I |
 | `0x0055C850` | `sub_0055C850_GoldPickup` | pick up a pile | I |
@@ -364,6 +364,8 @@ flowchart TD
   else `ItemHasDurability`. So the 13 `nodurability` crossbows of a `Repair` type are refused unless they have
   charges, and bows and `tpot` (no `Repair` type) likewise. (0x0062E660–0x0062E6E5, tbl:ItemTypes.txt:Repair,
   tbl:Weapons.txt:nodurability)
+  *2026-11-15 (plan 0066 S4a, `lane/n66h`):* the 13 are 12 crossbows (`xbow`) and the Phase Blade `7cr` (`swor`), not 13
+  crossbows (full-table check, [items/experiments § Addendum 2026-11-15](experiments.md#addendum-2026-11-15-plan-0066-batches-s4a-and-s4b-new-checks-over-the-kept-economy-and-inventory-logs-and-static-second-sources-lanen66h); tbl:Weapons.txt:nodurability).
 - [I] **The client copy.** Six client call sites (`0x0049024C`, `0x004B2C7C`–`0x004B3AB6`) and two of `RepairCost`
   (`0x004887F0`, `0x004B38FA`) call the same functions with the client's difficulty (`0x0044DCD0`) and quest record
   (`0x00463DE0`): the displayed prices are the same arithmetic on the client's copies of the units; the server's
@@ -525,7 +527,7 @@ cache as is), `HIRELING_RollEntry`'s price (already C), the gold pile amounts (i
 | Point | Answer | Anchor |
 |---|---|---|
 | (a) `cost` 0 rows; 5 armours with `cost` > `gamble cost` | `cost` 0 prices at 0 and returns the floor 1; `gamble cost` is read only for `rin`/`amu` and version-0 items, so the five armours' cells are unread on items of version ≥ 1 | 0x0062F09D, 0x006293DA `[I]` |
-| (b) the 13 `nodurability` crossbows; bows and `tpot` | the repair test needs the own type's `Repair` and `ItemHasDurability` (or charges, or a repairable stack): all of them refused unless charged | 0x0062E6B2–0x0062E6D7 `[I]` |
+| (b) the 13 `nodurability` bases of a `Repair` type (12 crossbows and `7cr`, corrected 2026-11-15, plan 0066 S4a); bows and `tpot` | the repair test needs the own type's `Repair` and `ItemHasDurability` (or charges, or a repairable stack): all of them refused unless charged | 0x0062E6B2–0x0062E6D7 `[I]` |
 | (c) MagicPrefix `divide` 0 | `divide` is not read; the divisor is 1024 | 0x0062F1AB–0x0062F213 `[I]` |
 | (d) QualityItems / rare names: no price cell | the quality term is code only (low halves; superior and tempered get the stat terms) | jump table 0x0062FD9C `[I]` |
 | (e) priced stats with no term; `ValShift` 8 | a stat with `Multiply` and `Add` 0 adds 0; `ValShift` stats are shifted right first (whole points) | 0x00628F15–0x00628F1C `[I]` |

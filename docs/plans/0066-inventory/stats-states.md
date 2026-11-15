@@ -23,7 +23,7 @@
 | 15 | 190 | B. The timed apply | The hook's type and class tests (a monster defender outside 704–709) are not separated: every … | – | d-owner | defenders 704–709 are the uber bosses (owner play); a player defender needs a second client | – | 1 |
 | 16 | 193 | B. The timed apply | Use kinds 6 and 9 only (sub_005BEDA0_ItemUseTimedState: yps, wms, vps, hrb) run the group clear | – | c | exhaustive xref scan with a second tool on `STATE_GroupClear` (nine call sites) | S4d | 1 |
 | 17 | 206 | C. Expiry and removal | C2. STATE_DefaultRemoveCB(unit, state): | `fn:STATE_DefaultRemoveCB@0x0056E900` | a-logs | EXP lines and the state clears and PAS lines after them in the s1017 logs (2 749 expiry runs) | S4d | 1 |
-| 18 | 229 | C. Expiry and removal | The client copy calls the same function with frame 0, which counts + down by … | – | d-none | the client copy is presentation | – | 1 |
+| 18 | 229 | C. Expiry and removal | The client copy calls the same function with frame 0, which counts + down by … | – | d-none | out of scope: client presentation (the client copy is presentation; architect ruling 2026-11-15) | – | 1 |
 | 19 | 231 | C. Expiry and removal | Death and mode. Death frees every counting child that is not from an item (+ … | – | b | as row 3 | H4e | 1 |
 | 20 | 264 | D. The group clear | The call is re-entered: the nested call for 139 runs inside the outer call for … | – | b | a return-address field on the group-clear lines of the shortfalls2 recipe | H4e | 1 |
 | 21 | 293 | E. The regeneration tick | if hp < 256: hp ← 256 | `0x0058065B` | b | as row 24 | H4e | 1 |
