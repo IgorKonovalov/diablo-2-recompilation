@@ -982,7 +982,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   contradictions: [`2026-11-15-reverser-spec-writer-plan-0066-s4c-s4d-corrections`](../backlog/2026-11-15-reverser-spec-writer-plan-0066-s4c-s4d-corrections.md).
 - **Symbols:** none raised. The run compares call sites, arguments, bytes and table cells, not a logged return of a named
   function (review-fixes 14's scope); judgment call (6) below.
-- **Totals** recomputed from the 29 inventory files' *Totals by class* after merging `main`: a-logs 645, a-run 340, b 432,
+- **Totals** recomputed from the 29 inventory files' *Totals by class* after merging `main` `82eaa099`: a-logs 645, a-run 340, b 432,
   c 390, c-emu 491, d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626. No row moved class (remainders are noted in the
   *Route* cells, as S4a/S4b did), so README § 1 and § 3 are unchanged; § 4's S4c and S4d rows record the outcome.
 - **Ready for Phase 3 (spec-writer), items/inventory lines at `b5999f5e`, match by text.** Whole: 42, 43, 44, 75, 76, 78,
