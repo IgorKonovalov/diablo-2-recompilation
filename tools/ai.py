@@ -46,7 +46,7 @@ MODS = ["ai_cat_emu", "ai_cat_emu2", "ai_cat_emu3", "ai_cat_emu4", "ai_cat_emu5"
 TIER = {2: "Skeleton", 6: "Fallen", 9: "Wraith", 13: "FallenShaman", 20: "Scarab", 21: "Mummy", 22: "GreaterMummy",
         28: "Vampire", 29: "BatDemon", 30: "Fetish", 34: "Andariel", 35: "CorruptArcher", 37: "SkeletonBow",
         61: "Hireable", 64: "SkeletonMage", 67: "NecroPet", 89: "Megademon", 125: "BloodLord"}
-TAGS = ("AGM", "AIN", "AID", "AIB", "AIR", "AIL", "MSM0", "MSM1", "PP0", "PP1", "SST0", "SST1", "AIX", "CAP")
+TAGS = ("AGM", "AIN", "AID", "AIB", "AIR", "AIL", "MSM0", "MSM1", "PP0", "PP1", "SST0", "SST1", "AIX", "CAP", "R7W", "AII", "AIQ")
 # the controls after the seed in each module's Hit tuple (before the block, where it has one): which AiCtl words
 CTRL = {"ai_cat_emu": ("c14",), "ai_cat_emu2": ("c14", "c18"), "ai_cat_emu3": ("c14", "c18", "c1c", "c4"),
         "ai_cat_emu4": ("c14", "c18", "c1c", "c4", None), "ai_cat_emu5": ("c14", "c18", "c1c"),
@@ -157,8 +157,11 @@ HAND_OBS = {0x005F02C0: (0x00540E60,), 0x005F1440: (0x005DDF90, 0x005A0180), 0x0
 
 # ----------------------------------------------------------------------------------------------------- the log
 def parse(path):
-    """The AI lines of a log: {"dec": [decision], "ain": [..], "sst": [..], "cap": [..], "lines": n}."""
+    """The AI lines of a log: {"dec": [decision], "ain": [..], "sst": [..], "cap": [..], "lines": n, "inits": [(tag, d)]}.
+    Rev 7: a decision's "r7" is {key: word} from its R7W lines (the first of a key; all are in "r7all"), and "inits" holds the
+    AII and AIQ lines of MonAiInit's init calls in file order."""
     dec, byk, ain, sst, sstk, cap = [], {}, [], [], {}, []
+    inits = []
     n_lines = 0
     rev = None
     bmax = 8
@@ -194,6 +197,12 @@ def parse(path):
                     if pair[1] is None:
                         pair[1] = d
                         break
+            elif tag == "R7W" and d["k"] in byk:
+                x = byk[d["k"]]
+                x.setdefault("r7all", []).append(d)
+                x.setdefault("r7", {}).setdefault(d["key"], d["v"])      # a word read twice in a decision keeps the first
+            elif tag in ("AII", "AIQ"):
+                inits.append((tag, d))
             elif tag == "AIL" and d["k"] in byk:
                 byk[d["k"]].setdefault("ail", []).append(d)
             elif tag == "AIX" and d["k"] in byk:
@@ -216,7 +225,7 @@ def parse(path):
         d["bmax"] = bmax
     if dec and dec[-1]["aix"] is None and not dec[-1]["aib"]:
         dec[-1]["trunc"] = True       # the log ends inside the last decision (the game exited): nothing to compare
-    return {"dec": dec, "ain": ain, "sst": sst, "cap": cap, "lines": n_lines, "rev": rev}
+    return {"dec": dec, "ain": ain, "sst": sst, "cap": cap, "lines": n_lines, "rev": rev, "inits": inits}
 
 
 # ----------------------------------------------------------------------------------------------------- inputs

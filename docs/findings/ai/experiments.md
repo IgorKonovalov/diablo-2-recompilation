@@ -1287,3 +1287,117 @@ Owner-played (ADR-0028: five processes, each one case; plan 0052 P1b-1 and the C
 - **Conclusion:** the 24 maps are `[C]` on their declared image, every callee run whole, with corrections 1 to 6. No
   symbol raise: an ADR-0015/0021 emulation over a declared scratch image confirms the map, not the role a name states
   (review-fixes rule 14). (run:2026-11-15-sweep2-s1e)
+
+## run:2026-11-15-ai-tour-1
+
+- **Question:** (plan 0069 Phase 2) Does the rev 7 logger keep every rev 6 line and add the words of the plan's rev 7 list
+  without disturbing the decisions, and do the Act I cases of plan 0069's tour, with the models of Phases 1b and 1c and
+  the revision 6 words, check with 0 mismatches? Which statements of the H1a to H1d, H1g and H1h batches do those cases
+  reach (the raise itself is Phase 4's)?
+- **Setup:** `tools/gdb/ai.py` rev 7 through `tools/gdb/ai-g4.gdb` (the AI logger with the G4 and P1b2 sources, unchanged),
+  slot 2 (display `:9`, `workspace/wineprefix-2`), every launch inside `systemd-run --user --scope -p MemoryMax=4G`,
+  runner `tools/ai_sessions.py` (the library runner, `--fresh`: one game process per case, ADR-0028 item 1), characters
+  built from the recipes by `ai_sessions.py build --saves workspace/logs/n69d/saves` (CombatSor `1d9de374…`, the kept
+  character). Seeds are the case table's (plan 0069 Phase 1a: Act I 7159; the four H1h reruns keep their kept cases'
+  seeds 5803, 5602, 5401, 5802). The model checker is `tools/ai_model_check.py` revision 6 and `tools/ai.py`.
+  The rev 7 additions (read-only, harness-play rule 17): `R7W` word lines at breakpoints of the think code (MonPlayerBonus's
+  difficulty word at 0x005F0B37, MonsterOwnerRef's (guid, type) at 0x005F6EED, AiNearestPlayer's (p, f, unit type of p) at
+  0x005E73BD and 0x005E690E, StatListFindFlag's result at 0x005E1E34 and 0x005E215C, AiTrapArrowKind's region word at
+  0x005FB674; MonStats Velocity and Run for rows 48 and 70, the Skills `aurastate` of `Skill2` and `MonsterData+0x0E` for
+  row 73, all at the think call), `AII`/`AIQ` lines at `MonAiInit`'s init call (0x005B0F18, return 0x005B0F1B) for the
+  inits 0x005F6630 (row 43) and 0x005E80E0 (state 11), the think window 0x005B0CD0..0x005B0D00 (row 1) with its two return
+  sites in `tools/gdb/ai-retsites.txt` (2 287 sites, `tools/ai_retsites.py check`), and the calls inside
+  `AiVileMotherSpawn` 0x005F9E30 logged although it is a pending boundary. Not in rev 7 (reasons in the plan log): R32's
+  home and script words, `objects.py`'s lines beside the logger, and the Phase 1c words of R56, R71, R85 and R128.
+- **Predictions** (committed before the first kept log; the development logs `dev-*` of 2026-11-15, three smokes of
+  `t-h1h-a1-stony`, `t-a1-stony` and the shared pair `t-a1-town`, `t-a1-cold`, preceded them and are not kept):
+  1. Every kept log's first logger line is `AI logger armed rev 7 bmax 48`, and a rerun of the kept rev 6 case `a2-oasis`
+     (seed 5201) shows 0 first-boundary mismatches by `tools/ai.py check`, its rev 6 lines unchanged in form.
+  2. `ai_model_check.py check` over the Act I logs gives 0 mismatches for every entry (a stop is allowed), and over the 38 kept
+     rev 4 and rev 6 logs `regress` stays byte-identical to S1b's `model-check.txt` apart from the SEP lines.
+  3. Decisions by case, from the predicted pools (`workspace/logs/n69a/pools.txt`, Act I seed 7159; each at least 1, at most the
+     per-row cap of 200 a game):
+     - `t-a1-cold` (level 3, pool brute1, corruptrogue1, cr_lancer1): R7, R10, R36. R59 (Blood Raven, a `hunt` on the Burial
+       Grounds border) is not pool-placed: at least 1 decision only if the border walk crosses into the Burial Grounds.
+     - `t-a1-stony` (level 4, goatman1, cr_archer1, crownest1): R43, with at least one `AII` and `AIQ` line of the init 0x005F6630
+       per crownest created near the player.
+     - `t-a1-darkwood` (level 5, corruptrogue2, quillrat2, cr_lancer2): R10, R14, R36.
+     - `t-a1-marsh` (level 6, brute2, goatman2, crownest2): R7, R43 and its `AII`/`AIQ` pair.
+     - `t-a1-barracks` (level 27, corruptrogue4, fallenshaman3, quillrat4): R10, R14. R98 (the Smith, a `hunt`) only if reached.
+     - `t-a1-catacombs` (level 35, bighead2, fallenshaman4, arach1): R4, R26.
+     - `t-a1-town` (Rogue Encampment, a town walk): R32 and R60; R58 (`navi`, the Blood Moor preset) only if the border walk
+       reaches it; S5 and S6 not predicted (the unhired mercenary's state think is not shown to run near the player).
+     - `t-h1h-a1-stony` (seed 5803): R1 at least 1 decision, each `ok`. `t-h1h-a3-flayer-p8` (5602): R78. `t-h1h-s-barb-flayer`
+       (5401): R79. `t-h1h-s-necro-curse` (5802): S11, with an `AII` of the init 0x005E80E0.
+  4. Word lines: each R10 decision that reaches step 2 carries exactly one `MonPlayerBonus` word; each R54 and R32 decision that
+     reaches `AiNearestPlayer` carries its word, with the unit type of p; each R78 and R79 decision that reaches
+     `AiTrapArrowKind` carries one `arrow.region` word. A rev 7 decision the model checks with its word is fork-free where the
+     fork was only that word (R10 step 2, R54 step 2, R118 and R119 step 1, R78 and R79's region).
+  5. The separation lines (ADR-0028 item 7) and the decision counts per entry are reported as the checker prints them; a
+     row with 1 outcome is reported as confirming it. The sharing decision (launch against switch) is made from the
+     measured wall of this run's marks.
+
+### Results of `run:2026-11-15-ai-tour-1` (plan 0069 Phase 2, `lane/n69d`)
+
+Kept outputs in `workspace/logs/n69d/` (`manifest.sha256`, 63 lines, `sha256sum -c` passes from that directory; paths are
+`../ai/…` and local names): the 12 case logs of the table below with their launch logs, marks, the pilot files, the status
+files and the 8 + 3 screenshots, the runners' stdout, and the checks (`model-check.txt`, `ai-check.txt`, `words.txt`,
+`flip-rows.txt`, `flip-states.txt`, `regress.txt`, each with its stdout). `manifest-ckpt1.sha256` (the checkpoint's) is
+superseded: its `…-s2.pilot.txt` line fails because the pilot file is appended by the later batch. Tools at the commit of this
+entry: `tools/gdb/ai.py` rev 7, `tools/ai_model_check.py` revision 6 with the AIL stop below, `tools/ai.py`,
+`tools/ai_tour_words.py`. Slot 2, `--fresh` (one game process per case), every launch under `MemoryMax=4G`.
+
+| case | seed | launch (pid) | decisions | wall |
+|---|---|---|---|---|
+| `t-a1-town` | 7159 | L1 (177637) | 421 | 111 s |
+| `t-a1-cold` | 7159 | L2 (180384) | 655 | 335 s |
+| `t-a1-stony` | 7159 | L3 (188215) | 399 | 227 s |
+| `t-a1-darkwood` | 7159 | L1-r2 (323701) | 437 | 226 s |
+| `t-a1-marsh` | 7159 | L2-r2 (336003) | 257 | 229 s |
+| `t-a1-barracks` | 7159 | L3-r2 (360120) | 368 | 245 s |
+| `t-a1-catacombs` | 7159 | L4 (381416) | 402 | 247 s |
+| `t-h1h-a1-stony` | 5803 | L5 (402778) | 217 | 163 s |
+| `t-h1h-a3-flayer-p8` | 5602 | L6 (424002) | 488 | 274 s |
+| `t-h1h-s-barb-flayer` | 5401 | L7 (455442) | 329 | 184 s |
+| `t-h1h-s-necro-curse` | 5802 | L9 (471439) | 781 | 321 s (kept after a first try, L8, 90 decisions, ended by the runner's relaunch; L8 is in the manifest, not checked) |
+| `a2-oasis` (regression, own batch, run id `…-tour-1-oasis`) | 5201 | L1 (511446) | 399 | 176 s |
+
+The second batch's launch numbers restarted at L1 (the runner counts launches per invocation), so its first three launches
+are `L1-r2` to `L3-r2` (the runner's `-r2` naming; the kept L1 to L3 were not overwritten, `sha256sum -c` of
+`manifest-ckpt1.sha256` passes for everything but the pilot file). An earlier start of this batch, stopped after its first
+launch to keep the numbering, is `workspace/logs/n69d/dev/` (`2026-11-15-ai-tour-1-s2-7159-L1-r2.*`, `aborted-batch2-stdout.txt`).
+
+- **Prediction 1 held.** All 12 logs open with `AI logger armed rev 7 bmax 48`. `a2-oasis` (399 decisions, rows 19, 20, 23, 32,
+  54, 61): `ai.py check` 0 mismatches. `ai.py check` over the 12 logs: 5 153 decisions, 0 mismatches.
+- **Prediction 2 held, after one checker change.** `ai_model_check.py check --logs` over the 12 logs: 95 entries, 0 mismatches
+  in every entry except the control `R79x` (2 mismatches, the control failing as required). The first check gave 2 more, in R23
+  and R23x (both the flayer-p8 log, decisions 7525 and 8657, `5.ovr7: the model calls Ovr, the log has no further call`).
+  Cause, from the log: each of the two decisions carries an `AIL` line (`out` 601, `pend` 0) before its `AIX`, the logger's
+  `OUT_LIMIT` of 600 calls made outside the think (the 601st is `RoomAtSubtile` 0x00463740, called from `FreeNearFallback`
+  0x0064E7B0's search at 0x0064D118) which disarms the boundary breakpoints, so the calls after the fallback are not logged. The
+  fallback's code after its call returns to 0x005F3443 and calls `Ovr` (0x005DE190) at 0x005F344E `[I]` (read, not logged). The
+  checker now stops such a decision (`Stop("AIL")`, as `finish` already did for a decision that ends on time) instead of
+  reporting a mismatch (`ai_model_check.py`, `Run.call`; test `Revision6.test_ail_truncated_decision_stops`, 98 tests OK).
+  `regress`: byte-identical to S1b's `model-check.txt` (32 entries, 38 logs), run after the change. R23 and R23x: 122
+  decisions, 119 ok (72 fork-free), 0 mismatches, 3 stops (the two AIL stops and one `no AIR line`).
+- **Stops** over the 12 logs: R4 1 and R96 1 (`no AIR line`, the decision's last return not logged), R32 61 (`a path action is
+  not modelled`, of 469), R23 3. Every other entry 0.
+- **Prediction 3 (decisions by case, from `words.txt`).**
+  - Held: `t-a1-cold` R7 10, R10 178, R36 21; `t-a1-stony` R43 4 with 3 `AII` and 3 `AIQ` lines of 0x005F6630;
+    `t-a1-darkwood` R10 24, R14 51, R36 11; `t-a1-marsh` R7 1, R43 1 with 3 `AII`/`AIQ` lines; `t-a1-barracks` R10 100, R14 26;
+    `t-a1-catacombs` R4 94, R26 29; `t-a1-town` R32 200; `t-h1h-a1-stony` R1 4 (41 over the three logs that have it), each ok
+    and fork-free; `t-h1h-a3-flayer-p8` R78 14; `t-h1h-s-barb-flayer` R79 10; `t-h1h-s-necro-curse` S11 (32 decisions) with
+    17 `AII` lines of 0x005E80E0.
+  - Not held: R60 (not seen in any of the 12 logs; `t-a1-town` has rows 1, 3, 6, 32, 54, 61 only); R59 and R98 (conditional, not
+    reached); R58 (conditional, not reached); S5 and S6 not seen (as predicted).
+- **Prediction 4**: the checker's own counts, not a per-decision recount of the word lines: R10 302 of 302 fork-free, R54 88
+  of 88, R78 14 of 14, R79 10 of 10, R1 41 of 41; R118 and R119 are Act IV and V rows and are not in this run.
+- **Prediction 5, separations** (`model-check.txt`, ADR-0028 item 7): R3 1 outcome over 34, R4 3 over 93, R5 6 over 88, R12 3 over 231,
+  R19 3 over 65, R23 14 over 72, R26 5 over 29, R43 3 over 5, R54 1 over 88 (confirms it: the path is `4.idle`). Resume flip (`flip-rows.txt`, rows 3, 4, 5, 15, 23, 26, 43, 52, 54, 63, 65, 68, 70, 78, 79, 96, 118, `--key
+  rowthink --cap 1000000`; `flip-states.txt`, thinks 5e8140 and 5e8340): fork-free decisions 23@5f3170 72, 26@5f4510 29, 3@5efe20
+  34, 43@5f6650 5, 4@5eff50 93, 5@5f00e0 88, 63@5f9490 7, 65@5f9a80 95, 78@5fb6c0 14, 79@5fb7e0 1, 96@5e1250 98, 54@5e73a0 0; every
+  two-way site fails alone (`two_way_sep` = `two_way`) except row 63's, 4 of 5. The raise itself is Phase 4's.
+- **Sharing decision.** Launch to ready 18.6 s and 19.1 s and a switch 18.7 s (dev, checkpoint): no saving, the tour stays fresh
+  per case (harness-play § Fresh process). The 12 cases took 2 738 s of game wall (the marks' walls).
+- **Not covered by this run:** Act II to V cases (the next batches), the Phase 1c words of R56, R71, R85, R128, R32's home and script
+  words, `objects.py`'s lines beside the logger.
