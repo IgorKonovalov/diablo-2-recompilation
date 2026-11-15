@@ -655,3 +655,174 @@ Targeted ruling on the three points the Tier B check left, not a full re-review.
 - **Verdict:** accept with fixes, 1 (stale tag 1). Merged `main` (S1e) into `lane/n66f`; the inventory totals recomputed
   from the 29 files' *Totals by class*: a-logs 668, a-run 358, b 394, c 390, c-emu 489, d 327 (d-2c 59, d-owner 68,
   d-edit 23, d-none 177), 2 626; Phase 1 1 547, Phase 2 752 (inventory README § 1 and § 3).
+
+### 2026-11-15 — Phase 1 batch S3a, part 1 of 2 (reverser-static, `lane/n66g`): checker built and run; resume note
+
+- **Done.** New check tool `tools/quests_s3a.py` (`6531b66c…`, stdlib, read-only; imports `tools/quests.py`'s model,
+  which stays unchanged at `b6dfb1a3…`, the hashed checker behind the three runs' kept outputs) over the 54 kept logs:
+  the 45 of run:2026-10-17-quests, run:2026-10-18-quests2 and run:2026-10-19-quests3, `p47h-x-wpact5r-0` and the 8 of
+  `p47b-run.lst`, with their installed and written saves. Kept output `workspace/logs/quests/sweep2-s3a/s3a-check.txt`
+  (`9134a7c7…`, `SUMMARY mismatches=4 checks=4070 logs=54`, the 4 being the C4 contradiction below) and
+  `s3a-static.txt` (`dd50e017…`: one `E8` call to `QUESTS_TimersRun`, at 0x0052D920; `g_ItemUseFns` rows 0–2) under
+  `sweep2-s3a/manifest.sha256` (passes from that directory); inputs in
+  `workspace/logs/quests/manifest-sweep2-s3a-inputs.sha256` (`510c8807…`, 128 lines: 54 logs, 74 saves; passes from
+  `workspace/logs/quests/`); development outputs in `sweep2-s3a/dev/` (`manifest-dev.sha256`). No game, no Ghidra.
+- **Not done yet (part 2):** the inventory rows' notes, the totals, the findings addenda (quests experiments under the
+  three runs; quests/0001 and 0002), `re/symbols.csv` raises, `tools/test_quests_s3a.py`, the Tier B request.
+- **Contradicted (for Phase 3 and the review), from the kept check:**
+  1. progression C4 (row 49): the first-join restore map is per quest, not the one map C4 gives. Quest 13 (word 14)
+     maps b2 → (+0x0B, +0x0C) = (1, 2), b3 → (5, 5), b4 → (6, 5) (0x0059D557–0x0059D5A3; x-talk2 logged +0x0B = 5 for
+     b3); quest 19 (word 21) does not restore on b4 (0x005BB4BC–0x005BB4C9; x-talk3, x-talk3b, h-talk3 logged
+     +0x0B = 0). The 4 mismatches.
+  2. travel Outputs (row 86, "quest event 3 for every level change"): every same-act level change is followed by one e3
+     (0x00543BB7) naming the old and new level (341: 101 waypoint, 115 warp, 122 portal, 3 resurrection; a portal used
+     in a town raises one more inside the use), but none of the 87 act changes (40 by NPC, 47 by waypoint) raises an e3.
+     Progression word 4's "the e3 level-40 branch then finds state 7" (an act change into 40) needs a re-read.
+  3. progression row 196 (the five Khalim items removed at completion): x-orb's written save lost `qf2 ` but kept
+     `qey qhr qbr` (no `qf1 ` held). Read `0x005BB850` before filing it: the pass may remove only some codes, or the
+     `0x005678A0(1)` test may hold.
+- **Row decisions reached (part 2 writes them into the rows; spec lines at `b5999f5e`):**
+  - *Raised whole:* progression 8, 18, 98, 130, 231, 262 (site 0x00588491: the spec's 0x00588496 is the return),
+    304 (call 0x0058E4CB); travel 2, 8, 9, 10, 11, 12.
+  - *Raised in part* (the `[C]` part first; the remainder's route after "/"): progression 4 (cadence; the caller by the
+    raw scan, objdump to confirm / c), 7 (ids, tables / the "NPC-introduction" role), 13 (Set/Clear: 430 QS and 38 QC
+    next-old pairs / GetState → c S3c), 16 (ClearSteps at the rewards of words 1, 20, 25, 35, not 2, 4, 6, 9, 27; the
+    other bits kept / the 2–11 clear: no QK met a step bit → a-run H3a), 34 (order, inits, rows 7/29 and 24's +0xE0 /
+    callbacks and private data), 39 (e10: 0x00543CA2, force 1, act filter 0, 32 / "after the item loop", "+0x0C" →
+    H3f), 42 (e10 32, re-dispatched e0 at 0x005457D4 28, e4 force 0 in 7 `due` / e5 → H3f), 56 (the reward halves /
+    the completing half → H3b), 58 (222 talks: e0, e11s with 28 re-dispatched e0, e2 / the store order, the client's
+    pick), 63 (e0, e2, e3, e10, e11 by the logged NPCs / kills, operates, item events → H3b, H3f), 65 (24 589 equal
+    pairs, 56 after a QGS, 3 in brackets, 0 elsewhere / the player-seed half), 75 (c-talk1 +1, x/h-talk1 +1 beside a
+    level-up's +1 / the timer → H3b), 125 and 184 (the talk half: 0xFD, 0x1D2 / first join and 0x1D1 → a-run H3a), 132,
+    141 (the clear / "no setter" → c S3c), 182, 190 (first join 48/6 / the reporter half → b H3c), 210 (2 / the arm
+    without b13 → c S3c), 237 (+2 in x/h/c-talk4), 260 (one class-511 unit per game in 6 logs / the InitFn and no
+    draw), 305 (object 40's callbacks / quest 31's state move: the one 0x4E46 met the quest switched off → a-run H3a),
+    307 (orb broken → pass / whole orb, level 101 → a-run H3a), 312 (155 and 210 pass sides / refusals, 367 → H3e), 313
+    (the operator's path, joiner w18 b0 clear / first-joiner path → a-run H3a, game-wide → d-2c), 322 (QGS sites inside
+    their events / created units); travel 3, 4 (g_ItemUseFns[2].use = 0x005BE290; check Misc pSpell 2 for tsc, tbk),
+    5, 6, 7, 17, 20 (size 3 step 1 with the walk 62 moved; size 2 step 1 62 moved / step 5 and the walk: all in place,
+    the walk-free control agrees in 62), 22, 34 (code 0: 148, and 7 level-0 packets with no level change / codes 1–3
+    → H3e), 35 (type 0, 106 field arrivals / 133–136), 37, 38, 58, 63 (e3 iff in town, 122), 69 (114 UnitInteract warps
+    within 4.5 / refusals; one warp from 0x00582027 at 8.1), 70 (gate iff destination in the set, 115), 71 (100's pass),
+    83, 84 (check word 10 in x-meshif), 85; README 1, 2.
+  - *Moved:* progression 54, 67 (Warriv message 1 never reported), 151 (no 0xBA), 152, 200, 201 (check the fired
+    variants in the kept `quests2-check.txt`: 0x251 with b7 set and 0x24D with b8 clear seem never met), 217 (the orb
+    wrote w18 b0, b13; w21 had b0 and no b4), 270, 271, 272, 301 (progression already ≥ 5d + 5 in every save) → a-run
+    H3a; 55 → b H3c (no line at `QUESTS_NpcHasQuest`); 57 (7 TMX, all return 1) → b H3b; 276 → b H3f (the bonus list is
+    not saved); 225, 308 → b H3e; 243 → d-none (the classic client has no message 0x4E20); 96: check x-act's word 4 and
+    the e3 into 40, likely a-run H3a; travel 48 (ActStale fires on 145 of 206 town departures and 16 times not after
+    one: needs a `TownLevelLeave` line), 67, 68 → b H3e; travel 19, 60 (no separating case) → c-emu (a step-5 and walk
+    emulation of `COLL_FindFreeNear`; a batch for the architect to name). Contradicted: progression 49, travel 86 (above).
+- **Resume (part 2, a fresh lane on `lane/n66g`):** re-run `tools/quests_s3a.py check $(cat
+  workspace/logs/quests/sweep2-s3a/s3a-logs.lst)` (byte-identical to `s3a-check.txt`), confirm the open items above
+  (row 96, 196's read, 200/201's variants, Misc pSpell, T84's word 10, row 4's objdump count), add a test file, write
+  the rows, the totals (merge `main` first), the addenda, the symbol raises (review-fixes rule 14), and the log entry
+  with the Tier B request.
+
+### 2026-11-15 — Phase 1 batch S3a, part 2 of 2 (reverser-static, `lane/n66g`): done, 87 of 87 settled
+
+- **Done.** Resumed from the note above after merging `main` `f56ab708` (S1e, S2b) at `973cb300`. `tools/quests_s3a.py`
+  revision 1 (`6531b66c…`) re-run over `s3a-logs.lst`: byte-identical to `s3a-check.txt` (`9134a7c7…`, `SUMMARY
+  mismatches=4 checks=4070 logs=54`). Revision 2 (`cd33719e…`) adds notes only and `static` reads; its check output
+  `s3a-check-r2.txt` (`f3116c95…`) keeps every revision 1 line, with `s3a-static-r2.txt` (`f1996df1…`) and
+  `s3a-objdump.txt` (`2670cffb…`) under `workspace/logs/quests/sweep2-s3a/manifest-r2.sha256` (`d4862ce0…`, passes from
+  that directory); development outputs in `dev2/` (`manifest-dev2.sha256`). New `tools/test_quests_s3a.py` (5 tests,
+  OK). Record: the [S3a addendum](../findings/quests/experiments.md#addendum-2026-11-15-plan-0066-batch-s3a-the-kept-quest-logs-re-checked-lanen66g)
+  under run:2026-10-19-quests3, with pointer lines under the other two runs and the p47 travel sessions;
+  [quests/0001 § 18](../findings/quests/0001-progression.md#18-plan-0066-batch-s3a-the-kept-quest-logs-re-checked-2026-11-15-lanen66g)
+  and [quests/0002 § 16](../findings/quests/0002-travel.md#16-plan-0066-batch-s3a-the-travel-lines-re-checked-2026-11-15-lanen66g).
+  No game, no Ghidra.
+- **Open items of part 1, settled:** row 4's caller: one `E8` at 0x0052D920 by objdump as by the raw scan, no absolute
+  reference; row 196: `0x005BB850` is called only through `PartyForEach` when `UnitPartyId` ≠ 0xFFFF
+  (0x005BBB30–0x005BBB49), and the operate removes the operator's `qf2 ` itself (0x005BBA23), so x-orb's save is
+  explained and part 1's contradiction 3 is withdrawn; rows 200/201: word 19's writes are 0x251 with b7 clear (x-talk3,
+  h-talk3) and 0x24D with b8 set (h-talk3) only; travel 4: Misc's `pSpell` 2 rows are `tbk` and `tsc` only; travel 84:
+  x-meshif wrote word 10 b0, b13 beside word 15's (0x005468FB, 0x00546905); row 96: every word 4 = 0 joiner wrote b14
+  on the waypoint act change (row 95's path) and x-act's joiner had w4 b0.
+- **Rows** (each with a dated S3a note in its *Route* cell): **raised** 13 (progression 4, 8, 18, 98, 130, 262, 304;
+  travel 2, 8, 9, 10, 11, 12); **raised in part** 51 (progression 7, 13, 16, 34, 39, 42, 56, 58, 63, 65, 75, 125, 132,
+  141, 182, 184, 190, 196, 210, 231, 237, 260, 270, 272, 305, 307, 312, 313, 322; travel 3, 4, 5, 6, 7, 17, 20, 22, 34,
+  35, 37, 38, 58, 63, 69, 70, 71, 83, 84, 85; README 1, 2), the `[C]` part and the remainder's class and batch in each;
+  **moved** 21: progression 54, 67, 96, 151, 152, 200, 201, 217, 271, 301 → a-run (H3a), 55 → b (H3c), 57 → b (H3b),
+  225, 308 → b (H3e), 276 → b (H3f), 243 → d-none; travel 48, 67, 68 → b (H3e), 19, 60 → c-emu (S3e, proposed);
+  **contradicted** 2 (progression 49, travel 86). S3a holds 66 statements.
+- **Contradictions** (Phase 3; backlog to the spec-writer):
+  1. progression C4 (row 49): the first-join restore is per quest. Quest 13 restores b3 as `+0x0B` = 5 and quest 19
+     does not restore on b4 (the 4 `MISMATCH` lines); as read, quest 13 maps b2 → (1, 2), b3 → (5, 5), b4 → (6, 5)
+     (0x0059D557–0x0059D5A3) ([backlog](../backlog/2026-11-15-reverser-spec-writer-plan-0066-s3a-contradictions.md)).
+  2. travel Outputs (row 86): an e3 follows every same-act level change (341 of 341) and none of the 87 act changes
+     (40 by NPC, 47 by waypoint); progression word 4's "the e3 level-40 branch then finds state 7" is re-read with it
+     ([backlog](../backlog/2026-11-15-reverser-spec-writer-plan-0066-s3a-travel-e3.md)).
+  3. In part, found in part 2: word 37's entry levels (rows 270, 272): the code tests 113 or 114 for b3
+     (0x00589DAB–0x00589DB3) and 121 to 124 for b14 (0x00589EBB–0x00589EC4); the logs met 113 (3) and 123 (2), the
+     two levels the spec's lists drop (in the first backlog entry).
+- **Symbols** (review-fixes rule 14): `QUESTRECORD_SetState`, `QUESTRECORD_ClearState` (next-old pairs),
+  `COLL_FindFreeNear` (1 102 results reproduced), `ITEMUSE_TownPortal` (the field branch's pair and `+0x48`, 62) and
+  `sub_0054B830_NpcTravelMove` (40 other-act calls) raised to `C` in `re/symbols.csv` (5 rows) and in the Functions
+  tables of save/0002, drlg/0005 and quests/0002; quests/0001's Functions row of `QUESTS_TimersRun`/`TimerAdd` set to
+  `C`, as `re/symbols.csv` already had it.
+- **Totals** recomputed from the 29 inventory files' rows against `main` `f56ab708`: a-logs 647, a-run 368, b 402,
+  c 390, c-emu 491, d 328 (d-2c 59, d-owner 68, d-edit 23, d-none 178), 2 626; Phase 1 1 528, Phase 2 770 (inventory
+  README § 1, § 3, § 4: S3a 66; S3e 2, proposed; H3a 37, H3b 55, H3c 29, H3e 34, H3f 35; the quests files' *Totals by
+  class*).
+- **New batch proposed (§ 4): S3e**, `COLL_FindFreeNear` step 5 and the walk (travel 19, 60), c-emu: the function run
+  on the pinned image over a declared collision grid (the logged `FF0` inputs and room maps), with cases built so that
+  the step-5 ring and the walk back each change the found cell, compared with `quests_s3a.py`'s `free_near_walk`.
+- **Ready for re-tagging (Phase 3, spec-writer)**, spec lines at `b5999f5e`, match by text: whole, progression rows 4
+  (line 36), 8 (74), 18 (141), 98 (583), 130 (772), 262 (1386), 304 (1553) and travel rows 2 (29), 8 (35), 9 (73), 10
+  (74), 11 (75), 12 (76); split, the `[C]` half each row's note names, progression rows 7, 13, 16, 34, 39, 42, 56, 58,
+  63, 65, 75, 125, 132, 141, 182, 184, 190, 196, 210, 231, 237, 260, 270, 272, 305, 307, 312, 313, 322, travel rows 3,
+  4, 5, 6, 7, 17, 20, 22, 34, 35, 37, 38, 58, 63, 69, 70, 71, 83, 84, 85 and README rows 1, 2; rewritten, progression
+  row 49 (C4) and travel row 86, with rows 270 and 272's level lists.
+- **Review:** Tier B (plan 0066 Phase 1). Judgment calls to check: (1) rows 4 and 8 raised whole: the tick = frame // 20
+  at 14 timer lines (frames 567 to 7 500) with the increment inside the pass (0x00543E2D) is what separates "every 20th
+  frame" from "every frame", not the run frames alone; (2) rows 141 and 262: x-newchar's first join (record not ready)
+  logged no clear and its second used the e14 callback; 262 raised whole on "each game's join clears", 141 in part;
+  (3) row 196 raised in part on a static read of the party gate plus the save, remainder d-2c; (4) rows 270 and 272
+  filed as contradicted in part from the code reads and five logged writes; (5) rows 182 and 231 in part (the per-NPC
+  flags are not logged), where part 1 had 231 whole; (6) travel 19 and 60 to c-emu with S3e proposed; (7) remainder
+  routes part 1 left unstated, set here: progression 7 → d-none, 34, 49 (other quests), 260 → c (S3c), 58, 63, 65 → b
+  (H3c), travel 3, 6, 17, 83 → b (H3e), 7 → c (S3c); (8) row 63's game-seed steps inside 14 reward e11s are left
+  unattributed (H3c); (9) row 313's first-joiner path: 45 joiners had w18 b0 but none warped into 100.
+
+### 2026-11-15 — Phase 1 batch S3a, Tier B lane check (architect-check, `lane/n66g`)
+
+- **Verdict:** accept with fixes, 4 (misread 1, tool not kept 1, miscount 1, omission 1). Merged `main` `7b7f20e9`
+  (plan 0069 Phase 1a) into `lane/n66g`; the only conflict was the inventory README (totals, two bullets), resolved.
+- **Fixes.**
+  1. *Misread:* rows 270 and 272 were filed "contradicted in part". The spec already holds `[C]` rows for "e3 entering
+     level 123" (b14) and "e3 entering level 113" (b3), and its `[I]` rows ("entering 121, 122 or 124", "entering 114")
+     name the levels the logs did not meet; the code tests (121 to 124, 113 or 114) agree with them. Nothing is raised
+     and nothing is contradicted: both rows moved a-logs → a-run (H3a, as row 271), the item dropped from quests/0001
+     § 18, the experiments addendum and the backlog entry (which now holds one contradiction, C4). S3a 66 → 64
+     statements, 21 → 23 moved, raised in part 51 → 49; H3a 37 → 39; the progression file's totals a-logs 73 → 71,
+     a-run 38 → 40; the log entry above keeps the lane's text (history), this entry corrects it.
+  2. *Tool not kept:* `manifest-r2.sha256` failed `sha256sum -c`: `s3a-check-r2.txt` had been rewritten (860 lines, with
+     the `P152`/`P217`/`P270-P272` write notes the rows cite) after the manifest was made for the 720-line output, and
+     `tools/quests_s3a.py` had been edited since (`ef1e8339…`, not the `cd33719e…` cited). The manifest now lists the
+     860-line output (`abfacb18…`; re-run from the current tool, byte-identical; manifest `e462dd3a…`); the 720-line
+     output (`f3116c95…`) is kept as `dev2/s3a-check-r2-dev3.txt` and added to `manifest-dev2.sha256`; the hashes and
+     the line count are corrected in the experiments addendum. All three manifests and the inputs manifest pass.
+  3. *Miscount:* the catalogue file's *Totals by class* still read a-run 202, b 94 after plan 0069 Phase 1a's 30 moves
+     (its README row had 172, 124). Corrected; with fix 1's two moves the totals are recomputed below.
+  4. *Omission:* travel row 85 raised in part with no run anchor ("as row 58"); `s3a-check.txt` T58, T58/T85 added.
+- **Totals** recomputed from the 29 files' *Totals by class* after merging `main` `7b7f20e9`: a-logs 645, a-run 340, b
+  432, c 390, c-emu 491, d 328 (d-2c 59, d-owner 68, d-edit 23, d-none 178), 2 626; Phase 1 1 526, Phase 2 772 (inventory
+  README § 1, § 3, § 4).
+- **Judgment calls.** (1) Rows 4 and 8 raised whole: accepted. The 7 adds and 7 runs show tick = frame // 20 at frames
+  that are not multiples of 20 (so the tick is not the frame count), the increment is inside the pass and the one
+  caller is 0x0052D920 by two tools; that separates "every 20th frame" from "every frame". (2) Rows 262 and 141:
+  accepted; 262's claim is the two callbacks' clears (53 at e13, one at e14), 141's remainder is the "no setter" half.
+  (3) Row 196 in part: accepted, with the counterfactual ("had the pass run ...") read as the code's own branch, not
+  logged; one solo game, the party half stays d-2c. (4) Rows 270, 272: not a contradiction (fix 1). (5)–(9): accepted as
+  stated (rows 182 and 231 in part; travel 19 and 60 moved; the remainder routes; row 63's steps unattributed; row 313).
+  Checked against the kept output: 4 `MISMATCH`, 341 same-act changes (3 p41, 61 + 61 portal, 115 warp, 101 wptr), 122
+  portal uses, 87 act changes (40 by NPC, 47 by waypoint), 115 gate checks, 430 and 38 next-old pairs, 222 talks with 28
+  re-dispatched e0, 32 e10, 24 589 / 56 / 3 seed observations. The rev 2 output keeps every rev 1 line (no `<` line in
+  `diff`); `python3 -I tools/test_quests_s3a.py`: 5 tests OK. The 9 e3 lines the T86 act-change note lists for
+  waypoint changes name the next same-act change (old level = the act change's new level), not the act change.
+- **Symbols:** the 5 raises agree between `re/symbols.csv` and the Functions tables (save/0002 two rows, drlg/0005's
+  `C / I` row, quests/0002 two rows, quests/0001's timer row); no other table lists them at `I`.
+- **S3e: for Tier A / architect ruling.** The plan's Phase 1 rules do not let a lane add a batch (the plan names batches
+  for the owner, e.g. H1h `proposed`); S3e's § 4 row is well formed (2 statements, travel 19 and 60, c-emu, method
+  ADR-0015/0021/0029, status `proposed`, matching `quests-travel.md`'s 2 c-emu rows) and stays `proposed`.

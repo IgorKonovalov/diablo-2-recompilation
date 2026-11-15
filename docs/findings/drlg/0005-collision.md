@@ -204,7 +204,7 @@ r2 and corrected in place (§ 5 table, § 6 rows 6 and 15), and both are require
 | `0x0064EA00` / `0x0064EBA0` | `COLL_SizeMark` / `COLL_SizeUnmark` | mark by size 1..3 (scheme A) | I |
 | `0x0064EA90` / `0x0064EC10` | `COLL_PatternMark` / `COLL_PatternUnmark` | mark by pattern 0..5 with the `0x1000`/`0x2000` extras (scheme B) | C (patterns 3 and 4 before / after, plan 0038 H5d) |
 | `0x0064ED20` / `0x0064EDA0` | `COLL_SizeMove` / `COLL_PatternMove` | unmark, test, re-mark (movement; named only) | I |
-| `0x0064DEA0` / `0x0064E840` | `COLL_FindFreeNear` / `COLL_FindFreeSpiral` | nearest free position searches (named only) | I |
+| `0x0064DEA0` / `0x0064E840` | `COLL_FindFreeNear` / `COLL_FindFreeSpiral` | nearest free position searches | C / I (`COLL_FindFreeNear`: plan 0066 S3a, 1 102 logged searches reproduced, step 5 and the walk unseparated, [quests/0002 § 16](../quests/0002-travel.md#16-plan-0066-batch-s3a-the-travel-lines-re-checked-2026-11-15-lanen66g)) |
 | `0x0064E260` | `COLL_LineTest` | line walk with a mask (line of sight and missiles; named only) | I |
 | `0x00649D00` | `PATH_DynamicCreate` | dynamic path (players, monsters, missiles): size, pattern, masks; marks when created in a room | I |
 | `0x00648580` | `PATH_PatternFromSize` | `g_CollPatternBySize`, NPC upgrade (`npc` or `inTown`, plan 0038 H5d) | C (38 338 creation marks) |

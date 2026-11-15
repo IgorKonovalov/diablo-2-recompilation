@@ -131,8 +131,8 @@ handlers test. A row is `[C]` only for what a game-written save shows; the bit m
 | `0x00410B30` | `BITFIELD_Get` | the same bit, tested | I |
 | `0x00410B50` | `BITFIELD_Clear` | the same bit, cleared | I |
 | `0x0065C310` | `QUESTRECORD_GetState` | `(rec, q, s)` → bit `16q + s` | I |
-| `0x0065C360` | `QUESTRECORD_SetState` | sets bit `16q + s` | I |
-| `0x0065C3A0` | `QUESTRECORD_ClearState` | clears bit `16q + s` | I |
+| `0x0065C360` | `QUESTRECORD_SetState` | sets bit `16q + s` | C (plan 0066 S3a: 430 next-old pairs, [quests/0001 § 18](../quests/0001-progression.md#18-plan-0066-batch-s3a-the-kept-quest-logs-re-checked-2026-11-15-lanen66g)) |
+| `0x0065C3A0` | `QUESTRECORD_ClearState` | clears bit `16q + s` | C (plan 0066 S3a: 38 next-old pairs, [quests/0001 § 18](../quests/0001-progression.md#18-plan-0066-batch-s3a-the-kept-quest-logs-re-checked-2026-11-15-lanen66g)) |
 | `0x0065C430` | `QUESTRECORD_Alloc` | 96 zero bytes behind a bit-buffer header (`.\QuestRecord\QuestRecord.cpp`) | I |
 | `0x0065C4D0` | `QUESTRECORD_LoadBytes` | 96 bytes in; with the flag, per word 0–41: clear bits 13, 14; bit 1 → set bit 15 | C (rule 14: `RQW` against the model over 126 words, [save/0001 § Plan 0038 batch H1a](0001-d2s-io.md#plan-0038-batch-h1a-run2026-10-27-sweep-d2s-load); `lane/h1a` review) |
 | `0x0065C560` | `QUESTRECORD_SaveBytes` | 96 bytes out, as they are | I |
