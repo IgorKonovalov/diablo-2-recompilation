@@ -970,3 +970,129 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
 - **Resume note.** Part 2 (same lane or a fresh one on `lane/n66j`): the 11 rows above, then **S5b** (24 rows, not
   started). Rerun `tools/sweep2_s5a.py combat …` as recorded to get the DU/GH and stat-62/63 counters; the MAS model
   reads MonStats/MonLvl as monsters/stats § H states and compares `MAS1` stats over the 19 780 `mas` events.
+
+### 2026-11-15 — Phase 1, batches S4c and S4d, paused (reverser-static, `lane/n66i`): resume note
+
+- **Paused** at the owner's reboot, early: no row is settled and no inventory row, finding, symbol or total is changed.
+  No game, no Ghidra was started (no process to stop).
+- **Tool state.** New `tools/sweep2_s4cd.py` (development, not yet run, no kept output): sections `invlogs` (rows 3, 8,
+  29/61, 31, 85/88 over the four kept logs of run:2026-11-04-inventory and -inventory-2) and `invstatic` (rows 2, 4,
+  5/6, 16, 18, 21, 35/60, 76/93–95, 78, 79/80/90/100, 82, 97: r2 and the raw-byte scan of `tools/xrefscan.py` beside the
+  objdump `static.txt` of run:2026-11-04-inventory-emu and -ground-emu; the objdump walker of `tools/sweep_s4b.py` and
+  r2's LCG search beside Ghidra's `rcg-summary.txt`). Not yet written: `stlogs`, `ststatic`, `tables` (S4d, and S4c
+  rows 54, 71).
+- **Leads found while reading (provisional, not checked by a kept output):** the packet table rows of 0x17..0x25 and
+  0x63 by r2 equal the spec's § D handlers; the page sizes at 0x0074479C and 0x007447B4 read 13 × 1 and 16 × 1; the
+  objdump walker finds no draw in the direct closures of 0x00555DA0, 0x0066A670, 0x00558A10, 0x00641530, 0x0063C600,
+  0x0063B950, and one `RNG_RangeB` call (0x00624563) under 0x00558AA0, as Ghidra; at A1's three sites the third push
+  is loaded from `[reg + 0x70]` (whether each base is the game is not yet traced: likely a remainder); the cursor item
+  is not on Inventory `+0x0C`'s list, so mode 4 is seen only at `IPG` of a 0x17 drop. Remainder homes planned: H4d for
+  the inventory rows, H4e for the stats rows.
+- **Resume (a fresh lane on `lane/n66i`):** finish the tool (S4d sections over `s1017-run.lst` and `p47h-run.lst`,
+  under `systemd-run --user --scope -p MemoryMax=4G`; Misc `autobelt`, Sets params, Skills `aurastat`, States bits;
+  `g_ShrineEffects` by r2; xrefs of `STATE_ApplyTimed`, `STATE_GroupClear`; `PlayerSwapWeapons` by r2), run it once into
+  `workspace/logs/n66i/` with a manifest, add `tools/test_sweep2_s4cd.py`, then the rows, the addenda (items and stats
+  experiments), the symbol raises, `main` merged before the totals, and the log entry with the Tier B request.
+
+### 2026-11-15 — Phase 1, batch S4c done and S4d part 1 of 2 (reverser-static, `lane/n66i`): 39 of 73 settled; resume note for S4d part 2
+
+- **Done.** No game, no Ghidra. `tools/sweep2_s4cd.py` finished for S4c and S4d's static rows (`271e96c8…`; sections
+  `invlogs`, `invstatic`, `ststatic`, `tables`; `tools/test_sweep2_s4cd.py`, 8 tests), run once under a 4 GB scope:
+  `workspace/logs/n66i/check.txt` (`fdf66219…`, 337 lines, `S4 total bad=0`), `manifest.sha256` passing from
+  `workspace/logs/n66i`; development outputs in `dev/` with their own manifest. Second tools: r2 (`pD`, `pxw`, `p8`, its own
+  `/x` search for the multiplier, 852 sites equal to objdump's) and the raw-byte scan where Ghidra or objdump read first;
+  objdump's walker over Ghidra's closure lists, every image body walked. A call's stack arguments by r2, walking back from
+  the call and skipping an inner call's pops. Inputs: the four kept inventory logs under their manifests; the excel `.txt`
+  tables; `expfield.d2`'s header. Records:
+  [items/experiments § Addendum 2026-11-15 (S4c)](../findings/items/experiments.md#addendum-2026-11-15-plan-0066-batch-s4c-new-checks-over-the-kept-inventory-logs-and-static-second-sources-lanen66i)
+  under run:2026-11-04-inventory, pointer lines under -ground-emu and -inventory-2;
+  [stats/experiments § Addendum 2026-11-15 (S4d part 1)](../findings/stats/experiments.md#addendum-2026-11-15-plan-0066-batch-s4d-part-1-of-2-static-second-sources-and-full-table-checks-lanen66i)
+  under run:2026-10-17-stats; dated notes in items/0013 § 1 and stats/0002 § 7. Every settled row's *Route* cell carries its
+  dated note.
+- **S4c (29): raised 21, raised in part 7, contradicted in part 1, moved 0.** Raised: 2, 3, 4, 5, 6, 8, 16, 21, 35, 54, 76,
+  78, 79, 80, 82 (with a refinement: the `RNG_` calls, now scanned, add `NPC_MenuAction`'s `RNG_RangeB` at 0x0057A3CC), 90,
+  93, 94, 95, 97, 100. In part, the remainder and its home: 18 (the 13 server calls' field reads → c, S4e), 29 and 31 (the
+  handlers' refusals, none met → c-emu, S4e), 61 (the cursor cleared, not logged → c-emu, S4e), 71 (ownership → d-2c),
+  85 ("sent to every player" → d-2c), 88 (a held item's `+0x24` → a-run, H4d).
+- **Contradicted in part: inventory row 60** (§ G, line 360): the `0x22` handler returns 3 for an owned item, not 0 (the
+  stub leaves the `&len` out word at 5; 0x0054B3BD–0x0054B3CB, r2 and objdump). The drain discards it: no outcome changes,
+  "no split on the server" stands.
+- **S4d part 1 (10 of 44): raised 4, raised in part 5, contradicted in part 1, moved 0.** Raised: states 16, 34, 42, 51.
+  In part: aggregate 34 (the counts of the logged chains → a-logs, part 2), aggregate 38 (a name in two tables → d-edit),
+  states 5 (`UNIT_HasState`'s types, `STATE_Set`'s bit 3 → c, part 2), states 14 (the elemental appliers' list shape → c,
+  part 2), states 31 (the stop at a blank and the unwritten 0 → d-none: no stock row has a stat after a blank).
+- **Contradicted in part: states row 46** (line 467): the remove callback's closure reaches 122 drawing functions through
+  `PetLimitRefresh` (0x0056E960 → `PetLimit` → `PetRemove` → `PetUnitRelease` → `MonSetMode` → `MonAttackStats`); the group
+  clear, death purge and mode drop hold none. Whether an expiry takes the path stays `[I]` (→ c, part 2). Backlog for both
+  contradictions: [`2026-11-15-reverser-spec-writer-plan-0066-s4c-s4d-corrections`](../backlog/2026-11-15-reverser-spec-writer-plan-0066-s4c-s4d-corrections.md).
+- **Symbols:** none raised. The run compares call sites, arguments, bytes and table cells, not a logged return of a named
+  function (review-fixes 14's scope); judgment call (6) below.
+- **Totals** recomputed from the 29 inventory files' *Totals by class* after merging `main` `82eaa099`: a-logs 645, a-run 340, b 432,
+  c 390, c-emu 491, d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626. No row moved class (remainders are noted in the
+  *Route* cells, as S4a/S4b did), so README § 1 and § 3 are unchanged; § 4's S4c and S4d rows record the outcome.
+- **Ready for Phase 3 (spec-writer), items/inventory lines at `b5999f5e`, match by text.** Whole: 42, 43, 44, 75, 76, 78,
+  136, 206, 242, 322, 567, 570, 576, 577, 579 (reworded for the `RNG_` scan), 643, 655, 656, 657, 661, 692. Split: 139,
+  236, 238, 360 (with the correction), 365, 483, 620, 640. stats/states whole: 193, 418, 447, 532; split: 93, 181, 397,
+  467 (with the correction); stats/aggregate split: 448, 520.
+- **Resume (S4d part 2, a fresh lane on `lane/n66i`):** 34 rows: aggregate 2–4, 6, 8–13, 16–17, 19, 23–26, 29, 31–32,
+  36–37, 39, 41–42 (a-logs), 5 (flag `0x4`'s writer and reader), 40 (the `aura` bit's readers); stats/README 1; states 13,
+  17, 23, 32, 37, 41 (a-logs); and the part-2 remainders of aggregate 34, states 5, 14, 46. Add a `stlogs` section to
+  `tools/sweep2_s4cd.py` over `workspace/logs/stats/s1017-run.lst` and `p47h-run.lst` (557 MB: one pass per log, under
+  `systemd-run --user --scope -p MemoryMax=4G`), reusing `tools/stats.py`'s parsers (TREE, LNK/ULK with `ra2`, STA1, EQR,
+  SCB, PAS, TK, ISC); write the kept output under a new name (`check-part2.txt`), not over `check.txt`.
+- **Review:** Tier B (plan 0066 Phase 1), for S4c whole and S4d part 1. Judgment calls to check: (1) rows 29, 31, 61's
+  handler remainders routed to S4e's emulation family rather than a harness batch; (2) row 18's field-read remainder to c,
+  S4e; (3) row 16 raised with "the game" as the functions' first argument by the handler and `InvPlaceItem` signatures,
+  not traced further; (4) the closures checked over Ghidra's own lists, so a function both tools miss (an indirect call) stays
+  outside, as the lines say; (5) the two contradictions rest on two tools' reading of one path with no case (row 60's return
+  is discarded; states 46's path is reachable code, not a logged draw); (6) no symbol raised: candidates would be
+  `g_ShrineEffects` (its 10 entries read by r2 equal to the spec) and `sub_0055E9A0_UnstackStub`; (7) states 31's remainder
+  to d-none, where the seven stock rows with a stat or calc alone are written by other skill functions.
+
+### 2026-11-15 — Phase 1, batch S4d part 2 of 2 (reverser-static, `lane/n66i`): done, S4d 44 of 44 settled
+
+- **Done.** No game, no Ghidra. `main` `aa6ceb9c` merged first (merge `8a511842`, no conflict). `tools/sweep2_s4cd.py`
+  (`59d67950…`) gains `ststatic2` (objdump next to r2 or the raw bytes) and `stlogs` (one pass per log of
+  `s1017-run.lst` and `p47h-run.lst` through `tools/stats.py`'s checker, `85e14b94…`, with observers and two model
+  controls); `tools/test_sweep2_s4cd.py` 13 tests; `all` still reproduces part 1's `check.txt` byte for byte. One kept
+  run under `systemd-run --user --scope -p MemoryMax=4G` (57 s): `workspace/logs/n66i/check-part2.txt` (`a2cbf09c…`,
+  105 lines, `S4 total bad=0`; the checker 0 mismatches over both runs), `manifest-part2.sha256` passing from
+  `workspace/logs/n66i`; development outputs under `dev/manifest-dev-part2.sha256`. Record:
+  [stats/experiments § Addendum S4d part 2](../findings/stats/experiments.md#addendum-2026-11-15-plan-0066-batch-s4d-part-2-of-2-new-checks-over-the-kept-stats-logs-and-static-second-sources-lanen66i);
+  dated notes in stats/0001 § 1 and § 9, stats/0002 § 1 and § 2. Every row's *Route* cell carries its note.
+- **S4d part 2 (34): raised 12, raised in part 13, raised in part and contradicted in part 4, contradicted in part 2, not
+  raised 3, moved 0.** Raised: aggregate 3, 5, 6, 8, 12, 19, 32, 39; states 13, 32, 37, 41. In part, the remainder and its
+  home: aggregate 10 (`+0x0C`, `+0x38` → c, S4e), 11 (`AddStat`'s removal at 0 → c-emu, S4e), 16 (op 7 → c-emu, S4e),
+  17 (the stat-point addition → c, S4e), 23 (107, 126, the item events → c, S4e), 25 and 26 (refusal, gem mods, broken,
+  the dual-wield re-link → a-run, H4e), 31 (ethereal → c, S4e), 36 (func 0 → c, S4e), 37 (the lookup → c, S4e), 40 (each
+  reader's effect → c, S4e); states 17 (the dead branch, one bit left on → a-run, H4e), 23 (mode 4 with the bonus →
+  a-run, H4e). Not raised: aggregate 9 (no `exp` state logged → a-run, H4e), 13 (no `bl` 11/12, no `DMG` → c, S4e), 24 (no
+  clamp write → a-run, H4e).
+- **Contradicted in part (5):** aggregate 2 and stats/README 1 (the pickup unlinks without `ITEMS_DetachFromOwner`, 260
+  cases), aggregate 4 (the unit list's `0x2` is the drop-on-mode marker), aggregate 41 (the refresh's closure reaches 122
+  drawing functions; no seed moved in 972 windows), aggregate 29 and 42 (136 the commonest gap in 22 of 28 logs, not
+  every session); and states 5's remainder (`UNIT_HasState` answers for types 0, 1, 3: missiles, not objects). Backlog:
+  items 3–7 added to [`2026-11-15-reverser-spec-writer-plan-0066-s4c-s4d-corrections`](../backlog/2026-11-15-reverser-spec-writer-plan-0066-s4c-s4d-corrections.md).
+- **Part-1 remainders:** aggregate 34 raised (the swap's direct calls touch `bl` 4 and 5 only, 76 swaps); states 5
+  contradicted in part, its `+0xC8` half raised; states 14 (the poison lists' shape raised; burn, cold, freeze → c, S4e)
+  and 46 (`PetLimitRefresh` on every player expiry, 149 freeing expiries drew nothing; a pet's release → c, S4e) keep a
+  remainder.
+- **Symbols:** none raised (judgment call 13).
+- **Totals** after merging `main` `aa6ceb9c` (merge `8a511842`), from the 29 files' *Totals by class*: a-logs 645,
+  a-run 340, b 432, c 390, c-emu 491, d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626, unchanged: no row moved class
+  (remainders in the *Route* cells, as S4a–S4d part 1). README § 4's S4d row records the outcome.
+- **Ready for Phase 3 (spec-writer), stats lines at `b5999f5e`, match by text.** stats/aggregate whole: 82, 91, 92, 94,
+  133, 325, 438, 532; split: 51, 90, 122, 128, 301, 306, 372, 383, 389, 425, 431, 448, 511, 516, 536, 544, 593 (the
+  contradictions with their correction); stats/README split: 54; stats/states whole: 178, 400, 429, 443; split: 93, 181,
+  206, 298, 467.
+- **Review:** Tier B for S4c and S4d whole, requested by a dated paragraph on
+  [`2026-11-15-reverser-architect-review-plan-0066-s4c-s4d-part1`](../backlog/archive/2026-11-15-reverser-architect-review-plan-0066-s4c-s4d-part1.md).
+  Judgment calls of part 2: (8) the flag rows (aggregate 4, 6, 9, 41) count only lists the apply made: a refresh returns
+  the list it found (0x0056EACC), 2 993 such returns left out; (9) the controls of rows 16 and 17 are counted per checked
+  write, where the stock model matched every write; op 8/9's control differs on every write, which separates but says
+  nothing beyond "own is non-zero"; (10) the pickup path filed a contradiction of the entry-point rows rather than a
+  refinement of H2; (11) aggregate 29/42's "every session" filed contradicted in part on a count of all gaps, bursts
+  included (the spec's count is not kept); (12) aggregate 5 raised with the setter list incomplete (7 register-argument
+  `STATLIST_Alloc` calls untraced), as the claim is the flag's meaning; (13) no symbol raised: the run compares fields,
+  flags and call chains, and `SKILLS_RefreshPassive`'s logged return (row 39) is compared with the list's own 351, not a
+  model; (14) agg 41's contradiction rests on the walker's closure with r2's LCG sites agreeing, no case, as states 46.
