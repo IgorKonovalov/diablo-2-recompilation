@@ -925,3 +925,48 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   and 53 (`mul=` multiples of 256) are true no-stock-source cases and stay plain d-none. quests/progression 11 and
   stats-states 26 are reading notes and also stay plain d-none. Totals unchanged: a-logs 645, a-run 340, b 432, c 390,
   c-emu 491, d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626.
+
+### 2026-11-15 — Phase 1 batch S5a, part 1 of 2 (reverser-static, `lane/n66j`): 70 of 81 settled; resume note
+
+- **Done.** No game, no Ghidra. New tool `tools/sweep2_s5a.py` (`104ce037…`; sections `combat`, `skills`, `handlers`),
+  run under a 4 GB scope: `workspace/logs/n66j/check-combat.txt` (`8301a8c5…`, 422 lines, `S5a total bad=0 checker=0`),
+  `check-skills.txt` (`c17d62f4…`), `check-handlers.txt` (`f51b54c2…`), `manifest.sha256` (`f7ddd85e…`) passing from
+  `workspace/logs/n66j`; development outputs in `dev/` with their own manifest. The `combat` section reruns
+  `tools/combat.py`'s Checker unchanged on `c37r-run2.lst`, `p47h-run.lst` (with its recorded `--no-shield-log`) and
+  `p47b-run.lst` (74 logs, 0 mismatches) and adds nine checks and the counters. Second tool r2 for `MonSkillAttackDo`'s
+  calls and `COMBAT_QueueHit`'s copy. Record:
+  [combat/experiments § Addendum 2026-11-15](../findings/combat/experiments.md#addendum-2026-11-15-plan-0066-batch-s5a-part-1-new-checks-over-the-kept-combat-and-skills-logs-lanen66j)
+  under run:2026-10-16-combat. Every settled row's *Route* cell carries its dated S5a note; the 11 others say "not
+  settled in part 1".
+- **Raised 26:** README 1, 11 (c, r2 call order), 2, 13, 19, 20, 24, 26 (skills/missiles C2, C4, E1, F1 already `[C]`
+  on the same runs: re-tags), 17, 37; to-hit 1, 29, 32, 33; damage 21, 28; reductions 11, 20, 24, 25; delivery 5, 27,
+  30, 45, 59, 67.
+- **Raised in part 27**, the remainder and its home in each Route cell: README 4 (zeroing → c), 12 and 39 (CB divisor
+  10, P 25 → S5e), 14, 18, 21, 34 (crit steps 2–3, frozen weapon terms → S5fe), 27 (the finisher loop → S5fe), 30
+  (handlers 3, 30, 31 → H5b), 32 (→ S5fe and H5b), 40 (→ d-2c); to-hit 10 (→ S5e), 16 (range test → H5b), 17 and 30
+  (undelivered bits → H5b), 31 (three draws → S5e); damage 6, 9, 13, 14, 15, 34 (→ S5e); delivery 4, 23, 24 (→ H5b),
+  49, 64 (→ H5b).
+- **Moved 17:** to b (H5b) 14 — README 36, to-hit 18, reductions 6, delivery 2, 3, 25, 32–37, 56, 58: `STA` is
+  logged at `STATE_ApplyTimed` only, so the kept logs hold none of the stun, cold, freeze, poison, shatter or burning
+  states; the evaded result word is never delivered; `MS0` has no missile stats; no delivery had kill handlers. To
+  c-emu (S5e) 3 — damage 3, 22 (the unarmed clamp, never reached), 10 (no build had an event-3 handler).
+- **Not settled (part 2) 11:** README 5 (the flag bits), 15 and delivery 57 (a durability and get-hit draw model:
+  the kept DU/GH seed steps are in `check-combat.txt`), README 35, 38, damage 1, 29, 30, 33 and player/party 12 (the
+  `MonAttackStats` output model), delivery 28 (`manahit`: 493 monster attacks with stats 62/63 set, `check-combat.txt`).
+- **New, not a contradiction:** 537 missile deliveries carry result bit 0x4000 (0x4001), which to-hit C1's list does
+  not name. Backlog [`2026-11-15-reverser-spec-writer+reverser-plan-0066-s5a-result-bit-0x4000`](../backlog/2026-11-15-reverser-spec-writer+reverser-plan-0066-s5a-result-bit-0x4000.md)
+  (with combat/README line 433's stale "no two-client run yet").
+- **Totals** after `main` `aa6ceb9c` (the lane's base; nothing to merge): a-logs 628, a-run 340, b 446, c 390, c-emu
+  494, d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626; Phase 1 1 512, Phase 2 786, blocked 328. § 1, § 4 (S5a,
+  S5e 49 → 52, H5b 11 → 25) and the six files' *Totals by class* updated.
+- **Symbols:** none raised; no run here compares a logged return of a named function not already `C`.
+- **Judgment calls for the review:** (1) README 1 and 11 raised by r2's call read alone (class c inside an a-logs
+  row), since no log can tell `MonSkillAttackDo`'s hits from the plain attack's; (2) the re-tag raises (README 2, 13,
+  19, 20, 24, 26) stand on skills/missiles' reviewed `[C]` on the same runs, with this lane's own counts where its tool
+  reads them; (3) damage 21 raised whole on the owner's step asserted at `MSX` (7 734) plus `MonCritDouble`'s melee
+  `[C]`, the doubled missile packet itself not compared; (4) to-hit 29's separating count is the 6 838 phys-0 events
+  in logs whose player blocked other missiles, not a per-event block chance; (5) H5b grows to 25 with rows that need
+  new logger lines (still deferred under the threshold).
+- **Resume note.** Part 2 (same lane or a fresh one on `lane/n66j`): the 11 rows above, then **S5b** (24 rows, not
+  started). Rerun `tools/sweep2_s5a.py combat …` as recorded to get the DU/GH and stat-62/63 counters; the MAS model
+  reads MonStats/MonLvl as monsters/stats § H states and compares `MAS1` stats over the 19 780 `mas` events.
