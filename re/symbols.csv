@@ -681,7 +681,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0055B300,func,sub_0055B300_PlayerPairFlags,,I,multiplayer,docs/findings/multiplayer/0001-cases.md
 0x0055B6C0,func,sub_0055B6C0_PlayerTickGet,,I,quests/travel,docs/findings/quests/0002-travel.md
 0x0055B720,func,sub_0055B720_PlayerTickSet,,I,quests/travel,docs/findings/quests/0002-travel.md
-0x0055B060,func,sub_0055B060_PlayerGiveGold,,I,items/economy,docs/findings/items/0011-economy.md
+0x0055B060,func,sub_0055B060_PlayerGiveGold,,C,items/economy,docs/findings/items/0011-economy.md
 0x0055B800,func,sub_0055B800_MonStatCallback,,C,monsters/stats,docs/findings/monsters/0004-stats.md
 0x0055BFF0,func,sub_0055BFF0_ItemBookSkill,,I,items/use,docs/findings/items/0014-ground-items.md
 0x0055C110,func,sub_0055C110_ItemSkillQtyAdjust,,I,items/use,docs/findings/items/0014-ground-items.md
@@ -2789,7 +2789,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00622C40,func,sub_00622C40_InMeleeRange,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x00622D00,func,sub_00622D00_UnitIsMoving,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x00622DE0,func,sub_00622DE0_HealCost,,I,items/economy,docs/findings/items/0011-economy.md
-0x00622E70,func,PLAYER_GoldCap,,I,items/economy,docs/findings/items/0011-economy.md
+0x00622E70,func,PLAYER_GoldCap,,C,items/economy,docs/findings/items/0011-economy.md
 0x00623460,func,PLAYER_StashGoldCap,,I,items/economy,docs/findings/items/0011-economy.md
 0x006235A0,func,UNIT_CanDualWield,,I,stats/aggregate,docs/findings/stats/0001-aggregate.md
 0x00623830,func,UNIT_CollUnmarkRect,,I,drlg/collision,docs/findings/drlg/0005-collision.md
@@ -4433,9 +4433,9 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00549150,func,sub_00549150_PktInvItemBad,,I,items/use,docs/findings/items/0012-use-inventory.md
 0x00549220,func,sub_00549220_PktOwnedItemBad,,I,items/use,docs/findings/items/0012-use-inventory.md
 0x005492F0,func,sub_005492F0_PktBeltItemBad,,I,items/use,docs/findings/items/0012-use-inventory.md
-0x0054B1E0,func,sub_0054B1E0_Pkt20UseInvItem,,I,items/use,docs/findings/items/0012-use-inventory.md
+0x0054B1E0,func,sub_0054B1E0_Pkt20UseInvItem,,C,items/use,docs/findings/items/0012-use-inventory.md
 0x0054B280,func,sub_0054B280_Pkt27ItemOnItem,,I,items/use,docs/findings/items/0012-use-inventory.md
-0x0054B560,func,sub_0054B560_Pkt26UseBeltItem,,I,items/use,docs/findings/items/0012-use-inventory.md
+0x0054B560,func,sub_0054B560_Pkt26UseBeltItem,,C,items/use,docs/findings/items/0012-use-inventory.md
 0x0054D230,func,sub_0054D230_MercGiveCursorItem,,I,items/use,docs/findings/items/0012-use-inventory.md
 0x0054D430,func,sub_0054D430_Pkt61MercItem,,I,items/use,docs/findings/items/0012-use-inventory.md
 0x0055BF50,func,sub_0055BF50_InvClearUseMarks,,I,items/use,docs/findings/items/0012-use-inventory.md
