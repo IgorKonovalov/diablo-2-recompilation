@@ -1675,7 +1675,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005ADCD0,func,sub_005ADCD0_MissileApplyAndAc,,I,skills/missiles,docs/findings/skills/0002-missiles.md
 0x005ADD20,func,sub_005ADD20_MissHit22Chain,,I,skills/missiles,docs/findings/skills/0003-handlers.md
 0x005ADF10,func,MISSILE_HitUnit,,C,combat/formulas,docs/findings/skills/0002-missiles.md
-0x005AE1F0,func,sub_005AE1F0_MissileMoveCollide,,I,skills/missiles,docs/findings/skills/0002-missiles.md
+0x005AE1F0,func,sub_005AE1F0_MissileMoveCollide,,C,skills/missiles,docs/findings/skills/0002-missiles.md
 0x005AE400,func,sub_005AE400_MissDo02SubMissile,,I,skills/missiles,docs/findings/skills/0002-missiles.md
 0x005AE480,func,sub_005AE480_MissDo03CloudMark,,I,skills/missiles,docs/findings/skills/0002-missiles.md
 0x005AE520,func,sub_005AE520_MissDo05Loop,,I,skills/missiles,docs/findings/skills/0003-handlers.md
@@ -4289,7 +4289,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005AF170,func,sub_005AF170_MissDo16TurnTarget,,I,skills/catalogue,docs/findings/skills/0004-missile-do-1-18.md
 0x005AF240,func,sub_005AF240_MissDo17CairnStones,,I,skills/catalogue,docs/findings/skills/0004-missile-do-1-18.md
 0x005AF300,func,sub_005AF300_MissDo18ChestSpawner,,I,skills/catalogue,docs/findings/skills/0004-missile-do-1-18.md
-0x005B0BC0,func,sub_005B0BC0_MissDo01Thunk,,I,skills/catalogue,docs/findings/skills/0004-missile-do-1-18.md
+0x005B0BC0,func,sub_005B0BC0_MissDo01Thunk,,C,skills/catalogue,docs/findings/skills/0002-missiles.md
 0x005C6CC0,func,SKILLS_ApplyAuraStats,,I,skills/dispatch,docs/findings/skills/0001-dispatch.md
 0x005CE790,func,sub_005CE790_SkillSt29Sacrifice,,I,skills/catalogue,docs/findings/skills/0011-paladin.md
 0x005CE8E0,func,sub_005CE8E0_SkillDo64SacrificeSelfHit,,I,skills/catalogue,docs/findings/skills/0011-paladin.md
