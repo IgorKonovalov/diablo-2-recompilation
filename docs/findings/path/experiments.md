@@ -256,3 +256,27 @@ The hold-out batch, `lane/p54c` (plan 0054 Phase 2, the kept batch of the `lane/
 - **Conclusion:** [path/0006](0006-holdout.md). **Boundary of the 0 mismatches:** the planners given the game's live grids at the call, 11 types (2, 4, 5, 6, 7, 8, 9, 10, 13, 14, 15) on server units near the first player; not the predicted grid (11 wrong plans), not type 0, 1, 3, 11, 12, 16.
 - **Short:** W1 floors (7 of 16 act changes and 3 of 9 in-act arrivals seen), `deadCol` 1 on the client and class 273, class 195 and 225 watched seeds (3 and 22 of 50), Jump, `T1S` 0 of 7, the type-1 stages, town-follow. `audit: n/a, Tier A.`
 - **Review of `lane/p54c`, no session.** `tools/path.py check` and `grid` at the lane's tip reproduced `d93dad5e` and `56e8a1fb` byte for byte. `tools/path_holdout_review.py` (no rule added): `workspace/logs/path/review-p54c/ablate.txt` (`20354891a8b4`), each of O1, T1, C1..C3 off in the `code` pass, 204, 107, 89 against 72; `eleven.txt` (`c8f36656166b`), the 11 plans' lines. `manifest.sha256` passes from that directory. `audit: n/a, no check of a new run.`
+
+## Addendum 2026-11-15: plan 0066 batch S7c, new checks over the 46 kept logs (`lane/n66m`)
+
+- **No game, no Ghidra.** A dated addendum to run:2026-11-04-path and run:2026-11-04-path-2 (plan 0066 Phase 1, batch
+  S7c, [inventory § 4](../../plans/0066-inventory/README.md#4-batch-list)). Tool `tools/sweep2_s7c.py` (`0a01fcf6…`,
+  new), reading the logs with `tools/path.py` (`e2844c16…`, unchanged: `parse`, `evaluate`, `compare`), `path_emu1`–`3`
+  unchanged. One pass per log over the 21 logs of `manifest-2026-11-04-path.sha256` and the 25 of
+  `manifest-path-2.sha256`, under `systemd-run --user --scope -p MemoryMax=4G` (20 s).
+- **Control:** 46 games, 33 722 stock plans evaluated, 33 722 matched, 0 unmodelled, 842 dropped after a probe's first
+  write: the stock counts of path/README F1.
+- **Output:** `workspace/logs/n66m/s7c/check-s7c.txt` (`911948c8…`, 261 lines, `S7c total bad=0 control_bad=0`);
+  `workspace/logs/n66m/manifest.sha256` (`54ad0bc5…`) passes from `workspace/logs/n66m`. Six development outputs of
+  earlier tool revisions in `workspace/logs/n66m/dev/` (`manifest-dev.sha256` passes from `dev/`), not cited.
+- **Results:** [path/0004 § 10](0004-per-event-reproduction.md#10-plan-0066-batch-s7c-new-checks-over-the-kept-logs-2026-11-15-lanen66m):
+  the masks at a plan, the slot call, `PlrModeStartMove`'s and `MonPathPlanType`'s types and fallback, `PathReplan`'s
+  plans, the tail's output words and the aim's writes, the live grid at the unit's and the target's cell, type 14's
+  structure, grid and iterations, type 10's turn map, greedy-near's switch. `audit: n/a, no check of a new run.`
+  (run:2026-11-04-path, run:2026-11-04-path-2)
+- **Review of `lane/n66m` (Tier A audit, 2026-11-16), no session.** `tools/sweep2_s7c.py check` and
+  `tools/sweep2_s7d.py check` at the lane's tip reproduced `911948c8…` and `6e30d778…` byte for byte under
+  `systemd-run --user --scope -p MemoryMax=4G`. `tools/sweep2_s7c_review.py` (`49919fa3…`, new, read-only, imports
+  `sweep2_s7c` unchanged): `workspace/logs/n66m/review/cap15-order.txt` (`manifest.sha256` there passes), the 84 empty
+  requests with no logged fallback placed against the type-15 cap lines by the logger's line counter: 82 after one, 2
+  whose fallback writes the `ref` cap line two lines later. `audit: n/a, no check of a new run.` (run:2026-11-04-path, run:2026-11-04-path-2)

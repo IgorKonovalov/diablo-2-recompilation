@@ -1754,3 +1754,19 @@
 - **Conclusion:** see [drlg/0005 § Plan 0038 batch H5d](0005-collision.md#plan-0038-batch-h5d-run2026-10-27-sweep-collision)
   and [monsters/0002 § Plan 0038 batch H5d](../monsters/0002-room-population.md#plan-0038-batch-h5d-run2026-10-27-sweep-collision):
   11 statements raised, 3 raised in part, 2 shortfalls, 1 proposed d-none.
+
+## Addendum 2026-11-15: plan 0066 batch S7d, new checks over the 16 kept lifecycle logs (`lane/n66m`)
+
+- **No game, no Ghidra.** A dated addendum to run:2026-10-17-lifecycle and run:2026-10-17-h7a-lifecycle (plan 0066
+  Phase 1, batch S7d, [inventory § 4](../../plans/0066-inventory/README.md#4-batch-list)). Tool `tools/sweep2_s7d.py`
+  (`59732e90…`, new) on `tools/rooms.py` (`1971372c…`, unchanged; its `Checker` runs first as the control), one pass per
+  log over the 13 logs of `rooms-lifecycle-manifest.sha256` and the 3 of `h7a-lifecycle-manifest.sha256`, under
+  `systemd-run --user --scope -p MemoryMax=4G` (14 s). The frame-window `RR` lines of run:2026-11-04-frame2/-frame3,
+  named by row 25's route, were not used.
+- **Control:** `SUMMARY mismatches=4 checks=2891656`, the sum of the kept checks (`rooms-lifecycle-check.txt` 0 of
+  2 215 807, `rooms-h7a-check.txt` 4 of 675 849, the known `+0xC4` bit `0x2000` records).
+- **Output:** `workspace/logs/n66m/s7d/check-s7d.txt` (`6e30d778…`, 101 lines, `S7d total bad=0`);
+  `workspace/logs/n66m/manifest.sha256` (`54ad0bc5…`) passes from `workspace/logs/n66m`. Two development outputs in
+  `workspace/logs/n66m/dev/`, not cited.
+- **Results:** [drlg/0009 § 11.5](0009-room-lifecycle.md#115-plan-0066-batch-s7d-new-checks-over-the-kept-logs-2026-11-15-lanen66m).
+  `audit: n/a, no check of a new run.` (run:2026-10-17-lifecycle, run:2026-10-17-h7a-lifecycle)
