@@ -305,8 +305,17 @@ def check_h2(paths):
             elif t == "UBL" and cur:
                 u = cur["urm"]
                 old = rate.get((d["list"], d["stat"]))
-                if not (u["list"] and d["list"] == u["list"]):
-                    bad.append("%s UBL without a found list" % where)
+                if not u["list"]:
+                    # a use with no list: the blend step runs on the list the use just made (UBL's list is that new
+                    # one), numerator v, denominator len, rate trunc(v / len) (smoke session, plan 0065 Phase 1)
+                    if cur["v"] is None or d["num"] != cur["v"] or d["den"] != u["len"]:
+                        bad.append("%s fresh UBL num %d den %d, predicted %s, %d" % (where, d["num"], d["den"],
+                                                                                   cur["v"], u["len"]))
+                    else:
+                        cur["fresh"] = tdiv(cur["v"], u["len"])
+                    continue
+                if d["list"] != u["list"]:
+                    bad.append("%s UBL on list %d, the use found %d" % (where, d["list"], u["list"]))
                     continue
                 if old is None or cur["v"] is None:
                     S["UBL with no earlier rate or no UDV (not predicted)"] += 1
@@ -317,6 +326,12 @@ def check_h2(paths):
                     continue
                 cur["blend"] = (tdiv(d["num"], d["den"]), tdiv(cur["v"], u["len"]))
             elif t == "USS":
+                if cur and cur.get("fresh") is not None:
+                    want = cur.pop("fresh")
+                    if d["rate"] != want:
+                        bad.append("%s USS rate %d, fresh trunc(v / len) %d" % (where, d["rate"], want))
+                    else:
+                        S["fresh rate as predicted"] += 1
                 if cur and cur.get("blend") is not None:
                     want, alt = cur.pop("blend")
                     if d["rate"] != want:

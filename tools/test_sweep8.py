@@ -187,6 +187,7 @@ class H2Test(Tmp):
     def lines(self, rate2):
         return [L("URM", {"uid": 1, "list": 0, "rem": 0, "len": 192, "state": 100, "f": 10}),
                 L("UDV", {"v": 7680, "stat": 0}),
+                L("UBL", {"num": 7680, "den": 192, "list": 55, "stat": 74, "slot": 0, "f": 10}),   # the fresh use's own
                 L("USS", {"list": 55, "stat": 74, "rate": 40, "f": 10}),
                 L("URM", {"uid": 1, "list": 55, "rem": 150, "len": 192, "state": 100, "f": 52}),
                 L("UDV", {"v": 46080, "stat": 0}),
@@ -200,6 +201,14 @@ class H2Test(Tmp):
         self.assertEqual(rc, 0, out)
         self.assertIn("blends=1 separating=1 frees=1 mismatches=0", out)
         self.assertIn("use after a free", out)
+        self.assertIn("fresh rate as predicted", out)
+
+    def test_fresh_wrong(self):
+        ls = self.lines((40 * 150 + 46080) // 342)
+        ls[2] = L("UBL", {"num": 7681, "den": 192, "list": 55, "stat": 74, "slot": 0, "f": 10})
+        rc, out = run_out(sc.check_h2, [self.log("a.log", ls)])
+        self.assertEqual(rc, 1, out)
+        self.assertIn("fresh UBL", out)
 
     def test_wrong(self):
         rc, out = run_out(sc.check_h2, [self.log("a.log", self.lines(46080 // 192))])
