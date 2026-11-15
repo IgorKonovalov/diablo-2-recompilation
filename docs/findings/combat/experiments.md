@@ -311,6 +311,155 @@ and a scan of the `EV0`/`DRM` lines; no new run):
   test is `[C]` (383), the champion half `[I]` (0); the −100 floor changed no logged value and stays `[I]`.
   Verdict in the [plan log](../../plans/done/0037-combat-formulas.md#implementation-log). (run:2026-10-16-combat)
 
+#### Addendum 2026-11-15: plan 0066 batch S5a, part 1 (new checks over the kept combat and skills logs, `lane/n66j`)
+
+A new check over the kept logs, no game. Tool `tools/sweep2_s5a.py` (`104ce037…`): its `combat` section reruns
+`tools/combat.py`'s `Checker` unchanged over `c37r-run2.lst` (40 logs, c37p2 and c37r), `p47h-run.lst` (31, with the
+recorded `--no-shield-log`) and `p47b-run.lst` (3), and on every event the Checker accepts adds the S5a counters and
+nine new checks; `skills` counts the owner-seed steps of each `MC0`/`MC1` creation of run:2026-10-25-skills; `handlers`
+counts each outermost `EVH`..`EVR` handler call's unit-seed steps in run:2026-10-25-skills and run:2026-10-27-skills.
+Outputs under `workspace/logs/n66j/`: `check-combat.txt` (`8301a8c5…`, 422 lines), `check-skills.txt` (`c17d62f4…`),
+`check-handlers.txt` (`f51b54c2…`), `manifest.sha256` (`f7ddd85e…`, passes `sha256sum -c` from that directory);
+development outputs in `dev/` with `manifest-dev.sha256`. Static reads with r2 (the second tool after Ghidra) on the
+pinned image.
+
+- **The Checker on the union:** 0 mismatches over 74 logs (pa 6 901, ma 19 017, ha 3 174, md 8 638, pm 4 409, MAS 19 780
+  events). **The nine new checks: 0 bad** (`S5a total bad=0 checker=0`): `burn-plain` 10 951 builds with `burnLen` 0
+  at `BD1` and no state-115 `STA`; `conv-zero` 10 951 `BD0` packets with byte `+0x65` and dword `+0x68` at 0;
+  `evh-order` 5 540 (no delivery held both a hit and a get-hit handler, so the order itself is not separated); `md-block` 10 387 missile events with physical 0 and no block draw, 6 838 of them in the 30 logs
+  where another missile was blocked; `miss-nodef` 12 161 missed to-hit rolls with no defence roll after them;
+  `mon-leech-strict` 8 876 monster attacks whose `LE1` attacker seed equals the `AD0` one (the Checker's own drain
+  model met 276 monster drains, Nightmare 19 and Hell 257); `sta-52` 509 state-52 `STA` lines with length 120 000, stat 31, value 0, all from a
+  player attacker; `steal` 462 deliveries whose defender mana at `AD1` is the `AD0` mana minus the packet's mana steal,
+  0 below 256 (226 on the player, 236 on monsters; no stamina steal logged). [C] (run:2026-10-16-combat,
+  run:2026-10-20-shortfalls, run:2026-10-21-shortfalls2)
+- **Entry points.** `EV0` return addresses (`check-combat.txt`, `ev0-ret`): `SKILL_AttackDo` 0x0056F156 (pa 6 901),
+  `MON_MeleeHit` 0x005A54C8 (ma 18 735, ha 1 318), `sub_005D7EA0_SkillSt32Hit` 0x005D7F42 (ha 1 068),
+  `sub_005DB2D0_SkillDo07MeleeHit` 0x005DB371 (231), `sub_005CAE40_SkillSt42FireHit` 0x005CAED8 (3),
+  `sub_005DA940_SkillSt06Hit` 0x005DA9B4 (1). No return lies in `sub_005D9C80_MonSkillAttackDo`, which reaches the hit
+  test through `MON_MeleeHit`: r2 reads its calls, in order, `sub_005A4F50_MonAttackStats` (0x005D9C95),
+  `MON_MeleeHit` (0x005D9C9F), `COMBAT_DeliverQueued` (0x005D9CAC), then 0x006445E0 and 0x00644620. [C] for the call
+  order (fn:sub_005D9C80_MonSkillAttackDo@0x005D9C80, r2 and Ghidra)
+- **The packet copy.** `COMBAT_QueueHit` copies the packet with `mov ecx, 0x1C; rep movsd` (0x0057CAE1–0x0057CAE6):
+  28 dwords, 0x70 bytes, the size the logger reads and the Checker compares at `BD1` and `AD0`. [C] for the size and
+  the whole copy (fn:COMBAT_QueueHit@0x0057CA80, r2 and Ghidra); the callers' zeroing was not read here. [I]
+- **Late deliveries:** 789, queued by `SkillSt32Hit` (788) and `SkillSt42FireHit` (1), delivered 6 frames (787) or 9
+  (2) after the hit test, resynchronised at `AD0`. [C] (run:2026-10-16-combat, run:2026-10-20-shortfalls)
+- **No difficulty term in the chance to hit, the block, crushing blow or open wounds.** `THR` per difficulty and game
+  type: Normal 12 019, Nightmare 4 940 + 607 classic, Hell 9 211 + 664 classic, with the chance strictly between 5
+  and 95 in 1 502, 3 546 and 9 814 of them; block rolls 2 204, 1 678 and 7 869; crushing-blow and open-wounds handler
+  calls 3 102, 1 662 (160 classic) and 675 (126 classic). Every chance and every handler's life result is asserted by
+  a model with no difficulty term. [C] (fn:COMBAT_ToHitRoll@0x0057D9B0, fn:STATEVENT_CrushingBlow@0x005BFFC0,
+  run:2026-10-16-combat)
+- **The result word at delivery** (`AD0 result word`): melee 0x1, 0x3, 0x5, 0x7, 0x9, 0xB, 0xD, 0xF, 0x2005, 0x2007;
+  missile 0x1, 0x5, 0xD and **0x4001 (537)**, a bit the to-hit spec's list does not name. Blocked, dodged, avoided,
+  evaded and weapon-blocked hits deliver nothing, so 0x10, 0x80, 0x100, 0x200 and 0x8000 are not in any logged
+  packet. Each `DRR` line is a roll, not a success: the one missile evade roll with a delivery (`p47h-ama-n-walk`,
+  frame 2549) failed and delivered 0x5. [C] for the bits listed (run:2026-10-16-combat); [I] for the others
+- **Defence rolls per event:** the defender 0 (29 243), 1 (12 000) or 2 (61); the attacker's `THR` 0 or 1; no event
+  drew three times. A running player defender drew the block without a to-hit roll in 135 events. [C]
+  (fn:COMBAT_DefenceRoll@0x0057DFB0, run:2026-10-16-combat)
+- **The builder.** 10 951 builds (player 6 901, hireling 1 787, monster 2 263) with `BD1` asserted whole. The
+  mastery crit and stat 141 both above 0 in 144 builds (the mastery drawn first). 981 doublings, every one with an
+  element field non-zero and left undoubled. No monster build had stat 21 below 1 or 22 below 2 and every player held
+  a weapon, so the unarmed clamp is not reached; no build carried an event-3 handler. [C] for the counts
+  (run:2026-10-16-combat)
+- **A monster's missile and the crit doubling:** 7 734 md events from monsters with MonStats `Crit` above 0, the
+  owner's step asserted at `MSX`. [C] (0x005AD884, run:2026-10-16-combat)
+- **Mercenaries:** 519 Hell `ha` leeches with steal fields checked by the model without the divisors (`LE1`); 79 hits
+  on Andariel at P 35 (53) and 25 (26) with the steal fields unscaled; 191 hits on champions, uniques and superuniques
+  that are not MonStats `boss` at P 100; 1 787 builds with no drain draw (the build's seeds asserted). [C]
+  (fn:sub_0063EE90_HirelingType@0x0063EE90, fn:MONSTATS_IsBoss@0x0063E9F0, run:2026-10-16-combat)
+- **Absorb and the zero floor:** 794 absorb heals on the player asserted at `AD1` (flat fire 372, lightning 51, cold 1;
+  percent 371); 635 negative and 864 zero totals leaving life unchanged. [C] (fn:COMBAT_Absorb@0x0057BF10,
+  fn:COMBAT_ApplyReductions@0x0057C1E0, run:2026-10-16-combat, run:2026-10-21-shortfalls2)
+- **Not in the logs.** `STA` is logged at `STATE_ApplyTimed` (0x0056E970) only: the logs hold states 9, 24, 28, 35,
+  40, 43, 44, 46, 49, 52, 62 and 159, and none of the stun (21), cold (11), freeze (1), poison (2), shatter (107) or
+  burning (115) states. The missile's stat 327 is not in `MS0`. No delivery had both a hit event and a get-hit event
+  handler, nor a kill or killed handler. Those rows return to (b), H5b.
+- **Skills runs.** `check-skills.txt`: weapon-share creations stepped the owner's seed once, 856 by a player and 128 by
+  a monster (classes 160, 161 and 170 with missiles 13, 14 and 196); none twice. `check-handlers.txt`: handlers 7, 8,
+  20 (attacker) and 21 (the player defender) stepped their unit's seed once per call, 9 once on a monster attacker;
+  5, 6, 13, 17, 19, 22, 28 and 29 not at all; handlers 3, 30 and 31 never fired. [C] (run:2026-10-25-skills,
+  run:2026-10-27-skills)
+- **Skills.txt:** `srvprgfunc1`–`3` are set on four rows: 259 (143, 38, 39), 269 (–, 36, 37) and 274 (–, 38, 39) with
+  `prgstack`, 280 (40, 143, 41) without. [C] (tbl:Skills.txt:srvprgfunc1, full table)
+
+#### Addendum 2026-11-15: plan 0066 batch S5a, part 2 (the `MonAttackStats` output model and the delivery's boundary draws, `lane/n66j`)
+
+A new check over the same kept logs, no game. Tool `tools/sweep2_s5a2.py` (`946081ff…`), which runs part 1's
+`sweep2_s5a.py` (`104ce037…`, unchanged) as its base, so the Checker and the nine part-1 checks run again (0
+mismatches, 0 bad), and adds the models below. Command, from the repository root: `python3 -I tools/sweep2_s5a2.py
+workspace/logs/combat/c37r-run2.lst workspace/logs/combat/p47h-run.lst workspace/logs/combat/p47b-run.lst
+--no-shield-log` with the nine logs recorded above for `p47h-run.lst`. Output `workspace/logs/n66j/check-combat-p2.txt`
+(`d5a594af…`, 214 lines, `S5a2 total bad=0 checker=0 part1-bad=0`); the r2 reads it rests on are kept beside it
+(`p2/mas-disasm.txt`, `p2/mas-disasm2.txt`, `p2/gethit-disasm.txt`); `manifest-p2.sha256` (`77a83aae…`) passes
+`sha256sum -c` from `workspace/logs/n66j`. Six development outputs of earlier revisions are in `p2/dev/` with
+`manifest-dev-p2.sha256`. r2 is the second tool after Ghidra for the readings below.
+
+- **`MonAttackStats`' stats reproduce in all 19 780 logged calls.** The model (module docstring; r2 0x005A4F50–0x005A5443):
+  MonLvlStats cells by the mode's column set, then in a classic game (`game+0x70` = 0) with `d` > 0 and `Align` ≠ 1
+  damage `tdiv(10x, 12)` and to-hit `tdiv(10x, 15)`; in an expansion game, when `sub_006259B0_UnitAlignGet` returns 0,
+  `x += tdiv(x·b, 128)` on 21, 22, 19 and on the `El` block's minimum, maximum and length, with
+  `b = sub_005A4F20_PlayerDmgBonus(game, max(stat 100, 1))` (r2: 0 for `game+0x6D` = 0 or `n` < 2, the dword table
+  0x006E21F4 = 0, 0, 8, 16, 24, 32, 40, 48, 56 for `n` < 9, `lea eax, [edx·8 − 0x10]` above). `mas-stats` 19 750 of 19 750
+  (the 30 others are each hireling's first call, where its offset is learned), `mas-el` 1 030 of 1 030 `El` applications
+  compared (types 1 fire 308, 2 lightning 611, 4 cold 108 with stat 56, 5 poison 298 with `× 10` and `× 2`; `El1` 1 228,
+  `El2` 97). [C] (fn:sub_005A4F50_MonAttackStats@0x005A4F50, fn:sub_005A4F20_PlayerDmgBonus@0x005A4F20,
+  data:g_PlayerDmgBonus@0x006E21F4, run:2026-10-16-combat, run:2026-10-20-shortfalls)
+  - **What separates** (each reading reversed alone, `check-combat-p2.txt`): the classic factors in 562 of the 600
+    classic Nightmare and Hell calls (no factor, or the two divisors swapped, gives other stats); `b` = 16 at
+    `/players 3` in 600 of 600 Hell calls and `b` = 56 at `/players 8` in 1 679 of 1 798 Nightmare calls (against
+    `b` = 0), the table step in 2 279 (`n − 1`) and 600 (`n + 1`); the `d = 0` test in 5 216 of 6 444 Normal calls at
+    `n` ≥ 2 (the bonus of `n` would change them); `b` on the `El` stats in 154 of 154 applications compared under
+    `b` > 0 (13 at 16, 141 at 56), the length included; the mode's column set in 18 081 calls; an `El` group of another
+    mode left unwritten in 3 929 calls; `El2` applied with `El1`'s minimum, maximum and length (the mask `0x40 + e`)
+    in 57 compared applications whose own `El2` cells differ from `El1`'s (97 applied, 40 on units with another `El`
+    list). [C] (0x005A5252–0x005A527A, run:2026-10-16-combat)
+  - **Not separated or not met.** The `L` columns (the plain cells give the same 17 714 values); the `8n − 16` branch
+    (`n` ≥ 9 never logged; at `n` = 9 it equals the table's 56); `Align` = 1 (2 classic calls, not counted for
+    separation); `UnitAlignGet` ≠ 0: the 2 066 hireling calls (class 561) are checked against an offset learned at each
+    one's first call, since their MonStats cells give 0 and their Hireling list adds the rest, so the alignment test is
+    not separated; types 3, 6–11 and 12 never applied, nor any `El3`; the skill-damage pair (no logged class has one). 295 `El`
+    writes on units already holding `El` stats from another list (classes 9, 10, 19, 20, 30, 80, 85, 135: enchanted
+    uniques' minions) are not compared. [I] (fn:sub_005A4F50_MonAttackStats@0x005A4F50)
+  - **The mode passed.** At the attacker's next `EV0` its mode equals the last `MAS0` mode in 10 842 of 10 979 pairs;
+    the 137 others (8 → 14 in 53, 4 → 14 in 25 among them) can have mode changes between, so this is a counter, not a
+    test of "the new mode". [I] (fn:sub_005A7C20_MonSetMode@0x005A7C20, 0x005A7D34)
+- **The durability draws match `items/economy` H1–H2 by seed steps.** On every one of 9 680 `DU0`/`DU1` pairs but
+  one: a player attacker's seed steps once and a monster's or a hireling's never (5 668 player hits, 4 012 others);
+  a player defender's seed steps three times (`RangeB(7)`, `RangeB(W)`, the roll; 2 045), a monster's or a hireling's
+  never (1 749 hireling hits on monsters, 218 monster hits on hirelings). The exception: the one `0x005CAED8` (mode-14)
+  attack on the player stepped neither seed, not explained. [C] for the step counts (fn:COMBAT_DurabilityLoss@0x0057D3D0,
+  fn:ITEMS_DurabilityLossRoll@0x00559E30, run:2026-10-16-combat); [I] the roll values (the equipment is not logged)
+  and the `0x005CAED8` case.
+- **The get-hit draws on a player defender are `GetHitRoll`'s** (anim/timing M1–M2): `gh-steps` 25 669 of 25 669, i.e.
+  18 072 events with no delivery and 875 with a result that returns first (0x1 without 0x4, or 0x7 killed) step
+  nothing, and 6 722 reach `GetHitRoll` with the bands by `hp ÷ D` (stat 7 at the outer `AD1`; `D` 16 in 6 547,
+  8 in 175 from a missile's hit class), 8 of them drawing (one draw 5, two 3); another divisor would give other steps
+  in 169. [C] (fn:COMBAT_GetHit@0x0057CEE0, fn:sub_0057CB00_GetHitRoll@0x0057CB00, run:2026-10-16-combat)
+- **On a monster or hireling defender the model is an upper bound only.** `COMBAT_GetHit` first calls 0x005A54F0
+  (unread) for such a defender and tests states 54 and 21 and, in `GetHitRoll`, state 1, none of which these logs
+  hold. Logged steps never exceed the model (`gh-steps-monster-not-more`, 9 509 of 9 509): equal in 7 969 (2 085 of
+  them drawing), fewer in 406 (163 with a logged stun packet still running, 125 with a cold length running), 0 in all
+  1 134 results that return before `GetHitRoll`; 2 of 1 696 GetHits with no delivery stepped once (0x005A54F0's part,
+  presumably). A kill runs `UnitKilled` (3 652, 2 364 stepping: the drop). [I] (0x0057CF65, 0x0057CFF8, 0x0057D0B9,
+  run:2026-10-16-combat)
+- **Flags and result bits** (`check-combat-p2.txt`, with part 1's counters): flag `0x2` is set at the builder's entry
+  in all 6 901 player attacks, which build once (`build-once` 10 951 of 10 951), and clear in the 4 050 monster and
+  hireling attacks, which build once inside the resolve; result `0x1` is set exactly when the melee `THR` roll is below
+  its chance (9 594 of 9 594, hits and misses); `0x2` exactly when the defender's life is 0 at the outer `AD1` (3 665
+  set, 17 141 clear); `0x4` only with `0x1` (20 806); `0x2000` with the doubling (the Checker's build). Flag `0x1`
+  never occurs; `0x300` (bypass undead and demons) occurs at 7 `AD0` lines, not tested; the other flags and result
+  bits are not in any logged packet (part 1). [C] for the bits named as tested (run:2026-10-16-combat); [I] for the
+  rest.
+- **A `manahit` attacker's drain.** 262 hits by monsters with stat 62 ≥ 256 (`v` = stat ÷ 256 from 10..16 to 60..91);
+  on the player, with no handler in the delivery, mana at `AD1` = `AD0` mana − the packet's mana field, 0 below 256,
+  in 226 of 226 (`manahit-loss`); every one took all the mana held, and in 138 the `v` reading (the field ÷ 256)
+  would have left mana. With the Checker's `BD1` (the field rolled from stats 62/63 and shifted) this composes B4's
+  `256·v`. [C] (fn:sub_005A1F90_UModManaHit@0x005A1F90, fn:COMBAT_ApplyDamage@0x0057C6C0, run:2026-10-16-combat,
+  run:2026-10-20-shortfalls) The `El` type 7 half (no logged `El` 7) and the `v << 22` wrap (`v` ≤ 91 here) stay [I].
+
 ## run:2026-10-20-shortfalls
 
 One run under two checkers: this section holds the combat sessions; the stats sessions are in
@@ -517,3 +666,32 @@ lightning flat absorb that `abs-nm-marsh` was to reach.
 - **Result:** lightning flat absorb **51** (met); cold flat absorb **1** (named again, final: Travincal's cold rows
   gave 13 melee attacks, all misses; *review 2026-10-21:* final under the Done-when's own condition, `abs-nm-marsh`
   run, not as a stock-data limit, since Nightmare and Hell cold rows were not tried). (run:2026-10-21-shortfalls2)
+
+## run:2026-11-15-sweep2-s5b
+
+Plan [0066](../../plans/0066-simulation-inferred-claims-sweep.md) Phase 1, batch S5b (`lane/n66j`): static second
+sources for the 24 class-c rows of the combat specs. No game, no wine, no Ghidra. The claims are in
+[combat/0001 § 18](0001-formulas.md#18-plan-0066-batch-s5b-static-second-sources-run2026-11-15-sweep2-s5b).
+
+- **Question:** do a second tool's call, pointer, push and store scans of the pinned `Game.exe`, and full-table
+  checks of the excel `.txt` tables, give the callers, stat ids, packet writers, event registrations and draw-free
+  closures the combat specs state (at `b5999f5e`) as inferred?
+- **Setup:** `tools/sweep2_s5b.py` (sha256 `4ad860dd…`), stdlib only. Its tools: the raw-byte scan of
+  `tools/xrefscan.py` (every rel32 call/jmp and abs32 reference to a target), radare2 (`r2 -q`, linear `pd`/`pD`,
+  `pxw`, its own `/x` byte search for the LCG multiplier) for every decoded instruction the checks assert, and the
+  objdump listing of `.text` (`tools/sweep_s4b.py`) for function bodies, the call graph and the store scans; plus
+  `re/symbols.csv` for names only. Sections `callers`, `stats`, `stores`, `tables`, `closures` (the docstring says
+  which row each serves).
+- **Procedure** (from the worktree root; `L=workspace/logs/n66j/s5b`):
+  ```
+  systemd-run --user --scope -p MemoryMax=4G python3 -I tools/sweep2_s5b.py all > $L/check-s5b.txt
+  (cd $L && sha256sum -c manifest-s5b.sha256)
+  ```
+- **Outputs:** `check-s5b.txt` (`3b8c2822…`, 2 517 lines, last line `S5b total bad=0`) and `totals-s5b.txt` (the
+  inventory's class totals after merging `main` `c48797e7`), listed in `manifest-s5b.sha256` (`30f6ea65…`), which
+  passes from `workspace/logs/n66j/s5b`. Fourteen development outputs of
+  earlier tool revisions (a stat-id window that kept the layer push, a misaligned read of the reduction table, a
+  missing entry for the helper `0x005D8B10`, a looser `rep movsd` decoding) are kept in `dev/` with their own
+  `dev/manifest-dev.sha256`, passing from `dev/`; none is cited.
+- **Result:** 29 checks, 0 bad. Row outcomes and their counts are in combat/0001 § 18 and in each inventory row's
+  *Route* cell.

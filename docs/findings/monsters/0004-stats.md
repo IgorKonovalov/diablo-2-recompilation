@@ -477,6 +477,15 @@ truncating toward zero (`0x51EB851F`, `sar 5`, sign fix). `lvl` is stat 12 at th
   **`El2` and `El3` are applied with El1's minimum, maximum and length** (their mode, chance and type are their own).
   No logged call applied an `El2` or `El3` (0x005A4FB3, 0x005A5252–0x005A527A, run:2026-10-27-skills).
 
+- [C] *2026-11-15 (plan 0066 S5a part 2, raised in part):* over the combat logs `tools/sweep2_s5a2.py` reproduces stats 19,
+  21, 22 in 19 750 calls and 1 030 `El` writes (types 1, 2, 4, 5), with the classic factors (562 calls separating) and
+  the expansion player-count bonus on the stats and on the `El` minimum, maximum and length (`b` 16 and 56, 154 `El`
+  writes separating), and `El2` applied with `El1`'s bounds (57 compared applications whose own cells differ; the
+  "no logged `El2`" above is run:2026-10-27-skills'). The `L` cells, `n` ≥ 9, `Align` = 1, the alignment test, `El3` and
+  types 3, 6–12 stay [I]
+  ([combat/experiments, S5a part 2](../combat/experiments.md#addendum-2026-11-15-plan-0066-batch-s5a-part-2-the-monattackstats-output-model-and-the-deliverys-boundary-draws-lanen66j)).
+  (fn:sub_005A4F50_MonAttackStats@0x005A4F50, data:g_PlayerDmgBonus@0x006E21F4, run:2026-10-16-combat)
+
 ### 10. Boundary decision for Phase 2 (recommendation)
 
 1. **Model in full**: the appearance pick, the doomknight `Range(4)`, the HP draw and arithmetic, AC, XP, the player
