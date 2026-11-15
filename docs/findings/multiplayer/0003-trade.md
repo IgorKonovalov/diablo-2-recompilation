@@ -634,14 +634,14 @@ logs; every case's anchors are the log's `TRB`/`TIT`/`TTK`/`TCM` lines and the �
 | Case | Log | Result |
 |---|---|---|
 | T1 | a | 0 mismatches, 4/4 met: the copy `X'` on J's page 1, the new unit at J's received cell, gold moved, 9 → 10 → 0. |
-| T2 | a | 0 mismatches, 2/2 met: the close (below) gives `TradeClose(…, 9)`, both inventories rebuilt (`TRS`), new ids. Variant: X was spent in T1, so H offered `gcv`; the cube was picked up (a `TIT`, item code 549). |
+| T2 | a | 0 mismatches, 2/2 met: the close (below) gives `TradeClose(…, 9)`, both inventories rebuilt (`TRS`), new ids. Variant: X was spent in T1, so H offered `gcv`; the cube's pick-up was tested (a `TIT`, item code 549) and refused (*2026-11-10, `lane/n67s` review: see the addendum below*). |
 | T3 (a) | a | event 8 to H, no state (`TEV` 8 at f 13549); J had Deckard Cain's menu open. |
 | T3 (b) | a | event 9 named, `+0x54` = `t` (f 3614, 80 frames after T2's close); 1 of 3 expectations for that segment. |
 | T3 (c) | - | not reached: the logger sources no `pilot.py` object lines, so `d2pilot wp` cannot find the town waypoint, and no exit coordinates are known; `TQN` never appeared. |
 | T4 | c | 0 mismatches, 2/2 met: side 1, `0x77` 9 then `0x0A`, `TCX`, both restored, 5 → 6 → 3. |
 | T5 | a | 0 mismatches, 2/3 met. First part: J's entry of 9 000 was clipped, H ended at exactly 800 000, nothing dropped. Second part (`g'` above J's gold) not reached: the client clamps the entry to J's own gold before it sends button 8 (`TRB` 8 with `param` 95 000 for an entry of 150 000, J holding 99 500 minus the 4 500 already given), so no overspend reaches the server. |
 | T6 | a | 0 mismatches; `E-offer-at-4` unmet, see below; `E-exchange` met in the rerun. |
-| T7 | b | 0 mismatches, 4/4 met: 7 → 8 → 11, J's `ok` at 7/8/11 answered code 6, state kept, 11 → 3 after the lock, then accepted. |
+| T7 | b | 0 mismatches, 4/4 met: 7 → 8 → 11, J's `ok` at 11 answered code 6, state kept (at 11 only: *2026-11-10, `lane/n67s` review, addendum below*), 11 → 3 after the lock, then accepted. |
 | T8 | c | 0 mismatches, 2/2 met: `TSV` flag 1 and `TSC` before `TAB`, both restored. J left by a killed client (`slots.py stop 2`), see below. |
 | T9 | b | 0 mismatches, 2/2 met: `TIT` 1 → both 7, `TBL` 0, the belt stays worn. |
 | T10 | b | 0 mismatches, 1/1 met: `TIT` returns 0, event `0x0A`. |
@@ -693,6 +693,28 @@ cube; after a commit both clients keep the inventory panel open (it shifts the v
 close it with `key:Escape` only when it is open, and check that the `TRQ` count rose; `d2pilot npc` did not find the
 town NPCs on this logger (no `pilot.py` object lines), so J clicked an NPC by `xy:` (Deckard Cain at 385,395 from
 the start position); T6's second part and T5's second part are unreachable on the stock client.
+
+**Addendum (2026-11-10, the `lane/n67s` Tier A review).** Counts the Phase 3 spec states from the kept host logs, and two
+corrections to the case table, recounted over `workspace/logs/n67h/{a,b,c}/host.log` by the kept
+`workspace/logs/n67h/review-n67s/recount.py` (output `recount.txt`, with a `manifest.sha256`). [run:2026-11-10-trade]
+- [C] **Item tests.** 19 `TIT`/`TITR` pairs (a 5, b 7, c 7), every one returning at 0x00567826 (the main exit; none at
+  the early refusal 0x0056768E); 3 returned 0: a f 3441 (H's cube, J holding a cube), b f 4026 (T10) and b f 4155 (T11).
+- [C] **Button 8s** (0x00568060, run:2026-11-10-trade). 113 `TRB` 8 (a 49, b 27, c 37), each with the presser's record set and both players at the same
+  state: 3 (72), 8 (38), 6 (2) or 11 (1). 7 carried an amount (a 6, c 1); each came after a button 7 of the same player
+  (1 to 142 frames after it; a's f 4587 and f 4680 follow one 7 at f 4586). The other 106 carried 0: 104 in 52
+  same-frame pairs, one from each player, and 2 alone (a f 4587, H's, beside J's 300; b f 1771, J's, after its refused
+  accept). The 95 000 of a f 8781 equals J's
+  carried gold at that line.
+- [C] **The saves at the two drops** (b f 4389, c f 3193): after `CRM` (`a1` 1), `SaveItemListOrSnapshot` with flag 1
+  was called twice for each player, J then H, with rooms `0x8000` and 7 348, each from 0x005697D2 (inside
+  `D2S_WriteItemList`); each of the 8 `TSC` lines returned that player's record byte count (`r0`) with the hash the
+  record line carries. Which `PLRSAVE_Save` route led to `D2S_WriteItemList` was not logged.
+- **Correction, T7.** The log holds one refused accept, J's button 4 at state 11 (b f 1769, code 6, state kept). States
+  7 and 8 lasted one frame each (f 1667–1669), and no button 4 came at either; the checker's `E-refused` accepts any
+  of 7, 8 or 11. A refused accept at 7 or 8 is not observed.
+- **Correction, T2.** H's cube was not picked up: its item test returned 0 (quest code `box`, J holding a cube) and
+  the cube stayed at page 0 cell (8, 0) through the close. The restore at T2's close brought back the offered `gcv`
+  with the rest of the list.
 
 ## Data touched
 
