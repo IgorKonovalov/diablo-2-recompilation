@@ -61,7 +61,7 @@ request which types; the sources of 2 and 1).
 | `0x0067B850` | `sub_0067B850_PathPlanType1` | only through greedy-near's switch (270 plans; its own controls separate up to 178, § 3); no type-1 request | C (through the switch) |
 | `0x0067A140` | `sub_0067A140_PathPlanSpiral` | type 14: the list, 27 stock plans, one list relative to the start `0x8000`; `swap` separates it. The rounding is `[C]` by [path/0006](0006-holdout.md) | C |
 | `0x006EB6D8` | `g_PathPlanFuncs` (data) | the planner at the slot call equals its entry for the context's type, 24 707 calls, types 2, 5–9, 13, 15 (§ 10) | C |
-| `0x00648480` | `PATH_MonTestMask` | its rule by class equals the test mask of 21 126 monster plans; the 249 others carry `AiVultureTakeOff`'s 0 (§ 10) | C |
+| `0x00648480` | `PATH_MonTestMask` | its three arms by class equal the test mask of 21 099 monster plans; the 27 wraith plans' `0x804` is `PATH_DynamicCreate`'s own branch (0x00649E60, review 2026-11-16), the 249 others carry `AiVultureTakeOff`'s 0 (§ 10) | C |
 | `0x0067A240` | `sub_0067A240_PathPlanRandomWalk` | type 10 (698), already C (path/0003 § 10) | C |
 | `0x0067AD00` | `sub_0067AD00_PathPlanSearch` | none (types 0 and 16 had no server plan) | I |
 | `0x00679E50`, `0x00679FD0`, `0x00679E60` | `PathPlanType3`, `Type11`, `Type12` | break lines: no server caller | I |
@@ -207,10 +207,13 @@ review section 1) and run:2026-11-04-path-2, `tools/path.py`'s `parse` and `eval
 - [C] **The masks at a plan** (`+0x50` test, `+0x4C` mark at `PathPlan`'s entry). Players: `0x1C09` / `0x80` in 4 212 of
   4 770 plans, every plan from `PlrModeStartMove` (3 999) and Charge (213); the 558 others are Whirlwind's `0xC01`
   (158, 0x005D906C) and Leap Attack's `0` / `0` (400, 0x005DA00C). Monsters: mark `0x100` in 21 375 of 21 375; test as
-  `PATH_MonTestMask`'s rule by the class's MonStats row (by `hcIdx`): flying `0x1804`, `opendoors` `0x3401`, else
-  `0x3C01`, a `BaseId` 38 class `0x804`, in 21 126 of 21 375. The 249 others are vultures (classes 111, 113) at `0`, the
+  `PATH_DynamicCreate`'s rule by the class's MonStats row (by `hcIdx`) in 21 126 of 21 375: a `BaseId` 38 class `0x804`
+  (27; `PATH_DynamicCreate`'s own branch, `cmp eax, 0x26` at 0x00649E3E, the store at 0x00649E60, before any call),
+  else `PATH_MonTestMask`'s return (0x00649E45): flying `0x1804`, `opendoors` `0x3401`, else `0x3C01` (21 099: 1 678,
+  14 670 and 4 751, the kept lines' rule counts less the 27 and the 249). *Review 2026-11-16:* the wraith arm was
+  credited to `PATH_MonTestMask`, which has no such test (0x00648480–0x006484D1). The 249 others are vultures (classes 111, 113) at `0`, the
   value `sub_005F2EB0_AiVultureTakeOff` pushes to `PathSetCollMask` (`push 0` at 0x005F2F9F, call 0x005F2FA2, r2); the
-  same classes plan with `0x3C01` 104 times. (fn:PATH_MonTestMask@0x00648480, fn:PATH_DynamicCreate@0x00649D00, 0x005F2FA2, run:2026-11-04-path, run:2026-11-04-path-2)
+  same classes plan with `0x3C01` 104 times. (fn:PATH_MonTestMask@0x00648480, fn:PATH_DynamicCreate@0x00649D00, 0x00649E3E, 0x005F2FA2, run:2026-11-04-path, run:2026-11-04-path-2)
 - [C] **The slot call.** At 0x00649BAE the planner address (`EAX`) equals `g_PathPlanFuncs[ctx type]` read from the
   pinned image in 24 707 of 24 707 calls, types 2, 5–9, 13, 15. (0x00649BAE, data:g_PathPlanFuncs@0x006EB6D8)
 - [C] **`PlrModeStartMove`'s plans** (return 0x0057F11C): 3 997 of type 7 and 2 of type 8 with `+0x90 = 5`, none else.
@@ -218,7 +221,8 @@ review section 1) and run:2026-11-04-path-2, `tools/path.py`'s `parse` and `eval
   plan), so which new mode gave each is not in the log: `[I]`. (fn:sub_0057F090_PlrModeStartMove@0x0057F090, 0x0057F103)
 - [C] **`MonPathPlanType`'s requests** (0x005A62F4) logged types 2 (638), 5 (1 092), 6 (1 048), 7 (2 863) and 13 (7 363).
   Every request of type 2, 7 or 13 that left `+0x28` = 0 is followed by the unit's type-15 plan from 0x005A6353 in the
-  same frame (2 469); 84 such requests have no logged follow-up, each in a game whose log has a type-15 cap line; no follow-up
+  same frame (2 469); 84 such requests have no logged follow-up, 82 after a type-15 cap line and 2 whose follow-up
+  is the refusal that writes the type-15 `ref` cap line two lines later (review 2026-11-16, `tools/sweep2_s7c_review.py`); no follow-up
   after the 190 empty requests of types 5 and 6 or the 9 261 non-empty ones. Each of the 2 469 + 2 480 fallback plans is
   type 15; 2 480 of them follow an unlogged request, each after a 2/7/9/13 cap line. The test is the byte table
   0x005A6368 (types 2..13, entry 0 for 2, 7, 9, 13) on `path +0x28` (`sub_00648780`, r2). Type 9, 1 and 15 requests
@@ -248,8 +252,8 @@ review section 1) and run:2026-11-04-path-2, `tools/path.py`'s `parse` and `eval
   and the game's points pass through them. `r` as a signed 32-bit sum fits to iteration 223 696 (2 147 481 600); 223 697
   gives 2 147 491 200 > 2³¹ − 1 (the kept bound line). (fn:sub_0067A140_PathPlanSpiral@0x0067A140, 0x0067A21D)
 - [C] **Type 10's turn map** (946 plans): the walk's `(lo & 31)` map reproduces every point and exit seed; the variant
-  with 30 and 31 straight (12/32) separates 851 and fails all 851. The game's 33 500 steps: 10 616 straight, 22 884 to a
-  side (31.7 %). (0x0067A258–0x0067A2F3)
+  with 30 and 31 straight (12/32) separates 851 and fails all 851. The game's 33 500 steps: 10 616 straight (31.7 %), 22 884 to a
+  side. (0x0067A258–0x0067A2F3)
 - [C] **Greedy-near's switch on players' type-7 plans:** greedy reached the target in 3 853; it stopped short in 462,
   461 at `d²` ≤ 324 (all ≤ 317) switching to type 1, 1 at `d²` > 360 not switching. No short plan has `d²` 318–360, so
   the 324/325 edge itself is not separated: `[I]`. (fn:sub_00679ED0_PathPlanGreedyNear@0x00679ED0)

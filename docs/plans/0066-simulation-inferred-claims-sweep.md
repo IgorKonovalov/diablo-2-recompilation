@@ -1325,7 +1325,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   wording, "oldest first" as list order) in
   [`2026-11-15-reverser-spec-writer-plan-0066-s7c-s7d-phase-3-notes`](../backlog/2026-11-15-reverser-spec-writer-plan-0066-s7c-s7d-phase-3-notes.md).
 - **Symbols:** `g_PathPlanFuncs` (data, the planner at 24 707 logged slot calls) and `PATH_MonTestMask` (the test mask
-  of 21 126 monster plans) raised to C in `re/symbols.csv`, evidence path/0004, and in path/0004's Functions table
+  of 21 099 monster plans; 21 126 until the review moved the 27 wraith plans to `PATH_DynamicCreate`'s branch) raised to C in `re/symbols.csv`, evidence path/0004, and in path/0004's Functions table
   (and drlg/0005's row for `PATH_MonTestMask`).
 - **Totals** from the 29 files' *Totals by class* at `7a3ef52e` (no row moved class; remainders in the *Route* cells):
   a-logs 628, a-run 340, b 446, c 390, c-emu 494, d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626, unchanged.
@@ -1337,3 +1337,44 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   [`2026-11-15-reverser-architect-review-plan-0066-s7c-s7d`](../backlog/2026-11-15-reverser-architect-review-plan-0066-s7c-s7d.md).
   Judgment calls listed there: the mask rows raised over later writers, the two symbol raises, rows 2 and 31 kept,
   the cap-line explanations of unlogged follow-ups, row 59 kept, row 14's reading, row 25's `RR` lines unused.
+
+### 2026-11-16 — S7c and S7d review (architect, Tier A, the audit of the fifth Tier B lane since `lane/n65h`): accept with fixes (3)
+
+- **Re-run** (no game, no Ghidra, each under `systemd-run --user --scope -p MemoryMax=4G`): `sweep2_s7c.py check` and
+  `sweep2_s7d.py check` at `94a3aa0b` reproduce `check-s7c.txt` (`911948c8…`) and `check-s7d.txt` (`6e30d778…`) byte
+  for byte; `workspace/logs/n66m/manifest.sha256` passes. Every count in path/0004 § 10, drlg/0009 § 11.5 and the 32
+  *Route* cells recomputed from the kept lines (sums and splits: 4 212 + 558, 2 469 + 2 480 type 15 of 4 949, 8 433 +
+  1 309, 9 742 + 9 542, 244 unbuilt of 7 690, 158 + 45, 27 + 1 + 4, 11 165 + 4 217, 83 839 of 94 349, 123 of 260).
+- **Sites read** (objdump): `AiVultureTakeOff`'s `push 0` / `PathSetCollMask` at 0x005F2F9F / 0x005F2FA2; the slot
+  call 0x00649BAE; the byte table 0x005A6368 (`00 01 01 01 01 00 01 00 01 01 01 00`, 0 for 2, 7, 9, 13); `PathReplan`'s 4
+  direct callers (a full-text call scan finds the same 4); the spiral's `r` from 0 with `add 0x2580` at the loop head
+  (the bound line holds); Whirlwind's `0xC01` (0x005D9042) and Leap Attack's `0` / `0` (0x005D9F91) writes, Leap's
+  landing restoring `0x80` / `0x1C09` (0x005DA26E–0x005DA27F); `PlrModeStartMove`'s plan (0x0057F117) before the mode
+  call (0x0057F148). The US lines of the save test carry types 1 to 5 (12 476), so 0 of type 0 (row 37) is a live absence.
+- **Fix (misread, 1): the wraith arm.** `PATH_MonTestMask` (0x00648480–0x006484D1) tests flying and `opendoors` only;
+  the `BaseId` 38 `0x804` is `PATH_DynamicCreate`'s own branch (`cmp eax, 0x26` at 0x00649E3E, store at 0x00649E60),
+  taken before the call. The lane credited the 27 wraith plans to `PATH_MonTestMask`'s rule and its C row to 21 126; the
+  function's arms give 21 099 (1 678 + 14 670 + 4 751, the kept rule counts less 27 and 249). Corrected in path/0004
+  § 10 and its Functions row, drlg/0005's row, inventory path-README row 10 and the lane's *Symbols* line; Phase 3
+  note 6 added (the spec's monster row anchors the wraith on `PATH_MonTestMask`). The raise stands: all three arms
+  separate (1 678, 14 670, 4 751).
+- **Fix (misread, 1):** path/0004 § 10 put type 10's 31.7 % on the side steps; it is the straight share (10 616 of 33 500).
+- **Fix (omission, 1): judgment (d) ordered.** The 84 empty requests with no logged fallback were checked at game
+  level only (`cut` in `ai`). `tools/sweep2_s7c_review.py` (`49919fa3…`) places them by the logger's line counter:
+  82 after a type-15 cap line, 2 whose own fallback writes the `ref` cap line two lines later; kept as
+  `workspace/logs/n66m/review/cap15-order.txt` (`f5d79c5a…`, `manifest.sha256` passes from `review/`). The 2 480 and
+  39 were already ordered (`n < pl.k`: a CAP line's `n` is the logger's line counter, the plan's `k`).
+- **Judgment calls.** (a) Rows 9 and 10 raised: accepted; the bullet names every other mask by its logged caller and
+  each has a read writer (Whirlwind, Leap Attack, `AiVultureTakeOff`), and no player plan from a move start or Charge
+  carries another mask. (b) `g_PathPlanFuncs` C (the logged `EAX` equals the image's entry in 24 707 calls, 8 types)
+  and `PATH_MonTestMask` C (its three arms on 21 099): accepted under review-fixes 14 as a writer/reader pair over the
+  table and the class rows. (c) Rows 2 and 31 kept: right; nothing in the log tells 0x00650757 from 0x006504D7. (d)
+  Accepted with the fix above. (e) Row 59 kept: right, the breakpoints fix the order. (f) Row 14's near list at `RMX`:
+  accepted, the file half is left. (g) Row 25 without the `RR` lines: the remainder stays `[I]` as written.
+  `RoomActivateB` stays I in `re/symbols.csv`: its return and the loads are not logged (row 16's remainder).
+- **Audit:** none of the three fixes is reject-grade; the wraith fix needs a disassembly a diff-scoped Tier B check
+  would not run, so a Tier B check would likely have missed it, but it is not reject-grade and counts no miss against
+  `reverser-static`. Gate green at the review commit. Totals unchanged (2 626; no row moved class).
+- **Ledger (for the orchestrator):** `audit of lane/n66m: misread 2, omission 1; no reject-grade miss (5th Tier B after
+  the n65h audit; count restarts)`. Review request resolution: "Tier A audit 2026-11-16: accept with fixes (3: misread
+  2, omission 1)".

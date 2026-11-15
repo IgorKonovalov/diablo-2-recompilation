@@ -26,3 +26,9 @@ Not blocking.
    "mode 19 plans type 8" describes the new mode (`EDI`).
 5. **drlg/lifecycle G / H2, "oldest first":** the restore order is the reverse of the save walk (829 restores), and
    unit ids rise along it in 372 of 563 multi-record restores, so "oldest" is the list's order, not the units' age.
+6. **path/README § A table, monster row** (added at the Tier A review, 2026-11-16): the wraith's `0x804` is
+   `PATH_DynamicCreate`'s own branch (`cmp eax, 0x26` at 0x00649E3E, the store at 0x00649E60), taken before
+   `PATH_MonTestMask` is called (0x00649E45); `PATH_MonTestMask` (0x00648480–0x006484D1) has the three arms only. The
+   row's cell names the wraith under `PATH_MonTestMask` with that function's anchor alone; § B's pseudocode line
+   (`testMask ← PATH_MonTestMask (wraith, base id 38: …)`) has the order right. path/0004 § 10 counts 21 099 plans for
+   the function's arms and 27 for the wraith branch.

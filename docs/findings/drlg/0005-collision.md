@@ -208,7 +208,7 @@ r2 and corrected in place (§ 5 table, § 6 rows 6 and 15), and both are require
 | `0x0064E260` | `COLL_LineTest` | line walk with a mask (line of sight and missiles; named only) | I |
 | `0x00649D00` | `PATH_DynamicCreate` | dynamic path (players, monsters, missiles): size, pattern, masks; marks when created in a room | I |
 | `0x00648580` | `PATH_PatternFromSize` | `g_CollPatternBySize`, NPC upgrade (`npc` or `inTown`, plan 0038 H5d) | C (38 338 creation marks) |
-| `0x00648480` | `PATH_MonTestMask` | monster move mask: `flying` `0x1804`, `opendoors` `0x3401`, else `0x3C01`; *2026-11-15:* C, the test mask of 21 126 logged monster plans ([path/0004 § 10](../path/0004-per-event-reproduction.md#10-plan-0066-batch-s7c-new-checks-over-the-kept-logs-2026-11-15-lanen66m)) | C |
+| `0x00648480` | `PATH_MonTestMask` | monster move mask: `flying` `0x1804`, `opendoors` `0x3401`, else `0x3C01`; *2026-11-15:* C, the test mask of 21 099 logged monster plans (the wraith's `0x804` is `PATH_DynamicCreate`'s branch at 0x00649E60, review 2026-11-16) ([path/0004 § 10](../path/0004-per-event-reproduction.md#10-plan-0066-batch-s7c-new-checks-over-the-kept-logs-2026-11-15-lanen66m)) | C |
 | `0x00648C30` | `PATH_SetMarkMask` | unmark, set path `+0x4C`, re-mark | I |
 | `0x00649400` / `0x00649560` | `UNIT_CollMark` / `UNIT_CollUnmark` | mark / unmark a unit by type | I |
 | `0x00649F70` / `0x00649FF0` | `sub_00649F70_UnitCorpseColl` / `sub_00649FF0_UnitReviveColl` | death (`0x8000`, pattern 5) and revival (`0x100`, pattern by size) | I |

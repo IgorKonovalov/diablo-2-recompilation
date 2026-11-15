@@ -274,3 +274,9 @@ The hold-out batch, `lane/p54c` (plan 0054 Phase 2, the kept batch of the `lane/
   plans, the tail's output words and the aim's writes, the live grid at the unit's and the target's cell, type 14's
   structure, grid and iterations, type 10's turn map, greedy-near's switch. `audit: n/a, no check of a new run.`
   (run:2026-11-04-path, run:2026-11-04-path-2)
+- **Review of `lane/n66m` (Tier A audit, 2026-11-16), no session.** `tools/sweep2_s7c.py check` and
+  `tools/sweep2_s7d.py check` at the lane's tip reproduced `911948c8…` and `6e30d778…` byte for byte under
+  `systemd-run --user --scope -p MemoryMax=4G`. `tools/sweep2_s7c_review.py` (`49919fa3…`, new, read-only, imports
+  `sweep2_s7c` unchanged): `workspace/logs/n66m/review/cap15-order.txt` (`manifest.sha256` there passes), the 84 empty
+  requests with no logged fallback placed against the type-15 cap lines by the logger's line counter: 82 after one, 2
+  whose fallback writes the `ref` cap line two lines later. `audit: n/a, no check of a new run.` (run:2026-11-04-path, run:2026-11-04-path-2)
