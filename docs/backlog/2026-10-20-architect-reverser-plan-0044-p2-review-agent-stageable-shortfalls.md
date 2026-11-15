@@ -60,3 +60,9 @@ arithmetic are read in [multiplayer/0002](../findings/multiplayer/0002-trade-and
 the readings). MP31: H `+g`, J `−g` with the offer clipped to H's room at button 8, and J holds the `ItemCopy` of the
 item. The logger lines are not written (they need the sessions' design). The sessions wait for the two-client run with
 both slots, like the rest of (2)–(4). The entry stays open.
+
+*2026-11-15 (architect, [plan 0065](../plans/0065-harness-sweep-8.md) Phase 0 review, `lane/n65p`):* everything in
+(2)–(4) is staged in plan 0065 Phase 0 except **MP28 (b), (c)**: the Den clear needs every Den room reached, which the
+pilot missed in three of four games (den-a, den-c, den-c2). **The owner postponed it (2026-11-15):** it waits for an
+owner-played Den clear with the scripted joiner; it is not dropped, and it is out of plan 0065 Phase 2's done-criteria
+until the owner plays it. MP31 is met by run:2026-11-10-trade T1. The entry stays open.

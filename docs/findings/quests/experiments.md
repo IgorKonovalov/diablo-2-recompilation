@@ -489,7 +489,7 @@ No game, no Ghidra: a new check over the kept logs of the three runs above and o
   `workspace/logs/quests/sweep2-s3a/s3a-logs.lst`; hashes in `workspace/logs/quests/manifest-sweep2-s3a-inputs.sha256`,
   `510c8807…`, 128 lines, passes from `workspace/logs/quests/`).
 - **Tool:** `tools/quests_s3a.py` (stdlib, read-only; imports `tools/quests.py`'s model, which stays at `b6dfb1a3…`).
-  Revision 1 (`6531b66c…`, part 1) wrote `s3a-check.txt`; revision 2 (`cd33719e…`, part 2) adds notes only (the reward
+  Revision 1 (`6531b66c…`, part 1) wrote `s3a-check.txt`; revision 2 (`ef1e8339…`, part 2) adds notes only (the reward
   writes, word 4's b14 sites, word 19's and the act-travel words' writes, the `due` dispatches, the timer results,
   every player-record write) and its `static` reads (absolute references, the orb's party test, Misc `pSpell`), so its
   check output repeats revision 1's lines unchanged (0 removed lines in `diff`). Test: `tools/test_quests_s3a.py`
@@ -498,9 +498,9 @@ No game, no Ghidra: a new check over the kept logs of the three runs above and o
   workspace/logs/quests/sweep2-s3a/s3a-logs.lst)`; `python3 -I tools/quests_s3a.py static`; `objdump -d -M intel`
   on the pinned image, grepped for calls to 0x543e10 and the orb lines.
 - **Outputs** (`workspace/logs/quests/sweep2-s3a/`): `s3a-check.txt` (`9134a7c7…`, revision 1; re-run in part 2
-  byte-identical) and `s3a-static.txt` (`dd50e017…`) under `manifest.sha256`; `s3a-check-r2.txt` (`f3116c95…`, 720
+  byte-identical) and `s3a-static.txt` (`dd50e017…`) under `manifest.sha256`; `s3a-check-r2.txt` (`abfacb18…`, 860
   lines), `s3a-static-r2.txt` (`f1996df1…`) and `s3a-objdump.txt` (`2670cffb…`) under `manifest-r2.sha256`
-  (`d4862ce0…`); both pass `sha256sum -c` from that directory. Development outputs in `dev/` and `dev2/`, each with its
+  (`e462dd3a…`); both pass `sha256sum -c` from that directory. Development outputs in `dev/` and `dev2/`, each with its
   manifest.
 - **Result:** **`SUMMARY mismatches=4 checks=4070 logs=54`** in both revisions. The 4 are one finding, progression C4
   (below). Among the checks: quest timers (14 lines) at tick = frame // 20, runs on frame mod 20 = 0; 41 quest objects
@@ -510,7 +510,7 @@ No game, no Ghidra: a new check over the kept logs of the three runs above and o
   searches reproduced (126 moved, 976 in place); 341 same-act level changes each followed by one e3; 122 portal uses
   with an e3 iff from a town; 115 warps with the gate called iff the destination is 73, 100, 118, 128 or 132.
 - **Contradictions** (for plan 0066 Phase 3; backlog
-  `2026-11-15-reverser-spec-writer-plan-0066-s3a-contradictions` for 1 and 3,
+  `2026-11-15-reverser-spec-writer-plan-0066-s3a-contradictions` for 1,
   `2026-11-15-reverser-spec-writer-plan-0066-s3a-travel-e3` for 2):
   1. **Progression C4** (row 49): the first-join restore map differs per quest. Quest 13 (word 14) maps b2 → (`+0x0B`,
      `+0x0C`) = (1, 2), b3 → (5, 5), b4 → (6, 5) (0x0059D557–0x0059D5A3; x-talk2 logged `+0x0B` = 5 for b3), and
@@ -519,9 +519,10 @@ No game, no Ghidra: a new check over the kept logs of the three runs above and o
   2. **Travel Outputs** (row 86): every same-act level change is followed by one e3 (0x00543BB7) naming the old and new
      level (341: 101 waypoint, 115 warp, 122 portal, 3 resurrection; a portal used in a town raises one more inside the
      use), but none of the 87 act changes (40 by NPC, 47 by waypoint) raises an e3.
-  3. **Word 37's entry levels** (rows 270, 272, in part): b3 was set on entering 113 (three logs) where the spec says
-     114, and b14 on entering 123 (two logs) where the spec says 121, 122 or 124; the code tests 113 or 114
-     (0x00589DAB–0x00589DB3) and 121 to 124 (0x00589EBB–0x00589EC4), so the spec drops one level each.
+- **Not a contradiction (check, 2026-11-15):** word 37's entry levels (rows 270, 272). b3 was set on entering 113 (three
+  logs) and b14 on entering 123 (two logs): the spec's own `[C]` rows. The code tests 113 or 114 (0x00589DAB–0x00589DB3)
+  and 121 to 124 (0x00589EBB–0x00589EC4), which agree with the spec's "114" and "121, 122 or 124" rows; those levels were
+  not met, so the rows move to H3a.
 - **Not a contradiction:** x-orb's written save kept `qey qhr qbr` and lost `qf2 `: the operate removes the flail
   itself (0x005BBA1E–0x005BBA23) and calls the party pass `0x005BB850` only when `UnitPartyId` is not 0xFFFF
   (0x005BBB30–0x005BBB49), which a one-client game never meets.

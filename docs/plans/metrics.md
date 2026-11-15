@@ -718,6 +718,10 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-11-15 | `lane/n66f` | 0066 P1, S2b | reverser-static | 491 513 | 157 | 42 | no slot | accept with fixes | 5: overclaim 2, omission 1, stale cross-reference 1, stale tag 1 (usage includes the paused first part, 306 217/85/29) |
 | 2026-11-15 | `lane/n66f` review | 0066 P1, S2b | lane-check | 101 858 | 28 | 2 | — | gave accept with fixes (Tier B) | — (3rd Tier B since the n66d audit; 3 points sent to Tier A) |
 | 2026-11-15 | `lane/n66f` Tier A | 0066 P1, S2b | architect-review | 92 767 | 35 | 4 | — | gave accept with fixes (Tier A, three points + merge of main, totals recomputed) | — (thunk 0x005B0BC0 raised to C with the do function) |
+| 2026-11-15 | `lane/n69a` | 0069 P1a | reverser-static | 393 456 | 160 | 30 | no slot | accept with fixes | 3: stale cross-reference 2, omission 1 |
+| 2026-11-15 | `lane/n69a` review | 0069 P1a | lane-check | 108 946 | 40 | 3 | — | gave accept with fixes (Tier B) | — (4th Tier B since the n66d audit; regress re-run byte-identical) |
+| 2026-11-15 | `lane/n65p` | 0065 P0 | reverser-harness | 458 827 | 211 | 35 | no slot | accept with fixes | 2: omission 1, tool not kept 1 |
+| 2026-11-15 | `lane/n65p` review | 0065 P0 | architect-review | 160 704 | 91 | 8 | — | gave accept with fixes (Tier A, audit of 5th Tier B lane) | — (audit: Tier B would likely have missed the P12 check omission; P12 no forced cell) |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not

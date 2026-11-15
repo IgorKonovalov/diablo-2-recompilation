@@ -18,9 +18,10 @@ Plan 0066 Phase 3, quests/progression (batch S3a, `lane/n66g`). Not blocking; wi
    quest 13 maps b2 → (`+0x0B`, `+0x0C`) = (1, 2), b3 → (5, 5), b4 → (6, 5) (0x0059D557–0x0059D5A3); quest 19 has no b4
    branch (0x005BB4BC–0x005BB4C9). Rewrite C4 as "per quest" with these two maps; the other quests' maps stay `[I]`
    until read (S3c).
-2. **Word 37's entry levels (rows 270, 272), contradicted in part.** b3 is set on entering 113 or 114 (the code
-   0x00589DAB–0x00589DB3; logged for 113 three times), not "114" only; b14 on entering 121 to 124 (0x00589EBB–0x00589EC4,
-   `level − 121 ≤ 3` unsigned; logged for 123 twice), not "121, 122 or 124". The 113 and 123 halves are `[C]`.
+2. **Word 37's entry levels (rows 270, 272), not a contradiction (n66g check).** The code tests 113 or 114 for b3
+   (0x00589DAB–0x00589DB3) and 121 to 124 for b14 (0x00589EBB–0x00589EC4, `level − 121 ≤ 3` unsigned), which agree with
+   the spec's "entering 114" and "entering 121, 122 or 124" rows; the logged 113 and 123 are the spec's own `[C]` rows.
+   Nothing to re-tag; the rows stay `[I]` until an entry into 114, 121, 122 and 124 is logged (H3a).
 3. **Refinements, not contradictions:** the Khalim items line (row 196): the operate removes the operator's `qf2 `
    itself (0x005BBA1E–0x005BBA23) and runs the party pass only for a player in a party (`UnitPartyId` ≠ 0xFFFF,
    0x005BBB30–0x005BBB49); "`ClearSteps` at most rewards" (row 16): name words 1, 20, 25, 35 (called) and 2, 4, 6, 9,

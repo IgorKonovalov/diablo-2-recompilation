@@ -208,7 +208,8 @@ class Checker:
         self.no_shield_logs = {n[:-4] if n.endswith(".log") else n for n in no_shield_logs}
         self.no_shield_here = False
         # plan 0044 Phase 2: player unit ids known (from their recipes) to hold no shield; UnitBlockChance is 0 for
-        # them (combat/0001 § 4: "0 without a shield in the hands"). The logs carry no equipment, so this is input.
+        # them (combat/0001 § 4: "0 without a shield in the hands"). Logs before plan 0065 carry no equipment, so this
+        # is input there; a DRB line with "sh" (tools/gdb/combat.py, plan 0065 Phase 0) decides instead.
         self.no_shield = set(no_shield)
         self.stats = {}
         self.mism = []
@@ -356,10 +357,20 @@ class Checker:
                     self.fail("expected DRB")
             b = drb["b"]
             if d["t"] == 0 and not drb.get("r1"):
-                shieldless = d.get("id") in self.no_shield or self.no_shield_here
+                hand_fed = d.get("id") in self.no_shield or self.no_shield_here
+                if drb.get("sh") is not None:
+                    # plan 0065 Phase 0: the logger's shield flag (InvItemQuery(inventory, 0) inside UnitBlockChance,
+                    # tools/gdb/combat.py) decides; a --no-shield that names a defender holding one is a mismatch
+                    shieldless = drb["sh"] == 0
+                    self.case("player shield flag logged: %s" % ("none held" if shieldless else "held"))
+                    if hand_fed and not shieldless:
+                        self.fail("--no-shield names a defender whose logged shield flag is set")
+                else:
+                    shieldless = hand_fed
                 want = 0 if shieldless else self.block_formula(d, g["exp"])
                 if shieldless:
-                    self.case("player block chance 0: no shield held (--no-shield)")
+                    self.case("player block chance 0: no shield held (%s)" %
+                              ("logged flag" if drb.get("sh") is not None else "--no-shield"))
                 if b > 0 or want > 0:
                     self.eq("DRB block chance (player formula, shield held)", b, want)
                     self.case("player block chance checked (classic)" if not g["exp"] else

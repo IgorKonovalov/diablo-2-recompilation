@@ -1,0 +1,61 @@
+{
+ "game": "expansion",
+ "class": "Paladin",
+ "seed": 650650006,
+ "name": "SweepConv",
+ "progression": 15,
+ "difficulty": [
+  128,
+  128,
+  128
+ ],
+ "waypoints": {
+  "normal": "all",
+  "nightmare": "all",
+  "hell": "all"
+ },
+ "quests": "all",
+ "stats": {
+  "strength": 100,
+  "energy": 100,
+  "dexterity": 100,
+  "vitality": 300,
+  "hitpoints": 3000,
+  "maxhp": 3000,
+  "mana": 1500,
+  "maxmana": 1500,
+  "stamina": 300,
+  "maxstamina": 300,
+  "level": 30,
+  "experience": 4663553
+ },
+ "skills": {
+  "Conversion": 20,
+  "Might": 1,
+  "Smite": 1,
+  "Holy Shield": 1
+ },
+ "mouse": {
+  "left": "Attack",
+  "right": "Conversion"
+ },
+ "hotkeys": [
+  "Conversion"
+ ],
+ "keep_items": [
+  "tsc",
+  "isc"
+ ],
+ "items": [
+  {
+   "code": "mbl",
+   "equip": "belt"
+  }
+ ],
+ "belt_fill": [
+  "hp5",
+  "hp5",
+  "rvl",
+  "mp5"
+ ]
+}

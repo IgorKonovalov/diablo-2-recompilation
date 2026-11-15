@@ -784,3 +784,45 @@ Targeted ruling on the three points the Tier B check left, not a full re-review.
   routes part 1 left unstated, set here: progression 7 → d-none, 34, 49 (other quests), 260 → c (S3c), 58, 63, 65 → b
   (H3c), travel 3, 6, 17, 83 → b (H3e), 7 → c (S3c); (8) row 63's game-seed steps inside 14 reward e11s are left
   unattributed (H3c); (9) row 313's first-joiner path: 45 joiners had w18 b0 but none warped into 100.
+
+### 2026-11-15 — Phase 1 batch S3a, Tier B lane check (architect-check, `lane/n66g`)
+
+- **Verdict:** accept with fixes, 4 (misread 1, tool not kept 1, miscount 1, omission 1). Merged `main` `7b7f20e9`
+  (plan 0069 Phase 1a) into `lane/n66g`; the only conflict was the inventory README (totals, two bullets), resolved.
+- **Fixes.**
+  1. *Misread:* rows 270 and 272 were filed "contradicted in part". The spec already holds `[C]` rows for "e3 entering
+     level 123" (b14) and "e3 entering level 113" (b3), and its `[I]` rows ("entering 121, 122 or 124", "entering 114")
+     name the levels the logs did not meet; the code tests (121 to 124, 113 or 114) agree with them. Nothing is raised
+     and nothing is contradicted: both rows moved a-logs → a-run (H3a, as row 271), the item dropped from quests/0001
+     § 18, the experiments addendum and the backlog entry (which now holds one contradiction, C4). S3a 66 → 64
+     statements, 21 → 23 moved, raised in part 51 → 49; H3a 37 → 39; the progression file's totals a-logs 73 → 71,
+     a-run 38 → 40; the log entry above keeps the lane's text (history), this entry corrects it.
+  2. *Tool not kept:* `manifest-r2.sha256` failed `sha256sum -c`: `s3a-check-r2.txt` had been rewritten (860 lines, with
+     the `P152`/`P217`/`P270-P272` write notes the rows cite) after the manifest was made for the 720-line output, and
+     `tools/quests_s3a.py` had been edited since (`ef1e8339…`, not the `cd33719e…` cited). The manifest now lists the
+     860-line output (`abfacb18…`; re-run from the current tool, byte-identical; manifest `e462dd3a…`); the 720-line
+     output (`f3116c95…`) is kept as `dev2/s3a-check-r2-dev3.txt` and added to `manifest-dev2.sha256`; the hashes and
+     the line count are corrected in the experiments addendum. All three manifests and the inputs manifest pass.
+  3. *Miscount:* the catalogue file's *Totals by class* still read a-run 202, b 94 after plan 0069 Phase 1a's 30 moves
+     (its README row had 172, 124). Corrected; with fix 1's two moves the totals are recomputed below.
+  4. *Omission:* travel row 85 raised in part with no run anchor ("as row 58"); `s3a-check.txt` T58, T58/T85 added.
+- **Totals** recomputed from the 29 files' *Totals by class* after merging `main` `7b7f20e9`: a-logs 645, a-run 340, b
+  432, c 390, c-emu 491, d 328 (d-2c 59, d-owner 68, d-edit 23, d-none 178), 2 626; Phase 1 1 526, Phase 2 772 (inventory
+  README § 1, § 3, § 4).
+- **Judgment calls.** (1) Rows 4 and 8 raised whole: accepted. The 7 adds and 7 runs show tick = frame // 20 at frames
+  that are not multiples of 20 (so the tick is not the frame count), the increment is inside the pass and the one
+  caller is 0x0052D920 by two tools; that separates "every 20th frame" from "every frame". (2) Rows 262 and 141:
+  accepted; 262's claim is the two callbacks' clears (53 at e13, one at e14), 141's remainder is the "no setter" half.
+  (3) Row 196 in part: accepted, with the counterfactual ("had the pass run ...") read as the code's own branch, not
+  logged; one solo game, the party half stays d-2c. (4) Rows 270, 272: not a contradiction (fix 1). (5)–(9): accepted as
+  stated (rows 182 and 231 in part; travel 19 and 60 moved; the remainder routes; row 63's steps unattributed; row 313).
+  Checked against the kept output: 4 `MISMATCH`, 341 same-act changes (3 p41, 61 + 61 portal, 115 warp, 101 wptr), 122
+  portal uses, 87 act changes (40 by NPC, 47 by waypoint), 115 gate checks, 430 and 38 next-old pairs, 222 talks with 28
+  re-dispatched e0, 32 e10, 24 589 / 56 / 3 seed observations. The rev 2 output keeps every rev 1 line (no `<` line in
+  `diff`); `python3 -I tools/test_quests_s3a.py`: 5 tests OK. The 9 e3 lines the T86 act-change note lists for
+  waypoint changes name the next same-act change (old level = the act change's new level), not the act change.
+- **Symbols:** the 5 raises agree between `re/symbols.csv` and the Functions tables (save/0002 two rows, drlg/0005's
+  `C / I` row, quests/0002 two rows, quests/0001's timer row); no other table lists them at `I`.
+- **S3e: for Tier A / architect ruling.** The plan's Phase 1 rules do not let a lane add a batch (the plan names batches
+  for the owner, e.g. H1h `proposed`); S3e's § 4 row is well formed (2 statements, travel 19 and 60, c-emu, method
+  ADR-0015/0021/0029, status `proposed`, matching `quests-travel.md`'s 2 c-emu rows) and stays `proposed`.

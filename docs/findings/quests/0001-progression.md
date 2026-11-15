@@ -2359,11 +2359,13 @@ A new check over the 54 kept quest-state logs, no game ([experiments, S3a addend
   rest of the two maps as read: quest 13's b2 → (`+0x0B`, `+0x0C`) = (1, 2), b3 → (5, 5), b4 → (6, 5); the other
   quests' maps are unread.
   (0x0059D557–0x0059D5A3, 0x005BB4BC–0x005BB4C9, run:2026-10-18-quests2)
-- [C] **Word 37's entry levels (correction).** Entering 113 or 114 with quest 33 active at state ≤ 2 starts log state 3
-  (b3 at 0x00588F71; logged for 113 in x-entry, x-entry2 and h-entry), and entering 121 to 124 below state 5 sets b14
-  for the game (0x00589AE6; logged for 123 in h-entry and x-entry2): the word 37 table's "114" and "121, 122 or 124"
-  each drop one level. 114, 121, 122, 124 and the thaw stay `[I]`. (fn:sub_00589D80_A5Q3_LevelChange@0x00589D80
-  0x00589DAB–0x00589DB3, 0x00589EBB–0x00589EC4, run:2026-10-19-quests3)
+- [C] **Word 37's entry levels (not a contradiction).** Entering 113 with quest 33 active at state ≤ 2 starts log state 3
+  (b3 at 0x00588F71; logged in x-entry, x-entry2 and h-entry, e3 112 → 113) and entering 123 below state 5 sets b14 for
+  the game (0x00589AE6; logged in h-entry and x-entry2, e3 113 → 123): both are the spec's own `[C]` rows, so nothing is
+  raised for rows 270 and 272, which move to H3a. [I] The code tests 113 or 114 for b3 (0x00589DAB–0x00589DB3) and 121 to
+  124 for b14 (0x00589EBB–0x00589EC4, `level − 121 ≤ 3` unsigned); the spec's other rows ("entering 114", "entering 121,
+  122 or 124") name the levels the logs did not meet and agree with those tests. (fn:sub_00589D80_A5Q3_LevelChange@0x00589D80
+  run:2026-10-19-quests3)
 - [C] **The orb's party pass needs a party.** The completing operate sets w18 b0 and b13 (0x005BB9F7, 0x005BBA14),
   removes the operator's `qf2 ` itself (0x005BBA1E–0x005BBA23), and calls `PartyForEach(sub_005BB850)` only when
   `UnitPartyId` is not 0xFFFF (0x005BBB30–0x005BBB49; the one reference to 0x005BB850). x-orb's written save kept `qey
