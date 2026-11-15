@@ -1356,8 +1356,8 @@ entry: `tools/gdb/ai.py` rev 7, `tools/ai_model_check.py` revision 6 with the AI
 | `t-a1-marsh` | 7159 | L2-r2 (336003) | 257 | 229 s |
 | `t-a1-barracks` | 7159 | L3-r2 (360120) | 368 | 245 s |
 | `t-a1-catacombs` | 7159 | L4 (381416) | 402 | 247 s |
-| `t-h1h-a1-stony` | 5803 | L5 (402778) | 216 | 163 s |
-| `t-h1h-a3-flayer-p8` | 5602 | L6 (424002) | 487 | 274 s |
+| `t-h1h-a1-stony` | 5803 | L5 (402778) | 217 | 163 s |
+| `t-h1h-a3-flayer-p8` | 5602 | L6 (424002) | 488 | 274 s |
 | `t-h1h-s-barb-flayer` | 5401 | L7 (455442) | 329 | 184 s |
 | `t-h1h-s-necro-curse` | 5802 | L9 (471439) | 781 | 321 s (kept after a first try, L8, 90 decisions, ended by the runner's relaunch; L8 is in the manifest, not checked) |
 | `a2-oasis` (regression, own batch, run id `…-tour-1-oasis`) | 5201 | L1 (511446) | 399 | 176 s |
