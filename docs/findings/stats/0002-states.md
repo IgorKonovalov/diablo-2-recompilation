@@ -485,6 +485,15 @@ The record: [experiments § The stats sessions of run:2026-10-21-shortfalls2](ex
   well's cure unreached, `palc-wells2` not run: out of this plan, *review 2026-10-21*).
   (fn:sub_00580610_LifeRegenTick@0x00580610, fn:OBJOP_Shrine@0x00583C70, run:2026-10-21-shortfalls2)
 
+### 11. Plan 0065 Phase 2: open wounds on a player (run:2026-11-15-sweep8-two-clients, `lane/n65i`)
+
+- [C] **Open wounds reach a player.** A hostile MpWoundJoin (Ripsaw, open wounds 80) hit MpPvpHost in `wounds`: 24 open-wounds
+  applications with a player as target (3 new state 62, 21 refresh, 200 frames), each followed by the target's stat-74 tick;
+  `combat.py check` 62 events and `stats.py check`, 1 857 ticks checked, 0 mismatches. This answers the "open wounds never hit the
+  player" of § 2 (it was an unreached case). The floor at 256 life was not reached (the host's life was far above it), so it stays `[I]`.
+  The defender held no shield (28 `DRB` lines with `sh` 0), so the shield-held branch of block chance is not run.
+  (fn:sub_00580610_LifeRegenTick@0x00580610, run:2026-11-15-sweep8-two-clients)
+
 ## Data touched
 
 tbl:States.txt:curse, tbl:States.txt:group, tbl:States.txt:plrstaydeath, tbl:States.txt:monstaydeath,

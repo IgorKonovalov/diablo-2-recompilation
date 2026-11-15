@@ -20,3 +20,8 @@ never references. (3) Bit 26 has 9 sets, 0 clears and 2 reads. It marks a monste
 (released and replaced pets, eggs, spawned minions), and the inactive-room save carries it; no writer sets it on a
 player. **Live remainder (optional, unchanged):** the two-client cases (a far credited player with a near member, a
 dead killer, a player killing a player). The entry stays open for them.
+
+**2026-11-16 (plan 0065 Phase 2, `lane/n65i`), annotation, entry stays open.** (c) a player kills a player ran once (`pk`): the
+victim died, with 0 `XK0` and 0 `XC0`, so § 4's prediction is not met, tagged `[I]` for want of a control in the session
+(player/0002 § 12). (a) and (b) were not reached: the host with a mercenary did not die (b), and `kills.sh a` started in the Act IV
+town (a); no pair beyond d² 6400 in the same level was logged.

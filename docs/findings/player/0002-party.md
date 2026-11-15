@@ -387,6 +387,20 @@ waypoint the staging named).
   fn:sub_0063A130_UnitHasStateInMask@0x0063A130, run:2026-11-15-sweep8-single)
 - [I] **A converted monster that kills**: not reached (`kxs` empty on every `XK0`); § 4's reading for it stays as it was. (fn:sub_0057E7B0_XpCreditPlayer@0x0057E7B0, 0x0057E7DF, run:2026-11-15-sweep8-single)
 
+## 12. Plan 0065 Phase 2: a player killing a player, and the dead and far credited player (run:2026-11-15-sweep8-two-clients, `lane/n65i`)
+
+- [I] **A player killed by a hostile player gave no `XK0`.** In `pk` (MpNovaHost hostile, Nova, against MpNovaWeak, life 60; no
+  monster within 30 sub-tiles) the joiner died (mode 17) and the session holds 0 `XK0` and 0 `XC0` lines at 0x0057E990 and
+  0x0057E480. § 4's prediction (`XK0` with `mtype` 0, the gate passes, the credit goes to the killer) is not met, but the
+  session has no monster kill to show the logger live, so the absence is not separated from a logger miss (reverser rule 4):
+  the logger was live in the other launches of the run (`kills-b`: 27 `XK0`). Where the death leaves `sub_0057CCB0_UnitKilled`
+  before 0x0057E990 was not traced; the gate (0x005A4EF0) or the player branch (0x0057CD28) are the candidates.
+  Routed to Phase 3: § 4 *victim-player* stays `[I]` with this observation beside it. (0x0057E990, 0x0057CD28, 0x005A4EF0, run:2026-11-15-sweep8-two-clients)
+- [I] **Not reached:** a dead credited player with a living member (0058b: the host, life 40, did not die in 120 teleport and 47
+  walking hops with its mercenary), and a far credited player (0058a, MP16's bound): no pair of the run is in the same level
+  beyond d² 6400 (`xpshare`: 23 + 17 pairs inside, 8 in another level). The mercenary kills, 48 with the member partied: n = 2
+  in 40, n = 1 in 8 (the member in another level), 0 mismatches of `xpshare` and `player.py check`. (run:2026-11-15-sweep8-two-clients)
+
 ## Data touched
 
 tbl:States.txt:exp; tbl:Experience.txt (`perClass`, `ExpRatio`) by offset, synthetic here; tbl:Hireling.txt:Exp/Lvl by offset, synthetic here.

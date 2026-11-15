@@ -427,6 +427,24 @@ readings each case reproduced:
 - [I] **A dead player** is in mode 17 with Unit `+0xC6` bit 0 clear, so PLRS's `dead` field stays 0 and the checkers
   read death from the mode, as `tools/tc.py` does. (run:2026-10-20-two-clients)
 
+### 7. Phase 2 of plan 0065 (run:2026-11-15-sweep8-two-clients, `lane/n65i`)
+
+- [C] **MP25, an offensive aura on a player** (Conviction, filter `0xA583`, bit `0x8000`, no `0x10000`): of 44 `AF` lines,
+  the 15 with the pair hostile passed, the 16 neither partied nor hostile and the 13 partied were refused (the declaration
+  also leaves the party, § 4), 0 mismatches against the § 4 prediction. Scope: Conviction only; Holy Fire, Holy Shock and
+  Holy Freeze were not cast, so their extra `+0xC4` tests (bits 2 and 3) are not exercised beyond "Conviction's, which pass in
+  the hostile case". The helping auras (`0x10000`) are run:2026-10-20-two-clients'. (fn:sub_0056B3E0_SkillUnitFilter@0x0056B3E0,
+  run:2026-11-15-sweep8-two-clients)
+- [C] **MP21, the room client count** (`+0x78`): at every `CE`, `CL` and `RP` row it equals the number of clients holding the
+  room (5 996 `RP` rows, 0 mismatches); 6 separating cases (a room two clients held, freed after both left), 12 shared rooms kept
+  while one client stayed. MP20: each activation attributed to the client of the latest `CRC` (6 of 14; 8 with none, counted).
+  (run:2026-11-15-sweep8-two-clients)
+- [C] **MP30, the leave sequence** for a player holding a quest item: `QL0`, `QE9`, `QE10`, `QL1` in order, the leaver's lines only.
+  [I] the e9 callback's count drop: not reached, the callback returned at one of its two early returns (0x00592C87, 0x00592C8D);
+  it stays as § 2 reads it. (fn:sub_00543BD0_QuestsInvItemEvent@0x00543BD0, 0x00592C80, run:2026-11-15-sweep8-two-clients)
+- [C] **MP31** is met by run:2026-11-10-trade (T1, 0 mismatches). **Unreached:** MP18, MP27, MP32, 0058 (a) and (b), and MP16's
+  bound (reasons: experiments § run:2026-11-15-sweep8-two-clients); MP28 (b), (c) are postponed by the owner.
+
 ## Data touched
 
 struct:Unit+0x0E4 (the player lists the PLRS line walks). PlayerData `+0x160` and `+0x38` (§ 4) and `PlayerPair`

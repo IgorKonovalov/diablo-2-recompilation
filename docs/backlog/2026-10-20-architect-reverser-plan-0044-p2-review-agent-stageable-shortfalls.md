@@ -66,3 +66,9 @@ both slots, like the rest of (2)–(4). The entry stays open.
 pilot missed in three of four games (den-a, den-c, den-c2). **The owner postponed it (2026-11-15):** it waits for an
 owner-played Den clear with the scripted joiner; it is not dropped, and it is out of plan 0065 Phase 2's done-criteria
 until the owner plays it. MP31 is met by run:2026-11-10-trade T1. The entry stays open.
+
+**2026-11-16 (plan 0065 Phase 2, `lane/n65i`), annotation, entry stays open.** Run: run:2026-11-15-sweep8-two-clients. Reached, 0
+mismatches: MP25's offensive aura (Conviction only), MP20 and MP21, MP30's leave order (the e9 count drop not reached), the
+open-wounds pair (24 applications on a player) and the shield flag's no-shield branch (28 lines, `sh` 0); MP31 was met by
+run:2026-11-10-trade. Not run: MP18 (driver written), MP27 (no Act III town waypoint position for the pilot), MP32 (the pilot has
+no ground-pile pickup), MP16's bound (see the 0058 entry); MP28 (b), (c) postponed by the owner. Details: multiplayer/experiments.

@@ -412,3 +412,37 @@ a driver fix is first a development session (`dev-` log, outside the manifest); 
 install. The first development session, `mp25` on `two-combat.gdb`, showed the three aura cases (hostile passes, partied and
 neither refused, 0 mismatches) and that `party hostile` is refused in effect when the host is not yet in town; the driver
 now checks both levels first.
+
+### 2026-11-16 — Phase 2 (two-client batch), `lane/n65i` (reverser, slots 1 and 2), partial: checkpoint with a resume note
+
+Record [run:2026-11-15-sweep8-two-clients](../findings/multiplayer/experiments.md#run2026-11-15-sweep8-two-clients); checks and manifest
+(77 lines) in `workspace/logs/n65i/`. Port-4000: the owner's 2026-11-10 listing plus the no-root baseline, `UFW-OK` before every launch.
+Both slots clean (saves restored, harness idle).
+
+| Row | Case | Result |
+|---|---|---|
+| 12 | MP25 offensive (Conviction) | 44 `AF`: hostile 15 passed, neither 16 and partied 13 refused; 0 mismatches. Raised in part (Conviction only) |
+| 18, 19 | open wounds on a player; the shield flag | 24 applications on a player, 1 857 ticks, 62 events, 0 mismatches; 28 `DRB` `sh` 0: the shield-held branch is not run. Raised in part |
+| 15 | MP30 | leave order met, 0 mismatches; the e9 count drop not reached (callback returned early) |
+| 11 | MP20, MP21 | 5 996 `RP` rows, 6 separating, 0 mismatches; MP20 attribution 6 of 14 activations |
+| 9 | 0058c a player kills a player | the victim died, 0 `XK0`: prediction not met, `[I]` (no control in the session) |
+| 8 | 0058b a dead killer | not reached (the host did not die, two sessions); 48 merc kills as samples, 0 mismatches |
+| 7 | 0058a, MP16 | not reached (driver started in the Act IV town; three dev launches) |
+| 10 | MP18 | not run (`mp18.sh` written) |
+| 13 | MP27 a, b | not run: the pilot found no Kurast Docks waypoint |
+| 17 | MP32, MP32 full | not run: the pilot has no ground-pile pickup |
+| 16, 14 | MP31, MP28 (b), (c) | met by run:2026-11-10-trade; postponed by the owner |
+
+Mismatches over the run: 0 in every check that had data (`aura`, `combat`, `stats`, `leave`, `rooms`, `monspawn`, `xpshare`, `player`).
+Tool change: `tools/mp_check.py rooms` skips a `null` act of an `RP` line (it crashed on the first real log).
+
+**Resume note** (the lane stopped at its token budget, not at a blocker). Drivers are in `workspace/logs/n65i/drivers/`. Next lane:
+(1) `kills.sh a`: wait until `where` shows both players before `meet.sh`, then the Act I waypoint; the host's explore with the
+joiner parked. For the far case, hop the host more than 80 sub-tiles away while the Rogue fights. (2) `kills.sh b`: the host must
+die, so try `--walk` into a pack at Cold Plains, or leave the Rogue dismissed until the host stands among monsters. (3) `mp18.sh`
+as written (trade, pick the rune up, click the cap). (4) `portal.sh`: needs the Kurast Docks waypoint position (read it from a
+kept Act III log or add it to `--wp-at`). (5) MP32: a pile pickup, for example a click at the `KILL` position of a monster killed
+by the host. The `pk` case wants a control (any monster kill in the same session). The Phase 3 re-tag may take what Phase 2
+raised now (MP25, MP21, open wounds); the owner decides whether the rest runs.
+
+**Review request:** [Tier B](../backlog/2026-11-16-reverser-architect-review-plan-0065-p2-two-clients.md).
