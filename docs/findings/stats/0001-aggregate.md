@@ -192,6 +192,10 @@ flowchart TD
   `0x40000000` linked without damage, `0x80000000` extended. Flags `0x1`, `0x80`, `0x100` are tested by the death
   purge (stats/0002 § 5) and not set by any code read here. (fn:STATE_ApplyTimed@0x0056E970,
   fn:sub_006272E0_StatListsDropOnMode@0x006272E0, fn:sub_00627540_StatListsPurgeOnDeath@0x00627540)
+  - [C] *Correction 2026-11-15 (plan 0066 S4d part 2):* on the unit (extended) list `0x2` is not "timed": `STATLIST_LinkToUnit`
+    sets it when a flag-4 list links and `StatListsDropOnMode` acts only while it is set, then clears it (objdump
+    and r2; 19 such nodes in the kept trees). On plain lists `0x2` goes with the end frame. (fn:STATLIST_LinkToUnit@0x00626E10,
+    fn:sub_006272E0_StatListsDropOnMode@0x006272E0, [stats/experiments § Addendum S4d part 2](experiments.md#addendum-2026-11-15-plan-0066-batch-s4d-part-2-of-2-new-checks-over-the-kept-stats-logs-and-static-second-sources-lanen66i))
 
 ### 2. Linking and unlinking
 
@@ -501,6 +505,14 @@ and predicts every line from § 1–§ 8 (method and counts in the run record). 
 - [I] The refresh also ran with no click on a period of 136 frames on every character of the run (the commonest gap
   between two refreshes in every session); what queues it was not read. (fn:sub_0055DBC0_EquipReqRefresh@0x0055DBC0,
   run:2026-10-17-stats)
+  - *Correction 2026-11-15 (plan 0066 S4d part 2):* counted over the kept logs, 136 is the commonest gap in 12 of the
+    18 sessions and all 10 of run:2026-10-20-shortfalls; in six it is 1 (bursts after actions). Still `[I]`.
+    (fn:sub_0055DBC0_EquipReqRefresh@0x0055DBC0, [stats/experiments § Addendum S4d part 2](experiments.md#addendum-2026-11-15-plan-0066-batch-s4d-part-2-of-2-new-checks-over-the-kept-stats-logs-and-static-second-sources-lanen66i))
+  - [C] *Correction 2026-11-15:* the body-to-cursor pickup unlinks the item through `sub_0063AAF0_InvItemRemove` →
+    `UNIT_UnlinkItemStatList`, not `ITEMS_DetachFromOwner` (260 unlinks with no detach in the frame); and the
+    refresh's direct-call closure reaches 122 drawing functions (`PlayerSkillReselect` → `PlayerSetSkill` → … →
+    `PlayerModeAllowed`), though no seed moved in its 972 logged windows. (fn:sub_0063AAF0_InvItemRemove@0x0063AAF0,
+    fn:sub_0055DBC0_EquipReqRefresh@0x0055DBC0, [stats/experiments § Addendum S4d part 2](experiments.md#addendum-2026-11-15-plan-0066-batch-s4d-part-2-of-2-new-checks-over-the-kept-stats-logs-and-static-second-sources-lanen66i))
 
 ### 10. Op 6 and 7 under emulation (run:2026-10-27-p51s-emu, plan 0051 Phase 1b)
 

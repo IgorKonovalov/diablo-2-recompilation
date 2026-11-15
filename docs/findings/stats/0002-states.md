@@ -123,6 +123,11 @@ Phase 1b, compared after the code reading of § 2 – § 7 (blind first).
   changed (set whenever a bit flips, for the client). `STATE_Set` also maintains unit flag `+0xC8` bit 3 for states
   with States flag bit 16 `disguise`. `UNIT_HasState` answers for players, monsters and objects (types 0, 1, 3).
   (fn:UNIT_SetStateBit@0x00625A70, fn:UNIT_TestStateBit@0x00625B70, fn:STATE_Set@0x00639DB0)
+  - [C] *Correction 2026-11-15 (plan 0066 S4d part 2):* type 3 is a missile, not an object: `UNIT_HasState`
+    (0x00639DF0) answers for players, monsters and missiles and gives 0 for objects (type 2) and items;
+    `UNIT_TestStateBit` has no type test; `UNIT_SetStateBit` sets `+0xC8` bit 3 for a record with `+0x12` bit 0 and
+    clears it only when `UNIT_HasStateFlag(unit, 16)` finds no other such state (0x00625B20–0x00625B56; objdump and
+    r2, [stats/experiments § Addendum S4d part 2](experiments.md#addendum-2026-11-15-plan-0066-batch-s4d-part-2-of-2-new-checks-over-the-kept-stats-logs-and-static-second-sources-lanen66i)).
 - [I] The States flag columns are read through the 40 bit-sets at `DataTables+0xCC + 4i` (the states loader);
   those used here: 11 `curse` (`+0xF8`), 13 `plrstaydeath` (`+0x100`), 14 `monstaydeath` (`+0x104`), 30 `exp`
   (`+0x144`), 32 `life` (`+0x14C`). (fn:STATES_IsCurse@0x0063A420, fn:STATES_StaysOnDeath@0x0063A4A0,
@@ -166,6 +171,9 @@ list->pfnRemove = req->pfnRemove ? req->pfnRemove : STATE_DefaultRemoveCB;
   fn:sub_00625760_StatListFindFlag@0x00625760)
 - [I] The monster gate refuses every timed state on a monster whose MonStats `+0x0D` bit 0 is set or whose
   MonStats2 `+0x05` bit 1 is clear (columns not named here). (0x0056E9A7–0x0056E9C3, fn:sub_00451FE0_MonStats2Rec@0x00451FE0)
+  - [C] *Note 2026-11-15 (plan 0066 S4d part 2):* the gate is at 0x0056E9C7–0x0056EA08 (0x0056E9A7–0x0056E9C3 is the
+    States row bounds test): target type 1, MonStats row (`0x1A8` bytes) `+0x0D` & 1 refuses, MonStats2 `+0x05` & 2
+    clear refuses (objdump; the raw bytes at six sites, [stats/experiments § Addendum S4d part 2](experiments.md#addendum-2026-11-15-plan-0066-batch-s4d-part-2-of-2-new-checks-over-the-kept-stats-logs-and-static-second-sources-lanen66i)).
 - [I] Callers: open wounds (state 62, 200 frames), prevent-heal, the aura target callback, the shrines, and about
   twenty skill functions; poison, burn, cold and freeze use their own appliers (combat/0001 § 9) with the same list
   shape. (fn:STATEVENT_OpenWounds@0x005BFE60, fn:sub_0057D810_PreventHealHook@0x0057D810, fn:COMBAT_ApplyPoison@0x0057AC50)
@@ -319,6 +327,13 @@ stateDiagram-v2
 | aura | events 8, 9 | skill, level, calcs, units in range | target lists via apply | none in the code read; the run found one `RNG_RangeB` per drawing run of a damaging aura (§ 8; once per run by the reading, note below) |
 | recompute | any list write, link, unlink (stats/0001 § 3) | the lists | the `+0x48` cache, callbacks | none |
 | shrine, well | `OBJOP_Shrine`, OperateFn 22 | Shrines/Objects row, player stats | apply, refill, re-arm event | none for codes 0–15 and wells |
+
+*2026-11-15 (plan 0066 S4d part 1, `lane/n66i`):* the remove callback is not draw-free in the code: `STATE_DefaultRemoveCB`
+calls `sub_00575900_PetLimitRefresh` (0x0056E960), whose direct-call closure holds 122 drawing functions (shortest path
+`PetLimit` → `PetRemove` → `PetUnitRelease` → `MonSetMode` → `MonAttackStats`); whether an expiry takes it is unread `[I]`.
+The group clear, death purge and mode drop hold none (closures of 463, 447, 457 functions, objdump walker and r2's LCG
+sites). [stats/experiments § Addendum 2026-11-15 (S4d part 1)](experiments.md#addendum-2026-11-15-plan-0066-batch-s4d-part-1-of-2-static-second-sources-and-full-table-checks-lanen66i).
+(0x0056E960, fn:STATE_DefaultRemoveCB@0x0056E900, fn:sub_00575900_PetLimitRefresh@0x00575900)
 
 - [I] **Chaining reading (ADR-0014).** None of the functions read for these events calls an RNG function or holds an
   inline LCG step (a scan of their address ranges for calls to `RNG_Range`, `RNG_RangeB`, `RNG_Step` and the
