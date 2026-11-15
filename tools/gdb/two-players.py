@@ -27,6 +27,12 @@
 #         refused, 0x0054C633 passed); PH PO GP GPR GPP the portal operate (0x00584894 hostile-to-any result,
 #         0x005848AF operator id vs owner id, 0x005848CD gate compare, 0x005848D1 refused, 0x005848E7 passed).
 #         Checked by tools/mp_check.py gates (case MP24).
+#   PQF PQR  plan 0065 Phase 0 (revision r6, case MP27): the portal operate's quest gate (multiplayer/0001 § 2, MP27;
+#         quests/0002 § 2): PQF at 0x00584A19, the call 0x0065C310(record, flag, 0) both paths reach (the classic flag
+#         Levels QuestFlag at the level record +0x00, 0x00584A39; the expansion flag QuestFlagEx at +0x04, 0x00584A0B):
+#         the operator's id (as PH), the record ([esp]), the flag word ([esp+4]), the game's expansion word (game +0x70 through [esi]); PQR at
+#         0x00584A1E its result (EAX: non-zero passes to 0x00584A48, 0 refuses at 0x00584A22 with message 0x13).
+#         Read-only. Checked by tools/mp_check.py portalquest.
 #   AF    0x0056B967 in SKILLS_ForUnitsInRange, after sub_0056B3E0_SkillUnitFilter (ECX source = [ebp-8], ESI target,
 #         [ebp+0x14] the filter, EAX the result), only for a player source and another player target: src, tgt,
 #         filter, pass. Checked by tools/mp_check.py aura (case MP25).
@@ -184,6 +190,14 @@ def _two_players_main():
     def on_gpp():       # 0x005848E7: passed
         emit("GPP", {})
 
+    def on_pqf():       # 0x00584A19: the quest gate's call (ESI the operate's argument block, [esi] the game)
+        sp = reg("esp")
+        emit("PQF", {"id": uid(u32(reg("esi") + 8)), "rec": u32(sp), "flag": u32(sp + 4),
+                     "exp": u32(u32(reg("esi")) + 0x70)})
+
+    def on_pqr():       # 0x00584A1E: its result
+        emit("PQR", {"r": reg("eax")})
+
     def on_af():        # 0x0056B967 in SKILLS_ForUnitsInRange, after sub_0056B3E0_SkillUnitFilter: player on player only
         src, tgt = u32(reg("ebp") - 8), reg("esi")
         if not src or not tgt or u32(src) != 0 or u32(tgt) != 0 or src == tgt:
@@ -195,7 +209,7 @@ def _two_players_main():
     for a, f in ((0x005A5E50, on_hd0), (0x005A5F20, on_hdr), (0x005A5F4C, on_hds), (0x005A5FDE, on_hdo),
                  (0x0054C60F, on_gw), (0x0054C614, on_gwr), (0x0054C633, on_gwp),
                  (0x00584894, on_ph), (0x005848AF, on_po), (0x005848CD, on_gp), (0x005848D1, on_gpr),
-                 (0x005848E7, on_gpp)):
+                 (0x005848E7, on_gpp), (0x00584A19, on_pqf), (0x00584A1E, on_pqr)):
         Bp(a, f)
     gdb.write("TWO-PLAYERS logger armed\n")
 

@@ -1,0 +1,47 @@
+{
+ "game": "expansion",
+ "class": "Sorceress",
+ "seed": 440440062,
+ "name": "MpGoldFull",
+ "progression": 15,
+ "difficulty": [
+  128,
+  128,
+  128
+ ],
+ "waypoints": {
+  "normal": "all",
+  "nightmare": "all",
+  "hell": "all"
+ },
+ "stats": {
+  "strength": 60,
+  "energy": 100,
+  "dexterity": 25,
+  "vitality": 200,
+  "hitpoints": 1500,
+  "maxhp": 1500,
+  "mana": 300,
+  "maxmana": 300,
+  "stamina": 100,
+  "maxstamina": 100,
+  "level": 9,
+  "experience": 44396,
+  "gold": 89995
+ },
+ "skills": {
+  "Teleport": 1,
+  "Charged Bolt": 1,
+  "Telekinesis": 1,
+  "Static Field": 1
+ },
+ "mouse": {
+  "left": "Teleport",
+  "right": "Telekinesis"
+ },
+ "keep_items": [
+  "tsc",
+  "isc"
+ ],
+ "items": []
+}

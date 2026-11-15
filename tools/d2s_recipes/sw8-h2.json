@@ -1,0 +1,105 @@
+{
+ "game": "expansion",
+ "class": "Sorceress",
+ "seed": 650650002,
+ "name": "SweepPot",
+ "progression": 15,
+ "difficulty": [
+  131,
+  131,
+  131
+ ],
+ "waypoints": {
+  "normal": "all",
+  "nightmare": "all",
+  "hell": "all"
+ },
+ "stats": {
+  "strength": 100,
+  "energy": 150,
+  "dexterity": 100,
+  "vitality": 150,
+  "hitpoints": 300,
+  "maxhp": 6000,
+  "mana": 100,
+  "maxmana": 3000,
+  "stamina": 800,
+  "maxstamina": 800,
+  "level": 85,
+  "experience": 1145236814
+ },
+ "skills": {
+  "Teleport": 1,
+  "Nova": 1,
+  "Telekinesis": 1
+ },
+ "mouse": {
+  "left": "Teleport",
+  "right": "Nova"
+ },
+ "hotkeys": [
+  "Nova"
+ ],
+ "items": [
+  {
+   "code": "hp1",
+   "store": "inventory",
+   "x": 0,
+   "y": 0
+  },
+  {
+   "code": "hp4",
+   "store": "inventory",
+   "x": 1,
+   "y": 0
+  },
+  {
+   "code": "hp5",
+   "store": "inventory",
+   "x": 2,
+   "y": 0
+  },
+  {
+   "code": "hp2",
+   "store": "inventory",
+   "x": 3,
+   "y": 0
+  },
+  {
+   "code": "mp1",
+   "store": "inventory",
+   "x": 4,
+   "y": 0
+  },
+  {
+   "code": "mp4",
+   "store": "inventory",
+   "x": 5,
+   "y": 0
+  },
+  {
+   "code": "mp5",
+   "store": "inventory",
+   "x": 6,
+   "y": 0
+  },
+  {
+   "code": "mp2",
+   "store": "inventory",
+   "x": 7,
+   "y": 0
+  },
+  {
+   "code": "mp3",
+   "store": "inventory",
+   "x": 8,
+   "y": 0
+  },
+  {
+   "code": "mp3",
+   "store": "inventory",
+   "x": 9,
+   "y": 0
+  }
+ ]
+}

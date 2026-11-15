@@ -1,0 +1,293 @@
+{
+ "game": "expansion",
+ "class": "Sorceress",
+ "seed": 650650005,
+ "name": "SweepBeltFull",
+ "progression": 15,
+ "difficulty": [
+  128,
+  128,
+  128
+ ],
+ "waypoints": {
+  "normal": "all",
+  "nightmare": "all",
+  "hell": "all"
+ },
+ "stats": {
+  "strength": 100,
+  "energy": 100,
+  "dexterity": 25,
+  "vitality": 10,
+  "hitpoints": 5,
+  "maxhp": 60,
+  "mana": 300,
+  "maxmana": 300,
+  "stamina": 74,
+  "maxstamina": 74,
+  "level": 9,
+  "experience": 44396
+ },
+ "skills": {
+  "Teleport": 1,
+  "Charged Bolt": 1,
+  "Telekinesis": 1,
+  "Static Field": 1
+ },
+ "mouse": {
+  "left": "Teleport",
+  "right": "Attack"
+ },
+ "items": [
+  {
+   "code": "hbl",
+   "equip": "belt"
+  },
+  {
+   "code": "isc",
+   "store": "inventory",
+   "x": 0,
+   "y": 0
+  },
+  {
+   "code": "isc",
+   "store": "inventory",
+   "x": 1,
+   "y": 0
+  },
+  {
+   "code": "isc",
+   "store": "inventory",
+   "x": 2,
+   "y": 0
+  },
+  {
+   "code": "isc",
+   "store": "inventory",
+   "x": 3,
+   "y": 0
+  },
+  {
+   "code": "isc",
+   "store": "inventory",
+   "x": 4,
+   "y": 0
+  },
+  {
+   "code": "isc",
+   "store": "inventory",
+   "x": 5,
+   "y": 0
+  },
+  {
+   "code": "isc",
+   "store": "inventory",
+   "x": 6,
+   "y": 0
+  },
+  {
+   "code": "isc",
+   "store": "inventory",
+   "x": 7,
+   "y": 0
+  },
+  {
+   "code": "isc",
+   "store": "inventory",
+   "x": 8,
+   "y": 0
+  },
+  {
+   "code": "isc",
+   "store": "inventory",
+   "x": 9,
+   "y": 0
+  },
+  {
+   "code": "isc",
+   "store": "inventory",
+   "x": 0,
+   "y": 1
+  },
+  {
+   "code": "isc",
+   "store": "inventory",
+   "x": 1,
+   "y": 1
+  },
+  {
+   "code": "isc",
+   "store": "inventory",
+   "x": 2,
+   "y": 1
+  },
+  {
+   "code": "isc",
+   "store": "inventory",
+   "x": 3,
+   "y": 1
+  },
+  {
+   "code": "isc",
+   "store": "inventory",
+   "x": 4,
+   "y": 1
+  },
+  {
+   "code": "isc",
+   "store": "inventory",
+   "x": 5,
+   "y": 1
+  },
+  {
+   "code": "isc",
+   "store": "inventory",
+   "x": 6,
+   "y": 1
+  },
+  {
+   "code": "isc",
+   "store": "inventory",
+   "x": 7,
+   "y": 1
+  },
+  {
+   "code": "isc",
+   "store": "inventory",
+   "x": 8,
+   "y": 1
+  },
+  {
+   "code": "isc",
+   "store": "inventory",
+   "x": 9,
+   "y": 1
+  },
+  {
+   "code": "isc",
+   "store": "inventory",
+   "x": 0,
+   "y": 2
+  },
+  {
+   "code": "isc",
+   "store": "inventory",
+   "x": 1,
+   "y": 2
+  },
+  {
+   "code": "isc",
+   "store": "inventory",
+   "x": 2,
+   "y": 2
+  },
+  {
+   "code": "isc",
+   "store": "inventory",
+   "x": 3,
+   "y": 2
+  },
+  {
+   "code": "isc",
+   "store": "inventory",
+   "x": 4,
+   "y": 2
+  },
+  {
+   "code": "isc",
+   "store": "inventory",
+   "x": 5,
+   "y": 2
+  },
+  {
+   "code": "isc",
+   "store": "inventory",
+   "x": 6,
+   "y": 2
+  },
+  {
+   "code": "isc",
+   "store": "inventory",
+   "x": 7,
+   "y": 2
+  },
+  {
+   "code": "isc",
+   "store": "inventory",
+   "x": 8,
+   "y": 2
+  },
+  {
+   "code": "isc",
+   "store": "inventory",
+   "x": 9,
+   "y": 2
+  },
+  {
+   "code": "isc",
+   "store": "inventory",
+   "x": 0,
+   "y": 3
+  },
+  {
+   "code": "isc",
+   "store": "inventory",
+   "x": 1,
+   "y": 3
+  },
+  {
+   "code": "isc",
+   "store": "inventory",
+   "x": 2,
+   "y": 3
+  },
+  {
+   "code": "isc",
+   "store": "inventory",
+   "x": 3,
+   "y": 3
+  },
+  {
+   "code": "isc",
+   "store": "inventory",
+   "x": 4,
+   "y": 3
+  },
+  {
+   "code": "isc",
+   "store": "inventory",
+   "x": 5,
+   "y": 3
+  },
+  {
+   "code": "isc",
+   "store": "inventory",
+   "x": 6,
+   "y": 3
+  },
+  {
+   "code": "isc",
+   "store": "inventory",
+   "x": 7,
+   "y": 3
+  },
+  {
+   "code": "isc",
+   "store": "inventory",
+   "x": 8,
+   "y": 3
+  },
+  {
+   "code": "isc",
+   "store": "inventory",
+   "x": 9,
+   "y": 3
+  }
+ ],
+ "belt_fill": [
+  "hp1",
+  "mp1",
+  "yps",
+  "wms"
+ ]
+}
