@@ -735,6 +735,14 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-11-15 | `lane/n65h` review | 0065 P1 | architect-review | 186 342 | 64 | 10 | — | gave accept with fixes (Tier A) | audit of lane/n65h: overclaim 1, misread 1, omission 3, wrong anchor 2, stale cross-reference 5, other 1; no reject-grade miss (5th Tier B after the n65p audit; count restarts) |
 | 2026-11-15 | `lane/n66i` | 0066 P1 S4c+S4d | reverser-static | 811 121 | 297 | 61 | ghidra-n66i | accept | 0 (three parts: 215 075/57/8 + 263 300/122/23 + 332 746/118/30) |
 | 2026-11-15 | `lane/n66i` check | 0066 P1 S4c+S4d | architect-check | 65 262 | 12 | 1 | — | gave accept (Tier B) | 0 (1st Tier B after the n65h audit) |
+| 2026-11-15 | `lane/n69d` | 0069 P2 | reverser-harness | 189 615 | 188 | 50 | slot 2 | accept with fixes | 1: recount 1 (part 2 only; part 1 before the pause not recorded) |
+| 2026-11-15 | `lane/n69d` check | 0069 P2 | architect-check | 74 012 | 14 | 1 | — | gave accept with fixes (Tier B) | 1: recount 1 (2nd Tier B after the n65h audit) |
+| 2026-11-15 | `lane/n66k` | 0066 P1 S6a+S6b | reverser-static | 587 728 | 197 | 47 | ghidra-n66k | accept with fixes | 1: overclaim 1 (two parts: 360 021/113/27 + 227 707/84/19) |
+| 2026-11-15 | `lane/n66k` check | 0066 P1 S6a+S6b | architect-check | 72 755 | 10 | 1 | — | gave accept with fixes (Tier B) | 1: overclaim 1 (3rd Tier B after the n65h audit) |
+| 2026-11-15 | `lane/n66j` | 0066 P1 S5a+S5b | reverser-static | 986 608 | 417 | 80 | ghidra-n66j | accept with fixes | 1: omission 1 (route to archivist) (three parts: 266 802/98/17 + 302 483/116/20 + 417 323/203/43) |
+| 2026-11-15 | `lane/n66j` check | 0066 P1 S5a+S5b | architect-check | 79 014 | 20 | 1 | — | gave accept with fixes (Tier B) | 1: omission 1 (4th Tier B after the n65h audit; next gets Tier A audit) |
+| 2026-11-16 | `lane/n66m` | 0066 P1 S7c+S7d | reverser-static | 371 423 | 126 | 26 | ghidra-n66m | accept with fixes | 3: misread 2, omission 1 |
+| 2026-11-16 | `lane/n66m` review | 0066 P1 S7c+S7d | architect-review | 164 396 | 66 | 8 | — | gave accept with fixes (Tier A) | audit of lane/n66m: misread 2, omission 1; no reject-grade miss (5th Tier B after the n65h audit; count restarts) |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not

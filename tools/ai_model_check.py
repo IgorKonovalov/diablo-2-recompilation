@@ -68,6 +68,12 @@ fork, so the H1h models run on rev 6 logs and take their word from a rev 7 one; 
 log does not hold (compared only when flipped); `unit_set_event`, `UnitSetEvent`'s `Unit+0xC4 |= 0x400` (0x005533B9);
 `sweep_table` and `step_xy`, R94's `SWEEP` table and `STEP` rule read from the catalogue's text. The entries of revisions
 1 to 4 are unchanged (`regress`; the 29 revision 4 entries' check over the 38 logs is byte-identical to Phase 1b's).
+
+Revision 6 (plan 0069 Phase 2, `lane/n69d`): the rev 7 logger's words as inputs (tools/gdb/ai.py `R7WORDS`; tools/ai.py puts
+them in `dec["r7"]`): R54 (`AiNearestPlayer`'s (p, f, type)), R32 (the type, for `UnitSetEvent`'s arm), R70 and R48 (`speed`,
+`run_bonus`), R78 and R79 (`arrow.region`), R118 and R119 (the `StatListFindFlag` result); each falls back to its fork on a
+rev 6 log. `UnitSetEvent`'s `Unit+0xC4 |= 0x400` is also made by R54's step 2 (behind the fork `2.setevent`) and R58's step 3
+(the Phase 1c review item).
 """
 import os
 import sys
@@ -360,6 +366,10 @@ class Run:
         words of the block a stack argument points at, before the call (AIB `b`)."""
         fn, ecx, edx, names = CONV[name]
         if self.i >= len(self.log):
+            if any(x.get("pend") == 0 for x in self.dec.get("ail", [])):
+                # the logger's OUT_LIMIT (600 calls made outside the think, e.g. FreeNearFallback's search) disarmed
+                # the boundary breakpoints: the calls after the AIL line are not logged, so the decision stops
+                raise Stop("AIL")
             raise Mismatch("%s: the model calls %s, the log has no further call" % (label, name))
         b = self.log[self.i]
         diffs = []
@@ -892,9 +902,23 @@ def m_r69(r):
     r.call("4.idle", "Idle", n=10)
 
 
+def run_bonus(w):
+    """The run speed's excess over the walk speed in percent (R70 step 2, R48 step 1; 0x005FA3B0-0x005FA3E7): `w` is the rev 7
+    word `speed` = (Velocity, Run), both s16 from MonStats. `Velocity > 0`: `q = Run*100 idiv Velocity - 100` (truncating), `q <= 0`
+    gives 0, `q >= 120` gives 120. None without the word."""
+    if w is None:
+        return None
+    vel, run = w
+    if vel <= 0:
+        return 0
+    q = tdiv(run * 100, vel) - 100
+    return 0 if q <= 0 else min(q, 120)
+
+
 def m_r70(r):
-    """R70 FingerMage. `p` (step 2) is read from MonStats words the log does not hold; it is used only as the
-    override's parameter, which is therefore not compared."""
+    """R70 FingerMage. `p` (step 2) is the rev 7 word `speed` (MonStats `Velocity`, `Run`), else it is not compared (revision 6:
+    the override's parameter)."""
+    pp = run_bonus(r7(r, "speed"))
     life = s32(r.call("1.lifepct", "UnitLifePct", u=r.U).eax)
     if r.br("3.St3or19", r.call("3.st3or19", "St3or19", U=r.U).eax):
         r.store("set v14=0", 0x14, 0)
@@ -910,7 +934,7 @@ def m_r70(r):
                 or r.less("4.aip(6)<v18", r.aip(6), r.v[0x18])):
             r.store("set v14=0#2", 0x14, 0)
         elif r.less("4.dist<14", r.dist, 14):
-            r.call("4.ovr", "Ovr", type=0, byte=0)
+            r.call("4.ovr", "Ovr", type=0, param=pp, byte=0)
             r.call("4.stepaway", "StepAway", t=r.t, d=14, flag=0)
             return
         r.call("4.idle", "Idle", n=15)
@@ -944,14 +968,18 @@ def m_r70(r):
 
 
 def arrow_kind(r):
-    """`AiTrapArrowKind` (R78's block): the region word is not logged, so whether it is set, and its value, fork."""
+    """`AiTrapArrowKind` (R78's block): the region word `+0x2D4` is the rev 7 word `arrow.region` (read at 0x005FB674, before
+    its test), else whether it is set, and its value, fork (revision 6)."""
     room = r.call("k.room", "UnitGetRoom", u=r.U).eax
     lvl = s32(r.call("k.level", "RoomGetLevelId", room=room).eax)
-    if r.unknown("k.region<0"):
+    w = r7(r, "arrow.region")
+    if r.unknown("k.region<0") if w is None else r.br("k.region<0", w < 0, val=w):
         if r.less("k.lvl<40", lvl, 40):
             return 0
         return r.rng(3)
-    return 1 if r.unknown("k.region=1") else 0
+    if w is None:
+        return 1 if r.unknown("k.region=1") else 0
+    return 1 if r.br("k.region=1", w == 1, val=w) else 0
 
 
 def trap_arrow(r, axis):
@@ -1103,8 +1131,9 @@ def m_r114(r):
 
 
 def m_r118(r):
-    """R118 Succubus. `StatListFindFlag` (0x00625760) is not a boundary: its result forks."""
-    if (not r.unknown("1.flag0x20") and r.less("1.dist<aip(4)", r.dist, r.aip(4)) and r.chance("1.chance(3)", 3)):
+    """R118 Succubus. `StatListFindFlag` (0x00625760) is not a boundary: its result is the rev 7 word `R118.flag0x20` (EAX at
+    0x005E1E34), else it forks (revision 6)."""
+    if (not known(r, "1.flag0x20", "R118.flag0x20", lambda w: w != 0) and r.less("1.dist<aip(4)", r.dist, r.aip(4)) and r.chance("1.chance(3)", 3)):
         if r.less("1.0<Skill1", 0, r.skill[0]) and not r.less(
                 "1.tlife<aip(7)", s32(r.call("1.tlife", "UnitLifePct", u=r.t).eax), r.aip(7)):
             use_skill(r, "1.useskill1", 1, r.t)
@@ -1197,11 +1226,17 @@ def m_r99(r):
 
 
 def m_r54(r):
-    """R54 NpcStationary. `AiNearestPlayer`, `PlayerIsBusy`, `NpcInteractAny` and `AiDistUnits` are not boundaries."""
-    if r.unknown("2.p"):
+    """R54 NpcStationary. `AiNearestPlayer`, `PlayerIsBusy`, `NpcInteractAny` and `AiDistUnits` are not boundaries.
+    Revision 6: `AiNearestPlayer`'s rev 7 word (p, f, type of p) gives step 2's `p != 0 and p != U` (else it forks), and step 2's
+    `UnitSetEvent(U, 18, p)` (a player p, `v18 = 0`, `n < 24`) makes `Unit+0xC4 |= 0x400` (`unit_set_event`) before the
+    `Idle(20)`; whether that arm ran forks (`2.setevent`)."""
+    w = r7(r, "AiNearestPlayer")
+    if r.unknown("2.p") if w is None else r.br("2.p", w[0] != 0 and w[0] != r.U, val=1 if w[0] else 0):
         if r.unknown("2.busy") or r.unknown("2.interact"):
             r.call("2.idle10", "Idle", n=10)
             return
+        if (w is None or nearest_is_player(w)) and r.unknown("2.setevent"):
+            unit_set_event(r, "2")
         r.v[0x18] = None
         r.call("2.idle20", "Idle", n=20)
         return
@@ -2051,9 +2086,10 @@ def m_r117(r):
 
 # ---- H1b R119 SuccubusWitch (catalogue 3306)
 def m_r119(r):
-    """R119 SuccubusWitch. `StatListFindFlag(t, 0x20)` is not a boundary here (0x005E2157): it forks."""
+    """R119 SuccubusWitch. `StatListFindFlag(t, 0x20)` is not a boundary here (0x005E2157): its result is the rev 7 word
+    `R119.flag0x20` (EAX at 0x005E215C), else it forks (revision 6)."""
     dist = r.dist
-    if (r.br("1.t", r.t != 0) and not r.unknown("1.flag0x20") and r.less("1.dist<aip(4)", dist, r.aip(4))
+    if (r.br("1.t", r.t != 0) and not known(r, "1.flag0x20", "R119.flag0x20", lambda w: w != 0) and r.less("1.dist<aip(4)", dist, r.aip(4))
             and r.chance("1.chance(3)", 3)):
         if (r.br("1.Skill1>0", r.skill[0] > 0)
                 and not r.less("1.lifeT<aip(7)", s32(r.call("1.lifet", "UnitLifePct", u=r.t).eax), r.aip(7))):
@@ -2582,6 +2618,7 @@ def m_r58(r):
             v = r.v[0x18]
             if r.br("3.v18=0", v == 0, val=v):
                 r.store("set v18=60", 0x18, 60)
+                unit_set_event(r, "3")                  # revision 6: p is a player here (0x005533B9's `or [esi+0xC4], 0x400`)
             elif r.less("3.v18<0", v, 0):
                 r.store("set v18=0", 0x18, 0)
             else:
@@ -2606,7 +2643,9 @@ def r7(r, key):
     the rev 7 list in `dec["r7"]`, by these keys: `MonPlayerBonus` (R10: the block's `pb.difficulty`), `MonsterOwnerRef`
     (R48: the pair (guid, type) the call writes), `AiNearestPlayer` (R32: the pair (p, f)), `R73.aurastate` (the Skills
     `aurastate` of `Skill2`, or None when `Skill2` is outside the table) and `R73.md0e` (`MonsterData+0x0E`), `owner.mode`
-    (R56: the owner's mode at `MonsterOwner`'s return), `found.mode` (R71: the mode of `GameFindUnit`'s unit)."""
+    (R56: the owner's mode at `MonsterOwner`'s return), `found.mode` (R71: the mode of `GameFindUnit`'s unit). Revision 6 adds `AiNearestPlayer`'s third element (the unit type of p, for
+    R32 and R54), `speed` (R70, R48: (Velocity, Run)), `arrow.region` (R78, R79), `R118.flag0x20` and `R119.flag0x20`. A word the
+    logger of rev 7 reads at a breakpoint is in the AID decision's R7W lines (tools/gdb/ai.py `R7WORDS`)."""
     return (r.dec.get("r7") or {}).get(key)
 
 
@@ -2919,11 +2958,11 @@ def m_r45(r):
 
 # ---- H1h R48 ZakarumZealot (catalogue 1138; MonsterOwnerRef 0x0058F090, rev 7 item 10)
 def m_r48(r):
-    """R48 ZakarumZealot. The run bonus (MonStats `Velocity`, `Run`) is not logged: the override's parameter is not
-    compared. `MonsterOwnerRef` is not a boundary: its (guid, type) is the rev 7 word `MonsterOwnerRef`, else the type
+    """R48 ZakarumZealot. The run bonus (MonStats `Velocity`, `Run`) is the rev 7 word `speed` (`run_bonus`), else the override's
+    parameter is not compared (revision 6). `MonsterOwnerRef` is not a boundary: its (guid, type) is the rev 7 word `MonsterOwnerRef`, else the type
     forks and the guid is not compared. `DRLG_ActFromLevelId` and `QUESTRECORD_GetState` are not boundaries: they fork.
     `COLL_CellTestAt`'s words are not compared (revision 3's caller read names one stack word for the block's four)."""
-    run = None
+    run = run_bonus(r7(r, "speed"))
     life = s32(r.call("2.lifepct", "UnitLifePct", u=r.U).eax)
     if r.br("3.t", r.t != 0):
         p, ptype0 = r.t, r.ttype == 0
@@ -3867,6 +3906,12 @@ def unit_set_event(r, step):
         r.store("set c4|=0x400 (%s.UnitSetEvent)" % step, "c4", r.c4 | 0x400)
 
 
+def nearest_is_player(w):
+    """`AiNearestPlayer`'s rev 7 word (p, f, unit type of p): p is a player when its unit type is 0 (`cmp [p], 0`,
+    0x005E6A11). A two-word value (revision 5's pair) has no type: not a player, so the caller forks instead."""
+    return len(w) > 2 and w[2] == 0
+
+
 def npc_near_player(r):
     """`AiNpcNearPlayer` (0x005E68F0). `AiNearestPlayer`'s (p, f) is the rev 7 word `AiNearestPlayer`; without it p is not
     compared and its tests fork. The interact list, `NpcInteractHas`, `NpcInteractAny` and the busy test are not logged:
@@ -3902,7 +3947,7 @@ def npc_near_player(r):
     v = r.v[0x18]
     if r.br("n.v18=0", v == 0, val=v):
         r.store("set v18=60", 0x18, 60)
-        if r.unknown("n.p player"):
+        if (w is None and r.unknown("n.p player")) or (w is not None and nearest_is_player(w)):
             unit_set_event(r, "n")
     elif r.less("n.v18<0", v, 0):
         r.store("set v18=0", 0x18, 0)

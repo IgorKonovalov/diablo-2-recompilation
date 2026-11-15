@@ -1,8 +1,10 @@
 # return addresses (call site + 5) of the calls from the AI think windows (0x005B14E0..0x005B1650, 0x005E0000..0x005FFFFF,
-# 0x0058F0D0..0x0058F130, 0x005DE830..0x005DE8C0, 0x005DF850..0x005DFC00) to the 136 boundary functions of tools/gdb/ai.py (BND).
+# 0x0058F0D0..0x0058F130, 0x005DE830..0x005DE8C0, 0x005DF850..0x005DFC00, 0x005B0CD0..0x005B0D00) to the 136 boundary functions of tools/gdb/ai.py (BND).
 # tools/ai_retsites.py regenerates it from the pinned game.exe by three objdump sweeps started at different offsets and keeps
 # the instruction starts all three agree on. One hex address per line.
 0058f0ff
+005b0cdc
+005b0cee
 005b14ff
 005b1533
 005b156b

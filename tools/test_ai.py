@@ -255,6 +255,77 @@ class PartsTest(unittest.TestCase):
         self.assertEqual(len(r["dec"]), 1)
         self.assertEqual(len(r["dec"][0]["aib"]), 1)
 
+    def test_parse_reads_the_rev7_word_and_init_lines(self):
+        with tempfile.NamedTemporaryFile("w", suffix=".log", delete=False) as fh:
+            fh.write('AI logger armed rev 7 bmax 48\nAII {"u":1,"fn":6252080,"n":2}\n'
+                     'AIQ {"u":1,"n":3}\nAID {"n":4,"ai":10}\n'
+                     'R7W {"k":4,"key":"MonPlayerBonus","v":1,"ra":6294327,"n":5}\n'
+                     'R7W {"k":4,"key":"MonPlayerBonus","v":2,"ra":6294327,"n":6}\n'
+                     'R7W {"k":4,"key":"speed","v":[100,150],"ra":1,"n":7}\nR7W {"k":99,"key":"x","v":1,"n":8}\n')
+            p = fh.name
+        r = ai.parse(p)
+        os.unlink(p)
+        self.assertEqual(r["rev"], 7)
+        self.assertEqual(r["dec"][0]["r7"], {"MonPlayerBonus": 1, "speed": [100, 150]})   # the first of a key
+        self.assertEqual(len(r["dec"][0]["r7all"]), 3)
+        self.assertEqual([t for t, _ in r["inits"]], ["AII", "AIQ"])
+
+    def test_rev6_log_has_no_r7_map(self):
+        with tempfile.NamedTemporaryFile("w", suffix=".log", delete=False) as fh:
+            fh.write('AI logger armed rev 6\nAID {"n":3,"ai":2}\n')
+            p = fh.name
+        r = ai.parse(p)
+        os.unlink(p)
+        self.assertNotIn("r7", r["dec"][0])
+        self.assertEqual(r["inits"], [])
+
+
+class LoggerSourceTest(unittest.TestCase):
+    """tools/gdb/ai.py cannot run without gdb; its rev 7 tables are checked as text against the pinned image's call shapes."""
+
+    @classmethod
+    def setUpClass(cls):
+        with open(os.path.join(HERE, "gdb", "ai.py")) as fh:
+            cls.src = fh.read()
+
+    def test_rev_is_7_and_the_line_forms_are_named(self):
+        self.assertIn("REV = 7", self.src)
+        for tag in ("R7W", "AII", "AIQ"):
+            self.assertIn(tag, self.src)
+
+    def test_every_word_breakpoint_is_a_return_site_or_documented_address(self):
+        import re
+        words = re.findall(r'\("([A-Za-z0-9_.]+)", (0x[0-9A-F]{8}), ', self.src)
+        self.assertEqual(len(words), 7)
+        self.assertEqual(sorted(set(k for k, _ in words)),
+                         ["AiNearestPlayer", "MonPlayerBonus", "MonsterOwnerRef", "R118.flag0x20", "R119.flag0x20", "arrow.region"])
+
+    def test_the_think_window_of_row_1_is_in_the_retsites(self):
+        with open(os.path.join(HERE, "gdb", "ai-retsites.txt")) as fh:
+            sites = set(int(x, 16) for x in fh.read().split("\n") if x and not x.startswith("#"))
+        self.assertIn(0x005B0CDC, sites)
+        self.assertIn(0x005B0CEE, sites)
+        self.assertIn("(0x005B0CD0, 0x005B0D00)", self.src)
+
+
+class TourWordsTest(unittest.TestCase):
+    def test_summary_counts_decisions_per_key(self):
+        import ai_tour_words as tw
+        with tempfile.NamedTemporaryFile("w", suffix=".log", delete=False) as fh:
+            fh.write('AI logger armed rev 7 bmax 48\nAII {"u":1,"fn":6252080,"n":2}\nAIQ {"u":1,"fn":null,"n":3}\n'
+                     'AID {"n":4,"ai":10}\nR7W {"k":4,"key":"MonPlayerBonus","v":1,"n":5}\n'
+                     'AID {"n":6,"ai":32}\nR7W {"k":6,"key":"AiNearestPlayer","v":[0,0,null],"n":7}\n'
+                     'R7W {"k":6,"key":"AiNearestPlayer","v":[1,0,0],"n":8}\nLOGERR x\n')
+            p = fh.name
+        s = tw.summary(p)
+        os.unlink(p)
+        self.assertEqual(s["armed"], "AI logger armed rev 7 bmax 48")
+        self.assertEqual(dict(s["rows"]), {10: 1, 32: 1})
+        self.assertEqual((s["word_lines"]["AiNearestPlayer"], s["carrying"]["AiNearestPlayer"]), (2, 1))
+        self.assertEqual(s["inits"][("AII", 6252080)], 1)
+        self.assertEqual(s["other"]["LOGERR"], 1)
+        self.assertIn("WORD AiNearestPlayer", tw.render(p, s))
+
 
 if __name__ == "__main__":
     unittest.main()
