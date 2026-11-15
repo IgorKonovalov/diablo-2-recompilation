@@ -78,7 +78,7 @@ Every file's *Count* column sums to its spec's front-matter `I` at `b5999f5e` (c
 | [items/inventory](items-inventory.md) | is | 104 | 7 | 2 | 14 | 22 | 39 | · | · | · | 6 | 14 |
 | [items/use](items-use.md) | is | 64 | 6 | 3 | 21 | 13 | 10 | · | · | · | 3 | 8 |
 | [monsters/ai/README](monsters-ai-README.md) | ai | 56 | 15 | 2 | 9 | 13 | 13 | · | · | · | · | 4 |
-| [monsters/ai/catalogue](monsters-ai-catalogue.md) | ai | 520 | 73 | 202 | 94 | 25 | 22 | · | 61 | · | · | 43 |
+| [monsters/ai/catalogue](monsters-ai-catalogue.md) | ai | 520 | 73 | 202 | 94 | 25 | 21 | · | 62 | · | · | 43 |
 | [monsters/ai/machinery](monsters-ai-machinery.md) | ai | 114 | 25 | 21 | 20 | 15 | 31 | · | · | · | · | 2 |
 | [path/README](path-README.md) | fp | 80 | 11 | 5 | 11 | 26 | 16 | · | · | · | · | 11 |
 | [path/search](path-search.md) | fp | 36 | 7 | · | 1 | 9 | 10 | · | · | · | · | 9 |
@@ -94,18 +94,18 @@ Every file's *Count* column sums to its spec's front-matter `I` at `b5999f5e` (c
 | [stats/README](stats-README.md) | is | 3 | 1 | 1 | 1 | · | · | · | · | · | · | · |
 | [stats/aggregate](stats-aggregate.md) | is | 42 | 25 | 6 | 1 | 4 | 6 | · | · | · | · | · |
 | [stats/states](stats-states.md) | is | 54 | 6 | 17 | 12 | 8 | · | 2 | 1 | · | 2 | 6 |
-| **All** | | **2626** | **668** | **358** | **394** | **390** | **490** | **59** | **67** | **0** | **23** | **177** |
+| **All** | | **2626** | **668** | **358** | **394** | **390** | **489** | **59** | **68** | **0** | **23** | **177** |
 
 By phase:
 
 | Route | Classes | Statements | Batches |
 |---|---|---|---|
-| Phase 1, static | a-logs 668, c 390, c-emu 490 | 1548 | 36 |
+| Phase 1, static | a-logs 668, c 390, c-emu 489 | 1547 | 36 |
 | Phase 2, harness | a-run 358, b 394 | 752 | 31 (about 256 sessions estimated) |
-| Blocked | d-2c 59, d-owner 67, d-edit 23, d-none 177 | 326 | – |
+| Blocked | d-2c 59, d-owner 68, d-edit 23, d-none 177 | 327 | – |
 | **Total** | | **2626** | |
 
-No row is `d-sim`: no claim was found to wait on plan 0061 or another open plan. *(The totals above include the moves of Phase 1 batches S1a (5 statements), S1b (18), S2a (20: 13 in part 1, 7 in part 2) and S1d (4) out of a-logs, 2026-11-10, and S2b (6), 2026-11-15.)*
+No row is `d-sim`: no claim was found to wait on plan 0061 or another open plan. *(The totals above include the moves of Phase 1 batches S1a (5 statements), S1b (18), S2a (20: 13 in part 1, 7 in part 2) and S1d (4) out of a-logs, 2026-11-10, S1e's (1) out of c-emu and S2b's (6) out of a-logs, 2026-11-15.)*
 
 ## 2. The threshold and the harness batches
 
@@ -149,10 +149,17 @@ deferred)**. The review is asked to rule on one of:
   first call on a word the log does not hold (rows 118, 32, 54; reasons in the rows). Totals after (recomputed from the 29
   files against `main` `4fb8b55f`, S1a, S1b and S2a merged): a-logs 674, a-run 358, b 389, c 389, c-emu 490, d 326;
   Phase 1 1 553, Phase 2 747.
+- **S1e (`lane/n66e`, 2026-11-15):** monsters/ai/catalogue 421 c-emu → d-owner: the threat scores reach
+  `COLL_LineTest`'s room walk through `InMeleeRange` and `AiLineClear`, so no emulation without a declared return
+  (ruling R2), and only Diablo and Baal call them (reason in the row). Totals after (recomputed from the 29 files against
+  `main` `389cb19d`, merged at `0f30ab21`): a-logs 674, a-run 358, b 389, c 389, c-emu 489, d 327 (d-owner 68);
+  Phase 1 1 552, Phase 2 747.
 - **S2b (`lane/n66f`, 2026-11-15):** skills/missiles 2 a-logs → c (S2c): `MC0` logs no return address, so no line names
   `MissileCreateAt`; missiles 37, 54, 55, 56 and 97 a-logs → b (H2a): no own-cell free in the logs (37, 97), `THR`
   carries the chance only (54, 55), no line of state 86 (56). Reasons in the rows. Totals after (recomputed from the 29
   files against `main` `f9b82bd4`): a-logs 668, a-run 358, b 394, c 390, c-emu 490, d 326; Phase 1 1 548, Phase 2 752.
+  After merging `main` with S1e (Tier A, 2026-11-15, recomputed from the 29 files' *Totals by class*): a-logs 668, a-run
+  358, b 394, c 390, c-emu 489, d 327 (d-owner 68); Phase 1 1 547, Phase 2 752.
 
 ## 4. Batch list
 
@@ -169,8 +176,8 @@ Phase 0 review. Static batches play no game session (their *Sessions* cell is 0)
 | **S1b** | S | 43 | catalogue 17–18, 20, 23–24, 44–45, 49, 51, 68, 93–94, 114–115, 138, 140, 147–148, 150, 152–153, 156, 161–162, 165, 167, 193, 198–199, 320–321, 323–324, 335, 369–370, 388, 485–486, 498, 501, 504–505 (filed with 12, 21, 50, 70–71, 113, 139, 151, 163, 168, 195, 336, 347–348, 466–467, 489, 500 too; moved at S1b) | new checker: a model written from each row's block (never the interpreter), fed the logged boundary returns as ADR-0004 oracles, compared call by call with the logged sequence; taken paths only, untaken arms stay `[I]`. Rows with ≥ 30 own decisions in the rev 4 and rev 6 logs | findings/ai/experiments.md, run:2026-11-04-ai-resume, run:2026-11-04-ai-r5 (addendum) | 0 | – | done 2026-11-10 (`lane/n66c`): 43 raised (row 44 whole, 42 in part), 18 moved (21, 50, 70, 71, 139, 151, 336, 489 → H1g; 12, 113, 163, 168, 195, 347, 348, 466, 467, 500 → H1h); Tier B review pending |
 | **S1c** | S | 6 | catalogue 280–281, 283, 507–509 | the S1b checker over the owner-played rev 6 logs of row 44 and state 13 (`ai_s13_check.py`, `ai_duriel_c10.py` the patterns) | findings/ai/experiments.md, run:2026-11-04-r72 (addendum) | 0 | – | done 2026-11-10 (`lane/n66d`): 6 raised in part (280, 281, 283, 507, 508, 509), 0 moved; `tools/ai_model_check.py` rev 2; Tier B review pending |
 | **S1d** | S | 12 | catalogue 38, 43, 54, 75, 96, 130, 136, 144, 325, 389, 487, 490 (filed with 13, 349, 460, 468 too; moved at S1d) | the 16 "Logged, not compared" rows: a first-boundary map per row (an emulated family where the think's head allows, else a hand map, README G5), `tools/ai.py check` over the kept logs each `l` line cites | findings/ai/experiments.md, run:2026-11-03-ai, run:2026-11-03-ai-3, run:2026-11-04-ai-r5, run:2026-11-04-r72 (addenda) | 0 | – | done 2026-11-10 (`lane/n66d`): 12 raised (38, 43, 75, 96, 130, 136, 144, 325, 389, 487, 490; 54 in part), 4 moved (13, 349, 460, 468 → H1h); `tools/ai_first_check.py`; Tier B review pending |
-| **S1e** | S | 22 | catalogue 3, 15, 31, 66, 72, 135, 154, 172, 182, 194, 196, 229, 242, 288, 314, 332, 356, 360, 385, 420–421, 518 | emulation (`EmuBoundary.java`), new families: the search callbacks (`AiNearAllyCb`, `AiWoundedNearCb`, `AiZakarumHealCb`, `AiFetishReviveCb`, `AiRegurgitatorCb`, `AiOblivionKnightCb`, `AiPriestHealCb`, `AiShadowMasterCb`, `AiImpNearCb`, `AiOverseerMinionCb`, `AiMinionCountCb`, Mephisto's pick), the helpers `AiLifePct`, `UnitLifePct`, `AiMonState3or19`, `MonAiEntryGet`, `AiTrapArrowKind`/`RNG_RandLoHi`, `AiGenSpawnPickClass`, `AiShadowSkillRoll`, Diablo's `pick(w, n)` and the threat scores; declared unit blocks, `tools/` models | findings/ai/experiments.md, new run:<date>-sweep2-S1e | 0 | – | scheduled |
-| **S1f** | S | 25 | catalogue 1–2, 16, 52, 73, 87, 89, 155, 171, 236, 244–245, 247, 274–275, 282, 313, 372, 422, 431, 440, 443, 473, 514 | static second source: xref and store scans with r2 beside objdump (the think call site, `MonAiInit`'s callers and state words, record-kind-14 writers, row 71's `v14` stores, the kind-1 target test), table-word equality of the alias rows, ADR-0031 image equalities (wisp tables, `CORNER`, Diablo and Baal weight tables, the `ret 4` stubs), full-table data checks (Duriel's stock thresholds, the fetish filter by difficulty, `pgsv` states, Skills `aitype` rows) | findings/ai/experiments.md, new run:<date>-sweep2-S1f | 0 | – | scheduled |
+| **S1e** | S | 21 | catalogue 3, 15, 31, 66, 72, 135, 154, 172, 182, 194, 196, 229, 242, 288, 314, 332, 356, 360, 385, 420, 518 (filed with 421 too; moved at S1e) | emulation (`EmuBoundary.java`), new families: the search callbacks (`AiNearAllyCb`, `AiWoundedNearCb`, `AiZakarumHealCb`, `AiFetishReviveCb`, `AiRegurgitatorCb`, `AiOblivionKnightCb`, `AiPriestHealCb`, `AiShadowMasterCb`, `AiImpNearCb`, `AiOverseerMinionCb`, `AiMinionCountCb`, Mephisto's pick), the helpers `AiLifePct`, `UnitLifePct`, `AiMonState3or19`, `MonAiEntryGet`, `AiTrapArrowKind`/`RNG_RandLoHi`, `AiGenSpawnPickClass`, `AiShadowSkillRoll`, Diablo's `pick(w, n)` and the threat scores; declared unit blocks, `tools/` models | findings/ai/experiments.md, run:2026-11-15-sweep2-s1e | 0 | – | done 2026-11-15 (`lane/n66e`): 5 raised (15, 172, 194, 242, 360), 16 raised in part, 1 moved (421 → d-owner); `tools/ai_s1e_emu.py`, 24 families, 5 760 cases, 0 mismatches; six corrections; Tier B review pending |
+| **S1f** | S | 25 | catalogue 1–2, 16, 52, 73, 87, 89, 155, 171, 236, 244–245, 247, 274–275, 282, 313, 372, 422, 431, 440, 443, 473, 514 | static second source: xref and store scans with r2 beside objdump (the think call site, `MonAiInit`'s callers and state words, record-kind-14 writers, row 71's `v14` stores, the kind-1 target test), table-word equality of the alias rows, ADR-0031 image equalities (wisp tables, `CORNER`, Diablo and Baal weight tables, the `ret 4` stubs), full-table data checks (Duriel's stock thresholds, the fetish filter by difficulty, `pgsv` states, Skills `aitype` rows); plus the S1e remainders routed to c (rows 196 `MonRegionsBuild`'s −1 store and the caller set, 288 the pick's one caller, 356 row 128's push and state 141's name, 420 the inline pick copies against 0x005FC130, 518 which rows call which life reader), counted in S1e's rows | findings/ai/experiments.md, new run:<date>-sweep2-S1f | 0 | – | scheduled |
 | **S1m** | S | 40 | machinery 2–4, 7, 21, 23, 25–26, 34, 47, 49, 53, 55, 58–59, 63, 67–69, 71, 84, 107, 110, 113–114; README 7, 9–11, 13–14, 18–19, 22, 27, 32, 36, 45, 47, 51 | (a-logs) new checks in `tools/ai.py` over the kept AI logs: AIB/AIR helper arguments, results and seeds; MSM0/MSM1 command blocks; PP0 types; next-event frames; next-AID `ctl` and head words; `ai_resume.py` census for rows 2, 9, 20; the run:2026-11-04-h1 AD0 stops; frame corpus pass order (frame/0004, 0005) | findings/ai/experiments.md: addenda to run:2026-11-04-ai-r5, run:2026-11-03-ai, run:2026-11-03-ai-3, run:2026-11-04-h1; findings/frame: run:2026-11-03-frame-order(-2) | 0 | – | scheduled |
 | **S1ne** | S | 44 | machinery 5–6, 8–9, 11–14, 16–18, 24, 27–33, 36–37, 46, 48, 50–52, 65, 73, 108, 111–112; README 5–6, 17, 20, 24–25, 29, 31, 39, 42–43, 50, 56 | (c-emu) EmuBoundary families added to `tools/ai_emu.py`: `MonAiFindTarget`/`FindHostile`/`ForcedTarget`/`AiHostileCandidate`, the walkers and step-aways past their override, `PathOverride`/`AiPathOverrideSet`, `AiParams*`, `MonAiInit`, `MonModeStartNeutral`, `DelayEarlier`, `PreChecks`, `MonSpcWalkCheck`, the corpse callbacks, entry states 10–12 and ≥ 18; hand maps of rows 6, 13, 28, 29, 35 | findings/ai/experiments.md: a new run:<date>-ai-emu-2 (sweep2 S1ne) | 0 | – | scheduled |
 | **S1o** | S | 28 | machinery 1, 10, 15, 19–20, 40–42, 44–45, 54, 57, 82, 88, 94; README 1–4, 16, 21, 23, 26, 33–35, 38, 55 | (c) r2 `axt`/`pxw` scans with a second tool (list functions, `MonAiInit` 33 callers, `PathOverride` 103 calls, `EventQueueAt` kind 2, `AiCtlFollowSet`, writers of `AiCtl+0x14`), table dumps (`g_MonAiTable`, state rows, `g_AiSearchKinds`, `g_MonEventFuncs`), full-table checks (MonStats `AI`, Hireling, PetType, Skills summon) | finding sections of ai/0001, ai/0007, ai/0013 (Plan 0066 batch S1o) | 0 | – | scheduled |
