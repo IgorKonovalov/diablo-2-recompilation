@@ -3,7 +3,7 @@ spec: items/inventory
 status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, items/use, drlg/collision, drlg/lifecycle, stats/aggregate, items/economy]
-consumed_by: [items/use, player/creation, quests/travel, drlg/lifecycle, drlg/collision, items/economy, items/quest-drops, items/cube]
+consumed_by: [items/use, player/creation, quests/travel, drlg/lifecycle, drlg/collision, items/economy, items/quest-drops, items/cube, items/trade]
 tags: {C: 75, I: 105, L: 13}
 updated: 2026-11-10
 ---
@@ -15,8 +15,8 @@ updated: 2026-11-10
 Where an item can go and how it gets there, on the server. Which grid a unit and page use, in which order the placement
 search walks it, the belt's boxes, stacks and merges, the cursor, the stash, pickup with its reach and its refusals, the
 cell a dropped item lands on, and how long the item then lives. Scope is [ADR-0025](../../adrs/0025-scope-item-use-inventory.md):
-the server's outcomes in game frames; the cube's grid is a page here and its transmute is [items/cube](cube.md); trading is
-out. Using an item, the request gate and the drain's order are [items/use](use.md).
+the server's outcomes in game frames; the cube's grid is a page here and its transmute is [items/cube](cube.md); the trade
+between players is [items/trade](trade.md) ([ADR-0033](../../adrs/0033-scope-player-trade.md)). Using an item, the request gate and the drain's order are [items/use](use.md).
 
 ```mermaid
 flowchart LR
@@ -698,7 +698,7 @@ An item's page, cell, mode and location byte; a belt box; a body location; the c
 - **`0x18` sets the page before the placement**: a refused item carries the new page byte. [I] (0x0054AC68)
 - **`DropGoldAmount` passes `fallback` 0**; every other direct drop passes 1. [I] (0x0055A15C)
 - **Store `gridX`, `gridY` as bytes**: the Hireling second-set rows hold 255 from blank cells. [C] (data) ([Inventory](../../tables/Inventory.md), 0x0065C1F0)
-- **Trading is not specified here.** Pages 1 and 2 and the trade test are named only. [I] (0x00535610, [ADR-0025](../../adrs/0025-scope-item-use-inventory.md))
+- **Trading is specified in [items/trade](trade.md)** (*2026-11-10, plan 0067 Phase 3*): pages 1 and 2, the trade test and what it does to a trading player's moves are there. [I] (0x00535610, [ADR-0033](../../adrs/0033-scope-player-trade.md))
 
 ## Evidence
 

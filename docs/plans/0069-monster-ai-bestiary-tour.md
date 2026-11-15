@@ -1,6 +1,6 @@
 # 0069 — Monster AI bestiary tour: the catalogue's harness rows of plan 0066
 
-> **Status:** proposed (drafted 2026-11-10, `lane/n69a`; Tier A review accepted with fixes 2026-11-10; the owner approves it, questions 1 and 2)
+> **Status:** approved (2026-11-10, by the owner, as recommended: question 1 (a), question 2 (a); not started: the owner starts it)
 > **Created:** 2026-11-10
 > **Owner skill(s):** reverser (every phase; the re-tag is plan 0066 Phase 3's, spec-writer)
 > **Related ADRs:** 0003-runtime-experiments, 0004-boundary-oracles-in-reproduction, 0021-observed-boundaries-in-emulation, 0023-review-tiers-and-gate-first-fixes, 0028-case-and-process-in-experiment-records
@@ -442,3 +442,9 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   39 statements. The tour's scope is therefore **241** statements, not the 237 counted above at `4fb8b55f`. The
   figures above stay as drafted; Phase 1a recounts the scope from the inventory at its start, and the cost scales by
   about 2 %.
+
+### 2026-11-10 — Owner decision
+
+- **Approved as recommended:** question 1 (a), the tour as drafted (about 3.4M tokens; scope 241 after 0066 S1d);
+  question 2 (a), the answer to plan 0066's question 3 (c) approves the tour by name, so the per-launch count does not
+  gate it. Not started: work across the project is paused by the owner; Phase 1a starts when the owner resumes.
