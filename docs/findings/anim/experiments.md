@@ -412,3 +412,189 @@ data, single player, the same saves (`saves-2026-10-30-anim-p3/`, unchanged), `/
 - **Kept files:** manifest `2026-10-30-anim-p3b-manifest.sha256` (122 lines, base `workspace/logs/anim/`, passes): logs,
   pilot outputs, potion counts, screenshots, batch outputs 1-6, lists, check, summary. The p3 manifest still passes.
 
+
+### Addendum 2026-11-15: plan 0066 batch S6a, new tallies over the 131 kept logs (`lane/n66k`)
+
+- **Question:** (plan 0066 Phase 1, batch S6a) which inferred statements of anim/timing do the kept logs of this run and
+  its three predecessors (`2026-10-30-anim-p3b-all4.lst`, 131 logs, revs 4 (37), 5 (18), 6 (76), no `CAP` line) hold
+  once a tally reads them, and which need another source?
+- **Setup:** no game, no Ghidra. `tools/sweep2_s6ab.py` (`f223ad12…`) parses each log once, runs `tools/anim.py`'s
+  `Checker` on it unchanged (the control) and the S6 observers on the same lines; `static` reads the return sites the
+  observers classify with r2 and the int3-padding entry next to `re/symbols.csv`, and the raw-byte callers of
+  `GetHitRoll`. One kept run each under `systemd-run --user --scope -p MemoryMax=4G` (the logs pass in 50 s):
+  `workspace/logs/n66k/check.txt` (`0b8f36b7…`, 52 lines, `S6 total bad=0 control_bad=0`) and `static.txt`
+  (`d0e848ac…`, `bad=0`); `manifest.sha256` (`50f61c5e…`, 2 lines) passes from `workspace/logs/n66k`. Development
+  outputs under `dev/` with `dev/manifest-dev.sha256` (8 lines, passes from `dev/`); `dev-run5-premature-check.txt` is
+  the run before the reschedule model took the weapon class from the last rate call (its only difference: the 893
+  reschedules counted "no rows").
+- **Procedure:**
+  ```
+  D=workspace/logs/n66k
+  systemd-run --user --scope -p MemoryMax=4G python3 -I tools/sweep2_s6ab.py static > $D/static.txt
+  systemd-run --user --scope -p MemoryMax=4G python3 -I tools/sweep2_s6ab.py logs > $D/check.txt
+  ```
+- **Control:** the run's `CHECK anim …` line equals `2026-10-30-anim-p3b-check.txt`'s byte for byte (`sched=46722/0
+  fire=72014/0 dispatch=71433/0 adv=4117/0 ghr=13932/0` and the rest).
+- **Static (`static.txt`):** the four `UNIT_AnimSetRate` returns 0x00624444, 0x00624469, 0x006244C5, 0x006244E3 lie in
+  `UNIT_AnimInit` (r2: `call 0x623f50` before each, the four calls of the body), 0x0055343A and 0x00553460 in
+  `SUNIT_AnimInit` (its two calls), 0x0055399F and 0x005539AC in `SUNIT_CancelModeEvents` (`call 0x540e60`), 0x005A8281
+  in `MonModeEndGeneric` (`call 0x624690`); owner by symbol and by padding agree for all 9; `UNIT_AnimInit` ends at
+  0x00624690 both ways. `GetHitRoll` 0x0057CB00 has two call sites, 0x0057D0C8 and 0x0057D37A, both in `COMBAT_GetHit`
+  (raw bytes; r2 decodes `call 0x57cb00` at each), no abs32 reference. `SOSC1HS` and `SOSCSTF` have `SOSCHTH`'s 14
+  frames, speed 256 and event 1 at frame 7; `PAGH1HS` has `PAGHHTH`'s 5 frames and speed 256.
+- **Observed** (`check.txt`; counts are lines of the 131 logs):
+  - *Mode set → animation start* (`mset-animinit`): every mode set to a new mode is followed, in its frame and before
+    the unit's next mode set, by exactly one `UNIT_AnimInit` rate return (players 34 259, monsters 244 552) or one
+    object `OA0` (1 481), and that call already sees the new mode; no set to the current mode is (players 12 055,
+    monsters 30 130, objects 260). 2 new-mode sets end their log. `[C]` (run:2026-10-30-anim-p3b).
+  - *`UNIT_AnimInit`'s branch* (`animinit-branch`): a display type 0 unit (an unshapeshifted player, or a monster whose
+    record carries a player token) returns at 0x00624444 in mode 18 (674) and at 0x00624469 otherwise (32 626, of them
+    500 monsters in mode 14); a display type 1 unit at 0x006244C5 in mode 14 (4 486) and at 0x006244E3 otherwise
+    (238 566). `+0x30` is set at both sequence calls and clear at 0x00624469; at 0x006244E3 it is still set in 4 460
+    calls (the monster branch clears it after its call). 1 957 rev-4 calls of a shapeshifted player are not classified
+    (no form state in rev 4). `[C]` (run:2026-10-30-anim-p3b).
+  - *`SUNIT_AnimInit`* (`sui-branch`, `two-rate-calls`): its rate return is 0x0055343A exactly at a monster mode-14 or
+    player mode-18 start with a sequence (5 295) and 0x00553460 otherwise (192 006); all 46 722 schedules follow it, and
+    their rate is its rate. 44 415 starts have both calls, `UNIT_AnimInit`'s first; in 168 the two rates differ and the
+    schedule takes the second. `[C]` (run:2026-10-30-anim-p3b).
+  - *The start order* (`start-sequence`, 140 936 player and monster scheduled or every-frame starts): `SUNIT_AnimInit`'s
+    rate, then the two cancels of kinds 0 and 1 from `SUNIT_CancelModeEvents`, then `SUNIT_ScheduleModeEvents` or
+    `SUNIT_ModeEveryFrame`, in every one. 88 player starts reschedule (`RSC`) after their schedule, in the same frame.
+    `[C]` (run:2026-10-30-anim-p3b).
+  - *Two clocks* (`two-clocks`): players schedule modes 0 (41), 4 (756), 7 (4 812), 9 (1 442), 10 (3 186), 11 (300), 12
+    (811), 14 (536), 15 (11), 16 (21), 18 (809) and run modes 2 (1 930), 3 (10 722), 19 (2) every frame; 1, 5, 17 queue
+    nothing. A monster start through `SUNIT_AnimInit` queues by its resulting mode's record (`g_MonModeRecords` +12) and
+    `g_MonModePerFrame` with the MonStats2 `*mv` bit: scheduled 0, 3, 4, 5, 6, 7, 8, 9 (A1 16 283, S1 2 144 …), every
+    frame 2, 13, 14, 15 and the `*mv` S1 (127) and S2 (16), nothing for 1, 12; 0 mismatches (one mode-5 start ends the
+    log). `[C]` (run:2026-10-30-anim-p3b).
+  - *Ends* (`player-mode-end`, `monster-dispatch`): each player kind-1 dispatch is followed in its frame by mode 17 from
+    mode 0 (39) and neutral otherwise (10 679), never 5: no end fell in a town. Monster kind-1 ends: DT → 12 (4 520), GH,
+    BL, A1, A2, S1, S2 → 1 (2 093, 91, 14 242, 5 233, 1 570, 254). 85 507 arrivals of WL and RN set mode 1 directly
+    from 0x005A8281 (74 522 from 2, 10 985 from 15). No monster dispatch carries `fz` 1. `[C]` (run:2026-10-30-anim-p3b).
+  - *Neutral and walk by town* (`town-modes`): player sets to 1 fall in the field (20 201), to 5 in a town (131), to 2
+    in the field (1 930); no set to 6; runs (3) keep mode 3 in a town (981); 262 sets of each neutral fall between two
+    pilot lines of different levels and are not classified. `[C]` (run:2026-10-30-anim-p3b).
+  - *`PlrModeLeaveOk`* (`leave-ok`, 26 574 `PL0`/`PL1` pairs): M4's block without the cursor test gives every return;
+    781 refusals, all from DT (6), GH (350) and BL (425) for requests outside {0, 1, 5, 17}; every request in A1, cast,
+    throw and kick (498, 930, 130, 173) returns 1; no request falls in `(E, E + 5]` (the slack is not separated); 192 SQ
+    requests are not modelled. `[C]` for the logged branches (run:2026-10-30-anim-p3b).
+  - *Get-hit and block are not left early* (`gh-bl-left`): the next mode set after a player GH (756) or BL (1 442) start
+    comes at its end frame (746, 1 436) or is a death before it (10, 5). `[C]` (run:2026-10-30-anim-p3b).
+  - *The hit's commands* (`gethit`, `stun-skips-roll`, `stat95`): on a player, get-hit commands mode 4 exactly when
+    `GetHitRoll` returned 0 (953) or the defender is stunned (2, no roll), not after a 1 (4 760); knockback requests 19
+    (15). On a monster, mode 3 follows exactly after a 0 (3 651; none after 4 566 ones), knockback sets 13 (919, 3
+    with no set). The next stat 95 after an open block gate is that frame (1 440, 185 of them after a refused command)
+    and after a shut gate unchanged (18 759). 515 monster hits share their segment with `MonKnockbackEnd`, whose command
+    is its own. `[C]` (run:2026-10-30-anim-p3b).
+  - *`GetHitRoll`* (`ghr-divisor`): divisor 32 at 38 calls, 4 of which a divisor of 16 would answer differently, all as
+    32; 64 at 4 calls, none separating; 222 calls on monsters without a GH mode, 28 of which would return 0 without the
+    test, all 1. `[C]` for 32 and the mode test, 64 not separated (run:2026-10-30-anim-p3b).
+  - *Closed forms* (`k-forms`, 45 913 non-sequence schedules): `+0x48 = frames << 8` at every one; K1's kind-0 list and
+    end equal the logged queue at every one (no schedule drops an event past `N`, none has no step); K2's band
+    `X_n ≤ X < X_{n−1}` holds at all 39 550 plain-rate schedules (28 922 exactly at `X_n`); K3's stat band at all 3 161
+    cast, 5 132 get-hit and 1 626 block schedules (305 at the least stat). `[C]` within those domains (run:2026-10-30-anim-p3b).
+  - *Worked records* (`worked`): `SOSC1HS`/`SOSCSTF` at FCR 0, 20, 40, 50: rate 256, 299, 332, 345, length 14, 12, 11, 11,
+    the do at `T + 7, 6, 6, 6` (112 casts at FCR 20); `PAGH1HS` at FHR 0, 24, 48: rate 128, 179, 215, length 10, 8, 6;
+    `AMA11HS` at factor 80, 130, 147, 160: length 18, 11, 10, 9, the do at `T + 11, 7, 6, 6`. No `SOSCHTH`, `PAGHHTH`,
+    factor-100 `AMA11HS` or FHR-7 schedule is logged.
+  - *Reschedules* (`reschedule-e3`): all 893 `RSC` lists equal E3's (`RescheduleSkip` 819, `RescheduleAt` 74; every one a
+    player sequence); `RescheduleAt` leaves `+0x44 = (T − n) << 8` (74) and `RescheduleSkip` `(T − p) << 8` (819, a value
+    the spec does not state). `RescheduleFromPct` is not reached. The catalogue queues kinds 2 (181 836) and 12 (9 206);
+    their dispatches are not logged. `[C]` (run:2026-10-30-anim-p3b).
+  - *Advances* (`advance`): 9 restarts (a same-mode set, only `SUNIT_AnimInit`'s rate, the first advance from 0);
+    `+0x48` equal across all 4 117 windowed pairs, none of which crosses a rate change; 476 pairs below rate `0x100`,
+    none where re-scanning the stood frame changes the result; 301 monster sequence starts with `+0x38` 0 and
+    `+0x34 = +0x48 = rows << 8`; no sequence step past the user's record. `[C]` for the restarts and the sequence start (run:2026-10-30-anim-p3b).
+  - *The plain monster attack* (`mon-attack-frame`, `delivery-frame`): with no used skill, A1's and A2's kind-0 events of
+    code 1 are followed in their frame by the attacker's hit (12 973 of 13 344; 5 187 of 5 293); events of code 2 by none
+    (A1 2 061, A2 187). 18 168 of 18 347 monster A1/A2 hits fall in a frame of the attacker's kind-0 dispatch.
+  - *Objects* (`chest-queue`): 161 object event-1 dispatches, none followed by a mode set or an animation start of that
+    object; no `OQ` line is logged at 0x005863B7 (the chest's queue). No chained pair of object start draws (the
+    checker's `chain-OA-OA` 0, 8 broken).
+  - *Mid-mode rate calls* (`sr-midmode`): the record changes at 52 player calls from `ITEMS_AttachToOwner` and 54 from
+    `SKILLS_ApplyAuraStats`, and at 1 390 monster calls (`MonInitMode` 1 363, `AURA_ApplyToTarget` 27), the frames
+    with it at 1 355.
+  - *Terms* (`rate-terms`): 13 693 monsters' first rate call with no state and no mod flags carries stats 67/68/69 =
+    75/100/100, 2 carry 75/95/100; 16 962 of 17 199 plain player calls carry the hands' item stat 93 sum.
+- **Conclusion:** the S6a rows are settled in plan 0066's inventory (`anim-timing.md`, each *Route* cell's S6a note).
+  **Contradicted in part:** timing § I2 `MonAttackFrame`'s "strikes on each of its scheduled events (any code 1–4)": a
+  code-2 event of a no-skill A1 or A2 is followed by no hit in 2 248 of 2 248 dispatches, against 18 160 of 18 637 for
+  code 1; which test separates them (`MonEventDispatch`'s kind-0 path or `MON_MeleeHit`) is not read (→ c, S6c). The
+  spec's "15 restarts" counts the logs of part 2 by another rule; 9 is this tally's (a same-mode set, then an advance
+  of that unit). (run:2026-10-30-anim-p3b)
+
+### Addendum 2026-11-15: plan 0066 batch S6a part 2 and batch S6b, new tallies over the same 131 logs (`lane/n66k`)
+
+- **Question:** (plan 0066 Phase 1, S6a rows 78, 103, 105 and batch S6b) which inferred statements of anim/movement and
+  anim/README, and the three timing rows part 1 left, do the kept logs hold once a tally reads them?
+- **Setup:** no game, no Ghidra. `tools/sweep2_s6ab.py` (`0ab4596e…`) gains a section `logs2` (the same one pass per log
+  of `2026-10-30-anim-p3b-all4.lst`, `tools/anim.py`'s `Checker` unchanged as the control, then the part 2 observers,
+  which read the Checker's branch and factor on each SR line) and `ai78` (the plan 0052 ai logs under
+  `workspace/logs/ai`). Its section `logs` is unchanged: a rerun gives part 1's `check.txt` byte for byte
+  (`dev/check-part1-rerun.txt`). Kept runs under `systemd-run --user --scope -p MemoryMax=4G`:
+  `workspace/logs/n66k/check-part2.txt` (`8a0baffc…`, 130 lines, `S6b total bad=94 control_bad=0`) and `ai78.txt`
+  (`9c066151…`); `manifest-part2.sha256` (`9d65825c…`, 2 lines) passes from `workspace/logs/n66k`. Development outputs
+  under `dev/manifest-dev2.sha256` (6 lines, passes from `dev/`; `full2-dev1`–`3` are earlier observer revisions).
+- **Procedure:**
+  ```
+  D=workspace/logs/n66k
+  systemd-run --user --scope -p MemoryMax=4G python3 -I tools/sweep2_s6ab.py logs2 > $D/check-part2.txt
+  systemd-run --user --scope -p MemoryMax=4G python3 -I tools/sweep2_s6ab.py ai78 > $D/ai78.txt
+  ```
+- **Control:** the `CHECK anim …` line equals part 1's and `2026-10-30-anim-p3b-check.txt`'s (`rate=541068/0
+  pathspeed=216788/0 pathspeed-step=240149/0 drain=88103/0 kb-end=5027/0` and the rest).
+- **Observed** (`check-part2.txt`, `ai78.txt`):
+  - *The run's stat 67* (`run-stat67`): between two rate calls of a player with the same states, entering mode 3 raises
+    stat 67 by 50 (5 121 starts; the wolf 26 and the bear 28 with their form state) and leaving it lowers it by 50
+    (5 119, 26, 28); mode 19 likewise (2 and 2); no other delta. Every class's `RunVelocity · 100 ÷ WalkVelocity − 100`
+    is 50, so the class read (real or display) is not separated. `[C]` (run:2026-10-30-anim-p3b).
+  - *Bases and the shared factor* (`move-bases`, on the moving rate calls the control reproduces): monster RN calls
+    whose `+0x38` differs from `+0x36` 33 390; player run calls on `0x65` 5 395, walk on `0xD5` 938; 208 555 monster
+    and 5 889 player moving calls at a factor other than 100, each reproducing both the rate and the path speed with
+    one `X`. A player walk at `X` 100 has path speed 1 536 and rate 213 (440). `[C]` (run:2026-10-30-anim-p3b).
+  - *A monster's stat 67* (`mon-stat67`, neutral rate calls with no logged state after the creation frame, units the
+    `MON` lines name): no mods 75 (6 578 units, 338 more with `Velocity` 0); `champion` 95 (50), `possessed` 95 (7),
+    `fast` `75 + clamp(2048 ÷ Velocity − 128, 10, 100)` (161), `fanatic` 175 at `Velocity` 4 (2: the clamp only, no
+    + 20). 74 units show none of these values (58 without mods, 7 champion, 9 fast; `bad`), unexplained. `[C]` for the
+    start at 75 in 6 578 of the 6 636 no-mod units (the 58 others differ, unexplained); the mods' values `[I]` (the 74). (run:2026-10-30-anim-p3b)
+  - *`Velocity`-0 classic classes in S1–S4* (`v0-s1`): no rate call logged.
+  - *The snap* (`snap`): every step that reaches its point lands on the point's subtile centre (3 277 reaches: player
+    walk 198, run 1 269, sequence 10; monster path types 2, 5, 6, 7, 13, 15). `[C]` (run:2026-10-30-anim-p3b).
+  - *Frames per point* (`frames-per-point`): a segment started at a subtile centre with one speed and direction takes
+    `⌈rem ÷ max(|stepX|, |stepY|)⌉` frames to its point in 2 387 of 2 407 segments; the 20 others take longer
+    (14 monster, 6 player run segments; whether the collision walk cut them is not compared here). Player walk
+    3 subtiles on an axis: 8 frames (3); run: 6 (16). `[C]` for the 2 387 (run:2026-10-30-anim-p3b).
+  - *Arrival* (`arrive-end`): a step that reaches the path's last point is followed in its frame by the unit's mode
+    set: player walk to 1 (655) or 12 (2), run to 1 (3 805) or 12 (11), monster WL and RN to 1 (2 578, 249). Of the
+    windowed units' sets from a moving mode to 1, 7 973 follow such a step in the frame and 653 do not (other causes,
+    not read). `[C]` for the end on arrival (run:2026-10-30-anim-p3b).
+  - *The town drain* (`town-drain`): 4 685 drains in a town return 1 with stamina above 0 unchanged (the field rule
+    takes at least 1); 83 340 field drains return 1 and 78 return 0. `[C]` (run:2026-10-30-anim-p3b).
+  - *The run's turn to a walk* (`run-turn`, `run-turn-ef`): 75 sets 3 → 2 follow the unit's drain returning 0 in its
+    frame, queue the walk's `EF` in phase 3 and take the first walk step in that frame. The control's 6 offset-1 cases
+    have their `EF` in phase 11 after another set: 2 sets 3 → 2 with the frame's drain returning 1, each after a
+    request (`PA0`, `PL0`), and 4 same-mode sets 2 → 2 after the drain's 0: not the drain's turn inside the step. `[C]` (run:2026-10-30-anim-p3b).
+  - *The knockback bit* (`gh-kb-bit`): a hit with bit `0x8` on a monster whose MonStats2 `mKB` is 1 sets mode 13 (919)
+    or 0 (104, a kill) in its frame, 1 sets none; on `mKB` 0, 2 hits set nothing in their frame. No base class 78 hit is
+    logged. `[C]` for the `mKB` 1 start. (run:2026-10-30-anim-p3b)
+  - *The knockback plan* (`kb-plan`): every first knockback step (monsters 644, players 2) has path type 8, one point
+    and `+0x90` 5; the point lies `n = 3` subtiles away on the major axis (577) or nearer (67). Against the player
+    attacker's last pilot position, the point equals `start + (n·dx ÷ M, n·dy ÷ M)` (signed, toward zero) in 575 of
+    576 full-length plans, 378 of them off an axis; 1 differs (a stale pilot position cannot be ruled out). `[C]` for
+    the unblocked plan; the line test's shortening (67) not compared. (run:2026-10-30-anim-p3b)
+  - *Knockback length* (`kb-advances`): from `+0x44 = 0`, the advances up to `MonKnockbackEnd` number
+    `max(1, ⌈L ÷ r⌉ − 1)` in 717 of 717 knockbacks, all with `⌈L ÷ r⌉ ≥ 2` (so `⌈L ÷ r⌉` alone fails each); 190 end
+    in another mode set first. `[C]` (run:2026-10-30-anim-p3b).
+  - *Mid-window speed changes* (`slow`): 32 moving rate calls inside a window that change the path speed (cold 10, other
+    22) are taken by the unit's next step. `[C]` (run:2026-10-30-anim-p3b). Slows Target's state 24 is not in the logger's `ss` list (11, 139,
+    140), so its rate calls are not identified.
+  - *MonModeVelocity* (`vel-cmd`): 33 067 monster rate calls return to 0x005A63E3, each reproduced by the control with
+    the stat 67 it then carries (values 7 to 275); the command block's `+0x10` is not logged.
+  - *Other players' restarts* (`rv-req-other`): the first request after `T` and the next start, for get-hit (756),
+    block (1 442), S2 (536), S3 (11), S4 (21); no A2 or S1 action is logged.
+  - *Timing row 78* (`ai78`): the ai logs date a neutral start only at an AI command to mode 1 (18 decisions); none
+    of the 12 next decisions it pairs comes at the decision's frame + `aidel` (e.g. 10 and 12 frames for `aidel` 15):
+    the think's own delay decides there, so the re-queue is not separated.
+- **Conclusion:** the rows are settled in plan 0066's inventory (`anim-movement.md`, `anim-README.md`, `anim-timing.md`
+  rows 78, 103, 105). No contradiction of an anim statement. `fanatic`'s 175 is a lead against monsters/stats § G's
+  "champion part" wording (backlog `2026-11-15-reverser-spec-writer-plan-0066-s6a-corrections`).

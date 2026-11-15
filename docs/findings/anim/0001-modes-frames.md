@@ -139,7 +139,7 @@ New names (subsystem `anim/timing`) and the existing ones this finding reads; al
 | `0x00645270` / `0x00645190` | `UNIT_AnimTransform` / `sub_00645190_PlrToMonMode` | the shapeshift states' display type, class and mode (§ 2) | C / C |
 | `0x005533D0` | `SUNIT_AnimInit` | server re-init at a mode start (§ 3) | I |
 | `0x005539B0` | `SUNIT_ScheduleModeEvents` | the schedule (§ 7) | C |
-| `0x00553B10` / `0x00553C70` / `0x00553DC0` | `sub_00553B10_RescheduleFromPct` / `sub_00553C70_RescheduleSkip` / `sub_00553DC0_RescheduleAt` | catalogue reschedules (§ 7.1) | I |
+| `0x00553B10` / `0x00553C70` / `0x00553DC0` | `sub_00553B10_RescheduleFromPct` / `sub_00553C70_RescheduleSkip` / `sub_00553DC0_RescheduleAt` | catalogue reschedules (§ 7.1) | I / C / C |
 | `0x00553F00` | `SUNIT_ModeEveryFrame` | event 0 every frame (raised at the Phase 2 review: 9 682 logged starts, `ef-first`, [run section](#plan-0050-phase-2-run2026-10-27-anim)) | C |
 | `0x00553990` / `0x00553570` | `SUNIT_CancelModeEvents` / `SUNIT_SetMode` | cancel events 0 and 1; `0x0057C980` then `UNIT_SetMode` | I |
 | `0x005416B0` / `0x005415E0` / `0x00541650` | `sub_005416B0_EventQueueAt` / `sub_005415E0_EventQueueEveryFrame` / `sub_00541650_UnitQueueEveryFrame` | the event queue (§ 6) | I |
@@ -420,6 +420,11 @@ unit->animFrame = game->frame << 8;
   (Whirlwind), Leap Attack. These are catalogue paths (plan 0046) and boundary oracles here.
   (fn:sub_00553B10_RescheduleFromPct@0x00553B10, fn:sub_00553C70_RescheduleSkip@0x00553C70,
   fn:sub_00553DC0_RescheduleAt@0x00553DC0, `p50a-anim-scan.txt` `CALL SUNIT_Reschedule*`)
+- [C] **Plan 0066 batch S6a (2026-11-15, `lane/n66k`).** The 893 logged reschedules (`RescheduleSkip` 819,
+  `RescheduleAt` 74, all player sequences) queue exactly the list above from `p`, with `p` from the unit's last
+  `+0x44`; `RescheduleAt` leaves `+0x44 = (T − n) << 8` and `RescheduleSkip` `(T − p) << 8`. `RescheduleFromPct` is
+  not reached. (fn:sub_00553C70_RescheduleSkip@0x00553C70, fn:sub_00553DC0_RescheduleAt@0x00553DC0,
+  run:2026-10-30-anim-p3b)
 
 ### 8. The per-frame advance
 
@@ -535,6 +540,10 @@ for (; f <= (unit->animFrame >> 8); f++) take(f);
   skill when the event byte is 1, or bit 6 set in mode 14), then advances. Since `MonModeFrameEvent` ignores the 2,
   an every-frame attack or skill mode with no end call of its own lasts until another command.
   (fn:sub_005A7670_MonAttackFrame@0x005A7670, 0x005A76DF–0x005A7741)
+- **Plan 0066 batch S6a (2026-11-15, `lane/n66k`), contradicted in part.** "Any code 1–4" does not hold for code 2:
+  with no used skill, A1's and A2's kind-0 dispatches of code 2 are followed in their frame by no hit of the attacker
+  (2 248 of 2 248), those of code 1 by one in 18 160 of 18 637. Which test drops code 2 (the dispatch's kind-0 path or
+  `MON_MeleeHit`) is not read: `[I]`. (run:2026-10-30-anim-p3b, fn:sub_005A7670_MonAttackFrame@0x005A7670)
 - [I] **`MonModeEndGeneric`** (the end of GH, BL, A1–S2, SQ; walk and run on arrival): for a `SplEndGeneric` base class
   in its listed mode (110 `vulture1` S1, 247 `frogdemon1` SQ, 136 `batdemon1` S3/S4, 230/231 any, 118 `willowisp1`
   WL, 403 any) only the AI event, unless frozen and alive; else, when `g_MonModeEndDirect[mode]` is 0 (all but WL and
