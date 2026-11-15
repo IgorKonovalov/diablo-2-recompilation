@@ -415,7 +415,7 @@ data, single player, the same saves (`saves-2026-10-30-anim-p3/`, unchanged), `/
 
 ### Addendum 2026-11-15: plan 0066 batch S6a, new tallies over the 131 kept logs (`lane/n66k`)
 
-- **Question:** (plan 0066 Phase 1, batch S6a) which `[I]` statements of anim/timing do the kept logs of this run and
+- **Question:** (plan 0066 Phase 1, batch S6a) which inferred statements of anim/timing do the kept logs of this run and
   its three predecessors (`2026-10-30-anim-p3b-all4.lst`, 131 logs, revs 4 (37), 5 (18), 6 (76), no `CAP` line) hold
   once a tally reads them, and which need another source?
 - **Setup:** no game, no Ghidra. `tools/sweep2_s6ab.py` (`f223ad12…`) parses each log once, runs `tools/anim.py`'s
@@ -446,49 +446,49 @@ data, single player, the same saves (`saves-2026-10-30-anim-p3/`, unchanged), `/
   - *Mode set → animation start* (`mset-animinit`): every mode set to a new mode is followed, in its frame and before
     the unit's next mode set, by exactly one `UNIT_AnimInit` rate return (players 34 259, monsters 244 552) or one
     object `OA0` (1 481), and that call already sees the new mode; no set to the current mode is (players 12 055,
-    monsters 30 130, objects 260). 2 new-mode sets end their log. `[C]`
+    monsters 30 130, objects 260). 2 new-mode sets end their log. `[C]` (run:2026-10-30-anim-p3b).
   - *`UNIT_AnimInit`'s branch* (`animinit-branch`): a display type 0 unit (an unshapeshifted player, or a monster whose
     record carries a player token) returns at 0x00624444 in mode 18 (674) and at 0x00624469 otherwise (32 626, of them
     500 monsters in mode 14); a display type 1 unit at 0x006244C5 in mode 14 (4 486) and at 0x006244E3 otherwise
     (238 566). `+0x30` is set at both sequence calls and clear at 0x00624469; at 0x006244E3 it is still set in 4 460
     calls (the monster branch clears it after its call). 1 957 rev-4 calls of a shapeshifted player are not classified
-    (no form state in rev 4). `[C]`
+    (no form state in rev 4). `[C]` (run:2026-10-30-anim-p3b).
   - *`SUNIT_AnimInit`* (`sui-branch`, `two-rate-calls`): its rate return is 0x0055343A exactly at a monster mode-14 or
     player mode-18 start with a sequence (5 295) and 0x00553460 otherwise (192 006); all 46 722 schedules follow it, and
     their rate is its rate. 44 415 starts have both calls, `UNIT_AnimInit`'s first; in 168 the two rates differ and the
-    schedule takes the second. `[C]`
+    schedule takes the second. `[C]` (run:2026-10-30-anim-p3b).
   - *The start order* (`start-sequence`, 140 936 player and monster scheduled or every-frame starts): `SUNIT_AnimInit`'s
     rate, then the two cancels of kinds 0 and 1 from `SUNIT_CancelModeEvents`, then `SUNIT_ScheduleModeEvents` or
     `SUNIT_ModeEveryFrame`, in every one. 88 player starts reschedule (`RSC`) after their schedule, in the same frame.
-    `[C]`
+    `[C]` (run:2026-10-30-anim-p3b).
   - *Two clocks* (`two-clocks`): players schedule modes 0 (41), 4 (756), 7 (4 812), 9 (1 442), 10 (3 186), 11 (300), 12
     (811), 14 (536), 15 (11), 16 (21), 18 (809) and run modes 2 (1 930), 3 (10 722), 19 (2) every frame; 1, 5, 17 queue
     nothing. A monster start through `SUNIT_AnimInit` queues by its resulting mode's record (`g_MonModeRecords` +12) and
     `g_MonModePerFrame` with the MonStats2 `*mv` bit: scheduled 0, 3, 4, 5, 6, 7, 8, 9 (A1 16 283, S1 2 144 …), every
     frame 2, 13, 14, 15 and the `*mv` S1 (127) and S2 (16), nothing for 1, 12; 0 mismatches (one mode-5 start ends the
-    log). `[C]`
+    log). `[C]` (run:2026-10-30-anim-p3b).
   - *Ends* (`player-mode-end`, `monster-dispatch`): each player kind-1 dispatch is followed in its frame by mode 17 from
     mode 0 (39) and neutral otherwise (10 679), never 5: no end fell in a town. Monster kind-1 ends: DT → 12 (4 520), GH,
     BL, A1, A2, S1, S2 → 1 (2 093, 91, 14 242, 5 233, 1 570, 254). 85 507 arrivals of WL and RN set mode 1 directly
-    from 0x005A8281 (74 522 from 2, 10 985 from 15). No monster dispatch carries `fz` 1. `[C]`
+    from 0x005A8281 (74 522 from 2, 10 985 from 15). No monster dispatch carries `fz` 1. `[C]` (run:2026-10-30-anim-p3b).
   - *Neutral and walk by town* (`town-modes`): player sets to 1 fall in the field (20 201), to 5 in a town (131), to 2
     in the field (1 930); no set to 6; runs (3) keep mode 3 in a town (981); 262 sets of each neutral fall between two
-    pilot lines of different levels and are not classified. `[C]`
+    pilot lines of different levels and are not classified. `[C]` (run:2026-10-30-anim-p3b).
   - *`PlrModeLeaveOk`* (`leave-ok`, 26 574 `PL0`/`PL1` pairs): M4's block without the cursor test gives every return;
     781 refusals, all from DT (6), GH (350) and BL (425) for requests outside {0, 1, 5, 17}; every request in A1, cast,
     throw and kick (498, 930, 130, 173) returns 1; no request falls in `(E, E + 5]` (the slack is not separated); 192 SQ
-    requests are not modelled. `[C]` for the logged branches.
+    requests are not modelled. `[C]` for the logged branches (run:2026-10-30-anim-p3b).
   - *Get-hit and block are not left early* (`gh-bl-left`): the next mode set after a player GH (756) or BL (1 442) start
-    comes at its end frame (746, 1 436) or is a death before it (10, 5). `[C]`
+    comes at its end frame (746, 1 436) or is a death before it (10, 5). `[C]` (run:2026-10-30-anim-p3b).
   - *The hit's commands* (`gethit`, `stun-skips-roll`, `stat95`): on a player, get-hit commands mode 4 exactly when
     `GetHitRoll` returned 0 (953) or the defender is stunned (2, no roll), not after a 1 (4 760); knockback requests 19
     (15). On a monster, mode 3 follows exactly after a 0 (3 651; none after 4 566 ones), knockback sets 13 (919, 3
     with no set). The next stat 95 after an open block gate is that frame (1 440, 185 of them after a refused command)
     and after a shut gate unchanged (18 759). 515 monster hits share their segment with `MonKnockbackEnd`, whose command
-    is its own. `[C]`
+    is its own. `[C]` (run:2026-10-30-anim-p3b).
   - *`GetHitRoll`* (`ghr-divisor`): divisor 32 at 38 calls, 4 of which a divisor of 16 would answer differently, all as
     32; 64 at 4 calls, none separating; 222 calls on monsters without a GH mode, 28 of which would return 0 without the
-    test, all 1. `[C]` for 32 and the mode test; 64 stays `[I]`.
+    test, all 1. `[C]` for 32 and the mode test (run:2026-10-30-anim-p3b); 64 stays `[I]` (fn:sub_0057CB00_GetHitRoll@0x0057CB00).
   - *Closed forms* (`k-forms`, 45 913 non-sequence schedules): `+0x48 = frames << 8` at every one; K1's kind-0 list and
     end equal the logged queue at every one (no schedule drops an event past `N`, none has no step); K2's band
     `X_n ≤ X < X_{n−1}` holds at all 39 550 plain-rate schedules (28 922 exactly at `X_n`); K3's stat band at all 3 161
@@ -500,11 +500,11 @@ data, single player, the same saves (`saves-2026-10-30-anim-p3/`, unchanged), `/
   - *Reschedules* (`reschedule-e3`): all 893 `RSC` lists equal E3's (`RescheduleSkip` 819, `RescheduleAt` 74; every one a
     player sequence); `RescheduleAt` leaves `+0x44 = (T − n) << 8` (74) and `RescheduleSkip` `(T − p) << 8` (819, a value
     the spec does not state). `RescheduleFromPct` is not reached. The catalogue queues kinds 2 (181 836) and 12 (9 206);
-    their dispatches are not logged. `[C]`
+    their dispatches are not logged. `[C]` (run:2026-10-30-anim-p3b).
   - *Advances* (`advance`): 9 restarts (a same-mode set, only `SUNIT_AnimInit`'s rate, the first advance from 0);
     `+0x48` equal across all 4 117 windowed pairs, none of which crosses a rate change; 476 pairs below rate `0x100`,
     none where re-scanning the stood frame changes the result; 301 monster sequence starts with `+0x38` 0 and
-    `+0x34 = +0x48 = rows << 8`; no sequence step past the user's record. `[C]` for the restarts and the sequence start.
+    `+0x34 = +0x48 = rows << 8`; no sequence step past the user's record. `[C]` for the restarts and the sequence start (run:2026-10-30-anim-p3b).
   - *The plain monster attack* (`mon-attack-frame`, `delivery-frame`): with no used skill, A1's and A2's kind-0 events of
     code 1 are followed in their frame by the attacker's hit (12 973 of 13 344; 5 187 of 5 293); events of code 2 by none
     (A1 2 061, A2 187). 18 168 of 18 347 monster A1/A2 hits fall in a frame of the attacker's kind-0 dispatch.
