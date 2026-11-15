@@ -971,3 +971,45 @@ revision 5 (docstring names it) and `tools/test_ai_model_check.py`.
 - **Review request: Tier B** (plan § Phase 1c). Check against the kept outputs: each model against its block (the 31
   docstrings name what is not compared and why), the 88 tests, the 6 exemptions, the byte-identical regression and revision 4
   check, the 0 mismatches on the 38 logs with the 9 non-zero counts, and the proposed rev 7 words.
+
+### 2026-11-15 — Phase 2 checkpoint 1: resume note (reverser, `lane/n69d`)
+
+Paused at the owner's request, at a case boundary (the 4th launch had not started; the batch runner was stopped between cases,
+`slots.py stop 2`, slot 2 holds no process and no aside, `saves.py --slot 2 restore n69d` done). Harness work on slot 2 only;
+branched from `main` `82eaa099`. Kept outputs in `workspace/logs/n69d/` (`manifest-ckpt1.sha256`, 13 lines, passes from that
+directory): the raw logs, marks and the three case logs of `run:2026-11-15-ai-tour-1` (`t-a1-town` L1, `t-a1-cold` L2, `t-a1-stony` L3,
+all seed 7159, fresh), `words-ckpt.txt` (`tools/ai_tour_words.py`), `model-check-ckpt.txt`, the runner's stdout. Development logs
+(three smokes and a shared pair) are `workspace/logs/ai/dev-2026-11-15-*` and `workspace/logs/n69d/dev/`.
+
+- **Done:**
+  - Logger rev 7 (`tools/gdb/ai.py`, `REV = 7`): `R7W` word lines (MonPlayerBonus, MonsterOwnerRef, AiNearestPlayer with p's unit
+    type, StatListFindFlag at R118 and R119, AiTrapArrowKind's region word, MonStats Velocity/Run for rows 48 and 70, row 73's
+    `aurastate` and `+0x0E`), `AII`/`AIQ` at `MonAiInit`'s init call (row 43's and state 11's inits), the row 1 think window with
+    its two return sites (`ai-retsites.txt` 2 287, `ai_retsites.py check` equals), the calls inside `AiVileMotherSpawn`. The rev 7
+    call-site addresses of the Phase 1a audit are call sites; the breakpoints are at the return sites (+5), e.g. R54 0x005E73BD.
+  - `tools/ai.py` fills `dec["r7"]` and `parse()["inits"]`; `tools/test_ai.py` 25 tests; `tools/ai_tour_words.py` (new).
+  - `ai_model_check.py` revision 6 (docstring): the words feed R54, R32 (unit type), R70, R48, R78, R79, R118, R119; `UnitSetEvent`'s
+    `Unit+0xC4 |= 0x400` is made by R54 step 2 (behind the fork `2.setevent`) and R58 step 3, the Phase 1c review item.
+    `test_ai_model_check.py` 97 tests OK (`Revision6`, 9). `regress`: byte-identical, 32 entries, 38 logs; the 32 Phase 1c names
+    over the 38 logs: identical to Phase 1c's `new-entries-38.txt`.
+  - Predictions committed at `aafee9e3` (experiments.md, `run:2026-11-15-ai-tour-1`), before the first kept log.
+  - Launch against switch (dev, shared pair on slot 2): launch to ready 18.6 s and 19.1 s, a switch 18.7 s: no saving, so the
+    tour stays **fresh per case** (harness-play § Fresh process; ADR-0028 item 4 gives no reason to share).
+  - Kept so far, checked: 3 cases, `check` over the three logs 0 mismatches (R1 37 decisions ok, fork-free; R10 178 fork-free with
+    its word; R54 16, fork-free; R7 and the notes row 10; R36 21; R43 4 and 3 `AII`/`AIQ` pairs of 0x005F6630; R32 228, 210 ok,
+    18 stopped at the path action); `tools/ai.py check` 0 mismatches.
+- **Left (resume here):**
+  - Launch the rest of the Act I batch fresh, same command (`ai_sessions.py run --slot 2 --tag n69d --saves
+    workspace/logs/n69d/saves --run 2026-11-15-ai-tour-1 --fresh t-a1-darkwood t-a1-marsh t-a1-barracks t-a1-catacombs
+    t-h1h-a1-stony t-h1h-a3-flayer-p8 t-h1h-s-barb-flayer t-h1h-s-necro-curse`; the saves are built by `ai_sessions.py build
+    --saves workspace/logs/n69d/saves`, CombatSor `1d9de374…`). The launch numbers continue from L4 (a new run id or `--status`
+    avoids overwriting `…s2.status.json`; the pinned seeds hold). Then the regression case `a2-oasis` seed 5201 in its own
+    batch (its seed is `seed0 + launch 0`, so first in a batch).
+  - Run `ai_model_check.py check --logs`, `ai.py check`, `ai_resume_flip.py` (H1g `r` lines), `regress`, `ai_tour_words.py` over all
+    kept logs; the 38 kept logs' byte check; the `experiments.md` results, separation lines, decision counts per entry, case list
+    with process and position, the final `manifest.sha256`; this plan's Phase 2 log entry; the Tier B request.
+  - Prediction 3 so far: R7, R10, R36 (cold), R43 and its `AII` (stony) held; R59 not tested; `t-a1-town` gave R32 and R54 and R1
+    (R60 not seen in the dev logs); S5/S6 not seen.
+- **Not done in rev 7, on purpose:** R32's home and script words (no model key reads them), `objects.py`'s lines beside the
+  logger (R77, R80, R92 are Act II and III), R56/R71/R85/R128's Phase 1c words (Acts III to V). **For Phase 3:** the R68 model must
+  consume the calls now logged inside `AiVileMotherSpawn`, or an Act IV log shows a mismatch at the call after it.

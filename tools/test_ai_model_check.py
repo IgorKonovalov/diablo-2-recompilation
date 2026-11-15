@@ -1067,18 +1067,19 @@ class Revision6(unittest.TestCase):
         self.assertEqual(self.chk("R70", self.r70(60, None)).status, "ok")                # no word: not compared
 
     def test_arrow_region_word(self):
-        # R78: |x - tx| <= 2, v14 < T, region word 1: kind 1, Skill1 >= 0: UseSkill1; region 0: SetModeAtUnit(4)
-        calls = [("UnitGetRoom", 0, 0, [U], 0x7300000, 0), ("RoomGetLevelId", 0, 0, [0x7300000], 10, 0),
-                 ("SetModeAtUnit", G, U, [4, T], 1, 0, None, (0, 0, 0))]
-        kw = dict(dist=10, aip={1: 0, 2: 100, 3: 0, 4: 0})
-        d = path("R78", calls, **kw)
+        # R78: |x - tx| <= 2, v14 < T: v14 <- T; AiTrapArrowKind(room, level 10); kind != 1: SetModeAtUnit(4, t)
+        c = (100, 0, 0)
+        calls = [("UnitGetRoom", 0, 0, [U], 0x7300000, 0, None, c), ("RoomGetLevelId", 0, 0, [0x7300000], 10, 0, None, c),
+                 ("SetModeAtUnit", G, U, [4, T], 1, 0, None, c)]
+        d = path("R78", calls, dist=10, aip={1: 0, 2: 100, 3: 0, 4: 0})
         d["aid"]["x"], d["aid"]["t"] = 10, [0, 1, 4, 1, 11, 22]
-        d["r7"] = {"arrow.region": 0}
-        o = self.chk("R78", d)
-        self.assertNotEqual(o.status, "stop", o.why)
-        self.assertEqual(o.forks, 0 if o.status == "ok" else o.forks)
-        d["r7"] = {"arrow.region": 1}
-        self.assertNotEqual(self.chk("R78", d).status, "ok")      # kind 1 does not take SetModeAtUnit(4)
+        self.assertEqual(self.chk("R78", d).forks, 2)               # no word: the region forks
+        for w in (0, 2, -1):                                       # a set region other than 1, or unset below level 40: kind 0
+            d["r7"] = {"arrow.region": w}
+            o = self.chk("R78", d)
+            self.assertEqual((o.status, o.forks), ("ok", 0), w)
+        d["r7"] = {"arrow.region": 1}                              # kind 1: the arrow, not SetModeAtUnit(4)
+        self.assertEqual(self.chk("R78", d).status, "mismatch")
 
     def test_r118_flag_word(self):
         d = path("R118", [("Idle", G, U, [7], 0, 1)], melee=1, dist=100, aip={1: 0, 3: 100, 4: 5, 5: 7})

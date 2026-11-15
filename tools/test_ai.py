@@ -308,5 +308,24 @@ class LoggerSourceTest(unittest.TestCase):
         self.assertIn("(0x005B0CD0, 0x005B0D00)", self.src)
 
 
+class TourWordsTest(unittest.TestCase):
+    def test_summary_counts_decisions_per_key(self):
+        import ai_tour_words as tw
+        with tempfile.NamedTemporaryFile("w", suffix=".log", delete=False) as fh:
+            fh.write('AI logger armed rev 7 bmax 48\nAII {"u":1,"fn":6252080,"n":2}\nAIQ {"u":1,"fn":null,"n":3}\n'
+                     'AID {"n":4,"ai":10}\nR7W {"k":4,"key":"MonPlayerBonus","v":1,"n":5}\n'
+                     'AID {"n":6,"ai":32}\nR7W {"k":6,"key":"AiNearestPlayer","v":[0,0,null],"n":7}\n'
+                     'R7W {"k":6,"key":"AiNearestPlayer","v":[1,0,0],"n":8}\nLOGERR x\n')
+            p = fh.name
+        s = tw.summary(p)
+        os.unlink(p)
+        self.assertEqual(s["armed"], "AI logger armed rev 7 bmax 48")
+        self.assertEqual(dict(s["rows"]), {10: 1, 32: 1})
+        self.assertEqual((s["word_lines"]["AiNearestPlayer"], s["carrying"]["AiNearestPlayer"]), (2, 1))
+        self.assertEqual(s["inits"][("AII", 6252080)], 1)
+        self.assertEqual(s["other"]["LOGERR"], 1)
+        self.assertIn("WORD AiNearestPlayer", tw.render(p, s))
+
+
 if __name__ == "__main__":
     unittest.main()
