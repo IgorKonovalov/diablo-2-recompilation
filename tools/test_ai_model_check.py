@@ -224,6 +224,9 @@ class Recorder(M.Run):
 
     def call(self, label, name, blk=None, **kw):
         fn, ecx, edx, a = conv_words(name, kw, self.G, self.U, self.rnd)
+        for o in (0x14, 0x18, 0x1C):          # revision 5: a word the model stored without knowing it (a found guid)
+            if self.v[o] is None:
+                self.v[o] = self.rnd.choice(POOL)
         b = {"k": 10, "n": self.k, "fn": fn, "ra": 0x5F0000 + self.k, "ecx": ecx, "edx": edx, "a": a,
              "s": "%08x:%08x" % self.seed, "c": [M.u32(self.v[o]) for o in (0x14, 0x18, 0x1C)], "c4": self.c4, "b": {}}
         for i, words in (blk or {}).items():
@@ -284,6 +287,9 @@ def record(model, th, rnd):
     """A decision written by running `model` with the recorder, and the recorder's answers to the unknown branches; None
     when the model stops on these inputs."""
     d = rand_decision(rnd, th)
+    name = next((n for n, (t_, m_, _) in M.MODELS.items() if m_ is model and n in R7WORDS), None)
+    if name and rnd.random() < 0.5:
+        d["r7"] = R7WORDS[name](rnd)
     r = Recorder(d, rnd)
     try:
         model(r)
@@ -318,12 +324,35 @@ def check_given(model, dec, given, flip=None, limit=64):
 
 NEW = ("R8", "R16", "R142", "R17", "R18", "R24", "R25", "R27", "R72", "R74", "R115", "R116", "R117", "S15", "R119",
        "R120", "R122", "R123", "S16", "R126", "R129", "R136", "R137", "S5", "S6", "R41", "R42", "R58", "R60")
+# plan 0069 Phase 1c (revision 5): H1c, H1g (with the notes row) and H1h. R1 is not here: on a rev 6 decision (the
+# recorder's) it stops, and its block is R100's `m_r1`, which S1b's logs check; Paths.test_r1_* covers both inputs.
+NEW5 = ("R38", "R45", "R66", "R77", "R80", "R92", "R50", "R53", "R55", "R59", "R85", "R94", "R128",
+        "R7", "NOTES", "R11", "R14", "R33", "R36", "R39", "R40", "R49", "R56", "R57", "R71", "R93", "R98",
+        "R10", "R32", "R48", "R73")
+# the rev 7 words the recorder gives (half of its decisions) to the entries that read them, as Phase 2's logs will
+R7WORDS = {
+    "R10": lambda rnd: {"MonPlayerBonus": rnd.choice((0, 1, 2))},
+    "R48": lambda rnd: {"MonsterOwnerRef": (rnd.choice((0x55, 0x99)), rnd.choice((0, 1, 3)))},
+    "R32": lambda rnd: {"AiNearestPlayer": (rnd.choice((0, U, 0x7200000)), rnd.choice((0, 1)))},
+    "R73": lambda rnd: {"R73.aurastate": rnd.choice((-1, 5, 40)), "R73.md0e": rnd.choice((0, 3, 4, 5))},
+    "R56": lambda rnd: {"owner.mode": rnd.choice((1, 12, 14))},
+    "R71": lambda rnd: {"found.mode": rnd.choice((1, 12))},
+}
 # branches no decision of the recorder can tell from their reverse, with the reason (a test of a value the block then
 # does not read, or a path the block makes unreachable)
 EXEMPT = {
     "R24": {"2.1.aip(5)<v18": "its stores follow the arm's last call: run_check's FLIP sees them at the next decision"},
     "R27": {"5.v14<1": "its store follows the block's last call: run_check's FLIP sees it at the next decision"},
     "R25": {"g.dead": "the grant is rarely reached by random inputs: Paths.test_r25_grant reverses it"},
+    # revision 5
+    "R50": {"c2.D100<50-L": "its store (v18 <- 0) follows the case's last call: run_check's FLIP sees it at the next decision",
+            "c2.v14=0": "it sets st, stored to v1C after the case's last call: run_check's FLIP sees it at the next decision"},
+    "R93": {"3.v18<1": "its stores follow the skill, the block's last call: run_check's FLIP sees them at the next decision",
+            "5.v18<1": "its stores follow SetModeAtUnit, the block's last call: as 3.v18<1"},
+    "R94": {"8.aip(2)<v18": "its stores follow PathSetTargetPoint, the block's last call: run_check's FLIP sees them at the "
+                            "next decision"},
+    "R32": {"n.v14<0": "its store (v14 <- 0 against v14 - 1) follows the arm's last call: run_check's FLIP sees it at the "
+                       "next decision"},
 }
 
 
@@ -365,11 +394,12 @@ class Branches(unittest.TestCase):
 
     def test_every_entry_is_listed(self):
         self.assertEqual(len(NEW), 29)
-        for n in NEW:
+        self.assertEqual(len(NEW5), 31)
+        for n in NEW + NEW5 + ("R1",):
             self.assertIn(n, M.MODELS)
 
     def test_each_branch_fails_when_reversed(self):
-        for n in NEW:
+        for n in NEW + NEW5:
             with self.subTest(entry=n):
                 rep = branch_report(n)
                 self.assertNotIn("bad", rep, rep.get("bad"))
@@ -415,6 +445,17 @@ def low(n, k=1):
     for _ in range(k):
         s = ai.step(s)
     return s[0]
+
+
+def setctl(d, v14, v18, v1c):
+    """The AID line's control words `v14`, `v18`, `v1C` (and every call's, before the block's stores)."""
+    ctl = bytearray.fromhex(d["aid"]["ctl"])
+    for off, v in zip((0x14, 0x18, 0x1C), (v14, v18, v1c)):
+        ctl[off:off + 4] = M.u32(v).to_bytes(4, "little")
+    d["aid"]["ctl"] = ctl.hex()
+    for b in d["aib"]:
+        b["c"] = [M.u32(v14), M.u32(v18), M.u32(v1c)]
+        d["air"][b["n"]]["c"] = list(b["c"])
 
 
 SETSTATE, OVERLAY, LIFEPCT, SEARCH, T56 = 0x00639DB0, 0x00621E40, 0x005DD280, 0x005DD0B0, 0x005DF7D0
@@ -622,6 +663,255 @@ class Paths(unittest.TestCase):
         d = path("R58", [("FindHostile", G, U, [0, 0], 0x7200000, 0, {"0": [24]}), ("SetModeAtUnit", G, U, [4, 0x7200000], 1, 0)])
         self.ok("R58", d, forks=2)
 
+    # ---- plan 0069 Phase 1c (revision 5): one path per entry, written from its block
+    def test_r7_far_override_from_clamped_life(self):
+        # not melee: UnitLifePct 30, clamped to 40: Ovr(0, 60, 0), Walk13(t, 7); no draw
+        d = path("R7", [("UnitLifePct", 0, 0, [U], 30, 0), ("Ovr", U, 0, [60, 0], 1, 0), ("Walk13", G, U, [T, 7], 1, 0)])
+        self.ok("R7", d)
+        d["aib"][1]["a"][0] = 70
+        self.bad("R7", d)
+
+    def test_notes_second_draw_on_aip3(self):
+        # melee: draw 1 (87) fails aip(3) 85, draw 2 (83) passes it: T56(t, 4, 0) after two draws on the same slot
+        d = path("NOTES", [("T56", G, U, [T, 4, 0], 1, 2)], melee=1, aip={3: 85})
+        self.ok("NOTES", d)
+        self.ok("R7", d)
+        d["aid"]["aip"] = aip_hex({3: 88})
+        self.bad("NOTES", d)                                    # 87 < 88: the attack, not the walk
+
+    def test_r10_bonus_word_given_or_forked(self):
+        far = [("UnitGetRoom", 0, 0, [U], 0x7300000, 0), ("Ovr", U, 13, [100, 0], 1, 0), ("RunStop", G, U, [T, 3], 1, 0)]
+        d = path("R10", far, dist=15, aip={4: 100})
+        self.ok("R10", d, forks=1)
+        d["r7"] = {"MonPlayerBonus": 2}                         # 15 > 20 - 6
+        self.ok("R10", d)
+        d["r7"] = {"MonPlayerBonus": 0}                         # 15 <= 20: not the run
+        self.bad("R10", d)
+
+    def test_r11_flight_ends_and_walks(self):
+        # v14 = 2 (in flight), life 80: v14 <- 1, v18 <- 0; life > 75: the stat read; not melee: v14 <- 0, Ovr(13, ., 0),
+        # Walk13(t, 7)
+        d = path("R11", [("UnitLifePct", 0, 0, [U], 80, 0, None, (2, 0, 0)),
+                         ("StatsGetUnitStat", 0, 0, [U, 74, 0], 5, 0, None, (1, 0, 0)),
+                         ("Ovr", U, 13, [9, 0], 1, 0, None, (0, 0, 0)), ("Walk13", G, U, [T, 7], 1, 0, None, (0, 0, 0))],
+                 ctl14=2)
+        self.ok("R11", d)
+
+    def test_r14_ring_keeps_the_target_bits(self):
+        # no head record; not melee, not St3or19, dist 10 >= aip(1) 5: Ring((t & ~0xFF) | 3), aip(4) 0
+        d = path("R14", [("ParamsHead", U, 0, [], 0, 0), ("St3or19", U, 0, [], 0, 0), ("Ring", G, U, [T | 3], 1, 0)],
+                 aip={1: 5})
+        self.ok("R14", d)
+        d["aib"][2]["a"][0] = 3
+        self.bad("R14", d)
+
+    def test_r33_square_around_itself(self):
+        # chance(1) 100 (draw 1); x = 10 + 83 mod 20 - 10, y = 20 + 95 mod 20 - 10 (draws 2, 3)
+        d = path("R33", [("UseSkill", G, U, [0, 300, 0, 3, 25], 1, 3)], aip={1: 100, 3: 10},
+                 sk=sk_hex([300, -1, -1, -1, -1, -1, -1, -1]))
+        self.ok("R33", d)
+
+    def test_r36_charge(self):
+        d = path("R36", [("PathSetStopDist", 0, 0, [], 0, 0), ("Ovr", U, 13, [100, 0], 1, 0), ("RunStop", G, U, [T, 2], 1, 0)],
+                 dist=30, aip={5: 20})
+        self.ok("R36", d)
+
+    def test_r38_not_melee_walk(self):
+        d = path("R38", [("Walk", G, U, [T, 1], 1, 1, None, (0, 0, 0))], ctl14=1, aip={3: 100})
+        self.ok("R38", d)
+
+    def test_r39_first_melee_no_draw(self):
+        d = path("R39", [("SetModeAtUnit", G, U, [4, T], 1, 0, None, (1, 0, 0))], melee=1, sk=sk_hex([-1] * 8))
+        self.ok("R39", d)
+
+    def test_r40_killed_after_hatch(self):
+        d = path("R40", [("GetTargetUnit", G, U, [], 0x7200000, 0, None, (1, 0, 0)),
+                         ("UnitKilled", G, U, [0x7200000, 1], 1, 0, None, (1, 0, 0)), ("Idle", G, U, [200], 0, 0, None, (1, 0, 0))],
+                 ctl14=1, aip={1: 200})
+        self.ok("R40", d)
+
+    def test_r45_far_and_die(self):
+        self.ok("R45", path("R45", [("Idle", G, U, [25], 0, 0)], dist=30))
+        d = path("R45", [("SetMode", G, U, [0, 0, 0], 1, 0)], aip={3: 0})
+        setctl(d, 0, 1, 0)
+        d["aib"][0]["c4"] = 0x20000
+        self.ok("R45", d)
+
+    def test_r48_owner_word_given(self):
+        # t a monster whose owner record names a player (type 0): GameFindUnit(G, 0, 0x55) finds none; not St3or19,
+        # not melee: v14 <- 0, not chance(4) (aip 0): Walk(t, 7)
+        d = path("R48", [("UnitLifePct", 0, 0, [U], 90, 0), ("GameFindUnit", G, 0, [0x55], 0, 0), ("St3or19", U, 0, [], 0, 0),
+                         ("Walk", G, U, [T, 7], 1, 1)])
+        d["aid"]["t"][0] = 1
+        d["r7"] = {"MonsterOwnerRef": (0x55, 0)}
+        self.ok("R48", d)
+        d["aib"][1]["a"][0] = 0x56
+        self.bad("R48", d)
+        del d["r7"]
+        self.ok("R48", d, forks=1)                              # the guid is not compared without the word
+
+    def test_r49_line_clear_no_cast(self):
+        # not melee, not St3or19; the heal search finds none; the line is clear: chance(4) 0 (draw 1), D100 83 >= 30: Idle(20)
+        blk = ({"0": [0, 0, 0x7FFFFFFF, 0]}, {"0": [0, 0, 0x7FFFFFFF, 0]})
+        d = path("R49", [("UnitLifePct", 0, 0, [U], 90, 0), ("St3or19", U, 0, [], 0, 0),
+                         ("UnitSearch", G, U, [0, 0x005F7240, 1], 0, 0, blk), ("AiLineClear", U, T, [], 1, 0),
+                         ("Idle", G, U, [20], 0, 2)])
+        self.ok("R49", d)
+
+    def test_r50_far_wander(self):
+        # full life, not melee, dist 25 > 20: case 4: Ovr(0, 50, 0), WanderNear(t, 6) succeeds; v1C <- 0
+        d = path("R50", [("UnitLifePct", 0, 0, [U], 100, 0), ("Ovr", U, 0, [50, 0], 1, 0), ("WanderNear", G, U, [T, 6], 1, 0)],
+                 dist=25)
+        self.ok("R50", d)
+
+    def test_r53_no_cast_ring(self):
+        d = path("R53", [("StatsGetUnitStat", 0, 0, [T, 43, 0], 10, 0), ("StatsGetUnitStat", 0, 0, [T, 39, 0], 20, 0),
+                         ("Ring", G, U, [4], 1, 1)], ctl14=1)
+        self.ok("R53", d)
+        d["aib"][0]["a"][1] = 39
+        self.bad("R53", d)
+
+    def test_r55_near_idle_aidel(self):
+        d = path("R55", [("Idle", G, U, [9], 0, 1)], ctl14=1, sk=sk_hex([-1] * 8), ad=[9, 0])
+        self.ok("R55", d)
+
+    def test_r56_no_owner_dies(self):
+        d = path("R56", [("MonsterOwner", U, 0, [], 0, 0), ("UnitKilled", G, U, [0, 1], 1, 0)])
+        self.ok("R56", d)
+
+    def test_r56_owner_mode_word(self):
+        # an owner in mode 1 (given): no death draw; Skill1, Skill2 < 0; v1C 0: the act: not melee: Idle(aip(5))
+        d = path("R56", [("MonsterOwner", U, 0, [], 0x7200000, 0), ("Idle", G, U, [7], 0, 0)], aip={5: 7}, sk=sk_hex([-1] * 8))
+        d["r7"] = {"owner.mode": 1}
+        self.ok("R56", d)
+        del d["r7"]
+        self.ok("R56", d, forks=1)
+
+    def test_r57_first_submerge(self):
+        c = (0, 100 + 25 * 12, 1)
+        d = path("R57", [("UseSkill", G, U, [4, 300, T, 0, 0], 1, 0), ("Delay", G, U, [8], 0, 0)], aip={3: 12},
+                 sk=sk_hex([300, -1, -1, -1, -1, -1, -1, -1], (4,) + (0,) * 7))
+        self.ok("R57", d)
+        self.assertEqual(M.check(M.m_r57, d).run.v[0x18], c[1])
+
+    def test_r59_leash_idle(self):
+        d = path("R59", [("ParamsFind", U, 10, [0], 0x7300000, 0), ("AiDistToPointSized", T, 0, [0], 10, 0),
+                         ("Idle", G, U, [5], 0, 0)], dist=50)
+        self.ok("R59", d)
+
+    def test_r66_move_then_delay(self):
+        d = path("R66", [("MoveToPoint", G, U, [10, 20, 8], 1, 0), ("Delay", G, U, [8], 0, 0)], aip={1: 5, 2: 8})
+        self.ok("R66", d)
+
+    def test_r71_step_away_state(self):
+        d = path("R71", [("StepAway", G, U, [T, 16, 1], 1, 0)], ctl14=5)
+        self.ok("R71", d)
+        self.assertEqual(M.check(M.m_r71, d).run.v[0x14], 0)
+
+    def test_r73_melee_attack(self):
+        d = path("R73", [("UnitLifePct", 0, 0, [U], 90, 0), ("SetModeAtUnit", G, U, [4, T], 1, 1)], melee=1, aip={3: 100},
+                 sk=sk_hex([-1] * 8))
+        self.ok("R73", d)
+
+    def test_r73_aura_word(self):
+        # Skill2 400 with aura state 5 (given): HasState(U, 5) 1, so no armour; melee, chance(3) 100
+        d = path("R73", [("UnitLifePct", 0, 0, [U], 10, 0), ("HasState", 0, 0, [U, 5], 1, 0), ("SetModeAtUnit", G, U, [4, T], 1, 1)],
+                 melee=1, aip={3: 100}, sk=sk_hex([-1, 400, -1, -1, -1, -1, -1, -1]))
+        d["r7"] = {"R73.aurastate": 5}
+        self.ok("R73", d)
+        d["aib"][1]["a"][1] = 6
+        self.bad("R73", d)
+
+    def test_r73_walk_override_word(self):
+        # no skills, not melee, dist 10 >= aip(5) 0: chance(7) 100 (draw 1), one more step (draw 2): Ovr(2, 0, w) with w
+        # the new low word with its low byte replaced by 6 + (low & 1) (R73a, as logged); Walk(t, 7)
+        lo = low(None, 2)
+        w = (lo & 0xFFFFFF00) | (6 + (lo & 1))
+        d = path("R73", [("UnitLifePct", 0, 0, [U], 90, 0), ("Ovr", U, 2, [0, w], 1, 2), ("Walk", G, U, [T, 7], 1, 0)],
+                 aip={7: 100}, sk=sk_hex([-1] * 8))
+        self.ok("R73", d)
+        d["aib"][1]["a"][1] = 6 + (lo & 1)                      # the low byte alone is not the logged word
+        self.bad("R73", d)
+
+    def test_r77_shot_and_die(self):
+        self.ok("R77", path("R77", [("SetModeAtUnit", G, U, [4, T], 1, 0)], aip={1: 25, 2: 1}))
+        d = path("R77", [("SetMode", G, U, [0, 0, 0], 1, 0)], dist=30, aip={1: 25, 2: 1})
+        d["aib"][0]["c4"] = 0x20000
+        self.ok("R77", d)
+
+    def test_r80_r92_shot(self):
+        d = path("R80", [("UseSkill", G, U, [4, 300, T, 0, 0], 1, 0)], aip={1: 25, 2: 1},
+                 sk=sk_hex([300, -1, -1, -1, -1, -1, -1, -1], (4,) + (0,) * 7))
+        self.ok("R80", d)
+        self.ok("R92", d)
+
+    def test_r85_melee_attack(self):
+        d = path("R85", [("SetModeAtUnit", G, U, [4, T], 1, 1, None, (1, 0, 0))], melee=1, aip={1: 100})
+        self.ok("R85", d)
+
+    def test_r85_hydra_corner(self):
+        # not melee, Skill2 < 0; Skill1, v18 0 < T, dist 10 < aip(8) 20, rchance(4) 100 (draw 1): Pow2(4) 6 -> corner 2
+        d = path("R85", [("RangePow2", U + 0x20, 4, [], 6, 1), ("UseSkill", G, U, [4, 300, T, 17, 27], 1, 0)],
+                 aip={4: 100, 8: 20}, sk=sk_hex([300, -1, -1, -1, -1, -1, -1, -1], (4,) + (0,) * 7))
+        self.ok("R85", d)
+
+    def test_r93_skill_phase(self):
+        d = path("R93", [("UseSkill", G, U, [4, 300, T, 0, 0], 1, 0, None, (0, 1, 0))], aip={1: 1},
+                 sk=sk_hex([300, -1, -1, -1, -1, -1, -1, -1], (4,) + (0,) * 7))
+        self.ok("R93", d)
+
+    def test_r94_sweep_and_step(self):
+        # Skill1 < 0; dist 10 <= aip(4) 30; direction 3: SWEEP[0 + 8·3] = 1, STEP[1] = (0, 1): x 10, y 20 + 5
+        d = path("R94", [("UnitDirToPoint", 0, 0, [U, 12, 22], 5, 0), ("Dir64To8", 0, 0, [5], 3, 0),
+                         ("SetPathTargetUnit", 0, 0, [U, T], 1, 0, None, (0, 0, 1)), ("Idle", G, U, [10], 0, 0, None, (0, 0, 1))],
+                 aip={4: 30, 5: 5}, sk=sk_hex([-1] * 8))
+        self.ok("R94", d)
+        self.assertEqual([M.step_xy(i) for i in range(8)],
+                         [(1, 1), (0, 1), (-1, 1), (-1, 0), (-1, -1), (0, -1), (1, -1), (1, 0)])
+        self.assertEqual(M.sweep_table()[:8], [0, 0, 1, 2, 5, 6, 7, 0])
+        d["aib"][2]["c"][2] = 2
+        self.bad("R94", d)
+
+    def test_r98_life_walk(self):
+        d = path("R98", [("UnitLifePct", 0, 0, [U], 50, 0), ("Ovr", U, 0, [25, 0], 1, 0), ("Walk", G, U, [T, 7], 1, 0)])
+        self.ok("R98", d)
+
+    def test_r128_no_target_idle(self):
+        d = path("R128", [("HasState", 0, 0, [U, 12], 0, 0), ("GetUnitSkill", U, 300, [], 0, 0), ("Idle", G, U, [25], 0, 0)],
+                 sk=sk_hex([300, -1, -1, -1, -1, -1, -1, -1]))
+        d["aid"]["ctx"][2] = 0
+        d["aid"]["t"] = None
+        self.ok("R128", d)
+
+    def test_r32_home_unset(self):
+        self.ok("R32", path("R32", [("Idle", G, U, [20], 0, 0)]), forks=1)
+
+    def test_r32_nearest_player_word(self):
+        # home set (fork), class other; AiNearestPlayer gives p = U: no list (fork) -> false; the script step finds no
+        # record (R4, R5, R7 0); no path list: Idle(8)
+        d = path("R32", [("AiDistUnits", U, U, [], 0, 0), ("ParamsFind", U, 4, [], 0, 0), ("ParamsFind", U, 5, [], 0, 0),
+                         ("ParamsFind", U, 7, [], 0, 0), ("Idle", G, U, [8], 0, 0)])
+        d["r7"] = {"AiNearestPlayer": (U, 0)}
+        self.ok("R32", d, forks=2)
+        d["aib"][0]["edx"] = 0x7200000
+        self.bad("R32", d)
+
+    def test_r32_set_event_flag(self):
+        # home set, class other; p = 0x7200000 a player (fork) at distance 1: list, not busy, no interact, v14 0 (forks);
+        # step 7: v18 0 -> 60, UnitSetEvent sets Unit+0xC4 bit 0x400 before Idle(20)
+        d = path("R32", [("AiDistUnits", U, 0x7200000, [], 1, 0), ("Idle", G, U, [20], 0, 0, None, (0, 60, 0))])
+        d["r7"] = {"AiNearestPlayer": (0x7200000, 1)}
+        d["aib"][1]["c4"] = 0x400
+        self.ok("R32", d, forks=5)
+        d["aib"][1]["c4"] = 0x800
+        self.bad("R32", d)                                      # neither fork gives 0x800
+
+    def test_r1_window(self):
+        d = path("R1", [("UnitGetRoom", 0, 0, [U], 0x7300000, 0), ("Idle", G, U, [200], 0, 0)])
+        self.assertEqual(M.check(M.m_r1w, d).status, "stop")
+        d["rev"] = 7
+        self.ok("R1", d)
+
 
 class Revision4(unittest.TestCase):
     """The engine additions: a call on another unit's word, the opaque seed and the state selection."""
@@ -655,12 +945,52 @@ class Revision4(unittest.TestCase):
         self.assertNotIn("R12", M.SELECT)
 
 
+class Revision5(unittest.TestCase):
+    """The revision 5 additions: the rev 7 words as inputs, a store of an unknown word, the turret's tables."""
+
+    def test_rev7_word_or_fork(self):
+        d = decision([(IDLE, G, U, [1], 0, SEED)])
+        model = lambda r: r.call("i", "Idle", n=1 if M.known(r, "w", "k", lambda w: w == 3) else 2)
+        self.assertEqual(M.check(model, d).forks, 1)
+        d["r7"] = {"k": 3}
+        self.assertEqual((M.check(model, d).status, M.check(model, d).forks), ("ok", 0))
+        d["r7"] = {"k": 4}
+        self.assertEqual(M.check(model, d).status, "mismatch")
+
+    def test_unknown_store_is_not_compared_unless_flipped(self):
+        d = decision([(IDLE, G, U, [1], 0, SEED)])
+        d["aib"][0]["c"][1] = 0x1234
+
+        def model(r):
+            M.store_unknown(r, "set v18=guid", 0x18)
+            r.call("i", "Idle", n=1)
+        self.assertEqual(M.check(model, d).status, "ok")
+        self.assertEqual(M.check(model, d, flip="set v18=guid").status, "mismatch")
+
+    def test_unit_set_event_flag(self):
+        d = decision([(IDLE, G, U, [1], 0, SEED)])
+
+        def model(r):
+            M.unit_set_event(r, "x")
+            r.call("i", "Idle", n=1)
+        self.assertEqual(M.check(model, d).status, "mismatch")   # the call's c4 is 0: the bit is missing
+        d["aib"][0]["c4"] = 0x400
+        self.assertEqual(M.check(model, d).status, "ok")
+        self.assertEqual(M.check(model, d, flip="set c4|=0x400 (x.UnitSetEvent)").status, "mismatch")
+
+    def test_sweep_table_from_the_spec(self):
+        sw = M.sweep_table()
+        self.assertEqual(len(sw), 64)
+        self.assertTrue(all(0 <= v < 8 for v in sw))
+        self.assertEqual(sw[8 * 7:], [7, 0, 1, 4, 5, 6, 7, 7])
+
+
 def report():
     """`python3 -I tools/test_ai_model_check.py report`: per revision 4 entry, over the recorder's 1500 seeded decisions,
     how many stop, how many the unforked check decides (no unknown branch on the matching path), and the branches run and
     separated."""
     M.IMP_RECS = IMP
-    for n in NEW:
+    for n in NEW + NEW5:
         rep = branch_report(n)
         if "bad" in rep:
             print("ENTRY %s BAD %s" % (n, rep["bad"]))
