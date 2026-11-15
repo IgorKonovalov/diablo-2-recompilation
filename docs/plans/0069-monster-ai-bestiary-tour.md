@@ -1,6 +1,6 @@
 # 0069 — Monster AI bestiary tour: the catalogue's harness rows of plan 0066
 
-> **Status:** approved (2026-11-10, by the owner, as recommended: question 1 (a), question 2 (a)); Phase 1a done (`lane/n69a`, Tier B check: accept with fixes, 3; merged); Phase 1b running (`lane/n69b`, 2026-11-15; 29 of 29 entries modelled; Tier B check: accept, 0 fixes)
+> **Status:** approved (2026-11-10, by the owner, as recommended: question 1 (a), question 2 (a)); Phase 1a done (`lane/n69a`, Tier B check: accept with fixes, 3; merged); Phase 1b done (`lane/n69b`, 29 of 29 entries modelled; Tier B check: accept, 0 fixes; merged); Phase 1c running (`lane/n69c`, 2026-11-15; checkpoint 1: 31 of 31 entries and the notes row modelled, the 38-log check in progress)
 > **Created:** 2026-11-10
 > **Owner skill(s):** reverser (every phase; the re-tag is plan 0066 Phase 3's, spec-writer)
 > **Related ADRs:** 0003-runtime-experiments, 0004-boundary-oracles-in-reproduction, 0021-observed-boundaries-in-emulation, 0023-review-tiers-and-gate-first-fixes, 0028-case-and-process-in-experiment-records
@@ -862,3 +862,32 @@ Tier B check of `lane/n69b` (head `6af73f90`, then `main` merged in; the catalog
   would show as a seed mismatch in the first log that reaches it. 5: stops rather than guesses. 6: constant branch, documented.
 - **Routed.** Nothing disagrees with a document the lane does not own. Passes 7 and 8: the diff changes no finding, table or format doc.
 - **For Tier A or the owner:** none.
+
+### 2026-11-15 — Phase 1c checkpoint 1: resume note (reverser, `lane/n69c`)
+
+Paused at the coordinator's request (owner reboot). Static; no slot, no game, no Ghidra started. Branched from `main` `684332ee`.
+
+- **Done, uncommitted until this checkpoint:** `tools/ai_model_check.py` revision 5 (docstring not yet updated): models for all 31
+  entries, H1c (R38, R45, R66, R77, R80, R92, R50, R53, R55, R59, R85, R94, R128), H1g (R7, R11, R14, R33, R36, R39, R40, R49, R56,
+  R57, R71, R93, R98, and the notes row as `NOTES` on `m_r7`), H1h (R1 as `m_r1w`, which stops on a log below rev 7; R10, R32, R48,
+  R73), with their `MODELS` rows; engine helpers `r7`/`known` (a rev 7 word from `dec["r7"]`, else a fork), `store_unknown`,
+  `sweep_table` (R94's `SWEEP` read from the catalogue text) and `step_xy` (its `STEP` rule). `tools/test_ai_model_check.py`:
+  `NEW5`, `R7WORDS` (the recorder gives the rev 7 words to half its decisions), 6 new `EXEMPT` reasons (R50 two, R93 two, R94, R32:
+  stores after the last call), 35 new `Paths` tests, `Revision5` (3). The full suite last ran green at 82 tests, before `Revision5`.
+- **Found while running the 38 kept logs** (development output kept as
+  `workspace/logs/n69c/dev-new-entries-38-ckpt1.txt`, before the fix below). The logs **do** hold decisions for 9 of these
+  entries (R7 14, NOTES 14, R40 6, R49 17, R71 9 all fork-free and matching; R1 4 stopped; R32 751, R48 121, R73 171), so the
+  Done-when's "0 decisions" does not apply as written; report the counts instead.
+  - R48: all 121 mismatched on `UnitGetPlayerData`'s word: the logs pass the player as the stack word (`s1`), ECX holds the
+    level id. **Fixed** (`s1=p`), not yet rerun.
+  - R73: 42 mismatches at step 7's `Ovr`: the logged byte word is the whole new low word with its low byte replaced (`0x9BBAEE07`
+    for low `0x9BBAEE99`, `6 + (low & 1)` = 7), like R14a's ring argument. **To do:** compare `(low & ~0xFF) | (6 + (low & 1))`
+    (or the low byte only) and say so in the docstring; the logged `HasState` state word there is 14 (a value for the proposed
+    `R73.aurastate`).
+  - R32: 1 mismatch (`s.find4` where the log has `Idle`@0x005E6A2C, inside `AiNpcNearPlayer`/`AiNpcHomeLeash`): to read; 160 stop at
+    the path action, 590 forked.
+- **Left:** the two fixes above and the R32 read; rerun the 38-log check into `workspace/logs/n69c/new-entries-38.txt`; `regress`
+  under `systemd-run --user --scope -p MemoryMax=4G`; the recorder `report` into `branches.txt`; `ai_tour.py audit`; test output;
+  `manifest.sha256`; revision 5 docstring; the Phase 1c log entry with the proposed rev 7 words (R56 `owner.mode` at 0x005F8FAC's
+  return; R71 `found.mode` at 0x005FA76C and 0x005FA808; R85 `MissS1` and the missile `Range`; R128 the node's id and mode words,
+  `CorpsePickNear`, `MonHasSkill`; R48 the act and quest returns), the Tier B request and the judgment calls.

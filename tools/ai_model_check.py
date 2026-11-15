@@ -2587,6 +2587,1359 @@ def m_r58(r):
     r.call("6.idle50", "Idle", n=50)
 
 
+# ---- plan 0069 Phase 1c (`lane/n69c`), revision 5: the models of batches H1c, H1g and H1h, transcribed from the catalogue
+# blocks at b5999f5e (the catalogue is unchanged from there to 684332ee) like Phase 1b's. A word the logs do not hold forks,
+# as in Phase 1b; the H1h models take their rev 7 word from the decision (`r7`) and fork only without it. A target position
+# the AID line does not hold (no target) is not compared (`tpos`).
+
+def r7(r, key):
+    """Revision 5: the rev 7 word `key` of this decision, or None on a rev 6 log. Phase 2's tools/ai.py puts the words of
+    the rev 7 list in `dec["r7"]`, by these keys: `MonPlayerBonus` (R10: the block's `pb.difficulty`), `MonsterOwnerRef`
+    (R48: the pair (guid, type) the call writes), `AiNearestPlayer` (R32: the pair (p, f)), `R73.aurastate` (the Skills
+    `aurastate` of `Skill2`, or None when `Skill2` is outside the table) and `R73.md0e` (`MonsterData+0x0E`), `owner.mode`
+    (R56: the owner's mode at `MonsterOwner`'s return), `found.mode` (R71: the mode of `GameFindUnit`'s unit)."""
+    return (r.dec.get("r7") or {}).get(key)
+
+
+def known(r, name, key, test):
+    """A branch on the rev 7 word `key`: `test(word)` when the decision holds it, else a fork."""
+    w = r7(r, key)
+    if w is None:
+        return r.unknown(name)
+    return r.br(name, test(w), val=w)
+
+
+def tpos(r):
+    """t's x, y (the AID line's `t`), None without a target."""
+    return r.tx, r.ty
+
+
+def add(a, b):
+    return None if a is None or b is None else u32(a + b)
+
+
+def tdiv(a, b):
+    """Signed 32-bit division toward zero (`idiv`, `cdq`)."""
+    q = abs(a) // abs(b)
+    return q if (a < 0) == (b < 0) else -q
+
+
+def store_unknown(r, name, key):
+    """A store of a value the log does not hold (a found unit's guid): the word is not compared after it (None). The flip
+    control skips it, so the old word is compared."""
+    r.arms.append((name, True))
+    if name != r.flip:
+        r.v[key] = None
+
+
+def clamp(r, lb, v, lo, hi):
+    """`clamp(v, lo, hi)` as two named compares."""
+    if r.less(lb + ".v<" + str(lo), v, lo):
+        return lo
+    if r.less(lb + "." + str(hi) + "<v", hi, v):
+        return hi
+    return v
+
+
+# ---- H1g R7 Brute, and the Reimplementation notes row (catalogue 517: row 7's second aip(3) draw)
+def m_r7(r):
+    """R7 Brute. The notes row is this block's step 3."""
+    if not r.br("1.melee", r.melee):
+        p = clamp(r, "1.p", s32(r.call("1.lifepct", "UnitLifePct", u=r.U).eax), 40, 100)
+        r.call("1.ovr", "Ovr", type=0, param=100 - p, byte=0)
+        r.call("1.walk13", "Walk13", t=r.t, flags=7)
+        return
+    if r.chance("2.chance(3)", 3):
+        r.call("2.setmode", "SetModeAtUnit", mode=4 if r.chance("2.chance(4)", 4) else 5, t=r.t)
+        return
+    if r.chance("3.chance(3)", 3):
+        r.call("3.t56", "T56", t=r.t, byte=4, flag=0)
+        return
+    r.call("4.idle", "Idle", n=15)
+
+
+# ---- H1h R10 CorruptRogue (catalogue 300; MonPlayerBonus 0x00573930, rev 7 item 8)
+def m_r10(r):
+    """R10 CorruptRogue. `MonPlayerBonus` is not a boundary: `pb.difficulty` is the rev 7 word `MonPlayerBonus`; without it
+    step 2 forks. With it, `VALS 2.pb=min(d,2)` lists whether it equals the block's comment."""
+    r.call("1.room", "UnitGetRoom", u=r.U)
+    pd = r7(r, "MonPlayerBonus")
+    if pd is not None:
+        r.vals.append(("2.pb=min(d,2)", pd == min(r.aid["diff"], 2)))
+        far = r.less("2.20-3pb<dist", 20 - 3 * s32(pd), r.dist)
+    else:
+        far = r.unknown("2.far")
+    if far:
+        r.call("2.ovr", "Ovr", type=13, param=r.aip(4), byte=0)
+        r.call("2.runstop", "RunStop", t=r.t, stop=3)
+        return
+    if r.br("3.melee", r.melee):
+        if r.chance("3.chance(3)", 3):
+            r.call("3.setmode4", "SetModeAtUnit", mode=4, t=r.t)
+            return
+        r.call("3.idle", "Idle", n=r.aip(2))
+        return
+    if not r.chance("4.chance(1)", 1):
+        r.call("4.idle", "Idle", n=r.aip(2))
+        return
+    if r.chance("5.chance(5)", 5):
+        r.call("5.ovr", "Ovr", type=13, param=r.aip(4), byte=0)
+        r.call("5.runstop", "RunStop", t=r.t, stop=3)
+        return
+    r.call("6.walk", "Walk", t=r.t, flags=7)
+
+
+# ---- H1g R11 Baboon (catalogue 330)
+def m_r11(r):
+    """R11 Baboon. The run bonus is read from MonStats `Velocity` and `Run`, which the log does not hold: it is used only as
+    the override's parameter, which is not compared. `UnitSetStat` is not a boundary (it draws nothing, taken)."""
+    life = s32(r.call("1.lifepct", "UnitLifePct", u=r.U).eax)
+    bonus = None
+    if r.br("3.v14=0", r.v[0x14] == 0, val=r.v[0x14]):
+        if not r.br("3.melee", r.melee):
+            r.call("3.walk13", "Walk13", t=r.t, flags=7)
+            return
+        if r.br("3.St3or19", r.call("3.st3or19", "St3or19", U=r.U).eax):
+            if r.less("3.life<aip(1)", life, r.aip(1)) and r.rchance("3.Range<50", 100, 50):
+                r.store("set v14=Range(5)+2", 0x14, r.rng(5) + 2)
+                s = s32(r.call("3.stat74", "StatsGetUnitStat", s1=r.U, s2=74, s3=0).eax)
+                r.store("set v1c", 0x1C, tdiv(s32(r.aip(5) * s), 8) if r.br("3.s!=0", s != 0) else 0)
+                r.call("3.ovr", "Ovr", type=2, param=bonus, byte=0)
+                r.call("3.stepaway", "StepAway", t=r.t, d=15, flag=0)
+                return
+            if r.br("3.v18!=0", r.v[0x18] != 0) and r.rchance("3.Range<20", 100, 20):
+                r.call("3.t56", "T56", t=r.t, byte=3, flag=0)
+                r.store("set v18=0", 0x18, 0)
+                return
+        if r.br("3.v18!=0#2", r.v[0x18] != 0) and not r.chance("3.chance(3)", 3):
+            if r.rchance("3.Range<aip(2)", 100, r.aip(2)):
+                r.call("3.t56b", "T56", t=r.t, byte=3, flag=0)
+                r.store("set v18=0#2", 0x18, 0)
+            r.call("3.idle", "Idle", n=15)
+            return
+        r.store("set v18=1", 0x18, 1)
+        r.call("3.setmode", "SetModeAtUnit", mode=4 if r.chance("3.chance(4)", 4) else 5, t=r.t)
+        return
+    r.store("set v14-=1", 0x14, r.v[0x14] - 1)
+    r.store("set v18=0#3", 0x18, 0)
+    if r.br("5.v14=0", r.v[0x14] == 0) or r.less("5.75<life", 75, life):
+        r.call("5.stat74", "StatsGetUnitStat", s1=r.U, s2=74, s3=0)
+    if not r.br("6.melee", r.melee):
+        if r.less("6.75<life", 75, life):
+            r.store("set v14=0", 0x14, 0)
+            r.call("6.ovr", "Ovr", type=13, param=bonus, byte=0)
+            r.call("6.walk13", "Walk13", t=r.t, flags=7)
+            return
+    elif r.less("6.D100<33", r.d100(), 33, draw=True):
+        r.call("6.setmode", "SetModeAtUnit", mode=4 if r.chance("6.chance(4)", 4) else 5, t=r.t)
+        return
+    if r.less("7.23<dist", 23, r.dist) and not r.br("7.St3or19", r.call("7.st3or19", "St3or19", U=r.U).eax):
+        if r.rchance("7.Range<33", 100, 33):
+            r.call("7.t56", "T56", t=r.t, byte=4, flag=0)
+        r.call("7.idle", "Idle", n=20)
+        return
+    r.call("8.ovr", "Ovr", type=2, param=bonus, byte=0)
+    if not r.br("8.stepped", r.call("8.stepaway", "StepAway", t=r.t, d=15, flag=1).eax):
+        if not r.br("8.melee", r.melee):
+            r.call("8.ring", "Ring", r=5)
+            return
+        r.call("8.setmode", "SetModeAtUnit", mode=4 if r.rchance("8.Range<aip(4)", 100, r.aip(4)) else 5, t=r.t)
+
+
+# ---- H1g R14 QuillRat (catalogue 410)
+def m_r14(r):
+    """R14 QuillRat. The head record's `+0x0C` and `+0x10` are the AID line's `head` words 3 and 4. The ring argument is
+    the target pointer with its low byte replaced (R14a)."""
+    rec = r.call("1.head", "ParamsHead", U=r.U).eax
+    if r.br("1.rec", rec != 0):
+        hw = r.head or [None] * 7
+        if r.br("1.found", r.call("1.find", "GameFindUnit", type=hw[3], guid=hw[4]).eax != 0):
+            r.call("1.setmode5", "SetModeAtUnit", mode=5, t=r.t)
+            r.call("1.pop", "ParamsPop")
+            return
+        r.call("1.pop2", "ParamsPop")
+    if r.br("2.melee", r.melee):
+        r.call("2.setmode4", "SetModeAtUnit", mode=4, t=r.t)
+        return
+    if r.br("3.St3or19", r.call("3.st3or19", "St3or19", U=r.U).eax):
+        r.call("3.setmode5", "SetModeAtUnit", mode=5, t=r.t)
+        return
+    if r.less("4.dist<aip(1)", r.dist, r.aip(1)):
+        if r.chance("4.chance(2)", 2):
+            r.call("4.setmode5", "SetModeAtUnit", mode=5, t=r.t)
+            return
+        if r.br("4.stepped", r.call("4.stepaway", "StepAway", t=r.t, d=r.aip(4) & 0xFF, flag=1).eax):
+            return
+        if r.less("4.dist<4", r.dist, 4):
+            r.call("4.setmode5b", "SetModeAtUnit", mode=5, t=r.t)
+            return
+    ring = 3 if r.less("5.aip(4)<3", r.aip(4), 3) else r.aip(4) & 0xFF
+    r.call("5.ring", "Ring", r=(u32(r.t) & 0xFFFFFF00) | ring)
+
+
+# ---- H1g R33 HellMeteor (catalogue 934)
+def m_r33(r):
+    """R33 HellMeteor. U's position is the AID line's x, y."""
+    if r.br("1.Skill1>=0", r.skill[0] >= 0) and r.chance("1.chance(1)", 1):
+        a = r.aip(3)
+        x = r.x + r.rng(2 * a) - a
+        y = r.y + r.rng(2 * a) - a
+        use_skill(r, "1.useskill1", 1, 0, x=u32(x), y=u32(y))
+        return
+    r.call("2.idle", "Idle", n=r.aip(2))
+
+
+# ---- H1g R36 CorruptLancer (catalogue 956)
+def m_r36(r):
+    """R36 CorruptLancer. `MeleeRng` (MonStats2 +0x0E) and the path are not logged: `PathSetStopDist`'s words and
+    `RunStop`'s stop distance are not compared."""
+    if r.less("1.aip(5)<dist", r.aip(5), r.dist):
+        r.call("1.stopdist", "PathSetStopDist")
+        r.call("1.ovr", "Ovr", type=13, param=100, byte=0)
+        r.call("1.runstop", "RunStop", t=r.t)
+        r.store("set v14=1", 0x14, 1)
+        return
+    if not r.br("2.melee", r.melee):
+        if not r.chance("2.chance(1)", 1):
+            r.call("2.idle", "Idle", n=r.aip(3))
+            return
+        r.call("2.stopdist", "PathSetStopDist")
+        if not r.chance("2.chance(4)", 4):
+            r.call("2.walkstop", "WalkStop", t=r.t, n=3)
+            return
+        r.call("2.ovr", "Ovr", type=13, param=100, byte=0)
+        r.call("2.runstop", "RunStop", t=r.t)
+        return
+    if r.br("3.v14=0", r.v[0x14] == 0, val=r.v[0x14]) and not r.chance("3.chance(2)", 2):
+        r.call("3.idle", "Idle", n=r.aip(3))
+        return
+    r.store("set v14=0", 0x14, 0)
+    if r.br("5.Skill1>=0", r.skill[0] >= 0) and r.chance("5.chance(6)", 6):
+        use_skill(r, "5.useskill1", 1, r.t)
+        return
+    if r.br("6.Skill2>=0", r.skill[1] >= 0) and r.rchance("6.Range<aip(7)", 100, r.aip(7)):
+        use_skill(r, "6.useskill2", 2, r.t)
+        return
+    if r.br("7.Skill3>=0", r.skill[2] >= 0) and r.rchance("7.Range<aip(8)", 100, r.aip(8)):
+        use_skill(r, "7.useskill3", 3, r.t)
+        return
+    r.call("8.setmode4", "SetModeAtUnit", mode=4, t=r.t)
+
+
+# ---- H1c R38 MaggotLarva (catalogue 986)
+def m_r38(r):
+    """R38 MaggotLarva."""
+    if not r.br("1.melee", r.melee):
+        r.store("set v14=0", 0x14, 0)
+        if r.chance("1.chance(3)", 3):
+            r.call("1.walk", "Walk", t=r.t, flags=1)
+            return
+        r.call("1.idle", "Idle", n=r.aip(4))
+        return
+    if r.br("2.v14=0", r.v[0x14] == 0, val=r.v[0x14]) and r.chance("2.chance(1)", 1):
+        r.store("set v14=1", 0x14, 1)
+        r.call("2.setmode4", "SetModeAtUnit", mode=4, t=r.t)
+        return
+    r.store("set v14=0#2", 0x14, 0)
+    r.call("3.idle", "Idle", n=r.aip(2))
+
+
+# ---- H1g R39 PinHead (catalogue 1006)
+def m_r39(r):
+    """R39 PinHead."""
+    if not r.br("1.melee", r.melee):
+        r.store("set v14=0", 0x14, 0)
+        if r.chance("1.chance(3)", 3):
+            r.call("1.walk", "Walk", t=r.t, flags=7)
+            return
+        r.call("1.idle", "Idle", n=r.aip(4))
+        return
+    if r.br("2.v14!=0", r.v[0x14] != 0, val=r.v[0x14]) and not r.chance("2.chance(1)", 1):
+        r.call("2.idle", "Idle", n=r.aip(2))
+        return
+    r.store("set v14=1", 0x14, 1)
+    if r.br("4.Skill1>=0", r.skill[0] >= 0) and r.chance("4.chance(5)", 5):
+        use_skill(r, "4.useskill1", 1, r.t)
+        return
+    if r.br("5.Skill2>=0", r.skill[1] >= 0) and r.chance("5.chance(6)", 6):
+        use_skill(r, "5.useskill2", 2, r.t)
+        return
+    r.call("6.setmode4", "SetModeAtUnit", mode=4, t=r.t)
+
+
+# ---- H1g R40 MaggotEgg (catalogue 1028)
+def m_r40(r):
+    """R40 MaggotEgg. `UnitKilled`'s words are revision 3's positional names: ECX the game, EDX the unit, then the killer
+    and 1 (the block's order)."""
+    if (r.br("1.Skill1>=0", r.skill[0] >= 0) and r.br("1.v14!=1", r.v[0x14] != 1, val=r.v[0x14])
+            and r.chance("1.chance(2)", 2)):
+        use_skill(r, "1.useskill1", 1, r.t)
+        r.call("1.delay", "Delay", n=r.aip(1))
+        r.store("set v14=1", 0x14, 1)
+        return
+    if r.br("2.v14=1", r.v[0x14] == 1):
+        k = r.call("2.gettarget", "GetTargetUnit").eax
+        r.call("2.killed", "UnitKilled", c=r.G, d=r.U, s1=k, s2=1)
+    r.call("3.idle", "Idle", n=r.aip(1))
+
+
+# ---- H1c R45 Sarcophagus (catalogue 1072)
+def m_r45(r):
+    """R45 Sarcophagus, the think (its init 0x005F6630 is not a think call). U's position is the AID line's x, y."""
+    if r.less("1.25<dist", 25, r.dist):
+        r.call("1.idle", "Idle", n=25)
+        return
+    if r.less("2.aip(3)<v18", r.aip(3), r.v[0x18]):
+        r.store("set c4|=0x20000", "c4", r.c4 | 0x20000)
+        r.call("2.die", "SetMode", mode=0, x=0, y=0)
+        return
+    e = s32(r.T - r.v[0x14])
+    if e < 0:
+        e = s32(-e)
+    if r.br("4.Skill1>=0", r.skill[0] >= 0) and not r.less("4.e<aip(1)", e, r.aip(1)):
+        cls = 228 if r.ms2 > 228 else -1
+        room = r.call("4.room", "UnitGetRoom", u=r.U).eax
+        if r.br("4.cell", r.call("4.celltest", "SpawnClassCellTest", cls=cls, room=room, x=r.x, y=r.y, z=0).eax):
+            r.store("set v18+=1", 0x18, r.v[0x18] + 1)
+            r.store("set v14=T", 0x14, r.T)
+            use_skill(r, "4.useskill1", 1, r.t)
+            return
+    low = r.step()
+    r.call("5.idle", "Idle", n=20 + low % 10)
+
+
+# ---- H1h R48 ZakarumZealot (catalogue 1138; MonsterOwnerRef 0x0058F090, rev 7 item 10)
+def m_r48(r):
+    """R48 ZakarumZealot. The run bonus (MonStats `Velocity`, `Run`) is not logged: the override's parameter is not
+    compared. `MonsterOwnerRef` is not a boundary: its (guid, type) is the rev 7 word `MonsterOwnerRef`, else the type
+    forks and the guid is not compared. `DRLG_ActFromLevelId` and `QUESTRECORD_GetState` are not boundaries: they fork.
+    `COLL_CellTestAt`'s words are not compared (revision 3's caller read names one stack word for the block's four)."""
+    run = None
+    life = s32(r.call("2.lifepct", "UnitLifePct", u=r.U).eax)
+    if r.br("3.t", r.t != 0):
+        p, ptype0 = r.t, r.ttype == 0
+        if r.br("3.t.type=1", r.ttype == 1, val=r.ttype):
+            w = r7(r, "MonsterOwnerRef")
+            if w is not None:
+                own0 = r.br("3.ownertype=0", w[1] == 0, val=w[1])
+                guid = w[0]
+            else:
+                own0, guid = r.unknown("3.ownertype=0"), None
+            if own0:
+                p = r.call("3.find", "GameFindUnit", type=0, guid=guid).eax
+                ptype0 = True                           # a unit found by type 0
+        if r.br("3.p", p != 0) and r.br("3.p.type=0", ptype0):
+            room = r.call("3.room", "UnitGetRoom", u=r.U).eax
+            r.call("3.level", "RoomGetLevelId", room=room)
+            if r.unknown("3.act=2"):
+                r.call("3.pdata", "UnitGetPlayerData", s1=p)
+                if r.unknown("3.quest21"):
+                    r.call("3.ovr", "Ovr", type=0, param=run, byte=0)
+                    if r.br("3.stepped", r.call("3.stepaway", "StepAwayXY", t=r.t, n=8, f=1).eax):
+                        return
+                    r.call("3.ring", "Ring", r=6)
+                    return
+    if r.br("4.St3or19", r.call("4.st3or19", "St3or19", U=r.U).eax):
+        if r.br("4.v18=0", r.v[0x18] == 0, val=r.v[0x18]) and r.less("4.life<aip(3)", life, r.aip(3)):
+            r.store("set v14=0", 0x14, 0)
+            r.call("4.ovr", "Ovr", type=0, param=run, byte=0)
+            if r.br("4.stepped", r.call("4.stepaway", "StepAwayXY", t=r.t, n=8, f=1).eax):
+                return
+            r.store("set v18=5", 0x18, 5)
+        room = r.call("4.room", "UnitGetRoom", u=r.U).eax
+        if r.br("4.cell", r.call("4.celltest", "CollCellTestAt").eax):
+            if r.br("4.melee", r.melee):
+                r.call("4.t56", "T56", t=r.t, byte=4, flag=0)
+            else:
+                r.call("4.walk", "Walk", t=r.t, flags=7)
+            return
+    if r.br("5.v18!=0", r.v[0x18] != 0):
+        r.store("set v18-=1", 0x18, r.v[0x18] - 1)
+    if not r.br("6.melee", r.melee):
+        r.store("set v14=0#2", 0x14, 0)
+        if not r.chance("6.chance(4)", 4):
+            r.call("6.walk", "Walk", t=r.t, flags=7)
+            return
+        r.call("6.ovr", "Ovr", type=0, param=run, byte=0)
+        r.call("6.run", "RunToUnit", t=r.t)
+        return
+    if r.br("7.v14!=0", r.v[0x14] != 0, val=r.v[0x14]) and not r.chance("7.chance(1)", 1):
+        r.store("set v14=0#3", 0x14, 0)
+        if r.rchance("7.Range<80", 100, 80):
+            r.call("7.idle", "Idle", n=10)
+            return
+        r.call("7.t56", "T56", t=r.t, byte=4, flag=0)
+        return
+    r.store("set v14=1", 0x14, 1)
+    r.call("9.setmode", "SetModeAtUnit", mode=5 if r.chance("9.chance(2)", 2) else 4, t=r.t)
+
+
+# ---- H1g R49 ZakarumPriest (catalogue 1188; AiZakarumHealCb 0x005F7240)
+def m_r49(r):
+    """R49 ZakarumPriest. U's position is the AID line's x, y and t's its `t` words; the offset is taken as a 32-bit
+    difference (R49a: a u16 difference that `<< 2` cannot wrap)."""
+    life = s32(r.call("1.lifepct", "UnitLifePct", u=r.U).eax)
+    melee = r.br("2.melee", r.melee)
+    if melee or r.br("2.St3or19", r.call("2.st3or19", "St3or19", U=r.U).eax):
+        if (r.br("2.Skill3>=0", r.skill[2] >= 0) and r.less("2.life<33", life, 33)
+                and r.less("2.v14<T", r.v[0x14], r.T)):
+            r.store("set v14=T+4aip(5)", 0x14, r.T + 4 * r.aip(5))
+            s = 2 if melee else 0
+            tx, ty = tpos(r)
+            x = None if tx is None else u32(tx + ((tx - r.x) << s))
+            y = None if ty is None else u32(ty + ((ty - r.y) << s))
+            if r.br("2.targetok", r.call("2.targetok", "SkillTargetOk", skill=r.skill[2], u=0, a=x, b=y).eax):
+                use_skill(r, "2.useskill3", 3, 0, x=x, y=y)
+                return
+        if melee and r.chance("2.chance(1)", 1):
+            r.call("2.setmode4", "SetModeAtUnit", mode=4, t=r.t)
+            return
+    ret = r.call("3.search", "UnitSearch", cb=0x005F7240, kind=1,
+                 blk={0: {0: 0, 1: 0, 2: 0x7FFFFFFF, 3: r.aip(6) * r.aip(6)}})
+    unit = ret.out(0, 0)
+    if (r.br("4.Skill1>=0", r.skill[0] >= 0) and r.br("4.unit", unit != 0)
+            and r.less("4.D100<25", r.d100(), 25, draw=True)):
+        use_skill(r, "4.useskill1", 1, unit)
+        return
+    blizzard = False
+    if not r.br("5.clear", r.call("5.lineclear", "AiLineClear", c=r.U, d=r.t).eax):
+        if (r.chance("5.chance(1)", 1) and r.br("5.Skill4>=0", r.skill[3] >= 0) and r.less("5.v18<T", r.v[0x18], r.T)
+                and r.rchance("5.Range<aip(2)", 100, r.aip(2))):
+            blizzard = True
+    elif r.chance("5.chance(4)", 4):
+        if (r.br("5.Skill4>=0#2", r.skill[3] >= 0) and r.less("5.v18<T#2", r.v[0x18], r.T)
+                and r.rchance("5.Range<aip(2)#2", 100, r.aip(2))):
+            blizzard = True
+        elif (r.br("5.Skill2>=0", r.skill[1] >= 0) and r.less("5.v1C<T", r.v[0x1C], r.T)
+              and r.rchance("5.Range<aip(3)", 100, r.aip(3))):
+            use_skill(r, "5.useskill2", 2, r.t)
+            r.store("set v1c=T+20", 0x1C, r.T + 20)
+            return
+    if blizzard:
+        use_skill(r, "5.useskill4", 4, r.t)
+        r.store("set v18=T+aip(5)", 0x18, r.T + r.aip(5))
+        return
+    if r.less("6.D100<30", r.d100(), 30, draw=True):
+        r.call("6.t56", "T56", t=r.t, byte=4, flag=0)
+        return
+    r.call("7.idle", "Idle", n=20)
+
+
+# ---- H1c R50 Mephisto (catalogue 2633; AiMephistoPickTarget 0x005F77C0)
+def m_r50(r):
+    """R50 Mephisto. `AiMephistoPickTarget` is a boundary: its words are revision 3's positional names, compared as the
+    block's (G, U, M, t). The difficulty tests are `d > 0` (`jbe`)."""
+    life = s32(r.call("1.lifepct", "UnitLifePct", u=r.U).eax)
+    L = tdiv(100 - life, 5)
+    if r.less("1.L<0", L, 0):
+        L = 0
+    st = r.v[0x1C]
+    move = False
+    if r.br("2.melee", r.melee):
+        if r.less("2.aip(1)<D100", r.aip(1), r.d100(), draw=True):
+            st = 3
+        else:
+            st = 2
+            r.store("set v14=step%3+3", 0x14, r.step() % 3 + 3)
+    elif r.less("2.20<dist", 20, r.dist):
+        st = 4
+    elif r.br("2.v1C>4u", u32(r.v[0x1C]) > 4, val=r.v[0x1C]):
+        move = True
+    elif r.br("2.v1C=0", r.v[0x1C] == 0):
+        if (not r.less("2.20<life", 20, life) and r.less("2.dist<5", r.dist, 5)
+                and r.less("2.D100<40", r.d100(), 40, draw=True)):
+            st = 1
+        elif r.less("2.D100<L+50", r.d100(), L + 50, draw=True):
+            st = 2
+            r.store("set v14=step%3+3#2", 0x14, r.step() % 3 + 3)
+        else:
+            move = True
+    if move:
+        if not r.less("m.D100<65", r.d100(), 65, draw=True):
+            r.store("set v1c=0", 0x1C, 0)
+            r.call("m.idle", "Idle", n=10)
+            return
+        if not r.less("m.D100<65#2", r.d100(), 65, draw=True) and not r.less("m.5<dist", 5, r.dist):
+            r.call("m.ovr", "Ovr", type=0, param=0, byte=4)
+            r.call("m.walk", "Walk", t=r.t, flags=7)
+        else:
+            r.call("m.t56", "T56", t=r.t, byte=4, flag=0)
+        r.store("set v1c=0#2", 0x1C, 0)
+        return
+    r.vals.append(("3.st", st))
+    if st == 0:
+        r.call("c0.idle", "Idle", n=5)
+        r.store("set v1c=4", 0x1C, 4)
+        return
+    if st == 1:
+        r.call("c1.ovr", "Ovr", type=0, param=50, byte=0)
+        if r.br("c1.stepped", r.call("c1.stepaway", "StepAway", t=r.t, d=8, flag=1).eax):
+            r.store("set v1c=0#3", 0x1C, 0)
+            return
+        if r.br("c1.melee", r.melee):
+            use_skill(r, "c1.useskill3", 3, r.t)
+            r.store("set v1c=0#4", 0x1C, 0)
+            return
+        st = 0
+    if st in (0, 2):
+        r.store("set v14-=1", 0x14, r.v[0x14] - 1)
+        if r.br("c2.v14=0", r.v[0x14] == 0):
+            st = 0
+        if r.br("c2.v18=0", r.v[0x18] == 0, val=r.v[0x18]):
+            r.store("set v18=2", 0x18, 2)
+            if not r.br("c2.t56", r.call("c2.t56", "T56", t=r.t, byte=3, flag=1).eax):
+                r.call("c2.ring12", "Ring", r=12)
+            r.store("set v1c=st", 0x1C, st)
+            return
+        r.store("set v18+=1", 0x18, r.v[0x18] + 1)
+        t2 = r.call("c2.pick", "AiMephistoPickTarget", c=r.G, d=r.U, s1=r.ms, s2=r.t).eax
+        n = 0
+        while n < 8 and r.skill[n] >= 0:
+            n += 1
+        if r.less("c2.n<=0", n, 1):
+            r.call("c2.ring6", "Ring", r=6)
+        else:
+            q = 100 // n
+            rr = r.d100()
+            dd = r.br("c2.d>0", diff(r) > 0)
+            if dd and ((r.br("c2.t2", t2 != 0)
+                        and r.br("c2.blocked", r.call("c2.blocked", "UnitLineBlocked", s1=r.U, s2=t2, s3=4).eax))
+                       or r.less("c2.30<dist", 30, r.dist)):
+                use_skill(r, "c2.useskill6", 6, t2)
+            elif r.less("c2.dist<15", r.dist, 15) and r.less("c2.r<q", rr, q, draw=True) and r.br("c2.d>0#2", diff(r) > 0):
+                use_skill(r, "c2.useskill5", 5, t2)
+            elif r.less("c2.r<2q", rr, 2 * q, draw=True):
+                use_skill(r, "c2.useskill4", 4, t2)
+            elif r.less("c2.r<3q", rr, 3 * q, draw=True):
+                use_skill(r, "c2.useskill2", 2, t2)
+            else:
+                use_skill(r, "c2.useskill1", 1, t2)
+        if r.less("c2.D100<50-L", r.d100(), 50 - L, draw=True):
+            r.store("set v18=0", 0x18, 0)
+        r.store("set v1c=st#2", 0x1C, st)
+        return
+    if st == 3:
+        if r.rchance("c3.Range<L+80", 100, L + 80):
+            if r.rchance("c3.Range<80-L", 100, 80 - L):
+                r.call("c3.setmode4", "SetModeAtUnit", mode=4, t=r.t)
+            else:
+                use_skill(r, "c3.useskill3", 3, r.t)
+        else:
+            r.call("c3.ovr", "Ovr", type=0, param=50, byte=0)
+            if not r.br("c3.t56", r.call("c3.t56", "T56", t=r.t, byte=3, flag=1).eax):
+                r.call("c3.ring12", "Ring", r=12)
+        r.store("set v1c=0#5", 0x1C, 0)
+        return
+    if st == 4:
+        r.call("c4.ovr", "Ovr", type=0, param=50, byte=0)
+        if not r.br("c4.wander", r.call("c4.wander", "WanderNear", u=r.t, r=6).eax):
+            r.call("c4.cancel", "CancelEvents", kind=2, z=0)
+            if not r.br("c4.toward", r.call("c4.toward", "Toward", t=r.t, max=12, ring=6).eax):
+                r.call("c4.ring12", "Ring", r=12)
+        r.store("set v1c=0#6", 0x1C, 0)
+        return
+    raise Stop("3: the dispatch word %d is outside the five-word table" % st)
+
+
+# ---- H1c R53 Summoner (catalogue 2703)
+def m_r53(r):
+    """R53 Summoner. `UseSkillK(a)` here takes t's x, y (the AID line's `t`). `A2Q5_BossSeen`'s words are not compared
+    (revision 3's names are positional and the block gives two for its five)."""
+    tx, ty = tpos(r)
+
+    def sk(lb, k, a):
+        use_skill(r, lb, k, a, x=tx, y=ty)
+    if r.br("1.v14=0", r.v[0x14] == 0, val=r.v[0x14]):
+        r.call("1.seen", "A2Q5_BossSeen")
+        r.store("set v14=1", 0x14, 1)
+    if r.less("2.dist<5", r.dist, 5) and r.less("2.D100<aip(6)", r.d100(), r.aip(6), draw=True):
+        r.call("2.stepaway", "StepAway", t=r.t, d=6, flag=0)
+    a = s32(r.call("3.cold", "StatsGetUnitStat", s1=r.t, s2=43, s3=0).eax)
+    b = s32(r.call("3.fire", "StatsGetUnitStat", s1=r.t, s2=39, s3=0).eax)
+    cold = not r.less("3.fire<cold", b, a)
+    if r.less("4.D100<aip(1)", r.d100(), r.aip(1), draw=True):
+        if r.br("4.Skill5>=0", r.skill[4] >= 0) and r.less("4.D100<aip(2)", r.d100(), r.aip(2), draw=True):
+            sk("4.useskill5", 5, r.t)
+            return
+        t2 = r.call("4.findhostile", "FindHostile", pm=0).eax
+        if r.less("4.aip(3)<D100", r.aip(3), r.d100(), draw=True):
+            cold = not cold
+        nova = False
+        if r.br("4.cold", cold):
+            if (r.br("4.Skill2>=0", r.skill[1] >= 0) and r.less("4.v18<T", r.v[0x18], r.T)
+                    and r.less("4.dist<aip(7)", r.dist, r.aip(7))):
+                nova = True
+            elif (r.br("4.Skill1>=0", r.skill[0] >= 0) and r.br("4.t2", t2 != 0)
+                  and r.less("4.dist<aip(8)", r.dist, r.aip(8))):
+                sk("4.useskill1", 1, t2)
+                return
+        if not nova:
+            if r.br("4.Skill4>=0", r.skill[3] >= 0) and r.less("4.v1C<T", r.v[0x1C], r.T):
+                r.store("set v1c=T+aip(5)", 0x1C, r.T + r.aip(5))
+                sk("4.useskill4", 4, r.t)
+                return
+            if (r.br("4.Skill3>=0", r.skill[2] >= 0) and r.br("4.t2#2", t2 != 0)
+                    and r.less("4.dist<aip(8)#2", r.dist, r.aip(8))):
+                sk("4.useskill3", 3, t2)
+                return
+            if (not cold and r.br("4.Skill2>=0#2", r.skill[1] >= 0) and r.less("4.v18<T#2", r.v[0x18], r.T)
+                    and r.less("4.dist<aip(7)#2", r.dist, r.aip(7))):
+                nova = True
+        if nova:
+            r.store("set v18=T+aip(4)", 0x18, r.T + r.aip(4))
+            sk("4.useskill2", 2, r.t)
+            return
+        if r.br("4.Skill5>=0#2", r.skill[4] >= 0):
+            sk("4.useskill5b", 5, r.t)
+            return
+    r.call("5.ring", "Ring", r=4)
+
+
+# ---- H1c R55 Izual (catalogue 2735)
+def m_r55(r):
+    """R55 Izual. The cast's x, y are read by the getters at the think's entry (0x005F89F1, 0x005F8A29), of a unit the
+    block does not name: not compared. `aidel` is logged for Normal only (AID `ad[0]`): its idles are compared in Normal."""
+    aidel = r.aid["ad"][0] if r.aid["diff"] == 0 and r.aid.get("ad") else None
+
+    def cast():
+        use_skill(r, "c.useskill1", 1, r.t, x=None, y=None)
+        r.store("set v18=aip(5)", 0x18, r.aip(5))
+        r.store("set v1c=aip(6)", 0x1C, r.aip(6))
+    if r.br("1.v14=0", r.v[0x14] == 0, val=r.v[0x14]):
+        r.store("set v14=1", 0x14, 1)
+        r.call("1.seen", "A4Q1_IzualSeen", c=r.G)
+    if r.br("2.v18!=0", r.v[0x18] != 0, val=r.v[0x18]):
+        r.call("2.idle", "Idle", n=r.v[0x18])
+        r.store("set v18=0", 0x18, 0)
+        return
+    if r.br("3.melee", r.melee):
+        if r.less("3.v1C<1", r.v[0x1C], 1) and not r.less("3.D100<aip(1)", r.d100(), r.aip(1), draw=True):
+            r.store("set v1c=0", 0x1C, 0)
+            if not r.br("3.Skill1>=0", r.skill[0] >= 0) or not r.rchance("3.Range<aip(4)", 100, r.aip(4)):
+                r.call("3.idle", "Idle", n=aidel)
+                return
+            cast()
+            return
+        if r.less("3.0<v1C", 0, r.v[0x1C]):
+            r.store("set v1c-=1", 0x1C, r.v[0x1C] - 1)
+        r.call("3.setmode4", "SetModeAtUnit", mode=4, t=r.t)
+        return
+    if r.br("4.Skill1>=0", r.skill[0] >= 0) and r.less("4.dist<10", r.dist, 10):
+        if r.less("4.0<v1C", 0, r.v[0x1C]):
+            r.call("4.walk", "Walk", t=r.t, flags=7)
+            return
+        if r.rchance("4.Range<aip(3)", 100, r.aip(3)):
+            cast()
+            return
+    if r.less("5.v1C<1", r.v[0x1C], 1) and not r.less("5.D100<aip(2)", r.d100(), r.aip(2), draw=True):
+        if r.less("5.dist<11", r.dist, 11):
+            r.call("5.idle", "Idle", n=aidel)
+        else:
+            r.call("5.toward", "Toward", t=r.t, max=6, ring=9)
+        return
+    r.call("6.walk", "Walk", t=r.t, flags=7)
+
+
+# ---- H1g R56 Tentacle (catalogue 1274)
+def m_r56(r):
+    """R56 Tentacle. The owner's mode is not logged: the rev 7 word `owner.mode` (proposed), else its tests fork."""
+    o = r.call("1.owner", "MonsterOwner", U=r.U).eax
+    if not r.br("2.o", o != 0):
+        r.call("2.killed", "UnitKilled", c=r.G, d=r.U, s1=0, s2=1)
+        return
+    if known(r, "3.o.mode=12", "owner.mode", lambda m: m == 12) and r.less("3.D100<40", r.d100(), 40, draw=True):
+        k = r.call("3.gettarget", "GetTargetUnit", _edx=o).eax
+        r.call("3.killed", "UnitKilled", c=r.G, d=r.U, s1=k, s2=1)
+        return
+
+    def submerge(lb):
+        use_skill(r, lb + ".useskill1", 1, r.t)
+        r.call(lb + ".delay8", "Delay", n=8)
+        r.store("set v18=T+25aip(3)", 0x18, r.T + 25 * r.aip(3))
+        r.store("set v1c=1", 0x1C, 1)
+    if r.br("4.Skill1>=0", r.skill[0] >= 0):
+        if r.br("4.v1C=0", r.v[0x1C] == 0, val=r.v[0x1C]):
+            submerge("4a")
+            return
+        if (r.br("4.v1C=2", r.v[0x1C] == 2) and r.less("4.v18<T", r.v[0x18], r.T)
+                and (r.less("4.aip(6)<dist", r.aip(6), r.dist)
+                     or (not r.br("4.melee", r.melee) and r.rchance("4.Range<aip(2)", 100, r.aip(2)))
+                     or (known(r, "4.o.mode=14", "owner.mode", lambda m: m == 14) and r.rchance("4.Range<50", 100, 50)))):
+            submerge("4b")
+            return
+    act = False
+    if r.br("5.Skill2>=0", r.skill[1] >= 0):
+        if not r.br("5.v1C=1", r.v[0x1C] == 1):
+            act = True
+        elif (r.less("5.v18<T", r.v[0x18], r.T)
+              and (r.br("5.melee", r.melee) or r.less("5.dist<aip(6)", r.dist, r.aip(6))
+                   or (not known(r, "5.o.mode=14", "owner.mode", lambda m: m == 14)
+                       and r.rchance("5.Range<5", 100, 5)))):
+            r.call("5.useskill2", "UseSkill", mode=r.skmode[1], skill=r.skill[1], t=r.U, x=0, y=0)
+            r.store("set v18=T+25aip(4)", 0x18, r.T + 25 * r.aip(4))
+            r.store("set v1c=2", 0x1C, 2)
+            return
+    if not act and r.br("6.v1C=1", r.v[0x1C] == 1):
+        r.call("6.delay", "Delay", n=r.aip(5))
+        return
+    if r.br("7.melee", r.melee) and r.rchance("7.Range<aip(1)", 100, r.aip(1)):
+        r.call("7.setmode4", "SetModeAtUnit", mode=4, t=r.t)
+        return
+    r.call("8.idle", "Idle", n=r.aip(5))
+
+
+# ---- H1g R57 TentacleHead (catalogue 1306)
+def m_r57(r):
+    """R57 TentacleHead."""
+    if r.br("1.Skill1>=0", r.skill[0] >= 0):
+        armed = False
+        if r.br("1.v1C=0", r.v[0x1C] == 0, val=r.v[0x1C]):
+            use_skill(r, "1.useskill1", 1, r.t)
+            r.call("1.delay8", "Delay", n=8)
+            armed = True
+        elif (r.br("1.v1C=2", r.v[0x1C] == 2) and r.less("1.v18<T", r.v[0x18], r.T)
+              and (r.less("1.aip(6)<dist", r.aip(6), r.dist)
+                   or (not r.br("1.melee", r.melee) and r.rchance("1.Range<aip(2)", 100, r.aip(2))))):
+            use_skill(r, "1.useskill1b", 1, r.t)
+            r.call("1.delay20", "Delay", n=20)
+            armed = True
+        if armed:
+            r.store("set v18=T+25aip(3)", 0x18, r.T + 25 * r.aip(3))
+            r.store("set v1c=1", 0x1C, 1)
+            return
+    if (r.br("2.Skill2>=0", r.skill[1] >= 0) and r.br("2.v1C=1", r.v[0x1C] == 1) and r.less("2.v18<T", r.v[0x18], r.T)
+            and (r.br("2.melee", r.melee) or r.less("2.dist<aip(6)", r.dist, r.aip(6)))):
+        r.call("2.useskill2", "UseSkill", mode=r.skmode[1], skill=r.skill[1], t=r.U, x=0, y=0)
+        r.store("set v18=T+25aip(4)", 0x18, r.T + 25 * r.aip(4))
+        r.store("set v1c=2", 0x1C, 2)
+        return
+    if r.br("3.v1C=1", r.v[0x1C] == 1):
+        r.call("3.delay", "Delay", n=r.aip(5))
+        return
+    h = r.call("4.findhostile", "FindHostile", pm=0, blk={0: {0: r.dist}}).eax
+    if r.chance("5.chance(1)", 1):
+        r.call("5.setmode4", "SetModeAtUnit", mode=4, t=h)
+        return
+    r.call("6.idle", "Idle", n=r.aip(5))
+
+
+# ---- H1c R59 BloodRaven (catalogue 2766)
+def m_r59(r):
+    """R59 BloodRaven, the think (the init is not a think call). The home record's words, `AiParamsPush`'s block and the
+    distance helpers' point words are not logged: not compared; `AiDistToPointSized` is compared by its ECX unit.
+    `MonAiRunNearUnit`'s words are revision 3's positional names: the block's (t, n) as the two stack words."""
+    h = r.call("1.find", "ParamsFind", U=r.U, kind=10, z=0).eax
+    if not r.br("1.h", h != 0):
+        r.call("1.push", "AiParamsPush")
+        h = r.call("1.find2", "ParamsFind", U=r.U, kind=10, z=0).eax
+    hd = 0
+    if r.br("2.h", h != 0):
+        hd = s32(r.call("2.hd", "AiDistToPointSized", c=r.t).eax)
+        if r.less("2.45<dist", 45, r.dist):
+            r.call("2.idle", "Idle", n=5)
+            return
+        if (r.less("2.49<hd", 49, hd)
+                or r.br("2.50<ud", u32(r.call("2.ud", "AiDistToPointSized", c=r.U).eax) > 50)):
+            r.store("set v1c=1", 0x1C, 1)
+            r.call("2.ovr", "Ovr", type=7, param=100, byte=0)
+            if r.br("2.ran", r.call("2.run", "RunToPoint").eax):
+                return
+            r.call("2.cancel", "CancelEvents", kind=2, z=0)
+        if (r.br("2.v1C!=0", r.v[0x1C] != 0, val=r.v[0x1C])
+                and r.br("2.5<ud", u32(r.call("2.ud2", "AiDistToPointSized", c=r.U).eax) > 5)):
+            r.call("2.ovr2", "Ovr", type=7, param=100, byte=0)
+            if r.br("2.ran2", r.call("2.run2", "RunToPoint").eax):
+                return
+            r.call("2.cancel2", "CancelEvents", kind=2, z=0)
+        r.store("set v1c=0", 0x1C, 0)
+    dist = r.dist
+    if r.less("3.20<dist", 20, dist) and r.less("3.hd<50", hd, 50):
+        dist = 12 if r.less("3.(dist>>1)<12", dist >> 1, 12) else dist >> 1
+        r.call("3.ovr", "Ovr", type=7, param=100, byte=0)
+        if r.br("3.ran", r.call("3.runnear", "MonAiRunNearUnit", s1=r.t, s2=dist).eax):
+            return
+        r.call("3.cancel", "CancelEvents", kind=2, z=0)
+    r.store("set v14+=3", 0x14, r.v[0x14] + 3)
+    if (r.br("5.Skill1>=0", r.skill[0] >= 0) and not r.br("5.melee", r.melee)
+            and r.less("5.v18<2d+8", r.v[0x18], 2 * diff(r) + 8) and r.rchance("5.Range<v14", 100, r.v[0x14])):
+        a = r.rng(15) + 5
+        if r.br("5.pow2=0", r.call("5.pow2a", "RangePow2", seedp=r.U + 0x20, n=2).eax == 0):
+            dx, dy = r.rng(a), a
+        else:
+            dx, dy = a, r.rng(a)
+        if r.br("5.negx", r.call("5.pow2b", "RangePow2", seedp=r.U + 0x20, n=2).eax != 0):
+            dx = -dx
+        if r.br("5.negy", r.call("5.pow2c", "RangePow2", seedp=r.U + 0x20, n=2).eax != 0):
+            dy = -dy
+        tx, ty = tpos(r)
+        use_skill(r, "5.useskill1", 1, 0, x=add(tx, dx), y=add(ty, dy))
+        r.store("set v18+=1", 0x18, r.v[0x18] + 1)
+        r.store("set v14=0", 0x14, 0)
+        return
+    if r.less("6.5<dist", 5, dist):
+        if r.less("6.D100<5", r.d100(), 5, draw=True) and r.less("6.hd<50", hd, 50):
+            r.call("6.ovr7", "Ovr", type=7, param=100, byte=0)
+            r.call("6.runnear", "MonAiRunNearUnit", s1=r.t, s2=12)
+            return
+        h2 = r.call("6.findhostile", "FindHostile").eax
+        if (r.br("6.h2", h2 != 0) and not r.br("6.St3or19", r.call("6.st3or19", "St3or19", U=r.U).eax)
+                and r.rchance("6.Range<80", 100, 80)):
+            if r.br("6.Skill2>=0", r.skill[1] >= 0) and r.rchance("6.Range<(d+4)10", 100, (diff(r) + 4) * 10):
+                use_skill(r, "6.useskill2", 2, h2)
+                return
+            r.call("6.setmode4", "SetModeAtUnit", mode=4, t=h2)
+            return
+        r.call("6.ovr0", "Ovr", type=0, param=50, byte=0)
+        if r.br("6.t56", r.call("6.t56", "T56", t=r.t, byte=4, flag=1).eax):
+            return
+    if r.less("7.D100<30", r.d100(), 30, draw=True) and r.less("7.dist<12", dist, 12):
+        r.call("7.ovr", "Ovr", type=7, param=100, byte=0)
+        if r.br("7.stepped", r.call("7.stepaway", "StepAwayXY", t=r.t, n=12 - dist, f=0).eax):
+            return
+        r.call("7.cancel", "CancelEvents", kind=2, z=0)
+    r.call("8.setmode4", "SetModeAtUnit", mode=4, t=r.t)
+
+
+# ---- H1c R66 SandMaggotQueen (catalogue 1406)
+def m_r66(r):
+    """R66 SandMaggotQueen. `SpawnClassByBase`'s seven words and the spawn's out words are not compared (revision 3's
+    names are positional); `RoomAtSubtile`'s room and point neither. U's position is the AID line's x, y."""
+    if r.br("1.v1C!=0", r.v[0x1C] != 0, val=r.v[0x1C]):
+        r.call("1.idle", "Idle", n=s32(25 * r.aip(2)))
+        r.store("set v1c=0", 0x1C, 0)
+        return
+    if r.br("2.v18=0", r.v[0x18] == 0, val=r.v[0x18]):
+        if r.less("2.v14<aip(1)", r.v[0x14], r.aip(1)):
+            r.call("2.move", "MoveToPoint", x=r.x, y=r.y, n=8)
+            r.call("2.delay", "Delay", n=r.aip(2))
+            r.store("set v18=1", 0x18, 1)
+        return
+    r.call("3.spawnclass", "SpawnClassByBase")
+    room = r.call("4.room", "UnitGetRoom", u=r.U).eax
+    room2 = r.call("4.subroom", "RoomAtSubtile").eax
+    if r.br("4.room", room2 != 0):
+        m = r.call("4.spawn", "SpawnAtPos").eax
+        if r.br("4.m", m != 0):
+            r.store("set v14+=1", 0x14, r.v[0x14] + 1)
+    r.call("5.delay", "Delay", n=r.aip(2))
+    r.store("set v18=0", 0x18, 0)
+    r.store("set v1c=1", 0x1C, 1)
+
+
+# ---- H1g R71 Regurgitator (catalogue 1515; AiRegurgitatorCb 0x005FA690)
+def m_r71(r):
+    """R71 Regurgitator. A found unit's mode is not logged (the rev 7 word `found.mode`, proposed, else a fork), nor its guid:
+    a store of it is not compared after it (`store_unknown`)."""
+    def clear(sfx):
+        r.store("set v14=0" + sfx, 0x14, 0)
+        r.store("set v18=0" + sfx, 0x18, 0)
+        r.store("set v1c=0" + sfx, 0x1C, 0)
+    v = r.v[0x14]
+    if r.br("1.v14=5", v == 5, val=v):
+        r.call("5.stepaway", "StepAway", t=r.t, d=16, flag=1)
+        r.store("set v14=0", 0x14, 0)
+        return
+    if r.br("1.v14=2", v == 2):
+        m = r.call("2.find", "GameFindUnit", type=1, guid=r.v[0x18]).eax
+        if not r.br("2.m", m != 0) or not known(r, "2.m.mode=12", "found.mode", lambda w: w == 12):
+            clear("#2")
+            r.call("2.ring", "Ring", r=8)
+            return
+        if r.less("2.4<distsq", 4, s32(r.call("2.distsq", "UnitDistSq", u=r.U, t=m).eax)):
+            if not r.less("2.v1C<6", r.v[0x1C], 6):
+                clear("#2b")
+                r.call("2.ring2", "Ring", r=8)
+                return
+            r.call("2.walkstop", "WalkStop", t=m, n=1)
+            r.store("set v1c+=1", 0x1C, r.v[0x1C] + 1)
+        r.store("set v14=3", 0x14, 3)
+        r.call("2.idle", "Idle", n=8)
+        return
+    if r.br("1.v14=3", v == 3):
+        m = r.call("3.find", "GameFindUnit", type=1, guid=r.v[0x18]).eax
+        if (r.br("3.Skill1>=0", r.skill[0] >= 0) and r.br("3.m", m != 0)
+                and known(r, "3.m.mode=12", "found.mode", lambda w: w == 12)):
+            use_skill(r, "3.useskill1", 1, m)
+            r.store("set v14=4", 0x14, 4)
+            return
+        clear("#3")
+        r.call("3.ring", "Ring", r=8)
+        return
+    if r.br("1.v14=4", v == 4):
+        if not r.br("4.melee", r.melee):
+            r.call("4.setmode5", "SetModeAtUnit", mode=5, t=r.t)
+            r.store("set v14=5", 0x14, 5)
+            return
+        r.call("4.stepaway", "StepAway", t=r.t, d=8, flag=1)
+        return
+    found = r.call("s.search", "UnitSearch", cb=0x005FA690, kind=1, blk={0: {0: 0, 1: r.aip(6) * r.aip(6)}}).out(0, 0)
+    if r.br("s.v14=1", v == 1):
+        if r.br("s.found", found != 0):
+            store_unknown(r, "set v18=guid", 0x18)
+            if r.less("s.2<distsq", 2, s32(r.call("s.distsq", "UnitDistSq", u=r.U, t=found).eax)):
+                r.call("s.walkstop", "WalkStop", t=found, n=1)
+                r.store("set v14=2", 0x14, 2)
+                r.store("set v1c=0#s", 0x1C, 0)
+                return
+            r.call("s.idle", "Idle", n=8)
+            r.store("set v14=3#s", 0x14, 3)
+            r.store("set v1c=0#s2", 0x1C, 0)
+            return
+        if r.rchance("s.Range<20", 100, 20):
+            clear("#s")
+            return
+        r.call("s.ring", "Ring", r=8)
+        return
+    eat = False
+    if r.br("4.found", found != 0):
+        if (r.less("4.distsq<9", s32(r.call("4.distsq", "UnitDistSq", u=r.U, t=found).eax), 9)
+                and r.rchance("4.rchance(2)", 100, r.aip(2))):
+            eat = True
+        elif r.rchance("4.rchance(5)", 100, r.aip(5)):
+            eat = True
+    if not eat:
+        rr = r.rng(100)
+        if r.br("6.melee", r.melee):
+            if r.less("6.r<aip(1)", rr, r.aip(1), draw=True):
+                r.call("6.setmode4", "SetModeAtUnit", mode=4, t=r.t)
+                return
+            r.call("6.idle", "Idle", n=15)
+            return
+        if r.less("7.r<aip(3)", rr, r.aip(3), draw=True):
+            r.call("7.walk", "Walk", t=r.t, flags=0)
+            return
+        if not (r.br("8.found", found != 0) and r.rchance("8.rchance(4)", 100, r.aip(4))):
+            r.call("9.idle", "Idle", n=8)
+            return
+    r.call("e.walkstop", "WalkStop", t=found, n=1)
+    r.store("set v14=2#e", 0x14, 2)
+    store_unknown(r, "set v18=guid#e", 0x18)
+    r.store("set v1c=0#e", 0x1C, 0)
+
+
+# ---- H1h R73 AbyssKnight (catalogue 1584; rev 7 item 11)
+def m_r73(r):
+    """R73 AbyssKnight. Step 2's aura state (Skills `aurastate` of `Skill2`) and step 5's `MonsterData+0x0E` are data reads
+    the rev 6 logs do not hold: the rev 7 words `R73.aurastate` and `R73.md0e`, else forks. U is a monster, so step 5's
+    type test holds."""
+    life = s32(r.call("1.lifepct", "UnitLifePct", u=r.U).eax)
+    if r.br("2.Skill2>=0", r.skill[1] >= 0):
+        w = r7(r, "R73.aurastate")
+        if w is None:
+            ok, st = r.unknown("2.st>=0"), None
+        else:
+            ok, st = r.br("2.st>=0", w >= 0, val=w), w
+        if (ok and not r.br("2.hasstate", r.call("2.hasstate", "HasState", u=r.U, state=st).eax)
+                and r.less("2.life<aip(1)", life, r.aip(1)) and r.rchance("2.rchance(2)", 100, r.aip(2))):
+            r.call("2.useskill2", "UseSkill", mode=r.skmode[1], skill=r.skill[1], t=0, x=0, y=0)
+            return
+    if r.br("3.melee", r.melee):
+        if r.chance("3.chance(3)", 3):
+            r.call("3.setmode4", "SetModeAtUnit", mode=4, t=r.t)
+            return
+        r.call("3.idle", "Idle", n=r.aip(4))
+        return
+    if r.less("4.dist<aip(5)", r.dist, r.aip(5)) and not r.less("4.0<v14", 0, r.v[0x14]):
+        r.store("set v14=aip(6)", 0x14, r.aip(6))
+    if (r.br("5.Skill1>=0", r.skill[0] >= 0) and r.br("5.v14=0", r.v[0x14] == 0, val=r.v[0x14])
+            and not known(r, "5.md0e>=4", "R73.md0e", lambda w: w >= 4)):
+        use_skill(r, "5.useskill1", 1, r.t)
+        r.store("set v14=aip(6)#2", 0x14, r.aip(6))
+        return
+    if r.less("6.0<v14", 0, r.v[0x14]):
+        r.store("set v14-=1", 0x14, r.v[0x14] - 1)
+    if r.chance("7.chance(7)", 7):
+        low = r.step()
+        r.call("7.ovr", "Ovr", type=2, param=0, byte=6 + (low & 1))
+        r.call("7.walk", "Walk", t=r.t, flags=7)
+        return
+    if r.less("8.dist<aip(8)", r.dist, r.aip(8)):
+        r.call("8.t56", "T56", t=r.t, byte=3, flag=0)
+        return
+    r.call("9.idle", "Idle", n=15)
+
+
+# ---- H1c R77 Trap-Missile, R80 Trap-Poison and R92 Trap-Nova (catalogue 1702, 1776, 1810)
+def trap_shot(r, skill):
+    if (r.br("1.t", r.t != 0) and not r.less("1.aip(1)<dist", r.aip(1), r.dist)
+            and r.less("1.v14<aip(2)", r.v[0x14], r.aip(2))):
+        if r.br("1.v18=0", r.v[0x18] == 0, val=r.v[0x18]) and (not skill or r.br("1.Skill1>=0", r.skill[0] >= 0)):
+            if skill:
+                use_skill(r, "1.useskill1", 1, r.t)
+            else:
+                r.call("1.setmode4", "SetModeAtUnit", mode=4, t=r.t)
+            r.store("set v14+=1", 0x14, r.v[0x14] + 1)
+            r.store("set v18=1", 0x18, 1)
+            return
+        r.store("set v18=0", 0x18, 0)
+        r.call("1.idle", "Idle", n=r.aip(3))
+        return
+    if r.br("2.U", r.U != 0):
+        r.store("set c4|=0x20000", "c4", r.c4 | 0x20000)
+    r.call("3.die", "SetMode", mode=0, x=0, y=0)
+
+
+def m_r77(r):
+    """R77 Trap-Missile."""
+    trap_shot(r, False)
+
+
+def m_r80(r):
+    """R80 Trap-Poison and R92 Trap-Nova (the same block)."""
+    trap_shot(r, True)
+
+
+# ---- H1c R85 HighPriest (catalogue 2924; AiPriestHealCb 0x005E0430; CORNER 0x006E337C, R85a)
+CORNER = ((-5, -5), (5, -5), (5, 5), (-5, 5))
+
+
+def m_r85(r):
+    """R85 HighPriest. MonStats `MissS1` and the missile record's `Range` are not logged: `MissS1 > 0` and the range test
+    fork, and `MissileRec`'s word is not compared."""
+    tx, ty = tpos(r)
+    if r.br("1.v14=0", r.v[0x14] == 0, val=r.v[0x14]):
+        if r.br("1.melee", r.melee):
+            if r.chance("1.chance(1)", 1):
+                r.store("set v14=1", 0x14, 1)
+                r.call("1.setmode4", "SetModeAtUnit", mode=4, t=r.t)
+                return
+            r.call("1.stepaway", "StepAway", t=r.t, d=6, flag=1)
+            return
+        if (r.br("1.Skill2>=0", r.skill[1] >= 0) and r.less("1.v18<T", r.v[0x18], r.T)
+                and r.rchance("1.rchance(2)", 100, r.aip(2))):
+            u = r.call("1.search", "UnitSearch", cb=0x005E0430, kind=1, blk={0: {0: 0, 1: 75, 2: 2500}}).out(0, 0)
+            if r.br("1.unit", u != 0):
+                r.store("set v18=T+aip(3)", 0x18, r.T + r.aip(3))
+                use_skill(r, "1.useskill2", 2, u)
+                return
+        if (r.br("1.Skill1>=0", r.skill[0] >= 0) and r.less("1.v18<T#2", r.v[0x18], r.T)
+                and r.less("1.dist<aip(8)", r.dist, r.aip(8)) and r.rchance("1.rchance(4)", 100, r.aip(4))):
+            k = r.call("1.pow2", "RangePow2", seedp=r.U + 0x20, n=4).eax & 3
+            use_skill(r, "1.useskill1", 1, r.t, x=add(tx, CORNER[k][0]), y=add(ty, CORNER[k][1]))
+            r.store("set v18=T+100", 0x18, r.T + 100)
+            return
+        if (r.less("1.0<aip(5)", 0, r.aip(5)) and r.unknown("1.MissS1>0")
+                and r.br("1.m", r.call("1.missile", "MissileRec").eax != 0) and r.unknown("1.dist<Range-2")
+                and r.rchance("1.rchance(5)", 100, r.aip(5))):
+            r.call("1.setmode8", "SetModeAtUnit", mode=8, t=r.t)
+            return
+        if r.less("1.D100<80", r.d100(), 80, draw=True):
+            if not r.less("1.aip(8)<dist", r.aip(8), r.dist):
+                r.call("1.t56", "T56", t=r.t, byte=3, flag=0)
+            else:
+                r.call("1.walkstop", "WalkStop", t=r.t, n=6)
+            return
+    r.store("set v14=1#2", 0x14, 1)
+    if r.br("3.melee", r.melee):
+        if r.chance("3.chance(7)", 7):
+            r.call("3.setmode8", "SetModeAtUnit", mode=8, t=r.t)
+            return
+        if r.chance("3.chance(6)", 6):
+            r.call("3.stepaway", "StepAway", t=r.t, d=6, flag=1)
+            r.store("set v14=0", 0x14, 0)
+            return
+        if r.rchance("3.Range<90", 100, 90):
+            r.call("3.setmode4", "SetModeAtUnit", mode=4, t=r.t)
+            return
+        r.call("3.idle", "Idle", n=10)
+        return
+    if r.less("4.dist<6", r.dist, 6) and r.chance("4.chance(7)", 7):
+        r.call("4.setmode8", "SetModeAtUnit", mode=8, t=r.t)
+        return
+    if r.chance("5.chance(6)", 6):
+        r.store("set v14=0#2", 0x14, 0)
+        r.call("5.idle", "Idle", n=10)
+        return
+    if r.less("6.D100<70", r.d100(), 70, draw=True):
+        r.call("6.walk", "Walk", t=r.t, flags=7)
+        return
+    r.call("7.ring", "Ring", r=12)
+
+
+# ---- H1g R93 ArcaneTower (catalogue 2970)
+def m_r93(r):
+    """R93 ArcaneTower."""
+    if r.br("1.v18=0", r.v[0x18] == 0, val=r.v[0x18]):
+        r.store("set v18=aip(1)", 0x18, r.aip(1))
+    if r.less("2.T<v1C", r.T, r.v[0x1C]):
+        r.call("2.idle", "Idle", n=10)
+        return
+    if r.br("3.Skill1>=0", r.skill[0] >= 0) and r.br("3.v14=0", r.v[0x14] == 0, val=r.v[0x14]):
+        use_skill(r, "3.useskill1", 1, r.t)
+        r.store("set v18-=1", 0x18, r.v[0x18] - 1)
+        if r.less("3.v18<1", r.v[0x18], 1):
+            r.store("set v14=1", 0x14, 1)
+            r.store("set v18=aip(4)", 0x18, r.aip(4))
+            r.store("set v1c=T+aip(3)", 0x1C, r.T + r.aip(3))
+        else:
+            r.store("set v1c=T+aip(2)", 0x1C, r.T + r.aip(2))
+        return
+    r.call("4.setmode4", "SetModeAtUnit", mode=4, t=r.t)
+    r.store("set v18-=1#2", 0x18, r.v[0x18] - 1)
+    if r.less("5.v18<1", r.v[0x18], 1):
+        r.store("set v14=0", 0x14, 0)
+        r.store("set v18=aip(1)#2", 0x18, r.aip(1))
+        r.store("set v1c=T+aip(5)", 0x1C, r.T + r.aip(5))
+    else:
+        r.store("set v1c=T+aip(6)", 0x1C, r.T + r.aip(6))
+
+
+# ---- H1c R94 DesertTurret (catalogue 2994; SWEEP 0x006E33E0 read from the catalogue's table, STEP by its rule)
+SWEEP = None
+
+
+def sweep_table():
+    """`SWEEP[v + 8·d]` as the catalogue lists it (R94, the `d` \\ `v` table), read from the spec text, as `wisp_tables`."""
+    global SWEEP
+    if SWEEP is not None:
+        return SWEEP
+    import re
+    path = os.path.join(os.path.dirname(HERE), "docs", "specs", "monsters", "ai", "catalogue.md")
+    with open(path, encoding="utf-8") as fh:
+        text = fh.read()
+    m = re.search(r"^`SWEEP`, 0x006E33E0.*?\n\n(.*?)\n\n", text, re.S | re.M)
+    rows = {}
+    for ln in m.group(1).splitlines():
+        cells = [c.strip() for c in ln.strip().strip("|").split("|")]
+        if cells and cells[0].isdigit():
+            rows[int(cells[0])] = [int(c) for c in cells[1:9]]
+    SWEEP = [rows[d][v] for d in range(8) for v in range(8)]
+    return SWEEP
+
+
+def step_xy(i):
+    """`STEP[i]` by R94's rule: `j = (i + 1) mod 8`, `k = (i − 1) mod 8`, `clamp(2 − min(j, 8 − j))` per axis."""
+    def c(a):
+        return max(-1, min(1, a))
+    j, k = (i + 1) % 8, (i - 1) % 8
+    return c(2 - min(j, 8 - j)), c(2 - min(k, 8 - k))
+
+
+def m_r94(r):
+    """R94 DesertTurret. U's position is the AID line's x, y and t's its `t` words. `PathSetTargetPoint`'s words are not
+    compared (revision 3's names are positional)."""
+    if r.br("1.Skill1>=0", r.skill[0] >= 0) and r.br("1.v14=0", r.v[0x14] == 0, val=r.v[0x14]):
+        r.call("1.useskill1", "UseSkill", mode=r.skmode[0], skill=r.skill[0], t=0, x=0, y=0)
+        r.store("set v1c=0", 0x1C, 0)
+        r.store("set v14=T", 0x14, r.T)
+        return
+    if r.less("2.T<v14", r.T, r.v[0x14]):
+        r.call("2.idle", "Idle", n=10)
+        return
+    if r.less("3.aip(4)<dist", r.aip(4), r.dist):
+        if r.less("3.0<v18", 0, r.v[0x18]):
+            r.store("set v18-=1", 0x18, r.v[0x18] - 1)
+        r.call("3.idle", "Idle", n=15)
+        return
+    tx, ty = tpos(r)
+    d64 = r.call("4.dir", "UnitDirToPoint", u=r.U, x=tx, y=ty).eax
+    dr = r.call("4.dir8", "Dir64To8", s1=d64).eax
+    v = s32(r.v[0x1C])
+    vm = abs(v) % 8 * (1 if v >= 0 else -1)            # the signed remainder (`cdq; idiv` shape, 0x005E0B0C)
+    idx = vm + 8 * (dr & 7)
+    if not 0 <= idx < 64:
+        raise Stop("5: SWEEP index %d outside the table" % idx)
+    r.vals.append(("5.sweep", "%d:%d" % (vm, dr & 7)))
+    r.store("set v1c=SWEEP", 0x1C, sweep_table()[idx])
+    vi = r.v[0x1C]
+    if not 0 <= vi < 8:
+        raise Stop("6: STEP index %d outside the table" % vi)
+    sx, sy = step_xy(vi)
+    x, y = u32(r.x + sx * r.aip(5)), u32(r.y + sy * r.aip(5))
+    r.call("7.pathtarget", "SetPathTargetUnit", u=r.U, t=r.t)
+    if (r.br("8.Skill1>=0", r.skill[0] >= 0)
+            and r.br("8.ok1", r.call("8.targetok1", "SkillTargetOk", skill=r.skill[0], u=r.t, a=x, b=y).eax)
+            and r.br("8.ok2", r.call("8.targetok2", "SkillTargetOk", skill=r.skill[0], u=r.t, a=tx, b=ty).eax)):
+        r.call("8.useskill1", "UseSkill", mode=r.skmode[0], skill=r.skill[0], t=0, x=x, y=y)
+        r.call("8.pathpoint", "PathSetTargetPoint")
+        r.store("set v18+=1", 0x18, r.v[0x18] + 1)
+        if r.less("8.aip(2)<v18", r.aip(2), r.v[0x18]):
+            r.store("set v14=T+aip(3)", 0x14, r.T + r.aip(3))
+            r.store("set v18=0", 0x18, 0)
+        else:
+            r.store("set v14=T+aip(1)", 0x14, r.T + r.aip(1))
+        return
+    if r.less("9.0<v18", 0, r.v[0x18]):
+        r.store("set v18-=1#2", 0x18, r.v[0x18] - 1)
+    r.call("10.idle", "Idle", n=10)
+
+
+# ---- H1g R98 Smith (catalogue 3135)
+def m_r98(r):
+    """R98 Smith."""
+    if r.br("1.melee", r.melee):
+        r.call("1.setmode4", "SetModeAtUnit", mode=4, t=r.t)
+        return
+    L = clamp(r, "2.L", s32(r.call("2.lifepct", "UnitLifePct", u=r.U).eax), 0, 100)
+    r.call("3.ovr", "Ovr", type=0, param=(100 - L) >> 1, byte=0)
+    r.call("3.walk", "Walk", t=r.t, flags=7)
+
+
+# ---- H1c R128 Nihlathak (catalogue 3939; AiOverseerMinionCb 0x005E26D0)
+def m_r128(r):
+    """R128 Nihlathak, the think. `A5Q4_NihlathakSeen`, the skill node's id and mode words, `CorpsePickNear` and
+    `MonHasSkill` are not boundaries: taken to draw nothing; their results fork and the node's words are not compared.
+    "U has it" is `GetUnitSkill(U, SkillK)` ≠ 0 (a boundary). `AiUseSkillNearSelf` is `near_self` (R122's)."""
+    if r.br("2.state12", r.call("2.hasstate", "HasState", u=r.U, state=12).eax):
+        r.call("2.stateclear", "StateSet", u=r.U, state=12, v=0)
+    s1 = r.call("3.skill1", "GetUnitSkill", u=r.U, skill=r.skill[0]).eax
+    if not r.br("4.t", r.t != 0):
+        if r.br("4.s1", s1 != 0) and r.br("4.St3or19", r.call("4.st3or19", "St3or19", U=r.U).eax):
+            near_self(r, "4.near", r.aip(2), None, None)
+            return
+        r.call("4.idle", "Idle", n=25)
+        return
+    if (r.br("5.s1", s1 != 0) and r.br("5.melee", r.melee)
+            and r.less("5.D100<aip(1)", r.d100(), r.aip(1), draw=True)):
+        near_self(r, "5.near", r.aip(2), None, None)
+        return
+    if (r.less("6.dist<aip(5)", r.dist, r.aip(5)) and r.less("6.D100<40", r.d100(), 40, draw=True)
+            and r.br("6.stepped", r.call("6.stepaway", "StepAway", t=r.t, d=5, flag=1).eax)):
+        return
+    if (r.less("7.0<Skill3", 0, r.skill[2])
+            and r.br("7.has3", (node := r.call("7.skill3", "GetUnitSkill", u=r.U, skill=r.skill[2]).eax) != 0)
+            and r.less("7.D100<aip(3)", r.d100(), r.aip(3), draw=True)):
+        r.call("7.level", "GetSkillLevel", u=r.U, s=node)
+        if (r.unknown("7.corpse") and r.br("7.used", r.call("7.useskill3", "UseSkill", mode=r.skmode[2],
+                                                                skill=r.skill[2], x=0, y=0).eax)):
+            return
+    if (r.less("8.0<Skill4", 0, r.skill[3])
+            and r.br("8.has4", r.call("8.skill4", "GetUnitSkill", u=r.U, skill=r.skill[3]).eax != 0)
+            and r.less("8.D100<60", r.d100(), 60, draw=True) and r.less("8.dist<14", r.dist, 14)):
+        r.call("8.useskill4", "UseSkill", mode=r.skmode[3], skill=r.skill[3], t=r.t, x=0, y=0)
+        return
+    if (r.less("9.0<Skill2", 0, r.skill[1]) and r.less("9.D100<aip(4)", r.d100(), r.aip(4), draw=True)
+            and r.unknown("9.hasskill2")):
+        ret = r.call("9.search", "UnitSearch", cb=0x005E26D0, kind=1, blk={0: {0: 0, 1: 625, 2: 50, 3: 0, 4: 0, 5: 0}})
+        u = ret.out(0, 4)
+        if r.br("9.blk4", u != 0):
+            r.call("9.useskill2", "UseSkill", mode=r.skmode[1], skill=r.skill[1], t=u, x=0, y=0)
+            return
+        if r.less("9.0<Skill5", 0, r.skill[4]):
+            room = r.call("9.room", "UnitGetRoom", u=r.U).eax
+            cls = 528 if r.ms2 > 528 else -1
+            if r.br("9.cell", r.call("9.celltest", "SpawnClassCellTest", cls=cls, room=room, x=r.x, y=r.y, z=0).eax):
+                room2 = r.call("9.room2", "UnitGetRoom", u=r.U).eax
+                r.call("9.variant", "LevelClassVariant", s1=room2, s2=453 if r.ms2 > 453 else -1)
+                r.call("9.useskill5", "UseSkill", mode=r.skmode[4], skill=r.skill[4], t=r.t, x=0, y=0)
+                return
+        r.call("9.ring", "Ring", r=6)
+        return
+    if (r.less("10.0<Skill4", 0, r.skill[3])
+            and r.br("10.has4", r.call("10.skill4", "GetUnitSkill", u=r.U, skill=r.skill[3]).eax != 0)
+            and r.less("10.dist<14", r.dist, 14)):
+        r.call("10.useskill4", "UseSkill", mode=r.skmode[3], skill=r.skill[3], t=r.t, x=0, y=0)
+        return
+    if r.less("11.D100<60", r.d100(), 60, draw=True):
+        r.call("11.walkz", "WalkZ", t=r.t)
+    r.call("12.idle", "Idle", n=5)
+
+
+# ---- H1h R32 Npc (catalogue 4154): Phase 1b's chain helpers with the class steps and AiNpcNearPlayer (rev 7 item 7)
+def npc_home_leash(r, n):
+    """`AiNpcHomeLeash(n)` (0x005E6860): the home record's find (a boundary, its words not compared), its distance
+    (`PathDist`, unsigned against n), the push of R4 (not a boundary) and `Idle(10)`."""
+    if not r.br("l.home", r.call("l.find", "ParamsFind", U=r.U).eax != 0):
+        return npc_save_home(r)
+    if not r.br("l.far", u32(r.call("l.dist", "PathDist", u=r.U).eax) > n):
+        return False
+    r.call("l.idle10", "Idle", n=10)
+    return True
+
+
+def npc_near_player(r):
+    """`AiNpcNearPlayer` (0x005E68F0). `AiNearestPlayer`'s (p, f) is the rev 7 word `AiNearestPlayer`; without it p is not
+    compared and its tests fork. The interact list, `NpcInteractHas`, `NpcInteractAny` and the busy test are not logged:
+    they fork. `UnitSetEvent` is taken to draw nothing."""
+    w = r7(r, "AiNearestPlayer")
+    p = None if w is None else w[0]
+    nn = s32(r.call("n.dist", "AiDistUnits", c=r.U, d=p).eax)
+    if not r.unknown("n.L"):
+        return False
+    if r.unknown("n.any") or r.unknown("n.h") or r.less("n.0<v14", 0, r.v[0x14]):
+        far = u32(r.call("n.pathdist", "PathDist", u=r.U, x=r.v[0x18], y=r.v[0x1C]).eax) > 2
+        if r.br("n.far", far) and r.less("n.36<v14", 36, r.v[0x14]):
+            r.call("n.walkpt", "WalkToPoint", x=r.v[0x18], y=r.v[0x1C])
+        elif r.less("n.0<v14#2", 0, r.v[0x14]):
+            r.call("n.idle8", "Idle", n=8)
+        if r.less("n.v14<0", r.v[0x14], 0):
+            r.store("set v14=0", 0x14, 0)
+        else:
+            r.store("set v14-=1", 0x14, r.v[0x14] - 1)
+        return True
+    if w is None:
+        if r.unknown("n.p=0|p=U"):
+            return False
+    elif r.br("n.p=0|p=U", p == 0 or p == r.U):
+        return False
+    if not r.less("n.n<3", nn, 3) and not r.less("n.23<n", 23, nn):
+        if npc_home_leash(r, 16):
+            return True
+        r.call("n.ovr", "Ovr", type=1, param=0, byte=0)
+        r.call("n.toward", "Toward", t=p, max=3 if not r.less("n.n<5", nn, 5) else nn - 2, ring=2)
+        return True
+    v = r.v[0x18]
+    if r.br("n.v18=0", v == 0, val=v):
+        r.store("set v18=60", 0x18, 60)
+    elif r.less("n.v18<0", v, 0):
+        r.store("set v18=0", 0x18, 0)
+    else:
+        r.store("set v18-=1", 0x18, v - 1)
+    r.call("n.idle20", "Idle", n=20)
+    return True
+
+
+def m_r32(r):
+    """R32 Npc. The class steps' quest helpers (0x0059F570, `A2Q4_GuardBlock`, 0x0059B6E0, 0x005BAD20, 0x005B9CA0,
+    0x00594360, their actions and `A5Q4_RedPortalCreateAI`) are not boundaries: their results fork, and they are taken to
+    draw nothing. `WalkPt(p)` is `MonAiWalkToPoint` (0x005DED90, a boundary); a quest point is not logged, so its words
+    are not compared."""
+    if npc_save_home(r):
+        return
+    c = r.cls
+    if c == 201:
+        if r.unknown("2.201.0059F570=0"):
+            r.call("2.201.idle40", "Idle", n=40)
+            return
+        if r.unknown("2.201.a"):
+            r.call("2.201.idle20", "Idle", n=20)
+        if not r.unknown("2.201.b"):
+            return
+        if r.unknown("2.201.0059B6E0&home"):
+            r.call("2.201.idle50", "Idle", n=50)
+            return
+    elif c == 254:
+        if r.unknown("2.254.005BAD20"):
+            r.call("2.254.setmode8", "SetMode", mode=8, x=0, y=0)
+            return
+    elif c == 255:
+        if r.unknown("2.255.005B9CA0"):
+            if r.br("2.255.far", u32(r.call("2.255.pathdist", "PathDist", u=r.U).eax) > 3):
+                r.call("2.255.walkpt", "WalkToPoint")
+                return
+            r.call("2.255.setmode8", "SetMode", mode=8, x=0, y=0)
+            return
+    elif c == 265:
+        if r.unknown("2.265.00594360"):
+            if r.br("2.265.far", u32(r.call("2.265.pathdist", "PathDist", u=r.U).eax) > 2):
+                r.call("2.265.walkpt", "WalkToPoint")
+                return
+    r.vals.append(("2.class", c if c in (201, 254, 255, 265, 512) else "other"))
+    if npc_near_player(r) or npc_script_step(r) or npc_path_pick(r):
+        return
+    r.call("6.idle8", "Idle", n=8)
+
+
+# ---- H1h R1 Idle (catalogue 101): R100's block, behind the rev 7 window
+def m_r1w(r):
+    """R1 Idle: `m_r1` once the think's calls are logged (rev 7 item 1: a return-address window over 0x005B0CD0). A rev 6
+    log holds no call of this think, so the decision stops."""
+    if (r.dec.get("rev") or 0) < 7:
+        raise Stop("R1: the think 0x005B0CD0 is outside the rev 6 windows (rev 7 item 1)")
+    m_r1(r)
+
+
+
 MODELS = {
     "R3": (0x005EFE20, m_r3, "catalogue 17, 18"),
     "R4": (0x005EFF50, m_r4, "catalogue 20, 21"),
@@ -2654,6 +4007,41 @@ MODELS = {
     "R42": (0x005E9E00, m_r42, "catalogue 464, 465 (H1d)"),
     "R58": (0x005E7E20, m_r58, "catalogue 470, 472 (H1d)"),
     "R60": (0x005E7AC0, m_s5, "catalogue 474 (H1d)"),
+    # plan 0069 Phase 1c (`lane/n69c`), revision 5: H1c
+    "R38": (0x005F6220, m_r38, "catalogue 105, 106, 107 (H1c)"),
+    "R45": (0x005F6A10, m_r45, "catalogue 117, 118, 119, 120 (H1c)"),
+    "R66": (0x005F9CF0, m_r66, "catalogue 158, 159, 160 (H1c)"),
+    "R77": (0x005FB5B0, m_r77, "catalogue 190, 191, 192 (H1c)"),
+    "R80": (0x005FB900, m_r80, "catalogue 201, 202, 203 (H1c)"),
+    "R92": (0x005FB9B0, m_r80, "catalogue 206, 207, 208 (H1c)"),
+    "R50": (0x005F78B0, m_r50, "catalogue 285, 286, 287, 289, 290 (H1c)"),
+    "R53": (0x005F85C0, m_r53, "catalogue 291, 292, 293 (H1c)"),
+    "R55": (0x005F89B0, m_r55, "catalogue 294, 295, 296 (H1c)"),
+    "R59": (0x005E6320, m_r59, "catalogue 297, 298, 299 (H1c)"),
+    "R85": (0x005E0490, m_r85, "catalogue 312, 315 (H1c)"),
+    "R94": (0x005E0980, m_r94, "catalogue 317, 318, 319 (H1c)"),
+    "R128": (0x005EE5D0, m_r128, "catalogue 424, 425, 426 (H1c)"),
+    # H1g
+    "R7": (0x005EFB80, m_r7, "catalogue 26, 27, 28 (H1g)"),
+    "NOTES": (0x005EFB80, m_r7, "catalogue 517 (H1g): the Reimplementation notes row, row 7's second aip(3) draw"),
+    "R11": (0x005F0CD0, m_r11, "catalogue 40, 41 (H1g)"),
+    "R14": (0x005F1140, m_r14, "catalogue 47, 48 (H1g)"),
+    "R33": (0x005F56D0, m_r33, "catalogue 101, 102 (H1g)"),
+    "R36": (0x005F5D50, m_r36, "catalogue 103, 104 (H1g)"),
+    "R39": (0x005F6340, m_r39, "catalogue 108, 109 (H1g)"),
+    "R40": (0x005F6530, m_r40, "catalogue 110, 111 (H1g)"),
+    "R49": (0x005F72D0, m_r49, "catalogue 132, 133, 134, 137 (H1g)"),
+    "R56": (0x005F8F80, m_r56, "catalogue 142, 143 (H1g)"),
+    "R57": (0x005F9270, m_r57, "catalogue 145, 146 (H1g)"),
+    "R71": (0x005FA710, m_r71, "catalogue 170, 173 (H1g)"),
+    "R93": (0x005E0F60, m_r93, "catalogue 316 (H1g)"),
+    "R98": (0x005E3890, m_r98, "catalogue 329 (H1g)"),
+    # H1h
+    "R1": (0x005B0CD0, m_r1w, "catalogue 12, 13 (H1h)"),
+    "R10": (0x005F0B00, m_r10, "catalogue 35, 36, 39 (H1h)"),
+    "R32": (0x005E7130, m_r32, "catalogue 450-458, 460, 461 (H1h)"),
+    "R48": (0x005F6E60, m_r48, "catalogue 126, 127, 128, 129, 131 (H1h)"),
+    "R73": (0x005FAB80, m_r73, "catalogue 176, 177, 178 (H1h)"),
 }
 
 # Revision 4: of two entries that share a think, each takes only the decisions of its AI state (the AID line's `st`,
