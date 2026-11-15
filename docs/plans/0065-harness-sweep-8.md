@@ -1,6 +1,6 @@
 # 0065 — Harness sweep 8: the backlog's live cases in one batch per slot plan
 
-> **Status:** in progress: Phase 0 (staging) running, `lane/n65p` (started by the owner 2026-11-15); approved 2026-11-10 by the owner, as recommended: Phase 2 runs (the pairing with plan 0067 Phase 2 lapsed: 0067 closed first, see the log)
+> **Status:** in progress: Phase 0 (staging) accepted with fixes 2026-11-15 (`lane/n65p`, Tier A as the audit); Phase 1 next, when the owner starts it; MP28 (b), (c) postponed by the owner 2026-11-15 (owner play, not dropped); approved 2026-11-10 by the owner, as recommended: Phase 2 runs (the pairing with plan 0067 Phase 2 lapsed: 0067 closed first, see the log)
 > **Created:** 2026-11-10
 > **Owner skill(s):** reverser, spec-writer
 > **Related ADRs:** 0003-runtime-experiments, 0008-two-client-harness, 0010-forced-path-runs, 0013-forced-path-runs-cell-level, 0014-scope-game-simulation, 0023-review-tiers-and-gate-first-fixes, 0028-case-and-process-in-experiment-records, 0030-verdict-lanes-and-wiki-tier-a
@@ -74,7 +74,8 @@ why.
 - **Outputs:** `run:<date>-sweep8-two-clients`; addenda in multiplayer/0001 § 6 (the raises), multiplayer/0002,
   player/0002, combat and stats findings as each case belongs.
 - **Done when:** each staged case has a kept log and a check (0 mismatches or a named contradiction). Each unstaged
-  case is named with its reason. Both entries are closed or annotated. Review: Tier B.
+  case is named with its reason. Both entries are closed or annotated. Review: Tier B. *MP28 (b), (c) are out of these
+  criteria for now: postponed by the owner 2026-11-15 until an owner-played Den clear (Phase 0 review).*
 
 ### Phase 3 — Re-tag
 - **Owner skill:** spec-writer
@@ -122,7 +123,7 @@ depend on the map seed; no sharing opt-in). Two-client cases run in Phase 2 from
 | # | Case | Recipe / pair | Session | Logger | Check | Prediction (written before any run) |
 |---|---|---|---|---|---|---|
 | 1 | C2 (skills/0002 § 12) | new `sw8-nova` (SweepNova, Nova 1, life 3000, Act I) | `c2`: seed 3, Normal; walk out of the camp, then 60 pilot hops in the Blood Moor, no casting, so the quill rats live to shoot | `skills.gdb` rev 5, unchanged | `skills.py check` (`MC.vel`); new `sweep8_check.py c2` (spike1 only, the separating count) | `spike1` (Missiles row 7, `Vel` 10, `VelLev` 8) created at level `l`: velocity `tdiv((((8·l) ÷ 8) + 10) << 8 · 75, 100)` = 2112 at `l` 1, 2304 at 2; the lead's `VelLev·(l − 1) + Vel` gives 1920, 3456. Every creation separates (`8l − 8 + 10 = l + 10` has no integer root). Route: seed 3 Normal held two `quillrat1` packs in level 2 (`p44h-mstat-1-host.log` lines 7039, 7471, a TCP host game); that a single-player game at seed 3 has the same packs is expected, not shown |
-| 2 | P12 (skills/missiles D3; verdict, Tier A at Phase 1) | `sw8-nova` | `p12`: seed 3, Normal; walk out, new `p12go` (re-pick from the session's own `CB` lines, hop to the stand cell), 6 Nova bursts there, then 25 hops of Nova over the level | new `p12.gdb` (`pilot.py` + new `p12.py`: `MMC` at 0x005AE2CB, the own-cell word `c`, point, size, cache flag; `MMR` at 0x005AE3F1 / 0x005AE3C3, returns 2 / 1); class filter `P12_CLS` 90 (`nova`: `pSrvDoFunc` 1, `CollideType` 3) | new `sweep8_check.py p12` | D3: a word with `c & 5 ≠ 0` at the missile's own point is followed by `MMR` 2 and no later `MMC` of that missile (freed, no hit function). The lead (flag 01 "allow missiles pass") predicts a later `MMC` for a bit-0-only word. Separating: a fresh (path `+0x7C` 0) word with `c & 5 = 1`. Control: words with `c & 5 = 0` step on. Pick from the kept grid (`sweep8_check.py pick`, seed 3): cell (4645, 4690), word `0x0001` (a 2×2 block in open ground), stand (4647, 4688), free on the whole diagonal through it; 28 930 of the 76 800 level-2 cells there have `c & 5 = 1`. **Open question 2:** stock bit-0-only cells lie on missile paths, so the lane proposes no forced cell (ADR-0013); the review rules |
+| 2 | P12 (skills/missiles D3; verdict, Tier A at Phase 1) | `sw8-nova` | `p12`: seed 3, Normal; walk out, new `p12go` (re-pick from the session's own `CB` lines, hop to the stand cell), 6 Nova bursts there, then 25 hops of Nova over the level | new `p12.gdb` (`pilot.py` + new `p12.py`: `MMC` at 0x005AE2CB, the own-cell word `c`, point, size, cache flag; `MMR` at 0x005AE3F1 / 0x005AE3C3, returns 2 / 1); class filter `P12_CLS` 90 (`nova`: `pSrvDoFunc` 1, `CollideType` 3) | new `sweep8_check.py p12` | D3: a word with `c & 5 ≠ 0` at the missile's own point is followed by `MMR` 2 and no later `MMC` of that missile (freed, no hit function). The lead (flag 01 "allow missiles pass") predicts a later `MMC` for a bit-0-only word. Separating: a fresh (path `+0x7C` 0) word with `c & 5 = 1`. Control: words with `c & 5 = 0` step on. Pick from the kept grid (`sweep8_check.py pick`, seed 3): cell (4645, 4690), word `0x0001` (a 2×2 block in open ground), stand (4647, 4688), free on the whole diagonal through it; 28 930 of the 76 800 level-2 cells there have `c & 5 = 1`. **Open question 2:** stock bit-0-only cells lie on missile paths, so the lane proposes no forced cell (ADR-0013); **ruled at the review: no forced cell** |
 | 3 | H2 (items/0017 H2; items/use F1f) | new `sw8-h2` (SweepPot: life 300 of 6000, mana 100 of 3000; page 0 cells 0..9: hp1 hp4 hp5 hp2 mp1 mp4 mp5 mp2 mp3 mp3) | `h2`: four pairs 1.2 s apart (hp1→hp4, hp5→hp2, mp1→mp4, mp5→mp2), 14 s between pairs; then 150 s of mana regeneration and the two mp3 | new `sweep8-use.gdb` (`pilot.py`, `inventory.py`, new `use-sweep8.py`: `URM` 0x005BE480 list/rem/len/state, `UBL` 0x005BE6C1 numerator/denominator, `UFL` 0x00580650, `UFM` 0x005807B7 the frees) | `inventory_check.py` (draws, fresh rates); new `sweep8_check.py h2` | The second use of a pair finds the first list (`list ≠ 0`, `rem > 0`): numerator `old·rem + v`, denominator `len + rem`, rate `trunc(num ÷ den)`; the wrong reading `trunc(v ÷ len)`. Fresh rates for a Sorceress, plain / doubled: hp1 40/80, hp2 96/192, hp4 240/480, hp5 320/640, mp1 80/160, mp2 160/320, mp4 600/1 200, mp5 1 000/2 000. Different tiers make `old ≠ v ÷ len`, so each blend separates unless the truncations meet (counted, not assumed). A `UFM` when mana reaches its maximum, and the next mana use finds no list |
 | 4 | H3 (items/0017 H3; items/use D3, D5) | new `sw8-h3` (SweepMerc: CombatSor's hireling, alive; belt boxes 0..3 and 5: mp1 hp1 rvs yps wms; the same five in page 0 cells 0..4) | `h3`: Shift + 2 twice (hp1, then wms fallen to box 1), Shift + 3, Shift + 4, Shift + 1 twice; then each page-0 cell on the cursor, clicked on the hireling's portrait (request 0x61) and back | `sweep8-use.gdb` (new `T26` 0x00562453 flag/item, `T26A/B/C` the three `ITEMS_UnitIsType` results, `T26P` the pet, `T61` and `T61A/B/C` at 0x0054D230.., `IU0` `ItemUse` entry 0x005BF240) | new `sweep8_check.py h3` | Flagged 0x26 in an expansion game, tests 0x4C, 0x51, 0x50 in order, stopping at the first pass (ItemTypes' Equiv closure): mp1 (mpot) 0, 0, 0, refused, no `ItemUse`; hp1 (hpot) pass at 0x4C; rvs (rpot, Equiv1 hpot) pass at 0x4C; yps (apot) pass at 0x50; wms (wpot) pass at 0x51; each pass reaches `ItemUse` with the hireling (unit type 1) as user. The lead (The Arreat Summit) gives mp1 to the hireling: the mp1 lines separate. 0x61: the same three tests, counted. **Measured in the dev session:** the portrait point (`MERC_PORTRAIT` (20, 20) is a guess) |
 | 5 | B8 (items/0017 B8; items/inventory F6) | new `sw8-b8room` / `sw8-b8full` (life 5 of 60, `hbl` worn, 16 boxes filled hp1 mp1 yps wms by column; page 0 empty / 40 `isc`) | `b8room`, `b8full`: waypoint to the Cold Plains, pilot hops with no potion until the first hit kills | `sweep8-use.gdb` (new `CCR` 0x0057F700 the item list, `CCN` 0x0057F72D the corpse path's count, `CMB` 0x0057F410, `BOV0`/`BOV1` `BeltOverflow` entry and return with the item lists) + `inventory.py`'s `IPG` | new `sweep8_check.py b8 --room / --full` | At the corpse's call (return 0x0057F47F, belt word 0, so `numboxes` 4): boxes 4..15 leave the belt in box order; b8room: page 0 at (9,3), (9,2), (9,1), (9,0), (8,3), (8,2), (8,1), (8,0), (7,3), (7,2), (7,1), (7,0) (`item_inventory.spot_find`, a player's page); b8full: each to the ground (an `IPG` before `BOV1`). Boxes 0..3 counted, not predicted. **Pre-check:** that a belt item's `x` in the logged list is its box |
@@ -158,7 +159,7 @@ by owner play with the scripted joiner (a few minutes), or MP28 (b), (c) named o
 - gdb parses and arms, with no process, `p12.gdb`, `sweep8-use.gdb`, `sweep8-xs.gdb`, `two-gold.gdb`, `two-rooms.gdb`
   and the edited `two-combat`, `two-wounds`, `two-quests`, `two-kills`, `two-sockets` (`gdb-parse.txt`: every
   ready line, no `LOGERR`).
-- Rule 17: the new logger files hold no memory or register write (`readonly-grep.txt`, 0). `sweep8-use.gdb` sources
+- Rule 17: the new logger files hold no memory or register write (`readonly-grep.txt`, 0; *review:* the edited `player.py`, `combat.py`, `two-players.py` and the sourced `pilot.py`, `rooms.py` 0 too, `review-readonly-grep.txt`). `sweep8-use.gdb` sources
   `inventory.py`, whose armed request edit fires only when its arm file exists: `sweep8_sessions.py` points
   `INV_RUNTIME` at a directory of its own and refuses to start if it is not empty.
 - `combat.py check` on the pre-0065 pvp-1 log (no `sh`): 243 events, 0 mismatches, as before.
@@ -166,7 +167,61 @@ by owner play with the scripted joiner (a few minutes), or MP28 (b), (c) named o
 **Before Phase 1 (one slot).** The smoke session per new or edited logger revision (harness-play.md § Before the batch:
 `p12.gdb`, `sweep8-use.gdb`, `sweep8-xs.gdb`) with the pre-checks named above: the hireling's portrait point (H3), the
 belt item's box in the logged list (B8), the P12 re-pick on the dev log's own grid, and Conversion reaching a monster
-by `explore --melee`. Then `c2`, `p12`, `h2`, `h3`, `b8room`, `b8full`, `xs` as kept sessions; P12's verdict is
+by `explore --melee`. *Review order (fix 1):* before the `p12` session, `sweep8_check.py p12` also looks up the session's `CB`
+grid at every `MMC` point and counts, as the lead's case, a word with `c & 5 = 0` (and a later `MMC`) at a point whose grid
+word has `c & 5 = 1`; the verdict line names that count beside `separating`. Then `c2`, `p12`, `h2`, `h3`, `b8room`, `b8full`, `xs` as kept sessions; P12's verdict is
 its own record (Tier A).
 
-**Review request:** [Tier B](../backlog/2026-11-15-reverser-architect-review-plan-0065-p0-staging.md).
+**Review request:** [Tier B](../backlog/archive/2026-11-15-reverser-architect-review-plan-0065-p0-staging.md).
+
+### 2026-11-15 — Phase 0 review (architect, Tier A as the audit of the fifth Tier B lane since `lane/n66d`, `lane/n65p`)
+
+- **Verdict: accept with fixes** (2 fixes: omission 1, tool not kept 1). Every case of § Context is staged with its
+  prediction or named a shortfall with its reason; the gate is green after merging `main` (`31246d78` → merge).
+- **Re-run, all as the log says.** `tools/test_sweep8.py` 27 OK (before and after the merge); `mp_saves.py check
+  workspace/merged/data/global/excel` 37 recipes, 29 pairs, 0 bad; `sweep8_sessions.py check` 6 recipes, 0 bad, 7
+  sessions; `combat.py check` on `p44h-pvp-1-host.log --no-shield 1,2` 243 events, 0 mismatches; `manifest.sha256` all OK
+  (16 files with the review's one); every file of `tools-revisions.txt` hashes to the committed tree;
+  `test_every_recipe_has_a_base` fails for the same six recipe names on the branch and on `main`.
+- **Predictions written before any run, and derived.** No session has run (no kept game log after the branch point).
+  C2 from skills/missiles B1 (`((VelLev·lvl) ÷ 8 + Vel) << 8`, then `× 75 ÷ 100`): 2112 / 1920 at level 1; the root
+  argument (`l + 10 = 8l + 2` has none) holds. P12 from D3 and the image: `test al,5` at 0x005AE2CB, `jne` 0x005AE3EF
+  straight to `mov eax,2` at 0x005AE3F1 with no call, the hit function 0x005ADF10 reached only from 0x005AE3EA. H2 from
+  items/0017 H2 and F1f (`num`, `den` read at the `idiv` 0x005BE6C2). H3's three tests in order at 0x00562464..0x00562486
+  and the Equiv closure. B8 from items/inventory F6 and `item_inventory.spot_find`. The exp-state kills from player/0002
+  § 4 and the image (0x0063A130 through 0x00625BB0: `+0x5C`, flag `0x80000000` at `+0x10`, `+0x58`; the victim's
+  `0x800` list read after the killer's, so it wins). 0058 (a), (b) from § 1's consequences, (c) from § 4 and § 10.
+  MP32 from multiplayer/0002 § 3 (the room 5 of MP32 full makes any `A ≥ 12` overflow). MP27 from quests/0002 § 2
+  (0x00584A03..0x00584A20). MP16 on the inclusive 6400.
+- **Breakpoints.** The 44 new ones (`test_sweep8.py`'s `NEW_BPS`) sit in 17 functions, each a row of `re/symbols.csv`, and `ImageTest` decodes each as an instruction start from its function's start; spot
+  reads against objdump: `MMC`/`MMR` (registers live at each), `T26A..C`, `XSK..XSR`, `GSN` (the `idiv`), `GC`, `GP0`,
+  `PQF`/`PQR`, `sh` at 0x0062279C. Addresses named only in comments (0x0063D5F0, 0x00626090) carry no breakpoint.
+- **Rule 17.** No write in any new, edited or sourced logger file except `inventory.py:254`, the armed request edit,
+  which `sweep8_sessions.py` keeps unarmed (its own `INV_RUNTIME`, refused when not empty).
+- **Fixes (2), written into this log above.**
+  1. *Omission:* `sweep8_check.py p12` reads the session's grid only for a freed bit-0-only word. P12's Phase 1 must state
+     which reading holds "either way", and the lead's observable is a Nova stepping on over ground the grid marks
+     `c & 5 = 1`; the word `c` has been through `CollisionTest` over the missile's size (0x00648EB0, `+0x44`), so it is
+     not the grid's cell word (reverser review-fixes rule 10: name what the observed value has been through). Ordered
+     for Phase 1, before the `p12` session (§ Before Phase 1).
+  2. *Tool not kept:* the kept read-only grep covered the new files only; the edited `player.py`, `combat.py`,
+     `two-players.py` and the sourced `pilot.py`, `rooms.py`, `inventory.py` are now in `review-readonly-grep.txt` (with
+     each file's hash), added to `manifest.sha256` and `commands.txt`.
+- **Ruling, open question 2 (P12's forced cell): no forced cell.** Stock bit-0-only words lie on the Nova's paths (28 930
+  of 76 800 level-2 cells at seed 3, the pick (4645, 4690) with free ground on both sides), so ADR-0013's condition
+  for a forced cell is not met. If the `p12` session logs no fresh bit-0-only word, P12 comes back as "not separated"
+  for a ruling; the lane does not force a cell on its own. The control stays the stock `c & 5 = 0` words of the same log.
+  *Context since the branch:* `main` raised `sub_005AE1F0_MissileMoveCollide` to `[C]` on its frame behaviour (plan
+  0066, skills/0002 § 13) with the own-cell branch left `[I]`, so P12 still decides D3.
+- **MP28 (b), (c): postponed by the owner (2026-11-15).** The options put to the owner were (1) an owner-played Den
+  clear with the scripted joiner, two short games (J partied in Act II; J not partied) under `two-quests.gdb` and
+  `mp_check.py quests --word 1`, which raises the two rows; or (2) naming them out of this plan, leaving the code reading
+  `[I]`. The owner chose neither yet: **postponed, not dropped**. The case stays staged as a shortfall awaiting owner
+  play, the 0044 entry stays open with the decision dated, and MP28 (b), (c) are out of Phase 2's done-criteria for now.
+  Phase 1 is not affected.
+- **Audit note.** A Tier B check would likely have passed the five request items as the lane ran them and found fix 2
+  (the grep's scope is diff-visible). Fix 1 needed `PathCellCollision`'s body read against the check, outside a
+  diff-scoped pass, so Tier B would probably have missed it; it is not reject-grade (the order lands before the run).
+  No reject-grade problem.
+- **Ledger cells:** `architect-review`, Fixes `audit of lane/n65p: omission 1, tool not kept 1`; no reject-grade miss.
+  **Promotion:** neither fix is a second sighting outside an existing rule (fix 1 is reverser rule 10), so no rule added.
