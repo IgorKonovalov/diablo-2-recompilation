@@ -738,8 +738,8 @@ What it adds to §§ 4 and 5:
   the range is spent (823, frames left 0 after the decrement) or the step fails (65, before it), and 1 otherwise, the
   missile's next frame then at frame + 1; a missile ending at range spent ran exactly the frames left at its creation
   (823 of 823); its 230 unit hits came at frames left below the activate mark. No do-1 frame returned 2 without a hit
-  call, so the own-cell and crossed-cell branches stay `[I]`; the log names no do-function address, and table entry 1 reaches `sub_005AE1F0` through the thunk `0x005B0BC0` (skills/0004, `[I]`). `sub_005AE1F0_MissileMoveCollide` raised to `C` on the frame behaviour.
-  (fn:sub_005AE1F0_MissileMoveCollide@0x005AE1F0, fn:sub_005ADBB0_MissileDoFrame@0x005ADBB0, run:2026-10-27-skills)
+  call, so the own-cell and crossed-cell branches stay `[I]`; the log names no do-function address: table entry 1 reaches `sub_005AE1F0` through the thunk `0x005B0BC0` (skills/0004), read statically, and the run corroborates that chain by the frames running `sub_005AE1F0`'s own code order (the step's end before the decrement, the range's after it). `sub_005AE1F0_MissileMoveCollide` and `sub_005B0BC0_MissDo01Thunk` raised to `C` on the frame behaviour (Tier A ruling 2026-11-15, plan 0066).
+  (fn:sub_005AE1F0_MissileMoveCollide@0x005AE1F0, fn:sub_005B0BC0_MissDo01Thunk@0x005B0BC0, data:g_MissileSrvDoFuncs@0x0073C768, fn:sub_005ADBB0_MissileDoFrame@0x005ADBB0, run:2026-10-27-skills)
 - [C] **The `end` call's own branch** (§ 5): a row with no hit function builds nothing, keeps the missile's seed and
   returns 2 in 80 600 of 80 600 end calls; hit-function rows return 2 in 5 610. Unit calls of rows with no hit function
   run the to-hit roll, the build and `MissileApplyAndAc` in that order (18 170). (fn:MISSILE_HitUnit@0x005ADF10,
