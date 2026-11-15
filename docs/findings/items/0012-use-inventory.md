@@ -82,8 +82,8 @@ No community source was compared; every claim is from the code. The doubling dra
 
 | Address | Name | Role | Tag |
 |---|---|---|---|
-| `0x0054B1E0` | `sub_0054B1E0_Pkt20UseInvItem` | packet `0x20`, 13 bytes: guid, x, y (C since plan 0066 S4a/S4b, [experiments § Addendum 2026-11-15](experiments.md#addendum-2026-11-15-plan-0066-batches-s4a-and-s4b-new-checks-over-the-kept-economy-and-inventory-logs-and-static-second-sources-lanen66h)) | C |
-| `0x0054B560` | `sub_0054B560_Pkt26UseBeltItem` | packet `0x26`, 13 bytes: guid, the mercenary flag (C since plan 0066 S4a/S4b, [experiments § Addendum 2026-11-15](experiments.md#addendum-2026-11-15-plan-0066-batches-s4a-and-s4b-new-checks-over-the-kept-economy-and-inventory-logs-and-static-second-sources-lanen66h)) | C |
+| `0x0054B1E0` | `sub_0054B1E0_Pkt20UseInvItem` | packet `0x20`, 13 bytes: guid, x, y (C for the handler's identity, entry and opcode; the length and fields `[I]`, [use § B](../../specs/items/use.md); C since plan 0066 S4a/S4b, [experiments § Addendum 2026-11-15](experiments.md#addendum-2026-11-15-plan-0066-batches-s4a-and-s4b-new-checks-over-the-kept-economy-and-inventory-logs-and-static-second-sources-lanen66h)) | C |
+| `0x0054B560` | `sub_0054B560_Pkt26UseBeltItem` | packet `0x26`, 13 bytes: guid, the mercenary flag (C for the handler's identity, entry and opcode; the length and fields `[I]`; C since plan 0066 S4a/S4b, [experiments § Addendum 2026-11-15](experiments.md#addendum-2026-11-15-plan-0066-batches-s4a-and-s4b-new-checks-over-the-kept-economy-and-inventory-logs-and-static-second-sources-lanen66h)) | C |
 | `0x0054B280` | `sub_0054B280_Pkt27ItemOnItem` | packet `0x27`, 9 bytes: target guid, used guid | I |
 | `0x0054D430` | `sub_0054D430_Pkt61MercItem` | packet `0x61`, 3 bytes | I |
 | `0x0054D230` | `sub_0054D230_MercGiveCursorItem` | the cursor item to the mercenary | I |

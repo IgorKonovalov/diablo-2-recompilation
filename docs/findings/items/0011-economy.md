@@ -155,7 +155,7 @@ Blind first: § 1–§ 7 were read from the code before the pages below were fet
 | `0x00622E70` | `PLAYER_GoldCap` | `level × 10 000` (C since plan 0066 S4a/S4b, [experiments § Addendum 2026-11-15](experiments.md#addendum-2026-11-15-plan-0066-batches-s4a-and-s4b-new-checks-over-the-kept-economy-and-inventory-logs-and-static-second-sources-lanen66h)) | C |
 | `0x00623460` | `PLAYER_StashGoldCap` | 2 500 000 | I |
 | `0x0053FF00` | `sub_0053FF00_UnitAddGoldStat` | add to stat 14/15, zero on overflow | I |
-| `0x0055B060` | `sub_0055B060_PlayerGiveGold` | add to carried gold, drop the overflow (C since plan 0066 S4a/S4b, [experiments § Addendum 2026-11-15](experiments.md#addendum-2026-11-15-plan-0066-batches-s4a-and-s4b-new-checks-over-the-kept-economy-and-inventory-logs-and-static-second-sources-lanen66h)) | C |
+| `0x0055B060` | `sub_0055B060_PlayerGiveGold` | add to carried gold, drop the overflow (C for the identity, the at-cap drop and the plain add; the over-cap split `[I]`, no case; C since plan 0066 S4a/S4b, [experiments § Addendum 2026-11-15](experiments.md#addendum-2026-11-15-plan-0066-batches-s4a-and-s4b-new-checks-over-the-kept-economy-and-inventory-logs-and-static-second-sources-lanen66h)) | C |
 | `0x005357D0` | `PLAYER_DeathGoldLoss` | the death loss | I |
 | `0x00535510` | `sub_00535510_PlayerDropGold` | drop an amount as piles at the player | I |
 | `0x0055C850` | `sub_0055C850_GoldPickup` | pick up a pile | I |

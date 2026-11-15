@@ -846,7 +846,7 @@ Targeted ruling on the three points the Tier B check left, not a full re-review.
   charge branch → a-run H4a), 49 (the over-cap branch → a-run H4b), 53 (`mul=` 1536, 2048 → a-run H4a; the order → d-none),
   60 ("written once" → b H4b), 65 (the cost sent → b H4b), 68 (melee-only, combat/delivery's own rows), 75 (the
   `magicarrow` test, `UseAmmo`'s gate, the monster sites' functions → a-run H4a), 77 (`calc2`/`calc3` → b H4b), 78 (the
-  none-queued test and the signed division → d-none), 84 (charges after a use → a-run H4a).
+  none-queued test → a-run H4a; the signed division, non-positive `r` only → d-none; Tier B fix), 84 (charges after a use → a-run H4a).
 - **S4b (19): raised 15, raised in part 4, moved 0.** Raised: 1, 2 (the handlers, logged and read), 5 (do 113's two calls),
   11 (178 `PKT` lines at the table's rows, return address 0x0054D81A), 13 and 64 (the return read by neither frame), 17 and
   59 (the gate's pushes 0, 0, 1, no draw past 0x0057EFF2, the seed unchanged 175 of 175), 29, 30, 31, 58 (no draw in the
@@ -877,3 +877,26 @@ Targeted ruling on the three points the Tier B check left, not a full re-review.
   `[I]` although the only other `+0x6A` byte store is a client record copy, since a displacement search cannot see a store
   through another base (0038 S3b ruling 4's limit); (7) four symbol raises, two of them handlers whose identity (entry =
   table row, opcode's packet) rather than return the run checks.
+
+### 2026-11-15 — Phase 1, batches S4a and S4b: Tier B lane check (`lane/n66h`): accept with fixes (3)
+
+- **Verdict:** accept with fixes, 3 (overstated tag 2, misrouted remainder 1). Gate green. `main` `684332ee` already merged,
+  nothing moved; totals recomputed from the 29 files' *Totals by class*: 2 626 (a-logs 645, a-run 340, b 432, c 390, c-emu 491,
+  d-2c 59, d-owner 68, d-edit 23, d-none 178), unchanged.
+- **Mechanical.** `manifest.sha256` and `dev/manifest-dev.sha256` pass `sha256sum -c`; `tools/sweep2_s4ab.py` (`a82294bc…`) rerun
+  under a 4 GB scope is byte-identical to `check.txt`; the three price controls fail as stated (196, 375 and 1 135 mismatch
+  lines, all in their one quality; stock 0). The contradiction: the parsed Weapons, Armor and Misc tables give 13 `nodurability`
+  bases of a `Repair` type, 12 of type `xbow` and 1 of type `swor`. The backlog entry is well formed. The four symbol rows agree
+  between `re/symbols.csv` and the Functions tables.
+- **Fixes.** (1) items/0011's `PlayerGiveGold` row said "drop the overflow" under `C`, where the over-cap split is row 49's
+  `[I]` remainder: scoped. (2) items/0012's two handler rows carried the length and fields ("13 bytes: guid, x, y") under `C`
+  where the run checks the entry, opcode and return only (use.md § B keeps them `[I]`): scoped. (3) Row 78's remainder was
+  routed whole to d-none: the none-queued test is reachable on stock (a second loss inside one interval), so it goes to a-run
+  H4a; only the signed division for a non-positive `r` is d-none (stock `rep-dur` values in the affix, unique and rune tables
+  are all positive).
+- **Judgment calls.** (1) row 6 accepted: the cap's form is code (two tools) and the equality at L 30 runs it; the other levels
+  are bounded only, as the row says. (2) row 17 accepted: the second source is objdump's read of the pushes and of the test at
+  0x0057EEFB (`cmp [ebp+0xc], 0; je 0x0057EFF2`, no draw before it or from it), the unchanged seed only agrees. (3) rows 3, 21
+  and 57 d-none accepted as presentation or no stock source (precedent stats-states 18, items/0010 qd 42 "no stock quality 9
+  item", items/0008's disabled tempered rows); row 3 and 57 are client presentation, reachable but out of the spec's scope: for
+  Tier A to confirm that reading of d-none. (4)–(7) accepted.
