@@ -30,7 +30,7 @@ back to it. Then follow the game from the map to the loot, and on to the charact
 | 6 | [Items](items.md) | one monster drop end to end: treasure class, quality and magic find, uniques and sets, affixes and rare names, base stats, ethereal and sockets |
 | 7 | [Other item paths](items-other-paths.md) | the items that do not come from a monster drop: socketing and runewords, the Horadric Cube, vendors and gambling, quest drops and rewards |
 | 8 | [Prices, repair, gold and wear](economy.md) | what an item costs to buy, sell, gamble and repair and why, how gold is paid, capped, dropped and lost on death, and how items wear out in melee and replenish |
-| 9 | [Using items, and the inventory](inventory.md) | what the server does when a player uses an item (the gate, the use kinds, healing and mana potions with their two draws, rejuvenation, identify, the cube), where an item can go (pages, the stash, the belt, stacks), pickup and its reach, which cell a dropped item lands on, and how long an item lies on the ground before the sweep frees it; with what a game session showed, what an emulation showed and what is only read from the code kept apart |
+| 9 | [Using items, and the inventory](inventory.md) | what the server does when a player uses an item (the gate, the use kinds, healing and mana potions with their two draws, rejuvenation, identify, the cube), where an item can go (pages, the stash, the belt, stacks), pickup and its reach, which cell a dropped item lands on, how long an item lies on the ground before the sweep frees it, and how two players trade (the request, the offer pages and what locks, both accepts, the commit's room test that can disagree with where the items land, the snapshot that undoes a trade, and every way a trade ends); with what a game session showed, what an emulation showed and what is only read from the code kept apart |
 | 10 | [Characters and hirelings](characters.md) | what a new character starts with, how experience and level-up work, how a kill's experience is shared in a party and what the number of players changes, and how hirelings are listed, hired and saved |
 | 11 | [Combat](combat.md) | what happens when one unit hits another: the chance to hit, block and avoid, the damage build, resistances and absorb, crushing blow, open wounds, leech and the life change, and whose seed each draw is on |
 | 12 | [Stats and states](stats-and-states.md) | how a character's final stats add up from items, set bonuses, passives and states, item requirements and the 136-frame refresh, how a timed state is applied, refreshed, refused, replaced and ended, group clears, the regeneration of life, mana and stamina, auras, and shrines and wells |
@@ -58,7 +58,7 @@ The wiki is one page per topic, except where the amount of material or a spec's 
   [Other item paths](items-other-paths.md) links it from its vendor section.
 - **Using items and the inventory get their own page.** Their specs ([item use](../specs/items/use.md) and
   [inventory](../specs/items/inventory.md)) cover the requests that use, move, pick up and drop an item, which no
-  other page holds. [Items](items.md) and [Other item paths](items-other-paths.md) link it for what happens to an item
+  other page holds; the [trade](../specs/items/trade.md) between two players moves items between inventories, so it is a section there. [Items](items.md) and [Other item paths](items-other-paths.md) link it for what happens to an item
   after it is made.
 - **Characters and hirelings get their own page.** Their specs (new characters and level-up, hirelings) fit no other
   topic. [Saves](saves.md) refers to it for what a new character's save
@@ -71,8 +71,8 @@ Everything else is one page per topic. The string tables and calc formulas sit o
 
 Only reviewed specs are covered, and every row of the [research map](../specs/README.md) that is reviewed has a page
 here: randomness and seeds, the excel data, string tables and calc formulas, the level generators, monsters, objects,
-item creation and the other item paths, the [item economy](../specs/items/economy.md), [item use](../specs/items/use.md) and the
-[inventory](../specs/items/inventory.md), new characters, hirelings, saves, [combat formulas](../specs/combat/README.md),
+item creation and the other item paths, the [item economy](../specs/items/economy.md), [item use](../specs/items/use.md), the
+[inventory](../specs/items/inventory.md) and [player trade](../specs/items/trade.md), new characters, hirelings, saves, [combat formulas](../specs/combat/README.md),
 [stats and states](../specs/stats/README.md), [quests and travel](../specs/quests/README.md), the composition of the core
 specs, [seed to world](../specs/chain/README.md), [skills and missiles](../specs/skills/README.md) (their machinery, a named
 tier of skills and the function catalogue of every other numbered skill and missile function), and
