@@ -548,6 +548,46 @@ records reaches (0x006E22C0). Owners and types:
   allows for unreached slots. Phase 2's per-type floors would then cover 1, 2, 4, 7, 8, 9, 10, 13, 14, 15 (and 0 if a
   get-hit request is logged), not 3, 11, 12, 16.
 
+### 15. Plan 0066 batch S7a, part 1: second-tool scans and graphs (2026-11-16, `lane/n66n`)
+
+Static, no game, no Ghidra. `tools/sweep2_s7a.py` (`49f0d2dc…`; the walker and draw sites as
+[frame/0001 § 8](../frame/0001-tick-and-messages.md#8-plan-0066-batch-s7a-part-1-second-tool-graphs-and-scans-2026-11-16-lanen66n)
+describes, the call sites from the raw bytes decoded by r2). Output `workspace/logs/n66n/s7a/check-s7a.txt`
+(`43476f6e…`, `S7a total bad=0`), `manifest-s7a.sha256`.
+
+- [C] **68 direct calls of `PathPlan`** (README row 1, in part): 68 `call` sites, no jump, no absolute reference; 34 below
+  0x00520000 (client) and 34 above (server). [I] stays: "in 58 functions": the int3-padded entries give 59, the count
+  § 11 already calls attribution-dependent. (fn:sub_00649970_PathPlan@0x00649970)
+- [C] **`force`** (README row 24): `PathPlan(path, unit, force)` names `[ebp+0x10]` once, 0x00649AEE; 66 sites push 0;
+  0x005FBFB7 pushes `EDI`, which the loop at 0x005FBF71–0x005FBF76 leaves only at 0 (callee-saved after); the client's
+  0x004804C4 pushes `EAX & 1`. (0x00649AEE, 0x005FBFB7, 0x004804C4)
+- [C] **`PATH_DynamicCreate`'s callers** (README row 3, with a correction): nine calls: `SUnitPathCreate` three (0x005548CB,
+  0x005548F1, 0x005549AA), `UnitRelocate` three (0x00554AC7, 0x00554B34, 0x00554C2D) and three client sites. The spec's
+  entry row names `SUnitPathCreate` only; `UnitRelocate` is a second server creator (Phase 3).
+  (fn:PATH_DynamicCreate@0x00649D00, fn:sub_00554850_SUnitPathCreate@0x00554850)
+- [C] **D1** (README row 35): roots `PathPlan`, `PathReplan`, `PathAimNextPoint`, `PathSetType`, the seven `PathSet*`
+  setters, `PathPointsOutsideRoom`, `PathTargetFree`, `PathTargetNotTown`, `PathTargetRefresh`, the object step,
+  `PathPlanStraight`, `PathPlanToUnit`, `PathTargetExtendPlayer`, `PathDirCell`, `PathDirTriple`; stops the random walk,
+  the spiral, `PATH_DynamicCreate` and the fatal path: 82 functions, no drawing function, two indirect calls, the slot
+  0x00649BAE and the `IsBadCodePtr` import 0x00649B8D. `PATH_DynamicCreate` with the allocator stopped: 52, none (Ghidra's 52).
+- [C] **D2** (README row 36): the eight planners, fatal path stopped: 58 functions (Ghidra's 58), one drawing function,
+  the random walk, one LCG site 0x0067A315, no RNG call; the search's roots 0x0067AD00, 0x0067B850, 0x0067C2D0: 46 functions
+  (Ghidra's 46), the three LCG sites 0x0067A641, 0x0067A6E1, 0x0067A983. (fn:sub_0067A240_PathPlanRandomWalk@0x0067A240)
+- [C] **Slots 3, 11, 12** (README rows 32–34): rooted at 0x00679E50, 0x00679FD0, 0x00679E60 (no Ghidra function), 25
+  functions, none.
+- [C] **D3** (README row 37, in part): `SUnitPathCreate`'s own body draws nothing; its 19 direct callees but
+  `PATH_DynamicCreate` reach drawing functions, the nearest at depth 2: `PlayerModeAllowed` through `PlayerModeCmd`
+  (0x005809D0) from `PlrPlaceEventsInit`, and `MonAttackStats` through `MonSetMode` from `MonInitMode`. [I] stays: the
+  count 118 (this walker: 122 with the seven RNG functions, 125 with nine). (fn:sub_00554850_SUnitPathCreate@0x00554850)
+- [C] **The seven type-1 sites** (README row 60): `AiPathOverrideSet` takes the type in `EDX`; at five of its nine calls the
+  last write to `EDX` is `mov edx, 1` (0x005E3BCC, 0x005E4300, 0x005E5DD9, 0x005E5EE7, 0x005E5F40); `PathSetType(path, 1)`
+  is pushed at 0x005CD484 and 0x005CBC44 on the server and at two client sites (0x004E0F00, 0x004E1F93).
+  (fn:sub_005A6260_AiPathOverrideSet@0x005A6260, fn:sub_00648CF0_PathSetType@0x00648CF0)
+- [C] **Type 16** (README row 65, search row 28): `PathPlanType16A` and `PathPlanType16B` have no call, jump or absolute
+  reference, and the only `PathSetType(…, 16)` pushes are theirs (0x00663E12, 0x00663EE2).
+  (fn:sub_00663E00_PathPlanType16A@0x00663E00, fn:sub_00663ED0_PathPlanType16B@0x00663ED0)
+- Not settled in part 1 (part 2 of the batch): README rows 6, 17, 38, 41, 56, 63, 76, 77, 79; search rows 5, 14, 34.
+
 ## Data touched
 
 - `tbl:MonStats.txt:npc` (`+0x0D`, MonIsNpc), MonStats `+0x18` (the MonStats2 index) and MonStats2 `+0x08`

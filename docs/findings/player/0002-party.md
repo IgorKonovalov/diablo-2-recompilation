@@ -387,6 +387,28 @@ waypoint the staging named).
   fn:sub_0063A130_UnitHasStateInMask@0x0063A130, run:2026-11-15-sweep8-single)
 - [I] **A converted monster that kills**: not reached (`kxs` empty on every `XK0`); § 4's reading for it stays as it was. (fn:sub_0057E7B0_XpCreditPlayer@0x0057E7B0, 0x0057E7DF, run:2026-11-15-sweep8-single)
 
+## 12. Plan 0066 batch S7a, part 1: second-tool scans (2026-11-16, `lane/n66n`)
+
+Static, no game. `tools/sweep2_s7a.py` (`49f0d2dc…`; sections `graphs`, `xrefs`, `reads`; the walker and draw sites as
+[frame/0001 § 8](../frame/0001-tick-and-messages.md#8-plan-0066-batch-s7a-part-1-second-tool-graphs-and-scans-2026-11-16-lanen66n)
+describes). Output `workspace/logs/n66n/s7a/check-s7a.txt` (`43476f6e…`, `S7a total bad=0`), `manifest-s7a.sha256`.
+
+- [C] **§§ A to D draw nothing by direct reach** (party row 2): from `XP_OnMonsterKill` and `PartyXpCollect`, stopped at
+  `PLAYER_AddExperience` (met 3 times), `MERC_AddExp` (once) and the fatal path, the walker's graph holds 467 functions
+  and no drawing function (r2's and objdump's LCG sites agree, 852 each); indirect calls are not followed, as the spec
+  says. (fn:XP_OnMonsterKill@0x0057E990, fn:sub_0057E5A0_PartyXpCollect@0x0057E5A0)
+- [C] **The count's references** (row 20): `PlayerCount` has two direct calls, 0x0055A8F4 (`TC_ResolveDrops`) and
+  0x00573974 (`MonPlayerBonus`), no jump and no absolute reference; `MonPlayerBonus` five, 0x00573DBC (`MonStatsInit`) and
+  the four thinks (0x005E8D61, 0x005E9C82, 0x005F0B32, 0x005FC542); `g_PlayersOverride` is named by two instructions,
+  0x00535785 (`SetPlayersOverride`) and 0x005357B9 (`PlayerCount`). (fn:sub_00535790_PlayerCount@0x00535790,
+  fn:sub_00573930_MonPlayerBonus@0x00573930, data:g_PlayersOverride@0x00883D70)
+- [C] **The four thinks read only word `+0x0C`** (rows 14, 22): in each, the block `MonPlayerBonus` fills (`EDX`, set by
+  `lea edx, [ebp−X]` before the call) is named twice: the `lea` (its address, the call's argument) and one read of
+  `+0x0C` (0x005E8D6B, 0x005E9C8C, 0x005F0B37, 0x005FC54C); no instruction of the four bodies names words `+0x04` to
+  `+0x10` other than that. `AiDiabloDecideUnref` has no call, jump or absolute reference. (fn:sub_005E8810_AiDiabloDecide@0x005E8810,
+  fn:sub_005E9750_AiDiabloDecideUnref@0x005E9750, fn:sub_005F0B00_AiCorruptRogue@0x005F0B00,
+  fn:sub_005FC450_AiBaalDecideRanged@0x005FC450)
+
 ## Data touched
 
 tbl:States.txt:exp; tbl:Experience.txt (`perClass`, `ExpRatio`) by offset, synthetic here; tbl:Hireling.txt:Exp/Lvl by offset, synthetic here.

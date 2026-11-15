@@ -2677,6 +2677,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00619F90,func,sub_00619F90_RoomUpdatedList,,I,sim/frame,docs/findings/frame/0001-tick-and-messages.md
 0x0061A010,func,DUNGEON_GetCollMap,,I,drlg/collision,docs/findings/drlg/0005-collision.md
 0x0061A040,func,DUNGEON_SetCollMap,,I,drlg/collision,docs/findings/drlg/0005-collision.md
+0x0061A140,func,sub_0061A140_ActRoomAtCoordsActivate,,I,drlg/lifecycle,docs/findings/drlg/0009-room-lifecycle.md
 0x0061A180,func,sub_0061A180_ActRoomsHead,,I,drlg/lifecycle,docs/findings/drlg/0009-room-lifecycle.md
 0x0061A1B0,func,sub_0061A1B0_RoomGetLevelId,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x0061A1F0,func,sub_0061A1F0_RoomPopLevelId,,I,monsters/spawn,docs/findings/monsters/0002-room-population.md
@@ -2720,6 +2721,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0061B5B0,func,sub_0061B5B0_DrlgRefRemoveNear,,C,drlg/lifecycle,docs/findings/drlg/0009-room-lifecycle.md
 0x0061B6F0,func,sub_0061B6F0_DrlgRefMove,,C,drlg/lifecycle,docs/findings/drlg/0009-room-lifecycle.md
 0x0061B730,func,sub_0061B730_RoomActivateB,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
+0x0061B7B0,func,sub_0061B7B0_RoomAtCoordsActivate,,I,drlg/lifecycle,docs/findings/drlg/0009-room-lifecycle.md
 0x0061B920,func,sub_0061B920_ClientBackgroundBuild,,I,drlg/lifecycle,docs/findings/drlg/0009-room-lifecycle.md
 0x0061BA30,func,sub_0061BA30_DrlgRoomReleaseTest,,C,drlg/lifecycle,docs/findings/drlg/0009-room-lifecycle.md
 0x0061BAC0,func,sub_0061BAC0_DrlgRoomPinFlag,,C,drlg/lifecycle,docs/findings/drlg/0009-room-lifecycle.md

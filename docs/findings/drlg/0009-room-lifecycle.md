@@ -107,6 +107,8 @@ written from the code before they were read. Little exists beyond anecdotes; not
 |---|---|---|---|
 | `0x0052D870` | `sub_0052D870_GameTick` | frame++, new-room updates, unit events, client room sync, every 12 frames `RoomsDeactivate`, every 11 frames the level-unload tick per act | I |
 | `0x0052D440` | `sub_0052D440_ClientsRoomSync` | per client: `ClientRoomSync` | I |
+| `0x0061A140` | `sub_0061A140_ActRoomAtCoordsActivate` | fatal on a null act, then `RoomAtCoordsActivate`; its one direct caller is 0x00553790 in `sub_00553720_PortalPartnerGet` (§ 12) | I |
+| `0x0061B7B0` | `sub_0061B7B0_RoomAtCoordsActivate` | `0x00642C30` (the room at given coordinates) then `RoomActivateB` on it; a fifth caller of `RoomActivateB` (§ 12) | I |
 | `0x005380D0` | `sub_005380D0_ClientRoomSync` | client room ← its player's room; on a change `ClientRoomChange` | I |
 | `0x00537B50` | `sub_00537B50_ClientRoomChange` | DRLG reference move, level reference move, near-set difference → client add/remove per active room | C |
 | `0x0053A8E0` / `0x0053A9B0` | `sub_0053A8E0_RoomClientEnter` / `sub_0053A9B0_RoomClientLeave` | add / remove the client in the room's client list (`+0x48`, `+0x78`) and tell the units | C |
@@ -1046,6 +1048,40 @@ Static, no session. Kept outputs under `workspace/logs/p49r/` (manifest `p49r-ma
 Unnamed functions are given by address. Their callers, as far as Ghidra's xrefs and the image's pointer tables give
 them, are in the first column; their purpose is not read. The quest sites set the pin when an event starts and clear
 it when it ends. That is a reading of the call order, not a traced lifetime.
+
+### 12. Plan 0066 batch S7a, part 1: caller and pin scans with a second tool (2026-11-16, `lane/n66n`)
+
+Static, no game. `tools/sweep2_s7a.py` (`49f0d2dc…`, section `xrefs2`): the raw-byte call/jump/abs32 scan of
+`tools/xrefscan.py`, each site decoded by r2, the pushed arguments by r2's linear listing from the int3-padded entry.
+Output `workspace/logs/n66n/s7a/check-s7a.txt` (`43476f6e…`, `S7a total bad=0`), `manifest-s7a.sha256` passing from
+`workspace/logs/n66n/s7a`.
+
+- [C] **`RoomUpdateOne` has exactly three direct callers** (lifecycle row 7): 0x0055379D, 0x0056CF7D, 0x0059E018, no jump
+  and no absolute reference; the third tool agrees with the first. (fn:sub_0052D0F0_RoomUpdateOne@0x0052D0F0)
+- [C] **Every caller of `RoomRestoredSet` passes 1** (lifecycle row 20, the parenthetical): three calls, 0x0052D12C and
+  0x0052D14A push the immediate 1, 0x0052D20C pushes `EBX`, set to 1 at 0x0052D19B and not written again before the call
+  (callee-saved). The setter's `and [eax+0x34], 0xFFFFFFFD` branch (0x0061A547) is therefore not taken by a direct call.
+  [I] stays: that no other code clears bit 1 of room `+0x34`; the one other `and [reg+0x34], mask` without bit 1 is
+  0x00648B54 in `PathSetTargetPoint` (a path record), and stores of a register to `+0x34` of an unresolved base were not
+  traced. (fn:sub_0061A510_RoomRestoredSet@0x0061A510, 0x0052D19B)
+- [C] **The 31 pin sites** (lifecycle row 27): `RoomPinSet` has 31 direct calls in 24 functions (int3-padded entries), no
+  jump, no absolute reference. `DrlgRoomPinFlag` ORs `0x400000` into room `+0x28` for a 0 argument and ANDs it out
+  otherwise (0x0061BAC0–0x0061BAD3), so a 0 push is a set: 18 sites push 0 (the one register push, `EAX` at 0x005EEAC9,
+  follows `test eax, eax; jne`, so it is 0) and 13 push 1, with the owners § 11.4 (c) names. That the quest sites set
+  at an event's start and clear at its end stays a reading of the call order. (fn:sub_0061AED0_RoomPinSet@0x0061AED0,
+  fn:sub_0061BAC0_DrlgRoomPinFlag@0x0061BAC0)
+- **Contradicted in part: lifecycle row 2.** `RoomActivateB` has ten direct calls. Nine lie in the families the spec
+  names: `PresetLevelBuild` (0x006681D2), the warp destination (0x0066AB5A, 0x0066AC32), the waypoint room (0x0066ADAC),
+  the warp record (0x0066B16A, 0x0066B171) and the level point (0x0066B313, 0x0066B330, 0x0066B3C0). The tenth,
+  0x0061B7CA, lies in a separate function, 0x0061B7B0 (int3-padded; Ghidra's references attribute it to
+  `RoomActivateB`), which takes the room at given coordinates (`0x00642C30`) and activates it; its one direct caller
+  is 0x0061A140, whose one direct caller is 0x00553790 in `sub_00553720_PortalPartnerGet`, the "unit spawn at coordinates
+  whose room was not active" that also calls `RoomUpdateOne` (0x0055379D). [I] So a unit spawn at coordinates is a fifth
+  on-demand activation, beside warp, waypoint, level point and preset build; what reaches 0x00553720 is not read here.
+  Backlog: [`2026-11-16-reverser-spec-writer-roomactivateb-fifth-caller`](../../backlog/2026-11-16-reverser-spec-writer-roomactivateb-fifth-caller.md).
+  (fn:sub_0061B730_RoomActivateB@0x0061B730, fn:sub_0061B7B0_RoomAtCoordsActivate@0x0061B7B0,
+  fn:sub_0061A140_ActRoomAtCoordsActivate@0x0061A140, 0x0061B7CA, 0x0061A173, 0x00553790)
+- Not settled in part 1 (part 2 of the batch): lifecycle rows 11, 12, 29, 36, 48.
 
 ## Data touched
 
