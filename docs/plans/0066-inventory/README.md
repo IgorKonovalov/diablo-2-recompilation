@@ -158,9 +158,9 @@ deferred)**. The review is asked to rule on one of:
   `MissileCreateAt`; missiles 37, 54, 55, 56 and 97 a-logs → b (H2a): no own-cell free in the logs (37, 97), `THR`
   carries the chance only (54, 55), no line of state 86 (56). Reasons in the rows. Totals after (recomputed from the 29
   files against `main` `f9b82bd4`): a-logs 668, a-run 358, b 394, c 390, c-emu 490, d 326; Phase 1 1 548, Phase 2 752.
-- **Plan 0069 Phase 1a (`lane/n69a`, 2026-11-15):** monsters/ai/catalogue 121–125, 184–189, 204–205, 306–309, 311, 330–331, 333–334, 358–359, 361 and 475–479 a-run → b (new batch H1p, out of plan 0069): the tour's placement tool (`tools/ai_tour.py place`) finds no stock creator of the classes of rows 46, 47, 62, 75, 76, 81, 82, 83, 87, 113 and 121 (H1c 18, H1b 7, H1d 5); a code creator is not ruled out, so (b), not d-none. Reasons in the rows. Totals after (the catalogue file recounted against `main` `f56ab708`, merged into the lane): a-run 328, b 424; Phase 2 752 unchanged.
   After merging `main` with S1e (Tier A, 2026-11-15, recomputed from the 29 files' *Totals by class*): a-logs 668, a-run
   358, b 394, c 390, c-emu 489, d 327 (d-owner 68); Phase 1 1 547, Phase 2 752.
+- **Plan 0069 Phase 1a (`lane/n69a`, 2026-11-15):** monsters/ai/catalogue 121–125, 184–189, 204–205, 306–309, 311, 330–331, 333–334, 358–359, 361 and 475–479 a-run → b (new batch H1p, out of plan 0069): the tour's placement tool (`tools/ai_tour.py place`) finds no stock creator of the classes of rows 46, 47, 62, 75, 76, 81, 82, 83, 87, 113 and 121 (H1c 18, H1b 7, H1d 5); a code creator is not ruled out, so (b), not d-none. Reasons in the rows. Totals after (the catalogue file recounted against `main` `f56ab708`, merged into the lane): a-run 328, b 424; Phase 2 752 unchanged.
 
 ## 4. Batch list
 

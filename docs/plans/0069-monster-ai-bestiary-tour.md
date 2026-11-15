@@ -1,6 +1,6 @@
 # 0069 — Monster AI bestiary tour: the catalogue's harness rows of plan 0066
 
-> **Status:** approved (2026-11-10, by the owner, as recommended: question 1 (a), question 2 (a)); Phase 1a running (`lane/n69a`, started by the owner 2026-11-15; filed for its Tier B review)
+> **Status:** approved (2026-11-10, by the owner, as recommended: question 1 (a), question 2 (a)); Phase 1a running (`lane/n69a`, started by the owner 2026-11-15; Tier B check: accept with fixes, 3)
 > **Created:** 2026-11-10
 > **Owner skill(s):** reverser (every phase; the re-tag is plan 0066 Phase 3's, spec-writer)
 > **Related ADRs:** 0003-runtime-experiments, 0004-boundary-oracles-in-reproduction, 0021-observed-boundaries-in-emulation, 0023-review-tiers-and-gate-first-fixes, 0028-case-and-process-in-experiment-records
@@ -247,7 +247,7 @@ both 1b and 1c. Phase 3 needs 2 and the models of its acts.
   - inventory rows that the audit or the placement shows unreachable, moved with their reason (to d-none, d-owner or
     (b)). This happens only after `lane/n66d` has merged, because that lane is editing the inventory files.
 - **Done when:**
-  - every one of the 237 rows has a case, or a move with its reason;
+  - every one of the 241 rows (237 at the draft; 241 after 0066 S1d) has a case, or a move with its reason;
   - each staged pool's classes match `monpool.py`'s prediction for the chosen seed (a kept output);
   - every new block's call has a class (compared, rev 7, or fork);
   - the 38 kept logs reproduce S1b's `model-check.txt` byte for byte, apart from the added separation lines.
@@ -255,7 +255,8 @@ both 1b and 1c. Phase 3 needs 2 and the models of its acts.
 
 ### Phase 1b — Models: H1a, H1b, H1d
 - **Owner skill:** reverser (static; no slot)
-- **What:** models for the 33 entries of H1a, H1b and H1d, transcribed from the catalogue blocks.
+- **What:** models for the 33 entries of H1a, H1b and H1d (29 after Phase 1a's moves to H1p: H1a 10, H1b 13, H1d 6),
+  transcribed from the catalogue blocks.
 - **Outputs:** `tools/ai_model_check.py` models with `MODELS` rows, and `tools/test_ai_model_check.py` cases.
 - **Done when:**
   - each entry is modelled with its controls, or named with the reason it cannot be modelled (returned to its row);
@@ -265,7 +266,8 @@ both 1b and 1c. Phase 3 needs 2 and the models of its acts.
 
 ### Phase 1c — Models: H1c, H1g, H1h
 - **Owner skill:** reverser (static; no slot)
-- **What:** the same work for the 38 unmodelled entries of H1c (20), H1g (13) and H1h (5), and the notes row of H1g.
+- **What:** the same work for the 38 unmodelled entries of H1c (20), H1g (13) and H1h (5), and the notes row of H1g
+  (H1c is 13 after Phase 1a's moves to H1p, so 31 entries).
 - **Outputs and Done when:** as Phase 1b. The H1h models also take their rev 7 word as an input, and fall back to a fork
   without it.
 - **Review:** Tier B.
@@ -707,3 +709,39 @@ Static; no slot, no game. `main` `f56ab708` merged (plan 0066 S1e and S2b in). K
   on a sample of entries against the catalogue blocks, the 64-of-68 convention check, the SEP lines and the byte-identical
   regression, the README totals.
 - **Next:** Phases 1b and 1c (the models) after this review; Phase 2 adds `objects.py` to the tour's gdb script with rev 7.
+
+### 2026-11-15 — Phase 1a Tier B lane check (architect-check, `lane/n69a`)
+
+- **Verdict: accept with fixes** (3 fixes: stale cross-reference 2, omission 1). Phase 1a's four *Done when* items hold
+  against the kept outputs; the gate is green.
+- **Done when, one by one.**
+  - *Every row has a case or a move:* `ai_tour.py rows` regenerated, byte-identical to `rows.txt`: 211 cased, 30 moved, 0
+    unplaced; the 30 moved rows are all class `b`, batch H1p in the catalogue file, and the 11 entries' other statements
+    (rows 310, 332, 360, d-none or c-emu) were not a-run. The draft's 237 became 241 at 0066 S1d (scope note of
+    2026-11-10); the lane's recount of 241 is right.
+  - *The kept `pools.txt` matches the chosen seeds:* the six group seeds of `pools.txt` equal `seeds.txt`'s `best` lines and the
+    plan's table; `ai_tour.py pools` regenerated, byte-identical; `seeds --group n4` re-run gives the same top three.
+  - *Every call has a class:* `audit.txt` regenerated, byte-identical; the plan's table sums to 980 compared, 9 rev 7, 215 run, 166 fork over 89 entries;
+    CONV-MISSING 0; `conv.txt` 68 checked, 64 agree, 35 entries in `CONV_REV3`.
+  - *Regress:* run under `systemd-run --user --scope -p MemoryMax=4G`: "byte-identical", 32 entries, 38 logs, 32 SEP lines, and
+    the output equals `regress-model-check.txt`. No-game tests (`python3 -I tools/test_ai_tour.py`, `test_ai_sessions.py`,
+    `test_ai_model_check.py`): 9, 21, 13 ok. `place`, `routes`, `conv`, `cases`, `entries` also regenerate byte-identical.
+- **Also checked.** `sha256sum -c manifest.sha256`: 12 of 12 OK. Inventory: 30 moved rows are `b` and H1p in the catalogue
+  file; the file's class counts are a-run 172, b 124; the 29 files sum to a-run 328, b 424 (All row, Phase 2 752, Phase 1
+  1 547 unchanged); H1b 38, H1c 41, H1d 11, H1p 30, tour scope 211 = 38 + 38 + 41 + 11 + 44 + 39. The (b) over d-none choice stands
+  (review-fixes rule 4: no class-id scan, so no absence claim; `monsters/0004` agrees for `minionspawner1`, "placed by no DS1"). No `[L]` or
+  `[C]` is added in the diff; the "likely, not certain" placements are aims, not claims.
+- **Fixes (3).**
+  1. *Stale cross-reference:* the plan's Phase 1b and 1c *What* lines still counted the entries before the moves (H1b 15, H1c
+     20, H1d 8); now with the post-move counts (H1a 10, H1b 13, H1d 6 = 29; H1c 13, so 31), recounted from `entries.txt`.
+  2. *Stale cross-reference:* Phase 1a's *Done when* said 237 rows; now 241 (237 at the draft).
+  3. *Omission:* in `0066-inventory/README.md` § 3 the new 0069 bullet sat between S2b's bullet and its "After merging
+     `main` with S1e" continuation, which read as the 0069 bullet's; the bullet moved below the continuation.
+- **For the next phases (no fix).** The plan's *Lacks* section (the 71 entries, lines 195–202) and the cost table keep
+  the draft figures, as the 2026-11-10 scope note says they stay; Phases 1b and 1c use the numbers in their *What* lines.
+  `regress` reads its entry list from the kept `model-check.txt`, so a dropped entry would not show as a difference by
+  itself (the byte comparison would still fail on the missing block). Phase 2 needs the `objects.py` line of the tour's gdb
+  script (judgment call 2) and the rev 7 list.
+- **Checked:** [C] added or raised 0; anchors `0x005FB650` (AiTrapArrowKind, R78/R79 rev 7), `0x00625760` (StatListFindFlag, R118), `0x005F6630`
+  (AiNestInit, R43/R121 init) against `re/symbols.csv` and the audit; review-fixes rules 2, 3, 6 and 4 applied; request items all answered; disagreements
+  routed 0; passes 7/8 skipped (no finding, table or format file in the diff).
