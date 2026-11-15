@@ -1,6 +1,6 @@
 # 0069 — Monster AI bestiary tour: the catalogue's harness rows of plan 0066
 
-> **Status:** approved (2026-11-10, by the owner, as recommended: question 1 (a), question 2 (a)); Phase 1a done (`lane/n69a`, Tier B check: accept with fixes, 3; merged); Phase 1b done (`lane/n69b`, 29 of 29 entries modelled; Tier B check: accept, 0 fixes; merged); Phase 1c running (`lane/n69c`, 2026-11-15; checkpoint 1: 31 of 31 entries and the notes row modelled, the 38-log check in progress)
+> **Status:** approved (2026-11-10, by the owner, as recommended: question 1 (a), question 2 (a)); Phase 1a done (`lane/n69a`, Tier B check: accept with fixes, 3; merged); Phase 1b done (`lane/n69b`, 29 of 29 entries modelled; Tier B check: accept, 0 fixes; merged); Phase 1c done pending merge (`lane/n69c`, 2026-11-15; 31 of 31 entries and the notes row modelled; Tier B check: accept with fixes, 3)
 > **Created:** 2026-11-10
 > **Owner skill(s):** reverser (every phase; the re-tag is plan 0066 Phase 3's, spec-writer)
 > **Related ADRs:** 0003-runtime-experiments, 0004-boundary-oracles-in-reproduction, 0021-observed-boundaries-in-emulation, 0023-review-tiers-and-gate-first-fixes, 0028-case-and-process-in-experiment-records
@@ -268,8 +268,10 @@ both 1b and 1c. Phase 3 needs 2 and the models of its acts.
 - **Owner skill:** reverser (static; no slot)
 - **What:** the same work for the 38 unmodelled entries of H1c (20), H1g (13) and H1h (5), and the notes row of H1g
   (H1c is 13 after Phase 1a's moves to H1p, so 31 entries).
-- **Outputs and Done when:** as Phase 1b. The H1h models also take their rev 7 word as an input, and fall back to a fork
-  without it.
+- **Outputs and Done when:** as Phase 1b, except that its third item reads: the 38 kept logs give 0 mismatches for these
+  entries and leave the S1b output unchanged, with the decision counts per entry reported (Phase 1b's entries had no
+  decisions in the logs; these hold some, which the check compares). The H1h models also take their rev 7 word as an
+  input, and fall back to a fork without it. [Wording fixed at the `lane/n69c` Tier B check, 2026-11-15.]
 - **Review:** Tier B.
 
 ### Phase 2 — Logger rev 7, the pilot and Act I
@@ -277,6 +279,8 @@ both 1b and 1c. Phase 3 needs 2 and the models of its acts.
 - **What:**
   - build rev 7 from Phase 1a's list, teach `tools/ai.py` its lines, and feed its words to the H1h models of
     `ai_model_check.py` (gap 4);
+  - give R54 (step 2) and R58 (step 3) `unit_set_event`'s `Unit+0xC4 |= 0x400` before their first Phase 2 log
+    (Phase 1c modelled it for R32 only; a log reaching either arm would otherwise show a `c4` mismatch);
   - run a regression case and measure launch against switch;
   - run the Act I and Rogue Encampment cases with committed predictions.
 - **Outputs:**
