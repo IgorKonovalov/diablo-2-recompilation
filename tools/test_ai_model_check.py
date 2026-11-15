@@ -822,6 +822,17 @@ class Paths(unittest.TestCase):
         d["aib"][1]["a"][1] = 6
         self.bad("R73", d)
 
+    def test_r73_walk_override_word(self):
+        # no skills, not melee, dist 10 >= aip(5) 0: chance(7) 100 (draw 1), one more step (draw 2): Ovr(2, 0, w) with w
+        # the new low word with its low byte replaced by 6 + (low & 1) (R73a, as logged); Walk(t, 7)
+        lo = low(None, 2)
+        w = (lo & 0xFFFFFF00) | (6 + (lo & 1))
+        d = path("R73", [("UnitLifePct", 0, 0, [U], 90, 0), ("Ovr", U, 2, [0, w], 1, 2), ("Walk", G, U, [T, 7], 1, 0)],
+                 aip={7: 100}, sk=sk_hex([-1] * 8))
+        self.ok("R73", d)
+        d["aib"][1]["a"][1] = 6 + (lo & 1)                      # the low byte alone is not the logged word
+        self.bad("R73", d)
+
     def test_r77_shot_and_die(self):
         self.ok("R77", path("R77", [("SetModeAtUnit", G, U, [4, T], 1, 0)], aip={1: 25, 2: 1}))
         d = path("R77", [("SetMode", G, U, [0, 0, 0], 1, 0)], dist=30, aip={1: 25, 2: 1})
@@ -885,6 +896,16 @@ class Paths(unittest.TestCase):
         d["aib"][0]["edx"] = 0x7200000
         self.bad("R32", d)
 
+    def test_r32_set_event_flag(self):
+        # home set, class other; p = 0x7200000 a player (fork) at distance 1: list, not busy, no interact, v14 0 (forks);
+        # step 7: v18 0 -> 60, UnitSetEvent sets Unit+0xC4 bit 0x400 before Idle(20)
+        d = path("R32", [("AiDistUnits", U, 0x7200000, [], 1, 0), ("Idle", G, U, [20], 0, 0, None, (0, 60, 0))])
+        d["r7"] = {"AiNearestPlayer": (0x7200000, 1)}
+        d["aib"][1]["c4"] = 0x400
+        self.ok("R32", d, forks=5)
+        d["aib"][1]["c4"] = 0x800
+        self.bad("R32", d)                                      # neither fork gives 0x800
+
     def test_r1_window(self):
         d = path("R1", [("UnitGetRoom", 0, 0, [U], 0x7300000, 0), ("Idle", G, U, [200], 0, 0)])
         self.assertEqual(M.check(M.m_r1w, d).status, "stop")
@@ -945,6 +966,17 @@ class Revision5(unittest.TestCase):
             r.call("i", "Idle", n=1)
         self.assertEqual(M.check(model, d).status, "ok")
         self.assertEqual(M.check(model, d, flip="set v18=guid").status, "mismatch")
+
+    def test_unit_set_event_flag(self):
+        d = decision([(IDLE, G, U, [1], 0, SEED)])
+
+        def model(r):
+            M.unit_set_event(r, "x")
+            r.call("i", "Idle", n=1)
+        self.assertEqual(M.check(model, d).status, "mismatch")   # the call's c4 is 0: the bit is missing
+        d["aib"][0]["c4"] = 0x400
+        self.assertEqual(M.check(model, d).status, "ok")
+        self.assertEqual(M.check(model, d, flip="set c4|=0x400 (x.UnitSetEvent)").status, "mismatch")
 
     def test_sweep_table_from_the_spec(self):
         sw = M.sweep_table()

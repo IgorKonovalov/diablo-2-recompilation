@@ -891,3 +891,79 @@ Paused at the coordinator's request (owner reboot). Static; no slot, no game, no
   `manifest.sha256`; revision 5 docstring; the Phase 1c log entry with the proposed rev 7 words (R56 `owner.mode` at 0x005F8FAC's
   return; R71 `found.mode` at 0x005FA76C and 0x005FA808; R85 `MissS1` and the missile `Range`; R128 the node's id and mode words,
   `CorpsePickNear`, `MonHasSkill`; R48 the act and quest returns), the Tier B request and the judgment calls.
+
+### 2026-11-15 — Phase 1c: models for H1c, H1g and H1h (reverser, `lane/n69c`)
+
+Static; no slot, no game, no Ghidra. Branched from `main` `684332ee`, checkpoint 1 at `9dfcc45d`, then `main` `fec1cc89`
+merged (it touches none of the files below; the catalogue is unchanged from `b5999f5e`). Kept outputs in
+`workspace/logs/n69c/` (`manifest.sha256`, 7 lines, passes `sha256sum -c` from that directory): `new-entries-38.txt`,
+`rev4-entries-38.txt`, `regress.txt`, `regress-model-check.txt`, `branches.txt`, `audit.txt`, `test-output.txt`, all
+written by the final revision 5 after the merge. The checkpoint's development output and the first test run are kept in
+`workspace/logs/n69c/dev/` (its own `manifest.sha256`, 2 lines, passes from `dev/`). Tools: `tools/ai_model_check.py`
+revision 5 (docstring names it) and `tools/test_ai_model_check.py`.
+
+- **Scope:** the 31 entries of `entries.txt` (Phase 1a) in H1c (R38, R45, R66, R77, R80, R92, R50, R53, R55, R59, R85, R94,
+  R128), H1g (R7, R11, R14, R33, R36, R39, R40, R49, R56, R57, R71, R93, R98) and H1h (R1, R10, R32, R48, R73), with H1g's
+  Reimplementation notes row as `NOTES` (`m_r7`; the row is the block's step 3). **All 31 are modelled; none is returned to
+  its row.** Each model is the catalogue block at `b5999f5e`, grouped per entry above `MODELS` like Phase 1b's. R1 is
+  `m_r1w`: R100's block (`m_r1`), stopped on a log below rev 7, since the think 0x005B0CD0 is outside the rev 6 windows (rev 7
+  item 1). R77, R80 and R92 share `trap_shot` (R80 and R92 are one block). R94's `SWEEP` and `STEP` are read from the catalogue text
+  (`sweep_table`, `step_xy`), so no table value is copied into `tools/`.
+- **Engine additions (revision 5), used only by the new models:** `r7`/`known` (a rev 7 word from the decision's `r7`
+  map, else a fork: the H1h models' input, which Phase 2's `tools/ai.py` fills); `store_unknown` (a store of a word the log
+  does not hold, compared only when flipped); `unit_set_event` (below).
+- **Three fixes after checkpoint 1**, each found by the 38 kept logs (`dev/dev-new-entries-38-ckpt1.txt`):
+  - **R48** (121 mismatches): `UnitGetPlayerData`'s player is the stack word (`s1`), ECX holds the level id. Fixed (`s1=p`).
+  - **R73** (42 mismatches at step 7's `Ovr`): the logged byte argument is the whole new low word with its low byte replaced,
+    `(low & 0xFFFFFF00) | (6 + (low & 1))` (`and al,1; add al,6` keeps EAX's upper 24 bits, R73a, 0x005FADB3–0x005FADC7; the
+    form of R14a's ring argument). The model compares that word (docstring), and `Paths.test_r73_walk_override_word` fails on
+    the low byte alone. The logged `HasState` state word at 0x005FAC0A is 14 in all 171 calls (a value for `R73.aurastate`).
+  - **R32** (1 mismatch, `2026-11-03-ai-3-s2-5804-L4-fresh:a1-marsh.log` decision 1310): the log's `Idle(20)` at
+    0x005E6A2C is `AiNpcNearPlayer` step 7's player arm, and its `c4` is 0x302240B against the AID line's 0x302200B.
+    `UnitSetEvent` (0x00553380) ends with `or dword [esi+0xC4], 0x400` (0x005533B9, after its null-unit assert only), a
+    store the catalogue's blocks do not name. The model's `unit_set_event` makes it, behind a fork on "p is a player"
+    (`cmp [p], 0`, 0x005E6A11; the unit type is not logged). `Paths.test_r32_set_event_flag` and
+    `Revision5.test_unit_set_event_flag` (the store flipped fails).
+- **The 38 kept logs** (`check --logs sweep2-s1b/logs.txt --rows` the 32 names, `new-entries-38.txt`): **0 mismatches.**
+  The logs hold decisions for 9 of the 32 names: fork-free and matching R7 14, NOTES 14, R40 6, R49 17, R71 9; forked and
+  matching R32 591 (160 more stop at the path action), R48 121, R73 171; R1 4 stopped (rev 6). The other 23 have 0. Branches
+  these logs cannot tell from their reverse (FLIP 0 of n): R7 `1.p.100<v` (0 of 9); R49 `2.Skill3>=0` (0 of 1), `2.St3or19`
+  (0 of 16), `4.Skill1>=0` (0 of 16); R71's three `#e` stores (0 of 1 each).
+- **Regression:** `regress` under `systemd-run --user --scope -p MemoryMax=4G`: byte-identical to
+  `sweep2-s1b/model-check.txt` without the SEP lines, 32 entries, 38 logs (`regress.txt`); its output equals Phase 1a's and
+  Phase 1b's `regress-model-check.txt` (`cmp`). The 29 revision 4 entries over the 38 logs (`rev4-entries-38.txt`) equal
+  Phase 1b's `new-entries-38.txt` byte for byte (`cmp`). `ai_tour.py audit`: 78 entries `model yes` (48 + 30; R1 was already
+  `yes` through R100's think), 11 not modelled (R46, R47, R75, R76, R87, R82, R83, R113, R121, R62, R81, the H1p moves), the
+  CALL lines unchanged from Phase 1b's, `SUMMARY audit calls compared 980 rev7 9 run 215 fork 166 conv-missing 0`.
+- **Controls** (`test_ai_model_check.py`, **88 tests, 41 new, OK**): `Paths`, 37 new (a hand path per entry, with a
+  wrong-word or wrong-branch case where the path has one; R1 on a rev 6 and a rev 7 decision); `Revision5`, 4; the
+  recorder (`Branches`, `NEW5`, 31 names, R1 left out: it stops on the recorder's rev 6 decisions and its block is
+  `m_r1`, which S1b's logs check). The recorder gives the rev 7 words (`R7WORDS`) to half its decisions. **424 named branches
+  run, 418 separated, the other 6 in `EXEMPT` with their reason** (R50 `c2.D100<50-L`, `c2.v14=0`; R93 `3.v18<1`, `5.v18<1`;
+  R94 `8.aip(2)<v18`; R32 `n.v14<0`: each guards a store after the block's last call, which `run_check`'s FLIP sees at the
+  next decision only) (`branches.txt`). R32's recorder decisions are all forked (0 fork-free).
+- **Proposed rev 7 words** (for Phase 2's list; the model keys in `r7`'s docstring): R10 `MonPlayerBonus` (0x00573930,
+  `pb.difficulty`); R48 `MonsterOwnerRef` (0x0058F090, the (guid, type) it writes) and the returns of `DRLG_ActFromLevelId`
+  and `QUESTRECORD_GetState`; R32 `AiNearestPlayer` (0x005DDF20, (p, f)) **and p's unit type** (step 7's player test,
+  0x005E6A11); R73 `R73.aurastate` (Skills `aurastate` of `Skill2`) and `R73.md0e` (`MonsterData+0x0E`); R56 `owner.mode`
+  (the owner's mode at the return of 0x005F8FAC's call); R71 `found.mode` (at 0x005FA76C and 0x005FA808); R85 MonStats
+  `MissS1` and the missile record's `Range`; R128 the skill node's id and mode words and the returns of `CorpsePickNear` and
+  `MonHasSkill`. R1's is item 1 (the think's window).
+- **Judgment calls for the review:**
+  1. **Done-when wording.** Phase 1c's *Done when* is "as Phase 1b", whose third item is "the 38 kept logs give 0 decisions
+     for these entries". For Phase 1c it does not hold as written: the logs hold decisions for 9 of the 32 names (above), all
+     matching or stopped. The lane reports the counts and does not reinterpret the item; the review (or the plan's author)
+     decides whether "0 mismatches, the counts reported" meets it.
+  2. **`UnitSetEvent`'s store** is modelled from the binary (0x005533B9), not from the catalogue block, which names the call
+     only. The same call sits in R54's step 2 (a revision 1 model, which sets `v18` unknown and leaves `c4` alone) and R58's
+     step 3 (revision 4). Neither is changed here: R54 is under `regress`, and R58 has 0 decisions in the 38 logs, so a fix
+     would be untested. A Phase 2 log reaching either arm will show the bit as a `c4` mismatch; the review may want both
+     changed now, and the catalogue's three `UnitSetEvent` lines (R32, R54, R58) given the store (a spec-writer request).
+  3. **R73's override word** is compared whole, as logged, though the block writes `6 + (new low & 1)`: the catalogue's
+     R73a already says the byte is set in AL; the model states the upper bits' source.
+  4. As Phase 1b: calls the blocks imply but do not name are taken from the Phase 1a audit's call list; non-boundary callees
+     are taken to draw nothing (a draw would show as a seed mismatch); arms that run an indirect action stop (R32's path
+     action, 160 of its decisions).
+- **Review request: Tier B** (plan § Phase 1c). Check against the kept outputs: each model against its block (the 31
+  docstrings name what is not compared and why), the 88 tests, the 6 exemptions, the byte-identical regression and revision 4
+  check, the 0 mismatches on the 38 logs with the 9 non-zero counts, and the proposed rev 7 words.

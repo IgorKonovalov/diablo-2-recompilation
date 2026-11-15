@@ -59,6 +59,15 @@ may draw (the next call takes the logged seed); `SELECT`, which splits a shared 
 row by the AID line's state; `check --no-select`. Row 122's and state 16's fixed records 492..495 are read from the game's
 monstats.bin (`imp_rec`), row 25's tables from the catalogue's text (`wisp_tables`). The entries of revisions 1 to 3 are
 unchanged (`regress`).
+
+Revision 5 (plan 0069 Phase 1c, `lane/n69c`): the 31 models of batches H1c (R38, R45, R66, R77, R80, R92, R50, R53, R55,
+R59, R85, R94, R128), H1g (R7, R11, R14, R33, R36, R39, R40, R49, R56, R57, R71, R93, R98, and the Reimplementation notes
+row as `NOTES` on `m_r7`) and H1h (R1 as `m_r1w`, R10, R32, R48, R73), grouped per entry above `MODELS`. Engine additions,
+used only by them: `r7`/`known`, a rev 7 word of the decision (`dec["r7"]`, which Phase 2's tools/ai.py fills) or else a
+fork, so the H1h models run on rev 6 logs and take their word from a rev 7 one; `store_unknown`, a store of a word the
+log does not hold (compared only when flipped); `unit_set_event`, `UnitSetEvent`'s `Unit+0xC4 |= 0x400` (0x005533B9);
+`sweep_table` and `step_xy`, R94's `SWEEP` table and `STEP` rule read from the catalogue's text. The entries of revisions
+1 to 4 are unchanged (`regress`; the 29 revision 4 entries' check over the 38 logs is byte-identical to Phase 1b's).
 """
 import os
 import sys
@@ -3521,7 +3530,9 @@ def m_r71(r):
 def m_r73(r):
     """R73 AbyssKnight. Step 2's aura state (Skills `aurastate` of `Skill2`) and step 5's `MonsterData+0x0E` are data reads
     the rev 6 logs do not hold: the rev 7 words `R73.aurastate` and `R73.md0e`, else forks. U is a monster, so step 5's
-    type test holds."""
+    type test holds. Step 7's override word is compared whole: the logged byte argument is the new low word with its low
+    byte replaced by `6 + (low & 1)` (`and al,1; add al,6` leaves EAX's upper 24 bits in place, R73a; the same form as
+    R14a's ring argument)."""
     life = s32(r.call("1.lifepct", "UnitLifePct", u=r.U).eax)
     if r.br("2.Skill2>=0", r.skill[1] >= 0):
         w = r7(r, "R73.aurastate")
@@ -3550,7 +3561,7 @@ def m_r73(r):
         r.store("set v14-=1", 0x14, r.v[0x14] - 1)
     if r.chance("7.chance(7)", 7):
         low = r.step()
-        r.call("7.ovr", "Ovr", type=2, param=0, byte=6 + (low & 1))
+        r.call("7.ovr", "Ovr", type=2, param=0, byte=(u32(low) & 0xFFFFFF00) | (6 + (low & 1)))
         r.call("7.walk", "Walk", t=r.t, flags=7)
         return
     if r.less("8.dist<aip(8)", r.dist, r.aip(8)):
@@ -3847,10 +3858,20 @@ def npc_home_leash(r, n):
     return True
 
 
+def unit_set_event(r, step):
+    """`UnitSetEvent(U, …)` (0x00553380) is not a boundary and draws nothing; it ends with `Unit+0xC4 |= 0x400`
+    (0x005533B9, unconditional after its null-unit assert), a store the next compared call sees. Found by the 38 kept logs
+    (R32, `2026-11-03-ai-3-s2-5804-L4-fresh:a1-marsh.log` decision 1310: `c4` 0x302200B at entry, 0x302240B at the
+    `Idle(20)` of 0x005E6A27). The catalogue's blocks name the call only."""
+    if r.c4 is not None:
+        r.store("set c4|=0x400 (%s.UnitSetEvent)" % step, "c4", r.c4 | 0x400)
+
+
 def npc_near_player(r):
     """`AiNpcNearPlayer` (0x005E68F0). `AiNearestPlayer`'s (p, f) is the rev 7 word `AiNearestPlayer`; without it p is not
     compared and its tests fork. The interact list, `NpcInteractHas`, `NpcInteractAny` and the busy test are not logged:
-    they fork. `UnitSetEvent` is taken to draw nothing."""
+    they fork. Step 7's `UnitSetEvent(U, 18, p)` runs when p is a player (`cmp [p], 0`, 0x005E6A11; a fork, the unit
+    type is not logged) and sets `Unit+0xC4` bit 0x400 (`unit_set_event`); it draws nothing."""
     w = r7(r, "AiNearestPlayer")
     p = None if w is None else w[0]
     nn = s32(r.call("n.dist", "AiDistUnits", c=r.U, d=p).eax)
@@ -3881,6 +3902,8 @@ def npc_near_player(r):
     v = r.v[0x18]
     if r.br("n.v18=0", v == 0, val=v):
         r.store("set v18=60", 0x18, 60)
+        if r.unknown("n.p player"):
+            unit_set_event(r, "n")
     elif r.less("n.v18<0", v, 0):
         r.store("set v18=0", 0x18, 0)
     else:
