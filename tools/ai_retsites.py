@@ -21,8 +21,9 @@ OUT = os.path.join(HERE, "gdb", "ai-retsites.txt")
 EXE = os.path.join(ROOT, "workspace", "runtime", "game", "game.exe")
 WINDOWS = ((0x005B14E0, 0x005B1650), (0x005E0000, 0x00600000), (0x0058F0D0, 0x0058F130), (0x005DE830, 0x005DE8C0),
            (0x005DF850, 0x005DFC00))
+EXACT = ((0x005B0CD0, 0x005B0D00),)   # a whole function (row 1's AiIdle): one sweep from its first byte; the offset-7 and -13 sweeps of a 48-byte window never resync
 HEAD = ("# return addresses (call site + 5) of the calls from the AI think windows (0x005B14E0..0x005B1650, 0x005E0000..0x005FFFFF,\n"
-        "# 0x0058F0D0..0x0058F130, 0x005DE830..0x005DE8C0, 0x005DF850..0x005DFC00) to the 136 boundary functions of tools/gdb/ai.py (BND).\n"
+        "# 0x0058F0D0..0x0058F130, 0x005DE830..0x005DE8C0, 0x005DF850..0x005DFC00, 0x005B0CD0..0x005B0D00) to the 136 boundary functions of tools/gdb/ai.py (BND).\n"
         "# tools/ai_retsites.py regenerates it from the pinned game.exe by three objdump sweeps started at different offsets and keeps\n"
         "# the instruction starts all three agree on. One hex address per line.\n")
 
@@ -51,6 +52,11 @@ def sites(exe=EXE):
         a, b2, c = sweep(exe, lo, hi), sweep(exe, lo + 7, hi), sweep(exe, lo + 13, hi)
         for ad in set(a) & set(b2) & set(c):
             n, t = a[ad]
+            m = re.match(r"call\s+0x([0-9a-f]+)$", t.strip())
+            if m and int(m.group(1), 16) in b:
+                res.add(ad + n)
+    for lo, hi in EXACT:
+        for ad, (n, t) in sweep(exe, lo, hi).items():
             m = re.match(r"call\s+0x([0-9a-f]+)$", t.strip())
             if m and int(m.group(1), 16) in b:
                 res.add(ad + n)
