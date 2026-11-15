@@ -162,6 +162,57 @@ event open at a log's end (the session killed inside it).
   The maxima stay value oracles until a run logs the lists. run:2026-10-16-combat logs values, not lists: its stat
   oracles are **not replaceable** from the kept logs.
 
+### Addendum 2026-11-15: plan 0066 batch S4d, part 1 of 2: static second sources and full-table checks (`lane/n66i`)
+
+- **Question.** Which of the S4d `[I]` rows of class (c) in [stats/aggregate](../../specs/stats/aggregate.md) and
+  [stats/states](../../specs/stats/states.md) does a second tool on the code or a full-table check raise? Inventory rows:
+  [stats-aggregate](../../plans/0066-inventory/stats-aggregate.md), [stats-states](../../plans/0066-inventory/stats-states.md).
+  Part 2 (the a-logs rows over this run's and the shortfalls logs, and aggregate rows 5 and 40) is not done here.
+  (data:g_ShrineEffects@0x006E1850, fn:STATE_GroupClear@0x0056C740, fn:STATE_ApplyTimed@0x0056E970)
+- **Setup and procedure.** As [items/experiments § Addendum 2026-11-15 (S4c)](../items/experiments.md#addendum-2026-11-15-plan-0066-batch-s4c-new-checks-over-the-kept-inventory-logs-and-static-second-sources-lanen66i):
+  `tools/sweep2_s4cd.py` (`271e96c8…`), sections `ststatic` and `tables`, in the one kept run
+  `workspace/logs/n66i/check.txt` (`fdf66219…`, `S4 total bad=0`, `manifest.sha256`). Second tools: objdump (the States
+  loader, `PlayerSwapWeapons`, the walker), r2 (`g_ShrineEffects`, `PlayerSwapWeapons`, the LCG sites), the raw-byte scan
+  (call sites). Tables: `states.txt`, `pettype.txt`, `skills.txt`, `sets.txt`, `montype.txt`.
+- **Observed** (`check.txt`):
+  - `states5`: objdump reads `STATES_Load` (0x00618100 up to `DATATBLS_LoadAll`): 91 field descriptors built on the
+    stack (name, type, bit), constants tracked through registers. 46 have type `0x1A`; 40 of them are States.txt columns,
+    with bits 0..39 each once (`curse` 11, `plrstaydeath` 13, `monstaydeath` 14, `exp` 30, `life` 32); the other 6
+    (`warp`, `range`, `partysend`, `unsummon`, `automap`, `drawhp`, bits 0..5) are PetType.txt columns built in the same
+    range.
+  - `states16_51`: `STATE_GroupClear` has 9 rel32 call sites, no abs32: `MonStatCallback` 0x0055BDA3, 0x0055BDB6;
+    `ItemUseTimedState` 0x005BEE15 (the only one in 0x005BE130..0x005BF3D0); `ShapeRemoveCb` 0x005C6C5B, 0x005C6CB2;
+    `SkillDo116Shapeshift` 0x005C6F20; `SkillDo18TimedSelfState` 0x005C94F4; `SkillSt28BladeShield` 0x005D7A9C;
+    `SkillSt38Whirlwind` 0x005D9195. `STATE_ApplyTimed`'s direct closure (1 999 functions, objdump) does not hold it.
+  - `states14`: `STATE_ApplyTimed` has 25 rel32 call sites in 25 functions, no abs32: its own (0x0056EC9E),
+    `PreventHealHook`, `SHRINE_ApplyState`, `SHRINE_Skill`, `STATEVENT_OpenWounds`, `AURA_ApplyToTarget`, and 19 more:
+    `UModElemDamage`, `MissHit21BattleCry`, `StatEv19Slow`, `CurseApplyCb`, `SkillDo59Attract`, `ConfuseApplyCb`,
+    `StatEv27ClayGolemSlow`, `SkillDo18TimedSelfState`, `SkillDo23TimedState`, `SkillDo25Enchant`,
+    `SkillDo29ThunderStorm`, `WhipApplyState`, `SkillDo133Impregnate`, `CloakAreaCb`, `SkillDo47Cloak`,
+    `SkillSt28BladeShield`, `SkillSt38Whirlwind`, `SkillDo06UnitCb`, `MonFleeFrom`.
+  - `states34_42`: r2 reads `g_ShrineEffects` as 24 entries of {fn, stat, state}: codes 6..15 give the spec's G2 pairs
+    (6 → 171, 128; 7 → state 129; 8 → 39, 131; 9 → 43, 132; 10 → 41, 130; 11 → 45, 133; 12 → 11, 134; 13 → 27, 135;
+    14 → 162, 136; 15 → 85, 137), no other code a state. States row 128 (`shrine_armor`) names `armorclass`.
+  - `agg34`: `PlayerSwapWeapons` (395 instructions, 52 direct calls, none indirect) has one caller, `SwapWeaponsReq`
+    0x0054CEB0; it calls `ITEMS_DetachFromOwner` at 0x005617C4 and 0x005617D8, each behind its own `test edx, edx`, and
+    `ITEMS_AttachToOwner` at 0x0056192B (objdump and r2 alike).
+  - `states46`: closures (objdump walker) and r2's LCG sites: `STATE_GroupClear` 463 functions, `StatListsPurgeOnDeath`
+    447, `StatListsDropOnMode` 457, none with a draw. `STATE_DefaultRemoveCB`: 1 996 functions, 122 with a draw, all
+    under its call of `PetLimitRefresh` (0x0056E960); the shortest path is `PetLimitRefresh` → `PetLimit` → `PetRemove` →
+    `PetUnitRelease` → `MonSetMode` → `MonAttackStats` (draw). Its other 8 call sites (7 functions) reach none.
+  - `states31` (table): 79 Skills rows with an `aurastat` or `aurastatcalc`: no `aurastat` after a blank one; 6 stats with
+    no calc (`Tiger Strike`, `Fists of Fire`, `Cobra Strike`, `Claws of Thunder`, `Blades of Ice`, `Royal Strike`, the
+    `progressive_*` stats); 1 calc with no stat (`Holy Shield`).
+  - `agg38` (table): 10 named Sets param cells: 4 first hit in skills (Trang-Oul's `Fire Ball`, `Fire Wall`, `Meteor`,
+    `Fire Mastery`), 6 in states (`fullsetgeneric` ×5, `monsterset`); none named in two of the three tables.
+- **Outcome by row:** raised 4 (states 16, 34, 42, 51), raised in part 5 (aggregate 34, 38; states 5, 14, 31), raised in
+  part and contradicted in part 1 (states 46: the remove callback). Part 2 holds the other 34 S4d rows.
+- **Contradicted in part, states 46.** stats/states' draw table says "none found in the code" for the remove callback.
+  Its direct-call closure reaches 122 drawing functions through `PetLimitRefresh` (a player's pet limits; a pet over a
+  lowered limit is released, its mode set). Whether an expiry ever takes that path on stock (a state whose end lowers a
+  summon limit) is not read; the run's 2 749 expiries left the seeds unchanged (§ Results). A static reading of one tool
+  (the walker) with r2's sites agreeing, no case. Backlog as for S4c.
+
 ## The stats sessions of run:2026-10-20-shortfalls
 
 The run is one run under two checkers; its combat half and its definition are in

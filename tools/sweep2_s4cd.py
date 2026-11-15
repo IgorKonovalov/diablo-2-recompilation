@@ -10,9 +10,11 @@ Sections (the inventory row each check serves is in its docstring):
   invstatic r2 and the raw-byte scan (tools/xrefscan.py) next to the objdump listings of run:2026-11-04-inventory-emu
             and run:2026-11-04-ground-emu (`static.txt`); the objdump walker of tools/sweep_s4b.py next to Ghidra's
             rngcallgraph (`rcg-*.txt`), with r2's own search for the LCG multiplier
-  stlogs    the 18 logs of run:2026-10-17-stats (s1017-run.lst) and the 10 of run:2026-10-20-shortfalls (p47h-run.lst)
-  ststatic  r2 and the raw-byte scan next to Ghidra's readings in stats/0001 and 0002; the objdump walker for draws
-  tables    full-table checks over the excel .txt tables (Misc autobelt, Sets params, Skills aurastat, States bits)
+  ststatic  S4d's static rows: the States loader's bit-set descriptors (objdump), call sites of STATE_GroupClear and
+            STATE_ApplyTimed (raw bytes), g_ShrineEffects (r2), PlayerSwapWeapons (objdump and r2), the closures of
+            the group clear, remove callback, death purge and mode drop (objdump walker and r2's LCG sites)
+  tables    full-table checks over the excel .txt tables (Skills aurastat, Sets params; Misc autobelt is in invstatic)
+  (S4d's a-logs rows over the s1017 and p47h stats logs are not in this tool revision: plan 0066 S4d part 2.)
 
 Each section prints `S4 <section> <check> key=value ...` lines and detail lines; `bad=` counts an observation that
 contradicts the statement the check tests. A statement with no stock case shows as a zero count, never as a failure.
@@ -150,19 +152,53 @@ def r2_bytes(va, n):
     return bytes.fromhex(out)
 
 
-def pushes_before(site, entry=None):
-    """The push operands before the call at `site`, last push first (arg 0 first), stopping at an earlier call or
-    ret, from r2's linear disassembly starting at the function's entry (the padded-block start)."""
-    e = entry or pad_entry(site)
-    ins = [x for x in r2_range(e, site + 1)]
+RET_CACHE = {}
+
+
+def callee_pop(target):
+    """The bytes a callee pops on return (`ret N`), from r2's linear disassembly of its first 0x800 bytes: the first
+    `ret` met; 0 for a plain `ret`, None when no `ret` is met."""
+    if target not in RET_CACHE:
+        RET_CACHE[target] = None
+        for va, mn, ops in r2_range(target, target + 0x800):
+            if mn in ("ret", "retn"):
+                RET_CACHE[target] = imm(ops) if ops else 0
+                break
+    return RET_CACHE[target]
+
+
+def pushes_before(site, entry=None, want=None):
+    """The stack arguments of the call at `site`, arg 0 first, from r2's linear disassembly starting at the function's
+    entry (`entry`, else the owning symbol's entry). Walking back from the call: a `push` is the call's argument unless
+    it belongs to an earlier call between (that call's `ret N` / 4 pushes, or the `add esp, N` after a caller-cleaned
+    call); stops at the entry, a `ret`, a `sub esp`, or once `want` arguments are found. Returns None when the linear
+    listing does not reach the site exactly."""
+    e = entry or owner(site)[0]
+    ins = r2_range(e, site + 1)
     if not ins or ins[-1][0] != site:
         return None
     out = []
+    skip = 0
     for va, mn, ops in reversed(ins[:-1]):
-        if mn in ("call", "ret", "retn"):
+        if mn in ("ret", "retn"):
             break
+        if mn == "sub" and ops.startswith("esp,"):
+            break
+        if mn == "add" and ops.startswith("esp,"):
+            skip += (imm(ops.split(",")[1]) or 0) // 4
+            continue
+        if mn == "call":
+            t = imm(ops)
+            k = callee_pop(t) if t is not None else None
+            skip += (k or 0) // 4
+            continue
         if mn == "push":
-            out.append(ops)
+            if skip:
+                skip -= 1
+            else:
+                out.append(ops)
+                if want and len(out) >= want:
+                    break
     return out
 
 
@@ -191,18 +227,24 @@ def unz(s):
 
 
 def r2_lcg_sites():
-    """r2's own search for the multiplier's four bytes, each hit decoded by r2 (an instruction that holds it)."""
+    """r2's own search for the multiplier's four bytes over .text, each hit decoded by r2: the instruction that starts
+    1 to 7 bytes before the hit and holds the immediate. One r2 process per step (a command script)."""
     hits = []
-    for ln in r2("e search.in=bin.section.[x]; /x %s" % struct.pack("<I", LCG_MUL).hex()).splitlines():
-        m = re.match(r"^0x([0-9a-f]+)", ln)
+    out = r2("e search.in=io.maps; e search.from=0x401000; e search.to=0x6cb000; /x %s" % struct.pack("<I", LCG_MUL).hex())
+    for ln in out.splitlines():
+        m = re.match(r"^0x([0-9a-f]+) hit", ln)
         if m:
             hits.append(int(m.group(1), 16))
+    cmds = ";".join("pd 1 @ 0x%x" % (h - back) for h in hits for back in range(1, 8))
+    dec = {}
+    for ln in r2(cmds).splitlines():
+        m = R2_LINE.match(ln)
+        if m:
+            dec[int(m.group(1), 16)] = m.group(3)
     sites = set()
     for h in hits:
-        # the instruction holding the immediate starts 2..6 bytes before it; take the decode r2 gives that covers h
         for back in range(1, 8):
-            ins = r2_range(h - back, h + 4)
-            if ins and ins[0][0] == h - back and "0x6ac690c5" in ins[0][2]:
+            if "0x6ac690c5" in dec.get(h - back, ""):
                 sites.add(h - back)
                 break
     return sorted(hits), sorted(sites)
@@ -252,6 +294,7 @@ def chk_invlogs():
                     continue
                 e, nm = owner(g["ret"])
                 r3.add("drops")
+                r3.add("drops_" + name.split("-6001-")[1][:-4])
                 if e == 0x0055A550 and g["a1"] == 1 and g["a2"] == 1:
                     r3.add("via_DropCreateItem")
                 else:
@@ -280,6 +323,7 @@ def chk_invlogs():
                     o = open17
                     open17 = None
                     r29.add("pairs")
+                    r29.add("pairs_" + name.split("-6001-")[1][:-4])
                     pk = bytes.fromhex(o["pkt"]["pkt"])
                     if pk[0] != 0x17:
                         r29.add("bad")
@@ -315,6 +359,7 @@ def chk_invlogs():
                     elif open19 is not None:
                         o, open19 = open19, None
                         r31.add("pairs")
+                        r31.add("pairs_" + name.split("-6001-")[1][:-4])
                         pk = bytes.fromhex(o["pkt"])
                         guid = struct.unpack_from("<I", pk, 1)[0]
                         before = {e[0]: e for e in o["inv"] if e != "err"}
@@ -422,6 +467,36 @@ def closure_check(rep, roots, rcg, lcg_sites):
         rep.note("root 0x%08X objdump: functions=%d draw_functions=%d r2_lcg_in_bodies=%d %s | ghidra: %s" % (
             r, len(G), len(R), len(r2in), draws, "functions=%d rng=%d indirect=%d" % (gh[0], gh[1], gh[3]) if gh else "-"))
         rep.add("roots")
+        # Ghidra's own function list for the root, each body walked by objdump and searched for draws (the second
+        # tool's reading over the first tool's closure)
+        gl = None
+        for d in ("r60c", "r60b"):
+            p = os.path.join(LOGS, d, "emu", "rcg-0x%08X.txt" % r)
+            if os.path.exists(p):
+                gl = sorted({int(m.group(1), 16) for m in re.finditer(r"^fn 0x([0-9A-Fa-f]+) ", open(p).read(), re.M)})
+                break
+        if gl is not None:
+            gdraw, unw, ext = [], 0, 0
+            for e in gl:
+                if e < 0x00401000:
+                    ext += 1           # Ghidra's EXTERNAL entries (imports), no code in the image
+                    continue
+                if A.at(e) is None:
+                    unw += 1
+                    continue
+                v2, _, _ = S.body(A, e)
+                lc, rc_ = S.rng_sites(A, v2)
+                r2l = [x for x in lcg_sites if x in v2]
+                if lc or rc_ or r2l:
+                    gdraw.append("0x%08X" % e)
+            rep.note("root 0x%08X ghidra list: functions=%d; external=%d; objdump bodies walked=%d unwalked=%d; with a "
+                     "draw: %s; ghidra-only functions=%d, objdump-only=%d" % (r, len(gl), ext, len(gl) - unw - ext, unw, gdraw,
+                                                                   len(set(gl) - set(G)), len(set(G) - set(gl))))
+            rep.add("ghidra_list_draw_functions", len(gdraw))
+            if unw:
+                rep.add("bad")
+            if (len(gdraw) > 0) != (gh is not None and gh[1] > 0):
+                rep.add("bad")
         if gh is not None and (gh[1] > 0) != (len(R) > 0):
             rep.add("bad")
         if r2in:
@@ -478,16 +553,32 @@ def chk_invstatic():
         if len(calls) != want or len(rel) != len(calls) or ab:
             rx.add("bad")
         for s in calls:
-            p = pushes_before(s)
+            p = pushes_before(s, want=8 if tgt == 0x0064E810 else 5)
             e, nm = owner(s)
             pe = pad_entry(s)
-            rx.note("site 0x%08X in %s (pad entry 0x%08X) pushes %s" % (s, nm, pe or 0, p))
+            rx.note("site 0x%08X in %s (entry 0x%08X; pad entry 0x%08X) pushes %s" % (s, nm, e, pe or 0, p))
             if tgt == 0x00555DA0:
                 # GroundDropCell(ECX room, EDX pos; out, size, fallback): the pushes after the out pointer
                 if p is None or len(p) < 3 or imm(p[1]) != 1 or imm(p[2]) != 1:
                     rx.add("bad")
                 else:
                     rx.add("size1_fallback1")
+            if tgt == 0x0064E810:
+                # FreeNearPair(..., size [3], cell mask [4], walk mask [5], fallback [6], ...): the S4c row 80 table
+                want80 = {0x0055923B: ("1", "0x3e01", "0x801", "1"), 0x005593F7: ("1", "0x3e01", "0x801", "1"),
+                          0x00559770: ("1", "0x3e01", "0x801", "1"), 0x00559969: ("1", "0x3e01", "0x801", "1"),
+                          0x0055A15C: ("1", "0x3e01", "0x801", "0"), 0x0056D213: ("3", "0x3e01", "0xc01", "0"),
+                          0x00555DF0: None}
+                p8 = pushes_before(s, want=8)
+                got = tuple(p8[3:7]) if p8 and len(p8) >= 7 else None
+                if s not in want80:
+                    rx.add("bad")
+                elif want80[s] is None:
+                    rx.add("the_search_forwards")
+                elif got != want80[s]:
+                    rx.add("bad")
+                else:
+                    rx.add("args_as_stated")
         rx.done()
         bad += rx.c["bad"]
 
@@ -503,6 +594,7 @@ def chk_invstatic():
             if s >= 0x00500000:
                 if lit == 0:
                     lit0_hi += 1
+                    rr.note("%s literal-0 site 0x%08X in %s" % (nm, s, owner(s)[1]))
                 else:
                     other.append("0x%08X:%s" % (s, st))
             else:
@@ -574,9 +666,20 @@ def chk_invstatic():
 
     # row 78: the field loader's halving of the 256
     rl = Rep("invstatic", "row78_field_loader")
-    for va in (0x0066A344, 0x0066A3E0, 0x0066A61C):
-        ins = r2_range(va - 6, va + 10)
-        rl.note("0x%08X: %s" % (va, [(hex(a), m, o) for a, m, o in ins]))
+    keep = ("[edi + 2]", "[edi + 4]", "sar ", "0x96d664", "0x96d668", "0x96d65c", "0x96d660", "0x96d654")
+    for va, mn, o in r2_range(0x0066A2B0, 0x0066A420):
+        if any(k in (mn + " " + o) for k in keep):
+            rl.note("FieldLoad 0x%08X %s %s" % (va, mn, o))
+    for va, mn, o in r2_range(0x0066A5D0, 0x0066A640):
+        if "0x96d6" in o:
+            rl.note("FieldStep 0x%08X %s %s" % (va, mn, o))
+    hdr = open(os.path.join(S.DATA, "data", "global", "expfield.d2"), "rb").read(10)
+    w, h = struct.unpack_from("<II", hdr, 2)
+    rl.note("expfield.d2 header: u32 at +2 = %d, u32 at +6 = %d; halves %d, %d" % (w, h, w >> 1, h >> 1))
+    sars = [(va, o) for va, mn, o in r2_range(0x0066A2B0, 0x0066A420) if mn == "sar"]
+    if (w, h) != (256, 256) or [o for _, o in sars] != ["ecx, 1", "ebx, 1"]:
+        rl.add("bad")
+    rl.add("halved_fields", len(sars))
     rl.done()
 
     # rows 76, 93, 94, 95: the closures
@@ -594,8 +697,15 @@ def chk_invstatic():
         rc.add("bad")
     closure_check(rc, [0x00555DA0, 0x0066A670, 0x00558A10, 0x00641530, 0x00558AA0, 0x0063C600, 0x0063B950], rcg, sites)
     # row 95: the one step of the placement's closure
-    for va, mn, o in r2_range(0x00624550, 0x006245A8):
-        if mn in ("call", "cmp", "je", "jne") or va in (0x00624563, 0x0062459D):
+    tbl = []
+    for ln in r2("pxw 20 @ 0x62467c").splitlines():
+        tbl += [int(x, 16) for x in ln.split()[1:5] if x.startswith("0x")]
+    tbl = tbl[:5]
+    rc.note("UNIT_AnimInit switch 0x00624408 on the type (cases 0..4): %s" % ["0x%08X" % x for x in tbl])
+    if not (tbl[2] < 0x00624563 < tbl[4] and tbl[4] == 0x0062459D):
+        rc.add("bad")
+    for va, mn, o in r2_range(0x00624390, 0x006245AE):
+        if va >= 0x0062453D:
             rc.note("UNIT_AnimInit 0x%08X %s %s" % (va, mn, o))
     rc.done()
     bad += rc.c["bad"]
@@ -621,7 +731,7 @@ def chk_invstatic():
     rel, calls, ab = raw(0x00555DA0)
     seen = set()
     for s in calls:
-        e = pad_entry(s)
+        e = owner(s)[0]
         if e in seen:
             continue
         seen.add(e)
@@ -637,13 +747,324 @@ def chk_invstatic():
                                                               [hex(x) for x in r2l], rc_))
         elif rc_:
             rd.note("0x%08X %s: rng calls only %s" % (e, owner(e)[1], rc_))
+    for va, mn, o in r2_range(0x005AF300, 0x005AF480):
+        if 0x005AF430 <= va <= 0x005AF474:
+            rd.note("MissDo18ChestSpawner 0x%08X %s %s" % (va, mn, o))
+    for va, mn, o in r2_range(0x005A30E0, 0x005A3130):
+        if 0x005A30F9 <= va <= 0x005A3128:
+            rd.note("TargetBeltItemToGround 0x%08X %s %s" % (va, mn, o))
     rd.done()
     bad += rd.c["bad"]
+
+    # row 54: Misc autobelt over every beltable row; the lists of F1 (hp1..5, mp1..5, rvl/rvs)
+    rt = Rep("invstatic", "row54_misc_autobelt")
+    lists = {"hp1", "hp2", "hp3", "hp4", "hp5", "mp1", "mp2", "mp3", "mp4", "mp5", "rvl", "rvs"}
+    zero = []
+    for x in S.tsv("misc"):
+        if x.get("belt") in ("", "0", None):
+            continue
+        rt.add("beltable_rows")
+        if x["autobelt"] in ("", "0"):
+            zero.append(x["code"])
+            if x["code"] in lists:
+                rt.add("bad")
+        else:
+            rt.add("autobelt1")
+    rt.add("autobelt0", len(zero))
+    rt.note("beltable with autobelt 0: %s" % zero)
+    if not {"isc", "tsc", "yps", "vps", "wms"} <= set(zero):
+        rt.add("bad")
+    rt.done()
+    bad += rt.c["bad"]
+
+    # row 71: g_NoPickup's every reference against the two pickups and their direct callees
+    rn = Rep("invstatic", "row71_nopickup")
+    rel, calls, ab = raw(0x007A6A90)
+    near = []
+    for e in (0x00563560, 0x0055CF50):
+        vas, cl, ic = S.body(A, e)
+        near.append((e, vas, cl))
+    callees = set()
+    for e, vas, cl in near:
+        callees |= {t for _, t in cl}
+    zone = set()
+    for e, vas, cl in near:
+        zone |= vas
+    for c in callees:
+        try:
+            zone |= S.body(A, c)[0]
+        except Exception:
+            rn.add("callee_unwalked")
+    for site in ab:
+        e, nm = owner(site)
+        rn.note("abs32 0x%08X in %s" % (site, nm))
+        if any(site <= v < site + 6 for v in zone) or site in zone:
+            rn.add("bad")
+    rn.add("abs32_sites", len(ab))
+    rn.add("callees", len(callees))
+    rn.done()
+    bad += rn.c["bad"]
+    return bad
+
+
+# ======================================================================================================= S4d: static
+def cstr(va):
+    data = S.image()[0]
+    o = S.va_off(va)
+    return data[o:data.index(b"\0", o)].decode("latin1")
+
+
+def callers_by_owner(target):
+    rel, calls, ab = raw(target)
+    by = collections.OrderedDict()
+    for s_ in calls:
+        by.setdefault(owner(s_)[1], []).append(s_)
+    return rel, calls, ab, by
+
+
+def chk_ststatic():
+    bad = 0
+    A = S.asm()
+    # states row 5: the States loader's bit-set descriptors (objdump), against the States.txt header
+    r5 = Rep("ststatic", "states5_loader_bitsets")
+    F = funcs()
+    nxt = next(a for a, _ in F if a > 0x00618100)     # STATES_Load's end: the next symbol's entry
+    vas = sorted(v for v in A.ins if 0x00618100 <= v < nxt)
+    r5.note("STATES_Load 0x00618100..0x%08X (%s next)" % (nxt, owner(nxt)[1]))
+    st = {}
+    regs = {}                     # a straight-line constant track: mov reg, imm / xor reg, reg; any other write unknown
+    for v in vas:
+        mn, ops = A.ins[v]
+        m = re.match(r"DWORD PTR \[ebp-0x([0-9a-f]+)\],(0x[0-9a-f]+|\w+)$", ops)
+        if mn == "mov" and m:
+            val = m.group(2)
+            if not val.startswith("0x"):
+                val = "0x%x" % regs[val] if val in regs else val
+            st.setdefault(int(m.group(1), 16), []).append((v, val))
+            continue
+        m = re.match(r"^(e[a-d]x|e[sd]i|ebx)(?:,(.*))?$", ops)
+        if m:
+            r_, src = m.group(1), m.group(2)
+            if mn == "mov" and src and src.startswith("0x"):
+                regs[r_] = int(src, 16)
+            elif mn == "xor" and src == r_:
+                regs[r_] = 0
+            else:
+                regs.pop(r_, None)
+        if mn == "call":
+            for r_ in ("eax", "ecx", "edx"):
+                regs.pop(r_, None)
+    cols = open(os.path.join(EXCEL, "states.txt"), errors="replace").readline().rstrip("\r\n").split("\t")
+    desc = []
+    for off in sorted(st, reverse=True):
+        for v, val in st[off]:
+            if not val.startswith("0x") or not 0x006D0000 <= int(val, 16) < 0x00760000:
+                continue
+            try:
+                nm = cstr(int(val, 16))
+            except (ValueError, IndexError):
+                continue
+            ty = [x[1] for x in st.get(off - 4, [])]
+            bit = [x[1] for x in st.get(off - 8, [])]
+            desc.append((nm, ty[-1] if ty else None, bit[-1] if bit else None, v))
+    types = collections.Counter(ty for nm, ty, b, v in desc)
+    r5.note("descriptor type words: %s" % sorted(types.items()))
+    allbits = [(nm, int(b, 16)) for nm, ty, b, v in desc if ty == "0x1a" and b is not None and b.startswith("0x")]
+    # the address range holds a second descriptor list (PetType's columns): keep the States header's names
+    pet = open(os.path.join(EXCEL, "pettype.txt"), errors="replace").readline().rstrip("\r\n").split("\t")
+    bitsets = [(nm, b) for nm, b in allbits if nm in cols]
+    other = [(nm, b) for nm, b in allbits if nm not in cols]
+    r5.note("bit-type descriptors not in the States header: %s (all PetType.txt columns: %s)" % (
+        other, all(nm in pet for nm, _ in other)))
+    if not all(nm in pet for nm, _ in other):
+        r5.add("bad")
+    r5.add("descriptors", len(desc))
+    r5.add("bitsets", len(bitsets))
+    r5.note("bit-sets (name, bit): %s" % bitsets)
+    bits = dict(bitsets)
+    for nm, want in (("curse", 11), ("plrstaydeath", 13), ("monstaydeath", 14), ("exp", 30), ("life", 32)):
+        if bits.get(nm) != want:
+            r5.add("bad")
+    if len(bitsets) != 40 or sorted(bits.values()) != list(range(40)):
+        r5.add("bad")
+    bad += r5.done()
+
+    # states rows 16, 51: STATE_GroupClear's call sites
+    r16 = Rep("ststatic", "states16_51_groupclear_sites")
+    rel, calls, ab, by = callers_by_owner(0x0056C740)
+    r16.add("calls", len(calls))
+    r16.add("abs32", len(ab))
+    r16.add("in_use_entries", sum(1 for x in calls if 0x005BE130 <= x < 0x005BF3D0))
+    for nm, ss in by.items():
+        r16.note("%s: %s" % (nm, ["0x%08X" % x for x in ss]))
+    if len(calls) != 9 or ab or len(rel) != len(calls) or \
+            [x for x in calls if 0x005BE130 <= x < 0x005BF3D0] != [0x005BEE15]:
+        r16.add("bad")
+    bad += r16.done()
+
+    # states row 14: STATE_ApplyTimed's call sites by owner
+    r14 = Rep("ststatic", "states14_applytimed_sites")
+    rel, calls, ab, by = callers_by_owner(0x0056E970)
+    r14.add("calls", len(calls))
+    r14.add("other_rel", len(rel) - len(calls))
+    r14.add("abs32", len(ab))
+    r14.add("owners", len(by))
+    for nm, ss in by.items():
+        r14.note("%s: %s" % (nm, ["0x%08X" % x for x in ss]))
+    for want in ("STATEVENT_OpenWounds", "sub_0057D810_PreventHealHook", "SHRINE_ApplyState"):
+        if want not in by:
+            r14.add("bad")
+            r14.note("named caller missing: %s" % want)
+    if ab:
+        r14.add("bad")
+    bad += r14.done()
+
+    # states rows 34, 42: g_ShrineEffects read with r2, {fn, stat, state} by Shrines code
+    r34 = Rep("ststatic", "states34_42_shrine_table")
+    spec = {6: (171, 128), 7: (None, 129), 8: (39, 131), 9: (43, 132), 10: (41, 130), 11: (45, 133), 12: (11, 134),
+            13: (27, 135), 14: (162, 136), 15: (85, 137)}
+    words = []
+    for ln in r2("pxw %d @ 0x6e1850" % (24 * 12)).splitlines():
+        words += [int(x, 16) for x in ln.split()[1:5] if x.startswith("0x")]
+    for code in range(24):
+        fn, stat, state = words[3 * code:3 * code + 3]
+        st_ = state if state < 0x10000 else state - (1 << 32)
+        r34.note("code %2d: fn 0x%08X (%s) stat %d state %d" % (code, fn, owner(fn)[1] if fn else "-",
+                                                                 stat if stat < 0x80000000 else stat - (1 << 32), st_))
+        if code in spec:
+            ws, wst = spec[code]
+            if st_ != wst or (ws is not None and stat != ws):
+                r34.add("bad")
+            else:
+                r34.add("as_spec")
+        elif 0 < st_ < 0x10000 and st_ not in (0,):
+            r34.add("state_outside_6_15")
+    states = S.tsv("states")
+    row128 = [r for r in states if r.get("state") == "armor_increased" or (r.get("id") == "128")]
+    r34.note("States row 128: %s stat=%s" % ([r.get("state") for r in row128], [r.get("stat") for r in row128]))
+    if not row128 or row128[0].get("stat") != "armorclass":
+        r34.add("bad")
+    bad += r34.done()
+
+    # aggregate row 34: PlayerSwapWeapons' own body (objdump) and the attach/detach calls
+    ra = Rep("ststatic", "agg34_swapweapons")
+    vas, cl, ic = S.body(A, 0x005616A0)
+    tg = collections.Counter(owner(t)[1] if owner(t)[0] == t else "0x%08X" % t for _, t in cl)
+    ra.add("instructions", len(vas))
+    ra.add("direct_calls", len(cl))
+    ra.add("indirect_calls", len(ic))
+    ra.add("detach_calls", tg.get("ITEMS_DetachFromOwner", 0))
+    ra.add("attach_calls", tg.get("ITEMS_AttachToOwner", 0))
+    ra.note("callees: %s" % sorted(tg.items()))
+    rel, calls, ab = raw(0x005616A0)
+    ra.note("PlayerSwapWeapons callers: %s" % ["0x%08X %s" % (x, owner(x)[1]) for x in calls])
+    for x in r2_range(0x005616A0, 0x00561AFF):
+        if x[1] == "call" and imm(x[2]) in (0x0055C730, 0x0055C2C0):
+            ra.note("r2 0x%08X call %s" % (x[0], owner(imm(x[2]))[1]))
+            ra.add("r2_attach_detach_calls")
+    bad += ra.done()
+
+    # states row 46: the four functions' closures (objdump walker) and r2's LCG sites in them
+    hits, sites = r2_lcg_sites()
+    r46 = Rep("ststatic", "states46_closures")
+    for r in (0x0056C740, 0x0056E900, 0x00627540, 0x006272E0):
+        G = S.graph([r])
+        R = S.rng_functions(G)
+        vv = set()
+        for e, v in G.items():
+            vv |= v[2]
+        r2in = [x for x in sites if x in vv]
+        nind = sum(len(v[1]) if False else 0 for v in G.values())
+        r46.note("root 0x%08X %s: functions=%d draw_functions=%d r2_lcg=%d %s" % (
+            r, owner(r)[1], len(G), len(R), len(r2in),
+            sorted((hex(e), [hex(x) for x in v[0]], [(hex(s_), n) for s_, n in v[1]]) for e, v in R.items())))
+        r46.add("roots")
+        r46.add("draw_functions", len(R))
+        if R or r2in:
+            r46.add("with_draw")
+            # the shortest direct-call path from the root to a drawing function (breadth first)
+            par, q, hit = {r: None}, collections.deque([r]), None
+            while q:
+                f = q.popleft()
+                if f in R:
+                    hit = f
+                    break
+                if f not in G:
+                    continue
+                for _, t in S.body(A, f)[1]:
+                    if t not in par:
+                        par[t] = f
+                        q.append(t)
+            path, x = [], hit
+            while x:
+                path.append("0x%08X %s" % (x, owner(x)[1]))
+                x = par[x]
+            r46.note("  shortest path to a draw: %s" % " <- ".join(path))
+            vas0, cl0, _ = S.body(A, r)
+            for _, t in cl0:
+                Gt = S.graph([t])
+                r46.note("  direct callee 0x%08X %s: closure %d, draw functions %d" % (
+                    t, owner(t)[1], len(Gt), len(S.rng_functions(Gt))))
+    # states row 51: does the apply's closure reach the group clear?
+    Ga = S.graph([0x0056E970])
+    r46.note("STATE_ApplyTimed closure: functions=%d, holds STATE_GroupClear: %s" % (len(Ga), 0x0056C740 in Ga))
+    r46.add("apply_reaches_groupclear", int(0x0056C740 in Ga))
+    bad += r46.done()
+    return bad
+
+
+# ======================================================================================================= S4d: tables
+def chk_tables():
+    bad = 0
+    # states row 31: Skills aurastat1..6 / aurastatcalc1..6
+    r31 = Rep("tables", "states31_aurastat")
+    for x in S.tsv("skills"):
+        if not x.get("skill"):
+            continue
+        st = [x.get("aurastat%d" % i, "") for i in range(1, 7)]
+        ca = [x.get("aurastatcalc%d" % i, "") for i in range(1, 7)]
+        if not any(st) and not any(ca):
+            continue
+        r31.add("rows")
+        first_blank = next((i for i, v in enumerate(st) if not v), 6)
+        if any(st[first_blank:]):
+            r31.add("stat_after_blank")
+            r31.note("%s: stats %s" % (x["skill"], st))
+        for v, c in zip(st, ca):
+            if v and not c:
+                r31.add("stat_without_calc")
+                r31.note("%s: stat %s, no calc" % (x["skill"], v))
+            if c and not v:
+                r31.add("calc_without_stat")
+                r31.note("%s: calc %s, no stat" % (x["skill"], c))
+    bad += r31.done()
+
+    # aggregate row 38: Sets params naming a row of skills, montype or states
+    r38 = Rep("tables", "agg38_sets_param_names")
+    sk = {x["skill"].lower(): i for i, x in enumerate(S.tsv("skills")) if x.get("skill")}
+    try:
+        mt = {x["type"].lower(): i for i, x in enumerate(S.tsv("montype")) if x.get("type")}
+    except (OSError, KeyError):
+        mt = {}
+    sts = {x["state"].lower(): i for i, x in enumerate(S.tsv("states")) if x.get("state")}
+    for x in S.tsv("sets"):
+        for k, v in x.items():
+            if not k or "Param" not in k or not v or re.match(r"^-?\d+$", v):
+                continue
+            r38.add("named_cells")
+            l = v.lower()
+            hit = "skills" if l in sk else "montype" if l in mt else "states" if l in sts else "none"
+            both = [t for t, d in (("skills", sk), ("montype", mt), ("states", sts)) if l in d]
+            r38.add("first_hit_" + hit)
+            if len(both) > 1:
+                r38.add("in_two_tables")
+            r38.note("%s %s=%s -> first hit %s (in %s)" % (x.get("index"), k, v, hit, both))
+    bad += r38.done()
     return bad
 
 
 # ============================================================================================================== main
-SECTIONS = {"invlogs": chk_invlogs, "invstatic": chk_invstatic}   # checkpoint: stlogs, ststatic, tables not yet written
+SECTIONS = {"invlogs": chk_invlogs, "invstatic": chk_invstatic, "ststatic": chk_ststatic, "tables": chk_tables}
 
 
 def main(argv):

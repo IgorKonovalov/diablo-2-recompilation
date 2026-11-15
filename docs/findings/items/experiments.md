@@ -3771,6 +3771,8 @@ run id). Evidence in [items/0010 § Plan 0038 batch H6e2](0010-quest-drops.md#pl
 - **Limits.** Declared scratch memory: the code's map, not the game's own data (ADR-0015), and no symbol raised. The claims are in docs/findings/items/0014-ground-items.md under its convention. `drop`'s lock slots and `dispatch`'s stop at a call instruction are outside ADR-0015 (1) and ADR-0021 (a) as written: those claims are `[I]` until ADR-0029 is decided, ruled at the `lane/r60c` review. fn:sub_00555DA0_GroundDropCell@0x00555DA0
 - **Imports, ADR-0029 (d)** (added 2026-11-04, `lane/r29`, no re-run). `drop`: slots `0x006CC218` `EnterCriticalSection` and `0x006CC214` `LeaveCriticalSection` hold the stand-in `0x0066A250` (`C2 04 00`, `ret 4`), rule (a), scan in run:2026-11-04-lock-scan. `dispatch`: a stop at the call instruction `0x0054D7DC` of slot `0x006CC34C` `IsBadCodePtr`, rule (c), with the row's word on the stack 106 of 106. No other family writes an import slot. **Not evidenced:** what the imports do (mutual exclusion, another thread's order, a wait, a fault), the allocator on any state but the declared page (its code runs, for no `[C]` of its own), the block's address, everything after `0x0054D7DC`. The checker compares no address the allocator chose. The claims rise to `[C]` under ADR-0029; the limit above replaces the `[I]` of the bullet before it. fn:sub_00555DA0_GroundDropCell@0x00555DA0, 0x0054D7DC
 
+*2026-11-15 (`lane/n66i`):* plan 0066 batch S4c read this run's `static.txt` and `rcg-*.txt` claims with r2, the raw-byte scan and objdump over Ghidra's closure lists (0 breaks): [run:2026-11-04-inventory § Addendum 2026-11-15](#addendum-2026-11-15-plan-0066-batch-s4c-new-checks-over-the-kept-inventory-logs-and-static-second-sources-lanen66i).
+
 ## run:2026-11-04-inventory
 
 Plan 0060 Phase 2, first lane run (`lane/p60`, reverser, harness, slot 2, seed 6001). Finding: [items/0015](0015-harness-inventory.md). Tools: `tools/gdb/inventory.gdb` + `inventory.py` (+ `pilot.py`), `tools/inventory_sessions.py`, `tools/inventory_check.py`, `tools/item_inventory.py` (P2 section: `pkt18_expect`, `belt23_expect`), `tools/test_inventory_check.py` (8 no-game tests pass), recipe `tools/d2s_recipes/inv-sor.json`; revision: `main` `8235256e` + `ae44be8c` (the checker was edited once after the first check, uncommitted at that point, committed with this record).
@@ -3782,6 +3784,100 @@ Plan 0060 Phase 2, first lane run (`lane/p60`, reverser, harness, slot 2, seed 6
 - **First check: 6 mismatches, all sweep predictions** of the town drops (not in an active room at any later sweep). Explained as a harness error (the prediction was not conditioned on the room staying active); the checker now classes them "not a sweep case" and the check prints `mismatches: 0 (explained: 6)`.
 - **Boundary of the 0 mismatches:** ground searches up to ring 2 on open ground with no walk blocked, no fallback, no null room; quality 2 `hpot` drops for the expiry; one `0x18` and one `0x23` case, both edited requests; the sweep claim rests on 4 frees at one sweep frame. Excluded: gold, quality 4+, filler, quest drops; the potion cases; pickups; belts' other cases; case 9's return to a deactivated room (three monster drops were restored by the pilot's own movement and met, not predicted).
 - **Review note (`lane/p60`, architect Tier B check, 2026-11-04).** The checker's exclusion class was tightened: the 6 first-check mismatches are excluded only on the player's `PLR` level differing from the drop's at every later sweep, else they stay mismatches; output `check-main-r2.txt` (`manifest-inventory-r2.txt`, passes from `workspace/logs/inventory/`; differs from `check-main.txt` in the wording of the sweep class and the last line only). The kept `check-main.txt` is the pre-review output. The `0x18` and `0x23` results are forced (a written packet field at the handler's entry, ADR-0003): `[I]`; ring 2 is one case: `[I]` as an order statement.
+
+### Addendum 2026-11-15: plan 0066 batch S4c, new checks over the kept inventory logs and static second sources (`lane/n66i`)
+
+- **Question.** Which `[I]` of [items/inventory](../../specs/items/inventory.md) (S4c, 29 rows) do a new check over this
+  run's and inventory-2's kept logs, a full-table check, or a second tool on the code raise? Inventory rows:
+  [items-inventory](../../plans/0066-inventory/items-inventory.md). (run:2026-11-04-inventory, run:2026-11-04-inventory-2,
+  run:2026-11-04-ground-emu)
+- **Setup.** No game, no Ghidra. `tools/sweep2_s4cd.py` (sha256 `271e96c8…`; sections `invlogs`, `invstatic`, `ststatic`,
+  `tables`; tests `tools/test_sweep2_s4cd.py`, 8 tests). Second tools: **r2** (`pD`, `pxw`, `p8`, its own `/x` search for
+  the LCG multiplier, each hit decoded by r2) and **the raw-byte scan** `tools/xrefscan.py` (rel32 and abs32) where the first
+  reading was Ghidra or the objdump listing of `static.txt`; **objdump** through `tools/sweep_s4b.py`'s walker over
+  Ghidra's own closure lists (`rcg-0x….txt` of run:2026-11-04-inventory-emu and -ground-emu). A call's stack arguments are
+  read by r2 from the function's entry, walking back from the call and skipping the pushes an earlier call pops (its `ret N`)
+  or an `add esp` drops. Logs: the four kept logs (`main`, `pot`, `drops2`, `crowd`) under `manifest-inventory.txt` and
+  `manifest-inventory-2.txt`.
+- **Procedure.** `systemd-run --user --scope -q -p MemoryMax=4G python3 -I tools/sweep2_s4cd.py all >
+  workspace/logs/n66i/check.txt` (337 lines, `fdf66219…`, `S4 total bad=0`); `manifest.sha256` passes `sha256sum -c` from
+  `workspace/logs/n66i`. Development outputs under `dev/` (`manifest-dev.sha256` passes from `dev/`): `check-failed1.txt`
+  stopped at the `UNIT_AnimInit` table read (a parse error, fixed), the `*-dev*.txt` are earlier revisions (the push walker
+  stopping at an inner call, an r2 search returning no hit, the States loader's range taking PetType's descriptors); nothing
+  rests on them.
+- **Observed, logs** (`invlogs`):
+  - `row3`: 28 ground drops at creation (`DCI`), 27 in `main` and 1 in `drops2`; for each, the `GDI` line before it returns
+    into `DropCreateItem` (0x0055A550) with size 1 and fallback 1. 0 other.
+  - `row8`: inventory listings (`PKT`/`PKR`): mode 0 on pages 0 (7 791) and 4 (45), mode 1 on the body with a location
+    1..10 (4 040), mode 2 in the belt with a box 0..15 (4 810); mode 3 at `DCI` (28), after a placement (`IPX`, 90) and in
+    every swept list (`SWP`, 626); mode 4 for the cursor item at the `IPG` of each `0x17` drop (90). 0 other.
+  - `row29_61`: 90 `0x17` pairs (main 10, drops2 40, crowd 40): each holds exactly one `GDI` (return into `CursorDrop`
+    0x00563C00, size 1, fallback 1), one `GDO` with a non-null room, one `IPG` at the `GDO` cell with the item in mode 4,
+    the item on neither inventory listing, the listings equal before and after, return 0. The `InteractIsPlayer` refusal
+    (return 3) is not met.
+  - `row31`: 91 `0x19` pairs (main 11, drops2 40, crowd 40): each item owned and on page 0 before, return 0, the item gone
+    from the listing after (the cursor item is not on Inventory `+0x0C`'s list), every other item unchanged. No refusal met.
+  - `row85_88`: 35 sweeps, each at a frame multiple of 1 500; 26 frees, each at a sweep, lag `frame − (+0x24)` 0..1 322;
+    every freed id listed at its own sweep and in no later sweep (26 of 26, a later sweep exists for each); every listed
+    item with `0 < +0x24 ≤ frame` freed at that sweep (26), none of the 521 not yet due, 79 listed with `+0x24 = 0`.
+- **Observed, static** (`invstatic`):
+  - `row2`: r2 reads `g_SrvPacketTable` rows `0x17..0x1F`, `0x21..0x25`, `0x63` as handlers with flag 1, each at a symbol's
+    entry (`Pkt17CursorDrop` … `Pkt25BeltSwap`, `SrvPacket63Handler`), equal to the spec's § D column.
+  - `row5_6`: r2 bytes at 0x0074479C are 13, 1 and at 0x007447B4 16, 1.
+  - `row4_79`: the raw scan finds 20 rel32 sites of `GroundDropCell`, all calls, no abs32; at each r2's pushes give size 1
+    and fallback 1 (20 of 20). Their 18 functions: `DropRolledAtPos`, `DropItemAtUnit`, `DropEar`, `DropCreateItem`,
+    `BeltOverflow`, `CubeDropEmptied`, `CursorDrop`, `NpcDropCreate`, `NPC_MenuAction` (3), `CorpseOverflowDrop`,
+    `PLAYER_CorpseCreate`, `ObjDropCreate`, `SHRINE_Exploding`, `SHRINE_Poison`, `DropItemCodeAt`, `ObjDropCreate2`,
+    `TargetBeltItemToGround`, `MissDo18ChestSpawner`.
+  - `row80_100`: 7 call sites of the pair form `0x0064E810`, no abs32: the search forwards its own arguments; 0x0055923B
+    (in `ItemCreate`), 0x005593F7 (`DropGoldPile`), 0x00559770 and 0x00559969 (`DropRolledAtPos`) push size 1, masks
+    0x3E01, 0x801, fallback 1; 0x0055A15C (`DropGoldAmount`) the same with fallback 0; 0x0056D213 (`PortalObjectCreate`)
+    size 3, masks 0x3E01, 0xC01, fallback 0.
+  - `row90`: 12 rel32 call sites of `ItemPlaceOnGround`, no other, no abs32.
+  - `row18`: `InvRecordGrid` 21 call sites: 10 at or above 0x00500000, all in `0x0063xxxx` (`InvGridPut`, `InvSpotFindBySize`,
+    `InvPlaceAnywhere` ×2, `InvPutAt`, `InvStackWithRoom`, `InvTomeWithRoom`, `INV_GetItemCount`, `InvScratchCopyGrid`,
+    `InvScratchPlace`) with a literal set 0, 11 below with a register or memory set; `BeltsRecord` 7: 3 with a literal 0
+    (0x00560921, 0x0056093D in `BeltOverflow`, 0x0063C6B3 in `BeltFreeSlot`), 4 below 0x00500000 non-literal.
+  - `row16`: `InvRowForUnit` has 39 call sites; at 0x00560297, 0x00560598 and 0x0054D658 the third push is loaded from
+    `[reg + 0x70]`, `reg` the function's first argument (`[ebp+8]` in `InvPlaceItem`, `ECX` in `InvItemToCursor` and the
+    `0x63` handler).
+  - `row21`: the bodies at 0x0063B790, 0x0063B7D0, 0x0063B810 are 19 bytes each and equal with their two call
+    displacements masked (both calls to 0x0063B620 and 0x0063B6E0).
+  - `row35_60`: r2 and objdump: `UnstackStub` is `xor eax, eax; ret 8`. The `0x22` handler returns 3 for a length other than
+    5, returns `PktOwnedItemBad`'s non-zero, and otherwise calls the stub with `&len` as its out word; the stub does not
+    write it, so the test `cmp [ebp+0xc], eax` meets 5, not 0, and the handler **returns 3** (0x0054B3BD–0x0054B3CB).
+  - `row78`: `FieldLoad` reads `u32` width at file `+2` (0x0066A2BC) and height at `+6` (0x0066A2C5), stores `height >> 1`
+    at 0x0096D664 (0x0066A344) and `width >> 1` at 0x0096D668 (0x0066A3E0, 0x0066A3FE); `FieldStep` adds both
+    (0x0066A600, 0x0066A60F) and the data base 0x0096D654 (0x0066A61C). `expfield.d2`'s header gives 256 and 256, so 128.
+  - `row76_93_95`: r2's search finds the multiplier 852 times in `.text`, each decoded by r2 as an immediate of an
+    instruction; the 852 equal objdump's instruction sites. For each of the 7 roots, Ghidra's closure list (567, 551, 556,
+    551, 711, 560, 632 functions) less its 104 or 105 external entries is walked body by body by objdump, every body found:
+    no inline step, no call of an `RNG_` function and no r2 site in any of them, except under `ItemPlaceOnGround` the one
+    body `UNIT_AnimInit` 0x00624390 (`RNG_RangeB` at 0x00624563). r2 reads `UNIT_AnimInit`'s switch at 0x00624408 on the
+    type: cases 0..4 enter at 0x0062440F, 0x00624483, 0x00624504, 0x006245EB, 0x0062459D; the draw lies in case 2's range,
+    which returns at 0x0062459A, before case 4 (an item) enters at 0x0062459D.
+  - `row97`: the 13 move bodies (own bodies, 96 to 402 instructions, no indirect call): no inline step, no `RNG_` call, no
+    r2 site.
+  - `row82`: of the 18 caller bodies, an inline step in 3, each found by both tools: `SHRINE_Exploding` 0x0058311D,
+    `SHRINE_Poison` 0x0058344D, `TargetBeltItemToGround` 0x005A30FC (the step on `[esi+0x20]` loaded at 0x005A30F9, then
+    `low mod 100` by `0x51EB851F`, `shr 5`, `× 100`, and `jl` past the rest below 30 at 0x005A3124–0x005A3127).
+    `RNG_` calls, scanned here for the first time: `MissDo18ChestSpawner` twice (0x005AF43A, 0x005AF44E, each
+    `RNG_RangeB([esi+0x20], 2n + 1) − n` with `n = [ebx+0x40]`, added to x then y, then the search at 0x005AF474), and
+    `NPC_MenuAction` once (`RNG_RangeB` at 0x0057A3CC). No other.
+  - `row54`: Misc: 22 rows with `belt` 1, 8 of them `autobelt` 0 (`mpo`, `mpf`, `vps`, `yps`, `wms`, `tsc`, `isc`, `hrb`),
+    none among `hp1..5`, `mp1..5`, `rvl`, `rvs`.
+  - `row71`: `g_NoPickup` (0x007A6A90) has 4 abs32 references, in `ClientMonCreate` (0x00467B18, 0x00467C48) and
+    `ChatInputParse` (0x0047C524, 0x0047C52D); none in the bodies of `PickupToInv`, `PickupToCursor` or their 36 direct
+    callees.
+- **Outcome by row** (the *Route* cells carry the notes): raised 21 (2, 3, 4, 5, 6, 8, 16, 21, 35, 54, 76, 78, 79, 80, 82,
+  90, 93, 94, 95, 97, 100), raised in part 7 (18, 29, 31, 61, 71, 85, 88), contradicted in part 1 (60: the handler's return).
+- **Contradicted, row 60.** items/inventory § G and items/0013 § 1 say the `0x22` handler returns 0; by r2 and objdump it
+  returns 3 for an owned item and `PktOwnedItemBad`'s non-zero otherwise. The drain discards the return (items/use A1), so
+  no outcome changes: "there is no split on the server" holds. A reading of two tools on one path; no case logs `0x22`.
+  Backlog: [`2026-11-15-reverser-spec-writer-plan-0066-s4c-s4d-corrections`](../../backlog/2026-11-15-reverser-spec-writer-plan-0066-s4c-s4d-corrections.md).
+- **Not evidenced here:** the `InteractIsPlayer`, ownership, empty-cursor and trade refusals of `0x17` and `0x19` (no case);
+  the cursor's clearing at `0x17` (no cursor field logged); what a held item's `+0x24` does later; the send of a freed item
+  to more than one player; the 13 server calls' reads of the copied record fields; ownership in a pickup.
 
 ## run:2026-11-04-inventory-2
 
@@ -3797,6 +3893,8 @@ Plan 0060 Phase 2, second lane run (`lane/p60b`, reverser, harness, slot 2, seed
 - Not run: see finding § Short. Slot 2 stopped and the saves restored (`saves.py --slot 2 status`: no aside, harness idle).
 
 *2026-11-15:* plan 0066 batches S4a and S4b re-checked this run's three kept logs with `tools/sweep2_s4ab.py` (0 breaks); the counts are in [run:2026-10-17-economy § Addendum 2026-11-15](#addendum-2026-11-15-plan-0066-batches-s4a-and-s4b-new-checks-over-the-kept-economy-and-inventory-logs-and-static-second-sources-lanen66h).
+
+*2026-11-15 (`lane/n66i`):* plan 0066 batch S4c re-checked this run's `drops2`, `crowd` and `pot` logs with `tools/sweep2_s4cd.py` (0 breaks); the counts are in [run:2026-11-04-inventory § Addendum 2026-11-15](#addendum-2026-11-15-plan-0066-batch-s4c-new-checks-over-the-kept-inventory-logs-and-static-second-sources-lanen66i).
 
 ## run:2026-11-04-lock-scan
 

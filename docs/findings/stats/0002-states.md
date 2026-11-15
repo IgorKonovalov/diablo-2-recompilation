@@ -320,6 +320,13 @@ stateDiagram-v2
 | recompute | any list write, link, unlink (stats/0001 § 3) | the lists | the `+0x48` cache, callbacks | none |
 | shrine, well | `OBJOP_Shrine`, OperateFn 22 | Shrines/Objects row, player stats | apply, refill, re-arm event | none for codes 0–15 and wells |
 
+*2026-11-15 (plan 0066 S4d part 1, `lane/n66i`):* the remove callback is not draw-free in the code: `STATE_DefaultRemoveCB`
+calls `sub_00575900_PetLimitRefresh` (0x0056E960), whose direct-call closure holds 122 drawing functions (shortest path
+`PetLimit` → `PetRemove` → `PetUnitRelease` → `MonSetMode` → `MonAttackStats`); whether an expiry takes it is unread `[I]`.
+The group clear, death purge and mode drop hold none (closures of 463, 447, 457 functions, objdump walker and r2's LCG
+sites). [stats/experiments § Addendum 2026-11-15 (S4d part 1)](experiments.md#addendum-2026-11-15-plan-0066-batch-s4d-part-1-of-2-static-second-sources-and-full-table-checks-lanen66i).
+(0x0056E960, fn:STATE_DefaultRemoveCB@0x0056E900, fn:sub_00575900_PetLimitRefresh@0x00575900)
+
 - [I] **Chaining reading (ADR-0014).** None of the functions read for these events calls an RNG function or holds an
   inline LCG step (a scan of their address ranges for calls to `RNG_Range`, `RNG_RangeB`, `RNG_Step` and the
   others and for `0x6AC690C5`; the only hits are in shrine codes 18, 21, 22, out of scope). So no event kind of this
