@@ -378,6 +378,9 @@ if (!StepAway(t, 15, 1)) { if (!melee) return Ring(5); return SetModeAtUnit(Rang
   tbl:MonStats.txt:Velocity, tbl:MonStats.txt:Run, fn:STATS_GetUnitStat@0x00625480, fn:sub_00627260_UnitSetStat@0x00627260)
 - [I] Two life readers: this function reads `UnitLifePct` (0x00621F20) directly, rows 4, 8 and 15 read `AiLifePct`
   (0x005DD280); ai/0001 names both.
+  - *Corrected 2026-11-15 (`lane/n66e`, plan 0066 S1e):* [C] the two are one map. 0x005DD280 is `push ecx; call
+    0x00621F20; ret`, so `AiLifePct` takes the unit in `ECX` and `UnitLifePct` on the stack; equal on 240 of 240 emulated
+    images. Which rows call which stays [I] here. (0x005DD280, run:2026-11-15-sweep2-s1e)
 
 #### 2.11 Row 13 `FallenShaman` (0x005F1440)
 

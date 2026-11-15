@@ -381,6 +381,281 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 - **Audit:** a Tier B check would have missed the fix (it shows only in the kept output's flip lines, not in the diff);
   it is not reject-grade, so no miss counts against the lane kind.
 
+### 2026-11-10 — Phase 1, batch S1e, paused (reverser-static, `lane/n66e`): resume note
+
+- **Paused at the owner's request** before the kept run. No inventory row, total or finding is changed yet; the batch
+  Status in the inventory README § 4 still reads `scheduled`.
+- **Done.** New tool `tools/ai_s1e_emu.py` (this commit): 24 emulation families, one shared memory spec and one cases file,
+  so one `tools/ghidra.sh emuboundary` launch (about 30 s) runs all 5 760 cases. **No callee is an observed boundary.** Every
+  callee runs whole on the declared image: `UnitDistSq`, the stat getters with `0x00624F60`'s search, `UnitAlignGet`,
+  `AlignSame02`, `UnitsHostile` with the player relation list, `MonsterOwner`/`GameFindUnit`, the state tests,
+  `AiShadowSkillFits` on its declared paths, and `AiUnitSearch` kind 1 with `AiSearchNearRooms` for Mephisto's pick.
+  This follows ruling R2. Each model names its tests. Every test is reversed alone, and every ordered compare has its
+  strictness switched alone; the check prints the cases each control separates and lists any it leaves unseparated.
+  Development runs in session scratch only (not kept), with the last tool revision but its tags: 5 760 of 5 760 match,
+  0 stopped, 0 unaccounted traced reads (only `g_BitMask32`, `g_UnitHashOffsets`, `g_AiSearchKinds` and the two
+  `.text` jump and byte tables at 0x005EB7D8 and 0x005EAD34). Unseparated: three controls, each inherent: `trkind`
+  `hi<=lo~` (the call is always `RandLoHi(0, 3)`; `randlohi` separates it); `shroll` `v18<lo~` (an equal value written
+  back); `genspawn` `count>453` and `count>453~` (the first `*out` store is overwritten on every path).
+- **Findings to carry into the rows (from the development runs; re-check on the kept run):** (1) the weighted pick
+  0x005FC130 with sum ≤ 0 takes `r = 0` with no draw and still scans: 27 of 240 cases return a `k` (a positive
+  prefix), against catalogue line 3917's "if sum ≤ 0: the fallback". (2) `AiGenSpawnPickClass` with n = 0 draws
+  nothing, still tests entry 0 (2 cases take its class), and otherwise ends at 496/−1 (36), not 453; its first store
+  is dead (line 3593 block). (3) `AiLifePct` 0x005DD280 is `push ecx; call UnitLifePct; ret`. The two return the same
+  value on 240 of 240 images, so lines 53 and 4689's "two different readers" is one map behind two calling
+  conventions. (4) Mephisto's pick draws only when the search found a candidate (`blk[3]` ≠ 0; 166 cases with no
+  draw); line 2697 implies a draw always. (5) `AiWoundedNearCb`'s "not dying" is `MonIsDeathMode`, which is 0 for
+  every player; ties replace (`≤`). (6) `AiShadowSkillRoll` draws 0, 1 or 3 times, not "three per tried skill", and
+  never reads its fourth argument (melee comes from `ctx+0x18` in Fits).
+- **Row plan (catalogue rows, per the analysis):** raised whole: 15, 172, 194, 242, 332, 360. Raised in part, with the
+  remainder named: 3 (the remainder follows machinery's `Ovr`, `Head`/`Pop`/`Push`, `UseSkillK`, `DelayE`, `State` and
+  rchance≡chance); 31 (the think's `aip(1)`, the 7 tries and the wrap's stock reach); 66, 72, 135, 154, 182, 314 (the
+  think's frame or initial block words); 196 (the caller set and `MonRegionsBuild`'s −1 store go to c, S1f); 229 (the
+  bonus-level branch 0x00644180 and Fits' undeclared paths); 288 (the "one caller" claim goes to c, S1f); 356 (row
+  128's push and the name of state 141 go to c); 385 and 420 (with the corrections above); 518 (which rows call which:
+  c). Moved: 421 c-emu → d-owner. Its reason: `AiPlayerThreatScore` and `AiBaalThreatScore` call `InMeleeRange` first
+  and `AiLineClear` later, both reaching `COLL_LineTest` 0x0064E260's room walk. R2 leaves no c-emu route, and both
+  callers are Diablo's and Baal's.
+- **Next (a fresh lane on `lane/n66e`):**
+  1. `python3 -I tools/ai_s1e_emu.py cases --dir workspace/logs/ai/sweep2-s1e`, then the Ghidra run under
+     `systemd-run --user --scope -p MemoryMax=4G` with `GHIDRA_PROJ_DIR=…/workspace/ghidra-n66e GHIDRA_HEADLESS_MAXMEM=3G`
+     into `s1e.out`, then `check > check.txt` and `manifest --write`.
+  2. Write the run record `run:2026-11-10-sweep2-s1e` in `docs/findings/ai/experiments.md` (setup, procedure, the
+     check's lines, the unseparated three, the corrections).
+  3. Update the 22 rows in `docs/plans/0066-inventory/monsters-ai-catalogue.md`: rows 3, 15, 31, 66, 72, 135, 154,
+     172, 182, 194, 196, 229, 242, 288, 314, 332, 356, 360, 385, 420, 421, 518. Their spec lines at `b5999f5e`: 53,
+     115, 289, 598, 687, 1220, 1397, 1560, 1643, 1736, 1747, 2031, 2277, 2697, 2960, 3164, 3359, 3380, 3593, 3916,
+     3921, 4689.
+  4. Update that file's *Totals by class* (421 → d-owner), the S1e row of the README § 4, § 1, § 3 and the
+     totals, against the merged `main`. Lane n66f edits the same totals rows.
+  5. Write the log entry (Tier B review) and the list of statements ready for re-tagging.
+
+### 2026-11-15 — Phase 1, batch S1e (reverser-static, `lane/n66e`): done, 22 of 22 settled
+
+- **Done.** The kept run [run:2026-11-15-sweep2-s1e](../findings/ai/experiments.md#run2026-11-15-sweep2-s1e): `tools/ai_s1e_emu.py`
+  as committed at `9d00a53b` (`6d0287cd…`, unchanged), one `tools/ghidra.sh emuboundary` launch on
+  `workspace/ghidra-n66e` (`-Xmx3G`, `MemoryMax=4G` scope), 24 families, 5 760 cases, 5 760 matching, 0 stopped, 0
+  unaccounted traced reads; 244 controls, 240 failing every case they separate, 4 with no observable (`trkind`
+  `hi<=lo~`, `shroll` `v18<lo~`, `genspawn` `count>453` and `count>453~`). Outputs in `workspace/logs/ai/sweep2-s1e/`
+  (`check.txt` `86d920a6…`, `manifest.sha256` `77befdea…`, 12 lines, passes from there); `cases` regenerates the case
+  file byte for byte, `check` reproduces `check.txt`. The development runs of 2026-11-10 were not kept and nothing rests on
+  them. The six findings of the resume note held on the kept run, each read again by objdump.
+- **Rows (22): raised 5, raised in part 16, moved 1** (332 moved from whole to in part at the Tier B check). Raised: 15
+  (`MonAiEntryGet`), 172 (`AiRegurgitatorCb`), 194 (the
+  R78 block), 242 (`AiShadowMasterCb`), 360 (`AiMinionCountCb`). In part, the remainder named in each
+  row: 332 (`AiImpNearCb`, its `count > 492 ? 492 : −1` guard), 3 (machinery's helpers), 31, 66, 72, 135, 154, 182, 314 (the think's frame, block words or later reads), 196 (the
+  caller set and `MonRegionsBuild`'s −1 store → c, S1f), 229 (`AiShadowSkillFits` past its declared paths and the
+  bonus-level branch 0x00644180), 288 (the one caller → c, S1f), 356 (row 128's push and state 141's name → c, S1f), 385
+  (the dead first store, no observable), 420 (the inline copies → c, S1f), 518 (which rows call which → c, S1f). Moved: 421
+  c-emu → d-owner, as the resume note gave: the threat scores reach `COLL_LineTest` 0x0064E260's room walk through
+  `InMeleeRange` and `AiLineClear`, R2 leaves no emulation route, and only Diablo and Baal call them. **Owner decision:**
+  none is needed now; 421 waits for owner play of Diablo or Baal, like the other d-owner rows.
+- **Corrections (six; the spec's text is Phase 3's).** (1) 0x005FC130 with sum ≤ 0 still scans with `r = 0` (27 of 240
+  return a `k`; line 3917). (2) `AiGenSpawnPickClass` with n = 0 tests entry 0 with no draw; its first store is dead (line
+  3593 block). (3) `AiLifePct` is `UnitLifePct` behind `ECX` (lines 58, 4689 and quirks Q515). (4) Mephisto's pick takes its first
+  draw only after a find (line 2697). (5) `AiWoundedNearCb`'s ties replace and "not dying" is 0 for players (line 687). (6)
+  `AiShadowSkillRoll` draws 0, 1 or 3 times and never reads `melee` (line 2031). Dated notes in ai/0002, 0003, 0006,
+  0008, 0011 and 0012 (rule 20); the spec copies routed by [backlog](../backlog/2026-11-15-reverser-spec-writer-plan-0066-s1e-corrections-for-phase-3.md).
+- **Symbols:** none raised. The run is an ADR-0015/0021 emulation over a declared image, which confirms maps, not names
+  (review-fixes rule 14).
+- **Totals** recomputed from the 29 inventory files against `main` `389cb19d` (merged at `0f30ab21`): a-logs 674, a-run
+  358, b 389, c 389, c-emu 489, d 327 (d-owner 68), sum 2 626; Phase 1 1 552, Phase 2 747 (inventory README § 1, § 3,
+  § 4; the catalogue file's *Totals by class*: c-emu 21, d-owner 62). S1f's row names the five remainders routed to it.
+- **Ready for Phase 3 (spec-writer), monsters/ai/catalogue at `b5999f5e` line numbers.** Whole, `[C]` with the run as
+  anchor: 115 (S0), 1560 (R71b), 1736 (the R78 block), 2277 (R106b), 3380 (R121a). Split, the raised half
+  `[C]` and the rest `[I]` as each row says: 53 (Notation: `LifePct`, `UnitLifePct`, `O`, `St3or19`), 289 (R8b), 3164 (R113b, its `count > 492` guard `[I]`), 598
+  (R18a), 687 (R23b, with correction 5), 1220 (R49b), 1397 (R65c), 1643 (R74b), 1747 (R78b), 2031 (the R105 block, with
+  correction 6), 2697 (R50c, with correction 4), 2960 (R85b), 3359 (R120b), 3593 (the R129 block, with correction 2),
+  3916 (the pick, with correction 1), 4689 (with correction 3). 3921 stays `[I]` (d-owner).
+- **Left.** Nothing in S1e. The c remainders wait in S1f.
+- **Review:** Tier B (plan Phase 1), with the audit rule. Judgment calls to check: (1) the callbacks' rows raised in part
+  where the block words come from the think (the callback's map is the whole claim tested; the initial words and frame
+  offsets are the think's and stay `[I]`); (2) row 31's "search kind 1 walks the near rooms' unit lists" counted as met
+  through family `mephpick`, the same `AiUnitSearch` code run whole for another callback; (3) the four controls with no
+  observable taken as inherent rather than as gaps (each named in the run record); (4) correction 1's Diablo inline read
+  statically and left `[I]`, routed to S1f rather than run; (5) row 385's dead store kept `[I]` inside a raised-in-part row
+  rather than moved to d-none.
+
+### 2026-11-15 — Phase 1, batch S1e, Tier B check (architect, `lane/n66e`): accept with fixes (3)
+
+- **Verdict: accept with fixes.** Fixes (3): overclaim 2, stale cross-reference 1. All three written on the branch.
+  (1) overclaim: row 332 (`AiImpNearCb`, line 3164) was raised whole, but its statement holds the guard `count > 492 ? 492 :
+  −1`, and the check lists no control for it (`base492` reverses the compare of the base, not the count test; the
+  model's `want` is computed with `ms_count` and no `e.c`). The row is raised in part, the guard stays `[I]`: the batch
+  is 5 raised, 16 in part, 1 moved (catalogue row, README § 4, this log's Rows and Ready lists, the run record's `imp`
+  bullet). (2) overclaim: correction 4 read "Mephisto's pick draws only when the search found a candidate" (run
+  record, this log, the backlog entry, ai/0008's note, row 288's "166 cases with no draw"). The kept tags give 166 cases
+  with no first draw and 190 with `blk[5]` 0; the second draw is gated on `blk[5]`, which a player searcher sets (4 and
+  43 cases), so "no draw at all" holds only with `blk[5]` 0, which for Mephisto rests on the `[I]` one-caller claim.
+  Reworded in all five places. (3) stale cross-reference: ai/0006's Functions row for `AiShadowSkillRoll` still read
+  "three `Range` draws" under correction 6; it now says 0, 1 or 3 and points to the note.
+- **Checked clean.** `sha256sum -c manifest.sha256` passes (12 lines); the hashes the record names match (`check.txt`
+  `86d920a6`, manifest `77befdea`, `s1e.out` `c0c12a75`, `s1e.cases` `01e0f560`, tool `6d0287cd`). The check's 24 family
+  lines each read 240 of 240, `bad=0 stopped=0`, every control `passed` 0; 244 controls, 4 unseparated (`trkind` `hi<=lo~`,
+  `shroll` `v18<lo~`, `genspawn` `count>453` and `~`), as the record says, and each of the four is named in the row that
+  touches it. The record's per-family counts (taken, drawn, 166, 88, 27, 125, 63, 36, 2, 76, 115, 49, 64, 22) agree with
+  the TAGS lines. Every raised row carries the run anchor and every raised-in-part row has a "Stays `[I]`" clause (row 3,
+  31, 66, 72, 135, 154, 182, 196, 229, 288, 314, 332, 356, 385, 420, 518). Totals recounted: the catalogue's c-emu 21 and
+  d-owner 62; the sum of the 29 files' *Totals by class* is a-logs 674, a-run 358, b 389, c 389, c-emu 489, d-2c 59,
+  d-owner 68, d-edit 23, d-none 177 = 2 626; Phase 1 1 552, Phase 2 747, blocked 327. Against `main` the lane moved c-emu 490
+  → 489, d-owner 67 → 68 (the one row 421). Six corrections in the findings and the backlog entry match the batch entry
+  (backlog entry front matter and routes read; Q515 and L58/L4689 routed). No `[L]` added. Gate green.
+- **The five judgment calls.** (1) accepted, with fix 1: the callback map is the claim tested, the think's initial block
+  words stay `[I]`. (2) accepted: `AiUnitSearch` runs whole with kind 1 in `mephpick`, and row 8's search passes the same kind;
+  the room-list walk is one code path. (3) accepted: each of the four is named, and none carries a claim the row states
+  `[C]` (`hi<=lo~` is separated in `randlohi`, 12). (4) accepted: the Diablo inline pick is read-only `[I]` and the remainder
+  is in S1f's row. (5) accepted: the dead store is `[I]` in a raised-in-part row; moving it to d-none would be a ruling for
+  the owner only if the count test mattered to a reimplementer, and it does not (every exit stores again).
+- **For Tier A or the owner.** Nothing needs the owner. Tier A: this is the Tier B lane counted for the audit rule; the
+  audit sample is the architect's to draw. For the Phase 3 spec-writer, the six corrections reach the spec through the
+  backlog entry; 3164 is now a split row.
+
+### 2026-11-10 — Phase 1 batch S2b, paused (reverser-static, `lane/n66f`): resume note
+
+- **Paused on the owner's request** before any row was settled: no inventory row, total or finding is changed yet. Kept
+  on the branch: the new check tool `tools/skills_s2b.py` (development revision, uncommitted outputs only; its docstring
+  lists the sections FRAME, MH, DMG, MA, BDO, MC, SKL, OWN). It reads the 45 S2a logs in `workspace/logs/skills`
+  (`2026-10-25-skills-*.log 2026-10-27-skills-*.log 2026-10-30-skills-catalogue-cat-*.log`) with `tools/skills.py`'s
+  parser; a full pass takes a few minutes under `systemd-run --user --scope -p MemoryMax=4G`. Its last complete
+  output (before the FRAME end-call split was added) gave 0 breaks; nothing is hashed or kept yet. The resuming lane
+  runs it once, keeps the output as `workspace/logs/skills/2026-11-1x-s2b-check.txt` under a new
+  `…-s2b-manifest.sha256`, and quotes every count below from that file, not from this note (review-fixes rule 2).
+- **What the development passes showed** (to be re-read from the kept output), with the row call each supports:
+  - FRAME: `MF0`'s row number equals Missiles `pSrvDoFunc` in every windowed frame (do 1: 20 860, 3: 4 605, 5: 7 096,
+    23: 480); every frame returning 1 is followed by the missile's frame at frame + 1 (31 804); do 1: 823 missiles end
+    at range spent with frames run = frames left at creation, the frame returning the end call's 2; 65 end calls with
+    left > 0 (the new split tells the step's end, before the decrement, from a crossed cell's, after it); 230 unit hits
+    in do-1 frames, all at left < activate (none at =); **no do-1 frame returned 2 without a hit call** → missiles rows
+    37, 97 (own-cell free) move a-logs → b (H2a). Rows catalogue 1, missiles 3, 20, 33, 34: raise in part / whole (3)
+    from these.
+  - MH: end calls of rows without a hit function 80 600: no build, missile seed unchanged, result 2; hit-function rows
+    5 610: result 2, seed moved in 419, 386 builds inside (no unit on the call); unit calls without a hit function:
+    `BD0 → MA0` 16 858, `THR → BD0 → MA0` 594, `THR` miss 718 — no filter ever refused one; pierce used by a
+    CollideKill row kept the missile 130 of 130; hit-function unit calls: 1 048 of 1 209 table-predicted builds not made
+    (separates "replace" from an OR, not from an AND: keep "replaces" `[I]`). Stat 19: 0 of 101 777 player-missile hits,
+    flag 0x1000 on 0 of 92 094 player creations. Rows missiles 4, 24, 50, 52, 53, 89: raise in part (hit-function
+    remainders → b H2a, as README 2).
+  - DMG: missile seed steps once between `BD1` and `MA0` for `pSrvDmgFunc` 3 (13 486 of 13 486), none for rows without
+    a damage function (4 118) → catalogue 2 in part. MA: KnockBack 0 → no step (17 608); 33 → one step and packet
+    `+0x04` bit 3 iff roll < 33 (5 of 5); `DRR` inside on the defender (85) → missiles 57, 88 in part (state 54, stat 120
+    → b).
+  - BDO: two-draw builds 143 (run25 19, run27 43, catalogue 81), every one separating its pair: phys→fire 108,
+    phys→poison 34, fire→cold 1 → missiles 59, 64 in part (stat 180 is not in the logger's stat list).
+  - MC: SrvDo srvmissile creations 579 match B2/B3 (line 0x21, monster with stat 19 0x1021 and +0x48 = it (113), lob
+    0x420 (104; no lob owner had stat 19, so B3's "no to-hit flag" is not separated)); MCB lines 618 of 618 with +0x54 =
+    0x005C9290, EDX = +0x58, ECX = the new missile, after SU0/SU1 (missiles 84 in part); Firestorm 221 of 221 do events:
+    one plain creation then callback args 0, 1 (missiles 92; calc1 3 only); Multiple Shot 36 of 36: 21 creations,
+    groups 9/2/10 (0x10820/0x820/0x10820), targets stepped by one vector (catalogue 44); class 408: 24 of 36 inside an
+    end call of class 407 (mhit 38), 12 after `cat-a5-1`'s MH cap (catalogue 100, missiles 86 in part, remainder
+    a-run H2b); Meteor 347 creations flags 1, no target, velocity 0 — no return address on `MC0`, so missiles 2 →
+    c (S2c) and missiles 1, 22 in part.
+  - SKL: Amplify Damage 24 do events with STA, one per unit, state 9 = auratargetstate, one length (catalogue 48 in
+    part); Holy Fire 35 do events, one REL on the caster, its first draw, one fire value across 2–15 units in 17
+    (catalogue 54 in part); Bash's st 32: 73 of 86 starts one REL on the caster (catalogue 59 in part, st 39 → b).
+    **R4 (catalogue 103), contradicted in part:** "the other logged monster rows none" fails for rows 339, 340, 342, 345
+    (92 do events, one step each, inside their srvmissile creation) and row 167 (9 steps in 1 of 11, no logged line);
+    do 109's one step lies inside `COMBAT_MeleeHitTest` (361), its four = hit test 1 + REL 1 + 2 unlogged (634); the 42
+    nested restarts draw nothing; do 132's step lies inside its creation (198).
+  - OWN: 1 356 hit rolls on the owner's stream from the creation's exit (113 with owner lines between, 56 more with
+    unlogged draws) → missiles 90 in part (remainder d-none, a pointer to dispatch § P).
+  - Not needing the tool: missiles 30 (C4's `MC.pierce` in `2026-10-25-skills-check.txt` + S2a's S328, 1 660 pairs:
+    raise), 31 and 96 (run:2026-11-03-frame-order `workspace/logs/p55a/check/check.txt` `106aa180…`, by-set table:
+    in part, objects and the fifth list → b H7b), 54, 55 (THR logs the chance only → b H2a), 56 (no STA of state 86 in
+    the 45 logs → b H2a), 91 (outputs: in part, the 0x40 marks → b H2a).
+- **Next (the resuming lane):** finish `tools/skills_s2b.py` (it ran clean; rerun after the FRAME split), keep its
+  output with a manifest, write the addendum under run:2026-10-27-skills in `docs/findings/skills/experiments.md`
+  (after the S2a part 2 addendum, about line 411) with pointer lines under run:2026-10-25-skills (about line 549) and
+  run:2026-10-30-skills-catalogue (about line 154), settle the 38 rows in `0066-inventory/skills-catalogue.md` and
+  `skills-missiles.md` (rows listed in inventory README § 4, S2b), update the S2b status cell and the totals, and file
+  the R4 contradiction for Phase 3.
+- **Review:** Tier B at the batch's end.
+
+### 2026-11-15 — Phase 1 batch S2b (reverser-static, `lane/n66f`): done, 38 of 38 settled
+
+- **Done.** Resumed from the note above, after merging `main` `f9b82bd4`. `tools/skills_s2b.py` (`114b0f7d…`, the
+  revision committed at the pause, unchanged) over the 45 kept skills logs, under a 4 GB scope: kept output
+  `workspace/logs/skills/2026-11-15-s2b-check.txt` (`180157a2…`, 218 lines, 0 breaks) and the `STA` state census
+  `2026-11-15-s2b-sta-states.txt` (`d11872d5…`), both under `2026-11-15-s2b-manifest.sha256` (passes from that
+  directory). Record: the addendum in [skills experiments, run:2026-10-27-skills](../findings/skills/experiments.md#addendum-2026-11-15-plan-0066-batch-s2b-the-missile-lines-of-the-three-kept-skills-runs-lanen66f),
+  with pointer lines under run:2026-10-25-skills and run:2026-10-30-skills-catalogue; a dated
+  [skills/0002 § 13](../findings/skills/0002-missiles.md#13-plan-0066-batch-s2b-the-missile-lines-re-checked-2026-11-15-lanen66f);
+  `sub_005AE1F0_MissileMoveCollide` raised to `C` in `re/symbols.csv` and skills/0002's Functions table (its frame return
+  compared with the nested end call in 888 frames, review-fixes rule 14). No Ghidra, no session.
+- **Rows** (each with a dated S2b note in its *Route* cell): **raised** 3 (catalogue 44; missiles 3, 30); **raised in
+  part** 29 (catalogue 1, 2, 48, 54, 59, 100, 103; missiles 1, 4, 20, 22, 24, 31, 33, 34, 50, 52, 53, 57, 59, 64, 84,
+  86, 88, 89, 90, 91, 92, 96), the `[C]` part and the remainder's class and batch in each row; **moved** 6: missiles 2
+  a-logs → c (S2c: `MC0` has no return address, so no line names `MissileCreateAt`), missiles 37, 97 → b (H2a: no
+  own-cell free logged), 54, 55 → b (H2a: `THR` carries the chance, not its terms), 56 → b (H2a: no state 86 line).
+  S2b holds 32 statements.
+- **Totals** recomputed from the 29 inventory files against `main` `f9b82bd4`: a-logs 668, a-run 358, b 394, c 390,
+  c-emu 490, d 326 (2 626); Phase 1 1 548, Phase 2 752 (inventory README § 1, § 3, § 4: S2b 32, S2c 69, H2a 37 at
+  ~3.7 claims per session; the missiles file's *Totals by class*).
+- **Contradicted in part (catalogue row 103, § R4), for Phase 3.** R4's "the other logged monster rows none" fails:
+  the `srvmissile` rows 339, 340, 342 and 345 (do 0) step the caster once in 92 of 92 do events, inside their
+  creation, and row 167 (do 91) nine times in 1 of 11 with no logged line inside. The run's own kept
+  `2026-10-30-skills-catalogue-check.txt` (`2bd2b4fb…`, lines 215, 234–237) already printed both, so this is a
+  transcription miss in the spec, not a new behaviour: Phase 3 rewords R4 (add the five rows; the one step of the
+  `srvmissile` rows is inside the creation, where § P's chain places the critical roll) and no owner decision is
+  needed. The sources of the unlogged steps (row 167's nine, do 129's one, do 109's two) stay `[I]` (b, H2a).
+- **Ready for re-tagging (Phase 3, spec-writer)**, spec lines at `b5999f5e`, match by text: whole, skills/catalogue
+  row 44 (line 585) and skills/missiles rows 3 (46), 30 (317); split, the `[C]` half each row's note names, catalogue
+  rows 1, 2, 48, 54, 59, 100, 103 and missiles rows 1, 4, 20, 22, 24, 31, 33, 34, 50, 52, 53, 57, 59, 64, 84, 86, 88,
+  89, 90, 91, 92, 96. Missiles F1's "separated only by the 19 two-draw builds" (row 64) becomes 143.
+- **Left.** Nothing in S2b. The moved rows wait in S2c and H2a as their notes say.
+- **Review:** Tier B (plan 0066 Phase 1). Judgment calls to check: (1) missiles row 3 raised whole: the do entry is
+  shown by `MF0`'s row number and the frame's return against D3's end branches, not by a logged call target; (2)
+  catalogue row 44 raised whole on one `(n, calc3)` = (21, 2) for the group sizes, the stepping shown over eight
+  vectors; (3) missiles row 30 raised with no new tool, from two kept outputs (C4's `MC.pierce` and S2a's stat-328
+  rise); (4) missiles rows 54, 55, 56 moved to b rather than kept a-logs, as no logged line holds the terms; (5) row
+  89's remainder routed d-none (the hit functions' draws are the catalogue's), rows 4, 50, 52, 53 to b (H2a); (6) the
+  58 `DMG` packets of rows without a damage function whose words change between the build and `COMBAT_ApplyDamage`
+  (monster owners, `2026-11-15-s2b-check.txt` DMG) are left unexplained and no row rests on them.
+
+### 2026-11-15 — S2b lane check (architect, Tier B, `lane/n66f`): accept with fixes (4)
+
+- **Verdict:** accept with fixes, 4 (overclaim 2, omission 1, stale cross-reference 1). Manifest passes `sha256sum -c`;
+  the R4 counts (92 = 42 + 12 + 8 + 30; row 167 one of 11; do 109 361 and 634; do 129 62 of 347; the 14 other rows 0)
+  match the kept `2026-11-15-s2b-check.txt` and `2026-10-30-skills-catalogue-check.txt` lines 215, 234–237
+  (`2bd2b4fb…`); the 38 rows (3 + 29 + 6), the inventory totals (2 626; Phase 1 1 548, Phase 2 752) and the § 4 S2b, S2c
+  and H2a cells agree against this branch's base; no `[L]` is added; every in-part row names its remainder's class and
+  batch.
+- **Fixes:** (1) overclaim: row 3 and the `MissileMoveCollide` raise: the log holds the do row number only, and the link
+  from table entry 1 to `0x005AE1F0` is the thunk `0x005B0BC0`, still `[I]` in skills/0004; the scope is now stated in
+  the row and in skills/0002 § 13; (2) overclaim: row 44 is one `(n, calc3)` = (21, 2), so its raise is the stepping, not
+  the group-size formula at other pairs, stated in the row; (3) omission: the R4 contradiction had no backlog entry,
+  filed to the spec-writer (`2026-11-15-architect-spec-writer-plan-0066-s2b-r4-caster-steps-reword`); (4) the symbol
+  raise's text in skills/0002's Functions table and § 13 now agrees with the scope in (1).
+- **For Tier A:** row 3 and the symbol raise to `C` on frame behaviour with the thunk still `[I]`; row 30's raise from two
+  kept outputs with no new tool.
+
+### 2026-11-15 — S2b Tier A ruling (architect, `lane/n66f`): accept with fixes (1)
+
+Targeted ruling on the three points the Tier B check left, not a full re-review.
+
+- **(1) Missiles row 3 and the `MissileMoveCollide` raise: the `C` stands.** `MF0` (0x005ADC97) and `MF1` (0x005ADCA9)
+  bracket the indexed do call, so the logged result is the return of whatever table entry 1 reaches. The anchor is the
+  static chain (Missiles `pSrvDoFunc` 1 → `g_MissileSrvDoFuncs[1]` = `0x005B0BC0` → `jmp 0x005AE1F0`); the corroboration
+  is independent runtime behaviour that follows `sub_005AE1F0`'s own code order: the step's end before the decrement
+  (65), the range's after it (823, frames run = frames left at creation), result = the nested end call's, `MissileDoFrame`
+  freeing on 2 (the consumer agrees). That is evidence rule 3 plus reverser review-fixes 14. The thunk's `[I]` was only
+  "not yet corroborated"; the same run corroborates that link, so a `C` callee behind an `I` jump was the inconsistency.
+  **Fix (1, stale tag):** `sub_005B0BC0_MissDo01Thunk` raised to `C` in `re/symbols.csv` (evidence skills/0002) and in
+  skills/0004's Functions table; skills/0002 § 13 and the row 3 note now state the chain and the ruling. The do-table
+  statements of skills/0004 (entries 1–18) keep their `[I]`.
+- **(2) Missiles row 30: the raise stands.** Both halves are kept and hashed (manifests pass) and were each accepted as `[C]`
+  already: `MC.pierce` 1 066 ok / 0 in `2026-10-25-skills-check.txt` (the count from the local `Init(stat 328)` seed, the
+  game seed checked unchanged in 31 391 creations), and S328 in `2026-11-10-s2a-check.txt` (1 660 separating pairs where
+  the rise equals the requests between, 59 365 with no request and no rise). The row's sentence is their composition, so
+  no new tool is needed.
+- **(3) Missiles rows 31 and 96 (the brief's "84" is the callback row, which rests on `2026-11-15-s2b-check.txt` MC, not
+  on p55a): confirmed.** `workspace/logs/p55a/check/check.txt` re-hashed `106aa180…`; its *separating pairs by set*
+  section prints `mis-ef → mon-slot` 21, `mis-ef → mon-ef` 11, `mis-ef → plr-slot` 7, `mis-ef+mis-slot →
+  plr-ef..mon-slot(4)` 7, and no pair with a missile set second other than the drain (87); the 7 object pairs (3 + 2 + 2)
+  hold no missile. The rows' `[C]` part and their H7b remainder stand as written.
+- **Verdict:** accept with fixes, 1 (stale tag 1). Merged `main` (S1e) into `lane/n66f`; the inventory totals recomputed
+  from the 29 files' *Totals by class*: a-logs 668, a-run 358, b 394, c 390, c-emu 489, d 327 (d-2c 59, d-owner 68,
+  d-edit 23, d-none 177), 2 626; Phase 1 1 547, Phase 2 752 (inventory README § 1 and § 3).
+
 ### 2026-11-15 — Phase 1 batch S3a, part 1 of 2 (reverser-static, `lane/n66g`): checker built and run; resume note
 
 - **Done.** New check tool `tools/quests_s3a.py` (`6531b66c…`, stdlib, read-only; imports `tools/quests.py`'s model,
