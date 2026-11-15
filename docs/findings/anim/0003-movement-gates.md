@@ -259,7 +259,7 @@ New names (subsystems `anim/movement` and `anim/timing`) and the existing ones t
 | `0x0067A000` | `sub_0067A000_PathPlanKnockback` | planner of path type 8 (§ 4) | I |
 | `0x00623C20` | `sub_00623C20_UnitBaseHitClass` | a unit's own hit class (§ 7) | I |
 | `0x0062A180` | `sub_0062A180_ItemHitClass` | an item's base record byte `+0x13C` | I |
-| `0x0057EDD0` | `sub_0057EDD0_PlrModeLeaveOk` | may the player leave its mode for the requested one (§ 6.2) | I |
+| `0x0057EDD0` | `sub_0057EDD0_PlrModeLeaveOk` | may the player leave its mode for the requested one (§ 6.2) | C |
 | `0x0057ED70` | `sub_0057ED70_PlrModeEndPending` | `frame ≤ (first kind-1 event frame) + 5` | C |
 | `0x0057ED90` | `sub_0057ED90_PlrSeqLeaveOk` | the sequence mode's leave test (not read past its first test) | I |
 | `0x005415A0` | `sub_005415A0_UnitEventFirstFrame` | the least positive frame of the unit's queued events of a kind | I |
@@ -523,6 +523,11 @@ monster (not in DT or DD): knockback → get-hit if no KB mode; base 78 adds 0x8
   mode passes. So a player in get-hit or block keeps the mode to its end (bar death and neutral requests).
   (fn:sub_0057EDD0_PlrModeLeaveOk@0x0057EDD0, fn:sub_0057ED70_PlrModeEndPending@0x0057ED70,
   fn:sub_005415A0_UnitEventFirstFrame@0x005415A0, 0x0057EDFA–0x0057EE17)
+- [C] **Plan 0066 batch S6a (2026-11-15, `lane/n66k`).** Over the 131 kept logs the 26 574 logged returns equal this
+  block without the cursor test: 781 refusals, all from DT (6), GH (350) and BL (425) for requests outside {0, 1, 5,
+  17}; every request in A1, cast, throw and kick returns 1 (1 731). `[I]` stay: the cursor test, the `+ 5` (no request
+  falls in `(E, E + 5]`), the A1–TH refusal without a pending end, KK, the S1 and S3 class refusals, SQ (192 not
+  modelled). (fn:sub_0057EDD0_PlrModeLeaveOk@0x0057EDD0, run:2026-10-30-anim-p3b)
 - [I] **`sub_0057EEC0_PlayerModeAllowed(requested, 1, skill)`** (second, unless the command is forced; 4 call sites:
   the two commands, `PlayerModeEnd`'s knockback branch, `sub_0054D750_SrvPacketDispatch`): 0 under state 54 or in DT
   or DD; 1 without a used skill (a get-hit start clears it); 1 when the request is for the used skill itself and its

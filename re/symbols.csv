@@ -595,8 +595,8 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00553990,func,SUNIT_CancelModeEvents,,I,anim/timing,docs/findings/anim/0001-modes-frames.md
 0x005539B0,func,SUNIT_ScheduleModeEvents,,C,anim/timing,docs/findings/anim/0001-modes-frames.md
 0x00553B10,func,sub_00553B10_RescheduleFromPct,,I,anim/timing,docs/findings/anim/0001-modes-frames.md
-0x00553C70,func,sub_00553C70_RescheduleSkip,,I,anim/timing,docs/findings/anim/0001-modes-frames.md
-0x00553DC0,func,sub_00553DC0_RescheduleAt,,I,anim/timing,docs/findings/anim/0001-modes-frames.md
+0x00553C70,func,sub_00553C70_RescheduleSkip,,C,anim/timing,docs/findings/anim/0001-modes-frames.md
+0x00553DC0,func,sub_00553DC0_RescheduleAt,,C,anim/timing,docs/findings/anim/0001-modes-frames.md
 0x00553F00,func,SUNIT_ModeEveryFrame,,C,anim/timing,docs/findings/anim/0001-modes-frames.md
 0x00554010,func,sub_00554010_UnitGetGame,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x005540A0,func,UNIT_SetSparkle,,C,objects,docs/findings/objects/0001-object-population.md
@@ -993,7 +993,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0057EC10,func,COMBAT_MeleeHitTest,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x0057ED70,func,sub_0057ED70_PlrModeEndPending,,C,anim/timing,docs/findings/anim/0003-movement-gates.md
 0x0057ED90,func,sub_0057ED90_PlrSeqLeaveOk,,I,anim/timing,docs/findings/anim/0003-movement-gates.md
-0x0057EDD0,func,sub_0057EDD0_PlrModeLeaveOk,,I,anim/timing,docs/findings/anim/0003-movement-gates.md
+0x0057EDD0,func,sub_0057EDD0_PlrModeLeaveOk,,C,anim/timing,docs/findings/anim/0003-movement-gates.md
 0x0057EEC0,func,sub_0057EEC0_PlayerModeAllowed,,I,quests/travel,docs/findings/quests/0002-travel.md
 0x0057F020,func,sub_0057F020_PlrModeStartNeutral,,I,anim/timing,docs/findings/anim/0001-modes-frames.md
 0x0057F090,func,sub_0057F090_PlrModeStartMove,,I,anim/timing,docs/findings/anim/0001-modes-frames.md
