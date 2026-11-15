@@ -40,8 +40,16 @@ Stdlib, tools/ai.py (the parser) and tools/ai_resume.py (`top_level`, the think'
 
 Revision 2 (plan 0066 S1c, `lane/n66d`): R44 (Duriel) and S13 (state row 13) added, with their calls in `CONV`; S13's path
 count is a given word per unit read from its logged fires (`S13_COUNT`, as tools/ai_s13_check.py takes it). The entries of
-revision 1 are unchanged: `--rows` with S1b's 32 names reproduces `sweep2-s1b/model-check.txt` byte for byte.
+revision 1 are unchanged: `--rows` with S1b's 32 names reproduces `sweep2-s1b/model-check.txt` byte for byte (from
+revision 3, without the SEP lines: `regress`).
 tools/ai_first_check.py (S1d) runs these models to their first call only.
+
+Revision 3 (plan 0069 Phase 1a, `lane/n69a`): CONV gains the boundaries the tour's thinks call (positional names, from
+tools/ai_tour.py's caller read); each entry ends with a `SEP` line, its number of distinct predicted outcomes (ADR-0028
+item 7); `regress` reruns S1b's check over its 38 logs and compares it, without the SEP lines, with the kept
+`sweep2-s1b/model-check.txt` (exit 1 on any difference):
+
+    python3 -I tools/ai_model_check.py regress [--base workspace/logs/ai/sweep2-s1b] [--logs-dir workspace/logs/ai] [--out F]
 """
 import os
 import sys
@@ -165,7 +173,51 @@ CONV = {
     "LogicRegionId": (0x0061B130, None, None, ("room", "x", "y")),
     "PathOvrSet": (0x005A6260, None, "a", ("b", "c")),
     "RunToPoint": (0x005DEDE0, "G", "U", ("x", "y")),
+    # plan 0069 Phase 1a (`lane/n69a`): the boundaries the tour's thinks call that CONV lacked (`tools/ai_tour.py audit`,
+    # CONV-MISSING). Source: the caller read of `tools/ai_tour.py conv` (ECX or EDX written, and the pushes, between the
+    # previous call and each call site in the logger's windows; a register set at most sites is an argument), which agrees
+    # with 64 of the 68 entries above (workspace/logs/n69a/conv.txt). The names are positional: "c" ECX, "d" EDX, "s1".. the
+    # stack words in push order reversed (the first argument first), at most the six the AIB line logs; the push count is an
+    # upper bound where the caller saves a register on the stack. A model that names a word here and mismatches on it
+    # corrects the entry with its own source (plan 0069 § How the S1b checker is reused, gap 2).
+    "RoomAtSubtile": (0x00463740, "c", "d", ()),
+    "MissileRec": (0x0046ACE0, "c", None, ()),
+    "SkillGetParam5": (0x004E6C70, "c", None, ()),
+    "UnitEventFirstFrame": (0x005415A0, "c", "d", ("s1",)),
+    "SpawnPosPick": (0x0054DC40, "c", "d", ("s1", "s2", "s3", "s4", "s5")),
+    "UnitGetOwner": (0x00552FD0, "c", "d", ()),
+    "UnitGetGame": (0x00554010, "c", None, ()),
+    "UnitIsDead": (0x005541B0, "c", None, ()),
+    "UnitsHostile": (0x00554200, "c", "d", ("s1",)),
+    "UnitTeleport": (0x00554EA0, "c", "d", ("s1",)),
+    "UnitKilled": (0x0057CCB0, "c", "d", ("s1", "s2")),
+    "AiParamsPush": (0x0058EF40, "c", "d", ("s1",)),
+    "A2Q5_BossSeen": (0x0059C330, None, "d", ("s1", "s2", "s3", "s4")),
+    "SpawnAtPos": (0x005B2F20, "c", "d", ("s1", "s2", "s3", "s4", "s5", "s6")),
+    "A4Q1_IzualSeen": (0x005B4390, "c", "d", ()),
+    "AiDistUnits": (0x005DC380, "c", "d", ()),
+    "AiDistToPointSized": (0x005DC480, "c", "d", ("s1",)),
+    "AiLineClear": (0x005DD290, "c", "d", ()),
+    "MonAiRunNearUnit": (0x005DF680, "c", "d", ("s1", "s2")),
+    "AiImpSetHost": (0x005E17E0, "c", "d", ()),
+    "AiMephistoPickTarget": (0x005F77C0, "c", "d", ("s1", "s2")),
+    "UnitSetOverlayStat": (0x00621E40, None, None, ("s1", "s2", "s3", "s4", "s5")),
+    "UnitGetPlayerData": (0x006221A0, "c", None, ("s1",)),
+    "UnitLineBlocked": (0x00622AA0, None, None, ("s1", "s2", "s3")),
+    "StatsGetUnitStat": (0x00625480, None, None, ("s1", "s2", "s3")),
+    "UnitGetMaxHp": (0x00625D10, None, None, ("s1",)),
+    "UnitGetMaxMana": (0x00625D60, None, None, ("s1",)),
+    "Dir64To8": (0x0063E7A0, None, None, ("s1",)),
+    "MonIsDeathMode": (0x0063EA40, None, None, ("s1",)),
+    "LevelClassVariant": (0x0063EC70, None, None, ("s1", "s2")),
+    "SpawnClassByBase": (0x0063EFA0, "c", "d", ("s1", "s2", "s3", "s4", "s5", "s6")),
+    "UnitEdgeDistance": (0x006416D0, None, None, ("s1", "s2")),
+    "PathSetTargetPoint": (0x00648AD0, "c", "d", ("s1", "s2", "s3")),
+    "PathSetStopDist": (0x00649070, "c", "d", ("s1", "s2")),
+    "CollCellTestAt": (0x0064CB30, None, None, ("s1",)),
 }
+# the entries revision 3 added (their source is the caller read itself, so tools/ai_tour.py conv checks its method on the others)
+CONV_REV3 = ("RoomAtSubtile", "MissileRec", "SkillGetParam5", "UnitEventFirstFrame", "SpawnPosPick", "UnitGetOwner", "UnitGetGame", "UnitIsDead", "UnitsHostile", "UnitTeleport", "UnitKilled", "AiParamsPush", "A2Q5_BossSeen", "SpawnAtPos", "A4Q1_IzualSeen", "AiDistUnits", "AiDistToPointSized", "AiLineClear", "MonAiRunNearUnit", "AiImpSetHost", "AiMephistoPickTarget", "UnitSetOverlayStat", "UnitGetPlayerData", "UnitLineBlocked", "StatsGetUnitStat", "UnitGetMaxHp", "UnitGetMaxMana", "Dir64To8", "MonIsDeathMode", "LevelClassVariant", "SpawnClassByBase", "UnitEdgeDistance", "PathSetTargetPoint", "PathSetStopDist", "CollCellTestAt")
 
 
 class Run:
@@ -1463,6 +1515,52 @@ MODELS = {
 
 
 # ------------------------------------------------------------------------------------------------------------ report
+def sep_line(name, free):
+    """ADR-0028 item 7 (plan 0069 gap 5): the number of distinct predicted outcomes over the entry's fork-free matched
+    decisions. An outcome is the sequence of the block's compared calls (their labels) in the decision; a row with one
+    outcome confirms that outcome, not a branch choice. The eight most common are listed with their counts."""
+    paths = Counter(" ".join(lb for lb, _ in o.run.labels) or "(no call)" for _, o in free)
+    top = " | ".join("%s: %d" % kv for kv in sorted(paths.items(), key=lambda kv: (-kv[1], kv[0]))[:8])
+    return "  SEP %s outcomes %d over %d fork-free decisions%s" % (name, len(paths), len(free), (": " + top) if top else "")
+
+
+def strip_sep(text):
+    """The report without its SEP lines: what S1b's model-check.txt holds (the regression check of plan 0069 gap 6)."""
+    return "".join(ln for ln in text.splitlines(True) if not ln.startswith("  SEP "))
+
+
+def regress(base_dir, logs_dir, out):
+    """Plan 0069 gap 6: S1b's check again, over its own log list, with its own entries, from the directory its paths are
+    relative to; the output without the SEP lines must equal its kept model-check.txt byte for byte."""
+    base = os.path.join(base_dir, "model-check.txt")
+    with open(base) as fh:
+        want = fh.read()
+    names = [ln.split()[1] for ln in want.splitlines() if ln.startswith("ENTRY ")]
+    with open(os.path.join(base_dir, "logs.txt")) as fh:
+        paths = [x.strip() for x in fh if x.strip()]
+    cwd = os.getcwd()
+    os.chdir(logs_dir)
+    try:
+        import io
+        buf, real = io.StringIO(), sys.stdout
+        sys.stdout = buf
+        try:
+            run_check(paths, names, None)
+        finally:
+            sys.stdout = real
+    finally:
+        os.chdir(cwd)
+    got = buf.getvalue()
+    if out:
+        with open(out, "w") as fh:
+            fh.write(got)
+    same = strip_sep(got) == want
+    nsep = sum(1 for ln in got.splitlines() if ln.startswith("  SEP "))
+    print("REGRESS entries %d logs %d SEP lines %d: %s %s" % (len(names), len(paths), nsep,
+                                                            "byte-identical to" if same else "DIFFERS from", base))
+    return 0 if same else 1
+
+
 def run_check(paths, names, out):
     decs = defaultdict(list)
     ths = defaultdict(list)
@@ -1561,6 +1659,7 @@ def run_check(paths, names, out):
         for c in ("le", "lecmp", "d0") + (("sdiv",) if n == "R43" else ()):
             st = Counter(check(model, d, ctl=c).status for d, _ in free)
             lines.append("  CONTROL %s fail %d of %d (stop %d)" % (c, st["mismatch"], len(free), st["stop"]))
+        lines.append(sep_line(n, free))
     txt = "\n".join(lines) + "\n"
     if out:
         with open(out, "w") as fh:
@@ -1578,7 +1677,13 @@ def main(argv):
     c.add_argument("--rows")
     c.add_argument("--out")
     sub.add_parser("list")
+    r = sub.add_parser("regress")
+    r.add_argument("--base", default=os.path.join("workspace", "logs", "ai", "sweep2-s1b"))
+    r.add_argument("--logs-dir", default=os.path.join("workspace", "logs", "ai"))
+    r.add_argument("--out")
     a = ap.parse_args(argv)
+    if a.cmd == "regress":
+        return regress(os.path.abspath(a.base), a.logs_dir, a.out)
     if a.cmd == "list":
         for n, (th, _, rows) in MODELS.items():
             print("%s %08x %s" % (n, th, rows))

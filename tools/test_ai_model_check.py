@@ -135,5 +135,44 @@ class Engine(unittest.TestCase):
         self.assertEqual(M.check(lambda r: r.call("idle", "Idle", n=1), d).status, "stop")
 
 
+class Revision3(unittest.TestCase):
+    """plan 0069 Phase 1a: the CONV additions, the SEP line and the regression filter."""
+
+    def test_conv_addresses_and_names_are_unique(self):
+        addrs = [v[0] for v in M.CONV.values()]
+        self.assertEqual(len(addrs), len(set(addrs)))
+        for name, (a, ecx, edx, st) in M.CONV.items():
+            self.assertLessEqual(len(st), 6, name)          # the AIB line logs six stack words
+
+    def test_new_conv_entry_is_compared(self):
+        # UnitIsDead (0x005541B0): ECX the unit, no stack word (the caller read of tools/ai_tour.py conv)
+        dead = M.CONV["UnitIsDead"][0]
+        d = decision([(dead, U, 0, [], 0, SEED)])
+        self.assertEqual(M.check(lambda r: r.call("dead", "UnitIsDead", c=r.U), d).status, "ok")
+        self.assertEqual(M.check(lambda r: r.call("dead", "UnitIsDead", c=r.U + 4), d).status, "mismatch")
+
+    def test_sep_line_counts_distinct_call_paths(self):
+        class O:
+            pass
+
+        def free(paths):
+            out = []
+            for p in paths:
+                o = O()
+                o.run = O()
+                o.run.labels = [(x, 0) for x in p]
+                out.append((None, o))
+            return out
+        ln = M.sep_line("RX", free([["a", "b"], ["a", "b"], ["a"], []]))
+        self.assertTrue(ln.startswith("  SEP RX outcomes 3 over 4 fork-free decisions: "))
+        self.assertIn("a b: 2", ln)
+        self.assertIn("(no call): 1", ln)
+        self.assertEqual(M.sep_line("RY", []), "  SEP RY outcomes 0 over 0 fork-free decisions")
+
+    def test_strip_sep_drops_only_sep_lines(self):
+        text = "ENTRY R1 x\n  CALLS y\n  SEP R1 outcomes 1 over 2 fork-free decisions: a: 2\nENTRY R2 z\n"
+        self.assertEqual(M.strip_sep(text), "ENTRY R1 x\n  CALLS y\nENTRY R2 z\n")
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -195,6 +195,66 @@ CASES["d-duriel"] = ("normal", duriel(), "Duriel's lair at /players 1, Normal: r
 CHAR = "CombatSor"
 # cases whose route holds on one map seed only: the launch seed is this one every time, a rerun included
 PINNED = {"d-duriel": 3364}
+# cases that stay in the level they start in (the stage gate accepts them there, and only there)
+STAY = set()
+
+
+# plan 0069 (the bestiary tour, `lane/n69a` Phase 1a): the t-* and nm-* cases are built from tools/ai_tour.py's TOUR
+# table, each pinned to its seed group's map seed (the pools tools/monpool.py predicts there: `ai_tour.py pools`).
+def tour_steps(route):
+    """The pilot steps of a TOUR route (tools/ai_tour.py, § the cases). A descent's skip set is its level and the levels
+    of the descents after it, so a step is not taken again once the player stands that deep."""
+    walk = ["--radius", "9", "--mana-col", "4", "--drink", "0.5"] + WP
+    deeper = [s[2] for s in route if s[0] == "descend"]
+    out = []
+    for st in route:
+        k = st[0]
+        if k == "stage":
+            out += stage(st[1], st[2])
+        elif k == "descend":
+            i = deeper.index(st[2])
+            out.append((["farm", "--sweep", "--descend", st[1], "--descend-to", str(st[2]), "--descend-time", "300",
+                         "--time", str(st[3]), "--max-res", "1000"] + NOVA0, 360 + st[3], tuple(deeper[i:])))
+        elif k == "border":
+            out.append((["explore", "--any-level", "--hops", str(st[1]), "--hop", "8", "--nova-key", "F2",
+                         "--give-up", "8"] + walk, 6 * st[1] + 120))
+        elif k == "hunt":
+            out.append((["hunt", "--mon-cls", str(st[1]), "--time", str(st[2])] + NOVA0 + ["--radius", "1"], st[2] + 40))
+        elif k in ("town", "stay"):
+            hops = st[2] if k == "town" else st[1]
+            if k == "town":
+                tab, row = st[1].split(",")
+                out.append(("wp", tab, row))
+            if hops:
+                out.append((["explore", "--walk", "--hops", str(hops), "--hop", "6", "--persist", "20"] + walk,
+                            5 * hops + 60))
+        elif k == "loot":
+            out.append((["explore", "--hops", str(st[1]), "--hop", "8", "--loot", "20", "--loot-max", "6",
+                         "--nova-key", "F2", "--give-up", "8"] + walk, 8 * st[1] + 120))
+        elif k == "rerun":
+            out += list(CASES[st[1]][1])
+        else:
+            raise ValueError("unknown route step %r" % (st,))
+    return out
+
+
+def add_tour():
+    import ai_tour as T
+    for name, t in T.TOUR.items():
+        route = t["route"]
+        save = CHAR
+        if route[0][0] == "rerun":
+            c = CASES[route[0][1]]
+            save = c[3] if len(c) > 3 else CHAR
+        lv = ";".join("%d:%s" % (k, ",".join(v)) for k, v in t["pool"].items()) or "-"
+        CASES[name] = (t.get("diff", "normal"), tour_steps(route),
+                       "plan 0069 tour, group %s: pool %s; aims %s" % (t["group"], lv, ",".join(t["aims"])), save)
+        PINNED[name] = T.seed_of(t["group"])
+        if route[0][0] == "stay":
+            STAY.add(name)
+
+
+add_tour()
 
 
 def case_of(name):
@@ -352,6 +412,8 @@ def run(slot, tag, saves, run_id, names, dev=False, status=None, seed0=5201, rer
         """The case gate (hr.batch stage=): a case that stayed in town is a failure, and its process takes no
         further case."""
         r = left_start(pr.log, starts.get(case))
+        if (case[6:] if case.startswith("fresh:") else case) in STAY:
+            r = stayed(pr.log, starts.get(case))
         if not r[0]:
             pr.dead = True
         pr.switch_ok = r[0]
@@ -376,6 +438,14 @@ def left_start(log, lid_start):
     lid = level_of(log)
     if lid == lid_start:
         return False, "stayed in level %s" % lid
+    return True, ""
+
+
+def stayed(log, lid_start):
+    """The stage check of a STAY case: (True, "") while the player's last PLR level is the one the case began in."""
+    lid = level_of(log)
+    if lid is None or lid != lid_start:
+        return False, "left level %s for %s" % (lid_start, lid)
     return True, ""
 
 

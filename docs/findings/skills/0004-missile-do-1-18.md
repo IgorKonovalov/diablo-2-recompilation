@@ -96,7 +96,7 @@ A `C` row of a function that ends at an observed boundary covers its code up to 
 
 | Address | Name | Role | Tag |
 |---|---|---|---|
-| `0x005B0BC0` | `sub_005B0BC0_MissDo01Thunk` | do-table entry 1: `jmp sub_005AE1F0_MissileMoveCollide` | I |
+| `0x005B0BC0` | `sub_005B0BC0_MissDo01Thunk` | do-table entry 1: `jmp sub_005AE1F0_MissileMoveCollide` (the do-1 frames run `sub_005AE1F0`'s code order, skills/0002 § 13) | C |
 | `0x005AE400` | `sub_005AE400_MissDo02SubMissile` | (P1.2 name) do 2 | C |
 | `0x005A9720` | `sub_005A9720_MissSubAtSelf` | do 2's helper: `SubMissile1` at the parent, velocity 0, loops `2·lvl − 2` | C |
 | `0x005AE680` | `sub_005AE680_MissDo06SubPerCell` | do 6 | C |
