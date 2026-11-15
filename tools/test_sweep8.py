@@ -116,13 +116,47 @@ class P12Test(Tmp):
     def test_d3_holds(self):
         rc, out = run_out(sc.check_p12, [self.log("a.log", self.mm(False))])
         self.assertEqual(rc, 0, out)
-        self.assertIn("separating=1 mismatches=0 verdict=D3 holds", out)
+        self.assertIn("separating=1 lead=0 mismatches=0 verdict=D3 holds", out)
         self.assertIn("bit 0 set", out)
 
     def test_lead_holds(self):
         rc, out = run_out(sc.check_p12, [self.log("a.log", self.mm(True))])
         self.assertEqual(rc, 1, out)
         self.assertIn("verdict=against D3", out)
+
+    def lead_log(self, fresh, again=True):
+        out = [self.grid(), L("PLR", {"th": 1, "room": 1, "lid": 2, "x": 5, "y": 4}),
+               L("MMC", {"mid": 9, "cls": 90, "ct": 3, "c": 0, "x": 5, "y": 10, "sz": 1, "cached": 0 if fresh else 1,
+                         "f": 1}),
+               L("MMR", {"mid": 9, "r": 1})]
+        if again:
+            out.append(L("MMC", {"mid": 9, "cls": 90, "ct": 3, "c": 0, "x": 5, "y": 11, "sz": 1, "cached": 0, "f": 2}))
+        return out
+
+    def test_lead_outcome_fresh(self):
+        # a Nova carries on over a cell the grid marks bit-0-only, with a fresh word of 0: the lead's outcome
+        rc, out = run_out(sc.check_p12, [self.log("a.log", self.lead_log(True))])
+        self.assertEqual(rc, 1, out)
+        self.assertIn("lead=1", out)
+        self.assertIn("verdict=against the grid reading", out)
+
+    def test_lead_outcome_cached_not_decisive(self):
+        # a cached word is another point's: counted, but it tested nothing at this cell
+        rc, out = run_out(sc.check_p12, [self.log("a.log", self.lead_log(False))])
+        self.assertEqual(rc, 0, out)
+        self.assertIn("lead=0", out)
+        self.assertIn("LEAD-OUTCOME at a grid bit-0-only point, word c&5=0 (cached), the missile steps again", out)
+        self.assertIn("verdict=not separated", out)
+
+    def test_neighbour_bit_not_separating(self):
+        # size 2 or 3: the word holds the neighbours' bits; own grid cell clear -> freed but not separating
+        ev = [self.grid(), L("PLR", {"th": 1, "room": 1, "lid": 2, "x": 5, "y": 4}),
+              L("MMC", {"mid": 8, "cls": 90, "ct": 3, "c": 1, "x": 5, "y": 9, "sz": 3, "cached": 0, "f": 1}),
+              L("MMR", {"mid": 8, "r": 2})]
+        rc, out = run_out(sc.check_p12, [self.log("a.log", ev)])
+        self.assertEqual(rc, 0, out)
+        self.assertIn("separating=0", out)
+        self.assertIn("bit 0 clear", out)
 
 
 @unittest.skipUnless(HAVE_EXCEL, "needs workspace/merged excel")
@@ -153,6 +187,7 @@ class H2Test(Tmp):
     def lines(self, rate2):
         return [L("URM", {"uid": 1, "list": 0, "rem": 0, "len": 192, "state": 100, "f": 10}),
                 L("UDV", {"v": 7680, "stat": 0}),
+                L("UBL", {"num": 7680, "den": 192, "list": 55, "stat": 74, "slot": 0, "f": 10}),   # the fresh use's own
                 L("USS", {"list": 55, "stat": 74, "rate": 40, "f": 10}),
                 L("URM", {"uid": 1, "list": 55, "rem": 150, "len": 192, "state": 100, "f": 52}),
                 L("UDV", {"v": 46080, "stat": 0}),
@@ -166,6 +201,14 @@ class H2Test(Tmp):
         self.assertEqual(rc, 0, out)
         self.assertIn("blends=1 separating=1 frees=1 mismatches=0", out)
         self.assertIn("use after a free", out)
+        self.assertIn("fresh rate as predicted", out)
+
+    def test_fresh_wrong(self):
+        ls = self.lines((40 * 150 + 46080) // 342)
+        ls[2] = L("UBL", {"num": 7681, "den": 192, "list": 55, "stat": 74, "slot": 0, "f": 10})
+        rc, out = run_out(sc.check_h2, [self.log("a.log", ls)])
+        self.assertEqual(rc, 1, out)
+        self.assertIn("fresh UBL", out)
 
     def test_wrong(self):
         rc, out = run_out(sc.check_h2, [self.log("a.log", self.lines(46080 // 192))])

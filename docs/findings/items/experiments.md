@@ -3921,3 +3921,43 @@ Plan 0060 Phase 2, second lane run (`lane/p60b`, reverser, harness, slot 2, seed
 - **Development runs.** `dev-1/` (the first scan, static set only, no coverage), `dev-2/` (both sets, before the confined verdict), `dev-3/` (both sets, before the `SPEC` lines; same counts), under `workspace/logs/r29/`, each with its own `manifest.txt` passing from its own directory, not cited. Their tool revisions are earlier states of `tools/lock_slot_scan.py`.
 - **Review's control (added 2026-11-04, `lane/r29` review; a control, no tag rests on it, and it models no lock).** `re/ghidra_scripts/EmuClobber.java` (EmuCover.java plus a `clobber <addr> <reg>...` directive), under `workspace/logs/r29/review` (`manifest.txt`): at the stand-in's `ret 4`, overwrite the named registers. Commands: `tools/ghidra.sh emuclobber drop.cases clobber.mem` (`EAX`, `ECX`, `EDX` and the six flags, all 4 000 cases) and `... teeth.cases teeth.mem` (`EBX`, `ESI`, the first 300). with `EAX`, `ECX`, `EDX` and the six flags overwritten at the stand-in's `ret 4` on every pass, all 4 000 cases give the kept `EAX`, dumps, pop and step count and the same 988 executed addresses, while `EDX` at the return differs in 2 070 cases, so the overwrite is live and reaches the return uncompared, as the scan says; with `EBX` and `ESI` overwritten instead, all of the first 300 cases stop at `0x0030320A`, outside the image's code, so the control can fail. It speaks for registers and flags on this declared page only. Compared with the kept `drop.out` by `tools/drop_clobber_compare.py`. fn:sub_00555DA0_GroundDropCell@0x00555DA0
 - **Limits.** A static reading of use and def over one case set: a different declared pool state needs its own run of this scan. The walk covers registers and flags, not memory a real lock guards. `[C]` for what `drop` shows is in docs/findings/items/0014-ground-items.md. The statement that the two outside reads carry no value is `[I]`. fn:sub_00555DA0_GroundDropCell@0x00555DA0, 0x0040A0FE, 0x0040A1D7, 0x00543E73, 0x0054D7DC
+
+## run:2026-11-15-sweep8-single
+
+Plan 0065 Phase 1 (`lane/n65h`), slot 1, expansion install, stock excel data, tool-built saves
+(`tools/d2s.py build` of `tools/d2s_recipes/sw8-*.json`; ADR-0013 § Neutral), single player, Normal, one fresh game
+process per session (`hr.batch(..., stage=hr.NO_SHARING)`). Sessions by `tools/sweep8_sessions.py`, loggers
+`tools/gdb/skills.gdb` (rev 5), `sweep8-use.gdb`, `sweep8-xs.gdb`; checks `tools/sweep8_check.py`, `tools/skills.py`,
+`tools/inventory_check.py`, `tools/player.py`. Kept under `workspace/logs/sweep8/` (`2026-11-15-sweep8-single-s1-*`) and
+`workspace/logs/n65h/` (`manifest.sha256` 24 lines, `commands.txt`, `tools-revisions.txt`, `checks/`). Development logs
+(`dev-2026-11-15-sweep8-smoke*`, kept, no claim rests on them): smoke through smoke9, the last two (b8room and xs;
+b8full) passed their checks before the batch.
+
+| Session | Seed | Save | What it covers | Check |
+|---|---|---|---|---|
+| c2 | 3 | SweepNova | `spike1` creations in the Blood Moor (skills/0002 § 14) | `skills.py check` 0 mismatches; `c2`: 3 creations, 3 separating |
+| h2 | 6501 | SweepPot | two potions in a row (items/0015) | `h2`: 4 blends, 4 separating, 6 fresh, 2 frees, 0 mismatches |
+| h3 | 6502 | SweepMerc | potions to the hireling (items/0015) | `h3`: 6 flagged, 2 separating, 0 mismatches |
+| b8room | 3 | SweepBeltRoom | death with page 0 empty (items/0013 § 11) | `b8 --room`: 12 moved, 0 mismatches |
+| b8full | 3 | SweepBeltFull | death with page 0 full (items/0013 § 11) | `b8 --full`: 12 moved, 0 mismatches |
+| xs | 3 | SweepConv | kills with Conversion states (player/0002 § 11) | `xs`: 3 separating, 0 mismatches; `player.py check` 6 kills, 0 |
+
+`inventory_check.py` over h2, h3, b8room, b8full: 73 predictions, 0 mismatches. Every session kept at the first try
+(731 s of batch wall time); nothing died. Short: the converted-monster-kills branch of the exp-state case was not
+reached; the P12 session is not in this run (its own record below; not separated, the owner's ruling of 2026-11-15). Backs
+[skills/0002 § 14](../skills/0002-missiles.md), [items/0013 § 11](0013-grids-belts-stacks.md),
+[items/0015](0015-harness-inventory.md), [player/0002 § 11](../player/0002-party.md).
+
+## run:2026-11-15-sweep8-p12
+
+Plan 0065 Phase 1 (`lane/n65h`), the P12 session: slot 1, seed 3, Normal, single player, one fresh process, the save
+`SweepNova` (`tools/d2s_recipes/sw8-nova.json`), logger `tools/gdb/p12.gdb` (`P12_CLS` 90, `nova`), steps by
+`tools/sweep8_sessions.py` `p12` (`LEAVE_TOWN`, `p12go` 12 hops to the stand cell picked from the session's own `CB`
+grid, 6 Nova bursts, 25 hops of Nova), run by `sweep8_sessions.py run` (slot 1, tag `n65h`, run id `2026-11-15-sweep8-p12`)
+(the runner's output `p12.out`), tools at `5c55b73d` (`tools-revisions.txt`). Kept at the first try, 110 s. Check
+`tools/sweep8_check.py p12`: 11 546 `MMC`, all with path `+0x7C` non-zero (cached), none with `c & 5 ≠ 0`; 10 522 step on
+(the control); 156 at a grid bit-0-only point, cached, step on (counted, decides nothing); 0 separating, 0 against the
+grid reading, 0 mismatches; verdict "not separated (no fresh bit-0-only word)", accepted under the owner's ruling of
+2026-11-15 (option (a)). Kept in `workspace/logs/sweep8/` (`2026-11-15-sweep8-p12-s1-3-p12.log`, `.marks.tsv`) and
+`workspace/logs/n65h/` (`checks/p12.txt`, `p12.out`; `manifest-p12.sha256`, 4 lines, passes from the repository root).
+Backs [path/0007](../path/0007-community-cross-check.md#plan-0065-phase-1-the-p12-session-run2026-11-15-sweep8-p12).

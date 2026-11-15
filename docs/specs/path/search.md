@@ -551,7 +551,7 @@ PathPlanSpiral(path) → 77:                                         [I] the str
 - J. [I] `g_SineTable` and `R` go on the x87 stack as f32, so the product has at most 48 mantissa bits and is exact in a double; `X` and `Y` are the low dwords of a 64-bit `FISTP`. The game's stored integers agree with the exact product ([overview § G4](README.md#g4-truncation)'s 43 804). (0x0067A196, 0x0067A1AC)
 - J. [I] No draw, no grid, neither `+0x90` nor `+0x91`. 94 iterations at the kept start, at most 95 in the emulator's cases; `r` would wrap at iteration 223 697. (0x0067A21D)
 - J. [I] The emulator's x87 can't test this: the p-code `FISTP` ignores the rounding field. So the list's tag rests on the game's plans. (0x0067A1A1, run:2026-11-03-path-emu-3)
-- J. [I] **The hammer at a wall:** this plan reads no grid; the end at a wall is the missile's own step, [skills/missiles § D3](../skills/missiles.md#d-each-frame), with [P12's entry](../../backlog/2026-11-04-architect-reverser+spec-writer-0054-p12-missile-own-cell-bit0-vs-floor.md). (fn:sub_005AE1F0_MissileMoveCollide@0x005AE1F0)
+- J. [I] **The hammer at a wall:** this plan reads no grid; the end at a wall is the missile's own step, [skills/missiles § D3](../skills/missiles.md#d-each-frame), with [P12's entry](../../backlog/archive/2026-11-04-architect-reverser+spec-writer-0054-p12-missile-own-cell-bit0-vs-floor.md). (fn:sub_005AE1F0_MissileMoveCollide@0x005AE1F0)
 
 ### K. The straight planner and type 4
 
