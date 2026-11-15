@@ -1026,6 +1026,14 @@ class Revision6(unittest.TestCase):
         d["aib"][0]["c4"] = 0
         self.assertEqual(self.chk("R54", d).status, "ok")
 
+    def test_ail_truncated_decision_stops(self):
+        """The logger's OUT_LIMIT disarms the boundary breakpoints: a model call after the AIL line is a stop, not a mismatch."""
+        d = path("R54", [])
+        d["r7"] = {"AiNearestPlayer": (0, 0, None)}
+        self.assertEqual(self.chk("R54", d).status, "mismatch")
+        d["ail"] = [{"k": 1, "pend": 0}]
+        self.assertEqual(self.chk("R54", d).status, "stop")
+
     def test_r54_p_word(self):
         d = path("R54", [("Idle", G, U, [20], 0, 0)])
         d["r7"] = {"AiNearestPlayer": (0, 0, None)}               # p = 0: step 2 is skipped, the class tests fork to Idle(20)

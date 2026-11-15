@@ -1,6 +1,6 @@
 # 0069 — Monster AI bestiary tour: the catalogue's harness rows of plan 0066
 
-> **Status:** approved (2026-11-10, by the owner, as recommended: question 1 (a), question 2 (a)); Phase 1a done (`lane/n69a`, Tier B check: accept with fixes, 3; merged); Phase 1b done (`lane/n69b`, 29 of 29 entries modelled; Tier B check: accept, 0 fixes; merged); Phase 1c done pending merge (`lane/n69c`, 2026-11-15; 31 of 31 entries and the notes row modelled; Tier B check: accept with fixes, 3)
+> **Status:** approved (2026-11-10, by the owner, as recommended: question 1 (a), question 2 (a)); Phase 1a done (`lane/n69a`, Tier B check: accept with fixes, 3; merged); Phase 1b done (`lane/n69b`, 29 of 29 entries modelled; Tier B check: accept, 0 fixes; merged); Phase 1c done pending merge (`lane/n69c`, 2026-11-15; 31 of 31 entries and the notes row modelled; Tier B check: accept with fixes, 3); Phase 2 done pending review (`lane/n69d`, 2026-11-15; 12 Act I cases kept, 0 mismatches)
 > **Created:** 2026-11-10
 > **Owner skill(s):** reverser (every phase; the re-tag is plan 0066 Phase 3's, spec-writer)
 > **Related ADRs:** 0003-runtime-experiments, 0004-boundary-oracles-in-reproduction, 0021-observed-boundaries-in-emulation, 0023-review-tiers-and-gate-first-fixes, 0028-case-and-process-in-experiment-records
@@ -1013,3 +1013,26 @@ all seed 7159, fresh), `words-ckpt.txt` (`tools/ai_tour_words.py`), `model-check
 - **Not done in rev 7, on purpose:** R32's home and script words (no model key reads them), `objects.py`'s lines beside the
   logger (R77, R80, R92 are Act II and III), R56/R71/R85/R128's Phase 1c words (Acts III to V). **For Phase 3:** the R68 model must
   consume the calls now logged inside `AiVileMotherSpawn`, or an Act IV log shows a mismatch at the call after it.
+
+### 2026-11-15 — Phase 2: Act I tour kept (reverser, `lane/n69d`)
+
+Resumed from the checkpoint 1 note at its case boundary; slot 2 only, `--fresh`, `MemoryMax=4G` per launch, saves restored
+(`saves.py --slot 2 restore n69d`), slot 2 holds no process. Record: `run:2026-11-15-ai-tour-1` and its Results section in
+[experiments.md](../findings/ai/experiments.md); kept outputs `workspace/logs/n69d/manifest.sha256` (63 lines).
+
+- **Done:** the 8 remaining Act I cases (`t-a1-darkwood`, `t-a1-marsh`, `t-a1-barracks`, `t-a1-catacombs`, `t-h1h-a1-stony`,
+  `t-h1h-a3-flayer-p8`, `t-h1h-s-barb-flayer`, `t-h1h-s-necro-curse`) and the regression case `a2-oasis` (seed 5201) are kept,
+  12 cases with the three of the checkpoint. `t-h1h-s-necro-curse` needed a second launch (the first, 90 decisions, was ended by
+  the runner's relaunch; kept as L8, unchecked).
+- **Checks:** `ai_model_check.py check` 0 mismatches over 95 entries, except the control `R79x` (2, as required); `ai.py check`
+  over the 12 logs 5 153 decisions, 0 mismatches; `a2-oasis` 0; `regress` byte-identical (32 entries, 38 logs); the flip over
+  the resume rows (`flip-rows.txt`, `flip-states.txt`). Tests: `test_ai_model_check.py` 98, `test_ai.py` 25.
+- **One checker change.** The first check had 2 R23/R23x mismatches (flayer-p8, decisions 7525 and 8657): the logger's
+  `OUT_LIMIT` (`AIL`, 601 calls made outside the think inside `FreeNearFallback`'s search) disarmed the boundary breakpoints, so
+  the model's `Ovr` after it had no logged call. `Run.call` now stops such a decision as `finish` already did (`Stop("AIL")`);
+  `regress` is unchanged. No model changed.
+- **Predictions:** 1, 2, 4, 5 held; 3 held except R60 (not seen in any log), R59, R98 and R58 (conditional, not reached).
+  Sharing decision: fresh per case.
+- **Left for Phase 3:** the Act II to V batches; the R68 model must consume the calls logged inside `AiVileMotherSpawn`
+  (checkpoint note). R60 stays untested.
+- **Review request: Tier B** (backlog entry `2026-11-15-reverser-architect-plan-0069-p2-tier-b-review-request`).

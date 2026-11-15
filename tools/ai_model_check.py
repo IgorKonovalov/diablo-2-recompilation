@@ -366,6 +366,10 @@ class Run:
         words of the block a stack argument points at, before the call (AIB `b`)."""
         fn, ecx, edx, names = CONV[name]
         if self.i >= len(self.log):
+            if any(x.get("pend") == 0 for x in self.dec.get("ail", [])):
+                # the logger's OUT_LIMIT (600 calls made outside the think, e.g. FreeNearFallback's search) disarmed
+                # the boundary breakpoints: the calls after the AIL line are not logged, so the decision stops
+                raise Stop("AIL")
             raise Mismatch("%s: the model calls %s, the log has no further call" % (label, name))
         b = self.log[self.i]
         diffs = []
