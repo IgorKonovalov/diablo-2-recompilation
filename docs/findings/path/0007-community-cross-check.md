@@ -17,7 +17,7 @@ code before any was read (ADR-0001), and registered in `docs/sources.md` before 
   collision columns, and one floor-flag table, whose first part (values 00 to 04) is aligned and whose other parts are not.
 - **15 claims compared: 2 `held`, 7 `held with refinement`, 1 `contradicted`, 5 `not covered`.** All
   agreement is weak: the sources are column guides without a version for these columns (P01, P02, P13), a 2006 list its author calls not final (P06), a wiki page with no patch for its claim (P07, P08) or describe D2R (P09, P10, P11). Nothing is raised on them.
-- **One contradiction, outside the planner:** floor flag 01 "allow missiles pass" against skills/missiles D3's own-cell test (P12). [Backlog entry](../../backlog/2026-11-04-architect-reverser+spec-writer-0054-p12-missile-own-cell-bit0-vs-floor.md). It does not touch a statement of path/0001 to 0006 and is not a case of plan 0054. A second entry asks for `unflatDead`'s readers, on which two sources disagree (P04, P14): [entry](../../backlog/archive/2026-11-04-architect-reverser-0054-unflatdead-reader-corpse-walk-or-draw.md).
+- **One contradiction, outside the planner:** floor flag 01 "allow missiles pass" against skills/missiles D3's own-cell test (P12). [Backlog entry](../../backlog/archive/2026-11-04-architect-reverser+spec-writer-0054-p12-missile-own-cell-bit0-vs-floor.md). It does not touch a statement of path/0001 to 0006 and is not a case of plan 0054. A second entry asks for `unflatDead`'s readers, on which two sources disagree (P04, P14): [entry](../../backlog/archive/2026-11-04-architect-reverser-0054-unflatdead-reader-corpse-walk-or-draw.md).
 - **Phase 1b's earlier reason did not hold.** The `lane/p54c` lane's statement, that no registered source held a comparable claim, was kept by its review as "true of `docs/sources.md`" (plan log, ruling 4; [path/0006](0006-holdout.md) § Floors). Two registered sources hold such claims: `src:d2mods-monstats-guide` (article 359: `deadCol`, `SizeX`) and `src:d2dfg-blizzard` (`deadCol`, `unflatDead`, `noGfxHitTest`, and `SizeX` already compared at drlg/0005). (tbl:MonStats2.txt:deadCol)
 - **Rejected or unread:** `src:pk-missile-functions-guide` (pseudocode-style formulas of game logic: rejected,
   unread beyond the scan, nothing used); five pages that returned HTTP 402 or 403 (`src:diablowiki-leap-teleport-charge` three of them,
@@ -116,7 +116,7 @@ The page has four tables. **The first, values 00 to 04, has five values under fi
   - *Verdict:* walk at 01 and missiles at 04 hold. **Refinement:** flyers do not test bit 0 and do test bit 2, so "monster walk" is the ground masks only. Jumping, teleport, line of sight, light and the corpse rows are not compared. The grid is the planners' input, so this bears on path/search only through `CB`. Weak: 2006, no patch, not final.
   - Anchor: fn:COLL_StampTile@0x0064C4C0, fn:PATH_MonTestMask@0x00648480, fn:sub_005AE1F0_MissileMoveCollide@0x005AE1F0.
 - [L] **P12** src:pk-walkable-flags-overview: flag 01: "allow missiles pass" yes. **contradicted**
-  - *Finding:* skills/missiles D3 `[I]`, "`c: u16 ← PathCellCollision(path); if c & 5: return 2`", own cell: freed, no hit function, for a do-function-1 missile with a `CollideType`. A cell with bit 0 and not bit 2 therefore frees it, against the table. One of the two is wrong for such a cell; neither is shown by a run. Nothing is demoted: D3 stays `[I]`, the source is weak. [Backlog entry](../../backlog/2026-11-04-architect-reverser+spec-writer-0054-p12-missile-own-cell-bit0-vs-floor.md). Not a statement of a path finding: "the missile's collision is its own" (path/0003 § 8). (fn:sub_005AE1F0_MissileMoveCollide@0x005AE1F0)
+  - *Finding:* skills/missiles D3 `[I]`, "`c: u16 ← PathCellCollision(path); if c & 5: return 2`", own cell: freed, no hit function, for a do-function-1 missile with a `CollideType`. A cell with bit 0 and not bit 2 therefore frees it, against the table. One of the two is wrong for such a cell; neither is shown by a run. Nothing is demoted: D3 stays `[I]`, the source is weak. [Backlog entry](../../backlog/archive/2026-11-04-architect-reverser+spec-writer-0054-p12-missile-own-cell-bit0-vs-floor.md). Not a statement of a path finding: "the missile's collision is its own" (path/0003 § 8). (fn:sub_005AE1F0_MissileMoveCollide@0x005AE1F0)
   - Anchor: fn:sub_005AE1F0_MissileMoveCollide@0x005AE1F0, fn:sub_00648EB0_PathCellCollision@0x00648EB0.
 
 ### Whirlwind, Leap and Charge (`src:fextralife-d2-whirlwind`; wiki prose on a D2R wiki, no patch for these claims)
@@ -165,6 +165,23 @@ Two masks are in play and the lane's first text read one for the other: `testMas
 - **Charge's path:** nothing beyond "closes the distance", stun/weapon-swap bug reports and the "not already in melee range" use limit, none
   with a collision statement.
 
+## Plan 0065 Phase 1: the P12 session (run:2026-11-15-sweep8-p12)
+
+- [C] The kept session `p12` (11 546 `MMC` of the Nova, class 90): path `+0x7C` is non-zero at every one, and no word has
+  `c & 5 ≠ 0`; 10 522 step on, and 156 of the steps lie at a point the session's `CB` grid marks bit-0-only (its word has `c & 5 = 0`;
+  the missile steps on). (run:2026-11-15-sweep8-p12)
+- [I] With `+0x7C` non-zero `PathCellCollision` returns the path's word `+0x54` without calling `CollisionTest`
+  (`cmp [esi+0x7c], 0; jne 0x00648EDD`), and that word is the one the path's move (fn:sub_00650910_PathMoveWithMark@0x00650910) stored: 0 at 0x00650957, or the return
+  of 0x0064EE70 (the move's own collision test, from the old point to the new one with the path's `+0x4C`) at
+  0x006509A5; what 0x0064EE70 tests is not read here. So the logged word never went through a test of the missile's own
+  cell under `0x7FFF`, and the 156 are what both readings predict once the word is the cache: they decide nothing.
+  (fn:sub_00648EB0_PathCellCollision@0x00648EB0, 0x00648EB7, 0x00650957, 0x006509A5, run:2026-11-15-sweep8-p12)
+
+Verdict: **not separated**, the owner's ruling of 2026-11-15 (option (a), no zero-velocity session). Neither
+the lead nor the code reading is confirmed for a fresh bit-0-only word; the lead stays as this document holds it. Untested,
+by the same ruling: whether a missile with a blank `Vel` (firestorm, `fireexplosion`) keeps `+0x7C` at 0 and so takes the
+fresh test.
+
 ## Open questions
 
 For the spec's Open questions. P12 is the one contradiction, and it belongs to skills/missiles, not to a case of this plan.
@@ -173,7 +190,7 @@ For the spec's Open questions. P12 is the one contradiction, and it belongs to s
   read so far", and `PathCellCollision`'s `0x7FFF` leaves the bit out too (skills/missiles D3 `[I]`). A reimplementer should not treat the `0x8000` corpse mark as a blocker until a mask that tests it
   is found; this is a statement of what the findings did not find, not a finding. `unflatDead`: `src:d2mods-monstats-guide` says walking, `src:d2dfg-blizzard` says drawing, no reader read ([entry](../../backlog/archive/2026-11-04-architect-reverser-0054-unflatdead-reader-corpse-walk-or-draw.md)).
 - `[L]` **Pets against players** (P05): no pet-specific mask read.
-- `[L]` **A missile over a bit-0 cell** (P12), for skills/missiles' Open questions, [entry](../../backlog/2026-11-04-architect-reverser+spec-writer-0054-p12-missile-own-cell-bit0-vs-floor.md).
+- `[L]` **A missile over a bit-0 cell** (P12), for skills/missiles' Open questions, [entry](../../backlog/archive/2026-11-04-architect-reverser+spec-writer-0054-p12-missile-own-cell-bit0-vs-floor.md).
 - `[L]` **Whirlwind's flight** (P07, P08): `0x401` is a reading past the emulation's boundary, and no run compares a flight stopping or passing a unit. The mask itself is not an open question, as the lane's first text had it, and neither is `SizeY`, which drlg/0005 § 5 answers (P02).
 
 ## Sources

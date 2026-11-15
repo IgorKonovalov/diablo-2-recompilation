@@ -581,7 +581,7 @@ A class 225 missile's type-10 plan, `2026-11-04-path-2-s1-6004-k5-sor-oasis.log`
 - [C] Knockback clears the path's target unit whether or not it finds a point ([search § E](search.md#e-the-knockback-planner-type-8)). (0x00648AE2–0x00648AEA, run:2026-11-03-path-emu-3)
 - [I] `0x8000` is written but in no immediate move mask scanned (F4's C4): on what this spec states, a corpse mark is not a blocker (Open questions). (0x00649FD8, fn:PATH_MonTestMask@0x00648480)
 - [I] `unflatDead` changes no grid mark and no move mask: its one direct reader is a client draw-list test, and no direct call on the server reads it. (0x004648AB, 0x004DDAD6, [path/0008 item 6](../../findings/path/0008-corpse-remainders.md))
-- [I] The plan of type 14 reads no grid. The hammer's end at a wall is the missile's own step, [skills/missiles § D3](../skills/missiles.md#d-each-frame), with [P12's entry](../../backlog/2026-11-04-architect-reverser+spec-writer-0054-p12-missile-own-cell-bit0-vs-floor.md) on the bit-0 case. (fn:sub_005AE1F0_MissileMoveCollide@0x005AE1F0)
+- [I] The plan of type 14 reads no grid. The hammer's end at a wall is the missile's own step, [skills/missiles § D3](../skills/missiles.md#d-each-frame), with [P12's entry](../../backlog/archive/2026-11-04-architect-reverser+spec-writer-0054-p12-missile-own-cell-bit0-vs-floor.md) on the bit-0 case. (fn:sub_005AE1F0_MissileMoveCollide@0x005AE1F0)
 
 ## Evidence
 

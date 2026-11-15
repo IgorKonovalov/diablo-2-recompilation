@@ -67,7 +67,7 @@ The rest:
 | `0x0057CCB0` | `sub_0057CCB0_UnitKilled` | calls the gate at 0x0057CD51 | C |
 | `0x005A4EF0` | `sub_005A4EF0_KillExpGate` | no call when a unit is null or the victim has flag bit 26 of `+0xC4` | I |
 | `0x0057E990` | `XP_OnMonsterKill` | the award | C |
-| `0x0057E7B0` | `sub_0057E7B0_XpCreditPlayer` | the credit | I |
+| `0x0057E7B0` | `sub_0057E7B0_XpCreditPlayer` | the credit; its return logged and compared, 6 of 6 (§ 11) | C (raised 2026-11-15 at the `lane/n65h` review) |
 | `0x0057E6C0` | `XP_PartyShare` | collects, then pays n = 1 or the split; members and inputs logged at n = 1 and 2 | C |
 | `0x0057E5A0` | `sub_0057E5A0_PartyXpCollect` | alive, distance to the victim, the cap; logged member sets at n = 1 and 2 | C |
 | `0x005405A0` | `sub_005405A0_PartyForEachInLevel` | party list, the credited player's level | C |
@@ -372,6 +372,21 @@ The [backlog entry](../../backlog/2026-11-03-architect-reverser-plan-0058-p1-par
 optional two-client cases are still open: a far credited player with a near member, a dead killer, and a player
 killing a player. So are the three action handlers 1–3 and the two other `PartyRemoveMember` callers.
 
+## 11. Plan 0065 Phase 1: the exp-mask states at a kill (run:2026-11-15-sweep8-single, `lane/n65h`)
+
+Session `xs` (SweepConv: a Paladin walking out of the Rogue Encampment into the Blood Moor, seed 3, then casting
+Conversion at the nearest monster for 40 walking hops; `tools/sweep8_sessions.py` `LEAVE_TOWN`, not the Cold Plains
+waypoint the staging named).
+`XK0` logged 6 kills; `player.py check` 6 kills credited, `XP_AddExperience` reproduced 6 of 6, 0 mismatches;
+`sweep8_check.py xs` 3 state kills, 3 separating, 0 mismatches.
+
+- [C] **A monster that kills a converted one** (3 kills: victim state 53 in the mask, killer a monster of class 19, 63,
+  63): the experience is credited through the victim's `0x800` list, where `MonsterOwner` gave no player; the
+  killer-side mask `kxs` is empty on all 6. The credited unit (`XSR`, the function's return) is the Paladin, the only
+  player and the one that cast Conversion. (fn:sub_0057E7B0_XpCreditPlayer@0x0057E7B0, 0x0057E7DF..0x0057E84B,
+  fn:sub_0063A130_UnitHasStateInMask@0x0063A130, run:2026-11-15-sweep8-single)
+- [I] **A converted monster that kills**: not reached (`kxs` empty on every `XK0`); § 4's reading for it stays as it was. (fn:sub_0057E7B0_XpCreditPlayer@0x0057E7B0, 0x0057E7DF, run:2026-11-15-sweep8-single)
+
 ## Data touched
 
 tbl:States.txt:exp; tbl:Experience.txt (`perClass`, `ExpRatio`) by offset, synthetic here; tbl:Hireling.txt:Exp/Lvl by offset, synthetic here.
@@ -385,5 +400,5 @@ struct:Unit: `+0x00` type, `+0x04` class, `+0x0C` guid, `+0x10` mode, `+0x14` da
 ## Open questions
 
 - [L] Does a player killing a player get an award in play? The code path exists (§ 4); no log holds one. For a later two-client case, not blocking. *2026-11-10 (plan 0063 P2a):* the gate's flag is now traced (§ 10): none of its 9 writers sets it on a player, so the static half is answered and only the live case stays open.
-- [L] Does a kill with an `exp` state credit the way § 4's code map says? (2026-11-04, `lane/a68` review.) The credit for a kill with an `exp` state (tags state-killer, state-victim, state-both, and the player case's state on the victim) is the code's map only: no logged kill carries such a state, and the `XK0` logger (`tools/gdb/player.py`) reads no state, so the six kill logs cannot say whether one had a state. [items/0010](../items/0010-quest-drops.md)'s "the caster" stays `[I]` for the same reason. A session would log the killer's and the victim's `exp`-mask states and the `0x800` list's owner at `XK0` with a converted monster's kill (Conversion) and a kill of a converted monster. Optional, not blocking: [States](../../tables/States.md) and player/party already state the scope.
+- [L] Does a kill with an `exp` state credit the way § 4's code map says? (2026-11-04, `lane/a68` review.) The credit for a kill with an `exp` state (tags state-killer, state-victim, state-both, and the player case's state on the victim) is the code's map only: no logged kill carries such a state, and the `XK0` logger (`tools/gdb/player.py`) reads no state, so the six kill logs cannot say whether one had a state. [items/0010](../items/0010-quest-drops.md)'s "the caster" stays `[I]` for the same reason. A session would log the killer's and the victim's `exp`-mask states and the `0x800` list's owner at `XK0` with a converted monster's kill (Conversion) and a kill of a converted monster. Optional, not blocking: [States](../../tables/States.md) and player/party already state the scope. *2026-11-15 (plan 0065 Phase 1, § 11):* the kill of a converted monster by a monster is answered (3 kills, credited through the victim's list to the caster); a converted monster that kills is still open. No session is scheduled for it (`lane/n65h` review): the branch is the same code as the emulated `state-killer` tag (§ 4).
 - [L] A live case of the corrected reading: a partied killer's far mercenary or summon with one member near the victim. The logs have none. It would need a session and a monster position line, which `KILL` already gives. Optional, for the owner's three-client or a two-client run.

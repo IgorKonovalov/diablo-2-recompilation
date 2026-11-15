@@ -60,7 +60,7 @@ RECIPE_SET = {
     "sw8-xs": (BASE_PAL, "SweepConv"),
 }
 INV0, CELL = (418, 316), 29
-MERC_PORTRAIT = (20, 20)       # the hireling's portrait, top left; measured in the development session (H3)
+MERC_PORTRAIT = (38, 40)       # the hireling's portrait frame (15..62, 18..62 in the 800x600 frame): measured in the dev session (screenshot, run:2026-11-15-sweep8-single)
 
 
 def icell(k):
@@ -84,7 +84,8 @@ def cast_explore(keys, hops, radius=12, walk=False):
              "--radius", str(radius), "--melee-hold", "0.3", "--drink", "0.4", "--mana-col", "4", "--hops", str(hops)])
 
 
-LEAVE_TOWN = ("pilot", ["explore", "--any-level", "--walk", "--hops", "12", "--drink", "0"], 300)
+# --dead-below 0: the pilot never stops on an empty-looking orb (the b8 characters stand at 5 of 60 life)
+LEAVE_TOWN = ("pilot", ["explore", "--any-level", "--walk", "--hops", "12", "--drink", "0", "--dead-below", "0"], 300)
 H3_GIVE = [step for k in range(5) for step in (("click",) + icell(k) + (0.6,),
                                                 ("click", MERC_PORTRAIT[0], MERC_PORTRAIT[1], 1.5),
                                                 ("click",) + icell(k) + (0.8,))]
@@ -95,7 +96,7 @@ SESSIONS = {
     # in the Blood Moor; seed 3 Normal held two quillrat1 creations in level 2 (p44h-mstat-1-host.log, PC lines
     # 7039 and 7471). No casting: the pilot only hops, so the rats live to shoot. skills.gdb is the rev 5 logger.
     "c2": ("sw8-nova", "tools/gdb/skills.gdb", "tools/gdb/enter-normal.steps", 3, "SKILLS logger armed",
-           [LEAVE_TOWN, ("pilot", explore(60), 900), ("shot", "end")], {"SKILLS_WIN": "10"}),
+           [LEAVE_TOWN, ("pilot", explore(60, ["--nova", "0"]), 900), ("shot", "end")], {"SKILLS_WIN": "10"}),
     # P12 (backlog 2026-11-04 0054-p12; skills/missiles D3): Nova (pSrvDoFunc 1, CollideType 3) cast beside a
     # bit-0-only cell of the Blood Moor, then Nova bursts over the level for more crossings and the free-cell control
     "p12": ("sw8-nova", "tools/gdb/p12.gdb", "tools/gdb/enter-normal.steps", 3, "P12 logger armed",
@@ -115,19 +116,18 @@ SESSIONS = {
             ("shiftkey", "4", 2.0), ("shiftkey", "1", 2.0), ("shiftkey", "1", 2.0), ("shot", "belt"),
             ("keys", ["i"], 1.0)] + H3_GIVE + [("shot", "end")], {}),
     # B8 (items/0017 B8, items/inventory F6): a death with a 16-box belt full, page 0 empty / page 0 full
-    "b8room": ("sw8-b8room", "tools/gdb/sweep8-use.gdb", "tools/gdb/enter-normal.steps", 6503, "USE8 logger armed",
-               [("pilot", ["farm", "--wp", "1,2", "--time", "1"], 90),
-                ("pilot", ["explore", "--hops", "40", "--drink", "0", "--dead-below", "0.05"], 600), ("wait", 6),
-                ("shot", "dead")], {}),
-    "b8full": ("sw8-b8full", "tools/gdb/sweep8-use.gdb", "tools/gdb/enter-normal.steps", 6504, "USE8 logger armed",
-               [("pilot", ["farm", "--wp", "1,2", "--time", "1"], 90),
-                ("pilot", ["explore", "--hops", "40", "--drink", "0", "--dead-below", "0.05"], 600), ("wait", 6),
-                ("shot", "dead")], {}),
+    "b8room": ("sw8-b8room", "tools/gdb/sweep8-use.gdb", "tools/gdb/enter-normal.steps", 3, "USE8 logger armed",
+               [LEAVE_TOWN,
+                ("pilot", ["explore", "--hops", "40", "--drink", "0", "--nova", "0", "--dead-below", "0"], 600),
+                ("wait", 6), ("shot", "dead")], {}),
+    "b8full": ("sw8-b8full", "tools/gdb/sweep8-use.gdb", "tools/gdb/enter-normal.steps", 3, "USE8 logger armed",
+               [LEAVE_TOWN,
+                ("pilot", ["explore", "--hops", "40", "--drink", "0", "--nova", "0", "--dead-below", "0"], 600),
+                ("wait", 6), ("shot", "dead")], {}),
     # exp-state kills (player/0002 § 4; backlog 2026-11-04 a68-review): Conversion (F1) cast at the nearest live
-    # monster while the Paladin walks the Cold Plains; the converted monster kills and is killed
-    "xs": ("sw8-xs", "tools/gdb/sweep8-xs.gdb", "tools/gdb/enter-normal.steps", 6505, "PLAYER logger armed",
-           [("pilot", ["farm", "--wp", "1,2", "--time", "1"], 90),
-            ("pilot", cast_explore(["F1"], 40, walk=True), 900), ("shot", "end")], {}),
+    # monster while the Paladin walks the Blood Moor; the converted monster kills and is killed
+    "xs": ("sw8-xs", "tools/gdb/sweep8-xs.gdb", "tools/gdb/enter-normal.steps", 3, "PLAYER logger armed",
+           [LEAVE_TOWN, ("pilot", cast_explore(["F1"], 40, walk=True), 900), ("shot", "end")], {}),
 }
 
 
@@ -263,7 +263,8 @@ def run(slot, tag, run_id, names, dev=False):
                 elif k == "p12go":
                     import sweep8_check
                     pk = sweep8_check.pick(log, near_player=True)
-                    hr.mark(stem, name, "p12-pick", log, json.dumps(pk))
+                    with open(stem + ".pick.json", "w") as pf:      # a case mark has a fixed event set
+                        pf.write(json.dumps(pk) + "\n")
                     if pk:
                         for _ in range(step[1]):
                             p = sweep8_check.last_pos(log)

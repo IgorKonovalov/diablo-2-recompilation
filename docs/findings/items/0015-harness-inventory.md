@@ -43,6 +43,27 @@ Wine session under gdb on slot 2, one fresh process (`harness-play.md` § Fresh 
 | `0x0054ABB0` | `sub_0054ABB0_Pkt18CursorToPage` | page 4 in town, no stash open: accepted, 1 case | I (one forced case, written packet field; not raised) |
 | `0x0054B3E0` | `sub_0054B3E0_Pkt23CursorToBelt` | box 12 stays on a 12-box belt, 1 case | I (one forced case; not raised) |
 | `0x00558B90` | `sub_00558B90_ActExpiredItemsFree` | the sweep: 4 frees at the predicted frame | I (owned by frame/0003; the claim above is the item case) |
+| `0x00562390` | `sub_00562390_PlayerUseBeltItem` | plan 0065 H3: flagged `0x26`, the three type tests and the pet as user, 6 of 6 as predicted | C (raised 2026-11-15 at the `lane/n65h` review; the flagged branch observed, the rest as items/0012) |
+
+## Plan 0065 Phase 1: H2 and H3 (run:2026-11-15-sweep8-single, `lane/n65h`)
+
+- [C] **H2, two potions in a row.** Session `h2` (SweepPot: life 300 of 6000, mana 100 of 3000), four pairs 1.2 s apart:
+  4 blends, all separating: the second use found the first's list alive and the logged rate is
+  `trunc((old * rem + v) / (len + rem))`, not the single potion's `v / len`; 6 fresh uses (no list) at the rate
+  predicted from `calc` and `len`; 2 frees at the maximum. `sweep8_check.py h2` 0 mismatches; `inventory_check.py` 0
+  mismatches over the four item logs. This holds `src:pd-potions-guide`'s averaging statement for 1.14d for tiers
+  below the maximum. (fn:sub_005BE3F0_ItemUsePotion@0x005BE3F0, 0x005BE480, 0x005BE6C1, run:2026-11-15-sweep8-single)
+- [C] **H3, a mana potion to the hireling.** Session `h3` (hireling alive, five potions in belt and page 0): flagged
+  `0x26` requests of hp1, rvs, yps and wms went to the hireling (types tested 76, then 81, then 80, stopping at the
+  first pass, as predicted); mp1 was refused twice (types 76, 81, 80 all false). `sweep8_check.py h3` 6 flagged,
+  2 separating, 0 mismatches. `src:arreat-summit-potions`' mana potion to the hireling is contradicted for 1.14d: the
+  code reading stands. Request `0x61` (a page-0 potion on the cursor, clicked on the portrait): hp1 and rvs passed at
+  76, wms at 81, yps at 80, as on `0x26`; the mp1 click made no `T61` line and the item went down as a ground drop
+  (request 0x17). (fn:sub_00562390_PlayerUseBeltItem@0x00562390, 0x00562453, fn:sub_0054D230_MercGiveCursorItem@0x0054D230,
+  fn:ITEMS_UnitIsType@0x00629BB0, run:2026-11-15-sweep8-single)
+- [I] Why the mp1 `0x61` click sent no `0x61`: the client's own type test (the client site 0x0049356E.., items/0017 H3)
+  refusing it before any request, so no server function ran; the client code is not read here (ADR-0025). Not a
+  `T61A..C` result. (0x0049356E, run:2026-11-15-sweep8-single)
 
 ## Open questions
 

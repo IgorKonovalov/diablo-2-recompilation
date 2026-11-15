@@ -1,6 +1,6 @@
 # 0065 — Harness sweep 8: the backlog's live cases in one batch per slot plan
 
-> **Status:** in progress: Phase 0 (staging) accepted with fixes 2026-11-15 (`lane/n65p`, Tier A as the audit); Phase 1 next, when the owner starts it; MP28 (b), (c) postponed by the owner 2026-11-15 (owner play, not dropped); approved 2026-11-10 by the owner, as recommended: Phase 2 runs (the pairing with plan 0067 Phase 2 lapsed: 0067 closed first, see the log)
+> **Status:** in progress: Phase 0 (staging) accepted with fixes 2026-11-15 (`lane/n65p`, Tier A as the audit); Phase 1 (single-client batch and P12) accepted with fixes 2026-11-15 (`lane/n65h`, Tier A as the audit; P12 not separated, owner ruling (a)); Phase 2 next, when the owner starts it; MP28 (b), (c) postponed by the owner 2026-11-15 (owner play, not dropped); approved 2026-11-10 by the owner, as recommended: Phase 2 runs (the pairing with plan 0067 Phase 2 lapsed: 0067 closed first, see the log)
 > **Created:** 2026-11-10
 > **Owner skill(s):** reverser, spec-writer
 > **Related ADRs:** 0003-runtime-experiments, 0008-two-client-harness, 0010-forced-path-runs, 0013-forced-path-runs-cell-level, 0014-scope-game-simulation, 0023-review-tiers-and-gate-first-fixes, 0028-case-and-process-in-experiment-records, 0030-verdict-lanes-and-wiki-tier-a
@@ -225,3 +225,155 @@ its own record (Tier A).
   No reject-grade problem.
 - **Ledger cells:** `architect-review`, Fixes `audit of lane/n65p: omission 1, tool not kept 1`; no reject-grade miss.
   **Promotion:** neither fix is a second sighting outside an existing rule (fix 1 is reverser rule 10), so no rule added.
+
+### 2026-11-15 — Phase 1 checkpoint (resume note), `lane/n65h` (reverser, slot 1; paused by the owner for a reboot)
+
+Branch `lane/n65h` from `main` `7b41313b`. No kept (batch) session has run yet; everything below is development and smoke
+work, kept as `dev-` logs under `workspace/logs/sweep8/dev/` (smoke through smoke7; smoke7 was cut by the pause: b8room
+and xs, no claim rests on it). Slot 1 is idle (driver killed by pid, `saves.py --slot 1 status`: no aside, harness idle).
+
+**Done**
+- *Review fix 1 (P12 check), committed `76f15377`.* `sweep8_check.py p12` now counts the lead's observable apart: a
+  missile at a point the session's `CB` grid marks `c & 5 == 1` whose logged word is 0 and that steps again (fresh word:
+  verdict "against the grid reading"; cached word: counted, decides nothing); SEPARATING needs a fresh freed word *and*
+  the grid's own cell bit-0-only (with size 2 or 3 the word holds the neighbours' bits). Three no-game tests added.
+- *Uncommitted edits at the pause (commit with this note):* `sweep8_check.py h2` handles the fresh use's own `UBL`
+  (smoke: `UBL` fires on a use with no list too, on the list the use just made, num = v, den = len; the first check
+  version called those six lines mismatches; now 4 blends as predicted, all 4 separating, 6 fresh rates as predicted,
+  2 `UFM` frees, 0 mismatches) plus two tests; `sweep8_sessions.py`: `MERC_PORTRAIT` (38, 40); `p12go` writes the pick to
+  `<stem>.pick.json` (a case mark has a fixed event set); the Rogue Encampment waypoint is not reachable by `farm --wp`
+  (its default click is the Act V point; "the waypoint list did not open", smoke5), so b8room, b8full and xs use
+  `LEAVE_TOWN` and walk the Blood Moor on seed 3 (the seed whose town walk is proven); `--dead-below 0` in `LEAVE_TOWN` and
+  the b8 explore (the pilot read the 5-of-60 life orb as death at hop 1); c2's explore has `--nova 0` (the default
+  `--nova 2` killed the quill rats before they shot: 640 Nova creations, no `spike1`).
+- `test_sweep8.py`: 31 OK.
+
+**Pre-checks settled (smoke logs)**
+- *Hireling portrait (H3):* the frame is about x 15..62, y 18..62 in the 800x600 frame; (20, 20) sat on its edge and the
+  clicks dropped the potions on the ground. At (38, 40) smoke4 gave 0x26 flagged: hp1, rvs, yps, wms to the hireling,
+  mp1 refused twice (`sweep8_check.py h3`: 6 flagged, 2 separating, 0 mismatches); 0x61: four requests (tests `[76 T]` x2,
+  `[76 F, 81 T]`, `[76 F, 81 F, 80 T]`); the mp1 click on the portrait produced no `T61` (the item went down as a ground drop,
+  request 0x17): a client refusal before the logged function, to be read as that, not as a `T61A..C` result.
+- *B8 belt `x`:* a belt item's logged `x` is its box (0x26 lines: mp1 x 0, hp1 x 1, rvs 2, yps 3, and wms 1 after the fall).
+  The b8 deaths themselves are not yet reached (smoke5/6: the character never left town; fixed as above, untested).
+- *P12 pick on the session's own grid:* holds (smoke2, seed 3: cell (4645, 4690) word 1, stand (4647, 4688), 2 148 bit-0-only
+  cells of 24 000 in the grid, the pilot hopped to (4647, 4688)).
+- *C2 seed 3 quill rats:* present in single-player (class 63 seen 146 times in the dev log); with `--nova 0` smoke6 logged 3
+  `spike1` creations, `sweep8_check.py c2` 3 separating, 0 mismatches.
+- *Conversion by `explore --melee`:* not yet shown (smoke5: the town walk failed on seed 6505; smoke7 cut).
+
+**P12 finding to carry (not yet a record):** in the smoke log all 15 759 `MMC` of class 90 carry path `+0x7C` of 2 608, 3 608
+or 4 608 (non-zero), so `PathCellCollision` (0x00648EB0, `cmp [esi+0x7c], 0; jne 0x648EDD`) returns the path's cached word
+`+0x54` and never runs `CollisionTest` at the missile's own point; `PathStepMove` (0x00650660) clears `+0x54` at each step
+(0x00650673) and `PathMoveWithMark` (0x00650910) writes it (0x00650957, 0x006509A5). The word was 0 in 15 001, 0x80 in 755,
+256 in 2 and 384 in 1; none had `c & 5`. 234 of the `MMC` lie at a grid bit-0-only point and the Nova steps on (cached word,
+nothing tested there). So a Nova can never give the fresh bit-0-only word: the staged separating case is unreachable for
+it (ruling stands: no forced cell; the verdict is "not separated"). Missiles with `pSrvDoFunc` 1, `CollideType` 3 and a
+blank `Vel` (firestorm, `fireexplosion`, the fire trails and 40-odd more, `missiles.txt`) are the candidates whose `+0x7C` may
+be 0 and so take the fresh branch; that is `[I]` until a run, and needs another character: an owner decision for the architect.
+
+**Next**
+1. Rerun `b8room` and `xs` as dev (smoke7), then `b8full`; check each; confirm `T61`-style pre-check for Conversion.
+2. Kept batch `2026-11-15-sweep8-single` (use the actual date): `c2 h2 h3 b8room b8full xs` under
+   `sweep8_sessions.py run --slot 1 --tag n65h --run <date>-sweep8-single ...`, then the checks (`skills.py check`,
+   `inventory_check.py`, `player.py check`, each `sweep8_check.py`), manifests, addenda (skills/0002, items/0013-0016,
+   player/0002, path/0007), the four backlog entries.
+3. `p12` as its own kept record `<date>-sweep8-p12`; verdict "not separated" unless a fresh bit-0-only word appears; Tier A request.
+4. Phase 1 log entry with Tier B (batch) and Tier A (P12) review requests.
+
+### 2026-11-15 — Phase 1 (single-client batch), `lane/n65h` (reverser, slot 1), batch landed, P12 not separated
+
+Resumed from the checkpoint above. Dev reruns (kept as `dev-2026-11-15-sweep8-smoke8` b8room and xs, `smoke9` b8full):
+b8room 12 boxes to page 0, b8full 12 to the ground, xs 5 separating, all 0 mismatches. Kept batch
+`run:2026-11-15-sweep8-single` (`c2 h2 h3 b8room b8full xs`, one fresh process each, 731 s, 6 kept at the first try, no
+death), record in [items/experiments](../findings/items/experiments.md#run2026-11-15-sweep8-single); kept logs
+`workspace/logs/sweep8/2026-11-15-sweep8-single-s1-*`, checks and `manifest.sha256` (24 lines, passes) in
+`workspace/logs/n65h/`.
+
+| Case | Result | Where |
+|---|---|---|
+| C2 | 3 `spike1` creations at level 1, 3 separating (velocity as read, not the lead's), `skills.py check` 0 mismatches | skills/0002 § 14 |
+| H2 | 4 blends, all separating; 6 fresh rates; 2 frees; 0 mismatches | items/0015 |
+| H3 | hp1, rvs, yps, wms to the hireling; mp1 refused twice (the Arreat Summit reading contradicted); 0 mismatches | items/0015 |
+| B8 | boxes 4..15: page 0 with room, ground without; 0 mismatches | items/0013 § 11 |
+| Exp-state | 3 monster-kills-converted cases credit the `0x800` list's owner, separating; a converted killer not reached | player/0002 § 11 |
+
+`inventory_check.py` 73 predictions, 0 mismatches; `player.py check` 6 kills, 0 mismatches. Gate green. The slot is
+clean (`saves.py --slot 1 status`: no aside, harness idle).
+
+**P12: not separated (owner ruling 2026-11-15, option (a)).** The Nova session cannot give a fresh bit-0-only word: its
+path's cached word at `+0x7C` makes `PathCellCollision` (0x00648EB0) return the cache, so `CollisionTest` never runs at the
+missile's own point (all `MMC` of class 90 carry a non-zero `+0x7C`). The owner ruled to accept "not separated" for the bit-0
+word and not to run a zero-velocity missile session with another character; the lane ran the staged session once to keep
+the record. `run:2026-11-15-sweep8-p12` (slot 1, seed 3, `p12.gdb`, kept log `2026-11-15-sweep8-p12-s1-3-p12.log`,
+`manifest-p12.sha256`): `sweep8_check.py p12`: 11 546 `MMC`, all cached words, 156 at a grid bit-0-only point whose cached word
+steps on (counted, decides nothing), 0 separating, 0 against the grid reading, 0 mismatches; verdict "not separated (no fresh
+bit-0-only word)". Neither reading is confirmed: the statement stays as the specs hold it, with the cause named. Whether the
+blank-`Vel` rows (firestorm, `fireexplosion`, `[I]`) take the fresh branch stays untested, by the owner's ruling. P12 backlog
+entry: annotated for the architect to close. **Review request:** Tier A for P12 (backlog entry filed with this entry).
+
+**Short:** the converted-monster-kills branch of the exp-state case; `spike1` above level 1.
+
+**Review request:** Tier B for the batch; Tier A for P12 (backlog entries filed with this entry).
+
+### 2026-11-15 — Phase 1 review (architect, Tier A: P12 a verdict lane, and the audit of the fifth Tier B lane since `lane/n65p`, `lane/n65h`)
+
+No game, no Ghidra (the owner's quiet machine); one objdump read of 0x00648EB0 and 0x00650910.
+
+- **Verdict: accept with fixes** (13 fixes: overclaim 1, misread 1, omission 3, wrong anchor 2, stale cross-reference 5,
+  other 1), all written into the documents named; gate green.
+- **Re-checked.** `manifest.sha256` (24 lines) and `manifest-p12.sha256` pass from the repository root; every check
+  output matches the counts the findings and this log give (`c2` 3/3, `h2` 4 blends 4 separating 6 fresh 2 frees, `h3` 6
+  flagged 2 separating, `b8` 12 + 12 moved, `xs` 3/3, `inv` 73, `player` 6, `p12` 11 546 / 10 522 / 156); the tools did
+  not change between the run's revision `5c55b73d` and `116d7239`. `XSF`/`XSR` give `[0, 3, 1]`, the Paladin, on the three
+  state kills.
+- **P12 (Tier A): not separated, accepted under the owner's ruling (a).** The image holds the lane's cause:
+  `cmp [esi+0x7c], 0; jne 0x00648EDD` returns `+0x54`, and `+0x54` is the path move's word (0 at 0x00650957, the
+  return of 0x0064EE70 at 0x006509A5), not a test of the own cell under `0x7FFF`. So the 156 grid bit-0-only steps are what
+  both readings predict and decide nothing; D3 stays `[I]` and P12 stays an open question of skills/missiles with the
+  cause named. The "a Nova can never give a fresh word" of the checkpoint is a count over two logs (27 305 `MMC`), not a
+  reading of `+0x7C`'s writer: it is recorded as the logged count only (path/0007). Backlog entry closed.
+- **The exp-state remainder (a converted monster that kills): no rerun.** That branch is § 4's first `if`, the same code as
+  the emulated `state-killer` tag (run:2026-11-03-party-emu); play would add only whether such a kill reaches
+  `XpCreditPlayer` with the state on. It stays in player/0002's Open questions, out of this plan; the a68 entry is closed.
+- **Spec-writer retag (items/use, items/inventory after H2, H3, B8; skills/missiles C2 and D3; player/party).** Already
+  routed: Phase 3 of this plan names each one, so no new entry. Phase 3's done-when covers Phases 1 and 2; whether it may
+  take Phase 1's set before Phase 2 runs is the owner's call.
+- **Fixes (13).**
+  1. *Overclaim:* items/0015 H3's `[C]` held the reason for the mp1 `0x61` click ("a client refusal before the logged
+     function"); now its own `[I]` bullet with the client site 0x0049356E (reverser rule 1).
+  2. *Misread:* player/0002 § 11 said the `xs` walk started from the Cold Plains; `sweep8_sessions.py` walks out of the camp
+     into the Blood Moor (`LEAVE_TOWN`).
+  3. *Omission (rule 14):* the run compares the logged returns or effects of `sub_0057E7B0_XpCreditPlayer` (`XSR`, 6 of 6),
+     `sub_005608C0_BeltOverflow` (24 of 24 moves) and `sub_00562390_PlayerUseBeltItem` (6 flagged uses); raised to C in
+     `re/symbols.csv` and the Functions tables (player/0002, items/0013, items/0015, items/0012, skills/0015), with scope.
+  4. *Omission (rule 10):* path/0007's P12 addendum was untagged and did not say what the cached word had been through;
+     now a `[C]` count and an `[I]` reading with 0x00648EB7, 0x00650957, 0x006509A5.
+  5. *Omission:* the `run:2026-11-15-sweep8-p12` record named no save, steps, command, tool revision or check counts; written,
+     and the runner output `p12.out` added to `manifest-p12.sha256` (4 lines).
+  6. *Wrong anchor:* items/0015 H3's flagged `0x26` claims were anchored to `MercGiveCursorItem` (`0x61`); now
+     `fn:sub_00562390_PlayerUseBeltItem@0x00562390` and 0x00562453 beside it.
+  7. *Wrong anchor:* items/0015 H2's blend was anchored to the `ItemUse` dispatcher; now
+     `fn:sub_005BE3F0_ItemUsePotion@0x005BE3F0`, 0x005BE480, 0x005BE6C1.
+  8. *Stale cross-reference:* items/0017's summary, H2, H3 and B8 entries, route table and Open question still said
+     unrun; annotated.
+  9. *Stale cross-reference:* items/0012's `0x26` and `0x61` readings, the live-potion note and the Open question ("the
+     blend open"); annotated.
+  10. *Stale cross-reference:* items/0013 § 4's `BeltOverflow` bullet; pointer to § 11.
+  11. *Stale cross-reference:* skills/0002's *Leads used* `VelLev` verdict, § 11's remainder and § 12's C2 bullet; pointers to
+      § 14.
+  12. *Stale cross-reference:* the `exp`-state Open question of player/0002 kept the whole case open; the victim half
+      is now marked answered.
+  13. *Other:* skills/0002 § 14 wrote the velocity as `… << 8 * 75`, which a C reader parses as `<< 600`; parenthesised,
+      and the level-1 limit said (the term is 1 under any order of product and division). items/0013 § 11's "(4 each)"
+      reworded; the `sweep8-single` record's "open on an owner question" updated; player/0002 § 11's unreached
+      bullet given its anchor (gate W1).
+- **Backlog.** Closed: C2, P12, the 0060 live cases, a68, and this review request (`tools/backlog.py close`, then
+  `archive`: links rewritten in five findings, plans and specs, paths only).
+- **Audit (ADR-0023).** No reject-grade problem. A Tier B check would likely have found fixes 3 and 6 to 12 (rules 14 and 20,
+  the anchor spot-checks, passes 7 and 8) and fix 2 (`LEAVE_TOWN` is in the diff). Fix 4 needed the image read outside a
+  diff-scoped pass; fix 1 is rule 1's wording, a check reading the statement would see it. Fix 6 is the closest to a
+  blocking anchor; the function it named is real and covers the bullet's last sentence, so it is not reject-grade.
+- **Ledger cells:** `architect-review`, Fixes `audit of lane/n65h: overclaim 1, misread 1, omission 3, wrong anchor 2,
+  stale cross-reference 5, other 1`; no reject-grade miss. **Promotion:** every fix is an existing rule (reverser 1, 10,
+  12, 14, 20), so no rule added.
