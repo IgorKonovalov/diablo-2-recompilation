@@ -446,3 +446,19 @@ by the host. The `pk` case wants a control (any monster kill in the same session
 raised now (MP25, MP21, open wounds); the owner decides whether the rest runs.
 
 **Review request:** [Tier B](../backlog/2026-11-16-reverser-architect-review-plan-0065-p2-two-clients.md).
+
+### 2026-11-16 — Phase 2 part 2 (`lane/n65i`, slots 1 and 2): driver fixes and the new case's prediction, written before its first kept log
+
+Merged `main` into the branch first (clean). Driver fixes (in `workspace/logs/n65i/drivers/`, not committed): `kills2.sh` takes
+the host from the Act IV start to the Act I waypoint with `meet.sh` (retried until the host's level changes) in place of `out`;
+the 0058b host walks alone while the joiner is parked, the joiner follows only once the host is down; `mp18c.sh` is a control for
+MP18 (the same clicks with no trade open and the inventory opened with `i`); `portal.sh` takes the Kurast Docks waypoint at
+(5159, 5049) (the DS1 waypoint unit 237 at (159, 49) of `docktown3.ds1` plus the level origin (5000, 5000) read from the 48 `RL`
+rooms of Act 3 - Town in the dev log); `pile.py` clicks the `KILL` position of each new kill (the MP32 pickup step).
+
+**New case: the 0058c control** (a monster kill in the same session, before the player kill, `two-kills.gdb`). Prediction:
+the monster kill gives an `XK0` line (so the logger is live in that session) and the player kill still gives none or gives one
+with `mtype` 0. Readings: (i) `XK0` for the monster and none for the player: the player-death path does not reach
+`XpCreditPlayer`'s logged entry 0x0057E990 (player/0002 § 4 *victim-player* is then not run by a hostile player's kill); (ii) `XK0`
+for both: the part-1 absence was the logger not armed. Separating by the line counts; the monster's credit is checked by
+`player.py check` as in every kills session.
