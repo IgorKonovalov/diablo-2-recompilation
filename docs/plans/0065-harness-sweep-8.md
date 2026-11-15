@@ -377,3 +377,38 @@ No game, no Ghidra (the owner's quiet machine); one objdump read of 0x00648EB0 a
 - **Ledger cells:** `architect-review`, Fixes `audit of lane/n65h: overclaim 1, misread 1, omission 3, wrong anchor 2,
   stale cross-reference 5, other 1`; no reject-grade miss. **Promotion:** every fix is an existing rule (reverser 1, 10,
   12, 14, 20), so no rule added.
+
+### 2026-11-15 — Phase 2 start (two-client batch), `lane/n65i` (reverser, slots 1 and 2): predictions and session list, written before any kept log
+
+Branched from `main` `712c49e6`. **Port-4000 precondition re-read first** (multiplayer/0001 § 5): step 1 (confirmed existing
+block) is the owner's `sudo ufw status verbose` of 2026-11-10 (active, deny incoming, no rule for 4000/tcp), kept as
+`workspace/logs/n65i/ufw-owner-2026-11-10.txt` with its no-root baseline (`ufw-baseline.sha256`, the eight files, the same
+hashes as run:2026-10-20-two-clients and run:2026-11-10-trade). Re-read today before any hosting: `tools/ufwcheck.sh`
+`UFW-OK` (ufw active and enabled, `DEFAULT_INPUT_POLICY="DROP"`, `ENABLED=yes`, all eight hashes unchanged), and no listener on
+4000 before the first launch. Nothing changed since the owner's listing, so step 1 still holds and no root step is repeated;
+`ufwcheck.sh` runs at the head of every session's driver (`two.sh`, log `<session>/ufw.log`).
+
+**Predictions: the Phase 0 staging table above (rows 7 to 13, 15, 17 to 19), unchanged, and `tools/sweep8_check.py predict`.**
+No prediction is edited by this entry; a case that does not separate its readings is named as such in the run record.
+
+**Session list** (one fresh pair of processes per session; saves from `tools/mp_saves.py build`, Normal, expansion, TCP/IP over
+127.0.0.1; drivers kept in `workspace/logs/n65i/drivers/`, adapted from run:2026-10-20-two-clients' `workspace/logs/p44h-run/drivers`):
+
+| Session | Rows | Pair | Logger | Checks |
+|---|---|---|---|---|
+| `mp25` | 12 | MpNovaHost, MpPalConv | `two-combat.gdb` | `mp_check.py aura`, `combat.py check` |
+| `wounds` | 18, 19 | MpPvpHost, MpWoundJoin | `two-wounds.gdb` | `combat.py check`, `stats.py check`, `mp_check.py gates` |
+| `mp30` | 15 | MpNovaHost, MpScrollJoin | `two-quests.gdb` | `mp_check.py leave` |
+| `mp18` | 10 | MpNovaHost, MpSockJoin | `two-sockets.gdb` | `sockets.py` |
+| `gold`, `goldfull` | 17 | MpNovaHost, MpGoldJoin / MpGoldFull | `two-gold.gdb` | `mp_check.py gold` |
+| `kills-a` | 7 | MpMercHost, MpTankJoin | `two-kills.gdb` | `mp_check.py xpshare`, `player.py check` |
+| `kills-b` | 8 | MpMercWeak, MpTankJoin | `two-kills.gdb` | same |
+| `pk` | 9 | MpNovaHost, MpNovaWeak | `two-kills.gdb` | `player.py check`, `mp_check.py xpshare` |
+| `rooms` | 11 | MpNovaHost, MpTankJoin | `two-rooms.gdb` | `mp_check.py rooms`, `monspawn.py check` |
+| `portal` | 13 | MpDurHost, MpDurClosed / MpDurOpen | `two-quests.gdb` | `mp_check.py portalquest` |
+
+MP31 (row 16) is met by run:2026-11-10-trade; MP28 (b), (c) are postponed by the owner (Phase 0 review). A session that needs
+a driver fix is first a development session (`dev-` log, outside the manifest); the kept session is run again from a fresh
+install. The first development session, `mp25` on `two-combat.gdb`, showed the three aura cases (hostile passes, partied and
+neither refused, 0 mismatches) and that `party hostile` is refused in effect when the host is not yet in town; the driver
+now checks both levels first.
