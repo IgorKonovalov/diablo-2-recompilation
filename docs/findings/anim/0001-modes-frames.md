@@ -146,6 +146,7 @@ New names (subsystem `anim/timing`) and the existing ones this finding reads; al
 | `0x00541240` / `0x00540F60` / `0x00541060` / `0x00541320` | `sub_00541240_MissileEventsRun` / `sub_00540F60_PlayerEventsRun` / `sub_00541060_MonEventsRun` / `sub_00541320_ItemEventsRun` | the list runners (§ 6) | I |
 | `0x00581220` / `0x005A7F80` | `sub_00581220_PlayerEventDispatch` / `sub_005A7F80_MonEventDispatch` | `g_PlayerEventFuncs` / `g_MonEventFuncs` by kind | I |
 | `0x005811D0` / `0x005A7BA0` / `0x005A7BE0` | `sub_005811D0_PlayerModeFrameEvent` / `sub_005A7BA0_MonModeFrameEvent` / `sub_005A7BE0_MonModeEndEvent` | event 0 and 1 handlers | I |
+| `0x005A6DE0` / `0x005A7B30` | `sub_005A6DE0_MonFrameCancelEvents` / `sub_005A7B30_MonModeNullRecord` | the NU, GH, BL, S4, DD frame slot (`UNIT_CancelEvents(0, 0)`); the null-record path (clear the used skill, start neutral unless dead outside DT and DD; unit in ESI, mode in EDI), plan 0066 S6c | I |
 | `0x005A6B10` | `sub_005A6B10_MonModeEveryFrame` | is the monster mode every-frame? | I |
 | `0x005A8520` | `sub_005A8520_MonKnockbackEnd` | the monster knockback's end (§ 10; raised at the Phase 2 review: 541 logged ends, `kb-end`, [anim/0003's run section](0003-movement-gates.md#plan-0050-phase-2-run2026-10-27-anim)) | C |
 | `0x005A8030` / `0x005A8330` / `0x005A83E0` / `0x005A73E0` | `sub_005A8030_MonModeEndGeneric` / `sub_005A8330_MonModeEndToS1` / `sub_005A83E0_MonModeEndToS1b` / `sub_005A73E0_MonModeStartNeutral` | monster mode ends and the neutral start (§ 10) | I |
@@ -522,6 +523,17 @@ for (; f <= (unit->animFrame >> 8); f++) take(f);
 | 15 | RN | `0x005A7550` | `0x005A84F0`: step; arrival → generic end | — | 1 |
 
 (data:g_MonModeRecords@0x006E2260, `p50a-anim-scan.txt` `MMODE`)
+
+- *2026-11-15, plan 0066 S6c (`lane/n66l`):* r2 reads the 21 records equal to the raw bytes and to `MMODE`, and the
+  frame and end functions' call sequences as this table gives them; `MonModeRecord`'s switch (r2, its two jump
+  tables) maps exactly the classes below; `MonSetMode`'s call order and its null-record call to 0x005A7B30, the
+  player starts' order, `g_PlayerEventFuncs[1]` = `PlayerModeEnd`, the 6 schedule call sites, and the machine's
+  draws (objdump walker over the p50a roots: one draw, 0x00624563) agree with §§ 6–11
+  ([experiments, S6c static addendum](experiments.md#static-addendum-2026-11-15-plan-0066-batch-s6c-second-tools-over-the-code-image-lanen66l),
+  `workspace/logs/n66l/s6c/check.txt`). Not named elsewhere here: `MonSetMode` also calls `MonModeVelocity` and a second
+  `UNIT_SetUsedSkill(0)` between `SUNIT_AnimInit` and the cancels (0x005A7DBF, 0x005A7DDE); ten MonStats rows set
+  `SplGetModeChart` with no switch case (404, 546–550, 559, 571–573). (fn:sub_005A7C20_MonSetMode@0x005A7C20,
+  fn:sub_005A78A0_MonModeRecord@0x005A78A0, fn:sub_005A7B30_MonModeNullRecord@0x005A7B30)
 
 - [I] **Class overrides** (`sub_005A78A0_MonModeRecord`, only when MonStats `SplGetModeChart` is set): classes 243
   (`diablo`), 333 (`diabloclone`) and 705 (`uberdiablo`) take attack records for S3 (row 17) and S4 (row 16); 403

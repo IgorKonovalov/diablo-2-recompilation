@@ -1150,3 +1150,63 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   converse (653 windowed sets to neutral with no step in the frame) is tallied, not explained, and the claim raised
   is the end on arrival only; (5) row 30 raised on the 75 drain turns with the 6 others explained by line order and
   phase, not by a code read of `PlrModeMoveFrame`; (6) rows 78 and 103 kept not raised instead of routed to a session.
+
+### 2026-11-15 — Phase 1, batch S6c (reverser-static, `lane/n66l`): done, 35 of 35 settled; S6e not started (resume note)
+
+- **Done.** No game, no Ghidra. `main` `ccb26b81` is the lane's base (nothing to merge). New tool
+  `tools/sweep2_s6c.py` (`6cc8ebc1…`, section `static`): raw-byte xrefs decoded by r2, r2 table dumps and range reads,
+  `tools/sweep_s4b.py`'s objdump call-graph walker over the Ghidra RngCallGraph roots and stops, and full-table checks
+  through `tools/anim_survey.py`, each against the kept plan 0050 first-tool output (`p50a-anim-scan.txt`,
+  `p50b-setrate-xrefs.txt`, `p50b-setrate-callees.txt`, `p50d-calls.txt`, `p50a-rng-machine.txt`, `p50a-rng-modes.txt`).
+  One kept run under `systemd-run --user --scope -p MemoryMax=4G`: `workspace/logs/n66l/s6c/check.txt` (`8665c322…`,
+  114 lines, 26 checks, `S6C total bad=0`; a second run gives the same bytes), `manifest.sha256` (`6e2b20c2…`, passes
+  from that directory); development outputs under `workspace/logs/n66l/dev/manifest-dev.sha256`. Record:
+  [anim/experiments § Static addendum S6c](../findings/anim/experiments.md#static-addendum-2026-11-15-plan-0066-batch-s6c-second-tools-over-the-code-image-lanen66l);
+  dated notes in anim/0001 (after the record table), anim/0002 § 5, anim/0003 (the walk base, § 8). Every settled
+  row's *Route* cell carries its S6c note.
+- **S6c (35): raised 12, raised in part 22, contradicted in part 1, not raised 0, moved 0.** Raised: timing 50, 55,
+  65, 68, 71, 72, 94, 121; movement 12, 18, 37; README 5. In part (remainder in each cell): timing 14, 15, 27, 28, 31,
+  37, 47, 48, 64, 66, 69, 70, 74, 86, 93, 131; movement 16, 19, 20, 25; README 6, 7. Contradicted in part: timing 67
+  (§ I2 table, line 532: the GH and BL frame slot is 0x005A6DE0, `UNIT_CancelEvents(0, 0)`, not "—"). Two remainders go
+  to S6e: timing 86's negative-`s` arithmetic and movement 19's step arithmetic (c-emu).
+- **S6a remainders routed to S6c:** timing 4 (`g_PlayerEventFuncs[1]` = `PlayerModeEnd`), 39 (the schedule's 6 call
+  sites and their cancel-first order), 56 (`PlrModeStartNeutral` for modes 1 and 5), 63 (the get-hit, block and skill
+  start order) and 73 (`MonSetMode`'s order, the state-54 fatal, the mode-3 test) raised; 5's in part (each logged
+  start being `MonSetMode`'s needs `SUNIT_AnimInit`'s callers, not scanned). Not taken here (no static route found in
+  this lane's budget, cells unchanged): timing 6 and 107 (the town return and the kill branch), 75 (the code-2 drop: the
+  frame function gets no code, `MonModeFrameEvent` passes only ECX and EDX, 0x005A7BD2–0x005A7BD6, so the drop is
+  below `MON_MeleeHit` or in its gates, unread), 85 (the stat accessor), 103 (`+0xC4` bit 6's writers); movement 21, 26,
+  35; README 12.
+- **Backlog:** [`2026-11-15-reverser-spec-writer-plan-0066-s6c-corrections`](../backlog/2026-11-15-reverser-spec-writer-plan-0066-s6c-corrections.md)
+  (the contradiction and five refinements: S4/DD frame slot and S3's `ret` end, `MonSetMode`'s `MonModeVelocity` and
+  second `UNIT_SetUsedSkill`, the ten chart rows with no case, `MonStatsSpeeds` writing `i` back, `HandsRefresh`'s draws
+  under the mode end).
+- **Symbols:** two new `I` rows, `sub_005A6DE0_MonFrameCancelEvents` and `sub_005A7B30_MonModeNullRecord`, in
+  `re/symbols.csv` and anim/0001's Functions table. None raised: the batch compares static reads, not logged returns
+  (review-fixes 14's scope).
+- **Totals** from the 29 files' *Totals by class* at `ccb26b81`: a-logs 645, a-run 340, b 432, c 390, c-emu 491,
+  d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626, unchanged: no row moved class (remainders in the *Route* cells).
+  README § 4's S6c row records the outcome.
+- **Ready for Phase 3 (spec-writer), lines at `b5999f5e`, match by text.** Timing whole: 414, 455, 530, 533, 536, 537,
+  700, 927; split: 136, 141, 237, 243, 263, 324, 401, 407, 529, 531, 534, 535, 546, 644, 694, 979; 532 with the
+  correction; S6a rows now whole: 50, 335, 486, 504, 541. Movement whole: 131 (with the refinement), 182, 313; split:
+  151, 198, 202, 231. README whole: 89; split: 90, 101.
+- **Review:** Tier B (plan Phase 1). Judgment calls to check: (1) "client" for the sites below 0x00520000 is left to the
+  symbol names, `[I]`, so rows 14 and 93 are in part; (2) timing 67 filed as a contradiction (a scheduled mode's slot
+  runs) while 69 and 70 (schedule 0, never queued) are refinements; (3) movement 12 raised on two tools reading the
+  guard plus the full table, not moved to d-none; (4) movement 37 raised with `PathPlan` stopped, the replan's draws
+  being movement G1's `[C]` replan line; (5) README 6 in part over `HandsRefresh`'s draws, filed as a refinement, not a
+  contradiction.
+- **Resume note for S6e (a fresh lane; S6e not started).** 34 rows (timing 9–11, 16–20, 30, 32–34, 40, 41, 45, 80–84,
+  87, 89–91, 129; movement 4–6, 8, 13, 14, 22, 24, 43) plus the remainders routed to S6e: timing 21, 23, 24, 29, 36, 43,
+  44, 46, 49, 61, 62, 86, 88, 96, 98, 128, 130; movement 2, 15, 19, 23, 31. Method as S1e's (`tools/ai_s1e_emu.py`, one
+  `tools/ghidra.sh emuboundary` launch over all families, one memory spec, every test reversed alone as a control; R2:
+  no declared callee return). Start from `tools/anim_rates.py`'s p50b emulation (`workspace/logs/anim/p50b-emu`,
+  `bonus` and `advance` families) and `tools/animdata.py`. Families, cheapest first: `ANIMDATA_Find`/`Lookup` (absent
+  and the 29 duplicate names), `UNIT_AnimAtEnd`, `UNIT_AnimStartFrame`, the advance with a start frame ≠ 0,
+  `SUNIT_ScheduleModeEvents` (`UnitQueueEvent` an observed boundary; r = 0, no step, events past 0x90),
+  `UNIT_AnimSetRate`'s edges (floors 15/25, block 1, cap, wrap, no path; `UNIT_AnimSetRecord`, `WeaponListsRelink2`
+  and `PathSetSpeed` must run whole or the row returns to b), the four rate-class predicates, `HumanAttackFrames`,
+  `MonStatsSpeeds`, `PathStepCollide` (0x0064FF90's room read: declare or return to b), `PathVelocityStep`'s wrap.
+  The inventory README § 5 (anim) suggests splitting S6e into rate/schedule and animdata/seq/path if it runs long.
+  Ghidra project `workspace/ghidra-n66l` is in place.

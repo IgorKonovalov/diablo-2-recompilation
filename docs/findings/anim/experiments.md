@@ -598,3 +598,112 @@ data, single player, the same saves (`saves-2026-10-30-anim-p3/`, unchanged), `/
 - **Conclusion:** the rows are settled in plan 0066's inventory (`anim-movement.md`, `anim-README.md`, `anim-timing.md`
   rows 78, 103, 105). No contradiction of an anim statement. `fanatic`'s 175 is a lead against monsters/stats § G's
   "champion part" wording (backlog `2026-11-15-reverser-spec-writer-plan-0066-s6a-corrections`).
+
+## Static addendum 2026-11-15: plan 0066 batch S6c, second tools over the code image (`lane/n66l`)
+
+- **Question:** do the anim rows routed to (c) hold when a second tool reads the same code and tables: raw-byte xrefs
+  decoded by r2, r2 dumps of the image's tables, r2 reads of the named ranges, the objdump call-graph walker over the
+  Ghidra RngCallGraph roots and stops, and full-table checks of the stock data?
+- **Setup:** no game, no Ghidra. `tools/sweep2_s6c.py` (`6cc8ebc1…`; imports `tools/sweep_s4b.py`,
+  `tools/sweep2_s4cd.py`, `tools/anim_survey.py` unchanged), objdump and r2. The first tool behind each statement is a
+  kept plan 0050 output in `workspace/logs/anim/`: `p50a-anim-scan.txt` (objdump calls, the MMODE/PEV/PSEQ dumps),
+  `p50b-setrate-xrefs.txt` (Ghidra), `p50b-setrate-callees.txt`, `p50d-calls.txt`, `p50a-rng-machine.txt` and
+  `p50a-rng-modes.txt` (Ghidra RngCallGraph). Each check compares the two and counts a contradiction as `bad`.
+- **Procedure:** `systemd-run --user --scope -p MemoryMax=4G python3 -I tools/sweep2_s6c.py static >
+  workspace/logs/n66l/s6c/check.txt`. Output `check.txt` (`8665c322…`, 114 lines, `S6C total bad=0`), manifest
+  `workspace/logs/n66l/s6c/manifest.sha256` (`6e2b20c2…`, passes from that directory). A second run gives the same
+  bytes. Development outputs (earlier tool revisions, the `anim_survey.py` sections run once) under
+  `workspace/logs/n66l/dev/manifest-dev.sha256`; nothing rests on them.
+- **Observations** (each a `S6C <check>` line of `check.txt`):
+  - `advance-callers`: `UNIT_AnimAdvance` 11 raw call sites, all 11 decoded by r2 as `call 0x623e00` and equal to the
+    kept objdump list; 7 in the monster mode functions (DT frame 0x005A7350, S3 frame 0x005A74A0, `MonAttackFrame` ×3,
+    KB frame 0x005A8630, `MonSeqFrame`), 4 below 0x00520000 (in `sub_00463390_ClientPlayerUpdate` and
+    `sub_004B1090_ClientMercInit` by re/symbols.csv). `UNIT_AnimAdvanceLoop` 5 sites, all below 0x00520000. No jump
+    or absolute reference to either. The player frame table 0x00732C10 (r2) gives `PlrModeMoveFrame` for modes 2, 3, 6
+    and 19; its direct-call closure (2 182 functions, fatal and allocator entries stopped) reaches neither advance.
+    The records' `schedule` words of NU, S3, S4 and DD are 0.
+  - `machine-draws`: the objdump walker over the Ghidra file's 29 roots and 7 stops: 164 functions, one draw
+    function, `UNIT_AnimInit`, with one call `0x00624563 → RNG_RangeB` and no multiplier site; r2's search for the
+    multiplier finds none in the walked bodies. Ghidra's 171 listed functions, each walked again by objdump: the only
+    body with a draw is `UNIT_AnimInit`, the one the Ghidra file tags. The advance (27 functions), the rate (101) and
+    the schedule (34) alone: no draw.
+  - `mode-draws`: under `p50a-rng-modes.txt`'s 19 stops, `PlrModeSkillFrame`'s closure (12 functions) draws nothing.
+    `PlayerModeEnd`'s own body has no draw; of its direct callees, draws lie below `PlayerModeAllowed` (1 function),
+    `PlrModeStartNeutral` (1), `PlayerDeathModeEnd` (118) and `sub_00580310_HandsRefresh` (118, two entries).
+    `MonModeEndGeneric`'s and `MonModeEndEvent`'s closures each reach one draw function, `UNIT_AnimInit`.
+  - `object-init`: `UNIT_AnimInit`'s type cases (r2 `pxw 0x0062467C`) are 0x0062440F, 0x00624483, 0x00624504,
+    0x006245EB, 0x0062459D for types 0–4. Case 2 [0x00624504, 0x0062459D) calls 0x00640E90 (the Objects row) and
+    `RNG_RangeB` only (r2 and objdump agree); its one other exit jumps to the fatal block 0x006243A5. The Objects
+    loader's 0x00640E33–0x00640E64 are eight `shl dword [edi + 0xD8 … 0xF4], 8`.
+  - `rate-readback`: the item case stores `+0x4C` = 0x100 or 0 (constants); the missile case stores no `+0x4C`.
+  - `start-frames`: `g_AttackStartFrames` (r2 equal to the raw bytes, 14 × 7): 12 non-zero cells, value 1 at weapon
+    class 0 and 2 at classes 2–6, character classes 0 and 1 only.
+  - `no-event`: 323 player records (tokens AM SO NE PA BA DZ AI) with a frame event; at `r = speed × 175 / 100` and
+    `S` the largest start frame of their class (A1 and A2 only), none reaches `r ≥ 256 (F − S)`; the smallest margin is
+    832 (`BAGHXBW`, 5 frames, speed 256).
+  - `sequences`: 0x007483B8 (r2): 207 non-empty entries, each with length = frames, as the kept PSEQ lines; 25 Skills
+    rows with a `charclass` and a `seqnum`, the largest seqnum 23. `MONSEQ_Load` adds the same `edx = 1` to both
+    fields per row (0x00659DB6–0x00659DC5).
+  - `event-byte-stores`: `mov byte [reg + 0x4E], 0` at 0x005CB48E (do 87), 0x005CB989 (do 89), 0x005CD51E (do 103).
+  - `seq-pos-pair`: `PlrModeSkillFrame` returns 2 with no used skill (0x00580477), else pushes its second stack argument
+    and the unit to `UnitSetSeqPos` (0x00580482–0x00580488), which writes `(+0x38 & 0xFF) + (b << 8)` to `+0x38`
+    (0x006212E9–0x006212FA). Readers: `SKILLS_SrvDo`'s `test dword [edi + 0x38], 0xFFFFFF00` (0x0056FAB4) and
+    `sub_005D35D0_PrgChargeHitDualDo`'s `+0x38 >> 8` parity (0x005D3659–0x005D365F).
+  - `null-record`: both monster event handlers call 0x005A7B30 when `MonModeRecord` returns 0 or the slot (`+4`,
+    `+8`) is 0, and `MonSetMode` calls it at 0x005A7DFD. 0x005A7B30 (unit in ESI, mode in EDI, the game on the stack)
+    calls `UNIT_SetUsedSkill(unit, 0)`, returns 1 when the mode is neither 0 nor 12 and `sub_005541B0_UnitIsDead` is
+    non-zero, else calls `MonModeStartNeutral`.
+  - `mon-mode-records`: r2 equal to the raw bytes and to the kept MMODE lines in all 21 rows. Call sequences (r2): DT
+    frame `0x0063E8D0(unit, 0)`, then `UnitMoveStep`, `UNIT_AnimAdvance`, `UNIT_AnimAtEnd`, `SUNIT_SetMode(12)`
+    (zero result: `SUNIT_SetMode(12)` at once); DT end `SUNIT_SetMode(12)`, `UNIT_DispatchEvent(13)`, then the owner
+    and `UnitKilled` calls; NU, GH, BL, S4 and DD frame slot 0x005A6DE0 = `UNIT_CancelEvents(0, 0)`; WL frame the state
+    13 and 22 tests with their calls, `UnitMoveStep`, `MonModeEndGeneric` on a return of 2; RN frame `UnitMoveStep`,
+    then `MonModeEndGeneric` on 2; S3 frame step, advance, at the end `SUNIT_SetMode(11)`; S3's end slot 0x005A74D0
+    is a bare `ret`; KB frame step, advance, at the end `MonKnockbackEnd`.
+  - `mode-chart-overrides`: `MonModeRecord`'s class switch decoded from its two byte-indexed jump tables and the
+    direct compare: 243, 333, 705 → rows 16 (S4) and 17 (S3); 403 → 18 (A1, A2) and 19 (S1, S2); 417, 418 → 20 (S4);
+    543, 544, 570, 709 → 7 (S3). The ten all have `SplGetModeChart`; ten more rows have it with no case (404, 546–550,
+    559, 571–573). The switch runs only when MonStats `+0x1A5` is non-zero (0x005A78EF).
+  - `rate-stat-minima`: `anim_survey.py ratemin` again: 353 blocks, lowest `min` 3, no negative, no other cell.
+  - `setrate-sites`: 31 raw call sites, r2-decoded, equal to objdump's and to Ghidra's 31; 7 below 0x00520000; no call
+    from `ITEMS_DetachFromOwner`.
+  - `setrate-callees`: 19 distinct callees (r2 over 0x00623F50–0x00624390) equal to `p50b-setrate-callees.txt`; the
+    closure (101 functions) reaches no queue, cancel or scheduler entry.
+  - `frame-return`: `MonModeFrameEvent` returns after `call eax` with no test (0x005A7BD6–0x005A7BDB), and
+    `MonEventDispatch` likewise (0x005A7FD6–0x005A7FDC). Its two callers (0x005410C4, 0x0054112B) overwrite `EAX`
+    before any read (`movzx eax, word [esi + 2]` at 0x00541136 and as 0x00540CD0's first instruction).
+  - `baseid-range`: 734 MonStats rows, no `BaseId` out of range. `MonStatsSpeeds`' guard (0x00650F29–0x00650F3C):
+    `BaseId < 0` or `≥ n` stores `i` into the row's `BaseId` field and uses `i`.
+  - `path-speed-writers`: `PathSetSpeed` 25 sites, as `p50d-calls.txt`; the 10 at or above 0x00520000 are
+    `UNIT_AnimSetRate` ×2 (0x00624105, 0x006241C9), `MonInitMode`, `MissileCreate` ×2, and five skill functions
+    (`SkillDo89Jump`, `SkillDo103DiabRun`, `SkillSt31Charge`, `SkillSt38Whirlwind`, `LeapAttackPath`).
+    `PathMoveReset` copies `+0x80` into `+0x7C` when `+0x34 & 0x8000` (0x00648DEC–0x00648DFE).
+  - `path-step-callers`: `PathStep` 3 sites, one at or above 0x00520000 (0x00554CD5 in `UnitMoveStep`, arguments
+    `edi, 0x400`); `PathSetAccel` 2 sites, the one above 0x00520000 in `MissileCreate` (0x0059FDCC).
+  - `path-dir-table`: 128 rows of three dwords (r2 equal to the raw bytes): norm² from 16 767 217 to 16 777 216.
+  - `movestep-callers`: `UnitMoveStep` 11 sites, as `p50d-calls.txt`: `PlrModeSkillFrame`, `PlrModeMoveFrame`, the
+    DT, S3, WL, RN and KB frames, `MonAttackFrame` ×2, `MonSeqFrame`, `sub_005AE1F0_MissileMoveCollide`.
+  - `move-draws`: under `PathStep`, `RunStaminaDrain`, `MonStatsSpeeds`, `PathSetSpeed`, `PathStepCollide`,
+    `PathStepSnap` and `PathPlanKnockback`, with `PathPlan` stopped: 154 functions, no draw. Without that stop the
+    one draw function reached is `PathPlanRandomWalk`, through `PathStepTargetCheck → PathReplan → PathPlan →
+    PathPlanStraight`.
+  - `player-event-tables`: `g_PlayerEventFuncs` (r2): kind 0 0x005811D0, kind 1 0x00581020 (`PlayerModeEnd`);
+    `PlayerEventDispatch` reads 0x006E1810 indexed. The start table 0x006E1740 gives `PlrModeStartNeutral` (xy) and no
+    unit start for modes 1 and 5.
+  - `start-order`: r2 call order. `MonSetMode`: `UNIT_HasState(0x36)` → fatal; `cmp ebx, 3`; the path calls,
+    `MonMovePlan`, `MonAttackStats`; `MonModeRecord` and the start (`call eax`; zero: `UNIT_SetUsedSkill`,
+    `MonModeStartNeutral`); `+0xC4 |= 0x80000`; `SUNIT_AnimInit`; `MonModeVelocity`; `UNIT_SetUsedSkill(0)`;
+    `SUNIT_CancelModeEvents`; `MonModeRecord` (null: 0x005A7B30); `cmp [eax + 0xC], 0`; `MonModeEveryFrame` →
+    `SUNIT_ModeEveryFrame` or `SUNIT_ScheduleModeEvents`. Get-hit and block: `SUNIT_SetMode`, `SUNIT_AnimInit`,
+    `UNIT_SetUsedSkill(0)`, cancel, schedule. Skill XY and skill unit: (path target,) `SUNIT_SetMode`, `SUNIT_AnimInit`,
+    cancel, schedule, `+0xC4 &= ~0x40`, `SKILLS_StartUsedSkill`. `PlayerDeath`: `SUNIT_AnimInit`, cancel, schedule.
+    `SUNIT_ScheduleModeEvents` has 6 raw call sites, equal to the kept list: those six functions.
+- **Conclusion:** no statement is contradicted by `bad`; one table cell is (row 67, below). The rows are settled in
+  plan 0066's inventory (`anim-timing.md`, `anim-movement.md`, `anim-README.md`, batch S6c). Corrections for Phase 3
+  in backlog `2026-11-15-reverser-spec-writer-plan-0066-s6c-corrections`: (1) timing I2's table gives the frame slot of
+  GH and BL (scheduled modes) as "—", where it holds 0x005A6DE0 (`UNIT_CancelEvents(0, 0)`), as do S4's and DD's
+  (schedule 0, never queued); S3's end slot is a bare `ret`; (2) `MonSetMode` calls `MonModeVelocity` and a second
+  `UNIT_SetUsedSkill(0)` between `SUNIT_AnimInit` and the cancels, which I2's sentence leaves out; (3) ten more MonStats
+  rows set `SplGetModeChart` with no case in the switch; (4) `MonStatsSpeeds`' out-of-range guard also writes `i` into
+  the row's `BaseId`; (5) `PlayerModeEnd`'s draws include those below `HandsRefresh`, which README A's "the next
+  start's, PlayerModeAllowed's, the AI's" does not name.

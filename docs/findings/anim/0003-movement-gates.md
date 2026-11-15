@@ -334,6 +334,12 @@ if (cs->WalkVelocity) { SetStat(list, 67, (RunVelocity * 100) / WalkVelocity - 1
   355) and the `E9` rows: walk base 256 (and run 128 below 410). (fn:sub_00650F00_MonStatsSpeeds@0x00650F00,
   fn:ANIMDATA_Lookup@0x0066A9B0, 0x00650F80–0x00650F9D, 0x00650FBE–0x00650FD4, `p50d-monstatsspeeds.asm`, tbl:MonStats.txt:Velocity,
   tbl:MonStats.txt:BaseId)
+- *2026-11-15, plan 0066 S6c (`lane/n66l`):* no stock `BaseId` is out of range (734 rows); r2 reads the guard
+  (0x00650F29–0x00650F3C): a `BaseId` below 0 or not below the row count is replaced by `i`, **and `i` is written back
+  into the row's `BaseId` field** (`mov word [eax + ecx + 2], di`). `PathSetSpeed`'s 25 call sites, `PathStep`'s 3
+  (the server one passes `0x400`), `PathSetAccel`'s 2 (server: `MissileCreate`), `UnitMoveStep`'s 11 and
+  `g_PathDirTable` (128 rows, norm² 16 767 217 to 4096²) read again by raw bytes and r2
+  ([experiments, S6c static addendum](experiments.md#static-addendum-2026-11-15-plan-0066-batch-s6c-second-tools-over-the-code-image-lanen66l)).
 - [I] **`+0x4C` of a `Velocity`-0 class in S1.** A classic class's S1 takes the moving branch (anim/0002 § 1), which
   returns without a write only when the unit has no path; every monster that `SUnitCreate` makes with create flag bit
   0 gets a dynamic path (drlg/0005: the spawn and preset paths pass it), so the branch writes `+0x4C = ⌊256 · X / 100⌋`
@@ -629,6 +635,11 @@ return 0;
   chain with the player's other events on it (combat/0001 § 11). (fn:COMBAT_DeliverQueued@0x0057D4F0)
 - [I] The run drain, the knockback planner (no draw in `0x0067A000`'s read part), the stun, the delay state and the
   object operate end draw nothing. (fn:sub_0057F240_RunStaminaDrain@0x0057F240, fn:sub_00581490_ObjEvOperateEnd@0x00581490)
+- *2026-11-15, plan 0066 S6c (`lane/n66l`):* the objdump walker under `PathStep`, `RunStaminaDrain`,
+  `MonStatsSpeeds`, `PathSetSpeed`, `PathStepCollide`, `PathStepSnap` and `PathPlanKnockback`, `PathPlan` stopped:
+  154 functions, no draw, and r2 finds no multiplier in them; without the stop the one draw reached is
+  `PathPlanRandomWalk`, through `PathStepTargetCheck → PathReplan → PathPlan → PathPlanStraight` (`check.txt`
+  `move-draws`; fn:sub_0067A240_PathPlanRandomWalk@0x0067A240).
 - [I] **Event kind: movement step** (ADR-0014): one per moving unit per frame, inside its mode's every-frame event;
   inputs the path speed (rate code, § 1), the planned points (phase (5)), the collision grid; output the position;
   no draw. It chains on nothing. (fn:sub_00554CA0_UnitMoveStep@0x00554CA0)

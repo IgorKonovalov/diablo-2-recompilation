@@ -504,6 +504,10 @@ Read only to the depth the rate needs; the writers are other findings' or specs'
 function, 0x0057AD80 and 0x005D8EF0, being the callbacks that `COMBAT_ApplyCold` pushes at 0x0057B08C and Whirlwind's
 start stores at 0x005D91EC)
 
+- *2026-11-15, plan 0066 S6c (`lane/n66l`):* the 31 sites again from the raw bytes, each decoded by r2, equal to
+  objdump's and Ghidra's lists; 24 at or above 0x00520000; the 19 direct callees (r2) equal `p50b-setrate-callees.txt`
+  and the closure reaches no queue, cancel or scheduler (`check.txt` `setrate-sites`, `setrate-callees`;
+  fn:UNIT_AnimSetRate@0x00623F50).
 - [I] **No stat write calls it.** `ITEMS_DetachFromOwner` is not a caller, so unequipping an item leaves the rate
   until the next call (a mode start, typically). (`p50b-calls.txt`; fn:ITEMS_DetachFromOwner@0x0055C730)
 - [I] **A second `+0x4C` writer.** `0x00621780(unit, q)` (stdcall, unnamed) stores `q` floored at 0 and capped at
