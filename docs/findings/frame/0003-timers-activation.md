@@ -76,7 +76,7 @@ run:2026-11-04-lock-scan)
 - [I] **The activation-order record.** A log-free build needs, per frame: for each client in the game's client list
   (newest client first, `ClientCreate`'s front push 0x00539B42–0x00539B53) whose player's room at pass 5 differs from
   its client's current room, the new room; and every on-demand activation (`RoomActivateB`: warp destination,
-  waypoint, level point, preset build) with its frame and the pass it runs in. From these, the DRLG near lists and the
+  waypoint, level point, preset build; and, by plan 0066 S7a, a fifth caller through `sub_0061B7B0_RoomAtCoordsActivate`, the unit spawn at coordinates of `sub_00553720_PortalPartnerGet`, drlg/0009 § 12) with its frame and the pass it runs in. From these, the DRLG near lists and the
   reference rules (drlg/0009 § 2) give which rooms are created and in which order, hence each act's list order, each
   frame's population order, the idle counts and so the releases. The player's room is the result of its movement in
   pass 4, so the record cannot be derived from the client messages alone without the movement simulation (path and
