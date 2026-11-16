@@ -809,6 +809,7 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-11-16 | `lane/n66sb` audit | 0066 P1 S2be | architect-review | 187 943 | 70 | 10 | — | gave accept with fixes (Tier A audit, single pass covering the Tier B list) | audit of lane/n66sb: 4: misread 2, miscount 1, omission 1; no reject-grade miss (5th Tier B after the n69h audit; count restarts) |
 | 2026-11-16 | `lane/p70` | 0070 | architect-plan | 89 959 | 21 | 5 | — | draft, owner answered | 0 |
 | 2026-11-16 | `lane/p70a` | 0070 | architect | 93 393 | 19 | 5 | — | accepted by owner (ADR-0035, plan approved) | 0 |
+| 2026-11-16 | `lane/n70m` | 0070 P1 | architect | 89 511 | 31 | 5 | — | mechanical done-when met; read in Phase 6 | 0 |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not
