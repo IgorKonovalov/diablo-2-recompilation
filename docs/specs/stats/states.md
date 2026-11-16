@@ -244,7 +244,7 @@ Step notes:
   run:2026-10-20-shortfalls, run:2026-10-21-shortfalls2)
 - C2. [C] The calls in C2's order are read with objdump and r2 beside the Ghidra reading, and the freed state's bit
   was off at the next states line in 147 of 148 logged frees. (fn:STATE_DefaultRemoveCB@0x0056E900,
-  fn:STATE_Set@0x00639DB0, run:2026-10-17-stats, [stats/experiments § S4d part 2](../../findings/stats/experiments.md#addendum-2026-11-15-plan-0066-batch-s4d-part-2-of-2-new-checks-over-the-kept-stats-logs-and-static-second-sources-lanen66i)) [I] The dead-unit branch, and the one free whose bit stayed on,
+  fn:STATE_Set@0x00639DB0, run:2026-10-17-stats, run:2026-10-20-shortfalls, [stats/experiments § S4d part 2](../../findings/stats/experiments.md#addendum-2026-11-15-plan-0066-batch-s4d-part-2-of-2-new-checks-over-the-kept-stats-logs-and-static-second-sources-lanen66i)) [I] The dead-unit branch, and the one free whose bit stayed on,
   were not met.
 - C1. [I] The client copy calls the same function with frame 0, which counts `+0x18` down by one per call
   (presentation). (fn:UNIT_ExpireTimedLists@0x00627460)
@@ -347,10 +347,11 @@ Step notes:
   (run:2026-10-21-shortfalls2).
   When their list ends (§ C) the stat leaves the cache and the tick stops changing life. (0x0058065B–0x0058066E,
   fn:sub_00580610_LifeRegenTick@0x00580610)
-- E3. [C] **The `b ≥ 1000` exception in mode 3.** Under the stamina shrine's bonus (`staminarecoverybonus` 1000, § G;
-  operated twice in run:2026-10-20-shortfalls) all 81 911 ticks of that run equal E3, and in 4 326 of them a player in
-  mode 3 gained stamina that a reading without the exception leaves unchanged. (fn:PLAYER_StaminaRegenTick@0x00580500,
-  0x0058054A–0x00580563, run:2026-10-20-shortfalls, [stats/experiments § S4d part 2](../../findings/stats/experiments.md#addendum-2026-11-15-plan-0066-batch-s4d-part-2-of-2-new-checks-over-the-kept-stats-logs-and-static-second-sources-lanen66i))
+- E3. [C] **The `b ≥ 1000` exception in mode 3.** All stamina ticks of the two runs equal E3 (54 719 in
+  run:2026-10-17-stats, 27 192 in run:2026-10-20-shortfalls), and with `staminarecoverybonus` at 1000 or more (the
+  stamina shrine's bonus, § G, operated twice in run:2026-10-20-shortfalls) a player in mode 3 gained stamina in 4 326
+  ticks where a reading without the exception writes nothing. (fn:PLAYER_StaminaRegenTick@0x00580500,
+  0x0058054A–0x00580563, run:2026-10-17-stats, run:2026-10-20-shortfalls, [stats/experiments § S4d part 2](../../findings/stats/experiments.md#addendum-2026-11-15-plan-0066-batch-s4d-part-2-of-2-new-checks-over-the-kept-stats-logs-and-static-second-sources-lanen66i))
 - E3. [I] Modes 2 and 6 (walking) were not among the run's modes, and mode 4 with the bonus was not met, so they stay
   a code reading. (0x00580565–0x005805AB, jump table 0x005805B8)
 - E5. [I] A monster's tick is `sub_005A6920_MonRegenEvent` ([combat/delivery § E4](../combat/delivery.md#e-the-stat-events-crushing-blow-open-wounds-freeze));
@@ -500,7 +501,7 @@ Step notes:
 | aura run (F) | none, except one `RNG_RangeB` on the caster's unit seed per drawing run of a damaging aura (2 763 runs unchanged, 865 drawing, 865 steps) | [C] (fn:SKILLS_RollElemDamage@0x0056E0C0, run:2026-10-17-stats) |
 | aura run (F), units per run | one draw per run whatever the number of units hit: the roll precedes the target pass and its packet is copied to each unit | [I] (fn:sub_005CF3A0_AuraHitDo@0x005CF3A0, fn:sub_005CF2A0_AuraHitUnitCb@0x005CF2A0) |
 | group clear (D), death purge, mode drop | none: their direct-call closures (463, 447 and 457 functions) hold no drawing function | [C] (fn:STATE_GroupClear@0x0056C740, objdump walker and r2's LCG sites, [stats/experiments § S4d part 1](../../findings/stats/experiments.md#addendum-2026-11-15-plan-0066-batch-s4d-part-1-of-2-static-second-sources-and-full-table-checks-lanen66i)) |
-| remove callback (C2) | none in 149 logged freeing expiries; but on a player it calls `PetLimitRefresh`, whose closure reaches 122 drawing functions through a pet's release (`PetLimit` → `PetRemove` → `PetUnitRelease` → `UnitKilled`, `MonSetMode`) | [C] the call on every player expiry, the chain and the 149 seeds (0x0056E960, fn:sub_00575900_PetLimitRefresh@0x00575900, run:2026-10-17-stats, [stats/experiments § S4d part 1](../../findings/stats/experiments.md#addendum-2026-11-15-plan-0066-batch-s4d-part-1-of-2-static-second-sources-and-full-table-checks-lanen66i), [stats/experiments § S4d part 2](../../findings/stats/experiments.md#addendum-2026-11-15-plan-0066-batch-s4d-part-2-of-2-new-checks-over-the-kept-stats-logs-and-static-second-sources-lanen66i), [stats/0002 § 13](../../findings/stats/0002-states.md#13-plan-0066-batch-s4e-part-5f-the-pet-release-routed-run2026-11-16-sweep2-s4e-emu-static)); [I] whether a stock expiry releases a pet (unrun) |
+| remove callback (C2) | none in 149 logged freeing expiries; but on a player it calls `PetLimitRefresh`, whose closure reaches 122 drawing functions through a pet's release (`PetLimit` → `PetRemove` → `PetUnitRelease` → `UnitKilled`, `MonSetMode`) | [C] the call on every player expiry, the chain and the 149 seeds (0x0056E960, fn:sub_00575900_PetLimitRefresh@0x00575900, run:2026-10-17-stats, run:2026-10-20-shortfalls, [stats/experiments § S4d part 1](../../findings/stats/experiments.md#addendum-2026-11-15-plan-0066-batch-s4d-part-1-of-2-static-second-sources-and-full-table-checks-lanen66i), [stats/experiments § S4d part 2](../../findings/stats/experiments.md#addendum-2026-11-15-plan-0066-batch-s4d-part-2-of-2-new-checks-over-the-kept-stats-logs-and-static-second-sources-lanen66i), [stats/0002 § 13](../../findings/stats/0002-states.md#13-plan-0066-batch-s4e-part-5f-the-pet-release-routed-run2026-11-16-sweep2-s4e-emu-static)); [I] whether a stock expiry releases a pet (unrun) |
 | shrine codes 0–15 (G1–G5), well (G6) | none found in the code; 16 and 5 events with the seeds unchanged over the three runs, under the floor of 20 | [I] (fn:OBJOP_Shrine@0x00583C70, run:2026-10-17-stats, run:2026-10-20-shortfalls, run:2026-10-21-shortfalls2) |
 
 Step notes:

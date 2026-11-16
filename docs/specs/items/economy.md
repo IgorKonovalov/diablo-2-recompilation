@@ -560,8 +560,11 @@ Step notes:
   (0x00578201)
 - F7. [C] `ItemRepairAll` leaves the game and player seeds unchanged (3 115 calls in the first run, 894 in the
   second). It restores the durability to the maximum: the quest services' two caps went from 1 to 12 of 12 and the
-  broken cap from 0 to 12 with flag `0x100` cleared, one case each. The quantity and charge refills are read from the
-  code. (fn:sub_005761C0_ItemRepairAll@0x005761C0, run:2026-10-17-economy, run:2026-10-19-economy2)
+  broken cap from 0 to 12 with flag `0x100` cleared, one case each. It repairs one item per call: each of the 4 009
+  logged calls dumps one item, the repair-alls change exactly the items of their calls, one call per item (7, 7, 7;
+  the fourth, at gold 0, none), and a single repair changes only the requested item. The quantity and charge refills
+  are read from the code. (fn:sub_005761C0_ItemRepairAll@0x005761C0, run:2026-10-17-economy, run:2026-10-19-economy2,
+  [items/experiments § S4a](../../findings/items/experiments.md#addendum-2026-11-15-plan-0066-batches-s4a-and-s4b-new-checks-over-the-kept-economy-and-inventory-logs-and-static-second-sources-lanen66h))
 - F7. [C] `ItemRepairBroken` reaches drawing code through its callees: the walk under it first draws at depth 6
   through 0x0055C5C0 (`AttachToOwner` → `PlayerSetSkill` → `AuraSelect` → `SKILLS_SrvDo` → `PlayerModeCmd` →
   `PlayerModeAllowed`, `RNG_Range` at 0x0057EF7C), each edge and the draw read again with r2.
