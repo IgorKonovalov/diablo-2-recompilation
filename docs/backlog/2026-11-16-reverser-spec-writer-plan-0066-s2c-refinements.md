@@ -28,7 +28,7 @@ and `workspace/logs/n66q/s2c/check-s2c-p1.txt`.
 - skills/dispatch C (row 42): the raise is scoped to the direct callers. A direct-call closure from the monster mode
   functions reaches `SKILLS_CanUse` through the defender's durability path (MonAttackFrame → DeliverQueued → durability
   loss → HandsRefresh → PlrModeStartSkillUnit). The spec should say so, or scope the line to the attacker.
-- skills/dispatch E1 (rows 56–57, part 2 of S2c will settle them): `sub_005A77C0_MonModeStartKnockback` clears bit 6,
+- skills/dispatch E1 (rows 56–57; part 2 below corrects the owner of the clear: it is `sub_005A7870_MonModeStartSeq`, 0x005A7884, not `MonModeStartKnockback`): the bit-6 clear,
   and 44 of the 124 set sites and 7 of the 17 clear sites are in client-range functions.
 
 **2026-11-16, S2c part 2 (`lane/n66q`).** More rewordings for Phase 3. The evidence is [skills/0002 § 16](../findings/skills/0002-missiles.md#16-plan-0066-batch-s2c-part-2-bit-6-the-flag-bits-packets-and-the-creators-2026-11-16-lanen66q) and `check-s2c-p2.txt`.
