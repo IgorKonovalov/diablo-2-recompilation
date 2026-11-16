@@ -1120,7 +1120,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   120 (missile hits), 122 (no `PlayerModeAllowed` draw), 133 (no frozen dispatch).
 - **Contradicted in part: timing row 75** (§ I2, line 550): a code-2 event of a no-skill A1 or A2 strikes no hit (2 248
   of 2 248 dispatches), code 1 in 18 160 of 18 637; the test that drops code 2 is not read (→ c, S6c). Backlog
-  [`2026-11-15-reverser-spec-writer-plan-0066-s6a-corrections`](../backlog/2026-11-15-reverser-spec-writer-plan-0066-s6a-corrections.md),
+  [`2026-11-15-reverser-spec-writer-plan-0066-s6a-corrections`](../backlog/archive/2026-11-15-reverser-spec-writer-plan-0066-s6a-corrections.md),
   with three Phase 3 notes (row 38's `RescheduleSkip` `+0x44 = (T − p) << 8`, row 117's "none of its refusals is
   reached" against all4's 781 refusals, row 42's 9 restarts by this rule against the spec's 15).
 - **Symbols:** `sub_00553C70_RescheduleSkip`, `sub_00553DC0_RescheduleAt` (their logged lists against E3: 819, 74) and
@@ -1175,7 +1175,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   README 1, 3, 10, 12. Not raised: movement 15 (no `Velocity`-0 classic S1–S4 call logged → c-emu, S6e) and 36 (the
   logger's `ss` lacks Slows Target's state 24 → a-run, deferred). No contradiction.
 - **Backlog:** two items added to
-  [`2026-11-15-reverser-spec-writer-plan-0066-s6a-corrections`](../backlog/2026-11-15-reverser-spec-writer-plan-0066-s6a-corrections.md):
+  [`2026-11-15-reverser-spec-writer-plan-0066-s6a-corrections`](../backlog/archive/2026-11-15-reverser-spec-writer-plan-0066-s6a-corrections.md):
   (5) a lead on monsters/stats § G's `fanatic` (stat 67 175, not 195, at `Velocity` 4, 2 units), (6) movement D2's open
   question answered (the 6 offset-1 turns are later phase-11 sets).
 - **Symbols:** none raised. The run compares stat values and rate-call outputs, not a function's logged return
@@ -1590,7 +1590,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   frame function gets no code, `MonModeFrameEvent` passes only ECX and EDX, 0x005A7BD2–0x005A7BD6, so the drop is
   below `MON_MeleeHit` or in its gates, unread), 85 (the stat accessor), 103 (`+0xC4` bit 6's writers); movement 21, 26,
   35; README 12.
-- **Backlog:** [`2026-11-15-reverser-spec-writer-plan-0066-s6c-corrections`](../backlog/2026-11-15-reverser-spec-writer-plan-0066-s6c-corrections.md)
+- **Backlog:** [`2026-11-15-reverser-spec-writer-plan-0066-s6c-corrections`](../backlog/archive/2026-11-15-reverser-spec-writer-plan-0066-s6c-corrections.md)
   (the contradiction and five refinements: S4/DD frame slot and S3's `ret` end, `MonSetMode`'s `MonModeVelocity` and
   second `UNIT_SetUsedSkill`, the ten chart rows with no case, `MonStatsSpeeds` writing `i` back, `HandsRefresh`'s draws
   under the mode end).
@@ -1644,7 +1644,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
 - **Corrections (refinements, the spec's text is Phase 3's):** (1) `ANIMDATA_Find`'s length fatal is inside the record
   loop: a long name in an empty block returns none; (2) monster SQ (14) is skill-dependent in both monster tables,
   which J3 does not list; (3) `AnimRateIsMove` and `AnimRateIsAttack` are fatal for unit types other than 0 and 1. Routed by
-  [backlog](../backlog/2026-11-16-reverser-spec-writer-plan-0066-s6e-part-1-corrections.md); anim/0001 § 2's "fails
+  [backlog](../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s6e-part-1-corrections.md); anim/0001 § 2's "fails
   fatally on a name … longer than 8" carries the dated refinement (rule 20; the spec's copy, timing line 157, is item 1).
 - **Symbols:** none raised (an ADR-0015/0021 emulation over a declared image, review-fixes 14).
 - **Totals** from the 29 files' *Totals by class* after the merge of `main` `7a3ef52e`: a-logs 628, a-run 340, b 446,
@@ -1700,7 +1700,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   read, which no emulation runs either.
 - **Corrections (refinements; the spec's text is Phase 3's):** (4) B3 omits the gfxtype 2 exception (class 6 in mode
   4 → 12), which anim/0001 states; (5) movement B6: −4096 wraps from 32 769. Routed by annotating
-  [the part 1 backlog entry](../backlog/2026-11-16-reverser-spec-writer-plan-0066-s6e-part-1-corrections.md).
+  [the part 1 backlog entry](../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s6e-part-1-corrections.md).
 - **Symbols:** none raised (an emulation over a declared image, review-fixes 14).
 - **Totals** from the 29 files' *Totals by class* after the merge of `main` `19edd04f`: a-logs 625, a-run 340, b 466,
   c 390, c-emu 477, d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626; Phase 1 1 492, Phase 2 806 (inventory
@@ -1963,7 +1963,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
 - **Corrections (refinements and readings; the spec's text is Phase 3's):** (6) K3: `X_m = 15` needs no IAS;
   (7) F1, `[I]`: a wrap on a record with frames ≤ the start frame never ends; (8) C2's missile divide truncates
   toward zero; C3's no-path call passes the unit's own type, class and mode. Routed by annotating
-  [the part 1 backlog entry](../backlog/2026-11-16-reverser-spec-writer-plan-0066-s6e-part-1-corrections.md).
+  [the part 1 backlog entry](../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s6e-part-1-corrections.md).
 - **Symbols:** none raised (an emulation over a declared image, review-fixes 14).
 - **Totals** from the 29 files' *Totals by class* after the merge of `main` `1f507662`: a-logs 623, a-run 341, b 469,
   c 390, c-emu 475, d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626; Phase 1 1 488, Phase 2 810 (inventory
@@ -2035,7 +2035,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
 - **Corrections (refinements; the spec's text is Phase 3's):** the primary-hand rule and the unwritten index (B1), the
   MonStats read with no null test (G1, `[I]`), the three lookups of `UNIT_SeqInit` (G2), flag `0x8` at every
   unblocked end (B4), `PathStop`'s step pair (B5). Routed by
-  [backlog](../backlog/2026-11-16-reverser-spec-writer-plan-0066-s6f-corrections.md).
+  [backlog](../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s6f-corrections.md).
 - **Symbols:** none raised (an emulation over a declared image, review-fixes 14).
 - **Totals** from the 29 files' *Totals by class* on `main` `0c3cd6c9`: a-logs 623, a-run 341, b 467, c 390,
   c-emu 477, d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626; Phase 1 1 490, Phase 2 808 (inventory README § 1
@@ -2405,3 +2405,82 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   map, the third argument's meaning (the source missile) left as the caller's tag; (4) README 42 contradicted in part,
   not raised with a correction: the note gives a different seed state for every negative stat 141; (5) the mastery
   claims are scoped to a unit with no used skill (0x00645720's throwable path not reached).
+
+### 2026-11-16 — Phase 3, the anim cluster re-tagged (spec-writer, `lane/n66v`): the first Phase 3 cluster
+
+- **Done.** Branch from `main` `2ffce327`. No game, no Ghidra, no slot. Sources: the S6a/S6b, S6c, S6e (parts 1–3) and
+  S6f entries above, their Tier B checks, the inventory files' *Route* cells and the four spec-writer entries. Each
+  raised statement now carries its run or second-source anchor: run:2026-10-30-anim-p3b with the S6a or S6b addendum,
+  the S6c static addendum, run:2026-11-16-sweep2-s6e, -s6e-2, -s6e-3, run:2026-11-16-sweep2-s6f, and
+  run:2026-10-30-frame-emu-2 for the queue and the list runners (rows 3, 51, 53).
+- **Front matter:** anim/timing C 65 / I 135 / L 22 → **C 168 / I 91 / L 22**; anim/movement C 26 / I 46 / L 8 →
+  **C 58 / I 32 / L 8**; anim/README C 14 / I 13 / L 2 → **C 23 / I 9 / L 2**. A split adds a `[C]` beside the `[I]` it
+  keeps, so `C` rises by more than `I` falls.
+- **Rows (191):** `[C]` whole 68 (timing 49, movement 15, README 4); split 75 (52, 18, 5); corrected to the finding 2
+  (timing 67: the GH and BL frame slot is `UNIT_CancelEvents(0, 0)`; timing 75: with no used skill a code-1 event
+  strikes, a code-2 event of A1 or A2 none in 2 248 dispatches, the dropping test `[I]`); kept `[I]` 46 (H6a–H6d,
+  deferred, not raised, S6g's two remainders, d-none). The row lists are in each inventory file's new *Phase 3* line;
+  inventory README § 6 records the tags per spec.
+- **Corrections applied (the four entries, closed):** S6a 1–4 and 6 (MonAttackFrame, `RescheduleSkip`'s `+0x44`,
+  M4's refusals, F1's two restart rules, the run's turn to a walk settled in movement D2 and its open question
+  closed); S6c 1–6 (the mode-record table's slots, `MonSetMode`'s two calls, the class overrides' scope and `+0x1A5`
+  test, `BaseId` written back, `HandsRefresh`'s draws); S6e 1–8 (B2's loop, J3's SQ and other types, B3's class-6
+  exception, K3's `X_m = 15`, F1's endless wrap `[I]`, C2's truncating divide, C3's no-path arguments, movement B6's
+  −4096 wrap); S6f 1–5 (B1's primary hand, G1's readings `[I]`, G2's three lookups, B4's flag `0x8`, B5's step pair).
+  S6a item 5 (monsters/stats § G's `fanatic`, a lead outside anim) is routed to the reverser
+  ([entry](../backlog/archive/2026-11-16-spec-writer-reverser-plan-0066-fanatic-stat-67-champion-part.md)).
+- **Also:** quirks Q40, Q117, Q249, Q372, Q373 and Q375 follow their notes to `[C]` (quirks C 388 / I 159); Q371,
+  Q376 and Q377 stay `[I]`, their notes now holding both tags and the entries restating the `[I]` clause. Research-map
+  rows of anim/timing, anim/movement, the overview and quirks updated. wiki/animation and wiki/quirks are left with W4
+  and two understated paragraphs on the run's turn; a refresh entry is filed
+  ([entry](../backlog/2026-11-16-spec-writer-spec-writer-wiki-animation-refresh-after-plan-0066-anim-re.md)).
+- **Judgment calls for the review:** (1) anim/README note 1 (row 12) raised whole on timing J7's `fire` and S6c's
+  callee closure of timing row 94, although row 12's route left its remainder to S6c, which did not take it;
+  (2) movement Outputs (row 38) raised whole: it states the end on arrival only, row 26's remainder being the monster
+  animation; (3) timing rows 69 and 70 counted whole with the S6c corrections written in; (4) timing J5's monster
+  starting stats and the stat-67 mods raised as movement row 11 raises them (review-fixes 8), although timing row 92
+  sent "the mods" to H6a; (5) timing M1's and M4's pseudocode headers stay `[I]` with a `[C]` bullet stating what the
+  logs hold, instead of per-line marks; (6) "server" for the call sites at or above 0x00520000 is written as the
+  address bound, with the client reading of the rest kept `[I]` (A2, C2, J6); (7) timing J1's "not reached on stock
+  data" kept `[I]`, since slows and curses are not scanned (the H6d ruling (b)).
+- **Gate:** fast green (73 warnings, none new in anim but W4 on the two wiki pages); `--full` green (39 surveys).
+- **Review:** Tier A, [request](../backlog/archive/2026-11-16-spec-writer-architect-review-plan-0066-phase-3-anim-cluster.md).
+
+### 2026-11-16 — Phase 3 anim cluster review (architect, Tier A, `lane/n66v`): accept with fixes (3)
+
+- **Checked.** The three inventory files' *Phase 3* lines partition their rows exactly (timing 134, movement 44, README
+  13; a script over the lists, no row twice or missing). Sampled against the Route cells and the S6a, S6b, S6c addenda
+  (anim/experiments): timing rows 5, 38, 42, 49, 62, 67, 75, 92, 94, 112, 117, 125, 128; movement 11, 26, 38, 44 and
+  the A1–E1 diff; README all 13. Every new `[C]` in the diff carries a run, a kept-output or a second-tool anchor; the
+  split remainders keep `[I]` where the Route cells put them; twelve `fn:` anchors resolve in `re/symbols.csv`. No
+  `[L]` outside *Open questions*; no Mermaid block changed and none now disagrees with its text. The promotion
+  re-check read the S6a, S6b and S6c raises the spec imports; they say what the sentences say, with the two scopes below.
+- **Fixes (3).** *Overclaim (2):* timing I2 `MonAttackFrame`: "a code-1 event strikes … a code-2 event strikes none" is
+  restated as the logs hold it (followed in its frame by a hit of the attacker, 18 160 of 18 637; by none, 2 248 of
+  2 248), the strike through `MON_MeleeHit` moved to the `[I]`, and the unread cause now says it leaves open whether a
+  code-2 event reaches the to-hit test and its draw (the finding records hits, not strikes or draws). anim/README § A's
+  frame-event row (inventory row 5) was `[C]` for every unit on S6c's walk of `PlrModeSkillFrame` alone: `[C]` for a
+  player, `[I]` for a monster's frame functions, which the second tool did not walk; the README goes to C 23 / I 10 /
+  L 2, row 5 moves from whole to split (README: whole 3, split 6; the cluster: whole 67, split 76), inventory § 6 and
+  the research-map row follow. *Misread (1):* S6a item 5, routed to the reverser as a `fanatic` contradiction, is none:
+  monsters/stats § G defines "champion part" without its velocity and G3 gives `fanatic` the clamp only (both `[C]`),
+  so 175 at `Velocity` 4 agrees; the entry is closed with that resolution. The S6b addendum's "a lead against
+  monsters/stats § G" (anim/experiments) is stale for the same reason; the reverser may strike it at its next anim pass.
+- **Judgment calls.** (1) README row 12 whole: accepted; row 94's S6c closure (the rate reaches no queue, cancel or
+  scheduler) is the static second source the route asked of S6c. (2) Movement Outputs (row 38) whole: accepted, it
+  states the arrival end only. (3) Timing 69 and 70 whole with the S6c corrections: accepted. (4) J5's mods as movement
+  row 11 raises them: accepted (spec-writer review-fixes 8). (5) M1/M4 headers `[I]` with a `[C]` bullet: accepted.
+  (6) The `0x00520000` bound stated as an address fact, the client reading `[I]`: accepted. (7) J1 kept `[I]`: accepted.
+- **Ruling on the cluster pattern (binding for the later clusters).** Accepted, with four rules. (a) Each inventory file
+  gets one *Phase 3* line under its header naming the four buckets in this order (whole, split, corrected, kept), each
+  with its row list and its count; the lists partition the file's rows, and the line states the front matter before
+  (at the branch point, naming any `[I]` of another plan that is not in the inventory) and after. (b) Inventory
+  README § 6 gets one row per spec with the same counts; "after" equals the spec's front matter at the cluster's merge.
+  (c) A row whose route waits on a later batch (S6g here: timing 49's schedule half, 62) stays in *kept*; when that
+  batch lands, the re-tag adds a second dated *Phase 3* line to the file and a new § 6 row, never an edit of the first.
+  (d) Judgment calls go in the lane's plan-log entry, and the review's acceptance or change of each is recorded here, not
+  in the inventory line. Phase 3's *Done when* "the inventory's final totals are recorded" is met by a totals row added
+  to § 6 at the last cluster's review.
+- **Gate:** fast green (73 warnings, the W4s on wiki/animation and wiki/quirks the lane's refresh entry answers);
+  `--full` green (39 surveys); `tools/quirks.py check` 0 errors.
+- **Verdict: accept with fixes (3)**: overclaim 2, misread 1. The review request stays open for the merge.

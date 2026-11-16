@@ -2,11 +2,11 @@
 from: reverser
 to: spec-writer
 date: 2026-11-16
-status: open
+status: done
 context:
-  - ../plans/0066-simulation-inferred-claims-sweep.md
-  - ../findings/anim/experiments.md
-resolution: ""
+  - ../../plans/0066-simulation-inferred-claims-sweep.md
+  - ../../findings/anim/experiments.md
+resolution: "Done in plan 0066 Phase 3 (lane/n66v): anim/timing B2 (the length fatal inside the loop, the record-name fatal and the bytes after the NUL [I]), J3 (SQ for monsters, the predicates' other types), B3 (class 6 mode 4 -> 12, [C]), K3 (X_m = 15 needs no IAS), F1 (the never-ending wrap, [I]), C2 (the truncating missile divide) and C3 (the no-path call's arguments); anim/movement B6 (-4096 wraps from 32 769)."
 ---
 
 Plan 0066 batch S6e part 1 (`lane/n66l`, 2026-11-16) corrections for Phase 3 in specs/anim/timing (lines at

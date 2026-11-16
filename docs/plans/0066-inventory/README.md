@@ -185,7 +185,7 @@ deferred)**. The review is asked to rule on one of:
 - **S6f (`lane/n66s`, 2026-11-16):** anim/movement 22 and 43 b → c-emu (S6f): the static attempt of ruling (c) ran `PathStepCollide` whole over a declared room (its closure holds no allocator and no import), 3 000 cases; H6d drops to 19 rows. Totals after (recomputed from the 29 files' *Totals by class* on `main` `0c3cd6c9`, the branch's base): a-logs 623, a-run 341, b 467, c 390, c-emu 477, d 328 (d-none 178); Phase 1 1 490, Phase 2 808.
 - **Plan 0069 Phase 4 (`lane/n69g`, 2026-11-16):** no moves. The 211 rows of H1a (38), H1b (38), H1c (41), H1d (11), H1g (44) and H1h (39) keep their class and batch; each Route cell ends with its outcome (raised 22, raised in part 41, kept `[I]` 148, `tools/ai_tour_settle.py tally`, `workspace/logs/n69g/tally.txt`). The kept rows that wait on a logger word (R32, R41, R48, R56, R120 all forked; R118 by the Phase 3b ruling) keep their class: the batch is closed, and the route is in the row. Totals unchanged (the 29 files, after merging `main` `21905e83`).
 - **Plan 0069 Phase 4 review (Tier A audit, 2026-11-16):** monsters/ai/catalogue 142, 143 (R56), 354, 355, 357 (R120) and 462, 463 (R41) a-run → b (new batch H1r, out of plan 0069): every decision of the three entries forks on a word logger rev 7 does not log (R56 `owner.mode` at 0x005F8FAC's return; R120 `AiStoredHostile`'s `U+0xC8`, its stored unit and `MonHasSkill`'s returns; R41 the home word of `AiCtlParamGet(10)` and the kind-4, 5, 7 records' words), so no session with the existing logger settles them, which (a-run) requires (the lane's judgment call 2, ruled the other way). Reasons in the rows. Totals after (the catalogue file recounted): a-run 334, b 474; Phase 2 808 unchanged.
-- **S5fe (`lane/n66w`, 2026-11-16):** combat/README 16, 28, 29 and combat/delivery 8, 10–13, 15, 17, 19, 52, 55, 61, 62 c-emu → b (H5b): each claim lies after `MissileCreate` → `sub_00555230_SUnitCreate` (0x0059FC75), `UnitMsgA3`'s allocation (0x0040B430 at 0x00571AC1), `COMBAT_QueueHit`'s (0x0057CABE), `QueuedHitRemove`'s free (0x0040B480 at 0x0057CA5B), `SKILLS_ForUnitsInRange` or `COLL_PatternTest` (rooms); ruling R2, reasons in the rows. Totals after (from the 29 files' rows after merging `main` `b5a32324`): a-logs 623, a-run 334, b 489, c 390, c-emu 462, d 328 (d-none 178); Phase 1 1 475, Phase 2 823.
+- **S5fe (`lane/n66w`, 2026-11-16):** combat/README 16, 28, 29 and combat/delivery 8, 10–13, 15, 17, 19, 52, 55, 61, 62 c-emu → b (H5b): each claim lies after `MissileCreate` → `sub_00555230_SUnitCreate` (0x0059FC75), `UnitMsgA3`'s allocation (0x0040B430 at 0x00571AC1), `COMBAT_QueueHit`'s (0x0057CABE), `QueuedHitRemove`'s free (0x0040B480 at 0x0057CA5B), `SKILLS_ForUnitsInRange` or `COLL_PatternTest` (rooms); ruling R2, reasons in the rows. Totals after (from the 29 files' rows after merging `main` `2d5dfac5`, the Tier B check): a-logs 623, a-run 334, b 489, c 390, c-emu 462, d 328 (d-none 178); Phase 1 1 475, Phase 2 823.
 
 ## 4. Batch list
 
@@ -463,3 +463,19 @@ and sampled 50 rows in 21 specs, opening the kept logs for 22 a-logs rows.
 - **path/README 67** (Jump: no stock user) is (c), a full-table check of every excel column, not d-edit: the claim is the data's, and the data check settles it; Jump's behaviour itself (row 14) stays b with only a monster arm.
 - **frame 126** (`ActsClockPass` refreshes every client's player) is the only d-2c in frame; lifecycle 18 (`+0x78` as a client count, sorted list) the other. Rows that mention multi-client unions in passing (lifecycle 14, frame 66) kept their single-client majority class with the note in the route.
 - **path-README 62 (type 0)** and **path-README 66 (town-follow with a hostile)** are (b) though possibly unreachable in stock play; no finding says they are, so I did not mark d-none.
+
+## 6. Phase 3: the re-tag per cluster
+
+Each cluster's inventory files carry a *Phase 3* line under their header: the rows whose statement is now `[C]` whole,
+split (the `[C]` half, the remainder `[I]` as the *Route* cell names), corrected to the finding, or kept `[I]`. Rows
+keep their Phase 0 class and batch, so § 1's totals stay the classification; this table records the specs' tags after
+each cluster's re-tag.
+
+| Cluster (lane) | Spec | Rows | Whole | Split | Corrected | Kept | Front matter before | Front matter after |
+|---|---|---|---|---|---|---|---|---|
+| anim (`lane/n66v`) | [anim/timing](anim-timing.md) | 134 | 49 | 52 | 2 | 31 | C 65 / I 135 / L 22 | C 168 / I 91 / L 22 |
+| anim (`lane/n66v`) | [anim/movement](anim-movement.md) | 44 | 15 | 18 | 0 | 11 | C 26 / I 46 / L 8 | C 58 / I 32 / L 8 |
+| anim (`lane/n66v`) | [anim/README](anim-README.md) | 13 | 3 | 6 | 0 | 4 | C 14 / I 13 / L 2 | C 23 / I 10 / L 2 |
+
+A split adds a `[C]` beside the `[I]` it keeps, and corrections add a few `[I]` readings the findings name, so the
+`[C]` count rises by more than the `[I]` count falls.

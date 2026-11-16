@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [every reviewed spec listed under Coverage]
 consumed_by: [docs/wiki/quirks.md]
-tags: {C: 382, I: 165, L: 3}
-updated: 2026-11-10
+tags: {C: 388, I: 159, L: 3}
+updated: 2026-11-16
 ---
 
 # Quirks: the behaviour a faithful reimplementation must keep
@@ -124,7 +124,7 @@ flowchart LR
 | Q37 | `MonHpAddPct` truncates before it multiplies once max HP × 256 exceeds `0x100000` (HP > 4 096). | [C] | fn:sub_005A0D20_MonHpAddPct@0x005A0D20, run:2026-10-15-mon-stats | [monsters/stats](../monsters/stats.md#reimplementation-notes) n4 |
 | Q38 | Two hpregen formulas: creation `((hp << 8)·r) >> 12`, the stat callback `((new >> 8)·r) >> 4`; they can differ by one, and a group member keeps the callback's value. | [C] | 0x00573FF6, 0x00574058, fn:sub_0055B800_MonStatCallback@0x0055B800, run:2026-10-15-mon-stats | [monsters/stats](../monsters/stats.md#reimplementation-notes) n5 |
 | Q39 | The life rescale truncates a float32, and never takes current life below 1. | [C] | fn:sub_0055B800_MonStatCallback@0x0055B800, run:2026-10-17-stats | [stats/aggregate](../stats/aggregate.md#reimplementation-notes) n5 |
-| Q40 | A path step that would pass its point lands on the subtile centre, so frames per point are a ceiling and the next step starts from the centre. | [I] | fn:sub_00650090_PathStepSnap@0x00650090 | [anim/movement](../anim/movement.md#reimplementation-notes) n3 |
+| Q40 | A path step that would pass its point lands on the subtile centre, so frames per point are a ceiling and the next step starts from the centre. | [C] | fn:sub_00650090_PathStepSnap@0x00650090, run:2026-10-30-anim-p3b | [anim/movement](../anim/movement.md#reimplementation-notes) n3 |
 | Q41 | The missile step direction is a lookup in `g_PathDirTable`, not a trigonometric function. | [I] | data:g_PathDirTable@0x006EB7E0 | [skills/missiles](../skills/missiles.md#reimplementation-notes) n10 |
 | Q454 | A monster with few hit points has no regeneration: stat 74 is `((hp << 8) × r) >> 12`, so 0 while `hp × r < 16`. | [I] | 0x00573FF6, 0x00574058, tbl:MonStats.txt:DamageRegen | [monsters/stats § B](../monsters/stats.md#b-monstatsinit-in-order) |
 | Q478 | `calc1` of a healing or mana potion is a total, not a per-frame amount: it is scaled, maybe doubled and divided by `len`, and the division truncates, so a potion can deliver less than its total. | [C] | 0x005BE6D4, run:2026-11-03-use-emu | [items/use](../items/use.md#reimplementation-notes) n1 |
@@ -214,7 +214,7 @@ flowchart LR
 | Q114 | The save reader stops at 8 KiB (`0x2000` bytes). | [C] | fn:PLRSAVE_ReadFile@0x005343A0, run:2026-10-27-sweep-d2s-load | [save/d2s](../save/d2s.md#reimplementation-notes) n14 |
 | Q115 | The writer's buffer is 8 KiB; no write passed it. | [I] | fn:PLRSAVE_Save@0x00532400 | [save/d2s](../save/d2s.md#reimplementation-notes) n14 |
 | Q116 | Missile `LevRange` counts every level: `LevRange · lvl + Range`, not from level 2. | [C] | fn:sub_0059FA30_MissileCreate@0x0059FA30, run:2026-10-27-skills | [skills/missiles](../skills/missiles.md#reimplementation-notes) n8 |
-| Q117 | The path's tenth subtile crossing is unchecked: a very fast step can pass a blocked subtile after ten free crossings. | [I] | 0x00650292, 0x006502AA | [anim/movement](../anim/movement.md#reimplementation-notes) n4 |
+| Q117 | The path's tenth subtile crossing is unchecked: a very fast step can pass a blocked subtile after ten free crossings. | [C] | 0x00650292, 0x006502AA, run:2026-11-16-sweep2-s6f | [anim/movement](../anim/movement.md#reimplementation-notes) n4 |
 | Q437 | Crash path on reachable data: `MissNovaCreate` with `n ≥ 41` (mhit 38, 45), do 123's class at or past the Missiles count and st 20's item class past the item count reach the fatal path `0x00408090`. | [C] | 0x00408090, run:2026-10-20-cat-emu-9d, run:2026-10-21-cat-emu-dru, run:2026-10-20-cat-emu-nec | [skills/catalogue](../skills/catalogue.md#reimplementation-notes) n4 |
 | Q447 | The party distance's edge is inclusive and unsigned: d² = 6400 shares, 6401 does not. | [C] | 0x0057E654, 0x0057E65A, run:2026-11-03-party-emu | [player/party](../player/party.md#reimplementation-notes) n6; [player/creation § J](../player/creation.md#j-other-level-and-experience-changes) |
 | Q448 | The party member cap is a fatal path, not a clip: a ninth member that passes every test reaches `0x00408090(0xF25)`, while one failing a test first does not count (the code's map, to that call; not a game outcome). | [C] | 0x0057E662, 0x0057E665, run:2026-11-03-party-emu | [player/party](../player/party.md#reimplementation-notes) n5; [player/creation § J](../player/creation.md#j-other-level-and-experience-changes) |
@@ -363,7 +363,7 @@ flowchart LR
 | Q246 | Each arrival on a `Position` level by waypoint (type ≠ 13), NPC act change, resurrection or join steps that level's seed once; a waypoint arrival into a town (type 13) does not. | [C] | run:2026-10-17-quests, run:2026-10-19-quests3 | [quests/travel § Draws](../quests/travel.md#draws-by-event-kind); [quests/travel](../quests/travel.md#reimplementation-notes) n2 |
 | Q247 | A town portal open draws three times: game seed, the town's level seed (type 11), game seed. | [C] | run:2026-10-17-quests | [quests/travel § Draws](../quests/travel.md#draws-by-event-kind); [quests/travel](../quests/travel.md#reimplementation-notes) n3 |
 | Q248 | The Harrogath portal's type-5 lookup takes its one type-0 point with no draw. | [C] | run:2026-10-19-quests3 | [quests/travel § Draws](../quests/travel.md#draws-by-event-kind); [quests/travel](../quests/travel.md#reimplementation-notes) n6 |
-| Q249 | An object's opened mode is set without an animation start: no start draw at the operate end. | [I] | fn:sub_00581490_ObjEvOperateEnd@0x00581490 | [anim/timing](../anim/timing.md#reimplementation-notes) n6 |
+| Q249 | An object's opened mode is set without an animation start: no start draw at the operate end. | [C] | fn:sub_00581490_ObjEvOperateEnd@0x00581490, run:2026-10-30-anim-p3b | [anim/timing](../anim/timing.md#reimplementation-notes) n6 |
 | Q250 | A damaging aura's run consumes one draw on the caster's seed in each run that draws, even when the state code itself draws nothing. | [C] | fn:SKILLS_RollElemDamage@0x0056E0C0, run:2026-10-17-stats | [stats/states](../stats/states.md#reimplementation-notes) n7 |
 | Q251 | Draw once per aura run, not once per unit hit: the one roll's packet is copied to every unit the run hits. | [I] | fn:sub_005CF3A0_AuraHitDo@0x005CF3A0, fn:sub_005CF2A0_AuraHitUnitCb@0x005CF2A0 | [stats/states](../stats/states.md#reimplementation-notes) n7 |
 | Q438 | do 112 (`MonCurseCast`) steps the caster's seed once before any test, so a refused cast still moves the seed by one (the finisher entries' form is Q136). | [C] | run:2026-10-21-cat-emu-8b | [skills/catalogue](../skills/catalogue.md#reimplementation-notes) n1 |
@@ -501,8 +501,8 @@ flowchart LR
 | Q369 | The group test is not in the apply: only callers that run `STATE_GroupClear` exclude a group. | [I] | fn:STATE_GroupClear@0x0056C740, fn:STATE_ApplyTimed@0x0056E970 | [stats/states](../stats/states.md#reimplementation-notes) n4 |
 | Q370 | Shrines share the curse slot: a shrine removes the player's curse, and the next curse removes the shrine's state. | [I] | tbl:States.txt:curse, fn:STATE_ApplyTimed@0x0056E970 | [stats/states](../stats/states.md#reimplementation-notes) n5 |
 | Q371 | A player's run speed is the walk base plus a +50 stat-67 list that lives while the run lasts; a monster runs at its walk path speed unless its AI command carries a velocity. | [I] | fn:sub_00620E80_RunVelocityStat@0x00620E80, fn:sub_005A6380_MonModeVelocity@0x005A6380 | [anim/movement](../anim/movement.md#reimplementation-notes) n1 |
-| Q372 | Two bases: the path speed moves the unit, the animation base only paces the animation; both take the same factor `X`. | [I] | fn:UNIT_AnimSetRate@0x00623F50 | [anim/movement](../anim/movement.md#reimplementation-notes) n2 |
-| Q373 | A shapeshifted player takes the form's record, start frame and rate, with the mode mapped through `g_PlrToMonMode` and the MonStats2 fallback. | [I] | fn:UNIT_AnimTransform@0x00645270 | [anim/timing](../anim/timing.md#reimplementation-notes) n4 |
+| Q372 | Two bases: the path speed moves the unit, the animation base only paces the animation; both take the same factor `X`. | [C] | fn:UNIT_AnimSetRate@0x00623F50, run:2026-10-30-anim-p3b | [anim/movement](../anim/movement.md#reimplementation-notes) n2 |
+| Q373 | A shapeshifted player takes the form's record, start frame and rate, with the mode mapped through `g_PlrToMonMode` and the MonStats2 fallback. | [C] | fn:UNIT_AnimTransform@0x00645270, run:2026-10-30-anim-p3b, run:2026-11-16-sweep2-s6e-2 | [anim/timing](../anim/timing.md#reimplementation-notes) n4 |
 | Q460 | Champions and uniques pick from `umon` in Normal only; in Nightmare and Hell they come from the region pool. | [C] | fn:sub_005BDE80_MonRegionPickClass@0x005BDE80, tbl:Levels.txt:umon1, run:2026-10-14-mon-special | [monsters/pool](../monsters/pool.md#consumers-named-only) |
 | Q461 | Prevent Monster Heal's hook tests for a player attacker, so stat 117 on a mercenary's items applies no state. | [I] | fn:sub_0057D810_PreventHealHook@0x0057D810 | [combat/to-hit § A](../combat/to-hit.md#a-the-chance-to-hit-combat_tohitroll) |
 | Q488 | The drop's base room moves between lookups: a fixed-room search agrees with all 118 live searches, on open ground, and still fails on declared rooms. | [C] | 0x0064E043, run:2026-11-04-ground-emu | [items/inventory](../items/inventory.md#reimplementation-notes) n1 |
@@ -522,7 +522,7 @@ flowchart LR
 | Id | Quirk | Tag | Anchors | Source |
 |---|---|---|---|---|
 | Q374 | A scheduled mode's end is `n` frames after its start; the community breakpoint tables count `N = n − 1`. With the stock client a held normal action restarts at `T + N`, held Lightning at `T + n`; the server starts the next action in the frame its request arrives. | [C] | fn:SUNIT_ScheduleModeEvents@0x005539B0, run:2026-10-27-anim | [anim/timing](../anim/timing.md#reimplementation-notes) n1; [anim/README](../anim/README.md#reimplementation-notes) n2 |
-| Q375 | A scheduled mode does not follow a rate change: its events stay where its start put them; an every-frame monster takes the new rate at its next advance. | [I] | fn:UNIT_AnimSetRate@0x00623F50 | [anim/README](../anim/README.md#reimplementation-notes) n1 |
+| Q375 | A scheduled mode does not follow a rate change: its events stay where its start put them; an every-frame monster takes the new rate at its next advance. | [C] | fn:UNIT_AnimSetRate@0x00623F50, run:2026-10-30-anim-p3b | [anim/README](../anim/README.md#reimplementation-notes) n1 |
 | Q376 | Two rate calls per server start: the first, before `+0x48` is written, sees the previous mode's length; the schedule uses the second. | [I] | fn:UNIT_AnimInit@0x00624390, fn:SUNIT_AnimInit@0x005533D0 | [anim/timing](../anim/timing.md#reimplementation-notes) n2 |
 | Q377 | A monster's frame-function result is ignored: an every-frame attack or skill mode with no end call of its own lasts until another command. | [I] | fn:sub_005A7BA0_MonModeFrameEvent@0x005A7BA0 | [anim/timing](../anim/timing.md#reimplementation-notes) n5 |
 | Q378 | A frozen monster loses its scheduled events (dropped and freed), its mode end among them. | [I] | fn:sub_005A7F80_MonEventDispatch@0x005A7F80 | [anim/timing](../anim/timing.md#reimplementation-notes) n7 |
