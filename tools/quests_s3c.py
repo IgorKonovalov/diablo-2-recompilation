@@ -24,8 +24,17 @@ Sections (inventory rows: P = quests-progression.md, T = quests-travel.md, R = q
             list head, WaypointTravelCheck's calls, PlayerTickSet's callers, the collision map's dimension users
   act       P175 P319: readers of act +0x094, +0x484, +0x474 in the quest scripts' ranges
   misc      P6 P104 P316: NPC_MenuAction's switch, MissileCreateAt's callers' arguments, g_ObjInitFns
-  data      P179 P302 R3 T56 T32 T30: a second DS1 parser (this file) over every .ds1, objgroup.txt, Levels.txt,
-            SuperUniques.txt, Objects.txt Sync/FrameDelta, and the immediate scans for classes 567, 410, 377
+  (part 2)
+  dataflow  P19: every `+0x10f4` displacement three ways; a may-taint walk over each function's control-flow graph from
+            each quest-control load (C) and its `[C+0xc]` game-record loads (R), into callees to depth 3, and into the
+            quest objects' `+0xE8` log-state callbacks; every write, store, push and register argument of C or R
+  data      P179 P302 R3 T56 T32 T30: a second DS1 reader (this file) against tools/ds1.py over every .ds1; a plain
+            .txt reader against the .bin through tools/excel_bin.py (MonPreset, LvlPrest, Levels, SuperUniques,
+            Hireling, objgroup, Objects); every excel cell naming act2guard4; the immediates 377, 567, 410 three ways
+  part2     P37 P316 P319 T21 T30: QUESTS_MonsterDeathEvent's forced list and UnitKilled's order; g_ObjInitFns[6];
+            the level getters' level-27 calls and the quest functions' DRLG callees; the field-centre words and the
+            expfield.d2 header; WAYPOINT_IndexFromLevel and WaypointOperate's references
+  totals    plan 0066's class totals over the per-spec inventory files
 Stdlib, objdump and r2. Read-only.
 """
 import collections
@@ -938,6 +947,844 @@ def sec_misc():
         cs = [t for _, t in calls_in(lo, hi)]
         q = sorted(set(nm(t) for t in cs if t in QUEST_READERS or t == GQG))
         note("InitFn %d = 0x%08X %s; quest calls: %s" % (k, f, nm(f) if f else "-", ", ".join(q) or "-"))
+
+
+# ================================================================================================== dataflow (P19)
+CTRL_DISP = 0x10F4
+NORET = {0x00681E09}             # the fatal exit every `[ctrl+0x8] == 0` test reaches (no return)
+RMW = ("or", "and", "xor", "add", "sub", "inc", "dec", "not", "neg", "bts", "btr", "btc", "shl", "shr", "sar",
+       "rol", "ror", "adc", "sbb", "xchg")
+REC_KNOWN = {0x0065C360: "SetState", 0x0065C3A0: "ClearState", 0x0065C3E0: "ClearSteps", 0x0065C310: "GetState"}
+
+
+def split_ops(ops):
+    ops = ops or ""
+    if "," in ops:
+        d, s = ops.split(",", 1)
+        return d.strip(), s.strip()
+    return ops.strip(), ""
+
+
+def slot_key(opnd):
+    """A register name, or the text of an ebp/esp-based stack slot, or None."""
+    o = norm(opnd)
+    if o in REG32:
+        return o
+    m = memref(opnd)
+    if m and m[0][0] in ("ebp", "esp") and m[0][1] is None:
+        return "[%s%+#x]" % (m[0][0], m[0][3] if m[0][3] < 0x80000000 else m[0][3] - 0x100000000)
+    return None
+
+
+def kinds_of(src, st):
+    k = slot_key(src)
+    if k is not None and k in st:
+        return st[k]
+    m = memref(src)
+    if m and m[0][1] is None:
+        b, _, _, d = m[0]
+        if d == CTRL_DISP and b not in ("ebp", "esp"):
+            return frozenset("C")
+        if d == 0xC and "C" in st.get(b, ()):
+            return frozenset("R")
+    return frozenset()
+
+
+def df_succ(ins, k, lo, hi):
+    va, mn, ops = ins[k]
+    nxt = [ins[k + 1][0]] if k + 1 < len(ins) else []
+    if mn == "ret":
+        return []
+    t = S.branch_target(ops) if (mn == "call" or mn.startswith("j")) else None
+    if mn == "call":
+        return [] if t in NORET else nxt
+    if mn == "jmp":
+        if t is not None:
+            return [t] if lo <= t < hi else []
+        m = S.JTAB.match(ops or "")
+        if m:
+            return S.switch_targets(A(), va, int(m.group(1), 16))
+        return []
+    if mn.startswith("j"):
+        return ([t] if t is not None and lo <= t < hi else []) + nxt
+    return nxt
+
+
+def df_events(va, mn, ops, st):
+    """The observations at one instruction, from the state before it."""
+    ev = []
+    dst, src = split_ops(ops)
+    for pos, opnd in ((0, dst), (1, src)):
+        for b, ix, sc, d in memref(opnd):
+            ks = st.get(b, frozenset())
+            if "R" in ks:
+                write = (pos == 0 and mn not in ("cmp", "test", "push", "call", "jmp")) and (mn == "mov" or mn in RMW)
+                ev.append(("REC-WRITE" if write else "REC-READ", va, mn, ops))
+            if "C" in ks and d == 0xC and ix is None and pos == 0 and mn not in ("cmp", "test", "push"):
+                ev.append(("RECPTR-STORE", va, mn, ops))
+    if mn == "push":
+        ks = kinds_of(dst, st) if slot_key(dst) else frozenset()
+        for kd in sorted(ks):
+            ev.append(("PUSH-" + kd, va, mn, ops))
+    if mn == "call" or mn == "jmp":
+        for r in ("ecx", "edx"):
+            for kd in sorted(st.get(r, ())):
+                ev.append(("REGARG-%s-%s" % (kd, r), va, mn, ops))
+    if mn == "mov" and slot_key(dst) is None and memref(dst):
+        for kd in sorted(kinds_of(src, st)):
+            ev.append(("STORE-" + kd, va, mn, ops))
+    return ev
+
+
+def df_step(va, mn, ops, st):
+    st = dict(st)
+    dst, src = split_ops(ops)
+    if mn == "mov":
+        k = slot_key(dst)
+        if k is not None:
+            ks = kinds_of(src, st)
+            if ks:
+                st[k] = ks
+            else:
+                st.pop(k, None)
+    elif mn == "call":
+        for r in ("eax", "ecx", "edx"):
+            st.pop(r, None)
+    elif mn not in ("cmp", "test", "push") and not mn.startswith("j"):
+        k = slot_key(dst)
+        if k is not None and (k in REG32 or mn in RMW or mn in ("lea", "pop")):
+            st.pop(k, None)
+    return st
+
+
+def dataflow(lo, hi, seeds=None, start=None):
+    """May-taint over the CFG of [lo, hi) from start (default lo): C = the quest control (a load of `[x+0x10f4]`),
+    R = the game record (a load of `[C+0xc]`). Calls kill eax/ecx/edx; the fatal exit has no successor. Returns the
+    events at every instruction (from its fixpoint in-state), the instructions reached, and the branches leaving the
+    range."""
+    ins = fresh(lo, hi)
+    at = {va: k for k, (va, _, _) in enumerate(ins)}
+    if (start if start is not None else lo) not in at:
+        return [("DESYNC", start or lo, "", "")], 0, len(ins), []
+    k0 = at[start if start is not None else lo]
+    IN = {k0: dict(seeds or {})}
+    work = [k0]
+    leave = set()
+    while work:
+        k = work.pop()
+        va, mn, ops = ins[k]
+        o = df_step(va, mn, ops, IN[k])
+        for t in df_succ(ins, k, lo, hi):
+            j = at.get(t)
+            if j is None:
+                leave.add((va, t))
+                continue
+            old = IN.get(j)
+            new = dict(old or {})
+            for key, ks in o.items():
+                new[key] = new.get(key, frozenset()) | ks
+            if old is None or new != old:
+                IN[j] = new
+                work.append(j)
+        if mn == "jmp" and S.branch_target(ops) is not None and not (lo <= S.branch_target(ops) < hi):
+            leave.add((va, S.branch_target(ops)))
+    ev = []
+    for k in sorted(IN):
+        va, mn, ops = ins[k]
+        ev += df_events(va, mn, ops, IN[k])
+    return ev, len(IN), len(ins), sorted(leave)
+
+
+_FRESH = {}
+
+
+def fresh(lo, hi):
+    """objdump's decoding of [lo, hi) started at lo (the global linear sweep can be out of step at an entry that
+    follows data)."""
+    if (lo, hi) not in _FRESH:
+        _FRESH[(lo, hi)] = sorted((va, mn, ops or "") for va, (mn, ops) in S.parse_listing(S.objdump(lo, hi)).items())
+    return _FRESH[(lo, hi)]
+
+
+def fn_range(va):
+    """[entry, end) for a walk through va: the entry is the nearer of the symbol's entry and the int3-padded guess
+    (a 0xCC byte inside an instruction can fake a pad), the end the first int3 instruction after va."""
+    e = T.owner(va)[0] or T.pad_entry(va)
+    pe = T.pad_entry(va)
+    if pe is not None and e is not None:
+        e = min(e, pe)
+    end = None
+    for v, mn, ops in fresh(e, va + 0x4000):
+        if v >= va and mn == "int3":
+            end = v
+            break
+    return e, end
+
+
+def next_call(va, hi):
+    for v, (mn, ops) in A().range(va + 1, hi):
+        if mn == "call":
+            return v, S.branch_target(ops or "")
+    return None, None
+
+
+def arg_index(site, opnd):
+    a = od_push_args(site, 8) or []
+    n = norm(opnd)
+    return a.index(n) if n in a else None
+
+
+def log_state_callbacks():
+    """(lo, hi, seeds) of every function stored at a quest object's +0xE8 by the 41 inits, and the default
+    0x00543F90; seeds: the game record at [ebp+0x8] (stack argument 1 of the `call eax` at 0x005442AD/0x00546135)."""
+    inits = sorted(set(v[3] for v in SPEC_ROWS.values()) | set(x[2] for x in SPEC_SECOND))
+    fns, unresolved = set(), []
+    for f in inits:
+        lo, hi = fn_range(f)
+        for va, (mn, ops) in A().range(lo, hi):
+            d, src = split_ops(ops)
+            m = memref(d)
+            if mn == "mov" and m and m[0][3] == 0xE8 and m[0][0] not in ("ebp", "esp"):
+                v = norm(src)
+                v = int(v) if v.isdigit() else v
+                if v in REG32:
+                    r = reg_src(va, v, entry=lo)
+                    if r and r[1] == "xor" and norm(split_ops(r[2])[1]) == v:
+                        v = 0
+                    elif r and r[1] == "mov" and norm(split_ops(r[2])[1]).isdigit():
+                        v = int(norm(split_ops(r[2])[1]))
+                    else:
+                        v = "%s<-%s" % (v, r)
+                if isinstance(v, int):
+                    if v:
+                        fns.add(v)
+                else:
+                    unresolved.append((va, ops, v))
+    # every +0xE8 store in .text, for the scope line
+    allst = [va for va, (mn, ops) in A().ins.items() if mn == "mov" and memref(split_ops(ops)[0]) and
+             memref(split_ops(ops)[0])[0][3] == 0xE8 and memref(split_ops(ops)[0])[0][0] not in ("ebp", "esp")]
+    inside = [va for va in allst if any(fn_range(f)[0] <= va < fn_range(f)[1] for f in inits)]
+    out("dataflow", "P19 +0xE8 callbacks", inits=len(inits), functions=len(fns), unresolved=len(unresolved),
+        e8_stores_text=len(allst), e8_stores_in_inits=len(inside), bad=len(unresolved))
+    for va in sorted(set(allst) - set(inside)):
+        note("+0xE8 store outside the inits: 0x%08X %s %s %s" % (va, nm(va), A().ins[va][0], A().ins[va][1]))
+    for u in unresolved:
+        note("unresolved +0xE8 store 0x%08X %s -> %s" % u)
+    res = []
+    for f in sorted(fns) + [0x00543F90]:
+        lo, hi = fn_range(f)
+        res.append((f, hi, (("[ebp+0x8]", frozenset("R")),) if f != 0x00543F90 else (), f))
+    note("callbacks: %s" % " ".join("0x%08X" % f for f in sorted(fns)))
+    return res
+
+
+@section
+def sec_dataflow():
+    # (1) every +0x10f4 displacement: raw bytes (ModRM mod=10, disp32 = 0x10f4), objdump, r2
+    data = S.image()[0]
+    import xrefscan
+    base, secs = xrefscan.sections(EXE)
+    raw = set()
+    for s in secs:
+        if not s["flags"] & xrefscan.IMAGE_SCN_MEM_EXECUTE:
+            continue
+        blob = data[s["raw"]:s["raw"] + min(s["rsize"], s["vsize"])]
+        k = blob.find(b"\xf4\x10\x00\x00")
+        while k >= 0:
+            raw.add(base + s["va"] + k)
+            k = blob.find(b"\xf4\x10\x00\x00", k + 1)
+    od = sorted(va for va, (mn, ops) in A().ins.items() if re.search(r"[+-]0x10f4\]", ops or ""))
+    # an objdump site holds the displacement bytes somewhere inside its encoding
+    od_disp = {}
+    for va in od:
+        nv = A().next_va(va)
+        hit = [r for r in raw if va < r and r + 4 <= nv]
+        od_disp[va] = hit
+    unclaimed = sorted(r for r in raw if not any(r in h for h in od_disp.values()))
+    dec = r2_many(od)
+    r2s = sorted(v for v, d in dec.items() if d and re.search(r"[+-]0x10f4\]", d[1].lower().replace(" ", "")))
+    ctrl = [va for va in od if not re.search(r"\[e[bs]p-0x10f4\]", A().ins[va][1] or "")]
+    out("dataflow", "P19 +0x10f4 sites", objdump=len(od), r2=len(r2s), raw_disp32=len(raw),
+        raw_unclaimed=len(unclaimed), stack_slots=len(od) - len(ctrl), ctrl_sites=len(ctrl),
+        agree=int(od == r2s and all(len(od_disp[v]) == 1 for v in ctrl)),
+        bad=int(od != r2s or not all(len(od_disp[v]) == 1 for v in ctrl)))
+    for r in unclaimed:
+        hold = max(v for v, _ in A().range(r - 15, r + 1))
+        note("raw f4 10 00 00 at 0x%08X inside 0x%08X %s %s (not a +0x10f4 operand) [r2 %s]" % (
+            r, hold, A().ins[hold][0], A().ins[hold][1], r2_text(hold)))
+    stores = [va for va in ctrl if split_ops(A().ins[va][1])[0].find("0x10f4]") >= 0 and A().ins[va][0] == "mov"]
+    for va in ctrl:
+        note("site 0x%08X %s: %s %s [r2 %s]" % (va, nm(va), A().ins[va][0], A().ins[va][1], r2_text(va)))
+    out("dataflow", "P19 stores to +0x10f4", n=len(stores), sites=" ".join("0x%08X" % v for v in stores))
+    # the record's creation: QUESTRECORD_Alloc's return stored at ctrl +0xc in QUESTS_InitGame, nothing between
+    seq = [(v, mn, o) for v, mn, o in fresh(0x00545F50, 0x00545F65)]
+    for v, mn, o in seq:
+        note("init 0x%08X %s %s [r2 %s]" % (v, mn, o, r2_text(v)))
+    ok = [(mn, o) for v, mn, o in seq if v in (0x00545F57, 0x00545F5C)] == [
+        ("call", "0x65c430"), ("mov", "DWORD PTR [ebx+0xc],eax")]
+    out("dataflow", "P19 record creation", alloc_then_store=int(ok), bad=int(not ok))
+    # (2) the CFG taint from every function holding a ctrl load; then the callees the C or R value reaches
+    queue = []
+    for va in ctrl:
+        lo, hi = fn_range(va)
+        queue.append((lo, hi, (), 0, va))
+    # the quest objects' log-state callbacks (+0xE8), handed the game record as stack argument 1
+    for lo, hi, sd, f in log_state_callbacks():
+        queue.append((lo, hi, sd, 1, f))
+    seen, allev = set(), []
+    while queue:
+        lo, hi, seeds, depth, start = queue.pop(0)
+        key = (lo, seeds, start)
+        if key in seen:
+            continue
+        seen.add(key)
+        ev, reached, total, leave = dataflow(lo, hi, dict(seeds), start)
+        note("WALK 0x%08X..0x%08X %s from 0x%08X depth=%d seeds=%s reached=%d/%d events=%d leave=%s" % (
+            lo, hi, nm(lo), start or lo, depth, ",".join("%s:%s" % (k, "".join(sorted(v))) for k, v in seeds) or "-",
+            reached, total, len(ev), " ".join("0x%08X->0x%08X" % x for x in leave) or "-"))
+        for kind, va, mn, ops in ev:
+            tgt = None
+            if kind.startswith("PUSH-"):
+                cs, tgt = next_call(va, hi)
+            elif kind.startswith("REGARG"):
+                cs, tgt = va, S.branch_target(ops)
+            allev.append((kind, va, mn, ops, tgt, lo))
+            note("  %s 0x%08X %s %s%s [r2 %s]" % (kind, va, mn, ops, " -> 0x%08X %s" % (tgt or 0, nm(tgt) if tgt else "?")
+                                                  if tgt is not None or kind.startswith(("PUSH", "REGARG")) else "",
+                                                  r2_text(va)))
+            # follow a C or R value into its callee, unless the callee is a record function
+            if depth >= 3 or tgt is None or tgt in REC_KNOWN:
+                continue
+            kd = kind.split("-")[1]
+            if kind.startswith("PUSH-"):
+                i = arg_index(cs, ops)
+                if i is None:
+                    note("    unresolved argument position at call 0x%08X" % cs)
+                    continue
+                sd = (("[ebp+%#x]" % (8 + 4 * i), frozenset(kd)),)
+            else:
+                sd = ((kind.split("-")[2], frozenset(kd)),)
+            clo, chi = fn_range(tgt)
+            queue.append((tgt, chi, sd, depth + 1, tgt))
+    c = collections.Counter(k for k, *_ in allev)
+    out("dataflow", "P19 events", functions=len(seen), **{k.replace("-", "_"): v for k, v in sorted(c.items())})
+    w = [e for e in allev if e[0] in ("REC-WRITE", "RECPTR-STORE") or e[0].startswith("STORE")]
+    for e in w:
+        note("WRITE-LIKE %s 0x%08X %s %s %s in %s" % (e[0], e[1], nm(e[1]), e[2], e[3], nm(e[5])))
+    recpush = collections.Counter(nm(e[4]) if e[4] else "?" for e in allev if e[0] in ("PUSH-R",) or
+                                  e[0].startswith("REGARG-R"))
+    out("dataflow", "P19 record handed to", **{re.sub(r"\W", "_", k): v for k, v in sorted(recpush.items())})
+
+
+# ================================================================================================== data (part 2)
+MERGED = os.path.join(S.ROOT, "workspace", "merged")
+EXCEL = os.path.join(MERGED, "data", "global", "excel")
+TILES = os.path.join(MERGED, "data", "global", "tiles")
+DS1_OBJ_IDS = 0x00748AD8          # g_Ds1ObjectIds: 5 acts x 150 u32
+
+
+def tab(table):
+    """A plain reader of <table>.txt, independent of tools/excel_bin.py: (header, rows as dicts in record order).
+    Lines split on LF, CR stripped, empty lines skipped, rows whose first cell is "Expansion" dropped (the compiled
+    .bin has no record for them; docs/formats/excel-bin.md)."""
+    raw = open(os.path.join(EXCEL, table + ".txt"), "rb").read().decode("latin-1")
+    lines = [ln[:-1] if ln.endswith("\r") else ln for ln in raw.split("\n")]
+    head = lines[0].split("\t")
+    rows = []
+    for ln in lines[1:]:
+        if not ln:
+            continue
+        c = ln.split("\t")
+        if c[0] == "Expansion":
+            continue
+        rows.append({h: (c[i] if i < len(c) else "") for i, h in enumerate(head) if h not in ()})
+    return head, rows
+
+
+def binrecs(table):
+    """The compiled records through tools/excel_bin.py and tools/excel_layouts.py: [{column: value}]."""
+    import excel_bin
+    recs, size = excel_bin.read_bin(os.path.join(EXCEL, table + ".bin"))
+    lay = excel_bin.get_layout(table)
+    out_ = []
+    for r in recs:
+        d = {}
+        for f in lay["fields"]:
+            try:
+                d.setdefault(f.get("name", f.get("col")), excel_bin.decode_field(r, f))
+            except Exception:  # noqa: BLE001 - a calc or string-table field this check does not need
+                pass
+        out_.append(d)
+    return out_
+
+
+def ds1_objects(data):
+    """A second DS1 reader (docs/formats/ds1.md, written for this check): the header, the file list skipped, the cell
+    layers skipped by count, then the object list. Returns (version, act, [(type, id, x, y, flags)], error)."""
+    o = 0
+
+    def i32():
+        nonlocal o
+        if o + 4 > len(data):
+            raise ValueError("short")
+        v = struct.unpack_from("<i", data, o)[0]
+        o += 4
+        return v
+    try:
+        ver, sx, sy = i32(), i32(), i32()
+        act = i32() if ver >= 8 else 0
+        tag = i32() if ver >= 10 else 0
+        if ver >= 3:
+            for _ in range(i32()):
+                z = data.index(b"\0", o)
+                o = z + 1
+        if 9 <= ver <= 13:
+            o += 8
+        cells = (sx + 1) * (sy + 1)
+        if ver >= 4:
+            walls = i32()
+            floors = i32() if ver >= 16 else 1
+            layers = 2 * walls + floors + 1 + (1 if tag in (1, 2) else 0)
+        else:
+            layers = 5
+        o += 4 * cells * layers
+        objs = []
+        if ver >= 2:
+            for _ in range(i32()):
+                t, i, x, y = i32(), i32(), i32(), i32()
+                fl = i32() if ver >= 6 else 0
+                objs.append((t, i, x, y, fl))
+        return ver, min(act, 4), objs, None
+    except ValueError as ex:
+        return None, None, [], str(ex)
+
+
+def ds1_map(ver, act, objs, mp, otab):
+    """The game's unit mapping (docs/formats/ds1.md § Objects): type 1 (v >= 5) through the act's MonPreset list to
+    (kind, index); type 2 (v >= 6) ids < 150 through g_Ds1ObjectIds, else id - 150; the act rewrites of six MonStats
+    ids into objects at act index 2 and 4. Returns [(type, class-or-place, x, y)]."""
+    res = []
+    for t, i, x, y, fl in objs:
+        if t == 1:
+            if ver < 5:
+                continue
+            lst = mp.get(act + 1, [])
+            pl = lst[i] if 0 <= i < len(lst) else None
+            if pl and pl[0] == 1:
+                cls = pl[1]
+                if act == 2 and cls in (297, 366):
+                    res.append((2, {297: 382, 366: 404}[cls], x, y))
+                    continue
+                if act == 4 and (cls == 514 or 537 <= cls <= 539):
+                    res.append((2, 461 if cls == 514 else 1013 - cls, x, y))
+                    continue
+            res.append((1, pl, x, y))
+        elif t == 2:
+            if ver >= 6:
+                c = otab[act * 150 + i] if i < 150 else i - 150
+            else:
+                c = i
+            res.append((2, c, x, y))
+        else:
+            res.append((t, i, x, y))
+    return res
+
+
+def imm_sites(value):
+    """Every .text instruction with `value` as an immediate operand: objdump's operands, the raw imm32 bytes, r2."""
+    od = sorted(va for va, (mn, ops) in A().ins.items()
+                if any(int(h, 16) == value for h in re.findall(r"(?:^|,)0x([0-9a-f]+)$", (ops or "").replace(" ", "")))
+                and "[" not in (ops or "").split(",")[-1])
+    data = S.image()[0]
+    import xrefscan
+    base, secs = xrefscan.sections(EXE)
+    raw = []
+    pat = struct.pack("<I", value)
+    for sct in secs:
+        if not sct["flags"] & xrefscan.IMAGE_SCN_MEM_EXECUTE:
+            continue
+        blob = data[sct["raw"]:sct["raw"] + min(sct["rsize"], sct["vsize"])]
+        k = blob.find(pat)
+        while k >= 0:
+            raw.append(base + sct["va"] + k)
+            k = blob.find(pat, k + 1)
+    # a raw imm32 hit belongs to the instruction that holds it when they are its last 4 bytes; an objdump site with a
+    # 16-bit operand (`cmp WORD PTR [...], imm16`) is checked on its own last 2 bytes
+    claimed, stray = set(), []
+    for r in raw:
+        hold = max((v for v, _ in A().range(r - 15, r + 1)), default=None)
+        nv = A().next_va(hold) if hold is not None else None
+        if hold is not None and nv == r + 4 and hold in od:
+            claimed.add(hold)
+        else:
+            stray.append((r, hold))
+    for va in od:
+        nv = A().next_va(va)
+        if "WORD PTR" in (A().ins[va][1] or "") and "DWORD" not in A().ins[va][1] and \
+                data[S.va_off(nv) - 2:S.va_off(nv)] == struct.pack("<H", value):
+            claimed.add(va)
+    dec = r2_many(od)
+    r2s = sorted(v for v, d in dec.items() if d and re.search(r"(?:^|[, ])0x%x$" % value, d[1].lower().strip()))
+    return od, sorted(claimed), stray, r2s
+
+
+@section
+def sec_data():
+    # ---- tables, read twice: the plain .txt reader above and the compiled .bin through tools/excel_bin.py
+    _, mon_t = tab("monstats")
+    mon_b = binrecs("monstats")
+    names = [r["Id"] for r in mon_t]
+    out("data", "monstats rows", txt=len(mon_t), bin=len(mon_b), row377=names[377] if len(names) > 377 else "-",
+        bad=int(len(mon_t) != len(mon_b) or names[377] != "act2guard4"))
+    _, su_t = tab("superuniques")
+    su_names = [r["Superunique"] for r in su_t]
+    _, mpl_t = tab("monplace")
+    mpl = [r["code"] for r in mpl_t]
+    _, mp_t = tab("monpreset")
+    mp_b = binrecs("monpreset")
+    mp = collections.defaultdict(list)
+    dis = 0
+    for k, r in enumerate(mp_t):
+        b = mp_b[k]
+        pl = r["Place"]
+        kind = 1 if pl in names else 2 if pl in su_names else 0 if pl in mpl else None
+        idx = names.index(pl) if kind == 1 else su_names.index(pl) if kind == 2 else mpl.index(pl) if kind == 0 else None
+        if int(r["Act"]) != b["Act"] or kind != b.get("PlaceKind") or idx != b["Place"]:
+            dis += 1
+        mp[int(r["Act"])].append((kind, idx, pl))
+    out("data", "monpreset txt=bin", rows=len(mp_t), bin=len(mp_b), disagree=dis, bad=dis + int(len(mp_t) != len(mp_b)))
+    a2 = [(i, e[2]) for i, e in enumerate(mp[2]) if e[2] in ("act2guard4", "place_talkingguard", "place_dumbguard")]
+    note("MonPreset act 2 entries for NPC 377 and its placeholders: %s" % a2)
+    _, lp_t = tab("lvlprest")
+    lp_b = binrecs("lvlprest")
+    named_t = set()
+    for r in lp_t:
+        for k in range(1, 7):
+            f = (r.get("File%d" % k) or "").strip().lower().replace("\\", "/")
+            if f and f != "0":
+                named_t.add(f)
+    named_b = set()
+    for r in lp_b:
+        for k in range(1, 7):
+            f = (r.get("File%d" % k) or "").strip().lower().replace("\\", "/")
+            if f and f != "0":
+                named_b.add(f)
+    out("data", "lvlprest files named", txt=len(named_t), bin=len(named_b), same=int(named_t == named_b),
+        bad=int(named_t != named_b))
+    otab = S.dwords(DS1_OBJ_IDS, 750)
+    out("data", "g_Ds1ObjectIds", entries=750, r2_same=int(otab == r2_words(DS1_OBJ_IDS, 750)),
+        bad=int(otab != r2_words(DS1_OBJ_IDS, 750)))
+    # ---- every DS1, by this file's reader and by tools/ds1.py
+    import ds1 as D1
+    files = []
+    for d, dirs, fnames in os.walk(TILES):
+        dirs.sort()
+        for fn in sorted(fnames):
+            if fn.lower().endswith(".ds1"):
+                files.append(os.path.join(d, fn))
+    ok = err = diff = other_err = 0
+    hits = collections.defaultdict(list)
+    for path in files:
+        data = open(path, "rb").read()
+        ver, act, objs, e = ds1_objects(data)
+        try:
+            f1 = D1.parse(data)
+            o1 = [(u["type"], u["id"], u["x"], u["y"]) for u in f1.get("objects", [])]
+        except Exception as ex:  # noqa: BLE001
+            f1, o1 = None, ("err", str(ex))
+        rel = os.path.relpath(path, TILES).replace(os.sep, "/").lower()
+        if e:
+            err += 1
+            note("DS1 %s: this reader: %s; tools/ds1.py: %s" % (rel, e, "error" if f1 is None else "%d objects" % len(o1)))
+            continue
+        ok += 1
+        if f1 is None:
+            other_err += 1
+            note("DS1 %s: tools/ds1.py refuses it (%s); this reader stops after the object list (%d objects)" % (
+                rel, o1[1], len(objs)))
+        elif [(t, i, x, y) for t, i, x, y, _ in objs] != o1:
+            diff += 1
+            note("DS1 %s: object lists differ (%d here, %d there)" % (rel, len(objs), len(o1)))
+        named = rel in named_t
+        for t, c, x, y in ds1_map(ver, act, objs, mp, otab):
+            if t == 1 and c and c[2] in ("act2guard4", "place_talkingguard", "place_dumbguard"):
+                hits["377"].append((rel, c[2], x, y, named))
+            if t == 2 and c in (567, 410):
+                hits[c].append((rel, c, x, y, named))
+    out("data", "DS1 files", files=len(files), parsed=ok, errors=err, lists_differ=diff, ds1py_errors=other_err,
+        both=ok - other_err, bad=diff + err)
+    n377 = [h for h in hits["377"] if h[4]]
+    out("data", "P179 R3 DS1 units NPC 377 or placeholders", units=len(hits["377"]), in_lvlprest_files=len(n377),
+        bad=len(n377))
+    for h in hits["377"]:
+        note("unit %s %s at (%d, %d), LvlPrest names the file: %s" % h)
+    for c in (567, 410):
+        out("data", "P302 T56 R3 DS1 objects class %d" % c, units=len(hits[c]), bad=len(hits[c]))
+        for h in hits[c]:
+            note("object %s %d at (%d, %d), LvlPrest names the file: %s" % h)
+    # ---- Levels and SuperUniques columns naming MonStats 377
+    _, lv_t = tab("levels")
+    lv_b = binrecs("levels")
+    lt = [(r.get("Name"), k) for r in lv_t for k, v in r.items() if v == "act2guard4"]
+    cols = ["mon%d" % k for k in range(1, 11)] + ["nmon%d" % k for k in range(1, 11)] + \
+           ["umon%d" % k for k in range(1, 11)] + ["cmon%d" % k for k in range(1, 5)]
+    lb = [(i, c) for i, r in enumerate(lv_b) for c in cols if r.get(c) == 377]
+    out("data", "P179 Levels cells naming act2guard4", txt=len(lt), bin_mon_cells_377=len(lb), rows=len(lv_t),
+        bin_rows=len(lv_b), bad=len(lt) + len(lb))
+    # every cell of every excel .txt that names act2guard4 (its own rows: MonStats Id/BaseId/MonStatsEx, MonStats2 Id,
+    # MonPreset Place)
+    own = {("monstats", "Id"), ("monstats", "BaseId"), ("monstats", "MonStatsEx"), ("monstats2", "Id"),
+           ("monpreset", "Place")}
+    cells = []
+    for fn in sorted(os.listdir(EXCEL)):
+        if not fn.lower().endswith(".txt"):
+            continue
+        h, rows = tab(fn[:-4])
+        for r in rows:
+            for k, v in r.items():
+                if v == "act2guard4":
+                    cells.append((fn[:-4].lower(), k))
+    other = [c for c in cells if c not in own]
+    out("data", "P179 excel cells naming act2guard4", cells=len(cells), outside_own_rows=len(other), bad=len(other))
+    note("cells: %s" % " ".join("%s.%s" % c for c in cells))
+    _, hi_t = tab("hireling")
+    hc = [r.get("Hireling") for r in hi_t if r.get("Class") == "377"]
+    out("data", "P179 Hireling Class 377 (txt; the one numeric monster-class column)", rows=len(hi_t), n=len(hc),
+        bad=len(hc))
+    su_b = binrecs("superuniques")
+    st = [r["Superunique"] for r in su_t if r.get("Class") == "act2guard4"]
+    sb = [i for i, r in enumerate(su_b) if r.get("Class") == 377]
+    out("data", "P179 SuperUniques Class 377", txt=len(st), bin=len(sb), rows=len(su_t), bad=len(st) + len(sb))
+    # ---- objgroup cells naming objects 410 and 567
+    _, og_t = tab("objgroup")
+    og_b = binrecs("objgroup")
+    for c in (410, 567):
+        ct = [(r.get("GroupName"), k) for r in og_t for k in ["ID%d" % j for j in range(8)] if r.get(k) == str(c)]
+        cb = [(i, "ID%d" % j) for i, r in enumerate(og_b) for j in range(8) if r.get("ID%d" % j) == c]
+        out("data", "T56 P302 objgroup ID cells = %d" % c, txt=len(ct), bin=len(cb), rows=len(og_t), bad=len(ct) + len(cb))
+    # ---- code immediates for the three classes
+    for v, lab in ((377, "P179 R3 class 377"), (567, "P302 R3 class 567"), (410, "T56 class 410")):
+        od, claimed, stray, r2s = imm_sites(v)
+        out("data", "%s immediates" % lab, objdump=len(od), raw_imm32=len(claimed), r2=len(r2s),
+            agree=int(od == claimed == r2s), raw_other=len(stray), bad=int(not (od == claimed == r2s)))
+        for va in od:
+            nc = next_call(va, va + 0x80)
+            note("0x%08X %s: %s %s; next call 0x%08X %s [r2 %s]" % (
+                va, nm(va), A().ins[va][0], A().ins[va][1], nc[0] or 0, nm(nc[1]) if nc[1] else A().ins.get(
+                    nc[0], ("", "?"))[1] if nc[0] else "-", r2_text(va)))
+        for r, h in stray:
+            note("raw %#x at 0x%08X inside 0x%08X %s %s (not an imm32 operand)" % (
+                v, r, h or 0, A().ins.get(h, ("?", ""))[0], A().ins.get(h, ("", ""))[1]))
+    # ---- T32: the waypoint rows' Sync and FrameDelta; T30: Levels.Waypoint
+    _, ob_t = tab("objects")
+    ob_b = binrecs("objects")
+    op46t = [k for k, r in enumerate(ob_t) if r.get("OperateFn") == "46"]
+    op46b = [k for k, r in enumerate(ob_b) if r.get("OperateFn") == 46]
+    out("data", "T56 Objects rows with OperateFn 46", txt=" ".join(map(str, op46t)), bin=" ".join(map(str, op46b)),
+        names="|".join(ob_t[k]["Name"] for k in op46t), row410=ob_t[410]["Name"].replace(" ", "_"),
+        bad=int(op46t != op46b or 410 not in op46t))
+    wp_t = [k for k, r in enumerate(ob_t) if r.get("InitFn") == "17" and r.get("OperateFn") == "23"]
+    wp_b = [k for k, r in enumerate(ob_b) if r.get("InitFn") == 17 and r.get("OperateFn") == 23]
+    sync0_t = [k for k in wp_t if ob_t[k]["Sync"] in ("0", "")]
+    sync0_b = [k for k in wp_b if ob_b[k]["Sync"] == 0]
+    fd = sorted(set((int(ob_t[k]["FrameDelta1"] or 0), int(ob_t[k]["FrameDelta2"] or 0)) for k in sync0_t))
+    fdb = sorted(set((ob_b[k]["FrameDelta1"], ob_b[k]["FrameDelta2"]) for k in sync0_b))
+    want = [429, 494, 496, 511, 539]
+    out("data", "T32 waypoint rows (InitFn 17, OperateFn 23)", txt=len(wp_t), bin=len(wp_b),
+        sync0_txt=" ".join(map(str, sync0_t)), sync0_bin=" ".join(map(str, sync0_b)),
+        fd12_txt=fd, fd12_bin=fdb, sync1=len([k for k in wp_t if ob_t[k]["Sync"] == "1"]),
+        bad=int(sync0_t != want or sync0_b != want or wp_t != wp_b or fd != [(200, 100)] or fdb != [(200, 100)]
+                or len(wp_t) != 16))
+    note("waypoint rows: %s" % " ".join("%d:%s:Sync%s" % (k, ob_t[k]["Name"], ob_t[k]["Sync"]) for k in wp_t))
+    wpl_t = [(int(r["Id"]), int(r["Waypoint"] or 255)) for r in lv_t if r.get("Id", "") != ""]
+    wpl_b = [(r["Id"], r["Waypoint"]) for r in lv_b]
+    out("data", "T30 Levels.Waypoint", rows_txt=len(wpl_t), rows_bin=len(wpl_b), same=int(wpl_t == wpl_b),
+        with_waypoint=sum(1 for _, w in wpl_b if w != 255), bad=int(wpl_t != wpl_b))
+    note("Levels with a waypoint index: %s" % " ".join("%d:%d" % x for x in wpl_b if x[1] != 255))
+
+
+# ================================================================================================== part2 (remainders)
+def r2_lines(lo, hi):
+    return [(va, mn, norm(ops)) for va, mn, ops in T.r2_range(lo, hi)]
+
+
+def od_lines(lo, hi):
+    return [(va, mn, norm(ops)) for va, mn, ops in fresh(lo, hi)]
+
+
+def into(lo, hi):
+    """Branch sites (raw rel32 index and objdump's jcc/jmp operands) whose target lies in (lo, hi]."""
+    res = set()
+    for t, lst in raw_index().items():
+        if lo < t <= hi:
+            res |= set(s for _, s in lst)
+    for t, lst in od_index().items():
+        if lo < t <= hi:
+            res |= set(s for _, s in lst)
+    # short jumps are not in the rel32 index: objdump's operands cover them
+    return sorted(res)
+
+
+@section
+def sec_part2():
+    # ---- P37: QUESTS_MonsterDeathEvent's forced list
+    lo, hi = 0x00543B12, 0x00543B4B
+    a, b = od_lines(lo, hi), r2_lines(lo, hi)
+    imms = sorted(int(o.split(",")[1], 0) for va, mn, o in a if mn == "cmp" and o.startswith("eax,"))
+    same = [(x[0], x[1]) for x in a] == [(x[0], x[1]) for x in b]
+    out("part2", "P37 class compares 0x00543B12-0x00543B4B", objdump=len(a), r2=len(b), same_listing=int(same),
+        classes=" ".join(map(str, imms)), bad=int(imms != [0xF2, 0xF3, 0x187, 0x220] or not same))
+    for x, y in zip(a, b):
+        note("0x%08X objdump %s %s | r2 %s %s" % (x[0], x[1], x[2], y[1], y[2]))
+    bt = S.image()[0][S.va_off(0x00543B68):S.va_off(0x00543B68) + 0x23]
+    bt_r2 = T.r2_bytes(0x00543B68, 0x23)
+    jt = S.dwords(0x00543B60, max(bt) + 1)
+    jt_r2 = r2_words(0x00543B60, max(bt) + 1)
+    forced = [k + 0x1A for k in range(0x23) if jt[bt[k]] == 0x00543B0E]
+    _, su_t = tab("superuniques")
+    su_b = binrecs("superuniques")
+    want = [26, 27, 29, 36, 37, 38, 39, 42, 43, 44, 45, 60]
+    out("part2", "P37 superunique switch", bytes_r2_same=int(bytes(bt) == bt_r2), targets=len(jt),
+        targets_r2_same=int(jt == jt_r2), forced=" ".join(map(str, forced)),
+        selfidx_txt_bin=int(all(su_b[k]["Superunique"] == k for k in forced)),
+        bad=int(forced != want or bytes(bt) != bt_r2 or jt != jt_r2))
+    note("jump targets: %s" % " ".join("0x%08X" % t for t in jt))
+    note("forced superuniques: %s" % ", ".join("%d %s" % (k, su_t[k]["Superunique"]) for k in forced))
+    # the SuperUniques row's +0x08 is the row's own index (Superunique column) in every row of the .bin
+    out("part2", "P37 SuperUniques +0x08 = row index", rows=len(su_b),
+        equal=sum(1 for k, r in enumerate(su_b) if r["Superunique"] == k),
+        bad=sum(1 for k, r in enumerate(su_b) if r["Superunique"] != k))
+    # "after the drop": UnitKilled's MonSetMode call (the drop, items/0010) then the quest event, nothing entering between
+    a, b = od_lines(0x0057CDC4, 0x0057CDDE), r2_lines(0x0057CDC4, 0x0057CDDE)
+    ins_ = into(0x0057CDC4, 0x0057CDD9)
+    inside = [s_ for s_ in ins_ if not (0x0057CDC4 <= s_ <= 0x0057CDD9)]
+    out("part2", "P37 drop then quest event in UnitKilled", objdump=len(a), r2=len(b),
+        same=int([(x[0], x[1]) for x in a] == [(x[0], x[1]) for x in b]), branches_into_from_outside=len(inside),
+        bad=int(len(inside) != 0 or a[0][1:] != ("call", str(0x005A7C20)) or a[-1][1:] != ("call", str(0x00543A30))))
+    for x in a:
+        note("0x%08X %s %s" % x)
+    for s_ in ins_:
+        note("branch into the span from 0x%08X %s" % (s_, nm(s_)))
+    # ---- P316: InitFn 6 (the cairn stones)
+    d = S.dwords(0x00731BC0, 90)
+    f6 = d[6]
+    out("part2", "P316 g_ObjInitFns[6]", image="0x%08X" % f6, r2="0x%08X" % r2_words(0x00731BC0, 7)[6],
+        fn=nm(f6), bad=int(f6 != r2_words(0x00731BC0, 7)[6]))
+    lo6, hi6 = fn_range(f6)
+    body = fresh(f6, hi6)
+    cs = [(va, S.branch_target(o)) for va, mn, o in body if mn == "call"]
+    qr = [(va, t) for va, t in cs if t in QUEST_READERS or t == GQG]
+    out("part2", "P316 InitFn 6 calls", calls=len(cs), quest_readers=" ".join("%s@0x%08X" % (QUEST_READERS.get(t, "GQG"), va)
+                                                                              for va, t in qr),
+        record_readers=sum(1 for va, t in qr if t in (0x0065C310, GQG, 0x00543520)),
+        bad=sum(1 for va, t in qr if t in (0x0065C310, GQG, 0x00543520)))
+    for va, t in cs:
+        note("call 0x%08X -> 0x%08X %s; edx=%s" % (va, t or 0, nm(t) if t else "?", expr(va, "edx")))
+    _, ob_t = tab("objects")
+    ob_b = binrecs("objects")
+    r6t = [k for k, r in enumerate(ob_t) if r.get("InitFn") == "6"]
+    r6b = [k for k, r in enumerate(ob_b) if r.get("InitFn") == 6]
+    out("part2", "P316 Objects rows with InitFn 6", txt=" ".join(map(str, r6t)), bin=" ".join(map(str, r6b)),
+        names="|".join(ob_t[k]["Name"] for k in r6t), bad=int(r6t != r6b))
+    # ---- P319: the level-27 bit; calls of the level getters with level 27, and quest functions calling them
+    for t, n in ((0x00642BB0, "LevelEnsure"), (0x00642AE0, "DRLG_LevelCreate"), (0x0061DB70, "LEVELS_GetRecord")):
+        sites = ref_line("part2", "P319 %s" % n, t)
+        l27, quest = [], []
+        for s_ in sites:
+            args = od_push_args(s_, 2) or []
+            ed = expr(s_, "edx")
+            if "27" in args or ed == 27:
+                l27.append(s_)
+            if QUEST_NAME.search(nm(s_)):
+                quest.append(s_)
+        out("part2", "P319 %s with level 27" % n, calls=len(sites), level27=" ".join("0x%08X:%s" % (x, nm(x)) for x in l27)
+            or "-", quest_callers=" ".join("0x%08X:%s" % (x, nm(x)) for x in quest) or "-")
+    # the DRLG and room callees of every quest function (direct calls), for the scope of "no quest code reads it"
+    fns = [(int(l.split(",")[0], 16), l.split(",")[2]) for l in open(os.path.join(S.ROOT, "re", "symbols.csv"))
+           if l.count(",") >= 3 and l.split(",")[1] == "func" and QUEST_NAME.search(l.split(",")[2])]
+    cnt = collections.Counter()
+    for e, n in fns:
+        flo, fhi = func_bounds(e)
+        for va, t in calls_in(flo, fhi):
+            if t and any(k in nm(t) for k in ("Level", "Room", "DRLG", "Drlg", "DUNGEON")):
+                cnt[t] += 1
+    getters = sum(cnt[t] for t in (0x00642BB0, 0x00642AE0))
+    out("part2", "P319 quest functions' DRLG/room callees", functions=len(fns), callees=len(cnt),
+        level_struct_getters=getters, bad=getters)
+    for t, v in sorted(cnt.items()):
+        note("0x%08X %s x%d" % (t, nm(t), v))
+    # ---- T21: the field's centre words 0x0096D664 / 0x0096D668
+    data = S.image()[0]
+    for g in (0x0096D664, 0x0096D668):
+        ab = [a_ for sec_, a_ in raw_abs(g) if sec_ == ".text"]
+        sites = sorted(set(max(v for v, _ in A().range(a_ - 15, a_ + 1)) for a_ in ab))
+        od = sorted(va for va, (mn, ops) in A().ins.items() if "0x%x" % g in (ops or "").lower())
+        dec = r2_many(od)
+        rs = sorted(v for v, dd in dec.items() if dd and "0x%x" % g in dd[1].lower())
+        rows = []
+        for va in od:
+            mn, ops = A().ins[va]
+            w = "write" if "0x%x" % g in split_ops(ops)[0].lower() and mn not in ("cmp", "test", "push") else "read"
+            rows.append((va, nm(va), w, mn, ops))
+        writers = sorted(set(r[1].split("+")[0] for r in rows if r[2] == "write"))
+        readers = sorted(set(r[1].split("+")[0] for r in rows if r[2] == "read"))
+        out("part2", "T21 0x%08X" % g, raw_abs32=len(ab), objdump=len(od), r2=len(rs),
+            agree=int(sites == od == rs), writers="|".join(writers), readers="|".join(readers),
+            bad=int(not (sites == od == rs)))
+        for r in rows:
+            note("0x%08X %s %s: %s %s" % r)
+    ef = os.path.join(MERGED, "data", "global", "expfield.d2")
+    raw_ = open(ef, "rb").read()
+    w_, h_ = struct.unpack_from("<II", raw_, 2)
+    out("part2", "T21 expfield.d2 header", width=w_, height=h_, size=len(raw_), centre_col=w_ >> 1, centre_row=h_ >> 1,
+        bad=int((w_, h_) != (256, 256) or len(raw_) != 10 + w_ * h_))
+    # ---- T30: WAYPOINT_IndexFromLevel's read and WaypointOperate's references
+    a, b = od_lines(0x00660E00, 0x00660E49), r2_lines(0x00660E00, 0x00660E49)
+    rd = [x for x in a if "+0xe4]" in x[2]]
+    out("part2", "T30 WAYPOINT_IndexFromLevel", objdump=len(a), r2=len(b),
+        same=int([(x[0], x[1]) for x in a] == [(x[0], x[1]) for x in b]),
+        reads_e4=" ".join("0x%08X:%s %s" % x for x in rd), getter=" ".join("0x%08X" % x[0] for x in a
+                                                                          if x[1] == "call"),
+        bad=int(len(rd) != 1))
+    for x in a:
+        note("0x%08X %s %s" % x)
+    sites = ref_line("part2", "T30 WaypointOperate direct calls", 0x00584E30, want=[])
+    ab = raw_abs(0x00584E30)
+    slots = [(a_, (a_ - 0x00732D18) // 4) for sec_, a_ in ab if sec_ != ".text"]
+    texts = []
+    for sec_, a_ in ab:
+        if sec_ == ".text":
+            hold = max(v for v, _ in A().range(a_ - 15, a_ + 1))
+            texts.append((hold, nm(hold), A().ins[hold][0], A().ins[hold][1], r2_text(hold)))
+    out("part2", "T30 WaypointOperate abs32", n=len(ab), table=" ".join("0x%08X:slot%d" % x for x in slots),
+        text=" ".join("0x%08X:%s" % (t[0], t[2]) for t in texts),
+        bad=int([x[1] for x in slots] != [23] or any(t[2] != "cmp" for t in texts)))
+    for t in texts:
+        note("0x%08X %s: %s %s [r2 %s]" % t)
+
+
+# ================================================================================================== totals
+@section
+def sec_totals():
+    """Plan 0066's class totals: every per-spec inventory file's rows (Class, Count) summed, against each file's own
+    *Totals by class* line."""
+    d = os.path.join(S.ROOT, "docs", "plans", "0066-inventory")
+    tot, bad = collections.Counter(), 0
+    files = sorted(f for f in os.listdir(d) if f.endswith(".md") and f != "README.md")
+    for f in files:
+        rows, line = collections.Counter(), None
+        for ln in open(os.path.join(d, f), encoding="utf-8"):
+            c = [x.strip() for x in ln.split(" | ")]
+            if ln.startswith("| ") and len(c) >= 9 and c[0].lstrip("| ").isdigit():
+                rows[c[5]] += int(c[-1].rstrip(" |\n"))
+            if ln.startswith("**Totals by class:**"):
+                line = collections.Counter({k: int(v) for k, v in re.findall(r"([a-z][a-z0-9-]*) (\d+)", ln.split("(sum")[0])})
+        tot += rows
+        if line is not None and +line != +rows:
+            bad += 1
+            note("%s: rows %s, totals line %s" % (f, dict(rows), dict(line)))
+    out("totals", "plan 0066 classes", files=len(files), sum=sum(tot.values()),
+        **{k.replace("-", "_"): v for k, v in sorted(tot.items())}, bad=bad)
 
 
 if __name__ == "__main__":

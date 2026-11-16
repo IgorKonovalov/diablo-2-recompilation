@@ -21,3 +21,14 @@ contradicted; row 229 carries a game-record correction (word 32 b13 from `A3Q7_F
 that directory; development outputs in `dev/`). Records: quests/0001 § 20, quests/0002 § 17; refinements in
 [`2026-11-16-reverser-spec-writer-plan-0066-s3c-refinements`](2026-11-16-reverser-spec-writer-plan-0066-s3c-refinements.md).
 Judgment calls in the plan log entry of the same date. Review S3b and S3c part 1 together.
+
+2026-11-16, extended to S3c part 2 (`lane/n66p`), so the request covers S3b and S3c whole. Part 2 settled the 8 open
+rows (progression 19, 179, 302; travel 21, 30, 32, 56; README 3) and the remainders of progression 37, 316 and 319.
+S3c totals: raised 45, raised in part 6 (progression 104, 124, 159, 229; travel 32, 56), none contradicted. Travel 32
+carries quests/0002 § 15's earlier correction ("draws again"). The new sections of `tools/quests_s3c.py` are
+`dataflow` (a CFG taint of the game record from every `+0x10F4` load), `data` (a second DS1 reader and a plain `.txt`
+reader against `tools/ds1.py` and `tools/excel_bin.py`) and `part2`. Kept output
+`workspace/logs/n66p/s3c/check-s3c-p2.txt` (`manifest-s3c-p2.sha256`, passing from that directory; development outputs
+in `dev2/`). Records: quests/0001 § 21, quests/0002 § 18. Refinements are in
+[`2026-11-16-reverser-spec-writer-plan-0066-s3c-part2-refinements`](2026-11-16-reverser-spec-writer-plan-0066-s3c-part2-refinements.md).
+The judgment calls are in the plan log entry of the same date.

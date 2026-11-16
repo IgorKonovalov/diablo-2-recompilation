@@ -2534,6 +2534,89 @@ value: `cmp eax, 1; jne` then `lea edx, [eax+0x1f]` is 32). Row by row in
   the `[ctrl+0xC]` loads misses `GameQuestSet`'s own), the DS1/Levels/SuperUniques placement scans with a second
   parser (NPC 377, objects 567 and 410), the `Objects.txt` and `Levels.txt` columns, the level-27 bit.
 
+### 21. Plan 0066 batch S3c, part 2: the game record's data flow, the placement scans with a second parser (2026-11-16, `lane/n66p`)
+
+Static, no game, no Ghidra. `tools/quests_s3c.py` sections `dataflow`, `data` and `part2` (`travel` rows are in
+[quests/0002 § 18](0002-travel.md#18-plan-0066-batch-s3c-part-2-the-travel-tables-and-the-field-centre-2026-11-16-lanen66p));
+kept output `workspace/logs/n66p/s3c/check-s3c-p2.txt` (`manifest-s3c-p2.sha256`, `S3c total bad=0`). Tables are read
+twice: a plain tab reader of the `.txt` written in the tool, and the compiled `.bin` through `tools/excel_bin.py` and
+its layouts. DS1 files are read twice: a second reader written for this check (header, file list and layers skipped by
+count, the object list) and `tools/ds1.py`. Row by row in `docs/plans/0066-inventory/quests-progression.md` and
+`quests-README.md`.
+
+- [C] **The game record is written only by `QUESTRECORD_SetState` from `GameQuestSet` (0x00544757) and from the join
+  (0x00546339)** (A6). The record pointer lives at the quest control's `+0x0C`, and the control at `game +0x10F4`. All
+  55 `+0x10F4` displacements in .text agree three ways (objdump, r2 and the raw disp32 bytes; the 4 other raw
+  `f4 10 00 00` lie inside `mov [ebp-0xc], 0x10` encodings, and 2 are stack slots `[ebp-0x10F4]`). The 2 stores to
+  `+0x10F4` are `QUESTS_InitGame`'s (0x00545F5F) and a client struct copy in `ClientMainFrame` (0x00450B7F). A
+  may-taint walk over each function's control-flow graph runs from each of the 53 loads (a call kills
+  EAX/ECX/EDX, and the fatal exit 0x00681E09 has no successor). It marks the control (C) and the record (`[C+0xC]`, R),
+  and it follows each C or R value into its callees to depth 3. The record is created by `QUESTRECORD_Alloc`, whose
+  return is stored at once (0x00545F57, 0x00545F5C). Outside that, R reaches only these calls:
+  - `SetState`, at the two sites above;
+  - `GetState` in `GameQuestGet` (0x00544797);
+  - `QUESTRECORD_SaveBytes` in `QUESTS_SendGameRecord` (0x0054456E, a read);
+  - the free 0x0065C490 (pushed at 0x0054388A);
+  - the quest objects' log-state callbacks, `call eax` at 0x005442AD and 0x00546135, as stack argument 1.
+
+  The callbacks are the 23 functions that the 41 inits (40 functions) store at `+0xE8` (40 stores, all resolved), and the default
+  `QUESTS_DefaultLogState`. Seeded with R at `[ebp+0x8]`, none touches it. C escapes only into the free 0x0040B480 and
+  the message helper 0x00408090, which keeps ECX and does nothing with it. No path stores C or R in memory, apart from
+  the client copy. No instruction writes through R, and the record is never handed to `QUESTRECORD_LoadBytes`.
+  (fn:sub_00544720_GameQuestSet@0x00544720, fn:sub_00546270_QuestsPlayerJoin@0x00546270,
+  fn:QUESTS_InitGame@0x00545D80, fn:QUESTS_SendGameRecord@0x00544520)
+- [C] Refinement, read side (A6 says "read through `GameQuestGet`"). `QUESTS_SendGameRecord` also reads the whole
+  record: it serialises it with `QUESTRECORD_SaveBytes` (0x0054456E). The log-state callbacks are handed the record but
+  never read it. (fn:QUESTS_SendGameRecord@0x00544520)
+- [C] **The forced death list** (event table, e8). `QUESTS_MonsterDeathEvent` forces the dispatch for monster
+  classes 242, 243, 391 and 544. Objdump and r2 give the same 20 instructions at 0x00543B12–0x00543B4B
+  (`cmp eax, 0x187 / 0xf2 / 0xf3 / 0x220`, each branch to 0x00543B47, which stores the force byte). It also forces
+  it for the superuniques whose row index (`+0x08`, equal to the row index in all 66 `.bin` records) is 26, 27, 29,
+  36–39, 42–45 or 60. That comes from the switch 0x00543B07 over index − 26 (0x23 cases): the byte table 0x00543B68 and
+  its 2 targets, read from the image and by r2 alike, with target 0x00543B0E setting the force byte. The rows are
+  Ismail Vilehand, Geleb Flamefinger, Toorc Icefist, Infector of Souls, Lord De Seis, Grand Vizier of Chaos, The Cow
+  King, Siege Boss, Ancient Barbarian 1–3 and Nihlathak Boss. (fn:QUESTS_MonsterDeathEvent@0x00543A30)
+- [C] **After the drop.** In `sub_0057CCB0_UnitKilled` the quest event (0x0057CDD9) follows `MonSetMode`
+  (0x0057CDC4, whose death-mode start function drops the items: items/0010 § 2, run:2026-10-16-quest-drops). The six
+  instructions between them are the same in objdump and r2. Their one branch, `jne` at 0x0057CDD2, skips the quest call
+  when bit 31 of the monster's `+0xC4` is set, and no branch from outside lands inside the span (raw rel32 index and
+  objdump operands). (fn:sub_0057CCB0_UnitKilled@0x0057CCB0)
+- [C] **NPC 377 is placed by no stock data** (§ G, quests/README). All 2 276 DS1 files under `data/global/tiles` pass
+  the second reader. `tools/ds1.py` refuses 2 of them (`act1/outdoors/trees.ds1`, `expansion/siege/xtransition.ds1`,
+  both known malformed and named by no LvlPrest row). The object lists of the other 2 274 agree between the two
+  readers. Units are mapped as `DS1_Parse` does: MonPreset by act, read from `.txt` and `.bin` alike (229 rows);
+  `g_Ds1ObjectIds` from the image and r2 alike; the six act rewrites. Act II's MonPreset list holds `act2guard4` at 54 and
+  `place_talkingguard`, `place_dumbguard` at 29 and 30, and the 3 units that resolve to any of them are in
+  `act2/town/lut2.ds1`, which no LvlPrest `File1..6` names (2 043 names, `.txt` and `.bin` alike). No Levels
+  `mon`/`nmon`/`umon`/`cmon` cell (137 rows, `.txt` and `.bin`), no SuperUniques `Class` (66 rows, both) and no Hireling
+  `Class` names MonStats 377. Over every excel `.txt`, `act2guard4` appears only in its own rows (MonStats
+  `Id`/`BaseId`/`MonStatsEx`, MonStats2 `Id`, MonPreset `Place`).
+  (data:g_Ds1ObjectIds@0x00748AD8, fn:DS1_Parse@0x00665950, tbl:MonPreset.txt:Place, tbl:Levels.txt:mon1,
+  tbl:SuperUniques.txt:Class) The immediate 0x179 occurs in 14 .text instructions,
+  the same three ways (objdump, r2, raw imm32/imm16), and none is a spawn's class:
+  - 8 are quest scripts: 5 compare an NPC class or a message (`A2Q4_NpcMessage` 0x0059B159, `A2Q6_TownPortalPos`
+    0x0059E0B7, word 30's `A2Q7` functions 0x0059E0E0, 0x0059E15B, 0x0059E2C3) and 3 push word 30's message
+    (0x0059E20A, 0x0059E23D, 0x0059E286, into `QUESTS_SetNpcMessage`);
+  - 2 are `OBJOP_LevelPortal`'s object-class compare (0x00584D63) and the client's NPC menu (0x004B1A4F);
+  - 4 are a source-line number or a stack constant (0x004D17C4, 0x005073BD, 0x0051FB2F, 0x00632725).
+- [C] **Object 567 is placed by no DS1, and no immediate creates it** (§ G, the Zoo). No unit of the 2 274 files the
+  two readers share maps to 567, and none of the other 2 maps to it under the second reader. No `objgroup` `ID0..7`
+  cell names it (133 rows, `.txt` and `.bin`). The immediate 0x237 occurs 3 times, the same three ways: a client
+  `PathSetSpeed` argument (0x004C8641) and two source-line numbers before the free call (0x005366E7, 0x0058F322). A
+  computed class is still not excluded, as the spec's Zoo bullet says. (fn:sub_0058E830_A5Q6_ZooInit@0x0058E830)
+- [C] **The cairn stones' init** (creation-path readers). `g_ObjInitFns[6]` is 0x005935E0
+  (`sub_005935E0_A1Q4_StoneInit`; image and r2 alike), the `InitFn` of Objects rows 17–21 (`StoneAlpha` … `StoneLambda`,
+  `.txt` and `.bin` alike). Its six calls are `QUESTS_FindById(4)` (0x005935EA), four `UNIT_SetMode` and one
+  `QUESTS_TimerAdd`, so no record reader: it reads quest 4's `+0x09` and its private block. (data:g_ObjInitFns@0x00731BC0)
+- [C] **The level-27 bit is read by no quest code** (creation-path readers, rng/seeds). `LevelEnsure` (21 calls) and
+  `DRLG_LevelCreate` (7) are the by-id getters of a level's struct, and their references agree three ways. Level 27 is
+  asked for twice, both through `LevelEnsure`: by the writer `LevelLinkBuild` (0x0067749F) and by
+  `MazeBarracksPlace` (0x00673131). No quest function calls either getter. The 620 quest functions call 19 DRLG or room
+  functions directly, which give a level id (`RoomGetLevelId`), an act, rooms or a room count; none is a level-struct
+  getter. Scope: direct calls. (fn:sub_00642BB0_LevelEnsure@0x00642BB0, fn:sub_006772C0_LevelLinkBuild@0x006772C0)
+- No row contradicted. One refinement (the record's read side, above) is in
+  [`2026-11-16-reverser-spec-writer-plan-0066-s3c-part2-refinements`](../../backlog/2026-11-16-reverser-spec-writer-plan-0066-s3c-part2-refinements.md).
+
 ## Data touched
 
 - `tbl:MonStats.txt:TCQuestId`, `tbl:MonStats.txt:TCQuestCP` (through items/0010), `tbl:MonStats.txt:zoo` (the Zoo)

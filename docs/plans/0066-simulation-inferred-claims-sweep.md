@@ -1668,3 +1668,58 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   `tools/quests.py objplace`/`npcplace`; `Objects.txt`, `objgroup.txt`, `Levels.txt`, `SuperUniques.txt` read by a plain
   tab parser against `tools/excel_bin.py`; the game record's writers by following each `[x+0x10F4]` load through the
   function (not killed at the fatal-path calls). A fresh lane on `lane/n66p`.
+
+### 2026-11-16 — Phase 1, batch S3c part 2 (reverser-static, `lane/n66p`): done, S3c 51 of 51 settled
+
+- **Done.** No game, no Ghidra. `main` `0f81e160` merged at `6ebc1f05`, with nothing that touches plan 0066. Four
+  sections were added to `tools/quests_s3c.py` (`37f80f75…`):
+  - `dataflow`: the 55 `+0x10F4` displacements three ways, then a may-taint walk over each function's control-flow
+    graph, from each quest-control load and its game-record loads into callees to depth 3 and into the 23 `+0xE8`
+    log-state callbacks;
+  - `data`: a second DS1 reader against `tools/ds1.py`, and a plain `.txt` reader against the `.bin` through
+    `tools/excel_bin.py`;
+  - `part2`: the remainders;
+  - `totals`: the class totals from the 29 files' rows, checked against each file's *Totals by class* line.
+
+  The kept run was made once with the final revision, under a 4 GB scope:
+  `workspace/logs/n66p/s3c/check-s3c-p2.txt` (`1c5ac8e8…`, `S3c total bad=0`), `totals-s3c-p2.txt` (`b2e97585…`), and
+  `manifest-s3c-p2.sha256` (`008e41e8…`), which passes from that directory. The development outputs are in `dev2/`
+  with `manifest-dev2.sha256` (14 lines). The last two development runs differ from the kept run only by the tool's
+  docstring and the totals section. Records:
+  [quests/0001 § 21](../findings/quests/0001-progression.md#21-plan-0066-batch-s3c-part-2-the-game-records-data-flow-the-placement-scans-with-a-second-parser-2026-11-16-lanen66p),
+  [quests/0002 § 18](../findings/quests/0002-travel.md#18-plan-0066-batch-s3c-part-2-the-travel-tables-and-the-field-centre-2026-11-16-lanen66p).
+  Every row's *Route* cell carries its dated S3c part 2 note, and README § 4's S3c row is updated.
+- **Raised 6:** progression 19, 179, 302; travel 21, 30; README 3. **Remainders raised 3:** progression 37, 316, 319,
+  so these rows are now raised whole.
+- **Raised in part 2**, with the remainders in the Route cells:
+  - travel 32: the mode-0 operate's draw → a-run (H3e, the x-wpact5c activations);
+  - travel 56: "on any level but 102 the handler moves no one" → d-none (the object is never placed).
+- **S3c whole:** raised 45, raised in part 6 (progression 104, 124, 159, 229; travel 32, 56), none contradicted.
+- **Corrections and refinements:** travel 32's "its later change to mode 2 draws again" was already superseded by
+  quests/0002 § 15 (event 1 writes mode 2 directly, no draw). The game record's read side gains
+  `QUESTS_SendGameRecord`'s `SaveBytes` (progression 19). Both are in backlog
+  [`2026-11-16-reverser-spec-writer-plan-0066-s3c-part2-refinements`](../backlog/2026-11-16-reverser-spec-writer-plan-0066-s3c-part2-refinements.md).
+- **Symbols:** none raised (static).
+- **Totals** at `0f81e160` (`totals-s3c-p2.txt`, the 29 files' rows): a-logs 625, a-run 341, b 448, c 390, c-emu 494,
+  d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626. No class moved, so Phase 1 is 1 509, Phase 2 789 and blocked 328
+  (README § 1).
+- **Ready for Phase 3 (spec-writer), lines at `b5999f5e`, match by text.**
+  - progression whole: 156, 204, 973, 1546, 1587, 1590;
+  - travel whole: 264, 327; split: 332, 488;
+  - README whole: 82.
+- **Judgment calls for the review:**
+  1. Row 19's "written only" rests on the CFG taint from every `+0x10F4` load. It is complete as far as the control
+     pointer is reached through that displacement, and the 2 stores to it are the init and a client copy.
+  2. The 23 `+0xE8` callbacks are taken from the 41 inits' stores. The 15 other `+0xE8` stores in .text are on other
+     structs (rooms, units, a quest's private block at 0x0058EAFA), and they are named in the output.
+  3. Row 179's "no code spawns class 377" is the 14 immediates, classified by reading, together with every excel cell
+     and the one numeric monster-class column (Hireling `Class`). A class computed some other way is not excluded,
+     as the spec already says for 567.
+  4. Row 319's remainder is scoped to direct calls of the two by-id level getters. The quest functions' 19 DRLG and
+     room callees are listed, and none is a level-struct getter.
+  5. Travel 56's remainder goes to d-none, not to a session: object 410 is never placed, so its handler never runs.
+  6. The two malformed DS1s that `tools/ds1.py` refuses are counted by the second reader only. Neither is named by
+     LvlPrest.
+- **Review:** Tier B. The request
+  [`2026-11-16-reverser-architect-review-plan-0066-s3b`](../backlog/2026-11-16-reverser-architect-review-plan-0066-s3b.md)
+  is extended to S3b and S3c whole.

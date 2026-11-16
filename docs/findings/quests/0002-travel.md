@@ -754,6 +754,46 @@ three site sets agree in every count below. Row by row in `docs/plans/0066-inven
 - Not checked in part 1 (S3c part 2): the `Levels.Waypoint` column against `WAYPOINT_IndexFromLevel` (C1), the
   waypoint rows' `Sync`/`FrameDelta` (C3), object 410's placement (F1), the collision map's dimension users (B1).
 
+### 18. Plan 0066 batch S3c, part 2: the travel tables and the field centre (2026-11-16, `lane/n66p`)
+
+Static, no game. `tools/quests_s3c.py` sections `data` and `part2`; kept output
+`workspace/logs/n66p/s3c/check-s3c-p2.txt` (`manifest-s3c-p2.sha256`). Tables are read twice: a plain tab reader of
+the `.txt` and the compiled `.bin` through `tools/excel_bin.py`. Row by row in `docs/plans/0066-inventory/quests-travel.md`.
+
+- [C] **The field's centre** (B1). `FieldLoad` writes the two words `FieldStep` adds: `height >> 1` to 0x0096D664
+  (`sar ecx, 1` at 0x0066A344, store 0x0066A346) and `width >> 1` to 0x0096D668 (`sar ebx, 1` at 0x0066A3E0, store
+  0x0066A3FE). Each word has 5 references in .text, the same three ways (raw abs32, objdump, r2): `FieldLoad`'s store,
+  `FieldFree`'s reset and read, and two reads in `FieldStep` (0x0066A600, 0x0066A650; 0x0066A60F, 0x0066A640). No other
+  code reads or writes them. `expfield.d2`'s header gives width 256 and height 256 (file 65 546 bytes = 10 + 256 × 256),
+  so the centre is row 128 and column 128. (fn:sub_0066A2B0_FieldLoad@0x0066A2B0, fn:sub_0066A5D0_FieldStep@0x0066A5D0,
+  fn:sub_0066A420_FieldFree@0x0066A420)
+- [C] **Waypoint activation is the operate** (C1). `sub_00584E30_WaypointOperate` has no direct call or jump (raw
+  rel32, objdump and r2 agree on 0). Its 2 absolute references are `g_ObjOperateFns` slot 23 (0x00732D74) and the
+  compare `cmp [ecx*4+0x732d18], 0x584e30` at 0x00584FA4 in `WaypointTravel`, which tests a target's operate slot and
+  does not call it. So the activation (`WAYPOINT_Set` at 0x00584E7C, § 17) runs only through `OBJ_OperateDispatch`.
+  `WAYPOINT_IndexFromLevel` reads the Levels record's byte `+0xE4` through `LEVELS_GetRecord` (0x00660E1E, 0x00660E27;
+  objdump and r2 give the same 25 instructions) and fails on 0xFF. `Levels.Waypoint` is equal in `.txt` and `.bin` over
+  all 137 rows, and 39 rows have an index other than 255. (fn:sub_00584E30_WaypointOperate@0x00584E30,
+  fn:WAYPOINT_IndexFromLevel@0x00660E00, data:g_ObjOperateFns@0x00732D18, tbl:Levels.txt:Waypoint)
+- [C] **The waypoint rows' `Sync` and `FrameDelta`** (C3). The 16 rows with `InitFn` 17 and `OperateFn` 23 are the
+  same in `.txt` and `.bin`. `Sync` is 0 in exactly 429, 494, 496, 511 and 539, each with `FrameDelta1` 200 and
+  `FrameDelta2` 100, and 1 in the other 11. (tbl:Objects.txt:Sync, tbl:Objects.txt:FrameDelta1)
+- Correction carried from § 15: C3's "its later change to mode 2 draws again" is superseded. Event 1 writes mode 2
+  directly, not through `UNIT_SetMode`, so the mode 1 → 2 change makes no draw (0x005814B0). The spec line still reads
+  "draws again", and this is in the part 2 refinements entry. The mode-0 operate's own draw is still unrun (§§ 13–14).
+  (fn:sub_00581490_ObjEvOperateEnd@0x00581490)
+- [C] **Object 410 is never placed** (F1). Objects rows 342 (`portal`) and 410 (`Siege Control`) have `OperateFn` 46
+  (`.txt` and `.bin`). No DS1 unit maps to 410: the 2 274 files both readers parse agree, and the other 2 pass the
+  second reader (progression § 21 for the readers). No `objgroup` `ID0..7` cell names it (133 rows, both).
+  (fn:sub_005BCFD0_A3Q6_ForcePortalOpen@0x005BCFD0, tbl:objgroup.txt:ID0) The immediate
+  0x19A occurs in 17 .text instructions, the same three ways, and none creates an object:
+  - 5 are anim-rate and speed compares of a monster class (0x00621423, 0x00621527, 0x006215BD, 0x00621643,
+    0x00650F94);
+  - 1 is LvlPrest `Def` 410 in the Act II ruins list (0x0067F853, before `OutA2PlaceList`);
+  - 11 are client string indices (0x0049574F, 0x00495C86), source-line numbers (0x004FDC98, 0x004FFBD7, 0x0051AB8C,
+    0x0051BD72, `MONSTER_DropItems` 0x005A6673) and loader or CRT constants (0x006331AF, 0x00640B8F, 0x00653557,
+    0x006B6003).
+
 ## Data touched
 
 - `tbl:Levels.txt:Position`, `tbl:Levels.txt:QuestFlag`, `tbl:Levels.txt:QuestFlagEx`, `tbl:Levels.txt:Waypoint`
