@@ -811,6 +811,9 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-11-16 | `lane/p70a` | 0070 | architect | 93 393 | 19 | 5 | — | accepted by owner (ADR-0035, plan approved) | 0 |
 | 2026-11-16 | `lane/n70m` | 0070 P1 | architect | 89 511 | 31 | 5 | — | mechanical done-when met; read in Phase 6 | 0 |
 | 2026-11-16 | lane/p70b | 0070 amend | architect | 96 468 | 23 | 5 | — | owner decisions recorded; ADR-0036 accepted on owner's word | 0 |
+| 2026-11-16 | lane/n66ne | 0066 S1ne p1 | reverser | 285 559 | 88 | 18 | ghidra-n66ne | Tier B accept (bdafe217) | 0 |
+| 2026-11-16 | lane/n66ne | 0066 S1ne p2 | reverser | 313 561 | 98 | 20 | ghidra-n66ne | Tier B accept (bdafe217) | 0 |
+| 2026-11-16 | lane/n66ne | 0066 S1ne p3 | reverser | 241 920 | 87 | 15 | ghidra-n66ne | Tier B accept (bdafe217) | 0 |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not
