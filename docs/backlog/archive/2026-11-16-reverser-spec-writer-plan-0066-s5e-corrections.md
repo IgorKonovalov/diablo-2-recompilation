@@ -2,15 +2,15 @@
 from: reverser
 to: spec-writer
 date: 2026-11-16
-status: open
+status: done
 context:
-  - ../plans/0066-simulation-inferred-claims-sweep.md
-  - ../findings/combat/0001-formulas.md
-resolution: ""
+  - ../../plans/0066-simulation-inferred-claims-sweep.md
+  - ../../findings/combat/0001-formulas.md
+resolution: "Applied at plan 0066 Phase 3, combat cluster (lane/n66y): items 1-15 in combat/reductions, to-hit, damage and delivery, the tags of item 14 as ruled ([plan log](../../plans/0066-simulation-inferred-claims-sweep.md#2026-11-16--phase-3-the-combat-cluster-re-tagged-spec-writer-lanen66y))"
 ---
 
 Plan 0066 batch S5e (`lane/n66t`) found these against the combat specs at `b5999f5e`, from the emulation
-run:2026-11-16-sweep2-s5e ([combat/0001 § 19](../findings/combat/0001-formulas.md#19-plan-0066-batch-s5e-part-1-emulated-reduction-and-to-hit-leaves-run2026-11-16-sweep2-s5e)).
+run:2026-11-16-sweep2-s5e ([combat/0001 § 19](../../findings/combat/0001-formulas.md#19-plan-0066-batch-s5e-part-1-emulated-reduction-and-to-hit-leaves-run2026-11-16-sweep2-s5e)).
 For Phase 3 (re-tag); not blocking.
 
 1. **Contradiction in part, reductions B2 (line 233) and the note at line 253.** `COMBAT_ResistFor`'s sanctuary test
@@ -29,7 +29,7 @@ For Phase 3 (re-tag); not blocking.
    120 000, 31, 0, 52, 0 (0x0057D869–0x0057D891); the 52 is the state id.
 
 **2026-11-16, reverser (`lane/n66t`), S5e part 2 corrections** (evidence:
-[combat/0001 § 20](../findings/combat/0001-formulas.md#20-plan-0066-batch-s5e-part-2-stat-events-life-tick-and-the-damage-builder-run2026-11-16-sweep2-s5e2),
+[combat/0001 § 20](../../findings/combat/0001-formulas.md#20-plan-0066-batch-s5e-part-2-stat-events-life-tick-and-the-damage-builder-run2026-11-16-sweep2-s5e2),
 run:2026-11-16-sweep2-s5e2). Phase 3's to apply:
 
 6. **Damage A step 1 (lines 89–94).** The condition is "att is type 0, or `UnitAlignGet(att)` = 2" (every unit of
@@ -48,7 +48,7 @@ run:2026-11-16-sweep2-s5e2). Phase 3's to apply:
     text's `(x − 1)·4` subtracts one twice. The draw is taken whenever stat 134 > 0, also at `c` = 0.
 
 **2026-11-16, reverser (`lane/n66t`), S5e part 3.** Three more, from
-[combat/0001 § 21](../findings/combat/0001-formulas.md#21-plan-0066-batch-s5e-part-3-the-defence-roll-with-a-shield-unit_getdefense-and-the-delivery-prologue-run2026-11-16-sweep2-s5e3)
+[combat/0001 § 21](../../findings/combat/0001-formulas.md#21-plan-0066-batch-s5e-part-3-the-defence-roll-with-a-shield-unit_getdefense-and-the-delivery-prologue-run2026-11-16-sweep2-s5e3)
 (run:2026-11-16-sweep2-s5e3):
 
 11. **To-hit B1 (lines 192–197).** For `d` ≤ 0 the percent term is subtracted: `d ← d − (d × p) ÷ 100` (the
