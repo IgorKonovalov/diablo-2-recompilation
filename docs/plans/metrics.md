@@ -757,6 +757,8 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-11-16 | `lane/n66l` check | 0066 P1 S6c+S6e | architect-check | 183 164 | 54 | 5 | — | gave accept with fixes (Tier B) | 4: stale cross-reference 3, omission 1; first pass skipped checks 7/8, rerun on request (1st Tier B after the n66p audit) |
 | 2026-11-16 | `lane/n66s` | 0066 P1 S6f | reverser-static | 354 774 | 115 | 22 | ghidra-n66s | accept with fixes | 2: stale cross-reference 1, moved-without-destination 1 |
 | 2026-11-16 | `lane/n66s` check | 0066 P1 S6f | architect-check | 99 618 | 21 | 2 | — | gave accept with fixes (Tier B) | 2: stale cross-reference 1, moved-without-destination 1 (2nd Tier B after the n66p audit) |
+| 2026-11-16 | `lane/n69f` | 0069 P3b | reverser-harness | 225 961 | 99 | 72 | slot 2 | accept with fixes | 3: recount 1, stale cross-reference 1, omission 1 |
+| 2026-11-16 | `lane/n69f` check | 0069 P3b | architect-check | 89 654 | 26 | 3 | — | gave accept with fixes (Tier B) | 3: recount 1, stale cross-reference 1, omission 1 (3rd Tier B after the n66p audit) |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not
