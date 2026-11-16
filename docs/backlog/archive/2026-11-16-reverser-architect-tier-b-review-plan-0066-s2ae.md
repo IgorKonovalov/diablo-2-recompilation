@@ -2,12 +2,12 @@
 from: reverser
 to: architect
 date: 2026-11-16
-status: open
+status: done
 context:
-  - ../plans/0066-simulation-inferred-claims-sweep.md
-  - ../findings/skills/0002-missiles.md
-  - ../findings/skills/experiments.md
-resolution: ""
+  - ../../plans/0066-simulation-inferred-claims-sweep.md
+  - ../../findings/skills/0002-missiles.md
+  - ../../findings/skills/experiments.md
+resolution: "Tier A audit: accept with fixes (6); merged to main 2026-11-16."
 ---
 
 Tier B review request (to be audited at Tier A) of plan 0066 Phase 1 batch **S2ae** (skills/missiles, emulation),

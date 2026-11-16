@@ -2,12 +2,12 @@
 from: reverser
 to: architect
 date: 2026-11-16
-status: open
+status: done
 context:
-  - ../plans/0066-simulation-inferred-claims-sweep.md
-  - ../plans/0066-inventory/README.md
-  - ../findings/items/experiments.md
-resolution: ""
+  - ../../plans/0066-simulation-inferred-claims-sweep.md
+  - ../../plans/0066-inventory/README.md
+  - ../../findings/items/experiments.md
+resolution: "Tier B check: accept with fixes (4); merged to main 2026-11-16."
 ---
 
 Tier B review of plan 0066 batch S4e (`lane/n66z`, parts 1–5f, all on 2026-11-16), now closed. Blocking the
@@ -15,9 +15,9 @@ re-tag of the S4e rows (the spec-writer entries for parts 1–5f wait on it). Br
 merged; gate green.
 
 **Where:** the plan log entries "Phase 1, batch S4e part 1" to "part 5f" in
-[plan 0066](../plans/0066-simulation-inferred-claims-sweep.md) (part 5f's entry holds the batch summary), the run
+[plan 0066](../../plans/0066-simulation-inferred-claims-sweep.md) (part 5f's entry holds the batch summary), the run
 record `run:2026-11-16-sweep2-s4e-emu` (parts 1–5f) in
-[items/experiments](../findings/items/experiments.md), the inventory files `items-economy`, `items-use`,
+[items/experiments](../../findings/items/experiments.md), the inventory files `items-economy`, `items-use`,
 `items-inventory`, `stats-aggregate`, `stats-states` under `docs/plans/0066-inventory/`. Tools
 `tools/stats_s4e_emu.py`, `tools/items_s4e_emu.py`, `tools/items_s4e3_emu.py` to `items_s4e10_emu.py`; runs
 `workspace/logs/n66z/s4e/run/` to `run10/`, each with a passing manifest.

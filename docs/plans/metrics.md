@@ -788,6 +788,8 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-11-16 | `lane/n69dry` | 0069/0065 owner prep | reverser-harness | 143 083 | 108 | 42 | 0,1 | accept | 0 (orchestrator inline check of an 18-line tool diff) |
 | 2026-11-16 | `lane/n66z` | 0066 P1 S4e | reverser-static | 2 938 143 | 1214 | 216 | ghidra-n66z | accept with fixes | 4: stale cross-reference 2, corroboration 1, absence basis 1 (ten parts: 272 420/103/17, 378 182/126/31, 314 736/129/22, 287 203/93/20, 253 109/92/16, 265 306/105/19, 300 022/126/23, 306 414/148/24, 274 330/129/20, 286 421/163/24) |
 | 2026-11-16 | `lane/n66z` check | 0066 P1 S4e | architect-check | 197 978 | 80 | 8 | — | gave accept with fixes (Tier B) | 4: stale cross-reference 2, corroboration 1, absence basis 1 (2nd Tier B after the n69h audit) |
+| 2026-11-16 | `lane/n66sa` | 0066 P1 S2ae | reverser-static | 2 491 974 | 971 | 206 | ghidra-n66sa | accept with fixes | 6: miscount 1, overclaim 1, misread 1, omission 2, stale cross-reference 1 (nine parts: 353 106/130/19, 232 682/102/20, 245 849/90/19, 263 737/95/19, 277 877/90/19, 321 703/128/24, 254 439/91/20, 272 189/110/33, 270 392/135/33) |
+| 2026-11-16 | `lane/n66sa` audit | 0066 P1 S2ae | architect-review | 251 387 | 134 | 14 | — | gave accept with fixes (Tier A audit, single pass covering the Tier B list) | 6: miscount 1, overclaim 1, misread 1, omission 2, stale cross-reference 1 |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not

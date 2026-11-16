@@ -3768,7 +3768,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   on that case (a wrong index reads undeclared memory, a traced read); (3) d129's remainder stays `[I]` (a room
   route), not b; (4) `wrap` added after the emulation, reproduction confirmed. The batch-wide list is in the request.
 - **Review:** Tier B request (to be audited at Tier A) filed:
-  [`2026-11-16-reverser-architect-tier-b-review-plan-0066-s2ae`](../backlog/2026-11-16-reverser-architect-tier-b-review-plan-0066-s2ae.md).
+  [`2026-11-16-reverser-architect-tier-b-review-plan-0066-s2ae`](../backlog/archive/2026-11-16-reverser-architect-tier-b-review-plan-0066-s2ae.md).
 
 ### 2026-11-16 — Phase 1, batch S4e part 5c (reverser-static, `lane/n66z`): the mercenary button, `ItemUse` after its entries, `ItemSkillQtyAdjust`, the routes; 12 rows settled or routed; resume note
 
@@ -3972,7 +3972,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   and correction backlog entries: 10 (parts 1, 2 corrections; parts 3, 4, 5a–5f refinements), and 1 archivist entry
   (table checks).
 - **Review:** Tier B requested by
-  [backlog](../backlog/2026-11-16-reverser-architect-plan-0066-s4e-tier-b-review.md).
+  [backlog](../backlog/archive/2026-11-16-reverser-architect-plan-0066-s4e-tier-b-review.md).
 
 ### 2026-11-16 — Phase 1, batch S2ae Tier A audit (architect, `lane/n66sa`): accept with fixes (6)
 
