@@ -23,11 +23,12 @@ workspace/render/anim/tc-<name>-d<difficulty>-<seed hex>/:
   steps.json     {text, calc} per step
 
 Every caption and calculation line restates a spec section; it claims nothing of its own. Models used, all
-reading of the specs, none re-derived here: tools/tc.py (Tables, nodrop_scaled; names of uniques, sets and affixes through tools/tbl.py, data/strings.md C; the resolver loop is the
+reading of the specs, none re-derived here: tools/tc.py (Tables, nodrop_scaled; the resolver loop is the
 expansion branch of tc.replay_call run on its own seed instead of a log), tools/quality.py (roll, with its
 trace), tools/uniques.py (overrides, unique_cands, set_cands and the draws of check_block), tools/affixes.py
 (Walk with free=True, the builders magic, rare, superior, low, normal; tools/props.py through
-tools/items_chain.make_hook for the item seed), tools/item_art.py and tools/palette.py (icons, items/0003).
+tools/items_chain.make_hook for the item seed), tools/item_art.py and tools/palette.py (icons, items/0003),
+tools/tbl.py (Strings: the shown names of uniques, sets and affixes, data/strings.md D and C).
 Not modelled here, shown as such: the Levels monster level, the quest TC (TreasureClass4), classic games,
 gold amounts and gold find, ItemInitStats (quantity, durability, defense), the ethereal and socket rolls and the
 automagic pick after them, the durability fix after a failed unique or set, the unit seed and the unidentified
@@ -73,8 +74,9 @@ CHAIN6 = ("unique", "set", "rare", "magic", "superior", "normal")     # quality.
 class Models:
     def add_display_names(self, root):
         """Give each unique, set, magic and rare-affix record a "disp" text: its name key resolved through the string
-        tables (data/strings.md C: key -> index by the patchstring, expansionstring, string order; index -> text).
-        The key stays in "name"; a key found nowhere keeps the key as its text."""
+        tables (data/strings.md D1: key -> index by the patchstring, expansionstring, string order; C1: index -> text).
+        The key stays in "name". A key found nowhere shows the key itself: our display choice, not the game's text
+        for a miss (D2's placeholder, F1's index 5382 for an excel cell, a rare name's raw key in parentheses)."""
         lng = os.path.join(root, "data", "local", "lng", "eng")
         S = tbl.Strings(lng) if os.path.isdir(lng) else None
 
@@ -908,7 +910,7 @@ class Anim:
             ri = res["rare"]
             AT_ = self.M.AT
             calc.append("affixes.md E: rare names first (prefix side, then suffix side): '%s' and '%s' (the RarePrefix / RareSuffix keys "
-                        "shown as their string-table text, data/strings.md C); count %d "
+                        "shown as their string-table text, data/strings.md D and C); count %d "
                         "(table g_RareAffixCountTable[low & 7] after one Step, or 3 + Range(item.seed, 2) for a jewel)." % (
                             AT_.rare[ri["n1"] - 1]["disp"], AT_.rare[ri["n2"] - 1]["disp"], ri["count"]))
         shown = []

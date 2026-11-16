@@ -27,10 +27,10 @@ index.html (iframe) or, failing that, its GIF, with the caption, the seed label 
 A missing tool or a failing run leaves the block's note and a visible warning on the page; the build goes on.
 A run is skipped when the output directory's stamp (command line and tool mtime) is unchanged.
 
-`check` is the gate-style rule for the blocks (the architect registers it as a gate rule): every
-```illustration block under docs/ parses (all six keys, no unknown key), ids are unique, `tool` names a script
-in tools/, and every `illustrates` link resolves (file exists, #anchor is a heading of it). One line per
-problem, exit 1 when there is one; last line `CHECK illustrations: N blocks, M problems`.
+`check` is the gate's rule E19 for the blocks: every ```illustration block under docs/ parses (all six keys,
+no unknown key), ids are unique, `tool` names a script in the tools/ beside the docs directory (this script's
+tools/ when there is none), and every `illustrates` link resolves (file exists, #anchor is a heading of it).
+One line per problem, exit 1 when there is one; last line `CHECK illustrations: N blocks, M problems`.
 
 Stdlib only. Everything written goes under workspace/ and never into git.
 """
@@ -496,12 +496,27 @@ def run_illustration(d, root, out_root, no_run):
         os.makedirs(odir, exist_ok=True)
         with open(sf, "w") as fh:
             fh.write(stamp)
-    if os.path.isfile(os.path.join(odir, "index.html")):
+    ipage = os.path.join(odir, "index.html")
+    if os.path.isfile(ipage):
+        add_footer(ipage)
         return "iframe", "illustrations/%s/index.html" % iid, ""
     gifs = sorted(f for f in os.listdir(odir) if f.endswith(".gif")) if os.path.isdir(odir) else []
     if gifs:
         return "gif", "illustrations/%s/%s" % (iid, gifs[0]), ""
     return None, None, "tool %s wrote neither index.html nor a GIF" % tool
+
+
+def add_footer(path):
+    """ADR-0034: every built page carries the footer, the tool's own step-through page too (idempotent)."""
+    with open(path, encoding="utf-8", errors="replace") as fh:
+        text = fh.read()
+    if FOOTER in text:
+        return
+    foot = '<footer style="margin:2em 0 1em;font:13px system-ui,sans-serif;text-align:center;opacity:.75">%s</footer>' % FOOTER
+    i = text.lower().rfind("</body>")
+    text = text[:i] + foot + text[i:] if i >= 0 else text + foot
+    with open(path, "w", encoding="utf-8") as fh:
+        fh.write(text)
 
 
 def illus_html(page, d, err, rel, out_root, root, no_run):
@@ -754,29 +769,19 @@ def build(argv):
 # ---------------------------------------------------------------- check
 
 def heading_slugs(path):
-    """The set of heading anchors of a Markdown file (fenced blocks skipped), or None when unreadable."""
+    """The set of heading anchors of a Markdown file as the gate's E8 computes them, or None when unreadable."""
+    import gate    # noqa: E402 (stdlib only; one slug rule for E8 and E19)
     try:
         with open(path, encoding="utf-8", errors="replace") as fh:
-            lines = fh.read().split("\n")
+            return set(gate.heading_slugs(fh.read()))
     except OSError:
         return None
-    seen, out, fence = {}, set(), None
-    for ln in lines:
-        fm = RE_FENCE.match(ln)
-        if fm:
-            fence = None if fence == fm.group(2)[0] else (fence or fm.group(2)[0])
-            continue
-        hm = None if fence else RE_HEAD.match(ln)
-        if hm:
-            s = slugify(plain(hm.group(2)))
-            n = seen.get(s, 0)
-            seen[s] = n + 1
-            out.add(s if n == 0 else "%s-%d" % (s, n))
-    return out
 
 
 def check(argv):
     docs = os.path.realpath(argv[0]) if argv else DOCS
+    tools = os.path.join(os.path.dirname(docs), "tools")    # the checkout's own tools/ (gate --root, --staged)
+    tools = tools if os.path.isdir(tools) else HERE
     seen, problems, nblocks, heads = {}, [], 0, {}
     for dp, dn, fn in os.walk(docs):
         dn.sort()
@@ -810,7 +815,7 @@ def check(argv):
                             problems.append("%s: id '%s' also at %s" % (where, d["id"], seen[d["id"]]))
                         seen.setdefault(d["id"], where)
                     tool = d.get("tool", "")
-                    if re.fullmatch(r"[A-Za-z0-9_]+\.py", tool) and not os.path.isfile(os.path.join(HERE, tool)):
+                    if re.fullmatch(r"[A-Za-z0-9_]+\.py", tool) and not os.path.isfile(os.path.join(tools, tool)):
                         problems.append("%s: tool '%s' is not in tools/" % (where, tool))
                     for part in re.split(r"[,\s]+", d.get("illustrates", "").strip()):
                         if not part:
