@@ -3061,3 +3061,50 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
 - **Gate:** fast green (93 warnings after the merge, none from the fixes; the W4s the refresh entry answers);
   `--full` green (39 surveys); `tools/quirks.py check` 0 errors.
 - **Verdict: accept with fixes (4)**: overclaim 2, misread 1, omission 1. The review request stays open for the merge.
+
+### 2026-11-16 — Phase 1, batch S4e part 4 (reverser-static, `lane/n66z`): the other request handlers, 15 inventory rows settled in whole or in part; resume note
+
+- **Done.** Merged `main` `d74fcb6d` first (`9fbd9a28`; plan-log conflict kept both; README § 1 recomputed from the 29
+  files' *Totals by class*, unchanged). New tool `tools/items_s4e4_emu.py` (`56e34310…`; parts 1–3's tools, `run/` to
+  `run3/` untouched; it imports part 3's world), six families on `workspace/ghidra-n66z` (`-Xmx3G`, `MemoryMax=4G`,
+  one kept launch each, about 41 s for the six) after two development passes (`dev4a/` 60 and `dev4b/` 300 cases per
+  family, earlier tool revisions, each with `manifest-dev.sha256`, not cited): `body` (`0x1A`..`0x1E`), `req` (`0x1F`,
+  `0x21`..`0x25`, `0x63`), `tocur` (`InvItemToCursor` to `InvTakeItem`), `place` (`InvPlaceItem` as `0x18` calls it, to
+  `InvItemRemove` or its return, the page byte dumped), `pageget` (`InvPageGet`), `rowfor` (`InvRowForUnit`, every page
+  byte). 17 952 cases, 0 mismatches, 0 undeclared reads, no traced write; 375 `pageget` cases stop at an allocator
+  guard where the model expects it; 19 controls, each separating, `passed` 0. No import reached. Record:
+  [run:2026-11-16-sweep2-s4e-emu part 4](../findings/items/experiments.md#part-4-the-other-request-handlers-invitemtocursor-invplaceitems-refusals-2026-11-16),
+  `workspace/logs/n66z/s4e/run4/` (`check.txt` `aa788c1b…`, `static.txt` `f189e4b8…`, `manifest.sha256` `ed4ce77e…`,
+  32 lines, passes from there; `cases` regenerates every input byte for byte and `check` reproduces `check.txt` from the
+  committed revision). Claims in
+  [items/0013 § 13](../findings/items/0013-grids-belts-stacks.md#13-plan-0066-batch-s4e-part-4-the-other-request-handlers-invitemtocursor-invplaceitems-refusals-invpageget-invrowforunit-run2026-11-16-sweep2-s4e-emu),
+  dated notes in items/0013 §§ 1, 2, 4, 5, 12.
+- **Rows settled (items/inventory).** Raised: 32, 33, 37 (with refinements), 34, 36, 38, 46 (with refinement); 40's
+  remainder (with refinement: `0x1C`'s length 3). Raised in part: 15 (the size refusal; the first use → b, H4d, the
+  allocator `0x0040B430`), 17 (13 and 29 never returned; the callers of type 2 with class `0x152`/`0x153` → c, part
+  5), 23 (the clamp and `InvGridPut`'s refusals; `InvGridFree` → part 5), 39 (to `BeltFreeSlot`; after it → part 5), 42
+  (to `InvTakeItem`; after it → part 5); 45 and 99's remainder raised in part (refusals before `InvItemRemove`; one
+  after it → part 5 with row 20). No class move. Refinements routed by
+  [backlog](../backlog/2026-11-16-reverser-spec-writer-plan-0066-s4e-part4-refinements.md).
+- **Symbols:** none raised (an emulation over a declared image, review-fixes 14).
+- **Totals** (recomputed from the 29 files' *Totals by class*; `main` `d74fcb6d`): a-logs 623, a-run 334, b 509,
+  c 390, c-emu 442, d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626; Phase 1 1 455, Phase 2 843. README §§ 3, 4
+  (S4e and H4d rows) updated.
+- **Judgment calls:** (1) the use rows 21, 22, 34, 38, 52, 54 were not reached in this part (0x61's route runs
+  `UNIT_GetUsedSkill`, `UnitIsDead`, `PETS_GetUnitOfType`, 0x0065A590 and `ItemBaseIsQuest`, each to be declared; `ItemUse`'s
+  C2 needs a client for `PlayerGetClient` 0x005531C0) and move to part 5; (2) `0x1C`'s slot-8 `TradeBeltLock` is
+  after `InvMoveInteractTest`, which with an interaction of type 0 returns 0 or ends at `TradeItemTest`'s boundary, so
+  no case reaches it: kept `[I]` in items/0013 § 13 and no control is filed for it (a `lock_first` control was dropped
+  after `dev4b` showed it cannot separate); (3) row 15's first-use half routed to H4d (a fresh character's first
+  placement on a page) rather than kept c-emu, since the route crosses the allocator (ADR-0029 R2); (4) row 17's
+  "never returned" raised over every page byte, two expansion words and the class table read from the image, its
+  "no path reaching them was read" left as a caller reading (c); (5) the 375 guard stops counted as matches where
+  the model names that guard, not as stops.
+- **Resume (part 5, a fresh lane on `lane/n66z`):** the use rows 21 (`Pkt61MercItem` to `MercGiveCursorItem` or
+  0x0054D130: declare the skill list for `UNIT_GetUsedSkill` 0x00620250, `UnitIsDead` 0x005541B0's `+0xC6`/mode, the pet
+  list for `PETS_GetUnitOfType` 0x00574EC0, 0x0065A590 and `ItemBaseIsQuest` 0x00628CD0's Items row), 22, 34, 38, 52, 54
+  as part 3's note says; the inventory families (`put` past `InvItemRemove` with rows 20, 45, 99's remainder;
+  `search` 22, 98; `place` 25–27; belts 47, 48, 55; `merge` 57, 58; `drop` 63, 81; `ground` 84; `expiry` 87;
+  `ItemAutoEquipSlot` 67); the part 4 remainders (17's callers, 23's `InvGridFree`, 39 after `BeltFreeSlot`, 42 after
+  `InvTakeItem`); then the static (c) and c-emu remainders of S4c/S4d listed in part 1's note. Extend
+  `tools/items_s4e4_emu.py`'s world (or a new tool) into `run5/`. Tier B review once S4e is whole.

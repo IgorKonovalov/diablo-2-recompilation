@@ -4117,3 +4117,39 @@ request handlers, inventory families) will add their own sections under this hea
   (the use functions, `UnitInteract`'s callee on the other unit types, the walk, the pickups, the line test and the
   unmark, `CursorDrop`, `InvPlaceItem`, `InvItemToCursor`, `NoManaMsg`, the interaction and trade callees), so the
   handlers' returns after those calls stay `[I]` (0x0054B250, 0x0054AD70, run:2026-11-16-sweep2-s4e-emu).
+
+### Part 4: the other request handlers, InvItemToCursor, InvPlaceItem's refusals (2026-11-16)
+
+- **Question:** do the requests `0x1A`..`0x1F`, `0x21`..`0x25` and `0x63`, `InvItemToCursor`, `InvPlaceItem` as
+  `0x18` calls it, `InvPageGet` and `InvRowForUnit` map their inputs as [items/inventory](../../specs/items/inventory.md)
+  §§ A, B5, D, E state, up to the callee each ends at? Claims in
+  [items/0013 § 13](0013-grids-belts-stacks.md#13-plan-0066-batch-s4e-part-4-the-other-request-handlers-invitemtocursor-invplaceitems-refusals-invpageget-invrowforunit-run2026-11-16-sweep2-s4e-emu),
+  dated notes in items/0013 §§ 1, 2, 4, 5, 12.
+- **Setup:** as part 3, one kept launch per family (about 41 s for the six), after two development passes (`dev4a/`,
+  60 cases per family, and `dev4b/`, 300, each with an earlier tool revision and its own `manifest-dev.sha256`, 30
+  lines, passing from its directory; not cited). New tool `tools/items_s4e4_emu.py` (`56e34310…`, draws from
+  `random.Random("n66z-s4e4-<family>")`; `rowfor`'s cases are an enumeration), importing part 3's world unchanged. Added
+  to the declared image, zero-filled before every case: the inventory's page array (`+0x14`, count `+0x18`) and cells,
+  the item list (`+0x0C`; ItemData `+0x64` next, `+0x69` location byte), a unit for `rowfor`, and Items rows 7..12,
+  inventory rows 0..15 and ItemTypes rows 0..3 with `tools/item_emu2.py`'s table pointers (0x00744304, 0x0096CA58/5C,
+  0x0096D4F0/F4). Guards as part 3 (the allocator entries 0x0040B430, 0x0040B4B0 among them). Observed boundaries,
+  call site asserted by the return address: `body` 0x005606B0, 0x00563D20, 0x00560CD0, 0x00560F00, 0x00561220 and part
+  3's 0x00554190, 0x00573140, 0x005B5810; `req` 0x00561B00, 0x0055E7C0, 0x0055E9A0, 0x0055E9B0, 0x00562250, 0x0055EB30,
+  0x00549A60, 0x0063C600 and the same three; `tocur` 0x0063AD90; `place` 0x0063AAF0. No import is reached.
+- **Families:** `body` 3 000, `req` 4 000, `tocur` 1 500, `place` 2 500, `pageget` 1 000, `rowfor` 5 952.
+- **Result:** `workspace/logs/n66z/s4e/run4/check.txt` (`aa788c1b…`, 100 lines), `static.txt` (`f189e4b8…`, 75
+  lines, 39 pins; the six part-3 tables and `InvRowForUnit`'s switch table 0x00621134 not writable; the two `.data`
+  ranges named in `.text` only by three loads of the class table and its count and 23 pushes of the body row's
+  address, no store), `manifest.sha256` (`ed4ce77e…`, 32 lines, passes from that directory); `cases` regenerates every
+  `.cases`, `.mem` and `.json` byte for byte, and `check` reproduces `check.txt` from the committed revision. 17 952
+  cases, 0 mismatches, 0 undeclared reads, no traced write; 375 `pageget` cases stop at a guard (68 at 0x0040B430, 307
+  at 0x0040B4B0), each where the model expects that guard; outcomes per family and boundary in `check.txt` (each
+  count in items/0013 § 13 is copied from it). **19 controls, each separating, `passed` 0.**
+- **Read set** (ADR-0015 (2)): part 3's tables, `InvRowForUnit`'s switch table 0x00621134 (.text), and two `.data`
+  ranges read as the image's values: the body row 0x0074479C (13 × 1) and `InvRowForUnit`'s class table
+  0x00744544..0x0074457F (seven class → row pairs and the count). Every other read lies in the declared image.
+- **Not covered** (ADR-0015 (3), ADR-0021): the meanings of the offsets; the callers; everything after each boundary
+  (each handler's function and its tail, `InvTakeItem` and what follows it, `InvItemRemove` and `InvGridPut`'s fill,
+  `InvPlaceSocketed`, `BeltFreeSlot` and `0x63`'s placement, `NoManaMsg`'s return of 2); `TradeBeltLock`'s use by
+  `0x1C`, which no case reaches; a page made on first use (the allocator); `InvGridFree`; `InvItemToCursor`'s
+  non-type-4 unit in the type-4 list.

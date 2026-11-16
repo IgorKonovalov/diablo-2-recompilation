@@ -80,22 +80,22 @@ No community source was compared; every claim is from the code. **2026-11-04 (`l
 | `0x17` | `0x0054AB40` | a cursor item; `InteractIsPlayer(0)` non-zero returns 3; `CursorDrop`. *2026-11-16, § 12: `[C]` to the call; the interaction test runs only when `PlayerIsBusy` is non-zero, and `InteractIsPlayer` does not read its argument* | [I] (fn:sub_00563C00_CursorDrop@0x00563C00) |
 | `0x18` | `0x0054ABB0` | § 5; `ItemSetPage(item, page)`, then `InvPlaceItem(…, x, y, 0, 1, 0)`. *2026-11-16, § 12: `[C]` to the call* | [I] (fn:sub_00560200_InvPlaceItem@0x00560200) |
 | `0x19` | `0x0054ACD0` | an owned item, empty cursor, not page 1; trade test `0x00535610`; `InvItemToCursor`. *2026-11-16, § 12: `[C]` to the call; a full cursor ends at `NoManaMsg`, and a 0 from the trade test returns 0 with nothing moved* | [I] (fn:sub_00560420_InvItemToCursor@0x00560420) |
-| `0x1A`..`0x1E` | | equip and swap with a body location (`0x1B`'s slot 1..10) | [I] (fn:sub_005606B0_ItemEquip@0x005606B0, fn:sub_00563D20_EquipCursorAtSlot@0x00563D20, fn:sub_00560CD0_BodyToCursor@0x00560CD0, fn:sub_00560F00_BodySwapCursor@0x00560F00, fn:sub_00561220_BodySwapCursor2@0x00561220) |
-| `0x1F` | `0x0054B0F0` | the cursor against a page item, not an item on page 1 or 2 | [I] (fn:sub_00561B00_PageSwapCursor@0x00561B00) |
-| `0x21` | `0x0054B300` | two owned items, unequal guids; `StackRequest` | [I] (fn:sub_0055E7C0_StackRequest@0x0055E7C0) |
-| `0x22` | `0x0054B380` | an owned item; the stub | [I] (0x0055E9A0) |
-| `0x23` | `0x0054B3E0` | a cursor item; `ItemToBelt(guid, box, 0)` | [I] (fn:sub_0055E9B0_ItemToBelt@0x0055E9B0) |
-| `0x24` | `0x0054B450` | a belt item, trade test, empty cursor; `BeltToCursor` | [I] (fn:sub_00562250_BeltToCursor@0x00562250) |
-| `0x25` | `0x0054B4E0` | a cursor item and a belt item; `BeltSwapCursor` | [I] (fn:sub_0055EB30_BeltSwapCursor@0x0055EB30) |
-| `0x63` | `0x0054D520` | an inventory-page beltable item, empty cursor: `BeltFreeSlot`, then to that box | [I] (fn:sub_0054D520_SrvPacket63Handler@0x0054D520) |
+| `0x1A`..`0x1E` | | equip and swap with a body location (`0x1B`'s slot 1..10) *2026-11-16, § 13: `[C]` to each call; `0x1C` has length 3 and a `u16` slot, `0x1D`/`0x1E` need an item at the slot, `0x1E` takes slots 4 and 5 only* | [I] (fn:sub_005606B0_ItemEquip@0x005606B0, fn:sub_00563D20_EquipCursorAtSlot@0x00563D20, fn:sub_00560CD0_BodyToCursor@0x00560CD0, fn:sub_00560F00_BodySwapCursor@0x00560F00, fn:sub_00561220_BodySwapCursor2@0x00561220) |
+| `0x1F` | `0x0054B0F0` | the cursor against a page item, not an item on page 1 or 2 *2026-11-16, § 13: `[C]` to the call, `InvMoveInteractTest` before it* | [I] (fn:sub_00561B00_PageSwapCursor@0x00561B00) |
+| `0x21` | `0x0054B300` | two owned items, unequal guids; `StackRequest` *2026-11-16, § 13: `[C]` to the call* | [I] (fn:sub_0055E7C0_StackRequest@0x0055E7C0) |
+| `0x22` | `0x0054B380` | an owned item; the stub *2026-11-16, § 13: `[C]` to the call, length 5* | [I] (0x0055E9A0) |
+| `0x23` | `0x0054B3E0` | a cursor item; `ItemToBelt(guid, box, 0)` *2026-11-16, § 13: `[C]` to the call* | [I] (fn:sub_0055E9B0_ItemToBelt@0x0055E9B0) |
+| `0x24` | `0x0054B450` | a belt item, trade test, empty cursor; `BeltToCursor` *2026-11-16, § 13: `[C]` to the call; the trade test gets an item of 0 and a full cursor returns 2* | [I] (fn:sub_00562250_BeltToCursor@0x00562250) |
+| `0x25` | `0x0054B4E0` | a cursor item and a belt item; `BeltSwapCursor` *2026-11-16, § 13: `[C]` to the call* | [I] (fn:sub_0055EB30_BeltSwapCursor@0x0055EB30) |
+| `0x63` | `0x0054D520` | an inventory-page beltable item, empty cursor: `BeltFreeSlot`, then to that box *2026-11-16, § 13: `[C]` to `BeltFreeSlot`; a full cursor ends at `NoManaMsg`; after it `[I]`* | [I] (fn:sub_0054D520_SrvPacket63Handler@0x0054D520) |
 
 ## 2. Grids and pages
 
 - [I] An inventory is `0x40` bytes (magic `0x01020304`); `+0x08` owner, `+0x0C`/`+0x10` the item list, `+0x14` the pages, `+0x18` their count, `+0x20` the cursor item, `+0x28` the item count. (fn:INV_Create@0x0063ABD0, fn:sub_0063AAF0_InvItemRemove@0x0063AAF0)
 - [I] The page table's index is `page + 2`; index 0 is the body (13 × 1), index 1 the belt (16 × 1), both sizes in the image, not the tables. Each entry is 16 bytes: `+8` width, `+9` height, `+0xC` the cells (u32 unit pointers, `row × width + col`). (data:0x0074479C, data:0x007447B4, fn:sub_0063ADD0_InvPageGet@0x0063ADD0)
-- [I] A page is made on first use from the row given then. A later request with another size returns 0, so nothing is placed. In a save moved between game types this would be the refusal; no run reaches it. (0x0063AE53, 0x0063AE5A, fn:sub_0063ADD0_InvPageGet@0x0063ADD0)
+- [I] A page is made on first use from the row given then. A later request with another size returns 0, so nothing is placed. *2026-11-16, § 13: the size refusal `[C]` (ADR-0015, `pageget`); the first use reaches the allocator `0x0040B430` (b, H4d); the index is signed and wraps when shifted by 4.* In a save moved between game types this would be the refusal; no run reaches it. (0x0063AE53, 0x0063AE5A, fn:sub_0063ADD0_InvPageGet@0x0063ADD0)
 - [C] (ADR-0021) `InvGridPut(col, row, index, invrow)` refuses a zero size. Indices 0 and 1 force the size to 1 × 1 and have **no** bound test; index 2 and above refuse `col < 0`, `col + w > gridX`, `row < 0`, `row + h > gridY`, then an occupied cell. The rest ends at `InvItemRemove`, after, `[I]`: the page fill, the page byte, the location byte. (fn:sub_0063AFD0_InvGridPut@0x0063AFD0, run:2026-11-04-inventory-emu)
-- [I] Note `InvGridFree` tests no bound itself; `InvPlaceItem`'s direct branch clamps a negative `x`, `y` to 0 and relies on `InvGridPut`. (0x005602BE, fn:sub_00560200_InvPlaceItem@0x00560200)
+- [I] Note `InvGridFree` tests no bound itself; `InvPlaceItem`'s direct branch clamps a negative `x`, `y` to 0 and relies on `InvGridPut`. *2026-11-16, § 13: the clamp and `InvGridPut`'s refusals `[C]` (ADR-0021, `place`); `InvGridFree` not run.* (0x005602BE, fn:sub_00560200_InvPlaceItem@0x00560200)
 - [I] `InvGridPut`'s location byte (`+0x69`): body `(col > 10) + 3`, belt 2, a page 1. (0x0063B1BF, 0x0063B1D2, 0x0063B1E9, fn:sub_0063AFD0_InvGridPut@0x0063AFD0)
 
 ## 3. The placement search
@@ -144,16 +144,16 @@ score: n = 0
 - [C] (ADR-0015) `InvRecordGrid(row, set, out)` copies 24 bytes from `base + (16·set + row) × 0xF0 + 0x10`: `gridX` to `gridBoxHeight`; a rectangle is not copied. An index above the count (`0x0096D4F0`) reaches `0x00408090`; the count itself (32) is accepted and past the table. (fn:sub_0065C1F0_InvRecordGrid@0x0065C1F0, run:2026-11-04-inventory-emu)
 - [C] (ADR-0015) `BeltsRecord(row, set, out)` copies the 264-byte record from `base + (7·set + row) × 0x108`, with no upper bound on the row. (fn:sub_00660CB0_BeltsRecord@0x00660CB0, run:2026-11-04-inventory-emu)
 - [I] **Reader survey of the bases:** the operand references to `0x0096D4F4` and `0x0096D4F8` sit in the loaders, the frees, `InvRecordGrid`, `BeltsRecord` and four more readers. `0x0065C270` (a body slot's rectangle, 20 direct calls), `0x0065C180` (the page and grid rectangles, 10) and `0x00660D10` (a box's rectangle, 6) are called only from `0x4xxxxx`, client code by the project's convention; `0x0065C140` and `0x00660C70` have 0 direct calls, table pointers to them unfollowed. (`static.txt`, 0x0065C270, 0x0065C180, 0x00660D10, 0x0065C140, 0x00660C70)
-- [I] So by direct calls the server reads `gridX`, `gridY` of `inventory` and `numboxes` of `belts`, and no rectangle. Rows 13 and 29 (Hireling) are never returned by `InvRowForUnit`: a hireling is type 1, row 5. The literal `0x0D` at `0x00483705` is client code. (0x00483705, fn:sub_00621050_InvRowForUnit@0x00621050)
+- [I] So by direct calls the server reads `gridX`, `gridY` of `inventory` and `numboxes` of `belts`, and no rectangle. Rows 13 and 29 (Hireling) are never returned by `InvRowForUnit`: a hireling is type 1, row 5. *2026-11-16, § 13: `[C]` (ADR-0015, `rowfor`, every page byte).* The literal `0x0D` at `0x00483705` is client code. (0x00483705, fn:sub_00621050_InvRowForUnit@0x00621050)
 - [I] **`Armor.belt` as the row is now a reader:** `0x0063C6A3` (the belt search) and `0x0056091B` (the belt overflow) both pass the worn item's Items `+0x130` to `BeltsRecord` with set 0. No worn belt gives row 2, at `0x0063C69B` and `0x0056093B`. (0x0063C6A3, 0x0056091B, 0x0056093D)
 - [I] Of P1.1's unclassified readers, `0x0063C8B1` is `sub_0063C830_BeltBoxQuery`'s: `useable` and `belt` both exactly 1 on a 1 × 1 beltable item, else 0; callers unfollowed. (fn:sub_0063C830_BeltBoxQuery@0x0063C830)
 - [I] Types `0x152`, `0x153` for rows 10 and 11 (Guild Vault, Trophy Case) are object classes; no path reaching them was read, and `inventory`'s page names are the only reason to give them those names. (0x00621050)
 
 ## 5. The stash and pages: `0x18`, `0x19`
 
-- [I] `0x18` for a player, in order: the cursor test; a page ≥ 5 returns 2 (the `PlayerIsBusy` branch never returns there, § Answer); page 4: a room in town, else 3; page 2: `InteractIsPlayer(1)`, else 3; page 3, 0: nothing further. Then `ItemSetPage(item, page)` **before** the placement, so a refused item keeps the new page byte on the cursor. A non-player user has only the page ≥ 5 test. *Corrected 2026-11-04 (`lane/s60` review): for a player the code passes only pages 0, 2, 3 and 4 and returns 2 for any other, page 1 and negatives included (`0x0054AC3E`, `0x0054AC40`).* *2026-11-16 (S4e part 3, § 12): `[C]` (ADR-0021) up to `InvPlaceItem`'s call, the page byte written before it; whether a refused placement keeps it is `InvPlaceItem`'s code, still `[I]`.* (0x0054ABE5..0x0054AC7E, 0x0054AC68)
+- [I] `0x18` for a player, in order: the cursor test; a page ≥ 5 returns 2 (the `PlayerIsBusy` branch never returns there, § Answer); page 4: a room in town, else 3; page 2: `InteractIsPlayer(1)`, else 3; page 3, 0: nothing further. Then `ItemSetPage(item, page)` **before** the placement, so a refused item keeps the new page byte on the cursor. *2026-11-16, § 13: `InvPlaceItem`'s refusals before `InvItemRemove` leave the byte, `[C]` (ADR-0021, `place`); one after it not run.* A non-player user has only the page ≥ 5 test. *Corrected 2026-11-04 (`lane/s60` review): for a player the code passes only pages 0, 2, 3 and 4 and returns 2 for any other, page 1 and negatives included (`0x0054AC3E`, `0x0054AC40`).* *2026-11-16 (S4e part 3, § 12): `[C]` (ADR-0021) up to `InvPlaceItem`'s call, the page byte written before it; whether a refused placement keeps it is `InvPlaceItem`'s code, still `[I]`.* (0x0054ABE5..0x0054AC7E, 0x0054AC68)
 - [I] `InvPlaceItem`: page 4 alone skips `0x0055C270` (for a player, `0x0055C110(1)`, a scroll's or tome's skill quantity, no page test; read at items/0014 § 5, fn:sub_0055C110_ItemSkillQtyAdjust@0x0055C110). An active charm then attaches. A failed put returns 0, the handler 3. (0x00560327, 0x0056032F, fn:ITEMS_IsActiveCharm@0x0062FF70, fn:sub_00560200_InvPlaceItem@0x00560200)
-- [I] `0x19` → `InvItemToCursor(…, 1, 0, 0, 0)`: the cursor empty; a player not busy (no interaction, empty cursor, PlayerData `+0x4C` 0) refuses any page but 0; the item in mode 0; then remove, page byte saved, page `0xFF`, cursor word, mode 4, event flag 4. (fn:sub_00560420_InvItemToCursor@0x00560420, 0x005604D2, 0x005604DC)
+- [I] `0x19` → `InvItemToCursor(…, 1, 0, 0, 0)`: the cursor empty; a player not busy (no interaction, empty cursor, PlayerData `+0x4C` 0) refuses any page but 0; the item in mode 0; then remove, page byte saved, page `0xFF`, cursor word, mode 4, event flag 4. *2026-11-16, § 13: `[C]` (ADR-0021, `tocur`) to `InvTakeItem` ("remove"), with the force argument `+0x1C` and the `+0xC4` bit 1 clear before it; what follows not run.* (fn:sub_00560420_InvItemToCursor@0x00560420, 0x005604D2, 0x005604DC)
 - [I] Page bytes in the code: 0 inventory, 1 and 2 trade, 3 cube, 4 stash; `0xFF` while on the cursor or the belt. (0x00628280, 0x0054AC7E, fn:sub_00621050_InvRowForUnit@0x00621050)
 
 ## 6. Belts
@@ -300,7 +300,7 @@ code as that map; the callees named as run are run, not observed. No import, no 
   case ends at `InvPlaceItem(game, player, guid, x, y, 0, 1, 0)` with ECX 0x006E1050 and EDX 0xBF6 (410: pages 0 136,
   2 44, 3 118, 4 96; refused 3 on page 2 81 and on page 4 108). Controls `page_after` 331, `page1_ok` 126.
   (0x0054AC0D–0x0054AC68, 0x0054AC7E, 0x0054ACA1, run:2026-11-16-sweep2-s4e-emu)
-- [I] After `InvPlaceItem`: whether a refused placement keeps that byte is its own code (part 4, `place`).
+- [I] After `InvPlaceItem`: whether a refused placement keeps that byte is its own code (part 4, `place`). *2026-11-16, § 13: refusals before `InvItemRemove` keep it, `[C]`.*
   (fn:sub_00560200_InvPlaceItem@0x00560200)
 - [C] (ADR-0021) **`0x19` to `InvItemToCursor`** (1 813 cases): length 5, else 3; `PktInvItemBad`, else 1; **a
   non-empty cursor ends at `NoManaMsg` (0x00549A60)** with ECX the player (405), the return of 2 after it not covered;
@@ -315,7 +315,86 @@ code as that map; the callees named as run are run, not observed. No import, no 
   `0x006E10E0[type]` + 4 × (guid & 0x7F); **type 5 walks one list from game + `0x1B20`**, with no bucket.
   (fn:sub_00552F60_GameFindUnit@0x00552F60)
 - Not covered here (S4e part 4 and on): the handlers `0x1A`..`0x1E`, `0x1F`, `0x21`, `0x23`..`0x25`, `0x63`;
-  `InvItemToCursor`'s body (rows 42, 46); the use rows 21, 22, 34, 38, 52, 54.
+  `InvItemToCursor`'s body (rows 42, 46); the use rows 21, 22, 34, 38, 52, 54. *2026-11-16: the handlers and `InvItemToCursor` to its remove are § 13.*
+
+## 13. Plan 0066 batch S4e part 4: the other request handlers, `InvItemToCursor`, `InvPlaceItem`'s refusals, `InvPageGet`, `InvRowForUnit` (run:2026-11-16-sweep2-s4e-emu)
+
+Six families, 17 952 cases, 0 mismatches, 0 undeclared reads, no traced write; 375 `pageget` cases stop at an
+allocator guard, each where the model expects it; 19 controls, each separating, `passed` 0 (`tools/items_s4e4_emu.py`,
+`workspace/logs/n66z/s4e/run4/check.txt`; record in
+[experiments](experiments.md#part-4-the-other-request-handlers-invitemtocursor-invplaceitems-refusals-2026-11-16)).
+Part 3's world (§ 12) plus the inventory's page array (`+0x14`, count `+0x18`), the body page's cells, the item list
+(`+0x0C`; each ItemData `+0x64` the next, `+0x69` the location byte) and Items/ItemTypes/inventory rows declared as
+`tools/item_emu2.py` declares them. Every case runs from the function's entry to its return or a declared callee's
+entry (ADR-0021: the callee and what follows are not covered; `lane/n66z`). The callees named as run are run, not
+observed. No import is reached; the only allocators reached are `InvPageGet`'s, as guards.
+
+- [C] (ADR-0021) **`0x1A`..`0x1E` to their functions**, family `body` (3 000). `0x1A` (0x0054AD90), `0x1B`
+  (0x0054AE30), `0x1D` (0x0054AF50), `0x1E` (0x0054B030): length 9, else 3; `PktIsCursorItem` on `+1`, else 1; the
+  slot is the byte at `+5`, and `s − 1 > 9` unsigned returns 2 (control `slot_signed` 95). `0x1C` (0x0054AEC0): length 3,
+  the slot the `u16` at `+1`, no guid. Then: `0x1A` → `ItemEquip(guid, slot, 0, &out)` (167, site 0x0054ADFC); `0x1B` →
+  `EquipCursorAtSlot(guid, slot, 0, &out)` (137, site 0x0054AE95); `0x1C` → `InvMoveInteractTest` (0 returns 0; its
+  boundaries as § 12's `0x19`), then `BodyToCursor(slot, 0, &out)` (151, site 0x0054AF30); `0x1D` → the slot's item by
+  `InvGetBodyLocItem` (page 0 by `InvPageGet` with the image's 13 × 1 row at `0x0074479C`), none returns 1 (control
+  `nobody_ok` 171), slot 8 then `TradeBeltLock` (0 returns 0; control `no_lock` 5), `InvMoveInteractTest`, then
+  `BodySwapCursor(guid, slot, 0, &out)` (49, site 0x0054B00B); `0x1E` → a slot other than 4 or 5 returns 3 (control
+  `swap2_any` 238), no item at it returns 1, `InvMoveInteractTest`, then `BodySwapCursor2(guid, slot, &out)` (17, site
+  0x0054B0CE). ECX the game, EDX the player at each. (0x0054ADCE, 0x0054AED7, 0x0054AF07, 0x0054AFC2, 0x0054B084,
+  0x0054B089, run:2026-11-16-sweep2-s4e-emu)
+- [C] (ADR-0021) **`0x1A`'s slot argument is a dword whose bits 8..31 are the frame's old bytes**: the handler stores
+  the byte at `[ebp−4]` and pushes the dword; 68 of the 167 calls had non-zero high bits. `0x1B`, `0x1D`, `0x1E` reuse
+  the length's dword (9), so their high bits are 0. What `ItemEquip` reads of it is after the boundary, `[I]`.
+  (0x0054ADBB, 0x0054ADE1, run:2026-11-16-sweep2-s4e-emu)
+- [I] `TradeBeltLock` (0x00567840) as run: with the interaction flag set and type 0, a listed item whose location byte
+  is 2 returns 0, else 1. `0x1C`'s slot-8 test comes after `InvMoveInteractTest`, which with an interaction of type 0
+  returns 0 or ends at `TradeItemTest`'s boundary 0x005B5810, so no case reaches it; it stays a reading. (0x0054AF07,
+  0x00567876, 0x0063E043)
+- [C] (ADR-0021) **`0x1F`, `0x21`..`0x25`, `0x63` to their functions**, family `req` (4 000). `0x1F` (0x0054B0F0):
+  length 17; `PktIsCursorItem` on `+1`, `PktInvItemBad` on `+5`; that item's page 1 or 2 returns 3 (control
+  `page12_ok` 29); `InvMoveInteractTest`; `PageSwapCursor(+1, +5, +9, +0xD, &out)` (44, site 0x0054B1AC). `0x21`
+  (0x0054B300): length 9; `PktOwnedItemBad` on `+1`, then `+5`; equal guids return 3 (control `same_ok` 335);
+  `StackRequest(+1, +5, &out)` (112, site 0x0054B352). `0x22` (0x0054B380): length 5; `PktOwnedItemBad`; the stub
+  0x0055E9A0 (255). `0x23` (0x0054B3E0): length 9; `PktIsCursorItem`; `ItemToBelt(+1, +5, 0, &out)` (231, site
+  0x0054B428). `0x24` (0x0054B450): length 5; `PktBeltItemBad`; `InvMoveInteractTest` with an item of 0; then a
+  non-empty cursor returns 2 (control `cursor_first` 140); `BeltToCursor(+1, &out)` (80, site 0x0054B4B8). `0x25`
+  (0x0054B4E0): length 9; `PktIsCursorItem` on `+1`, `PktBeltItemBad` on `+5`; `BeltSwapCursor(+1, +5, &out)` (48, site
+  0x0054B536). `0x63` (0x0054D520): length 5; `PktInvItemBad`; a non-empty cursor ends at `NoManaMsg` (226; the 2 after
+  it not covered); the item's ItemTypes `+0x19` 0 returns 2 (control `beltable_ignored` 73); a page byte ≠ 0 returns 3
+  (control `page_any` 100); `BeltFreeSlot(inventory, item, &slot)` (63, site 0x0054D5C4). Each wrong length returns 3.
+  (0x0054B0F9, 0x0054B16B, 0x0054B33E, 0x0054B383, 0x0054B3E3, 0x0054B47C, 0x0054B48E, 0x0054B4E3, 0x0054D526,
+  0x0054D58E, 0x0054D598, run:2026-11-16-sweep2-s4e-emu)
+- [I] After each function: a return of 0 with `out` set returns 3, else 0 (each handler's tail); `0x63` after
+  `BeltFreeSlot`: a slot below 0 returns 0, then `InvMoveInteractTest`, `InvTakeItem` and `BeltPutItem` (0x0054D5C6,
+  0x0054D628, 0x0054D6E3). Not covered.
+- [C] (ADR-0021) **`InvItemToCursor` (0x00560420) to `InvTakeItem`**, family `tocur` (1 500; ECX game, EDX player,
+  `guid, &out, a3, a4, inventory, force`): `out ← 0`; the inventory is the argument or else the player's; a non-empty
+  cursor returns 0 unless `force` (`+0x1C`) is non-zero (control `force_ignored` 639); a guid not found sets `out` to 1
+  and returns 0; for a type-0 user, `PlayerIsBusy` 0 with a page byte ≠ 0 sets 1 (control `busy_ignored` 69); a mode
+  ≠ 0 sets 1 (control `mode_any` 125); then `InvClearUseMarks` (run, no flagged item), the item's `+0xC4` bit 1
+  cleared (dumped) and `InvTakeItem(inventory, item)` (575, site 0x00560535). A type-1 user skips the busy test.
+  (0x00560465, 0x0056048D, 0x005604CB, 0x005604DC, 0x005604F9, 0x00560527, run:2026-11-16-sweep2-s4e-emu)
+- [C] (ADR-0021) **`InvPlaceItem` (0x00560200) as `0x18` calls it**, family `place` (2 500; `x, y, 0, f20, 0`, the item
+  on the cursor in mode 4 with the page byte written): `InvClearUseMarks` (run); a guid not found or a mode ≠ 4 returns
+  0; `InvRowForUnit(player, page, game+0x70)`; the direct branch clamps a negative `x`, `y` (signed) to 0 (control
+  `noclamp` 522); `0x0063BCC0` → `InvGridPut(x, y, page + 2, row)`: an item with no ItemData returns 0 first, then
+  `InvRecordGrid`'s row, `InvPageGet`'s size refusal, the bound and cell tests (§ 2); a fit ends at `InvItemRemove` (544,
+  site 0x0063B138). **No refusal before `InvItemRemove` writes the page byte** (1 956 refusals, the byte dumped after
+  each; control `page_reset` 2 290). (0x00560259, 0x005602E5, 0x005602EE, 0x0063B003, run:2026-11-16-sweep2-s4e-emu)
+- [C] (ADR-0015) **`InvPageGet` (0x0063ADD0)**, family `pageget` (1 000; EAX the page, EDI the inventory, the row
+  pointer on the stack): `page < count` is signed and the entry is `pages + (page << 4)` wrapping, so `0x80000000` names
+  page 0 (control `unsigned_idx` 138); with no row, the entry if its cells exist, else 0; with a row, a made page of
+  another size returns 0 (control `size_ignored` 93), a page not made reaches the allocator `0x0040B430` (68 guard
+  stops) and a page at or above the count the reallocation `0x0040B4B0` (307). (0x0063ADDA, 0x0063AE53, 0x0063AE5A,
+  run:2026-11-16-sweep2-s4e-emu)
+- [C] (ADR-0015) **`InvRowForUnit` (0x00621050)**, family `rowfor` (5 952): every page byte (as a byte: control
+  `page_dword` 28) for player classes 0..7 and two others with both expansion words, and types 1..6 and two others over
+  13 classes. Returns: −1, 0..4, 14, 15 (the class table `0x00744544`, 7 entries, .data, named by three loads and no
+  store in `.text`, `static.txt`), 5 (type 1), 6, 7, 9, 8 or 12 (page 4: control `stashsmall` 10), 10, 11 (type 2,
+  class `0x152`, `0x153`). **13 and 29 are never returned.** (fn:sub_00621050_InvRowForUnit@0x00621050,
+  run:2026-11-16-sweep2-s4e-emu)
+- Not covered here (S4e part 5): the use rows 21, 22, 34, 38, 52, 54; the `put`, `search`, `merge`, `drop`, `ground`,
+  `expiry` and belt families (inventory 20, 22, 25–27, 47, 48, 55, 57, 58, 63, 67, 81, 84, 87, 98); what follows
+  `InvTakeItem`, `BeltFreeSlot` and `InvItemRemove`; `InvGridFree`.
 
 ## Data touched
 
