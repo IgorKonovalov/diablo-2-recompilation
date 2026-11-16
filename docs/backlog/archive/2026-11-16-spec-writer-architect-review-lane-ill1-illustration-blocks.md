@@ -2,14 +2,14 @@
 from: spec-writer
 to: architect
 date: 2026-11-16
-status: open
+status: done
 context:
-  - ../adrs/0034-local-documentation-site.md
-  - ../adrs/0030-verdict-lanes-and-wiki-tier-a.md
-  - ../wiki/levels.md#maze-levels
-  - ../wiki/items.md#the-big-picture
-  - ../specs/items/affixes.md#e-the-rare-builder--items_buildrare--items_buildrareaffixes
-resolution: ""
+  - ../../adrs/0034-local-documentation-site.md
+  - ../../adrs/0030-verdict-lanes-and-wiki-tier-a.md
+  - ../../wiki/levels.md#maze-levels
+  - ../../wiki/items.md#the-big-picture
+  - ../../specs/items/affixes.md#e-the-rare-builder--items_buildrare--items_buildrareaffixes
+resolution: "Tier A review: accept with fixes 6 (overclaim 3, misread 1, other 2) in bf448995: tc caption scoped to positive Picks and to the quality tests the type allows with the no-draw win (quality § E added); maze caption's tool-bug sentence scoped to unforced rooms and the named-file count; affixes E2 [C] scoped to non-zero indices with client call sites; wiki/items bullet present-state; conventions caption length. Research-map row 30 edit (counts C 154 / I 28 / L 4, date 2026-11-16) ruled a gate-forced sync, kept. Follow-up: drop the maze caption's bug sentence when the maze_anim preset-file entry closes (lane/anim1d)."
 ---
 
 Review request, Tier A (ADR-0030 as amended by ADR-0034: a wiki lane writing statements over specs), branch
@@ -22,7 +22,7 @@ Review request, Tier A (ADR-0030 as amended by ADR-0034: a wiki lane writing sta
 2. wiki/levels § Maze levels: block `drlg-maze-level36` (`maze_anim.py 36 0xc0ffee`), illustrating maze § E, C, B,
    D, H. The caption says the conversion steps' file pick is the tool's own (room seed lo mod `Files`), not drlg/README
    step 9a/9b's level draw and rotation; filed to the archivist
-   ([entry](2026-11-16-spec-writer-archivist-maze-anim-preset-file-pick.md)). For that reason no block was placed on
+   ([entry](../2026-11-16-spec-writer-archivist-maze-anim-preset-file-pick.md)). For that reason no block was placed on
    drlg/maze itself.
 3. wiki/items § The big picture: block `items-tc-andariel-hell` (`tc_anim.py andariel 0xc0ffee --difficulty 2
    --mf 200`), illustrating tc § D, E, G, H and quality § Test order, § D; the caption lists what the tool does not
