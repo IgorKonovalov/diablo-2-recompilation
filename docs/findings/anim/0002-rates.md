@@ -463,6 +463,21 @@ r = (base * X) mod 2^32 / 100;                          // unsigned
   not change its pace, and a player sequence (mode 18, scheduled with `+0x3C`) is paced by the rate only through the
   cast or attack branch. (0x00624016, 0x006242FF, fn:UNIT_SeqInit@0x00621260; anim/0001 §§ 7–8)
 
+- *2026-11-16, plan 0066 H6d (`lane/n66h6`, slot 1, 11 sessions, 48 118 SR lines):* the moving floor 25 is met live: 105
+  monster calls with X below 25 (X −15, −9, 5 and 8) give the floored rate and path speed (0x00624128; controls floors 24, 26 and
+  none differ in 105 of 105), a player never reaches it (least X 150). [C] The attack floor 15: 111 monster attack calls
+  with X below 15 (all at X 10), controls 14, 16 and none differ in 111, so the constant 15 is shown at one input value and the
+  threshold for X 11–14 stays `[I]`; the attack's 175: 37 player calls with X above 175,
+  controls differ in 37; the default branch's floor 15: 139 monster and 14 player calls. (fn:UNIT_AnimSetRate@0x00623F50,
+  [run:2026-11-16-sweep2-H6d](experiments.md#run2026-11-16-sweep2-h6d)) [C] The call leaves `+0x48` and `+0x44` as at its
+  entry in 48 118 of 48 118 calls, among them 25 059 that changed the record pointer with a non-zero length; the first
+  call of `UNIT_AnimInit` reads the live entry `+0x48`, which is the previous record's length in 3 040 of 3 074 init
+  attack calls and another length in 34 (the length stays the start's), the rate equal to the model fed the live value in
+  3 074; 833 shapeshifted calls equal. [C] Dual wield: 186 attack calls equal the term `(R + L) ÷ 2 − R` (152 with the
+  hands' 68 differing, the no-term control differing in 141); which hand the skill links is not logged, [I] left 32, right
+  96 by inference from stat 68. Not reached in 48 118 calls: a player's moving X below 25, block q ≤ 0, q at or above
+  0x7FFF, a moving call with no path, the default branch's 175; they stay `[I]`.
+
 - *2026-11-16, plan 0066 S6e part 1 (`lane/n66l`):* the four rate-class predicates and the two mode tests 0x00621680
   (get-hit, fn:sub_00621680_AnimModeIsGetHit@0x00621680) and 0x006216B0 (block, fn:sub_006216B0_AnimModeIsBlock@0x006216B0) run whole over types 0–5, every mode, both class ranges, the `npc` bit and the
   used skill's flags and record bytes ([run:2026-11-16-sweep2-s6e](experiments.md#run2026-11-16-sweep2-s6e), family
