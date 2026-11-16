@@ -1558,3 +1558,175 @@ logs: 7 143 (`ai.py check`). Wall of the 17 cases: 4 271 s (the marks' walls; th
 - **Not covered by this run:** Act IV, Act V and Nightmare (Phase 3b), the entries listed as not reached, R32's home and script
   words, the Phase 1c words of R56, R71, R85, R128 and `objects.py`'s lines (R56 stays all-forked), R68 (Act IV: the nested-call
   test covers the logged calls inside `AiVileMotherSpawn`, no Act IV log yet).
+
+## run:2026-11-16-ai-tour-3
+
+- **Question:** (plan 0069 Phase 3b, `lane/n69f`) Do the Act IV, Act V and Nightmare cases of plan 0069's tour (17 cases:
+  `t-a4-town`, `t-a4-steppes`, `t-a4-cotd`, `t-a4-river`, `t-a4-chaos`, `t-a5-town`, `t-a5-foothills`, `t-a5-highlands`,
+  `t-a5-plateau`, `t-a5-crystal`, `t-a5-glacial`, `t-a5-tundra`, `t-a5-halls`, `t-a5-wsk1`, `t-a5-wsk`, `nm-a5-crystal`,
+  `nm-a5-wsk`) check with 0 mismatches against the models of Phases 1b and 1c, and which statements of the H1a to H1d, H1g and H1h
+  batches do they reach (the raise itself is Phase 4's)? The aims named by the lane: R68, R118, R119, R128.
+- **Setup:** as `run:2026-11-16-ai-tour-2`: `tools/gdb/ai.py` rev 7 (unchanged), slot 2, `--fresh` (one game process per case),
+  every launch inside `systemd-run --user --scope -p MemoryMax=4G`, runner `tools/ai_sessions.py`, characters built by
+  `ai_sessions.py build --saves workspace/logs/n69f/saves`, seeds the case table's (Act IV 7055, Act V 6908, Nightmare 6927), checker
+  `tools/ai_model_check.py` revision 6 and `tools/ai.py`. Batches by seed: Act IV under run id `2026-11-16-ai-tour-3` (7055), Act V under
+  `2026-11-16-ai-tour-3b` (6908), Nightmare under `2026-11-16-ai-tour-3c` (6927), so that launch numbers are not reused. R56, R85,
+  R32's home and script words stay unlogged (no logger change).
+- **Predictions** (committed before the first kept log; predicted pools: `workspace/logs/n69a/pools.txt`):
+  1. Every kept log's first logger line is `AI logger armed rev 7 bmax 48`; `ai.py check` gives 0 mismatches over the 17 logs.
+  2. `ai_model_check.py check --logs` over the 17 logs together with the 29 of Phases 2 and 3a gives 0 mismatches for every entry
+     except the control `R79x` (2, as required; a stop is allowed); `regress` over the 38 kept rev 4 and rev 6 logs stays
+     byte-identical.
+  3. Decisions by case (each at least 1, from the predicted pools; the town cases need the NPC near the player):
+     - `t-a4-town` (stay in town): R32 and R54. `t-a4-steppes` (104: fingermage1, regurgitator1, doomknight1): R72; R55 only if the
+       hunt for 256 (Izual) reaches him.
+     - `t-a4-cotd` (106: bighead5, vilemother2, regurgitator2): R4, R68 (with the calls logged inside `AiVileMotherSpawn` between its
+       AIB and AIR lines) and R71; R70 and R73 only if their units are met.
+     - `t-a4-river` (107: blunderbore4, vilemother3, doomknight2): R39, R68, R73; R70, R71 conditional; R33, R98, R100 only if the
+       hunt for 409 (Hephasto) reaches him.
+     - `t-a4-chaos` (108: fingermage3, doomknight3, megademon3): R74 and R70.
+     - `t-a5-town`: R32; S5, S6 not predicted. `t-a5-foothills` (110: overseer1, imp1): R120, R122; R116, R123, R126, R129 conditional.
+     - `t-a5-highlands` (111: siegebeast2, imp1): R115, R122. `t-a5-plateau` (112: minion2, overseer2): R116, R120.
+     - `t-a5-crystal` (113: succubus3, frozenhorror1, bloodlord1): R124 and **R118**; R80 only if the loot walk springs a trap.
+     - `t-a5-glacial` (115: reanimatedhorde2, frozenhorror2, deathmauler3): R114, R124. `t-a5-tundra` (117: siegebeast2, imp4): R115, R122.
+     - `t-a5-halls` (123: reanimatedhorde4, deathmauler2, putriddefiler1): R137, R114; **R128** only if the hunt for 526 (Nihlathak)
+       reaches him (the warp 77 to 124 is not taken in 3a's experience; a timed out hunt is reported as such).
+     - `t-a5-wsk1` (128: reanimatedhorde5, succubuswitch2, putriddefiler3): **R119**, R137; R136, S15 not predicted.
+     - `t-a5-wsk` (129: minion7, suicideminion6; 130: imp5, bloodlord5, putriddefiler4): R116, R117, R137, if the warp 82 to 130 is taken.
+     - `nm-a5-crystal` (Nightmare 113: frozenhorror1, bloodlord3, clawviper6): R142. `nm-a5-wsk` (129: suicideminion6, clawviper10,
+       willowisp6; 130: overseer4, fetishblow8, dkmag2): R142, R25; R74 only if the warp is taken.
+  4. Word lines as in `run:2026-11-15-ai-tour-1` prediction 4: each R10, R54, R32, R78, R79 decision carries its word line and is
+     fork-free where the fork was only that word.
+  5. Separation lines and decision counts per entry are reported as the checker prints them; a row with 1 outcome is reported as
+     confirming it. Sharing: fresh per case, as in Phases 2 and 3a.
+
+### Results of `run:2026-11-16-ai-tour-3` (plan 0069 Phase 3b, `lane/n69f`)
+
+Kept outputs in `workspace/logs/n69f/` (`manifest.sha256`, 84 lines, `sha256sum -c` passes from that directory; paths are `../ai/…` and
+local names): the 17 launch logs with their marks and per-case logs (`split`), the three pilot files, the screenshots, the status
+files and the runners' stdout (`batch-a4-stdout.txt`, `batch-a5-stdout.txt`, `batch-nm-stdout.txt`), and the checks
+(`model-check.txt` over the 17 kept logs, `model-check-all46.txt` over them and the 29 of Phases 2 and 3a, `ai-check.txt`, `words.txt`,
+`flip-rows.txt`, `flip-states.txt`, `regress.txt`, `r118-probe.txt`, each with its stdout; the log lists `logs-tour3.txt` and
+`logs-all46.txt`). Tools at the commit of this entry: `tools/gdb/ai.py` rev 7 (unchanged), `tools/ai_model_check.py` revision 6
+(unchanged), `tools/ai.py`, `tools/ai_tour_words.py`, `tools/ai_resume_flip.py`, `tools/ai_r118_probe.py` (new, read-only). Slot 2,
+`--fresh` (one game process per case), every launch under `MemoryMax=4G`. Three batches: Act IV under run id `2026-11-16-ai-tour-3`
+(seed 7055), Act V under `-3b` (6908), Nightmare under `-3c` (6927); launch numbers L1 to L5, L1 to L10, L1 and L2. Predictions were
+committed at `13c02e50`, before the first kept log.
+
+| case | seed | launch (pid) | position (level) | decisions | wall |
+|---|---|---|---|---|---|
+| `t-a4-town` | 7055 | L1 (1467459) | Pandemonium Fortress 103, walk ended at hop 2 ("no target, level done") | 13 | 21 s |
+| `t-a4-steppes` | 7055 | L2 (1468931) | 104, border walk (60 hops, stopped at hop 54 with 125 rooms left), hunt 256 timed out (class never seen) | 383 | 184 s |
+| `t-a4-cotd` | 7055 | L3 (1481260) | 106, sweep 240 s | 482 | 268 s |
+| `t-a4-river` | 7055 | L4 (1487723) | 107, sweep, hunt 409 timed out (class never seen) | 446 | 287 s |
+| `t-a4-chaos` | 7055 | L5 (1494029) | 107, sweep 30 s, border walk 60 hops (frontier 499 rooms; level 108 not entered) | 319 | 149 s |
+| `t-a5-town` | 6908 | L1 (1497519) | Harrogath 109, walk ended at hop 6 ("no target, level done") | 121 | 35 s |
+| `t-a5-foothills` | 6908 | L2 (1498409) | 109, border walk (80 hops), 110 | 646 | 186 s |
+| `t-a5-highlands` | 6908 | L3 (1502682) | 111, sweep | 344 | 227 s |
+| `t-a5-plateau` | 6908 | L4 (1508098) | 112, sweep | 351 | 168 s |
+| `t-a5-crystal` | 6908 | L5 (1513058) | 113, sweep, loot walk (60 hops) | 391 | 247 s |
+| `t-a5-glacial` | 6908 | L6 (1518367) | 115, sweep | 241 | 226 s |
+| `t-a5-tundra` | 6908 | L7 (1524192) | 117, sweep | 340 | 227 s |
+| `t-a5-halls` | 6908 | L8 (1530720) | 123, sweep; descent 77 to 124 not made ("4 hops without moving", time out); hunt 526 timed out (class never seen) | 702 | 568 s |
+| `t-a5-wsk1` | 6908 | L9 (1544581) | 129; "every room activated or skipped, no warp 81 to 128" (level 128 never entered) | 537 | 247 s |
+| `t-a5-wsk` | 6908 | L10 (1550669) | 129; "no warp 82 to 130" (level 130 never entered) | 563 | 260 s |
+| `nm-a5-crystal` | 6927 | L1 (1557469) | Nightmare 113, sweep | 398 | 227 s |
+| `nm-a5-wsk` | 6927 | L2 (1563506) | Nightmare 129; "no warp 82 to 130" | 475 | 176 s |
+
+Cases kept: 17 of 17 (Act IV 5, Act V 10, Nightmare 2); 0 reruns, 0 failed launches. Decisions per case are `words.txt`'s `DECISIONS` lines
+(the runners' stdout counts `t-a4-river`, `t-a4-chaos`, `t-a5-crystal`, `t-a5-glacial`, `t-a5-halls`, `t-a5-wsk1`, `t-a5-wsk` and `nm-a5-wsk` one lower).
+Decisions in the 17 kept logs: 6 752 (`ai.py check`: `CHECK logs=17 decisions=6752 ain=7746 sst=641 caps=24`). Wall of the 17 cases: 3 703 s (the batches' own totals 909 s, 2 391 s and 403 s).
+Sharing decision: fresh per case, unchanged.
+
+- **Prediction 1 held.** All 17 logs open with `AI logger armed rev 7 bmax 48` (`words.txt`). `ai.py check` over the 17 logs: 6 752
+  decisions, 0 mismatches (`ai-check.txt`, its `TOTAL` line).
+- **Prediction 2 held in part: one entry fails, R118.** `ai_model_check.py check --logs` over the 17 logs: 95 entries, **0 mismatches in
+  every entry but R118** (12; below). Over the 46 logs (`model-check-all46.txt`) the only entries with mismatches are R118 (12), and the
+  controls as required: `R78y` 8 of 27, `R79x` 2 of 10, `R23x` 1 of 613 (all three have 0 decisions in the 17 logs of this run; the counts
+  are those of the earlier logs). `regress` over the 38 kept rev 4 and rev 6 logs: byte-identical to S1b's `model-check.txt` (32 entries,
+  38 logs, 32 SEP lines; `regress.txt`). Stops over the 17 logs: R118 16, R32 61, R4 1, R39 1.
+- **Decisions, fork-free count and separation line per entry** (`model-check.txt`, the 17 logs; separation line = distinct outcomes over the
+  fork-free decisions, ADR-0028 item 7; an entry not in the list had 0 decisions):
+
+| entry | decisions | fork-free | forked | mismatch | stop | separation line |
+|---|---:|---:|---:|---:|---:|---|
+| R1 | 41 | 41 | 0 | 0 | 0 | 1 over 41 |
+| R4 | 100 | 99 | 0 | 0 | 1 | 3 over 99 |
+| R7 and the notes row | 6 | 6 | 0 | 0 | 0 | 1 over 6 |
+| R25 | 163 | 163 | 0 | 0 | 0 | 8 over 163 |
+| R32 | 499 | 0 | 438 | 0 | 61 | none (all forked: its home and script words are not logged) |
+| R33 | 18 | 18 | 0 | 0 | 0 | 2 over 18 |
+| R39 | 150 | 149 | 0 | 0 | 1 | 4 over 149 |
+| R54 | 88 | 88 | 0 | 0 | 0 | 1 over 88 (confirms it) |
+| R68 | 104 | 104 | 0 | 0 | 0 | 6 over 104 |
+| R69 | 91 | 91 | 0 | 0 | 0 | 5 over 91 |
+| R70 | 13 | 13 | 0 | 0 | 0 | 3 over 13 |
+| R71 | 120 | 117 | 3 | 0 | 0 | 10 over 117 |
+| R72 | 35 | 35 | 0 | 0 | 0 | 4 over 35 |
+| R73 | 98 | 98 | 0 | 0 | 0 | 6 over 98 |
+| R99 | 86 | 86 | 0 | 0 | 0 | 2 over 86 |
+| R100 | 13 | 13 | 0 | 0 | 0 | 1 over 13 (confirms it) |
+| R114 | 212 | 212 | 0 | 0 | 0 | 6 over 212 |
+| R115 | 20 | 20 | 0 | 0 | 0 | 4 over 20 |
+| R116 | 739 | 739 | 0 | 0 | 0 | 4 over 739 |
+| R117 | 164 | 164 | 0 | 0 | 0 | 4 over 164 |
+| **R118** | 44 | 8 | 8 | **12** | 16 | 2 over 8 |
+| R120 | 31 | 0 | 31 | 0 | 0 | none (all forked) |
+| R122 | 320 | 320 | 0 | 0 | 0 | 15 over 320 |
+| R123 | 3 | 3 | 0 | 0 | 0 | 2 over 3 |
+| R124 | 87 | 87 | 0 | 0 | 0 | 6 over 87 |
+| R126 | 33 | 24 | 9 | 0 | 0 | 2 over 24 |
+| R129 | 11 | 9 | 2 | 0 | 0 | 3 over 9 |
+| R130 | 246 | 246 | 0 | 0 | 0 | 5 over 246 |
+| R136 | 151 | 151 | 0 | 0 | 0 | 3 over 151 |
+| R137 | 81 | 81 | 0 | 0 | 0 | 5 over 81 |
+| R142 | 131 | 131 | 0 | 0 | 0 | 11 over 131 |
+| S16 | 8 | 8 | 0 | 0 | 0 | 3 over 8 |
+
+  The four aimed entries: **R68 reached** (104 decisions, 0 mismatches, 6 outcomes; the calls logged inside `AiVileMotherSpawn` between
+  AIB and AIR lines are dropped by `top_level` as the 3a test states, so the model needed no change); **R118 reached, 12 mismatches**
+  (below); **R119 and R128 not reached** (0 decisions: no warp 81 to level 128 from 129 was found, and the descent 77 to 124 and the hunt
+  for 526 did not reach Halls of Vaught or Nihlathak). Entries aimed at by Phase 3b's cases and not reached (0 decisions in any of the 17
+  logs): R55, R74, R98, R119, R128, R80 and S15. Reasons: R55 (hunt 256 timed out), R74 (levels 108 and 130 not entered), R98 (hunt 409 timed out), R119 and R128 as above; R80 and S15 had no decision in any of the 17 logs (no further reason is recorded). R56, R85 and R32's unlogged
+  words are as in `run:2026-11-16-ai-tour-2`: R32 stays all-forked (499 decisions, 0 fork-free); R85 had no decision.
+- **R118: 12 mismatches, named as a contradiction candidate.** All 12 are in `t-a5-crystal` (44 R118 decisions, unit class 471, the only log
+  with R118): 5 `4.idle` seeds, 2 `4.walk` calls and 5 `2.setmode4` (3 seeds, 2 calls) where the model's seed (two steps) or its chosen call
+  (Walk 0x005DEC80, SetModeAtUnit 0x005DDF90) differs from the log's (one step; `Idle` 0x005DE080 at 0x005E210E or 0x005E202A). `tools/ai_r118_probe.py` over the
+  `t-a5-crystal` log (`r118-probe.txt`, 44 decisions): the 12 far decisions (dist ≥ aip(4)) take one seed step each and the model matches
+  all 12; of the 32 near decisions (dist < aip(4)), the 25 with the rev 7 word logged all take exactly one seed step (12 mismatch,
+  13 stop), and of the 7 without the word 4 take two steps (model ok, forked) and 3 take one (stop). The probe's second tally (first boundary of the near
+  decisions, `r118-probe.txt`): the 25 with the word logged call `SetModeAtUnit` (6), `Idle` (9) or `Walk` (10) first, none enters the
+  curse arm; the 3 that call `UnitGetMaxHp` 0x00625D10 (the arm's test, 0x005E1F3B) are among the 7 without the word line. The model's
+  chance(3) draw plus the later chance draw gives two steps for a near decision whose chance(3) fails; the log has one. Reading `[I]`,
+  unresolved at the lane's time box: the 25 behave as if the flag test at 0x005E1E36 had been taken (no step-1 draw, one draw for the
+  later test, no curse), while the rev 7 word `R118.flag0x20` (EAX at 0x005E1E34) reads 0 in all 33 lines that carry it, which
+  the model reads as "not taken". Either the word does not read what row 118 says, or the flag differs from the word at the test.
+  Other readings the same data allow: the `dist` or `aip(4)` the test at 0x005E1E45 compares differs from the checker's `ctx[5]` and `aip(4)`; or the rev 7 word breakpoint at 0x005E1E34 perturbs the path (the 7 near decisions with no word line behave as the model does). Both exits of the tests at 0x005E1E36 and 0x005E1E48 go to 0x005E1FBE, so no change of the block's structure gives one step.
+  Catalogue rows 347 and 348 stay `[I]`; the far case (12 decisions) matches. Filed for the spec and the
+  architect: backlog entry `2026-11-16-reverser-spec-writer+architect-plan-0069-p3b-r118-step-1-draw-contradiction`.
+- **Prediction 3 (decisions by case, from `words.txt`).**
+  - Held: `t-a4-town` R32 6, R54 2; `t-a4-steppes` R72 35; `t-a4-cotd` R4 100, R68 44, R71 56; `t-a4-river` R39 81, R68 31, R73 62, R33 18
+    and R100 12 (the conditional ones, with R98 not seen); `t-a5-town` R32 81; `t-a5-foothills` R116 90 and R126 21 (conditional);
+    `t-a5-highlands` R115 7, R122 169; `t-a5-plateau` R116 168, R120 31; `t-a5-crystal` R124 65 and R118 44; `t-a5-tundra` R115 13, R122 150;
+    `t-a5-halls` R137 81, R114 200; `t-a5-wsk` R116 200, R117 68; `nm-a5-crystal` R142 22; `nm-a5-wsk` R142 109, R25 163.
+  - Not held: `t-a4-steppes` R55 (hunt timed out), `t-a4-chaos` R74 and R70 (level 108 not entered, 319 decisions in 107: R73 36, R39 69),
+    `t-a5-foothills` R120 and R122 (not seen there; R120 in the plateau, R122 in the highlands and tundra), `t-a5-glacial` R124 (not seen;
+    R114 12, R130 12), `t-a5-wsk1` R119 and R137 (level 128 not entered; R116 200, R117 66, R136 54), `t-a5-wsk` R137 (level 130 not
+    entered), `nm-a5-wsk` R74 (conditional on level 130), `t-a5-halls` R128 (conditional: Halls of Vaught not entered).
+  - Seen, not predicted: R70 13 and R71 64 in `t-a4-steppes`, R69 37 and R99 86 in `t-a4-cotd`, R69 25 in `t-a4-river` and `t-a4-chaos`,
+    R1 in the Act V cases, R130 in the Act V cases, R136, R129 11 in the highlands, R123 3 in the tundra, R7 6 in `t-a5-crystal`.
+- **Prediction 4**: R54 88 of 88 fork-free (as predicted, 1 outcome); R10, R78, R79 not in these logs; the rev 7 word lines of `words.txt`:
+  `AiNearestPlayer` 14 lines where R32 and R54 are present in a case, `R73.aurastate` and `R73.md0e` 36 lines in `t-a4-chaos`.
+- **Prediction 5, separations** above. Resume flip (`flip-rows.txt`, rows 3, 4, 5, 15, 23, 26, 43, 52, 54, 63, 65, 68, 70, 78, 79, 96, 118,
+  `--key rowthink --cap 1000000`; `flip-states.txt`, thinks 5e8140 and 5e8340, no decision in these logs): the rows with decisions here
+  are R118 (44 resumed: 11 sites, 10 separate, 1 `nosep` at 0x005E203B, 4 two-way all separate), R4 (99: 9 sites, 8 sep, 1 `nosep`,
+  3 two-way all sep), R54 (88: 3 sites, 3 `nosep`: the same `Idle` follows every branch), R68 (104: 11 sites, 11 sep, 5 two-way all sep) and
+  R70 (13: 12 sites, 11 sep, 1 `nosep`, 2 two-way all sep). Phase 4 reads them. The raise itself is Phase 4's.
+- **Observations, not claims.** (1) `t-a5-wsk1` and `t-a5-wsk` stood in level 129 and found no warp 81 or 82 (the pilot's "every room
+  activated or skipped"): R119's pool level 128 and the Worldstone 130 cases (R74, R137) need another route; this is a lead for a later rerun.
+  (2) `t-a4-chaos` never left the River of Flame (107): the border walk of the case table did not reach Chaos Sanctuary. (3) A `LOGERR ai f
+  MemoryError('Cannot access memory at address 0x0')` line (the `f` reader of `w_nearest`, a logged rev 7 word with the pointer 0) sits in
+  the R118 decisions without a word line; the word lines of the others are unaffected. It is a lead for the logger, not a claim.
+- **Contradictions:** one, R118 above (filed). 0 mismatches in every other real entry.
+- **Not covered by this run:** R119, R128, R55, R74, R98 (Act IV and V, not reached), R32's home and script words, R56 and R85 (rev 7 does
+  not log their words), R10, R78, R79 (no decision in these logs).
