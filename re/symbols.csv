@@ -1565,6 +1565,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005A73E0,func,sub_005A73E0_MonModeStartNeutral,,I,anim/timing,docs/findings/anim/0001-modes-frames.md
 0x005A7670,func,sub_005A7670_MonAttackFrame,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x005A77C0,func,sub_005A77C0_MonModeStartKnockback,,I,path/search,docs/findings/path/0001-pathplan-register.md
+0x005A7870,func,sub_005A7870_MonModeStartSeq,,I,skills/dispatch,docs/findings/skills/0002-missiles.md
 0x005A78A0,func,sub_005A78A0_MonModeRecord,,C,items/quest-drops,docs/findings/items/0010-quest-drops.md
 0x005A7B30,func,sub_005A7B30_MonModeNullRecord,,I,anim/timing,docs/findings/anim/0001-modes-frames.md
 0x005A7BA0,func,sub_005A7BA0_MonModeFrameEvent,,I,anim/timing,docs/findings/anim/0001-modes-frames.md

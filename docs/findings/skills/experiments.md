@@ -409,7 +409,7 @@ its `-2` and `-3` launches) and the 35 economy.gdb logs of run:2026-10-17-econom
   of `PLAYER_UseAmmo`.
 - **For Phase 3.** Slow's logged block carries stat 67 = −v, which dispatch § K's row 19 does not name. Mode 14:
   bit 6 is clear at the AI command's return as at the start's entry (part 1), against dispatch § E2, § M1 and the
-  entry table; backlog `2026-11-10-reverser-reverser-skills-mode-14-start-bit-6.md` asks for the read.
+  entry table; backlog `2026-11-10-reverser-reverser-skills-mode-14-start-bit-6.md` asked for the read (answered: skills/0002 § 16).
 
 ### Addendum 2026-11-15: plan 0066 batch S2b, the missile lines of the three kept skills runs (`lane/n66f`)
 

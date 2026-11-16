@@ -1730,3 +1730,51 @@ Sharing decision: fresh per case, unchanged.
 - **Contradictions:** one, R118 above (filed). 0 mismatches in every other real entry.
 - **Not covered by this run:** R119, R128, R55, R74, R98 (Act IV and V, not reached), R32's home and script words, R56 and R85 (rev 7 does
   not log their words), R10, R78, R79 (no decision in these logs).
+- **Addendum 2026-11-16: plan 0069 Phase 4, the settle** (`lane/n69g`, static, no game; tools at the commit of this entry:
+  `tools/ai_model_check.py` revision 6, unchanged, sha256 `257e3fac…`; `tools/ai_resume_flip.py` `98484cb5…`, `tools/ai_resume.py`
+  `187dcaaf…`, both unchanged; `tools/ai_tour_settle.py` new, `105e9fee…`, its test `tools/test_ai_tour_settle.py`, 5 tests OK). The 84
+  logs: the 38 kept rev 4 and rev 6 logs of S1b and the 46 tour logs of this run, run:2026-11-15-ai-tour-1 and run:2026-11-16-ai-tour-2
+  (`workspace/logs/n69g/logs-all84.txt`; per group `logs-kept38.txt`, `logs-tour1.txt`, `-tour2`, `-tour3`). Outputs in
+  `workspace/logs/n69g/`, `manifest.sha256` (105 lines: the 21 outputs and the 84 logs as `../ai/…`; passes from that directory).
+  - **Procedure** (from `workspace/logs/ai`, each replay under `systemd-run --user --scope -p MemoryMax=4G`): `ai_model_check.py check
+    --logs ../n69g/logs-all84.txt` (`model-check-all84.txt`) and the same per group (`model-check-kept38.txt`, `-tour1`, `-tour2`,
+    `-tour3`); `ai_resume_flip.py check <84 logs> --rows 1,7,23,26,32,43,48,49,54,70,71,73,78,79,95,100,114,118,124 --key rowthink --cap
+    1000000` (`flip-rows-all84.txt`) and `ai_resume.py check <84 logs>` on the same rows (`resume-all84.txt`, the `RROW` mismatch counts);
+    `ai_model_check.py regress` (`regress.txt`: byte-identical, 32 entries, 38 logs). Then `ai_tour_settle.py`: `entries` (S1b's rule per
+    entry: 0 mismatches over all the entry's decisions, at least 30 fork-free, each named branch and store classed by its `ARM` and `FLIP`
+    lines, `entries.txt`), `runs` (the log groups holding each entry's decisions, `runs.txt`), `h1` (sentence H1's four tests per row's own
+    think, `h1.txt`), `inits` (the rev 7 `AII`/`AIQ` pairs, `inits.txt`), `tally` and `ready` over the inventory file (`tally.txt`,
+    `ready.txt`).
+  - [C] (run:2026-11-15-ai-tour-1, run:2026-11-16-ai-tour-2, run:2026-11-16-ai-tour-3, `model-check-all84.txt`, `entries.txt`, 0x005B186F)
+    **S1b's block rule is met on the logged paths** (0 mismatches over every decision of the entry, at least 30 fork-free, each raised arm's
+    branch failing alone) by these entries of the tour's batches (decisions, fork-free): R7 and the notes row (0x005EFB80) 131, 131;
+    R8 (0x005F0700) 211, 211; R10 (0x005F0B00) 302, 302, with the rev 7 `MonPlayerBonus` word; R11 (0x005F0CD0) 93, 93; R14 (0x005F1140)
+    77, 77; R142 (0x005F1DE0) 131, 131; R17 (0x005F20A0) 145, 145; R18 (0x005F22B0) 47, 47; R25 (0x005F39B0) 193, 193 (gather trigger,
+    state 1 and states 0, 2, 3; the dance separates nothing, the grant and state 4 are not run); R36 (0x005F5D50) 32, 32; R38 (0x005F6220)
+    41, 41; R39 (0x005F6340) 226, 225; R49 (0x005F72D0) 99, 99; R57 (0x005F9270) 52, 52; R71 (0x005FA710) 129, 126; R72 (0x005FAA90) 35, 35;
+    R73 (0x005FAB80) 269, 98 (the rev 7 ones); R114's `+0xC4 |= 0xE` (0x005E1540, 243, 243: skipped alone it fails 15); R116 (0x005E1B60)
+    739, 739; R117 (0x005E1D30) 164, 164; R122 (0x005E2FF0) 320, 320; R136 (0x005EF710) 151, 151; R137 (0x005EFA90) 81, 81; R1
+    (0x005B0CD0) 86, 82 (the rev 7 window; the no-room arm never met); R54 (0x005E73A0) 618, 316 (one outcome, `4.idle`: its first call
+    and its exit seed, no branch separated). The arms, stores and equal pairs raised per row are in the inventory rows
+    (`0066-inventory/monsters-ai-catalogue.md`, the rows `ready.txt` lists).
+  - [C] (run:2026-11-15-ai-tour-1, run:2026-11-16-ai-tour-2, run:2026-11-16-ai-tour-3, `h1.txt`, `resume-all84.txt`, `flip-rows-all84.txt`)
+    **Sentence H1's rule is met** (0 mismatches, at least 50 fork-free, a call past the first, every two-way site failing alone) by the
+    own thinks of row 7 (0x005EFB80: 131, 212 past the first, 3 of 3), row 26 (0x005F4510: 75, 145, 7 of 7), row 49 (0x005F72D0: 99,
+    385, 12 of 12), row 71 (0x005FA710: 126 of 129, 161, 12 of 12), row 95 (0x005E1080: 192, 219, 9 of 9), row 114 (0x005E1540: 243,
+    221, 8 of 8) and row 124 (0x005E3530: 135, 406, 6 of 6). Logged paths only; no role or symbol is raised.
+  - [I] (`entries.txt`, `h1.txt`, `inits.txt`, 0x005F6630, 0x005E1E36) **Not met:** under the block floor of 30 fork-free: R24 29, R27 26,
+    R33 18, R40 20, R94 21, R115 20, R123 3, S16 8, R126 24, R129 9, R42 20, R100 17, and R43's init 0x005F6630 (9 `AII`/`AIQ` pairs in 3
+    logs; `v14` equals the line's frame after the call in 9 of 9, the word before differing in all 9; `v18` 0 before and after); all
+    forked: R32 2 226 (364 stop at the path action), R41 200, R48 391, R56 76, R120 31; R23 8 mismatches (the rev 4 cluster, unchanged)
+    with a two-way site that fails nothing (24 of 25); R118 12 mismatches (the Phase 3b ruling holds it); state 11's init 0x005E80E0
+    (17 pairs, the control block unchanged, its calls not logged). H1 not met by rows 43 (37 fork-free), 79 (19), 100 (17), 78 (no call
+    past the first) and 32, 48, 54, 70, 73, 118 (0 fork-free: the resume interpreter forks on words it does not take from rev 7's lines). Row 1's `RROW` in `resume-all84.txt` (86 decisions, 4 resumed, 82 "mismatches") is the interpreter's window, not the
+    game: `tools/ai_resume.py`'s `THINK_WINDOWS` lacks rev 7's R1 window 0x005B0CD0..0x005B0D00 (`tools/gdb/ai.py` `THINK_LO`), so at
+    0x005B0CDC, where the 82 rev 7 decisions log `UnitGetRoom` 0x00620BB0, it offers no call ("the model has no further call"). R1's `r`
+    line is d-none and outside this phase; its `l` line rests on `ai_model_check.py` (0 mismatches, 82 fork-free). (Added at the Phase 4
+    review.)
+    Not reached (0 decisions in the 84 logs): R16, R74, S15, R119, S5, S6, R58, R60, R45, R66, R77, R80, R92, R50, R53, R55, R59, R85,
+    R128, R93, R98, and the alts 0x005F81D0 and 0x005F9950; their rows wait on the owner (a rerun with a changed route, or d-owner).
+  - **Rows:** 211 settled (the 241 of the tour's scope less Phase 1a's 30 moved to H1p): 22 raised, 41 raised in part, 148 kept
+    (`tally.txt`). No contradiction is new; no symbol row is raised (the models feed on the logged returns as oracles and compare the
+    calls, not the callees' roles, as at S1b).
