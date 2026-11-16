@@ -22,7 +22,7 @@ Review request, Tier A (ADR-0030 as amended by ADR-0034: a wiki lane writing sta
 2. wiki/levels § Maze levels: block `drlg-maze-level36` (`maze_anim.py 36 0xc0ffee`), illustrating maze § E, C, B,
    D, H. The caption says the conversion steps' file pick is the tool's own (room seed lo mod `Files`), not drlg/README
    step 9a/9b's level draw and rotation; filed to the archivist
-   ([entry](../2026-11-16-spec-writer-archivist-maze-anim-preset-file-pick.md)). For that reason no block was placed on
+   ([entry](2026-11-16-spec-writer-archivist-maze-anim-preset-file-pick.md)). For that reason no block was placed on
    drlg/maze itself.
 3. wiki/items § The big picture: block `items-tc-andariel-hell` (`tc_anim.py andariel 0xc0ffee --difficulty 2
    --mf 200`), illustrating tc § D, E, G, H and quality § Test order, § D; the caption lists what the tool does not
