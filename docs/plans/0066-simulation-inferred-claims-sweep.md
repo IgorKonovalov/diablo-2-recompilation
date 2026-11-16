@@ -2276,7 +2276,6 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
     0x006CE274).
   A fresh lane on `lane/n66q`.
 
-
 ### 2026-11-16 — Phase 1, batch S2c part 2 (reverser-static, `lane/n66q`): S2c closed; 20 of 22 settled, 2 not settled; mode-14 bit 6 found
 
 - **Done.** Merged `main` `0c3cd6c9` into the branch at `d4ed5dca` (plan log kept both sides). No game and no Ghidra.
@@ -2351,7 +2350,6 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
 - **Review (Tier A, the audit sample, 2026-11-16):** accept with fixes, 8 (plan 0069's log). Rows 142, 143, 354, 355, 357, 462, 463
   moved a-run → b (new batch H1r, deferred); line 243 (row 27) raised in part on "at full life the parameter is 0" only; line 3268
   (row 345) without "whatever the distance"; line 328 (row 39) in Normal only. The ready list above stands otherwise.
-
 
 ### 2026-11-16 — Phase 1, batch S5fe (reverser-static, `lane/n66w`): done, 26 of 26 statements settled (1 named not settled)
 
@@ -2695,6 +2693,98 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   whether that is worth a batch is the architect's call.
 - **Review:** Tier B, [`2026-11-16-reverser-architect-review-plan-0066-s7e`](../backlog/archive/2026-11-16-reverser-architect-review-plan-0066-s7e.md), covering S7e whole.
 
+### 2026-11-16 — Phase 1, batch S4e part 1 (reverser-static, `lane/n66z`): the stats family, 6 of 91 settled; resume note
+
+- **Split, planned up front.** S4e (91 rows, plus the S4c/S4d remainders routed "→ S4e") runs as: part 1 the stats
+  family (aggregate 1, 14, 15, 18, 20, 21; done here); part 2 the price core (`tools/economy.py` as model; economy 4–5,
+  7–8, 11–20, 22–23, 25–36, 43, 46–48, 56, 69, 79, 85); part 3 the item request handlers and `UnitInteract` (use 6,
+  18–22, 34, 38, 52, 54; inventory 1, 9, 10, 28–34, 36–43, 45, 46, 64, 99); part 4 the inventory families (`put`,
+  `place`, `merge`, `search`, `drop`, `ground`, `expiry`, belts: the other inventory rows); part 5 the static (c)
+  remainders of S4c/S4d (inventory 18; aggregate 2, 10, 13, 17, 23, 29, 31, 36, 37, 40, 41; states 14, 46) and the
+  c-emu remainders (inventory 29, 31, 61; aggregate 11).
+- **Done.** Branch from `main` `858b7eea`; work committed at `bb2b0172`, then `main` `72f003c8` merged (no conflict).
+  New tool `tools/stats_s4e_emu.py` (`02c23870…`), one kept `emuboundary` launch per family on
+  `workspace/ghidra-n66z` (`-Xmx3G`, `MemoryMax=4G`, 38 s for the four), after one 60-case development pass
+  (`dev/manifest-dev.sha256`, not cited). Four families, 11 000 cases, 0 mismatches, 0 stops, 0 undeclared reads, no
+  traced write; 30 controls, each separating, `passed` 0. No observed boundary, no import, no allocator reached (the
+  generator rejects a case whose model would grow or shrink the cache). Record:
+  [run:2026-11-16-sweep2-s4e-emu](../findings/items/experiments.md#run2026-11-16-sweep2-s4e-emu) (part 1),
+  `workspace/logs/n66z/s4e/run/` (`check.txt` `e138a326…`, `static.txt` `8149f77b…`, `r2.txt` `f083ed6b…`,
+  `manifest.sha256` `c0773683…`, 24 lines, passes from there; `cases` regenerates every case and memory file byte for
+  byte, and `check` reproduces `check.txt` from the committed revision). Claims in stats/0001 § 11, dated notes in
+  §§ 1, 3, 5.
+- **Rows settled (stats/aggregate).** Raised: 1, 14, 21. Raised in part: 15 (op 3 as code, ops 10 and 12, no stock row
+  with op 3, 10 or 12; the 36 op-6/7 rows on *of Dawn* / *of Sunlight* only → c, part 5), 18 (no new run: the formula
+  and `ActTimeOfDay`'s map are run:2026-10-27-p51s-emu's; the phase as a time of day → c, part 5). **Contradicted in
+  part: 20** (F2): the readers test `v < MinAccr` unshifted and only then return `MinAccr << ValShift`, so a value
+  between the two is kept (65 cases; the spec's threshold control fails 79); the rest raised with two refinements
+  (the record argument and the extended bit; an absent entry unfloored). Remainder raised, no new run: 16 (op 7 on the
+  running total, p51s's control). Correction and refinements routed by
+  [backlog](../backlog/2026-11-16-reverser-spec-writer-plan-0066-s4e-part1-corrections.md).
+- **Symbols:** none raised (an emulation over a declared image, review-fixes 14).
+- **Totals** after merging `main` `72f003c8`, from the 29 files' *Totals by class*: a-logs 623, a-run 334, b 507, c 390,
+  c-emu 444, d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626; Phase 1 1 457, Phase 2 841. No row moved class
+  (remainders in the *Route* cells); README § 4's S4e row records part 1.
+- **Ready for Phase 3 (spec-writer), stats/aggregate lines at `b5999f5e`, match by text.** Whole: 50, 210 (with
+  refinement 2), 363. Split: 298, 310, 338 (with correction 1), 301 (op 7).
+- **Judgment calls:** (1) row 18 and row 16's remainder raised from the kept run:2026-10-27-p51s-emu, recounted from its
+  record, not re-run; (2) the `take` cases keep every row's `+0x52` at 0 (targets and sources evaluate to their own
+  value), so the take test is checked through `StatRecompute` whole with plain evaluations, and the evaluation ops
+  stay with § 10 and the `ops` family; (3) row 20 filed "contradicted in part" rather than "refinement", since the
+  spec's floor value differs from the code's for `maxhp` 1..255; (4) the `take` generator rejects cases that would
+  reach the allocator instead of guarding them, so insert growth and removal shrink are not covered.
+- **Resume (parts 2 to 5, a fresh lane on `lane/n66z`):** 85 rows of S4e and the remainders listed above. Start with
+  part 2: read items/economy §§ B–H and `tools/economy.py`'s price model, declare an item, its stat lists and the five
+  tables (Items/ItemTypes/Books/Misc/NPC rows) as S5e part 3 and S6f did, and run `ITEMS_TradePriceCore` whole (route
+  rows to b only where an allocator or an import whose result a claim uses lies on the route, naming the call). Write
+  a new tool (`tools/items_s4e_emu.py`) and new run directories (`workspace/logs/n66z/s4e/run2/` and on); do not
+  overwrite `run/`. The record continues under the same run heading in items/experiments. Tier B review once S4e is
+  whole.
+
+### 2026-11-16 — Phase 1, batch S4e part 2 (reverser-static, `lane/n66z`): the price core, 36 of 36 economy rows settled; resume note
+
+- **Done.** On `lane/n66z` from `ae4f5810` (`main` `72f003c8` already merged, unchanged since). New tool
+  `tools/items_s4e_emu.py` (`cdfe09bd…`; part 1's tool and `run/` untouched), six families on
+  `workspace/ghidra-n66z` (`-Xmx3G`, `MemoryMax=4G`, one kept launch each, about 75 s for the six) after two
+  development passes (`dev2/`, `dev2full/`, `manifest-dev.sha256`, not cited): `price` (`ITEMS_TradePriceCore` whole
+  over a declared world: DataTables, items and their code link, ItemTypes bits, affixes, uniques, sets, Books, Npc,
+  MonStats, a quest record, a player and an item with stat lists and socketed children), `rep` (`ItemCanRepair`,
+  `ItemHasDurability`, `RechargeCost`), `gold` (the caps; `UnitAddGoldStat` to its write), `wear`
+  (`ITEMS_DurabilityLossRoll` to its first callee after the roll), `timer` (`ItemReplenishDurTimer` to its queue),
+  `repl` (`ITEMEVENT_Replenish` to `ReplenishStep`'s write). 14 300 cases, 0 mismatches, 0 stops, 0 undeclared
+  reads, no traced write; 40 controls, each separating, `passed` 0. No allocator and no import on any covered route
+  (guards never reached); the error routine 0x00408090 is an observed boundary (0xBBA 17, 0xCDC 110). Record:
+  [run:2026-11-16-sweep2-s4e-emu part 2](../findings/items/experiments.md#part-2-the-price-core-and-the-gold-wear-and-replenish-helpers-2026-11-16),
+  `workspace/logs/n66z/s4e/run2/` (`check.txt` `09e30b28…`, `static.txt` `fc40bd45…`, `r2.txt` `970a0a52…`,
+  `manifest.sha256` `75befcaa…`, 40 lines, passes from there; `cases` regenerates every input byte for byte and `check`
+  reproduces `check.txt` from the committed revision). Claims in
+  [items/0011 § S4e part 2](../findings/items/0011-economy.md#plan-0066-batch-s4e-part-2-the-price-core-under-emulation-run2026-11-16-sweep2-s4e-emu),
+  dated notes in §§ 5 and 6.
+- **Rows settled (items/economy, 36).** Raised: 4, 5, 7, 12–20, 22, 23, 25–33, 35, 36, 47, 48 (27). Raised in part:
+  11 (the timer's 2 500, no floor; `ReplenishStep`'s floor → b H4b), 34 (the stock-data expectation stays `[I]`), 43
+  (client half → d-none, `out of scope: client presentation`), 69 (after the first write → b H4b), 79 (the floor and
+  the broken repair → b H4b), 85 (the callers → c, part 5). **Contradicted in part: 46** (mode 0 reads `max buy [3]`,
+  unused; the caller half → c, part 5). **Moved c-emu → b (H4b): 8, 56** (`DropGoldAmount`'s loop crosses the
+  free-cell search 0x0064E810 and the item creation 0x00559CE0, a unit allocation, before every next test).
+  Refinements and the correction routed by
+  [backlog](../backlog/2026-11-16-reverser-spec-writer-plan-0066-s4e-part2-corrections.md) (G3's caps are a player's
+  only; B3 after B2; 0xBBA; D5's ethereal test never decides; Encode 4's `x`; the timer has no floor).
+- **Symbols:** none raised (an emulation over a declared image, review-fixes 14).
+- **Totals** (recomputed from the 29 files' rows; `main` `72f003c8`): a-logs 623, a-run 334, b 509, c 390, c-emu 442,
+  d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626; Phase 1 1 455, Phase 2 843. README §§ 1, 3, 4 (S4e and H4b rows)
+  updated.
+- **Judgment calls:** (1) the stat lists have owner 0, so the readers' floor (part 1) is never taken in these cases and
+  every stat reads raw; (2) rows 11, 69 and 79 are split at the first `UnitSetStat`, whose closure reaches the pool
+  allocator 0x0040B4B0 (depth 3 of the call graph), rather than running it whole with a guarded entry; (3) row 46 is
+  filed "contradicted in part" because the spec says "reads", while the finding's "returns" holds; (4) row 34's "none is
+  expected on stock data" is left `[I]` as a play expectation, not a code claim; (5) row 17's missing-Books path is
+  raised to the error routine's call (ADR-0021) rather than left d-edit, matching D3's 0xCDC.
+- **Resume (parts 3 to 5, a fresh lane on `lane/n66z`):** part 3, the item request handlers and `UnitInteract` (use 6,
+  18–22, 34, 38, 52, 54; inventory 1, 9, 10, 28–34, 36–43, 45, 46, 64, 99), extending `tools/use_emu.py` /
+  `tools/item_emu2.py` with model `tools/item_inventory.py`, in a new tool and `run3/`; part 4 the inventory families;
+  part 5 the static (c) remainders of S4c/S4d plus economy 46's and 85's caller halves and the c-emu remainders listed
+  in part 1. Tier B review once S4e is whole.
+
 ### 2026-11-16 — Phase 1, batches S1f and S1o part 2 (reverser-static, `lane/n66x`): the 21 remaining rows; S1f and S1o done
 
 - **Done.** Merged `main` `72f003c8` first (plan-log conflict kept both; README § 1 checked against the 29 files' rows,
@@ -2898,6 +2988,55 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
     (d172's remainder), `STATEVENT_Reanimate` (d133, pool at 0x005C0AF2), handlers 8, 9 and the unfired gates (d117,
     135, 178).
 - **Review:** none yet; the Tier B request (to be audited at Tier A) comes when S2ae is whole.
+
+### 2026-11-16 — Phase 1, batch S4e part 3 (reverser-static, `lane/n66z`): the request handlers and the pickup, 17 rows settled; resume note
+
+- **Done.** Merged `main` `0df309d6` first (`5b3eb0f1`; plan-log conflict kept both; README § 1 recomputed from the 29
+  files' *Totals by class*, unchanged). New tool `tools/items_s4e3_emu.py` (parts 1–2's tools, `run/` and `run2/`
+  untouched), five families on `workspace/ghidra-n66z` (`-Xmx3G`, `MemoryMax=4G`, one kept launch each, about 32 s for
+  the five) after one development pass (`dev3/`, `manifest-dev.sha256`, not cited): `pos` (`PktPosFar` whole), `use`
+  (the `0x20`, `0x26`, `0x27` handlers to their use function), `act` (`0x13`, `0x16` to `UnitInteract`), `pick`
+  (`UnitInteract`'s item case to the walk, the pickups, the line test or the unmark), `mv` (`0x17`, `0x18`, `0x19` to
+  `CursorDrop`, `InvPlaceItem`, `InvItemToCursor` and the interaction callees). 12 700 cases, 0 mismatches, 0 stops,
+  0 undeclared reads, no traced write; 16 controls, each separating, `passed` 0. No import, no allocator on any
+  covered route. Record:
+  [run:2026-11-16-sweep2-s4e-emu part 3](../findings/items/experiments.md#part-3-the-item-request-handlers-and-unitinteracts-item-case-2026-11-16),
+  `workspace/logs/n66z/s4e/run3/` (`check.txt` `1bc77600…`, `static.txt` `8de890ed…`, `manifest.sha256` `741310ae…`,
+  27 lines, passes from there; `cases` regenerates every input byte for byte and `check` reproduces `check.txt` from the
+  committed revision). Claims in
+  [items/0013 § 12](../findings/items/0013-grids-belts-stacks.md#12-plan-0066-batch-s4e-part-3-the-request-handlers-and-the-pickup-under-emulation-run2026-11-16-sweep2-s4e-emu),
+  dated notes in items/0013 §§ 1, 5, 8 and items/0012 § 1.
+- **Rows settled (17).** items/use: 6 raised; 18, 19, 20 raised in part (the flagged-refusal 3 after the use function
+  → b H4c, its closure reaching the use entries' `STATLIST_Alloc`). items/inventory: 1, 9, 10, 28, 30, 41, 43 raised;
+  29 and 31 remainders raised (with refinements); 40 raised in part (lengths of `0x17`–`0x19` and `0x18`'s fields; the
+  other handlers stay S4e part 4); 45, 99 raised in part (the page write before `InvPlaceItem`; its refusal → part 4,
+  `place`); 64 raised in part (the walk after a blocked line → b H4c). No class move. Refinements routed by
+  [backlog](../backlog/2026-11-16-reverser-spec-writer-plan-0066-s4e-part3-refinements.md): `PktPosFar`'s position
+  rule and −2³¹; `0x26`'s test for a static-path unit; `PktOwnedItemBad`'s cursor alternative; `0x16`'s self refusal;
+  `0x17`'s busy gate and `InteractIsPlayer`'s unread argument; `0x19`'s `NoManaMsg` and silent trade refusal and the
+  trade test's map; `InvPlaceItem`'s ECX/EDX; I1's returns of 1 and `InteractWalkTo`; `GameFindUnit`'s type 5.
+- **Symbols:** none raised (an emulation over a declared image, review-fixes 14).
+- **Totals** (recomputed from the 29 files' *Totals by class*; `main` `0df309d6`): a-logs 623, a-run 334, b 509,
+  c 390, c-emu 442, d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626; Phase 1 1 455, Phase 2 843. README §§ 3, 4
+  (S4e and H4c rows) updated.
+- **Judgment calls:** (1) part 3 stops at the first callee of each handler; the six use rows that need a use entry
+  to return (21, 22, 34, 38, 52, 54) and the other handlers (`0x1A`–`0x1F`, `0x21`–`0x25`, `0x63`) and
+  `InvItemToCursor` (42, 46) were not reached and move to part 4 with the inventory families; (2) rows 29 and 31's
+  remainders raised with the refinements (the busy gate; the full-cursor message and the silent trade refusal) rather
+  than "contradicted in part", since the spec's tests hold and only their conditions are wider; (3) row 64's
+  `PLAYER_ModeCmdUnit` read as reached through `InteractWalkTo` (items/0014 § 4 anchors both), so a refinement;
+  (4) `GameFindUnit`'s type-5 list was found by a model mismatch (16 `mv` cases with a type-5 partner) in a first
+  full-size pass written to `run3/`, which the kept run then overwrote (the model fixed, the code unchanged); that
+  pass is not kept, against review-fixes 6, and `dev3/` holds only the 300-case pass (the 60-case one overwritten too).
+- **Resume (parts 4 and 5, a fresh lane on `lane/n66z`):** part 4: the use rows 21 (`0x61`, `Pkt61MercItem` to
+  `MercGiveCursorItem`), 22 (C2: `ItemUse` past a kind-1 test with `ItemSpellIcon` < 0 and a kind-3 use returning 0, to
+  `SendUnitPacket6` 0x0053B3D0; the test-0 half has no image test returning 0), 34 (the "else 0" half is
+  run:2026-11-03-use-emu's `stat3` returns, recount them; the 1 half is after a boundary → b), 38 (the doubling's share
+  over the `(r1, r2)` grid, seeds inverted per pair), 52 (`GolemHeal`), 54 (`PlayerUseInvItem` and `PlayerUseBeltItem`
+  to `ItemUse`, `InvClearUseMarks` run with no flagged item, observe 0x0053D220); the handlers `0x1A`–`0x1F`, `0x21`,
+  `0x23`–`0x25`, `0x63` (rows 32–34, 36–39, 40's rest) and `InvItemToCursor` (42, 46), extending
+  `tools/items_s4e3_emu.py`'s world (or a new tool) into `run4/`; then the inventory families. Part 5 as in part 1's
+  note. Tier B review once S4e is whole.
 
 ### 2026-11-16 — Phase 3, the frame cluster re-tagged (spec-writer, `lane/n66pf`)
 
@@ -3211,6 +3350,153 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
     d84's and d172's remainders.
 - **Review:** none yet; the Tier B request (to be audited at Tier A) comes when S2ae is whole.
 
+### 2026-11-16 — Phase 1, batch S4e part 4 (reverser-static, `lane/n66z`): the other request handlers, 15 inventory rows settled in whole or in part; resume note
+
+- **Done.** Merged `main` `d74fcb6d` first (`9fbd9a28`; plan-log conflict kept both; README § 1 recomputed from the 29
+  files' *Totals by class*, unchanged). New tool `tools/items_s4e4_emu.py` (`56e34310…`; parts 1–3's tools, `run/` to
+  `run3/` untouched; it imports part 3's world), six families on `workspace/ghidra-n66z` (`-Xmx3G`, `MemoryMax=4G`,
+  one kept launch each, about 41 s for the six) after two development passes (`dev4a/` 60 and `dev4b/` 300 cases per
+  family, earlier tool revisions, each with `manifest-dev.sha256`, not cited): `body` (`0x1A`..`0x1E`), `req` (`0x1F`,
+  `0x21`..`0x25`, `0x63`), `tocur` (`InvItemToCursor` to `InvTakeItem`), `place` (`InvPlaceItem` as `0x18` calls it, to
+  `InvItemRemove` or its return, the page byte dumped), `pageget` (`InvPageGet`), `rowfor` (`InvRowForUnit`, every page
+  byte). 17 952 cases, 0 mismatches, 0 undeclared reads, no traced write; 375 `pageget` cases stop at an allocator
+  guard where the model expects it; 19 controls, each separating, `passed` 0. No import reached. Record:
+  [run:2026-11-16-sweep2-s4e-emu part 4](../findings/items/experiments.md#part-4-the-other-request-handlers-invitemtocursor-invplaceitems-refusals-2026-11-16),
+  `workspace/logs/n66z/s4e/run4/` (`check.txt` `aa788c1b…`, `static.txt` `f189e4b8…`, `manifest.sha256` `ed4ce77e…`,
+  32 lines, passes from there; `cases` regenerates every input byte for byte and `check` reproduces `check.txt` from the
+  committed revision). Claims in
+  [items/0013 § 13](../findings/items/0013-grids-belts-stacks.md#13-plan-0066-batch-s4e-part-4-the-other-request-handlers-invitemtocursor-invplaceitems-refusals-invpageget-invrowforunit-run2026-11-16-sweep2-s4e-emu),
+  dated notes in items/0013 §§ 1, 2, 4, 5, 12.
+- **Rows settled (items/inventory).** Raised: 32, 33, 37 (with refinements), 34, 36, 38, 46 (with refinement); 40's
+  remainder (with refinement: `0x1C`'s length 3). Raised in part: 15 (the size refusal; the first use → b, H4d, the
+  allocator `0x0040B430`), 17 (13 and 29 never returned; the callers of type 2 with class `0x152`/`0x153` → c, part
+  5), 23 (the clamp and `InvGridPut`'s refusals; `InvGridFree` → part 5), 39 (to `BeltFreeSlot`; after it → part 5), 42
+  (to `InvTakeItem`; after it → part 5); 45 and 99's remainder raised in part (refusals before `InvItemRemove`; one
+  after it → part 5 with row 20). No class move. Refinements routed by
+  [backlog](../backlog/2026-11-16-reverser-spec-writer-plan-0066-s4e-part4-refinements.md).
+- **Symbols:** none raised (an emulation over a declared image, review-fixes 14).
+- **Totals** (recomputed from the 29 files' *Totals by class*; `main` `d74fcb6d`): a-logs 623, a-run 334, b 509,
+  c 390, c-emu 442, d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626; Phase 1 1 455, Phase 2 843. README §§ 3, 4
+  (S4e and H4d rows) updated.
+- **Judgment calls:** (1) the use rows 21, 22, 34, 38, 52, 54 were not reached in this part (0x61's route runs
+  `UNIT_GetUsedSkill`, `UnitIsDead`, `PETS_GetUnitOfType`, 0x0065A590 and `ItemBaseIsQuest`, each to be declared; `ItemUse`'s
+  C2 needs a client for `PlayerGetClient` 0x005531C0) and move to part 5; (2) `0x1C`'s slot-8 `TradeBeltLock` is
+  after `InvMoveInteractTest`, which with an interaction of type 0 returns 0 or ends at `TradeItemTest`'s boundary, so
+  no case reaches it: kept `[I]` in items/0013 § 13 and no control is filed for it (a `lock_first` control was dropped
+  after `dev4b` showed it cannot separate); (3) row 15's first-use half routed to H4d (a fresh character's first
+  placement on a page) rather than kept c-emu, since the route crosses the allocator (ADR-0029 R2); (4) row 17's
+  "never returned" raised over every page byte, two expansion words and the class table read from the image, its
+  "no path reaching them was read" left as a caller reading (c); (5) the 375 guard stops counted as matches where
+  the model names that guard, not as stops.
+- **Resume (part 5, a fresh lane on `lane/n66z`):** the use rows 21 (`Pkt61MercItem` to `MercGiveCursorItem` or
+  0x0054D130: declare the skill list for `UNIT_GetUsedSkill` 0x00620250, `UnitIsDead` 0x005541B0's `+0xC6`/mode, the pet
+  list for `PETS_GetUnitOfType` 0x00574EC0, 0x0065A590 and `ItemBaseIsQuest` 0x00628CD0's Items row), 22, 34, 38, 52, 54
+  as part 3's note says; the inventory families (`put` past `InvItemRemove` with rows 20, 45, 99's remainder;
+  `search` 22, 98; `place` 25–27; belts 47, 48, 55; `merge` 57, 58; `drop` 63, 81; `ground` 84; `expiry` 87;
+  `ItemAutoEquipSlot` 67); the part 4 remainders (17's callers, 23's `InvGridFree`, 39 after `BeltFreeSlot`, 42 after
+  `InvTakeItem`); then the static (c) and c-emu remainders of S4c/S4d listed in part 1's note. Extend
+  `tools/items_s4e4_emu.py`'s world (or a new tool) into `run5/`. Tier B review once S4e is whole.
+
+### 2026-11-16 — Phase 1, batch S4e part 5a (reverser-static, `lane/n66z`): the search, the belt tests, the ground expiry and quest call, 10 inventory rows settled in whole or in part; resume note
+
+- **Done.** Merged `main` `30e8a46c` first (`metrics.md` only, no conflict; README § 1 recomputed from the 29 files'
+  rows and *Totals by class*). New tool `tools/items_s4e5_emu.py` (`43fe6fcc…`; parts 1–4's tools and `run/` to
+  `run4/` untouched; it builds on `tools/item_emu2.py`'s and `tools/item_emu3.py`'s worlds, unchanged), eight families
+  on `workspace/ghidra-n66z` (`-Xmx3G`, `MemoryMax=4G`, one kept launch each, about 77 s for the eight) after one
+  development pass (`dev5a/`, 60 cases per family, an earlier revision, `manifest-dev.sha256`, not cited): `search`
+  (`InvSpotFindBySize` on full, near-full and one-hole pages), `seq` (the search in sequence, the worked example's
+  two first), `gridfree` (`InvGridFree`), `holds` (`BeltHoldsSameGroup`), `autobelt` (`ItemAutoBeltTest`), `beltput`
+  (`BeltPutItem` to `InvItemRemove`), `expiry` (quality 9), `ground` (`ItemPlaceOnGround` with its flag, to
+  `QUESTS_RaiseItemDropped`). 10 633 cases, 0 mismatches, 0 stops, 0 undeclared reads, no traced write; 22 controls,
+  each separating, `passed` 0. No import, no allocator reached. Record:
+  [run:2026-11-16-sweep2-s4e-emu part 5a](../findings/items/experiments.md#part-5a-the-search-on-full-pages-and-in-sequence-invgridfree-the-belt-tests-beltputitem-the-ground-expiry-and-the-quest-call-2026-11-16),
+  `workspace/logs/n66z/s4e/run5/` (`check.txt` `6e87e907…`, `static.txt` `320b0b98…`, `manifest.sha256` `fc4c8808…`,
+  42 lines, passes from there; `cases` regenerates every input byte for byte and `check` reproduces `check.txt` from the
+  committed revision). Claims in
+  [items/0013 § 14](../findings/items/0013-grids-belts-stacks.md#14-plan-0066-batch-s4e-part-5a-the-search-on-full-pages-and-in-sequence-invgridfree-the-belt-tests-beltputitem-the-ground-expirys-quality-9-and-the-quest-call-run2026-11-16-sweep2-s4e-emu),
+  dated notes in items/0013 §§ 1, 6 and items/0014 § 2.
+- **Rows settled (items/inventory).** Raised: 22, 98, 48, 55; 47 and 84 with refinements (the error routine for a
+  null item, a non-item or a missing row; `+0xC4` bit 0 from `UNIT_SetMode`); 23's remainder (`InvGridFree`). Raised in
+  part: 87 (quality 9's `+45000`; "no stock path makes one" stays c, S4e continuation), 81 (`ItemPlaceOnGround`'s null
+  room; `CursorDrop`'s and `DropCreateItem`'s tests → b, H4d, no class move). **Class move:** 63 c-emu → b (H4d): its
+  claim is the room `GroundDropCell` returns to `CursorDrop`, past the search's pool allocation 0x0064DEE8 (ruling R2).
+  Refinements routed by [backlog](../backlog/2026-11-16-reverser-spec-writer-plan-0066-s4e-part5a-refinements.md).
+- **Symbols:** none raised (an emulation over a declared image, review-fixes 14).
+- **Totals** (recomputed from the 29 files' rows and *Totals by class*; `main` `30e8a46c`): a-logs 623, a-run 334,
+  b 510, c 390, c-emu 441, d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626; Phase 1 1 454, Phase 2 844. README
+  §§ 1, 3, 4 (S4e and H4d rows) updated.
+- **Judgment calls:** (1) row 22's control is `noedge`, the one reading under which a free spot scores 0 and a best of
+  0 refuses; the claim itself rests on the fit enumeration, which does not use the search's orders; (2) row 55
+  raised from the emulated return plus the objdump pins of the pickup's branch (0x0056371B, 0x0056371D, 0x00563728),
+  not from an emulated pickup; (3) row 63 moved whole (its claim is the search's result), row 81 split (the
+  `ItemPlaceOnGround` half runs without the search); (4) `ground`'s `+0xC4` filed as a refinement of K1, not a
+  contradiction (the spec lists the function's own bits; bit 0 comes from its `UNIT_SetMode` call); (5) row 48 raised
+  on `BeltPutItem` (the inventory route), `ItemToBelt`'s lookup before it named as out of scope.
+- **Resume (part 5b, a fresh lane on `lane/n66z`):** the use rows 21, 22, 34, 38, 52, 54 (part 4's resume note: declare
+  the skill list for `UNIT_GetUsedSkill` 0x00620250, `UnitIsDead` 0x005541B0, the pet list for `PETS_GetUnitOfType`
+  0x00574EC0, 0x0065A590, `ItemBaseIsQuest` 0x00628CD0; `ItemUse` C2 needs a client for `PlayerGetClient` 0x005531C0);
+  inventory 20 and 45/99's remainder (`InvGridPut` past `InvItemRemove` 0x0063AAF0: `InvAppendItem` 0x0063AF20,
+  `InvPageAppend` 0x0063AF70, `InvGridFill` 0x0063A910, 0x00620470, 0x006204C0, 0x00629ED0, `ItemSetPage` 0x00628280,
+  then the location byte at 0x0063B1BF..0x0063B1EF; `InvPlaceSocketed` for 45/99), 25–27 (`InvPlaceItem` past the put
+  to `ItemSkillQtyAdd` 0x0055C270 and the charm call; `ItemSkillQtyAdjust` 0x0055C110 with a Books row and stat 70),
+  57 (`StackMerge` past the first `UnitSetStat`: check whether `UnitSetStat` reaches the pool allocator, as economy 11
+  did, then b), 58 (`StackRequest` 0x0055E7C0 on part 3's world: `GameFindUnit`, `ItemGetPage`, `ItemsCanStack`; to
+  `StackMerge` 0x0055E590; note the class compare at 0x0055E8A3 after `ItemsCanStack`), 67 (`ItemAutoEquipSlot`
+  0x0055D710); the remainders of 17 (callers of type 2 with class `0x152`/`0x153`), 39 (after `BeltFreeSlot`), 42 (after
+  `InvTakeItem`), 87 (quality writers), and the S4c/S4d static (c) and c-emu remainders in part 1's note. New tool
+  and `run6/`; do not overwrite `run5/`. Tier B review once S4e is whole.
+
+### 2026-11-16 — Phase 1, batch S4e part 5b (reverser-static, `lane/n66z`): the golem's heal, the doubling draw, kind 3's return, StackRequest; 5 rows settled in whole or in part; resume note
+
+- **Done.** `main` `30e8a46c` was already merged (nothing newer; README § 1 recomputed from the 29 files' rows and
+  *Totals by class*). New tool `tools/items_s4e6_emu.py` (`d75c9ae3…`; parts 1–5a's tools and `run/` to `run5/`
+  untouched; it builds on `tools/use_emu.py`'s, `tools/items_s4e3_emu.py`'s and `tools/item_emu2.py`'s worlds,
+  unchanged), four families on `workspace/ghidra-n66z` (`-Xmx3G`, `MemoryMax=4G`, one kept launch each, about 36 s for
+  the four) after three development passes (`dev6a/`, `dev6b/`, `dev6c/`, each with `check-dev.txt` and
+  `manifest-dev.sha256`, not cited; `dev6c/` is a full-count run whose one `potret` mismatch was the generator's, a calc
+  above `2³¹ − 1` modelled as positive): `golem` (`GolemHealShare` with `v = 0` weighted, `GolemHeal` direct),
+  `double` (kind 3's draws at chosen `(r1, r2)`, seeds built backwards), `potret` (kind 3's return for amounts at and
+  below 0), `stackreq` (`StackRequest` to `StackMerge`). 8 600 cases, 0 mismatches, 0 stops, 0 undeclared reads, no
+  traced write; 16 controls, each separating, `passed` 0. No import, no allocator reached. Record:
+  [run:2026-11-16-sweep2-s4e-emu part 5b](../findings/items/experiments.md#part-5b-the-blood-golems-heal-the-doubling-draw-kind-3s-return-and-stackrequest-2026-11-16),
+  `workspace/logs/n66z/s4e/run6/` (`check.txt` `108ce34a…`, `static.txt` `6499c56a…`, `manifest.sha256` `576815a0…`,
+  22 lines, passes from there; `cases` regenerates every input byte for byte and `check` reproduces `check.txt` from the
+  committed revision). Claims in
+  [items/0013 § 15](../findings/items/0013-grids-belts-stacks.md#15-plan-0066-batch-s4e-part-5b-the-blood-golems-heal-the-doubling-draw-kind-3s-return-and-stackrequest-run2026-11-16-sweep2-s4e-emu),
+  dated notes in items/0012 §§ 5, 6 and items/0013 § 7.
+- **Rows settled.** items/use: 38 and 52 raised with refinements (the chance is the uniform-pair count; the `v = 0`
+  rule's anchor is `GolemHealShare`'s 0x005C68AC, `GolemHeal` returning 0 at `v ≤ 0`); 34 raised in part (every amount
+  ≤ 0 returns 0; a refill slot with `len + rem ≤ 0` returns 1; the 1 after `UnitAddStat` or `STATLIST_SetStat` stays
+  c-emu, S4e continuation). items/inventory: 58 raised with refinement (a found non-item returns 0 with the flag
+  clear). **Class move:** inventory 57 c-emu → b (H4d): each branch after the first `UnitSetStat` sends a stat message
+  whose `ClientQueuePacket` allocates when the client's buffer has no room (0x0040B430 at 0x0053B2DD; ruling R2).
+  Refinements routed by [backlog](../backlog/2026-11-16-reverser-spec-writer-plan-0066-s4e-part5b-refinements.md).
+- **Symbols:** none raised (an emulation over a declared image, review-fixes 14).
+- **Totals** (recomputed from the 29 files' rows and *Totals by class*; `main` `30e8a46c`): a-logs 623, a-run 334,
+  b 511, c 390, c-emu 440, d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626; Phase 1 1 453, Phase 2 845. README
+  §§ 1, 3, 4 (S4e and H4d rows) updated.
+- **Judgment calls:** (1) row 57 moved whole although the allocation is conditional (a client buffer with room
+  appends without it): the merge's later writes all follow a message send whose queue state is the live client's, which
+  a declared image would have to invent; (2) row 52's v = 0 rule stopped at the `UnitSetStat` call (ADR-0021), the
+  return after it left `[I]`; (3) row 38 raised on the per-pair rule, the formula filed as the uniform-pair count
+  (refinement), not as a property of the LCG; (4) `StackRequest`'s class compare after `ItemsCanStack` kept `[I]` as a
+  reading (no case can reach its unequal branch).
+- **Resume (part 5c, a fresh lane on `lane/n66z`):** items/use 21 (`Pkt61MercItem` to `MercGiveCursorItem` or
+  0x0054D130: declare the skill list for `UNIT_GetUsedSkill` 0x00620250, `UnitIsDead` 0x005541B0, the pet list for
+  `PETS_GetUnitOfType` 0x00574EC0, 0x0065A590, `ItemBaseIsQuest` 0x00628CD0), 22 (`ItemUse` C2: the real test and use
+  entries with worlds making them return 0 or not, `InvClearUseMark` 0x005BE1C0 as the boundary; the message 0x7C goes
+  through `SendUnitPacket6` 0x0053B3D0 → `ClientQueuePacket` 0x0053B280 (0x0053B3EE), so the message half is a b
+  candidate as row 57), 54 (the `useable` gate through the 0x20/0x26 handlers' families of part 3), 34's remainder (the
+  1 after `UnitAddStat`/`STATLIST_SetStat`: check their closures; a player's list reaches 0x00624DD0, which calls
+  0x0040B4B0 at 0x00624E73); items/inventory 20 and 45/99's remainder (`InvGridPut` past `InvItemRemove` 0x0063AAF0:
+  `InvAppendItem` 0x0063AF20, `InvPageAppend` 0x0063AF70, `InvGridFill` 0x0063A910, 0x00620470, 0x006204C0,
+  0x00629ED0, `ItemSetPage` 0x00628280, the location byte 0x0063B1BF..0x0063B1EF; `InvPlaceSocketed` 0x0063B210),
+  25–27 (`InvPlaceItem` past the put to `ItemSkillQtyAdd` 0x0055C270 and the charm call; `ItemSkillQtyAdjust`
+  0x0055C110 with a Books row and stat 70), 67 (`ItemAutoEquipSlot` 0x0055D710); the remainders of 17 (callers of
+  type 2 with class `0x152`/`0x153`), 39 (after `BeltFreeSlot`), 42 (after `InvTakeItem`), 87 (quality writers); and
+  the S4c/S4d static (c) and c-emu remainders in part 1's note. New tool and `run7/`; do not overwrite `run6/`. Tier B
+  review once S4e is whole.
+
 ### 2026-11-16 — Phase 2, batch H6d (reverser-harness, `lane/n66h6`): done, 19 rows settled or named
 
 - **Done.** Branch from `main` `0df309d6`, `main` `30e8a46c` merged. Logger `tools/gdb/anim.py` rev 7 (`40367f4a…`):
@@ -3483,3 +3769,207 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   route), not b; (4) `wrap` added after the emulation, reproduction confirmed. The batch-wide list is in the request.
 - **Review:** Tier B request (to be audited at Tier A) filed:
   [`2026-11-16-reverser-architect-tier-b-review-plan-0066-s2ae`](../backlog/2026-11-16-reverser-architect-tier-b-review-plan-0066-s2ae.md).
+
+### 2026-11-16 — Phase 1, batch S4e part 5c (reverser-static, `lane/n66z`): the mercenary button, `ItemUse` after its entries, `ItemSkillQtyAdjust`, the routes; 12 rows settled or routed; resume note
+
+- **Done.** `main` `ac87a5f5` merged first (keep-both on this log; README § 1 recomputed from the 29 files' *Totals by
+  class*). New tool `tools/items_s4e7_emu.py` (`8ba80ecb…`; parts 1–5b's tools and `run/` to `run6/` untouched; it
+  builds on `tools/items_s4e3_emu.py`'s, `tools/use_emu.py`'s and `tools/items_s4e6_emu.py`'s worlds, unchanged), three
+  families on `workspace/ghidra-n66z` (`-Xmx3G`, `MemoryMax=4G`, one kept launch each, about 30 s for the three) after
+  four development passes (`dev7a/` to `dev7d/`, each with `check-dev.txt` and `manifest-dev.sha256`, not cited):
+  `merc` (`Pkt61MercItem` to `MercGiveCursorItem` or `0x0054D130`), `c2` (`ItemUse` with kind 1's test and kind 3's use
+  run, to `InvClearUseMark` or the return), `qty` (`ItemSkillQtyAdjust` and `ItemSkillQtyAdd` to the message builder,
+  `UnitAddStat` or the error routine); and a new `sites` command (the direct-call closures from 19 roots to an
+  allocator or import). 8 000 cases, 0 mismatches, 0 stops, 0 undeclared reads, no traced write; 18 controls, each
+  separating, `passed` 0. No import, no allocator reached. Record:
+  [run:2026-11-16-sweep2-s4e-emu part 5c](../findings/items/experiments.md#part-5c-the-mercenary-button-itemuse-after-its-entries-itemskillqtyadjust-and-the-routes-2026-11-16),
+  `workspace/logs/n66z/s4e/run7/` (`check.txt` `a7d99e9b…`, `static.txt` `411de8b4…` 48 pins, `sites.txt` `2b6f5e27…`,
+  `manifest.sha256` `e1cfd74e…`, 18 lines, passes from there; `cases` regenerates every input byte for byte and `check`
+  reproduces `check.txt` from the committed revision). Claims in
+  [items/0013 § 16](../findings/items/0013-grids-belts-stacks.md#16-plan-0066-batch-s4e-part-5c-the-mercenary-button-itemuse-after-its-entries-itemskillqtyadjust-and-the-routes-past-invitemremove-run2026-11-16-sweep2-s4e-emu),
+  dated notes in items/0012 §§ 1, 2.
+- **Rows settled.** items/use: 21 raised with refinements (busy-and-player → 3, the pet's room near the player's, no
+  inventory → 3, the no-cursor branch to `0x0054D130`, the first free pet node); 22 raised in part (the test's 1 leaves
+  the marks, a use's 0 clears them, a use's 1 is returned). items/inventory: 26 raised in part with refinements (a tome
+  with stat 70 = 0 returns 0; `q` is stat 70 itself); 27 raised in part (`0x0055C110` has no page test); 25 raised in
+  part (`ItemSkillQtyAdd`'s player test). **Class moves:** use 54 c-emu → b (H4c): `InvClearUseMarks` 0x0055BF50 runs
+  before the `useable` gate in both use functions and queues through `ClientQueuePacket` (0x0040B430); inventory 20
+  c-emu → b (H4d): what follows `InvGridPut`'s `InvItemRemove` (0x0063B133), whose `0x006277F0` at 0x0063ABA4 recomputes
+  the owner's stats to `STATLIST_InsertEntry` → 0x0040B4B0 (with an indirect callback at 0x00626BE7); ruling R2.
+  **Remainders routed without a move:** inventory 25, 26, 27, 39, 42, 45/99 to H4d (each past `InvItemRemove` or the
+  message queue); use 22 (message `0x7C`, use returns other than 0 and 1) and 34 (the 1 after `UnitAddStat` /
+  `STATLIST_SetStat`, both reaching `STATLIST_InsertEntry`) to H4c; use 22's "a test returning 0" to d-none (no stock
+  entry's test returns 0, 0x005BE16F). Refinements routed by
+  [backlog](../backlog/2026-11-16-reverser-spec-writer-plan-0066-s4e-part5c-refinements.md).
+- **Symbols:** none raised (an emulation over a declared image, review-fixes 14).
+- **Totals** (recomputed from the 29 files' rows and *Totals by class* after merging `main` `ac87a5f5`): a-logs 623,
+  a-run 334, b 513, c 390, c-emu 438, d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626; Phase 1 1 451, Phase 2 847.
+  README §§ 1, 3, 4 (S4e, H4c and H4d rows) updated.
+- **Judgment calls:** (1) inventory 20 and the remainders past `InvItemRemove` routed to b although a declared item
+  with no stat list would dodge the unlink: every stock item has one and every stock inventory an owner, so the stock
+  route always runs the owner's recompute (precedent: row 57's conditional queue allocation); (2) use 54 moved whole on
+  the same ground (`InvClearUseMarks` sends only for marked items, but the gate's route always runs it); (3) the `c2`
+  family runs the stock entries rather than declaring their returns (ruling R2), so "a test returning 0" is not met
+  and goes to d-none as unreachable with stock entries; (4) the `sites` closure follows direct calls only and skips the
+  error routine and the stack-cookie report 0x006889D6; the indirect calls it lists (ItemUse's two entries, the unlink
+  callback) are named in the rows that cross them.
+- **Resume (part 5d, a fresh lane on `lane/n66z`):** items/inventory 67 (`ItemAutoEquipSlot` 0x0055D710: its
+  `InvGetBodyLocItem` 0x0063BDE0 → `InvPageGet` 0x0063ADD0 allocates only for a page at or above the count, so declare
+  the body page as part 5a did; ItemReqCheck 0x0062FDF0, `EquipPairFlags` 0x0055D560 and `EquipPairCompatible`
+  0x0055D670 are clean); the remainders of 17 (the 39 direct callers of `InvRowForUnit` 0x00621050, 19 of them
+  client-side 0x0048xxxx–0x004Cxxxx: which can pass a type-2 unit with class `0x152`/`0x153`) and 87 (the quality
+  writers); and the S4c/S4d static (c) and c-emu remainders in part 1's note (inventory 18, 61; aggregate 2, 10, 11, 13,
+  17, 23, 29, 31, 36, 37, 40, 41; states 14, 46). New tool and `run8/`; do not overwrite `run7/`. Tier B review once S4e
+  is whole.
+
+### 2026-11-16 — Phase 1, batch S4e part 5d (reverser-static, `lane/n66z`): `ItemAutoEquipSlot`, `AddStat`'s removal, five static remainders; 8 rows settled in whole or in part or routed; resume note
+
+- **Done.** `main` `31a4949c` merged (it changes only `tools/d2pilot.py` and `tools/gdb/`; no inventory file).
+  New tool `tools/items_s4e8_emu.py` (`ab66b398…`; parts 1–5c's tools and `run/` to `run7/`
+  untouched, run7's `check` reproduces), two families on `workspace/ghidra-n66z` (`-Xmx3G`, `MemoryMax=4G`, one
+  kept launch each, about 20 s for the two) after four development passes (`dev8a/` to `dev8d/`, each with
+  `check-dev.txt` and `manifest-dev.sha256`, not cited): `auto` (`ItemAutoEquipSlot` to the return, or to
+  `ItemReqCheck` observed when `skipReq` is 0) and `addst` (`STATLIST_AddStat` to the return, `STATLIST_InsertEntry`
+  or the pool's resize inside `STATLIST_RemoveEntry`); `static` (113 objdump pins), `sites` (5 roots) and `xref`
+  (the stat callback's switch from the raw bytes; rel32 callers). 8 500 cases, 0 mismatches, 0 stops, 0 undeclared
+  reads, no traced write; 19 controls, each separating, `passed` 0. Record:
+  [run:2026-11-16-sweep2-s4e-emu part 5d](../findings/items/experiments.md#part-5d-itemautoequipslot-addstats-removal-and-the-static-remainders-2026-11-16),
+  `workspace/logs/n66z/s4e/run8/` (`check.txt` `097e2c36…`, `static.txt` `9842c53a…`, `sites.txt`
+  `05cfb200…`, `xref.txt` `9615a76c…`, `manifest.sha256` `9c5d612d…`, 14 lines, passes from
+  there; `cases` regenerates every input byte for byte and `check` reproduces `check.txt` from the committed
+  revision). Claims in items/0013 § 17 and stats/0001 § 12.
+- **Rows settled.** items/inventory 67 raised in part with refinements (a slot above 12 reads as empty; a location of
+  0 is a slot like any other); stats/aggregate 11's, 17's and 37's remainders raised; 13 raised with refinement (the
+  damage switch gated by the list's flag `0x40000000`); 10 and 23 raised in part (23's refinements `[I]`: 107's class
+  test, the registration on the fourth argument). **Class moves:** none. **Remainders routed without a move:**
+  items/inventory 61 (the cursor clear, `InvSetCursor` at 0x00563CB8 after `GroundDropCell`'s and
+  `ItemPlaceOnGround`'s allocations) to H4d, ruling R2. Refinements routed by
+  [backlog](../backlog/2026-11-16-reverser-spec-writer-plan-0066-s4e-part5d-refinements.md).
+- **Symbols:** none raised (an emulation over a declared image and objdump readings, review-fixes 14).
+- **Totals** (recomputed from the 29 files' *Totals by class* after merging `main` `31a4949c`): a-logs 623, a-run 334,
+  b 513, c 390, c-emu 438, d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626; Phase 1 1 451, Phase 2 847, unchanged.
+  README §§ 3, 4 (S4e and H4d rows) and the part 5d line updated.
+- **Judgment calls:** (1) `ItemReqCheck` observed rather than run: its closure reaches no allocator (`sites.txt`), so
+  row 67's remainder stays c-emu for part 5e and is not routed to b; (2) the static rows are objdump and raw-byte
+  readings set beside the findings' Ghidra readings (the S4c/S4d practice); a reading only this part made (107's
+  class test, the registration's argument test, `EquipPairFlags`'s unread ninth word) stays `[I]`; (3) aggregate 10's
+  `+0x0C` is named the guid only on the set code's path read (one of 71 `STATLIST_Alloc` callers), and `+0x38`'s
+  other writers were not scanned; (4) the scratchpad held an older lane's row script under the name I first used:
+  it ran once and re-applied part 5c's text, and the two inventory files were restored from the index before
+  part 5d's rows were applied (`git diff` checked).
+- **Resume (part 5e, a fresh lane on `lane/n66z`):** items/inventory 67 past `ItemReqCheck` (run `ItemReqCheck`
+  0x0062EAF0 emulated with declared stat lists, CharStats and Items rows; it is allocation-free); 17 (the 39 direct
+  callers of `InvRowForUnit` 0x00621050, 19 client-side: which can pass a type-2 unit of class 0x152/0x153; Guild
+  Vault and Trophy Case are objects.txt rows 338, 339; `RoomPresetUnits` 0x00555BAD passes a non-player owner); 18
+  (the 13 server calls' record field reads); 87 (the quality writers); aggregate 2 (`StatListLinkOwner` and
+  `KeyConsume` callers), 10's and 23's remainders (`+0x38`'s reader and writers, the extended fields; 0x005C0BE0,
+  0x005C0B50), 29 (the 136-frame cadence's writer), 31 (ethereal), 36 (`add func` 0 at creation), 40 (the 9 aura-bit
+  readers for 127–129), 41 (`EquipReqRefresh` → `PlayerSkillReselect`); states 14 (burn, cold, freeze list shape),
+  46 (a stock expiry releasing a pet). New tool and `run9/`; do not overwrite `run8/`. Tier B review once S4e is
+  whole.
+
+### 2026-11-16 — Phase 1, batch S4e part 5e (reverser-static, `lane/n66z`): `ItemAutoEquipSlot` through `ItemReqCheck`, the stat event list, the elemental appliers; 3 rows settled; resume note
+
+- **Done.** `main` `31a4949c` already merged (nothing new). Spot-check of the two inventory files part 5d restored
+  (items-inventory, stats-aggregate): against part 5c's commit `2296165b` they differ only in the Route column of
+  part 5d's eight rows (inventory 61, 67; aggregate 10, 11, 13, 17, 23, 37), each a pure append of part 5d text (no
+  part 5c text repeated, Class, Batch and Count unchanged); every other line equal. Scratch scripts this part are
+  `p5e_*.py` in `workspace/logs/n66z/s4e/scratch-p5e/`; the three inventory files edited were diffed against `HEAD`
+  after the scripted edit (only the Route column of the three rows below changed, each an append). New tool
+  `tools/items_s4e9_emu.py` (parts 1–5d's tools and `run/` to `run8/` untouched; run8's `check` reproduces), two
+  families on `workspace/ghidra-n66z` (`-Xmx3G`, `MemoryMax=4G`) after five development passes (`dev9a/` to `dev9e/`,
+  each with `check-dev.txt` and `manifest-dev.sha256`, not cited): `req` (`ItemAutoEquipSlot` with `skipReq` 0
+  through `ItemReqCheck` and every callee, on part 5d's world drawn by its `gen_auto` unchanged) and `evt` (the
+  event list's find 0x005C0BE0, remove 0x005C0B50 to the free, `AddStatEvent` to the allocator); `static` (49 family
+  pins, 35 for states 14) and `xref` (the `g_StatEventFuncs` references, the event functions' callers, the four
+  appliers' call scans). 9 000 cases, 0 mismatches, 0 stops, 0 undeclared reads, no traced write; 15 controls, each
+  separating, `passed` 0. Record:
+  [run:2026-11-16-sweep2-s4e-emu part 5e](../findings/items/experiments.md#part-5e-itemautoequipslot-through-itemreqcheck-the-stat-event-list-and-the-elemental-appliers-2026-11-16),
+  `workspace/logs/n66z/s4e/run9/` (`manifest.sha256`, 13 lines, passes from there). Claims in items/0013 § 18,
+  stats/0001 § 13, stats/0002 § 12.
+- **Rows settled.** items/inventory 67's remainder raised (all of I6 now `[C]`); stats/aggregate 23's remainder
+  raised (refinement `[I]`: a found node blocks both events, a 0 frees every kind-2 node of the stat not in use);
+  stats/states 14's remainder raised with refinement (the four remove callbacks: poison and burn 0x0056E900, cold
+  0x0057AD80, freeze 0x0057B170). **Class moves:** none. Refinements routed by
+  [backlog](../backlog/2026-11-16-reverser-spec-writer-plan-0066-s4e-part5e-refinements.md), including the H3 evidence
+  that sits beside aggregate 27 (H4e, a-run; not moved).
+- **Symbols:** none raised (an emulation over a declared image and objdump readings, review-fixes 14).
+- **Totals** (the 29 files' *Totals by class* summed after this part, `main` `31a4949c`): a-logs 623, a-run 334, b 513,
+  c 390, c-emu 438, d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626; Phase 1 1 451, Phase 2 847, unchanged. README
+  § 3 (part 5e line) and § 4 (S4e row) updated.
+- **Judgment calls:** (1) `req` drives only the level requirement's quality-default path (qualities 0..3, 9 and
+  larger) and declares no stat 97/107 entry, so the affix, set, unique and crafted arms and the skill loops stay
+  unrun; that suffices for row 67, whose claim is `ItemAutoEquipSlot`'s, and is stated under *Not covered*; (2) the
+  `req` cases are drawn by rejection (at most 60 draws per case) so that returns of 1 are not swamped by part 5d's
+  world, which gives 0 in most draws; (3) states 14 is a static (c) row: raised by objdump pins and a call scan of
+  each applier's body beside the specs' Ghidra reading (the S4c/S4d practice); what cold's and freeze's own remove
+  callbacks do is not read; (4) the `evt` add is observed at the allocator (ADR-0021); the node fill after it is one
+  objdump reading, kept `[I]`, and only the callback's call sites of the event functions were read (23 others not).
+- **Resume (part 5f, a fresh lane on `lane/n66z`):** 11 rows left. items/inventory 17: the 39 `InvRowForUnit`
+  callers (list in `scratch-p5e/rowfor-callers.txt`); note 0x00555BAD lies in the unnamed 0x00555AE0 (not
+  `RoomPresetUnits`, the nearest named symbol below it), whose three callers are `PlayerUnitAlloc` 0x00534A01,
+  `ItemInitStats` 0x00557EF4 and `MonInitMode` 0x005736E8 (a player, an item, a monster). A cheaper route may be the
+  creator side: `SUnitCreate` has 53 rel32 callers (`scratch-p5e/sunit-regs.txt`), the type-2 ones with literal
+  classes never 0x152/0x153; the non-literal ones (preset dispatch from DS1, `OBJ_PlaceRandom*`, `OBJPOP_*`, the
+  portal pair, the shrine/chest/quest presets) need their class source, and a DS1 survey for object rows 338/339
+  (`tools/ds1.py units` gives ranges only). 18 (the 13 server calls' record field reads); 87 (quality writers);
+  aggregate 2 (`StatListLinkOwner` and `KeyConsume` callers), 10 (`+0x38`'s reader and other writers, the extended
+  fields), 29 (the 136-frame cadence's writer), 31 (ethereal), 36 (`add func` 0 at creation), 40 (the 9 aura-bit
+  readers for 127–129), 41 (`EquipReqRefresh` → `PlayerSkillReselect`: whether a refresh takes it; consider a
+  `sites` route to b under R2 if the path allocates); states 46 (a stock expiry releasing a pet, `PetLimitRefresh`
+  0x00575900). New tool and `run10/`; do not overwrite `run9/`. Tier B review once S4e is whole.
+
+### 2026-11-16 — Phase 1, batch S4e part 5f (reverser-static, `lane/n66z`): the closing static part; 15 rows closed; S4e done, Tier B review requested
+
+- **Done.** `main` `31a4949c` already merged (nothing new). No emulation and no Ghidra launch: the 11 rows left were
+  static remainders. New tool `tools/items_s4e10_emu.py` (`static`, `xref`, `sites` reusing
+  `items_s4e7_emu.cmd_sites`, `logs`), run dir `workspace/logs/n66z/s4e/run10/` (`static.txt` 100 pins over 10 rows,
+  all ok; `xref.txt`; `sites.txt` 4 roots; `logs.txt` 28 logs; `manifest.sha256`, 4 lines, passes from there). Parts
+  1–5e's tools and `run/` to `run9/` untouched (run9's manifest passes, its `static` reproduces). Scratch scripts this
+  part are `p5f_*.py` in `workspace/logs/n66z/s4e/scratch-p5f/`; the four inventory files edited by `p5f_rows.py`
+  were diffed against `HEAD` (only the Route column of the 15 rows below changed, each a pure append; states 46's
+  Class and Batch too). Record:
+  [run:2026-11-16-sweep2-s4e-emu part 5f](../findings/items/experiments.md#part-5f-the-closing-static-part-2026-11-16).
+  Claims in items/0013 § 19, stats/0001 § 14, stats/0002 § 13.
+- **Rows closed (15).** Raised: items/inventory 18's remainder (with refinement: `numboxes` read as a byte, the grid
+  bytes also through `InvPageGet`); stats/aggregate 36's remainder (`add func` 0 built as a `prop`). Raised in part:
+  aggregate 2 (the callers of `StatListLinkOwner` and `KeyConsume`), 10 (the `+0x38` reader), 29 (the writer: the act
+  clock pass), 31 (`ITEMS_MakeEthereal` writes only its argument), 41 (the reselect call and its gates); items/economy
+  46's caller half (part 2's, dropped by the part-5 resume notes). **Class move:** stats/states 46 c → b (H4e),
+  ruling R2: the release reaches the pool's free (0x005758DB → 0x00574850 → 0x0040B480) and `UnitKilled`
+  (0x005744DB). **Not settled in S4e; stay `[I]` in their class with the route named:** items/inventory 17 (the
+  non-literal object creators' class sources and a DS1/population survey for objects 338, 339), 87 (the stock CubeMain
+  quality bytes, the request's `+0x30` writers, direct stores; the cube path that writes 9 is now pinned, 0x00565EE5),
+  aggregate 40 (per-reader table checks for 127–129); and the part-2 remainders the part-5 resume notes dropped:
+  economy 85 (the over-cap writer's callers), aggregate 15 (the op-6/7 affix check), 18 (the act word's writer).
+  Remainders left `[I]` inside the raised-in-part rows: aggregate 2 (which caller each logged link took), 10 (the
+  other `+0x38` writers, chains, keys, extended fields), 29 (the 136 as act index 3's bucket period), 31 ("only"
+  over the flag's 19 other users), 41 (whether a stock refresh takes the draw; routed to H4e, no class move: an
+  a-logs row, and the path crosses the allocator, 0x0057026C, 0x0056FFFD). Refinements routed by
+  [backlog](../backlog/2026-11-16-reverser-spec-writer-plan-0066-s4e-part5f-refinements.md); the table checks by
+  [backlog](../backlog/2026-11-16-reverser-archivist-plan-0066-s4e-part5f-table-checks.md).
+- **Symbols:** none raised (objdump readings beside Ghidra readings; review-fixes 14).
+- **Totals** (the 29 files' *Totals by class* summed after this part, `main` `31a4949c`): a-logs 623, a-run 334, b 514,
+  c 389, c-emu 438, d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626; Phase 1 1 450, Phase 2 848. README § 1
+  (stats/states row, All, By phase), § 3 (part 5f line) and § 4 (S4e row, status done; H4e row 39 with states 46 and
+  aggregate 41's remainder) updated.
+- **Judgment calls:** (1) every `[C]` this part is an objdump reading beside a Ghidra reading already in a finding or
+  spec (the S4c/S4d practice); the a-logs rows 2, 10, 29, 31, 36, 41 were routed "→ c" by S4d part 2, so a static
+  raise is the planned method; (2) states 46 is a c row moved under R2 because the question needs the release path
+  run, while aggregate 41 (a-logs) is routed without a move; (3) three development passes of `static`/`xref` wrote
+  into `run10/` before the final revision and were overwritten, not kept (regenerable; none cited); (4) the
+  inventory 18 scan covers `ebp`-relative operands only; (5) the four part-2 remainders were found by a scan of all
+  S4e rows' Route text (`scratch-p5f/p5f_summary.py`, output `scratch-p5f/summary.txt`, which the batch summary's
+  tallies below are counted from), not by the resume notes.
+- **Batch S4e summary (parts 1–5f).** The 91 listed rows: **raised 58**, **raised in part 25** (remainders: 18
+  routed to b without a move, 1 to d-none (economy 43's client half), 6 not settled and kept in class: economy 34,
+  85, inventory 17, 87, aggregate 15, 18), **contradicted in part 2** (economy 46, aggregate 20), **moved to b 6**
+  (economy 8, 56 → H4b; use 54 → H4c; inventory 20, 57, 63 → H4d). The 16 S4c/S4d remainder rows brought in:
+  remainder raised 8 (aggregate 11, 13, 16, 17, 23, 36, 37; states 14), raised in part 5 (aggregate 2, 10, 29, 31,
+  41), not settled 1 (aggregate 40), moved to b 1 (states 46 → H4e), routed to b without a move 1 (inventory 61 →
+  H4d). Class moves: 7 (6 c-emu → b, 1 c → b). Emulation (parts 1–5e): 100 685 cases, 0 mismatches, 0 stops, 0
+  undeclared reads, no traced write; 195 controls, each separating, `passed` 0; part 5f 100 objdump pins. Refinement
+  and correction backlog entries: 10 (parts 1, 2 corrections; parts 3, 4, 5a–5f refinements), and 1 archivist entry
+  (table checks).
+- **Review:** Tier B requested by
+  [backlog](../backlog/2026-11-16-reverser-architect-plan-0066-s4e-tier-b-review.md).
