@@ -1551,6 +1551,77 @@ and `MissileDamageToStats`' stats carry the shipped table's bytes there), after 
   callback, `+0x08` and player tests (rows 6 and 72 send nothing or stop at the switch, so those reversals change no
   case). (run:2026-11-16-sweep2-s2ae8)
 
+### 25. Plan 0066 batch S2ae part 9: `SummonSetLevel` and handler 25 emulated with the setter whole; the batch closed (2026-11-16, `lane/n66sa`)
+
+Two families under `tools/ghidra.sh emuboundary` with `tools/skills_s2ae9_emu.py` (record:
+[run:2026-11-16-sweep2-s2ae9](experiments.md#run2026-11-16-sweep2-s2ae9)): 14 000 cases, 0 mismatches, 0 stops, 0
+unaccounted reads or writes; 149 controls, 127 separating, `passed` 0. The setter world and its observed boundaries
+are part 8's (§ 24: `STATLIST_InsertEntry` 0x00624C80, the resize 0x0040B4B0, the callback 0x0055B800,
+`sub_006266C0_StatRecompute`), with part 8's ItemStatCost rows (`isc.bin`, the same bytes); two more boundaries:
+`sub_0064C040_UnitMarkUpdated` (from 0x00639E76) and `STATE_Set` 0x00639DB0 (from 0x005C893F). Only the fields named
+below are written in the units, lists and game, so any other read of them would be a traced, unaccounted read; no
+MonStats image is loaded (the data table's `+0xA78` is 0). Bracketed counts are the cases a reversed test changes
+(`check.txt`).
+
+- [C] *`sub_006272B0_UnitAddStat(unit, stat, value, param)` → 0x00627030, whole.* A value of 0 returns at once
+  [`ua_val` 4 237]; the unit is not tested (its `+0x5C` list is read); no list returns [`ax_list` 4 237]; the key
+  `(stat << 16) + (param & 0xFFFF)` absent from the base array calls `InsertEntry` (from 0x0062706B) [`ax_found`
+  4 237]; else the entry `+= value` (wrapping), a result of 0 removes it (`RemoveEntry`) [`ax_zero` 3 894], and
+  `Propagate(list, key, value)` and, for a list with bit 31 and `+0x08` = 0, `MarkClientDirty` follow as in
+  `SetStatEx` (§ 24). (fn:sub_006272B0_UnitAddStat@0x006272B0, 0x00627030–0x006270AA, run:2026-11-16-sweep2-s2ae9)
+- [C] *d142, d143 (dispatch L2), `sub_005C49E0_SummonSetLevel(ECX game, EDX owner; summon, level, bonus)`, whole*
+  (`ssl`, 6 000 cases; 3 711 return 1, 648 return 0, 1 413 `InsertEntry`, 228 resize). A level `> 0` (signed) is
+  taken as given [`lv_pos` 5 546, `lv_pos~` 3 591]. Otherwise `L = STATS_GetUnitStat(owner, 12, 0)` (0 for no owner
+  or no list), `n = trunc(s32(3L) / 4) + bonus` (32-bit, `cdq`/`and 3`/`sar 2`; a floor instead, `spec_floor`, 2; a
+  ceiling, `spec_ceil`, 1 422), and the level is `L` when `max(n, 1) ≥ L` [`cap_ge` 4 100], else `max(n, 1)`
+  [`n_gt1` 823, `n_gt1b` 2 036], that is `min(max(n, 1), L)`, the clamps binding on both sides. `3L` fits for
+  −715 827 882 ≤ L ≤ 715 827 882 and wraps one past either end (`wrap.txt`: 3 · 715 827 883 = 2 147 483 649 →
+  −2 147 483 647). A level of 0 is not written [`lvl_nz` 4 240]; any other is written by `UnitSetStat(summon, 12,
+  level, 0)` (§ 24's setter, whole). Then the MonLvl index is the level clamped to `count − 1` (signed) [`ml_lt`
+  4 506], and an index below 0 or not below the count returns 0 [`ml_ge0` 5 057, `ml_ge0~` 936, `ml_ltn` 4 409]. The
+  difficulty is `game +0x6D` with 0 → 0, 1 → 1, ≥ 2 → 2 [`df_nz` 3 171, `df_ge2` 2 085]; the expansion is 1 when the
+  byte `+0x6A` or the dword `+0x74` is non-zero [`x_6a` 2 168, `x_74` 2 100]. `UnitAddStat(summon, 31, row[d + 3x],
+  0)` and `UnitAddStat(summon, 19, row[d + 3(x + 2)], 0)` follow, in that order, with the raw cells (the transposed
+  layout, `spec_cells`, 4 011), and the function returns 1. The summon is declared at `+0x00` (the setter's player
+  test) and `+0x5C` only and no MonStats image exists: no read of its class, its MonStats record or `noRatio` (0
+  unaccounted reads). (fn:sub_005C49E0_SummonSetLevel@0x005C49E0, 0x005C4A02–0x005C4A2E, 0x005C4A40–0x005C4AAE,
+  0x005C4AC6, 0x005C4ADF, run:2026-11-16-sweep2-s2ae9)
+- [C] *d129 (dispatch K 25), `sub_005C87A0_StatEv25CycloneArmor(unit, –, packet, skill, –)`, to its boundaries*
+  (`h25`, 8 000 cases; 312 return 1, 2 409 return 0). A null unit or packet returns 0 [`u_nz` 5 677, `pk_nz` 5 647];
+  so does a skill outside `[0, count)` [`sk_ge0` 5 749, `sk_ltn` 5 733], a state word `+0x80` (signed 16) outside
+  `[0, states)` [`st_ge0` 5 680, `st_ltn` 5 674], no list of that state [`sl_nz` 5 591] and a stat word `+0x56` or
+  `+0x54` outside `[0, ItemStatCost count)` [`s56_ge0` 5 591, `s54_ge0` 5 708]. The list is
+  `UNIT_FindStatListByState(unit, state)`: none when the unit's list lacks bit 31 [`fs_ext` 5 720] or the state is 0
+  [`fs_state` 5 647], else the first list with `+0x14` = state in the `+0x3C` chain, then the `+0x40` chain, by
+  `+0x2C` [`fs_eq` 6 560]. `max` = the list's base stat `+0x56` (0x00625350, the base array, not the cache); `max ≤ 0`
+  returns 0 [`mx_pos` 6 219, `mx_pos~` 367]. The pool is the base stat `+0x54`; a pool of 0 goes to the off branch
+  [`pool_nz` 4 521]. Otherwise the packet's `+0x10`, `+0x24` and `+0x1C`, in that order and each only when `> 0`
+  [`pk10_pos` 3 935, `pk24_pos` 3 044, `pk1c_pos` 2 540; the order `+0x10`, `+0x1C`, `+0x24`, `spec_order`, 556],
+  absorb: a pool larger than the field (signed) takes the field to 0 and keeps the difference, else the field
+  loses the pool and the pool is 0 [`ab10` 2 347, `ab24` 2 335, `ab1c` 2 284] (0x005C8780). `STATLIST_SetStat(list,
+  +0x54 stat, pool, 0)` follows (`SetStatEx` whole, no unit mark). A pool `≤ 0` goes to the off branch [`left_pos`
+  2 605, `left_pos~` 1 403]: `STATE_Set(unit, state, 0)` (observed, 2 473 cases with the pool-0 entry). Else
+  `pct = MulDiv(pool, 100, max)` and, when `pct − base stat 84 ≥ 5` (signed, wrapping) [`pct_ge5` 1 055], 
+  `sub_00639E30_UnitSetStateBit(unit, state, 1)`: with the unit's list extended, the bit of `state` in the second of
+  the two bit sets at `+0x58` (`(states + 31) / 32` words on) is set and `UnitMarkUpdated(unit)` called (observed,
+  743 cases, the bit array dumped); a smaller change returns 1. (fn:sub_005C87A0_StatEv25CycloneArmor@0x005C87A0,
+  0x005C8780, fn:UNIT_FindStatListByState@0x006256B0, fn:sub_00625650_StatListFindByState@0x00625650,
+  fn:STATLIST_SetStat@0x00627150, 0x005C88CD–0x005C88FD, fn:sub_00639E30_UnitSetStateBit@0x00639E30,
+  run:2026-11-16-sweep2-s2ae9)
+- *After, `[I]` (ADR-0021).* d129: past `UnitMarkUpdated` (0x00639E71) the write of stat 84 = `pct`
+  (`STATLIST_SetStat` at 0x005C891B) and the return 1; past `STATE_Set` (0x005C893F) `UNIT_UnlinkStatList` and
+  `STATLIST_FreeIfPlain`, which for a list without bit 31 reaches the pool free 0x0040B480 (0x00626C20, through
+  `STATLIST_Free` 0x00626CE3). Not settled in S2ae: `UnitMarkUpdated` needs a declared room (0x00620BB0 `UnitGetRoom`,
+  0x0061AB60, 0x00619F90), and so does `STATE_Set`'s own mark (0x00639DD8); the plain list's free is R2's (→ b, H2a)
+  once a run reaches it. Part 8's allocating routes as § 24.
+- [I] *Not covered.* In `ssl`, the `+0x08`/bit-31 tests of `UnitAddStat`'s `MarkClientDirty` and the callback (rows 19
+  and 31 of the declared table have no send or callback bit: `ax_8`, `ax_ext`, `ca_cb` change no case); the
+  strictness of the clamps at their own bounds (`cap_ge~`, `n_gt1~`, `n_gt1b~`, `ml_lt~`, `df_ge2~`: the bound gives
+  the same level either way) and `ml_ltn~` (the clamp leaves no index equal to the count); in `h25` the absorb
+  compares at equality (`ab*~`: both sides give a field and pool of 0), the stat words at 0 (no case declares stat 0;
+  `s54_*~`, `s56_*~`) and the state word at 0 (`st_ge0~`: state 0 finds no list either way),
+  and the state-bit tests after a found list (`sb_*`: the list found implies the same bit 31). (run:2026-11-16-sweep2-s2ae9)
+
 ## Data touched
 
 `tbl:Missiles.txt:Id`, `pSrvDoFunc`, `pSrvHitFunc`, `pSrvDmgFunc`, `Vel`, `VelLev`, `MaxVel`, `Accel`, `Range`,

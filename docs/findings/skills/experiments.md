@@ -2159,3 +2159,68 @@ Plan [0066](../../plans/0066-simulation-inferred-claims-sweep.md) Phase 1, batch
 - **Not covered:** see skills/0002 § 24, *Not covered*; everything past the observed calls. **Conclusion:** bit-exact
   reproduction (evidence rule 4, ADR-0015) of the maps above; the claims and the rows they settle are in skills/0002
   § 24.
+
+## run:2026-11-16-sweep2-s2ae9
+
+Plan [0066](../../plans/0066-simulation-inferred-claims-sweep.md) Phase 1, batch S2ae (`lane/n66sa`), part 9 (the
+closing part): `sub_005C49E0_SummonSetLevel` whole and `sub_005C87A0_StatEv25CycloneArmor` to its boundaries, both
+with part 8's stat setter run whole, under Ghidra's p-code emulator on the pinned image (ADR-0015, ADR-0021),
+compared with a `tools/` model. No game, no wine. The claims are in
+[skills/0002 § 25](0002-missiles.md#25-plan-0066-batch-s2ae-part-9-summonsetlevel-and-handler-25-emulated-with-the-setter-whole-the-batch-closed-2026-11-16-lanen66sa).
+
+- **Question:** do `SummonSetLevel` and handler 25 do what skills/dispatch L2 (the summon level, no `noRatio` test)
+  and K 25 (at `b5999f5e`) state as inferred, up to the first call on each route that leaves the claim?
+- **Setup:** `tools/skills_s2ae9_emu.py` (sha256 `e5d88bb6…`, stdlib and objdump; imports `tools/combat_s5e_emu.py`
+  and parts 1, 6, 7 and 8's tools, unchanged, in their module state only: part 1's case, check and manifest
+  machinery, part 8's setter model, world builder and ItemStatCost rows), `re/ghidra_scripts/EmuBoundary.java`
+  unchanged, project `workspace/ghidra-n66sa` (`-Xmx3G`, `MemoryMax=4G`). One kept launch of `tools/ghidra.sh
+  emuboundary`, 2 families (`ssl` 6 000, `h25` 8 000), seeds `random.Random("n66sa-s2ae9-<family>")`.
+- **Memory spec** (`s2ae.mem`): a DataTables image at 0x21000000 (`dt.bin`: states 192, part 6's Skills image of 48
+  rows with part 7's column merged (`skills.bin`), part 8's 512 ItemStatCost rows (`isc.bin`, the same bytes as
+  `run8/isc.bin`); no MonStats image, `+0xA78` 0); the CRT copy-path flag 0x00994C88 = 1. Each case writes only:
+  `ssl` the summon's `+0x00` and `+0x5C`, its list (part 8's world: header, base and cache arrays, changed-key array,
+  up to two parents) holding keys 12, 31 and 19 or not, the owner's `+0x5C` and list with stat 12, the game's
+  `+0x6A`, `+0x6D`, `+0x74`, the data table's `+0xB70`/`+0xB74` and the MonLvl rows (0x78 bytes) the level can
+  index; `h25` the unit's `+0x5C`, its list's `+0x10`, `+0x3C`, `+0x40`, `+0x58` and bit sets, decoy lists' `+0x14`
+  and `+0x2C`, the target state list (part 8's world), the Skills record's `+0x54`, `+0x56`, `+0x80` and a 0x40-byte
+  packet. Guards: 0x00408090, 0x00408A60, 0x00681E09, 0x0040B430, 0x0040B480. Observed: `STATLIST_InsertEntry`
+  0x00624C80, 0x0040B4B0, 0x0055B800, `sub_006266C0_StatRecompute`, `sub_0064C040_UnitMarkUpdated`, `STATE_Set`
+  0x00639DB0; at each the registers the code sets, the stack arguments, the return address and the dumps (list
+  headers, arrays, parents, the packet, the state bit sets) are compared.
+- **Read set (ADR-0015 (2)):** every traced read falls in a declared constant range: `g_BitMask32` (0x00624E2E 6 941,
+  0x00624EFC 12 488, 0x00624F9F 3 990, 0x00625120 7 157, 0x00626974 10 680, 0x00639E67 743), `MarkClientDirty`'s
+  switch tables (0x00624DF6, 0x00624DFD, 3 026 each) and the memmove's jump tables (0x0068389C 451, 0x006838C4 2 177,
+  0x006839AB 2 177, 0x00683A2E 275, 0x00683B47 275). No traced write.
+- **Procedure** (worktree root; `D=workspace/logs/n66sa/s2ae/run9`):
+  ```
+  python3 -I tools/skills_s2ae9_emu.py cases --dir $D
+  GHIDRA_PROJ_DIR=workspace/ghidra-n66sa GHIDRA_HEADLESS_MAXMEM=3G systemd-run --user --scope -p MemoryMax=4G \
+      tools/ghidra.sh emuboundary $D/s2ae.cases $D/s2ae.mem > $D/s2ae.out 2> $D/s2ae.err
+  python3 -I tools/skills_s2ae9_emu.py check --dir $D > $D/check.txt
+  python3 -I tools/skills_s2ae9_emu.py reach > $D/reach.txt
+  python3 -I tools/skills_s2ae9_emu.py static > $D/static.txt
+  python3 -I tools/skills_s2ae9_emu.py wrap > $D/wrap.txt
+  python3 -I tools/skills_s2ae6_emu.py check --dir workspace/logs/n66sa/s2ae/run6 > $D/check6-rerun.txt
+  (cd $D && sha256sum -c manifest.sha256)
+  ```
+- **Outputs:** `check.txt` (`40230f8d…`, 154 lines, last line `S2AE total cases=14000 mismatches=0 stops=0
+  controls=149 unseparated=22 controls_passed=0 unaccounted=0`), `reach.txt` (`b776807a…`, 4 lines), `static.txt`
+  (`bf2c02a2…`, 862 lines: 19 functions or ranges with their direct-call counts), `wrap.txt` (`8ec21331…`, 4 lines),
+  `s2ae.out` (`e8688f7f…`), `s2ae.cases` (`0f12d5dc…`), and `check6-rerun.txt` (`276b3a96…`, byte-identical to
+  `run6/check.txt`: part 6's check reproduces), and `batch-totals.txt` (`fb605ba9…`, the nine parts' kept `check.txt`
+  last lines and their sums), listed in `manifest.sha256` (`5089fa8d…`, 13 lines), which passes from `$D`. The emulation, `check`, `reach` and `static` ran on the revision before the `wrap` command was added; the
+  committed revision reproduces all three byte for byte. Development: one launch (`dev20/`, the same cases; its
+  `check.txt` equals the kept one) and the session's objdump listings (`scratch9/`) under
+  `workspace/logs/n66sa/s2ae/manifest-dev-p9.sha256` (15 lines, passes from `workspace/logs/n66sa/s2ae/`), not cited.
+- **Outcomes** (`reach.txt`): `ssl` 3 711 return 1, 648 return 0, 1 413 `InsertEntry` (466 from `CacheAdd`, 547 from
+  `UnitAddStat`, 400 from `SetStatEx`), 228 resize; `h25` 312 return 1, 2 409 return 0, 2 473 `STATE_Set`, 743
+  `UnitMarkUpdated`, 138 `InsertEntry`, 1 134 resize, 339 callback, 452 `StatRecompute`.
+- **Controls:** 149, 127 separating, each `passed` 0. Not separating (22): the strictness of clamps and compares at
+  bounds that give the same result (`cap_ge~`, `n_gt1~`, `n_gt1b~`, `ml_lt~`, `ml_ltn~`, `df_ge2~`, `ab10~`, `ab24~`,
+  `ab1c~`, `rm_mid~`, `s54_ge0~`, `s54_ltn~`, `s56_ge0~`, `s56_ltn~`, `st_ge0~`, `sb_ge0~`, `sb_ltn~`), the reversals
+  rows 19 and 31 make inert (`ax_8`, `ax_ext`, `ca_cb`) and `spec_md_all` in `ssl`. The spec-reading and alternative
+  controls: `spec_floor` 2, `spec_ceil` 1 422, `spec_cells` 4 011, `spec_order` 556, `spec_add` (`ssl` 3 816, `h25`
+  4 668), `spec_md_all` (`h25` 3).
+- **Not covered:** see skills/0002 § 25, *Not covered*; everything past the observed calls. **Conclusion:** bit-exact
+  reproduction (evidence rule 4, ADR-0015) of the maps above; the claims and the rows they settle are in skills/0002
+  § 25.

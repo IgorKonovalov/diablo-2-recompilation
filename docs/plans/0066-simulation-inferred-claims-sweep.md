@@ -3438,3 +3438,48 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   - **No calc, no page:** handler 1 to `MissileCreate` (d110).
   - **A constant calc pool**, **a declared inventory page**, **a declared room**: as part 7's note.
 - **Review:** none yet; the Tier B request (to be audited at Tier A) comes when S2ae is whole.
+
+### 2026-11-16 — Phase 1, batch S2ae part 9 (reverser-static, `lane/n66sa`): 3 more settled (63 of 89); the batch closed, 26 rows not settled and left `[I]` with routes; Tier B review requested
+
+- **Done.** `main` had not moved past `31a4949c` (merged at part 8), so no merge; totals from the 29 files' *Totals by
+  class* (`tools/quests_s3c.py totals`, `bad=0`) equal README § 1 (a-logs 623, a-run 334, b 510, c 390, c-emu 441,
+  d 328). Part 6's `check` re-run reproduces `run6/check.txt` byte for byte (`run9/check6-rerun.txt`, `276b3a96…`).
+  New tool `tools/skills_s2ae9_emu.py` (`e5d88bb6…`; reuses parts 1, 6, 7 and 8's machinery in module state only).
+  One kept `tools/ghidra.sh emuboundary` launch on `workspace/ghidra-n66sa` (`-Xmx3G`, `MemoryMax=4G`) after one
+  development launch (`dev20/`, `workspace/logs/n66sa/s2ae/manifest-dev-p9.sha256`, not cited). Two families (`ssl`
+  `SummonSetLevel` whole, `h25` handler 25 to `UnitMarkUpdated`/`STATE_Set`, both with the setter whole), 14 000
+  cases, 0 mismatches, 0 stops, 0 unaccounted reads or writes; 149 controls, 127 separating, `passed` 0. Record:
+  [run:2026-11-16-sweep2-s2ae9](../findings/skills/experiments.md#run2026-11-16-sweep2-s2ae9);
+  `workspace/logs/n66sa/s2ae/run9/` (`check.txt` `40230f8d…`, `reach.txt` `b776807a…`, `static.txt` `bf2c02a2…`,
+  `wrap.txt` `8ec21331…`, `batch-totals.txt` `fb605ba9…`, `manifest.sha256` `5089fa8d…`, 13 lines, passes from
+  there). Claims:
+  [skills/0002 § 25](../findings/skills/0002-missiles.md#25-plan-0066-batch-s2ae-part-9-summonsetlevel-and-handler-25-emulated-with-the-setter-whole-the-batch-closed-2026-11-16-lanen66sa).
+- **Rows (3).** Raised: dispatch 142 (the summon level's clamps, binding on both sides) and 143 (no `noRatio` read:
+  the summon declared at `+0x00`/`+0x5C` only, no MonStats image, 0 unaccounted reads). Raised in part: dispatch 129
+  (handler 25 to `UnitMarkUpdated` and `STATE_Set`; the stat-84 write and the off branch need a declared room and stay
+  `[I]`; a plain list's free there is R2's once reached). None moved, none contradicted.
+- **Not settled in S2ae; stays `[I]`** (each Route cell annotated with the route it would need): dispatch 3, 30,
+  32–35, 89, 92, 96, 152–154, missiles 26, 74 (a declared inventory page); dispatch 111, 112, 128, 144 (a constant calc
+  pool); dispatch 83, 84, missiles 71, 72, 85 (a declared room; m85's no-reference half a two-tool scan); dispatch
+  110, 127, missiles 63 (no new route, not run for the batch's budget); and the remainders of dispatch 31, 39, 63, 69,
+  79, 129, 135, 164, 172, 178 and missiles 29, 69, 81, 82. No row's whole claim lies past an allocating call, so no
+  whole-row move to b (ruling R2 applies only to the remainders already routed to H2a).
+- **Refinements** (Phase 3's): L2's integer level and MonLvl indexing, the raw cells and no `noRatio` test, K 25's
+  list, absorb order and percent test. Routed by backlog
+  [`2026-11-16-reverser-spec-writer-plan-0066-s2ae-part-9-refinements`](../backlog/2026-11-16-reverser-spec-writer-plan-0066-s2ae-part-9-refinements.md).
+- **Symbols:** none raised (an emulation over a declared image, review-fixes 14).
+- **Totals** unchanged (no class move): a-logs 623, a-run 334, b 510, c 390, c-emu 441, d-2c 59, d-owner 68, d-edit
+  23, d-none 178 = 2 626; Phase 1 1 454, Phase 2 844. Inventory README § 4's S2ae row updated; skills-dispatch rows
+  3, 30–35, 39, 63, 69, 79, 83, 84, 89, 92, 96, 110–112, 127–129, 135, 142–144, 152–154, 164, 172, 178 and
+  skills-missiles rows 26, 29, 63, 69, 71, 72, 74, 81, 82, 85 annotated.
+- **Batch S2ae over parts 1–9:** 89 rows: 38 raised whole, 22 raised in part, 3 moved to b (missiles 49, dispatch
+  182, 184 → b, H2a), 26 not settled; 107 900 cases, 0 mismatches, 912 controls, 816 separating, `passed` 0
+  (`run9/batch-totals.txt`).
+- **Ready for Phase 3 (spec-writer), lines at `b5999f5e`, match by text.** Dispatch L2's summon-level and `noRatio`
+  bullets; K's row 25 in part.
+- **Judgment calls for the review** (part 9): (1) the absence `[C]` of d143 rests on the trace (declared-minimal
+  summon, no MonStats image, 0 unaccounted reads); (2) the MonLvl rows a case declares are those the model indexes
+  on that case (a wrong index reads undeclared memory, a traced read); (3) d129's remainder stays `[I]` (a room
+  route), not b; (4) `wrap` added after the emulation, reproduction confirmed. The batch-wide list is in the request.
+- **Review:** Tier B request (to be audited at Tier A) filed:
+  [`2026-11-16-reverser-architect-tier-b-review-plan-0066-s2ae`](../backlog/2026-11-16-reverser-architect-tier-b-review-plan-0066-s2ae.md).
