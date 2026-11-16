@@ -795,6 +795,8 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-11-16 | `lane/anim2` | ADR-0034 | archivist | 267 978 | 76 | 12 | — | accept with fixes | 4: caption overclaim 2 (set builder filter/weight, normal builder scope), misread 1 (jewel rare count), cosmetic 1 (font glyphs, name wrap) |
 | 2026-11-16 | `lane/anim2` check | ADR-0034 | architect-check | 128 452 | 44 | 5 | — | gave accept with fixes (Tier B) | 4 |
 | 2026-11-16 | `lane/anim1` | ADR-0034 | archivist | 0 | 0 | 0 | — | orchestrator inline, merged | usage unknown (session restart); orchestrator fixes: font glyph, blank floor, calc panel, 3/4 pairing, warps (lane/anim1b) |
+| 2026-11-16 | `lane/site1` | ADR-0034 | archivist | 140 673 | 35 | 9 | — | accept with fixes | 6: omission 3, misread 2, cosmetic 1 |
+| 2026-11-16 | `lane/site1` review | ADR-0034 | architect-review | 140 003 | 60 | 7 | — | gave accept with fixes (Tier A, ADR-0034 generator text) | 6; gate rule E19 registered |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not
