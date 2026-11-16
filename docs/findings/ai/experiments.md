@@ -1768,7 +1768,11 @@ Sharing decision: fresh per case, unchanged.
     forked: R32 2 226 (364 stop at the path action), R41 200, R48 391, R56 76, R120 31; R23 8 mismatches (the rev 4 cluster, unchanged)
     with a two-way site that fails nothing (24 of 25); R118 12 mismatches (the Phase 3b ruling holds it); state 11's init 0x005E80E0
     (17 pairs, the control block unchanged, its calls not logged). H1 not met by rows 43 (37 fork-free), 79 (19), 100 (17), 78 (no call
-    past the first) and 32, 48, 54, 70, 73, 118 (0 fork-free: the resume interpreter forks on words it does not take from rev 7's lines).
+    past the first) and 32, 48, 54, 70, 73, 118 (0 fork-free: the resume interpreter forks on words it does not take from rev 7's lines). Row 1's `RROW` in `resume-all84.txt` (86 decisions, 4 resumed, 82 "mismatches") is the interpreter's window, not the
+    game: `tools/ai_resume.py`'s `THINK_WINDOWS` lacks rev 7's R1 window 0x005B0CD0..0x005B0D00 (`tools/gdb/ai.py` `THINK_LO`), so at
+    0x005B0CDC, where the 82 rev 7 decisions log `UnitGetRoom` 0x00620BB0, it offers no call ("the model has no further call"). R1's `r`
+    line is d-none and outside this phase; its `l` line rests on `ai_model_check.py` (0 mismatches, 82 fork-free). (Added at the Phase 4
+    review.)
     Not reached (0 decisions in the 84 logs): R16, R74, S15, R119, S5, S6, R58, R60, R45, R66, R77, R80, R92, R50, R53, R55, R59, R85,
     R128, R93, R98, and the alts 0x005F81D0 and 0x005F9950; their rows wait on the owner (a rerun with a changed route, or d-owner).
   - **Rows:** 211 settled (the 241 of the tour's scope less Phase 1a's 30 moved to H1p): 22 raised, 41 raised in part, 148 kept

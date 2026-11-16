@@ -1,6 +1,6 @@
 # 0069 — Monster AI bestiary tour: the catalogue's harness rows of plan 0066
 
-> **Status:** approved (2026-11-10, by the owner, as recommended: question 1 (a), question 2 (a)); Phase 1a done (`lane/n69a`, Tier B check: accept with fixes, 3; merged); Phase 1b done (`lane/n69b`, 29 of 29 entries modelled; Tier B check: accept, 0 fixes; merged); Phase 1c done pending merge (`lane/n69c`, 2026-11-15; 31 of 31 entries and the notes row modelled; Tier B check: accept with fixes, 3); Phase 2 done (`lane/n69d`, 2026-11-15; 12 Act I cases kept, 0 mismatches; Tier B check: accept with fixes, 1; merged); Phase 3a done (`lane/n69e`, 2026-11-16; 17 Act II and III cases kept, 0 mismatches; Tier B check: accept with fixes, 1; merged); Phase 3b done (`lane/n69f`, 2026-11-16; 17 Act IV, Act V and Nightmare cases kept, 1 contradiction candidate: R118; Tier B check: accept with fixes, 3; merged); Phase 4 done pending review (`lane/n69g`, 2026-11-16; 211 rows settled: 22 raised, 41 raised in part, 148 kept `[I]`)
+> **Status:** approved (2026-11-10, by the owner, as recommended: question 1 (a), question 2 (a)); Phase 1a done (`lane/n69a`, Tier B check: accept with fixes, 3; merged); Phase 1b done (`lane/n69b`, 29 of 29 entries modelled; Tier B check: accept, 0 fixes; merged); Phase 1c done pending merge (`lane/n69c`, 2026-11-15; 31 of 31 entries and the notes row modelled; Tier B check: accept with fixes, 3); Phase 2 done (`lane/n69d`, 2026-11-15; 12 Act I cases kept, 0 mismatches; Tier B check: accept with fixes, 1; merged); Phase 3a done (`lane/n69e`, 2026-11-16; 17 Act II and III cases kept, 0 mismatches; Tier B check: accept with fixes, 1; merged); Phase 3b done (`lane/n69f`, 2026-11-16; 17 Act IV, Act V and Nightmare cases kept, 1 contradiction candidate: R118; Tier B check: accept with fixes, 3; merged); Phase 4 done (`lane/n69g`, 2026-11-16; 211 rows settled: 22 raised, 41 raised in part, 148 kept `[I]`; Tier A review, the audit sample: accept with fixes, 8; 7 kept rows moved to H1r at the review)
 > **Created:** 2026-11-10
 > **Owner skill(s):** reverser (every phase; the re-tag is plan 0066 Phase 3's, spec-writer)
 > **Related ADRs:** 0003-runtime-experiments, 0004-boundary-oracles-in-reproduction, 0021-observed-boundaries-in-emulation, 0023-review-tiers-and-gate-first-fixes, 0028-case-and-process-in-experiment-records
@@ -1157,7 +1157,7 @@ Static; no slot, no game, no Ghidra. Branched from `main` `21905e83` (Phase 3b a
 - line 104 (row 12, R1, raised in part; the 38 kept logs, tour-1, tour-3): one arm `has-room` (true)
 - line 110 (row 13, R1, raised; the 38 kept logs, tour-1, tour-3): first boundary, every fork-free decision
 - line 234 (row 26, R7, raised in part; the 38 kept logs, tour-1, tour-2, tour-3): both arms `1.melee`, `2.chance(3)`, `2.chance(4)`; one arm `3.chance(3)` (true), `1.p.v<40` (false)
-- line 243 (row 27, R7, raised in part; the 38 kept logs, tour-1, tour-2, tour-3): the override parameter `100 − life%` for life in 40..100, compared at the override call (`1.p.v<40`, false in all 106, fails 106 alone)
+- line 243 (row 27, R7, raised in part; the 38 kept logs, tour-1, tour-2, tour-3): at full life the override parameter is 0, compared at the override call (life% 100 in all 106, `1.p.100<v` at an equal pair 106 of 106; `1.p.v<40` false in all 106, fails 106 alone); `100 − life%` below full life stays `[I]` (scoped at the review)
 - line 248 (row 28, R7, raised; tour-1, tour-2, tour-3, the 38 kept logs): H1: 131 fork-free, 212 calls past the first
 - line 263 (row 29, R8, raised in part; tour-2): both arms `1.v14=0`, `3.n=aip(5)`, `4.aip(5)<n`, `6.4<dist`, `6.chance(2)`, `6.v18=0`, `7.chance(4)`, `7.melee`, `7.v18!=0`, `8.v18=1`, `9.Range<aip(7)`, `9.chance(3)`; one arm `5.v1C<7` (true), `8.Skill1>=0` (true), `10.aip(5)+k<v14` (false), `3.aip(6)=1` (false), `4.aip(6)=1` (false), `5.life<aip(1)` (false); stores `set v14+=1`, `set v18=1`
 - line 288 (row 30, R8, raised in part; tour-2): the count (`set v14+=1` fails 211 alone), the overlay and wait at `n = aip(5)` (`3.n=aip(5)`, 2 decisions; `4.aip(5)<n`), the armed `Skill1` in melee range (`8.v18=1`, `8.Skill1>=0`, 1 decision)
@@ -1165,7 +1165,7 @@ Static; no slot, no game, no Ghidra. Branched from `main` `21905e83` (Phase 3b a
 - line 294 (row 34, R8, raised; tour-2): first boundary, every fork-free decision
 - line 311 (row 35, R10, raised in part; tour-1): both arms `2.20-3pb<dist`, `3.chance(3)`, `3.melee`, `4.chance(1)`, `5.chance(5)`
 - line 323 (row 36, R10, raised in part; tour-1): beyond 20 in Normal the run (`2.20-3pb<dist` both ways, 10 equal pairs)
-- line 328 (row 39, R10, raised; tour-1): R10 (think 0x005F0B00): 302 decisions in the 84 logs (run:2026-11-15-ai-tour-1), 302 fork-free, 0 mismatches, every arm the line names reached: melee A1, near idle, run and walk, and the far run (`2.2
+- line 328 (row 39, R10, raised; tour-1): R10 (think 0x005F0B00): 302 decisions in the 84 logs (run:2026-11-15-ai-tour-1), 302 fork-free, 0 mismatches, every arm the line names reached, in Normal only: melee A1 and melee idle, near idle, near run and walk, and the far run (`2.20-3pb<dist`, `3.melee`, `3.chance(3)`, `4.chance(1)`, `5.chance(5)` both ways, each failing alone); the per-arm counts are `model-check-all84.txt`'s `SEP R10` line (completed at the review: the lane's line was cut)
 - line 341 (row 40, R11, raised in part; tour-2): both arms `3.chance(4)`, `3.melee`; one arm `3.v14=0` (true), `3.v18!=0#2` (false); stores `set v18=1`
 - line 419 (row 47, R14, raised in part; tour-1): both arms `2.melee`, `4.chance(2)`, `4.dist<aip(1)`, `4.stepped`; one arm `5.aip(4)<3` (true), `1.rec` (false), `3.St3or19` (false), `4.dist<4` (false)
 - line 526 (row 59, R142, raised in part; tour-3): both arms `1.aip(6)=2`, `1.v14!=0`, `2.chance(3)`, `2.melee`, `3.chance(4)`, `3.dist<aip(7)`, `3.v18<T`, `4.aip(6)=2`, `4.chance(1)`, `4.dist<aip(2)`, `5.D100<50`; one arm `1.aip(6)!=0` (true), `4.Skill1>=0` (true), `4.aip(6)!=0` (true), `4.targetok` (true); stores `set v14=1`, `set v18=T + aip(8)`
@@ -1203,7 +1203,7 @@ Static; no slot, no game, no Ghidra. Branched from `main` `21905e83` (Phase 3b a
 - line 3231 (row 341, R116, raised in part; tour-3): both arms `3.chance(1)`, `3.chance(2)`, `3.melee`, `4.chance(3)`; one arm `3.f=0` (true), `4.f=0` (true)
 - line 3252 (row 343, R116, raised; tour-3): first boundary, every fork-free decision
 - line 3259 (row 344, R117, raised in part; tour-3): both arms `1.v14!=0`, `2.melee`, `3.chance(3)`; one arm `1.v14<T` (true); stores `set v14=T + aip(5)`
-- line 3268 (row 345, R117, raised in part; tour-3): the death command `SetMode(0, …)` when `v14 ≠ 0` and `v14 < T` (`1.v14!=0` both ways, `1.v14<T` true only), whatever the distance
+- line 3268 (row 345, R117, raised in part; tour-3): the death command `SetMode(0, …)` when `v14 ≠ 0` and `v14 < T` (`1.v14!=0` both ways, `1.v14<T` true only); "whatever the distance" stays `[I]` (scoped at the review)
 - line 3272 (row 346, R117, raised; tour-3): first boundary, every fork-free decision
 - line 3393 (row 362, R122, raised in part; tour-3): both arms `1.R2a1^2<dsq`, `1.dead`, `1.owner=0`, `1.v14!=-1`, `2.D100<R3a2`, `2.melee`, `3.D100<R1a3`, `4.D100<R3a2`, `4.dist<R3a1`, `5.Range<R3a4`, `5.dist<R3a3`, `5.h`, `6.D100<33`, `7.D100<20`; one arm `1.Skill1>=0` (true), `1.align=0` (true), `1.h` (true), `1.halign=0` (true), `2.Skill1>=0` (true), `2.stepped` (true), `3.Skill1>=0` (true), `5.Skill4>=0` (true), `2.life<R1a1` (false), `5.dist<R4a3` (false); stores `set v14=-1`
 - line 3428 (row 365, R122, raised; tour-3): first boundary, every fork-free decision
@@ -1216,6 +1216,47 @@ Static; no slot, no game, no Ghidra. Branched from `main` `21905e83` (Phase 3b a
 - line 3814 (row 411, R137, raised; tour-3): first boundary, every fork-free decision
 - line 4310 (row 467, R54, raised in part; the 38 kept logs, tour-1, tour-2, tour-3): no draw on the logged path (the exit seed equal in all 316)
 - line 4314 (row 468, R54, raised; the 38 kept logs, tour-1, tour-2, tour-3): first boundary, every fork-free decision
-- line 4688 (row 517, Reimplementation, raised in part; the 38 kept logs, tour-1, tour-2, tour-3): step 3's second `aip(3)` draw is a new draw (`3.chance(3)` met in 2 decisions, true, each failing alone, the seed compared)
+- line 4688 (row 517, Reimplementation, raised in part; the 38 kept logs, tour-1, tour-2, tour-3): step 3's second `aip(3)` draw is a new draw (`3.chance(3)` met in 2 decisions, true, each failing alone, the seed compared); "Each `chance` is one step" stays `[I]`
 
 - **Review request: Tier B** (backlog entry `2026-11-16-reverser-architect-plan-0069-p4-tier-b-review-request`).
+
+### 2026-11-16 — Phase 4 review (architect, Tier A; the audit sample after `lane/n66p`)
+
+Reviewed `lane/n69g` at `a420094d` against the kept outputs (`workspace/logs/n69g/manifest.sha256`, 105 lines, passes; the review's
+regenerated `tally-review.txt` and `ready-review.txt` in `workspace/logs/n69g/review/`, `manifest-review.sha256`, 2 lines, passes).
+
+- **Verdict: accept with fixes** (8: overclaim 3, misread 1, omission 2, wrong anchor 1, bookkeeping splice 1). Fixed in place:
+  1. *Overclaim, row 27 (line 243):* the formula `100 − life%` "for life in 40..100" was raised on one point: `model-check-all84.txt`
+     has `EDGE 1.p.100<v 106`, life% 100 in all 106 overrides, so only "at full life the parameter is 0" is tested. The row and the
+     ready bullet now raise that; the formula below full life, both clamps and "stores nothing" stay `[I]`.
+  2. *Overclaim, row 345 (line 3268):* "whatever the distance" is a universal no output splits (the 10 death decisions are not
+     printed by distance); it stays `[I]`.
+  3. *Overclaim, row 39 (line 328):* the R10 status raise is Normal only (tour-1); said, with melee idle added to the arms reached
+     (`3.chance(3)` both ways; `SEP R10` has all six outcomes).
+  4. *Misread (class), rows 142, 143 (R56), 354, 355, 357 (R120), 462, 463 (R41):* judgment call 2 ruled the other way. (a-run) is "one
+     more session with an existing recipe, logger and checker"; these rows wait on a word rev 7 does not log, so they are (b). Moved
+     a-run → b into a new deferred batch **H1r** (out of plan 0069), as Phase 1a moved its 30 to H1p; README § 1, § 3, § 4 and the
+     file's *Totals by class* updated (a-run 334, b 474; Phase 2 808 unchanged). The 211 stay settled: 22 raised, 41 in part, 148 kept,
+     7 of the kept then moved (`tally-review.txt`: 204 in the six batches).
+  5. *Omission, row 517 (line 4688):* "Each `chance` is one step" named in what stays `[I]`.
+  6. *Omission, the record:* `resume-all84.txt`'s row 1 shows 82 "mismatches" of 86, unmentioned. Traced: `tools/ai_resume.py`'s
+     `THINK_WINDOWS` lacks rev 7's R1 window, so it offers no call at 0x005B0CDC where rev 7 logs `UnitGetRoom`; an interpreter window,
+     not the game. Said in the addendum; R1's `l` raise rests on `ai_model_check.py` and stands.
+  7. *Wrong anchor, row 336:* "skipped alone it fails" cited `entries.txt`, which prints no count; now "15 of 243",
+     `model-check-all84.txt` (`FLIP set c4|=0xE`).
+  8. *Bookkeeping splice:* the ready bullet for line 328 was cut mid-word (`` (`2.2 ``); completed.
+- **Checked and held:** the scope (237 at the draft, 241 after 0066 S1d, less Phase 1a's 30 to H1p = 211; the six batches sum to 211);
+  every one of the 22 whole entries of the ready list against its output: the 14 `l` lines (R1 82, R8 211, R142 131, R17 145, R18 47,
+  R25 193, R38 41, R116 739, R117 164, R122 320, R136 151, R137 81, R72 35, R54 316 fork-free, each 0 mismatches, floor met in
+  `entries.txt`; first-call outcome counts in `model-check-all84.txt`'s `SEP` lines for Phase 3's R43l form), the 7 `r` lines against
+  `h1.txt` (rows 7, 26, 49, 71, 95, 114, 124: all "met"; Phase 3 should carry row 71's "126 of 129" and row 114's "221 of 243 with a
+  call past the first" into H1's Narrowness column), and R10's status line (item 3). The sampled in-part rows 30, 32, 36, 60, 104,
+  106, 109, 146, 177, 407, 410, 467 hold against `ARM`/`FLIP`/`EDGE`. Judgment calls 1 (the floor of 30 on `l` lines and R43's init:
+  stricter than S1d, accepted), 3 (checker labels: accepted; a label Phase 3 cannot map to a block word stays `[I]`) and 4 (row 336:
+  accepted) are upheld; 2 is ruled the other way (item 4).
+- **Audit result:** no reject-grade miss. Item 1 is the miss a Tier B check is most likely to pass: the raise reads as a compare at
+  the call, and only the `EDGE` line shows one input value. Candidate rule for the reverser's review-fixes if seen again: a formula
+  or a range is raised only over the input values an output shows (`VALS`/`EDGE`), at least two of them.
+- **Ready list:** the lists in this log and in plan 0066's stand with items 1, 2, 3 and 5 (line 243 still split, narrower; line 3268
+  split, narrower; line 328 whole, Normal only; line 4688 split). Phase 3 takes the rows' text, which wins over the bullets.
+- **Gate:** green at the review commit. The review request stays open for the merge.

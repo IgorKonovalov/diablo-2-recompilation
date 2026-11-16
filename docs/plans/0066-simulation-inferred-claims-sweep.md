@@ -2066,4 +2066,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   and its inventory row): to `[C]` whole: 110 (R1), 248 (R7), 294 (R8), 328 (R10), 546 (R142), 574 (R17), 602 (R18), 836 (R25), 882 (R26), 1004 (R38), 1224 (R49), 1565 (R71), 1582 (R72), 3072 (R95), 3193 (R114), 3252 (R116), 3272 (R117), 3428 (R122), 3470 (R124), 3790 (R136), 3814 (R137), 4314 (R54). Split, the raised half `[C]` and the rest `[I]` as each row says: 104 (R1), 234 (R7), 243 (R7), 263 (R8), 288 (R8), 290 (R8), 311 (R10), 323 (R10), 341 (R11), 419 (R14), 526 (R142), 542 (R142), 560 (R17), 586 (R18), 735 (R25), 772 (R25), 780 (R25), 961 (R36), 976 (R36), 991 (R38), 1000 (R38), 1011 (R39), 1022 (R39), 1193 (R49), 1311 (R57), 1326 (R57), 1522 (R71), 1572 (R72), 1589 (R73), 1607 (R73), 3188 (R114), 3231 (R116), 3259 (R117), 3268 (R117), 3393 (R122), 3775 (R136), 3786 (R136), 3797 (R137), 3810 (R137), 4310 (R54), 4688 (Reimplementation). The `l` lines
   are rewritten as first-boundary lines (R43l's form), the `r` lines under H1 with the new counts; the block lines get a `[C]` bullet per
   block naming the logged paths, as at S1b. No symbol is raised.
+- **Review (Tier A, the audit sample, 2026-11-16):** accept with fixes, 8 (plan 0069's log). Rows 142, 143, 354, 355, 357, 462, 463
+  moved a-run → b (new batch H1r, deferred); line 243 (row 27) raised in part on "at full life the parameter is 0" only; line 3268
+  (row 345) without "whatever the distance"; line 328 (row 39) in Normal only. The ready list above stands otherwise.
 
