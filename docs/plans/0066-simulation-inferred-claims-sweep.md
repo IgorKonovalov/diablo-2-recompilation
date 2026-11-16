@@ -749,10 +749,10 @@ Targeted ruling on the three points the Tier B check left, not a full re-review.
 - **Contradictions** (Phase 3; backlog to the spec-writer):
   1. progression C4 (row 49): the first-join restore is per quest. Quest 13 restores b3 as `+0x0B` = 5 and quest 19
      does not restore on b4 (the 4 `MISMATCH` lines); as read, quest 13 maps b2 → (1, 2), b3 → (5, 5), b4 → (6, 5)
-     (0x0059D557–0x0059D5A3) ([backlog](../backlog/2026-11-15-reverser-spec-writer-plan-0066-s3a-contradictions.md)).
+     (0x0059D557–0x0059D5A3) ([backlog](../backlog/archive/2026-11-15-reverser-spec-writer-plan-0066-s3a-contradictions.md)).
   2. travel Outputs (row 86): an e3 follows every same-act level change (341 of 341) and none of the 87 act changes
      (40 by NPC, 47 by waypoint); progression word 4's "the e3 level-40 branch then finds state 7" is re-read with it
-     ([backlog](../backlog/2026-11-15-reverser-spec-writer-plan-0066-s3a-travel-e3.md)).
+     ([backlog](../backlog/archive/2026-11-15-reverser-spec-writer-plan-0066-s3a-travel-e3.md)).
   3. In part, found in part 2: word 37's entry levels (rows 270, 272): the code tests 113 or 114 for b3
      (0x00589DAB–0x00589DB3) and 121 to 124 for b14 (0x00589EBB–0x00589EC4); the logs met 113 (3) and 123 (2), the
      two levels the spec's lists drop (in the first backlog entry).
@@ -1754,7 +1754,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   warp into 132 before the opening, no gate line).
 - **None contradicted.** Refinements for Phase 3 (Radament's near-credit sites, Andariel's level-37 pass writing a
   credited killer again, two StepBits site owners) in backlog
-  [`2026-11-16-reverser-spec-writer-plan-0066-s3b-refinements`](../backlog/2026-11-16-reverser-spec-writer-plan-0066-s3b-refinements.md).
+  [`2026-11-16-reverser-spec-writer-plan-0066-s3b-refinements`](../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s3b-refinements.md).
 - **Symbols:** `sub_00544720_GameQuestSet` raised to `C` (518 logged writes, every one on the `QI1` game record, none
   on a player record) in `re/symbols.csv` (evidence moved to quests/0001), quests/0001's Functions table (row added)
   and items/0008's Functions table.
@@ -1807,7 +1807,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
 - **None contradicted. One correction:** row 229's "word 32 has one write" holds for the player record; the game
   record's word 32 also gets b13 from `A3Q7_FirstJoin` (`GameQuestSet(32, 13)`, 0x005BD2EE). Refinements (e3's direct
   raiser in `NpcActTravel`, the operate wrapper 0x00584540, the travel check's same-act test, `A2Q6_WrongTombMsg`) in
-  backlog [`2026-11-16-reverser-spec-writer-plan-0066-s3c-refinements`](../backlog/2026-11-16-reverser-spec-writer-plan-0066-s3c-refinements.md).
+  backlog [`2026-11-16-reverser-spec-writer-plan-0066-s3c-refinements`](../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s3c-refinements.md).
 - **Symbols:** none raised (rule 14 covers logged returns; this part is static).
 - **Totals** at `19edd04f` (`totals-s3c-p1.txt`, the 29 files' *Totals by class*): a-logs 625, a-run 341, b 448, c 390,
   c-emu 494, d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626; no class moved, so Phase 1 1 509, Phase 2 789, blocked
@@ -1864,7 +1864,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
 - **Corrections and refinements:** travel 32's "its later change to mode 2 draws again" was already superseded by
   quests/0002 § 15 (event 1 writes mode 2 directly, no draw). The game record's read side gains
   `QUESTS_SendGameRecord`'s `SaveBytes` (progression 19). Both are in backlog
-  [`2026-11-16-reverser-spec-writer-plan-0066-s3c-part2-refinements`](../backlog/2026-11-16-reverser-spec-writer-plan-0066-s3c-part2-refinements.md).
+  [`2026-11-16-reverser-spec-writer-plan-0066-s3c-part2-refinements`](../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s3c-part2-refinements.md).
 - **Symbols:** none raised (static).
 - **Totals** at `0f81e160` (`totals-s3c-p2.txt`, the 29 files' rows): a-logs 625, a-run 341, b 448, c 390, c-emu 494,
   d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626. No class moved, so Phase 1 is 1 509, Phase 2 789 and blocked 328
@@ -2540,3 +2540,47 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
 - **For the owner:** none. The 27 not-settled statements could be a later static batch (no pool entry in 23 of them);
   whether that is worth a batch is the architect's call.
 - **Review:** Tier B, [`2026-11-16-reverser-architect-review-plan-0066-s7e`](../backlog/archive/2026-11-16-reverser-architect-review-plan-0066-s7e.md), covering S7e whole.
+
+### 2026-11-16 — Phase 3, the quests cluster re-tagged (spec-writer, `lane/n66qr`)
+
+- **Done.** Branch from `main` `72f003c8`. No game, no Ghidra, no slot. Sources: the S3a, S3b and S3c entries above
+  with their Tier B checks and the S3b/S3c Tier A audit (rows 19 split, 179 scoped), the travel rows of S7e (19, 60)
+  with its Tier B check (`ffn` on 596 of 600 cases), the inventory files' *Route* cells and the six spec-writer entries.
+  Each raised statement carries its run or second-tool anchor and a link to the finding section that holds it:
+  quests/0001 § 18–§ 21, quests/0002 § 16–§ 18, run:2026-11-16-sweep2-s7e.
+- **Front matter:** quests/progression C 118 / I 322 / L 6 → **C 231 / I 272 / L 6**; quests/travel C 79 / I 88 / L 5 →
+  **C 118 / I 75 / L 5** (2 of the 88 `[I]` are plan 0063's, outside the inventory); quests/README C 11 / I 6 / L 2 →
+  **C 14 / I 5 / L 2**.
+- **Rows (414):** `[C]` whole 65 (progression 50, travel 14, README 1); split 86 (61, 23, 2); rewritten to the finding 2
+  (progression 49: C4's restore per quest, quests 13 and 19 `[C]`, the maps as read `[I]`; travel 86: quest event 3 is
+  dispatched for a level change within one act (341) and for none of the 87 act changes, the guard `[I]`); kept `[I]` 261
+  (H3a–H3f deferred, d-2c, d-none, not raised). The row lists are in each inventory file's *Phase 3* line; inventory
+  README § 6 records the tags per spec.
+- **Corrections applied (five entries closed):** S3a contradictions (C4; row 196's party gate; `ClearSteps` named by the
+  rewards it runs at, words 1, 20, 25, 35, and not 2, 4, 6, 9, 27, 37, which D7 now says too); S3a travel e3 (travel
+  Outputs and the reimplementation note "Move first, write second"; progression's e3 events row; word 4's
+  `TownLevelLeave` row loses "the e3 level-40 branch then finds state 7", that arrival being an act change); S3b
+  refinements (Radament's near-credit sites beside the party triple; Andariel's level pass rewriting a credited killer;
+  the A2Q1 and A4Q3 StepBits sites in their `NpcGate` functions); S3c refinements (game word 32's `GameQuestSet(32, 13)`;
+  e3's direct raiser in `NpcActTravel`; the operate wrapper 0x00584540; the travel check's act and position tests;
+  `A2Q6_WrongTombMsg`); S3c part 2 (A6's read side; travel C3's "draws again" was already gone with plan 0063, its table
+  half now `[C]`). The S7e refinements entry is annotated: item 3 (travel B1's sizes-and-steps bullet) taken, items 1 and
+  2 left for the path/frame cluster. `tools/backlog.py close` rewrote one link in findings/quests/0001 to the archived
+  entry.
+- **Also:** research-map rows of quests/progression and quests/travel rewritten whole; quests/README's evidence
+  paragraph names plan 0066's raises. wiki/quests is left with W4 and one wrong row (the events table's level change);
+  a refresh entry is filed ([entry](../backlog/2026-11-16-spec-writer-spec-writer-wiki-quests-refresh-after-plan-0066-quests-re.md)).
+- **Judgment calls for the review:** (1) travel B1's header (row 20) raised whole: S3a's remainder was routed to S7e,
+  which landed (`ffn`, sizes 0–4, steps 1–5, through both wrappers and directly); the header cites both. (2) Pseudocode
+  headers that cover more than the logs hold (travel A2, D2, E1, E2, G1, G3; progression A1) stay `[I]` with a `[C]` note
+  beside them, as the anim review accepted for M1/M4. (3) Four rows filed whole are split on a clause no kept output
+  tests: travel 78 ("no portal is exempt", G3's reading), progression 230 (the Dark Wanderer's spawn point), 254 ("No
+  draw"), 302 ("`+0xA4` stays 0"). (4) Two rows kept by their own routes are split because S3c raised their half in
+  another row (review-fixes 8): progression 43 (B4's forced list, row 37's remainder) and 227 (game word 32's b13 write,
+  row 229's correction). (5) The computed-class caveat (the Tier A ruling on row 179) is written inside the `[C]` sentence
+  as its scope, for progression 179 and README row 3, not as a separate `[I]`. (6) Travel row 22: the S7e scope bullet is
+  its `[C]` half, the callers' survey ("only the field end passes an `other`") its `[I]` remainder. (7) The Outputs
+  rewrite says "dispatched" event 3, since Warriv's act change calls quest object 6's event-3 slot directly (S3c), which
+  the S3a check's dispatch site does not see.
+- **Gate:** fast green (76 warnings, the W4s on wiki/quests the refresh entry answers); `--full` green.
+- **Review:** Tier A, [request](../backlog/2026-11-16-spec-writer-architect-review-plan-0066-phase-3-quests-cluster.md).

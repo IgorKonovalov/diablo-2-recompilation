@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, save/d2s, items/quest-drops, objects, monsters/spawn, monsters/special, quests/travel]
 consumed_by: [items/quest-drops, items/cube, objects, monsters/spawn, monsters/special, quests/travel, save/d2s]
-tags: {C: 118, I: 322, L: 6}
-updated: 2026-11-03
+tags: {C: 231, I: 272, L: 6}
+updated: 2026-11-16
 ---
 
 # Quest progression: the record, the events, every quest's bits and the quest draws
@@ -29,13 +29,13 @@ dialogue line the client reports) is an input; what the server does with it is s
 | an NPC talk starts / ends (e0 / e2) | `sub_00572C10_NpcInteractStart` / `sub_00572F20_NpcInteractRemove` → `QUESTS_DispatchEvent` | [C] (fn:QUESTS_DispatchEvent@0x005438E0, run:2026-10-17-quests) |
 | the client reports a dialogue message (packet `0x31`, 9 bytes) (e11) | `sub_0054BA90_Pkt31NpcMessage` → `QUESTS_RaiseNpcMessage` | [C] (fn:QUESTS_RaiseNpcMessage@0x005443B0, run:2026-10-17-quests) |
 | the player's room changes level (e3) | `sub_005380D0_ClientRoomSync`, and a portal use from a town | [C] (fn:sub_005380D0_ClientRoomSync@0x005380D0, run:2026-10-17-quests) |
-| an item is placed / dropped (e4 / e5) | `0x00543D80` (7 sites) / `0x00543DB0` → `QUESTS_DispatchUnitEvent` | [I] (fn:QUESTS_DispatchUnitEvent@0x005439A0) |
-| a hooked monster dies (e8) | `sub_0057CCB0_UnitKilled` → `QUESTS_MonsterDeathEvent` | [I] (fn:QUESTS_MonsterDeathEvent@0x00543A30) |
-| a player leaves (e9 per quest item carried, then e10) | `sub_00543BD0_QuestsInvItemEvent` | [I] (fn:sub_00543BD0_QuestsInvItemEvent@0x00543BD0) |
+| an item is placed / dropped (e4 / e5) | `0x00543D80` (7 sites) / `0x00543DB0` → `QUESTS_DispatchUnitEvent` | [C] the raisers' 7 callers (0x0053149C, 0x00531627, 0x0055D0AD, 0x005601C0, 0x00563130, 0x005636F0, 0x0057F9C3) and 1 caller (0x00558B26), each into the dispatch with event 4 / 5, three tools agreeing (fn:QUESTS_DispatchUnitEvent@0x005439A0, [quests/0001 § 20](../../findings/quests/0001-progression.md#20-plan-0066-batch-s3c-part-1-second-tool-reference-argument-and-table-scans-2026-11-16-lanen66p)) |
+| a hooked monster dies (e8) | `sub_0057CCB0_UnitKilled` → `QUESTS_MonsterDeathEvent` | [C] its one caller, 0x0057CDD9 in `UnitKilled`, three tools agreeing (fn:QUESTS_MonsterDeathEvent@0x00543A30, [quests/0001 § 20](../../findings/quests/0001-progression.md#20-plan-0066-batch-s3c-part-1-second-tool-reference-argument-and-table-scans-2026-11-16-lanen66p)) |
+| a player leaves (e9 per quest item carried, then e10) | `sub_00543BD0_QuestsInvItemEvent` | [C] each of the 3 logged leaves raised one e10, dispatched at 0x00543CA2 (run:2026-10-27-sweep-quest-npc, [quests/0001 § 19](../../findings/quests/0001-progression.md#19-plan-0066-batch-s3b-kill-step-and-service-step-rules-over-the-kept-questsgdb-logs-2026-11-16-lanen66p)); [I] the e9 per quest item and its order before e10: no leave carried one (fn:sub_00543BD0_QuestsInvItemEvent@0x00543BD0) |
 | a player joins (e13 first, e14 later) | `sub_00546270_QuestsPlayerJoin` | [C] (fn:sub_00546270_QuestsPlayerJoin@0x00546270, run:2026-10-17-quests) |
-| every 20th game frame | `QUESTS_TimersRun` from `sub_0052D870_GameTick` | [I] (fn:QUESTS_TimersRun@0x00543E10, fn:sub_0052D870_GameTick@0x0052D870) |
-| a quest object is operated, or its timed object event 7 fires | `g_ObjOperateFns[OperateFn]`, `QUESTS_ObjectEvent` | [I] (data:g_ObjOperateFns@0x00732D18, fn:QUESTS_ObjectEvent@0x005449E0) |
-| an NPC menu service (imbue, socket, personalise, Hell respec, travel) | `NPC_MenuAction` | [I] (fn:NPC_MenuAction@0x00579D60) |
+| every 20th game frame | `QUESTS_TimersRun` from `sub_0052D870_GameTick` | [C] the pass's one caller is the call at 0x0052D920 (two tools, no absolute reference); the 14 logged timer lines give tick = frame // 20 and the 7 runs fall on frames with frame mod 20 = 0 (fn:QUESTS_TimersRun@0x00543E10, fn:sub_0052D870_GameTick@0x0052D870, run:2026-10-19-quests3, [quests/0001 § 18](../../findings/quests/0001-progression.md#18-plan-0066-batch-s3a-the-kept-quest-logs-re-checked-2026-11-15-lanen66g)) |
+| a quest object is operated, or its timed object event 7 fires | `g_ObjOperateFns[OperateFn]`, `QUESTS_ObjectEvent` | [C] `OBJ_OperateDispatch` calls the slot (0x0058450E; objdump and r2), 10 logged operates reached their slot's function, and event 7 came 19 times through 0x00586B19 into `QUESTS_ObjectEvent` (data:g_ObjOperateFns@0x00732D18, fn:QUESTS_ObjectEvent@0x005449E0, run:2026-10-27-sweep-quest-items, [quests/0001 § 19](../../findings/quests/0001-progression.md#19-plan-0066-batch-s3b-kill-step-and-service-step-rules-over-the-kept-questsgdb-logs-2026-11-16-lanen66p)) |
+| an NPC menu service (imbue, socket, personalise, Hell respec, travel) | `NPC_MenuAction` | [C] `ImbueDone`, `RespecDone`, `SocketDone` and `PersonalizeDone` each have one call, inside `NPC_MenuAction`; `NpcTravelMove` has four there and one in the Harrogath portal's operate (0x005B598F); three tools agreeing (fn:NPC_MenuAction@0x00579D60, [quests/0001 § 20](../../findings/quests/0001-progression.md#20-plan-0066-batch-s3c-part-1-second-tool-reference-argument-and-table-scans-2026-11-16-lanen66p)) |
 | the client opens a quest-log entry (packet `0x58`) | `sub_0054C9C0_Pkt58QuestSeen` | [C] (fn:sub_0054C9C0_Pkt58QuestSeen@0x0054C9C0, run:2026-10-17-quests) |
 
 ## Inputs
@@ -69,9 +69,9 @@ Not a table: `data:g_QuestDescs@0x00731510` (37 rows of 0x18 bytes, count at `0x
 
 | Name | Value | Anchor | Tag |
 |---|---|---|---|
-| quest objects | 37 main-table + 4 NPC-introduction objects (ids 37–40) | data:g_QuestDescs@0x00731510 | [I] |
+| quest objects | 37 main-table + 4 NPC-introduction objects (ids 37–40) | data:g_QuestDescs@0x00731510 | [C] 41, ids 0 to 40, in each of the 54 logged games' first object list; ids 37 to 40 carry word 42 and acts I, II, III and V (run:2026-10-17-quests, [quests/0001 § 18](../../findings/quests/0001-progression.md#18-plan-0066-batch-s3a-the-kept-quest-logs-re-checked-2026-11-15-lanen66g)); [I] their NPC-introduction role (§ Act I, Act II, Act III and Act V rows) |
 | record words | 48 per record; words 0–41 under the loader rule, 42–47 copied | fn:QUESTRECORD_LoadBytes@0x0065C4D0 | [C] (run:2026-10-18-quests2) |
-| timer cadence | every 20th frame (`frame mod 20 = 0`) | fn:sub_0052D870_GameTick@0x0052D870 0x0052D912–0x0052D920 | [I] |
+| timer cadence | every 20th frame (`frame mod 20 = 0`) | fn:sub_0052D870_GameTick@0x0052D870 0x0052D912–0x0052D920 | [C] (the pass adds 1 to the tick (0x00543E2D) and has one caller, 0x0052D920; logged tick = frame // 20 at frames 567 to 7 500, runs on frame mod 20 = 0; run:2026-10-19-quests3, [quests/0001 § 18](../../findings/quests/0001-progression.md#18-plan-0066-batch-s3a-the-kept-quest-logs-re-checked-2026-11-15-lanen66g)) |
 | LCG multiplier | `0x6AC690C5` ([rng](../rng/README.md) step 1) | fn:RNG_Step@0x0045C370 | [C] (run:2026-10-11-rng-emu) |
 
 ### Inputs and oracles
@@ -132,16 +132,19 @@ A5. Packet 0x58 {u16 q}: if q < 42: SetState(rec, q, 12)            [C] (fn:sub_
 
 | bit | meaning in the code | set by | cleared by | Tag |
 |---|---|---|---|---|
-| 0 | done (reward taken, or no reward) | the reward message or the completing event | only word 9's first-join check | [I] (fn:QUESTRECORD_SetState@0x0065C360, 0x0059927F) |
-| 1 | done in a game, reward not yet taken | the completing event (`QUESTS_ListSetPending` sets 13 and 1 together) | the reward | [I] (fn:QUESTS_ListSetPending@0x005455F0) |
-| 2–11 | log steps (quest-log progress) | each quest's StepBits by log state | `ClearSteps` at most rewards | [I] (fn:QUESTRECORD_ClearSteps@0x0065C3E0) |
+| 0 | done (reward taken, or no reward) | the reward message or the completing event | only word 9's first-join check | [C] of the 46 `ClearState` calls, one clears bit 0: 0x0059927F, word 9 (`A2Q1_FirstJoin`), two walkers agreeing; scope: writes through the record functions, the loader's rule being A3 (fn:QUESTRECORD_SetState@0x0065C360, 0x0059927F, [quests/0001 § 20](../../findings/quests/0001-progression.md#20-plan-0066-batch-s3c-part-1-second-tool-reference-argument-and-table-scans-2026-11-16-lanen66p)) |
+| 1 | done in a game, reward not yet taken | the completing event (`QUESTS_ListSetPending` sets 13 and 1 together) | the reward | [C] `ListSetPending` wrote bit 13 then bit 1 back to back (0x0054565C, 0x00545665) at the Den of Evil's logged completion, its only caller being 0x00590387; the reward clears bit 1 and sets bit 0 (the 65 logged service rewards, § F) (fn:QUESTS_ListSetPending@0x005455F0, run:2026-10-20-two-clients, [quests/0001 § 19](../../findings/quests/0001-progression.md#19-plan-0066-batch-s3b-kill-step-and-service-step-rules-over-the-kept-questsgdb-logs-2026-11-16-lanen66p)) |
+| 2–11 | log steps (quest-log progress) | each quest's StepBits by log state | `ClearSteps` at the rewards of words 1, 20, 25 and 35 among the logged rewards, not at those of words 2, 4, 6, 9, 27 and 37 | [C] for where `ClearSteps` runs (fn:QUESTRECORD_ClearSteps@0x0065C3E0, run:2026-10-18-quests2, [quests/0001 § 18](../../findings/quests/0001-progression.md#18-plan-0066-batch-s3a-the-kept-quest-logs-re-checked-2026-11-15-lanen66g)); [I] for the setters by log state (§ D) |
 | 12 | the quest-log entry was seen | packet `0x58` | never | [C] (fn:sub_0054C9C0_Pkt58QuestSeen@0x0054C9C0, run:2026-10-17-quests) |
 | 13 | done in this game | with bit 1 or bit 0 | the loader | [C] (fn:QUESTRECORD_LoadBytes@0x0065C4D0, run:2026-10-18-quests2) |
 | 14 | failed in this game (another player finished it) | each quest's FailOthers | the loader; word 11 at 0x0059AAB7 | [C] for the loader (run:2026-10-18-quests2); [I] for the writers (0x0059AAB7) |
-| 15 | reward pending from an earlier game | the loader, from a saved bit 1; in the game record, the join | word 9's first-join check (0x00599293) | [C] for the loader (run:2026-10-18-quests2); [I] for word 9 (0x00599293) |
+| 15 | reward pending from an earlier game | the loader, from a saved bit 1; in the game record, the join | word 9's first-join check (0x00599293) | [C] for the loader (run:2026-10-18-quests2); [C] for word 9: its first join cleared bits 0, 1, 15 and 5 (0x0059927F–0x0059929D) exactly when the joiner had bits 0 and 5 and no `ass ` (of the 3 logged joins with bits 0 and 5, the 2 without `ass ` cleared and the one holding it did not; none of the 51 others cleared) (0x00599293, run:2026-10-19-quests3, [quests/0001 § 18](../../findings/quests/0001-progression.md#18-plan-0066-batch-s3a-the-kept-quest-logs-re-checked-2026-11-15-lanen66g)) |
 
 Step notes:
 
+- A1. [C] `SetState` and `ClearState` set or clear bit *s* of word *q*: in 430 logged `SetState` and 38 `ClearState`
+  calls the next write's old word is the one predicted (389 and 17 of them changed the word).
+  (fn:QUESTRECORD_SetState@0x0065C360, fn:QUESTRECORD_ClearState@0x0065C3A0, run:2026-10-18-quests2, [quests/0001 § 18](../../findings/quests/0001-progression.md#18-plan-0066-batch-s3a-the-kept-quest-logs-re-checked-2026-11-15-lanen66g))
 - A2. [C] `ClearSteps` clears bits 2–11 with `BITFIELD_Clear` and calls no `QUESTRECORD_ClearState`; the saved words match
   only with it applied. (fn:QUESTRECORD_ClearSteps@0x0065C3E0, run:2026-10-18-quests2)
 - A3. [C] The join's logged record equalled the loader rule's in all 16 compared sessions, for all three records.
@@ -153,15 +156,26 @@ Step notes:
 - A5. [C] The handler tests nothing but `q < 42`: 53 packets set bit 12 of the word named, for the 26 words the stock
   client's quest log shows (words 1–6, 10–14, 17–22, 25–27, 35–40). Word 33 has no quest-log entry, so the stock client
   never sends it. (fn:sub_0054C9C0_Pkt58QuestSeen@0x0054C9C0, run:2026-10-17-quests)
-- A6. [I] **The game record** has the same shape. It is written only through `GameQuestSet` (and the join, § C) and read
-  through `GameQuestGet`, both fatal before the first join. Bit 13 of word *w* marks "this game's step done" for that
-  quest (set at the same event as the players' bits), bit 15 "the creator had it done" (§ C), and word 4 bit 11 "the cow
-  portal was opened". It is sent to the clients after every NPC message. (fn:sub_00544720_GameQuestSet@0x00544720,
-  fn:sub_00544760_GameQuestGet@0x00544760, fn:QUESTS_SendGameRecord@0x00544520)
-- A7. [I] Words written by no quest object as its own word: 7, 15, 23, 28 (the act-travel words, [quests/travel § E](travel.md#e-act-change-through-an-npc)),
+- A6. [C] **The game record** has the same shape. It is written only by `QUESTRECORD_SetState` from `GameQuestSet`
+  (0x00544757) and from the join (0x00546339, § C): a control-flow taint from each of the 53 loads of the quest control
+  (`game +0x10F4`, 55 sites agreeing three ways) into callees to depth 3 finds no other write. It is read through
+  `GameQuestGet` (0x00544797) and, whole, by `QUESTS_SendGameRecord`, which serialises it with `QUESTRECORD_SaveBytes`
+  (0x0054456E); the quest objects' log-state callbacks are handed it as stack argument 1 and never read it.
+  (fn:sub_00544720_GameQuestSet@0x00544720, fn:sub_00544760_GameQuestGet@0x00544760, fn:QUESTS_SendGameRecord@0x00544520,
+  fn:sub_00546270_QuestsPlayerJoin@0x00546270, [quests/0001 § 21](../../findings/quests/0001-progression.md#21-plan-0066-batch-s3c-part-2-the-game-records-data-flow-the-placement-scans-with-a-second-parser-2026-11-16-lanen66p))
+- A6. [I] Both `GameQuestSet` and `GameQuestGet` are fatal before the first join. Bit 13 of word *w* marks "this game's
+  step done" for that quest (set at the same event as the players' bits), bit 15 "the creator had it done" (§ C), and
+  word 4 bit 11 "the cow portal was opened". It is sent to the clients after every NPC message.
+  (fn:sub_00544720_GameQuestSet@0x00544720 0x00544729, fn:QUESTS_SendGameRecord@0x00544520)
+- A7. [C] Words written by no quest object as its own word: 7, 15, 23, 28 (the act-travel words, [quests/travel § E](travel.md#e-act-change-through-an-npc)),
   34, 41 (the Hell respec, written by quest object 1's scripts as their second word, § Word 41), 42 (carried by the
-  introduction objects, never written); 43–47 are never addressed. No quest script writes word 33 (only packet `0x58` could). (fn:QUESTRECORD_SetState@0x0065C360,
-  data:g_QuestDescs@0x00731510)
+  introduction objects, never written); 43–47 are never addressed. No quest script writes word 33 (only packet `0x58` could).
+  By immediate word over the 332 `SetState`, 46 `ClearState`, 12 `ClearSteps` and 40 `GameQuestSet` calls (two walkers
+  agreeing): 7 and 15 only by `NpcActTravel`, 23 only by `DuranceActTravel`, 28 by `NpcActTravel` and the Harrogath
+  portal's operate (quest object 23's script, as a second word), 41 only by quest object 1's scripts, 33, 34 and 42–47 by
+  none; the 50 writes whose word is not an immediate take `[obj+0xE0]`, `[obj+0xE4]`, an argument, packet `0x58`'s word
+  or the join's descriptor word, none in an object-29 script. (fn:QUESTRECORD_SetState@0x0065C360,
+  data:g_QuestDescs@0x00731510, [quests/0001 § 20](../../findings/quests/0001-progression.md#20-plan-0066-batch-s3c-part-1-second-tool-reference-argument-and-table-scans-2026-11-16-lanen66p))
 
 ### B. Events and dispatch
 
@@ -169,22 +183,26 @@ Step notes:
 
 | row | quest object | act | word (`+0xE0`) | init | Tag |
 |---|---|---|---|---|---|
-| 0 | 0 | I | 0 | `0x0058FB80` | [I] (data:g_QuestDescs@0x00731510) |
-| 1–6 | 1–6 | I | 1–6 | `0x00590720`, `0x00591210`, `0x00591F70`, `0x005971B0`, `0x00595920`, `0x00596990` | [I] (data:g_QuestDescs@0x00731510) |
+| 0 | 0 | I | 0 | `0x0058FB80` | [C] (data:g_QuestDescs@0x00731510, read from the image and by r2 with each init's `+0xE0` store; [quests/0001 § 20](../../findings/quests/0001-progression.md#20-plan-0066-batch-s3c-part-1-second-tool-reference-argument-and-table-scans-2026-11-16-lanen66p)) |
+| 1–6 | 1–6 | I | 1–6 | `0x00590720`, `0x00591210`, `0x00591F70`, `0x005971B0`, `0x00595920`, `0x00596990` | [C] (data:g_QuestDescs@0x00731510, read from the image and by r2 with each init's `+0xE0` store; [quests/0001 § 20](../../findings/quests/0001-progression.md#20-plan-0066-batch-s3c-part-1-second-tool-reference-argument-and-table-scans-2026-11-16-lanen66p)) |
 | 7 | 30 | I | 29 (descriptor word 41) | `0x00596C40` | [C] (run:2026-10-18-quests2, 0x00596C7E) |
-| 8 | 7 | II | 8 | `0x00598810` | [I] (data:g_QuestDescs@0x00731510) |
-| 9–14 | 8–13 | II | 9–14 | `0x00599340`, `0x0059EB00`, `0x0059EEA0`, `0x0059F2A0`, `0x0059C280`, `0x0059D5B0` | [I] (data:g_QuestDescs@0x00731510) |
-| 15, 16 | 26, 27 | II | 30, 31 | `0x0059E330`, `0x0059E530` | [I] (data:g_QuestDescs@0x00731510) |
-| 17 | 14 | III | 16 | `0x005B7010` | [I] (data:g_QuestDescs@0x00731510) |
-| 18–23 | 15–20 | III | 17–22 | `0x005B7E90`, `0x005BDA30`, `0x005B9850`, `0x005BAA70`, `0x005BBEB0`, `0x005BCDC0` | [I] (data:g_QuestDescs@0x00731510) |
-| 24 | 28 | III | 16 in `+0xE0`; the code uses word 32 | `0x005BD300` | [I] (0x005BD368) |
-| 25 | 21 | IV | 24 | `0x005B3780` | [I] (data:g_QuestDescs@0x00731510) |
-| 26–28 | 22–24 | IV | 25–27 | `0x005B42B0`, `0x005B54C0`, `0x005B6610` | [I] (data:g_QuestDescs@0x00731510) |
+| 8 | 7 | II | 8 | `0x00598810` | [C] (data:g_QuestDescs@0x00731510, read from the image and by r2 with each init's `+0xE0` store; [quests/0001 § 20](../../findings/quests/0001-progression.md#20-plan-0066-batch-s3c-part-1-second-tool-reference-argument-and-table-scans-2026-11-16-lanen66p)) |
+| 9–14 | 8–13 | II | 9–14 | `0x00599340`, `0x0059EB00`, `0x0059EEA0`, `0x0059F2A0`, `0x0059C280`, `0x0059D5B0` | [C] (data:g_QuestDescs@0x00731510, read from the image and by r2 with each init's `+0xE0` store; [quests/0001 § 20](../../findings/quests/0001-progression.md#20-plan-0066-batch-s3c-part-1-second-tool-reference-argument-and-table-scans-2026-11-16-lanen66p)) |
+| 15, 16 | 26, 27 | II | 30, 31 | `0x0059E330`, `0x0059E530` | [C] (data:g_QuestDescs@0x00731510, read from the image and by r2 with each init's `+0xE0` store; [quests/0001 § 20](../../findings/quests/0001-progression.md#20-plan-0066-batch-s3c-part-1-second-tool-reference-argument-and-table-scans-2026-11-16-lanen66p)) |
+| 17 | 14 | III | 16 | `0x005B7010` | [C] (data:g_QuestDescs@0x00731510, read from the image and by r2 with each init's `+0xE0` store; [quests/0001 § 20](../../findings/quests/0001-progression.md#20-plan-0066-batch-s3c-part-1-second-tool-reference-argument-and-table-scans-2026-11-16-lanen66p)) |
+| 18–23 | 15–20 | III | 17–22 | `0x005B7E90`, `0x005BDA30`, `0x005B9850`, `0x005BAA70`, `0x005BBEB0`, `0x005BCDC0` | [C] (data:g_QuestDescs@0x00731510, read from the image and by r2 with each init's `+0xE0` store; [quests/0001 § 20](../../findings/quests/0001-progression.md#20-plan-0066-batch-s3c-part-1-second-tool-reference-argument-and-table-scans-2026-11-16-lanen66p)) |
+| 24 | 28 | III | 16 in `+0xE0`; the code uses word 32 | `0x005BD300` | [C] (0x005BD368 stores 16 against descriptor word 32; no A3Q7 record call takes `[obj+0xE0]`, its word-32 calls are immediates; [quests/0001 § 20](../../findings/quests/0001-progression.md#20-plan-0066-batch-s3c-part-1-second-tool-reference-argument-and-table-scans-2026-11-16-lanen66p)) |
+| 25 | 21 | IV | 24 | `0x005B3780` | [C] (data:g_QuestDescs@0x00731510, read from the image and by r2 with each init's `+0xE0` store; [quests/0001 § 20](../../findings/quests/0001-progression.md#20-plan-0066-batch-s3c-part-1-second-tool-reference-argument-and-table-scans-2026-11-16-lanen66p)) |
+| 26–28 | 22–24 | IV | 25–27 | `0x005B42B0`, `0x005B54C0`, `0x005B6610` | [C] (data:g_QuestDescs@0x00731510, read from the image and by r2 with each init's `+0xE0` store; [quests/0001 § 20](../../findings/quests/0001-progression.md#20-plan-0066-batch-s3c-part-1-second-tool-reference-argument-and-table-scans-2026-11-16-lanen66p)) |
 | 29 | 25 | I | 29 | `0x00596C40` | [C] (run:2026-10-18-quests2, 0x00596C7E) |
-| 30 | 29 | IV | 33 | `0x005B6A70` | [I] (data:g_QuestDescs@0x00731510) |
-| 31–36 | 31–36 | V | 35–40 | `0x005876E0`, `0x00588510`, `0x0058A410`, `0x0058BB20`, `0x0058CE30`, `0x0058E500` | [I] (data:g_QuestDescs@0x00731510) |
-| second table | 37, 38, 39, 40 | I, II, III, V | 42, never written | `0x0058FA20`, `0x005985D0`, `0x005B6E60`, `0x0058EA50` | [I] (0x0073188C) |
+| 30 | 29 | IV | 33 | `0x005B6A70` | [C] (data:g_QuestDescs@0x00731510, read from the image and by r2 with each init's `+0xE0` store; [quests/0001 § 20](../../findings/quests/0001-progression.md#20-plan-0066-batch-s3c-part-1-second-tool-reference-argument-and-table-scans-2026-11-16-lanen66p)) |
+| 31–36 | 31–36 | V | 35–40 | `0x005876E0`, `0x00588510`, `0x0058A410`, `0x0058BB20`, `0x0058CE30`, `0x0058E500` | [C] (data:g_QuestDescs@0x00731510, read from the image and by r2 with each init's `+0xE0` store; [quests/0001 § 20](../../findings/quests/0001-progression.md#20-plan-0066-batch-s3c-part-1-second-tool-reference-argument-and-table-scans-2026-11-16-lanen66p)) |
+| second table | 37, 38, 39, 40 | I, II, III, V | 42, never written | `0x0058FA20`, `0x005985D0`, `0x005B6E60`, `0x0058EA50` | [C] (0x0073188C, count 4 at 0x007318AC; each init stores `+0xE0` = 42; no record call writes word 42; [quests/0001 § 20](../../findings/quests/0001-progression.md#20-plan-0066-batch-s3c-part-1-second-tool-reference-argument-and-table-scans-2026-11-16-lanen66p)) |
 
+- B1. [C] In each of the 54 logged games the join's first list runs 40, 39, 38, 37, then the main rows from the last to
+  row 0; main objects enter it with `+0x09` = `+0x0A` = 1, the second table's with `+0x09` = 0, `+0x0A` = 1; `+0xE0` is
+  29 for rows 7 and 29 and 16 for row 24, the only rows whose `+0xE0` is not the descriptor word (the init stores, read
+  three ways, agree). (fn:QUESTS_InitGame@0x00545D80, run:2026-10-17-quests, [quests/0001 § 18](../../findings/quests/0001-progression.md#18-plan-0066-batch-s3a-the-kept-quest-logs-re-checked-2026-11-15-lanen66g), [quests/0001 § 20](../../findings/quests/0001-progression.md#20-plan-0066-batch-s3c-part-1-second-tool-reference-argument-and-table-scans-2026-11-16-lanen66p))
 - B1. [I] `QUESTS_InitGame` builds one object per main-table row, then one per second-table row (ids 37–40), each linked
   at the head, so **the list runs from quest object 40 down to row 0's object**. Main-table objects start active
   (`+0x09` = 1); second-table ones start with `+0x09` = 0 and `+0x0A` = 1. Each init fills its callbacks, `+0xE0`,
@@ -198,12 +216,12 @@ Step notes:
 |---|---|---|---|---|---|
 | e0 talk start | `+0xA0` | `NpcInteractStart`; re-dispatched by quest scripts (`QUESTS_RedispatchNpcTalk`, which then sends the game record) | all quests, forced, act filter | `+0x08` NPC, `+0x0C` player | [C] (fn:QUESTS_DispatchEvent@0x005438E0, run:2026-10-17-quests) |
 | e2 talk end | `+0xA8` | `NpcInteractRemove` | all, forced, act filter | `+0x08` NPC | [C] (run:2026-10-17-quests) |
-| e3 level change | `+0xAC` | room sync; the portal operate from a town | all, forced, any act | `+0x0C` player, `+0x14` level left, `+0x18` level entered | [C] (fn:sub_005380D0_ClientRoomSync@0x005380D0, run:2026-10-17-quests) |
-| e4 item placed | `+0xB0` | 7 sites | the item's hooks, unforced | `+0x08` item, `+0x0C` player | [I] (0x00543D80) |
-| e5 item dropped | `+0xB4` | `0x00558AA0` | the item's hooks, unforced | `+0x08` item | [I] (0x00543DB0) |
-| e8 hooked death | `+0xC0` | `QUESTS_MonsterDeathEvent` after the drop | the monster's hooks; forced for a fixed list | `+0x08` monster, `+0x0C` killer player | [I] (fn:QUESTS_MonsterDeathEvent@0x00543A30) |
-| e9 quest item of a leaving player | `+0xC4` | client removal | that item's quest (`Misc.quest` − 1), direct call | `+0x08` item, `+0x0C` player | [I] (fn:sub_00543BD0_QuestsInvItemEvent@0x00543BD0) |
-| e10 player leaves | `+0xC8` | the same, after the item loop | all, forced, any act | `+0x0C` player | [I] (0x00543C96) |
+| e3 level change | `+0xAC` | room sync, for a level change within one act ([quests/travel § Outputs](travel.md#outputs)); the portal operate from a town; `NpcActTravel`'s Warriv branch calls quest object 6's slot directly | all, forced, any act (the direct call: quest 6 only) | `+0x0C` player, `+0x14` level left, `+0x18` level entered | [C] (fn:sub_005380D0_ClientRoomSync@0x005380D0, run:2026-10-17-quests; the direct call at 0x00546A22–0x00546AA3, fn:sub_005467E0_NpcActTravel@0x005467E0, [quests/0001 § 20](../../findings/quests/0001-progression.md#20-plan-0066-batch-s3c-part-1-second-tool-reference-argument-and-table-scans-2026-11-16-lanen66p)) |
+| e4 item placed | `+0xB0` | 7 sites | the item's hooks, unforced | `+0x08` item, `+0x0C` player | [C] the 7 callers of 0x00543D80 and event 4 at block `+0x04` (0x00543D92), three tools agreeing ([quests/0001 § 20](../../findings/quests/0001-progression.md#20-plan-0066-batch-s3c-part-1-second-tool-reference-argument-and-table-scans-2026-11-16-lanen66p)); e4 pushes force 0 (7 logged, return 0x00543DA4; run:2026-10-18-quests2, [quests/0001 § 18](../../findings/quests/0001-progression.md#18-plan-0066-batch-s3a-the-kept-quest-logs-re-checked-2026-11-15-lanen66g)) |
+| e5 item dropped | `+0xB4` | `0x00558AA0` | the item's hooks, unforced | `+0x08` item | [C] one caller of 0x00543DB0, 0x00558B26 in `ItemPlaceOnGround`, event 5 (0x00543DC2) ([quests/0001 § 20](../../findings/quests/0001-progression.md#20-plan-0066-batch-s3c-part-1-second-tool-reference-argument-and-table-scans-2026-11-16-lanen66p)) |
+| e8 hooked death | `+0xC0` | `QUESTS_MonsterDeathEvent` after the drop | the monster's hooks; forced for a fixed list | `+0x08` monster, `+0x0C` killer player | [C] the only raiser of event 8 (0x00543B33, 0x00543B52), one caller 0x0057CDD9, which follows `MonSetMode` (0x0057CDC4) with no branch entering between; the list's class and superunique tests read alike by objdump and r2 (B4) (fn:QUESTS_MonsterDeathEvent@0x00543A30, [quests/0001 § 20](../../findings/quests/0001-progression.md#20-plan-0066-batch-s3c-part-1-second-tool-reference-argument-and-table-scans-2026-11-16-lanen66p), [quests/0001 § 21](../../findings/quests/0001-progression.md#21-plan-0066-batch-s3c-part-2-the-game-records-data-flow-the-placement-scans-with-a-second-parser-2026-11-16-lanen66p)) |
+| e9 quest item of a leaving player | `+0xC4` | client removal | that item's quest (`Misc.quest` − 1), direct call | `+0x08` item, `+0x0C` player | [C] `QuestsInvItemEvent` calls the item's quest's `+0xC4` slot itself (0x00543C7C, `call eax` 0x00543C87); its one caller is `ClientRemove` (0x0053A088) (fn:sub_00543BD0_QuestsInvItemEvent@0x00543BD0, [quests/0001 § 20](../../findings/quests/0001-progression.md#20-plan-0066-batch-s3c-part-1-second-tool-reference-argument-and-table-scans-2026-11-16-lanen66p)) |
+| e10 player leaves | `+0xC8` | the same, after the item loop | all, forced, any act | `+0x0C` player | [C] all, forced, any act: 32 logged e10s, dispatched from 0x00543CA2 with force 1 and act filter 0, ran every object with its slot set in list order (run:2026-10-18-quests2, [quests/0001 § 18](../../findings/quests/0001-progression.md#18-plan-0066-batch-s3a-the-kept-quest-logs-re-checked-2026-11-15-lanen66g)); [I] "after the item loop" (no leaving player held a quest item) and the block's `+0x0C` (0x00543C96) |
 | e11 NPC message | `+0xCC` | packet `0x31` `{u32 npc id, u16 message}` | all, forced, act filter | `+0x08` NPC, `+0x0C` player, `+0x14` NPC class, `+0x18` u16 message | [C] (fn:QUESTS_RaiseNpcMessage@0x005443B0, run:2026-10-17-quests) |
 | e13 first join / e14 later join | `+0xD4` / `+0xD8` | `QuestsPlayerJoin`, direct | every quest | the player | [C] (fn:sub_00546270_QuestsPlayerJoin@0x00546270, run:2026-10-17-quests) |
 
@@ -237,19 +255,25 @@ Step notes:
   and e11 pushes force 1 (4631 callbacks of switched-off quests ran). The unforced half (a `+0x0A` = 0 quest skipped by
   e4, e5 and e8 outside the forced list) was not logged and stays `[I]`. (fn:QUESTS_DispatchEvent@0x005438E0
   0x00543934–0x0054393E, 0x00543D2A, 0x00543D5C, 0x00543BA2, 0x005443FA, run:2026-10-17-quests)
-- B2. [I] e10 (0x00543C96) and the re-dispatched e0 (0x005457BF) also push force 1; e4 and e5 push force 0 (0x00543D8A).
-  (fn:QUESTS_DispatchEvent@0x005438E0)
-- B4. [I] **Forced deaths.** `QUESTS_MonsterDeathEvent` forces the dispatch when the dead monster is a superunique whose
-  row's `+0x08` index is 26, 27, 29, 36–39, 42–45 or 60, or its class is 242, 243, 391 or 544; other hooked deaths reach
-  only quests with `+0x0A` = 1. A pet or hireling killer is first resolved to its owner (`0x0058F090`), and in a game of
+- B2. [C] e10 (0x00543C96) and the re-dispatched e0 (0x005457BF) also push force 1, and e4 pushes force 0 (0x00543D8A):
+  32 e10s, 28 re-dispatched e0s (each after an e11 inside its talk) and 7 e4s logged. (fn:QUESTS_DispatchEvent@0x005438E0,
+  run:2026-10-18-quests2, [quests/0001 § 18](../../findings/quests/0001-progression.md#18-plan-0066-batch-s3a-the-kept-quest-logs-re-checked-2026-11-15-lanen66g))
+- B2. [I] e5 pushes force 0 too; no e5 was logged. (fn:QUESTS_DispatchEvent@0x005438E0)
+- B4. [C] **Forced deaths.** `QUESTS_MonsterDeathEvent` forces the dispatch when the dead monster is a superunique whose
+  row's `+0x08` index is 26, 27, 29, 36–39, 42–45 or 60, or its class is 242, 243, 391 or 544: the four compares at
+  0x00543B12–0x00543B4B and the switch over index − 26 (byte table 0x00543B68), read alike by objdump and r2; the
+  `+0x08` index equals the row index in all 66 SuperUniques records. (fn:QUESTS_MonsterDeathEvent@0x00543A30, [quests/0001 § 21](../../findings/quests/0001-progression.md#21-plan-0066-batch-s3c-part-2-the-game-records-data-flow-the-placement-scans-with-a-second-parser-2026-11-16-lanen66p))
+- B4. [I] Other hooked deaths reach only quests with `+0x0A` = 1. A pet or hireling killer is first resolved to its owner (`0x0058F090`), and in a game of
   type 3 with no killer the event takes a client's player. (fn:QUESTS_MonsterDeathEvent@0x00543A30 0x00543A5D–0x00543B4B,
   fn:sub_0058F090_MonsterOwnerRef@0x0058F090)
 - B5. [I] **Hooks.** `QUESTS_HookMonster(questId, unit)` adds the quest to the unit's list (for quest 4 with object class
   61, quest 8 with monster 229 and quest 12 with 250 it first records the unit); `QUESTS_LevelHookMonster` hooks every
   monster of a room to the quest named by its level's Levels `+0x30` byte; item hooks are made by the script that creates
   the item. (fn:QUESTS_HookMonster@0x005436B0, fn:QUESTS_LevelHookMonster@0x00545CD0)
-- B6. [I] Events 1, 6, 7 and 12 have no live raiser (the wrappers `0x00543CE0` and `0x00543DE0` have no caller or
-  pointer), so the `+0xB8` handlers of words 3 and 4 are dead. Object operates reach quest code through
+- B6. [C] Events 1, 6, 7 and 12 have no live raiser (the wrappers `0x00543CE0` and `0x00543DE0` have no caller or
+  pointer), so the `+0xB8` handlers of words 3 and 4 are dead: the dispatchers' 12 calls pass 0, 2, 3, 4, 5, 6, 8, 10
+  and 11, 6 only from `0x00543DE0`, and the server-range slot calls outside the dispatchers are e9, e13, e14 and
+  `NpcActTravel`'s e3 (three tools; [quests/0001 § 20](../../findings/quests/0001-progression.md#20-plan-0066-batch-s3c-part-1-second-tool-reference-argument-and-table-scans-2026-11-16-lanen66p)). Object operates reach quest code through
   `g_ObjOperateFns` and timed object event 7 through `QUESTS_ObjectEvent` ([items/quest-drops § D](../items/quest-drops.md#d-special-drops)).
   (data:g_ObjOperateFns@0x00732D18, fn:QUESTS_ObjectEvent@0x005449E0)
 
@@ -309,17 +333,24 @@ Step notes:
   0x005344EF, run:2026-10-18-quests2)
 - C3. [I] The version < 92 reader joins twice the same way; `PlayerLoad`'s own no-save branch joins once.
   (fn:sub_00532590_NewCharLegacy@0x00532590, fn:sub_005345A0_PlayerLoad@0x005345A0 0x00534607)
-- C4. [I] The FirstJoin callbacks restore each quest's log state from the creator's step bits (bit 4 → `+0x0B` = 2,
-  `+0x0C` = 3; bit 3 → 1/3; bit 2 → 1/2) when the creator has neither bit 0 nor 15, and several write bits (per quest
-  below). (fn:sub_00546270_QuestsPlayerJoin@0x00546270)
+- C4. [C] **The FirstJoin restore is per quest**, not one map: quest 13 (word 14) restored its log state from the
+  creator's bit 3 as `+0x0B` = 5 (x-talk2), and quest 19 (word 21) wrote no log state from bit 4 (`+0x0B` = 0 in x-talk3,
+  x-talk3b and h-talk3). (0x0059D557–0x0059D5A3, 0x005BB4BC–0x005BB4C9, run:2026-10-18-quests2, [quests/0001 § 18](../../findings/quests/0001-progression.md#18-plan-0066-batch-s3a-the-kept-quest-logs-re-checked-2026-11-15-lanen66g))
+- C4. [I] The FirstJoin callbacks restore a quest's log state from the creator's step bits when the creator has neither
+  bit 0 nor 15, and several write bits (per quest below). Quest 13's map as read: bit 2 → (`+0x0B`, `+0x0C`) = (1, 2),
+  bit 3 → (5, 5), bit 4 → (6, 5); quest 19 has no bit-4 branch. The other quests' maps are not read.
+  (fn:sub_00546270_QuestsPlayerJoin@0x00546270, 0x0059D557–0x0059D5A3, 0x005BB4BC–0x005BB4C9)
 
 ### D. Shared shapes of the quest scripts
 
 Each quest has its own copy of these helpers; the per-quest tables below name them by their effect.
 
+- D1. [C] **StepBits** writes keep the gate: 35 logged writes at the StepBits sites of seven functions (A1Q1 bit 4,
+  A1Q6 bits 3 and 4, A2Q1 bit 4, A2Q6 bit 2, A3Q6 bit 9, A5Q6 bit 2), each on a player record whose old word had bits 0
+  and 1 clear. (fn:sub_0058FC90_A1Q1_StepBits@0x0058FC90, run:2026-10-17-sweep-quest-b6, [quests/0001 § 19](../../findings/quests/0001-progression.md#19-plan-0066-batch-s3b-kill-step-and-service-step-rules-over-the-kept-questsgdb-logs-2026-11-16-lanen66p))
 - D1. [I] **StepBits** (per player, when bits 0 and 1 are clear): set the step bit chosen by the quest's log state
-  (state 2 → bit 2; state 3 → bit 3 or 4 by `+0x0B`; …). Steps gate nothing outside the quest's own log code.
-  (fn:sub_0058FC90_A1Q1_StepBits@0x0058FC90)
+  (state 2 → bit 2; state 3 → bit 3 or 4 by `+0x0B`; …); no logged write separates the choice or a refusal. Steps gate
+  nothing outside the quest's own log code. (fn:sub_0058FC90_A1Q1_StepBits@0x0058FC90)
 - D2. [I] **Near credit**: every player whose room is the event's room or in that room's near list
   (`DUNGEON_GetNearRooms`), with the quest's bits clear, gets the credit bits. **Level credit**: every player in a named
   level. (fn:sub_00590C40_A1Q2_CreditNearBoss@0x00590C40)
@@ -334,9 +365,11 @@ Each quest has its own copy of these helpers; the per-quest tables below name th
 - D6. [I] **The NPC gate** (`+0xEC`): when a talk starts with an NPC whose MonStats `+0x0D` bit 1 is set,
   `QUESTS_NpcHasQuest` asks `+0xEC` of each quest of the player's act whether it has something for that NPC class; the
   first yes sends the "quest available" mark. Presentation. (fn:QUESTS_NpcHasQuest@0x00544590)
+- D7. [C] **The reward half.** The reward message, with bit 1 set, sets bit 0 and clears bit 1 (logged for words 1, 2,
+  4, 6, 9, 20, 25, 27 and 37); among the logged rewards `ClearSteps` runs at those of words 1, 20, 25 and 35, not at
+  those of 2, 4, 6, 9, 27 or 37. (fn:QUESTRECORD_ClearSteps@0x0065C3E0, run:2026-10-18-quests2, [quests/0001 § 18](../../findings/quests/0001-progression.md#18-plan-0066-batch-s3a-the-kept-quest-logs-re-checked-2026-11-15-lanen66g))
 - D7. [I] **Reward pattern** (most quests): a completing event sets bits 13 and 1 (or 13 and 0 when there is no reward
-  talk), and the reward message, with bit 1 set, sets bit 0, clears bit 1 and calls `ClearSteps`.
-  (fn:QUESTS_ListSetPending@0x005455F0, fn:QUESTRECORD_ClearSteps@0x0065C3E0)
+  talk). (fn:QUESTS_ListSetPending@0x005455F0)
 
 ### E. Timers
 
@@ -364,9 +397,16 @@ E2. QUESTS_TimersRun, when frame mod 20 = 0:                        [C] for one-
   player's bits and often a held item. The client picks which message to report from the quest-message index the server
   sent at e0 (`QUESTS_SetNpcMessage`); no dialogue text is involved. (fn:QUESTS_RaiseNpcMessage@0x005443B0,
   fn:QUESTS_SetNpcMessage@0x00543790)
+- F1. [C] Each of the 222 logged talks opens with e0 (no talk open with that unit), each of the 187 e11s lies inside its
+  unit's open talk, 28 re-dispatched e0s follow an e11 inside it, and e2 closes each talk. (fn:QUESTS_RaiseNpcMessage@0x005443B0,
+  run:2026-10-18-quests2, [quests/0001 § 18](../../findings/quests/0001-progression.md#18-plan-0066-batch-s3a-the-kept-quest-logs-re-checked-2026-11-15-lanen66g))
 - F2. [C] Each NPC-talk step of the per-quest tables tagged confirmed fired at its call site from the logged NPC class, message
   and word, and wrote nothing when its condition was off: 41 talk steps over 20 rows, in Normal and Hell expansion and
   classic Normal. (fn:QUESTRECORD_SetState@0x0065C360, run:2026-10-18-quests2)
+- F3. [C] Each logged imbue (19), socket (24) and personalisation (22) was followed by bit 0 set then bit 1 cleared on its
+  word (3, 35, 38) at the done function's sites, with bit 1 set and bit 0 clear before. (fn:sub_00591790_A1Q3_ImbueDone@0x00591790,
+  fn:sub_005877C0_A5Q1_SocketDone@0x005877C0, fn:sub_0058BC00_A5Q4_PersonalizeDone@0x0058BC00, run:2026-10-27-sweep-quest-npc,
+  [quests/0001 § 19](../../findings/quests/0001-progression.md#19-plan-0066-batch-s3b-kill-step-and-service-step-rules-over-the-kept-questsgdb-logs-2026-11-16-lanen66p))
 - F3. [I] Item services and the Hell respec are `NPC_MenuAction` actions: imbue (word 3 bit 1), socket (word 35 bit 1),
   personalise (word 38 bit 1), the Hell respec (word 41), and the act travel ([quests/travel § E](travel.md#e-act-change-through-an-npc)).
   The services' item effects are [items/quest-drops § F](../items/quest-drops.md#f-npc-item-services-and-given-items).
@@ -401,26 +441,33 @@ sequenceDiagram
 | the Dark Wanderer timer | one inline `Step` (W32) | quest seed | 0x005BD3E6 | [C] (run:2026-10-19-quests3; fn:sub_005BD390_A3Q7_AfterglowTimer@0x005BD390) |
 | the Zoo (`InitFn` 79) | 1–10 `RandLoHi(1, nMonStats)` (W40; object 567 is placed by no stock DS1) | quest seed | 0x0058E87C | [I] (fn:sub_0058E830_A5Q6_ZooInit@0x0058E830) |
 | quest chests, Wirt, Andariel, Baal, the Hellforge, the Cow King | [items/quest-drops](../items/quest-drops.md#draw-order-on-the-quest-seed) | quest seed | — | as there |
-| every other quest event | none in quest code | — | — | [I] (fn:QUESTS_DispatchEvent@0x005438E0; § 11 of [quests/0001](../../findings/quests/0001-progression.md#11-which-events-draw-all-acts)) |
+| every other quest event | none in quest code | — | — | [C] for the talk, message, level-change and leave events logged: in 1 111 dispatches the quest seed moved only at the sites above and the player seed only in NPC 266's e0 (run:2026-10-19-quests3, [quests/0001 § 18](../../findings/quests/0001-progression.md#18-plan-0066-batch-s3a-the-kept-quest-logs-re-checked-2026-11-15-lanen66g)); [I] for kills, operates and item events, and for the game-seed steps inside 14 reward e11s, whose callee is not logged (fn:QUESTS_DispatchEvent@0x005438E0; § 11 of [quests/0001](../../findings/quests/0001-progression.md#11-which-events-draw-all-acts)) |
 
 ```
 G1. The quest seed: Init(questSeed, game seed low after one Step at QUESTS_InitGame)   [C] (fn:QUESTS_InitGame@0x00545D80, run:2026-10-16-quest-drops)
 G2. QuestPick(n) = Step(questSeed); return questSeed.low mod n       [C] (fn:QUESTS_GetSeed@0x005438B0, run:2026-10-16-quest-drops)
-G3. RandLoHi(s, lo, hi) = lo + Range(s, hi − lo)                    [I] (fn:RNG_RandLoHi@0x004BC500)
+G3. RandLoHi(s, lo, hi) = lo + Range(s, hi − lo)                    [C] (fn:RNG_RandLoHi@0x004BC500, run:2026-10-17-sweep-quest-b6; G3 note)
 ```
 
 Step notes:
 
 - G1. [C] The quest seed and its start value are [items/quest-drops § A](../items/quest-drops.md#a-the-quest-record-and-the-quest-seed)'s
   (game-seed draw 4, `{low, 666}`). (fn:QUESTS_InitGame@0x00545D80, run:2026-10-16-quest-drops)
+- G3. [C] Baal's gold draw is `1500 + Range(qs, 1500)` = 2 178 on the logged seed, the seed after it equal to the logged
+  one; the `hi − lo + 1` reading would give 2 668. (fn:RNG_RandLoHi@0x004BC500, run:2026-10-17-sweep-quest-b6, [quests/0001 § 19](../../findings/quests/0001-progression.md#19-plan-0066-batch-s3b-kill-step-and-service-step-rules-over-the-kept-questsgdb-logs-2026-11-16-lanen66p))
 - G4. [C] The NPC 331 step chained: 44 talks, 42 chained pairs, one step per talk, each talk's exit seed the next talk's
   entry in Normal and Nightmare. (0x0059B229, run:2026-10-17-quests)
 - G4a. [C] The eclipse arm, the cairn order on the `bkd ` use, the Dark Wanderer timer and Anya's reward were each
   predicted from the quest seed before it (W11, W4, W32, W37). (run:2026-10-19-quests3; quests/0001 § 11)
-- G5. [I] **Chaining.** The quest seed is one object per game: its value at any draw depends on which of the drawing
+- G5. [C] The quest seed is one chain per game: of its 24 589 consecutive logged observations every pair is equal except
+  56 one step after a `QUESTS_GetSeed` draw and 3 inside the cairn bracket; 0 moved elsewhere. (fn:QUESTS_GetSeed@0x005438B0,
+  run:2026-10-19-quests3, [quests/0001 § 18](../../findings/quests/0001-progression.md#18-plan-0066-batch-s3a-the-kept-quest-logs-re-checked-2026-11-15-lanen66g))
+- G5. [I] **Chaining.** The quest seed's value at any draw depends on which of the drawing
   events above, and the item draws of [items/quest-drops](../items/quest-drops.md), ran before. The player-seed draws of
   NPCs 266 and 377 chain with every other user of the player's unit seed. A reimplementation asserts the quest seed on
   entry to each drawing event. (fn:QUESTS_GetSeed@0x005438B0, 0x00596B23, 0x0059E1CE)
+- G6. [C] In 108 logs the quest seed moved only after a `QUESTS_GetSeed` fetch: 388 observations, 56 moves, each after
+  a fetch. (fn:QUESTS_GetSeed@0x005438B0, run:2026-10-16-quest-drops, [quests/0001 § 19](../../findings/quests/0001-progression.md#19-plan-0066-batch-s3b-kill-step-and-service-step-rules-over-the-kept-questsgdb-logs-2026-11-16-lanen66p))
 - G6. [I] Spawns, objects, portals and items that quest events create draw on their own seeds (`SpawnAtPos` and the
   monster spawners, `SUnitCreate`'s game seed, `PortalObjectCreate`, item creation) and are oracles here.
   (fn:sub_005B2F20_SpawnAtPos@0x005B2F20, fn:sub_00555230_SUnitCreate@0x00555230, fn:sub_0056D130_PortalObjectCreate@0x0056D130)
@@ -451,8 +498,9 @@ stateDiagram-v2
 | b0 | set | e11 NPC 155 (`warriv1`), message 0 | 0x0058FAC1 | [C] (run:2026-10-18-quests2: x-talk1, h-talk1, c-talk1) |
 | b0 | set | e11 NPC 155, message 1 | 0x0058FAC1 | [I] (fn:sub_0058FA90_A1Q0_NpcMessage@0x0058FA90) |
 
-- [I] Word 0 bit 0 gates only NPC 155's quest message (e0 and the NPC gate). It is no act-travel gate: `NpcActTravel`
-  tests word 7. (fn:sub_0058FB50_A1Q0_NpcGate@0x0058FB50, fn:sub_005467E0_NpcActTravel@0x005467E0)
+- [C] Word 0 bit 0 gates only NPC 155's quest message (e0 and the NPC gate). It is no act-travel gate: `NpcActTravel`
+  tests word 7. Word 0 is read by two calls, `A1Q0_NpcTalk` (0x0058FB01) and `A1Q0_NpcGate` (0x0058FB63), both bit 0
+  (two walkers). (fn:sub_0058FB50_A1Q0_NpcGate@0x0058FB50, fn:sub_005467E0_NpcActTravel@0x005467E0, [quests/0001 § 20](../../findings/quests/0001-progression.md#20-plan-0066-batch-s3c-part-1-second-tool-reference-argument-and-table-scans-2026-11-16-lanen66p))
 
 ##### Word 1: the level-8 monster region, and the Hell respec offer (quest object 1)
 
@@ -469,13 +517,13 @@ stateDiagram-v2
 
 | bit | set/clear | trigger and condition | site | Tag |
 |---|---|---|---|---|
-| b13, b1 | set | e8: the level-8 monster region has every monster dead (`+0x2D0` = `+0x2CC`) and every room counted (`0x0061ABF0(act, 8)` ≤ region `+0x04`); each player of the quest's private list (players who killed a hooked monster) with b0, b1 clear | 0x00590387 | [I] (fn:sub_00590260_A1Q1_MonsterDeath@0x00590260, fn:sub_00547BB0_MonRegionGet@0x00547BB0) |
+| b13, b1 | set | e8: the level-8 monster region has every monster dead (`+0x2D0` = `+0x2CC`) and every room counted (`0x0061ABF0(act, 8)` ≤ region `+0x04`); each player of the quest's private list (players who killed a hooked monster) with b0, b1 clear | 0x00590387 | [C] for the write: at the logged Den completion `ListSetPending`, called from 0x00590387, wrote b13 then b1 on the host's record, old 0x10 (b0, b1 clear) (run:2026-10-20-two-clients: den-a2, [quests/0001 § 19](../../findings/quests/0001-progression.md#19-plan-0066-batch-s3b-kill-step-and-service-step-rules-over-the-kept-questsgdb-logs-2026-11-16-lanen66p)); [I] for the region test and the private list (fn:sub_00590260_A1Q1_MonsterDeath@0x00590260, fn:sub_00547BB0_MonRegionGet@0x00547BB0) |
 | b13, b1 | set | the same kill: party members in Act I | 0x00590175, 0x0059017F | [C] for a partied member in the Rogue Encampment (run:2026-10-20-two-clients: den-a2); [I] for the act test and an unpartied player (fn:sub_00590120_A1Q1_PartyCreditMember@0x00590120) |
 | b14 | set | the same kill: fail others | 0x005900B8 | [I] (fn:sub_00590080_A1Q1_FailOthers@0x00590080) |
-| G b13 | set | the same kill | 0x00590375 | [I] (fn:sub_00590260_A1Q1_MonsterDeath@0x00590260) |
+| G b13 | set | the same kill | 0x00590375 | [C] (logged at the Den completion just before the 0x00590387 pair; 0x00590375 is `A1Q1_MonsterDeath`'s only `GameQuestSet` call; fn:sub_00590260_A1Q1_MonsterDeath@0x00590260, run:2026-10-20-two-clients: den-a2, [quests/0001 § 19](../../findings/quests/0001-progression.md#19-plan-0066-batch-s3b-kill-step-and-service-step-rules-over-the-kept-questsgdb-logs-2026-11-16-lanen66p)) |
 | b0; b1 clear; steps clear | set / clear | e11 NPC 148 (`akara`) message 0x4C with b1 set | 0x0058FF11, 0x0058FF20, 0x0058FF4B | [C] (run:2026-10-18-quests2: x-talk1, h-talk1, c-talk1) |
 | w41 b13, w41 b1 | set | the same message (word `+0xE4` = 41): the respec offer | 0x0058FF2F, 0x0058FF3E | [C] (run:2026-10-18-quests2: in the saved words) |
-| b2, b3, b4 | set | StepBits by log state (2; 3; 4 when `+0x0B` ≠ 1) | 0x0058FCDD, 0x0058FCF9, 0x0058FD0A | [I] (fn:sub_0058FC90_A1Q1_StepBits@0x0058FC90) |
+| b2, b3, b4 | set | StepBits by log state (2; 3; 4 when `+0x0B` ≠ 1) | 0x0058FCDD, 0x0058FCF9, 0x0058FD0A | [C] for b4: 8 writes at 0x0058FD0A in the four den host logs, old b0, b1 clear (run:2026-10-20-two-clients, [quests/0001 § 19](../../findings/quests/0001-progression.md#19-plan-0066-batch-s3b-kill-step-and-service-step-rules-over-the-kept-questsgdb-logs-2026-11-16-lanen66p)); [I] for b2, b3 and the `+0x0B` choice (fn:sub_0058FC90_A1Q1_StepBits@0x0058FC90) |
 
 - [C] **The party credit with two players.** In plan 0044's two-client run the host cleared the Den with the joiner
   partied in the Rogue Encampment, and the joiner's record got b13 and b1 from the calls at 0x00590175 and 0x0059017F
@@ -484,8 +532,10 @@ stateDiagram-v2
 - [I] In the same run, the host's entry into the Den set b4 (the 0x0058FD0A site) on both players' records, partied or
   not, in four games. This is not the case list's prediction and the event behind the call is not read, so whether
   StepBits reaches every player of the game here stays open. (0x0058FD0A, run:2026-10-20-two-clients)
-- [I] The reward also adds 1 to stat 5 of the player (`UnitAddStat(player, 5, 1, 0)` at 0x0058FF5A). The kill registers
-  timer `0x00590230` (period 8) once, a log-state change only. No draw. (fn:sub_0058FDD0_A1Q1_NpcMessage@0x0058FDD0,
+- [C] The reward also adds 1 to stat 5 of the player (`UnitAddStat(player, 5, 1, 0)` at 0x0058FF5A): stat 5 rose by 1 in
+  c-talk1 (level unchanged) and by 2 in x-talk1 and h-talk1, beside a level-up's 1. (fn:sub_0058FDD0_A1Q1_NpcMessage@0x0058FDD0,
+  run:2026-10-18-quests2, [quests/0001 § 18](../../findings/quests/0001-progression.md#18-plan-0066-batch-s3a-the-kept-quest-logs-re-checked-2026-11-15-lanen66g))
+- [I] The kill registers timer `0x00590230` (period 8) once, a log-state change only. No draw. (fn:sub_0058FDD0_A1Q1_NpcMessage@0x0058FDD0,
   fn:sub_006272B0_UnitAddStat@0x006272B0, fn:sub_00590230_A1Q1_DoneTimer@0x00590230)
 
 ##### Word 41: the Hell respec (quest object 1's second word)
@@ -503,10 +553,10 @@ stateDiagram-v2
 | b13, b1 | set | `NPC_MenuAction` in Hell (`game+0x6D` = 2): w1 b1 set and w41 b0, b1 clear | 0x0057A21E (`0x0058FD20`) | [I] (fn:sub_0058FD20_A1Q1_RespecOffer@0x0058FD20) |
 | b0; b1 clear | set / clear | `NPC_MenuAction` in Hell with w41 b1 set: the respec runs (`0x00570360`, `0x00570C80`), then this write; if b15 is clear, quest object 30's `+0x0A` ← 0 | `0x0058FD50` | [I] (fn:sub_0058FD50_A1Q1_RespecDone@0x0058FD50, fn:NPC_MenuAction@0x00579D60 0x0057A1D0–0x0057A266) |
 
-- [I] **Every write of word 41 is quest object 1's.** Over every call of the record functions, word 41 is written at
+- [C] **Every write of word 41 is quest object 1's.** Over every call of the record functions, word 41 is written at
   the `+0xE4` sites 0x0058FF2F and 0x0058FF3E (b13, b1: object 1 keeps 41 as its second word) and the constant sites
   0x0058FD36, 0x0058FD40 (b13, b1), 0x0058FD67 (b0 set) and 0x0058FD71 (b1 clear), all in object 1's scripts; quest
-  object 30 (whose own word is 29) writes none. (0x0058FF2F, 0x0058FD36, fn:QUESTRECORD_SetState@0x0065C360,
+  object 30 (whose own word is 29) writes none; no other call names word 41 (two walkers, [quests/0001 § 20](../../findings/quests/0001-progression.md#20-plan-0066-batch-s3c-part-1-second-tool-reference-argument-and-table-scans-2026-11-16-lanen66p)). (0x0058FF2F, 0x0058FD36, fn:QUESTRECORD_SetState@0x0065C360,
   [items/0010 § Plan 0049 Phase 1](../../findings/items/0010-quest-drops.md#plan-0049-phase-1-2026-10-20-static-the-s2c-static-leftovers))
 
 ##### Word 2: the hooked Act I boss and the free hireling (quest object 2)
@@ -550,7 +600,7 @@ stateDiagram-v2
 | b13, b1 | set | e11 NPC 154 (`charsi`) message 0xA3, b0 clear, the player holds `hdm ` (then removed) | 0x00591532, 0x0059153F | [I] (fn:sub_00591490_A1Q3_NpcMessage@0x00591490, fn:sub_00558110_PlayerFindItemByCode@0x00558110) |
 | b13, b1 | set | party members in Act I | 0x00591476, 0x00591480 | [I] (fn:sub_00591430_A1Q3_PartyCreditMember@0x00591430) |
 | G b13 | set | the same message when the log state `+0x0C` = 4 | 0x005915B9 | [I] (fn:sub_00591490_A1Q3_NpcMessage@0x00591490) |
-| b0; b1 clear | set / clear | `NPC_MenuAction` imbue done ([items/quest-drops § F](../items/quest-drops.md#f-npc-item-services-and-given-items)); if b15 is clear, quest object 3's `+0x0A` ← 0 | 0x005917A7, 0x005917B1 | [I] (fn:sub_00591790_A1Q3_ImbueDone@0x00591790) |
+| b0; b1 clear | set / clear | `NPC_MenuAction` imbue done ([items/quest-drops § F](../items/quest-drops.md#f-npc-item-services-and-given-items)); if b15 is clear, quest object 3's `+0x0A` ← 0 | 0x005917A7, 0x005917B1 | [C] for the write: 19 logged imbues, each followed by b0 set then b1 cleared at these sites, old 0x8002 (run:2026-10-16-quest-drops, [quests/0001 § 19](../../findings/quests/0001-progression.md#19-plan-0066-batch-s3b-kill-step-and-service-step-rules-over-the-kept-questsgdb-logs-2026-11-16-lanen66p)); [I] for the b15 test and `+0x0A` (fn:sub_00591790_A1Q3_ImbueDone@0x00591790) |
 | b2, b3 | set | StepBits | 0x0059138C, 0x005913A5 | [I] (fn:sub_00591340_A1Q3_StepBits@0x00591340) |
 
 - [I] The talk offers the hand-in (message 3) only at clvl (stat 12) > 7 with the Malus held and b0 clear; the e11
@@ -576,14 +626,14 @@ stateDiagram-v2
 | b13, b1 | set | `Gibbet` operate (object 26, `OperateFn` 10) by a player with b0, b1 clear; party members in Act I | 0x00593587, 0x00593591 | [I] (fn:sub_00593480_A1Q4_GibbetOperate@0x00593480) |
 | b13, b1 | set | the Gibbet's object event 7 (frame + 17): every player in level 38 with b0, b1 clear, and their Act I party | 0x0059317D, 0x00593187 | [I] (fn:sub_00593130_A1Q4_CreditTristram@0x00593130) |
 | b14 | set | the same event: fail others | 0x005931F7 | [I] (fn:sub_005931C0_A1Q4_FailOthers@0x005931C0) |
-| b14, G b13 | set | Cain lost, the `TownLevelLeave` path: the first arrival in level 40 from Act I with word 4 = 0 runs `0x00597310` from `TownLevelLeave` inside `PlayerChangeLevel`: G w4 b13, then b14 for the player (one client; the pass over every player with b0, b1 clear is read from the code); the e3 level-40 branch then finds state 7 and writes nothing, and later arrivals in 40 write nothing | 0x005973D2, 0x00592B46 | [C] for one client (run:2026-10-19-quests3: x-entry, x-entry2, h-entry, and c-wp in the part 1 re-check; fn:sub_00597310_A1Q4_FailOnActLeave@0x00597310, 0x0053743D) |
-| b14, G b13 | set | Cain lost, the other paths: e3 entry to level 40 by a player with b0, b1 clear while Cain is not rescued (`+0x50` = 0, `+0x0C` < 6), and `0x00597310` from the Warriv travel branch | 0x00592B46, 0x00597005 | [I] (fn:sub_00592B10_A1Q4_FailPlayer@0x00592B10, fn:sub_005467E0_NpcActTravel@0x005467E0 0x00546A35, 0x00546AA9) |
+| b14, G b13 | set | Cain lost, the `TownLevelLeave` path: the first arrival in level 40 from Act I with word 4 = 0 runs `0x00597310` from `TownLevelLeave` inside `PlayerChangeLevel`: G w4 b13, then b14 for the player (one client; the pass over every player with b0, b1 clear is read from the code); that arrival is an act change, which dispatches no event 3 ([quests/travel § Outputs](travel.md#outputs)), and later arrivals in 40 write nothing | 0x005973D2, 0x00592B46 | [C] for one client (run:2026-10-19-quests3: x-entry, x-entry2, h-entry, and c-wp in the part 1 re-check; fn:sub_00597310_A1Q4_FailOnActLeave@0x00597310, 0x0053743D) |
+| b14, G b13 | set | Cain lost, the other paths: e3 entry to level 40 (from a level of Act II: an act change dispatches no e3) by a player with b0, b1 clear while Cain is not rescued (`+0x50` = 0, `+0x0C` < 6), and `0x00597310` from the Warriv travel branch | 0x00592B46, 0x00597005 | [I] (fn:sub_00592B10_A1Q4_FailPlayer@0x00592B10, fn:sub_005467E0_NpcActTravel@0x005467E0 0x00546A35, 0x00546AA9) |
 | b0; b1 clear | set / clear | e11 NPC 148 message 0x76 with b1 set; the ring reward (oracle) | 0x005923AC, 0x005923B6 | [C] (run:2026-10-18-quests2: x-talk1, h-talk1, c-talk1) |
 | G b13 | set | the same message: if G w4 b13 was clear (then `+0xF0`), and if the creator had b15 | 0x00592483, 0x005924D8 | [I] (fn:sub_00592250_A1Q4_NpcMessage@0x00592250) |
-| G b13 | set | FirstJoin when the creator has b0 | 0x00597081 | [I] (fn:sub_00597030_A1Q4_FirstJoin@0x00597030) |
+| G b13 | set | FirstJoin when the creator has b0 | 0x00597081 | [C] (written inside the join exactly when the joiner had w4 b0: 44 of 44 joins with it, 0 of 10 without; fn:sub_00597030_A1Q4_FirstJoin@0x00597030, run:2026-10-19-quests3, [quests/0001 § 18](../../findings/quests/0001-progression.md#18-plan-0066-batch-s3a-the-kept-quest-logs-re-checked-2026-11-15-lanen66g)) |
 | b10 | set | the Cow King's death: the killer has b10 clear **and** w26 b0 (classic, `game+0x70` = 0) or w40 b0 (expansion) | 0x00593EF6 | [I] (fn:sub_00593E70_A1Q4_CowKingDeath@0x00593E70) |
 | b10 | set | the same death: every player then in level 39 | 0x00593E5E | [I] (fn:sub_00593E30_A1Q4_CowLevelCredit@0x00593E30) |
-| G b11 | set | the cow portal opened ([items/cube](../items/cube.md)) | 0x0059423A | [I] (fn:CUBE_CowPortalOpen@0x00594140) |
+| G b11 | set | the cow portal opened ([items/cube](../items/cube.md)) | 0x0059423A | [C] (both logged cow-portal openings, 3361 and 3506; 0x0059423A is the only `GameQuestSet` caller with (4, 11); fn:CUBE_CowPortalOpen@0x00594140, run:2026-10-16-quest-drops, [quests/0001 § 19](../../findings/quests/0001-progression.md#19-plan-0066-batch-s3b-kill-step-and-service-step-rules-over-the-kept-questsgdb-logs-2026-11-16-lanen66p)) |
 | b2, b3 | set | StepBits | 0x0059217C, 0x00592195 | [I] (fn:sub_00592130_A1Q4_StepBits@0x00592130) |
 
 ```
@@ -609,6 +659,9 @@ W4. StoneOrderDraw (first use of the decoded scroll `bkd `, or first stone opera
   fn:sub_00544840_QuestsItemUseCode@0x00544840, fn:sub_00593CB0_A1Q4_SendStoneOrder@0x00593CB0 0x00593CD5–0x00593CE1)
 - W4b. [I] The first stone operate draws the order the same way (not reached), and `0x00544840`'s `trs ` branch
   calls `0x0059D6A0` (not run). (fn:sub_00593710_A1Q4_StoneOperate@0x00593710, fn:sub_00544840_QuestsItemUseCode@0x00544840)
+- W4c. [C] `MissileCreateAt` takes five stack arguments: its 17 callers each push five (two walkers) and it returns with
+  `ret 0x14`; at the four constant sites the third argument is a missile id (625, 288, 332, 347).
+  (fn:sub_0056EDE0_MissileCreateAt@0x0056EDE0, [quests/0001 § 20](../../findings/quests/0001-progression.md#20-plan-0066-batch-s3c-part-1-second-tool-reference-argument-and-table-scans-2026-11-16-lanen66p))
 - W4c. [I] **`MissileCreateAt(a, b, missile, x, y)`** (game in `ECX`, the source unit in `EDX`) creates a missile at a
   point. With x = y = 0 it first takes a point from `0x0056D2C0`; with no point, or one more than 100 from the source
   (`UnitDistance`), it returns 0. Otherwise it fills a zeroed `0x5C`-byte request (`+0x00` = 1, `+0x04` the source,
@@ -693,11 +746,11 @@ stateDiagram-v2
 
 | bit | set/clear | trigger and condition | site | Tag |
 |---|---|---|---|---|
-| b13, b1 | set | e8 Andariel: the killer (b0, b1 clear); then every player in level 37 with b0 and b15 clear; then party members in Act I | 0x00596218, 0x00596222 | [I] (fn:sub_00596210_A1Q6_SetKilled@0x00596210, fn:sub_005965A0_A1Q6_AndarielDeath@0x005965A0) |
+| b13, b1 | set | e8 Andariel: the killer (b0, b1 clear); then every player in level 37 with b0 and b15 clear, so a killer standing there is written again; then party members in Act I | 0x00596218, 0x00596222 | [C] for the killer and the level pass: each of 7 credited kills wrote b13, b1 twice, first with old 0x18 (the killer, from 0x00596639), then with old 0x201A (b1 already set; the level pass, `CreditInLevel` from 0x00596302); no write in the kills with b1 and b15 set (3345) or b0 set (3347, 3350) (run:2026-10-16-quest-drops, run:2026-10-17-sweep-quest-b6, [quests/0001 § 19](../../findings/quests/0001-progression.md#19-plan-0066-batch-s3b-kill-step-and-service-step-rules-over-the-kept-questsgdb-logs-2026-11-16-lanen66p)); [I] for the party members (fn:sub_00596210_A1Q6_SetKilled@0x00596210, fn:sub_005965A0_A1Q6_AndarielDeath@0x005965A0) |
 | b14 | set | fail others | 0x00596417 | [I] (fn:sub_005963E0_A1Q6_FailOthers@0x005963E0) |
 | b1 clear; b0 | clear / set | e11 NPC 155 message 0xB7 with b1 set | 0x00595D92, 0x00595D9C | [C] (run:2026-10-18-quests2: x-talk1, h-talk1, c-talk1) |
-| G b13 | set | the same message when b13 is set | 0x00595D88 | [I] (fn:sub_00595C60_A1Q6_NpcMessage@0x00595C60) |
-| b2, b3, b4 | set | StepBits | 0x00595C1D, 0x00595C39, 0x00595C4A | [I] (fn:sub_00595BD0_A1Q6_StepBits@0x00595BD0) |
+| G b13 | set | the same message when b13 is set | 0x00595D88 | [C] at Warriv's report in r3 and r4 with the player's word 0x201A (b13 set, b0 clear), from 0x00595D88, the only (6, 13) caller (run:2026-10-16-quest-drops, [quests/0001 § 19](../../findings/quests/0001-progression.md#19-plan-0066-batch-s3b-kill-step-and-service-step-rules-over-the-kept-questsgdb-logs-2026-11-16-lanen66p)); [I] the message with b13 clear (fn:sub_00595C60_A1Q6_NpcMessage@0x00595C60) |
+| b2, b3, b4 | set | StepBits | 0x00595C1D, 0x00595C39, 0x00595C4A | [C] for b3 (0x00595C39, 10 writes) and b4 (0x00595C4A, 9), old b0, b1 clear (run:2026-10-17-sweep-quest-b6, [quests/0001 § 19](../../findings/quests/0001-progression.md#19-plan-0066-batch-s3b-kill-step-and-service-step-rules-over-the-kept-questsgdb-logs-2026-11-16-lanen66p)); [I] for b2 (fn:sub_00595BD0_A1Q6_StepBits@0x00595BD0) |
 
 - [I] After the death a timer (period 1) gives each player in level 37 a class-59 portal to level 1 at his position
   (`PortalObjectCreate(room, x, y, 1, 0, 59, 0)`); the chain timer `0x00596580` has period 20. Andariel's gems draw on
@@ -728,7 +781,9 @@ W29. NpcTalk266(event) — the e0 handler 0x00596A90, run once for each of quest
 
 ##### Word 42: the Act I introductions (quest object 37)
 
-- [I] No record bit is written (its `+0xE0` = 42 is never passed to a setter). e0 sends NPCs 147, 148, 150, 154 and 155
+- [C] No record bit is written: no record call writes word 42 and no write with a computed word lies in a second-table
+  script, whose four inits store `+0xE0` = 42 (two walkers). (fn:sub_0058F870_A1Intro_NpcMessage@0x0058F870, [quests/0001 § 20](../../findings/quests/0001-progression.md#20-plan-0066-batch-s3c-part-1-second-tool-reference-argument-and-table-scans-2026-11-16-lanen66p))
+- [I] e0 sends NPCs 147, 148, 150, 154 and 155
   a greeting index while the player's per-NPC introduction flag is clear; e11 sets that flag (`0x00572360`, the save's
   NPC section). No draw. (fn:sub_0058F870_A1Intro_NpcMessage@0x0058F870, fn:sub_00572360_NpcIntroBitSet@0x00572360)
 
@@ -745,10 +800,12 @@ stateDiagram-v2
 | bit | set/clear | trigger and condition | site | Tag |
 |---|---|---|---|---|
 | b0 | set | e11 NPC 201 (`jerhyn`) message 0xFD | 0x00598671 | [C] (run:2026-10-18-quests2: x-talk2) |
-| G b13 | set | the same message; first join of a player with b0 | 0x0059867F, 0x005987FE | [I] (fn:sub_00598640_A2Q0_NpcMessage@0x00598640, fn:sub_005987D0_A2Q0_FirstJoin@0x005987D0) |
+| G b13 | set | the same message; first join of a player with b0 | 0x0059867F, 0x005987FE | [C] for the message: e11 NPC 201 message 0xFD wrote G w8 b13 in both logged talks (fn:sub_00598640_A2Q0_NpcMessage@0x00598640, run:2026-10-19-quests3, [quests/0001 § 18](../../findings/quests/0001-progression.md#18-plan-0066-batch-s3a-the-kept-quest-logs-re-checked-2026-11-15-lanen66g)); [I] for the first join: no joiner had w8 b0 (fn:sub_005987D0_A2Q0_FirstJoin@0x005987D0) |
 
-- [I] G w8 b13 is read by Jerhyn's placement (word 12). NPC 244's e0 reacts to w4 b14 (Cain lost in Act I).
-  (fn:sub_005986B0_A2Q0_NpcTalk@0x005986B0, fn:sub_0059F380_A2Q4_JerhynSpawn@0x0059F380)
+- [C] G w8 b13 is read by Jerhyn's placement (word 12): `GameQuestGet` at 0x0059F3A4 (`JerhynSpawn`) and 0x0059F4C2
+  (`JerhynPlaceholder`). NPC 244's e0 reacts to w4 b14 (Cain lost in Act I): read at 0x0059871B. Two walkers agree.
+  (fn:sub_005986B0_A2Q0_NpcTalk@0x005986B0, fn:sub_0059F380_A2Q4_JerhynSpawn@0x0059F380,
+  fn:sub_0059F440_A2Q4_JerhynPlaceholder@0x0059F440, [quests/0001 § 20](../../findings/quests/0001-progression.md#20-plan-0066-batch-s3c-part-1-second-tool-reference-argument-and-table-scans-2026-11-16-lanen66p))
 
 ##### Word 9: Radament and the Book of Skill (quest object 8)
 
@@ -765,15 +822,17 @@ stateDiagram-v2
 
 | bit | set/clear | trigger and condition | site | Tag |
 |---|---|---|---|---|
-| b2, b3, b4 | set | per player with b0, b1 clear, by log state (2; 3 with `+0x0B` = 1; 3 otherwise) | 0x00598A2D, 0x00598A49, 0x00598A5A | [I] (0x005989E0) |
-| b13, b1, b5 | set | e8 Radament: near credit, b0, b1 clear; party members in Act II | 0x00598D96, 0x00598DA0, 0x00598DAA | [I] (fn:sub_00598E20_A2Q1_NearCredit@0x00598E20, fn:sub_00598D40_A2Q1_PartyCredit@0x00598D40) |
+| b2, b3, b4 | set | per player with b0, b1 clear, by log state (2; 3 with `+0x0B` = 1; 3 otherwise) | 0x00598A2D, 0x00598A49, 0x00598A5A, in `A2Q1_NpcGate` | [C] for b4: one logged write at 0x00598A5A, old 0 (run:2026-10-27-sweep-quest-items: 4904-radament4, [quests/0001 § 19](../../findings/quests/0001-progression.md#19-plan-0066-batch-s3b-kill-step-and-service-step-rules-over-the-kept-questsgdb-logs-2026-11-16-lanen66p)); [I] for b2, b3 and the choice by log state (fn:sub_00598910_A2Q1_NpcGate@0x00598910, 0x005989E0) |
+| b13, b1, b5 | set | e8 Radament: near credit, b0, b1 clear; party members in Act II | near credit 0x00598F10, 0x00598F1F, 0x00598F29; party 0x00598D96, 0x00598DA0, 0x00598DAA | [C] for the near credit: b13, b1, b5 at its three sites, old 0x10 (run:2026-10-27-sweep-quest-items: 4904-radament4, fn:sub_00598E20_A2Q1_NearCredit@0x00598E20, [quests/0001 § 19](../../findings/quests/0001-progression.md#19-plan-0066-batch-s3b-kill-step-and-service-step-rules-over-the-kept-questsgdb-logs-2026-11-16-lanen66p)); [I] for the party members (fn:sub_00598D40_A2Q1_PartyCredit@0x00598D40) |
 | b14 | set | e8: every other player with b0, b1 clear | 0x00598DF7 | [I] (0x00598DC0) |
 | b0; b1 clear | set / clear | e11 NPC 176 (`atma`) message 0x14E with b1 set | 0x00598BFE, 0x00598C0D | [C] (run:2026-10-18-quests2: x-talk2) |
-| b0, b1, b15, b5 | clear | e13: the first joiner has b0 and b5 and holds no `ass ` | 0x0059927F–0x0059929D | [I] (fn:sub_00599230_A2Q1_FirstJoin@0x00599230) |
+| b0, b1, b15, b5 | clear | e13: the first joiner has b0 and b5 and holds no `ass ` | 0x0059927F–0x0059929D | [C] (the four clears in the 2 logged first joins with b0, b5 and no `ass `; none in the join holding `ass ` or in the 51 others; fn:sub_00599230_A2Q1_FirstJoin@0x00599230, run:2026-10-19-quests3, [quests/0001 § 18](../../findings/quests/0001-progression.md#18-plan-0066-batch-s3a-the-kept-quest-logs-re-checked-2026-11-15-lanen66g)) |
 | b5 | clear | the player uses the item `ass ` (Book of Skill): the item-use code tests the code, removes the book and clears b5 when set | 0x0055E3FB | [C] for the branch reached, b5 set (run:2026-10-19-quests3: x-book; 0x0055E3D0–0x0055E3FB) |
-| G b13 | set | Radament's death; message 0x14E while the quest is off; first joiner with b0 | 0x0059906E, 0x00598BB1, 0x005992AC | [I] (fn:sub_00599020_A2Q1_RadamentDeath@0x00599020) |
+| G b13 | set | Radament's death; message 0x14E while the quest is off; first joiner with b0 | 0x0059906E, 0x00598BB1, 0x005992AC | [C] for the death: G w9 b13 right after Radament's credit, at a death only 0x0059906E of the three (9, 13) callers running (fn:sub_00599020_A2Q1_RadamentDeath@0x00599020, run:2026-10-27-sweep-quest-items: 4904-radament4, [quests/0001 § 19](../../findings/quests/0001-progression.md#19-plan-0066-batch-s3b-kill-step-and-service-step-rules-over-the-kept-questsgdb-logs-2026-11-16-lanen66p)); [I] for the message and the first joiner's condition |
 
-- [I] So a creator who saved with the Book unread **loses the quest** at his next first join and can redo it. Radament's
+- [C] So a creator who saved with the Book unread **loses the quest** at his next first join: his word 9 lost b0, b1, b15
+  and b5 at that join in x-lut and nm-lut. (fn:sub_00599230_A2Q1_FirstJoin@0x00599230, run:2026-10-19-quests3, [quests/0001 § 18](../../findings/quests/0001-progression.md#18-plan-0066-batch-s3a-the-kept-quest-logs-re-checked-2026-11-15-lanen66g))
+- [I] He can then redo it (no save was kept after such a join). Radament's
   death drops one `ass ` per player with b5 and no Book (the drop is [items/quest-drops § E](../items/quest-drops.md#e-quest-items));
   timer `0x00598F70` (period 12). No draw. (fn:sub_00599230_A2Q1_FirstJoin@0x00599230, fn:sub_00598F70_A2Q1_Timer@0x00598F70)
 
@@ -795,13 +854,15 @@ stateDiagram-v2
 | b10; b1 clear | set / clear | e11 message 0x153 | 0x005998BC, 0x0059988F | [I] (fn:sub_005997F0_A2Q2_NpcMessage@0x005997F0) |
 | b4 / b5 / b6 | clear | e5: `vip ` / `msf ` / `box ` dropped on the ground; e13: the part not held (b0 clear, quest active, no `hst `) | 0x00599B7D, 0x00599BC6, 0x00599BA1; 0x0059E935, 0x0059E945, 0x0059E955 | [I] (fn:sub_00599B30_A2Q2_ItemToGround@0x00599B30, fn:sub_0059E850_A2Q2_FirstJoin@0x0059E850) |
 | b11 | set | the cube makes `hst ` | 0x0059E614 | [I] (fn:sub_0059E5C0_QuestStaffMade@0x0059E5C0) |
-| b0, b13 | set | the staff placed in the orifice: the placer | 0x0059DD9C, 0x0059DDB4 | [I] (fn:sub_0059DD80_A2Q6_StaffPlaced@0x0059DD80) |
+| b0, b13 | set | the staff placed in the orifice: the placer | 0x0059DD9C, 0x0059DDB4 | [C] (3364: b0 (old 0) then b13 (old 1) on the placer's record; `StaffPlaced`'s one caller is 0x0058541F; fn:sub_0059DD80_A2Q6_StaffPlaced@0x0059DD80, run:2026-10-16-quest-drops, [quests/0001 § 19](../../findings/quests/0001-progression.md#19-plan-0066-batch-s3b-kill-step-and-service-step-rules-over-the-kept-questsgdb-logs-2026-11-16-lanen66p)) |
 | b0, b13 | set | party members in Act II with b0 clear; removes `hst `, `vip `, `msf ` unless `0x005678A0(1)` | 0x0059DC13, 0x0059DC1D | [I] (fn:sub_0059DBD0_A2Q6_StaffPartyCredit@0x0059DBD0) |
 | b0, b13 | set | `NpcActTravel`, NPC 210, the first crossing (w15 b0 clear) with w10 b0 clear; removes `msf `, `vip ` (not `hst `) | 0x005468FB, 0x00546905 | [I] (fn:sub_005467E0_NpcActTravel@0x005467E0) |
-| b9 | clear | word 14's e13 and e14 (every join); no constant setter found | 0x0059D50D, 0x0059D4E9 | [I] (fn:sub_0059D4F0_A2Q6_FirstJoin@0x0059D4F0) |
+| b9 | clear | word 14's e13 and e14 (every join); no constant setter found | 0x0059D50D, 0x0059D4E9 | [C] for the clears: every logged first join cleared w10 b9 once, 53 at the e13 site, x-newchar's second join at the e14 site; its first join, the record not ready, logged none (fn:sub_0059D4F0_A2Q6_FirstJoin@0x0059D4F0, run:2026-10-19-quests3, [quests/0001 § 18](../../findings/quests/0001-progression.md#18-plan-0066-batch-s3a-the-kept-quest-logs-re-checked-2026-11-15-lanen66g)); [I] for "no constant setter" |
 
-- [I] The three quest chests (`OperateFn` 39–41, objects 354–356) take one quest-seed step each for their gold count
-  ([items/quest-drops](../items/quest-drops.md)); no record write. (fn:sub_00599C10_A2Q2_ScrollChest@0x00599C10)
+- [C] The three quest chests (`OperateFn` 39–41, objects 354–356) take one quest-seed step each for their gold count
+  ([items/quest-drops](../items/quest-drops.md)); no record write: five logged operates (slots 39 twice, 40, 41 twice), one
+  fetch each, then 5 to 9 gold piles, no record write up to the last pile. (fn:sub_00599C10_A2Q2_ScrollChest@0x00599C10,
+  fn:sub_00599DF0_A2Q2_CubeChest@0x00599DF0, run:2026-10-27-sweep-quest-items, [quests/0001 § 19](../../findings/quests/0001-progression.md#19-plan-0066-batch-s3b-kill-step-and-service-step-rules-over-the-kept-questsgdb-logs-2026-11-16-lanen66p))
 
 ##### Word 11: the altar and the eclipse (quest object 10)
 
@@ -886,7 +947,11 @@ W12. NpcTalk331 — e0 for NPC 331:                                   [C] for th
 - [I] b0 and b1 are set together at the journal, so the quest completes on reading; message 0x18C (journal read), once
   and in the journal's room, opens the Canyon portal: a free spot (`0x00545340`, size 2, mask `0xBE11`, 8 tries) and
   `PortalObjectCreate(room, x, y, level 46, 0, class 60, 0)`. (fn:sub_0059AF50_A2Q4_NpcMessage@0x0059AF50)
-- [I] No word-12 bit gates level 74's waypoint or the Arcane portal 298, and the palace is opened by removing the harem
+- [C] No word-12 bit gates level 74's waypoint or the Arcane portal 298: `A2Q4_ArcanePortalInit` and `OBJINIT_Waypoint`
+  and their callees to depth 2 call no record reader; the portal's init reads quest object 11's private `+0x42` and
+  `+0x44` through `QUESTS_FindById` (0x0059BA4B). Scope: direct calls to depth 2.
+  (fn:sub_0059BA40_A2Q4_ArcanePortalInit@0x0059BA40, fn:OBJINIT_Waypoint@0x00547210, [quests/0002 § 17](../../findings/quests/0002-travel.md#17-plan-0066-batch-s3c-part-1-second-tool-reference-scans-2026-11-16-lanen66p))
+- [I] The palace is opened by removing the harem
   blocker object 318 (NPC 177 message 0x175, or e13 with w11 b0, w12 b0/b1, a held `hst `, b2–b5, or w10 b0).
   (fn:sub_0059BA40_A2Q4_ArcanePortalInit@0x0059BA40, fn:sub_0059AEF0_A2Q4_PalaceOpen@0x0059AEF0)
 
@@ -927,8 +992,8 @@ stateDiagram-v2
 
 | bit | set/clear | trigger and condition | site | Tag |
 |---|---|---|---|---|
-| b2 | set | e3 entering the true tomb `T = act+0x094`, or e2, with b0 clear and state > 1 | 0x0059C6FC | [I] (fn:sub_0059C6C0_A2Q6_CanyonCredit@0x0059C6C0, fn:sub_0059D1C0_A2Q6_LevelChange@0x0059D1C0) |
-| b5 | set | e8 Duriel: the killer, party in Act II, players in level 73; each with b0, b3, b4, b5 clear | 0x0059D0F0, 0x0059CF9D, 0x0059D017 | [I] (fn:sub_0059D050_A2Q6_DurielDeath@0x0059D050) |
+| b2 | set | e3 entering the true tomb `T = act+0x094`, or e2, with b0 clear and state > 1 | 0x0059C6FC | [C] for the write: b2 at 0x0059C6FC in 3364, old 0 (run:2026-10-16-quest-drops, [quests/0001 § 19](../../findings/quests/0001-progression.md#19-plan-0066-batch-s3b-kill-step-and-service-step-rules-over-the-kept-questsgdb-logs-2026-11-16-lanen66p)); [I] for the trigger and the state test (fn:sub_0059C6C0_A2Q6_CanyonCredit@0x0059C6C0, fn:sub_0059D1C0_A2Q6_LevelChange@0x0059D1C0) |
+| b5 | set | e8 Duriel: the killer, party in Act II, players in level 73; each with b0, b3, b4, b5 clear | 0x0059D0F0, 0x0059CF9D, 0x0059D017 | [C] for the killer: b5 at 0x0059D0F0 in 3364 (old 0x4: b0, b3, b4, b5 clear), none in the kills with b0 set (3368) or b5 set (3371) (run:2026-10-16-quest-drops, [quests/0001 § 19](../../findings/quests/0001-progression.md#19-plan-0066-batch-s3b-kill-step-and-service-step-rules-over-the-kept-questsgdb-logs-2026-11-16-lanen66p)); [I] for the party and the level-73 pass (fn:sub_0059D050_A2Q6_DurielDeath@0x0059D050) |
 | b13, b3 | set | e11 NPC 251 (`tyrael1`) message 0x12E, once: the portal made; players in level 73 with b13, b3, b4 clear; their party | 0x0059C818, 0x0059C822 | [I] (fn:sub_0059C810_A2Q6_LairCredit@0x0059C810) |
 | b14 | set | the same: others with b0, b3, b4 clear | 0x0059CA36 | [I] (fn:sub_0059CB20_A2Q6_NpcMessage@0x0059CB20) |
 | b4; b3 clear | set / clear | e11 NPC 201 message 0x1BA with b3 set | 0x0059CD2F, 0x0059CD39 | [C] (run:2026-10-18-quests2: x-talk2) |
@@ -944,8 +1009,11 @@ stateDiagram-v2
   orifice's init when the staff was already placed): it opens the chamber door and creates object 100 (Duriel's lair
   portal) at the orifice's x − 13, y + 3. The death registers timer `0x0059CEE0` (period 8). No draw.
   (fn:sub_0059D870_A2Q6_LairPortalTimer@0x0059D870, fn:sub_0059DB50_A2Q6_OrificeInit@0x0059DB50)
-- [I] Word 14's code reads act `+0x094` as the true tomb (e3, the tomb message to the client, the join's tomb index);
-  no quest code reads act `+0x484`. (0x0061AEB0, fn:sub_0059D6A0_A2Q6_SendTomb@0x0059D6A0)
+- [C] Word 14's code reads act `+0x094` as the true tomb (e3, the tomb message to the client, the join's tomb index, and
+  the wrong-tomb message); no quest code reads act `+0x484`. The field is read only through 0x00642230, whose one caller
+  0x0061AEB0 is called by `QUESTS_SendPlayerQuestInfo`, `OBJINIT_Portal`, `A2Q6_LevelChange`, `A2Q6_SendTomb` and
+  `A2Q6_WrongTombMsg` (0x0059D731); no operand of the 620 quest functions has displacement `+0x484` (three tools).
+  (0x0061AEB0, fn:sub_0059D6A0_A2Q6_SendTomb@0x0059D6A0, fn:sub_0059D720_A2Q6_WrongTombMsg@0x0059D720, [quests/0001 § 20](../../findings/quests/0001-progression.md#20-plan-0066-batch-s3c-part-1-second-tool-reference-argument-and-table-scans-2026-11-16-lanen66p))
 
 ##### Word 30: NPC 377's talk (quest object 26)
 
@@ -970,9 +1038,11 @@ W30. NpcTalk377 — e0, one draw per talk:                            [I] (fn:su
        else:                                       Step(player.unitSeed);  msg ← low mod 3 + 2
 ```
 
-- [I] **No stock data places NPC 377**: no DS1 that a LvlPrest row names holds it or its placeholders, no Levels or
-  SuperUniques column names it, and no code spawns class 377. So the draw above is unreachable on stock data.
-  (run:2026-10-18-quests2 `npcplace` scan, 0x0059E1CE)
+- [C] **No stock data places NPC 377**: no DS1 that a LvlPrest row names holds it or its placeholders (two DS1 readers
+  agree on 2 274 files; the 3 such units are in `lut2.ds1`, which no LvlPrest row names), no Levels, SuperUniques or
+  Hireling class cell names it (`.txt` and `.bin`), and none of the 14 instructions with the immediate 0x179 spawns it.
+  So the draw above is not reached through stock placement; a class computed at run time is not excluded.
+  (run:2026-10-18-quests2 `npcplace` scan, 0x0059E1CE, [quests/0001 § 21](../../findings/quests/0001-progression.md#21-plan-0066-batch-s3c-part-2-the-game-records-data-flow-the-placement-scans-with-a-second-parser-2026-11-16-lanen66p))
 
 ##### Word 31: NPC 378 (quest object 27)
 
@@ -991,7 +1061,10 @@ stateDiagram-v2
 
 ##### Word 42: the Act II introductions (quest object 38)
 
-- [I] As quest object 37: per-NPC introduction flags only, no record bit, no draw. (fn:sub_005984C0_A2Intro_NpcTalk@0x005984C0)
+- [C] No record bit, no draw: quest object 38's callbacks (e0 77 times, e11 56) wrote no record bit in their 133
+  logged dispatches; 88 left the quest and player seeds unchanged and the other 45 are NPC 331's e0, whose step is quest
+  object 11's fetch at 0x0059B21C. (fn:sub_005984C0_A2Intro_NpcTalk@0x005984C0, run:2026-10-19-quests3, [quests/0001 § 18](../../findings/quests/0001-progression.md#18-plan-0066-batch-s3a-the-kept-quest-logs-re-checked-2026-11-15-lanen66g))
+- [I] As quest object 37: per-NPC introduction flags only. (fn:sub_005984C0_A2Intro_NpcTalk@0x005984C0)
 
 #### Act III
 
@@ -1007,7 +1080,7 @@ stateDiagram-v2
 |---|---|---|---|---|
 | b0 | set | e11 NPC 253 (`hratli`) message 0x1D2 | 0x005B6F09 | [C] (run:2026-10-18-quests2: x-talk3, h-talk3) |
 | b0 | set | e11 NPC 253 message 0x1D1 | 0x005B6F09 | [I] (fn:sub_005B6ED0_A3Q0_NpcMessage@0x005B6ED0) |
-| G b13 | set | the same messages; first joiner with b0 | 0x005B6F18, 0x005B6FFE | [I] (fn:sub_005B6FD0_A3Q0_FirstJoin@0x005B6FD0) |
+| G b13 | set | the same messages; first joiner with b0 | 0x005B6F18, 0x005B6FFE | [C] for message 0x1D2: e11 NPC 253 wrote G w16 b13 in both logged talks (run:2026-10-19-quests3, [quests/0001 § 18](../../findings/quests/0001-progression.md#18-plan-0066-batch-s3a-the-kept-quest-logs-re-checked-2026-11-15-lanen66g)); [I] for message 0x1D1 and the first joiner: no joiner had w16 b0 (fn:sub_005B6FD0_A3Q0_FirstJoin@0x005B6FD0) |
 
 - [I] **Creation reader.** Two object `InitFn`s spawn Hratli once per game at the object (`SpawnAtPos(x, y, 253, 1, −1,
   0)`): `InitFn` 49 only while G w16 b13 is clear, `InitFn` 50 only while it is set (and then ORs `+0xC4 |= 0x3000000` on
@@ -1032,7 +1105,7 @@ stateDiagram-v2
 | b13, b0, b1 | set | e11 NPC 254 (`alkor`) message 0x234 with `bbb ` held (removed): **every player in Act III** with b0, b1 clear; once per game | 0x005B753A, 0x005B7544, 0x005B754E | [I] (fn:sub_005B74E0_A3Q1_SetDone@0x005B74E0) |
 | b1 | clear | right after: each player with b1 gets `UnitAddStat(player, 4, 5, 0)` (+5 to stat 4) and a message, then b1 cleared | 0x005B75C0 | [I] (fn:sub_005B7580_A3Q1_StatReward@0x005B7580) |
 | b14 | set | the same pass: each player still with b0, b1 clear (not in Act III) | 0x005B7604 | [I] (fn:sub_005B75D0_A3Q1_SetMissed@0x005B75D0) |
-| G b13 | set | the reporter has b13; first joiner with b0 | 0x005B7902, 0x005B7C41 | [I] (fn:sub_005B7740_A3Q1_NpcMessage@0x005B7740) |
+| G b13 | set | the reporter has b13; first joiner with b0 | 0x005B7902, 0x005B7C41 | [C] for the first joiner: G w17 b13 was written inside the join exactly when the joiner had w17 b0 (48 of 48 joins with it, 0 of 6 without; run:2026-10-19-quests3, [quests/0001 § 18](../../findings/quests/0001-progression.md#18-plan-0066-batch-s3a-the-kept-quest-logs-re-checked-2026-11-15-lanen66g)); [I] for the reporter: no word-17 report was logged (fn:sub_005B7740_A3Q1_NpcMessage@0x005B7740) |
 
 - [I] The tome object (193) refuses a player with b0 ([items/quest-drops § E](../items/quest-drops.md#e-quest-items)). No
   draw. (fn:sub_005B7A60_A3Q1_TomeDrop@0x005B7A60)
@@ -1070,6 +1143,10 @@ W18. CompellingOrbOperate(object, operator):                        [C] for the 
   run:2026-10-18-quests2)
 - W18. [I] An operate without `qf2 ` counts nothing; it was not reached on the server (the client sent no operate).
   (fn:sub_005BB980_A3Q5_CompellingOrbOperate@0x005BB980 0x005BB9B3)
+- [C] The orb's party pass runs only in a party: the completing operate calls `PartyForEach(0x005BB850)` only when
+  `UnitPartyId` is not 0xFFFF (0x005BBB30–0x005BBB49, the one reference to 0x005BB850), and it removes the operator's own
+  `qf2 ` itself (0x005BBA1E–0x005BBA23). x-orb's operator, in no party, kept `qey qhr qbr` and lost only `qf2 `.
+  (fn:sub_005BB980_A3Q5_CompellingOrbOperate@0x005BB980, run:2026-10-18-quests2, [quests/0001 § 18](../../findings/quests/0001-progression.md#18-plan-0066-batch-s3a-the-kept-quest-logs-re-checked-2026-11-15-lanen66g))
 - [I] The five items `qey qhr qbr qf1 qf2` are removed for each party member on completion unless `0x005678A0(1)`; the
   Khalim chests take one quest-seed step each ([items/quest-drops](../items/quest-drops.md)); the sewer lever (367) and
   stairs (366) belong to this quest object but write no bit. (fn:sub_005BB850_A3Q5_OrbPartyPass@0x005BB850,
@@ -1123,7 +1200,7 @@ stateDiagram-v2
 | b1 | set | e11 NPC 254 message 0x216 with `g34 ` held (removed), b0, b1 clear (and party) | 0x005BA4C9 | [I] (fn:sub_005BA320_A3Q4_NpcMessage@0x005BA320) |
 | b1 clear; b0, b13; steps clear; b5 | clear / set | e11 NPC 254 message 0x21A with b1 set, b0 clear; `QUESTS_GiveItem('xyz', 0, 2, 1)` (oracle) | 0x005BA52B, 0x005BA535, 0x005BA53F, 0x005BA54C, 0x005BA556 | [C] (run:2026-10-18-quests2: x-talk3b, h-talk3) |
 | b6 | set | e4 on `j34 `, once per player | 0x005BA78B | [I] (fn:sub_005BA6A0_A3Q4_ItemEvent@0x005BA6A0) |
-| G b13 | set | after message 0x21A when the reporter has b13 | 0x005BA5CA | [I] (fn:sub_005BA320_A3Q4_NpcMessage@0x005BA320) |
+| G b13 | set | after message 0x21A when the reporter has b13 | 0x005BA5CA | [C] for the reporter with b13: e11 NPC 254 message 0x21A wrote G w20 b13 in both logged talks, beside QC w20 b1 and QS b0, b13, b5 on the player (fn:sub_005BA320_A3Q4_NpcMessage@0x005BA320, run:2026-10-19-quests3, [quests/0001 § 18](../../findings/quests/0001-progression.md#18-plan-0066-batch-s3a-the-kept-quest-logs-re-checked-2026-11-15-lanen66g)); [I] for the arm without b13 |
 
 - [I] NPC 264's (`meshif2`) message 0x211 with `j34 ` held turns it into `g34 ` (no bit). The figurine `j34 ` drops from the
   first Act III pack monster hooked while the quest is active ([items/quest-drops § E](../items/quest-drops.md#e-quest-items)).
@@ -1169,11 +1246,11 @@ stateDiagram-v2
 
 | bit | set/clear | trigger and condition | site | Tag |
 |---|---|---|---|---|
-| b2–b9 | set | every player at the state pass: state 2 → b2, 3 → b3, 4 with `+0x0B` 2/3/4 → b4/b5/b6, 5 with 2/3/4 → b7/b8/b9 | 0x005BC088–0x005BC11D | [I] (fn:sub_005BC020_A3Q6_SetProgressBits@0x005BC020) |
-| b13, b0, b11 | set | e8 Mephisto: the killer if b0 clear; every player on level 102 with b0, b11 clear; party members in Act III of credited players | 0x005BC148, 0x005BC152, 0x005BC15C | [I] (fn:sub_005BC8B0_A3Q6_MephistoDeath@0x005BC8B0, fn:sub_005BC190_A3Q6_SetDoneLevel102@0x005BC190) |
+| b2–b9 | set | every player at the state pass: state 2 → b2, 3 → b3, 4 with `+0x0B` 2/3/4 → b4/b5/b6, 5 with 2/3/4 → b7/b8/b9 | 0x005BC088–0x005BC11D | [C] for b9: written at 0x005BC11D in four Mephisto sessions, old 0 (run:2026-10-16-quest-drops, [quests/0001 § 19](../../findings/quests/0001-progression.md#19-plan-0066-batch-s3b-kill-step-and-service-step-rules-over-the-kept-questsgdb-logs-2026-11-16-lanen66p)); [I] for the other states and bits (fn:sub_005BC020_A3Q6_SetProgressBits@0x005BC020) |
+| b13, b0, b11 | set | e8 Mephisto: the killer if b0 clear; every player on level 102 with b0, b11 clear; party members in Act III of credited players | 0x005BC148, 0x005BC152, 0x005BC15C | [C] for the killer: b13, b0, b11 at the three sites in 3356 (old 0x200: b0 clear), none in 3501 (b0 set) (run:2026-10-16-quest-drops, [quests/0001 § 19](../../findings/quests/0001-progression.md#19-plan-0066-batch-s3b-kill-step-and-service-step-rules-over-the-kept-questsgdb-logs-2026-11-16-lanen66p)); [I] for the level-102 pass (the killer stood there, already credited) and the party (fn:sub_005BC8B0_A3Q6_MephistoDeath@0x005BC8B0, fn:sub_005BC190_A3Q6_SetDoneLevel102@0x005BC190) |
 | b14 | set | players with b0 and b11 clear | 0x005BC847 | [I] (fn:sub_005BC810_A3Q6_SetMissed@0x005BC810) |
 | b11 | clear | e11 any NPC message 0x291–0x297 (the kill reported) | 0x005BC6D1 | [I] (fn:sub_005BC5A0_A3Q6_NpcMessage@0x005BC5A0) |
-| G b13 | set | the death (always); first joiner with w22 b0, b11 or w23 b0 | 0x005BC9F0, 0x005BCDAA | [I] (fn:sub_005BCC80_A3Q6_FirstJoin@0x005BCC80) |
+| G b13 | set | the death (always); first joiner with w22 b0, b11 or w23 b0 | 0x005BC9F0, 0x005BCDAA | [C] for the death: G w22 b13 after both logged Mephisto kills, also with the game bit already set (3356 old 0x2000, 3501 old 0xA000); at a death only 0x005BC9F0 of the two (22, 13) callers runs (fn:sub_005BC8B0_A3Q6_MephistoDeath@0x005BC8B0, run:2026-10-16-quest-drops, [quests/0001 § 19](../../findings/quests/0001-progression.md#19-plan-0066-batch-s3b-kill-step-and-service-step-rules-over-the-kept-questsgdb-logs-2026-11-16-lanen66p)); [I] for the first joiner's condition (fn:sub_005BCC80_A3Q6_FirstJoin@0x005BCC80) |
 
 - [I] The Durance portal reads w22 b13 or b0 ([quests/travel § F](travel.md#f-the-durance-portal-and-the-other-travel-objects));
   b13 is cleared at load, so a reloaded character passes through b0. Mephisto's death opens the portal object (mode 1)
@@ -1194,7 +1271,7 @@ stateDiagram-v2
 | bit | set/clear | trigger and condition | site | Tag |
 |---|---|---|---|---|
 | b0 | set | the Dark Wanderer timer fires: every player in Act III with b0 clear, before the step | 0x005BD2AB | [C] for one player (run:2026-10-19-quests3: x-entry, x-entry2, h-entry, x-wpact3r-0; fn:sub_005BD260_A3Q7_SetSeen@0x005BD260) |
-| G b13 | set | e13: the first joiner has b0 (and then no Dark Wanderer this game) | 0x005BD2EE | [I] (fn:sub_005BD2C0_A3Q7_FirstJoin@0x005BD2C0) |
+| G b13 | set | e13: the first joiner has b0 (and then no Dark Wanderer this game) | 0x005BD2EE | [C] for the write: `GameQuestSet(32, 13)` at 0x005BD2EE under the joiner's w32 b0 test (`cmp eax, 1; jne`, then `lea edx, [eax+0x1f]`), two walkers ([quests/0001 § 20](../../findings/quests/0001-progression.md#20-plan-0066-batch-s3c-part-1-second-tool-reference-argument-and-table-scans-2026-11-16-lanen66p)); [I] for "no Dark Wanderer this game" (fn:sub_005BD2C0_A3Q7_FirstJoin@0x005BD2C0) |
 
 ```
 W32. AfterglowTimer — registered once, period 2, by the darkwanderer AI (0x005BD4A0); runs once:
@@ -1215,15 +1292,23 @@ W32. AfterglowTimer — registered once, period 2, by the darkwanderer AI (0x005
   order, one free-spot search each. `low & 1` was 0 in all four (8 tries). (run:2026-10-19-quests3: x-entry, x-entry2,
   h-entry, x-wpact3r-0; fn:sub_005BD390_A3Q7_AfterglowTimer@0x005BD390)
 - [I] The 7-try branch (`low & 1` = 1) was not reached. (fn:sub_005BD390_A3Q7_AfterglowTimer@0x005BD390)
-- [I] Word 32 has one write through the record functions: b0 at 0x005BD2AB (`SetSeen`). Beyond the join's bit-15
-  pass it holds only that bit. (fn:sub_005BD260_A3Q7_SetSeen@0x005BD260, [items/0010 § Plan 0049 Phase 1](../../findings/items/0010-quest-drops.md#plan-0049-phase-1-2026-10-20-static-the-s2c-static-leftovers))
-- [I] The init writes `+0xE0` = 16 although the code uses word 32; only the quest log is affected. `InitFn` 43 spawns the
-  Dark Wanderer at (x + 7, y) while the private flag is set. (fn:sub_005BD300_A3Q7_Init@0x005BD300,
+- [C] The player record's word 32 has one write through the record functions: b0 at 0x005BD2AB (`SetSeen`), read only
+  by `SetSeen` and `FirstJoin` (bit 0). The game record's word 32 has a second writer: `A3Q7_FirstJoin`'s
+  `GameQuestSet(32, 13)` (0x005BD2EE, the table above), so game word 32 holds bit 13 beside the join's bit 15.
+  (fn:sub_005BD260_A3Q7_SetSeen@0x005BD260, fn:sub_005BD2C0_A3Q7_FirstJoin@0x005BD2C0, [quests/0001 § 20](../../findings/quests/0001-progression.md#20-plan-0066-batch-s3c-part-1-second-tool-reference-argument-and-table-scans-2026-11-16-lanen66p))
+- [I] Beyond these and the join's bit-15 pass, word 32 holds no bit. (fn:sub_005BD260_A3Q7_SetSeen@0x005BD260,
+  [items/0010 § Plan 0049 Phase 1](../../findings/items/0010-quest-drops.md#plan-0049-phase-1-2026-10-20-static-the-s2c-static-leftovers))
+- [C] The init writes `+0xE0` = 16 (0x005BD368) although the code uses word 32: no A3Q7 record call takes `[obj+0xE0]`,
+  and `g_ObjInitFns[43]` is `A3Q7_WandererSpawnInit` ([quests/0001 § 20](../../findings/quests/0001-progression.md#20-plan-0066-batch-s3c-part-1-second-tool-reference-argument-and-table-scans-2026-11-16-lanen66p)). Only the quest log is affected.
+- [I] `InitFn` 43 spawns the Dark Wanderer at (x + 7, y) while the private flag is set. (fn:sub_005BD300_A3Q7_Init@0x005BD300,
   fn:sub_005BD1F0_A3Q7_WandererSpawnInit@0x005BD1F0)
 
 ##### Word 42: the Act III introductions (quest object 39)
 
-- [I] Per-NPC introduction flags only (player data `+0x60 + 4·difficulty`), no record bit, no draw.
+- [C] No record bit, no draw: quest object 39's callbacks (e0 28 times, e11 16) wrote no record bit in their 44 logged
+  dispatches, the quest and player seeds unchanged in all 44. (fn:sub_005B6C60_A3Q0x_NpcMessage@0x005B6C60,
+  run:2026-10-19-quests3, [quests/0001 § 18](../../findings/quests/0001-progression.md#18-plan-0066-batch-s3a-the-kept-quest-logs-re-checked-2026-11-15-lanen66g))
+- [I] Per-NPC introduction flags only (player data `+0x60 + 4·difficulty`).
   (fn:sub_005B6C60_A3Q0x_NpcMessage@0x005B6C60)
 
 #### Act IV
@@ -1261,7 +1346,9 @@ stateDiagram-v2
 | b0; b1 clear; steps clear | set / clear | e11 NPC 367 message 0x2A4 with b1 set | 0x005B3AF8, 0x005B3B07, 0x005B3B14 | [C] (run:2026-10-18-quests2: x-talk4, h-talk4, c-talk4) |
 | G b13 | set | the same message when the player also has b13 | 0x005B3AE9 | [I] (fn:sub_005B39A0_A4Q1_NpcMessage@0x005B39A0) |
 
-- [I] The reward also adds 2 to stat 5 (`UnitAddStat(p, 5, 2)`, 0x005B3B1F). The death arms timer `0x005B3E60` (period 3)
+- [C] The reward also adds 2 to stat 5 (`UnitAddStat(p, 5, 2)`, 0x005B3B1F): stat 5 rose by 2 in x-talk4, h-talk4 and
+  c-talk4 with the level unchanged. (fn:sub_005B39A0_A4Q1_NpcMessage@0x005B39A0, run:2026-10-18-quests2, [quests/0001 § 18](../../findings/quests/0001-progression.md#18-plan-0066-batch-s3a-the-kept-quest-logs-re-checked-2026-11-15-lanen66g))
+- [I] The death arms timer `0x005B3E60` (period 3)
   that spawns class 406 at the death position (oracle). No draw. (fn:sub_005B3E60_A4Q1_GhostTimer@0x005B3E60)
 
 ##### Word 26: Diablo, the seals and the Harrogath portal (quest object 23)
@@ -1328,9 +1415,9 @@ stateDiagram-v2
 
 | bit | set/clear | trigger and condition | site | Tag |
 |---|---|---|---|---|
-| b13, b1; steps clear | set / clear | the third strike: the striker, and every player in Act IV with b0, b1 clear (each loses `hfh ` and `mss `) | 0x005B5D3C, 0x005B5D49, 0x005B5B72, 0x005B5B7C | [I] (fn:sub_005B5C10_A4Q3_ForgeOperate@0x005B5C10, fn:sub_005B5B00_A4Q3_ForgeCredit@0x005B5B00) |
+| b13, b1; steps clear | set / clear | the third strike: the striker, and every player in Act IV with b0, b1 clear (each loses `hfh ` and `mss `) | 0x005B5D3C, 0x005B5D49, 0x005B5B72, 0x005B5B7C | [C] for the striker: each of the 6 logged third strikes wrote b13 then b1 at 0x005B5D3C/0x005B5D49 (old 0x4: b0, b1 clear), and no earlier strike wrote word 27 (fn:sub_005B5C10_A4Q3_ForgeOperate@0x005B5C10, run:2026-10-16-quest-drops, [quests/0001 § 19](../../findings/quests/0001-progression.md#19-plan-0066-batch-s3b-kill-step-and-service-step-rules-over-the-kept-questsgdb-logs-2026-11-16-lanen66p)); [I] for the steps clear (`ClearSteps` at 0x005B5D59, not logged), the item removals and the other Act IV players (fn:sub_005B5B00_A4Q3_ForgeCredit@0x005B5B00) |
 | b14 | set | the rest | 0x005B5BE7 | [I] (fn:sub_005B5B00_A4Q3_ForgeCredit@0x005B5B00) |
-| b2 / b5 / b3 | set | log state 2 → b5 with the soulstone given, else b2; state 3 → b3 | 0x005B6027, 0x005B6016, 0x005B603D | [I] (fn:sub_005B59C0_A4Q3_StepBits@0x005B59C0) |
+| b2 / b5 / b3 | set | log state 2 → b5 with the soulstone given, else b2; state 3 → b3 | 0x005B6027, 0x005B6016, 0x005B603D, in `A4Q3_NpcGate` | [I] (fn:sub_005B5EE0_A4Q3_NpcGate@0x005B5EE0; the sites' owner per [quests/0001 § 19](../../findings/quests/0001-progression.md#19-plan-0066-batch-s3b-kill-step-and-service-step-rules-over-the-kept-questsgdb-logs-2026-11-16-lanen66p)) |
 | b0; b1 clear | set / clear | e11 NPC 246 message 0x2A8 with b1 set | 0x005B6287, 0x005B6296 | [C] (run:2026-10-18-quests2: x-talk4, h-talk4, c-talk4) |
 
 - [I] The forge, its strikes and its draws are [items/quest-drops § D](../items/quest-drops.md#d-special-drops).
@@ -1338,8 +1425,11 @@ stateDiagram-v2
 
 ##### Word 33: NPC 408's dialogue (quest object 29)
 
-- [I] A dialogue selector for class 408 (reading w27 and w26); no quest script writes word 33, and the stock client never
-  sends packet `0x58` for it. No draw. (fn:sub_005B6940_A4Q4_NpcTalk@0x005B6940, fn:sub_005B69F0_A4Q4_NpcGate@0x005B69F0)
+- [C] A dialogue selector for class 408 (reading w27 and w26); no quest script writes word 33, and the stock client never
+  sends packet `0x58` for it (A5). `A4Q4_NpcTalk` reads w27 (b0, b1, b13) and `A4Q4_NpcGate` w27 and w26 (b13, b0); no
+  record call writes word 33, by immediate or computed word (two walkers). (fn:sub_005B6940_A4Q4_NpcTalk@0x005B6940,
+  fn:sub_005B69F0_A4Q4_NpcGate@0x005B69F0, [quests/0001 § 20](../../findings/quests/0001-progression.md#20-plan-0066-batch-s3c-part-1-second-tool-reference-argument-and-table-scans-2026-11-16-lanen66p))
+- [I] No draw. (fn:sub_005B6940_A4Q4_NpcTalk@0x005B6940)
 
 #### Act V
 
@@ -1363,9 +1453,11 @@ stateDiagram-v2
 | G b13 | set | e8 | 0x005873A8 | [I] (fn:sub_00587330_A5Q1_ShenkDeath@0x00587330) |
 | b2, b3, b4 | set | log states | 0x00586E2D, 0x00586E5A, 0x00586E49 | [I] (fn:sub_00586DE0_A5Q1_StepBitsByState@0x00586DE0) |
 | steps clear; b5 | clear / set | e11 NPC 511 (`larzuk`) message 0x4E7A with b1 set | 0x00586F27, 0x00586F36 | [C] (run:2026-10-18-quests2: x-talk5) |
-| b0; b1 clear | set / clear | the socket service done ([items/quest-drops § F](../items/quest-drops.md#f-npc-item-services-and-given-items)) | 0x005877D7, 0x005877E1 | [I] (fn:sub_005877C0_A5Q1_SocketDone@0x005877C0) |
+| b0; b1 clear | set / clear | the socket service done ([items/quest-drops § F](../items/quest-drops.md#f-npc-item-services-and-given-items)) | 0x005877D7, 0x005877E1 | [C] (24 logged socket services: b0 set then b1 cleared at these sites after each, old b1 set, b0 clear; fn:sub_005877C0_A5Q1_SocketDone@0x005877C0, run:2026-10-16-quest-drops, [quests/0001 § 19](../../findings/quests/0001-progression.md#19-plan-0066-batch-s3b-kill-step-and-service-step-rules-over-the-kept-questsgdb-logs-2026-11-16-lanen66p)) |
 
-- [I] Larzuk is spawned once by object `InitFn` 70/71 (`SpawnAtPos(x, y, 511, 1, 5, 0)`, oracle). No draw.
+- [C] Larzuk is spawned once per game: one class-511 unit per game in the 6 logs that meet him.
+  (fn:sub_00587840_A5Q1_LarzukSpawn@0x00587840, run:2026-10-19-quests3, [quests/0001 § 18](../../findings/quests/0001-progression.md#18-plan-0066-batch-s3a-the-kept-quest-logs-re-checked-2026-11-15-lanen66g))
+- [I] By object `InitFn` 70/71 (`SpawnAtPos(x, y, 511, 1, 5, 0)`, oracle). No draw.
   (fn:sub_00587840_A5Q1_LarzukSpawn@0x00587840)
 
 ##### Word 36: the prisoners (quest object 32)
@@ -1383,7 +1475,7 @@ stateDiagram-v2
 | bit | set/clear | trigger and condition | site | Tag |
 |---|---|---|---|---|
 | b4 | set | a cage freed with the rescue not complete (prisoner AI) | 0x00588C0C | [I] (fn:sub_005888D0_A5Q2_CageFreed@0x005888D0) |
-| b4 | clear | every join (e13, e14) | 0x00588496 | [I] (fn:sub_00588040_A5Q2_MonsterDeath@0x00588040) |
+| b4 | clear | every join (e13, e14) | 0x00588491 (e13), 0x00588469 (e14) | [C] (each of the 54 logged games cleared w36 b4 at its join: 53 at the e13 call, x-newchar's second join at the e14 call; its first join, the record not ready, logged none; fn:sub_00588040_A5Q2_MonsterDeath@0x00588040, run:2026-10-19-quests3, [quests/0001 § 18](../../findings/quests/0001-progression.md#18-plan-0066-batch-s3a-the-kept-quest-logs-re-checked-2026-11-15-lanen66g)) |
 | b13, b1 | set | rescue complete: spawned = killed + rescued, all 3 cages open, rescued ≥ 12; the triggering player and party members in Act V | 0x00588B81, 0x00588B8B, 0x00587EBA, 0x00587EC4 | [I] (fn:sub_00587E60_A5Q2_PartyCredit@0x00587E60) |
 | b5 / b6 / b7 | set | the same: rescued 15 → b5, 14 → b6, 12–13 → b7 | 0x00588BAD, 0x00587EE8, 0x00587EFD, 0x00587F0D | [I] (fn:sub_00587E60_A5Q2_PartyCredit@0x00587E60) |
 | b14 | set | rescue complete with fewer than 12 rescued, or more than 4 prisoners killed | 0x00587FA6 | [I] (fn:sub_00587F60_A5Q2_FailBit@0x00587F60) |
@@ -1415,7 +1507,7 @@ stateDiagram-v2
 | b3 | set | e3 entering level 113 (state to 3): `0x00588F10` for the player; the entry into 112 before it moves the state to 1 with no write | 0x00588F71 | [C] (run:2026-10-19-quests3: x-entry, x-entry2, h-entry; 0x00589D80–0x00589EFE) |
 | b2 | set | log state | 0x00588F5C | [I] (fn:sub_00588EB0_A5Q3_StepBits@0x00588EB0) |
 | b3 | set | e3 entering 114, or the old-level-109 branch (not reached) | 0x00588F71 | [I] (fn:sub_00589D80_A5Q3_LevelChange@0x00589D80) |
-| b8 | set | e11 NPC 513 message 0x4EA4 with b1 set, b0 clear: `tr2 ` given | 0x005896F1 | [I] (fn:sub_00589580_A5Q3_NpcMessage@0x00589580) |
+| b8 | set | e11 NPC 513 message 0x4EA4 with b1 set, b0 clear: `tr2 ` given | 0x005896F1 | [C] after Malah's `tr2 ` (placed by `QUESTS_GiveItem`), b8 at 0x005896F1 with old 0x8002 (b1 set, b0 clear), in Normal, Nightmare and Hell (run:2026-10-27-sweep-quest-npc, [quests/0001 § 19](../../findings/quests/0001-progression.md#19-plan-0066-batch-s3b-kill-step-and-service-step-rules-over-the-kept-questsgdb-logs-2026-11-16-lanen66p)); [I] the message with b1 clear or b0 set (fn:sub_00589580_A5Q3_NpcMessage@0x00589580) |
 | b9, b10 | set | e11 NPC 512 message 0x4EA8 with b1 set, b0 and b10 clear, no `+0x09` test: the reward item made (W37), then b9, and b10 last; a second talk gives nothing (b10) | 0x005899BA, 0x005899E6 | [C] (run:2026-10-19-quests3: x-anya, nm-anya, h-anya, quest 33 switched off; fn:sub_00589580_A5Q3_NpcMessage@0x00589580) |
 | b0; b1 clear | set / clear | the reward talk coming second (b8 already set): b1 cleared, b0 set, between b9 and b10 | 0x005899D2, 0x005899DC | [C] (run:2026-10-19-quests3: x-anya, nm-anya, h-anya) |
 | b0; b1 clear | set / clear | the NPC 513 talk coming second (b9 already set) | 0x0058973A, 0x00589744 | [I] (fn:sub_00589580_A5Q3_NpcMessage@0x00589580) |
@@ -1460,7 +1552,7 @@ stateDiagram-v2
 | b14 | set | the rest at the kill; a joiner as in word 37 | 0x0058B716, 0x0058A267 | [I] (fn:sub_0058B7A0_A5Q4_NihlathakDeath@0x0058B7A0) |
 | b2, b3 | set | log states | 0x0058B118, 0x0058B12D | [I] (fn:sub_0058AEA0_A5Q4_StepBits@0x0058AEA0) |
 | b4 | set | e11 NPC 512 message 0x4EB4 | 0x0058B24E | [I] (fn:sub_0058B1C0_A5Q4_NpcMessage@0x0058B1C0) |
-| b0; b1 clear | set / clear | the personalise service done | 0x0058BC16, 0x0058BC20 | [I] (fn:sub_0058BC00_A5Q4_PersonalizeDone@0x0058BC00) |
+| b0; b1 clear | set / clear | the personalise service done | 0x0058BC16, 0x0058BC20 | [C] (22 logged personalisations: b0 set then b1 cleared at these sites after each, old b1 set, b0 clear; fn:sub_0058BC00_A5Q4_PersonalizeDone@0x0058BC00, run:2026-10-16-quest-drops, [quests/0001 § 19](../../findings/quests/0001-progression.md#19-plan-0066-batch-s3b-kill-step-and-service-step-rules-over-the-kept-questsgdb-logs-2026-11-16-lanen66p)) |
 
 - [I] **The red portal** to level 121: `PortalObjectCreate(room, x + 10, y + 5, 121, 0, class 60, 1)` at the town Anya
   placeholder, once per game, after message 0x4EA9 (talk end) or object 459's event 7 (every 12 frames until it succeeds);
@@ -1519,9 +1611,9 @@ stateDiagram-v2
 
 | bit | set/clear | trigger and condition | site | Tag |
 |---|---|---|---|---|
-| b13, b0 | set | e8 Baal: each player on level 132 with b0, b1 clear; party members in Act V | 0x0058DD38, 0x0058DD42, 0x0058DCB6, 0x0058DCC0 | [I] (fn:sub_0058DD30_A5Q6_Credit@0x0058DD30, fn:sub_0058DC60_A5Q6_PartyCredit@0x0058DC60) |
+| b13, b0 | set | e8 Baal: each player on level 132 with b0, b1 clear; party members in Act V | 0x0058DD38, 0x0058DD42, 0x0058DCB6, 0x0058DCC0 | [C] for the players on 132: b13, b0 at 0x0058DD38/0x0058DD42 in baal-fresh-r2 (old 0x4), `Credit`'s only caller being 0x0058DF10 in `ChamberCredit`; none in baal-done (b0 set) (fn:sub_0058DD30_A5Q6_Credit@0x0058DD30, fn:sub_0058DEA0_A5Q6_ChamberCredit@0x0058DEA0, run:2026-10-17-sweep-quest-b6, [quests/0001 § 19](../../findings/quests/0001-progression.md#19-plan-0066-batch-s3b-kill-step-and-service-step-rules-over-the-kept-questsgdb-logs-2026-11-16-lanen66p)); [I] for the party members (fn:sub_0058DC60_A5Q6_PartyCredit@0x0058DC60) |
 | b14 | set | the rest | 0x0058DE08 | [I] (fn:sub_0058DF20_A5Q6_BaalDeath@0x0058DF20) |
-| b2 / b3 | set | log state 2 / 3, players in Act V | 0x0058D91D, 0x0058D933 | [I] (fn:sub_0058D8B0_A5Q6_StepBitsByState@0x0058D8B0) |
+| b2 / b3 | set | log state 2 / 3, players in Act V | 0x0058D91D, 0x0058D933 | [C] for b2: twice at 0x0058D91D in baal-fresh-r2 (old 0, then 0x4) (run:2026-10-17-sweep-quest-b6, [quests/0001 § 19](../../findings/quests/0001-progression.md#19-plan-0066-batch-s3b-kill-step-and-service-step-rules-over-the-kept-questsgdb-logs-2026-11-16-lanen66p)); [I] for b3 (fn:sub_0058D8B0_A5Q6_StepBitsByState@0x0058D8B0) |
 | b4 | set | e11 message 0x4ED2 (jump table at 0x0058D9D0, index `msg − 0x4ECF`; no NPC or `+0x09` test) | 0x0058D9C7 | [C] (run:2026-10-18-quests2: x-talk5) |
 | b9, b6 | set | e11 messages 0x4ED0 (Anya's talk), 0x4ED3 (Malah's talk) by the same table | 0x0058D9C7 | [C] (run:2026-10-19-quests3: x-anya, nm-anya, h-anya; one Malah talk) |
 | b7, b5, b8 | set | e11 messages 0x4ECF, 0x4ED1, 0x4ED4 by the same table | 0x0058D9C7 | [I] (fn:sub_0058D940_A5Q6_NpcMessage@0x0058D940) |
@@ -1543,39 +1635,51 @@ W40. ZooInit — InitFn 79 (object 567), once per game (private +0xA0):   [I] (f
 - [I] Every Baal credit, and the first join of a player with b0 or b15, raises the client's status progression to at least
   `5d + 5`. Baal's gold draws on the quest seed ([items/quest-drops](../items/quest-drops.md)). The consumer of the Zoo's
   class beyond its message is not traced. (fn:sub_00538680_PlayerProgressionRaise@0x00538680, tbl:MonStats.txt:zoo)
-- [I] **The Zoo does not run on stock data**: no DS1 places object 567 (2 274 DS1 files scanned) and no immediate in the
-  code creates class `0x237`, so W40 and its 1–10 quest-seed draws are not reached by stock play (a computed class is
-  not excluded), and `+0xA4` stays 0 for the level-109 message. (fn:sub_0058E830_A5Q6_ZooInit@0x0058E830,
-  data:g_ObjInitFns@0x00731BC0; quests/0001 § 10, `objplace`)
+- [C] **The Zoo does not run on stock data**: no DS1 places object 567 (2 276 files under the second reader, 2 274 read
+  alike by both), no `objgroup` cell names it, and none of the 3 instructions with the immediate `0x237` creates it, so
+  W40 and its 1–10 quest-seed draws are not reached through stock placement (a computed class is not excluded).
+  (fn:sub_0058E830_A5Q6_ZooInit@0x0058E830, data:g_ObjInitFns@0x00731BC0; quests/0001 § 10, `objplace`; [quests/0001 § 21](../../findings/quests/0001-progression.md#21-plan-0066-batch-s3c-part-2-the-game-records-data-flow-the-placement-scans-with-a-second-parser-2026-11-16-lanen66p))
+- [I] So `+0xA4` stays 0 for the level-109 message. (fn:sub_0058E830_A5Q6_ZooInit@0x0058E830)
+- [C] The Worldstone Chamber portal moved the player into level 132: an operate of object 563, then the player in 132,
+  in both logged Baal sessions. (fn:sub_0058E6A0_A5Q6_BaalPortalOperate@0x0058E6A0, run:2026-10-17-sweep-quest-b6, [quests/0001 § 19](../../findings/quests/0001-progression.md#19-plan-0066-batch-s3b-kill-step-and-service-step-rules-over-the-kept-questsgdb-logs-2026-11-16-lanen66p))
 - [I] The Worldstone Chamber portal (objects 563, 569) moves a player from 131 to 132 only after Baal's AI opened it; the
   warp gate into 132 refuses until then ([quests/travel § F](travel.md#f-the-durance-portal-and-the-other-travel-objects)).
   (fn:sub_0058E640_A5Q6_ChamberWarpBlocked@0x0058E640)
-- [I] The join of a player with w40 b0 sets b10 at the first-join callback; the run's save loads logged that write in
+- [C] The join of a player with w40 b0 sets b10 at the first-join callback (call 0x0058E4CB): in 40 of the 40 logged joins
+  with w40 b0 and in none of the 14 without (run:2026-10-19-quests3, [quests/0001 § 18](../../findings/quests/0001-progression.md#18-plan-0066-batch-s3a-the-kept-quest-logs-re-checked-2026-11-15-lanen66g)); the run's save loads logged that write in
   every save with word 40 done, outside the checked rules. (fn:sub_0058E430_A5Q6_PlayerJoin@0x0058E430 0x0058E4D0,
   run:2026-10-17-quests)
 
 ##### Word 42: the Act V introductions (quest object 40)
 
-- [I] Per-NPC introduction flags for NPCs 512–520 only, no record bit; messages 0x4E45–0x4E47 also move quest 31 from log
-  state 0 to 1. No draw. (fn:sub_0058E990_A5Q0_NpcMessage@0x0058E990)
+- [C] No record bit, no draw: quest object 40's callbacks (e0 7 times, e11 13) wrote no record bit in their 20 logged
+  dispatches; 17 left the seeds unchanged and the other 3 are Anya's reward e11, whose step is quest object 33's fetch at
+  0x0058992E. (fn:sub_0058E990_A5Q0_NpcMessage@0x0058E990, run:2026-10-19-quests3, [quests/0001 § 18](../../findings/quests/0001-progression.md#18-plan-0066-batch-s3a-the-kept-quest-logs-re-checked-2026-11-15-lanen66g))
+- [I] Per-NPC introduction flags for NPCs 512–520 only; messages 0x4E45–0x4E47 also move quest 31 from log state 0 to 1
+  (the one 0x4E46 logged met the quest switched off). (fn:sub_0058E990_A5Q0_NpcMessage@0x0058E990)
 
 ### Warp and portal gates
 
 | Gate | Reads | Refuses when | Tag |
 |---|---|---|---|
 | warp into 73 | an Act II quest object's private byte `+0x0B` | the object is active with that byte 0 | [I] (0x0059DB20, fn:QUESTS_WarpGate@0x00545B80) |
-| warp into 100 | quest 19's "orb broken" byte; the player's room level | the orb is whole and the player is not on 101 | [I] (fn:sub_005BBFA0_A3Q5_DuranceWarpGate@0x005BBFA0) |
+| warp into 100 | quest 19's "orb broken" byte; the player's room level | the orb is whole and the player is not on 101 | [C] for the pass: x-orb's warp 83 → 100 after the orb broke called the gate and passed (run:2026-10-18-quests2, [quests/0001 § 18](../../findings/quests/0001-progression.md#18-plan-0066-batch-s3a-the-kept-quest-logs-re-checked-2026-11-15-lanen66g)); [I] for the refusal (fn:sub_005BBFA0_A3Q5_DuranceWarpGate@0x005BBFA0) |
 | warp into 118 or 128 from 120 | quest 35's `+0x09` and private "done in this game" byte | quest 35 is active and not done in this game | [I] (fn:sub_0058D090_A5Q5_SummitWarpBlocked@0x0058D090 0x0058D09A) |
 | warp into 132 | quest 36's chamber flag | Baal has not opened the chamber | [I] (fn:sub_0058E640_A5Q6_ChamberWarpBlocked@0x0058E640) |
 | another player's town portal | `Levels.QuestFlag`/`QuestFlagEx` of the destination | the user's word bit 0 is clear | [I] (fn:OBJOP_Portal@0x00584870, tbl:Levels.txt:QuestFlagEx) |
 | Durance portal | w22 b13, b0 | both clear | [I] (fn:sub_00584750_DurancePortalOperate@0x00584750) |
-| NPC act travel | w6, w14, w26 bit 0 | clear | [I] (fn:NPC_MenuAction@0x00579D60) |
+| NPC act travel | w6, w14, w26 bit 0 | clear | [C] for the pass: NPC 155's 11 act travels with w6 b0 set and NPC 210's 7 with w14 b0 set (run:2026-10-19-quests3, [quests/0001 § 18](../../findings/quests/0001-progression.md#18-plan-0066-batch-s3a-the-kept-quest-logs-re-checked-2026-11-15-lanen66g)); [I] for the refusals and NPC 367's w26 (fn:NPC_MenuAction@0x00579D60) |
 | the summit door | quest 35's private "done in this game" byte | it is 0 | [C] (fn:sub_0058D6A0_A5Q5_SummitDoorOperate@0x0058D6A0, run:2026-10-17-quests) |
 
-- [I] The orb-broken byte is set game-wide by the orb's completing operate or by a first joiner with w18 b0, so the
-  Durance entrance opens for everyone once any player breaks the orb. (fn:sub_005BB480_A3Q5_FirstJoin@0x005BB480)
-- [I] The waypoint menu and waypoint travel read no quest word on the server; level 74's waypoint and the Arcane portal
-  read none either. (fn:sub_00549570_WaypointTravelCheck@0x00549570, fn:sub_0059BA40_A2Q4_ArcanePortalInit@0x0059BA40)
+- [C] The orb's completing operate sets the orb-broken byte: x-orb's operate set it (its joiner had w18 b0 clear) and
+  the warp 83 → 100 then passed. (fn:sub_005BB980_A3Q5_CompellingOrbOperate@0x005BB980, run:2026-10-18-quests2, [quests/0001 § 18](../../findings/quests/0001-progression.md#18-plan-0066-batch-s3a-the-kept-quest-logs-re-checked-2026-11-15-lanen66g))
+- [I] The byte is set game-wide, also by a first joiner with w18 b0, so the Durance entrance opens for everyone once any
+  player breaks the orb. (fn:sub_005BB480_A3Q5_FirstJoin@0x005BB480)
+- [C] The waypoint menu and waypoint travel read no quest word on the server; level 74's waypoint and the Arcane portal
+  read none either: `WaypointOperate`, `Pkt49WaypointTravel`, `WaypointTravelCheck`, `WaypointTravel` and
+  `OBJINIT_Waypoint` and their callees to depth 2 call no quest reader, and `A2Q4_ArcanePortalInit` calls only
+  `QUESTS_FindById` for private state. Scope: direct calls to depth 2. (fn:sub_00549570_WaypointTravelCheck@0x00549570,
+  fn:sub_0059BA40_A2Q4_ArcanePortalInit@0x0059BA40, [quests/0002 § 17](../../findings/quests/0002-travel.md#17-plan-0066-batch-s3c-part-1-second-tool-reference-scans-2026-11-16-lanen66p))
 
 ### Creation-path readers
 
@@ -1583,13 +1687,13 @@ The quest state that the reviewed creation specs take as an input, and the code 
 
 | Spec | Reader | State read | Tag |
 |---|---|---|---|
-| [items/quest-drops](../items/quest-drops.md) | the quest TC switch (B6) | the killer's `TCQuestId` word bits 15, 1 and `TCQuestCP`, read before the boss's script writes | [I] (fn:MONSTER_DropItems@0x005A6600) |
-| [objects](../objects/README.md) | `InitFn` 49/50 (Hratli), 52 (NPC 297), 43 (Dark Wanderer), 55 (Diablo's start point), 69 (Nihlathak), 79 (the Zoo), 44 (hellgate 342), the cairn stones' init (Tristram portal) | G w16 b13, G w22 b13, quest private state | [I] (data:g_ObjInitFns@0x00731BC0) |
+| [items/quest-drops](../items/quest-drops.md) | the quest TC switch (B6) | the killer's `TCQuestId` word bits 15, 1 and `TCQuestCP`, read before the boss's script writes | [C] (in the 18 logged quest-TC groups the reads precede the boss's credit writes, 10 credited; in the 7 credited Andariel kills the b1 read gave 0 and the credit then set b1; fn:MONSTER_DropItems@0x005A6600, run:2026-10-16-quest-drops, run:2026-10-17-sweep-quest-b6, [quests/0001 § 19](../../findings/quests/0001-progression.md#19-plan-0066-batch-s3b-kill-step-and-service-step-rules-over-the-kept-questsgdb-logs-2026-11-16-lanen66p)) |
+| [objects](../objects/README.md) | `InitFn` 49/50 (Hratli), 52 (NPC 297), 43 (Dark Wanderer), 55 (Diablo's start point), 69 (Nihlathak), 79 (the Zoo), 44 (hellgate 342), the cairn stones' init (Tristram portal) | G w16 b13, G w22 b13, quest private state | [C] (`g_ObjInitFns` read from the image and by r2: entries 43, 44, 49, 50, 52, 55, 69, 79 and 6 are these inits; 49 and 50 read G w16 b13 (0x005B70CF, 0x005B7197), 52 G w22 b13 (0x005BCE8C), the others, the cairn stones' `A1Q4_StoneInit` included, only private state; data:g_ObjInitFns@0x00731BC0, [quests/0001 § 20](../../findings/quests/0001-progression.md#20-plan-0066-batch-s3c-part-1-second-tool-reference-argument-and-table-scans-2026-11-16-lanen66p), [quests/0001 § 21](../../findings/quests/0001-progression.md#21-plan-0066-batch-s3c-part-2-the-game-records-data-flow-the-placement-scans-with-a-second-parser-2026-11-16-lanen66p)) |
 | [monsters/spawn](../monsters/spawn.md) | the Chaos Sanctuary gate | quest 23's private `+0x13` (word 26) | [I] (fn:sub_005B5210_DiabloQuestFlag@0x005B5210) |
-| [monsters/special](../monsters/special.md) | superunique quest hooks, the forced death list | the hook lists (§ B) | [I] (fn:QUESTS_HookMonster@0x005436B0) |
-| [rng/seeds](../rng/seeds.md) | act `+0x094` | the true tomb: word 14's level-change step, the join's tomb index, `OBJINIT_Portal`'s lair pair; act `+0x484` (maze only), `+0x474` (Kurast gates only) and the level-27 bit are read by no quest code | [I] (0x0061AEB0, fn:OBJINIT_Portal@0x0054FE70) |
-| [items/cube](../items/cube.md) | the cow portal | w26 b0 (classic) or w40 b0 (expansion), G w4 b11 | [I] (fn:CUBE_CowPortalOpen@0x00594140) |
-| [drlg/collision](../drlg/collision.md) | the Arcane Sanctuary waypoint | no quest bit gates level 74 or portal 298 | [I] (fn:sub_0059BA40_A2Q4_ArcanePortalInit@0x0059BA40) |
+| [monsters/special](../monsters/special.md) | superunique quest hooks, the forced death list | the hook lists (§ B) | [C] (`QUESTS_HookMonster` has 32 calls in 11 functions, three tools agreeing; the forced list as B4; fn:QUESTS_HookMonster@0x005436B0, [quests/0001 § 20](../../findings/quests/0001-progression.md#20-plan-0066-batch-s3c-part-1-second-tool-reference-argument-and-table-scans-2026-11-16-lanen66p), [quests/0001 § 21](../../findings/quests/0001-progression.md#21-plan-0066-batch-s3c-part-2-the-game-records-data-flow-the-placement-scans-with-a-second-parser-2026-11-16-lanen66p)) |
+| [rng/seeds](../rng/seeds.md) | act `+0x094` | the true tomb: word 14's level-change step, the join's tomb index, `OBJINIT_Portal`'s lair pair; act `+0x484` (maze only), `+0x474` (Kurast gates only) and the level-27 bit are read by no quest code | [C] (`+0x094` read only through 0x00642230 from 0x0061AEB0, whose five callers are these; no quest function names `+0x484` or `+0x474`; level 27's struct is fetched only by `LevelLinkBuild` and `MazeBarracksPlace`, and no quest function calls a level-struct getter, scope direct calls; 0x0061AEB0, fn:OBJINIT_Portal@0x0054FE70, [quests/0001 § 20](../../findings/quests/0001-progression.md#20-plan-0066-batch-s3c-part-1-second-tool-reference-argument-and-table-scans-2026-11-16-lanen66p), [quests/0001 § 21](../../findings/quests/0001-progression.md#21-plan-0066-batch-s3c-part-2-the-game-records-data-flow-the-placement-scans-with-a-second-parser-2026-11-16-lanen66p)) |
+| [items/cube](../items/cube.md) | the cow portal | w26 b0 (classic) or w40 b0 (expansion), G w4 b11 | [C] for the expansion side: G w4 b11 with the opener's w40 b0 set in both logged openings (run:2026-10-16-quest-drops, [quests/0001 § 19](../../findings/quests/0001-progression.md#19-plan-0066-batch-s3b-kill-step-and-service-step-rules-over-the-kept-questsgdb-logs-2026-11-16-lanen66p)); [I] for w26 b0 in a classic game and the refusal (fn:CUBE_CowPortalOpen@0x00594140) |
+| [drlg/collision](../drlg/collision.md) | the Arcane Sanctuary waypoint | no quest bit gates level 74 or portal 298 | [C] (no record reader in `A2Q4_ArcanePortalInit` or `OBJINIT_Waypoint` and their callees to depth 2; fn:sub_0059BA40_A2Q4_ArcanePortalInit@0x0059BA40, [quests/0002 § 17](../../findings/quests/0002-travel.md#17-plan-0066-batch-s3c-part-1-second-tool-reference-scans-2026-11-16-lanen66p)) |
 | [save/d2s](../save/d2s.md) | the quest record of difficulty *d* | `+0x10 + 4·d`; the loader rule A3 | [C] (fn:D2S_ReadQuests@0x0056A370, run:2026-10-18-quests2) |
 
 ## Outputs
@@ -1599,8 +1703,10 @@ The quest state that the reviewed creation specs take as an input, and the code 
   run:2026-10-18-quests2)
 - The quest objects' active flags (`+0x09`, `+0x0A`) after the join, read by the scripts. [C] for the branch reached
   (fn:sub_00546270_QuestsPlayerJoin@0x00546270, run:2026-10-17-quests)
-- Draws on the quest seed and the player's unit seed (§ G); units, items, portals and timers created by the scripts.
-  [I] (fn:QUESTS_GetSeed@0x005438B0)
+- Draws on the quest seed and the player's unit seed (§ G): [C] each logged quest-seed fetch lies inside its drawing
+  event (0x0059B21C in e0 45 times, 0x0058992E in e11 3, 0x0059EDD8 in e3 3, 0x00592EE6 and 0x005BD3E2 in timer runs 3
+  and 4), one 0x005BD3E2 fetch outside any logged event (fn:QUESTS_GetSeed@0x005438B0, run:2026-10-19-quests3, [quests/0001 § 18](../../findings/quests/0001-progression.md#18-plan-0066-batch-s3a-the-kept-quest-logs-re-checked-2026-11-15-lanen66g)).
+  Units, items, portals and timers created by the scripts, and their seeds: [I] (fn:QUESTS_GetSeed@0x005438B0)
 
 ## Worked example
 

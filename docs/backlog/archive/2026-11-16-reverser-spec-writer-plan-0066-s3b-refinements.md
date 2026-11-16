@@ -2,13 +2,15 @@
 from: reverser
 to: spec-writer
 date: 2026-11-16
-status: open
-context: [../plans/0066-simulation-inferred-claims-sweep.md, ../findings/quests/0001-progression.md]
-resolution: ""
+status: done
+context:
+  - ../../plans/0066-simulation-inferred-claims-sweep.md
+  - ../../findings/quests/0001-progression.md
+resolution: "Plan 0066 Phase 3 (lane/n66qr, 2026-11-16): Radament's two site triples listed, Andariel's level pass rewriting a credited killer stated, the A2Q1 and A4Q3 StepBits sites given their NpcGate owners. [quests/progression](../../specs/quests/progression.md#h-the-quests)"
 ---
 
 Plan 0066 batch S3b (`lane/n66p`) found no contradiction in quests/progression, and three refinements for Phase 3
-(spec lines at `b5999f5e`; evidence in [quests/0001 § 19](../findings/quests/0001-progression.md#19-plan-0066-batch-s3b-kill-step-and-service-step-rules-over-the-kept-questsgdb-logs-2026-11-16-lanen66p)):
+(spec lines at `b5999f5e`; evidence in [quests/0001 § 19](../../findings/quests/0001-progression.md#19-plan-0066-batch-s3b-kill-step-and-service-step-rules-over-the-kept-questsgdb-logs-2026-11-16-lanen66p)):
 
 1. **Radament's credit sites (line 769, inventory row 128).** The row gives 0x00598D96, 0x00598DA0, 0x00598DAA, which are
    `sub_00598D40_A2Q1_PartyCredit`'s. The near credit's own writes are at 0x00598F10, 0x00598F1F, 0x00598F29 in

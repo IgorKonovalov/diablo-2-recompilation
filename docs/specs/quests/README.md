@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, save/d2s, items/quest-drops, drlg/collision, drlg/warps, objects]
 consumed_by: [items/quest-drops, items/cube, objects, monsters/spawn, monsters/special, rng/seeds, save/d2s]
-tags: {C: 11, I: 6, L: 2}
-updated: 2026-10-20
+tags: {C: 14, I: 5, L: 2}
+updated: 2026-11-16
 ---
 
 # Quests and travel: the game rules that move a character through the acts
@@ -59,9 +59,14 @@ flowchart TD
   the loader clears bits 13 and 14 of words 0–41 and sets bit 15 where bit 1 is set, copies words 42–47, and Save and
   Exit writes the record as it stands ([progression § A](progression.md#a-the-quest-record)). (fn:D2S_ReadQuests@0x0056A370,
   fn:QUESTRECORD_LoadBytes@0x0065C4D0, run:2026-10-18-quests2)
-- [I] **The bit grammar.** Bit 0 done, bit 1 done with a reward pending, bits 2–11 log steps, bit 12 seen in the log,
-  bit 13 done in this game, bit 14 failed in this game, bit 15 a reward pending from an earlier game; each quest adds its
-  own bits ([progression § A](progression.md#a-the-quest-record)). (fn:QUESTRECORD_SetState@0x0065C360)
+- [C] **The bit grammar, as far as the kept logs test it.** `SetState` and `ClearState` set or clear one bit of the
+  word (430 and 38 logged writes, each next write's old word as predicted); bit 0 is done and bit 1 done with a reward
+  pending, by their writers (the reward message sets bit 0 and clears bit 1 on words 1, 2, 4, 6, 9, 20, 25, 27 and 37);
+  bit 13 is done in this game, on the player and the game record; bit 15 is a reward pending from an earlier game, by
+  word 9's first-join clear ([progression § A](progression.md#a-the-quest-record)). (fn:QUESTRECORD_SetState@0x0065C360,
+  fn:QUESTRECORD_ClearState@0x0065C3A0, run:2026-10-19-quests3, [quests/0001 § 18](../../findings/quests/0001-progression.md#18-plan-0066-batch-s3a-the-kept-quest-logs-re-checked-2026-11-15-lanen66g))
+- [I] Bits 2–11 are log steps, bit 12 seen in the log and bit 14 failed in this game; each quest adds its own bits. No
+  kept log met a step bit at a `ClearSteps`. (fn:QUESTRECORD_SetState@0x0065C360)
 - [C] **The events reach quests in a fixed order**, from quest object 40 down to row 0, and the talk, message and
   level-change events are forced, so they reach a quest the join switched off
   ([progression § B](progression.md#b-events-and-dispatch)). (fn:QUESTS_DispatchEvent@0x005438E0, run:2026-10-17-quests)
@@ -73,15 +78,22 @@ flowchart TD
   Wanderer, the Zoo, and the item draws of [items/quest-drops](../items/quest-drops.md)) and on the player's unit seed
   (NPCs 266 and 377); travel draws on the destination level's seed, the game seed of the portal objects and, for five
   waypoint rows, the object's seed ([progression § G](progression.md#g-the-draws),
-  [travel § Draws by event kind](travel.md#draws-by-event-kind)). (fn:QUESTS_GetSeed@0x005438B0,
-  fn:sub_0066AC40_LevelPointPick@0x0066AC40)
+  [travel § Draws by event kind](travel.md#draws-by-event-kind)). The draws of kill events (the cairn order aside) are
+  read from the code. (fn:QUESTS_GetSeed@0x005438B0, fn:sub_0066AC40_LevelPointPick@0x0066AC40)
+- [C] In the 1 111 logged talk, message, level-change and leave dispatches the quest seed moves only at the drawing sites
+  named above (NPC 331's talk 45 times, Anya's reward 3, the eclipse 3) and the player seed only in NPC 266's talk (23);
+  the cairn-order and Dark Wanderer fetches (0x00592EE6, 0x005BD3E2) lie inside timer runs (3 and 4), with one
+  0x005BD3E2 fetch outside any logged event
+  ([progression § G](progression.md#g-the-draws)). (fn:QUESTS_GetSeed@0x005438B0, run:2026-10-19-quests3, [quests/0001 § 18](../../findings/quests/0001-progression.md#18-plan-0066-batch-s3a-the-kept-quest-logs-re-checked-2026-11-15-lanen66g))
 - [C] The quest-seed draws the runs reached (NPC 331's talk, the eclipse arm, the cairn order on the `bkd ` use, the
   Dark Wanderer timer, Anya's reward in the three difficulties) and NPC 266's two player-seed draws were each predicted
   from the seed before them ([progression § G](progression.md#g-the-draws)). (run:2026-10-17-quests,
   run:2026-10-18-quests2, run:2026-10-19-quests3)
-- [I] The Zoo's quest-seed draws and NPC 377's player-seed draw are not reached on stock data: object 567 and NPC 377
-  are placed by no stock DS1 ([progression § G](progression.md#g-the-draws)). (fn:sub_0058E830_A5Q6_ZooInit@0x0058E830,
-  0x0059E1CE)
+- [C] The Zoo's quest-seed draws and NPC 377's player-seed draw are not reached through stock placement: no DS1 places
+  object 567, no DS1 that a LvlPrest row names places NPC 377 or its placeholders, and no Levels, SuperUniques or
+  Hireling class cell names 377 (two DS1 readers, the tables read as `.txt` and `.bin`). A class computed at run time is
+  not excluded ([progression § G](progression.md#g-the-draws)). (fn:sub_0058E830_A5Q6_ZooInit@0x0058E830, 0x0059E1CE,
+  [quests/0001 § 21](../../findings/quests/0001-progression.md#21-plan-0066-batch-s3c-part-2-the-game-records-data-flow-the-placement-scans-with-a-second-parser-2026-11-16-lanen66p))
 - [C] **One placement routine.** The waypoint, NPC and join arrivals and the portals' town ends the runs logged went
   through `ActLevelSpot`: a level point, the subtile `5·t + 3`, then the nearest free cell (124 placements)
   ([travel § A](travel.md#a-placement)). (fn:sub_0061B060_ActLevelSpot@0x0061B060, run:2026-10-17-quests)
@@ -110,9 +122,13 @@ three runs reproduce it with 0 mismatches: [run:2026-10-17-quests](../../finding
 pass, the quest timers (one-shots), the quest-seed draws of NPC 331, the eclipse arm, the cairn order on the `bkd ` use,
 the Dark Wanderer and Anya's reward, the NPC 266 draws, the level-entry and item-use steps reached, the portal's three
 draws and its refusal in a town, placement, Meshif's stepping type-5 return, the Harrogath portal, packet 0x48's clear,
-the resurrection's move and the "no draw" travel rows. `[I]` for this plan: the steps triggered by kills, boss events
-and far operates, the timer re-arm and wrap, the Zoo (placed by no stock DS1), the mode-0 waypoint activation, NPC 367's
-travel branch, the unreached level-entry rows and the Dark Wanderer's 7-try branch.
+the resurrection's move and the "no draw" travel rows. [Plan 0066](../../plans/0066-simulation-inferred-claims-sweep.md)
+added, from new checks over the kept logs, second-tool scans of the code image and tables, and an emulation of the
+free-cell search: the logged boss credits, services and object steps, the event raisers, the registry, the game record's
+writers, the timer cadence, the stock placement scans and the free-cell search at other sizes and steps. `[I]` for this
+plan: the kill steps the logs do not hold (party credit, the region tests, most log-state steps), boss events and far
+operates, the timer re-arm and wrap, the Zoo's draws (the object is placed by no stock DS1), the mode-0 waypoint
+activation, NPC 367's travel branch, the unreached level-entry rows and the Dark Wanderer's 7-try branch.
 
 ## Cross-references
 
