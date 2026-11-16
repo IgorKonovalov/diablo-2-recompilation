@@ -2227,12 +2227,12 @@ compared with a `tools/` model. No game, no wine. The claims are in
 
 ## run:2026-11-16-sweep2-s2be2
 
-Plan [0066](../../plans/0066-simulation-inferred-claims-sweep.md) Phase 1, batch S2be (`lane/n66sb`), part 2: do 12's
+Plan [0066](../../plans/0066-simulation-inferred-claims-sweep.md) Phase 1, batch S2be (`lane/n66sb`), part 2: do 6's
 per-unit callback 0x005DB150 to `STATE_ApplyTimed`, and `sub_005D4DB0_SkillPrgDo36NovaAtTarget` whole to
 `SkillNovaAtUnit` on Skills rows 44 and 48, under Ghidra's p-code emulator on the pinned image (ADR-0015, ADR-0021),
 compared with a `tools/` model; plus do 13's single return read with objdump over `.text` and with radare2. No game,
 no wine. The claims are in
-[skills/0003 § 19](0003-handlers.md#19-plan-0066-batch-s2be-part-2-do-13s-return-do-12s-per-unit-callback-and-prg-36-on-skills-rows-44-and-48-2026-11-16-lanen66sb).
+[skills/0003 § 19](0003-handlers.md#19-plan-0066-batch-s2be-part-2-do-13s-return-do-6s-per-unit-callback-and-prg-36-on-skills-rows-44-and-48-2026-11-16-lanen66sb).
 
 - **Question:** do the callback and prg 36 do what skills/catalogue H5's `after:` line and M5 (at `b5999f5e`) state
   as inferred, up to the first call that leaves the claim? Does do 13 return 0 on every path (the catalogue's
@@ -2332,7 +2332,8 @@ model. No game, no wine. The claims are in
   `manifest.sha256` (`3f8db4aa…`, 13 lines), which passes from `$D`.
 - **Outcomes:** `tent140` 433 at `SpawnAtPos` (from 0x005D2E07), 767 returns of 1, W1 and W2 among them as the
   spec's table gives them; `d137` 221 at 0x00570590 (from 0x005D2793; 104 bit new, 86 bit already set, 31 no list;
-  89 linked, 147 already marked, 33 refused by the room's `+0x34` bit 2, 70 no room), 1 279 returns of 0 (327 bad
+  70 no room and 33 refused by the room's `+0x34` bit 2 at the first `UnitMarkUpdated`; the other 118 cases make two
+  calls each, of which 89 link and 147 find the target marked), 1 279 returns of 0 (327 bad
   id, 193 bad aurastate, 363 no target, 396 refused by 0x00645590).
 - **Controls:** 5, each failing (`tent140`: `n_mod4` 913, `xy_swap140` 433; `d137`: `old_inv` 157, `chg_nsw` 100,
   `f34_any` 23); the site control fails every boundary case (433 and 221) with its return address changed.

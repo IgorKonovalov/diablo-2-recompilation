@@ -4077,7 +4077,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
     0x0056C110 reaches the pool), README 3 and 13 (as dispatch 135's remainder).
 - **Review:** none yet; the Tier B request comes when S2be is whole.
 
-### 2026-11-16 — Phase 1, batch S2be part 2 (reverser-static, `lane/n66sb`): 3 more settled (do 13's return, do 12's callback, prg 36 on rows 44 and 48); resume note for part 3
+### 2026-11-16 — Phase 1, batch S2be part 2 (reverser-static, `lane/n66sb`): 3 more settled (do 13's return, do 6's callback, prg 36 on rows 44 and 48); resume note for part 3
 
 - **Done.** Merged `main` `c6c85ae8` (only the site builder, `tools/gate.py` and `tools/tc_anim.py` changed; no
   inventory file). Totals from the 29 files' *Totals by class* (`tools/quests_s3c.py totals`, `bad=0`) are unchanged
@@ -4090,7 +4090,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   [run:2026-11-16-sweep2-s2be2](../findings/skills/experiments.md#run2026-11-16-sweep2-s2be2);
   `workspace/logs/n66sb/s2be/run2/` (`check.txt` `2030c929…`, `rows.txt` `b8547594…`, `tail.txt` `ec66e116…`,
   `static.txt` `dc526bbe…`, `manifest.sha256` `0dc5df57…`, 12 lines, passes from there). Claims:
-  [skills/0003 § 19](../findings/skills/0003-handlers.md#19-plan-0066-batch-s2be-part-2-do-13s-return-do-12s-per-unit-callback-and-prg-36-on-skills-rows-44-and-48-2026-11-16-lanen66sb).
+  [skills/0003 § 19](../findings/skills/0003-handlers.md#19-plan-0066-batch-s2be-part-2-do-13s-return-do-6s-per-unit-callback-and-prg-36-on-skills-rows-44-and-48-2026-11-16-lanen66sb).
 - **Rows (3).** Raised: catalogue 107. do 13's one `ret` follows `xor eax, eax` with no `EAX` write between, and no
   branch in `.text` lands between them (objdump, with radare2 as the second tool), so the return is 0 on every path,
   queue paths included; no remainder. Raised in part: catalogue 43 (the callback's nine-dword block to
@@ -4176,7 +4176,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   as not settled with routes, as the brief for the closing part asks; none is moved to b, since each route needs no
   game run. (4) H2c (45 statements, proposed by part 1) is put to the reviewer with this batch.
 - **Review:** Tier B requested
-  ([request](../backlog/2026-11-16-reverser-architect-review-plan-0066-s2be.md)); it is the fifth check since the
+  ([request](../backlog/archive/2026-11-16-reverser-architect-review-plan-0066-s2be.md)); it is the fifth check since the
   last audit, so a Tier A audit follows.
 
 ### 2026-11-16 — Phase 1, batch S1m (reverser-static, `lane/n66m1`): done, 40 of 40 rows settled or routed
@@ -4359,3 +4359,58 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
 - **Gate:** fast green (74 warnings, none from the fixes; the W4s the refresh entry answers); `--full` green
   (39 surveys); `tools/quirks.py check` 0 errors.
 - **Verdict: accept with fixes (3)**: misread 1, omission 2. The review request is closed with this entry.
+
+### 2026-11-16 — Phase 1, batch S2be Tier A audit (architect, `lane/n66sb`): accept with fixes (4)
+
+One review covering the Tier B list (`lane-check.md`) and the Tier A depth; the fifth Tier B check since the
+`lane/n69h` audit (the ledger counts S1m as the fourth).
+
+- **Merge.** `main` `200625e8` is already in the lane (2bdb4285); nothing to merge. Totals from the 29 files
+  (`tools/quests_s3c.py totals`, `bad=0`): a-logs 622, a-run 334, b 562, c 389, c-emu 390, d-2c 59, d-owner 68, d-edit
+  24, d-none 178 = 2 626; Phase 1 1 401, Phase 2 896, as part 3 filed them.
+- **Reproduction.** The three manifests (`run/`, `run2/`, `run3/`) and `manifest-dev-p2.sha256` pass from their
+  directories; the tools' hashes match their `tool.sha256`. `skills_s2be_routes.py sites` and `rows --depth 6`,
+  `skills_s2be2_emu.py check` (on a scratch copy of `run2/`), `rows`, `tail`, `static`, and `skills_s2be3_emu.py check`
+  and `worked` are byte-identical to the kept outputs. Control counts in skills/0003 §§ 19–20 and the run records
+  match `check.txt` (35 controls, 5 not separating, `passed` 0; 5 + 2 site controls in run3).
+- **The 45 moves (sample of 13 rows, 17 `CLAIM` entries: 15, 17, 19, 22, 31, 38 ×2, 45 ×2, 61, 65, 69, 76, 83, 95 ×2).**
+  A second tool: radare2's block graph (`af`, `afbj`) per root, the claim's block searched from the entry with the gate
+  blocks cut. All 17 agree with `rows.txt` (no path around the gate); the method returns "reachable" on do 146's
+  re-seed with no gate (a live control) and on rows 18 and 27, as the lane's tool does. Rows 18 and 27 read by hand
+  (objdump): row 27's `mov eax, 1` follows `AreaHitAt` with no branch between, and the early exits join at 0x005A9BE1/2;
+  row 18's gone-chest `je 0x005AF3EB` joins before the store call 0x005AF3EE. Both are R2 moves as filed (the claim is
+  the path through the gate); both are straight-line code after the call and cheap for H2c. Four "in the callee" rows
+  read in `rows.txt`/`sites.txt` (55, 64, 94, 97). Row 97's revive lists `UnitSetStat` as a gate, which S2ae part 8
+  runs whole; `QUESTS_LevelHookMonster` (pool 0x0040B430 at 0x00543615) carries the move alone.
+- **Raised rows' anchors.** Every `fn:` and address of rows 8, 43, 73, 96, 104 and 107 resolves in `re/symbols.csv`
+  (0x00570590 is an address, unnamed); the runs cited exist in skills/experiments.md. Row 107: `tail.txt` gives 179
+  instructions, the 9 inner targets, 7 branches to 0x005DBE3D/3E and none into the `xor`…`ret` over 1 067 138
+  instructions; radare2's block list is the second tool (S2c's practice). Row 104: `worked.txt`'s nine steps equal the
+  spec's table, W1 and W2 are cases 0 and 1 of `tent140`, all 1 200 matched.
+- **Not settled (22).** Every Route cell names a function, a call site and the read set (a declared page, a constant
+  calc pool, the setters whole, or a route to read first); none lies wholly past an allocating call.
+- **Fixes (4).** Misread 1: 0x005DB150 is **do 6's** callback (catalogue H5, do 6 at 0x005DB1C0; its `push` at
+  0x005DB29B is the only copy of the dword in the file), not do 12's: skills/0003 § 19's heading and bullet, the run
+  record and part 2's log heading corrected, the § 19 anchor in the log, the record and the request updated
+  (`tools/skills_s2be2_emu.py`'s docstring keeps the old label; its hash is cited). Misread 1: catalogue 64's Route
+  cell said the length is set after `STATLIST_Alloc`; it is pushed before it (0x005C6F88, unclamped), and the whole
+  `after:` follows the plan 0046 boundary `STATE_GroupClear` (0x005C6F20 → free at 0x00626C20); the move holds.
+  Miscount 1: § 20 and the s2be3 record gave "89 linked, 147 already marked" beside per-case counts; they are per
+  `UnitMarkUpdated` call (118 cases × 2 = 236), now stated. Omission 1: the order difference on 43 (a disagreement
+  with the spec) and the Phase 3 refinements had no backlog entry (ADR-0024); filed
+  ([entry](../backlog/2026-11-16-architect-spec-writer-plan-0066-s2be-skills-catalogue-retag.md)).
+- **H2c ruling: accepted as filed**, a harness batch of its own: 45 statements under the 60 cap, one logger family
+  (skills.gdb); folding into H2a would make 85. Sessions **~12 (an estimate)**, ~3.8 claims per session, so
+  **deferred** under the threshold like H2a and H2b; when the skills harness runs, H2a and H2c share recipes
+  (golems/Valkyrie, charged items) and should be scheduled together. Inventory README § 4's row and § 1's session
+  total updated.
+- **Rulings on the judgment calls.** Part 1: (1) accepted, the routing is `[I]` and moves only; (2) accepted, with the
+  row 64 reason corrected; (3) see H2c; (4) accepted, the callbacks' runs reach the re-seed on the same functions. Part
+  2: (1) accepted, two disassemblers on a claim about straight-line instructions no callee reaches; (2) accepted (S1e
+  ruling 3); (3) accepted; (4) accepted, `check.txt` reproduces on the committed revision. Part 3: (1) accepted, the
+  Baal arm stays `[I]`; (2) accepted, the `[C]` is do 137's own calls with `STATE_Set(…, 1)`; (3) accepted; (4) ruled
+  above. The request's point 5 is the entry filed above.
+- **Gate:** fast green (77 warnings, none from the fixes).
+- **Verdict: accept with fixes (4)**: misread 2, miscount 1, omission 1. Ledger Fixes cell: `audit of lane/n66sb: 4:
+  misread 2, miscount 1, omission 1; no reject-grade miss (5th Tier B after the n69h audit; count restarts)`. The
+  review request is closed with this entry.

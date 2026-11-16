@@ -1052,7 +1052,7 @@ without crossing a gate. Outputs: `workspace/logs/n66sb/s2be/run/` (`sites.txt` 
   105, 107. Each has a part before its first allocating call that an emulation can reach (`sites.txt` names the
   calls), and most an R2 remainder.
 
-### 19. Plan 0066 batch S2be part 2: do 13's return, do 12's per-unit callback and prg 36 on Skills rows 44 and 48 (2026-11-16, `lane/n66sb`)
+### 19. Plan 0066 batch S2be part 2: do 13's return, do 6's per-unit callback and prg 36 on Skills rows 44 and 48 (2026-11-16, `lane/n66sb`)
 
 Two families under Ghidra's p-code emulator with a `tools/` model (`tools/skills_s2be2_emu.py`, ADR-0015, ADR-0021;
 6 500 cases, 0 mismatches, 0 stops, 0 unaccounted reads or writes, 35 controls, 30 separating, `passed` 0), and one
@@ -1067,7 +1067,8 @@ two-tool read. Record: run:2026-11-16-sweep2-s2be2. Outputs `workspace/logs/n66s
   three jumps to 0x005DBE3E, and `axt` gives no reference to 0x005DBE3F–0x005DBE45. So no return skips the `xor`, and
   the value cannot depend on a callee, the queue paths included: the row is whole, with no b remainder. (`tail.txt`,
   fn:sub_005DBC60_SkillDo13Fend@0x005DBC60)
-- [C] **do 12's per-unit callback 0x005DB150 (catalogue 43, raised in part).** With `ECX` the walker's context and
+- [C] **do 6's per-unit callback 0x005DB150 (catalogue 43, raised in part).** (do 6 is 0x005DB1C0, catalogue H5; its
+  `push 0x5DB150` at 0x005DB29B holds the only copy of the dword 0x005DB150 in the file, a byte scan.) With `ECX` the walker's context and
   `EDX` the unit, it builds nine dwords on its frame and calls `STATE_ApplyTimed` (0x0056E970, from 0x005DB1A6) with
   `ECX` pointing to them. The nine dwords are `{ctx+0x04, unit, b+0x00, b+0x04, b+0x08, b+0x10, b+0x14, b+0x0C, 0}`,
   where `b` is the block at `ctx+0x0C`. In the spec's block terms `{id, lvl, auralencalc, auratargetstate, aurastat1,
@@ -1135,8 +1136,9 @@ address changed. Record: run:2026-11-16-sweep2-s2be3. Outputs `workspace/logs/n6
   3. do 137's own `UnitMarkUpdated(target)` (0x005D2778) then changes nothing: the bit is set or the room refuses.
   4. `0x00570590` is called from 0x005D2793 with `ECX` the game, `EDX` the caster and `(caster, aurastate, id, lvl)`
      (`aurastate` the Skills `+0x80` word, sign-extended).
-  1 500 cases, 221 at the call (104 with the bit new, 86 with it set, 31 with no list; 89 linked, 147 already marked,
-  33 refused by the room flag, 70 with no room). Controls: `old_inv` (157), `chg_nsw` (100, the changed word one
+  1 500 cases, 221 at the call (104 with the bit new, 86 with it set, 31 with no list; 70 with no room and 33 refused
+  by the room flag at the first `UnitMarkUpdated`, the other 118 through both calls: 89 cases linked by the first and
+  29 already marked, so 147 of the 236 calls find the target marked; `check.txt` counts the last two per call). Controls: `old_inv` (157), `chg_nsw` (100, the changed word one
   further), `f34_any` (23). (`check.txt`, fn:sub_005D26F0_SkillDo137FenrisRage@0x005D26F0, 0x00639DB0, 0x00625A70,
   0x0064C040)
 - [I] The remainder of catalogue 96: do 128's overlay, do 133's end callback (the spawn from a dead unit), do 134's
