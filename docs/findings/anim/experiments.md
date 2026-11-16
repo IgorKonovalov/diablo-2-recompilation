@@ -869,3 +869,59 @@ data, single player, the same saves (`saves-2026-10-30-anim-p3/`, unchanged), `/
 - **Covers:** the four maps on the declared image, `SUNIT_AnimInit` up to its first call, the kept `bonus` outputs'
   negative half and K3's attack inversion. Not covered: what `UNIT_AnimSetRate`, `UNIT_AnimSetRecord` and
   `UNIT_SeqInit` do after the calls (H6d), the weapon class of an item (0x00629FE0), the missile table's loader.
+
+## run:2026-11-16-sweep2-s6f
+
+- **Question:** (plan 0066 Phase 1, batch S6f, `lane/n66s`) Do `COMPOSIT_WeaponClass`'s dual classes,
+  `UnitSeqRecord`, `UNIT_SeqInit`, the sequence advance and `PlayerModeEnd` (up to its first callee) map their inputs
+  as [anim/0001 §§ 2, 5, 9](0001-modes-frames.md) state, on a declared inventory, item and sequence image? Does
+  `PathStepCollide` (and `PathStop`) map as [anim/0003 § 2](0003-movement-gates.md) states over a declared room (the
+  static attempt of the `lane/n66l` Tier B ruling (c))? Do the kept `knock` outputs of run:2026-11-03-path-emu-3 show
+  the knockback line test?
+- **Setup:** Ghidra 12.1 p-code emulator on the pinned `game.exe` (`GHIDRA_PROJ_DIR=workspace/ghidra-n66s`, heap 3 GB,
+  one instance, a 4 GB scope), `re/ghidra_scripts/EmuBoundary.java` unchanged, one kept `emuboundary` launch. New tool
+  `tools/anim_s6f_emu.py` (`2e252633…`; `cases`/`check`/`knock`/`manifest`, every draw from
+  `random.Random("n66s-s6f-<family>")`, the declared tables from `"n66s-s6f-image"`; the S6e tools unchanged).
+  Declared image (the tool's docstring and `write_images`): the DataTables pointer to a scratch DataTables (MonStats 16,
+  Skills 64, CharStats 7 records, ItemTypes 64 × 4 equivalence words), `g_pItems`/`g_nItems` to 32 scratch Items
+  records, `g_ItemWeaponClassIndex` (the stock code map of anim/0001 § 4, 8 pairs), the inventory page descriptor
+  0x0074479C, `g_PlrSeqTables` and `g_PlrSeqColumns` (synthetic: 24 tables of 14 records, a shuffled column map),
+  `g_pMonSeqIndex` (20 records) and their frames, a unit, an inventory with page 0, two item units and itemdata, a
+  skill list, a path and one DungeonRoom of 100 × 100 subtiles (`path_emu2.room_spec`'s layout, 5 % blocked cells,
+  re-written per case since the moves re-mark it). Guards on the fatal entries and the allocator (0x0040B4B0,
+  0x0040B430, 0x0040B480; none reached: page 0 is declared, so `sub_0063ADD0_InvPageGet` allocates nothing).
+  `pme` ends at observed boundaries (ADR-0021): 0x00580310, 0x0057FCA0, 0x0057F020, 0x0057EEC0. `coll` traces
+  0x0064FF90 (each test's subtiles) and 0x00650215 (its result); the model takes the results as given. No import is
+  reached (no stand-in, ADR-0029 not used).
+- **Families:** `wc` 6 400 (4 000 drawn freely, 2 400 Barbarian and Assassin cases with two enabled weapons of class
+  index 2 or 3 weighted), `seq` 2 500 (players and monsters; Skills ids at and past the bounds, 199, seqnum past 24),
+  `sinit` 900, `sadv` 1 500 (every sequence record, wraps), `pme` 1 600 (modes 0–20, used skills, game 0, cursor
+  items), `coll` 3 000 (steps up to 24 subtiles, masks 0x1C09, 0x3401, 0x0C01, 0xFFFF, flag 0x20000), `stop` 200.
+  Without the emulator: `knock`, the 300 kept cases of `workspace/logs/r54c/emu/knock.out` (`5db9f569…`) with
+  `path_emu3`'s model and compare, the line test recorded per case.
+- **Result:** `workspace/logs/n66s/s6f/run/check.txt` (`55040b7a…`, 136 lines; `knock.txt` `e39c661d…`;
+  `manifest.sha256` `83e3c276…`, 17 lines, passes from that directory; `cases` regenerates `s6f.cases` (`7420257b…`)
+  byte for byte): `SCAN check bad=0`. 16 100 emulated cases, 0 mismatches, 0 stops other than the predicted fatals
+  (`wc` 342, `seq` 41, `sinit` 10, `pme` 96, all at 0x00408090). Tallies: `wc` `1js` 245, `1jt` 241, `1st` 195,
+  `1ss` 693, `ht2` 490, a primary written 326; `seq` players 543 records (148 with an index past the 24 tables),
+  monsters 174; `sinit` 223 set (147 players, 76 monsters), 9 with a later lookup on another record; `sadv` 351 wraps,
+  647 with an event; `pme` refresh 849, death end 221, neutral 136, `PlayerModeAllowed` 231, cursor return 67;
+  `coll` blocked 422, ended 2 202, at the 10th crossing 376 (69 across a blocked cell), list 947. 88 controls on the
+  emulated families, 81 separating with `passed` 0; 7 do not, each named: `seq` and `sinit`'s `primid`, `s1is2`,
+  `swap` (the `wc` tests reached through the column, separated in `wc`: 490, 752, 517) and `pme sid0~` (Skills row 0's
+  `durability` bit is clear in the declared table). `knock`: 300 of 300 equal, the line cut 193 (142 to the start),
+  `noline` 193, passed 0; `+0x90` values 5, 14, 20, 39, 40, 73, 77. Every traced read is a listed constant
+  (`g_WeaponClassTokens`, `g_BitMask32`, PathStop's pair 0x006EB7D4 in `.rdata`; the pattern-0 entries of three `COLL`
+  jump tables in `.text`); no write outside the image.
+- **Readings the development runs showed (`[I]`):** a right hand that is not an item unit makes `COMPOSIT_WeaponClass`
+  return 0 with its index unwritten, and `sub_006632C0_PlrSeqColumn` then searches with its uninitialised local (the
+  first development run's `seq` case 4015 returned a record where the model predicted the fatal); the kept generator
+  keeps item units in the hands. (0x0064F121, fn:sub_006632C0_PlrSeqColumn@0x006632C0)
+- **Dev runs:** `workspace/logs/n66s/s6f/dev/` (the first launch, `SCAN check bad=245`: 32 mismatches from the uninitialised-local cases,
+  too few dual cases, the jump-table reads unlisted, `stop`'s tag clash; `manifest-dev.sha256`) and `dev2/` (the
+  kept generator, identical to the kept run; `manifest-dev.sha256`); `workspace/logs/n66s/dec/` the decompiles used.
+  Not cited for a raise.
+- **Covers:** the maps above on the declared image. Not covered: what `g_ItemWeaponClassIndex`, the sequence tables
+  and `monseq` hold at run time (their loaders), what each observed callee does, `PathStep`'s `+0x24`/`+0x90`,
+  `PathStepTargetCheck`, `PathStop` with flag `0x40000` or a marked unit, the schedule with a sequence, and
+  `PlrModeStartMove`'s refused path.

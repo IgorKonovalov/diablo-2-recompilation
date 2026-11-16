@@ -2008,3 +2008,47 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
 - **Checked.** 7 `[C]` lines added in the anim findings, all emulation runs with separating controls named; anchors
   `COMPOSIT_BuildCofName` 0x0064F5B0, `ANIMDATA_Lookup` 0x0066A9B0, `MonModeNullRecord` 0x005A7B30 resolve to the
   sentences; the two new symbol rows are `I`, not clashing; the corrections routes are in the diff.
+
+### 2026-11-16 — Phase 1, batch S6f (reverser-static, `lane/n66s`): done, 11 rows settled
+
+- **Done.** Branch from `main` `0c3cd6c9` (no newer `main` to merge). New tool `tools/anim_s6f_emu.py` (`2e252633…`;
+  the S6e tools unchanged), one kept `tools/ghidra.sh emuboundary` launch on `workspace/ghidra-n66s` (`-Xmx3G`,
+  `MemoryMax=4G`), after two development launches (`dev/`, `dev2/`; `manifest-dev.sha256` in each, not cited). Seven
+  families, 16 100 cases, 0 mismatches, 0 unpredicted stops, 0 unaccounted reads or writes; 88 controls, 81
+  separating with `passed` 0, 7 named in the record. One recount without the emulator (`knock`). No allocator or
+  import reached; `pme` alone uses observed boundaries (ADR-0021). Record:
+  [run:2026-11-16-sweep2-s6f](../findings/anim/experiments.md#run2026-11-16-sweep2-s6f); `workspace/logs/n66s/s6f/run/`
+  (`check.txt` `55040b7a…`, `knock.txt` `e39c661d…`, `manifest.sha256` `83e3c276…`, 17 lines, passes from there;
+  `cases` regenerates the case file byte for byte). Dated notes in anim/0001 §§ 2, 5, 9 and anim/0003 §§ 2, 4.
+- **Rows settled.** Raised: timing 45 (`seq`), movement 43 (`coll`: 376 walks at the 10th crossing, 69 across a
+  blocked cell). Raised in part: timing 18 (the dual classes as a map from the hands' class indices; which Items code
+  has index 2 or 3, the fallback record (H6d) and the object's name stay `[I]`), movement 22 (`PathStepCollide`'s walk;
+  `+0x24`, the `+0x90` drop and the re-plan, `PathStep`'s, stay with H6d). **Remainders raised:** timing 46 (`+0x3C`,
+  `+0xC4`). **Remainders raised in part:** timing 49 (the advance half; the schedule's half not run), 61 (up to each
+  first callee; after the calls `[I]`), movement 2 and 31 (the line test by the kept `knock` outputs; the 1 logged
+  plan and E1 Start's "base class 78" stay), 23 (`PathStop`; `PathStepTargetCheck` stays H6d). **Not attempted:**
+  timing 62's remainder (the refused path follows `0x00648780` after `PathPlan`, whose return the start discards: it
+  needs `PathPlan` whole through `IsBadCodePtr` and a planner); it stays in H6d, provisional.
+- **Moves:** movement 22 and 43 b → c-emu (S6f). Ruling (c)'s attempt: `PathStepCollide`'s closure (35 functions,
+  `workspace/logs/n66l/s6e/dev3/c_650150.txt`) has no allocator and no import; the room reads ran over a declared
+  DungeonRoom as plan 0054's runs did.
+- **Corrections (refinements; the spec's text is Phase 3's):** the primary-hand rule and the unwritten index (B1), the
+  MonStats read with no null test (G1, `[I]`), the three lookups of `UNIT_SeqInit` (G2), flag `0x8` at every
+  unblocked end (B4), `PathStop`'s step pair (B5). Routed by
+  [backlog](../backlog/2026-11-16-reverser-spec-writer-plan-0066-s6f-corrections.md).
+- **Symbols:** none raised (an emulation over a declared image, review-fixes 14).
+- **Totals** from the 29 files' *Totals by class* on `main` `0c3cd6c9`: a-logs 623, a-run 341, b 467, c 390,
+  c-emu 477, d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626; Phase 1 1 490, Phase 2 808 (inventory README § 1
+  tables, the S6f row, the H6d row (19) and the moves note updated).
+- **Ready for Phase 3 (spec-writer), lines at `b5999f5e`, match by text.** Timing 380 (G1, with correction 2's
+  reading `[I]`), 387 (G2, with correction 3); movement 345 (the 10th crossing). Halves: timing 170 (the dual classes,
+  with correction 1), 410 (G4's advance), 494 (I1 up to the calls); movement 41 and 269 (the line test), 212 (the walk,
+  with correction 4), 221 (`PathStop`, with correction 5).
+- **Review:** Tier B, [request](../backlog/2026-11-16-reverser-architect-review-plan-0066-s6f.md). Judgment calls:
+  (1) `coll` takes each test's result from the run's own trace and predicts the walk around it: the `[C]` is the walk
+  given the tests, what `0x0064FF90` answers for a cell is drlg/collision's; (2) synthetic `g_PlrSeqTables` and column
+  map, and the stock code map in `g_ItemWeaponClassIndex` (ADR-0015 (4)); the codes per index stay with that table's
+  own `[I]`; (3) movement 2 and 31 raised in part from a kept earlier emulation's outputs, recounted, not a new run
+  (as S6e part 3's timing 86); (4) timing 49's schedule half and 62's refused path left for a later static batch
+  rather than routed to b: neither hit an allocator or an import whose result a claim uses; (5) the seven unseparated
+  controls taken as inherent (the `wc` tests reached through `seq`/`sinit`, separated in `wc`; Skills row 0's bit).
