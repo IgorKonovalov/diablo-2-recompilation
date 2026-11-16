@@ -779,6 +779,8 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-11-16 | `lane/n66x` check | 0066 P1 S1f+S1o | architect-check | 135 122 | 44 | 4 | — | gave accept with fixes (Tier B) | 6: overclaim 1, misread 1, stale cross-reference 3, bookkeeping 1 (4th Tier B after the n69g audit; next gets Tier A audit) |
 | 2026-11-16 | `lane/n66pf` | 0066 P3 frame | spec-writer | 422 622 | 137 | 24 | — | accept with fixes | 4: overclaim 2, misread 1, omission 1 |
 | 2026-11-16 | `lane/n66pf` review | 0066 P3 frame | architect-review | 185 271 | 78 | 8 | — | gave accept with fixes (Tier A) | 4: overclaim 2, misread 1, omission 1 |
+| 2026-11-16 | `lane/n66w` | 0066 P3 wiki | spec-writer | 255 490 | 96 | 12 | — | accept with fixes | 3: misread 1, bookkeeping 2 (three forks, usage not included) |
+| 2026-11-16 | `lane/n66w` review | 0066 P3 wiki | architect-review | 129 655 | 71 | 5 | — | gave accept with fixes (Tier A) | 3: misread 1, bookkeeping 2 |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not

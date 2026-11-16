@@ -2433,7 +2433,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   Q376 and Q377 stay `[I]`, their notes now holding both tags and the entries restating the `[I]` clause. Research-map
   rows of anim/timing, anim/movement, the overview and quirks updated. wiki/animation and wiki/quirks are left with W4
   and two understated paragraphs on the run's turn; a refresh entry is filed
-  ([entry](../backlog/2026-11-16-spec-writer-spec-writer-wiki-animation-refresh-after-plan-0066-anim-re.md)).
+  ([entry](../backlog/archive/2026-11-16-spec-writer-spec-writer-wiki-animation-refresh-after-plan-0066-anim-re.md)).
 - **Judgment calls for the review:** (1) anim/README note 1 (row 12) raised whole on timing J7's `fire` and S6c's
   callee closure of timing row 94, although row 12's route left its remainder to S6c, which did not take it;
   (2) movement Outputs (row 38) raised whole: it states the end on arrival only, row 26's remainder being the monster
@@ -2572,7 +2572,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   skills cluster raises them ([entry](../backlog/2026-11-16-spec-writer-spec-writer-plan-0066-skills-dispatch-notes-2-and-7.md));
   the quirks class table, stale since the anim re-tag (377 / 161 against 383 / 155), now reads 396 / 142. Research-map
   rows of combat (rewritten whole), player/party and quirks updated. wiki/combat and wiki/characters carry W4; a refresh
-  entry is filed ([entry](../backlog/2026-11-16-spec-writer-spec-writer-wiki-combat-refresh-after-plan-0066-combat-re.md)).
+  entry is filed ([entry](../backlog/archive/2026-11-16-spec-writer-spec-writer-wiki-combat-refresh-after-plan-0066-combat-re.md)).
 - **Judgment calls for the review:** (1) README 20 and 24, filed raised by S5a as re-tags of skills/missiles, are
   split: skills/missiles E1 and F1 keep the missile's `arPct`, `AlwaysExplode` and the seven pairs' order `[I]`, and
   "the order differs" rests on damage step 3's mastery place, still `[I]` (review-fixes 1); (2) README 21 and 22 split:
@@ -2766,7 +2766,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   entry.
 - **Also:** research-map rows of quests/progression and quests/travel rewritten whole; quests/README's evidence
   paragraph names plan 0066's raises. wiki/quests is left with W4 and one wrong row (the events table's level change);
-  a refresh entry is filed ([entry](../backlog/2026-11-16-spec-writer-spec-writer-wiki-quests-refresh-after-plan-0066-quests-re.md)).
+  a refresh entry is filed ([entry](../backlog/archive/2026-11-16-spec-writer-spec-writer-wiki-quests-refresh-after-plan-0066-quests-re.md)).
 - **Judgment calls for the review:** (1) travel B1's header (row 20) raised whole: S3a's remainder was routed to S7e,
   which landed (`ffn`, sizes 0–4, steps 1–5, through both wrappers and directly); the header cites both. (2) Pseudocode
   headers that cover more than the logs hold (travel A2, D2, E1, E2, G1, G3; progression A1) stay `[I]` with a `[C]` note
@@ -2933,7 +2933,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   sim/frame n8 alone and monsters/ai/README n1 moves to the Coverage table's *Weaker duplicate* column
   ([entry](../backlog/2026-11-16-spec-writer-spec-writer-plan-0066-monsters-ai-readme-note-1-after.md)). Research-map rows of
   sim/frame, path (both), drlg/lifecycle, drlg/collision, monsters/spawn, player/party and quirks rewritten. Eight wiki pages
-  carry W4; a refresh entry is filed ([entry](../backlog/2026-11-16-spec-writer-spec-writer-wiki-refresh-after-plan-0066-frame-re-tag.md)).
+  carry W4; a refresh entry is filed ([entry](../backlog/archive/2026-11-16-spec-writer-spec-writer-wiki-refresh-after-plan-0066-frame-re-tag.md)).
   `tools/backlog.py close` rewrote the closed entries' links in three findings (drlg/0009, frame/0001, path/0001); no other
   findings edit.
 - **Judgment calls for the review:** (1) five rows filed raised are counted split, under the binding overclaim rule: frame 37
