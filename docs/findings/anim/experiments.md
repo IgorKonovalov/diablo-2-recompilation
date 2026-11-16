@@ -598,3 +598,274 @@ data, single player, the same saves (`saves-2026-10-30-anim-p3/`, unchanged), `/
 - **Conclusion:** the rows are settled in plan 0066's inventory (`anim-movement.md`, `anim-README.md`, `anim-timing.md`
   rows 78, 103, 105). No contradiction of an anim statement. `fanatic`'s 175 is a lead against monsters/stats § G's
   "champion part" wording (backlog `2026-11-15-reverser-spec-writer-plan-0066-s6a-corrections`).
+
+## Static addendum 2026-11-15: plan 0066 batch S6c, second tools over the code image (`lane/n66l`)
+
+- **Question:** do the anim rows routed to (c) hold when a second tool reads the same code and tables: raw-byte xrefs
+  decoded by r2, r2 dumps of the image's tables, r2 reads of the named ranges, the objdump call-graph walker over the
+  Ghidra RngCallGraph roots and stops, and full-table checks of the stock data?
+- **Setup:** no game, no Ghidra. `tools/sweep2_s6c.py` (`6cc8ebc1…`; imports `tools/sweep_s4b.py`,
+  `tools/sweep2_s4cd.py`, `tools/anim_survey.py` unchanged), objdump and r2. The first tool behind each statement is a
+  kept plan 0050 output in `workspace/logs/anim/`: `p50a-anim-scan.txt` (objdump calls, the MMODE/PEV/PSEQ dumps),
+  `p50b-setrate-xrefs.txt` (Ghidra), `p50b-setrate-callees.txt`, `p50d-calls.txt`, `p50a-rng-machine.txt` and
+  `p50a-rng-modes.txt` (Ghidra RngCallGraph). Each check compares the two and counts a contradiction as `bad`.
+- **Procedure:** `systemd-run --user --scope -p MemoryMax=4G python3 -I tools/sweep2_s6c.py static >
+  workspace/logs/n66l/s6c/check.txt`. Output `check.txt` (`8665c322…`, 114 lines, `S6C total bad=0`), manifest
+  `workspace/logs/n66l/s6c/manifest.sha256` (`6e2b20c2…`, passes from that directory). A second run gives the same
+  bytes. Development outputs (earlier tool revisions, the `anim_survey.py` sections run once) under
+  `workspace/logs/n66l/dev/manifest-dev.sha256`; nothing rests on them.
+- **Observations** (each a `S6C <check>` line of `check.txt`):
+  - `advance-callers`: `UNIT_AnimAdvance` 11 raw call sites, all 11 decoded by r2 as `call 0x623e00` and equal to the
+    kept objdump list; 7 in the monster mode functions (DT frame 0x005A7350, S3 frame 0x005A74A0, `MonAttackFrame` ×3,
+    KB frame 0x005A8630, `MonSeqFrame`), 4 below 0x00520000 (in `sub_00463390_ClientPlayerUpdate` and
+    `sub_004B1090_ClientMercInit` by re/symbols.csv). `UNIT_AnimAdvanceLoop` 5 sites, all below 0x00520000. No jump
+    or absolute reference to either. The player frame table 0x00732C10 (r2) gives `PlrModeMoveFrame` for modes 2, 3, 6
+    and 19; its direct-call closure (2 182 functions, fatal and allocator entries stopped) reaches neither advance.
+    The records' `schedule` words of NU, S3, S4 and DD are 0.
+  - `machine-draws`: the objdump walker over the Ghidra file's 29 roots and 7 stops: 164 functions, one draw
+    function, `UNIT_AnimInit`, with one call `0x00624563 → RNG_RangeB` and no multiplier site; r2's search for the
+    multiplier finds none in the walked bodies. Ghidra's 171 listed functions, each walked again by objdump: the only
+    body with a draw is `UNIT_AnimInit`, the one the Ghidra file tags. The advance (27 functions), the rate (101) and
+    the schedule (34) alone: no draw.
+  - `mode-draws`: under `p50a-rng-modes.txt`'s 19 stops, `PlrModeSkillFrame`'s closure (12 functions) draws nothing.
+    `PlayerModeEnd`'s own body has no draw; of its direct callees, draws lie below `PlayerModeAllowed` (1 function),
+    `PlrModeStartNeutral` (1), `PlayerDeathModeEnd` (118) and `sub_00580310_HandsRefresh` (118, two entries).
+    `MonModeEndGeneric`'s and `MonModeEndEvent`'s closures each reach one draw function, `UNIT_AnimInit`.
+  - `object-init`: `UNIT_AnimInit`'s type cases (r2 `pxw 0x0062467C`) are 0x0062440F, 0x00624483, 0x00624504,
+    0x006245EB, 0x0062459D for types 0–4. Case 2 [0x00624504, 0x0062459D) calls 0x00640E90 (the Objects row) and
+    `RNG_RangeB` only (r2 and objdump agree); its one other exit jumps to the fatal block 0x006243A5. The Objects
+    loader's 0x00640E33–0x00640E64 are eight `shl dword [edi + 0xD8 … 0xF4], 8`.
+  - `rate-readback`: the item case stores `+0x4C` = 0x100 or 0 (constants); the missile case stores no `+0x4C`.
+  - `start-frames`: `g_AttackStartFrames` (r2 equal to the raw bytes, 14 × 7): 12 non-zero cells, value 1 at weapon
+    class 0 and 2 at classes 2–6, character classes 0 and 1 only.
+  - `no-event`: 323 player records (tokens AM SO NE PA BA DZ AI) with a frame event; at `r = speed × 175 / 100` and
+    `S` the largest start frame of their class (A1 and A2 only), none reaches `r ≥ 256 (F − S)`; the smallest margin is
+    832 (`BAGHXBW`, 5 frames, speed 256).
+  - `sequences`: 0x007483B8 (r2): 207 non-empty entries, each with length = frames, as the kept PSEQ lines; 25 Skills
+    rows with a `charclass` and a `seqnum`, the largest seqnum 23. `MONSEQ_Load` adds the same `edx = 1` to both
+    fields per row (0x00659DB6–0x00659DC5).
+  - `event-byte-stores`: `mov byte [reg + 0x4E], 0` at 0x005CB48E (do 87), 0x005CB989 (do 89), 0x005CD51E (do 103).
+  - `seq-pos-pair`: `PlrModeSkillFrame` returns 2 with no used skill (0x00580477), else pushes its second stack argument
+    and the unit to `UnitSetSeqPos` (0x00580482–0x00580488), which writes `(+0x38 & 0xFF) + (b << 8)` to `+0x38`
+    (0x006212E9–0x006212FA). Readers: `SKILLS_SrvDo`'s `test dword [edi + 0x38], 0xFFFFFF00` (0x0056FAB4) and
+    `sub_005D35D0_PrgChargeHitDualDo`'s `+0x38 >> 8` parity (0x005D3659–0x005D365F).
+  - `null-record`: both monster event handlers call 0x005A7B30 when `MonModeRecord` returns 0 or the slot (`+4`,
+    `+8`) is 0, and `MonSetMode` calls it at 0x005A7DFD. 0x005A7B30 (unit in ESI, mode in EDI, the game on the stack)
+    calls `UNIT_SetUsedSkill(unit, 0)`, returns 1 when the mode is neither 0 nor 12 and `sub_005541B0_UnitIsDead` is
+    non-zero, else calls `MonModeStartNeutral`.
+  - `mon-mode-records`: r2 equal to the raw bytes and to the kept MMODE lines in all 21 rows. Call sequences (r2): DT
+    frame `0x0063E8D0(unit, 0)`, then `UnitMoveStep`, `UNIT_AnimAdvance`, `UNIT_AnimAtEnd`, `SUNIT_SetMode(12)`
+    (zero result: `SUNIT_SetMode(12)` at once); DT end `SUNIT_SetMode(12)`, `UNIT_DispatchEvent(13)`, then the owner
+    and `UnitKilled` calls; NU, GH, BL, S4 and DD frame slot 0x005A6DE0 = `UNIT_CancelEvents(0, 0)`; WL frame the state
+    13 and 22 tests with their calls, `UnitMoveStep`, `MonModeEndGeneric` on a return of 2; RN frame `UnitMoveStep`,
+    then `MonModeEndGeneric` on 2; S3 frame step, advance, at the end `SUNIT_SetMode(11)`; S3's end slot 0x005A74D0
+    is a bare `ret`; KB frame step, advance, at the end `MonKnockbackEnd`.
+  - `mode-chart-overrides`: `MonModeRecord`'s class switch decoded from its two byte-indexed jump tables and the
+    direct compare: 243, 333, 705 → rows 16 (S4) and 17 (S3); 403 → 18 (A1, A2) and 19 (S1, S2); 417, 418 → 20 (S4);
+    543, 544, 570, 709 → 7 (S3). The ten all have `SplGetModeChart`; ten more rows have it with no case (404, 546–550,
+    559, 571–573). The switch runs only when MonStats `+0x1A5` is non-zero (0x005A78EF).
+  - `rate-stat-minima`: `anim_survey.py ratemin` again: 353 blocks, lowest `min` 3, no negative, no other cell.
+  - `setrate-sites`: 31 raw call sites, r2-decoded, equal to objdump's and to Ghidra's 31; 7 below 0x00520000; no call
+    from `ITEMS_DetachFromOwner`.
+  - `setrate-callees`: 19 distinct callees (r2 over 0x00623F50–0x00624390) equal to `p50b-setrate-callees.txt`; the
+    closure (101 functions) reaches no queue, cancel or scheduler entry.
+  - `frame-return`: `MonModeFrameEvent` returns after `call eax` with no test (0x005A7BD6–0x005A7BDB), and
+    `MonEventDispatch` likewise (0x005A7FD6–0x005A7FDC). Its two callers (0x005410C4, 0x0054112B) overwrite `EAX`
+    before any read (`movzx eax, word [esi + 2]` at 0x00541136 and as 0x00540CD0's first instruction).
+  - `baseid-range`: 734 MonStats rows, no `BaseId` out of range. `MonStatsSpeeds`' guard (0x00650F29–0x00650F3C):
+    `BaseId < 0` or `≥ n` stores `i` into the row's `BaseId` field and uses `i`.
+  - `path-speed-writers`: `PathSetSpeed` 25 sites, as `p50d-calls.txt`; the 10 at or above 0x00520000 are
+    `UNIT_AnimSetRate` ×2 (0x00624105, 0x006241C9), `MonInitMode`, `MissileCreate` ×2, and five skill functions
+    (`SkillDo89Jump`, `SkillDo103DiabRun`, `SkillSt31Charge`, `SkillSt38Whirlwind`, `LeapAttackPath`).
+    `PathMoveReset` copies `+0x80` into `+0x7C` when `+0x34 & 0x8000` (0x00648DEC–0x00648DFE).
+  - `path-step-callers`: `PathStep` 3 sites, one at or above 0x00520000 (0x00554CD5 in `UnitMoveStep`, arguments
+    `edi, 0x400`); `PathSetAccel` 2 sites, the one above 0x00520000 in `MissileCreate` (0x0059FDCC).
+  - `path-dir-table`: 128 rows of three dwords (r2 equal to the raw bytes): norm² from 16 767 217 to 16 777 216.
+  - `movestep-callers`: `UnitMoveStep` 11 sites, as `p50d-calls.txt`: `PlrModeSkillFrame`, `PlrModeMoveFrame`, the
+    DT, S3, WL, RN and KB frames, `MonAttackFrame` ×2, `MonSeqFrame`, `sub_005AE1F0_MissileMoveCollide`.
+  - `move-draws`: under `PathStep`, `RunStaminaDrain`, `MonStatsSpeeds`, `PathSetSpeed`, `PathStepCollide`,
+    `PathStepSnap` and `PathPlanKnockback`, with `PathPlan` stopped: 154 functions, no draw. Without that stop the
+    one draw function reached is `PathPlanRandomWalk`, through `PathStepTargetCheck → PathReplan → PathPlan →
+    PathPlanStraight`.
+  - `player-event-tables`: `g_PlayerEventFuncs` (r2): kind 0 0x005811D0, kind 1 0x00581020 (`PlayerModeEnd`);
+    `PlayerEventDispatch` reads 0x006E1810 indexed. The start table 0x006E1740 gives `PlrModeStartNeutral` (xy) and no
+    unit start for modes 1 and 5.
+  - `start-order`: r2 call order. `MonSetMode`: `UNIT_HasState(0x36)` → fatal; `cmp ebx, 3`; the path calls,
+    `MonMovePlan`, `MonAttackStats`; `MonModeRecord` and the start (`call eax`; zero: `UNIT_SetUsedSkill`,
+    `MonModeStartNeutral`); `+0xC4 |= 0x80000`; `SUNIT_AnimInit`; `MonModeVelocity`; `UNIT_SetUsedSkill(0)`;
+    `SUNIT_CancelModeEvents`; `MonModeRecord` (null: 0x005A7B30); `cmp [eax + 0xC], 0`; `MonModeEveryFrame` →
+    `SUNIT_ModeEveryFrame` or `SUNIT_ScheduleModeEvents`. Get-hit and block: `SUNIT_SetMode`, `SUNIT_AnimInit`,
+    `UNIT_SetUsedSkill(0)`, cancel, schedule. Skill XY and skill unit: (path target,) `SUNIT_SetMode`, `SUNIT_AnimInit`,
+    cancel, schedule, `+0xC4 &= ~0x40`, `SKILLS_StartUsedSkill`. `PlayerDeath`: `SUNIT_AnimInit`, cancel, schedule.
+    `SUNIT_ScheduleModeEvents` has 6 raw call sites, equal to the kept list: those six functions.
+- **Conclusion:** no statement is contradicted by `bad`; one table cell is (row 67, below). The rows are settled in
+  plan 0066's inventory (`anim-timing.md`, `anim-movement.md`, `anim-README.md`, batch S6c). Corrections for Phase 3
+  in backlog `2026-11-15-reverser-spec-writer-plan-0066-s6c-corrections`: (1) timing I2's table gives the frame slot of
+  GH and BL (scheduled modes) as "—", where it holds 0x005A6DE0 (`UNIT_CancelEvents(0, 0)`), as do S4's and DD's
+  (schedule 0, never queued); S3's end slot is a bare `ret`; (2) `MonSetMode` calls `MonModeVelocity` and a second
+  `UNIT_SetUsedSkill(0)` between `SUNIT_AnimInit` and the cancels, which I2's sentence leaves out; (3) ten more MonStats
+  rows set `SplGetModeChart` with no case in the switch; (4) `MonStatsSpeeds`' out-of-range guard also writes `i` into
+  the row's `BaseId`; (5) `PlayerModeEnd`'s draws include those below `HandsRefresh`, which README A's "the next
+  start's, PlayerModeAllowed's, the AI's" does not name.
+
+## run:2026-11-16-sweep2-s6e
+
+- **Question:** (plan 0066 Phase 1, batch S6e, part 1 of 2, `lane/n66l`) Do `UNIT_AnimAtEnd`, `ANIMDATA_Find`,
+  `SUNIT_ScheduleModeEvents` (with the event queue and its pool run whole) and the rate-class predicates map their
+  inputs as [anim/0001 §§ 2, 7, 8](0001-modes-frames.md) and [anim/0002 § 3](0002-rates.md#3-the-branches) state, every
+  named test separated by a case?
+- **Setup:** Ghidra 12.1 p-code emulator on the pinned `game.exe` (lane copy `GHIDRA_PROJ_DIR=workspace/ghidra-n66l`,
+  heap 3 GB, one instance, a 4 GB scope), `re/ghidra_scripts/EmuBoundary.java` unchanged, one `emuboundary` launch
+  over all families, no `observe` line and no declared callee return (ruling R2): every callee runs emulated
+  (`sub_00611D20` the animdata pointer, the CRT `strlen` 0x006C9A38, `UNIT_AnimStartFrame` with `UNIT_AnimTransform`,
+  `UnitQueueEvent` → `sub_005416B0_EventQueueAt` → `sub_00540DF0_EventRecordAlloc` →
+  `sub_00540C30_EventRecordTake` with the CRT `memset`, the used-skill getters 0x00620250 and 0x006439A0, 0x006446A0,
+  0x00643CE0 and the Skills record getter 0x0045C4B0). Case writer, models and check: `tools/anim_s6e_emu.py`
+  (`cases`/`check`/`manifest`; every draw from `random.Random("n66l-s6e-<family>")`); the declared image is listed in
+  the tool's docstring (DataTables pointer and the MonStats and Skills regions, the animdata container built by the
+  loader's walk 0x0066A7F0–0x0066A804 with the fallback's 0x800 and 0x100 at `+0x40C`/`+0x410`, the stock
+  `animdata.d2` loaded `const`, a game, an event pool and a 200-node free list). Guards on the fatal and allocator
+  entries; a case the model sends to the fatal path must stop at 0x00408090.
+- **Families:** `atend` (600: sequence and plain units, the `i16` rate, the 32-bit add's wrap, 2 null units); `find`
+  (7 705: every stock name as stored and in mixed case, 3 529 each; the 29 duplicate names ×3; 300 absent names; 120
+  more stock names meant to carry bytes after the NUL, which no stock name leaves room for (all 3 529 names have 7
+  characters), so that kind adds no separation; 80 with bytes outside `a`–`z`; 60 long names, half steered into empty blocks);
+  `sched` (1 300: a monster or a player outside modes 7, 8, 15 and 16, so the start frame is 0; `r` = 0 (40),
+  no step `r ≥ L` (183), negative `i16` rates (30), lengths that are not whole frames, records of up to 0xA8 frames
+  with event bytes past 0x90); `pred` (2 019: `AnimRateIsMove`, `AnimRateIsAttack`, `AnimRateIsFixed`,
+  `AnimRateIsCast`, 0x00621680 and 0x006216B0 over types 0–5, every mode, classes on both sides of 410, negative and
+  past the count, the `npc` bit, null units, skill lists and skills, the skill flags and record bytes `+0x06` and
+  `+0x12`).
+- **Controls:** every named test of the four models reversed alone and every ordered compare's strictness switched
+  alone (`tools/anim_s6e_emu.py` docstring); `sep` counts the cases a control's prediction changes, `passed` those
+  the emulator still matches (must be 0). A reversed loop test that would run past twice the base case's own step
+  count (or 4 096 records) is cut and scored as a mismatch, since no emulated case can match it.
+- **Result:** `workspace/logs/n66l/s6e/run/check.txt` (`fca5054c…`, 359 lines; manifest `manifest.sha256`
+  `0539fe07…`, 12 lines, passes from that directory; tool `5362890f…`; `cases` regenerates `s6e.cases` byte for
+  byte): `S6E total cases=11624 bad=0 stops=0 controls=65 unseparated=6 unaccounted=0`. Per family, every case
+  matching: `atend` 600 (2 fatal as modelled, 242 sequence, 356 plain); `find` 7 705 (3 529 stock and 3 529 mixed-case
+  hits, 87 of 87 duplicate cases on the earlier record of the name, 300 absent → 0, 19 long names fatal and 41 long
+  names → 0, 21 of them of 9–12 characters in an empty block); `sched` 1 300 (40 `r = 0`, 183 no step, 30 negative
+  rates, 889 with steps, 158 of them with events past 0x90); `pred` 2 019 (116 fatal as modelled, types 2–5 in
+  `AnimRateIsMove` and `AnimRateIsAttack`, and null units). `E2 closed-form cases=1115 bad=0 with_dropped_event=128
+  no_step_with_event=104`: E2's derived frames and end equal the emulated lists. `J3 tables bad=0`: the player table
+  gives move 2, 3, 6; attack 7, 8, 11, 12; skill-move and skill-attack 13–16, 18; fixed 0, 17; the monster tables
+  move 2, 15 (and 8–11 below 410), attack 4, 5, fixed 0, 12, skill-move and skill-attack 8–11 and 14 in both.
+  59 of the 65 controls separate (`passed` 0 each); the 6 that do not: `find reclen~` (no stock record name of 8),
+  `pred:attack` and `pred:fixed` `c410` and `c410~` (the two monster tables are equal in the attack, skill-attack and
+  fixed columns, so the class split has no observable there), `sched qfr~` (no queued frame equals `T`). Every
+  traced read outside the declared image is a listed image constant (the mode-class tables, `g_BitMask32` words 0
+  and 3, the event type table, the two jump tables 0x00553AFC and 0x00623C04–0x00623C19); no write outside it.
+  `ANIMDATA over0x90`: one stock record has more than 0x90 frames (`42DTHTH`, 200), with no event byte, and none of
+  the 56 bytes an unbounded scan would read past 0x90 is 1–4.
+  The dev run under `workspace/logs/n66l/s6e/dev/` (an earlier revision; `manifest-dev.sha256`) is not cited.
+- **Covers:** the maps above on the declared image, with the start frame 0 and no sequence. Not covered: a start frame
+  other than 0 and the sequence branch of the schedule (the player start-frame path needs
+  `sub_00623990_SkillSrcDamWeapon`), `ANIMDATA_Lookup` (its name builder `COMPOSIT_BuildCofName`) and the loader
+  itself (its allocator and file read), which the declared container models: the fallback's values and the block
+  order stay the loader's static reading.
+
+## run:2026-11-16-sweep2-s6e-2
+
+- **Question:** (plan 0066 Phase 1, batch S6e, part 2, `lane/n66l`) Do `PathVelocityStep`, `PlrToMonMode` and
+  `UNIT_AnimTransform` map their inputs as [anim/0003 § Answer](0003-movement-gates.md#answer-summary) and
+  [anim/0001 § 2](0001-modes-frames.md) state, every named test separated by a case? Which S6e rows cannot run whole?
+- **Setup:** as [run:2026-11-16-sweep2-s6e](#run2026-11-16-sweep2-s6e): Ghidra 12.1 p-code emulator on the pinned
+  `game.exe` (`GHIDRA_PROJ_DIR=workspace/ghidra-n66l`, heap 3 GB, one instance, a 4 GB scope),
+  `re/ghidra_scripts/EmuBoundary.java` unchanged, one `emuboundary` launch, no `observe` line and no declared callee
+  return (ruling R2): `UNIT_HasState` 0x00639DF0, `UNIT_TestStateBit` 0x00625B70 and `PlrToMonMode` run emulated under
+  `UNIT_AnimTransform`. New tool `tools/anim_s6e2_emu.py` (`51c04b41…`; `cases`/`check`/`manifest`, every draw from
+  `random.Random("n66l-s6e2-<family>")`; part 1's tool and seeds unchanged, its helpers imported). Declared image (the
+  tool's docstring): the DataTables pointer and its MonStats, MonStats2, States and transform-list fields, the stock
+  `monstats.bin` (734 records) and `monstats2.bin` (609) loaded `const` without their count word, scratch States
+  records, unit, stat list, state bits, path and out words. Guards on the fatal and allocator entries.
+- **Families:** `pvs` (3 064: `k` 0x400, 0, negative and random; speeds near 32 768, negative and random;
+  accelerations of both signs with counts 0–9 and caps at, below and above `v + acc`; plus a 64-case sweep of `v`
+  32 760–32 775 at `k` 0x400 with components ±4096 and ±2896); `p2m` (15 080: the 20 player modes on every stock class,
+  then 400 cases with the class or MonStats2 count at the class's own index, negative and past-the-end classes);
+  `xform` (3 000: unit types −1 and 0–5, `+0xC8` bit 3 set or clear, lists of 0–6 states with entries past the States
+  count and −1, gfxtype 0–3 and 0xFF, classes 0–6, 430, 431 and random, monster mode 4 weighted, stat lists absent or
+  without bit 31).
+- **Controls:** as part 1 (each named test reversed alone, each ordered compare's strictness switched alone; `passed`
+  must be 0). A control that reads a stock table past its end (a reversed bound) is scored a mismatch.
+- **Result:** `workspace/logs/n66l/s6e/run2/check.txt` (`d37ef05c…`, 186 lines; manifest `manifest.sha256`
+  `d5d968e6…`, 6 lines, passes from that directory; `cases` regenerates `s6e2.cases` (`701f36ba…`) byte for byte):
+  `S6E2 total cases=21144 bad=0 stops=0 controls=68 unseparated=5 unaccounted=0`. Every case of the three families
+  equal (`p2m` 7 619 direct, 7 461 down the fallback; `xform` 70 gfxtype 1, 72 gfxtype 2, 3 of them class 6 in mode 4
+  → 12, 2 855 unchanged; `pvs` 872 accelerating). `WRAP d=4096 … first_sign_flip=32768`, `d=-4096 … 32769`, the
+  diagonal none in the sweep. `P2M class=430` and `431` print the stock chain per player mode (3 → 15, 4 → 3, 7 → 4,
+  11 → 4, 17 and 18 → 1, …). `MS2COLS txt_rows=609 bin_rows=609 differing=0`: bit `m` of MonStats2 `+0xF0` is the
+  `m<mode>` column of `monstats2.txt`, `mDT` to `mRN`, on every row. 63 of 68 controls separate, `passed` 0 each; the 5
+  that do not: `pvs vneg~` (a speed of exactly 0 is 0 either way), `xform ccnt~` and `icnt~` (separated in `p2m`, 82
+  and 8), `xform scnt~` and `scnt2~` (the same state bound is tested twice, in `UNIT_HasState` and after it, so
+  either strictness alone is masked by the other). Every traced read is a listed image constant (`g_BitMask32`,
+  `g_PlrToMonMode`, `g_MonToPlrMode`, the jump table 0x00645248 and its index 0x00645260); no write outside the image.
+- **Not run (moved):** `UNIT_AnimSetRate`, `ANIMDATA_Lookup`, `MonStatsSpeeds` and `HumanAttackFrames`. A raw `E8`
+  scan (`dev2/callers.py`, output `dev2/callers.txt`) finds `ANIMDATA_Lookup` called by `UNIT_AnimSetRecord` and
+  `MonStatsSpeeds`, `COMPOSIT_BuildCofName` by `ANIMDATA_Lookup` and `HumanAttackFrames`, and `UNIT_AnimSetRecord` by
+  `SUNIT_AnimInit` and `UNIT_AnimSetRate`; `UNIT_AnimSetRate` calls `UNIT_AnimSetRecord` at 0x00623FAF before any
+  branch (types 0–3), and `UNIT_AnimSetRecord` calls `ANIMDATA_Lookup` at 0x00620F3B. `COMPOSIT_BuildCofName` writes
+  the name with `wsprintfA` (the USER32 slot 0x006CC468, calls 0x0064F9C2 and 0x0064F9E9) on every path that builds one.
+  ADR-0029 admits no stand-in for an import whose result a claim uses, so these rows go to the harness (plan 0066
+  inventory, H6d proposed).
+- **Dev run:** `workspace/logs/n66l/s6e/dev2/` (`manifest-dev.sha256`): a 670-case subset of the same cases
+  (`sub.cases`, `sub.out`, compared by `subcheck.py`: 0 differences) and the disassembly listings; not cited.
+- **Covers:** the three maps on the declared image. Not covered: what fills the transform list and the States records
+  (the loader), and the rates and record look-ups above.
+
+## run:2026-11-16-sweep2-s6e-3
+
+- **Question:** (plan 0066 Phase 1, batch S6e, part 3, `lane/n66l`) Do `UNIT_AnimStartFrame`, `UNIT_AnimAdvance` with
+  a start frame other than 0, `UNIT_AnimInit`'s missile and item branches and `SUNIT_AnimInit` up to its first callee
+  map their inputs as [anim/0001 §§ 3, 4, 8](0001-modes-frames.md) state, every named test separated by a case? Does
+  the kept `bonus` emulation of run:2026-10-27-anim-rates-emu separate the signed divide for negative stats, and does
+  K3's attack form (anim/0002 § 7) equal a brute-force search through J1 and J2?
+- **Setup:** as [run:2026-11-16-sweep2-s6e-2](#run2026-11-16-sweep2-s6e-2): Ghidra 12.1 p-code emulator on the pinned
+  `game.exe` (`GHIDRA_PROJ_DIR=workspace/ghidra-n66l`, heap 3 GB, one instance, a 4 GB scope),
+  `re/ghidra_scripts/EmuBoundary.java` unchanged, one kept `emuboundary` launch. New tool `tools/anim_s6e3_emu.py`
+  (`5a4b9681…`; `cases`/`check`/`manifest`, every draw from `random.Random("n66l-s6e3-<family>")`; parts 1 and 2's
+  tools and seeds unchanged). `sf`, `adv` and `ainit` run every callee whole (no `observe` reached; R2). `sinit` ends
+  at observed boundaries (ADR-0021) at `UNIT_AnimSetRate` 0x00623F50, `UNIT_AnimSetRecord` 0x00620F00 and
+  `sub_006633B0_UnitAnimData` 0x006633B0: its claim stops at the call. Two `trace` lines (0x00623BAF, 0x00623BED)
+  show per case which `g_AttackStartFrames` read ran. Declared image (the tool's docstring): the DataTables pointer
+  with a scratch Missiles base and count, a scratch Missiles table (48 records of 0x1A4), a unit and a record. The
+  unit has `+0x60` 0 (no inventory: `sub_00623990_SkillSrcDamWeapon` returns 0 at 0x006239A2, so the weapon class is
+  0 and 0x00629FE0 is not reached) and `+0xC8` 0 (no transform). Guards on the fatal and allocator entries.
+- **Families:** `sf` (905: types 0–4 × classes 0–6 × modes 0–20, plus 300 drawn with monster classes 0x1A1/0x1A2);
+  `adv` (4 000: a player in modes 7, 8, 15, 16 and others, records of 1–0xA0 frames with events in and past 0x90,
+  rates 0–0x7FFF; a quarter with one event on the frame stood on only; frame counts kept above the start frame, see
+  below); `ainit` (1 500: types 3 and 4, classes inside, at and past the count and negative, `animrate` over the whole
+  i16 range, item modes 3, 5 and others); `sinit` (811: types 0–4 × modes 0–20 with and without a path, 600 drawn
+  with modes 14 and 18 weighted, and the null unit). Without the emulator: `bonus` (the 3 413 kept calls of
+  `workspace/logs/anim/p50b-emu/bonus.out`, `8be5b94f…`, whose case file `tools/anim_rates.py` regenerates byte for
+  byte) and `k3` (1 297 362 targets: speeds 128–512, frame counts 2–29, start frames 0–2, every length the factor
+  range reaches, stat68 0–175, dual terms −10, 0, 15).
+- **Result:** `workspace/logs/n66l/s6e/run3/check.txt` (`ab744e1a…`, 63 lines; manifest `manifest.sha256`
+  `1d84bce4…`, 6 lines, passes from that directory; `cases` regenerates `s6e3.cases` (`91bd8f5a…`) byte for byte):
+  `SCAN check bad=0`. 7 216 emulated cases, 0 mismatches, 0 stops other than the expected one (the null unit's fatal
+  at 0x00408090). Tallies: the mode-7/8 read ran at all 38 type-0 cases in modes 7 and 8 (classes 0–6) and the
+  mode-15/16 read only for classes 4 (4 cases) and 6 (7); 478 `adv` wraps with a start frame of 1 (the Amazon and the Sorceress
+  hand to hand); 604 `adv` cases with a rate below 0x100 and an event on the frame stood on only; `ainit` 517
+  missile rows (143 negative rates whose divide is inexact), 487 missiles without a row (return 0), 496 items;
+  `sinit` 112 cases at the sequence test, 335 at the rate call (a path), 363 at the record call (no path), each
+  with `+0x4E` 0 and, past the sequence test, `+0x30` and `+0x44` 0 before the call, the record call's arguments the
+  unit's own `+0`, `+4`, `+0x10`. Controls: 33 on the emulated families, 32 separating with `passed` 0; the one that
+  does not is `adv m1516` (the dual classes' cell is 0, so the mode-15/16 path gives the same advance; `sf` separates
+  it by the trace, 49). `bonus`: 832 negative-stat calls equal; an unsigned divide changes 798 of them, a floor divide
+  562, the emulator matched none. `k3`: 0 differences once one refinement is applied: a target factor `X_m` of 15 (the
+  clamp's floor) is reached with no IAS whatever `stat68 + terms` is, where K3 as written asks for `s_min(X_m −
+  stat68 − terms)` (2 241 targets, all with `stat68 + terms` below 15); the floor control separates 284 292, passed 0.
+  Every traced read is a listed image constant (`g_AttackStartFrames`, the two jump tables and the case index); no
+  write outside the image.
+- **A reading the development run showed (`[I]`):** `UNIT_AnimAdvance` never returns when it wraps on a record whose
+  frame count is at or below the start frame: each pass subtracts `+0x48` and adds `S << 8 ≥ +0x48` back
+  (0x00623ED1–0x00623EE8). The development run's case 1369 (a Sorceress in mode 8, start frame 1, a 1-frame
+  record, rate 0x300) passed 0x00623BAF without end and the run was stopped (killed by pid, confirmed dead); the kept run draws frame counts above the start frame. Whether a
+  stock record reaches it (a frame count of 1 or 2 under a start frame of 1 or 2) is not checked here; routed to
+  the spec-writer as a reading.
+- **Dev run:** `workspace/logs/n66l/s6e/dev3/` (`manifest-dev.sha256`, 23 lines, passes from there): the stopped first
+  launch (`run3-abort/`, its partial output gzipped: the 905 `sf` cases equal, then case 1369), the objdump listing
+  and the direct-call closures (`closure.py`, `c_*.txt`) used to choose the routes; not cited for a raise.
+- **Covers:** the four maps on the declared image, `SUNIT_AnimInit` up to its first call, the kept `bonus` outputs'
+  negative half and K3's attack inversion. Not covered: what `UNIT_AnimSetRate`, `UNIT_AnimSetRecord` and
+  `UNIT_SeqInit` do after the calls (H6d), the weapon class of an item (0x00629FE0), the missile table's loader.

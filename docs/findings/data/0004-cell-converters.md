@@ -197,8 +197,8 @@ for (g = 0; g < nGems; g++) {
   (0x004866E1, 0x0055C321, 0x0062C4C0)
 - [I] `MONEQUIP_Load` (`0x0065A070`–`0x0065A0F7`): every monstats `+0x02A` = −1, then for each `monequip` row r whose
   `monster` is a valid record and whose class still has −1, `+0x02A` = r.
-- [I] `sub_00650F00_MonStatsSpeeds` (from `MONSTATS_Load` at `0x00653890`): a `BaseId` outside the table is replaced by
-  the record itself; `+0x036` = a value from the animation lookup `0x0066A9B0` (mode argument 2) scaled by
+- [I] `sub_00650F00_MonStatsSpeeds` (from `MONSTATS_Load` at `0x00653890`): a `BaseId` below 0 or not below the row count is replaced by
+  the record itself, which is also written back into the row's `BaseId` field (anim/0003, the 2026-11-15 S6c note on `BaseId`, 0x00650F29–0x00650F3C); `+0x036` = a value from the animation lookup `0x0066A9B0` (mode argument 2) scaled by
   `Velocity`/the base record's `Velocity`, clamped to 0x7FFF; `+0x038` likewise with mode argument 15 and `Run`
   (records below 410 start from half the base record's `+0x036`). Its meaning belongs to `monsters/*`.
 - [I] `sub_00651040_MonClassChain` (from `0x00653884`): walks `BaseId` → `NextInClass` (≤ 256 steps) and stores the
