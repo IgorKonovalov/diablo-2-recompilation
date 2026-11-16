@@ -1,6 +1,6 @@
 # ADR index
 
-Next free number: **0034**
+Next free number: **0035**
 
 | # | Title | Status |
 |---|---|---|
@@ -15,7 +15,7 @@ Next free number: **0034**
 | [0009](0009-public-documentation-site.md) | Public documentation: deferred; a later, heavily redacted export with no tie to the repository | proposed (no site now; what `docs/tables/` holds amended by 0031) |
 | [0010](0010-forced-path-runs.md) | Forced-path runs: an edited decision table may drive a rare stock path | superseded by 0013 |
 | [0011](0011-harness-slots.md) | Harness slots: several game copies at once, one per display and prefix | accepted |
-| [0012](0012-human-wiki.md) | A human wiki: explanatory pages over the reviewed specs, no claims of their own, not published | accepted |
+| [0012](0012-human-wiki.md) | A human wiki: explanatory pages over the reviewed specs, no claims of their own, not published | accepted (local builds: amendment proposed by 0034) |
 | [0013](0013-forced-path-runs-cell-level.md) | Forced-path runs: "a table the path reads" is decided cell by cell (supersedes 0010's decision) | accepted |
 | [0014](0014-scope-game-simulation.md) | Game simulation enters scope, in five phases, with per-event reproduction as its evidence (amends 0002) | accepted (phase 3's gates amended by 0020; phases 4 and 5 swapped by plan, owner 2026-10-20) |
 | [0015](0015-emulated-reproduction.md) | Emulated reproduction: the binary's own code under the p-code emulator, with a declared memory image (amends 0003) | accepted (conditions (1) and (3) amended by 0021) |
@@ -33,7 +33,8 @@ Next free number: **0034**
 | [0027](0027-archivist-reader-lanes-tier-a.md) | Archivist reader lanes take the full review instead of the lane check (amends 0023) | accepted (owner, 2026-11-03) |
 | [0028](0028-case-and-process-in-experiment-records.md) | A case is what an experiment record cites, a process may hold several cases, and the marks and the split are provenance; sharing stays opt-in with a stated reason (amends 0003) | accepted (owner, 2026-11-04) |
 | [0029](0029-import-slots-and-import-boundaries-in-emulation.md) | Imports in emulated reproduction: a declared stand-in in an import slot, and a stop at an import's call (amends 0015, 0021) | accepted (owner, 2026-11-04) |
-| [0030](0030-verdict-lanes-and-wiki-tier-a.md) | Verdict lanes and wiki lanes take the full review instead of the lane check (amends 0023) | accepted (owner, 2026-11-04) |
+| [0030](0030-verdict-lanes-and-wiki-tier-a.md) | Verdict lanes and wiki lanes take the full review instead of the lane check (amends 0023) | accepted (owner, 2026-11-04; generator text lanes: amendment proposed by 0034) |
 | [0031](0031-constants-of-the-code-image.md) | Constants of the code image: a short table with its address and reader only where no exact rule gives it; every rule written as a rule and checked by a survey (amends 0009) | accepted (owner, 2026-11-04) |
 | [0032](0032-clean-room-implementation-test.md) | A clean-room implementation test of the specs: a lane outside the four skills implements a slice from the specs alone, its code stays in `workspace/`, its gap ledger enters git | accepted (owner, 2026-11-10) |
 | [0033](0033-scope-player-trade.md) | Scope: the player-to-player trade, row `items/trade` (amends 0025) | accepted (owner, 2026-11-10) |
+| [0034](0034-local-documentation-site.md) | A local-only documentation site, built by the user from their own game files and our scripts, with animated illustrations (amends 0012, 0030) | proposed (owner decision 2026-11-16) |
