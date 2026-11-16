@@ -2276,7 +2276,6 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
     0x006CE274).
   A fresh lane on `lane/n66q`.
 
-
 ### 2026-11-16 — Phase 1, batch S2c part 2 (reverser-static, `lane/n66q`): S2c closed; 20 of 22 settled, 2 not settled; mode-14 bit 6 found
 
 - **Done.** Merged `main` `0c3cd6c9` into the branch at `d4ed5dca` (plan log kept both sides). No game and no Ghidra.
@@ -2351,7 +2350,6 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
 - **Review (Tier A, the audit sample, 2026-11-16):** accept with fixes, 8 (plan 0069's log). Rows 142, 143, 354, 355, 357, 462, 463
   moved a-run → b (new batch H1r, deferred); line 243 (row 27) raised in part on "at full life the parameter is 0" only; line 3268
   (row 345) without "whatever the distance"; line 328 (row 39) in Normal only. The ready list above stands otherwise.
-
 
 ### 2026-11-16 — Phase 1, batch S5fe (reverser-static, `lane/n66w`): done, 26 of 26 statements settled (1 named not settled)
 
@@ -2922,6 +2920,75 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   entry answers); `--full` green (39 surveys).
 - **Verdict: accept with fixes (4)**: overclaim 3, stale cross-reference 1. The review request stays open for the merge.
 
+### 2026-11-16 — Phase 1, batch S2ae part 1 (reverser-static, `lane/n66sa`): 22 of 89 settled; resume note for part 2
+
+- **Done.** Branch from `main` `de39e642` (no newer `main` to merge). New tools `tools/skills_s2ae_emu.py`
+  (`d35f9f74…`; imports `tools/combat_s5e_emu.py` and `tools/sweep_s4b.py` unchanged) and `tools/skills_s2ae_routes.py`
+  (`ee45d8f1…`; the S7e route walker over 80 roots, depth 4). One kept `tools/ghidra.sh emuboundary` launch on
+  `workspace/ghidra-n66sa` (`-Xmx3G`, `MemoryMax=4G`; `import-symbols` first), after two development launches
+  (`dev1/`, `dev2/`; `workspace/logs/n66sa/s2ae/manifest-dev.sha256`, not cited). Eight families (`pvs`, `pdir`,
+  `elem`, `smana`, `rst`, `dly`, `kick`, `skel`), 14 100 cases, 0 mismatches, 0 stops, 0 unaccounted reads or writes;
+  62 controls, 57 separating with `passed` 0, the 5 others inherent and named; spec-reading controls `spec_two_ifs`
+  111, `spec_no_swap` 1 172, `spec_unsigned` 12. Observed boundaries `SKILLS_GetSkillLevel` and 0x005B0D70, return
+  addresses checked. Record: [run:2026-11-16-sweep2-s2ae](../findings/skills/experiments.md#run2026-11-16-sweep2-s2ae);
+  `workspace/logs/n66sa/s2ae/run/` (`check.txt` `1b264a66…`, `static.txt` `2a020d10…`, `routes.txt` `c78b8b93…`,
+  `manifest.sha256` `83a5755f…`, 12 lines, passes from there; `cases` regenerates the case file byte for byte). Claims:
+  [skills/0002 § 17](../findings/skills/0002-missiles.md#17-plan-0066-batch-s2ae-part-1-leaf-functions-emulated-earlier-runs-re-read-the-routes-2026-11-16-lanen66sa).
+- **Rows (22).** Raised 17: dispatch 38 (refinement), 91, 149 (refinement); missiles 35 (refinements), 38, 60, 61,
+  62, 65, 66, 98 (emulated); from earlier kept runs, no new run: dispatch 122 (run:2026-11-16-sweep2-s5e2 `frz`),
+  138 (run:2026-11-16-sweep2-s5e `phh`), missiles 28 (combat/0001 § 22, the combat cluster's Tier A ruling), 78
+  (run:2026-10-20-cat-emu-9a/9b `scatter`, `scatter25`), 79, 80 (9b `reseed9b`). Raised in part 4: dispatch 39 (the map;
+  the stock rows and when the check runs), 69 (the gate up to `GetSkillLevel`; the `EvalCalc` test), missiles 29 (the
+  call at 0x0064BD15 from § 22; the branch and the argument's identity), 81 (the re-seed and step; `+0x28 ← low` after
+  `PathPlan`); the remainders stay S2ae (part 2). Moved c-emu → b (H2a) 1: missiles 49 (do 1 after do 2's creation:
+  `MissileCreate` → `SUnitCreate` 0x0059FC75 → pool 0x0040B430 at 0x005553BE).
+- **Corrections (Phase 3's):** D4's `else`, count and written step; C5's null record and mask; L5's data-byte rows;
+  H's do-34 "path X" = `SubX`; I4's tail call read. Routed by backlog
+  [`2026-11-16-reverser-spec-writer-plan-0066-s2ae-corrections`](../backlog/2026-11-16-reverser-spec-writer-plan-0066-s2ae-corrections.md).
+- **Symbols:** none raised (an emulation over a declared image and re-reads of kept runs, review-fixes 14).
+- **Totals** from the 29 files' *Totals by class* on `main` `de39e642` (`tools/quests_s3c.py totals`): a-logs 623,
+  a-run 334, b 508, c 390, c-emu 443, d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626; Phase 1 1 456, Phase 2 842.
+  Inventory README § 1, § 3, § 4 (S2ae 88 statements, part 1 done; H2a 38) and skills-missiles' *Totals by class*
+  updated.
+- **Ready for Phase 3 (spec-writer), lines at `b5999f5e`, match by text.** Dispatch 276 (with correction 2), 643
+  (with correction 5), 786, 838, 916 (with correction 3) whole; 279, 496 in part. Missiles 305, 360 (with correction
+  1), 379, 495, 496, 497, 515, 522, 572, 574, 575 (with correction 4), 680 whole; 307, 576 in part.
+- **Judgment calls for the review:** (1) seven rows raised from earlier kept runs with no new emulation, as the combat
+  review ruled for rows 28 and 29: the same function and the same steps, the run's own tallies cited (d122, d138, m78,
+  m79, m80; m29 and m81 in part); (2) d91 raised whole on the function's emulated map plus `GetPhysMax`'s tail call
+  read by objdump and the 9d decompile (two tools on the call site, S5fe's README 25 pattern); (3) d149's draws covered
+  through `SummonClassRoll` with the 0x00741940 rows read from the image (`.data`; the reference scan finds 9 loads and
+  no store); state 97's path not run; (4) m65 raised on the emulated mastery step (752 cases) although its sentence is a
+  log report: the `[I]` is "the mastery step is a code reading"; (5) the 5 unseparated controls taken as inherent.
+- **Resume note for part 2 (a fresh lane on `lane/n66sa`; `workspace/ghidra-n66sa` stays, symbols imported).** Left:
+  67 rows and the 5 S2a remainders (dispatch 31, 63, 79, 164, 172), plus the part-1 remainders of dispatch 39 (stock
+  `startmana` rows: a table read), 69 (`EvalCalc` on a calc pool, as plan 0046's families), missiles 29 (with 26) and 81
+  (`PathPlan` whole through the `IsBadCodePtr` slot, ADR-0029 (b), as run:2026-11-03-path-emu-3). The route listing
+  `workspace/logs/n66sa/s2ae/run/routes.txt` names the first pool path of every root; read each claim's branch before
+  moving a row (review-fixes: name the call on the actual route). Groundwork:
+  - **No pool and no import at depth 4:** `SKILLS_ManaOk` (d36, 37), `SKILLS_TargetCheck` (d47), `SKILLS_SrvManaCheck`
+    (d49), `ItemTargetRandomPoint`/`StoredUnit` (d83, 84 half), `MissileOwnerUModEvent` (m21, to its first creation),
+    the collide filters (m40–42, 45–47; `UnitsHostile`, `MISSDATA_IsLastHit`, `UnitAlignGet`), `MISSILE_BuildDamage`
+    (m63, stat-180 entries), `CallDoFunc` (m69), hit 27 `0x005ABA00` (m73), `MissCbReseedZigzag` (m76),
+    `SorSkillStaticMin` (d164's remainder).
+  - **Pool only through `InvPageGet` (0x0063ADD0):** `SKILLS_CanUse`, `SkillAmmoOk`, `SKILLS_WeaponTypeOk`,
+    `SKILLS_GetRangeType`, `DualAttackAlternate`, `GetPhysMin`/`SkillSrcDamWeapon`, `KickItemDamage`,
+    `MissileDamageBlock` (d3, 30–35, 63's and 31's remainders, 92, 96; m26, 29): declare the page at the descriptor's
+    size as S5e part 3 did, so the allocator is not reached.
+  - **Pool through the stat setters** (`UnitSetStat` 0x00627260 → 0x00624DD0, `UnitSetOverlayStat` 0x00621E40):
+    handlers 18, 23–27 (d124, 127–131), `SummonSetLevel` (d142, 143), `MonAttackStats` (d152), `MissileDamageToStats`
+    (m27, 95): an observed boundary at the first setter, or the stat already present so the list does not grow; a
+    claim about several setter calls in a row needs the latter.
+  - **Allocator or import on the route, read the branch first (likely b):** `MissileCreate` after 0x0059FC75 (m16, 17;
+    m14, 18, 19 lie before it: emulate to the `SUnitCreate` boundary; skills/0002 § 14 already separated `VelLev` at
+    level 8, run:2026-11-15-sweep8-single, so read it for m18 first), handlers 1, 2, 3, 10 (d110–112, 119; imports),
+    `SummonInitStats` (d144), start 6 (d89), start 2 (d93, the stores up to `ResolveAndQueue`), `SkillWeaponWear`
+    (d156, 181; 5 imports), do 146 (d182, 184), do 3 and do 5 (m71, 72), `AreaHitUnit`/hit 14 (m74), the callbacks
+    with `PathPlan` (m75, 77, 82, 85), `ITEMSKILL_Cast` and `ItemTargetCorpse` (d79's remainder, d84), Firestorm
+    (d172's remainder), `STATEVENT_Reanimate` (d133, pool at 0x005C0AF2), handlers 8, 9 and the unfired gates (d117,
+    135, 178).
+- **Review:** none yet; the Tier B request (to be audited at Tier A) comes when S2ae is whole.
+
 ### 2026-11-16 — Phase 1, batch S4e part 3 (reverser-static, `lane/n66z`): the request handlers and the pickup, 17 rows settled; resume note
 
 - **Done.** Merged `main` `0df309d6` first (`5b3eb0f1`; plan-log conflict kept both; README § 1 recomputed from the 29
@@ -3061,6 +3128,227 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
 - **Gate:** fast green (93 warnings after the merge, none from the fixes; the W4s the refresh entry answers);
   `--full` green (39 surveys); `tools/quirks.py check` 0 errors.
 - **Verdict: accept with fixes (4)**: overclaim 2, misread 1, omission 1. The review request stays open for the merge.
+
+### 2026-11-16 — Phase 1, batch S2ae part 2 (reverser-static, `lane/n66sa`): 9 more settled (31 of 89); resume note for part 3
+
+- **Done.** Merged `main` twice (`0df309d6` at `8e58556a`, clean; `ae68c24d` at `aeecec21`, the plan log kept both
+  sides); totals from the 29 files' *Totals by class* (`tools/quests_s3c.py totals`) are unchanged after each: a-logs
+  623, a-run 334, b 508, c 390, c-emu 443, d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626, as README § 1 already
+  gives. New tool `tools/skills_s2ae2_emu.py` (`ac1bae1a…`; reuses part 1's check machinery in module state only;
+  part 1's tool and `run/` unchanged, its `check` still reproduces `run/check.txt`). One kept `tools/ghidra.sh
+  emuboundary` launch on `workspace/ghidra-n66sa` (`-Xmx3G`, `MemoryMax=4G`) after three development launches (`dev3/`
+  to `dev5/`; `workspace/logs/n66sa/s2ae/manifest-dev-p2.sha256`, not cited). Seven families (`mana`, `srvm`, `filt`,
+  `cpa`, `cmon`, `cun`, `cmis`), 11 000 cases, 0 mismatches, 0 stops, 0 unaccounted reads or writes, no observed
+  boundary, no import; 131 controls, 121 separating with `passed` 0, the 10 others named (9 inherent equalities, one
+  spec control separated by two sibling families). Record:
+  [run:2026-11-16-sweep2-s2ae2](../findings/skills/experiments.md#run2026-11-16-sweep2-s2ae2);
+  `workspace/logs/n66sa/s2ae/run2/` (`check.txt` `4aa76a41…`, `reach.txt` `0001c1a2…`, `static.txt` `42c76d27…`,
+  `manifest.sha256` `1edb5bbd…`, 12 lines, passes from there). Claims:
+  [skills/0002 § 18](../findings/skills/0002-missiles.md#18-plan-0066-batch-s2ae-part-2-the-mana-checks-and-the-collide-filters-emulated-2026-11-16-lanen66sa).
+- **Rows (9).** Raised 4: dispatch 36, 37 (`SKILLS_ManaOk` with `SkillLevelBonus` and `ExpMaxLevel` whole; the `− 1`
+  separated, `spec_no_minus1` 428), 49 (`SKILLS_SrvManaCheck`; no state-114 branch, `spec_st114` 56); missiles 47
+  (`CollideUnitFilter` with `UnitsHostile`, `PlayerPairFlags`, `AlignSame02`, `UnitAlignGet` whole). Raised in part
+  5: missiles 40, 41, 42, 45, 46 (the filter cells); the mask cells stay c-emu (part 3): the image bytes match the spec
+  (`static.txt` `GCT`), but two of the four `.text` operands inside `g_MissileCollideTypes` are `lea`s (0x005AE30B,
+  0x005AE355) whose uses were not followed for a store.
+- **Refinements** (Phase 3's): the level bonus's terms; the last-hit test needs Missiles `+4` bit 0; the friend test is
+  skipped with no owner, an owner that is the candidate is not hostile, two players use the relation node's bit 3.
+  Routed by backlog
+  [`2026-11-16-reverser-spec-writer-plan-0066-s2ae-part-2-refinements`](../backlog/2026-11-16-reverser-spec-writer-plan-0066-s2ae-part-2-refinements.md).
+- **Symbols:** none raised (an emulation over a declared image, review-fixes 14).
+- **Judgment calls for the review:** (1) the mana families set stats 6 and 8 at the model's own cost (or one off) in
+  about two cases of three, so the returned bit separates the level term; the cost is the model's, the emulator's
+  answer is compared; (2) `UnitsHostile` is run whole only on owners whose `MonsterOwner` chain ends in 0 and with no
+  type-3 owner carrying `+0xC8` bit 10 (0x00552F60 a guard); m47 is raised on that input space and the two excluded
+  routes are named as not covered; (3) the mask cells split off rather than read the two `lea` uses in part 2's budget.
+- **Resume note for part 3 (a fresh lane on `lane/n66sa`; `workspace/ghidra-n66sa` stays, symbols imported).** Left:
+  58 rows, the 5 S2a remainders (dispatch 31, 63, 79, 164, 172), part 1's 4 remainders (dispatch 39, 69, missiles 29,
+  81) and part 2's 5 mask cells (missiles 40–42, 45, 46: follow 0x005AE30B and 0x005AE355 in `0x005AE2xx` (the do-function
+  calling the collide filters through the table) for a store, then raise from `static.txt` `GCT`). Start a new tool
+  or section and a `run3/`; `tools/skills_s2ae2_emu.py`'s helpers (`relist` for layered stats, `chains` for state stat
+  lists, the declared `ExpMaxLevel` pointer, the Skills/SkillDesc/Missiles tables) cover most of what the remaining
+  leaf functions read. Groups, cheapest first:
+  - **No pool and no import** (part 1's list less what part 2 settled): `SKILLS_TargetCheck` (d47),
+    `ItemTargetRandomPoint`/`StoredUnit` (d83, d84 half), `MissileOwnerUModEvent` (m21, to its first creation),
+    `MISSILE_BuildDamage` (m63, stat-180 entries), `CallDoFunc` (m69), hit 27 `0x005ABA00` (m73),
+    `MissCbReseedZigzag` (m76), `SorSkillStaticMin` (d164's remainder).
+  - **Pool only through `InvPageGet` (0x0063ADD0):** d3, 30–35, 63's and 31's remainders, 92, 96; m26, 29: declare the
+    page at the descriptor's size as S5e part 3 did.
+  - **Pool through the stat setters:** d124, 127–131, 142, 143, 152; m27, 95 (an observed boundary at the first setter,
+    or the stat present so the list does not grow).
+  - **Allocator or import on the route, read the branch first (likely b):** m14, 16–19 (`MissileCreate`; read
+    skills/0002 § 14 for m18 first), d110–112, 119, 144, 89, 93, 156, 181, 182, 184, m71, 72, 74, 75, 77, 82, 85,
+    d79's remainder, d84, d172's remainder, d133, d117, 135, 178; d153, 154 (`MonOwnerSkillDamage`), m80's siblings
+    as part 1 listed.
+- **Review:** none yet; the Tier B request (to be audited at Tier A) comes when S2ae is whole.
+
+### 2026-11-16 — Phase 1, batch S2ae part 3 (reverser-static, `lane/n66sa`): 3 more settled and the 5 mask cells (34 of 89); resume note for part 4
+
+- **Done.** Merged `main` `72b55cd4` (clean, `4b5edf98`); totals from the 29 files' *Totals by class*
+  (`tools/quests_s3c.py totals`) unchanged: a-logs 623, a-run 334, b 508, c 390, c-emu 443, d-2c 59, d-owner 68,
+  d-edit 23, d-none 178 = 2 626, as README § 1 gives; part 3 moves no row's class, so they stand. New tool
+  `tools/skills_s2ae3_emu.py` (`d173233c…`; reuses part 1's check machinery in module state only; parts 1 and 2's tools
+  and runs unchanged, their `check` still reproduce `run/check.txt` and `run2/check.txt`). One kept `tools/ghidra.sh
+  emuboundary` launch on `workspace/ghidra-n66sa` (`-Xmx3G`, `MemoryMax=4G`) after four development launches (`dev6/`
+  to `dev9/`; `workspace/logs/n66sa/s2ae/manifest-dev-p3.sha256`, not cited). Three families (`h27`, `cdo`, `uev`),
+  4 800 cases, 0 mismatches, 0 stops, 0 unaccounted reads or writes, no import; 35 controls, all separating, `passed`
+  0. Static: the def-use of the two `g_MissileCollideTypes` `lea`s (`masks.txt`, 0 stores through them) and per-site
+  allocator reach for mod 29's and do 30's calls (`sites.txt`). Record:
+  [run:2026-11-16-sweep2-s2ae3](../findings/skills/experiments.md#run2026-11-16-sweep2-s2ae3);
+  `workspace/logs/n66sa/s2ae/run3/` (`check.txt` `bad4fdbf…`, `masks.txt` `d7cc31cc…`, `sites.txt` `4d3253be…`,
+  `static.txt` `0ecfbce8…`, `manifest.sha256` `5612f356…`, 11 lines, passes from there). Claims:
+  [skills/0002 § 19](../findings/skills/0002-missiles.md#19-plan-0066-batch-s2ae-part-3-the-mask-uses-read-calldofunc-hit-27-and-unique-mod-29-emulated-2026-11-16-lanen66sa).
+- **Rows (3, and part 2's 5 remainders).** Raised 1: missiles 73 (hit 27 is `mov eax, 1; ret 4`). Raised in part 2:
+  missiles 69 (`CallDoFunc`'s unsigned bound, null test and pass-through; remainder, do 30's effect, stays c-emu) and
+  21 (mod 29 to its first creation; remainder → b (H2a): the second creation lies past the first creation's
+  `SUnitCreate` allocation, 0x005A377C → 0x0056ECB0 → 0x0059FA30 → 0x00555230, pool alloc at 0x005553BE). Part 2's
+  remainders raised: missiles 40, 41, 42, 45, 46 (the mask cells; these rows are whole). No class moves.
+- **Refinements** (Phase 3's): mod 29's gates, its seed's high word and the side-missile geometry; `CallDoFunc`'s
+  register pass-through and returns. Routed by backlog
+  [`2026-11-16-reverser-spec-writer-plan-0066-s2ae-part-3-refinements`](../backlog/2026-11-16-reverser-spec-writer-plan-0066-s2ae-part-3-refinements.md).
+- **Symbols:** none raised (an emulation over a declared image, review-fixes 14).
+- **Judgment calls for the review:** (1) the mask cells rest on the image bytes and a def-use of the only two
+  pointers into the table that `.text` forms; a pointer reaching the table by other arithmetic is the residual every
+  ADR-0015 (2) reference scan carries; (2) `cdo` observes every non-null `g_SkillDoFuncs` entry rather than declaring
+  the table, so the bound and the null test are run on the image's own entries (132 of 152 reached); (3) m21's
+  remainder goes to b although the second creation's arguments mirror the first's: the route to it crosses an
+  allocation (ruling R2); (4) part 3 took the mask cells and the three smallest no-pool functions first; the cheaper
+  route reads of the allocator group were not started.
+- **Resume note for part 4 (a fresh lane on `lane/n66sa`; `workspace/ghidra-n66sa` stays).** Left: 55 rows, the 5 S2a
+  remainders (dispatch 31, 63, 79, 164, 172), part 1's 4 remainders (dispatch 39, 69, missiles 29, 81) and missiles
+  69's remainder (do 30 past `CallDoFunc`: no allocator to depth 4, but `SKILLS_EvalCalc` 0x00646CA0's 5 indirect
+  calls; `run3/sites.txt`). Start a new tool and a `run4/`; `tools/skills_s2ae3_emu.py`'s `Mem` model view (the model
+  reads the case's own bytes), its node and game-bucket builders (`put_node`, `find_unit`) and `sites` (per call site,
+  allocator and import reach) carry over. Groups, cheapest first:
+  - **No pool and no import:** `SKILLS_TargetCheck` (d47), `ItemTargetRandomPoint`/`StoredUnit` (d83, d84 half),
+    `MISSILE_BuildDamage` (m63, stat-180 entries), `MissCbReseedZigzag` (m76), `SorSkillStaticMin` (d164's
+    remainder), do 30 (m69's remainder).
+  - **Before `MissileCreate`'s allocation (read this part):** m14's refusal (0x0059FC2E), m18 and m19's velocity
+    (0x0059FB18) and m17's slow-missiles and refusal halves all precede `SUnitCreate` at 0x0059FC75, so an observed
+    boundary there reaches them (the velocity is a local at that point: dump the frame, or end at the refusal);
+    m16's B1 lines after 0x0059FC75 and m17's `SubLoop` half (the range) are past it, class b by ruling R2.
+  - **Pool only through `InvPageGet` (0x0063ADD0):** d3, 30–35, 63's and 31's remainders, 92, 96; m26, 29.
+  - **Pool through the stat setters:** d124, 127–131, 142, 143, 152; m27, 95.
+  - **Allocator or import on the route, read the branch first (likely b):** d110–112, 119, 144, 89, 93, 156, 181,
+    182, 184, m71, 72, 74, 75, 77, 82, 85, d79's remainder, d84, d172's remainder, d133, d117, 135, 178; d153, 154;
+    m80's siblings as part 1 listed.
+- **Review:** none yet; the Tier B request (to be audited at Tier A) comes when S2ae is whole.
+
+### 2026-11-16 — Phase 1, batch S2ae part 4 (reverser-static, `lane/n66sa`): 6 more settled (40 of 89); resume note for part 5
+
+- **Done.** Merged `main` `30e8a46c` (clean, `1056c0fd`); totals from the 29 files' *Totals by class*
+  (`tools/quests_s3c.py totals`, `bad=0`) unchanged: a-logs 623, a-run 334, b 508, c 390, c-emu 443, d-2c 59, d-owner
+  68, d-edit 23, d-none 178 = 2 626, as README § 1 gives; part 4 moves no row's class, so they stand. New tool
+  `tools/skills_s2ae4_emu.py` (`f481fed7…`; reuses part 1's check machinery and `PathDirection` model and part 3's
+  memory view, reference scan and site walk in module state only; parts 1 to 3's tools and runs unchanged, their
+  `check` still reproduce `run/`, `run2/`, `run3/` `check.txt`). One kept `tools/ghidra.sh emuboundary` launch on
+  `workspace/ghidra-n66sa` (`-Xmx3G`, `MemoryMax=4G`) after one development launch (`dev10/`,
+  `workspace/logs/n66sa/s2ae/manifest-dev-p4.sha256`, not cited). Two families (`zz`, `mcr`), 6 500 cases, 0
+  mismatches, 369 predicted fatal-path stops, 0 unaccounted reads or writes, no import; 72 controls, 69 separating (the
+  3 others named in the record), `passed` 0. Route reads: per call site, allocator and import reach of eight roots
+  (`sites.txt`). Record: [run:2026-11-16-sweep2-s2ae4](../findings/skills/experiments.md#run2026-11-16-sweep2-s2ae4);
+  `workspace/logs/n66sa/s2ae/run4/` (`check.txt` `5d0dead9…`, `reach.txt` `83bda362…`, `static.txt` `02daa52f…`,
+  `sites.txt` `58ac68de…`, `manifest.sha256` `ce7ed80a…`, 11 lines, passes from there). Claims:
+  [skills/0002 § 20](../findings/skills/0002-missiles.md#20-plan-0066-batch-s2ae-part-4-the-zig-zag-callback-and-missilecreate-to-its-allocation-emulated-2026-11-16-lanen66sa).
+- **Rows (6).** Raised whole: missiles 14 (the refusal), 18 (the `VelLev` term, no `− 1`), 76 (the zig-zag callback:
+  `2 + ⌈n ÷ 15⌉` seed steps). Raised in part, `MissileCreate` up to `SUnitCreate` at 0x0059FC75 (observed boundary):
+  missiles 16 (B1's lines before the call; remainder → b (H2a)), 17 (the slow scaling and the refusal; the `SubLoop`
+  half → b (H2a)), 19 (the `÷ 8` and `÷ 100` semantics; the lob division and `MaxVel` → b (H2a)); each remainder's
+  route crosses `SUnitCreate`'s pool allocation (0x0040B430 at 0x005553BE, `sites.txt`). No class moves.
+- **Refinements** (Phase 3's): the refusal's −2³¹ difference, `RoomAtSubtile`'s neighbour fallback, the guards' signed
+  class and 0/1 owner types, the velocity's byte and dword widths, and the zig-zag's exact draws and points. Routed by
+  backlog [`2026-11-16-reverser-spec-writer-plan-0066-s2ae-part-4-refinements`](../backlog/2026-11-16-reverser-spec-writer-plan-0066-s2ae-part-4-refinements.md).
+- **Symbols:** none raised (an emulation over a declared image, review-fixes 14).
+- **Judgment calls for the review:** (1) `zz`'s domain is unit-to-target differences of at most 250 sub-tiles: past
+  258, `PathDirection`'s product wraps and the index leaves `g_PathDirTable`, a read the run would not account; the
+  callback's own steps are unaffected by the limit; (2) `mcr` ends at the first allocation, so rows 16, 17 and 19 are
+  split there rather than read further; the frame's locals (target, `x`, `y`, `v`, `tx`, `ty`, row) are taken from a
+  stack dump at the boundary, a read of the emulator's state, not a write; (3) the three spec controls
+  `spec_udiv8` and the two `spec_floor100_*` were added to `check` after the emulation (the cases file is unchanged),
+  and `static`'s reference scan now also splits the `ds:0x…` operand form (part 3's `DOF-REF`/`UMF-REF` counts are the
+  same under it); (4) part 4 took two of the plan's six cheapest groups' roots; `SKILLS_TargetCheck` (d47) was read
+  but not run (below).
+- **Resume note for part 5 (a fresh lane on `lane/n66sa`; `workspace/ghidra-n66sa` stays).** Left: 49 rows (dispatch
+  3, 30, 32–35, 40, 47, 83, 84, 89, 92, 93, 96, 110–112, 117, 119, 124, 127–131, 133, 135, 142–144, 152–154, 156, 178,
+  181, 182, 184; missiles 26, 27, 63, 71, 72, 74, 75, 77, 82, 85, 95), the 5 S2a remainders (dispatch 31, 63, 79, 164,
+  172), part 1's 4 (dispatch 39, 69, missiles 29, 81) and missiles 69's (do 30). Start a new tool and a `run5/`;
+  `tools/skills_s2ae4_emu.py`'s `room_at`, `has_state`, `find_state_list`, `base_stat` (byte-reading models of the
+  state and stat-list helpers) carry over. From `run4/sites.txt`:
+  - **d47 `SKILLS_TargetCheck` (no pool, no import):** read in part 4 (`0x0056CC60`–`0x0056CD43`): no target → 1; an
+    out-of-range skill with a target → 0; `TargetableOnly` (`+6` & 0x10) needs `UnitsHostile`, else
+    `SkillPetTest` (0x005542C0), else `SkillAllyTest`; then a dead target (`+0xC4` bit 1): a type-1 target in mode 12
+    is kept by a `TargetCorpse` skill (`+7` & 1) and cleared otherwise, **but any other dead target is cleared when the
+    skill has `TargetCorpse` and kept when it has not** (0x0056CD27–0x0056CD35): a reading that differs from D2, to be
+    run before it is filed. Models to reuse: `tools/combat_s5e3_emu.py`'s `hostile` and `gen_adp` units
+    (`UnitsHostile`, `MonsterOwner`, `PlayerPairFlags`, `AlignSame02`); still to model: `UNIT_GetTargetUnit` (part 3's
+    `uev` ran it), 0x0058F090 (`SkillPetTest`'s owner lookup), `SkillAllyTest`'s six functions,
+    `UnitSetPathTargetUnit` (0x00620C10, two functions).
+  - **No pool and no import, still open:** d83 (`ItemTargetRandomPoint`'s later tries: the collision test 0x0064D870,
+    11 functions, runs whole), d164's remainder (`SorSkillStaticMin`: end at `ForUnitsInRange` 0x0056B7E0 as an
+    observed boundary; `SKILLS_EvalCalc` brings 5 indirect calls), m63 (`MISSILE_BuildDamage`'s stat-180 term,
+    0x005A8B97 → 0x006261D0), do 30 (m69: 0x0056E780 has 45 functions and 1 indirect call). d84: helper 3's first
+    call that reaches the pool is 0x005FD9DA (0x0056E390), an observed boundary for "no draw before it".
+  - **Then** the `InvPageGet` group, the stat-setter group and the allocator group as part 3's note lists.
+- **Review:** none yet; the Tier B request (to be audited at Tier A) comes when S2ae is whole.
+
+### 2026-11-16 — Phase 1, batch S2ae part 5 (reverser-static, `lane/n66sa`): 4 more settled (44 of 89), D2 contradicted in part; resume note for part 6
+
+- **Done.** `main` `30e8a46c` was already merged (part 4's `1056c0fd`; `git merge main`: up to date); totals from the
+  29 files' *Totals by class* (`tools/quests_s3c.py totals`, `bad=0`) unchanged: a-logs 623, a-run 334, b 508, c 390,
+  c-emu 443, d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626, as README § 1 gives; part 5 moves no row's class.
+  New tool `tools/skills_s2ae5_emu.py` (`0490ce73…`; reuses parts 1, 3 and 4's machinery in module state only; parts
+  1 to 4's tools and runs unchanged, their `check` still reproduce `run/` to `run4/` `check.txt`). One kept
+  `tools/ghidra.sh emuboundary` launch on `workspace/ghidra-n66sa` (`-Xmx3G`, `MemoryMax=4G`) after one development
+  launch (`dev11/`, `workspace/logs/n66sa/s2ae/manifest-dev-p5.sha256`, not cited). Three families (`tc`, `rfa`,
+  `rro`), 7 500 cases, 0 mismatches, 655 predicted fatal-path stops, 0 unaccounted reads or writes, no import; 78
+  controls, 74 separating (the 4 others named in the record), `passed` 0. Route reads: per call site, allocator and
+  import reach of 39 roots, every open S2ae row's function (`sites.txt`). Record:
+  [run:2026-11-16-sweep2-s2ae5](../findings/skills/experiments.md#run2026-11-16-sweep2-s2ae5);
+  `workspace/logs/n66sa/s2ae/run5/` (`check.txt` `78107755…`, `split.txt` `f2f57100…`, `reach.txt` `cbd40329…`,
+  `static.txt` `05fc2d2e…`, `sites.txt` `9255ebd1…`, `manifest.sha256` `0f6933ff…`, 12 lines, passes from there).
+  Claims: [skills/0002 § 21](../findings/skills/0002-missiles.md#21-plan-0066-batch-s2ae-part-5-skills_targetcheck-and-two-re-seed-callbacks-emulated-2026-11-16-lanen66sa);
+  skills/0001's `TargetCheck` bullet carries a dated correction.
+- **Rows (4).** Raised whole: dispatch 47 (`SKILLS_TargetCheck`, whole, with `UnitsHostile`, `SkillPetTest`,
+  `SkillAllyTest` and the party lookup run whole), **contradicted in part**: spec D2's dead-target rule holds only for a
+  type-1 target in mode 12; a target with `+0xC4` bit 1 clear is cleared, and with the bit set any other target is
+  cleared by a `TargetCorpse` skill and kept otherwise (`split.txt` 1 433 of 1 593; `spec_d2` 1 564, `passed` 0) →
+  Phase 3; missiles 77 (callback `0x005CD110` to `PathPlan`). Raised in part: missiles 75 (callback `0x005D40F0` to
+  `PathPlan`; the remainder, that the argument is do 37's ring word, → b (H2a): the callback runs inside
+  `MissileCreate` after `SUnitCreate`'s pool allocation, 0x0059FC75 → 0x00555230, 0x0040B430 at 0x005553BE) and 82
+  (the two callbacks' `PathPlan` entries; the walk and the do functions stay c-emu). No class moves.
+- **Refinements and the contradiction** (Phase 3's): routed by backlog
+  [`2026-11-16-reverser-spec-writer-plan-0066-s2ae-part-5-refinements`](../backlog/2026-11-16-reverser-spec-writer-plan-0066-s2ae-part-5-refinements.md)
+  (D2's clear map, its three `TargetableOnly` tests, the re-found target; the two callbacks' table cells, which leave
+  out `PathPlan`'s walk, and `0x005CD110`'s roll gate).
+- **Symbols:** none raised (an emulation over a declared image, review-fixes 14).
+- **Judgment calls for the review:** (1) `tc`'s domain keeps every lookup type in 0..5, gives every type-1 unit
+  monster data and an owner record, and has no owner cycle: outside it the code reads address 0 or loops, which the
+  run would not account; (2) `pet_u0` and `pet_t1` cannot separate (the owner test fails any target that is not type 1),
+  so `SkillPetTest`'s first test is filed as having no effect on the result rather than as confirmed; (3) the "Draws
+  after" cells of rows 75 and 77 are filed as refinements, not contradictions: the walk is past the observed boundary
+  and only inferred from H1's identical entry; (4) `split` was added to the tool after the emulation (the cases file
+  is unchanged; `check` reproduces byte for byte); (5) the throughput note's "route to b as soon as `sites` shows the
+  allocator" was applied only where the claim lies past it (m75's caller half); for the stat-setter and `InvPageGet`
+  groups the claims sit at or before the first reaching call, so they stay c-emu (part 3's note).
+- **Resume note for part 6 (a fresh lane on `lane/n66sa`; `workspace/ghidra-n66sa` stays).** Left: 45 rows (dispatch
+  3, 30, 32–35, 40, 83, 84, 89, 92, 93, 96, 110–112, 117, 119, 124, 127–131, 133, 135, 142–144, 152–154, 156, 178,
+  181, 182, 184; missiles 26, 27, 63, 71, 72, 74, 85, 95), the 5 S2a remainders (dispatch 31, 63, 79, 164, 172), part
+  1's 4 (dispatch 39, 69, missiles 29, 81), missiles 69's (do 30) and 82's (the walk, the do functions). Start a new
+  tool and a `run6/`. `run5/sites.txt` lists every open root's call sites with their pool and import reach; from it:
+  - **No pool and no import:** d40 `SKILLS_ItemChargesOk` (5 callees, none reaching), the callbacks' `PathPlan` (m82's
+    remainder: run it whole from the `rfa`/`rro` entries as run:2026-11-03-path-emu-3 did; its one import must be
+    shown off the walk's branch first), d83, d164's remainder, m63, do 30 as part 4's note lists.
+  - **One allocator-reaching call, claim before or at it (observed boundary there):** d110 handler 1 (only
+    `MissileCreate` 0x005CAC1E reaches the pool: end there and compare the block), d30 `GetRangeType` (only
+    0x00645485 → 0x0064F460 through `InvPageGet`; declare the page at the descriptor's size as S5e part 3 did).
+  - **Stat setters** (0x00627260, 0x00627150, 0x006272B0, 0x006270B0 reach 0x0040B4B0 through the list growth):
+    d124, 127–131, 142, 143, 152; m27, 95: declare the stat present so the list does not grow, or end at the first
+    setter.
+  - **Read the branch, likely b:** d111, 112, 119 (`ApplyDamage` 0x0057C6C0 and 0x0057CEE0 frees and allocates),
+    d117, 135, 178 (the flee and stupidity calls), d133 (0x005C0AD0 allocates), d144, d156/181 (four reaching
+    calls), d182/184 (`EventBlockNew`, `SkillMissileCreate`, 0x00571AA0), d89, d93, d153/154, m71, 72, 74, 85, d79's,
+    d84's and d172's remainders.
+- **Review:** none yet; the Tier B request (to be audited at Tier A) comes when S2ae is whole.
 
 ### 2026-11-16 — Phase 1, batch S4e part 4 (reverser-static, `lane/n66z`): the other request handlers, 15 inventory rows settled in whole or in part; resume note
 
@@ -3208,6 +3496,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   type 2 with class `0x152`/`0x153`), 39 (after `BeltFreeSlot`), 42 (after `InvTakeItem`), 87 (quality writers); and
   the S4c/S4d static (c) and c-emu remainders in part 1's note. New tool and `run7/`; do not overwrite `run6/`. Tier B
   review once S4e is whole.
+
 ### 2026-11-16 — Phase 2, batch H6d (reverser-harness, `lane/n66h6`): done, 19 rows settled or named
 
 - **Done.** Branch from `main` `0df309d6`, `main` `30e8a46c` merged. Logger `tools/gdb/anim.py` rev 7 (`40367f4a…`):
@@ -3245,6 +3534,241 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   and 624, 632, 653 (the floors), and halves: 374, 657, 971; movement 80, 111, 132 (the words), 144.
 - **Notes.** The logger's OA ret hook raised "Cannot convert value to long" 3 times in 2 sessions (not an H6d line). Slot 1's
   saves restored (empty), no game left running.
+
+### 2026-11-16 — Phase 1, batch S2ae part 6 (reverser-static, `lane/n66sa`): 9 more settled (53 of 89), 2 moved to b; resume note for part 7
+
+- **Done.** `main` `ac87a5f5` merged (`4a63c604`; the plan-log conflict kept both sides, README § 1's phase line took
+  the branch's numbers with `main`'s "H6d done"); totals from the 29 files' *Totals by class* (`tools/quests_s3c.py
+  totals`, `bad=0`) after the merge equalled README § 1 (a-logs 623, a-run 334, b 508, c 390, c-emu 443, d 328).
+  New tool `tools/skills_s2ae6_emu.py` (`74a04489…`; reuses `tools/combat_s5e_emu.py` and parts 1, 3 and 5's
+  machinery in module state only; parts 4 and 5's `check` still reproduce `run4/`, `run5/` `check.txt`). One kept
+  `tools/ghidra.sh emuboundary` launch on `workspace/ghidra-n66sa` (`-Xmx3G`, `MemoryMax=4G`) after three development
+  launches (`dev12/` to `dev14/`, `workspace/logs/n66sa/s2ae/manifest-dev-p6.sha256`, not cited). Seven families
+  (`h7`, `h8`, `h9`, `h10`, `h18`, `h31`, `st2`), 18 500 cases, 0 mismatches, 0 stops, 0 unaccounted reads or writes;
+  75 controls, 69 separating, the 6 others the strictness of a clamp at its own bound, `passed` 0. Record:
+  [run:2026-11-16-sweep2-s2ae6](../findings/skills/experiments.md#run2026-11-16-sweep2-s2ae6);
+  `workspace/logs/n66sa/s2ae/run6/` (`check.txt` `276b3a96…`, `reach.txt` `a3ae2ace…`, `static.txt` `f6b1716e…`,
+  `manifest.sha256` `d5ce3bdc…`, 13 lines, passes from there). Claims:
+  [skills/0002 § 22](../findings/skills/0002-missiles.md#22-plan-0066-batch-s2ae-part-6-six-stat-event-handlers-and-kicks-start-emulated-the-open-routes-read-2026-11-16-lanen66sa);
+  skills/0003's handler table carries a dated note (rows 10 and 18 say less than the code).
+- **Triage first (the orchestrator's step 1).** Every row of part 5's "read the branch, likely b" group was read in
+  `run6/static.txt` against `run5/sites.txt`. Only do 146's rows lie wholly past a reaching call: **dispatch 182 and
+  184 c-emu → b (H2a)** (the re-seed 0x005C8688 and the draw 0x005C8694 follow 0x005C8654 → 0x005417D0 →
+  `sub_00540BB0_EventBlockNew`, at 0x00540C56 via 0x00540C30 ← 0x00540DF0 ← 0x005416B0). Every other row in the group
+  has its claim, or part of it, at or before its first reaching call, so it stays c-emu with the boundary named in
+  its Route cell (a "part 6 triage" note): handlers 1, 2, 3 (d110–112; 2 and 3 need `EvalCalc` on a constant calc
+  pool, their draws past `ApplyDamage` → b), d89, d153, d154, m74's roll (`InvPageGet` only: a declared page),
+  d156/181 (`SkillWeaponWear` to `UseAmmo`, `UnitSetStat`, 0x0053D130), d172's remainder (bit 6 and `calc1 ≤ 0`
+  before `SkillMissileCreate`), m71, m72 (the `0x40` mark before the tail into do 1: a declared room), d79's
+  remainder (helpers before `SrvStart`; the restore after `SrvDo` → b), d144 (the passive stats at the first setter;
+  `sumskill`, the aura list, the equipment init and `sumumod` past allocating calls → b). No row turned out to be
+  static-settleable (class c) on its own. d93 was the one in the group that settles whole: its claim ends at its
+  one queue call, which the emulation reaches.
+- **Rows (9).** Raised whole: dispatch 93 (Kick's start: the packet byte for byte, three direct calls, record reads
+  `+0x1A4`/`+0x1A8` only). Raised in part: dispatch 117 (howl to `MonFleeFrom`; the flight → b, H2a), 119 (handler 10
+  to `ApplyDamage`; the damage and later draws → b, H2a), 124 (handler 18 to `UnitSetStat`; the write stays c-emu with
+  stat 6 present), 133 (handler 31 to `UNIT_AddEvent`; the reanimation → b, H2a), 135 (knockback's mask and bit,
+  howl's gate, stupidity's formula, handlers 10, 18, 31 to their boundaries; handlers 1–4 and 23–27 stay c-emu, the
+  effects past the calls → b), 178 (those handlers' draws up to their calls). Moved: dispatch 182, 184 → b (H2a).
+  None contradicted.
+- **Refinements** (Phase 3's): handler 18's life-below-maximum gate and its floor at 0; handler 10's other-unit
+  `+0xC4` bit 2 gate; handler 9's formula; handler 31's owner walk and event arguments. Routed by backlog
+  [`2026-11-16-reverser-spec-writer-plan-0066-s2ae-part-6-refinements`](../backlog/2026-11-16-reverser-spec-writer-plan-0066-s2ae-part-6-refinements.md).
+- **Symbols:** none raised (an emulation over a declared image, review-fixes 14).
+- **Totals** from the 29 files' *Totals by class* after the merge of `main` `ac87a5f5`: a-logs 623, a-run 334, b 510,
+  c 390, c-emu 441, d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626; Phase 1 1 454, Phase 2 844. Inventory README
+  § 1 (the dispatch and All rows, the phase line), § 3 (the S2ae part 6 move), § 4 (S2ae 86 statements; H2a 40,
+  ~4.0 claims per session) and skills-dispatch's *Totals by class* updated.
+- **Ready for Phase 3 (spec-writer), lines at `b5999f5e`, match by text.** Dispatch 653 (I4, Kick) whole; 781, 783,
+  788, 801 (K rows 8, 10, 18, 31), 820 (K2's remainder) and 1056 (P's handler row) in part.
+- **Judgment calls for the review:** (1) the handlers' unit is non-null in the domain wherever `UnitGetStat` is
+  reached, since it does not test it (a null unit there reads address 0x5C, which the run would not account);
+  (2) handler 18's ECX/EDX at `UnitSetStat` are not compared (callees' leftovers; the setter takes stack arguments
+  only); (3) d93 filed raised whole although its bullet quotes I1's reading of flags 2 in a parenthesis: that reading
+  is I1's own row; (4) d124's remainder (the setter's write) is kept c-emu, not b, because a declared stat 6 keeps
+  `UnitSetStat` off the allocator (part 3's note); (5) the 6 unseparated controls are taken as inherent.
+- **Resume note for part 7 (a fresh lane on `lane/n66sa`; `workspace/ghidra-n66sa` stays).** Left: 36 rows (dispatch 3,
+  30, 32–35, 40, 83, 84, 89, 92, 96, 110–112, 127–131, 142–144, 152–154, 156, 181; missiles 26, 27, 63, 71, 72, 74, 85,
+  95), the 5 S2a remainders (dispatch 31, 63, 79, 164, 172), part 1's 4 (dispatch 39, 69, missiles 29, 81), missiles
+  69's and 82's, and part 6's c-emu remainders (dispatch 124's write, 135's and 178's handlers 1–4, 23–27). Start a new
+  tool and a `run7/`; reuse `tools/skills_s2ae6_emu.py`'s handler case writer (units, stat words, observed-call
+  compare with ECX/EDX and the stack packet). Order, cheapest first:
+  - **No calc, no page:** handler 1 to `MissileCreate` (d110); d40 `SKILLS_ItemChargesOk` (five callees, none
+    reaching); `SkillWeaponWear` to its three boundaries (d156, 181); handlers 23–27 to their first setter (d127–131,
+    stat present or the setter observed).
+  - **A constant calc pool** (`09 <s32> 00` programs, as `tools/skills_catalogue_emu.py`'s `put_skill_calcs`, with
+    `SKILLS_EvalCalc` 0x00646CA0 and `CALC_Eval` 0x006C0BC0 run whole and its jump table 0x006C1164 a declared read):
+    handlers 2, 3 to `ApplyDamage` (d111, 112), Firestorm's bit 6 and `calc1 ≤ 0` (d172), d69's `< 1` test, d164's
+    callback parameters.
+  - **A declared inventory page** (S5e part 3): `SKILLS_CanUse` and its checks (d3, 32–35, 63's and 31's
+    remainders), `GetRangeType` (d30), start 6 (d89), `GetPhysMin` (d92), `KickItemDamage` (d96),
+    `MonOwnerSkillDamage` (d153, 154), m74's roll, `MissileDamageBlock` (m26, 29).
+  - **A declared room:** do 3 and do 5's marks (m71, 72), `ItemTargetRandomPoint`'s later tries (d83), the callbacks'
+    `PathPlan` walk (m82, m81's remainder).
+  - **Stat setters** (stat present): `SummonSetLevel` (d142, 143), `MonAttackStats` (d152), `MissileDamageToStats`
+    (m27, 95), d144's passive stats; m63 `MISSILE_BuildDamage`; m85's no-reference half (`0x00645390`) by a full
+    reference scan with two tools.
+- **Review:** none yet; the Tier B request (to be audited at Tier A) comes when S2ae is whole.
+
+### 2026-11-16 — Phase 1, batch S2ae part 7 (reverser-static, `lane/n66sa`): 5 more settled (58 of 89); resume note for part 8
+
+- **Done.** `main` had not moved past `ac87a5f5` (already merged at part 6), so no merge; totals from the 29 files'
+  *Totals by class* (`tools/quests_s3c.py totals`, `bad=0`) equal README § 1 (a-logs 623, a-run 334, b 510, c 390,
+  c-emu 441, d 328). New tool `tools/skills_s2ae7_emu.py` (`6a383a11…`; reuses parts 1, 3, 5 and 6's machinery in
+  module state only; parts 5 and 6's `check` still reproduce `run5/`, `run6/` `check.txt`). One kept `tools/ghidra.sh
+  emuboundary` launch on `workspace/ghidra-n66sa` (`-Xmx3G`, `MemoryMax=4G`) after two development launches
+  (`dev15/`, `dev16/`, `workspace/logs/n66sa/s2ae/manifest-dev-p7.sha256`, not cited). Four families (`chg`, `wear`,
+  `h26`, `h27`), 13 500 cases, 0 mismatches, 0 stops, 0 unaccounted reads or writes; 69 controls, 65 separating, the
+  4 others the strictness of a clamp at its own bound, `passed` 0. Record:
+  [run:2026-11-16-sweep2-s2ae7](../findings/skills/experiments.md#run2026-11-16-sweep2-s2ae7);
+  `workspace/logs/n66sa/s2ae/run7/` (`check.txt` `1baf4dc6…`, `reach.txt` `32353c4a…`, `static.txt` `27991a14…`,
+  `manifest.sha256` `60c01ec1…`, 14 lines, passes from there). Claims:
+  [skills/0002 § 23](../findings/skills/0002-missiles.md#23-plan-0066-batch-s2ae-part-7-skills_itemchargesok-skillweaponwear-and-handlers-26-and-27-emulated-2026-11-16-lanen66sa);
+  skills/0001's C7 bullet carries a dated note.
+- **Rows (5).** Raised whole: dispatch 40 (`SKILLS_ItemChargesOk`, its four callees run whole). Raised in part:
+  dispatch 130 (handler 26 to `UnitSetStat`; the write and the packet reduction after it stay c-emu, stat 6
+  present), 131 (handler 27 to `STATE_ApplyTimed`; stats 68/69 and the state → b, H2a: the call reaches 0x0040B4B0 at
+  0x00624CC8), 156 (`SkillWeaponWear` to `PLAYER_UseAmmo`, `UnitSetStat`, `ItemBreak`; the setter's write stays
+  c-emu, the ammunition use and the break → b, H2a), 181 (its one step; draws inside `UseAmmo`/`ItemBreak` → b).
+  None moved, none contradicted.
+- **Refinements** (Phase 3's): C7's refusal, passes, level and walk end; N2's type-45 test, durability gate, signed
+  roll and wrapped-sign break test; handler 26's gates and loss formula; handler 27's caps by unit type. Routed by
+  backlog [`2026-11-16-reverser-spec-writer-plan-0066-s2ae-part-7-refinements`](../backlog/2026-11-16-reverser-spec-writer-plan-0066-s2ae-part-7-refinements.md).
+- **Symbols:** none raised (an emulation over a declared image, review-fixes 14).
+- **Totals** unchanged (no class move): a-logs 623, a-run 334, b 510, c 390, c-emu 441, d-2c 59, d-owner 68, d-edit
+  23, d-none 178 = 2 626; Phase 1 1 454, Phase 2 844. Inventory README § 4's S2ae row updated; skills-dispatch rows
+  40, 130, 131, 156, 181 annotated.
+- **Ready for Phase 3 (spec-writer), lines at `b5999f5e`, match by text.** Dispatch 282 (C7) whole; 796, 797 (K rows
+  26, 27), 981 (N2) and 1061 (P's weapon-wear row) in part.
+- **Judgment calls for the review:** (1) the item records, `ExpMaxLevel`'s pointer and the ItemTypes words are
+  inputs set on purpose (S1e ruling 3), declared as `dword`/`load` lines; (2) `wear`'s domain keeps the item's first
+  type a declared row, since 0x00628700's type indexes the equivalence words unchecked; (3) the setters' writes stay
+  c-emu as part 6's handler 18 (judgment call 4 there); (4) d181 is filed in part, not whole, since the row's
+  "1 draw" also covers what the three callees draw; (5) `wear`'s chance is set at the roll in 12 % of the cases
+  (computed from the case's seed by the case writer) so that both roll strictness controls separate.
+- **Resume note for part 8 (a fresh lane on `lane/n66sa`; `workspace/ghidra-n66sa` stays).** Left: 31 rows (dispatch
+  3, 30, 32–35, 83, 84, 89, 92, 96, 110–112, 127–129, 142–144, 152–154; missiles 26, 27, 63, 71, 72, 74, 85, 95), the
+  5 S2a remainders (dispatch 31, 63, 79, 164, 172), part 1's 4 (dispatch 39, 69, missiles 29, 81), missiles 69's and
+  82's, and the c-emu remainders of parts 6 and 7 (dispatch 124's, 130's and 156's setter writes; 135's and 178's
+  handlers 1–4, 23–25). Start a new tool and a `run8/`; `tools/skills_s2ae7_emu.py` adds item stat lists with base and
+  live arrays (`put_list`), the ItemTypes/items declarations, `UnitIsDead` and `MonsterOwner` reuse. Order, cheapest
+  first:
+  - **No calc, no page:** handler 1 to `MissileCreate` (d110: `0x00552FD0`, `UnitsHostile` 0x00554200, 0x0045C4B0,
+    the missile record 0x0046ACE0, the position getters 0x0045ADF0/0x0045AE20); handler 25 to `StatListSetStat`
+    0x00627150 (d129: 0x006256B0 the list by state, 0x00625D00, 0x005C8780, `MulDiv`); handler 23 (d127: 0x0055B7E0,
+    `UnitAlignGet`, 0x00645B70, 0x004EFC50, `GolemHeal` 0x005C5F10, 0x00621E40); handler 24 (d128).
+  - **A constant calc pool** (`09 <s32> 00` programs; `SKILLS_EvalCalc` 0x00646CA0 and `CALC_Eval` 0x006C0BC0 whole,
+    jump table 0x006C1164 a declared read): handlers 2, 3 to `ApplyDamage` (d111, 112), Firestorm (d172), d69's
+    `< 1` test (0x006478F0, `SKILLS_DelayOk`), d164's callback parameters.
+  - **A declared inventory page** (S5e part 3): `SKILLS_CanUse` and its checks (d3, 32–35, 63's and 31's
+    remainders; `ItemChargesOk` now emulated whole), `GetRangeType` (d30), start 6 (d89), `GetPhysMin` (d92),
+    `KickItemDamage` (d96), `MonOwnerSkillDamage` (d153, 154), m74's roll, `MissileDamageBlock` (m26, 29).
+  - **A declared room:** do 3 and do 5's marks (m71, 72), `ItemTargetRandomPoint`'s later tries (d83), the callbacks'
+    `PathPlan` walk (m82, m81's remainder).
+  - **Stat setters** (stat present): `SummonSetLevel` (d142, 143), `MonAttackStats` (d152), `MissileDamageToStats`
+    (m27, 95), d144's passive stats; m63 `MISSILE_BuildDamage`; m85's no-reference half (`0x00645390`) by a full
+    reference scan with two tools.
+- **Review:** none yet; the Tier B request (to be audited at Tier A) comes when S2ae is whole.
+
+### 2026-11-16 — Phase 1, batch S2ae part 8 (reverser-static, `lane/n66sa`): the stat setter run whole; 2 more settled (60 of 89), 3 remainders raised; resume note for part 9
+
+- **Done.** Merged `main` `31a4949c` (`02c6bf0e`; only `tools/d2pilot.py` and `tools/gdb/` changed); totals from the
+  29 files' *Totals by class* (`tools/quests_s3c.py totals`, `bad=0`) equal README § 1 (a-logs 623, a-run 334, b 510,
+  c 390, c-emu 441, d 328). New tool `tools/skills_s2ae8_emu.py` (`8af90127…`; reuses parts 1, 5, 6 and 7's
+  machinery in module state only; the world after batch S4e part 5d's `addst`, `lane/n66z`, read on its branch, not
+  imported; part 7's `check` still reproduces `run7/check.txt`). One kept `tools/ghidra.sh emuboundary` launch on
+  `workspace/ghidra-n66sa` (`-Xmx3G`, `MemoryMax=4G`) after three development launches (`dev17/`–`dev19/`,
+  `workspace/logs/n66sa/s2ae/manifest-dev-p8.sha256`, not cited). Five families (`set`, `h18w`, `h26w`, `wearw`,
+  `mdts`), 18 000 cases, 0 mismatches, 0 stops, 0 unaccounted reads or writes; 241 controls, 199 separating,
+  `passed` 0. Record: [run:2026-11-16-sweep2-s2ae8](../findings/skills/experiments.md#run2026-11-16-sweep2-s2ae8);
+  `workspace/logs/n66sa/s2ae/run8/` (`check.txt` `2a37b7c0…`, `reach.txt` `fe367583…`, `static.txt` `24013e3c…`,
+  `manifest.sha256` `45f538e0…`, 15 lines, passes from there). Claims:
+  [skills/0002 § 24](../findings/skills/0002-missiles.md#24-plan-0066-batch-s2ae-part-8-the-stat-setter-run-whole-behind-handlers-18-26-skillweaponwear-and-in-missiledamagetostats-2026-11-16-lanen66sa);
+  § 23's *After* bullet carries a dated note.
+- **The setter world.** One declared list per unit: base `+0x24`, cache `+0x48`, changed-key array `+0x50`, callback
+  `+0x5C` (0 or 0x0055B800), up to two parents (`+0x34`), declared ItemStatCost rows. `UnitSetStat` →
+  `SetStatEx` → `RemoveEntry` (memmove whole) → `Propagate` → `CacheAdd` → `MarkClientDirty` run whole while the key
+  is present and no array resizes; `InsertEntry` 0x00624C80, the resize 0x0040B4B0 (0x00624D7E, 0x00624E73), the
+  callback and `StatRecompute` are the observed boundaries, so those routes → b (H2a, R2).
+- **Rows (5).** Raised: missiles 27 (C1, `MissileDamageToStats` whole: order, flags, the owner's stat-180 entries)
+  and 95 (315 overwritten by word 26). Remainders raised, rows now settled: dispatch 124 (h18's write), 130 (h26's
+  write and the packet's `max(0, +0x4C − loss)`), 156 (wear's write); their allocating routes → b (H2a). None moved,
+  none contradicted.
+- **Refinements** (Phase 3's): the setter's rules, K 26's packet reduction, C1's data bits and stat-180 source.
+  Routed by backlog [`2026-11-16-reverser-spec-writer-plan-0066-s2ae-part-8-refinements`](../backlog/2026-11-16-reverser-spec-writer-plan-0066-s2ae-part-8-refinements.md).
+- **Symbols:** none raised (an emulation over a declared image, review-fixes 14).
+- **Totals** unchanged (no class move): a-logs 623, a-run 334, b 510, c 390, c-emu 441, d-2c 59, d-owner 68, d-edit
+  23, d-none 178 = 2 626; Phase 1 1 454, Phase 2 844. Inventory README § 4's S2ae row updated; skills-dispatch rows
+  124, 130, 156 and skills-missiles rows 27, 95 annotated.
+- **Ready for Phase 3 (spec-writer), lines at `b5999f5e`, match by text.** Dispatch 788, 796, 981 (K 18, K 26, N2,
+  now whole); missiles 298, 672 (C1).
+- **Judgment calls for the review:** (1) ItemStatCost rows are declared inputs (S1e ruling 3); the 37 stats the
+  handlers and C1 use carry the shipped `.bin` bytes at `+0x04`, `+0x05`, `+0x50`..`+0x53` (read from
+  `workspace/merged` at case time, not copied into git), the others random; `+0x05` bit 2 (the getter's minimum) is
+  kept clear everywhere so parts 6 and 7's getters read as before; whether the loader writes `+0x51`/`+0x52` at run
+  time is outside this claim (a non-zero row reaches `StatRecompute`, observed); (2) the wrapped families reuse parts
+  6 and 7's generators and rebuild the target's list after them, keeping the live entries the handler read; MonStats
+  and Skills images merged so both parts' models read the same bytes; (3) the CRT copy-path flag 0x00994C88 is set
+  to 1 (memmove's result does not depend on it); (4) the rows are settled by composition: the handler to the setter
+  call (parts 6 and 7) and the setter whole on the same call in one case (`h18w`, `h26w`, `wearw`), where the
+  setter's routes that allocate go to b; (5) `spec_sorted` was added after the emulation (a model-side control;
+  cases and `reach.txt` unchanged, `check.txt` reproduced on the committed revision).
+- **Resume note for part 9 (a fresh lane on `lane/n66sa`; `workspace/ghidra-n66sa` stays).** Left: 29 rows (dispatch
+  3, 30, 32–35, 83, 84, 89, 92, 96, 110–112, 127–129, 142–144, 152–154; missiles 26, 63, 71, 72, 74, 85), the 5 S2a
+  remainders (dispatch 31, 63, 79, 164, 172), part 1's 4 (dispatch 39, 69, missiles 29, 81), missiles 69's and 82's,
+  and handlers 1–4, 23–25 in rows 135 and 178. `tools/skills_s2ae8_emu.py` gives `unit_set_stat`, `put_world`,
+  `put_parent` and `entries` (stat-list reads by lower bound) for reuse. Order, cheapest first:
+  - **Setter-backed, now runnable:** handler 25 → `StatListSetStat` 0x00627150 (d129: 0x006256B0 the list by state,
+    0x00625D00, 0x005C8780, `MulDiv`) — `STATLIST_SetStat` is `SetStatEx` without the unit mark; handler 23 (d127),
+    24 (d128); `SummonSetLevel` (d142, 143); `MonAttackStats` (d152); d144's passive stats.
+  - **No calc, no page:** handler 1 to `MissileCreate` (d110).
+  - **A constant calc pool**, **a declared inventory page**, **a declared room**: as part 7's note.
+- **Review:** none yet; the Tier B request (to be audited at Tier A) comes when S2ae is whole.
+
+### 2026-11-16 — Phase 1, batch S2ae part 9 (reverser-static, `lane/n66sa`): 3 more settled (63 of 89); the batch closed, 26 rows not settled and left `[I]` with routes; Tier B review requested
+
+- **Done.** `main` had not moved past `31a4949c` (merged at part 8), so no merge; totals from the 29 files' *Totals by
+  class* (`tools/quests_s3c.py totals`, `bad=0`) equal README § 1 (a-logs 623, a-run 334, b 510, c 390, c-emu 441,
+  d 328). Part 6's `check` re-run reproduces `run6/check.txt` byte for byte (`run9/check6-rerun.txt`, `276b3a96…`).
+  New tool `tools/skills_s2ae9_emu.py` (`e5d88bb6…`; reuses parts 1, 6, 7 and 8's machinery in module state only).
+  One kept `tools/ghidra.sh emuboundary` launch on `workspace/ghidra-n66sa` (`-Xmx3G`, `MemoryMax=4G`) after one
+  development launch (`dev20/`, `workspace/logs/n66sa/s2ae/manifest-dev-p9.sha256`, not cited). Two families (`ssl`
+  `SummonSetLevel` whole, `h25` handler 25 to `UnitMarkUpdated`/`STATE_Set`, both with the setter whole), 14 000
+  cases, 0 mismatches, 0 stops, 0 unaccounted reads or writes; 149 controls, 127 separating, `passed` 0. Record:
+  [run:2026-11-16-sweep2-s2ae9](../findings/skills/experiments.md#run2026-11-16-sweep2-s2ae9);
+  `workspace/logs/n66sa/s2ae/run9/` (`check.txt` `40230f8d…`, `reach.txt` `b776807a…`, `static.txt` `bf2c02a2…`,
+  `wrap.txt` `8ec21331…`, `batch-totals.txt` `fb605ba9…`, `manifest.sha256` `5089fa8d…`, 13 lines, passes from
+  there). Claims:
+  [skills/0002 § 25](../findings/skills/0002-missiles.md#25-plan-0066-batch-s2ae-part-9-summonsetlevel-and-handler-25-emulated-with-the-setter-whole-the-batch-closed-2026-11-16-lanen66sa).
+- **Rows (3).** Raised: dispatch 142 (the summon level's clamps, binding on both sides) and 143 (no `noRatio` read:
+  the summon declared at `+0x00`/`+0x5C` only, no MonStats image, 0 unaccounted reads). Raised in part: dispatch 129
+  (handler 25 to `UnitMarkUpdated` and `STATE_Set`; the stat-84 write and the off branch need a declared room and stay
+  `[I]`; a plain list's free there is R2's once reached). None moved, none contradicted.
+- **Not settled in S2ae; stays `[I]`** (each Route cell annotated with the route it would need): dispatch 3, 30,
+  32–35, 89, 92, 96, 152–154, missiles 26, 74 (a declared inventory page); dispatch 111, 112, 128, 144 (a constant calc
+  pool); dispatch 83, 84, missiles 71, 72, 85 (a declared room; m85's no-reference half a two-tool scan); dispatch
+  110, 127, missiles 63 (no new route, not run for the batch's budget); and the remainders of dispatch 31, 39, 63, 69,
+  79, 129, 135, 164, 172, 178 and missiles 29, 69, 81, 82. No row's whole claim lies past an allocating call, so no
+  whole-row move to b (ruling R2 applies only to the remainders already routed to H2a).
+- **Refinements** (Phase 3's): L2's integer level and MonLvl indexing, the raw cells and no `noRatio` test, K 25's
+  list, absorb order and percent test. Routed by backlog
+  [`2026-11-16-reverser-spec-writer-plan-0066-s2ae-part-9-refinements`](../backlog/2026-11-16-reverser-spec-writer-plan-0066-s2ae-part-9-refinements.md).
+- **Symbols:** none raised (an emulation over a declared image, review-fixes 14).
+- **Totals** unchanged (no class move): a-logs 623, a-run 334, b 510, c 390, c-emu 441, d-2c 59, d-owner 68, d-edit
+  23, d-none 178 = 2 626; Phase 1 1 454, Phase 2 844. Inventory README § 4's S2ae row updated; skills-dispatch rows
+  3, 30–35, 39, 63, 69, 79, 83, 84, 89, 92, 96, 110–112, 127–129, 135, 142–144, 152–154, 164, 172, 178 and
+  skills-missiles rows 26, 29, 63, 69, 71, 72, 74, 81, 82, 85 annotated.
+- **Batch S2ae over parts 1–9:** 89 rows: 38 raised whole, 22 raised in part, 3 moved to b (missiles 49, dispatch
+  182, 184 → b, H2a), 26 not settled; 107 900 cases, 0 mismatches, 912 controls, 816 separating, `passed` 0
+  (`run9/batch-totals.txt`).
+- **Ready for Phase 3 (spec-writer), lines at `b5999f5e`, match by text.** Dispatch L2's summon-level and `noRatio`
+  bullets; K's row 25 in part.
+- **Judgment calls for the review** (part 9): (1) the absence `[C]` of d143 rests on the trace (declared-minimal
+  summon, no MonStats image, 0 unaccounted reads); (2) the MonLvl rows a case declares are those the model indexes
+  on that case (a wrong index reads undeclared memory, a traced read); (3) d129's remainder stays `[I]` (a room
+  route), not b; (4) `wrap` added after the emulation, reproduction confirmed. The batch-wide list is in the request.
+- **Review:** Tier B request (to be audited at Tier A) filed:
+  [`2026-11-16-reverser-architect-tier-b-review-plan-0066-s2ae`](../backlog/2026-11-16-reverser-architect-tier-b-review-plan-0066-s2ae.md).
 
 ### 2026-11-16 — Phase 1, batch S4e part 5c (reverser-static, `lane/n66z`): the mercenary button, `ItemUse` after its entries, `ItemSkillQtyAdjust`, the routes; 12 rows settled or routed; resume note
 
@@ -3449,3 +3973,46 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   (table checks).
 - **Review:** Tier B requested by
   [backlog](../backlog/2026-11-16-reverser-architect-plan-0066-s4e-tier-b-review.md).
+
+### 2026-11-16 — Phase 1, batch S2ae Tier A audit (architect, `lane/n66sa`): accept with fixes (6)
+
+- **Merge.** `main` `3e073e94` (S4e) merged first at `880e03f7`: this log kept both sides; inventory README § 1 (All,
+  By phase) recomputed from the 29 files (`tools/quests_s3c.py totals`, `bad=0`): a-logs 623, a-run 334, b 517, c 389,
+  c-emu 435, d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626; Phase 1 1 447, Phase 2 851.
+- **Reproduction.** All nine run manifests pass from their directories. `check` re-run from the committed tools for
+  `run`, `run4`, `run5`, `run8` and `run9`: byte-identical to the kept `check.txt`. The nine last lines sum to the
+  request's totals (107 900 cases, 1 024 stops, 912 controls, 96 unseparated). Every bracketed control count in
+  skills/0002 §§ 17–25 was compared by script with its run's `check.txt` (439 counts, `spec_*` "fails" counts
+  included): 432 matched on first pass; the 7 others (§ 18) were a development pass's (`dev5/`), fixed below.
+- **Sample (14 rows):** dispatch 36, 37, 47, 93, 142, 143, 182/184 (move); missiles 14, 27, 40–42, 47, 49 (move), 76.
+  `SKILLS_TargetCheck` read at 0x0056CCF0–0x0056CD43 (objdump): bit 1 clear → `UnitSetPathTargetUnit(unit, 0)`; set
+  and a type-1 unit in mode 12 → kept by `TargetCorpse`, else cleared; set otherwise → cleared by `TargetCorpse`, else
+  kept; `split.txt`'s 684/73/87/329/420 give 1 433 against D2. The contradiction is D2's clear rule only; routed with
+  scope noted in the part 5 entry. Moves: do 2's creation call 0x005AE469 precedes do 1 at 0x005AE475 (the claim is
+  "after a creation"); do 146's 0x005C8654 → 0x005417D0 → 0x005416B0 → 0x00540DF0 → 0x00540C30 → `EventBlockNew`
+  (0x00540C56) → 0x0040B430 (0x00540BC5), and no jump lands between 0x005C8659 and the re-seed.
+- **Fixes (6).** Miscount 1: m47's and m40's `f_nexthit`, `f_st86`, `lh_match`, `f_hostile`, `f_friend`, `h_align`
+  and `w_align2` counts were `dev5/`'s, now run2's (skills/0002 § 18). Overclaim 1: part 6's route triage (an objdump
+  reading checked against a walker over the same objdump) `[C]` → `[I]`, as part 1's routes bullet. Misread 1: dispatch
+  84's Route cell said a declared room; helper 3 needs only its `CorpsePickNear` call 0x005FD9DA as a boundary and
+  helper 4 has no pool or import. Omission 2: dispatch 127's and missiles 63's Route cells said their callees were not
+  read for allocation, which part 1's `routes.txt` reads (stated); the `+0xC4` bit 1 "dead" name in skills/0003
+  § `TgtPlaceCheck` (a test of the bit **set**, 0x005FD4C5–0x005FD4D0) marked, and the table doc's copy routed
+  ([backlog](../backlog/2026-11-16-architect-archivist-plan-0066-s2ae-skills-table-c4-bit1-name.md)). Stale
+  cross-reference 1: skills/0003's two `SummonSetLevel` bullets and quirks/0001's `noRatio` line given § 25's raise.
+- **Added at review (no fault):** d143's absence given the function's own memory operands (objdump); the mask cells'
+  no-store given a dword scan of every section (four hits, the four `.text` operands).
+- **Rulings on the request's judgment calls.** (1) Accepted: declared inputs as recorded; the copy-path flag only
+  selects the CRT memmove path, whose copy runs whole; the getter's minimum stays under *Not covered*. (2) Accepted:
+  every composed claim was run in one emulation (`h18w`, `h26w`, `wearw`, `ssl`, `h25` call the handler with the setter
+  inside); no `[C]` joins two runs. (3) Sufficient for `[C]`: EmuBoundary traces every read outside the stack, the
+  spec and case memory, the summon is written at `+0x00` and `+0x5C` only, and the function's own operands name no
+  class field (now cited); the scope is `SummonSetLevel` itself. Same ruling for the mask cells (ADR-0015 (2)'s
+  reference check, the `lea`s followed, the section scan). (4) Accepted: the rows are written per row, so a wrong
+  index reads undeclared memory and shows as an unaccounted read, a structural check, not a probability. (5)
+  Accepted: a remainder that is not R2's stays `[I]` with its route; the R2 halves of rows 74, 111, 112, 144 are named
+  in the cells for H2a. (6) Accepted as filed. (7) Accepted: reproduction confirmed above. (8) Accepted: each sep-0
+  control is named in its run record (experiments.md), the findings' *Not covered* bullets give the families.
+- **Not settled rows (26):** every Route cell names a page, a calc pool, a room or a run; none lies wholly past an
+  allocating call (rows 84, 127 and m63 corrected above).
+- **Gate:** fast green (68 warnings, none from the fixes). The review request stays open for the merge.

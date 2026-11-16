@@ -18,7 +18,10 @@ The ones a reimplementer would most plausibly "fix":
 - [I] A monster's line missile carries the monster's stat 19 as `arPct`, and the monster formula adds `arPct` to stat 19,
   so the attack rating counts twice. (fn:sub_0056ECB0_SkillMissileCreate@0x0056ECB0, fn:COMBAT_ToHitRoll@0x0057D9B0)
 - [I] A summon gets its MonLvl defence and to-hit added whole, with no `noRatio` test.
-  (fn:sub_005C49E0_SummonSetLevel@0x005C49E0)
+  (fn:sub_005C49E0_SummonSetLevel@0x005C49E0) *2026-11-16:* `[C]` for `SummonSetLevel` itself in
+  [skills/0002 § 25](../skills/0002-missiles.md#25-plan-0066-batch-s2ae-part-9-summonsetlevel-and-handler-25-emulated-with-the-setter-whole-the-batch-closed-2026-11-16-lanen66sa)
+  (run:2026-11-16-sweep2-s2ae9: the raw cells, no read of the class or its record); this line and row 16 follow at
+  the next re-tag of this finding.
 - [I] A player's Smite calls the hit test, draws, then forces the hit bit; a monster's Smite takes its `A2` stats, whatever
   mode it used. (0x005CEBA8, 0x005CEBB0, 0x005CEBB6)
 - [I] The knockback chance of Dragon Talon and Psychic Hammer computes `level(target) + slvl − level(target)`, so the

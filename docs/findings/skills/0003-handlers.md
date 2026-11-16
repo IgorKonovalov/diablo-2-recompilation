@@ -343,6 +343,8 @@ flagged for removal (`+0x02` bit 1) or with no list (`+0x04` = 0) is unlinked an
 | 30 | `0x005C0670` | stats 197, 199 | `killed`, `levelup` | skill on death/level-up: skill `= layer >> shift`, level `= layer & mask`; one inline step, `low % 100 < stat` → cast, effect 0 | 1 inline |
 | 31 | `0x005C09E0` | stat 155 | `kill` | reanimate (items/0002) | 1 |
 
+*2026-11-16 (plan 0066 batch S2ae part 6, `lane/n66sa`):* handlers 7 (whole), 8, 9, 10, 18 and 31 were emulated to their first call that reaches the pool; the maps are [C] in [skills/0002 § 22](0002-missiles.md#22-plan-0066-batch-s2ae-part-6-six-stat-event-handlers-and-kicks-start-emulated-the-open-routes-read-2026-11-16-lanen66sa). Two cells above say less than the code: row 10 also needs the other unit's `+0xC4` bit 2 (0x005BF739), and row 18 returns unless the unit's life is below its maximum and floors the sum at 0 before the cap (0x005C02B2, 0x005C02C4–0x005C02CE). (run:2026-11-16-sweep2-s2ae6)
+
 - [I] Handler names (`re/symbols.csv`): 1 `sub_005CAB40_StatEv01MissileAtSource`, 2 `sub_005CAC50_StatEv02CalcHitAttacker`,
   3 `sub_005CAD40_StatEv03ElemHitAttacker`, 4 `sub_005C5F50_StatEv04ReturnDamage`, 5 `sub_005C61E0_StatEv05LifeTap`,
   6 `sub_005BF670_StatEv06ThornsPhys`, 7 `sub_005BF960_StatEv07Knockback`, 8 `sub_005BFA10_StatEv08Howl`,
@@ -633,7 +635,9 @@ if (m) { m->c4 &= ~4; SetStat(m, 74, 0); SummonSetLevel(m, max(calc2, 1), lvl); 
   min(max(L · 3 / 4 + skillLvl, 1), L)` (signed `/ 4`), left unset when `L` is 0; stat 12 = lvl;
   then the MonLvl row (`DataTables+0xB70`, 0x78 bytes, capped at the last row) adds defence (stat 31) and to-hit
   (stat 19) by difficulty (`game+0x6D`, 0/1/2) and by the expansion/ladder pair (`+0x6A`, `+0x74`).
-  (fn:sub_005C49E0_SummonSetLevel@0x005C49E0)
+  (fn:sub_005C49E0_SummonSetLevel@0x005C49E0) *2026-11-16:* emulated whole with the setter, `[C]` in
+  [skills/0002 § 25](0002-missiles.md#25-plan-0066-batch-s2ae-part-9-summonsetlevel-and-handler-25-emulated-with-the-setter-whole-the-batch-closed-2026-11-16-lanen66sa)
+  (run:2026-11-16-sweep2-s2ae9).
 - [I] `sub_005C4470_SummonInitStats(m, id, lvl, n)`: `passivestat1..5` with `passivecalc` added to the summon, then
   `aurastat1..6` into a list (each stat's `itemevent` registered on the summon), `aurastate` set, max life `+=
   maxhp · calc1 / 100` (64-bit when large), `sumskill1..5` with `sumsk*calc`, `sumumod` (`sub_005A4850_ModAppendApply`),
@@ -762,6 +766,11 @@ RunList(lists->a14, every); RunList(lists->bucket[4], frame);     // fifth list 
 - [I] **`TgtPlaceCheck`** (`+0x08` bit 0; Resurrect, Resurrect2): one server reader, `sub_005FD470_MonSkillTargetOk`
   (`0x005FD4B9`): with the flag, the target must be dead (`+0xC4` bit 1) and its cell free for its pattern
   (`COLL_PatternTestBool(…, 0x3C01) == 0`). It is a monster AI target test (phase (5)), not a player start check.
+  *2026-11-16 (plan 0066 S2ae Tier A review):* the test is bit 1 **set** (0x005FD4C5–0x005FD4D0); "dead" is a name,
+  not what the code gives. `SKILLS_TargetCheck` (skills/0002 § 21, run:2026-11-16-sweep2-s2ae5) clears every target
+  with the bit clear and keeps one with it set that is not a type-1 unit in mode 12 for a skill without `TargetCorpse`,
+  so the bit is not "dead" there either; the table doc's wording is routed to the archivist
+  ([backlog](../../backlog/2026-11-16-architect-archivist-plan-0066-s2ae-skills-table-c4-bit1-name.md)).
 - [I] **`weapsel`** (`+0x168`): no server read of a Skills `+0x168` (the 11 `[r+0x168]` operands are other records:
   `PlayerData+0x168` in the packet handlers, `0x006222A3`, …). **`leftskill`** (`+0x07` bit 6): one test, client
   (`0x004AA498`). Both are client choices on stock data. (`FLAG weapsel`, `FLAG leftskill`)
@@ -866,7 +875,9 @@ RunList(lists->a14, every); RunList(lists->bucket[4], frame);     // fifth list 
 - [I] The 8 summons share one input (L 86, `lvl` 0, skill level 20) and decide one case. It separates the read
   formula from the lead's 86 and from a rounded-up `3/4` (64.5 → 65 would give 85), not the clamps: neither `max(…, 1)`
   nor `min(…, L)` binds at 84. Its MonLvl defence and to-hit, `SummonInitStats`, and the created unit's seed are not
-  checked. *2026-10-27:* the seed, life and defence checked by part 2 (§ 16). (run:2026-10-25-skills)
+  checked. *2026-10-27:* the seed, life and defence checked by part 2 (§ 16). *2026-11-16 (plan 0066 S2ae part 9):*
+  the clamps on both sides, the MonLvl cells and the absent `noRatio` test emulated whole (skills/0002 § 25,
+  run:2026-11-16-sweep2-s2ae9). (run:2026-10-25-skills)
 - [C] **`0x005C9290`'s re-seed** (§ 9): the new missile's seed at the callback's `ret` lies on the stream of
   `Init(path x + arg)` (low = the word at path `+0x10` plus `+0x58`, high `0x29A`) in 450 of 450 creations, 20 steps
   past it in the 442 of Firestorm's sub-missiles and 38 in the 8 of a monster's class-195 missiles; a seed made any

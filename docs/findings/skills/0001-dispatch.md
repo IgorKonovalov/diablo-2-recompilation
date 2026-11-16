@@ -314,6 +314,10 @@ return SKILLS_DelayOk(unit, entry) ? 0 : 8;
 - [I] `SKILLS_ItemChargesOk`: an item skill passes only if the inventory item whose guid is `+0x34` has a non-zero low
   byte of stat 204 at layer `skill · 64 + (level & 0x3F)`; a missing item passes. (fn:SKILLS_ItemChargesOk@0x00647840,
   struct:SkillEntry+0x34)
+  *Plan 0066 S2ae part 7 (2026-11-16):* emulated whole and confirmed, with the null-unit/entry refusal, the
+  no-inventory and guid −1 passes, the level `SKILLS_GetSkillLevel(unit, entry, 0)` and the walk's end at a non-item
+  node: [skills/0002 § 23](0002-missiles.md#23-plan-0066-batch-s2ae-part-7-skills_itemchargesok-skillweaponwear-and-handlers-26-and-27-emulated-2026-11-16-lanen66sa)
+  (fn:SKILLS_ItemChargesOk@0x00647840, run:2026-11-16-sweep2-s2ae7).
 - [I] `SKILLS_DelayOk`: a player in state 121 passes only if the skill's `delay` calc gives < 1 (§ 8).
   (fn:SKILLS_DelayOk@0x006478F0)
 
@@ -356,6 +360,12 @@ return r;
   skill has `TargetCorpse` (`+0x07` bit 0; the monster-in-mode-12 case keeps it only then too), otherwise the target is
   cleared (`0x00620C10(unit, 0)`) and the check passes. (fn:SKILLS_StartUsedSkill@0x0056FAF0,
   fn:SKILLS_TargetCheck@0x0056CC60, fn:SKILLS_GetItemSkillInfo@0x00643B00)
+- [C] **Corrected 2026-11-16 (plan 0066 S2ae part 5, `lane/n66sa`).** The bullet above holds for a type-1 target in
+  mode 12 only. Emulated whole: a target whose `+0xC4` bit 1 is **clear** is cleared; with the bit set, any target that
+  is not a type-1 unit in mode 12 is cleared when the skill has `TargetCorpse` and kept when it has not. The
+  `TargetableOnly` tests are `UnitsHostile`, then `sub_005542C0_SkillPetTest`, then `SkillAllyTest`. Full map and
+  counts in [skills/0002 § 21](0002-missiles.md#21-plan-0066-batch-s2ae-part-5-skills_targetcheck-and-two-re-seed-callbacks-emulated-2026-11-16-lanen66sa).
+  (0x0056CCF0–0x0056CD35, run:2026-11-16-sweep2-s2ae5)
 
 ```c
 // fn:SKILLS_SrvStart@0x0056F640 (id, lvl, noCost; ECX game, EDX unit), trimmed
