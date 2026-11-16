@@ -790,6 +790,11 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-11-16 | `lane/n66z` check | 0066 P1 S4e | architect-check | 197 978 | 80 | 8 | — | gave accept with fixes (Tier B) | 4: stale cross-reference 2, corroboration 1, absence basis 1 (2nd Tier B after the n69h audit) |
 | 2026-11-16 | `lane/n66sa` | 0066 P1 S2ae | reverser-static | 2 491 974 | 971 | 206 | ghidra-n66sa | accept with fixes | 6: miscount 1, overclaim 1, misread 1, omission 2, stale cross-reference 1 (nine parts: 353 106/130/19, 232 682/102/20, 245 849/90/19, 263 737/95/19, 277 877/90/19, 321 703/128/24, 254 439/91/20, 272 189/110/33, 270 392/135/33) |
 | 2026-11-16 | `lane/n66sa` audit | 0066 P1 S2ae | architect-review | 251 387 | 134 | 14 | — | gave accept with fixes (Tier A audit, single pass covering the Tier B list) | 6: miscount 1, overclaim 1, misread 1, omission 2, stale cross-reference 1 |
+| 2026-11-16 | `lane/adr35` | ADR-0034 | architect | 72 276 | 13 | 3 | — | accepted by owner | 0 |
+| 2026-11-16 | `lane/shot1` | ADR-0034 | reverser-harness | 110 713 | 81 | 11 | 1 | inline check, merged | 0; verdict: in-game walls reach the floor, renderer wall base moved +80 (lane/wall80, orchestrator) |
+| 2026-11-16 | `lane/anim2` | ADR-0034 | archivist | 267 978 | 76 | 12 | — | accept with fixes | 4: caption overclaim 2 (set builder filter/weight, normal builder scope), misread 1 (jewel rare count), cosmetic 1 (font glyphs, name wrap) |
+| 2026-11-16 | `lane/anim2` check | ADR-0034 | architect-check | 128 452 | 44 | 5 | — | gave accept with fixes (Tier B) | 4 |
+| 2026-11-16 | `lane/anim1` | ADR-0034 | archivist | 0 | 0 | 0 | — | orchestrator inline, merged | usage unknown (session restart); orchestrator fixes: font glyph, blank floor, calc panel, 3/4 pairing, warps (lane/anim1b) |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not
