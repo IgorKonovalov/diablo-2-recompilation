@@ -8,6 +8,10 @@
   inventory). Statement `[C]` whole: row 12 (1), with combat/README row 38. Split, corrected: none (0). Kept `[I]`
   (25): rows 1–11, 13–26: the S7a rows 2, 14, 20 and 22 wait for their own cluster's re-tag (a second *Phase 3* line
   then), the others are H7a, d-2c and d-none.
+- **Phase 3 (`lane/n66pf`, 2026-11-16, the frame cluster): the S7a rows re-tagged.** The spec's front matter is now C 51 / I 25 /
+  L 3 (it was C 47 / I 29 / L 3 at `main` `6e0ee2b7`; four `[I]` lines of plan 0063 P3 are not in this inventory). Statement
+  `[C]` whole: rows 2, 14, 20, 22 (4). Split, corrected: none (0). Kept `[I]` (H7a, d-2c, d-none): 1, 3–11, 13, 15–19, 21, 23–26 (21). Row 12 is the
+  combat cluster's (line above).
 
 | # | Line | Section | Claim (excerpt) | Anchor | Class | Route or reason | Batch | Count |
 |---|---|---|---|---|---|---|---|---|

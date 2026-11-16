@@ -34,4 +34,4 @@ Worth checking:
    the DRLG near list at `RMX` (active, status ≤ 1), the file-loading half left; (g) row 25's frame-window `RR` lines
    not used.
 4. Phase 3 notes in
-   [`2026-11-15-reverser-spec-writer-plan-0066-s7c-s7d-phase-3-notes`](../2026-11-15-reverser-spec-writer-plan-0066-s7c-s7d-phase-3-notes.md).
+   [`2026-11-15-reverser-spec-writer-plan-0066-s7c-s7d-phase-3-notes`](2026-11-15-reverser-spec-writer-plan-0066-s7c-s7d-phase-3-notes.md).

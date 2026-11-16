@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, monsters/pool, data/excel, drlg/collision, objects]
 consumed_by: [monsters/special, monsters/stats, items/tc, chain, monsters/ai/overview]
-tags: {C: 137, I: 46, L: 5}
-updated: 2026-11-04
+tags: {C: 138, I: 46, L: 5}
+updated: 2026-11-16
 ---
 
 # Random population of a room
@@ -795,7 +795,7 @@ fn:sub_00552DF0_UnitSeedInit@0x00552DF0, fn:sub_00573CB0_MonStatsInit@0x00573CB0
 ### K. Wanderers (the tick)
 
 ```
-K1. RoomWandererTick(game, room):                                 [C] for the first draw, the roll's draw and its no-spawn branch; [I] for the gate's mask width, the room +0x78 test, the Levels MonWndr ≠ 0 test and the spawn branch (bullets below) (fn:sub_0054F060_RoomWandererTick@0x0054F060, run:2026-10-13-mon-spawn, run:2026-10-21-sweep-monsters-a)
+K1. RoomWandererTick(game, room):                                 [C] for the first draw, the roll's draw and its no-spawn branch, and the gate's mask width, the room +0x78 test, the Levels MonWndr ≠ 0 test and the region count test (signed) as the code's map; [I] for the spawn branch's spawn (bullets below) (fn:sub_0054F060_RoomWandererTick@0x0054F060, run:2026-10-13-mon-spawn, run:2026-10-21-sweep-monsters-a)
       Step(room.seed)                                             ; room draw, every tick
       if room.seed.low & 0x7FFF = 0 and room[+0x78] = 0 and Levels[level].MonWndr ≠ 0:
         WandererRoll: Step(room.seed)                             ; room draw
@@ -813,10 +813,12 @@ K1. RoomWandererTick(game, room):                                 [C] for the fi
   `low & 0x7FFF` (0x0054F089), room `+0x78` = 0 (0x0054F096) and Levels `+0x2E` ≠ 0 (0x0054F0AA), then `low mod 100`
   (unsigned) against 3 (0x0054F02B) and the region's `+0x2C4` against 3 (0x0054F041). (fn:sub_0054F060_RoomWandererTick@0x0054F060,
   fn:sub_0054EFF0_WandererRoll@0x0054EFF0, tbl:Levels.txt:MonWndr, run:2026-10-21-sweep-monsters-a, [monsters/0002 § Plan 0038 batch H4a](../../findings/monsters/0002-room-population.md#plan-0038-batch-h4a-run2026-10-21-sweep-monsters-a))
-- [I] Not separated by that one case: the mask's width (its low word had 16 zero bits, so `0x7FFF` and `0xFFFF` agree),
-  the room `+0x78` test (not logged), the Levels `MonWndr` ≠ 0 test (0x0054F0AA; the pass came in a `MonWndr` 1 level,
-  and no logged tick passed the mask in a `MonWndr` 0 level) and the spawn branch (a roll below 3, the region count, `WandererSpawn`'s draws and
-  placement). (fn:sub_0054F060_RoomWandererTick@0x0054F060, fn:sub_0054EF50_WandererSpawn@0x0054EF50)
+- [C] Not separated by that one case, and separated under emulation (ADR-0015, the code's map): the mask's width (its low
+  word had 16 zero bits, so `0x7FFF` and `0xFFFF` agree; 32 emulated cases with bit 15 set and bits 0–14 clear pass to the
+  roll), the room `+0x78` test and the Levels `MonWndr` ≠ 0 test (0x0054F0AA), and the region count test, signed
+  (0x0054F041): families `wtick` and `wroll`, 300 cases each, 0 mismatches (run:2026-11-16-sweep2-s7e, [frame/experiments](../../findings/frame/experiments.md#run2026-11-16-sweep2-s7e),
+  [drlg/lifecycle § I](../drlg/lifecycle.md#i-the-wanderer-tick)). [I] The spawn branch in a game (a roll below 3, `WandererSpawn`'s
+  draws and placement). (fn:sub_0054F060_RoomWandererTick@0x0054F060, fn:sub_0054EF50_WandererSpawn@0x0054EF50)
   Run:2026-10-17-lifecycle checked the first draw on 11 064 more walked rooms, re-activated ones included. What room `+0x78`
   is, and so in which rooms the gate can pass, is [drlg/lifecycle § I](../drlg/lifecycle.md#i-the-wanderer-tick).
 - [C] The class list has an entry for Act I only: one class, 270 `rogue2`. `WandererSpawn` returns for an act ≥ 5

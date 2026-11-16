@@ -36,11 +36,14 @@ def main(paths):
             aixs = d["aix"]["s"] if isinstance(d["aix"], dict) else d["aix"][-1]["s"]
             aip4 = [ai.s16(x) for x in ai.le16(a["aip"], 24)][9 + a["diff"]]
             w = (d.get("r7") or {}).get("R118.flag0x20")
+            ctl = (d.get("r7") or {}).get("R118.ctl")                     # rev 8: [mask, mode, n], the perturbation control
+            cw = (d.get("r7") or {}).get("R118.cmp")
             o = m.check(m.m_r118, d)
             c[("near" if a["ctx"][5] < aip4 else "far", "melee" if a["ctx"][6] else "nomelee",
-               "word=" + str(w), "real_seed_steps=%d" % steps(a["s"], aixs), "model=" + o.status)] += 1
+               "word=" + str(w), "mask=" + str(ctl[0] if ctl else None), "cmp=" + str(cw),
+               "real_seed_steps=%d" % steps(a["s"], aixs), "model=" + o.status)] += 1
             if a["ctx"][5] < aip4 and d["aib"]:
-                first[("near", "word=" + str(w), "first boundary fn 0x%08X" % d["aib"][0]["fn"])] += 1
+                first[("near", "word=" + str(w), "mask=" + str(ctl[0] if ctl else None), "first boundary fn 0x%08X" % d["aib"][0]["fn"])] += 1
     for k, v in sorted(c.items(), key=str):
         print(v, *k)
     for k, v in sorted(first.items(), key=str):

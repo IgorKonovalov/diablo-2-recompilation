@@ -2,12 +2,12 @@
 from: spec-writer
 to: spec-writer
 date: 2026-11-16
-status: open
+status: done
 context:
-  - ../plans/0066-simulation-inferred-claims-sweep.md
-  - ../wiki/quests.md
-  - ../specs/quests/travel.md
-resolution: ""
+  - ../../plans/0066-simulation-inferred-claims-sweep.md
+  - ../../wiki/quests.md
+  - ../../specs/quests/travel.md
+resolution: "Refreshed wiki/quests from quests/README, progression and travel: the level-change row now says within one act only (341 and 87 logged), Warriv's direct call stated, C4's per-quest restore, ClearSteps at words 1, 20, 25 and 35 among those logged, the game record's writers and the free-cell search's emulated sizes followed."
 ---
 
 Plan 0066 Phase 3 (`lane/n66qr`) re-tagged quests/README, quests/progression and quests/travel (updated 2026-11-16), so

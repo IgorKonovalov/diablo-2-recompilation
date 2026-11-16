@@ -1,8 +1,8 @@
 ---
 based_on:
-  - docs/specs/path/README.md 2026-11-10
-  - docs/specs/path/search.md 2026-11-04
-  - docs/specs/drlg/collision.md 2026-11-04
+  - docs/specs/path/README.md 2026-11-16
+  - docs/specs/path/search.md 2026-11-16
+  - docs/specs/drlg/collision.md 2026-11-16
 ---
 
 # Pathing
@@ -27,6 +27,7 @@ what their confirmed tags cover are in [the search's purpose](../specs/path/sear
 |---|---|---|
 | **Seen in a game** | Plans logged in two runs of the game, 21 and 25 sessions, 46 in all, and compared with a model. | It holds for the types and outcomes the logs hold ([what each count tests](#what-each-count-tests)), and a planner's count is given the live cells from the log. |
 | **Emulated** | The game's own code run in an emulator on declared inputs, and compared byte for byte with a model. | It shows what the code does with the bytes it reads, not what the game stores there or when it runs. |
+| **Checked by a second reading** | The instructions read again with a second tool, or a scan of every reference to, call of or store into the thing named. The spec counts it confirmed. | It covers what the code says, as far as the scan reaches, not that a game reached it. |
 | **Read from the code** | The instructions were read, and nothing ran. | No run has checked it. |
 | **Unknown** | Listed under [What is not known yet](#what-is-not-known-yet). | |
 
@@ -82,9 +83,10 @@ otherwise ([overview § C](../specs/path/README.md#c-pathplan)).
     is at the position the plan fails like a refusal. A plan that survives notes whether any point lies outside its
     room, keeps a copy of its target, and, with no target unit and one flag clear, takes its last point as the target.
 
-The aim and its "every point at the position" refusal agree in all 13 265 plans of the first run that reached a planner or a
-straight type, 72 of them with a non-zero count and a return of 0. The spec keeps this as inferred, and the aim's writes are
-not compared ([overview § F1](../specs/path/README.md#f1-the-planners-take-the-live-grid)).
+**The aim is seen in the game.** The aim and its "every point at the position" refusal agree in all 13 265 plans of the first run that reached a
+planner or a straight type, 72 of them with a non-zero count and a return of 0. The aim's writes equal the game's record in all 19 284 plans with a
+return over both runs, and in the 154 with a count and a return of 0, apart from the point index, which the fail path zeroes
+([overview § F1](../specs/path/README.md#f1-the-planners-take-the-live-grid)).
 
 **The window** tests the request's target, before the free step, so a target the free step moved may lie a few subtiles
 further, and the planners see the moved one. The room lookup uses the near list of the unit's room, so a target in an
@@ -100,14 +102,16 @@ emulation except that branch ([overview § C1](../specs/path/README.md#c1-the-ta
 **The town test.** A monster that is not an NPC is refused a target in a town (levels 1, 40, 75, 103 and 109). "NPC" here is
 the `npc` or `inTown` column of MonStats, or a negative unit field. Anything that is not a monster passes. It ran under
 emulation, 400 cases ([overview § C2](../specs/path/README.md#c2-the-town-test)). Of the 68 call sites, 66 pass 0 for
-"force", one passes a register holding 0, and only one client site can force. All read from the code.
+"force", one passes a register holding 0, and only one client site can force; "force" is read once, and lets a refused town target through
+and changes nothing else (checked by a second reading).
 
 **Refusals draw nothing.** The return was 0 and the seed unchanged in all 628 + 814 refusals of the two runs, 624 + 814 of
 them stock. Of those, the 211 and the 281 whose reason needs the town test, the room or the free step are observed, not
 predicted: their match says only that the game returned 0
 ([overview § C](../specs/path/README.md#c-pathplan)).
 
-**A replan** ([overview § C4](../specs/path/README.md#c4-the-replan)) ran under emulation as far as its first boundary, 300
+**A replan** ([overview § C4](../specs/path/README.md#c4-the-replan)) follows a blocked step, or a path that ended short with no target unit or
+whose target unit moved more than 5 subtiles (read from the code). It ran under emulation as far as its first boundary, 300
 cases. A monster with one flag clear and no re-plan budget left returns 0. For types 2, 13 and 15 it plans again as 13 when its flag argument is
 set and as 2 otherwise, and a failed plan then tries 15 (that retry read from the code). It writes the type directly, so
 the path keeps the flags word of the type before it (read from the code). 836 + 889 replans of the two runs reproduce,
@@ -120,9 +124,24 @@ A path record holds two masks, and they are not interchangeable: the **test mask
 refuse, and the **mark mask**, the bits the unit writes into the grid
 ([overview § A](../specs/path/README.md#a-two-masks-what-a-move-tests-and-what-a-unit-writes)). Players mark `0x80`,
 monsters `0x100`; a missile marks nothing at creation and `0x40` when its `Collision` column is not 0. The marks are
-confirmed at [collision § F](../specs/drlg/collision.md#f-unit-marks), the test masks are read from the code. Neither of
-Whirlwind's masks, the plan's and the flight's, holds `0x100`, `0x1000` or `0x2000`, so no live unit's mark refuses that plan or
-that flight (read from the code). The Whirlwind plan's mask ran to its boundary under emulation.
+confirmed at [collision § F](../specs/drlg/collision.md#f-unit-marks). The path module stores each mask only through its own setter and at
+creation, and the mark calls take the mark mask while the plan reads the test mask (checked by a second reading).
+
+**The test masks are seen in the game** for players and monsters:
+
+- **A player** tests `0x1C09`: every logged plan of a walk or run start, 3 999, and of Charge, 213. The other player plans are skill overrides,
+  Whirlwind's 158 and the 400 of the Leap Attack path, whose test and mark masks are both 0.
+- **A monster** tests by its MonStats flags: `0x1804` when flying, `0x3401` when it opens doors, `0x3C01` otherwise, in 21 126 plans. The wraith
+  base class tests `0x804` by the creation's own branch, taken before the flag rule, in 27 plans. All 21 375 monster plans mark `0x100`.
+- **A vulture after its take-off** tests 0, set by its AI: the other 249 monster plans, of the two vulture classes.
+
+Neither of Whirlwind's masks, the plan's and the flight's, holds `0x100`, `0x1000` or `0x2000` (checked by a second reading), so no live unit's mark
+refuses that plan or that flight. The Whirlwind plan's mask ran to its boundary under emulation. Leap's flight sets the player's test mask to 0 and back
+at the landing; that the 400 plans above are that flight's is not read.
+
+**Two AI removals read a monster's `SizeY`.** A monster's footprint reads `SizeY` only through the rectangle mark and unmark, and two AI routines, one of them Baal's
+walk to the stairs, unmark their own monster's `SizeX × SizeY` rectangle (checked by a second reading). The two columns are
+equal in every stock row, so the data cannot tell them apart. The rectangle routines' client callers are not followed.
 
 ## A blocked target, and a player's target step
 
@@ -147,7 +166,7 @@ Every type's planner and draws. Only types 10 and 16 draw ([overview § D](../sp
 | 0 | the search | none, emulated | no plan in 46 sessions |
 | 1 | best-first over 200 nodes | none, emulated, and 824 plans through type 7 | no request observed in 46 sessions |
 | 2 | greedy | none, seen | yes |
-| 3 | greedy, client slot | none, read from the code; the emulated map reads no seed | none |
+| 3 | greedy, client slot | none, checked by a second reading; the emulated map reads no seed | none |
 | 4 | one point at the target | none, seen | yes |
 | 5 | the sideways walk, one way | none, seen | yes |
 | 6 | the sideways walk, the other way | none, seen | yes |
@@ -155,18 +174,21 @@ Every type's planner and draws. Only types 10 and 16 draw ([overview § D](../sp
 | 8 | knockback | none, seen | yes |
 | 9 | one point along a line | none, seen | yes |
 | 10 | the random walk | **the limit halved, on the seed passed**, seen and emulated | yes |
-| 11 | one point along a line, client slot | none, read from the code; the emulated map reads no seed | client only |
-| 12 | sideways walks at up to three settings, client slot | none, read from the code; the emulated map reads no seed | none |
+| 11 | one point along a line, client slot | none, checked by a second reading; the emulated map reads no seed | client only |
+| 12 | sideways walks at up to three settings, client slot | none, checked by a second reading; the emulated map reads no seed | none |
 | 13 | greedy, the same plan as 2 | none, seen | yes |
 | 14 | the spiral | none, seen | yes |
 | 15 | a line with two wall followers | none, seen | yes |
 | 16 | the search, with draws | at each child and each turn, on the unit's seed, emulated | none: two functions nothing references |
 
-**The plan routine itself draws nothing:** by reading, no random step lies in it or in what it calls, apart from the one
-indirect call to the planner, and in the emulated domain the unit's seed is not read. Monster plans of types 2, 5, 6, 7,
+**The plan routine itself draws nothing:** checked by a second reading, a second tool's call graph under it and the routines around it, no random step
+lies in it or in what it calls, apart from the one indirect call to the planner; and in the emulated domain the unit's seed is not read. So every draw of
+a plan is in a planner. Under the eight planners other than the search, the one random step is the random walk's, and under the search the three are
+type 16's (checked by a second reading). Monster plans of types 2, 5, 6, 7,
 13 and 15 reproduced in the game with the unit seed unchanged, each above a floor of 50 plans; type 1 has none
 ([overview § G1](../specs/path/README.md#g1-per-type)). What runs after a path is created (the mode set, the population) does reach
-random functions; those are not the path's and are not followed here.
+random functions, the nearest two calls deep, and the creation's own body draws nothing (checked by a second reading); those are not the path's and are
+not followed here.
 
 ## The planners
 
@@ -175,7 +197,9 @@ the cell, patterns 1, 3 and 5 a plus, patterns 2 and 4 a 3×3 rectangle, and any
 its centre) is blocked. A cell in a room
 outside the near list of the planner's room counts as blocked, however large the search's rectangle (emulated:
 [search § A1](../specs/path/search.md#a1-a-cell-read-blocked)). **The limit** that several planners use is a byte of the path record: at most 77, and 73 for a
-player and 14 for a monster at creation ([overview § Runtime state](../specs/path/README.md#runtime-state)).
+player and 14 for a monster at creation ([overview § Runtime state](../specs/path/README.md#runtime-state)). That 77 is the most any writer of the path
+module or any immediate gives is checked by a second reading; that the stores outside the module whose base is not traced give no more is read from the
+code.
 
 ### Greedy: types 2 and 13
 
@@ -204,9 +228,10 @@ run these plans hold 6 points at most; the walk's other branches rest on the emu
 A greedy plan, kept if its last point is within the refresh distance and is not the start. Otherwise, if the start and the
 target are more than 324 apart in squared distance, it returns what it has. So (18, 0) falls through to the next step, and
 (18, 1) at 325 does not. Next comes a best-first plan, and if that gives nothing, a greedy plan is run again, unless the
-first gave 0 ([search § D](../specs/path/search.md#d-greedy-near-type-7)). This is emulated. A player plans this type (read
-from the code). In the game 270 + 554 plans took the switch, of 2 725 + 4 355 that reached the planner. **The 324 boundary
-and the retry separate no plan in either run**, so they rest on the emulation.
+first gave 0 ([search § D](../specs/path/search.md#d-greedy-near-type-7)). This is emulated. **A player plans this type, and seen in the game:** of the players' plans of this type, greedy stopped short in 462; the 461 at a
+squared distance of 324 or less (all 317 or less) switched to best-first, and the 1 above 360 did not. In the game 270 + 554 plans took the switch, of
+2 725 + 4 355 that reached the planner. **The 324 edge itself and the retry separate no plan in either run**, since no short plan fell between 318 and
+360, so they rest on the emulation.
 
 ### Knockback: type 8
 
@@ -244,8 +269,9 @@ block. When one stops, the nearer end to the target is taken unless the start is
 point whose step equals the last is dropped, and, with nothing dropped since, a point where both coordinates of the step
 change. So east, south, east, south loses every other corner, and east, south-east, east, south-east loses none
 ([search § H](../specs/path/search.md#h-type-15-a-line-with-two-wall-followers); emulated, and seen). **Most plans end at
-0:** 2 273 of the second run's 3 309, the planner's own refusal or a free line of too few cells. A monster with its
-creation's limit of 14 and a target unit reaches 39 subtiles here where its other plans have 14 (read from the code).
+0:** 2 273 of the second run's 3 309, the planner's own refusal or a free line of too few cells. A limit above 80 is reached only with
+bytes no writer of the path module gives (checked by a second reading). A monster with its creation's limit of 14 and a target unit reaches 39 subtiles
+here where its other plans have 14 (read from the code).
 
 ### One point at the target: type 4
 
@@ -258,7 +284,8 @@ paths skip the plan's own window ([search § K](../specs/path/search.md#k-the-st
 The first direction toward the target is found once. Then each draw takes one step on the seed passed: it writes a point, and the direction of the move is the first direction plus −1, 0 or 1 from the draw's low 5 bits, moving 2 subtiles. Every step is the first
 direction ±1 or straight, so **it is not a walk of accumulating turns**. The first point is the position itself. **No grid
 and no room are read**: a missile's collision is its own ([search § I](../specs/path/search.md#i-the-random-walk-type-10)).
-A straight step has chance 10/32 and each side 11/32 (read from the code).
+A straight step has chance 10/32 and each side 11/32, seen in the game: the rule reproduces all 946 plans' points and seeds, a variant with 12/32
+straight fails all 851 it separates, and 10 616 of the game's 33 500 steps are straight (31.7 %).
 
 The count of draws is the missile's limit halved, and the count of points one more. At limit 77 that is 38 draws and 39
 points. In the game, 698 + 248 plans return 39 at that limit, and in 654 of 654 creations the exit seed is the one predicted
@@ -285,13 +312,15 @@ are short of the floor of 50 each, with 22 and 3 seeds watched in one run and on
 
 ### The spiral: type 14
 
-77 points in a growing spiral around the position, with no draw and no grid. Its structure is read from the code; **the
-truncation is seen**. The code sets the rounding field around each conversion, and the game's own stored integers agree: 233
+77 points in a growing spiral around the position, with no draw and no grid. **Its structure is seen in the game:** it reproduces all 260 stock plans,
+and other step sizes or angles fail all 260. The seed, the grid (no grid read) and the limit bytes are unchanged in 260 of 260 plans. **The
+truncation is seen** too. The code sets the rounding field around each conversion, and the game's own stored integers agree: 233
 natural plans, 43 804 stored products, 18 174 of which separate the readings, all 18 174 truncating toward zero and 0 rounding
 ([overview § G4](../specs/path/README.md#g4-truncation)). The point list reproduces in 27 stock plans of the first run, which
 are one list relative to the start, and in 233 natural plans of the second
 ([search § J](../specs/path/search.md#j-the-spiral-type-14)). The emulator's rounding ignores that field, so its own spiral
-cases say nothing about the game. The hammer's end at a wall is the missile's own step, not this plan's (read from the code).
+cases say nothing about the game. **The plan reads no grid,** seen in the game: no grid read in 260 of 260 plans, 123 of them through cells with the wall bit. The hammer's end at a wall is
+the missile's own step (read from the code).
 
 ### The search: types 0 and 16
 
@@ -307,7 +336,8 @@ is emulated (2 116 cases, 0 mismatches, plus 120 boundary cases). No type 0 or 1
   emulated cases, every exit seed compared.
 - At most 77 points. The node store of 900 is out of reach under the plan's window (read from the code).
 - A rectangle can pass the size check and still overrun the stack frame: 217 × 217 fits and 218 × 218 overruns. No single stock
-  room overruns (read from the code).
+  room overruns (checked against the level tables: the largest room is 60 × 60 subtiles, and a pair of near rooms has a side of at most 145, a clear of
+  at most 22 801 cells against the frame's 50 010). That the builders make no room outside these extents is read from the code.
 
 ### The client slots: types 3, 11 and 12
 
@@ -341,6 +371,10 @@ the town test and the slot are inputs to this count, not predictions of it.
 
 **This is not the predicted grid.** The 0 mismatches take the grid from the game. The same planners on a grid predicted from the
 built map plus the units are another claim, and it failed.
+
+**A unit does not block itself,** and a target under the path's flag does not block either: seen in the game, the start cell holds none of the unit's own
+blocking bits in 8 334 of 8 334 plans with no other unit within 3 subtiles, and a target's cell none of its own in 1 286 of 1 286, where a lone other unit
+holds them in 83 839 of 94 349. That an unmark there can take a neighbour's bit, and the tail gives back only the unit's own footprint, is read from the code.
 
 **The grid is its operations in order, never a union of holders.** The grid at a planner call is the result of the marks and
 unmarks in order. An unmark takes the same footprint off and no bit is counted, so it clears a shared bit another holder also set:
@@ -396,7 +430,7 @@ server's, never the client's plus. Every statement here holds for the copy it na
 | Dead player | server | The 3×3 | Read from the code; the call did not fire |
 | Player created in mode 0 or 17 | server | The plus, not the 3×3 | Read from the code |
 
-These are read from the code, and no game ran on them:
+These are read from the code, and no game ran on them, unless a bullet says otherwise:
 
 - **The corpse call's last step marks nothing.** It snaps the corpse's position to the middle of its subtile, which moves no cell and,
   in practice, no room.
@@ -411,17 +445,23 @@ These are read from the code, and no game ran on them:
   resurrect, the fetish revive callback, the resurrect packet, skill start 21's revive and three callees of the revive routines. A
   mode set from dead to alive is not given as a route, since where the mode word is written was not located. No server revival
   is logged with its grid.
-- **`0x8000` is in no immediate move mask scanned:** 0 of 53 immediates that reach a move mask, and none of the monsters' masks.
-  A mask built in a register or read from a table was not scanned. It is in no spawn mask either. So on what the specs state a corpse mark is not a blocker, but whether corpses block movement stays open.
-- **`unflatDead` is no route to it.** Its one direct reader is a client draw-list test, so it changes no grid mark and no move
+- **`0x8000` is in no immediate move mask scanned:** 0 of 53 immediates that reach a move mask, and none of the monsters' masks. Checked by a second
+  reading, it is in no mask the path module builds in a register or reads from a table either: the setter's register calls, the two missile collision
+  tables, the monster rule's three returns and creation's stores. 77 register stores to the test mask outside the path module, whose bases are not traced,
+  are read from the code only. It is in no spawn mask either. So on what the specs state a corpse mark is not a blocker, but whether corpses block movement stays open.
+- **`unflatDead` is no route to it** (checked by a second reading). Its one direct reader is a client draw-list test, so it changes no grid mark and no move
   mask, and no direct call on the server reads it ([overview § Reimplementation notes](../specs/path/README.md#reimplementation-notes)).
 
 ## Who asks
 
-The plan routine has 68 direct calls in 58 functions, 34 on the server and 34 on the client
-([overview § E](../specs/path/README.md#e-who-asks-the-request-register)). The register is read from the code, each type at its site.
+The plan routine has 68 direct calls in 58 functions, 34 on the server and 34 on the client, and no jump or address reference to it
+([overview § E](../specs/path/README.md#e-who-asks-the-request-register)). The 68 calls are checked by a second reading; the register's types are read from the code,
+each at its site, unless a line below says otherwise. The path record is created by nine calls, six on the server and three in the client (checked by a
+second reading).
 Seen in the game: all 33 722 stock plans came through sites of this register, by their return addresses, and the first run's other 842 did too: 0
-outside it in either run. "Current" plans with the type the path already holds.
+outside it in either run. "Current" plans with the type the path already holds: a missile's 4 unless a callback set 10 or a do function 14 (checked by a second
+reading: the seven server calls that set a missile path's type give 4, 10 or 14), a monster's last request type, and a player's 7 after a mode reset (read from
+the code; the reset itself ran under emulation, 300 cases).
 
 | Who | Sites | Type at the call |
 |---|---:|---|
@@ -434,8 +474,11 @@ outside it in either run. "Current" plans with the type the path already holds.
 | referenced by nothing | 2 | 16 |
 | client | 34 | out of scope |
 
-A walk, run or town walk start plans type 7. The AI's types are 1, 2, 5, 6, 7, 13 and 15, and a failed plan of 2, 7, 9 or 13 falls back to 15; [monster AI](monster-ai.md#the-path-request) has how a think asks.
-No Missiles column chooses a type: it is a constant in the code that asks. All read from the code.
+**Seen in the game:** a walk, run or town walk start planned type 7 (3 997) or type 8 (2), none else. The AI's requests through its type routine were of
+types 2, 5, 6, 7 and 13 (13 004), and 13 is also asked directly (7 363) beside the replan's 1 202; an empty request of type 2, 7 or 13 was followed by the
+unit's type-15 plan in its frame 2 469 times, the other 84 with no logged follow-up each after the type-15 plan's cap line or its own refusal, and none came after an empty 5 or 6 or a request with points. Read from the code: the AI's types are 1, 2, 5, 6, 7, 13 and
+15, and the fallback to 15 also follows a failed type 9; [monster AI](monster-ai.md#the-path-request) has how a think asks. No Missiles column chooses a type:
+it is a constant in the code that asks (checked by a second reading).
 
 ## What each count tests
 
@@ -469,24 +512,25 @@ What the logs did not reach, each stated as it stands ([overview § G2](../specs
 
 - **Type 1.** The planner is confirmed: emulated to its return, and seen in the game through greedy-near's switch, 270 + 554 plans. **No
   stock request was observed in 46 sessions** (21 + 25): no plan with type 1 at the plan's entry, and in the 25 all seven sites that
-  request it count 0. Those seven are read from the code. Two are a retry, reached only when the request before returned 0, and followers
+  request it count 0. The seven sites are checked by a second reading. Two are a retry, reached only when the request before returned 0, and followers
   planned in these logs without one (a mercenary 103 plans, a clay golem 65). Five were not staged, so their 0 says nothing of why.
 - **Type 0.** Planned where a "current" site holds it. No plan in 46 sessions. The planner rests on emulation only.
 - **Types 3, 11 and 12.** No server code sets them, by a scan of immediate stores (read from the code; 18 register stores of unresolved
-  base and 4 read-modify-write stores remain). Break lines over 46 sessions show no server caller: types 3 and 12 no line on either side,
+  base and 4 read-modify-write stores remain). Ten of those 22 resolve without reading the base, as the value 0, pointers, hash schedule words and runtime
+  stack frames (checked by a second reading); the other twelve rest on a reading of the owner's block. Break lines over 46 sessions show no server caller: types 3 and 12 no line on either side,
   type 11 client callers only, 229 + 1 105 hits. The control under the same break is counted on the second run and capped on the first,
   so there the absence past its last line is inferred. Of the 22 store sites 7 and 6 executed, none storing those types.
-- **Type 16.** Planned only from two functions nothing references (read from the code), with no line on either side in 46 sessions.
+- **Type 16.** Planned only from two functions nothing references, whose pushes are the only ones that set it (checked by a second reading), with no line on either side in 46 sessions.
 - **Town-follow.** Attempted in the Rogue Encampment, 313 plans, with no hostile monster in the town room, so it is short
   (inferred). The geometry stays with the [room lifecycle](levels.md#rooms-that-come-and-go-release-and-restore). Whether a stock town's geometry admits the route is open.
-- **Jump.** No stock user: no MonStats skill column and no other excel table holds it, and it occurs in `skills.txt` only (read from the code).
+- **Jump.** No stock user: no MonStats skill column and no other excel table holds it, and it occurs in `skills.txt` only (checked over 92 tables).
 
 ## What is not known yet
 
 From the specs' open questions ([overview](../specs/path/README.md#open-questions), [search](../specs/path/search.md#open-questions)):
 
-- **Do corpses block movement?** No immediate mask scanned holds the corpse bit, but that is what the findings did not find, and no run
-  tests it. A mask built in a register or read from a table was not scanned.
+- **Do corpses block movement?** No immediate mask scanned holds the corpse bit, and no mask the path module builds or reads from a table, but that is what
+  the findings did not find, and no run tests it. 77 register stores to the test mask outside the module are not resolved.
 - **The operations in order.** Whether marks and unmarks applied in the game's order, with the seventh caller, leave 0 wrong plans. The logger
   holds no line per ordinary mark. The same question carries the player after an act change beyond its 7 and 3, and the shorts above.
 - **The `0x200` cells:** what sets them. No logged unit does.

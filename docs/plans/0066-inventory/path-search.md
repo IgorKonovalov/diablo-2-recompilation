@@ -3,6 +3,10 @@
 - **Spec:** [path/search](../../specs/path/search.md), read at `main` `b5999f5e`.
 - **Front matter `I`:** 36; the *Count* column sums to 36.
 - Classes, batches and conventions as in [the inventory README](README.md#conventions).
+- **Phase 3 (`lane/n66pf`, 2026-11-16, the frame cluster): re-tagged.** The spec's front matter is now C 117 / I 27 / L 4 (it was
+  C 102 / I 36 / L 4 at `main` `6e0ee2b7`). Statement `[C]` whole: rows 2, 3, 5, 15, 17, 19, 26–28 (9). Split, the `[C]` half and the
+  remainder `[I]` as the *Route* cell names: 7, 14, 21, 30, 34–36 (7). Corrected to the finding: none (0). Kept `[I]`
+  (H7a–H7d, deferred, moved to b, not settled, not raised, d-none, d-2c): 1, 4, 6, 8–13, 16, 18, 20, 22–25, 29, 31–33 (20). Rows 26 and 27 carry the S7f refinements (any `h0`; type 16's draw). Row 35, filed raised, is split at the Tier A review: "no server planner passes 78" rests on rows 33 and 34's `[I]` remainders.
 
 | # | Line | Section | Claim (excerpt) | Anchor | Class | Route or reason | Batch | Count |
 |---|---|---|---|---|---|---|---|---|
