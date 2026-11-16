@@ -3245,3 +3245,55 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   and 624, 632, 653 (the floors), and halves: 374, 657, 971; movement 80, 111, 132 (the words), 144.
 - **Notes.** The logger's OA ret hook raised "Cannot convert value to long" 3 times in 2 sessions (not an H6d line). Slot 1's
   saves restored (empty), no game left running.
+
+### 2026-11-16 — Phase 1, batch S4e part 5c (reverser-static, `lane/n66z`): the mercenary button, `ItemUse` after its entries, `ItemSkillQtyAdjust`, the routes; 12 rows settled or routed; resume note
+
+- **Done.** `main` `ac87a5f5` merged first (keep-both on this log; README § 1 recomputed from the 29 files' *Totals by
+  class*). New tool `tools/items_s4e7_emu.py` (`8ba80ecb…`; parts 1–5b's tools and `run/` to `run6/` untouched; it
+  builds on `tools/items_s4e3_emu.py`'s, `tools/use_emu.py`'s and `tools/items_s4e6_emu.py`'s worlds, unchanged), three
+  families on `workspace/ghidra-n66z` (`-Xmx3G`, `MemoryMax=4G`, one kept launch each, about 30 s for the three) after
+  four development passes (`dev7a/` to `dev7d/`, each with `check-dev.txt` and `manifest-dev.sha256`, not cited):
+  `merc` (`Pkt61MercItem` to `MercGiveCursorItem` or `0x0054D130`), `c2` (`ItemUse` with kind 1's test and kind 3's use
+  run, to `InvClearUseMark` or the return), `qty` (`ItemSkillQtyAdjust` and `ItemSkillQtyAdd` to the message builder,
+  `UnitAddStat` or the error routine); and a new `sites` command (the direct-call closures from 19 roots to an
+  allocator or import). 8 000 cases, 0 mismatches, 0 stops, 0 undeclared reads, no traced write; 18 controls, each
+  separating, `passed` 0. No import, no allocator reached. Record:
+  [run:2026-11-16-sweep2-s4e-emu part 5c](../findings/items/experiments.md#part-5c-the-mercenary-button-itemuse-after-its-entries-itemskillqtyadjust-and-the-routes-2026-11-16),
+  `workspace/logs/n66z/s4e/run7/` (`check.txt` `a7d99e9b…`, `static.txt` `411de8b4…` 48 pins, `sites.txt` `2b6f5e27…`,
+  `manifest.sha256` `e1cfd74e…`, 18 lines, passes from there; `cases` regenerates every input byte for byte and `check`
+  reproduces `check.txt` from the committed revision). Claims in
+  [items/0013 § 16](../findings/items/0013-grids-belts-stacks.md#16-plan-0066-batch-s4e-part-5c-the-mercenary-button-itemuse-after-its-entries-itemskillqtyadjust-and-the-routes-past-invitemremove-run2026-11-16-sweep2-s4e-emu),
+  dated notes in items/0012 §§ 1, 2.
+- **Rows settled.** items/use: 21 raised with refinements (busy-and-player → 3, the pet's room near the player's, no
+  inventory → 3, the no-cursor branch to `0x0054D130`, the first free pet node); 22 raised in part (the test's 1 leaves
+  the marks, a use's 0 clears them, a use's 1 is returned). items/inventory: 26 raised in part with refinements (a tome
+  with stat 70 = 0 returns 0; `q` is stat 70 itself); 27 raised in part (`0x0055C110` has no page test); 25 raised in
+  part (`ItemSkillQtyAdd`'s player test). **Class moves:** use 54 c-emu → b (H4c): `InvClearUseMarks` 0x0055BF50 runs
+  before the `useable` gate in both use functions and queues through `ClientQueuePacket` (0x0040B430); inventory 20
+  c-emu → b (H4d): what follows `InvGridPut`'s `InvItemRemove` (0x0063B133), whose `0x006277F0` at 0x0063ABA4 recomputes
+  the owner's stats to `STATLIST_InsertEntry` → 0x0040B4B0 (with an indirect callback at 0x00626BE7); ruling R2.
+  **Remainders routed without a move:** inventory 25, 26, 27, 39, 42, 45/99 to H4d (each past `InvItemRemove` or the
+  message queue); use 22 (message `0x7C`, use returns other than 0 and 1) and 34 (the 1 after `UnitAddStat` /
+  `STATLIST_SetStat`, both reaching `STATLIST_InsertEntry`) to H4c; use 22's "a test returning 0" to d-none (no stock
+  entry's test returns 0, 0x005BE16F). Refinements routed by
+  [backlog](../backlog/2026-11-16-reverser-spec-writer-plan-0066-s4e-part5c-refinements.md).
+- **Symbols:** none raised (an emulation over a declared image, review-fixes 14).
+- **Totals** (recomputed from the 29 files' rows and *Totals by class* after merging `main` `ac87a5f5`): a-logs 623,
+  a-run 334, b 513, c 390, c-emu 438, d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626; Phase 1 1 451, Phase 2 847.
+  README §§ 1, 3, 4 (S4e, H4c and H4d rows) updated.
+- **Judgment calls:** (1) inventory 20 and the remainders past `InvItemRemove` routed to b although a declared item
+  with no stat list would dodge the unlink: every stock item has one and every stock inventory an owner, so the stock
+  route always runs the owner's recompute (precedent: row 57's conditional queue allocation); (2) use 54 moved whole on
+  the same ground (`InvClearUseMarks` sends only for marked items, but the gate's route always runs it); (3) the `c2`
+  family runs the stock entries rather than declaring their returns (ruling R2), so "a test returning 0" is not met
+  and goes to d-none as unreachable with stock entries; (4) the `sites` closure follows direct calls only and skips the
+  error routine and the stack-cookie report 0x006889D6; the indirect calls it lists (ItemUse's two entries, the unlink
+  callback) are named in the rows that cross them.
+- **Resume (part 5d, a fresh lane on `lane/n66z`):** items/inventory 67 (`ItemAutoEquipSlot` 0x0055D710: its
+  `InvGetBodyLocItem` 0x0063BDE0 → `InvPageGet` 0x0063ADD0 allocates only for a page at or above the count, so declare
+  the body page as part 5a did; ItemReqCheck 0x0062FDF0, `EquipPairFlags` 0x0055D560 and `EquipPairCompatible`
+  0x0055D670 are clean); the remainders of 17 (the 39 direct callers of `InvRowForUnit` 0x00621050, 19 of them
+  client-side 0x0048xxxx–0x004Cxxxx: which can pass a type-2 unit with class `0x152`/`0x153`) and 87 (the quality
+  writers); and the S4c/S4d static (c) and c-emu remainders in part 1's note (inventory 18, 61; aggregate 2, 10, 11, 13,
+  17, 23, 29, 31, 36, 37, 40, 41; states 14, 46). New tool and `run8/`; do not overwrite `run7/`. Tier B review once S4e
+  is whole.

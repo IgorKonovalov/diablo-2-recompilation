@@ -4223,3 +4223,37 @@ request handlers, inventory families) will add their own sections under this hea
   `STATLIST_SetStat` and what follows them (kind 3's 1 after an applied slot; the golem functions' returns after the
   set); `StackMerge` (its first set is items/0013 § 7's; after it, the stat messages' packet queue can allocate, so
   inventory 57 goes to H4d); the uniformity of `low mod n` behind the chance formula.
+
+### Part 5c: the mercenary button, ItemUse after its entries, ItemSkillQtyAdjust and the routes (2026-11-16)
+
+- **Question:** do `Pkt61MercItem`, `ItemUse` with its stock test and use entries run, and `ItemSkillQtyAdjust` map
+  their inputs as [items/use](../../specs/items/use.md) B (`0x61`), C2 and [items/inventory](../../specs/items/inventory.md)
+  C1, C2 state, up to the callee each ends at; and which rows' routes cross an allocator (ruling R2)? Claims in
+  [items/0013 § 16](0013-grids-belts-stacks.md#16-plan-0066-batch-s4e-part-5c-the-mercenary-button-itemuse-after-its-entries-itemskillqtyadjust-and-the-routes-past-invitemremove-run2026-11-16-sweep2-s4e-emu),
+  dated notes in items/0012 §§ 1, 2.
+- **Setup:** `main` `ac87a5f5` merged at the part's start. One kept launch per family on `workspace/ghidra-n66z`
+  (`-Xmx3G`, `MemoryMax=4G`, about 30 s for the three), after four development passes, each with its `check-dev.txt`
+  and `manifest-dev.sha256` passing from its directory, not cited: `dev7a/` (60 per family; the `c2` dumps of the
+  kind-3 cases were not emitted and the book cases had no player data, so 42 mismatches), `dev7b/` (300 per family),
+  `dev7c/` (`merc` only, 300, reweighted), `dev7d/` (the full counts under the revision before the last controls were
+  added; its outputs match, its controls are fewer). New tool `tools/items_s4e7_emu.py` (`8ba80ecb…`; draws from
+  `random.Random("n66z-s4e7-<family>")`), building on `tools/items_s4e3_emu.py`'s world (merc), `tools/use_emu.py`'s
+  world with `tools/items_s4e6_emu.py`'s `potret` generator (c2) and `tools/use_emu.py`'s world (qty), all unchanged;
+  parts 1–5b's tools and `run/` to `run6/` untouched. Guards: 0x00408A60, 0x00681E09 and the allocator entries
+  0x0040B430, 0x0040B480, 0x0040B4B0; none is hit. Observed: `merc` `MercGiveCursorItem` 0x0054D230, 0x0054D130 and the
+  error routine 0x00408090; `c2` `InvClearUseMark` 0x005BE1C0, `SendUnitPacket6` 0x0053B3D0, 0x0053D220, kind 1's use
+  0x005BE230 and kind 3's callees; `qty` 0x005531C0, `UnitAddStat` 0x006272B0, 0x00570080 and 0x00408090.
+- **Families:** `merc` 3 000, `c2` 2 500, `qty` 2 500.
+- **Result:** `workspace/logs/n66z/s4e/run7/check.txt` (`a7d99e9b…`), `static.txt` (`411de8b4…`, 48 objdump pins, each
+  as cited), `sites.txt` (`2b6f5e27…`, 19 roots), `manifest.sha256` (`e1cfd74e…`, 18 lines, passes from that directory);
+  `cases` regenerates every `.cases`, `.mem` and `.json` byte for byte, and `check` reproduces `check.txt` from the
+  committed revision. 8 000 cases, 0 mismatches, 0 stops, 0 undeclared reads, no traced write; outcomes per family in
+  `check.txt` (each count in items/0013 § 16 is copied from it). **18 controls, each separating, `passed` 0.**
+- **Read set** (ADR-0015 (2)): the declared worlds of the three tools named; the image reads are `GameFindUnit`'s head
+  offsets, the use table and its count (0x00741790, 0x0074178C), the stack cookie and the switch tables, bit masks and
+  counts of `items_s4e6_emu.py`'s and `item_emu2.py`'s `ACCOUNTED`; every other read lies in the declared image.
+- **Not covered** (ADR-0015 (3), ADR-0021): the meanings of the offsets; `MercGiveCursorItem`, 0x0054D130 and what
+  follows them; message `0x7C` and `ItemUse`'s return after `InvClearUseMark`; a test returning 0 (none of the stock
+  entries does); `ItemSkillQtyAdjust` after the message builder (the send, the skill resets, the grant, the 1).
+- **Moved, not run** (`sites.txt`): items/inventory 20 and items/use 54 (classes c-emu → b), the remainders of
+  inventory 25, 26, 27, 39, 42, 45/99 and use 22, 34; reasons in items/0013 § 16's last bullet.

@@ -525,6 +525,77 @@ reached (the allocator entries are guards; none is hit). These are items/use row
   current buffer (`+ len > 0x200`, 0x0053B2A4) and none on its free list (`+0x1C0`), that allocates (0x0040B430 at
   0x0053B2DD). Ruling R2 sends the claim to the harness (H4d). `[I]` here. (0x0055E647, 0x0053B2DD)
 
+## 16. Plan 0066 batch S4e part 5c: the mercenary button, `ItemUse` after its entries, `ItemSkillQtyAdjust`, and the routes past `InvItemRemove` (run:2026-11-16-sweep2-s4e-emu)
+
+Three families, 8 000 cases, 0 mismatches, 0 stops, 0 undeclared reads, no traced write; 18 controls, each separating,
+`passed` 0 (`tools/items_s4e7_emu.py`, `workspace/logs/n66z/s4e/run7/check.txt`; record in
+[experiments](experiments.md#part-5c-the-mercenary-button-itemuse-after-its-entries-itemskillqtyadjust-and-the-routes-2026-11-16)).
+`merc` is built on `tools/items_s4e3_emu.py`'s world, `c2` on `tools/use_emu.py`'s world with
+`tools/items_s4e6_emu.py`'s `potret` cases, `qty` on `tools/use_emu.py`'s world, all unchanged. Every case runs from the
+function's entry to its return or a declared callee's entry (ADR-0021; `lane/n66z`). No import and no allocator is
+reached (the allocator entries are guards; none is hit). The rows are items/use 21, 22 (items/0012 §§ 1, 2 carry dated
+notes) and items/inventory 25–27.
+
+- [C] (ADR-0021) **The mercenary button's request**, family `merc` (3 000). `Pkt61MercItem` (0x0054D430; ECX the game,
+  EDX the player, packet, length) returns 3 for a length ≠ 3 (control `len_ignored` separates 153) and for
+  `game+0x70` = 0 (`exp_ignored` 431); returns 3 when `PlayerIsBusy` and `InteractIsPlayer` are both non-zero
+  (`iip_ignored` 140); returns 0 for a used skill, the skill block at `player+0xA8` with a non-zero `+0x10`
+  (`UNIT_GetUsedSkill`; a block whose `+0x10` is 0 passes, `skill_any` 88), and for a dead player (`UnitIsDead`:
+  `+0xC6` bit 0, or a player in mode 0 or 17; `pdead_ignored` 74); asks `PETS_GetUnitOfType(game, player, 7, 0)`, which
+  takes type 7's list only when the pet-type count (data tables `+0xBF0`) is above 7 and returns the unit of the first
+  node whose bit 0 is clear (`pet_first` 40), and returns 0 with none or with a dead pet (a monster in mode 0 or 12, or
+  bit 0 of `+0xC6`; `petdead_ignored` 64); returns 0 unless `0x0065A590(pet, player)` finds the pet's room in the
+  player's room's near list (`[room]` the array, `[room+0x24]` the signed count; a null room fails; `spec_noroom` 107);
+  returns 3 with no inventory (`player+0x60` = 0); with no cursor item, a non-zero `u16` at `+1` calls
+  `0x0054D130(player, u16)` (EBX the game; 30) and 0 returns 0; a cursor item whose Items row has the quest byte
+  (`+0x12A`) returns 0 (`quest_ignored` 52); else `MercGiveCursorItem` (0x0054D230; EAX the item, ECX the pet, the game
+  and the player on the stack; 122). Outcomes: 813 returns of 3, 2 035 of 0, 30 and 122 at the two callees.
+  **Refinements** of items/use B (`0x61`): the busy-and-player test, the pet's room near the player's, the inventory
+  test, the no-cursor branch to `0x0054D130`, the first-free-node rule; "used skill" is the block's `+0x10`. After the
+  two callees, `[I]`. (fn:sub_0054D430_Pkt61MercItem@0x0054D430, 0x0054D4B8, 0x0054D4E9, fn:PETS_GetUnitOfType@0x00574EC0,
+  0x00574F05, 0x0065A5F5, 0x00628D19, run:2026-11-16-sweep2-s4e-emu)
+- [C] (ADR-0021) **`ItemUse` after its entries**, family `c2` (2 500), the entries run, not declared (ruling R2).
+  Kind 1's test (0x005BE130) on a book or scroll with flag 4 clear and no Books row for its suffix returns 1 without a
+  message, and `ItemUse` returns 0 with no call of `InvClearUseMark` (349; control `clear_on_test` separates 349); with a
+  Books row the test sends its message (0x0053D220, 223) and with flag 4 set kind 1's use is called (182). Kind 3's use
+  (0x005BE3F0) on `items_s4e6_emu.py`'s `potret` worlds: a use returning 0 calls `InvClearUseMark` (0x005BE1C0, return
+  0x005BF395; 1 123; `no_clear` 1 123), a use returning 1 makes `ItemUse` return 1 (192; `use_ret0` 192), and the rest
+  end at kind 3's callees as in § 15 (431). Flag 4 is set before the use or the test in all 2 095 cases that reach one
+  (dumped). **Not met:** a test returning 0 (kind 1's test returns 1 on both its paths, 0x005BE16F, and no other kind has
+  a test) and a use return other than 0 or 1. After `InvClearUseMark`, `[I]`: message `0x7C` goes through
+  `SendUnitPacket6` (0x005BF345, 0x005BF3B1) → `ClientQueuePacket` (0x0053B3EE), which can allocate (0x0040B430 at
+  0x0053B2DD; ruling R2 → H4c). (fn:sub_005BF240_ItemUse@0x005BF240, fn:sub_005BE130_ItemUseIdentifyTest@0x005BE130,
+  0x005BF320, 0x005BF38C, 0x005BF3B6, run:2026-11-16-sweep2-s4e-emu)
+- [C] (ADR-0021) **`ItemSkillQtyAdjust`**, family `qty` (2 500: 2 004 direct calls with EAX the item, EDI the unit,
+  `add` on the stack; 496 through `ItemSkillQtyAdd`). The skill is Books `+8` for an item of type 22 (also when it is of
+  type 18 too), Books `+0xC` for type 18, else −1, and −1 (or no Books row) returns 0 (`swap_books` 790). `q` is stat 70
+  of the item when non-zero, as it is (a negative stat 70 is used negative; `spec_max` 127); stat 70 = 0 returns 0 for a
+  tome (`tome0_adds0` 164) and gives 1 for any other item (`nontome0_zero` 113). The unit's skill is found by id with
+  owner word `+0x34` = −1. `add ≠ 0`: a missing skill calls `UnitAddStat(unit, 5, q, 0)` (return 0x0055C17B; 837 with
+  `0x00570080` after it unrun), else the quantity becomes `i32(qty + q)`; `add = 0`: a missing skill reaches the error
+  routine with line `0x230` (184), else `i32(qty − q)` floored at 0 (`noclamp` 25). The quantity is written to the
+  skill's `+0x30` (`0x00645120`) and the message builder `PlayerGetClient` is reached with `0x234`, the unit's id, the
+  skill and the quantity (309). The item's page byte is not consulted: page 4 gives the same outcomes (`page4_nothing`
+  341). `ItemSkillQtyAdd` (0x0055C270) calls it with `add = 1` for a player only; another unit type returns at once (154).
+  **Refinements** of items/inventory C2: a tome with stat 70 = 0 returns 0 before the skill is looked up (0x0055C13E);
+  `q` is stat 70 itself, not `max(stat 70, 1)`; a scroll that is also a tome uses `+8`. After the message builder,
+  `[I]`: the send (`0x0053C520` → `ClientQueuePacket`), the left and right skill resets, the grant at `0x00570080`, and
+  the return of 1 (0x0055C24E). (fn:sub_0055C110_ItemSkillQtyAdjust@0x0055C110, fn:sub_0055C270_ItemSkillQtyAdd@0x0055C270,
+  fn:sub_0055BFF0_ItemBookSkill@0x0055BFF0, 0x0055C14E, 0x0055C1D7, 0x0055C20C, run:2026-11-16-sweep2-s4e-emu)
+- [C] (static, `sites.txt`, objdump direct-call closures) **The routes that cross an allocator**, read by the tool's
+  `sites` command (19 roots, 102 calls whose closure reaches an allocator entry or an import; the error routine's
+  branches and the stack-cookie report 0x006889D6 not followed): (1) `InvItemRemove` 0x0063AAF0 calls `0x006277F0` at
+  0x0063ABA4 whenever the inventory has an owner, which unlinks the item's stat list (`STATLIST_Unlink` 0x006269F0) and
+  recomputes the owner's (`StatRecompute` 0x006266C0 at 0x00626B24 → `STATLIST_CacheWrite` 0x00625150 →
+  `STATLIST_InsertEntry` 0x00624C80 → 0x0040B4B0), with an indirect callback at 0x00626BE7; `InvGridPut` reaches it at
+  0x0063B133, `InvPlaceSocketed` at 0x0063B26E, `InvTakeItem` through it, the `0x63` handler at 0x0054D628; (2)
+  `PlayerUseInvItem` and `PlayerUseBeltItem` call `InvClearUseMarks` 0x0055BF50 at their entry (0x0055E1C1, 0x005623E1),
+  before the `useable` gate, and it reaches `ClientQueuePacket` → 0x0040B430; (3) `UnitAddStat` (0x006272CA → 0x00627030)
+  and `STATLIST_SetStat` (0x00627167 → 0x006270B0) reach `STATLIST_InsertEntry` → 0x0040B4B0. Ruling R2 sends what
+  lies past them to the harness: items/inventory 20, the remainders of 25, 26, 27, 39, 42 and 45/99 (H4d), items/use 54
+  and the remainders of 22 and 34 (H4c). (0x0063ABA4, 0x00626B24, 0x00626BE7, 0x0063B133, 0x0055E1C1, 0x005623E1,
+  run:2026-11-16-sweep2-s4e-emu)
+
 ## Data touched
 
 tbl:Inventory.txt:gridX, tbl:Inventory.txt:gridY, tbl:Belts.txt:numboxes, tbl:Armor.txt:belt, tbl:Misc.txt:autobelt, tbl:Misc.txt:stackable, tbl:Misc.txt:invwidth, tbl:Misc.txt:invheight, tbl:ItemStatCost.txt:Stat, tbl:ItemTypes.txt:Beltable, tbl:ItemTypes.txt:AutoStack.

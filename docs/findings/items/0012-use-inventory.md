@@ -132,7 +132,7 @@ No community source was compared; every claim is from the code. The doubling dra
   passes for any dynamic-path unit (the player) but can fail for a static-path unit with a coordinate above `0xFFFF`.
   The return of 3 on a flagged refusal comes after the call and stays `[I]`.
 - [I] **`0x61`.** Length 3; expansion games only (`game+0x70`), else 3. With a cursor item that is not a quest item the
-  mercenary path runs; the player must have no used skill and be alive, and the pet of type 7 alive. (0x0054D430)
+  mercenary path runs; the player must have no used skill and be alive, and the pet of type 7 alive. (0x0054D430) *Update 2026-11-16 (plan 0066 S4e part 5c): `[C]` (ADR-0021) to `MercGiveCursorItem` and `0x0054D130`, family `merc`, with refinements: a busy player whose interaction is with a player returns 3, the pet's room must be in the player's room's near list (`0x0065A590`), no inventory returns 3, with no cursor item a non-zero `u16` at `+1` goes to `0x0054D130`, the pet is the first type-7 node with bit 0 clear; [items/0013 § 16](0013-grids-belts-stacks.md#16-plan-0066-batch-s4e-part-5c-the-mercenary-button-itemuse-after-its-entries-itemskillqtyadjust-and-the-routes-past-invitemremove-run2026-11-16-sweep2-s4e-emu).*
 - [I] A refusal flagged by the use function returns 3 from the handler; what the drain does with 3 is P1.3's. (0x0054B1E0)
 
 ## 2. The dispatch
@@ -146,6 +146,8 @@ row; kind 4's `use` is an address in the table and the empty ones return 0.
 [I] After the boundary: a test returning 0, or a use returning 0, clears the use marks (`sub_005BE1C0_InvClearUseMark`)
 and sends message `0x7C`; a test's non-zero leaves them. **`ItemUse` returns 0 after any test**, and the use's own return
 otherwise. Only kind 1 has a test, and it returns 1. (0x005BF320–0x005BF34C, 0x005BF38C–0x005BF3B6)
+
+*Update 2026-11-16 (plan 0066 S4e part 5c): `[C]` (ADR-0021), family `c2`, with the stock entries run: kind 1's test returning 1 leaves the marks and `ItemUse` returns 0; a use returning 0 reaches `InvClearUseMark`; a use returning 1 is `ItemUse`'s return. Still `[I]`: message `0x7C` after `InvClearUseMark` (its queue can allocate; → H4c), a test returning 0 (no stock entry's does) and use returns other than 0 and 1 (0x005BF324, 0x005BF390, 0x005BE16F, run:2026-11-16-sweep2-s4e-emu); [items/0013 § 16](0013-grids-belts-stacks.md#16-plan-0066-batch-s4e-part-5c-the-mercenary-button-itemuse-after-its-entries-itemskillqtyadjust-and-the-routes-past-invitemremove-run2026-11-16-sweep2-s4e-emu).*
 
 ## 3. Consumption, in the callers
 
