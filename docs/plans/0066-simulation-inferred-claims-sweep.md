@@ -1617,3 +1617,54 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   and 12 `ClearSteps` calls; `PlayerTickSet`; waypoint-record writers; act `+0x094` readers; dumps of `g_QuestDescs`,
   the second table 0x0073188C and `g_ObjInitFns`; the full-data scans (DS1 objects 567/410, NPC 377 placement, Objects
   Sync/FrameDelta, Levels.Waypoint) with a second parser. A fresh lane on `lane/n66p`.
+
+### 2026-11-16 — Phase 1, batch S3c part 1 (reverser-static, `lane/n66p`): 43 of 51 settled; resume note for part 2
+
+- **Done.** No game, no Ghidra. `main` is `19edd04f`, the lane's base (nothing to merge). New tool `tools/quests_s3c.py`
+  (`53242800…`; stdlib, objdump through `tools/sweep_s4b.py`, r2): every reference count three ways (a raw-byte
+  rel32/abs32 pass with `tools/xrefscan.py`'s rules, objdump's call operands, r2 re-decoding each site), call arguments
+  by two walkers (objdump, and r2's `pushes_before`), a register word followed back to its source. Run once kept under a
+  4 GB scope: `workspace/logs/n66p/s3c/check-s3c-p1.txt` (`4c86fddb…`, `S3c total bad=0`), `totals-s3c-p1.txt`,
+  `manifest-s3c-p1.sha256` passing from that directory; development outputs (the first full run, whose `events` section
+  failed its own owner test on an int3 entry guess, fixed before the kept run) in `dev/` with `manifest-dev.sha256`.
+  Records: [quests/0001 § 20](../findings/quests/0001-progression.md#20-plan-0066-batch-s3c-part-1-second-tool-reference-argument-and-table-scans-2026-11-16-lanen66p),
+  [quests/0002 § 17](../findings/quests/0002-travel.md#17-plan-0066-batch-s3c-part-1-second-tool-reference-scans-2026-11-16-lanen66p).
+  Every row's *Route* cell carries its dated S3c note; README § 4's S3c row updated.
+- **Raised 36:** progression 1, 2, 6, 14, 20–33, 35, 36, 38, 45, 68, 78, 126, 175, 230, 254, 314, 318, 321; travel 1,
+  31, 33, 36, 78.
+- **Raised in part 7**, remainders in the Route cells: progression 37 (the forced list, "after the drop" → S3c part 2),
+  104 (register roles and body → c-emu), 124 (the e0 greeting, e11 flag; out of this plan), 159 (the harem removal; out
+  of this plan), 229 (with a game-record correction, below), 316 (the cairn stones' init → part 2), 319 (the level-27
+  bit → part 2).
+- **Open for part 2, 8:** progression 19 (game-record writers: a full data-flow scan), 179, 302, README 3 (DS1, Levels,
+  SuperUniques placement with a second parser), travel 21 (collision map dimension users), 30 (`Levels.Waypoint`), 32
+  (`Objects.txt` Sync/FrameDelta), 56 (object 410 with a second parser).
+- **None contradicted. One correction:** row 229's "word 32 has one write" holds for the player record; the game
+  record's word 32 also gets b13 from `A3Q7_FirstJoin` (`GameQuestSet(32, 13)`, 0x005BD2EE). Refinements (e3's direct
+  raiser in `NpcActTravel`, the operate wrapper 0x00584540, the travel check's same-act test, `A2Q6_WrongTombMsg`) in
+  backlog [`2026-11-16-reverser-spec-writer-plan-0066-s3c-refinements`](../backlog/2026-11-16-reverser-spec-writer-plan-0066-s3c-refinements.md).
+- **Symbols:** none raised (rule 14 covers logged returns; this part is static).
+- **Totals** at `19edd04f` (`totals-s3c-p1.txt`, the 29 files' *Totals by class*): a-logs 625, a-run 341, b 448, c 390,
+  c-emu 494, d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626; no class moved, so Phase 1 1 509, Phase 2 789, blocked
+  328 stand (README § 1).
+- **Ready for Phase 3 (spec-writer), lines at `b5999f5e`, match by text.** progression whole: 32, 33, 38, 135, 161,
+  172, 173, 175–182, 184–186, 202, 203, 205, 251, 454, 506, 750, 947, 1220, 1341, 1577, 1589, 1592; split: 204, 612, 731, 889,
+  1218, 1587, 1590; travel whole: 28, 330, 337, 375, 714.
+- **Judgment calls for the review:** (1) a register-pushed word is resolved one source back (`[obj+0xE0]`, `[obj+0xE4]`,
+  an argument, a compare-known value); rows 20 and 254's "no write of word 33" rest on none of the 50 non-immediate
+  writes lying in an object-29 script; (2) the slot-call scan (row 45) treats the 41 slot-offset calls outside the
+  server range as other structures (client UI, CRT), named but not traced; (3) "no quest reader" (rows 159, 314, 321)
+  is direct calls to depth 2 from each named function; (4) rows 21–33 raised on the table read twice (image and r2)
+  plus each init's `+0xE0` store, the spec's table being a transcription; (5) the 7 walker disagreements of the record
+  section are walker failures (empty or short listings, `GameQuestSet`'s compare-known `lea`), each read in the output,
+  none on a row's claim.
+- **Review:** Tier B, by extending
+  [`2026-11-16-reverser-architect-review-plan-0066-s3b`](../backlog/2026-11-16-reverser-architect-review-plan-0066-s3b.md)
+  to S3b + S3c part 1.
+- **Resume note (S3c part 2, 8 rows + 3 remainders):** progression 19, 179, 302; travel 21, 30, 32, 56; README 3; the
+  remainders of progression 37 (the forced list's class tests at 0x00543B1E–0x00543B2A), 316 (the cairn stones' init)
+  and 319 (the level-27 bit). Method: add `data` and `dataflow` sections to `tools/quests_s3c.py`: a second DS1 parser
+  (header, layers skipped, the object list; ids < 150 through `g_Ds1ObjectIds` read from the image) against
+  `tools/quests.py objplace`/`npcplace`; `Objects.txt`, `objgroup.txt`, `Levels.txt`, `SuperUniques.txt` read by a plain
+  tab parser against `tools/excel_bin.py`; the game record's writers by following each `[x+0x10F4]` load through the
+  function (not killed at the fatal-path calls). A fresh lane on `lane/n66p`.

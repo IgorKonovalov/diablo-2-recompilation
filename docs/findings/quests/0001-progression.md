@@ -2454,6 +2454,86 @@ decodes every site named below with objdump and r2 and reads its pushed word and
   0); the forge's StepBits (0x005B6016/27/3D) and its `ClearSteps` (0x005B5D59; `quests.gdb` has no `QK` line); A1Q6
   and A2Q1's b2, A5Q6's b3; a warp into 132 before the opening.
 
+### 20. Plan 0066 batch S3c, part 1: second-tool reference, argument and table scans (2026-11-16, `lane/n66p`)
+
+Static, no game, no Ghidra. `tools/quests_s3c.py` (sections `events`, `record`, `registry`, `act`, `misc`; `travel`
+is [quests/0002 § 17](0002-travel.md#17-plan-0066-batch-s3c-part-1-second-tool-reference-scans-2026-11-16-lanen66p));
+kept output `workspace/logs/n66p/s3c/check-s3c-p1.txt` (`manifest-s3c-p1.sha256`). Each reference count is taken three
+ways (a raw-byte rel32/abs32 pass over the image, objdump's call operands, r2 re-decoding each site); the three agree in
+every count below, and no target has an abs32 reference. A record call's word and bit are read by two walkers (an
+objdump walk back over the pushes, and r2's `pushes_before`); they agree on 1 538 of the 1 545 server-range calls (the 59
+client-range `GetState` calls are not read), and the 7 others are walker failures named in the output (an empty or short
+listing), each read by hand. A word pushed from a register is followed back to its source (`[obj+0xE0]`, a compare-known
+value: `cmp eax, 1; jne` then `lea edx, [eax+0x1f]` is 32). Row by row in
+`docs/plans/0066-inventory/quests-progression.md` and `quests-README.md`.
+
+- [C] **Event raisers** (§ Entry points, § Events): `QUESTS_DispatchEvent` has 6 calls and `QUESTS_DispatchUnitEvent` 6;
+  the event index each stores at block `+0x04` is 3 (`RaiseLevelChange`), 10 (`QuestsInvItemEvent`, the leave), 0
+  (`RaiseNpcTalk`, `RedispatchNpcTalk`, and the unreferenced `0x00543CE0`), 2, 11, 8 (`QUESTS_MonsterDeathEvent`, two
+  calls, 0x00543B33 and 0x00543B52), 4 (`RaiseItemPlaced`), 5 (`RaiseItemDropped`) and 6 (the unreferenced
+  `0x00543DE0`). `RaiseItemPlaced` has 7 callers (0x0053149C, 0x00531627, 0x0055D0AD, 0x005601C0, 0x00563130, 0x005636F0,
+  0x0057F9C3), `RaiseItemDropped` one (0x00558B26 in `ItemPlaceOnGround`), `QUESTS_MonsterDeathEvent` one (0x0057CDD9
+  in `UnitKilled`), `QuestsInvItemEvent` one (0x0053A088 in `ClientRemove`), which calls the item's quest's `+0xC4`
+  slot itself (0x00543C7C, `call eax` at 0x00543C87). (fn:QUESTS_DispatchUnitEvent@0x005439A0,
+  fn:QUESTS_MonsterDeathEvent@0x00543A30, fn:sub_00543BD0_QuestsInvItemEvent@0x00543BD0)
+- [C] **No live raiser of events 1, 6, 7, 12** (B6): no dispatcher call passes 1, 7 or 12, and 6 only from
+  `0x00543DE0`, which has no reference; over .text the indirect calls through a slot displacement in the server range
+  (0x00500000–0x00680000) are 4: e9 (0x00543C7C), e13 and e14 (`QuestsPlayerJoin`, 0x00546382, 0x0054659B) and e3
+  (`NpcActTravel`, 0x00546A98); the indexed `[b+x*4+0xA0]` operands are the two dispatchers' 6. The other 41 slot-offset
+  calls lie in client and CRT functions (named in the output). **Refinement:** e3 has a third raiser,
+  `NpcActTravel`'s Warriv branch, which finds quest object 6 and calls its `+0xAC` slot directly with a block of event 3,
+  level 40 (0x00546A22–0x00546AA3). (0x00543CE0, 0x00543DE0, fn:sub_005467E0_NpcActTravel@0x005467E0)
+- [C] **The NPC services** (§ Entry points): `ImbueDone` (0x0057A1A3), `RespecDone` (0x0057A261), `SocketDone`
+  (0x0057A477) and `PersonalizeDone` (0x0057A62E) each have one call, inside `NPC_MenuAction`; `NpcTravelMove` has 5,
+  four inside it (0x0057A67A, 0x0057A6FF, 0x0057A786, 0x0057A7D6) and one in `A4Q2_HarrogathPortalOperate` (0x005B598F).
+  (fn:NPC_MenuAction@0x00579D60)
+- [C] **The registry** (§ B): `g_QuestDescs` read as 37 rows of `{init, act, ?, flag, id, word}` from the image and by
+  r2 `pxw` gives the § B table row for row (ids, acts, words, inits); each init's one `+0xE0` store is the descriptor
+  word except rows 7 and 29 (`0x00596C7E`, 29) and row 24 (`0x005BD368`, 16 against descriptor word 32). The second
+  table 0x0073188C holds 4 rows `{init, act}`: 0x0058FA20 (I), 0x005985D0 (II), 0x005B6E60 (III), 0x0058EA50 (V), each
+  init storing `+0xE0` = 42 (0x0058FA65, 0x00598615, 0x005B6EA5, 0x0058EA95). The loop counts after the tables are 37
+  (0x00731888) and 4 (0x007318AC). (data:g_QuestDescs@0x00731510, fn:QUESTS_InitGame@0x00545D80)
+- [C] **The record calls by word** (A7, words 0, 32, 33, 41): `SetState` has 332 calls, `ClearState` 46, `ClearSteps` 12,
+  `GetState` 1 149, `GameQuestSet` 40, `GameQuestGet` 25. By immediate word: 7 and 15 are written only by `NpcActTravel`,
+  23 only by `DuranceActTravel`, 28 by `NpcActTravel` and `A4Q2_HarrogathPortalOperate` (object 23's script writing it as
+  a second word); 33, 34, 42–47 by no call (none reads 34 or 42–47 either); 41 at 0x0058FD36, 0x0058FD40 (b13, b1,
+  `RespecOffer`), 0x0058FD67 (b0) and 0x0058FD71 (b1 clear, `RespecDone`), with the `+0xE4` writes 0x0058FF2F and
+  0x0058FF3E in object 1's `NpcMessage`. The 50 writes whose word is not an immediate take `[obj+0xE0]`, `[obj+0xE4]`
+  (object 1), an argument (`ListSetPending`, `A1Q5_CreditList`), packet `0x58`'s `q`, or the join's descriptor word;
+  none lies in an object-29 (word 33) script. Word 0 is read only by `A1Q0_NpcTalk` (0x0058FB01) and `A1Q0_NpcGate`
+  (0x0058FB63), both bit 0. `ClearState` with bit 0 has one call, 0x0059927F (word 9, `A2Q1_FirstJoin`).
+  (fn:QUESTRECORD_SetState@0x0065C360, fn:QUESTRECORD_ClearState@0x0065C3A0)
+- [C] **Word 32 and quest object 28** (rows 24, A3Q7): the player record's word 32 has one write, b0 at 0x005BD2AB
+  (`SetSeen`), and its two reads are `SetSeen`'s and `FirstJoin`'s (bit 0); no A3Q7 record call takes `[obj+0xE0]`
+  (which holds 16). **Correction:** the game record's word 32 has a second write: `A3Q7_FirstJoin` calls
+  `GameQuestSet(32, 13)` (0x005BD2EE; `cmp eax, 1; jne`, then `lea edx, [eax+0x1f]`) when the joining player's w32 b0
+  is set, so game word 32 holds b13 beside the join's b15. (fn:sub_005BD2C0_A3Q7_FirstJoin@0x005BD2C0,
+  fn:sub_005BD260_A3Q7_SetSeen@0x005BD260)
+- [C] **Single readers**: G w8 b13 by `A2Q4_JerhynSpawn` (0x0059F3A4) and `A2Q4_JerhynPlaceholder` (0x0059F4C2);
+  NPC 244's e0 reads w4 b14 (0x0059871B, `A2Q0_NpcTalk`); the class-408 scripts read w27 (b0, b1, b13; `A4Q4_NpcTalk`
+  and `NpcGate`) and w26 (b13, b0; `NpcGate`). (fn:sub_0059F380_A2Q4_JerhynSpawn@0x0059F380,
+  fn:sub_005B69F0_A4Q4_NpcGate@0x005B69F0)
+- [C] **`MissileCreateAt`'s stack** (W4c): its 17 callers each push five arguments (both walkers; at 0x00593A2F r2
+  prints the immediate 0x120 by a flag name) and the callee returns `ret 0x14`; the constant third argument at the four
+  quest and AI sites is a missile id (625, 288, 332, 347). The register roles and the body stay the reading `[I]`.
+  (fn:sub_0056EDE0_MissileCreateAt@0x0056EDE0)
+- [C] **The act fields** (§ Creation-path readers): act `+0x094` is read through `0x00642230`, whose one caller is
+  `0x0061AEB0`, called 5 times: `QUESTS_SendPlayerQuestInfo` (0x0054622C, the join's tomb index), `OBJINIT_Portal`
+  (0x0054FED9), `A2Q6_LevelChange` (0x0059D20E, e3), `A2Q6_SendTomb` (0x0059D6E7) and `A2Q6_WrongTombMsg` (0x0059D731).
+  In the 620 functions named `QUESTS_*`, `*_A?Q?_*`, `*Quests*` or `OBJINIT_Portal`, no operand has displacement
+  `+0x484` or `+0x474`; the 6 `+0x94` operands there have a quest object's private block (`[obj+0x18]`, or its allocation in `A5Q6_Init`) as base. Over
+  .text `+0x484` is named in `DRLG_ActCreate`, `PlayerProgressionRaise`, `PlayerPlaceInAct`, `MazeGrow` and
+  `MazeSpecialsTomb`; `+0x474` in `DRLG_ActCreate` and the three Kurast ring builders. (0x0061AEB0, 0x00642230)
+- [C] **Creation-path hooks**: `QUESTS_HookMonster` has 32 calls in 11 functions (listed in the output); the
+  `g_ObjInitFns` entries 43, 44, 49, 50, 52, 55, 69, 79 are `A3Q7_WandererSpawnInit`, `A3Q6_PortalInit`,
+  `A3Q0_HratliSpawnA/B`, `A3Q6_NpcSpawnInit`, `A4Q2_StartPointInit`, `A5Q3_NihlathakBossSpawn`, `A5Q6_ZooInit`
+  (table read from the image and by r2 alike); 49 and 50 read G w16 b13 (0x005B70CF, 0x005B7197), 52 G w22 b13
+  (0x005BCE8C), the others only a quest object's private state (`QUESTS_FindById`). (data:g_ObjInitFns@0x00731BC0,
+  fn:QUESTS_HookMonster@0x005436B0)
+- Not settled in part 1 (S3c part 2): the game record's writers by a full data-flow scan (A6; the register taint of
+  the `[ctrl+0xC]` loads misses `GameQuestSet`'s own), the DS1/Levels/SuperUniques placement scans with a second
+  parser (NPC 377, objects 567 and 410), the `Objects.txt` and `Levels.txt` columns, the level-27 bit.
+
 ## Data touched
 
 - `tbl:MonStats.txt:TCQuestId`, `tbl:MonStats.txt:TCQuestCP` (through items/0010), `tbl:MonStats.txt:zoo` (the Zoo)

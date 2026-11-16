@@ -712,6 +712,48 @@ The travel half of the S3a check over the 54 kept quest logs ([experiments, S3a 
 - [I] **Not separated** (routes in the rows): `ActStale`'s caller per leave (145 of 206 town departures and 16 not
   after one), the class-59 pair's free, class-60 portals. (run:2026-10-19-quests3)
 
+### 17. Plan 0066 batch S3c, part 1: second-tool reference scans (2026-11-16, `lane/n66p`)
+
+Static, no game. `tools/quests_s3c.py` (sections `travel`, `events`, `misc`); kept output
+`workspace/logs/n66p/s3c/check-s3c-p1.txt` (hash in `manifest-s3c-p1.sha256`). Every reference count is taken
+three ways (a raw-byte rel32/abs32 pass over the image, objdump's call operands, r2 re-decoding each site) and the
+three site sets agree in every count below. Row by row in `docs/plans/0066-inventory/quests-travel.md`.
+
+- [C] **The object click** (§ Entry points): `sub_00548B00_UnitInteract` switches through the 6-entry table at
+  0x00548E8C (`jmp [edx*4+0x548e8c]` at 0x00548B12; the table read from the image and by r2 alike), whose entry 2 is
+  0x00548B19. That case tests the distance (`cmp eax, 0x32; jg` at 0x00548B6D/0x00548B70) and calls 0x00584540
+  (0x00548BA2), an unnamed operate wrapper whose two callers are this case and `MonAiOpenDoor` (0x005B0FC1); the
+  wrapper calls `OBJ_OperateDispatch` (0x005845B2, one of its two callers; the other is Telekinesis, 0x005C9B13),
+  which calls `g_ObjOperateFns[OperateFn]` (0x00584504, `call eax` at 0x0058450E). Refinement: the chain has the
+  wrapper 0x00584540 between the case and the dispatch. (fn:sub_00548B00_UnitInteract@0x00548B00,
+  fn:OBJ_OperateDispatch@0x00584420)
+- [C] **The arrival list head** (C2): the objrgn's `+0x1110` is named by 7 instructions in .text: written at
+  0x00546CE9 (`OBJRGN_Create`, its init), 0x00546EF4 (cleared to 0 after the walk at 0x00546ECC, code the symbol
+  table files under `OBJRGN_Create`), 0x00547201 (`WaypointArrivalAdd`, the push) and 0x005472EC (`OBJINIT_Waypoint`,
+  cleared); read at 0x00546ECC, 0x005471F8, 0x00547221. `WaypointArrivalAdd` has one caller, `WaypointTravel`
+  (0x00585108). (fn:sub_00547170_WaypointArrivalAdd@0x00547170, fn:OBJINIT_Waypoint@0x00547210)
+- [C] **The waypoint record's writers** (C4): `WAYPOINT_Set` has 6 calls: `NPC_MenuAction` 0x0057A6B4, 0x0057A739,
+  0x0057A7BC, `DurancePortalOperate` 0x005847FC, `WaypointOperate` 0x00584E7C (the activation itself) and
+  `A4Q2_HarrogathWaypointSet` 0x005B501C. `WAYPOINT_Load` is called by the two save readers (0x00532CCB, 0x0056A438)
+  and the client menu (0x0049CFF8). (fn:WAYPOINT_Set@0x00660EC0, fn:WAYPOINT_Load@0x00661030)
+- [C] **The waypoint travel check** (D3): `sub_00549570_WaypointTravelCheck` (0x00549570–0x005496E2) makes 17 calls,
+  none to a quest reader (`QUESTRECORD_GetState`, `GameQuestGet`, `QUESTS_PlayerRecord`, `QUESTS_FindById`); the target
+  level reaches only `WAYPOINT_IndexFromLevel` (0x005496A6) → `PlayerWaypointRecord` (0x005496B8) → `WAYPOINT_IsSet`
+  (0x005496BE). No test reads the target level's act. Refinement: the server also refuses (returns 2) when the two
+  units' rooms lie in different acts (`DRLG_ActFromLevelId` of each unit's room level, `cmp bl, al` at 0x005495BC),
+  and tests the position (`PktPosFar`, 0x00549647). (fn:sub_00549570_WaypointTravelCheck@0x00549570)
+- [C] **No quest word in the waypoint paths** (progression § Warp and portal gates): the bodies of `WaypointOperate`,
+  `Pkt49WaypointTravel`, `WaypointTravelCheck`, `WaypointTravel` and `OBJINIT_Waypoint`, and of every function they
+  call directly (depth 2), call no quest reader. `A2Q4_ArcanePortalInit`'s body and its callees to depth 2 call no
+  record reader; it calls `QUESTS_FindById(11)` (0x0059BA4B) and reads that object's private `+0x42` (level 74) and
+  `+0x44` (level 54) portal modes, no record word. (fn:sub_0059BA40_A2Q4_ArcanePortalInit@0x0059BA40)
+- [C] **The hostility stamp** (J2): `PlayerTickSet` has one call, 0x005A5F51 in `sub_005A5E50_PlayerHostileToggle`;
+  of the 4 stores with displacement `+0x160` in .text, the one in the server range is `PlayerTickSet`'s 0x0055B76B
+  (`GetTickCount` into the player data); the others are Storm's 0x00421E77 and the client's 0x004B83D5 and
+  0x004B83FB. (fn:sub_0055B720_PlayerTickSet@0x0055B720)
+- Not checked in part 1 (S3c part 2): the `Levels.Waypoint` column against `WAYPOINT_IndexFromLevel` (C1), the
+  waypoint rows' `Sync`/`FrameDelta` (C3), object 410's placement (F1), the collision map's dimension users (B1).
+
 ## Data touched
 
 - `tbl:Levels.txt:Position`, `tbl:Levels.txt:QuestFlag`, `tbl:Levels.txt:QuestFlagEx`, `tbl:Levels.txt:Waypoint`
