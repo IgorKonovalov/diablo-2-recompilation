@@ -469,11 +469,19 @@ nothing about DRLG behaviour** and is not evidence for any tag. What it simplifi
 - Layer order: all floor layers, then all wall layers, each row by row (`y` outer, `x` inner). No
   depth sorting of walls against each other, no roof lift (`roof_height`), no orientation 3/4 corner
   pairing.
-- Not drawn: hidden cells (bit 31 set; `--hidden` draws them, and the skipped count is printed),
+- Not drawn: hidden cells (bit 31 set; `--hidden` draws them, and the skipped count is printed), the blank floor
+  key (0, 30, 0/1), which the game forces hidden (above; `--hidden` draws it too),
   shadow and substitution layers, objects, NPC paths, orientations 10 and 11. No lighting,
   no shadow or blend tables, flat palette lookup with the act-directory palette
   ([palette.md](palette.md)).
 - Placement: cell (`x`, `y`) is drawn with its tile origin at (`(x − y)·80`, `(x + y)·40`) pixels.
+  A wall tile (orientations 1–11, 16–19) is drawn 80 pixels lower, its base on the cell's bottom vertex. This is a
+  renderer choice matched to in-game Catacombs screenshots (2026-11-16, kept in `workspace/render/shots/`): there the
+  wall faces reach the floor, interior walls have floor up to their base, and only the hidden tops of wall blocks are
+  black. With the base at the tile origin, camera-facing walls float half a cell up and leave a black band. The rooms
+  compared were not the same rooms (no level seed logged), so this is a pattern match, not a measurement.
+- The maze renderers (`tools/maze_render.py`, `tools/maze_anim.py`) also pair an orientation-3 wall with its
+  orientation-4 tile, as the room build does ([drlg/0001 § Per-cell decision](../findings/drlg/0001-ds1-dt1-readers.md#per-cell-decision)).
   Presets over 60 M pixels are drawn at half scale (12 files).
 - Cells whose key is in no DT1 are filled with a palette-index-255 diamond and counted.
 - Hidden cells are mostly collision filler: wall key (1, 5, 0) of `act1/outdoors/river.dt1`, RLE

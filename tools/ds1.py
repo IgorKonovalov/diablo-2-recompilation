@@ -953,6 +953,12 @@ def blank_floor(c):
     return (c >> 20) & 63 == 30 and (c >> 8) & 63 in (0, 1)
 
 
+# Renderer choice, not a format claim: a wall tile's base (block y = 0) is drawn on the cell's bottom vertex, one
+# floor height below the floor tile's origin. Matched to in-game Catacombs screenshots (2026-11-16): with the base at
+# the origin, camera-facing walls float half a cell above the floor and leave a black band in front of them.
+WALL_DY = TILE_H
+WALL_ORIENT = set(range(1, 12)) | set(range(16, 20))   # walls and corners (dt1.md); not 12/14 special, 13, 15 roof
+
 MARKER = 255                      # palette index used to fill the diamond of a missing tile key
 
 
@@ -1006,6 +1012,7 @@ class _Tiles:
             data, first = self._file(path)
             w, h, px, x0, y0 = self.dt1.render_tile(data, first[key])
             sc, runs = self.scale, []
+            dy = WALL_DY if key[0] in WALL_ORIENT else 0
             for y in range(0, h, sc):
                 row = px[y * w:(y + 1) * w:sc]
                 x = 0
@@ -1014,7 +1021,7 @@ class _Tiles:
                         e = x
                         while e < len(row) and row[e]:
                             e += 1
-                        runs.append(((y0 + y) // sc, (x0 // sc) + x, bytes(row[x:e])))
+                        runs.append(((y0 + y + dy) // sc, (x0 // sc) + x, bytes(row[x:e])))
                         x = e
                     else:
                         x += 1
