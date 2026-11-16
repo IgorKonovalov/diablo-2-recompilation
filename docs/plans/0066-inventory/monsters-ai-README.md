@@ -3,6 +3,17 @@
 - **Spec:** [monsters/ai/README](../../specs/monsters/ai/README.md), read at `main` `b5999f5e`.
 - **Front matter `I`:** 56; the *Count* column sums to 56.
 - Classes, batches and conventions as in [the inventory README](README.md#conventions).
+- **Phase 3 (`lane/n66ai`, 2026-11-16, the monsters/ai cluster part 1): re-tagged.** The spec's front matter is now C 78 / I 45 / L 10
+  (it was C 41 / I 56 / L 10). Statement `[C]` whole: rows 1–6, 9, 24–26, 34, 45, 51, 55 (14; row 34 keeps one new `[I]` pointer
+  sentence for E5's *Setter read* column). Split, the `[C]` half and the remainder `[I]` as the *Route* cell names: 10, 11, 13, 14,
+  16–19, 21, 22, 27, 29, 31, 35, 38, 39, 47, 48, 50, 56 (20). Corrected to the finding: 20 (1; C4, S1ne correction 1: `n` 0
+  becomes 1, a negative `n` kept, the unsigned test; `[C]` to the queue call). Kept `[I]`: 7, 8, 12, 15, 23, 28, 30, 32, 33, 36,
+  37, 40–44, 46, 49, 52–54 (21; S1m not raised 7, 32, 36; S1o and S1ne not settled 23, 33, 42, 43; H1m, H1n, H1o; d-none).
+  Row 48 (n1, H1n) is split by the frame cluster's S7b count (backlog `plan-0066-monsters-ai-readme-note-1-after`), its
+  nine-sites half kept for H1n. The S1m corrections 3, 4, 5 and the S1ne corrections 1, 2, 12, 15, 16 are in rows 45, 36,
+  18/47, 20, 17, 29, 39 and 40 (row 36's E8 gains a `[C]` bullet E8a, row 18's C2 the bullets C2a `[C]` and C2b `[I]`);
+  S1f-p1 correction 5's F4 pointer is in row 42's block. C2's and C3's `max(n, 1)` stay `[I]` with a reverser entry
+  (`monsters-ai-idle-delay-n-at-or-below`).
 
 | # | Line | Section | Claim (excerpt) | Anchor | Class | Route or reason | Batch | Count |
 |---|---|---|---|---|---|---|---|---|

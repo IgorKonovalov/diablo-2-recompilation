@@ -42,3 +42,8 @@ not blocking.
    spec's 215 is not reproduced; reconcile it (getter list or walker), or write the scan's count with its scope. The sentence
    "no code in the image reads stat 89 by an immediate id" is tested for calls of those ten getters only. Inventory
    machinery row 19 (ruled raised in part at the check).
+
+*2026-11-16, spec-writer (plan 0066 Phase 3, monsters/ai cluster part 1, `lane/n66ai`):* items 1, 5 and 6 are in
+monsters/ai/machinery (T30a names row 65's writer; the § F `UModTeleportTry` row carries the two gated draws, and README
+F4 points to it; A9 is split at the scan's scope with the 205 against ai/0001's 215). Items 2, 3 and 4 are catalogue
+statements and wait for part 2 (the catalogue's re-tag); the entry stays open for them.

@@ -2,19 +2,19 @@
 from: reverser
 to: spec-writer
 date: 2026-11-16
-status: open
+status: done
 context:
-  - ../findings/ai/experiments.md#run2026-11-16-sweep2-s1ne
-  - ../findings/ai/0001-machinery.md#14-plan-0066-batch-s1ne-part-1-twelve-maps-emulated-the-routes-read-2026-11-16-lanen66ne
-  - ../plans/0066-simulation-inferred-claims-sweep.md
-resolution: ""
+  - ../../findings/ai/experiments.md#run2026-11-16-sweep2-s1ne
+  - ../../findings/ai/0001-machinery.md#14-plan-0066-batch-s1ne-part-1-twelve-maps-emulated-the-routes-read-2026-11-16-lanen66ne
+  - ../../plans/0066-simulation-inferred-claims-sweep.md
+resolution: "Plan 0066 Phase 3, monsters/ai cluster part 1 (lane/n66ai): items 1–16 in the specs: README C4 rewritten (C2 and C3 kept [I] with C2b and a reverser entry for n ≤ 0), C1's no-record exit, E1's order and IsBadCodePtr, F1 and F2; machinery D2's null control, A7's unsigned shift, T22a's IsUndead bits, T13a's distance first, E4's scan order, B8b, B4, B7's low byte, note on row 125, A3, A6 and E1 (KeepNear) ([README](../../specs/monsters/ai/README.md), [machinery](../../specs/monsters/ai/machinery.md))."
 ---
 
 [2026-11-16] from reverser → spec-writer: plan 0066 batch S1ne part 1 (`lane/n66ne`) corrects or refines six
-statements of [monsters/ai/README](../specs/monsters/ai/README.md) and [machinery](../specs/monsters/ai/machinery.md).
+statements of [monsters/ai/README](../../specs/monsters/ai/README.md) and [machinery](../../specs/monsters/ai/machinery.md).
 Carry them into the spec text at the Phase 3 re-tag of the monsters/ai cluster (line numbers at `b5999f5e`). The
-evidence is [ai/0001 § 14](../findings/ai/0001-machinery.md#14-plan-0066-batch-s1ne-part-1-twelve-maps-emulated-the-routes-read-2026-11-16-lanen66ne)
-and [run:2026-11-16-sweep2-s1ne](../findings/ai/experiments.md#run2026-11-16-sweep2-s1ne). Not blocking.
+evidence is [ai/0001 § 14](../../findings/ai/0001-machinery.md#14-plan-0066-batch-s1ne-part-1-twelve-maps-emulated-the-routes-read-2026-11-16-lanen66ne)
+and [run:2026-11-16-sweep2-s1ne](../../findings/ai/experiments.md#run2026-11-16-sweep2-s1ne). Not blocking.
 
 1. README L205 (C4 `MonAiDelayEarlier`): `n` becomes 1 only when it is 0, and a negative `n` is kept (`T + n`), so it
    is not `max(n, 1)`. The "at or after `T + n`" test is an unsigned `cmp; jb` (0x005DE15F). C2 and C3 (`MonAiIdle`,
@@ -31,8 +31,8 @@ and [run:2026-11-16-sweep2-s1ne](../findings/ai/experiments.md#run2026-11-16-swe
    tests.
 
 [2026-11-16] reverser (S1ne part 2, `lane/n66ne`): five more items for the same Phase 3 pass, on
-[ai/0001 § 15](../findings/ai/0001-machinery.md#15-plan-0066-batch-s1ne-part-2-the-walkers-monaiuseseqskill-the-parameter-list-and-the-notation-2026-11-16-lanen66ne)
-and [run:2026-11-16-sweep2-s1ne-p2](../findings/ai/experiments.md#run2026-11-16-sweep2-s1ne-p2).
+[ai/0001 § 15](../../findings/ai/0001-machinery.md#15-plan-0066-batch-s1ne-part-2-the-walkers-monaiuseseqskill-the-parameter-list-and-the-notation-2026-11-16-lanen66ne)
+and [run:2026-11-16-sweep2-s1ne-p2](../../findings/ai/experiments.md#run2026-11-16-sweep2-s1ne-p2).
 
 7. Machinery E4 (`AiParamsFind`): the scan starts at the head's next record and ends with the head, so the head is
    examined last; with the kind at the head and elsewhere, the other record is returned.
@@ -48,8 +48,8 @@ and [run:2026-11-16-sweep2-s1ne-p2](../findings/ai/experiments.md#run2026-11-16-
     `MonAiUseSkill`'s skill argument.
 
 [2026-11-16] reverser (S1ne part 3, `lane/n66ne`, the closing part): five more items for the same Phase 3 pass, on
-[ai/0001 § 16](../findings/ai/0001-machinery.md#16-plan-0066-batch-s1ne-part-3-monaiinit-monaiprechecks-aihostilecandidate-and-monaiforcedtarget-2026-11-16-lanen66ne)
-and [run:2026-11-16-sweep2-s1ne-p3](../findings/ai/experiments.md#run2026-11-16-sweep2-s1ne-p3). Seven S1ne rows stay
+[ai/0001 § 16](../../findings/ai/0001-machinery.md#16-plan-0066-batch-s1ne-part-3-monaiinit-monaiprechecks-aihostilecandidate-and-monaiforcedtarget-2026-11-16-lanen66ne)
+and [run:2026-11-16-sweep2-s1ne-p3](../../findings/ai/experiments.md#run2026-11-16-sweep2-s1ne-p3). Seven S1ne rows stay
 `[I]` with their routes in the inventory (machinery 5, 6, 11, 12, 14; README 42, 43): no rewording for them.
 
 12. README E1 (`MonAiInit`): the state-54 test (`UNIT_HasState(U, 54)`, fatal) comes before the null tests; "free the

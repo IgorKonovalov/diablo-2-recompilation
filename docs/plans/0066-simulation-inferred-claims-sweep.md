@@ -3070,7 +3070,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   and 14).
 - **Also:** quirks Q275, Q487, Q500, Q502, Q523 and Q526 follow their notes to `[C]` (class table 402 / 136); Q500 now cites
   sim/frame n8 alone and monsters/ai/README n1 moves to the Coverage table's *Weaker duplicate* column
-  ([entry](../backlog/2026-11-16-spec-writer-spec-writer-plan-0066-monsters-ai-readme-note-1-after.md)). Research-map rows of
+  ([entry](../backlog/archive/2026-11-16-spec-writer-spec-writer-plan-0066-monsters-ai-readme-note-1-after.md)). Research-map rows of
   sim/frame, path (both), drlg/lifecycle, drlg/collision, monsters/spawn, player/party and quirks rewritten. Eight wiki pages
   carry W4; a refresh entry is filed ([entry](../backlog/archive/2026-11-16-spec-writer-spec-writer-wiki-refresh-after-plan-0066-frame-re-tag.md)).
   `tools/backlog.py close` rewrote the closed entries' links in three findings (drlg/0009, frame/0001, path/0001); no other
@@ -4200,7 +4200,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   the table's five commands (item 1). (3) 75 A1/A2 commands move the unit seed inside `MonSetMode` with no skill start
   logged (item 2). (4) States 10 and 11 occur in the Countess launches with no curse cast (item 4).
 - **Corrections** to Phase 3 through
-  [`2026-11-16-reverser-spec-writer-plan-0066-s1m-corrections`](../backlog/2026-11-16-reverser-spec-writer-plan-0066-s1m-corrections.md)
+  [`2026-11-16-reverser-spec-writer-plan-0066-s1m-corrections`](../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s1m-corrections.md)
   (five items). No contradiction filed: each item is a refinement or a remainder.
 - **Symbols:** none raised or added.
 - **Totals** (the kept check's `totals` line; `main` `c6c85ae8` merged after, which changes no inventory file, and `tools/ai_s1m.py totals` gives the same line): a-logs 622, a-run 334,
@@ -4438,7 +4438,7 @@ One review covering the Tier B list (`lane-check.md`) and the Tier A depth; the 
   (`UNIT_CancelEvents`' unlink), 50 (the `MonAiInit` bound, which is part 2), and 56 (`MonSkillTargetOk`). There are no
   class moves, so the totals are unchanged.
 - **Corrections** go to Phase 3 through
-  [`2026-11-16-reverser-spec-writer-plan-0066-s1ne-corrections`](../backlog/2026-11-16-reverser-spec-writer-plan-0066-s1ne-corrections.md)
+  [`2026-11-16-reverser-spec-writer-plan-0066-s1ne-corrections`](../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s1ne-corrections.md)
   (six items). The largest is README C4: `n` = 0 becomes 1, a negative `n` is kept, and the compare is unsigned, not
   `max(n, 1)`. The others: C1's exit with no MonStats record, D2's `ECX` 0 stores, A7's unsigned `shr` of the size,
   `IsUndead`'s two bits, and `AiDeadMinionCb`'s distance taken first.
@@ -4493,7 +4493,7 @@ One review covering the Tier B list (`lane-check.md`) and the Tier A depth; the 
   sign-extended Skill1). **Raised in part 2:** machinery 27 (the ten B7 walkers to their boundary; the refusal paths
   after it → b) and 46 (`AiParamsHead`, `AiParamsFind`; Alloc, Push and Pop reach the pool → b). No class moves.
 - **Corrections** go to Phase 3 through the part 1 entry
-  [`2026-11-16-reverser-spec-writer-plan-0066-s1ne-corrections`](../backlog/2026-11-16-reverser-spec-writer-plan-0066-s1ne-corrections.md),
+  [`2026-11-16-reverser-spec-writer-plan-0066-s1ne-corrections`](../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s1ne-corrections.md),
   as a dated paragraph (items 7–11): E4's `AiParamsFind` examines the head last; B8b's three ring walkers (centres,
   `MonSetMode` direct, null other, the state-60 order, `r & 0xFF`); B4's flag 0; B7's stop word keeps its high bytes;
   row 125's Skill1 is sign-extended.
@@ -4546,7 +4546,7 @@ One review covering the Tier B list (`lane-check.md`) and the Tier A depth; the 
 - **S1ne closed** (parts 1–3): of 44 rows, raised 22, raised in part 15, not settled 7; inventory README's S1ne Status
   cell updated.
 - **Corrections** go to Phase 3 through the existing entry
-  [`2026-11-16-reverser-spec-writer-plan-0066-s1ne-corrections`](../backlog/2026-11-16-reverser-spec-writer-plan-0066-s1ne-corrections.md),
+  [`2026-11-16-reverser-spec-writer-plan-0066-s1ne-corrections`](../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s1ne-corrections.md),
   as a dated paragraph (items 12–16): E1's state-54 test first, the parameter free on MonsterData's control and the
   unstated `IsBadCodePtr` check; A3's kind 0 not cleared, a kind past 4 cleared, the flag choosing the line test and
   the search kind, the out distance sized by the found unit; A6's test order and the room-less candidate; KeepNear's
@@ -4668,3 +4668,44 @@ One review covering the Tier B list (`lane-check.md`) and the Tier A depth; the 
   earlier clusters did.
 - **Gate:** fast green (82 warnings, the W4s on wiki/skills the refresh entry answers); `--full` green (39 surveys);
   `tools/quirks.py check` 0 errors. Tier A review requested for the whole cluster (both parts' judgment calls).
+
+### 2026-11-16 — Phase 3, the monsters/ai cluster re-tagged, part 1 (spec-writer, `lane/n66ai`): overview and machinery; resume note for the catalogue
+
+- **Done.** Branch from `main` `44fdd275`. No game, no Ghidra, no slot, no subagent. Sources: the S1m entry and its Tier B
+  check, the S1ne parts 1–3 entries and their Tier B check, the S1o parts 1–2 entries (with the S1f/S1o check), each
+  inventory row's *Route* cell, and the four spec-writer entries. Anchors: run:2026-11-16-sweep2-s1m, run:2026-11-16-sweep2-s1f
+  (S1o), run:2026-11-16-sweep2-s1ne(-p2, -p3) with ai/0001 §§ 14–16, frame/0004 § 2 and frame/0007 § S7b for the tick.
+- **Front matter:** monsters/ai/README C 41 / I 56 / L 10 → **C 78 / I 45 / L 10**; monsters/ai/machinery C 28 / I 114 / L 4 →
+  **C 87 / I 85 / L 4**; catalogue unchanged (C 344 / I 520 / L 18, part 2). Outside the inventory: quirks C 411 / I 136 →
+  **C 414 / I 133** (class table 406 / 132 → 409 / 129: Q480, Q491, Q518 `[C]`; Q500 cites README n1, the Coverage
+  *Weaker duplicate* cell emptied, 34 notes skipped).
+- **Rows (170: README 56, machinery 114):** `[C]` whole 44 (14, 30); split 49 (20, 29); corrected to the finding 4 (README
+  20: C4's `n` and unsigned test; machinery 46: `AiParamsFind`'s scan order; 54: `UModTeleportTry`'s two draws; 82: T30a's
+  writer); kept `[I]` 73 (21, 52). The lists are each inventory file's new *Phase 3* line (a script checks each partitions its
+  file, and that no kept row carries a raise); inventory README § 6 has the two rows.
+- **Corrections applied:** S1m items 1–5, S1ne items 1–16, the README note-1 entry (all three closed); S1f-p1 items 1, 5, 6
+  (the entry stays open for catalogue items 2–4, annotated). New: a reverser entry for C2's and C3's `max(n, 1)` at n ≤ 0
+  (S1ne item 1 asked that they be read before rewording; no logged call has n ≤ 0), and the wiki/monster-ai refresh entry
+  (W4 on the page for both specs; one refresh after part 2 suffices).
+- **Judgment calls for the review:** (1) pseudocode headers raised in part carry `[C] … ; [I] …` inline, as sim/frame B1
+  does; whole ones `[C] (all of X) code's map` (D1, B4, B8–B12, D2). (2) README row 48 (n1) and machinery row 43 (E1
+  `MonAiKeepNear`) are H1n rows, counted split: n1 by the frame cluster's S7b raise (the spec-writer entry), E1 by README
+  row 39's S1ne part 3 run of `MonAiKeepNear` whole inside `MonAiPreChecks` (review-fixes 8). (3) Corrected counts only
+  rows whose Route cell says "correction" or "contradicted"; refinements on raised rows (C1's no-record exit, T22a's
+  `IsUndead` bits, B8b, B4's flag 0) count whole or split. (4) Machinery 54 and 82 stay `[I]`: their corrections are static
+  readings (one tool's decode of the draws; ai/0005's writer). (5) README row 34 (E5) whole with one new `[I]` pointer for
+  the *Setter read* column; row 36's E8 kept with a new `[C]` bullet E8a (S1m correction 4), row 18's C2 with C2a `[C]` (the
+  68 early events) and C2b `[I]`. (6) The S1m correction 2 (75 A1/A2 seed moves) is an `[I]` *Open questions* line in
+  machinery, no row moved. (7) Row 20 Scarab added to README H1's table on S1m's census (205 decisions, 346 calls past the
+  first, 9 of 10 two-way sites failing alone, the tenth told apart by the next `AID` word).
+- **Review:** requested, Tier B on Sonnet only, by the owner's budget decision
+  ([entry](../backlog/archive/2026-11-16-spec-writer-architect-tier-b-review-plan-0066-monsters-ai-cluster.md)).
+- **Resume note (part 2, a fresh spec-writer on `lane/n66ai` or a new lane after this merges).** Left: **monsters/ai/catalogue**,
+  inventory `monsters-ai-catalogue.md` (520 rows; front matter C 344 / I 520 / L 18, unchanged since `b5999f5e`). Its settled
+  rows come from S1a, S1b, S1c, S1d, S1e, S1f (each row's Route cell) and plan 0069 Phase 4 (H1a–H1d, H1g, H1h: 22 raised,
+  41 in part); about 104 rows have no verdict (H1e deferred, H1p, H1r, d-owner, d-none) and stay kept. Block lines carry one
+  `[I]` for the whole think: add a `[C]` bullet per block naming the logged decisions (the S1b ruling, "Block and `a` lines").
+  Entries to apply and close with it: S1e corrections ([entry](../backlog/2026-11-15-reverser-spec-writer-plan-0066-s1e-corrections-for-phase-3.md),
+  six catalogue statements), S1f-p1 items 2–4 (row 518's four `AiLifePct` callers and one map; R51a's `Skill8` scope with
+  `uberbaal`; R71a's eleven stores). Then: quirks entries citing catalogue notes, the catalogue research-map clause, § 6's
+  catalogue row, the wiki refresh entry above, the gate `--full`, and the review request.

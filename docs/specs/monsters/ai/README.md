@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, anim/timing, anim/movement, skills/dispatch, monsters/stats, path/overview, path/search, drlg/collision]
 consumed_by: [monsters/ai/machinery, skills/dispatch, monsters/stats, monsters/spawn, hirelings, drlg/lifecycle, path/overview, sim/frame]
-tags: {C: 41, I: 56, L: 10}
-updated: 2026-11-04
+tags: {C: 78, I: 45, L: 10}
+updated: 2026-11-16
 ---
 
 # Monster AI: the tick, the AI state, the event kinds and their seeds
@@ -43,9 +43,9 @@ flowchart LR
 
 | When | Function | Tag |
 |---|---|---|
-| A kind-2 event comes due in the monster slot pass | fn:sub_005B1740_MonAiEvent@0x005B1740, from `g_MonEventFuncs[2]` (data:g_MonEventFuncs@0x006E2490) | [I] |
-| A mode ends, nine direct calls of the same slot | fn:sub_005A8030_MonModeEndGeneric@0x005A8030 (seven), fn:sub_005A8330_MonModeEndToS1@0x005A8330, fn:sub_005A83E0_MonModeEndToS1b@0x005A83E0 | [I] |
-| A monster is created, or its AI state changes | fn:sub_005B0E00_MonAiInit@0x005B0E00, first from fn:sub_00574250_MonsterInit@0x00574250 | [I] |
+| A kind-2 event comes due in the monster slot pass | fn:sub_005B1740_MonAiEvent@0x005B1740, from `g_MonEventFuncs[2]` (data:g_MonEventFuncs@0x006E2490) | [C] the slot's word is 0x005B1740 with two tools, and it is `MonAiEvent`'s only reference ([run:2026-11-16-sweep2-s1f](../../../findings/ai/experiments.md#run2026-11-16-sweep2-s1f)) |
+| A mode ends, nine direct calls of the same slot | fn:sub_005A8030_MonModeEndGeneric@0x005A8030 (seven), fn:sub_005A8330_MonModeEndToS1@0x005A8330, fn:sub_005A83E0_MonModeEndToS1b@0x005A83E0 | [C] nine loads of the slot, each followed by `call eax`, seven in `MonModeEndGeneric` and one in each `MonModeEndToS1` form ([run:2026-11-16-sweep2-s1f](../../../findings/ai/experiments.md#run2026-11-16-sweep2-s1f)) |
+| A monster is created, or its AI state changes | fn:sub_005B0E00_MonAiInit@0x005B0E00, first from fn:sub_00574250_MonsterInit@0x00574250 | [C] `MonAiInit`'s 33 direct calls, three tools, include `MonsterInit`'s at 0x00574307 with state 0 ([run:2026-11-16-sweep2-s1f](../../../findings/ai/experiments.md#run2026-11-16-sweep2-s1f)) |
 
 ## Inputs
 
@@ -79,9 +79,9 @@ flowchart LR
 | Name | Value | Anchor | Tag |
 |---|---|---|---|
 | table rows | 148 of 16 bytes, as bytes ([MonAI](../../../tables/MonAI.md#the-ai-table-in-the-image)) | data:g_MonAiTable@0x0073CA18 | [C] |
-| state rows | 18 of 16 bytes | data:g_MonAiStateRows@0x0073D358 | [I] |
-| default `aidel` | 15 when the cell is 0 | fn:sub_005A73E0_MonModeStartNeutral@0x005A73E0 | [I] |
-| stunned delay | 45 under state 21 | 0x005A7419 | [I] |
+| state rows | 18 of 16 bytes | data:g_MonAiStateRows@0x0073D358 | [C] dumped with a second tool against `MonAiInit`'s signed `< 18` bound, 0x005B0E4D ([run:2026-11-16-sweep2-s1f](../../../findings/ai/experiments.md#run2026-11-16-sweep2-s1f)) |
+| default `aidel` | 15 when the cell is 0 | fn:sub_005A73E0_MonModeStartNeutral@0x005A73E0 | [C] emulated for a monster already in NU, 35 cases (run:2026-11-16-sweep2-s1ne, [ai/0001 § 14](../../../findings/ai/0001-machinery.md#14-plan-0066-batch-s1ne-part-1-twelve-maps-emulated-the-routes-read-2026-11-16-lanen66ne)) |
+| stunned delay | 45 under state 21 | 0x005A7419 | [C] emulated, 37 cases (run:2026-11-16-sweep2-s1ne, [ai/0001 § 14](../../../findings/ai/0001-machinery.md#14-plan-0066-batch-s1ne-part-1-twelve-maps-emulated-the-routes-read-2026-11-16-lanen66ne)) |
 
 ## Algorithm
 
@@ -124,8 +124,8 @@ sequenceDiagram
   inside the unit's own decision, at 0 steps from that decision's last boundary line. All 41 are AI row 13, and the
   resumed model reproduces every decision between the two events (91). Logged paths only: the seed movement is the
   decision's, and the callee that starts the skill is a boundary. (run:2026-11-04-h1, fn:sub_005F1440_AiFallenShaman@0x005F1440)
-- A5. [I] **The rest of H1.** The other 8 stop at an `AD0` with the monster as attacker, its seed 1 to 4 steps past the
-  walking seed, and which draws those are is not examined. The 331 gaps of plan 0045 cannot be re-walked, as their logs
+- A5. [C] **The rest of H1.** The other 8 stop at an `AD0` whose attacker is the gap's monster, its seed 1 step (5 gaps),
+  3 (2) or 4 (1) past the walking seed ([run:2026-11-16-sweep2-s1m](../../../findings/ai/experiments.md#run2026-11-16-sweep2-s1m)); which draws those are is not examined. The 331 gaps of plan 0045 cannot be re-walked, as their logs
   hold no AI line and a replay does not reproduce them; they have the same shape, which is all their logs can say: 330
   are of classes 58 and 59, and the first disagreement is `MAS0` in 257 and `AD0` in 70. The frame model's walk re-chains none of
   the 331 ([frame/0004 § 6](../../../findings/frame/0004-order-on-kept-logs.md#6-the-resynchronised-entries), run:2026-11-03-frame-order).
@@ -151,10 +151,10 @@ flowchart TD
 ```
 
 ```
-B1. the frame:                                                    [I] (fn:sub_0052D870_GameTick@0x0052D870, 0x0052D8F2)
+B1. the frame:                                                    [C] the pass order [sim/frame B1](../../sim/frame.md#b-gametick) raises, 0 inversions on the kept checks, and `fr = pre + 1` (run:2026-11-03-frame-order, [frame/0007 § S7b](../../../findings/frame/0007-frame-batch.md#plan-0066-batch-s7b-new-checks-over-the-kept-windows-2026-11-16-lanen66o), [run:2026-11-16-sweep2-s1m](../../../findings/ai/experiments.md#run2026-11-16-sweep2-s1m)); [I] the act passes and `NewRoomsUpdate`'s place against them (fn:sub_0052D870_GameTick@0x0052D870, 0x0052D8F2)
       GameTick increments Game+0xA8, runs its act passes and NewRoomsUpdate,
       then GameRunUnitEvents, the client room sync and the timers.
-B2. the pass:                                                     [I] (fn:sub_005414D0_GameRunUnitEvents@0x005414D0, 0x005414EE, 0x00541589)
+B2. the pass:                                                     [C] every-frame before slot (4 637 pairs), slot records at their frame oldest first (4 566 `MDS` pairs), the type order (run:2026-11-03-frame-order-2, [frame/0004 § 2](../../../findings/frame/0004-order-on-kept-logs.md#2-the-order-of-the-passes-and-walks), [frame/0007 § S7b](../../../findings/frame/0007-frame-batch.md#plan-0066-batch-s7b-new-checks-over-the-kept-windows-2026-11-16-lanen66o), [run:2026-11-16-sweep2-s1m](../../../findings/ai/experiments.md#run2026-11-16-sweep2-s1m)); [I] the `frame & 63` store, the objects' and items' walks (no event logged), the free (fn:sub_005414D0_GameRunUnitEvents@0x005414D0, 0x005414EE, 0x00541589)
       write frame & 63 into the event control
       for each type in missiles, players, monsters, objects, items:
         run its every-frame list, with no frame test
@@ -162,7 +162,7 @@ B2. the pass:                                                     [I] (fn:sub_00
 B3. MonEventDispatch(kind, a, b):                                 [I] (fn:sub_005A7F80_MonEventDispatch@0x005A7F80)
       if the unit has state 1 (freeze) and is alive and kind not in {3, 4, 5, 8, 12}: drop the event
       call g_MonEventFuncs[kind]
-B4. MonAiEvent(game, unit):                                       [I] (fn:sub_005B1740_MonAiEvent@0x005B1740, 0x005B1746, 0x005B186F)
+B4. MonAiEvent(game, unit):                                       [C] in 14 063 `AID` lines `ctx+0x00` is the `AiCtl`, `+0x1C` the MonStats record, `+0x04`, `+0x0C`, `+0x10` zero; 18 076 `AIN` events end before the think ([run:2026-11-16-sweep2-s1m](../../../findings/ai/experiments.md#run2026-11-16-sweep2-s1m)); [I] `+0x20`, the order of the three pre-steps, the `IsBadCodePtr` test (fn:sub_005B1740_MonAiEvent@0x005B1740, 0x005B1746, 0x005B186F)
       ctx.ctl ← MonsterData+0x28;  ctx+0x04..+0x18 ← 0
       ctx+0x1C ← the MonStats record of Unit+0x04
       ctx+0x20 ← the MonStats2 record of MonStats +0x18
@@ -173,15 +173,17 @@ B4. MonAiEvent(game, unit):                                       [I] (fn:sub_00
       AiCtl.think(game, unit, &ctx)                               ; IsBadCodePtr test first, fatal
 ```
 
-- B1a. [I] Every frame is run by `ServerGamesFrame` over its 1 024 game slots; `GameTick`'s other caller is unreached.
-  The AI event is always queued at a frame (`T + n`, n ≥ 1), so it runs in the monster slot pass, after every monster's
-  every-frame event of that frame, in the order the events were queued. (fn:sub_0052FC20_ServerGamesFrame@0x0052FC20,
+- B1a. [C] Every frame is run by `ServerGamesFrame` over its 1 024 game slots, and `GameTick`'s other caller,
+  `GameTickAlt`, has its one call in an unreferenced stub; the monsters' every-frame walk runs before their slot walk,
+  slot records in queue order; every logged `Idle` and `Delay` has n ≥ 1 ([run:2026-11-16-sweep2-s1m](../../../findings/ai/experiments.md#run2026-11-16-sweep2-s1m), [frame/0004 § 2](../../../findings/frame/0004-order-on-kept-logs.md#2-the-order-of-the-passes-and-walks)). [I] That the AI
+  event is always queued at a frame `T + n` with n ≥ 1 is the reading of the 30 queue sites (C5), so it runs in the
+  monster slot pass, after every monster's every-frame event of that frame, in the order the events were queued. (fn:sub_0052FC20_ServerGamesFrame@0x0052FC20,
   0x0052FD19, fn:sub_005645E0_GameTickAlt@0x005645E0, fn:sub_00541060_MonEventsRun@0x00541060, fn:sub_005416B0_EventQueueAt@0x005416B0)
 - B3a. [I] **A frozen monster loses a due AI event**, and `COMBAT_ApplyFreeze` queues a new one at `T + length + 1`.
   (fn:COMBAT_ApplyFreeze@0x0057B230, 0x0057B3DC)
-- B5. [I] **The nine direct calls** are all mode ends: seven in `MonModeEndGeneric` (0x005A80F5, 0x005A813F, 0x005A818E,
+- B5. [C] **The nine direct calls** are all mode ends: seven in `MonModeEndGeneric` (0x005A80F5, 0x005A813F, 0x005A818E,
   0x005A81ED, 0x005A822E, 0x005A8267, 0x005A82AD) and one each in `MonModeEndToS1` (0x005A83D1) and `MonModeEndToS1b`
-  (0x005A8481), each skipped while frozen and alive. There the AI runs inside the mode-end event of that frame, not from
+  (0x005A8481), read with three tools ([run:2026-11-16-sweep2-s1f](../../../findings/ai/experiments.md#run2026-11-16-sweep2-s1f)). [I] Each is skipped while frozen and alive. There the AI runs inside the mode-end event of that frame, not from
   the queue. The event's two arguments are not read. (fn:sub_005A8030_MonModeEndGeneric@0x005A8030)
 - B6. [C] `AiCtx`'s fields as the first-boundary comparison reads them: the think call at 0x005B186F is where a decision
   begins, and its `ctx` words, the control words and the block a pointer argument addresses are compared with the model.
@@ -190,31 +192,44 @@ B4. MonAiEvent(game, unit):                                       [I] (fn:sub_00
 ### C. When the next AI event comes
 
 ```
-C1. MonModeStartNeutral (mode NU, and MonSetMode's refusal fallback):      [I] (fn:sub_005A73E0_MonModeStartNeutral@0x005A73E0, 0x005A7419, 0x005A747D)
-      if UnitEventFirstFrame(2) ≤ T:                     ; no AI event pending later than now
+C1. MonModeStartNeutral (mode NU, and MonSetMode's refusal fallback):      [C] for a monster already in NU, to the queue call: the signed `> T` test, the `Game+0x6A`/`+0x74` test, the difficulty byte, the return with no MonStats record (240 cases, run:2026-11-16-sweep2-s1ne, [ai/0001 § 14](../../../findings/ai/0001-machinery.md#14-plan-0066-batch-s1ne-part-1-twelve-maps-emulated-the-routes-read-2026-11-16-lanen66ne)); [I] a unit in another mode, and everything after the queue call (fn:sub_005A73E0_MonModeStartNeutral@0x005A73E0, 0x005A7419, 0x005A747D)
+      if UnitEventFirstFrame(2) ≤ T:                     ; no AI event pending later than now (signed)
         if state 21 (stunned): n ← 45
         else:
+          if MonsterData has no MonStats pointer: return 1, nothing queued
           a: u8 ← MonStats+0x4F
           if Game+0x6A ≠ 0 or Game+0x74 ≠ 0: a ← the byte at MonStats+0x4F + difficulty
           n ← a, or 15 when a = 0
         queue kind 2 at T + n
-C2. MonAiIdle(n):                                                          [I] (fn:sub_005DE080_MonAiIdle@0x005DE080)
+C2. MonAiIdle(n):                                                          [C] the next AI event at `T + n` after 2 358 of 2 573 last-call `Idle(n)`, n ≥ 1 in all ([run:2026-11-16-sweep2-s1m](../../../findings/ai/experiments.md#run2026-11-16-sweep2-s1m)); [I] the form at n ≤ 0, the mode NU command (fn:sub_005DE080_MonAiIdle@0x005DE080)
       mode NU unless already NU;  cancel kind 2;  queue kind 2 at T + max(n, 1)
-C3. MonAiDelay(n):                                                         [I] (fn:sub_005DE0F0_MonAiDelay@0x005DE0F0)
+C3. MonAiDelay(n):                                                         [C] the next AI event at `T + n` after 294 of 318 last-call `Delay(n)`, no mode command inside any of the 318 ([run:2026-11-16-sweep2-s1m](../../../findings/ai/experiments.md#run2026-11-16-sweep2-s1m)); [I] the form at n ≤ 0 (fn:sub_005DE0F0_MonAiDelay@0x005DE0F0)
       cancel kind 2;  queue kind 2 at T + max(n, 1);  the mode is unchanged
-C4. MonAiDelayEarlier(n):                                                  [I] (fn:sub_005DE130_MonAiDelayEarlier@0x005DE130)
-      only when nothing is pending, or the pending one is due now, or it is
-      due at or after T + n:  cancel kind 2;  queue kind 2 at T + max(n, 1)
+C4. MonAiDelayEarlier(n):                                                  [C] to the queue call, 240 cases (run:2026-11-16-sweep2-s1ne, [ai/0001 § 14](../../../findings/ai/0001-machinery.md#14-plan-0066-batch-s1ne-part-1-twelve-maps-emulated-the-routes-read-2026-11-16-lanen66ne)); [I] `UNIT_CancelEvents`' unlink path (fn:sub_005DE130_MonAiDelayEarlier@0x005DE130, 0x005DE15F)
+      m ← 1 when n = 0, else n                            ; a negative n is kept
+      keep the pending event when one is pending, it is not due at T,
+        and its frame is below T + n (unsigned compare);
+      otherwise: cancel kind 2;  queue kind 2 at T + m
 ```
 
-- C5. [I] **The other queueing sites**, of 30 in all: `MonAiTargetOrWait` (`T + 20`); `MonKnockbackEnd` (`T + 1`,
+- C2a. [C] **Another queue can come first.** After 68 of the 2 573 last-call `Idle(n)` decisions the unit's next AI
+  event comes 1 to 7 frames before `T + n`, in mode NU; which queue wins is not attributed. ([run:2026-11-16-sweep2-s1m](../../../findings/ai/experiments.md#run2026-11-16-sweep2-s1m),
+  fn:sub_005DE080_MonAiIdle@0x005DE080)
+- C2b. [I] **C2's and C3's `max(n, 1)`** is the older reading of both helpers at n ≤ 0, where C4's emulation found
+  `n = 0 → 1` and a negative `n` kept; no logged call has n ≤ 0, and neither helper was emulated. See *Open questions*.
+  (fn:sub_005DE080_MonAiIdle@0x005DE080, fn:sub_005DE0F0_MonAiDelay@0x005DE0F0)
+- C5. [C] **The queueing sites:** `UnitQueueEvent` has kind 2 at 30 call sites and `UNIT_CancelEvents` at 66, two walkers
+  agreeing; the 30 are the sites below with `MonAiIdle`, `MonAiDelay`, `MonAiDelayEarlier` and two of
+  `MonModeStartNeutral` (C1 to C4), and the frame offsets the walker resolves hold: `T + 2` twice, 15, 25, 15, 13 twice,
+  1, 20 and 20 ([run:2026-11-16-sweep2-s1f](../../../findings/ai/experiments.md#run2026-11-16-sweep2-s1f), 0x005417D0). [I] The other sites' offsets, as read: `MonAiTargetOrWait` (`T + 20`); `MonKnockbackEnd` (`T + 1`,
   `T + 15`), 0x005A74E0 (`T + 15`), freeze (`T + length + 1`), 0x0057B170 (`T + ebx`), 0x0058594B (`T + eax + 1`),
   0x005A3A6C (`T + 51`); `SpawnOwnedMonster` (`T + 25`), `RoomInactiveUnitsRestore` (a saved delay), 0x00573780 (`T + 2`,
   twice), `UnitInteract` and 0x0054CA10 (`T + 1`); `SkillReviveDo` (`T + 25`), `SummonFinish` (`T + 15`), 0x005D1320 and
   `SkillDo126ImpInferno` (`T + 13`), `SkillDo44BladeSentinel`, `SkillDo71Taunt`, `MonFleeFrom` (`T + 1`), `SkillDo49Shadow`
-  and `SkillDo16Valkyrie` (`T + 20`), and two AI helpers 0x005E8140, 0x005E8340 (`T + 1`). 66 sites cancel kind 2.
+  and `SkillDo16Valkyrie` (`T + 20`), and two AI helpers 0x005E8140, 0x005E8340 (`T + 1`).
   (fn:sub_005A8520_MonKnockbackEnd@0x005A8520, fn:sub_0056D940_SpawnOwnedMonster@0x0056D940, 0x005417D0)
-- C6. [I] **What this means.** A monster that commands a mode usually gets its next AI event from that mode's end
+- C6. [C] **What this means.** After a last-call `Idle(n)` or `Delay(n)` the next AI event comes at `T + n` (C2, C3;
+  [run:2026-11-16-sweep2-s1m](../../../findings/ai/experiments.md#run2026-11-16-sweep2-s1m)). [I] A monster that commands a mode usually gets its next AI event from that mode's end
   (`MonModeStartNeutral` at `T + aidel`, or a direct call at one of the nine mode ends); an idle monster with no target
   gets it from the idle delay of its row kind (D3); an AI function may also queue it while a mode runs (`MonAiDelay`),
   and then the AI's next command replaces that mode. (fn:sub_005DE890_MonAiTargetOrIdle@0x005DE890, fn:sub_005A7C20_MonSetMode@0x005A7C20)
@@ -240,7 +255,7 @@ flowchart TD
 ```
 
 ```
-D1. MonAiEntryGet(unit, state: u32) → row:                                 [I] (fn:sub_005B15D0_MonAiEntryGet@0x005B15D0, 0x005B15E5, 0x005B1645, 0x00623470)
+D1. MonAiEntryGet(unit, state: u32) → row:                                 [C] (all of D1) code's map, ADR-0015: states 10–12 through the gate and 18 and past with no bound, 240 cases (run:2026-11-16-sweep2-s1ne, [ai/0001 § 14](../../../findings/ai/0001-machinery.md#14-plan-0066-batch-s1ne-part-1-twelve-maps-emulated-the-routes-read-2026-11-16-lanen66ne)), the others in D1a (fn:sub_005B15D0_MonAiEntryGet@0x005B15D0, 0x005B15E5, 0x005B1645, 0x00623470)
       if state ≠ 0 and (state not in 10..12 or the gate allows):
         return g_MonAiStateRows + 16·state                ; no bound on state here
       ai: i16 ← MonStats[class].AI
@@ -249,16 +264,20 @@ D1. MonAiEntryGet(unit, state: u32) → row:                                 [I]
 
 - D1a. [C] This row-address map, for states 0–9 and 13–17 and `AI` over the s16 range, matches the emulation in all 554
   cases; the control without the upper bound fails all 143 cases that separate it. (run:2026-10-27-ai-emu, `entry`)
-- D1b. [I] **The gate for states 10–12** (`0x00623470`) is true for a class allowed by `MonModeAllowed` with MonStats
-  `+0x0C` bit 6 (`boss`) clear and `+0x0E` bit 0 set; when false, the lookup falls through to the class's row.
-  (0x00623470, tbl:MonStats.txt:boss)
-- D2. [I] **A row** is `{+0 searchKind, +4 init, +8 think, +C alt}`. It is dispatched in two steps: `MonAiInit` copies
+- D1b. [C] **The gate for states 10–12** (`0x00623470`) is true for a class allowed by `MonModeAllowed` with MonStats
+  `+0x0C` bit 6 (`boss`) clear and `+0x0E` bit 0 set; when false, the lookup falls through to the class's row. Emulated:
+  the `gate` family's 240 cases and `entry`'s 71. (0x00623470, tbl:MonStats.txt:boss, run:2026-11-16-sweep2-s1ne, [ai/0001 § 14](../../../findings/ai/0001-machinery.md#14-plan-0066-batch-s1ne-part-1-twelve-maps-emulated-the-routes-read-2026-11-16-lanen66ne))
+- D2. [C] **A row** is `{+0 searchKind, +4 init, +8 think, +C alt}`, the words `MonAiInit` and `MonAiTargetByKind`
+  read ([run:2026-11-16-sweep2-s1f](../../../findings/ai/experiments.md#run2026-11-16-sweep2-s1f)). It is dispatched in two steps: `MonAiInit` copies
   `think` (or `alt`) into `AiCtl.think`; on each AI event the `searchKind` of the row for the stored state runs the
   target search, then `AiCtl.think(game, unit, &ctx)` runs. 147 distinct think functions over 148 rows: rows 106 and
   143 share theirs. 146 rows are named by a MonStats row; `None` and `ShadowMasterNoInit` are not. Rows 0 (`ret 4`) and 1
   (`Idle`: with a room, `MonAiIdle(200)`) are bare. (data:g_MonAiTable@0x0073CA18, fn:sub_005B0CC0_AiNone@0x005B0CC0,
   fn:sub_005B0CD0_AiIdle@0x005B0CD0, tbl:MonStats.txt:AI)
-- D3. [I] **The row kind** (`MonAiTargetByKind`, a switch on `+0` of `MonAiEntryGet(unit, AiCtl.state)`; fn:sub_005B1650_MonAiTargetByKind@0x005B1650):
+- D3. [C] **The row kind** (`MonAiTargetByKind`, a switch on `+0` of `MonAiEntryGet(unit, AiCtl.state)`): the stock
+  kinds below read twice; the 8 496 decisions of kind-1 states all have a target, and kinds 0 and 5 think without one
+  (5 003 and 340 decisions) ([run:2026-11-16-sweep2-s1m](../../../findings/ai/experiments.md#run2026-11-16-sweep2-s1m), fn:sub_005B1650_MonAiTargetByKind@0x005B1650). [I] The *No target* column and
+  kinds 3 and above 5 are the reading (fn:sub_005B1650_MonAiTargetByKind@0x005B1650):
 
   | Kind | Search | The think runs | No target |
   |---|---|---|---|
@@ -299,26 +318,29 @@ stateDiagram-v2
 ```
 
 ```
-E1. MonAiInit(game, unit, ctl, state: i32):                                [I] (fn:sub_005B0E00_MonAiInit@0x005B0E00, 0x005B0E4D, 0x005B0E77, 0x005B0E99, 0x005B0EA5, 0x005B0F2D)
+E1. MonAiInit(game, unit, ctl, state: i32):                                [C] to the `IsBadCodePtr` call, 200 cases (run:2026-11-16-sweep2-s1ne-p3, [ai/0001 § 16](../../../findings/ai/0001-machinery.md#16-plan-0066-batch-s1ne-part-3-monaiinit-monaiprechecks-aihostilecandidate-and-monaiforcedtarget-2026-11-16-lanen66ne)); [I] the stores after a non-zero init return, and the fatal branch after `IsBadCodePtr` (fn:sub_005B0E00_MonAiInit@0x005B0E00, 0x005B0E4D, 0x005B0E77, 0x005B0E99, 0x005B0EA5, 0x005B0F2D, 0x005B0F30–0x005B0F43)
+      if UNIT_HasState(unit, 54): fatal                     ; before the null tests
       if game, unit or ctl is null, or state ≥ 18 (signed), or unit is no monster: return
       if the class is at or past the MonStats count: state ← 1
       if AiCtl.think ≠ 0
          and AiCtl.think = think of MonAiEntryGet(unit, AiCtl.state)
          and that row has an alt:
         AiCtl.state ← state;  AiCtl.think ← alt;  return
-      clear AiCtl+0x14, +0x18, +0x1C;  free the parameter records
+      clear AiCtl+0x14, +0x18, +0x1C;  free the parameter records of MonsterData+0x28's control
       r ← MonAiEntryGet(unit, state)
       r.init(game, unit, &blk)     ; blk laid out as an AiCtx: ctl, six zeros, MonStats, MonStats2;
-                                   ; returns without setting anything when a record is missing
+                                   ; returns without setting anything more when a record is missing
       AiCtl.state ← state
       AiCtl.think ← r.think, or 0x005B0CD0 when 0
+      if IsBadCodePtr(AiCtl.think) ≠ 0: fatal               ; KERNEL32, not run
 ```
 
 - E1a. [I] A unit with state 54 takes a fatal path at `0x005B0E14`. The `< 18` test is signed, so a negative argument
   passes it and would index below the second table; no stock caller found passes one. Writes to `AiCtl+0x00` other than
   `MonAiInit`'s two stores are not scanned. (0x005B0E14, 0x005B0E94, 0x005B0F2B, struct:AiCtl+0x00)
-- E2. [I] **The alt as a one-event bridge.** A `MonAiInit` call while `AiCtl.think` is the current row's think and that
-  row has an `alt` sets the new state and installs the `alt`; the `alt` then calls `MonAiInit` with that state while
+- E2. [C] **The alt as a one-event bridge.** A `MonAiInit` call while `AiCtl.think` is the current row's think and that
+  row has an `alt` sets the new state and installs the `alt`, and stores nothing else (23 cases); any other non-zero
+  think takes the full init (53) (run:2026-11-16-sweep2-s1ne-p3, [ai/0001 § 16](../../../findings/ai/0001-machinery.md#16-plan-0066-batch-s1ne-part-3-monaiinit-monaiprechecks-aihostilecandidate-and-monaiforcedtarget-2026-11-16-lanen66ne)). [I] The `alt` then calls `MonAiInit` with that state while
   `AiCtl.think` is the `alt`, so the full init runs and installs the state's think. (fn:sub_005E5280_AiHireableAlt@0x005E5280,
   0x005E52AB, [ai/0007 § 2.5](../../../findings/ai/0007-hirelings.md#25-the-alt-and-states-5-and-6))
 - E3. [I] **The blocks.** `MonsterInit` allocates into `MonsterData+0x28/+0x2C/+0x30` the `AiCtl` (0x40 bytes, zeroed,
@@ -338,7 +360,9 @@ E1. MonAiInit(game, unit, ctl, state: i32):                                [I] (
   | `+0x28`..`+0x34` | | the owner and the minion list |
 
   (struct:AiCtl+0x08, struct:AiCtl+0x2C, fn:sub_0058F030_MonSetOwner@0x0058F030, fn:sub_0058F380_MonGroupForEach@0x0058F380)
-- E5. [I] **The state rows and who sets them.** `MonAiInit` has 33 direct calls: 21 push an immediate, 12 a register (fn:sub_005B0E00_MonAiInit@0x005B0E00).
+- E5. [C] **The state rows and who sets them.** `MonAiInit` has 33 direct calls: 21 push an immediate, 12 a register,
+  the same with both walkers (fn:sub_005B0E00_MonAiInit@0x005B0E00, [run:2026-11-16-sweep2-s1f](../../../findings/ai/experiments.md#run2026-11-16-sweep2-s1f)). [I] The *Setter read* column is the
+  reading of those sites (fn:sub_005B0E00_MonAiInit@0x005B0E00).
 
   | State | Think | Kind | Setter read |
   |---|---|---|---|
@@ -370,33 +394,40 @@ E1. MonAiInit(game, unit, ctl, state: i32):                                [I] (
   13 to 17 occur in 0 of those lines. Over the 17 logs of run:2026-11-04-ai-r5 the states are 0 in 5 894 decisions, 10 in
   594 and 11 in 36, with 12 absent. This is a statement about those logged lines: the word is read only at a decision or
   an event, and the curses not cast, Nightmare and Hell are outside it. (run:2026-11-03-ai-3, run:2026-11-04-ai-r5, 0x005B186F)
-- E7. [I] **"No setter" stays a reading.** No immediate call passes 2, 3, 8, 9, 14 or 17, the register sites give no new
-  value, and `SpawnOwnedMonster`'s block `+0x0C` is 0 at all 15 callers; states 4 and 7 meet the same scan. No spec calls
+- E7. [C] No immediate call passes 2, 3, 8, 9, 14 or 17 (both walkers), and `SpawnOwnedMonster` has 15 direct calls
+  ([run:2026-11-16-sweep2-s1f](../../../findings/ai/experiments.md#run2026-11-16-sweep2-s1f)). [I] **"No setter" stays a reading:** the register sites give no new value, and `SpawnOwnedMonster`'s
+  block `+0x0C` is 0 at all 15 callers; states 4 and 7 meet the same scan. No spec calls
   those rows dead on that.
   (fn:sub_0056D940_SpawnOwnedMonster@0x0056D940, [ai/0013 § 3](../../../findings/ai/0013-batch12.md))
 - E8. [I] **Which curse sets which state.** `CurseSetAiState`, `CurseApplyCb`'s one callee, passes 10, 12 or 11 for a
   skill whose `auratargetstate` (Skills `+0x82`) is 23, 27 or 56, else 0. The states' think functions are the catalogue's.
   (fn:sub_005C34B0_CurseSetAiState@0x005C34B0, 0x005C34D8, 0x005C3503, tbl:Skills.txt:auratargetstate)
+- E8a. [C] **Not the only setter.** States 10 (594 decisions) and 11 (36) occur in the Countess launches of
+  run:2026-11-04-ai-r5 with no curse cast, so E8 is one route among E5's setters, not the only one. ([run:2026-11-16-sweep2-s1m](../../../findings/ai/experiments.md#run2026-11-16-sweep2-s1m),
+  fn:sub_005C34B0_CurseSetAiState@0x005C34B0)
 - E9. [I] **The inactive save and restore** keep, of all this, only the saved point of parameter record 10 for
   `isSpawn`/`isMelee`/`interact`-class rows and three named classes, the owner link of classes 68 and 543, and a
   `MonsterData+0x0E` byte for classes 311 and 312; the state word and think function are rebuilt by `MonAiInit` on
   restore (0x0054286B). See [drlg/lifecycle](../../drlg/lifecycle.md). (fn:sub_00541FE0_InactiveMonAiSave@0x00541FE0,
   fn:sub_00541E20_InactiveMonAiRestore@0x00541E20, fn:sub_005424F0_InactiveMonstersRestore@0x005424F0)
-- E10. [I] **Who has which row.** A monster's row is its record's. Every Hireling row's class uses row 61 `Hireable`.
-  Summons enter like any monster, by `SpawnOwnedMonster` → `MonAiInit`, and the target lists by `TargetListAttach`: Raise
-  Skeleton, Skeletal Mage, the three golems and Valkyrie row 67; Dopplezon and Bone Prison row 1; Bone Wall 84; Hydra 86;
-  the druid rows 107 to 112; the assassin rows 101, 102, 104, 105 and 106; Overseer's whip 117; Impregnate 69.
+- E10. [C] **Who has which row.** Hireling's 120 rows name four classes, all of row 61 `Hireable`. The 32 Skills
+  `summon` classes resolve to rows: Raise Skeleton, Skeletal Mage, the three golems and Valkyrie row 67; Dopplezon 1;
+  Bone Wall 84; Hydra 86; the druid rows 107 to 112; the assassin rows 101, 102, 104, 105 and 106; Overseer's whip 117;
+  Impregnate 69 ([run:2026-11-16-sweep2-s1f](../../../findings/ai/experiments.md#run2026-11-16-sweep2-s1f)). [I] A monster's row is its record's. Bone Prison takes row 1: its `summon` cell names
+  `bonewall` (row 84) while `boneprison1`–`4` are row 1, and `SkillSummonClass`'s mapping is unread. Summons enter like
+  any monster, by `SpawnOwnedMonster` → `MonAiInit`, and the target lists by `TargetListAttach`.
   (fn:sub_0056D940_SpawnOwnedMonster@0x0056D940, 0x0056DA6A, tbl:Skills.txt:summon, tbl:PetType.txt:mclass1, tbl:Hireling.txt:Class)
 
 ### F. The pre-checks and the walk check
 
 ```
-F1. MonAiPreChecks:                                                        [I] (fn:sub_005B10E0_MonAiPreChecks@0x005B10E0)
+F1. MonAiPreChecks:                                                        [C] to its boundaries, 200 cases: state 21 → `MonAiIdle(3)`, `MonAiOpenDoor`'s `+0x0C` bit 3 test before its collision read, `MonAiKeepNear` whole (run:2026-11-16-sweep2-s1ne-p3, [ai/0001 § 16](../../../findings/ai/0001-machinery.md#16-plan-0066-batch-s1ne-part-3-monaiinit-monaiprechecks-aihostilecandidate-and-monaiforcedtarget-2026-11-16-lanen66ne)); [I] the 1 returned after each boundary, the door path past the collision read (fn:sub_005B10E0_MonAiPreChecks@0x005B10E0)
       if state 21: MonAiIdle(3); stop the event
       if MonAiOpenDoor stops: stop the event
       if MonAiKeepNear stops: stop the event                      ; machinery § E
 F2. MonAiOpenDoor:                                                         [I] (fn:sub_005B0F50_MonAiOpenDoor@0x005B0F50, 0x00621A70, 0x00584540)
-      for a MonStats opendoors row (+0x0C bit 3) whose cell has collision bit 0x800:
+      for a MonStats opendoors row (+0x0C bit 3 of ctx's record, ctx+0x1C, tested first)
+      whose cell has collision bit 0x800:
         o ← search kind 8                      ; the nearest object with 0x00621A70 set in mode 0
         if o's Objects record +0x16D ≠ 0: operate it (0x00584540(2, guid)); MonAiIdle(5); stop
 F3. MonAiBossSightPause:                                                   [I] (fn:sub_005B1140_MonAiBossSightPause@0x005B1140, 0x005B11B8, 0x005B11CB, fn:sub_00553380_UnitSetEvent@0x00553380)
@@ -405,7 +436,7 @@ F3. MonAiBossSightPause:                                                   [I] (
         UnitSetEvent(U, 16, 0);  set flag 0x10;  MonAiIdle(20);  stop
 F4. MonSpcWalkCheck, only with a target:                                   [I] (fn:sub_005B13E0_MonSpcWalkCheck@0x005B13E0, fn:sub_005DC640_AiApproachPointTest@0x005DC640, tbl:Levels.txt:MonSpcWalk, tbl:MonStats.txt:isMelee)
       MonAiBossSightPause
-      UModTeleportTry                                             ; drlg/lifecycle
+      UModTeleportTry                                             ; drlg/lifecycle; up to two draws, machinery § F
       for an isMelee class allowed its mode, in a level with MonSpcWalk ≠ 0, the distance above it (unsigned):
         if AiApproachPointTest(unit, target) passes: go on, target unchanged
         else search kind 11:
@@ -497,6 +528,7 @@ forks. A model that forks on unknowns cannot fail there, so the number of calls 
   |---:|---|---:|---:|---|---|---|
   | 13 | FallenShaman | 103 | 361 | 10 of 10 | rev 4 | |
   | 21 | Mummy | 205 | 205 | 4 of 4 | rev 4 | one call past the first in every decision |
+  | 20 | Scarab | 205 | 346 | 9 of 10, the tenth (0x005F283F) by the next `AID`'s `+0x14` (H4) | rev 6 | |
   | 30 | Fetish | 316 | 877 | 7 of 7 | rev 4 | 243 of 316 on one path |
   | 89 | Megademon | 77 | 232 | 7 of 7 | rev 4 | |
   | 37 | SkeletonBow | 81 of 86 | | 6 of 6 in the 81 | rev 4 | the 81 only |
@@ -524,10 +556,12 @@ forks. A model that forks on unknowns cannot fail there, so the number of calls 
   unit's mode and position (0x005F0367, 0x005F037A), Hireable a word through `EDI` that picks its first arm in every decision
   (0x005E5353), NecroPet the words `+0x32`/`+0x34` through `[ebp-0x8]` and a found unit's `+0xC4` (0x005E48DE, 0x005E48F3).
   (run:2026-11-04-ai-resume, run:2026-11-04-ai-resume-flip)
-- H4. [I] **Not under the sentence for other reasons.** Row 20 Scarab: 205 decisions fork-free, but one two-way site,
-  0x005F283F, fails none alone: it clears `AiCtl+0x14` and returns with no call after it, so no comparison of calls can see
-  it. Rows 2 Skeleton and 9 Wraith and 125 BloodLord have no call past the first (BloodLord 38 decisions, under the floor of
-  50 too), so there is nothing to claim. (run:2026-11-04-ai-r5, 0x005F283F, 0x005B186F)
+- H4. [C] **Rows 20, 2, 9 and 125.** Row 20 Scarab's two-way site 0x005F283F, which clears `AiCtl+0x14` and returns
+  with no call after it, is told apart by the unit's next `AID` word `+0x14`: 0 where the step's low word mod 100 is
+  above 10 (59), unchanged where not (11), 70 of 70; so row 20 meets H1's rule and is in its table. Rows 2 Skeleton
+  (260 decisions), 9 Wraith (92) and 125 BloodLord (38, under the floor of 50) make the block's one call and no other,
+  the exit seed the call's, so there is nothing past the first to claim. (run:2026-11-04-ai-r5, [run:2026-11-16-sweep2-s1m](../../../findings/ai/experiments.md#run2026-11-16-sweep2-s1m), 0x005F283F,
+  0x005B186F)
 - H5. [I] Everything an entry of [machinery § T](machinery.md#t-the-tier-ais) states past its first boundary outside those
   logged paths stays the code reading of its catalogue finding. (run:2026-11-04-ai-r5)
 
@@ -538,20 +572,27 @@ tests are the checkers `tools/ai.py check` and `tools/ai_resume.py` over the log
 
 - [C] `AiDistToPoint` with `dx = 10`, `dy = 3` gives `(2·10 + 3) / 2 = 11` in the floor the emulation confirms
   (run:2026-10-27-ai-emu, fn:sub_005DC530_AiDistToPoint@0x005DC530).
-- [I] `MonAiIdle(5)` at frame 1 000 cancels any kind-2 record of the unit and queues one for frame 1 005; `MonAiIdle(0)`
-  queues one for frame 1 001. (fn:sub_005DE080_MonAiIdle@0x005DE080)
+- [C] `MonAiIdle(5)` at frame 1 000 gives the unit's next AI event at frame 1 005, as C2's 2 358 logged calls do, unless
+  another queue comes first (C2a). ([run:2026-11-16-sweep2-s1m](../../../findings/ai/experiments.md#run2026-11-16-sweep2-s1m), fn:sub_005DE080_MonAiIdle@0x005DE080)
+- [I] It cancels any kind-2 record of the unit first, and `MonAiIdle(0)` queues one for frame 1 001: no `Idle(0)` is
+  logged, and C2b holds the form at n ≤ 0. (fn:sub_005DE080_MonAiIdle@0x005DE080)
 
 ## Reimplementation notes
 
-- [I] **The AI has two entries, the queue and a mode end.** At a mode end it runs inside that mode-end event, so its draws
-  come at that event's place in the frame, not at the kind-2 record's. The per-unit order on a shared seed is [sim/frame § D and § E](../../sim/frame.md#d-the-unit-events-the-control-the-pass-the-runners)'s.
+- [C] **The AI has two entries, the queue and a mode end.** At a mode end it runs inside that mode-end event, so its draws
+  come at that event's place in the frame, not at the kind-2 record's: S7b counts the AI's draws by event kind, 447 in
+  monsters' kind-0 events and 992 in kind-2 ([sim/frame n8](../../sim/frame.md#reimplementation-notes), run:2026-11-04-frame2,
+  run:2026-11-04-frame3, [frame/0007 § S7b](../../../findings/frame/0007-frame-batch.md#plan-0066-batch-s7b-new-checks-over-the-kept-windows-2026-11-16-lanen66o)). [I] Those mode-end entries are the nine call sites of B5, each skipped while the
+  unit is frozen and alive. The per-unit order on a shared seed is [sim/frame § D and § E](../../sim/frame.md#d-the-unit-events-the-control-the-pass-the-runners)'s.
   (fn:sub_005B1740_MonAiEvent@0x005B1740, fn:sub_005A8030_MonModeEndGeneric@0x005A8030)
 - [I] **`Idle` queues; a think that queues nothing leaves no kind-2 record**, so such a unit next thinks at a mode's end.
   Row 6 cancels its pending event on every decision (T6). (fn:UNIT_CancelEvents@0x00540E60, fn:sub_005F02C0_AiFallen@0x005F02C0)
-- [I] **`MonAiEntryGet` is not bounded on the state branch.** The bound is `MonAiInit`'s, and it is signed.
+- [C] **`MonAiEntryGet` is not bounded on the state branch:** 112 emulated cases from 18 to 2³² − 1, the row address
+  wrapping (run:2026-11-16-sweep2-s1ne, [ai/0001 § 14](../../../findings/ai/0001-machinery.md#14-plan-0066-batch-s1ne-part-1-twelve-maps-emulated-the-routes-read-2026-11-16-lanen66ne)). [I] The bound is `MonAiInit`'s, and it is signed.
   (fn:sub_005B15D0_MonAiEntryGet@0x005B15D0, 0x005B0E4D)
-- [I] **The row kind follows the stored state**, not the class: a unit in state 12 (kind 0), when the gate of D1b allows it,
-  skips the search even when its class's row has kind 1. (fn:sub_005B1650_MonAiTargetByKind@0x005B1650, 0x005B1663)
+- [C] **The row kind follows the stored state**, not the class: a unit in state 12 (kind 0), when the gate of D1b allows it,
+  skips the search even when its class's row has kind 1. In 56 logged state-12 decisions, each unit's class row of kind
+  1, the `ctx` target, distance and melee word are 0 in all. ([run:2026-11-16-sweep2-s1m](../../../findings/ai/experiments.md#run2026-11-16-sweep2-s1m)) (fn:sub_005B1650_MonAiTargetByKind@0x005B1650, 0x005B1663)
 
 ## Evidence
 
@@ -580,12 +621,15 @@ tests are the checkers `tools/ai.py check` and `tools/ai_resume.py` over the log
 - [L] **The H1 remainder:** the 8 `AD0` stops, unexamined (A5), and the 330 of 331 same shape, an inference (A5).
 - [C] **C10, settled for record 211, Normal.** Of 308 logged melee decisions, Smite 102, Jab 116, A1 90; exact 95 % intervals 27.9–38.7, 32.2–43.3, 24.2–34.6 %, excluding src:arreat-summit-boss-pages's 50 and 17. The 9 with the mercenary as target are counted, as the think only pushes its target; the player alone gives 99, 111, 89 of 299 and excludes them too. Each decision's arm and number of steps follow from its logged seed by the three draws, 308 of 308; six other readings fail 90 to 234. (run:2026-11-04-r72, fn:sub_005F67B0_AiDuriel@0x005F67B0, [ai/0020](../../../findings/ai/0020-owner-played-duriel-countess.md))
 - [C] **The code's side, emulated:** `draw < aip2` Skill3, then a fresh `draw < aip3` Skill2, then a fresh `draw < aip4` A2, else A1, to the first callee. (run:2026-10-30-ai-cat-emu-6, fn:sub_005F67B0_AiDuriel@0x005F67B0)
-- [I] **Its frequencies** are arithmetic on that map with `aip2..4` 33, 50, 0: Smite 33 %, Jab 33.5 %, A1 33.5 %; the counts agree and do not prove them. (fn:sub_005F67B0_AiDuriel@0x005F67B0)
+- [C] **Its frequencies** are arithmetic on that map with `aip2..4` 33, 50, 0 (records 211 and 708, every difficulty, `.txt` = `.bin`): Smite 33/100, Jab 67/200, A1 67/200, computed; the counts agree and do not prove them. (fn:sub_005F67B0_AiDuriel@0x005F67B0, [run:2026-11-16-sweep2-s1f](../../../findings/ai/experiments.md#run2026-11-16-sweep2-s1f))
 - [L] **C11, Über Duriel:** the page's same 17/33/50. Same think and `aip` values as data, no decision of record 708 logged; open with the Uber cases. (fn:sub_005F67B0_AiDuriel@0x005F67B0, [ai/0014](../../../findings/ai/0014-community-cross-check.md))
 - [L] **P1b-2, C40.** Whether a natural champion corpse reaches the Greater Mummy's skill test: no natural champion was logged, and the built-state run cannot count, since a logger
   never writes game memory (ADR-0003). It needs a `-forced` mode that writes nothing. (fn:sub_005F2A00_AiGreaterMummyCb@0x005F2A00)
-- [I] **The code's side of C40:** the callback tests the unique flag only, so a champion corpse in range becomes `corpse` ([machinery T22a](machinery.md#t22-row-22-greatermummy-fnsub_005f2b10_aigreatermummy0x005f2b10)); the skill's own target test is not read for champions. (fn:sub_005F2A00_AiGreaterMummyCb@0x005F2A00, fn:sub_005FD470_MonSkillTargetOk@0x005FD470)
+- [C] **The code's side of C40:** with `uniquesToo` 0 the callback refuses only `MonTypeFlag` 8, so a champion corpse in range becomes `corpse` (2 emulated cases; [machinery T22a](machinery.md#t22-row-22-greatermummy-fnsub_005f2b10_aigreatermummy0x005f2b10); fn:sub_005F2A00_AiGreaterMummyCb@0x005F2A00, run:2026-11-16-sweep2-s1ne, [ai/0001 § 14](../../../findings/ai/0001-machinery.md#14-plan-0066-batch-s1ne-part-1-twelve-maps-emulated-the-routes-read-2026-11-16-lanen66ne)). [I] The skill's own target test is not read for champions. (fn:sub_005FD470_MonSkillTargetOk@0x005FD470)
 - [L] **The Uber forced cases** G1, G2, G3 and G5 of [ai/0016](../../../findings/ai/0016-uber-event.md) are named
   shortfalls, for owner play.
+- [I] **C2's and C3's form at n ≤ 0.** C4 turns 0 into 1 and keeps a negative `n`; whether `MonAiIdle` and `MonAiDelay`
+  clamp with `max(n, 1)` (C2b) is unread ([backlog](../../../backlog/2026-11-16-spec-writer-reverser-monsters-ai-idle-delay-n-at-or-below.md)).
+  (fn:sub_005DE080_MonAiIdle@0x005DE080, fn:sub_005DE0F0_MonAiDelay@0x005DE0F0)
 - [L] **`0x00623470`'s** column at MonStats `+0x0E` bit 0, `MonsterData+0x54`'s writer, the third `MonsterInit` block and
   `Game+0x6A`'s meaning in the `aidel` choice are unnamed here. (0x00623470, fn:sub_00574250_MonsterInit@0x00574250)
