@@ -740,6 +740,71 @@ stats/aggregate 23.
 - [I] Callers (`xref.txt`): the find has 3 rel32 callers, the remove 10, `AddStatEvent` 11, 0x005C0AD0 2; only the
   callback's (0x0055B87A, 0x0055B897, 0x0055B8B9, 0x0055B8C2) were read.
 
+### 14. Plan 0066 batch S4e part 5f: the static remainders (run:2026-11-16-sweep2-s4e-emu, static)
+
+No emulation. Objdump pins and full scans by `tools/items_s4e10_emu.py` (`workspace/logs/n66z/s4e/run10/static.txt`,
+`xref.txt`, `sites.txt`, `logs.txt`; record in
+[items/experiments](../items/experiments.md#part-5f-the-closing-static-part-2026-11-16)), each a second tool beside
+the Ghidra reading named. Rows: stats/aggregate 2, 10, 29, 31, 36, 40, 41.
+
+- [C] (static) **Aggregate 2: the other link and unlink paths' callers.** `sub_00627910_StatListLinkOwner` has 44
+  rel32 callers in 14 functions and no abs32: `ITEMS_AttachToOwner` (0x0055C43E), `ITEMS_DetachFromOwner`
+  (0x0055C826), `sub_0055F140_KeyConsume` (0x0055F56B), `HIRE_Hire`, the two weapon relinks (0x00535D10, 0x00623C80),
+  the damage-stat enable and disable (0x00627860, 0x00627A40), the two kick functions (0x005D54B0, 0x00646280) and four
+  client functions below 0x00500000. `KeyConsume` has 2 rel32 callers: `OBJOP_Chest` (0x00585FB9) and
+  `sub_00581A10_ObjEvent7Thunk` (0x00581DC1). (`xref.txt`; fn:sub_00627910_StatListLinkOwner@0x00627910,
+  fn:sub_0055F140_KeyConsume@0x0055F140, run:2026-11-16-sweep2-s4e-emu)
+- [I] Which of these callers the `StatListLinkOwner` links and `KeyConsume` unlinks logged in S4d part 2 came
+  through, and what `KeyConsume` does to the key (an operated chest's key), is not read.
+  (fn:sub_0055F140_KeyConsume@0x0055F140)
+- [C] (static) **Aggregate 10: the `+0x38` reader.** `STATLIST_Unlink` loads `+0x38` (0x00626BD9) and, when it and
+  `[ebp-0xc]` are non-zero, calls it with `ECX` = `[ebp-0xc]`, `EDX` = the list's `+0x14` (state) and the list pushed
+  (0x00626BD2..0x00626BE7), beside drlg/0009's reading of the same call. `STATLIST_SetRemoveCallback` is the writer
+  part 5d pinned (0x00625CED). (fn:STATLIST_Unlink@0x006269F0, fn:STATLIST_SetRemoveCallback@0x00625CE0,
+  run:2026-11-16-sweep2-s4e-emu)
+- [I] Other writers of `+0x38`, the child chains, the changed keys, the stat callback field and the extended fields
+  stay unread (a field-offset scan cannot tell a stat list's `+0x38` from another struct's). (fn:STATLIST_SetRemoveCallback@0x00625CE0)
+- [C] (static) **Aggregate 29: what queues the idle refresh.** `sub_0052D7B0_ActsClockPass` walks the five act slots
+  at `Game+0xBC` (0x0052D7BB, bound 5 at 0x0052D855); for a slot whose `sub_0061C040_ActClockTick` returns non-zero
+  (0x0052D7D2, 0x0052D7D9) it calls `sub_0055FDE0_PlayerEquipRefresh(…, 1)` for each client's player (0x0052D813,
+  0x0052D822, next client `+0x4A8`), which calls `EquipReqRefresh` with 0 (0x0055FDE4, 0x0055FDE8). This is frame/0001's
+  reading. `PlayerEquipRefresh` has 3 rel32 callers (the clock pass, `PlayerSetSkill` 0x00570413, `PLAYER_LevelUp`
+  0x00570A0E); `EquipReqRefresh` has 22 (`xref.txt`). (fn:sub_0052D7B0_ActsClockPass@0x0052D7B0,
+  fn:sub_0055FDE0_PlayerEquipRefresh@0x0055FDE0, run:2026-11-16-sweep2-s4e-emu)
+- [I] **The 136.** All 28 kept logs (s1017 and p47h) start in level 103, Act IV's town, and 22 of them have 136 as
+  their commonest gap (`logs.txt`); frame/0001's act-clock computation gives act index 3 a bucket return every
+  `17 × 128 / 16` = 136 frames. That the idle refreshes are those returns stays `[I]`: no kept log has an `ACL`
+  line to pair with them. (fn:sub_0061C040_ActClockTick@0x0061C040, run:2026-11-16-sweep2-s4e-emu)
+- [C] (static) **Aggregate 31, the ethereal half in part.** `ITEMS_MakeEthereal(item)` sets flag `0x400000` on its
+  argument (`ITEMS_SetFlag`, 0x0065E502) and writes the argument's stats through `sub_00627260_UnitSetStat`, each with
+  `ESI` (the argument) pushed: 21..24, 159, 160 for a type-45 base, else 31 (0x0065E52F..0x0065E5EA); it has 3 rel32
+  callers (`ItemRollEthereal`, `PROP_Func23_Ethereal`, `CubeModApply`). (fn:ITEMS_MakeEthereal@0x0065E4D0,
+  run:2026-11-16-sweep2-s4e-emu)
+- [I] "Only" stays `[I]`: the flag's other users (19 `push 0x400000` in 12 functions, `xref.txt`) were not read.
+  (fn:ITEMS_MakeEthereal@0x0065E4D0)
+- [C] (static) **Aggregate 36's remainder: `add func` 0 at creation.** In set mode `ItemApplyProps` gives each `prop`
+  block state 0 and flags 0x40 (0x0065FFB4..0x0065FFB8, call 0x0065FFC5); for an `aprop` block it reads `add func`
+  (`+0x87`, 0x0065FFE3) and, when it is 0, passes state 0 (0x00660032) and flags 0x40 (0x0065FFF2), else the
+  `g_SetAPropStates` and `g_SetAPropListFlags` entries (0x0065FFF9, 0x00660000). So an `aprop` of a row with `add
+  func` 0 is built exactly as a `prop`, beside items/0006's reading. (fn:sub_0065FEC0_ItemApplyProps@0x0065FEC0,
+  run:2026-11-16-sweep2-s4e-emu)
+- [I] **Aggregate 40 not settled in S4e.** The 9 aura-bit readers (`EVENT_SelectedAuraTick`, `AuraSelect`,
+  `PlayerSetSkill` twice, `MissileCreate`, `ITEMAURA_Start`, `ITEMAURA_Stop`, `SummonInitStats`, `MERCAI_PickSkill`)
+  each need a reason skills 127–129 never reach them on stock data (a passive's selection refused, no item aura, no
+  missile, no summon or hireling skill row): table checks not made here.
+  (fn:SKILLS_RefreshPassive@0x00646D60, fn:ITEMAURA_Start@0x005BF510)
+- [C] (static) **Aggregate 41, in part.** `EquipReqRefresh` returns early only for a null unit, a non-player unit
+  without `+0xC4` bit 9, or a unit with no inventory (0x0055DBCE, 0x0055DBE6, 0x0055DBFF; the scan finds no other
+  branch over the call, `xref.txt`); otherwise, after its loop, it calls `PlayerSkillReselect` (0x0055DEA0) with the
+  wanted skills saved by 0x0055D9D0 (0x0055DBF2). The reselect calls `PlayerSetSkill` for a side whose wanted skill
+  is set, found, different from the current one, and not given 2 or 7 by `SKILLS_CanUse` (0x0055DA76..0x0055DAB3,
+  and 0x0055DAF7 for the left side). frame/0001 reads the same. (fn:sub_0055DA70_PlayerSkillReselect@0x0055DA70,
+  fn:sub_0055DBC0_EquipReqRefresh@0x0055DBC0, run:2026-11-16-sweep2-s4e-emu)
+- [I] **Whether a stock refresh takes it** stays `[I]`: no logged refresh moved a seed (S4d part 2), and the path
+  from `PlayerSetSkill` to the draw crosses the allocator (`PlayerSetSkill` 0x0057026C → 0x0053C590 → 0x0040B430;
+  `AuraSelect`'s `STATLIST_Alloc` at 0x0056FFFD) and `SKILLS_SrvDo` (0x0056FFB4) (`sites.txt`), so an emulation would
+  need a declared callee return (ADR-0029, R2). It needs a session where a refresh restores a wanted skill.
+
 ## Data touched
 
 tbl:ItemStatCost.txt:op, tbl:ItemStatCost.txt:op param, tbl:ItemStatCost.txt:op base, tbl:ItemStatCost.txt:op stat1,

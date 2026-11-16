@@ -669,6 +669,52 @@ floor) and the MonStats count (DataTables `+0xA80`). `ItemReqCheck` 0x0062EAF0 a
   test is not separated through this caller, since `ItemAutoEquipSlot` tests flag `0x10` again after it.
   (0x0062B5B0, 0x0062B8B7)
 
+## 19. Plan 0066 batch S4e part 5f: the server's record reads, and the quality-9 writers (run:2026-11-16-sweep2-s4e-emu, static)
+
+No emulation. Objdump: 100 pins (`workspace/logs/n66z/s4e/run10/static.txt`) and full scans (`xref.txt`) by
+`tools/items_s4e10_emu.py`; record in
+[experiments](experiments.md#part-5f-the-closing-static-part-2026-11-16). A second tool beside the specs' Ghidra
+readings (the S4c/S4d practice). Rows: items/inventory 18, 87, 17; items/economy 46's caller half.
+
+- [C] (static) **The 13 server calls read the inventory record's `gridX`, `gridY` and the belts record's `numboxes`
+  only.** `InvRecordGrid` copies the 24 bytes at `+0x10..+0x27` of the 0xF0 record into its third argument
+  (0x0065C23B..0x0065C25E); `BeltsRecord` copies the whole 0x108-byte record (`rep movs`, 0x42 dwords, 0x00660D02).
+  For each server call (the 10 `InvRecordGrid` and 3 `BeltsRecord` calls at or above `0x00500000`, each with a
+  literal set of 0, row 18's S4c half), the scan lists every `ebp`-relative operand of the calling function inside
+  the copied buffer (`xref.txt`, 13 calls, 8 non-`lea` operands): `InvGridPut` reads bytes 0 and 1 (`gridX`,
+  `gridY`; 0x0063B067, 0x0063B084); every other `lea` of a buffer is an argument of the call itself or of
+  `sub_0063ADD0_InvPageGet`, which reads only the bytes at its argument and argument + 1 (0x0063AE04, 0x0063AE0A,
+  0x0063AE53, 0x0063AE5A, 0x0063AEB8, 0x0063AEC2); the two belts functions read the byte at buffer `+4` (`numboxes`,
+  0x00560963, 0x0063C6F5). No operand reaches the rectangle (`+0x14..+0x23` of the record) or a belt box. In
+  `InvPlaceAnywhere` the slot `[ebp-0x4]` (buffer `+0x14` of the call at 0x0063BA63) is a loop local written at
+  0x0063BBF2 before its read at 0x0063BC48. (fn:sub_0065C1F0_InvRecordGrid@0x0065C1F0,
+  fn:sub_00660CB0_BeltsRecord@0x00660CB0, fn:sub_0063ADD0_InvPageGet@0x0063ADD0, run:2026-11-16-sweep2-s4e-emu)
+- [C] (static) **Refinement:** `numboxes` (a u32 at `+0x004`) is read by both server callers as its low byte
+  (`movzx … BYTE PTR`), and the server reaches `gridX`/`gridY` through `InvPageGet` as well as directly.
+  (0x00560963, 0x0063C6F5, 0x0063AE04)
+- [I] The scan covers `ebp`-relative operands; an `esp`-relative alias of a buffer was not looked for.
+  (fn:sub_0065C1F0_InvRecordGrid@0x0065C1F0, run:2026-11-16-sweep2-s4e-emu)
+- [C] (static) **Who writes quality 9.** `ITEMS_SetQuality` (stores its second argument at the item data's `+0x00`
+  for a type-4 unit, 0x00627EB9) has 10 rel32 callers in 6 functions and no abs32 (`xref.txt`): the four fallbacks
+  push 2, 3, 4, 6; `ItemCreateByQuality` pushes 4, 4, 7, 2 and, at 0x005574DE, the request's `+0x30` when non-zero
+  (0x005574D1); `sub_00565AB0_RecipeOutputCreate` pushes **9** (0x00565EE5) when the recipe output's byte `+0x06` is
+  9 (0x00565EB6), after two non-zero returns of 0x005C1BC0 (0x00565EC7, 0x00565ED3), and then sets the two rare-name
+  words (0x00628010, 0x00628070). (fn:ITEMS_SetQuality@0x00627EA0, fn:sub_00565AB0_RecipeOutputCreate@0x00565AB0,
+  run:2026-11-16-sweep2-s4e-emu)
+- [I] **Inventory 87 not settled in S4e.** "No stock path makes one" needs, beyond these calls: the stock CubeMain
+  outputs whose quality byte `+0x06` is 9 (a table check), every writer of the creation request's `+0x30`, and any
+  direct store to the item data's `+0x00` outside `ITEMS_SetQuality` (the save loader's, for one). Stays `[I]`.
+  (fn:sub_00558A10_ItemGroundExpiry@0x00558A10, 0x005574D1, 0x00565EB6)
+- [I] **Inventory 17 not settled in S4e.** The creator side (part 5e's route) needs the class source of each
+  non-literal type-2 `SUnitCreate` caller (the preset dispatch from DS1, `OBJ_PlaceRandom*`, `OBJPOP_*`, the portal
+  pair, the shrine, chest and quest presets; 53 rel32 callers, `scratch-p5e/sunit-regs.txt`) and a survey of the DS1
+  object presets and the population tables for objects.txt rows 338, 339. Stays `[I]`.
+  (fn:sub_00621050_InvRowForUnit@0x00621050, 0x00483705)
+- [C] (static) **Economy 46's caller half.** `D2S_WriteCorpses` calls `sub_0062FDC0_ItemTradePrice(player, item, 3,
+  quest word, 0x201, 0)` (pushes 0x005698A8..0x005698B3, call 0x005698B4; the order is items/0009's signature) and
+  adds the return to `EBX` (0x005698B9): difficulty 3, class 513, mode 0. What the sum chooses is not read here
+  (`[I]`). (fn:D2S_WriteCorpses@0x005697F0, fn:sub_0062FDC0_ItemTradePrice@0x0062FDC0, run:2026-11-16-sweep2-s4e-emu)
+
 ## Data touched
 
 tbl:Inventory.txt:gridX, tbl:Inventory.txt:gridY, tbl:Belts.txt:numboxes, tbl:Armor.txt:belt, tbl:Misc.txt:autobelt, tbl:Misc.txt:stackable, tbl:Misc.txt:invwidth, tbl:Misc.txt:invheight, tbl:ItemStatCost.txt:Stat, tbl:ItemTypes.txt:Beltable, tbl:ItemTypes.txt:AutoStack.

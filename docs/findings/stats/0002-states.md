@@ -512,6 +512,22 @@ link call 0x00626E10. A second tool beside [combat/delivery](../../specs/combat/
 - [I] Only the list's make-up is pinned; the timer calls (0x005417D0) and cold's stats 67..69 follow the link and
   were not compared.
 
+### 13. Plan 0066 batch S4e part 5f: the pet release routed (run:2026-11-16-sweep2-s4e-emu, static)
+
+Objdump pins and the route scan of `tools/items_s4e10_emu.py` (`workspace/logs/n66z/s4e/run10/static.txt`,
+`sites.txt`; record in [items/experiments](../items/experiments.md#part-5f-the-closing-static-part-2026-11-16)). Row:
+stats/states 46.
+
+- [C] (static) **The release chain.** `STATE_DefaultRemoveCB` calls `PetLimitRefresh` (0x0056E960); `PetLimit` calls
+  `PetRemove` (0x005758DB), which calls `PetUnitRelease` (0x00575137), which calls `UnitKilled` (0x005744DB) and
+  `MonSetMode` (0x00574501), beside skills/0015 § 10's reading. (fn:sub_00575850_PetLimit@0x00575850,
+  fn:sub_005750E0_PetRemove@0x005750E0, fn:sub_00574450_PetUnitRelease@0x00574450, run:2026-11-16-sweep2-s4e-emu)
+- [I] **Whether a stock expiry releases a pet is not settled statically.** It needs a player at a pet limit that a
+  timed state's skill levels raised (the skill shrine's, for one) when the state ends; and `PetLimit`'s
+  `PetRemove` call reaches the pool's free (0x005758DB → 0x00574850 → 0x0040B480), `PetUnitRelease`'s
+  `UnitKilled` call the same (0x005744DB), and `MonSetMode` an import (0x00574501 → … → 0x00580B2F; `sites.txt`), so
+  an emulation of the release would need a declared callee return (ADR-0029, R2). Moved to b (H4e).
+
 ## Data touched
 
 tbl:States.txt:curse, tbl:States.txt:group, tbl:States.txt:plrstaydeath, tbl:States.txt:monstaydeath,

@@ -3394,3 +3394,58 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   readers for 127–129), 41 (`EquipReqRefresh` → `PlayerSkillReselect`: whether a refresh takes it; consider a
   `sites` route to b under R2 if the path allocates); states 46 (a stock expiry releasing a pet, `PetLimitRefresh`
   0x00575900). New tool and `run10/`; do not overwrite `run9/`. Tier B review once S4e is whole.
+
+### 2026-11-16 — Phase 1, batch S4e part 5f (reverser-static, `lane/n66z`): the closing static part; 15 rows closed; S4e done, Tier B review requested
+
+- **Done.** `main` `31a4949c` already merged (nothing new). No emulation and no Ghidra launch: the 11 rows left were
+  static remainders. New tool `tools/items_s4e10_emu.py` (`static`, `xref`, `sites` reusing
+  `items_s4e7_emu.cmd_sites`, `logs`), run dir `workspace/logs/n66z/s4e/run10/` (`static.txt` 100 pins over 10 rows,
+  all ok; `xref.txt`; `sites.txt` 4 roots; `logs.txt` 28 logs; `manifest.sha256`, 4 lines, passes from there). Parts
+  1–5e's tools and `run/` to `run9/` untouched (run9's manifest passes, its `static` reproduces). Scratch scripts this
+  part are `p5f_*.py` in `workspace/logs/n66z/s4e/scratch-p5f/`; the four inventory files edited by `p5f_rows.py`
+  were diffed against `HEAD` (only the Route column of the 15 rows below changed, each a pure append; states 46's
+  Class and Batch too). Record:
+  [run:2026-11-16-sweep2-s4e-emu part 5f](../findings/items/experiments.md#part-5f-the-closing-static-part-2026-11-16).
+  Claims in items/0013 § 19, stats/0001 § 14, stats/0002 § 13.
+- **Rows closed (15).** Raised: items/inventory 18's remainder (with refinement: `numboxes` read as a byte, the grid
+  bytes also through `InvPageGet`); stats/aggregate 36's remainder (`add func` 0 built as a `prop`). Raised in part:
+  aggregate 2 (the callers of `StatListLinkOwner` and `KeyConsume`), 10 (the `+0x38` reader), 29 (the writer: the act
+  clock pass), 31 (`ITEMS_MakeEthereal` writes only its argument), 41 (the reselect call and its gates); items/economy
+  46's caller half (part 2's, dropped by the part-5 resume notes). **Class move:** stats/states 46 c → b (H4e),
+  ruling R2: the release reaches the pool's free (0x005758DB → 0x00574850 → 0x0040B480) and `UnitKilled`
+  (0x005744DB). **Not settled in S4e; stay `[I]` in their class with the route named:** items/inventory 17 (the
+  non-literal object creators' class sources and a DS1/population survey for objects 338, 339), 87 (the stock CubeMain
+  quality bytes, the request's `+0x30` writers, direct stores; the cube path that writes 9 is now pinned, 0x00565EE5),
+  aggregate 40 (per-reader table checks for 127–129); and the part-2 remainders the part-5 resume notes dropped:
+  economy 85 (the over-cap writer's callers), aggregate 15 (the op-6/7 affix check), 18 (the act word's writer).
+  Remainders left `[I]` inside the raised-in-part rows: aggregate 2 (which caller each logged link took), 10 (the
+  other `+0x38` writers, chains, keys, extended fields), 29 (the 136 as act index 3's bucket period), 31 ("only"
+  over the flag's 19 other users), 41 (whether a stock refresh takes the draw; routed to H4e, no class move: an
+  a-logs row, and the path crosses the allocator, 0x0057026C, 0x0056FFFD). Refinements routed by
+  [backlog](../backlog/2026-11-16-reverser-spec-writer-plan-0066-s4e-part5f-refinements.md); the table checks by
+  [backlog](../backlog/2026-11-16-reverser-archivist-plan-0066-s4e-part5f-table-checks.md).
+- **Symbols:** none raised (objdump readings beside Ghidra readings; review-fixes 14).
+- **Totals** (the 29 files' *Totals by class* summed after this part, `main` `31a4949c`): a-logs 623, a-run 334, b 514,
+  c 389, c-emu 438, d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626; Phase 1 1 450, Phase 2 848. README § 1
+  (stats/states row, All, By phase), § 3 (part 5f line) and § 4 (S4e row, status done; H4e row 39 with states 46 and
+  aggregate 41's remainder) updated.
+- **Judgment calls:** (1) every `[C]` this part is an objdump reading beside a Ghidra reading already in a finding or
+  spec (the S4c/S4d practice); the a-logs rows 2, 10, 29, 31, 36, 41 were routed "→ c" by S4d part 2, so a static
+  raise is the planned method; (2) states 46 is a c row moved under R2 because the question needs the release path
+  run, while aggregate 41 (a-logs) is routed without a move; (3) three development passes of `static`/`xref` wrote
+  into `run10/` before the final revision and were overwritten, not kept (regenerable; none cited); (4) the
+  inventory 18 scan covers `ebp`-relative operands only; (5) the four part-2 remainders were found by a scan of all
+  S4e rows' Route text (`scratch-p5f/p5f_summary.py`, output `scratch-p5f/summary.txt`, which the batch summary's
+  tallies below are counted from), not by the resume notes.
+- **Batch S4e summary (parts 1–5f).** The 91 listed rows: **raised 58**, **raised in part 25** (remainders: 18
+  routed to b without a move, 1 to d-none (economy 43's client half), 6 not settled and kept in class: economy 34,
+  85, inventory 17, 87, aggregate 15, 18), **contradicted in part 2** (economy 46, aggregate 20), **moved to b 6**
+  (economy 8, 56 → H4b; use 54 → H4c; inventory 20, 57, 63 → H4d). The 16 S4c/S4d remainder rows brought in:
+  remainder raised 8 (aggregate 11, 13, 16, 17, 23, 36, 37; states 14), raised in part 5 (aggregate 2, 10, 29, 31,
+  41), not settled 1 (aggregate 40), moved to b 1 (states 46 → H4e), routed to b without a move 1 (inventory 61 →
+  H4d). Class moves: 7 (6 c-emu → b, 1 c → b). Emulation (parts 1–5e): 100 685 cases, 0 mismatches, 0 stops, 0
+  undeclared reads, no traced write; 195 controls, each separating, `passed` 0; part 5f 100 objdump pins. Refinement
+  and correction backlog entries: 10 (parts 1, 2 corrections; parts 3, 4, 5a–5f refinements), and 1 archivist entry
+  (table checks).
+- **Review:** Tier B requested by
+  [backlog](../backlog/2026-11-16-reverser-architect-plan-0066-s4e-tier-b-review.md).

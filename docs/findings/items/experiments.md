@@ -4332,3 +4332,28 @@ request handlers, inventory families) will add their own sections under this hea
 - **Not covered** (ADR-0015 (3), ADR-0021): the level requirement's quality arms 4..8, its socket and skill-stat
   loops; the allocation and free and what follows them; the 23 other callers of the event functions. The states 14
   pins are an objdump reading beside the specs' Ghidra reading, not a run.
+
+### Part 5f: the closing static part (2026-11-16)
+
+- **Question:** the 11 rows S4e part 5e left (items/inventory 17, 18, 87; stats/aggregate 2, 10, 29, 31, 36, 40, 41;
+  stats/states 46), and items/economy 46's caller half left by part 2. Claims in
+  [items/0013 § 19](0013-grids-belts-stacks.md#19-plan-0066-batch-s4e-part-5f-the-servers-record-reads-and-the-quality-9-writers-run2026-11-16-sweep2-s4e-emu-static),
+  [stats/0001 § 14](../stats/0001-aggregate.md#14-plan-0066-batch-s4e-part-5f-the-static-remainders-run2026-11-16-sweep2-s4e-emu-static)
+  and [stats/0002 § 13](../stats/0002-states.md#13-plan-0066-batch-s4e-part-5f-the-pet-release-routed-run2026-11-16-sweep2-s4e-emu-static).
+- **Setup:** `main` `31a4949c` (unchanged; nothing to merge). No emulation and no Ghidra launch. New tool
+  `tools/items_s4e10_emu.py` (objdump and the image's raw bytes; `sites` reuses `items_s4e7_emu.cmd_sites` with this
+  part's roots under `MemoryMax=4G`; `logs` reads `workspace/logs/stats/s1017-run.lst` and `p47h-run.lst`). Parts
+  1–5e's tools and `run/` to `run9/` untouched (run9's manifest passes; its `static` reproduces `static.txt`). Three
+  development passes of `static`/`xref` wrote into `run10/` before the final revision (the server-call filter, the
+  `lea` follow window, economy 46's pins) and were overwritten, not kept; every kept output is from the committed
+  revision.
+- **Result:** `workspace/logs/n66z/s4e/run10/static.txt` (100 pins over 10 rows, all ok), `xref.txt` (the 13 server
+  record calls' buffer operands; the callers of `ITEMS_SetQuality` with their quality argument,
+  `StatListLinkOwner`, `KeyConsume`, `EquipReqRefresh`, `PlayerEquipRefresh`, `PlayerSkillReselect`,
+  `PetLimitRefresh`, `ITEMS_MakeEthereal`; the branches over 0x0055DEA0; the 19 `push 0x400000`), `sites.txt` (4
+  roots, 13 calls reaching an allocator or import), `logs.txt` (28 logs, all first in level 103, 22 with 136 the
+  commonest EQR gap), `manifest.sha256` (4 lines, passes from that directory).
+- **Not covered:** an `esp`-relative alias of a record buffer; the flag `0x400000`'s 19 other users; the 9 aura-bit
+  readers' reachability for 127–129; the class sources of the non-literal object creators; the CubeMain quality
+  bytes; anything past the allocator or import each `sites.txt` route names. Every `[C]` here is an objdump reading
+  beside a Ghidra reading already in a finding or spec, not a run. (run:2026-11-16-sweep2-s4e-emu)
